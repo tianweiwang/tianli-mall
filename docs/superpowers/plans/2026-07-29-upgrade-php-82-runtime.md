@@ -130,11 +130,11 @@ opcache.jit_buffer_size=0
 - Modify: `crmeb/composer.json`
 - Modify: `crmeb/composer.lock`
 
-- [ ] **Step 1: Constrain the platform and enable checking**
+- [x] **Step 1: Constrain the platform and enable checking**
 
 Set `require.php` to `~8.2.0` and `config.platform-check` to `true`, replacing the current `false`. The committed file must contain no advisory-ignore, platform-ignore, or extension-ignore setting.
 
-- [ ] **Step 2: Compute the minimal lock with a command-only advisory bypass**
+- [x] **Step 2: Compute the minimal lock with a command-only advisory bypass**
 
 Guzzle 6.5.5 is advisory-blocked by current Composer policy. Use Composer 2.10's command-only `--no-blocking` option so no diagnostic setting is written to `composer.json`. Target the ten blockers with `--with-all-dependencies --minimal-changes --no-install --no-plugins --no-scripts --no-audit`:
 
@@ -145,13 +145,13 @@ symfony/psr-http-message-bridge symfony/translation
 symfony/translation-contracts symfony/var-dumper
 ```
 
-- [ ] **Step 3: Review the minimal delta package by package**
+- [x] **Step 3: Review the minimal delta package by package**
 
 Expected: 10 changed and 3 added (`composer/pcre` 3.4.0, `ezyang/htmlpurifier` v4.19.0, `symfony/polyfill-php80` v1.37.0), with no removals. Full changed list is in the design.
 
 Note that `symfony/psr-http-message-bridge` moves **down**, v1.2.0 to v1.0.2, because v1.2.0 requires `http-foundation ^3.4||^4.0` while EasyWechat requires `~2.6|~2.7|~2.8|~3.0`; v1.0.2 satisfies both. `paragonie/random_compat` moves to v9.99.100 rather than being removed. `overtrue/wechat 3.3.33`, `doctrine/cache v1.4.4`, ThinkPHP, Think Queue, JWT, Guzzle, and unrelated transitive packages stay at their locked versions.
 
-- [ ] **Step 4: Prove the platform gates pass with no bypass**
+- [x] **Step 4: Prove the platform gates pass with no bypass**
 
 Run:
 
@@ -162,7 +162,7 @@ composer check-platform-reqs
 
 Expected: `There is no installed package depending on "php" in versions not matching 8.2`, and every `check-platform-reqs` entry reports `success`.
 
-- [ ] **Step 5: Compare audits**
+- [x] **Step 5: Compare audits**
 
 Record baseline and resulting `composer audit` output. Verified result: the migration reduces the audit from 62 advisories across 12 packages to 33 across 11 packages. The remaining advisories remain a launch blocker tracked separately.
 

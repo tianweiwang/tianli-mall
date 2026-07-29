@@ -14,10 +14,10 @@
 
 ## 3. Dependency migration
 
-- [ ] 3.1 Constrain `composer.json` to `~8.2.0`, enable `platform-check`, and confirm no advisory-ignore, platform-ignore, or extension-ignore setting reaches the committed file.
-- [ ] 3.2 Apply the reviewed 10-update, 3-addition lock delta package by package with `--minimal-changes`, using the diagnostic advisory setting only locally and never committing it.
-- [ ] 3.3 Confirm `composer prohibits php 8.2 --locked` reports no package and `check-platform-reqs` passes on every entry with no bypass.
-- [ ] 3.4 Record baseline and resulting audits and confirm the advisory count and severity do not increase.
+- [x] 3.1 Constrain `composer.json` to `~8.2.0`, enable `platform-check`, and confirm no advisory-ignore, platform-ignore, or extension-ignore setting reaches the committed file.
+- [x] 3.2 Apply the reviewed 10-update, 3-addition lock delta package by package with `--minimal-changes`, using the diagnostic advisory setting only locally and never committing it.
+- [x] 3.3 Confirm `composer prohibits php 8.2 --locked` reports no package and `check-platform-reqs` passes on every entry with no bypass.
+- [x] 3.4 Record baseline and resulting audits and confirm the advisory count and severity do not increase.
 
 ## 4. Compatibility repairs
 
