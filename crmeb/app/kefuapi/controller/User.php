@@ -145,7 +145,7 @@ class User extends AuthController
      */
     public function logout()
     {
-        $key = trim(ltrim($this->request->header(Config::get('cookie.token_name')), 'Bearer'));
+        $key = trim(ltrim((string)$this->request->header(Config::get('cookie.token_name')), 'Bearer'));
         CacheService::delete(md5($key));
         return app('json')->success();
     }

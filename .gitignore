@@ -35,6 +35,7 @@ crmeb/public/uploads/*
 /help/docker/mysql/data/
 /help/docker/.env.runtime
 /help/docker/.env.application
+/help/docker/backup/
 
 # 配置文件(敏感信息)
 crmeb/.env

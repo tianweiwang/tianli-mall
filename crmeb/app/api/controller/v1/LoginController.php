@@ -67,7 +67,7 @@ class LoginController
      */
     public function logout(Request $request)
     {
-        $key = trim(ltrim($request->header(Config::get('cookie.token_name')), 'Bearer'));
+        $key = trim(ltrim((string)$request->header(Config::get('cookie.token_name')), 'Bearer'));
         CacheService::delete(md5($key));
         return app('json')->success('退出成功');
     }
