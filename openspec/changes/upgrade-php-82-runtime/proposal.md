@@ -9,7 +9,8 @@ Measured on 2026-07-29 against a PHP 8.2.32 container with the extensions the ap
 - Vendor PHP 8.2 parse failures are 25 across 6 packages, not the single Doctrine Cache failure recorded. Two of them are reachable in production paths. Application code (917 files under `app/`, 158 under `crmeb/`, plus `config/`, `route/`, `public/`) has zero parse failures.
 - `topthink/think-image` v1.0.7 fails to compile on PHP 8.2 in `gif/Decoder.php` and `gif/Encoder.php`. `crmeb/services/upload/storage/Local.php` and `crmeb/utils/DownloadImage.php` call `Image::open()` on every local upload. Because curly-brace offset access is a compile-time error, the surrounding `catch (\Throwable $e)` never runs: uploading any GIF returns an unlogged HTTP 500. This package declares no `php` constraint, so `composer prohibits` cannot see it.
 - `overtrue/wechat` `Support/Collection.php:354` declares `__set_state()` with the wrong arity and is a compile-time failure on the WeChat path. A one-parameter edit is insufficient: PHP 8.2 also requires the method to be static, its current body cannot use `$this` in static context, and the class emits eight interface/serialization deprecations after it compiles.
-- Runtime deprecations, measured by loading all 1042 autoloadable classes under `E_ALL` (0 load failures): 24 distinct diagnostics in application code, all from the 32 optional-before-required declarations, and 8 in `think-orm` plus `Pimple` that remain after the project-owned WeChat collection is fully repaired. The prior acceptance criterion requiring zero vendor deprecations is therefore unreachable as written.
+- Runtime deprecations, initially measured by loading all 1042 autoloadable classes under `E_ALL` (0 load failures): 24 distinct diagnostics in application code, all from the 32 optional-before-required declarations, and 8 in `think-orm` plus `Pimple`. A real PHP 8.2 image build proved that this baseline was incomplete: ThinkPHP forces `E_ALL` during console initialization, promotes the notices to exceptions, and exposes another 6 notices in `think\\Paginator` plus 4 in `think\\db\\Where`. All 18 reachable return-type notices are runtime blockers and must be repaired.
+- An authoritative Composer classmap contains 5817 symbols because several legacy dependencies publish their PHPUnit tests and optional Laravel, React, and Symfony adapters as production autoload entries. Eagerly loading that entire map reports diagnostics and missing optional frameworks that normal CRMEB execution never reaches. Runtime cleanliness is therefore measured across application code plus production-startup classes, while payment, messaging, WeChat, and storage SDK boundaries receive separate no-side-effect construction checks.
 - The vendor tree does not match `composer.lock`: `crmeb/easypay`, `xin/container`, and `xin/helper` are recorded in both the lock and `installed.json` with install paths that do not exist, while an unrecorded `phpoffice/phpexcel` directory remains. The `topthink/framework v6.1.2` source itself still declares `const VERSION = '6.1.1'`, including after a clean install, so that constant is not used as an integrity check.
 
 ## What Changes
@@ -20,10 +21,11 @@ Measured on 2026-07-29 against a PHP 8.2.32 container with the extensions the ap
 - Repair the 32 optional-before-required declarations in application code without reordering parameters.
 - Replace the two unpatchable `think-image` GIF classes with project-owned equivalents loaded ahead of the package, keeping animated-GIF frame handling intact. `intervention/image` 2.7.2 is already in the tree but decodes only the first GIF frame, so it is not a usable substitute.
 - Repair the `overtrue/wechat` collection's PHP 8.2 magic-method, interface-return, and serialization contract through the same project-owned override mechanism rather than editing `vendor/`.
+- Repair the 18 reachable `think-orm` and `Pimple` interface-return notices through project-owned class and trait overrides. This keeps ThinkPHP's strict error handling intact and avoids suppressing deprecations globally.
 - Replace `openssl_free_key()` in `crmeb/utils/Rsa.php`, which is deprecated from PHP 8.0.
 - Allow the web entrypoint to run on PHP 8.2 and reject unvalidated release lines.
 - Add PHP 8.2 build, dependency, lint, deprecation, process, HTTP, WebSocket, JWT, spreadsheet, image, upload, and data-preservation checks, and fix the lint-harness defect described below.
-- Record the vendor deprecations and the pre-existing `Encoder.php:77` warning as accepted known issues rather than release blockers.
+- Record only the pre-existing `Encoder.php:77` warning as an accepted known issue; reachable PHP 8.2 deprecations remain release blockers.
 - **BREAKING**: the runtime moves to the PHP 8.2 line; the PHP 7.4 image is retained only as a rollback checkpoint.
 - This remains an acceptance-environment compatibility migration. The lock migration reduces the audit from 62 advisories across 12 packages to 33 across 11 packages, but the remaining advisories, the abandoned EasyWechat package, and the absent first-party suite still block public production launch.
 
@@ -39,10 +41,10 @@ Measured on 2026-07-29 against a PHP 8.2.32 container with the extensions the ap
 
 ## Impact
 
-- Affected code: `docker/php/Dockerfile`, `docker/php/opcache.ini`, `crmeb/composer.json`, `crmeb/composer.lock`, `crmeb/public/index.php`, `crmeb/utils/Rsa.php`, 26 files carrying optional-before-required declarations, and new project-owned image and WeChat compatibility classes.
+- Affected code: `docker/php/Dockerfile`, `docker/php/opcache.ini`, `crmeb/composer.json`, `crmeb/composer.lock`, `crmeb/public/index.php`, `crmeb/utils/Rsa.php`, 26 files carrying optional-before-required declarations, and new project-owned image, WeChat, Think ORM, and Pimple compatibility classes.
 - Affected verification: `help/docker/verify-optimized.ps1` and a new PHP 8.2 verification script.
 - Preserved state: `help/docker/mysql/data` and `crmeb/public/uploads`. No schema or data migration is part of this change.
-- Known issues carried forward: 8 vendor runtime deprecations, the pre-existing static-GIF `Undefined array key 0` warning, and the outstanding dependency advisories.
+- Known issues carried forward: the pre-existing static-GIF `Undefined array key 0` warning and the outstanding dependency advisories.
 
 ## Verification Harness Defect
 

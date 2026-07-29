@@ -67,11 +67,18 @@
         "exclude-from-classmap": [
             "vendor/topthink/think-image/src/image/gif/Decoder.php",
             "vendor/topthink/think-image/src/image/gif/Encoder.php",
-            "vendor/overtrue/wechat/src/Support/Collection.php"
+            "vendor/overtrue/wechat/src/Support/Collection.php",
+            "vendor/topthink/think-orm/src/Paginator.php",
+            "vendor/topthink/think-orm/src/Model.php",
+            "vendor/topthink/think-orm/src/model/concern/Conversion.php",
+            "vendor/topthink/think-orm/src/db/Where.php",
+            "vendor/pimple/pimple/src/Pimple/Container.php"
         ],
         "classmap": [
             "crmeb/services/image/gif/",
-            "crmeb/services/wechat/Collection.php"
+            "crmeb/services/wechat/Collection.php",
+            "crmeb/compat/think/orm/",
+            "crmeb/compat/pimple/Container.php"
         ]
     },
     "config": {

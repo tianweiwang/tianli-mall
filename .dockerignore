@@ -87,6 +87,7 @@ yarn-error.log*
 # ===========================================
 # 注意：如果 vendor 目录需要，进入镜像时不要排除
 # 如果使用 composer install 构建，则可以排除
+crmeb/vendor/
 # vendor/test/
 # vendor/tests/
 # vendor/docs/

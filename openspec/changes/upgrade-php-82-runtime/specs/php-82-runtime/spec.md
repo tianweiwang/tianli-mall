@@ -91,6 +91,11 @@ Classes that cannot compile on PHP 8.2 and are reachable at runtime SHALL be rep
 - **THEN** the project-owned replacements SHALL still take precedence over the packaged classes
 - **THEN** no file under `vendor/` SHALL have been modified by hand
 
+#### Scenario: Strict application startup remains usable
+- **WHEN** console and web startup initialize ThinkPHP under `E_ALL`
+- **THEN** reachable `think-orm` and `Pimple` interface implementations SHALL emit no PHP 8.2 return-type deprecations
+- **THEN** ThinkPHP's error handler SHALL NOT be weakened to suppress deprecations globally
+
 #### Scenario: Image receives a clean dependency tree
 - **WHEN** the PHP image is built
 - **THEN** Composer SHALL install the committed lock in an isolated build stage
@@ -99,9 +104,10 @@ Classes that cannot compile on PHP 8.2 and are reachable at runtime SHALL be rep
 ### Requirement: Recorded known issues
 Compatibility failures that cannot be repaired within this change SHALL be recorded rather than silently tolerated or treated as release blockers.
 
-#### Scenario: Vendor deprecations are bounded
-- **WHEN** all autoloadable classes are loaded under `E_ALL`
-- **THEN** the only remaining deprecations SHALL be the recorded `think-orm` and `Pimple` return-type notices
+#### Scenario: Runtime deprecations are eliminated
+- **WHEN** application, project-owned compatibility, and production-startup classes are loaded under `E_ALL`
+- **THEN** application code, project-owned compatibility classes, and reachable vendor classes SHALL report zero deprecations
+- **THEN** dependency test suites and optional framework adapters SHALL NOT be treated as production runtime classes
 
 #### Scenario: Log scan excludes only recorded sites
 - **WHEN** logs are scanned after exercised workflows

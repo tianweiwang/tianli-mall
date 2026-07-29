@@ -78,9 +78,13 @@ Both repairs ship as project-owned classes registered ahead of the package throu
 
 The 32 optional-before-required declarations span 26 files, 14 of them `Dao` methods with the shape `(string $field = '*', int $page, int $limit)`. The repair removes the ineffective default, since PHP 8 already treats those parameters as required. Reordering is rejected because positional callers would change meaning. Fifteen distinct diagnostics are confirmed as reached at runtime; the remainder are repaired identically. `crmeb/utils/Rsa.php:120` replaces `openssl_free_key()`, which is a no-op from PHP 8.0.
 
-### Accept unrepairable vendor deprecations
+### Override reachable vendor return-type blockers
 
-After the project-owned WeChat collection is loaded, the only remaining deprecations are 8 vendor notices: `think\Model::jsonSerialize/offsetGet/offsetSet/offsetUnset` return types in `think-orm`, and the four matching `Pimple\Container` offset methods. Both need `#[\ReturnTypeWillChange]` in vendor code, which is out of scope. The acceptance criterion is therefore split: application code and project-owned compatibility classes must report zero deprecations, and these 8 are recorded as known issues.
+The initial class-loading probe reported 8 return-type notices in `think\Model` and `Pimple\Container`. A real PHP 8.2 image build then failed before `service:discover`: ThinkPHP's error initializer forces `E_ALL` and promotes `think\Paginator::offsetExists()` to an exception. Explicitly loading the reachable interface implementations exposes 18 notices across `think\Paginator` (6), `think\Model` and its `Conversion` trait (4), `think\db\Where` (4), and `Pimple\Container` (4).
+
+These cannot remain known issues because they stop application and console startup. Project-owned copies add the PHP 8.2 interface return types and are registered ahead of their packages through the same `exclude-from-classmap` plus project classmap mechanism used by the GIF and WeChat repairs. Global deprecation suppression and changes to ThinkPHP's error handler are rejected because they would hide new application defects. The acceptance criterion is zero reachable runtime deprecations under `E_ALL`.
+
+Composer's authoritative map is not itself the production reachability boundary. It contains dependency test suites and optional adapters for PHPUnit, Laravel, React, and Symfony components that are not installed in this application. Eagerly loading all 5817 mapped symbols produces missing-development-dependency failures and third-party SDK diagnostics unrelated to CRMEB startup. The verifier therefore covers every application and project-owned symbol, explicitly covers the strict startup classes above, and exercises external SDK entrypoints through separate no-side-effect construction probes.
 
 ## Risks / Trade-offs
 
@@ -98,7 +102,6 @@ After the project-owned WeChat collection is loaded, the only remaining deprecat
 
 ## Known Issues Carried Forward
 
-- 8 vendor runtime deprecations in `think-orm` and `Pimple`.
 - `think-image` `gif/Encoder.php:77` emits `Undefined array key 0` for static GIFs. Present on PHP 7.4 as a Notice and unrelated to this migration; output bytes are unchanged. It will fail any "no warnings in logs" assertion, so that assertion excludes this one site. Repairing it means changing frame-array logic, which is a functional fix, not a compatibility one.
 - 33 dependency advisories across 11 packages after migration, reduced from the 62-advisory, 12-package baseline, plus the abandoned EasyWechat package.
 - No first-party automated test suite.

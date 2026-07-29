@@ -74,7 +74,7 @@ The current vendor image supplies the extensions **and** Supervisor at `/usr/bin
 - Modify: `docker/php/opcache.ini`
 - Modify: `.dockerignore`
 
-- [ ] **Step 1: Derive from the official image and install what the base lacks**
+- [x] **Step 1: Derive from the official image and install what the base lacks**
 
 Install the compiled extension set, the Redis extension via PECL, and Supervisor from apt. `sockets` is added for Workerman. Copy the Composer binary from the pinned Composer 2 image into the PHP 8.2 base stage. Keep the existing entrypoint, Supervisor config, and healthcheck unchanged.
 
@@ -90,7 +90,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 ```
 
-- [ ] **Step 2: Install dependencies in an isolated image stage**
+- [x] **Step 2: Install dependencies in an isolated image stage**
 
 Add `crmeb/vendor/` to `.dockerignore`. Create a `vendor` stage from the PHP 8.2 base. Copy `composer.json`, `composer.lock`, and the three project-owned override paths first so dependency downloads remain cacheable, and run:
 
@@ -101,13 +101,13 @@ RUN composer install --no-dev --prefer-dist --no-interaction --no-progress \
 
 Copy the remaining application code into the vendor stage, run `composer dump-autoload --no-dev --classmap-authoritative --no-plugins --no-scripts`, then run `php think service:discover` and `php think vendor:publish` explicitly after all code is present. Copy the complete `/var/www` tree from this stage into the final runtime stage. Confirm `docker history` and an image-side package-integrity check show no tracked host vendor content.
 
-- [ ] **Step 3: Verify the extension set against the PHP 7.4 image**
+- [x] **Step 3: Verify the extension set against the PHP 7.4 image**
 
 The 7.4 image loads: `bcmath ctype curl date dom fileinfo filter ftp gd hash iconv json libxml mbstring mysqli mysqlnd openssl pcntl pcre PDO pdo_mysql pdo_sqlite Phar posix readline redis Reflection session SimpleXML sodium SPL sqlite3 standard tokenizer xml xmlreader xmlwriter Zend OPcache zip zlib`.
 
 Compare `php -m` between both images and justify any absence.
 
-- [ ] **Step 4: Disable JIT explicitly**
+- [x] **Step 4: Disable JIT explicitly**
 
 `opcache.jit` defaults to a tracing JIT on the PHP 8 line. Queue, timer, and Workerman are long-lived processes where tracing JIT has known stability problems, and JIT gains nothing for this workload. Add to the INI, keeping all existing settings:
 
@@ -116,11 +116,11 @@ opcache.jit=disable
 opcache.jit_buffer_size=0
 ```
 
-- [ ] **Step 5: Confirm build-time autoload scripts need no database**
+- [x] **Step 5: Confirm build-time autoload scripts need no database**
 
 `post-autoload-dump` runs `think service:discover` and `vendor:publish`, but Composer install happens in a build stage with no MySQL available. Confirm both are static; if either touches the database, move them to container start.
 
-- [ ] **Step 6: Re-confirm the disabled-function policy**
+- [x] **Step 6: Re-confirm the disabled-function policy**
 
 `README.md` instructs disabling `proc_open` and the `pcntl_*` family, but Workerman needs `pcntl` to fork. Confirm which of these are actually disabled in the 8.2 image and that queue, timer, and Workerman still start.
 
@@ -276,6 +276,34 @@ Exclude the packaged files from the classmap and add the project copies, so `com
 
 After `composer dump-autoload --classmap-authoritative`, confirm the resolved file for `think\image\gif\Encoder` and `EasyWeChat\Support\Collection` is the project copy, and that `git status` shows no modification under `vendor/`.
 
+### Task 5A: Override strict-startup return-type blockers
+
+The initial class-loading probe undercounted reachable vendor diagnostics. A real PHP 8.2 image build completes dependency installation and authoritative classmap generation, then fails while booting `php think service:discover`: ThinkPHP forces `E_ALL` and promotes `think\Paginator::offsetExists()` to an exception. Explicit loading exposes 18 notices across four classes and one trait. They cannot remain accepted warnings because they stop console and web startup.
+
+**Files:**
+- Create: `crmeb/crmeb/compat/think/orm/Paginator.php`
+- Create: `crmeb/crmeb/compat/think/orm/Model.php`
+- Create: `crmeb/crmeb/compat/think/orm/model/concern/Conversion.php`
+- Create: `crmeb/crmeb/compat/think/orm/db/Where.php`
+- Create: `crmeb/crmeb/compat/pimple/Container.php`
+- Modify: `crmeb/composer.json`
+
+- [x] **Step 1: Record the failing strict-startup probe**
+
+Under PHP 8.2 and `E_ALL`, load `think\Paginator`, `think\Model`, `think\db\Where`, and `Pimple\Container`. Expected: 18 return-type deprecations (6 + 4 + 4 + 4). Also retain the failed image-build evidence showing ThinkPHP promotes the first `Paginator` notice to an exception during `service:discover`.
+
+- [x] **Step 2: Add project-owned return-type repairs**
+
+Copy the five locked source files into project-owned compatibility paths and add only the PHP 8.2 interface return types: `bool`, `mixed`, `void`, and `\Traversable` as required by `ArrayAccess`, `JsonSerializable`, and `IteratorAggregate`. Do not alter method bodies, error handling, or unrelated package code.
+
+- [x] **Step 3: Register the overrides without touching vendor**
+
+Exclude the five packaged files from Composer's classmap and add the project compatibility paths to the project classmap. A clean `composer install` plus authoritative dump must resolve every class and trait to the project copy while `git status -- crmeb/vendor` stays empty.
+
+- [x] **Step 4: Prove strict startup is clean**
+
+Re-run the explicit four-class probe under `E_ALL` and require zero diagnostics. Then build the PHP 8.2 image and require both `php think service:discover` and `php think vendor:publish` to complete without changing ThinkPHP's `E_ALL` policy or adding a global deprecation suppression.
+
 ### Task 6: Verify compatibility
 
 **Files:**
@@ -287,7 +315,7 @@ PHP is on the 8.2 line; the required extensions are loaded; OPcache is enabled; 
 
 - [ ] **Step 2: Assert code cleanliness with the corrected harness**
 
-Application code and project-owned compatibility classes report zero parse failures and zero runtime deprecations. The only remaining vendor deprecations are the 8 recorded return-type notices: `think\Model::jsonSerialize`, `offsetGet`, `offsetSet`, `offsetUnset` in `think-orm`, and the four matching `Pimple\Container` offset methods. Both need `#[\ReturnTypeWillChange]` in vendor code and are out of scope.
+Application code, project-owned compatibility classes, and reachable vendor classes report zero parse failures and zero runtime deprecations. The verifier must explicitly include `think\Paginator` and `think\db\Where` so class-list gaps cannot hide their return-type diagnostics.
 
 - [ ] **Step 3: Assert processes are genuinely stable**
 
@@ -329,7 +357,7 @@ No `Fatal error`, `TypeError`, unexpected `Deprecated`, or repeating worker rest
 - Modify: `help/docker/README.md`
 - Modify: `openspec/changes/upgrade-php-82-runtime/tasks.md`
 
-- [ ] **Step 1: Snapshot state and secure the rollback tag**
+- [x] **Step 1: Snapshot state and secure the rollback tag**
 
 Dump the database and record upload count and bytes. Then retag the current PHP 7.4 image **before** building the 8.2 image, because a build would otherwise overwrite the shared `acceptance` tag:
 
@@ -362,4 +390,4 @@ openspec validate upgrade-php-82-runtime
 codegraph sync
 ```
 
-The README must document the 8.2 build, verification, and PHP 7.4 rollback commands, never with `-v`, and must state that the carried-forward known issues still block public production launch: 8 vendor deprecations, the static-GIF warning, 33 dependency advisories across 11 packages, the abandoned EasyWechat package, and the absent first-party test suite.
+The README must document the 8.2 build, verification, and PHP 7.4 rollback commands, never with `-v`, and must state that the carried-forward known issues still block public production launch: the static-GIF warning, 33 dependency advisories across 11 packages, the abandoned EasyWechat package, and the absent first-party test suite.
