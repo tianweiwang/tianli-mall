@@ -1,6 +1,8 @@
 # PHP 8.2 Compatibility Migration Design
 
-**Status:** Approved for detailed planning on 2026-07-29
+**Status:** Superseded on 2026-07-29 by `openspec/changes/upgrade-php-82-runtime/design.md`. Retained as the original planning record; do not implement from this document.
+
+Its dependency and vendor findings were measured directly against PHP 8.2.32 and three did not hold: the targeted dependency update closes without a major EasyWechat upgrade, the minimum compatible lock delta is 10 updates plus 3 additions, and vendor parse failures are 25 across 6 packages rather than one in Doctrine Cache. Composer's non-minimal solver can also reproduce a broader 23-update, 3-addition, 2-removal delta, but that refresh is not required for PHP 8.2 compatibility. The earlier baseline was taken with `find | xargs php -l`, which aborts the whole batch on the first fatal parse error and skipped the rest of the tree. See the superseding design for the corrected evidence.
 
 The implementation will be tracked by the OpenSpec change `upgrade-php-82-runtime`.
 
