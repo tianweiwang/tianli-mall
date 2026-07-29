@@ -21,12 +21,13 @@ the crmeb-p82-probe image with the source tree mounted read-only.
 #>
 [CmdletBinding()]
 param(
-    [ValidateSet("Baseline", "Integrity", "Lint", "Deprecations", "SelfTest")]
+    [ValidateSet("Baseline", "Integrity", "Lint", "Deprecations", "Candidate", "SelfTest")]
     [string]$Mode = "Baseline",
     [string]$SourceRoot,
     [string]$VendorRoot,
     [string[]]$LintPath = @(),
-    [string]$Image = "crmeb-p82-probe:latest"
+    [string]$Image = "crmeb-p82-probe:latest",
+    [string]$RollbackImage = "tianli/crmeb-php:php74-rollback"
 )
 
 Set-StrictMode -Version Latest
@@ -139,6 +140,23 @@ function Invoke-ProbeImage {
         $arguments += @("--mount", $mount)
     }
     $arguments += @("-w", "/workspace", "--entrypoint", $Entrypoint, $Image)
+    $arguments += $CommandArguments
+    Invoke-Docker -Arguments $arguments
+}
+
+function Invoke-CandidateImage {
+    param(
+        [Parameter(Mandatory)][string]$Entrypoint,
+        [Parameter(Mandatory)][string[]]$CommandArguments,
+        [string[]]$AdditionalMounts = @(),
+        [string]$CandidateImage = $Image
+    )
+
+    $arguments = @("run", "--rm", "--network", "none")
+    foreach ($mount in $AdditionalMounts) {
+        $arguments += @("--mount", $mount)
+    }
+    $arguments += @("-w", "/var/www", "--entrypoint", $Entrypoint, $CandidateImage)
     $arguments += $CommandArguments
     Invoke-Docker -Arguments $arguments
 }
@@ -474,6 +492,7 @@ declare(strict_types=1);
 
 $roots = array_slice($argv, 1);
 $symbols = [];
+$sourceFiles = [];
 $declarationTokens = [T_CLASS, T_INTERFACE, T_TRAIT];
 if (defined('T_ENUM')) {
     $declarationTokens[] = T_ENUM;
@@ -539,7 +558,9 @@ foreach ($roots as $root) {
             for ($cursor = $index + 1; $cursor < $tokenCount; $cursor++) {
                 $candidate = $tokens[$cursor];
                 if (is_array($candidate) && $candidate[0] === T_STRING) {
-                    $symbols[] = $namespace === '' ? $candidate[1] : $namespace . '\\' . $candidate[1];
+                    $symbol = $namespace === '' ? $candidate[1] : $namespace . '\\' . $candidate[1];
+                    $symbols[] = $symbol;
+                    $sourceFiles[$symbol] = $file->getPathname();
                     break;
                 }
             }
@@ -547,17 +568,24 @@ foreach ($roots as $root) {
     }
 }
 
-$classmapPath = '/workspace/vendor/composer/autoload_classmap.php';
-if (is_file($classmapPath)) {
-    foreach (array_keys((array) require $classmapPath) as $symbol) {
-        $symbols[] = $symbol;
-    }
-}
+$strictSymbols = [
+    'think\\Paginator',
+    'think\\Model',
+    'think\\model\\concern\\Conversion',
+    'think\\db\\Where',
+    'Pimple\\Container',
+    'think\\image\\gif\\Decoder',
+    'think\\image\\gif\\Encoder',
+    'think\\Image',
+    'EasyWeChat\\Support\\Collection',
+];
+$symbols = array_merge($symbols, $strictSymbols);
 
 $symbols = array_values(array_unique($symbols));
 sort($symbols, SORT_STRING);
 foreach ($symbols as $symbol) {
-    echo base64_encode($symbol), PHP_EOL;
+    $sourcePath = $sourceFiles[$symbol] ?? '';
+    echo base64_encode($symbol), ' ', $sourcePath === '' ? '-' : base64_encode($sourcePath), PHP_EOL;
 }
 '@
 
@@ -596,6 +624,8 @@ function php82ProbeSeverityName(int $severity): string
 }
 
 $class = $argv[1] ?? '';
+$autoloadPath = $argv[2] ?? '/workspace/vendor/autoload.php';
+$sourcePath = $argv[3] ?? '';
 $diagnosticCount = 0;
 $finished = false;
 error_reporting(E_ALL);
@@ -637,11 +667,18 @@ register_shutdown_function(
 );
 
 try {
-    require_once '/workspace/vendor/autoload.php';
+    require_once $autoloadPath;
     $loaded = class_exists($class, true)
         || interface_exists($class, true)
         || trait_exists($class, true)
         || (function_exists('enum_exists') && enum_exists($class, true));
+    if (!$loaded && $sourcePath !== '') {
+        require_once $sourcePath;
+        $loaded = class_exists($class, false)
+            || interface_exists($class, false)
+            || trait_exists($class, false)
+            || (function_exists('enum_exists') && enum_exists($class, false));
+    }
     if (!$loaded) {
         $finished = true;
         php82ProbeEmit([
@@ -675,16 +712,93 @@ try {
     [IO.File]::WriteAllText((Join-Path $Directory "class-probe.php"), $classProbeScript)
 }
 
+function Invoke-DeprecationScopeSelfTest {
+    $fixtureRoot = New-TemporaryDirectory -Prefix "crmeb-php82-scope-selftest-"
+    $probeRoot = New-TemporaryDirectory -Prefix "crmeb-php82-scope-probe-"
+    try {
+        foreach ($relativePath in @("app", "crmeb", "vendor/composer")) {
+            $null = New-Item -ItemType Directory -Path (Join-Path $fixtureRoot $relativePath) -Force
+        }
+
+        [IO.File]::WriteAllText(
+            (Join-Path $fixtureRoot "app/OrderReader.php"),
+            "<?php`nnamespace Retail;`nclass OrderReader {}`n"
+        )
+        [IO.File]::WriteAllText(
+            (Join-Path $fixtureRoot "crmeb/CatalogSupport.php"),
+            "<?php`nnamespace Commerce;`ntrait CatalogSupport {}`n"
+        )
+        [IO.File]::WriteAllText(
+            (Join-Path $fixtureRoot "vendor/composer/autoload_classmap.php"),
+            "<?php`nreturn ['Vendor\\Production\\Client' => __FILE__, 'Vendor\\Tests\\ClientTest' => __FILE__];`n"
+        )
+
+        New-DeprecationProbeFiles -Directory $probeRoot
+        $result = Invoke-ProbeImage `
+            -MountedSourceRoot $fixtureRoot `
+            -MountedVendorRoot $null `
+            -Entrypoint "php" `
+            -CommandArguments @("/probe/discover.php", "/workspace/app", "/workspace/crmeb") `
+            -AdditionalMounts @("type=bind,source=$probeRoot,target=/probe,readonly")
+
+        $discoveredSymbols = @($result.Lines | Where-Object { $_ } | ForEach-Object {
+            $parts = $_ -split ' ', 2
+            [pscustomobject]@{
+                Symbol = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($parts[0]))
+                SourcePath = if ($parts[1] -eq "-") {
+                    ""
+                } else {
+                    [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($parts[1]))
+                }
+            }
+        })
+        $symbols = @($discoveredSymbols.Symbol)
+        $expected = @(
+            "Retail\OrderReader",
+            "Commerce\CatalogSupport",
+            "think\Paginator",
+            "think\Model",
+            "think\model\concern\Conversion",
+            "think\db\Where",
+            "Pimple\Container",
+            "think\image\gif\Decoder",
+            "think\image\gif\Encoder",
+            "think\Image",
+            "EasyWeChat\Support\Collection"
+        )
+        $missing = @($expected | Where-Object { $_ -notin $symbols })
+        $unexpected = @($symbols | Where-Object { $_ -like "Vendor\*" })
+        $passed = $result.ExitCode -eq 0 -and $missing.Count -eq 0 -and $unexpected.Count -eq 0
+
+        [pscustomobject]@{
+            Passed = $passed
+            Detail = if ($passed) {
+                "[PASS] deprecation scope self-test: project and strict symbols included; vendor classmap excluded."
+            } else {
+                "[FAIL] deprecation scope self-test: missing=$($missing -join ',') unexpected=$($unexpected -join ',')"
+            }
+        }
+    } finally {
+        Remove-TemporaryDirectory -Path $probeRoot
+        Remove-TemporaryDirectory -Path $fixtureRoot
+    }
+}
+
 function Get-DiagnosticSource {
-    param([AllowNull()][string]$Origin)
+    param(
+        [AllowNull()][string]$Origin,
+        [string]$ContainerSourceRoot = "/workspace"
+    )
 
     if (-not $Origin) {
         return "other"
     }
-    if ($Origin.Replace('\', '/').StartsWith("/workspace/vendor/", [StringComparison]::Ordinal)) {
+    $normalizedOrigin = $Origin.Replace('\', '/')
+    $normalizedSourceRoot = $ContainerSourceRoot.Replace('\', '/').TrimEnd('/')
+    if ($normalizedOrigin.StartsWith("$normalizedSourceRoot/vendor/", [StringComparison]::Ordinal)) {
         return "vendor"
     }
-    if ($Origin.Replace('\', '/').StartsWith("/workspace/", [StringComparison]::Ordinal)) {
+    if ($normalizedOrigin.StartsWith("$normalizedSourceRoot/", [StringComparison]::Ordinal)) {
         return "application"
     }
     "other"
@@ -692,25 +806,34 @@ function Get-DiagnosticSource {
 
 function Invoke-DeprecationProbe {
     param(
-        [Parameter(Mandatory)][string]$MountedSourceRoot,
-        [Parameter(Mandatory)][string]$MountedVendorRoot
+        [AllowNull()][string]$MountedSourceRoot,
+        [AllowNull()][string]$MountedVendorRoot,
+        [string]$ContainerSourceRoot = "/workspace",
+        [switch]$UseCandidateImage
     )
 
-    foreach ($relativePath in @("app", "crmeb")) {
-        $path = Join-Path $MountedSourceRoot $relativePath
-        if (-not (Test-Path -LiteralPath $path -PathType Container)) {
-            throw "Probe directory not found: $path"
+    if (-not $UseCandidateImage) {
+        if (-not $MountedSourceRoot -or -not $MountedVendorRoot) {
+            throw "Mounted source and vendor roots are required outside candidate mode"
+        }
+        foreach ($relativePath in @("app", "crmeb")) {
+            $path = Join-Path $MountedSourceRoot $relativePath
+            if (-not (Test-Path -LiteralPath $path -PathType Container)) {
+                throw "Probe directory not found: $path"
+            }
         }
     }
 
     $probeRoot = New-TemporaryDirectory -Prefix "crmeb-php82-deprecation-probe-"
     try {
         New-DeprecationProbeFiles -Directory $probeRoot
-        $command = @'
+        $encodedContainerSourceRoot = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($ContainerSourceRoot.TrimEnd('/')))
+        $command = "encoded_source_root=$encodedContainerSourceRoot`n" + @'
+source_root="$(printf '%s' "$encoded_source_root" | base64 -d)"
 class_list=/tmp/php82-class-list.txt
 probe_records=/tmp/php82-probe-records.txt
 : > "$probe_records"
-if ! php /probe/discover.php /workspace/app /workspace/crmeb > "$class_list"; then
+if ! php /probe/discover.php "$source_root/app" "$source_root/crmeb" > "$class_list"; then
     printf '__PHP82_PROBE_DISCOVERY_FAILURE__\n'
     exit 1
 fi
@@ -726,8 +849,13 @@ fi
 
 probe_one_class() {
     encoded="$1"
+    encoded_source_path="$2"
     class_name="$(printf '%s' "$encoded" | base64 -d)"
-    probe_output="$(timeout --signal=TERM --kill-after=2s 20s php -d display_errors=0 -d log_errors=0 /probe/class-probe.php "$class_name" 2>&1)"
+    source_path=""
+    if [ "$encoded_source_path" != "-" ]; then
+        source_path="$(printf '%s' "$encoded_source_path" | base64 -d)"
+    fi
+    probe_output="$(timeout --signal=TERM --kill-after=2s 20s php -d display_errors=0 -d log_errors=0 /probe/class-probe.php "$class_name" "$source_root/vendor/autoload.php" "$source_path" 2>&1)"
     probe_status=$?
     record_name="${encoded//\//_}"
     record_path="$record_directory/$record_name"
@@ -744,8 +872,9 @@ probe_one_class() {
 }
 export -f probe_one_class
 export record_directory
+export source_root
 
-xargs -r -n 1 -P "$worker_count" bash -c 'probe_one_class "$1"' _ < "$class_list"
+xargs -r -n 2 -P "$worker_count" bash -c 'probe_one_class "$1" "$2"' _ < "$class_list"
 find "$record_directory" -type f -exec cat {} + > "$probe_records"
 nonzero_class_count="$(grep -c '^__PHP82_PROBE_CLASS_STATUS__|' "$probe_records" || true)"
 if [ "$nonzero_class_count" -ne 0 ]; then
@@ -757,12 +886,20 @@ printf '__PHP82_PROBE_SUMMARY__|classes=%s|nonzero_classes=%s\n' "$class_count" 
 exit "$failed"
 '@
 
-        $run = Invoke-ProbeImage `
-            -MountedSourceRoot $MountedSourceRoot `
-            -MountedVendorRoot $MountedVendorRoot `
-            -Entrypoint "bash" `
-            -CommandArguments @("-lc", $command) `
-            -AdditionalMounts @("type=bind,source=$probeRoot,target=/probe,readonly")
+        $additionalMounts = @("type=bind,source=$probeRoot,target=/probe,readonly")
+        if ($UseCandidateImage) {
+            $run = Invoke-CandidateImage `
+                -Entrypoint "bash" `
+                -CommandArguments @("-lc", $command) `
+                -AdditionalMounts $additionalMounts
+        } else {
+            $run = Invoke-ProbeImage `
+                -MountedSourceRoot $MountedSourceRoot `
+                -MountedVendorRoot $MountedVendorRoot `
+                -Entrypoint "bash" `
+                -CommandArguments @("-lc", $command) `
+                -AdditionalMounts $additionalMounts
+        }
 
         $recordPrefix = "__PHP82_PROBE__|"
         $records = [Collections.Generic.List[object]]::new()
@@ -770,7 +907,7 @@ exit "$failed"
             if ($line.StartsWith($recordPrefix)) {
                 try {
                     $record = $line.Substring($recordPrefix.Length) | ConvertFrom-Json
-                    $record | Add-Member -NotePropertyName Source -NotePropertyValue (Get-DiagnosticSource -Origin $record.origin)
+                    $record | Add-Member -NotePropertyName Source -NotePropertyValue (Get-DiagnosticSource -Origin $record.origin -ContainerSourceRoot $ContainerSourceRoot)
                     $records.Add($record)
                 } catch {
                     $records.Add([pscustomobject]@{
@@ -872,16 +1009,209 @@ function Invoke-ComposerBlockerCheck {
         -CommandArguments @("prohibits", "php", "8.2", "--locked", "--no-ansi", "--no-interaction")
 }
 
-if ($Mode -eq "SelfTest") {
-    $selfTest = Invoke-LintSelfTest
-    if ($selfTest.LintOutput) {
-        $selfTest.LintOutput
+function Invoke-CandidateRuntimeCheck {
+    $script = @'
+$requiredExtensions = [
+    'bcmath', 'curl', 'fileinfo', 'gd', 'iconv', 'mbstring', 'mysqli',
+    'pdo_mysql', 'pcntl', 'redis', 'simplexml', 'sockets', 'sodium', 'xml', 'zip',
+];
+$missingExtensions = array_values(array_filter(
+    $requiredExtensions,
+    static fn (string $extension): bool => !extension_loaded($extension)
+));
+$jit = strtolower((string) ini_get('opcache.jit'));
+$jitBufferSize = (int) ini_get('opcache.jit_buffer_size');
+$facts = [
+    'php_version' => PHP_VERSION,
+    'php_version_id' => PHP_VERSION_ID,
+    'missing_extensions' => $missingExtensions,
+    'opcache_loaded' => extension_loaded('Zend OPcache'),
+    'opcache_enabled' => filter_var(ini_get('opcache.enable'), FILTER_VALIDATE_BOOL),
+    'opcache_jit' => $jit,
+    'opcache_jit_buffer_size' => $jitBufferSize,
+];
+$passed = PHP_VERSION_ID >= 80200
+    && PHP_VERSION_ID < 80300
+    && $missingExtensions === []
+    && $facts['opcache_loaded']
+    && $facts['opcache_enabled']
+    && in_array($jit, ['', '0', 'off', 'disable'], true)
+    && $jitBufferSize === 0;
+echo '__PHP82_CANDIDATE_RUNTIME__|', json_encode($facts, JSON_UNESCAPED_SLASHES), PHP_EOL;
+exit($passed ? 0 : 1);
+'@
+
+    Invoke-CandidateImage `
+        -Entrypoint "php" `
+        -CommandArguments @("-d", "display_errors=0", "-d", "log_errors=0", "-r", $script)
+}
+
+function Invoke-CandidateLint {
+    $command = @'
+paths=(/var/www/app /var/www/crmeb /var/www/config /var/www/route /var/www/public)
+failed=0
+file_count=0
+failure_count=0
+while IFS= read -r -d '' file; do
+    file_count=$((file_count + 1))
+    php_output="$(php -d display_errors=1 -d log_errors=0 -l "$file" 2>&1)"
+    php_status=$?
+    if [ "$php_status" -ne 0 ]; then
+        printf '__PHP82_CANDIDATE_LINT_FAILURE__|%s\n' "$file"
+        printf '%s\n' "$php_output"
+        failed=1
+        failure_count=$((failure_count + 1))
+    fi
+done < <(find "${paths[@]}" -type f -name '*.php' -print0 | sort -z)
+printf '__PHP82_CANDIDATE_LINT_SUMMARY__|files=%s|failures=%s\n' "$file_count" "$failure_count"
+exit "$failed"
+'@
+
+    Invoke-CandidateImage -Entrypoint "bash" -CommandArguments @("-lc", $command)
+}
+
+function Invoke-CandidateImageCompatibility {
+    $probePath = Join-Path $repoRoot "help/docker/probes/php82-image-compatibility.php"
+    if (-not (Test-Path -LiteralPath $probePath -PathType Leaf)) {
+        throw "Image compatibility probe not found: $probePath"
     }
-    $selfTest.Detail
-    if ($selfTest.Passed) {
+    $probePath = (Resolve-Path -LiteralPath $probePath).Path
+    $workRoot = New-TemporaryDirectory -Prefix "crmeb-php82-image-candidate-"
+    try {
+        foreach ($directory in @("fixtures", "baseline", "candidate")) {
+            $null = New-Item -ItemType Directory -Path (Join-Path $workRoot $directory)
+        }
+        $mounts = @(
+            "type=bind,source=$workRoot,target=/compat",
+            "type=bind,source=$probePath,target=/probe.php,readonly"
+        )
+        $phpArguments = @("-d", "open_basedir=", "-d", "display_errors=0", "-d", "log_errors=0", "/probe.php")
+
+        $generate = Invoke-CandidateImage `
+            -CandidateImage $RollbackImage `
+            -Entrypoint "php" `
+            -CommandArguments ($phpArguments + @("generate", "/compat/fixtures")) `
+            -AdditionalMounts $mounts
+        if ($generate.ExitCode -ne 0) {
+            return [pscustomobject]@{ ExitCode = 1; Output = "PHP 7.4 fixture generation failed:`n$($generate.Output)" }
+        }
+
+        $baseline = Invoke-CandidateImage `
+            -CandidateImage $RollbackImage `
+            -Entrypoint "php" `
+            -CommandArguments ($phpArguments + @("run", "/compat/fixtures", "/compat/baseline")) `
+            -AdditionalMounts $mounts
+        if ($baseline.ExitCode -ne 0) {
+            return [pscustomobject]@{ ExitCode = 1; Output = "PHP 7.4 image baseline failed:`n$($baseline.Output)" }
+        }
+
+        $candidate = Invoke-CandidateImage `
+            -Entrypoint "php" `
+            -CommandArguments ($phpArguments + @("run", "/compat/fixtures", "/compat/candidate")) `
+            -AdditionalMounts $mounts
+        if ($candidate.ExitCode -ne 0) {
+            return [pscustomobject]@{ ExitCode = 1; Output = "PHP 8.2 image cases failed:`n$($candidate.Output)" }
+        }
+
+        Invoke-CandidateImage `
+            -Entrypoint "php" `
+            -CommandArguments ($phpArguments + @("compare", "/compat/baseline", "/compat/candidate")) `
+            -AdditionalMounts $mounts
+    } finally {
+        Remove-TemporaryDirectory -Path $workRoot
+    }
+}
+
+function Invoke-CandidateVerification {
+    $failed = $false
+
+    "=== Candidate runtime ==="
+    $runtime = Invoke-CandidateRuntimeCheck
+    $runtime.Output
+    if ($runtime.ExitCode -ne 0) { $failed = $true }
+
+    "=== Candidate Supervisor ==="
+    $supervisor = Invoke-CandidateImage `
+        -Entrypoint "sh" `
+        -CommandArguments @("-lc", "command -v supervisord >/dev/null && supervisord --version")
+    $supervisor.Output
+    if ($supervisor.ExitCode -ne 0) { $failed = $true }
+
+    "=== Candidate platform requirements ==="
+    $platform = Invoke-CandidateImage `
+        -Entrypoint "composer" `
+        -CommandArguments @("check-platform-reqs", "--no-dev", "--no-ansi")
+    $platform.Output
+    if ($platform.ExitCode -ne 0) { $failed = $true }
+
+    $blockers = Invoke-CandidateImage `
+        -Entrypoint "sh" `
+        -CommandArguments @(
+            "-lc",
+            'export COMPOSER_HOME=/tmp/php82-composer-home && mkdir -p "$COMPOSER_HOME" && composer config --global repo.packagist false && COMPOSER_DISABLE_NETWORK=1 composer prohibits php 8.2 --locked --no-ansi --no-interaction'
+        )
+    $blockers.Output
+    if ($blockers.ExitCode -ne 0 -or @($blockers.Lines | Where-Object { $_ -match '^\S+\s+\S+\s+requires php ' }).Count) {
+        $failed = $true
+    }
+
+    "=== Candidate application lint ==="
+    $lint = Invoke-CandidateLint
+    $lint.Output
+    if ($lint.ExitCode -ne 0) { $failed = $true }
+
+    "=== Candidate runtime diagnostics ==="
+    $deprecations = Invoke-DeprecationProbe `
+        -MountedSourceRoot $null `
+        -MountedVendorRoot $null `
+        -ContainerSourceRoot "/var/www" `
+        -UseCandidateImage
+    Write-DeprecationResult -Result $deprecations
+    if ($deprecations.ExitCode -ne 0) { $failed = $true }
+
+    "=== Candidate static service discovery ==="
+    foreach ($command in @("service:discover", "vendor:publish")) {
+        $discovery = Invoke-CandidateImage `
+            -Entrypoint "php" `
+            -CommandArguments @("think", $command)
+        $discovery.Output
+        if ($discovery.ExitCode -ne 0) { $failed = $true }
+    }
+
+    "=== Candidate image compatibility ==="
+    $imageCompatibility = Invoke-CandidateImageCompatibility
+    $imageCompatibility.Output
+    if ($imageCompatibility.ExitCode -ne 0) { $failed = $true }
+
+    if ($failed) {
+        "CANDIDATE_STATUS=RED"
+        return 1
+    }
+    "CANDIDATE_STATUS=GREEN"
+    return 0
+}
+
+if ($Mode -eq "SelfTest") {
+    $lintSelfTest = Invoke-LintSelfTest
+    if ($lintSelfTest.LintOutput) {
+        $lintSelfTest.LintOutput
+    }
+    $lintSelfTest.Detail
+    $scopeSelfTest = Invoke-DeprecationScopeSelfTest
+    $scopeSelfTest.Detail
+    if ($lintSelfTest.Passed -and $scopeSelfTest.Passed) {
         exit 0
     }
     exit 1
+}
+
+if ($Mode -eq "Candidate") {
+    $candidateResult = @(Invoke-CandidateVerification)
+    $candidateExitCode = [int]$candidateResult[-1]
+    if ($candidateResult.Count -gt 1) {
+        $candidateResult[0..($candidateResult.Count - 2)]
+    }
+    exit $candidateExitCode
 }
 
 if (-not (Test-Path -LiteralPath $VendorRoot -PathType Container)) {
