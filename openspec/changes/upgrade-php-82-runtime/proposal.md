@@ -30,7 +30,7 @@ Measured on 2026-07-29 against a PHP 8.2.32 container with the extensions the ap
 - Add PHP 8.2 build, dependency, lint, deprecation, process, HTTP, WebSocket, JWT, spreadsheet, image, upload, and data-preservation checks, and fix the lint-harness defect described below.
 - Record only the pre-existing `Encoder.php:77` warning as an accepted known issue; reachable PHP 8.2 deprecations remain release blockers.
 - **BREAKING**: the runtime moves to the PHP 8.2 line; the PHP 7.4 image is retained only as a rollback checkpoint.
-- This remains an acceptance-environment compatibility migration. The reviewed lock migration reduces the audit from 62 advisories across 12 packages to 25 across 10 packages, but the remaining advisories, two abandoned packages, and the absent first-party suite still block public production launch.
+- This remains an acceptance-environment compatibility migration. The reviewed lock migration reduces the audit from 62 advisories across 12 packages to 24 across 9 packages, but the remaining advisories, two abandoned packages, and the absent first-party suite still block public production launch.
 
 ## Capabilities
 

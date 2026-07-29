@@ -116,10 +116,12 @@ Resolving the repaired Open Platform provider then reaches `ProgramOpen3rd::__co
 
 **Hard-coded acceptance data baselines drift.** The recorded 25,210 language rows, 174 uploads, and 21,664,281 bytes change as soon as anyone uses the environment, and uploads are a live bind mount. Mitigation: snapshot before migration and compare against that snapshot rather than literals.
 
+**Offline class loading does not reach every failure.** This was not a predicted risk; it was observed. Loading all 1036 autoloadable classes under `E_ALL` reported zero diagnostics and all nine offline integration cases passed, yet the first cutover attempt returned HTTP 500 on the homepage and left timer and Workerman `FATAL`. Four defects live only in code paths that require a running FPM worker or a Supervisor-managed long-lived process: Carbon's `jsonSerialize()` return type reached through `think-queue`'s clock helper, `Worker::$workerId` dynamic property creation, `ob_implicit_flush(0)` inside template rendering, and the float microsecond argument to `stream_select()` in Workerman's event loop. Mitigation: static verification gates the image, but process health, route responses, and log scanning against a genuinely running stack remain mandatory before the change can be accepted.
+
 ## Known Issues Carried Forward
 
 - `think-image` `gif/Encoder.php:77` emits `Undefined array key 0` for static GIFs. Present on PHP 7.4 as a Notice and unrelated to this migration; output bytes are unchanged. It will fail any "no warnings in logs" assertion, so that assertion excludes this one site. Repairing it means changing frame-array logic, which is a functional fix, not a compatibility one.
-- 25 dependency advisories across 10 packages after migration, reduced from the 62-advisory, 12-package baseline, plus two abandoned packages (`guzzle/guzzle` and `topthink/think-factory`).
+- 24 dependency advisories across 9 packages after migration, reduced from the 62-advisory, 12-package baseline, plus two abandoned packages (`guzzle/guzzle` and `topthink/think-factory`).
 - No first-party automated test suite.
 
 ## Migration and Rollback

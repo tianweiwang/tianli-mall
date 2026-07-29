@@ -18,7 +18,7 @@
 - [x] 3.2 Apply the reviewed 12-update, 3-addition lock delta package by package with `--minimal-changes`, including the integration-proven `myclabs/php-enum` 1.7.6→1.8.5 and `monolog/monolog` 1.24.0→1.27.1 patch updates, using the diagnostic advisory setting only locally and never committing it.
 - [x] 3.3 Confirm `composer prohibits php 8.2 --locked` reports no package and `check-platform-reqs` passes on every entry with no bypass.
 - [x] 3.4 Record baseline and resulting audits and confirm the advisory count and severity do not increase.
-- [x] 3.5 Prove JDOSS's real lazy `S3Client` emits PHP 8.2 diagnostics on AWS SDK 3.173.19 and that AWS 3.226.0 still emits 8; apply the reviewed AWS 3.236.0, Guzzle 6.5.8, PSR-7 1.9.1, Promises 1.5.3, JMESPath 2.9.2, mbstring polyfill 1.38.2, and AWS CRT 1.2.7 delta, then confirm zero diagnostics and a non-regressing audit. Measured via `help/docker/probes/php82-aws-s3client.php`, which resolves the client through `Jdoss::app()` and additionally builds a `PutObject` command and the S3 v4 signer: 21 diagnostics on 3.173.19, 8 on 3.226.0, 0 on 3.236.0. Audit moves from 33 advisories across 11 packages to 25 across 10.
+- [x] 3.5 Prove JDOSS's real lazy `S3Client` emits PHP 8.2 diagnostics on AWS SDK 3.173.19 and that AWS 3.226.0 still emits 8; apply the reviewed AWS 3.236.0, Guzzle 6.5.8, PSR-7 1.9.1, Promises 1.5.3, JMESPath 2.9.2, mbstring polyfill 1.38.2, and AWS CRT 1.2.7 delta, then confirm zero diagnostics and a non-regressing audit. Measured via `help/docker/probes/php82-aws-s3client.php`, which resolves the client through `Jdoss::app()` and additionally builds a `PutObject` command and the S3 v4 signer: 21 diagnostics on 3.173.19, 8 on 3.226.0, 0 on 3.236.0. Audit moves from 33 advisories across 11 packages to 25 across 10, and to 24 across 9 after the runtime-path updates in 4.12.
 
 ## 4. Compatibility repairs
 
@@ -54,11 +54,11 @@
 
 - [x] 6.1 Dump the database, snapshot upload count and bytes, and retag the current PHP 7.4 image as `tianli/crmeb-php:php74-rollback` before building the 8.2 image.
 - [x] 6.2 Recreate application containers without `-v` and confirm the snapshot comparison shows database and uploads unchanged.
-- [ ] 6.3 Recreate the stack once more without deleting volumes and repeat process-health and data-preservation checks.
-- [ ] 6.4 Confirm the retagged PHP 7.4 image restores a healthy stack against the same database and uploads.
+- [x] 6.3 Recreate the stack once more without deleting volumes and repeat process-health and data-preservation checks.
+- [x] 6.4 Confirm the retagged PHP 7.4 image restores a healthy stack against the same database and uploads. Rollback serves PHP 7.4.33 with all four processes `RUNNING`, HTTP routes answering, and the snapshot unchanged. `/notice` and `/msg` return 400 rather than 502 on the 7.4 image, which means Workerman is listening and rejecting a plain HTTP request to a WebSocket endpoint; 502 would indicate an unreachable upstream.
 
 ## 7. Specification and handoff
 
-- [ ] 7.1 Run `openspec validate upgrade-php-82-runtime` and ensure CodeGraph is synchronized.
-- [ ] 7.2 Document the 8.2 build, verification, and PHP 7.4 rollback commands in the Docker help README.
-- [ ] 7.3 Record the carried-forward static-GIF warning and state that outstanding advisories, the abandoned EasyWechat package, and the absent test suite still block public production launch.
+- [x] 7.1 Run `openspec validate upgrade-php-82-runtime` and ensure CodeGraph is synchronized.
+- [x] 7.2 Document the 8.2 build, verification, and PHP 7.4 rollback commands in the Docker help README, including the tag-swap rollback procedure and the `--no-build` requirement that stops a rollback from rebuilding over the `:acceptance` tag.
+- [x] 7.3 Record the carried-forward static-GIF warning, the project-owned compatibility overrides that must be rechecked on any future dependency upgrade, and state that the 24 outstanding advisories across 9 packages, the two abandoned packages, and the absent test suite still block public production launch.

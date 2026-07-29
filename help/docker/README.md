@@ -2,7 +2,9 @@
 
 优化版将 PHP 源码、Composer 依赖和前端静态文件构建进 Docker 镜像，避免 Windows 绑定盘的小文件性能问题。它启用了 OPcache，并修复了 Workerman 在容器重启后因残留 PID 无法启动的问题。
 
-> 当前镜像仍基于 PHP 7.4，仅用于本地开发和验收。完成 PHP 8.2 兼容升级、生产安全加固、TLS 和备份恢复演练之前，不得直接用于公网生产环境。
+镜像现基于 **PHP 8.2**（`php:8.2-fpm-bookworm`），JIT 显式关闭。
+
+> 仅用于本地开发和验收。完成生产安全加固、TLS 和备份恢复演练之前，不得直接用于公网生产环境。遗留阻塞项见文末「已知问题」。
 
 ## 首次配置
 
@@ -38,6 +40,42 @@ docker compose --env-file help\docker\.env.runtime -f help\docker\docker-compose
 pwsh -NoProfile -File help\docker\verify-optimized.ps1
 ```
 
+## PHP 8.2 兼容性验证
+
+镜像构建后、切换容器前，先做静态验证。`Candidate` 模式检查运行时版本与扩展、平台依赖、应用 lint、运行期诊断、图像输出比对，以及九项离线集成用例：
+
+```powershell
+pwsh -NoProfile -File help\docker\verify-php82.ps1 -Mode Candidate -Image tianli/crmeb-php:acceptance
+```
+
+期望末行为 `CANDIDATE_STATUS=GREEN`。
+
+单独复跑某项集成用例（用 `www-data` 运行，与 FPM 进程用户一致；用 root 会使只读断言失败）：
+
+```powershell
+docker run --rm --network none --user www-data `
+  -v ${PWD}\help\docker\probes:/probes:ro tianli/crmeb-php:acceptance `
+  sh -c "cd /var/www && php /probes/php82-integration-compatibility.php jwt"
+```
+
+可用用例：`jwt`、`spreadsheet`、`order-export`、`product-export`、`easywechat`、`payment`、`sms`、`uploads`、`service-discovery`。
+
+JDOSS 惰性 `S3Client` 的 AWS SDK 诊断单独验证：
+
+```powershell
+docker run --rm --network none tianli/crmeb-php:acceptance `
+  sh -c "cd /var/www && php /probes/php82-aws-s3client.php"
+```
+
+常驻进程必须检查重启次数，不能只看状态。`startsecs=3` 意味着崩溃后 3 秒内重启仍报告 `RUNNING`：
+
+```powershell
+docker exec crmeb_php supervisorctl status
+docker logs crmeb_php 2>&1 | Select-String -Pattern "Implicit conversion|process terminated" | Measure-Object
+```
+
+四个程序都应为 `RUNNING`，且计数为 0。
+
 ## 停止与回滚
 
 停止优化栈：
@@ -46,7 +84,28 @@ pwsh -NoProfile -File help\docker\verify-optimized.ps1
 docker compose --env-file help\docker\.env.runtime -f help\docker\docker-compose.optimized.yml down
 ```
 
-回滚到旧栈：
+### 回滚到 PHP 7.4
+
+`tianli/crmeb-php:php74-rollback` 是切换前保留的 7.4 镜像。Compose 引用 `:acceptance` 标签，所以回滚通过改标签完成：
+
+```powershell
+docker tag tianli/crmeb-php:acceptance tianli/crmeb-php:php82-verified
+docker tag tianli/crmeb-php:php74-rollback tianli/crmeb-php:acceptance
+docker compose --env-file help\docker\.env.runtime -f help\docker\docker-compose.optimized.yml up -d --wait --no-build
+```
+
+恢复 8.2：
+
+```powershell
+docker tag tianli/crmeb-php:php82-verified tianli/crmeb-php:acceptance
+docker compose --env-file help\docker\.env.runtime -f help\docker\docker-compose.optimized.yml up -d --wait --no-build
+```
+
+必须加 `--no-build`，否则会用当前源码重新构建并覆盖 `:acceptance` 标签。
+
+本次迁移不含任何库表结构或数据变更，因此回滚不需要恢复数据库。`help/docker/backup/` 下的转储是防御性备份，不是常规回滚手段。
+
+回滚到旧栈（非优化版）：
 
 ```powershell
 docker compose --env-file help\docker\.env.runtime -f help\docker\docker-compose.optimized.yml down
@@ -54,6 +113,29 @@ docker compose -f help\docker\docker-compose.yml up -d
 ```
 
 以上命令都不得添加 `-v`。MySQL 示例数据位于 `help/docker/mysql/data`，上传文件位于 `crmeb/public/uploads`；删除卷或清空这些目录会造成数据损失。
+
+## 已知问题（仍阻塞公网生产）
+
+PHP 8.2 兼容迁移已完成，但以下问题未解决，上线前必须单独处理：
+
+- **依赖安全公告 24 条，涉及 9 个包。** 已从迁移前的 33 条 / 11 个包降低，但未清零。
+- **两个已废弃包**：`guzzle/guzzle`（Guzzle 3，应迁移到 `guzzlehttp/guzzle`）和 `topthink/think-factory`（无替代）。`overtrue/wechat` 3.x 亦已停止维护。
+- **无第一方自动化测试套件。** `app/adminapi/controller/Test.php` 是业务控制器，不是测试。本次迁移依靠专用探测脚本验证，不能替代回归测试。
+- **`think-image` `gif/Encoder.php:77`** 处理静态 GIF 时报 `Undefined array key 0`。该缺陷在 PHP 7.4 上即已存在（当时为 Notice），输出字节不受影响，故不计为迁移引入的问题。修复它需要改动帧数组逻辑，属于功能修复。
+- TLS、生产密钥管理、备份保留策略与恢复演练均未配置。
+
+### 项目自有兼容覆盖类
+
+以下 vendor 类因无法在 PHP 8.2 运行且上游无可用修复版本，由项目自有实现覆盖，通过 `composer.json` 的 `exclude-from-classmap` 与 `classmap` 注册，位于 `crmeb/crmeb/compat/` 和 `crmeb/crmeb/services/`。升级相关依赖时必须同步复查：
+
+| 覆盖对象 | 原因 |
+| --- | --- |
+| `think\image\gif\Decoder` / `Encoder` | 花括号偏移语法在 PHP 8.0 被移除 |
+| `think\Image` | 文字水印坐标隐式浮点转换 |
+| `EasyWeChat\Support\Collection` | `__set_state()` 参数数量、接口返回类型、序列化契约 |
+| `think\Paginator`、`think\Model`、`Conversion`、`think\db\Where` | 接口返回类型声明 |
+| `Pimple\Container` | 接口返回类型声明 |
+| `Workerman\Events\Select` | `stream_select()` 微秒参数隐式浮点转换 |
 
 ---
 
