@@ -5,7 +5,7 @@ The optimized acceptance runtime is on PHP 7.4.33, which reached end of life in 
 Measured on 2026-07-29 against a PHP 8.2.32 container with the extensions the application requires:
 
 - The ten `composer prohibits php 8.2 --locked` blockers reproduce exactly, and a targeted lock update clears them: `prohibits` reports no remaining package, and `check-platform-reqs` passes on every entry without a bypass. The `overtrue/wechat` and `doctrine/cache` versions are retained unchanged. The prior concern that this dependency set could not close was incorrect.
-- Composer's default partial update changes 23 packages, adds 3, and removes 2. Re-running the same update with `--minimal-changes` produces the smaller compatible result: 10 updates, 3 additions, and no removals. Both clear the PHP 8.2 platform gates; the migration selects the minimal result and leaves the broader dependency refresh out of scope.
+- Composer's default partial update changes 23 packages, adds 3, and removes 2. Re-running the same update with `--minimal-changes` produces the smaller platform-compatible result: 10 updates, 3 additions, and no removals. Offline integration probes then prove two additional compatible patch updates are required: `myclabs/php-enum` 1.7.6 to 1.8.5 removes its PHP 8.2 `JsonSerializable` deprecation during Xlsx writes, and `monolog/monolog` 1.24.0 to 1.27.1 removes its null-to-`DateTime` deprecation during EasyWechat construction. The final reviewed delta is therefore 12 updates, 3 additions, and no removals; the broader dependency refresh remains out of scope.
 - Vendor PHP 8.2 parse failures are 25 across 6 packages, not the single Doctrine Cache failure recorded. Two of them are reachable in production paths. Application code (917 files under `app/`, 158 under `crmeb/`, plus `config/`, `route/`, `public/`) has zero parse failures.
 - `topthink/think-image` v1.0.7 fails to compile on PHP 8.2 in `gif/Decoder.php` and `gif/Encoder.php`. `crmeb/services/upload/storage/Local.php` and `crmeb/utils/DownloadImage.php` call `Image::open()` on every local upload. Because curly-brace offset access is a compile-time error, the surrounding `catch (\Throwable $e)` never runs: uploading any GIF returns an unlogged HTTP 500. This package declares no `php` constraint, so `composer prohibits` cannot see it.
 - `overtrue/wechat` `Support/Collection.php:354` declares `__set_state()` with the wrong arity and is a compile-time failure on the WeChat path. A one-parameter edit is insufficient: PHP 8.2 also requires the method to be static, its current body cannot use `$this` in static context, and the class emits eight interface/serialization deprecations after it compiles.
@@ -17,11 +17,12 @@ Measured on 2026-07-29 against a PHP 8.2.32 container with the extensions the ap
 
 - Rebuild the original Composer tree from the lock in an isolated PHP 7.4 environment, then probe that immutable tree with PHP 8.2. The red baseline never changes `composer.lock`.
 - Build the PHP runtime from `php:8.2-fpm-bookworm`, installing the extension set the current image provides plus Supervisor and using an isolated Composer stage so the image never copies the repository's tracked `vendor/` tree.
-- Constrain the Composer platform requirement to the PHP 8.2 line, enable platform checks, and apply the minimal 10-update, 3-addition lock delta.
+- Constrain the Composer platform requirement to the PHP 8.2 line, enable platform checks, and apply the minimal 12-update, 3-addition lock delta proven by platform and integration probes.
 - Repair the 32 optional-before-required declarations in application code without reordering parameters.
 - Replace the two unpatchable `think-image` GIF classes with project-owned equivalents loaded ahead of the package, keeping animated-GIF frame handling intact. `intervention/image` 2.7.2 is already in the tree but decodes only the first GIF frame, so it is not a usable substitute.
 - Repair the `overtrue/wechat` collection's PHP 8.2 magic-method, interface-return, and serialization contract through the same project-owned override mechanism rather than editing `vendor/`.
 - Repair the 18 reachable `think-orm` and `Pimple` interface-return notices through project-owned class and trait overrides. This keeps ThinkPHP's strict error handling intact and avoids suppressing deprecations globally.
+- Align the two Open Platform service namespaces with their existing `Open3rd` PSR-4 directory and provider namespace so Linux Composer autoload can construct that integration path.
 - Replace `openssl_free_key()` in `crmeb/utils/Rsa.php`, which is deprecated from PHP 8.0.
 - Allow the web entrypoint to run on PHP 8.2 and reject unvalidated release lines.
 - Add PHP 8.2 build, dependency, lint, deprecation, process, HTTP, WebSocket, JWT, spreadsheet, image, upload, and data-preservation checks, and fix the lint-harness defect described below.
@@ -41,7 +42,7 @@ Measured on 2026-07-29 against a PHP 8.2.32 container with the extensions the ap
 
 ## Impact
 
-- Affected code: `docker/php/Dockerfile`, `docker/php/opcache.ini`, `crmeb/composer.json`, `crmeb/composer.lock`, `crmeb/public/index.php`, `crmeb/utils/Rsa.php`, 26 files carrying optional-before-required declarations, and new project-owned image, WeChat, Think ORM, and Pimple compatibility classes.
+- Affected code: `docker/php/Dockerfile`, `docker/php/opcache.ini`, `crmeb/composer.json`, `crmeb/composer.lock`, `crmeb/public/index.php`, `crmeb/utils/Rsa.php`, the two Open Platform service namespaces, 26 files carrying optional-before-required declarations, and new project-owned image, WeChat, Think ORM, and Pimple compatibility classes.
 - Affected verification: `help/docker/verify-optimized.ps1` and a new PHP 8.2 verification script.
 - Preserved state: `help/docker/mysql/data` and `crmeb/public/uploads`. No schema or data migration is part of this change.
 - Known issues carried forward: the pre-existing static-GIF `Undefined array key 0` warning and the outstanding dependency advisories.

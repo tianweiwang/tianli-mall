@@ -5,7 +5,7 @@ The optimized acceptance runtime built by `optimize-container-runtime` runs PHP 
 An earlier design was approved on 2026-07-29 from an unmeasured reading of the dependency set. Its evidence has now been reproduced directly against PHP 8.2.32 with `bcmath`, `zip`, `gd`, `pcntl`, `mysqli`, `pdo_mysql`, `simplexml`, and `sockets` installed. The ten locked dependency blockers and the 32 application parameter deprecations reproduce exactly. Three other findings did not, and they change the work:
 
 - The targeted dependency update closes. `composer prohibits php 8.2 --locked` returns no remaining package and `check-platform-reqs` succeeds on every entry with no bypass, while `overtrue/wechat 3.3.33` and `doctrine/cache v1.4.4` stay at their locked versions. The earlier concern that the WeChat dependency chain would force a major EasyWechat upgrade was wrong.
-- Composer's default partial update produces 23 changes, 3 additions, and 2 removals, but `--minimal-changes` proves that only 10 updates plus 3 additions are required. The migration uses that smaller result.
+- Composer's default partial update produces 23 changes, 3 additions, and 2 removals. `--minimal-changes` initially proves that only 10 updates plus 3 additions are required to clear platform gates; offline integration probes then identify two additional patch updates required to remove reachable PHP 8.2 deprecations: `myclabs/php-enum` 1.7.6 to 1.8.5 for Xlsx writes and `monolog/monolog` 1.24.0 to 1.27.1 for EasyWechat construction. The final migration uses this 12-update, 3-addition result.
 - Vendor parse failures are 25 across 6 packages, and two are reachable in production paths.
 
 The earlier baseline was measured with `find … | xargs php -l`. Because `php -l` exits 255 on a fatal parse error, `xargs` aborts the whole batch and silently skips the rest of the tree. That is why 25 failures were recorded as one. Every lint pass in this change lints one file per process and continues past failures.
@@ -46,17 +46,21 @@ The image derives from `php:8.2-fpm-bookworm`. The current vendor image supplies
 
 `opcache.jit` defaults to a tracing JIT on the PHP 8 line. Queue, timer, and Workerman are long-lived processes where tracing JIT has known stability problems, and JIT offers nothing for this workload. The INI sets `opcache.jit=disable` explicitly rather than relying on a default.
 
-### Apply the minimal 13-package delta
+### Apply the minimal 15-package delta
 
-`composer.json` constrains `php` to `~8.2.0` and enables `platform-check`. The update targets the ten blockers with `--with-all-dependencies --minimal-changes`, producing:
+`composer.json` constrains `php` to `~8.2.0` and enables `platform-check`. The update targets the ten platform blockers with `--with-all-dependencies --minimal-changes`, then adds the single integration-proven patch update, producing:
 
-Changed: `markbaker/complex` 1.4.8→3.0.2, `markbaker/matrix` 1.2.0→3.0.1, `paragonie/random_compat` v9.99.99→v9.99.100, `phpoffice/phpspreadsheet` 1.13.0→1.30.6, `spatie/macroable` 1.0.0→1.0.1, `symfony/process` v4.3.2→v4.4.44, `symfony/psr-http-message-bridge` v1.2.0→v1.0.2, `symfony/translation` v4.3.2→v4.4.47, `symfony/translation-contracts` v1.1.5→v2.5.4, `symfony/var-dumper` v4.3.1→v4.4.47.
+Changed: `markbaker/complex` 1.4.8→3.0.2, `markbaker/matrix` 1.2.0→3.0.1, `monolog/monolog` 1.24.0→1.27.1, `myclabs/php-enum` 1.7.6→1.8.5, `paragonie/random_compat` v9.99.99→v9.99.100, `phpoffice/phpspreadsheet` 1.13.0→1.30.6, `spatie/macroable` 1.0.0→1.0.1, `symfony/process` v4.3.2→v4.4.44, `symfony/psr-http-message-bridge` v1.2.0→v1.0.2, `symfony/translation` v4.3.2→v4.4.47, `symfony/translation-contracts` v1.1.5→v2.5.4, `symfony/var-dumper` v4.3.1→v4.4.47.
 
 Added: `composer/pcre` 3.4.0, `ezyang/htmlpurifier` v4.19.0, `symfony/polyfill-php80` v1.37.0.
 
 Removed: none.
 
 `symfony/psr-http-message-bridge` moves down from v1.2.0 to v1.0.2 because v1.2.0 requires `http-foundation ^3.4||^4.0` while EasyWechat requires `~2.6|~2.7|~2.8|~3.0`; v1.0.2 satisfies both. ThinkPHP, Think Queue, EasyWechat, JWT, Guzzle, and unrelated transitive packages stay at their locked versions. Any resolution outside this list stops the change for review.
+
+`myclabs/php-enum` 1.7.6 is loaded by `maennchen/zipstream-php` during Xlsx writes and emits a `JsonSerializable::jsonSerialize()` return-type deprecation that ThinkPHP's strict handler promotes to a fatal error. Version 1.8.5 remains on the compatible 1.x line, adds `#[ReturnTypeWillChange]`, and a targeted `--minimal-changes --dry-run` proves that no other package moves.
+
+`monolog/monolog` 1.24.0 is reached by EasyWechat's constructor-time debug logging and passes `null` to `DateTime`, which PHP 8.2 deprecates and the strict handler promotes to a fatal error. Version 1.27.1 remains on the compatible 1.x line, passes `'now'` explicitly, and a targeted `--minimal-changes --dry-run` proves that no other package moves.
 
 Computing this lock needs Composer 2.10's command-only `--no-blocking` option because Guzzle 6.5.5 is advisory-blocked by current policy. No advisory setting is written to `composer.json`. Baseline and resulting audits are both recorded and the advisory count must not increase.
 
@@ -89,6 +93,8 @@ The initial class-loading probe reported 8 return-type notices in `think\Model` 
 These cannot remain known issues because they stop application and console startup. Project-owned copies add the PHP 8.2 interface return types and are registered ahead of their packages through the same `exclude-from-classmap` plus project classmap mechanism used by the GIF and WeChat repairs. Global deprecation suppression and changes to ThinkPHP's error handler are rejected because they would hide new application defects. The acceptance criterion is zero reachable runtime deprecations under `E_ALL`.
 
 Composer's authoritative map is not itself the production reachability boundary. It contains dependency test suites and optional adapters for PHPUnit, Laravel, React, and Symfony components that are not installed in this application. Eagerly loading all 5817 mapped symbols produces missing-development-dependency failures and third-party SDK diagnostics unrelated to CRMEB startup. The verifier therefore covers every application and project-owned symbol, explicitly covers the strict startup classes above, and exercises external SDK entrypoints through separate no-side-effect construction probes.
+
+That application-symbol probe also exposes a Linux-only PSR-4 defect in the WeChat Open Platform path. `ProgramProvider.php`, its registration in `Application.php`, and the on-disk directory all use `Open3rd`, while `AccessToken.php` and `ProgramOpen3rd.php` declare `open3rd`. Composer therefore cannot autoload either class on the case-sensitive PHP image when the provider closures are resolved. The repair changes only those two namespace declarations to the established `Open3rd` spelling and verifies both through Composer autoload; no service behavior or external request is changed.
 
 ## Risks / Trade-offs
 

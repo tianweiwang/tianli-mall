@@ -15,7 +15,7 @@
 ## 3. Dependency migration
 
 - [x] 3.1 Constrain `composer.json` to `~8.2.0`, enable `platform-check`, and confirm no advisory-ignore, platform-ignore, or extension-ignore setting reaches the committed file.
-- [x] 3.2 Apply the reviewed 10-update, 3-addition lock delta package by package with `--minimal-changes`, using the diagnostic advisory setting only locally and never committing it.
+- [x] 3.2 Apply the reviewed 12-update, 3-addition lock delta package by package with `--minimal-changes`, including the integration-proven `myclabs/php-enum` 1.7.6→1.8.5 and `monolog/monolog` 1.24.0→1.27.1 patch updates, using the diagnostic advisory setting only locally and never committing it.
 - [x] 3.3 Confirm `composer prohibits php 8.2 --locked` reports no package and `check-platform-reqs` passes on every entry with no bypass.
 - [x] 3.4 Record baseline and resulting audits and confirm the advisory count and severity do not increase.
 
@@ -28,6 +28,9 @@
 - [x] 4.5 Allow the entrypoint to run on PHP 8.2, reject unvalidated release lines, and correct the supported-range message.
 - [x] 4.6 Add project-owned PHP 8.2 return-type overrides for `think\\Paginator`, `think\\Model` plus its `Conversion` trait, `think\\db\\Where`, and `Pimple\\Container`; register them ahead of vendor code and prove all 18 startup-blocking deprecations are removed without weakening error handling.
 - [x] 4.7 Add a project-owned `think\\Image` override that explicitly converts final text-watermark coordinates to integers at the GD call boundary, preserving PHP 7.4 coordinate truncation while removing the PHP 8.2 implicit-conversion deprecation.
+- [x] 4.8 Align `AccessToken` and `ProgramOpen3rd` with the existing `Open3rd` directory/provider namespace and prove Composer autoload resolves both classes on the Linux PHP image.
+- [x] 4.9 Prove Xlsx writing fails under strict PHP 8.2 diagnostics with `myclabs/php-enum` 1.7.6, update only that package to 1.8.5, and prove the deprecation is removed without changing the advisory count or severity.
+- [x] 4.10 Prove EasyWechat construction-time logging fails under strict PHP 8.2 diagnostics with `monolog/monolog` 1.24.0, update only that package to 1.27.1, and prove the deprecation is removed without changing the advisory count or severity.
 
 ## 5. Verification
 

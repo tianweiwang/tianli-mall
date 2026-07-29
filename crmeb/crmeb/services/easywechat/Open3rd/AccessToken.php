@@ -9,7 +9,7 @@
 // | Author: CRMEB Team <admin@crmeb.com>
 // +----------------------------------------------------------------------
 
-namespace crmeb\services\easywechat\open3rd;
+namespace crmeb\services\easywechat\Open3rd;
 
 
 use crmeb\exceptions\ApiException;

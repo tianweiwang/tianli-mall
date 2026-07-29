@@ -34,7 +34,7 @@ The committed dependency configuration SHALL require the PHP 8.2 line and pass p
 
 #### Scenario: Resolution stays within the reviewed delta
 - **WHEN** the targeted lock update is applied
-- **THEN** exactly the reviewed 10 updates and 3 additions SHALL differ from the prior lock
+- **THEN** exactly the reviewed 12 updates and 3 additions SHALL differ from the prior lock
 - **THEN** no package SHALL be removed
 - **THEN** any other movement SHALL stop the change for review
 
@@ -133,3 +133,22 @@ The migration SHALL preserve acceptance data and retain a tested PHP 7.4 rollbac
 - **WHEN** application containers are recreated for cutover
 - **THEN** MySQL data, Redis state, the runtime volume, and uploads SHALL be retained
 - **THEN** no schema or data migration SHALL run
+
+### Requirement: Offline integration compatibility
+Integration boundaries SHALL be exercised on PHP 8.2 without live third-party transactions.
+
+#### Scenario: JWT paths remain usable
+- **WHEN** neutral HMAC claims are encoded and decoded through the locked Firebase JWT API
+- **THEN** the decoded claims SHALL match the input
+- **WHEN** Google Auth signs a self-signed JWT with a runtime-generated test key
+- **THEN** signing SHALL complete without a network request or PHP diagnostic
+
+#### Scenario: Spreadsheet and export paths remain usable
+- **WHEN** a workbook containing representative order and product rows, formatting, and an embedded image is written and read back
+- **THEN** the values, formatting, and image SHALL survive the round trip
+- **THEN** the path SHALL emit no PHP diagnostic under `E_ALL`
+
+#### Scenario: External providers construct without transactions
+- **WHEN** WeChat, payment/refund, SMS, and upload or cloud-storage providers are loaded or constructed with neutral local configuration under a no-network runtime
+- **THEN** construction and service discovery SHALL complete without a PHP diagnostic
+- **THEN** no payment, refund, message, callback, upload, or other third-party request SHALL be sent
