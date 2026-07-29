@@ -59,6 +59,7 @@ class Timer extends Command
     {
         $this->init($input, $output);
         Worker::$pidFile = app()->getRootPath() . 'runtime/timer.pid';
+        Worker::$logFile = app()->getRootPath() . 'runtime/timer.log';
         $task = new Worker();
         date_default_timezone_set('PRC');
         $task->count = 1;

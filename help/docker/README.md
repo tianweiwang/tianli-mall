@@ -1,3 +1,62 @@
+# 天俪商城优化版验收环境
+
+优化版将 PHP 源码、Composer 依赖和前端静态文件构建进 Docker 镜像，避免 Windows 绑定盘的小文件性能问题。它启用了 OPcache，并修复了 Workerman 在容器重启后因残留 PID 无法启动的问题。
+
+> 当前镜像仍基于 PHP 7.4，仅用于本地开发和验收。完成 PHP 8.2 兼容升级、生产安全加固、TLS 和备份恢复演练之前，不得直接用于公网生产环境。
+
+## 首次配置
+
+```powershell
+Copy-Item help\docker\.env.runtime.example help\docker\.env.runtime
+Copy-Item help\docker\.env.application.example help\docker\.env.application
+```
+
+修改两个本地配置文件，确保 MySQL 和 Redis 口令一致。它们已加入 `.gitignore`，不得提交真实口令。
+
+现有验收库迁移时，应保留当前本地配置中的数据库口令，避免已有 MySQL 数据卷与新容器凭据不一致。
+
+## 构建与启动
+
+```powershell
+docker compose --env-file help\docker\.env.runtime -f help\docker\docker-compose.optimized.yml config --quiet
+docker compose --env-file help\docker\.env.runtime -f help\docker\docker-compose.optimized.yml build
+docker compose -f help\docker\docker-compose.yml down
+docker compose --env-file help\docker\.env.runtime -f help\docker\docker-compose.optimized.yml up -d --wait
+pwsh -NoProfile -File help\docker\verify-optimized.ps1
+```
+
+商城地址：`http://127.0.0.1:8011/`
+
+优化栈只向宿主机开放 `8011`。MySQL、Redis、PHP-FPM 和 Workerman 仅在 Compose 网络内访问。
+
+## 修改代码后重建
+
+优化版不再实时挂载 PHP 源码。源码或打包后的静态文件发生变化后执行：
+
+```powershell
+docker compose --env-file help\docker\.env.runtime -f help\docker\docker-compose.optimized.yml up -d --build --wait
+pwsh -NoProfile -File help\docker\verify-optimized.ps1
+```
+
+## 停止与回滚
+
+停止优化栈：
+
+```powershell
+docker compose --env-file help\docker\.env.runtime -f help\docker\docker-compose.optimized.yml down
+```
+
+回滚到旧栈：
+
+```powershell
+docker compose --env-file help\docker\.env.runtime -f help\docker\docker-compose.optimized.yml down
+docker compose -f help\docker\docker-compose.yml up -d
+```
+
+以上命令都不得添加 `-v`。MySQL 示例数据位于 `help/docker/mysql/data`，上传文件位于 `crmeb/public/uploads`；删除卷或清空这些目录会造成数据损失。
+
+---
+
 # 安装docker
 ## docker 官网下载
 https://www.docker.com/products/docker-desktop

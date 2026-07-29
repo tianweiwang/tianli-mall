@@ -175,3 +175,10 @@ php_errors.log
 *.pdf
 *.exe
 *.msi
+
+# Runtime state and installation-specific configuration
+crmeb/runtime/
+crmeb/public/uploads/
+crmeb/public/install/
+crmeb/.env
+crmeb/.constant

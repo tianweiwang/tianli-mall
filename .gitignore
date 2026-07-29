@@ -33,6 +33,8 @@ crmeb/public/uploads/*
 # Docker Compose
 /docker-compose-dev/
 /help/docker/mysql/data/
+/help/docker/.env.runtime
+/help/docker/.env.application
 
 # 配置文件(敏感信息)
 crmeb/.env
@@ -74,5 +76,7 @@ crmeb/runtime/temp/readme.md
 .codebuddy/rules/git-commit-standard.mdc
 .codebuddy/rules/readme.mdc
 Dockerfile
+!/docker/php/Dockerfile
+!/docker/nginx/Dockerfile
 .codebuddy/models.json
 .codebuddy/rules/project-intro.mdc
