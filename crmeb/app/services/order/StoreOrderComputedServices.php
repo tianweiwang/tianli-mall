@@ -77,7 +77,7 @@ class StoreOrderComputedServices extends BaseServices
      * @param int $shipping_type
      * @return array
      */
-    public function computedOrder(int $uid, array $userInfo = [], array $cartGroup, int $addressId, string $payType, bool $useIntegral = false, int $couponId = 0, bool $isCreate = false, int $shippingType = 1, int $is_gift = 0)
+    public function computedOrder(int $uid, array $userInfo, array $cartGroup, int $addressId, string $payType, bool $useIntegral = false, int $couponId = 0, bool $isCreate = false, int $shippingType = 1, int $is_gift = 0)
     {
         $offlinePayStatus = (int)sys_config('offline_pay_status') ?? (int)2;
         $systemPayType = PayServices::PAY_TYPE;
@@ -269,7 +269,7 @@ class StoreOrderComputedServices extends BaseServices
      * @param array $other
      * @return array
      */
-    public function computedPayPostage(int $shipping_type, string $payType, array $cartInfo, array $addr, string $payPrice, array $postage = [], array $other, $userInfo = [], $is_gift = 0)
+    public function computedPayPostage(int $shipping_type, string $payType, array $cartInfo, array $addr, string $payPrice, array $postage, array $other, $userInfo = [], $is_gift = 0)
     {
         $storePostageDiscount = 0;
         $storeFreePostage = $postage['storeFreePostage'] ?? 0;

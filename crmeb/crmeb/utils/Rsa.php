@@ -117,7 +117,6 @@ class Rsa
             return false;
         }
 
-        openssl_free_key($res);
         return true;
     }
 

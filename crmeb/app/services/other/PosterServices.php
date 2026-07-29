@@ -22,7 +22,7 @@ class PosterServices
      * @return array|bool|string
      * @throws \Exception
      */
-    public static function setShareMarketingPoster($data = array(), $path)
+    public static function setShareMarketingPoster($data, $path)
     {
         $config = array(
             'text' => array(
@@ -124,7 +124,7 @@ class PosterServices
      * @return array|bool|string
      * @throws \Exception
      */
-    public static function setSharePoster($config = array(), $path, $name = '')
+    public static function setSharePoster($config, $path, $name = '')
     {
         $imageDefault = array(
             'left' => 0,

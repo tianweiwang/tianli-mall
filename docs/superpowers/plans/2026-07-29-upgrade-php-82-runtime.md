@@ -173,7 +173,7 @@ Record baseline and resulting `composer audit` output. Verified result: the migr
 - Modify: `crmeb/crmeb/utils/Rsa.php`
 - Modify: `crmeb/public/index.php`
 
-- [ ] **Step 1: Remove ineffective defaults without reordering**
+- [x] **Step 1: Remove ineffective defaults without reordering**
 
 PHP 8 already treats a parameter after a defaulted one as required, so the default is dead. Remove it; do not reorder, because positional callers would change meaning.
 
@@ -188,11 +188,11 @@ public function getAgentUserList(array $where, string $field, int $page, int $li
 
 Check callers for each site individually. Where an inherited signature or a real caller relies on omission, treat the declaration and its callers as one change. No unrelated cleanup or reformatting.
 
-- [ ] **Step 2: Replace the deprecated OpenSSL call**
+- [x] **Step 2: Replace the deprecated OpenSSL call**
 
 `crmeb/crmeb/utils/Rsa.php:120` calls `openssl_free_key($res)`, a no-op deprecated from PHP 8.0. Remove the call; `OpenSSLAsymmetricKey` is released by the garbage collector. Keep the surrounding return semantics unchanged.
 
-- [ ] **Step 3: Correct the entrypoint version gate**
+- [x] **Step 3: Correct the entrypoint version gate**
 
 `crmeb/public/index.php` currently rejects PHP 8 outright:
 

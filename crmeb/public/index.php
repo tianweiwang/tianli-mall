@@ -12,11 +12,8 @@
 // [ 应用入口文件 ]
 namespace think;
 
-if ('7.1.0' > phpversion()) {
-    exit('您的php版本过低，不能安装本软件，兼容php版本7.1~7.4，谢谢！');
-}
-if (phpversion() >= '8.0.0') {
-    exit('您的php版本太高，不能安装本软件，兼容php版本7.1~7.4，谢谢！');
+if (PHP_VERSION_ID < 80200 || PHP_VERSION_ID >= 80300) {
+    exit('您的PHP版本不受支持，本软件仅兼容PHP 8.2.x，谢谢！');
 }
 
 define('DS', DIRECTORY_SEPARATOR);

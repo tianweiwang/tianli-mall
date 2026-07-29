@@ -83,7 +83,7 @@ class StoreCartServices extends BaseServices
      * @throws \think\db\exception\DbException
      * @throws \think\db\exception\ModelNotFoundException
      */
-    public function getUserProductCartListV1($uid, $cartIds = '', bool $new, $addr = [], int $shipping_type = 1, $is_gift = 0)
+    public function getUserProductCartListV1($uid, $cartIds, bool $new, $addr = [], int $shipping_type = 1, $is_gift = 0)
     {
         if ($new) {
             $cartIds = explode(',', $cartIds);
@@ -146,7 +146,7 @@ class StoreCartServices extends BaseServices
      * @throws \think\db\exception\DbException
      * @throws \think\db\exception\ModelNotFoundException
      */
-    public function checkProductStock(int $uid, int $cartNum, string $unique, int $type = 0, $productId, int $seckillId, int $bargainId, int $combinationId, int $advanceId)
+    public function checkProductStock(int $uid, int $cartNum, string $unique, int $type, $productId, int $seckillId, int $bargainId, int $combinationId, int $advanceId)
     {
         /** @var StoreProductAttrValueServices $attrValueServices */
         $attrValueServices = app()->make(StoreProductAttrValueServices::class);
