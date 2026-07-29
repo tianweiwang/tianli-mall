@@ -5,7 +5,7 @@ The optimized acceptance runtime built by `optimize-container-runtime` runs PHP 
 An earlier design was approved on 2026-07-29 from an unmeasured reading of the dependency set. Its evidence has now been reproduced directly against PHP 8.2.32 with `bcmath`, `zip`, `gd`, `pcntl`, `mysqli`, `pdo_mysql`, `simplexml`, and `sockets` installed. The ten locked dependency blockers and the 32 application parameter deprecations reproduce exactly. Three other findings did not, and they change the work:
 
 - The targeted dependency update closes. `composer prohibits php 8.2 --locked` returns no remaining package and `check-platform-reqs` succeeds on every entry with no bypass, while `overtrue/wechat 3.3.33` and `doctrine/cache v1.4.4` stay at their locked versions. The earlier concern that the WeChat dependency chain would force a major EasyWechat upgrade was wrong.
-- Composer's default partial update produces 23 changes, 3 additions, and 2 removals. `--minimal-changes` initially proves that only 10 updates plus 3 additions are required to clear platform gates; offline integration probes then identify two additional patch updates required to remove reachable PHP 8.2 deprecations: `myclabs/php-enum` 1.7.6 to 1.8.5 for Xlsx writes and `monolog/monolog` 1.24.0 to 1.27.1 for EasyWechat construction. The final migration uses this 12-update, 3-addition result.
+- Composer's default partial update produces 23 changes, 3 additions, and 2 removals. `--minimal-changes` initially proves that only 10 updates plus 3 additions are required to clear platform gates; offline integration probes then identify the Xlsx, EasyWechat logging, and JDOSS dependency paths that need compatibility updates. The final migration uses 18 updates and 4 additions: the earlier 12-update, 3-addition result plus six same-major AWS/Guzzle updates and `aws/aws-crt-php`.
 - Vendor parse failures are 25 across 6 packages, and two are reachable in production paths.
 
 The earlier baseline was measured with `find … | xargs php -l`. Because `php -l` exits 255 on a fatal parse error, `xargs` aborts the whole batch and silently skips the rest of the tree. That is why 25 failures were recorded as one. Every lint pass in this change lints one file per process and continues past failures.
@@ -46,21 +46,23 @@ The image derives from `php:8.2-fpm-bookworm`. The current vendor image supplies
 
 `opcache.jit` defaults to a tracing JIT on the PHP 8 line. Queue, timer, and Workerman are long-lived processes where tracing JIT has known stability problems, and JIT offers nothing for this workload. The INI sets `opcache.jit=disable` explicitly rather than relying on a default.
 
-### Apply the minimal 15-package delta
+### Apply the minimal 22-package delta
 
-`composer.json` constrains `php` to `~8.2.0` and enables `platform-check`. The update targets the ten platform blockers with `--with-all-dependencies --minimal-changes`, then adds the single integration-proven patch update, producing:
+`composer.json` constrains `php` to `~8.2.0` and enables `platform-check`. The update targets the ten platform blockers with `--with-all-dependencies --minimal-changes`, then adds the integration-proven Xlsx, EasyWechat logging, and JDOSS updates, producing:
 
-Changed: `markbaker/complex` 1.4.8→3.0.2, `markbaker/matrix` 1.2.0→3.0.1, `monolog/monolog` 1.24.0→1.27.1, `myclabs/php-enum` 1.7.6→1.8.5, `paragonie/random_compat` v9.99.99→v9.99.100, `phpoffice/phpspreadsheet` 1.13.0→1.30.6, `spatie/macroable` 1.0.0→1.0.1, `symfony/process` v4.3.2→v4.4.44, `symfony/psr-http-message-bridge` v1.2.0→v1.0.2, `symfony/translation` v4.3.2→v4.4.47, `symfony/translation-contracts` v1.1.5→v2.5.4, `symfony/var-dumper` v4.3.1→v4.4.47.
+Changed: `aws/aws-sdk-php` 3.173.19→3.236.0, `guzzlehttp/guzzle` 6.5.5→6.5.8, `guzzlehttp/promises` v1.3.1→1.5.3, `guzzlehttp/psr7` 1.7.0→1.9.1, `markbaker/complex` 1.4.8→3.0.2, `markbaker/matrix` 1.2.0→3.0.1, `monolog/monolog` 1.24.0→1.27.1, `mtdowling/jmespath.php` 2.5.0→2.9.2, `myclabs/php-enum` 1.7.6→1.8.5, `paragonie/random_compat` v9.99.99→v9.99.100, `phpoffice/phpspreadsheet` 1.13.0→1.30.6, `spatie/macroable` 1.0.0→1.0.1, `symfony/polyfill-mbstring` v1.11.0→v1.38.2, `symfony/process` v4.3.2→v4.4.44, `symfony/psr-http-message-bridge` v1.2.0→v1.0.2, `symfony/translation` v4.3.2→v4.4.47, `symfony/translation-contracts` v1.1.5→v2.5.4, `symfony/var-dumper` v4.3.1→v4.4.47.
 
-Added: `composer/pcre` 3.4.0, `ezyang/htmlpurifier` v4.19.0, `symfony/polyfill-php80` v1.37.0.
+Added: `aws/aws-crt-php` v1.2.7, `composer/pcre` 3.4.0, `ezyang/htmlpurifier` v4.19.0, `symfony/polyfill-php80` v1.37.0.
 
 Removed: none.
 
-`symfony/psr-http-message-bridge` moves down from v1.2.0 to v1.0.2 because v1.2.0 requires `http-foundation ^3.4||^4.0` while EasyWechat requires `~2.6|~2.7|~2.8|~3.0`; v1.0.2 satisfies both. ThinkPHP, Think Queue, EasyWechat, JWT, Guzzle, and unrelated transitive packages stay at their locked versions. Any resolution outside this list stops the change for review.
+`symfony/psr-http-message-bridge` moves down from v1.2.0 to v1.0.2 because v1.2.0 requires `http-foundation ^3.4||^4.0` while EasyWechat requires `~2.6|~2.7|~2.8|~3.0`; v1.0.2 satisfies both. ThinkPHP, Think Queue, EasyWechat, JWT, and unrelated transitive packages stay at their locked versions. Any resolution outside this list stops the change for review.
 
 `myclabs/php-enum` 1.7.6 is loaded by `maennchen/zipstream-php` during Xlsx writes and emits a `JsonSerializable::jsonSerialize()` return-type deprecation that ThinkPHP's strict handler promotes to a fatal error. Version 1.8.5 remains on the compatible 1.x line, adds `#[ReturnTypeWillChange]`, and a targeted `--minimal-changes --dry-run` proves that no other package moves.
 
 `monolog/monolog` 1.24.0 is reached by EasyWechat's constructor-time debug logging and passes `null` to `DateTime`, which PHP 8.2 deprecates and the strict handler promotes to a fatal error. Version 1.27.1 remains on the compatible 1.x line, passes `'now'` explicitly, and a targeted `--minimal-changes --dry-run` proves that no other package moves.
+
+`aws/aws-sdk-php` 3.173.19 is reached only after JDOSS resolves its protected `app()` method and creates the underlying `S3Client`; wrapper-only construction misses the defect. Under `E_ALL`, that path emits 15 PHP 8.2 deprecations across callable, `Countable`, `ArrayAccess`, and `Serializable` contracts. Updating AWS alone stops at 3.226.0 because the root pins Guzzle 6.5.5, and that version still emits eight callable deprecations. AWS 3.235.5 is the first release to remove the final callable diagnostics; the reviewed target remains AWS 3.236.0 with Guzzle 6.5.8 and PSR-7 1.9.1. Composer also updates Promises, JMESPath, and the mbstring polyfill and adds AWS CRT. A read-only `--network none` probe constructs `Aws\\S3\\S3Client` with synthetic credentials at zero diagnostics and sends no request. All changes stay within their existing major versions.
 
 Computing this lock needs Composer 2.10's command-only `--no-blocking` option because Guzzle 6.5.5 is advisory-blocked by current policy. No advisory setting is written to `composer.json`. Baseline and resulting audits are both recorded and the advisory count must not increase.
 
@@ -96,11 +98,15 @@ Composer's authoritative map is not itself the production reachability boundary.
 
 That application-symbol probe also exposes a Linux-only PSR-4 defect in the WeChat Open Platform path. `ProgramProvider.php`, its registration in `Application.php`, and the on-disk directory all use `Open3rd`, while `AccessToken.php` and `ProgramOpen3rd.php` declare `open3rd`. Composer therefore cannot autoload either class on the case-sensitive PHP image when the provider closures are resolved. The repair changes only those two namespace declarations to the established `Open3rd` spelling and verifies both through Composer autoload; no service behavior or external request is changed.
 
+Resolving the repaired Open Platform provider then reaches `ProgramOpen3rd::__construct()`, which stores `AccessToken::getConfig()` in an undeclared `$config` property. PHP 8.2 reports the dynamic property creation as deprecated. Declaring the existing property is the complete repair; constructor input and downstream behavior remain unchanged.
+
 ## Risks / Trade-offs
 
 **A dependency changes outside the measured delta.** The delta was computed on an unverified vendor tree. Recomputing after clean reinstall may shift it. Mitigation: the delta is recomputed and compared before the lock is committed; deviation stops the change.
 
 **PhpSpreadsheet moves 1.13.0 to 1.30.6, 17 minor versions.** It backs order and product export in `app/adminapi/controller/v1/order/StoreOrder.php` and `.../product/StoreProduct.php` through `crmeb/services/SpreadsheetExcelService.php` and `crmeb/services/FileService.php`. Mitigation: export and read checks including a formatting and an image case.
+
+**AWS SDK moves from 3.173.19 to 3.236.0 and requires Guzzle/PSR-7 patch movement.** Live JDOSS requests need credentials and would create third-party side effects. Mitigation: keep every package on its existing major line, construct the real lazy `S3Client` with synthetic local configuration under `--network none`, and defer live upload/download transactions to the third-party verification phase.
 
 **Workerman 3.5.19 and crontab 1.0.2 declare no meaningful PHP constraint.** Their PHP 8.2 behavior is unverified, and `startsecs=3` lets a crash-restart loop still report `RUNNING`. Mitigation: verification asserts Supervisor restart counts stay at zero, not just process state. The README's instruction to disable `pcntl_*` and `proc_open` is re-confirmed against the 8.2 image, since Workerman needs `pcntl` to fork.
 
@@ -113,7 +119,7 @@ That application-symbol probe also exposes a Linux-only PSR-4 defect in the WeCh
 ## Known Issues Carried Forward
 
 - `think-image` `gif/Encoder.php:77` emits `Undefined array key 0` for static GIFs. Present on PHP 7.4 as a Notice and unrelated to this migration; output bytes are unchanged. It will fail any "no warnings in logs" assertion, so that assertion excludes this one site. Repairing it means changing frame-array logic, which is a functional fix, not a compatibility one.
-- 33 dependency advisories across 11 packages after migration, reduced from the 62-advisory, 12-package baseline, plus the abandoned EasyWechat package.
+- 25 dependency advisories across 10 packages after migration, reduced from the 62-advisory, 12-package baseline, plus two abandoned packages (`guzzle/guzzle` and `topthink/think-factory`).
 - No first-party automated test suite.
 
 ## Migration and Rollback

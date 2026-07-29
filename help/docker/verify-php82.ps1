@@ -149,10 +149,18 @@ function Invoke-CandidateImage {
         [Parameter(Mandatory)][string]$Entrypoint,
         [Parameter(Mandatory)][string[]]$CommandArguments,
         [string[]]$AdditionalMounts = @(),
-        [string]$CandidateImage = $Image
+        [string]$CandidateImage = $Image,
+        [switch]$ReadOnly,
+        [string[]]$Tmpfs = @()
     )
 
     $arguments = @("run", "--rm", "--network", "none")
+    if ($ReadOnly) {
+        $arguments += "--read-only"
+    }
+    foreach ($tmpfsMount in $Tmpfs) {
+        $arguments += @("--tmpfs", $tmpfsMount)
+    }
     foreach ($mount in $AdditionalMounts) {
         $arguments += @("--mount", $mount)
     }
@@ -1122,6 +1130,143 @@ function Invoke-CandidateImageCompatibility {
     }
 }
 
+function Invoke-CandidateIntegrationCompatibility {
+    $probePath = Join-Path $repoRoot "help/docker/probes/php82-integration-compatibility.php"
+    if (-not (Test-Path -LiteralPath $probePath -PathType Leaf)) {
+        throw "Integration compatibility probe not found: $probePath"
+    }
+    $probePath = (Resolve-Path -LiteralPath $probePath).Path
+    $probeName = "php82-integration-compatibility"
+    $sentinelPrefix = "__PHP82_INTEGRATION__|"
+    $cases = @(
+        "jwt",
+        "spreadsheet",
+        "order-export",
+        "product-export",
+        "easywechat",
+        "payment",
+        "sms",
+        "uploads",
+        "service-discovery"
+    )
+    $details = [Collections.Generic.List[string]]::new()
+    $failedCases = [Collections.Generic.List[string]]::new()
+
+    foreach ($case in $cases) {
+        $run = Invoke-CandidateImage `
+            -Entrypoint "php" `
+            -CommandArguments @("/probe/php82-integration-compatibility.php", $case) `
+            -AdditionalMounts @("type=bind,source=$probePath,target=/probe/php82-integration-compatibility.php,readonly") `
+            -ReadOnly `
+            -Tmpfs @("/tmp:rw,nosuid,nodev,noexec,size=128m")
+
+        $issues = [Collections.Generic.List[string]]::new()
+        if ($run.ExitCode -ne 0) {
+            $issues.Add("container-exit=$($run.ExitCode)")
+        }
+
+        $sentinelLines = @($run.Lines | Where-Object { $_.StartsWith($sentinelPrefix) })
+        $extraLines = @($run.Lines | Where-Object { -not $_.StartsWith($sentinelPrefix) })
+        if ($extraLines.Count) {
+            $issues.Add("extra-output=" + ($extraLines -join "\n"))
+        }
+        if ($sentinelLines.Count -ne 1) {
+            $issues.Add("sentinel-count=$($sentinelLines.Count)")
+        }
+
+        $record = $null
+        if ($sentinelLines.Count -eq 1) {
+            try {
+                $record = $sentinelLines[0].Substring($sentinelPrefix.Length) | ConvertFrom-Json
+            } catch {
+                $issues.Add("invalid-json=$($_.Exception.Message)")
+            }
+        }
+
+        if ($null -ne $record) {
+            if ($record -isnot [pscustomobject]) {
+                $issues.Add("record-not-object")
+            }
+            $requiredProperties = @(
+                "probe", "case", "status", "checks", "diagnostics", "unexpectedOutput", "throwable"
+            )
+            $recordProperties = @($record.PSObject.Properties.Name)
+            foreach ($requiredProperty in $requiredProperties) {
+                if ($requiredProperty -notin $recordProperties) {
+                    $issues.Add("missing-property=$requiredProperty")
+                }
+            }
+            if ($record.probe -ne $probeName) {
+                $issues.Add("probe-mismatch=$($record.probe)")
+            }
+            if ($record.case -ne $case) {
+                $issues.Add("case-mismatch=$($record.case)")
+            }
+            if ($record.status -ne "pass") {
+                $issues.Add("status=$($record.status)")
+            }
+
+            $checkProperties = if ($record.checks -is [pscustomobject]) {
+                @($record.checks.PSObject.Properties)
+            } else {
+                @()
+            }
+            if ($record.checks -isnot [pscustomobject]) {
+                $issues.Add("checks-not-object")
+            }
+            if (-not $checkProperties.Count) {
+                $issues.Add("checks=missing")
+            }
+            foreach ($check in $checkProperties) {
+                if ($check.Value -ne $true) {
+                    $issues.Add("check-false=$($check.Name)")
+                }
+            }
+
+            if ($record.diagnostics -isnot [array]) {
+                $issues.Add("diagnostics-not-array")
+            }
+            $diagnostics = @($record.diagnostics)
+            if ($diagnostics.Count) {
+                $diagnosticSummary = @($diagnostics | ForEach-Object {
+                    "$($_.severityName):$($_.file):$($_.line):$($_.message)"
+                }) -join "; "
+                $issues.Add("diagnostics=$diagnosticSummary")
+            }
+            if ($null -ne $record.throwable) {
+                $issues.Add("throwable=$($record.throwable.class):$($record.throwable.message)")
+            }
+            if ($record.unexpectedOutput -isnot [string]) {
+                $issues.Add("unexpected-output-not-string")
+            } elseif ($record.unexpectedOutput -ne "") {
+                $issues.Add("unexpected-output=$($record.unexpectedOutput)")
+            }
+        }
+
+        if ($issues.Count) {
+            $failedCases.Add($case)
+            $details.Add("[FAIL] integration case=$case " + ($issues -join " | "))
+        } else {
+            $details.Add("[PASS] integration case=$case")
+        }
+    }
+
+    $details.Add(
+        "INTEGRATION_SUMMARY cases=$($cases.Count) passed=$($cases.Count - $failedCases.Count) failed=$($failedCases.Count)"
+    )
+    if ($failedCases.Count) {
+        $details.Add("INTEGRATION_STATUS=RED failed_cases=$($failedCases -join ',')")
+    } else {
+        $details.Add("INTEGRATION_STATUS=GREEN")
+    }
+
+    [pscustomobject]@{
+        ExitCode = if ($failedCases.Count) { 1 } else { 0 }
+        Output = $details -join "`n"
+        FailedCases = @($failedCases)
+    }
+}
+
 function Invoke-CandidateVerification {
     $failed = $false
 
@@ -1168,6 +1313,11 @@ function Invoke-CandidateVerification {
         -UseCandidateImage
     Write-DeprecationResult -Result $deprecations
     if ($deprecations.ExitCode -ne 0) { $failed = $true }
+
+    "=== Candidate offline integration compatibility ==="
+    $integrationCompatibility = Invoke-CandidateIntegrationCompatibility
+    $integrationCompatibility.Output
+    if ($integrationCompatibility.ExitCode -ne 0) { $failed = $true }
 
     "=== Candidate static service discovery ==="
     foreach ($command in @("service:discover", "vendor:publish")) {

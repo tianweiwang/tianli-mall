@@ -42,7 +42,7 @@
         "godruoyi/php-snowflake": "^1.0",
         "qcloud_sts/qcloud-sts-sdk": "^3.0",
         "guzzlehttp/psr7": "^1.7",
-        "guzzlehttp/guzzle": "6.5.5",
+        "guzzlehttp/guzzle": "6.5.8",
         "alipaysdk/easysdk": "2.0",
         "lizhichao/word": "^2.1",
         "alibabacloud/dysmsapi-20170525": "2.0.16",
@@ -51,7 +51,7 @@
         "workerman/crontab": "^1.0",
         "topthink/think-migration": "^3.0",
         "topthink/think-filesystem": "^2.0",
-        "aws/aws-sdk-php": "^3.173",
+        "aws/aws-sdk-php": "3.236.0",
         "ext-zip": "*",
         "ext-simplexml": "*",
         "crmeb/easypay": "^1.0"

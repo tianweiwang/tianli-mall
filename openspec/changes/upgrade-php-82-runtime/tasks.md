@@ -18,6 +18,7 @@
 - [x] 3.2 Apply the reviewed 12-update, 3-addition lock delta package by package with `--minimal-changes`, including the integration-proven `myclabs/php-enum` 1.7.6→1.8.5 and `monolog/monolog` 1.24.0→1.27.1 patch updates, using the diagnostic advisory setting only locally and never committing it.
 - [x] 3.3 Confirm `composer prohibits php 8.2 --locked` reports no package and `check-platform-reqs` passes on every entry with no bypass.
 - [x] 3.4 Record baseline and resulting audits and confirm the advisory count and severity do not increase.
+- [x] 3.5 Prove JDOSS's real lazy `S3Client` emits PHP 8.2 diagnostics on AWS SDK 3.173.19 and that AWS 3.226.0 still emits 8; apply the reviewed AWS 3.236.0, Guzzle 6.5.8, PSR-7 1.9.1, Promises 1.5.3, JMESPath 2.9.2, mbstring polyfill 1.38.2, and AWS CRT 1.2.7 delta, then confirm zero diagnostics and a non-regressing audit. Measured via `help/docker/probes/php82-aws-s3client.php`, which resolves the client through `Jdoss::app()` and additionally builds a `PutObject` command and the S3 v4 signer: 21 diagnostics on 3.173.19, 8 on 3.226.0, 0 on 3.236.0. Audit moves from 33 advisories across 11 packages to 25 across 10.
 
 ## 4. Compatibility repairs
 
@@ -31,17 +32,18 @@
 - [x] 4.8 Align `AccessToken` and `ProgramOpen3rd` with the existing `Open3rd` directory/provider namespace and prove Composer autoload resolves both classes on the Linux PHP image.
 - [x] 4.9 Prove Xlsx writing fails under strict PHP 8.2 diagnostics with `myclabs/php-enum` 1.7.6, update only that package to 1.8.5, and prove the deprecation is removed without changing the advisory count or severity.
 - [x] 4.10 Prove EasyWechat construction-time logging fails under strict PHP 8.2 diagnostics with `monolog/monolog` 1.24.0, update only that package to 1.27.1, and prove the deprecation is removed without changing the advisory count or severity.
+- [x] 4.11 Prove `ProgramOpen3rd` construction creates a dynamic `$config` property under PHP 8.2, declare the existing property without changing constructor behavior, and prove the diagnostic is removed.
 
 ## 5. Verification
 
-- [ ] 5.1 Confirm the running PHP is on the 8.2 line with the required extensions and OPcache loaded and JIT disabled.
-- [ ] 5.2 Confirm application code reports zero parse failures and zero runtime deprecations, and that reachable vendor classes report zero runtime deprecations.
+- [x] 5.1 Confirm the running PHP is on the 8.2 line with the required extensions and OPcache loaded and JIT disabled.
+- [x] 5.2 Confirm application code reports zero parse failures and zero runtime deprecations, and that reachable vendor classes report zero runtime deprecations.
 - [ ] 5.3 Confirm PHP-FPM, queue, timer, and Workerman report `RUNNING` with Supervisor restart counts at zero, so a crash-restart loop cannot pass.
 - [ ] 5.4 Confirm homepage, admin entry, SPA fallback, representative public APIs, and `/notice` and `/msg` respond without 502.
 - [x] 5.5 Compare PHP 7.4 baseline and PHP 8.2 candidate output directories generated from shared fixtures: require exact bytes, SHA256, and dimensions for every case except text PNG positions 1/5/9; require those three to keep dimensions and alpha identical with no more than one differing pixel and maximum RGB channel delta 1; require both animated GIF outputs to retain three frames; prove the tolerance rejects two changed pixels, RGB delta 2, and alpha changes; and require zero unexpected diagnostics.
-- [ ] 5.6 Confirm JWT encode/decode with neutral claims, including the `google/auth` path that pins `firebase/php-jwt ~5.0`.
-- [ ] 5.7 Confirm spreadsheet create, read, formatting, and image cases with neutral temporary data, and exercise order and product export.
-- [ ] 5.8 Confirm WeChat service construction, upload provider construction, and service discovery complete without sending third-party transactions.
+- [x] 5.6 Confirm JWT encode/decode with neutral claims, including the `google/auth` path that pins `firebase/php-jwt ~5.0`.
+- [x] 5.7 Confirm spreadsheet create, read, formatting, and image cases with neutral temporary data, and exercise order and product export.
+- [x] 5.8 Confirm WeChat service construction, payment/refund and SMS construction, every upload provider including JDOSS's lazy `S3Client`, and service discovery complete under `--network none` without sending third-party transactions. Probe cases run as `www-data`, matching the FPM pool and Supervisor process user; running as root makes `var_www_rejects_write` fail because root bypasses the 0755 root-owned application tree.
 - [ ] 5.9 Confirm uploads remain writable by `www-data` and installer access stays blocked.
 - [ ] 5.10 Scan logs after exercised workflows for `Fatal error`, `TypeError`, `Deprecated`, and repeating worker restarts, excluding the recorded `Encoder.php:77` static-GIF warning.
 

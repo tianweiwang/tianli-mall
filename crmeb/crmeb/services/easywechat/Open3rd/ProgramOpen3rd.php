@@ -23,6 +23,12 @@ class ProgramOpen3rd
     protected $accessToken;
 
     /**
+     * 开放平台配置
+     * @var array
+     */
+    protected $config;
+
+    /**
      * 预授权码
      */
     const PRE_AUTH_CODE = 'https://api.weixin.qq.com/cgi-bin/component/api_create_preauthcode';

@@ -34,7 +34,7 @@ The committed dependency configuration SHALL require the PHP 8.2 line and pass p
 
 #### Scenario: Resolution stays within the reviewed delta
 - **WHEN** the targeted lock update is applied
-- **THEN** exactly the reviewed 12 updates and 3 additions SHALL differ from the prior lock
+- **THEN** exactly the reviewed 18 updates and 4 additions SHALL differ from the prior lock
 - **THEN** no package SHALL be removed
 - **THEN** any other movement SHALL stop the change for review
 
@@ -70,6 +70,11 @@ Application code SHALL run on PHP 8.2 without parse failures or deprecations, pr
 - **WHEN** an optional-before-required declaration is repaired
 - **THEN** the ineffective default SHALL be removed rather than the parameters reordered
 - **THEN** existing positional callers SHALL retain their meaning
+
+#### Scenario: Open Platform construction avoids dynamic properties
+- **WHEN** the Open Platform provider resolves `ProgramOpen3rd` under `E_ALL`
+- **THEN** its stored configuration SHALL use a declared property
+- **THEN** construction SHALL emit no PHP 8.2 dynamic-property diagnostic
 
 ### Requirement: Vendor compatibility overrides
 Classes that cannot compile on PHP 8.2 and are reachable at runtime SHALL be replaced from project-owned code without editing `vendor/`.
@@ -150,5 +155,6 @@ Integration boundaries SHALL be exercised on PHP 8.2 without live third-party tr
 
 #### Scenario: External providers construct without transactions
 - **WHEN** WeChat, payment/refund, SMS, and upload or cloud-storage providers are loaded or constructed with neutral local configuration under a no-network runtime
+- **WHEN** lazy provider clients, including JDOSS's underlying `Aws\\S3\\S3Client`, are resolved without invoking a transaction method
 - **THEN** construction and service discovery SHALL complete without a PHP diagnostic
 - **THEN** no payment, refund, message, callback, upload, or other third-party request SHALL be sent
