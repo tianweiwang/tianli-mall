@@ -63,7 +63,16 @@
         },
         "psr-0": {
             "": "extend/"
-        }
+        },
+        "exclude-from-classmap": [
+            "vendor/topthink/think-image/src/image/gif/Decoder.php",
+            "vendor/topthink/think-image/src/image/gif/Encoder.php",
+            "vendor/overtrue/wechat/src/Support/Collection.php"
+        ],
+        "classmap": [
+            "crmeb/services/image/gif/",
+            "crmeb/services/wechat/Collection.php"
+        ]
     },
     "config": {
         "preferred-install": "dist",

@@ -21,8 +21,8 @@
 
 ## 4. Compatibility repairs
 
-- [ ] 4.1 Add project-owned replacements for `think-image` `gif/Decoder.php` and `gif/Encoder.php` converting the 29 curly-brace offset accesses, registered ahead of the package through `exclude-from-classmap` and a project classmap so `composer install` cannot overwrite them.
-- [ ] 4.2 Add a project-owned replacement for `overtrue/wechat` `Support/Collection.php` with a valid static `__set_state()` reconstruction, PHP 8.2-compatible interface return types, and `__serialize()`/`__unserialize()` support, through the same mechanism.
+- [x] 4.1 Add project-owned replacements for `think-image` `gif/Decoder.php` and `gif/Encoder.php` converting the 29 curly-brace offset accesses, registered ahead of the package through `exclude-from-classmap` and a project classmap so `composer install` cannot overwrite them.
+- [x] 4.2 Add a project-owned replacement for `overtrue/wechat` `Support/Collection.php` with a valid static `__set_state()` reconstruction, PHP 8.2-compatible interface return types, and `__serialize()`/`__unserialize()` support, through the same mechanism.
 - [x] 4.3 Repair the 32 optional-before-required declarations across 26 files by removing the ineffective default, without reordering parameters, checking callers for each.
 - [x] 4.4 Replace `openssl_free_key()` in `crmeb/utils/Rsa.php`.
 - [x] 4.5 Allow the entrypoint to run on PHP 8.2, reject unvalidated release lines, and correct the supported-range message.

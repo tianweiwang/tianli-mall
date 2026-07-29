@@ -214,7 +214,7 @@ Replace both bounds so PHP 8.2 is accepted and unvalidated release lines are ref
 - Create: `crmeb/crmeb/services/wechat/Collection.php`
 - Modify: `crmeb/composer.json`
 
-- [ ] **Step 1: Convert the think-image GIF classes**
+- [x] **Step 1: Convert the think-image GIF classes**
 
 `topthink/think-image` v1.0.7 uses curly-brace offset access, removed in PHP 8.0, at `gif/Decoder.php:165` and 28 sites in `gif/Encoder.php`. `crmeb/services/upload/storage/Local.php:263,341,365` and `crmeb/utils/DownloadImage.php:111` call `Image::open()` on local uploads, and `Image.php:78` constructs the GIF decoder whenever the type is `gif`. Because this is a compile-time error, the `catch (\Throwable $e)` blocks around those calls never run: a GIF upload returns HTTP 500 with nothing logged.
 
@@ -231,13 +231,13 @@ Keep the `think\image\gif` namespace and class names so `Image.php` resolves to 
 
 Do **not** substitute `intervention/image` 2.7.2. It is already present via `fastknife/ajcaptcha` and is PHP 8.2 compatible, but its GD decoder reads only the first GIF frame, so it would silently flatten every animated GIF.
 
-- [ ] **Step 2: Write the failing WeChat collection compatibility probe**
+- [x] **Step 2: Write the failing WeChat collection compatibility probe**
 
 `vendor/overtrue/wechat/src/Support/Collection.php:354` declares `public function __set_state()` with no parameters. PHP 8 requires exactly one, which is a compile-time failure. The class also implements the `Serializable` interface deprecated from PHP 8.1.
 
 The probe loads the project-owned class under `E_ALL`, round-trips a neutral collection through `serialize()`/`unserialize()`, `__serialize()`/`__unserialize()`, and `var_export()`/`eval()`, and exercises `ArrayAccess`, `count()`, iteration, and JSON serialization. Expected before the override: compile failure. Expected after only adding one parameter: `Method ...::__set_state() must be static`. Expected after making it static without changing the body: `Using $this when not in object context`.
 
-- [ ] **Step 3: Implement the complete WeChat collection contract**
+- [x] **Step 3: Implement the complete WeChat collection contract**
 
 ```php
 // before
@@ -254,7 +254,7 @@ public static function __set_state(array $state)
 
 Add PHP 8.2-compatible interface return types to `offsetExists`, `offsetGet`, `offsetSet`, `offsetUnset`, `count`, `getIterator`, and `jsonSerialize`. Add `__serialize()` returning the item payload and `__unserialize(array $data): void` restoring it, while retaining the package's legacy `serialize()` and `unserialize()` methods. Keep the `EasyWeChat\Support` namespace and all unrelated package behavior unchanged. The compatibility probe must pass with zero diagnostics from this class.
 
-- [ ] **Step 4: Register the overrides ahead of the packages**
+- [x] **Step 4: Register the overrides ahead of the packages**
 
 Exclude the packaged files from the classmap and add the project copies, so `composer install` cannot overwrite them and they stay in version control:
 
@@ -272,7 +272,7 @@ Exclude the packaged files from the classmap and add the project copies, so `com
 }
 ```
 
-- [ ] **Step 5: Prove the overrides take effect and vendor is untouched**
+- [x] **Step 5: Prove the overrides take effect and vendor is untouched**
 
 After `composer dump-autoload --classmap-authoritative`, confirm the resolved file for `think\image\gif\Encoder` and `EasyWeChat\Support\Collection` is the project copy, and that `git status` shows no modification under `vendor/`.
 
