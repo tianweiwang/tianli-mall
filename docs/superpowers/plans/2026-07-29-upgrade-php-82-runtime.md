@@ -164,7 +164,7 @@ Expected: `There is no installed package depending on "php" in versions not matc
 
 - [ ] **Step 5: Compare audits**
 
-Record baseline and resulting `composer audit` output. The advisory count and severity must not increase. The 62 outstanding advisories across 12 packages remain a launch blocker tracked separately.
+Record baseline and resulting `composer audit` output. Verified result: the migration reduces the audit from 62 advisories across 12 packages to 33 across 11 packages. The remaining advisories remain a launch blocker tracked separately.
 
 ### Task 4: Repair application code
 
@@ -362,4 +362,4 @@ openspec validate upgrade-php-82-runtime
 codegraph sync
 ```
 
-The README must document the 8.2 build, verification, and PHP 7.4 rollback commands, never with `-v`, and must state that the carried-forward known issues still block public production launch: 8 vendor deprecations, the static-GIF warning, 62 dependency advisories across 12 packages, the abandoned EasyWechat package, and the absent first-party test suite.
+The README must document the 8.2 build, verification, and PHP 7.4 rollback commands, never with `-v`, and must state that the carried-forward known issues still block public production launch: 8 vendor deprecations, the static-GIF warning, 33 dependency advisories across 11 packages, the abandoned EasyWechat package, and the absent first-party test suite.

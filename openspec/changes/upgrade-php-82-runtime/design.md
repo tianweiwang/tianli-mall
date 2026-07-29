@@ -25,7 +25,7 @@ The vendor tree also does not match `composer.lock`: `crmeb/easypay`, `xin/conta
 **Non-Goals:**
 
 - Major-version migration of JWT, Guzzle, PSR-7, EasyWechat, COS, payment, SMS, or cloud-storage SDKs.
-- Resolving the 62 outstanding dependency advisories or replacing the abandoned EasyWechat package.
+- Resolving the remaining 33 dependency advisories across 11 packages or replacing the abandoned EasyWechat package.
 - Live payment, refund, SMS, WeChat, or cloud-storage transactions.
 - Database schema changes or data migrations.
 - TLS, production secrets, backup retention, restore drills.
@@ -100,7 +100,7 @@ After the project-owned WeChat collection is loaded, the only remaining deprecat
 
 - 8 vendor runtime deprecations in `think-orm` and `Pimple`.
 - `think-image` `gif/Encoder.php:77` emits `Undefined array key 0` for static GIFs. Present on PHP 7.4 as a Notice and unrelated to this migration; output bytes are unchanged. It will fail any "no warnings in logs" assertion, so that assertion excludes this one site. Repairing it means changing frame-array logic, which is a functional fix, not a compatibility one.
-- 62 dependency advisories across 12 packages and the abandoned EasyWechat package.
+- 33 dependency advisories across 11 packages after migration, reduced from the 62-advisory, 12-package baseline, plus the abandoned EasyWechat package.
 - No first-party automated test suite.
 
 ## Migration and Rollback
