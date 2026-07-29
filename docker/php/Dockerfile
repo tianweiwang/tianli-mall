@@ -36,6 +36,7 @@ WORKDIR /var/www
 
 COPY crmeb/composer.json crmeb/composer.lock ./
 COPY crmeb/crmeb/compat/ crmeb/compat/
+COPY crmeb/crmeb/services/image/Image.php crmeb/services/image/Image.php
 COPY crmeb/crmeb/services/image/gif/ crmeb/services/image/gif/
 COPY crmeb/crmeb/services/wechat/Collection.php crmeb/services/wechat/Collection.php
 

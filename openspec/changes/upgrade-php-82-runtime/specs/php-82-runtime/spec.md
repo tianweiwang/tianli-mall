@@ -75,10 +75,13 @@ Application code SHALL run on PHP 8.2 without parse failures or deprecations, pr
 Classes that cannot compile on PHP 8.2 and are reachable at runtime SHALL be replaced from project-owned code without editing `vendor/`.
 
 #### Scenario: Local image upload handling
-- **WHEN** a GIF is uploaded through local storage
+- **WHEN** local image handling processes the shared PNG, static-GIF, animated-GIF, and text-watermark fixtures
 - **THEN** the request SHALL succeed rather than fail with an unlogged fatal error
-- **THEN** thumbnail and watermark output SHALL match the PHP 7.4 baseline byte for byte
+- **THEN** PNG thumbnail/image-watermark output and every GIF output in the image probe SHALL match the PHP 7.4 baseline byte for byte and by SHA256
+- **THEN** every compared output SHALL retain the PHP 7.4 baseline dimensions
+- **THEN** text PNG output at positions 1/5/9 SHALL differ from the decoded PHP 7.4 baseline by no more than one pixel per output, with identical alpha and a maximum RGB channel delta of 1
 - **THEN** an animated GIF SHALL retain all of its frames
+- **THEN** text watermark positions SHALL emit no PHP 8.2 implicit-conversion deprecations
 
 #### Scenario: WeChat collection class loads
 - **WHEN** the WeChat integration path loads its support collection

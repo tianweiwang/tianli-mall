@@ -304,10 +304,32 @@ Exclude the five packaged files from Composer's classmap and add the project com
 
 Re-run the explicit four-class probe under `E_ALL` and require zero diagnostics. Then build the PHP 8.2 image and require both `php think service:discover` and `php think vendor:publish` to complete without changing ThinkPHP's `E_ALL` policy or adding a global deprecation suppression.
 
+### Task 5B: Remove the exercised text-watermark deprecation
+
+**Files:**
+- Create: `crmeb/crmeb/services/image/Image.php`
+- Modify: `crmeb/composer.json`
+- Test: `help/docker/probes/php82-image-compatibility.php`
+
+- [x] **Step 1: Preserve the failing PHP 8.2 image probe**
+
+Run text watermark cases at positions 1, 5, and 9 with a negative offset and rotation under `E_ALL`. Expected before the override: position 5 fails at `think-image` `Image.php:575` because a half-pixel float is implicitly converted to an integer by `imagettftext()`.
+
+- [x] **Step 2: Add the minimal project-owned override**
+
+Copy the locked `Image.php` to project code and cast only the final x/y arguments passed to `imagettftext()` to `int`. This matches PHP 7.4's existing truncation behavior. Register the copy through `exclude-from-classmap` and the project classmap; do not modify `vendor/`.
+
+- [x] **Step 3: Prove behavior stays inside the baseline gate**
+
+Generate one shared fixture set and run the same PNG, static-GIF, animated-GIF, and text-watermark cases on the PHP 7.4 rollback image and PHP 8.2 candidate. Compare the resulting directories rather than fixed byte counts. Require exact bytes, SHA256, and dimensions for all cases except `text_png_1`, `text_png_5`, and `text_png_9`; for each exception require identical dimensions and alpha, no more than one differing decoded pixel, and maximum RGB channel delta 1. Require both animated GIF outputs to retain three frames and no unexpected diagnostic. The tolerance self-test must reject two changed pixels, RGB delta 2, and any alpha change.
+
 ### Task 6: Verify compatibility
 
 **Files:**
 - Modify: `help/docker/verify-php82.ps1`
+- Create: `help/docker/probes/php82-image-compatibility.php`
+- Create: `help/docker/probes/php82-integration-compatibility.php`
+- Modify: `help/docker/verify-optimized.ps1`
 
 - [ ] **Step 1: Assert the runtime**
 
@@ -325,19 +347,9 @@ PHP-FPM, queue, timer, and Workerman report `RUNNING` **and** Supervisor restart
 
 Homepage, admin entry, SPA fallback, and representative public APIs respond successfully; `/notice` and `/msg` do not return 502.
 
-- [ ] **Step 5: Assert image handling is byte-identical to the 7.4 baseline**
+- [ ] **Step 5: Assert image handling against the 7.4 baseline**
 
-Compare against PHP 7.4 with the unpatched package. Verified expected values, from a 120x80 source with a DejaVu font, are:
-
-| Case | Bytes |
-| --- | --- |
-| PNG thumb / water | 130 / 205 |
-| static GIF thumb / water | 93 / 182 |
-| animated GIF thumb / water | 429 / 717, 3 frames retained |
-| text watermark, positions 1/5/9 on PNG | 2041 / 2025 / 1860 |
-| text watermark, positions 1/5/9 on GIF | 635 / 630 / 613 |
-
-The text cases must include a negative offset and a rotation, matching the call shape at `crmeb/services/upload/storage/Local.php:373`.
+Generate a shared 120x80 fixture set with the PHP 7.4 rollback image, then compare output directories after running the same probe on the PHP 8.2 candidate. Require exact bytes, SHA256, and dimensions for PNG thumbnail/image-watermark and every GIF case; require both animated GIF outputs to retain three frames. For text PNG positions 1/5/9, permit only identical dimensions and alpha, no more than one differing decoded pixel, and maximum RGB channel delta 1. The probe must prove this tolerance with failing fixtures for two changed pixels, RGB delta 2, and alpha changes, and must fail on any unexpected diagnostic. Text cases include a negative offset and rotation, matching the call shape at `crmeb/services/upload/storage/Local.php:373`.
 
 - [ ] **Step 6: Assert dependency-sensitive integrations**
 

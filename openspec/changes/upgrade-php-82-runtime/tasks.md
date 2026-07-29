@@ -27,6 +27,7 @@
 - [x] 4.4 Replace `openssl_free_key()` in `crmeb/utils/Rsa.php`.
 - [x] 4.5 Allow the entrypoint to run on PHP 8.2, reject unvalidated release lines, and correct the supported-range message.
 - [x] 4.6 Add project-owned PHP 8.2 return-type overrides for `think\\Paginator`, `think\\Model` plus its `Conversion` trait, `think\\db\\Where`, and `Pimple\\Container`; register them ahead of vendor code and prove all 18 startup-blocking deprecations are removed without weakening error handling.
+- [x] 4.7 Add a project-owned `think\\Image` override that explicitly converts final text-watermark coordinates to integers at the GD call boundary, preserving PHP 7.4 coordinate truncation while removing the PHP 8.2 implicit-conversion deprecation.
 
 ## 5. Verification
 
@@ -34,7 +35,7 @@
 - [ ] 5.2 Confirm application code reports zero parse failures and zero runtime deprecations, and that reachable vendor classes report zero runtime deprecations.
 - [ ] 5.3 Confirm PHP-FPM, queue, timer, and Workerman report `RUNNING` with Supervisor restart counts at zero, so a crash-restart loop cannot pass.
 - [ ] 5.4 Confirm homepage, admin entry, SPA fallback, representative public APIs, and `/notice` and `/msg` respond without 502.
-- [ ] 5.5 Confirm image handling matches the PHP 7.4 baseline byte for byte: PNG thumb/water, static-GIF thumb/water, animated-GIF thumb/water with frames retained, and text watermark across positions with negative offsets and rotation.
+- [x] 5.5 Compare PHP 7.4 baseline and PHP 8.2 candidate output directories generated from shared fixtures: require exact bytes, SHA256, and dimensions for every case except text PNG positions 1/5/9; require those three to keep dimensions and alpha identical with no more than one differing pixel and maximum RGB channel delta 1; require both animated GIF outputs to retain three frames; prove the tolerance rejects two changed pixels, RGB delta 2, and alpha changes; and require zero unexpected diagnostics.
 - [ ] 5.6 Confirm JWT encode/decode with neutral claims, including the `google/auth` path that pins `firebase/php-jwt ~5.0`.
 - [ ] 5.7 Confirm spreadsheet create, read, formatting, and image cases with neutral temporary data, and exercise order and product export.
 - [ ] 5.8 Confirm WeChat service construction, upload provider construction, and service discovery complete without sending third-party transactions.

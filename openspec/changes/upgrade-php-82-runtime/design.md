@@ -60,13 +60,17 @@ Removed: none.
 
 Computing this lock needs Composer 2.10's command-only `--no-blocking` option because Guzzle 6.5.5 is advisory-blocked by current policy. No advisory setting is written to `composer.json`. Baseline and resulting audits are both recorded and the advisory count must not increase.
 
-### Override the two unpatchable vendor classes from project code
+### Override unpatchable reachable vendor classes from project code
 
 `vendor/` is not edited. Two classes cannot run on PHP 8.2 and are reachable:
 
 `topthink/think-image` v1.0.7 uses curly-brace offset access, removed in PHP 8.0, at `gif/Decoder.php:165` and 28 places in `gif/Encoder.php`. `crmeb/services/upload/storage/Local.php:263,341,365` and `crmeb/utils/DownloadImage.php:111` call `Image::open()` on local uploads, and `Image.php:78` constructs the GIF decoder whenever the file type is `gif`. Because this is a compile-time error rather than an exception, the `catch (\Throwable $e)` blocks around those calls never execute; a GIF upload returns HTTP 500 with nothing logged.
 
-The repair is a mechanical `$expr{offset}` → `$expr[offset]` conversion, 1 replacement in `Decoder.php` and 28 in `Encoder.php`. Verified on PHP 8.2 against the PHP 7.4 baseline, output is byte-identical across twelve cases: PNG thumb/water 130/205 bytes, static-GIF thumb/water 93/182, animated-GIF thumb/water 429/717 with all three frames retained, and six text-watermark combinations covering positions 1/5/9 with negative offsets and rotation at 2041/2025/1860/635/630/613 bytes.
+The repair is a mechanical `$expr{offset}` → `$expr[offset]` conversion, 1 replacement in `Decoder.php` and 28 in `Encoder.php`. Verification compares output directories generated from one shared PHP 7.4 fixture set instead of relying on fixed byte counts. Nine cases are byte-identical with matching SHA256 and dimensions: PNG thumbnail/image watermark, static-GIF thumbnail/image watermark, animated-GIF thumbnail/image watermark, and GIF text watermark at positions 1/5/9. Both animated-GIF outputs retain all three frames.
+
+The same exercised image path exposes one further PHP 8.2 deprecation in `think-image` `Image.php`: centered text positions can produce half-pixel floats, which `imagettftext()` implicitly converts to integer coordinates. A project-owned copy casts the final x/y arguments explicitly at that API boundary. PHP 7.4 already truncates those values, so this removes the diagnostic without changing the integer coordinates passed to GD.
+
+Text PNG output is not byte-identical across the rollback and candidate graphics stacks: PHP 7.4 uses Debian 11 FreeType 2.10.4/libpng 1.6.37, while PHP 8.2 uses Debian 12 FreeType 2.12.1/libpng 1.6.39. For each of `text_png_1`, `text_png_5`, and `text_png_9`, decoded comparison finds exactly one differing pixel out of 9,600, identical alpha, and a maximum RGB channel delta of 1. The acceptance gate permits only that bounded exception, requires identical dimensions, and proves the boundary with negative fixtures where two changed pixels, RGB delta 2, or any alpha change fail.
 
 `intervention/image` 2.7.2 is already present via `fastknife/ajcaptcha` and is PHP 8.2 compatible, but its GD decoder reads only the first GIF frame. Substituting it would silently flatten every animated GIF, so it is rejected.
 
