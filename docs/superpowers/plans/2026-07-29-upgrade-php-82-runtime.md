@@ -8,7 +8,18 @@
 
 **Tech Stack:** PHP 8.2 FPM on Debian bookworm, Composer 2 with platform checks, Zend OPcache with JIT disabled, Supervisor, Docker Compose, PowerShell verification.
 
-**Tracked by:** `openspec/changes/upgrade-php-82-runtime`. Supersedes `docs/superpowers/specs/2026-07-29-php-82-compatibility-design.md`.
+**Tracked by:** `openspec/changes/archive/2026-07-29-upgrade-php-82-runtime`. Supersedes `docs/superpowers/specs/2026-07-29-php-82-compatibility-design.md`.
+
+**Status:** Completed 2026-07-30. The archived change and `openspec/specs/php-82-runtime/spec.md` are the authoritative record; this plan is the pre-implementation design and was not fully accurate. Read the deviations below before using it as a reference.
+
+## How Implementation Deviated
+
+- **The dependency delta was smaller than planned, then grew for a different reason.** This plan predicted 23 changed, 3 added, 2 removed. Running the same update with `--minimal-changes` produced 10 changed, 3 added, 0 removed. Offline integration probes then required `myclabs/php-enum`, `monolog/monolog`, and the AWS/Guzzle chain, and running processes required Carbon, Workerman, and think-template. The final delta is larger than either estimate.
+- **Vendor deprecations were repaired, not accepted.** Task 6 Step 2 planned to accept 8 `think-orm` and `Pimple` return-type notices as known issues. That was wrong: ThinkPHP forces `E_ALL` during console initialization and promotes those notices to exceptions, and the real count was 18 startup blockers. They were all fixed with project-owned overrides, so the accepted-deprecation allowance in this plan does not apply.
+- **Offline verification was not sufficient, and this plan implied it was.** Every static gate here passed while the first cutover still returned HTTP 500 on the homepage and left timer and Workerman `FATAL`. Four defects live only in code paths needing a running FPM worker or a Supervisor-managed process: Carbon's `jsonSerialize()` return type via `think-queue`'s clock helper, `Worker::$workerId` dynamic property creation, `ob_implicit_flush(0)` in template rendering, and the float microsecond argument to `stream_select()`. Three were fixed by same-major dependency updates; the fourth needed a project-owned `Workerman\Events\Select` override because Workerman 3.5 has no release that fixes it.
+- **A fifth application-code defect appeared only under real requests.** `Request::header()` returns null when a header is absent, and PHP 8.1 deprecates passing null to `ltrim()`. Nine token call sites across the `api`, `adminapi`, `kefuapi`, and `outapi` entrypoints needed explicit casts.
+- **"Process is RUNNING" proved insufficient as a health signal.** The first cutover reported all four programs `RUNNING` while Workerman children crashed and respawned 20734 times, because `startsecs=3` tolerates a fast restart loop. Verification must assert restart counts.
+- **Probe user matters.** Integration probes must run as `www-data`. As root the `var_www_rejects_write` assertion fails, because root bypasses the 0755 root-owned application tree.
 
 ---
 
@@ -331,35 +342,35 @@ Generate one shared fixture set and run the same PNG, static-GIF, animated-GIF, 
 - Create: `help/docker/probes/php82-integration-compatibility.php`
 - Modify: `help/docker/verify-optimized.ps1`
 
-- [ ] **Step 1: Assert the runtime**
+- [x] **Step 1: Assert the runtime**
 
 PHP is on the 8.2 line; the required extensions are loaded; OPcache is enabled; JIT is disabled.
 
-- [ ] **Step 2: Assert code cleanliness with the corrected harness**
+- [x] **Step 2: Assert code cleanliness with the corrected harness**
 
 Application code, project-owned compatibility classes, and reachable vendor classes report zero parse failures and zero runtime deprecations. The verifier must explicitly include `think\Paginator` and `think\db\Where` so class-list gaps cannot hide their return-type diagnostics.
 
-- [ ] **Step 3: Assert processes are genuinely stable**
+- [x] **Step 3: Assert processes are genuinely stable**
 
 PHP-FPM, queue, timer, and Workerman report `RUNNING` **and** Supervisor restart counts are zero. `startsecs=3` means a crash-restart loop still reports `RUNNING`, so state alone is not sufficient evidence.
 
-- [ ] **Step 4: Assert HTTP and WebSocket behavior**
+- [x] **Step 4: Assert HTTP and WebSocket behavior**
 
 Homepage, admin entry, SPA fallback, and representative public APIs respond successfully; `/notice` and `/msg` do not return 502.
 
-- [ ] **Step 5: Assert image handling against the 7.4 baseline**
+- [x] **Step 5: Assert image handling against the 7.4 baseline**
 
 Generate a shared 120x80 fixture set with the PHP 7.4 rollback image, then compare output directories after running the same probe on the PHP 8.2 candidate. Require exact bytes, SHA256, and dimensions for PNG thumbnail/image-watermark and every GIF case; require both animated GIF outputs to retain three frames. For text PNG positions 1/5/9, permit only identical dimensions and alpha, no more than one differing decoded pixel, and maximum RGB channel delta 1. The probe must prove this tolerance with failing fixtures for two changed pixels, RGB delta 2, and alpha changes, and must fail on any unexpected diagnostic. Text cases include a negative offset and rotation, matching the call shape at `crmeb/services/upload/storage/Local.php:373`.
 
-- [ ] **Step 6: Assert dependency-sensitive integrations**
+- [x] **Step 6: Assert dependency-sensitive integrations**
 
 JWT encode/decode with neutral claims, including the `google/auth` path that pins `firebase/php-jwt ~5.0`. Spreadsheet create, read, formatting, and image cases with neutral temporary data, plus order and product export, since PhpSpreadsheet moves 17 minor versions and backs `app/adminapi/controller/v1/order/StoreOrder.php` and `.../product/StoreProduct.php`. WeChat service construction, upload provider construction, and service discovery, without sending third-party transactions.
 
-- [ ] **Step 7: Assert filesystem and installer posture**
+- [x] **Step 7: Assert filesystem and installer posture**
 
 Uploads remain writable by `www-data`; installer access stays blocked.
 
-- [ ] **Step 8: Scan logs**
+- [x] **Step 8: Scan logs**
 
 No `Fatal error`, `TypeError`, unexpected `Deprecated`, or repeating worker restart. Exclude exactly one recorded site: `think-image` `gif/Encoder.php:77` emits `Undefined array key 0` for static GIFs. It is present on PHP 7.4 as a Notice, is unrelated to this migration, and does not change output bytes. Repairing it means changing frame-array logic, which is a functional fix, not a compatibility one.
 
@@ -379,27 +390,27 @@ docker tag tianli/crmeb-php:acceptance tianli/crmeb-php:php74-rollback
 
 Compare data against this snapshot, not against hard-coded literals. The previously recorded 25,210 language rows, 174 uploads, and 21,664,281 bytes drift as soon as anyone uses the environment, and uploads are a live bind mount.
 
-- [ ] **Step 2: Build and verify statically before touching containers**
+- [x] **Step 2: Build and verify statically before touching containers**
 
 Build the 8.2 image and run the compatibility checks against it before recreating anything.
 
-- [ ] **Step 3: Recreate application containers**
+- [x] **Step 3: Recreate application containers**
 
 Recreate without `-v`, preserving MySQL data, Redis state, the runtime volume, and uploads. No migration command or schema mutation runs.
 
-- [ ] **Step 4: Verify, then verify again after recreation**
+- [x] **Step 4: Verify, then verify again after recreation**
 
 Run the full verification, then `down` and `up -d` again without `-v` and repeat process-health and data-preservation checks.
 
-- [ ] **Step 5: Prove the rollback works**
+- [x] **Step 5: Prove the rollback works**
 
 Restore `tianli/crmeb-php:php74-rollback` and confirm a healthy stack against the same database and uploads. No database rollback is needed, since this change performs no schema or data migration; the dump is a defensive artifact only.
 
-- [ ] **Step 6: Document and hand off**
+- [x] **Step 6: Document and hand off**
 
 ```powershell
 openspec validate upgrade-php-82-runtime
 codegraph sync
 ```
 
-The README must document the 8.2 build, verification, and PHP 7.4 rollback commands, never with `-v`, and must state that the carried-forward known issues still block public production launch: the static-GIF warning, 33 dependency advisories across 11 packages, the abandoned EasyWechat package, and the absent first-party test suite.
+The README must document the 8.2 build, verification, and PHP 7.4 rollback commands, never with `-v`, and must state that the carried-forward known issues still block public production launch: the static-GIF warning, 24 dependency advisories across 9 packages, two abandoned packages, and the absent first-party test suite.
