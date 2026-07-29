@@ -1,9 +1,9 @@
 ## 1. Trustworthy baseline
 
-- [ ] 1.1 Install the unchanged lock into an empty vendor directory under PHP 7.4, then mount that immutable tree into the PHP 8.2 probe. Confirm installed versions and source references, `installed.json`, and the lock agree, and that the `crmeb/easypay`, `xin/container`, and `xin/helper` install paths exist. Do not use the stale `topthink/framework` source constant as a version check.
-- [ ] 1.2 Add a PHP 8.2 verification script that lints one file per process, continues past failures, reports every failing file, and exits nonzero if any failure occurred.
-- [ ] 1.3 Record the red baseline on the reinstalled tree: entrypoint PHP 8 rejection, `composer prohibits php 8.2 --locked` blockers, vendor parse failures with per-package counts, application parse failures, and application plus vendor runtime deprecations under `E_ALL`.
-- [ ] 1.4 Recompute the targeted lock delta with `--minimal-changes` on the clean tree and compare against the 10 changed, 3 added, 0 removed set in the design. Stop for review on any deviation.
+- [x] 1.1 Install the unchanged lock into an empty vendor directory under PHP 7.4, then mount that immutable tree into the PHP 8.2 probe. Confirm installed versions and source references, `installed.json`, and the lock agree, and that the `crmeb/easypay`, `xin/container`, and `xin/helper` install paths exist. Do not use the stale `topthink/framework` source constant as a version check.
+- [x] 1.2 Add a PHP 8.2 verification script that lints one file per process, continues past failures, reports every failing file, and exits nonzero if any failure occurred.
+- [x] 1.3 Record the red baseline on the reinstalled tree: entrypoint PHP 8 rejection, `composer prohibits php 8.2 --locked` blockers, vendor parse failures with per-package counts, application parse failures, and application plus vendor runtime deprecations under `E_ALL`.
+- [x] 1.4 Recompute the targeted lock delta with `--minimal-changes` on the clean tree and compare against the 10 changed, 3 added, 0 removed set in the design. Stop for review on any deviation.
 
 ## 2. PHP 8.2 runtime image
 

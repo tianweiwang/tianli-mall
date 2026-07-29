@@ -19,19 +19,19 @@ The prior baseline is not usable. `crmeb/easypay`, `xin/container`, and `xin/hel
 **Files:**
 - Create: `help/docker/verify-php82.ps1`
 
-- [ ] **Step 1: Write a failing baseline-integrity check**
+- [x] **Step 1: Write a failing baseline-integrity check**
 
 Add a verifier mode that compares lock package names, versions, and source references with `installed.json`, resolves every `install-path`, and fails on an unexpected package directory. Run it against the current tracked tree.
 
 Expected: FAIL for the three missing install paths and the unrecorded `phpoffice/phpexcel` directory.
 
-- [ ] **Step 2: Rebuild the unchanged baseline tree in isolation**
+- [x] **Step 2: Rebuild the unchanged baseline tree in isolation**
 
 Install the current lock into an empty vendor directory under PHP 7.4. If an actual PHP 7.4 Composer environment is unavailable, use `--ignore-platform-req=php` only inside the disposable baseline container. Do not modify `composer.json` or `composer.lock`. Re-run the integrity check against the clean tree.
 
 Expected: PASS; all 93 metadata entries have install paths, no unrecorded package directory exists, and `topthink/framework` is verified by Composer metadata/source reference rather than `App::VERSION`.
 
-- [ ] **Step 3: Write the lint harness so it cannot hide failures**
+- [x] **Step 3: Write the lint harness so it cannot hide failures**
 
 `php -l` exits 255 on a fatal parse error, which makes `xargs` abort the entire batch and skip every remaining file. That defect recorded a 25-failure tree as having one failure. Lint one file per process and continue past failures:
 
@@ -49,19 +49,19 @@ test "$failures" -eq 0
 
 Run the harness first against a neutral temporary fixture containing two invalid PHP files. Expected: both paths are printed and the command exits nonzero. Never use `find … -print0 | xargs -0 php -l` for this purpose.
 
-- [ ] **Step 4: Add a runtime deprecation probe**
+- [x] **Step 4: Add a runtime deprecation probe**
 
 Lint cannot see dynamic properties, `Serializable`, or return-type deprecations. Load every autoloadable class under `E_ALL` with a `set_error_handler` that records diagnostics, deriving the class list from `vendor/composer/autoload_classmap.php` plus namespace and class declarations under `app/` and `crmeb/`, and reflect each class's methods and properties.
 
 Expected on the current tree: 1042 classes loaded, 0 load failures.
 
-- [ ] **Step 5: Record the red baseline**
+- [x] **Step 5: Record the red baseline**
 
 Capture, on the reinstalled tree: entrypoint PHP 8 rejection, `composer prohibits php 8.2 --locked` blockers, vendor parse failures with per-package counts, application parse failures, and application plus vendor runtime deprecations.
 
 Expected from the pre-reinstall measurement, to be re-confirmed: 10 dependency blockers; 32 optional-before-required declarations across 26 files producing 24 distinct application deprecations; 8 vendor deprecations in `think-orm` and `Pimple`; 0 application parse failures. Vendor parse failures were 25 across `phpoffice/phpexcel` (19), `topthink/think-image` (2), `overtrue/wechat` (1), `doctrine/cache` (1), `nesbot/carbon` (1), and `symfony/var-dumper` tests (1). The 19 `phpexcel` failures should disappear after reinstall, because that package is in neither the lock nor `installed.json`, is referenced by no autoload map, and appears only in comments in `crmeb/services/SpreadsheetExcelService.php`.
 
-- [ ] **Step 6: Recompute the lock delta and compare**
+- [x] **Step 6: Recompute the lock delta and compare**
 
 Recompute the targeted update with `--with-all-dependencies --minimal-changes` on the clean tree and diff it against the 10-update, 3-addition, 0-removal delta recorded in the design. Any deviation stops the change for review.
 
