@@ -1,3 +1,21 @@
+# 天俪商城
+
+> **这是 CRMEB v6.0.0 的私有化部署仓库，不是上游发行版。** 基线为上游 `cb355bab`（CRMEB-KY v6.0.0）。
+>
+> **本部署与上游的差异：**
+>
+> | 项目 | 上游 | 本部署 |
+> | --- | --- | --- |
+> | PHP | 7.1 ~ 7.4 | **8.2**（`php:8.2-fpm-bookworm`，JIT 关闭） |
+> | 应用代码交付 | 绑定挂载 | 构建进镜像（改代码需重建镜像） |
+> | 进程管理 | 宿主 Supervisor | 容器内前台 Supervisor |
+> | 部署入口 | `docker run ...crmebky:latest` | `help/docker/docker-compose.optimized.yml` |
+>
+> **启动、验证与回滚命令见 [`help/docker/README.md`](help/docker/README.md)。** 本文件下方是上游原始说明，其中的运行环境、PHP 版本和 docker 一键命令**不适用于本部署**，仅作功能与技术栈参考保留。
+>
+> 当前仅用于本地开发和验收。完成生产安全加固、TLS 和备份恢复演练之前不得用于公网生产，遗留阻塞项见 `help/docker/README.md` 的「已知问题」。
+
+---
 
 <div align="center" >
     <img src="https://www.crmeb.com/static/images/dark_logo.png" />
@@ -94,6 +112,9 @@ CRMEB开源商城系统代码100%开源，基于 **Apache-2.0协议** 免费商�
 ---
 
 ### docker一键体验
+
+> ⚠️ 以下上游镜像与本部署无关，运行它得到的是 PHP 7.4 的上游演示环境，**不包含本仓库的任何改动**。本部署请用 `help/docker/docker-compose.optimized.yml`，见 [`help/docker/README.md`](help/docker/README.md)。
+
 ```
 # 拉取并运行CRMEB Docker镜像
 docker run -d --name crmeb -p 8080:80 ccr.ccs.tencentyun.com/crmebky_php/crmebky:latest
@@ -189,6 +210,7 @@ APP下载：http://app.crmeb.cn/bzv （苹果手机直接在APP Store里搜索CR
 
 ###  🔐 **运行环境**
 
+> ⚠️ 以下是上游要求，**不是本部署的实际环境**。本部署运行 PHP 8.2，容器内已装好扩展与 Supervisor，无需按此表配置宿主环境。见 [`help/docker/README.md`](help/docker/README.md)。
 
 | **运行环境**         | **要求**                                                                 |
 |------------------|------------------------------------------------------------------------|
