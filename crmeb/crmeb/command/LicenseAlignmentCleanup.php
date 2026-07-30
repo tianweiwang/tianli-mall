@@ -56,7 +56,7 @@ class LicenseAlignmentCleanup extends Command
                     ->where('id', 605)
                     ->update([
                         'menu_name' => '系统信息',
-                        'url' => '/system/maintain/info',
+                        'menu_path' => '/system/maintain/info',
                         'unique_auth' => 'system-maintain-info',
                         'mark' => '系统信息',
                     ]),
