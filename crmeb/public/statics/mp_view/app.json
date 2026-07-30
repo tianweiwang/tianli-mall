@@ -250,6 +250,5 @@
     "base-money": "/components/BaseMoney",
     "base-tag": "/components/BaseTag",
     "base-drawer": "/components/tuiDrawer/tui-drawer"
-  },
-  "sitemapLocation": "sitemap.json"
+  }
 }

@@ -130,7 +130,9 @@ Active management, H5, and mini-program production assets SHALL implement the sa
 #### Scenario: Management, H5, and mini-program assets are rebuilt
 - **WHEN** management source and uni-app source are built and synchronized for release
 - **THEN** management entry manifests SHALL reference the completed new management build
-- **THEN** fresh H5 and `mp-weixin` trees SHALL be produced by one fixed official HBuilderX/uni-app compiler version with its exact publish commands recorded
+- **THEN** fresh H5 and `mp-weixin` trees SHALL be produced by one fixed official HBuilderX/uni-app compiler version with its compiler-plugin versions and hashes plus exact build commands recorded
+- **THEN** HBuilderX 5.15 H5 publishing SHALL use `publish web` and the verified `unpackage/dist/build/web` output; when publishing is blocked solely by tracked DCloud AppID membership, the same installation's official local `uniapp-cli` compiler MAY produce that output with explicit production input/output/platform variables and no upload
+- **THEN** the tracked uni-app manifest SHALL remain unchanged
 - **THEN** only the H5 `static/` tree SHALL be mirrored to `crmeb/public/static` and only its `index.html` SHALL replace `crmeb/public/index.html`
 - **THEN** the complete verified `mp-weixin` tree SHALL be mirrored to `crmeb/public/statics/mp_view`
 - **THEN** only stale generated assets absent from each verified build SHALL be removed

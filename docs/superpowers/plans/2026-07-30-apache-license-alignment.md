@@ -695,29 +695,81 @@ git commit -m "chore: remove authorization metadata from installs"
 - Modify: `crmeb/public/index.html`
 - Modify/Create/Delete: `crmeb/public/static/**` according to a fresh `template/uni-app` H5 build manifest
 - Modify/Create/Delete: `crmeb/public/statics/mp_view/**` according to a fresh `template/uni-app` `mp-weixin` build manifest
-- Modify: `crmeb/public/install/crmeb.sql` only for exact generated-file inventory differences produced by the verified builds
+- Modify: `crmeb/public/install/crmeb.sql` only for the named deleted authorization/telemetry and support-image inventory rows; do not broadly rewrite the legacy generated-client browsing inventory
 - Modify: `openspec/changes/align-apache-license-and-disable-vendor-auth/tasks.md`
 
-- [ ] **Step 1: Build the management client, H5, and mini-program**
+- [x] **Step 1: Build the management client, H5, and mini-program**
 
-Run:
+Use this exact Linux/amd64 admin toolchain. The tag is informational; the digest is the executable pin:
 
 ```powershell
-npm ci
-npm run build
+$nodeImage = 'node:20.19.4-bookworm-slim@sha256:6db5e436948af8f0244488a1f658c2c8e55a3ae51ca2e1686ed042be8f25f70a'
+$adminSource = (Resolve-Path 'template/admin').Path
+docker run --rm --platform linux/amd64 --mount "type=bind,source=$adminSource,target=/workspace" --workdir /workspace $nodeImage sh -lc 'node --version && npm --version && npm ci && npm run build'
 ```
 
-Working directory: `template/admin`.
+The pinned image reports Node `v20.19.4`, npm `10.8.2`, and Debian 12 (`bookworm`). Do not substitute a host Node installation or an unpinned moving tag. `npm ci` SHALL consume the tracked lockfile, and the build SHALL run from `template/admin` without editing tracked source.
 
 Expected: production build exits `0` and creates `template/admin/dist/index.html` plus hashed assets. The build must not edit source files.
 
-Build `template/uni-app` for both H5 and `mp-weixin` with one fixed official HBuilderX/uni-app compiler version and record that version and the exact publish commands. This source tree has no npm build script, so do not invent or commit a replacement package manifest. The expected ignored outputs are `template/uni-app/unpackage/dist/build/h5` and `template/uni-app/unpackage/dist/build/mp-weixin`; H5 must contain `index.html` and `static/`, while the mini-program must contain `app.js`, `app.json`, `project.config.json`, and the compiled page files. If the official compiler cannot produce both complete builds, stop this task as incomplete; do not patch minified output to make the verifier pass.
+Build `template/uni-app` for both H5 and `mp-weixin` with one fixed official HBuilderX/uni-app compiler version and record that version, the installed compiler-plugin versions and hashes, and the exact commands. For HBuilderX 5.15, use `cli publish web --project <repository-external-copy>` and `cli publish mp-weixin --project <repository-external-copy> --upload false`; `publish web` is the supported H5 command. If those wrappers are blocked solely because the logged-in account is not a member of the tracked DCloud AppID, use that same installation's official `plugins/uniapp-cli/bin/uniapp-cli.js` with `NODE_ENV=production`, explicit `UNI_INPUT_DIR`, `UNI_OUTPUT_DIR`, `UNI_PLATFORM=h5` or `mp-weixin`, and `UNI_MINIMIZE=true`; this fallback performs no upload or remote publishing call. The external copy must exclude prior `node_modules`, `unpackage`, and `.hbuilderx` output and otherwise match tracked source; never modify the tracked `manifest.json`. This source tree has no npm build script, so do not invent or commit a replacement package manifest. The expected outputs are `<copy>/unpackage/dist/build/web` and `<copy>/unpackage/dist/build/mp-weixin`; H5 must contain `index.html` and `static/`, while the mini-program must contain `app.js`, `app.json`, `project.config.json`, and the compiled page files. If the official compiler cannot produce both complete builds, stop this task as incomplete; do not patch minified output to make the verifier pass.
 
-- [ ] **Step 2: Synchronize through a validated staging directory**
+- [x] **Step 2: Synchronize through a validated staging directory**
 
-Resolve all absolute paths. Assert the admin source equals `H:\天俪商城\CRMEB\template\admin\dist` and destination equals `H:\天俪商城\CRMEB\crmeb\public\admin`; assert the H5 source equals `H:\天俪商城\CRMEB\template\uni-app\unpackage\dist\build\h5`; assert the mini-program source equals `H:\天俪商城\CRMEB\template\uni-app\unpackage\dist\build\mp-weixin` and destination equals `H:\天俪商城\CRMEB\crmeb\public\statics\mp_view`. Copy each completed build to a separate temporary sibling staging directory and verify its required entry files. Mirror the complete admin and mini-program staging trees into their exact destinations. For H5, mirror only the staged `static/` tree to `crmeb/public/static/` and replace only `crmeb/public/index.html`; never mirror an H5 root over `crmeb/public/`. Remove only destination assets absent from the corresponding verified build; never delete a computed, unresolved, workspace-root, or user-data path.
+Resolve all absolute paths. Assert the admin source equals `H:\天俪商城\CRMEB\template\admin\dist` and destination equals `H:\天俪商城\CRMEB\crmeb\public\admin`; assert the H5 source equals the validated repository-external copy's `unpackage\dist\build\web`; assert the mini-program source equals that copy's `unpackage\dist\build\mp-weixin` and destination equals `H:\天俪商城\CRMEB\crmeb\public\statics\mp_view`. Copy each completed build to a separate temporary sibling staging directory and verify its required entry files. Mirror the complete admin and mini-program staging trees into their exact destinations. For H5, mirror only the staged `static/` tree to `crmeb/public/static/` and replace only `crmeb/public/index.html`; never mirror an H5 root over `crmeb/public/`. Remove only destination assets absent from the corresponding verified build; never delete a computed, unresolved, workspace-root, or user-data path.
 
-Expected: old `app.dc1bf06a.js` and `chunk-55fbd112.733791df.js` are absent if the new admin entry manifest no longer references them; the H5 and `mp_view` trees have no compiled fallback to `/static/images/support.png`; all three source/published support images are absent; and no minified file is hand-edited. Update fresh-install file inventory only for exact added, removed, renamed, or rehashed files proven by the three build-manifest comparisons.
+Expected: old `app.dc1bf06a.js` and `chunk-55fbd112.733791df.js` are absent if the new admin entry manifest no longer references them; the H5 and `mp_view` trees have no compiled fallback to `/static/images/support.png`; all three source/published support images are absent; and no minified file is hand-edited. The legacy `system_file_info` browsing inventory already predates the pre-build hashed client trees, so do not broadly regenerate it here; only the named authorization/telemetry and support-image rows from Task 7 remain in scope.
+
+#### Final build and publication evidence (2026-07-31)
+
+This snapshot describes the accepted uncommitted release-asset worktree at `f2014a83`. Tree manifests hash UTF-8 `relative-path|bytes|file-sha256` lines in case-sensitive relative-path order, joined with LF and no trailing LF.
+
+| Build input | Tracked files | Missing | SHA-256 differences | Source manifest |
+| --- | ---: | ---: | ---: | --- |
+| Admin external copy | 1,072 | 0 | 0 | `f06194951553ad04c2e8cfbb6f624c94fe5b4450a449bc2ef1e32082dfb0fa04` |
+| uni-app external copy | 533 | 0 | 0 | `8a4bc63a90d562e4eddc29c560298c94cd3c39a6df91cf0cc81577ad3ca9f309` |
+
+The repository and external-copy `manifest.json` SHA-256 are both `8EFBC786766BBFFB86008216DA140EBD58E75569719D72DDD354DF32D1FA2AE3`.
+
+| Surface | Published scope | Files | Bytes | Tree manifest SHA256 |
+| --- | --- | ---: | ---: | --- |
+| Admin | `crmeb/public/admin` | 596 | 40,841,733 | `ea264e4650c50ce458a86b947d1b167069a6fd86f4e074094c4d258a6bce608d` |
+| H5 publication subset | `crmeb/public/index.html` plus `crmeb/public/static` | 220 | 8,957,634 | `cc07ac3948f2e293ea03541d7a9a1b38a2cc239e33ce1d5e3aac21d37ab75a31` |
+| mp-weixin | `crmeb/public/statics/mp_view` | 1,215 | 7,980,678 | `512b6aa957055fbd242a4a1cc5a7f610f5a6c9ee90f7206aa9fb2233182e3685` |
+
+The complete H5 output contains 333 files and 10,186,674 bytes with tree SHA-256 `b38da121ba126389e8732a45b270e59700615196f3bbb03a43fb8b7cc147d986`.
+
+| Tool | Fixed value | SHA-256 evidence |
+| --- | --- | --- |
+| Admin Node image | Linux/amd64, Node `v20.19.4`, npm `10.8.2`, Debian bookworm | image digest `sha256:6db5e436948af8f0244488a1f658c2c8e55a3ae51ca2e1686ed042be8f25f70a` |
+| HBuilderX archive | `5.15.2026070915`; `cli ver` reports the same release | archive `D28A0A25D0EAD3FF0891DEE4FDA15A987E9891D217F0BE32D08B407FDB77F8C6`; `cli.exe` `B9A74664E28AA8646E6ADD7A9CC17DBA74FEB3AE8F9421DD38C52D90E9DED55F` |
+| HBuilderX bundled Node | `v22.22.2` | `AE1A50511BE58E987483FDBC12125407443926D2D394669ADE2352776E920DD3` |
+| `uniapp-cli` | `5.15.2026070717.2935` | package `339D340441B13F0C7D48E52BFCBA28C0135E6D9990800DCD02C8A406444023DD`; entrypoint `0C71853CB91EFFBEAB019C4BB05660FD171764E84C42EE7046EE28BAB0E4320C` |
+| `@dcloudio/vue-cli-plugin-uni` | `2.0.2-alpha-5010220260604002` | package `CEAC75CE4D4BC3B4D0EA07AEF95C13095D1B7259288F0A44B540CD2B41E5BD13` |
+| `uni_helpers` / Sass / Stylus helpers | `3.0.1-2026052919` / `0.1.9` / `1.0.4` | package hashes `BA46A7BC51EFB11B3D1287C47B3AB52A58BEA1A7BD0252529A18BBD1383E236C`, `41518FF38BFA0457AB4B2E7A42E00DD4600A663CDC4E703EE0C0F1F3CF975674`, and `C60BE2921A6D37EC71B08122D4C9BE168B0AB326F3B98EA4AA8665922CEA3ABC` |
+
+The HBuilderX publish wrappers were blocked by tracked DCloud AppID membership, so both uni-app targets used that installation's official local `uniapp-cli` entrypoint with `NODE_ENV=production`, explicit `UNI_INPUT_DIR`, `UNI_OUTPUT_DIR`, `UNI_PLATFORM=h5` or `mp-weixin`, and `UNI_MINIMIZE=true`; no upload occurred and tracked `manifest.json` remained unchanged. The retained invocation contract is:
+
+```powershell
+docker run --rm --platform linux/amd64 --mount "type=bind,source=<external-admin-copy>,target=/workspace" --workdir /workspace node:20.19.4-bookworm-slim@sha256:6db5e436948af8f0244488a1f658c2c8e55a3ae51ca2e1686ed042be8f25f70a sh -lc 'node --version && npm --version && npm ci && npm run build'
+
+$env:NODE_ENV = 'production'
+$env:UNI_INPUT_DIR = '<external-uni-app-copy>'
+$env:UNI_OUTPUT_DIR = '<validated-output>\web'
+$env:UNI_PLATFORM = 'h5'
+$env:UNI_MINIMIZE = 'true'
+& '<HBuilderX>\plugins\node\node.exe' '<HBuilderX>\plugins\uniapp-cli\bin\uniapp-cli.js'
+
+$env:UNI_OUTPUT_DIR = '<validated-output>\mp-weixin'
+$env:UNI_PLATFORM = 'mp-weixin'
+& '<HBuilderX>\plugins\node\node.exe' '<HBuilderX>\plugins\uniapp-cli\bin\uniapp-cli.js'
+```
+
+The retained Node 20 Admin output matches the Admin publication byte-for-byte. Three retained H5 trees match each other byte-for-byte, and their `index.html` plus `static/` publication subset matches the public tree. The first retained `mp-weixin` build matches publication byte-for-byte. A second build has tree SHA-256 `324f1786f5fe532b28f457f909b4c93c48404ee793d25d0359031ddf8db172c3`; 1,207 files match byte-for-byte and eight JSON files differ only in object-key order. Structured JSON normalization reports semantic differences `0`. A second independent Admin build and byte-identical second mini-program build are not claimed.
+
+Both running containers contain the same 2,031 published paths and match the worktree by SHA-256 with zero differences. Nginx runs clean BuildKit image `sha256:585abdc33f0f355eb71b6de4faf57a52277a4c90df44df5ea5936dd8dbb4fd13`. The running PHP container was created from `sha256:425ddbcdeeca68e7f53bc85b636db452d87d5ac440c2b9440c373df9e826c55f` and then received the verified publication tree; the current `tianli/crmeb-php:acceptance` tag points to snapshot image `sha256:88029feddbd9c4f081277ce9b256341be5ada52eb8727aa413d80c3e965b3e80`. The rollback tag is `tianli/crmeb-php:pre-client-publish-20260731` at `sha256:425ddbcdeeca68e7f53bc85b636db452d87d5ac440c2b9440c373df9e826c55f`.
+
+Production deployment must build both PHP and Nginx images cleanly from the same committed release tree, recreate both containers, clear ThinkPHP template/runtime caches, and restart PHP so OPcache cannot retain an older Admin entry manifest. A runtime container snapshot is not a substitute for that clean image build.
 
 - [ ] **Step 3: Run complete static, syntax, OpenSpec, and runtime checks**
 
@@ -735,7 +787,9 @@ pwsh -NoProfile -File help/docker/verify-optimized.ps1
 
 Expected: all commands exit `0`; source and active published assets contain no commercial authorization or forced CRMEB fallback; existing PHP 8.2/runtime acceptance remains green.
 
-- [ ] **Step 4: Perform authenticated browser acceptance**
+Final focused results: license tests `7/7`, compliance areas `6/6`, network-isolated upgrade probe `status=pass`, PHP 8.2 syntax `1,109/1,109`, strict OpenSpec validation passed, and two final cleanup runs removed zero additional named records. This step remains open because the separate PHP 8.2 dependency baseline is not green: `verify-php82.ps1 -Mode Integrity` reports 54 `composer.lock`/installed-vendor mismatches. The unrestricted script invocation also exceeded 244 seconds, and `verify-optimized.ps1` requires an explicit `SnapshotManifest`. Those PHP 8.2/help/docker changes are outside this publication commit and were not modified or staged.
+
+- [x] **Step 4: Perform authenticated browser acceptance**
 
 With the local stack running, log in and verify:
 
@@ -746,9 +800,42 @@ With the local stack running, log in and verify:
 5. Cross-Version Upgrade overview, backup status, progress, and rollback-version list remain locally reachable.
 6. Storefront homepage still shows the restored demo products and returns business `status=200` for copyright, theme, home-layout, and language bootstrap APIs.
 
-- [ ] **Step 5: Compare data and upload evidence**
+Browser acceptance completed in one authenticated automation session. Nginx request logs independently retain the HTTP timestamps, routes, response codes, referrers, and browser user agent; DOM/screenshots and console capture remain in the task transcript. No standalone HAR was persisted.
+
+| Record | Current value |
+| --- | --- |
+| Base URL | `http://127.0.0.1:8011/` |
+| Administrator role/account label | Local super-administrator session; credential omitted |
+| Started/completed time and timezone | 2026-07-31 02:44:53 through 03:06:05, Asia/Shanghai |
+| Browser/version | `HeadlessChrome/150.0.0.0` |
+| Network capture or exported HAR | Browser request capture plus `crmeb_nginx` access/error logs; no standalone HAR persisted |
+| Screenshots/console log | Task-transcript DOM/screenshot evidence; final console errors `0` |
+
+| Browser check | Status | Required evidence |
+| --- | --- | --- |
+| Dashboard metrics and authorization-domain denylist | Pass | Dashboard header/order/user/rank returned HTTP 200; no authorization-domain request; former `check_auth`, `auth_apply`, and `auth` routes returned HTTP 404 |
+| System Information diagnostics and copyright read/save | Pass | PHP 8.2.32/MySQL 8.0.45 diagnostics visible; copyright GET/POST returned HTTP 200 |
+| Configured and empty copyright states | Pass | Configured value rendered, then empty values were restored and UI showed `暂未配置` without a CRMEB fallback |
+| Online Upgrade default-disabled state | Pass | Only `/adminapi/system/upgrade/capability` was requested by the page and returned `remote_enabled=false` |
+| Local cross-version overview/backup/progress/rollback | Pass | Overview, pending, SQL, backup status, progress, and rollback-list APIs returned business `status=200` without remote login |
+| Storefront demo products and four bootstrap APIs | Pass | Three demo products visible; copyright, theme, home-layout, and language bootstrap APIs returned business `status=200` |
+
+- [x] **Step 5: Compare data and upload evidence**
 
 Recompute the five business table digests and upload snapshot from Task 7. Expected: exact equality with the pre-change evidence. Also record product count and homepage product API count so a visually empty homepage cannot pass only on database presence.
+
+The post-cleanup comparison is strictly equal to the MySQL 8.0.45 baseline:
+
+| Data | Rows | Normalized dump bytes | SHA-256 |
+| --- | ---: | ---: | --- |
+| `eb_store_product` | 4 | 2,422 | `e6b937bf7f53dee9141f8c87adf5a49c211370ed43d59600eddb0a11d55ff7cf` |
+| `eb_store_order` | 0 | 0 | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| `eb_user` | 2 | 532 | `1ab350918710961180039902c764d4eb208584006d72a86a26713ae8965bff3f` |
+| `eb_system_attachment` | 135 | 33,735 | `0a7f282e3d228cc9c3de9a0d92f7315db80d89353636c7a237024a89ca3a97ff` |
+| `eb_diy` | 6 | 242,946 | `13d1d76858b0cd062d85bd5abd3f7293a60f28f22be45d9f4b07da9937bcc7cc` |
+| Visible products (`is_show=1 AND is_del=0`) | 3 | 1,778 | `f4b5e25d90aa0e77f04dbb9e85c5c53cfee91c67102c7f8616389beed351a5d1` |
+
+Uploads remain 174 files and 21,664,281 bytes; comparison by relative path, size, and per-file SHA-256 reports zero differences. The storefront product API and visible homepage both return the same three demo products.
 
 - [ ] **Step 6: Mark OpenSpec tasks complete and commit artifacts**
 
