@@ -382,6 +382,45 @@ workerman                       RUNNING   pid 14, uptime 1:02:03
         Assert-Throws { Write-AcceptanceSnapshotManifest -Manifest $manifest -OutputDirectory $outputDirectory } "already exists"
         Assert-True (@(Get-ChildItem -LiteralPath $outputDirectory -Filter "*.tmp" -File).Count -eq 0) "Expected no temporary manifest file"
     }
+
+    $verifierPath = Join-Path $PSScriptRoot "../verify-optimized.ps1"
+    $verifierSource = Get-Content -LiteralPath $verifierPath -Raw
+
+    Invoke-Test "requires an explicit snapshot manifest without hard-coded demo counts" {
+        Assert-True ($verifierSource -match '(?s)\[Parameter\(Mandatory\)\]\s*\[string\]\$SnapshotManifest') "Expected mandatory SnapshotManifest parameter"
+        Assert-False ($verifierSource -match '\$ExpectedProducts|\$ExpectedUsers|\$ExpectedUploads') "Expected hard-coded demo-count parameters to be removed"
+        Assert-False ($verifierSource -match '\(\s*if\s*\(') "Expected conditional details to be assigned before function arguments"
+        Assert-True ($verifierSource -match 'Compare-AcceptanceSnapshot') "Expected snapshot comparison"
+    }
+
+    Invoke-Test "checks facts inside the deployed PHP container" {
+        Assert-True ($verifierSource -match 'Test-PhpRuntimeFacts') "Expected deployed PHP fact validation"
+        Assert-True ($verifierSource -match 'jitBufferSize') "Expected JIT buffer validation"
+        Assert-True ($verifierSource -match 'bcmath.+curl.+fileinfo.+gd') "Expected required extension list"
+    }
+
+    Invoke-Test "samples Supervisor twice and scans new runtime logs" {
+        Assert-True ($verifierSource -match 'Compare-SupervisorSnapshots') "Expected Supervisor snapshot comparison"
+        Assert-True ($verifierSource -match '(?s)\$initialProcessProblems\s*=\s*@\(\s*@\(.+?Where-Object.+?\}\s*\)') "Expected process problems to remain an array under strict mode"
+        Assert-True ($verifierSource -match 'Start-Sleep\s+-Seconds\s+5') "Expected a bounded process sampling interval"
+        Assert-True ($verifierSource -match '(?s)logs.+--since') "Expected logs bounded by acceptance start time"
+        Assert-True ($verifierSource -match 'Find-RuntimeLogViolation') "Expected runtime log classification"
+    }
+
+    Invoke-Test "performs real upload I/O with guaranteed cleanup" {
+        Assert-True ($verifierSource -match 'mktemp') "Expected a unique upload probe file"
+        Assert-True ($verifierSource -match '(?s)--user.+www-data') "Expected upload I/O as www-data"
+        Assert-True ($verifierSource -match '(?s)trap.+rm') "Expected shell cleanup trap"
+    }
+
+    Invoke-Test "requires representative HTTP routes and exact WebSocket upgrades" {
+        foreach ($path in @('/', '/admin/', '/pages/index/index', '/api/index')) {
+            Assert-True ($verifierSource.Contains($path)) "Expected route check for $path"
+        }
+        Assert-True ($verifierSource -match 'notice\s*=\s*101') "Expected notice WebSocket status 101"
+        Assert-True ($verifierSource -match 'msg\s*=\s*101') "Expected msg WebSocket status 101"
+        Assert-True ($verifierSource -match 'Test-RouteStatuses') "Expected exact route-status validation"
+    }
 } finally {
     Remove-Item -LiteralPath $temporaryRoot -Recurse -Force -ErrorAction SilentlyContinue
 }
