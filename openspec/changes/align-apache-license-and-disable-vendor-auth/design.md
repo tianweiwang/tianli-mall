@@ -45,6 +45,8 @@ The former commercial-authorization page SHALL become a local system-information
 
 The existing `GET /copyright` and `POST /copyright` routes, status envelope, response field names, configuration keys, and stored values SHALL remain compatible. Clients SHALL render configured local copyright text or image. Empty or unavailable configuration SHALL hide the branding region or use an already configured local site name/logo; it SHALL NOT fall back to CRMEB support text, links, or images.
 
+The runtime route metadata and fresh-install route metadata SHALL describe these operations neutrally as `读取版权信息` and `保存版权信息` without changing their URLs, methods, response fields, or stored values.
+
 Menu metadata for ID `605` SHALL be updated in place to the neutral system-information title, route, and permission so existing role references retain the same menu ID. Local copyright records SHALL NOT be deleted or renamed as authorization metadata.
 
 ### Gate every official remote upgrade operation
@@ -55,7 +57,7 @@ Menu metadata for ID `605` SHALL be updated in place to the neutral system-infor
 
 `GET /system/upgrade/capability` SHALL be a local authenticated endpoint returning business `status=200` and a boolean `data.remote_enabled`. The management page SHALL call this endpoint first and SHALL stop before all other online-upgrade calls when disabled.
 
-When explicitly enabled, remote authentication and token lookup SHALL be initialized lazily. Every official endpoint SHALL come from configuration and SHALL use HTTPS; invalid or missing HTTPS configuration SHALL fail before network access. Existing official authentication, signature, and package-eligibility decisions SHALL remain enforced.
+When explicitly enabled, remote authentication and token lookup SHALL be initialized lazily. Every official endpoint SHALL come from configuration and SHALL use HTTPS; invalid or missing HTTPS configuration SHALL fail before network access and SHALL record a management log. Existing official authentication, signature, and package-eligibility decisions SHALL remain enforced.
 
 ### Keep local upgrade operations independent
 
@@ -87,7 +89,7 @@ Synchronization SHALL remove only stale generated assets absent from the corresp
 
 ## Error Handling
 
-- Disabled remote upgrade, invalid HTTPS configuration, authentication failure, and official eligibility failure SHALL remain distinguishable outcomes.
+- Disabled remote upgrade, invalid HTTPS configuration, authentication failure, and official eligibility failure SHALL remain distinguishable outcomes; rejecting invalid HTTPS configuration SHALL record a management log before returning the error.
 - Copyright configuration failure SHALL NOT create or display a fabricated CRMEB fallback.
 - Cleanup failure SHALL roll back its database transaction; repeated successful cleanup SHALL be a no-op for already removed authorization records.
 - Build or synchronization failure SHALL preserve the previous published directory and SHALL NOT be reported as released.

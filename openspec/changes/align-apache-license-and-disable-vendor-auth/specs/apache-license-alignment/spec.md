@@ -50,6 +50,7 @@ The application SHALL retain local environment diagnostics and local copyright t
 #### Scenario: Local copyright is configured
 - **WHEN** an administrator reads or saves local copyright text or image
 - **THEN** the existing `GET /copyright` and `POST /copyright` routes SHALL remain available
+- **THEN** their route metadata SHALL read `读取版权信息` and `保存版权信息`
 - **THEN** the existing configuration keys and stored values SHALL remain unchanged
 - **THEN** the existing status envelope and response field names SHALL remain compatible
 - **THEN** configured values SHALL be rendered by their existing management and storefront consumers
@@ -74,6 +75,7 @@ Official remote upgrade access SHALL be disabled by default, SHALL perform no to
 - **THEN** token lookup and authentication SHALL occur lazily only when a remote operation is requested
 - **THEN** every official endpoint SHALL be read from configuration and SHALL use HTTPS
 - **THEN** invalid or missing HTTPS configuration SHALL fail before network access
+- **THEN** rejecting invalid or missing HTTPS configuration SHALL record a management log
 - **THEN** existing official authentication, signature, and package-eligibility decisions SHALL remain enforced
 
 #### Scenario: Online-upgrade page is opened while disabled

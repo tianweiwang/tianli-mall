@@ -353,6 +353,7 @@ Expected: syntax and focused verifier pass; old endpoints resolve to 404 once ru
 
 **Files:**
 - Move: `template/admin/src/pages/system/auth/index.vue` to `template/admin/src/pages/system/info/index.vue`
+- Modify: `crmeb/app/adminapi/route/common.php`
 - Modify: `template/admin/src/router/modules/system.js`
 - Modify: `template/admin/src/components/copyright/index.vue`
 - Modify: `template/admin/src/pages/account/login/index.vue`
@@ -364,6 +365,8 @@ Expected: syntax and focused verifier pass; old endpoints resolve to 404 once ru
 - Modify: `template/uni-app/pages/users/login/index.vue`
 - Delete: `template/uni-app/static/images/support.png`
 - Modify: `template/admin/README.md`
+- Modify: `template/admin/src/styles/font/iconfont.json`
+- Modify: `template/admin/src/styles/font/demo_index.html`
 
 - [ ] **Step 1: Rewrite the former authorization page as local system information**
 
@@ -403,6 +406,8 @@ Use this frontend route contract:
 
 The data cleanup in Task 7 updates menu ID `605` in place, so existing roles continue referencing the same menu ID. Update `template/admin/README.md` from `auth # 商业授权` to `info # 系统信息`.
 
+Keep the existing copyright URLs and methods, but change the runtime route descriptions to `读取版权信息` and `保存版权信息`. Task 7 applies the same neutral descriptions to fresh-install SQL.
+
 - [ ] **Step 3: Render copyright only when configured**
 
 Apply these exact empty-state rules:
@@ -424,6 +429,7 @@ Run:
 pwsh -NoProfile -File help/license-alignment/verify-license-alignment.ps1 -Area Branding
 rg -n "商业授权|authorize\.crmeb\.net|shop\.crmeb\.net|CRMEB提供技术支持|static/images/support\.png" template/admin/src template/uni-app/pages
 Test-Path template/uni-app/static/images/support.png
+php -l crmeb/app/adminapi/route/common.php
 ```
 
 Expected: focused verifier passes; the exact search returns no runtime fallback/authorization match; `Test-Path` returns `False`. Source-header copyright/author attribution is intentionally outside this denylist.
@@ -431,7 +437,7 @@ Expected: focused verifier passes; the exact search returns no runtime fallback/
 - [ ] **Step 5: Commit the system information and branding changes**
 
 ```powershell
-git add -- template/admin/src/pages/system/auth/index.vue template/admin/src/pages/system/info/index.vue template/admin/src/router/modules/system.js template/admin/src/components/copyright/index.vue template/admin/src/pages/account/login/index.vue template/admin/src/pages/kefu/index.vue template/admin/src/pages/kefu/appChat/index.vue template/uni-app/pages/index/index.vue template/uni-app/pages/annex/special/index.vue template/uni-app/pages/user/index.vue template/uni-app/pages/users/login/index.vue template/uni-app/static/images/support.png template/admin/README.md
+git add -- crmeb/app/adminapi/route/common.php template/admin/src/pages/system/auth/index.vue template/admin/src/pages/system/info/index.vue template/admin/src/router/modules/system.js template/admin/src/components/copyright/index.vue template/admin/src/pages/account/login/index.vue template/admin/src/pages/kefu/index.vue template/admin/src/pages/kefu/appChat/index.vue template/admin/src/styles/font/iconfont.json template/admin/src/styles/font/demo_index.html template/uni-app/pages/index/index.vue template/uni-app/pages/annex/special/index.vue template/uni-app/pages/user/index.vue template/uni-app/pages/users/login/index.vue template/uni-app/static/images/support.png template/admin/README.md
 git diff --cached --check
 git commit -m "refactor: keep local system info without forced branding"
 ```
@@ -496,13 +502,14 @@ protected function getRemoteUrl(string $name): string
 {
     $url = (string)Config::get('upgrade.remote.' . $name, '');
     if ($url === '' || strtolower((string)parse_url($url, PHP_URL_SCHEME)) !== 'https') {
+        Log::warning('Official remote upgrade endpoint rejected', ['name' => $name, 'url' => $url]);
         throw new AdminException('官方在线升级服务地址必须使用 HTTPS');
     }
     return $url;
 }
 ```
 
-Add one idempotent lazy initializer that reads `.version`, request host, timestamp, and cached token only after `assertRemoteEnabled()`. It authenticates only when the token is absent. Remove all `http://` URL constants.
+Import the existing application `Log` facade for the management log. Add one idempotent lazy initializer that reads `.version`, request host, timestamp, and cached token only after `assertRemoteEnabled()`. It authenticates only when the token is absent. Remove all `http://` URL constants.
 
 - [ ] **Step 3: Gate every remote operation before HTTP**
 
@@ -584,7 +591,7 @@ php -l crmeb/app/adminapi/controller/UpgradeController.php
 php -l crmeb/app/adminapi/route/system.php
 ```
 
-Expected: probe passes construction, disabled message, HTTPS validation, and local cross-version overview; all PHP files report no syntax errors.
+Expected: probe passes construction, disabled message, HTTPS validation with one recorded warning for the rejected HTTP URL, and local cross-version overview; all PHP files report no syntax errors.
 
 - [ ] **Step 7: Commit only remote-upgrade files**
 
@@ -629,6 +636,8 @@ Remove:
 - file-tree and MD5 rows for `SystemAuthServices.php`, `SystemUpgradeClient.php`, `UpgradeService.php`, and `UpgradeOpenApiService.php`;
 - file-tree rows for `/public/static/images/support.png` and `/public/statics/mp_view/static/images/support.png`;
 - any `cert_crmeb` seed record if present.
+
+Update fresh-install route rows `127` and `128` in place to the neutral descriptions `读取版权信息` and `保存版权信息` without changing their URLs, methods, controllers, or actions.
 
 Update menu ID `605` in place to `/system/maintain/info` and `system-maintain-info`. Do not renumber unrelated SQL tuple IDs or rewrite the dump.
 

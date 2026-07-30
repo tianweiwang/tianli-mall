@@ -24,7 +24,7 @@
 
 - [ ] 4.1 Convert the former commercial-authorization page to local system information while retaining environment/directory diagnostics and the existing local copyright editor.
 - [ ] 4.2 Update menu ID `605` in place to the neutral system-information title, route, and permission so existing role ownership is preserved.
-- [ ] 4.3 Preserve the existing `/copyright` URLs, configuration keys, stored values, status envelope, and response field names.
+- [ ] 4.3 Preserve the existing `/copyright` URLs, configuration keys, stored values, status envelope, and response field names; update runtime and fresh-install route metadata to `读取版权信息` and `保存版权信息`.
 - [ ] 4.4 Remove forced CRMEB text, URL, and image fallbacks from management, login, customer-service, PC, H5, and mini-program consumers without adding a product-wide rebrand; delete the unused uni-app support image only after all source references are gone.
 - [ ] 4.5 Verify configured copyright text/image render and empty or failed configuration renders no CRMEB fallback.
 
@@ -35,7 +35,7 @@
 - [ ] 5.3 Gate every official authentication, list, agreement, status, package download, and log method before HTTP; disabled calls return business `status=400` with `官方在线升级服务未启用`.
 - [ ] 5.4 Add `GET /system/upgrade/capability` as a local authenticated endpoint returning business `status=200` and boolean `data.remote_enabled`.
 - [ ] 5.5 Make the management online-upgrade page capability-first and stop all other remote-upgrade calls while disabled.
-- [ ] 5.6 Read official endpoints only from configuration, require HTTPS, and preserve existing authentication, signature, and eligibility behavior when explicitly enabled.
+- [ ] 5.6 Read official endpoints only from configuration, require HTTPS, record a management log before rejecting invalid or missing HTTPS configuration, and preserve existing authentication, signature, and eligibility behavior when explicitly enabled.
 - [ ] 5.7 Verify under network isolation that disabled construction and calls read no cached token, contact no CRMEB domain, and return the specified local responses.
 
 ## 6. Independent local upgrades
