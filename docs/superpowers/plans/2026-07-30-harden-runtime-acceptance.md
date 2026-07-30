@@ -142,7 +142,7 @@ The Docker-side export command uses the container's own password environment and
 mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" --single-transaction --skip-comments --compact --skip-dump-date --no-tablespaces --set-gtid-purged=OFF --default-character-set=utf8mb4 --no-data crmeb
 ```
 
-Data export additionally uses `--no-create-info --hex-blob --order-by-primary --skip-extended-insert`.
+Data export additionally uses `--no-create-info --hex-blob --order-by-primary` and retains MySQL's default extended INSERT format so its bytes match the verified pre-upgrade canonical dump.
 
 - [ ] **Step 6: Import the authoritative baseline**
 

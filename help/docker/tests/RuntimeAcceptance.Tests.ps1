@@ -300,6 +300,88 @@ workerman                       RUNNING   pid 14, uptime 1:02:03
         $result = Test-RouteStatuses -Statuses @{ notice = 404 } -Expected @{ notice = 101 }
         Assert-False $result.Passed "WebSocket HTTP 404 was accepted"
     }
+
+    Invoke-Test "creates a normalized upload entry from a file" {
+        $uploadRoot = Join-Path $temporaryRoot "uploads-entry"
+        $uploadDirectory = Join-Path $uploadRoot "attach/catalog"
+        $null = New-Item -ItemType Directory -Path $uploadDirectory
+        $uploadPath = Join-Path $uploadDirectory "sample.txt"
+        [IO.File]::WriteAllText($uploadPath, "sample-content", [Text.UTF8Encoding]::new($false))
+
+        $entry = New-UploadSnapshotEntry -LiteralPath $uploadPath -RootPath $uploadRoot
+        Assert-True ($entry.relativePath -eq "attach/catalog/sample.txt") "Expected normalized relative upload path"
+        Assert-True ($entry.bytes -eq 14) "Expected exact upload byte count"
+        Assert-True ($entry.sha256 -eq (Get-FileHash -LiteralPath $uploadPath -Algorithm SHA256).Hash) "Expected exact upload digest"
+    }
+
+    Invoke-Test "imports and sorts the upload hash CSV" {
+        $csvPath = Join-Path $temporaryRoot "uploads.csv"
+        [IO.File]::WriteAllLines($csvPath, @(
+            '"RelativePath","Bytes","SHA256"',
+            ('"attach/z-last.jpg","8","' + ("F" * 64) + '"'),
+            ('"attach/a-first.png","4","' + ("E" * 64) + '"')
+        ), [Text.UTF8Encoding]::new($false))
+
+        $entries = @(Import-UploadHashCsv -LiteralPath $csvPath)
+        Assert-True ($entries.Count -eq 2) "Expected two imported upload entries"
+        Assert-True ($entries[0].relativePath -eq "attach/a-first.png") "Expected ordinal path sorting"
+        Assert-True ($entries[1].bytes -eq 8) "Expected numeric byte values"
+    }
+
+    Invoke-Test "rejects upload CSV files with unsupported columns" {
+        $csvPath = Join-Path $temporaryRoot "bad-uploads.csv"
+        [IO.File]::WriteAllText($csvPath, '"Path","Length","Hash"', [Text.UTF8Encoding]::new($false))
+        Assert-Throws { Import-UploadHashCsv -LiteralPath $csvPath } "RelativePath"
+    }
+
+    Invoke-Test "constructs a manifest from SQL digests and upload entries" {
+        $schemaPath = Join-Path $temporaryRoot "schema.sql"
+        $dataPath = Join-Path $temporaryRoot "data.sql"
+        [IO.File]::WriteAllText($schemaPath, "CREATE TABLE sample (id int);`n", [Text.UTF8Encoding]::new($false))
+        [IO.File]::WriteAllText($dataPath, "INSERT INTO sample VALUES (1);`n", [Text.UTF8Encoding]::new($false))
+        $entries = @(
+            [pscustomobject]@{ relativePath = "attach/b.jpg"; bytes = 8; sha256 = ("F" * 64) },
+            [pscustomobject]@{ relativePath = "attach/a.png"; bytes = 4; sha256 = ("E" * 64) }
+        )
+
+        $manifest = New-AcceptanceSnapshotManifest `
+            -DatabaseName "crmeb" `
+            -TableCount 157 `
+            -SchemaPath $schemaPath `
+            -DataPath $dataPath `
+            -DumpClient "mysqldump 8.0.45" `
+            -UploadEntries $entries `
+            -CreatedAtUtc ([DateTimeOffset]::Parse("2026-07-30T00:00:00Z"))
+
+        Assert-True ($manifest.database.schemaSha256 -eq (Get-FileHash -LiteralPath $schemaPath -Algorithm SHA256).Hash) "Expected schema digest"
+        Assert-True ($manifest.database.dataSha256 -eq (Get-FileHash -LiteralPath $dataPath -Algorithm SHA256).Hash) "Expected data digest"
+        Assert-True ($manifest.uploads.fileCount -eq 2) "Expected upload file count"
+        Assert-True ($manifest.uploads.totalBytes -eq 12) "Expected upload byte total"
+        Assert-True ($manifest.uploads.files[0].relativePath -eq "attach/a.png") "Expected sorted manifest uploads"
+    }
+
+    Invoke-Test "writes a valid manifest and refuses to overwrite it" {
+        $outputDirectory = Join-Path $temporaryRoot "manifest-output"
+        $schemaPath = Join-Path $temporaryRoot "write-schema.sql"
+        $dataPath = Join-Path $temporaryRoot "write-data.sql"
+        [IO.File]::WriteAllText($schemaPath, "schema", [Text.UTF8Encoding]::new($false))
+        [IO.File]::WriteAllText($dataPath, "data", [Text.UTF8Encoding]::new($false))
+        $manifest = New-AcceptanceSnapshotManifest `
+            -DatabaseName "crmeb" `
+            -TableCount 1 `
+            -SchemaPath $schemaPath `
+            -DataPath $dataPath `
+            -DumpClient "mysqldump 8.0" `
+            -UploadEntries @() `
+            -CreatedAtUtc ([DateTimeOffset]::Parse("2026-07-30T00:00:00Z"))
+
+        $manifestPath = Write-AcceptanceSnapshotManifest -Manifest $manifest -OutputDirectory $outputDirectory
+        Assert-True (Test-Path -LiteralPath $manifestPath -PathType Leaf) "Expected a written manifest"
+        $written = Read-AcceptanceSnapshot -LiteralPath $manifestPath
+        Assert-True ($written.database.tableCount -eq 1) "Expected readable written manifest"
+        Assert-Throws { Write-AcceptanceSnapshotManifest -Manifest $manifest -OutputDirectory $outputDirectory } "already exists"
+        Assert-True (@(Get-ChildItem -LiteralPath $outputDirectory -Filter "*.tmp" -File).Count -eq 0) "Expected no temporary manifest file"
+    }
 } finally {
     Remove-Item -LiteralPath $temporaryRoot -Recurse -Force -ErrorAction SilentlyContinue
 }
