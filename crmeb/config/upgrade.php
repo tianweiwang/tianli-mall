@@ -9,11 +9,15 @@
 // | Author: CRMEB Team <admin@crmeb.com>
 // +----------------------------------------------------------------------
 
+use think\facade\Env;
+
 /**
  * 升级配置
  * 版本列表按从小到大排列，升级时会按顺序执行
  */
 return [
+    'remote_enabled' => Env::get('upgrade.remote_enabled', false),
+
     // 最低版本要求 (只有达到此版本才能使用跨版本在线升级功能)
     // 因为跨版本在线升级功能是在 v6.0.0 版本开发的，低于此版本的用户无法使用
     'min_version' => [

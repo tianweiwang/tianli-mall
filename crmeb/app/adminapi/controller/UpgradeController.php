@@ -2797,6 +2797,13 @@ SQL
         return app('json')->success($this->services->getUpgradeList());
     }
 
+    public function capability()
+    {
+        return app('json')->success([
+            'remote_enabled' => $this->services->isRemoteEnabled(),
+        ]);
+    }
+
     /**
      * 可升级的版本列表
      * @return \think\Response
@@ -2855,6 +2862,7 @@ SQL
      */
     public function packageDownload($packageKey)
     {
+        $this->services->assertRemoteEnabled();
         if (sys_config('queue_open', 0) != 1 || Env::get('cache.driver', 'file') != 'redis') {
             return app('json')->fail('请先开启消息队列');
         }

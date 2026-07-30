@@ -32,14 +32,6 @@ use app\dao\system\upgrade\UpgradeLogDao;
  */
 class UpgradeServices extends BaseServices
 {
-    const LOGIN_URL = 'http://upgrade.crmeb.net/api/login';
-    const UPGRADE_URL = 'http://upgrade.crmeb.net/api/upgrade/list';
-    const UPGRADE_CURRENT_URL = 'http://upgrade.crmeb.net/api/upgrade/current_list';
-    const AGREEMENT_URL = 'http://upgrade.crmeb.net/api/upgrade/agreement';
-    const PACKAGE_DOWNLOAD_URL = 'http://upgrade.crmeb.net/api/upgrade/download';
-    const UPGRADE_STATUS_URL = 'http://upgrade.crmeb.net/api/upgrade/status';
-    const UPGRADE_LOG_URL = 'http://upgrade.crmeb.net/api/upgrade/log';
-
     /**
      * @var array $requestData
      */
@@ -57,8 +49,31 @@ class UpgradeServices extends BaseServices
     public function __construct(UpgradeLogDao $dao)
     {
         $this->dao = $dao;
+    }
+
+    /**
+     * 官方远程升级是否启用
+     */
+    public function isRemoteEnabled(): bool
+    {
+        return (bool)Config::get('upgrade.remote_enabled', false);
+    }
+
+    public function assertRemoteEnabled(): void
+    {
+        if (!$this->isRemoteEnabled()) {
+            throw new AdminException([400, '官方在线升级服务未启用']);
+        }
+    }
+
+    protected function initializeRemoteContext(): void
+    {
+        $this->assertRemoteEnabled();
+        if ($this->requestData !== []) {
+            return;
+        }
+
         $versionData = $this->getVersion();
-        //        if ($versionData['version_code'] < 450) return true;
         if (empty($versionData)) {
             throw new AdminException('授权信息丢失');
         }
@@ -74,10 +89,46 @@ class UpgradeServices extends BaseServices
             'app_key' => trim($versionData['app_key'] ?? ''),
             'version' => implode('.', $recVersion)
         ];
+    }
 
+    protected function prepareRemoteRequest(): void
+    {
+        $this->assertRemoteEnabled();
+        $this->initializeRemoteContext();
         if (!CacheService::get('upgrade_auth_token')) {
             $this->getAuth();
         }
+    }
+
+    protected function getRemoteUrl(string $name): string
+    {
+        $this->assertRemoteEnabled();
+        return $this->validateRemoteHttpsUrl((string)Config::get('upgrade.remote.' . $name, ''), $name);
+    }
+
+    protected function validateRemoteHttpsUrl(string $url, string $name): string
+    {
+        if (!$url || !filter_var($url, FILTER_VALIDATE_URL) || strtolower((string)parse_url($url, PHP_URL_SCHEME)) !== 'https') {
+            Log::warning([
+                'type' => 'upgrade_remote_url_rejected',
+                'endpoint' => $name,
+            ]);
+            throw new AdminException([400, '官方在线升级服务地址必须使用 HTTPS']);
+        }
+        return $url;
+    }
+
+    protected function validatePackageDownloadUrls(array $data): array
+    {
+        $packageFields = ['server_package_link', 'client_package_link', 'pc_package_link'];
+        foreach ($data as $key => $value) {
+            if (in_array($key, $packageFields, true) && is_string($value) && $value !== '') {
+                $data[$key] = $this->validateRemoteHttpsUrl($value, $key);
+            } elseif (is_array($value)) {
+                $data[$key] = $this->validatePackageDownloadUrls($value);
+            }
+        }
+        return $data;
     }
 
     /**
@@ -125,8 +176,11 @@ class UpgradeServices extends BaseServices
      */
     public function getAuth()
     {
+        $this->assertRemoteEnabled();
+        $url = $this->getRemoteUrl('login_url');
+        $this->initializeRemoteContext();
         $this->getSign($this->timeStamp);
-        $result = HttpService::postRequest(self::LOGIN_URL, $this->requestData);
+        $result = HttpService::postRequest($url, $this->requestData);
         if (!$result) {
             throw new AdminException('授权失败');
         }
@@ -146,6 +200,8 @@ class UpgradeServices extends BaseServices
      */
     public function getSign(int $timeStamp)
     {
+        $this->assertRemoteEnabled();
+        $this->initializeRemoteContext();
         $data = $this->requestData;
         if ((!isset($data['host']) || !$data['host']) ||
             (!isset($data['nonce']) || !$data['nonce']) ||
@@ -185,11 +241,13 @@ class UpgradeServices extends BaseServices
      */
     public function getUpgradeList()
     {
+        $url = $this->getRemoteUrl('upgrade_url');
+        $this->prepareRemoteRequest();
         [$page, $limit] = $this->getPageValue();
         $this->requestData['page'] = (string)($page ?: 1);
         $this->requestData['limit'] = (string)($limit ?: 10);
         $this->getSign($this->timeStamp);
-        $result = HttpService::getRequest(self::UPGRADE_URL, $this->requestData);
+        $result = HttpService::getRequest($url, $this->requestData);
         if (!$result) {
             throw new AdminException('升级列表获取失败');
         }
@@ -198,7 +256,7 @@ class UpgradeServices extends BaseServices
         if (!$this->checkAuth($data)) {
             throw new AdminException($data['msg'] ?? '升级列表获取失败');
         }
-        return $data['data'] ?? [];
+        return $this->validatePackageDownloadUrls($data['data'] ?? []);
     }
 
     /**
@@ -207,8 +265,10 @@ class UpgradeServices extends BaseServices
      */
     public function getUpgradeableList()
     {
+        $url = $this->getRemoteUrl('upgrade_current_url');
+        $this->prepareRemoteRequest();
         $this->getSign($this->timeStamp);
-        $result = HttpService::getRequest(self::UPGRADE_CURRENT_URL, $this->requestData, ['Access-Token: Bearer ' . CacheService::get('upgrade_auth_token')]);
+        $result = HttpService::getRequest($url, $this->requestData, ['Access-Token: Bearer ' . CacheService::get('upgrade_auth_token')]);
         if (!$result) {
             throw new AdminException('可升级列表获取失败');
         }
@@ -218,6 +278,7 @@ class UpgradeServices extends BaseServices
             throw new AdminException($data['msg'] ?? '升级列表获取失败');
         }
 
+        $data['data'] = $this->validatePackageDownloadUrls($data['data'] ?? []);
         if ($data['data']) {
             $routineData = [
                 'version' => $data['data'][0]['first_version'] . '.' . $data['data'][0]['second_version'] . '.' . $data['data'][0]['third_version'],
@@ -235,8 +296,10 @@ class UpgradeServices extends BaseServices
      */
     public function getAgreement()
     {
+        $url = $this->getRemoteUrl('agreement_url');
+        $this->prepareRemoteRequest();
         $this->getSign($this->timeStamp);
-        $result = HttpService::getRequest(self::AGREEMENT_URL, $this->requestData, ['Access-Token: Bearer ' . CacheService::get('upgrade_auth_token')]);
+        $result = HttpService::getRequest($url, $this->requestData, ['Access-Token: Bearer ' . CacheService::get('upgrade_auth_token')]);
         if (!$result) {
             throw new AdminException('升级协议获取失败');
         }
@@ -255,6 +318,8 @@ class UpgradeServices extends BaseServices
      */
     public function packageDownload(string $packageKey): bool
     {
+        $url = $this->getRemoteUrl('package_download_url');
+        $this->prepareRemoteRequest();
         $token = md5(time());
 
         //检查数据库大小
@@ -262,7 +327,7 @@ class UpgradeServices extends BaseServices
 
         $this->requestData['package_key'] = $packageKey;
         $this->getSign($this->timeStamp);
-        $result = HttpService::getRequest(self::PACKAGE_DOWNLOAD_URL, $this->requestData, ['Access-Token: Bearer ' . CacheService::get('upgrade_auth_token')]);
+        $result = HttpService::getRequest($url, $this->requestData, ['Access-Token: Bearer ' . CacheService::get('upgrade_auth_token')]);
         if (!$result) {
             throw new AdminException('升级包获取失败');
         }
@@ -271,6 +336,8 @@ class UpgradeServices extends BaseServices
         if (!$this->checkAuth($data)) {
             throw new AdminException($data['msg'] ?? '授权失败');
         }
+
+        $data['data'] = $this->validatePackageDownloadUrls($data['data'] ?? []);
 
         if (empty($data['data']['server_package_link']) && empty($data['data']['client_package_link']) && empty($data['data']['pc_package_link'])) {
             CacheService::set($token . 'upgrade_status', 2, 86400);
@@ -311,6 +378,8 @@ class UpgradeServices extends BaseServices
      */
     public function download(string $seq, string $url, string $downloadPath, string $fileName, int $timeout = 300)
     {
+        $this->assertRemoteEnabled();
+        $url = $this->validateRemoteHttpsUrl($url, 'package_download');
         ini_set('memory_limit', '-1');
 
         $filePath = $downloadPath . DS . $fileName;
@@ -379,6 +448,7 @@ class UpgradeServices extends BaseServices
      */
     private function downloadFile(string $packageLink, string $seq)
     {
+        $packageLink = $this->validateRemoteHttpsUrl($packageLink, 'package_download');
         $fileName = substr($packageLink, strrpos($packageLink, '/') + 1);
         $filePath = app()->getRootPath() . 'upgrade' . DS . date('Y-m-d');
         if (!is_dir($filePath)) mkdir($filePath, 0755, true);
@@ -643,7 +713,11 @@ class UpgradeServices extends BaseServices
      */
     public function sendUpgradeLog(string $token): bool
     {
+        $this->assertRemoteEnabled();
+        $url = $this->getRemoteUrl('upgrade_log_url');
+        $data = [];
         try {
+            $this->prepareRemoteRequest();
             $versionBefore = CacheService::get('version_before', '');
             $versionData = $this->getVersion();
             if (empty($versionData)) {
@@ -656,7 +730,7 @@ class UpgradeServices extends BaseServices
             $this->requestData['error_data'] = CacheService::get($token . 'upgrade_status_tip', '');
 
             $this->getSign($this->timeStamp);
-            $result = HttpService::postRequest(self::UPGRADE_LOG_URL, $this->requestData, ['Access-Token: Bearer ' . CacheService::get('upgrade_auth_token')]);
+            $result = HttpService::postRequest($url, $this->requestData, ['Access-Token: Bearer ' . CacheService::get('upgrade_auth_token')]);
             if (!$result) {
                 throw new AdminException('升级日志推送失败');
             }
@@ -1082,6 +1156,7 @@ class UpgradeServices extends BaseServices
      */
     public function checkAuth(array $data): bool
     {
+        $this->assertRemoteEnabled();
         if (!isset($data['status']) || $data['status'] != 200) {
             if ($data['status'] == '请输入账号和密码') {
                 $this->getAuth();
@@ -1098,8 +1173,10 @@ class UpgradeServices extends BaseServices
      */
     public function getUpgradeStatus(): array
     {
+        $url = $this->getRemoteUrl('upgrade_status_url');
+        $this->prepareRemoteRequest();
         $this->getSign($this->timeStamp);
-        $result = HttpService::getRequest(self::UPGRADE_STATUS_URL, $this->requestData, ['Access-Token: Bearer ' . CacheService::get('upgrade_auth_token')]);
+        $result = HttpService::getRequest($url, $this->requestData, ['Access-Token: Bearer ' . CacheService::get('upgrade_auth_token')]);
         if (!$result) {
             throw new AdminException('升级状态获取失败');
         }

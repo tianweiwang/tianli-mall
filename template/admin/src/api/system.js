@@ -624,6 +624,16 @@ export function upgradeListApi(params) {
 }
 
 /**
+ * 在线升级能力
+ */
+export function upgradeCapabilityApi() {
+  return request({
+    url: '/system/upgrade/capability',
+    method: 'get',
+  });
+}
+
+/**
  * @description 升级进度
  */
 export function upgradeProgressApi() {
