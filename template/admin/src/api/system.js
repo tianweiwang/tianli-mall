@@ -431,28 +431,6 @@ export function replaceSiteUrlApi(data) {
 }
 
 /**
- *
- */
-export function auth() {
-  return request({
-    url: 'auth',
-    method: 'get',
-  });
-}
-
-/**
- * @description 申请授权
- * @param data
- */
-export function authApply(data) {
-  return request({
-    url: 'auth_apply',
-    method: 'post',
-    data,
-  });
-}
-
-/**
  * @description 获取客服页面广告
  * @param data
  */
@@ -599,17 +577,6 @@ export function setAgreements(data, type) {
     url: `setting/save_agreement`,
     method: 'post',
     data,
-  });
-}
-
-/**
- * @description 获取授权产品
- */
-export function crmebProduct(params) {
-  return request({
-    url: 'crmeb_product',
-    method: 'get',
-    params,
   });
 }
 
