@@ -365,12 +365,12 @@ function Test-InstallDataArea {
         'Db::transaction(',
         "whereIn('path', ['check_auth', 'auth_apply', 'auth'])",
         "'menu_path' => '/system/maintain/info'",
-        "'mark' => '系统信息'",
         "CacheService::delete('upgrade_auth_token')",
         'writeMd5()'
     )
     Assert-TextExcludes -RelativePath 'crmeb/crmeb/command/LicenseAlignmentCleanup.php' -ForbiddenText @(
-        "'url' => '/system/maintain/info'"
+        "'url' => '/system/maintain/info'",
+        "'mark' => '系统信息'"
     )
     Add-Check 'Fresh-install and existing-environment cleanup metadata checked'
 }

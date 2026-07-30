@@ -58,7 +58,6 @@ class LicenseAlignmentCleanup extends Command
                         'menu_name' => '系统信息',
                         'menu_path' => '/system/maintain/info',
                         'unique_auth' => 'system-maintain-info',
-                        'mark' => '系统信息',
                     ]),
                 'system_file_info' => Db::name('system_file_info')
                     ->whereIn('full_path', $fileInfoPaths)
