@@ -360,6 +360,36 @@ workerman                       RUNNING   pid 14, uptime 1:02:03
         Assert-True ($manifest.uploads.files[0].relativePath -eq "attach/a.png") "Expected sorted manifest uploads"
     }
 
+    Invoke-Test "detects a one-byte database fixture change" {
+        $schemaPath = Join-Path $temporaryRoot "byte-schema.sql"
+        $dataPath = Join-Path $temporaryRoot "byte-data.sql"
+        [IO.File]::WriteAllText($schemaPath, "CREATE TABLE sample (id int);`n", [Text.UTF8Encoding]::new($false))
+        [IO.File]::WriteAllText($dataPath, "INSERT INTO sample VALUES (1);`n", [Text.UTF8Encoding]::new($false))
+        $expected = New-AcceptanceSnapshotManifest -DatabaseName "crmeb" -TableCount 1 -SchemaPath $schemaPath -DataPath $dataPath -DumpClient "mysqldump 8.0" -UploadEntries @()
+
+        [IO.File]::WriteAllText($dataPath, "INSERT INTO sample VALUES (2);`n", [Text.UTF8Encoding]::new($false))
+        $actual = New-AcceptanceSnapshotManifest -DatabaseName "crmeb" -TableCount 1 -SchemaPath $schemaPath -DataPath $dataPath -DumpClient "mysqldump 8.0" -UploadEntries @()
+        $result = Compare-AcceptanceSnapshot -Expected $expected -Actual $actual
+        Assert-False $result.Passed "One-byte database change was accepted"
+        Assert-True (($result.Differences -join "`n") -match "dataSha256") "Expected data digest difference"
+    }
+
+    Invoke-Test "detects a one-byte upload fixture change" {
+        $uploadRoot = Join-Path $temporaryRoot "byte-uploads"
+        $null = New-Item -ItemType Directory -Path $uploadRoot
+        $uploadPath = Join-Path $uploadRoot "sample.bin"
+        [IO.File]::WriteAllBytes($uploadPath, [byte[]](1, 2, 3))
+        $expectedEntry = New-UploadSnapshotEntry -LiteralPath $uploadPath -RootPath $uploadRoot
+
+        [IO.File]::WriteAllBytes($uploadPath, [byte[]](1, 2, 4))
+        $actualEntry = New-UploadSnapshotEntry -LiteralPath $uploadPath -RootPath $uploadRoot
+        $result = Compare-AcceptanceSnapshot `
+            -Expected (New-TestSnapshot -Files @($expectedEntry)) `
+            -Actual (New-TestSnapshot -Files @($actualEntry))
+        Assert-False $result.Passed "One-byte upload change was accepted"
+        Assert-True (($result.Differences -join "`n") -match "upload changed") "Expected changed upload difference"
+    }
+
     Invoke-Test "writes a valid manifest and refuses to overwrite it" {
         $outputDirectory = Join-Path $temporaryRoot "manifest-output"
         $schemaPath = Join-Path $temporaryRoot "write-schema.sql"
@@ -420,6 +450,12 @@ workerman                       RUNNING   pid 14, uptime 1:02:03
         Assert-True ($verifierSource -match 'notice\s*=\s*101') "Expected notice WebSocket status 101"
         Assert-True ($verifierSource -match 'msg\s*=\s*101') "Expected msg WebSocket status 101"
         Assert-True ($verifierSource -match 'Test-RouteStatuses') "Expected exact route-status validation"
+    }
+
+    $php82VerifierSource = Get-Content -LiteralPath (Join-Path $PSScriptRoot "../verify-php82.ps1") -Raw
+    Invoke-Test "normalizes Windows line endings before Docker shell execution" {
+        Assert-True ($php82VerifierSource -match '(?s)\$normalizedArguments\s*=.+?Replace\("`r`n",\s*"`n"\)') "Expected CRLF normalization at the Docker boundary"
+        Assert-True ($php82VerifierSource -match '& docker @normalizedArguments') "Expected Docker to receive normalized arguments"
     }
 } finally {
     Remove-Item -LiteralPath $temporaryRoot -Recurse -Force -ErrorAction SilentlyContinue

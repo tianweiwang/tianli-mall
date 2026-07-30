@@ -93,7 +93,8 @@ function Remove-TemporaryDirectory {
 function Invoke-Docker {
     param([Parameter(Mandatory)][string[]]$Arguments)
 
-    $output = & docker @Arguments 2>&1
+    $normalizedArguments = @($Arguments | ForEach-Object { $_.Replace("`r`n", "`n") })
+    $output = & docker @normalizedArguments 2>&1
     $exitCode = $LASTEXITCODE
     [pscustomobject]@{
         ExitCode = $exitCode
