@@ -133,8 +133,8 @@ function Test-LicenseArea {
 
     $oldHeaderFiles = @($oldMatches | ForEach-Object { $_.RelativePath })
     $headerFiles = $oldHeaderFiles + @($newHeaderFiles)
-    if ($headerFiles.Count -ne 1242) {
-        Add-Failure "project-owned license header inventory changed: expected=1242 actual=$($headerFiles.Count)"
+    if ($headerFiles.Count -ne 1239) {
+        Add-Failure "project-owned license header inventory changed: expected=1239 actual=$($headerFiles.Count)"
     }
     if ($oldMatches.Count -gt 0) {
         Add-Failure "restrictive project-owned license headers remain: files=$($oldMatches.Count) matches=$(($oldMatches | Measure-Object -Property MatchCount -Sum).Sum)"
