@@ -328,7 +328,9 @@ function Test-RemoteUpgradeArea {
 function Test-InstallDataArea {
     Assert-TextExcludes -RelativePath 'crmeb/public/install/crmeb.sql' -ForbiddenText @(
         'auth_cert_query',
+        "'check_auth'",
         'auth_apply',
+        "(123, 14, 'adminapi', '授权信息'",
         'cert_crmeb',
         "'400330'",
         "'400331'",
@@ -340,10 +342,11 @@ function Test-InstallDataArea {
         '/public/statics/mp_view/static/images/support.png',
         'SystemAuthServices.php',
         'SystemUpgradeClient.php',
-        'UpgradeOpenApiService.php'
+        'UpgradeOpenApiService.php',
+        'UpgradeService.php'
     )
     Assert-TextContains -RelativePath 'crmeb/public/install/crmeb.sql' -RequiredText @(
-        "(605, 104, 0, '系统信息'",
+        "(605, 25, '', '系统信息'",
         "'/system/maintain/info'",
         "'system-maintain-info'",
         "'读取版权信息', '', 'copyright', 'GET'",
@@ -352,10 +355,19 @@ function Test-InstallDataArea {
     Assert-TextExcludes -RelativePath 'crmeb/app/adminapi/controller/UpgradeController.php' -ForbiddenText @(
         'SystemAuthServices.php',
         'SystemUpgradeClient.php',
-        'UpgradeOpenApiService.php'
+        'UpgradeOpenApiService.php',
+        'UpgradeService.php'
     )
     Assert-PathPresent -RelativePath 'crmeb/crmeb/command/LicenseAlignmentCleanup.php'
     Assert-TextContains -RelativePath 'crmeb/config/console.php' -RequiredText @('LicenseAlignmentCleanup')
+    Assert-TextContains -RelativePath 'crmeb/crmeb/command/LicenseAlignmentCleanup.php' -RequiredText @(
+        'class LicenseAlignmentCleanup',
+        'Db::transaction(',
+        "whereIn('path', ['check_auth', 'auth_apply', 'auth'])",
+        "'mark' => '系统信息'",
+        "CacheService::delete('upgrade_auth_token')",
+        'writeMd5()'
+    )
     Add-Check 'Fresh-install and existing-environment cleanup metadata checked'
 }
 

@@ -614,16 +614,18 @@ git commit -m "feat: disable official remote upgrades by default"
 Register `license:cleanup` in `config/console.php`. The command obtains the active database prefix from `Config`, starts a transaction, and performs only:
 
 ```php
-Db::name('system_route')->whereIn('url', ['check_auth', 'auth_apply', 'auth'])->delete();
+Db::name('system_route')->whereIn('path', ['check_auth', 'auth_apply', 'auth'])->delete();
 Db::name('system_config')->where('menu_name', 'cert_crmeb')->delete();
 Db::name('lang_code')->whereIn('code', ['400330', '400331', '400332', '400333', '400334', '400335'])->delete();
 Db::name('system_menus')->where('id', 605)->update([
     'menu_name' => '系统信息',
     'url' => '/system/maintain/info',
     'unique_auth' => 'system-maintain-info',
-    'name' => '系统信息',
+    'mark' => '系统信息',
 ]);
 ```
+
+The menu update keeps the existing `pid`, icon, visibility, sort, and role-owned ID `605` unchanged.
 
 The same transaction removes `system_file_info.full_path` and `system_file_md5.filename` rows for the four deleted source files by exact path. After the transaction commits, delete `upgrade_auth_token` only when `Config::get('upgrade.remote_enabled', false)` is false, then invoke the existing `SystemFileServices::writeMd5()` against the already-verified release tree so the local integrity baseline represents the final distributed PHP files. Output affected row counts. Repeated execution must succeed with zero further authorization/language/file-row deletes and the same menu values.
 

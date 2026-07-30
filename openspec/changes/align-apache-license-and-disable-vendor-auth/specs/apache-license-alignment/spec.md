@@ -99,7 +99,7 @@ Local cross-version operations, backups, execution state, and rollback SHALL rem
 ### Requirement: Authorization metadata cleanup is exact and idempotent
 Fresh-install data and existing-environment cleanup SHALL contain no commercial authorization metadata and SHALL modify only explicitly named authorization-related records.
 
-The named cleanup set SHALL consist only of `system_config.menu_name=cert_crmeb`, `system_route.url` values `check_auth`, `auth_apply`, and `auth`, authorization-only translation codes `400330` through `400335`, menu ID `605` system-information metadata, file-tree and MD5 inventory rows for deleted authorization/telemetry classes, fresh-install file-tree rows for `/public/static/images/support.png` and `/public/statics/mp_view/static/images/support.png`, and cached `upgrade_auth_token` while remote upgrade is disabled.
+The named cleanup set SHALL consist only of `system_config.menu_name=cert_crmeb`, `system_route.path` values `check_auth`, `auth_apply`, and `auth`, authorization-only translation codes `400330` through `400335`, menu ID `605` system-information metadata, file-tree and MD5 inventory rows for deleted authorization/telemetry classes, fresh-install file-tree rows for `/public/static/images/support.png` and `/public/statics/mp_view/static/images/support.png`, and cached `upgrade_auth_token` while remote upgrade is disabled.
 
 #### Scenario: Fresh installation metadata is inspected
 - **WHEN** fresh-install SQL, route documentation, translations, menu metadata, file tree, and MD5 inventory are loaded
