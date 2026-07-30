@@ -264,6 +264,11 @@ function Test-BrandingArea {
         'captchs',
         '<iframe'
     )
+    Assert-TextContains -RelativePath 'crmeb/app/adminapi/route/common.php' -RequiredText @(
+        "Route::get('copyright', 'Common/copyright')->option(['real_name' => '读取版权信息'])",
+        "Route::post('copyright', 'Common/saveCopyright')->option(['real_name' => '保存版权信息'])"
+    )
+    Assert-TextExcludes -RelativePath 'crmeb/app/adminapi/route/common.php' -ForbiddenText @('申请版权')
     Add-Check 'System information and source-level branding fallbacks checked'
 }
 
@@ -277,7 +282,8 @@ function Test-RemoteUpgradeArea {
         'function assertRemoteEnabled()',
         'function getRemoteUrl(string $name)',
         '官方在线升级服务未启用',
-        '官方在线升级服务地址必须使用 HTTPS'
+        '官方在线升级服务地址必须使用 HTTPS',
+        'Log::warning('
     )
     Assert-TextExcludes -RelativePath 'crmeb/app/services/system/UpgradeServices.php' -ForbiddenText @(
         'http://upgrade.crmeb.net'
@@ -339,7 +345,9 @@ function Test-InstallDataArea {
     Assert-TextContains -RelativePath 'crmeb/public/install/crmeb.sql' -RequiredText @(
         "(605, 104, 0, '系统信息'",
         "'/system/maintain/info'",
-        "'system-maintain-info'"
+        "'system-maintain-info'",
+        "'读取版权信息', '', 'copyright', 'GET'",
+        "'保存版权信息', '', 'copyright', 'POST'"
     )
     Assert-TextExcludes -RelativePath 'crmeb/app/adminapi/controller/UpgradeController.php' -ForbiddenText @(
         'SystemAuthServices.php',
