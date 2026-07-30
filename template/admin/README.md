@@ -204,7 +204,7 @@ utils 自定义工具js 独立命名，一般不用新建文件夹
 │   │         └──user                # 个人中心
 │   │         └──verifyOrder         # 核销订单
 │   │    └──system                   # 维护
-│   │         └──auth                # 商业授权
+│   │         └──info                # 系统信息
 │   │         └──clear               # 刷新缓存
 │   │         └──configTab           # 配置
 │   │              └──index          # 配置分类

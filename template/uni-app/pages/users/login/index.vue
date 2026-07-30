@@ -91,11 +91,8 @@
 				</checkbox-group>
 			</view>
 		</view>
-		<view class="bottom">
-			<view class="ver" v-if="copyRight">{{ copyRight }}</view>
-			<view v-else class="ver">
-				<a href="https://www.crmeb.com">Copyright ©2024 CRMEB. All Rights</a>
-			</view>
+		<view class="bottom" v-if="copyRight">
+			<view class="ver">{{ copyRight }}</view>
 		</view>
 		<Verify @success="success" :captchaType="captchaType" :imgSize="{ width: '330px', height: '155px' }" ref="verify"></Verify>
 	</view>

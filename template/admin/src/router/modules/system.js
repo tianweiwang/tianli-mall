@@ -186,13 +186,13 @@ export default {
       component: () => import('@/pages/system/group/list'),
     },
     {
-      path: 'maintain/auth',
-      name: `${pre}auth`,
+      path: 'maintain/info',
+      name: `${pre}info`,
       meta: {
-        auth: ['system-maintain-auth'],
-        title: '商业授权',
+        auth: ['system-maintain-info'],
+        title: '系统信息',
       },
-      component: () => import('@/pages/system/auth/index'),
+      component: () => import('@/pages/system/info/index'),
     },
     {
       path: 'onlineUpgrade/index',

@@ -32,10 +32,10 @@ Route::group(function () {
     Route::get('menusList', 'Common/menusList')->option(['real_name' => '搜索菜单列表']);
     //获取logo
     Route::get('logo', 'Common/getLogo')->option(['real_name' => '获取logo']);
-    //查询版权
-    Route::get('copyright', 'Common/copyright')->option(['real_name' => '申请版权']);
-    //保存版权
-    Route::post('copyright', 'Common/saveCopyright')->option(['real_name' => '保存版权']);
+    //读取版权信息
+    Route::get('copyright', 'Common/copyright')->option(['real_name' => '读取版权信息']);
+    //保存版权信息
+    Route::post('copyright', 'Common/saveCopyright')->option(['real_name' => '保存版权信息']);
     //后台菜单搜索
     Route::post('menusSearch', 'Common/menusSearch')->option(['real_name' => '后台菜单搜索']);
 })->middleware([

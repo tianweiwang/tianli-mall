@@ -33,7 +33,7 @@
       @changeBarg="changeBarg"
       @goDetail="goDetail"
     ></PageDesign>
-    <image :src="copyRightPic" alt="" class="support"></image>
+    <image v-if="copyRightPic" :src="copyRightPic" alt="" class="support"></image>
     <editUserModal
       :isShow="editModal"
       @closeEdit="closeEdit"
@@ -168,7 +168,7 @@ export default {
       member_style: 0,
       my_banner_status: 0,
       is_diy: uni.getStorageSync("is_diy"),
-      copyRightPic: require("static/images/support.png"), //版权图片
+      copyRightPic: '', //版权图片
       belongIndex: 0,
       isScrolled: false,
       isFixed: false,
