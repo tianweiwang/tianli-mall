@@ -619,7 +619,7 @@ Db::name('system_config')->where('menu_name', 'cert_crmeb')->delete();
 Db::name('lang_code')->whereIn('code', ['400330', '400331', '400332', '400333', '400334', '400335'])->delete();
 Db::name('system_menus')->where('id', 605)->update([
     'menu_name' => '系统信息',
-    'url' => '/system/maintain/info',
+    'menu_path' => '/system/maintain/info',
     'unique_auth' => 'system-maintain-info',
     'mark' => '系统信息',
 ]);

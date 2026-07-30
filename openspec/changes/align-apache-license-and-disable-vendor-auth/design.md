@@ -47,7 +47,7 @@ The existing `GET /copyright` and `POST /copyright` routes, status envelope, res
 
 The runtime route metadata and fresh-install route metadata SHALL describe these operations neutrally as `读取版权信息` and `保存版权信息` without changing their URLs, methods, response fields, or stored values.
 
-Menu metadata for ID `605` SHALL be updated in place to the neutral system-information title, route, and permission so existing role references retain the same menu ID. Local copyright records SHALL NOT be deleted or renamed as authorization metadata.
+Menu metadata for ID `605` SHALL be updated in place to the neutral system-information title, `menu_path`, and permission so existing role references retain the same menu ID. Local copyright records SHALL NOT be deleted or renamed as authorization metadata.
 
 ### Gate every official remote upgrade operation
 
@@ -72,7 +72,7 @@ The existing-environment cleanup SHALL be transactional, prefix-aware, idempoten
 - `system_config.menu_name = cert_crmeb`;
 - `system_route.path IN (check_auth, auth_apply, auth)`;
 - authorization-only translation codes `400330` through `400335`;
-- menu ID `605` title, route, and permission metadata;
+- menu ID `605` title, `menu_path`, and permission metadata;
 - file-tree and MD5 inventory rows for the four deleted authorization/telemetry classes;
 - fresh-install file-tree rows for `/public/static/images/support.png` and `/public/statics/mp_view/static/images/support.png`;
 - Redis key `upgrade_auth_token`, and only while remote upgrade is disabled.

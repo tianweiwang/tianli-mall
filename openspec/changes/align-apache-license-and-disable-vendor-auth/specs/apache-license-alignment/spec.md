@@ -99,12 +99,12 @@ Local cross-version operations, backups, execution state, and rollback SHALL rem
 ### Requirement: Authorization metadata cleanup is exact and idempotent
 Fresh-install data and existing-environment cleanup SHALL contain no commercial authorization metadata and SHALL modify only explicitly named authorization-related records.
 
-The named cleanup set SHALL consist only of `system_config.menu_name=cert_crmeb`, `system_route.path` values `check_auth`, `auth_apply`, and `auth`, authorization-only translation codes `400330` through `400335`, menu ID `605` system-information metadata, file-tree and MD5 inventory rows for deleted authorization/telemetry classes, fresh-install file-tree rows for `/public/static/images/support.png` and `/public/statics/mp_view/static/images/support.png`, and cached `upgrade_auth_token` while remote upgrade is disabled.
+The named cleanup set SHALL consist only of `system_config.menu_name=cert_crmeb`, `system_route.path` values `check_auth`, `auth_apply`, and `auth`, authorization-only translation codes `400330` through `400335`, menu ID `605` system-information `menu_path` metadata, file-tree and MD5 inventory rows for deleted authorization/telemetry classes, fresh-install file-tree rows for `/public/static/images/support.png` and `/public/statics/mp_view/static/images/support.png`, and cached `upgrade_auth_token` while remote upgrade is disabled.
 
 #### Scenario: Fresh installation metadata is inspected
 - **WHEN** fresh-install SQL, route documentation, translations, menu metadata, file tree, and MD5 inventory are loaded
 - **THEN** they SHALL contain no `cert_crmeb`, `check_auth`, `auth_apply`, `auth`, authorization-only translation, deleted authorization/telemetry file entry, `/public/static/images/support.png` entry, or `/public/statics/mp_view/static/images/support.png` entry
-- **THEN** menu ID `605` SHALL identify the local system-information title, route, and permission
+- **THEN** menu ID `605` SHALL identify the local system-information title, `menu_path`, and permission
 - **THEN** every retained file-integrity entry except the legacy self-referential `UpgradeController.php` entry SHALL match the final distributed file bytes
 - **THEN** the `UpgradeController.php` entry SHALL retain the same existing value in the fresh-install and embedded inventories, and existing-environment cleanup SHALL regenerate its actual runtime hash after the transaction commits
 
