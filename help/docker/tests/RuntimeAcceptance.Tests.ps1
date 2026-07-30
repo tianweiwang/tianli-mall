@@ -1,0 +1,310 @@
+[CmdletBinding()]
+param()
+
+Set-StrictMode -Version Latest
+$ErrorActionPreference = "Stop"
+
+$modulePath = Join-Path $PSScriptRoot "../RuntimeAcceptance.psm1"
+Import-Module -Name $modulePath -Force
+
+$script:passed = 0
+$script:failed = 0
+
+function Invoke-Test {
+    param(
+        [string]$Name,
+        [scriptblock]$Body
+    )
+
+    try {
+        & $Body
+        $script:passed++
+        "[PASS] $Name"
+    } catch {
+        $script:failed++
+        "[FAIL] $Name`: $($_.Exception.Message)"
+    }
+}
+
+function Assert-True {
+    param(
+        [bool]$Condition,
+        [string]$Message
+    )
+
+    if (-not $Condition) {
+        throw $Message
+    }
+}
+
+function Assert-False {
+    param(
+        [bool]$Condition,
+        [string]$Message
+    )
+
+    if ($Condition) {
+        throw $Message
+    }
+}
+
+function Assert-Throws {
+    param(
+        [scriptblock]$Body,
+        [string]$Pattern
+    )
+
+    try {
+        & $Body
+    } catch {
+        if ($_.Exception.Message -notmatch $Pattern) {
+            throw "Expected error matching '$Pattern', got '$($_.Exception.Message)'"
+        }
+        return
+    }
+
+    throw "Expected an exception matching '$Pattern'"
+}
+
+function New-TestSnapshot {
+    param(
+        [string]$SchemaHash = ("A" * 64),
+        [string]$DataHash = ("B" * 64),
+        [object[]]$Files = @(
+            [pscustomobject]@{ relativePath = "attach/catalog/item-a.png"; bytes = 12; sha256 = ("C" * 64) },
+            [pscustomobject]@{ relativePath = "attach/catalog/item-b.jpg"; bytes = 18; sha256 = ("D" * 64) }
+        )
+    )
+
+    [pscustomobject]@{
+        formatVersion = 1
+        createdAtUtc = "2026-07-30T00:00:00.0000000Z"
+        database = [pscustomobject]@{
+            name = "crmeb"
+            tableCount = 157
+            schemaSha256 = $SchemaHash
+            dataSha256 = $DataHash
+            dumpClient = "mysqldump 8.0"
+        }
+        uploads = [pscustomobject]@{
+            fileCount = $Files.Count
+            totalBytes = [long](($Files | Measure-Object -Property bytes -Sum).Sum)
+            files = $Files
+        }
+    }
+}
+
+function Write-TestSnapshot {
+    param(
+        [string]$Path,
+        [object]$Snapshot
+    )
+
+    [IO.File]::WriteAllText(
+        $Path,
+        ($Snapshot | ConvertTo-Json -Depth 8),
+        [Text.UTF8Encoding]::new($false)
+    )
+}
+
+$temporaryRoot = Join-Path ([IO.Path]::GetTempPath()) ("runtime-acceptance-tests-" + [guid]::NewGuid().ToString("N"))
+$null = New-Item -ItemType Directory -Path $temporaryRoot
+
+try {
+    Invoke-Test "reads a valid version-one snapshot" {
+        $path = Join-Path $temporaryRoot "valid.json"
+        Write-TestSnapshot -Path $path -Snapshot (New-TestSnapshot)
+        $snapshot = Read-AcceptanceSnapshot -LiteralPath $path
+        Assert-True ($snapshot.database.tableCount -eq 157) "Expected table count 157"
+        Assert-True ($snapshot.uploads.fileCount -eq 2) "Expected two upload entries"
+    }
+
+    Invoke-Test "rejects a snapshot with a missing database digest" {
+        $path = Join-Path $temporaryRoot "missing-digest.json"
+        $snapshot = New-TestSnapshot
+        $snapshot.database.PSObject.Properties.Remove("dataSha256")
+        Write-TestSnapshot -Path $path -Snapshot $snapshot
+        Assert-Throws { Read-AcceptanceSnapshot -LiteralPath $path } "dataSha256"
+    }
+
+    Invoke-Test "rejects duplicate upload paths" {
+        $path = Join-Path $temporaryRoot "duplicate-path.json"
+        $files = @(
+            [pscustomobject]@{ relativePath = "attach/catalog/item.png"; bytes = 12; sha256 = ("C" * 64) },
+            [pscustomobject]@{ relativePath = "attach/catalog/item.png"; bytes = 12; sha256 = ("C" * 64) }
+        )
+        Write-TestSnapshot -Path $path -Snapshot (New-TestSnapshot -Files $files)
+        Assert-Throws { Read-AcceptanceSnapshot -LiteralPath $path } "duplicate"
+    }
+
+    Invoke-Test "rejects upload path traversal" {
+        $path = Join-Path $temporaryRoot "traversal.json"
+        $files = @(
+            [pscustomobject]@{ relativePath = "../outside.txt"; bytes = 12; sha256 = ("C" * 64) }
+        )
+        Write-TestSnapshot -Path $path -Snapshot (New-TestSnapshot -Files $files)
+        Assert-Throws { Read-AcceptanceSnapshot -LiteralPath $path } "relativePath"
+    }
+
+    Invoke-Test "accepts identical database and upload snapshots" {
+        $result = Compare-AcceptanceSnapshot -Expected (New-TestSnapshot) -Actual (New-TestSnapshot)
+        Assert-True $result.Passed ($result.Differences -join "; ")
+    }
+
+    Invoke-Test "detects a changed schema digest" {
+        $result = Compare-AcceptanceSnapshot -Expected (New-TestSnapshot) -Actual (New-TestSnapshot -SchemaHash ("E" * 64))
+        Assert-False $result.Passed "Changed schema digest was accepted"
+        Assert-True (($result.Differences -join "`n") -match "schema") "Expected schema difference"
+    }
+
+    Invoke-Test "detects a changed data digest" {
+        $result = Compare-AcceptanceSnapshot -Expected (New-TestSnapshot) -Actual (New-TestSnapshot -DataHash ("F" * 64))
+        Assert-False $result.Passed "Changed data digest was accepted"
+        Assert-True (($result.Differences -join "`n") -match "data") "Expected data difference"
+    }
+
+    Invoke-Test "detects a missing upload" {
+        $actualFiles = @((New-TestSnapshot).uploads.files | Select-Object -First 1)
+        $result = Compare-AcceptanceSnapshot -Expected (New-TestSnapshot) -Actual (New-TestSnapshot -Files $actualFiles)
+        Assert-False $result.Passed "Missing upload was accepted"
+        Assert-True (($result.Differences -join "`n") -match "missing") "Expected missing upload difference"
+    }
+
+    Invoke-Test "detects an extra upload" {
+        $actualFiles = @((New-TestSnapshot).uploads.files) + @(
+            [pscustomobject]@{ relativePath = "attach/catalog/item-c.webp"; bytes = 9; sha256 = ("E" * 64) }
+        )
+        $result = Compare-AcceptanceSnapshot -Expected (New-TestSnapshot) -Actual (New-TestSnapshot -Files $actualFiles)
+        Assert-False $result.Passed "Extra upload was accepted"
+        Assert-True (($result.Differences -join "`n") -match "extra") "Expected extra upload difference"
+    }
+
+    Invoke-Test "detects changed upload bytes and digest" {
+        $actualFiles = @(
+            [pscustomobject]@{ relativePath = "attach/catalog/item-a.png"; bytes = 13; sha256 = ("F" * 64) },
+            (New-TestSnapshot).uploads.files[1]
+        )
+        $result = Compare-AcceptanceSnapshot -Expected (New-TestSnapshot) -Actual (New-TestSnapshot -Files $actualFiles)
+        Assert-False $result.Passed "Changed upload was accepted"
+        Assert-True (($result.Differences -join "`n") -match "changed") "Expected changed upload difference"
+    }
+
+    $requiredExtensions = @("curl", "redis")
+    $validFacts = [pscustomobject]@{
+        phpVersion = "8.2.32"
+        extensions = @("curl", "redis")
+        opcacheLoaded = $true
+        opcacheEnabled = $true
+        jit = "disable"
+        jitBufferSize = 0
+    }
+
+    Invoke-Test "accepts valid PHP 8.2 runtime facts" {
+        $result = Test-PhpRuntimeFacts -Facts $validFacts -RequiredExtensions $requiredExtensions
+        Assert-True $result.Passed ($result.Differences -join "; ")
+    }
+
+    Invoke-Test "rejects PHP 7.4 runtime facts" {
+        $facts = $validFacts.PSObject.Copy()
+        $facts.phpVersion = "7.4.33"
+        $result = Test-PhpRuntimeFacts -Facts $facts -RequiredExtensions $requiredExtensions
+        Assert-False $result.Passed "PHP 7.4 was accepted"
+    }
+
+    Invoke-Test "rejects a missing PHP extension" {
+        $facts = $validFacts.PSObject.Copy()
+        $facts.extensions = @("curl")
+        $result = Test-PhpRuntimeFacts -Facts $facts -RequiredExtensions $requiredExtensions
+        Assert-False $result.Passed "Missing Redis extension was accepted"
+    }
+
+    Invoke-Test "rejects enabled PHP JIT" {
+        $facts = $validFacts.PSObject.Copy()
+        $facts.jit = "tracing"
+        $facts.jitBufferSize = 1048576
+        $result = Test-PhpRuntimeFacts -Facts $facts -RequiredExtensions $requiredExtensions
+        Assert-False $result.Passed "Enabled JIT was accepted"
+    }
+
+    $supervisorText = @"
+php-fpm                         RUNNING   pid 11, uptime 1:02:03
+queue                           RUNNING   pid 12, uptime 1:02:03
+timer                           RUNNING   pid 13, uptime 1:02:03
+workerman                       RUNNING   pid 14, uptime 1:02:03
+"@
+
+    Invoke-Test "parses running Supervisor processes" {
+        $snapshot = ConvertFrom-SupervisorStatus -Text $supervisorText
+        Assert-True ($snapshot["workerman"].Pid -eq 14) "Expected Workerman PID 14"
+        Assert-True ($snapshot["php-fpm"].Status -eq "RUNNING") "Expected PHP-FPM RUNNING"
+    }
+
+    Invoke-Test "accepts stable Supervisor process identities" {
+        $before = ConvertFrom-SupervisorStatus -Text $supervisorText
+        $after = ConvertFrom-SupervisorStatus -Text $supervisorText
+        $result = Compare-SupervisorSnapshots -Before $before -After $after -ContainerRestartCount 0
+        Assert-True $result.Passed ($result.Differences -join "; ")
+    }
+
+    Invoke-Test "rejects a changed Supervisor PID" {
+        $before = ConvertFrom-SupervisorStatus -Text $supervisorText
+        $after = ConvertFrom-SupervisorStatus -Text ($supervisorText -replace "pid 14", "pid 99")
+        $result = Compare-SupervisorSnapshots -Before $before -After $after -ContainerRestartCount 0
+        Assert-False $result.Passed "Changed Workerman PID was accepted"
+    }
+
+    Invoke-Test "rejects a non-running Supervisor process" {
+        $before = ConvertFrom-SupervisorStatus -Text $supervisorText
+        $after = ConvertFrom-SupervisorStatus -Text ($supervisorText -replace "workerman\s+RUNNING\s+pid 14, uptime 1:02:03", "workerman                       BACKOFF   Exited too quickly")
+        $result = Compare-SupervisorSnapshots -Before $before -After $after -ContainerRestartCount 0
+        Assert-False $result.Passed "BACKOFF Workerman was accepted"
+    }
+
+    Invoke-Test "rejects a restarted PHP container" {
+        $snapshot = ConvertFrom-SupervisorStatus -Text $supervisorText
+        $result = Compare-SupervisorSnapshots -Before $snapshot -After $snapshot -ContainerRestartCount 1
+        Assert-False $result.Passed "Container restart was accepted"
+    }
+
+    Invoke-Test "accepts clean runtime logs and the recorded GIF warning" {
+        $violations = @(Find-RuntimeLogViolation -Lines @(
+            "service ready",
+            "Undefined array key 0 in /var/www/vendor/topthink/think-image/src/gif/Encoder.php on line 77"
+        ))
+        Assert-True ($violations.Count -eq 0) "Expected no log violations"
+    }
+
+    foreach ($case in @(
+        @{ Name = "fatal errors"; Line = "PHP Fatal error: failed" },
+        @{ Name = "type errors"; Line = "TypeError: invalid value" },
+        @{ Name = "unexpected deprecations"; Line = "PHP Deprecated: old call" },
+        @{ Name = "worker terminations"; Line = "process terminated with exit code 255" }
+    )) {
+        Invoke-Test "detects $($case.Name) in runtime logs" {
+            $violations = @(Find-RuntimeLogViolation -Lines @($case.Line))
+            Assert-True ($violations.Count -eq 1) "Expected one log violation"
+        }
+    }
+
+    Invoke-Test "accepts exact route statuses" {
+        $result = Test-RouteStatuses -Statuses @{ storefront = 200; notice = 101 } -Expected @{ storefront = 200; notice = 101 }
+        Assert-True $result.Passed ($result.Differences -join "; ")
+    }
+
+    Invoke-Test "rejects a non-200 HTTP route" {
+        $result = Test-RouteStatuses -Statuses @{ storefront = 500 } -Expected @{ storefront = 200 }
+        Assert-False $result.Passed "HTTP 500 was accepted"
+    }
+
+    Invoke-Test "rejects a non-101 WebSocket route" {
+        $result = Test-RouteStatuses -Statuses @{ notice = 404 } -Expected @{ notice = 101 }
+        Assert-False $result.Passed "WebSocket HTTP 404 was accepted"
+    }
+} finally {
+    Remove-Item -LiteralPath $temporaryRoot -Recurse -Force -ErrorAction SilentlyContinue
+}
+
+"Tests passed: $script:passed; failed: $script:failed"
+if ($script:failed) {
+    exit 1
+}
