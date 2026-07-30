@@ -17,6 +17,35 @@ Copy-Item help\docker\.env.application.example help\docker\.env.application
 
 现有验收库迁移时，应保留当前本地配置中的数据库口令，避免已有 MySQL 数据卷与新容器凭据不一致。
 
+## 验收快照
+
+切换容器或升级依赖前，应先停止业务写入并把验收快照保存到仓库外。快照包含规范化数据库结构/数据摘要和每个上传文件的路径、字节数、SHA256；数据库正文、上传文件和口令不会写入 JSON 清单。
+
+对正在运行的旧栈采集新快照：
+
+```powershell
+$snapshotDir = "D:\backups\crmeb-before-change"
+pwsh -NoProfile -File help\docker\capture-acceptance-snapshot.ps1 `
+  -Mode Capture `
+  -OutputDirectory $snapshotDir
+```
+
+已有规范化 SQL 和上传 SHA256 CSV 时，可导入为机器可读清单：
+
+```powershell
+$snapshotDir = "D:\backups\crmeb-before-change"
+pwsh -NoProfile -File help\docker\capture-acceptance-snapshot.ps1 `
+  -Mode Import `
+  -OutputDirectory $snapshotDir `
+  -SchemaPath "$snapshotDir\crmeb-schema-pre-change.sql" `
+  -DataPath "$snapshotDir\crmeb-data-pre-change.sql" `
+  -UploadManifestCsv "$snapshotDir\uploads-pre-change.sha256.csv" `
+  -TableCount 157 `
+  -DumpClient "mysqldump 8.0"
+```
+
+采集和严格比对必须在停写的迁移窗口执行。恢复业务写入后，新增订单、用户或上传文件会让旧快照校验失败，这是预期保护行为，不应通过修改快照绕过。
+
 ## 构建与启动
 
 ```powershell
@@ -24,7 +53,8 @@ docker compose --env-file help\docker\.env.runtime -f help\docker\docker-compose
 docker compose --env-file help\docker\.env.runtime -f help\docker\docker-compose.optimized.yml build
 docker compose -f help\docker\docker-compose.yml down
 docker compose --env-file help\docker\.env.runtime -f help\docker\docker-compose.optimized.yml up -d --wait
-pwsh -NoProfile -File help\docker\verify-optimized.ps1
+pwsh -NoProfile -File help\docker\verify-optimized.ps1 `
+  -SnapshotManifest "D:\backups\crmeb-before-change\acceptance-snapshot.json"
 ```
 
 商城地址：`http://127.0.0.1:8011/`
@@ -37,7 +67,8 @@ pwsh -NoProfile -File help\docker\verify-optimized.ps1
 
 ```powershell
 docker compose --env-file help\docker\.env.runtime -f help\docker\docker-compose.optimized.yml up -d --build --wait
-pwsh -NoProfile -File help\docker\verify-optimized.ps1
+pwsh -NoProfile -File help\docker\verify-optimized.ps1 `
+  -SnapshotManifest "D:\backups\crmeb-before-change\acceptance-snapshot.json"
 ```
 
 ## PHP 8.2 兼容性验证
@@ -63,11 +94,12 @@ docker run --rm --network none --user www-data `
 JDOSS 惰性 `S3Client` 的 AWS SDK 诊断单独验证：
 
 ```powershell
-docker run --rm --network none tianli/crmeb-php:acceptance `
+docker run --rm --network none `
+  -v ${PWD}\help\docker\probes:/probes:ro tianli/crmeb-php:acceptance `
   sh -c "cd /var/www && php /probes/php82-aws-s3client.php"
 ```
 
-常驻进程必须检查重启次数，不能只看状态。`startsecs=3` 意味着崩溃后 3 秒内重启仍报告 `RUNNING`：
+严格验收脚本会比较两次 Supervisor PID、Docker 重启次数和本轮新增日志。手工排查时仍可执行：
 
 ```powershell
 docker exec crmeb_php supervisorctl status
