@@ -60,6 +60,9 @@ crmeb/php-fpm.conf
 
 
 .trae/skills/dockercompose/ALLINONE_SKILL.md
+
+# 隔离开发工作树
+/.worktrees/
 .gitignore
 crmeb/Dockerfile
 crmeb/nginx.conf
