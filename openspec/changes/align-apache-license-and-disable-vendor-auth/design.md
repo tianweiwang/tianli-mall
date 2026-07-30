@@ -65,7 +65,7 @@ Local cross-version inspection, pending-version inspection, SQL preview, databas
 
 ### Restrict installation and existing-environment cleanup
 
-Fresh-install SQL SHALL omit the `check_auth`, `auth_apply`, and `auth` route metadata, `cert_crmeb`, authorization-only translations, and inventory rows for deleted authorization/telemetry files. Menu ID `605` SHALL contain the final system-information metadata. Integrity hashes for retained changed files SHALL be recalculated from final bytes rather than disabling integrity checking.
+Fresh-install SQL SHALL omit the `check_auth`, `auth_apply`, and `auth` route metadata, `cert_crmeb`, authorization-only translations, and inventory rows for deleted authorization/telemetry files. Menu ID `605` SHALL contain the final system-information metadata. Integrity hashes for retained changed files SHALL be recalculated from final bytes rather than disabling integrity checking. The legacy `UpgradeController.php` entry is self-referential because that controller embeds the inventory containing its own MD5; its existing value SHALL remain unchanged in both static inventories rather than publishing an unverifiable one-pass hash. Existing-environment cleanup SHALL still call `writeMd5()` after commit so the live database records the controller's actual runtime hash.
 
 The existing-environment cleanup SHALL be transactional, prefix-aware, idempotent, and limited to these named records:
 

@@ -105,7 +105,8 @@ The named cleanup set SHALL consist only of `system_config.menu_name=cert_crmeb`
 - **WHEN** fresh-install SQL, route documentation, translations, menu metadata, file tree, and MD5 inventory are loaded
 - **THEN** they SHALL contain no `cert_crmeb`, `check_auth`, `auth_apply`, `auth`, authorization-only translation, deleted authorization/telemetry file entry, `/public/static/images/support.png` entry, or `/public/statics/mp_view/static/images/support.png` entry
 - **THEN** menu ID `605` SHALL identify the local system-information title, route, and permission
-- **THEN** every retained file-integrity entry SHALL match the final distributed file bytes
+- **THEN** every retained file-integrity entry except the legacy self-referential `UpgradeController.php` entry SHALL match the final distributed file bytes
+- **THEN** the `UpgradeController.php` entry SHALL retain the same existing value in the fresh-install and embedded inventories, and existing-environment cleanup SHALL regenerate its actual runtime hash after the transaction commits
 
 #### Scenario: Existing cleanup runs repeatedly
 - **WHEN** cleanup runs twice with the configured database table prefix

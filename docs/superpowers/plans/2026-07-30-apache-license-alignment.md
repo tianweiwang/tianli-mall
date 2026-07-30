@@ -653,6 +653,8 @@ Get-FileHash -Algorithm MD5 -LiteralPath <retained-file-path>
 
 The actual implementation records the concrete path/hash pairs in the task evidence before staging; no wildcard update is allowed.
 
+`UpgradeController.php` is the single explicit exception: it embeds this inventory and therefore cannot contain an MD5 that matches its own final bytes. Keep its existing self-entry unchanged and identical in the embedded inventory and fresh-install SQL instead of writing a one-pass snapshot that becomes false as soon as it is inserted. The existing-environment cleanup still calls `SystemFileServices::writeMd5()` after the transaction so the live database receives the actual runtime hash.
+
 - [ ] **Step 4: Verify idempotency and business-data preservation**
 
 Before running cleanup, capture row counts and deterministic primary-key-ordered digests for:
