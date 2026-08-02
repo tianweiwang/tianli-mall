@@ -20,6 +20,24 @@ The optimized runtime SHALL execute the application on the PHP 8.2 release line 
 - **WHEN** the entrypoint runs on an unvalidated release line
 - **THEN** it SHALL refuse to start and name the actual supported range
 
+#### Scenario: Storefront bootstrap handles typed runtime values
+- **WHEN** an unset system configuration value is read on PHP 8.2
+- **THEN** the configured default SHALL be returned without a null-to-string deprecation
+- **WHEN** ThinkORM renders SQL containing integer bound values for diagnostics
+- **THEN** it SHALL preserve the SQL value semantics without passing non-string replacements to `substr_replace()`
+- **THEN** the repair SHALL live in project-owned code and the Composer lock SHALL remain unchanged
+
+#### Scenario: ORM collections load without terminating managed workers
+- **WHEN** a managed process first converts an ORM result set to `think\Collection` under `E_ALL`
+- **THEN** the collection SHALL satisfy the PHP 8.2 interface return-type contracts without emitting a deprecation
+- **THEN** the managed process SHALL remain running
+- **THEN** the repair SHALL use project-owned compatibility code without modifying `vendor/` or the Composer lock
+
+#### Scenario: Default product list does not activate an empty coupon filter
+- **WHEN** the storefront requests products without selecting a coupon category and the normalized category value is integer zero
+- **THEN** product list and count queries SHALL omit the coupon-category subquery
+- **THEN** otherwise eligible products SHALL remain visible on PHP 8.2
+
 ### Requirement: Recorded known issues
 Compatibility failures that cannot be repaired within this change SHALL be recorded rather than silently tolerated or hidden by the acceptance gate.
 

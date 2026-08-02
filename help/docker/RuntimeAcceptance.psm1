@@ -495,6 +495,44 @@ function Test-RouteStatuses {
     New-DecisionResult -Differences $differences
 }
 
+function Test-JsonApiResponses {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][Collections.IDictionary]$Responses)
+
+    $differences = [Collections.Generic.List[string]]::new()
+    foreach ($name in @($Responses.Keys | Sort-Object)) {
+        $body = [string]$Responses[$name]
+        if ([string]::IsNullOrWhiteSpace($body)) {
+            $differences.Add("API response empty: $name")
+            continue
+        }
+
+        try {
+            $payload = $body | ConvertFrom-Json -Depth 100
+        } catch {
+            $differences.Add("API response invalid JSON: $name")
+            continue
+        }
+
+        $statusProperty = $payload.PSObject.Properties['status']
+        if ($null -eq $statusProperty) {
+            $differences.Add("API business status missing: $name")
+            continue
+        }
+
+        $status = 0
+        if (-not [int]::TryParse([string]$statusProperty.Value, [ref]$status)) {
+            $differences.Add("API business status invalid: $name")
+            continue
+        }
+        if ($status -ne 200) {
+            $differences.Add("API business status mismatch: $name expected=200 actual=$status")
+        }
+    }
+
+    New-DecisionResult -Differences $differences
+}
+
 Export-ModuleMember -Function @(
     'Read-AcceptanceSnapshot',
     'Compare-AcceptanceSnapshot',
@@ -506,5 +544,6 @@ Export-ModuleMember -Function @(
     'ConvertFrom-SupervisorStatus',
     'Compare-SupervisorSnapshots',
     'Find-RuntimeLogViolation',
-    'Test-RouteStatuses'
+    'Test-RouteStatuses',
+    'Test-JsonApiResponses'
 )

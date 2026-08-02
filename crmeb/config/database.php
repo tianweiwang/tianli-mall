@@ -18,7 +18,10 @@
 // | Author: liu21st <liu21st@gmail.com>
 // +----------------------------------------------------------------------
 
+use crmeb\compat\think\orm\db\connector\Mysql as Php82Mysql;
 use think\facade\Env;
+
+$databaseType = Env::get('database.type', 'mysql');
 
 return [
     // 默认使用的数据库连接配置
@@ -28,7 +31,7 @@ return [
     'connections'     => [
         'mysql' => [
             // 数据库类型
-            'type'            => Env::get('database.type', 'mysql'),
+            'type'            => $databaseType === 'mysql' ? Php82Mysql::class : $databaseType,
             // 服务器地址
             'hostname'        => Env::get('database.hostname', '127.0.0.1'),
             // 数据库名

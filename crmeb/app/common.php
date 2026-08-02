@@ -134,14 +134,15 @@ if (!function_exists('sys_config')) {
         $sysConfig = app('sysConfig')->get($name);
         if (is_array($sysConfig)) {
             foreach ($sysConfig as &$item) {
-                if (!is_array($item)) {
+                if (is_string($item)) {
                     if (strpos($item, '/uploads/system/') !== false || strpos($item, '/statics/system_images/') !== false) $item = set_file_url($item);
                 }
             }
         } else {
-            if (strpos($sysConfig, '/uploads/system/') !== false || strpos($sysConfig, '/statics/system_images/') !== false) $sysConfig = set_file_url($sysConfig);
+            if ($sysConfig === null) return $default;
+            if (is_string($sysConfig) && (strpos($sysConfig, '/uploads/system/') !== false || strpos($sysConfig, '/statics/system_images/') !== false)) $sysConfig = set_file_url($sysConfig);
         }
-        $config = is_array($sysConfig) ? $sysConfig : trim($sysConfig);
+        $config = is_array($sysConfig) ? $sysConfig : trim((string)$sysConfig);
         if ($config === '' || $config === false) {
             return $default;
         } else {
@@ -672,7 +673,13 @@ if (!function_exists('filter_str')) {
     {
         $param_filter_type = sys_config('param_filter_type');
         if ($param_filter_type != 0) {
-            $rules = preg_split('/\r\n|\r|\n/', base64_decode(sys_config('param_filter_data')));
+            $rules = array_values(array_filter(
+                preg_split('/\r\n|\r|\n/', base64_decode(sys_config('param_filter_data'))),
+                static function ($rule) {
+                    return is_string($rule) && trim($rule) !== '';
+                }
+            ));
+            if (!$rules) return $str;
             if ($param_filter_type == 1) {
                 foreach ($rules as $item) {
                     if (preg_match($item, $str)) {

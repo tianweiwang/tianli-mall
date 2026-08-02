@@ -50,7 +50,7 @@ class StoreProductDao extends BaseDao
                         ->whereOr('id', is_array($where['cid']) ? 'in' : '=', $where['cid'])->field('id')->select();
                 })->field('product_id')->select();
             });
-        })->when(isset($where['coupon_category_id']) && $where['coupon_category_id'] != '', function ($query) use ($where) {
+        })->when(!empty($where['coupon_category_id']), function ($query) use ($where) {
             $where['coupon_category_id'] = toIntArray($where['coupon_category_id']);
             $query->whereIn('id', function ($query) use ($where) {
                 $query->name('store_product_cate')->whereIn('cate_id', function ($query) use ($where) {
@@ -138,7 +138,7 @@ class StoreProductDao extends BaseDao
                         ->whereOr('id', is_array($where['cid']) ? 'in' : '=', $where['cid'])->field('id')->select();
                 })->field('product_id')->select();
             });
-        })->when(isset($where['coupon_category_id']) && $where['coupon_category_id'] != '', function ($query) use ($where) {
+        })->when(!empty($where['coupon_category_id']), function ($query) use ($where) {
             $where['coupon_category_id'] = toIntArray($where['coupon_category_id']);
             $query->whereIn('id', function ($query) use ($where) {
                 $query->name('store_product_cate')->whereIn('cate_id', function ($query) use ($where) {

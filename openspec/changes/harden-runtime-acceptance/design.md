@@ -11,12 +11,13 @@ The pre-upgrade evidence directory `H:\天俪商城\CRMEB-backups\php82-upgrade-
 - Make a successful running-stack verification meaningful enough to gate the next migration step.
 - Detect database, schema, upload-path, upload-size, or upload-content drift from an explicit pre-cutover snapshot.
 - Detect wrong PHP images, missing extensions, enabled JIT, unstable supervised processes, relevant runtime diagnostics, broken application routes, invalid WebSocket handshakes, and unusable upload mounts.
+- Detect HTTP 200 responses whose JSON payload reports a failed storefront bootstrap, and repair the PHP 8.2 type boundaries exposed by the bootstrap and managed-worker workflows.
 - Keep snapshot capture reusable for later dependency and deployment migrations.
 - Make comparison logic testable without Docker or a live database.
 
 **Non-Goals:**
 
-- Modify business data, database schema, application code, Docker images, or Composer dependencies.
+- Modify business data, database schema, the Composer lock, or unrelated application behavior.
 - Treat frequently changing Redis/cache/runtime state as acceptance data.
 - Send any request to an external payment, messaging, WeChat, or storage provider.
 - Replace production backup retention and disaster-recovery procedures.
@@ -49,9 +50,17 @@ The verifier records Supervisor status and PIDs for PHP-FPM, queue, timer, and W
 
 ### Exercise observable routes and real local I/O
 
-The HTTP gate requires 200 for the storefront, admin entry, SPA fallback, and representative public API. Existing warm-storefront latency checks remain. `/notice` and `/msg` must complete a WebSocket upgrade with 101; 4xx/5xx responses fail.
+The HTTP gate requires 200 for the storefront, admin entry, SPA fallback, and representative public API. The storefront copyright, theme, home-layout, and language bootstrap responses must also parse as JSON and report business `status=200`; transport success cannot mask an application exception. Existing warm-storefront latency checks remain. `/notice` and `/msg` must complete a WebSocket upgrade with 101; 4xx/5xx responses fail.
 
 As `www-data`, the verifier creates a uniquely named file below uploads, writes unpredictable local probe content, reads it back, and removes it in guaranteed cleanup. Failure to create, read, compare, or delete fails verification. The probe never enters application metadata or business tables.
+
+### Repair PHP 8.2 boundaries in project-owned code
+
+`sys_config()` returns its caller-provided default before applying string operations to a missing value. For ThinkORM, a project-owned MySQL connector overrides SQL diagnostic rendering, follows the maintained 2.0 branch behavior by stringifying bound values before `substr_replace()`, and retains the native MySQL SQL builder instead of deriving a builder name from the custom connector class. Database configuration selects that connector only for the existing MySQL type. The locked `topthink/think-orm` package and tracked `vendor/` source remain unchanged.
+
+The locked `topthink/think-helper` collection predates PHP 8.1 interface return types. A project-owned compatibility copy preserves its behavior while declaring the required `ArrayAccess`, `Countable`, `IteratorAggregate`, and `JsonSerializable` return types. Composer excludes only the original collection from the authoritative classmap and maps the compatibility copy instead. This keeps the fix auditable, avoids suppressing `E_DEPRECATED`, and leaves both `composer.lock` and tracked `vendor/` source unchanged.
+
+The product list receives `coupon_category_id=0` when no coupon filter is selected. PHP 7 treated `0 != ''` as false while PHP 8 treats it as true, so the old guard executes an empty category subquery and removes every product. Both product-list and product-count query paths apply the coupon filter only when the normalized value is non-empty.
 
 ### Keep orchestration separate from pure comparison logic
 
@@ -67,11 +76,12 @@ Snapshot parsing, upload-manifest normalization, set comparison, runtime-fact va
 
 ## Testing
 
-1. Write self-tests that fail against the current implementation for hard-coded/missing snapshots, changed database digests, missing/extra/changed uploads, duplicate/traversal paths, unstable PIDs, wrong runtime facts, disallowed logs, non-101 WebSockets, and failed upload cleanup.
+1. Write self-tests that fail against the current implementation for hard-coded/missing snapshots, changed database digests, missing/extra/changed uploads, duplicate/traversal paths, unstable PIDs, wrong runtime facts, disallowed logs, non-101 WebSockets, failed upload cleanup, and HTTP 200 business-error payloads.
 2. Add the minimum comparison helpers and watch those tests pass.
 3. Integrate the helpers into snapshot capture and `verify-optimized.ps1`.
 4. Run the focused self-tests, `openspec validate harden-runtime-acceptance`, PowerShell parser checks, PHP 8.2 candidate verification, and the full optimized-stack verifier against the authoritative pre-upgrade snapshot.
 5. Confirm the verifier fails on a temporary copied fixture with one changed byte, then confirm the unchanged authoritative snapshot passes without modifying acceptance data.
+6. Reproduce the blank storefront, empty default product list, and managed-worker collection failure against the old image, prove the SQL/config/collection/product-list checks and bootstrap API gate fail, rebuild the PHP image, and require all layers to pass.
 
 ## Risks / Trade-offs
 
@@ -80,6 +90,8 @@ Snapshot parsing, upload-manifest normalization, set comparison, runtime-fact va
 - [Canonical dump output can vary across client versions] -> Capture and verification record and require the same MySQL major/client strategy and pinned dump options; version mismatch is reported explicitly.
 - [Log history may contain older failures] -> Record a time/log cursor before workflows and scan only new output where the runtime allows it; otherwise use a clearly bounded tail and report that limitation.
 - [The external snapshot can be moved] -> Require an explicit path and validate all referenced artifacts by digest rather than relying on a repository-relative location.
+- [A project-owned connector can drift from ThinkORM] -> Override only `getRealSql()`, pin its behavior with a candidate probe, and remove it when the locked ORM is deliberately upgraded to a release carrying the upstream fix.
+- [A project-owned collection can drift from think-helper] -> Preserve the locked implementation byte-for-byte apart from required interface return types, exercise it under `E_ALL`, and remove the override when the dependency is deliberately upgraded.
 
 ## Open Questions
 

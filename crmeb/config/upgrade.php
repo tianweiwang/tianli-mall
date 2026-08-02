@@ -15,15 +15,16 @@ use think\facade\Env;
  * 升级配置
  * 版本列表按从小到大排列，升级时会按顺序执行
  */
+// 官方在线升级（远程授权）已移除：它会把本站域名、app_id/app_key、版本号
+// 上报至 upgrade.crmeb.net 换取访问令牌，与 Apache-2.0 声明不符，且本项目
+// 通过镜像构建与回滚标签发布，不需要在线自动升级。
+// 保留的能力：本地版本脚本升级、备份、文件 MD5 二开比对。
 return [
-    'remote_enabled' => Env::get('upgrade.remote_enabled', false),
-
-    // 最低版本要求 (只有达到此版本才能使用跨版本在线升级功能)
-    // 因为跨版本在线升级功能是在 v6.0.0 版本开发的，低于此版本的用户无法使用
+    // 最低版本要求 (只有达到此版本才能使用跨版本升级脚本)
     'min_version' => [
         'version' => 'CRMEB-BZ v6.0.0',
         'code' => 600,
-        'message' => '跨版本在线升级功能需要 v6.0.0 及以上版本才能使用，请先手动升级到 v6.0.0 版本'
+        'message' => '跨版本升级功能需要 v6.0.0 及以上版本才能使用，请先手动升级到 v6.0.0 版本'
     ],
 
     // 版本列表 (按版本从小到大排列)
@@ -45,21 +46,6 @@ return [
 
     // 平台信息
     'platform' => 'CRMEB',
-
-    // APP认证信息 (可从.version文件读取覆盖)
-    'app_id' => 'ze7x9rxsv09l6pvsyo',
-    'app_key' => 'fuF7U9zaybLa5gageVQzxtxQMFnvU2OI',
-
-    // 远程升级服务器配置
-    'remote' => [
-        'login_url' => 'https://upgrade.crmeb.net/api/login',
-        'upgrade_url' => 'https://upgrade.crmeb.net/api/upgrade/list',
-        'upgrade_current_url' => 'https://upgrade.crmeb.net/api/upgrade/current_list',
-        'agreement_url' => 'https://upgrade.crmeb.net/api/upgrade/agreement',
-        'package_download_url' => 'https://upgrade.crmeb.net/api/upgrade/download',
-        'upgrade_status_url' => 'https://upgrade.crmeb.net/api/upgrade/status',
-        'upgrade_log_url' => 'https://upgrade.crmeb.net/api/upgrade/log',
-    ],
 
     // 备份配置
     'backup' => [

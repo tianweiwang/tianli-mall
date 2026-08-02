@@ -26,3 +26,13 @@
 - [x] 4.4 Run `openspec validate harden-runtime-acceptance`.
 - [x] 4.5 Run PHP 8.2 candidate verification and the full optimized-stack verifier against the authoritative snapshot.
 - [x] 4.6 Review the final diff and confirm no database contents, uploads, credentials, `.env`, `.constant`, or `.codex/` files entered the change.
+
+## 5. Storefront bootstrap regression
+
+- [ ] 5.1 Add failing tests for invalid business JSON payloads, ThinkORM integer SQL rendering, the reachable Think collection, and the default integer coupon-category filter, then reproduce the current blank-page, empty-product, and managed-worker failures.
+- [ ] 5.2 Add a project-owned MySQL connector that follows upstream 2.0 SQL rendering and select it without changing the Composer lock or `vendor/`.
+- [ ] 5.3 Make `sys_config()` return its default safely for missing values while preserving scalar and array behavior.
+- [ ] 5.4 Require copyright, theme, home-layout, and language bootstrap APIs to return valid JSON with business `status=200`.
+- [ ] 5.5 Cover `think\Collection` in the strict PHP 8.2 probe and load a project-owned return-type-compatible implementation without changing `composer.lock` or `vendor/`.
+- [ ] 5.6 Keep the default integer coupon-category value from activating an empty product list/count subquery on PHP 8.2.
+- [ ] 5.7 Enforce LF-only Linux entrypoints, rebuild the PHP image, and verify the bootstrap and product APIs, Candidate suite, strict snapshot acceptance, OpenSpec, and protected-file boundaries.

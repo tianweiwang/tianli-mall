@@ -17,7 +17,6 @@ use app\services\system\UpgradeServices;
 use think\facade\Db;
 use think\facade\Env;
 
-
 class UpgradeController
 {
     /**
@@ -32,6 +31,39 @@ class UpgradeController
     public function __construct(UpgradeServices $services)
     {
         $this->services = $services;
+    }
+
+    /**
+     * 官方在线升级已移除，保留本地能力接口以兼容现有管理端。
+     */
+    public function capability()
+    {
+        return app('json')->success(['remote_enabled' => false]);
+    }
+
+    public function upgradeList()
+    {
+        return app('json')->fail('官方在线升级服务未启用');
+    }
+
+    public function upgradeableList()
+    {
+        return app('json')->fail('官方在线升级服务未启用');
+    }
+
+    public function agreement()
+    {
+        return app('json')->fail('官方在线升级服务未启用');
+    }
+
+    public function packageDownload($packageKey)
+    {
+        return app('json')->fail('官方在线升级服务未启用');
+    }
+
+    public function upgradeStatus()
+    {
+        return app('json')->fail('官方在线升级服务未启用');
     }
 
     /**
@@ -126,7 +158,10 @@ class UpgradeController
         }
         //sql 执行完成，开始执行修改数据
         if (!isset($sql_arr[$sleep])) {
-            file_put_contents(app()->getRootPath() . '.version', "version=" . $data['new_version'] . "\nversion_code=" . $data['new_code'] . "\nplatform=CRMEB\napp_id=ze7x9rxsv09l6pvsyo" . "\napp_key=fuF7U9zaybLa5gageVQzxtxQMFnvU2OI");
+            // 不再写入官方 app_id/app_key：远程授权流程已移除，这两个键无人读取。
+            // spread_uid 需保留，SystemConfig 会读取它。
+            $spreadUid = (int)(parse_ini_file(app()->getRootPath() . '.version')['spread_uid'] ?? 0);
+            file_put_contents(app()->getRootPath() . '.version', "version=" . $data['new_version'] . "\nversion_code=" . $data['new_code'] . "\nplatform=GITHUB\nspread_uid=" . $spreadUid);
             return app('json')->success(['sleep' => -1]);
         }
         $sql = $sql_arr[$sleep];
@@ -2780,50 +2815,6 @@ SQL
         return $data;
     }
 
-
-    /**
-     * 所有的版本列表
-     * @return \think\Response
-     * @author wuhaotian
-     * @email 442384644@qq.com
-     * @date 2026/2/25
-     */
-    public function upgradeList()
-    {
-        return app('json')->success($this->services->getUpgradeList());
-    }
-
-    public function capability()
-    {
-        return app('json')->success([
-            'remote_enabled' => $this->services->isRemoteEnabled(),
-        ]);
-    }
-
-    /**
-     * 可升级的版本列表
-     * @return \think\Response
-     * @author wuhaotian
-     * @email 442384644@qq.com
-     * @date 2026/2/25
-     */
-    public function upgradeableList()
-    {
-        return app('json')->success($this->services->getUpgradeableList());
-    }
-
-    /**
-     * 升级协议
-     * @return \think\Response
-     * @author wuhaotian
-     * @email 442384644@qq.com
-     * @date 2026/2/25
-     */
-    public function agreement()
-    {
-        return app('json')->success($this->services->getAgreement());
-    }
-
     /**
      * 检查文件
      * @return \think\Response
@@ -2852,24 +2843,6 @@ SQL
     }
 
     /**
-     * 下载升级包
-     * @param $packageKey
-     * @return mixed
-     */
-    public function packageDownload($packageKey)
-    {
-        $this->services->assertRemoteEnabled();
-        if (sys_config('queue_open', 0) != 1 || Env::get('cache.driver', 'file') != 'redis') {
-            return app('json')->fail('请先开启消息队列');
-        }
-        if (empty($packageKey)) {
-            return app('json')->fail('参数错误');
-        }
-        $this->services->packageDownload($packageKey);
-        return app('json')->success('下载中...');
-    }
-
-    /**
      * 升级进度
      * @return mixed
      */
@@ -2889,16 +2862,6 @@ SQL
         $type = $request->param('type', '');
         $result = $this->services->getDownloadProgress($type);
         return app('json')->success($result);
-    }
-
-    /**
-     * 获取升级状态
-     * @return mixed
-     */
-    public function upgradeStatus()
-    {
-        $data = $this->services->getUpgradeStatus();
-        return app('json')->success($data);
     }
 
     /**
