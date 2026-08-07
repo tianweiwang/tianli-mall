@@ -22,6 +22,11 @@ use app\services\activity\advance\StoreAdvanceServices;
 class StoreAdvanceController
 {
     /**
+     * @var StoreAdvanceServices
+     */
+    protected $services;
+
+    /**
      * StoreAdvanceController constructor.
      * @param StoreAdvanceServices $services
      */

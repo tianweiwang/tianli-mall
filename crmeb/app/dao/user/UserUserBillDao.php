@@ -24,6 +24,8 @@ use app\model\user\UserBill;
  */
 class UserUserBillDao extends BaseDao
 {
+    /** @var string */
+    protected $join_alis = '';
 
     /**
      * 设置模型

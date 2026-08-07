@@ -28,6 +28,11 @@ use think\helper\Str;
  */
 class SystemRouteServices extends BaseServices
 {
+    /**
+     * 应用实例
+     * @var \think\App
+     */
+    protected $app;
 
     /**
      * SystemRouteServices constructor.

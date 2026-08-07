@@ -36,6 +36,16 @@ class Signature
     private $options;
 
     /**
+     * @var string
+     */
+    private $token;
+
+    /**
+     * @var array
+     */
+    private $signHeader;
+
+    /**
      * Signature constructor.
      * @param string $accessKey
      * @param string $secretKey

@@ -24,6 +24,8 @@ use app\model\user\UserBrokerage;
  */
 class UserUserBrokerageDao extends BaseDao
 {
+    /** @var string */
+    protected $join_alis = '';
 
     /**
      * 设置模型

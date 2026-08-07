@@ -16,6 +16,11 @@ use app\services\user\UserBrokerageServices;
 class UserBrokerageController
 {
     /**
+     * @var UserBrokerageServices
+     */
+    protected $services;
+
+    /**
      * UserBrokerageController constructor.
      * @param UserBrokerageServices $services
      */

@@ -16,6 +16,11 @@ use crmeb\services\CacheService;
 
 class SpreadApplyController
 {
+    /**
+     * @var SpreadApplyServices
+     */
+    protected $services;
+
     public function __construct(SpreadApplyServices $services)
     {
         $this->services = $services;
