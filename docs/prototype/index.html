@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>天俪商城 · 加盟平台交互原型</title>
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+
+<div class="demo-shell">
+
+  <div class="demo-bar">
+    <h1>天俪商城 · 加盟平台</h1>
+    <span class="tag">交互原型</span>
+    <div class="spacer"></div>
+    <div class="role-switch" id="roleSwitch">
+      <button class="on" data-role="customer">顾客端</button>
+      <button data-role="store">门店端</button>
+      <button data-role="brand">品牌方</button>
+      <button data-role="flow">资金流</button>
+    </div>
+  </div>
+
+  <div class="demo-hint" id="hint">
+    <b>演示说明：</b><span id="hintText">顾客在店内扫码进入该门店子商城，可预约到店或直接下单。点击页面元素可交互。</span>
+  </div>
+
+  <div class="screen-nav" id="screenNav"></div>
+
+  <div class="stage">
+    <div class="phones" id="phones"></div>
+    <div class="admin-wrap" id="adminWrap" style="display:none"></div>
+  </div>
+
+</div>
+
+<script src="assets/data.js"></script>
+<script src="assets/views.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>
