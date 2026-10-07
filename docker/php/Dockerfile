@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1.7
+
 FROM composer:2.10.2 AS composer-bin
 
 FROM php:8.2-fpm-bookworm AS php-base

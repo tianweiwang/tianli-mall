@@ -4,7 +4,7 @@
 // +----------------------------------------------------------------------
 // | Copyright (c) 2016~2026 https://www.crmeb.com All rights reserved.
 // +----------------------------------------------------------------------
-// | Licensed under the Apache License, Version 2.0
+// | Licensed CRMEB并不是自由软件，未经许可不能去掉CRMEB相关版权
 // +----------------------------------------------------------------------
 // | Author: CRMEB Team <admin@crmeb.com>
 // +----------------------------------------------------------------------
@@ -15,11 +15,6 @@ use app\services\user\UserBrokerageServices;
 
 class UserBrokerageController
 {
-    /**
-     * @var UserBrokerageServices
-     */
-    protected $services;
-
     /**
      * UserBrokerageController constructor.
      * @param UserBrokerageServices $services

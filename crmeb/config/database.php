@@ -4,7 +4,7 @@
 // +----------------------------------------------------------------------
 // | Copyright (c) 2016~2026 https://www.crmeb.com All rights reserved.
 // +----------------------------------------------------------------------
-// | Licensed under the Apache License, Version 2.0
+// | Licensed CRMEB并不是自由软件，未经许可不能去掉CRMEB相关版权
 // +----------------------------------------------------------------------
 // | Author: CRMEB Team <admin@crmeb.com>
 // +----------------------------------------------------------------------
@@ -18,10 +18,7 @@
 // | Author: liu21st <liu21st@gmail.com>
 // +----------------------------------------------------------------------
 
-use crmeb\compat\think\orm\db\connector\Mysql as Php82Mysql;
 use think\facade\Env;
-
-$databaseType = Env::get('database.type', 'mysql');
 
 return [
     // 默认使用的数据库连接配置
@@ -31,7 +28,7 @@ return [
     'connections'     => [
         'mysql' => [
             // 数据库类型
-            'type'            => $databaseType === 'mysql' ? Php82Mysql::class : $databaseType,
+            'type'            => Env::get('database.type', 'mysql'),
             // 服务器地址
             'hostname'        => Env::get('database.hostname', '127.0.0.1'),
             // 数据库名

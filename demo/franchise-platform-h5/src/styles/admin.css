@@ -1,0 +1,142 @@
+.admin-shell {
+  display: grid;
+  min-width: 1100px;
+  min-height: 100vh;
+  grid-template-columns: 220px minmax(0, 1fr);
+  background: var(--page);
+}
+
+.admin-sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  color: #d7dde8;
+  background: #1f2530;
+}
+
+.admin-brand {
+  display: flex;
+  height: 64px;
+  align-items: center;
+  gap: 11px;
+  padding: 0 18px;
+  color: #fff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.admin-brand__mark {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  place-items: center;
+  color: #fff;
+  background: var(--brand-primary);
+  border-radius: var(--radius-md);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.admin-brand strong,
+.admin-brand small {
+  display: block;
+}
+
+.admin-brand strong {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.admin-brand small {
+  margin-top: 1px;
+  color: #8f9aab;
+  font-size: 11px;
+}
+
+.admin-menu {
+  padding: 12px 10px;
+}
+
+.admin-menu a {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 2px;
+  padding: 0 13px;
+  color: #b9c1cf;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  transition:
+    color var(--motion-fast),
+    background var(--motion-fast);
+}
+
+.admin-menu a:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.admin-menu a.router-link-active {
+  color: #fff;
+  background: var(--admin-primary);
+}
+
+.admin-workspace {
+  min-width: 0;
+}
+
+.admin-topbar {
+  position: sticky;
+  z-index: 50;
+  top: 0;
+  display: flex;
+  height: 64px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.admin-topbar__role {
+  display: block;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.admin-topbar strong {
+  display: block;
+  margin-top: 1px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.admin-topbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.admin-topbar__user {
+  color: var(--text-regular);
+  font-size: 13px;
+}
+
+.admin-topbar .demo-navigator {
+  position: static;
+  box-shadow: none;
+}
+
+.admin-main {
+  min-width: 0;
+  padding: 20px 24px 32px;
+  overflow-x: auto;
+}
+
+@media (max-width: 1280px) {
+  .admin-main {
+    padding-right: 18px;
+    padding-left: 18px;
+  }
+}

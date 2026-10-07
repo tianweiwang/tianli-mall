@@ -3,7 +3,7 @@
 // +----------------------------------------------------------------------
 // | Copyright (c) 2016~2023 https://www.crmeb.com All rights reserved.
 // +----------------------------------------------------------------------
-// | Licensed under the Apache License, Version 2.0
+// | Licensed CRMEB并不是自由软件，未经许可不能去掉CRMEB相关版权
 // +----------------------------------------------------------------------
 // | Author: CRMEB Team <admin@crmeb.com>
 // +----------------------------------------------------------------------
@@ -431,6 +431,28 @@ export function replaceSiteUrlApi(data) {
 }
 
 /**
+ *
+ */
+export function auth() {
+  return request({
+    url: 'auth',
+    method: 'get',
+  });
+}
+
+/**
+ * @description 申请授权
+ * @param data
+ */
+export function authApply(data) {
+  return request({
+    url: 'auth_apply',
+    method: 'post',
+    data,
+  });
+}
+
+/**
  * @description 获取客服页面广告
  * @param data
  */
@@ -581,6 +603,17 @@ export function setAgreements(data, type) {
 }
 
 /**
+ * @description 获取授权产品
+ */
+export function crmebProduct(params) {
+  return request({
+    url: 'crmeb_product',
+    method: 'get',
+    params,
+  });
+}
+
+/**
  * @description 获取授权订单
  */
 export function getVersion() {
@@ -620,16 +653,6 @@ export function upgradeListApi(params) {
     url: '/system/upgrade/list',
     method: 'get',
     params,
-  });
-}
-
-/**
- * 在线升级能力
- */
-export function upgradeCapabilityApi() {
-  return request({
-    url: '/system/upgrade/capability',
-    method: 'get',
   });
 }
 

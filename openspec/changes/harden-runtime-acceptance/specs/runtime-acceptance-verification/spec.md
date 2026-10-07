@@ -50,11 +50,6 @@ Acceptance SHALL exercise the local interfaces and writable storage used by repr
 - **THEN** every route SHALL return its expected successful HTTP status
 - **THEN** the existing warm-storefront latency limit SHALL remain satisfied
 
-#### Scenario: Storefront bootstrap APIs are business-successful
-- **WHEN** the storefront copyright, theme, home-layout, and language bootstrap APIs are requested locally
-- **THEN** every response SHALL be valid JSON with business `status=200`
-- **THEN** an HTTP 200 response carrying an error status or malformed JSON SHALL fail verification
-
 #### Scenario: WebSocket routes upgrade
 - **WHEN** valid WebSocket upgrade requests are sent to `/notice` and `/msg`
 - **THEN** both routes SHALL return HTTP 101
@@ -69,6 +64,6 @@ Acceptance SHALL exercise the local interfaces and writable storage used by repr
 Pure snapshot and acceptance-decision logic SHALL be testable without Docker, MySQL, or external services.
 
 #### Scenario: Failure fixtures are exercised
-- **WHEN** focused self-tests run against changed digests, changed uploads, duplicate or escaping paths, wrong runtime facts, unstable processes, disallowed logs, invalid route statuses, and invalid business JSON responses
+- **WHEN** focused self-tests run against changed digests, changed uploads, duplicate or escaping paths, wrong runtime facts, unstable processes, disallowed logs, and invalid route statuses
 - **THEN** every invalid fixture SHALL be rejected for the intended reason
 - **THEN** a valid fixture SHALL pass

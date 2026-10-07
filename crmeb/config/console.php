@@ -4,7 +4,7 @@
 // +----------------------------------------------------------------------
 // | Copyright (c) 2016~2026 https://www.crmeb.com All rights reserved.
 // +----------------------------------------------------------------------
-// | Licensed under the Apache License, Version 2.0
+// | Licensed CRMEB并不是自由软件，未经许可不能去掉CRMEB相关版权
 // +----------------------------------------------------------------------
 // | Author: CRMEB Team <admin@crmeb.com>
 // +----------------------------------------------------------------------
@@ -29,7 +29,6 @@ return [
         'workerman' => \crmeb\command\Workerman::class,
         'timer' => \crmeb\command\Timer::class,
         'util' => \crmeb\command\Util::class,
-        'npm' => \crmeb\command\Npm::class,
-        'license:cleanup' => \crmeb\command\LicenseAlignmentCleanup::class
+        'npm' => \crmeb\command\Npm::class
     ],
 ];

@@ -156,27 +156,6 @@ PHP 8.2 兼容迁移已完成，但以下问题未解决，上线前必须单独
 - **`think-image` `gif/Encoder.php:77`** 处理静态 GIF 时报 `Undefined array key 0`。该缺陷在 PHP 7.4 上即已存在（当时为 Notice），输出字节不受影响，故不计为迁移引入的问题。修复它需要改动帧数组逻辑，属于功能修复。
 - TLS、生产密钥管理、备份保留策略与恢复演练均未配置。
 
-## 阿里云演示服务器
-
-`docker-compose.demo-server.yml` 用于不接域名的隔离演示环境。它只发布 `8011` 端口，并从本地已验证的 PHP/Nginx 镜像启动，不在服务器上编译源码。
-
-服务器目录固定为 `/srv/tianli/crmeb-demo`：
-
-```bash
-cd /srv/tianli/crmeb-demo
-sh redeploy-demo-server.sh
-```
-
-MySQL、Redis、runtime 和 uploads 分别保存在 `data/` 下。停止或升级不得清空这些目录，也不得在 Compose 命令中添加 `-v`。首次启动时 `init/` 下的权威示例 SQL 仅在空数据目录中导入一次。
-
-更新 PHP 镜像时必须使用上述脚本：Compose 重建 PHP 容器后，脚本会重启 Nginx 以刷新上游 IP 解析，避免旧地址导致 502。
-
-脚本会把 `.env.application` 和 `.constant` 设置为 `root:www-data`、权限 `0640`。PHP 健康检查也以 `www-data` 身份运行，确保 FPM 实际能够读取配置；不要手工改回仅 root 可读的 `0600`。
-
-阿里云安全组还必须放行入方向 TCP `8011`；演示期间优先限制为甲方和维护人员的公网出口地址，确需公开演示时再临时放宽来源范围。
-
-该环境仅用于客户演示，不得接入真实支付、真实用户数据或作为公网生产环境。
-
 ### 项目自有兼容覆盖类
 
 以下 vendor 类因无法在 PHP 8.2 运行且上游无可用修复版本，由项目自有实现覆盖，通过 `composer.json` 的 `exclude-from-classmap` 与 `classmap` 注册，位于 `crmeb/crmeb/compat/` 和 `crmeb/crmeb/services/`。升级相关依赖时必须同步复查：
@@ -187,7 +166,6 @@ MySQL、Redis、runtime 和 uploads 分别保存在 `data/` 下。停止或升�
 | `think\Image` | 文字水印坐标隐式浮点转换 |
 | `EasyWeChat\Support\Collection` | `__set_state()` 参数数量、接口返回类型、序列化契约 |
 | `think\Paginator`、`think\Model`、`Conversion`、`think\db\Where` | 接口返回类型声明 |
-| `think\Collection` | PHP 8.2 接口返回类型声明，避免 ORM 结果集首次转换时终止 Worker |
 | `Pimple\Container` | 接口返回类型声明 |
 | `Workerman\Events\Select` | `stream_select()` 微秒参数隐式浮点转换 |
 

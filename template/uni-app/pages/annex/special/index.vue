@@ -396,6 +396,9 @@ export default {
         .then((res) => {
           let data = res.data;
           uni.setStorageSync("wechatStatus", data.wechat_status);
+          if (!data.copyrightContext && !data.copyrightImage) {
+            data.copyrightImage = "/static/images/support.png";
+          }
           uni.setStorageSync("copyNameInfo", data.copyrightContext);
           uni.setStorageSync("copyImageInfo", data.copyrightImage);
           // #ifdef MP

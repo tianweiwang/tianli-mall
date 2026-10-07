@@ -1,0 +1,156 @@
+* {
+  box-sizing: border-box;
+  letter-spacing: 0;
+}
+
+html,
+body,
+#app {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  color: var(--text-primary);
+  background: var(--page);
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    "Microsoft YaHei",
+    sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  letter-spacing: 0;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--admin-primary);
+  outline-offset: 2px;
+}
+
+.demo-navigator {
+  position: fixed;
+  z-index: 80;
+  top: 12px;
+  right: max(12px, env(safe-area-inset-right));
+  display: inline-grid;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  place-items: center;
+  color: var(--text-regular);
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  box-shadow: var(--shadow-low);
+  cursor: pointer;
+}
+
+.demo-role-menu {
+  display: grid;
+  gap: 2px;
+}
+
+.demo-role-menu button {
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 10px;
+  padding: 0 10px;
+  color: var(--text-primary);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-align: left;
+}
+
+.demo-role-menu button:hover {
+  background: var(--surface-subtle);
+}
+
+.demo-customer-switcher {
+  display: grid;
+  gap: 2px;
+  margin-top: 4px;
+  padding-top: 7px;
+  border-top: 1px solid var(--border);
+}
+
+.demo-customer-switcher > span {
+  padding: 0 10px 3px;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.demo-customer-switcher button.is-active {
+  color: var(--brand-primary);
+  background: #fff5f4;
+  font-weight: 600;
+}
+
+.demo-role-menu .demo-role-menu__reset {
+  margin-top: 4px;
+  color: var(--danger);
+  border-top: 1px solid var(--border);
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+}
+
+.route-placeholder {
+  min-height: 260px;
+  padding: 24px;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+}
+
+.route-placeholder h1 {
+  margin: 0 0 24px;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.route-placeholder__line {
+  width: 62%;
+  height: 12px;
+  margin-top: 12px;
+  background: #f1f3f6;
+  border-radius: 3px;
+}
+
+.route-placeholder__line--wide {
+  width: 88%;
+}
+
+.route-placeholder__line--short {
+  width: 38%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

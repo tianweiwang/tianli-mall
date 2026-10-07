@@ -21,6 +21,7 @@ import baseInfo from './components/baseInfo';
 import gridMenu from './components/gridMenu';
 import visitChart from './components/visitChart';
 import userChart from './components/userChart';
+import { auth } from '@/api/system';
 import { mapState } from 'vuex';
 export default {
   name: 'index',
@@ -41,7 +42,23 @@ export default {
   computed: {
     ...mapState('userInfo', ['userInfo']),
   },
+  mounted() {
+    this.getAuth();
+  },
   methods: {
+    getAuth() {
+      auth()
+        .then((res) => {
+          let data = res.data || {};
+          this.force_reminder = data.force_reminder;
+          if (data.auth_code && data.auth) {
+            this.authCode = data.auth_code;
+            this.auth = true;
+          }
+          this.openImage = true;
+        })
+        .catch((res) => {});
+    },
     clear() {
       this.openImage = false;
     },

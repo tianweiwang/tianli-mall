@@ -4,7 +4,7 @@
 // +----------------------------------------------------------------------
 // | Copyright (c) 2016~2026 https://www.crmeb.com All rights reserved.
 // +----------------------------------------------------------------------
-// | Licensed under the Apache License, Version 2.0
+// | Licensed CRMEB并不是自由软件，未经许可不能去掉CRMEB相关版权
 // +----------------------------------------------------------------------
 // | Author: CRMEB Team <admin@crmeb.com>
 // +----------------------------------------------------------------------
@@ -32,6 +32,14 @@ use app\dao\system\upgrade\UpgradeLogDao;
  */
 class UpgradeServices extends BaseServices
 {
+    const LOGIN_URL = 'http://upgrade.crmeb.net/api/login';
+    const UPGRADE_URL = 'http://upgrade.crmeb.net/api/upgrade/list';
+    const UPGRADE_CURRENT_URL = 'http://upgrade.crmeb.net/api/upgrade/current_list';
+    const AGREEMENT_URL = 'http://upgrade.crmeb.net/api/upgrade/agreement';
+    const PACKAGE_DOWNLOAD_URL = 'http://upgrade.crmeb.net/api/upgrade/download';
+    const UPGRADE_STATUS_URL = 'http://upgrade.crmeb.net/api/upgrade/status';
+    const UPGRADE_LOG_URL = 'http://upgrade.crmeb.net/api/upgrade/log';
+
     /**
      * @var array $requestData
      */
@@ -49,6 +57,27 @@ class UpgradeServices extends BaseServices
     public function __construct(UpgradeLogDao $dao)
     {
         $this->dao = $dao;
+        $versionData = $this->getVersion();
+        //        if ($versionData['version_code'] < 450) return true;
+        if (empty($versionData)) {
+            throw new AdminException('授权信息丢失');
+        }
+
+        $this->timeStamp = time();
+        $recVersion = $this->recombinationVersion($versionData['version'] ?? '');
+
+        $this->requestData = [
+            'nonce' => mt_rand(111, 999),
+            'host' => app()->request->host(),
+            'timestamp' => $this->timeStamp,
+            'app_id' => trim($versionData['app_id'] ?? ''),
+            'app_key' => trim($versionData['app_key'] ?? ''),
+            'version' => implode('.', $recVersion)
+        ];
+
+        if (!CacheService::get('upgrade_auth_token')) {
+            $this->getAuth();
+        }
     }
 
     /**
@@ -88,6 +117,273 @@ class UpgradeServices extends BaseServices
             }
             return (int)$item;
         }, explode('.', $version));
+    }
+
+    /**
+     * 获取Token
+     * @return void
+     */
+    public function getAuth()
+    {
+        $this->getSign($this->timeStamp);
+        $result = HttpService::postRequest(self::LOGIN_URL, $this->requestData);
+        if (!$result) {
+            throw new AdminException('授权失败');
+        }
+
+        $authData = json_decode($result, true);
+        if (!isset($authData['status']) || $authData['status'] != 200) {
+            Log::error(['msg' => $authData['msg'] ?? '', 'error' => $authData['data'] ?? []]);
+            throw new AdminException($authData['msg'] ?? '授权失败');
+        }
+        CacheService::set('upgrade_auth_token', $authData['data']['access_token'], 7200);
+    }
+
+    /**
+     * 获取签名
+     * @param int $timeStamp
+     * @return void
+     */
+    public function getSign(int $timeStamp)
+    {
+        $data = $this->requestData;
+        if ((!isset($data['host']) || !$data['host']) ||
+            (!isset($data['nonce']) || !$data['nonce']) ||
+            (!isset($data['app_id']) || !$data['app_id']) ||
+            (!isset($data['version']) || !$data['version']) ||
+            (!isset($data['app_key']) || !$data['app_key'])
+        ) {
+            throw new AdminException('验证失效，请重新请求');
+        }
+
+        $host = $data['host'];
+        $nonce = $data['nonce'];
+        $appId = $data['app_id'];
+        $appKey = $data['app_key'];
+        $version = $data['version'];
+        unset($data['sign'], $data['nonce'], $data['host'], $data['version'], $data['app_id'], $data['app_key']);
+
+        $params = json_encode($data);
+        $shaiAtt = [
+            'host' => $host,
+            'nonce' => $nonce,
+            'app_id' => $appId,
+            'params' => $params,
+            'app_key' => $appKey,
+            'version' => $version,
+            'time_stamp' => $timeStamp
+        ];
+
+        sort($shaiAtt, SORT_STRING);
+        $shaiStr = implode(',', $shaiAtt);
+        $this->requestData['sign'] = hash("SHA256", $shaiStr);
+    }
+
+    /**
+     * 升级列表
+     * @return mixed
+     */
+    public function getUpgradeList()
+    {
+        [$page, $limit] = $this->getPageValue();
+        $this->requestData['page'] = (string)($page ?: 1);
+        $this->requestData['limit'] = (string)($limit ?: 10);
+        $this->getSign($this->timeStamp);
+        $result = HttpService::getRequest(self::UPGRADE_URL, $this->requestData);
+        if (!$result) {
+            throw new AdminException('升级列表获取失败');
+        }
+
+        $data = json_decode($result, true);
+        if (!$this->checkAuth($data)) {
+            throw new AdminException($data['msg'] ?? '升级列表获取失败');
+        }
+        return $data['data'] ?? [];
+    }
+
+    /**
+     * 可升级列表
+     * @return mixed
+     */
+    public function getUpgradeableList()
+    {
+        $this->getSign($this->timeStamp);
+        $result = HttpService::getRequest(self::UPGRADE_CURRENT_URL, $this->requestData, ['Access-Token: Bearer ' . CacheService::get('upgrade_auth_token')]);
+        if (!$result) {
+            throw new AdminException('可升级列表获取失败');
+        }
+
+        $data = json_decode($result, true);
+        if (!$this->checkAuth($data)) {
+            throw new AdminException($data['msg'] ?? '升级列表获取失败');
+        }
+
+        if ($data['data']) {
+            $routineData = [
+                'version' => $data['data'][0]['first_version'] . '.' . $data['data'][0]['second_version'] . '.' . $data['data'][0]['third_version'],
+                'desc' => $data['data'][0]['content'],
+                'is_live' => 0
+            ];
+            CacheService::set('routine_upload_data', $routineData, 86400);
+        }
+        return $data['data'] ?? [];
+    }
+
+    /**
+     * 升级协议
+     * @return mixed
+     */
+    public function getAgreement()
+    {
+        $this->getSign($this->timeStamp);
+        $result = HttpService::getRequest(self::AGREEMENT_URL, $this->requestData, ['Access-Token: Bearer ' . CacheService::get('upgrade_auth_token')]);
+        if (!$result) {
+            throw new AdminException('升级协议获取失败');
+        }
+
+        $data = json_decode($result, true);
+        if (!$this->checkAuth($data)) {
+            throw new AdminException($data['msg'] ?? '升级协议获取失败');
+        }
+        return $data['data'] ?? [];
+    }
+
+    /**
+     * 下载
+     * @param string $packageKey
+     * @return bool
+     */
+    public function packageDownload(string $packageKey): bool
+    {
+        $token = md5(time());
+
+        //检查数据库大小
+        $this->checkDatabaseSize();
+
+        $this->requestData['package_key'] = $packageKey;
+        $this->getSign($this->timeStamp);
+        $result = HttpService::getRequest(self::PACKAGE_DOWNLOAD_URL, $this->requestData, ['Access-Token: Bearer ' . CacheService::get('upgrade_auth_token')]);
+        if (!$result) {
+            throw new AdminException('升级包获取失败');
+        }
+        $data = json_decode($result, true);
+
+        if (!$this->checkAuth($data)) {
+            throw new AdminException($data['msg'] ?? '授权失败');
+        }
+
+        if (empty($data['data']['server_package_link']) && empty($data['data']['client_package_link']) && empty($data['data']['pc_package_link'])) {
+            CacheService::set($token . 'upgrade_status', 2, 86400);
+            return true;
+        }
+
+        if (!empty($data['data']['server_package_link'])) {
+            $this->downloadFile($data['data']['server_package_link'], $token . '_server_package');
+        } else {
+            CacheService::set($token . '_server_package', 2, 86400);
+        }
+
+        if (!empty($data['data']['client_package_link'])) {
+            $this->downloadFile($data['data']['client_package_link'], $token . '_client_package');
+        } else {
+            CacheService::set($token . '_client_package', 2, 86400);
+        }
+
+        if (!empty($data['data']['pc_package_link'])) {
+            $this->downloadFile($data['data']['pc_package_link'], $token . '_pc_package');
+        } else {
+            CacheService::set($token . '_pc_package', 2, 86400);
+        }
+
+        CacheService::set('upgrade_token', $token, 86400);
+        CacheService::set($token . '_upgrade_data', $data, 86400);
+        return true;
+    }
+
+    /**
+     * 执行下载
+     * @param string $seq
+     * @param string $url
+     * @param string $downloadPath
+     * @param string $fileName
+     * @param int $timeout
+     * @return void
+     */
+    public function download(string $seq, string $url, string $downloadPath, string $fileName, int $timeout = 300)
+    {
+        ini_set('memory_limit', '-1');
+
+        $filePath = $downloadPath . DS . $fileName;
+        $fp_output = fopen($filePath, 'w');
+        if (!$fp_output) {
+            throw new AdminException('无法创建下载文件');
+        }
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30);        // 连接超时
+        curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);         // 总超时时间
+        curl_setopt($ch, CURLOPT_FILE, $fp_output);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);      // 跟随重定向
+        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+        curl_setopt($ch, CURLOPT_REFERER, 'https://www.crmeb.com');
+        if (stripos($url, "https://") !== false) {
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+        }
+        $result = curl_exec($ch);
+        $error = curl_error($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        fclose($fp_output);  // 关闭文件句柄
+
+        // 检查下载结果
+        if ($result === false || !empty($error)) {
+            @unlink($filePath);
+            throw new AdminException('下载失败: ' . $error);
+        }
+
+        if ($httpCode !== 200) {
+            @unlink($filePath);
+            throw new AdminException('下载失败，HTTP状态码: ' . $httpCode);
+        }
+
+        // 检查文件是否存在且有内容
+        if (!is_file($filePath) || filesize($filePath) < 100) {
+            @unlink($filePath);
+            throw new AdminException('下载的文件无效');
+        }
+
+        if (pathinfo($fileName, PATHINFO_EXTENSION) !== 'zip') {
+            throw new AdminException('安装包格式错误');
+        }
+
+        /** @var FileService $fileService */
+        $fileService = app()->make(FileService::class);
+        $downloadFilePath = $downloadPath . DS . pathinfo($fileName, PATHINFO_FILENAME);
+        if (!$fileService->extractFile($filePath, $downloadFilePath)) {
+            throw new AdminException('升级包解压失败');
+        }
+
+        CacheService::set($seq . '_path', $downloadFilePath, 86400);
+        CacheService::set($seq . '_name', $filePath, 86400);
+        CacheService::set($seq, 2, 86400);
+    }
+
+    /**
+     * 开始下载
+     * @param string $packageLink
+     * @param string $seq
+     * @return void
+     */
+    private function downloadFile(string $packageLink, string $seq)
+    {
+        $fileName = substr($packageLink, strrpos($packageLink, '/') + 1);
+        $filePath = app()->getRootPath() . 'upgrade' . DS . date('Y-m-d');
+        if (!is_dir($filePath)) mkdir($filePath, 0755, true);
+        UpgradeJob::dispatch('download', [$seq, $packageLink, $filePath, $fileName, 300]);
+        CacheService::set($seq, 1, 86400);
     }
 
     /**
@@ -152,6 +448,7 @@ class UpgradeServices extends BaseServices
             try {
                 $this->overwriteProject();
             } catch (\Exception $e) {
+                $this->sendUpgradeLog($token);
             }
         }
 
@@ -298,6 +595,8 @@ class UpgradeServices extends BaseServices
             // 替换文件目录
             $this->coverageProject($token);
 
+            // 发送升级日志
+            $this->sendUpgradeLog($token);
             $this->saveLog($token);
             CacheService::set($token . 'upgrade_status', 2, 86400);
             return true;
@@ -335,6 +634,39 @@ class UpgradeServices extends BaseServices
             'package_link' => CacheService::get($token . '_project_backup_name', ''),
             'data_link' => CacheService::get($token . '_database_backup_name', '')
         ]);
+    }
+
+    /**
+     * 发送日志
+     * @param string $token
+     * @return bool
+     */
+    public function sendUpgradeLog(string $token): bool
+    {
+        try {
+            $versionBefore = CacheService::get('version_before', '');
+            $versionData = $this->getVersion();
+            if (empty($versionData)) {
+                throw new AdminException('授权信息丢失');
+            }
+            $versionAfter = $this->recombinationVersion($versionData['version'] ?? '');
+
+            $this->requestData['version_before'] = implode('.', $versionBefore);
+            $this->requestData['version_after'] = implode('.', $versionAfter);
+            $this->requestData['error_data'] = CacheService::get($token . 'upgrade_status_tip', '');
+
+            $this->getSign($this->timeStamp);
+            $result = HttpService::postRequest(self::UPGRADE_LOG_URL, $this->requestData, ['Access-Token: Bearer ' . CacheService::get('upgrade_auth_token')]);
+            if (!$result) {
+                throw new AdminException('升级日志推送失败');
+            }
+
+            $data = json_decode($result, true);
+            $this->checkAuth($data);
+        } catch (\Exception $e) {
+            Log::error(['msg' => '升级日志发送失败:,失败原因' . ($data['msg'] ?? '') . $e->getMessage(), 'data' => $data]);
+        }
+        return true;
     }
 
     /**
@@ -741,6 +1073,48 @@ class UpgradeServices extends BaseServices
         }
 
         return $rollbackList;
+    }
+
+    /**
+     * 检查访问权限
+     * @param array $data
+     * @return bool
+     */
+    public function checkAuth(array $data): bool
+    {
+        if (!isset($data['status']) || $data['status'] != 200) {
+            if ($data['status'] == '请输入账号和密码') {
+                $this->getAuth();
+            }
+            Log::error(['msg' => $data['msg'] ?? '', 'error' => $data]);
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 升级状态
+     * @return array
+     */
+    public function getUpgradeStatus(): array
+    {
+        $this->getSign($this->timeStamp);
+        $result = HttpService::getRequest(self::UPGRADE_STATUS_URL, $this->requestData, ['Access-Token: Bearer ' . CacheService::get('upgrade_auth_token')]);
+        if (!$result) {
+            throw new AdminException('升级状态获取失败');
+        }
+
+        $data = json_decode($result, true);
+        $this->checkAuth($data);
+
+        if (!isset($data['data']['auth']) || !$data['data']['auth']) {
+            throw new AdminException('您的域名未授权，请先授权');
+        }
+
+        $upgradeData['status'] = $data['data']['status'] ?? 0;
+        $upgradeData['force_reminder'] = $data['data']['force_reminder'] ?? 0;
+        $upgradeData['title'] = $upgradeData['status'] < 1 ? "您已升级至最新版本，无需更新" : "系统有新版本可更新";
+        return $upgradeData;
     }
 
     /**

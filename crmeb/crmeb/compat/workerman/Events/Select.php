@@ -280,7 +280,7 @@ class Select implements EventInterface
             // $_selectTimeout as a float on purpose, because tick() compares it
             // against zero, so convert only at this call boundary. Truncation
             // matches the pre-8.1 implicit cast.
-            $ret = stream_select($read, $write, $except, 0, max(0, (int)$this->_selectTimeout));
+            $ret = stream_select($read, $write, $except, 0, (int)$this->_selectTimeout);
             restore_error_handler();
 
 

@@ -582,7 +582,6 @@ $strictSymbols = [
     'think\\Model',
     'think\\model\\concern\\Conversion',
     'think\\db\\Where',
-    'think\\Collection',
     'Pimple\\Container',
     'think\\image\\gif\\Decoder',
     'think\\image\\gif\\Encoder',
@@ -770,7 +769,6 @@ function Invoke-DeprecationScopeSelfTest {
             "think\Model",
             "think\model\concern\Conversion",
             "think\db\Where",
-            "think\Collection",
             "Pimple\Container",
             "think\image\gif\Decoder",
             "think\image\gif\Encoder",
@@ -1150,12 +1148,7 @@ function Invoke-CandidateIntegrationCompatibility {
         "payment",
         "sms",
         "uploads",
-        "service-discovery",
-        "orm-sql",
-        "form-builder",
-        "remote-upgrade-disabled",
-        "empty-filter-rules",
-        "workerman-timer"
+        "service-discovery"
     )
     $details = [Collections.Generic.List[string]]::new()
     $failedCases = [Collections.Generic.List[string]]::new()
@@ -1214,11 +1207,11 @@ function Invoke-CandidateIntegrationCompatibility {
                 $issues.Add("status=$($record.status)")
             }
 
-            $checkProperties = @(
-                if ($record.checks -is [pscustomobject]) {
-                    $record.checks.PSObject.Properties
-                }
-            )
+            $checkProperties = if ($record.checks -is [pscustomobject]) {
+                @($record.checks.PSObject.Properties)
+            } else {
+                @()
+            }
             if ($record.checks -isnot [pscustomobject]) {
                 $issues.Add("checks-not-object")
             }

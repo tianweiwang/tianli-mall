@@ -4,7 +4,7 @@
 // +----------------------------------------------------------------------
 // | Copyright (c) 2016~2026 https://www.crmeb.com All rights reserved.
 // +----------------------------------------------------------------------
-// | Licensed under the Apache License, Version 2.0
+// | Licensed CRMEB并不是自由软件，未经许可不能去掉CRMEB相关版权
 // +----------------------------------------------------------------------
 // | Author: CRMEB Team <admin@crmeb.com>
 // +----------------------------------------------------------------------
@@ -101,8 +101,6 @@ Route::group('system', function () {
 
     /** 在线升级 */
     Route::group(function () {
-        //在线升级能力
-        Route::get('upgrade/capability', 'UpgradeController/capability')->option(['real_name' => '在线升级能力']);
         //升级状态
         Route::get('upgrade_status', 'UpgradeController/upgradeStatus')->option(['real_name' => '升级状态']);
         //升级包列表

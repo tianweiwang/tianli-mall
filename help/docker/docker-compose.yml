@@ -47,7 +47,6 @@ services:
       REDIS_PASSWORD: 123456
       APP_DEBUG: true
       DEFAULT_TIMEZONE: Asia/Shanghai
-      UPGRADE_REMOTE_ENABLED: "${UPGRADE_REMOTE_ENABLED:-false}"
     ports:
       - "9000:9000"
       - "40001:40001"

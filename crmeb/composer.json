@@ -73,8 +73,6 @@
             "vendor/topthink/think-orm/src/Model.php",
             "vendor/topthink/think-orm/src/model/concern/Conversion.php",
             "vendor/topthink/think-orm/src/db/Where.php",
-            "vendor/topthink/think-helper/src/Collection.php",
-            "vendor/xaboy/form-builder/src/Driver/CustomComponent.php",
             "vendor/pimple/pimple/src/Pimple/Container.php",
             "vendor/workerman/workerman/Events/Select.php"
         ],
@@ -83,8 +81,6 @@
             "crmeb/services/image/gif/",
             "crmeb/services/wechat/Collection.php",
             "crmeb/compat/think/orm/",
-            "crmeb/compat/think-helper/Collection.php",
-            "crmeb/compat/form-builder/Driver/CustomComponent.php",
             "crmeb/compat/pimple/Container.php",
             "crmeb/compat/workerman/Events/Select.php"
         ]

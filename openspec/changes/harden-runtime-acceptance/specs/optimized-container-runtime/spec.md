@@ -17,11 +17,6 @@ The optimized runtime SHALL load OPcache, disable application and database debug
 - **THEN** every route SHALL return HTTP 200
 - **THEN** `/pages/index/index` SHALL be served by the Nginx SPA fallback without invoking ThinkPHP
 
-#### Scenario: Storefront bootstrap reaches application success
-- **WHEN** the optimized stack serves the copyright, theme, home-layout, and language bootstrap APIs
-- **THEN** every endpoint SHALL return valid JSON with business `status=200`
-- **THEN** PHP 8.2 type diagnostics SHALL NOT be converted into HTTP 200 error payloads
-
 ### Requirement: Reliable managed processes
 The optimized runtime SHALL keep PHP-FPM, queue, timer, and Workerman under foreground process supervision and SHALL reject transiently running or restarting processes.
 
@@ -31,17 +26,11 @@ The optimized runtime SHALL keep PHP-FPM, queue, timer, and Workerman under fore
 - **THEN** PHP-FPM, queue, timer, and Workerman SHALL report `RUNNING` under Supervisor
 - **THEN** PHP-FPM, Workerman ports 40001 and 40002, and internal channel port 40003 SHALL become reachable
 
-#### Scenario: Linux entrypoint survives a Windows checkout
-- **WHEN** the PHP image is built from a Windows working tree
-- **THEN** executable Shell entrypoints SHALL retain LF line endings
-- **THEN** the container SHALL start without a missing-interpreter error caused by CRLF
-
 #### Scenario: Stable supervised processes
 - **WHEN** PHP-FPM, queue, timer, and Workerman are sampled twice over a bounded interval
 - **THEN** every process SHALL remain `RUNNING` with the same PID
 - **THEN** relevant post-workflow logs SHALL contain no fatal, termination, or repeating-restart evidence
 - **THEN** PHP-FPM, Workerman ports 40001 and 40002, and internal channel port 40003 SHALL remain reachable
-- **THEN** first-load ORM collection conversion SHALL NOT terminate a queue, timer, or Workerman process
 
 #### Scenario: Application dependencies are ready
 - **WHEN** the PHP container reports healthy

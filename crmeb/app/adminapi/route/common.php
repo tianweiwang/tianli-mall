@@ -4,7 +4,7 @@
 // +----------------------------------------------------------------------
 // | Copyright (c) 2016~2026 https://www.crmeb.com All rights reserved.
 // +----------------------------------------------------------------------
-// | Licensed under the Apache License, Version 2.0
+// | Licensed CRMEB并不是自由软件，未经许可不能去掉CRMEB相关版权
 // +----------------------------------------------------------------------
 // | Author: CRMEB Team <admin@crmeb.com>
 // +----------------------------------------------------------------------
@@ -26,16 +26,22 @@ Route::group(function () {
     Route::get('home/rank', 'Common/purchaseRanking')->option(['real_name' => '首页交易额排行']);
     //消息提醒
     Route::get('jnotice', 'Common/jnotice')->option(['real_name' => '消息提醒']);
+    //验证授权
+    Route::get('check_auth', 'Common/auth')->option(['real_name' => '验证授权']);
+    //申请授权
+    Route::post('auth_apply', 'Common/auth_apply')->option(['real_name' => '申请授权']);
+    //授权
+    Route::get('auth', 'Common/auth')->option(['real_name' => '授权信息']);
     //获取左侧菜单
     Route::get('menus', 'v1.setting.SystemMenus/menus')->option(['real_name' => '左侧菜单']);
     //获取搜索菜单列表
     Route::get('menusList', 'Common/menusList')->option(['real_name' => '搜索菜单列表']);
     //获取logo
     Route::get('logo', 'Common/getLogo')->option(['real_name' => '获取logo']);
-    //读取版权信息
-    Route::get('copyright', 'Common/copyright')->option(['real_name' => '读取版权信息']);
-    //保存版权信息
-    Route::post('copyright', 'Common/saveCopyright')->option(['real_name' => '保存版权信息']);
+    //查询版权
+    Route::get('copyright', 'Common/copyright')->option(['real_name' => '申请版权']);
+    //保存版权
+    Route::post('copyright', 'Common/saveCopyright')->option(['real_name' => '保存版权']);
     //后台菜单搜索
     Route::post('menusSearch', 'Common/menusSearch')->option(['real_name' => '后台菜单搜索']);
 })->middleware([

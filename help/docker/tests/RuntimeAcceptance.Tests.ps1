@@ -301,28 +301,6 @@ workerman                       RUNNING   pid 14, uptime 1:02:03
         Assert-False $result.Passed "WebSocket HTTP 404 was accepted"
     }
 
-    Invoke-Test "accepts business-successful JSON API responses" {
-        $result = Test-JsonApiResponses -Responses @{
-            copyright = '{"status":200,"msg":"success","data":{}}'
-            home = '{"status":200,"msg":"success","data":{"value":[]}}'
-        }
-        Assert-True $result.Passed ($result.Differences -join "`n")
-    }
-
-    Invoke-Test "rejects an HTTP 200 business-error payload" {
-        $result = Test-JsonApiResponses -Responses @{
-            home = '{"status":400,"msg":"runtime failure","data":[]}'
-        }
-        Assert-False $result.Passed "Business error payload was accepted"
-        Assert-True (($result.Differences -join "`n") -match "business status mismatch") "Expected business status difference"
-    }
-
-    Invoke-Test "rejects malformed JSON API payloads" {
-        $result = Test-JsonApiResponses -Responses @{ home = '<html>error</html>' }
-        Assert-False $result.Passed "Malformed JSON payload was accepted"
-        Assert-True (($result.Differences -join "`n") -match "invalid JSON") "Expected invalid JSON difference"
-    }
-
     Invoke-Test "creates a normalized upload entry from a file" {
         $uploadRoot = Join-Path $temporaryRoot "uploads-entry"
         $uploadDirectory = Join-Path $uploadRoot "attach/catalog"
@@ -474,77 +452,10 @@ workerman                       RUNNING   pid 14, uptime 1:02:03
         Assert-True ($verifierSource -match 'Test-RouteStatuses') "Expected exact route-status validation"
     }
 
-    Invoke-Test "requires business-successful storefront bootstrap APIs" {
-        foreach ($path in @('/api/copyright', '/api/theme_info/theme', '/api/theme_info/home', '/api/get_lang_json')) {
-            Assert-True ($verifierSource.Contains($path)) "Expected bootstrap API $path"
-        }
-        Assert-True ($verifierSource -match 'Test-JsonApiResponses') "Expected business JSON response validation"
-    }
-
     $php82VerifierSource = Get-Content -LiteralPath (Join-Path $PSScriptRoot "../verify-php82.ps1") -Raw
-    Invoke-Test "covers the reachable Think collection with project-owned compatibility code" {
-        Assert-True ($php82VerifierSource -match "'think\\\\Collection'") "Expected think\\Collection in the strict PHP 8.2 symbols"
-
-        $composerPath = Join-Path $PSScriptRoot "../../../crmeb/composer.json"
-        $composer = Get-Content -LiteralPath $composerPath -Raw | ConvertFrom-Json -AsHashtable
-        $excludedClasses = @($composer['autoload']['exclude-from-classmap'])
-        $projectClasses = @($composer['autoload']['classmap'])
-        Assert-True ($excludedClasses -contains "vendor/topthink/think-helper/src/Collection.php") "Expected the locked vendor collection to be excluded"
-        Assert-True ($projectClasses -contains "crmeb/compat/think-helper/Collection.php") "Expected the project collection compatibility mapping"
-
-        $compatibilityPath = Join-Path $PSScriptRoot "../../../crmeb/crmeb/compat/think-helper/Collection.php"
-        Assert-True (Test-Path -LiteralPath $compatibilityPath -PathType Leaf) "Expected the project collection compatibility file"
-    }
-
-    Invoke-Test "does not activate the coupon-category product filter for integer zero" {
-        $productDaoPath = Join-Path $PSScriptRoot "../../../crmeb/app/dao/product/product/StoreProductDao.php"
-        $productDaoSource = Get-Content -LiteralPath $productDaoPath -Raw
-        Assert-False ($productDaoSource -match "coupon_category_id'\]\s*!=\s*''") "Expected PHP 8-safe coupon-category guards"
-        Assert-True (([regex]::Matches($productDaoSource, "!empty\(\`$where\['coupon_category_id'\]\)"))).Count -eq 2 "Expected list and count coupon-category guards"
-    }
-
     Invoke-Test "normalizes Windows line endings before Docker shell execution" {
         Assert-True ($php82VerifierSource -match '(?s)\$normalizedArguments\s*=.+?Replace\("`r`n",\s*"`n"\)') "Expected CRLF normalization at the Docker boundary"
         Assert-True ($php82VerifierSource -match '& docker @normalizedArguments') "Expected Docker to receive normalized arguments"
-    }
-
-    Invoke-Test "keeps a single integration check as an array under strict mode" {
-        Assert-True ($php82VerifierSource -match '(?s)\$checkProperties\s*=\s*@\(\s*if\s*\(\$record\.checks') "Expected the complete checks branch to be array-wrapped"
-    }
-
-    Invoke-Test "keeps the Linux runtime entrypoint LF-only" {
-        $entrypointPath = Join-Path $PSScriptRoot "../../../docker/php/runtime-entrypoint.sh"
-        $entrypointBytes = [IO.File]::ReadAllBytes($entrypointPath)
-        Assert-False ($entrypointBytes -contains 13) "Linux runtime entrypoint contains CR bytes"
-    }
-
-    Invoke-Test "waits for the complete demonstration SQL import before starting PHP" {
-        $composePath = Join-Path $PSScriptRoot "../docker-compose.demo-server.yml"
-        $composeSource = Get-Content -LiteralPath $composePath -Raw
-        Assert-True ($composeSource -match '/var/lib/mysql/\.crmeb-init-complete') "Expected MySQL health to require the completed-import marker"
-
-        $markerPath = Join-Path $PSScriptRoot "../demo-init/999-init-complete.sh"
-        Assert-True (Test-Path -LiteralPath $markerPath -PathType Leaf) "Expected the final initialization marker script"
-        $markerSource = Get-Content -LiteralPath $markerPath -Raw
-        Assert-True ($markerSource -match 'touch\s+/var/lib/mysql/\.crmeb-init-complete') "Expected the marker to be written in persistent MySQL data"
-    }
-
-    Invoke-Test "refreshes Nginx upstream resolution after a demonstration image update" {
-        $redeployPath = Join-Path $PSScriptRoot "../redeploy-demo-server.sh"
-        Assert-True (Test-Path -LiteralPath $redeployPath -PathType Leaf) "Expected the demonstration redeploy script"
-        $redeploySource = Get-Content -LiteralPath $redeployPath -Raw
-        Assert-True ($redeploySource -match '(?s)compose.+up.+--wait.+compose.+restart\s+nginx') "Expected Nginx restart after the Compose update"
-    }
-
-    Invoke-Test "checks demonstration configuration as the FPM user" {
-        $composePath = Join-Path $PSScriptRoot "../docker-compose.demo-server.yml"
-        $composeSource = Get-Content -LiteralPath $composePath -Raw
-        Assert-True ($composeSource -match '(?s)healthcheck:.+?su.+?www-data.+?runtime-healthcheck\.php') "Expected the PHP healthcheck to run as www-data"
-
-        $redeployPath = Join-Path $PSScriptRoot "../redeploy-demo-server.sh"
-        $redeploySource = Get-Content -LiteralPath $redeployPath -Raw
-        Assert-True ($redeploySource -match 'chgrp\s+33\s+\.env\.application\s+\.constant') "Expected the application config group to match www-data"
-        Assert-True ($redeploySource -match 'chmod\s+0640\s+\.env\.application\s+\.constant') "Expected least-privilege application config permissions"
     }
 } finally {
     Remove-Item -LiteralPath $temporaryRoot -Recurse -Force -ErrorAction SilentlyContinue

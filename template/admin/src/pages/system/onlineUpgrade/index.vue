@@ -1,9 +1,6 @@
 <template>
 <div class="upgrade">
-    <el-card v-if="capabilityLoaded && !remoteEnabled" :bordered="false" shadow="never" class="ivu-mt">
-      <el-alert :title="capabilityMessage" type="info" :closable="false" show-icon />
-    </el-card>
-    <el-card v-if="capabilityLoaded && remoteEnabled" :bordered="false" shadow="never" class="ivu-mt">
+    <el-card :bordered="false" shadow="never" class="ivu-mt">
       <div class="header">
         <div>当前版本<span class="v"></span><span class="num">{{$store.state.userInfo.version}}</span></div>
         <div class="info title">
@@ -16,7 +13,7 @@
         <el-button v-if="currentTab == 1 && upgradeStatus.status == 1" type="primary" class="primary btn update" v-db-click @click="update()">立即更新</el-button>
       </div>
     </el-card>
-    <el-card v-if="capabilityLoaded && remoteEnabled" :bordered="false" shadow="never" class="ivu-mt">
+    <el-card :bordered="false" shadow="never" class="ivu-mt">
           <el-tabs v-model="currentTab" @tab-click="handleClick">
             <el-tab-pane :label="item.label" :name="item.value.toString()" v-for="item in headerList" :key="item.id" ></el-tab-pane>
           </el-tabs>
@@ -73,7 +70,7 @@
         </div>
     </el-card>
     <!-- 免责声明 -->
-    <el-dialog v-if="capabilityLoaded && remoteEnabled" :visible.sync="declaration"
+    <el-dialog :visible.sync="declaration"
       width="470px"
       custom-clas="vertical-center-modal"
       :show-close="true"
@@ -91,7 +88,7 @@
       </span>
     </el-dialog>
     <!-- 升级 -->
-    <el-dialog v-if="capabilityLoaded && remoteEnabled" v-model="updateModal" width="470px"  custom-clas="vertical-center-modal" :show-close="true"
+    <el-dialog v-model="updateModal" width="470px"  custom-clas="vertical-center-modal" :show-close="true"
       :close-on-click-modal="false">
         <p slot="header" class="header-modal2">
           <span >升级至v{{forceVersion}}</span>
@@ -132,7 +129,6 @@
 
 <script>
 import {
-  upgradeCapabilityApi,
   upgradeListApi,
   upgradeProgressApi,
   upgradeAgreementApi,
@@ -150,9 +146,6 @@ export default {
   name: 'systemUpgradeclient',
   data() {
     return {
-      capabilityLoaded: false,
-      remoteEnabled: false,
-      capabilityMessage: '官方在线升级服务未启用',
       Panel: '1',
       currentTab: '1',
       declaration: false,
@@ -203,24 +196,13 @@ export default {
     // }
   },
   async mounted() {
-    try {
-      const capability = await upgradeCapabilityApi();
-      this.remoteEnabled = capability.data.remote_enabled === true;
-      this.capabilityLoaded = true;
-      if (!this.remoteEnabled) {
-        return;
-      }
 
-      this.getUpgradeStatus();
-      await this.getUpgradeList();
-      await this.getupgradeableList();
-      if (this.$store.state.upgrade.toggleStatus) {
-        this.servionStatus = true;
-        this.getUpgradeAgreement();
-      }
-    } catch (error) {
-      this.capabilityMessage = '在线升级能力状态获取失败';
-      this.capabilityLoaded = true;
+    this.getUpgradeStatus();
+    await this.getUpgradeList();
+    await this.getupgradeableList();
+    if (this.$store.state.upgrade.toggleStatus) {
+      this.servionStatus = true;
+      this.getUpgradeAgreement();
     }
     // this.compare();
   },

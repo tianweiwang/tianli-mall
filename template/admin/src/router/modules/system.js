@@ -3,7 +3,7 @@
 // +---------------------------------------------------------------------
 // | Copyright (c) 2016~2023 https://www.crmeb.com All rights reserved.
 // +---------------------------------------------------------------------
-// | Licensed under the Apache License, Version 2.0
+// | Licensed CRMEB并不是自由软件，未经许可不能去掉CRMEB相关版权
 // +---------------------------------------------------------------------
 // | Author: CRMEB Team <admin@crmeb.com>
 // +---------------------------------------------------------------------
@@ -186,13 +186,13 @@ export default {
       component: () => import('@/pages/system/group/list'),
     },
     {
-      path: 'maintain/info',
-      name: `${pre}info`,
+      path: 'maintain/auth',
+      name: `${pre}auth`,
       meta: {
-        auth: ['system-maintain-info'],
-        title: '系统信息',
+        auth: ['system-maintain-auth'],
+        title: '商业授权',
       },
-      component: () => import('@/pages/system/info/index'),
+      component: () => import('@/pages/system/auth/index'),
     },
     {
       path: 'onlineUpgrade/index',

@@ -81,19 +81,6 @@ function Get-HttpMeasurement {
     }
 }
 
-function Get-HttpBody {
-    param(
-        [string]$Url,
-        [int]$TimeoutSeconds = 25
-    )
-
-    $output = & curl.exe -sS --max-time $TimeoutSeconds $Url 2>$null
-    if ($LASTEXITCODE -ne 0) {
-        return ''
-    }
-    ($output -join "`n").Trim()
-}
-
 if (-not (Test-Path -LiteralPath $composePath)) {
     throw "Compose file not found: $composePath"
 }
@@ -308,18 +295,6 @@ trap - EXIT
         spa = Get-HttpMeasurement -Url "http://127.0.0.1:8011/pages/index/index"
         api = Get-HttpMeasurement -Url "http://127.0.0.1:8011/api/index"
     }
-    $bootstrapApiPaths = @{
-        copyright = "/api/copyright"
-        theme = "/api/theme_info/theme"
-        home = "/api/theme_info/home"
-        language = "/api/get_lang_json"
-    }
-    $bootstrapApiResponses = @{}
-    foreach ($name in $bootstrapApiPaths.Keys) {
-        $url = "http://127.0.0.1:8011$($bootstrapApiPaths[$name])"
-        $routeMeasurements[$name] = Get-HttpMeasurement -Url $url
-        $bootstrapApiResponses[$name] = Get-HttpBody -Url $url
-    }
 
     $installerMeasurement = Get-HttpMeasurement -Url "http://127.0.0.1:8011/install/index.php"
     Add-Check "web installer is blocked" ($installerMeasurement.Status -eq 404) "HTTP $($installerMeasurement.Status)"
@@ -343,10 +318,6 @@ trap - EXIT
         admin = 200
         spa = 200
         api = 200
-        copyright = 200
-        theme = 200
-        home = 200
-        language = 200
         notice = 101
         msg = 101
     }
@@ -357,14 +328,6 @@ trap - EXIT
         $routeDecision.Differences -join "; "
     }
     Add-Check "HTTP and WebSocket routes return exact statuses" $routeDecision.Passed $routeDetail
-
-    $bootstrapDecision = Test-JsonApiResponses -Responses $bootstrapApiResponses
-    $bootstrapDetail = if ($bootstrapDecision.Passed) {
-        "copyright, theme, home-layout and language APIs report business status 200"
-    } else {
-        $bootstrapDecision.Differences -join "; "
-    }
-    Add-Check "storefront bootstrap APIs are business-successful" $bootstrapDecision.Passed $bootstrapDetail
 
     try {
         $captureScriptPath = Join-Path $PSScriptRoot "capture-acceptance-snapshot.ps1"

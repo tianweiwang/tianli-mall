@@ -1,5 +1,0 @@
-*.sh text eol=lf
-crmeb/public/admin/** -text whitespace=-trailing-space
-crmeb/public/index.html -text whitespace=-trailing-space
-crmeb/public/static/** -text whitespace=-trailing-space
-crmeb/public/statics/mp_view/** -text whitespace=-trailing-space
