@@ -41,7 +41,7 @@
 **Interfaces:**
 - Produces: 复用 compose 服务 audit-app、audit-runner 和实际名为 isolation 的内部网络（internal=true），源代码只读、runtime专用可写；audit_fault_redis(string $mode): void 的模式为 pause/unpause/stop/start。FaultyRedis继承PHP原生Redis，构造参数为真实Redis与故障计划；已反射确认扩展的方法签名，委托真实连接，可在指定命令前后抛错/断连，不用于生产。
 
-- [ ] **Step 1: 自检用例**：Z02、Z06、Z07 在 ISO-FULL 下重跑；新增子场景 `no-egress`（runner 内 `curl -m 5 https://example.com` 必须失败）、`no-host-ports`（核对实际Docker端口绑定为空，等价于docker port无输出），及真实Redis命令前失败/执行后响应丢失/执行后断连/专用服务pause-unpause-stop-start恢复；全部全键快照与双哨兵不变。先提交测试并保留适配器未实现时的正常FAIL，不制造已经具备的ISO属性失败。
+- [x] **Step 1: 自检用例**（264fbcff测试先提交；新RUN=20261011092042df3a82，12项基线8PASS/4FAIL，exit1；4FAIL均因故障适配器未实现，无环境退出）：Z02、Z06、Z07 在 ISO-FULL 下重跑；新增子场景 `no-egress`（runner 内 `curl -m 5 https://example.com` 必须失败）、`no-host-ports`（核对实际Docker端口绑定为空，等价于docker port无输出），及真实Redis命令前失败/执行后响应丢失/执行后断连/专用服务pause-unpause-stop-start恢复；全部全键快照与双哨兵不变。先提交测试并保留适配器未实现时的正常FAIL，不制造已经具备的ISO属性失败。
 - [ ] **Step 2: 实现并运行自检**，期望全部 PASS。
 - [ ] **Step 3: 提交** `test: upgrade isolated harness to ISO-FULL with fault injection`。
 
@@ -49,7 +49,7 @@
 
 **Files:**
 - Create: `crmeb/crmeb/services/auth/AuthSessionStore.php`、`crmeb/crmeb/services/auth/lua/create_session.lua`、`redeem_session.lua`、`rotate_account.lua`、`verify_session.lua`（只读原子核对账号与会话，避免两次读跨过撤销）
-- Create: `crmeb/crmeb/exceptions/AuthUnavailableException.php`
+- Create: `crmeb/crmeb/exceptions/AuthUnavailableException.php`、`AuthSessionException.php`（两者保持AuthException子类兼容，构造直接用RuntimeException受控消息/代码，不触发getLang缓存/详细故障日志，不携带底层previous）
 - Create: `help/audit-regressions/isolated/ms0b-session-store.php`
 
 **Interfaces:**
@@ -71,7 +71,7 @@ public function beginChange(string $app, string $id): string               // �
 public function completeChange(string $app, string $id, string $owner): void // 仅CAS匹配的本次owner可解除保护
 ```
 
-Redis 连接错误一律转换为 `AuthUnavailableException`。
+Redis 连接错误一律转换为 `AuthUnavailableException`。账号/会话用HASH，blocked为字符串0/1，initialized=1；未初始化保护标记initialized=0且无session_version。会话status为active，兑换后旧status为consumed、TTL保留。账号键持久，无早于会话过期风险。redeem的newSession还要求session_version匹配账号/旧会话，type/audience/credential_stamp匹配旧会话，sid不同，previous_token_digest匹配旧摘要；previous_token_digest只校验、不存入新会话。
 
 2026-10-11 必要设计补齐（用户委托执行方自主选择，安全规则保持）：
 
@@ -122,7 +122,7 @@ public function revoke(string $app, string $token): void
 **Files:**
 - Modify: `crmeb/app/services/system/admin/AdminAuthServices.php`（`parseToken()` 改用 `AuthTokenV2::verify()`）
 - Modify: `crmeb/app/services/system/admin/SystemAdminServices.php`（`login()` 改用 `initAccount()` + `issue()`；退出改用 `revoke()`）
-- Modify: 管理端退出接口所在控制器（以代码为准）
+- Modify: `crmeb/app/adminapi/controller/v1/setting/SystemAdmin.php`（真实退出接口）；`crmeb/app/adminapi/AdminApiExceptionHandle.php`（受控v2异常直接JSON，避开Json::make再次翻译缓存写入和debug trace）
 
 **Interfaces:**
 - Consumes: Task 2、Task 3
@@ -134,7 +134,7 @@ public function revoke(string $app, string $token): void
 ### Task 5: 对外账号接入 v2
 
 **Files:**
-- Modify: `crmeb/app/services/out/OutAccountServices.php`（`authLogin()`、`parseToken()`、`refresh()`）
+- Modify: `crmeb/app/services/out/OutAccountServices.php`（`authLogin()`、`parseToken()`、`refresh()`）；`crmeb/app/outapi/OutApiExceptionHandle.php`（同一受控异常必要返回调用点，直接JSON、不得记录请求参数/底层异常）
 
 **Interfaces:**
 - Produces: 对外账号凭据摘要 = 数据库中的 `appsecret` 哈希字符串；`refresh()` 使用 `AuthTokenV2::refresh()`（单次兑换）
