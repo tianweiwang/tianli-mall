@@ -92,8 +92,13 @@ function m1m_columns(PDO $db): array
 {
     $design = file_get_contents(audit_repo_dir() . '/help/migrations/marketplace-ms1.md');
     preg_match_all('/CREATE TABLE `(eb_marketplace_[a-z_]+)` \((.*?)\) ENGINE=InnoDB/s', $design, $tables, PREG_SET_ORDER);
-    audit_expect(count($tables) === 5, 'five frozen DDL definitions required'); $metadata = []; $indexMetadata = [];
+    audit_expect(count($tables) === 5, 'five frozen DDL definitions required'); $metadata = []; $indexMetadata = []; $tableMetadata = [];
     foreach ($tables as $definition) {
+        $tableQuery = $db->prepare('SELECT TABLE_NAME,TABLE_TYPE,ENGINE,TABLE_COLLATION,TABLE_COMMENT FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=?');
+        $tableQuery->execute([$definition[1]]); $table = $tableQuery->fetch(PDO::FETCH_ASSOC);
+        audit_expect(is_array($table) && $table['TABLE_TYPE'] === 'BASE TABLE' && $table['ENGINE'] === 'InnoDB'
+            && $table['TABLE_COLLATION'] === 'utf8mb4_bin' && $table['TABLE_COMMENT'] === 'marketplace-ms1-v1', 'new table engine, collation or version marker differs');
+        $tableMetadata[$definition[1]] = $table;
         preg_match_all('/^  `([a-z_]+)` ([A-Z]+(?:\([0-9]+\))?(?: UNSIGNED)?)([^\n]*)$/m', $definition[2], $columns, PREG_SET_ORDER);
         $statement = $db->prepare('SELECT COLUMN_NAME,COLUMN_TYPE,IS_NULLABLE,COLUMN_DEFAULT,EXTRA,CHARACTER_MAXIMUM_LENGTH,CHARACTER_SET_NAME,COLLATION_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=? ORDER BY ORDINAL_POSITION');
         $statement->execute([$definition[1]]); $actual = $statement->fetchAll();
@@ -157,7 +162,7 @@ function m1m_columns(PDO $db): array
             && $row['REFERENCED_TABLE_SCHEMA'] === 'audit_auth' && $row['REFERENCED_TABLE_NAME'] === $target
             && $row['UPDATE_RULE'] === 'RESTRICT' && $row['DELETE_RULE'] === 'RESTRICT', 'same-merchant foreign key identity, order, target or actions differ');
     }
-    return ['columns' => $metadata, 'indexes' => $indexMetadata, 'checks' => $constraints, 'foreign_keys' => $fk];
+    return ['tables' => $tableMetadata, 'columns' => $metadata, 'indexes' => $indexMetadata, 'checks' => $constraints, 'foreign_keys' => $fk];
 }
 
 function m1m_new_menus(PDO $db, array $before): array
