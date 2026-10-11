@@ -342,20 +342,61 @@ function td_register_file(string $relative): void
     if (str_ends_with($relative, '/')) { $GLOBALS['td_owned_dirs'][] = rtrim($relative, '/'); }
     else { $GLOBALS['td_owned_files'][] = $relative; }
 }
-function td_created_output(array $before, array $after, array $expectedFiles): array
+function td_crud_url(string $url): bool
 {
-    $allowed = [];
+    $parts = parse_url($url);
+    if (!is_array($parts) || preg_match('~\A/adminapi/download/[a-f0-9]{32}\z~D', $parts['path'] ?? '') !== 1
+        || isset($parts['user']) || isset($parts['pass']) || isset($parts['query']) || isset($parts['fragment'])) { return false; }
+    // Empty installed site_url legitimately produces this exact root-relative
+    // link. Protocol-relative URLs or arbitrary absolute origins are excluded.
+    if ($url === $parts['path']) { return true; }
+    $site = sys_config('site_url'); $configured = is_string($site) ? parse_url($site) : false;
+    if (!is_array($configured) || !isset($configured['scheme'], $configured['host'], $parts['scheme'], $parts['host'])
+        || !in_array(strtolower($parts['scheme']), ['http', 'https'], true)
+        || !in_array(strtolower($configured['scheme']), ['http', 'https'], true)
+        || isset($configured['user']) || isset($configured['pass']) || isset($configured['query']) || isset($configured['fragment'])) { return false; }
+    $port = $parts['port'] ?? (strtolower($parts['scheme']) === 'https' ? 443 : 80);
+    $expectedPort = $configured['port'] ?? (strtolower($configured['scheme']) === 'https' ? 443 : 80);
+    return strtolower($parts['scheme']) === strtolower($configured['scheme']) && strcasecmp($parts['host'], $configured['host']) === 0 && $port === $expectedPort;
+}
+function td_time_header_preview(string $preview, string $generated, int $start, int $end): ?string
+{
+    $expectedLines = explode("\n", $preview); $actualLines = explode("\n", $generated);
+    $pattern = '~\A( \* @date )([0-9]{4}/[0-9]{2}/[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2})(\r?)\z~D';
+    // Only line17 in the four known native stubs has TIME. The adjacent fixed
+    // author/header lines also remain identical; no other date is substituted.
+    if (!in_array($expectedLines[15] ?? null, [' * @author crud自动生成代码', " * @author crud自动生成代码\r"], true)
+        || ($actualLines[15] ?? null) !== $expectedLines[15]
+        || preg_match($pattern, $expectedLines[16] ?? '', $old) !== 1
+        || preg_match($pattern, $actualLines[16] ?? '', $actual) !== 1) { return null; }
+    $timezone = new DateTimeZone(date_default_timezone_get()); // initialized real App timezone
+    $time = DateTimeImmutable::createFromFormat('!Y/m/d H:i:s', $actual[2], $timezone); $errors = DateTimeImmutable::getLastErrors();
+    if (!$time || ($errors !== false && ($errors['warning_count'] || $errors['error_count']))
+        || $time->format('Y/m/d H:i:s') !== $actual[2] || $time->getTimestamp() < $start || $time->getTimestamp() > $end) { return null; }
+    $expectedLines[16] = $old[1] . $actual[2] . $old[3];
+    return implode("\n", $expectedLines);
+}
+function td_created_output(array $before, array $after, array $expectedFiles, int $start, int $end): array
+{
+    $allowed = []; $zipExpected = [];
     foreach ($expectedFiles as $relative => $content) {
+        $generated = is_file($GLOBALS['td_backup'] . '/' . $relative) ? file_get_contents($GLOBALS['td_backup'] . '/' . $relative) : null;
+        if (in_array($relative, $GLOBALS['td_timed_preview_paths'], true)) {
+            $content = is_string($generated) ? td_time_header_preview($content, $generated, $start, $end) : null;
+            td_check(is_string($content), 'the single known native TIME header has a valid producer-window timestamp in the actual App timezone');
+        }
+        if (!is_string($content)) { continue; }
         $expected = ['bytes' => strlen($content), 'sha256' => hash('sha256', $content)];
-        td_check(!isset($before['backup'][$relative]) && ($after['backup'][$relative] ?? null) === $expected, 'actual generated file matches its readonly native-generator preview');
-        if (($after['backup'][$relative] ?? null) === $expected) { $allowed[$relative] = $expected; td_register_file($relative); }
+        $matches = !isset($before['backup'][$relative]) && is_string($generated) && $generated === $content && ($after['backup'][$relative] ?? null) === $expected;
+        td_check($matches, 'actual generated file matches every preview byte with only its independently validated known TIME header');
+        if ($matches) { $allowed[$relative] = $expected; $zipExpected[$relative] = $content; td_register_file($relative); }
         $parent = dirname($relative);
         while ($parent !== '.') {
             if (!isset($before['backup'][$parent . '/']) && ($after['backup'][$parent . '/'] ?? null) === ['directory' => true]) { $allowed[$parent . '/'] = ['directory' => true]; td_register_file($parent . '/'); }
             $parent = dirname($parent);
         }
     }
-    return $allowed;
+    return ['files' => $allowed, 'zip_expected' => $zipExpected];
 }
 function td_download_record(string $key, string $path, string $filename, array $before, array $after, int $start, int $end): array
 {
@@ -542,14 +583,16 @@ try {
         }
         $preview = $GLOBALS['td_app']->make(\app\services\system\SystemCrudServices::class)->makeFile('system_crud_list', 'crud/system_crud_list', false,
             ['menuName' => 'TD8_' . $GLOBALS['td_execution'], 'key' => 'id', 'softDelete' => false, 'fromField' => [], 'columnField' => [], 'tableField' => [], 'searchField' => [], 'hasOneField' => []], $map, $base);
-        $GLOBALS['td_preview'] = [];
+        $GLOBALS['td_preview'] = []; $GLOBALS['td_timed_preview_paths'] = [];
         foreach ($preview as $key => $file) {
             $expectedPath = $map[$key];
             // Services.replace strips the app root and frontend-source root;
             // absolute path identity is proven using the actual mapped preview.
             $expectedRelative = str_replace([$GLOBALS['td_app']->getRootPath(), \crmeb\services\crud\Make::adminTemplatePath()], '', $expectedPath);
             audit_expect($file['path'] === $expectedRelative && str_starts_with($expectedPath, $base . '/') && !str_contains($expectedPath, '..'), 'all nine preview outputs must stay in this dedicated backup tree');
-            $GLOBALS['td_preview'][substr($expectedPath, strlen($GLOBALS['td_backup'] . '/'))] = $file['content'];
+            $relative = substr($expectedPath, strlen($GLOBALS['td_backup'] . '/'));
+            $GLOBALS['td_preview'][$relative] = $file['content'];
+            if (in_array($key, ['model', 'dao', 'service', 'validate'], true)) { $GLOBALS['td_timed_preview_paths'][] = $relative; }
         }
         audit_expect(count($GLOBALS['td_preview']) === 9 && !file_exists($base) && !file_exists($base . '.zip'), 'native readonly preview creates nothing and all nine dedicated outputs are initially absent');
         td_evidence('prepare-download-metadata'); audit_expect(!in_array(false, array_column($GLOBALS['td_capture']['checks'], 'passed'), true), 'download DML metadata preparation is scoped');
@@ -574,21 +617,20 @@ try {
                 static function ($before, $after, $response, $start, $end): array {
                     $logRows = td_admin_log_effects($before, $after, 'system/crud/download/<id>', $start, $end);
                     $url = $response['json']['data']['download_url'] ?? null; $parts = is_string($url) ? parse_url($url) : false; $key = is_array($parts) ? basename($parts['path'] ?? '') : '';
-                    td_check($response['http'] === 200 && ($response['json']['status'] ?? null) === 200 && is_array($parts)
-                        && in_array($parts['scheme'] ?? '', ['http', 'https'], true) && !isset($parts['user']) && !isset($parts['pass']) && !isset($parts['query']) && !isset($parts['fragment'])
-                        && ($parts['path'] ?? '') === '/adminapi/download/' . $key && preg_match('/^[a-f0-9]{32}$/D', $key) === 1,
-                        'actual CRUD returns its normal own file route with a32lowerhex key');
+                    td_check($response['http'] === 200 && ($response['json']['status'] ?? null) === 200 && is_string($url) && td_crud_url($url),
+                        'actual CRUD returns an exact root-relative or configured same-origin file route with a32lowerhex key');
                     audit_expect(is_string($url) && preg_match('/^[a-f0-9]{32}$/D', $key) === 1, 'real CRUD file key is available for its first normal use');
                     $GLOBALS['td_route_key'] = $key; $zipPath = $GLOBALS['td_backup'] . '/systemCrudList.zip';
                     // Record new randomness contract failure without blocking the
                     // genuine old producer's ordinary first download baseline.
                     td_check($key !== md5($zipPath), 'normal producer file key no longer equals the original deterministic path digest');
-                    $files = td_created_output($before, $after, $GLOBALS['td_preview']); $zip = new ZipArchive();
+                    $generated = td_created_output($before, $after, $GLOBALS['td_preview'], $start, $end); $files = $generated['files']; $zip = new ZipArchive();
                     audit_expect($zip->open($zipPath) === true, 'real producer archive is readable'); $seen = [];
                     for ($i = 0; $i < $zip->numFiles; $i++) { $name = $zip->getNameIndex($i); if (str_ends_with($name, '/')) { continue; } $seen[$name] = $zip->getFromIndex($i); }
-                    $zip->close(); ksort($seen); $expected = $GLOBALS['td_preview']; ksort($expected);
-                    td_check($seen === $expected, 'real ZIP contains exactly the nine native preview file bytes');
-                    $relative = basename($zipPath); if ($seen === $expected && isset($after['backup'][$relative]) && !isset($before['backup'][$relative])) { $files[$relative] = $after['backup'][$relative]; td_register_file($relative); }
+                    $zip->close(); ksort($seen); $expected = $generated['zip_expected']; ksort($expected);
+                    $exactZip = count($expected) === 9 && $seen === $expected;
+                    td_check($exactZip, 'real ZIP contains exactly the same nine individually verified generated files and their complete bytes');
+                    $relative = basename($zipPath); if ($exactZip && isset($after['backup'][$relative]) && !isset($before['backup'][$relative])) { $files[$relative] = $after['backup'][$relative]; td_register_file($relative); }
                     $keys = td_download_record($key, $zipPath, 'systemCrudList.zip', $before, $after, $start, $end);
                     return ['rows' => $logRows, 'keys' => $keys, 'files' => $files];
                 });
