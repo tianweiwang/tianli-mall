@@ -1,0 +1,563 @@
+{
+  "milestone": "MS0b",
+  "task": "Task10 normal functional freeze",
+  "run_id": "202610111921564c510d",
+  "source_head": "b3ba65da6acd0d518a5cd535f467e40492e02dd7",
+  "source_crmeb_tree": "194c70ea4a0a6fb4f8e7a2a6fb5fe13fba3c8174",
+  "scope": "Ordinary functional checks only; no full security acceptance",
+  "counts": {
+    "PASS": 30,
+    "FAIL": 0,
+    "NOT RUN": 1,
+    "BLOCKED": 0
+  },
+  "tests": [
+    {
+      "script": "help/audit-regressions/isolated/ms0b-out-functional.php",
+      "script_sha256": "7b9670298bf9e98bfbf347ae305cfc30ad81d6113461b2a0c597d6181c159e78",
+      "raw_jsonl": "evidence/ms0b-out-functional-after-20261011192427.jsonl",
+      "raw_sha256": "60a10e5893a2ceb417a0d541486233087e3f63e61c5a8237c66c9400dbd13c21",
+      "rows": 6,
+      "counts": {
+        "PASS": 6,
+        "FAIL": 0,
+        "NOT RUN": 0,
+        "BLOCKED": 0
+      },
+      "native_bash_exit": 0
+    },
+    {
+      "script": "help/audit-regressions/isolated/ms0b-account-functional.php",
+      "script_sha256": "ed0af3db02044140302fed32e36a86f052f50fd0973807706e2aee53b4a00ad0",
+      "raw_jsonl": "evidence/ms0b-account-functional-after-20261011192452.jsonl",
+      "raw_sha256": "ee7b6b64d21290a4f3be68ef75b6d9a3ee1a4d3025f549086c9c701ab54c906b",
+      "rows": 16,
+      "counts": {
+        "PASS": 15,
+        "FAIL": 0,
+        "NOT RUN": 1,
+        "BLOCKED": 0
+      },
+      "native_bash_exit": 0
+    },
+    {
+      "script": "help/audit-regressions/isolated/ms0b-epoch-functional.php",
+      "script_sha256": "1fccac5875bc76f96345d27eb36c30efd566582a33e8b17f449405c2e90b58cf",
+      "raw_jsonl": "evidence/ms0b-epoch-functional-after-20261011192511.jsonl",
+      "raw_sha256": "79c423f360d3a043bb1b411c320f49e1efa7454ec770e05a40f962d57c0be709",
+      "rows": 3,
+      "counts": {
+        "PASS": 3,
+        "FAIL": 0,
+        "NOT RUN": 0,
+        "BLOCKED": 0
+      },
+      "native_bash_exit": 0
+    },
+    {
+      "script": "help/audit-regressions/isolated/ms0b-login-download-functional.php",
+      "script_sha256": "57705207b05b4447bc87d5a9beee472d8c064d517af0bfe04c0200f46b9f619c",
+      "raw_jsonl": "evidence/ms0b-login-download-functional-20261011192521728011.jsonl",
+      "raw_sha256": "13f421300acc3d6d12db088eefa90cf6622f617f734711ea11754ddb6a0e2590",
+      "rows": 6,
+      "counts": {
+        "PASS": 6,
+        "FAIL": 0,
+        "NOT RUN": 0,
+        "BLOCKED": 0
+      },
+      "native_bash_exit": 0
+    }
+  ],
+  "case_records": [
+    {
+      "case_id": "F01",
+      "subcase": "normal HTTP external login and auth_info",
+      "status": "PASS",
+      "layer": "INTEGRATION",
+      "evidence_ref": "evidence/out-functional-2026101119242289c2b9-F01.json"
+    },
+    {
+      "case_id": "F02",
+      "subcase": "normal originally granted category read",
+      "status": "PASS",
+      "layer": "INTEGRATION",
+      "evidence_ref": "evidence/out-functional-2026101119242289c2b9-F02.json"
+    },
+    {
+      "case_id": "F03",
+      "subcase": "one normal refresh followed by a read using its new token",
+      "status": "PASS",
+      "layer": "INTEGRATION",
+      "evidence_ref": "evidence/out-functional-2026101119242289c2b9-F03.json"
+    },
+    {
+      "case_id": "F04",
+      "subcase": "normal same-instance service A/B/A identity DTOs",
+      "status": "PASS",
+      "layer": "INTEGRATION",
+      "evidence_ref": "evidence/out-functional-2026101119242289c2b9-F04.json"
+    },
+    {
+      "case_id": "F05",
+      "subcase": "normal MCP header initialize",
+      "status": "PASS",
+      "layer": "INTEGRATION",
+      "evidence_ref": "evidence/out-functional-2026101119242289c2b9-F05.json"
+    },
+    {
+      "case_id": "F06",
+      "subcase": "normal MCP actual read-only category tool",
+      "status": "PASS",
+      "layer": "INTEGRATION",
+      "evidence_ref": "evidence/out-functional-2026101119242289c2b9-F06.json"
+    },
+    {
+      "case_id": "A21",
+      "subcase": "W01-admin-save-normal-password",
+      "status": "PASS",
+      "layer": "INTEGRATION",
+      "evidence_ref": "evidence/account-functional-202610111924374dcf46-W01-admin-save-normal-password.json"
+    },
+    {
+      "case_id": "A21",
+      "subcase": "W02-own-updateAdmin-normal-password",
+      "status": "PASS",
+      "layer": "INTEGRATION",
+      "evidence_ref": "evidence/account-functional-202610111924374dcf46-W02-own-updateAdmin-normal-password.json"
+    },
+    {
+      "case_id": "A21",
+      "subcase": "W03-admin-normal-soft-delete",
+      "status": "PASS",
+      "layer": "INTEGRATION",
+      "evidence_ref": "evidence/account-functional-202610111924374dcf46-W03-admin-normal-soft-delete.json"
+    },
+    {
+      "case_id": "A21",
+      "subcase": "W04-admin-normal-disable-enable",
+      "status": "PASS",
+      "layer": "INTEGRATION",
+      "evidence_ref": "evidence/account-functional-202610111924374dcf46-W04-admin-normal-disable-enable.json"
+    },
+    {
+      "case_id": "A21",
+      "subcase": "W05-out-normal-secret-and-plaintext",
+      "status": "PASS",
+      "layer": "INTEGRATION",
+      "evidence_ref": "evidence/account-functional-202610111924374dcf46-W05-out-normal-secret-and-plaintext.json"
+    },
+    {
+      "case_id": "A21",
+      "subcase": "W06-out-normal-disable-enable",
+      "status": "PASS",
+      "layer": "INTEGRATION",
+      "evidence_ref": "evidence/account-functional-202610111924374dcf46-W06-out-normal-disable-enable.json"
+    },
+    {
+      "case_id": "A21",
+      "subcase": "W07-out-normal-soft-delete",
+      "status": "PASS",
+      "layer": "INTEGRATION",
+      "evidence_ref": "evidence/account-functional-202610111924374dcf46-W07-out-normal-soft-delete.json"
+    },
+    {
+      "case_id": "A21",
+      "subcase": "W08-division-normal-edit-password",
+      "status": "PASS",
+      "layer": "INTEGRATION",
+      "evidence_ref": "evidence/account-functional-202610111924374dcf46-W08-division-normal-edit-password.json"
+    },
+    {
+      "case_id": "A21",
+      "subcase": "W09-division-normal-bulk-status",
+      "status": "PASS",
+      "layer": "INTEGRATION",
+      "evidence_ref": "evidence/account-functional-202610111924374dcf46-W09-division-normal-bulk-status.json"
+    },
+    {
+      "case_id": "A21",
+      "subcase": "W10-division-normal-physical-delete",
+      "status": "PASS",
+      "layer": "INTEGRATION",
+      "evidence_ref": "evidence/account-functional-202610111924374dcf46-W10-division-normal-physical-delete.json"
+    },
+    {
+      "case_id": "A21",
+      "subcase": "N01-admin-and-division-normal-create",
+      "status": "PASS",
+      "layer": "INTEGRATION",
+      "evidence_ref": "evidence/account-functional-202610111924374dcf46-N01-admin-and-division-normal-create.json"
+    },
+    {
+      "case_id": "A21",
+      "subcase": "N02-out-normal-create",
+      "status": "PASS",
+      "layer": "INTEGRATION",
+      "evidence_ref": "evidence/account-functional-202610111924374dcf46-N02-out-normal-create.json"
+    },
+    {
+      "case_id": "A28",
+      "subcase": "normal-admin-profile-preserves-version",
+      "status": "PASS",
+      "layer": "INTEGRATION",
+      "evidence_ref": "evidence/account-functional-202610111924374dcf46-normal-admin-profile-preserves-version.json"
+    },
+    {
+      "case_id": "A28",
+      "subcase": "normal-account-statistics-preserve-version",
+      "status": "PASS",
+      "layer": "INTEGRATION",
+      "evidence_ref": "evidence/account-functional-202610111924374dcf46-normal-account-statistics-preserve-version.json"
+    },
+    {
+      "case_id": "A28",
+      "subcase": "normal-filePwd-existing-schema-boundary",
+      "status": "NOT RUN",
+      "layer": "INTEGRATION",
+      "evidence_ref": "evidence/account-functional-202610111924374dcf46-filePwd-schema.json"
+    },
+    {
+      "case_id": "A28",
+      "subcase": "normal-push-settings-preserve-version",
+      "status": "PASS",
+      "layer": "INTEGRATION",
+      "evidence_ref": "evidence/account-functional-202610111924374dcf46-normal-push-settings-preserve-version.json"
+    },
+    {
+      "case_id": "A29",
+      "subcase": "epoch-command-registration-help",
+      "status": "PASS",
+      "layer": "INTEGRATION",
+      "evidence_ref": "evidence/epoch-functional-20261011192502e3f1a4-epoch-command-registration-help.json"
+    },
+    {
+      "case_id": "A29",
+      "subcase": "epoch-command-normal-batched-delete",
+      "status": "PASS",
+      "layer": "INTEGRATION",
+      "evidence_ref": "evidence/epoch-functional-20261011192502e3f1a4-epoch-command-normal-batched-delete.json"
+    },
+    {
+      "case_id": "A29",
+      "subcase": "epoch-command-normal-empty-repeat",
+      "status": "PASS",
+      "layer": "INTEGRATION",
+      "evidence_ref": "evidence/epoch-functional-20261011192502e3f1a4-epoch-command-normal-empty-repeat.json"
+    },
+    {
+      "case_id": "T8F01",
+      "subcase": "normal login info has numeric captcha0",
+      "status": "PASS",
+      "layer": "INTEGRATION",
+      "evidence_ref": "evidence/task8-functional-20261011192521728011-T8F01.json"
+    },
+    {
+      "case_id": "T8F02",
+      "subcase": "normal valid HTTP admin login",
+      "status": "PASS",
+      "layer": "INTEGRATION",
+      "evidence_ref": "evidence/task8-functional-20261011192521728011-T8F02.json"
+    },
+    {
+      "case_id": "T8F03",
+      "subcase": "normal account0 DAO identity query",
+      "status": "PASS",
+      "layer": "INTEGRATION",
+      "evidence_ref": "evidence/task8-functional-20261011192521728011-T8F03.json"
+    },
+    {
+      "case_id": "T8F04",
+      "subcase": "normal existing captcha creation and display data",
+      "status": "PASS",
+      "layer": "INTEGRATION",
+      "evidence_ref": "evidence/task8-functional-20261011192521728011-T8F04.json"
+    },
+    {
+      "case_id": "T8F05",
+      "subcase": "real CRUD producer and first authenticated route download",
+      "status": "PASS",
+      "layer": "INTEGRATION",
+      "evidence_ref": "evidence/task8-functional-20261011192521728011-T8F05.json"
+    },
+    {
+      "case_id": "T8F06",
+      "subcase": "real backup producer and first authenticated encoded query download",
+      "status": "PASS",
+      "layer": "INTEGRATION",
+      "evidence_ref": "evidence/task8-functional-20261011192521728011-T8F06.json"
+    }
+  ],
+  "source_files": [
+    {
+      "path": "crmeb/app/AppService.php",
+      "sha256": "eda698c3e282a12a923a845e840a37d97121197a0f298599240e95ab37fdd664"
+    },
+    {
+      "path": "crmeb/app/adminapi/AdminApiExceptionHandle.php",
+      "sha256": "69ec2721fb8a7264eb80f1671045cb1523ca3e4c8973c860e8c3511dbe031b04"
+    },
+    {
+      "path": "crmeb/app/adminapi/controller/Login.php",
+      "sha256": "b7ff2d5b78afbfa8e75795c5c037c13f27f78e693474d774daf7cdf5454add70"
+    },
+    {
+      "path": "crmeb/app/adminapi/controller/PublicController.php",
+      "sha256": "265f8c9b9814b5163e7715316caf3a56aa574608904f6441d023998c9d439e85"
+    },
+    {
+      "path": "crmeb/app/adminapi/controller/v1/setting/SystemAdmin.php",
+      "sha256": "73753042e659c6b3b562e38d96fa2763d5681fc17a098ac1570ba251cfe53b18"
+    },
+    {
+      "path": "crmeb/app/adminapi/controller/v1/setting/SystemCrud.php",
+      "sha256": "f9b25b3cccc2c380bf64da3e527c511a377ed5e9aa489d8b7c35f994ca1da2e4"
+    },
+    {
+      "path": "crmeb/app/adminapi/middleware/AdminAuthTokenMiddleware.php",
+      "sha256": "6b40f0deaaf1b9f48af0ac82d0c654d4358884b49bd1be09b042efa66ef22585"
+    },
+    {
+      "path": "crmeb/app/command/AuthEpochRotate.php",
+      "sha256": "b4e75cd7308d0b6eb5a4dbbd5742c4942e68cd3ba60a6cdc86af097e044926ba"
+    },
+    {
+      "path": "crmeb/app/model/system/admin/SystemAdmin.php",
+      "sha256": "e4ab3b84cfd73fc542384ba8ca519f506b19319728b35d8048e620f38e759861"
+    },
+    {
+      "path": "crmeb/app/outapi/OutApiExceptionHandle.php",
+      "sha256": "c7c34892f187fab451fa652515d357802945258e4cda31581d27e127956ffce2"
+    },
+    {
+      "path": "crmeb/app/outapi/controller/Login.php",
+      "sha256": "b075cfc279db9743b50031e40151cf683be22caf02979c19e4f6d629bb6fb6ec"
+    },
+    {
+      "path": "crmeb/app/services/agent/DivisionServices.php",
+      "sha256": "818c9e437b697cbbd067d5f6b4084bc700593a4d3b3ab7ba2008271ff31c0d81"
+    },
+    {
+      "path": "crmeb/app/services/out/OutAccountServices.php",
+      "sha256": "a8f0c9932cc65b28cdf600429db6bd660bd51b936dbcdd7035dc0f04eb122987"
+    },
+    {
+      "path": "crmeb/app/services/system/admin/AdminAuthServices.php",
+      "sha256": "15ded525569f29461e1caa84567b60108b743255fc1a5e76832f23aaf18e9543"
+    },
+    {
+      "path": "crmeb/app/services/system/admin/SystemAdminServices.php",
+      "sha256": "fbafecb614824ca16f75a521757d72a78fe6b94a865c090cde2e1b55023acab6"
+    },
+    {
+      "path": "crmeb/config/auth.php",
+      "sha256": "b7408977123b2e1bbdc53336bdee851587f53da230a5fdf28088e30e1000feea"
+    },
+    {
+      "path": "crmeb/config/console.php",
+      "sha256": "788ae4b930db24d079482edf056e8815965d8b6f1e8ec86437fda35907128bc2"
+    },
+    {
+      "path": "crmeb/crmeb/compat/think/Db.php",
+      "sha256": "246fc1ca03fa2c63587365ec7cc609018e8f04074a92362d8d933260e47ce2bd"
+    },
+    {
+      "path": "crmeb/crmeb/compat/think/DbCache.php",
+      "sha256": "c86348094c51aedf9d71d9cc5744d0fd169e4a61ce1da428694bfe31e2b12ced"
+    },
+    {
+      "path": "crmeb/crmeb/exceptions/AuthSessionException.php",
+      "sha256": "2303ba782790e0e154daebb34dd291574c297419f2a3584a7343064aff132a2e"
+    },
+    {
+      "path": "crmeb/crmeb/exceptions/AuthUnavailableException.php",
+      "sha256": "581d7c91bfa0c96e5887686ff8b68f2c30529f95029fd40906292683b52c52ad"
+    },
+    {
+      "path": "crmeb/crmeb/services/AuthConfigGuard.php",
+      "sha256": "71306fd9952381a09e447c43c77094faedbf773a5aaffe82ced0947c349b95db"
+    },
+    {
+      "path": "crmeb/crmeb/services/BoundedRedisConnection.php",
+      "sha256": "3038dcc2796ed5902a217468bfcf313a54ab3f223a8378eb60a8c45dbbab2738"
+    },
+    {
+      "path": "crmeb/crmeb/services/CacheService.php",
+      "sha256": "914bcd258d633fd3b1e6b8a91cdae271658e8e66176405bf9bdf88cde3e3fead"
+    },
+    {
+      "path": "crmeb/crmeb/services/MysqlBackupService.php",
+      "sha256": "f7e9009cad436bbba628967187fd2ddf1f8af75ec2204c4bbd2cca505eb5ecbf"
+    },
+    {
+      "path": "crmeb/crmeb/services/auth/AccountChangeGuard.php",
+      "sha256": "776077cb8245d04b615e9411faa7dcacec473a90e7b1ff1f41c4327ecbcce6ae"
+    },
+    {
+      "path": "crmeb/crmeb/services/auth/AuthSessionStore.php",
+      "sha256": "eda31f5e1856725a32e2777f096d0ccc5ec7b22841f599636a13584e3c54c054"
+    },
+    {
+      "path": "crmeb/crmeb/services/auth/AuthTokenV2.php",
+      "sha256": "eb226a8ebab560f333a7b3a380785630a94fc2039658bf4425e44fa9ec47f94e"
+    },
+    {
+      "path": "crmeb/crmeb/services/auth/CredentialStamp.php",
+      "sha256": "21af3606635e412c2866e8e51b4c40baa591d3672670b716e1d999be2aeb42e9"
+    },
+    {
+      "path": "crmeb/crmeb/services/auth/lua/create_session.lua",
+      "sha256": "ce58386b2fa0359d38e71845b6da5f7676bd2f6f516119368738b6bbf253bef8"
+    },
+    {
+      "path": "crmeb/crmeb/services/auth/lua/login_failure.lua",
+      "sha256": "b9b060c2ef41993af2e3b1e27683011dfc31aff1becf538d0db2ffa1600e01a1"
+    },
+    {
+      "path": "crmeb/crmeb/services/auth/lua/redeem_session.lua",
+      "sha256": "950e901e0814da6a6cd8b43571d85bd715e63876fc9af765920a0ae87a33e476"
+    },
+    {
+      "path": "crmeb/crmeb/services/auth/lua/revoke_session.lua",
+      "sha256": "e5f33d5e67dff5ba59356c4647f4b7ad1acfc1c6cd3cdffce7232229059b4bc0"
+    },
+    {
+      "path": "crmeb/crmeb/services/auth/lua/rotate_account.lua",
+      "sha256": "d311e9c20b32db84dc1fa6637b60622ef0a5d178bfa42520a62c50dd2aba1cb1"
+    },
+    {
+      "path": "crmeb/crmeb/services/auth/lua/verify_session.lua",
+      "sha256": "c3d0cc1a1cf7f0a096ccb372e981045ad15718d66403a63f59594cc365060503"
+    },
+    {
+      "path": "crmeb/crmeb/services/workerman/WorkermanService.php",
+      "sha256": "a27c0c3914100f413e641f55ba95fd0d4a2d75afc6e755ece69422233d224d58"
+    },
+    {
+      "path": "crmeb/crmeb/services/workerman/chat/ChatService.php",
+      "sha256": "ce671df44d636920c525c9e86ebc32ad583c414535489350f4fd018f7b44a2fb"
+    },
+    {
+      "path": "template/admin/src/libs/download.js",
+      "sha256": "3fb68e1a05fcc673cb9b2b7779f1cb85e16a0202a9abcd29bb510caf30971fa1"
+    },
+    {
+      "path": "template/admin/src/pages/system/codeGeneration/list.vue",
+      "sha256": "46342c0e3b537cbc9804d40ba3c419b5c9d0a6a9d58e1ceccbed03a0ddf75343"
+    },
+    {
+      "path": "template/admin/src/pages/system/maintain/systemDatabackup/index.vue",
+      "sha256": "16fdc6b308bd0bc38f8338433dc126f55e6c83cb17e8aa1c109fe6346aa01654"
+    }
+  ],
+  "changed_paths_at_source": [
+    "crmeb/app/AppService.php",
+    "crmeb/app/adminapi/AdminApiExceptionHandle.php",
+    "crmeb/app/adminapi/controller/Login.php",
+    "crmeb/app/adminapi/controller/PublicController.php",
+    "crmeb/app/adminapi/controller/v1/setting/SystemAdmin.php",
+    "crmeb/app/adminapi/controller/v1/setting/SystemCrud.php",
+    "crmeb/app/adminapi/middleware/AdminAuthTokenMiddleware.php",
+    "crmeb/app/command/AuthEpochRotate.php",
+    "crmeb/app/model/system/admin/SystemAdmin.php",
+    "crmeb/app/outapi/OutApiExceptionHandle.php",
+    "crmeb/app/outapi/controller/Login.php",
+    "crmeb/app/services/agent/DivisionServices.php",
+    "crmeb/app/services/out/OutAccountServices.php",
+    "crmeb/app/services/system/admin/AdminAuthServices.php",
+    "crmeb/app/services/system/admin/SystemAdminServices.php",
+    "crmeb/config/auth.php",
+    "crmeb/config/console.php",
+    "crmeb/crmeb/compat/think/Db.php",
+    "crmeb/crmeb/compat/think/DbCache.php",
+    "crmeb/crmeb/exceptions/AuthSessionException.php",
+    "crmeb/crmeb/exceptions/AuthUnavailableException.php",
+    "crmeb/crmeb/services/AuthConfigGuard.php",
+    "crmeb/crmeb/services/BoundedRedisConnection.php",
+    "crmeb/crmeb/services/CacheService.php",
+    "crmeb/crmeb/services/MysqlBackupService.php",
+    "crmeb/crmeb/services/auth/AccountChangeGuard.php",
+    "crmeb/crmeb/services/auth/AuthSessionStore.php",
+    "crmeb/crmeb/services/auth/AuthTokenV2.php",
+    "crmeb/crmeb/services/auth/CredentialStamp.php",
+    "crmeb/crmeb/services/auth/lua/create_session.lua",
+    "crmeb/crmeb/services/auth/lua/login_failure.lua",
+    "crmeb/crmeb/services/auth/lua/redeem_session.lua",
+    "crmeb/crmeb/services/auth/lua/revoke_session.lua",
+    "crmeb/crmeb/services/auth/lua/rotate_account.lua",
+    "crmeb/crmeb/services/auth/lua/verify_session.lua",
+    "crmeb/crmeb/services/workerman/WorkermanService.php",
+    "crmeb/crmeb/services/workerman/chat/ChatService.php",
+    "docs/multi-merchant/03-test-environment.md",
+    "docs/multi-merchant/05-plan-ms0b.md",
+    "docs/multi-merchant/records/ms0b/account-change-design.md",
+    "docs/multi-merchant/records/ms0b/credential-writer-inventory.md",
+    "docs/multi-merchant/records/ms0b/cutover-plan.md",
+    "docs/multi-merchant/records/ms0b/integration-inventory.md",
+    "docs/multi-merchant/records/ms0b/report.md",
+    "docs/multi-merchant/records/ms0b/results.jsonl",
+    "docs/multi-merchant/records/ms0b/runbook-session-loss.md",
+    "docs/multi-merchant/records/ms0b/task6-functional-summary.json",
+    "docs/multi-merchant/records/ms0b/task7-functional-summary.json",
+    "docs/multi-merchant/records/ms0b/task8-browser-summary.json",
+    "docs/multi-merchant/records/ms0b/task8-first-baseline-summary.json",
+    "docs/multi-merchant/records/ms0b/task8-fixture-preparation.md",
+    "docs/multi-merchant/records/ms0b/task8-functional-summary.json",
+    "docs/multi-merchant/records/ms0b/task8-test-expectation-correction.md",
+    "help/audit-regressions/isolated/README.md",
+    "help/audit-regressions/isolated/compose.yml",
+    "help/audit-regressions/isolated/lib/fault.php",
+    "help/audit-regressions/isolated/lib/guard.php",
+    "help/audit-regressions/isolated/lib/harness.php",
+    "help/audit-regressions/isolated/ms0b-account-functional.php",
+    "help/audit-regressions/isolated/ms0b-admin-http.php",
+    "help/audit-regressions/isolated/ms0b-bootstrap.php",
+    "help/audit-regressions/isolated/ms0b-epoch-functional.php",
+    "help/audit-regressions/isolated/ms0b-http-workers.php",
+    "help/audit-regressions/isolated/ms0b-login-download-functional.php",
+    "help/audit-regressions/isolated/ms0b-out-functional.php",
+    "help/audit-regressions/isolated/ms0b-out-http.php",
+    "help/audit-regressions/isolated/ms0b-session-store.php",
+    "help/audit-regressions/isolated/ms0b-token.php",
+    "help/audit-regressions/isolated/run.sh",
+    "help/audit-regressions/isolated/selftest.php",
+    "template/admin/src/libs/download.js",
+    "template/admin/src/pages/system/codeGeneration/list.vue",
+    "template/admin/src/pages/system/maintain/systemDatabackup/index.vue"
+  ],
+  "append_receipt": {
+    "before_rows": 1191,
+    "before_bytes": 951502,
+    "before_sha256": "7a15b0a9f6df8a94973b08ff6c2497a93ff4d4097e48861cf84a61117c4c4e1f",
+    "appended_rows": 31,
+    "after_rows": 1222,
+    "after_sha256": "12441374368050d31e056c612dbdebf87bf9fcb17aa2d7e917b0a2e4ffa7ae37",
+    "prefix_preserved": true,
+    "original_raw_bytes": true
+  },
+  "teardown": {
+    "run_id": "202610111921564c510d",
+    "native_bash_exit": 0,
+    "removed_containers": 3,
+    "removed_networks": 1,
+    "removed_volumes": 10,
+    "remaining_containers": 0,
+    "remaining_networks": 0,
+    "remaining_volumes": 0,
+    "install_lock_present": false,
+    "evidence_preserved": true
+  },
+  "cleanup_scope": {
+    "out": "Own cache/session keys and normal HTTP server stopped; no separate all-state restoration receipt. Login statistics on bootstrap synthetic rows remain within this disposable RUN until teardown.",
+    "account": "All pre-fixture database rows/cache deadlines restored; cleanup runtime unchanged.",
+    "epoch": "All initial tables/cache deadlines/runtime and parent auth config restored.",
+    "login_download": "Full original snapshot restored; own rows/keys/files removed; cleanup runtime unchanged."
+  },
+  "native_receipt_sha256": "893a1dc9ae25a558b6d3253b218c3b938174281d580a661b199983121bce95ac",
+  "skipped_checks_executed": false,
+  "new_build_or_browser_run": false,
+  "full_ms0b_acceptance": false,
+  "human_acceptance": false,
+  "pushed": false,
+  "deployed": false
+}

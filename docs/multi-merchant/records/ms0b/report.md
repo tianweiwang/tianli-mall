@@ -243,3 +243,20 @@ Console 并非无错。三轮均保留 pageerror `Event` 的消息 SHA `4e1f49a9
 `integration-inventory.md` 已按00 §11.3列出14组源码入口，并关联用途、认证、重新取令牌、负责人、最近使用窗口、切换责任及普通验证方式；全部真实使用均为“未知，待核实”，没有读取生产账号/日志或联系集成方。`cutover-plan.md` 已列出发布前记录、配置实际加载合同、部署顺序、长连接卸载影响和保留MS0a/v2边界的回退约束。两份文档的本地Task8下载BROWSER证据与生产调用方待验状态分开记载；文档任务完成不代表发布前置条件满足。当前仅L2，推送需L3，部署/通知/生产轮换需L4，均未执行。
 
 同次源码盘点在 `ec2c84b7` 分别移除WorkermanService与ChatService各一条原始消息var_dump；精确两行差异、PHP8.2两个文件lint exit0已记录于仓库外Task9收据SHA `09fa06ec699d75432a320f950ab1a718efaceac3152bb4dfed538c1b2f01074b`。未运行worker或读取生产日志，不能据此证明全部日志已脱敏、WORKER验收或旧连接卸载。没有新增安全复现或恢复被用户跳过的检查，Task10常规冻结和完整验收缺口仍保留。
+
+### Task10：最终源码的普通功能冻结
+
+源冻结HEAD为 `b3ba65da6acd0d518a5cd535f467e40492e02dd7`，新ISO-FULL RUN `202610111921564c510d` 使用157张原安装表及sentinel、私有DML账号/Redis/内部网络及新卷，无真实数据、共享服务或宿主端口。bootstrap原生Bash exit0；静态先确认仅下面四个正常脚本，不调用九个已停用套件或用户跳过场景。共同Redis工厂改变后，本次各运行一次，没有重新构建或重复BROWSER操作。
+
+| 实际命令（共同前缀：`AUDIT_PHASE=after AUDIT_MILESTONE=MS0b bash help/audit-regressions/isolated/run.sh 202610111921564c510d`） | 原生Bash退出 | 原始结果 |
+| --- | ---: | --- |
+| `help/audit-regressions/isolated/ms0b-out-functional.php` | 0 | 6PASS，正常HTTP/MCP及单次刷新后新token读取 |
+| `help/audit-regressions/isolated/ms0b-account-functional.php` | 0 | 15PASS/1NOT RUN，真实CLI-SERVICE正常账号变更/创建；file_pwd缺列项不执行 |
+| `help/audit-regressions/isolated/ms0b-epoch-functional.php` | 0 | 3PASS，真实think命令及自有旧命名空间正常清理，非恢复演练 |
+| `help/audit-regressions/isolated/ms0b-login-download-functional.php` | 0 | 6PASS，合法登录/验证码展示/两真实producer及首次header文件消费；准备、清理、记录均未失败 |
+
+合计INTEGRATION层30PASS/1NOT RUN；层级标签沿原始脚本，CLI、HTTP和MCP的实际入口在各case另列，不能当作31项完整安全验收。账号及epoch检查的初始DB/缓存期限恢复、Task8原快照恢复均由各自cleanup收据确认。out脚本只清理本次cache/session键并正常停止HTTP服务，没有独立全状态恢复收据；bootstrap合成账号的合法登录统计保留在这次可丢弃RUN直到teardown，不能声称它们已恢复初始值。全部原case/evidence、四份原生执行收据及完整源码/脚本SHA见 `task10-normal-freeze-summary.json`。
+
+31条原始JSONL完整字节追加至1222条，原1191条/951502字节前缀SHA `7a15b0a9f6df8a94973b08ff6c2497a93ff4d4097e48861cf84a61117c4c4e1f` 保持，新full SHA `12441374368050d31e056c612dbdebf87bf9fcb17aa2d7e917b0a2e4ffa7ae37`；既有FAIL和生成摘要标记均未改。manifest精确teardown原生Bash exit0，3容器/1网络/10卷复查均0，install.lock不存在，仓库外证据保留。源冻结相对 `3e7c966ecfa084ff4f219b03c61ed0efbac4caac` 的73路径已逐项核对计划/必要调用点；本次仅新增Task10记录，无额外业务改动。
+
+普通开发交付已形成，完整MS0b安全验收、人工签收及真实集成/WORKER/生产回执仍未取得；用户取消的验证继续NOT RUN，不创建acceptance.md或SECURITY_BASE_SHA。按用户持续自主L2委托继续MS1普通开发，该委托不构成上述签收，也不授权推送、部署、真实库迁移或外部通知。
