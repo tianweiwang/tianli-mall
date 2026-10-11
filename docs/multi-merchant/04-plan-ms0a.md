@@ -15,6 +15,7 @@
 - 本次起点：用户确认通过的 `codex/audit-base@6dee65785b5655d7bac7c3838b95106c7c0549cc`，工作目录 `H:/天俪商城/tianli-mall--ms0a`，分支 `codex/ms0a`。历史 `AUDIT_BASE_SHA=9685731dcd116784d38e6bbdb902cec3c0c84975` 保持不变；两者业务源码相同，当前起点保留已批准的测试契约修订和 BASE 记录。
 - 用户于 2026-10-11 在本会话确认 BASE 通过、授权 MS0a L2，并批准 Windows 使用 ISO-FULL（03 文档 §2.1）。本计划中的宿主 `php` 测试命令在专用 runner 中执行；Mac 绝对路径按上述 worktree 对应替换。执行清单仍以本文件为唯一记录。
 - 2026-10-11 用户批准正常授权探针使用安装种子已有的 `GET product/product/rule`（商品规则列表）。原计划的商品列表接口未登记；保持该事实并纳入 Task 7 清单，不为通过测试而添加权限种子。
+- 2026-10-11 用户批准 Task 1 补充文件校验引导初始化（03 §2.1）：在专用实例内由 audit_migrator 调用现有 writeMd5() 真实生成校验数据并记录当前版本标记，应用仍仅有 DML 权限，Z07 断言不变。实际触发原因和失败证据见 records/ms0a/report.md P10。
 - 不改令牌载荷格式，不新增数据库表或列，不改 `eb_system_menus` 等种子数据。
 - 不改客服、顾客令牌的**签发**；只改验证。
 - 签名算法固定为 `HS256`，JWT 时钟容差保持 `60` 秒。
@@ -65,7 +66,7 @@ Expected: 新目录的 `git rev-parse HEAD` 等于 `AUDIT_BASE_SHA`，`git statu
 
 - [ ] **Step 2: 实现环境文件**
 
-按 03 文档 §3 实现。`bootstrap.sh` 结束时打印 `RUN_ID` 和运行目录，不打印任何凭据。
+按 03 文档 §3 与经批准的 §2.1 实现，包括真实的文件校验引导初始化。`bootstrap.sh` 结束时打印 `RUN_ID` 和运行目录，不打印任何凭据。
 
 - [ ] **Step 3: 运行自检**
 

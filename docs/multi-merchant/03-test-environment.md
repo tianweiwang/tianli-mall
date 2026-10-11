@@ -34,6 +34,7 @@
 - ISO-FULL 的启动保护沿用 §3.4 的 RUN_ID、双哨兵、库名、受限权限检查。主机固定为 `audit-mysql` / `audit-redis`、端口固定为 3306/6379，解析后的地址必须与 manifest 中经过 Docker 核验的本次容器地址一致。禁止接受调用方自选主机或业务实例地址。
 - `audit_app_start()` / `audit_app_stop()` 通过本次运行目录中的受限控制记录请求专用应用容器启停 PHP 内置服务器；配置只从受限凭据卷注入 `PHP_*` 环境变量（ThinkPHP `Env::getEnv()` 的读取规则）。不创建 `crmeb/.env`。`install.lock` 仍按 §3.5 哨兵规则处理。
 - 初始建库、导入种子、写入双哨兵属于引导阶段，只能在已核对的本次专用实例内完成；之后任何测试写入和应用启动都必须经过 guard。测试失败保留证据，不自动清理。
+- 2026-10-11 用户批准安装后的文件校验初始化：安装种子没有当前版本的 `write_md5` 标记，真实 `login/info` 首次请求会通过 `SystemFileServices::writeMd5()` 重建 `eb_system_file_md5`，其 TRUNCATE 需要 DROP 权限。bootstrap 在双哨兵和受限账号 guard 已通过后，只用本次专用 `audit_migrator` 初始化真实 ThinkPHP，调用该现有方法实际生成当前源码的文件校验数据；成功后以现有 `CacheServices::setDbCache()` 写入当前版本标记，并检查数据非空。此步骤只在引导容器内执行，migrator 配置不传给应用或 runner；应用仍使用仅有 DML 权限的 `audit_app`。不新增表或权限种子，不伪造标记跳过校验生成，Z07 的业务码 200 断言保持不变。
 
 §3 中的 127.0.0.1、宿主 PHP 与凭据文件位置适用于 ISO-MIN；本节是 ISO-FULL 的等效约束，不取消其他启动保护。新增 `run.sh` 属于本次批准的启动脚本范围。
 
