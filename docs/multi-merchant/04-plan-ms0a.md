@@ -310,6 +310,7 @@ git commit -m "fix(outapi): single enabled-state rule for login/access/refresh/M
 - Modify（2026-10-11 用户批准的必要路由调用点）: `crmeb/app/adminapi/route/route.php`（原三项仅认证分组追加 AdminCheckRoleMiddleware）
 - Modify（A04 临时探针的必要清理调用点）: `help/audit-regressions/isolated/teardown.sh`（仅移除首行匹配本 RUN 哨兵的临时 CRUD 探针）
 - Modify（ISO-FULL 源码只读挂载下 A04 探针的必要调用点）: `help/audit-regressions/isolated/run.sh`（guard 后由宿主按 RUN 哨兵准备探针，EXIT 精确清理）
+- Modify（运行复现说明）: `help/audit-regressions/isolated/README.md`（A04 宿主临时探针，以及 baseline 源码边界说明）
 - Modify: `help/audit-regressions/security.php`（按批准的契约收紧 3 项旁路断言并追加 UNIT-STUB 用例）、`help/audit-regressions/isolated/ms0a-auth.php`（追加 A02–A06、A08、A30）
 
 **Interfaces:**
@@ -327,7 +328,7 @@ git commit -m "fix(outapi): single enabled-state rule for login/access/refresh/M
 
 已批准三项仅认证入口补角色检查：`get system/info`、`get route/import_api`、`get download/<key?>`；仍未登记，受限管理员拒绝，最高管理员保持现有 level=0 行为。新增三个 HTTP 负向子场景验证在控制器前拒绝，业务数据和会话不变；不实际导入或下载业务文件。
 
-- [ ] **Step 3: 写测试**
+- [x] **Step 3: 写测试**（原 86 项不变；新增 19 个集成子场景，总 105；UNIT 总 42，含白名单方法精确匹配与冷权限缓存拒绝零写入）
 
 `security.php` 先将原有三项旁路放行用例（`unregistered route proceeds`、`unregistered method proceeds without warning`、`existing CRUD exemption proceeds`）改为期望拒绝并相应改名，保持其他 20 项不变。新契约子场景不得把测试路由加入白名单来保留原放行结果。再追加 UNIT-STUB 用例：未登记且不在白名单 → 抛 `AuthException`；在白名单 → 放行；`crud/` 前缀未授权 → 抛异常；已登记已授权 → 放行。
 
@@ -343,7 +344,7 @@ git commit -m "fix(outapi): single enabled-state rule for login/access/refresh/M
 | A08 | `admin_super` 通过角色接口撤销 `R-limited` 的授权后，`admin_limited` 的下一次请求 | 被拒绝 |
 | A30 | `admin_super` 通过菜单接口删除授予 `admin_limited` 访问权的那条接口登记 | `admin_limited` 的下一次请求被拒绝 |
 
-- [ ] **Step 4: 确认新用例当前失败**
+- [x] **Step 4: 确认新用例当前失败**（UNIT 29 PASS / 13 FAIL，原 20 回归 PASS；新增集成 11 PASS / 8 FAIL；A03 下载探针仅修正合成 key 为路由可匹配的字母数字，A03 四项均 FAIL，断言未改；A04 EXIT 已精确清理探针）
 
 Run: `php help/audit-regressions/security.php; AUDIT_PHASE=after php help/audit-regressions/isolated/ms0a-auth.php --only=A03,A04,A30`
 Expected: 三项收紧后的 UNIT-STUB 用例、新增的拒绝用例和 A03、A04、A30 FAIL；其余 20 个原有 UNIT-STUB 用例 PASS。基线原始 23 项结果保留在 AUDIT_BASE_SHA 的记录中，不覆盖历史结果。
@@ -355,7 +356,7 @@ Expected: 三项收紧后的 UNIT-STUB 用例、新增的拒绝用例和 A03、A
 - 授权失败保持零副作用：冷的 all_auth 与角色缓存先只读查询；只有放行后才写派生权限缓存。必要的 getRolesByAuth 调用逻辑一并调整，签名保持不变。撤权/菜单删除后第一次拒绝不能为了缓存重建而放宽 Redis 不变断言。
 - `SystemMenus` 控制器：新增、修改、删除、显示开关这几个写操作成功后调用 `CacheService::clear()`，与 `SystemRole` 控制器一致。
 - `route/route.php`：原三项仅认证分组保留现有中间件并追加 AdminCheckRoleMiddleware，不改变公开登录/MISS/CORS 分组。
-- A04 临时 CRUD 探针指向已有只读方法，首行带本 RUN 哨兵；测试 finally 与 teardown 都只删除完全匹配本 RUN 标记的探针，保留其他文件。
+- A04 临时 CRUD 探针指向已有只读方法，首行带本 RUN 哨兵；运行器 EXIT 清理与 teardown 都只删除完全匹配本 RUN 标记的探针，保留其他文件。
 
 - [ ] **Step 6: 重跑**
 

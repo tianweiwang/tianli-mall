@@ -19,7 +19,6 @@ bash help/audit-regressions/isolated/bootstrap.sh
 # Copy the emitted RUN_ID (never a password).
 bash help/audit-regressions/isolated/run.sh <RUN_ID> help/audit-regressions/isolated/selftest.php
 bash help/audit-regressions/isolated/run.sh <RUN_ID> help/audit-regressions/security.php
-AUDIT_PHASE=baseline bash help/audit-regressions/isolated/run.sh <RUN_ID> help/audit-regressions/isolated/ms0a-auth.php
 AUDIT_PHASE=after bash help/audit-regressions/isolated/run.sh <RUN_ID> help/audit-regressions/isolated/ms0a-auth.php
 bash help/audit-regressions/isolated/teardown.sh <RUN_ID>
 ```
@@ -47,7 +46,20 @@ The host run directory is `${AUDIT_RUN_ROOT:-$HOME/.tianli-audit}/<RUN_ID>`.
 It contains the manifest and redacted evidence; credential files remain in
 Docker volumes. Do not commit the run directory or copy secret-volume contents
 into evidence. `crmeb/.env` must be absent; an existing file is never overwritten.
-Only a new `install.lock` tagged with the run ID is created and later removed.
+Only a new `install.lock` tagged with the run ID is created during bootstrap.
+For full MS0a tests or `--only` including A04, run.sh verifies the guard and
+temporarily installs `app/adminapi/route/crud/audit-ms0a.php` on the host. Its
+first line contains the exact run marker and it targets the existing readonly
+product-rule list. Source remains read-only inside containers. The EXIT trap
+removes only its own probe; teardown provides the same recovery cleanup. A
+directory created for that run is removed only when empty and its marker matches.
+
+Baseline runs require a separate worktree with business source identical to
+`9685731dcd116784d38e6bbdb902cec3c0c84975` and no changes under crmeb. Copy only
+the committed regression harness from the frozen verification source into that
+worktree, bootstrap a new dedicated run there, and use `AUDIT_PHASE=baseline`.
+The host wrapper rejects baseline labelling on changed or repaired business
+source. Never label an after run as baseline just by changing the phase variable.
 
 Every test/app startup checks the run identity, registered container addresses,
 internal network, database and Redis sentinels, and restricted database grants.

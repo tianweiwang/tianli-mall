@@ -56,9 +56,22 @@ namespace think\facade {
     class Cache
     {
         public static array $values = [];
+        public static array $writes = [];
         public static function get(string $key) { return self::$values[$key] ?? null; }
+        public static function set(string $key, $value, $expire = null): bool
+        {
+            self::$values[$key] = $value;
+            self::$writes[] = $key;
+            return true;
+        }
         public static function tag(string $tag): self { return new self(); }
-        public function remember(string $key, $value, $expire) { return $value(); }
+        public function remember(string $key, $value, $expire)
+        {
+            if (array_key_exists($key, self::$values)) { return self::$values[$key]; }
+            $result = is_callable($value) ? $value() : $value;
+            self::set($key, $result, $expire);
+            return $result;
+        }
     }
 }
 
@@ -74,6 +87,19 @@ namespace {
     use think\facade\Cache;
 
     function getLang($message, array $replace = []): string { return (string)$message; }
+    function approvedAuthRoutes(): array
+    {
+        return ['get setting/admin/logout', 'get menuslist', 'get menus', 'get setting/menus/unique', 'get setting/info', 'put setting/update_admin'];
+    }
+    function config(string $name, $default = null)
+    {
+        if ($name !== 'auth_routes.authenticated') { throw new \LogicException('Unexpected test configuration: ' . $name); }
+        $file = dirname(__DIR__, 2) . '/crmeb/app/adminapi/config/auth_routes.php';
+        // Tests precede the production configuration. Use only the approved
+        // six exact entries until the real configuration exists, then read it.
+        $configuration = is_file($file) ? require $file : ['authenticated' => approvedAuthRoutes()];
+        return $configuration['authenticated'] ?? $default;
+    }
 
     $root = dirname(__DIR__, 2) . '/crmeb/';
     foreach ([
@@ -131,6 +157,7 @@ namespace {
         global $passed, $failed;
         $GLOBALS['testApp'] = new TestApp();
         Cache::$values = [];
+        Cache::$writes = [];
         try {
             $test();
             $passed++;
@@ -148,12 +175,25 @@ namespace {
         ['other method permission cannot refund', [['api_url' => 'order/refund/<id>', 'methods' => 'GET']], 'order/refund/<id>', 'PUT', 1, false],
         ['assigned role proceeds', [$protectedRoute], 'order/refund/<id>', 'PUT', 1, true],
         ['super administrator proceeds', [], 'order/refund/<id>', 'PUT', 0, true],
-        ['logout exemption proceeds', [], 'setting/admin/logout', 'POST', 1, true],
+        // BASE's original POST probe is preserved in its historical evidence.
+        // The approved factual correction uses the actual GET logout route;
+        // its original positive assertion remains, with POST denial added below.
+        ['logout exemption proceeds', [], 'setting/admin/logout', 'GET', 1, true],
         ['menus exemption proceeds', [], 'menuslist', 'GET', 1, true],
-        ['unregistered route proceeds', [], 'order/unregistered', 'PUT', 1, true],
-        ['unregistered method proceeds without warning', [], 'order/unregistered', 'PATCH', 1, true],
-        ['existing CRUD exemption proceeds', [], 'crud/example', 'PUT', 1, true],
+        ['unregistered route is denied', [], 'order/unregistered', 'PUT', 1, false],
+        ['unregistered method is denied without warning', [], 'order/unregistered', 'PATCH', 1, false],
+        ['unassigned CRUD route is denied', [], 'crud/example', 'PUT', 1, false],
+        ['new contract unregistered non-allowlisted route is denied', [], 'audit/unregistered', 'GET', 1, false],
+        ['new contract approved authenticated route proceeds', [], 'menus', 'GET', 1, true],
+        ['new contract registered CRUD without a grant is denied', [], 'crud/example', 'PUT', 1, false],
+        ['new contract registered granted route normalizes and proceeds', [$protectedRoute], ' ORDER/REFUND/<ID> ', ' PUT ', 1, true],
     ];
+    foreach (approvedAuthRoutes() as $entry) {
+        [$method, $path] = explode(' ', $entry, 2);
+        $roleCases[] = ['exact allowlist ' . $entry . ' proceeds', [], $path, strtoupper($method), 1, true];
+        $wrongMethod = $method === 'get' ? 'POST' : 'GET';
+        $roleCases[] = ['allowlist rejects wrong method ' . strtolower($wrongMethod) . ' ' . $path, [], $path, $wrongMethod, 1, false];
+    }
     foreach ($roleCases as [$name, $granted, $path, $method, $level, $allowed]) {
         run($name, static function () use ($protectedRoute, $granted, $path, $method, $level, $allowed): void {
             SystemMenusServices::$registered = [$protectedRoute, ['api_url' => 'crud/example', 'methods' => 'PUT']];
@@ -176,6 +216,26 @@ namespace {
             }
             check($denied === !$allowed, 'Unexpected authorization decision');
             check($nextCalls === ($allowed ? 1 : 0), 'Unauthorized request reached the next middleware');
+        });
+    }
+    run('allowlist contains only the six approved exact method-rule entries', static function (): void {
+        $actual = config('auth_routes.authenticated', []);
+        $expected = approvedAuthRoutes();
+        check(is_array($actual), 'Authenticated allowlist must be an array');
+        sort($actual); sort($expected);
+        check($actual === $expected, 'Authenticated allowlist contains missing, extra or non-exact entries');
+    });
+    foreach (['registered-ungranted' => 'order/refund/<id>', 'unregistered' => 'audit/cold-unregistered'] as $name => $path) {
+        run('cold permission-cache denial performs no writes: ' . $name, static function () use ($protectedRoute, $path): void {
+            SystemMenusServices::$registered = [$protectedRoute];
+            SystemMenusServices::$granted = [];
+            $request = new Request(); $request->path = $path; $request->verb = 'PUT';
+            $denied = false; $nextCalls = 0;
+            try {
+                (new AdminCheckRoleMiddleware())->handle($request, static function () use (&$nextCalls): void { $nextCalls++; });
+            } catch (AuthException $error) { $denied = true; }
+            check($denied && $nextCalls === 0, 'Cold unauthorized request must stop before downstream middleware');
+            check(Cache::$writes === [] && Cache::$values === [], 'Denied cold permission lookup wrote cache values');
         });
     }
 

@@ -6,11 +6,55 @@ audit_context "$1"; shift
 [[ -f "$audit_run_path/manifest.json" ]] || { echo 'Unknown run' >&2; exit 2; }
 [[ "$1" == help/audit-regressions/* && "$1" != *..* ]] || { echo 'Script outside approved regression directory' >&2; exit 2; }
 export AUDIT_PHASE="${AUDIT_PHASE:-after}"
+if [[ "$AUDIT_PHASE" == baseline && "$1" == help/audit-regressions/isolated/ms0a-auth.php ]]; then
+    baseline_sha=9685731dcd116784d38e6bbdb902cec3c0c84975
+    baseline_tree="$(git -c "safe.directory=$audit_repo" -C "$audit_repo" rev-parse "$baseline_sha:crmeb")"
+    current_tree="$(git -c "safe.directory=$audit_repo" -C "$audit_repo" rev-parse HEAD:crmeb)"
+    if [[ "$baseline_tree" != "$current_tree" || -n "$(git -c "safe.directory=$audit_repo" -C "$audit_repo" status --porcelain --untracked-files=normal -- crmeb)" ]]; then
+        echo 'Baseline requires unchanged historical business source; refused to mislabel results' >&2; exit 2
+    fi
+fi
 audit_register
+crud_probe="$audit_repo/crmeb/app/adminapi/route/crud/audit-ms0a.php"
+crud_directory_marker="$audit_run_path/crud-probe-directory-created"
+probe_installed=false
+redis_stopped=false
+audit_runner_cleanup() {
+    if [[ "$redis_stopped" == true ]]; then audit_compose start audit-redis >/dev/null; fi
+    if [[ "$probe_installed" == true && -f "$crud_probe" && "$(head -n 1 "$crud_probe")" == "<?php // AUDIT-RUN $AUDIT_RUN_ID" ]]; then
+        [[ "$(realpath -m "$crud_probe")" == "$audit_repo/crmeb/app/adminapi/route/crud/audit-ms0a.php" ]] || return 2
+        rm -- "$crud_probe"
+    fi
+    if [[ -f "$crud_directory_marker" && "$(cat "$crud_directory_marker")" == "$AUDIT_RUN_ID" ]]; then
+        [[ "$(realpath -m "$(dirname "$crud_probe")")" == "$audit_repo/crmeb/app/adminapi/route/crud" ]] || return 2
+        rmdir -- "$(dirname "$crud_probe")" 2>/dev/null || true
+        rm -- "$crud_directory_marker"
+    fi
+}
+trap audit_runner_cleanup EXIT
+if [[ "$1" == help/audit-regressions/isolated/ms0a-auth.php ]]; then
+    needs_crud_probe=true
+    for argument in "$@"; do
+        if [[ "$argument" == --only=* ]]; then
+            [[ ",${argument#--only=}," == *,A04,* ]] || needs_crud_probe=false
+        fi
+    done
+    if [[ "$needs_crud_probe" == true ]]; then
+        audit_compose run --rm --no-deps -T audit-runner help/audit-regressions/isolated/lib/guard.php
+        [[ "$(realpath -m "$crud_probe")" == "$audit_repo/crmeb/app/adminapi/route/crud/audit-ms0a.php" ]] || { echo 'CRUD probe target rejected' >&2; exit 2; }
+        if [[ -e "$crud_probe" && "$(head -n 1 "$crud_probe")" != "<?php // AUDIT-RUN $AUDIT_RUN_ID" ]]; then
+            echo 'Existing CRUD probe belongs to another run; refused' >&2; exit 2
+        fi
+        if [[ ! -d "$(dirname "$crud_probe")" ]]; then
+            mkdir -- "$(dirname "$crud_probe")"
+            printf '%s\n' "$AUDIT_RUN_ID" > "$crud_directory_marker"
+        fi
+        printf '%s\n' "<?php // AUDIT-RUN $AUDIT_RUN_ID" '\think\facade\Route::get("crud/audit-ms0a", "v1.product.StoreProductRule/index");' > "$crud_probe"
+        probe_installed=true
+    fi
+fi
 audit_compose run --rm --no-deps -T audit-runner "$@" &
 runner_pid=$!
-redis_stopped=false
-trap 'if [[ "$redis_stopped" == true ]]; then audit_compose start audit-redis >/dev/null; fi' EXIT
 while kill -0 "$runner_pid" 2>/dev/null; do
     for action in stop start; do
         request="$audit_run_path/$action-redis.request"

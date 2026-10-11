@@ -21,7 +21,7 @@ require __DIR__ . '/lib/harness.php';
 require __DIR__ . '/lib/token-forge.php';
 
 const MS0A_BASE = '9685731dcd116784d38e6bbdb902cec3c0c84975';
-const MS0A_CASES = ['A01', 'A09', 'A11', 'A12', 'A13', 'A14', 'A15', 'A16', 'A17', 'A18', 'A19', 'A20', 'A21', 'A23', 'A26', 'A27', 'A10', 'A28'];
+const MS0A_CASES = ['A01', 'A09', 'A11', 'A12', 'A13', 'A14', 'A15', 'A16', 'A17', 'A18', 'A19', 'A20', 'A21', 'A23', 'A26', 'A27', 'A10', 'A28', 'A02', 'A03', 'A04', 'A05', 'A06', 'A08', 'A30'];
 const MS0A_PROBES = ['admin' => '/adminapi/product/product/rule', 'out' => '/outapi/category/list', 'kefu' => '/kefuapi/service/info', 'api' => '/api/userinfo'];
 
 $GLOBALS['ms0a_only'] = [];
@@ -372,6 +372,51 @@ function ms0a_restore_draft_key(array|false $row): void
         audit_db()->prepare('INSERT INTO eb_cache (' . $quotedKey . ',result,expire_time,add_time) VALUES (?,?,?,?)')->execute([$row['key'], $row['result'], $row['expire_time'], $row['add_time']]);
     }
 }
+function ms0a_permission_negative(callable $request): array
+{
+    audit_guard_assert();
+    $scope = ['tables' => ['eb_store_product_rule' => null, 'eb_system_role' => 'id=101', 'eb_system_menus' => null, 'eb_system_route' => null], 'redis' => []];
+    $before = audit_snapshot($scope);
+    // Reuse the unchanged strict five-table / ALL-Redis negative contract.
+    // Cold authorization-cache rebuilds are failures, not permitted writes.
+    $response = ms0a_capture_negative($request, 400);
+    $after = audit_snapshot($scope);
+    $differences = [];
+    foreach ($before['tables'] as $table => $value) {
+        if ($value !== $after['tables'][$table]) { $differences[] = ['table' => $table, 'before' => $value, 'after' => $after['tables'][$table]]; }
+    }
+    $GLOBALS['ms0a_case']['db_diff'] = array_merge($GLOBALS['ms0a_case']['db_diff'], $differences);
+    $GLOBALS['ms0a_case']['snapshots'][] = ['permission_and_rule_tables_before' => $before['tables'], 'permission_and_rule_tables_after' => $after['tables']];
+    ms0a_check($differences === [], 'permission metadata and product-rule table must remain unchanged by denied request');
+    ms0a_check(($response['json']['msg'] ?? null) === '您暂时没有访问权限', 'permission middleware must deny before the business controller');
+    ms0a_check(empty($response['json']['data']), 'permission failure must not return protected data');
+    return $response;
+}
+function ms0a_fixture_role_status(): int
+{
+    $status = audit_db()->query('SELECT status FROM eb_system_role WHERE id=101')->fetchColumn();
+    audit_expect($status !== false && (int)$GLOBALS['ms0a_accounts']['_permissions']['role'] === 101, 'synthetic role identity must exist');
+    return (int)$status;
+}
+function ms0a_set_fixture_role_status(string $superToken, int $status): void
+{
+    audit_guard_assert();
+    audit_expect(in_array($status, [0, 1], true), 'synthetic role status rejected');
+    ms0a_assert_response(ms0a_http('PUT', '/adminapi/setting/role/set_status/101/' . $status, $superToken), 200);
+    ms0a_check((int)audit_db()->query('SELECT status FROM eb_system_role WHERE id=101')->fetchColumn() === $status, 'real role setter must persist the exact synthetic role state');
+}
+function ms0a_restore_menu_row(array $row): void
+{
+    audit_guard_assert();
+    $menuId = (int)$GLOBALS['ms0a_accounts']['_permissions']['admin_menu'];
+    audit_expect((int)($row['id'] ?? 0) === $menuId && (int)$row['auth_type'] === 2 && strtolower(trim($row['api_url'])) === 'product/product/rule' && strtolower(trim($row['methods'])) === 'get', 'only the original granted installation permission may be restored');
+    $quote = static fn(string $column): string => chr(96) . $column . chr(96);
+    $columns = array_keys($row);
+    $updates = implode(',', array_map(static fn(string $column): string => $quote($column) . '=VALUES(' . $quote($column) . ')', $columns));
+    audit_db()->prepare('INSERT INTO eb_system_menus (' . implode(',', array_map($quote, $columns)) . ') VALUES (' . implode(',', array_fill(0, count($row), '?')) . ') ON DUPLICATE KEY UPDATE ' . $updates)->execute(array_values($row));
+    $statement = audit_db()->prepare('SELECT * FROM eb_system_menus WHERE id=?'); $statement->execute([$menuId]);
+    ms0a_check($statement->fetch() === $row, 'the exact complete original permission row must be restored');
+}
 function ms0a_redis_control(string $action): void
 {
     audit_expect(in_array($action, ['stop', 'start'], true), 'service-control action rejected');
@@ -647,6 +692,140 @@ ms0a_case('A28', 'normal-out-login-probe-refresh', 'out login and own probe succ
 foreach (['kefu_101' => 'kefu', 'user_101' => 'api'] as $fixture => $type) {
     ms0a_case('A28', 'normal-' . $type . '-login-probe', 'real own login issues a matching session; protected probe succeeds', '新增契约', static function () use ($fixture, $type): void {
         ms0a_assert_response(ms0a_probe($type, ms0a_login($fixture)), 200);
+    });
+}
+
+// Task 7 additions: the original 86 authentication scenarios above retain
+// their exact assertions. These authorization failures also keep ALL Redis
+// keys unchanged, even when the permission cache is cold after a real edit.
+ms0a_case('A02', 'registered-ungranted-product-rule-write', 'registered but ungranted write is denied before controller; all business, permission and session values unchanged', '既有拒绝回归', static function (): void {
+    $token = ms0a_prepare('admin_limited');
+    $registered = audit_db()->query("SELECT COUNT(*) FROM eb_system_menus WHERE auth_type=2 AND LOWER(api_url)='product/product/rule/<id>' AND LOWER(methods)='post'")->fetchColumn();
+    audit_expect((int)$registered > 0, 'write probe must be an existing registered permission');
+    $marker = 'AUDIT-A02-' . getenv('AUDIT_RUN_ID');
+    $statement = audit_db()->prepare('SELECT COUNT(*) FROM eb_store_product_rule WHERE rule_name=?'); $statement->execute([$marker]);
+    audit_expect((int)$statement->fetchColumn() === 0, 'synthetic negative-write marker must not preexist');
+    try {
+        ms0a_permission_negative(static fn(): array => ms0a_http('POST', '/adminapi/product/product/rule/0', $token, ['rule_name' => $marker, 'spec' => []]));
+    } finally {
+        // If a regression unexpectedly reached save(), preserve its failure
+        // evidence and remove only the otherwise-absent synthetic marker.
+        audit_guard_assert();
+        audit_db()->prepare('DELETE FROM eb_store_product_rule WHERE rule_name=?')->execute([$marker]);
+    }
+});
+ms0a_case('A03', 'unregistered-product-list', 'unregistered product list is denied before protected read; zero business and session changes', '待复现风险', static function (): void {
+    $token = ms0a_prepare('admin_limited');
+    audit_expect((int)audit_db()->query("SELECT COUNT(*) FROM eb_system_menus WHERE auth_type=2 AND LOWER(api_url)='product/product' AND LOWER(methods)='get'")->fetchColumn() === 0, 'product-list probe must remain unregistered');
+    ms0a_permission_negative(static fn(): array => ms0a_http('GET', '/adminapi/product/product', $token));
+});
+foreach (['system-info' => '/adminapi/system/info', 'route-import' => '/adminapi/route/import_api', 'download' => '/adminapi/download/AUDITmissing' . getenv('AUDIT_RUN_ID')] as $name => $path) {
+    ms0a_case('A03', 'former-auth-only-' . $name, 'new role middleware denies before server-info/import/download controller; no protected data or mutations', '新增契约', static function () use ($path): void {
+        $token = ms0a_prepare('admin_limited');
+        // Import has no file_path and download uses an absent synthetic key.
+        // The exact permission message distinguishes denial from controller
+        // validation; no real import file or downloadable file is supplied.
+        ms0a_permission_negative(static fn(): array => ms0a_http('GET', $path, $token));
+    });
+}
+ms0a_case('A04', 'temporary-unregistered-crud-probe', 'unregistered CRUD read is denied; its existing readonly controller is never entered', '待复现风险', static function (): void {
+    $file = audit_repo_dir() . '/crmeb/app/adminapi/route/crud/audit-ms0a.php';
+    audit_expect(is_file($file), 'host harness must install the scoped temporary CRUD probe');
+    $handle = fopen($file, 'r'); $firstLine = rtrim((string)fgets($handle), "\r\n"); fclose($handle);
+    audit_expect($firstLine === '<?php // AUDIT-RUN ' . getenv('AUDIT_RUN_ID'), 'CRUD probe must carry the exact current-run first-line sentinel');
+    ms0a_check(true, 'temporary source probe identity verified read-only');
+    $token = ms0a_prepare('admin_limited');
+    ms0a_permission_negative(static fn(): array => ms0a_http('GET', '/adminapi/crud/audit-ms0a', $token));
+    // Source is read-only in the runner. run.sh owns installation and its EXIT
+    // trap removes only this exact matching sentinel, including on test failure.
+});
+ms0a_case('A05', 'limited-registered-granted-read', 'limited administrator retains the existing granted product-rule read', '既有修复回归', static function (): void {
+    ms0a_assert_response(ms0a_probe('admin', ms0a_login('admin_limited')), 200);
+});
+ms0a_case('A05', 'super-protected-unregistered-read', 'level-zero administrator retains the existing protected product-list access', '既有修复回归', static function (): void {
+    ms0a_assert_response(ms0a_http('GET', '/adminapi/product/product', ms0a_prepare('admin_super')), 200);
+});
+foreach (['logout' => '/adminapi/setting/admin/logout', 'search-menus' => '/adminapi/menusList', 'own-menus' => '/adminapi/menus', 'own-menu-unique' => '/adminapi/setting/menus/unique', 'own-info' => '/adminapi/setting/info'] as $name => $path) {
+    ms0a_case('A06', 'allowlist-' . $name, 'approved exact GET route remains available to an authenticated limited administrator', '新增契约', static function () use ($name, $path): void {
+        $token = ms0a_prepare('admin_limited'); $response = ms0a_http('GET', $path, $token);
+        ms0a_assert_response($response, 200);
+        if ($name === 'logout') { ms0a_check(audit_redis()->exists(ms0a_session_key($token)) === 0, 'logout must remove only the current session record'); }
+        if ($name === 'own-info') {
+            ms0a_check((int)($response['json']['data']['id'] ?? 0) === 102, 'self-information route must return the authenticated synthetic administrator');
+            ms0a_check(!array_key_exists('pwd', $response['json']['data'] ?? []), 'self-information response must omit credential hash');
+        }
+        if ($name === 'own-menus' || $name === 'own-menu-unique') {
+            ms0a_check(($response['json']['data']['menus'] ?? null) === [], 'limited API-only fixture must not gain unassigned navigation menus');
+        }
+    });
+}
+ms0a_case('A06', 'allowlist-own-update', 'approved exact PUT self-update succeeds and changes only the current synthetic profile', '新增契约', static function (): void {
+    $token = ms0a_prepare('admin_limited');
+    $before = audit_db()->query('SELECT * FROM eb_system_admin WHERE id=102')->fetch();
+    $other = audit_db()->query('SELECT * FROM eb_system_admin WHERE id=101')->fetch();
+    audit_expect(is_array($before) && is_array($other), 'synthetic self-update identities must exist');
+    try {
+        audit_guard_assert();
+        ms0a_assert_response(ms0a_http('PUT', '/adminapi/setting/update_admin', $token, ['real_name' => 'AUDIT SELF', 'head_pic' => $before['head_pic']]), 200);
+        $after = audit_db()->query('SELECT * FROM eb_system_admin WHERE id=102')->fetch();
+        ms0a_check(($after['real_name'] ?? null) === 'AUDIT SELF', 'self-update must persist the current synthetic administrator name');
+        foreach (['account', 'pwd', 'roles', 'level', 'status', 'is_del', 'division_id'] as $column) {
+            ms0a_check(($after[$column] ?? null) === $before[$column], 'self-update must not change protected account field ' . $column);
+        }
+        ms0a_check(audit_db()->query('SELECT * FROM eb_system_admin WHERE id=101')->fetch() === $other, 'self-update must not change the other synthetic administrator');
+    } finally {
+        audit_guard_assert();
+        audit_db()->prepare('UPDATE eb_system_admin SET real_name=?,head_pic=? WHERE id=102')->execute([$before['real_name'], $before['head_pic']]);
+    }
+});
+ms0a_case('A06', 'public-login', 'public credential login remains available without an existing token', '新增契约', static function (): void {
+    $token = ms0a_login('admin_limited');
+    ms0a_check($token !== '', 'public login must issue the normal matching synthetic session');
+});
+ms0a_case('A06', 'public-login-info', 'public login-info remains available without an existing token', '新增契约', static function (): void {
+    audit_guard_assert();
+    ms0a_assert_response(ms0a_http('GET', '/adminapi/login/info'), 200);
+});
+ms0a_case('A08', 'real-role-status-revocation', 'real role revocation makes the very next limited request fail without business or session changes', '既有修复回归', static function (): void {
+    $GLOBALS['ms0a_case']['coverage_refs'] = ['A28/normal-admin-login-probe-logout', 'A20/expired'];
+    $limited = ms0a_prepare('admin_limited'); $super = ms0a_prepare('admin_super');
+    $originalStatus = ms0a_fixture_role_status();
+    try {
+        ms0a_set_fixture_role_status($super, 0);
+        ms0a_permission_negative(static fn(): array => ms0a_probe('admin', $limited));
+    } finally { ms0a_set_fixture_role_status($super, $originalStatus); }
+});
+foreach (['delete', 'update-interface-type'] as $operation) {
+    ms0a_case('A30', 'real-menu-' . $operation . '-revocation', 'real existing permission deletion/edit invalidates authorization before the next read; rejection writes no business or cache data', '待复现风险', static function () use ($operation): void {
+        $limited = ms0a_prepare('admin_limited'); $super = ms0a_prepare('admin_super');
+        $menuId = (int)$GLOBALS['ms0a_accounts']['_permissions']['admin_menu'];
+        $statement = audit_db()->prepare('SELECT * FROM eb_system_menus WHERE id=?'); $statement->execute([$menuId]); $original = $statement->fetch();
+        audit_expect(is_array($original) && (int)$original['auth_type'] === 2, 'original granted installation interface must exist');
+        $roleStatus = ms0a_fixture_role_status();
+        try {
+            audit_guard_assert();
+            if ($operation === 'delete') {
+                ms0a_assert_response(ms0a_http('DELETE', '/adminapi/setting/menus/' . $menuId, $super), 200);
+                $statement->execute([$menuId]);
+                ms0a_check($statement->fetch() === false, 'real menu DELETE must remove the exact original permission');
+            } else {
+                // Edit the original row out of auth_type=2; no new permission
+                // row, URL or method is invented to manufacture the result.
+                $body = $original; $body['auth_type'] = 3;
+                $body['path'] = $original['path'] === '' ? [] : explode('/', $original['path']);
+                ms0a_assert_response(ms0a_http('PUT', '/adminapi/setting/menus/' . $menuId, $super, $body), 200);
+                $statement->execute([$menuId]); $edited = $statement->fetch();
+                ms0a_check((int)($edited['auth_type'] ?? 0) === 3, 'real menu PUT must remove the original row from the interface permission set');
+            }
+            ms0a_permission_negative(static fn(): array => ms0a_probe('admin', $limited));
+        } finally {
+            try { ms0a_restore_menu_row($original); } finally {
+                // Restoration uses the existing real role setter to clear its
+                // permission caches before the next test, never direct Redis
+                // wildcard deletion and never a new permission registration.
+                ms0a_set_fixture_role_status($super, $roleStatus);
+            }
+        }
     });
 }
 audit_finish();
