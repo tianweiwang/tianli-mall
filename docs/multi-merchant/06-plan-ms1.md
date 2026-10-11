@@ -218,7 +218,7 @@ POST employees仅account/role_id必填，name/avatar可选；服务器写Ctx商�
 
 普通读可直接按Ctx查询；所有管理写在默认连接真实外层事务内先锁商家行，再重检执行者及有限目标/角色，写WHERE同时含目标ID与Ctx mer_id，固定白名单列，不能保存早前含pwd的模型整体快照。相同商家的会员关系变更由该商家行锁协调；Task4首次设密也先按服务器能力记录取得的mer_id锁同一行，再锁能力/员工，不伪造Ctx。角色/员工预读仅用于决定保护集与允许字段差异，事务内复核原公开行/保护成员集合一致；变化时受控不可用且不写，不自动重试或扩大未保护集合。
 
-account/role_id/status实质变更通过既有AccountChangeGuard保护目标员工后持外层Db事务；name/avatar变化使用runMany([])，不轮换版本。角色permissions实质变化先读本店全部绑定员工ID（包含停用/软删除），runMany预保护，再锁商家/角色并复核完整成员集才写；角色名变化或真正无变化不轮换。创建/改绑员工也锁角色。保护本人后只按已验证Ctx及当前Db权限核对，不再调用JWT认证；变更后正常流程重新凭据登录。AccountChangeGuard仅在merchantapi数据库回调阶段保留HttpException的401/403/404/422，新handler仍固定消息；不可用/驱动错误和其他应用处理不变。重复名/账号等数据库唯一约束以明确MySQL1062/SQLSTATE23000分类转换固定422，不回传原消息。
+account/role_id/status实质变更通过既有AccountChangeGuard保护目标员工后持外层Db事务；name/avatar变化使用runMany([])，不轮换版本。角色permissions按集合实质增删判断，单纯顺序/重复规范化不写不轮换；实质变化先读本店全部绑定员工ID（包含停用/软删除），runMany预保护，再锁商家/角色并复核完整成员集才写；角色名变化或真正无变化不轮换。创建/改绑员工也锁角色。保护本人后只按已验证Ctx及当前Db权限核对，不再调用JWT认证；变更后正常流程重新凭据登录。AccountChangeGuard仅在merchantapi数据库回调阶段保留HttpException的401/403/404/422，新handler仍固定消息；不可用/驱动错误和其他应用处理不变。重复名/账号等数据库唯一约束以明确MySQL1062/SQLSTATE23000分类转换固定422，不回传原消息。
 
 本任务不提前新增审计服务或种子/表列；Task6的平台写审计按原顺序落实。日志正文保护继续覆盖全部merchantapi。已有五认证接口与本次七管理接口构成最终12条路由，当前阶段只变更完整路由目录核对，不改此前原始结果；仍无商品路由。
 
