@@ -139,6 +139,7 @@ public function revoke(string $app, string $token): void
 - Modify: `crmeb/app/services/system/admin/AdminAuthServices.php`（`parseToken()` 改用 `AuthTokenV2::verify()`）
 - Modify: `crmeb/app/services/system/admin/SystemAdminServices.php`（`login()` 改用 `initAccount()` + `issue()`；退出改用 `revoke()`）
 - Modify: `crmeb/app/adminapi/controller/v1/setting/SystemAdmin.php`（真实退出接口）；`crmeb/app/adminapi/AdminApiExceptionHandle.php`（受控v2异常直接JSON，避开Json::make再次翻译缓存写入和debug trace）
+- Modify（真实登录入口的必要前置调用点）: `crmeb/app/adminapi/controller/Login.php`。Request::postMore在service.login前会经filter_str/sys_config写缓存，即使filter=false仍有more中的无条件过滤；入口须在原postMore之前验证独立有界Redis连接及真实PDO连接，失败固定503。实版本Db::connect()->getPdo()只返回已有句柄/false，不建立连接；使用接口实际公开的Db::connect()->connect()，成功后保留原输入过滤、验证码、校验和400失败计数。前置不能冒称消除执行中途依赖失效的竞态，Task6仍验证部分失败。
 - Create: `help/audit-regressions/isolated/ms0b-admin-http.php`（30项真实HTTP接线场景；不冒称覆盖尚未接齐Task6的永久版本撤销或生产HTTP竞态）。
 - Modify（测试真实前置条件/观察的必要调用点）: `help/audit-regressions/isolated/lib/harness.php`、`compose.yml`、`run.sh`、`docs/multi-merchant/03-test-environment.md`。新RUN私有卷生成独立epoch/stamp并供给PHP_AUTH_*；runner只读观察实际app-runtime卷；增加仅本次RUN受控的缺配置/APP_DEBUG/DB闭合端口1/CACHE_PREFIX override；冷故障用TCP监听就绪，不用login/info预热。MySQL/Redis主机及账号/库仍固定，guard及安装初始化不变，不映射端口。新RUN首次自检11PASS/1FAIL保留：runner-runtime首次启动才创建，旧清单缺该卷导致服务控制严格拒绝；run.sh先运行原guard，再登记实际卷身份，之后才运行测试/故障控制，不放宽身份断言。
 
@@ -147,6 +148,7 @@ public function revoke(string $app, string $token): void
 - Produces: 管理员凭据摘要 = 数据库中的 `pwd` 哈希字符串
 - 接线设计：主登录先完整配置/独立Redis连接校验，再只读校验密码并保留该次原digest；initAccount后重读当前账号存在/status=1/is_del=0及digest严格相同，再createSession CAS。统计仅在会话确认成功后写。可提取只读helper并让既有verifyLogin公共方法保留原统计行为，主登录用helper。实际全源检索确认verifyLogin当前仅由主login调用，verifyFileLogin无直接调用；文件编辑真实入口SystemFileServices::Login校验filesystem.password并独立签发旧file_edit协议，不改该路径或BaseServices::createToken，不为其新增AUTH配置前置。无效凭据保持既有400；正常失败仅允许精确login_captcha计数及CRMEB标签SET增加该计数键成员，其他成员和到期点不变，禁用账号仍零写。配置/依赖失败503不得转false或进入限流写入。已核对Login控制器对service.login没有catch，通常无需在Task4改控制器；只要后续必要实现确需改才增列同一调用点。
 - Task4 30项通过只能证明接线和当前摘要失效；A21同秒登录/改密、永久版本撤销/状态重启复活及部分失败依赖Task6。接线可先本地提交并如实记录，Task4完整验收检查保持待Task6联合验证；不删原A21要求或提前标里程碑完成。
+- 退出暂与现有middleware使用同一header优先、空header才GET token的提取规则，避免认证成功但revoke空串；Q7/Task8统一移除两处URL fallback。首次HTTP基线83dc4070为8PASS/22FAIL、exit1并保留。其中download测试用了含连字符的not-a-file，与真实默认变量pattern [\w\.]+不匹配；改成既有MS0a的AUDITmissingRUN，不改Role400/零副作用断言或路由。三项正常凭据失败窗口虽预热login/info，但该路由不建立输入过滤缓存，出现5个额外配置缓存变化；窗口明确为正常已初始化应用，先同前缀真实成功登录再观察，仍严格只允许既有限流counter/精确tag增量。独立冷配置/Redis/DB窗口不预热、不放宽全零断言，更新测试后重新保留完整旧服务基线。
 
 - [ ] **Step 1: 用例**：A24（旧格式管理员令牌，即使旧 `md5(token)` 键仍在，也被拒绝；Redis 中其他业务键不受影响）；A21-v2（改密后旧令牌失效，新登录可用；同一秒内"登录"与"改密"并发，改密胜出）；全部 MS0a 管理端用例的回归。
 - [ ] **Step 2–5**：确认失败 → 实现 → 通过 → 提交 `feat(adminapi): switch to v2 sessions`。
@@ -158,6 +160,7 @@ public function revoke(string $app, string $token): void
 
 **Interfaces:**
 - Produces: 对外账号凭据摘要 = 数据库中的 `appsecret` 哈希字符串；`refresh()` 使用 `AuthTokenV2::refresh()`（单次兑换）
+- 实源预审补齐：authLogin不得以appsecret真假值决定是否验密，null/空串/字符串0均不能跳过password_verify；auth_info及parseToken结果隐藏存明文凭据的apppwd，保留其余DTO和rules可消费形态，以专用非空合成fixture证明隐藏，不改历史库值。公开refresh_token自行验证body.access_token，MCP仍独立header直接凭据，不额外加角色中间件。Login公开入口与管理端相同有过滤缓存先行链，必要的早期配置/依赖前置纳同一调用点。HTTP并发需先在harness验证实际多worker/PID和并行接收，不能把单worker排队或CLI原语竞态冒称HTTP并发；断开客户端还须独立观察真实消费/仅一replacement，再重试旧token401。
 
 - [ ] **Step 1: 用例**：A24（旧格式对外令牌被拒绝）；A25 的 HTTP 子场景（并发刷新只成功一个；客户端在收到响应前断开时，服务端不产生第二个有效会话）；A19、A28 中对外账号相关部分回归；MCP 回归（不受影响）。
 - [ ] **Step 2–5**：确认失败 → 实现 → 通过 → 提交 `feat(outapi): switch to v2 sessions with single-use refresh`。

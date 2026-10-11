@@ -379,7 +379,7 @@ m4_case('A28', 'v2-logout-only-current-sid', 'real logout removes only the prese
         && m4_status(m4_http('GET', '/adminapi/product/product/rule', $other['token'])) === 200, 'same-account and other-account sessions remain usable');
 });
 foreach (['product-list' => '/adminapi/product/product', 'system-info' => '/adminapi/system/info',
-    'route-import' => '/adminapi/route/import_api', 'download' => '/adminapi/download/not-a-file'] as $name => $path) {
+    'route-import' => '/adminapi/route/import_api', 'download' => '/adminapi/download/AUDITmissing' . getenv('AUDIT_RUN_ID')] as $name => $path) {
     m4_case('A03', 'v2-unregistered-' . $name, 'unregistered protected route is rejected before controller with its existing role failure contract', static function () use ($path): void {
         m4_start(); $login = m4_login('admin_limited');
         m4_http('GET', '/adminapi/product/product/rule', $login['token']);
@@ -436,8 +436,10 @@ foreach (['wrong-password', 'disabled-account', 'deleted-account'] as $mode) {
         $prefix = m4_start();
         $fixtureName = match ($mode) { 'disabled-account' => 'admin_disabled', 'deleted-account' => 'admin_deleted', default => 'admin_super' };
         $fixture = $GLOBALS['m4_accounts'][$fixtureName];
-        // Warm legacy translation outside this observation, independently of
-        // a credential failure. Task 8 separately hardens the actual limiter.
+        // This credential-failure window observes an ordinarily initialized
+        // application. A real successful login initializes input-filter caches
+        // before the window; cold configuration/dependency cases stay separate.
+        m4_login('admin_super');
         m4_http('GET', '/adminapi/login/info');
         $response = m4_negative(static fn(): array => m4_http('POST', '/adminapi/login', null,
             ['account' => $fixture['account'], 'pwd' => $mode === 'wrong-password' ? bin2hex(random_bytes(12)) : $fixture['password']]),
