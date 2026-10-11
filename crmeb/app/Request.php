@@ -11,6 +11,8 @@
 
 namespace app;
 
+use app\services\marketplace\context\MerchantContext;
+use crmeb\exceptions\MerchantUnauthenticatedException;
 use Spatie\Macroable\Macroable;
 
 /**
@@ -28,6 +30,27 @@ use Spatie\Macroable\Macroable;
 class Request extends \think\Request
 {
     use Macroable;
+
+    /** A verified value belongs only to this request instance. */
+    private ?MerchantContext $merchantContextValue = null;
+
+    public function setMerchantContext(MerchantContext $context): void
+    {
+        $this->merchantContextValue = $context;
+    }
+
+    public function merchantContext(): MerchantContext
+    {
+        if ($this->merchantContextValue === null) {
+            throw new MerchantUnauthenticatedException();
+        }
+        return $this->merchantContextValue;
+    }
+
+    public function clearMerchantContext(): void
+    {
+        $this->merchantContextValue = null;
+    }
 
     /**
      * 不过滤变量名
