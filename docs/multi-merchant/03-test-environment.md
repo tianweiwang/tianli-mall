@@ -40,6 +40,8 @@
 - 2026-10-11 MS0b Task5并发前置：仅本RUN Linux PHP服务允许SERVER_WORKERS为空（不设置PHP_CLI_SERVER_WORKERS）或2；不给宿主开放端口、不共享PID namespace/挂Docker socket或外网。supervisor在实际setsid后登记PID/PGID/SID/starttime，并验证独立组；有限observe只读本组实际成员及到audit-redis:6379的socket数字信息，屏障中不做Redis写入/EVAL观察。stop须验证整个登记组已退出/回收且8000无监听，wrapper先退出不能漏掉fork worker。测试先记录旧实现基线，实际运行PID/HTTP处理重叠/停止后状态分别验证；不按env值或ACK推断。CLIENT PAUSE WRITE固定短时仅对专用Redis，真实CLIENT LIST flags/command与app进程socket关联证明处理重叠；不加生产sleep/ignore_user_abort/test hook，不打印私有环境或请求内容。
 - 同轮真实Redis暂停诊断定位框架启动先行连接：ModelService经Db::__make在请求/应用handler之前创建timeout=0的旧缓存客户端。修复使用根服务绑定的兼容Db及标准Cache manager延迟委托，保留default/named backend与共享client选项；测试必须从App::initialize之前暂停，不能先完成initialize再以工厂约1秒503替代HTTP启动覆盖。新bootstrap回归与真实HTTP仍在原专用网络/卷、原DML权限中执行，不修改vendor、镜像或网络边界。
 
+- 2026-10-12 MS0b Task8普通下载检查：依据05计划同一调用点设计，app/runner共用本RUN新建的`backup-output`命名卷，挂载真实生产者固定的`/workspace/crmeb/backup`写入路径；不复制宿主或业务备份。源码/vendor继续只读，内部网络/无宿主端口/DML账号和全部启动保护保持。卷沿实际标签进入manifest，并由既有teardown精确清理；文件生产、内容和最终清理分别记录。此项只用于正常CRUD/备份下载，停止的复现、负向和故障验证不恢复。
+
 §3 中的 127.0.0.1、宿主 PHP 与凭据文件位置适用于 ISO-MIN；本节是 ISO-FULL 的等效约束，不取消其他启动保护。新增 `run.sh` 属于本次批准的启动脚本范围。
 
 ## 3. ISO-MIN 环境（MS0a 交付）

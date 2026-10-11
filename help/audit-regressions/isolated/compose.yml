@@ -67,6 +67,7 @@ services:
       - ${AUDIT_RUN_DIR}:/run/audit
       - app-secrets:/run/audit-app:ro
       - app-runtime:/workspace/crmeb/runtime
+      - backup-output:/workspace/crmeb/backup
   audit-runner:
     <<: *php
     environment:
@@ -81,6 +82,7 @@ services:
       - fixture-secrets:/run/audit-fixtures:ro
       - runner-runtime:/workspace/crmeb/runtime
       - app-runtime:/run/audit-app-runtime:ro
+      - backup-output:/workspace/crmeb/backup
 
 networks:
   isolation:
@@ -96,6 +98,8 @@ volumes:
   app-runtime:
     labels: *labels
   runner-runtime:
+    labels: *labels
+  backup-output:
     labels: *labels
   bootstrap-secrets:
     labels: *labels

@@ -45,6 +45,13 @@ with plugins and scripts disabled. This activates the project's existing PHP
 8.2 compatibility classmaps, as the repository Dockerfile does. Source and lock
 files are unchanged; the application and runner mount that volume read-only.
 
+For MS0b Task 8 normal file production, application and runner share this RUN's
+dedicated `backup-output` volume at `/workspace/crmeb/backup`. The source and
+vendor mounts remain read-only; no existing host backup is exposed or copied.
+The volume carries the same RUN labels and is recorded and removed by the
+existing manifest-based cleanup. Normal checks record the actual produced files
+and their hashes. This does not enable any skipped security or fault suite.
+
 After seed import and guard verification, bootstrap uses its dedicated migrator
 to run the existing file checksum initialization and verifies the generated
 checksums before recording the actual version marker. This is the approved
