@@ -269,7 +269,8 @@ function cf_logs_private(): bool
 }
 function cf_same($actual, $expected): bool
 {
-    if (is_callable($expected)) { return $expected($actual); }
+    // Business strings may match PHP function names; only explicit predicates run.
+    if ($expected instanceof Closure) { return $expected($actual); }
     return $actual === null || $expected === null ? $actual === $expected : (string)$actual === (string)$expected;
 }
 function cf_update_rule(array $patch): array { return ['mode' => 'update', 'patch' => $patch]; }
@@ -281,6 +282,7 @@ function cf_time_value($value): bool
 {
     return is_numeric($value) && (int)$value >= $GLOBALS['cf_window_start'] && (int)$value <= $GLOBALS['cf_window_end'];
 }
+function cf_time_rule(): Closure { return Closure::fromCallable('cf_time_value'); }
 function cf_pwd_rule(string $password): Closure { return static fn($value): bool => is_string($value) && password_verify($password, $value); }
 function cf_rows_match(array $before, array $after, array $rules, string $table): bool
 {
@@ -417,7 +419,7 @@ function cf_division_data(int $uid, int $aid, string $account, string $password 
 function cf_division_patch(int $uid, array $data): array
 {
     return ['division_percent' => $data['division_percent'], 'division_end_time' => strtotime($data['division_end_time']),
-        'division_change_time' => 'cf_time_value', 'is_division' => 1, 'is_agent' => 0, 'is_staff' => 0, 'division_id' => $uid,
+        'division_change_time' => cf_time_rule(), 'is_division' => 1, 'is_agent' => 0, 'is_staff' => 0, 'division_id' => $uid,
         'agent_id' => 0, 'staff_id' => 0, 'division_type' => 1, 'division_status' => $data['division_status'], 'spread_uid' => 0,
         'spread_time' => 0, 'division_name' => $data['division_name'], 'is_promoter' => 1, 'division_invite' => 13572468];
 }
@@ -425,7 +427,7 @@ function cf_division_reset(): array
 {
     return ['division_name' => '', 'division_type' => 0, 'division_status' => 0, 'is_division' => 0, 'is_agent' => 0, 'is_staff' => 0,
         'division_id' => 0, 'agent_id' => 0, 'staff_id' => 0, 'division_percent' => 0, 'division_end_time' => 0,
-        'division_change_time' => 'cf_time_value', 'division_invite' => 0];
+        'division_change_time' => cf_time_rule(), 'division_invite' => 0];
 }
 
 try {
@@ -438,7 +440,7 @@ try {
         $row = cf_rows('eb_system_admin')[(string)$subject['id']];
         cf_window('SystemAdminServices::login with the new valid password', static fn() => cf_login($subject),
             ['eb_system_admin' => [$subject['id'] => cf_update_rule(['login_count' => (int)$row['login_count'] + 1,
-                'last_time' => 'cf_time_value', 'last_ip' => request()->ip()])]], [], [$subject], false, $subject);
+                'last_time' => cf_time_rule(), 'last_ip' => request()->ip()])]], [], [$subject], false, $subject);
     });
     cf_case('A21', 'W02-own-updateAdmin-normal-password', static function (): void {
         $subject = cf_subject('adminapi'); $password = cf_password();
@@ -468,7 +470,7 @@ try {
         cf_check($result instanceof \think\Model && password_verify($password, $hash), 'normal out secret hash/plaintext synchronization preserves the Model result');
         $subject['password'] = $password;
         cf_window('OutAccountServices::authLogin with the new valid secret', static fn() => cf_login($subject),
-            ['eb_out_account' => [$subject['id'] => cf_update_rule(['last_time' => 'cf_time_value', 'ip' => request()->ip()])]], [], [$subject], false, $subject);
+            ['eb_out_account' => [$subject['id'] => cf_update_rule(['last_time' => cf_time_rule(), 'ip' => request()->ip()])]], [], [$subject], false, $subject);
     });
     cf_case('A21', 'W06-out-normal-disable-enable', static function (): void {
         $subject = cf_subject('outapi');
@@ -524,7 +526,7 @@ try {
                 $rows = array_filter($after['eb_system_admin'], static fn(array $row): bool => $row['account'] === $name);
                 audit_expect(count($rows) === 1, 'normal service create yields one exact new account'); $row = reset($rows); $id = (int)$row['id']; cf_register('eb_system_admin', $id);
                 return ['eb_system_admin' => [$id => cf_create_rule('eb_system_admin', $id, ['account' => $name, 'pwd' => cf_pwd_rule($password), 'real_name' => $data['real_name'],
-                    'roles' => (string)$GLOBALS['cf_role'], 'status' => 1, 'level' => 1, 'division_id' => 0, 'add_time' => 'cf_time_value', 'head_pic' => '/statics/system_images/admin_head_pic.png'])]];
+                    'roles' => (string)$GLOBALS['cf_role'], 'status' => 1, 'level' => 1, 'division_id' => 0, 'add_time' => cf_time_rule(), 'head_pic' => '/statics/system_images/admin_head_pic.png'])]];
             });
         cf_check($result === true, 'new admin create preserves its boolean success and automatic identity');
         $uid = cf_user(); $name = cf_name(); $password = cf_password(); $division = cf_division_data($uid, 0, $name, $password);
@@ -534,7 +536,7 @@ try {
                 audit_expect(count($rows) === 1, 'normal new Division yields one exact generated admin identity'); $row = reset($rows); $id = (int)$row['id']; cf_register('eb_system_admin', $id);
                 return ['eb_user' => [$uid => cf_update_rule(cf_division_patch($uid, $division))], 'eb_system_admin' => [$id => cf_create_rule('eb_system_admin', $id,
                     ['account' => $name, 'pwd' => cf_pwd_rule($password), 'real_name' => $division['division_name'], 'roles' => (string)$GLOBALS['cf_role'], 'status' => 1,
-                        'level' => 1, 'division_id' => $uid, 'add_time' => 'cf_time_value', 'head_pic' => '/statics/system_images/admin_head_pic.png'])]];
+                        'level' => 1, 'division_id' => $uid, 'add_time' => cf_time_rule(), 'head_pic' => '/statics/system_images/admin_head_pic.png'])]];
             });
         cf_check($result === true, 'new Division commits its actual user/admin relation and preserves original boolean success');
     });
