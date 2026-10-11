@@ -23,6 +23,7 @@
 - 认证失败只允许两类副作用：`eb_system_log` 审计记录、限流计数键。
 - 配置错误统一抛出 `crmeb\exceptions\AuthException('认证服务配置错误', [], 503)`；认证失败统一抛出业务码 `401`。
 - 不放宽任何已有断言。`security.php` 的 BASE 原始 23 项保留基线记录；经用户批准，Task 7 的三项旁路放行断言改为拒绝（未登记路由、未登记方法、未授权 CRUD），其余 20 项保持不变。最终要求 20 项原有回归、3 项权限收紧契约及新增用例全部通过。
+- Task 7 事实修正：原 UNIT-STUB 退出正向探针使用 POST，但真实退出接口只有 GET。依据用户“按最优处理继续、不用问”的后续授权，仅把该探针输入改为 GET，保留放行断言，并新增 POST 必须拒绝；不把 POST 加入白名单，不覆盖原 BASE 证据。
 - 测试先于修复提交，并先在 `AUDIT_BASE_SHA` 上以 `AUDIT_PHASE=baseline` 运行一次。
 
 ## Review Focus
@@ -308,6 +309,7 @@ git commit -m "fix(outapi): single enabled-state rule for login/access/refresh/M
 - Modify: `crmeb/app/adminapi/controller/v1/setting/SystemMenus.php`（写操作成功后清缓存）
 - Modify（2026-10-11 用户批准的必要路由调用点）: `crmeb/app/adminapi/route/route.php`（原三项仅认证分组追加 AdminCheckRoleMiddleware）
 - Modify（A04 临时探针的必要清理调用点）: `help/audit-regressions/isolated/teardown.sh`（仅移除首行匹配本 RUN 哨兵的临时 CRUD 探针）
+- Modify（ISO-FULL 源码只读挂载下 A04 探针的必要调用点）: `help/audit-regressions/isolated/run.sh`（guard 后由宿主按 RUN 哨兵准备探针，EXIT 精确清理）
 - Modify: `help/audit-regressions/security.php`（按批准的契约收紧 3 项旁路断言并追加 UNIT-STUB 用例）、`help/audit-regressions/isolated/ms0a-auth.php`（追加 A02–A06、A08、A30）
 
 **Interfaces:**
@@ -350,6 +352,7 @@ Expected: 三项收紧后的 UNIT-STUB 用例、新增的拒绝用例和 A03、A
 
 - `auth_routes.php` 返回 `['authenticated' => [...用户确认的清单...]]`。先确认 ThinkPHP 多应用模式会加载 `app/adminapi/config/` 下的配置文件；如果不会，改放到 `crmeb/config/auth_routes.php` 并在报告中说明。
 - `verifyAuth()`：`"$method $rule"` 在白名单中 → 放行；已登记且角色已授权 → 放行；其余一律抛 `AuthException('您暂时没有访问权限')`。删除"未登记放行"和 `crud/` 前缀放行两个分支。保留审计 A1 已有的严格比较。
+- 授权失败保持零副作用：冷的 all_auth 与角色缓存先只读查询；只有放行后才写派生权限缓存。必要的 getRolesByAuth 调用逻辑一并调整，签名保持不变。撤权/菜单删除后第一次拒绝不能为了缓存重建而放宽 Redis 不变断言。
 - `SystemMenus` 控制器：新增、修改、删除、显示开关这几个写操作成功后调用 `CacheService::clear()`，与 `SystemRole` 控制器一致。
 - `route/route.php`：原三项仅认证分组保留现有中间件并追加 AdminCheckRoleMiddleware，不改变公开登录/MISS/CORS 分组。
 - A04 临时 CRUD 探针指向已有只读方法，首行带本 RUN 哨兵；测试 finally 与 teardown 都只删除完全匹配本 RUN 标记的探针，保留其他文件。
