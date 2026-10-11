@@ -36,6 +36,8 @@
 - 初始建库、导入种子、写入双哨兵属于引导阶段，只能在已核对的本次专用实例内完成；之后任何测试写入和应用启动都必须经过 guard。测试失败保留证据，不自动清理。
 - 2026-10-11 用户批准安装后的文件校验初始化：安装种子没有当前版本的 `write_md5` 标记，真实 `login/info` 首次请求会通过 `SystemFileServices::writeMd5()` 重建 `eb_system_file_md5`，其 TRUNCATE 需要 DROP 权限。bootstrap 在双哨兵和受限账号 guard 已通过后，只用本次专用 `audit_migrator` 初始化真实 ThinkPHP，调用该现有方法实际生成当前源码的文件校验数据；成功后以现有 `CacheServices::setDbCache()` 写入当前版本标记，并检查数据非空。此步骤只在引导容器内执行，migrator 配置不传给应用或 runner；应用仍使用仅有 DML 权限的 `audit_app`。不新增表或权限种子，不伪造标记跳过校验生成，Z07 的业务码 200 断言保持不变。
 
+- 2026-10-11 MS0b HTTP接线前置（依用户委托自主推进，05 Task4记录）：每个新RUN在私有app-secrets卷生成独立auth.session_epoch/stamp_key（与签名key不同），通过PHP_AUTH_*供给专用应用，不在宿主控制文件、命令行或输出传真实值。runner另只读挂载本次app-runtime卷，核对真实HTTP文件缓存/业务日志；访问日志正常增长单独做敏感值检查。冷错误场景仅TCP监听就绪，不调用login/info预热。supervisor配置override仅白名单中的缺AUTH值/short、debug true/false、同一audit-mysql的闭合端口1或3306、本次RUN安全cache prefix；guard连接仍固定真实3306/6379并核双哨兵/DML权限，不改变账号/库/网络主机。原MS0a配置override保留；安装writeMd5初始化仍只bootstrap专用migrator真实执行。
+
 §3 中的 127.0.0.1、宿主 PHP 与凭据文件位置适用于 ISO-MIN；本节是 ISO-FULL 的等效约束，不取消其他启动保护。新增 `run.sh` 属于本次批准的启动脚本范围。
 
 ## 3. ISO-MIN 环境（MS0a 交付）

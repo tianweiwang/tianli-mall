@@ -139,10 +139,14 @@ public function revoke(string $app, string $token): void
 - Modify: `crmeb/app/services/system/admin/AdminAuthServices.php`（`parseToken()` 改用 `AuthTokenV2::verify()`）
 - Modify: `crmeb/app/services/system/admin/SystemAdminServices.php`（`login()` 改用 `initAccount()` + `issue()`；退出改用 `revoke()`）
 - Modify: `crmeb/app/adminapi/controller/v1/setting/SystemAdmin.php`（真实退出接口）；`crmeb/app/adminapi/AdminApiExceptionHandle.php`（受控v2异常直接JSON，避开Json::make再次翻译缓存写入和debug trace）
+- Create: `help/audit-regressions/isolated/ms0b-admin-http.php`（30项真实HTTP接线场景；不冒称覆盖尚未接齐Task6的永久版本撤销或生产HTTP竞态）。
+- Modify（测试真实前置条件/观察的必要调用点）: `help/audit-regressions/isolated/lib/harness.php`、`compose.yml`、`docs/multi-merchant/03-test-environment.md`。新RUN私有卷生成独立epoch/stamp并供给PHP_AUTH_*；runner只读观察实际app-runtime卷；增加仅本次RUN受控的缺配置/APP_DEBUG/DB闭合端口1/CACHE_PREFIX override；冷故障用TCP监听就绪，不用login/info预热。MySQL/Redis主机及账号/库仍固定，guard及安装初始化不变，不映射端口。
 
 **Interfaces:**
 - Consumes: Task 2、Task 3
 - Produces: 管理员凭据摘要 = 数据库中的 `pwd` 哈希字符串
+- 接线设计：主登录先完整配置/独立Redis连接校验，再只读校验密码并保留该次原digest；initAccount后重读当前账号存在/status=1/is_del=0及digest严格相同，再createSession CAS。统计仅在会话确认成功后写。可提取只读helper并让既有verifyLogin公共方法保留原统计行为，主登录用helper。实际全源检索确认verifyLogin当前仅由主login调用，verifyFileLogin无直接调用；文件编辑真实入口SystemFileServices::Login校验filesystem.password并独立签发旧file_edit协议，不改该路径或BaseServices::createToken，不为其新增AUTH配置前置。无效凭据保持既有400；正常失败仅允许精确login_captcha计数及CRMEB标签SET增加该计数键成员，其他成员和到期点不变，禁用账号仍零写。配置/依赖失败503不得转false或进入限流写入。已核对Login控制器对service.login没有catch，通常无需在Task4改控制器；只要后续必要实现确需改才增列同一调用点。
+- Task4 30项通过只能证明接线和当前摘要失效；A21同秒登录/改密、永久版本撤销/状态重启复活及部分失败依赖Task6。接线可先本地提交并如实记录，Task4完整验收检查保持待Task6联合验证；不删原A21要求或提前标里程碑完成。
 
 - [ ] **Step 1: 用例**：A24（旧格式管理员令牌，即使旧 `md5(token)` 键仍在，也被拒绝；Redis 中其他业务键不受影响）；A21-v2（改密后旧令牌失效，新登录可用；同一秒内"登录"与"改密"并发，改密胜出）；全部 MS0a 管理端用例的回归。
 - [ ] **Step 2–5**：确认失败 → 实现 → 通过 → 提交 `feat(adminapi): switch to v2 sessions`。

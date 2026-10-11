@@ -80,6 +80,7 @@ services:
       - app-secrets:/run/audit-app:ro
       - fixture-secrets:/run/audit-fixtures:ro
       - runner-runtime:/workspace/crmeb/runtime
+      - app-runtime:/run/audit-app-runtime:ro
 
 networks:
   isolation:

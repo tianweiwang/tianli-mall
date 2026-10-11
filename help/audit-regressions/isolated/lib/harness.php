@@ -156,7 +156,9 @@ function audit_prepare(bool $buildVendor = true): void
     file_put_contents('/run/audit-bootstrap/root-password', $rootPassword); chmod('/run/audit-bootstrap/root-password', 0600);
     $migrator = ['username' => 'audit_migrator', 'password' => bin2hex(random_bytes(24))];
     audit_write_json('/run/audit-bootstrap/migrator.json', $migrator);
-    $config = ['run_id' => $runId, 'database' => ['username' => 'audit_app', 'password' => bin2hex(random_bytes(24))], 'redis_password' => bin2hex(random_bytes(24)), 'signing_key' => bin2hex(random_bytes(32))];
+    $config = ['run_id' => $runId, 'database' => ['username' => 'audit_app', 'password' => bin2hex(random_bytes(24))], 'redis_password' => bin2hex(random_bytes(24)), 'signing_key' => bin2hex(random_bytes(32)),
+        'auth' => ['session_epoch' => 'audit-http-' . $runId, 'stamp_key' => bin2hex(random_bytes(32)), 'issuer' => 'tianli-mall']];
+    audit_expect(!hash_equals($config['signing_key'], $config['auth']['stamp_key']), 'test signing/stamp keys must be independently generated');
     audit_write_json('/run/audit-app/config.json', $config);
     file_put_contents('/run/audit-redis/redis.conf', "bind 0.0.0.0\nprotected-mode yes\nport 6379\nrequirepass " . $config['redis_password'] . "\nappendonly yes\nappendfsync always\nsave \"\"\n");
     chmod('/run/audit-redis/redis.conf', 0600);
@@ -360,9 +362,27 @@ function audit_serve(): void
                     audit_guard_assert();
                     $config = audit_config();
                     $env = ['PATH' => getenv('PATH'), 'PHP_APP_DEBUG' => 'false', 'PHP_APP_APP_KEY' => $config['signing_key'], 'PHP_DATABASE_HOSTNAME' => 'audit-mysql', 'PHP_DATABASE_HOSTPORT' => '3306', 'PHP_DATABASE_DATABASE' => 'audit_auth', 'PHP_DATABASE_USERNAME' => 'audit_app', 'PHP_DATABASE_PASSWORD' => $config['database']['password'], 'PHP_DATABASE_PREFIX' => 'eb_', 'PHP_DATABASE_DEBUG' => 'false', 'PHP_CACHE_DRIVER' => 'redis', 'PHP_REDIS_REDIS_HOSTNAME' => 'audit-redis', 'PHP_REDIS_PORT' => '6379', 'PHP_REDIS_REDIS_PASSWORD' => $config['redis_password'], 'PHP_CACHE_CACHE_PREFIX' => 'c:', 'PHP_CACHE_CACHE_TAG_PREFIX' => 'CRMEB:'];
+                    audit_expect(is_array($config['auth'] ?? null)
+                        && ($config['auth']['session_epoch'] ?? '') === 'audit-http-' . getenv('AUDIT_RUN_ID')
+                        && is_string($config['auth']['stamp_key'] ?? null) && strlen($config['auth']['stamp_key']) >= 32
+                        && !hash_equals($config['signing_key'], $config['auth']['stamp_key']), 'private HTTP v2 configuration is not initialized');
+                    $env['PHP_AUTH_SESSION_EPOCH'] = $config['auth']['session_epoch'];
+                    $env['PHP_AUTH_STAMP_KEY'] = $config['auth']['stamp_key'];
+                    $env['PHP_AUTH_ISSUER'] = $config['auth']['issuer'];
                     foreach ($control['overrides'] ?? [] as $key => $value) {
-                        $mapping = ['APP_KEY' => 'PHP_APP_APP_KEY', 'CACHE_DRIVER' => 'PHP_CACHE_DRIVER'];
-                        audit_expect(isset($mapping[$key]) && in_array($value, ['', 'default', 'file', 'redis'], true), 'unapproved application configuration override');
+                        $mapping = ['APP_KEY' => 'PHP_APP_APP_KEY', 'CACHE_DRIVER' => 'PHP_CACHE_DRIVER',
+                            'AUTH_SESSION_EPOCH' => 'PHP_AUTH_SESSION_EPOCH', 'AUTH_STAMP_KEY' => 'PHP_AUTH_STAMP_KEY',
+                            'APP_DEBUG' => 'PHP_APP_DEBUG', 'DB_PORT' => 'PHP_DATABASE_HOSTPORT', 'CACHE_PREFIX' => 'PHP_CACHE_CACHE_PREFIX'];
+                        $approved = is_string($value) && match ($key) {
+                            'APP_KEY', 'CACHE_DRIVER' => in_array($value, ['', 'default', 'file', 'redis'], true),
+                            'AUTH_SESSION_EPOCH' => $value === '',
+                            'AUTH_STAMP_KEY' => in_array($value, ['', 'short'], true),
+                            'APP_DEBUG' => in_array($value, ['true', 'false'], true),
+                            'DB_PORT' => in_array($value, ['1', '3306'], true),
+                            'CACHE_PREFIX' => (bool)preg_match('/^audit:http-lang:' . preg_quote((string)getenv('AUDIT_RUN_ID'), '/') . ':[0-9]+:$/D', $value),
+                            default => false,
+                        };
+                        audit_expect(isset($mapping[$key]) && $approved, 'unapproved application configuration override');
                         $env[$mapping[$key]] = $value;
                     }
                     $credentialCheck = json_decode(file_get_contents(audit_run_dir() . '/credential-check.json'), true, 512, JSON_THROW_ON_ERROR);
