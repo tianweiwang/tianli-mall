@@ -2,6 +2,8 @@
 
 > **For agentic workers (Codex):** 先读 [12-codex-protocol.md](12-codex-protocol.md)。开工前提：MS0b 已验收（merchantapi 直接使用 v2 会话）。需要授权级别 L2。本里程碑有数据库迁移，只在隔离环境演练；真实库执行需要 L4。
 
+> **2026-10-12 本次执行依据：** 用户持续委托“按文档规划目标推进，遇到问题，按你认为最优的处理方式继续进行就行，不用问我”，并明确跳过安全复现、异常请求、故障、并发/断连及恢复等验证。本次按该委托继续正常L2开发；MS0b普通源码交付为 `fe9ab18f2555d2cbc9f21a1dcd1a61a9c704a39f`，四正常脚本30PASS/1NOT RUN、两下载BROWSER保存已补证，完整安全验收及人工签收未发生。原文前置要求保留为验收缺口，不宣称已经签收，不填写SECURITY_BASE_SHA；后续只运行正常流程，逐项保留原负向用例的NOT RUN边界。真实数据库、推送、发布、通知不在本次授权内。
+
 **Goal:** 平台可以建立、审核、启停商家并为其创建员工；员工通过独立的 merchantapi 登录；服务端由已验证身份生成请求/任务局部的 `MerchantContext`；商家身份无法进入平台、对外、客服接口。商品接口不在本里程碑开放。
 
 **Architecture:** 新增 `marketplace` 业务模块（model/dao/services）与 `merchantapi` 应用。商家员工的会话复用 MS0b 的 `AuthTokenV2`（app = `merchantapi`，type = `merchant`）。`MerchantContext` 为只读值对象，由中间件创建并只挂在当前 `Request` 实例上；服务方法显式接收它。三种查询范围类在本里程碑建好并测试，MS2 起用于商品。
@@ -12,13 +14,29 @@
 
 ## Global Constraints
 
-- 起点：`SECURITY_BASE_SHA` 加上已合入的 MS0b。分支 `feature/multi-merchant-v0.1`（MS1 起所有多商家功能在此分支上，以里程碑为单位合入），工作目录 `/Volumes/Kingston/cdx/projects/tianli-mall--mm`。
+- 本次Windows工作目录：`H:/天俪商城/tianli-mall--mm`，分支 `feature/multi-merchant-v0.1`，实际起点 `fe9ab18f2555d2cbc9f21a1dcd1a61a9c704a39f`。原计划的签收后 `SECURITY_BASE_SHA` 起点未取得签收记录，不能虚构；本地源码继承MS0a/MS0b已实施边界。后续里程碑沿此功能分支继续，当前不合入稳定分支或推送。
 - 表名（实际前缀以环境为准，下文用 `eb_`）：`eb_marketplace_merchant`、`eb_marketplace_employee`、`eb_marketplace_role`、`eb_marketplace_audit_log`、`eb_marketplace_password_setup`。
 - 所有新表的 `mer_id` 列为 `int unsigned NOT NULL`，**没有默认值**。
 - 商家状态拆成四个独立字段：`review_status`（0 待审、1 通过、2 驳回）、`accept_orders`（0/1）、`fulfillment_enabled`（0/1）、`security_locked`（0/1）；外加 `closed_at`（可空）。不用一个字段表达多种含义。
 - 新接口返回真实 HTTP 状态码：未认证 401、无动作权限 403、跨商家对象 404。响应体格式沿用 `{status, msg, data}`。
 - 员工初始密码采用一次性设置链接（Q8 默认值）：平台创建员工时生成 32 字节随机令牌，只存 SHA-256，有效期 24 小时，只能使用一次。不生成、不发送明文口令。
 - 迁移脚本放在 `help/migrations/`，沿用 `theme-module.php` 的 `check` / `apply` 模式：幂等、遇到不兼容的已有结构就拒绝、只新增空表和菜单登记。
+
+## 实源接线与本次设计决策
+
+以下依据新分支起点的实际源码补齐，先于依赖它们的实现；不修改00/10/11/12规格或验收签收。
+
+- `Request` 使用的Macroable注册表是static；商户上下文采用当前Request实例的私有属性和明确getter/setter，不注册捕获身份的macro。服务及任务仍显式传递不可变上下文。
+- merchantapi的v2接线除config.auth外，必须同时扩展AuthConfigGuard、AuthTokenV2、AuthSessionStore、CredentialStamp和AccountChangeGuard的服务端应用枚举/主体映射；这是同一会话扩展的必要调用点。不得从请求输入选择app/type，也不替换其他应用的协议。
+- 新平台marketplace路由必须取得真实HTTP状态；旧AdminApiExceptionHandle仍把部分认证错误包装HTTP200，不能直接据旧路由组假定新接口满足401/403/404。采用限定marketplace路径的处理接线，具体来源与映射在Task6实现前记录，旧API合同保持。
+- 商家主体以 `mer_id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY` 为唯一经营身份；其他四新表各有自增id及无默认值的正整数mer_id。角色为商家内角色，不创建mer_id=0的全局内建角色。五表完整DDL、索引和列默认/可空规则在Task2的 `marketplace-ms1.md` 中冻结后才编码。
+- 员工登录只接收account/password，因此account采用全局唯一的规范化值：去首尾空白、仅ASCII大小写折叠；非ASCII文本保持，数据库用区分大小写的utf8mb4排序规则保存该规范化值。员工绑定一个同商家的role_id；权限以已验证权限码JSON数组存储，每次请求从当前员工、角色与商家重建，不用令牌中的旧权限缓存。
+- 初始员工未设置密码（pwd可空）；设置能力使用32随机字节的base64url无填充令牌，数据库只存SHA-256与24小时到期/消费记录。一次正常设置在事务内写密码哈希并消费该记录；只向本次获授权创建者返回merchantapi设置入口和能力，正文不入审计/日志。不能由已登录商户传入mer_id决定设置归属。
+- `marketplace_audit_log.mer_id` 非空：本阶段有目标的商家写操作都在取得真实正mer_id后记日志；可空参数签名不等于允许落库null/0。平台全局只读列表的请求由既有平台审计链记录，不伪造新商家ID；若以后新增无目标写动作，须先补其审计合同，不能静默丢弃。
+- 迁移的“空”指CRMEB已安装且五目标表不存在；零表库缺少system_menus，不能创建第六张表或调用Installer。theme-module实际使用 `--check/--apply`，新MS1 CLI明确支持文档要求的 `check|apply`（兼容同义选项）。只新增五表及精确marketplace菜单/接口登记；原表列/index/旧行保持，system_menus正常新增行与其AUTO_INCREMENT变化单列核对，不能要求新增后checksum仍相同，也不回拨计数器。其他原表结构/数据保持。
+- 现Supervisor声明queue:listen，实版Listener每轮启动queue:work --once，job不复用同一PHP进程。Task1为新marketplace队列声明独立 `queue:work --queue=marketplace --sleep=1 --tries=1` 常驻模式，并用相同命令建立ISO audit-worker；原队列保持。生产声明默认不自动启动，实际发布另行处理。正常空任务的同一PID证据到位后，Task8再运行正常A→B上下文重建；异常/无上下文/伪造载荷/并发场景按用户要求跳过，不冒称M05/M09/M10完整通过。
+
+执行顺序仍以Task1–9为单一清单；Task1源码盘点完成，正常worker能力尚待实现/观察。迁移、接口和上下文都尚未实施，普通成功用例与原跳过项分别记录。
 
 ## Review Focus
 
@@ -35,8 +53,10 @@
 **Files:**
 - Create: `docs/multi-merchant/records/ms1/runtime-process-inventory.md`
 - Modify: `help/audit-regressions/isolated/compose.yml`（增加与生产相同方式启动的队列 worker 服务 `audit-worker`）
+- Modify（同一worker能力的必要接线）: `docker/php/supervisord.conf`（独立marketplace队列声明，autostart=false）；`help/audit-regressions/isolated/lib/guard.php`、`lib/harness.php`、`bootstrap.sh`（按实际需要将新增服务身份、私有配置和普通启动纳入现有manifest保护）
+- Create（仅隔离检查）: `help/audit-regressions/isolated/ms1-worker-functional.php` 及必要的 `lib/` 普通空任务/启动适配；不得导入或运行停用套件。
 
-- [ ] **Step 1:** 从 `docker/`、`help/docker/`、Supervisor 配置、`crmeb/config/queue.php`、`crmeb/crmeb/services/workerman/` 列出声明的常驻进程（FPM、队列、Workerman 聊天、定时任务）：启动命令、容器、是否复用容器单例。表分两栏："配置中声明"与"实际观察到"（有运行环境权限时填 PID、镜像；没有就写"未观察"）。
+- [x] **Step 1:** 声明盘点见 `records/ms1/runtime-process-inventory.md`，列出FPM、队列、Workerman和Timer的源码命令/容器/对象边界；没有生产运行证据的项目均为“未观察”。原queue:listen不具备相同job-worker PID前提，新marketplace常驻模式及普通ISO核对方式见上述决策。
 - [ ] **Step 2:** 在 ISO-FULL 中启动 `audit-worker`，用一个空任务验证同一个 PID 连续处理多个任务（WORKER 层的前提）。
 - [ ] **Step 3:** 提交 `docs(records): MS1 runtime process inventory; worker in isolated env`。
 
@@ -60,6 +80,7 @@
 - Create: `crmeb/app/services/marketplace/context/MerchantContext.php`
 - Create: `crmeb/app/dao/marketplace/scope/MerchantScope.php`、`PlatformScope.php`、`PublicCatalogScope.php`
 - Create: `help/audit-regressions/isolated/ms1-context.php`
+- Modify（请求局部上下文的必要调用点）: `crmeb/app/Request.php`；新增对应MerchantForbiddenException/MerchantNotFoundException等明确HTTP异常类，位置沿现有 `crmeb/crmeb/exceptions/` 约定。
 
 **Interfaces:**
 - Produces:
@@ -103,6 +124,7 @@ public static function fields(string $resource): array                          
 - Create: `crmeb/app/model/marketplace/`、`crmeb/app/dao/marketplace/` 下对应的 Merchant、Employee、Role、PasswordSetup 模型与 DAO
 - Create: `crmeb/app/services/marketplace/EmployeeAuthServices.php`
 - Modify: `crmeb/config/auth.php`（加入 `apps.merchantapi`：type `merchant`，audience `tianli:merchantapi`）
+- Modify（同一v2扩展的必要调用点）: `crmeb/crmeb/services/AuthConfigGuard.php`、`auth/AuthTokenV2.php`、`auth/AuthSessionStore.php`、`auth/CredentialStamp.php`、`auth/AccountChangeGuard.php`
 - Create: `help/audit-regressions/isolated/ms1-merchantapi.php`
 
 **Interfaces:**
