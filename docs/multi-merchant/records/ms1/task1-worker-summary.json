@@ -1,0 +1,150 @@
+{
+  "milestone": "MS1",
+  "task": "Task1 ordinary worker capability only",
+  "status": "verified_normal_worker",
+  "source_commit": "bcd04b12b850e6efd977391a13e8b685f3d03ff1",
+  "initial_worker": {
+    "run_id": "20261011195406edef53",
+    "status": "FAIL",
+    "worker_native_exit": 255,
+    "observe_native_exit": 1,
+    "raw_sha256": "e1645cd28e1d1b6d8e0547dc6095119176057e516087c3b2a6b7b0bf5613ddfb",
+    "failure_and_runtime_log_preserved": true,
+    "cleanup_restored_original_runtime": false
+  },
+  "successful_worker": {
+    "run_id": "20261011202953d2f1c8",
+    "status": "PASS",
+    "raw_sha256": "f31f52d0461e38ebe11ced06fa0fecff6fe09fcff9304897989d3a87a20a4906",
+    "native_steps": {
+      "bootstrap": 0,
+      "prepare": 0,
+      "observe": 0,
+      "teardown": 0
+    },
+    "container": {
+      "run_id": "20261011202953d2f1c8",
+      "container_id": "a6a78d7c0cf5afa1761d8e75e6b477c0eebaf5538c2d981217f0813ae3c2f724",
+      "image_id": "sha256:1099f749e2a38ec9453c6b820db8a78174514bc72d14edf5c203e13b82816e0a",
+      "runtime_volume": "tianli-audit-20261011202953d2f1c8_worker-runtime",
+      "status": "exited",
+      "native_exit": 0,
+      "restart_count": 0,
+      "started_at": "2026-10-11T20:32:30.320869188Z",
+      "finished_at": "2026-10-11T20:32:35.425533119Z",
+      "wait_cli_exit": 0,
+      "wait_reported_exit": "0"
+    },
+    "events": [
+      {
+        "run_id": "20261011202953d2f1c8",
+        "delete_called": true,
+        "deleted": true,
+        "sequence": 1,
+        "pid": 1,
+        "start_ticks": "38334384",
+        "hostname": "a6a78d7c0cf5",
+        "job_id_sha256": "baa9587414dcb405d17b52fe0aa27a6f27750de06fa5c29397dbd2a009b40323",
+        "requested_quit": false,
+        "completed_at": 1791750755
+      },
+      {
+        "run_id": "20261011202953d2f1c8",
+        "delete_called": true,
+        "deleted": true,
+        "sequence": 2,
+        "pid": 1,
+        "start_ticks": "38334384",
+        "hostname": "a6a78d7c0cf5",
+        "job_id_sha256": "ee7fbd72fa1aaccdf46eb902127a59cd71ec023a68ecbf7fa42129e4b9eba15e",
+        "requested_quit": true,
+        "completed_at": 1791750755
+      }
+    ],
+    "worker_diff": {
+      "tables": [],
+      "redis": [],
+      "runtime": []
+    },
+    "cleanup_diff": {
+      "tables": [],
+      "redis": [],
+      "runtime": []
+    },
+    "deleted_owned_keys": 0,
+    "docker_log_observation": "native docker logs exit0 with empty output; Tee-Object did not create an empty output file"
+  },
+  "resources": {
+    "registered_containers": 4,
+    "registered_volumes": 11,
+    "network_internal": true,
+    "remaining": [
+      {
+        "run_id": "20261011195406edef53",
+        "containers": 0,
+        "networks": 0,
+        "volumes": 0
+      },
+      {
+        "run_id": "20261011202953d2f1c8",
+        "containers": 0,
+        "networks": 0,
+        "volumes": 0
+      }
+    ],
+    "install_lock_exists": false
+  },
+  "repository_results": {
+    "rows": 2,
+    "PASS": 1,
+    "FAIL": 1,
+    "full_sha256": "fd91033b1f4d2b4f00c28698e1536eefb6b828cae62af5868cc753f8dc7216e7"
+  },
+  "source_files": [
+    {
+      "path": "crmeb/app/AppService.php",
+      "sha256": "f4b60136cd5ea867231aeff47360bab5f36d74e6a85354c14fad81f2c2f908ef"
+    },
+    {
+      "path": "crmeb/crmeb/compat/CarbonErrorCompatibility.php",
+      "sha256": "52e1e415c54d4532a377b15376561da234289495cbefec6b66250b75fc556067"
+    },
+    {
+      "path": "crmeb/vendor/nesbot/carbon/src/Carbon/Traits/Creator.php",
+      "sha256": "62ca497035eac596efc1416006a8e930f494c9cd9b7d3e49fd436071c7081b5c"
+    },
+    {
+      "path": "crmeb/vendor/nesbot/carbon/src/Carbon/Traits/Date.php",
+      "sha256": "1d2417fdd00bf40c76ecb82e9302abc18d9a46489c3f4912f1bc6cc9200484e3"
+    },
+    {
+      "path": "crmeb/vendor/nesbot/carbon/src/Carbon/Traits/Modifiers.php",
+      "sha256": "9884770ab12be5c805edcd86dbf82145b006cb97b5536ed2f713b4fde35dd7a5"
+    },
+    {
+      "path": "help/audit-regressions/isolated/lib/ms1-worker-entry.php",
+      "sha256": "ec9de7038d77bc5819550e92dc8fa6fce9b346757e5ed9098333f31f753705c8"
+    },
+    {
+      "path": "help/audit-regressions/isolated/lib/Ms1EmptyWorkerJob.php",
+      "sha256": "2226fd6e534f07fc52fb955b7ecd3f361257883ea1f7726b60ea326ca3a55c2b"
+    },
+    {
+      "path": "help/audit-regressions/isolated/ms1-worker-functional.php",
+      "sha256": "de43826890580642bdef8fc535e2bde1a08f93eb4ecd299a8ee7e581e101a779"
+    }
+  ],
+  "compatibility": {
+    "tracked_carbon_version": "2.20.0 with bounded local backports",
+    "lock_carbon_version": "2.73.0",
+    "dependency_versions_changed": false,
+    "normal_date_probe_native_exit": 0,
+    "php74_runtime_observed": false
+  },
+  "limits": [
+    "Task1 only; merchant identity/context and migration remain pending",
+    "No security, abnormal credentials, fault, concurrency, disconnect or restoration tests run",
+    "M05/M09/M10 complete acceptance not established",
+    "No production worker activation, real database writes, push or deployment"
+  ]
+}

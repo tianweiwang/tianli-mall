@@ -36,7 +36,7 @@
 - 迁移的“空”指CRMEB已安装且五目标表不存在；零表库缺少system_menus，不能创建第六张表或调用Installer。theme-module实际使用 `--check/--apply`，新MS1 CLI明确支持文档要求的 `check|apply`（兼容同义选项）。只新增五表及精确marketplace菜单/接口登记；原表列/index/旧行保持，system_menus正常新增行与其AUTO_INCREMENT变化单列核对，不能要求新增后checksum仍相同，也不回拨计数器。其他原表结构/数据保持。
 - 现Supervisor声明queue:listen，实版Listener每轮启动queue:work --once，job不复用同一PHP进程。Task1为新marketplace队列声明独立 `queue:work --queue=marketplace --sleep=1 --tries=1` 常驻模式，并用相同命令建立ISO audit-worker；原队列保持。生产声明默认不自动启动，实际发布另行处理。正常空任务的同一PID证据到位后，Task8再运行正常A→B上下文重建；异常/无上下文/伪造载荷/并发场景按用户要求跳过，不冒称M05/M09/M10完整通过。
 
-执行顺序仍以Task1–9为单一清单；Task1源码盘点完成，正常worker能力尚待实现/观察。迁移、接口和上下文都尚未实施，普通成功用例与原跳过项分别记录。
+执行顺序仍以Task1–9为单一清单；Task1源码盘点与普通worker能力已完成，真实T1W01为1PASS，原首RUN的1FAIL保留。Task2–9的迁移、接口和上下文仍待实施，普通成功用例与原跳过项分别记录。
 
 ## Review Focus
 
@@ -58,12 +58,12 @@
 - Modify/Create（实际PHP8队列启动的必要调用点）: `crmeb/app/AppService.php`、`crmeb/crmeb/compat/CarbonErrorCompatibility.php`；仅CLI queue:work/queue:listen 的旧Carbon E_DEPRECATED兼容；`crmeb/vendor/nesbot/carbon/src/Carbon/Traits/Creator.php` 两处原生日历错误状态的PHP8.2兼容、`Traits/Date.php` 与 `Traits/Modifiers.php` 五个原生签名转接，见下述实际失败与修复设计。
 
 - [x] **Step 1:** 声明盘点见 `records/ms1/runtime-process-inventory.md`，列出FPM、队列、Workerman和Timer的源码命令/容器/对象边界；没有生产运行证据的项目均为“未观察”。原queue:listen不具备相同job-worker PID前提，新marketplace常驻模式及普通ISO核对方式见上述决策。
-- [ ] **Step 2:** 在 ISO-FULL 中启动 `audit-worker`，用一个空任务验证同一个 PID 连续处理多个任务（WORKER 层的前提）。
-- [ ] **Step 3:** 提交 `docs(records): MS1 runtime process inventory; worker in isolated env`。
+- [x] **Step 2:** ISO-FULL普通RUN `20261011202953d2f1c8`：同一真实worker连续处理两个空任务，PID=1/start_ticks=38334384且同一容器，实际native exit0/restart0；T1W01 PASS，原断言未改。见 `records/ms1/task1-worker-summary.json`，只证明后续任务的运行前提。
+- [x] **Step 3:** 提交 `docs(records): MS1 runtime process inventory; worker in isolated env`；实现提交9a00c108/626b4399，兼容修复d71af53c/bcd04b12，普通记录保留原1FAIL并追加1PASS。完整MS1与人工验收尚未完成。
 
-Task1普通运行契约（先于接线）：audit-worker沿既有x-php隔离设置，仅挂只读源/vendor/本RUN私有DML配置、RUN证据及专用worker-runtime；runner只读观察worker-runtime。bootstrap仍只启动原服务，普通检查先用真实Queue推送同一测试handler的两个自有空载荷，再由宿主显式启动worker并登记其真实ID/IP/image/卷身份。宿主在登记后原子写本RUN启动许可，薄CLI适配校验许可、manifest和自身容器身份后，在同一PHP进程加载原think入口及上述queue:work参数。ISO增加原Console标准 `--quiet` 仅抑制原Work状态行的明文任务ID；不改vendor、queue参数或Job语义，不用PHP输出缓冲冒称能过滤直接fwrite。handler每次明确delete、记录序号/PID/start_ticks/任务ID哈希，第二个完成后只设置同一真实Worker.shouldQuit，由引擎正常exit0；不注入业务异常，不直接exit，不发HTTP断连或服务故障控制。
+Task1普通运行契约（先于接线）：audit-worker沿既有x-php隔离设置，仅挂只读源/vendor/本RUN私有DML配置、RUN证据及专用worker-runtime；runner只读观察worker-runtime。bootstrap仍只启动原服务，普通检查先用真实Queue推送同一测试handler的两个自有空载荷，再由宿主显式启动worker并登记其真实ID/IP/image/卷身份。宿主在登记后原子写本RUN启动许可，薄CLI适配校验许可、manifest和自身容器身份后，在同一PHP进程加载原think入口及上述queue:work参数。ISO增加原Console标准 `--quiet` 仅抑制原Work状态行的明文任务ID；该启动适配不改queue组件、参数或Job语义，生产Carbon兼容回移见下文，不用PHP输出缓冲冒称能过滤直接fwrite。handler每次明确delete、记录序号/PID/start_ticks/任务ID哈希，第二个完成后只设置同一真实Worker.shouldQuit，由引擎正常exit0；不注入业务异常，不直接exit，不发HTTP断连或服务故障控制。
 
-`ms1-worker-functional.php --prepare` 只准备、保存真实全表/Redis值hash及绝对到期点/runtime快照，不生成PASS；`--observe` 在正常worker终止后核对两个回执、原生容器exit0/restart0、同PID与start_ticks、三个实际队列键清空及非预期副作用，形成一个T1W01 WORKER结果。实际队列键为queues:marketplace及delayed/reserved，配置prefix不参与；worker与producer共享本RUN专用业务Cache前缀以只读取得think:queue:restart。只认领实际两个载荷及精确自有键，不忽略整表/前缀、不回拨计数。私有状态/原生日志留仓库外；原始结果和失败如实保留。既有guard不变；为取得真实image及挂载归属，仅在bootstrap资源收集与harness manifest登记增加Docker.Image和Mounts，并核对worker的runtime为本RUN专用可写volume且其身份已经登记，其他启动/权限/故障控制行为保持。当前是实现依据，尚无运行结论。
+`ms1-worker-functional.php --prepare` 只准备、保存真实全表/Redis值hash及绝对到期点/runtime快照，不生成PASS；`--observe` 在正常worker终止后核对两个回执、原生容器exit0/restart0、同PID与start_ticks、三个实际队列键清空及非预期副作用，形成一个T1W01 WORKER结果。实际队列键为queues:marketplace及delayed/reserved，配置prefix不参与；worker与producer共享本RUN专用业务Cache前缀以只读取得think:queue:restart。只认领实际两个载荷及精确自有键，不忽略整表/前缀、不回拨计数。私有状态/原生日志留仓库外；原始结果和失败如实保留。既有guard不变；为取得真实image及挂载归属，仅在bootstrap资源收集与harness manifest登记增加Docker.Image和Mounts，并核对worker的runtime为本RUN专用可写volume且其身份已经登记，其他启动/权限/故障控制行为保持。实际普通结论与验收边界见下述记录。
 
 首个实际RUN `20261011195406edef53`（源码626b4399）：bootstrap/prepare原生exit0，worker实际exit255/restart0，T1W01 FAIL/observe Bash exit1，未产生两个任务回执。真实日志定位queue.InteractsWithTime→旧Carbon加载；CarbonInterface的旧jsonSerialize声明在PHP8产生E_DEPRECATED，Think初始化器Error把它转为ErrorException，使接口继承期间致命退出。失败与runtime差异保留，不能按Docker wait命令exit0称worker通过。修复仅在AppService.boot且PHP8/CLI队列命令中安装针对实际vendor/nesbot/carbon/src路径、E_DEPRECATED类别的兼容handler；其他类别/路径原样委托原Think handler，E_ALL、类型/业务/认证异常保留，不全局降错误等级，也不只在测试入口隐藏错误。该handler不修改Carbon声明或依赖版本。
 
@@ -72,6 +72,8 @@ Task1普通运行契约（先于接线）：audit-worker沿既有x-php隔离设�
 正常日期探针随后实际exit255：CarbonInterface::modify($modify)的宽参数与继承的PHP8 DateTime::modify(string)不兼容，属于编译致命错误，不能由弃用handler修复。源码核对实际tracked Carbon2.20.0，而既有lock记为2.73.0；锁版完整恢复还涉及新增PHP8.1依赖及多包，不在本次最小队列修复中展开。按锁版上游 `9228ce90e1035ff2f0db84b40ec2e023ed802075` 中的原生转接模式，在共享Modifiers/Date traits增加modify、setDate、setISODate、setTime、setTimestamp的五个宽参数wrapper并标注ReturnTypeWillChange；统一调用对应parent方法，setTimestamp保持旧版整秒语义，不回移新版本的分数时间功能。保持mutable/immutable共用、PHP7.4可解析、旧queue时钟和setTestNow语义，不改Queue时间计算或依赖树；错误、业务异常仍由原处理链负责。健康日期探针的初次失败保留为原生255，修复后只验证正常now/格式化日期和实际两个空任务。
 
 上述普通探针在五个wrapper补齐后原生exit0，覆盖mutable/immutable正常日期及setter；native编译仍提示Date.php五处旧`${var}`插值弃用。仅将实际五处改为PHP7/8均支持的等价`{$var}`写法，保持字符串/动态方法名，不创建警告或异常探针。这个正常日期结果不代替真实队列WORKER结果。
+
+完成后的独立普通RUN `20261011202953d2f1c8` 实际源码bcd04b12：bootstrap/prepare/observe/teardown原生均exit0；同一容器两个真实空任务PID=1/start_ticks=38334384，实际worker exit0/restart0、正常引擎quit，三个队列已先清空，158表/Redis值与到期点/三个runtime快照均无差异，cleanup无需删除队列键。使用原626b4399三辅助文件及断言，SHA256未改变。原始成功行603字节追加至原失败行，records/ms1/results.jsonl共2行（1PASS/1FAIL），原失败SHA保持e1645cd28e1d1b6d8e0547dc6095119176057e516087c3b2a6b7b0bf5613ddfb，全2行SHA为fd91033b1f4d2b4f00c28698e1536eefb6b828cae62af5868cc753f8dc7216e7。两个RUN的专用资源均已按manifest清理，各剩余容器/网络/卷为0，临时install.lock不存在。仅Task1基础能力通过；商户上下文、迁移和M05/M09/M10完整验收仍未完成，安全/异常/故障等停用项不运行。
 
 ### Task 2: 数据库迁移
 
