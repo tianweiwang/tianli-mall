@@ -319,7 +319,7 @@ function cf_window(string $call, callable $operation, array|callable $rules, arr
     }
     $tagKeys = $clearTag ? cf_tag_keys() : [];
     $GLOBALS['cf_window_start'] = time(); $result = null; $errorClass = null;
-    try { $result = $operation(); } catch (Throwable $error) { $errorClass = get_class($error); cf_check(false, 'normal real service call succeeds (' . $errorClass . ')'); }
+    try { $result = $operation(); } catch (Throwable $error) { $errorClass = get_class($error); cf_check(false, 'normal real service call succeeds (' . $errorClass . ' at ' . basename($error->getFile()) . ':' . $error->getLine() . ')'); }
     $GLOBALS['cf_window_end'] = time(); audit_guard_assert(); $after = cf_snapshot(); $afterRows = cf_target_rows(); $runtimeAfter = cf_runtime();
     $resolved = is_callable($rules) ? $rules($result, $beforeRows, $afterRows) : $rules;
     $validTables = []; $dbDiff = [];
@@ -390,7 +390,7 @@ function cf_case(string $id, string $name, callable $operation): void
 {
     audit_case($id, $name, 'INTEGRATION', static function () use ($id, $name, $operation): array {
         $GLOBALS['cf_capture'] = ['checks' => [], 'observations' => [], 'db_diff' => [], 'cache_diff' => []];
-        try { $operation(); } catch (Throwable $error) { cf_check(false, 'normal case preparation and observation complete (' . get_class($error) . ')'); }
+        try { $operation(); } catch (Throwable $error) { cf_check(false, 'normal case preparation and observation complete (' . get_class($error) . ' at ' . basename($error->getFile()) . ':' . $error->getLine() . ')'); }
         $capture = $GLOBALS['cf_capture']; $ref = 'evidence/account-functional-' . $GLOBALS['cf_execution'] . '-' . $name . '.json';
         $created = []; foreach ($GLOBALS['cf_created'] as $table => $ids) { $created[$table] = array_map('intval', array_keys($ids)); }
         audit_write_json(audit_run_dir() . '/' . $ref, ['run_id' => getenv('AUDIT_RUN_ID'), 'commit_sha' => getenv('AUDIT_SOURCE_SHA'), 'phase' => getenv('AUDIT_PHASE') ?: 'after',
