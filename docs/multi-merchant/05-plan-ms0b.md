@@ -255,6 +255,14 @@ public static function runMany(string $app, array $ids, callable $dbChange): mix
 - 必要Files：`crmeb/app/adminapi/controller/Login.php`、`crmeb/app/adminapi/middleware/AdminAuthTokenMiddleware.php`、`crmeb/app/adminapi/controller/PublicController.php`；新增小下载helper `template/admin/src/libs/download.js`，修改 `template/admin/src/pages/system/codeGeneration/list.vue` 与 `template/admin/src/pages/system/maintain/systemDatabackup/index.vue` 两个真实消费点。仅对可信本站后端发header，拒绝外部URL/跳转，处理JSON错误与文件名；下载缓存成功消费采用原子比较删除，重复下载失败，保留现有admin+role边界。旧已注释npm/EventSource按钮后端路由不存在，移除该死代码的URL JWT，不凭空开发新后端。扫码上传/fileToken/客服/uni-app不是Q7 JWT，不批量改动。
 - 代码调用证据见仓库外 ms0b-q7-caller-inventory.md；Task8当前只执行正常登录、既有验证码正常展示、header下载及两处实际浏览器消费检查。连续错误凭据、缺失验证码拒绝、URL JWT拒绝、重复消费拒绝及同类负向/故障验证遵循顶部用户跳过指令，不执行、不改名转入普通检查，也不记PASS。验证码完整通过只接受正常人工操作证据，不从服务端答案生成通过材料。两项各自单独提交；普通检查与被跳过的完整验收缺口分别记录。
 
+2026-10-12 实源设计补齐（继续现有L2委托）：
+
+- Q6：现有坏账号/密码确实由service返回false，只在该分支计数；禁用、会话变化和依赖异常不计数。增加同DAO的只读身份helper，已命中账号用实际id与存储account，未命中ASCII输入用独立前缀的小写值，不猜数据库排序规则。修正合法账号`0`在模型搜索器遗漏account条件的必要调用点。身份与`Request.ip()`的打包IP经独立purpose的HMAC构成无明文键；使用Store私有有界连接和单键Lua读/增加/删除，首失败EX60，递增保持原到期点，第二次返回数字1，下一次提交前强制既有二次验证码。验证码通过不清计数，完整登录成功只清当前组合；登录页info保持数字0，不读取全局计数。
+- Q7：两条生产链分别是SystemCrud.download及MysqlBackupService.downloadFile；备份query key先取标量。新增CacheService.consumeDownload，以实际默认Redis配置prefix（已核对Driver.getCacheKey只拼接prefix）读取原始PHP序列化字节、校验文件，再单键Lua严格比较该字节并删除；不重试、不改共享连接选项。提取Store现有独立有界连接工厂BoundedRedisConnection，供Store及下载消费复用；不新增认证配置要求。当前serialize=[]的下载记录沿PHP反序列化并禁止对象，非此配置受控失败。CRUD每次生成随机32hex key；两生产者只在缓存写入成功后返回链接/key。中间件与logout同时移除GET token fallback，前端清理失去入口的npm/EventSource死代码，其他token协议保持。
+- 新增/必要调用点：`crmeb/crmeb/services/BoundedRedisConnection.php`、`crmeb/crmeb/services/auth/AuthSessionStore.php`、`crmeb/crmeb/services/auth/lua/login_failure.lua`、`crmeb/app/services/system/admin/SystemAdminServices.php`、`crmeb/app/model/system/admin/SystemAdmin.php`、`crmeb/crmeb/services/CacheService.php`、`crmeb/app/adminapi/controller/v1/setting/SystemAdmin.php`、`crmeb/app/adminapi/controller/v1/setting/SystemCrud.php`、`crmeb/crmeb/services/MysqlBackupService.php`，以及前述控制器/中间件/helper/两个Vue页面。无DDL或业务种子变更。
+- 普通检查独立记录：新增`help/audit-regressions/isolated/ms0b-login-download-functional.php`，正常凭据登录/账号0查询、info数字协议、正常验证码创建、两生产者及一次正常header文件下载。不自动解答验证码。浏览器仅访问真实源码构建页面，若通过本RUN CLI传输桥接，只转发明确允许的路径并保留真实状态/响应/文件，不用API假数据；桥接证据不称生产网络验收。离线前端验证用现有Node22及已核对全部2698锁定包version/integrity相同的本地依赖，在仓库外目录构建，避免写现有工程依赖缓存。
+- ISO必要写入点：为app/runner增加本RUN专用backup-output卷，供实际CRUD/备份生产者写其固定backup目录；source/vendor仍只读，内部网络无宿主端口，DML账号不扩权。仅调整compose、隔离README、03的同一ISO记录，teardown仍按manifest清理本RUN资源。原九项停用套件及运行入口不变。完整门槛、负向/故障/并发验收继续留缺口，不以普通检查替代。
+
 ### Task 9: 发布准备文档（不发布）
 
 **Files:**
