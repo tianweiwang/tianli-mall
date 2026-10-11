@@ -230,9 +230,15 @@ public static function runMany(string $app, array $ids, callable $dbChange): mix
 **Files:**
 - Create: `crmeb/app/command/AuthEpochRotate.php`（命令 `php think auth:epoch-rotate --confirm`）、`docs/multi-merchant/records/ms0b/runbook-session-loss.md`
 - Modify（显式命令注册的必要调用点）: `crmeb/config/console.php`
+- Modify（既有私有原生连接的必要调用点）: `crmeb/crmeb/services/auth/AuthSessionStore.php`，只增加窄接口 `deleteOldEpoch(string $oldEpoch): int`
+- Create（独立普通命令检查）: `help/audit-regressions/isolated/ms0b-epoch-functional.php`
 
 **Interfaces:**
 - Produces: 命令要求显式 `--old-epoch=<旧值>` 和 `--confirm`；新旧epoch限安全字符，不允许冒号/通配符。校验新的 `AUTH_SESSION_EPOCH` 已在配置中生效且与旧值不同；按 `SCAN` + 前缀删除**旧 epoch** 下的 `auth:v2:<old>:*` 键（分批，打印数量，不打印键名）。不接触其他键。
+
+2026-10-11 实源设计补齐：沿现有Guard/Store使用 `/^[A-Za-z0-9._-]{1,128}$/D`，不trim或改写输入。新值读取实际已加载的 `AuthConfigGuard::authConfig()`，不能只看Env尚未加载的变量。`AuthSessionStore::fromConfig()` 已有独立有界连接（connect2秒/read1秒），但Redis为private且无公开SCAN方法；由新增deleteOldEpoch封装精确旧前缀，重复核对old与当前实例/live配置不同且一致，不暴露raw getter、不走共享Cache。SCAN COUNT=200是提示；每个实际返回页先逐键核完整旧前缀，再最多200键一批DEL，累计实际DEL整数，空页继续到cursor=0；不以扫描数代替删除数、不自动重试失败。命令configure只声明选项，execute先校验显式old/confirm与配置，再连接/删除；成功输出deleted_keys数量并exit0，拒绝或异常只输出固定说明并exit1，不向Think默认异常渲染传递driver消息或私有值。命令不修改配置/数据库、不证明全部实例已加载新配置；人工隔离入口及配置下发属于未来L4操作，当前只写runbook。
+
+普通检查范围为三个CLI场景：真实 `php think list --raw`/help证明注册与选项；本RUN新建正常旧空间大于单批上限的真实签发会话及两应用账号键，在已配置新epoch下正常执行一次精确清理；对已空旧空间再正常执行得到删除0。实际php进程仅使用私有RUN环境，全部158表/所有其他Redis值及TIME/PTTL绝对期限/runtime不变；自有当前epoch及相似边界epoch保持。输入缺失/异常配置、依赖故障、恢复、旧token拒绝及并发场景不运行，不提供完整A29验收结论。测试先提交并保留命令尚未注册的实际基线，再实现、验证普通流程和本地提交；原恢复要求继续记为跳过。
 
 - [ ] **Step 1: 用例**（恢复试验按用户最新要求跳过，不记通过） A29：原设计模拟 Redis 从旧快照恢复（备份 RDB → 写入新会话 → 恢复 RDB）→ 隔离认证入口 → 轮换 epoch → 旧会话全部 401、重新登录可用；业务缓存键数量前后不变。
 - [ ] **Step 2–5**：确认失败 → 实现命令与 runbook → 通过 → 提交 `feat(auth): epoch rotation command and session-loss runbook`。
