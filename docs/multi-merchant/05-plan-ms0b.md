@@ -103,6 +103,7 @@ Redis 连接错误一律转换为 `AuthUnavailableException`。账号/会话用H
 - Modify（同一认证模块的必要构造调用点）: `crmeb/crmeb/services/auth/AuthSessionStore.php`，新增 `fromConfig(): self`；用已校验配置创建独立、无原生prefix/serializer的Redis连接，connect/read timeout为2/1秒，auth/select失败受控503。不得复用或改动业务Cache原生客户端选项。
 - Create（退出绑定核对的必要调用点）: `crmeb/crmeb/services/auth/lua/revoke_session.lua`；Store增加 `revokeBoundSession(app,sid,id,type,audience,version,tokenDigest): void`，先原子核对持久、已初始化且未blocked的账号版本与active会话全部身份/摘要/期限，再只删对应sid。Token.revoke无数据库回调，核对服务器记录中的戳结构即可；实际退出接口仍先经过完整middleware当前凭据认证。不得把纯JWT验签当作直接DEL依据；缺账号/会话或已consumed均401零写入。Task2两参revokeSession幂等原语保持不变。
 - Create: `help/audit-regressions/isolated/ms0b-token.php`（真实框架/Redis/JWT/PDO摘要读取；实际配置、声明、时间、冷语言缓存与文件缓存/log、到期点、签发/刷新故障和常驻实例边界）。
+- 2026-10-11测试复核补齐：所有case清理前观察真实文件缓存/log哈希，覆盖签发/刷新执行后丢应答专属失败路径；stamp_key与signing_key完全相同须503（独立密钥约束）；null pwd也属凭据字段，超配置TTL声明401且不读账号；JWT调用者静态timestamp/leeway在成功/失败均恢复，认证仍用实际当前时钟。原123项缺类基线保留，新测试127项须另录完整基线，A10=35、A22=57，其余数量不变。
 
 **Interfaces:**
 - Produces:

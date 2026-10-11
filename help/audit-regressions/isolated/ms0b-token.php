@@ -101,6 +101,19 @@ function ms0b_token_runtime_snapshot(): array
     ksort($files);
     return $files;
 }
+function ms0b_token_runtime_changes(array $before, array $after): array
+{
+    $changes = [];
+    foreach (array_unique(array_merge(array_keys($before), array_keys($after))) as $key) {
+        if (($before[$key] ?? null) !== ($after[$key] ?? null)) {
+            // The snapshot key already hashes the relative name. Emit only a
+            // second hash of that identity, never a file name, path or content.
+            $changes[] = 'runtime-sha256:' . hash('sha256', $key);
+        }
+    }
+    sort($changes, SORT_STRING);
+    return $changes;
+}
 function ms0b_token_summary(array $snapshot): array
 {
     return [
@@ -279,9 +292,13 @@ function ms0b_token_case(string $id, string $subcase, string $expected, callable
         // Real manager drops only client instances; it does not delete any key
         // or warm any cache. Every case gets a new cold actual language prefix.
         $app->cache->forgetDriver(['redis', 'file']);
-        $before = ms0b_token_snapshot(); $failure = null;
+        $before = ms0b_token_snapshot(); $runtimeBefore = ms0b_token_runtime_snapshot(); $failure = null;
         try { ms0b_token_require_classes(); $operation(); } catch (Throwable $error) { $failure = $error; }
         finally {
+            // Observe before cleanup so positive and allowed-write fault paths
+            // cannot hide file-cache or detailed-log side effects. Cleanup only
+            // deletes registered test-epoch Redis keys, never runtime files.
+            $runtimeAfter = ms0b_token_runtime_snapshot();
             // Returned and unreturned random SIDs are discovered only inside a
             // freshly reserved test epoch, then deleted by their exact names.
             $redis = audit_redis();
@@ -292,8 +309,9 @@ function ms0b_token_case(string $id, string $subcase, string $expected, callable
             $app->config->set(['cache' => $GLOBALS['ms0b_token_case_cache_config']]);
         }
         $after = ms0b_token_snapshot(); $changes = ms0b_token_changes($before, $after);
-        $unexpected = array_values(array_unique(array_merge($changes, ...array_column($GLOBALS['ms0b_token_observations'], 'unexpected_changes'))));
-        $passed = $failure === null && $changes === [];
+        $runtimeChanges = ms0b_token_runtime_changes($runtimeBefore, $runtimeAfter);
+        $unexpected = array_values(array_unique(array_merge($changes, $runtimeChanges, ...array_column($GLOBALS['ms0b_token_observations'], 'unexpected_changes'))));
+        $passed = $failure === null && $changes === [] && $runtimeChanges === [];
         // Only audit_expect's literal messages are emitted. Production driver
         // or exception messages, tokens, hashes and config values are excluded.
         $detail = $failure !== null && get_class($failure) === RuntimeException::class ? $failure->getMessage() : null;
@@ -306,16 +324,20 @@ function ms0b_token_case(string $id, string $subcase, string $expected, callable
             'operations' => $GLOBALS['ms0b_token_observations'],
             'before' => ms0b_token_summary($before), 'after_exact_cleanup' => ms0b_token_summary($after),
             'unexpected_changes_after_cleanup' => $changes,
+            'runtime_cache_and_log_unchanged' => $runtimeChanges === [],
+            'runtime_before_sha256' => hash('sha256', json_encode($runtimeBefore, JSON_THROW_ON_ERROR)),
+            'runtime_after_sha256' => hash('sha256', json_encode($runtimeAfter, JSON_THROW_ON_ERROR)),
+            'unexpected_runtime_hash_changes_before_cleanup' => $runtimeChanges,
             'database_tables_checked' => count($before['tables']), 'all_redis_values_checked' => true,
             'mysql_and_redis_sentinels' => 'verified before case; included in all-value snapshots',
         ]);
         return [
             'status' => $passed ? 'PASS' : 'FAIL', 'expected' => $expected,
-            'actual' => $failure ? 'controlled test failure: ' . get_class($failure) . ($detail !== null ? ': ' . $detail : '') : 'contract passed; all database tables and non-test Redis values unchanged',
+            'actual' => $failure ? 'controlled test failure: ' . get_class($failure) . ($detail !== null ? ': ' . $detail : '') : ($passed ? 'contract passed; all database tables, non-test Redis values/deadlines, runtime cache and log files unchanged' : 'case side-effect mismatch in database, cache, expiry or runtime file hashes'),
             'db_diff' => array_values(array_filter($unexpected, static fn(string $value): bool => str_starts_with($value, 'table:'))),
-            'cache_diff' => array_values(array_filter($unexpected, static fn(string $value): bool => str_starts_with($value, 'cache-sha256:'))),
+            'cache_diff' => array_values(array_filter($unexpected, static fn(string $value): bool => str_starts_with($value, 'cache-sha256:') || str_starts_with($value, 'runtime-sha256:'))),
             'evidence_ref' => $reference,
-            'notes' => 'Real framework/Redis/PDO fixture reads; no language cache prewarm; negative full snapshots occur before exact test-epoch cleanup.',
+            'notes' => 'Real framework/Redis/PDO fixture reads; no language cache prewarm; negative full snapshots and every case runtime-cache/log hash comparison occur before exact test-epoch cleanup.',
         ];
     });
 }
@@ -339,7 +361,7 @@ ms0b_token_case('A10', 'v2-config-real-file-defaults', 'real config loads explic
 
 $configurationVariants = [
     'missing-epoch', 'empty-epoch', 'unsafe-epoch-colon', 'unsafe-epoch-wildcard', 'overlong-epoch',
-    'missing-stamp', 'empty-stamp', 'short-stamp', 'non-string-stamp',
+    'missing-stamp', 'empty-stamp', 'short-stamp', 'non-string-stamp', 'same-signing-stamp',
     'empty-issuer', 'non-string-issuer', 'overlong-issuer', 'missing-apps', 'missing-admin-app', 'missing-out-app',
     'missing-admin-type', 'empty-admin-type', 'wrong-admin-type', 'wrong-out-type',
     'missing-admin-audience', 'empty-admin-audience', 'non-string-out-audience', 'overlong-audience',
@@ -358,6 +380,7 @@ foreach ($configurationVariants as $variant) {
             case 'empty-stamp': $config['stamp_key'] = ''; break;
             case 'short-stamp': $config['stamp_key'] = str_repeat('x', 31); break;
             case 'non-string-stamp': $config['stamp_key'] = ['invalid']; break;
+            case 'same-signing-stamp': $config['stamp_key'] = $GLOBALS['ms0b_token_signing_key']; break;
             case 'empty-issuer': $config['issuer'] = ''; break;
             case 'non-string-issuer': $config['issuer'] = ['invalid']; break;
             case 'overlong-issuer': $config['issuer'] = str_repeat('a', 4096); break;
@@ -493,7 +516,7 @@ $claimVariants = [
     'missing-sid', 'short-sid', 'uppercase-sid', 'array-sid', 'missing-version', 'short-version', 'array-version',
     'missing-iat', 'string-iat', 'float-iat', 'future-iat-past-nbf', 'missing-nbf', 'string-nbf', 'float-nbf', 'future-nbf',
     'missing-exp', 'string-exp', 'float-exp', 'expired-beyond-leeway', 'expiry-before-issued',
-    'expiry-equals-issued', 'not-before-after-expiry', 'forbidden-pwd',
+    'expiry-equals-issued', 'not-before-after-expiry', 'forbidden-pwd', 'forbidden-null-pwd', 'lifetime-over-configured-ttl',
 ];
 foreach ($claimVariants as $variant) {
     ms0b_token_case('A22', 'v2-signed-claims-' . $variant, 'signature-valid malformed or incompatible v2 claims reject with 401 before credential reader and without writes', static function () use ($variant): void {
@@ -552,6 +575,8 @@ foreach ($claimVariants as $variant) {
             case 'expiry-equals-issued': $claims['exp'] = $claims['iat']; break;
             case 'not-before-after-expiry': $claims['iat'] = time() - 30; $claims['nbf'] = time(); $claims['exp'] = time() - 10; break;
             case 'forbidden-pwd': $claims['pwd'] = ''; break;
+            case 'forbidden-null-pwd': $claims['pwd'] = null; break;
+            case 'lifetime-over-configured-ttl': $claims['exp'] = $claims['iat'] + $context['config']['apps'][$context['app']]['ttl'] + 1; break;
         }
         $token = \Firebase\JWT\JWT::encode($claims, $GLOBALS['ms0b_token_signing_key'], 'HS256');
         $reads = 0; $reader = ms0b_token_reader($context, $reads);
@@ -560,6 +585,24 @@ foreach ($claimVariants as $variant) {
         ms0b_token_verify($context);
     });
 }
+ms0b_token_case('A22', 'v2-jwt-static-clock-and-leeway-restored', 'caller JWT time state cannot override real authentication time and is restored after both success and rejection', static function (): void {
+    $context = ms0b_token_ready();
+    $originalTimestamp = \Firebase\JWT\JWT::$timestamp;
+    $originalLeeway = \Firebase\JWT\JWT::$leeway;
+    $callerTimestamp = time() - 3600;
+    try {
+        \Firebase\JWT\JWT::$timestamp = $callerTimestamp;
+        \Firebase\JWT\JWT::$leeway = 7;
+        audit_expect(ms0b_token_verify($context) === ['id' => $context['id'], 'sid' => $context['issued']['sid']], 'caller stale clock may not reject a valid current session');
+        audit_expect(\Firebase\JWT\JWT::$timestamp === $callerTimestamp && \Firebase\JWT\JWT::$leeway === 7, 'successful validation must restore caller static settings');
+        ms0b_token_deny(static fn() => ms0b_token_verify($context, 'invalid.invalid.invalid'));
+        audit_expect(\Firebase\JWT\JWT::$timestamp === $callerTimestamp && \Firebase\JWT\JWT::$leeway === 7, 'rejected validation must also restore caller static settings');
+    } finally {
+        \Firebase\JWT\JWT::$timestamp = $originalTimestamp;
+        \Firebase\JWT\JWT::$leeway = $originalLeeway;
+    }
+});
+
 foreach (['wrong-key', 'hs384', 'malformed'] as $variant) {
     ms0b_token_case('A22', 'v2-signature-' . $variant, 'wrong signature/algorithm/malformed encoding reject before reader and preserve valid session', static function () use ($variant): void {
         $context = ms0b_token_ready();
