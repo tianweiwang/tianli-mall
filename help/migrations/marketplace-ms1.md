@@ -133,7 +133,7 @@ CREATE TABLE `eb_marketplace_password_setup` (
 
 计划入口为 `php help/migrations/marketplace-ms1.php check|apply`，兼容 `--check/--apply`；默认 `check`，纯 PDO 检查/应用，不启动 Installer 或业务服务。检查以下三类状态后才决定是否执行：
 
-默认连接/前缀只在内存解析本地crmeb/.env。可由CLI操作者显式提供 `--config-file=PATH` 私有JSON文件，包含hostname/hostport/database/username/password/prefix；不接受连接串、命令行密码或HTTP输入，输出不回显配置。ISO普通核对在既有audit-bootstrap服务中使用专用audit_migrator（仅本RUN audit_auth库的既有DDL权限），不把migrator/root私有配置挂入runner或应用，不修改原DML guard或账号权限。核对脚本先用audit_app通过原隔离保护，再生成RUN私有0600 CLI配置，使用proc_open参数数组执行真实check/apply命令并记录各原生退出码，finally移除仅本次配置文件。
+默认连接/前缀只在内存解析本地crmeb/.env。可由CLI操作者显式提供 `--config-file=PATH` 私有JSON文件，包含hostname/hostport/database/username/password/prefix；不接受连接串、命令行密码或HTTP输入，输出不回显配置。ISO普通核对在既有audit-bootstrap服务中使用专用audit_migrator（仅本RUN audit_auth库的既有DDL权限），不把migrator/root私有配置挂入runner或应用，不修改原DML guard或账号权限。核对脚本先用audit_app通过原隔离保护，再于bootstrap专属secret挂载中创建本RUN唯一0600 CLI配置；共享RUN目录也挂入app/worker，不能放DDL配置。使用proc_open参数数组执行真实check/apply命令并记录各原生退出码，finally只移除本次成功创建的配置，拒绝时不删除既存文件。
 
 check只读取完整元数据/菜单。apply在当前数据库取得本迁移命名锁，再重新全量预检、依次创建、事务登记、完整复检，finally释放命名锁。没有表恢复/删除命令；DDL中断后列出当前实际存在的本版目标，不伪造全事务回滚。结构核对覆盖精确有序列、类型/长度/默认/可空/字符集排序规则、主键/索引、内部组合FK的顺序/目标/RESTRICT，以及实际ENFORCED CHECK表达式；不把不相关结构或已有业务行归为可改写资源。七行菜单全部非ID列精确比对，不改原角色授权或权限缓存。
 

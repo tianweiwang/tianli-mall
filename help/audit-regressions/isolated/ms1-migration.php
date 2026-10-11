@@ -65,12 +65,34 @@ function m1m_cli(string $mode, string $configFile): array
         'stdout_sha256' => hash('sha256', (string)$stdout), 'stderr_sha256' => hash('sha256', (string)$stderr), 'result' => $json];
 }
 
+/** Compare fixed contract clauses without dropping operator grouping or string case. */
+function m1m_check_clause(string $clause): string
+{
+    $value = preg_replace_callback("/'(?:[^']|'')*'|[^']+/", static function (array $match): string {
+        if (str_starts_with($match[0], "'")) return $match[0];
+        return preg_replace('/\s+/', '', str_replace(['`', '_utf8mb4'], '', strtolower($match[0])));
+    }, $clause);
+    while (str_starts_with($value, '(') && str_ends_with($value, ')')) {
+        $depth = 0; $quoted = false; $whole = true;
+        for ($i = 0, $length = strlen($value); $i < $length; $i++) {
+            if ($value[$i] === "'") { if ($quoted && ($value[$i + 1] ?? '') === "'") { $i++; continue; } $quoted = !$quoted; }
+            if ($quoted) continue;
+            if ($value[$i] === '(') $depth++;
+            elseif ($value[$i] === ')') $depth--;
+            if ($depth === 0 && $i < $length - 1) { $whole = false; break; }
+        }
+        if (!$whole || $depth !== 0 || $quoted) break;
+        $value = substr($value, 1, -1);
+    }
+    return $value;
+}
+
 /** Independently derive column contracts from the frozen requirement DDL. */
 function m1m_columns(PDO $db): array
 {
     $design = file_get_contents(audit_repo_dir() . '/help/migrations/marketplace-ms1.md');
     preg_match_all('/CREATE TABLE `(eb_marketplace_[a-z_]+)` \((.*?)\) ENGINE=InnoDB/s', $design, $tables, PREG_SET_ORDER);
-    audit_expect(count($tables) === 5, 'five frozen DDL definitions required'); $metadata = [];
+    audit_expect(count($tables) === 5, 'five frozen DDL definitions required'); $metadata = []; $indexMetadata = [];
     foreach ($tables as $definition) {
         preg_match_all('/^  `([a-z_]+)` ([A-Z]+(?:\([0-9]+\))?(?: UNSIGNED)?)([^\n]*)$/m', $definition[2], $columns, PREG_SET_ORDER);
         $statement = $db->prepare('SELECT COLUMN_NAME,COLUMN_TYPE,IS_NULLABLE,COLUMN_DEFAULT,EXTRA,CHARACTER_MAXIMUM_LENGTH,CHARACTER_SET_NAME,COLLATION_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=? ORDER BY ORDINAL_POSITION');
@@ -89,24 +111,53 @@ function m1m_columns(PDO $db): array
         }
         audit_expect((int)$db->query('SELECT COUNT(*) FROM `' . $definition[1] . '`')->fetchColumn() === 0, 'migration must not seed identity data');
         $metadata[$definition[1]] = $actual;
+        $expectedIndexes = [];
+        preg_match_all('/^  (PRIMARY KEY|UNIQUE KEY `[a-z_]+`|KEY `[a-z_]+`) \(([^\n]+)\),?$/m', $definition[2], $keys, PREG_SET_ORDER);
+        foreach ($keys as $key) {
+            preg_match_all('/`([a-z_]+)`/', $key[2], $parts);
+            $name = $key[1] === 'PRIMARY KEY' ? 'PRIMARY' : explode('`', $key[1])[1];
+            $expectedIndexes[$name] = ['unique' => !str_starts_with($key[1], 'KEY '), 'columns' => $parts[1]];
+        }
+        $statement = $db->prepare('SELECT INDEX_NAME,NON_UNIQUE,COLUMN_NAME,SEQ_IN_INDEX,SUB_PART,INDEX_TYPE,IS_VISIBLE,EXPRESSION,COLLATION FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=? ORDER BY INDEX_NAME,SEQ_IN_INDEX');
+        $statement->execute([$definition[1]]); $actualIndexes = []; $indexes = $statement->fetchAll();
+        foreach ($indexes as $index) {
+            $name = $index['INDEX_NAME']; $actualIndexes[$name] ??= ['unique'=>(int)$index['NON_UNIQUE'] === 0, 'columns'=>[]];
+            audit_expect((int)$index['SEQ_IN_INDEX'] === count($actualIndexes[$name]['columns']) + 1 && $index['SUB_PART'] === null
+                && $index['EXPRESSION'] === null && $index['INDEX_TYPE'] === 'BTREE' && $index['IS_VISIBLE'] === 'YES' && $index['COLLATION'] === 'A', 'actual index shape differs');
+            $actualIndexes[$name]['columns'][] = $index['COLUMN_NAME'];
+        }
+        ksort($expectedIndexes); ksort($actualIndexes);
+        audit_expect($actualIndexes === $expectedIndexes, 'primary, unique or ordinary indexes differ from frozen DDL');
+        $indexMetadata[$definition[1]] = $indexes;
     }
     $constraints = $db->query("SELECT tc.TABLE_NAME,tc.CONSTRAINT_NAME,tc.ENFORCED,cc.CHECK_CLAUSE FROM information_schema.TABLE_CONSTRAINTS tc JOIN information_schema.CHECK_CONSTRAINTS cc ON cc.CONSTRAINT_SCHEMA=tc.CONSTRAINT_SCHEMA AND cc.CONSTRAINT_NAME=tc.CONSTRAINT_NAME WHERE tc.CONSTRAINT_SCHEMA=DATABASE() AND tc.TABLE_NAME IN ('eb_marketplace_merchant','eb_marketplace_role','eb_marketplace_employee','eb_marketplace_audit_log','eb_marketplace_password_setup') AND tc.CONSTRAINT_TYPE='CHECK' ORDER BY tc.TABLE_NAME,tc.CONSTRAINT_NAME")->fetchAll();
     preg_match_all('/CONSTRAINT `(eb_mm_[a-z_]+)` CHECK/', $design, $checkNames); $expectedNames = $checkNames[1]; sort($expectedNames, SORT_STRING);
     $actualNames = array_column($constraints, 'CONSTRAINT_NAME'); sort($actualNames, SORT_STRING);
     audit_expect(count($constraints) === 10 && $actualNames === $expectedNames, 'actual CHECK names differ');
-    foreach ($constraints as $constraint) audit_expect($constraint['ENFORCED'] === 'YES', 'actual CHECK is not enforced');
-    $fk = $db->query("SELECT k.TABLE_NAME,k.CONSTRAINT_NAME,k.COLUMN_NAME,k.REFERENCED_TABLE_NAME,k.REFERENCED_COLUMN_NAME,k.ORDINAL_POSITION,r.UPDATE_RULE,r.DELETE_RULE FROM information_schema.KEY_COLUMN_USAGE k JOIN information_schema.REFERENTIAL_CONSTRAINTS r ON r.CONSTRAINT_SCHEMA=k.CONSTRAINT_SCHEMA AND r.CONSTRAINT_NAME=k.CONSTRAINT_NAME AND r.TABLE_NAME=k.TABLE_NAME WHERE k.CONSTRAINT_SCHEMA=DATABASE() AND k.TABLE_NAME IN ('eb_marketplace_role','eb_marketplace_employee','eb_marketplace_audit_log','eb_marketplace_password_setup') AND k.REFERENCED_TABLE_NAME IS NOT NULL ORDER BY k.TABLE_NAME,k.CONSTRAINT_NAME,k.ORDINAL_POSITION")->fetchAll();
+    $expectedClauses = ['eb_mm_mer_review'=>'review_status in (0,1,2)',
+        'eb_mm_mer_flags'=>'(accept_orders in (0,1)) and (fulfillment_enabled in (0,1)) and (security_locked in (0,1))',
+        'eb_mm_role_positive'=>'mer_id > 0', 'eb_mm_role_permissions'=>"json_type(permissions) = 'ARRAY'",
+        'eb_mm_emp_positive'=>'(mer_id > 0) and (role_id > 0)', 'eb_mm_emp_flags'=>'(status in (0,1)) and (is_del in (0,1))',
+        'eb_mm_audit_positive'=>'(mer_id > 0) and (actor_id > 0)', 'eb_mm_audit_detail'=>"json_type(detail) = 'OBJECT'",
+        'eb_mm_setup_positive'=>'(mer_id > 0) and (employee_id > 0)', 'eb_mm_setup_expiry'=>'expires_at = (add_time + 86400)'];
+    foreach ($constraints as $constraint) audit_expect($constraint['ENFORCED'] === 'YES'
+        && m1m_check_clause($constraint['CHECK_CLAUSE']) === m1m_check_clause($expectedClauses[$constraint['CONSTRAINT_NAME']]), 'actual CHECK predicate or enforcement differs');
+    $fk = $db->query("SELECT k.TABLE_NAME,k.CONSTRAINT_NAME,k.COLUMN_NAME,k.REFERENCED_TABLE_SCHEMA,k.REFERENCED_TABLE_NAME,k.REFERENCED_COLUMN_NAME,k.ORDINAL_POSITION,r.UPDATE_RULE,r.DELETE_RULE FROM information_schema.KEY_COLUMN_USAGE k JOIN information_schema.REFERENTIAL_CONSTRAINTS r ON r.CONSTRAINT_SCHEMA=k.CONSTRAINT_SCHEMA AND r.CONSTRAINT_NAME=k.CONSTRAINT_NAME AND r.TABLE_NAME=k.TABLE_NAME WHERE k.CONSTRAINT_SCHEMA=DATABASE() AND k.TABLE_NAME IN ('eb_marketplace_role','eb_marketplace_employee','eb_marketplace_audit_log','eb_marketplace_password_setup') AND k.REFERENCED_TABLE_NAME IS NOT NULL ORDER BY k.TABLE_NAME,k.CONSTRAINT_NAME,k.ORDINAL_POSITION")->fetchAll();
     audit_expect(count($fk) === 6, 'four exact foreign keys required');
     $expectedFk = ['eb_marketplace_role' => ['eb_marketplace_merchant', ['mer_id'], ['mer_id']],
         'eb_marketplace_employee' => ['eb_marketplace_role', ['mer_id', 'role_id'], ['mer_id', 'id']],
         'eb_marketplace_audit_log' => ['eb_marketplace_merchant', ['mer_id'], ['mer_id']],
         'eb_marketplace_password_setup' => ['eb_marketplace_employee', ['mer_id', 'employee_id'], ['mer_id', 'id']]];
+    $fkNames = ['eb_marketplace_role'=>'eb_mm_role_merchant_fk','eb_marketplace_employee'=>'eb_mm_emp_role_fk',
+        'eb_marketplace_audit_log'=>'eb_mm_audit_merchant_fk','eb_marketplace_password_setup'=>'eb_mm_setup_employee_fk'];
     foreach ($expectedFk as $table => [$target, $sourceColumns, $targetColumns]) {
         $rows = array_values(array_filter($fk, static fn(array $row): bool => $row['TABLE_NAME'] === $table));
         audit_expect(array_column($rows, 'COLUMN_NAME') === $sourceColumns && array_column($rows, 'REFERENCED_COLUMN_NAME') === $targetColumns, 'same-merchant foreign key columns differ');
-        foreach ($rows as $row) audit_expect($row['REFERENCED_TABLE_NAME'] === $target && $row['UPDATE_RULE'] === 'RESTRICT' && $row['DELETE_RULE'] === 'RESTRICT', 'same-merchant foreign key target or actions differ');
+        foreach ($rows as $i => $row) audit_expect($row['CONSTRAINT_NAME'] === $fkNames[$table] && (int)$row['ORDINAL_POSITION'] === $i + 1
+            && $row['REFERENCED_TABLE_SCHEMA'] === 'audit_auth' && $row['REFERENCED_TABLE_NAME'] === $target
+            && $row['UPDATE_RULE'] === 'RESTRICT' && $row['DELETE_RULE'] === 'RESTRICT', 'same-merchant foreign key identity, order, target or actions differ');
     }
-    return ['columns' => $metadata, 'checks' => $constraints, 'foreign_keys' => $fk];
+    return ['columns' => $metadata, 'indexes' => $indexMetadata, 'checks' => $constraints, 'foreign_keys' => $fk];
 }
 
 function m1m_new_menus(PDO $db, array $before): array
@@ -136,7 +187,8 @@ function m1m_new_menus(PDO $db, array $before): array
 }
 
 audit_case('T2M01', 'normal_check_apply_repeat', 'INTEGRATION', static function (): array {
-    $evidence = ['run_id' => getenv('AUDIT_RUN_ID'), 'steps' => [], 'negative_cases_run' => false]; $configFile = audit_run_dir() . '/ms1-migration-cli-config.json'; $failure = null;
+    $evidence = ['run_id' => getenv('AUDIT_RUN_ID'), 'steps' => [], 'negative_cases_run' => false];
+    $configFile = '/run/audit-bootstrap/ms1-migration-cli-config-' . getenv('AUDIT_RUN_ID') . '.json'; $createdConfig = false; $failure = null;
     try {
         $before = m1m_snapshot(); $evidence['before'] = $before;
         audit_expect(count($before['names']) === 158, 'fresh installed base with no marketplace tables required');
@@ -147,6 +199,7 @@ audit_case('T2M01', 'normal_check_apply_repeat', 'INTEGRATION', static function 
         $db = audit_pdo($migrator); $grants = $db->query('SHOW GRANTS')->fetchAll(PDO::FETCH_COLUMN);
         audit_expect(count($grants) === 2 && count(array_filter($grants, static fn(string $g): bool => str_starts_with($g, 'GRANT ALL PRIVILEGES ON `audit_auth`.* TO '))) === 1, 'migrator must retain only its existing dedicated schema privileges');
         audit_write_json($configFile, ['hostname'=>'audit-mysql','hostport'=>'3306','database'=>'audit_auth','username'=>$migrator['username'],'password'=>$migrator['password'],'prefix'=>'eb_']);
+        $createdConfig = true;
         $step = m1m_cli('check', $configFile); $evidence['steps'][] = $step;
         audit_expect($step['native_exit'] === 0 && $step['stderr_bytes'] === 0 && ($step['result']['state'] ?? '') === 'applicable' && ($step['result']['changed'] ?? null) === false, 'first check must be native0 applicable and read-only');
         $checked = m1m_snapshot(); m1m_assert_old($before, $checked, false); audit_expect($before['names'] === $checked['names'], 'read-only check created tables');
@@ -170,7 +223,7 @@ audit_case('T2M01', 'normal_check_apply_repeat', 'INTEGRATION', static function 
         $failure = ['class'=>get_class($error),'file'=>basename($error->getFile()),'line'=>$error->getLine()]; $evidence['diagnostic'] = $failure;
         if (isset($before)) { $evidence['actual_after_failure'] = m1m_snapshot(); }
     } finally {
-        if (is_file($configFile)) { audit_expect(unlink($configFile), 'private CLI config cleanup failed'); }
+        if ($createdConfig && is_file($configFile)) { audit_expect(unlink($configFile), 'private CLI config cleanup failed'); }
     }
     $ref = 'evidence/ms1-migration-' . (getenv('AUDIT_PHASE') ?: 'after') . '.json'; audit_write_json(audit_run_dir() . '/' . $ref, $evidence);
     return ['status'=>$failure === null ? 'PASS' : 'FAIL', 'actual'=>$failure === null ? 'real CLI check/apply/check/apply native0; exactly five empty tables and seven interfaces; original rows/schema/cache preserved' : $failure['class'].'@'.$failure['file'].':'.$failure['line'],
