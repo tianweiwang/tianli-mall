@@ -57,7 +57,7 @@ ISO-FULL，RUN=20261011092042df3a82：现有PHP8.2镜像、独立internal网络�
 
 ## Task5：对外接线前置（业务接线未实现）
 
-RUN=2026101112350380d12a，新建ISO-FULL专用内部网络、MySQL/Redis、9卷及真实初始化；目前仍供后续Task5测试使用。生产OutAccountServices、OutApiExceptionHandle及Login入口未修改。此阶段不声称完成A25 HTTP刷新。
+RUN=2026101112350380d12a，新建ISO-FULL专用内部网络、MySQL/Redis、9卷及真实初始化；完成worker前置及48项旧服务基线后，已核manifest并teardown、exit0，全部专用资源删除、仓库外证据保留。生产OutAccountServices、OutApiExceptionHandle及Login入口未修改。此阶段不声称完成A25 HTTP刷新。
 
 - worker测试先提交563f045d，旧supervisor5项基线2PASS/3FAIL、exit1：默认单进程启动/停止及非法override拒绝已通过；多worker、只读进程观察和恢复单进程因缺少严格override能力而失败。所有158张表、Redis值/绝对期限、双runtime缓存/log及真实TCP停止状态无意外变化；原始失败保留。
 - 隔离harness仅新增严格SERVER_WORKERS为空或2、本app容器内登记PID/PGID/SID/starttime、有限只读observe及真实fork worker有界退出。原setsid/php think run命令、环境主机/库/账号、所有既有override和root-fingerprint/guard均保持。原生数值标识以数字/数字字符串返回，既不读environ/cmdline也不打印请求或密码；本组监听inode与实际成员fd关联，observer不做Redis写/EVAL。
@@ -65,10 +65,13 @@ RUN=2026101112350380d12a，新建ISO-FULL专用内部网络、MySQL/Redis、9卷
 - 原12项selftest全部PASS/exit0，包含16次受控启动、ISO隔离/DML边界/真实Redis故障与恢复，未放宽断言。raw=selftest-after-20261011124638.jsonl，SHA256=7d6b20f429e5ba86c8503dbae93135ac9c7328abe23f8e3d974c650ec526c504。该轮生产代码无未提交改动，harness待提交文件哈希按下文记录；不冒称Task10清洁冻结。
 - 额外故障诊断只在同一专用app容器、核对登记leader和supervisor的真实PID/starttime/PGID/SID后SIGKILL确切wrapper。其后4个真实子进程及8000监听仍存活；stop按原登记组处理，即使wrapper已退出仍完整TERM/必要KILL并回收。独立docker exec中的/proc数值观察再次确认整个组（包括待回收成员）空、监听关闭、158表和全部Redis值/期限不变，exit0。证据diagnostic-http-wrapper-state.json及实际diagnostic-ms0b-http-wrapper.php保留仓库外，临时源码核对归档哈希后精确删除。该诊断证明worker退出边界，不代替HTTP业务竞态。
 - harness生产于测试提交563f045d加单个待提交文件时运行，后本地提交7895776a；task5-harness-tested-source.json记录SHA256=d762074a49b40e2244cb1de27b529eb6edcbd45bf1b127084e266215d25ab5d3并确认与提交后一致。原始commit_sha不改写。
-- 对外基本48场景和真正双HTTP刷新/响应前断开用例尚在准备；三业务文件仅仓库外草稿，未安装或验证。尚无Task5接线通过结论。
+- 基本48项测试先提交5ac0d37e，lint通过、源合同经独立只读审查；真实旧服务完整基线6PASS/42FAIL、exit1，raw=ms0b-out-http-baseline-20261011125527.jsonl，SHA256=c5bdd451d3679dddff739d56da3be3e47b7cfb4cd0bb890db023f2ebc6b837c9。真实service默认/显式null、空串、字符串0全部跳过旧密码核对，产生目标统计与旧会话缓存写入；HTTP缺失/null/空串原validator400和错误/禁用/删除凭据原401共6项已通过。旧schema/缺sid、当前账号状态、冷配置和Redis/DB依赖边界等未满足新契约如实FAIL；不可拿未执行的草稿当修复结果。
+- 8项MCP基线全部仅失败于“actual application and server logs contain no private credential or token”一条：此前旧HTTP数据库故障污染了日志；当前MCP响应及其全表/缓存/期限/runtime零写断言均通过。initialize和真实分类工具仍返回JSON-RPC result，错误/禁用/删除/缺header返回-32600；缺JWT epoch正常可用。不擦日志或把这8项改报PASS，也不声称出现MCP协议回归。后续新RUN完整after仍必须全部严格通过。
+- 未执行草稿的静态复核修正留在测试提交中：刷新old sid仅status允许变，绝对期限仍逐键核对；CLI专用prefix必须初始空，最终只精确清本次新增键；公开攻击探针0不纳整份log/JWT子串私有值扫描，真实随机密码/摘要/token/marker/部署key匹配全部保留。合成fixture两非空明文字段和关闭推送目标只在专用数据中设置，观察后精确还原；不改业务权限种子。
+- 独立实源审查识别cold A24刷新调用点：postMore即使在配置/Redis/PDO前置之后，仍先于schema拒绝调用filter_str/sys_config而写缓存。05已先记录必要修复设计：refreshToken用真实Request::post('access_token', '', null)读取POST body原始签名字符串，非字符串受控401，直接单次刷新服务；登录原postMore/validator不变。不放宽冷401全零断言、不靠预热掩盖、不加重复Token验证或全局filter改动。三业务文件仍只为仓库外草稿，未安装/验证；HTTP并发及响应前断开测试继续准备，尚无Task5接线通过结论。
 
 ## 未完成
 
 Task4完整A21、Task5对外端、Task6全部变更入口、Task7世代轮换/RDB恢复、Task8验证码/URL令牌与浏览器下载、Task9发布准备、Task10完整冻结回归和独立验收均待完成。当前HTTP通过仅限Task4上述30项；无整个MS0b或WORKER/BROWSER/EXTERNAL验收通过结论，接口实际在用情况未知。此报告不构成人工签收。
 
-results.jsonl当前共1034条INTEGRATION原始行：原Task1–3共822行，加Task4共190行，以及Task5 worker5项baseline/after和原12项selftest共22行。历史失败不抹除，原commit_sha不改写；Task1–3最后一轮239项及Task4最后38项全PASS，不能相加为整个里程碑验收。Task5前置17项通过仅证明隔离执行能力，wrapper额外诊断JSON单列。UNIT-STUB43文本证据单独统计；整个MS0b未完成，后续任务与交付继续更新本记录。
+results.jsonl当前共1082条INTEGRATION原始行：原Task1–3共822行，加Task4共190行，以及Task5 worker/selftest22行和对外旧服务基线48行。历史失败不抹除，原commit_sha不改写；Task1–3最后一轮239项及Task4最后38项全PASS，不能相加为整个里程碑验收。Task5前置17项通过仅证明隔离执行能力，wrapper额外诊断JSON单列；48项仍只是旧服务基线。UNIT-STUB43文本证据单独统计；整个MS0b未完成，后续任务与交付继续更新本记录。

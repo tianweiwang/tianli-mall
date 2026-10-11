@@ -167,6 +167,7 @@ public function revoke(string $app, string $token): void
 **Interfaces:**
 - Produces: 对外账号凭据摘要 = 数据库中的 `appsecret` 哈希字符串；`refresh()` 使用 `AuthTokenV2::refresh()`（单次兑换）
 - 实源预审补齐：authLogin不得以appsecret真假值决定是否验密，null/空串/字符串0均不能跳过password_verify。实版本Validate::require允许字符串0，旧service真假判断让该值通过HTTP入口跳过验密；空/null若被原HTTP validator以400提前拒绝，另用真实service调用覆盖其401边界，不改验证器或将既有拒绝冒称新修复。auth_info及parseToken结果隐藏存明文凭据的apppwd、push_password，保留其余DTO和rules可消费形态，以专用非空合成fixture且push_open=0证明字段不存在、原数据库值不变、不触发外部推送；不全局隐藏模型、改CRUD/历史库值或推送消费点。公开refresh_token自行验证body.access_token，MCP仍独立header直接凭据，不额外加角色中间件或JWT配置前置。Login公开入口与管理端相同有过滤缓存先行链，必要的早期配置/依赖前置纳同一调用点。HTTP并发需先在harness验证实际多worker/PID、两个请求同时处理的Redis阻塞/连接证据，不能仅以两个TCP accept/排队或CLI原语竞态冒称HTTP并发；固定短时CLIENT PAUSE WRITE屏障须在认证1秒read_timeout内并真实观测，旧token只有一个replacement。响应丢失用真实HTTP发送完整请求后、未读取响应字节时关闭socket，须先证明服务端已进入刷新处理、其后独立观察实际消费/仅一replacement和重试旧token401，不按客户端超时推断执行结果。保护完整DB/Redis值/期限/实际runtime日志窗口，释放屏障/停止worker后再次核对。
+- 48项测试独立源审补齐：旧schema冷刷新即使独立配置/Redis/PDO前置成功，postMore仍会在服务验证前通过filter_str/sys_config写缓存。保留A24冷401全零断言；刷新入口改从真实Request::post('access_token', '', null)读取POST body原始签名字符串（框架null过滤器明确关闭过滤，纯input/getData不做业务IO），严格非字符串401，直接交给单次刷新服务。JWT必须逐字验签，不能经通用业务regex修改；正常JWT与access_token/exp_time/envelope协议不变，登录getToken仍保留原postMore/validator。不新增Token预验证API或重复凭据查询/验证，不改vendor或全局输入过滤器。此必要入口设计先记录、后更新仓库外草稿，旧服务完整基线保留。
 
 - [ ] **Step 1: 用例**：A24（旧格式对外令牌被拒绝）；A25 的 HTTP 子场景（并发刷新只成功一个；客户端在收到响应前断开时，服务端不产生第二个有效会话）；A19、A28 中对外账号相关部分回归；MCP 回归（不受影响）。
 - [ ] **Step 2–5**：确认失败 → 实现 → 通过 → 提交 `feat(outapi): switch to v2 sessions with single-use refresh`。
