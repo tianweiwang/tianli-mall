@@ -232,6 +232,7 @@ public static function runMany(string $app, array $ids, callable $dbChange): mix
 - Modify（显式命令注册的必要调用点）: `crmeb/config/console.php`
 - Modify（既有私有原生连接的必要调用点）: `crmeb/crmeb/services/auth/AuthSessionStore.php`，只增加窄接口 `deleteOldEpoch(string $oldEpoch): int`
 - Create（独立普通命令检查）: `help/audit-regressions/isolated/ms0b-epoch-functional.php`
+- Create（普通运行及源码摘要）: `docs/multi-merchant/records/ms0b/task7-functional-summary.json`
 
 **Interfaces:**
 - Produces: 命令要求显式 `--old-epoch=<旧值>` 和 `--confirm`；新旧epoch限安全字符，不允许冒号/通配符。校验新的 `AUTH_SESSION_EPOCH` 已在配置中生效且与旧值不同；按 `SCAN` + 前缀删除**旧 epoch** 下的 `auth:v2:<old>:*` 键（分批，打印数量，不打印键名）。不接触其他键。
@@ -241,6 +242,8 @@ public static function runMany(string $app, array $ids, callable $dbChange): mix
 2026-10-12 本机接口核对：现有PHPRedis的scan游标为 `string|int|null` 引用，返回 `array|false`；false不能作为成功空页的可靠证据。窄方法在同一有界私有连接上使用实际 `rawCommand('SCAN', <游标文本>, 'MATCH', <准确旧前缀*>, 'COUNT', '200')`，严格检查响应为uint64游标文本及键名list，保持大游标为文本；正常空list继续到文本'0'。false、错误响应或连接异常均受控失败，不把解析失败记为扫描结束。仍是同一SCAN/分批DEL设计，没有改变删除范围或增加恢复/故障试验。
 
 普通检查范围为三个CLI场景：真实 `php think list --raw`/help证明注册与选项；本RUN新建正常旧空间大于单批上限的真实签发会话及两应用账号键，在已配置新epoch下正常执行一次精确清理；对已空旧空间再正常执行得到删除0。实际php进程仅使用私有RUN环境，全部158表/所有其他Redis值及TIME/PTTL绝对期限/runtime不变；自有当前epoch及相似边界epoch保持。输入缺失/异常配置、依赖故障、恢复、旧token拒绝及并发场景不运行，不提供完整A29验收结论。测试先提交并保留命令尚未注册的实际基线，再实现、验证普通流程和本地提交；原恢复要求继续记为跳过。
+
+- [x] 普通命令实现、runbook与本地提交：设计ed08f94b、测试903e0dfb先于业务a9c3ce35。RUN=20261011160257a153b4旧源基线2FAIL/1NOT RUN、原生Bash exit1；缺注册使list/help及清理契约失败，真实未清空则不执行空空间重复。实现后3PASS、exit0：4个实际think子进程全部exit0，删除1026旧键的实际输出精确一致，独立INFO观察7次DEL；当前空间4键及相似前缀4键、158表、其他所有Redis值/绝对期限和runtime不变。真实Token.issue正常准备与精确finally清理单列，不造恢复/旧token验收。三PHP与runbook哈希匹配审查及测试内容；3容器/1内部网/9卷已teardown exit0并独立复查无残留。详情见report与task7-functional-summary.json，完整A29仍未验收。
 
 - [ ] **Step 1: 用例**（恢复试验按用户最新要求跳过，不记通过） A29：原设计模拟 Redis 从旧快照恢复（备份 RDB → 写入新会话 → 恢复 RDB）→ 隔离认证入口 → 轮换 epoch → 旧会话全部 401、重新登录可用；业务缓存键数量前后不变。
 - [ ] **Step 2–5**：确认失败 → 实现命令与 runbook → 通过 → 提交 `feat(auth): epoch rotation command and session-loss runbook`。

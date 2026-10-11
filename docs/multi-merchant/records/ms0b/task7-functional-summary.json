@@ -1,0 +1,157 @@
+{
+  "run_id": "20261011160257a153b4",
+  "normal_only": true,
+  "production_commit": "a9c3ce355bb76349cc3cb2be31c0e2293b1a8b14",
+  "runs": [
+    {
+      "raw_file": "ms0b-epoch-functional-baseline-20261011161722.jsonl",
+      "sha256": "f0826d1af0f55533faa2ecacf81ebb74da0f1b4927f545214540c06f4af93cf9",
+      "rows": 3,
+      "counts": {
+        "FAIL": 2,
+        "NOT RUN": 1
+      },
+      "windows": 3,
+      "table_counts": [
+        158
+      ],
+      "native_bash_exit": 1,
+      "source_commits": [
+        "903e0dfb4aa4040efc00427551ff173e72f4c9dd"
+      ],
+      "cases": [
+        {
+          "subcase": "epoch-command-registration-help",
+          "status": "FAIL",
+          "native_child_exits": [
+            0,
+            1
+          ],
+          "deleted_keys": [],
+          "native_del_calls": null
+        },
+        {
+          "subcase": "epoch-command-normal-batched-delete",
+          "status": "FAIL",
+          "native_child_exits": [
+            1
+          ],
+          "deleted_keys": [],
+          "native_del_calls": 0
+        },
+        {
+          "subcase": "epoch-command-normal-empty-repeat",
+          "status": "NOT RUN",
+          "native_child_exits": [],
+          "deleted_keys": [],
+          "native_del_calls": null
+        }
+      ]
+    },
+    {
+      "raw_file": "ms0b-epoch-functional-after-20261011161938.jsonl",
+      "sha256": "179183ac074d543e2596037821ef65dc18bf45f9fb38f73d49f1ca33f303e51e",
+      "rows": 3,
+      "counts": {
+        "PASS": 3
+      },
+      "windows": 4,
+      "table_counts": [
+        158
+      ],
+      "native_bash_exit": 0,
+      "source_commits": [
+        "903e0dfb4aa4040efc00427551ff173e72f4c9dd"
+      ],
+      "cases": [
+        {
+          "subcase": "epoch-command-registration-help",
+          "status": "PASS",
+          "native_child_exits": [
+            0,
+            0
+          ],
+          "deleted_keys": [],
+          "native_del_calls": null
+        },
+        {
+          "subcase": "epoch-command-normal-batched-delete",
+          "status": "PASS",
+          "native_child_exits": [
+            0
+          ],
+          "deleted_keys": [
+            1026
+          ],
+          "native_del_calls": 7
+        },
+        {
+          "subcase": "epoch-command-normal-empty-repeat",
+          "status": "PASS",
+          "native_child_exits": [
+            0
+          ],
+          "deleted_keys": [
+            0
+          ],
+          "native_del_calls": null
+        }
+      ]
+    }
+  ],
+  "old_result_rows": 1158,
+  "new_result_rows": 1164,
+  "old_bytes_sha256": "47bcec424d4c4307b41c966cc4f078a764f2316d6be4d463ca69cfd6b1c87a04",
+  "old_bytes_preserved": true,
+  "preparation_evidence": [
+    "epoch-functional-20261011161713022d24-preparation.json",
+    "epoch-functional-2026101116192862abe3-preparation.json"
+  ],
+  "cleanup_evidence": [
+    "epoch-functional-20261011161713022d24-cleanup.json",
+    "epoch-functional-2026101116192862abe3-cleanup.json"
+  ],
+  "tested_source": {
+    "phase": "after",
+    "source_head": "903e0dfb4aa4040efc00427551ff173e72f4c9dd",
+    "files": [
+      {
+        "sha256": "b4e75cd7308d0b6eb5a4dbbd5742c4942e68cd3ba60a6cdc86af097e044926ba",
+        "path": "crmeb/app/command/AuthEpochRotate.php"
+      },
+      {
+        "sha256": "2e1464e322e147ef0699860021e50b4b9fe1d97152f807457617ff5c09b088bb",
+        "path": "crmeb/crmeb/services/auth/AuthSessionStore.php"
+      },
+      {
+        "sha256": "788ae4b930db24d079482edf056e8815965d8b6f1e8ec86437fda35907128bc2",
+        "path": "crmeb/config/console.php"
+      }
+    ],
+    "run_id": "20261011160257a153b4",
+    "test_sha256": "1fccac5875bc76f96345d27eb36c30efd566582a33e8b17f449405c2e90b58cf",
+    "business_pending_local_commit": true,
+    "stage": "before_test",
+    "skipped_checks_remain_skipped": true,
+    "runbook_sha256": "7f4ebdf1eaa95bc8873834e01d4a635c9478f1e7391c3ad46dee078f2418b54e",
+    "result": {
+      "production_commit": "a9c3ce355bb76349cc3cb2be31c0e2293b1a8b14",
+      "committed_files_match_tested": true,
+      "normal_counts": {
+        "PASS": 3
+      },
+      "native_bash_exit": 0,
+      "teardown_native_bash_exit": 0
+    }
+  },
+  "teardown_native_bash_exit": 0,
+  "skipped_checks_executed": false,
+  "full_A29_accepted": false,
+  "post_cleanup": {
+    "audit_containers_found": 0,
+    "run_networks_found": 0,
+    "run_volumes_found": 0,
+    "run_install_lock_present": false,
+    "evidence_preserved": true
+  }
+}
