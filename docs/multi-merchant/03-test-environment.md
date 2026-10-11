@@ -164,7 +164,7 @@ audit_finish(): never                 // 汇总，写 JSONL，有 FAIL 时以退
 
 | 脚本 | 层级 | 规则 |
 |---|---|---|
-| `security.php` | UNIT-STUB | 可以随时运行；MS0a 只追加用例，不删除、不放宽断言 |
+| `security.php` | UNIT-STUB | 可以随时运行。BASE 保留原始 23 项；MS0a 先记录原始基线，Task 7 在 SP-MS0a-1 确认后，将 `unregistered route proceeds`、`unregistered method proceeds without warning`、`existing CRUD exemption proceeds` 三项收紧为拒绝并相应改名，其余 20 项保留；追加新用例，不删除覆盖、不放宽断言。此契约调整须用户批准。 |
 | `commerce.php`、`wallet-admin.php`、`wallet-store.php`、`theme-module.php` | INTEGRATION（旧式） | 需要建库、删库权限，只能在本文件 §3 的专用实例里，由 `bootstrap.sh` 用该实例新生成的 root 凭据运行；MS0a 不要求运行 |
 | `diy-http.py` | INTEGRATION（只读） | 运行前显式传入测试应用的 base URL |
 | `frontend-*.cjs` | 前端 | 按 `frontend.md` |

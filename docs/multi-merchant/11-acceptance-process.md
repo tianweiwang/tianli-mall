@@ -126,7 +126,7 @@ help/audit-regressions/isolated/teardown.sh <RUN_ID>
 
 ### 5.2 MS0a
 
-- **必须 PASS**：10 文档中阶段为 MS0a 的全部用例（A10、A17、A18、A21、A23 只看 MS0a 部分）；`security.php` 原有 23 个及新增用例；`selftest.php`。
+- **必须 PASS**：10 文档中阶段为 MS0a 的全部用例（A10、A17、A18、A21、A23 只看 MS0a 部分）；`security.php` 保留的 20 项原有回归、3 项经用户批准从旁路放行收紧为拒绝的契约，以及新增用例；`selftest.php`。三项新契约须有 BASE 原始放行证据、实现前拒绝断言 FAIL、实现后 PASS 的对应记录，不得删除覆盖或用白名单规避拒绝目标。
 - **允许延后**：Z08 中"实际在用的调用方"一栏可以是"未知"（发布前在 MS0b 补齐）。
 - **必查证据**：A12（两个子场景）、A27（`eb_cache` 与 `eb_store_product` 的前后快照）、A19（关闭后访问与刷新）、A09（16 组矩阵）、A26。
 - **审阅重点**：

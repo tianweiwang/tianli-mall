@@ -18,7 +18,7 @@
 - 签名算法固定为 `HS256`，JWT 时钟容差保持 `60` 秒。
 - 认证失败只允许两类副作用：`eb_system_log` 审计记录、限流计数键。
 - 配置错误统一抛出 `crmeb\exceptions\AuthException('认证服务配置错误', [], 503)`；认证失败统一抛出业务码 `401`。
-- 不放宽任何已有断言；`security.php` 原有 23 个用例必须继续通过。
+- 不放宽任何已有断言。`security.php` 的 BASE 原始 23 项保留基线记录；经用户批准，Task 7 的三项旁路放行断言改为拒绝（未登记路由、未登记方法、未授权 CRUD），其余 20 项保持不变。最终要求 20 项原有回归、3 项权限收紧契约及新增用例全部通过。
 - 测试先于修复提交，并先在 `AUDIT_BASE_SHA` 上以 `AUDIT_PHASE=baseline` 运行一次。
 
 ## Review Focus
@@ -300,7 +300,7 @@ git commit -m "fix(outapi): single enabled-state rule for login/access/refresh/M
 - Create: `help/audit-regressions/isolated/route-inventory.php`、`docs/multi-merchant/records/ms0a/route-permission-matrix.md`、`crmeb/app/adminapi/config/auth_routes.php`
 - Modify: `crmeb/app/services/system/admin/SystemRoleServices.php`（`verifyAuth()`）
 - Modify: `crmeb/app/adminapi/controller/v1/setting/SystemMenus.php`（写操作成功后清缓存）
-- Modify: `help/audit-regressions/security.php`（追加 UNIT-STUB 用例）、`help/audit-regressions/isolated/ms0a-auth.php`（追加 A02–A06、A08、A30）
+- Modify: `help/audit-regressions/security.php`（按批准的契约收紧 3 项旁路断言并追加 UNIT-STUB 用例）、`help/audit-regressions/isolated/ms0a-auth.php`（追加 A02–A06、A08、A30）
 
 **Interfaces:**
 - Produces: 配置 `config('auth_routes.authenticated')`，值为 `string[]`，每项格式为小写的 `"<method> <rule>"`，例如 `"get menuslist"`；`verifyAuth()` 签名不变
@@ -315,7 +315,7 @@ git commit -m "fix(outapi): single enabled-state rule for login/access/refresh/M
 
 - [ ] **Step 3: 写测试**
 
-`security.php` 追加 UNIT-STUB 用例：未登记且不在白名单 → 抛 `AuthException`；在白名单 → 放行；`crud/` 前缀未授权 → 抛异常；已登记已授权 → 放行。
+`security.php` 先将原有三项旁路放行用例（`unregistered route proceeds`、`unregistered method proceeds without warning`、`existing CRUD exemption proceeds`）改为期望拒绝并相应改名，保持其他 20 项不变。新契约子场景不得把测试路由加入白名单来保留原放行结果。再追加 UNIT-STUB 用例：未登记且不在白名单 → 抛 `AuthException`；在白名单 → 放行；`crud/` 前缀未授权 → 抛异常；已登记已授权 → 放行。
 
 `ms0a-auth.php` 追加 INTEGRATION 用例：
 
@@ -332,7 +332,7 @@ git commit -m "fix(outapi): single enabled-state rule for login/access/refresh/M
 - [ ] **Step 4: 确认新用例当前失败**
 
 Run: `php help/audit-regressions/security.php; AUDIT_PHASE=after php help/audit-regressions/isolated/ms0a-auth.php --only=A03,A04,A30`
-Expected: 新增的 UNIT-STUB 用例和 A03、A04、A30 FAIL；原有 23 个 UNIT-STUB 用例 PASS。
+Expected: 三项收紧后的 UNIT-STUB 用例、新增的拒绝用例和 A03、A04、A30 FAIL；其余 20 个原有 UNIT-STUB 用例 PASS。基线原始 23 项结果保留在 AUDIT_BASE_SHA 的记录中，不覆盖历史结果。
 
 - [ ] **Step 5: 实现**
 
