@@ -180,11 +180,11 @@ Task4编码合同（2026-10-12）：沿既有v2 Redis协议扩展固定merchanta
 
 五接口采用JSON `{status,msg,data}`及真实HTTP状态：login请求account/password，成功data仅token/exp；refresh成功同样仅token/exp；logout与password/setup成功data为空数组；me成功data仅employee（id、mer_id、role_id、account、name、avatar、status）、role（id、mer_id、name、permissions）、merchant（mer_id、name、logo、after_sale_contact、shipping_note）。商家会话只来自标准 `Authorization: Bearer <token>` 请求头，固定前缀完整解析；不读取URL或请求体中的登录会话。刷新/退出先正常认证。login/setup读取未过滤的字符串，账号用ASCII trim及ASCII小写规范化，必须有效UTF-8且字符数不超过191；密码8–72字节且无NUL，不截断，使用password_hash/password_verify。参数类型/格式错误固定422，认证状态固定401，权限403、对象404、依赖问题503；新handler不回传驱动消息、参数或trace。子应用database配置沿基础默认连接，仅固定debug=false、charset=utf8mb4及break_reconnect=false，避免SQL正文记录和事务重连。
 
-首次设置请求token/password：token为32随机字节的小写64位hex能力，数据库仅存原始SHA256 32字节，精确24小时。先按摘要读取真实员工ID，再交既有AccountChangeGuard持有同一默认Db的外层事务；回调锁住能力和员工、重检绑定/有效期/未消费/员工正常及空密码，两项影响行数各为1后共同提交。不伪造Ctx、不在guard外开启/自行提交事务、不预先初始化账号版本；设置可在商家审核前完成，但员工正常且商家未关闭，实际登录仍严格遵守上述商家条件。只有有效凭据登录通过后initAccount，重读同一密码及最新状态后签发。协议内的受控身份失败使用既有AuthSessionException，由新HTTP handler映射；不复制协议或Lua实现。
+首次设置请求token/password：token沿既有冻结合同为32随机字节的无填充base64url（43字符），消费者核对32字节解码及规范重编码一致，数据库仅存原始SHA256 32字节，精确24小时。先按摘要读取真实员工ID，再交既有AccountChangeGuard持有同一默认Db的外层事务；回调锁住能力和员工、重检绑定/有效期/未消费/员工正常及空密码，两项影响行数各为1后共同提交。不伪造Ctx、不在guard外开启/自行提交事务、不预先初始化账号版本；设置可在商家审核前完成，但员工正常且商家未关闭，实际登录仍严格遵守上述商家条件。只有有效凭据登录通过后initAccount，重读同一密码及最新状态后签发。协议内的受控身份失败使用既有AuthSessionException，由新HTTP handler映射；不复制协议或Lua实现。
 
 DAO为有限用途独立类，不继承旧BaseDao的全局写入口；身份读取不依赖客户端Ctx，普通资料查询必须消费MerchantScope返回Query。公共DTO/日志无密码、摘要、会话版本或设置能力。全局HttpEndListener按应用名在读取正文前排除merchantapi，避免将成功token或设密正文写入日志；其他应用现行为保留。Task6管理员设置链接返回同样需限定处理日志，留在Task6落实。
 
-普通核对T4A01：新的ISO-FULL中先记实现尚缺失的自然基线FAIL；bootstrap专用迁移账号仅准备冻结五表，正式runner仍为audit_app DML。仅建立有效A/B员工及真实一次性能力，正常设密→登录→本人资料→刷新→本人资料→退出，核对真实密码哈希/消费时间、已验证Ctx归属、当前权限、两应用正常响应，及accept_orders=0/fulfillment_enabled=0时仍正常登录。密文只在内存与私有实例，记录仅ID/响应状态/计数/摘要；精确清理本次新表行与本次应用账号/会话键，不回拨计数器。正常HTTP语言缓存须预热或精确列出本次实际生成项，不能宽泛忽略缓存、修改旧行或恢复快照掩盖副作用；全163表原行/DDL（仅四张夹具表自然计数器）与旧Redis值/绝对到期点独立核对。原M03/M04/M06拒绝/M08拒绝、错误/过期/重复能力等均NOT RUN，不产生这些请求，普通PASS不代替原验收。
+普通核对T4A01：新的ISO-FULL中先记实现尚缺失的自然基线FAIL；bootstrap专用迁移账号仅准备冻结五表，正式runner仍为audit_app DML。仅建立有效A/B员工及真实一次性能力；A正常待审核时设置密码，再仅按本次ID推进审核夹具，B设置时已审核。全程不向待审核商家发送受保护请求，不把夹具推进冒称Task6平台审核接口验收。正常设密→登录→本人资料→刷新→本人资料→退出，核对真实密码哈希/消费时间、已验证Ctx归属、当前权限、两个商家的正常响应，及accept_orders=0/fulfillment_enabled=0时仍正常登录。密文只在内存与私有实例，记录仅ID/响应状态/计数/摘要；精确清理本次新表行与本次应用账号/会话键，不回拨计数器。正常HTTP语言缓存须预热或精确列出本次实际生成项，不能宽泛忽略缓存、修改旧行或恢复快照掩盖副作用；全163表原行/DDL（仅四张夹具表自然计数器）与旧Redis值/绝对到期点独立核对。原M03/M04/M06拒绝/M08拒绝、错误/过期/重复能力等均NOT RUN，不产生这些请求，普通PASS不代替原验收。
 
 - [ ] **普通T4A01：** 实现可用性基线、真实五接口有效流程、精确清理及旧状态保留。
 
