@@ -8,9 +8,10 @@ audit_context "$1"; shift
 export AUDIT_PHASE="${AUDIT_PHASE:-after}"
 if [[ "$AUDIT_PHASE" == baseline && "$1" == help/audit-regressions/isolated/ms0a-auth.php ]]; then
     baseline_sha=9685731dcd116784d38e6bbdb902cec3c0c84975
-    baseline_tree="$(git -c "safe.directory=$audit_repo" -C "$audit_repo" rev-parse "$baseline_sha:crmeb")"
-    current_tree="$(git -c "safe.directory=$audit_repo" -C "$audit_repo" rev-parse HEAD:crmeb)"
-    if [[ "$baseline_tree" != "$current_tree" || -n "$(git -c "safe.directory=$audit_repo" -C "$audit_repo" status --porcelain --untracked-files=normal -- crmeb)" ]]; then
+    baseline_git_repo="$(audit_native_path "$audit_repo")"
+    baseline_tree="$(git -c "safe.directory=$baseline_git_repo" -C "$baseline_git_repo" rev-parse "$baseline_sha:crmeb")"
+    current_tree="$(git -c "safe.directory=$baseline_git_repo" -C "$baseline_git_repo" rev-parse HEAD:crmeb)"
+    if [[ "$baseline_tree" != "$current_tree" || -n "$(git -c "safe.directory=$baseline_git_repo" -C "$baseline_git_repo" status --porcelain --untracked-files=normal -- crmeb)" ]]; then
         echo 'Baseline requires unchanged historical business source; refused to mislabel results' >&2; exit 2
     fi
 fi
