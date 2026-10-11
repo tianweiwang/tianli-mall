@@ -451,9 +451,14 @@ class UserServices extends BaseServices
      */
     public function addNowMoney(int $uid, $old_now_money, $now_money)
     {
-        if (!$this->dao->update($uid, ['now_money' => bcadd($old_now_money, $now_money, 2)]))
-            throw new AdminException('增加用户余额失败');
-        return true;
+        // The caller snapshot may be stale; calculate from the locked account.
+        return $this->transaction(function () use ($uid, $now_money) {
+            $user = $this->dao->selectModel(['uid' => $uid])->lock(true)->find();
+            if (!$user || !$this->dao->update($uid, ['now_money' => bcadd((string)$user['now_money'], (string)$now_money, 2)])) {
+                throw new AdminException('增加用户余额失败');
+            }
+            return true;
+        });
     }
 
     /**
@@ -466,14 +471,16 @@ class UserServices extends BaseServices
      */
     public function cutNowMoney(int $uid, $old_now_money, $now_money)
     {
-        if ($old_now_money > $now_money) {
-            $money = ['now_money' => bcsub($old_now_money, $now_money, 2)];
-        } else {
-            $money = ['now_money' => 0];
-        }
-        if (!$this->dao->update($uid, $money, 'uid'))
-            throw new AdminException('减少用户余额失败');
-        return true;
+        return $this->transaction(function () use ($uid, $now_money) {
+            $user = $this->dao->selectModel(['uid' => $uid])->lock(true)->find();
+            if (!$user) throw new AdminException('减少用户余额失败');
+            $balance = bccomp((string)$user['now_money'], (string)$now_money, 2) > 0
+                ? bcsub((string)$user['now_money'], (string)$now_money, 2) : '0.00';
+            if (!$this->dao->update($uid, ['now_money' => $balance], 'uid')) {
+                throw new AdminException('减少用户余额失败');
+            }
+            return true;
+        });
     }
 
     /**
@@ -777,102 +784,104 @@ class UserServices extends BaseServices
      */
     public function updateInfo(int $id, array $data)
     {
-        $user = $this->getUserInfo($id);
-        if (!$user) {
-            throw new AdminException('数据不存在');
-        }
-        $res1 = false;
-        $res2 = false;
-        $edit = array();
-        if ($data['money_status'] && $data['money']) {//余额增加或者减少
-            /** @var UserMoneyServices $userMoneyServices */
-            $userMoneyServices = app()->make(UserMoneyServices::class);
-            if ($data['money_status'] == 1) {//增加
-                $edit['now_money'] = bcadd($user['now_money'], $data['money'], 2);
-                $res1 = $userMoneyServices->income('system_add', $user['uid'], $data['money'], $edit['now_money'], $data['adminId'] ?? 0, $data['mark']);
-                //增加充值记录
-                $recharge_data = [
-                    'order_id' => app()->make(StoreOrderCreateServices::class)->getNewOrderId('cz'),
-                    'uid' => $id,
-                    'price' => $data['money'],
-                    'recharge_type' => 'system',
-                    'paid' => 1,
-                    'add_time' => time(),
-                    'give_price' => 0,
-                    'channel_type' => 'system',
-                    'pay_time' => time(),
-                ];
-                /** @var UserRechargeServices $rechargeServices */
-                $rechargeServices = app()->make(UserRechargeServices::class);
-                $rechargeServices->save($recharge_data);
-            } else if ($data['money_status'] == 2) {//减少
-                if ($user['now_money'] > $data['money']) {
-                    $edit['now_money'] = bcsub($user['now_money'], $data['money'], 2);
-                } else {
-                    $edit['now_money'] = 0;
-                    $data['money'] = $user['now_money'];
+        return $this->transaction(function () use ($id, $data) {
+            $user = $this->dao->selectModel(['uid' => $id])->lock(true)->find();
+            if (!$user) {
+                throw new AdminException('数据不存在');
+            }
+            $res1 = false;
+            $res2 = false;
+            $edit = array();
+            if ($data['money_status'] && $data['money']) {//余额增加或者减少
+                /** @var UserMoneyServices $userMoneyServices */
+                $userMoneyServices = app()->make(UserMoneyServices::class);
+                if ($data['money_status'] == 1) {//增加
+                    $edit['now_money'] = bcadd($user['now_money'], $data['money'], 2);
+                    $res1 = $userMoneyServices->income('system_add', $user['uid'], $data['money'], $edit['now_money'], $data['adminId'] ?? 0, $data['mark']);
+                    //增加充值记录
+                    $recharge_data = [
+                        'order_id' => app()->make(StoreOrderCreateServices::class)->getNewOrderId('cz'),
+                        'uid' => $id,
+                        'price' => $data['money'],
+                        'recharge_type' => 'system',
+                        'paid' => 1,
+                        'add_time' => time(),
+                        'give_price' => 0,
+                        'channel_type' => 'system',
+                        'pay_time' => time(),
+                    ];
+                    /** @var UserRechargeServices $rechargeServices */
+                    $rechargeServices = app()->make(UserRechargeServices::class);
+                    $rechargeServices->save($recharge_data);
+                } else if ($data['money_status'] == 2) {//减少
+                    if ($user['now_money'] > $data['money']) {
+                        $edit['now_money'] = bcsub($user['now_money'], $data['money'], 2);
+                    } else {
+                        $edit['now_money'] = 0;
+                        $data['money'] = $user['now_money'];
+                    }
+                    $res1 = $userMoneyServices->income('system_sub', $user['uid'], $data['money'], $edit['now_money'], $data['adminId'] ?? 0, $data['mark']);
                 }
-                $res1 = $userMoneyServices->income('system_sub', $user['uid'], $data['money'], $edit['now_money'], $data['adminId'] ?? 0, $data['mark']);
+                event('OutPushListener', ['user_update_push', ['uid' => $id, 'type' => 'money', 'value' => $data['money_status'] == 2 ? -floatval($data['money']) : $data['money']]]);
+            } else {
+                $res1 = true;
             }
-            event('OutPushListener', ['user_update_push', ['uid' => $id, 'type' => 'money', 'value' => $data['money_status'] == 2 ? -floatval($data['money']) : $data['money']]]);
-        } else {
-            $res1 = true;
-        }
-        if ($data['integration_status'] && $data['integration']) {//积分增加或者减少
-            /** @var UserBillServices $userBill */
-            $userBill = app()->make(UserBillServices::class);
-            $integral_data = ['link_id' => $data['adminId'] ?? 0, 'number' => $data['integration']];
-            if ($data['integration_status'] == 1) {//增加
-                $edit['integral'] = bcadd($user['integral'], $data['integration'], 2);
-                $integral_data['balance'] = $edit['integral'];
-                $integral_data['title'] = '系统增加积分';
-                $integral_data['mark'] = $data['mark'] == '' ? '系统增加了' . floatval($data['integration']) . '积分' : $data['mark'];
-                $res2 = $userBill->incomeIntegral($user['uid'], 'system_add', $integral_data);
-            } else if ($data['integration_status'] == 2) {//减少
-                $edit['integral'] = bcsub($user['integral'], $data['integration'], 2);
-                $integral_data['balance'] = $edit['integral'];
-                $integral_data['title'] = '系统减少积分';
-                $integral_data['mark'] = $data['mark'] == '' ? '系统扣除了' . floatval($data['integration']) . '积分' : $data['mark'];
-                $res2 = $userBill->expendIntegral($user['uid'], 'system_sub', $integral_data);
+            if ($data['integration_status'] && $data['integration']) {//积分增加或者减少
+                /** @var UserBillServices $userBill */
+                $userBill = app()->make(UserBillServices::class);
+                $integral_data = ['link_id' => $data['adminId'] ?? 0, 'number' => $data['integration']];
+                if ($data['integration_status'] == 1) {//增加
+                    $edit['integral'] = bcadd($user['integral'], $data['integration'], 2);
+                    $integral_data['balance'] = $edit['integral'];
+                    $integral_data['title'] = '系统增加积分';
+                    $integral_data['mark'] = $data['mark'] == '' ? '系统增加了' . floatval($data['integration']) . '积分' : $data['mark'];
+                    $res2 = $userBill->incomeIntegral($user['uid'], 'system_add', $integral_data);
+                } else if ($data['integration_status'] == 2) {//减少
+                    $edit['integral'] = bcsub($user['integral'], $data['integration'], 2);
+                    $integral_data['balance'] = $edit['integral'];
+                    $integral_data['title'] = '系统减少积分';
+                    $integral_data['mark'] = $data['mark'] == '' ? '系统扣除了' . floatval($data['integration']) . '积分' : $data['mark'];
+                    $res2 = $userBill->expendIntegral($user['uid'], 'system_sub', $integral_data);
+                }
+                event('OutPushListener', ['user_update_push', ['uid' => $id, 'type' => 'point', 'value' => $data['integration_status'] == 2 ? -intval($data['integration']) : $data['integration']]]);
+            } else {
+                $res2 = true;
             }
-            event('OutPushListener', ['user_update_push', ['uid' => $id, 'type' => 'point', 'value' => $data['integration_status'] == 2 ? -intval($data['integration']) : $data['integration']]]);
-        } else {
-            $res2 = true;
-        }
-        //修改基本信息
-        if (!isset($data['is_other']) || !$data['is_other']) {
-            app()->make(UserLabelRelationServices::class)->setUserLabel([$id], $data['label_id']);
-            if (isset($data['pwd']) && $data['pwd'] && $data['pwd'] != $user['pwd']) {
-                $edit['pwd'] = $data['pwd'];
+            //修改基本信息
+            if (!isset($data['is_other']) || !$data['is_other']) {
+                app()->make(UserLabelRelationServices::class)->setUserLabel([$id], $data['label_id']);
+                if (isset($data['pwd']) && $data['pwd'] && $data['pwd'] != $user['pwd']) {
+                    $edit['pwd'] = $data['pwd'];
+                }
+                if (isset($data['spread_open'])) {
+                    $edit['spread_open'] = $data['spread_open'];
+                }
+                $edit['status'] = $data['status'];
+                $edit['real_name'] = $data['real_name'];
+                $edit['card_id'] = $data['card_id'];
+                $edit['birthday'] = strtotime($data['birthday']);
+                $edit['mark'] = $data['mark'];
+                $edit['is_promoter'] = $data['is_promoter'];
+                $edit['level'] = $data['level'];
+                $edit['phone'] = $data['phone'];
+                $edit['addres'] = $data['addres'];
+                $edit['group_id'] = $data['group_id'];
+                if ($user['level'] != $data['level']) {
+                    /** @var UserLevelServices $userLevelService */
+                    $userLevelService = app()->make(UserLevelServices::class);
+                    $userLevelService->setUserLevel((int)$user['uid'], (int)$data['level']);
+                }
+                if ($data['is_promoter'] == 0) {
+                    app()->make(SpreadApplyServices::class)->delete(['uid' => $user['uid']]);
+                }
             }
-            if (isset($data['spread_open'])) {
-                $edit['spread_open'] = $data['spread_open'];
-            }
-            $edit['status'] = $data['status'];
-            $edit['real_name'] = $data['real_name'];
-            $edit['card_id'] = $data['card_id'];
-            $edit['birthday'] = strtotime($data['birthday']);
-            $edit['mark'] = $data['mark'];
-            $edit['is_promoter'] = $data['is_promoter'];
-            $edit['level'] = $data['level'];
-            $edit['phone'] = $data['phone'];
-            $edit['addres'] = $data['addres'];
-            $edit['group_id'] = $data['group_id'];
-            if ($user['level'] != $data['level']) {
-                /** @var UserLevelServices $userLevelService */
-                $userLevelService = app()->make(UserLevelServices::class);
-                $userLevelService->setUserLevel((int)$user['uid'], (int)$data['level']);
-            }
-            if ($data['is_promoter'] == 0) {
-                app()->make(SpreadApplyServices::class)->delete(['uid' => $user['uid']]);
-            }
-        }
-        if ($edit) $res3 = $this->dao->update($id, $edit);
+            if ($edit) $res3 = $this->dao->update($id, $edit);
 
-        else $res3 = true;
-        if ($res1 && $res2 && $res3)
-            return true;
-        else throw new AdminException('修改失败');
+            else $res3 = true;
+            if ($res1 && $res2 && $res3)
+                return true;
+            else throw new AdminException('修改失败');
+        });
     }
 
     /**
@@ -2284,45 +2293,47 @@ class UserServices extends BaseServices
      */
     public function rewardNewUser(int $id)
     {
-        $user = $this->getUserInfo($id);
-        if (!$user) {
-            throw new AdminException('数据不存在');
-        }
-        $res1 = false;
-        $res2 = false;
-        $reward_money = sys_config('reward_money');
-        $reward_integral = sys_config('reward_integral');
-        $edit = array();
-        if ($reward_money > 0) {//余额增加
-            /** @var UserMoneyServices $userMoneyServices */
-            $userMoneyServices = app()->make(UserMoneyServices::class);
-            $edit['now_money'] = bcadd($user['now_money'], $reward_money, 2);
-            $res1 = $userMoneyServices->income('register_system_add', $user['uid'], $reward_money, $edit['now_money'], 1);
-        } else {
-            $res1 = true;
-        }
-        if ($reward_integral > 0) {//积分增加
-            /** @var UserBillServices $userBill */
-            $userBill = app()->make(UserBillServices::class);
-            $integral_data = ['link_id' => 1, 'number' => $reward_integral];
-            $edit['integral'] = bcadd($user['integral'], $reward_integral, 2);
-            $integral_data['balance'] = $edit['integral'];
-            $integral_data['title'] = '新用户注册增加积分';
-            $integral_data['mark'] = '新用户注册增加了' . floatval($reward_integral) . '积分';
-            $res2 = $userBill->incomeIntegral($user['uid'], 'system_add', $integral_data);
-        } else {
-            $res2 = true;
-        }
-        if ($edit) {
-            $res3 = $this->dao->update($id, $edit);
-        } else {
-            $res3 = true;
-        }
-        if ($res1 && $res2 && $res3) {
-            return true;
-        } else {
-            throw new AdminException('修改失败');
-        }
+        return $this->transaction(function () use ($id) {
+            $user = $this->dao->selectModel(['uid' => $id])->lock(true)->find();
+            if (!$user) {
+                throw new AdminException('数据不存在');
+            }
+            $res1 = false;
+            $res2 = false;
+            $reward_money = sys_config('reward_money');
+            $reward_integral = sys_config('reward_integral');
+            $edit = array();
+            if ($reward_money > 0) {//余额增加
+                /** @var UserMoneyServices $userMoneyServices */
+                $userMoneyServices = app()->make(UserMoneyServices::class);
+                $edit['now_money'] = bcadd($user['now_money'], $reward_money, 2);
+                $res1 = $userMoneyServices->income('register_system_add', $user['uid'], $reward_money, $edit['now_money'], 1);
+            } else {
+                $res1 = true;
+            }
+            if ($reward_integral > 0) {//积分增加
+                /** @var UserBillServices $userBill */
+                $userBill = app()->make(UserBillServices::class);
+                $integral_data = ['link_id' => 1, 'number' => $reward_integral];
+                $edit['integral'] = bcadd($user['integral'], $reward_integral, 2);
+                $integral_data['balance'] = $edit['integral'];
+                $integral_data['title'] = '新用户注册增加积分';
+                $integral_data['mark'] = '新用户注册增加了' . floatval($reward_integral) . '积分';
+                $res2 = $userBill->incomeIntegral($user['uid'], 'system_add', $integral_data);
+            } else {
+                $res2 = true;
+            }
+            if ($edit) {
+                $res3 = $this->dao->update($id, $edit);
+            } else {
+                $res3 = true;
+            }
+            if ($res1 && $res2 && $res3) {
+                return true;
+            } else {
+                throw new AdminException('修改失败');
+            }
+        });
     }
 
     /**

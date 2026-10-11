@@ -489,38 +489,49 @@ class StoreManageServices extends BaseServices
     public function userUpdate($uid, $data)
     {
         $userServices = app()->make(UserServices::class);
-        $userInfo = $userServices->getUserInfo($uid);
+        $userInfo = $data['type'] == 0 ? null : $userServices->getUserInfo($uid);
         switch ($data['type']) {
             case 0: // 余额
-                /** @var UserMoneyServices $userMoneyServices */
-                $userMoneyServices = app()->make(UserMoneyServices::class);
-                if ($data['status'] == 1) { //增加
-                    $edit['now_money'] = bcadd($userInfo['now_money'], $data['number'], 2);
-                    $userMoneyServices->income('system_add', $uid, $data['number'], $edit['now_money'], 0, '移动端商家管理增加余额');
-                    //增加充值记录
-                    $recharge_data = [
-                        'order_id' => app()->make(StoreOrderCreateServices::class)->getNewOrderId('cz'),
-                        'uid' => $uid,
-                        'price' => $data['number'],
-                        'recharge_type' => 'system',
-                        'paid' => 1,
-                        'add_time' => time(),
-                        'give_price' => 0,
-                        'channel_type' => 'system',
-                        'pay_time' => time(),
-                    ];
-                    app()->make(UserRechargeServices::class)->save($recharge_data);
-                } else { //减少
-                    if ($userInfo['now_money'] > $data['number']) {
-                        $edit['now_money'] = bcsub($userInfo['now_money'], $data['number'], 2);
-                    } else {
-                        $edit['now_money'] = 0;
-                        $data['number'] = $userInfo['now_money'];
+                return $this->transaction(function () use ($uid, $data, $userServices) {
+                    $userInfo = $userServices->selectModel(['uid' => $uid])->lock(true)->find();
+                    if (!$userInfo) throw new ApiException('用户不存在');
+                    /** @var UserMoneyServices $userMoneyServices */
+                    $userMoneyServices = app()->make(UserMoneyServices::class);
+                    if ($data['status'] == 1) { //增加
+                        $edit['now_money'] = bcadd($userInfo['now_money'], $data['number'], 2);
+                        if (!$userMoneyServices->income('system_add', $uid, $data['number'], $edit['now_money'], 0, '移动端商家管理增加余额')) {
+                            throw new ApiException('写入余额记录失败');
+                        }
+                        //增加充值记录
+                        $recharge_data = [
+                            'order_id' => app()->make(StoreOrderCreateServices::class)->getNewOrderId('cz'),
+                            'uid' => $uid,
+                            'price' => $data['number'],
+                            'recharge_type' => 'system',
+                            'paid' => 1,
+                            'add_time' => time(),
+                            'give_price' => 0,
+                            'channel_type' => 'system',
+                            'pay_time' => time(),
+                        ];
+                        if (!app()->make(UserRechargeServices::class)->save($recharge_data)) {
+                            throw new ApiException('写入充值记录失败');
+                        }
+                    } else { //减少
+                        if ($userInfo['now_money'] > $data['number']) {
+                            $edit['now_money'] = bcsub($userInfo['now_money'], $data['number'], 2);
+                        } else {
+                            $edit['now_money'] = 0;
+                            $data['number'] = $userInfo['now_money'];
+                        }
+                        if (!$userMoneyServices->income('system_sub', $uid, $data['number'], $edit['now_money'], 0, '移动端商家管理减少余额')) {
+                            throw new ApiException('写入余额记录失败');
+                        }
                     }
-                    $userMoneyServices->income('system_sub', $uid, $data['number'], $edit['now_money'], 0, '移动端商家管理减少余额');
-                }
-                $userServices->update($uid, $edit);
-                break;
+                    $userInfo->now_money = $edit['now_money'];
+                    if (!$userInfo->save()) throw new ApiException('修改用户信息失败');
+                    return true;
+                });
             case 1: // 积分
                 /** @var UserBillServices $userBill */
                 $userBill = app()->make(UserBillServices::class);

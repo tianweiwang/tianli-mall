@@ -52,9 +52,12 @@ class StoreCouponUserDao extends BaseDao
      * @param $id
      * @return \think\Model|null
      */
-    public function useCoupon(int $id)
+    public function useCoupon(int $id, int $uid)
     {
-        return $this->getModel()->where('id', $id)->update(['status' => 1, 'use_time' => time()]);
+        $now = time();
+        return $this->getModel()->where(['id' => $id, 'uid' => $uid, 'status' => 0, 'is_fail' => 0])
+            ->where('start_time', '<', $now)->where('end_time', '>', $now)
+            ->update(['status' => 1, 'use_time' => $now]);
     }
 
     /**

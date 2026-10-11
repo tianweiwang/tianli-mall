@@ -539,19 +539,21 @@ class LuckLotteryServices extends BaseServices
                 }
                 break;
             case 2:
-                if ($userInfo['now_money'] >= $lottery['factor_num']) {
-                    $now_money = bcsub((string)$userInfo['now_money'], (string)$lottery['factor_num'], 2);
-                } else {
-                    throw new ApiException('抽奖失败，余额不足');
-                }
-                /** @var UserServices $userServices */
-                $userServices = app()->make(UserServices::class);
-                /** @var UserMoneyServices $userMoneyServices */
-                $userMoneyServices = app()->make(UserMoneyServices::class);
-                $userMoneyServices->income('lottery_use_money', $uid, $lottery['factor_num'], $now_money, $lottery['id']);
-                if (!$userServices->update($uid, ['now_money' => $now_money], 'uid')) {
-                    throw new ApiException('抽奖扣除用户余额失败');
-                }
+                $this->transaction(function () use ($uid, $lottery) {
+                    /** @var UserServices $userServices */
+                    $userServices = app()->make(UserServices::class);
+                    $user = $userServices->selectModel(['uid' => $uid])->lock(true)->find();
+                    if (!$user || bccomp((string)$user['now_money'], (string)$lottery['factor_num'], 2) < 0) {
+                        throw new ApiException('抽奖失败，余额不足');
+                    }
+                    $now_money = bcsub((string)$user['now_money'], (string)$lottery['factor_num'], 2);
+                    /** @var UserMoneyServices $userMoneyServices */
+                    $userMoneyServices = app()->make(UserMoneyServices::class);
+                    $user->now_money = $now_money;
+                    if (!$user->save() || !$userMoneyServices->income('lottery_use_money', $uid, $lottery['factor_num'], $now_money, $lottery['id'])) {
+                        throw new ApiException('抽奖扣除用户余额失败');
+                    }
+                });
                 break;
             case 3:
             case 4:

@@ -467,7 +467,7 @@ class PublicController
      */
     public function getDiy(DiyServices $services, $id = 0)
     {
-        return app('json')->success($services->getDiyInfo((int)$id));
+        return app('json')->success($services->getDiy((int)$id));
     }
 
     /**

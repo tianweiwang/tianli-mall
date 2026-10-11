@@ -262,33 +262,45 @@ class UserRechargeServices extends BaseServices
         } catch (\Exception $e) {
             throw new AdminException($e->getMessage());
         }
-        if (!$this->dao->update($id, $data)) {
-            throw new AdminException('修改失败');
-        }
+        [$userInfo, $now_money, $UserRecharge] = $this->transaction(function () use ($id, $data, $number) {
+            $UserRecharge = $this->dao->selectModel(['id' => $id])->lock(true)->find();
+            if (!$UserRecharge || $UserRecharge['price'] == $UserRecharge['refund_price']) {
+                throw new AdminException('已退完支付金额，不能再退款了');
+            }
+            if (!$this->dao->update($id, $data)) {
+                throw new AdminException('修改失败');
+            }
 
-        //修改用户余额
-        /** @var UserServices $userServices */
-        $userServices = app()->make(UserServices::class);
-        $userInfo = $userServices->getUserInfo($UserRecharge['uid']);
-        if ($userInfo['now_money'] > $number) {
-            $now_money = bcsub((string)$userInfo['now_money'], $number, 2);
-        } else {
-            $number = $userInfo['now_money'];
-            $now_money = 0;
-        }
-        $userServices->update((int)$UserRecharge['uid'], ['now_money' => $now_money], 'uid');
+            //修改用户余额
+            /** @var UserServices $userServices */
+            $userServices = app()->make(UserServices::class);
+            $userInfo = $userServices->selectModel(['uid' => $UserRecharge['uid']])->lock(true)->find();
+            if (!$userInfo) throw new AdminException('用户不存在');
+            if ($userInfo['now_money'] > $number) {
+                $now_money = bcsub((string)$userInfo['now_money'], $number, 2);
+            } else {
+                $number = $userInfo['now_money'];
+                $now_money = 0;
+            }
+            if (!$userServices->update((int)$UserRecharge['uid'], ['now_money' => $now_money], 'uid')) {
+                throw new AdminException('修改用户信息失败');
+            }
 
-        //写入资金流水
-        /** @var CapitalFlowServices $capitalFlowServices */
-        $capitalFlowServices = app()->make(CapitalFlowServices::class);
-        $UserRecharge['nickname'] = $userInfo['nickname'];
-        $UserRecharge['phone'] = $userInfo['phone'];
-        $capitalFlowServices->setFlow($UserRecharge, 'refund_recharge');
+            //写入资金流水
+            /** @var CapitalFlowServices $capitalFlowServices */
+            $capitalFlowServices = app()->make(CapitalFlowServices::class);
+            $UserRecharge['nickname'] = $userInfo['nickname'];
+            $UserRecharge['phone'] = $userInfo['phone'];
+            $capitalFlowServices->setFlow($UserRecharge, 'refund_recharge');
 
-        //保存余额记录
-        /** @var UserMoneyServices $userMoneyServices */
-        $userMoneyServices = app()->make(UserMoneyServices::class);
-        $userMoneyServices->income('user_recharge_refund', $UserRecharge['uid'], $number, $now_money, $id);
+            //保存余额记录
+            /** @var UserMoneyServices $userMoneyServices */
+            $userMoneyServices = app()->make(UserMoneyServices::class);
+            if (!$userMoneyServices->income('user_recharge_refund', $UserRecharge['uid'], $number, $now_money, $id)) {
+                throw new AdminException('写入余额记录失败');
+            }
+            return [$userInfo, $now_money, $UserRecharge];
+        });
 
         //提醒推送
         event('NoticeListener', [['user_type' => strtolower($userInfo['user_type']), 'data' => $data, 'UserRecharge' => $UserRecharge, 'now_money' => $refund_price], 'recharge_order_refund_status']);
@@ -349,65 +361,71 @@ class UserRechargeServices extends BaseServices
      */
     public function importNowMoney(int $uid, $price)
     {
-        /** @var UserServices $userServices */
-        $userServices = app()->make(UserServices::class);
-        $user = $userServices->getUserInfo($uid);
-        if (!$user) {
-            throw new ApiException('参数错误');
-        }
-        /** @var UserBrokerageServices $frozenPrices */
-        $frozenPrices = app()->make(UserBrokerageServices::class);
-        $broken_commission = $frozenPrices->getUserFrozenPrice($uid);
-        $commissionCount = bcsub((string)$user['brokerage_price'], (string)$broken_commission, 2);
-        if ($price > $commissionCount) {
-            throw new ApiException('转入金额不能大于可提现佣金');
-        }
-        $edit_data = [];
-        $edit_data['now_money'] = bcadd((string)$user['now_money'], (string)$price, 2);
-        $edit_data['brokerage_price'] = $user['brokerage_price'] > $price ? bcsub((string)$user['brokerage_price'], (string)$price, 2) : 0;
-        if (!$userServices->update($uid, $edit_data, 'uid')) {
-            throw new ApiException('修改失败');
-        }
+        return $this->transaction(function () use ($uid, $price) {
+            /** @var UserServices $userServices */
+            $userServices = app()->make(UserServices::class);
+            $user = $userServices->selectModel(['uid' => $uid])->lock(true)->find();
+            if (!$user) {
+                throw new ApiException('参数错误');
+            }
+            /** @var UserBrokerageServices $frozenPrices */
+            $frozenPrices = app()->make(UserBrokerageServices::class);
+            $broken_commission = $frozenPrices->getUserFrozenPrice($uid);
+            $commissionCount = bcsub((string)$user['brokerage_price'], (string)$broken_commission, 2);
+            if ($price > $commissionCount) {
+                throw new ApiException('转入金额不能大于可提现佣金');
+            }
+            $edit_data = [];
+            $edit_data['now_money'] = bcadd((string)$user['now_money'], (string)$price, 2);
+            $edit_data['brokerage_price'] = $user['brokerage_price'] > $price ? bcsub((string)$user['brokerage_price'], (string)$price, 2) : 0;
+            if (!$userServices->update($uid, $edit_data, 'uid')) {
+                throw new ApiException('修改失败');
+            }
 
-        //写入充值记录
-        $rechargeInfo = [
-            'uid' => $uid,
-            'order_id' => app()->make(StoreOrderCreateServices::class)->getNewOrderId('cz'),
-            'recharge_type' => 'balance',
-            'price' => $price,
-            'give_price' => 0,
-            'paid' => 1,
-            'pay_time' => time(),
-            'add_time' => time()
-        ];
-        if (!$re = $this->dao->save($rechargeInfo)) {
-            throw new ApiException('写入余额充值失败');
-        }
+            //写入充值记录
+            $rechargeInfo = [
+                'uid' => $uid,
+                'order_id' => app()->make(StoreOrderCreateServices::class)->getNewOrderId('cz'),
+                'recharge_type' => 'balance',
+                'price' => $price,
+                'give_price' => 0,
+                'paid' => 1,
+                'pay_time' => time(),
+                'add_time' => time()
+            ];
+            if (!$re = $this->dao->save($rechargeInfo)) {
+                throw new ApiException('写入余额充值失败');
+            }
 
-        //余额记录
-        /** @var UserMoneyServices $userMoneyServices */
-        $userMoneyServices = app()->make(UserMoneyServices::class);
-        $userMoneyServices->income('brokerage_to_nowMoney', $uid, $price, $edit_data['now_money'], $re['id']);
+            //余额记录
+            /** @var UserMoneyServices $userMoneyServices */
+            $userMoneyServices = app()->make(UserMoneyServices::class);
+            if (!$userMoneyServices->income('brokerage_to_nowMoney', $uid, $price, $edit_data['now_money'], $re['id'])) {
+                throw new ApiException('写入余额记录失败');
+            }
 
-        //写入提现记录
-        $extractInfo = [
-            'uid' => $uid,
-            'real_name' => $user['nickname'],
-            'extract_type' => 'balance',
-            'extract_price' => $price,
-            'balance' => $user['brokerage_price'],
-            'add_time' => time(),
-            'status' => 1
-        ];
-        /** @var UserExtractServices $userExtract */
-        $userExtract = app()->make(UserExtractServices::class);
-        $userExtract->save($extractInfo);
+            //写入提现记录
+            $extractInfo = [
+                'uid' => $uid,
+                'real_name' => $user['nickname'],
+                'extract_type' => 'balance',
+                'extract_price' => $price,
+                'balance' => $user['brokerage_price'],
+                'add_time' => time(),
+                'status' => 1
+            ];
+            /** @var UserExtractServices $userExtract */
+            $userExtract = app()->make(UserExtractServices::class);
+            if (!$userExtract->save($extractInfo)) throw new ApiException('写入提现记录失败');
 
-        //佣金提现记录
-        /** @var UserBrokerageServices $userBrokerageServices */
-        $userBrokerageServices = app()->make(UserBrokerageServices::class);
-        $userBrokerageServices->income('brokerage_to_nowMoney', $uid, $price, $edit_data['brokerage_price'], $re['id']);
-        return true;
+            //佣金提现记录
+            /** @var UserBrokerageServices $userBrokerageServices */
+            $userBrokerageServices = app()->make(UserBrokerageServices::class);
+            if (!$userBrokerageServices->income('brokerage_to_nowMoney', $uid, $price, $edit_data['brokerage_price'], $re['id'])) {
+                throw new ApiException('写入佣金记录失败');
+            }
+            return true;
+        });
     }
 
     /**
@@ -487,33 +505,38 @@ class UserRechargeServices extends BaseServices
      */
     public function rechargeSuccess($orderId, array $other = [])
     {
-        $order = $this->dao->getOne(['order_id' => $orderId, 'paid' => 0]);
-        if (!$order) {
-            throw new ApiException('订单不存在');
-        }
-        /** @var UserServices $userServices */
-        $userServices = app()->make(UserServices::class);
-        $user = $userServices->getUserInfo((int)$order['uid']);
-        if (!$user) {
-            throw new ApiException('用户不存在');
-        }
-        $price = bcadd((string)$order['price'], (string)$order['give_price'], 2);
-        if (!$this->dao->update($order['id'], ['paid' => 1, 'recharge_type' => $other['pay_type'], 'pay_time' => time(), 'trade_no' => $other['trade_no'] ?? ''], 'id')) {
-            throw new ApiException('修改订单失败');
-        }
-        $now_money = bcadd((string)$user['now_money'], (string)$price, 2);
-        /** @var UserMoneyServices $userMoneyServices */
-        $userMoneyServices = app()->make(UserMoneyServices::class);
-        $userMoneyServices->income('user_recharge', $user['uid'], ['number' => $price, 'price' => $order['price'], 'give_price' => $order['give_price']], $now_money, $order['id']);
-        if (!$userServices->update((int)$order['uid'], ['now_money' => $now_money], 'uid')) {
-            throw new ApiException('修改用户信息失败');
-        }
+        [$order, $now_money] = $this->transaction(function () use ($orderId, $other) {
+            $order = $this->dao->selectModel(['order_id' => $orderId, 'paid' => 0])->lock(true)->find();
+            if (!$order) {
+                throw new ApiException('订单不存在');
+            }
+            /** @var UserServices $userServices */
+            $userServices = app()->make(UserServices::class);
+            $user = $userServices->selectModel(['uid' => $order['uid']])->lock(true)->find();
+            if (!$user) {
+                throw new ApiException('用户不存在');
+            }
+            $price = bcadd((string)$order['price'], (string)$order['give_price'], 2);
+            if (!$this->dao->update($order['id'], ['paid' => 1, 'recharge_type' => $other['pay_type'], 'pay_time' => time(), 'trade_no' => $other['trade_no'] ?? ''], 'id')) {
+                throw new ApiException('修改订单失败');
+            }
+            $now_money = bcadd((string)$user['now_money'], (string)$price, 2);
+            /** @var UserMoneyServices $userMoneyServices */
+            $userMoneyServices = app()->make(UserMoneyServices::class);
+            if (!$userMoneyServices->income('user_recharge', $user['uid'], ['number' => $price, 'price' => $order['price'], 'give_price' => $order['give_price']], $now_money, $order['id'])) {
+                throw new ApiException('写入余额记录失败');
+            }
+            if (!$userServices->update((int)$order['uid'], ['now_money' => $now_money], 'uid')) {
+                throw new ApiException('修改用户信息失败');
+            }
 
-        /** @var CapitalFlowServices $capitalFlowServices */
-        $capitalFlowServices = app()->make(CapitalFlowServices::class);
-        $order['nickname'] = $user['nickname'];
-        $order['phone'] = $user['phone'];
-        $capitalFlowServices->setFlow($order, 'recharge');
+            /** @var CapitalFlowServices $capitalFlowServices */
+            $capitalFlowServices = app()->make(CapitalFlowServices::class);
+            $order['nickname'] = $user['nickname'];
+            $order['phone'] = $user['phone'];
+            $capitalFlowServices->setFlow($order, 'recharge');
+            return [$order, $now_money];
+        });
 
         //提醒推送
         event('NoticeListener', [['order' => $order, 'now_money' => $now_money], 'recharge_success']);

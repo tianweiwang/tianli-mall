@@ -296,6 +296,13 @@ class StoreOrderCreateServices extends BaseServices
         $cartServices = app()->make(StoreOrderCartInfoServices::class);
         $priceData['coupon_id'] = $couponId;
         $order = $this->transaction(function () use ($cartIds, $orderInfo, $cartInfo, $key, $userInfo, $useIntegral, $priceData, $combinationId, $seckillId, $bargainId, $cartServices, $uid, $addressId, $advanceId) {
+            // Consume the coupon atomically with the order and stock reservation.
+            if ($orderInfo['coupon_id']) {
+                $couponServices = app()->make(StoreCouponUserServices::class);
+                if ($couponServices->useCoupon((int)$orderInfo['coupon_id'], (int)$uid) !== 1) {
+                    throw new ApiException('选择的优惠劵无效');
+                }
+            }
             //创建订单
             $order = $this->dao->save($orderInfo);
             if (!$order) {

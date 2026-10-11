@@ -5,7 +5,7 @@
 				<view class="icons"></view>经验值明细
 			</view> -->
 			<view v-if="expList.length" class="list">
-				<view class="item acea-row row-between-wrapper" v-for="(item,index) in expList">
+				<view class="item acea-row row-between-wrapper" v-for="(item,index) in expList" :key="item.id">
 					<view class="text">
 						<view class="name">{{$t(item.title)}}</view>
 						<view class="data">{{item.add_time}}</view>

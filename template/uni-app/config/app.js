@@ -1,8 +1,13 @@
+// #ifdef MP || APP-PLUS
+const validateApiOrigin = require('./api-origin');
+const apiOrigin = validateApiOrigin(process.env.VUE_APP_API_URL, process.env.NODE_ENV);
+// #endif
+
 module.exports = {
 	// 小程序 / APP请求配置
 	// #ifdef MP || APP-PLUS
-	// 请求域名 格式： https://您的域名
-	HTTP_REQUEST_URL: `https://demo.crmeb.com`,
+	// 开发连接本机；发布前显式配置 VUE_APP_API_URL。
+	HTTP_REQUEST_URL: apiOrigin,
 	// #endif
 
 	// H5请求配置

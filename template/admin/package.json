@@ -4,6 +4,10 @@
   "author": "sugar1569<763569752@qq.com>",
   "private": false,
   "scripts": {
+    "check:sources": "node ../../help/audit-regressions/frontend-source-check.cjs",
+    "prebuild": "npm run check:sources",
+    "predev": "npm run check:sources",
+    "preserve": "npm run check:sources",
     "serve": "node src/libs/start.js && vue-cli-service serve --open --mode=dev",
     "dev": "node src/libs/start.js && vue-cli-service serve --open --mode=dev",
     "build": "vue-cli-service build --mode=production",

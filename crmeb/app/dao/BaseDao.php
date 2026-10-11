@@ -18,6 +18,7 @@ namespace app\dao;
 use crmeb\basic\BaseModel;
 use think\helper\Str;
 use think\Model;
+use think\facade\Db;
 
 /**
  * Class BaseDao
@@ -507,21 +508,20 @@ abstract class BaseDao
      */
     public function bc($key, string $incField, string $inc, string $keyField = null, int $type = 1, int $acc = 2)
     {
-        if ($keyField === null) {
-            $result = $this->get($key);
-        } else {
-            $result = $this->getOne([$keyField => $key]);
-        }
-        if (!$result) return false;
-        $new = 0;
-        if ($type === 1) {
-            $new = bcadd($result[$incField], $inc, $acc);
-        } else if ($type === 2) {
-            if ($result[$incField] < $inc) return false;
-            $new = bcsub($result[$incField], $inc, $acc);
-        }
-        $result->{$incField} = $new;
-        return false !== $result->save();
+        return Db::transaction(function () use ($key, $incField, $inc, $keyField, $type, $acc) {
+            $where = $keyField === null && is_array($key) ? $key : [($keyField ?? $this->getPk()) => $key];
+            $result = $this->getModel()->where($where)->lock(true)->find();
+            if (!$result) return false;
+            $new = 0;
+            if ($type === 1) {
+                $new = bcadd($result[$incField], $inc, $acc);
+            } else if ($type === 2) {
+                if ($result[$incField] < $inc) return false;
+                $new = bcsub($result[$incField], $inc, $acc);
+            }
+            $result->{$incField} = $new;
+            return false !== $result->save();
+        });
     }
 
     /**

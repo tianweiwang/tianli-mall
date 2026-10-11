@@ -12,8 +12,8 @@
     }"
   >
     <view
-      v-for="(item, rect_idx) in skeletonRectLists"
-      :key="rect_idx + 'rect'"
+      v-for="item in skeletonRectLists"
+      :key="item.skeletonKey"
       :class="[loading == 'chiaroscuro' ? 'chiaroscuro' : '']"
       :style="{
         width: item.width + 'px',
@@ -26,8 +26,8 @@
     >
     </view>
     <view
-      v-for="(item, circle_idx) in skeletonCircleLists"
-      :key="circle_idx + 'circle'"
+      v-for="item in skeletonCircleLists"
+      :key="item.skeletonKey"
       :class="loading == 'chiaroscuro' ? 'chiaroscuro' : ''"
       :style="{
         width: item.width + 'px',
@@ -126,7 +126,10 @@ export default {
         .selectAll(`.${this.selector}-rect`)
         .boundingClientRect()
         .exec(function (res) {
-          that.skeletonRectLists = res[0];
+          that.skeletonRectLists = res[0].map((item, index) => ({
+            ...item,
+            skeletonKey: `rect-${index}`,
+          }));
         });
     },
     radiusHandle() {
@@ -137,7 +140,10 @@ export default {
         .selectAll(`.${this.selector}-radius`)
         .boundingClientRect()
         .exec(function (res) {
-          that.skeletonCircleLists = res[0];
+          that.skeletonCircleLists = res[0].map((item, index) => ({
+            ...item,
+            skeletonKey: `circle-${index}`,
+          }));
         });
     },
   },

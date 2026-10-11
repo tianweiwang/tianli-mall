@@ -26,7 +26,7 @@
 					<text class="iconfont icon-xiangyou"></text></text>
 			</view>
 			<view class="product-list" v-if="goodList.length">
-				<view class="product-item" v-for="(item, index) in goodList" @click="goGoodsDetail(item)">
+				<view class="product-item" v-for="(item, index) in goodList" :key="item.id" @click="goGoodsDetail(item)">
 					<image :src="item.image"></image>
 					<view class="info">
 						<view class="title line1">{{ item.title }}</view>

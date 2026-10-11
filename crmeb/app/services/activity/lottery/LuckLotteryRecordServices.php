@@ -148,22 +148,24 @@ class LuckLotteryRecordServices extends BaseServices
      */
     public function receivePrize(int $uid, int $lottery_record_id, array $receive_info = [])
     {
-        /** @var UserServices $userServices */
-        $userServices = app()->make(UserServices::class);
-        $userInfo = $userServices->getUserInfo($uid);
-        if (!$userInfo) {
-            throw new ApiException('用户不存在');
-        }
-        $lotteryRecord = $this->dao->get($lottery_record_id, ['*'], ['prize']);
-        if (!$lotteryRecord || !isset($lotteryRecord['prize'])) {
-            throw new ApiException('请继续参与活动抽奖');
-        }
-        if ($lotteryRecord['is_receive'] == 1) {
-            throw new ApiException('已经领取成功');
-        }
-        $data = ['is_receive' => 1, 'receive_time' => time(), 'receive_info' => $receive_info];
-        $prize = $lotteryRecord['prize'];
-        $this->transaction(function () use ($uid, $userInfo, $lottery_record_id, $data, $prize, $userServices, $receive_info, $lotteryRecord) {
+        $this->transaction(function () use ($uid, $lottery_record_id, $receive_info) {
+            // The parent lottery flow may already hold the account lock. Always lock
+            // account before prize record so direct claims use the same lock order.
+            /** @var UserServices $userServices */
+            $userServices = app()->make(UserServices::class);
+            $userInfo = $userServices->selectModel(['uid' => $uid])->lock(true)->find();
+            if (!$userInfo) {
+                throw new ApiException('用户不存在');
+            }
+            $lotteryRecord = $this->dao->selectModel(['id' => $lottery_record_id, 'uid' => $uid], '*', 0, 0, '', ['prize'])->lock(true)->find();
+            if (!$lotteryRecord || !isset($lotteryRecord['prize'])) {
+                throw new ApiException('请继续参与活动抽奖');
+            }
+            if ($lotteryRecord['is_receive'] == 1) {
+                throw new ApiException('已经领取成功');
+            }
+            $data = ['is_receive' => 1, 'receive_time' => time(), 'receive_info' => $receive_info];
+            $prize = $lotteryRecord['prize'];
             //奖品类型1：未中奖2：积分3:余额4：红包5:优惠券6：站内商品7：等级经验8：用户等级 9：svip天数
             switch ($prize['type']) {
                 case 1:
@@ -178,8 +180,10 @@ class LuckLotteryRecordServices extends BaseServices
                     /** @var UserMoneyServices $userMoneyServices */
                     $userMoneyServices = app()->make(UserMoneyServices::class);
                     $now_money = bcadd((string)$userInfo['now_money'], (string)$prize['num'], 2);
-                    $userMoneyServices->income('lottery_give_money', $uid, $prize['num'], $now_money, $prize['id']);
-                    $userServices->update($uid, ['now_money' => $now_money], 'uid');
+                    $userInfo->now_money = $now_money;
+                    if (!$userInfo->save() || !$userMoneyServices->income('lottery_give_money', $uid, $prize['num'], $now_money, $prize['id'])) {
+                        throw new ApiException('领取余额奖品失败');
+                    }
                     break;
                 case 4:
                     /** @var WechatUserServices $wechatServices */
@@ -263,7 +267,9 @@ class LuckLotteryRecordServices extends BaseServices
                     }
                     break;
             }
-            $this->dao->update($lottery_record_id, $data, 'id');
+            if (!$this->dao->update($lottery_record_id, $data, 'id')) {
+                throw new ApiException('更新领奖状态失败');
+            }
         });
         return true;
     }

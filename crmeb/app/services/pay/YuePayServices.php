@@ -37,44 +37,45 @@ class YuePayServices extends BaseServices
         if (!$orderInfo) {
             throw new ApiException('订单不存在');
         }
-        if ($orderInfo['paid']) {
-            throw new ApiException('订单已支付');
-        }
-        $type = 'pay_product';
-        if (isset($orderInfo['member_type'])) {
-            $type = 'pay_member';
-        }
+        $isMember = isset($orderInfo['member_type']);
+        $type = $isMember ? 'pay_member' : 'pay_product';
         /** @var UserServices $services */
         $services = app()->make(UserServices::class);
-        $userInfo = $services->getUserInfo($uid);
-        if ($userInfo['now_money'] < $orderInfo['pay_price']) {
-            return ['status' => 'pay_deficiency', 'msg' => '余额不足' . floatval($orderInfo['pay_price'])];
-        }
-        $this->transaction(function () use ($services, $orderInfo, $userInfo, $type) {
-            $res = false !== $services->bcDec($userInfo['uid'], 'now_money', $orderInfo['pay_price'], 'uid');
+        $orderServices = app()->make($isMember ? OtherOrderServices::class : StoreOrderSuccessServices::class);
+
+        return $this->transaction(function () use ($services, $orderServices, $orderInfo, $uid, $type) {
+            // Lock the order before the account so duplicate requests cannot debit twice.
+            $order = $orderServices->selectModel(['id' => $orderInfo['id']])->lock(true)->find();
+            if (!$order) {
+                throw new ApiException('订单不存在');
+            }
+            if ($order['paid']) {
+                throw new ApiException('订单已支付');
+            }
+            $orderInfo = $order->toArray();
+            if (!empty($orderInfo['is_cancel']) || !empty($orderInfo['is_del']) || !empty($orderInfo['is_system_del'])) {
+                throw new ApiException('订单已经取消，无法支付');
+            }
+
+            // Use the current locked balance for both the debit and its ledger entry.
+            $userInfo = $services->selectModel(['uid' => $uid])->lock(true)->find();
+            if (!$userInfo) {
+                throw new ApiException('用户不存在');
+            }
+            if (bccomp((string)$userInfo['now_money'], (string)$orderInfo['pay_price'], 2) < 0) {
+                return ['status' => 'pay_deficiency', 'msg' => '余额不足' . floatval($orderInfo['pay_price'])];
+            }
+            $now_money = bcsub((string)$userInfo['now_money'], (string)$orderInfo['pay_price'], 2);
+            $userInfo->now_money = $now_money;
+            $res = $userInfo->save();
             /** @var UserMoneyServices $userMoneyServices */
             $userMoneyServices = app()->make(UserMoneyServices::class);
-            //写入余额记录
-            $now_money = bcsub((string)$userInfo['now_money'], (string)$orderInfo['pay_price'], 2);
-            $number = $orderInfo['pay_price'];
-            switch ($type) {
-                case 'pay_product'://商品余额
-                    $res = $res && $userMoneyServices->income('pay_product', $userInfo['uid'], $number, $now_money, $orderInfo['id']);
-                    /** @var StoreOrderSuccessServices $orderServices */
-                    $orderServices = app()->make(StoreOrderSuccessServices::class);
-                    $res = $res && $orderServices->paySuccess($orderInfo, PayServices::YUE_PAY);//余额支付成功
-                    break;
-                case 'pay_member'://会员卡支付
-                    $res = $res && $userMoneyServices->income('pay_member', $userInfo['uid'], $number, $now_money, $orderInfo['id']);
-                    /** @var OtherOrderServices $OtherOrderServices */
-                    $OtherOrderServices = app()->make(OtherOrderServices::class);
-                    $res = $res && $OtherOrderServices->paySuccess($orderInfo, PayServices::YUE_PAY);//余额支付成功
-                    break;
-            }
+            $res = $res && $userMoneyServices->income($type, (int)$userInfo['uid'], $orderInfo['pay_price'], $now_money, $orderInfo['id']);
+            $res = $res && $orderServices->paySuccess($orderInfo, PayServices::YUE_PAY);
             if (!$res) {
                 throw new ApiException('余额支付失败');
             }
+            return ['status' => true];
         });
-        return ['status' => true];
     }
 }

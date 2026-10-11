@@ -151,7 +151,6 @@ class StoreOrderComputedServices extends BaseServices
     public function useCouponId(int $couponId, int $uid, $cartInfo, $payPrice, bool $isCreate)
     {
         //使用优惠劵
-        $res1 = true;
         if ($couponId) {
             /** @var StoreCouponUserServices $couponServices */
             $couponServices = app()->make(StoreCouponUserServices::class);
@@ -201,17 +200,12 @@ class StoreOrderComputedServices extends BaseServices
             if (!$flag) {
                 throw new ApiException('不满足优惠劵的使用条件');
             }
-            if ($isCreate) {
-                $res1 = $couponServices->useCoupon($couponId);
-            }
             $couponPrice = $couponInfo['coupon_price'] > $price ? $price : $couponInfo['coupon_price'];
             $payPrice = (float)bcsub((string)$payPrice, (string)$couponPrice, 2);
         } else {
             $couponPrice = 0;
         }
-        if (!$res1) {
-            throw new ApiException('使用优惠劵失败');
-        }
+        // Coupon consumption belongs to the order transaction; calculation is read-only.
         return [$payPrice, $couponPrice];
     }
 
