@@ -82,7 +82,13 @@ trait Creator
             setlocale(LC_NUMERIC, $locale);
         }
 
-        static::setLastErrors(parent::getLastErrors());
+        $lastErrors = parent::getLastErrors();
+        static::setLastErrors($lastErrors === false ? [
+            'warning_count' => 0,
+            'warnings' => [],
+            'error_count' => 0,
+            'errors' => [],
+        ] : $lastErrors);
     }
 
     /**
@@ -526,6 +532,10 @@ trait Creator
         // First attempt to create an instance, so that error messages are based on the unmodified format.
         $date = self::createFromFormatAndTimezone($format, $time, $tz);
         $lastErrors = parent::getLastErrors();
+
+        if ($lastErrors === false) {
+            $lastErrors = ['warning_count' => 0, 'warnings' => [], 'error_count' => 0, 'errors' => []];
+        }
 
         if (($mock = static::getTestNow()) && $date instanceof DateTimeInterface) {
             // Set timezone from mock if custom timezone was neither given directly nor as a part of format.
