@@ -1,0 +1,804 @@
+{
+  "milestone": "MS1",
+  "task": "Task5 normal scoped employee and role management",
+  "status": "verified_normal_employee_role_management",
+  "source_commit": "0b23b029ec41553a785717357ab67835d431a040",
+  "source_sha256": {
+    "crmeb/app/dao/marketplace/EmployeeDao.php": "81166fd7a3689f2c42093641353c2bfeafb46cfc1cf396b959152e0c041c6cc5",
+    "crmeb/app/dao/marketplace/MerchantDao.php": "1b9676225c23f9229ad822d97de349e36e108e95d548c5a8578c4f9959732a06",
+    "crmeb/app/dao/marketplace/PasswordSetupDao.php": "37fcfc34b6fe31137fd9373148a257620d8d061c0bb6bb38647a31d80a66c22f",
+    "crmeb/app/dao/marketplace/RoleDao.php": "269d1dbe4aa21e10c2d3f092cb6257c8e137da0968c7e495f65498dc6d7b649d",
+    "crmeb/app/merchantapi/controller/Employee.php": "833c2afabf2880b238ae47d78441af7f11d8437b7cb41b6c1db9916446418038",
+    "crmeb/app/merchantapi/controller/Role.php": "e22ae11b2847314f7e5b2ee531d99660f539dea59ee523235e71687c26c34654",
+    "crmeb/app/merchantapi/route/route.php": "ac661d486ae245da7fb373361555297393fd62892b8f18b3317c383474146d98",
+    "crmeb/app/services/marketplace/EmployeeAuthServices.php": "55da30b8724d06e980cfcd7bdd7bac115c2d5d38eff47ca22aca55dc5ac55337",
+    "crmeb/app/services/marketplace/EmployeeServices.php": "4a02e8d7c6b3a7579631242f2ea78ed98314c2ef1dcaba383bd02b48e31ea5d6",
+    "crmeb/app/services/marketplace/MerchantManagementInput.php": "d304e974f3e7d86bee6c0f69fe7d059dee196b365bde57be4f087babe6bacca1",
+    "crmeb/app/services/marketplace/RoleServices.php": "01a533de792930bfe14b63d4c58574d49b8d7fd0af8c8b062f8a9dbcf9254aa4",
+    "crmeb/crmeb/services/auth/AccountChangeGuard.php": "20b495c736544073af57c4bb861adddeaaa23d3530b1b6b40a13f408054f2741",
+    "help/audit-regressions/isolated/ms1-management.php": "fbae0c5fe9fd61d44884a8fdd098efb34634d355eea7189a486b03c92feaeae1",
+    "help/audit-regressions/isolated/ms1-merchantapi.php": "ab5decc8812e1ca34e77e4966622448536ea747cd1a4cc965536d7be813d3a4b"
+  },
+  "environment": {
+    "kind": "ISO-FULL",
+    "run_id": "202610112248420b0204",
+    "database": "audit_auth",
+    "account": "audit_app: existing DML only; frozen migration prepared by dedicated bootstrap migrator",
+    "images": {
+      "audit-app": "sha256:1099f749e2a38ec9453c6b820db8a78174514bc72d14edf5c203e13b82816e0a",
+      "audit-mysql": "sha256:c7a313f1402365dc91253bdbdb1e74c6a361b036106d8bd25b8ec8e2dd0069f4",
+      "audit-redis": "sha256:6c8f6edc1aa871a76a257ef86a2089d108e64b78d16f45b89f09c6a4ab30d07e"
+    }
+  },
+  "history": [
+    {
+      "run_id": "202610112248420b0204",
+      "phase": "baseline",
+      "source_commit": "f78b953e14e7e757c867c1b11376ac840c1d4257",
+      "status": "FAIL",
+      "native_exit": 1,
+      "native_receipt": "baseline-native.json",
+      "raw_ref": "ms1-management-baseline-20261011225904.jsonl",
+      "raw_bytes": 3453,
+      "raw_sha256": "1b2b05519dff8c1a7b3434de483a7ed64b8a3a70da3cd91258e05ea129c63c31",
+      "evidence_ref": "ms1-management-baseline.json",
+      "evidence_sha256": "a3e97a462217923d7a4dc25246ea54a702fa7c3599b6d29624ba5a5162c933bb",
+      "http_requests": 0,
+      "preservation": {
+        "tables": 158,
+        "original_rows_schema_checksums_unchanged": true,
+        "cache_values_and_absolute_expiry_unchanged": true,
+        "counter_changes_allowed_only": []
+      },
+      "fixtures_cleaned": false,
+      "exact_twelve_routes_verified": false,
+      "diagnostic": {
+        "class": "RuntimeException",
+        "file": "harness.php",
+        "line": 14
+      }
+    },
+    {
+      "run_id": "202610112248420b0204",
+      "phase": "after",
+      "source_commit": "0b23b029ec41553a785717357ab67835d431a040",
+      "status": "PASS",
+      "native_exit": 0,
+      "native_receipt": "after-native.json",
+      "raw_ref": "ms1-management-after-20261011230101.jsonl",
+      "raw_bytes": 3521,
+      "raw_sha256": "c45f5f63dc6bb3e1b2477624c246bb36229fe3955922d79f59b9bf899677e5b2",
+      "evidence_ref": "ms1-management-after.json",
+      "evidence_sha256": "b1c50293dcb657fb8083ed49997ec92d1324fe2b5d02f1c891984216ebb3cbf4",
+      "http_requests": 41,
+      "preservation": {
+        "tables": 163,
+        "original_rows_schema_checksums_unchanged": true,
+        "cache_values_and_absolute_expiry_unchanged": true,
+        "counter_changes_allowed_only": [
+          "eb_marketplace_merchant",
+          "eb_marketplace_role",
+          "eb_marketplace_employee",
+          "eb_marketplace_password_setup"
+        ]
+      },
+      "fixtures_cleaned": true,
+      "exact_twelve_routes_verified": true,
+      "diagnostic": null
+    }
+  ],
+  "native_steps": {
+    "bootstrap": 0,
+    "baseline": 1,
+    "prepare": 0,
+    "after": 0,
+    "teardown": 0
+  },
+  "php_lint": {
+    "files": 14,
+    "native_exit": 0,
+    "harness_native_exit": 0
+  },
+  "normal_requests": [
+    {
+      "method": "POST",
+      "path": "/merchantapi/password/setup",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/merchantapi/login",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/merchantapi/employees",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/merchantapi/roles",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/merchantapi/password/setup",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/merchantapi/login",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/merchantapi/employees",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/merchantapi/roles",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/merchantapi/roles",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "PUT",
+      "path": "/merchantapi/roles/3",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/merchantapi/employees",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/merchantapi/password/setup",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/merchantapi/login",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/merchantapi/me",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/merchantapi/employees?page=1&limit=20",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/merchantapi/roles?page=1&limit=20",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "PUT",
+      "path": "/merchantapi/roles/3",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "PUT",
+      "path": "/merchantapi/roles/3",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "PUT",
+      "path": "/merchantapi/employees/3",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "PUT",
+      "path": "/merchantapi/employees/3",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "PUT",
+      "path": "/merchantapi/employees/3",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/merchantapi/login",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/merchantapi/me",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/merchantapi/employees?page=1&limit=1&status=1&role_id=1",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/merchantapi/employees?page=2&limit=1&status=1&role_id=1",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/merchantapi/roles?page=2&limit=1",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "PUT",
+      "path": "/merchantapi/employees/3/status",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/merchantapi/employees?page=1&limit=20&status=0",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "PUT",
+      "path": "/merchantapi/employees/3/status",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/merchantapi/login",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/merchantapi/me",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "PUT",
+      "path": "/merchantapi/employees/3/status",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "PUT",
+      "path": "/merchantapi/roles/1",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/merchantapi/login",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/merchantapi/login",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/merchantapi/me",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/merchantapi/me",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/merchantapi/employees?page=1&limit=20",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/merchantapi/roles?page=1&limit=20",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/merchantapi/employees?page=1&limit=20",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/merchantapi/roles?page=1&limit=20",
+      "http": 200,
+      "business_status": 200
+    }
+  ],
+  "successful_observations": {
+    "merchant_ids": [
+      1,
+      2
+    ],
+    "administrator_employee_ids": [
+      1,
+      2
+    ],
+    "created_employee_id": 3,
+    "created_role_id": 3,
+    "created_setup_id": 3,
+    "created_capability_exact_hash_and_expiry_verified": true,
+    "profile_and_bound_role_name_do_not_rotate": true,
+    "valid_noop_count": 3,
+    "updated_account_and_same_merchant_role_verified": true,
+    "disabled_phase_employee_requests": 0,
+    "bound_permission_member_count": 2,
+    "fresh_latest_permissions": 8,
+    "normal_actor_self_protection_completed": true,
+    "old_token_requests": 0
+  },
+  "list_observations": [
+    {
+      "resource": "employee",
+      "mer_id": 1,
+      "page": 1,
+      "limit": 20,
+      "count": 1,
+      "returned_ids": [
+        1
+      ],
+      "explicit_defaults_verified": true
+    },
+    {
+      "resource": "role",
+      "mer_id": 1,
+      "page": 1,
+      "limit": 20,
+      "count": 1,
+      "returned_ids": [
+        1
+      ],
+      "explicit_defaults_verified": true
+    },
+    {
+      "resource": "employee",
+      "mer_id": 2,
+      "page": 1,
+      "limit": 20,
+      "count": 1,
+      "returned_ids": [
+        2
+      ],
+      "explicit_defaults_verified": true
+    },
+    {
+      "resource": "role",
+      "mer_id": 2,
+      "page": 1,
+      "limit": 20,
+      "count": 1,
+      "returned_ids": [
+        2
+      ],
+      "explicit_defaults_verified": true
+    },
+    {
+      "resource": "employee",
+      "mer_id": 1,
+      "page": 1,
+      "limit": 20,
+      "count": 2,
+      "returned_ids": [
+        1,
+        3
+      ],
+      "explicit_defaults_verified": false
+    },
+    {
+      "resource": "role",
+      "mer_id": 1,
+      "page": 1,
+      "limit": 20,
+      "count": 2,
+      "returned_ids": [
+        1,
+        3
+      ],
+      "explicit_defaults_verified": false
+    },
+    {
+      "resource": "employee",
+      "mer_id": 1,
+      "page": 1,
+      "limit": 1,
+      "count": 2,
+      "returned_ids": [
+        1
+      ],
+      "explicit_defaults_verified": false
+    },
+    {
+      "resource": "employee",
+      "mer_id": 1,
+      "page": 2,
+      "limit": 1,
+      "count": 2,
+      "returned_ids": [
+        3
+      ],
+      "explicit_defaults_verified": false
+    },
+    {
+      "resource": "role",
+      "mer_id": 1,
+      "page": 2,
+      "limit": 1,
+      "count": 2,
+      "returned_ids": [
+        3
+      ],
+      "explicit_defaults_verified": false
+    },
+    {
+      "resource": "employee",
+      "mer_id": 1,
+      "page": 1,
+      "limit": 20,
+      "count": 1,
+      "returned_ids": [
+        3
+      ],
+      "explicit_defaults_verified": false
+    },
+    {
+      "resource": "employee",
+      "mer_id": 1,
+      "page": 1,
+      "limit": 20,
+      "count": 2,
+      "returned_ids": [
+        1,
+        3
+      ],
+      "explicit_defaults_verified": false
+    },
+    {
+      "resource": "role",
+      "mer_id": 1,
+      "page": 1,
+      "limit": 20,
+      "count": 2,
+      "returned_ids": [
+        1,
+        3
+      ],
+      "explicit_defaults_verified": false
+    },
+    {
+      "resource": "employee",
+      "mer_id": 2,
+      "page": 1,
+      "limit": 20,
+      "count": 1,
+      "returned_ids": [
+        2
+      ],
+      "explicit_defaults_verified": false
+    },
+    {
+      "resource": "role",
+      "mer_id": 2,
+      "page": 1,
+      "limit": 20,
+      "count": 1,
+      "returned_ids": [
+        2
+      ],
+      "explicit_defaults_verified": false
+    }
+  ],
+  "valid_noops": [
+    {
+      "resource": "role_permission_order",
+      "id": 3,
+      "rows_times_and_versions_unchanged": true
+    },
+    {
+      "resource": "employee",
+      "id": 3,
+      "rows_times_and_versions_unchanged": true
+    },
+    {
+      "resource": "employee_status",
+      "id": 3,
+      "rows_times_and_versions_unchanged": true
+    }
+  ],
+  "version_observations": [
+    {
+      "operation": "normal_account_and_same_merchant_role_change",
+      "affected_employee_ids": [
+        3
+      ],
+      "changed_and_unblocked": true,
+      "old_token_requests": 0
+    },
+    {
+      "operation": "normal_admin_disable",
+      "affected_employee_ids": [
+        3
+      ],
+      "changed_and_unblocked": true,
+      "old_token_requests": 0
+    },
+    {
+      "operation": "normal_admin_enable",
+      "affected_employee_ids": [
+        3
+      ],
+      "changed_and_unblocked": true,
+      "old_token_requests": 0
+    },
+    {
+      "operation": "normal_bound_role_permissions_including_current_actor",
+      "affected_employee_ids": [
+        1,
+        3
+      ],
+      "changed_and_unblocked": true,
+      "old_token_requests": 0
+    }
+  ],
+  "routes": {
+    "actual_framework_rules": [
+      {
+        "method": "PUT",
+        "rule": "employees/<id>/status",
+        "name": "merchant.employee.status"
+      },
+      {
+        "method": "PUT",
+        "rule": "employees/<id>",
+        "name": "merchant.employee.update"
+      },
+      {
+        "method": "GET",
+        "rule": "employees",
+        "name": "merchant.employee.list"
+      },
+      {
+        "method": "POST",
+        "rule": "employees",
+        "name": "merchant.employee.create"
+      },
+      {
+        "method": "POST",
+        "rule": "login",
+        "name": "merchant.login"
+      },
+      {
+        "method": "POST",
+        "rule": "logout",
+        "name": "merchant.logout"
+      },
+      {
+        "method": "GET",
+        "rule": "me",
+        "name": "merchant.me"
+      },
+      {
+        "method": "POST",
+        "rule": "password/setup",
+        "name": "merchant.password.setup"
+      },
+      {
+        "method": "POST",
+        "rule": "refresh",
+        "name": "merchant.refresh"
+      },
+      {
+        "method": "PUT",
+        "rule": "roles/<id>",
+        "name": "merchant.role.update"
+      },
+      {
+        "method": "GET",
+        "rule": "roles",
+        "name": "merchant.role.list"
+      },
+      {
+        "method": "POST",
+        "rule": "roles",
+        "name": "merchant.role.create"
+      }
+    ],
+    "exact_twelve_verified": true,
+    "product_routes": 0
+  },
+  "language_preparation": {
+    "source": "real getLang and installed LangCode/LangType/LangCountry services",
+    "logical_keys": [
+      "range_name",
+      "sys_lang_source_map",
+      "type_id_zh-CN",
+      "lang_type_data",
+      "lang_zh_CN"
+    ],
+    "added_key_hashes": [
+      "853b11d557675770cfdd95bf2d9c38e459f537bdf22e6eec8422c413cb9fe996",
+      "9e4c4a58e58bc23ce102d74418c7aa08a02db130483547dea12cf26a67e4363e",
+      "c0cdf088fd8aafb7495a9544ddf9c8530e83d2576150bb5bf9763855e98d7dbe",
+      "62095032824648e6ffdbcd439b2bb2ea7bded35dacd5cbd1452d4dfe5970f51b",
+      "cb681bc4652bf3435ff30fa097ae9e67b0806bfbe0b9baa85a3a3a1f82693f39",
+      "0fb83f4dc25cb228596220808a45538b5e287c845b655ce407c63ec445d45c0e"
+    ],
+    "exact_values_and_source_expiry_verified": true,
+    "unrelated_state_preserved": true
+  },
+  "owned_row_ids": {
+    "merchant": [
+      1,
+      2
+    ],
+    "role": [
+      1,
+      2,
+      3
+    ],
+    "employee": [
+      1,
+      2,
+      3
+    ],
+    "password_setup": [
+      1,
+      2,
+      3
+    ]
+  },
+  "owned_keys_registered_count": 21,
+  "owned_keys_removed_count": 16,
+  "preservation": {
+    "tables": 163,
+    "original_rows_schema_checksums_unchanged": true,
+    "cache_values_and_absolute_expiry_unchanged": true,
+    "counter_changes_allowed_only": [
+      "eb_marketplace_merchant",
+      "eb_marketplace_role",
+      "eb_marketplace_employee",
+      "eb_marketplace_password_setup"
+    ]
+  },
+  "private_logs_verified_in_normal_configuration": true,
+  "migration_preparation": {
+    "mode": "apply",
+    "state": "completed",
+    "changed": true,
+    "tables": [
+      "eb_marketplace_merchant",
+      "eb_marketplace_role",
+      "eb_marketplace_employee",
+      "eb_marketplace_audit_log",
+      "eb_marketplace_password_setup"
+    ],
+    "menu_ids": [
+      3465,
+      3466,
+      3467,
+      3468,
+      3469,
+      3470,
+      3471
+    ],
+    "issues": [],
+    "created_tables": [
+      "eb_marketplace_merchant",
+      "eb_marketplace_role",
+      "eb_marketplace_employee",
+      "eb_marketplace_audit_log",
+      "eb_marketplace_password_setup"
+    ]
+  },
+  "migration_evidence_sha256": "25b1113f3c5231d98a47806491b37d4cbaa5b1ceb2e274bcfb74bf5715ce150e",
+  "resources_before_teardown": {
+    "202610112248420b0204": {
+      "containers": 3,
+      "networks": 1,
+      "volumes": 11
+    },
+    "20261011225002148a61": {
+      "containers": 0,
+      "networks": 0,
+      "volumes": 0
+    }
+  },
+  "before_inventory_artifact_sha256": "0418afd4e26483f8650beeaa3127b0158f94bb94291a2686e43eecc912e75aa7",
+  "before_install_lock_flag_used_as_evidence": false,
+  "auxiliary_inventory_note": "The original before inventory checked crmeb/public/install/install.lock rather than crmeb/public/install.lock. Its lock flag is not used as evidence; the original artifact is retained. Correct post inventory explicitly records crmeb/public/install.lock and its absent state.",
+  "final_resources": {
+    "env_file_exists": false,
+    "stage": "after",
+    "install_lock_exists": false,
+    "inventory": [
+      {
+        "run_id": "202610112248420b0204",
+        "volumes": 0,
+        "containers": 0,
+        "native_exits": [
+          0,
+          0,
+          0
+        ],
+        "networks": 0
+      },
+      {
+        "run_id": "20261011225002148a61",
+        "volumes": 0,
+        "containers": 0,
+        "native_exits": [
+          0,
+          0,
+          0
+        ],
+        "networks": 0
+      }
+    ],
+    "completed_at": "2026-10-11T23:02:01.0423978Z",
+    "install_lock_checked_path": "crmeb/public/install.lock"
+  },
+  "after_inventory_artifact_sha256": "8d0752771716ee249c9fdb169e69d3d1fe0785c40730e9f434197ecb824283f8",
+  "results": {
+    "original_rows": 43,
+    "original_sha256": "15b9f8fe7c5d56dc2c64f4e4ff8b9dede912246d0176c9ca13a3706396e3f527",
+    "appended_rows": 14,
+    "total_rows": 57,
+    "counts": {
+      "FAIL": 8,
+      "PASS": 6,
+      "NOT RUN": 43
+    },
+    "sha256": "63a1878f973dd67a2b27af17aac385c174ce2bbe17126e7e04a7777f37485181"
+  },
+  "limits": [
+    "Six original operator/foreign-employee/invalid-role-code subcases remain NOT RUN. Only the actual seven rows per phase are appended.",
+    "The original disabled-employee next-request requirement was not executed: disabled_phase_employee_requests=0. No new raw row is synthesized for it.",
+    "The original pre-change-session next-request requirement was not executed: old_token_requests=0. Private server state observation does not establish that refusal acceptance.",
+    "No wrong/foreign/forged or old-token request, repeated/expired capability, fault, concurrency, disconnect, or recovery case was executed.",
+    "Normal valid management includes current-actor protection and two bound accounts, followed by fresh credential logins; it does not establish complete original M02 acceptance.",
+    "Normal runtime logs were inspected; logging switches or failure requests were not used to claim broader privacy acceptance.",
+    "Platform merchant APIs/audit, cross-app acceptance, worker context and Task6-9 delivery remain pending.",
+    "Local L2 only; no push, production database write, deployment, notification, human signoff, or SECURITY_BASE_SHA."
+  ]
+}
