@@ -18,6 +18,7 @@ use app\services\system\admin\SystemRoleServices;
 use app\services\user\UserServices;
 use crmeb\exceptions\AdminException;
 use crmeb\exceptions\ApiException;
+use crmeb\services\auth\AccountChangeGuard;
 use crmeb\services\FormBuilder as Form;
 use think\db\exception\DataNotFoundException;
 use think\db\exception\DbException;
@@ -136,6 +137,12 @@ class DivisionServices extends BaseServices
     {
         if ((int)$data['uid'] == 0) $data['uid'] = $data['image']['uid'];
         if ((int)$data['uid'] == 0) throw new AdminException('请填写用户UID');
+        if ((!is_int($data['aid']) && (!is_string($data['aid']) || !ctype_digit($data['aid']))) || (int)$data['aid'] < 0) {
+            throw new AdminException('参数错误');
+        }
+        if (!is_string($data['pwd']) || !is_string($data['conf_pwd']) || !is_array($data['roles'])) {
+            throw new AdminException('参数错误');
+        }
         /** @var UserServices $userServices */
         $userServices = app()->make(UserServices::class);
         if ($data['aid'] == 0) {
@@ -145,8 +152,9 @@ class DivisionServices extends BaseServices
             if ($userInfo['is_agent']) throw new AdminException('此用户是代理商，无法添加为事业部');
             if ($userInfo['is_staff']) throw new AdminException('此用户是下级员工，无法添加为事业部');
         }
-        $uid = $data['uid'];
-        $aid = $data['aid'];
+        $uid = (int)$data['uid'];
+        $aid = (int)$data['aid'];
+        if ($uid <= 0) throw new AdminException('请填写用户UID');
         $agentData = [
             'division_percent' => $data['division_percent'],
             'division_end_time' => strtotime($data['division_end_time']),
@@ -174,44 +182,48 @@ class DivisionServices extends BaseServices
             'level' => 1,
             'division_id' => $uid
         ];
-        return $this->transaction(function () use ($uid, $agentData, $adminData, $aid, $userServices) {
-            $agentData['division_invite'] = $userServices->value(['uid' => $uid], 'division_invite') ?: rand(10000000, 99999999);
-            $userServices->update($uid, $agentData);
-
-            /** @var SystemAdminServices $adminService */
-            $adminService = app()->make(SystemAdminServices::class);
-            if (!$aid) {
-                if ($adminData['pwd']) {
-                    if (!$adminData['conf_pwd']) throw new AdminException('请输入确认密码');
-                    if ($adminData['pwd'] != $adminData['conf_pwd']) throw new AdminException('两次输入的密码不一致');
-                    $adminService->create($adminData);
-                } else {
-                    throw new AdminException('请输入确认密码');
-                }
-            } else {
+        /** @var SystemAdminServices $adminService */
+        $adminService = app()->make(SystemAdminServices::class);
+        if ($aid) {
+            $adminInfo = $adminService->get($aid);
+            if (!$adminInfo) throw new AdminException('管理员信息未查到');
+            if ($adminInfo->is_del) throw new AdminException('管理员已经删除');
+            if (!$adminData['real_name']) throw new AdminException('管理员姓名不能为空');
+            if (!$userServices->getUserInfo($uid)) throw new AdminException('用户不存在');
+        } elseif (!$adminData['pwd']) {
+            throw new AdminException('请输入确认密码');
+        }
+        if ($adminData['pwd']) {
+            if (!$adminData['conf_pwd']) throw new AdminException('请输入确认密码');
+            if ($adminData['pwd'] != $adminData['conf_pwd']) throw new AdminException('两次输入的密码不一致');
+        }
+        $roles = implode(',', $adminData['roles']);
+        $dbChange = function () use ($uid, $agentData, $adminData, $aid, $roles, $userServices, $adminService) {
+            // 在本次外层事务内重新读取目标，不保存保护前的模型。
+            if ($aid) {
                 $adminInfo = $adminService->get($aid);
-                if (!$adminInfo)
-                    throw new AdminException('管理员信息未查到');
-                if ($adminInfo->is_del) {
-                    throw new AdminException('管理员已经删除');
-                }
-                if (!$adminData['real_name'])
-                    throw new AdminException('管理员姓名不能为空');
-                if ($adminData['pwd']) {
-                    if (!$adminData['conf_pwd']) throw new AdminException('请输入确认密码');
-                    if ($adminData['pwd'] != $adminData['conf_pwd']) throw new AdminException('两次输入的密码不一致');
-                    $adminInfo->pwd = $this->passwordHash($adminData['pwd']);
-                }
+                if (!$adminInfo) throw new AdminException('管理员信息未查到');
+                if ($adminInfo->is_del) throw new AdminException('管理员已经删除');
+            }
+            $userInfo = $userServices->getUserInfo($uid);
+            if (!$userInfo) throw new AdminException('用户不存在');
+            $agentData['division_invite'] = $userInfo['division_invite'] ?: rand(10000000, 99999999);
+            if (!$userInfo->save($agentData)) throw new AdminException('保存失败');
+            if (!$aid) {
+                if ($adminService->create($adminData) === false) throw new AdminException('添加失败');
+            } else {
+                if ($adminData['pwd']) $adminInfo->pwd = $this->passwordHash($adminData['pwd']);
                 $adminInfo->real_name = $adminData['real_name'];
                 $adminInfo->account = $adminData['account'];
-                $adminInfo->roles = implode(',', $adminData['roles']);
-                if ($adminInfo->save())
-                    return true;
-                else
-                    return false;
+                $adminInfo->roles = $roles;
+                if (!$adminInfo->save()) throw new AdminException('保存失败');
             }
             return true;
-        });
+        };
+        if ($aid && $adminData['pwd']) {
+            return AccountChangeGuard::run('adminapi', (string)$aid, $dbChange);
+        }
+        return $this->transaction($dbChange);
     }
 
 //    /**
@@ -315,17 +327,23 @@ class DivisionServices extends BaseServices
      */
     public function setDivisionStatus($status, $uid)
     {
+        if (!in_array($status, [0, 1, '0', '1'], true)) throw new AdminException('参数错误');
+        $status = (int)$status;
         /** @var UserServices $userServices */
         $userServices = app()->make(UserServices::class);
         /** @var SystemAdminServices $adminServices */
         $adminServices = app()->make(SystemAdminServices::class);
-        $res = $userServices->update($uid, ['division_status' => $status]);
-        $res = $res && $adminServices->update(['division_id' => $uid], ['status' => $status]);
-        if ($res) {
+        if (!$userServices->getUserInfo($uid)) throw new AdminException('用户不存在');
+        $adminIds = array_map('strval', $adminServices->getColumn(['division_id' => $uid], 'id'));
+        return AccountChangeGuard::runMany('adminapi', $adminIds, function () use ($status, $uid, $adminIds, $userServices, $adminServices) {
+            $userInfo = $userServices->getUserInfo($uid);
+            if (!$userInfo) throw new AdminException('用户不存在');
+            if (!$userInfo->save(['division_status' => $status])) throw new AdminException('操作失败');
+            if ($adminIds) {
+                $adminServices->update([['id', 'in', $adminIds]], ['status' => $status]);
+            }
             return true;
-        } else {
-            throw new AdminException('操作失败');
-        }
+        });
     }
 
     /**
@@ -336,12 +354,22 @@ class DivisionServices extends BaseServices
      */
     public function delDivision($type, $uid)
     {
-        return $this->transaction(function () use ($type, $uid) {
-            /** @var UserServices $userServices */
-            $userServices = app()->make(UserServices::class);
+        /** @var UserServices $userServices */
+        $userServices = app()->make(UserServices::class);
+        $userInfo = $userServices->getUserInfo($uid);
+        if (!$userInfo) throw new AdminException('用户不存在');
+        $divisionType = (int)$userInfo['division_type'];
+        $adminServices = null;
+        $adminIds = [];
+        if ($divisionType === 1) {
+            /** @var SystemAdminServices $adminServices */
+            $adminServices = app()->make(SystemAdminServices::class);
+            $adminIds = array_map('strval', $adminServices->getColumn(['division_id' => $uid], 'id'));
+        }
+        $dbChange = function () use ($uid, $divisionType, $adminIds, $userServices, $adminServices) {
             $userInfo = $userServices->getUserInfo($uid);
             if (!$userInfo) throw new AdminException('用户不存在');
-            $userInfo = $userInfo->toArray();
+            if ((int)$userInfo['division_type'] !== $divisionType) throw new AdminException('参数错误');
             $data = [
                 'division_name' => '',
                 'division_type' => 0,
@@ -357,17 +385,27 @@ class DivisionServices extends BaseServices
                 'division_change_time' => time(),
                 'division_invite' => 0
             ];
-            $userServices->update(['uid' => $uid], $data);
-            if ($userInfo['division_type'] == 1) {
-                app()->make(SystemAdminServices::class)->delete(['division_id' => $uid]);
+            if ($divisionType === 1) {
+                if (!$userInfo->save($data)) throw new AdminException('操作失败');
+                if ($adminIds) {
+                    $deleted = $adminServices->delete([['id', 'in', $adminIds]]);
+                    if ((int)$deleted !== count($adminIds)) throw new AdminException('删除失败');
+                }
                 $userServices->update(['division_id' => $uid], $data);
-            } elseif ($userInfo['division_type'] == 2) {
-                app()->make(DivisionAgentApplyServices::class)->delete(['uid' => $uid]);
-                $userServices->update(['agent_id' => $uid], $data);
-            } elseif ($userInfo['division_type'] == 3) {
-                $userServices->update(['staff_id' => $uid], $data);
+            } else {
+                $userServices->update(['uid' => $uid], $data);
+                if ($divisionType === 2) {
+                    app()->make(DivisionAgentApplyServices::class)->delete(['uid' => $uid]);
+                    $userServices->update(['agent_id' => $uid], $data);
+                } elseif ($divisionType === 3) {
+                    $userServices->update(['staff_id' => $uid], $data);
+                }
             }
-        });
+        };
+        if ($divisionType === 1) {
+            return AccountChangeGuard::runMany('adminapi', $adminIds, $dbChange);
+        }
+        return $this->transaction($dbChange);
     }
 
     /**

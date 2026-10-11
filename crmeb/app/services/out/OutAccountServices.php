@@ -21,6 +21,7 @@ use crmeb\services\HttpService;
 use crmeb\services\auth\AuthSessionStore;
 use crmeb\services\auth\AuthTokenV2;
 use crmeb\services\auth\CredentialStamp;
+use crmeb\services\auth\AccountChangeGuard;
 use think\facade\Db;
 
 /**
@@ -46,6 +47,46 @@ class OutAccountServices extends BaseServices
     {
         return $account !== null && (int)($account['status'] ?? 0) === 1
             && (int)($account['is_del'] ?? 0) === 0;
+    }
+
+    /** Preserve inherited CRUD output and freeze every sensitive-write target. */
+    public function update($id, array $data, ?string $key = null)
+    {
+        if (array_intersect(['appsecret', 'status', 'is_del'], array_keys($data)) === []) {
+            return $this->dao->update($id, $data, $key);
+        }
+        foreach (['status', 'is_del'] as $field) {
+            if (array_key_exists($field, $data) && !in_array($data[$field], [0, 1, '0', '1'], true)) {
+                throw new AdminException('参数错误');
+            }
+        }
+        if (array_key_exists('appsecret', $data) && (!is_string($data['appsecret']) || $data['appsecret'] === '')) {
+            throw new AdminException('参数错误');
+        }
+        $where = is_array($id) ? $id : [is_null($key) ? 'id' : $key => $id];
+        if ($where === []) { throw new AdminException('参数错误'); }
+        $ids = array_values(array_unique(array_map('strval', $this->dao->getColumn($where, 'id'))));
+        if ($ids === []) {
+            if (!is_array($id)) { throw new AdminException('没有此账号'); }
+            // Keep Model::update's normal empty-match return without open SQL.
+            return $this->dao->update([['id', '=', null]], $data);
+        }
+        return AccountChangeGuard::runMany('outapi', $ids, function () use ($ids, $data) {
+            $result = $this->dao->update([['id', 'in', $ids]], $data);
+            if ($result === false) { throw new AdminException('保存失败'); }
+            foreach ($ids as $subjectId) {
+                $row = $this->dao->get($subjectId);
+                if (!$row) { throw new AdminException('保存失败'); }
+                $stored = $row->getData();
+                foreach ($data as $field => $value) {
+                    if (!array_key_exists($field, $stored)
+                        || ($value === null ? $stored[$field] !== null : (string)$stored[$field] !== (string)$value)) {
+                        throw new AdminException('保存失败');
+                    }
+                }
+            }
+            return $result;
+        });
     }
 
     /**

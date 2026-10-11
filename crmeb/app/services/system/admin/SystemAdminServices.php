@@ -28,6 +28,7 @@ use crmeb\services\CacheService;
 use crmeb\services\auth\AuthSessionStore;
 use crmeb\services\auth\AuthTokenV2;
 use crmeb\services\auth\CredentialStamp;
+use crmeb\services\auth\AccountChangeGuard;
 use crmeb\services\FormBuilder;
 use crmeb\services\workerman\ChannelService;
 use think\facade\Config;
@@ -410,44 +411,53 @@ class SystemAdminServices extends BaseServices
      */
     public function save(int $id, array $data)
     {
-        if (!$adminInfo = $this->dao->get($id)) {
-            throw new AdminException('管理员不存在');
+        $adminInfo = $this->adminForWrite($id);
+        if (!array_key_exists('status', $data) || !in_array($data['status'], [0, 1, '0', '1'], true)) {
+            throw new AdminException('参数错误');
         }
-        if ($adminInfo->is_del) {
-            throw new AdminException('管理员已经删除');
-        }
-        //修改密码
-        if ($data['pwd']) {
-
-            if (!$data['conf_pwd']) {
+        $changes = [];
+        if (!empty($data['pwd'])) {
+            if (empty($data['conf_pwd'])) {
                 throw new AdminException('请输入确认密码');
             }
-
             if ($data['conf_pwd'] != $data['pwd']) {
                 throw new AdminException('两次输入的密码不一致');
             }
-
             if (strlen(trim($data['pwd'])) < 6 || strlen(trim($data['pwd'])) > 32) {
                 throw new AdminException('账号密码必须是在6到32位之间');
             }
-
-            $adminInfo->pwd = $this->passwordHash($data['pwd']);
+            $digest = $this->passwordHash($data['pwd']);
+            if (!is_string($digest) || $digest === '') {
+                throw new AdminException('密码处理失败');
+            }
+            if (!hash_equals((string)$adminInfo['pwd'], $digest)) {
+                $changes['pwd'] = $digest;
+            }
         }
-        //修改账号
-        if (isset($data['account']) && $data['account'] != $adminInfo->account && $this->dao->isAccountUsable($data['account'], $id)) {
+        if (isset($data['account']) && $data['account'] != $adminInfo->account
+            && $this->dao->isAccountUsable($data['account'], $id)) {
             throw new AdminException('管理员账号已存在');
         }
-        if (isset($data['roles'])) {
-            $adminInfo->roles = implode(',', $data['roles']);
+        foreach (['account', 'real_name'] as $field) {
+            if (isset($data[$field])) { $changes[$field] = $data[$field]; }
         }
-        $adminInfo->real_name = $data['real_name'] ?? $adminInfo->real_name;
-        $adminInfo->account = $data['account'] ?? $adminInfo->account;
-        $adminInfo->status = $data['status'];
-        if ($adminInfo->save()) {
+        if (isset($data['roles'])) { $changes['roles'] = implode(',', $data['roles']); }
+        if ((int)$adminInfo['status'] !== (int)$data['status']) {
+            $changes['status'] = (int)$data['status'];
+        }
+        // Unchanged sensitive fields are omitted from a profile-only save.
+        $change = function () use ($id, $changes) {
+            $current = $this->adminForWrite($id);
+            if (isset($changes['account']) && $changes['account'] != $current->account
+                && $this->dao->isAccountUsable($changes['account'], $id)) {
+                throw new AdminException('管理员账号已存在');
+            }
+            foreach ($changes as $field => $value) { $current->$field = $value; }
+            if ($current->save() === false) { throw new AdminException('修改失败'); }
             return true;
-        } else {
-            return false;
-        }
+        };
+        return isset($changes['pwd']) || isset($changes['status'])
+            ? AccountChangeGuard::run('adminapi', (string)$id, $change) : $change();
     }
 
     /**
@@ -458,33 +468,107 @@ class SystemAdminServices extends BaseServices
      */
     public function updateAdmin(int $id, array $data)
     {
-        $adminInfo = $this->dao->get($id);
-        if (!$adminInfo)
-            throw new AdminException('管理员信息未查到');
-        if ($adminInfo->is_del) {
-            throw new AdminException('管理员已经删除');
+        $adminInfo = $this->adminForWrite($id, '管理员信息未查到');
+        if (!$data['real_name']) { throw new AdminException('管理员姓名不能为空'); }
+        $changes = ['real_name' => $data['real_name'], 'head_pic' => $data['head_pic']];
+        $oldDigest = (string)$adminInfo['pwd'];
+        if (!empty($data['pwd'])) {
+            if (!password_verify($data['pwd'], $oldDigest)) { throw new AdminException('原始密码错误'); }
+            if (empty($data['new_pwd'])) { throw new AdminException('请输入新密码'); }
+            if (empty($data['conf_pwd'])) { throw new AdminException('请输入确认密码'); }
+            if ($data['new_pwd'] != $data['conf_pwd']) { throw new AdminException('两次输入的密码不一致'); }
+            $digest = $this->passwordHash($data['new_pwd']);
+            if (!is_string($digest) || $digest === '') { throw new AdminException('密码处理失败'); }
+            if (!hash_equals($oldDigest, $digest)) { $changes['pwd'] = $digest; }
         }
-        if (!$data['real_name'])
-            throw new AdminException('管理员姓名不能为空');
-        if ($data['pwd']) {
-            if (!password_verify($data['pwd'], $adminInfo['pwd']))
+        $change = function () use ($id, $data, $changes, $oldDigest) {
+            $current = $this->adminForWrite($id, '管理员信息未查到');
+            if (isset($changes['pwd']) && (!hash_equals($oldDigest, (string)$current['pwd'])
+                || !password_verify($data['pwd'], (string)$current['pwd']))) {
                 throw new AdminException('原始密码错误');
-            if (!$data['new_pwd'])
-                throw new AdminException('请输入新密码');
-            if (!$data['conf_pwd'])
-                throw new AdminException('请输入确认密码');
-            if ($data['new_pwd'] != $data['conf_pwd'])
-                throw new AdminException('两次输入的密码不一致');
-            $adminInfo->pwd = $this->passwordHash($data['new_pwd']);
-        }
-
-        $adminInfo->real_name = $data['real_name'];
-        $adminInfo->head_pic = $data['head_pic'];
-        if ($adminInfo->save()) {
-            CacheService::clear();
+            }
+            foreach ($changes as $field => $value) { $current->$field = $value; }
+            if ($current->save() === false) { throw new AdminException('修改失败'); }
             return true;
-        } else {
-            return false;
+        };
+        $result = isset($changes['pwd']) ? AccountChangeGuard::run('adminapi', (string)$id, $change) : $change();
+        // Keep the existing cache clear after the actual business commit and
+        // successful Guard completion. It is not evidence of an SQL commit.
+        CacheService::clear();
+        return $result;
+    }
+
+    /** Get a fresh model for a named writer; never save the validation model. */
+    private function adminForWrite(int $id, string $missing = '管理员不存在')
+    {
+        $adminInfo = $this->dao->get($id);
+        if (!$adminInfo) { throw new AdminException($missing); }
+        if ($adminInfo->is_del) { throw new AdminException('管理员已经删除'); }
+        return $adminInfo;
+    }
+
+    /** Preserve inherited DAO semantics while owning existing-subject writes. */
+    public function update($id, array $data, ?string $key = null)
+    {
+        if (array_intersect(['pwd', 'status', 'is_del'], array_keys($data)) === []) {
+            return $this->dao->update($id, $data, $key);
+        }
+        $this->assertAdminChangeData($data);
+        $where = is_array($id) ? $id : [is_null($key) ? 'id' : $key => $id];
+        if ($where === []) { throw new AdminException('参数错误'); }
+        $ids = array_values(array_unique(array_map('strval', $this->dao->getColumn($where, 'id'))));
+        if ($ids === []) {
+            if (!is_array($id)) { throw new AdminException('管理员不存在'); }
+            // Model::update returns a Model even for no matching rows. Integer
+            // empty IN becomes IN(''), so use the impossible NOT NULL pk test.
+            return $this->dao->update([['id', '=', null]], $data);
+        }
+        return AccountChangeGuard::runMany('adminapi', $ids, function () use ($ids, $data) {
+            $result = $this->dao->update([['id', 'in', $ids]], $data);
+            if ($result === false) { throw new AdminException('修改失败'); }
+            // The ORM returns a Model and ignores save's bool; verify the exact
+            // submitted fields instead of interpreting its truthiness/row count.
+            foreach ($ids as $subjectId) {
+                $row = $this->dao->get($subjectId);
+                if (!$row) { throw new AdminException('修改失败'); }
+                $stored = $row->getData();
+                foreach ($data as $field => $value) {
+                    if (!array_key_exists($field, $stored)
+                        || ($value === null ? $stored[$field] !== null : (string)$stored[$field] !== (string)$value)) {
+                        throw new AdminException('修改失败');
+                    }
+                }
+            }
+            return $result;
+        });
+    }
+
+    /** Physical deletion remains scoped to the original frozen DAO predicate. */
+    public function delete($id, ?string $key = null)
+    {
+        $where = is_array($id) ? $id : [is_null($key) ? 'id' : $key => $id];
+        if ($where === []) { throw new AdminException('参数错误'); }
+        $ids = array_values(array_unique(array_map('strval', $this->dao->getColumn($where, 'id'))));
+        if ($ids === []) { return 0; }
+        return AccountChangeGuard::runMany('adminapi', $ids, function () use ($ids) {
+            $result = $this->dao->delete([['id', 'in', $ids]]);
+            if ($result === false || $this->dao->getColumn([['id', 'in', $ids]], 'id') !== []) {
+                throw new AdminException('删除失败');
+            }
+            return $result;
+        });
+    }
+
+    /** Validate the existing writer's literal sensitive values before begin. */
+    private function assertAdminChangeData(array $data): void
+    {
+        foreach (['status', 'is_del'] as $field) {
+            if (array_key_exists($field, $data) && !in_array($data[$field], [0, 1, '0', '1'], true)) {
+                throw new AdminException('参数错误');
+            }
+        }
+        if (array_key_exists('pwd', $data) && (!is_string($data['pwd']) || $data['pwd'] === '')) {
+            throw new AdminException('参数错误');
         }
     }
 
