@@ -68,10 +68,6 @@ function m1m_cli(string $mode, string $configFile): array
 /** Compare fixed contract clauses without dropping operator grouping or string case. */
 function m1m_check_clause(string $clause): string
 {
-    $delimiter = "\\'";
-    foreach (['ARRAY', 'OBJECT'] as $literal) {
-        $clause = str_replace('_utf8mb4' . $delimiter . $literal . $delimiter, "_utf8mb4'" . $literal . "'", $clause);
-    }
     $value = preg_replace_callback("/'(?:[^']|'')*'|[^']+/", static function (array $match): string {
         if (str_starts_with($match[0], "'")) return $match[0];
         return preg_replace('/\s+/', '', str_replace(['`', '_utf8mb4'], '', strtolower($match[0])));
@@ -149,8 +145,14 @@ function m1m_columns(PDO $db): array
         'eb_mm_emp_positive'=>'(mer_id > 0) and (role_id > 0)', 'eb_mm_emp_flags'=>'(status in (0,1)) and (is_del in (0,1))',
         'eb_mm_audit_positive'=>'(mer_id > 0) and (actor_id > 0)', 'eb_mm_audit_detail'=>"json_type(detail) = 'OBJECT'",
         'eb_mm_setup_positive'=>'(mer_id > 0) and (employee_id > 0)', 'eb_mm_setup_expiry'=>'expires_at = (add_time + 86400)'];
-    foreach ($constraints as $constraint) audit_expect($constraint['ENFORCED'] === 'YES'
-        && m1m_check_clause($constraint['CHECK_CLAUSE']) === m1m_check_clause($expectedClauses[$constraint['CONSTRAINT_NAME']]), 'actual CHECK predicate or enforcement differs');
+    foreach ($constraints as $constraint) {
+        $actualClause = $constraint['CHECK_CLAUSE']; $delimiter = "\\'";
+        foreach (['ARRAY', 'OBJECT'] as $literal) {
+            $actualClause = str_replace('_utf8mb4' . $delimiter . $literal . $delimiter, "_utf8mb4'" . $literal . "'", $actualClause);
+        }
+        audit_expect($constraint['ENFORCED'] === 'YES'
+            && m1m_check_clause($actualClause) === m1m_check_clause($expectedClauses[$constraint['CONSTRAINT_NAME']]), 'actual CHECK predicate or enforcement differs');
+    }
     $fk = $db->query("SELECT k.TABLE_NAME,k.CONSTRAINT_NAME,k.COLUMN_NAME,k.REFERENCED_TABLE_SCHEMA,k.REFERENCED_TABLE_NAME,k.REFERENCED_COLUMN_NAME,k.ORDINAL_POSITION,r.UPDATE_RULE,r.DELETE_RULE FROM information_schema.KEY_COLUMN_USAGE k JOIN information_schema.REFERENTIAL_CONSTRAINTS r ON r.CONSTRAINT_SCHEMA=k.CONSTRAINT_SCHEMA AND r.CONSTRAINT_NAME=k.CONSTRAINT_NAME AND r.TABLE_NAME=k.TABLE_NAME WHERE k.CONSTRAINT_SCHEMA=DATABASE() AND k.TABLE_NAME IN ('eb_marketplace_role','eb_marketplace_employee','eb_marketplace_audit_log','eb_marketplace_password_setup') AND k.REFERENCED_TABLE_NAME IS NOT NULL ORDER BY k.TABLE_NAME,k.CONSTRAINT_NAME,k.ORDINAL_POSITION")->fetchAll();
     audit_expect(count($fk) === 6, 'four exact foreign keys required');
     $expectedFk = ['eb_marketplace_role' => ['eb_marketplace_merchant', ['mer_id'], ['mer_id']],
