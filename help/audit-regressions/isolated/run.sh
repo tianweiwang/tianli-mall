@@ -15,6 +15,9 @@ if [[ "$AUDIT_PHASE" == baseline && "$1" == help/audit-regressions/isolated/ms0a
         echo 'Baseline requires unchanged historical business source; refused to mislabel results' >&2; exit 2
     fi
 fi
+# Compose creates runner-runtime on the first runner invocation. Validate that
+# invocation, then register its real volume identity before any fault control.
+audit_compose run --rm --no-deps -T audit-runner help/audit-regressions/isolated/lib/guard.php
 audit_register
 for action in pause unpause stop start; do
     for suffix in request done; do

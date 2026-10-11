@@ -140,7 +140,7 @@ public function revoke(string $app, string $token): void
 - Modify: `crmeb/app/services/system/admin/SystemAdminServices.php`（`login()` 改用 `initAccount()` + `issue()`；退出改用 `revoke()`）
 - Modify: `crmeb/app/adminapi/controller/v1/setting/SystemAdmin.php`（真实退出接口）；`crmeb/app/adminapi/AdminApiExceptionHandle.php`（受控v2异常直接JSON，避开Json::make再次翻译缓存写入和debug trace）
 - Create: `help/audit-regressions/isolated/ms0b-admin-http.php`（30项真实HTTP接线场景；不冒称覆盖尚未接齐Task6的永久版本撤销或生产HTTP竞态）。
-- Modify（测试真实前置条件/观察的必要调用点）: `help/audit-regressions/isolated/lib/harness.php`、`compose.yml`、`docs/multi-merchant/03-test-environment.md`。新RUN私有卷生成独立epoch/stamp并供给PHP_AUTH_*；runner只读观察实际app-runtime卷；增加仅本次RUN受控的缺配置/APP_DEBUG/DB闭合端口1/CACHE_PREFIX override；冷故障用TCP监听就绪，不用login/info预热。MySQL/Redis主机及账号/库仍固定，guard及安装初始化不变，不映射端口。
+- Modify（测试真实前置条件/观察的必要调用点）: `help/audit-regressions/isolated/lib/harness.php`、`compose.yml`、`run.sh`、`docs/multi-merchant/03-test-environment.md`。新RUN私有卷生成独立epoch/stamp并供给PHP_AUTH_*；runner只读观察实际app-runtime卷；增加仅本次RUN受控的缺配置/APP_DEBUG/DB闭合端口1/CACHE_PREFIX override；冷故障用TCP监听就绪，不用login/info预热。MySQL/Redis主机及账号/库仍固定，guard及安装初始化不变，不映射端口。新RUN首次自检11PASS/1FAIL保留：runner-runtime首次启动才创建，旧清单缺该卷导致服务控制严格拒绝；run.sh先运行原guard，再登记实际卷身份，之后才运行测试/故障控制，不放宽身份断言。
 
 **Interfaces:**
 - Consumes: Task 2、Task 3
