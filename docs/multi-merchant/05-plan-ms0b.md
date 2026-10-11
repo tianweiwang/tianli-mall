@@ -195,7 +195,12 @@ public function revoke(string $app, string $token): void
 
 普通事务设计见 `records/ms0b/account-change-design.md`：实际框架没有afterCommit/公开事务深度接口，Guard持有已知最外层transaction，并用真实PDO身份及inTransaction核对提交；内层具名writer只复用同app、同连接、已冻结主体集合的本次上下文，不提前complete、不在业务写入后扩张保护集合。没有受管上下文但已有PDO事务时拒绝接线，不能把模型内层savepoint当成外层提交。上下文仅活在本次DB闭包并finally清空；新建路径保留自动id及原普通事务，不伪造旧subject；批量按真实管理员id冻结，不用事业部uid代替。实现尚未开始，这些是后续接线依据，不是运行通过结论。
 
+普通接线细节：`save`/`updateAdmin` 的纯资料patch不写已确认未变的敏感字段，所以保留现有会话；显式 `update` 若含pwd/status/is_del或appsecret/status/is_del则保护全部冻结目标，即使同值更新的affected rows为0也视为合法操作并轮换版本，原Model返回形态保留。不带上述键的统计/filePwd/push配置更新沿原DAO。Division编辑不得写原代码未写的adminData.status；空管理员集合跳过管理员SQL，不能依赖ORM的空IN表达式。PDO/Store异常只记固定分类、阶段和数量，受控503不带底层previous；普通业务验证异常按原响应保留。
+
+本次独立普通检查脚本拟 `help/audit-regressions/isolated/ms0b-account-functional.php`，只通过真实CLI service/DAO及本RUN新建合成行验证正常W01–W10、N01/N02与非敏感更新，记录精确目标行/列、账号版本变化、其他所有表/缓存/期限。源审确认安装SQL的eb_system_admin无file_pwd列，而旧setFilePassword赋值该列；对应兼容检查记NOT RUN（原路径保持，不造DDL、不算通过），其余普通流程继续。并发、故障、旧/错误token请求仍不执行。
+
 **Files:**
+- Create（独立普通检查）: `help/audit-regressions/isolated/ms0b-account-functional.php`
 - Create（已核对的入口记录）: `docs/multi-merchant/records/ms0b/credential-writer-inventory.md`
 - Create（普通事务设计记录）: `docs/multi-merchant/records/ms0b/account-change-design.md`
 - Create: `crmeb/crmeb/services/auth/AccountChangeGuard.php`

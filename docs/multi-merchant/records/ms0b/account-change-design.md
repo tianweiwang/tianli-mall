@@ -37,6 +37,8 @@ managed context 只包本次 DB 闭包；嵌套 Guard 不自行清掉外层 cont
 
 ## 服务 update/delete 与批量目标
 
+2026-10-11 实施细化：save/updateAdmin只对实际敏感patch接Guard，纯资料路径省略未变的敏感字段；显式update携带敏感键时全部冻结目标进入Guard，包括合法同值更新。此规则保留DAO Model返回形态并避免没有保护的敏感重写；affected rows为0仍合法。不带敏感键的统计、文件或推送更新保留原DAO路径。内层Division敏感update复用外层已保护集合，不重复begin/complete。
+
 当前 [BaseServices::__call](H:/天俪商城/tianli-mall--ms0b/crmeb/app/services/BaseServices.php:151) 直接转 DAO；[BaseDao::update/delete](H:/天俪商城/tianli-mall--ms0b/crmeb/app/dao/BaseDao.php:256) 已支持 scalar pk / array where / optional key。建议最小补齐：
 
 - SystemAdminServices 显式覆盖现有调用签名 `update($id, array $data, ?string $key=null)` 与 `delete($id, ?string $key=null)`；OutAccountServices 显式覆盖同 update 签名。update 只对 pwd/status/is_del 或 appsecret/status/is_del 接 Guard，非敏感统计、文件凭据、推送设置等保持原 DAO 透传。新建 save/create 不因方法名相似被强行当作已有 subject。
