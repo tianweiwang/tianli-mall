@@ -57,9 +57,10 @@
 
 ```php
 public function initAccount(string $app, string $id): string                 // 仅供凭据登录；键已存在且未 blocked 时返回现有版本
+public function epoch(): string                                            // 只返回构造配置的世代，不保存上次请求主体
 public function createSession(string $app, string $id, string $expectedVersion, array $session): void
-        // $session: type, audience, token_digest, credential_stamp, expires_at；sid 由调用方生成并放在 $session['sid']
-        // 账号版本不等于 $expectedVersion 或 blocked 时抛 AuthException
+        // $session: sid, type, audience, session_version, token_digest, credential_stamp, expires_at
+        // sid由调用方生成；session_version必须同时匹配expectedVersion和账号版本；blocked时抛AuthException
 public function verify(string $app, string $sid, string $id, string $type, string $audience,
                        string $version, string $tokenDigest, string $credentialStamp): void
 public function revokeSession(string $app, string $sid): void
@@ -71,13 +72,15 @@ public function beginChange(string $app, string $id): string               // �
 public function completeChange(string $app, string $id, string $owner): void // 仅CAS匹配的本次owner可解除保护
 ```
 
-Redis 连接错误一律转换为 `AuthUnavailableException`。账号/会话用HASH，blocked为字符串0/1，initialized=1；未初始化保护标记initialized=0且无session_version。会话status为active，兑换后旧status为consumed、TTL保留。账号键持久，无早于会话过期风险。redeem的newSession还要求session_version匹配账号/旧会话，type/audience/credential_stamp匹配旧会话，sid不同，previous_token_digest匹配旧摘要；previous_token_digest只校验、不存入新会话。
+Redis 连接错误一律转换为 `AuthUnavailableException`。账号/会话用HASH，blocked为字符串0/1，initialized=1；未初始化保护标记initialized=0且无session_version。会话status为active，兑换后旧status为consumed、绝对到期点保留。账号键持久（TTL=-1），无早于会话过期风险。redeem的newSession还要求session_version匹配账号/旧会话，type/audience/credential_stamp匹配旧会话，sid不同，previous_token_digest匹配旧摘要且新的token_digest不同于旧摘要；previous_token_digest只校验、不存入新会话。所有摘要/戳为64位小写十六进制，expires_at为可安全计算Redis TTL的正整数；缺少、非整数、已超过exp+60、数值溢出均在写入前拒绝。
 
 2026-10-11 必要设计补齐（用户委托执行方自主选择，安全规则保持）：
 
 - 账号键缺失/从未登录时，账号变更只创建 blocked 的未初始化保护标记（initialized=0，无可授权版本）；成功后解除本次保护仍无版本，之后有效凭据登录才产生新的128位版本。verify/redeem始终拒绝并不重建。普通rotateAccount缺键拒绝；AccountChangeGuard使用beginChange/completeChange，不从失踪版本恢复旧会话。
 - beginChange以Lua一次检查并设置blocked及轮换现有版本；另存本次随机owner。并发变更遇到既有blocked拒绝；completeChange仅匹配owner解除，普通unblock不得清除带owner的保护。身份/owner只在调用栈传递，实例不保存上次主体。
 - Lua任何可能导致类型/结构/TTL错误的前置条件在第一项写入前检查；真实EVAL执行后断连/返回丢失不得恢复旧sid或返回新令牌。所有连接有界超时，错误仅包含受控分类，不记录底层异常原文和敏感值。
+- Store负向及只读操作验证全部Redis值与绝对到期点：用只读Lua同次读取Redis TIME与每键PTTL，-1持久/-2缺失严格区分，正数绝对到期点只容许1ms取整误差；自然倒计时不是写入，EXPIRE/PERSIST续期或移除过期不可漏检。兑换保留旧sid绝对到期点，新sid仍不晚于exp+60。
+- beginChange未执行前故障必须零写入；执行后丢应答必须仍blocked、保留本次owner和轮换版本、抛503且调用方不得开始改库。completeChange未执行故障仍blocked；已执行但丢应答可能已解除owner，仍抛503、不报告成功、不补偿恢复旧版本。后续Task6仅在数据库已提交后调用completeChange，回读状态只能用于脱敏审计，不能作为失败后返回成功的依据。
 - 凭据登录先只读校验并保存原digest，再init取得账号版本，再重读当前digest/status作严格比较，最后createSession CAS。init之前的改密由digest重比对拒绝，之后的变更由blocked/version CAS拒绝。不得拿旧校验配新digest签发。verifyLogin统计从读验证分离，Redis依赖及会话写入成功前不写统计；相应必要调用点属于Task4/5。
 
 - [ ] **Step 1: 写用例**（CLI 进程内直接调用，`INTEGRATION` 层，真实 Redis + `FaultyRedis`）：
@@ -86,6 +89,7 @@ Redis 连接错误一律转换为 `AuthUnavailableException`。账号/会话用H
   - A23-v2：会话键缺失 → `AuthException`；Redis `pause` / `stop` → `AuthUnavailableException`；`verify` 不会写入任何键。
   - A25：两个并发 `redeem` 同一个旧 `sid`，恰好一个成功；`redeem` 在写新会话前或后注入错误时，旧 `sid` 不恢复、调用方拿不到新令牌；重复 `redeem` 已消耗的 `sid` 失败。
   - A29：删除账号键后 `verify` 和 `redeem` 都失败，且不重建该键；更换 `epoch` 后旧会话全部无效。
+  - 2026-10-11只读合同复核补齐：create输入版本缺少/不一致、所有账号/旧会话HASH字段损坏对create/redeem的拒绝、错类型目标、redeem摘要/到期/溢出、same-token-digest、旧到期点保留、账号持久、丢账号后变更标记不复活旧会话，以及begin/complete的EVAL前后故障；当前Task2为100项，新增用例需重新保留缺类基线，不能沿用此前82项结果冒充覆盖。
 - [ ] **Step 2: 运行，确认因类不存在而失败。**
 - [ ] **Step 3: 实现。** 每个 Lua 脚本先校验所有前置条件，任一不满足就直接返回错误码，不做任何写入；全部满足后再写。会话键 TTL = `expires_at - now + 60`。
 - [ ] **Step 4: 运行，期望全部 PASS。**
@@ -104,12 +108,15 @@ Redis 连接错误一律转换为 `AuthUnavailableException`。账号/会话用H
 // crmeb\services\auth\CredentialStamp
 public static function for(string $app, string $id, string $credentialDigest): string
         // hash_hmac('sha256', "$app|$id|$credentialDigest", stamp_key)
-// crmeb\services\auth\AuthTokenV2（无实例状态）
+// crmeb\services\auth\AuthTokenV2（无上次请求身份状态，仅持有Store依赖）
+public function __construct(AuthSessionStore $store)
+        // 每次调用重新读取AuthConfigGuard::authConfig；配置epoch必须与store.epoch()一致，否则503
 public function issue(string $app, string $id, string $version, string $credentialStamp): array
         // 返回 ['token' => string, 'exp' => int, 'sid' => string]；会话写入成功后才返回
 public function verify(string $app, string $token, callable $currentCredentialDigest): array
         // 返回 ['id' => string, 'sid' => string]；顺序：验签与时间 → auth_schema=2 → iss/aud/type 与 $app 配置一致
         //   → AuthSessionStore::verify（用当前凭据摘要重新计算 credential_stamp）
+        // callback(string $id): string，返回当前数据库凭据摘要；相关业务调用点负责当前状态检查
 public function refresh(string $app, string $token, callable $currentCredentialDigest): array   // 单次兑换
 public function revoke(string $app, string $token): void
 ```
@@ -157,10 +164,11 @@ public static function run(string $app, string $id, callable $dbChange): mixed
 public static function runMany(string $app, array $ids, callable $dbChange): mixed // 全部先保护，同一事务后按owner解除
         // 1) AuthSessionStore::beginChange（原子block+rotate）；失败 → 不执行 $dbChange
         // 2) 执行 $dbChange（在数据库事务中）；失败 → 保持 blocked，重新抛出
-        // 3) completeChange(owner CAS)；失败 → 保持保护，记录脱敏审计，返回“需人工复核”错误，不报告成功
+        // 3) 数据库提交后completeChange(owner CAS)；未执行故障仍保护，已执行丢应答可能已解除
+        //    两者均记录脱敏审计、返回“需人工复核”503，不报告成功，不补偿恢复旧版本
 ```
 
-- [ ] **Step 1: 用例**：A21-v2 中"改密、停用、删除各自让全部旧会话失效"；故障注入：步骤 1 失败时数据库不变；步骤 2 失败时账号保持 blocked、不能登录；步骤 3 失败时接口不返回成功。
+- [ ] **Step 1: 用例**：A21-v2 中"改密、停用、删除各自让全部旧会话失效"；故障注入：步骤 1 失败时数据库不变（执行后丢应答已有blocked/新版本，仍不改库）；步骤 2 失败时账号保持 blocked、不能登录；步骤 3 失败时接口不返回成功，未执行仍blocked，已执行丢应答可能已解除但旧版本始终失效、数据库此前已提交。
 - [ ] **Step 2–5**：确认失败 → 实现并接入全部入口 → 通过 → 提交 `feat(auth): block-rotate-change-unblock for credential and state changes`。
 
 ### Task 7: 会话状态丢失与世代号轮换
