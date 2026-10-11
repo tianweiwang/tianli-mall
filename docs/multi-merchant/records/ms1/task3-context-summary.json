@@ -1,0 +1,294 @@
+{
+  "milestone": "MS1",
+  "task": "Task3 normal contexts and query scopes only",
+  "status": "verified_normal_context_queries",
+  "source_commit": "ad2ff12a6fbca1becb304c25ef105eaf80317942",
+  "source_sha256": {
+    "crmeb/app/services/marketplace/MerchantPermissions.php": "d8a9420be960b6922a196e6c6e6074e9285ef0945c9788b9105da4f33df43bba",
+    "crmeb/app/services/marketplace/context/MerchantContext.php": "80e14366a3abf885c519d4c0e21e79966f8c153431e7061e3353b8101ccddd4a",
+    "crmeb/app/dao/marketplace/scope/MerchantScope.php": "ae54350db9b800256223fa8616b796f0ad61f6120cb7d4228e865fd6d790e54e",
+    "crmeb/app/dao/marketplace/scope/PlatformScope.php": "b7386ab811ba5c9fe7d1b5801e27f3164b2883cbaa12ec0eacb7d29a6c0c5dca",
+    "crmeb/app/dao/marketplace/scope/PublicCatalogScope.php": "f75e2275e4f78f510286147948c58265e753924abddd68640463bafcd04dc943",
+    "crmeb/app/Request.php": "5a82fe204bfd86adbcbb4119e8f424ac381279f6d1f5a11a48dae7c7f88392a1",
+    "crmeb/crmeb/exceptions/MerchantForbiddenException.php": "fe1edf91932364ae5db6fddd78f82df2b22bf395141b24392febf78601d8dba6",
+    "crmeb/crmeb/exceptions/MerchantNotFoundException.php": "d4064e65b1d57aa87a39e4c30f5abdb8bc38eeff95e3bfc32c946d13d6ea9d06",
+    "crmeb/crmeb/exceptions/MerchantUnauthenticatedException.php": "67680ba69f083b4f3074f945b753f1d81708cd5bbdea28a1eb5a4e9fadc78338",
+    "help/audit-regressions/isolated/ms1-context.php": "ae5e5956edfa0f6b96b462c991b1ed0477fb480c348753693707fa0832da488d"
+  },
+  "environment": {
+    "kind": "ISO-FULL",
+    "run_id": "20261011214404d81a84",
+    "database": "audit_auth",
+    "account": "audit_app: existing DML only",
+    "images": {
+      "audit-app": "sha256:1099f749e2a38ec9453c6b820db8a78174514bc72d14edf5c203e13b82816e0a",
+      "audit-mysql": "sha256:c7a313f1402365dc91253bdbdb1e74c6a361b036106d8bd25b8ec8e2dd0069f4",
+      "audit-redis": "sha256:6c8f6edc1aa871a76a257ef86a2089d108e64b78d16f45b89f09c6a4ab30d07e"
+    },
+    "versions": "Synthetic value-object versions only; no token authentication claim."
+  },
+  "history": [
+    {
+      "run_id": "2026101121344901117b",
+      "phase": "baseline",
+      "source_commit": "ea086ab579d57cf42f46e178454dc3aabfbbbb8e",
+      "status": "FAIL",
+      "native_exit": 1,
+      "raw_ref": "ms1-context-baseline-20261011213655.jsonl",
+      "raw_bytes": 1543,
+      "raw_sha256": "bf34a6b5b3044495e2838a92b30af0312450b4452cfbfbeb4f135de469fdf48c",
+      "evidence_ref": "ms1-context-baseline.json",
+      "evidence_sha256": "7e3abad6ff38ac8f0e44c9ac7e3a77eb32f671d30043efc6b10359f79dd5406d",
+      "tables_before": 158,
+      "tables_after": 158,
+      "exact_snapshot_unchanged": true,
+      "preservation": {
+        "tables": 158,
+        "original_rows_schema_checksums_unchanged": true,
+        "cache_values_expiry_unchanged": true,
+        "counter_changes_allowed_only": []
+      },
+      "fixture_rows_cleaned": false
+    },
+    {
+      "run_id": "2026101121344901117b",
+      "phase": "after",
+      "source_commit": "d5f1c9cb0bf119efc905f3492f4bda5a2b10254d",
+      "status": "FAIL",
+      "native_exit": 1,
+      "raw_ref": "ms1-context-after-20261011214100.jsonl",
+      "raw_bytes": 1531,
+      "raw_sha256": "1dd4add2ce1235eee67f2195cd01d56778aa530bc156f84d3cc310f939850d27",
+      "evidence_ref": "ms1-context-after.json",
+      "evidence_sha256": "d5b7e011687d87f94a3bebb72cfcb8734c44352afa9537678b11d9a0ccdfc9cf",
+      "tables_before": 163,
+      "tables_after": 163,
+      "exact_snapshot_unchanged": false,
+      "preservation": {
+        "tables": 163,
+        "original_rows_schema_checksums_unchanged": true,
+        "cache_values_expiry_unchanged": true,
+        "counter_changes_allowed_only": [
+          "eb_marketplace_merchant",
+          "eb_marketplace_role",
+          "eb_marketplace_employee"
+        ]
+      },
+      "fixture_rows_cleaned": true
+    },
+    {
+      "run_id": "20261011214404d81a84",
+      "phase": "after",
+      "source_commit": "ad2ff12a6fbca1becb304c25ef105eaf80317942",
+      "status": "PASS",
+      "native_exit": 0,
+      "raw_ref": "ms1-context-after-20261011214648.jsonl",
+      "raw_bytes": 1661,
+      "raw_sha256": "fc79760a1cdbaa442bd6b58499262374a97e255bc56d9c32172d05c46204b13e",
+      "evidence_ref": "ms1-context-after.json",
+      "evidence_sha256": "56206d5820f8d47a0a0084b7a6dd19c7ec07a3292d12f18fb76ce58f18d33970",
+      "tables_before": 163,
+      "tables_after": 163,
+      "exact_snapshot_unchanged": false,
+      "preservation": {
+        "tables": 163,
+        "original_rows_schema_checksums_unchanged": true,
+        "cache_values_expiry_unchanged": true,
+        "counter_changes_allowed_only": [
+          "eb_marketplace_merchant",
+          "eb_marketplace_role",
+          "eb_marketplace_employee"
+        ]
+      },
+      "fixture_rows_cleaned": true
+    }
+  ],
+  "native_steps": {
+    "bootstrap": 0,
+    "baseline": 1,
+    "prepare": 0,
+    "after": 1,
+    "first-teardown": 0,
+    "retry-bootstrap": 0,
+    "retry-prepare": 0,
+    "retry-after": 0,
+    "retry-teardown": 0
+  },
+  "successful_observations": {
+    "A": {
+      "mer_id": 1,
+      "employee_id": 1,
+      "permissions": 9,
+      "owned_array_model": true,
+      "model_query": true
+    },
+    "B": {
+      "mer_id": 2,
+      "employee_id": 2,
+      "permissions": 7,
+      "owned_array_model": true,
+      "model_query": true
+    }
+  },
+  "request_local_cleanup": true,
+  "query_template_preservation_and_exact_grouped_results": true,
+  "platform_ranges": {
+    "target": 1,
+    "global_explicit": true,
+    "actual_authorization_pending_task6": true
+  },
+  "public_fields": {
+    "merchant": [
+      "mer_id",
+      "name",
+      "logo",
+      "after_sale_contact",
+      "shipping_note"
+    ],
+    "product": [
+      "id",
+      "mer_id",
+      "store_name",
+      "store_info",
+      "image",
+      "slider_image",
+      "price",
+      "ot_price",
+      "vip_price",
+      "unit_name",
+      "sales",
+      "stock",
+      "spec_type",
+      "is_postage",
+      "postage",
+      "is_vip",
+      "video_link"
+    ]
+  },
+  "preservation": {
+    "tables": 163,
+    "original_rows_schema_checksums_unchanged": true,
+    "cache_values_expiry_unchanged": true,
+    "counter_changes_allowed_only": [
+      "eb_marketplace_merchant",
+      "eb_marketplace_role",
+      "eb_marketplace_employee"
+    ]
+  },
+  "migration_preparation": {
+    "initial": {
+      "mode": "apply",
+      "state": "completed",
+      "changed": true,
+      "tables": [
+        "eb_marketplace_merchant",
+        "eb_marketplace_role",
+        "eb_marketplace_employee",
+        "eb_marketplace_audit_log",
+        "eb_marketplace_password_setup"
+      ],
+      "menu_ids": [
+        3465,
+        3466,
+        3467,
+        3468,
+        3469,
+        3470,
+        3471
+      ],
+      "issues": [],
+      "created_tables": [
+        "eb_marketplace_merchant",
+        "eb_marketplace_role",
+        "eb_marketplace_employee",
+        "eb_marketplace_audit_log",
+        "eb_marketplace_password_setup"
+      ]
+    },
+    "successful": {
+      "mode": "apply",
+      "state": "completed",
+      "changed": true,
+      "tables": [
+        "eb_marketplace_merchant",
+        "eb_marketplace_role",
+        "eb_marketplace_employee",
+        "eb_marketplace_audit_log",
+        "eb_marketplace_password_setup"
+      ],
+      "menu_ids": [
+        3465,
+        3466,
+        3467,
+        3468,
+        3469,
+        3470,
+        3471
+      ],
+      "issues": [],
+      "created_tables": [
+        "eb_marketplace_merchant",
+        "eb_marketplace_role",
+        "eb_marketplace_employee",
+        "eb_marketplace_audit_log",
+        "eb_marketplace_password_setup"
+      ]
+    }
+  },
+  "harness_fix": "Keep the existing OR group and final AND; match the exact context ID as the native integer or same quoted decimal literal, anchored at SQL end. Actual owned-row result assertion retained. No production change for display formatting.",
+  "resources_before_successful_teardown": {
+    "containers": 3,
+    "volumes": 11,
+    "run_id": "20261011214404d81a84",
+    "networks": 1
+  },
+  "final_resources": {
+    "runs": [
+      {
+        "run_id": "2026101121344901117b",
+        "volumes": 0,
+        "containers": 0,
+        "networks": 0
+      },
+      {
+        "run_id": "20261011214404d81a84",
+        "volumes": 0,
+        "containers": 0,
+        "networks": 0
+      },
+      {
+        "run_id": "20261011213611e5a850",
+        "volumes": 0,
+        "containers": 0,
+        "networks": 0
+      },
+      {
+        "run_id": "20261011214524142b4e",
+        "volumes": 0,
+        "containers": 0,
+        "networks": 0
+      }
+    ],
+    "install_lock_absent": true
+  },
+  "results": {
+    "original_rows": 10,
+    "original_sha256": "bbf79f1311787f43dddecb99c1ca98c7cf33b26cb16dee8e85dda4d56931eec4",
+    "appended_rows": 9,
+    "total_rows": 19,
+    "counts": {
+      "FAIL": 6,
+      "PASS": 3,
+      "NOT RUN": 10
+    },
+    "sha256": "71e4a97220b427d8f2ec739d521febdc3065a427930b74735675a49756881622"
+  },
+  "limits": [
+    "M04/M08 refusal and invalid/missing-context cases remain NOT RUN at user request.",
+    "Preexisting UNION refusal was source-reviewed only; no invalid-composition case run.",
+    "PlatformScope construction does not establish real platform authorization; Task6 remains pending.",
+    "Public product evidence is real ORM SQL projection only; no product HTTP or publication-state acceptance.",
+    "Merchant authentication, employee/role APIs, worker context and Task4-9 remain pending.",
+    "Local L2 only; no push, production database write, deployment or notification; no safety signoff."
+  ]
+}

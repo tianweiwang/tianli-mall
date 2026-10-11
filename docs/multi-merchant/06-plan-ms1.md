@@ -36,7 +36,7 @@
 - 迁移的“空”指CRMEB已安装且五目标表不存在；零表库缺少system_menus，不能创建第六张表或调用Installer。theme-module实际使用 `--check/--apply`，新MS1 CLI明确支持文档要求的 `check|apply`（兼容同义选项）。只新增五表及精确marketplace菜单/接口登记；原表列/index/旧行保持，system_menus正常新增行与其AUTO_INCREMENT变化单列核对，不能要求新增后checksum仍相同，也不回拨计数器。其他原表结构/数据保持。
 - 现Supervisor声明queue:listen，实版Listener每轮启动queue:work --once，job不复用同一PHP进程。Task1为新marketplace队列声明独立 `queue:work --queue=marketplace --sleep=1 --tries=1` 常驻模式，并用相同命令建立ISO audit-worker；原队列保持。生产声明默认不自动启动，实际发布另行处理。正常空任务的同一PID证据到位后，Task8再运行正常A→B上下文重建；异常/无上下文/伪造载荷/并发场景按用户要求跳过，不冒称M05/M09/M10完整通过。
 
-执行顺序仍以Task1–9为单一清单；Task1源码盘点与普通worker能力已完成，真实T1W01为1PASS，原首RUN的1FAIL保留。Task2普通迁移与重复执行已通过，异构结构等原跳过项仍为NOT RUN。Task3–9的商户上下文、接口及业务流程仍待实施；普通结果不代替完整验收。
+执行顺序仍以Task1–9为单一清单；Task1源码盘点与普通worker能力、Task2普通迁移、Task3正常上下文与查询范围已完成，历史FAIL及原跳过项分别保留。Task4–9的商家认证、管理接口、任务上下文及最终交付仍待实施；普通结果不代替完整验收。
 
 ## Review Focus
 
@@ -151,9 +151,14 @@ public function __construct(int $adminId, string $permission, ?int $targetMerId)
 public static function fields(string $resource): array                                // 公开字段白名单
 ```
 
-- [ ] **Step 1: 写用例**（M04、M08 的 UNIT 部分）：`merId` 为 0、负数、null（类型错误）时构造失败；`MerchantScope::apply` 生成的 SQL 含 `mer_id = <merId>`；`assertOwned` 对他店行抛 404 异常；没有 `MerchantContext` 时无法调用需要它的服务方法（类型约束）。
-- [ ] **Step 2–4:** 确认失败 → 实现 → 通过。
-- [ ] **Step 5:** 提交 `feat(marketplace): permission catalog, MerchantContext and query scopes`。
+- [x] **Step 1（普通用例）:** T3C01使用真实DbManager/Query/Model、合成A/B身份验证正常正整数Context、9/7权限目录、本人array/Model行、带绑定和OR分组的查询及原模板保持、两个Request的本地属性与正常清理、显式平台目标/全局范围、商家真实公开查询及商品SQL字段投影；不替代会话认证或商品HTTP行为。
+- [ ] **原M04/M08拒绝验收:** 0/负数/null商家ID、缺少Context、他店行404、无权限动作等原要求保留，按用户指示NOT RUN。已有union输入的拒绝也只核对源码，未运行；未宣称这些场景通过。
+- [x] **Step 2–4（普通流程）:** 原实现缺失基线FAIL → 实现 → 原展示格式假设导致正常after FAIL → 按实版ORM修正展示匹配且加强精确归属 → 新RUN T3C01 PASS；全部FAIL和NOT RUN保留。
+- [x] **Step 5:** 本地d5f1c9cb `feat(marketplace): add permission catalog, context and query scopes`，普通脚本ea086ab5及SQL展示核对ad2ff12a；记录另行提交，未推送。
+
+Task3普通交付：最终RUN20261011214404d81a84、源码ad2ff12a，T3C01 INTEGRATION PASS/native0；M04 UNIT-STUB NOT RUN、M08 INTEGRATION NOT RUN。bootstrap、一次正常迁移准备和teardown均native0。真实A/B Query分别返回员工1/2，已有绑定及OR整体分组后AND真实商家1/2，原模板保持；两个Request值及clear均为各自实例。只证明合成Context与范围基础，真实v2身份生成在Task4、平台鉴权/审计在Task6、商品发布可见性在MS2、worker上下文在Task8继续实施。
+
+夹具只写三张新身份表，均已按真实ID/商家/账号或名称精确清理；163表原行/checksum/DDL（仅三张夹具表的自然AUTO_INCREMENT前进）和Redis值/绝对到期点保持。首RUN的基线FAIL和实现后FAIL均保留，两个主RUN及其初始化清理实例最终容器/网络/卷各为0，install.lock不存在。9条Task3原始结果逐字节追加至此前10条，当前总19行（3PASS/6FAIL/10NOT RUN），原10行SHA保持；摘要、原始文件hash及真实边界见 `records/ms1/task3-context-summary.json`。完整MS1与签收未发生，L2本地源码交付，无真实库写入、推送、发布或通知。
 
 ### Task 4: merchantapi 应用与员工认证
 
