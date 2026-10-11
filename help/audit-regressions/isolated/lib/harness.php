@@ -71,7 +71,17 @@ function audit_snapshot(array $spec): array
         $values = []; $cursor = null;
         do {
             $keys = $redis->scan($cursor, $pattern, 500);
-            foreach ($keys ?: [] as $key) { $values[$key] = hash('sha256', (string)$redis->dump($key)); }
+            foreach ($keys ?: [] as $key) {
+                if ($redis->type($key) === Redis::REDIS_SET) {
+                    // SET iteration / DUMP order can change after AOF recovery.
+                    // Compare every member, preserving the unordered value contract.
+                    $members = $redis->sMembers($key);
+                    sort($members, SORT_STRING);
+                    $values[$key] = hash('sha256', "set\0" . serialize($members));
+                } else {
+                    $values[$key] = hash('sha256', (string)$redis->dump($key));
+                }
+            }
         } while ($cursor !== 0);
         ksort($values); $snapshot['redis'][$pattern] = $values;
     }
