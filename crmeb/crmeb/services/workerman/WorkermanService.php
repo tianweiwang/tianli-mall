@@ -75,7 +75,6 @@ class WorkermanService
         if (!$res || !isset($res['type']) || !$res['type'] || $res['type'] == 'ping') {
             return $this->response->connection($connection)->success('ping', ['now' => time()]);
         }
-        var_dump('adminMessage', $res);
         if (!method_exists($this->handle, $res['type'])) return;
 
         $this->handle->{$res['type']}($connection, $res + ['data' => []], $this->response->connection($connection));

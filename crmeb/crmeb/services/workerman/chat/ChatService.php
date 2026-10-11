@@ -111,7 +111,6 @@ class ChatService
         if (!$res || !isset($res['type']) || !$res['type'] || $res['type'] == 'ping') {
             return $this->response->connection($connection)->success('ping', ['now' => time(), 'datetime' => date('Y-m-d H:i:s')]);
         }
-        var_dump('chatMessage', $res);
         if (!method_exists($this->handle, $res['type'])) return;
         try {
             $this->handle->{$res['type']}($connection, $res + ['data' => []], $this->response->connection($connection));
