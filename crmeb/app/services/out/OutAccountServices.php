@@ -14,14 +14,14 @@ namespace app\services\out;
 use app\dao\out\OutAccountDao;
 use app\services\BaseServices;
 use crmeb\exceptions\AdminException;
-use crmeb\exceptions\AuthException;
-use crmeb\services\CacheService;
-use crmeb\services\AuthConfigGuard;
-use crmeb\services\SessionWhitelist;
+use crmeb\exceptions\AuthSessionException;
+use crmeb\exceptions\AuthUnavailableException;
 use crmeb\services\FormBuilder as Form;
 use crmeb\services\HttpService;
-use crmeb\utils\JwtAuth;
-use Firebase\JWT\ExpiredException;
+use crmeb\services\auth\AuthSessionStore;
+use crmeb\services\auth\AuthTokenV2;
+use crmeb\services\auth\CredentialStamp;
+use think\facade\Db;
 
 /**
  * 获取token
@@ -57,27 +57,44 @@ class OutAccountServices extends BaseServices
      * @throws \think\db\exception\DbException
      * @throws \think\db\exception\ModelNotFoundException
      */
-    public function authLogin(string $appid, string $appsecret = null)
+    public function authLogin(string $appid, ?string $appsecret = null): array
     {
-        AuthConfigGuard::assertRedisSessionStore();
-        $autInfo = $this->dao->get(['appid' => $appid, 'is_del' => 0]);
-        if (!$autInfo) {
-            throw new AuthException('没有此用户', [], 401);
+        // Dependency/configuration failure precedes credential enumeration.
+        $store = AuthSessionStore::fromConfig();
+        $tokens = new AuthTokenV2($store);
+        if ($appsecret === null || $appsecret === '') {
+            throw new AuthSessionException();
         }
-        if ($appsecret && !password_verify($appsecret, $autInfo->appsecret)) {
-            throw new AuthException('appid或appsecret错误', [], 401);
+        try {
+            $authInfo = $this->dao->get(['appid' => $appid, 'is_del' => 0]);
+        } catch (\Throwable $error) {
+            throw new AuthUnavailableException();
         }
-        if (!self::isEnabled($autInfo)) {
-            throw new AuthException('您已被禁止登录', [], 401);
+        if (!$authInfo) {
+            throw new AuthSessionException();
         }
-        $token = $this->createToken($autInfo->id, 'out');
-        $data['last_time'] = time();
-        $data['ip'] = request()->ip();
-        $this->update($autInfo['id'], $data);
+        $validatedDigest = (string)$authInfo['appsecret'];
+        // In particular, string "0" must be checked, not treated as absent.
+        if ($validatedDigest === '' || !password_verify($appsecret, $validatedDigest)
+            || !self::isEnabled($authInfo)) {
+            throw new AuthSessionException();
+        }
+        $id = (string)$authInfo['id'];
+        $version = $store->initAccount('outapi', $id);
+        $current = $this->currentCredentialAccount($id);
+        if (!hash_equals($validatedDigest, (string)$current['appsecret'])) {
+            throw new AuthSessionException();
+        }
+        // Task 6 protects subsequent credential/state writers; issue's CAS
+        // rejects a changed version or blocked account after the fresh read.
+        $tokenInfo = $tokens->issue('outapi', $id, $version,
+            CredentialStamp::for('outapi', $id, $validatedDigest));
+        $this->updateAuthenticationStats($id);
         return [
-            'access_token' => $token['token'],
-            'exp_time' => $token['params']['exp'],
-            'auth_info' => $autInfo->hidden(['appsecret', 'ip', 'is_del', 'add_time', 'status', 'last_time'])->toArray()
+            'access_token' => $tokenInfo['token'],
+            'exp_time' => $tokenInfo['exp'],
+            'auth_info' => $current->hidden(['appsecret', 'apppwd', 'push_password',
+                'ip', 'is_del', 'add_time', 'status', 'last_time'])->toArray()
         ];
     }
 
@@ -90,21 +107,16 @@ class OutAccountServices extends BaseServices
      * @throws \think\db\exception\DbException
      * @throws \think\db\exception\ModelNotFoundException
      */
-    public function parseToken(string $token)
+    public function parseToken(string $token): array
     {
-        /** @var CacheService $cacheService */
-        $cacheService = app()->make(CacheService::class);
-
-        /** @var JwtAuth $jwtAuth */
-        $jwtAuth = app()->make(JwtAuth::class);
-
-        //获取token信息
-        [$md5Token, $id, $type] = $this->verifyToken($token, $jwtAuth, $cacheService);
-
-        //获取对外账号
-        $authInfo = $this->dao->getOne(['id' => $id, 'is_del' => 0]);
-        $this->checkAuth($authInfo, $md5Token, $cacheService);
-        return $authInfo->hidden(['appsecret', 'ip', 'is_del', 'add_time', 'status', 'last_time'])->toArray();
+        // The current subject lives only in this invocation's callback scope.
+        $authInfo = null;
+        AuthTokenV2::fromConfig()->verify('outapi', $token, function (string $id) use (&$authInfo): string {
+            $authInfo = $this->currentCredentialAccount($id);
+            return (string)$authInfo['appsecret'];
+        });
+        return $authInfo->hidden(['appsecret', 'apppwd', 'push_password',
+            'ip', 'is_del', 'add_time', 'status', 'last_time'])->toArray();
     }
 
     /**
@@ -155,83 +167,49 @@ class OutAccountServices extends BaseServices
      */
     public function refresh(string $token): array
     {
-        /** @var CacheService $cacheService */
-        $cacheService = app()->make(CacheService::class);
-
-        /** @var JwtAuth $jwtAuth */
-        $jwtAuth = app()->make(JwtAuth::class);
-
-        //获取token信息
-        [$md5Token, $id, $type] = $this->verifyToken($token, $jwtAuth, $cacheService);
-
-        //获取对外账号
-        $authInfo = $this->dao->getOne(['id' => $id, 'is_del' => 0]);
-        $this->checkAuth($authInfo, $md5Token, $cacheService);
-
-        $cacheService->delete($md5Token);
-
-        $token = $jwtAuth->createToken($id, 'out');
-        $data['last_time'] = time();
-        $data['ip'] = request()->ip();
-        $this->dao->update($id, $data);
+        $authInfo = null;
+        $tokenInfo = AuthTokenV2::fromConfig()->refresh('outapi', $token, function (string $id) use (&$authInfo): string {
+            $authInfo = $this->currentCredentialAccount($id);
+            return (string)$authInfo['appsecret'];
+        });
+        // A refresh reply is returned only after the single-use exchange and
+        // statistics are acknowledged. No retry, old-sid revival or compensation.
+        $this->updateAuthenticationStats((string)$authInfo['id']);
         return [
-            'access_token' => $token['token'],
-            'exp_time' => $token['params']['exp'],
+            'access_token' => $tokenInfo['token'],
+            'exp_time' => $tokenInfo['exp'],
         ];
     }
 
-    /**
-     * 核对用户
-     * @param $authInfo
-     * @param string $md5Token
-     * @param CacheService $cacheService
-     * @return bool
-     */
-    protected function checkAuth($authInfo, string $md5Token, CacheService $cacheService): bool
+    /** Read current credentials/status without mutating account or caches. */
+    private function currentCredentialAccount(string $id)
     {
-        if (!$authInfo) {
-            if (!request()->isCli()) {
-                $cacheService->delete($md5Token);
-            }
-            throw new AuthException('登录已过期,请重新登录', [], 401);
+        try {
+            $authInfo = $this->dao->getOne(['id' => $id, 'is_del' => 0]);
+        } catch (\Throwable $error) {
+            throw new AuthUnavailableException();
         }
-
-        if (!self::isEnabled($authInfo)) {
-            if (!request()->isCli()) {
-                $cacheService->delete($md5Token);
-            }
-            throw new AuthException('您已被禁止登录', [], 401);
+        if (!self::isEnabled($authInfo) || (string)$authInfo['appsecret'] === '') {
+            throw new AuthSessionException();
         }
-        return true;
+        return $authInfo;
     }
 
-    /**
-     * 获取token
-     * @param string $token
-     * @param JwtAuth $jwtAuth
-     * @param CacheService $cacheService
-     * @return array
-     * @throws \Psr\SimpleCache\InvalidArgumentException
-     */
-    protected function verifyToken(string $token, JwtAuth $jwtAuth, CacheService $cacheService): array
+    /** Write only success statistics, never save a stale credential model. */
+    private function updateAuthenticationStats(string $id): void
     {
-        if (!$token || $token === 'undefined') {
-            throw new AuthException('登录失败', [], 401);
-        }
-        AuthConfigGuard::assertRedisSessionStore();
-        $md5Token = md5($token);
         try {
-            ['id' => $id, 'type' => $type] = $jwtAuth->decodeVerified($token);
-        } catch (AuthException $e) {
-            throw $e;
-        } catch (\Throwable $e) {
-            throw new AuthException('登录失败', [], 401);
+            Db::name('out_account')->where('id', $id)->update([
+                'last_time' => time(),
+                'ip' => request()->ip(),
+            ]);
+        } catch (\Throwable $error) {
+            // The acknowledged replacement may remain when DB write fails.
+            // Do not return its token, log private context, retry or compensate.
+            throw new AuthUnavailableException();
         }
-        if ($type !== 'out' || !SessionWhitelist::matches(SessionWhitelist::read($token), 'out', $id, $token)) {
-            throw new AuthException('登录已过期,请重新登录', [], 401);
-        }
-
-        return [$md5Token, $id, $type];
+        // An unchanged last_time/ip in the same second is a legitimate zero
+        // affected-row result, not a dependency failure or another token issue.
     }
 
     /**

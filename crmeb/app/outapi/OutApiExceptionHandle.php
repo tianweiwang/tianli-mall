@@ -15,6 +15,8 @@ namespace app\outapi;
 use crmeb\exceptions\AdminException;
 use crmeb\exceptions\ApiException;
 use crmeb\exceptions\AuthException;
+use crmeb\exceptions\AuthSessionException;
+use crmeb\exceptions\AuthUnavailableException;
 use think\db\exception\DbException;
 use think\exception\Handle;
 use think\facade\Env;
@@ -77,6 +79,14 @@ class OutApiExceptionHandle extends Handle
      */
     public function render($request, Throwable $e): Response
     {
+        // Controlled v2 errors bypass language cache, debug arguments and
+        // driver details; AuthException's existing report ignore covers both.
+        if ($e instanceof AuthUnavailableException) {
+            return Response::create(['status' => 503, 'msg' => '认证服务暂不可用', 'data' => []], 'json', 200);
+        }
+        if ($e instanceof AuthSessionException) {
+            return Response::create(['status' => 401, 'msg' => '认证信息无效，请重新登录', 'data' => []], 'json', 200);
+        }
         $massageData = Env::get('app_debug', false) ? [
             'message' => $e->getMessage(),
             'file' => $e->getFile(),

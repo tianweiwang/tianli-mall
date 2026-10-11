@@ -12,6 +12,10 @@ namespace app\outapi\controller;
 
 use app\outapi\validate\LoginValidate;
 use app\Request;
+use crmeb\exceptions\AuthSessionException;
+use crmeb\exceptions\AuthUnavailableException;
+use crmeb\services\auth\AuthSessionStore;
+use think\facade\Db;
 use think\facade\App;
 use app\services\out\OutAccountServices;
 
@@ -37,6 +41,18 @@ class Login extends AuthController
         // TODO: Implement initialize() method.
     }
 
+    /** Check the actual authentication dependencies before public input handling. */
+    private function assertAuthenticationDependencies(): void
+    {
+        AuthSessionStore::fromConfig();
+        try {
+            // This actual public method creates PDO; getPdo only observes it.
+            Db::connect()->connect();
+        } catch (\Throwable $error) {
+            throw new AuthUnavailableException();
+        }
+    }
+
     /**
      * 客服登录
      * @param Request $request
@@ -47,6 +63,7 @@ class Login extends AuthController
      */
     public function getToken(Request $request)
     {
+        $this->assertAuthenticationDependencies();
         [$appid, $appsecret] = $request->postMore([
             ['appid', ''],
             ['appsecret', ''],
@@ -64,9 +81,13 @@ class Login extends AuthController
      */
     public function refreshToken(Request $request)
     {
-        [$token] = $request->postMore([
-            ['access_token', ''],
-        ], true);
+        $this->assertAuthenticationDependencies();
+        // Preserve signed bytes; postMore eagerly writes filtering caches even
+        // for a schema-invalid token. Explicit null disables Think input filters.
+        $token = $request->post('access_token', '', null);
+        if (!is_string($token)) {
+            throw new AuthSessionException();
+        }
         $token = $this->services->refresh($token);
         return app('json')->success('操作成功', $token);
     }
