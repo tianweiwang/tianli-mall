@@ -265,6 +265,10 @@ public static function runMany(string $app, array $ids, callable $dbChange): mix
 
 同轮Q7源码复核：既有TagSet.set及Redis Driver.set忽略底层写入bool并返回true，不能据该返回值宣称下载记录写入成功。两生产者因此改用同调用点的窄`CacheService.setDownload(key,file)`：沿真实prefix/tag_prefix和默认PHP serialize，私有有界连接以两键Lua先核cache/tag类型，再SETEX300并SADD当前crmeb标签，严格收到整数1才返回；CacheService全局set和vendor保持。消费仍仅比较删除文件键，不删除既有tag成员。实际响应丢失或驱动异常受控503、不重试/补偿；这条实现由源码和正常实际写入核对，故障验证仍跳过。
 
+首份普通旧源基线（测试0ecd0b51，RUN=20261011165615374dae，execution=20261011172803177594）实际3PASS/3FAIL、原生Bash exit1，准备成功、清理失败；原JSONL/summary和异常输出保留。F03确实为账号0谓词，F05含旧确定性key，同时检查脚本错误地要求绝对URL和把更早预览的秒级模板时间当成正式生成时间；安装site_url为空时生产者的精确root-relative链接原本合法，四个原生模板的TIME在Make构造时读取当前秒，其余五文件通过。普通检查据该源事实修正为精确本站/root-relative路径及已知四header生成时间位于实际producer窗口，其他文件字节、ZIP九entry和未知文件差异仍严格核对，不能改seed/模板或整体忽略文件。
+
+F06首次query文件消费在原代码已HTTP200且字节/缓存消费通过：Think按名称把GET key自动绑定到控制器参数，故不能把潜在getMore数组分支称为已HTTP复现。实际失败为producer HTTP500而JSON业务200；已有私有运行日志及源码定位MysqlBackupService析构在未打开fp时无条件gzclose(null)，PHP8 TypeError使普通成功响应失败。Q7同必要调用点增加仅is_resource(fp)时关闭的析构保护，保留HTTP200原断言和查询兼容修正。无需新故障/负向试验。首次四不匹配文件未被错误登记删除，导致rmdir报非空；已按manifest身份核对将本RUN残留代码/ZIP复制到外部证据，后续整RUN精确teardown并用新RUN保留修正检查的基线，不清日志假装原检查通过。
+
 ### Task 9: 发布准备文档（不发布）
 
 **Files:**
