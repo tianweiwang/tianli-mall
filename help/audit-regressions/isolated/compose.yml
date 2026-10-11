@@ -72,6 +72,7 @@ services:
     environment:
       <<: *audit-env
       AUDIT_PHASE: ${AUDIT_PHASE:-after}
+      AUDIT_MILESTONE: ${AUDIT_MILESTONE:-MS0a}
     volumes:
       - ${AUDIT_REPO_DIR}:/workspace:ro
       - audit-vendor:/workspace/crmeb/vendor:ro

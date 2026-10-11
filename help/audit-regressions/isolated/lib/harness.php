@@ -19,7 +19,7 @@ function audit_case(string $caseId, string $subcase, string $layer, callable $fn
     try { $result = $fn(); } catch (Throwable $error) {
         $result = ['status' => 'FAIL', 'actual' => get_class($error) . ($error instanceof RuntimeException && !$error instanceof PDOException ? ': ' . $error->getMessage() : '')];
     }
-    $record = array_merge(['case_id' => $caseId, 'subcase' => $subcase, 'milestone' => 'MS0a', 'layer' => $layer, 'phase' => getenv('AUDIT_PHASE') ?: 'after', 'commit_sha' => getenv('AUDIT_SOURCE_SHA'), 'run_id' => getenv('AUDIT_RUN_ID'), 'finding_kind' => '新增契约', 'expected' => 'documented case contract', 'db_diff' => [], 'cache_diff' => [], 'evidence_ref' => '', 'notes' => ''], $result);
+    $record = array_merge(['case_id' => $caseId, 'subcase' => $subcase, 'milestone' => getenv('AUDIT_MILESTONE') ?: 'MS0a', 'layer' => $layer, 'phase' => getenv('AUDIT_PHASE') ?: 'after', 'commit_sha' => getenv('AUDIT_SOURCE_SHA'), 'run_id' => getenv('AUDIT_RUN_ID'), 'finding_kind' => '新增契约', 'expected' => 'documented case contract', 'db_diff' => [], 'cache_diff' => [], 'evidence_ref' => '', 'notes' => ''], $result);
     $GLOBALS['audit_results'][] = $record;
     echo $record['status'] . ' ' . $caseId . '/' . $subcase . ': ' . $record['actual'] . "\n";
 }

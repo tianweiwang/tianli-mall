@@ -68,4 +68,120 @@ audit_case('Z09', 'fixture-source', 'INTEGRATION', function (): array {
     audit_expect((int)$manifest['fixture_table_count'] === 157 && (int)$tables === 158, '157 installation tables and one sentinel table');
     return audit_pass('157 installation tables + audit_sentinel; normalized SQL SHA-256 matches');
 });
+if (getenv('AUDIT_MILESTONE') === 'MS0b') {
+    audit_case('Z02', 'no-egress', 'INTEGRATION', function (): array {
+        audit_guard_assert();
+        $spec = ['tables' => ['audit_sentinel' => null], 'redis' => ['*']];
+        $before = audit_snapshot($spec);
+        audit_expect(extension_loaded('curl') && function_exists('curl_init'), 'real PHP curl extension is required');
+        $curl = curl_init('https://example.com');
+        audit_expect($curl !== false, 'HTTPS curl handle must be created');
+        curl_setopt_array($curl, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 5, CURLOPT_CONNECTTIMEOUT => 5, CURLOPT_FOLLOWLOCATION => false, CURLOPT_PROXY => '', CURLOPT_NOPROXY => '*']);
+        $raw = curl_exec($curl);
+        $errno = curl_errno($curl);
+        $status = (int)curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
+        curl_close($curl);
+        audit_expect($raw === false && $status === 0 && in_array($errno, [6, 7, 28], true), 'HTTPS must fail at DNS/connect/timeout, not TLS or missing-extension failure');
+        audit_expect(audit_assert_unchanged($before, audit_snapshot($spec)) === [], 'egress probe must preserve sentinel and every Redis value');
+        return audit_pass('real HTTPS request with proxy disabled failed, curl=' . $errno . '; sentinel and all Redis values unchanged');
+    });
+
+    audit_case('Z02', 'no-host-ports', 'INTEGRATION', function (): array {
+        audit_guard_assert();
+        $spec = ['tables' => ['audit_sentinel' => null], 'redis' => ['*']];
+        $before = audit_snapshot($spec);
+        $manifest = audit_manifest();
+        $file = audit_run_dir() . '/containers.jsonl';
+        audit_expect(is_file($file), 'actual Docker container inspection is required');
+        $seen = [];
+        foreach (file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+            $container = json_decode($line, true, 512, JSON_THROW_ON_ERROR);
+            $service = $container['labels']['com.docker.compose.service'] ?? '';
+            if (!in_array($service, ['audit-mysql', 'audit-redis'], true)) { continue; }
+            audit_expect(!isset($seen[$service]), 'database/cache inspection must have unique service identities');
+            audit_expect(($container['id'] ?? '') === ($manifest['services'][$service]['id'] ?? null)
+                && ($container['labels']['tianli.audit.run'] ?? '') === getenv('AUDIT_RUN_ID')
+                && ($container['labels']['com.docker.compose.project'] ?? '') === $manifest['project'], 'inspected database/cache must match current manifest');
+            audit_expect(array_key_exists('ports', $container) && is_array($container['ports']), 'actual Docker port-binding map is required');
+            foreach ($container['ports'] as $binding) { audit_expect($binding === null, 'database/cache must have no host port bindings'); }
+            $seen[$service] = true;
+        }
+        audit_expect(count($seen) === 2, 'both actual MySQL and Redis containers must be inspected');
+        audit_expect(audit_assert_unchanged($before, audit_snapshot($spec)) === [], 'port inspection must preserve sentinel and every Redis value');
+        return audit_pass('actual manifest-owned MySQL/Redis port bindings are all null; sentinel and all Redis values unchanged');
+    });
+
+    foreach ([
+        'fault-before-eval' => ['when' => 'before', 'action' => 'throw', 'written' => false],
+        'fault-after-eval-response-loss' => ['when' => 'after', 'action' => 'throw', 'written' => true],
+        'fault-after-eval-disconnect' => ['when' => 'after', 'action' => 'disconnect', 'written' => true],
+    ] as $subcase => $fault) {
+        audit_case('Z07', $subcase, 'INTEGRATION', function () use ($subcase, $fault): array {
+            audit_guard_assert();
+            $adapter = __DIR__ . '/lib/fault.php';
+            audit_expect(is_file($adapter), 'real Redis fault adapter has not been implemented');
+            require_once $adapter;
+            audit_expect(class_exists('FaultyRedis', false), 'FaultyRedis adapter class is required');
+            $spec = ['tables' => ['audit_sentinel' => null], 'redis' => ['*']];
+            $before = audit_snapshot($spec);
+            $key = 'audit:fault:' . getenv('AUDIT_RUN_ID') . ':' . $subcase;
+            $observer = audit_redis();
+            audit_expect($observer->exists($key) === 0, 'fault probe must not overwrite an existing key');
+            $delegate = audit_redis();
+            $faulty = new FaultyRedis($delegate, [['command' => 'eval', 'occurrence' => 1, 'when' => $fault['when'], 'action' => $fault['action']]]);
+            $thrown = null;
+            $writeObserved = false;
+            try {
+                try {
+                    $faulty->eval("return redis.call('SET', KEYS[1], ARGV[1], 'EX', 120)", [$key, 'executed'], 1);
+                } catch (Throwable $error) { $thrown = $error; }
+                audit_expect($thrown instanceof RedisException, 'configured EVAL fault must throw a RedisException instead of returning success');
+                $writeObserved = $observer->get($key) === 'executed';
+                audit_expect($writeObserved === $fault['written'], 'independent real Redis read must distinguish failure before execution from response loss after execution');
+                if ($fault['action'] === 'disconnect') {
+                    audit_expect(!$delegate->isConnected(), 'disconnect fault must actually close the real Redis connection');
+                } elseif ($fault['when'] === 'before') {
+                    audit_expect($faulty->eval("return redis.call('SET', KEYS[1], ARGV[1], 'EX', 120)", [$key, 'next-command'], 1) === 'OK'
+                        && $observer->get($key) === 'next-command', 'fault occurrence must affect only the first EVAL; next command must execute against real Redis');
+                }
+            } finally {
+                // Remove only this run's exact disposable probe, never a prefix.
+                $observer->del($key);
+            }
+            audit_expect(audit_assert_unchanged($before, audit_snapshot($spec)) === [], 'fault probe cleanup must restore sentinel and every Redis value');
+            return audit_pass('EVAL exception=' . get_class($thrown) . '; write observed=' . ($writeObserved ? 'yes' : 'no') . '; exact probe removed, sentinel and all Redis values unchanged');
+        });
+    }
+
+    audit_case('Z07', 'service-fault-cycle', 'INTEGRATION', function (): array {
+        audit_guard_assert();
+        $adapter = __DIR__ . '/lib/fault.php';
+        audit_expect(is_file($adapter), 'real Redis fault adapter has not been implemented');
+        require_once $adapter;
+        audit_expect(function_exists('audit_fault_redis'), 'manifest-owned Redis service controller is required');
+        $spec = ['tables' => ['audit_sentinel' => null], 'redis' => ['*']];
+        $before = audit_snapshot($spec);
+        $paused = false;
+        $stopped = false;
+        $failures = [];
+        try {
+            audit_fault_redis('pause'); $paused = true;
+            try { audit_redis()->get('audit:sentinel'); } catch (RedisException $error) { $failures['pause'] = get_class($error); }
+            audit_fault_redis('unpause'); $paused = false;
+            audit_guard_assert();
+            audit_expect(isset($failures['pause']), 'real paused Redis must fail a bounded read');
+            audit_expect(audit_assert_unchanged($before, audit_snapshot($spec)) === [], 'unpause must preserve database sentinel and every Redis value');
+            audit_fault_redis('stop'); $stopped = true;
+            try { audit_redis()->get('audit:sentinel'); } catch (RedisException $error) { $failures['stop'] = get_class($error); }
+            audit_fault_redis('start'); $stopped = false;
+            audit_guard_assert();
+            audit_expect(isset($failures['stop']), 'real stopped Redis must fail a bounded read');
+            audit_expect(audit_assert_unchanged($before, audit_snapshot($spec)) === [], 'restart must preserve database sentinel and every Redis value');
+        } finally {
+            if ($paused) { audit_fault_redis('unpause'); }
+            if ($stopped) { audit_fault_redis('start'); }
+        }
+        return audit_pass('real pause/unpause/stop/start completed; pause and stop caused RedisException; both sentinels and all Redis values preserved');
+    });
+}
 audit_finish();
