@@ -625,11 +625,16 @@ try {
                     // genuine old producer's ordinary first download baseline.
                     td_check($key !== md5($zipPath), 'normal producer file key no longer equals the original deterministic path digest');
                     $generated = td_created_output($before, $after, $GLOBALS['td_preview'], $start, $end); $files = $generated['files']; $zip = new ZipArchive();
-                    audit_expect($zip->open($zipPath) === true, 'real producer archive is readable'); $seen = [];
-                    for ($i = 0; $i < $zip->numFiles; $i++) { $name = $zip->getNameIndex($i); if (str_ends_with($name, '/')) { continue; } $seen[$name] = $zip->getFromIndex($i); }
+                    audit_expect($zip->open($zipPath) === true, 'real producer archive is readable'); $seen = []; $fileEntries = 0; $duplicateEntry = false;
+                    for ($i = 0; $i < $zip->numFiles; $i++) {
+                        $name = $zip->getNameIndex($i); if (str_ends_with($name, '/')) { continue; }
+                        $fileEntries++;
+                        if (array_key_exists($name, $seen)) { $duplicateEntry = true; continue; }
+                        $seen[$name] = $zip->getFromIndex($i);
+                    }
                     $zip->close(); ksort($seen); $expected = $generated['zip_expected']; ksort($expected);
-                    $exactZip = count($expected) === 9 && $seen === $expected;
-                    td_check($exactZip, 'real ZIP contains exactly the same nine individually verified generated files and their complete bytes');
+                    $exactZip = $fileEntries === 9 && !$duplicateEntry && count($expected) === 9 && $seen === $expected;
+                    td_check($exactZip, 'real ZIP contains exactly nine non-directory entries with unique names and the complete bytes of the same nine verified generated files');
                     $relative = basename($zipPath); if ($exactZip && isset($after['backup'][$relative]) && !isset($before['backup'][$relative])) { $files[$relative] = $after['backup'][$relative]; td_register_file($relative); }
                     $keys = td_download_record($key, $zipPath, 'systemCrudList.zip', $before, $after, $start, $end);
                     return ['rows' => $logRows, 'keys' => $keys, 'files' => $files];

@@ -1,4 +1,4 @@
-# Task8 两处测试预期修正（仅外稿）
+# Task8 测试预期与正常 ZIP 完整性修正
 
 依据根代理已记录的 992b91d6 设计与真实首 RUN 基线。根代理执行的原基线为 3 PASS / 3 FAIL、native exit1、cleanup_failed=true；其原 JSONL、summary、每例证据和实际代码 ZIP 副本均保留。本代理本次只修外稿，没有执行或安装仓库。
 
@@ -8,3 +8,5 @@
 原基线的 encoded query 首次消费实际 HTTP200，Think Controller.php 第90/110行取 Request.param，Request.php 第862行合并 GET，Container.php 第454–455行按 key 参数名绑定 PublicController.download 的字符串参数，因此未进入 getMore 数组分支。不再声称本次 HTTP 复现 query TypeError。
 
 T8F06 原失败不是已证实的 regex 不匹配：其联合断言首先检查 HTTP200，但实际 producer HTTP500、业务 JSON200，后面的 regex 已短路。源码 MysqlBackupService.php 第22行未打开 fp，而第512–514行析构无条件 gzclose(null)；已有 app-runtime.log 对应 TypeError。此为根代理将修的正常业务调用点，测试 HTTP200 期望、SQL/gzip、审计日志、六 case/selector、状态差异和清理标准均保持。
+
+ZIP 校验另精确统计所有非目录条目，要求恰9个；同名条目设置失败标志且不覆盖第一次读取的内容。唯一名称和逐文件完整字节比较同时保持，不新增异常输入、复现或测试用例，正常生产/首下载流程不变。本修订只写外稿，未执行。
