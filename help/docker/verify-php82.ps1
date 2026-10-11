@@ -1155,7 +1155,8 @@ function Invoke-CandidateIntegrationCompatibility {
         "form-builder",
         "remote-upgrade-disabled",
         "empty-filter-rules",
-        "workerman-timer"
+        "workerman-timer",
+        "dao-join-aliases"
     )
     $details = [Collections.Generic.List[string]]::new()
     $failedCases = [Collections.Generic.List[string]]::new()

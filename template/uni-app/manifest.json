@@ -113,15 +113,15 @@
                 "push" : {},
                 "maps" : {
                     "amap" : {
-                        "appkey_ios" : "aeb768547b9d752891e37e1ca0a2b66d",
-                        "appkey_android" : "41ec5c3f4d110ce02a326210fe147be8"
+                        "appkey_ios" : "",
+                        "appkey_android" : ""
                     }
                 },
                 "oauth" : {
                     "apple" : {},
                     "weixin" : {
                         "appid" : "wx277a269f3d736d67",
-                        "appsecret" : "bd08741a055c2ecac5826ff1c048464b",
+                        "appsecret" : "",
                         "UniversalLinks" : "https://bzapp.crmeb.net/uni-universallinks/__UNI__A3F1ED4/"
                     }
                 },
@@ -129,8 +129,8 @@
                 "geolocation" : {
                     "amap" : {
                         "__platform__" : [ "ios", "android" ],
-                        "appkey_ios" : "aeb768547b9d752891e37e1ca0a2b66d",
-                        "appkey_android" : "41ec5c3f4d110ce02a326210fe147be8"
+                        "appkey_ios" : "",
+                        "appkey_android" : ""
                     }
                 },
                 "statics" : {
@@ -228,7 +228,7 @@
         "sdkConfigs" : {
             "maps" : {
                 "qqmap" : {
-                    "key" : "NO7BZ-APDKP-UCBD7-VT7CX-R5UZK-JBF2W"
+                    "key" : ""
                 }
             }
         },

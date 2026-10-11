@@ -886,6 +886,33 @@ function probeWorkermanTimer(): array
     return $checks;
 }
 
+function probeDaoJoinAliases(): array
+{
+    $checks = [];
+
+    foreach ([
+        'user_user_brokerage' => app\dao\user\UserUserBrokerageDao::class,
+        'user_user_bill' => app\dao\user\UserUserBillDao::class,
+    ] as $name => $class) {
+        $reflection = new ReflectionClass($class);
+        $dao = $reflection->newInstanceWithoutConstructor();
+        $writeAlias = Closure::bind(
+            static function (object $target): string {
+                $target->join_alis = 'b';
+
+                return $target->join_alis;
+            },
+            null,
+            $class
+        );
+
+        probeCheck($checks, $name . '_declares_join_alias', $reflection->hasProperty('join_alis'));
+        probeCheck($checks, $name . '_join_alias_round_trip', $writeAlias($dao) === 'b');
+    }
+
+    return $checks;
+}
+
 $caseHandlers = [
     'jwt' => 'probeJwt',
     'spreadsheet' => 'probeSpreadsheet',
@@ -901,6 +928,7 @@ $caseHandlers = [
     'remote-upgrade-disabled' => 'probeRemoteUpgradeDisabled',
     'empty-filter-rules' => 'probeEmptyFilterRules',
     'workerman-timer' => 'probeWorkermanTimer',
+    'dao-join-aliases' => 'probeDaoJoinAliases',
 ];
 
 try {
