@@ -230,26 +230,26 @@ git commit -m "fix(adminapi): verify JWT before use, require admin type, whiteli
 - Consumes: Task 3
 - Produces: 两个 `parseToken()` 的签名与返回结构不变
 
-- [ ] **Step 1: 盘点签发点**
+- [x] **Step 1: 盘点签发点**（实际使用 rg；顾客签发均为 api，客服签发均为 kefu，未发现其他合法顾客 type）
 
 Run: `grep -rnE "createToken\(" crmeb/app crmeb/crmeb | grep -v "function createToken"`
 Expected: 顾客端签发全部为 `'api'`，客服端为 `'kefu'`（与 F-26 一致）。出现其他 type 时**停止**并回报。
 
-- [ ] **Step 2: 确认 A09 中相关组合当前失败**
+- [x] **Step 2: 确认 A09 中相关组合当前失败**（7 PASS / 9 FAIL，exit 1；错误端混用实际复现）
 
 Run: `AUDIT_PHASE=after php help/audit-regressions/isolated/ms0a-auth.php --only=A09`
 Expected: admin/out 令牌访问 kefuapi、api 探针的组合 FAIL。
 
-- [ ] **Step 3: 实现**
+- [x] **Step 3: 实现**（仅验证路径；两个方法的签名与返回结构、原有签发逻辑保持不变）
 
 两个方法都改为：`decodeVerified()` → type 分别必须为 `kefu`、`api` → `SessionWhitelist::matches()` → 原有的账号查询与返回逻辑。错误 type 或白名单不匹配时直接拒绝，不删除缓存。
 
-- [ ] **Step 4: 重跑**
+- [x] **Step 4: 重跑**（另覆盖 A18 四端缓存篡改；43 项中 34 PASS / 9 待 Task 6，exit 1；9 项均属 out；两文件 lint PASS，独立源码复核无必须修复项）
 
 Run: `AUDIT_PHASE=after php help/audit-regressions/isolated/ms0a-auth.php --only=A09,A13,A14,A26,A28`
 Expected: A09 中除 out 相关组合外全部 PASS（out 在 Task 6）；A13、A14、A26 PASS；A28 中客服与顾客子场景 PASS。
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**（仅本地 Task 5 修复与本清单）
 
 ```bash
 git add crmeb/app/services/kefu/LoginServices.php crmeb/app/services/user/UserAuthServices.php

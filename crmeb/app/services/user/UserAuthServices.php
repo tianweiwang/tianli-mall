@@ -15,7 +15,8 @@ namespace app\services\user;
 use app\services\BaseServices;
 use app\dao\user\UserAuthDao;
 use crmeb\exceptions\AuthException;
-use crmeb\services\CacheService;
+use crmeb\services\AuthConfigGuard;
+use crmeb\services\SessionWhitelist;
 use crmeb\utils\JwtAuth;
 
 /**
@@ -45,35 +46,30 @@ class UserAuthServices extends BaseServices
      */
     public function parseToken($token): array
     {
-        $md5Token = is_null($token) ? '' : md5($token);
-
-        if ($token === 'undefined') {
+        if (!is_string($token) || !$token || $token === 'undefined') {
             throw new AuthException('请登录', [], 401);
         }
-        if (!$token || !$tokenData = CacheService::get($md5Token))
-            throw new AuthException('请登录', [], 401);
-
-        if (!is_array($tokenData) || empty($tokenData) || !isset($tokenData['uid'])) {
-            throw new AuthException('请登录', [], 401);
-        }
-
+        AuthConfigGuard::assertRedisSessionStore();
         /** @var JwtAuth $jwtAuth */
         $jwtAuth = app()->make(JwtAuth::class);
-        //设置解析token
-        [$id, $type] = $jwtAuth->parseToken($token);
-
-
         try {
-            $jwtAuth->verifyToken();
+            ['id' => $id, 'type' => $type] = $jwtAuth->decodeVerified($token);
+        } catch (AuthException $e) {
+            throw $e;
         } catch (\Throwable $e) {
-            if (!request()->isCli()) CacheService::delete($md5Token);
             throw new AuthException('登录已过期,请重新登录', [], 401);
         }
-
+        if ($type !== 'api') {
+            throw new AuthException('请登录', [], 401);
+        }
+        $tokenData = SessionWhitelist::read($token);
+        if (!SessionWhitelist::matches($tokenData, 'api', $id, $token)) {
+            throw new AuthException('请登录', [], 401);
+        }
         $user = $this->dao->get(['uid' => $id, 'is_del' => 0, 'status' => 1]);
 
         if (!$user || $user->uid != $tokenData['uid']) {
-            if (!request()->isCli()) CacheService::delete($md5Token);
+            if (!request()->isCli()) SessionWhitelist::forget($token);
             throw new AuthException('登录状态有误,请重新登录', [], 401);
         }
 

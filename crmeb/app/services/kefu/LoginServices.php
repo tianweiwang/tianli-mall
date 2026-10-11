@@ -17,6 +17,8 @@ use crmeb\services\oauth\OAuth;
 use crmeb\utils\JwtAuth;
 use app\services\BaseServices;
 use crmeb\services\CacheService;
+use crmeb\services\AuthConfigGuard;
+use crmeb\services\SessionWhitelist;
 use app\dao\service\StoreServiceDao;
 use app\services\wechat\WechatUserServices;
 
@@ -82,33 +84,28 @@ class LoginServices extends BaseServices
     public function parseToken(string $token)
     {
         $noCli = !request()->isCli();
-        //检测token是否过期
-        $md5Token = md5($token);
-        if (!$token || !CacheService::has($md5Token) || !(CacheService::get($md5Token, '', NULL, 'kefu'))) {
-            throw new AuthException('请登录', [], 402);
+        if (!$token || $token === 'undefined') {
+            throw new AuthException('请登录', [], 401);
         }
-        if ($token === 'undefined') {
-            throw new AuthException('请登录', [], 402);
-        }
-
+        AuthConfigGuard::assertRedisSessionStore();
         /** @var JwtAuth $jwtAuth */
         $jwtAuth = app()->make(JwtAuth::class);
-        //设置解析token
-        [$id, $type] = $jwtAuth->parseToken($token);
-
-        //验证token
         try {
-            $jwtAuth->verifyToken();
+            ['id' => $id, 'type' => $type] = $jwtAuth->decodeVerified($token);
+        } catch (AuthException $e) {
+            throw $e;
         } catch (\Throwable $e) {
-            $noCli && CacheService::delete($md5Token);
-            throw new AuthException('登录已过期,请重新登录', [], 402);
+            throw new AuthException('登录已过期,请重新登录', [], 401);
+        }
+        if ($type !== 'kefu' || !SessionWhitelist::matches(SessionWhitelist::read($token), 'kefu', $id, $token)) {
+            throw new AuthException('请登录', [], 401);
         }
 
         //获取管理员信息
         $adminInfo = $this->dao->get($id);
         if (!$adminInfo || !$adminInfo->id) {
-            $noCli && CacheService::delete($md5Token);
-            throw new AuthException('登录状态有误,请重新登录', [], 402);
+            $noCli && SessionWhitelist::forget($token);
+            throw new AuthException('登录状态有误,请重新登录', [], 401);
         }
 
         $adminInfo->type = $type;
