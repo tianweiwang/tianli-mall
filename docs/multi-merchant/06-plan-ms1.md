@@ -81,6 +81,8 @@ Task1普通运行契约（先于接线）：audit-worker沿既有x-php隔离设�
 - Create: `help/migrations/marketplace-ms1.php`、`help/migrations/marketplace-ms1.md`
 - Create: `help/audit-regressions/isolated/ms1-migration.php`
 
+2026-10-12编码前已冻结marketplace-ms1.md的五表/七登记合同；独立源码审查确认，仅修正草稿中不合法的自增列CHECK。保留非自增mer_id正数检查与同商家组合RESTRICT FK，自增ID由正常省略写入及服务/上下文正数校验保证，不增加trigger/其他表。CLI沿纯PDO默认check，兼容check|apply/--check|--apply与操作者私有--config-file；命名锁内重检后创建，遇部分结构不自动修复，DDL隐式提交如实报告。普通隔离脚本使用既有audit-bootstrap内的audit_migrator执行真实CLI四步（check、apply、check、apply），原audit_app隔离保护和权限不变；完整旧表结构/行hash、可用checksum、旧菜单逐ID内容保留，仅允许五张空表及七条本版接口行和自然菜单计数器变化。新身份/菜单留在本RUN最终随实例销毁，不删表、不回拨计数、不清理Redis。异构结构/错误输入/故障/并发/恢复项按用户指示NOT RUN；基础脚本缺失的正常开发基线可记真实FAIL，不能注入故障或重跑停用套件。
+
 **Interfaces:**
 - Produces: 五张表（§Global Constraints）；`eb_system_menus` 中新增平台菜单与接口登记（`auth_type = 2`），权限标记以 `marketplace-` 开头；命令 `php help/migrations/marketplace-ms1.php check|apply`
 
