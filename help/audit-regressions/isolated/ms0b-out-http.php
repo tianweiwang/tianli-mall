@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-/* Task 5 draft: basic real HTTP / real framework CLI / independent MCP.
- * Copy beside lib/ only after review. Not executed or linted by its preparer.
+/* Task 5 real HTTP / real framework CLI / independent MCP integration.
+ * Default runs all 50 cases; --only=refresh-races selects exactly two cases.
  * Uses an already provisioned fresh RUN; never supplies missing auth config.
- * Concurrent HTTP and response-before-read disconnect are explicitly pending.
+ * Includes actual HTTP worker overlap and response-before-read disconnect checks.
  * Evidence contains booleans/counts/diff hashes, never a token, password or DTO.
  */
 require __DIR__ . '/lib/harness.php';
@@ -12,6 +12,9 @@ require __DIR__ . '/lib/token-forge.php';
 require __DIR__ . '/lib/fault.php';
 audit_guard_assert();
 putenv('AUDIT_MILESTONE=MS0b');
+$selection = array_slice($argv, 1);
+audit_expect($selection === [] || $selection === ['--only=refresh-races'], 'only the documented exact test selection is allowed');
+$GLOBALS['m5_only_refresh_races'] = $selection !== [];
 $GLOBALS['m5_config'] = audit_config();
 $auth = $GLOBALS['m5_config']['auth'] ?? [];
 audit_expect(($auth['session_epoch'] ?? '') === 'audit-http-' . getenv('AUDIT_RUN_ID')
@@ -235,6 +238,7 @@ function m5_negative(callable $operation, int $expected, ?callable $recover = nu
 }
 function m5_case(string $id, string $subcase, string $expected, callable $fn, string $layer = 'INTEGRATION'): void
 {
+    if ($GLOBALS['m5_only_refresh_races'] && !in_array($subcase, ['out-http-two-worker-single-refresh', 'out-http-response-before-read-disconnect'], true)) { return; }
     audit_case($id, $subcase, $layer, static function () use ($id, $subcase, $expected, $fn): array {
         $GLOBALS['m5_case'] = ['checks' => [], 'requests' => [], 'observations' => [], 'db_diff' => [], 'cache_diff' => []];
         try { $fn(); } catch (Throwable $error) { m5_check(false, 'case preparation/operation/recovery succeeds (' . get_class($error) . ')'); }
@@ -248,7 +252,7 @@ function m5_case(string $id, string $subcase, string $expected, callable $fn, st
             'actual' => 'checks ' . count(array_filter(array_column($capture['checks'], 'passed'))) . '/' . count($capture['checks'])
                 . '; DB/cache changes ' . count($capture['db_diff']) . '/' . count($capture['cache_diff']),
             'db_diff' => $capture['db_diff'], 'cache_diff' => $capture['cache_diff'], 'evidence_ref' => $ref,
-            'notes' => 'Real HTTP and real framework CLI. True HTTP concurrency, response disconnect, Task6 guards/midflight failures remain pending.'];
+            'notes' => 'Selection=' . ($GLOBALS['m5_only_refresh_races'] ? 'refresh-races' : 'all') . '; real HTTP/framework CLI. Race conclusions require actual mapped-actor evidence; Task6 guards/midflight failures and Task10 full freeze remain pending.'];
     });
 }
 
@@ -423,6 +427,444 @@ function m5_mcp_success(array $response, int $id, string $method): void
     foreach (m5_secrets() as $secret) { if ($secret !== '') { m5_check(!str_contains($response['raw'] ?? '', $secret), 'MCP result contains no known private secret'); } }
 }
 
+function m5_race_log_offset(): int
+{
+    $path = audit_run_dir() . '/evidence/app-runtime.log';
+    clearstatcache(true, $path); return is_file($path) ? (int)filesize($path) : 0;
+}
+function m5_race_log_events(int $offset, array $clients = []): array
+{
+    $path = audit_run_dir() . '/evidence/app-runtime.log';
+    $handle = fopen($path, 'rb'); audit_expect(is_resource($handle), 'server log observation is available');
+    try {
+        audit_expect(fseek($handle, $offset) === 0, 'server log offset is valid');
+        $events = [];
+        while (($line = fgets($handle)) !== false) {
+            $end = ftell($handle); $begin = $end - strlen($line);
+            if (preg_match('/^\[(\d+)\] .*PHP ([0-9.]+) Development Server .* started\s*$/D', $line, $match) === 1) {
+                $events[] = ['kind' => 'started', 'pid' => (int)$match[1], 'version' => $match[2], 'offset' => $begin];
+            }
+            foreach ($clients as $label => $client) {
+                if (preg_match('/^\[(\d+)\] .* ' . preg_quote($client['local_address'], '/') . ' (Accepted|Closing)\s*$/D', $line, $match) === 1) {
+                    $events[] = ['kind' => strtolower($match[2]), 'label' => $label, 'pid' => (int)$match[1], 'offset' => $begin];
+                }
+            }
+        }
+        return $events;
+    } finally { fclose($handle); }
+}
+function m5_race_app_facts(string $action = 'observe', ?int $deadline = null): array
+{
+    if ($deadline === null) { audit_app_request($action); }
+    else {
+        // Same real supervisor protocol as audit_app_request. Its generic100ms
+        // polling can spend the entire200ms proof budget, so only this read-only
+        // observation uses10ms polling and the existing absolute barrier bound.
+        audit_expect($action === 'observe', 'only read-only observation has a short proof deadline');
+        $revision = bin2hex(random_bytes(8));
+        audit_write_json(audit_run_dir() . '/app-control.json', ['run_id' => getenv('AUDIT_RUN_ID'),
+            'revision' => $revision, 'action' => 'observe', 'overrides' => []]);
+        do {
+            usleep(10000); $ack = audit_read_control_json(audit_run_dir() . '/app-status.json');
+            if (($ack['revision'] ?? '') === $revision) { break; }
+        } while (hrtime(true) < $deadline);
+        audit_expect(($ack['revision'] ?? '') === $revision && ($ack['status'] ?? '') === 'observe'
+            && hrtime(true) <= $deadline, 'same registered supervisor acknowledges observation inside the proof deadline');
+    }
+    $facts = $deadline === null ? audit_read_control_json(audit_run_dir() . '/app-status.json') : $ack;
+    audit_expect(($facts['run_id'] ?? '') === getenv('AUDIT_RUN_ID') && ($facts['status'] ?? '') === $action,
+        'manifest-owned supervisor observation is acknowledged');
+    return $facts;
+}
+function m5_race_write($socket, string $bytes, int $deadline): int
+{
+    $written = 0;
+    while ($written < strlen($bytes)) {
+        audit_expect(hrtime(true) < $deadline, 'complete socket write is bounded');
+        $amount = @fwrite($socket, substr($bytes, $written));
+        audit_expect($amount !== false, 'socket write succeeds without reconnect or retry');
+        if ($amount === 0) {
+            $read = []; $write = [$socket]; $except = [];
+            audit_expect(stream_select($read, $write, $except, 0, 5000) !== false, 'socket write readiness is available');
+        } else { $written += $amount; }
+    }
+    return $written;
+}
+function m5_race_open(string $token): array
+{
+    $socket = @stream_socket_client('tcp://audit-app:8000', $errno, $message, 0.3, STREAM_CLIENT_CONNECT);
+    audit_expect(is_resource($socket), 'real fixed-endpoint socket connects');
+    try {
+        stream_set_blocking($socket, false);
+        $body = json_encode(['access_token' => $token], JSON_THROW_ON_ERROR);
+        $request = "POST /outapi/refresh_token HTTP/1.1\r\nHost: audit-app:8000\r\nConnection: close\r\nContent-Type: application/json\r\nContent-Length: " . strlen($body) . "\r\n\r\n" . $body;
+        $initial = m5_race_write($socket, substr($request, 0, -1), hrtime(true) + 300000000);
+        $address = stream_socket_get_name($socket, false);
+        audit_expect(is_string($address) && preg_match('/^[0-9.]+:[0-9]+$/D', $address) === 1, 'actual IPv4 client address is observable');
+        return ['socket' => $socket, 'local_address' => $address, 'last_byte' => substr($request, -1),
+            'request_bytes' => strlen($request), 'initial_bytes' => $initial, 'response_read_bytes' => 0];
+    } catch (Throwable $error) { fclose($socket); throw $error; }
+}
+function m5_race_allocate(string $token, int $count, array $generation, int $offset): array
+{
+    $deadline = hrtime(true) + 2000000000; $attempts = []; $assigned = [];
+    for ($attempt = 1; $attempt <= 3 && hrtime(true) < $deadline; ++$attempt) {
+        $clients = [];
+        try {
+            foreach (array_slice(['A', 'B'], 0, $count) as $label) { $clients[$label] = m5_race_open($token); }
+            do {
+                $assigned = [];
+                foreach (m5_race_log_events($offset, $clients) as $event) {
+                    if ($event['kind'] === 'accepted') { $assigned[$event['label']] = $event; }
+                }
+                if (count($assigned) === $count) { break; }
+                usleep(5000);
+            } while (hrtime(true) < $deadline);
+            $pids = array_column($assigned, 'pid');
+            $satisfied = count($assigned) === $count && count(array_unique($pids)) === $count
+                && array_diff($pids, $generation['server_pids']) === [];
+            $facts = ['attempt' => $attempt, 'satisfied' => $satisfied, 'actors' => []];
+            foreach ($clients as $label => $client) {
+                $facts['actors'][$label] = ['address_sha256' => hash('sha256', $client['local_address']),
+                    'server_pid' => $assigned[$label]['pid'] ?? null, 'accepted_offset' => $assigned[$label]['offset'] ?? null,
+                    'initial_bytes' => $client['initial_bytes'], 'request_bytes' => $client['request_bytes']];
+            }
+            $attempts[] = $facts;
+            if ($satisfied) {
+                foreach ($clients as $label => &$client) { $client['server_pid'] = $assigned[$label]['pid']; $client['accepted_offset'] = $assigned[$label]['offset']; }
+                unset($client);
+                $GLOBALS['m5_case']['transport']['allocations'] = $attempts;
+                $GLOBALS['m5_case']['transport']['allocation_failures'] = count($attempts) - 1;
+                return $clients;
+            }
+        } finally {
+            if (!($satisfied ?? false)) { foreach ($clients as $client) { if (is_resource($client['socket'])) { fclose($client['socket']); } } }
+        }
+        usleep(10000);
+    }
+    $GLOBALS['m5_case']['transport']['allocations'] = $attempts;
+    $GLOBALS['m5_case']['transport']['allocation_failures'] = count($attempts);
+    throw new RuntimeException('different actual server PID allocation was not achieved within three preconnection groups');
+}
+function m5_race_client_list(Redis $redis): array
+{
+    $raw = $redis->rawCommand('CLIENT', 'LIST'); audit_expect(is_string($raw), 'native CLIENT LIST is readable during WRITE pause');
+    $clients = [];
+    foreach (explode("\n", trim($raw)) as $line) {
+        $fields = [];
+        foreach (explode(' ', $line) as $field) { $parts = explode('=', $field, 2); if (count($parts) === 2) { $fields[$parts[0]] = $parts[1]; } }
+        if (isset($fields['id'])) { $clients[$fields['id']] = $fields; }
+    }
+    return $clients;
+}
+function m5_race_blocked(Redis $redis, array $clients, array $generation, int $pauseAt): array
+{
+    $facts = []; $deadline = $pauseAt + 200000000;
+    do {
+        $first = m5_race_client_list($redis);
+        $waiting = array_filter($first, static fn(array $client): bool => str_contains($client['flags'] ?? '', 'b') && ($client['cmd'] ?? '') === 'eval');
+        if (count($waiting) < count($clients)) { usleep(3000); continue; }
+        $observation = m5_race_app_facts('observe', $deadline); $second = m5_race_client_list($redis); $facts = [];
+        audit_expect(($observation['generation_revision'] ?? '') === $generation['revision'], 'blocked sockets belong to the same registered generation');
+        foreach ($clients as $label => $client) {
+            foreach ($observation['members'] ?? [] as $member) {
+                if (($member['pid'] ?? 0) !== $client['server_pid'] || ($member['starttime'] ?? null) !== ($generation['starttimes'][$client['server_pid']] ?? null)) { continue; }
+                foreach ($member['redis_sockets'] ?? [] as $socket) {
+                    $address = audit_manifest()['services']['audit-app']['address'] . ':' . $socket['local_port'];
+                    foreach ($waiting as $id => $before) {
+                        $after = $second[$id] ?? [];
+                        if (($before['addr'] ?? '') !== $address || ($after['addr'] ?? '') !== $address
+                            || !str_contains($after['flags'] ?? '', 'b') || ($after['cmd'] ?? '') !== 'eval'
+                            || ($socket['remote_port'] ?? 0) !== 6379 || !ctype_digit((string)($socket['inode'] ?? ''))
+                            || !ctype_digit((string)$id)) { continue; }
+                        $facts[$label] = ['server_pid' => $client['server_pid'], 'blocked_mapped' => true, 'command' => 'eval',
+                            'redis_client_id' => (string)$id,
+                            'redis_connection_sha256' => hash('sha256', $address . '|' . $socket['inode']),
+                            'sample_elapsed_ms' => (hrtime(true) - $pauseAt) / 1000000];
+                    }
+                }
+            }
+        }
+        if (count($facts) === count($clients) && count(array_unique(array_column($facts, 'redis_client_id'))) === count($clients)
+            && count(array_unique(array_column($facts, 'redis_connection_sha256'))) === count($clients)) { break; }
+        usleep(3000);
+    } while (hrtime(true) < $deadline);
+    $GLOBALS['m5_case']['transport']['blocked'] = $facts;
+    audit_expect(count($facts) === count($clients) && count(array_unique(array_column($facts, 'redis_client_id'))) === count($clients)
+        && count(array_unique(array_column($facts, 'redis_connection_sha256'))) === count($clients) && hrtime(true) <= $deadline,
+        'all distinct real HTTP actors simultaneously wait on mapped native eval connections within200ms');
+    return $facts;
+}
+function m5_race_receive(array &$client): array
+{
+    $raw = ''; $deadline = hrtime(true) + 3000000000;
+    do {
+        $read = [$client['socket']]; $write = []; $except = [];
+        $ready = stream_select($read, $write, $except, 0, 10000);
+        audit_expect($ready !== false, 'HTTP response readiness is available');
+        if ($ready > 0) {
+            $bytes = fread($client['socket'], 8192); audit_expect($bytes !== false, 'real HTTP response read succeeds');
+            $raw .= $bytes; $client['response_read_bytes'] += strlen($bytes);
+            audit_expect(strlen($raw) <= 262144, 'HTTP response remains within the bounded transport envelope');
+        }
+        if (feof($client['socket'])) { break; }
+    } while (hrtime(true) < $deadline);
+    audit_expect(feof($client['socket']), 'real HTTP actor completes within3seconds');
+    $parts = explode("\r\n\r\n", $raw, 2);
+    audit_expect(count($parts) === 2 && preg_match('/\AHTTP\/1\.[01] ([0-9]{3})\b/', $parts[0], $match) === 1
+        && stripos($parts[0], 'Transfer-Encoding: chunked') === false, 'actual PHP server returns an ordinary complete HTTP envelope');
+    $json = json_decode($parts[1], true, 512, JSON_THROW_ON_ERROR);
+    audit_expect(is_array($json), 'actual HTTP body is a JSON object');
+    return ['http' => (int)$match[1], 'json' => $json, 'raw' => $parts[1]];
+}
+function m5_race_closings(int $offset, array $clients): array
+{
+    $deadline = hrtime(true) + 3000000000; $closings = [];
+    do {
+        $closings = [];
+        foreach (m5_race_log_events($offset, $clients) as $event) {
+            if ($event['kind'] === 'closing' && $event['pid'] === ($clients[$event['label']]['server_pid'] ?? 0)) { $closings[$event['label']] = $event; }
+        }
+        if (count($closings) === count($clients)) { break; } usleep(10000);
+    } while (hrtime(true) < $deadline);
+    return $closings;
+}
+function m5_race_unknown_token_log_free(int $offset): bool
+{
+    $handle = fopen(audit_run_dir() . '/evidence/app-runtime.log', 'rb');
+    if (!is_resource($handle)) { return false; }
+    try {
+        if (fseek($handle, $offset) !== 0) { return false; }
+        $bytes = stream_get_contents($handle);
+        // The disconnected client never learns the replacement JWT. Check its
+        // possible textual shape without reconstructing it or saving a match.
+        return is_string($bytes) && preg_match('/\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]{43}\b/', $bytes) === 0;
+    } finally { fclose($handle); }
+}
+function m5_race_effects(array $before, array $runtimeBefore, array $rowsBefore, array $oldBinding,
+    array $oldRecord, array $keysBefore, int $start, int $end, ?array $fresh): array
+{
+    audit_guard_assert(); $after = m5_snapshot(); $runtimeAfter = m5_runtime_snapshot(); $rowsAfter = m5_rows();
+    $newKeys = array_values(array_diff(m5_scan($GLOBALS['m5_v2_prefix'] . 'session:*'), $keysBefore));
+    $expectedOld = $oldRecord; $expectedOld['status'] = 'consumed'; $actualOld = audit_redis()->hGetAll($oldBinding['session_key']);
+    ksort($expectedOld); ksort($actualOld);
+    m5_check($actualOld === $expectedOld, 'presented old HASH changes only active to consumed without deletion or rebuilding');
+    $oldExpiry = $before['expires'][$oldBinding['session_key']] ?? -2; $nowExpiry = $after['expires'][$oldBinding['session_key']] ?? -2;
+    m5_check($oldExpiry > 0 && $nowExpiry > 0 && abs($oldExpiry - $nowExpiry) <= 1, 'consumed old sid retains its original absolute expiry');
+    m5_check(count($newKeys) === 1, 'exactly one new server-side sid exists after the actual HTTP exchange');
+    $allowed = [$oldBinding['session_key']]; $recordValid = false;
+    if (count($newKeys) === 1) {
+        $newKey = $newKeys[0]; $record = audit_redis()->hGetAll($newKey); $fields = array_keys($record); sort($fields, SORT_STRING);
+        $expectedFields = ['subject_id', 'type', 'audience', 'session_version', 'token_digest', 'credential_stamp', 'expires_at', 'status']; sort($expectedFields, SORT_STRING);
+        $row = m5_row('out_101'); $expiry = $record['expires_at'] ?? '';
+        $recordValid = preg_match('/^' . preg_quote($GLOBALS['m5_v2_prefix'] . 'session:', '/') . '[a-f0-9]{32}$/D', $newKey) === 1
+            && $fields === $expectedFields && ($record['subject_id'] ?? '') === (string)$row['id'] && ($record['type'] ?? '') === 'out'
+            && ($record['audience'] ?? '') === 'outapi' && ($record['session_version'] ?? '') === $oldRecord['session_version']
+            && ($record['status'] ?? '') === 'active' && preg_match('/^[a-f0-9]{64}$/D', $record['token_digest'] ?? '') === 1
+            && ($record['token_digest'] ?? '') !== $oldRecord['token_digest']
+            && ($record['credential_stamp'] ?? '') === hash_hmac('sha256', 'outapi|' . $row['id'] . '|' . $row['appsecret'], $GLOBALS['m5_auth']['stamp_key'])
+            && preg_match('/^[1-9][0-9]{0,11}$/D', $expiry) === 1 && (int)$expiry >= $start + 30 * 86400 && (int)$expiry <= $end + 30 * 86400
+            && ($after['expires'][$newKey] ?? 0) > 0 && abs($after['expires'][$newKey] - ((int)$expiry + 60) * 1000) <= 1;
+        m5_check($recordValid, 'one active replacement has exact identity/type/audience/current HMAC/version/digest fields and bounded expiry, with no predecessor digest');
+        if ($recordValid) { $allowed[] = $newKey; $GLOBALS['m5_owned_sessions'][] = $newKey; }
+        if ($fresh !== null) {
+            $binding = m5_binding($fresh);
+            m5_check(($binding['session_key'] ?? null) === $newKey && ($record['token_digest'] ?? '') === hash('sha256', $fresh['token']), 'received successful replacement token binds exactly the only new HASH');
+        }
+        $GLOBALS['m5_case']['transport']['replacement'] = ['key_sha256' => hash('sha256', $newKey),
+            'record_sha256' => hash('sha256', json_encode($record, JSON_THROW_ON_ERROR)), 'binding_valid' => $recordValid, 'received_token' => $fresh !== null];
+    }
+    $id = (string)$GLOBALS['m5_accounts']['out_101']['id']; $same = count($rowsBefore) === count($rowsAfter);
+    foreach ($rowsBefore as $rowId => $row) {
+        if ((string)$rowId !== $id) { if (($rowsAfter[$rowId] ?? null) !== $row) { $same = false; } continue; }
+        foreach ($row as $field => $value) { if (!in_array($field, ['last_time', 'ip'], true) && ($rowsAfter[$id][$field] ?? null) !== $value) { $same = false; } }
+    }
+    m5_check($same && (int)($rowsAfter[$id]['last_time'] ?? 0) >= $start && (int)($rowsAfter[$id]['last_time'] ?? 0) <= $end
+        && ($rowsAfter[$id]['ip'] ?? '') === gethostbyname(gethostname()), 'acknowledged service exchange changes only target last_time/IP, allowing unchanged values in the same second');
+    $diff = m5_differences($before, $after, $allowed);
+    $diff['db'] = array_merge(array_values(array_diff($diff['db'], ['eb_out_account'])), $same ? [] : ['eb_out_account']);
+    m5_observe($before, $after, $runtimeBefore, $runtimeAfter, $diff);
+    m5_check($diff['db'] === [] && $diff['cache'] === [], 'all158 tables and every account/other sid/cache value and absolute expiry remain unchanged except the validated old/new records and target statistics');
+    m5_check($runtimeBefore === $runtimeAfter && m5_sensitive_log_free(), 'real file cache/business logs remain unchanged and no private value reaches logs');
+    return ['snapshot' => $after, 'runtime' => $runtimeAfter, 'new_keys' => $newKeys,
+        'redeemed' => $actualOld === $expectedOld && count($newKeys) === 1 && $recordValid];
+}
+function m5_race_run(bool $disconnect): void
+{
+    $clients = []; $control = null; $paused = false; $before = null; $fresh = null; $oldBinding = null; $registeredGroup = null;
+    $sessionsAtEntry = m5_scan($GLOBALS['m5_v2_prefix'] . 'session:*'); $accountsAtEntry = m5_scan($GLOBALS['m5_v2_prefix'] . 'account:*');
+    $prefixesAtEntry = $GLOBALS['m5_cache_prefixes']; $logOffset = m5_race_log_offset();
+    $GLOBALS['m5_case']['transport'] = ['configured_workers' => '2', 'client_pid' => getmypid(), 'response_disconnect' => $disconnect,
+        'ignore_user_abort_override' => false, 'test_source_sha256' => hash_file('sha256', __FILE__), 'source_sha256' => []];
+    foreach (['crmeb/app/services/out/OutAccountServices.php', 'crmeb/app/outapi/controller/Login.php',
+        'crmeb/app/outapi/OutApiExceptionHandle.php', 'crmeb/crmeb/services/auth/AuthTokenV2.php',
+        'crmeb/crmeb/services/auth/AuthSessionStore.php', 'help/audit-regressions/isolated/lib/harness.php'] as $relative) {
+        $GLOBALS['m5_case']['transport']['source_sha256'][$relative] = hash_file('sha256', audit_repo_dir() . '/' . $relative);
+    }
+    try {
+        m5_start(['SERVER_WORKERS' => '2']); $facts = m5_race_app_facts(); $starts = m5_race_log_events($logOffset);
+        $registeredGroup = $facts['group'];
+        $pids = []; $versions = []; $starttimes = [];
+        foreach ($facts['members'] ?? [] as $member) { $starttimes[$member['pid']] = $member['starttime']; }
+        foreach ($starts as $event) { if ($event['kind'] === 'started' && isset($starttimes[$event['pid']])) { $pids[] = $event['pid']; $versions[] = $event['version']; } }
+        $pids = array_values(array_unique($pids)); sort($pids, SORT_NUMERIC); $versions = array_values(array_unique($versions));
+        audit_expect(count($pids) >= 2 && ($facts['listener_open'] ?? false) && $versions !== []
+            && count(array_filter($versions, static fn(string $version): bool => str_starts_with($version, '8.2.'))) === count($versions), 'real Linux registered generation has multiple actual PHP8.2 server PIDs');
+        $generation = ['revision' => $facts['generation_revision'], 'server_pids' => $pids, 'starttimes' => $starttimes];
+        $GLOBALS['m5_case']['transport']['generation'] = ['revision' => $generation['revision'], 'server_pids' => $pids,
+            'actual_versions' => $versions, 'pgid' => $facts['group']['pgid'], 'sid' => $facts['group']['sid']];
+        $old = m5_login('out_101'); $oldBinding = m5_binding($old); $same = m5_login('out_101'); $other = m5_login('out_102');
+        audit_expect(isset($oldBinding['session_key']), 'presented HTTP-issued old token has a real v2 session');
+        foreach ([$old, $same, $other] as $login) { audit_expect(m5_status(m5_http('GET', '/outapi/category/list', $login['token'])) === 200, 'normal actual grant is warm and usable before race observation'); }
+        $warm = m5_login('out_101'); $warmResponse = m5_http('POST', '/outapi/refresh_token', null, ['access_token' => $warm['token']]);
+        $warmToken = $warmResponse['json']['data']['access_token'] ?? null;
+        audit_expect(m5_status($warmResponse) === 200 && is_string($warmToken), 'normal real refresh is warmed outside the race window');
+        $GLOBALS['m5_live_tokens'][] = $warmToken; m5_track($warmToken, 'out_101');
+        $clients = m5_race_allocate($old['token'], $disconnect ? 1 : 2, $generation, $logOffset);
+        audit_guard_assert(); $preparedSnapshot = m5_snapshot(); $runtimeBefore = m5_runtime_snapshot(); $rowsBefore = m5_rows(); $keysBefore = m5_scan($GLOBALS['m5_v2_prefix'] . 'session:*');
+        $oldRecord = audit_redis()->hGetAll($oldBinding['session_key']); audit_expect(($oldRecord['status'] ?? '') === 'active', 'old actual session is active at the observation boundary');
+        $before = $preparedSnapshot; $start = time(); $control = audit_redis(); $pauseAt = hrtime(true); $paused = true;
+        $GLOBALS['m5_case']['transport']['barrier'] = ['pause_at_monotonic_ns' => (string)$pauseAt,
+            'pause_duration_ms' => 500, 'mode' => 'WRITE', 'proof_deadline_ms' => 200, 'close_deadline_ms' => $disconnect ? 300 : null];
+        audit_expect($control->rawCommand('CLIENT', 'PAUSE', '500', 'WRITE') !== false, 'fixed dedicated500ms WRITE pause is acknowledged');
+        $GLOBALS['m5_case']['transport']['barrier']['go_at_monotonic_ns'] = (string)hrtime(true);
+        foreach ($clients as $label => &$client) {
+            $last = m5_race_write($client['socket'], $client['last_byte'], $pauseAt + 200000000);
+            $client['complete_at'] = hrtime(true); $client['complete_bytes'] = $client['initial_bytes'] + $last;
+            m5_check($client['complete_bytes'] === $client['request_bytes'], 'actor' . $label . ' sends the exact full HTTP request before any response read');
+            $GLOBALS['m5_case']['transport']['actors'][$label] = ['server_pid' => $client['server_pid'], 'accepted_offset' => $client['accepted_offset'],
+                'request_bytes' => $client['request_bytes'], 'complete_bytes' => $client['complete_bytes'],
+                'complete_elapsed_ms' => ($client['complete_at'] - $pauseAt) / 1000000, 'response_read_bytes' => 0];
+        }
+        unset($client); m5_race_blocked($control, $clients, $generation, $pauseAt);
+        m5_check($control->hGet($oldBinding['session_key'], 'status') === 'active', 'old sid is still active while all actual handlers wait in native eval');
+        if ($disconnect) {
+            $read = [$clients['A']['socket']]; $write = []; $except = [];
+            $ready = stream_select($read, $write, $except, 0, 0);
+            $GLOBALS['m5_case']['transport']['actors']['A']['readable_before_close'] = $ready !== 0;
+            audit_expect($ready === 0 && $clients['A']['response_read_bytes'] === 0 && hrtime(true) < $pauseAt + 300000000,
+                'complete processed HTTP request has no readable response/EOF and no response bytes read before300ms');
+            fclose($clients['A']['socket']); $clients['A']['closed_at'] = hrtime(true);
+            $GLOBALS['m5_case']['transport']['actors']['A']['closed_elapsed_ms'] = ($clients['A']['closed_at'] - $pauseAt) / 1000000;
+            m5_check($clients['A']['closed_at'] <= $pauseAt + 300000000, 'real complete HTTP client closes before300ms and before automatic pause expiry');
+        }
+        audit_expect($control->rawCommand('CLIENT', 'UNPAUSE') !== false, 'native WRITE pause is explicitly released'); $paused = false;
+        $GLOBALS['m5_case']['transport']['barrier']['unpause_elapsed_ms'] = (hrtime(true) - $pauseAt) / 1000000;
+        if ($disconnect) {
+            $observer = audit_redis(); $deadline = hrtime(true) + 3000000000;
+            do {
+                $consumed = $observer->hGet($oldBinding['session_key'], 'status') === 'consumed';
+                $one = count(array_diff(m5_scan($GLOBALS['m5_v2_prefix'] . 'session:*'), $keysBefore)) === 1;
+                if ($consumed && $one) { break; } usleep(10000);
+            } while (hrtime(true) < $deadline);
+            m5_check($consumed && $one, 'independent fresh Redis observer sees one real consumed old sid and one active replacement after HTTP response loss');
+        } else {
+            $responses = [];
+            foreach ($clients as $label => &$client) {
+                $responses[$label] = m5_race_receive($client);
+                $GLOBALS['m5_case']['requests'][] = ['method' => 'POST', 'path' => '/outapi/refresh_token', 'actor' => $label,
+                    'http' => $responses[$label]['http'], 'business_status' => m5_status($responses[$label]),
+                    'issued_token' => !empty($responses[$label]['json']['data']['access_token'])];
+            }
+            unset($client); $codes = array_map('m5_status', $responses); sort($codes, SORT_NUMERIC);
+            m5_check($codes === [200, 401] && array_column($responses, 'http') === [200, 200], 'two actually overlapping HTTP handlers return exactly one business200 and one401, bothHTTP200');
+            foreach ($responses as $response) {
+                if (m5_status($response) === 200 && is_string($response['json']['data']['access_token'] ?? null) && $response['json']['data']['access_token'] !== '') {
+                    $token = $response['json']['data']['access_token']; $GLOBALS['m5_live_tokens'][] = $token; m5_track($token, 'out_101');
+                    $fresh = ['token' => $token, 'response' => $response, 'fixture' => 'out_101'];
+                } elseif (m5_status($response) === 401) { m5_check(($response['json']['data'] ?? null) === [], 'losing actual HTTP actor returns controlled401 with no token/debug data'); }
+            }
+            m5_check($fresh !== null && $fresh['token'] !== $old['token'], 'actual successful200 response contains a nonempty distinct replacement token');
+        }
+        $closings = m5_race_closings($logOffset, $clients);
+        m5_check(count($closings) === count($clients), 'all actual assigned server actors have bounded Closing events');
+        if (!$disconnect) { m5_check(count($closings) === 2 && max(array_column($clients, 'accepted_offset')) < min(array_column($closings, 'offset')), 'Accepted/Closing intervals overlap for the two distinct blocked server PIDs'); }
+        foreach ($clients as $label => $client) {
+            $GLOBALS['m5_case']['transport']['actors'][$label] = array_merge($GLOBALS['m5_case']['transport']['actors'][$label] ?? [], ['server_pid' => $client['server_pid'], 'accepted_offset' => $client['accepted_offset'],
+                'closing_offset' => $closings[$label]['offset'] ?? null, 'complete_bytes' => $client['complete_bytes'],
+                'request_bytes' => $client['request_bytes'], 'complete_elapsed_ms' => ($client['complete_at'] - $pauseAt) / 1000000,
+                'response_read_bytes' => $client['response_read_bytes'], 'closed_elapsed_ms' => isset($client['closed_at']) ? ($client['closed_at'] - $pauseAt) / 1000000 : null]);
+        }
+    } catch (Throwable $error) {
+        unset($client);
+        m5_check(false, 'real HTTP race preparation/transport/observation succeeds (' . get_class($error) . ')');
+    } finally {
+        unset($client);
+        if ($paused && $control instanceof Redis) {
+            try { m5_check($control->rawCommand('CLIENT', 'UNPAUSE') !== false, 'finally releases this dedicated WRITE pause'); }
+            catch (Throwable $error) { m5_check(false, 'explicit pause recovery succeeds (' . get_class($error) . '); fixed500ms automatic expiry remains'); }
+        }
+        foreach ($clients as $label => $client) {
+            if (is_resource($client['socket'])) { fclose($client['socket']); }
+            $GLOBALS['m5_case']['transport']['actors'][$label]['response_read_bytes'] = $client['response_read_bytes'];
+        }
+        try {
+            if ($before !== null && $oldBinding !== null) {
+                $settledClosings = m5_race_closings($logOffset, $clients);
+                m5_check(count($settledClosings) === count($clients), 'complete or failed actual actors finish before final state observation');
+                $observed = m5_race_effects($before, $runtimeBefore, $rowsBefore, $oldBinding, $oldRecord, $keysBefore, $start, time(), $fresh);
+                m5_check(m5_race_unknown_token_log_free($logOffset), 'native server log contains no JWT text including the disconnected unreceived replacement');
+                if ($observed['redeemed']) { m5_negative(static fn(): array => m5_http('POST', '/outapi/refresh_token', null, ['access_token' => $old['token']]), 401); }
+                else { m5_check(false, 'old-token retry is withheld because an actual single bound exchange was not established'); }
+                foreach (array_filter([$fresh, $same, $other]) as $login) { m5_check(m5_status(m5_http('GET', '/outapi/category/list', $login['token'])) === 200, 'received replacement and both independent pre-existing real sessions retain their grants'); }
+                $expectedKeys = array_values(array_unique(array_merge($keysBefore, $observed['new_keys']))); sort($expectedKeys, SORT_STRING);
+                m5_check(m5_scan($GLOBALS['m5_v2_prefix'] . 'session:*') === $expectedKeys, 'old-token retry produces no second active sid or resurrection');
+            }
+        } catch (Throwable $error) { m5_check(false, 'before-cleanup real exchange observation succeeds (' . get_class($error) . ')'); }
+        finally {
+            $beforeStop = null; $runtimeStop = null; $default = null;
+            try { $beforeStop = m5_snapshot(); $runtimeStop = m5_runtime_snapshot(); }
+            catch (Throwable $error) { m5_check(false, 'pre-stop state snapshot succeeds (' . get_class($error) . ')'); }
+            finally {
+                try {
+                    $stop = m5_race_app_facts('stop');
+                    m5_check(($stop['remaining_members'] ?? null) === [] && ($stop['listener_closed'] ?? false) === true, 'entire registered worker group is reaped and8000 is closed before restore');
+                    if ($registeredGroup !== null) { m5_check(($stop['stopped_group'] ?? null) === $registeredGroup, 'stop acknowledges the exact registered group used by these HTTP actors'); }
+                    $GLOBALS['m5_case']['transport']['worker_stop'] = ['stopped_pgid' => $stop['stopped_group']['pgid'] ?? null,
+                        'remaining_members' => $stop['remaining_members'] ?? null, 'listener_closed' => $stop['listener_closed'] ?? null];
+                } catch (Throwable $error) { m5_check(false, 'registered worker stop succeeds (' . get_class($error) . ')'); }
+                finally {
+                    try {
+                        $restoreOffset = m5_race_log_offset(); m5_start(['SERVER_WORKERS' => '']); $default = m5_race_app_facts();
+                        $defaultMembers = array_column($default['members'] ?? [], 'pid'); sort($defaultMembers, SORT_NUMERIC);
+                        $restoreLog = file_get_contents(audit_run_dir() . '/evidence/app-runtime.log', false, null, $restoreOffset);
+                        audit_expect(is_string($restoreLog), 'fresh default startup log is readable');
+                        $startupCount = preg_match_all('/^\[(?![0-9]+\])[^\]\r\n]+\] PHP ([0-9.]+) Development Server [^\r\n]* started\r?$/m', $restoreLog, $startupMatches);
+                        // Native single-worker startup has no PID prefix. The
+                        // listener and live members come from the registered
+                        // supervisor group; no unknown server PID is invented.
+                        m5_check($startupCount === 1 && $defaultMembers !== [] && ($default['listener_open'] ?? false)
+                            && ($default['generation_revision'] ?? '') !== ($generation['revision'] ?? '')
+                            && ($default['group']['pgid'] ?? null) !== ($registeredGroup['pgid'] ?? null)
+                            && ($default['group']['sid'] ?? null) !== ($registeredGroup['sid'] ?? null)
+                            && array_intersect($defaultMembers, array_keys($generation['starttimes'] ?? [])) === [], 'restored native default has exactly one unprefixed startup, an open listener and entirely fresh registered group members');
+                        $GLOBALS['m5_case']['transport']['restored_generation'] = ['revision' => $default['generation_revision'],
+                            'startup_count' => $startupCount, 'startup_style' => $startupCount === 1 ? 'unprefixed' : 'not-established', 'actual_member_pids' => $defaultMembers,
+                            'pgid' => $default['group']['pgid'], 'sid' => $default['group']['sid']];
+                    } catch (Throwable $error) { m5_check(false, 'default native server restore succeeds (' . get_class($error) . ')'); }
+                }
+            }
+            audit_expect($beforeStop !== null && $runtimeStop !== null && $default !== null, 'state observations and worker recovery are complete before exact cleanup');
+            $afterStop = m5_snapshot(); $runtimeAfterStop = m5_runtime_snapshot(); $stopDiff = m5_differences($beforeStop, $afterStop);
+            m5_observe($beforeStop, $afterStop, $runtimeStop, $runtimeAfterStop, $stopDiff);
+            m5_check($stopDiff['db'] === [] && $stopDiff['cache'] === [] && $runtimeStop === $runtimeAfterStop, 'worker stop/default restore add no database/Redis/expiry/file-log changes before scoped cleanup');
+            audit_guard_assert(); $cleanup = [];
+            foreach (array_diff(m5_scan($GLOBALS['m5_v2_prefix'] . 'session:*'), $sessionsAtEntry) as $key) {
+                if (in_array($key, $GLOBALS['m5_owned_sessions'], true)) { $cleanup[] = $key; }
+            }
+            foreach (array_diff(m5_scan($GLOBALS['m5_v2_prefix'] . 'account:*'), $accountsAtEntry) as $key) {
+                if (in_array($key, $GLOBALS['m5_owned_accounts'], true)) { $cleanup[] = $key; }
+            }
+            foreach (array_diff($GLOBALS['m5_cache_prefixes'], $prefixesAtEntry) as $prefix) { $cleanup = array_merge($cleanup, m5_scan($prefix . '*')); }
+            $cleanup = array_values(array_unique($cleanup)); if ($cleanup !== []) { audit_redis()->del($cleanup); }
+            $cleaned = m5_snapshot(); $cleanDiff = m5_differences($afterStop, $cleaned, $cleanup);
+            m5_check($cleanDiff['db'] === [] && $cleanDiff['cache'] === [] && m5_runtime_snapshot() === $runtimeAfterStop, 'only exact owned session/account/cache keys are removed after all evidence is captured');
+            $GLOBALS['m5_case']['transport']['scoped_cleanup_key_count'] = count($cleanup);
+        }
+    }
+}
+
+
 // Make the two disclosure assertions non-vacuous using only synthetic rows.
 // No push target or notification API is invoked. Restore only these exact columns.
 $GLOBALS['m5_fixture_restore'] = [];
@@ -591,8 +1033,13 @@ foreach (['out_101', 'out_102'] as $fixtureName) {
             } finally { if ($mode === 'deleted-account') { audit_db()->prepare('UPDATE eb_out_account SET is_del=? WHERE id=?')->execute([$row['is_del'], $id]); } }
         });
     }
-    // Root will append real dual-worker refresh and disconnect transport here.
-    // No PASS/BLOCKED pseudo-case is emitted for either unfinished acceptance.
+    // Insert both cases inside the existing synthetic-fixture try/finally.
+    m5_case('A25', 'out-http-two-worker-single-refresh', 'two complete real HTTP requests on different verified PHP workers simultaneously wait in mapped native eval; exactly one200/one401, one bound replacement and precise effects', static function (): void {
+        m5_race_run(false);
+    });
+    m5_case('A25', 'out-http-response-before-read-disconnect', 'one complete HTTP refresh demonstrably enters native eval, client closes with no readable/read response before300ms; independent observer sees one consumed old sid/one active replacement and retry401 without second sid', static function (): void {
+        m5_race_run(true);
+    });
 } finally {
     try { audit_app_request('stop'); }
     finally {
