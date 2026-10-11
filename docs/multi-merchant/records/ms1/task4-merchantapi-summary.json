@@ -1,0 +1,447 @@
+{
+  "milestone": "MS1",
+  "task": "Task4 normal merchant employee authentication",
+  "status": "verified_normal_employee_http_lifecycle",
+  "source_commit": "682015ecba649f290ce6bcc6217d64ba7a026876",
+  "source_sha256": {
+    "crmeb/app/services/marketplace/EmployeeAuthServices.php": "c83d642e8816a3e78455fc8658841bb71a475454f223392e9e70e2aabe164b62",
+    "crmeb/app/listener/http/HttpEndListener.php": "7e5f70f760e0581ada78fb418efa935897a9070be9dfb5df55e81eb27df54d1b",
+    "crmeb/config/auth.php": "2bca032802f0d6be48538c4de4395047dc2ab00613401038e90947ea329b4c5d",
+    "crmeb/crmeb/services/AuthConfigGuard.php": "0e9f91e93db3a5f839ca8a3fe0ed0fcbecbdf35cd9ba60f17d057fdbfbc3b405",
+    "crmeb/crmeb/services/auth/AuthTokenV2.php": "59518646797c71ea45084326e5ca87da64f402f59d97ce57b655c87d3aa0591b",
+    "crmeb/crmeb/services/auth/AuthSessionStore.php": "530aad12e98c623359f7c1a972215b10020e91852833e2e62c2bc985f7a75663",
+    "crmeb/crmeb/services/auth/CredentialStamp.php": "7b05effc12191cbd5651e8ad13bc1652ace44b0557f55eb7d7e658ccf0231447",
+    "crmeb/crmeb/services/auth/AccountChangeGuard.php": "39b189d6c05c22837dd5e3a38d03c4bd025dd098377e7318df5017f12bd9d617",
+    "crmeb/app/model/marketplace/Merchant.php": "00d93371605f75436b989aa4f7f9950c476b04b3d8ba0e6e58f7cb2fe5c08adc",
+    "crmeb/app/dao/marketplace/MerchantDao.php": "935b70611560350b579a55080ff99a35381c37c67e32f562dc634fa27de31f06",
+    "crmeb/app/model/marketplace/Employee.php": "d2cd2bd6c29c8697f43710a9b59eef82d4d224919aabf80dd39f2d80aee5c35e",
+    "crmeb/app/dao/marketplace/EmployeeDao.php": "b8eee17c844cfcc1294ec9d19241b8bd15a527cce66f3cef63e86d2da5fe8e76",
+    "crmeb/app/model/marketplace/Role.php": "5aa6fe50032e1faa97e0f74c88f53174d8dec3572f60b2daece33ae5b4c38057",
+    "crmeb/app/dao/marketplace/RoleDao.php": "5544ff3ab071d6bd574172d476d9576439bea587732f748a6e576af8da0f1496",
+    "crmeb/app/model/marketplace/PasswordSetup.php": "1c96637c6ced466196baee4e5b2ba72a0383f76212e5faf409627ee970e7ee52",
+    "crmeb/app/dao/marketplace/PasswordSetupDao.php": "25ab903ebaa583fbebf4c6c67040b8f1de5baebbf386e12bc9127144b26ee71e",
+    "crmeb/app/merchantapi/event.php": "abab743283ff1c08cb555ece04a296af7038c7ca2116e89d992cde7938581069",
+    "crmeb/app/merchantapi/MerchantApiExceptionHandle.php": "ab75bdd5e6ad614b6a386b724fe21ae2593542ea883a490e64595ddfd406c0cc",
+    "crmeb/app/merchantapi/provider.php": "b0111ffece70b6da21cb0d80718578d34b61195b2a748093172580734cbf2cc2",
+    "crmeb/app/merchantapi/config/database.php": "29a57b6bac7173a385e0cc7701bea0584bd4d0c825bde5d37ee1e43bb0e40e1b",
+    "crmeb/app/merchantapi/config/route.php": "ec90901a4e15a65016e8838382003d2e186a00eaf0af919d80b219db5250316d",
+    "crmeb/app/merchantapi/controller/Login.php": "848c8be107ece9a5d9e6fe1101ddaefd9f2545fc8033b7171d53c580233bfb6d",
+    "crmeb/app/merchantapi/controller/Me.php": "9c841179ec3b94e79538e1d030acefb3692c52bbc71346099ced767a1b816ddb",
+    "crmeb/app/merchantapi/middleware/MerchantAuthTokenMiddleware.php": "18ea310c36e900aa7d1823cca3a7f7fa0599a7898de839cfd58397ced328548d",
+    "crmeb/app/merchantapi/middleware/MerchantPermissionMiddleware.php": "e8cbc63d8b495acb7c55d2b413bf8bcbd15a87dafac7e7b89399d8a16c098ee5",
+    "crmeb/app/merchantapi/route/route.php": "7e1847f8e2b655b8b1b074b837f7c84605f6c92bd7ae8aba10d7bfe17c91d5f6",
+    "help/audit-regressions/isolated/ms1-merchantapi.php": "d03f920df5e68f55b7a66b09d0d5a8bdef8493d3a7c6770094fd2afae66a6724"
+  },
+  "environment": {
+    "kind": "ISO-FULL",
+    "run_id": "20261011222416b12d81",
+    "database": "audit_auth",
+    "account": "audit_app: existing DML only; frozen migration prepared by dedicated bootstrap migrator",
+    "images": {
+      "audit-app": "sha256:1099f749e2a38ec9453c6b820db8a78174514bc72d14edf5c203e13b82816e0a",
+      "audit-mysql": "sha256:c7a313f1402365dc91253bdbdb1e74c6a361b036106d8bd25b8ec8e2dd0069f4",
+      "audit-redis": "sha256:6c8f6edc1aa871a76a257ef86a2089d108e64b78d16f45b89f09c6a4ab30d07e"
+    }
+  },
+  "history": [
+    {
+      "run_id": "202610112210395cc192",
+      "phase": "baseline",
+      "source_commit": "910a385711970fe657c764cc0c01fdb51412d6c4",
+      "status": "FAIL",
+      "native_exit": 1,
+      "raw_ref": "ms1-merchantapi-baseline-20261011221726.jsonl",
+      "raw_bytes": 3705,
+      "raw_sha256": "913c45ec49e957fd3f3df63b719278c4cdc05601f04d4fac4e64d80a4567121d",
+      "evidence_ref": "ms1-merchantapi-baseline.json",
+      "evidence_sha256": "3f9ebc2e01b1d6772fa7c6556a4998329d0f807343dcad974bca082ae7525a00",
+      "http_requests": 0,
+      "preservation": {
+        "tables": 158,
+        "original_rows_schema_checksums_unchanged": true,
+        "cache_values_and_absolute_expiry_unchanged": true,
+        "counter_changes_allowed_only": []
+      },
+      "fixtures_cleaned": false,
+      "exact_five_routes_verified": false
+    },
+    {
+      "run_id": "202610112210395cc192",
+      "phase": "after",
+      "source_commit": "769733020a38090fb757b4d1dbd6e5b8f72f2594",
+      "status": "PASS",
+      "native_exit": 0,
+      "raw_ref": "ms1-merchantapi-after-20261011221934.jsonl",
+      "raw_bytes": 3765,
+      "raw_sha256": "add151c1e44af94713c96b35d0a863c250287aafb31251a9eb6aaad26fe3889e",
+      "evidence_ref": "ms1-merchantapi-after.json",
+      "evidence_sha256": "74da781b4973bf1cb3eb5365116e9f38069cf3fedd91c074456115c98a40fbe9",
+      "http_requests": 12,
+      "preservation": {
+        "tables": 163,
+        "original_rows_schema_checksums_unchanged": true,
+        "cache_values_and_absolute_expiry_unchanged": true,
+        "counter_changes_allowed_only": [
+          "eb_marketplace_merchant",
+          "eb_marketplace_role",
+          "eb_marketplace_employee",
+          "eb_marketplace_password_setup"
+        ]
+      },
+      "fixtures_cleaned": true,
+      "exact_five_routes_verified": false
+    },
+    {
+      "run_id": "20261011222416b12d81",
+      "phase": "after",
+      "source_commit": "682015ecba649f290ce6bcc6217d64ba7a026876",
+      "status": "PASS",
+      "native_exit": 0,
+      "raw_ref": "ms1-merchantapi-after-20261011222759.jsonl",
+      "raw_bytes": 3765,
+      "raw_sha256": "d8fa30e553474c40c11a50faf51eb11e2355924647007c565c90098e72d5d664",
+      "evidence_ref": "ms1-merchantapi-after.json",
+      "evidence_sha256": "466416799a3fd4b864e806617919f29214eb39bb7bf27075091b9ee0170a3d7e",
+      "http_requests": 12,
+      "preservation": {
+        "tables": 163,
+        "original_rows_schema_checksums_unchanged": true,
+        "cache_values_and_absolute_expiry_unchanged": true,
+        "counter_changes_allowed_only": [
+          "eb_marketplace_merchant",
+          "eb_marketplace_role",
+          "eb_marketplace_employee",
+          "eb_marketplace_password_setup"
+        ]
+      },
+      "fixtures_cleaned": true,
+      "exact_five_routes_verified": true
+    }
+  ],
+  "native_steps": {
+    "bootstrap": 0,
+    "baseline": 1,
+    "prepare": 0,
+    "after": 0,
+    "teardown": 0,
+    "retry-bootstrap": 0,
+    "retry-prepare": 0,
+    "retry-after": 0,
+    "retry-teardown": 0
+  },
+  "php_lint": {
+    "files": 26,
+    "native_exit": 0,
+    "harness_native_exit": 0
+  },
+  "normal_requests": [
+    {
+      "method": "POST",
+      "path": "/merchantapi/password/setup",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/merchantapi/login",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/merchantapi/me",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/merchantapi/refresh",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/merchantapi/me",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/merchantapi/logout",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/merchantapi/password/setup",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/merchantapi/login",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/merchantapi/me",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/merchantapi/refresh",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/merchantapi/me",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/merchantapi/logout",
+      "http": 200,
+      "business_status": 200
+    }
+  ],
+  "successful_observations": {
+    "A": {
+      "mer_id": 1,
+      "employee_id": 1,
+      "role_id": 1,
+      "setup_id": 1,
+      "permissions": 9,
+      "password_hash_and_consumption_verified": true,
+      "first_setup_no_authorization_version": true,
+      "setup_before_review_verified": true,
+      "accept_orders": 0,
+      "fulfillment_enabled": 0,
+      "normal_login_me_refresh_me_logout_verified": true,
+      "consumed_predecessor_observed_only": true,
+      "current_session_absent_after_logout": true
+    },
+    "B": {
+      "mer_id": 2,
+      "employee_id": 2,
+      "role_id": 2,
+      "setup_id": 2,
+      "permissions": 7,
+      "password_hash_and_consumption_verified": true,
+      "first_setup_no_authorization_version": true,
+      "setup_before_review_verified": false,
+      "accept_orders": 0,
+      "fulfillment_enabled": 0,
+      "normal_login_me_refresh_me_logout_verified": true,
+      "consumed_predecessor_observed_only": true,
+      "current_session_absent_after_logout": true
+    }
+  },
+  "authenticated_contexts": {
+    "A": {
+      "mer_id": 1,
+      "employee_id": 1,
+      "permissions": 9,
+      "verified_version_matches_signed_current_session": true,
+      "request_id_present": true,
+      "current_token_only": true,
+      "snapshot_unchanged": true
+    },
+    "B": {
+      "mer_id": 2,
+      "employee_id": 2,
+      "permissions": 7,
+      "verified_version_matches_signed_current_session": true,
+      "request_id_present": true,
+      "current_token_only": true,
+      "snapshot_unchanged": true
+    }
+  },
+  "routes": {
+    "actual_framework_rules": [
+      {
+        "method": "POST",
+        "rule": "login",
+        "name": "merchant.login"
+      },
+      {
+        "method": "POST",
+        "rule": "logout",
+        "name": "merchant.logout"
+      },
+      {
+        "method": "GET",
+        "rule": "me",
+        "name": "merchant.me"
+      },
+      {
+        "method": "POST",
+        "rule": "password/setup",
+        "name": "merchant.password.setup"
+      },
+      {
+        "method": "POST",
+        "rule": "refresh",
+        "name": "merchant.refresh"
+      }
+    ],
+    "exact_five_verified": true,
+    "source": "real App service boot and same merchantapi route definition; no undeclared HTTP requests"
+  },
+  "fixture_review_transition": {
+    "mer_id": 1,
+    "from": 0,
+    "to": 1,
+    "exact_row_and_other_state_verified": true,
+    "source": "precise synthetic fixture DML after valid setup and before login",
+    "platform_review_api_verified": false,
+    "task6_pending": true
+  },
+  "language_preparation": {
+    "source": "real getLang and installed LangCode/LangType/LangCountry services",
+    "logical_keys": [
+      "range_name",
+      "sys_lang_source_map",
+      "type_id_zh-CN",
+      "lang_type_data",
+      "lang_zh_CN"
+    ],
+    "added_key_hashes": [
+      "741f215283e509d650218942f45de22009090bf6200ae7c7df04199418749cdb",
+      "96358896ed3c0dca1153662e3e0f492677b3022478582005fd3c3758b3572535",
+      "1957e2b0a7a8f91ec16eb9ab01ced51f1b60df5cb6b741a1fa36e0ae7fff1ffe",
+      "ee22c4644800c2ab8be420312686f3e2ebe378511d3d0751ec87320b2c6943ad",
+      "880ab2342d66a0702437a1d89a29e99e88a385e5d0a566871e6259eca999b3e5",
+      "6c98e484c3741062610d9652e6fc053019bf40240fc37faba07c7c4ebe05cf68"
+    ],
+    "exact_values_and_source_expiry_verified": true,
+    "unrelated_state_preserved": true
+  },
+  "owned_keys_registered_count": 17,
+  "owned_keys_removed_count": 10,
+  "preservation": {
+    "tables": 163,
+    "original_rows_schema_checksums_unchanged": true,
+    "cache_values_and_absolute_expiry_unchanged": true,
+    "counter_changes_allowed_only": [
+      "eb_marketplace_merchant",
+      "eb_marketplace_role",
+      "eb_marketplace_employee",
+      "eb_marketplace_password_setup"
+    ]
+  },
+  "private_logs_verified_in_normal_configuration": true,
+  "migration_preparation": {
+    "202610112210395cc192": {
+      "mode": "apply",
+      "state": "completed",
+      "changed": true,
+      "tables": [
+        "eb_marketplace_merchant",
+        "eb_marketplace_role",
+        "eb_marketplace_employee",
+        "eb_marketplace_audit_log",
+        "eb_marketplace_password_setup"
+      ],
+      "menu_ids": [
+        3465,
+        3466,
+        3467,
+        3468,
+        3469,
+        3470,
+        3471
+      ],
+      "issues": [],
+      "created_tables": [
+        "eb_marketplace_merchant",
+        "eb_marketplace_role",
+        "eb_marketplace_employee",
+        "eb_marketplace_audit_log",
+        "eb_marketplace_password_setup"
+      ]
+    },
+    "20261011222416b12d81": {
+      "mode": "apply",
+      "state": "completed",
+      "changed": true,
+      "tables": [
+        "eb_marketplace_merchant",
+        "eb_marketplace_role",
+        "eb_marketplace_employee",
+        "eb_marketplace_audit_log",
+        "eb_marketplace_password_setup"
+      ],
+      "menu_ids": [
+        3465,
+        3466,
+        3467,
+        3468,
+        3469,
+        3470,
+        3471
+      ],
+      "issues": [],
+      "created_tables": [
+        "eb_marketplace_merchant",
+        "eb_marketplace_role",
+        "eb_marketplace_employee",
+        "eb_marketplace_audit_log",
+        "eb_marketplace_password_setup"
+      ]
+    }
+  },
+  "auxiliary_inventory_note": "First pre-teardown host inventory failed because volumeContext has Name rather than ID; no complete before-inventory was recorded. Native teardown and fresh -q inventories independently prove zero remaining owned resources.",
+  "resources_before_final_teardown": {
+    "network": 1,
+    "volume": 11,
+    "container": 3
+  },
+  "final_resources": {
+    "20261011222416b12d81": {
+      "network": 0,
+      "container": 0,
+      "volume": 0
+    },
+    "20261011222536e5da13": {
+      "network": 0,
+      "container": 0,
+      "volume": 0
+    },
+    "202610112210395cc192": {
+      "network": 0,
+      "container": 0,
+      "volume": 0
+    },
+    "install_lock_present": false,
+    "2026101122120061a69b": {
+      "network": 0,
+      "container": 0,
+      "volume": 0
+    }
+  },
+  "results": {
+    "original_rows": 19,
+    "original_sha256": "71e4a97220b427d8f2ec739d521febdc3065a427930b74735675a49756881622",
+    "appended_rows": 24,
+    "total_rows": 43,
+    "counts": {
+      "FAIL": 7,
+      "PASS": 5,
+      "NOT RUN": 31
+    },
+    "sha256": "15b9f8fe7c5d56dc2c64f4e4ff8b9dede912246d0176c9ca13a3706396e3f527"
+  },
+  "limits": [
+    "Original M03/M04/M06-refusal/M08-refusal and wrong/expired/repeated capability cases remain NOT RUN at user request.",
+    "No old/foreign/forged token requests, captcha solving, fault, concurrency, disconnect, or recovery cases run.",
+    "Initial PASS covers the five valid endpoints; final PASS adds real framework exact-five route inventory after app-local clearing of inherited global routes.",
+    "A review transition is exact synthetic fixture DML; platform review HTTP API is still Task6 pending.",
+    "Normal runtime logs inspected; source early-return and SQL-debug rules reviewed, without changing logging switches or running failure requests.",
+    "Employee/role management, platform merchant APIs, worker context and Task5-9 delivery remain pending.",
+    "Local L2 only; no push, production database write, deployment, external notification, human signoff, or SECURITY_BASE_SHA."
+  ]
+}

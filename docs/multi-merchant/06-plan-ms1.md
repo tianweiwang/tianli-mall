@@ -36,7 +36,7 @@
 - 迁移的“空”指CRMEB已安装且五目标表不存在；零表库缺少system_menus，不能创建第六张表或调用Installer。theme-module实际使用 `--check/--apply`，新MS1 CLI明确支持文档要求的 `check|apply`（兼容同义选项）。只新增五表及精确marketplace菜单/接口登记；原表列/index/旧行保持，system_menus正常新增行与其AUTO_INCREMENT变化单列核对，不能要求新增后checksum仍相同，也不回拨计数器。其他原表结构/数据保持。
 - 现Supervisor声明queue:listen，实版Listener每轮启动queue:work --once，job不复用同一PHP进程。Task1为新marketplace队列声明独立 `queue:work --queue=marketplace --sleep=1 --tries=1` 常驻模式，并用相同命令建立ISO audit-worker；原队列保持。生产声明默认不自动启动，实际发布另行处理。正常空任务的同一PID证据到位后，Task8再运行正常A→B上下文重建；异常/无上下文/伪造载荷/并发场景按用户要求跳过，不冒称M05/M09/M10完整通过。
 
-执行顺序仍以Task1–9为单一清单；Task1源码盘点与普通worker能力、Task2普通迁移、Task3正常上下文与查询范围已完成，历史FAIL及原跳过项分别保留。Task4–9的商家认证、管理接口、任务上下文及最终交付仍待实施；普通结果不代替完整验收。
+执行顺序仍以Task1–9为单一清单；Task1源码盘点与普通worker能力、Task2普通迁移、Task3正常上下文与查询范围、Task4商家五接口及正常身份流程已完成，历史FAIL及原跳过项分别保留。Task5–9的员工/角色与平台管理接口、任务上下文及最终交付仍待实施；普通结果不代替完整验收。
 
 ## Review Focus
 
@@ -188,11 +188,19 @@ DAO为有限用途独立类，不继承旧BaseDao的全局写入口；身份读�
 
 普通核对T4A01：新的ISO-FULL中先记实现尚缺失的自然基线FAIL；bootstrap专用迁移账号仅准备冻结五表，正式runner仍为audit_app DML。仅建立有效A/B员工及真实一次性能力；A正常待审核时设置密码，再仅按本次ID推进审核夹具，B设置时已审核。全程不向待审核商家发送受保护请求，不把夹具推进冒称Task6平台审核接口验收。正常设密→登录→本人资料→刷新→本人资料→退出，核对真实密码哈希/消费时间、已验证Ctx归属、当前权限、两个商家的正常响应，及accept_orders=0/fulfillment_enabled=0时仍正常登录。密文只在内存与私有实例，记录仅ID/响应状态/计数/摘要；精确清理本次新表行与本次应用账号/会话键，不回拨计数器。正常HTTP语言缓存须预热或精确列出本次实际生成项，不能宽泛忽略缓存、修改旧行或恢复快照掩盖副作用；全163表原行/DDL（仅四张夹具表自然计数器）与旧Redis值/绝对到期点独立核对。原M03/M04/M06拒绝/M08拒绝、错误/过期/重复能力等均NOT RUN，不产生这些请求，普通PASS不代替原验收。
 
-- [ ] **普通T4A01：** 实现可用性基线、真实五接口有效流程、精确清理及旧状态保留。
+- [x] **普通T4A01：** 实现可用性基线、真实五接口有效流程、真实已验证Context、最终五条框架路由元数据、精确清理及旧状态保留。
 
-- [ ] **Step 1: 写用例**：M03（请求体、Header、URL 中伪造 `mer_id`/`merchant_id`，`/me` 返回的商家仍是员工所属商家）；M04（绕过中间件直接调用服务时因缺少上下文而失败）；M06（`security_locked = 1` 后员工下一次请求 401；`accept_orders = 0` 时仍可登录）；M08（员工所属商家 `review_status != 1` 时不能登录）；一次性设置链接：过期、重复使用、令牌错误都失败。
-- [ ] **Step 2–4:** 确认失败 → 实现 → 通过。
-- [ ] **Step 5:** 提交 `feat(merchantapi): employee authentication with v2 sessions and MerchantContext`。
+- [ ] **原拒绝验收（按用户指示NOT RUN）：** M03（请求体、Header、URL 中伪造 `mer_id`/`merchant_id`，`/me` 返回的商家仍是员工所属商家）；M04（绕过中间件直接调用服务时因缺少上下文而失败）；M06（`security_locked = 1` 后员工下一次请求 401）；M08（员工所属商家 `review_status != 1` 时不能登录）；一次性设置链接：过期、重复使用、令牌错误都失败。上述未发送请求、未宣称通过；M06中accept_orders=0仍可正常登录已由普通T4A01实际证明。
+- [x] **Step 2–4（普通流程）：** 源码缺失基线真实FAIL → 五接口实现及真实流程PASS → 独立源码复核发现继承全局验证码路由 → 仅商家定义清理继承规则并补真实路由元数据 → 新实例普通流程PASS。历史FAIL、两次普通PASS及全部NOT RUN保留。
+- [x] **Step 5（普通源码L2）：** 已提交 `769733020 feat(merchantapi): employee authentication with v2 sessions and MerchantContext`；`682015ecb fix(merchantapi): keep selected application route scope explicit`。26个源码文件及普通harness的PHP lint通过。
+
+Task4普通交付（2026-10-12）：首RUN202610112210395cc192的源码缺失基线FAIL/native1、0业务请求、0夹具，158表/Redis完整快照保持；实现769733020后T4A01 PASS/native0，两商家正常五接口共12请求均为真实200。最终新RUN20261011222416b12d81、源码682015ecba649f290ce6bcc6217d64ba7a026876，实际框架登记恰好login/logout/me/password/setup/refresh五条，T4A01 PASS/native0，12请求均为200。两次bootstrap、正常五表迁移准备与teardown全部native0；没有发送原拒绝或验证码请求。
+
+实际A/B商家/角色/员工/设置记录ID各为1/2，权限数9/7；一次正常设置保存真实可验证密码哈希和消费时间，完成时账号仍未初始化版本。A在待审核时正常设置，再按本次真实ID推进审核夹具后登录；该夹具DML不是Task6平台审核接口验收。有效登录的真实v2回调建立精确Ctx，已验证版本与当前会话一致；本人DTO无密码/摘要/会话版本/设置能力。两商家accept_orders=0及fulfillment_enabled=0仍正常登录；正常刷新消费前驱状态且保留其绑定/绝对到期点，退出后当前会话键消失，未发送旧会话请求。
+
+真实getLang预热五个精确来源键及其tag，独立核对内容与期限；仅清理本次17个登记键中的实际10个仍存在键（退出键与锁键在清理时不存在），不忽略缓存前缀或恢复快照。四新表夹具精确逆序清理；163表原行/checksum/DDL（只允许四张夹具表自然计数器前进）及旧Redis值/绝对期限保持。正常配置下实际日志未包含本次密码、能力、会话和凭据；正文提前排除及SQL debug规则另有源码核对，不冒称启用了各日志开关或运行了失败请求。
+
+两个主RUN及其两个引导清理实例最终容器/网络/卷均为0，install.lock不存在；首RUN销毁前的宿主库存读取因volume模板字段ID无效失败，未伪造该库存，销毁native0及后续-q库存独立证明已清理，最终RUN真实销毁前库存3容器/1网络/11卷。24条Task4原始记录逐字节追加至原19条，当前总43行（5PASS/7FAIL/31NOT RUN），原19行SHA保持；摘要、原始证据及源码hash见 `records/ms1/task4-merchantapi-summary.json`。完整MS1与人工签收未发生，未填SECURITY_BASE_SHA，未推送、发布、写真实库或通知。
 
 ### Task 5: 商家内的员工与角色管理
 
