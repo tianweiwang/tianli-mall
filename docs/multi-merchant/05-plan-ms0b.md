@@ -293,6 +293,11 @@ Task8 普通功能进度（2026-10-12，完整验收仍待）：
 
 以下全量安全回归要求保留为未验收缺口，实际执行遵循本计划顶部用户最新跳过指令；只能报告已完成的普通检查和逐项跳过，不得把综合回归或里程碑改记为全 PASS。
 
+2026-10-12 普通交付冻结：Task8共享Redis连接工厂已接入最终业务源码，Task9日志两行修复和文档已本地提交。为核对共同调用点，使用一个全新ISO-FULL RUN，仅各执行一次既有正常脚本 `ms0b-out-functional.php`（6项）、`ms0b-account-functional.php`（16项，原安装缺少file_pwd列时该项仍NOT RUN）、`ms0b-epoch-functional.php`（3项正常命令）与 `ms0b-login-download-functional.php`（6项）。先静态确认四脚本不调用已停用套件或被跳过场景，再bootstrap及运行；记录原生退出、真实准备/清理、原始摘要与业务源码SHA。只追加本次原始结果，不重写1191条历史记录。完成后按manifest teardown并复查本RUN资源。已有Task8真实构建与两个BROWSER保存证据不重复运行；这次没有完整安全回归、人工签收或发布结论。
+
+- [ ] 四个既有正常脚本在最终共同源码上完成一次新RUN核对；若实际失败，保留原证据并定位修复，不能放宽断言或把准备/清理失败记作通过。
+- [ ] 最终变更路径与计划及已说明的同一修复必要调用点逐项对应；常规冻结摘要与实际运行命令写入报告。
+
 - [ ] 原完整回归要求（按用户最新要求停止执行同类综合套件，保留覆盖缺口）：在新建的 ISO-FULL 环境运行：`security.php`、`selftest.php`、`ms0a-auth.php`、`ms0b-session-store.php` 以及 MS0b 的 HTTP 用例；全部 `exit=0`。v2回归保留旧业务拒绝/零副作用/原应用可用断言；旧pwd/md5白名单构造迁为当前v2会话输入，旧schema拒绝另由A24在旧键仍存在时真实覆盖，不拿旧schema拒绝伪装v2匹配测试。测试脚本适配输入形态前逐条记录对照，不放宽业务期望。
 - [ ] `git diff --name-only 3e7c966ecfa084ff4f219b03c61ed0efbac4caac HEAD` 只包含本计划列出的路径（Task 6 中 grep 出的入口逐项说明）。
 - [ ] 写 `records/ms0b/report.md`、`results.jsonl`；提交；停止，等待验收（11 文档 §5.3）。
