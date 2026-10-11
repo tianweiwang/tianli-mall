@@ -249,6 +249,8 @@ Expected: admin/out 令牌访问 kefuapi、api 探针的组合 FAIL。
 
 客服账号存在检查同时要求 `(int)status === 1`，只有已验证白名单属于 kefu 时，账号不存在或停用才精确撤销本会话；恢复状态后须重新登录。顾客端原有 status=1/is_del=0 查询保留。追加 A15 客服停用→旧令牌拒绝/准确撤销→恢复仍须重登→新登录成功，额外核对 eb_store_service 无失败请求写入。
 
+补漏验证：新增测试提交前 HTTP 实测 2 个管理员 PASS、客服 FAIL（停用后两次旧令牌均 200、会话未撤销）；提交测试后最小修复，A09/A15/A26/A28 共 28 项全部 PASS，lint PASS，独立只读复核无必须修复项。原 105 项断言不变，最终集成总数 106。
+
 - [x] **Step 4: 重跑**（另覆盖 A18 四端缓存篡改；43 项中 34 PASS / 9 待 Task 6，exit 1；9 项均属 out；两文件 lint PASS，独立源码复核无必须修复项）
 
 Run: `AUDIT_PHASE=after php help/audit-regressions/isolated/ms0a-auth.php --only=A09,A13,A14,A26,A28`

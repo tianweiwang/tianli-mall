@@ -103,7 +103,7 @@ class LoginServices extends BaseServices
 
         //获取管理员信息
         $adminInfo = $this->dao->get($id);
-        if (!$adminInfo || !$adminInfo->id) {
+        if (!$adminInfo || !$adminInfo->id || (int)$adminInfo->status !== 1) {
             $noCli && SessionWhitelist::forget($token);
             throw new AuthException('登录状态有误,请重新登录', [], 401);
         }
