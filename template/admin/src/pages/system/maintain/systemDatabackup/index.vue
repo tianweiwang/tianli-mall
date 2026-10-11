@@ -192,6 +192,7 @@ import {
 } from '@/api/system';
 import Setting from '@/setting';
 import { getCookies } from '@/libs/util';
+import { downloadByKey } from '@/libs/download';
 
 export default {
   name: 'systemDatabackup',
@@ -298,12 +299,10 @@ export default {
       };
       filesDownloadApi(data)
         .then((res) => {
-          if (res.data.key) {
-            window.open(Setting.apiBaseURL + '/download?key=' + res.data.key);
-          }
+          return downloadByKey(res.data.key, 'database-backup.sql.gz');
         })
         .catch((res) => {
-          this.$message.error(res);
+          this.$message.error(res.msg || '下载失败，请稍后重试');
         });
     },
     // 导出备份记录表

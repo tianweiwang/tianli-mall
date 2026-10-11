@@ -29,17 +29,14 @@ class PublicController
      */
     public function download(Request $request, string $key = '')
     {
-        if ($key == '') {
-            $key = $request->getMore([
-                ['key', ''],
-            ], true);
+        if ($key === '') {
+            $key = $request->get('key', '', null);
         }
-        if (!$key) {
+        if (!is_string($key) || $key === '') {
             return Response::create()->code(500);
         }
-        $fileName = CacheService::get($key);
-        if (is_array($fileName) && isset($fileName['path']) && isset($fileName['fileName']) && $fileName['path'] && $fileName['fileName'] && file_exists($fileName['path'])) {
-            CacheService::delete($key);
+        $fileName = CacheService::consumeDownload($key);
+        if ($fileName !== null) {
             return download($fileName['path'], $fileName['fileName']);
         }
         return Response::create()->code(500);

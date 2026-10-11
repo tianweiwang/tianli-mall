@@ -210,11 +210,6 @@ class SystemAdmin extends AuthController
         // The route already verified current credentials; revoke still checks
         // the exact adminapi identity, account version and token/sid binding.
         $token = trim(ltrim((string)$this->request->header(Config::get('cookie.token_name', 'Authori-zation')), 'Bearer'));
-        // Keep the middleware's temporary header-first normalization until
-        // Task 8 removes URL JWT input from both actual request consumers.
-        if (!$token) {
-            $token = trim(ltrim((string)$this->request->get('token')));
-        }
         AuthTokenV2::fromConfig()->revoke('adminapi', $token);
         return app('json')->success();
     }

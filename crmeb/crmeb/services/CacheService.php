@@ -11,6 +11,7 @@
 
 namespace crmeb\services;
 
+use crmeb\exceptions\AuthUnavailableException;
 use think\facade\Cache;
 use think\facade\Config;
 use think\cache\TagSet;
@@ -77,6 +78,124 @@ class CacheService
     public static function get(string $name, $default = '')
     {
         return Cache::get($name) ?? $default;
+    }
+
+    /** Write a download record and its original tag with native acknowledgement. */
+    public static function setDownload(string $key, array $file): void
+    {
+        try {
+            if ($key === '' || !is_string($file['path'] ?? null)
+                || !is_string($file['fileName'] ?? null) || $file['path'] === '' || $file['fileName'] === '') {
+                throw new AuthUnavailableException();
+            }
+            $options = self::downloadCacheOptions();
+            $physicalKey = $options['prefix'] . $key;
+            $tagKey = $options['prefix'] . $options['tag_prefix'] . md5('crmeb');
+            if ($physicalKey === $tagKey) {
+                throw new AuthUnavailableException();
+            }
+            $raw = serialize($file);
+            $redis = BoundedRedisConnection::fromDefaultCacheConfig();
+            // Validate both key types before the first write, preserving the
+            // Think Redis string record and set-based crmeb tag format.
+            $script = <<<'LUA'
+local fileType = redis.call('TYPE', KEYS[1]).ok
+local tagType = redis.call('TYPE', KEYS[2]).ok
+if (fileType ~= 'none' and fileType ~= 'string') or (tagType ~= 'none' and tagType ~= 'set') then
+    return 0
+end
+redis.call('SETEX', KEYS[1], 300, ARGV[1])
+redis.call('SADD', KEYS[2], KEYS[1])
+return 1
+LUA;
+            if (@$redis->clearLastError() !== true) {
+                throw new AuthUnavailableException();
+            }
+            $written = @$redis->rawCommand('EVAL', $script, 2, $physicalKey, $tagKey, $raw);
+            if (@$redis->getLastError() !== null || $written !== 1) {
+                throw new AuthUnavailableException();
+            }
+        } catch (\Throwable $error) {
+            throw new AuthUnavailableException();
+        }
+    }
+
+    /** Consume exactly one validated download record without a shared client. */
+    public static function consumeDownload(string $key): ?array
+    {
+        if ($key === '') {
+            return null;
+        }
+        try {
+            $options = self::downloadCacheOptions();
+            // Think Driver::getCacheKey uses precisely this configured prefix.
+            $physicalKey = $options['prefix'] . $key;
+            $redis = BoundedRedisConnection::fromDefaultCacheConfig();
+            if (@$redis->clearLastError() !== true) {
+                throw new AuthUnavailableException();
+            }
+            $raw = @$redis->rawCommand('GET', $physicalKey);
+            if (@$redis->getLastError() !== null) {
+                throw new AuthUnavailableException();
+            }
+            if ($raw === false || $raw === null) {
+                return null;
+            }
+            if (!is_string($raw)) {
+                throw new AuthUnavailableException();
+            }
+            $record = @unserialize($raw, ['allowed_classes' => false]);
+            if (!is_array($record) || !is_string($record['path'] ?? null)
+                || !is_string($record['fileName'] ?? null) || $record['path'] === ''
+                || $record['fileName'] === '' || !is_file($record['path']) || !is_readable($record['path'])) {
+                return null;
+            }
+            // Preserve the original tag membership; only the exact file key is
+            // consumed. Expiry or replacement never removes a different value.
+            $script = <<<'LUA'
+local current = redis.call('GET', KEYS[1])
+if not current or current ~= ARGV[1] then
+    return 0
+end
+return redis.call('DEL', KEYS[1])
+LUA;
+            if (@$redis->clearLastError() !== true) {
+                throw new AuthUnavailableException();
+            }
+            $removed = @$redis->rawCommand('EVAL', $script, 1, $physicalKey, $raw);
+            if (@$redis->getLastError() !== null) {
+                throw new AuthUnavailableException();
+            }
+            if ($removed === 1) {
+                return $record;
+            }
+            if ($removed === 0) {
+                return null;
+            }
+            throw new AuthUnavailableException();
+        } catch (\Throwable $error) {
+            // Never expose private driver details, retry, or restore a record
+            // after an unacknowledged consume.
+            throw new AuthUnavailableException();
+        }
+    }
+
+    /** Only the existing default Redis download representation is supported. */
+    private static function downloadCacheOptions(): array
+    {
+        $store = Config::get('cache.default');
+        $options = is_string($store) ? Config::get('cache.stores.' . $store) : null;
+        if (!is_array($options) || !is_string($options['type'] ?? null)
+            || strcasecmp($options['type'], 'redis') !== 0) {
+            throw new AuthUnavailableException();
+        }
+        $prefix = array_key_exists('prefix', $options) ? $options['prefix'] : '';
+        $tagPrefix = array_key_exists('tag_prefix', $options) ? $options['tag_prefix'] : 'tag:';
+        $serialize = array_key_exists('serialize', $options) ? $options['serialize'] : [];
+        if (!is_string($prefix) || !is_string($tagPrefix) || $serialize !== []) {
+            throw new AuthUnavailableException();
+        }
+        return ['prefix' => $prefix, 'tag_prefix' => $tagPrefix];
     }
 
     /**

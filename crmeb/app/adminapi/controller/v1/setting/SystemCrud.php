@@ -20,6 +20,7 @@ use app\services\system\SystemCrudListServices;
 use app\services\system\SystemCrudServices;
 use app\services\system\SystemMenusServices;
 use app\services\system\SystemRouteServices;
+use crmeb\exceptions\AuthUnavailableException;
 use crmeb\services\CacheService;
 use crmeb\services\crud\enum\FormTypeEnum;
 use crmeb\services\crud\Make;
@@ -697,11 +698,15 @@ class SystemCrud extends AuthController
         $fileService = new FileService();
         $fileService->addZip($zipPath, $zipName, app()->getRootPath() . 'backup');
 
-        $key = md5($zipName);
-        CacheService::set($key, [
+        try {
+            $key = bin2hex(random_bytes(16));
+        } catch (\Throwable $error) {
+            throw new AuthUnavailableException();
+        }
+        CacheService::setDownload($key, [
             'path' => $zipName,
             'fileName' => Str::camel($info->table_name) . '.zip',
-        ], 300);
+        ]);
         return app('json')->success(['download_url' => sys_config('site_url') . '/adminapi/download/' . $key]);
     }
 

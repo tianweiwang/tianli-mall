@@ -2,7 +2,6 @@
   <div>
     <el-card :bordered="false" shadow="never" class="ivu-mt" v-loading="spinShow">
       <el-button type="primary" v-db-click @click="groupAdd()" class="mr20">添加功能</el-button>
-      <!-- <el-button type="success" v-db-click @click="buildCode()" class="mr20">重新发布</el-button> -->
       <el-table
         :data="tabList"
         ref="table"
@@ -155,8 +154,7 @@
 import { mapState } from 'vuex';
 import { crudList, crudDet, crudDownload, crudSaveFile } from '@/api/systemCodeGeneration';
 import * as monaco from 'monaco-editor';
-import { getCookies, removeCookies } from '@/libs/util';
-import Setting from '@/setting';
+import { downloadFile } from '@/libs/download';
 export default {
   data() {
     return {
@@ -254,11 +252,6 @@ export default {
   mounted() {
     this.getList();
   },
-  beforeDestroy() {
-    if (this.source) {
-      this.source.close(); //关闭EventSource
-    }
-  },
   methods: {
     crudSaveFile() {
       let data = {
@@ -276,25 +269,11 @@ export default {
         });
     },
     downLoad(row) {
-      crudDownload(row.id).then((res) => {
-        window.open(res.data.download_url, '_blank');
-      });
-    },
-    buildCode() {
-      this.buildModals = true;
-      if (typeof EventSource !== 'undefined') {
-        //支持eventSource
-        var postURL = Setting.apiBaseURL + '/system/crud/npm?token=' + getCookies('token');
-        this.source = new EventSource(postURL);
-        let self = this; //因EventSource中this的指向变了，所以要提前存储一下
-        this.source.onopen = function (res) {};
-        this.source.onmessage = function (data) {};
-        this.source.onerror = function (err) {
-          //链接失败后EventSource会每隔三秒左右重新发起链接
-        };
-      } else {
-        console.log('暂不支持EventSource');
-      }
+      crudDownload(row.id)
+        .then((res) => downloadFile(res.data.download_url, 'crud-export.zip'))
+        .catch((err) => {
+          this.$message.error(err.msg || '下载失败，请稍后重试');
+        });
     },
     // 跳转到组合数据列表页面
     goList(row) {

@@ -11,6 +11,7 @@
 namespace crmeb\services;
 
 use crmeb\exceptions\AdminException;
+use crmeb\exceptions\AuthUnavailableException;
 use think\facade\Db;
 
 class MysqlBackupService
@@ -269,7 +270,10 @@ class MysqlBackupService
         if (file_exists($fileName)) {
             if ($isFile) {
                 $key = password_hash(time() . $fileName, PASSWORD_DEFAULT);
-                CacheService::set($key, ['path' => $fileName, 'fileName' => substr(strstr($fileName, 'backup'), 7)], 300);
+                if (!is_string($key) || $key === '') {
+                    throw new AuthUnavailableException();
+                }
+                CacheService::setDownload($key, ['path' => $fileName, 'fileName' => substr(strstr($fileName, 'backup'), 7)]);
                 return $key;
             }
             ob_end_clean();
@@ -511,6 +515,9 @@ class MysqlBackupService
      */
     public function __destruct()
     {
-        $this->config['compress'] ? @gzclose($this->fp) : @fclose($this->fp);
+        if (is_resource($this->fp)) {
+            $this->config['compress'] ? @gzclose($this->fp) : @fclose($this->fp);
+        }
+        $this->fp = null;
     }
 }
