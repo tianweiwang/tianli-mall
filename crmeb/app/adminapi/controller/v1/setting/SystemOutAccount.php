@@ -57,7 +57,7 @@ class SystemOutAccount extends AuthController
      */
     public function set_status($id = '', $status = '')
     {
-        if ($status == '' || $id == '') return app('json')->fail('参数错误');
+        if (!in_array($status, ['0', '1'], true) || $id == '') return app('json')->fail('参数错误');
         $this->services->update($id, ['status' => $status]);
         return app('json')->success($status == 1 ? '更新成功' : '更新失败');
     }

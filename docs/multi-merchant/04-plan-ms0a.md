@@ -273,7 +273,7 @@ git commit -m "fix(kefuapi,api): accept only own token type and matching whiteli
 Run: `AUDIT_PHASE=after php help/audit-regressions/isolated/ms0a-auth.php --only=A19,A09,A10`
 Expected: A19 中"关闭后继续访问 / 刷新""`set_status` 传 2"子场景 FAIL。
 
-- [ ] **Step 2: 实现**
+- [x] **Step 2: 实现**（统一启用状态，验签后固定 out 与完整白名单，正常状态 setter 不变）
 
 - `authLogin()`：先调用 `assertRedisSessionStore()`；用 `!self::isEnabled()` 替换 `status == 0` 判断。
 - `verifyToken()`：先 `assertRedisSessionStore()`，再 `decodeVerified()`，`type !== 'out'` 拒绝，`SessionWhitelist::matches(..., 'out', ...)` 不成立拒绝；不再使用未验签的 `parseToken()`。错误 type 时不删除缓存。
@@ -282,16 +282,16 @@ Expected: A19 中"关闭后继续访问 / 刷新""`set_status` 传 2"子场景 F
 - `Mcp.php`：用 `!OutAccountServices::isEnabled($accountInfo)` 替换 `status == 0 || status == 2`。
 - `SystemOutAccount::set_status()`：`$status` 不是 `'0'` 或 `'1'` 时返回 `参数错误`，不写库。
 
-- [ ] **Step 3: 写调用方影响说明**
+- [x] **Step 3: 写调用方影响说明**（external-integrations.md；Z08 调用方未知，未通知或部署）
 
 在 `records/ms0a/external-integrations.md` 中写明（只写代码侧事实，不写"已通知"）：outapi JWT 入口清单；MCP 使用请求头凭据、不受 JWT 变化影响；本次行为变化——已关闭（`status = 0`）的对外账号，其现存令牌与刷新将被拒绝；实际在用的调用方仍待核实（Z08）。
 
-- [ ] **Step 4: 重跑**
+- [x] **Step 4: 重跑**（含所需集合的全量 86 PASS / 0 FAIL，exit 0；三文件 lint PASS；独立源码复核无必须修复项；首次 A23 DUMP 表示误报及严格 SET 快照修复证据另存报告）
 
 Run: `AUDIT_PHASE=after php help/audit-regressions/isolated/ms0a-auth.php --only=A09,A10,A19,A26,A28`
 Expected: 全部 PASS。
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**（本地 Task 6 修复与本清单；测试先提交，未推送）
 
 ```bash
 git add crmeb/app/services/out/OutAccountServices.php crmeb/app/outapi/controller/Mcp.php \

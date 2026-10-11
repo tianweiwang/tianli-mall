@@ -16,6 +16,8 @@ use app\services\BaseServices;
 use crmeb\exceptions\AdminException;
 use crmeb\exceptions\AuthException;
 use crmeb\services\CacheService;
+use crmeb\services\AuthConfigGuard;
+use crmeb\services\SessionWhitelist;
 use crmeb\services\FormBuilder as Form;
 use crmeb\services\HttpService;
 use crmeb\utils\JwtAuth;
@@ -40,6 +42,12 @@ class OutAccountServices extends BaseServices
         $this->dao = $dao;
     }
 
+    public static function isEnabled(array|\think\Model|null $account): bool
+    {
+        return $account !== null && (int)($account['status'] ?? 0) === 1
+            && (int)($account['is_del'] ?? 0) === 0;
+    }
+
     /**
      * 账号密码登录
      * @param string $appid
@@ -51,15 +59,16 @@ class OutAccountServices extends BaseServices
      */
     public function authLogin(string $appid, string $appsecret = null)
     {
+        AuthConfigGuard::assertRedisSessionStore();
         $autInfo = $this->dao->get(['appid' => $appid, 'is_del' => 0]);
         if (!$autInfo) {
-            throw new AuthException('没有此用户');
+            throw new AuthException('没有此用户', [], 401);
         }
         if ($appsecret && !password_verify($appsecret, $autInfo->appsecret)) {
-            throw new AuthException('appid或appsecret错误');
+            throw new AuthException('appid或appsecret错误', [], 401);
         }
-        if ($autInfo->status == 0) {
-            throw new AuthException('您已被禁止登录');
+        if (!self::isEnabled($autInfo)) {
+            throw new AuthException('您已被禁止登录', [], 401);
         }
         $token = $this->createToken($autInfo->id, 'out');
         $data['last_time'] = time();
@@ -161,7 +170,7 @@ class OutAccountServices extends BaseServices
 
         $cacheService->delete($md5Token);
 
-        $token = $jwtAuth->createToken($id, $type);
+        $token = $jwtAuth->createToken($id, 'out');
         $data['last_time'] = time();
         $data['ip'] = request()->ip();
         $this->dao->update($id, $data);
@@ -184,14 +193,14 @@ class OutAccountServices extends BaseServices
             if (!request()->isCli()) {
                 $cacheService->delete($md5Token);
             }
-            throw new AuthException('登录已过期,请重新登录');
+            throw new AuthException('登录已过期,请重新登录', [], 401);
         }
 
-        if ($authInfo->status == 2) {
+        if (!self::isEnabled($authInfo)) {
             if (!request()->isCli()) {
                 $cacheService->delete($md5Token);
             }
-            throw new AuthException('您已被禁止登录');
+            throw new AuthException('您已被禁止登录', [], 401);
         }
         return true;
     }
@@ -207,28 +216,19 @@ class OutAccountServices extends BaseServices
     protected function verifyToken(string $token, JwtAuth $jwtAuth, CacheService $cacheService): array
     {
         if (!$token || $token === 'undefined') {
-            throw new AuthException('登录失败');
+            throw new AuthException('登录失败', [], 401);
         }
-
+        AuthConfigGuard::assertRedisSessionStore();
         $md5Token = md5($token);
-
-        if (!$cacheService->has($md5Token) || !($cacheToken = $cacheService->get($md5Token, '', NULL, 'out'))) {
-            throw new AuthException('登录已过期,请重新登录');
-        }
-
-        //解析token
-        [$id, $type] = $jwtAuth->parseToken($token);
-        if (!$id || $type != 'out') {
-            throw new AuthException('登录失败');
-        }
-
         try {
-            $jwtAuth->verifyToken();
+            ['id' => $id, 'type' => $type] = $jwtAuth->decodeVerified($token);
+        } catch (AuthException $e) {
+            throw $e;
         } catch (\Throwable $e) {
-            if (!request()->isCli()) {
-                $cacheService->delete($md5Token);
-            }
-            throw new AuthException('登录失败');
+            throw new AuthException('登录失败', [], 401);
+        }
+        if ($type !== 'out' || !SessionWhitelist::matches(SessionWhitelist::read($token), 'out', $id, $token)) {
+            throw new AuthException('登录已过期,请重新登录', [], 401);
         }
 
         return [$md5Token, $id, $type];

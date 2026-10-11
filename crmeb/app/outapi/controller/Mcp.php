@@ -10,6 +10,7 @@
 // +----------------------------------------------------------------------
 namespace app\outapi\controller;
 
+use app\services\out\OutAccountServices;
 use think\facade\Db;
 use think\Request;
 
@@ -65,8 +66,8 @@ class Mcp extends AuthController
                 return;
             }
 
-            // 检查账号状态（status=0 或 status=2 表示禁用）
-            if ($accountInfo['status'] == 0 || $accountInfo['status'] == 2) {
+            // 仅启用且未删除的账号可以访问
+            if (!OutAccountServices::isEnabled($accountInfo)) {
                 $this->authFail('账号已被禁用');
                 return;
             }
