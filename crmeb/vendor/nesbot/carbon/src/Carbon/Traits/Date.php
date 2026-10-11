@@ -512,6 +512,31 @@ use ReflectionException;
  */
 trait Date
 {
+    /** Keep wide Carbon parameters while delegating to native date setters. */
+    #[\ReturnTypeWillChange]
+    public function setDate($year, $month, $day)
+    {
+        return parent::setDate((int) $year, (int) $month, (int) $day);
+    }
+
+    #[\ReturnTypeWillChange]
+    public function setISODate($year, $week, $day = 1)
+    {
+        return parent::setISODate((int) $year, (int) $week, (int) $day);
+    }
+
+    #[\ReturnTypeWillChange]
+    public function setTime($hour, $minute, $second = 0, $microseconds = 0)
+    {
+        return parent::setTime((int) $hour, (int) $minute, (int) $second, (int) $microseconds);
+    }
+
+    #[\ReturnTypeWillChange]
+    public function setTimestamp($unixtimestamp)
+    {
+        return parent::setTimestamp((int) $unixtimestamp);
+    }
+
     use Boundaries;
     use Comparison;
     use Converter;
@@ -1151,7 +1176,7 @@ trait Date
     protected function getTranslatedFormByRegExp($baseKey, $keySuffix, $context, $subKey, $defaultValue)
     {
         $key = $baseKey.$keySuffix;
-        $standaloneKey = "${key}_standalone";
+        $standaloneKey = "{$key}_standalone";
         $baseTranslation = $this->getTranslationMessage($key);
 
         if ($baseTranslation instanceof Closure) {
@@ -1160,7 +1185,7 @@ trait Date
 
         if (
             $this->getTranslationMessage("$standaloneKey.$subKey") &&
-            (!$context || ($regExp = $this->getTranslationMessage("${baseKey}_regexp")) && !preg_match($regExp, $context))
+            (!$context || ($regExp = $this->getTranslationMessage("{$baseKey}_regexp")) && !preg_match($regExp, $context))
         ) {
             $key = $standaloneKey;
         }
@@ -2325,7 +2350,7 @@ trait Date
             return 'millennia';
         }
 
-        return "${unit}s";
+        return "{$unit}s";
     }
 
     protected function executeCallable($macro, ...$parameters)
@@ -2445,7 +2470,7 @@ trait Date
             if (substr($unit, 0, 4) === 'Real') {
                 $unit = static::singularUnit(substr($unit, 4));
 
-                return $this->{"${action}RealUnit"}($unit, ...$parameters);
+                return $this->{"{$action}RealUnit"}($unit, ...$parameters);
             }
 
             if (preg_match('/^(Month|Quarter|Year|Decade|Century|Centurie|Millennium|Millennia)s?(No|With|Without|WithNo)Overflow$/', $unit, $match)) {
@@ -2457,7 +2482,7 @@ trait Date
         }
 
         if (static::isModifiableUnit($unit)) {
-            return $this->{"${action}Unit"}($unit, $parameters[0] ?? 1, $overflow);
+            return $this->{"{$action}Unit"}($unit, $parameters[0] ?? 1, $overflow);
         }
 
         $sixFirstLetters = substr($unit, 0, 6);

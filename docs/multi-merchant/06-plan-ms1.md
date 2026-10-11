@@ -55,7 +55,7 @@
 - Modify: `help/audit-regressions/isolated/compose.yml`（增加与生产相同方式启动的队列 worker 服务 `audit-worker`）
 - Modify（同一worker能力的必要接线）: `docker/php/supervisord.conf`（独立marketplace队列声明，autostart=false）；`help/audit-regressions/isolated/lib/guard.php`、`lib/harness.php`、`bootstrap.sh`（按实际需要将新增服务身份、私有配置和普通启动纳入现有manifest保护）
 - Create（仅隔离检查）: `help/audit-regressions/isolated/ms1-worker-functional.php` 及必要的 `lib/` 普通空任务/启动适配；不得导入或运行停用套件。
-- Modify/Create（实际PHP8队列启动的必要调用点）: `crmeb/app/AppService.php`、`crmeb/crmeb/compat/CarbonErrorCompatibility.php`；仅CLI queue:work/queue:listen 的旧Carbon E_DEPRECATED兼容；`crmeb/vendor/nesbot/carbon/src/Carbon/Traits/Creator.php` 两处原生日历错误状态的PHP8.2兼容，见下述实际失败与修复设计。
+- Modify/Create（实际PHP8队列启动的必要调用点）: `crmeb/app/AppService.php`、`crmeb/crmeb/compat/CarbonErrorCompatibility.php`；仅CLI queue:work/queue:listen 的旧Carbon E_DEPRECATED兼容；`crmeb/vendor/nesbot/carbon/src/Carbon/Traits/Creator.php` 两处原生日历错误状态的PHP8.2兼容、`Traits/Date.php` 与 `Traits/Modifiers.php` 五个原生签名转接，见下述实际失败与修复设计。
 
 - [x] **Step 1:** 声明盘点见 `records/ms1/runtime-process-inventory.md`，列出FPM、队列、Workerman和Timer的源码命令/容器/对象边界；没有生产运行证据的项目均为“未观察”。原queue:listen不具备相同job-worker PID前提，新marketplace常驻模式及普通ISO核对方式见上述决策。
 - [ ] **Step 2:** 在 ISO-FULL 中启动 `audit-worker`，用一个空任务验证同一个 PID 连续处理多个任务（WORKER 层的前提）。
@@ -68,6 +68,10 @@ Task1普通运行契约（先于接线）：audit-worker沿既有x-php隔离设�
 首个实际RUN `20261011195406edef53`（源码626b4399）：bootstrap/prepare原生exit0，worker实际exit255/restart0，T1W01 FAIL/observe Bash exit1，未产生两个任务回执。真实日志定位queue.InteractsWithTime→旧Carbon加载；CarbonInterface的旧jsonSerialize声明在PHP8产生E_DEPRECATED，Think初始化器Error把它转为ErrorException，使接口继承期间致命退出。失败与runtime差异保留，不能按Docker wait命令exit0称worker通过。修复仅在AppService.boot且PHP8/CLI队列命令中安装针对实际vendor/nesbot/carbon/src路径、E_DEPRECATED类别的兼容handler；其他类别/路径原样委托原Think handler，E_ALL、类型/业务/认证异常保留，不全局降错误等级，也不只在测试入口隐藏错误。该handler不修改Carbon声明或依赖版本。
 
 追踪正常日期的producer/consumer后发现第二处兼容边界：本地已批准PHP8.2镜像中的正常DateTime实例，其原生getLastErrors()返回false（普通探针exit0）；旧Carbon的Creator构造器和createFromFormat两处把返回值交给setLastErrors(array)。在这两个原生返回调用点仅将严格false规范为旧版无错误四字段数组（warning_count=0、warnings=[]、error_count=0、errors=[]），保留非false返回值与私有array类型约束；不泛化null/任意类型、不抑制TypeError。这是tracked vendor的最小兼容回移，不升级包、不修改composer/lock或依赖树。首RUN的失败日志已保存，专用4容器/1网络/11卷已按manifest清理、teardown原生exit0。两处修复完成后使用新RUN重新做同一两个正常空任务，原断言保持，安全/异常/故障场景不运行。
+
+正常日期探针随后实际exit255：CarbonInterface::modify($modify)的宽参数与继承的PHP8 DateTime::modify(string)不兼容，属于编译致命错误，不能由弃用handler修复。源码核对实际tracked Carbon2.20.0，而既有lock记为2.73.0；锁版完整恢复还涉及新增PHP8.1依赖及多包，不在本次最小队列修复中展开。按锁版上游 `9228ce90e1035ff2f0db84b40ec2e023ed802075` 中的原生转接模式，在共享Modifiers/Date traits增加modify、setDate、setISODate、setTime、setTimestamp的五个宽参数wrapper并标注ReturnTypeWillChange；统一调用对应parent方法，setTimestamp保持旧版整秒语义，不回移新版本的分数时间功能。保持mutable/immutable共用、PHP7.4可解析、旧queue时钟和setTestNow语义，不改Queue时间计算或依赖树；错误、业务异常仍由原处理链负责。健康日期探针的初次失败保留为原生255，修复后只验证正常now/格式化日期和实际两个空任务。
+
+上述普通探针在五个wrapper补齐后原生exit0，覆盖mutable/immutable正常日期及setter；native编译仍提示Date.php五处旧`${var}`插值弃用。仅将实际五处改为PHP7/8均支持的等价`{$var}`写法，保持字符串/动态方法名，不创建警告或异常探针。这个正常日期结果不代替真实队列WORKER结果。
 
 ### Task 2: 数据库迁移
 

@@ -19,6 +19,13 @@ use Carbon\CarbonInterface;
  */
 trait Modifiers
 {
+    /** Keep the Carbon interface compatible with native PHP 8 date signatures. */
+    #[\ReturnTypeWillChange]
+    public function modify($modify)
+    {
+        return parent::modify((string) $modify);
+    }
+
     /**
      * Midday/noon hour.
      *
