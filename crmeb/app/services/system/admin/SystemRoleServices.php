@@ -98,13 +98,14 @@ class SystemRoleServices extends BaseServices
         $rule = trim(strtolower($request->rule()->getRule()));
         $method = trim(strtolower($request->method()));
 
-        // 判断接口是一下两种的时候放行
-        if (in_array($rule, ['setting/admin/logout', 'menuslist'])) {
+        if (in_array($method . ' ' . $rule, config('auth_routes.authenticated', []), true)) {
             return true;
         }
 
-        // 获取所有接口类型以及对应的接口
-        $allAuth = CacheService::remember('all_auth', function () {
+        // A rejected request must not populate cold authorization caches.
+        $allAuth = CacheService::get('all_auth', null);
+        $cacheAllAuth = !is_array($allAuth);
+        if ($cacheAllAuth) {
             /** @var SystemMenusServices $menusService */
             $menusService = app()->make(SystemMenusServices::class);
             $allList = $menusService->getColumn([['api_url', '<>', ''], ['auth_type', '=', 2]], 'api_url,methods');
@@ -112,18 +113,21 @@ class SystemRoleServices extends BaseServices
             foreach ($allList as $item) {
                 $allAuth[trim(strtolower($item['methods']))][] = trim(strtolower(str_replace(' ', '', $item['api_url'])));
             }
-            return $allAuth;
-        });
+        }
 
-        // 权限菜单未添加时放行
-        if (!in_array($rule, $allAuth[$method] ?? [], true)) return true;
-
-        // 如果是crud接口放行
-        if (strpos($rule, 'crud/') === 0) return true;
+        if (!in_array($rule, $allAuth[$method] ?? [], true)) {
+            throw new AuthException('您暂时没有访问权限');
+        }
 
         // 获取管理员的接口权限列表，存在时放行
-        $auth = $this->getRolesByAuth($request->adminInfo()['roles'], 2);
+        $roles = $request->adminInfo()['roles'];
+        $roleCacheName = md5(self::ADMIN_RULES_LEVEL . '_2_' . implode('_', $roles));
+        $auth = CacheService::get($roleCacheName, null);
+        $cacheRoleAuth = !is_array($auth);
+        if ($cacheRoleAuth) { $auth = $this->getRolesByAuth($roles, 2); }
         if (isset($auth[$method]) && in_array($rule, $auth[$method], true)) {
+            if ($cacheAllAuth) { CacheService::set('all_auth', $allAuth); }
+            if ($cacheRoleAuth) { CacheService::set($roleCacheName, $auth); }
             return true;
         }
 
@@ -142,16 +146,16 @@ class SystemRoleServices extends BaseServices
     {
         if (empty($rules)) return [];
         $cacheName = md5($cachePrefix . '_' . $type . '_' . implode('_', $rules));
-        return CacheService::remember($cacheName, function () use ($rules, $type) {
-            /** @var SystemMenusServices $menusService */
-            $menusService = app()->make(SystemMenusServices::class);
-            $authList = $menusService->getColumn([['id', 'IN', $this->getRoleIds($rules)], ['auth_type', '=', $type]], 'api_url,methods');
-            $rolesAuth = [];
-            foreach ($authList as $item) {
-                $rolesAuth[trim(strtolower($item['methods']))][] = trim(strtolower(str_replace(' ', '', $item['api_url'])));
-            }
-            return $rolesAuth;
-        });
+        $cached = CacheService::get($cacheName, null);
+        if (is_array($cached)) { return $cached; }
+        /** @var SystemMenusServices $menusService */
+        $menusService = app()->make(SystemMenusServices::class);
+        $authList = $menusService->getColumn([['id', 'IN', $this->getRoleIds($rules)], ['auth_type', '=', $type]], 'api_url,methods');
+        $rolesAuth = [];
+        foreach ($authList as $item) {
+            $rolesAuth[trim(strtolower($item['methods']))][] = trim(strtolower(str_replace(' ', '', $item['api_url'])));
+        }
+        return $rolesAuth;
     }
 
     /**

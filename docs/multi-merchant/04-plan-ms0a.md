@@ -349,7 +349,7 @@ git commit -m "fix(outapi): single enabled-state rule for login/access/refresh/M
 Run: `php help/audit-regressions/security.php; AUDIT_PHASE=after php help/audit-regressions/isolated/ms0a-auth.php --only=A03,A04,A30`
 Expected: 三项收紧后的 UNIT-STUB 用例、新增的拒绝用例和 A03、A04、A30 FAIL；其余 20 个原有 UNIT-STUB 用例 PASS。基线原始 23 项结果保留在 AUDIT_BASE_SHA 的记录中，不覆盖历史结果。
 
-- [ ] **Step 5: 实现**
+- [x] **Step 5: 实现**（精确六项白名单；三入口角色检查；五个菜单写路径含 batch 清缓存；冷权限拒绝不写缓存；热权限命中不回写；多应用配置实际加载已由 A06 验证）
 
 - `auth_routes.php` 返回 `['authenticated' => [...用户确认的清单...]]`。先确认 ThinkPHP 多应用模式会加载 `app/adminapi/config/` 下的配置文件；如果不会，改放到 `crmeb/config/auth_routes.php` 并在报告中说明。
 - `verifyAuth()`：`"$method $rule"` 在白名单中 → 放行；已登记且角色已授权 → 放行；其余一律抛 `AuthException('您暂时没有访问权限')`。删除"未登记放行"和 `crud/` 前缀放行两个分支。保留审计 A1 已有的严格比较。
@@ -358,12 +358,12 @@ Expected: 三项收紧后的 UNIT-STUB 用例、新增的拒绝用例和 A03、A
 - `route/route.php`：原三项仅认证分组保留现有中间件并追加 AdminCheckRoleMiddleware，不改变公开登录/MISS/CORS 分组。
 - A04 临时 CRUD 探针指向已有只读方法，首行带本 RUN 哨兵；运行器 EXIT 清理与 teardown 都只删除完全匹配本 RUN 标记的探针，保留其他文件。
 
-- [ ] **Step 6: 重跑**
+- [x] **Step 6: 重跑**（UNIT 43 PASS / 0 FAIL；19 个新增 HTTP 全 PASS，热缓存修正后 A05/A08/A30 五项再跑 PASS；最终真实 973 路由，961 角色检查，6 白名单 / 520 未登记拒绝，0 仅认证；源码及临时探针保护独立复核通过）
 
 Run: `php help/audit-regressions/security.php && AUDIT_PHASE=after php help/audit-regressions/isolated/ms0a-auth.php --only=A02,A03,A04,A05,A06,A08,A30`
 Expected: 全部 PASS。
 
-- [ ] **Step 7: 提交**
+- [x] **Step 7: 提交**（本地 Task 7；前置测试提交及热缓存回归先于业务修复；未推送）
 
 ```bash
 git add crmeb/app/adminapi/config/auth_routes.php crmeb/app/services/system/admin/SystemRoleServices.php \

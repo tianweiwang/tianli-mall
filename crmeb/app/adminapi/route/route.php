@@ -53,7 +53,8 @@ Route::group(function () {
     Route::get('download/[:key]', 'PublicController/download')->option(['real_name' => '下载文件']);
 })->middleware([
     AllowOriginMiddleware::class,
-   \app\adminapi\middleware\AdminAuthTokenMiddleware::class
+   \app\adminapi\middleware\AdminAuthTokenMiddleware::class,
+   \app\adminapi\middleware\AdminCheckRoleMiddleware::class
 ])->option(['mark' => 'system', 'mark_name' => '系统相关']);
 
 /**

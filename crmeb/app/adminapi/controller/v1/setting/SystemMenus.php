@@ -15,6 +15,7 @@ use app\adminapi\controller\AuthController;
 use app\services\system\SystemMenusServices;
 use app\services\system\SystemRouteCateServices;
 use app\services\system\SystemRouteServices;
+use crmeb\services\CacheService;
 use think\facade\App;
 use think\facade\Route;
 
@@ -116,6 +117,7 @@ class SystemMenus extends AuthController
             return app('json')->fail('请填写按钮名称');
         $data['path'] = implode('/', $data['path']);
         if ($this->services->save($data)) {
+            CacheService::clear();
             return app('json')->success('添加成功');
         } else {
             return app('json')->fail('添加失败');
@@ -185,6 +187,7 @@ class SystemMenus extends AuthController
         }
 
         $this->services->saveAll($data);
+        CacheService::clear();
 
         return app('json')->success('添加成功');
     }
@@ -249,10 +252,12 @@ class SystemMenus extends AuthController
         if (!$data['menu_name'])
             return app('json')->fail('请填写按钮名称');
         $data['path'] = implode('/', $data['path']);
-        if ($this->services->update($id, $data))
+        if ($this->services->update($id, $data)) {
+            CacheService::clear();
             return app('json')->success('修改成功');
-        else
+        } else {
             return app('json')->fail('修改失败');
+        }
     }
 
     /**
@@ -270,6 +275,7 @@ class SystemMenus extends AuthController
         if (!$this->services->delete((int)$id)) {
             return app('json')->fail('删除失败');
         } else {
+            CacheService::clear();
             return app('json')->success('删除成功');
         }
     }
@@ -293,6 +299,7 @@ class SystemMenus extends AuthController
         }
 
         if ($res) {
+            CacheService::clear();
             return app('json')->success('修改成功');
         } else {
             return app('json')->fail('修改失败');
