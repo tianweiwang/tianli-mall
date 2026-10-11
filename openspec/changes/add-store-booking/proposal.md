@@ -1,5 +1,7 @@
 ## Why
 
+> **PAUSED（2026-10-11）**：路线 A 范围外，不随多商家改造执行。保留原内容与勾选状态。见 docs/multi-merchant/README.md 决策 D8。
+
 Franchise stores need customers to reserve a service slot online and then complete the transaction in the store. The application has no booking capability today: a search for booking, appointment, and reservation terms across `app/` and `crmeb/` returns zero matches, and the tables whose names suggest it (`eb_store_service`, `eb_store_service_record`) are the customer-service chat system, with columns like `online`, `account`, `nickname`, and `notify`.
 
 Three existing capabilities cover most of what booking needs, so this is an additive module rather than a rewrite:

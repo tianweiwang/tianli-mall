@@ -1,5 +1,7 @@
 ## 0. Business rules and prerequisites
 
+> **PAUSED（2026-10-11）**：路线 A 范围外，不随多商家改造执行。保留原内容与勾选状态。见 docs/multi-merchant/README.md 决策 D8。
+
 - [ ] 0.1 Answer the five open questions in the proposal (booking horizon and same-day booking, cancellation deadline and reschedule limit, no-show handling, per-customer booking limits, whether stores or the brand configure slots). Implementation must not start before these are settled, because each one changes customer-visible behavior.
 - [ ] 0.2 Confirm that the four PHP 8.2 business defects tracked by `harden-runtime-acceptance` are fixed, in particular the `DiyDao::getDiyInfo` callback failure and the `xaboy/form-builder` return-type exception that blocks the admin settings page. Booking cannot be verified end to end on a storefront whose home layout API returns `status=400` and whose admin settings page will not open.
 - [ ] 0.3 Decide whether booking ships before the store-attribution change. If it does, booking reads the store identifier from the entry request parameter, which is correct for in-store QR scanning but does not survive a customer reopening the mini program from history.
