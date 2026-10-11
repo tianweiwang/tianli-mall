@@ -1,0 +1,235 @@
+<?php
+declare(strict_types=1);
+
+namespace crmeb\services\auth;
+
+use crmeb\exceptions\AuthSessionException;
+use crmeb\exceptions\AuthUnavailableException;
+
+/**
+ * Redis is the authority for v2 sessions. No token or subject is retained
+ * between calls; account and session predicates execute together in Lua.
+ */
+class AuthSessionStore
+{
+    private \Redis $redis;
+    private string $epoch;
+
+    public function __construct(\Redis $redis, string $epoch)
+    {
+        if (!preg_match('/^[A-Za-z0-9._-]{1,128}$/D', $epoch)) {
+            throw new AuthUnavailableException();
+        }
+        $this->redis = $redis;
+        $this->epoch = $epoch;
+        try {
+            if ($redis->setOption(\Redis::OPT_READ_TIMEOUT, 1.0) !== true) {
+                throw new \RuntimeException();
+            }
+        } catch (\Throwable $error) {
+            throw new AuthUnavailableException();
+        }
+    }
+
+    /** Configuration only, for live epoch checks in long-running consumers. */
+    public function epoch(): string
+    {
+        return $this->epoch;
+    }
+
+    /** Only credential-login callers may initialize an authorization version. */
+    public function initAccount(string $app, string $id): string
+    {
+        return $this->accountCommand($app, $id, 'init', $this->nonce());
+    }
+
+    public function createSession(string $app, string $id, string $expectedVersion, array $session): void
+    {
+        $account = $this->accountKey($app, $id);
+        $this->assertNonce($expectedVersion);
+        $this->assertSession($session);
+        if ($session['session_version'] !== $expectedVersion) {
+            throw new AuthSessionException();
+        }
+        $this->execute('create_session', [$account, $this->sessionKey($app, $session['sid'])], [
+            $id, $expectedVersion, $session['type'], $session['audience'],
+            $session['token_digest'], $session['credential_stamp'], (string)$session['expires_at'],
+        ]);
+    }
+
+    public function verify(string $app, string $sid, string $id, string $type, string $audience,
+                           string $version, string $tokenDigest, string $credentialStamp): void
+    {
+        $account = $this->accountKey($app, $id);
+        $session = $this->sessionKey($app, $sid);
+        $this->assertText($type);
+        $this->assertText($audience);
+        $this->assertNonce($version);
+        $this->assertDigest($tokenDigest);
+        $this->assertDigest($credentialStamp);
+        $this->execute('verify_session', [$account, $session], [
+            $id, $type, $audience, $version, $tokenDigest, $credentialStamp,
+        ]);
+    }
+
+    public function revokeSession(string $app, string $sid): void
+    {
+        $key = $this->sessionKey($app, $sid);
+        try {
+            $deleted = $this->redis->del($key);
+        } catch (\Throwable $error) {
+            throw new AuthUnavailableException();
+        }
+        if (!is_int($deleted)) {
+            throw new AuthUnavailableException();
+        }
+    }
+
+    public function rotateAccount(string $app, string $id): string
+    {
+        return $this->accountCommand($app, $id, 'rotate', $this->nonce());
+    }
+
+    public function block(string $app, string $id): void
+    {
+        $this->accountCommand($app, $id, 'block');
+    }
+
+    public function unblock(string $app, string $id): void
+    {
+        $this->accountCommand($app, $id, 'unblock');
+    }
+
+    public function beginChange(string $app, string $id): string
+    {
+        return $this->accountCommand($app, $id, 'begin', $this->nonce(), $this->nonce());
+    }
+
+    public function completeChange(string $app, string $id, string $owner): void
+    {
+        $this->assertNonce($owner);
+        $this->accountCommand($app, $id, 'complete', '', $owner);
+    }
+
+    public function redeem(string $app, string $oldSid, string $id, array $newSession): void
+    {
+        $account = $this->accountKey($app, $id);
+        $old = $this->sessionKey($app, $oldSid);
+        $this->assertSession($newSession);
+        $previousDigest = $newSession['previous_token_digest'] ?? null;
+        $this->assertDigest($previousDigest);
+        $new = $this->sessionKey($app, $newSession['sid']);
+        if ($old === $new) {
+            throw new AuthSessionException();
+        }
+        $this->execute('redeem_session', [$account, $old, $new], [
+            $id, $newSession['session_version'], $newSession['type'], $newSession['audience'],
+            $newSession['token_digest'], $newSession['credential_stamp'],
+            (string)$newSession['expires_at'], $previousDigest,
+        ]);
+    }
+
+    private function accountCommand(string $app, string $id, string $mode, string $version = '', string $owner = ''): string
+    {
+        $result = $this->execute('rotate_account', [$this->accountKey($app, $id)], [$mode, $version, $owner]);
+        return $result[1] ?? '';
+    }
+
+    private function accountKey(string $app, string $id): string
+    {
+        $this->assertApp($app);
+        if (!preg_match('/^[1-9][0-9]{0,18}$/D', $id)) {
+            throw new AuthSessionException();
+        }
+        return 'auth:v2:' . $this->epoch . ':' . $app . ':account:' . $id;
+    }
+
+    private function sessionKey(string $app, string $sid): string
+    {
+        $this->assertApp($app);
+        $this->assertNonce($sid);
+        return 'auth:v2:' . $this->epoch . ':' . $app . ':session:' . $sid;
+    }
+
+    private function assertApp(string $app): void
+    {
+        if (!in_array($app, ['adminapi', 'outapi'], true)) {
+            throw new AuthSessionException();
+        }
+    }
+
+    private function assertSession(array $session): void
+    {
+        foreach (['sid', 'session_version', 'type', 'audience', 'token_digest', 'credential_stamp', 'expires_at'] as $field) {
+            if (!array_key_exists($field, $session)) {
+                throw new AuthSessionException();
+            }
+        }
+        $this->assertNonce($session['sid']);
+        $this->assertNonce($session['session_version']);
+        $this->assertText($session['type']);
+        $this->assertText($session['audience']);
+        $this->assertDigest($session['token_digest']);
+        $this->assertDigest($session['credential_stamp']);
+        if (!is_int($session['expires_at']) || $session['expires_at'] <= 0 || $session['expires_at'] > 999999999999) {
+            throw new AuthSessionException();
+        }
+    }
+
+    private function assertNonce($value): void
+    {
+        if (!is_string($value) || !preg_match('/^[a-f0-9]{32}$/D', $value)) {
+            throw new AuthSessionException();
+        }
+    }
+
+    private function assertDigest($value): void
+    {
+        if (!is_string($value) || !preg_match('/^[a-f0-9]{64}$/D', $value)) {
+            throw new AuthSessionException();
+        }
+    }
+
+    private function assertText($value): void
+    {
+        if (!is_string($value) || !preg_match('/^[A-Za-z0-9._:\/-]{1,128}$/D', $value)) {
+            throw new AuthSessionException();
+        }
+    }
+
+    private function nonce(): string
+    {
+        try {
+            return bin2hex(random_bytes(16));
+        } catch (\Throwable $error) {
+            throw new AuthUnavailableException();
+        }
+    }
+
+    private function execute(string $name, array $keys, array $arguments): array
+    {
+        try {
+            $path = __DIR__ . '/lua/' . $name . '.lua';
+            if (!is_file($path) || !is_readable($path)) {
+                throw new \RuntimeException();
+            }
+            $script = file_get_contents($path);
+            if (!is_string($script) || $script === '') {
+                throw new \RuntimeException();
+            }
+            $result = $this->redis->eval($script, array_merge($keys, $arguments), count($keys));
+        } catch (\Throwable $error) {
+            // Do not translate, log driver messages/parameters, or retain previous.
+            // An executed write with lost acknowledgement must never be retried here.
+            throw new AuthUnavailableException();
+        }
+        if ($result === ['AUTH']) {
+            throw new AuthSessionException();
+        }
+        if (!is_array($result) || ($result[0] ?? null) !== 'OK'
+            || (isset($result[1]) && !is_string($result[1]))) {
+            throw new AuthUnavailableException();
+        }
+        return $result;
+    }
+}

@@ -83,17 +83,17 @@ Redis 连接错误一律转换为 `AuthUnavailableException`。账号/会话用H
 - beginChange未执行前故障必须零写入；执行后丢应答必须仍blocked、保留本次owner和轮换版本、抛503且调用方不得开始改库。completeChange未执行故障仍blocked；已执行但丢应答可能已解除owner，仍抛503、不报告成功、不补偿恢复旧版本。后续Task6仅在数据库已提交后调用completeChange，回读状态只能用于脱敏审计，不能作为失败后返回成功的依据。
 - 凭据登录先只读校验并保存原digest，再init取得账号版本，再重读当前digest/status作严格比较，最后createSession CAS。init之前的改密由digest重比对拒绝，之后的变更由blocked/version CAS拒绝。不得拿旧校验配新digest签发。verifyLogin统计从读验证分离，Redis依赖及会话写入成功前不写统计；相应必要调用点属于Task4/5。
 
-- [ ] **Step 1: 写用例**（CLI 进程内直接调用，`INTEGRATION` 层，真实 Redis + `FaultyRedis`）：
+- [x] **Step 1: 写用例**（14c4f9c4原82项；独立复核补18项后a651aa97为100项，均先于生产实现提交；CLI进程内真实Redis + `FaultyRedis`）：
   - A17-v2：会话或账号键缺少任一字段、版本为空或不一致 → 拒绝。
   - A18-v2：会话存在于其他 `<app>` 命名空间、或 `type`/`audience`/`token_digest` 不一致 → 拒绝；验证失败不删除其他应用的键。
   - A23-v2：会话键缺失 → `AuthException`；Redis `pause` / `stop` → `AuthUnavailableException`；`verify` 不会写入任何键。
   - A25：两个并发 `redeem` 同一个旧 `sid`，恰好一个成功；`redeem` 在写新会话前或后注入错误时，旧 `sid` 不恢复、调用方拿不到新令牌；重复 `redeem` 已消耗的 `sid` 失败。
   - A29：删除账号键后 `verify` 和 `redeem` 都失败，且不重建该键；更换 `epoch` 后旧会话全部无效。
   - 2026-10-11只读合同复核补齐：create输入版本缺少/不一致、所有账号/旧会话HASH字段损坏对create/redeem的拒绝、错类型目标、redeem摘要/到期/溢出、same-token-digest、旧到期点保留、账号持久、丢账号后变更标记不复活旧会话，以及begin/complete的EVAL前后故障；当前Task2为100项，新增用例需重新保留缺类基线，不能沿用此前82项结果冒充覆盖。
-- [ ] **Step 2: 运行，确认因类不存在而失败。**
-- [ ] **Step 3: 实现。** 每个 Lua 脚本先校验所有前置条件，任一不满足就直接返回错误码，不做任何写入；全部满足后再写。会话键 TTL = `expires_at - now + 60`。
-- [ ] **Step 4: 运行，期望全部 PASS。**
-- [ ] **Step 5: 提交** `feat(auth): versioned Redis session store with single-use redeem`。
+- [x] **Step 2: 运行，确认因类不存在而失败。** 14c4f9c4的82项、a651aa97的100项均全部正常FAIL/exit1，原因均为缺类，数据库/缓存值和补齐后的到期点无意外变化；原始两份基线保留。
+- [x] **Step 3: 实现。** 四个Lua先校验前置条件/类型/字段/安全整数/期限，再写；读验证一次原子核对账号与会话，零写入。账号持久，会话EXPIREAT固定为expires_at+60，兑换旧键只改consumed并保留到期点；版本和owner使用128位随机数，丢键不复活，依赖失败受控503且无重试/补偿。
+- [x] **Step 4: 运行，全部 PASS。** 100/100、exit0（ms0b-session-store-after-20261011100431.jsonl），含真实pause/stop有界503、两独立进程兑换恰好一成功、执行后丢应答/断连无复活、TIME/PTTL及全部158张表/缓存值检查。3个PHP lint通过，7个正式文件与独立审查草稿哈希一致。该轮为a651aa97加7个待提交生产文件，原始source元数据不改写；最终交付须Task10清洁冻结新RUN完整回归。
+- [x] **Step 5: 本地提交** `feat(auth): versioned Redis session store with single-use redeem`；未推送。当前仅存储原语完成，管理端/对外端尚未接入v2，整个MS0b未完成。
 
 ### Task 3: AuthTokenV2 与 CredentialStamp
 
