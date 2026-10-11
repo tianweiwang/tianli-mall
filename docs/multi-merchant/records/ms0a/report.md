@@ -1,137 +1,136 @@
-# MS0a 执行记录（进行中，未交付）
+# MS0a 交付报告
 
 ## P1 基本信息
 
-- 用户于 2026-10-11 在当前会话确认 BASE 通过，授权 MS0a L2；未授权推送或部署。
-- 分支：`codex/ms0a`；工作目录：`H:/天俪商城/tianli-mall--ms0a`。
-- 起点：`6dee65785b5655d7bac7c3838b95106c7c0549cc`，与用户指定远程分支一致。
-- 历史 `AUDIT_BASE_SHA` 仍为 `9685731dcd116784d38e6bbdb902cec3c0c84975`；从该提交到本次起点只涉及文档和 BASE 记录。
-- 已提交：`f9bfb095`（批准的 Windows ISO-FULL 环境适配）、`760fdbbd`（批准的现有商品规则权限探针）、`da1af4f6`（批准的安装初始化）、`9062a302`（Task 1 隔离环境）、`80c2db24`（Task 2 回归用例）、`55da15f3`（控制文件读取竞态修复）、`3e1f7fea`（Task 3）、`c2653b2e`（Task 4）、`908ba5b9`（Task 5）、`53a318e5`（Task 6 正向状态回归）、`7ba8cbe6`（Redis SET 快照修复）、`b2b2e922`（Task 6）。尚未生成 `SECURITY_BASE_SHA`。
-- Task 2 基线源码一致性：`git rev-parse AUDIT_BASE_SHA:crmeb HEAD:crmeb` 均为 `e5bc53996280f4d60f4f577d22da0fbf274b67be`；结果仍记录实际运行的 HEAD，不把在当前 worktree 运行的结果伪标为历史提交。
-- 唯一执行清单仍为 `04-plan-ms0a.md`；Task 1–6 已完成。Task 2 原 85 个认证子场景已完成基线运行，Task 6 追加 1 个正常状态切换回归，原断言不变。Task 6 全量复测 86 PASS / 0 FAIL；Task 7 正在生成路由盘点，随后须在 SP-MS0a-1 等待用户决定，Task 8 尚未开始。
+- 分支：`codex/ms0a`；工作目录：`H:/天俪商城/tianli-mall--ms0a`；授权：L2。
+- 起点：`6dee65785b5655d7bac7c3838b95106c7c0549cc`。用户已确认 BASE 通过；历史 `AUDIT_BASE_SHA=9685731dcd116784d38e6bbdb902cec3c0c84975`，起点与历史基线的业务树均为 `e5bc53996280f4d60f4f577d22da0fbf274b67be`。
+- 已验证源码冻结点：`af3e3e0c48fab9cf5af18f45f6341e9c272b168f`。最终记录提交的交付 SHA 由 `git rev-parse HEAD` 及回传给出；必须与冻结点的 `crmeb`、`help/audit-regressions` 差异为空。
+- 主验收 RUN：`202610110832052c8009`，全新 MySQL/Redis/内部网络/卷。主完整 HTTP 已 106/106 通过；独立完整 HTTP 同为 106/106，最终逐项差异0，独立副作用与源码审阅无必须修复项，详见下文。
+- 没有推送、PR、合入、部署、外部通知或真实业务数据库操作。没有生成 `acceptance.md`、修改 README 验收状态或自行指定 `SECURITY_BASE_SHA`。
+- 用户先后批准 ISO-FULL、已有商品规则权限探针、专用 migrator 真实初始化、六项精确白名单及三个入口补角色检查；后续明确授权按文档规划自主处理问题。唯一执行清单为 `04-plan-ms0a.md`。
 
-## P4 当前变更范围
+## P4 变更文件与范围
 
-- 已批准的规格和计划适配：03、04 文档。
-- 环境文件：`help/audit-regressions/isolated/`，含原计划文件及用户批准的 `run.sh`；Task 3–6 认证修复已提交，Task 7 仅完成路由盘点，没有修改授权策略。
-- 本记录用于保存实际进度，不代表 MS0a 验收完成。
+起点到冻结源码共 34 文件，完整逐路径归属见仓库外 `ms0a-scope-coverage.md`。下列清单覆盖全部路径，必要调用点均已在 04 和相关提交中记录。
 
-## P5 已执行检查
-
-| 检查 | 结果 | 层级与边界 |
-|---|---|---|
-| 原分支 `security.php`，PHP 8.2.33、本地镜像、只读挂载、无网络 | 23 PASS / 0 FAIL，exit 0 | UNIT-STUB；未验证 HTTP、数据库或 Redis |
-| 初次执行新 `selftest.php` | exit 1，harness 尚未实现 | 写测试后的预期失败 |
-| 新增 4 个 PHP 文件语法检查 | exit 0 | 源码静态 |
-| Bash 脚本语法检查 | exit 0 | 源码静态 |
-| 首轮专用环境启动 | MySQL 临时服务器造成过早健康判定，PDO 2002 | 已将健康检查改为 TCP；仅按 manifest 清理该轮资源 |
-| 第二轮专用环境 | 内部网络、无宿主端口；157 张安装表与哨兵已导入 | 新建隔离实例，无业务库数据 |
-| 受限账号 guard 真实复核 | exit 0 | 双哨兵匹配、端点匹配、仅 audit_auth DML、CREATE DATABASE 被拒 |
-| 合成账号夹具初始化 | BLOCKED：计划要求的商品列表权限登记不存在 | 未补登记、未修改安装种子或断言 |
-| 商品规则列表探针与夹具 | 用户批准后已完成初始化 | 保留安装权限种子；out/kefu 合成登录名使用验证器允许的字母数字 |
-| PHP 8.2 应用启动 | 已成功监听 HTTP | 现有 Composer 自动加载表过旧；在专用 vendor 卷离线生成当前 composer.json 的兼容类映射，未改源码或锁文件 |
-| 专用卷清理身份核验 | 已补实际标签、卷名及创建时间核对 | 新环境清理探针保留其他 project 的容器 ID |
-| 六项环境自检（初始化补充前） | INTEGRATION 5 PASS / 1 FAIL，exit 1 | Z07 失败：login/info 返回业务码 400；其余五项通过 |
-| Z07 原因复核 | MySQL errno 1142，TRUNCATE 所需 DROP 权限被拒 | audit_app 仍仅有 audit_auth DML；未扩大权限 |
-| 批准的专用初始化 | 真实校验数据生成并与源码匹配，版本标记成功写入 | 仅 bootstrap 使用专用 migrator |
-| 全新环境启动（最新） | bootstrap exit 0，自检 INTEGRATION 6 PASS / 0 FAIL，exit 0 | RUN_ID=20261011065024d6dda7；未使用上一轮卷或手动补丁 |
-| 正常认证流程预跑 A28 | 3 PASS / 1 FAIL，exit 1 | out 旧令牌已拒绝，但为业务 400，尚未统一 401；其登录、刷新、新令牌均正常 |
-| MS0a 完整 baseline | INTEGRATION 24 PASS / 61 FAIL，共 85 行，exit 1 | 实际测试 HEAD=9062a302，业务源码与历史 AUDIT_BASE_SHA 相同 |
-| A09/A26 分类复核 baseline | 8 PASS / 13 FAIL，exit 1 | 已拒绝且仅为 400/402→401 契约差异的情况，不归为身份旁路 |
-| A23 实际 Redis 停启 | PASS；拒绝时 HTTP 500、无业务或会话变化 | 恢复后双哨兵与会话值保留；MS0a 只要求拒绝，依赖故障 503 属于 MS0b |
-| A10 重复配置切换时的启动器竞态 | 已修复；加强后的六项自检 6 PASS，exit 0 | Windows bind mount 在 rename 替换瞬间可能读不到控制文件；仅命令/ACK 空读重试，manifest/凭据仍严格失败；Z07 连续 16 次启停均真实返回 200 |
-| Task 3 A10/A20 修复前 | 15 FAIL，exit 1 | 保留实际失败；Task 3 后 A10 登录密钥保护 4 PASS / 5 待后续任务 |
-| Task 4 复测及 A20 | 43 项 31 PASS / 12 待后续端；A20 6 PASS，exit 0 | 管理端验签、状态、密码摘要与精确撤销通过；A27 认证失败不再写草稿 |
-| Task 5 复测 | 43 项 34 PASS / 9 待 out，exit 1 | kefu/api 固定 type、四端缓存篡改与错误端请求后原会话回归；9 FAIL 均属待 Task 6 |
-| Task 6 修复前 | 35 项 24 PASS / 11 FAIL，exit 1 | 关闭后访问/刷新、非法状态 2、out 文件缓存签发等实际失败；正常 1→0 持久化通过 |
-| Task 6 首次全量复测 | 86 项 85 PASS / 1 FAIL，exit 1 | 仅 A23 的 Redis SET DUMP 摘要变化；业务表零变化，未将失败隐去 |
-| A23 摘要差异只读诊断 | 集合 173 个完整成员排序摘要前后一致，DUMP SHA 变化 | 本次实例仅重启 Redis，不发 HTTP；目标是管理员标签 SET；不是会话值变化 |
-| Redis SET 快照修复后的 A23 | 2 PASS / 0 FAIL，exit 0 | 对 SET 比较排序后的全部 SMEMBERS，保留类型标记；其他类型仍 DUMP；全部 Redis 键和成员仍严格比较，无新增允许变化 |
-| 修复快照后的完整认证复测 | INTEGRATION 86 PASS / 0 FAIL，exit 0 | run.sh RUN_ID ms0a-auth.php；head=7ba8cbe6，加上随后提交 b2b2e922 的 Task 6 工作树改动；Task 8 的干净交付 SHA 验证尚未执行 |
-
-## P6 证据位置
-
-当前隔离运行目录：`C:/Users/Vwang/.tianli-audit/20261011065024d6dda7`。前轮 `2026101106410417ff4a` 的资源已按身份核验清理，证据仍保留。
-
-- `manifest.json`、`network.json`、`containers.jsonl`、`volumes.txt`：本次专用资源身份。
-- `evidence/selftest-after-20261011065236.jsonl`：全新运行的六项真实自检结果；仓库中 `results.jsonl` 保留脱敏摘要。前轮失败输出保留在前轮运行目录。
-- `evidence/autoload-build.log`：离线生成自动加载表，5252 个类；`app-runtime.log`：PHP 8.2.33 内置服务器启动与 HTTP 请求。
-- `evidence/ms0a-auth-baseline-20261011070721.jsonl`：完整 85 项认证基线，逐行指向脱敏响应、五表与全部 Redis 前后摘要；后续分类复核文件保留 A09/A26 的实际结果。
-- `evidence/ms0a-auth-after-20261011072329.jsonl`、`20261011072500.jsonl`、`20261011072801.jsonl`：Task 4/5 及 A20 分步验证；中间结果的 commit_sha 是当时 HEAD，修复代码仍在 worktree，不能当成交付提交的干净环境验收。
-- `evidence/ms0a-auth-after-20261011073657.jsonl`：Task 6 修复前；`20261011073853.jsonl`：首次全量 85/1；`20261011074043.jsonl`：A23 快照修复后 2/0。
-- `evidence/ms0a-auth-after-20261011074202.jsonl`：完整 86 PASS；仓库 results.jsonl 当前只保存自检、原 baseline 与该完整 after 的阶段快照，尚不是最终交付包。
-- `evidence/redis-set-probe-before.json`、`redis-set-probe-after.json`：只读 SET 值摘要诊断；全部成员保留，未记录成员内容、键名或令牌。
-- `evidence/Z07-preflight.json`：只记录业务状态、MySQL 错误编号、调用链及统计，不含凭据或原始 HTTP 数据。
-- 前轮 `202610110628309baa41/evidence/fixture-route-preflight.json` 保留商品列表未登记的只读事实；前轮专用资源已清理。
-- 密码、密钥只在本次 project 的独立 Docker 卷中，不复制进报告或仓库。
-
-## P7 数据边界
-
-只在本次专用 MySQL 中建立 `audit_auth` 和受限账号、导入仓库安装 SQL、增加计划内的 `audit_sentinel`。Redis 同样为新建实例。没有连接既有 CRMEB、commerce-platform 或其他业务实例。
-
-## P8 尚未验证
-
-六项环境自检已通过，认证 baseline 已完成；Task 3–6 已实现并验证。路由清单、权限收紧与 Task 8 全新环境验证尚未完成。WORKER、BROWSER、EXTERNAL 未运行。当前不得描述为 MS0a 或多商户功能完成。
-
-## P9 发现与决定
-
-03 文档要求 `admin_limited` 的 `R-limited` 角色仅有商品列表读权限，但安装种子中 `auth_type=2 AND api_url='product/product' AND methods='GET'` 的数量为 0。源码 `adminapi/route/product.php` 的 `GET product/product` 路由确实存在；因此不能把它当作已登记已授权接口测试。
-
-种子已有 `GET product/product/rule`（商品规则列表）权限登记，以及 outapi 的 `GET category/list` 登记。用户于 2026-10-11 明确批准使用现有商品规则列表作为正常授权探针；03/04 文档及夹具已据此调整。商品列表未登记的事实保留，后续纳入 Task 7 清单；没有修改权限种子。
-
-## P10 已解决的安装初始化差异
-
-触发 12 文档 §5.1：计划要求受限 DML 账号在仅导入安装种子的干净 worktree 上访问 `GET /adminapi/login/info` 返回 200，但现有代码第一次请求会执行安装后的文件校验初始化。
-
-实际链路：`SystemAdminServices::getLoginInfo()`（189–192）发现 `eb_cache` 中不存在当前版本的 `write_md5` 标记，调用 `SystemFileServices::writeMd5()`（504–527）；其 `SystemFileMd5Services::clearMd5List()`（34–37）执行 `TRUNCATE TABLE eb_system_file_md5`，MySQL 要求 DROP 权限。因此业务响应为 400 / errno 1142。只读统计：write_md5 标记行数 0，安装种子的文件校验行数 1071。该行为不属于本次认证修复。
-
-建议用户批准的具体方案：在 bootstrap 引导阶段，以本次实例的 `audit_migrator` 配置启动真实 ThinkPHP，调用现有 `writeMd5()` 生成当前源码的校验数据，确认成功后用现有 `CacheServices::setDbCache()` 写入真实版本的 `write_md5` 标记；再恢复受限 `audit_app` 并执行 Z07 的原始 200 断言。引导在已核对的专用资源内执行，不新增表或权限种子，不伪造缓存来跳过实际生成。03/04 文档同步记录这项新增初始化步骤。
-
-用户于 2026-10-11 明确批准上述方案；03/04 文档已单独提交 `da1af4f6`。引导初始化已实现并验证，Z07 恢复为 PASS。应用权限未扩大；该引导提交没有业务源码改动，后续认证修复另列 Task 3–6。推送和部署均未发生。
-
-## P11 已复现的认证基线
-
-- A09：四个自身应用探针均成功；6 个错误应用组合返回 200，部分顾客路径还更新了 eb_user；另 3 个进入 outapi 的组合已被 400 拒绝，只缺统一 401。
-- A11/A13/A14：原有管理端密码摘要检查已拒绝 out 登录、客服、顾客令牌；归为既有拒绝回归。
-- A12：out 真实续签令牌在管理员 ID 101/102 碰撞时都能访问管理端探针（200）。
-- A15/A16：禁用管理员与软删除管理员仍返回 200；物理删除/不存在已拒绝并精确撤销本会话。
-- A17/A18：缺少或空 pwd、缓存 type/uid/token 不匹配可绕过；既有拒绝但无精确撤销、或错误撤销的情况另记契约差异。
-- A19：关闭账号的现有令牌仍可访问/刷新；非法 status=2 写入；MCP 和软删除入口原本已拒绝，统一业务码仍需修复。
-- A26：limited 令牌先打不存在的客服 ID 后，原管理端会话也被删；正确应用随后 401。
-- A27：错误签名、过期令牌命中商品保存路由，两项均实际改变 eb_cache 草稿记录；独立精确准备与恢复，不触碰其他缓存行。
-- A10：空/default 密钥与文件缓存均会继续签发，且登录统计有业务写入。
-
-以上为基线事实，FAIL 保留最终契约断言；不能把所有 FAIL 都称为本次新增漏洞或修复成果。
-
-## P12 必要调用点顺序
-
-Task 3 的签名配置保护同时在 `SystemAdminServices::login()` 的 `verifyLogin()` 之前接入。该文件已在 Task 4 的计划范围，属于相同配置修复的必要调用点：verifyLogin 已写登录统计，单独在 JwtAuth::getToken 检查会导致虽然返回 503、业务表却已改变。A10 基线已观察到这项实际变化。这里只调整实现任务的归属与调用顺序，不改变已批准的行为、权限或测试期望；Task 4 的 Redis 存储保护仍在同一位置接入。
-
-## P13 阶段独立复核
-
-未参与实现的 harness_review 代理只读审阅 Task 3–6 源码与完整 after 结果，确认 86 个唯一 INTEGRATION 子场景全部 PASS；抽开 A09 的 16 项、A12 的 2 项、A27 的 2 项、A19 关闭访问/刷新 2 项、A26 的 5 项，共 27 份脱敏原始证据。跨端拒绝、原端会话保留、五表和缓存无未允许变化均与结果一致；没有必须修复项。
-
-该复核不代替 11 文档要求的最终 V4 新 worktree / 新 RUN 复跑及基线抽样；Task 7 授权与菜单缓存审阅仍未完成，执行方没有自行签收。
-
-## P14 SP-MS0a-1 路由决定待确认
-
-实际命令：`AUDIT_PHASE=after bash help/audit-regressions/isolated/run.sh 20261011065024d6dda7 help/audit-regressions/isolated/route-inventory.php`，exit 0。枚举 973 条唯一方法/规则：11 公开、3 仅认证、958 认证加角色授权、1 MISS。958 条中 435 已登记、523 未登记；安装 auth_type=2 权限 641 行，对应 437 个唯一键。CRUD 目录为空。全部 158 张表和 Redis 405 键摘要前后一致，无 HTTP 请求。
-
-完整矩阵及原两项白名单方案的 521 条拒绝清单见 `route-permission-matrix.md`；运行证据 `route-inventory-metadata.json`、`route-permission-matrix.md` 保存在 P6 的仓库外 evidence 目录，矩阵 SHA 与仓库副本一致。此阶段没有新增权限种子。
-
-综合本人菜单与个人中心的源码调用，执行方建议六项精确方法/规则白名单，等待用户确认：
-
-| 方法与规则 | 登录即可访问的范围 |
+| 路径（仓库相对路径） | 任务与理由 |
 |---|---|
-| get setting/admin/logout | 退出本人会话，现有例外 |
-| get menuslist | 全局可搜索菜单元数据，现有例外；没有本人角色过滤，不等同本人菜单 |
-| get menus | 本人启用角色范围内的菜单与权限标识 |
-| get setting/menus/unique | 同一本人角色过滤的菜单与权限标识，供导航刷新 |
-| get setting/info | 本人账户资料，隐藏密码、删除和状态字段 |
-| put setting/update_admin | 仅修改本人姓名、头像，或凭旧密码改密；不能修改角色、等级、账号或状态 |
+| crmeb/crmeb/services/AuthConfigGuard.php；SessionWhitelist.php；crmeb/crmeb/utils/JwtAuth.php | Task 3：安全配置、原白名单精确比对、无状态 HS256 验签 |
+| crmeb/app/services/system/admin/SystemAdminServices.php | Task 3/4：配置检查在写登录统计前；签发前 Redis 检查 |
+| crmeb/app/services/system/admin/AdminAuthServices.php | Task 4：固定 admin、当前状态及密码摘要；删除认证失败草稿写入 |
+| crmeb/app/services/kefu/LoginServices.php；crmeb/app/services/user/UserAuthServices.php | Task 5：固定接收端、当前白名单；客服补齐规格已有启用状态要求 |
+| crmeb/app/services/out/OutAccountServices.php；crmeb/app/outapi/controller/Mcp.php；crmeb/app/adminapi/controller/v1/setting/SystemOutAccount.php | Task 6：统一 status=1/is_del=0；刷新固定 out；非法状态不写库；MCP 保留凭据协议 |
+| crmeb/app/adminapi/config/auth_routes.php；crmeb/app/services/system/admin/SystemRoleServices.php；crmeb/app/adminapi/controller/v1/setting/SystemMenus.php | Task 7：六项精确白名单、未登记/CRUD 拒绝、菜单写后失效权限缓存；拒绝不写冷缓存、热命中不回写旧权限 |
+| crmeb/app/adminapi/route/route.php | 已批准必要调用点：system/info、route/import_api、download 追加角色检查 |
+| help/audit-regressions/isolated/README.md；compose.yml；bootstrap.sh；run.sh；teardown.sh；lib/guard.php；lib/harness.php；fixtures/ms0a.php；selftest.php | Task 1 及必要测试修复：ISO-FULL、资源身份保护、DML 权限、真实引导、Windows 控制文件瞬时空读重试、Redis SET 完整成员比较、宿主临时 CRUD 探针精确清理、原生 Git 基线路径核对 |
+| help/audit-regressions/isolated/ms0a-auth.php；lib/token-forge.php | Task 2/7：106 个真实 HTTP 认证/授权子场景，原断言保留 |
+| help/audit-regressions/isolated/route-inventory.php | Task 7：框架真实路由枚举、安装权限比对、全表/缓存只读证据 |
+| help/audit-regressions/security.php | Task 7：20 原回归、3 批准收紧契约、20 新检查，共 43 UNIT-STUB |
+| docs/multi-merchant/03-test-environment.md | 用户批准 ISO-FULL、已有权限探针与专用真实 writeMd5 初始化 |
+| docs/multi-merchant/04-plan-ms0a.md | 批准决定、事实修正、必要调用点及唯一任务进度 |
+| docs/multi-merchant/11-acceptance-process.md | 后续自主处理授权下修正实际测试 SHA 契约，保留真实 baseline 并要求冻结运行树一致 |
+| docs/multi-merchant/records/ms0a/external-integrations.md；route-permission-matrix.md；report.md；results.jsonl | Task 6–8：入口影响、全量路由矩阵及交付证据 |
 
-该六项方案下，其余未登记且挂角色中间件的 517 条路由将拒绝受限管理员。具体清单等于矩阵原 521 条拒绝清单，扣除 `get menus`、`get setting/menus/unique`、`get setting/info`、`put setting/update_admin` 四条。保守选项为只加两条本人菜单（四项白名单、519 条拒绝），或严格保留原两项（521 条拒绝，但本人导航刷新及资料修改会被拒绝）。已登记接口仍须对应角色授权；最高管理员 level=0 的现有角色豁免按计划保持。
+没有修改 vendor、public、.env、help/docker/run.sh、安装 SQL、业务结构或权限种子。测试仅在专用库建立计划内 audit_sentinel 和合成账号/角色；不是新增业务认证结构。
 
-额外覆盖决定：`get system/info`、`get route/import_api`、`get download/<key?>` 现仅认证，不经过 verifyAuth。建议在其现有分组补 AdminCheckRoleMiddleware，三项保持未登记并拒绝受限管理员；最高管理员仍可调用。采用六项白名单并补这三项角色中间件后，受限管理员的未登记拒绝清单共 520 条。导入有路由元数据写入，下载成功会删除一次性文件缓存键；不应将其标为无副作用接口。
+## P5 实际命令与结果
 
-补中间件会涉及 `crmeb/app/adminapi/route/route.php` 这一必要调用点，并需在 04 文档记录用户批准的范围和对应负向测试。当前该文件、verifyAuth、白名单均未修改；停在 04 Task 7 Step 2 / 12 文档 SP-MS0a-1，等待这两项决定。WORKER、BROWSER、EXTERNAL 与最终验收仍未执行。
+Windows 调用 Git Bash，所有退出码使用实际 `$LASTEXITCODE`；容器中的测试不能用宿主 PHP 结果替代。bootstrap/run/teardown 的完整参数见隔离 README；以下记录实际入口与证据。
+
+| 实际命令/检查 | exit | 结果与证据 |
+|---|---:|---|
+| bash isolated/bootstrap.sh（冻结 af3e3e0c，主 RUN） | 0 | 新资源、安装 157 表及独立哨兵、真实 writeMd5、audit_app DML、应用启动 |
+| AUDIT_PHASE=after bash isolated/run.sh 202610110832052c8009 help/audit-regressions/isolated/selftest.php | 0 | 6 PASS；Z07 含 16 次启停、login/info 均 200 |
+| docker run（--network none、--read-only、只读 /workspace 挂载）内执行 php /workspace/help/audit-regressions/security.php | 0 | UNIT-STUB 43 PASS / 0 FAIL；security-after-af3e3e0c.txt |
+| AUDIT_PHASE=after bash isolated/run.sh 202610110832052c8009 help/audit-regressions/isolated/ms0a-auth.php | 0 | 单次完整 106 PASS / 0 FAIL；ms0a-auth-after-20261011084959.jsonl |
+| AUDIT_PHASE=after bash isolated/run.sh 202610110832052c8009 help/audit-regressions/isolated/route-inventory.php | 0 | 973 路由、961 角色检查、6 白名单、520 未登记拒绝；0 仅认证/CRUD/重复键；全部 158 表及 84 Redis 键不变，0 HTTP |
+| php -l（容器内，22 个改动 PHP 文件） | 0 | 全部无语法错误，static-verification.txt |
+| bash -n bootstrap.sh；run.sh；teardown.sh（逐文件分别执行） | 0 | 三个脚本均通过 |
+| git diff --check 6dee6578 af3e3e0c；git diff --exit-code af3e3e0c -- crmeb help/audit-regressions | 0 | LF/差异检查与冻结运行树核对通过 |
+| Scoped Python scan（34个变更文件，明显凭据格式/排除路径/.env） | 0 | 格式命中0，排除路径变更0，无.env；启发式扫描不代表穷尽所有秘密格式 |
+| bash isolated/teardown.sh 202610110832052c8009 | 0 | manifest身份核对后仅清理本RUN容器/网络/新卷，证据保留 |
+| 历史 AUDIT_PHASE=baseline run.sh（HEAD=9062a302）完整 85 项 | 1 | 24 PASS / 61 FAIL；正常测试失败，无环境退出/崩溃；业务树与历史基线一致 |
+
+### 最终分层统计（Z04）
+
+| 层级/阶段 | PASS | FAIL | NOT RUN/BLOCKED | 边界 |
+|---|---:|---:|---|---|
+| UNIT-STUB / after | 43 | 0 | 0 | 权限与扫码上传回归；不计作 HTTP |
+| INTEGRATION / after 自检 | 6 | 0 | 0 | 新主 RUN、冻结源码 |
+| INTEGRATION / after HTTP | 106 | 0 | 0 | 单次完整 106 个唯一子场景，非分组拼接 |
+| INTEGRATION / 历史 baseline | 24 | 61 | 0 | 原 85 项，真实 SHA 保留；FAIL 不全等同身份旁路 |
+| 记录 Z04/Z08 | 2（记录完成） | 0 | 实际调用方 UNKNOWN | 记录合同已满足，独立统计、不计自动化 PASS |
+| WORKER / BROWSER / EXTERNAL | 0 | 0 | NOT RUN | MS0a 无 worker/UI 验收要求；未获真实调用方/环境访问及发布授权 |
+
+### 关键修复与基线事实
+
+| 用例 | baseline 实际 | after 要求及已有阶段验证 | 分类 |
+|---|---|---|---|
+| A09 | 四自身探针成功；6 错误应用组合返回 200；另有已经拒绝但业务码非 401 的组合 | 16 组合仅四对角线成功；错误应用不删除正确端会话 | 待复现风险与既有拒绝分别逐行记录 |
+| A11/A13/A14 | 原密码摘要已拒绝 out 登录/客服/顾客令牌进入管理端 | 拒绝，并保持原应用会话可用 | 既有拒绝回归 |
+| A12 | 真实 out 刷新后的令牌撞管理员 101/102 均返回 200 | 两种均 401，五表及全部 Redis 无未允许变化 | 基线已复现风险 |
+| A15/A16/A21 | 管理员停用/软删仍可用；物理删除/不存在已拒绝；改密已有部分保护 | 当前账号状态和凭据一致才可用；仅精确撤销本端失效会话 | 风险与既有拒绝分别记录 |
+| A15 客服补充 | 追加测试前停用客服旧会话仍返回 200 | 401；本端精确撤销；恢复后旧令牌仍拒绝，新登录可用 | 原规格遗漏补齐；旧 85 基线中无此新增行 |
+| A17/A18 | 缺少/空 pwd、缓存 type/uid/token 不匹配存在放行；部分已拒绝但撤销不符 | 验签后固定类型、精确内容比对；不删除别端会话 | 按子场景事实分类 |
+| A19 | 关闭后的访问/刷新仍 200；status=2 实际写库；MCP/软删入口原已拒绝 | 登录/访问/刷新/MCP 使用相同启用定义；2 不写库；正常 1→0 持久化 | 风险、既有拒绝与新增正向契约分别记录 |
+| A27 | 错误签名/过期商品保存请求均改变 eb_cache 草稿 | 两种均 401；完整 eb_cache、eb_store_product 及草稿目标不变 | 基线已复现业务写入 |
+| A10 | 空/default/file 配置仍签发，部分写登录统计 | 503，不签发，不写业务；检查在 verifyLogin 前 | 基线已复现配置降级 |
+| A02–A06/A08/A30 | 新拒绝测试前 UNIT 29 PASS/13 FAIL；新增 HTTP 11 PASS/8 FAIL | 精确白名单；未登记/CRUD/未授予拒绝；真实撤权、删菜单、改 auth_type 后下次拒绝 | 原审计回归与批准的新契约 |
+| A23 | Redis 停机能拒绝；MS0a 契约要求无业务变化 | 停机实际 HTTP 500 拒绝；恢复后业务和会话值完整保留 | 依赖故障 503 分类留 MS0b，不虚报本阶段已统一 |
+
+最终 results.jsonl 共 245 行：历史 baseline85、最终 HTTP106、自检6、UNIT43、记录2、三层各1条 NOT RUN 范围摘要。HTTP分类为既有拒绝18、既有修复3、待复现风险38、新增契约47；UNIT分类为既有修复20、原旁路风险3、新增契约20。对85个同名历史场景，最终发现分类依据真实baseline并保留 raw_after_finding_kind、classification_basis 与原始结果指针；15个分类元数据有调整，状态/实际/期望/副作用保持原值。新21项不伪造历史 baseline；31个MS0a验收ID全部覆盖，补充BASE-SECURITY编号独立说明扫码上传。
+
+## P6 仓库外证据
+
+- 主 RUN 已按 manifest 清理，证据和工作树保留；以下为历史执行身份，不能作为当前服务运行证明。
+- 主最终目录：`C:/Users/Vwang/.tianli-audit/202610110832052c8009`。manifest.json、network.json、containers.jsonl、volumes.txt 记录本 RUN 资源身份；秘密仅留专用凭据卷，不入库。
+- `evidence/selftest-after-20261011083416.jsonl`：6 个冻结源码自检；`security-after-af3e3e0c.txt`：43 个单元子场景；`static-verification.txt`：语法/冻结树核对。
+- `evidence/ms0a-auth-after-20261011084959.jsonl`：106 行完整最终 HTTP，全部源 SHA 为 af3e3e0c；evidence_ref 对应同目录脱敏响应、完整五表与全 Redis 前后摘要、追加可能受影响的权限表摘要。仅允许本应用失效会话精确撤销等已说明变化。`route-inventory-metadata.json` 和 `route-permission-matrix.md` 为最终只读枚举；31 个关键源文件 SHA 前后一致，仓库矩阵副本摘要相同。
+- 历史目录：`C:/Users/Vwang/.tianli-audit/20261011065024d6dda7/evidence`。`ms0a-auth-baseline-20261011070721.jsonl` 保留 85 项真实 baseline；`20261011071124.jsonl` 保留 A09/A26 分类元数据复核；旧运行资源已按 manifest 清理，证据保留。
+- 历史 after：`ms0a-auth-after-20261011073853.jsonl` 保留 85 PASS/1 FAIL（A23 SET DUMP 差异）；`20261011074043.jsonl` 保留修复后的 A23 2 PASS；`20261011074202.jsonl` 保留认证 86 PASS。它们是阶段证据，不冒充冻结源码全量。
+- `task7-unit-before.txt`、`task7-unit-after.txt`、`task7-hot-cache-before.txt`：收紧契约与热缓存回写测试先失败后修复；`ms0a-auth-after-20261011082022.jsonl` 为客服停用修复前 2 PASS/1 FAIL，`20261011082108.jsonl` 为相关 28 项修复后 PASS。
+- 最终汇总脚本及统计：主 evidence 中 `build-ms0a-results.py`、`results.candidate.counts.json`、`reviewed-z04-z08.jsonl`；仓库results与候选 SHA-256一致（`2ce0edc82b6982f6b2cea1cdfe717fd935c8fd6d32893df62aaa03b0e2441d3f`）。`scoped-secret-and-path-check.json`与仓库外scope记录支持范围检查。
+- `redis-set-probe-before.json`、`redis-set-probe-after.json`：173 个完整 SET 成员排序摘要相同，而内部 DUMP 变化；快照改为完整排序成员与类型标记比较，其他类型仍 DUMP，全键覆盖/允许变化不扩大。
+
+## 独立 V4 / V7
+
+独立复核方 harness_review 未参与业务实现。冻结源码只读审阅、43 UNIT 源码与必查 27 份阶段原始证据已无必须修复项；这不替代最终 V4。
+
+最终 V4 使用独立干净工作树 `H:/天俪商城/tianli-mall--accept-ms0a-1579fddf`（目录名保留旧编号，实际 HEAD 为 af3e3e0c）及自己的新 RUN `20261011083629920dac`。基线工作树 `H:/天俪商城/tianli-mall--accept-ms0a-base-9685731d` 保留历史业务源码，仅覆盖冻结版本的隔离测试目录；运行器强制核对历史 crmeb 树与干净业务目录。独立修复版 UNIT43、自检6、HTTP106均PASS/exit 0；历史原BASE UNIT23 PASS/exit 0，基线A12/A27/A19/A15抽样17行为3 PASS、14预期FAIL/exit 1，真实复现旧缺陷而非环境错误。两个版本各自完整初始化、自检和资源清理均exit 0。
+
+独立记录：`H:/天俪商城/artifacts/ms0a-independent-1579fddf/review.md`，同目录 `commands.jsonl`、`result-comparison.json`、`final-results-review.json`、`mandatory-evidence-review.json`、`baseline-evidence-review.json`、`inventory-review.json`。独立原始HTTP为 `C:/Users/Vwang/.tianli-audit/20261011083629920dac/evidence/ms0a-auth-after-20261011084945.jsonl`；基线样本为 `C:/Users/Vwang/.tianli-audit/20261011084120a148e3/evidence/ms0a-auth-baseline-20261011084916.jsonl`。
+
+双方原始HTTP106的状态、期望、实际、源SHA与原始分类逐子场景差异0；最终245行的核心结果无变化，15个分类调整和85条历史分类引用均正确追溯。独立打开31份必查/补充副作用证据，重算前后表与Redis摘要，无未允许变化；最终V7按11§5.2逐项审阅，无必须修复项。两个独立RUN已清理；其他50个容器、69个卷、16个网络身份不变。准备阶段仓库外命令记录器有127/本地解析错误，发生在harness调用前或只读分析，原失败日志保留，不计作测试通过。
+
+上述是执行与独立复核事实，V10用户签收仍待；没有自填acceptance或改README。
+## P7 数据与迁移
+
+没有业务 DDL、数据迁移或真实库访问。安装 SQL 去 CR 后 SHA-256 为 `7af188f42c622db523d8000c0cf50f95fa48df2fe41123969ca2dbb65ffb5eb2`，157 张安装表另加 audit_sentinel；只导入仓库安装种子到新专用 audit_auth，audit_app 仅 SELECT/INSERT/UPDATE/DELETE，无全局权限。root/migrator 仅用于已核对的 bootstrap：真实 writeMd5 涉及 TRUNCATE，随后真实版本缓存标记核对；应用/runner 不接触 root。没有提高应用权限或伪造标记来绕过实际初始化。
+
+## P8 未运行项与允许延后
+
+| 项目 | 状态 | 原因/补齐边界 |
+|---|---|---|
+| Z08 实际外部调用方、启用账号及频率 | UNKNOWN | 只完成代码入口/行为清单；11 §5.2 明确允许延后，MS0b 发布前必须核实 |
+| WORKER/BROWSER/EXTERNAL | NOT RUN | MS0a 无新增界面/worker 合同；未连接业务实例或第三方，不称生产验收 |
+| V10 人工验收、README 状态与 SECURITY_BASE_SHA | 待验收人 | 独立审阅与测试不代替用户签收；后续 L2 按自主继续授权进行，不自行签名 |
+| 推送/PR/合入/部署/密钥轮换/通知 | 未执行 | 当前授权边界为 L2；L3/L4 操作单独授权 |
+
+## P9 遗留边界与后续
+
+- 未登记拒绝清单针对安装种子与受限管理员；最高管理员 level=0 保留原角色豁免，但仍检查有效认证/账号。真实环境权限登记和实际使用方未知。
+- menuslist 保留批准的全局搜索菜单元数据语义；menus 与 setting/menus/unique 仍按本人角色过滤。本人资料更新仅允许姓名、头像和凭旧密码改密。
+- Redis 运行时故障 503 分类、v2 单次刷新、版本撤销与 epoch 丢失处理在 MS0b；当前 MS0a 复用原令牌与白名单，未声称已实现会话 v2。
+- 热权限缓存命中不再回写，避免复活已清理的旧权限。原有冷缓存初始化与并发失效之间的窗口未引入新原子版本合同，不能把此阶段描述为权限 epoch 原子化。
+- 遗留客户端 URL 令牌、验证码强制规则属于 MS0b 候选 Q6/Q7，后续按自主处理授权评估并记录兼容路径，不在本次修改签发协议。
+- 本阶段验证与记录完成后保持人工验收待办，按用户“按文档规划目标推进，遇到问题按最优方式继续、不用问”的后续指令推进下一 L2 开发阶段；不伪造 SECURITY_BASE_SHA、不执行真实切换。
+
+## 实施中的事实修正
+
+1. 种子没有商品列表 GET 权限登记：经用户批准改用已有商品规则 GET 探针；未增加权限种子，商品列表进入未登记拒绝清单。
+2. DML 干净启动因原 writeMd5 的 TRUNCATE 失败：经用户批准仅 bootstrap migrator 完成真实初始化，login/info 原 200 断言保留。
+3. Windows 控制文件 rename 瞬时空读：只对命令/ACK 重试；manifest/秘密仍严格失败。基线包装器在禁止 MSYS 转换下使用原生 Git 绝对路径；最终重新冻结复跑。
+4. security.php 原退出探针输入 POST 与真实 GET 不符：保留放行期望，仅修正输入 GET 并新增 POST 拒绝，原 BASE 证据保留。
+5. 拒绝请求必须全 Redis 无未允许变化：冷权限缓存先只读，授权成功才填充；热命中不回写。新增失败证据先于修复。
+6. 客服主键 DAO 不隐式过滤启用状态，后台停用不撤销旧会话：按 00 §4.2 补精确状态验证，先提交真实 HTTP 失败测试再修复。
+7. 11 V1 原“所有结果等于交付 SHA”与真实 baseline/报告自身提交冲突：改为真实测试 SHA；最终源码冻结与记录提交的运行树差异必须为空。未覆盖历史结果、未降低覆盖。

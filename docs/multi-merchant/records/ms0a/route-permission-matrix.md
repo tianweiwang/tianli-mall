@@ -2,7 +2,7 @@
 
 状态：SP-MS0a-1 已由用户于 2026-10-11 批准六项白名单和三个入口补角色检查。中间件列只写本次真实枚举状态；批准政策与预期统计不能代替实现或行为测试。尚缺角色中间件的批准入口数：0。
 
-- 执行时间（UTC）：`2026-10-11T08:14:36Z`；RUN_ID：`20261011065024d6dda7`；源码 HEAD：`78975fd75a6640ccbbf89d78562d61e72b36b573`。
+- 执行时间（UTC）：`2026-10-11T08:50:43Z`；RUN_ID：`202610110832052c8009`；源码 HEAD：`af3e3e0c48fab9cf5af18f45f6341e9c272b168f`。
 - 实际枚举读取只读挂载的工作树；HEAD 只标识 Git 基点，不声称工作树与 HEAD 一致。关键路由、框架枚举 API 与授权源码的 SHA-256 已记录在脱敏元数据，盘点前后保持一致。
 - 枚举 API：`SystemRouteServices::getRouteListAll('adminapi')`，真实载入框架路由，包含嵌套 group、资源路由的 only/except 过滤与 CRUD 自动载入。
 - 权限来源：专用 `audit_auth` 中安装种子的 `eb_system_menus`，仅 `auth_type = 2`；不修改权限登记。比对谓词与现有 `verifyAuth()` 一致，未额外按 is_del、is_show 或 access 过滤。

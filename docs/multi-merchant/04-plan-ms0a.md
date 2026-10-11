@@ -383,7 +383,7 @@ git commit -m "fix(adminapi): deny unregistered and crud routes unless allowlist
 **Files:**
 - Create: `docs/multi-merchant/records/ms0a/report.md`、`docs/multi-merchant/records/ms0a/results.jsonl`
 
-- [ ] **Step 1: 在干净环境全量运行**
+- [x] **Step 1: 在干净环境全量运行**（2026-10-11：冻结 af3e3e0c；全新 RUN=202610110832052c8009，UNIT 43、selftest 6、单次 HTTP 106 全 PASS/exit 0；独立新 RUN 的相同全量也均 PASS）
 
 ```bash
 help/audit-regressions/isolated/teardown.sh <旧 RUN_ID>
@@ -395,20 +395,20 @@ AUDIT_PHASE=after php help/audit-regressions/isolated/ms0a-auth.php; echo "ms0a 
 
 Expected: 三个 `exit=0`。
 
-- [ ] **Step 2: 语法与范围检查**
+- [x] **Step 2: 语法与范围检查**（22 PHP、3 Bash、diff --check 均 exit 0；34/34 路径逐项归属；明显凭据格式扫描 0，排除路径 0，运行树与冻结点差异为空）
 
 Run: `git diff --name-only <AUDIT_BASE_SHA> HEAD`
 Expected: 只包含本计划各任务 **Files** 中列出的路径。多出的路径要么撤回，要么在报告中逐项说明理由。
 
-- [ ] **Step 3: 写报告**
+- [x] **Step 3: 写报告**（report、results 245 行与最终矩阵；历史 baseline85 保真；after 106+6、UNIT43、Z04/Z08记录及3个未运行层分开统计；31个MS0a ID全部有记录）
 
 按 [records/README.md](records/README.md) 和 12 文档 §7.2 编写：每个 MS0a 用例的 baseline 与 after 结果、`finding_kind`、零副作用证据、未运行项及原因；Z04 要求的分层统计。
 
-- [ ] **Step 4: 提交并停止**
+- [x] **Step 4: 提交交付记录**（本地记录提交，运行树保持冻结；独立V4/V6/V7已完成，无必须修复项；不自行验收、推送或部署）
 
 ```bash
 git add docs/multi-merchant/records/ms0a
 git commit -m "docs(records): MS0a report"
 ```
 
-停止，等待验收（11 文档 §5.2）。验收通过后，该提交即为 `SECURITY_BASE_SHA`。
+正式验收仍按 11 §5.2 由验收人签收，之后方可记录 `SECURITY_BASE_SHA`。用户后续明确授权按文档规划自主继续 L2：本次完整自动化及独立复核无必须修复项后，可从实际交付提交开始后续隔离开发；该指令不代替 V10，不授权推送、合入、真实库或部署。后续计划须如实注明“已独立验证、正式签收待办”的来源，不虚构 SECURITY_BASE_SHA。
