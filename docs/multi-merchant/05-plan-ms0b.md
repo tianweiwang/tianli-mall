@@ -269,6 +269,15 @@ public static function runMany(string $app, array $ids, callable $dbChange): mix
 
 F06首次query文件消费在原代码已HTTP200且字节/缓存消费通过：Think按名称把GET key自动绑定到控制器参数，故不能把潜在getMore数组分支称为已HTTP复现。实际失败为producer HTTP500而JSON业务200；已有私有运行日志及源码定位MysqlBackupService析构在未打开fp时无条件gzclose(null)，PHP8 TypeError使普通成功响应失败。Q7同必要调用点增加仅is_resource(fp)时关闭的析构保护，保留HTTP200原断言和查询兼容修正。无需新故障/负向试验。首次四不匹配文件未被错误登记删除，导致rmdir报非空；已按manifest身份核对将本RUN残留代码/ZIP复制到外部证据，后续整RUN精确teardown并用新RUN保留修正检查的基线，不清日志假装原检查通过。
 
+Task8 普通功能进度（2026-10-12，完整验收仍待）：
+
+- [x] Q6 六个必要业务路径已本地提交 `5b95cfa7`，包含共享有界 Redis 工厂；四项正常检查 PASS，原生 Bash exit0，准备与清理均成功。只证明合法登录、info 数字协议、账号0查询及验证码图片展示。
+- [x] Q7 九个必要业务路径已另行本地提交 `875b9300`；真实备份析构修复、两生产者的原生缓存写入确认及两个 Vue 下载调用点已接线。前端三个文件与已通过生产构建的源码哈希一致。
+- [x] 测试 `dfd2a2eb` 补充正常 ZIP 的非目录条目数及唯一名称核对。第二 RUN `2026101117390914bd52` 修正版全旧源基线为3PASS/3FAIL；Q6接线后4PASS；Q7旧下载源基线为2FAIL；最终普通六项全部PASS、原生Bash exit0。八个正式业务窗口均核对158表、所有Redis值/绝对期限、实际runtime及自有备份输出。每轮原始记录保留，18条新增结果只追加、不改写。
+- [ ] 两个真实后台页面的 BROWSER 操作和文件保存核对待完成。验证码完整人工操作未运行；被跳过的负向/故障/并发等检查不记通过，Task8及MS0b没有完整验收结论。
+
+浏览器普通准备补充：真实布局/home和列表的 GET 也经 AdminLogMiddleware 写审计日志，不能把预期副作用限为两次下载producer。仅接受实源确认的normal GET：home/header、home/order、home/user、home/rank、jnotice、menus、logo、copyright、system/crud、system/backup、system/backup/file_list及两条原producer。每行必须是原快照不存在的新id，本次新合成账号身份、实际归一化rule/菜单DAO page、adminapi模块、system类型、可信IP、请求窗口时间及全部列均匹配，才登记并逐id清理；原日志完整保留。传输桥只转发真实调用/响应，不修改角色、种子、审计中间件或API返回。夹具状态存本RUN私有RW证据目录，凭据/令牌只在私有管道和浏览器内存中传递。先完成精确归属及清理源码设计，再运行普通浏览器操作。
+
 ### Task 9: 发布准备文档（不发布）
 
 **Files:**

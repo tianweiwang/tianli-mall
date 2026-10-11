@@ -157,3 +157,46 @@ results.jsonl当前共1164条INTEGRATION原始行：原Task1–3共822行，加T
 已核对首轮异常：旧账号0遗漏谓词；CRUD仍用确定性MD5 key。检查脚本还误拒安装空site_url产生的合法relative链接，并将更早预览的四个原生TIME字段当成实际producer时间，其余五生成文件通过；这些属于检查本身待修。备份producer则实测HTTP500/JSON业务200，已有日志与源码定位未开fp的MysqlBackupService析构gzclose(null)；保持HTTP200断言，按同调用点修真实PHP8普通缺陷。四个未匹配文件没有登记删除，rmdir非空原样记录。真实代码/ZIP已经manifest容器身份核对复制到外部证据，随后teardown原生exit0；3容器/1网络/10卷均无残留，安装锁删除，证据保留。
 
 仓库results现1170条：原1164条字节完全保持（前缀SHA256 `b5c83a5d8cf558dd8e99f8849a70e0b6feec7b9de1326ad254ec8ebaefd0d61b`），只追加首轮6条真实结果；新原始JSONL SHA256 `410200a3155a137519c098cb88c183c0a907fcc3545085f14f66c52cb60ed695`。细节见 `task8-first-baseline-summary.json`。这轮没有安全复现、错误凭据、验证码解答、URL JWT拒绝、重复文件消费、故障或并发验证；Task8业务尚未安装，浏览器与完整验收仍待。
+
+## Task8：登录与下载普通功能接线（浏览器验收待完成）
+
+Q6 业务已本地提交 `5b95cfa7395c1c7c37444aa63f9af9c8cc1a4b50`，Q7 已本地提交 `875b93007f6b3741ca005c30483a6b25ced74382`，两组共15个唯一业务路径。本节更新前文“Task8业务尚未安装”的阶段状态；首轮历史失败和原始证据保留。当前只取得独立普通HTTP/CLI功能及前端构建证据，未取得完整Task8或MS0b验收。
+
+RUN `2026101117390914bd52` 的四次原生Bash结果如下。四次 `prepare_failed=false`、`cleanup_failed=false`，根代理记录的 `recording_failed=false`；原始清理证据均证明原快照恢复、runtime在清理中不变及私密日志检查通过。
+
+| 运行 | execution | 普通结果 | 原生Bash exit | raw记录的HEAD |
+| --- | --- | --- | --- | --- |
+| 全量旧源修正版基线 | 20261011174647361024 | 3PASS / 3FAIL | 1 | 6d23a4c6 |
+| Q6普通after | 20261011175556317913 | 4PASS | 0 | 6d23a4c6 |
+| Q7旧下载源基线 | 20261011175723275580 | 2FAIL | 1 | dfd2a2eb |
+| Q6/Q7全量普通after | 20261011175814920773 | 6PASS | 0 | dfd2a2eb |
+
+最后一轮的六项普通检查如下，原始层级均为INTEGRATION；账号0项通过同实例CLI真实DAO，其余为真实HTTP。
+
+| case | 实际正常检查范围 | 最后结果 | 断言 / 正式窗口 |
+| --- | --- | --- | --- |
+| T8F01 | 登录信息JSON数字 `login_captcha=0` | PASS | 5/5；1窗 |
+| T8F02 | 合法凭据登录；签名DTO、当前会话登记、账户版本保持及精确统计列 | PASS | 13/13；1窗 |
+| T8F03 | 字符串账号0添加真实DAO谓词，完整列仅返回合成账号0行 | PASS | 5/5；1窗 |
+| T8F04 | 现有验证码正常创建、图片数据可展示、未解答挑战缓存期限 | PASS | 12/12；1窗 |
+| T8F05 | 真实CRUD producer；新32hex key；backup内9文件/唯一9条ZIP；首次header文件消费 | PASS | 30/30；2窗 |
+| T8F06 | 真实备份producer；原bcrypt key；编码query key与header认证的首次文件消费 | PASS | 15/15；2窗 |
+
+四轮共42个真实快照窗口：24个正式业务窗口、18个独立准备窗口；每窗核对158张实际表、所有其他Redis值及TIME/PTTL绝对期限、实际app/runner runtime、私密日志与backup树。许可只覆盖精确合成行、统计列、native会话登记、已核值/期限的具体缓存及tag增量、每个producer恰一条完整匹配的新审计日志，以及已逐一核对的自有文件；没有整表或整prefix忽略。四轮所有非预期db/cache差异为空，cleanup实际差异的tables/redis/runtime/backup均为空。最后全量after含8个正式窗口及5个准备窗口；准备不计为六项PASS。
+
+首RUN `20261011165615374dae` 的原3PASS/3FAIL、Bash exit1、cleanup失败仍保留，raw SHA256 `410200a3155a137519c098cb88c183c0a907fcc3545085f14f66c52cb60ed695`。第二RUN的全量修正版基线仍3PASS/3FAIL：账号0旧谓词缺失、CRUD旧MD5合同、备份producer HTTP500/业务JSON200三个真实失败保留；其route与encoded query首次消费实际HTTP200，不能声称query数组TypeError已复现。检查预期只修正空site_url合法root-relative路径及四个原生stub第17行TIME：时间严格在真实producer窗口、使用实际App时区，随后仍比较每个完整文件字节。测试提交 `dfd2a2eb6b86143e13e7feb39a5490fb2f0c2813` 又精确统计ZIP的9个非目录条目、拒绝重复名称，不新增场景。Q7仅装Q6后的旧下载源独立基线仍2FAIL；Q7安装后两个producer及两个首次consumer均HTTP200。普通备份修复为未打开fp时避免析构 `gzclose(null)`，原业务HTTP200断言保留。
+
+运行时 `commit_sha` 原样保留：Q6 after时HEAD为6d23a4c6，Q7全量after时HEAD为dfd2a2eb，业务候选尚未提交。通过 `q6-normal-tested-source.json`、`q7-normal-tested-source.json` 的文件SHA关联后续5b95cfa7/875b9300；15个提交文件均与测试收据一致，不能把raw的HEAD改成后续业务提交。最终Store SHA256为 `eda31f5e1856725a32e2777f096d0ccc5ec7b22841f599636a13584e3c54c054`。
+
+第二RUN四份原始JSONL的SHA256依次为：
+
+- `ms0b-login-download-functional-20261011174647361024.jsonl`：`3c7722d67682a1b406d0ee9e33ba85636404aa94363834bfb57b701c6d21552c`
+- `ms0b-login-download-functional-20261011175556317913.jsonl`：`9416bd6d33107162b7c415c5d5d0ea591d2c68458b0728f0f60d7ffee72d1c10`
+- `ms0b-login-download-functional-20261011175723275580.jsonl`：`063b4befe2d9f96c8a959e70339a890f047c25dac17f596cefb4be0fc8776d72`
+- `ms0b-login-download-functional-20261011175814920773.jsonl`：`f9f7593b0c09923cfe5250eda4b3c8bf930750d5d9ee673337d1beb788e00f74`
+
+详细summary、cleanup和最后六项证据的完整SHA见 `task8-functional-summary.json`。Q6/Q7源码收据SHA分别为 `8880e9040fcef7075ad0a50a8c6b31be2ae2d80f6c651ef6b6402dee8ee16e7d`、`70fb4e4961fa15898f1d76c291be309aef0d2d171cd66b801dfb9edc8390c331`。四份raw共18条，根代理已字节原样追加，results现1188条；原1170条/935629字节前缀SHA `3867b1ebebbfb66753ef6473c7b91f939d1f6838a68b8685ad51f2792fd9106c` 保留，新文件SHA `8865e3914da7aeafe49140cc3ccbe5060e726cbf1233417dcfd60be24d207405`，本稿只读复核一致。首轮6条和四轮所有FAIL均未抹除，累计行数不能当作整个里程碑验收通过数。
+
+前端是独立BUILD证据：三份已提交源码与已构建副本SHA一致，`production_build_exit=0`，build-summary SHA `13d232da9210cb22ad18d966ace658a9a7fe3a1004ea798f71681ac2d24a22bd`，日志SHA `b04efe4b4613060c995c539f7a984224a29079b38d94fe816065ad5e80cf9bcc`。其中 `prepared_store_sha256=2821b29a…` 是构建收据中的历史后端稿引用，不能作为最终Store证明；最终身份以Q6测试收据为准。浏览器登录、真实保存文件和浏览器下载入口仍待验证，构建和后端HTTP不构成BROWSER通过。
+
+验证码仅检查创建/图片展示数据，完整解答及人工通过未执行；错误凭据、失败计数门槛/绕过、URL JWT拒绝、重复消费拒绝、安全复现、故障、并发/断连及RDB/恢复检查均按用户要求NOT RUN，没有换入口重跑或记为PASS。普通逻辑cleanup已恢复；第二RUN专用Docker资源teardown另由根代理记录，本四份功能收据不包含该结论。仍为L2本地交付，未push、部署、外部通知或人工签收；Task9–10与完整验收缺口保留。
