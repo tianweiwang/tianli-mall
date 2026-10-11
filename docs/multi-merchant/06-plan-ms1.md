@@ -60,6 +60,10 @@
 - [ ] **Step 2:** 在 ISO-FULL 中启动 `audit-worker`，用一个空任务验证同一个 PID 连续处理多个任务（WORKER 层的前提）。
 - [ ] **Step 3:** 提交 `docs(records): MS1 runtime process inventory; worker in isolated env`。
 
+Task1普通运行契约（先于接线）：audit-worker沿既有x-php隔离设置，仅挂只读源/vendor/本RUN私有DML配置、RUN证据及专用worker-runtime；runner只读观察worker-runtime。bootstrap仍只启动原服务，普通检查先用真实Queue推送同一测试handler的两个自有空载荷，再由宿主显式启动worker并登记其真实ID/IP/image/卷身份。宿主在登记后原子写本RUN启动许可，薄CLI适配校验许可、manifest和自身容器身份后，在同一PHP进程加载原think入口及上述queue:work参数。ISO增加原Console标准 `--quiet` 仅抑制原Work状态行的明文任务ID；不改vendor、queue参数或Job语义，不用PHP输出缓冲冒称能过滤直接fwrite。handler每次明确delete、记录序号/PID/start_ticks/任务ID哈希，第二个完成后只设置同一真实Worker.shouldQuit，由引擎正常exit0；不注入业务异常，不直接exit，不发HTTP断连或服务故障控制。
+
+`ms1-worker-functional.php --prepare` 只准备、保存真实全表/Redis值hash及绝对到期点/runtime快照，不生成PASS；`--observe` 在正常worker终止后核对两个回执、原生容器exit0/restart0、同PID与start_ticks、三个实际队列键清空及非预期副作用，形成一个T1W01 WORKER结果。实际队列键为queues:marketplace及delayed/reserved，配置prefix不参与；worker与producer共享本RUN专用业务Cache前缀以只读取得think:queue:restart。只认领实际两个载荷及精确自有键，不忽略整表/前缀、不回拨计数。私有状态/原生日志留仓库外；原始结果和失败如实保留。既有guard不变；为取得真实image及挂载归属，仅在bootstrap资源收集与harness manifest登记增加Docker.Image和Mounts，并核对worker的runtime为本RUN专用可写volume且其身份已经登记，其他启动/权限/故障控制行为保持。当前是实现依据，尚无运行结论。
+
 ### Task 2: 数据库迁移
 
 **Files:**

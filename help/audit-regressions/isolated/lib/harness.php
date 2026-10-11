@@ -191,12 +191,23 @@ function audit_register_resources(): void
         audit_expect(count($item['networks']) === 1 && isset($item['networks'][$network['Name']]), 'container attached to foreign network');
         foreach ($item['ports'] ?? [] as $binding) { audit_expect($binding === null, 'published host port rejected'); }
         $service = $item['labels']['com.docker.compose.service'];
-        $services[$service] = ['id' => $item['id'], 'address' => $item['networks'][$network['Name']]['IPAddress']];
+        audit_expect(is_string($item['image_id'] ?? null) && preg_match('/^sha256:[a-f0-9]{64}$/D', $item['image_id']) === 1, 'container image identity rejected');
+        $services[$service] = ['id' => $item['id'], 'address' => $item['networks'][$network['Name']]['IPAddress'], 'image_id' => $item['image_id']];
+        if ($service === 'audit-worker') {
+            $runtimeMounts = array_values(array_filter($item['mounts'] ?? [], static fn(array $mount): bool => ($mount['Destination'] ?? '') === '/workspace/crmeb/runtime'));
+            audit_expect(count($runtimeMounts) === 1 && ($runtimeMounts[0]['Type'] ?? '') === 'volume'
+                && ($runtimeMounts[0]['RW'] ?? null) === true && ($runtimeMounts[0]['Name'] ?? '') === $project . '_worker-runtime', 'worker runtime mount identity rejected');
+            $services[$service]['runtime_volume'] = $runtimeMounts[0]['Name'];
+        }
     }
     audit_expect(isset($services['audit-mysql'], $services['audit-redis']), 'database and Redis identities required');
     $manifest['services'] = $services;
     $manifest['volumes'] = array_values(array_filter(array_map('trim', file(audit_run_dir() . '/volumes.txt'))));
     $manifest['volume_identities'] = audit_volume_identities($manifest);
+    if (isset($services['audit-worker'])) {
+        $runtimeVolume = $services['audit-worker']['runtime_volume'];
+        audit_expect(in_array($runtimeVolume, $manifest['volumes'], true) && isset($manifest['volume_identities'][$runtimeVolume]), 'worker runtime volume is not registered');
+    }
     audit_write_json(audit_run_dir() . '/manifest.json', $manifest);
     echo "Registered dedicated internal network and container identities\n";
 }

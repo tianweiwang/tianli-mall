@@ -68,6 +68,16 @@ services:
       - app-secrets:/run/audit-app:ro
       - app-runtime:/workspace/crmeb/runtime
       - backup-output:/workspace/crmeb/backup
+  audit-worker:
+    <<: *php
+    working_dir: /workspace/crmeb
+    command: [/workspace/help/audit-regressions/isolated/lib/ms1-worker-entry.php, "queue:work", "--queue=marketplace", "--sleep=1", "--tries=1", "--quiet"]
+    volumes:
+      - ${AUDIT_REPO_DIR}:/workspace:ro
+      - audit-vendor:/workspace/crmeb/vendor:ro
+      - ${AUDIT_RUN_DIR}:/run/audit
+      - app-secrets:/run/audit-app:ro
+      - worker-runtime:/workspace/crmeb/runtime
   audit-runner:
     <<: *php
     environment:
@@ -82,6 +92,7 @@ services:
       - fixture-secrets:/run/audit-fixtures:ro
       - runner-runtime:/workspace/crmeb/runtime
       - app-runtime:/run/audit-app-runtime:ro
+      - worker-runtime:/run/audit-worker-runtime:ro
       - backup-output:/workspace/crmeb/backup
 
 networks:
@@ -98,6 +109,8 @@ volumes:
   app-runtime:
     labels: *labels
   runner-runtime:
+    labels: *labels
+  worker-runtime:
     labels: *labels
   backup-output:
     labels: *labels
