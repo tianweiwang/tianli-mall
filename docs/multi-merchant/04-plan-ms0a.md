@@ -147,6 +147,7 @@ git commit -m "test: MS0a auth regression cases (baseline recorded, fixes pendin
 **Files:**
 - Create: `crmeb/crmeb/services/AuthConfigGuard.php`、`crmeb/crmeb/services/SessionWhitelist.php`
 - Modify: `crmeb/crmeb/utils/JwtAuth.php`
+- Modify（同一签名配置修复的必要调用点，原本已在 Task 4 范围）：`crmeb/app/services/system/admin/SystemAdminServices.php`（`login()` 在 `verifyLogin()` 前检查签名密钥；后者已会写登录时间/IP/次数，仅在 getToken 中检查不足以满足 A10 零业务变化）
 
 **Interfaces:**
 - Produces:
@@ -157,15 +158,16 @@ git commit -m "test: MS0a auth regression cases (baseline recorded, fixes pendin
   - `crmeb\services\SessionWhitelist::forget(string $token): void`：删除 `md5($token)` 记录。
   - `crmeb\utils\JwtAuth::decodeVerified(string $jwt): array`：设置 `JWT::$leeway = 60`，调用 `JWT::decode($jwt, AuthConfigGuard::signingKey(), ['HS256'])`；返回 `['id' => jti.id, 'type' => (string) jti.type, 'pwd' => (string)($payload->pwd ?? '')]`；`jti.id` 或 `jti.type` 缺失时抛出 `\UnexpectedValueException`。**不读写** `$this->token`。
   - `JwtAuth::getToken()`、`JwtAuth::verifyToken()` 改用 `AuthConfigGuard::signingKey()`。`parseToken()` 保留不动，供尚未迁移的调用方使用。
+  - `SystemAdminServices::login()` 在 `verifyLogin()` 前调用 `AuthConfigGuard::signingKey()`，避免错误配置下先写登录统计。Task 4 再在同一位置接入 Redis 会话存储检查；这是已批准 A10 契约的必要调用顺序，最终行为与范围不变。
 
-- [ ] **Step 1: 运行与本任务相关的用例，确认当前失败**
+- [x] **Step 1: 运行与本任务相关的用例，确认当前失败**（A10/A20 全部 15 FAIL；启动器修复后复跑，所有请求实际完成）
 
 Run: `AUDIT_PHASE=after php help/audit-regressions/isolated/ms0a-auth.php --only=A10,A20`
 Expected: A10 的子场景 FAIL（基线会以 `default` 密钥或文件缓存继续工作）。
 
-- [ ] **Step 2: 实现上述三个类的改动**
+- [x] **Step 2: 实现上述三个类的改动**（另含已记录的管理员签名检查必要调用点）
 
-- [ ] **Step 3: 语法检查并重跑**
+- [x] **Step 3: 语法检查并重跑**（4 文件 lint PASS；A10 4 PASS / 5 待 Task 4/6，exit 1，未称全量通过；独立源码复核无必须修复项）
 
 Run: `php -l crmeb/crmeb/services/AuthConfigGuard.php && php -l crmeb/crmeb/services/SessionWhitelist.php && php -l crmeb/crmeb/utils/JwtAuth.php && AUDIT_PHASE=after php help/audit-regressions/isolated/ms0a-auth.php --only=A10`
 Expected: A10 中"`APP_KEY` 为空"和"`APP_KEY = default`"下的**登录**子场景 PASS（不签发令牌，业务码 503）。管理端探针子场景此时仍会被旧代码的 `catch (\Throwable)` 转成 401，要等 Task 4 改用 `decodeVerified()` 后才返回 503；缓存驱动子场景要等 Task 4、Task 6 接入检查。
@@ -173,7 +175,7 @@ Expected: A10 中"`APP_KEY` 为空"和"`APP_KEY = default`"下的**登录**子�
 - [ ] **Step 4: 提交**
 
 ```bash
-git add crmeb/crmeb/services/AuthConfigGuard.php crmeb/crmeb/services/SessionWhitelist.php crmeb/crmeb/utils/JwtAuth.php
+git add crmeb/crmeb/services/AuthConfigGuard.php crmeb/crmeb/services/SessionWhitelist.php crmeb/crmeb/utils/JwtAuth.php crmeb/app/services/system/admin/SystemAdminServices.php
 git commit -m "fix(auth): refuse missing/default signing key; add stateless verified JWT decode"
 ```
 
@@ -209,7 +211,7 @@ Expected: 与基线一致的 FAIL 子场景。
 - [ ] **Step 3: 重跑**
 
 Run: `AUDIT_PHASE=after php help/audit-regressions/isolated/ms0a-auth.php --only=A01,A11,A12,A15,A16,A17,A18,A21,A23,A27,A10`
-Expected: 全部 PASS（A10 中只有"out 登录"子场景要等到 Task 6）。A26 涉及客服与顾客端，到 Task 5 才能通过。
+Expected: 原计划管理端子场景全部 PASS（A10 中 out 的文件驱动登录需 Task 6）。Task 2 追加的 A18 out/kefu/api 12 行分别等 Task 5/6；其断言不变。A26 涉及客服与顾客端，到 Task 5 才能通过。
 
 - [ ] **Step 4: 提交**
 

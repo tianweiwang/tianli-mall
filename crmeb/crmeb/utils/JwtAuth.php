@@ -13,9 +13,9 @@ namespace crmeb\utils;
 
 
 use crmeb\exceptions\AdminException;
+use crmeb\services\AuthConfigGuard;
 use crmeb\services\CacheService;
 use Firebase\JWT\JWT;
-use think\facade\Env;
 
 /**
  * Jwt
@@ -51,7 +51,7 @@ class JwtAuth
             'exp' => $exp_time,
         ];
         $params['jti'] = compact('id', 'type');
-        $token = JWT::encode($params, Env::get('app.app_key', 'default'));
+        $token = JWT::encode($params, AuthConfigGuard::signingKey(), 'HS256');
 
         return compact('token', 'params');
     }
@@ -69,6 +69,21 @@ class JwtAuth
         return [$payload->jti->id, $payload->jti->type, $payload->pwd ?? ''];
     }
 
+    /** Verify this JWT without using or changing the legacy token property. */
+    public function decodeVerified(string $jwt): array
+    {
+        JWT::$leeway = 60;
+        $payload = JWT::decode($jwt, AuthConfigGuard::signingKey(), ['HS256']);
+        if (!isset($payload->jti) || !is_object($payload->jti)
+            || !isset($payload->jti->id, $payload->jti->type)
+            || (!is_int($payload->jti->id) && !is_string($payload->jti->id))
+            || !is_scalar($payload->jti->type)
+            || (isset($payload->pwd) && !is_scalar($payload->pwd))) {
+            throw new \UnexpectedValueException('Invalid JWT identity claims');
+        }
+        return ['id' => $payload->jti->id, 'type' => (string)$payload->jti->type, 'pwd' => (string)($payload->pwd ?? '')];
+    }
+
     /**
      * 验证token
      */
@@ -76,7 +91,7 @@ class JwtAuth
     {
         JWT::$leeway = 60;
 
-        JWT::decode($this->token, Env::get('app.app_key', 'default'), array('HS256'));
+        JWT::decode($this->token, AuthConfigGuard::signingKey(), array('HS256'));
 
         $this->token = null;
     }

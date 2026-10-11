@@ -23,6 +23,7 @@ use app\dao\system\admin\SystemAdminDao;
 use app\services\system\SystemMenusServices;
 use app\services\other\CacheServices;
 use crmeb\services\CacheService;
+use crmeb\services\AuthConfigGuard;
 use crmeb\services\FormBuilder;
 use crmeb\services\workerman\ChannelService;
 use think\facade\Config;
@@ -120,6 +121,7 @@ class SystemAdminServices extends BaseServices
      */
     public function login(string $account, string $password, string $type, string $key = '')
     {
+        AuthConfigGuard::signingKey();
         $adminInfo = $this->verifyLogin($account, $password);
         if (!$adminInfo) return false;
         $tokenInfo = $this->createToken($adminInfo->id, $type, $adminInfo->pwd);
