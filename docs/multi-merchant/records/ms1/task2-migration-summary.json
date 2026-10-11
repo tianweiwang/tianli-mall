@@ -1,0 +1,402 @@
+{
+  "milestone": "MS1",
+  "task": "Task2 normal migration only",
+  "status": "verified_normal_migration",
+  "source_commit": "19e94f3de54025a049aa2dda45159b10c7ae209a",
+  "source_sha256": {
+    "help/migrations/marketplace-ms1.php": "9d73229f911b5712ca9c7051a18468c98837ae44f48bf77d20b2c165ac02b17a",
+    "help/audit-regressions/isolated/ms1-migration.php": "5e344a842ecafd3849e84bdc9ea2863683811d2b2f10acb81308ace67ba20c39",
+    "crmeb/public/install/crmeb.sql": "7af188f42c622db523d8000c0cf50f95fa48df2fe41123969ca2dbb65ffb5eb2"
+  },
+  "environment": {
+    "kind": "ISO-FULL",
+    "run_id": "20261011211731fed7ed",
+    "database": "audit_auth",
+    "application_account": "audit_app: existing DML only",
+    "migration_account": "audit_migrator: existing ALL on dedicated audit_auth only",
+    "fixture": "tracked installation seed and synthetic identities only",
+    "images": {
+      "audit-app": "sha256:1099f749e2a38ec9453c6b820db8a78174514bc72d14edf5c203e13b82816e0a",
+      "audit-mysql": "sha256:c7a313f1402365dc91253bdbdb1e74c6a361b036106d8bd25b8ec8e2dd0069f4",
+      "audit-redis": "sha256:6c8f6edc1aa871a76a257ef86a2089d108e64b78d16f45b89f09c6a4ab30d07e"
+    }
+  },
+  "history": [
+    {
+      "run_id": "2026101120502249a619",
+      "phase": "after",
+      "source_commit": "7c3af7202f99873e83131e83104438bb15d43030",
+      "statuses": {
+        "FAIL": 1,
+        "NOT RUN": 1
+      },
+      "native_exit": 1,
+      "raw_ref": "ms1-migration-after-20261011205619.jsonl",
+      "raw_bytes": 1051,
+      "raw_sha256": "34ba27cf4bba7107bb56ab1c0b21acfcebf475223604f5a1fc6b8521d27ca65a",
+      "evidence_ref": "ms1-migration-after.json",
+      "evidence_sha256": "06c903e75f3df87de35474d2790e12aebb26327c28898e8a18a113464a13fbb3",
+      "cli_steps": [],
+      "table_count_before": 158,
+      "table_count_after": 158,
+      "snapshot_unchanged": true
+    },
+    {
+      "run_id": "2026101120502249a619",
+      "phase": "baseline",
+      "source_commit": "dc42567743a8ef0f660b89abf807f5cfc6b17fff",
+      "statuses": {
+        "FAIL": 1,
+        "NOT RUN": 1
+      },
+      "native_exit": 1,
+      "raw_ref": "ms1-migration-baseline-20261011205923.jsonl",
+      "raw_bytes": 1060,
+      "raw_sha256": "64077d6b736f61f8265a1d179242f857ae542fcadc4453914dd09e2bf6e3b7e8",
+      "evidence_ref": "ms1-migration-baseline.json",
+      "evidence_sha256": "06c903e75f3df87de35474d2790e12aebb26327c28898e8a18a113464a13fbb3",
+      "cli_steps": [],
+      "table_count_before": 158,
+      "table_count_after": 158,
+      "snapshot_unchanged": true
+    },
+    {
+      "run_id": "20261011210408f41e62",
+      "phase": "after",
+      "source_commit": "332326bde363d26781e234a911a8cfb1bc0b4d0d",
+      "statuses": {
+        "FAIL": 1,
+        "NOT RUN": 1
+      },
+      "native_exit": 1,
+      "raw_ref": "ms1-migration-after-20261011210619.jsonl",
+      "raw_bytes": 1051,
+      "raw_sha256": "a93ad2f6c2934e3fcf68d1f173c10561d3430f6966d2eb6f0c3ecedaf45b94d5",
+      "evidence_ref": "ms1-migration-after.json",
+      "evidence_sha256": "1d24cf6dbfd5bf0027036e6a51c254263b9297cdb2988b4c3891de11eb1acf63",
+      "cli_steps": [
+        {
+          "mode": "check",
+          "native_exit": 0,
+          "stderr_bytes": 0,
+          "stdout_sha256": "9542461a307dfc59d9f4b622f8ad75a1cffabc8c2b289a14c0224b4bd57f2101",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "result": {
+            "mode": "check",
+            "state": "applicable",
+            "changed": false,
+            "tables": [
+              "eb_marketplace_merchant",
+              "eb_marketplace_role",
+              "eb_marketplace_employee",
+              "eb_marketplace_audit_log",
+              "eb_marketplace_password_setup"
+            ],
+            "menu_ids": [],
+            "issues": []
+          }
+        },
+        {
+          "mode": "apply",
+          "native_exit": 1,
+          "stderr_bytes": 0,
+          "stdout_sha256": "a0521073b08554c71c4faf51bc8a2f6c452166983e326e999009c7eb9abb52e8",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "result": {
+            "mode": "apply",
+            "state": "incompatible",
+            "changed": true,
+            "tables": [
+              "eb_marketplace_merchant",
+              "eb_marketplace_role",
+              "eb_marketplace_employee",
+              "eb_marketplace_audit_log",
+              "eb_marketplace_password_setup"
+            ],
+            "menu_ids": [
+              3465,
+              3466,
+              3467,
+              3468,
+              3469,
+              3470,
+              3471
+            ],
+            "issues": [
+              {
+                "kind": "postcheck_failed",
+                "path": "migration"
+              }
+            ],
+            "created_tables": [
+              "eb_marketplace_merchant",
+              "eb_marketplace_role",
+              "eb_marketplace_employee",
+              "eb_marketplace_audit_log",
+              "eb_marketplace_password_setup"
+            ],
+            "partial_resources": {
+              "tables": [
+                "eb_marketplace_merchant",
+                "eb_marketplace_role",
+                "eb_marketplace_employee",
+                "eb_marketplace_audit_log",
+                "eb_marketplace_password_setup"
+              ],
+              "menu_ids": [
+                3465,
+                3466,
+                3467,
+                3468,
+                3469,
+                3470,
+                3471
+              ]
+            }
+          }
+        }
+      ],
+      "table_count_before": 158,
+      "table_count_after": 163,
+      "snapshot_unchanged": false
+    },
+    {
+      "run_id": "20261011211731fed7ed",
+      "phase": "after",
+      "source_commit": "19e94f3de54025a049aa2dda45159b10c7ae209a",
+      "statuses": {
+        "PASS": 1,
+        "NOT RUN": 1
+      },
+      "native_exit": 0,
+      "raw_ref": "ms1-migration-after-20261011211920.jsonl",
+      "raw_bytes": 1146,
+      "raw_sha256": "48a0f531ed9903921c9f63607b703d38cfc626174cb2568097e1e16ef4cb354f",
+      "evidence_ref": "ms1-migration-after.json",
+      "evidence_sha256": "a95d28b03b173e081d415a940d695a66356864befd46dddbf79daf0bc950d1bc",
+      "cli_steps": [
+        {
+          "mode": "check",
+          "native_exit": 0,
+          "stderr_bytes": 0,
+          "stdout_sha256": "9542461a307dfc59d9f4b622f8ad75a1cffabc8c2b289a14c0224b4bd57f2101",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "result": {
+            "mode": "check",
+            "state": "applicable",
+            "changed": false,
+            "tables": [
+              "eb_marketplace_merchant",
+              "eb_marketplace_role",
+              "eb_marketplace_employee",
+              "eb_marketplace_audit_log",
+              "eb_marketplace_password_setup"
+            ],
+            "menu_ids": [],
+            "issues": []
+          }
+        },
+        {
+          "mode": "apply",
+          "native_exit": 0,
+          "stderr_bytes": 0,
+          "stdout_sha256": "2fc97021f7766d2d84befc8fe43b55cbbb80839101b11b0280efe9f7c89eb7e6",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "result": {
+            "mode": "apply",
+            "state": "completed",
+            "changed": true,
+            "tables": [
+              "eb_marketplace_merchant",
+              "eb_marketplace_role",
+              "eb_marketplace_employee",
+              "eb_marketplace_audit_log",
+              "eb_marketplace_password_setup"
+            ],
+            "menu_ids": [
+              3465,
+              3466,
+              3467,
+              3468,
+              3469,
+              3470,
+              3471
+            ],
+            "issues": [],
+            "created_tables": [
+              "eb_marketplace_merchant",
+              "eb_marketplace_role",
+              "eb_marketplace_employee",
+              "eb_marketplace_audit_log",
+              "eb_marketplace_password_setup"
+            ]
+          }
+        },
+        {
+          "mode": "check",
+          "native_exit": 0,
+          "stderr_bytes": 0,
+          "stdout_sha256": "a80f4e4eb810a5d7d8445698dfcd00f940d44dcf0b44895e81962fe95c1b5e8f",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "result": {
+            "mode": "check",
+            "state": "completed",
+            "changed": false,
+            "tables": [
+              "eb_marketplace_merchant",
+              "eb_marketplace_role",
+              "eb_marketplace_employee",
+              "eb_marketplace_audit_log",
+              "eb_marketplace_password_setup"
+            ],
+            "menu_ids": [
+              3465,
+              3466,
+              3467,
+              3468,
+              3469,
+              3470,
+              3471
+            ],
+            "issues": []
+          }
+        },
+        {
+          "mode": "apply",
+          "native_exit": 0,
+          "stderr_bytes": 0,
+          "stdout_sha256": "5cf5bc38f01cddc766053956145a6202ed8e9a8167a74a398cabdf0e0aa44811",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "result": {
+            "mode": "apply",
+            "state": "completed",
+            "changed": false,
+            "tables": [
+              "eb_marketplace_merchant",
+              "eb_marketplace_role",
+              "eb_marketplace_employee",
+              "eb_marketplace_audit_log",
+              "eb_marketplace_password_setup"
+            ],
+            "menu_ids": [
+              3465,
+              3466,
+              3467,
+              3468,
+              3469,
+              3470,
+              3471
+            ],
+            "issues": []
+          }
+        }
+      ],
+      "table_count_before": 158,
+      "table_count_after": 163,
+      "snapshot_unchanged": false
+    }
+  ],
+  "successful_native_steps": {
+    "bootstrap": 0,
+    "migration": 0,
+    "teardown": 0
+  },
+  "successful_tables_before": 158,
+  "successful_tables_after": 163,
+  "new_empty_tables": [
+    "eb_marketplace_audit_log",
+    "eb_marketplace_employee",
+    "eb_marketplace_merchant",
+    "eb_marketplace_password_setup",
+    "eb_marketplace_role"
+  ],
+  "new_menu_ids": [
+    3465,
+    3466,
+    3467,
+    3468,
+    3469,
+    3470,
+    3471
+  ],
+  "preservation": {
+    "original_tables": 158,
+    "original_menu_rows": 1096,
+    "non_menu_checksums_available": 157,
+    "old_structure_and_rows_unchanged": true,
+    "cache_values_and_expiry_unchanged": true
+  },
+  "metadata_counts": {
+    "tables": 5,
+    "columns": 46,
+    "index_rows": 21,
+    "enforced_checks": 10,
+    "foreign_key_column_rows": 6
+  },
+  "source_fix": "Decode only the two actual MySQL CHECK metadata literal representations before unchanged predicate comparison; no DDL or assertion change.",
+  "successful_resources_before_teardown": {
+    "containers": 3,
+    "networks": 1,
+    "run_id": "20261011211731fed7ed",
+    "volumes": 9
+  },
+  "final_resources": {
+    "install_lock_absent": true,
+    "runs": [
+      {
+        "run_id": "20261011195406edef53",
+        "volumes": 0,
+        "networks": 0,
+        "containers": 0
+      },
+      {
+        "run_id": "20261011202953d2f1c8",
+        "volumes": 0,
+        "networks": 0,
+        "containers": 0
+      },
+      {
+        "run_id": "2026101120502249a619",
+        "volumes": 0,
+        "networks": 0,
+        "containers": 0
+      },
+      {
+        "run_id": "20261011210408f41e62",
+        "volumes": 0,
+        "networks": 0,
+        "containers": 0
+      },
+      {
+        "run_id": "20261011211731fed7ed",
+        "volumes": 0,
+        "networks": 0,
+        "containers": 0
+      },
+      {
+        "run_id": "202610112118519d9980",
+        "volumes": 0,
+        "networks": 0,
+        "containers": 0
+      }
+    ]
+  },
+  "results": {
+    "original_task1_rows": 2,
+    "original_task1_sha256": "fd91033b1f4d2b4f00c28698e1536eefb6b828cae62af5868cc753f8dc7216e7",
+    "appended_task2_rows": 8,
+    "total_rows": 10,
+    "counts": {
+      "FAIL": 4,
+      "PASS": 2,
+      "NOT RUN": 4
+    },
+    "sha256": "bbf79f1311787f43dddecb99c1ca98c7cf33b26cb16dee8e85dda4d56931eec4"
+  },
+  "limits": [
+    "T2M02 remains NOT RUN at user request; no incompatible structures, invalid input or faults created.",
+    "Ordinary migration evidence does not establish complete safety acceptance or human signoff.",
+    "Task3-9 merchant context, APIs, business workflows and final delivery remain pending.",
+    "Local L2 only; no push, production database write, deployment or external notification."
+  ]
+}

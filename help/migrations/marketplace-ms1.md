@@ -1,6 +1,6 @@
 # MS1 身份迁移设计
 
-本文件是 `06-plan-ms1.md` Task 2 的实施依据，冻结五张身份表与七条平台接口登记；2026-10-12经实源与独立只读审查，修正MySQL自增列CHECK限制后作为编码依据，尚无应用或验收结论。依据：`00-implementation-spec.md` §3/5/6/7、06 Task 2–6、07 Task 8 的公众店铺字段；实源为 `help/migrations/theme-module.php`、`crmeb/public/install/crmeb.sql:48660` 及 `app/services/system/admin/SystemRoleServices::verifyAuth()`。真实库结构和在用情况未核对。
+本文件是 `06-plan-ms1.md` Task 2 的实施依据，冻结五张身份表与七条平台接口登记；2026-10-12经实源与独立只读审查，修正MySQL自增列CHECK限制后作为编码依据。源码19e94f3d在专用ISO-FULL实例中的正常四命令迁移已通过，原失败和NOT RUN保留；完整安全验收与人工签收未发生，见 `docs/multi-merchant/records/ms1/task2-migration-summary.json`。依据：`00-implementation-spec.md` §3/5/6/7、06 Task 2–6、07 Task 8 的公众店铺字段；实源为 `help/migrations/theme-module.php`、`crmeb/public/install/crmeb.sql:48660` 及 `app/services/system/admin/SystemRoleServices::verifyAuth()`。真实库结构和在用情况未核对。
 
 ## 表与写入合同
 
@@ -147,7 +147,7 @@ check只读取完整元数据/菜单。apply在当前数据库取得本迁移命
 
 ## 普通隔离核对
 
-在新的 ISO-FULL、安装种子基表已存在的专用库，由专用 DDL 账号执行；应用仍使用原 DML 账号。本设计没有运行结论。Task 2 后续核对：
+在新的ISO-FULL RUN20261011211731fed7ed、安装种子基表已存在的专用库，由既有专用DDL账号执行；应用仍使用原DML账号。实际正常check/apply/check/apply四命令及bootstrap/teardown均native0，T2M01 PASS、T2M02 NOT RUN；以下普通核对已完成，不能代替跳过项或真实库验收：
 
 - 原始 `check` 报 `applicable`；首次 `apply` 创建恰好五张空表和七个接口行；再次 `check/apply` 报 `completed`，新增菜单 ID/内容不重复、五表仍为空。
 - 前后所有旧表的列、索引、外键及旧行保持。除 `system_menus` 外，旧表 `SHOW CREATE TABLE`/可用 `CHECKSUM TABLE` 保持；菜单只允许上述七个实际新 ID/精确内容和自然 AUTO_INCREMENT 前进，其余 DDL 与按原 ID 逐行内容保持。不能要求菜单新增后整体 checksum 不变，不能回拨计数器。

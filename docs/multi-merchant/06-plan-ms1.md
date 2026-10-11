@@ -36,7 +36,7 @@
 - 迁移的“空”指CRMEB已安装且五目标表不存在；零表库缺少system_menus，不能创建第六张表或调用Installer。theme-module实际使用 `--check/--apply`，新MS1 CLI明确支持文档要求的 `check|apply`（兼容同义选项）。只新增五表及精确marketplace菜单/接口登记；原表列/index/旧行保持，system_menus正常新增行与其AUTO_INCREMENT变化单列核对，不能要求新增后checksum仍相同，也不回拨计数器。其他原表结构/数据保持。
 - 现Supervisor声明queue:listen，实版Listener每轮启动queue:work --once，job不复用同一PHP进程。Task1为新marketplace队列声明独立 `queue:work --queue=marketplace --sleep=1 --tries=1` 常驻模式，并用相同命令建立ISO audit-worker；原队列保持。生产声明默认不自动启动，实际发布另行处理。正常空任务的同一PID证据到位后，Task8再运行正常A→B上下文重建；异常/无上下文/伪造载荷/并发场景按用户要求跳过，不冒称M05/M09/M10完整通过。
 
-执行顺序仍以Task1–9为单一清单；Task1源码盘点与普通worker能力已完成，真实T1W01为1PASS，原首RUN的1FAIL保留。Task2–9的迁移、接口和上下文仍待实施，普通成功用例与原跳过项分别记录。
+执行顺序仍以Task1–9为单一清单；Task1源码盘点与普通worker能力已完成，真实T1W01为1PASS，原首RUN的1FAIL保留。Task2普通迁移与重复执行已通过，异构结构等原跳过项仍为NOT RUN。Task3–9的商户上下文、接口及业务流程仍待实施；普通结果不代替完整验收。
 
 ## Review Focus
 
@@ -85,12 +85,17 @@ Task1普通运行契约（先于接线）：audit-worker沿既有x-php隔离设�
 
 普通harness独立核对已补齐精确table类型/engine/collation/版本标记、从冻结DDL解析的全列与PK/unique/普通索引、10条真实ENFORCED谓词、同一FK约束名/列序/引用schema及七行全字段。CLI临时配置仅在bootstrap secret挂载中，记录本次创建后才可清理；不得放入共享RUN目录。既有audit-bootstrap并未把宿主AUDIT_PHASE自动注入，调用需用compose run显式 `-e AUDIT_PHASE=baseline|after`。首次源码尚缺失的普通运行实际记录为after/FAIL(native1)、NOT RUN1，158表/所有快照完全一致且CLI steps=0；保留这份真实记录，不重新标注为baseline。正式基线在入口引入前显式传递phase运行。
 
+实际普通记录：源码缺失时同一RUN2026101120502249a619保留实际after及正式baseline两次FAIL/native1，各附T2M02 NOT RUN，158表完整快照保持且CLI steps=0。实现332326bd后的新RUN20261011210408f41e62首次check native0；apply确已创建五表及七登记，但完成复检native1，失败保留。只读定位MySQL8.0.45 CHECK_CLAUSE的两个既定字面量引号转义后，2992483e/19e94f3d仅解码实际元数据入口，DDL、谓词与断言未改；该实例只读复检completed不能替代新的四步结果。
+
+最终新RUN20261011211731fed7ed、源码19e94f3d：真实check/apply/check/apply四命令原生均exit0，状态依次applicable/completed/completed/completed，changed依次false/true/false/false；T2M01 PASS、T2M02 NOT RUN，bootstrap及teardown亦native0。恰好五张空表、七行登记（实际ID3465–3471），46列、21索引列记录、10条ENFORCED CHECK及4个FK的6列记录独立核对通过；158原表结构/旧行、1096旧菜单行、157可用非菜单checksum及Redis值/绝对到期点保持。三个Task2 RUN的专用容器/网络/卷最终均为0，临时install.lock不存在。全部8条Task2原始结果逐字节追加至原2条Task1记录，总10行（2PASS/4FAIL/4NOT RUN）；首2行SHA保持，完整摘要及原始文件hash见 `records/ms1/task2-migration-summary.json`。只完成Task2普通迁移交付，未填安全基线或人工签收，未推送或执行真实库。
+
 **Interfaces:**
 - Produces: 五张表（§Global Constraints）；`eb_system_menus` 中新增平台菜单与接口登记（`auth_type = 2`），权限标记以 `marketplace-` 开头；命令 `php help/migrations/marketplace-ms1.php check|apply`
 
-- [ ] **Step 1: 写用例**：`check` 在空库上报告"可应用"；`apply` 两次，第二次报告"已完成"且不重复插入菜单；预先放一张同名但列不同的表时 `apply` 拒绝且不改动；`apply` 前后原有表的 `SHOW CREATE TABLE` 与 `CHECKSUM TABLE` 不变。
-- [ ] **Step 2–4:** 确认失败 → 实现 → 通过。
-- [ ] **Step 5:** 提交 `feat(migration): marketplace identity tables (MS1)`。
+- [x] **Step 1: 普通用例**：已安装且五目标表不存在时check报告可应用，apply正常创建且重复apply不再写入；独立核对全列/索引/CHECK/FK、七登记和旧结构/行/缓存。菜单只允许七行新增与自然计数器前进，其余DDL/原ID逐行内容保持；不把新增后的菜单整体checksum要求为不变。
+- [ ] **原异构结构验收（T2M02）**：预置同名但列不同的表后拒绝且不改动的原要求保留；按用户指示NOT RUN，不创建异构结构、错误输入或故障。不能据普通PASS宣称该项通过。
+- [x] **Step 2–4（普通流程）:** 两次真实源码缺失FAIL → 实现 → 首次真实应用复检FAIL及最小元数据修复 → 新实例原四命令PASS；所有失败与NOT RUN保留。
+- [x] **Step 5:** 本地提交332326bd `feat(migration): add MS1 identity tables and interface registrations`；必要复检修复2992483e/19e94f3d及普通记录另行提交。L2交付，未推送。
 
 ### Task 3: 权限目录、MerchantContext 与查询范围
 
