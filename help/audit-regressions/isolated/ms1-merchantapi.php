@@ -131,6 +131,27 @@ function m4h_warm_language(\think\App $app,string $prefix,array &$ownedKeys,arra
         'exact_values_and_source_expiry_verified'=>true,'unrelated_state_preserved'=>true];
 }
 
+function m4h_route_inventory(\think\App $app,array &$evidence): void
+{
+    $before=m4h_snapshot();
+    require audit_repo_dir().'/crmeb/app/merchantapi/route/route.php';
+    $actual=[];
+    foreach ($app->route->getRuleList() as $rule) {
+        $actual[]=['method'=>strtoupper($rule['method']),'rule'=>$rule['rule'],'name'=>$rule['name']];
+    }
+    $expected=[['method'=>'POST','rule'=>'login','name'=>'merchant.login'],
+        ['method'=>'POST','rule'=>'password/setup','name'=>'merchant.password.setup'],
+        ['method'=>'POST','rule'=>'refresh','name'=>'merchant.refresh'],
+        ['method'=>'POST','rule'=>'logout','name'=>'merchant.logout'],
+        ['method'=>'GET','rule'=>'me','name'=>'merchant.me']];
+    usort($actual,static fn(array $a,array $b): int=>strcmp($a['rule'],$b['rule']));
+    usort($expected,static fn(array $a,array $b): int=>strcmp($a['rule'],$b['rule']));
+    audit_expect($actual===$expected,'actual framework merchant routes must contain exactly the five contracted interfaces');
+    m4h_same($before,m4h_snapshot());
+    $evidence['routes']=['actual_framework_rules'=>$actual,'exact_five_verified'=>true,
+        'source'=>'real App service boot and same merchantapi route definition; no undeclared HTTP requests'];
+}
+
 function m4h_fixtures(PDO $pdo,array &$fixtures,array &$secrets): void
 {
     $slug='ms1_http_'.substr(hash('sha256',(string)getenv('AUDIT_RUN_ID')),0,12);
@@ -326,7 +347,7 @@ audit_case('T4A01','normal_merchant_http_lifecycle','INTEGRATION',static functio
         $prefix='audit:http-lang:'.getenv('AUDIT_RUN_ID').':'.gmdate('YmdHis').random_int(100000,999999).':';
         $v2='auth:v2:'.$config['auth']['session_epoch'].':merchantapi:';
         audit_expect(m4h_scan($v2.'*')===[] && m4h_scan($prefix.'*')===[],'new normal merchant and language namespaces must initially be empty');
-        $app=m4h_app($config,$prefix); m4h_warm_language($app,$prefix,$ownedKeys,$evidence);
+        $app=m4h_app($config,$prefix); m4h_route_inventory($app,$evidence); m4h_warm_language($app,$prefix,$ownedKeys,$evidence);
         $pdo=audit_db(); m4h_fixtures($pdo,$fixtures,$secrets); $fixtureRows=m4h_rows($pdo,$fixtures);
         foreach ($fixtures as $f) { $key=$v2.'account:'.$f['employee_id']; audit_expect(audit_redis()->exists($key)===0,'new employee account key was absent'); $ownedKeys[]=$key; }
         // The existing supervisor verifies its real listener; no extra admin request.

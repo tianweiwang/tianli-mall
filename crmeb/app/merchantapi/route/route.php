@@ -5,6 +5,9 @@ use app\merchantapi\middleware\MerchantAuthTokenMiddleware;
 use app\merchantapi\middleware\MerchantPermissionMiddleware;
 use think\facade\Route;
 
+// Service boot can register global routes before MultiApp selects this app.
+Route::clear();
+
 Route::post('login', 'Login/login')->name('merchant.login');
 Route::post('password/setup', 'Login/setupPassword')->name('merchant.password.setup');
 
