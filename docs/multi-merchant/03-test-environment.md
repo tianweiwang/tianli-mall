@@ -96,7 +96,7 @@
 | 键 | 表 | id | 关键属性 |
 |---|---|---|---|
 | `admin_super` | `eb_system_admin` | 101 | `level = 0`，`status = 1`，`is_del = 0` |
-| `admin_limited` | `eb_system_admin` | 102 | `level = 1`，角色 `R-limited` 只授予"商品列表"读接口 |
+| `admin_limited` | `eb_system_admin` | 102 | `level = 1`，角色 `R-limited` 只授予已有的"商品规则列表"读接口（`GET product/product/rule`，2026-10-11 用户批准；安装种子未登记 `GET product/product`，不补写种子） |
 | `admin_disabled` | `eb_system_admin` | 103 | `status = 0` |
 | `admin_deleted` | `eb_system_admin` | 104 | `is_del = 1` |
 | `out_101` | `eb_out_account` | 101 | `status = 1`，与 `admin_super` 撞 ID；授予一个只读对外接口 |
