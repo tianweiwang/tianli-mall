@@ -33,7 +33,13 @@
 验收人按顺序执行 V1–V10。每一步的结论写进 `records/<里程碑>/acceptance.md`（模板见 §8）。
 
 ### V1 交付包完整性
-对照 §2 逐项打勾。`results.jsonl` 每行都必须有 `case_id`、`subcase`、`layer`、`phase`、`commit_sha`、`status`；`commit_sha` 必须等于交付 SHA。
+对照 §2 逐项打勾。`results.jsonl` 每行都必须有 `case_id`、`subcase`、`layer`、`phase`、`commit_sha`、`status`；`commit_sha` 必须是实际测试的源码提交，不得事后改写为未测试的提交。
+
+- `baseline` 保留实际基线 SHA；执行方须证明业务源码与声明的基线一致，并说明测试 harness 的来源。
+- 最终 `after` 对应报告 P1 声明的已验证源码 SHA；全量测试和独立复跑均以该冻结源码为准。
+- 最终交付 SHA 可以是在冻结源码上追加交付记录的提交；必须用 `git diff --exit-code <已验证源码SHA> <交付SHA> -- crmeb help/audit-regressions` 证明应用、依赖、测试与夹具完全一致，并审查其余差异只含已说明的文档/证据记录。若这期间有任何运行源码或测试变更，重新冻结和测试，不可使用此例外。
+
+2026-10-11 执行说明：用户后续授权按最优方案处理文档内问题。原“所有行等于交付 SHA”与保留真实 baseline、先测试再提交报告存在冲突；以上修正保留真实证据与源码一致性要求，避免报告提交自身 SHA 的循环依赖，不降低验收覆盖。
 
 ### V2 范围审查
 ```bash
