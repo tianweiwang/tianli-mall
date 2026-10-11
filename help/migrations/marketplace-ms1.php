@@ -234,7 +234,7 @@ final class MarketplaceMs1Migration
         $checks = [];
         foreach ($actual['checks'] as $check) {
             $name = $check['CONSTRAINT_NAME'];
-            $tree = self::checkExpression((string) $check['CHECK_CLAUSE']);
+            $tree = self::checkMetadataExpression((string) $check['CHECK_CLAUSE']);
             if (isset($checks[$name]) || $check['ENFORCED'] !== 'YES' || $tree === null) {
                 $issues[] = self::issue('checks', $table);
                 return $issues;
@@ -422,6 +422,16 @@ final class MarketplaceMs1Migration
         }
         unset($definition);
         return $definitions;
+    }
+
+    /** Decode only MySQL metadata's escaped delimiters for our two fixed literals. */
+    private static function checkMetadataExpression(string $expression): ?array
+    {
+        $delimiter = "\\'";
+        foreach (['ARRAY', 'OBJECT'] as $literal) {
+            $expression = str_replace('_utf8mb4' . $delimiter . $literal . $delimiter, "_utf8mb4'" . $literal . "'", $expression);
+        }
+        return self::checkExpression($expression);
     }
 
     /** Parse only the frozen CHECK grammar. Grouping changes the tree, not just text. */

@@ -68,6 +68,10 @@ function m1m_cli(string $mode, string $configFile): array
 /** Compare fixed contract clauses without dropping operator grouping or string case. */
 function m1m_check_clause(string $clause): string
 {
+    $delimiter = "\\'";
+    foreach (['ARRAY', 'OBJECT'] as $literal) {
+        $clause = str_replace('_utf8mb4' . $delimiter . $literal . $delimiter, "_utf8mb4'" . $literal . "'", $clause);
+    }
     $value = preg_replace_callback("/'(?:[^']|'')*'|[^']+/", static function (array $match): string {
         if (str_starts_with($match[0], "'")) return $match[0];
         return preg_replace('/\s+/', '', str_replace(['`', '_utf8mb4'], '', strtolower($match[0])));
