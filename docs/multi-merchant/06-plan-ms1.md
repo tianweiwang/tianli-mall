@@ -206,9 +206,25 @@ Task4普通交付（2026-10-12）：首RUN202610112210395cc192的源码缺失基
 
 **Files:**
 - Create: `crmeb/app/merchantapi/controller/Employee.php`、`Role.php`；`crmeb/app/services/marketplace/EmployeeServices.php`、`RoleServices.php`
+- Create（两套管理入口共享的有限验证）: `crmeb/app/services/marketplace/MerchantManagementInput.php`
+- Modify（必要调用点）: merchantapi `route/route.php`；marketplace的EmployeeDao、RoleDao、MerchantDao、PasswordSetupDao；EmployeeAuthServices（当前执行者动作核对及相同商家写锁）；AccountChangeGuard（仅merchantapi保留受控HTTP异常）；`help/audit-regressions/isolated/ms1-merchantapi.php`（后续完整MS1路由目录）；Create `help/audit-regressions/isolated/ms1-management.php`。
 
 **Interfaces:**
 - Produces: `GET|POST /merchantapi/employees`、`PUT /merchantapi/employees/:id`、`PUT /merchantapi/employees/:id/status`、`GET|POST /merchantapi/roles`、`PUT /merchantapi/roles/:id`；全部要求 `merchant.employee.manage` 或 `merchant.role.manage`；角色的权限只能取 `MerchantPermissions::ALL` 的子集。
+
+Task5编码合同（2026-10-12）：七路由均先认证、再固定动作中间件，服务也显式接收Ctx并重读当前执行者状态/同商家角色/动作权限。员工公开DTO仅id、mer_id、role_id、account、name、avatar、status、add_time、update_time；角色公开DTO仅id、mer_id、name、permissions、add_time、update_time。GET默认page=1/limit=20（最多100）、id升序、返回 `{list,count}`；employees可筛选status/role_id，默认排除is_del。查询数字接受规范十进制字符串，body的role_id/status必须JSON整数。字符串有效UTF-8且遵守191/64/512字符表上限，账号沿冻结的ASCII规范化；role.name去首尾空白、非空且最多64字符，permissions为去重后的目录字符串list。
+
+POST employees仅account/role_id必填，name/avatar可选；服务器写Ctx商家、status=1/is_del=0/pwd=NULL和时间。同一默认Db事务锁本商家及角色、写员工和43字符base64url能力的SHA256/24h期限，提交后仅向创建者返回 `{employee,password_setup:{endpoint:'/merchantapi/password/setup',token,expires_at}}`；该endpoint是已有POST接口，设置网页在MS3实现，不预初始化账号版本。PUT employees/:id仅account/role_id/name/avatar非空部分更新；status只在独立PUT status入口；roles POST必填name/permissions，PUT允许其非空部分更新。未知body字段及商家选择、pwd/is_del/时间等不入写白名单。有效无实质变更可200，原行/时间/版本保持；没有另加最后管理员限制或按模板名锁死角色，也不增加删除/改密/重发路由。
+
+普通读可直接按Ctx查询；所有管理写在默认连接真实外层事务内先锁商家行，再重检执行者及有限目标/角色，写WHERE同时含目标ID与Ctx mer_id，固定白名单列，不能保存早前含pwd的模型整体快照。相同商家的会员关系变更由该商家行锁协调；Task4首次设密也先按服务器能力记录取得的mer_id锁同一行，再锁能力/员工，不伪造Ctx。角色/员工预读仅用于决定保护集与允许字段差异，事务内复核原公开行/保护成员集合一致；变化时受控不可用且不写，不自动重试或扩大未保护集合。
+
+account/role_id/status实质变更通过既有AccountChangeGuard保护目标员工后持外层Db事务；name/avatar变化使用runMany([])，不轮换版本。角色permissions实质变化先读本店全部绑定员工ID（包含停用/软删除），runMany预保护，再锁商家/角色并复核完整成员集才写；角色名变化或真正无变化不轮换。创建/改绑员工也锁角色。保护本人后只按已验证Ctx及当前Db权限核对，不再调用JWT认证；变更后正常流程重新凭据登录。AccountChangeGuard仅在merchantapi数据库回调阶段保留HttpException的401/403/404/422，新handler仍固定消息；不可用/驱动错误和其他应用处理不变。重复名/账号等数据库唯一约束以明确MySQL1062/SQLSTATE23000分类转换固定422，不回传原消息。
+
+本任务不提前新增审计服务或种子/表列；Task6的平台写审计按原顺序落实。日志正文保护继续覆盖全部merchantapi。已有五认证接口与本次七管理接口构成最终12条路由，当前阶段只变更完整路由目录核对，不改此前原始结果；仍无商品路由。
+
+普通T5G01：先记录管理类尚缺失的自然基线FAIL；新ISO、专用bootstrap准备冻结五表、runner仅DML。有效A/B管理员正常列本店员工/角色；A正常建/改角色、建员工和能力、有效设密/登录/me、姓名头像修改、同店账号及角色修改后重新登录、管理端正常停用/启用、角色权限修改后重新登录读取当前权限及服务器版本。修改后不再请求旧会话；停用员工期间只由仍有效管理员核对列表/Db再启用。不发送运营无权限、外店ID、无效权限、过期/重复能力、故障并发/恢复等原停用请求。精确清理本次新表真实ID/能力及账号会话键，163原表行/结构（仅四夹具表自然计数器）和旧Redis值/绝对期限保持，不恢复快照、不回拨计数器；旧FAIL和NOT RUN保留。
+
+- [ ] **普通T5G01：** 有效管理七接口、最新身份/权限与版本、能力交付、精确清理和状态保留。
 
 - [ ] **Step 1: 写用例** M02：运营员工创建员工、修改角色、修改自己的角色、修改员工所属商家 → 403 且数据库不变；商家管理员操作他店员工 ID → 404；角色中写入不存在的权限码 → 422 且不保存。员工被停用或角色被修改后，其下一次请求按新状态处理。
 - [ ] **Step 2–5:** 确认失败 → 实现 → 通过 → 提交 `feat(merchantapi): scoped employee and role management`。
