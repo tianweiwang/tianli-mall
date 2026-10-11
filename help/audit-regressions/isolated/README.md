@@ -1,5 +1,13 @@
 # MS0a isolated regression environment
 
+2026-10-11 user decision: skip further security reproduction, fault injection,
+and the prepared HTTP concurrency/disconnect experiments. `run.sh` rejects the
+existing combined suites before reading the RUN or invoking Docker (exit 2,
+not PASS). The commands below describe the prior workflow and are currently
+disabled where they select those suites. Keep past evidence; use separate normal
+business checks for further functional development. Do not resume the skipped
+checks through another entry point. See `docs/multi-merchant/05-plan-ms0b.md`.
+
 This environment implements the approved Windows ISO-FULL adaptation in
 `docs/multi-merchant/03-test-environment.md` §2.1. Use Git Bash on Windows, or Bash
 with Docker Compose. PHP, the application, MySQL and Redis all run in dedicated

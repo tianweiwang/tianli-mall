@@ -10,6 +10,15 @@
 
 **Spec:** [00-implementation-spec.md](00-implementation-spec.md) §4.4、§11.3；用例：[10-acceptance-matrix.md](10-acceptance-matrix.md) 中阶段为 MS0b 的项，以及全部 MS0a 用例的回归。
 
+## 2026-10-11 用户要求跳过的验证
+
+用户明确要求“跳过行不行，再把我号封了”：从本次指令起，停止安全复现、故障注入，以及刚准备的 HTTP 并发刷新和响应前断连试验；不自动恢复、改名或换入口执行同类验证。继续普通功能开发、源码审查、语法/构建检查及正常业务流程检查，认证和权限功能的实现要求保留。
+
+- Task5 两项 A25（`out-http-two-worker-single-refresh`、`out-http-response-before-read-disconnect`）未执行，记为“按用户要求跳过”，不记 PASS。
+- Task4/6 的并发与部分失败验证、Task7 的 RDB 恢复试验、Task10 综合安全回归中的同类场景也按本指令跳过；原计划描述保留为覆盖缺口，不再作为当前执行指令。既有原始结果和历史失败不改写；跳过不构成完整安全验收或人工签收。
+- `run.sh` 在读取 RUN、启动 Docker 或执行脚本之前拒绝现有综合安全/故障套件，退出码 2 表示未执行，不提供恢复开关。后续正常业务检查需单独选择不含上述场景的检查脚本。
+- RUN `202610111416385a3cf0` 只完成安装引导，尚未运行新测试；专用 3 个容器、1 个隔离网络、8 个卷已通过 manifest 身份核对清理，`teardown.sh` exit 0，复查无残留。仓库外证据目录保留。
+
 ## Global Constraints
 
 - 实际开发起点：`3e7c966ecfa084ff4f219b03c61ed0efbac4caac`（MS0a交付）；其运行源码/测试与已验证冻结点 `af3e3e0c48fab9cf5af18f45f6341e9c272b168f` 差异为空。MS0a 主/独立完整 HTTP106、UNIT43、selftest6均PASS，独立V4/V6/V7无必须修复项。分支 `codex/ms0b`，工作目录 `H:/天俪商城/tianli-mall--ms0b`；原 Mac 路径命令按此映射。正式 SECURITY_BASE_SHA 待验收人指定，实际开发起点不冒充签收。
@@ -20,11 +29,11 @@
 - 新配置 `crmeb/config/auth.php`：`session_epoch`（Env `AUTH_SESSION_EPOCH`，必填）、`stamp_key`（Env `AUTH_STAMP_KEY`，必填，至少 32 字节）、`issuer`（Env `AUTH_ISSUER`，默认 `tianli-mall`）、`apps.adminapi` / `apps.outapi`（`type`、`audience`、`ttl`）。任何必填项缺失时，相关认证抛 503。
 - 依赖故障（Redis、数据库连接）抛 `crmeb\exceptions\AuthUnavailableException`，业务码 503；会话不存在或无效抛 `AuthException`，业务码 401。
 - 禁止 `FLUSHALL`、`FLUSHDB`、`KEYS *` 式全量删除；禁止回查旧的 `md5(token)` 键。
-- MS0a 已经用户批准并实际实现 ISO-FULL（03 §2.1）：复用 PHP8.2、本地已存在镜像、只读源代码、专用内部网络/新卷/DML账号，不重复构建或拉镜像。每阶段仍新建 RUN，自检增加网络隔离与故障注入。
+- MS0a 已经用户批准并实际实现 ISO-FULL（03 §2.1）：复用 PHP8.2、本地已存在镜像、只读源代码、专用内部网络/新卷/DML账号，不重复构建或拉镜像。此前阶段采用新建 RUN 并执行隔离/故障自检；当前不再自动执行含故障注入或安全复现的自检，遵循顶部用户跳过指令。
 
 ## Review Focus
 
-- **部分失败**：Lua 脚本在原子执行中途出错时，Redis 不会回滚已执行的写入。每个脚本先检查全部前置条件，再执行写入；故障注入测试覆盖"脚本报错""连接在 EVAL 后断开""返回值丢失"。
+- **部分失败**：Lua 脚本在原子执行中途出错时，Redis 不会回滚已执行的写入。每个脚本先检查全部前置条件，再执行写入；原计划故障注入覆盖"脚本报错""连接在 EVAL 后断开""返回值丢失"；当前保留为验证缺口，按用户要求停止后续执行。
 - **丢键复活**：访问或刷新时，账号键或会话键缺失必须拒绝，不能重建。只有凭据登录可以初始化账号键。
 - **时钟**：会话 TTL 不得超过令牌 `exp` 加 60 秒容差；账号键的寿命不得短于引用它的会话。
 - **并发登录绕过撤销**：登录写会话时，以"账号版本未变且未 blocked"为条件；与改密并发时，改密一方胜出。
@@ -168,7 +177,7 @@ public function revoke(string $app, string $token): void
 - Produces: 对外账号凭据摘要 = 数据库中的 `appsecret` 哈希字符串；`refresh()` 使用 `AuthTokenV2::refresh()`（单次兑换）
 - 实源预审补齐：authLogin不得以appsecret真假值决定是否验密，null/空串/字符串0均不能跳过password_verify。实版本Validate::require允许字符串0，旧service真假判断让该值通过HTTP入口跳过验密；空/null若被原HTTP validator以400提前拒绝，另用真实service调用覆盖其401边界，不改验证器或将既有拒绝冒称新修复。auth_info及parseToken结果隐藏存明文凭据的apppwd、push_password，保留其余DTO和rules可消费形态，以专用非空合成fixture且push_open=0证明字段不存在、原数据库值不变、不触发外部推送；不全局隐藏模型、改CRUD/历史库值或推送消费点。公开refresh_token自行验证body.access_token，MCP仍独立header直接凭据，不额外加角色中间件或JWT配置前置。Login公开入口与管理端相同有过滤缓存先行链，必要的早期配置/依赖前置纳同一调用点。HTTP并发需先在harness验证实际多worker/PID、两个请求同时处理的Redis阻塞/连接证据，不能仅以两个TCP accept/排队或CLI原语竞态冒称HTTP并发；固定短时CLIENT PAUSE WRITE屏障须在认证1秒read_timeout内并真实观测，旧token只有一个replacement。响应丢失用真实HTTP发送完整请求后、未读取响应字节时关闭socket，须先证明服务端已进入刷新处理、其后独立观察实际消费/仅一replacement和重试旧token401，不按客户端超时推断执行结果。保护完整DB/Redis值/期限/实际runtime日志窗口，释放屏障/停止worker后再次核对。
 - 48项测试独立源审补齐：旧schema冷刷新即使独立配置/Redis/PDO前置成功，postMore仍会在服务验证前通过filter_str/sys_config写缓存。保留A24冷401全零断言；刷新入口改从真实Request::post('access_token', '', null)读取POST body原始签名字符串（框架null过滤器明确关闭过滤，纯input/getData不做业务IO），严格非字符串401，直接交给单次刷新服务。JWT必须逐字验签，不能经通用业务regex修改；正常JWT与access_token/exp_time/envelope协议不变，登录getToken仍保留原postMore/validator。不新增Token预验证API或重复凭据查询/验证，不改vendor或全局输入过滤器。此必要入口设计先记录、后更新仓库外草稿，旧服务完整基线保留。
-- 真HTTP两项扩展合并后默认运行全部50项；仅允许显式参数`--only=refresh-races`选择两个确切A25场景，选择记录进证据，不拿2项冒充50项。已保存且没有改动的48项基线不重复制造失败；新2项先提交，再在旧out服务新RUN运行。旧入口未签发真实v2时，按真实前置失败记录，不伪造会话/改用CLI签发，也不声称已执行HTTP竞态。实现后的新RUN默认全50运行。2个真实socket同父进程即可，必须分配到不同已登记HTTP server PID并在500ms专用Redis WRITE屏障内、200ms以内，以两次CLIENT LIST及真实PID/starttime/FD关联证明同时等待EVAL；断开须300ms前、完整发送但无可读响应/EOF且读入0字节。finally先释放屏障、观察实际old/one new/全部DB缓存期限，再停止登记worker并恢复默认。默认单worker原生启动日志无PID前缀，复用已实际通过的hw单worker日志合同、一条startup+新组/成员及监听核对，不猜造未知server PID。
+- 原真HTTP扩展设计（2026-10-11 用户指令后停止执行，仅保留测试定义）：合并脚本默认为50项，`--only=refresh-races`选择两个确切A25场景。48项旧服务基线保留，新2项源码已提交95b1e0cb，但没有执行基线或修复后验证；不得拿worker前置通过或安装引导当作HTTP竞态通过。当前 `run.sh` 对两种选择均在执行前拒绝，后续不再默认运行此综合套件。
 
 - [ ] **Step 1: 用例**：A24（旧格式对外令牌被拒绝）；A25 的 HTTP 子场景（并发刷新只成功一个；客户端在收到响应前断开时，服务端不产生第二个有效会话）；A19、A28 中对外账号相关部分回归；MCP 回归（不受影响）。
 - [ ] **Step 2–5**：确认失败 → 实现 → 通过 → 提交 `feat(outapi): switch to v2 sessions with single-use refresh`。
@@ -194,7 +203,7 @@ public static function runMany(string $app, array $ids, callable $dbChange): mix
         //    两者均记录脱敏审计、返回“需人工复核”503，不报告成功，不补偿恢复旧版本
 ```
 
-- [ ] **Step 1: 用例**：A21-v2 中"改密、停用、删除各自让全部旧会话失效"；故障注入：步骤 1 失败时数据库不变（执行后丢应答已有blocked/新版本，仍不改库）；步骤 2 失败时账号保持 blocked、不能登录；步骤 3 失败时接口不返回成功，未执行仍blocked，已执行丢应答可能已解除但旧版本始终失效、数据库此前已提交。
+- [ ] **Step 1: 用例**（以下并发/故障场景按用户最新要求跳过，不记通过）：A21-v2 中"改密、停用、删除各自让全部旧会话失效"；原故障注入设计：步骤 1 失败时数据库不变（执行后丢应答已有blocked/新版本，仍不改库）；步骤 2 失败时账号保持 blocked、不能登录；步骤 3 失败时接口不返回成功，未执行仍blocked，已执行丢应答可能已解除但旧版本始终失效、数据库此前已提交。
 - [ ] **Step 2–5**：确认失败 → 实现并接入全部入口 → 通过 → 提交 `feat(auth): block-rotate-change-unblock for credential and state changes`。
 
 ### Task 7: 会话状态丢失与世代号轮换
@@ -206,7 +215,7 @@ public static function runMany(string $app, array $ids, callable $dbChange): mix
 **Interfaces:**
 - Produces: 命令要求显式 `--old-epoch=<旧值>` 和 `--confirm`；新旧epoch限安全字符，不允许冒号/通配符。校验新的 `AUTH_SESSION_EPOCH` 已在配置中生效且与旧值不同；按 `SCAN` + 前缀删除**旧 epoch** 下的 `auth:v2:<old>:*` 键（分批，打印数量，不打印键名）。不接触其他键。
 
-- [ ] **Step 1: 用例** A29：模拟 Redis 从旧快照恢复（备份 RDB → 写入新会话 → 恢复 RDB）→ 隔离认证入口 → 轮换 epoch → 旧会话全部 401、重新登录可用；业务缓存键数量前后不变。
+- [ ] **Step 1: 用例**（恢复试验按用户最新要求跳过，不记通过） A29：原设计模拟 Redis 从旧快照恢复（备份 RDB → 写入新会话 → 恢复 RDB）→ 隔离认证入口 → 轮换 epoch → 旧会话全部 401、重新登录可用；业务缓存键数量前后不变。
 - [ ] **Step 2–5**：确认失败 → 实现命令与 runbook → 通过 → 提交 `feat(auth): epoch rotation command and session-loss runbook`。
 
 ### Task 8（按用户委托纳入 Q6/Q7）: 登录验证码与 URL 令牌
@@ -227,6 +236,8 @@ public static function runMany(string $app, array $ids, callable $dbChange): mix
 
 ### Task 10: 全量回归与交付
 
-- [ ] 在新建的 ISO-FULL 环境运行：`security.php`、`selftest.php`、`ms0a-auth.php`、`ms0b-session-store.php` 以及 MS0b 的 HTTP 用例；全部 `exit=0`。v2回归保留旧业务拒绝/零副作用/原应用可用断言；旧pwd/md5白名单构造迁为当前v2会话输入，旧schema拒绝另由A24在旧键仍存在时真实覆盖，不拿旧schema拒绝伪装v2匹配测试。测试脚本适配输入形态前逐条记录对照，不放宽业务期望。
+以下全量安全回归要求保留为未验收缺口，实际执行遵循本计划顶部用户最新跳过指令；只能报告已完成的普通检查和逐项跳过，不得把综合回归或里程碑改记为全 PASS。
+
+- [ ] 原完整回归要求（按用户最新要求停止执行同类综合套件，保留覆盖缺口）：在新建的 ISO-FULL 环境运行：`security.php`、`selftest.php`、`ms0a-auth.php`、`ms0b-session-store.php` 以及 MS0b 的 HTTP 用例；全部 `exit=0`。v2回归保留旧业务拒绝/零副作用/原应用可用断言；旧pwd/md5白名单构造迁为当前v2会话输入，旧schema拒绝另由A24在旧键仍存在时真实覆盖，不拿旧schema拒绝伪装v2匹配测试。测试脚本适配输入形态前逐条记录对照，不放宽业务期望。
 - [ ] `git diff --name-only 3e7c966ecfa084ff4f219b03c61ed0efbac4caac HEAD` 只包含本计划列出的路径（Task 6 中 grep 出的入口逐项说明）。
 - [ ] 写 `records/ms0b/report.md`、`results.jsonl`；提交；停止，等待验收（11 文档 §5.3）。

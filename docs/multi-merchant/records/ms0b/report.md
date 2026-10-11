@@ -4,6 +4,20 @@
 
 开发起点为MS0a交付3e7c966ecfa084ff4f219b03c61ed0efbac4caac；用户明确委托按规划自主继续并解决问题，V10人工签收仍待。工作目录H:/天俪商城/tianli-mall--ms0b，分支codex/ms0b。会话状态仅Redis，无新数据库表/列/种子。
 
+## 2026-10-11 用户要求跳过安全复现与故障试验
+
+用户最新指令“跳过行不行，再把我号封了”已纳入05计划。停止同类安全复现、故障注入及并发/断连试验，后续仅推进普通功能开发和常规检查；不自动恢复、改名或换入口重跑。认证与权限功能要求保留，完整安全验收仍有缺口，未签收。
+
+| 用例 | 当前状态 | 实际执行 |
+|---|---|---|
+| A25 / out-http-two-worker-single-refresh | 按用户要求跳过 | 测试源码95b1e0cb已提交，未运行 |
+| A25 / out-http-response-before-read-disconnect | 按用户要求跳过 | 测试源码95b1e0cb已提交，未运行 |
+| Task4/6 并发及部分失败、Task7 RDB恢复、Task10同类综合验证 | 按用户要求跳过 | 保留原覆盖要求与缺口，不再自动执行 |
+
+RUN=202610111416385a3cf0仅完成引导安装，没有产生新测试JSONL。已执行teardown.sh，manifest身份核对通过、exit0；本RUN的3容器、1隔离网络、8专用卷已移除，独立复查无audit容器及本RUN网络/卷残留。C:/Users/Vwang/.tianli-audit/202610111416385a3cf0保留，不删除原证据。此处跳过记录不追加为results.jsonl的实际运行行，不生成空副作用快照或PASS。
+
+run.sh新增执行前保护，现有综合安全/故障套件在读取RUN或调用Docker前退出2；这表示未执行，不是测试通过。本次仅检查Bash语法、9个套件入口均在环境操作前按预期退出2、git diff --check，以及results.jsonl相对HEAD无变化；没有运行认证或故障试验。普通业务检查后续单独选择。现有1082条原始结果不变，既有失败和此前验证结论保留。
+
 ## 环境与证据
 
 ISO-FULL，RUN=20261011092042df3a82：现有PHP8.2镜像、独立internal网络、专用MySQL/Redis和新卷；没有宿主端口或Docker socket。测试/应用audit_app仅具SELECT/INSERT/UPDATE/DELETE，bootstrap专用audit_migrator完成真实安装文件校验初始化。测试过程中每次核对实际容器、网络、卷身份和双哨兵。其他检出及服务未作为测试目标。
@@ -66,12 +80,12 @@ RUN=2026101112350380d12a，新建ISO-FULL专用内部网络、MySQL/Redis、9卷
 - 额外故障诊断只在同一专用app容器、核对登记leader和supervisor的真实PID/starttime/PGID/SID后SIGKILL确切wrapper。其后4个真实子进程及8000监听仍存活；stop按原登记组处理，即使wrapper已退出仍完整TERM/必要KILL并回收。独立docker exec中的/proc数值观察再次确认整个组（包括待回收成员）空、监听关闭、158表和全部Redis值/期限不变，exit0。证据diagnostic-http-wrapper-state.json及实际diagnostic-ms0b-http-wrapper.php保留仓库外，临时源码核对归档哈希后精确删除。该诊断证明worker退出边界，不代替HTTP业务竞态。
 - harness生产于测试提交563f045d加单个待提交文件时运行，后本地提交7895776a；task5-harness-tested-source.json记录SHA256=d762074a49b40e2244cb1de27b529eb6edcbd45bf1b127084e266215d25ab5d3并确认与提交后一致。原始commit_sha不改写。
 - 基本48项测试先提交5ac0d37e，lint通过、源合同经独立只读审查；真实旧服务完整基线6PASS/42FAIL、exit1，raw=ms0b-out-http-baseline-20261011125527.jsonl，SHA256=c5bdd451d3679dddff739d56da3be3e47b7cfb4cd0bb890db023f2ebc6b837c9。真实service默认/显式null、空串、字符串0全部跳过旧密码核对，产生目标统计与旧会话缓存写入；HTTP缺失/null/空串原validator400和错误/禁用/删除凭据原401共6项已通过。旧schema/缺sid、当前账号状态、冷配置和Redis/DB依赖边界等未满足新契约如实FAIL；不可拿未执行的草稿当修复结果。
-- 8项MCP基线全部仅失败于“actual application and server logs contain no private credential or token”一条：此前旧HTTP数据库故障污染了日志；当前MCP响应及其全表/缓存/期限/runtime零写断言均通过。initialize和真实分类工具仍返回JSON-RPC result，错误/禁用/删除/缺header返回-32600；缺JWT epoch正常可用。不擦日志或把这8项改报PASS，也不声称出现MCP协议回归。后续新RUN完整after仍必须全部严格通过。
+- 8项MCP基线全部仅失败于“actual application and server logs contain no private credential or token”一条：此前旧HTTP数据库故障污染了日志；当前MCP响应及其全表/缓存/期限/runtime零写断言均通过。initialize和真实分类工具仍返回JSON-RPC result，错误/禁用/删除/缺header返回-32600；缺JWT epoch正常可用。不擦日志或把这8项改报PASS，也不声称出现MCP协议回归。原计划的完整after未执行；含安全复现/故障的综合套件现按用户要求停止，常规业务检查另行选择，既有8项FAIL不改写。
 - 未执行草稿的静态复核修正留在测试提交中：刷新old sid仅status允许变，绝对期限仍逐键核对；CLI专用prefix必须初始空，最终只精确清本次新增键；公开攻击探针0不纳整份log/JWT子串私有值扫描，真实随机密码/摘要/token/marker/部署key匹配全部保留。合成fixture两非空明文字段和关闭推送目标只在专用数据中设置，观察后精确还原；不改业务权限种子。
-- 独立实源审查识别cold A24刷新调用点：postMore即使在配置/Redis/PDO前置之后，仍先于schema拒绝调用filter_str/sys_config而写缓存。05已先记录必要修复设计：refreshToken用真实Request::post('access_token', '', null)读取POST body原始签名字符串，非字符串受控401，直接单次刷新服务；登录原postMore/validator不变。不放宽冷401全零断言、不靠预热掩盖、不加重复Token验证或全局filter改动。三业务文件仍只为仓库外草稿，未安装/验证；HTTP并发及响应前断开测试继续准备，尚无Task5接线通过结论。
+- 独立实源审查识别cold A24刷新调用点：postMore即使在配置/Redis/PDO前置之后，仍先于schema拒绝调用filter_str/sys_config而写缓存。05已先记录必要修复设计：refreshToken用真实Request::post('access_token', '', null)读取POST body原始签名字符串，非字符串受控401，直接单次刷新服务；登录原postMore/validator不变。不放宽冷401全零断言、不靠预热掩盖、不加重复Token验证或全局filter改动。三业务文件仍只为仓库外草稿，未安装/验证；HTTP并发及响应前断开测试定义已提交95b1e0cb，但未运行，现按用户要求跳过；尚无Task5接线通过结论。
 
 ## 未完成
 
-Task4完整A21、Task5对外端、Task6全部变更入口、Task7世代轮换/RDB恢复、Task8验证码/URL令牌与浏览器下载、Task9发布准备、Task10完整冻结回归和独立验收均待完成。当前HTTP通过仅限Task4上述30项；无整个MS0b或WORKER/BROWSER/EXTERNAL验收通过结论，接口实际在用情况未知。此报告不构成人工签收。
+Task4完整A21、Task5对外端、Task6全部变更入口、Task7世代轮换实现（RDB恢复验证按用户要求跳过）、Task8验证码/URL令牌与浏览器下载、Task9发布准备、Task10常规冻结回归和独立验收待完成；同类安全复现/故障验证已按用户要求跳过，完整安全验收缺口保留。当前HTTP通过仅限Task4上述30项；无整个MS0b或WORKER/BROWSER/EXTERNAL验收通过结论，接口实际在用情况未知。此报告不构成人工签收。
 
 results.jsonl当前共1082条INTEGRATION原始行：原Task1–3共822行，加Task4共190行，以及Task5 worker/selftest22行和对外旧服务基线48行。历史失败不抹除，原commit_sha不改写；Task1–3最后一轮239项及Task4最后38项全PASS，不能相加为整个里程碑验收。Task5前置17项通过仅证明隔离执行能力，wrapper额外诊断JSON单列；48项仍只是旧服务基线。UNIT-STUB43文本证据单独统计；整个MS0b未完成，后续任务与交付继续更新本记录。

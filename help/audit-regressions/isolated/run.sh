@@ -1,7 +1,24 @@
 #!/usr/bin/env bash
 set -euo pipefail
-source "$(dirname "$0")/bootstrap.sh"
 [[ $# -ge 2 ]] || { echo 'Usage: run.sh RUN_ID repository-relative-script [arguments...]' >&2; exit 2; }
+# The user requested these combined security/fault suites be skipped. Refuse
+# before bootstrap sourcing, RUN inspection, Docker, or any test side effects.
+# Exit 2 records non-execution; it must never be counted as a passing test.
+case "$2" in
+    help/audit-regressions/security.php|\
+    help/audit-regressions/isolated/selftest.php|\
+    help/audit-regressions/isolated/ms0a-auth.php|\
+    help/audit-regressions/isolated/ms0b-session-store.php|\
+    help/audit-regressions/isolated/ms0b-token.php|\
+    help/audit-regressions/isolated/ms0b-bootstrap.php|\
+    help/audit-regressions/isolated/ms0b-admin-http.php|\
+    help/audit-regressions/isolated/ms0b-http-workers.php|\
+    help/audit-regressions/isolated/ms0b-out-http.php)
+        echo 'Skipped at user request (2026-10-11); no test or Docker operation started. See docs/multi-merchant/05-plan-ms0b.md.' >&2
+        exit 2
+        ;;
+esac
+source "$(dirname "$0")/bootstrap.sh"
 audit_context "$1"; shift
 [[ -f "$audit_run_path/manifest.json" ]] || { echo 'Unknown run' >&2; exit 2; }
 [[ "$1" == help/audit-regressions/* && "$1" != *..* ]] || { echo 'Script outside approved regression directory' >&2; exit 2; }
