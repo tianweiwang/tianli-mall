@@ -95,11 +95,11 @@ git commit -m "test: isolated MySQL/Redis harness for auth regressions (ISO-FULL
 - Consumes: Task 1 的 harness
 - Produces: `ms0a-auth.php`（之后各任务只运行它，不修改已有断言；新增子场景可以追加；支持参数 `--only=A10,A20` 只运行指定用例，不带参数时运行全部）；`audit_forge_jwt(array $payload, string $key, string $alg = 'HS256'): string`（测试签发器，只用于构造 A17/A20/A27 的令牌，使用运行目录中的测试密钥）
 
-- [ ] **Step 1: 盘点各端登录入口**
+- [x] **Step 1: 盘点各端登录入口**（四端真实登录、只读探针、out 续签及 MCP 凭据入口已核对）
 
 在代码中确认并写进 `ms0a-auth.php` 顶部注释：admin 登录 `POST /adminapi/login`（`account`、`pwd`，不带验证码字段）；out 登录 `POST /outapi/access_token`、刷新 `POST /outapi/refresh_token`；客服登录入口（`kefuapi` 路由）；顾客账号密码登录入口（`api` 路由）；各端各选一个只读的受保护接口作为探针。
 
-- [ ] **Step 2: 写用例**
+- [x] **Step 2: 写用例**（85 个子场景；追加四端白名单篡改、out 软删除入口、limited 跨端会话回归；原期望不变）
 
 全部为 `INTEGRATION` 层，每个负向子场景都做 `audit_snapshot()` 前后对比（表：`eb_cache`、`eb_store_product`、`eb_system_admin`、`eb_out_account`、`eb_user`；Redis：白名单键模式），只允许 03 文档 §4.3 列出的变化。
 
@@ -126,7 +126,7 @@ git commit -m "test: isolated MySQL/Redis harness for auth regressions (ISO-FULL
 
 A02–A06、A08、A30 的用例在 Task 7 中追加（需要先完成路由盘点）。
 
-- [ ] **Step 3: 在基线上运行**
+- [x] **Step 3: 在基线上运行**（完整 baseline：24 PASS / 61 FAIL，exit 1；A09/A26 分类元数据复核：8 PASS / 13 FAIL，exit 1；没有环境退出或崩溃）
 
 ```bash
 git status --short          # 期望只有 ms0a-auth.php 与 token-forge.php 两个新文件
@@ -135,7 +135,7 @@ AUDIT_PHASE=baseline php help/audit-regressions/isolated/ms0a-auth.php; echo "ex
 
 Expected: 进程正常结束（`exit` 为 0 或 1，不能是 2 或崩溃）；基线结果写入运行目录。根据 01 文档推测，A12、A15、A16、A19、A27 和 A09 的部分组合在基线上应为 FAIL。**按实际结果记录**：没有复现的风险写明"基线未复现"及原因，不得调整夹具或代码去制造漏洞。
 
-- [ ] **Step 4: 提交测试**
+- [x] **Step 4: 提交测试**（本地测试提交先于所有认证修复）
 
 ```bash
 git add help/audit-regressions/isolated/ms0a-auth.php help/audit-regressions/isolated/lib/token-forge.php
