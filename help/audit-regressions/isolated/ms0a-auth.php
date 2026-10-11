@@ -504,6 +504,37 @@ foreach (['admin_super', 'admin_limited'] as $fixture) {
         } finally { ms0a_update('eb_system_admin', $id, ['status' => 1]); }
     });
 }
+ms0a_case('A15', 'kefu-disabled-after-login', 'disabled customer-service old JWT returns 401 and exact own session is revoked; restoring status requires a fresh login', '待复现风险', static function (): void {
+    $token = ms0a_prepare('kefu_101');
+    $originalStatus = audit_db()->query('SELECT status FROM eb_store_service WHERE id=101')->fetchColumn();
+    audit_expect($originalStatus !== false && (int)$GLOBALS['ms0a_accounts']['kefu_101']['id'] === 101, 'synthetic customer-service fixture must exist');
+    $setStatus = static function (int $status): void {
+        audit_guard_assert();
+        audit_db()->prepare('UPDATE eb_store_service SET status=? WHERE id=101')->execute([$status]);
+    };
+    $negative = static function (array $ownDeletions = []) use ($token): void {
+        audit_guard_assert();
+        $scope = ['tables' => ['eb_store_service' => null], 'redis' => []];
+        $before = audit_snapshot($scope);
+        ms0a_capture_negative(static fn(): array => ms0a_probe('kefu', $token), 401, $ownDeletions);
+        $after = audit_snapshot($scope);
+        $unchanged = $before['tables']['eb_store_service'] === $after['tables']['eb_store_service'];
+        ms0a_check($unchanged, 'customer-service table must remain unchanged by the negative request');
+        if (!$unchanged) {
+            $GLOBALS['ms0a_case']['db_diff'][] = ['table' => 'eb_store_service', 'before' => $before['tables']['eb_store_service'], 'after' => $after['tables']['eb_store_service']];
+        }
+        $GLOBALS['ms0a_case']['snapshots'][] = ['customer_service_table_before' => $before['tables']['eb_store_service'], 'customer_service_table_after' => $after['tables']['eb_store_service']];
+    };
+    try {
+        $setStatus(0);
+        $negative([[$token, 'kefu', 101]]);
+        $setStatus(1);
+        $negative();
+        $newToken = ms0a_login('kefu_101');
+        ms0a_check(!hash_equals($token, $newToken), 're-enabled customer-service account must obtain a distinct new session');
+        ms0a_assert_response(ms0a_probe('kefu', $newToken), 200);
+    } finally { $setStatus((int)$originalStatus); }
+});
 foreach (['soft-delete', 'physical-delete', 'record-absent'] as $mode) {
     ms0a_case('A16', $mode, 'business 401 and exact own session revoked; no business writes', $mode === 'soft-delete' ? '待复现风险' : '既有拒绝回归', static function () use ($mode): void {
         $id = $mode === 'record-absent' ? 909101 : 102;
