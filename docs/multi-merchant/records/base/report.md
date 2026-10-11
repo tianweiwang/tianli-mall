@@ -2,7 +2,7 @@
 
 ## P1 基本信息
 
-- 授权：L2；日期：2026-10-11；分支：`codex/audit-base`；未推送。
+- 初始 BASE 执行授权：L2；日期：2026-10-11；分支：`codex/audit-base`；初始交付未推送。后续批准的记录修正、契约修订和 L3 推送授权见文末补记。
 - 工作目录：`/Volumes/Kingston/cdx/projects/tianli-mall--audit-base`。
 - 起点 SHA：`3e2a1a158149dbf35b4438f5d317b6ec2316e166`；开工时远程 master 与此相同。
 - 备份快照：`9580c80381e9e03823d8d69495a54491a3c3a6a9`；只读来源：`/Volumes/Kingston/cdx/projects/tianli-mall--private-backup-20261007-tianli-crmeb`。
@@ -154,7 +154,7 @@ PHP 语法检查逐文件执行，共 21 个；以下资金或迁移脚本仅 `-
 | `/opt/homebrew/opt/php@8.2/bin/php -l help/audit-regressions/wallet-store.php` | 0 |
 | `/opt/homebrew/opt/php@8.2/bin/php -l help/migrations/theme-module.php` | 0 |
 
-会话 Git auto-sync 登记只读核对返回 `project_not_enabled`（exit=1）；未登记项目、未启动同步任务。本次明确禁止推送。
+会话 Git auto-sync 登记只读核对返回 `project_not_enabled`（exit=1）；未登记项目、未启动同步任务。初始 BASE 执行时禁止推送；后续用户单独授权本分支推送，见文末补记。
 
 ## 结果统计
 
@@ -170,7 +170,7 @@ PHP 语法检查逐文件执行，共 21 个；以下资金或迁移脚本仅 `-
 
 这些层级不可相加。记录层有 10 个核验子场景，对应矩阵 **Z01、Z03、Z05 三条用例，全部 PASS**。源码静态为 21 个语法命令；UNIT-STUB 为脚本原有 23 个子场景。每个 NOT RUN 计一个范围说明组，不虚构业务用例数量。`BASE-LINT`、`BASE-SECURITY`、`BASE-SCOPE` 是本报告补充编号，不修改验收矩阵。
 
-PASS 子场景 finding_kind 分布：{"新增契约": 31, "既有拒绝回归": 15, "既有修复回归": 8}。迁移和治理核验归类为新增契约，不将保留的历史拒绝称作本轮新增修复。
+PASS 子场景 finding_kind 分布：{"新增契约": 31, "既有修复回归": 23}。23 项归类表示来自 A1/A2 既有审计修复回归包，不表示新增了 23 个修复。其中 16 项完整断言依赖既有修复，另 7 项是行为原样保留的兼容对照；逐项依据见 `results.jsonl` 的 notes。迁移、治理核验和语法检查归类为新增契约。
 
 ## 关键用例
 
@@ -187,7 +187,9 @@ PASS 子场景 finding_kind 分布：{"新增契约": 31, "既有拒绝回归": 
 | Z05 | `audit-source-archived` | 见 Task 1 快照及 02 文档输入清单；未执行 master 业务测试 | 23/23 内容与备份去 CR 后一致；20 个新增文件；3 个导出源码与 master 相同且无差异 | 新增契约 | `task3-copy.json` |
 | Z05 | `generated-and-excluded-paths-preserved` | 见 Task 1 快照及 02 文档输入清单；未执行 master 业务测试 | 排除路径相对 master 无差异；备份状态不变；未添加、删除或执行本地运行产物 | 新增契约 | `verify-base.py` |
 
-`security.php` 保留 23 个原始用例，逐项原名和结果见 `results.jsonl` 与仓库外 `security.txt`。没有在 master 上重跑业务测试；23/23 是计划规定的既有审计基准与本次实际结果的核对。未登记路由/方法及既有豁免仍按 BASE 原测试通过，权限收紧属于后续 MS0a，不能据此宣称已完成。
+`security.php` 保留 23 个原始用例，逐项原名和结果见 `results.jsonl` 与仓库外 `security.txt`。独立复核方补充使用字节未变的测试脚本，分别加载固定 master 的相关类源码和 `AUDIT_BASE_SHA` 源码做 UNIT-STUB 对照：master 为 7 PASS / 16 FAIL / exit=1，AUDIT 为 23 PASS / 0 FAIL / exit=0。这是选定类源码的内存替身对照，没有启动完整 master 应用或执行真实业务集成测试。未登记路由/方法及既有豁免仍按 BASE 原测试通过，权限收紧属于后续 MS0a，不能据此宣称已完成。
+
+16 项完整断言包括 A1 拒绝行为修复 3 项、缺失方法键的无警告兼容修复 1 项，以及 A2 拒绝行为修复 6 项、拒绝前不解析上传服务的修复 6 项。后一组在 master 中虽已返回拒绝，却因提前解析上传服务而未通过完整断言；不能仅按响应结果或用例名称中的 rejected 将其归为既有拒绝回归。7 项兼容对照在两组源码下均 PASS，不计作新增修复。
 
 ## P6 证据位置
 
@@ -244,4 +246,14 @@ PASS 子场景 finding_kind 分布：{"新增契约": 31, "既有拒绝回归": 
 
 BASE 的执行要求均已验证；当前交付限于源码迁移、治理记录与 UNIT-STUB 回归。真实应用与前端运行结果不能由本次静态/内存替身结果推出。
 
-下一步为 **SP-BASE，等待验收**。按 11 文档，BASE 验收的 V4 独立复跑和 V7 独立代码审阅必须由未参与实现的复核方参与；执行方未自行签收，未创建 `acceptance.md`，README 状态保持原样。没有进入 MS0a，没有推送；推送须另行 L3 授权。
+下一步为 **SP-BASE，等待验收**。按 11 文档，BASE 验收的 V4 独立复跑和 V7 独立代码审阅必须由未参与实现的复核方参与；执行方未自行签收，未创建 `acceptance.md`，README 状态保持原样。初始交付时没有进入 MS0a、没有推送；后续用户授权见以下补记。
+
+## 2026-10-11 批准修正与推送补记
+
+用户批准修正 BASE 报告分类，并批准对 03、04、11 文档的契约修订。原 `AUDIT_BASE_SHA` 和 58 行测试记录的执行结果、期望、状态、层级、证据引用均保留；本次只修正 23 项 UNIT-STUB 的 `finding_kind` 和 notes 及本报告的解释。原有 16 份治理文档在 `AUDIT_BASE_SHA` 与备份字节一致的历史核验仍有效。
+
+契约修订另行提交为 `3110bd5b3df277c0d9469bcb8987c71165ae1cd0`（`docs: align MS0a tests with approved authorization contract`），仅涉及 03、04、11 文档。它要求后续 MS0a Task 7 在 SP-MS0a-1 确认后，将三个旧旁路的预期由放行收紧为拒绝，保留其他 20 项及前后证据；本次没有修改测试源码或鉴权实现。初始记录提交为 `538d3e384f55634f504efbca6b1a26b42682fbe8`。
+
+独立复核补充证据位于仓库外 `/tmp/base-independent-review-20261011-gfg1gx7c/`：`classification-recommendations.md`、`evidence/classification-recommendations.json`、`evidence/master-stub-source-manifest.json`、`evidence/master-stub-security.stdout`、`evidence/master-stub-security.stderr` 和 `evidence/security.stdout`。原五个提交范围核对见 `evidence/per-commit-scope-review.json`；77 项历史证据核对全部匹配，见 `evidence/historical-evidence-review.json`。这些补充对照不计入原 58 行结果，不提升测试层级，也不构成验收人签收。
+
+用户随后明确授权将这些提交推送到 GitHub，授权范围为 `codex/audit-base` 分支（L3）。推送前已核实仓库 `tianweiwang/tianli-mall` 为 PRIVATE，远程 master 仍为固定起点；实际推送结果及远程 SHA 核对在本轮回传中报告。该授权不包含合入 master、部署或代替验收人签收。隔离测试环境准备另获用户批准，但本次记录修正不表示环境已安装或 MS0a 已完成。
