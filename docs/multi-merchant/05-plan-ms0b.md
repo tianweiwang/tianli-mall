@@ -100,6 +100,9 @@ Redis 连接错误一律转换为 `AuthUnavailableException`。账号/会话用H
 **Files:**
 - Create: `crmeb/config/auth.php`、`crmeb/crmeb/services/auth/AuthTokenV2.php`、`crmeb/crmeb/services/auth/CredentialStamp.php`
 - Modify: `crmeb/crmeb/services/AuthConfigGuard.php`（新增 `authConfig(): array`，校验 §Global Constraints 中的必填项）
+- Modify（同一认证模块的必要构造调用点）: `crmeb/crmeb/services/auth/AuthSessionStore.php`，新增 `fromConfig(): self`；用已校验配置创建独立、无原生prefix/serializer的Redis连接，connect/read timeout为2/1秒，auth/select失败受控503。不得复用或改动业务Cache原生客户端选项。
+- Create（退出绑定核对的必要调用点）: `crmeb/crmeb/services/auth/lua/revoke_session.lua`；Store增加 `revokeBoundSession(app,sid,id,type,audience,version,tokenDigest): void`，先原子核对持久、已初始化且未blocked的账号版本与active会话全部身份/摘要/期限，再只删对应sid。Token.revoke无数据库回调，核对服务器记录中的戳结构即可；实际退出接口仍先经过完整middleware当前凭据认证。不得把纯JWT验签当作直接DEL依据；缺账号/会话或已consumed均401零写入。Task2两参revokeSession幂等原语保持不变。
+- Create: `help/audit-regressions/isolated/ms0b-token.php`（真实框架/Redis/JWT/PDO摘要读取；实际配置、声明、时间、冷语言缓存与文件缓存/log、到期点、签发/刷新故障和常驻实例边界）。
 
 **Interfaces:**
 - Produces:
@@ -111,6 +114,8 @@ public static function for(string $app, string $id, string $credentialDigest): s
 // crmeb\services\auth\AuthTokenV2（无上次请求身份状态，仅持有Store依赖）
 public function __construct(AuthSessionStore $store)
         // 每次调用重新读取AuthConfigGuard::authConfig；配置epoch必须与store.epoch()一致，否则503
+public static function fromConfig(): self
+        // 生产调用者通过AuthSessionStore::fromConfig创建独立且有界的连接；测试可显式注入真实故障连接
 public function issue(string $app, string $id, string $version, string $credentialStamp): array
         // 返回 ['token' => string, 'exp' => int, 'sid' => string]；会话写入成功后才返回
 public function verify(string $app, string $token, callable $currentCredentialDigest): array
@@ -121,7 +126,7 @@ public function refresh(string $app, string $token, callable $currentCredentialD
 public function revoke(string $app, string $token): void
 ```
 
-- [ ] **Step 1: 写用例** A22：受控签发器生成签名有效、但 `auth_schema` 缺失或为 1、`iss`/`aud`/`type` 不匹配、缺少 `sid` 或 `session_version` 的令牌 → 全部 401。A10-v2：`AUTH_SESSION_EPOCH`、`AUTH_STAMP_KEY` 缺失或过短 → 503。
+- [ ] **Step 1: 写用例** A22：受控签发器生成签名有效、但 `auth_schema` 缺失或为 1、`iss`/`aud`/`type` 不匹配、缺少 `sid` 或 `session_version` 的令牌 → 全部 401。A10-v2：`AUTH_SESSION_EPOCH`、`AUTH_STAMP_KEY` 缺失或过短 → 503。补必要声明验证：id规范正整数；sid/version为32位小写hex；iat/nbf/exp必需严格整数且符合次序与60秒容差（即使nbf已存在也须独立拒绝未来iat）；拒绝v2中的pwd凭据字段。配置缺字段/错类型/无效TTL均503，默认type/admin-out和30天TTL兼容既有正常路径。回调仅在签名/声明全通过后调用；当前摘要为空/账号不存在401，实际数据库依赖故障503。签发持久成功后返回；刷新先验证、再原子兑换，真实执行后丢应答不返回token或补偿旧会话；revoke仅本人app/sid。配置世代更新后旧Store实例必须503，不能沿用旧namespace；新Store验证旧token401且零写入。
 - [ ] **Step 2: 运行确认失败；Step 3: 实现；Step 4: 运行通过；Step 5: 提交** `feat(auth): v2 token issue/verify bound to app audience and server session`。
 
 ### Task 4: 管理端接入 v2
