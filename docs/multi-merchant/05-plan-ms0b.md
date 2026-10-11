@@ -170,6 +170,8 @@ public function revoke(string $app, string $token): void
 
 2026-10-11 后续普通功能开发：新增独立 `help/audit-regressions/isolated/ms0b-out-functional.php`，只检查合成账号正常HTTP登录及v2响应、受保护分类读取、一次正常刷新后新会话读取、同一服务实例A/B/A身份及正常MCP初始化/分类工具。用新建ISO-FULL实例及既有fixture，观察全部表和Redis实际变化，明确只允许本次正常登录/刷新目标统计与会话、正常输入缓存变化；令牌与密码不写证据。先保留正常流程在旧服务上的实际基线，再安装本Task已审查的三个业务文件并验证。综合安全套件保持停用，不重复负向凭据、失效令牌、配置/依赖故障、并发或断连试验；正常检查通过仅支持功能接线结论，原安全覆盖缺口保留。
 
+- [x] 普通功能接线与本地提交：测试6d8c86ca先于业务3acfd5ae；新RUN=20261011143154925356旧服务正常基线3PASS/3FAIL（6条原始结果，原PowerShell包装未回传Bash退出码，不把宿主exit0记为通过）。实现后F01–F06全部PASS，原生Bash exit0，7个正式观察窗口完整核对158表、全部Redis值/期限及runtime；准备窗口单列、不造PASS。正常刷新只请求一次，用实际新token继续读取；MCP协议保持。3业务文件与受审草稿/测试时哈希相同。专用资源已teardown exit0并复查无残留；详情见report。原安全复现/故障/并发/断连验证继续跳过，完整Task5安全验收不标通过。
+
 **Files:**
 - Create（普通功能检查）: `help/audit-regressions/isolated/ms0b-out-functional.php`；仅复用现有harness、单worker和健康依赖，不引用已停用的综合套件、token-forge或fault。
 - Modify: `crmeb/app/services/out/OutAccountServices.php`（`authLogin()`、`parseToken()`、`refresh()`）；`crmeb/app/outapi/OutApiExceptionHandle.php`（同一受控异常必要返回调用点，直接JSON、不得记录请求参数/底层异常）
@@ -191,8 +193,11 @@ public function revoke(string $app, string $token): void
 
 2026-10-11 入口清单已完成源码核对：10个既有账号变更入口、2个新建持久化入口，包含事业部直接模型写入、批量状态更新和物理删除的最外层事务。清单见 `records/ms0b/credential-writer-inventory.md`；读取时源码与当前对应writer文件一致，只有静态证据，不代表流程已接入或通过运行检查。后续并发、依赖故障和部分失败复现保持跳过，普通修改/创建流程检查单独记录。
 
+普通事务设计见 `records/ms0b/account-change-design.md`：实际框架没有afterCommit/公开事务深度接口，Guard持有已知最外层transaction，并用真实PDO身份及inTransaction核对提交；内层具名writer只复用同app、同连接、已冻结主体集合的本次上下文，不提前complete、不在业务写入后扩张保护集合。没有受管上下文但已有PDO事务时拒绝接线，不能把模型内层savepoint当成外层提交。上下文仅活在本次DB闭包并finally清空；新建路径保留自动id及原普通事务，不伪造旧subject；批量按真实管理员id冻结，不用事业部uid代替。实现尚未开始，这些是后续接线依据，不是运行通过结论。
+
 **Files:**
 - Create（已核对的入口记录）: `docs/multi-merchant/records/ms0b/credential-writer-inventory.md`
+- Create（普通事务设计记录）: `docs/multi-merchant/records/ms0b/account-change-design.md`
 - Create: `crmeb/crmeb/services/auth/AccountChangeGuard.php`
 - Modify: 所有修改管理员密码、状态、删除标记的入口（至少 `SystemAdminServices::save()`、`updateAdmin()`、删除方法），以及所有修改对外账号密钥、状态、删除标记的入口（至少 `OutAccountServices` 的更新方法、`SystemOutAccount::set_status()`、删除方法）。已定位必要调用点还含 `DivisionServices::divisionSave()` 直接模型写密码、`setDivisionStatus()` 批量更新、`delDivision()` 批量删除；批量变更须先保护全部确切目标，再单一事务改库，再逐owner解除，不能只包SystemAdmin保存方法。开工时先 `grep` 列出全部入口，写进报告。
 

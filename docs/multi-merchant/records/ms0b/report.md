@@ -1,6 +1,6 @@
 # MS0b 进度记录（未交付、未签收）
 
-当前阶段：L2 隔离开发，Task1–3已实现并验证；Task4管理端接线已本地提交，30项HTTP和8项启动/缓存兼容回归通过，完整A21仍待Task6联合验证。Task5–10待完成，整个MS0b尚未完成；对外端尚未接入v2。没有推送、部署、外部通知或真实环境会话切换。README验收状态和SECURITY_BASE_SHA未由执行方改写。
+当前阶段：L2 隔离开发，Task1–3已实现并验证；Task4管理端接线已本地提交，30项HTTP和8项启动/缓存兼容回归通过。Task5对外端已接入v2并本地提交，6项独立正常业务检查通过；Task6–10待完成，整个MS0b尚未完成。按用户要求跳过的安全复现、故障和并发验证保留未验收缺口。没有推送、部署、外部通知或真实环境会话切换。README验收状态和SECURITY_BASE_SHA未由执行方改写。
 
 开发起点为MS0a交付3e7c966ecfa084ff4f219b03c61ed0efbac4caac；用户明确委托按规划自主继续并解决问题，V10人工签收仍待。工作目录H:/天俪商城/tianli-mall--ms0b，分支codex/ms0b。会话状态仅Redis，无新数据库表/列/种子。
 
@@ -69,7 +69,7 @@ ISO-FULL，RUN=20261011092042df3a82：现有PHP8.2镜像、独立internal网络�
 - 当前无Task4同秒登录/改密竞争、永久版本撤销或状态重启复活通过结论；这些原A21要求保留在Task6联合验证。MS0a全部106项在v2输入下的完整回归仍待Task10，不以本轮30项代替。
 - Task4三次RUN=20261011110747e9e9a8、20261011112142dd83e0、202610111127061c6db5均已按manifest核对并teardown、exit0；仅删除各自专用容器、internal网络和9个卷，仓库外原始证据保留。未清理日志以隐藏失败，后续测试使用新RUN。
 
-## Task5：对外接线前置（业务接线未实现）
+## Task5：对外接线前置历史与普通功能接线
 
 RUN=2026101112350380d12a，新建ISO-FULL专用内部网络、MySQL/Redis、9卷及真实初始化；完成worker前置及48项旧服务基线后，已核manifest并teardown、exit0，全部专用资源删除、仓库外证据保留。生产OutAccountServices、OutApiExceptionHandle及Login入口未修改。此阶段不声称完成A25 HTTP刷新。
 
@@ -82,10 +82,37 @@ RUN=2026101112350380d12a，新建ISO-FULL专用内部网络、MySQL/Redis、9卷
 - 基本48项测试先提交5ac0d37e，lint通过、源合同经独立只读审查；真实旧服务完整基线6PASS/42FAIL、exit1，raw=ms0b-out-http-baseline-20261011125527.jsonl，SHA256=c5bdd451d3679dddff739d56da3be3e47b7cfb4cd0bb890db023f2ebc6b837c9。真实service默认/显式null、空串、字符串0全部跳过旧密码核对，产生目标统计与旧会话缓存写入；HTTP缺失/null/空串原validator400和错误/禁用/删除凭据原401共6项已通过。旧schema/缺sid、当前账号状态、冷配置和Redis/DB依赖边界等未满足新契约如实FAIL；不可拿未执行的草稿当修复结果。
 - 8项MCP基线全部仅失败于“actual application and server logs contain no private credential or token”一条：此前旧HTTP数据库故障污染了日志；当前MCP响应及其全表/缓存/期限/runtime零写断言均通过。initialize和真实分类工具仍返回JSON-RPC result，错误/禁用/删除/缺header返回-32600；缺JWT epoch正常可用。不擦日志或把这8项改报PASS，也不声称出现MCP协议回归。原计划的完整after未执行；含安全复现/故障的综合套件现按用户要求停止，常规业务检查另行选择，既有8项FAIL不改写。
 - 未执行草稿的静态复核修正留在测试提交中：刷新old sid仅status允许变，绝对期限仍逐键核对；CLI专用prefix必须初始空，最终只精确清本次新增键；公开攻击探针0不纳整份log/JWT子串私有值扫描，真实随机密码/摘要/token/marker/部署key匹配全部保留。合成fixture两非空明文字段和关闭推送目标只在专用数据中设置，观察后精确还原；不改业务权限种子。
-- 独立实源审查识别cold A24刷新调用点：postMore即使在配置/Redis/PDO前置之后，仍先于schema拒绝调用filter_str/sys_config而写缓存。05已先记录必要修复设计：refreshToken用真实Request::post('access_token', '', null)读取POST body原始签名字符串，非字符串受控401，直接单次刷新服务；登录原postMore/validator不变。不放宽冷401全零断言、不靠预热掩盖、不加重复Token验证或全局filter改动。三业务文件仍只为仓库外草稿，未安装/验证；HTTP并发及响应前断开测试定义已提交95b1e0cb，但未运行，现按用户要求跳过；尚无Task5接线通过结论。
+- 独立实源审查识别cold A24刷新调用点：postMore即使在配置/Redis/PDO前置之后，仍先于schema拒绝调用filter_str/sys_config而写缓存。05已先记录必要修复设计：refreshToken用真实Request::post('access_token', '', null)读取POST body原始签名字符串，非字符串受控401，直接单次刷新服务；登录原postMore/validator不变。不放宽冷401全零断言、不靠预热掩盖、不加重复Token验证或全局filter改动。此前三业务文件仅为仓库外草稿，未安装/验证；现已完成下述普通功能接线。HTTP并发及响应前断开测试定义已提交95b1e0cb，但未运行，现按用户要求跳过；尚无Task5接线通过结论。
+
+## Task5：独立正常功能验证（已接线，安全覆盖仍按要求跳过）
+
+测试提交6d8c86ca，业务提交3acfd5ae2dc63c16bd2cc8bdd846f3c73bb5447b。三个业务文件为OutAccountServices、OutApiExceptionHandle、outapi Login；其字节哈希与受审草稿和运行时hash一致。登录/parse/refresh统一用v2模块，正常统计只写last_time/ip；auth_info省略appsecret/apppwd/push_password，保留原规则形态；MCP、后台CRUD和推送读取未改。三项PHP8.2 lint和diff检查通过，独立静态复核无遗留必须修复项。
+
+RUN=20261011143154925356，仅使用既有隔离初始化和合成账号。独立ms0b-out-functional.php只有F01–F06正常场景，不引用综合套件、fault或token-forge，不更改凭据/状态，不重发刷新前的token。正常初始化（两账号登录、分类首用缓存）单独保存完整变化摘要，不写成PASS；正式七个窗口检查全部158张表、所有Redis实际值和TIME/PTTL绝对期限、真实runtime文件/日志。目标last_time/ip精确核对；会话写入只允许实际正常返回token所绑定的键；其他行/列/业务缓存不变。
+
+| 正常检查 | 旧服务基线 | 接线后 |
+|---|---|---|
+| F01 实际HTTP登录、v2会话与auth_info | FAIL：缺v2绑定/DTO契约 | PASS |
+| F02 实际授权分类读取、8列和日期格式/顺序 | PASS | PASS |
+| F03 一次正常刷新、实际新token读取及真实会话期限 | FAIL：正常请求已执行，缺v2会话契约 | PASS |
+| F04 同一真实服务实例A/B/A身份DTO | FAIL：DTO仍含待隐藏字段 | PASS |
+| F05 正常MCP header initialize | PASS | PASS |
+| F06 正常MCP只读分类工具、实际数据库行/数量 | PASS | PASS |
+
+基线3PASS/3FAIL；原PowerShell包装仅返回宿主exit0，没有捕获Bash原生码，不能以此记成功，失败结论来自六条实际记录。该包装缺口已在仓库外summary注明；未据无法检索到的Docker历史事件猜写exit码。修复后6PASS、Bash原生exit0且宿主exit0。以下原始文件和source元数据保留：
+
+- ms0b-out-functional-baseline-20261011145132.jsonl，SHA256=976e31102443a9c8228b6a9f566f1356a6cd2498ba4bb4b9fa7e5d8afc07fd7c。
+- ms0b-out-functional-after-20261011145454.jsonl，SHA256=7f5c2ee44e6acdad4c054bcbadfad4a206321bd2cb3efe8d50a69fabda3d3238。
+- task5-functional-tested-source.json保留测试时HEAD=6d8c86ca及当时3个未提交业务文件哈希，注明提交后内容一致，不改raw commit_sha。测试脚本SHA256=7b9670298bf9e98bfbf347ae305cfc30ad81d6113461b2a0c597d6181c159e78。
+
+本RUN已teardown、manifest身份核对通过、Bash exit0；3个专用容器、隔离网络、9个专用卷移除并复查无残留。证据根C:/Users/Vwang/.tianli-audit/20261011143154925356/evidence保留。这个6项通过只证明正常功能接线，不替代已跳过的原安全/故障/并发/断连验证或整个MS0b验收。
+
+## Task6：源码入口与普通事务设计（尚未实现）
+
+credential-writer-inventory.md记录10个既有writer和2个新建持久化入口，account-change-design.md记录真实最外层事务及本次受管上下文。已有入口源在读取基线至Task5接线前保持一致；OutService后续行号随接线变化，按方法复核。框架真实transaction对false也提交、合法void可提交，没有afterCommit；Guard后续需持有真正外层业务事务，在实际PDO退出事务后才complete，不能在Division内部模型保存处解除。普通新建保留自动id/既有事务，不创建虚假旧subject保护。此处只有源审和设计证据，尚无AccountChangeGuard实现或Task6运行通过结论；跳过的故障/并发试验未准备或执行。
 
 ## 未完成
 
-Task4完整A21、Task5对外端、Task6全部变更入口、Task7世代轮换实现（RDB恢复验证按用户要求跳过）、Task8验证码/URL令牌与浏览器下载、Task9发布准备、Task10常规冻结回归和独立验收待完成；同类安全复现/故障验证已按用户要求跳过，完整安全验收缺口保留。当前HTTP通过仅限Task4上述30项；无整个MS0b或WORKER/BROWSER/EXTERNAL验收通过结论，接口实际在用情况未知。此报告不构成人工签收。
+Task4完整A21、Task5原安全覆盖、Task6全部变更入口、Task7世代轮换实现（RDB恢复验证按用户要求跳过）、Task8验证码/URL令牌与浏览器下载、Task9发布准备、Task10常规冻结回归和独立验收待完成；同类安全复现/故障验证已按用户要求跳过，完整安全验收缺口保留。正常接线运行证据为Task4上述30项及Task5独立F01–F06（含真实HTTP、同实例CLI和MCP）；无整个MS0b或WORKER/BROWSER/EXTERNAL验收通过结论，接口实际在用情况未知。此报告不构成人工签收。
 
-results.jsonl当前共1082条INTEGRATION原始行：原Task1–3共822行，加Task4共190行，以及Task5 worker/selftest22行和对外旧服务基线48行。历史失败不抹除，原commit_sha不改写；Task1–3最后一轮239项及Task4最后38项全PASS，不能相加为整个里程碑验收。Task5前置17项通过仅证明隔离执行能力，wrapper额外诊断JSON单列；48项仍只是旧服务基线。UNIT-STUB43文本证据单独统计；整个MS0b未完成，后续任务与交付继续更新本记录。
+results.jsonl当前共1094条INTEGRATION原始行：原Task1–3共822行，加Task4共190行，以及Task5 worker/selftest22行、对外旧服务综合基线48行、普通功能基线6行和修复后6行。原1082行逐字节保持，历史失败不抹除，原commit_sha不改写；Task1–3最后一轮239项、Task4最后38项、Task5普通功能最后6项各自全PASS，不能相加为整个里程碑验收。Task5前置17项通过仅证明隔离执行能力，wrapper额外诊断JSON单列；48项仍只是旧服务基线，其综合after已按用户要求停止。UNIT-STUB43文本证据单独统计；整个MS0b未完成，后续任务与交付继续更新本记录。
