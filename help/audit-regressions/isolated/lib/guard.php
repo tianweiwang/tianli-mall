@@ -21,7 +21,7 @@ function audit_db(): PDO { return audit_pdo(audit_config()['database']); }
 function audit_redis(): Redis
 {
     $redis = new Redis();
-    $redis->connect('audit-redis', 6379, 2.0);
+    $redis->connect('audit-redis', 6379, 2.0, null, 0, 1.0);
     $redis->auth(audit_config()['redis_password']);
     $redis->select(0);
     return $redis;

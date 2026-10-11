@@ -42,8 +42,8 @@
 - Produces: 复用 compose 服务 audit-app、audit-runner 和实际名为 isolation 的内部网络（internal=true），源代码只读、runtime专用可写；audit_fault_redis(string $mode): void 的模式为 pause/unpause/stop/start。FaultyRedis继承PHP原生Redis，构造参数为真实Redis与故障计划；已反射确认扩展的方法签名，委托真实连接，可在指定命令前后抛错/断连，不用于生产。
 
 - [x] **Step 1: 自检用例**（264fbcff测试先提交；新RUN=20261011092042df3a82，12项基线8PASS/4FAIL，exit1；4FAIL均因故障适配器未实现，无环境退出）：Z02、Z06、Z07 在 ISO-FULL 下重跑；新增子场景 `no-egress`（runner 内 `curl -m 5 https://example.com` 必须失败）、`no-host-ports`（核对实际Docker端口绑定为空，等价于docker port无输出），及真实Redis命令前失败/执行后响应丢失/执行后断连/专用服务pause-unpause-stop-start恢复；全部全键快照与双哨兵不变。先提交测试并保留适配器未实现时的正常FAIL，不制造已经具备的ISO属性失败。
-- [ ] **Step 2: 实现并运行自检**，期望全部 PASS。
-- [ ] **Step 3: 提交** `test: upgrade isolated harness to ISO-FULL with fault injection`。
+- [x] **Step 2: 实现并运行自检**（12/12 PASS，exit0；真实pause/stop均有界失败、恢复双哨兵及全Redis不变。首次after10PASS/2FAIL及exit2保留：修复pause后错误健康检查；原生EVAL状态严格true/OK语义有真实只读诊断，不改变业务/副作用断言）
+- [x] **Step 3: 提交**（本地Task1故障适配器/控制/文档；测试提交264fbcff先于实现；未推送）`test: add guarded Redis fault injection to existing ISO-FULL harness`。
 
 ### Task 2: AuthSessionStore
 

@@ -54,12 +54,15 @@ product-rule list. Source remains read-only inside containers. The EXIT trap
 removes only its own probe; teardown provides the same recovery cleanup. A
 directory created for that run is removed only when empty and its marker matches.
 
-Baseline runs require a separate worktree with business source identical to
+Historical MS0a baseline runs require a separate worktree with business source identical to
 `9685731dcd116784d38e6bbdb902cec3c0c84975` and no changes under crmeb. Copy only
 the committed regression harness from the frozen verification source into that
 worktree, bootstrap a new dedicated run there, and use `AUDIT_PHASE=baseline`.
-The host wrapper rejects baseline labelling on changed or repaired business
-source. Never label an after run as baseline just by changing the phase variable.
+The host wrapper rejects historical MS0a baseline labelling on changed or repaired business
+source. Never relabel an after run as historical baseline just by changing phase.
+
+MS0b pre-implementation tests use baseline with the actual development-parent SHA.
+They are not the historical AUDIT_BASE_SHA: keep both provenance and failures.
 
 Every test/app startup checks the run identity, registered container addresses,
 internal network, database and Redis sentinels, and restricted database grants.
@@ -76,3 +79,18 @@ and EXTERNAL coverage is not implied by this environment.
 On startup failure, inspect only this run's container status and sanitized
 runtime log. Never solve an environment failure by using a shared instance,
 loosening the guard, changing assertions or deleting another project's data.
+For MS0b harness validation, set AUDIT_MILESTONE=MS0b before calling run.sh with
+selftest.php. The original six checks remain; six extra integration checks cover
+no egress, no database/cache host bindings, real EVAL before/after/disconnect
+faults, and manifest-owned Redis pause/unpause/stop/start. Every control action
+rechecks actual container/network/volume identities. Recovery is authorized
+without requiring an unavailable Redis, then confirms its sentinel and full
+startup guard. EXIT restores any faulted service and confirms its sentinel.
+Only exact control files belonging to this RUN are removed before a new run.
+
+FaultyRedis is a test-only subclass delegating to a real Redis connection. A plan
+entry has command, occurrence (one-based), when (before/after), and action
+(throw/disconnect). Installed phpredis returns true for a default EVAL status OK;
+tests accept strict true or literal OK and also check the actual stored value.
+No token-return or single-use-session guarantee is inferred from adapter tests:
+those require AuthSessionStore/AuthTokenV2 and their integration suites.

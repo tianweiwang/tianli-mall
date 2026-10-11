@@ -16,12 +16,32 @@ if [[ "$AUDIT_PHASE" == baseline && "$1" == help/audit-regressions/isolated/ms0a
     fi
 fi
 audit_register
+for action in pause unpause stop start; do
+    for suffix in request done; do
+        control="$audit_run_path/$action-redis.$suffix"
+        if [[ -f "$control" ]]; then
+            [[ "$(cat "$control")" == "$AUDIT_RUN_ID" ]] || { echo 'Foreign service control file; refused' >&2; exit 2; }
+            rm -- "$control"
+        fi
+    done
+done
 crud_probe="$audit_repo/crmeb/app/adminapi/route/crud/audit-ms0a.php"
 crud_directory_marker="$audit_run_path/crud-probe-directory-created"
 probe_installed=false
 redis_stopped=false
+redis_paused=false
+audit_redis_service_control() {
+    local action="$1"
+    audit_collect_resources
+    audit_compose run --rm --no-deps -T audit-bootstrap help/audit-regressions/isolated/lib/harness.php __authorize_redis_control
+    audit_compose "$action" audit-redis >/dev/null
+    if [[ "$action" == start || "$action" == unpause ]]; then
+        audit_compose run --rm --no-deps -T audit-bootstrap help/audit-regressions/isolated/lib/harness.php __check_redis
+    fi
+}
 audit_runner_cleanup() {
-    if [[ "$redis_stopped" == true ]]; then audit_compose start audit-redis >/dev/null; fi
+    if [[ "$redis_paused" == true ]]; then audit_redis_service_control unpause; fi
+    if [[ "$redis_stopped" == true ]]; then audit_redis_service_control start; fi
     if [[ "$probe_installed" == true && -f "$crud_probe" && "$(head -n 1 "$crud_probe")" == "<?php // AUDIT-RUN $AUDIT_RUN_ID" ]]; then
         [[ "$(realpath -m "$crud_probe")" == "$audit_repo/crmeb/app/adminapi/route/crud/audit-ms0a.php" ]] || return 2
         rm -- "$crud_probe"
@@ -57,16 +77,16 @@ fi
 audit_compose run --rm --no-deps -T audit-runner "$@" &
 runner_pid=$!
 while kill -0 "$runner_pid" 2>/dev/null; do
-    for action in stop start; do
+    for action in pause unpause stop start; do
         request="$audit_run_path/$action-redis.request"
         acknowledgement="$audit_run_path/$action-redis.done"
         if [[ -f "$request" && ! -f "$acknowledgement" ]]; then
             [[ "$(cat "$request")" == "$AUDIT_RUN_ID" ]] || { echo 'Invalid service control identity' >&2; exit 2; }
-            audit_compose "$action" audit-redis >/dev/null
-            if [[ "$action" == stop ]]; then redis_stopped=true; else
-                redis_stopped=false
-                audit_compose run --rm --no-deps -T audit-bootstrap help/audit-regressions/isolated/lib/harness.php __check_redis
-            fi
+            audit_redis_service_control "$action"
+            if [[ "$action" == pause ]]; then redis_paused=true; fi
+            if [[ "$action" == unpause ]]; then redis_paused=false; fi
+            if [[ "$action" == stop ]]; then redis_stopped=true; fi
+            if [[ "$action" == start ]]; then redis_stopped=false; fi
             printf '%s\n' "$AUDIT_RUN_ID" > "$acknowledgement"
         fi
     done

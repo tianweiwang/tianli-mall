@@ -141,7 +141,8 @@ if (getenv('AUDIT_MILESTONE') === 'MS0b') {
                 if ($fault['action'] === 'disconnect') {
                     audit_expect(!$delegate->isConnected(), 'disconnect fault must actually close the real Redis connection');
                 } elseif ($fault['when'] === 'before') {
-                    audit_expect($faulty->eval("return redis.call('SET', KEYS[1], ARGV[1], 'EX', 120)", [$key, 'next-command'], 1) === 'OK'
+                    $next = $faulty->eval("return redis.call('SET', KEYS[1], ARGV[1], 'EX', 120)", [$key, 'next-command'], 1);
+                    audit_expect(in_array($next, [true, 'OK'], true)
                         && $observer->get($key) === 'next-command', 'fault occurrence must affect only the first EVAL; next command must execute against real Redis');
                 }
             } finally {

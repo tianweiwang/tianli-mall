@@ -293,6 +293,34 @@ function audit_authorize_cleanup(): void
     foreach ($volumes as $volume) { audit_expect(str_starts_with($volume, $manifest['project'] . '_'), 'foreign volume rejected'); }
     echo "Cleanup identities verified against manifest\n";
 }
+function audit_authorize_redis_control(): void
+{
+    $manifest = audit_manifest();
+    $runId = getenv('AUDIT_RUN_ID');
+    audit_expect(getenv('AUDIT_ISOLATED') === '1' && ($manifest['run_id'] ?? '') === $runId
+        && ($manifest['project'] ?? '') === 'tianli-audit-' . $runId, 'service control manifest rejected');
+    $network = json_decode(file_get_contents(audit_run_dir() . '/network.json'), true, 512, JSON_THROW_ON_ERROR);
+    audit_expect($network['Id'] === $manifest['network']['id'] && $network['Internal'] === true
+        && ($network['Labels']['tianli.audit.run'] ?? '') === $runId
+        && ($network['Labels']['com.docker.compose.project'] ?? '') === $manifest['project'], 'service control network rejected');
+    $matches = [];
+    foreach (file(audit_run_dir() . '/containers.jsonl', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+        $item = json_decode($line, true, 512, JSON_THROW_ON_ERROR);
+        if (($item['labels']['com.docker.compose.service'] ?? '') === 'audit-redis') { $matches[] = $item; }
+    }
+    audit_expect(count($matches) === 1, 'service control requires one actual Redis container');
+    $redis = $matches[0];
+    audit_expect($redis['id'] === $manifest['services']['audit-redis']['id']
+        && ($redis['labels']['tianli.audit.run'] ?? '') === $runId
+        && ($redis['labels']['com.docker.compose.project'] ?? '') === $manifest['project'], 'service control Redis identity rejected');
+    foreach (array_keys($redis['networks']) as $name) {
+        audit_expect($name === $network['Name'], 'service control foreign network rejected');
+    }
+    foreach ($redis['ports'] ?? [] as $binding) { audit_expect($binding === null, 'service control host port rejected'); }
+    audit_expect(audit_volume_identities($manifest) === $manifest['volume_identities'], 'service control volume identities rejected');
+    echo "Manifest-owned Redis service control authorized\n";
+}
+
 function audit_check_credentials(): void
 {
     audit_expect(audit_manifest()['run_id'] === getenv('AUDIT_RUN_ID'), 'credential check identity rejected');
@@ -353,7 +381,7 @@ function audit_serve(): void
 }
 if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
     try {
-        match ($argv[1] ?? '') { '__prepare' => audit_prepare(), '__prepare_probe' => audit_prepare(false), '__register' => audit_register_resources(), '__seed' => audit_seed(), '__initialize_files' => audit_initialize_files(), '__serve' => audit_serve(), '__check_credentials' => audit_check_credentials(), '__check_redis' => audit_check_redis(), '__authorize_cleanup' => audit_authorize_cleanup(), default => throw new RuntimeException('unknown harness operation') };
+        match ($argv[1] ?? '') { '__prepare' => audit_prepare(), '__prepare_probe' => audit_prepare(false), '__register' => audit_register_resources(), '__seed' => audit_seed(), '__initialize_files' => audit_initialize_files(), '__serve' => audit_serve(), '__check_credentials' => audit_check_credentials(), '__check_redis' => audit_check_redis(), '__authorize_cleanup' => audit_authorize_cleanup(), '__authorize_redis_control' => audit_authorize_redis_control(), default => throw new RuntimeException('unknown harness operation') };
     } catch (Throwable $error) {
         fwrite(STDERR, 'BLOCKED ' . get_class($error) . ': ' . ($error instanceof PDOException ? 'isolated database operation failed; SQLSTATE ' . $error->getCode() : $error->getMessage()) . "\n");
         exit(2);
