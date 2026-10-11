@@ -84,7 +84,7 @@ class SystemAdmin extends BaseModel
      */
     public function searchAccountAttr($query, $value)
     {
-        if ($value) {
+        if ($value !== null && $value !== '') {
             $query->where('account', $value);
         }
     }

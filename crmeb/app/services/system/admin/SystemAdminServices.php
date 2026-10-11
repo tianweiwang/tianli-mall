@@ -104,6 +104,28 @@ class SystemAdminServices extends BaseServices
         return $adminInfo;
     }
 
+    /** Use the actual DAO match instead of guessing its database collation. */
+    public function loginFailureIdentity(string $account): string
+    {
+        try {
+            $adminInfo = $this->dao->accountByAdmin($account);
+            if ($adminInfo) {
+                $id = (string)$adminInfo->getData('id');
+                $storedAccount = $adminInfo->getData('account');
+                if (preg_match('/^[1-9][0-9]{0,18}$/D', $id) !== 1 || !is_string($storedAccount)) {
+                    throw new \RuntimeException();
+                }
+                $identity = ['kind' => 'known', 'id' => $id, 'account' => $storedAccount];
+            } else {
+                // Login's existing alphaDash scene has already accepted input.
+                $identity = ['kind' => 'missing', 'account' => strtolower($account)];
+            }
+            return json_encode($identity, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+        } catch (\Throwable $error) {
+            throw new AuthUnavailableException();
+        }
+    }
+
     /**
      * 文件管理员登陆
      * @param string $account
@@ -269,9 +291,6 @@ class SystemAdminServices extends BaseServices
         } catch (\ReflectionException $e) {
         }
 
-        if (CacheService::get('login_captcha', 1) > 1) {
-            $data['login_captcha'] = 1;
-        }
         return $data;
     }
 

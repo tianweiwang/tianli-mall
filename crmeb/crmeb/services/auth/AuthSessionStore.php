@@ -6,7 +6,7 @@ namespace crmeb\services\auth;
 use crmeb\exceptions\AuthSessionException;
 use crmeb\exceptions\AuthUnavailableException;
 use crmeb\services\AuthConfigGuard;
-use think\facade\Config;
+use crmeb\services\BoundedRedisConnection;
 
 /**
  * Redis is the authority for v2 sessions. No token or subject is retained
@@ -37,41 +37,52 @@ class AuthSessionStore
     public static function fromConfig(): self
     {
         $auth = AuthConfigGuard::authConfig();
-        $options = Config::get('cache.stores.' . Config::get('cache.default'));
-        if (!is_array($options)) {
-            throw new AuthUnavailableException();
-        }
-        $host = $options['host'] ?? null;
-        $port = $options['port'] ?? 6379;
-        $database = $options['select'] ?? 0;
-        $password = $options['password'] ?? '';
-        $validPassword = is_string($password) || (is_array($password)
-            && array_keys($password) === [0, 1] && is_string($password[0]) && is_string($password[1]));
-        if (!is_string($host) || trim($host) === ''
-            || (!is_int($port) && !(is_string($port) && ctype_digit($port)))
-            || (int)$port < 1 || (int)$port > 65535
-            || (!is_int($database) && !(is_string($database) && ctype_digit($database)))
-            || (int)$database < 0 || (int)$database > 2147483647
-            || !$validPassword) {
-            throw new AuthUnavailableException();
-        }
-        try {
-            $redis = new \Redis();
-            if (@$redis->connect($host, (int)$port, 2.0, null, 0, 1.0) !== true
-                || ($password !== '' && @$redis->auth($password) !== true)
-                || @$redis->select((int)$database) !== true) {
-                throw new \RuntimeException();
-            }
-            return new self($redis, $auth['session_epoch']);
-        } catch (\Throwable $error) {
-            throw new AuthUnavailableException();
-        }
+        return new self(BoundedRedisConnection::fromDefaultCacheConfig(), $auth['session_epoch']);
     }
 
     /** Configuration only, for live epoch checks in long-running consumers. */
     public function epoch(): string
     {
         return $this->epoch;
+    }
+
+    public function loginFailureCount(string $identity, string $ip): int
+    {
+        return $this->loginFailureCommand($identity, $ip, 'read');
+    }
+
+    public function recordLoginFailure(string $identity, string $ip): int
+    {
+        return $this->loginFailureCommand($identity, $ip, 'failure');
+    }
+
+    public function clearLoginFailures(string $identity, string $ip): void
+    {
+        $this->loginFailureCommand($identity, $ip, 'clear');
+    }
+
+    private function loginFailureCommand(string $identity, string $ip, string $mode): int
+    {
+        try {
+            $auth = AuthConfigGuard::authConfig();
+            $packedIp = @inet_pton($ip);
+            if ($identity === '' || $packedIp === false || $auth['session_epoch'] !== $this->epoch) {
+                throw new \RuntimeException();
+            }
+            $digest = hash_hmac('sha256', "admin-login-failure:v1\0" . $identity . "\0" . $packedIp, $auth['stamp_key']);
+            $result = $this->execute('login_failure', ['auth:login:adminapi:' . $digest], [$mode]);
+            $count = $result[1] ?? null;
+            $maximum = (string)PHP_INT_MAX;
+            if (!is_string($count) || preg_match('/^(0|[1-9][0-9]{0,18})$/D', $count) !== 1
+                || strlen($count) > strlen($maximum)
+                || (strlen($count) === strlen($maximum) && strcmp($count, $maximum) > 0)) {
+                throw new \RuntimeException();
+            }
+            return (int)$count;
+        } catch (\Throwable $error) {
+            // A driver failure is never a credential failure or a retry signal.
+            throw new AuthUnavailableException();
+        }
     }
 
     /** Delete only one retired epoch using this store's bounded raw connection. */
