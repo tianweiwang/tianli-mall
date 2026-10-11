@@ -1,0 +1,135 @@
+{
+  "run_id": "202610111523384ecf19",
+  "normal_only": true,
+  "production_commit": "8efff286c08e60c28a28d11227760f14ebf2980c",
+  "runs": [
+    {
+      "raw_file": "ms0b-account-functional-baseline-20261011154109.jsonl",
+      "sha256": "1c5c850b008c8ef9e670d9d840d19068e0372205afe9a6a52dc676d27f1863c3",
+      "row_count": 16,
+      "counts": {
+        "FAIL": 11,
+        "PASS": 4,
+        "NOT RUN": 1
+      },
+      "normal_windows": 17,
+      "table_counts": [
+        158
+      ],
+      "native_bash_exit": 1,
+      "source_commits": [
+        "d52ba7ddc2fda8ab3d71ae7b5ad6a08d1815b421"
+      ]
+    },
+    {
+      "raw_file": "ms0b-account-functional-baseline-20261011154318.jsonl",
+      "sha256": "bade26aba99eca0a22b6a69b6a69302f64a5807618de2e77e1071149843aa7e4",
+      "row_count": 16,
+      "counts": {
+        "FAIL": 11,
+        "PASS": 4,
+        "NOT RUN": 1
+      },
+      "normal_windows": 17,
+      "table_counts": [
+        158
+      ],
+      "native_bash_exit": 1,
+      "source_commits": [
+        "e70aa915705bf348a55c4a59a83a4c667d6333f0"
+      ]
+    },
+    {
+      "raw_file": "ms0b-account-functional-baseline-20261011154430.jsonl",
+      "sha256": "51a7535407959aa630e29011375678ddf1bde10be94617f17d25df9be333b9cf",
+      "row_count": 16,
+      "counts": {
+        "FAIL": 10,
+        "PASS": 5,
+        "NOT RUN": 1
+      },
+      "normal_windows": 22,
+      "table_counts": [
+        158
+      ],
+      "native_bash_exit": 1,
+      "source_commits": [
+        "32953a26b5d1589feed43385ec6885e8740fe99b"
+      ]
+    },
+    {
+      "raw_file": "ms0b-account-functional-after-20261011154543.jsonl",
+      "sha256": "ade4516336cbf056e113c762711e22149c172982d8823e7cb6823086b39593cc",
+      "row_count": 16,
+      "counts": {
+        "PASS": 15,
+        "NOT RUN": 1
+      },
+      "normal_windows": 22,
+      "table_counts": [
+        158
+      ],
+      "native_bash_exit": 0,
+      "source_commits": [
+        "32953a26b5d1589feed43385ec6885e8740fe99b"
+      ]
+    }
+  ],
+  "old_result_rows": 1094,
+  "new_result_rows": 1158,
+  "old_bytes_sha256": "bc951b0db94c6ea6cdda9183fc689c74f7a249ec9a98782f1ba06d307ca0fde0",
+  "old_bytes_preserved": true,
+  "fixture_cleanups": [
+    "account-functional-202610111540544d96d9-cleanup.json",
+    "account-functional-20261011154303f7c67c-cleanup.json",
+    "account-functional-2026101115441577bcbd-cleanup.json",
+    "account-functional-202610111545285bda67-cleanup.json"
+  ],
+  "teardown_native_bash_exit": 0,
+  "skipped_cases_executed": false,
+  "http_task6_acceptance": false,
+  "tested_source": {
+    "business_pending_local_commit": true,
+    "files": [
+      {
+        "sha256": "776077cb8245d04b615e9411faa7dcacec473a90e7b1ff1f41c4327ecbcce6ae",
+        "path": "crmeb/crmeb/services/auth/AccountChangeGuard.php"
+      },
+      {
+        "sha256": "0128e79f253798a01dfa1970cd90ac5f7595b4b7f9b8225f9d2091410f64cced",
+        "path": "crmeb/app/services/system/admin/SystemAdminServices.php"
+      },
+      {
+        "sha256": "a8f0c9932cc65b28cdf600429db6bd660bd51b936dbcdd7035dc0f04eb122987",
+        "path": "crmeb/app/services/out/OutAccountServices.php"
+      },
+      {
+        "sha256": "818c9e437b697cbbd067d5f6b4084bc700593a4d3b3ab7ba2008271ff31c0d81",
+        "path": "crmeb/app/services/agent/DivisionServices.php"
+      }
+    ],
+    "run_id": "202610111523384ecf19",
+    "source_head": "32953a26b5d1589feed43385ec6885e8740fe99b",
+    "phase": "after",
+    "normal_test_sha256": "ed0af3db02044140302fed32e36a86f052f50fd0973807706e2aee53b4a00ad0",
+    "stage": "before_test",
+    "skipped_tests_remain_skipped": true,
+    "result": {
+      "production_commit": "8efff286c08e60c28a28d11227760f14ebf2980c",
+      "committed_files_match_tested": true,
+      "normal_counts": {
+        "PASS": 15,
+        "NOT RUN": 1
+      },
+      "native_bash_exit": 0,
+      "teardown_native_bash_exit": 0
+    }
+  },
+  "post_cleanup": {
+    "audit_containers_found": 0,
+    "run_networks_found": 0,
+    "run_volumes_found": 0,
+    "run_install_lock_present": false,
+    "evidence_preserved": true
+  }
+}

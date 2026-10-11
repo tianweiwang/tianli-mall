@@ -1,6 +1,6 @@
 # MS0b 进度记录（未交付、未签收）
 
-当前阶段：L2 隔离开发，Task1–3已实现并验证；Task4管理端接线已本地提交，30项HTTP和8项启动/缓存兼容回归通过。Task5对外端已接入v2并本地提交，6项独立正常业务检查通过；Task6–10待完成，整个MS0b尚未完成。按用户要求跳过的安全复现、故障和并发验证保留未验收缺口。没有推送、部署、外部通知或真实环境会话切换。README验收状态和SECURITY_BASE_SHA未由执行方改写。
+当前阶段：L2 隔离开发，Task1–3已实现并验证；Task4管理端接线已本地提交，30项HTTP和8项启动/缓存兼容回归通过。Task5对外端已接入v2并本地提交，6项独立正常业务检查通过；Task6账号变更接线已本地提交，15项正常CLI服务检查通过、1项filePwd兼容检查NOT RUN。Task7–10待完成，整个MS0b尚未完成。按用户要求跳过的安全复现、故障和并发验证保留未验收缺口。没有推送、部署、外部通知或真实环境会话切换。README验收状态和SECURITY_BASE_SHA未由执行方改写。
 
 开发起点为MS0a交付3e7c966ecfa084ff4f219b03c61ed0efbac4caac；用户明确委托按规划自主继续并解决问题，V10人工签收仍待。工作目录H:/天俪商城/tianli-mall--ms0b，分支codex/ms0b。会话状态仅Redis，无新数据库表/列/种子。
 
@@ -107,12 +107,29 @@ RUN=20261011143154925356，仅使用既有隔离初始化和合成账号。独�
 
 本RUN已teardown、manifest身份核对通过、Bash exit0；3个专用容器、隔离网络、9个专用卷移除并复查无残留。证据根C:/Users/Vwang/.tianli-audit/20261011143154925356/evidence保留。这个6项通过只证明正常功能接线，不替代已跳过的原安全/故障/并发/断连验证或整个MS0b验收。
 
-## Task6：源码入口与普通事务设计（尚未实现）
+## Task6：账号变更接线与正常CLI服务验证（已本地提交）
 
-credential-writer-inventory.md记录10个既有writer和2个新建持久化入口，account-change-design.md记录真实最外层事务及本次受管上下文。已有入口源在读取基线至Task5接线前保持一致；OutService后续行号随接线变化，按方法复核。框架真实transaction对false也提交、合法void可提交，没有afterCommit；Guard后续需持有真正外层业务事务，在实际PDO退出事务后才complete，不能在Division内部模型保存处解除。普通新建保留自动id/既有事务，不创建虚假旧subject保护。此处只有源审和设计证据，尚无AccountChangeGuard实现或Task6运行通过结论；跳过的故障/并发试验未准备或执行。
+业务提交8efff286c08e60c28a28d11227760f14ebf2980c，包含AccountChangeGuard、SystemAdminServices、OutAccountServices与DivisionServices，覆盖入口清单W01–W10。Guard持有真实最外层SQL事务，实际PDO退出事务后才按本次owner完成；Division组合中的内层writer复用同app、同连接、已保护主体集合。批量操作冻结真实管理员id，空集合不伪造主体；合法同值更新和原Model/boolean/void返回保留。普通新建保留自动id及原事务，纯资料/统计/推送配置不轮换版本。原filePwd方法未改、未调用；数据库结构、权限种子与其他应用端未变。四个PHP8.2 lint及检查脚本lint、diff检查通过，四个业务文件与独立审查的草稿和测试内容哈希一致。
+
+正常检查测试先提交d52ba7dd。最初两份旧writer基线各4PASS/11FAIL/1NOT RUN、Bash exit1：W08/W09/W10及N01的Division窗口被检查脚本TypeError中断，其他已有窗口保留。e70aa915仅补类名/文件位置诊断，证实错误位于cf_user入口；PHP函数名不区分大小写，cf_same的通用is_callable把行数据昵称CF_USER当成同名函数，向array参数传了字符串。32953a26改为只执行显式Closure，时间谓词也显式包装；所有原行/列及期限断言保持，未换昵称或跳过字段。两份真实失败不删除、不改写。
+
+同一独立RUN=202610111523384ecf19修正后的旧writer基线为5PASS/10FAIL/1NOT RUN、Bash exit1，W01–W10仅缺账号版本轮换。实现后15PASS/1NOT RUN、Bash exit0；N01/N02创建、纯资料、统计、推送配置均正常。W01/W05另用新密码/新secret各成功登录一次，核对真实签名/声明、当前数据库摘要HMAC、完整会话HASH、当前版本和exp+60期限；新登录只允许准确的一条新会话及目标统计列，未请求旧/错误凭据。
+
+正式22个观察窗口全部完成，逐窗核对158张表、目标表全部行/列、所有Redis实际值及TIME/PTTL绝对期限、真实app/runner runtime文件和日志。仅允许目标列、目标账号版本轮换，以及完整绑定的新登录会话；其他账号、原会话记录/期限和业务缓存保持。本人资料缓存失效仅允许本次预先观察到的准确tag成员删除。每轮finally仅清本RUN注册的新合成行及对应键，四份cleanup均证明原数据行/其他缓存回到准备前快照，runtime清理期间不变；不回拨AUTO_INCREMENT或执行DDL。
+
+原始文件位于C:/Users/Vwang/.tianli-audit/202610111523384ecf19/evidence，摘要见task6-functional-summary.json；results.jsonl追加四轮各16条，保留原commit_sha及全部历史失败：
+
+- ms0b-account-functional-baseline-20261011154109.jsonl，SHA256=1c5c850b008c8ef9e670d9d840d19068e0372205afe9a6a52dc676d27f1863c3。
+- ms0b-account-functional-baseline-20261011154318.jsonl，SHA256=bade26aba99eca0a22b6a69b6a69302f64a5807618de2e77e1071149843aa7e4。
+- ms0b-account-functional-baseline-20261011154430.jsonl，SHA256=51a7535407959aa630e29011375678ddf1bde10be94617f17d25df9be333b9cf。
+- ms0b-account-functional-after-20261011154543.jsonl，SHA256=ade4516336cbf056e113c762711e22149c172982d8823e7cb6823086b39593cc。
+
+task6-functional-tested-source.json保留测试时HEAD=32953a26及当时四个未提交业务文件哈希，注明与8efff286一致；不把raw source改成提交后的HEAD。专用3容器、1内部网络、9卷已通过manifest身份核对teardown，原生Bash exit0，随后独立查询无残留，匹配本RUN的install.lock已移除，仓库外证据保留。
+
+filePwd检查明确NOT RUN：安装表eb_system_admin没有file_pwd列，而旧setFilePassword赋值该列，未调用方法、未造DDL，不能声称密码持久化正常。上述15项仅是CLI-SERVICE正常功能证据，本Task的HTTP、旧令牌拒绝、并发/部分失败及其他被跳过验证没有通过结论。
 
 ## 未完成
 
-Task4完整A21、Task5原安全覆盖、Task6全部变更入口、Task7世代轮换实现（RDB恢复验证按用户要求跳过）、Task8验证码/URL令牌与浏览器下载、Task9发布准备、Task10常规冻结回归和独立验收待完成；同类安全复现/故障验证已按用户要求跳过，完整安全验收缺口保留。正常接线运行证据为Task4上述30项及Task5独立F01–F06（含真实HTTP、同实例CLI和MCP）；无整个MS0b或WORKER/BROWSER/EXTERNAL验收通过结论，接口实际在用情况未知。此报告不构成人工签收。
+Task4完整A21、Task5原安全覆盖、Task6完整安全覆盖及filePwd兼容、Task7世代轮换实现（RDB恢复验证按用户要求跳过）、Task8验证码/URL令牌与浏览器下载、Task9发布准备、Task10常规冻结回归和独立验收待完成；同类安全复现/故障验证已按用户要求跳过，完整安全验收缺口保留。正常接线运行证据为Task4上述30项、Task5独立F01–F06（含真实HTTP、同实例CLI和MCP）及Task6上述15项CLI服务检查；无整个MS0b或WORKER/BROWSER/EXTERNAL验收通过结论，接口实际在用情况未知。此报告不构成人工签收。
 
-results.jsonl当前共1094条INTEGRATION原始行：原Task1–3共822行，加Task4共190行，以及Task5 worker/selftest22行、对外旧服务综合基线48行、普通功能基线6行和修复后6行。原1082行逐字节保持，历史失败不抹除，原commit_sha不改写；Task1–3最后一轮239项、Task4最后38项、Task5普通功能最后6项各自全PASS，不能相加为整个里程碑验收。Task5前置17项通过仅证明隔离执行能力，wrapper额外诊断JSON单列；48项仍只是旧服务基线，其综合after已按用户要求停止。UNIT-STUB43文本证据单独统计；整个MS0b未完成，后续任务与交付继续更新本记录。
+results.jsonl当前共1158条INTEGRATION原始行：原Task1–3共822行，加Task4共190行，以及Task5 worker/selftest22行、对外旧服务综合基线48行、普通功能基线6行和修复后6行，再追加Task6三份普通基线及一份after共64行。原1094行逐字节保持，历史失败不抹除，原commit_sha不改写；Task1–3最后一轮239项、Task4最后38项、Task5普通功能最后6项各自全PASS，Task6最后15PASS/1NOT RUN，不能相加为整个里程碑验收。Task5前置17项通过仅证明隔离执行能力，wrapper额外诊断JSON单列；48项仍只是旧服务基线，其综合after已按用户要求停止。UNIT-STUB43文本证据单独统计；整个MS0b未完成，后续任务与交付继续更新本记录。

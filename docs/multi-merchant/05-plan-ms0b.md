@@ -193,16 +193,19 @@ public function revoke(string $app, string $token): void
 
 2026-10-11 入口清单已完成源码核对：10个既有账号变更入口、2个新建持久化入口，包含事业部直接模型写入、批量状态更新和物理删除的最外层事务。清单见 `records/ms0b/credential-writer-inventory.md`；读取时源码与当前对应writer文件一致，只有静态证据，不代表流程已接入或通过运行检查。后续并发、依赖故障和部分失败复现保持跳过，普通修改/创建流程检查单独记录。
 
-普通事务设计见 `records/ms0b/account-change-design.md`：实际框架没有afterCommit/公开事务深度接口，Guard持有已知最外层transaction，并用真实PDO身份及inTransaction核对提交；内层具名writer只复用同app、同连接、已冻结主体集合的本次上下文，不提前complete、不在业务写入后扩张保护集合。没有受管上下文但已有PDO事务时拒绝接线，不能把模型内层savepoint当成外层提交。上下文仅活在本次DB闭包并finally清空；新建路径保留自动id及原普通事务，不伪造旧subject；批量按真实管理员id冻结，不用事业部uid代替。实现尚未开始，这些是后续接线依据，不是运行通过结论。
+普通事务设计见 `records/ms0b/account-change-design.md`：实际框架没有afterCommit/公开事务深度接口，Guard持有已知最外层transaction，并用真实PDO身份及inTransaction核对提交；内层具名writer只复用同app、同连接、已冻结主体集合的本次上下文，不提前complete、不在业务写入后扩张保护集合。没有受管上下文但已有PDO事务时拒绝接线，不能把模型内层savepoint当成外层提交。上下文仅活在本次DB闭包并finally清空；新建路径保留自动id及原普通事务，不伪造旧subject；批量按真实管理员id冻结，不用事业部uid代替。已在8efff286本地实现Guard及三服务接线；下述普通运行证据不替代跳过场景。
 
 普通接线细节：`save`/`updateAdmin` 的纯资料patch不写已确认未变的敏感字段，所以保留现有会话；显式 `update` 若含pwd/status/is_del或appsecret/status/is_del则保护全部冻结目标，即使同值更新的affected rows为0也视为合法操作并轮换版本，原Model返回形态保留。不带上述键的统计/filePwd/push配置更新沿原DAO。Division编辑不得写原代码未写的adminData.status；空管理员集合跳过管理员SQL，不能依赖ORM的空IN表达式。PDO/Store异常只记固定分类、阶段和数量，受控503不带底层previous；普通业务验证异常按原响应保留。
 
-本次独立普通检查脚本拟 `help/audit-regressions/isolated/ms0b-account-functional.php`，只通过真实CLI service/DAO及本RUN新建合成行验证正常W01–W10、N01/N02与非敏感更新，记录精确目标行/列、账号版本变化、其他所有表/缓存/期限。源审确认安装SQL的eb_system_admin无file_pwd列，而旧setFilePassword赋值该列；对应兼容检查记NOT RUN（原路径保持，不造DDL、不算通过），其余普通流程继续。并发、故障、旧/错误token请求仍不执行。
+本次独立普通检查脚本为 `help/audit-regressions/isolated/ms0b-account-functional.php`，只通过真实CLI service/DAO及本RUN新建合成行验证正常W01–W10、N01/N02与非敏感更新，记录精确目标行/列、账号版本变化、其他所有表/缓存/期限。源审确认安装SQL的eb_system_admin无file_pwd列，而旧setFilePassword赋值该列；对应兼容检查记NOT RUN（原路径保持，不造DDL、不算通过），其余普通流程继续。并发、故障、旧/错误token请求仍不执行。
+
+- [x] 普通功能接线与本地提交：测试d52ba7dd先于业务8efff286；e70aa915增加仅类名/文件位置诊断，32953a26修正检查脚本将业务昵称CF_USER误判为同名PHP函数的问题，字符串恢复为数据比较，时间谓词改为显式Closure，全字段断言保留。RUN=202610111523384ecf19最初两份基线各4PASS/11FAIL/1NOT RUN、Bash exit1，保留原始结果；修正后的旧writer基线5PASS/10FAIL/1NOT RUN、exit1，10项只缺会话版本轮换；实现后15PASS/1NOT RUN、exit0，22个正常观察窗口核对全部158表、所有Redis值/绝对期限及runtime。W01/W05另用正常新凭据成功登录，精确核对真实新会话及本次统计。filePwd仍NOT RUN；只有CLI-SERVICE证据，没有本Task HTTP验收、旧令牌拒绝或被跳过场景结论。四个业务文件与受审/测试内容哈希相同，3容器/1网络/9卷已teardown exit0并复查无残留。详细记录见report与task6-functional-summary.json。
 
 **Files:**
 - Create（独立普通检查）: `help/audit-regressions/isolated/ms0b-account-functional.php`
 - Create（已核对的入口记录）: `docs/multi-merchant/records/ms0b/credential-writer-inventory.md`
 - Create（普通事务设计记录）: `docs/multi-merchant/records/ms0b/account-change-design.md`
+- Create（普通运行及源码摘要）: `docs/multi-merchant/records/ms0b/task6-functional-summary.json`
 - Create: `crmeb/crmeb/services/auth/AccountChangeGuard.php`
 - Modify: 所有修改管理员密码、状态、删除标记的入口（至少 `SystemAdminServices::save()`、`updateAdmin()`、删除方法），以及所有修改对外账号密钥、状态、删除标记的入口（至少 `OutAccountServices` 的更新方法、`SystemOutAccount::set_status()`、删除方法）。已定位必要调用点还含 `DivisionServices::divisionSave()` 直接模型写密码、`setDivisionStatus()` 批量更新、`delDivision()` 批量删除；批量变更须先保护全部确切目标，再单一事务改库，再逐owner解除，不能只包SystemAdmin保存方法。开工时先 `grep` 列出全部入口，写进报告。
 

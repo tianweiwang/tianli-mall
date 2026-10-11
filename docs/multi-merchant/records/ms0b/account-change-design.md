@@ -1,6 +1,6 @@
 # MS0b Task6：普通账号变更与外层事务接线设计
 
-本记录仅是只读设计，基于 `ms0b-task6-writer-inventory.md` 和仓库真实源。读取时 HEAD 为 `72c9c3017c5bebc0707438b96ad39f0d23bf5f9b`，Task5 服务接线仍由 root 推进；实现前按方法复核其最新源，不把行号视为接口。未改仓库、提交或启动 Docker。按用户最新范围，本记录不准备安全复现、故障注入、并发/断连或 RDB 恢复试验。
+本记录基于 `credential-writer-inventory.md` 和仓库真实源。最初只读设计时 HEAD 为 `72c9c3017c5bebc0707438b96ad39f0d23bf5f9b`，实现前已按方法复核Task5后的最新源，不把历史行号视为接口。设计已用于8efff286的Guard及三服务接线；普通功能15PASS/1NOT RUN，运行摘要见 `task6-functional-summary.json`。按用户最新范围，不准备或执行安全复现、故障注入、并发/断连或 RDB 恢复试验。
 
 ## 框架实际支持与提交边界
 
