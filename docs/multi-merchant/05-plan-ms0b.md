@@ -1,6 +1,6 @@
 # MS0b：会话 v2 Implementation Plan
 
-> **For agentic workers (Codex):** 先读 [12-codex-protocol.md](12-codex-protocol.md)。开工前提：MS0a 已验收；开放问题 Q6、Q7 已由用户决定（决定"不纳入"时跳过 Task 8 对应部分）。需要授权级别 L2。本计划**不包含**真实发布、外部通知和生产会话切换，这些需要 L4 授权。
+> **For agentic workers (Codex):** 先读 [12-codex-protocol.md](12-codex-protocol.md)。正常签收流程的起点为 MS0a 已验收。2026-10-11 用户后续明确授权按文档规划自主继续、问题由执行方选择最优方案：本阶段从已完整自动化及独立复核的 MS0a 实际交付提交开始 L2 隔离开发，V10 人工签收仍待，不自行生成 SECURITY_BASE_SHA。Q6/Q7 依该委托纳入，兼容路径及具体测试先记录后实现。需要授权级别 L2。本计划**不包含**真实发布、外部通知和生产会话切换，这些需要 L4 授权。
 
 **Goal:** 为 adminapi 与 outapi 引入版本化服务端会话：可撤销、可单次兑换刷新、依赖故障时安全失败；旧格式令牌在切换后统一拒绝。
 
@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- 起点：`SECURITY_BASE_SHA`。分支 `codex/ms0b`，工作目录 `/Volumes/Kingston/cdx/projects/tianli-mall--ms0b`。
+- 实际开发起点：`3e7c966ecfa084ff4f219b03c61ed0efbac4caac`（MS0a交付）；其运行源码/测试与已验证冻结点 `af3e3e0c48fab9cf5af18f45f6341e9c272b168f` 差异为空。MS0a 主/独立完整 HTTP106、UNIT43、selftest6均PASS，独立V4/V6/V7无必须修复项。分支 `codex/ms0b`，工作目录 `H:/天俪商城/tianli-mall--ms0b`；原 Mac 路径命令按此映射。正式 SECURITY_BASE_SHA 待验收人指定，实际开发起点不冒充签收。
 - 不新增数据库表或列（会话状态只在 Redis）。
 - 键结构固定为 `auth:v2:<session_epoch>:<app>:account:<id>` 与 `auth:v2:<session_epoch>:<app>:session:<sid>`；`<app>` 只能取 `adminapi`、`outapi`（MS1 加入 `merchantapi`）。
 - `sid`、`session_version` 用 `bin2hex(random_bytes(16))` 生成（128 位）。
@@ -20,7 +20,7 @@
 - 新配置 `crmeb/config/auth.php`：`session_epoch`（Env `AUTH_SESSION_EPOCH`，必填）、`stamp_key`（Env `AUTH_STAMP_KEY`，必填，至少 32 字节）、`issuer`（Env `AUTH_ISSUER`，默认 `tianli-mall`）、`apps.adminapi` / `apps.outapi`（`type`、`audience`、`ttl`）。任何必填项缺失时，相关认证抛 503。
 - 依赖故障（Redis、数据库连接）抛 `crmeb\exceptions\AuthUnavailableException`，业务码 503；会话不存在或无效抛 `AuthException`，业务码 401。
 - 禁止 `FLUSHALL`、`FLUSHDB`、`KEYS *` 式全量删除；禁止回查旧的 `md5(token)` 键。
-- 测试环境升级到 `ISO-FULL`（03 文档 §2）。
+- MS0a 已经用户批准并实际实现 ISO-FULL（03 §2.1）：复用 PHP8.2、本地已存在镜像、只读源代码、专用内部网络/新卷/DML账号，不重复构建或拉镜像。每阶段仍新建 RUN，自检增加网络隔离与故障注入。
 
 ## Review Focus
 
@@ -32,23 +32,23 @@
 
 ---
 
-### Task 1: 升级测试环境到 ISO-FULL
+### Task 1: 复用 ISO-FULL 并增加故障验证
 
 **Files:**
-- Modify: `help/audit-regressions/isolated/compose.yml`、`bootstrap.sh`、`teardown.sh`、`README.md`
-- Create: `help/audit-regressions/isolated/runner/Dockerfile`、`help/audit-regressions/isolated/lib/fault.php`
+- Modify: `help/audit-regressions/isolated/compose.yml`、`README.md`、`selftest.php`、`lib/harness.php`（可选milestone元数据）、`lib/guard.php`（有界Redis读超时）、`run.sh`（pause/unpause控制、身份核对与退出恢复）
+- Create: `help/audit-regressions/isolated/lib/fault.php`；不新建重复 runner/Dockerfile，本机经批准的镜像已有所需扩展与工具。bootstrap/teardown沿用已验证环境边界，仅确有恢复必要时以同一调用点调整并列证据。
 
 **Interfaces:**
-- Produces: compose 服务 `audit-app`（项目 PHP 镜像，挂载测试 worktree，只读挂载源代码、可写挂载独立的 runtime）、`audit-runner`；内部网络 `audit-net`（`internal: true`）；`audit_fault_redis(string $mode): void`，`$mode` 取 `pause`、`unpause`、`stop`、`start`；`FaultyRedis` 包装类（构造参数为真实 `\Redis` 与故障计划，可在指定命令前或后抛错、断开连接）
+- Produces: 复用 compose 服务 audit-app、audit-runner 和实际名为 isolation 的内部网络（internal=true），源代码只读、runtime专用可写；audit_fault_redis(string $mode): void 的模式为 pause/unpause/stop/start。FaultyRedis继承PHP原生Redis，构造参数为真实Redis与故障计划；已反射确认扩展的方法签名，委托真实连接，可在指定命令前后抛错/断连，不用于生产。
 
-- [ ] **Step 1: 自检用例**：Z02、Z06、Z07 在 ISO-FULL 下重跑；新增子场景 `no-egress`（runner 内 `curl -m 5 https://example.com` 必须失败）、`no-host-ports`（`docker port` 对 `audit-mysql`、`audit-redis` 无输出）。
+- [ ] **Step 1: 自检用例**：Z02、Z06、Z07 在 ISO-FULL 下重跑；新增子场景 `no-egress`（runner 内 `curl -m 5 https://example.com` 必须失败）、`no-host-ports`（核对实际Docker端口绑定为空，等价于docker port无输出），及真实Redis命令前失败/执行后响应丢失/执行后断连/专用服务pause-unpause-stop-start恢复；全部全键快照与双哨兵不变。先提交测试并保留适配器未实现时的正常FAIL，不制造已经具备的ISO属性失败。
 - [ ] **Step 2: 实现并运行自检**，期望全部 PASS。
 - [ ] **Step 3: 提交** `test: upgrade isolated harness to ISO-FULL with fault injection`。
 
 ### Task 2: AuthSessionStore
 
 **Files:**
-- Create: `crmeb/crmeb/services/auth/AuthSessionStore.php`、`crmeb/crmeb/services/auth/lua/create_session.lua`、`redeem_session.lua`、`rotate_account.lua`
+- Create: `crmeb/crmeb/services/auth/AuthSessionStore.php`、`crmeb/crmeb/services/auth/lua/create_session.lua`、`redeem_session.lua`、`rotate_account.lua`、`verify_session.lua`（只读原子核对账号与会话，避免两次读跨过撤销）
 - Create: `crmeb/crmeb/exceptions/AuthUnavailableException.php`
 - Create: `help/audit-regressions/isolated/ms0b-session-store.php`
 
@@ -67,9 +67,18 @@ public function rotateAccount(string $app, string $id): string               // 
 public function block(string $app, string $id): void
 public function unblock(string $app, string $id): void
 public function redeem(string $app, string $oldSid, string $id, array $newSession): void   // 单次兑换
+public function beginChange(string $app, string $id): string               // 原子blocked并轮换已有版本；返回本次owner nonce
+public function completeChange(string $app, string $id, string $owner): void // 仅CAS匹配的本次owner可解除保护
 ```
 
 Redis 连接错误一律转换为 `AuthUnavailableException`。
+
+2026-10-11 必要设计补齐（用户委托执行方自主选择，安全规则保持）：
+
+- 账号键缺失/从未登录时，账号变更只创建 blocked 的未初始化保护标记（initialized=0，无可授权版本）；成功后解除本次保护仍无版本，之后有效凭据登录才产生新的128位版本。verify/redeem始终拒绝并不重建。普通rotateAccount缺键拒绝；AccountChangeGuard使用beginChange/completeChange，不从失踪版本恢复旧会话。
+- beginChange以Lua一次检查并设置blocked及轮换现有版本；另存本次随机owner。并发变更遇到既有blocked拒绝；completeChange仅匹配owner解除，普通unblock不得清除带owner的保护。身份/owner只在调用栈传递，实例不保存上次主体。
+- Lua任何可能导致类型/结构/TTL错误的前置条件在第一项写入前检查；真实EVAL执行后断连/返回丢失不得恢复旧sid或返回新令牌。所有连接有界超时，错误仅包含受控分类，不记录底层异常原文和敏感值。
+- 凭据登录先只读校验并保存原digest，再init取得账号版本，再重读当前digest/status作严格比较，最后createSession CAS。init之前的改密由digest重比对拒绝，之后的变更由blocked/version CAS拒绝。不得拿旧校验配新digest签发。verifyLogin统计从读验证分离，Redis依赖及会话写入成功前不写统计；相应必要调用点属于Task4/5。
 
 - [ ] **Step 1: 写用例**（CLI 进程内直接调用，`INTEGRATION` 层，真实 Redis + `FaultyRedis`）：
   - A17-v2：会话或账号键缺少任一字段、版本为空或不一致 → 拒绝。
@@ -137,7 +146,7 @@ public function revoke(string $app, string $token): void
 
 **Files:**
 - Create: `crmeb/crmeb/services/auth/AccountChangeGuard.php`
-- Modify: 所有修改管理员密码、状态、删除标记的入口（至少 `SystemAdminServices::save()`、`updateAdmin()`、删除方法），以及所有修改对外账号密钥、状态、删除标记的入口（至少 `OutAccountServices` 的更新方法、`SystemOutAccount::set_status()`、删除方法）。开工时先 `grep` 列出全部入口，写进报告。
+- Modify: 所有修改管理员密码、状态、删除标记的入口（至少 `SystemAdminServices::save()`、`updateAdmin()`、删除方法），以及所有修改对外账号密钥、状态、删除标记的入口（至少 `OutAccountServices` 的更新方法、`SystemOutAccount::set_status()`、删除方法）。已定位必要调用点还含 `DivisionServices::divisionSave()` 直接模型写密码、`setDivisionStatus()` 批量更新、`delDivision()` 批量删除；批量变更须先保护全部确切目标，再单一事务改库，再逐owner解除，不能只包SystemAdmin保存方法。开工时先 `grep` 列出全部入口，写进报告。
 
 **Interfaces:**
 - Produces:
@@ -145,9 +154,10 @@ public function revoke(string $app, string $token): void
 ```php
 // crmeb\services\auth\AccountChangeGuard
 public static function run(string $app, string $id, callable $dbChange): mixed
-        // 1) AuthSessionStore::block + rotateAccount；失败 → 抛 AuthUnavailableException，不执行 $dbChange
+public static function runMany(string $app, array $ids, callable $dbChange): mixed // 全部先保护，同一事务后按owner解除
+        // 1) AuthSessionStore::beginChange（原子block+rotate）；失败 → 不执行 $dbChange
         // 2) 执行 $dbChange（在数据库事务中）；失败 → 保持 blocked，重新抛出
-        // 3) unblock；失败 → 保持 blocked，记录审计，返回"需人工复核"错误，不报告成功
+        // 3) completeChange(owner CAS)；失败 → 保持保护，记录脱敏审计，返回“需人工复核”错误，不报告成功
 ```
 
 - [ ] **Step 1: 用例**：A21-v2 中"改密、停用、删除各自让全部旧会话失效"；故障注入：步骤 1 失败时数据库不变；步骤 2 失败时账号保持 blocked、不能登录；步骤 3 失败时接口不返回成功。
@@ -157,18 +167,20 @@ public static function run(string $app, string $id, callable $dbChange): mixed
 
 **Files:**
 - Create: `crmeb/app/command/AuthEpochRotate.php`（命令 `php think auth:epoch-rotate --confirm`）、`docs/multi-merchant/records/ms0b/runbook-session-loss.md`
+- Modify（显式命令注册的必要调用点）: `crmeb/config/console.php`
 
 **Interfaces:**
-- Produces: 命令只做两件事：校验新的 `AUTH_SESSION_EPOCH` 已在配置中生效且与旧值不同；按 `SCAN` + 前缀删除**旧 epoch** 下的 `auth:v2:<old>:*` 键（分批，打印数量，不打印键名）。不接触其他键。
+- Produces: 命令要求显式 `--old-epoch=<旧值>` 和 `--confirm`；新旧epoch限安全字符，不允许冒号/通配符。校验新的 `AUTH_SESSION_EPOCH` 已在配置中生效且与旧值不同；按 `SCAN` + 前缀删除**旧 epoch** 下的 `auth:v2:<old>:*` 键（分批，打印数量，不打印键名）。不接触其他键。
 
 - [ ] **Step 1: 用例** A29：模拟 Redis 从旧快照恢复（备份 RDB → 写入新会话 → 恢复 RDB）→ 隔离认证入口 → 轮换 epoch → 旧会话全部 401、重新登录可用；业务缓存键数量前后不变。
 - [ ] **Step 2–5**：确认失败 → 实现命令与 runbook → 通过 → 提交 `feat(auth): epoch rotation command and session-loss runbook`。
 
-### Task 8（视 Q6、Q7 决定）: 登录验证码与 URL 令牌
+### Task 8（按用户委托纳入 Q6/Q7）: 登录验证码与 URL 令牌
 
-- Q6 纳入时：失败计数改为按"账号 + IP"计；超过阈值后，服务端**要求**验证码字段存在且校验通过。用例：连续失败后不带验证码登录被拒绝。
-- Q7 纳入时：`AdminAuthTokenMiddleware` 不再接受 `?token=`，确需 URL 令牌的下载接口改用短期一次性下载凭证。开工前先列出前端所有使用 `?token=` 的位置并回报。
-- 两项各自单独提交。
+- Q6 本阶段纳入：失败计数改为按与DAO一致的账号规范化值 + 服务端可信IP计；保留60秒窗口，两次凭据失败后下一次尝试必须验证码。成功仅清当前组合，失败包装数字 login_captcha=1 沿用现有前端；超过阈值后，服务端**要求**验证码字段存在且校验通过。用例：连续失败后不带验证码登录被拒绝。
+- Q7 本阶段纳入：`AdminAuthTokenMiddleware` 不再接受 `?token=`，现有两处裸window.open下载改用本站header+Blob消费。当前无必须URL直下的大文件需求，不引入新匿名凭证协议；以后确需直下时再实现短期、一次性、限定文件/主体/会话的下载凭证。开工前先列出前端所有使用 `?token=` 的位置并回报。
+- 必要Files：`crmeb/app/adminapi/controller/Login.php`、`crmeb/app/adminapi/middleware/AdminAuthTokenMiddleware.php`、`crmeb/app/adminapi/controller/PublicController.php`；新增小下载helper `template/admin/src/libs/download.js`，修改 `template/admin/src/pages/system/codeGeneration/list.vue` 与 `template/admin/src/pages/system/maintain/systemDatabackup/index.vue` 两个真实消费点。仅对可信本站后端发header，拒绝外部URL/跳转，处理JSON错误与文件名；下载缓存成功消费采用原子比较删除，重复下载失败，保留现有admin+role边界。旧已注释npm/EventSource按钮后端路由不存在，移除该死代码的URL JWT，不凭空开发新后端。扫码上传/fileToken/客服/uni-app不是Q7 JWT，不批量改动。
+- 代码调用证据见仓库外 ms0b-q7-caller-inventory.md；Task8须加入header正向/URL JWT负向、两下载消费/重复消费/错误响应与浏览器验证。两项各自单独提交。
 
 ### Task 9: 发布准备文档（不发布）
 
@@ -181,6 +193,6 @@ public static function run(string $app, string $id, callable $dbChange): mixed
 
 ### Task 10: 全量回归与交付
 
-- [ ] 在新建的 ISO-FULL 环境运行：`security.php`、`selftest.php`、`ms0a-auth.php`、`ms0b-session-store.php` 以及 MS0b 的 HTTP 用例；全部 `exit=0`。
-- [ ] `git diff --name-only <SECURITY_BASE_SHA> HEAD` 只包含本计划列出的路径（Task 6 中 grep 出的入口逐项说明）。
+- [ ] 在新建的 ISO-FULL 环境运行：`security.php`、`selftest.php`、`ms0a-auth.php`、`ms0b-session-store.php` 以及 MS0b 的 HTTP 用例；全部 `exit=0`。v2回归保留旧业务拒绝/零副作用/原应用可用断言；旧pwd/md5白名单构造迁为当前v2会话输入，旧schema拒绝另由A24在旧键仍存在时真实覆盖，不拿旧schema拒绝伪装v2匹配测试。测试脚本适配输入形态前逐条记录对照，不放宽业务期望。
+- [ ] `git diff --name-only 3e7c966ecfa084ff4f219b03c61ed0efbac4caac HEAD` 只包含本计划列出的路径（Task 6 中 grep 出的入口逐项说明）。
 - [ ] 写 `records/ms0b/report.md`、`results.jsonl`；提交；停止，等待验收（11 文档 §5.3）。
