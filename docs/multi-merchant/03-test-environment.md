@@ -19,9 +19,23 @@
 | 等级 | 适用 | 要求 |
 |---|---|---|
 | `ISO-MIN` | MS0a | 专用 MySQL、Redis 容器（新 compose project、新卷、随机凭据）；端口只绑定 `127.0.0.1` 的临时端口；应用用宿主机 PHP 8.2 CLI 内置服务器从**测试 worktree** 启动；测试账号无全局权限；哨兵校验 |
-| `ISO-FULL` | MS0b 起 | 在 `ISO-MIN` 基础上：runner 容器与应用容器都在内部网络，不映射宿主端口；执行安全用例时禁止对外出站；常驻进程（队列、Workerman）按实际部署方式启动以支持 `WORKER` 层 |
+| `ISO-FULL` | MS0a 的 Windows 执行环境及 MS0b 起 | runner 容器与应用容器都在专用内部网络，不映射宿主端口；执行安全用例时禁止对外出站；常驻进程（队列、Workerman）按实际部署方式启动以支持 `WORKER` 层。MS0a 不由此获得 WORKER 层验收结果 |
 
 两种等级都禁止：连接业务实例或共享实例；读取现有实例的 root 密码；从业务库复制数据；`DROP` 通配库、`FLUSHALL`、清业务卷；写备份检出（`$BACKUP`）的任何文件。
+
+### 2.1 Windows 上的 MS0a 执行适配（2026-10-11 用户批准）
+
+当前 Windows/WSL 无宿主 PHP 8.2，用户明确批准 MS0a 使用 ISO-FULL，并更新本文件、04 计划和启动脚本。业务契约、测试子场景和验收标准不变。
+
+- 使用本机已有 `tianli/crmeb-php:acceptance`（运行时核对 PHP 8.2）；MySQL、Redis 镜像仍为 §3.1 的版本。所有服务 `pull_policy: never`，不依赖下载或业务容器。
+- `audit-app`、`audit-runner`、`audit-bootstrap`、`audit-mysql`、`audit-redis` 仅连接本次 compose project 的 `internal: true` 网络，不映射端口，不挂载 Docker socket。源码来自当前测试 worktree；应用和 runner 只读挂载，运行缓存使用独立命名卷。
+- 宿主运行目录只保存 manifest、控制记录和脱敏证据。随机密码、测试签名密钥和合成账号凭据保存在本次 project 的专用 Docker 卷中，目录/文件权限 0700/0600；root/migrator 卷只供引导使用，应用和 runner 只挂载受限账号所需的配置，runner 另挂合成账号凭据卷。不得在环境变量、命令行或日志中暴露密码。
+- `bootstrap.sh` 在 Git Bash 或原生 Bash 执行，先检查所有镜像和版本、创建独立资源、导入安装种子，再记录容器 ID、卷名、内部网络与地址。`run.sh <RUN_ID> <脚本> [参数...]` 负责启动一次性 runner 和必要的服务故障场景；`teardown.sh` 按 manifest 与实际标签/ID 双重核对后仅清理本次资源。
+- ISO-FULL 的启动保护沿用 §3.4 的 RUN_ID、双哨兵、库名、受限权限检查。主机固定为 `audit-mysql` / `audit-redis`、端口固定为 3306/6379，解析后的地址必须与 manifest 中经过 Docker 核验的本次容器地址一致。禁止接受调用方自选主机或业务实例地址。
+- `audit_app_start()` / `audit_app_stop()` 通过本次运行目录中的受限控制记录请求专用应用容器启停 PHP 内置服务器；配置只从受限凭据卷注入 `PHP_*` 环境变量（ThinkPHP `Env::getEnv()` 的读取规则）。不创建 `crmeb/.env`。`install.lock` 仍按 §3.5 哨兵规则处理。
+- 初始建库、导入种子、写入双哨兵属于引导阶段，只能在已核对的本次专用实例内完成；之后任何测试写入和应用启动都必须经过 guard。测试失败保留证据，不自动清理。
+
+§3 中的 127.0.0.1、宿主 PHP 与凭据文件位置适用于 ISO-MIN；本节是 ISO-FULL 的等效约束，不取消其他启动保护。新增 `run.sh` 属于本次批准的启动脚本范围。
 
 ## 3. ISO-MIN 环境（MS0a 交付）
 
