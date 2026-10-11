@@ -127,8 +127,11 @@ public function refresh(string $app, string $token, callable $currentCredentialD
 public function revoke(string $app, string $token): void
 ```
 
-- [ ] **Step 1: 写用例** A22：受控签发器生成签名有效、但 `auth_schema` 缺失或为 1、`iss`/`aud`/`type` 不匹配、缺少 `sid` 或 `session_version` 的令牌 → 全部 401。A10-v2：`AUTH_SESSION_EPOCH`、`AUTH_STAMP_KEY` 缺失或过短 → 503。补必要声明验证：id规范正整数；sid/version为32位小写hex；iat/nbf/exp必需严格整数且符合次序与60秒容差（即使nbf已存在也须独立拒绝未来iat）；拒绝v2中的pwd凭据字段。配置缺字段/错类型/无效TTL均503，默认type/admin-out和30天TTL兼容既有正常路径。回调仅在签名/声明全通过后调用；当前摘要为空/账号不存在401，实际数据库依赖故障503。签发持久成功后返回；刷新先验证、再原子兑换，真实执行后丢应答不返回token或补偿旧会话；revoke仅本人app/sid。配置世代更新后旧Store实例必须503，不能沿用旧namespace；新Store验证旧token401且零写入。
-- [ ] **Step 2: 运行确认失败；Step 3: 实现；Step 4: 运行通过；Step 5: 提交** `feat(auth): v2 token issue/verify bound to app audience and server session`。
+- [x] **Step 1: 写用例** A22：受控签发器生成签名有效、但 `auth_schema` 缺失或为 1、`iss`/`aud`/`type` 不匹配、缺少 `sid` 或 `session_version` 的令牌 → 全部 401。A10-v2：`AUTH_SESSION_EPOCH`、`AUTH_STAMP_KEY` 缺失或过短 → 503。补必要声明验证：id规范正整数；sid/version为32位小写hex；iat/nbf/exp必需严格整数且符合次序与60秒容差（即使nbf已存在也须独立拒绝未来iat）；拒绝v2中的pwd凭据字段。配置缺字段/错类型/无效TTL均503，默认type/admin-out和30天TTL兼容既有正常路径。回调仅在签名/声明全通过后调用；当前摘要为空/账号不存在401，实际数据库依赖故障503。签发持久成功后返回；刷新先验证、再原子兑换，真实执行后丢应答不返回token或补偿旧会话；revoke仅本人app/sid。配置世代更新后旧Store实例必须503，不能沿用旧namespace；新Store验证旧token401且零写入。
+- [x] **Step 2: 确认失败。** c784f309原123项、406f2d54补齐127项均缺AuthTokenV2正常FAIL/exit1，DB/Redis/期限/文件日志无意外变化；两份原始基线保留。
+- [x] **Step 3: 实现。** 配置纯校验503；类型、声明、实际时钟及签名严格核对401；当前凭据HMAC与会话一致，签发/兑换确认成功才返回token。Redis独立连接及owner/namespace不跨用途；revoke原子校验exact binding后删除。原Guard两个旧方法未改，客服/顾客路径未接入v2。
+- [x] **Step 4: 运行通过。** 最终127PASS/exit0（ms0b-token-after-20261011103252.jsonl），5PHP lint、既有UNIT-STUB权限43/43/exit0、全158张表/全部Redis值及期限/真实file-cache/log检查通过。首次after125PASS/2FAIL保留：真实Env批量setter将错误类型数组展开，在Env.php:120先抛TypeError；隔离诊断确认单键setter能原样保留输入，9e3fd519仅修测试设置方式，原503/无IO断言及6生产文件完全未改。task3-tested-source.json保留运行时HEAD+当时未提交6文件的哈希，最终Task10仍须清洁冻结新RUN回归。
+- [x] **Step 5: 本地提交** `feat(auth): v2 token issue/verify bound to app audience and server session`；未推送，整个MS0b仍未完成。
 
 ### Task 4: 管理端接入 v2
 

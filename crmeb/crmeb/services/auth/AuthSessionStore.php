@@ -5,6 +5,8 @@ namespace crmeb\services\auth;
 
 use crmeb\exceptions\AuthSessionException;
 use crmeb\exceptions\AuthUnavailableException;
+use crmeb\services\AuthConfigGuard;
+use think\facade\Config;
 
 /**
  * Redis is the authority for v2 sessions. No token or subject is retained
@@ -26,6 +28,41 @@ class AuthSessionStore
             if ($redis->setOption(\Redis::OPT_READ_TIMEOUT, 1.0) !== true) {
                 throw new \RuntimeException();
             }
+        } catch (\Throwable $error) {
+            throw new AuthUnavailableException();
+        }
+    }
+
+    /** A separate raw connection must not inherit shared Cache client options. */
+    public static function fromConfig(): self
+    {
+        $auth = AuthConfigGuard::authConfig();
+        $options = Config::get('cache.stores.' . Config::get('cache.default'));
+        if (!is_array($options)) {
+            throw new AuthUnavailableException();
+        }
+        $host = $options['host'] ?? null;
+        $port = $options['port'] ?? 6379;
+        $database = $options['select'] ?? 0;
+        $password = $options['password'] ?? '';
+        $validPassword = is_string($password) || (is_array($password)
+            && array_keys($password) === [0, 1] && is_string($password[0]) && is_string($password[1]));
+        if (!is_string($host) || trim($host) === ''
+            || (!is_int($port) && !(is_string($port) && ctype_digit($port)))
+            || (int)$port < 1 || (int)$port > 65535
+            || (!is_int($database) && !(is_string($database) && ctype_digit($database)))
+            || (int)$database < 0 || (int)$database > 2147483647
+            || !$validPassword) {
+            throw new AuthUnavailableException();
+        }
+        try {
+            $redis = new \Redis();
+            if (@$redis->connect($host, (int)$port, 2.0, null, 0, 1.0) !== true
+                || ($password !== '' && @$redis->auth($password) !== true)
+                || @$redis->select((int)$database) !== true) {
+                throw new \RuntimeException();
+            }
+            return new self($redis, $auth['session_epoch']);
         } catch (\Throwable $error) {
             throw new AuthUnavailableException();
         }
@@ -83,6 +120,19 @@ class AuthSessionStore
         if (!is_int($deleted)) {
             throw new AuthUnavailableException();
         }
+    }
+
+    /** Logout requires the exact persisted binding, without a DB digest read. */
+    public function revokeBoundSession(string $app, string $sid, string $id, string $type,
+                                       string $audience, string $version, string $tokenDigest): void
+    {
+        $account = $this->accountKey($app, $id);
+        $session = $this->sessionKey($app, $sid);
+        $this->assertText($type);
+        $this->assertText($audience);
+        $this->assertNonce($version);
+        $this->assertDigest($tokenDigest);
+        $this->execute('revoke_session', [$account, $session], [$id, $type, $audience, $version, $tokenDigest]);
     }
 
     public function rotateAccount(string $app, string $id): string
