@@ -238,6 +238,22 @@ namespace {
             check(Cache::$writes === [] && Cache::$values === [], 'Denied cold permission lookup wrote cache values');
         });
     }
+    run('hot authorized permission-cache hit is read-only and never rewrites old grants', static function (): void {
+        $request = new Request();
+        $roleKey = md5(SystemRoleServices::ADMIN_RULES_LEVEL . '_2_' . implode('_', $request->admin['roles']));
+        $authorization = ['put' => ['order/refund/<id>']];
+        Cache::$values = ['all_auth' => $authorization, $roleKey => $authorization];
+        $original = Cache::$values;
+        SystemMenusServices::$registered = [];
+        SystemMenusServices::$granted = [];
+        $nextCalls = 0;
+        (new AdminCheckRoleMiddleware())->handle($request, static function () use (&$nextCalls): void { $nextCalls++; });
+        check($nextCalls === 1, 'Hot registered and granted cache hit must proceed');
+        // A same-value rewrite still counts: it could resurrect a stale grant
+        // when another request clears the shared cache after this read.
+        check(Cache::$writes === [], 'Hot authorization lookup rewrote cached permission values');
+        check(Cache::$values === $original, 'Hot authorization lookup changed the original cache contents');
+    });
 
     $validToken = 'test-only-scan-token';
     $scanCases = [
