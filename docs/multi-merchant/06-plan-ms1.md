@@ -118,6 +118,8 @@ PublicCatalogScope当前固定两个资源：`merchant`为 `[mer_id,name,logo,af
 
 普通核对契约：新的ISO-FULL安装库先记源码缺失的自然FAIL（不得注入异常），实现后在bootstrap专属迁移账号准备既有五表；正式脚本只持audit_app DML配置，用真实DbManager/Query/Model和合成A/B商家、角色、员工核对正常Context、两个Request实例、同值Owned行、Query与Model入口及带OR的正常列表、显式平台目标/全局范围和两个公开投影。夹具只在新身份表写入，精确按本次真实ID逆序清理，不改旧产品或原账号，不回拨计数器；全表旧行/结构（仅三张夹具表的自然计数器变化单列记明）及Redis值/到期点保持。原M04/M08的非法ID、缺失上下文、他店对象拒绝和无权限动作等场景继续NOT RUN，不把普通结果计为原拒绝验收通过。
 
+首个实现后的普通RUN2026101121344901117b记录native1：真实Model与同值Owned行已走到通过，生成的SQL正确为已有OR整体括号后AND `e.mer_id = '1'`，但最初harness正则只接受无引号的任意数字而失败；夹具已精确清理，163表原行/结构（仅三自然计数器）和缓存保持。实版Builder::parseWhereItem按限定字段名查未限定类型字典，未命中alias字段时用PDO::PARAM_STR，Fetch正常显示带引号数值。修正只在harness展示形式边界：分组后的最终AND必须精确匹配当前ctx正merId，接受该整数原文或同值成对SQL引号形式，锚定SQL末尾；实际column结果仍必须严格等于本商家的真实员工ID。比原任意数字匹配更严格，不改变生产范围、期望归属或断言结果；原FAIL保留，使用新RUN重跑普通流程。
+
 **Interfaces:**
 - Produces:
 

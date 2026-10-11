@@ -143,7 +143,9 @@ audit_case('T3C01','normal_context_and_queries','INTEGRATION',static function():
         foreach ($contexts as $label=>$ctx) {
             $scoped = \app\dao\marketplace\scope\MerchantScope::apply($template,$ctx,'e.mer_id');
             $evidence['sql'][$label] = (clone $scoped)->field('e.id,e.mer_id')->fetchSql()->select();
-            audit_expect(str_contains($evidence['sql'][$label],'mer_id') && preg_match('/\)\s+AND\s+`e`\.`mer_id`\s*=\s*[0-9]+/i',$evidence['sql'][$label]) === 1, 'existing filters must remain grouped before ownership');
+            $literal = preg_quote((string)$ctx->merId,'/');
+            $ownerPattern = '/\)\s+AND\s+`e`\.`mer_id`\s*=\s*(?:'.$literal.'|\x27'.$literal.'\x27)\s*\z/i';
+            audit_expect(preg_match($ownerPattern,$evidence['sql'][$label]) === 1, 'existing filters must remain grouped before exact ownership');
             audit_expect(array_map('intval',$scoped->order('e.id')->column('e.id')) === [$fixtures[$label]['employee_id']], 'normal scoped list differs');
         }
         audit_expect($template->getOptions('where') === $templateOptions && $template->getBind(false) === $templateBindings, 'shared query template changed');
