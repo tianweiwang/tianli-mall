@@ -106,6 +106,18 @@ Task1普通运行契约（先于接线）：audit-worker沿既有x-php隔离设�
 - Create: `help/audit-regressions/isolated/ms1-context.php`
 - Modify（请求局部上下文的必要调用点）: `crmeb/app/Request.php`；新增对应MerchantForbiddenException/MerchantNotFoundException等明确HTTP异常类，位置沿现有 `crmeb/crmeb/exceptions/` 约定。
 
+Task3编码依据（2026-10-12）：沿上面的签名及00 §5，不开放商品HTTP接口，不改变旧全局DAO。`MerchantPermissions::validate(array): array`只接受9个目录码组成的字符串list，去重保留次序；Context保存其值副本，正merId/employeeId及非空版本/请求标识在构造时校验，`can/require`严格匹配。Task4的sessionVersion必须取自AuthTokenV2在verifyCurrent完成后的已验证version；当前verify只返回id/sid，Task4需在同一必要调用点显式返回version，不能再读取未经验证的原始载荷。requestId由服务器生成，Task8每任务重建；Task3普通值对象核对使用明确合成版本，不冒称会话认证已经完成。
+
+Request新增私有nullable属性与 `setMerchantContext/merchantContext/clearMerchantContext`，不使用Macroable注册表或容器共享属性；缺失时抛固定401的MerchantUnauthenticatedException。Forbidden/NotFound/Unauthenticated三个异常继承实际think HttpException，固定真实状态403/404/401与无敏感上下文的消息；不调用getLang或保存previous。Task4的新handler及Task6限定marketplace的处理仍需把这些状态显式映射到 `{status,msg,data}`，旧AdminApiExceptionHandle尚不是新接口HTTP结论。
+
+`MerchantScope::apply`将Model转换为其新db Query；实际Builder::buildWhere直接拼接顶层AND/OR，因此已有where先用Query副本在Closure内整体分组，保留原绑定，再AND可信正merId。column仅接受调用方固定的单列或alias.column标识符；assertOwned读取array或Model原始getData，接受真实整数或同值十进制字符串，不通过访问器推断归属。后续仓储先构造全部业务筛选，最后apply并执行；不得在apply后重写/追加顶层OR、where(Query)或union。受保护写入仍须在SQL WHERE中使用相同范围，不能以读前检查替代。
+
+PlatformScope为readonly的授权结果值对象：adminId为正数，permission为非空服务端动作码，targetMerId必须显式给出（null为受审计全局，否则为正数）；构造器不把字符串当作鉴权成功。其apply同样先整体分组已有条件；有目标时AND mer_id，无目标返回已明确授权的全局Query。真实动作授权及全局审计在Task6调用点落实，不能因scope对象存在就略过鉴权。
+
+PublicCatalogScope当前固定两个资源：`merchant`为 `[mer_id,name,logo,after_sale_contact,shipping_note]`；`product`为 `[id,mer_id,store_name,store_info,image,slider_image,price,ot_price,vip_price,unit_name,sales,stock,spec_type,is_postage,postage,is_vip,video_link]`，均核对实际迁移/安装表列。未知资源抛参数异常，不返回星号或后台投影；这些字段不包含cost、mer_use、review字段、内部备注或顾客数据。MS2接线时按其公众合同补齐必要独立子资源与响应组装，已发布/商家状态筛选仍在MS2服务中落实，不由字段投影冒称完成。
+
+普通核对契约：新的ISO-FULL安装库先记源码缺失的自然FAIL（不得注入异常），实现后在bootstrap专属迁移账号准备既有五表；正式脚本只持audit_app DML配置，用真实DbManager/Query/Model和合成A/B商家、角色、员工核对正常Context、两个Request实例、同值Owned行、Query与Model入口及带OR的正常列表、显式平台目标/全局范围和两个公开投影。夹具只在新身份表写入，精确按本次真实ID逆序清理，不改旧产品或原账号，不回拨计数器；全表旧行/结构（仅三张夹具表的自然计数器变化单列记明）及Redis值/到期点保持。原M04/M08的非法ID、缺失上下文、他店对象拒绝和无权限动作等场景继续NOT RUN，不把普通结果计为原拒绝验收通过。
+
 **Interfaces:**
 - Produces:
 
