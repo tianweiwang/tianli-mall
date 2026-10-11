@@ -338,27 +338,200 @@ function audit_check_redis(): void
     }
     throw new RuntimeException('Redis did not restore the run sentinel');
 }
+// Linux app-container observations only: never read environ or cmdline.
+function audit_app_proc_stat(int $pid): ?array
+{
+    if ($pid < 1) { return null; }
+    $raw = @file_get_contents('/proc/' . $pid . '/stat');
+    if (!is_string($raw)) {
+        audit_expect(!is_dir('/proc/' . $pid), 'numeric process identity unavailable');
+        return null;
+    }
+    $end = strrpos($raw, ')');
+    if ($end === false || !str_starts_with($raw, $pid . ' (')) { return null; }
+    $fields = preg_split('/\s+/', trim(substr($raw, $end + 1)));
+    if (count($fields) < 20 || preg_match('/^[A-Za-z]$/D', $fields[0]) !== 1) { return null; }
+    foreach ([1, 2, 3, 19] as $index) {
+        if (!ctype_digit($fields[$index])) { return null; }
+    }
+    return ['pid' => $pid, 'ppid' => (int)$fields[1], 'pgid' => (int)$fields[2],
+        'sid' => (int)$fields[3], 'starttime' => $fields[19], 'state' => $fields[0]];
+}
+function audit_app_group_members(array $group, array $supervisor): array
+{
+    $self = audit_app_proc_stat(getmypid());
+    foreach (['pid', 'pgid', 'sid', 'starttime'] as $key) {
+        audit_expect($self !== null && $self[$key] === $supervisor[$key], 'supervisor process identity changed');
+    }
+    audit_expect($group['leader_pid'] > 1 && $group['pgid'] === $group['leader_pid']
+        && $group['sid'] === $group['leader_pid'] && (int)$group['leader_starttime'] >= (int)$supervisor['starttime']
+        && !in_array($group['pgid'], [$supervisor['pid'], $supervisor['pgid'], $supervisor['sid']], true),
+        'unregistered or supervisor process group rejected');
+    $leader = audit_app_proc_stat($group['leader_pid']);
+    if ($leader !== null) {
+        audit_expect($leader['starttime'] === $group['leader_starttime'] && $leader['pgid'] === $group['pgid']
+            && $leader['sid'] === $group['sid'], 'registered group leader identity changed');
+    }
+    $members = [];
+    // Numeric stat fields select the registered group; no other group is
+    // exposed, inspected for descriptors, signalled, or waited for.
+    $files = glob('/proc/[0-9]*/stat');
+    audit_expect(is_array($files) && $files !== [], 'numeric process group observation unavailable');
+    foreach ($files as $file) {
+        $member = audit_app_proc_stat((int)basename(dirname($file)));
+        if ($member === null || $member['pgid'] !== $group['pgid']) { continue; }
+        audit_expect($member['sid'] === $group['sid'] && $member['pid'] !== $supervisor['pid']
+            && (int)$member['starttime'] >= (int)$group['leader_starttime'], 'foreign process group member rejected');
+        $members[] = $member;
+    }
+    usort($members, static fn(array $a, array $b): int => $a['pid'] <=> $b['pid']);
+    return $members;
+}
+function audit_app_tcp_rows(): array
+{
+    $rows = [];
+    foreach (['/proc/net/tcp', '/proc/net/tcp6'] as $file) {
+        $raw = @file_get_contents($file);
+        audit_expect(is_string($raw), 'container TCP observation unavailable');
+        foreach (array_slice(explode("\n", trim($raw)), 1) as $line) {
+            $fields = preg_split('/\s+/', trim($line));
+            if (count($fields) < 10 || !ctype_digit($fields[9])) { continue; }
+            $local = explode(':', $fields[1]); $remote = explode(':', $fields[2]);
+            if (count($local) !== 2 || count($remote) !== 2) { continue; }
+            $rows[] = ['local_port' => hexdec($local[1]), 'remote_port' => hexdec($remote[1]),
+                'remote_hex' => $remote[0], 'state' => $fields[3], 'inode' => $fields[9]];
+        }
+    }
+    return $rows;
+}
+function audit_app_listener_open(): bool
+{
+    foreach (audit_app_tcp_rows() as $row) {
+        if ($row['local_port'] === 8000 && $row['state'] === '0A') { return true; }
+    }
+    return false;
+}
+function audit_app_process_observation(array $group, array $supervisor): array
+{
+    // Public observation contains live members. Internal stop always uses the
+    // complete group, including zombies/dead members, before confirming empty.
+    $members = array_values(array_filter(audit_app_group_members($group, $supervisor),
+        static fn(array $member): bool => !in_array($member['state'], ['Z', 'X', 'x'], true)));
+    $manifest = audit_manifest();
+    audit_expect(($manifest['run_id'] ?? null) === getenv('AUDIT_RUN_ID'), 'process observation RUN rejected');
+    $address = $manifest['services']['audit-redis']['address'] ?? '';
+    audit_expect(filter_var($address, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== false, 'process observation Redis endpoint rejected');
+    $remoteHex = strtoupper(bin2hex(strrev(inet_pton($address))));
+    $sockets = []; $listenerInodes = []; $listener = false;
+    foreach (audit_app_tcp_rows() as $row) {
+        if ($row['local_port'] === 8000 && $row['state'] === '0A') { $listenerInodes[$row['inode']] = true; }
+        if ($row['remote_port'] === 6379 && $row['remote_hex'] === $remoteHex && $row['state'] === '01') {
+            $sockets[$row['inode']] = ['local_port' => $row['local_port'], 'inode' => $row['inode'], 'remote_port' => 6379];
+        }
+    }
+    $observed = [];
+    foreach ($members as $member) {
+        $member['redis_sockets'] = [];
+        $ownsListener = false;
+        $current = audit_app_proc_stat($member['pid']);
+        if ($current === null || $current['starttime'] !== $member['starttime']
+            || $current['pgid'] !== $group['pgid'] || $current['sid'] !== $group['sid']) { continue; }
+        foreach (glob('/proc/' . $member['pid'] . '/fd/*') ?: [] as $file) {
+            $target = @readlink($file);
+            if (is_string($target) && preg_match('/^socket:\[(\d+)\]$/D', $target, $match) === 1) {
+                if (isset($sockets[$match[1]])) { $member['redis_sockets'][] = $sockets[$match[1]]; }
+                if (isset($listenerInodes[$match[1]])) { $ownsListener = true; }
+            }
+        }
+        $current = audit_app_proc_stat($member['pid']);
+        if ($current === null || $current['starttime'] !== $member['starttime']
+            || $current['pgid'] !== $group['pgid'] || $current['sid'] !== $group['sid']
+            || in_array($current['state'], ['Z', 'X', 'x'], true)) { continue; }
+        $member['ppid'] = $current['ppid']; $member['state'] = $current['state'];
+        usort($member['redis_sockets'], static fn(array $a, array $b): int => $a['local_port'] <=> $b['local_port']);
+        $listener = $listener || $ownsListener;
+        $observed[] = $member;
+    }
+    return ['group' => $group, 'supervisor' => array_intersect_key($supervisor, array_flip(['pid', 'pgid', 'sid', 'starttime'])),
+        'members' => $observed, 'listener_open' => $listener];
+}
+function audit_app_register_group($process, array $supervisor): array
+{
+    $pid = proc_get_status($process)['pid']; $deadline = microtime(true) + 1.0;
+    do {
+        $leader = audit_app_proc_stat($pid);
+        if ($leader !== null && $leader['ppid'] === $supervisor['pid'] && $leader['pgid'] === $pid && $leader['sid'] === $pid) {
+            $group = ['leader_pid' => $pid, 'pgid' => $leader['pgid'], 'sid' => $leader['sid'], 'leader_starttime' => $leader['starttime']];
+            audit_app_group_members($group, $supervisor);
+            return $group;
+        }
+        audit_expect(proc_get_status($process)['running'], 'server exited before independent group registration');
+        usleep(5000);
+    } while (microtime(true) < $deadline);
+    throw new RuntimeException('setsid independent process group was not observed');
+}
+function audit_app_stop_group(&$process, ?array &$group, array $supervisor): array
+{
+    if ($group === null && is_resource($process) && proc_get_status($process)['running']) {
+        // Do not guess a group from a PID. Registration still must prove the
+        // actual independent SID/PGID before cleanup may signal that group.
+        $group = audit_app_register_group($process, $supervisor);
+    }
+    $stopped = $group; $remaining = [];
+    if ($group !== null) {
+        foreach ([[SIGTERM, 3.0], [SIGKILL, 2.0]] as [$signal, $seconds]) {
+            $remaining = audit_app_group_members($group, $supervisor);
+            if ($remaining !== [] && !posix_kill(-$group['pgid'], $signal)) {
+                // A group that exited between the read and signal is already
+                // gone; every other failure remains a refused cleanup ACK.
+                audit_expect(audit_app_group_members($group, $supervisor) === [], 'registered group signal failed');
+            }
+            $deadline = microtime(true) + $seconds;
+            do {
+                if (is_resource($process)) { proc_get_status($process); }
+                // Only direct/adopted children in the exact registered group.
+                while (pcntl_waitpid(-$group['pgid'], $waitStatus, WNOHANG) > 0) {}
+                $remaining = audit_app_group_members($group, $supervisor);
+                if ($remaining === [] && !audit_app_listener_open()) { break 2; }
+                usleep(20000);
+            } while (microtime(true) < $deadline);
+        }
+    }
+    if (is_resource($process)) {
+        audit_expect(!proc_get_status($process)['running'], 'registered direct child still running after bounded cleanup');
+        proc_close($process); $process = null;
+    }
+    audit_expect($remaining === [] && !audit_app_listener_open(), 'registered group or application listener remains after cleanup');
+    $group = null;
+    return ['stopped_group' => $stopped, 'remaining_members' => [], 'listener_closed' => true];
+}
 function audit_serve(): void
 {
     audit_guard_assert();
-    $process = null; $revision = '';
-    $stop = static function () use (&$process): void {
-        if (is_resource($process)) {
-            $status = proc_get_status($process);
-            if ($status['running']) { posix_kill(-$status['pid'], SIGTERM); proc_terminate($process); }
-            proc_close($process); $process = null;
-        }
+    $supervisor = audit_app_proc_stat(getmypid());
+    audit_expect($supervisor !== null, 'supervisor numeric process identity unavailable');
+    $process = null; $group = null; $revision = ''; $generation = '';
+    $stop = static function () use (&$process, &$group, &$generation, $supervisor): array {
+        $result = audit_app_stop_group($process, $group, $supervisor); $generation = '';
+        return $result;
     };
     pcntl_async_signals(true);
-    pcntl_signal(SIGTERM, static function () use ($stop): void { $stop(); exit(0); });
+    pcntl_signal(SIGTERM, static function () use ($stop): void {
+        try { $stop(); exit(0); } catch (Throwable $error) { exit(2); }
+    });
     while (true) {
         $file = audit_run_dir() . '/app-control.json';
         $control = audit_read_control_json($file);
         if (($control['run_id'] ?? '') === getenv('AUDIT_RUN_ID') && ($control['revision'] ?? '') !== $revision) {
-            $revision = $control['revision']; $stop();
+            $revision = $control['revision']; $action = $control['action'] ?? '';
             try {
-                audit_expect(in_array($control['action'], ['start', 'stop'], true), 'invalid supervisor action');
-                if ($control['action'] === 'start') {
+                audit_expect(is_string($revision) && preg_match('/^[a-f0-9]{16}$/D', $revision) === 1
+                    && in_array($action, ['start', 'stop', 'observe'], true), 'invalid supervisor action');
+                if ($action === 'observe') {
+                    audit_expect($group !== null && $generation !== '' && ($control['overrides'] ?? []) === [], 'no registered generation or invalid observation options');
+                    $facts = audit_app_process_observation($group, $supervisor);
+                } else { $facts = $stop(); }
+                if ($action === 'start') {
                     audit_guard_assert();
                     $config = audit_config();
                     $env = ['PATH' => getenv('PATH'), 'PHP_APP_DEBUG' => 'false', 'PHP_APP_APP_KEY' => $config['signing_key'], 'PHP_DATABASE_HOSTNAME' => 'audit-mysql', 'PHP_DATABASE_HOSTPORT' => '3306', 'PHP_DATABASE_DATABASE' => 'audit_auth', 'PHP_DATABASE_USERNAME' => 'audit_app', 'PHP_DATABASE_PASSWORD' => $config['database']['password'], 'PHP_DATABASE_PREFIX' => 'eb_', 'PHP_DATABASE_DEBUG' => 'false', 'PHP_CACHE_DRIVER' => 'redis', 'PHP_REDIS_REDIS_HOSTNAME' => 'audit-redis', 'PHP_REDIS_PORT' => '6379', 'PHP_REDIS_REDIS_PASSWORD' => $config['redis_password'], 'PHP_CACHE_CACHE_PREFIX' => 'c:', 'PHP_CACHE_CACHE_TAG_PREFIX' => 'CRMEB:'];
@@ -372,7 +545,8 @@ function audit_serve(): void
                     foreach ($control['overrides'] ?? [] as $key => $value) {
                         $mapping = ['APP_KEY' => 'PHP_APP_APP_KEY', 'CACHE_DRIVER' => 'PHP_CACHE_DRIVER',
                             'AUTH_SESSION_EPOCH' => 'PHP_AUTH_SESSION_EPOCH', 'AUTH_STAMP_KEY' => 'PHP_AUTH_STAMP_KEY',
-                            'APP_DEBUG' => 'PHP_APP_DEBUG', 'DB_PORT' => 'PHP_DATABASE_HOSTPORT', 'CACHE_PREFIX' => 'PHP_CACHE_CACHE_PREFIX'];
+                            'APP_DEBUG' => 'PHP_APP_DEBUG', 'DB_PORT' => 'PHP_DATABASE_HOSTPORT', 'CACHE_PREFIX' => 'PHP_CACHE_CACHE_PREFIX',
+                            'SERVER_WORKERS' => 'PHP_CLI_SERVER_WORKERS'];
                         $approved = is_string($value) && match ($key) {
                             'APP_KEY', 'CACHE_DRIVER' => in_array($value, ['', 'default', 'file', 'redis'], true),
                             'AUTH_SESSION_EPOCH' => $value === '',
@@ -380,10 +554,12 @@ function audit_serve(): void
                             'APP_DEBUG' => in_array($value, ['true', 'false'], true),
                             'DB_PORT' => in_array($value, ['1', '3306'], true),
                             'CACHE_PREFIX' => (bool)preg_match('/^audit:http-lang:' . preg_quote((string)getenv('AUDIT_RUN_ID'), '/') . ':[0-9]+:$/D', $value),
+                            'SERVER_WORKERS' => in_array($value, ['', '2'], true),
                             default => false,
                         };
                         audit_expect(isset($mapping[$key]) && $approved, 'unapproved application configuration override');
-                        $env[$mapping[$key]] = $value;
+                        if ($key === 'SERVER_WORKERS' && $value === '') { unset($env['PHP_CLI_SERVER_WORKERS']); }
+                        else { $env[$mapping[$key]] = $value; }
                     }
                     $credentialCheck = json_decode(file_get_contents(audit_run_dir() . '/credential-check.json'), true, 512, JSON_THROW_ON_ERROR);
                     audit_expect(!audit_contains_secret_fingerprint($env, $credentialCheck['root_fingerprint']), 'root value rejected from application environment');
@@ -392,9 +568,23 @@ function audit_serve(): void
                     $log = audit_run_dir() . '/evidence/app-runtime.log';
                     $process = proc_open(['setsid', 'php', 'think', 'run', '-H', '0.0.0.0', '-p', '8000'], [['file', '/dev/null', 'r'], ['file', $log, 'a'], ['file', $log, 'a']], $pipes, audit_repo_dir() . '/crmeb', $env);
                     audit_expect(is_resource($process), 'cannot start PHP server');
+                    $group = audit_app_register_group($process, $supervisor); $generation = $revision;
+                    $deadline = microtime(true) + 3.0;
+                    do {
+                        $facts = audit_app_process_observation($group, $supervisor);
+                        if ($facts['members'] !== [] && $facts['listener_open']) { break; }
+                        usleep(10000);
+                    } while (microtime(true) < $deadline);
+                    audit_expect($facts['members'] !== [] && $facts['listener_open'], 'registered server group did not listen');
                 }
-                audit_write_json(audit_run_dir() . '/app-status.json', ['revision' => $revision, 'status' => $control['action']]);
-            } catch (Throwable $error) { audit_write_json(audit_run_dir() . '/app-status.json', ['revision' => $revision, 'status' => 'failed', 'error_class' => get_class($error)]); }
+                audit_write_json(audit_run_dir() . '/app-status.json', ['revision' => $revision, 'status' => $action,
+                    'run_id' => getenv('AUDIT_RUN_ID'), 'generation_revision' => $generation] + $facts);
+            } catch (Throwable $error) {
+                $cleanupError = null;
+                if ($action !== 'observe') { try { $stop(); } catch (Throwable $cleanup) { $cleanupError = get_class($cleanup); } }
+                audit_write_json(audit_run_dir() . '/app-status.json', ['revision' => $revision, 'status' => 'failed',
+                    'error_class' => get_class($error), 'cleanup_error_class' => $cleanupError]);
+            }
         }
         usleep(50000);
     }
