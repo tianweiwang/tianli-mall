@@ -1,0 +1,100 @@
+{
+  "milestone": "MS0b",
+  "task": "Task8",
+  "level": "BROWSER",
+  "record_origin": "GENERATED_SUMMARY_FROM_BROWSER_RECEIPTS_AND_ROOT_EXECUTION_RECEIPTS",
+  "run_id": "2026101117390914bd52",
+  "source_head": "ec2c84b7dc92a38934b60051f4391bc7080a9cf0",
+  "status": "TWO_NORMAL_FILE_SAVES_VERIFIED_FULL_ACCEPTANCE_PENDING",
+  "scope": "真实已构建Vue页面、真实隔离API、合法登录及两个正常首次FileSaver保存；汇总过程未重新执行程序或测试。",
+  "evidence_root": "C:/Users/Vwang/.tianli-audit/2026101117390914bd52/evidence",
+  "native_exit_provenance": "root已捕获的原生Node执行收据；不是原始浏览器summary字段，也不是生成结果行的退出码。",
+  "receipt_hash_algorithm": "SHA256 of original file bytes",
+  "executions": [
+    {
+      "execution": "20261011183458234495",
+      "raw_summary": "task8-browser-20261011183458234495-summary.json",
+      "raw_summary_sha256": "7e278bf5aa4b5853ca408b5117f71de8690db40507220fa64153ac0956738a52",
+      "raw_status": "INCOMPLETE",
+      "native_node_exit": 1,
+      "runner_sha256": "843f4a83490fdf88da5cabad89c6d27747212f68aaed83e1b44e7835710a5bfc",
+      "runner_archive_verified": false,
+      "classification": "检查脚本readiness未找到可点击下载控件；不是应用业务失败。没有点击producer/consumer下载路径，文件保存未执行。",
+      "failure": {"phase": "crud-page", "name": "Error", "message_sha256": "926c372e54edc6685f2708abbf050cc0f3f26e68eccca5042594ee43e434af8d"},
+      "saved_file_count": 0,
+      "screenshot_count": 0,
+      "http_response_count": 14,
+      "http_responses_all_200": true,
+      "cleanup": {"ok": true, "original_restored": true, "private_runtime": true, "deleted_rows": 3, "deleted_logs": 4, "deleted_cache_keys": 27, "deleted_files": 1, "unmatched_logs": 0, "missing_audit_facts": 0, "http_fact_count": 5, "successful_login_fact_count": 1, "pre_diff": {"tables": [], "redis": [], "runtime": [], "backup": []}, "post_diff": {"tables": [], "redis": [], "runtime": [], "backup": []}}
+    },
+    {
+      "execution": "20261011183753140496",
+      "raw_summary": "task8-browser-20261011183753140496-summary.json",
+      "raw_summary_sha256": "3b970c0ce11c729da8fff1e304a76b1355d19a9854daa35cef0d023cc0a8511f",
+      "raw_status": "PASS",
+      "native_node_exit": 0,
+      "runner_sha256": "5cc7bb2ad886e716c9ac0ad54bc005ad398dfee0f0ceaa3dcf07afc029bec0b0",
+      "runner_archive_verified": true,
+      "classification": "两个真实下载action各触发一次正常FileSaver保存；保存名称、字节数和SHA与真实producer及首次消费响应一致。",
+      "saved_file_count": 2,
+      "screenshot_count": 4,
+      "http_response_count": 26,
+      "http_responses_all_200": true,
+      "cleanup": {"ok": true, "original_restored": true, "private_runtime": true, "deleted_rows": 3, "deleted_logs": 11, "deleted_cache_keys": 27, "deleted_files": 11, "unmatched_logs": 0, "missing_audit_facts": 0, "http_fact_count": 12, "successful_login_fact_count": 1, "pre_diff": {"tables": [], "redis": [], "runtime": [], "backup": []}, "post_diff": {"tables": [], "redis": [], "runtime": [], "backup": []}}
+    },
+    {
+      "execution": "20261011184546373226",
+      "raw_summary": "task8-browser-20261011184546373226-summary.json",
+      "raw_summary_sha256": "dce913f2d166a104e5da629fb7469d2ba7ed295f7e11d9edaf7f6919a31710e1",
+      "raw_status": "OBSERVED",
+      "native_node_exit": 0,
+      "inspect_only": true,
+      "runner_sha256": "333798f6c4d82bc522d922ee925bdcdc83bbe70dadafe894970b6f8990616e2b",
+      "classification": "仅正常页面console观察；没有再次producer/consumer下载或文件保存，不新增PASS用例。",
+      "saved_file_count": 0,
+      "screenshot_count": 4,
+      "http_response_count": 22,
+      "http_responses_all_200": true,
+      "cleanup": {"ok": true, "original_restored": true, "private_runtime": true, "deleted_rows": 3, "deleted_logs": 9, "deleted_cache_keys": 27, "deleted_files": 1, "unmatched_logs": 0, "missing_audit_facts": 0, "http_fact_count": 10, "successful_login_fact_count": 1, "pre_diff": {"tables": [], "redis": [], "runtime": [], "backup": []}, "post_diff": {"tables": [], "redis": [], "runtime": [], "backup": []}}
+    }
+  ],
+  "sources": {
+    "fixture": {"path": "H:/天俪商城/artifacts/ms0b-task8/browser/fixture.php", "sha256": "089742e11404dbf66eede95d3c4e7d735e350520b0785c591f49f1adb1dbc428", "matches_all_three_receipts": true},
+    "transport": {"path": "H:/天俪商城/artifacts/ms0b-task8/browser/transport.php", "sha256": "0e42ed55a037481e1986b941b3d537bea42bf807ddc45b34f12505d439a8ff4c", "matches_all_three_receipts": true},
+    "successful_runner_archive": {"path": "H:/天俪商城/artifacts/ms0b-task8/browser/archive/run-browser-5cc7bb2a.cjs", "sha256": "5cc7bb2ad886e716c9ac0ad54bc005ad398dfee0f0ceaa3dcf07afc029bec0b0", "matches_execution": "20261011183753140496"},
+    "observe_only_runner": {"path": "H:/天俪商城/artifacts/ms0b-task8/browser/run-browser.cjs", "sha256": "333798f6c4d82bc522d922ee925bdcdc83bbe70dadafe894970b6f8990616e2b", "matches_execution": "20261011184546373226"},
+    "built_script_assets": {"provenance": "第二轮原始summary的built_script_assets字段；保留原始文件作为完整构建资产哈希证据。", "summary_not_a_new_build": true}
+  },
+  "verified_file_cases": [
+    {"case_id": "B01", "execution": "20261011183753140496", "kind": "crud", "status": "PASS", "saved_file": "task8-browser-20261011183753140496/systemCrudList.zip", "filename": "systemCrudList.zip", "bytes": 12096, "sha256": "6675c93d027ba66bee251b9f3bbea14a634741b7a93092d5f1348c20ad4593ad", "producer_route": "system/crud/download/<id>", "consumer_route": "download/<key>", "producer_business_status": 200, "consumer_http_status": 200, "matches_actual_producer_and_saved_file": true},
+    {"case_id": "B02", "execution": "20261011183753140496", "kind": "backup", "status": "PASS", "saved_file": "task8-browser-20261011183753140496/20261012-023754-1.sql.gz", "filename": "20261012-023754-1.sql.gz", "bytes": 496, "sha256": "1ac147737c96818a785e47c0aa71ff01016e1ead2c76f1099583080a06e0c5fc", "producer_route": "backup/download", "consumer_route": "download", "producer_business_status": 200, "consumer_http_status": 200, "matches_actual_producer_and_saved_file": true}
+  ],
+  "normal_save_proof": "第二轮归档runner：真实producer后inspect其自有文件记录；实际首次消费响应长度/SHA必须与该记录一致；点击真实UI后的Playwright download.saveAs保存，再独立比较suggestedFilename、实际文件字节与SHA。这里不保存file key或响应正文。",
+  "screenshots": [
+    {"case_id": "B01", "file": "task8-browser-20261011183753140496/crud-1365.png", "sha256": "90a1f83336b0548773067ba7b676b4119bdecd147302ae4801abe204bc562b5c", "viewport": {"width": 1365, "height": 900}, "fits_viewport": true, "text_fits": true},
+    {"case_id": "B01", "file": "task8-browser-20261011183753140496/crud-1024.png", "sha256": "9030a7f7127b9377ddea21d9ed5106f19ae5f7077beb87aaca240df36f547b65", "viewport": {"width": 1024, "height": 768}, "fits_viewport": true, "text_fits": true},
+    {"case_id": "B02", "file": "task8-browser-20261011183753140496/backup-1365.png", "sha256": "126fdb5314a3d3b04e1d774279e1db7962af9948b0490100150089334a9ab525", "viewport": {"width": 1365, "height": 900}, "fits_viewport": true, "text_fits": true},
+    {"case_id": "B02", "file": "task8-browser-20261011183753140496/backup-1024.png", "sha256": "f3620849cb3d552c31b194c3a8c377f30465527a248021f315ff1728a40c27a2", "viewport": {"width": 1024, "height": 768}, "fits_viewport": true, "text_fits": true}
+  ],
+  "visual_review": {"provenance": "root已用view_image核对第二轮四截图；本汇总只读核对截图文件SHA及原始bounds。", "download_action_clipped": false, "text_fits": true, "existing_fixed_columns_and_horizontal_scroll_retained": true},
+  "console": {
+    "clean": false,
+    "counts_execution_order": ["20261011183458234495", "20261011183753140496", "20261011184546373226"],
+    "message_groups": [
+      {"type": "pageerror", "message_sha256": "4e1f49a9c8ae8a158434e647c0c410352d718984a4fcd144d26cca3c394caa02", "original_socket_related": false, "counts": [2, 4, 4], "safe_message": "Event", "attribution": "root核对固定文本SHA及未改socket.js:createSocket.error中的reject(e)；该正常隔离环境两项WS服务未运行。原socket_related=false不改写，源码关联不作为WORKER运行验收。"},
+      {"type": "error", "message_sha256": "45427d24ad2d164eb9faf5df85dd0a36332d31f1ca61da52d0ddb04a097d105a", "original_socket_related": false, "counts": [2, 3, 3], "safe_message": "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector", "attribution": "root核对固定文本SHA；main.js:193-195旧外部统计脚本被runner离线路由阻断。没有外部统计或生产网络通过结论。"},
+      {"type": "error", "message_sha256": "02305d49b5b59fe34a1b265d424b7676aa245a2234d5afe127f20bca01454aee", "original_socket_related": true, "counts": [1, 2, 2], "attribution": "原始socket相关错误单独保留；未记录原消息内容。"},
+      {"type": "error", "message_sha256": "f56aad00c52fec7a39acbd8b5cc1b680aa8984802c22bab6ef8b15921bb33e36", "original_socket_related": true, "counts": [1, 2, 2], "attribution": "原始socket相关错误单独保留；未记录原消息内容。"}
+    ],
+    "offline_blocked_script_counts": [2, 3, 3],
+    "route_failure_counts": [0, 0, 0],
+    "unchanged_socket_source": "template/admin/src/libs/socket.js对MS0a开发基点3e7c966ecfa084ff4f219b03c61ed0efbac4caac的Git diff为空；这是静态差异证据，不是正式安全验收基线。"
+  },
+  "restoration": {"table_count": 158, "scope": "各执行自有数据精确清理后，原158表、全部Redis值及绝对期限、runtime和backup恢复；normal统计/审计日志/缓存的允许变化由fixture精确认领。", "provenance": "三份原始cleanup收据、fixture源码及root运行核对；汇总未重跑检查。", "all_three_cleanup_ok": true, "all_three_original_restored": true},
+  "generated_result_rows": {"file": "browser-results-summary.jsonl", "record_origin": "GENERATED_SUMMARY_FROM_BROWSER_RECEIPT", "case_ids": ["B00", "B01", "B02"], "total": 3, "pass": 2, "fail": 1, "first_failure_kind": "CHECK_SCRIPT_READINESS", "observe_only_added_cases": 0, "not_original_harness_raw_jsonl": true},
+  "repository_append": {"state_at_draft": "NOT_APPENDED_BY_THIS_AGENT", "existing_rows": 1188, "existing_file_sha256": "8865e3914da7aeafe49140cc3ccbe5060e726cbf1233417dcfd60be24d207405", "proposed_additional_rows": 3, "raw_browser_summaries_rewritten": false},
+  "remaining_gaps": ["验证码仅正常显示，未解答人工挑战。", "没有原URL JWT浏览器基线；被用户跳过的旧凭据/令牌拒绝、重复消费、安全复现、故障、并发、断连和恢复检查未运行。", "console有上述实际错误；两项WS服务未运行，WORKER以及外部统计/生产网络没有通过结论。", "两项下载保存通过仅覆盖当前正常首次保存路径；Task8及整个MS0b没有完整安全验收或人工签收结论。", "L2仅本地提交；未推送、发布、部署或通知集成方。"],
+  "skipped_checks_executed": false,
+  "production_network_acceptance": false,
+  "secrets_or_response_bodies_included": false
+}

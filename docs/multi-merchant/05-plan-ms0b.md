@@ -274,7 +274,7 @@ Task8 普通功能进度（2026-10-12，完整验收仍待）：
 - [x] Q6 六个必要业务路径已本地提交 `5b95cfa7`，包含共享有界 Redis 工厂；四项正常检查 PASS，原生 Bash exit0，准备与清理均成功。只证明合法登录、info 数字协议、账号0查询及验证码图片展示。
 - [x] Q7 九个必要业务路径已另行本地提交 `875b9300`；真实备份析构修复、两生产者的原生缓存写入确认及两个 Vue 下载调用点已接线。前端三个文件与已通过生产构建的源码哈希一致。
 - [x] 测试 `dfd2a2eb` 补充正常 ZIP 的非目录条目数及唯一名称核对。第二 RUN `2026101117390914bd52` 修正版全旧源基线为3PASS/3FAIL；Q6接线后4PASS；Q7旧下载源基线为2FAIL；最终普通六项全部PASS、原生Bash exit0。八个正式业务窗口均核对158表、所有Redis值/绝对期限、实际runtime及自有备份输出。每轮原始记录保留，18条新增结果只追加、不改写。
-- [ ] 两个真实后台页面的 BROWSER 操作和文件保存核对待完成。验证码完整人工操作未运行；被跳过的负向/故障/并发等检查不记通过，Task8及MS0b没有完整验收结论。
+- [x] 两个真实后台页面的正常首次 BROWSER 文件保存已核对：ZIP 与 gzip 的保存名称、长度和内容哈希对应真实 producer；1365×900 与1024×768四份截图已查看。首次检查脚本控件 readiness 失败保留，console 的既有 WS 服务缺失和离线外部统计阻断单列；只确认这两项下载流程，不是全站、生产网络或 WORKER 验收。三条生成摘要追加至 results，原1188条字节保留，现1191条，见 `records/ms0b/task8-browser-summary.json` 与报告补充。专用 RUN 已 teardown，复查3容器/1网络/10卷均无残留。验证码完整人工操作未运行；被跳过的负向/故障/并发等检查不记通过，Task8及MS0b没有完整验收结论。
 
 浏览器普通准备补充：真实布局/home和列表的 GET 也经 AdminLogMiddleware 写审计日志，不能把预期副作用限为两次下载producer。仅接受实源确认的normal GET：home/header、home/order、home/user、home/rank、jnotice、menus、logo、copyright、system/crud、system/backup、system/backup/file_list及两条原producer。每行必须是原快照不存在的新id，本次新合成账号身份、实际归一化rule/菜单DAO page、adminapi模块、system类型、可信IP、请求窗口时间及全部列均匹配，才登记并逐id清理；原日志完整保留。传输桥只转发真实调用/响应，不修改角色、种子、审计中间件或API返回。夹具状态存本RUN私有RW证据目录，凭据/令牌只在私有管道和浏览器内存中传递。先完成精确归属及清理源码设计，再运行普通浏览器操作。
 
@@ -283,9 +283,11 @@ Task8 普通功能进度（2026-10-12，完整验收仍待）：
 **Files:**
 - Create: `docs/multi-merchant/records/ms0b/cutover-plan.md`、`docs/multi-merchant/records/ms0b/integration-inventory.md`
 
-- [ ] 按 00 文档 §11.3 编写集成清单：代码侧入口逐项列出；"实际在用"一栏写"未知，待核实"，除非有可核实的证据。
-- [ ] 切换计划：前置条件（集成清单已核实、通知已发出——由用户执行）、部署顺序、`AUTH_SESSION_EPOCH` 与 `AUTH_STAMP_KEY` 的生成和下发、旧会话失效对管理员和第三方的影响、回退方案（回退版本必须保留 MS0a 边界）。
-- [ ] 文中不得出现"已通知""已部署"等未发生的事实。
+2026-10-12 集成源码盘点补充：`crmeb/crmeb/services/workerman/WorkermanService.php` 的 onMessage 在把 res.data 交给 v2 AdminAuthServices 前打印整个消息；`crmeb/crmeb/services/workerman/chat/ChatService.php` 同样打印整个聊天消息，普通登录消息包含令牌。这是静态源码证据，没有运行 worker 或读取生产日志。按现有自主委托将这两个同一认证集成的必要调用点纳入最小普通修复：只移除各一条原始消息 var_dump，保留解析、分发、响应、连接及状态行为；PHP8.2 语法检查和精确两行差异核对后单独本地提交。此修复不证明其他日志均已脱敏，不替代仍待的 WORKER 连接、旧连接卸载、真实发布或集成使用核实，也不恢复已跳过的验证。
+
+- [x] 按 00 文档 §11.3 编写集成清单：14组代码侧入口分别关联用途、认证、重新取令牌、责任及验证；全部"实际在用"为"未知，待核实"，源码与本地合成证据不代替真实使用证据。
+- [x] 切换计划已成文：列明集成核实/通知等发布前置记录、部署顺序、`AUTH_SESSION_EPOCH` 与 `AUTH_STAMP_KEY` 生成及下发规则、旧会话与长连接影响，以及保留 MS0a/v2 边界的回退方案；文档完成不代表前置条件已满足或已经发布。
+- [x] 两份文档如实保留未知/待核实和用户跳过项；未记为已通知、已部署或完整验收。当前仅L2本地文档，推送/发布授权层级分别为L3/L4。
 
 ### Task 10: 全量回归与交付
 

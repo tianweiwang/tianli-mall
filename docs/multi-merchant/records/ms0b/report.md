@@ -200,3 +200,46 @@ RUN `2026101117390914bd52` 的四次原生Bash结果如下。四次 `prepare_fai
 前端是独立BUILD证据：三份已提交源码与已构建副本SHA一致，`production_build_exit=0`，build-summary SHA `13d232da9210cb22ad18d966ace658a9a7fe3a1004ea798f71681ac2d24a22bd`，日志SHA `b04efe4b4613060c995c539f7a984224a29079b38d94fe816065ad5e80cf9bcc`。其中 `prepared_store_sha256=2821b29a…` 是构建收据中的历史后端稿引用，不能作为最终Store证明；最终身份以Q6测试收据为准。浏览器登录、真实保存文件和浏览器下载入口仍待验证，构建和后端HTTP不构成BROWSER通过。
 
 验证码仅检查创建/图片展示数据，完整解答及人工通过未执行；错误凭据、失败计数门槛/绕过、URL JWT拒绝、重复消费拒绝、安全复现、故障、并发/断连及RDB/恢复检查均按用户要求NOT RUN，没有换入口重跑或记为PASS。普通逻辑cleanup已恢复；第二RUN专用Docker资源teardown另由根代理记录，本四份功能收据不包含该结论。仍为L2本地交付，未push、部署、外部通知或人工签收；Task9–10与完整验收缺口保留。
+
+### Task8：正常浏览器文件保存补充证据
+
+RUN `2026101117390914bd52` 的两个真实已构建后台页面完成正常首次 FileSaver 保存；B01/B02 为 BROWSER PASS。原检查脚本首次未找到可点击下载控件的失败保留为 B00 FAIL，不记为应用业务失败。第三次仅观察正常页面 console，不新增用例或 PASS。本段依据已有收据整理，未重新执行程序或测试。
+
+| 执行 | 原始状态 / 原生 Node 退出码 | 实际结果 |
+| --- | --- | --- |
+| `20261011183458234495` | INCOMPLETE / 1 | 检查脚本 readiness 失败；没有执行下载，保存文件 0，截图 0；cleanup true。 |
+| `20261011183753140496` | PASS / 0 | 两个真实 action 各触发一次正常保存；保存名称、字节数及 SHA 与实际 producer/首次消费响应一致；四截图完成。 |
+| `20261011184546373226` | OBSERVED / 0 | 正常页面 console 观察，未再次下载，保存文件 0；不作为额外 PASS。 |
+
+退出码来自 root 已捕获的原生执行收据，不是原始 summary 内的字段。三份原始 summary 位于该 RUN 的 `evidence/`，完整字节 SHA256 分别为：
+
+- `task8-browser-20261011183458234495-summary.json`：`7e278bf5aa4b5853ca408b5117f71de8690db40507220fa64153ac0956738a52`。
+- `task8-browser-20261011183753140496-summary.json`：`3b970c0ce11c729da8fff1e304a76b1355d19a9854daa35cef0d023cc0a8511f`。
+- `task8-browser-20261011184546373226-summary.json`：`dce913f2d166a104e5da629fb7469d2ba7ed295f7e11d9edaf7f6919a31710e1`。
+
+| 生成摘要用例 | 正常保存文件 | 字节数 | 文件 SHA256 |
+| --- | --- | ---: | --- |
+| B01 PASS | `systemCrudList.zip` | 12096 | `6675c93d027ba66bee251b9f3bbea14a634741b7a93092d5f1348c20ad4593ad` |
+| B02 PASS | `20261012-023754-1.sql.gz` | 496 | `1ac147737c96818a785e47c0aa71ff01016e1ead2c76f1099583080a06e0c5fc` |
+
+成功轮 source HEAD 为 `ec2c84b7dc92a38934b60051f4391bc7080a9cf0`。执行时 runner SHA 为 `5cc7bb2ad886e716c9ac0ad54bc005ad398dfee0f0ceaa3dcf07afc029bec0b0`，与 `browser/archive/run-browser-5cc7bb2a.cjs` 归档一致；当前 `run-browser.cjs` 是第三次观察版 `333798f6c4d82bc522d922ee925bdcdc83bbe70dadafe894970b6f8990616e2b`，不冒称成功轮源码。三轮 fixture `089742e11404dbf66eede95d3c4e7d735e350520b0785c591f49f1adb1dbc428`、transport `0e42ed55a037481e1986b941b3d537bea42bf807ddc45b34f12505d439a8ff4c` 与原收据一致。首次 runner 哈希仅保留收据引用，未声称已核实其归档。原 summary 的 `built_script_assets` 保留实际加载构建资产哈希，本次不是一次新构建。
+
+成功轮 `crud-1365.png` / `crud-1024.png` / `backup-1365.png` / `backup-1024.png` 四图的 SHA、1365×900 / 1024×768 bounds 均与收据一致。root 已查看图片，下载 action 无裁剪、文字适配；原有列表固定列及水平滚动保持。截图完整哈希列于 `task8-browser-summary.json`。这只确认两项下载 action 及相应大小下的呈现，不扩为全站 UI 验收。
+
+三轮 cleanup 均 true / original_restored true，未匹配日志及缺失审计事实均 0。成功轮精确清理自有 3 行、11 条已认领审计日志、27 个缓存键、11 个文件；首次为 3/4/27/1，观察轮为 3/9/27/1。原 158 表、全部 Redis 值及绝对到期点、runtime 和 backup 均恢复，各轮 pre/post diff 四类为空；正常统计、日志与缓存变化通过 fixture 精确认领。本段不保留私有 state、真实账号、JWT、密码、密钥、文件 key、请求/响应正文。
+
+Console 并非无错。三轮均保留 pageerror `Event` 的消息 SHA `4e1f49a9c8ae8a158434e647c0c410352d718984a4fcd144d26cca3c394caa02`，次数 2/4/4；原 `socket_related=false` 不改写。root 核对固定文本哈希及未改 `template/admin/src/libs/socket.js:createSocket.error` 的 `reject(e)`，隔离环境两项 WS 服务未运行；另两种原 `socket_related=true` 的 error 哈希 `02305d49…` / `f56aad00…` 单独保留，次数均 1/2/2。该文件与 MS0a 开发基点 `3e7c966ecfa084ff4f219b03c61ed0efbac4caac` 的 diff 为空，仅为静态差异证据，不是 WORKER 通过或正式安全基线。
+
+消息 `Failed to load resource: net::ERR_BLOCKED_BY_CLIENT.Inspector` 的精确 SHA 为 `45427d24ad2d164eb9faf5df85dd0a36332d31f1ca61da52d0ddb04a097d105a`，次数 2/3/3；root 核对其对应 `main.js:193–195` 旧外部统计脚本被离线路由阻断。原 route_failures 各为 0，也不能据此宣称 console 清洁、外部统计、生产网络或 WORKER 验收通过。
+
+`browser-results-summary.jsonl` 是依据原始浏览器及 root 执行收据生成的三条安全摘要，明确 `record_origin=GENERATED_SUMMARY_FROM_BROWSER_RECEIPT`；不是 harness 原始 raw JSONL。B00 为检查脚本 readiness FAIL，B01/B02 为正常文件保存 PASS；不为观察轮制造用例。外稿生成时仓库结果仍为 1188 行，本代理未追加三条、未改写原始 summary。原 1188 行 SHA 为 `8865e3914da7aeafe49140cc3ccbe5060e726cbf1233417dcfd60be24d207405`；根代理安装后另记录追加收据。
+
+此前“两个下载页面正常保存待 BROWSER 核对”的缺口由上述窄范围证据补齐。验证码仍仅正常显示、未解答；没有原 URL JWT 浏览器基线。用户跳过的旧凭据/令牌拒绝、重复消费、安全复现、故障、并发、断连与恢复检查均未重跑、不记通过。Task8 和整个 MS0b 完整验收、WORKER/EXTERNAL 及人工签收缺口保留；L2 仅本地，未推送、部署或通知集成方。
+
+根代理已按冻结稿完整字节追加上述3条生成摘要，results现1191条；原1188条前缀SHA保持8865e3914da7aeafe49140cc3ccbe5060e726cbf1233417dcfd60be24d207405，新增摘要SHA为f1587ce89e89963525e98b4de41ff01c66c63e1fecd1d1b2595d3a01de5db93f。安装收据位于仓库外browser/record-append-receipt.json。专用RUN已按manifest完成teardown：原生Bash exit0，复查容器/网络/卷均为0，install.lock不存在，证据保留；仓库外browser/teardown-summary.json记录该结论。
+
+### Task9：发布准备文档本地交付
+
+`integration-inventory.md` 已按00 §11.3列出14组源码入口，并关联用途、认证、重新取令牌、负责人、最近使用窗口、切换责任及普通验证方式；全部真实使用均为“未知，待核实”，没有读取生产账号/日志或联系集成方。`cutover-plan.md` 已列出发布前记录、配置实际加载合同、部署顺序、长连接卸载影响和保留MS0a/v2边界的回退约束。两份文档的本地Task8下载BROWSER证据与生产调用方待验状态分开记载；文档任务完成不代表发布前置条件满足。当前仅L2，推送需L3，部署/通知/生产轮换需L4，均未执行。
+
+同次源码盘点在 `ec2c84b7` 分别移除WorkermanService与ChatService各一条原始消息var_dump；精确两行差异、PHP8.2两个文件lint exit0已记录于仓库外Task9收据SHA `09fa06ec699d75432a320f950ab1a718efaceac3152bb4dfed538c1b2f01074b`。未运行worker或读取生产日志，不能据此证明全部日志已脱敏、WORKER验收或旧连接卸载。没有新增安全复现或恢复被用户跳过的检查，Task10常规冻结和完整验收缺口仍保留。
