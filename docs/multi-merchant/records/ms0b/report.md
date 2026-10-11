@@ -55,8 +55,20 @@ ISO-FULL，RUN=20261011092042df3a82：现有PHP8.2镜像、独立internal网络�
 - 当前无Task4同秒登录/改密竞争、永久版本撤销或状态重启复活通过结论；这些原A21要求保留在Task6联合验证。MS0a全部106项在v2输入下的完整回归仍待Task10，不以本轮30项代替。
 - Task4三次RUN=20261011110747e9e9a8、20261011112142dd83e0、202610111127061c6db5均已按manifest核对并teardown、exit0；仅删除各自专用容器、internal网络和9个卷，仓库外原始证据保留。未清理日志以隐藏失败，后续测试使用新RUN。
 
+## Task5：对外接线前置（业务接线未实现）
+
+RUN=2026101112350380d12a，新建ISO-FULL专用内部网络、MySQL/Redis、9卷及真实初始化；目前仍供后续Task5测试使用。生产OutAccountServices、OutApiExceptionHandle及Login入口未修改。此阶段不声称完成A25 HTTP刷新。
+
+- worker测试先提交563f045d，旧supervisor5项基线2PASS/3FAIL、exit1：默认单进程启动/停止及非法override拒绝已通过；多worker、只读进程观察和恢复单进程因缺少严格override能力而失败。所有158张表、Redis值/绝对期限、双runtime缓存/log及真实TCP停止状态无意外变化；原始失败保留。
+- 隔离harness仅新增严格SERVER_WORKERS为空或2、本app容器内登记PID/PGID/SID/starttime、有限只读observe及真实fork worker有界退出。原setsid/php think run命令、环境主机/库/账号、所有既有override和root-fingerprint/guard均保持。原生数值标识以数字/数字字符串返回，既不读environ/cmdline也不打印请求或密码；本组监听inode与实际成员fd关联，observer不做Redis写/EVAL。
+- 5项after全部PASS/exit0，实际PHP日志3个server PID均属于独立登记组（2个worker加master），重复observe保留generation；stop后无组成员或8000监听，空override实际恢复单进程。raw=ms0b-http-workers-after-20261011124413.jsonl，SHA256=71fe0ab7648280aadcdd48069f50e1fa45bb86072c5314d68ec91a42feeed4a8。基线raw=ms0b-http-workers-baseline-20261011123751.jsonl，SHA256=eff5edd50ac218e8dd64e3752a7bccc344eb17eac9b3c93cb6d0dfd923b5fb59。
+- 原12项selftest全部PASS/exit0，包含16次受控启动、ISO隔离/DML边界/真实Redis故障与恢复，未放宽断言。raw=selftest-after-20261011124638.jsonl，SHA256=7d6b20f429e5ba86c8503dbae93135ac9c7328abe23f8e3d974c650ec526c504。该轮生产代码无未提交改动，harness待提交文件哈希按下文记录；不冒称Task10清洁冻结。
+- 额外故障诊断只在同一专用app容器、核对登记leader和supervisor的真实PID/starttime/PGID/SID后SIGKILL确切wrapper。其后4个真实子进程及8000监听仍存活；stop按原登记组处理，即使wrapper已退出仍完整TERM/必要KILL并回收。独立docker exec中的/proc数值观察再次确认整个组（包括待回收成员）空、监听关闭、158表和全部Redis值/期限不变，exit0。证据diagnostic-http-wrapper-state.json及实际diagnostic-ms0b-http-wrapper.php保留仓库外，临时源码核对归档哈希后精确删除。该诊断证明worker退出边界，不代替HTTP业务竞态。
+- harness生产于测试提交563f045d加单个待提交文件时运行，后本地提交7895776a；task5-harness-tested-source.json记录SHA256=d762074a49b40e2244cb1de27b529eb6edcbd45bf1b127084e266215d25ab5d3并确认与提交后一致。原始commit_sha不改写。
+- 对外基本48场景和真正双HTTP刷新/响应前断开用例尚在准备；三业务文件仅仓库外草稿，未安装或验证。尚无Task5接线通过结论。
+
 ## 未完成
 
 Task4完整A21、Task5对外端、Task6全部变更入口、Task7世代轮换/RDB恢复、Task8验证码/URL令牌与浏览器下载、Task9发布准备、Task10完整冻结回归和独立验收均待完成。当前HTTP通过仅限Task4上述30项；无整个MS0b或WORKER/BROWSER/EXTERNAL验收通过结论，接口实际在用情况未知。此报告不构成人工签收。
 
-results.jsonl当前共1012条INTEGRATION原始行：原Task1–3共822行，加Task4两轮12项自检、三轮30项HTTP基线、两轮30项after及启动8项baseline/after共190行。历史失败不抹除，原commit_sha不改写；Task1–3最后一轮239项及Task4最后38项全PASS，不能相加为整个里程碑验收。UNIT-STUB43文本证据单独统计；整个MS0b未完成，后续任务与交付继续更新本记录。
+results.jsonl当前共1034条INTEGRATION原始行：原Task1–3共822行，加Task4共190行，以及Task5 worker5项baseline/after和原12项selftest共22行。历史失败不抹除，原commit_sha不改写；Task1–3最后一轮239项及Task4最后38项全PASS，不能相加为整个里程碑验收。Task5前置17项通过仅证明隔离执行能力，wrapper额外诊断JSON单列。UNIT-STUB43文本证据单独统计；整个MS0b未完成，后续任务与交付继续更新本记录。

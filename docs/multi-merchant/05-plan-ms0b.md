@@ -171,6 +171,8 @@ public function revoke(string $app, string $token): void
 - [ ] **Step 1: 用例**：A24（旧格式对外令牌被拒绝）；A25 的 HTTP 子场景（并发刷新只成功一个；客户端在收到响应前断开时，服务端不产生第二个有效会话）；A19、A28 中对外账号相关部分回归；MCP 回归（不受影响）。
 - [ ] **Step 2–5**：确认失败 → 实现 → 通过 → 提交 `feat(outapi): switch to v2 sessions with single-use refresh`。
 
+2026-10-11测试运行前置进度：563f045d先提交5项真实worker生命周期测试；旧supervisor实际2PASS/3FAIL、exit1，默认单进程及非法override拒绝既有行为不制造失败。实现后5PASS/exit0、原12项selftest全PASS/exit0；harness本地提交7895776a，原raw元数据保留测试时HEAD+文件哈希。另在本RUN app容器内严格核对登记leader PID/starttime/PGID/SID及supervisor身份后，只终止该wrapper：4个实际子进程和8000仍存活；stop后独立/proc核对全组（含僵尸）空、监听关闭，全部158表/Redis值及期限不变。diagnostic源和状态保留仓库外，不加生产钩子。48项对外基础场景及真正并发/断开场景仍待旧服务基线、实现和完整通过，不能以worker前置通过标Task5完成。短屏障EVAL等待的原理核对了[Redis CLIENT PAUSE文档](https://redis.io/docs/latest/commands/client-pause/)及[8.6.1暂停处理源码](https://github.com/redis/redis/blob/8.6.1/src/server.c#L4290)、[阻塞标记源码](https://github.com/redis/redis/blob/8.6.1/src/blocked.c#L595)、[CLIENT LIST序列化源码](https://github.com/redis/redis/blob/8.6.1/src/networking.c#L3656)；仍须真实HTTP运行证明本次重叠。
+
 ### Task 6: 凭据与状态变更的撤销流程
 
 **Files:**
