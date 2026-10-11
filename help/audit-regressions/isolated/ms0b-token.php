@@ -158,11 +158,15 @@ function ms0b_token_set_config(array $config): void
     // Config::set($config, 'auth') merges and would restore a removed field.
     // Replacing the top-level entry makes missing-field probes actually missing.
     $app->config->set(['auth' => $config]);
-    $app->env->set([
+    // Bulk Env::set flattens array values and TypeErrors on numeric keys.
+    // Preserve wrong-type values exactly so the real auth guard rejects them.
+    foreach ([
         'AUTH_SESSION_EPOCH' => $config['session_epoch'] ?? null,
         'AUTH_STAMP_KEY' => $config['stamp_key'] ?? null,
         'AUTH_ISSUER' => $config['issuer'] ?? null,
-    ]);
+    ] as $name => $value) {
+        $app->env->set($name, $value);
+    }
 }
 function ms0b_token_require_classes(): void
 {
