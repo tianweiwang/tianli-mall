@@ -30,6 +30,7 @@ return [
         'timer' => \crmeb\command\Timer::class,
         'util' => \crmeb\command\Util::class,
         'npm' => \crmeb\command\Npm::class,
-        'license:cleanup' => \crmeb\command\LicenseAlignmentCleanup::class
+        'license:cleanup' => \crmeb\command\LicenseAlignmentCleanup::class,
+        'auth:epoch-rotate' => \app\command\AuthEpochRotate::class
     ],
 ];

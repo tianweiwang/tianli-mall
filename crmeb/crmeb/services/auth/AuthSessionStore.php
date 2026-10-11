@@ -74,6 +74,58 @@ class AuthSessionStore
         return $this->epoch;
     }
 
+    /** Delete only one retired epoch using this store's bounded raw connection. */
+    public function deleteOldEpoch(string $oldEpoch): int
+    {
+        try {
+            $auth = AuthConfigGuard::authConfig();
+            if (preg_match('/^[A-Za-z0-9._-]{1,128}$/D', $oldEpoch) !== 1
+                || $auth['session_epoch'] !== $this->epoch || $oldEpoch === $this->epoch) {
+                throw new \RuntimeException();
+            }
+            $prefix = 'auth:v2:' . $oldEpoch . ':';
+            $cursor = '0';
+            $deleted = 0;
+            do {
+                if (@$this->redis->clearLastError() !== true) {
+                    throw new \RuntimeException();
+                }
+                // Inspect the full native reply; scan()'s false result and local
+                // error state cannot reliably prove a successful empty page.
+                $page = @$this->redis->rawCommand('SCAN', $cursor, 'MATCH', $prefix . '*', 'COUNT', 200);
+                $lastError = @$this->redis->getLastError();
+                if ($lastError !== null || !is_array($page) || array_keys($page) !== [0, 1]
+                    || !is_string($page[0]) || !is_array($page[1]) || !array_is_list($page[1])) {
+                    throw new \RuntimeException();
+                }
+                $cursor = $page[0];
+                if (preg_match('/^(0|[1-9][0-9]{0,19})$/D', $cursor) !== 1
+                    || (strlen($cursor) === 20 && strcmp($cursor, '18446744073709551615') > 0)) {
+                    throw new \RuntimeException();
+                }
+                // SCAN may return an empty page before its cursor reaches zero.
+                $keys = $page[1];
+                foreach ($keys as $key) {
+                    if (!is_string($key) || !str_starts_with($key, $prefix)) {
+                        throw new \RuntimeException();
+                    }
+                }
+                // COUNT is a hint; validate the entire page before its first DEL.
+                foreach (array_chunk($keys, 200) as $batch) {
+                    $removed = @$this->redis->del($batch);
+                    if (!is_int($removed) || $removed < 0 || $removed > count($batch)) {
+                        throw new \RuntimeException();
+                    }
+                    $deleted += $removed;
+                }
+            } while ($cursor !== '0');
+            return $deleted;
+        } catch (\Throwable $error) {
+            // A partially completed cleanup is not retried or reported as success.
+            throw new AuthUnavailableException();
+        }
+    }
+
     /** Only credential-login callers may initialize an authorization version. */
     public function initAccount(string $app, string $id): string
     {
