@@ -310,7 +310,7 @@ git commit -m "fix(outapi): single enabled-state rule for login/access/refresh/M
 **Interfaces:**
 - Produces: 配置 `config('auth_routes.authenticated')`，值为 `string[]`，每项格式为小写的 `"<method> <rule>"`，例如 `"get menuslist"`；`verifyAuth()` 签名不变
 
-- [ ] **Step 1: 路由盘点**
+- [x] **Step 1: 路由盘点**（真实 973 条，958 条有授权中间件：435 已登记、523 未登记；严格原两项方案拒绝 521 条；3 条仅认证单列，CRUD 为空；全 158 表与 Redis 405 键前后不变，0 HTTP，exit 0）
 
 `route-inventory.php` 在隔离环境中列出 adminapi 的全部路由（方法、规则、是否挂了 `AdminAuthTokenMiddleware` 与 `AdminCheckRoleMiddleware`），与 `eb_system_menus`（`auth_type = 2`）的 `api_url`、`methods` 对比，输出到 `route-permission-matrix.md`。表头：`方法 | 规则 | 有认证中间件 | 有授权中间件 | 已登记 | 建议策略（已登记授权 / 白名单 / 拒绝） | 理由`。`crud/` 生成路由单列一节。
 
