@@ -162,6 +162,7 @@ public function revoke(string $app, string $token): void
 **Files:**
 - Modify: `crmeb/app/services/out/OutAccountServices.php`（`authLogin()`、`parseToken()`、`refresh()`）；`crmeb/app/outapi/OutApiExceptionHandle.php`（同一受控异常必要返回调用点，直接JSON、不得记录请求参数/底层异常）
 - Modify（真实公开入口前置及测试并发的必要调用点）: `crmeb/app/outapi/controller/Login.php`、`help/audit-regressions/isolated/lib/harness.php`；Create: `help/audit-regressions/isolated/ms0b-out-http.php`。公开getToken/refreshToken在postMore前校验v2配置和真实有界Redis/PDO依赖；多worker仅供本RUN的隔离PHP服务，SERVER_WORKERS严格只允许未设置或2，记录实际PID/PGID、启动/停止及遗留进程清理，不将单worker排队冒称并发。不得修改生产HTTP传输或增加测试钩子来制造竞态。
+- Create（真实多worker验收前置）: `help/audit-regressions/isolated/ms0b-http-workers.php`；03记录相同隔离边界。先提交/保留旧supervisor基线，再启用严格SERVER_WORKERS override与本组只读observe。观察只返回本generation PGID/SID/starttime、数字PID及其到专用audit-redis:6379的socket端口/inode，不返回cmdline/environ/请求内容；不停止服务或写Redis。start/stop ACK不能当作实际运行/清理完成，分别以真实PHP启动日志PID、TCP监听及本组成员证据核对；默认单worker正常行为保留，不要求既有正常行为失败。wrapper提前退出的清理另用隔离容器内核对本RUN/登记PID及starttime的故障诊断，保持原生传输和业务代码不变。
 
 **Interfaces:**
 - Produces: 对外账号凭据摘要 = 数据库中的 `appsecret` 哈希字符串；`refresh()` 使用 `AuthTokenV2::refresh()`（单次兑换）
