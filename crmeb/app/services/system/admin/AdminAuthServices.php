@@ -14,10 +14,9 @@ namespace app\services\system\admin;
 
 use app\dao\system\admin\AdminAuthDao;
 use app\services\BaseServices;
-use crmeb\exceptions\AuthException;
-use crmeb\services\AuthConfigGuard;
-use crmeb\services\SessionWhitelist;
-use crmeb\utils\JwtAuth;
+use crmeb\exceptions\AuthSessionException;
+use crmeb\exceptions\AuthUnavailableException;
+use crmeb\services\auth\AuthTokenV2;
 
 /**
  * admin授权service
@@ -48,39 +47,26 @@ class AdminAuthServices extends BaseServices
     public function parseToken(string $token, string $msg = '登录已过期,请重新登录'): array
     {
         if (!$token || $token === 'undefined') {
-            throw new AuthException($msg, [], 401);
-        }
-        AuthConfigGuard::assertRedisSessionStore();
-        /** @var JwtAuth $jwtAuth */
-        $jwtAuth = app()->make(JwtAuth::class);
-        try {
-            ['id' => $id, 'type' => $type, 'pwd' => $pwd] = $jwtAuth->decodeVerified($token);
-        } catch (AuthException $e) {
-            // Configuration failures retain their 503 contract.
-            throw $e;
-        } catch (\Throwable $e) {
-            throw new AuthException($msg, [], 401);
-        }
-        if ($type !== 'admin'
-            || !SessionWhitelist::matches(SessionWhitelist::read($token), 'admin', $id, $token)
-            || $pwd === '') {
-            throw new AuthException($msg, [], 401);
-        }
-        $adminInfo = $this->dao->get($id);
-        if (!$adminInfo || !$adminInfo->id || (int)$adminInfo->is_del !== 0 || (int)$adminInfo->status !== 1) {
-            if (!request()->isCli()) {
-                SessionWhitelist::forget($token);
-            }
-            throw new AuthException($msg, [], 401);
-        }
-        if (!hash_equals(md5((string)$adminInfo->pwd), $pwd)) {
-            if (!request()->isCli()) {
-                SessionWhitelist::forget($token);
-            }
-            throw new AuthException($msg, [], 401);
+            throw new AuthSessionException();
         }
 
-        $adminInfo->type = $type;
+        // Only this call's validated identity is retained in the local scope.
+        // AuthTokenV2 invokes the reader after signature/schema/app checks.
+        $adminInfo = null;
+        AuthTokenV2::fromConfig()->verify('adminapi', $token, function (string $id) use (&$adminInfo): string {
+            try {
+                $adminInfo = $this->dao->get($id);
+            } catch (\Throwable $error) {
+                throw new AuthUnavailableException();
+            }
+            if (!$adminInfo || !$adminInfo->id || (int)$adminInfo->is_del !== 0
+                || (int)$adminInfo->status !== 1) {
+                throw new AuthSessionException();
+            }
+            return (string)$adminInfo->pwd;
+        });
+
+        $adminInfo->type = 'admin';
         return $adminInfo->hidden(['pwd', 'is_del', 'status'])->toArray();
     }
 

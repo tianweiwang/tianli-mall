@@ -12,7 +12,7 @@ namespace app\adminapi\controller\v1\setting;
 
 use app\adminapi\controller\AuthController;
 use app\services\system\admin\SystemAdminServices;
-use crmeb\services\CacheService;
+use crmeb\services\auth\AuthTokenV2;
 use think\facade\{App, Config};
 
 /**
@@ -207,8 +207,15 @@ class SystemAdmin extends AuthController
      */
     public function logout()
     {
-        $key = trim(ltrim((string)$this->request->header(Config::get('cookie.token_name')), 'Bearer'));
-        CacheService::delete(md5($key));
+        // The route already verified current credentials; revoke still checks
+        // the exact adminapi identity, account version and token/sid binding.
+        $token = trim(ltrim((string)$this->request->header(Config::get('cookie.token_name', 'Authori-zation')), 'Bearer'));
+        // Keep the middleware's temporary header-first normalization until
+        // Task 8 removes URL JWT input from both actual request consumers.
+        if (!$token) {
+            $token = trim(ltrim((string)$this->request->get('token')));
+        }
+        AuthTokenV2::fromConfig()->revoke('adminapi', $token);
         return app('json')->success();
     }
 }

@@ -10,6 +10,7 @@
 // +----------------------------------------------------------------------
 namespace app;
 
+use crmeb\compat\think\Db as CompatDb;
 use crmeb\services\SystemConfigService;
 use crmeb\services\GroupDataService;
 use crmeb\utils\Json;
@@ -19,6 +20,7 @@ class AppService extends Service
 {
 
     public $bind = [
+        \think\Db::class => CompatDb::class,
         'json' => Json::class,
         'sysConfig' => SystemConfigService::class,
         'sysGroupData' => GroupDataService::class

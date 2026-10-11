@@ -11,7 +11,10 @@
 namespace app\adminapi\controller;
 
 use crmeb\services\CacheService;
+use crmeb\exceptions\AuthUnavailableException;
+use crmeb\services\auth\AuthSessionStore;
 use think\facade\App;
+use think\facade\Db;
 use crmeb\utils\Captcha;
 use app\services\system\admin\SystemAdminServices;
 
@@ -90,6 +93,17 @@ class Login extends AuthController
      */
     public function login()
     {
+        // Request::postMore calls filter_str/sys_config even with filter=false.
+        // Fail before that cache/DB-dependent input filtering when deployment
+        // configuration or the bounded Redis connection is unavailable.
+        AuthSessionStore::fromConfig();
+        try {
+            // getPdo() merely observes an existing handle; connect() is the
+            // public PDOConnection method that actually establishes one.
+            Db::connect()->connect();
+        } catch (\Throwable $error) {
+            throw new AuthUnavailableException();
+        }
         [$account, $password, $key, $captchaVerification, $captchaType] = $this->request->postMore([
             'account',
             'pwd',

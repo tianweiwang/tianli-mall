@@ -15,6 +15,8 @@ namespace app\adminapi;
 use crmeb\exceptions\AdminException;
 use crmeb\exceptions\ApiException;
 use crmeb\exceptions\AuthException;
+use crmeb\exceptions\AuthSessionException;
+use crmeb\exceptions\AuthUnavailableException;
 use think\db\exception\DbException;
 use think\exception\Handle;
 use think\exception\HttpResponseException;
@@ -82,6 +84,14 @@ class AdminApiExceptionHandle extends Handle
      */
     public function render($request, Throwable $e): Response
     {
+        // Controlled v2 errors bypass translation/cache IO and debug context.
+        // Both subclasses stay under AuthException's existing report ignore.
+        if ($e instanceof AuthUnavailableException) {
+            return Response::create(['status' => 503, 'msg' => '认证服务暂不可用', 'data' => []], 'json', 200);
+        }
+        if ($e instanceof AuthSessionException) {
+            return Response::create(['status' => 401, 'msg' => '认证信息无效，请重新登录', 'data' => []], 'json', 200);
+        }
         if ($e instanceof HttpResponseException) {
             return parent::render($request, $e);
         }

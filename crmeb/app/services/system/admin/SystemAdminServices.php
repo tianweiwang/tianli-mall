@@ -19,14 +19,19 @@ use app\services\product\product\StoreProductServices;
 use app\services\system\log\SystemFileServices;
 use app\services\user\UserExtractServices;
 use crmeb\exceptions\AdminException;
+use crmeb\exceptions\AuthSessionException;
+use crmeb\exceptions\AuthUnavailableException;
 use app\dao\system\admin\SystemAdminDao;
 use app\services\system\SystemMenusServices;
 use app\services\other\CacheServices;
 use crmeb\services\CacheService;
-use crmeb\services\AuthConfigGuard;
+use crmeb\services\auth\AuthSessionStore;
+use crmeb\services\auth\AuthTokenV2;
+use crmeb\services\auth\CredentialStamp;
 use crmeb\services\FormBuilder;
 use crmeb\services\workerman\ChannelService;
 use think\facade\Config;
+use think\facade\Db;
 use think\facade\Event;
 use think\Model;
 
@@ -81,6 +86,24 @@ class SystemAdminServices extends BaseServices
     }
 
     /**
+     * Read credential state without the legacy verifyLogin statistics write.
+     * Only the main v2 login uses this helper; public verifyLogin is unchanged.
+     */
+    private function readLoginCredentials(string $account, string $password)
+    {
+        try {
+            $adminInfo = $this->dao->accountByAdmin($account);
+        } catch (\Throwable $error) {
+            throw new AuthUnavailableException();
+        }
+        if (!$adminInfo || !password_verify($password, (string)$adminInfo->pwd)) {
+            return false;
+        }
+
+        return $adminInfo;
+    }
+
+    /**
      * 文件管理员登陆
      * @param string $account
      * @param string $password
@@ -121,11 +144,59 @@ class SystemAdminServices extends BaseServices
      */
     public function login(string $account, string $password, string $type, string $key = '')
     {
-        AuthConfigGuard::assertRedisSessionStore();
-        AuthConfigGuard::signingKey();
-        $adminInfo = $this->verifyLogin($account, $password);
+        // Validate deployment configuration and the bounded, independent Redis
+        // connection before credential queries, statistics, menus or caches.
+        $store = AuthSessionStore::fromConfig();
+        $tokens = new AuthTokenV2($store);
+        if ($type !== 'admin') {
+            throw new AuthSessionException();
+        }
+        $adminInfo = $this->readLoginCredentials($account, $password);
         if (!$adminInfo) return false;
-        $tokenInfo = $this->createToken($adminInfo->id, $type, $adminInfo->pwd);
+        if ((int)$adminInfo->status !== 1) {
+            // Retain the existing disabled-credential login response.
+            throw new AdminException('您已被禁止登录');
+        }
+        if ((int)$adminInfo->is_del !== 0) {
+            return false;
+        }
+        $id = (string)$adminInfo->id;
+        $validatedDigest = (string)$adminInfo->pwd;
+        $version = $store->initAccount('adminapi', $id);
+
+        // Never pair an earlier password_verify result with a newer digest.
+        // A change after this read is rejected by createSession's version CAS
+        // once all credential/state writers use the Task 6 change guard.
+        try {
+            $current = $this->dao->get($id);
+        } catch (\Throwable $error) {
+            throw new AuthUnavailableException();
+        }
+        if (!$current || !$current->id || (int)$current->status !== 1
+            || (int)$current->is_del !== 0
+            || !hash_equals($validatedDigest, (string)$current->pwd)) {
+            throw new AuthSessionException();
+        }
+        $adminInfo = $current;
+        $tokenInfo = $tokens->issue('adminapi', $id, $version,
+            CredentialStamp::for('adminapi', $id, $validatedDigest));
+
+        // Persist only statistics after the session write has been confirmed.
+        // Do not save the earlier model and overwrite concurrent account data.
+        try {
+            $updated = Db::name('system_admin')->where('id', $id)->update([
+                'last_time' => time(),
+                'last_ip' => app('request')->ip(),
+                'login_count' => Db::raw('login_count + 1'),
+            ]);
+        } catch (\Throwable $error) {
+            // An acknowledged session may remain, but an unacknowledged login
+            // never returns its token or retries/compensates the dependency.
+            throw new AuthUnavailableException();
+        }
+        if ($updated !== 1) {
+            throw new AuthSessionException();
+        }
         /** @var SystemMenusServices $services */
         $services = app()->make(SystemMenusServices::class);
         [$menus, $uniqueAuth] = $services->getMenusList($adminInfo->roles, (int)$adminInfo['level']);
@@ -146,7 +217,7 @@ class SystemAdminServices extends BaseServices
 
         return [
             'token' => $tokenInfo['token'],
-            'expires_time' => $tokenInfo['params']['exp'],
+            'expires_time' => $tokenInfo['exp'],
             'menus' => $menus,
             'unique_auth' => $uniqueAuth,
             'user_info' => [
