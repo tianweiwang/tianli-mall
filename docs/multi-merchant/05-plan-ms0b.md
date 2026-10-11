@@ -155,14 +155,17 @@ public function revoke(string $app, string $token): void
 - [ ] **Step 1: 用例**：A24（旧格式管理员令牌，即使旧 `md5(token)` 键仍在，也被拒绝；Redis 中其他业务键不受影响）；A21-v2（改密后旧令牌失效，新登录可用；同一秒内"登录"与"改密"并发，改密胜出）；全部 MS0a 管理端用例的回归。
 - [ ] **Step 2–5**：确认失败 → 实现 → 通过 → 提交 `feat(adminapi): switch to v2 sessions`。
 
+2026-10-11接线阶段进度（不替代上述完整A21）：30项HTTP测试先提交并保留旧服务12PASS/18FAIL新RUN基线；首轮after27PASS/3FAIL，精确正常退出审计及实际启动Redis阻塞按上文处理。62c201ba先提交8项bootstrap测试，旧实现6PASS/2FAIL，保留6项既有PSR16/tag/DB/ORM兼容；实现后8PASS/exit0，30项HTTP最终30PASS/exit0。8个生产文件本地提交7c26c85b，测试时HEAD+未提交文件哈希与提交后一致，原raw source元数据保留。记录见records/ms0b/report.md；Task4完整验收勾选仍待Task6同秒并发/永久撤销联合测试及Task10完整MS0a回归，不标整个MS0b完成。
+
 ### Task 5: 对外账号接入 v2
 
 **Files:**
 - Modify: `crmeb/app/services/out/OutAccountServices.php`（`authLogin()`、`parseToken()`、`refresh()`）；`crmeb/app/outapi/OutApiExceptionHandle.php`（同一受控异常必要返回调用点，直接JSON、不得记录请求参数/底层异常）
+- Modify（真实公开入口前置及测试并发的必要调用点）: `crmeb/app/outapi/controller/Login.php`、`help/audit-regressions/isolated/lib/harness.php`；Create: `help/audit-regressions/isolated/ms0b-out-http.php`。公开getToken/refreshToken在postMore前校验v2配置和真实有界Redis/PDO依赖；多worker仅供本RUN的隔离PHP服务，SERVER_WORKERS严格只允许未设置或2，记录实际PID/PGID、启动/停止及遗留进程清理，不将单worker排队冒称并发。不得修改生产HTTP传输或增加测试钩子来制造竞态。
 
 **Interfaces:**
 - Produces: 对外账号凭据摘要 = 数据库中的 `appsecret` 哈希字符串；`refresh()` 使用 `AuthTokenV2::refresh()`（单次兑换）
-- 实源预审补齐：authLogin不得以appsecret真假值决定是否验密，null/空串/字符串0均不能跳过password_verify；auth_info及parseToken结果隐藏存明文凭据的apppwd，保留其余DTO和rules可消费形态，以专用非空合成fixture证明隐藏，不改历史库值。公开refresh_token自行验证body.access_token，MCP仍独立header直接凭据，不额外加角色中间件。Login公开入口与管理端相同有过滤缓存先行链，必要的早期配置/依赖前置纳同一调用点。HTTP并发需先在harness验证实际多worker/PID和并行接收，不能把单worker排队或CLI原语竞态冒称HTTP并发；断开客户端还须独立观察真实消费/仅一replacement，再重试旧token401。
+- 实源预审补齐：authLogin不得以appsecret真假值决定是否验密，null/空串/字符串0均不能跳过password_verify。实版本Validate::require允许字符串0，旧service真假判断让该值通过HTTP入口跳过验密；空/null若被原HTTP validator以400提前拒绝，另用真实service调用覆盖其401边界，不改验证器或将既有拒绝冒称新修复。auth_info及parseToken结果隐藏存明文凭据的apppwd、push_password，保留其余DTO和rules可消费形态，以专用非空合成fixture且push_open=0证明字段不存在、原数据库值不变、不触发外部推送；不全局隐藏模型、改CRUD/历史库值或推送消费点。公开refresh_token自行验证body.access_token，MCP仍独立header直接凭据，不额外加角色中间件或JWT配置前置。Login公开入口与管理端相同有过滤缓存先行链，必要的早期配置/依赖前置纳同一调用点。HTTP并发需先在harness验证实际多worker/PID、两个请求同时处理的Redis阻塞/连接证据，不能仅以两个TCP accept/排队或CLI原语竞态冒称HTTP并发；固定短时CLIENT PAUSE WRITE屏障须在认证1秒read_timeout内并真实观测，旧token只有一个replacement。响应丢失用真实HTTP发送完整请求后、未读取响应字节时关闭socket，须先证明服务端已进入刷新处理、其后独立观察实际消费/仅一replacement和重试旧token401，不按客户端超时推断执行结果。保护完整DB/Redis值/期限/实际runtime日志窗口，释放屏障/停止worker后再次核对。
 
 - [ ] **Step 1: 用例**：A24（旧格式对外令牌被拒绝）；A25 的 HTTP 子场景（并发刷新只成功一个；客户端在收到响应前断开时，服务端不产生第二个有效会话）；A19、A28 中对外账号相关部分回归；MCP 回归（不受影响）。
 - [ ] **Step 2–5**：确认失败 → 实现 → 通过 → 提交 `feat(outapi): switch to v2 sessions with single-use refresh`。
