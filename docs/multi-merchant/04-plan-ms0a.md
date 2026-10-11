@@ -16,6 +16,7 @@
 - 用户于 2026-10-11 在本会话确认 BASE 通过、授权 MS0a L2，并批准 Windows 使用 ISO-FULL（03 文档 §2.1）。本计划中的宿主 `php` 测试命令在专用 runner 中执行；Mac 绝对路径按上述 worktree 对应替换。执行清单仍以本文件为唯一记录。
 - 2026-10-11 用户批准正常授权探针使用安装种子已有的 `GET product/product/rule`（商品规则列表）。原计划的商品列表接口未登记；保持该事实并纳入 Task 7 清单，不为通过测试而添加权限种子。
 - 2026-10-11 用户批准 Task 1 补充文件校验引导初始化（03 §2.1）：在专用实例内由 audit_migrator 调用现有 writeMd5() 真实生成校验数据并记录当前版本标记，应用仍仅有 DML 权限，Z07 断言不变。实际触发原因和失败证据见 records/ms0a/report.md P10。
+- 2026-10-11 用户在 SP-MS0a-1 批准六项白名单与其余未登记接口拒绝策略，并批准为 system/info、route/import_api、download/<key?> 补角色中间件。精确清单和影响见 Task 7；不新增权限种子。
 - 不改令牌载荷格式，不新增数据库表或列，不改 `eb_system_menus` 等种子数据。
 - 不改客服、顾客令牌的**签发**；只改验证。
 - 签名算法固定为 `HS256`，JWT 时钟容差保持 `60` 秒。
@@ -305,6 +306,8 @@ git commit -m "fix(outapi): single enabled-state rule for login/access/refresh/M
 - Create: `help/audit-regressions/isolated/route-inventory.php`、`docs/multi-merchant/records/ms0a/route-permission-matrix.md`、`crmeb/app/adminapi/config/auth_routes.php`
 - Modify: `crmeb/app/services/system/admin/SystemRoleServices.php`（`verifyAuth()`）
 - Modify: `crmeb/app/adminapi/controller/v1/setting/SystemMenus.php`（写操作成功后清缓存）
+- Modify（2026-10-11 用户批准的必要路由调用点）: `crmeb/app/adminapi/route/route.php`（原三项仅认证分组追加 AdminCheckRoleMiddleware）
+- Modify（A04 临时探针的必要清理调用点）: `help/audit-regressions/isolated/teardown.sh`（仅移除首行匹配本 RUN 哨兵的临时 CRUD 探针）
 - Modify: `help/audit-regressions/security.php`（按批准的契约收紧 3 项旁路断言并追加 UNIT-STUB 用例）、`help/audit-regressions/isolated/ms0a-auth.php`（追加 A02–A06、A08、A30）
 
 **Interfaces:**
@@ -314,9 +317,13 @@ git commit -m "fix(outapi): single enabled-state rule for login/access/refresh/M
 
 `route-inventory.php` 在隔离环境中列出 adminapi 的全部路由（方法、规则、是否挂了 `AdminAuthTokenMiddleware` 与 `AdminCheckRoleMiddleware`），与 `eb_system_menus`（`auth_type = 2`）的 `api_url`、`methods` 对比，输出到 `route-permission-matrix.md`。表头：`方法 | 规则 | 有认证中间件 | 有授权中间件 | 已登记 | 建议策略（已登记授权 / 白名单 / 拒绝） | 理由`。`crud/` 生成路由单列一节。
 
-- [ ] **Step 2: 停止点 SP-MS0a-1**
+- [x] **Step 2: 停止点 SP-MS0a-1**（2026-10-11 用户明确批准六项白名单、其余 517 条现有未登记角色接口拒绝，以及三项仅认证入口补角色检查；合计未登记拒绝 520 条）
 
 把"建议进入白名单"的路由（至少包含现有的 `setting/admin/logout`、`menuslist`）和"将被拒绝的未登记路由"清单，按 12 文档 §7.3 回传，**等待用户确认后再继续**。未确认前不得修改 `verifyAuth()`。
+
+已批准白名单：`get setting/admin/logout`、`get menuslist`、`get menus`、`get setting/menus/unique`、`get setting/info`、`put setting/update_admin`。menuslist 是全局搜索菜单元数据；两项本人菜单仍由服务按当前角色过滤；本人更新只接收姓名、头像和凭旧密码改密。不给 menussearch 或其他业务接口白名单。
+
+已批准三项仅认证入口补角色检查：`get system/info`、`get route/import_api`、`get download/<key?>`；仍未登记，受限管理员拒绝，最高管理员保持现有 level=0 行为。新增三个 HTTP 负向子场景验证在控制器前拒绝，业务数据和会话不变；不实际导入或下载业务文件。
 
 - [ ] **Step 3: 写测试**
 
@@ -344,6 +351,8 @@ Expected: 三项收紧后的 UNIT-STUB 用例、新增的拒绝用例和 A03、A
 - `auth_routes.php` 返回 `['authenticated' => [...用户确认的清单...]]`。先确认 ThinkPHP 多应用模式会加载 `app/adminapi/config/` 下的配置文件；如果不会，改放到 `crmeb/config/auth_routes.php` 并在报告中说明。
 - `verifyAuth()`：`"$method $rule"` 在白名单中 → 放行；已登记且角色已授权 → 放行；其余一律抛 `AuthException('您暂时没有访问权限')`。删除"未登记放行"和 `crud/` 前缀放行两个分支。保留审计 A1 已有的严格比较。
 - `SystemMenus` 控制器：新增、修改、删除、显示开关这几个写操作成功后调用 `CacheService::clear()`，与 `SystemRole` 控制器一致。
+- `route/route.php`：原三项仅认证分组保留现有中间件并追加 AdminCheckRoleMiddleware，不改变公开登录/MISS/CORS 分组。
+- A04 临时 CRUD 探针指向已有只读方法，首行带本 RUN 哨兵；测试 finally 与 teardown 都只删除完全匹配本 RUN 标记的探针，保留其他文件。
 
 - [ ] **Step 6: 重跑**
 
