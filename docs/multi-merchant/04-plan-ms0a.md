@@ -172,7 +172,7 @@ Expected: A10 的子场景 FAIL（基线会以 `default` 密钥或文件缓存�
 Run: `php -l crmeb/crmeb/services/AuthConfigGuard.php && php -l crmeb/crmeb/services/SessionWhitelist.php && php -l crmeb/crmeb/utils/JwtAuth.php && AUDIT_PHASE=after php help/audit-regressions/isolated/ms0a-auth.php --only=A10`
 Expected: A10 中"`APP_KEY` 为空"和"`APP_KEY = default`"下的**登录**子场景 PASS（不签发令牌，业务码 503）。管理端探针子场景此时仍会被旧代码的 `catch (\Throwable)` 转成 401，要等 Task 4 改用 `decodeVerified()` 后才返回 503；缓存驱动子场景要等 Task 4、Task 6 接入检查。
 
-- [ ] **Step 4: 提交**
+- [x] **Step 4: 提交**（3e1f7fea，签名配置保护与无状态工具）
 
 ```bash
 git add crmeb/crmeb/services/AuthConfigGuard.php crmeb/crmeb/services/SessionWhitelist.php crmeb/crmeb/utils/JwtAuth.php crmeb/app/services/system/admin/SystemAdminServices.php
@@ -189,16 +189,16 @@ git commit -m "fix(auth): refuse missing/default signing key; add stateless veri
 - Consumes: Task 3 的 `AuthConfigGuard`、`SessionWhitelist`、`JwtAuth::decodeVerified()`
 - Produces: `AdminAuthServices::parseToken(string $token, string $msg = '登录已过期,请重新登录'): array`，签名与返回结构不变（返回隐藏 `pwd`、`is_del`、`status` 后的管理员数组，并带 `type`）
 
-- [ ] **Step 1: 确认相关用例在当前代码上失败**
+- [x] **Step 1: 确认相关用例在当前代码上失败**（28 行：4 PASS / 24 FAIL，exit 1；管理端风险保持基线结果）
 
 Run: `AUDIT_PHASE=after php help/audit-regressions/isolated/ms0a-auth.php --only=A12,A15,A16,A17,A18,A27`
 Expected: 与基线一致的 FAIL 子场景。
 
-- [ ] **Step 2: 按以下顺序重写 `parseToken()`**
+- [x] **Step 2: 按以下顺序重写 `parseToken()`**
 
 1. 令牌为空或为 `undefined` → 401。
 2. `AuthConfigGuard::assertRedisSessionStore()`。
-3. `decodeVerified()`；任何异常 → 401。不删除任何缓存。
+3. `decodeVerified()`；JWT 异常 → 401，配置 `AuthException` 保留全局契约 503。不删除任何缓存。
 4. `type !== 'admin'` → 401。不删除任何缓存。
 5. `SessionWhitelist::matches(SessionWhitelist::read($token), 'admin', $id, $token)` 不成立 → 401。不删除任何缓存。
 6. `pwd` 为空字符串 → 401。
@@ -208,12 +208,12 @@ Expected: 与基线一致的 FAIL 子场景。
 
 删除 `authFailAfter()`、`saveProduct()` 以及因此不再使用的 `use` 语句。正常的草稿保存仍在 `StoreProduct` 控制器中，不受影响。
 
-- [ ] **Step 3: 重跑**
+- [x] **Step 3: 重跑**（43 行：31 PASS / 12 其余应用待 Task 5/6，exit 1；另 A20 6 PASS / 0 FAIL，exit 0；2 文件 lint PASS；独立源码复核无必须修复项）
 
 Run: `AUDIT_PHASE=after php help/audit-regressions/isolated/ms0a-auth.php --only=A01,A11,A12,A15,A16,A17,A18,A21,A23,A27,A10`
 Expected: 原计划管理端子场景全部 PASS（A10 中 out 的文件驱动登录需 Task 6）。Task 2 追加的 A18 out/kefu/api 12 行分别等 Task 5/6；其断言不变。A26 涉及客服与顾客端，到 Task 5 才能通过。
 
-- [ ] **Step 4: 提交**
+- [x] **Step 4: 提交**（管理端验证、配置前置检查、移除失败草稿写入；本地提交）
 
 ```bash
 git add crmeb/app/services/system/admin/AdminAuthServices.php crmeb/app/services/system/admin/SystemAdminServices.php

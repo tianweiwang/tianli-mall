@@ -121,6 +121,7 @@ class SystemAdminServices extends BaseServices
      */
     public function login(string $account, string $password, string $type, string $key = '')
     {
+        AuthConfigGuard::assertRedisSessionStore();
         AuthConfigGuard::signingKey();
         $adminInfo = $this->verifyLogin($account, $password);
         if (!$adminInfo) return false;

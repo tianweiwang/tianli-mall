@@ -14,11 +14,10 @@ namespace app\services\system\admin;
 
 use app\dao\system\admin\AdminAuthDao;
 use app\services\BaseServices;
-use app\services\other\CacheServices;
 use crmeb\exceptions\AuthException;
-use crmeb\services\CacheService;
+use crmeb\services\AuthConfigGuard;
+use crmeb\services\SessionWhitelist;
 use crmeb\utils\JwtAuth;
-use Firebase\JWT\ExpiredException;
 
 /**
  * admin授权service
@@ -48,45 +47,36 @@ class AdminAuthServices extends BaseServices
      */
     public function parseToken(string $token, string $msg = '登录已过期,请重新登录'): array
     {
-        /** @var CacheService $cacheService */
-        $cacheService = app()->make(CacheService::class);
-
         if (!$token || $token === 'undefined') {
             throw new AuthException($msg, [], 401);
         }
+        AuthConfigGuard::assertRedisSessionStore();
         /** @var JwtAuth $jwtAuth */
         $jwtAuth = app()->make(JwtAuth::class);
-        //设置解析token
-        [$id, $type, $pwd] = $jwtAuth->parseToken($token);
-
-        //检测token是否过期
-        $md5Token = md5($token);
-        if (!$cacheService->has($md5Token) || !$cacheService->get($md5Token, '', NULL, 'admin')) {
-            $this->authFailAfter($id, $type);
-            throw new AuthException($msg, [], 401);
-        }
-
-        //验证token
         try {
-            $jwtAuth->verifyToken();
+            ['id' => $id, 'type' => $type, 'pwd' => $pwd] = $jwtAuth->decodeVerified($token);
+        } catch (AuthException $e) {
+            // Configuration failures retain their 503 contract.
+            throw $e;
         } catch (\Throwable $e) {
-            if (!request()->isCli()) {
-                $cacheService->delete($md5Token);
-            }
-            $this->authFailAfter($id, $type);
             throw new AuthException($msg, [], 401);
         }
-
-        //获取管理员信息
+        if ($type !== 'admin'
+            || !SessionWhitelist::matches(SessionWhitelist::read($token), 'admin', $id, $token)
+            || $pwd === '') {
+            throw new AuthException($msg, [], 401);
+        }
         $adminInfo = $this->dao->get($id);
-        if (!$adminInfo || !$adminInfo->id) {
+        if (!$adminInfo || !$adminInfo->id || (int)$adminInfo->is_del !== 0 || (int)$adminInfo->status !== 1) {
             if (!request()->isCli()) {
-                $cacheService->delete($md5Token);
+                SessionWhitelist::forget($token);
             }
-            $this->authFailAfter($id, $type);
             throw new AuthException($msg, [], 401);
         }
-        if ($pwd !== '' && $pwd !== md5($adminInfo->pwd)) {
+        if (!hash_equals(md5((string)$adminInfo->pwd), $pwd)) {
+            if (!request()->isCli()) {
+                SessionWhitelist::forget($token);
+            }
             throw new AuthException($msg, [], 401);
         }
 
@@ -94,32 +84,4 @@ class AdminAuthServices extends BaseServices
         return $adminInfo->hidden(['pwd', 'is_del', 'status'])->toArray();
     }
 
-    /**
-     * token验证失败后事件
-     */
-    protected function authFailAfter($id, $type)
-    {
-        try {
-            $postData = request()->post();
-            $rule = trim(strtolower(request()->rule()->getRule()));
-            $method = trim(strtolower(request()->method()));
-            //添加商品退出后事件
-            if ($rule === 'product/product/<id>' && $method === 'post') {
-                $this->saveProduct($id, $postData);
-            }
-        } catch (\Throwable $e) {
-        }
-    }
-
-    /**
-     * 保存提交数据
-     * @param $adminId
-     * @param $postData
-     */
-    protected function saveProduct($adminId, $postData)
-    {
-        /** @var CacheServices $cacheService */
-        $cacheService = app()->make(CacheServices::class);
-        $cacheService->setDbCache($adminId . '_product_data', $postData, 68400);
-    }
 }
