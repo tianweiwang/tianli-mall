@@ -263,6 +263,8 @@ public static function runMany(string $app, array $ids, callable $dbChange): mix
 - 普通检查独立记录：新增`help/audit-regressions/isolated/ms0b-login-download-functional.php`，正常凭据登录/账号0查询、info数字协议、正常验证码创建、两生产者及一次正常header文件下载。不自动解答验证码。浏览器仅访问真实源码构建页面，若通过本RUN CLI传输桥接，只转发明确允许的路径并保留真实状态/响应/文件，不用API假数据；桥接证据不称生产网络验收。离线前端验证用现有Node22及已核对全部2698锁定包version/integrity相同的本地依赖，在仓库外目录构建，避免写现有工程依赖缓存。
 - ISO必要写入点：为app/runner增加本RUN专用backup-output卷，供实际CRUD/备份生产者写其固定backup目录；source/vendor仍只读，内部网络无宿主端口，DML账号不扩权。仅调整compose、隔离README、03的同一ISO记录，teardown仍按manifest清理本RUN资源。原九项停用套件及运行入口不变。完整门槛、负向/故障/并发验收继续留缺口，不以普通检查替代。
 
+同轮Q7源码复核：既有TagSet.set及Redis Driver.set忽略底层写入bool并返回true，不能据该返回值宣称下载记录写入成功。两生产者因此改用同调用点的窄`CacheService.setDownload(key,file)`：沿真实prefix/tag_prefix和默认PHP serialize，私有有界连接以两键Lua先核cache/tag类型，再SETEX300并SADD当前crmeb标签，严格收到整数1才返回；CacheService全局set和vendor保持。消费仍仅比较删除文件键，不删除既有tag成员。实际响应丢失或驱动异常受控503、不重试/补偿；这条实现由源码和正常实际写入核对，故障验证仍跳过。
+
 ### Task 9: 发布准备文档（不发布）
 
 **Files:**
