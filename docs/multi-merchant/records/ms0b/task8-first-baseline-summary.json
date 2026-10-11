@@ -1,0 +1,26 @@
+{
+  "run_id": "20261011165615374dae",
+  "execution": "20261011172803177594",
+  "code_source_sha": "0ecd0b511d62965d07fb74a7b11a417f029c965c",
+  "test_sha256": "67e9a149b39a1b684e46c630a5cb353f438cdcf07a4afe2fc7a19b7538b10992",
+  "raw_sha256": "410200a3155a137519c098cb88c183c0a907fcc3545085f14f66c52cb60ed695",
+  "business_case_counts": {
+    "PASS": 3,
+    "FAIL": 3
+  },
+  "native_bash_exit": 1,
+  "cleanup_failed": true,
+  "teardown_native_bash_exit": 0,
+  "post_teardown": {
+    "containers": 0,
+    "networks": 0,
+    "volumes": 0
+  },
+  "source_install_lock_present": false,
+  "original_evidence_retained": true,
+  "actual_first_query_file_http": 200,
+  "actual_backup_producer_http": 500,
+  "actual_backup_producer_business_status": 200,
+  "preserved_backup_output": "evidence/task8-baseline-backup-preserved",
+  "limitation": "Uncorrected preview-time and absolute-URL expectations remain original failed evidence; no security or fault scenario executed"
+}

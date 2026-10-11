@@ -149,3 +149,11 @@ filePwd检查明确NOT RUN：安装表eb_system_admin没有file_pwd列，而旧s
 Task4完整A21、Task5原安全覆盖、Task6完整安全覆盖及filePwd兼容、Task7完整A29恢复验证（按用户要求跳过）、Task8验证码/URL令牌与浏览器下载、Task9发布准备、Task10常规冻结回归和独立验收待完成；同类安全复现/故障验证已按用户要求跳过，完整安全验收缺口保留。正常接线运行证据为Task4上述30项、Task5独立F01–F06（含真实HTTP、同实例CLI和MCP）、Task6上述15项CLI服务及Task7上述3项实际CLI检查；无整个MS0b或WORKER/BROWSER/EXTERNAL验收通过结论，接口实际在用情况未知。此报告不构成人工签收。
 
 results.jsonl当前共1164条INTEGRATION原始行：原Task1–3共822行，加Task4共190行，以及Task5 worker/selftest22行、对外旧服务综合基线48行、普通功能基线6行和修复后6行，再追加Task6三份普通基线及一份after共64行、Task7普通基线及after共6行。原1158行逐字节保持，历史失败不抹除，原commit_sha不改写；Task1–3最后一轮239项、Task4最后38项、Task5普通功能最后6项各自全PASS，Task6最后15PASS/1NOT RUN，Task7最后3PASS，不能相加为整个里程碑验收。Task5前置17项通过仅证明隔离执行能力，wrapper额外诊断JSON单列；48项仍只是旧服务基线，其综合after已按用户要求停止。UNIT-STUB43文本证据单独统计；整个MS0b未完成，后续任务与交付继续更新本记录。
+
+### Task8 普通检查：首份旧源基线（未完成）
+
+2026-10-12 按用户跳过指令继续正常功能。测试提交0ecd0b51先于任何Task8业务安装；RUN `20261011165615374dae` 的6项正常场景实际3PASS/3FAIL，原生Bash exit1。Info、合法HTTP登录、现有验证码创建/图片展示形态通过；账号0真实DAO、CRUD producer/首次消费组合、备份producer/首次消费组合失败。准备成功、严格清理失败，原JSONL与summary未改写。普通route及encoded query两个首次消费窗口实际都HTTP200且字节/长度/文件名和文件缓存删除通过；不能将后者称为已复现query数组TypeError。
+
+已核对首轮异常：旧账号0遗漏谓词；CRUD仍用确定性MD5 key。检查脚本还误拒安装空site_url产生的合法relative链接，并将更早预览的四个原生TIME字段当成实际producer时间，其余五生成文件通过；这些属于检查本身待修。备份producer则实测HTTP500/JSON业务200，已有日志与源码定位未开fp的MysqlBackupService析构gzclose(null)；保持HTTP200断言，按同调用点修真实PHP8普通缺陷。四个未匹配文件没有登记删除，rmdir非空原样记录。真实代码/ZIP已经manifest容器身份核对复制到外部证据，随后teardown原生exit0；3容器/1网络/10卷均无残留，安装锁删除，证据保留。
+
+仓库results现1170条：原1164条字节完全保持（前缀SHA256 `b5c83a5d8cf558dd8e99f8849a70e0b6feec7b9de1326ad254ec8ebaefd0d61b`），只追加首轮6条真实结果；新原始JSONL SHA256 `410200a3155a137519c098cb88c183c0a907fcc3545085f14f66c52cb60ed695`。细节见 `task8-first-baseline-summary.json`。这轮没有安全复现、错误凭据、验证码解答、URL JWT拒绝、重复文件消费、故障或并发验证；Task8业务尚未安装，浏览器与完整验收仍待。
