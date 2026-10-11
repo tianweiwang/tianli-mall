@@ -23,6 +23,8 @@ class HttpEndListener
 {
     public function handle(Response $response): void
     {
+        // Login/setup responses and request bodies must never enter business logs.
+        if (app()->http->getName() === 'merchantapi') return;
         if (!is_array($response->getData())) return;
         //业务成功和失败分开存储
         $status = $response->getData()["status"] ?? 0;

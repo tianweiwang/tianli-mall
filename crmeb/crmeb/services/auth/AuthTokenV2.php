@@ -43,7 +43,7 @@ class AuthTokenV2
         $this->assertApp($app);
         $claims = $this->decode($app, $token, $config);
         $this->verifyCurrent($app, $token, $claims, $currentCredentialDigest, $config);
-        return ['id' => $claims['id'], 'sid' => $claims['sid']];
+        return ['id' => $claims['id'], 'sid' => $claims['sid'], 'version' => $claims['version']];
     }
 
     public function refresh(string $app, string $token, callable $currentCredentialDigest): array
@@ -82,7 +82,7 @@ class AuthTokenV2
 
     private function assertApp(string $app): void
     {
-        if (!in_array($app, ['adminapi', 'outapi'], true)) {
+        if (!in_array($app, ['adminapi', 'outapi', 'merchantapi'], true)) {
             throw new AuthSessionException();
         }
     }

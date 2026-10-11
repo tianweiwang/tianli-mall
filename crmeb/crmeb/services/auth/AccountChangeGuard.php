@@ -28,7 +28,7 @@ class AccountChangeGuard
         $phase = 'input';
         $count = count($ids);
         try {
-            if (!in_array($app, ['adminapi', 'outapi'], true)) {
+            if (!in_array($app, ['adminapi', 'outapi', 'merchantapi'], true)) {
                 throw new AuthUnavailableException();
             }
             $ids = self::normalizeIds($ids);
@@ -128,7 +128,7 @@ class AccountChangeGuard
         // Classification/counts only: no subject, owner, credential, SQL or
         // underlying exception text enters either log sink.
         $record = json_encode(['event' => 'auth_account_change_unavailable',
-            'app' => in_array($app, ['adminapi', 'outapi'], true) ? $app : 'invalid',
+            'app' => in_array($app, ['adminapi', 'outapi', 'merchantapi'], true) ? $app : 'invalid',
             'phase' => $phase, 'subject_count' => $count], JSON_THROW_ON_ERROR);
         try {
             Log::record($record, 'warning', [], false);

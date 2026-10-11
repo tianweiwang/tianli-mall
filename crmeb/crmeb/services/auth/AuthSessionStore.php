@@ -266,7 +266,7 @@ class AuthSessionStore
 
     private function assertApp(string $app): void
     {
-        if (!in_array($app, ['adminapi', 'outapi'], true)) {
+        if (!in_array($app, ['adminapi', 'outapi', 'merchantapi'], true)) {
             throw new AuthSessionException();
         }
     }

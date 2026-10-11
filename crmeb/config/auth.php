@@ -11,5 +11,6 @@ return [
     'apps' => [
         'adminapi' => ['type' => 'admin', 'audience' => 'adminapi', 'ttl' => 30 * 86400],
         'outapi' => ['type' => 'out', 'audience' => 'outapi', 'ttl' => 30 * 86400],
+        'merchantapi' => ['type' => 'merchant', 'audience' => 'tianli:merchantapi', 'ttl' => 30 * 86400],
     ],
 ];

@@ -48,7 +48,7 @@ class AuthConfigGuard
             || !is_array($config['apps'] ?? null)) {
             throw new AuthUnavailableException();
         }
-        foreach (['adminapi' => 'admin', 'outapi' => 'out'] as $app => $expectedType) {
+        foreach (['adminapi' => 'admin', 'outapi' => 'out', 'merchantapi' => 'merchant'] as $app => $expectedType) {
             $binding = $config['apps'][$app] ?? null;
             if (!is_array($binding) || ($binding['type'] ?? null) !== $expectedType
                 || !self::validBindingText($binding['audience'] ?? null)
@@ -56,6 +56,9 @@ class AuthConfigGuard
                 || $binding['ttl'] > 2147483587) {
                 throw new AuthUnavailableException();
             }
+        }
+        if ($config['apps']['merchantapi']['audience'] !== 'tianli:merchantapi') {
+            throw new AuthUnavailableException();
         }
         $config['signing_key'] = $key;
         return $config;
