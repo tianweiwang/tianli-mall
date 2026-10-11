@@ -550,6 +550,18 @@ ms0a_case('A19', 'illegal-set-status-two', 'parameter error business 400; databa
         ms0a_check((int)audit_db()->query('SELECT status FROM eb_out_account WHERE id=105')->fetchColumn() === 0, 'illegal state must not change the synthetic account');
     } finally { ms0a_update('eb_out_account', 105, ['status' => 0]); }
 });
+ms0a_case('A19', 'valid-set-status-round-trip', 'real status setter accepts 1 then 0 with business 200 and persists each state', '新增契约', static function (): void {
+    $token = ms0a_prepare('admin_super');
+    $originalStatus = audit_db()->query('SELECT status FROM eb_out_account WHERE id=105')->fetchColumn();
+    audit_expect($originalStatus !== false, 'synthetic round-trip account must exist');
+    try {
+        foreach ([1, 0] as $status) {
+            audit_guard_assert();
+            ms0a_assert_response(ms0a_http('PUT', '/adminapi/setting/system_out_account/set_status/105/' . $status, $token), 200);
+            ms0a_check((int)audit_db()->query('SELECT status FROM eb_out_account WHERE id=105')->fetchColumn() === $status, 'real setter must persist approved state ' . $status);
+        }
+    } finally { ms0a_update('eb_out_account', 105, ['status' => (int)$originalStatus]); }
+});
 
 foreach (['expired', 'future-nbf', 'wrong-signature', 'none', 'HS512', 'malformed'] as $mode) {
     ms0a_case('A20', $mode, 'business 401; no HTTP 500, business writes, or whitelist changes', $mode === 'malformed' ? '待复现风险' : '新增契约', static function () use ($mode): void {

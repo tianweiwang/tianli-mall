@@ -268,7 +268,7 @@ git commit -m "fix(kefuapi,api): accept only own token type and matching whiteli
 - Consumes: Task 3
 - Produces: `app\services\out\OutAccountServices::isEnabled(array|\think\Model|null $account): bool`，当且仅当 `(int)status === 1 && (int)is_del === 0` 时返回 `true`
 
-- [ ] **Step 1: 确认相关用例当前失败**
+- [x] **Step 1: 确认相关用例当前失败**（35 项，24 PASS / 11 FAIL，exit 1；新增 A19 正常 1→0 持久化子场景 PASS，原 85 项断言未改）
 
 Run: `AUDIT_PHASE=after php help/audit-regressions/isolated/ms0a-auth.php --only=A19,A09,A10`
 Expected: A19 中"关闭后继续访问 / 刷新""`set_status` 传 2"子场景 FAIL。
