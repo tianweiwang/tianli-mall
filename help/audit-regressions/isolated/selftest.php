@@ -52,10 +52,12 @@ audit_case('Z06', 'root-not-exposed', 'INTEGRATION', function (): array {
 
 audit_case('Z07', 'clean-worktree-boot', 'INTEGRATION', function (): array {
     audit_expect(!file_exists(audit_repo_dir() . '/crmeb/.env'), 'no untracked .env dependency');
-    $url = audit_app_start();
-    $response = audit_http('GET', $url . '/adminapi/login/info');
-    audit_expect(($response['json']['status'] ?? null) === 200, 'real login information endpoint returns business status 200');
-    return audit_pass('clean worktree application returns login/info status=200');
+    for ($start = 0; $start < 16; $start++) {
+        $url = audit_app_start();
+        $response = audit_http('GET', $url . '/adminapi/login/info');
+        audit_expect(($response['json']['status'] ?? null) === 200, 'real login information endpoint returns business status 200');
+    }
+    return audit_pass('16 consecutive controlled starts from clean worktree return login/info status=200');
 });
 
 audit_case('Z09', 'fixture-source', 'INTEGRATION', function (): array {

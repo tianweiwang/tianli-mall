@@ -94,13 +94,22 @@ function audit_app_request(string $action, array $overrides = []): void
     audit_write_json(audit_run_dir() . '/app-control.json', ['run_id' => getenv('AUDIT_RUN_ID'), 'revision' => $revision, 'action' => $action, 'overrides' => $overrides]);
     for ($i = 0; $i < 200; $i++) {
         usleep(100000);
-        $status = is_file(audit_run_dir() . '/app-status.json') ? json_decode(file_get_contents(audit_run_dir() . '/app-status.json'), true) : [];
+        $status = audit_read_control_json(audit_run_dir() . '/app-status.json');
         if (($status['revision'] ?? '') === $revision) {
             audit_expect(($status['status'] ?? '') === $action, 'isolated app supervisor failed');
             return;
         }
     }
     throw new RuntimeException('isolated app supervisor timed out');
+}
+function audit_read_control_json(string $file): array
+{
+    // A Windows bind mount can briefly hide the destination during rename.
+    // Only ephemeral command/ack files are retried; manifests and secrets keep
+    // their strict failure checks. Never accept a partial JSON command.
+    $contents = @file_get_contents($file);
+    $value = is_string($contents) ? json_decode($contents, true) : null;
+    return is_array($value) ? $value : [];
 }
 function audit_app_start(array $envOverrides = []): string
 {
@@ -304,7 +313,7 @@ function audit_serve(): void
     pcntl_signal(SIGTERM, static function () use ($stop): void { $stop(); exit(0); });
     while (true) {
         $file = audit_run_dir() . '/app-control.json';
-        $control = is_file($file) ? json_decode(file_get_contents($file), true) : [];
+        $control = audit_read_control_json($file);
         if (($control['run_id'] ?? '') === getenv('AUDIT_RUN_ID') && ($control['revision'] ?? '') !== $revision) {
             $revision = $control['revision']; $stop();
             try {
