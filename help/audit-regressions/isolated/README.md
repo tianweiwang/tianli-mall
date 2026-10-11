@@ -1,0 +1,66 @@
+# MS0a isolated regression environment
+
+This environment implements the approved Windows ISO-FULL adaptation in
+`docs/multi-merchant/03-test-environment.md` §2.1. Use Git Bash on Windows, or Bash
+with Docker Compose. PHP, the application, MySQL and Redis all run in dedicated
+containers on a new **internal** network, without published ports or a Docker
+socket. Existing database/Redis instances and credentials are never used.
+
+Required **local** images (automatic pulling is disabled):
+
+- `tianli/crmeb-php:acceptance`: PHP 8.2, PDO MySQL, Redis, curl, pcntl and `setsid`.
+- `ccr.ccs.tencentyun.com/crmebky_php/mysql:v8.0.45`
+- `ccr.ccs.tencentyun.com/crmebky_php/redis:v8.6.1`
+
+From the test worktree:
+
+```bash
+bash help/audit-regressions/isolated/bootstrap.sh
+# Copy the emitted RUN_ID (never a password).
+bash help/audit-regressions/isolated/run.sh <RUN_ID> help/audit-regressions/isolated/selftest.php
+bash help/audit-regressions/isolated/run.sh <RUN_ID> help/audit-regressions/security.php
+AUDIT_PHASE=baseline bash help/audit-regressions/isolated/run.sh <RUN_ID> help/audit-regressions/isolated/ms0a-auth.php
+AUDIT_PHASE=after bash help/audit-regressions/isolated/run.sh <RUN_ID> help/audit-regressions/isolated/ms0a-auth.php
+bash help/audit-regressions/isolated/teardown.sh <RUN_ID>
+```
+
+The bootstrap creates random credentials in this project's private Docker
+volumes. Bootstrap/root and migrator credentials are absent from the application
+and test containers. Application/test accounts receive only SELECT, INSERT,
+UPDATE and DELETE on `audit_auth`. Installation SQL is loaded from the tracked
+`crmeb/public/install/crmeb.sql`, with its normalized SHA-256 recorded. Fixtures
+use synthetic accounts with intentionally colliding numeric IDs across apps.
+No business data is copied; no authentication schema is added.
+
+Tracked dependencies are copied into a dedicated vendor volume and Composer
+regenerates optimized autoload files from the current composer.json, offline
+with plugins and scripts disabled. This activates the project's existing PHP
+8.2 compatibility classmaps, as the repository Dockerfile does. Source and lock
+files are unchanged; the application and runner mount that volume read-only.
+
+After seed import and guard verification, bootstrap uses its dedicated migrator
+to run the existing file checksum initialization and verifies the generated
+checksums before recording the actual version marker. This is the approved
+installation preparation for login/info; the application account remains DML-only.
+
+The host run directory is `${AUDIT_RUN_ROOT:-$HOME/.tianli-audit}/<RUN_ID>`.
+It contains the manifest and redacted evidence; credential files remain in
+Docker volumes. Do not commit the run directory or copy secret-volume contents
+into evidence. `crmeb/.env` must be absent; an existing file is never overwritten.
+Only a new `install.lock` tagged with the run ID is created and later removed.
+
+Every test/app startup checks the run identity, registered container addresses,
+internal network, database and Redis sentinels, and restricted database grants.
+An unknown target exits 2. Bootstrap also creates and tears down a disposable
+second project and compares the other audit container IDs before/after.
+Teardown checks current IDs and volumes against the manifest, then removes only
+that compose project. Run directories/evidence are retained, including on failure.
+
+Exit codes: 0 = all executed cases pass; 1 = test failure; 2 = invalid environment
+or invocation. Each subcase produces a JSONL result with an explicit test layer.
+UNIT-STUB counts do not establish HTTP/database/Redis behavior. WORKER, BROWSER
+and EXTERNAL coverage is not implied by this environment.
+
+On startup failure, inspect only this run's container status and sanitized
+runtime log. Never solve an environment failure by using a shared instance,
+loosening the guard, changing assertions or deleting another project's data.

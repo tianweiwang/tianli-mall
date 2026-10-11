@@ -51,7 +51,7 @@ git -C /Volumes/Kingston/cdx/projects/tianli-mall--audit-base worktree add -b co
 
 Expected: 新目录的 `git rev-parse HEAD` 等于 `AUDIT_BASE_SHA`，`git status --short` 为空。
 
-- [ ] **Step 1: 写自检用例 `selftest.php`**
+- [x] **Step 1: 写自检用例 `selftest.php`**（先执行并确认 harness 未实现时 exit 1）
 
 用例与断言：
 
@@ -64,11 +64,11 @@ Expected: 新目录的 `git rev-parse HEAD` 等于 `AUDIT_BASE_SHA`，`git statu
 | Z07 | `clean-worktree-boot` | 在没有 `crmeb/.env` 的干净 worktree 中 `audit_app_start()` 成功；`GET /adminapi/login/info` 返回业务 `status = 200` |
 | Z09 | `fixture-source` | 记录 `crmeb.sql`（去 CR 后）的 SHA-256；导入后表数量为 157；`audit_sentinel` 存在 |
 
-- [ ] **Step 2: 实现环境文件**
+- [x] **Step 2: 实现环境文件**（含批准的 Docker 完整隔离、现有权限探针、真实文件校验初始化）
 
 按 03 文档 §3 与经批准的 §2.1 实现，包括真实的文件校验引导初始化。`bootstrap.sh` 结束时打印 `RUN_ID` 和运行目录，不打印任何凭据。
 
-- [ ] **Step 3: 运行自检**
+- [x] **Step 3: 运行自检**（2026-10-11，全新 RUN_ID=20261011065024d6dda7；bootstrap exit 0，自检 6 PASS / 0 FAIL，exit 0）
 
 ```bash
 cd /Volumes/Kingston/cdx/projects/tianli-mall--ms0a
@@ -79,11 +79,11 @@ php help/audit-regressions/isolated/selftest.php; echo "exit=$?"
 
 Expected: 6 个子场景全部 PASS，`exit=0`。
 
-- [ ] **Step 4: 提交**
+- [x] **Step 4: 提交**（本地 ISO-FULL 环境提交；未推送）
 
 ```bash
 git add help/audit-regressions/isolated
-git commit -m "test: isolated MySQL/Redis harness for auth regressions (ISO-MIN)"
+git commit -m "test: isolated MySQL/Redis harness for auth regressions (ISO-FULL)"
 ```
 
 ### Task 2: 编写 MS0a 回归用例并在基线上运行

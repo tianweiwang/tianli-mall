@@ -1,0 +1,105 @@
+x-php: &php
+  image: tianli/crmeb-php:acceptance
+  pull_policy: never
+  entrypoint: [php]
+  working_dir: /workspace
+  read_only: true
+  tmpfs: [/tmp]
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  networks: [isolation]
+  environment: &audit-env
+    AUDIT_ISOLATED: "1"
+    AUDIT_RUN_ID: ${AUDIT_RUN_ID:?required}
+    AUDIT_RUN_DIR: /run/audit
+    AUDIT_REPO_DIR: /workspace
+    AUDIT_PROJECT: ${AUDIT_PROJECT:?required}
+    AUDIT_SOURCE_SHA: ${AUDIT_SOURCE_SHA:?required}
+  labels: &labels
+    tianli.audit: "1"
+    tianli.audit.run: ${AUDIT_RUN_ID}
+
+services:
+  audit-bootstrap:
+    <<: *php
+    tmpfs: [/tmp, /workspace/crmeb/runtime]
+    volumes:
+      - ${AUDIT_REPO_DIR:?required}:/workspace:ro
+      - ${AUDIT_REPO_DIR:?required}:/source:ro
+      - audit-vendor:/workspace/crmeb/vendor
+      - ${AUDIT_RUN_DIR:?required}:/run/audit
+      - bootstrap-secrets:/run/audit-bootstrap
+      - redis-secrets:/run/audit-redis
+      - app-secrets:/run/audit-app
+      - fixture-secrets:/run/audit-fixtures
+  audit-mysql:
+    image: ccr.ccs.tencentyun.com/crmebky_php/mysql:v8.0.45
+    pull_policy: never
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: /run/audit-bootstrap/root-password
+      MYSQL_ROOT_HOST: "%"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - bootstrap-secrets:/run/audit-bootstrap:ro
+    networks: [isolation]
+    labels: *labels
+    healthcheck:
+      test: [CMD, mysqladmin, ping, --protocol=tcp, --host=127.0.0.1, --silent]
+      interval: 2s
+      timeout: 2s
+      retries: 40
+  audit-redis:
+    image: ccr.ccs.tencentyun.com/crmebky_php/redis:v8.6.1
+    pull_policy: never
+    entrypoint: [redis-server]
+    command: [/run/audit-redis/redis.conf]
+    volumes:
+      - redis-secrets:/run/audit-redis:ro
+      - redis-data:/data
+    networks: [isolation]
+    labels: *labels
+  audit-app:
+    <<: *php
+    command: [help/audit-regressions/isolated/lib/harness.php, __serve]
+    volumes:
+      - ${AUDIT_REPO_DIR}:/workspace:ro
+      - audit-vendor:/workspace/crmeb/vendor:ro
+      - ${AUDIT_RUN_DIR}:/run/audit
+      - app-secrets:/run/audit-app:ro
+      - app-runtime:/workspace/crmeb/runtime
+  audit-runner:
+    <<: *php
+    environment:
+      <<: *audit-env
+      AUDIT_PHASE: ${AUDIT_PHASE:-after}
+    volumes:
+      - ${AUDIT_REPO_DIR}:/workspace:ro
+      - audit-vendor:/workspace/crmeb/vendor:ro
+      - ${AUDIT_RUN_DIR}:/run/audit
+      - app-secrets:/run/audit-app:ro
+      - fixture-secrets:/run/audit-fixtures:ro
+      - runner-runtime:/workspace/crmeb/runtime
+
+networks:
+  isolation:
+    internal: true
+    labels: *labels
+volumes:
+  audit-vendor:
+    labels: *labels
+  mysql-data:
+    labels: *labels
+  redis-data:
+    labels: *labels
+  app-runtime:
+    labels: *labels
+  runner-runtime:
+    labels: *labels
+  bootstrap-secrets:
+    labels: *labels
+  redis-secrets:
+    labels: *labels
+  app-secrets:
+    labels: *labels
+  fixture-secrets:
+    labels: *labels
