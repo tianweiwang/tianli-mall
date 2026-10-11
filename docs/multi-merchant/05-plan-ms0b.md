@@ -253,7 +253,7 @@ public static function runMany(string $app, array $ids, callable $dbChange): mix
 - Q6 本阶段纳入：失败计数改为按与DAO一致的账号规范化值 + 服务端可信IP计；保留60秒窗口，两次凭据失败后下一次尝试必须验证码。成功仅清当前组合，失败包装数字 login_captcha=1 沿用现有前端；超过阈值后，服务端**要求**验证码字段存在且校验通过。用例：连续失败后不带验证码登录被拒绝。
 - Q7 本阶段纳入：`AdminAuthTokenMiddleware` 不再接受 `?token=`，现有两处裸window.open下载改用本站header+Blob消费。当前无必须URL直下的大文件需求，不引入新匿名凭证协议；以后确需直下时再实现短期、一次性、限定文件/主体/会话的下载凭证。开工前先列出前端所有使用 `?token=` 的位置并回报。
 - 必要Files：`crmeb/app/adminapi/controller/Login.php`、`crmeb/app/adminapi/middleware/AdminAuthTokenMiddleware.php`、`crmeb/app/adminapi/controller/PublicController.php`；新增小下载helper `template/admin/src/libs/download.js`，修改 `template/admin/src/pages/system/codeGeneration/list.vue` 与 `template/admin/src/pages/system/maintain/systemDatabackup/index.vue` 两个真实消费点。仅对可信本站后端发header，拒绝外部URL/跳转，处理JSON错误与文件名；下载缓存成功消费采用原子比较删除，重复下载失败，保留现有admin+role边界。旧已注释npm/EventSource按钮后端路由不存在，移除该死代码的URL JWT，不凭空开发新后端。扫码上传/fileToken/客服/uni-app不是Q7 JWT，不批量改动。
-- 代码调用证据见仓库外 ms0b-q7-caller-inventory.md；Task8须加入header正向/URL JWT负向、两下载消费/重复消费/错误响应与浏览器验证。两项各自单独提交。
+- 代码调用证据见仓库外 ms0b-q7-caller-inventory.md；Task8当前只执行正常登录、既有验证码正常展示、header下载及两处实际浏览器消费检查。连续错误凭据、缺失验证码拒绝、URL JWT拒绝、重复消费拒绝及同类负向/故障验证遵循顶部用户跳过指令，不执行、不改名转入普通检查，也不记PASS。验证码完整通过只接受正常人工操作证据，不从服务端答案生成通过材料。两项各自单独提交；普通检查与被跳过的完整验收缺口分别记录。
 
 ### Task 9: 发布准备文档（不发布）
 
