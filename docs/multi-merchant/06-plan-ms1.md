@@ -239,10 +239,30 @@ Task5普通交付（2026-10-12）：RUN202610112248420b0204，基线源码f78b95
 
 **Files:**
 - Create: `crmeb/app/adminapi/route/marketplace.php`、`crmeb/app/adminapi/controller/v1/marketplace/Merchant.php`、`crmeb/app/services/marketplace/MerchantAdminServices.php`、`crmeb/app/services/marketplace/AuditLogServices.php`
+- Create（必要接线）: `PlatformAccessServices.php`、marketplace的AuditLog model/dao、adminapi的MarketplaceBoundaryMiddleware/MarketplaceScopeMiddleware及 `help/audit-regressions/isolated/ms1-platform.php`；Modify（必要调用点）: `app/Request.php`、`AdminApiExceptionHandle.php`、`HttpEndListener.php`、marketplace的MerchantDao/RoleDao/EmployeeDao/PasswordSetupDao、merchantapi/config/database.php。
 
 **Interfaces:**
 - Produces: `GET|POST /adminapi/marketplace/merchants`、`GET|PUT /adminapi/marketplace/merchants/:id`、`PUT /adminapi/marketplace/merchants/:id/review`、`PUT /adminapi/marketplace/merchants/:id/flags`（`accept_orders`、`fulfillment_enabled`、`security_locked`）、`POST /adminapi/marketplace/merchants/:id/admin-employee`（创建商家管理员并返回一次性设置链接）；每个写操作都写 `eb_marketplace_audit_log`。
 - `AuditLogServices::record(string $actorType, int $actorId, ?int $merId, string $action, string $resourceType, string $resourceId, string $result, array $detail = []): void`（`$detail` 中不得出现密码、令牌、设置链接）。
+
+Task6编码合同（2026-10-12）：沿用户持续授权，在既有五表/七登记和Task5业务基础上实施，不增加表列、全局种子、重发/删除/关闭接口或真实库操作。七路由使用服务器定义的marketplace标记与七个冻结unique_auth动作码。边界中间件在AdminAuth前限定默认mysql为utf8mb4/debug=false/break_reconnect=false；当前已验证平台身份仍来自AdminAuthTokenMiddleware→AdminAuthServices固定adminapi v2。后续新范围中间件从真实已登录管理员和服务器路由构造PlatformScope，挂当前Request私有属性并finally清空；服务显式接收scope，并核对它与本Request已授权对象、固定动作和当前Db管理员/角色/接口登记，不把scope.permission字符串当作鉴权。最高管理员沿level=0语义；受限管理员按当前启用角色及真实auth_type=2叶节点核对，避免以旧缓存代替当前授权。成功授权后只精确删除all_auth及当前角色组合的既有权限缓存，不清tag或全Redis。
+
+平台DTO为商家表12字段，整数与closed_at可空值保持类型；GET列表返回 `{list,count}`，默认page=1/limit=20、最多100、mer_id升序，可按review_status=0/1/2筛选。GET列表显式global scope，详情/修改/审核/开关/管理员创建显式正targetMerId，不接受body商家选择。POST商家必填name，可选logo/after_sale_contact/shipping_note；PUT资料仅这四字段的非空部分更新。name去首尾空白且非空，长度分别128/512/255/1000，字符串有效UTF-8/无NUL。服务器写默认review_status=0、accept_orders=0、fulfillment_enabled=1、security_locked=0、closed_at=null及时间。商家创建事务内一并建立本商家“管理员”9权限/“运营”7权限两个默认角色；这是该次业务创建，不是迁移种子。
+
+PUT review只接收JSON整数review_status(0/1/2)；PUT flags仅接收accept_orders/fulfillment_enabled/security_locked的JSON整数0/1非空部分更新。资料和仅接单/履约变化不轮换员工版本；review_status或security_locked实质变化先预读本店全部员工ID（含停用/软删除），AccountChangeGuard在merchantapi域预保护，再锁同一商家行、复核旧12字段/成员全集与当前平台执行者，才能写。所有平台管理写与Task5/首次设密用同一商家行锁；创建商家后锁住真实新行再建立默认角色。预读漂移受控503，不扩大保护集、自动重试或回拨版本。有效无变化保留商家时间及版本，但仍按“每个写操作”记成功审计。
+
+POST admin-employee仅account必填，name/avatar可选，沿既有账号规范化/64和512长度限制。允许同商家多个不同账号管理员；重复规范化账号固定422，不重置员工或重发能力。服务优先复用本店当前权限集合恰好为9项的最小ID角色，不依名称授权或重写既有角色；若无该角色，建立权限9项的新角色，名称从“管理员”“管理员 2”顺序选择本店未占用值。新员工status=1/is_del=0/pwd=null，能力沿32随机字节无填充base64url→原始SHA256/24h，不预初始化账号版本。目标商家closed_at非空时不创建管理员；新管理员返回同Task5的 `{employee,password_setup:{endpoint:'/merchantapi/password/setup',token,expires_at}}`，不捏造MS3网页已存在。
+
+MerchantAdminServices公共签名：listing(PlatformScope,array query=[]):array；read(PlatformScope):array；create(PlatformScope,array body):array；update/review/flags/createAdminEmployee(PlatformScope,array body):array。DAO新增有限平台入口，consume scope.apply返回的Query；global create仅用真实insert ID创建附属默认角色，不构造虚假MerchantContext。返回员工DTO沿Task5公开9字段。
+
+每个成功平台写（含无变化）取得真实mer_id后，在同一默认Db外层事务写marketplace_audit_log：actor_type=admin、当前真实actor_id、固定动作、merchant或employee资源及真实resource_id、result=success、服务器时间。detail仅服务器生成changed_fields、employee_id、role_id、protected_employee_count等有类型的元数据，不保存业务正文/账号/密码/能力/会话；空detail编码JSON OBJECT `{}`。global GET列表在查询前沿既有SystemLogServices.recordAdminLog记录platform请求元数据，显式确认返回true后才执行列表并提交；不挂会吞异常的AdminLogMiddleware，不往商家审计表写null/0。读取详情也沿该平台请求审计链记录，写操作的目标商家审计是必需业务审计；失败不返回成功或完整驱动内容。
+
+新marketplace的AdminApiExceptionHandle分支与HttpEndListener均按选中adminapi应用+服务器路由标记限定，在读取参数/响应正文之前排除记录；新异常只返回固定401/403/404/422/503状态与固定消息，report仅固定事件分类，旧接口包装保持。不通过关闭日志总开关作隐私验收。实版PDOConnection的SQL监控看trigger_sql而非debug，因此Task6边界及merchantapi子应用连接同时显式trigger_sql=false；仅debug=false不能支持普遍禁用SQL正文的结论。Task4/5现有正常配置日志PASS保留历史边界，不改写为任意日志配置或拒绝场景验收。
+
+普通T6P01：先保存实现缺失的真实基线；新ISO-FULL正常准备冻结五表/七登记，runner只持audit_app DML。测试管理员为专用合成Db记录，由现有v2发行器按该记录创建正常有效平台会话；不请求验证码或登录页、不重做停用认证套件。通过真实七接口创建A/B商家（默认角色归属）、审核、建管理员及能力、正常设密/登录/me、资料修改、接单/履约开关及平台正常锁定/解除与列表/详情。锁定时仅平台读取目标，不发送商家受限请求；身份变化后只重新凭据登录。核对每次写实际商家审计、全局读的system_log真实行、权限登记/当前授权、日志无正文及正常有效无变化。夹具按本次真实ID逆FK清理，专用合成平台账号/请求日志/本次缓存精确清理；旧行/结构/checksum及旧Redis值/绝对期限保持，实际夹具表/system_admin/system_log自然计数器变化单列，不能恢复快照掩盖副作用。原D20、M06员工拒绝及旧/无效会话等继续NOT RUN；正常流程不代替完整验收。
+
+- [ ] **普通T6P01：** 七平台接口、真实商家/角色/管理员归属与能力、状态独立性、事务审计和精确清理。
+  普通验证还覆盖已正常授予七登记权限的受限平台管理员list/read，以及A原角色正常改为8权限后，平台为新账号创建全9权限“管理员 2”的合法分支；不重用受影响旧会话，不发送拒绝请求。专用合成system_role的真实ID/旧行保留与自然计数器一并核对。
 
 - [ ] **Step 1: 写用例**：M01（建立 A、B 商家并审核，分别创建管理员，归属正确）；M06（停止接新单与安全封禁两个开关效果不同；安全封禁后平台仍可查看该商家）；D20（只有旧 `merchant` 门店权限的受限管理员访问 `marketplace` 路由 → 拒绝）；审计日志字段完整，且不含敏感值。
 - [ ] **Step 2–5:** 确认失败 → 实现（含菜单登记，见 Task 2）→ 通过 → 提交 `feat(adminapi): platform merchant management with audit log`。
