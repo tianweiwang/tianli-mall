@@ -21,3 +21,18 @@ Route::get('me', 'Me/index')
     ->option(['merchant_permission' => 'merchant.profile.read'])
     ->middleware([MerchantAuthTokenMiddleware::class, MerchantPermissionMiddleware::class])
     ->name('merchant.me');
+
+Route::get('employees', 'Employee/index')->option(['merchant_permission' => 'merchant.employee.manage'])
+    ->middleware([MerchantAuthTokenMiddleware::class, MerchantPermissionMiddleware::class])->name('merchant.employee.list');
+Route::post('employees', 'Employee/create')->option(['merchant_permission' => 'merchant.employee.manage'])
+    ->middleware([MerchantAuthTokenMiddleware::class, MerchantPermissionMiddleware::class])->name('merchant.employee.create');
+Route::put('employees/<id>', 'Employee/update')->option(['merchant_permission' => 'merchant.employee.manage'])
+    ->middleware([MerchantAuthTokenMiddleware::class, MerchantPermissionMiddleware::class])->name('merchant.employee.update');
+Route::put('employees/<id>/status', 'Employee/status')->option(['merchant_permission' => 'merchant.employee.manage'])
+    ->middleware([MerchantAuthTokenMiddleware::class, MerchantPermissionMiddleware::class])->name('merchant.employee.status');
+Route::get('roles', 'Role/index')->option(['merchant_permission' => 'merchant.role.manage'])
+    ->middleware([MerchantAuthTokenMiddleware::class, MerchantPermissionMiddleware::class])->name('merchant.role.list');
+Route::post('roles', 'Role/create')->option(['merchant_permission' => 'merchant.role.manage'])
+    ->middleware([MerchantAuthTokenMiddleware::class, MerchantPermissionMiddleware::class])->name('merchant.role.create');
+Route::put('roles/<id>', 'Role/update')->option(['merchant_permission' => 'merchant.role.manage'])
+    ->middleware([MerchantAuthTokenMiddleware::class, MerchantPermissionMiddleware::class])->name('merchant.role.update');

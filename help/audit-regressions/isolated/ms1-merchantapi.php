@@ -143,12 +143,19 @@ function m4h_route_inventory(\think\App $app,array &$evidence): void
         ['method'=>'POST','rule'=>'password/setup','name'=>'merchant.password.setup'],
         ['method'=>'POST','rule'=>'refresh','name'=>'merchant.refresh'],
         ['method'=>'POST','rule'=>'logout','name'=>'merchant.logout'],
-        ['method'=>'GET','rule'=>'me','name'=>'merchant.me']];
+        ['method'=>'GET','rule'=>'me','name'=>'merchant.me'],
+        ['method'=>'GET','rule'=>'employees','name'=>'merchant.employee.list'],
+        ['method'=>'POST','rule'=>'employees','name'=>'merchant.employee.create'],
+        ['method'=>'PUT','rule'=>'employees/<id>','name'=>'merchant.employee.update'],
+        ['method'=>'PUT','rule'=>'employees/<id>/status','name'=>'merchant.employee.status'],
+        ['method'=>'GET','rule'=>'roles','name'=>'merchant.role.list'],
+        ['method'=>'POST','rule'=>'roles','name'=>'merchant.role.create'],
+        ['method'=>'PUT','rule'=>'roles/<id>','name'=>'merchant.role.update']];
     usort($actual,static fn(array $a,array $b): int=>strcmp($a['rule'],$b['rule']));
     usort($expected,static fn(array $a,array $b): int=>strcmp($a['rule'],$b['rule']));
-    audit_expect($actual===$expected,'actual framework merchant routes must contain exactly the five contracted interfaces');
+    audit_expect($actual===$expected,'actual framework merchant routes must contain exactly the twelve contracted interfaces');
     m4h_same($before,m4h_snapshot());
-    $evidence['routes']=['actual_framework_rules'=>$actual,'exact_five_verified'=>true,
+    $evidence['routes']=['actual_framework_rules'=>$actual,'exact_contracted_count'=>12,
         'source'=>'real App service boot and same merchantapi route definition; no undeclared HTTP requests'];
 }
 

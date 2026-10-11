@@ -11,7 +11,9 @@ putenv('AUDIT_MILESTONE=MS1');
 require_once audit_repo_dir() . '/crmeb/vendor/autoload.php';
 function m5h_diag(Throwable $error): array
 {
-    return ['class'=>get_class($error),'file'=>basename($error->getFile()),'line'=>$error->getLine()];
+    $caller=$error->getTrace()[0] ?? [];
+    return ['class'=>get_class($error),'file'=>basename($error->getFile()),'line'=>$error->getLine(),
+        'caller_file'=>basename($caller['file'] ?? ''),'caller_line'=>$caller['line'] ?? null];
 }
 
 function m5h_scan(string $pattern): array
@@ -496,6 +498,13 @@ audit_case('T5G01','normal_employee_role_management','INTEGRATION',static functi
         $before=m5h_snapshot(); $start=time(); $data=m5h_http('PUT','/merchantapi/roles/'.$roleId,$admins['A']['token'],['name'=>$roleBoundName],$evidence); $end=time();
         $state=m5h_change($state,'role',$roleId,['name'=>$roleBoundName],$start,$end); m5h_role_dto($data,$state['role'][$roleId]); m5h_same($before,m5h_snapshot(),['eb_marketplace_role']);
         $subjects['C']['role_name']=$roleBoundName;
+        usleep(1100000); $before=m5h_snapshot();
+        $data=m5h_http('PUT','/merchantapi/roles/'.$roleId,$admins['A']['token'],
+            ['name'=>$roleBoundName,'permissions'=>array_reverse($newPermissions)],$evidence);
+        m5h_role_dto($data,$state['role'][$roleId]);
+        audit_expect(m5h_identity_rows()===$state,'valid role permission-order no-op preserves original rows and times');
+        m5h_same($before,m5h_snapshot());
+        $evidence['valid_noops'][]=['resource'=>'role_permission_order','id'=>$roleId,'rows_times_and_versions_unchanged'=>true];
         $before=m5h_snapshot(); $start=time(); $updatedName='Management employee updated'; $updatedAvatar='/statics/ms1-management-employee-updated.png';
         $data=m5h_http('PUT','/merchantapi/employees/'.$employeeId,$admins['A']['token'],['name'=>$updatedName,'avatar'=>$updatedAvatar],$evidence); $end=time();
         $state=m5h_change($state,'employee',$employeeId,['name'=>$updatedName,'avatar'=>$updatedAvatar],$start,$end); m5h_employee_dto($data,$state['employee'][$employeeId]); m5h_same($before,m5h_snapshot(),['eb_marketplace_employee']);
@@ -549,10 +558,10 @@ audit_case('T5G01','normal_employee_role_management','INTEGRATION',static functi
         m5h_list('employee',$subjects['A'],$admins['A'],$evidence); m5h_list('role',$subjects['A'],$admins['A'],$evidence);
         m5h_list('employee',$subjects['B'],$admins['B'],$evidence); m5h_list('role',$subjects['B'],$admins['B'],$evidence);
         audit_expect(m5h_identity_rows()===$state,'final normal current reads preserve the verified identity state');
-        audit_expect(count($evidence['requests'])===40,'complete declared normal management flow has forty successful HTTP requests');
+        audit_expect(count($evidence['requests'])===41,'complete declared normal management flow has forty-one successful HTTP requests');
         $evidence['observations']=['merchant_ids'=>[$subjects['A']['mer_id'],$subjects['B']['mer_id']],
             'administrator_employee_ids'=>[$subjects['A']['employee_id'],$subjects['B']['employee_id']],'created_employee_id'=>$employeeId,'created_role_id'=>$roleId,'created_setup_id'=>$setupId,
-            'created_capability_exact_hash_and_expiry_verified'=>true,'profile_and_bound_role_name_do_not_rotate'=>true,'valid_noop_count'=>2,
+            'created_capability_exact_hash_and_expiry_verified'=>true,'profile_and_bound_role_name_do_not_rotate'=>true,'valid_noop_count'=>3,
             'updated_account_and_same_merchant_role_verified'=>true,'disabled_phase_employee_requests'=>0,'bound_permission_member_count'=>count($affectedIds),
             'fresh_latest_permissions'=>count($finalPermissions),'normal_actor_self_protection_completed'=>true,'old_token_requests'=>0];
     } catch (Throwable $error) { $failure=m5h_diag($error); $evidence['diagnostic']=$failure; }

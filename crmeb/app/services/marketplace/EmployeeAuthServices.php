@@ -121,16 +121,21 @@ final class EmployeeAuthServices
             $tokenHash = hash('sha256', $token, true);
             $setup = $this->validSetup($this->setups->findForSetup($tokenHash), time());
             $employeeId = (int)$setup['employee_id'];
+            $merId = (int)$setup['mer_id'];
             $passwordHash = password_hash($password, PASSWORD_DEFAULT);
             if (!is_string($passwordHash) || $passwordHash === '') {
                 throw new AuthUnavailableException();
             }
             AccountChangeGuard::run(self::APP, (string)$employeeId,
-                function () use ($tokenHash, $employeeId, $passwordHash): void {
+                function () use ($tokenHash, $employeeId, $merId, $passwordHash): void {
+                    if (!$this->merchants->lockForPasswordSetup($merId)) {
+                        throw new AuthSessionException();
+                    }
                     $now = time();
                     $setup = $this->validSetup($this->setups->lockForSetup($tokenHash), $now);
                     $identity = $this->employees->lockIdentityForPasswordSetup($employeeId);
                     if ($identity === null || (int)$setup['employee_id'] !== $employeeId
+                        || (int)$setup['mer_id'] !== $merId
                         || (int)$setup['mer_id'] !== (int)$identity['employee']['mer_id']
                         || (int)$identity['employee']['id'] !== $employeeId
                         || (int)$identity['employee']['status'] !== 1
@@ -196,6 +201,28 @@ final class EmployeeAuthServices
     {
         if (strlen($password) < 8 || strlen($password) > 72 || str_contains($password, "\0")) {
             throw new HttpException(422, '密码长度应为8至72字节');
+        }
+    }
+
+    /** Recheck the current actor; protected self-writes must not reauthenticate the old token. */
+    public function authorizeAction(MerchantContext $ctx, string $permission, bool $forWrite = false): void
+    {
+        $ctx->require($permission);
+        try {
+            if ($forWrite && !$this->merchants->lockForManagement($ctx)) {
+                throw new AuthSessionException();
+            }
+            $identity = $this->eligible($this->employees->findIdentityByEmployeeId($ctx->employeeId));
+            if ((int)$identity['employee']['mer_id'] !== $ctx->merId) {
+                throw new AuthSessionException();
+            }
+            if (!in_array($permission, $identity['role']['permissions'], true)) {
+                throw new MerchantForbiddenException();
+            }
+        } catch (AuthException|MerchantForbiddenException $error) {
+            throw $error;
+        } catch (\Throwable $error) {
+            throw new AuthUnavailableException();
         }
     }
 

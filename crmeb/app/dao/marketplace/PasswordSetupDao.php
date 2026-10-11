@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace app\dao\marketplace;
 
 use app\model\marketplace\PasswordSetup;
+use app\services\marketplace\context\MerchantContext;
+use crmeb\exceptions\AuthUnavailableException;
 use InvalidArgumentException;
 use LogicException;
 use PDO;
@@ -37,6 +39,27 @@ final class PasswordSetupDao
             ->where('employee_id', '=', $employeeId)->whereNull('consumed_at')->where('expires_at', '>', $now);
         self::assertTransaction($query);
         return $query->update(['consumed_at' => $now]);
+    }
+
+    public function createForEmployee(MerchantContext $ctx, int $employeeId, string $raw32Hash, int $now): int
+    {
+        if ($employeeId <= 0 || strlen($raw32Hash) !== 32 || $now <= 0 || $now > 4294967295 - 86400) {
+            throw new InvalidArgumentException('Invalid password setup creation');
+        }
+        $query = (new PasswordSetup())->db();
+        self::assertTransaction($query);
+        $id = (int) $query->insertGetId([
+            'mer_id' => $ctx->merId,
+            'employee_id' => $employeeId,
+            'token_hash' => $raw32Hash,
+            'expires_at' => $now + 86400,
+            'consumed_at' => null,
+            'add_time' => $now,
+        ]);
+        if ($id <= 0) {
+            throw new AuthUnavailableException();
+        }
+        return $id;
     }
 
     private function lookup(string $tokenHash): Query

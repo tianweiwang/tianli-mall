@@ -8,6 +8,7 @@ use app\model\marketplace\Employee;
 use app\model\marketplace\Merchant;
 use app\model\marketplace\Role;
 use app\services\marketplace\context\MerchantContext;
+use crmeb\exceptions\AuthUnavailableException;
 use InvalidArgumentException;
 use JsonException;
 use LogicException;
@@ -67,6 +68,153 @@ final class EmployeeDao
             ->where('status', '=', 1)->where('is_del', '=', 0)->whereNull('pwd');
         self::assertTransaction($query);
         return $query->update(['pwd' => $passwordHash, 'update_time' => $now]);
+    }
+
+    private const MANAGEMENT_FIELDS = ['id', 'mer_id', 'role_id', 'account', 'name', 'avatar', 'status', 'add_time', 'update_time'];
+
+    public function findForManagement(MerchantContext $ctx, int $employeeId, bool $lock = false): ?array
+    {
+        self::assertPositive($employeeId);
+        $query = (new Employee())->db()->where('id', '=', $employeeId)->where('is_del', '=', 0);
+        $query = MerchantScope::apply($query, $ctx);
+        if ($lock) {
+            self::assertTransaction($query);
+            $query->lock(true);
+        }
+        return self::managementData($query->field(self::MANAGEMENT_FIELDS)->find());
+    }
+
+    public function listForManagement(MerchantContext $ctx, int $page, int $limit, ?int $status, ?int $roleId): array
+    {
+        if ($page <= 0 || $limit <= 0 || $limit > 100
+            || ($status !== null && !in_array($status, [0, 1], true))
+            || ($roleId !== null && $roleId <= 0)) {
+            throw new InvalidArgumentException('Invalid employee listing');
+        }
+        $query = (new Employee())->db()->where('is_del', '=', 0);
+        if ($status !== null) {
+            $query->where('status', '=', $status);
+        }
+        if ($roleId !== null) {
+            $query->where('role_id', '=', $roleId);
+        }
+        $query = MerchantScope::apply($query, $ctx);
+        $count = (int) (clone $query)->count();
+        $rows = (clone $query)->field(self::MANAGEMENT_FIELDS)->order('id', 'asc')->page($page, $limit)->select();
+        $list = [];
+        foreach ($rows as $row) {
+            $data = self::managementData($row);
+            if ($data === null) {
+                throw new AuthUnavailableException();
+            }
+            $list[] = $data;
+        }
+        return ['list' => $list, 'count' => $count];
+    }
+
+    /** Include every binding, including disabled and soft-deleted employees. */
+    public function idsForRole(MerchantContext $ctx, int $roleId, bool $lock = false): array
+    {
+        self::assertPositive($roleId);
+        $query = (new Employee())->db()->where('role_id', '=', $roleId);
+        $query = MerchantScope::apply($query, $ctx)->order('id', 'asc');
+        if ($lock) {
+            self::assertTransaction($query);
+            $query->lock(true);
+        }
+        $ids = [];
+        foreach ($query->column('id') as $value) {
+            $id = (int) $value;
+            if ($id <= 0) {
+                throw new AuthUnavailableException();
+            }
+            $ids[] = $id;
+        }
+        return $ids;
+    }
+
+    /** Exact uniqueness probe only: it returns no subject or credential data. */
+    public function accountExists(string $normalized, ?int $excludeId = null): bool
+    {
+        if ($normalized === '') {
+            throw new InvalidArgumentException('Invalid employee account');
+        }
+        $query = (new Employee())->db()->where('account', '=', $normalized);
+        if ($excludeId !== null) {
+            self::assertPositive($excludeId);
+            $query->where('id', '<>', $excludeId);
+        }
+        return (int) $query->count() > 0;
+    }
+
+    public function createForMerchant(MerchantContext $ctx, array $validatedFields, int $now): int
+    {
+        self::assertTimestamp($now);
+        if (array_diff(array_keys($validatedFields), ['account', 'role_id', 'name', 'avatar']) !== []
+            || !isset($validatedFields['account'], $validatedFields['role_id'])
+            || !is_string($validatedFields['account']) || $validatedFields['account'] === ''
+            || !is_int($validatedFields['role_id']) || $validatedFields['role_id'] <= 0) {
+            throw new InvalidArgumentException('Invalid employee creation');
+        }
+        $query = (new Employee())->db();
+        self::assertTransaction($query);
+        $id = (int) $query->insertGetId([
+            'mer_id' => $ctx->merId,
+            'role_id' => $validatedFields['role_id'],
+            'account' => $validatedFields['account'],
+            'pwd' => null,
+            'name' => $validatedFields['name'] ?? '',
+            'avatar' => $validatedFields['avatar'] ?? '',
+            'status' => 1,
+            'is_del' => 0,
+            'add_time' => $now,
+            'update_time' => $now,
+        ]);
+        if ($id <= 0) {
+            throw new AuthUnavailableException();
+        }
+        return $id;
+    }
+
+    public function updateForManagement(MerchantContext $ctx, int $employeeId, array $changes, int $now): int
+    {
+        self::assertPositive($employeeId);
+        self::assertTimestamp($now);
+        if (array_diff(array_keys($changes), ['account', 'role_id', 'name', 'avatar', 'status']) !== []) {
+            throw new InvalidArgumentException('Invalid employee update');
+        }
+        $query = (new Employee())->db()->where('id', '=', $employeeId)->where('is_del', '=', 0);
+        $query = MerchantScope::apply($query, $ctx);
+        self::assertTransaction($query);
+        if ($changes === []) {
+            return 0;
+        }
+        $changes['update_time'] = $now;
+        return $query->update($changes);
+    }
+
+    private static function managementData(array|Model|null $row): ?array
+    {
+        $data = $row instanceof Model ? $row->getData() : $row;
+        if (!is_array($data) || $data === []) {
+            return null;
+        }
+        $result = [];
+        foreach (self::MANAGEMENT_FIELDS as $field) {
+            if (!array_key_exists($field, $data)) {
+                throw new AuthUnavailableException();
+            }
+            $result[$field] = in_array($field, ['id', 'mer_id', 'role_id', 'status', 'add_time', 'update_time'], true)
+                ? (int) $data[$field] : (string) $data[$field];
+        }
+        return $result;
+    }
+
+    private static function assertTimestamp(int $now): void
+    {
+        if ($now <= 0 || $now > 4294967295) {
+            throw new InvalidArgumentException('Invalid employee timestamp');
+        }
     }
 
     /** Same-merchant joins are part of identity establishment, not a client selector. */

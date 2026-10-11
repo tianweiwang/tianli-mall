@@ -9,6 +9,7 @@ use crmeb\exceptions\AuthException;
 use crmeb\exceptions\AuthUnavailableException;
 use PDO;
 use think\exception\ValidateException;
+use think\exception\HttpException;
 use think\facade\Db;
 use think\facade\Log;
 
@@ -94,7 +95,9 @@ class AccountChangeGuard
         } catch (\Throwable $error) {
             if ($phase === 'database' && ($error instanceof AdminException
                 || $error instanceof ApiException || $error instanceof ValidateException
-                || ($error instanceof AuthException && !$error instanceof AuthUnavailableException))) {
+                || ($error instanceof AuthException && !$error instanceof AuthUnavailableException)
+                || ($app === 'merchantapi' && $error instanceof HttpException
+                    && in_array($error->getStatusCode(), [401, 403, 404, 422], true)))) {
                 // Preserve controlled business validation and its original
                 // response, while the normal transaction performs its rollback.
                 throw $error;
