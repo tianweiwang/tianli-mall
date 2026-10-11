@@ -369,10 +369,41 @@ m4_case('A28', 'v2-logout-only-current-sid', 'real logout removes only the prese
     // Warm approved probes outside the logout/no-effects observation.
     m4_http('GET', '/adminapi/product/product/rule', $second['token']);
     m4_http('GET', '/adminapi/product/product/rule', $other['token']);
-    $before = m4_snapshot();
+    $readAuditRows = static function (): array {
+        $rows = [];
+        foreach (audit_db()->query('SELECT * FROM eb_system_log ORDER BY id')->fetchAll() as $row) { $rows[(string)$row['id']] = $row; }
+        return $rows;
+    };
+    $auditBefore = $readAuditRows();
+    $pageQuery = audit_db()->prepare('SELECT menu_name FROM eb_system_menus WHERE api_url=? LIMIT 1');
+    $pageQuery->execute(['setting/admin/logout']);
+    $expectedPage = $pageQuery->fetchColumn() ?: '未知';
+    $before = m4_snapshot(); $requestStart = time();
     m4_check(m4_status(m4_http('GET', '/adminapi/setting/admin/logout', $first['token'])) === 200, 'approved logout route must retain its success envelope');
+    $requestEnd = time();
     $after = m4_snapshot(); $diff = m4_differences($before, $after, [$firstBinding['session_key']]);
-    m4_check($diff['db'] === [] && $diff['cache'] === [], 'logout may change only the exact presented sid key');
+    $auditAfter = $readAuditRows(); $priorRowsUnchanged = true;
+    foreach ($auditBefore as $id => $row) { if (($auditAfter[$id] ?? null) !== $row) { $priorRowsUnchanged = false; } }
+    $added = array_diff_key($auditAfter, $auditBefore); $row = count($added) === 1 ? reset($added) : [];
+    $fixture = $GLOBALS['m4_accounts']['admin_limited'];
+    $columns = array_keys($row); sort($columns, SORT_STRING);
+    $expectedColumns = ['id', 'admin_id', 'admin_name', 'path', 'page', 'method', 'ip', 'type', 'add_time', 'merchant_id'];
+    sort($expectedColumns, SORT_STRING);
+    $exactAudit = $priorRowsUnchanged && count($added) === 1 && count($auditAfter) === count($auditBefore) + 1
+        && $columns === $expectedColumns && (int)($row['id'] ?? 0) > max([0, ...array_keys($auditBefore)])
+        && (string)($row['admin_id'] ?? '') === (string)$fixture['id'] && ($row['admin_name'] ?? '') === $fixture['account']
+        && ($row['method'] ?? '') === 'adminapi' && ($row['path'] ?? '') === 'setting/admin/logout'
+        && ($row['type'] ?? '') === 'system' && ($row['page'] ?? '') === $expectedPage
+        && ($row['ip'] ?? '') === gethostbyname(gethostname()) && (int)($row['merchant_id'] ?? -1) === 0
+        && (int)($row['add_time'] ?? 0) >= $requestStart && (int)($row['add_time'] ?? 0) <= $requestEnd;
+    m4_check($exactAudit, 'successful logout appends exactly its existing authenticated audit row; every prior row and audit field is preserved');
+    $unexpectedTables = array_values(array_diff($diff['db'], ['eb_system_log']));
+    m4_check($exactAudit && $unexpectedTables === [] && $diff['cache'] === [], 'logout changes only the exact presented sid and its one precisely verified audit row');
+    $GLOBALS['m4_case']['observations'][] = ['database_tables' => count($before['tables']), 'approved_audit_table' => 'eb_system_log',
+        'added_audit_rows' => count($added), 'prior_audit_rows_unchanged' => $priorRowsUnchanged, 'exact_logout_audit' => $exactAudit,
+        'unapproved_db_diff' => $unexpectedTables, 'unapproved_cache_diff' => $diff['cache']];
+    $GLOBALS['m4_case']['db_diff'] = array_merge($GLOBALS['m4_case']['db_diff'], $unexpectedTables, $exactAudit ? [] : ['eb_system_log']);
+    $GLOBALS['m4_case']['cache_diff'] = array_merge($GLOBALS['m4_case']['cache_diff'], $diff['cache']);
     m4_check(audit_redis()->exists($firstBinding['session_key']) === 0, 'logout must really delete the current v2 sid');
     m4_negative(static fn(): array => m4_http('GET', '/adminapi/product/product/rule', $first['token']), 401);
     m4_check(m4_status(m4_http('GET', '/adminapi/product/product/rule', $second['token'])) === 200
