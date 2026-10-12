@@ -614,6 +614,36 @@ function m7b_browser_result(string $exchange,string $run,string $source,array $u
         audit_expect(is_array($actual)&&$actual['message']===$messages[$stage.'_kefu']&&(int)$actual['message_type']===1
             &&(int)$actual['type']===3&&(int)$actual['mssage_num']===0,'each actual guest conversation retains the delivered normal reply without unread messages');
     }
+    $preview=$result['list_preview'] ?? null;
+    audit_expect(is_array($preview),'actual mobile own-row HTTP preview metadata is present');
+    $previewKeys=array_keys($preview); sort($previewKeys);
+    audit_expect($previewKeys===['client_http_sequence','is_tourist','message_type','path','preview_sha256','received_via','record_id','stage','to_uid','user_id'],
+        'mobile preview evidence contains only its finite metadata fields');
+    $mobileRecords=array_values(array_filter($owners['store_service_record'],static fn(array $row): bool=>
+        $row['user_id']===$users['kefu']['uid']&&$row['to_uid']===$guestByStage['mobile']&&$row['is_tourist']===1));
+    audit_expect(count($mobileRecords)===1&&$preview['stage']==='mobile'&&$preview['record_id']===$mobileRecords[0]['id']
+        &&$preview['user_id']===$users['kefu']['uid']&&$preview['to_uid']===$guestByStage['mobile']
+        &&$preview['is_tourist']===1&&$preview['message_type']===1&&$preview['received_via']==='http'
+        &&$preview['path']==='/kefuapi/user/record'&&is_int($preview['client_http_sequence'])
+        &&$preview['client_http_sequence']>0&&$preview['client_http_sequence']<=count($evidence['client_http']),
+        'mobile preview is bound to the current RUN staff and unique guest record');
+    $previewHttp=$evidence['client_http'][$preview['client_http_sequence']-1];
+    audit_expect($previewHttp['stage']==='mobile'&&$previewHttp['method']==='GET'&&$previewHttp['path']==='/kefuapi/user/record'
+        &&$previewHttp['http']===200&&$previewHttp['business_status']===200,'mobile preview sequence is its actual registered successful HTTP response');
+    $stmt=audit_db()->prepare('SELECT id,uid,to_uid,msn,msn_type,add_time FROM eb_store_service_log '
+        . 'WHERE is_tourist=1 AND ((uid=? AND to_uid=?) OR (uid=? AND to_uid=?)) ORDER BY id DESC LIMIT 1');
+    $stmt->execute([$users['kefu']['uid'],$guestByStage['mobile'],$guestByStage['mobile'],$users['kefu']['uid']]);
+    $last=$stmt->fetch();
+    audit_expect(is_array($last)&&isset($owners['store_service_log'][(int)$last['id']])
+        &&(int)$last['uid']===$users['kefu']['uid']&&(int)$last['to_uid']===$guestByStage['mobile']
+        &&(int)$last['msn_type']===1&&$last['msn']===$messages['mobile_kefu'],'independent DB last message is the delivered current mobile staff reply');
+    $stmt=audit_db()->prepare('SELECT message,message_type,update_time FROM eb_store_service_record WHERE id=? AND user_id=? AND to_uid=? AND is_tourist=1 LIMIT 1');
+    $stmt->execute([$mobileRecords[0]['id'],$users['kefu']['uid'],$guestByStage['mobile']]); $storedPreview=$stmt->fetch();
+    audit_expect(is_array($storedPreview)&&$storedPreview['message']===$last['msn']&&(int)$storedPreview['message_type']===1
+        &&(int)$storedPreview['update_time']>=(int)$last['add_time'],'current staff conversation preview and ordering time follow the real last bidirectional message');
+    $expectedPreview=mb_substr($last['msn'],0,10,'UTF-8');
+    audit_expect(is_string($preview['preview_sha256'])&&preg_match('/^[a-f0-9]{64}$/D',$preview['preview_sha256'])===1
+        &&hash_equals(hash('sha256',$expectedPreview),$preview['preview_sha256']),'HTTP own-row preview equals the native first ten Unicode characters without suffix');
     foreach ($messages as $name=>$message) {
         [$stage,$kind]=explode('_',$name); $from=$kind==='guest' ? $guestByStage[$stage] : $users['kefu']['uid'];
         $to=$kind==='guest' ? $users['kefu']['uid'] : $guestByStage[$stage];
@@ -662,6 +692,7 @@ function m7b_browser_result(string $exchange,string $run,string $source,array $u
     return ['browser_result_sha256'=>hash_file('sha256',$file),'actual_http'=>count($evidence['client_http']),
         'ui_logins'=>2,'guest_issues'=>2,'identity_acks'=>4,'ordinary_texts'=>4,'real_log_rows'=>4,'real_record_rows'=>4,
         'rendered_chat_screenshots'=>4,'rendered_control_screenshots'=>1,'controls_geometry_checked'=>true,'manual_screenshot_review'=>'PENDING ROOT',
+        'list_preview'=>$preview,'list_preview_independently_verified'=>true,
         'external_requests_blocked_count'=>$result['external_requests_blocked_count']];
 }
 
@@ -716,10 +747,12 @@ function m7b_serve(): array
         } else $evidence['kf_adv_preparation']=['new_owned_default_row'=>false,'preexisting_row_untouched'=>true];
         $slug=$run.':'.bin2hex(random_bytes(8)); $users['kefu']=m7b_seed_browser($pdo,$slug,'http://audit-ui:8080'.$avatarPath,$owners,$secrets);
         foreach (['desktop_guest','desktop_kefu','mobile_guest','mobile_kefu'] as $name) {
-            $text='M7 browser '.substr(hash('sha256',$slug.'|'.$name),0,40); $messages[$name]=$text; $secrets[]=$text;
+            $text=$name.' '.substr(hash('sha256',$slug.'|'.$name),0,40); $messages[$name]=$text; $secrets[]=$text;
             $stmt=$pdo->prepare('SELECT COUNT(*) FROM eb_wechat_key WHERE key_type=1 AND (`keys`=? OR `keys` LIKE ?)'); $stmt->execute([$text,'%'.$text.'%']);
             audit_expect((int)$stmt->fetchColumn()===0,'normal unique browser text does not match an installed automatic response');
         }
+        audit_expect(count(array_unique(array_map(static fn(string $text): string=>mb_substr($text,0,10,'UTF-8'),$messages)))===4,
+            'the four normal text previews have distinct first ten Unicode characters');
         m7b_register_keys([$prefix.'CRMEB:'.md5('kefu')],$ownedKeys); // Token never issued during prepare.
         m7b_old_rows($pdo,$old,$owners,$sequenceBefore);
         $service=audit_manifest()['services']['audit-chat'] ?? []; audit_expect(isset($service['id'],$service['image_id'],$service['runtime_volume']),'registered chat is available');

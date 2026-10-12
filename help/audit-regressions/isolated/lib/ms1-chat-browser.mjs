@@ -224,6 +224,7 @@ function observe(page, name, kind) {
   page.on('response', (response) => {
     const responseUrl = new URL(response.url());
     if (responseUrl.origin !== ORIGIN) return;
+    const captureListPreview = name === 'mobile' && kind === 'kefu' && stage.expectListPreview === true;
     if (!responseUrl.pathname.startsWith('/adminapi/') && !responseUrl.pathname.startsWith('/kefuapi/') &&
       !responseUrl.pathname.startsWith('/api/')) {
       const category = response.request().resourceType() + ':' + response.status();
@@ -236,7 +237,7 @@ function observe(page, name, kind) {
       const url = new URL(response.url());
       if (url.origin !== ORIGIN) return;
       const method = response.request().method(), pathname = url.pathname;
-      let businessStatus = null, meta;
+      let businessStatus = null, meta, listPreview;
       if (pathname.startsWith('/adminapi/') || pathname.startsWith('/kefuapi/') || pathname.startsWith('/api/')) {
         check(internalApiPaths.has(pathname), 'UNEXPECTED_INTERNAL_API_PRODUCER');
         if (pathname !== '/adminapi/custom_admin_js') {
@@ -255,6 +256,19 @@ function observe(page, name, kind) {
             check(kind === 'guest' && Number.isSafeInteger(stage.guestUid) && stage.guestUid < 0 &&
               Number(url.searchParams.get('uid')) === input.staff_uid && Array.isArray(envelope.data),
             'GUEST_HISTORY_SUBJECT');
+          } else if (pathname === '/kefuapi/user/record' && captureListPreview &&
+            method === 'GET' && url.searchParams.get('is_tourist') === '1') {
+            check(Number.isSafeInteger(stage.guestUid) && stage.guestUid < 0 && Array.isArray(envelope.data),
+            'LIST_PREVIEW_SUBJECT');
+            const rows = envelope.data.filter((row) => row && typeof row === 'object' &&
+              row.user_id === input.staff_uid && row.to_uid === stage.guestUid && row.is_tourist === 1);
+            check(rows.length === 1, 'LIST_PREVIEW_ROW_COUNT');
+            const row = rows[0], preview = Array.from(input.texts[name + '_kefu']).slice(0, 10).join('');
+            check(Number.isSafeInteger(row.id) && row.id > 0 && row.message_type === 1 &&
+              typeof row.message === 'string' && row.message === preview, 'LAST_REPLY_PREVIEW_BINDING');
+            // Only this normal own-row projection survives the response callback.
+            listPreview = { stage: name, record_id: row.id, user_id: row.user_id, to_uid: row.to_uid,
+              is_tourist: 1, message_type: 1, preview_sha256: sha(preview), received_via: 'http', path: pathname };
           } else if (pathname === '/kefuapi/service/list') {
             check(url.searchParams.get('is_tourist') === '1' &&
               Number(url.searchParams.get('uid')) === stage.guestUid, 'HISTORY_SELECTED_GUEST');
@@ -278,6 +292,10 @@ function observe(page, name, kind) {
       } else check(response.status() >= 200 && response.status() < 400, 'NORMAL_STATIC_UNSUCCESSFUL');
       await command('client_http', { stage: name, method, path: pathname, http: response.status(), business_status: businessStatus });
       result.client_http_count++;
+      if (listPreview) {
+        stage.listPreview = { ...listPreview, client_http_sequence: result.client_http_count };
+        result.list_preview = stage.listPreview;
+      }
       if (meta === 'login') { result.login_http_success++; stage.loginHttp = true; }
       if (meta === 'guest') { result.guest_http_success++; stage.guestHttp = true; }
     }).catch((error) => {
@@ -433,7 +451,8 @@ async function avatar(page, name, kind) {
 async function stage(name) {
   stageName = name;
   const state = { guestUid: null, loginHttp: false, guestHttp: false,
-    guestEcho: false, guestSelectionRequested: false, guestHistory: null };
+    guestEcho: false, guestSelectionRequested: false, guestHistory: null,
+    expectListPreview: false, listPreview: null };
   stages.set(name, state);
   const staffContext = await contextFor(name), guestContext = await contextFor(name);
   const staff = await staffContext.newPage(), guest = await guestContext.newPage();
@@ -498,6 +517,7 @@ async function stage(name) {
   if (name === 'desktop') {
     await staff.getByRole('button', { name: '用户列表', exact: true }).click();
   } else {
+    state.expectListPreview = true;
     await (await actionControl(staff, '返回会话列表', 'kefu')).click();
   }
   await until(() => result.room_acks.filter((a) => a.stage === name && a.uid === 0).length > leaveBefore, 'ORDINARY_LEAVE_ACK');
@@ -505,8 +525,11 @@ async function stage(name) {
   if (name === 'mobile') {
     check(new URL(staff.url()).pathname === '/kefu/mobile_list', 'MOBILE_BACK_ROUTE');
     await staff.getByRole('button', { name: '游客列表', exact: true }).click();
-    await until(async () => await staff.locator('.list-box .item').filter({ hasText: visitorName }).count() === 1, 'MOBILE_VISITOR_LIST_VISIBLE');
-    await textVisible(staff, replyText, 'MOBILE_REPLY_LIST_VISIBLE');
+    const visitor = staff.locator('.list-box .item').filter({ hasText: visitorName });
+    await until(async () => await visitor.count() === 1 && await visitor.isVisible(), 'MOBILE_VISITOR_LIST_VISIBLE');
+    await until(() => state.listPreview && state.listPreview.to_uid === state.guestUid &&
+      state.listPreview.preview_sha256 === sha(Array.from(replyText).slice(0, 10).join('')), 'MOBILE_LIST_PREVIEW_RESPONSE');
+    await textVisible(visitor.locator('.msg'), Array.from(replyText).slice(0, 10).join(''), 'MOBILE_REPLY_LIST_VISIBLE');
     await drain(); await controls(staff, name);
     result.control_screenshot = await shot(staff, name, 'kefu_list');
   }

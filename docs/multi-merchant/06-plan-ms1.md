@@ -362,6 +362,10 @@ T7B01第十四轮 `20261012064833e676d0`（源码a39b6c419、第五轮真实dist
 - [ ] **Step 1: 写用例**：A07（商家令牌访问平台配置、数据库备份、文件编辑、用户资料、CRUD 生成等 adminapi 接口 → 全部拒绝）；M07（商家令牌 × adminapi/outapi/kefuapi/api，以及 admin/out/kefu/api 令牌 × merchantapi，共 8 组 → 全部拒绝）；K01（商家令牌访问客服 HTTP 接口与 WebSocket 鉴权、房间订阅 → 全部拒绝；平台合法客服仍可用）。
 - [ ] **Step 2–5:** 确认失败 → 修复（若 MS0a 的 type 检查已覆盖 HTTP 部分，只需补 WebSocket 入口）→ 通过 → 提交 `fix: reject merchant tokens outside merchantapi, including kefu websocket`。
 
+列表预览修正已接入（普通运行尚未验证）：saveRecord 在新增与更新两分支后，以原双方 UID 和 is_tourist 同步已有反向记录的 message、message_type、update_time；不改头像、昵称、未读或记录数量。辅助按本次唯一游客行核真实 HTTP 的十字符预览，PHP 独立联查最后实际日志和会话记录；四个普通文本的前十字符互不相同。两 PHP 与 Node 辅助实际离线语法检查均 native0；原 RUN14 FAIL 保持，新浏览器结果未生成。
+
+消息头像核对补充（先于客户端修正）：合法游客头像可以为空，移动游客页的普通 img 没有本地默认值或失败回退；其他页已有 VueLazyload 的 moren.jpg/no.png 默认图。旧辅助主要核 header 图片，不能证明消息头像。移动游客页复用现有本地默认头像处理合法空值和加载失败；不改游客身份、头像配置或存储。新辅助按四侧真实聊天的两条消息、发送者及消息区域逐一等待实际图片加载，记录八项有限图片/边界元数据，明确游客默认图与真实客服头像；header 品牌图单列，不能代替消息头像。PHP 独立绑定本次 actor/消息与允许的真实内部资源。保留四条全文、四日志/四会话、真实退房、五张 PNG 和旧状态保持；必须重新构建并实际看图，原头像覆盖缺口不追认通过。
+
 ### Task 8: 常驻进程中的上下文
 
 **Files:**

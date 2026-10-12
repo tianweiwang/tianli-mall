@@ -96,20 +96,20 @@ class StoreServiceRecordServices extends BaseServices
      */
     public function saveRecord(int $uid, int $toUid, string $message, int $type, int $messageType, int $num, int $isTourist = 0, string $nickname = '', string $avatar = '')
     {
+        $now = time();
         $info = $this->dao->get(['user_id' => $toUid, 'to_uid' => $uid, 'is_tourist' => $isTourist]);
         if ($info) {
             $info->type = $type;
             $info->message = $message;
             $info->message_type = $messageType;
-            $info->update_time = time();
+            $info->update_time = $now;
             $info->mssage_num = $num;
             if ($avatar) $info->avatar = $avatar;
             if ($nickname) $info->nickname = $nickname;
             $info->save();
-            $this->dao->update(['user_id' => $uid, 'to_uid' => $toUid, 'is_tourist' => $isTourist], ['message' => $message, 'message_type' => $messageType]);
-            return $info->toArray();
+            $record = $info->toArray();
         } else {
-            return $this->dao->save([
+            $record = $this->dao->save([
                 'user_id' => $toUid,
                 'to_uid' => $uid,
                 'type' => $type,
@@ -118,10 +118,13 @@ class StoreServiceRecordServices extends BaseServices
                 'nickname' => $nickname,
                 'message_type' => $messageType,
                 'mssage_num' => $num,
-                'add_time' => time(),
-                'update_time' => time(),
+                'add_time' => $now,
+                'update_time' => $now,
                 'is_tourist' => $isTourist
             ])->toArray();
         }
+        $this->dao->update(['user_id' => $uid, 'to_uid' => $toUid, 'is_tourist' => $isTourist],
+            ['message' => $message, 'message_type' => $messageType, 'update_time' => $now]);
+        return $record;
     }
 }
