@@ -4854,5 +4854,58 @@
     "first_failure_cache_path": "/hbx/plugins/uniapp-cli/node_modules/@dcloudio/vue-cli-plugin-uni-optimize/.tmp",
     "followup": "Eleven unchanged public optimize files overlaid read only with its exact cache in tmpfs; second actual build is still running",
     "runtime_browser_verified": false
+  },
+  "admin_build_round_5": {
+    "round": 5,
+    "finished_at_utc": "2026-10-12T06:42:43.1966966Z",
+    "status": "BUILD_EXIT_ZERO",
+    "source_commit_at_copy": "a44ee1b31b57051e2666ae761f4b0fa9ddd8af42",
+    "node_image": "sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293",
+    "node_version": "v20.20.2",
+    "npm_version": "10.8.2",
+    "native_exits": {
+      "docker_start_attach": 0,
+      "container": 0,
+      "npm_build": 0
+    },
+    "npm_ci_repeated": false,
+    "dependencies_readonly": true,
+    "source_manifest_sha256": "4224413f706f3e7e3be5533c8cbe3e59baf7446403e8c89be0fc30aaca83a497",
+    "tracked_input_count": 1074,
+    "build_input_changes": [],
+    "current_repository_matches_built_inputs": true,
+    "dist_manifest_sha256": "b8dd5272ffdd99741b404329d49c358ed9e35862190549696f4d899536e9b272",
+    "dist_file_count": 596,
+    "dist_total_bytes": 40879357.0,
+    "dist_index_sha256": "f2228d0d2340754ca70702be293e3e9669b528300945a0132678b3cc365f98f3",
+    "build_warning_count": 11,
+    "build_warning_categories": [
+      "CSS extraction order",
+      "asset size",
+      "entrypoint size"
+    ],
+    "build_warnings_manual_review": "PENDING ROOT",
+    "application_server_started": false,
+    "business_http_or_websocket_requests": 0,
+    "browser_acceptance": "NOT RUN",
+    "original_skipped_security_negative_fault_scenarios": "NOT RUN",
+    "external_publish_or_push": false,
+    "actual_container_cleanup": {
+      "container_id": "2eafcc277c9f8ca5db92b7470380ee62ff3166fa24132cea6925cf5b93c1d6ad",
+      "prior_state": "exited",
+      "remove_native_exit": 0,
+      "verification_native_exit": 0,
+      "remaining_container": [],
+      "all_source_dist_evidence_preserved": true,
+      "other_containers_touched": false
+    },
+    "prior_round_4_evidence_untouched": true,
+    "warning_review": "Eleven warnings retained; actual categories remain CSS extraction order, asset size, entrypoint size; no warning suppression",
+    "actual_manifest_hashes": {
+      "source-manifest-5.json": "4224413f706f3e7e3be5533c8cbe3e59baf7446403e8c89be0fc30aaca83a497",
+      "dist-manifest-5.json": "b8dd5272ffdd99741b404329d49c358ed9e35862190549696f4d899536e9b272",
+      "build-result-5.json": "703eae7606b397e7c4de7dfe383ab71756521c98e24029744768229f8841d5b8"
+    },
+    "next_normal_browser_verification": "NOT RUN"
   }
 }

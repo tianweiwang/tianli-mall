@@ -349,6 +349,8 @@ T7B01第十三轮 `202610120607539b91d2`（源码cdf6740aa）：真实27个HTTP�
 
 uni-app普通运行准备：现HBuilderX有真实H5 compiler，536tracked外部副本逐文件一致；缺Stylus用外部Docker安装固定0.54.8兼容候选（原peer>=0.52.4，不声称原锁定版），ignore-scripts/native0，原安装未写。首次无网络/只读Linux真实compile native1/EROFS，原optimize包要求写自己的.tmp；仅外部复制11个同hash公开文件、包RO覆盖加精确.tmp tmpfs后第二次真实compile仍运行。编译/运行/截图与客服admin H5分别记录，不使用旧mock脚本，不删除原页面/style或冒称当前uni运行已验。
 
+移动操作控件修正已安装并本地提交a44ee1b：两Vue业务script逐字节保持，仅返回/发送native buttons、本地已加载SVG、访问名称、44px点击区/45px返回区、输入flex/min-width0/边界/focus状态修正；独立context各自有已知symbol颜色规则。普通辅助改真实按钮角色点击及三控件实际几何，PHP/Node离线语法native0。第五轮后台真正构建已完成：npm build、docker attach、实际container exit全部0/restart0，1074输入与当前源/副本一致、596全新dist，已有依赖仅RO复用/不再npm ci，原11个CSS顺序/资源大小类警告完整保留；原第四轮产物证据未覆写，第五轮自有容器删除及精确ID盘点0。此构建不算页面验收；下一新普通RUN将使用第五轮dist核真实SVG像素/按钮边界及正常退房、第五张移动列表PNG，uni客户端仍另行待验。
+
 2026-10-12普通后端交付：第四个独立RUN `20261012020114e0c80a` 在源码 `1682ccc249fa3364fa07eee9075b52c0504fcb71` 上运行，bootstrap、prepare、start-chat、after及teardown原生全部exit0。实际4个正常HTTP请求均200，34个正常WS客户端帧、5个身份ACK、9个房间/正常退房ACK、8条双方文字和2个服务器游客会话；真实Channel事件经实际客服连接收到。17个自有SQL夹具精确清理，37个精确键登记/23个实际键删除；163表原行、checksum和DDL及旧Redis值/绝对期限保持，仅四张实际夹具表自然计数器变化单列，不恢复快照或回拨计数。主实例及四轮引导清理实例共8个RUN最终容器/网络/卷均0，真实.env与install.lock不存在。
 
 第四轮原始24行逐字节追加，`records/ms1/results.jsonl`现195行（8PASS/13FAIL/174NOT RUN），整体SHA256 `24b17f40dfb2b71504a599679ac04a79abde43bafa8d4ffa0d69fc181bf68870`；此前171行、Task1–6的75行和首57行均保持原字节。自然源码缺失基线及前三轮普通失败仍保留为FAIL；第三轮六个未登记readiness键的实际生产者经源码核对，第四轮按原9个配置/幻灯片生产者逐键预备，保留原最终数据/缓存断言。后台第三轮真实Node20构建exit0，1074个构建输入与本次源码一致，596个dist文件、11个原构建警告留存；36个实际后端/前端/辅助/文档路径hash及完整正常摘要见 `records/ms1/task7-progress-summary.json`。浏览器依赖就绪只代表准备完成，浏览器及uni-app运行验收未完成；原A07/M07/K01及安全、异常、故障、并发/断连、恢复和DDL拒绝场景仍NOT RUN。仅本地L2，未推送、部署、写真实库、通知或人工签收。
