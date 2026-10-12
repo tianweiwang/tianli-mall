@@ -490,6 +490,7 @@ function m7h_sources(array &$evidence): void
         'crmeb/app/listener/http/HttpEndListener.php','crmeb/app/services/kefu/KefuServices.php',
         'crmeb/app/services/kefu/service/StoreServiceRecordServices.php','crmeb/app/services/system/SystemClearServices.php',
         'template/admin/src/api/kefu.js','template/admin/src/libs/request.js','template/admin/src/libs/socket.js',
+        'template/admin/src/layout/navBars/breadcrumb/userNews.vue',
         'template/admin/src/pages/kefu/appChat/index.vue','template/admin/src/pages/kefu/appChat/mobile/index.vue',
         'template/admin/src/pages/kefu/mobile/chat_list.vue','template/admin/src/pages/kefu/mobile/index.vue','template/admin/src/pages/kefu/pc/index.vue',
         'template/uni-app/libs/new_chat.js','template/uni-app/pages/extension/customer_list/chat.vue',

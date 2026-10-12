@@ -31,7 +31,7 @@
 <script>
 let newOrderAudioLink = new Audio(require('@/assets/video/newOrderAudioLink.mp3'));
 import { jnoticeRequest } from '@/api/common';
-import { adminSocket } from '@/libs/socket';
+import { getAdminSocket } from '@/libs/socket';
 import { getCookies, removeCookies, setCookies } from '@/libs/util';
 export default {
   name: 'layoutBreadcrumbUserNews',
@@ -46,7 +46,7 @@ export default {
   mounted() {
     this.getNotict();
     this.newOrderAudioLink = newOrderAudioLink;
-    adminSocket.then((ws) => {
+    getAdminSocket().then((ws) => {
       ws.send({
         type: 'login',
         data: getCookies('token'),

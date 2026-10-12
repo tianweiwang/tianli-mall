@@ -188,5 +188,9 @@ function createSocket(key) {
   }));
 }
 
-export const adminSocket = createSocket(1);
+let adminSocket;
+export function getAdminSocket() {
+  if (!adminSocket) adminSocket = createSocket(1);
+  return adminSocket;
+}
 export const Socket = createSocket(2);

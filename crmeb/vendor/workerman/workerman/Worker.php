@@ -31,6 +31,8 @@ class Worker
     /** Stable instance identifier and the existing Channel server subscription map. */
     public $workerId = '';
     public $channels = array();
+    public $socket = '';
+    public $status = '';
 
     /**
      * Version.
