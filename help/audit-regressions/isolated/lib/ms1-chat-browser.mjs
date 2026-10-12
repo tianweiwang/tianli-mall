@@ -38,7 +38,7 @@ const internalApiPaths = new Set([
   '/adminapi/get_workerman_url', '/adminapi/custom_admin_js',
   '/kefuapi/config', '/kefuapi/login', '/kefuapi/service/info',
   '/kefuapi/user/record', '/kefuapi/service/list', '/kefuapi/service/transfer_list',
-  '/kefuapi/tourist/user', '/kefuapi/tourist/adv',
+  '/kefuapi/tourist/user', '/kefuapi/tourist/adv', '/kefuapi/tourist/chat',
 ]);
 const stages = new Map();
 
@@ -52,7 +52,7 @@ function atomic(file, value) {
   fs.renameSync(tmp, file);
 }
 function healthy() {
-  if (httpFailure) fail('HTTP_REGISTRATION_FAILED');
+  if (httpFailure) fail(httpFailure);
   if (fatal) fail(fatal);
   check(Date.now() < ready.normal_deadline * 1000, 'NORMAL_DEADLINE_REACHED');
 }
@@ -250,6 +250,10 @@ function observe(page, name, kind) {
             check(kind === 'guest' && Number(envelope.data.uid) === input.staff_uid &&
               Number.isSafeInteger(uid) && uid < 0 && Number.isSafeInteger(envelope.data.guest_expires_at), 'GUEST_ISSUER_SUBJECT');
             stage.guestUid = uid; meta = 'guest';
+          } else if (pathname === '/kefuapi/tourist/chat') {
+            check(kind === 'guest' && Number.isSafeInteger(stage.guestUid) && stage.guestUid < 0 &&
+              Number(url.searchParams.get('uid')) === input.staff_uid && Array.isArray(envelope.data),
+            'GUEST_HISTORY_SUBJECT');
           } else if (pathname === '/kefuapi/service/list') {
             check(url.searchParams.get('is_tourist') === '1' &&
               Number(url.searchParams.get('uid')) === stage.guestUid, 'HISTORY_SELECTED_GUEST');
@@ -275,7 +279,11 @@ function observe(page, name, kind) {
       result.client_http_count++;
       if (meta === 'login') { result.login_http_success++; stage.loginHttp = true; }
       if (meta === 'guest') { result.guest_http_success++; stage.guestHttp = true; }
-    }).catch(() => { httpFailure = true; });
+    }).catch((error) => {
+      const code = error?.publicCode;
+      httpFailure ||= typeof code === 'string' && /^[A-Z0-9_]+$/.test(code) ? code : 'HTTP_REGISTRATION_FAILED';
+      result.http_failure_code = httpFailure;
+    });
   });
   page.on('websocket', (socket) => {
     try { const url = new URL(socket.url()); check(url.origin === ORIGIN.replace('http:', 'ws:') && url.pathname === '/msg', 'UNEXPECTED_WEBSOCKET'); }
