@@ -331,7 +331,7 @@ T7B01第八轮 `202610120458376634c5`（源码ac9bb17db）：启动观察已过�
 
 T7B01第九轮 `20261012051150958c31`（源码c4fa7a376）：bootstrap/prepare/start原生exit0，浏览器完成一次真实客服登录、一次游客发行和双方身份ACK，11个正常HTTP登记通过；固定状态采样与逐producer归属检查已通过。Node实际exited/native1/restart0、GUEST_TEXT_RECEIVED且contexts_closed=true，无已完成消息接收或截图；after在finish的“两名游客”原断言处exit1，属于提前退出后的次级失败。5自有SQL夹具、43登记键/24实际键均精确清理，163表/原cache保持，原teardown native0，主/引导实例两标签资源全0且env/install.lock不存在。24原始行逐字节追加，现411行（8PASS/22FAIL/381NOT RUN），此前387行保持。源码及实际room ACK表明客服仍在room0，首条游客消息已产生自己的log/record；ChatHandle对尚未选中该会话的客服发送未读和列表通知，仅在选中房间时发送实时reply。辅助先等待实时reply、随后才点击新会话，形成操作顺序错误；不改生产聊天规则。
 
-T7B01正常首条消息验收顺序补充（先于辅助修正）：游客从真实页面发送原第一条文字后，核本人的echo；客服从实际游客tab/list选中刚出现的自有会话，取得实际room ACK，再沿真实历史接口字段/实际DOM核对该首条消息的发送者、接收者、tourist与文字hash。历史接收明确标记transport=history，不把游客echo或未读计数当客服接收；随后原客服回复必须通过游客真实WebSocket实时接收及双方DOM。保留两尺寸各两条原普通文字、4身份ACK、房间/退房ACK、5截图和原数据保持断言，安全/异常等23项仍NOT RUN；新的浏览器与视觉验收尚未完成。
+T7B01正常首条消息验收顺序补充（先于辅助修正）：游客从真实页面发送原第一条文字后，核本人的echo；客服从实际游客tab/list选中刚出现的自有会话，取得实际room ACK，再沿真实历史接口字段/实际DOM核对该首条消息的发送者、接收者、tourist与文字hash。历史接收明确标记received_via=history，不把游客echo或未读计数当客服接收；随后原客服回复必须通过游客真实WebSocket实时接收及双方DOM。移动会话created实际同时调用getTransferList（mobile/index.vue:252、535，api/kefu.js:181），因此有限HTTP元数据名单同步登记现GET /kefuapi/service/transfer_list，仅观察正常列表读取，不执行转接写入或扩成任意接口。保留两尺寸各两条原普通文字、4身份ACK、房间/退房ACK、5截图和原数据保持断言，安全/异常等23项仍NOT RUN；新的浏览器与视觉验收尚未完成。
 
 2026-10-12普通后端交付：第四个独立RUN `20261012020114e0c80a` 在源码 `1682ccc249fa3364fa07eee9075b52c0504fcb71` 上运行，bootstrap、prepare、start-chat、after及teardown原生全部exit0。实际4个正常HTTP请求均200，34个正常WS客户端帧、5个身份ACK、9个房间/正常退房ACK、8条双方文字和2个服务器游客会话；真实Channel事件经实际客服连接收到。17个自有SQL夹具精确清理，37个精确键登记/23个实际键删除；163表原行、checksum和DDL及旧Redis值/绝对期限保持，仅四张实际夹具表自然计数器变化单列，不恢复快照或回拨计数。主实例及四轮引导清理实例共8个RUN最终容器/网络/卷均0，真实.env与install.lock不存在。
 

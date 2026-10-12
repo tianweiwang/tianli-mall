@@ -37,7 +37,7 @@ const blocked = new Map();
 const internalApiPaths = new Set([
   '/adminapi/get_workerman_url', '/adminapi/custom_admin_js',
   '/kefuapi/config', '/kefuapi/login', '/kefuapi/service/info',
-  '/kefuapi/user/record', '/kefuapi/service/list',
+  '/kefuapi/user/record', '/kefuapi/service/list', '/kefuapi/service/transfer_list',
   '/kefuapi/tourist/user', '/kefuapi/tourist/adv',
 ]);
 const stages = new Map();
@@ -253,6 +253,21 @@ function observe(page, name, kind) {
           } else if (pathname === '/kefuapi/service/list') {
             check(url.searchParams.get('is_tourist') === '1' &&
               Number(url.searchParams.get('uid')) === stage.guestUid, 'HISTORY_SELECTED_GUEST');
+            check(kind === 'kefu' && stage.guestSelectionRequested && Array.isArray(envelope.data),
+              'HISTORY_STAFF_SELECTION');
+            const text = input.texts[name + '_guest'];
+            const rows = envelope.data.filter((row) => row && typeof row === 'object' && row.msn === text);
+            check(rows.length === 1 || (rows.length === 0 && stage.guestHistory), 'GUEST_HISTORY_TEXT_COUNT');
+            if (rows.length === 1) {
+              const row = rows[0];
+              check(row.uid === stage.guestUid && row.to_uid === input.staff_uid &&
+                row.is_tourist === 1 && row.msn_type === 1, 'NORMAL_TEXT_BINDING');
+              // Keep only metadata from the actual selected staff history response.
+              // The guest's own echo cannot establish staff receipt. Later empty
+              // pagination cannot replace the already verified history receipt.
+              stage.guestHistory = { stage: name, sender_uid: row.uid, recipient_uid: row.to_uid,
+                is_tourist: 1, message_sha256: sha(text), received_via: 'history' };
+            }
           }
         }
       } else check(response.status() >= 200 && response.status() < 400, 'NORMAL_STATIC_UNSUCCESSFUL');
@@ -290,6 +305,11 @@ function observe(page, name, kind) {
           data.uid === actor.pendingRooms[0] && data.num === 0) {
           actor.pendingRooms.shift(); actor.roomCount++;
           result.room_acks.push({ stage: name, uid: data.uid, num: 0 });
+        } else if (kind === 'guest' && frame.type === 'chat' && data.msn === input.texts[name + '_guest']) {
+          check(data.uid === stage.guestUid && data.to_uid === input.staff_uid &&
+            data.is_tourist === 1 && data.msn_type === 1, 'NORMAL_TEXT_BINDING');
+          check(!stage.guestEcho, 'DUPLICATE_GUEST_ECHO');
+          stage.guestEcho = true;
         } else if (['chat', 'reply'].includes(frame.type)) {
           const senderKind = kind === 'kefu' ? 'guest' : 'kefu';
           const text = input.texts[name + '_' + senderKind];
@@ -300,7 +320,7 @@ function observe(page, name, kind) {
             data.is_tourist === 1 && data.msn_type === 1, 'NORMAL_TEXT_BINDING');
           check(!result.normal_texts.some((t) => t.stage === name && t.sender_uid === senderUid), 'DUPLICATE_NORMAL_TEXT');
           result.normal_texts.push({ stage: name, sender_uid: senderUid, recipient_uid: recipientUid,
-            is_tourist: 1, message_sha256: sha(text) });
+            is_tourist: 1, message_sha256: sha(text), received_via: 'websocket' });
         } else if (['err_tip', 'error'].includes(frame.type)) fatal = 'CHAT_UNAVAILABLE';
       } catch (error) { fatal = error.publicCode || 'SERVER_FRAME_CONTRACT'; }
     });
@@ -374,7 +394,8 @@ async function avatar(page, name, kind) {
 }
 async function stage(name) {
   stageName = name;
-  const state = { guestUid: null, loginHttp: false, guestHttp: false };
+  const state = { guestUid: null, loginHttp: false, guestHttp: false,
+    guestEcho: false, guestSelectionRequested: false, guestHistory: null };
   stages.set(name, state);
   const staffContext = await contextFor(name), guestContext = await contextFor(name);
   const staff = await staffContext.newPage(), guest = await guestContext.newPage();
@@ -403,7 +424,7 @@ async function stage(name) {
     await guest.getByPlaceholder('请输入内容', { exact: true }).fill(guestText);
     await guest.locator('.input-box .iconfasong').click();
   }
-  await until(() => result.normal_texts.some((t) => t.stage === name && t.sender_uid === state.guestUid), 'GUEST_TEXT_RECEIVED');
+  await until(() => state.guestEcho, 'GUEST_TEXT_ACKNOWLEDGED');
   await textVisible(guest, guestText, 'GUEST_ECHO_VISIBLE');
   const visitorName = '游客' + Math.abs(state.guestUid);
   const itemSelector = name === 'desktop' ? '.chatList .chat-item' : '.list-box .item';
@@ -411,10 +432,15 @@ async function stage(name) {
   await until(async () => await item.count() === 1 && await item.isVisible(), 'OWN_VISITOR_VISIBLE');
   await controls(staff, name);
   const beforeRooms = staffActor.roomCount;
+  state.guestSelectionRequested = true;
   await item.click();
   await until(() => staffActor.roomCount > beforeRooms, 'SELECTED_ROOM_ACK');
   await drain();
   await textVisible(staff, guestText, 'STAFF_RECEIVED_TEXT_VISIBLE');
+  check(state.guestHistory && state.guestHistory.received_via === 'history', 'GUEST_HISTORY_RECEIVED');
+  check(!result.normal_texts.some((t) => t.stage === name && t.sender_uid === state.guestUid), 'DUPLICATE_NORMAL_TEXT');
+  result.normal_texts.push(state.guestHistory);
+  await until(() => result.normal_texts.some((t) => t.stage === name && t.sender_uid === state.guestUid), 'GUEST_TEXT_RECEIVED');
   if (name === 'desktop') {
     await staff.getByPlaceholder('请输入文字内容', { exact: true }).fill(replyText);
     await staff.getByRole('button', { name: '发送', exact: true }).click();

@@ -529,7 +529,7 @@ function m7b_client_http(array $event,array &$evidence): void
     audit_expect($keys===$wanted&&in_array($event['stage'],['desktop','mobile'],true)&&is_int($event['http'])&&$event['http']===200
         &&(is_int($event['business_status'])||$event['business_status']===null),'browser HTTP handshake accepts only white-listed successful metadata');
     $allowedGet=['/adminapi/get_workerman_url','/adminapi/custom_admin_js','/kefuapi/config','/kefuapi/service/info',
-        '/kefuapi/user/record','/kefuapi/service/list','/kefuapi/service/cate','/kefuapi/service/speechcraft',
+        '/kefuapi/user/record','/kefuapi/service/list','/kefuapi/service/cate','/kefuapi/service/speechcraft','/kefuapi/service/transfer_list',
         '/kefuapi/tourist/user','/kefuapi/tourist/chat','/kefuapi/tourist/adv'];
     audit_expect(($event['method']==='GET'&&in_array($event['path'],$allowedGet,true))
         ||($event['method']==='POST'&&in_array($event['path'],['/kefuapi/login','/kefuapi/user/logout'],true)),
@@ -619,7 +619,8 @@ function m7b_browser_result(string $exchange,string $run,string $source,array $u
         $to=$kind==='guest' ? $users['kefu']['uid'] : $guestByStage[$stage];
         $reported=array_values(array_filter($result['normal_texts'],static fn(array $row): bool=>($row['stage'] ?? null)===$stage
             &&($row['sender_uid'] ?? null)===$from&&($row['recipient_uid'] ?? null)===$to
-            &&($row['is_tourist'] ?? null)===1&&($row['message_sha256'] ?? null)===hash('sha256',$message)));
+            &&($row['is_tourist'] ?? null)===1&&($row['message_sha256'] ?? null)===hash('sha256',$message)
+            &&($row['received_via'] ?? null)===($kind==='guest' ? 'history' : 'websocket')));
         $stored=array_values(array_filter($owners['store_service_log'],static fn(array $row): bool=>$row['uid']===$from&&$row['to_uid']===$to
             &&$row['msn']===$message&&$row['msn_type']===1&&$row['is_tourist']===1));
         audit_expect(count($reported)===1&&count($stored)===1,'each real browser message is server classified and matches its exact persisted log');
