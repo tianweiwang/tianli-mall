@@ -1,0 +1,134 @@
+{
+  "status": "ACTUAL_NORMAL_FOUR_COMMANDS_VERIFIED_TERMINAL_CLEANUP_VERIFIED",
+  "exec_session": 46053,
+  "exec_state": "CLOSED",
+  "exec_native_exit": 0,
+  "exec_terminal_chunk": "657c2f",
+  "root_receipt_verification_chunk": "a8988a",
+  "root_receipt_verification_native_exit": 0,
+  "source_commit": "91ca07d16ffb8ce6cca8bdb7b4c113a7abcadacf",
+  "source_repository_clean_after_run": true,
+  "run_id": "2026101222353843267f",
+  "candidate_sha256": "eeb0a2892e29bffd20d8f644881fceef5fbb8836b8bd0e18f72be119c799a614",
+  "candidate_manifest_sha256": "2429b3a602d76dc188ec81b8c3de25dbddb48e5ab5a01fdb4f03de42f022b7d6",
+  "prep_manifest_sha256": "26c0534f9d2ba388fb954e9fb70e2210f4b8d64666b9ba702e43ea7c67c67fb7",
+  "actual_child_native_exit": 0,
+  "actual_child_restart_count": 0,
+  "actual_subprocesses": {
+    "MS1_apply": 1,
+    "MS2_check": 3,
+    "MS2_apply_structure": 2,
+    "MS2_backfill": 2,
+    "MS2_enforce": 2,
+    "total": 10,
+    "distinct_actual_PIDs": 10,
+    "all_native_exit_zero": true,
+    "all_stderr_empty": true,
+    "all_actual_stdout_hashes_verified": true
+  },
+  "normal_fixture_observations": {
+    "same_actual_self_all_commands": true,
+    "backfill_first_updated_rows": 5,
+    "backfill_repeat_updated_rows": 0,
+    "enforce_first_changed": true,
+    "enforce_repeat_changed": false,
+    "final_check_read_only": true,
+    "final_apply_enforced_unchanged": true,
+    "all_original_rows_PK_paths_nonowner_fields_preserved": true,
+    "full_schema_only_approved_structure_owner_constraints": true,
+    "Redis_complete_absolute_expiry_and_four_RO_runtime_unchanged": true,
+    "fixture_entire_volume_and_RO_alias_preserved": true
+  },
+  "initializer": {
+    "all157_original_CREATE_blocks_executed": true,
+    "installation_INSERTs_executed": 0,
+    "compat_SESSION_window_only": true,
+    "SESSION_restored_exact": true,
+    "GLOBAL_unchanged": true,
+    "InnoDB_strict_unchanged": true,
+    "qrcode_actual_ticket_prefix": 191,
+    "qrcode_full_metadata_and_SHOW_CREATE_equal_old_successful_baseline": true,
+    "source_declaration_or_manual_ALTER_changed": false
+  },
+  "all6_actual_resource_counts_zero": true,
+  "env_absent": true,
+  "install_lock_absent": true,
+  "all_owned_private_files_exactly_removed": true,
+  "orchestration": {
+    "bytes": 2809,
+    "sha256": "90ed3c7a998ecfb69dccfdbfdc5916d403093d030fddfee9502865fa049c7a7e"
+  },
+  "scoped_receipt": {
+    "bytes": 162334,
+    "sha256": "14f87987a35352df7884dac30dc9da7f086b71a98f5cd0ca1f9895d4e6b519a2"
+  },
+  "scope": "DECLARED_NEW_SYNTHETIC_FIXTURE_NORMAL_FLOW_ONLY",
+  "full_original_Task2_acceptance": false,
+  "whole_MS2_complete": false,
+  "historical_mapping": "UNKNOWN / NOT APPROVED / NOT EXECUTED",
+  "stopped_cases": "NOT RUN",
+  "feature_enabled": false,
+  "candidate_integrated_in_repository": true,
+  "push": false,
+  "deploy": false,
+  "integration_scope": "Exact verified CLI bytes, usage and ordinary summary only; required in-repository full test helper and whole Task2 remain pending",
+  "validation_source_commit": "91ca07d16ffb8ce6cca8bdb7b4c113a7abcadacf",
+  "initialization_scope": "Fresh dedicated schema, 157 original CREATE blocks, zero installation INSERTs, only predeclared new synthetic fixture",
+  "original_failed_runs_preserved": [
+    {
+      "run_id": "20261012221416fff691",
+      "native_exit": 1,
+      "MS1_MS2_children": 0,
+      "all6_actual_resource_counts_zero": true
+    },
+    {
+      "run_id": "20261012222117fb86ba",
+      "native_exit": 1,
+      "MS1_MS2_children": 0,
+      "table": "eb_qrcode",
+      "successful_CREATEs": 37,
+      "sqlstate": "42000",
+      "driver_code": 1071,
+      "all6_actual_resource_counts_zero": true
+    }
+  ],
+  "raw_evidence_external": {
+    "scoped_receipt": "C:/Users/Vwang/.tianli-audit/2026101222353843267f/evidence/ms2-full-normal.json",
+    "orchestration": "H:/天俪商城/artifacts/ms2-four-command-normal-attempt3/orchestration.json",
+    "root_native": "H:/天俪商城/artifacts/ms2-four-command-normal-attempt3/wrapper-native-root.json"
+  },
+  "unverified": [
+    "Whole original Task2 and G01-G07 acceptance",
+    "Historical mapping and SP-MS2-1 signoff",
+    "L3d or L4 operations",
+    "Product/service/API acceptance",
+    "Full MS2 and business enablement",
+    "Push, deployment or human acceptance"
+  ],
+  "installed_candidate_byte_verification": {
+    "bytes": 113988,
+    "sha256": "eeb0a2892e29bffd20d8f644881fceef5fbb8836b8bd0e18f72be119c799a614",
+    "all10_actual_CLI_source_bindings_unchanged": true
+  },
+  "installed_CLI_offline_checks": {
+    "lint": {
+      "native_exit": 0,
+      "chunk": "8c3ef2"
+    },
+    "help": {
+      "native_exit": 0,
+      "chunk": "9ff6f0"
+    },
+    "PHP_image": "sha256:1099f749e2a38ec9453c6b820db8a78174514bc72d14edf5c203e13b82816e0a",
+    "network": "none",
+    "bind_read_only": true,
+    "DB_HTTP_or_business_started": false
+  },
+  "usage_review": {
+    "candidate_sha256": "61a4cb6df4c8ed4b61b47ef163b13db59010c8f3c8a7b364c4cd9bb391ed7023",
+    "independent_review_completed": true,
+    "identified_gap": "Mapping example needed a post-structure check without mapping",
+    "gap_corrected": true,
+    "full_acceptance_claimed": false
+  }
+}

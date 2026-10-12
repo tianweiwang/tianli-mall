@@ -54,9 +54,23 @@
 - [ ] **Step 1: 写用例**：G01（每个子命令执行两次结果一致，不重复创建自营商家）；G02（夹具中放入未知 `mer_id`、孤儿规格、引用他店模板的商品 → `backfill` 报告并隔离，`enforce` 拒绝）；G04（映射只把确认项迁到自营商家，自营商家 ID 为正整数且不是 1 的假设值）；G05（夹具中加入同语义冲突列 → `check` 报告冲突并停止）；G06（迁移前后商品、规格、附件主键与文件路径不变）；G07（`enforce` 之后，漏写 `mer_id` 的插入失败）。
 - [ ] **Step 2–5:** 确认失败 → 实现 → 通过 → 提交 `feat(migration): marketplace product ownership (MS2)`。
 
-普通结构流程进度（2026-10-13，完整 Task 2 仍未完成）：`help/migrations/marketplace-ms2.php` 已接入已验证的 `check`、`apply-structure`，另两命令明确返回未实现。设计沿安装结构和现 MS1 迁移，四归属列保持 nullable、原商品 owner/default0 保留，历史数据不自动映射；新增审核字段、索引和库存流水，自营身份按真实 INSERT ID 与仓库外私有登记绑定，业务 enabled=false。原计划的四命令、显式 mapping、quarantine、enforce、测试和交付要求继续保留。
+普通结构流程进度（2026-10-13，完整 Task 2 仍未完成）：此前已接入已验证的 `check`、`apply-structure`，另两命令当时明确返回未实现。设计沿安装结构和现 MS1 迁移，四归属列保持 nullable、原商品 owner/default0 保留，历史数据不自动映射；新增审核字段、索引和库存流水，自营身份按真实 INSERT ID 与仓库外私有登记绑定，业务 enabled=false。原计划的四命令、显式 mapping、quarantine、enforce、测试和交付要求继续保留。
 
 实际普通 ISO `2026101221160570c06b`（基线源码43cf、冻结 CLI SHA256 `2eb13dd870f409494f5c5f42ad96b4157081de4a73921dcec475fefdda930c97`）的 `check → apply-structure → check → apply-structure` 均 native0；实际8新列/6索引、库存表15列/4索引/2 FK/1生效CHECK通过独立元数据核对，自营真实ID1仅一行且重复不增加。原列全行/主键/路径/owner与旧schema保持，重复后164表、原缓存绝对期限/运行目录全等，私有文件清理和双标签12库存归零。首轮原FAIL `20261012210236788c24` 保留，辅助自增计数改取同一实际SHOW CREATE，未改业务或原严格断言。仅本普通结构范围通过，G01–G07/backfill/enforce/真实历史映射与完整MS2仍未验收，未操作真实库或推送部署；见 `records/ms2/structure-normal-summary.json`。
+
+#### 四命令扩展设计与普通验证（2026-10-13）
+
+沿本 Task 2 的五个 owner 根表和四命令合同扩展，不改变原验收范围。`backfill` 仅使用仓库外私有映射中逐 PK 明确确认的 from/to owner；映射绑定完整非 owner 行 hash、前后分组、实际数据库/schema、自营身份和必要 producer/consumer 源码。未知历史归属保持未确认，不由 NULL、0、名称或 ID1 推定。子表按真实 type 和父关系盘点，图片按现有附件精确匹配或明确 link 确认；孤儿子行另按实际表+PK/hash 去重计数，原 issue 计数保持。私有 quarantine 按内容独占创建，原报告不覆盖。
+
+`enforce` 在全部当前根行已确认、引用问题清零及 SESSION/GLOBAL 真实严格模式成立后，将四新增 owner 收紧为 NOT NULL/no default，并去掉商品 owner 默认0；维护参数只是调用方已暂停其它写方的声明。CLI 不改变 SQL 模式，不启用业务；DDL 逐条提交，失败保留真实已完成步骤，不宣称整批回滚或恢复旧库。已收紧结构重跑 apply 不放宽 owner。原 Task 2/G01–G07、真实历史映射及完整交付要求仍保留。
+
+- [x] 集成冻结完整 CLI `eeb0a2892e29bffd20d8f644881fceef5fbb8836b8bd0e18f72be119c799a614`、四命令说明和 `records/ms2/four-command-normal-summary.json`，按原字节核对；集成后 PHP 8.2语法/help各native0、说明独立核对通过。说明已补结构完成后无mapping的check，用其真实binding/expectations准备确认映射。本次为窄L2本地交付，完整Task2复选框仍保持未完成。
+- [x] 新声明合成夹具的普通四命令验证：源91ca的实际 ISO `2026101222353843267f`，MS1 apply1及 MS2 check3/apply2/backfill2/enforce2共10个真实不同PID均 native0。回填首次5行、重复0行；约束首次变化、重复不变；最终 check只读、apply保持已收紧 owner；同一实际 self、不重复创建。
+- [x] 普通保持及收尾：原完整行/PK/path/非owner字段、仅批准schema变化、完整 Redis值与绝对期限、四原RO运行卷和新纯PNG卷保持；私有文件精确清理，单真实RUN双标签6项资源0、env/install.lock absent。仅原157 CREATE初始化窗口采用旧镜像兼容模式，随后 SESSION精确恢复，GLOBAL及InnoDB strict不变；四命令实际严格模式检查通过。
+- [ ] 仓库内 `help/audit-regressions/isolated/ms2-migration.php` 和完整 Task 2/G01–G07交付；现有普通原始运行仍保留在仓库外，不能以本次窄验证替代完整验收。用户要求停止的场景继续 NOT RUN，不恢复执行。
+- [ ] 真实历史映射、SP-MS2-1签收、L3d/L4及业务启用；UNKNOWN/未批准保持，不操作真实库或业务数据副本。
+
+此前两次完整流程准备在新库 CREATE初始化失败，均未进入 MS1/MS2子命令，原FAIL与清理收据保留。R3的新库原生二维码索引实际191前缀与旧成功安装的完整元数据及SHOW CREATE一致，未修改安装列/索引声明或执行手工ALTER。完整Task2/MS2仍未完成，未推送、部署或填写验收人状态。
 
 ### Task 3: 商家商品服务与接口
 
