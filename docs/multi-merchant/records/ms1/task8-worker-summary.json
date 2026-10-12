@@ -1,0 +1,656 @@
+{
+  "milestone": "MS1",
+  "task": 8,
+  "status": "verified_ordinary_same_pid_context_full_negative_acceptance_pending",
+  "history": [
+    {
+      "name": "ms1-worker-baseline-20261012092302.jsonl",
+      "sha256": "2e13ddaf13c2ba10ac581de0250bd833c4d1b18535bfaee15a4e8b89603dbfb8",
+      "rows": 1,
+      "commit_sha": "0bd6ab3494383f90da5e065c7034a055e416b761",
+      "phase": "baseline",
+      "run_id": "20261012092045c6ca41",
+      "case": "T8W01"
+    },
+    {
+      "name": "ms1-worker-after-20261012092831.jsonl",
+      "sha256": "98196a612b0ca6fc4e03a2dfb714985030fbdf2c71e45c15ece140cd5d45b342",
+      "rows": 1,
+      "commit_sha": "792ef7f4e5c3c1fc5c189e878ae304da9d5f60e1",
+      "phase": "after",
+      "run_id": "20261012092534292cde",
+      "case": "T8W01"
+    }
+  ],
+  "raw_records": {
+    "prior_rows": 531,
+    "prior_sha256": "137dd6caac2659710eefbf6f0072e5851a25f5727c8be905095a7b4d422f7d2b",
+    "appended_rows": 2,
+    "total_rows": 533,
+    "sha256": "db4cb620f22eeecf159fee6bb30727070109e8a486d91b167a34926b1681002e",
+    "counts": {
+      "FAIL": 28,
+      "PASS": 9,
+      "NOT RUN": 496
+    },
+    "all_prior_bytes_preserved": true,
+    "first_532_rows_sha256": "127570b872f4f8f3fafa6ef4a2e6d990c9500adbf4322f90094c5a0f44881b18"
+  },
+  "first_baseline": {
+    "run_id": "20261012092045c6ca41",
+    "cleanup_probe_run_id": "2026101209220817e89c",
+    "commit_sha": "0bd6ab3494383f90da5e065c7034a055e416b761",
+    "status": "FAIL",
+    "guard_mode": "read-only",
+    "ddl_denial_probe": "NOT RUN",
+    "native_steps": {
+      "bootstrap": {
+        "exit": 0
+      },
+      "migration": {
+        "exit": 0,
+        "completed_at": "2026-10-12T09:23:01.0426114Z",
+        "guard_mode": "read-only"
+      },
+      "prepare": {
+        "exit": 1,
+        "completed_at": "2026-10-12T09:23:02.6616823Z",
+        "guard_mode": "read-only"
+      },
+      "teardown": {
+        "exit": 0,
+        "completed_at": "2026-10-12T09:23:11.2806411Z",
+        "guard_mode": "read-only"
+      }
+    },
+    "orchestration_exit": 1,
+    "first_failure_stage": "prepare",
+    "failure_diagnostic": {
+      "class": "RuntimeException",
+      "file": "ms1-worker.php",
+      "line": 331
+    },
+    "source_availability": {
+      "missing_path": "crmeb/app/jobs/marketplace/AuditLogJob.php",
+      "fixtures": 0,
+      "queued_jobs": 0,
+      "business_requests": 0,
+      "worker_startup": 0
+    },
+    "normal_observations": {
+      "http_requests": 0,
+      "business_requests": 0,
+      "queued_jobs": 0,
+      "worker_startup": 0,
+      "normal_service_logins": 0,
+      "authenticated_contexts": 0
+    },
+    "negative_cases_run": false,
+    "M05_exception_or_no_context": "NOT RUN",
+    "M09": "NOT RUN",
+    "M10": "NOT RUN",
+    "cleanup": {
+      "rows": 0,
+      "keys": 0,
+      "queue_items": 0
+    },
+    "preservation": {
+      "tables": 163,
+      "before_after_cleanup_equal_by_field": {
+        "names": true,
+        "rows": true,
+        "ddl": true,
+        "checksums": true,
+        "redis": true,
+        "runtime": true
+      },
+      "original_rows_ddl_checksums_redis_runtime_unchanged": true,
+      "snapshot_restore_used": false,
+      "sequence_rollback_used": false
+    },
+    "migration": {
+      "state": "prepared",
+      "coordination_only": true,
+      "prepare_creates_pass": false,
+      "fixtures_created": 0,
+      "queued_jobs": 0,
+      "worker_startup": 0,
+      "http_requests": 0,
+      "migration_source_sha256": "9d73229f911b5712ca9c7051a18468c98837ae44f48bf77d20b2c165ac02b17a",
+      "preservation": {
+        "original_table_count": 158,
+        "original_menu_row_count": 1096,
+        "original_non_menu_rows_schema_checksums_unchanged": true,
+        "old_menu_rows_unchanged": true,
+        "menu_schema_unchanged_except_natural_counter": true,
+        "redis_values_absolute_deadlines_unchanged": true,
+        "observed_runtime_unchanged": true,
+        "observed_runtime_paths": [
+          "/workspace/crmeb/runtime"
+        ],
+        "old_menu_rows_sha256": "d86af318823ffe41389ef12a38f099a0c7c4cddea19730ebd3a9e4ecf14e72d7",
+        "redis_sha256": "6d58105bf47aa9e41d8dc35e9fcff6d587744352eb2f4012c33fe810fdf6d5ee",
+        "observed_runtime_sha256": "6516279c553e98688c071a88a350dfdfa677edb92577d83f64e1153aa61ba91d",
+        "menu_ddl_before_sha256": "ca622bbdafb79bbc813348766be5665eafb1c085a575afb376dbea7a0b27ef26",
+        "menu_ddl_after_sha256": "5d999bf02dad61d2634bd317d521d57983f2b3b40c2614db0a1f8f01cf662409",
+        "counter_restored": false
+      },
+      "empty_new_table_counts": {
+        "eb_marketplace_audit_log": 0,
+        "eb_marketplace_employee": 0,
+        "eb_marketplace_merchant": 0,
+        "eb_marketplace_password_setup": 0,
+        "eb_marketplace_role": 0
+      }
+    },
+    "final_inventory": {
+      "checks": [
+        {
+          "run_id": "20261012092045c6ca41",
+          "label": "com.docker.compose.project=tianli-audit-20261012092045c6ca41",
+          "kind": "containers",
+          "count": 0
+        },
+        {
+          "run_id": "20261012092045c6ca41",
+          "label": "com.docker.compose.project=tianli-audit-20261012092045c6ca41",
+          "kind": "networks",
+          "count": 0
+        },
+        {
+          "run_id": "20261012092045c6ca41",
+          "label": "com.docker.compose.project=tianli-audit-20261012092045c6ca41",
+          "kind": "volumes",
+          "count": 0
+        },
+        {
+          "run_id": "20261012092045c6ca41",
+          "label": "tianli.audit.run=20261012092045c6ca41",
+          "kind": "containers",
+          "count": 0
+        },
+        {
+          "run_id": "20261012092045c6ca41",
+          "label": "tianli.audit.run=20261012092045c6ca41",
+          "kind": "networks",
+          "count": 0
+        },
+        {
+          "run_id": "20261012092045c6ca41",
+          "label": "tianli.audit.run=20261012092045c6ca41",
+          "kind": "volumes",
+          "count": 0
+        },
+        {
+          "run_id": "2026101209220817e89c",
+          "label": "com.docker.compose.project=tianli-audit-2026101209220817e89c",
+          "kind": "containers",
+          "count": 0
+        },
+        {
+          "run_id": "2026101209220817e89c",
+          "label": "com.docker.compose.project=tianli-audit-2026101209220817e89c",
+          "kind": "networks",
+          "count": 0
+        },
+        {
+          "run_id": "2026101209220817e89c",
+          "label": "com.docker.compose.project=tianli-audit-2026101209220817e89c",
+          "kind": "volumes",
+          "count": 0
+        },
+        {
+          "run_id": "2026101209220817e89c",
+          "label": "tianli.audit.run=2026101209220817e89c",
+          "kind": "containers",
+          "count": 0
+        },
+        {
+          "run_id": "2026101209220817e89c",
+          "label": "tianli.audit.run=2026101209220817e89c",
+          "kind": "networks",
+          "count": 0
+        },
+        {
+          "run_id": "2026101209220817e89c",
+          "label": "tianli.audit.run=2026101209220817e89c",
+          "kind": "volumes",
+          "count": 0
+        }
+      ],
+      "all_resources_zero": true,
+      "source": "normal/all-orchestration.json final_resources"
+    },
+    "failure_cause": "The tested commit naturally lacks the actual production AuditLogJob.php. Prepare reports that missing path before any fixture, login, dispatch or worker startup. No source was deleted to manufacture this baseline failure.",
+    "after_verification": "Separate first_after ordinary PASS recorded; baseline FAIL retained"
+  },
+  "limits": [
+    "Ordinary production A then B dispatch, same PID/start ticks and cached handler, current audit ownership, real delete acknowledgements, native worker exit and original-state preservation are verified. This does not complete original negative or full MS1 acceptance.",
+    "M05 exception or no-context, M09 interleaving, M10 negative payload or actor and original fault or restore scenarios remain NOT RUN.",
+    "Local L2 evidence only; no push, deployment, real database change, notification, human signoff or security baseline is recorded."
+  ],
+  "first_after": {
+    "run_id": "20261012092534292cde",
+    "cleanup_probe_run_id": "202610120926574149cb",
+    "commit_sha": "792ef7f4e5c3c1fc5c189e878ae304da9d5f60e1",
+    "status": "PASS",
+    "guard_mode": "read-only",
+    "ddl_denial_probe": "NOT RUN",
+    "native_steps": {
+      "bootstrap": {
+        "exit": 0
+      },
+      "migration": {
+        "exit": 0,
+        "completed_at": "2026-10-12T09:28:21.2818185Z",
+        "guard_mode": "read-only"
+      },
+      "prepare": {
+        "exit": 0,
+        "completed_at": "2026-10-12T09:28:23.4778081Z",
+        "guard_mode": "read-only"
+      },
+      "start": {
+        "exit": 0,
+        "completed_at": "2026-10-12T09:28:28.9622011Z",
+        "guard_mode": "read-only"
+      },
+      "observe": {
+        "exit": 0,
+        "completed_at": "2026-10-12T09:28:32.1498264Z",
+        "guard_mode": "read-only"
+      },
+      "teardown": {
+        "exit": 0,
+        "completed_at": "2026-10-12T09:28:40.9858357Z",
+        "guard_mode": "read-only"
+      }
+    },
+    "orchestration_exit": 0,
+    "worker_terminal": {
+      "run_id": "20261012092534292cde",
+      "container_id": "7569421d900f5dcf7219f66d2a158fac64e50d6dcbc75ae529d626bb5d53b22e",
+      "image_id": "sha256:1099f749e2a38ec9453c6b820db8a78174514bc72d14edf5c203e13b82816e0a",
+      "runtime_volume": "tianli-audit-20261012092534292cde_worker-runtime",
+      "status": "exited",
+      "native_exit": 0,
+      "restart_count": 0,
+      "started_at": "2026-10-12T09:28:24.020189771Z",
+      "finished_at": "2026-10-12T09:28:29.548099556Z",
+      "wait_cli_exit": 0,
+      "wait_reported_exit": "0"
+    },
+    "source_inventory": {
+      "actual_files_sha256": {
+        "crmeb/app/jobs/marketplace/AuditLogJob.php": "5910e859b92672e89892279e716599a37e155f3213587c32d8c08bf5d5ff62cd",
+        "crmeb/app/services/marketplace/queue/MarketplaceRedis.php": "a209729368652b6ccf2e71bd621f111b33c3b1ce0b52fcccefd74f453551833a",
+        "crmeb/crmeb/services/BoundedRedisConnection.php": "a0e5a0385aeadb934ce83cdaccf32165fd3f17351e8f14357af9b3b31ed4706a",
+        "crmeb/config/queue.php": "3a3df518fc1772637ee2d2136b50f5d948043be2f51e6763f2d4bd8683d0e440",
+        "docker/php/supervisord.conf": "dd3e95252f1f24c8ea27757e2ed183c03f2deefcaf9d4342ad4940cbc82415e3",
+        "crmeb/app/services/marketplace/context/MerchantJobContext.php": "5d0213a4c83d08b6894d48a84e46596d417864dcf7ddb7a2fa2318c2add5398e",
+        "crmeb/crmeb/services/auth/AuthSessionStore.php": "853a48c65c035992ae618551be5632fd5b3649e534b7fb7f7791faeabc53338f",
+        "crmeb/crmeb/services/auth/lua/read_account.lua": "d8be86290c6a7c157929f506d2ceb8ac596eb59b94aeca47490f5283ed4eece4",
+        "crmeb/app/services/marketplace/EmployeeAuthServices.php": "55da30b8724d06e980cfcd7bdd7bac115c2d5d38eff47ca22aca55dc5ac55337",
+        "crmeb/app/dao/marketplace/EmployeeDao.php": "88f587a8e20859658d8e9ad800518e9784acc5802083cd1dc1f8fd87d77ff0eb",
+        "crmeb/app/dao/marketplace/MerchantDao.php": "0a725a25ebdec4bb76b38c2ad86968282727509427a392117f3f898cca453bd1",
+        "crmeb/app/services/marketplace/MerchantPermissions.php": "d8a9420be960b6922a196e6c6e6074e9285ef0945c9788b9105da4f33df43bba",
+        "crmeb/app/services/marketplace/context/MerchantContext.php": "80e14366a3abf885c519d4c0e21e79966f8c153431e7061e3353b8101ccddd4a",
+        "crmeb/app/services/marketplace/AuditLogServices.php": "68183f537647114972fc53fd2da0ede9bc885076402f6f9f2bf5f7ae22ced02d",
+        "crmeb/app/dao/marketplace/AuditLogDao.php": "d055a09feef02ffc602793cc1c209232ad2fe2f47ea7c22cfa85ddf31f537f87",
+        "crmeb/crmeb/services/auth/AuthTokenV2.php": "59518646797c71ea45084326e5ca87da64f402f59d97ce57b655c87d3aa0591b",
+        "crmeb/crmeb/services/AuthConfigGuard.php": "0e9f91e93db3a5f839ca8a3fe0ed0fcbecbdf35cd9ba60f17d057fdbfbc3b405",
+        "help/audit-regressions/isolated/ms1-worker.php": "f698ff48e9da8db1cda83eebc665397fba7a8e97877feef1d47f5438525298d1",
+        "help/audit-regressions/isolated/lib/Ms1ContextWorkerObserver.php": "842bf771f5c583616c0d76b585ef4a81133601e43ca8dfdac4b3be89aaa1a076",
+        "help/audit-regressions/isolated/lib/ms1-worker-entry.php": "d7b0d3b70cf4253812f3bd3015e0fdffdb581acd1331de309c99e7689a3637a3",
+        "help/audit-regressions/isolated/lib/Ms1EmptyWorkerJob.php": "2226fd6e534f07fc52fb955b7ecd3f361257883ea1f7726b60ea326ca3a55c2b",
+        "help/audit-regressions/isolated/lib/harness.php": "f0ce5d2a08e3df80b07476ab8186f17f0d692a65d7ae308aac3c188a83d84ab1",
+        "help/audit-regressions/isolated/lib/guard.php": "a7a182c3a204dbb55f5669a61f44af099360223acd9835f82d9da3a8bf2f79a8",
+        "help/audit-regressions/isolated/compose.yml": "e3882126a14d60f354686fd8c8c4bdc2f3bb231bf7f8e8d01f19dfc5742552a2"
+      },
+      "file_count": 24
+    },
+    "delivery_source_scope": {
+      "actual_files_sha256": {
+        "crmeb/app/jobs/marketplace/AuditLogJob.php": "5910e859b92672e89892279e716599a37e155f3213587c32d8c08bf5d5ff62cd",
+        "crmeb/app/services/marketplace/queue/MarketplaceRedis.php": "a209729368652b6ccf2e71bd621f111b33c3b1ce0b52fcccefd74f453551833a",
+        "crmeb/crmeb/services/BoundedRedisConnection.php": "a0e5a0385aeadb934ce83cdaccf32165fd3f17351e8f14357af9b3b31ed4706a",
+        "crmeb/config/queue.php": "3a3df518fc1772637ee2d2136b50f5d948043be2f51e6763f2d4bd8683d0e440",
+        "docker/php/supervisord.conf": "dd3e95252f1f24c8ea27757e2ed183c03f2deefcaf9d4342ad4940cbc82415e3",
+        "help/audit-regressions/isolated/ms1-worker.php": "f698ff48e9da8db1cda83eebc665397fba7a8e97877feef1d47f5438525298d1",
+        "help/audit-regressions/isolated/lib/Ms1ContextWorkerObserver.php": "842bf771f5c583616c0d76b585ef4a81133601e43ca8dfdac4b3be89aaa1a076",
+        "help/audit-regressions/isolated/lib/ms1-worker-entry.php": "d7b0d3b70cf4253812f3bd3015e0fdffdb581acd1331de309c99e7689a3637a3",
+        "crmeb/app/services/marketplace/context/MerchantJobContext.php": "5d0213a4c83d08b6894d48a84e46596d417864dcf7ddb7a2fa2318c2add5398e",
+        "crmeb/crmeb/services/auth/AuthSessionStore.php": "853a48c65c035992ae618551be5632fd5b3649e534b7fb7f7791faeabc53338f",
+        "crmeb/crmeb/services/auth/lua/read_account.lua": "d8be86290c6a7c157929f506d2ceb8ac596eb59b94aeca47490f5283ed4eece4"
+      },
+      "file_count": 11,
+      "current_repository_matches_tested_delivery_sources": true
+    },
+    "normal_observations": {
+      "http_requests": 0,
+      "business_requests": 0,
+      "normal_service_logins": 2,
+      "authenticated_contexts": 2,
+      "queued_jobs": 2,
+      "sequential_worker_entry": true,
+      "same_pid": 1,
+      "same_start_ticks": "42989895",
+      "same_cached_handler_object_id": 156
+    },
+    "jobs": [
+      {
+        "sequence": 1,
+        "employee_id": 1,
+        "mer_id": 1,
+        "job_id_sha256": "0359d3cdf9809fbd61c6420a0c6e0a6ac16e7cc240f821008634e39e72448f51"
+      },
+      {
+        "sequence": 2,
+        "employee_id": 2,
+        "mer_id": 2,
+        "job_id_sha256": "a6cbc997cf2b96241d6a1e1e08cf413f26f9183e38238ab05b822a46014531ac"
+      }
+    ],
+    "fixtures": {
+      "A": {
+        "mer_id": 1,
+        "role_id": 1,
+        "employee_id": 1
+      },
+      "B": {
+        "mer_id": 2,
+        "role_id": 2,
+        "employee_id": 2
+      }
+    },
+    "events": [
+      {
+        "run_id": "20261012092534292cde",
+        "event": "processing",
+        "sequence": 1,
+        "pid": 1,
+        "start_ticks": "42989895",
+        "hostname": "7569421d900f",
+        "job_id_sha256": "0359d3cdf9809fbd61c6420a0c6e0a6ac16e7cc240f821008634e39e72448f51",
+        "name": "app\\jobs\\marketplace\\AuditLogJob",
+        "actual_redis_job": true,
+        "connection": "marketplace",
+        "queue": "marketplace",
+        "observed_at": 1791797309,
+        "default_connection_has_pdo": false,
+        "no_transaction": true,
+        "reservation_present": true
+      },
+      {
+        "run_id": "20261012092534292cde",
+        "event": "processed",
+        "sequence": 1,
+        "pid": 1,
+        "start_ticks": "42989895",
+        "hostname": "7569421d900f",
+        "job_id_sha256": "0359d3cdf9809fbd61c6420a0c6e0a6ac16e7cc240f821008634e39e72448f51",
+        "name": "app\\jobs\\marketplace\\AuditLogJob",
+        "actual_redis_job": true,
+        "connection": "marketplace",
+        "queue": "marketplace",
+        "observed_at": 1791797309,
+        "handler_object_id": 156,
+        "default_connection_has_pdo": false,
+        "no_transaction": true,
+        "audit_id": 1,
+        "audit_employee_id": 1,
+        "audit_mer_id": 1,
+        "audit_actor_type": "merchant",
+        "audit_action": "merchant.profile.read",
+        "audit_resource_type": "merchant",
+        "audit_resource_id": "1",
+        "audit_result": "success",
+        "audit_detail_type": "OBJECT",
+        "audit_detail_length": 0,
+        "audit_add_time": 1791797309,
+        "deleted": true,
+        "released": false,
+        "failed": false,
+        "reservation_absent": true,
+        "requested_quit": false
+      },
+      {
+        "run_id": "20261012092534292cde",
+        "event": "processing",
+        "sequence": 2,
+        "pid": 1,
+        "start_ticks": "42989895",
+        "hostname": "7569421d900f",
+        "job_id_sha256": "a6cbc997cf2b96241d6a1e1e08cf413f26f9183e38238ab05b822a46014531ac",
+        "name": "app\\jobs\\marketplace\\AuditLogJob",
+        "actual_redis_job": true,
+        "connection": "marketplace",
+        "queue": "marketplace",
+        "observed_at": 1791797309,
+        "default_connection_has_pdo": false,
+        "no_transaction": true,
+        "reservation_present": true
+      },
+      {
+        "run_id": "20261012092534292cde",
+        "event": "processed",
+        "sequence": 2,
+        "pid": 1,
+        "start_ticks": "42989895",
+        "hostname": "7569421d900f",
+        "job_id_sha256": "a6cbc997cf2b96241d6a1e1e08cf413f26f9183e38238ab05b822a46014531ac",
+        "name": "app\\jobs\\marketplace\\AuditLogJob",
+        "actual_redis_job": true,
+        "connection": "marketplace",
+        "queue": "marketplace",
+        "observed_at": 1791797309,
+        "handler_object_id": 156,
+        "default_connection_has_pdo": false,
+        "no_transaction": true,
+        "audit_id": 2,
+        "audit_employee_id": 2,
+        "audit_mer_id": 2,
+        "audit_actor_type": "merchant",
+        "audit_action": "merchant.profile.read",
+        "audit_resource_type": "merchant",
+        "audit_resource_id": "2",
+        "audit_result": "success",
+        "audit_detail_type": "OBJECT",
+        "audit_detail_length": 0,
+        "audit_add_time": 1791797309,
+        "deleted": true,
+        "released": false,
+        "failed": false,
+        "reservation_absent": true,
+        "requested_quit": true
+      }
+    ],
+    "audits": {
+      "A": {
+        "id": 1,
+        "mer_id": 1,
+        "employee_id": 1,
+        "row_hash": "c2c54f8117d248492d2db246a5a4c85a28f0a47920de6a6036100bdfeca29c2b"
+      },
+      "B": {
+        "id": 2,
+        "mer_id": 2,
+        "employee_id": 2,
+        "row_hash": "7d4678c4fe4d2fc6adf3bc8b266e017781cee81b6d43c77a3e821eea194771df"
+      }
+    },
+    "checks": [
+      {
+        "passed": true,
+        "description": "actual A then B production tasks share PID/start ticks and handler; current merchant audits commit and native queue deletion completes"
+      }
+    ],
+    "finite_queue_final": {
+      "queue_keys": [
+        "queues:marketplace",
+        "queues:marketplace:delayed",
+        "queues:marketplace:reserved"
+      ],
+      "initially_absent": true,
+      "after_worker_absent": true,
+      "after_cleanup_absent": true,
+      "cleanup_queue_items": 0,
+      "source": "Actual snapshots and original ms1-worker.php:477 assertion before cleanup"
+    },
+    "cleanup": {
+      "rows": 8,
+      "keys": 4,
+      "queue_items": 0
+    },
+    "registered_cache_keys": [
+      {
+        "key_sha256": "1f604a81135a8d1b5dc298f03c639ffbd20e77acbfecf9a9d4ffeb64a9ac2d0e",
+        "kind": "account"
+      },
+      {
+        "key_sha256": "794a5f423cdbb8355055ae517f96e4020744d76651d5be4e96fd91896fb00790",
+        "kind": "session"
+      },
+      {
+        "key_sha256": "a7500e66850a9fd878739acf1d385bdb85af61aec847bb716a6e0820cc7bbe01",
+        "kind": "account"
+      },
+      {
+        "key_sha256": "de03ed3951317bef48ecf8d959d5e6e9ea96a2e243b087d577d240f8e461a75e",
+        "kind": "session"
+      }
+    ],
+    "exact_fixture_cleanup": true,
+    "preservation": {
+      "tables": 163,
+      "original_rows_checksums_redis_runtime_unchanged": true,
+      "before_after_cleanup_equal_by_field": {
+        "names": true,
+        "rows": true,
+        "ddl": false,
+        "checksums": true,
+        "redis": true,
+        "runtime": true
+      },
+      "ddl_differences_only_natural_fixture_counters": [
+        "eb_marketplace_audit_log",
+        "eb_marketplace_employee",
+        "eb_marketplace_merchant",
+        "eb_marketplace_role"
+      ],
+      "natural_counter_changes": {
+        "eb_marketplace_merchant": {
+          "before_ddl_sha256": "ef3622887e5d34b4ba45c81edef0728a13475d3a5502b44a3f1131358ad21a81",
+          "after_ddl_sha256": "2d8ecf38921a9a6cf27db65a6f25963549da65802c43cecd1cf253b4c7ab413c",
+          "same_schema_without_counter": true,
+          "counter_restored": false
+        },
+        "eb_marketplace_role": {
+          "before_ddl_sha256": "0600d1100057cb0d4c4bad8811bcd54b457efcd0441eb96dde5170084c6262fb",
+          "after_ddl_sha256": "db4b8141c356ae2333b0277463408e695c9b8570dc579504fd3f5145f288a0c9",
+          "same_schema_without_counter": true,
+          "counter_restored": false
+        },
+        "eb_marketplace_employee": {
+          "before_ddl_sha256": "de5369c0852579585f07ba6f4e6e8419df449a63a7820cd6c1752cc1f5602a21",
+          "after_ddl_sha256": "949c57d9fdbba176dc4d8f7581b4ffee5794396f3dc826ec333a4a100ed312bb",
+          "same_schema_without_counter": true,
+          "counter_restored": false
+        },
+        "eb_marketplace_audit_log": {
+          "before_ddl_sha256": "4dd96a8a149a3e873d783d94b74147e9479a066ec70e109b628740fd1829abd0",
+          "after_ddl_sha256": "537d217280fc0d536b2d0e3d3d9496429b93d7188aa1357dcfe72a9312903dbd",
+          "same_schema_without_counter": true,
+          "counter_restored": false
+        }
+      },
+      "schema_without_counter_unchanged": true,
+      "old_cache_values_absolute_deadlines_unchanged": true,
+      "snapshot_restore_used": false,
+      "counter_restored": false
+    },
+    "final_inventory": {
+      "checks": [
+        {
+          "run_id": "20261012092534292cde",
+          "label": "com.docker.compose.project=tianli-audit-20261012092534292cde",
+          "kind": "containers",
+          "count": 0
+        },
+        {
+          "run_id": "20261012092534292cde",
+          "label": "com.docker.compose.project=tianli-audit-20261012092534292cde",
+          "kind": "networks",
+          "count": 0
+        },
+        {
+          "run_id": "20261012092534292cde",
+          "label": "com.docker.compose.project=tianli-audit-20261012092534292cde",
+          "kind": "volumes",
+          "count": 0
+        },
+        {
+          "run_id": "20261012092534292cde",
+          "label": "tianli.audit.run=20261012092534292cde",
+          "kind": "containers",
+          "count": 0
+        },
+        {
+          "run_id": "20261012092534292cde",
+          "label": "tianli.audit.run=20261012092534292cde",
+          "kind": "networks",
+          "count": 0
+        },
+        {
+          "run_id": "20261012092534292cde",
+          "label": "tianli.audit.run=20261012092534292cde",
+          "kind": "volumes",
+          "count": 0
+        },
+        {
+          "run_id": "202610120926574149cb",
+          "label": "com.docker.compose.project=tianli-audit-202610120926574149cb",
+          "kind": "containers",
+          "count": 0
+        },
+        {
+          "run_id": "202610120926574149cb",
+          "label": "com.docker.compose.project=tianli-audit-202610120926574149cb",
+          "kind": "networks",
+          "count": 0
+        },
+        {
+          "run_id": "202610120926574149cb",
+          "label": "com.docker.compose.project=tianli-audit-202610120926574149cb",
+          "kind": "volumes",
+          "count": 0
+        },
+        {
+          "run_id": "202610120926574149cb",
+          "label": "tianli.audit.run=202610120926574149cb",
+          "kind": "containers",
+          "count": 0
+        },
+        {
+          "run_id": "202610120926574149cb",
+          "label": "tianli.audit.run=202610120926574149cb",
+          "kind": "networks",
+          "count": 0
+        },
+        {
+          "run_id": "202610120926574149cb",
+          "label": "tianli.audit.run=202610120926574149cb",
+          "kind": "volumes",
+          "count": 0
+        }
+      ],
+      "all_resources_zero": true,
+      "source": "normal/all-orchestration.json final_resources"
+    },
+    "M05_exception_or_no_context": "NOT RUN",
+    "M09": "NOT RUN",
+    "M10": "NOT RUN",
+    "negative_cases_run": false,
+    "delivery": "Implementation locally committed at tested source. No push, deployment, real database writes, notifications, human signoff or security baseline."
+  }
+}

@@ -171,12 +171,12 @@
   "raw_records": {
     "prior_rows": 75,
     "prior_sha256": "976380d291736202a90e0a1ec5c24f6f0ac7201f4899e870634dba612c26540b",
-    "appended_rows": 456,
-    "total_rows": 531,
-    "sha256": "137dd6caac2659710eefbf6f0072e5851a25f5727c8be905095a7b4d422f7d2b",
+    "appended_rows": 458,
+    "total_rows": 533,
+    "sha256": "db4cb620f22eeecf159fee6bb30727070109e8a486d91b167a34926b1681002e",
     "counts": {
-      "FAIL": 27,
-      "PASS": 8,
+      "FAIL": 28,
+      "PASS": 9,
       "NOT RUN": 496
     },
     "prior_bytes_preserved": true,
@@ -198,7 +198,11 @@
     "first_435_rows_sha256": "2288f17703cdeab6d758797cef3de214d22a85aa45b61112d0536d5a8b50d1a5",
     "first_459_rows_sha256": "8a2fea628e0d7b5df779464c496432194f3e6063960420024bdc0d9ad2b9fefe",
     "first_483_rows_sha256": "27ae7c86217c73ca83c4e06f9927092d56e9f099e172fa0d1f7a0c454a7af523",
-    "first_507_rows_sha256": "9e421c2ec6490cdd006c1111b7d168fff7d1ded2492f8aac66a07ed45732efff"
+    "first_507_rows_sha256": "9e421c2ec6490cdd006c1111b7d168fff7d1ded2492f8aac66a07ed45732efff",
+    "first_531_rows_sha256": "137dd6caac2659710eefbf6f0072e5851a25f5727c8be905095a7b4d422f7d2b",
+    "task7_rows_total_at_last_browser_run": 531,
+    "task7_appended_rows_at_last_browser_run": 456,
+    "first_532_rows_sha256": "127570b872f4f8f3fafa6ef4a2e6d990c9500adbf4322f90094c5a0f44881b18"
   },
   "first_run": {
     "run_id": "2026101201134532bd35",
@@ -5579,5 +5583,27 @@
     "visual_observation": "Root viewed the two mobile chat PNGs: local return/send SVGs and text are visible. Complete five-PNG acceptance is pending; guest own avatar shows a broken image that requires independent diagnosis.",
     "next_normal_list_contract": "Check the current visitor row only: actual server ten UTF-8 character preview and latest bidirectional message must agree. Keep four full texts in actual conversation areas, four logs, four records, real normal leave acknowledgement, five PNGs and original preservation assertions. Repair reverse row message/message_type/update_time with both UIDs and is_tourist scoped; preserve avatar, nickname, unread count and row count.",
     "followup_browser_verification": "NOT RUN"
-  }
+  },
+  "shared_record_extensions": [
+    {
+      "task": 8,
+      "phase": "baseline",
+      "run_id": "20261012092045c6ca41",
+      "name": "ms1-worker-baseline-20261012092302.jsonl",
+      "rows": 1,
+      "status": "FAIL",
+      "sha256": "2e13ddaf13c2ba10ac581de0250bd833c4d1b18535bfaee15a4e8b89603dbfb8",
+      "summary": "task8-worker-summary.json"
+    },
+    {
+      "task": 8,
+      "phase": "after",
+      "run_id": "20261012092534292cde",
+      "name": "ms1-worker-after-20261012092831.jsonl",
+      "rows": 1,
+      "status": "PASS",
+      "sha256": "98196a612b0ca6fc4e03a2dfb714985030fbdf2c71e45c15ece140cd5d45b342",
+      "summary": "task8-worker-summary.json"
+    }
+  ]
 }

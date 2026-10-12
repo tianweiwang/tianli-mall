@@ -36,7 +36,7 @@
 - 迁移的“空”指CRMEB已安装且五目标表不存在；零表库缺少system_menus，不能创建第六张表或调用Installer。theme-module实际使用 `--check/--apply`，新MS1 CLI明确支持文档要求的 `check|apply`（兼容同义选项）。只新增五表及精确marketplace菜单/接口登记；原表列/index/旧行保持，system_menus正常新增行与其AUTO_INCREMENT变化单列核对，不能要求新增后checksum仍相同，也不回拨计数器。其他原表结构/数据保持。
 - 现Supervisor声明queue:listen，实版Listener每轮启动queue:work --once，job不复用同一PHP进程。Task1为新marketplace队列声明独立 `queue:work --queue=marketplace --sleep=1 --tries=1` 常驻模式，并用相同命令建立ISO audit-worker；原队列保持。生产声明默认不自动启动，实际发布另行处理。正常空任务的同一PID证据到位后，Task8再运行正常A→B上下文重建；异常/无上下文/伪造载荷/并发场景按用户要求跳过，不冒称M05/M09/M10完整通过。
 
-执行顺序仍以Task1–9为单一清单；Task1源码盘点与普通worker能力、Task2普通迁移、Task3正常上下文与查询范围、Task4商家五接口及正常身份流程、Task5员工/角色管理和Task6平台商家管理普通流程已完成，历史FAIL及原跳过项分别保留。Task7源码、跨应用静态核对、正常后端聊天与后台构建已完成，浏览器验收仍待完成；Task8任务上下文及Task9最终交付仍待实施。普通结果不代替完整验收。
+执行顺序仍以Task1–9为单一清单；Task1源码盘点与普通worker能力、Task2普通迁移、Task3正常上下文与查询范围、Task4商家五接口及正常身份流程、Task5员工/角色管理和Task6平台商家管理普通流程已完成，历史FAIL及原跳过项分别保留。Task7源码、跨应用静态核对、正常后端聊天与后台构建已完成，浏览器验收仍待完成；Task8普通任务上下文已实现并验证；Task9最终交付仍待完成。普通结果不代替完整验收。
 
 ## Review Focus
 
@@ -353,7 +353,7 @@ uni-app普通运行准备：现HBuilderX有真实H5 compiler，536tracked外部�
 
 T7B01第十四轮 `20261012064833e676d0`（源码a39b6c419、第五轮真实dist）：bootstrap/prepare/start原生exit0；PHP真实登记与浏览器各30个正常HTTP，四条双方文字、四张聊天PNG和三项原生操作控件几何已取得。发送按钮44×44、返回45×45，现本地SVG实际可见且居中，按钮均位于父边界内；真实返回路由及room0 ACK已完成。Node实际exited/native1/restart0、MOBILE_REPLY_LIST_VISIBLE、contexts_closed=true；列表最后回复可见及第五张PNG尚未取得，原FAIL保留，不视为完整页面或退房验收。after在browser状态PASS原断言处exit1；11SQL夹具、46登记键/27实际键精确清理，163表原行/checksum/DDL与旧cache值/绝对期限保持。原teardown native0；最终完整盘点对主实例和引导实例202610120649575c4b46各查两标签、容器/网络/卷共12项全0，真实crmeb/.env和crmeb/public/install.lock不存在；旧6项partial盘点仅保留历史。24原始行逐字节追加后531行（8PASS/27FAIL/496NOT RUN），此前507行SHA256 `9e421c2ec6490cdd006c1111b7d168fff7d1ded2492f8aac66a07ed45732efff`保持。已看两移动PNG的按钮/文字仅证明部分视觉；游客本人头像有broken图，需独立追查，不声称整体视觉通过。
 
-下一正常列表核对合同（先于编码）：StoreServiceRecordServices.getServiceList实际通过Str::substrUTf8将文本截为前10个UTF-8字符且suffix为空，mobile/chat_list.vue显示该item.message；原计划要求正常会话可见，未要求列表显示全文。仅在本次游客对应单行核实际服务器10字符预览与最近双向消息一致，保留对话区四条全文、4log/4record、真实普通退房、5PNG与原数据保持断言；第十四轮全文断言不符合生产预览合同，其原FAIL不改写。另有独立生产缺陷：saveRecord首次客服回复的else分支未更新反向staff-owned row，既有if分支反向更新未写更新时间。下一修复共同更新反向行message/message_type/update_time，以双方UID和is_tourist精确限定；不改avatar/nickname/未读计数或会话行数。游客头像独立缺口及uni-app运行仍待验，安全/异常等原跳过项仍NOT RUN。
+下一正常列表核对合同（先于编码）：StoreServiceRecordServices.getServiceList实际通过Str::substrUTf8将文本截为前10个UTF-8字符且suffix为空，mobile/chat_list.vue显示该item.message；原计划要求正常会话可见，未要求列表显示全文。仅在本次游客对应单行核实际服务器10字符预览与最近双向消息一致，保留对话区四条全文、4log/4record、真实普通退房、5PNG与原数据保持断言；第十四轮全文断言不符合生产预览合同，其原FAIL不改写。四个普通文本以各自desktop_guest/desktop_kefu/mobile_guest/mobile_kefu名称加现hash构成，使前10个Unicode字符可区分；PHP独立核DB及真实HTTP的list_preview。另有独立生产缺陷：saveRecord首次客服回复的else分支未更新反向staff-owned row，既有if分支反向更新未写更新时间。下一修复共同更新反向行message/message_type/update_time，以双方UID和is_tourist精确限定；不改avatar/nickname/未读计数或会话行数。游客头像独立缺口及uni-app运行仍待验，安全/异常等原跳过项仍NOT RUN。
 
 2026-10-12普通后端交付：第四个独立RUN `20261012020114e0c80a` 在源码 `1682ccc249fa3364fa07eee9075b52c0504fcb71` 上运行，bootstrap、prepare、start-chat、after及teardown原生全部exit0。实际4个正常HTTP请求均200，34个正常WS客户端帧、5个身份ACK、9个房间/正常退房ACK、8条双方文字和2个服务器游客会话；真实Channel事件经实际客服连接收到。17个自有SQL夹具精确清理，37个精确键登记/23个实际键删除；163表原行、checksum和DDL及旧Redis值/绝对期限保持，仅四张实际夹具表自然计数器变化单列，不恢复快照或回拨计数。主实例及四轮引导清理实例共8个RUN最终容器/网络/卷均0，真实.env与install.lock不存在。
 
@@ -394,9 +394,15 @@ Task8普通实施合同（2026-10-12，先于编码）：仅支持现动作 `mer
 
 任务结束按真实mer/role/employee/两审计ID逆依赖清理；两正常account/session及实际产生键逐键登记，原Redis值与绝对期限保持，不能忽略整namespace或恢复snapshot。三个实际marketplace队列结构prepare前须不存在，正常消费后已空；仅核实生产FQCN/本RUN实际job ID/提交来源后才移除精确自有残留项，不删非自有队列。163表原行/checksum/DDL及原runtime保持，实际夹具表自然计数器变化单列，不回拨；Task1旧158表辅助/原断言及全部历史raw保持。bootstrap/prepare/worker/observe/teardown、实际资源归零和原状态保持到位才作普通PASS，不能替代完整MS1或人工签收。
 
-- [ ] **普通T8W01：** 真实A→B生产任务同PID重建、实际审计/删除、精确清理与原状态保持。
+- [x] **普通T8W01：** 真实A→B生产任务同PID重建、实际审计/删除、精确清理与原状态保持。
 
-Task8准备进度：五份实际队列/Job生产草稿及三份普通worker辅助草稿已在外部目录完成源码复核；生产四PHP与辅助三PHP均通过已有PHP8.2镜像离线语法检查。已安装的MerchantJobContext与只读账户版本读取仍为部分实现；这八份草稿尚未接入仓库，尚无真实A→B任务/审计/退出运行证据，不勾普通T8W01或原M05/M09/M10。
+Task8准备进度：五份实际队列/Job生产草稿及三份普通worker辅助草稿已完成源码复核；生产四PHP与辅助三PHP通过已有PHP8.2镜像离线语法检查。三份普通辅助在基线源码0bd6ab349中已接入仓库，MerchantJobContext与只读账户版本读取为部分实现；该基线实际仍缺生产AuditLogJob。八份生产/辅助已接入并本地提交，完整生产加三项ctx/只读版本依赖共11交付路径hash与实际after一致；普通T8W01通过，原M05异常/无上下文、M09/M10仍不勾。
+
+Task8首个自然缺失基线 `20261012092045c6ca41`（源码 `0bd6ab3494383f90da5e065c7034a055e416b761`）：新read-only ISO原bootstrap native0，引导清理实例2026101209220817e89c；真实五表迁移native0，保留原158表/旧菜单、Redis值及绝对期限/原runtime，五张新增表均空。prepare native1，实际ms1-worker.php:331在生产AuditLogJob.php自然缺失处失败；未人工删除源码造FAIL，0夹具、0HTTP/业务、0合法登录/ctx、0queued jobs、0worker startup。清理rows/keys/queue_items均0；prepare的163表names/rows/DDL/checksums/Redis/runtime与after_cleanup六部分逐项完全相等。原teardown native0，主/引导两个实例两标签各容器/网络/卷共12项盘点全0。原1行FAIL逐字节追加，当前532行（8PASS/28FAIL/496NOT RUN），完整SHA256 `127570b872f4f8f3fafa6ef4a2e6d990c9500adbf4322f90094c5a0f44881b18`，此前531行SHA256 `137dd6caac2659710eefbf6f0072e5851a25f5727c8be905095a7b4d422f7d2b`及所有历史字节保持；摘要见 `records/ms1/task8-worker-summary.json`。此记录仅证明真实缺失基线及清理；生产后续安装、同PID A→B普通after尚未运行，不预填PASS。原M05异常/无上下文、M09/M10、安全/故障/恢复及DDL拒绝仍NOT RUN，未推送、部署或人工签收。
+
+Task8首个普通after `20261012092534292cde`（源码 `792ef7f4e5c3c1fc5c189e878ae304da9d5f60e1`，已本地提交）：bootstrap、真实migration、prepare、start、observe及原teardown native全0，orchestration0；引导清理实例202610120926574149cb。两合法service login/authenticate建立A/B当前ctx，由真实生产dispatch先后提交两AuditLogJob；四个真实processing/processed事件均为marketplace连接/队列与实际RedisJob，容器7569421d900f内PID1/start_ticks42989895一致，生产cached handler object ID156复用。两条实际审计各归本员工/本商家，merchant.profile.read及商家资源一致、detail空；事务已结束，真实reservation先存在后删除，deleted=true且无release/failed，第二项完成仅设置正常shouldQuit。实际worker exited/native0/restart0，wait CLI及报告均0；三个专用queue结构消费后、cleanup前已不存在，不以辅助删除冒充消费完成。
+
+实际8SQL夹具行逆依赖精确清理，四个新account/session键逐键登记并清理，queue_items清理0；163表原行/checksum与旧Redis值/绝对期限、原runtime均保持，仅merchant/role/employee/audit_log四表自然计数器变化单列、无snapshot恢复或计数回拨。最终主/引导双标签各6项盘点共12项容器/网络/卷全0，原专用worker由原teardown清理。原1行PASS逐字节追加后533行（9PASS/28FAIL/496NOT RUN），整体SHA256 `db4cb620f22eeecf159fee6bb30727070109e8a486d91b167a34926b1681002e`，此前532行SHA256 `127570b872f4f8f3fafa6ef4a2e6d990c9500adbf4322f90094c5a0f44881b18`及所有历史字节保持；摘要与11交付路径/实际24来源hash见 `records/ms1/task8-worker-summary.json`。仅普通T8W01勾选；原自然FAIL仍保留，M05异常/无上下文、M09/M10及安全/故障/恢复/DDL拒绝保持NOT RUN，完整Task7/Task9/MS1与人工验收仍未完成；未push/deploy、写真实库或签收。
 
 - [ ] **Step 1: 写用例**（WORKER 层，在 `audit-worker` 的同一个 PID 中）：M05（A→B、A 抛异常→B、A→无上下文的任务，审计日志中记录的 `mer_id` 与各自的员工一致，第三个任务因无上下文被拒绝）；M09（如果盘点确认 worker 能并发或交错处理，测交错；否则在报告中写明"该入口串行执行"，不伪造并发测试）；M10（载荷中的 `mer_id` 与员工实际商家不一致、员工已停用 → 拒绝，且下一个任务不受影响）。每条结果附 PID 与镜像标识。
 - [ ] **Step 2–5:** 确认失败 → 实现 → 通过 → 提交 `feat(marketplace): job-scoped MerchantContext with worker regression`。
