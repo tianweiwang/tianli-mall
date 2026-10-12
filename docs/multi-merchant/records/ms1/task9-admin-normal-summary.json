@@ -1,7 +1,7 @@
 {
   "milestone": "MS1",
   "task": 9,
-  "status": "THIRD_NORMAL_ENTRY_PREPARATION_FAILED_EXISTING_PERMISSION_SELECTION_CORRECTION_PENDING",
+  "status": "MENU_CONTRACT_CORRECTED_SYNTAX_VERIFIED_COMBINED_RERUN_PENDING",
   "first_run": {
     "run_id": "202610121537033b609f",
     "probe_run_id": "20261012154110cc6d53",
@@ -41,18 +41,18 @@
     "all_first_native_evidence_preserved": true
   },
   "record_append": {
-    "previous_rows": 558,
-    "previous_sha256": "5808d996adf9880aa864a5d4e33480c31185a4739854f63d82058f7f082eee12",
-    "current_rows": 559,
+    "previous_rows": 559,
+    "previous_sha256": "cbd77147d8606d45f62fcc26ca51fe75e06be59b97c657419c2701ac26291750",
+    "current_rows": 560,
     "current_counts": {
-      "FAIL": 30,
+      "FAIL": 31,
       "PASS": 10,
       "NOT RUN": 519
     },
-    "current_sha256": "cbd77147d8606d45f62fcc26ca51fe75e06be59b97c657419c2701ac26291750",
+    "current_sha256": "5daf5e1e2efafff27f0b43ea9ce84e604a2d3a7c7075ff5d23eacb897cd61ae8",
     "previous_bytes_preserved": true
   },
-  "full_combined_regression": "NOT RUN",
+  "full_combined_regression": "STARTED_ADMIN_FAILED_REMAINING_STAGES_NOT_RUN",
   "uni_app_runtime": "NOT RUN",
   "stopped_security_negative_fault_recovery_concurrency_ddl_cases": "NOT RUN",
   "full_ms1_acceptance": "PENDING",
@@ -118,5 +118,116 @@
     "raw_result_path": "evidence/ms1-admin-normal-after-20261012160421.jsonl",
     "raw_result_sha256": "114f721715c4fb1795af3bac4c8a94761652ba71585b402e182d1cd56a25edac",
     "all_prior_native_raw_evidence_preserved": true
+  },
+  "combined_first_run": {
+    "run_id": "20261012163614c2a6ea",
+    "probe_run_id": "2026101216385775e4d3",
+    "source_commit": "5d105f5d8f0963c9af73518aafaf940e4779176c",
+    "native_stage_exits": {
+      "admin-normal": 1,
+      "register-final-identities": 0,
+      "teardown": 0
+    },
+    "bootstrap_native_exit": 0,
+    "first_failure_stage": "admin-normal",
+    "failure": "RuntimeException@harness.php:14/caller=ms1-admin-normal.php:290",
+    "business_requests": [
+      {
+        "method": "POST",
+        "path": "/adminapi/login",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/adminapi/product/product/rule",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/adminapi/menusList",
+        "http": 200,
+        "business_status": 200
+      }
+    ],
+    "readiness_requests": [
+      {
+        "method": "GET",
+        "path": "/adminapi/login/info",
+        "http": 200,
+        "business_status": 200
+      }
+    ],
+    "helper_readiness": {
+      "helper": "unchanged audit_app_start",
+      "route": "GET /adminapi/login/info",
+      "transport": "real original HTTP readiness producer",
+      "internal_response_or_attempt_count": "NOT CAPTURED by helper"
+    },
+    "existing_rule_registration_count": 3,
+    "granted_existing_rule_id": 2626,
+    "granted_existing_rule_count": 1,
+    "cleanup": {
+      "rows_removed": 4,
+      "registered_key_count": 49,
+      "keys_removed": 26
+    },
+    "original_state_preserved": true,
+    "full_table_count": 158,
+    "full_preservation_receipt": {
+      "before_rows_sha256": "dc745f96a7f1b99cfef338febdfe10a9d257a8c8903320c1d02aaa0982fa09b3",
+      "after_rows_sha256": "dc745f96a7f1b99cfef338febdfe10a9d257a8c8903320c1d02aaa0982fa09b3",
+      "before_redis_values_sha256": "798e8fb3267e3aad14d14f2eef9fc295ad81b46fbac770ddbe3dd800725e1119",
+      "after_redis_values_sha256": "798e8fb3267e3aad14d14f2eef9fc295ad81b46fbac770ddbe3dd800725e1119",
+      "before_runtime_sha256": "9e021a7299c29b509b74d70ad91719f16f63923232300a36a7bee1fd05db7695",
+      "after_runtime_sha256": "9e021a7299c29b509b74d70ad91719f16f63923232300a36a7bee1fd05db7695",
+      "all_schema_and_checksums_verified": true,
+      "all_unrelated_absolute_deadlines_verified": true,
+      "no_state_restore_or_counter_rollback": true
+    },
+    "natural_counter_changes": {
+      "eb_system_admin": [
+        105,
+        106
+      ],
+      "eb_system_role": [
+        102,
+        103
+      ],
+      "eb_system_log": [
+        null,
+        3
+      ]
+    },
+    "remaining_business_stages": "NOT RUN after the first admin failure",
+    "old_wrong_credential_or_stopped_scenarios": "NOT RUN",
+    "all_main_probe_dual_label_counts_zero": true,
+    "repository_runtime_files_absent": {
+      "env": true,
+      "public_install_lock": true
+    },
+    "raw_result_path": "evidence/ms1-admin-normal-after-20261012163938.jsonl",
+    "raw_result_sha256": "e87a36746aad1ee2d9ae9a697078b4faccfd48efb6477937cb0273809c15035a",
+    "admin_evidence_sha256": "925d1d6c1ea675026006881b7cf7a3f53f992fa724e2b3adf23d2090d561d2ec",
+    "host_orchestration_sha256": "5a43cdc8e56438a00816760a0680fa625c894b57b547ecfb19fa9dc221043610",
+    "all_prior_native_raw_evidence_preserved": true
+  },
+  "menu_contract_correction": {
+    "before_sha256": "79e95cd885835d4af5ee4c641869513de38c8a4dede72bd620810d94c96ae3e5",
+    "after_sha256": "ed79746a206c592406f31ee35a6c6e4fe1174f627b6306664832448b908c8fdd",
+    "source_contract": "Common::menusList; SystemMenusDao::getSearchList; sort_list_tier: exact six fields, original filters, sort DESC/id DESC, root-reachable flat depth-first ordering, original prefix/type/depth labels",
+    "previous_unsupported_helper_expectation": "required nonempty response and traversed a children tree",
+    "natural_empty_allowed_only_when_source_expected_also_empty": true,
+    "expected_observed_cardinality_and_fields_recorded_on_next_run": true,
+    "latest_failed_response_body_not_captured": true,
+    "actual_latest_empty_response_not_yet_observed": true,
+    "production_menu_source_role_permission_or_seed_changed": false,
+    "draft_evidence_dir": "H:/天俪商城/artifacts/ms1-task9/admin-menu-contract-draft-20261012T165632Z",
+    "draft_source_contract_sha256": "6ef532cdbf06d9dd1211fc569787ac89eee8d1327936c3747806ed5840ba0f57",
+    "syntax_native_exit": 0,
+    "syntax_receipt_sha256": "0876982969efc26a01440b45e8127a98a1f2aad72238bc9660ec8a246bb9c251",
+    "business_rerun": "NOT RUN at installation",
+    "all_original_raw_failures_preserved": true
   }
 }

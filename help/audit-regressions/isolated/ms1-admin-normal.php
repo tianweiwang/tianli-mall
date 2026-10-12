@@ -284,10 +284,39 @@ audit_case('T9A01','current_v2_granted_rule_and_own_profile','INTEGRATION',stati
         $ruleIds=array_map('intval',$pdo->query('SELECT id FROM eb_store_product_rule ORDER BY id DESC')->fetchAll(PDO::FETCH_COLUMN));
         audit_expect(is_array($data['list']??null) && (int)($data['count']??-1)===count($ruleIds) && array_map(static fn(array $r): int=>(int)$r['id'],$data['list'])===$ruleIds, 'granted actual rule read must return the installed source count and ordered identities');
         $search=a9_http('GET','/adminapi/menusList',$token,null,$context,$evidence);
-        $searchRows=$pdo->query('SELECT id,pid FROM eb_system_menus WHERE is_show=1 AND auth_type=1 AND is_del=0 AND is_show_path=0')->fetchAll();
-        $seen=[]; $collect=static function(array $items) use (&$collect,&$seen): void { foreach ($items as $r) { audit_expect(is_array($r) && isset($r['id'],$r['menu_name'],$r['menu_path'],$r['type']), 'actual search metadata item differs'); $seen[]=(int)$r['id']; if (isset($r['children'])) $collect($r['children']); } }; $collect($search);
-        $known=array_map(static fn(array $r): int=>(int)$r['id'],$searchRows); $roots=array_map(static fn(array $r): int=>(int)$r['id'],array_filter($searchRows,static fn(array $r): bool=>(int)$r['pid']===0));
-        audit_expect($seen!==[] && array_diff($seen,$known)===[] && array_diff($roots,$seen)===[], 'global search metadata must come from the installed visible menu source including every actual root');
+        // Common::menusList emits a flat depth-first list from the filtered
+        // pid=0 roots. Disconnected rows are omitted; an empty source is valid.
+        $searchRows=$pdo->query('SELECT id,pid,menu_name,menu_path,unique_auth,sort FROM eb_system_menus WHERE is_show=1 AND auth_type=1 AND is_del=0 AND is_show_path=0 ORDER BY sort DESC,id DESC')->fetchAll();
+        $byParent=[]; $sourceParents=[];
+        foreach ($searchRows as $row) { $byParent[(int)$row['pid']][]=$row; $sourceParents[(int)$row['pid']]=true; }
+        $rootIds=array_map(static fn(array $row): int=>(int)$row['id'],$byParent[0]??[]);
+        $stack=[]; foreach (array_reverse($byParent[0]??[]) as $row) $stack[]=[$row,1];
+        $expectedSearch=[]; $menuPrefix='/'.(string)$app->config->get('app.admin_prefix','admin');
+        while ($stack!==[]) {
+            [$row,$depth]=array_pop($stack); $id=(int)$row['id'];
+            $expectedSearch[]=['id'=>$id,'pid'=>(int)$row['pid'],'menu_name'=>$row['menu_name'],'menu_path'=>$menuPrefix.$row['menu_path'],
+                'unique_auth'=>$row['unique_auth'],'sort'=>(int)$row['sort'],'type'=>isset($sourceParents[$id])?1:0,'html'=>str_repeat('|-----',$depth)];
+            foreach (array_reverse($byParent[$id]??[]) as $child) $stack[]=[$child,$depth+1];
+        }
+        $observedIds=array_map(static fn($row): ?int=>is_array($row)&&isset($row['id'])?(int)$row['id']:null,$search);
+        $evidence['search_metadata']=['source_filtered_count'=>count($searchRows),'source_root_ids'=>$rootIds,
+            'expected_reachable_count'=>count($expectedSearch),'observed_count'=>count($search),
+            'expected_flat_ids'=>array_column($expectedSearch,'id'),'observed_flat_ids'=>$observedIds,
+            'expected_flat_types'=>array_column($expectedSearch,'type'),'observed_flat_types'=>array_map(static fn($row)=>is_array($row)?($row['type']??null):null,$search),
+            'source'=>'installed visible non-path menus; Common::menusList and sort_list_tier flat depth-first producer'];
+        audit_expect(array_values($search)===$search && count($search)===count($expectedSearch), 'actual global search metadata must have the exact source-reachable flat list cardinality');
+        $observedSearch=[];
+        foreach ($search as $row) {
+            audit_expect(is_array($row), 'actual search metadata item must be an array'); $fields=array_keys($row); sort($fields);
+            audit_expect($fields===['html','id','menu_name','menu_path','pid','sort','type','unique_auth'], 'actual search metadata must retain exactly its producer fields');
+            foreach (['id','pid','sort'] as $field) audit_expect(is_int($row[$field]) || (is_string($row[$field]) && preg_match('/^-?[0-9]+$/D',$row[$field])===1), 'actual search metadata integer field differs');
+            foreach (['menu_name','menu_path','unique_auth','html'] as $field) audit_expect(is_string($row[$field]), 'actual search metadata text field differs');
+            audit_expect(is_int($row['type']) && in_array($row['type'],[0,1],true), 'actual search metadata branch type differs');
+            $observedSearch[]=['id'=>(int)$row['id'],'pid'=>(int)$row['pid'],'menu_name'=>$row['menu_name'],'menu_path'=>$row['menu_path'],
+                'unique_auth'=>$row['unique_auth'],'sort'=>(int)$row['sort'],'type'=>$row['type'],'html'=>$row['html']];
+        }
+        audit_expect($observedSearch===$expectedSearch, 'global search metadata must equal the source fields, prefix, roots, reachability, depth-first order, branch types and depth labels');
+        $evidence['search_metadata']['full_source_contract_verified']=true;
         $menus=a9_http('GET','/adminapi/menus',$token,null,$context,$evidence); audit_expect(($menus['menus']??null)===[] && ($menus['unique']??null)===$login['unique'], 'own menus remain filtered to the API-only synthetic role');
         $unique=a9_http('GET','/adminapi/setting/menus/unique',$token,null,$context,$evidence); audit_expect(($unique['menus']??null)===[] && ($unique['uniqueAuth']??null)===$login['unique'], 'own unique permissions remain filtered to the API-only role');
         a9_info(a9_http('GET','/adminapi/setting/info',$token,null,$context,$evidence),$context['admin_row']); a9_cache($context); a9_preserve($context['baseline'],a9_state($context['owned_rows']),$context['owned_keys']);

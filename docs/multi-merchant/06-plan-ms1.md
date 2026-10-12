@@ -351,7 +351,7 @@ uni-app普通运行准备：现HBuilderX有真实H5 compiler，536tracked外部�
 
 H5第二轮输出修复采用独立外部工具适配（先冻结设计/代码、独立源码审查和离线parse）：536源文件和11 optimize包覆盖文件与原文件逐hash相等，不修改应用或安装编译器。原生产treeShaking/watch配置保持；在原第一轮所有done hook及真实callback完成后，只清除8个真实生成模块的现有读取缓存并一次调用原Watching.invalidate()，第二轮仍由原插件emit/退出。真实RUN `2026101215215907fe3cfc`（exec29451）已观察无错误首轮和实际第二轮请求；须原生退出0、真实第二轮afterEmit、完整dist双向hash一致后才记构建通过，当前仍运行，不代替uni客户端运行验收。原两项live编译和全部历史FAIL证据保持。
 
-H5诊断RUN `20261012161040ae0ab63e`：八primary guards/536源/11overlay保持，真实首轮无error、callback成功；下一emit实际EROFS/errno-30/mkdir，尚未识别目录（仅固定path hash），第二callback无stats、afterEmit0/完整第二done缺失。原首轮Promise已resolve，后续reject不会让旧CLI输出错误，这解释当前首轮日志不能证明构建完成。新诊断只观察公开阶段，在实际failed与callback同一error后正常public MultiWatching.close完整，并自然native1；wrapper/attach/compiler各1，专用container删除native0。333文件只是静态copy/非完整dist，禁止运行uni浏览器；随后原configure-webpack.js220及Copy5.1.2→Compiler.mkdirp源码链核定原asset为../.automator/h5/.automator.json，实际/output使目标到只读根/.automator；该公开目录SHA精确命中原error hash。未设endpoint时原transform为空但仍需创建目录；下一独立prep仅为该目录提供1MiB tmpfs，仍须全部双轮/native/dist原判据。原三live和历史证据保持，不关闭优化或修改源/输出凑通过。
+H5诊断RUN `20261012161040ae0ab63e`：八primary guards/536源/11overlay保持，真实首轮无error、callback成功；下一emit实际EROFS/errno-30/mkdir，尚未识别目录（仅固定path hash），第二callback无stats、afterEmit0/完整第二done缺失。原首轮Promise已resolve，后续reject不会让旧CLI输出错误，这解释当前首轮日志不能证明构建完成。新诊断只观察公开阶段，在实际failed与callback同一error后正常public MultiWatching.close完整，并自然native1；wrapper/attach/compiler各1，专用container删除native0。已生成333文件，包含实际编译JS/CSS；该轮缺afterEmit且native1，构建未通过，禁止运行uni浏览器；随后原configure-webpack.js220及Copy5.1.2→Compiler.mkdirp源码链核定原asset为../.automator/h5/.automator.json，实际/output使目标到只读根/.automator；该公开目录SHA精确命中原error hash。未设endpoint时原transform为空但仍需创建目录；下一独立prep仅为该目录提供1MiB tmpfs，仍须全部双轮/native/dist原判据。原三live和历史证据保持，不关闭优化或修改源/输出凑通过。
 
 移动操作控件修正已安装并本地提交a44ee1b：两Vue业务script逐字节保持，仅返回/发送native buttons、本地已加载SVG、访问名称、44px点击区/45px返回区、输入flex/min-width0/边界/focus状态修正；独立context各自有已知symbol颜色规则。普通辅助改真实按钮角色点击及三控件实际几何，PHP/Node离线语法native0。第五轮后台真正构建已完成：npm build、docker attach、实际container exit全部0/restart0，1074输入与当前源/副本一致、596全新dist，已有依赖仅RO复用/不再npm ci，原11个CSS顺序/资源大小类警告完整保留；原第四轮产物证据未覆写，第五轮自有容器删除及精确ID盘点0。此构建不算页面验收；下一新普通RUN将使用第五轮dist核真实SVG像素/按钮边界及正常退房、第五张移动列表PNG，uni客户端仍另行待验。
 
@@ -365,7 +365,8 @@ T7B01第十五轮 `20261012095932496c23`（源码 `12afea74d7b76a4fd2d4fc6af706a
 
 - [ ] **客户端整体普通验收：** admin浏览器及uni-app真实运行均完成；当前仅admin子项通过。
 - [x] **admin普通浏览器：** 两尺寸真实收发、归属/preview、正常返回、五PNG和受影响控件/头像人工核对通过（RUN15）。
-- [ ] **uni-app普通客户端：** 真实H5编译终止、合法登录/聊天运行及页面验收；源码/既有编译输出不代替实际runtime。
+- [x] **uni-app H5编译：** RUN `20261012163449e2cf0866` 两轮实际 done、第二轮 afterEmit、attach/compiler及宿主退出均0，自有构建容器删除0；536个当前源/副本与333个产物逐文件一致。产物包含149个JS和5个CSS，实际 index 的本地引用齐全；9个资源与入口体积警告保留。原诊断失败轮产物与本轮相同，纠正此前“仅静态copy”的分类；原 native1/EROFS/缺afterEmit 的失败仍保留。只在隔离根为原工具必需的 `/.automator` 提供1MiB临时目录，原编译/优化和成功门禁不变。外部复核回执 `uni-h5-build-explicit-pass-automator-prep/current-verification.json` SHA `b8dbb5693a7b7a02b59f9438847d230152fe9d2132b4d43ec43349875b25626d`。
+- [ ] **uni-app普通客户端：** 合法登录/聊天实际运行及页面验收；编译已通过，不能代替实际runtime。运行草稿独立审查定位原文本脚本接口、正常登录返回路径、固定快照的归属核对，以及外部字体在隔离环境下的必要聊天控件显示，先修正合同/必要控件再运行，不伪造响应或身份。
 
 第十五轮只完成普通admin浏览器，完整Task7/MS1、Task9、人工签收与security baseline仍未完成；本地L2，未push/deploy或写真实库，原安全/拒绝/异常/故障/并发/恢复/DDL拒绝继续NOT RUN。
 
@@ -429,7 +430,7 @@ Task8首个普通after `20261012092534292cde`（源码 `792ef7f4e5c3c1fc5c189e87
 
 ### Task 9: 回归与交付
 
-当前普通组合回归设计（先于新入口接入/执行）：按仓库外normal-regression-discovery已核实际入口，新增独立 `help/audit-regressions/isolated/ms1-admin-normal.php` 的T9A01只用当前v2合法login、既有授权商品规则读取、六本人接口、正确旧密码改密后fresh login及正常logout，要求12个正常业务请求、另1次显式login/info双200与真实DTO核对、10条精确日志、原全状态保持及本次夹具/键逆依赖精确清理；原audit_app_start内部HTTP readiness保持，其内部响应和次数未捕获，不计为已证明200；不require、调用或绕过blocked旧套件，原安全/拒绝/错误输入/旧凭据/故障/恢复/并发/DDL拒绝保持NOT RUN。该独立admin入口已按生产源合同及独立审查接入，已有PHP8.2镜像离线语法exit0；真实组合回归尚未执行。全新同源码ISO的组合先做MS0b普通/login-download及Task1（158表），再Task2真实五表迁移，后做163表Tasks3–8；Task1 worker用原默认连接命令，Task8明确 `--context-task8` 与marketplace连接，Task7沿当前已真实构建admin dist及普通浏览器入口。后续必须保留每步真实native退出/原始raw/原状态和双标签资源盘点，并用真实 `route:list` 核merchantapi无product；仅满足普通组合范围，不替代下列原完整回归要求或原验收表，尚未执行不勾Task9，uni-app真实H5客户端仍缺。
+当前普通组合回归设计（先于新入口接入/执行）：按仓库外normal-regression-discovery已核实际入口，新增独立 `help/audit-regressions/isolated/ms1-admin-normal.php` 的T9A01只用当前v2合法login、既有授权商品规则读取、六本人接口、正确旧密码改密后fresh login及正常logout，要求12个正常业务请求、另1次显式login/info双200与真实DTO核对、10条精确日志、原全状态保持及本次夹具/键逆依赖精确清理；原audit_app_start内部HTTP readiness保持，其内部响应和次数未捕获，不计为已证明200；不require、调用或绕过blocked旧套件，原安全/拒绝/错误输入/旧凭据/故障/恢复/并发/DDL拒绝保持NOT RUN。该独立admin入口已按生产源合同及独立审查接入，已有PHP8.2镜像离线语法exit0；该入口接入时组合回归尚未执行，首次实际运行结果见下文。全新同源码ISO的组合先做MS0b普通/login-download及Task1（158表），再Task2真实五表迁移，后做163表Tasks3–8；Task1 worker用原默认连接命令，Task8明确 `--context-task8` 与marketplace连接，Task7沿当前已真实构建admin dist及普通浏览器入口。后续必须保留每步真实native退出/原始raw/原状态和双标签资源盘点，并用真实 `route:list` 核merchantapi无product；仅满足普通组合范围，不替代下列原完整回归要求或原验收表，完整组合未通过，不勾Task9，uni-app真实H5客户端仍缺。
 
 独立admin实现合同：保持原harness/read-only guard及允许的真实decimal毫秒cache prefix；15源配置、1真实幻灯片和5语言值由原生产者预热，原raw缓存值/TTL/临时lock/精确tag成员分别核对，三个logo DTO另按真实sys_config规范化值。API-only合成角色仅授予既有商品规则列表：安装源同GET有2642/2661两条登记，按真实查询ID升序选择一条授予新role，记录实际登记总数/选中ID并核role.rules只有此一条，全部旧菜单行保持、不改种子；本人PUT/logout依真实Json::make省略data，正常读/login保留数组DTO，均严格HTTP200/status200。本人资料只改姓名/头像，正确旧密码改密后丢弃旧令牌，仅正常新密码登录与当前退出。实际日志在数量/字段断言前认领，原helper正常stop后再以合成actor精确ID/name补认领实际完整行，再按全列删除；不运行异常/故障请求。原158/163表行/DDL/checksum、旧Redis值及绝对期限/runtime全保持，仅三夹具表自然计数器增长单列；不得恢复或回拨。准备及历史四稿来源见 `records/ms1/task9-normal-preparation.json`，运行证据尚无。
 
@@ -438,6 +439,10 @@ T9A01首轮普通RUN `202610121537033b609f`（源码eaf022df5）引导native0，
 T9A01第二宿主RUN `20261012155400f6fe89`（源码c774ca6f5）：bootstrap native0，normal stage因本机Compose create不支持--no-deps而native1；PHP入口未调用，无业务/无raw，不编造case结果或完整数据保持PASS。原register/teardown native0，主/引导2026101215561338cdb8共12库存全0，env/安装锁均无。本机实际create --help确认支持--no-recreate/--no-build/--pull never；新薄宿主只改create参数，run仍用原支持的--no-deps，已有依赖不重建、不启动默认runner命令。原两轮native/raw保持，558行原记录不增加；第三宿主准备后待真实验证。
 
 T9A01第三普通RUN `20261012160136ac3fa4`（源码c3e4f2df8）：bootstrap0、normal1、原登记/teardown0，有限caller明确227行的商品规则登记唯一断言失败。0业务/0显式readiness/0SQL夹具，45登记键实际删除0，158原表/缓存绝对期限/runtime保持；console_remind真实默认true已核。安装SQL有两条同GET登记，选择一条授权即可，须保留全部旧菜单，不以修改种子满足错误唯一断言；失败轮未输出真实匹配数量，该缺口如实保留，修正后将记录真实数量/选中ID。主/引导20261012160350c93366双标签12库存全0，实际env/安装锁无。原1FAIL逐字节追加后559行（10PASS/30FAIL/519NOT RUN），前558行SHA 5808d996adf9880aa864a5d4e33480c31185a4739854f63d82058f7f082eee12保持、当前SHA cbd77147d8606d45f62fcc26ca51fe75e06be59b97c657419c2701ac26291750；普通辅助选取修正后待新RUN，完整组合/uni/MS1仍未完成。
+
+Task9首次普通组合 RUN `20261012163614c2a6ea`（源码 `5d105f5d8`）：原 bootstrap native0，独立 admin 入口 native1，随后原身份登记和 teardown native0。显式 `login/info` 与登录、已授权商品规则读取、`menusList` 三个业务请求均为 HTTP200/status200；菜单结果核对在辅助入口290行失败，后续组合步骤全部未执行，不计为完整回归。实际既有商品规则登记为3条，按升序选中2626且仅授予该一条，原菜单种子不变。4条自有夹具记录及26个实际自有键精确清理，原158表、缓存绝对期限和 runtime 保持；主/引导实例 `2026101216385775e4d3` 两标签共12项资源盘点全0，仓库 env/安装锁均无。原1FAIL逐字节追加后560行（10PASS/31FAIL/519NOT RUN），前559行 SHA `cbd77147d8606d45f62fcc26ca51fe75e06be59b97c657419c2701ac26291750` 字节保持，当前 SHA `5daf5e1e2efafff27f0b43ea9ce84e604a2d3a7c7075ff5d23eacb897cd61ae8`。正在按真实菜单 producer 核对辅助预期；安全、负向、故障、恢复、并发及 DDL 拒绝仍未运行。完整组合、uni 客户端验收及 MS1 交付仍未完成，见 `records/ms1/task9-admin-normal-summary.json`。
+
+下一普通修正只调整菜单回归辅助合同：按生产 DAO 六字段、原 filters 与 sort DESC/id DESC 的安装数据，独立计算 pid=0 根可达的平面深度优先列表；逐项比对菜单前缀、类型、层级和顺序，并保存实际来源/返回数量。仅当真实来源也为空时允许空返回，不修改业务权限、菜单种子或接口。实际回归确认前仍保留原FAIL和全部后续未运行项。
 
 - [ ] 在新的 ISO-FULL 环境运行全部 MS0a、MS0b 用例及 MS1 用例；全部 `exit=0`。
 - [ ] 确认 merchantapi 没有任何商品相关路由（`php think route:list` 输出中不含 `product`）。

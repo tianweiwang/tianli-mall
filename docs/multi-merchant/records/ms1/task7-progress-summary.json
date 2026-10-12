@@ -6724,8 +6724,6 @@
     "actual_public_failure_close_completed": true,
     "original_compiler_error_preserved": true,
     "dist_complete": false,
-    "partial_static_files": 333,
-    "partial_static_bytes": 10175246,
     "runtime_browser_verified": false,
     "old_three_live_attempts_untouched": true,
     "error_path_not_identified_yet": false,
@@ -6743,6 +6741,114 @@
       "resolved_directory_sha256": "d7d4c67ac399cec5024b3e274b330f1f174e29795f317083e17109031771388a",
       "failure_stage": "real webpack emit mkdirp into readonly root",
       "proposed_narrow_tooling_fix": "dedicated1MiB /.automator tmpfs in a new external prep; original engine/input/output/optimization and success requirements retained"
-    }
+    },
+    "emitted_output_files": 333,
+    "emitted_output_bytes": 10175246,
+    "prior_static_only_classification_corrected": "Contains the same 333 files, including compiled JavaScript/CSS and index, as the successful run. Static-only classification is unsupported. Its native exit 1 and missing afterEmit remain a failed build; artifact equality alone does not validate that earlier compiler run.",
+    "emitted_inventory_matches_later_success_run": true,
+    "native_success_requirements_met": false
+  },
+  "uni_h5_automator_mount_build": {
+    "status": "BUILD_VERIFIED_RUNTIME_PENDING",
+    "run_id": "20261012163449e2cf0866",
+    "source_commit_at_copy": "87f448274f9cb8f74344a09aef3fec389e0e25e5",
+    "current_repo_head_at_review": "5d105f5d8f0963c9af73518aafaf940e4779176c",
+    "tracked_input_count": 536,
+    "current_repository_and_copy_hashes_match": true,
+    "source_manifest_sha256": "eae1ca9f058d5236f0ec35d255e2b4ed61fa91ddb693b9543bdca93a8af33944",
+    "preparation_manifest_sha256": "21bbe0a56bfee68e60b3410f60aa58cfe2d46768232e87301860dad062f2fe9a",
+    "adapter_sha256": "a4692cdee10951f07f567170908b444ccace6ac74254bcf0a1aaf52aa1d51e44",
+    "wrapper_sha256": "4ad82ee2df27f5a1b818a46b5facaafeab453bc9d1495777e59ce854d0e9a1cd",
+    "actual_done_passes": [
+      {
+        "pass": 1,
+        "has_errors": false,
+        "has_warnings": false,
+        "asset_count": 185,
+        "asset_names_sha256": "9c64baba7c2dde8f7083260acc6599cb270aa3b0bec156938931ee353ea015e1"
+      },
+      {
+        "pass": 2,
+        "has_errors": false,
+        "has_warnings": true,
+        "asset_count": 334,
+        "asset_names_sha256": "90ffdd22f4e2e86edcc2ce259e9774a7749215ff6205c0011ede0056ee9526f6"
+      }
+    ],
+    "after_emit_passes": [
+      2
+    ],
+    "native_exits": {
+      "wrapper": 0,
+      "attach": 0,
+      "compiler": 0,
+      "container_remove": 0
+    },
+    "wrapper_exit_evidence": "parent executed process reported exit 0; no separate wrapper-exit file",
+    "adapter_receipt_sha256": "c42d226302504065ddfe0bb73fb12be6001db291202f8dfb6724bc5f981d200e",
+    "build_result_sha256": "76f5ac323e27434b5765bb70e1adadf6aa651570fe6838872435e0a4aee282bf",
+    "dist_file_count": 333,
+    "dist_bytes": 10175246,
+    "dist_inventory_sha256": "00d38f1edecb8fe6417117cc0e4e8a57a1315646984910500ff4e78fade82636",
+    "all_dist_file_hashes_match_saved_manifest": true,
+    "dist_matches_actual_after_emit": true,
+    "dist_file_type_counts": {
+      ".css": 5,
+      ".gif": 4,
+      ".html": 3,
+      ".jpg": 16,
+      ".js": 149,
+      ".png": 151,
+      ".scss": 2,
+      ".svg": 1,
+      ".ttf": 2
+    },
+    "index_local_references": [
+      {
+        "tag": "link",
+        "reference": "/static/index.149e085d.css",
+        "local": true,
+        "resolved_path": "static/index.149e085d.css",
+        "exists": true,
+        "bytes": 98182,
+        "sha256": "f62bf853d2338897e8c298109becd21c0f3a9b14462ccf7f16f70c3cb7a5efe8"
+      },
+      {
+        "tag": "script",
+        "reference": "/static/js/chunk-vendors.ab5d7b88.js",
+        "local": true,
+        "resolved_path": "static/js/chunk-vendors.ab5d7b88.js",
+        "exists": true,
+        "bytes": 885073,
+        "sha256": "d6d555b12ad22adb88b7657935096ca0c2536e6ad7ee6dbfcf815fa0017336cd"
+      },
+      {
+        "tag": "script",
+        "reference": "/static/js/index.e68fc9c6.js",
+        "local": true,
+        "resolved_path": "static/js/index.e68fc9c6.js",
+        "exists": true,
+        "bytes": 531100,
+        "sha256": "b923e0ef68196ae3291aac047863fcd801feca4fae98a2e5f732a0e551cf80bc"
+      }
+    ],
+    "all_index_local_references_present": true,
+    "warning_categories": [
+      "WARNING: asset size limit: The following asset(s) exceed the recommended size limit (244 KiB).",
+      "entrypoint size limit: The following entrypoint(s) combined asset size exceeds the recommended limit (244 KiB). This can impact web performance."
+    ],
+    "oversized_asset_count": 9,
+    "actual_owned_container_removed": true,
+    "runtime_browser_verified": false,
+    "business_requests": 0,
+    "external_review_path": "H:/天俪商城/artifacts/ms1-task7/uni-h5-build-explicit-pass-automator-prep/current-verification.json",
+    "external_review_sha256": "b8dbb5693a7b7a02b59f9438847d230152fe9d2132b4d43ec43349875b25626d",
+    "original_diagnostic_failure_preserved": true,
+    "limits": [
+      "No build, HTTP, Docker or browser commands were run by this review.",
+      "Native wrapper exit 0 is parent process evidence; no separate wrapper-exit file is present.",
+      "No browser runtime, actual login/chat or mobile client acceptance is established.",
+      "Task 7 and MS1 acceptance remain incomplete."
+    ]
   }
 }
