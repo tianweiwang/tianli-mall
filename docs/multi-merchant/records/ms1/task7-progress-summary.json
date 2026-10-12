@@ -6641,5 +6641,108 @@
     "old_live_attempts_restarted_or_stopped": false,
     "business_requests": 0,
     "evidence_directory": "H:/天俪商城/artifacts/ms1-task7/uni-h5-build-explicit-pass-prep/evidence/linux-2026101215215907fe3cfc"
+  },
+  "uni_h5_diagnostic_build": {
+    "status": "BUILD_FAILED_ACTUAL_EMIT_EROFS",
+    "run_id": "20261012161040ae0ab63e",
+    "source_commit_at_copy": "87f448274f9cb8f74344a09aef3fec389e0e25e5",
+    "all_536_current_repo_and_copy_inputs_match": true,
+    "source_manifest_sha256": "eae1ca9f058d5236f0ec35d255e2b4ed61fa91ddb693b9543bdca93a8af33944",
+    "preparation_manifest_sha256": "1ee3dc6fcaddbc5db8a3f66c88cbb10f7c2bf0078776a6b77d8fd3c3472d3209",
+    "adapter_sha256": "a4692cdee10951f07f567170908b444ccace6ac74254bcf0a1aaf52aa1d51e44",
+    "wrapper_sha256": "cb458c6c3f94e175f98a4b407be3fabd4e94fa295699e9e6ba0c7aaa06011f7c",
+    "native_exits": {
+      "wrapper": 1,
+      "attach": 1,
+      "compiler": 1,
+      "container_remove": 0
+    },
+    "actual_callback_observations": [
+      {
+        "index": 1,
+        "error_present": false,
+        "has_stats": true,
+        "has_child_stats": true,
+        "known_first_compilation": true,
+        "observed_done_count": 1,
+        "phase": "afterCompile",
+        "failed_same_error": false
+      },
+      {
+        "index": 2,
+        "error_present": true,
+        "has_stats": false,
+        "has_child_stats": false,
+        "known_first_compilation": false,
+        "observed_done_count": 1,
+        "phase": "failed",
+        "failed_same_error": true
+      }
+    ],
+    "actual_phase_counts": {
+      "watchRun": 1,
+      "beforeCompile": 3,
+      "afterCompile": 4,
+      "emit": 1,
+      "afterEmit": 0,
+      "failed": 1,
+      "invalid": 0
+    },
+    "actual_errors": [
+      {
+        "source": "failed",
+        "index": 1,
+        "phase": "emit",
+        "error": {
+          "name": "Error",
+          "code": "EROFS",
+          "errno": -30,
+          "syscall": "mkdir",
+          "path": {
+            "kind": "unknown",
+            "sha256": "d7d4c67ac399cec5024b3e274b330f1f174e29795f317083e17109031771388a"
+          }
+        }
+      },
+      {
+        "source": "callback",
+        "index": 2,
+        "phase": "failed",
+        "error": {
+          "name": "Error",
+          "code": "EROFS",
+          "errno": -30,
+          "syscall": "mkdir",
+          "path": {
+            "kind": "unknown",
+            "sha256": "d7d4c67ac399cec5024b3e274b330f1f174e29795f317083e17109031771388a"
+          }
+        }
+      }
+    ],
+    "first_success_immutable": true,
+    "actual_public_failure_close_completed": true,
+    "original_compiler_error_preserved": true,
+    "dist_complete": false,
+    "partial_static_files": 333,
+    "partial_static_bytes": 10175246,
+    "runtime_browser_verified": false,
+    "old_three_live_attempts_untouched": true,
+    "error_path_not_identified_yet": false,
+    "business_requests": 0,
+    "evidence_directory": "H:/天俪商城/artifacts/ms1-task7/uni-h5-build-explicit-pass-diag-prep/evidence/linux-20261012161040ae0ab63e",
+    "build_result_sha256": "f9a7d789d7ce0d9440cd0d4232e76cc9b8289d9aa3adcce05c1bb1dbd04cb4d4",
+    "adapter_receipt_sha256": "0e7ee06f306a4b07b6b78a19f0018f41fbd30ac913c22c9085ad76b19d85d166",
+    "original_receipt_path_was_hash_only": true,
+    "supported_error_directory": "/.automator",
+    "supported_source_chain": {
+      "configure_source": "E:/HBuilderX/plugins/uniapp-cli/node_modules/@dcloudio/vue-cli-plugin-uni/lib/configure-webpack.js:220",
+      "relative_original_asset": "../.automator/h5/.automator.json",
+      "no_endpoint_original_transform_returns_empty_content": true,
+      "output_root": "/output",
+      "resolved_directory_sha256": "d7d4c67ac399cec5024b3e274b330f1f174e29795f317083e17109031771388a",
+      "failure_stage": "real webpack emit mkdirp into readonly root",
+      "proposed_narrow_tooling_fix": "dedicated1MiB /.automator tmpfs in a new external prep; original engine/input/output/optimization and success requirements retained"
+    }
   }
 }

@@ -1,7 +1,7 @@
 {
   "milestone": "MS1",
   "task": 9,
-  "status": "NORMAL_ENTRY_RETEST_NOT_INVOKED_DUE_HOST_CREATE_FLAG_CORRECTION_PENDING",
+  "status": "THIRD_NORMAL_ENTRY_PREPARATION_FAILED_EXISTING_PERMISSION_SELECTION_CORRECTION_PENDING",
   "first_run": {
     "run_id": "202610121537033b609f",
     "probe_run_id": "20261012154110cc6d53",
@@ -41,15 +41,15 @@
     "all_first_native_evidence_preserved": true
   },
   "record_append": {
-    "previous_rows": 557,
-    "previous_sha256": "06547f0b75663e7f2df1da9ef80a66a64d92ba304e178c0d4f6d1691895a9cca",
-    "current_rows": 558,
+    "previous_rows": 558,
+    "previous_sha256": "5808d996adf9880aa864a5d4e33480c31185a4739854f63d82058f7f082eee12",
+    "current_rows": 559,
     "current_counts": {
-      "FAIL": 29,
+      "FAIL": 30,
       "PASS": 10,
       "NOT RUN": 519
     },
-    "current_sha256": "5808d996adf9880aa864a5d4e33480c31185a4739854f63d82058f7f082eee12",
+    "current_sha256": "cbd77147d8606d45f62fcc26ca51fe75e06be59b97c657419c2701ac26291750",
     "previous_bytes_preserved": true
   },
   "full_combined_regression": "NOT RUN",
@@ -77,5 +77,46 @@
     "host_output_sha256": "905c035c59bf046a71bc519766f0c095420f3ad97663868862d3bce0bc7301d3",
     "full_case_state_preservation": "NOT RUN because entry was not invoked",
     "all_previous_evidence_preserved": true
+  },
+  "third_run": {
+    "run_id": "20261012160136ac3fa4",
+    "probe_run_id": "20261012160350c93366",
+    "source_commit": "c3e4f2df8890a9c13ce9465859f1935e72d1066b",
+    "bootstrap_native_exit": 0,
+    "normal_native_exit": 1,
+    "original_teardown_native_exit": 0,
+    "business_requests": 0,
+    "explicit_readiness_requests": 0,
+    "failure": "RuntimeException@harness.php:14/caller=ms1-admin-normal.php:227",
+    "cleanup": {
+      "rows_removed": 0,
+      "registered_key_count": 45,
+      "keys_removed": 0
+    },
+    "original_state_preserved": true,
+    "full_table_count": 158,
+    "full_preservation_receipt": {
+      "before_rows_sha256": "643a6ce6edb5b0fa5ad55e52a328dcb4094895a2d95c21c8cf66c1b9404428a9",
+      "after_rows_sha256": "643a6ce6edb5b0fa5ad55e52a328dcb4094895a2d95c21c8cf66c1b9404428a9",
+      "before_redis_values_sha256": "6f9831f4da87e08d7f94e4b21902b1fa0f3d4d023f50fdb4160a3412acef35bc",
+      "after_redis_values_sha256": "6f9831f4da87e08d7f94e4b21902b1fa0f3d4d023f50fdb4160a3412acef35bc",
+      "before_runtime_sha256": "9e021a7299c29b509b74d70ad91719f16f63923232300a36a7bee1fd05db7695",
+      "after_runtime_sha256": "9e021a7299c29b509b74d70ad91719f16f63923232300a36a7bee1fd05db7695",
+      "all_schema_and_checksums_verified": true,
+      "all_unrelated_absolute_deadlines_verified": true,
+      "no_state_restore_or_counter_rollback": true
+    },
+    "source_console_remind_default_true_verified": true,
+    "source_analysis": "installation SQL has two active GET product/product/rule registrations (2642 and2661); helper incorrectly required the whole matching set to have one row",
+    "actual_matching_row_count_not_captured_in_failed_run": true,
+    "correction_contract": "select one existing registration by ascending id; grant exactly that one to synthetic role and preserve all original menu rows",
+    "all_main_probe_dual_label_counts_zero": true,
+    "repository_runtime_files_absent": {
+      "env": true,
+      "public_install_lock": true
+    },
+    "raw_result_path": "evidence/ms1-admin-normal-after-20261012160421.jsonl",
+    "raw_result_sha256": "114f721715c4fb1795af3bac4c8a94761652ba71585b402e182d1cd56a25edac",
+    "all_prior_native_raw_evidence_preserved": true
   }
 }

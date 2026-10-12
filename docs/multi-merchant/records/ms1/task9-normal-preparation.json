@@ -1,9 +1,9 @@
 {
   "milestone": "MS1",
   "task": 9,
-  "status": "NORMAL_ADMIN_ENTRY_CORRECTED_AFTER_FIRST_PREPARATION_FAILURE_RETEST_PENDING",
+  "status": "NORMAL_ADMIN_ENTRY_EXISTING_PERMISSION_SELECTION_CORRECTED_RETEST_PENDING",
   "entrypoint": "help/audit-regressions/isolated/ms1-admin-normal.php",
-  "entrypoint_sha256": "b70d4eb8e7592652452717ce9901310fa0f280f6ba9a5e1afe744ccca54e7c26",
+  "entrypoint_sha256": "79e95cd885835d4af5ee4c641869513de38c8a4dede72bd620810d94c96ae3e5",
   "final_external_revision": 4,
   "external_preparation_directory": "H:/澶╀开鍟嗗煄/artifacts/ms1-task9/admin-normal-drafts/revision-4",
   "design_sha256": "490d8edba10cb8f1ade86349694240bd374888e5895ad24a56aece7bab25ce16",
@@ -43,5 +43,21 @@
     "entrypoint_sha256": "b70d4eb8e7592652452717ce9901310fa0f280f6ba9a5e1afe744ccca54e7c26",
     "receipt_sha256": "9d85fda40d384afb9ac866fa2bf1849c848b58a314b1929e9cae7f7ef4928a7c"
   },
-  "first_actual_runtime_summary": "task9-admin-normal-summary.json"
+  "first_actual_runtime_summary": "task9-admin-normal-summary.json",
+  "prior_console_corrected_entrypoint_sha256": "b70d4eb8e7592652452717ce9901310fa0f280f6ba9a5e1afe744ccca54e7c26",
+  "permission_selection": {
+    "source_sql_matching_ids": [
+      2642,
+      2661
+    ],
+    "strategy": "first actual matching existing id in ascending order",
+    "synthetic_role_granted_rule_count": 1,
+    "original_menu_rows_modified": false,
+    "actual_row_count_and_selected_id_recorded_before_runtime_assertions": true
+  },
+  "actual_offline_syntax_after_permission_correction": {
+    "native_exit": 0,
+    "entrypoint_sha256": "79e95cd885835d4af5ee4c641869513de38c8a4dede72bd620810d94c96ae3e5",
+    "receipt_sha256": "fb5240eff8be8f59225f3b4459091876d7142d1fe143bc393015bec2942f3031"
+  }
 }

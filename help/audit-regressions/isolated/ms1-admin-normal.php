@@ -224,7 +224,9 @@ audit_case('T9A01','current_v2_granted_rule_and_own_profile','INTEGRATION',stati
         $evidence['console_reminder_source_enabled']=$consoleRemind;
         audit_expect((int)audit_db()->query("SELECT COUNT(*) FROM eb_system_event WHERE mark='admin_login' AND is_del=0 AND is_open=1")->fetchColumn()===0, 'installed normal login must have no executable custom event');
         $q=audit_db()->query("SELECT id FROM eb_system_menus WHERE auth_type=2 AND LOWER(api_url)='product/product/rule' AND LOWER(methods)='get' AND is_del=0 ORDER BY id"); $rules=$q->fetchAll(PDO::FETCH_COLUMN);
-        audit_expect(count($rules)===1, 'exact existing granted product rule registration is required'); $permission=(string)$rules[0];
+        $evidence['existing_rule_registration_count']=count($rules);
+        audit_expect($rules!==[] && (int)$rules[0]>0, 'one actual existing product rule registration must be available');
+        $permission=(string)$rules[0]; $evidence['granted_existing_rule_id']=(int)$permission;
         $context['account']='m9a_'.bin2hex(random_bytes(7)); $context['password']='M9a-'.bin2hex(random_bytes(10)).'-X7'; $context['new_password']='M9b-'.bin2hex(random_bytes(10)).'-X8';
         $context['names']=['MS1 normal admin','MS1 updated admin']; $context['avatar']='/statics/system_images/default_avatar.jpeg';
         audit_expect(is_file(audit_repo_dir().'/crmeb/public'.$context['avatar']), 'actual existing local profile avatar asset must exist');
@@ -234,6 +236,8 @@ audit_case('T9A01','current_v2_granted_rule_and_own_profile','INTEGRATION',stati
         $q=$pdo->prepare('SELECT COUNT(*) FROM eb_system_role WHERE role_name=?'); $q->execute([$roleName]); audit_expect((int)$q->fetchColumn()===0, 'new normal synthetic role name must not exist');
         $q=$pdo->prepare('INSERT INTO eb_system_role(role_name,rules,level,status) VALUES(?,?,1,1)'); $q->execute([$roleName,$permission]);
         $context['role_id']=(int)$pdo->lastInsertId(); $context['owned_rows']['eb_system_role']=[$context['role_id']]; $context['role_row']=a9_row('system_role',$context['role_id']);
+        audit_expect($context['role_row']['rules']===$permission, 'synthetic role must grant exactly the one selected existing rule');
+        $evidence['granted_existing_rule_count']=1;
         $digest=password_hash($context['password'],PASSWORD_BCRYPT); audit_expect(is_string($digest), 'normal synthetic password digest differs'); $context['secrets'][]=$digest;
         $q=$pdo->prepare('INSERT INTO eb_system_admin(account,pwd,real_name,roles,add_time,level,status,is_del) VALUES(?,?,?,?,?,1,1,0)'); $q->execute([$context['account'],$digest,$context['names'][0],(string)$context['role_id'],time()]);
         $context['admin_id']=(int)$pdo->lastInsertId(); $context['owned_rows']['eb_system_admin']=[$context['admin_id']]; $context['admin_row']=a9_row('system_admin',$context['admin_id']);
