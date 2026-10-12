@@ -60,10 +60,14 @@ function m7c_listeners(): array
     $ports=[]; foreach (audit_app_tcp_rows() as $row) if ($row['state']==='0A' && in_array($row['local_port'],[40001,40002,40003],true)) $ports[]=$row['local_port'];
     $ports=array_values(array_unique($ports)); sort($ports,SORT_NUMERIC); return $ports;
 }
-function m7c_observe(array $group,array $supervisor): array
+function m7c_observe(array $group,array $supervisor,?array &$snapshot=null): array
 {
+    $snapshot=['stage'=>'members','leader_pid'=>$group['leader_pid'],'pgid'=>$group['pgid'],'sid'=>$group['sid']];
     $members=array_values(array_filter(audit_app_group_members($group,$supervisor),static fn(array $m): bool=>!in_array($m['state'],['Z','X','x'],true)));
+    $snapshot['live_member_count']=count($members); $snapshot['stage']='initial_tcp';
     $inodes=[]; foreach (audit_app_tcp_rows() as $row) if ($row['state']==='0A' && in_array($row['local_port'],[40001,40002,40003],true)) $inodes[$row['inode']]=$row['local_port'];
+    $initial=array_values(array_unique(array_values($inodes))); sort($initial,SORT_NUMERIC);
+    $snapshot['initial_listener_ports']=$initial; $snapshot['identity_checked_count']=0; $snapshot['stage']='descriptors';
     $owned=[];
     foreach ($members as &$member) {
         $member['listener_ports']=[]; $check=audit_app_proc_stat($member['pid']);
@@ -74,11 +78,14 @@ function m7c_observe(array $group,array $supervisor): array
         }
         $check=audit_app_proc_stat($member['pid']);
         audit_expect($check!==null && $check['starttime']===$member['starttime'] && $check['pgid']===$group['pgid'] && $check['sid']===$group['sid'],'chat process changed during listener observation');
+        $snapshot['identity_checked_count']++;
         $member['listener_ports']=array_values(array_unique($member['listener_ports'])); sort($member['listener_ports'],SORT_NUMERIC);
         $owned=array_merge($owned,$member['listener_ports']);
     } unset($member);
     $owned=array_values(array_unique($owned)); sort($owned,SORT_NUMERIC);
-    $visible=m7c_listeners(); audit_expect(!in_array(40001,$visible,true),'ordinary chat does not start the admin notice listener');
+    $snapshot['owned_listener_ports']=$owned; $snapshot['stage']='final_tcp';
+    $visible=m7c_listeners(); $snapshot['final_listener_ports']=$visible;
+    audit_expect(!in_array(40001,$visible,true),'ordinary chat does not start the admin notice listener');
     audit_expect($owned===$visible,'dedicated chat listeners must belong to the registered generation');
     return ['group'=>$group,'supervisor'=>array_intersect_key($supervisor,array_flip(['pid','pgid','sid','starttime'])),
         'members'=>$members,'listener_ports'=>$owned,'admin_listener_open'=>false];
@@ -124,10 +131,11 @@ function m7c_serve(): never
         $control=audit_read_control_json(audit_run_dir().'/ms1-chat-control.json');
         if (($control['run_id'] ?? '')===getenv('AUDIT_RUN_ID') && ($control['revision'] ?? '')!==$revision) {
             $revision=$control['revision']; $action=$control['action'] ?? '';
+            $lastObservation=null;
             try {
                 audit_expect(is_string($revision) && preg_match('/^[a-f0-9]{16}$/D',$revision)===1 && in_array($action,['start','observe','stop'],true),'ordinary chat control differs');
                 $options=$control['options'] ?? []; audit_expect(is_array($options),'ordinary chat control options differ');
-                if ($action==='observe') { audit_expect($options===[] && $group!==null && $generation!=='','chat observation requires its current generation'); $facts=m7c_observe($group,$supervisor); }
+                if ($action==='observe') { audit_expect($options===[] && $group!==null && $generation!=='','chat observation requires its current generation'); $facts=m7c_observe($group,$supervisor,$lastObservation); }
                 else $facts=$stop();
                 if ($action==='start') {
                     audit_expect(array_keys($options)===['cache_prefix'] && is_string($options['cache_prefix']),'chat start has only its normal cache prefix'); m7c_prefix($options['cache_prefix']);
@@ -138,14 +146,17 @@ function m7c_serve(): never
                     $process=proc_open(['setsid','php',__FILE__,'__runtime',$options['cache_prefix']],[['file','/dev/null','r'],['file',$log,'a'],['file',$log,'a']],$pipes,audit_repo_dir().'/crmeb',$env);
                     audit_expect(is_resource($process),'ordinary chat child unavailable'); $group=audit_app_register_group($process,$supervisor); $generation=$revision;
                     $deadline=microtime(true)+8;
-                    do { $facts=m7c_observe($group,$supervisor); if ($facts['listener_ports']===[40002,40003]) break; usleep(10000); } while (microtime(true)<$deadline);
+                    do { $facts=m7c_observe($group,$supervisor,$lastObservation); if ($facts['listener_ports']===[40002,40003]) break; usleep(10000); } while (microtime(true)<$deadline);
                     audit_expect($facts['listener_ports']===[40002,40003] && $facts['members']!==[],'actual chat and Channel listeners unavailable');
                 }
                 audit_write_json(audit_run_dir().'/ms1-chat-status.json',['run_id'=>getenv('AUDIT_RUN_ID'),'revision'=>$revision,'status'=>$action,'generation_revision'=>$generation]+$facts);
             } catch (Throwable $error) {
                 $cleanup=null; if ($action!=='observe') { try { $stop(); } catch (Throwable $e) { $cleanup=get_class($e); } }
+                $caller=$error->getTrace()[0] ?? [];
                 audit_write_json(audit_run_dir().'/ms1-chat-status.json',['run_id'=>getenv('AUDIT_RUN_ID'),'revision'=>$revision,'status'=>'failed',
-                    'error_class'=>get_class($error),'error_file'=>basename($error->getFile()),'error_line'=>$error->getLine(),'cleanup_error_class'=>$cleanup]);
+                    'error_class'=>get_class($error),'error_file'=>basename($error->getFile()),'error_line'=>$error->getLine(),
+                    'error_caller_file'=>basename($caller['file'] ?? ''),'error_caller_line'=>$caller['line'] ?? null,
+                    'last_observation'=>$lastObservation,'cleanup_error_class'=>$cleanup]);
             }
         }
         usleep(50000);
