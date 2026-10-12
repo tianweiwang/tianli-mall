@@ -36,7 +36,7 @@
 - 迁移的“空”指CRMEB已安装且五目标表不存在；零表库缺少system_menus，不能创建第六张表或调用Installer。theme-module实际使用 `--check/--apply`，新MS1 CLI明确支持文档要求的 `check|apply`（兼容同义选项）。只新增五表及精确marketplace菜单/接口登记；原表列/index/旧行保持，system_menus正常新增行与其AUTO_INCREMENT变化单列核对，不能要求新增后checksum仍相同，也不回拨计数器。其他原表结构/数据保持。
 - 现Supervisor声明queue:listen，实版Listener每轮启动queue:work --once，job不复用同一PHP进程。Task1为新marketplace队列声明独立 `queue:work --queue=marketplace --sleep=1 --tries=1` 常驻模式，并用相同命令建立ISO audit-worker；原队列保持。生产声明默认不自动启动，实际发布另行处理。正常空任务的同一PID证据到位后，Task8再运行正常A→B上下文重建；异常/无上下文/伪造载荷/并发场景按用户要求跳过，不冒称M05/M09/M10完整通过。
 
-执行顺序仍以Task1–9为单一清单；Task1源码盘点与普通worker能力、Task2普通迁移、Task3正常上下文与查询范围、Task4商家五接口及正常身份流程、Task5员工/角色管理和Task6平台商家管理普通流程已完成，历史FAIL及原跳过项分别保留。Task7–9的跨应用静态核对、任务上下文及最终交付仍待实施；普通结果不代替完整验收。
+执行顺序仍以Task1–9为单一清单；Task1源码盘点与普通worker能力、Task2普通迁移、Task3正常上下文与查询范围、Task4商家五接口及正常身份流程、Task5员工/角色管理和Task6平台商家管理普通流程已完成，历史FAIL及原跳过项分别保留。Task7源码、跨应用静态核对、正常后端聊天与后台构建已完成，浏览器验收仍待完成；Task8任务上下文及Task9最终交付仍待实施。普通结果不代替完整验收。
 
 ## Review Focus
 
@@ -278,7 +278,7 @@ Task6普通交付（2026-10-12）：RUN2026101123465067a219，基线源码62ae96
 
 ### Task 7: 跨应用隔离
 
-2026-10-12只读前置盘点（尚未实现/运行Task7）：adminapi/outapi/merchantapi受保护HTTP入口已有AuthTokenV2固定应用、type/audience和当前绑定；kefu/api沿现签名、固定type、白名单及当前账号检查，没有audience/realm校验，公开api的force=false降为匿名属旧合同。WebSocket的ChatHandle.kefu_login/login已复用各自服务，后台notice复用AdminAuthServices，不另造商家type特判。房间/消息边界仍需明确：ChatService.onMessage按method_exists分派，ChatHandle.to_chat/chat可消费客户端tourist_uid/is_tourist建立或改写发送身份；现游客前端通过Common.getServiceUser取得tourist_uid后有无登录的正常聊天流程，不能全面禁游客后称兼容，也不能仅凭登录type检查宣称房间验收通过。后续实现须先记录服务器连接身份、现游客兼容及未覆盖部分的设计，再修改生产者/消费者。
+2026-10-12历史只读前置盘点（实施前状态）：adminapi/outapi/merchantapi受保护HTTP入口已有AuthTokenV2固定应用、type/audience和当前绑定；kefu/api沿现签名、固定type、白名单及当前账号检查，没有audience/realm校验，公开api的force=false降为匿名属旧合同。WebSocket的ChatHandle.kefu_login/login已复用各自服务，后台notice复用AdminAuthServices，不另造商家type特判。房间/消息边界仍需明确：ChatService.onMessage按method_exists分派，ChatHandle.to_chat/chat可消费客户端tourist_uid/is_tourist建立或改写发送身份；现游客前端通过Common.getServiceUser取得tourist_uid后有无登录的正常聊天流程，不能全面禁游客后称兼容，也不能仅凭登录type检查宣称房间验收通过。后续实现须先记录服务器连接身份、现游客兼容及未覆盖部分的设计，再修改生产者/消费者。
 
 普通真实客服验证的前置仍待落实：ISO尚无Workerman chat/Channel专用服务、runtime及manifest接线；实版chat40002/Channel40003。正常用自有User/启用StoreService及现真实底层发行器，避免BaseServices.createToken的通知事件，双端在线运行合法客服HTTP service/info、双方登录/房间选择与普通文字收发，不发送外部通知。ChatService两秒timer会将所有不在线旧客服/记录更新online=0，须先只读确认旧online为0并全量核对，不能运行后恢复旧行掩盖副作用。A07、M07错应用八组、K01商家身份的HTTP/WS/房间拒绝，以及无效凭证、故障、并发、恢复均继续NOT RUN；源码盘点不代替运行验收。相关事实已核对AuthTokenV2.php、kefu/LoginServices.php、user/UserAuthServices.php、workerman/chat/ChatService.php和ChatHandle.php、kefuapi/controller/Common.php、template/admin/src/pages/kefu/appChat/index.vue及command/Workerman.php。
 
@@ -304,8 +304,12 @@ WebSocket正常协议：白名单仅kefu_login、login、guest_login、to_chat�
 
 第三个普通RUN已完成4次业务HTTP、5次合法登录ACK、9次进退房ACK、8条双向在线文字、2次独立游客发行和真实Channel mssage_num到达；整项仍FAIL，最终原缓存核对识别到六个未登记新键。来源是既有GET adminapi/login/info就绪检查的SystemAdminServices.getLoginInfo与QueueTrait.dispatchSecs：五项system_config缓存及data_admin_login_slide，均实际CacheService.remember永久值。补充正常准备仅以真实SystemConfigService.get和sys_data生产者预热现三个聊天配置及上述六键，先登记九个精确值键和九个临时锁，再核对DB来源的完整序列化值、永久期限、恰十四个语言/配置/slide tag成员及其它状态保持；不调用整个loginInfo，不忽略整个prefix，不修改最终保持断言。第三FAIL和原快照保留，新RUN重做同一正常流程；不将已经完成的收发步骤称为整项PASS。
 
-- [ ] **普通T7C01：** 真实合法客服、顾客与游客身份/房间/文字回复、精确清理及静态跨应用路径。
+- [x] **普通T7C01：** 真实合法客服、顾客与游客身份/房间/文字回复、精确清理及静态跨应用路径。
 - [ ] **客户端正常验证：** 源码接线、实际构建、正常桌面/移动浏览器结果分别记录；缺口保持待验。
+
+2026-10-12普通后端交付：第四个独立RUN `20261012020114e0c80a` 在源码 `1682ccc249fa3364fa07eee9075b52c0504fcb71` 上运行，bootstrap、prepare、start-chat、after及teardown原生全部exit0。实际4个正常HTTP请求均200，34个正常WS客户端帧、5个身份ACK、9个房间/正常退房ACK、8条双方文字和2个服务器游客会话；真实Channel事件经实际客服连接收到。17个自有SQL夹具精确清理，37个精确键登记/23个实际键删除；163表原行、checksum和DDL及旧Redis值/绝对期限保持，仅四张实际夹具表自然计数器变化单列，不恢复快照或回拨计数。主实例及四轮引导清理实例共8个RUN最终容器/网络/卷均0，真实.env与install.lock不存在。
+
+第四轮原始24行逐字节追加，`records/ms1/results.jsonl`现195行（8PASS/13FAIL/174NOT RUN），整体SHA256 `24b17f40dfb2b71504a599679ac04a79abde43bafa8d4ffa0d69fc181bf68870`；此前171行、Task1–6的75行和首57行均保持原字节。自然源码缺失基线及前三轮普通失败仍保留为FAIL；第三轮六个未登记readiness键的实际生产者经源码核对，第四轮按原9个配置/幻灯片生产者逐键预备，保留原最终数据/缓存断言。后台第三轮真实Node20构建exit0，1074个构建输入与本次源码一致，596个dist文件、11个原构建警告留存；36个实际后端/前端/辅助/文档路径hash及完整正常摘要见 `records/ms1/task7-progress-summary.json`。浏览器依赖就绪只代表准备完成，浏览器及uni-app运行验收未完成；原A07/M07/K01及安全、异常、故障、并发/断连、恢复和DDL拒绝场景仍NOT RUN。仅本地L2，未推送、部署、写真实库、通知或人工签收。
 
 - [ ] **Step 1: 写用例**：A07（商家令牌访问平台配置、数据库备份、文件编辑、用户资料、CRUD 生成等 adminapi 接口 → 全部拒绝）；M07（商家令牌 × adminapi/outapi/kefuapi/api，以及 admin/out/kefu/api 令牌 × merchantapi，共 8 组 → 全部拒绝）；K01（商家令牌访问客服 HTTP 接口与 WebSocket 鉴权、房间订阅 → 全部拒绝；平台合法客服仍可用）。
 - [ ] **Step 2–5:** 确认失败 → 修复（若 MS0a 的 type 检查已覆盖 HTTP 部分，只需补 WebSocket 入口）→ 通过 → 提交 `fix: reject merchant tokens outside merchantapi, including kefu websocket`。
