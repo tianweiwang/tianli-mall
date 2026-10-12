@@ -725,11 +725,17 @@ function m7b_serve(): array
                 $allowed=$action==='client_http' ? ['action','event','revision','run_id'] : ['action','revision','run_id']; $keys=array_keys($control); sort($keys); sort($allowed);
                 audit_expect($keys===$allowed,'browser control contains only metadata and never private response data');
                 if ($action==='client_http') m7b_client_http($control['event'],$evidence);
+                $observation=m7b_snapshot(); $ownedBefore=$ownedKeys;
                 m7b_kefu_sessions($app,$prefix,$users['kefu']['service_id'],$initial,$ownedKeys,$sessions,$secrets,$evidence);
                 m7b_guest_discover($pdo,$config,$sequenceBefore,$owners,$ownedKeys,$secrets); m7b_guest_checks($owners,$preparedAt,$deadline,$system['tourist_avatar']);
                 m7b_discover_chat($pdo,$users,array_values($messages),$owners);
                 m7b_old_rows($pdo,$old,$owners,$sequenceBefore);
-                m7b_same($initial,m7b_snapshot(),['eb_user','eb_store_service','eb_store_service_log','eb_store_service_record','eb_cache'],$ownedKeys,$counterTables);
+                $unregisteredBefore=array_values(array_diff(array_keys($observation['redis']),array_keys($initial['redis']),$ownedBefore));
+                $newVerifiedKeys=array_values(array_diff($ownedKeys,$ownedBefore));
+                $evidence['last_ownership_observation']=['snapshot_new_key_hashes_before_registration'=>array_map(static fn(string $key): string=>hash('sha256',$key),$unregisteredBefore),
+                    'verified_producer_registration_added_key_hashes'=>array_map(static fn(string $key): string=>hash('sha256',$key),$newVerifiedKeys),
+                    'unregistered_snapshot_key_hashes_after_registration'=>array_map(static fn(string $key): string=>hash('sha256',$key),array_values(array_diff($unregisteredBefore,$ownedKeys)))];
+                m7b_same($initial,$observation,['eb_user','eb_store_service','eb_store_service_log','eb_store_service_record','eb_cache'],$ownedKeys,$counterTables);
                 if ($action==='finish') {
                     $finishRequested=true; audit_expect(count($owners['guest'])===2,'ordinary browser has exactly its two real guests');
                     $evidence['browser_observations']=m7b_browser_result($exchange,$run,$source,$users,$owners,$messages,$evidence);
