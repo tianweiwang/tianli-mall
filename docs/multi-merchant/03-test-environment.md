@@ -99,6 +99,8 @@ Task7普通浏览器接线：可选profile `ms1-chat-browser` 增加同一内部
 
 第二轮实际元数据确认浏览器镜像默认USER=node（UID/GID1000），而PHP生成的ready/login文件为UID/GID0、0600；故Node无法读取许可，正常窗口最终原生超时，Chromium/浏览器HTTP均0。browser profile显式user=0:0与该专用私密文件生产者一致；仍保持0600、只读输入、只读rootfs、cap_drop=ALL、非privileged、no-new-privileges及唯一内部网络，不增加其它挂载。Node启动记录并核对UID/GID，准备输入/输出若不可访问立即报告固定错误。该轮3个自有SQL行已清理，36精确键登记/18实际移除，163表和原cache保持，主/引导资源均0。没有降低私密文件读取权限或以其它入口代替浏览器验收。
 
+第五轮普通浏览器准备已实际启动Chat/Channel及HTTP服务，但Chromium启动尝试失败，业务页面尚未访问。独立无网络、无凭据的启动依赖核对定位到Crashpad缺少可写database目录；保持同一镜像、只读rootfs与cap_drop=ALL，设置HOME=/tmp/audit-browser-home、XDG_CONFIG_HOME=/tmp/audit-browser-config、XDG_CACHE_HOME=/tmp/audit-browser-cache后，真实Chromium149.0.7827.53启动、打开about:blank并正常关闭，native exit0。三个目录都在本实例既有/tmp tmpfs内，不增加挂载；该普通依赖PASS不替代T7B01页面验收，必须在新RUN中继续真实登录与聊天。
+
 含可选profile的RUN销毁必须用 `audit_compose --profile '*' down --volumes --remove-orphans`，保留原manifest身份核对。Task7首次普通RUN的旧down命令native0却留下1个audit-chat、1网络及3卷，已据真实资源盘点识别，不称清理完成；剩余资源必须逐一与原manifest的ID、标签、网络ID和卷创建身份匹配后，才沿同一project开启该profile完成销毁。以后每次销毁仍核对实际容器/网络/卷全部0，native0不能代替资源结果。
 
 ### 3.5 应用启动

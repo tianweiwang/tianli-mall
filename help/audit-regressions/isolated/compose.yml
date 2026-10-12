@@ -140,6 +140,9 @@ services:
     environment:
       AUDIT_RUN_ID: ${AUDIT_RUN_ID:?required}
       AUDIT_SOURCE_SHA: ${AUDIT_SOURCE_SHA:?required}
+      HOME: /tmp/audit-browser-home
+      XDG_CONFIG_HOME: /tmp/audit-browser-config
+      XDG_CACHE_HOME: /tmp/audit-browser-cache
     volumes:
       - ${AUDIT_PLAYWRIGHT_CORE:-./artifacts/not-configured-playwright-core}:/opt/playwright-core:ro
       - ${AUDIT_REPO_DIR}/help/audit-regressions/isolated/lib/ms1-chat-browser.mjs:/opt/ms1-chat-browser.mjs:ro

@@ -138,6 +138,10 @@ Chromium or using its private login input. Run the helper directly through
 audit_compose run --rm --no-deps -T audit-runner with the __serve argument;
 it does not use the stopped suite's fault-control host wrapper.
 
+Chromium HOME, XDG_CONFIG_HOME and XDG_CACHE_HOME are dedicated directories
+under the existing /tmp tmpfs, so Crashpad can initialize with a read-only rootfs.
+An offline about:blank launch check only proves dependencies; it does not complete T7B01.
+
 The browser has read-only private inputs and a dedicated writable output
 directory. It uses normal UI login, visitor category selection, four ordinary
 messages and graceful page closure. External resources are blocked before

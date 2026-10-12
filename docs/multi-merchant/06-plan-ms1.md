@@ -321,6 +321,8 @@ T7B01第三轮 `202610120401031e21c2`（源码3d35c98bb）：bootstrap/prepare�
 
 T7B01第四轮 `20261012041327988879`（源码d6c30fbdd）：1074构建输入及596真实dist文件与当前源/构建清单一致，bootstrap/prepare/start原生exit0，Windows挂载规范化与全部浏览器资源核对通过。聊天子入口已通过read-only/self/prefix及真实app/preflight（旧online与上周游客均0），但start确认返回固定RuntimeException、定位仅harness.php:14，after原生exit1；原因尚未确定。Browser收到真实准备终态后exit1/PREPARATION_TERMINATED，0浏览器业务请求/0登录、未启动Chromium；Compose wait随后无运行容器而exit1，不能冒称其为成功退出证据。3自有SQL行已精确清理，36缓存键登记/18移除，163表与原cache保持；原teardown exit0，主/引导资源的两种标签盘点均为0，env/install.lock不存在。24原始行追加至此前267行，现291行（8PASS/17FAIL/266NOT RUN）。仅增加start失败的固定caller文件/行号及沿原读取取得的组PID、成员数、三指定监听端口诊断，不新增/proc读取、不输出异常消息、凭据或业务载荷，不改原断言；新的正常运行继续定位。
 
+T7B01第五轮 `202610120423176825ab`（源码edd34d1a8）：bootstrap/prepare/start原生exit0，实际Chat/Channel归属监听40002/40003与HTTP服务准备成功。Chromium启动尝试失败，Node以UNEXPECTED_RUNTIME_ERROR/native exit1结束，0浏览器HTTP/登录/游客；after在原“两名真实游客”finish断言处exit1，不改该断言。3自有SQL行及36登记键/18实际新键已清理，163表/旧cache保持，原teardown exit0，两种标签主/引导资源均0。独立同镜像无网络/凭据的正常依赖核对保留两次native1（固定分类Crashpad/--database is required），只将HOME/XDG目录放到现/tmp tmpfs后，真实Chromium149.0.7827.53打开about:blank并关闭/native0；该依赖PASS不算页面验收。源接线这三个临时目录，不改只读rootfs、权限、挂载、隔离或原页面断言；新T7B01仍待执行。原24行追加后315行（8PASS/18FAIL/289NOT RUN），此前291行保持。
+
 2026-10-12普通后端交付：第四个独立RUN `20261012020114e0c80a` 在源码 `1682ccc249fa3364fa07eee9075b52c0504fcb71` 上运行，bootstrap、prepare、start-chat、after及teardown原生全部exit0。实际4个正常HTTP请求均200，34个正常WS客户端帧、5个身份ACK、9个房间/正常退房ACK、8条双方文字和2个服务器游客会话；真实Channel事件经实际客服连接收到。17个自有SQL夹具精确清理，37个精确键登记/23个实际键删除；163表原行、checksum和DDL及旧Redis值/绝对期限保持，仅四张实际夹具表自然计数器变化单列，不恢复快照或回拨计数。主实例及四轮引导清理实例共8个RUN最终容器/网络/卷均0，真实.env与install.lock不存在。
 
 第四轮原始24行逐字节追加，`records/ms1/results.jsonl`现195行（8PASS/13FAIL/174NOT RUN），整体SHA256 `24b17f40dfb2b71504a599679ac04a79abde43bafa8d4ffa0d69fc181bf68870`；此前171行、Task1–6的75行和首57行均保持原字节。自然源码缺失基线及前三轮普通失败仍保留为FAIL；第三轮六个未登记readiness键的实际生产者经源码核对，第四轮按原9个配置/幻灯片生产者逐键预备，保留原最终数据/缓存断言。后台第三轮真实Node20构建exit0，1074个构建输入与本次源码一致，596个dist文件、11个原构建警告留存；36个实际后端/前端/辅助/文档路径hash及完整正常摘要见 `records/ms1/task7-progress-summary.json`。浏览器依赖就绪只代表准备完成，浏览器及uni-app运行验收未完成；原A07/M07/K01及安全、异常、故障、并发/断连、恢复和DDL拒绝场景仍NOT RUN。仅本地L2，未推送、部署、写真实库、通知或人工签收。
@@ -361,6 +363,8 @@ Task8普通实施合同（2026-10-12，先于编码）：仅支持现动作 `mer
 任务结束按真实mer/role/employee/两审计ID逆依赖清理；两正常account/session及实际产生键逐键登记，原Redis值与绝对期限保持，不能忽略整namespace或恢复snapshot。三个实际marketplace队列结构prepare前须不存在，正常消费后已空；仅核实生产FQCN/本RUN实际job ID/提交来源后才移除精确自有残留项，不删非自有队列。163表原行/checksum/DDL及原runtime保持，实际夹具表自然计数器变化单列，不回拨；Task1旧158表辅助/原断言及全部历史raw保持。bootstrap/prepare/worker/observe/teardown、实际资源归零和原状态保持到位才作普通PASS，不能替代完整MS1或人工签收。
 
 - [ ] **普通T8W01：** 真实A→B生产任务同PID重建、实际审计/删除、精确清理与原状态保持。
+
+Task8准备进度：五份实际队列/Job生产草稿及三份普通worker辅助草稿已在外部目录完成源码复核；生产四PHP与辅助三PHP均通过已有PHP8.2镜像离线语法检查。已安装的MerchantJobContext与只读账户版本读取仍为部分实现；这八份草稿尚未接入仓库，尚无真实A→B任务/审计/退出运行证据，不勾普通T8W01或原M05/M09/M10。
 
 - [ ] **Step 1: 写用例**（WORKER 层，在 `audit-worker` 的同一个 PID 中）：M05（A→B、A 抛异常→B、A→无上下文的任务，审计日志中记录的 `mer_id` 与各自的员工一致，第三个任务因无上下文被拒绝）；M09（如果盘点确认 worker 能并发或交错处理，测交错；否则在报告中写明"该入口串行执行"，不伪造并发测试）；M10（载荷中的 `mer_id` 与员工实际商家不一致、员工已停用 → 拒绝，且下一个任务不受影响）。每条结果附 PID 与镜像标识。
 - [ ] **Step 2–5:** 确认失败 → 实现 → 通过 → 提交 `feat(marketplace): job-scoped MerchantContext with worker regression`。

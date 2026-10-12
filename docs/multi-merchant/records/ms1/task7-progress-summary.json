@@ -76,18 +76,27 @@
       "phase": "after",
       "run_id": "20261012041327988879",
       "case": "T7B01"
+    },
+    {
+      "name": "ms1-chat-browser-after-20261012042627.jsonl",
+      "sha256": "306477bc79056b3ba2984a78ec4817cbb3a15059ffe407f61abcd69616398eb2",
+      "rows": 24,
+      "commit_sha": "edd34d1a83b75093e9b3c7a1811a19f4a6743da7",
+      "phase": "after",
+      "run_id": "202610120423176825ab",
+      "case": "T7B01"
     }
   ],
   "raw_records": {
     "prior_rows": 75,
     "prior_sha256": "976380d291736202a90e0a1ec5c24f6f0ac7201f4899e870634dba612c26540b",
-    "appended_rows": 216,
-    "total_rows": 291,
-    "sha256": "232cc886ebff1301c561d67fb8b1294d28529acd4781337b94923eaf11490266",
+    "appended_rows": 240,
+    "total_rows": 315,
+    "sha256": "effba4952f145dc57eba5d8e11b6b3c9b58d9d69a4a4e457f38f49676f126409",
     "counts": {
-      "FAIL": 17,
+      "FAIL": 18,
       "PASS": 8,
-      "NOT RUN": 266
+      "NOT RUN": 289
     },
     "prior_bytes_preserved": true,
     "first_171_rows_sha256": "9caddc50f64f7ad5a01e5fd68de914cd6147c53e04f6d7adcf4704be68f153af",
@@ -98,7 +107,8 @@
     "first_195_rows_sha256": "24b17f40dfb2b71504a599679ac04a79abde43bafa8d4ffa0d69fc181bf68870",
     "first_219_rows_sha256": "48e4efaca342b63be767b75d9eb1c243646617f4d5fb166766e5cd1dc5683181",
     "first_243_rows_sha256": "7ca5e74a1e33d2ea3381a3bbabe002e7862919c238ee788cbefab864f1977f86",
-    "first_267_rows_sha256": "de77443ca81e122a582c83a066e1ca313b800c80b6918c96ee6552e08e8c33f3"
+    "first_267_rows_sha256": "de77443ca81e122a582c83a066e1ca313b800c80b6918c96ee6552e08e8c33f3",
+    "first_291_rows_sha256": "232cc886ebff1301c561d67fb8b1294d28529acd4781337b94923eaf11490266"
   },
   "first_run": {
     "run_id": "2026101201134532bd35",
@@ -268,7 +278,8 @@
     "The first ordinary T7B01 run failed before Chromium, business requests or fixtures because of the actual nginx temporary path. Original FAIL is retained; the source correction requires a fresh ordinary run.",
     "The second ordinary T7B01 run reached real HTTP readiness but no browser requests or Chromium. The native Node wait timed out because its UID 1000 could not read producer-owned UID 0 / mode 0600 inputs. Both actual FAILs remain; the identity alignment needs a fresh ordinary run.",
     "Third T7B01 reached no Chromium or browser requests: equivalent Windows/Docker bind presentations failed registration. Actual FAIL and rejected first cleanup remain recorded; actual same-run compatibility registration and standard cleanup succeeded. Fresh browser verification remains pending.",
-    "Fourth T7B01 passed current bind/resource registration and build reuse, then failed chat startup confirmation before browser requests. Actual FAIL is retained; startup cause remains unconfirmed and will use fixed caller metadata. Fresh browser and visual acceptance remain pending."
+    "Fourth T7B01 passed current bind/resource registration and build reuse, then failed chat startup confirmation before browser requests. Actual FAIL is retained; startup cause remains unconfirmed and will use fixed caller metadata. Fresh browser and visual acceptance remain pending.",
+    "Fifth T7B01 reached actual Chat/Channel and HTTP preparation, then Chromium launch failed before browser business requests. Isolated offline dependency checks identified Crashpad writable-directory requirements and passed after HOME/XDG paths moved under existing tmpfs; no normal UI acceptance is claimed."
   ],
   "second_run": {
     "run_id": "20261012013347cde0c5",
@@ -1633,6 +1644,279 @@
     "browser_wait_note": "Compose wait reported no running containers and returned 1; separate same-run read-only docker inspect observed browser exited with native exit 1 before teardown.",
     "failure_cause": "Not yet determined: registered chat start returned RuntimeException at harness.php:14 after real app/preflight; source location instrumentation needed.",
     "source_followup": "Fixed caller file/line plus registered-group numeric PID/count/three-port observation metadata from existing reads only; no new sampling, message, credential, payload or weakened assertion.",
+    "followup_browser_verification": "NOT RUN"
+  },
+  "browser_fifth_run": {
+    "run_id": "202610120423176825ab",
+    "commit_sha": "edd34d1a83b75093e9b3c7a1811a19f4a6743da7",
+    "status": "FAIL",
+    "guard_mode": "read-only",
+    "native_steps": {
+      "bootstrap": {
+        "exit": 0,
+        "completed_at": "2026-10-12T04:25:01.5981564Z",
+        "guard_mode": "read-only"
+      },
+      "prepare": {
+        "completed_at": "2026-10-12T04:25:54.4858744Z",
+        "exit": 0
+      },
+      "start": {
+        "completed_at": "2026-10-12T04:26:14.9019793Z",
+        "exit": 0
+      },
+      "after": {
+        "completed_at": "2026-10-12T04:26:27.6833922Z",
+        "exit": 1
+      },
+      "teardown": {
+        "completed_at": "2026-10-12T04:26:53.0214816Z",
+        "exit": 0
+      }
+    },
+    "failure_diagnostic": {
+      "class": "RuntimeException",
+      "file": "harness.php",
+      "line": 14,
+      "caller_file": "ms1-chat-browser.php",
+      "caller_line": 734
+    },
+    "source_inventory": {
+      "actual_files_sha256": {
+        "crmeb/crmeb/services/workerman/chat/GuestChatSession.php": "88718d32b223d8af42aafee0b24fe1d678b09b7977689a57964dd9661cfb8a40",
+        "crmeb/crmeb/services/workerman/chat/ChatIdentity.php": "92c902f84a0385623ba50fd015143809641b5cc796bbee42fd28ae5869410495",
+        "crmeb/crmeb/services/workerman/chat/ChatService.php": "436af1b35bc9c964fcd5a8695ee80dd22f7f119eb3b59cb74d34fd0e5629f023",
+        "crmeb/crmeb/services/workerman/chat/ChatHandle.php": "c5d3e65c933da578e5d4db95accc6424844c26d02c570c0846d2283773c43249",
+        "crmeb/crmeb/services/auth/AuthTokenV2.php": "59518646797c71ea45084326e5ca87da64f402f59d97ce57b655c87d3aa0591b",
+        "crmeb/app/services/kefu/LoginServices.php": "0e69433eb0f936e2bda3163e19815fbaf4f3c6776443ba1391445b2d05ed7822",
+        "crmeb/app/services/user/UserAuthServices.php": "ebe8f0928967d992a0f0a78d75ad740711b01b2274a8e2c47e8248155bd98983",
+        "crmeb/app/kefuapi/controller/Common.php": "08a92f670847693133283a996180a56d3e6d3cdde23c397d8d1bfafc773f4b55",
+        "crmeb/app/kefuapi/route/route.php": "4829c914c8678608642ac8e2175f4d3c93f61cb4b75fa169fdac175c56f8c724",
+        "crmeb/app/kefuapi/KefuApiExceptionHandle.php": "0949c00ae7fad194d50722d224d28828e9343d8eeb5b5b4612517aab60525f88",
+        "crmeb/app/listener/http/HttpEndListener.php": "4416a217c180f3e19ac0da0174282e1144b8a8982b794d5a60f985fbbcc66951",
+        "crmeb/app/services/kefu/KefuServices.php": "270d761d536421162b5f748001f46b6dd43ae7cbbff9726aca264688d76e5b8b",
+        "crmeb/app/services/kefu/service/StoreServiceRecordServices.php": "bd3bd9be020fb73ebb44eeaeab71e6c76b9ed47458632548d7a53f431ecc279c",
+        "crmeb/app/services/system/SystemClearServices.php": "97a3626708c34b926e8ff44d86b781a144b8d0af5f5719ef603340341ec5d69c",
+        "template/admin/src/api/kefu.js": "90bbb634e5abb2be9fd9a1aa8157c1d56262cf3393abfe8a0917a382b45d243b",
+        "template/admin/src/libs/request.js": "bbf70687578183e6b22d5cd9a0413abd896af0c6db331792977c725b1a6d7bfd",
+        "template/admin/src/libs/socket.js": "9c4068f6a2765d1c5216a247753aece8bf3019632929edc840a3cb7b29942366",
+        "template/admin/src/layout/navBars/breadcrumb/userNews.vue": "4728a22d257b04a5cf4f7f0cb53c57cb603edfe3d7b4213e7a8d4052591252bd",
+        "template/admin/src/pages/kefu/appChat/index.vue": "1e9e4ea1b969fcb894ae103df4d7269a688241a23906f2bdbbb36806a92ce30d",
+        "template/admin/src/pages/kefu/appChat/mobile/index.vue": "8fa985f9a442d8a2485e13bb4e4f73bde4eddd248c6d3ee8893199204d9c9ad8",
+        "template/admin/src/pages/kefu/mobile/chat_list.vue": "4b2d6cf9958992f3e3d4b008d39f2c65f76efb08efbd6b0eacca87c6bb278b6f",
+        "template/admin/src/pages/kefu/mobile/index.vue": "0a907855a8b8a5b62ff83f8154271eaaf971ff0b1723ca3febff7ada1e6cf931",
+        "template/admin/src/pages/kefu/pc/index.vue": "00afc1fb6f948428c7f7c03d1a81b587b6b10a59881a80ed839af7260a1f78f1",
+        "template/admin/src/pages/kefu/pc/components/chatList.vue": "eef91148181e49e6f1e82fe44c01db9221b6d44de7988dba89cf85c8627208d3",
+        "template/admin/src/pages/kefu/pc/components/rightMenu.vue": "0397a02be2e17c0e473830bb94a6158d6c84cf5122e9f49ee947cc4cde12d2db",
+        "template/admin/src/pages/kefu/index.vue": "1af98f34ebca68d2cbb9728f866c1f039cc21b7a548dc150885477921689162f",
+        "crmeb/app/kefuapi/validate/LoginValidate.php": "19017821687afda295c91185192a208688f5fdcbc513e07d788feaf1fdcb72af",
+        "crmeb/crmeb/utils/JwtAuth.php": "c34cc805cdf875c34111b5d9c84b6332141b58ffa64db35ff22db409deadc56a",
+        "crmeb/app/services/other/CacheServices.php": "f16f074c99bae90860ff40f4a20df31b77eea4d5f857d4a768c9418831bb34f5",
+        "crmeb/app/dao/other/CacheDao.php": "efa0f523f1382647e0e1c77137ea76214fbed59d104a65214b5661ef324641c3",
+        "help/audit-regressions/isolated/ms1-chat-browser.php": "41fb88466714e80af117d09460f32fa712cf5b1dcc9438568b59061ffc8a2921",
+        "help/audit-regressions/isolated/lib/ms1-chat-browser.mjs": "dc2549eaf1264b2d7229d1467290a9052c0c75a315253b12484f72aa8d92c194",
+        "help/audit-regressions/isolated/lib/ms1-chat-browser-nginx.conf": "730980c7f1002744803d932580233e7700bf5364785adec7e69ae0facb285ce9",
+        "help/audit-regressions/isolated/bootstrap.sh": "0399d2d182cb87e4cbe0f2b2abf4d1147673d4605a7469e9e2b65fc59ddda161",
+        "template/uni-app/libs/new_chat.js": "7771b671c768a5820c2804ec9132021ab83e5b3393269cf5771346bce8aa28e1",
+        "template/uni-app/pages/extension/customer_list/chat.vue": "686f8e0ba491c4044f8ba52f4885c658961ac687c1b8e34e425cc4df0d6bbc6e",
+        "help/audit-regressions/isolated/lib/ms1-chat-entry.php": "dc760adabd92f43e5a55c40605a2f61126070a776ea4596ef68ef023ad8918d3",
+        "help/audit-regressions/isolated/ms1-cross-app.php": "89f4bfd524c70400398bd6c82df840812c479ab883bff6855427a30cd82aa5f7",
+        "help/audit-regressions/isolated/compose.yml": "a191b99395f97e05c1516ab2f4595bdf79fa8181544953a8456e52235b8c630a",
+        "help/audit-regressions/isolated/lib/harness.php": "f0ce5d2a08e3df80b07476ab8186f17f0d692a65d7ae308aac3c188a83d84ab1",
+        "help/audit-regressions/isolated/lib/guard.php": "a7a182c3a204dbb55f5669a61f44af099360223acd9835f82d9da3a8bf2f79a8",
+        "crmeb/crmeb/compat/workerman/Events/Select.php": "6994df7c39b722bec9c55120cd39b416f80171a536670fc3a1b1766a16dd60bb",
+        "crmeb/vendor/workerman/workerman/Worker.php": "2f21fda397f42cfa1650e198fb5db2aa392a500037b948bf3eeb3fe5fdd7977b",
+        "crmeb/vendor/workerman/workerman/Connection/TcpConnection.php": "9016266e3fe0273060f6a3b4e09980ab50619c14948245b5402822e71b4f0a96",
+        "docs/multi-merchant/03-test-environment.md": "76f3cdb80ce04459e39674bebd21b48abe347f19131cb844eba161c798ee7d7b",
+        "docs/multi-merchant/06-plan-ms1.md": "ac7d0739588876b7e9454deafa69670bab2a0b908e69a1a3c989a2b3118f1bb3",
+        "help/audit-regressions/isolated/README.md": "25816743c5bdcd9181e9d35722dbd8cdd280b6bbbe5c118c91d0665c2db586ae"
+      },
+      "file_count": 47,
+      "layer": "SOURCE inventory only; T7B01 is normal browser UI; original stopped matrix remains NOT RUN"
+    },
+    "build_reuse": {
+      "expected_commit": "edd34d1a83b75093e9b3c7a1811a19f4a6743da7",
+      "prepared_files": [
+        {
+          "path": "prepare.sh",
+          "sha256": "994b15df7567d127bf2867ca488d24035bb1bc4f8f841aa24f15997b8e1ba83b"
+        },
+        {
+          "path": "context.sh",
+          "sha256": "36376a5c349ec2952b962c0c50b1e63bb795e0f80d47578115fb4e5c7f543f8b"
+        },
+        {
+          "path": "start.sh",
+          "sha256": "41efc8c0a3c1b79cb8a4cc898b205694e1c3b4d44a1ff8fa8fdc775a7bfd418e"
+        },
+        {
+          "path": "after.sh",
+          "sha256": "f3be68b5dea8a971c2a3b80a4a351cafd2a59b31fd31c9f2f27f7f4989186a69"
+        },
+        {
+          "path": "browser-wait.sh",
+          "sha256": "30851cc6be5ae83c07a6c4a04fb889e5502ba43bd715e44d1702bec1595fc959"
+        },
+        {
+          "path": "run-step.ps1",
+          "sha256": "37a1b119718574a0fd37ae9d25dc8ec32ddcc3796b948377871dea3a89dc72ca"
+        },
+        {
+          "path": "dist-avatar-template.json",
+          "sha256": "e9525295e806d2b8bc06133c563f0df45fe17f733c0168a8f386321f40524f01"
+        }
+      ],
+      "checked_at_utc": "2026-10-12T04:25:30.9965473Z",
+      "build_round": 4,
+      "dist_manifest_sha256": "d9a3eadbfca537e1ad0df814a99677838143ad95bdb4d98541a145b6f401b89a",
+      "browser_runtime": "NOT RUN BY THIS AGENT",
+      "current_commit": "edd34d1a83b75093e9b3c7a1811a19f4a6743da7",
+      "dist_file_count": 596,
+      "matched": true,
+      "build_input_count": 1074,
+      "scope": "fresh source and dist hash verification; preparation only; no execution or business requests",
+      "actual_dist_file_count": 596,
+      "run_id": "202610120423176825ab",
+      "source_manifest_sha256": "a3e387cb571cfa312380e6cf16f22fd6cc463b089cb6dc8c82f774f590b8420a",
+      "dist_manifest_differences": [],
+      "current_repository_input_differences": [],
+      "shared_migration_input": "H:/天俪商城/artifacts/ms1-task7/attempt4/prepare-migration.php"
+    },
+    "chat_start": {
+      "run_id": "202610120423176825ab",
+      "revision": "b5606a7909116b3e",
+      "status": "start",
+      "generation_revision": "b5606a7909116b3e",
+      "group": {
+        "leader_pid": 7,
+        "pgid": 7,
+        "sid": 7,
+        "leader_starttime": "41177649"
+      },
+      "supervisor": {
+        "pid": 1,
+        "pgid": 1,
+        "sid": 1,
+        "starttime": "41176384"
+      },
+      "members": [
+        {
+          "pid": 7,
+          "ppid": 1,
+          "pgid": 7,
+          "sid": 7,
+          "starttime": "41177649",
+          "state": "S",
+          "listener_ports": [
+            40002,
+            40003
+          ]
+        },
+        {
+          "pid": 8,
+          "ppid": 7,
+          "pgid": 7,
+          "sid": 7,
+          "starttime": "41177666",
+          "state": "S",
+          "listener_ports": [
+            40003
+          ]
+        },
+        {
+          "pid": 9,
+          "ppid": 7,
+          "pgid": 7,
+          "sid": 7,
+          "starttime": "41177666",
+          "state": "D",
+          "listener_ports": [
+            40002
+          ]
+        }
+      ],
+      "listener_ports": [
+        40002,
+        40003
+      ],
+      "admin_listener_open": false
+    },
+    "browser_failure_code": "UNEXPECTED_RUNTIME_ERROR",
+    "browser_business_requests": 0,
+    "chromium_launch_attempt_failed": true,
+    "browser_session_established": false,
+    "contexts_closed": true,
+    "browser_native_exit_observed_before_teardown": 1,
+    "browser_native_observation_basis": "same-run read-only docker inspect emitted exited 1 before standard teardown",
+    "fixtures_created": 3,
+    "fixtures_cleaned": true,
+    "owned_keys_registered_count": 36,
+    "owned_keys_removed_count": 18,
+    "preservation": {
+      "tables": 163,
+      "original_rows_and_schema_checksums_preserved": true,
+      "old_cache_values_and_absolute_expiry_unchanged": true,
+      "counter_changes_allowed_only": [
+        "eb_user",
+        "eb_store_service"
+      ],
+      "preexisting_sequence_forward_exception": false,
+      "snapshot_restore_used": false,
+      "sequence_rollback_used": false
+    },
+    "final_inventory": {
+      "env_file_exists": false,
+      "inventory": [
+        {
+          "counts": {
+            "network": 0,
+            "volume": 0,
+            "container": 0
+          },
+          "run_id": "202610120423176825ab",
+          "project_label_counts": {
+            "network": 0,
+            "volume": 0,
+            "container": 0
+          }
+        },
+        {
+          "counts": {
+            "network": 0,
+            "volume": 0,
+            "container": 0
+          },
+          "run_id": "20261012042440e2a854",
+          "project_label_counts": {
+            "network": 0,
+            "volume": 0,
+            "container": 0
+          }
+        }
+      ],
+      "completed_at": "2026-10-12T04:32:35.6811197Z",
+      "install_lock_exists": false
+    },
+    "dependency_smoke_native_steps": {
+      "dependency-smoke": {
+        "scope": "offline browser dependency smoke only",
+        "business_requests": 0,
+        "exit": 1
+      },
+      "dependency-smoke-diagnostic": {
+        "exit": 1,
+        "business_requests": 0,
+        "scope": "offline browser dependency diagnostic only"
+      },
+      "dependency-smoke-fixed": {
+        "business_requests": 0,
+        "scope": "offline browser dependency smoke with temporary HOME/XDG directories",
+        "exit": 0
+      }
+    },
+    "dependency_smoke_result": "actual Chromium 149.0.7827.53 opened about:blank and closed, native 0, only with dedicated HOME/XDG paths under existing /tmp tmpfs; no network/credentials/application requests",
+    "failure_cause": "ordinary dependency diagnostic captured Crashpad --database is required during Chromium launch with default readonly HOME",
+    "source_followup": "Set browser HOME/XDG_CONFIG_HOME/XDG_CACHE_HOME to existing private /tmp tmpfs directories; all rootfs, caps, mounts and normal page assertions retained",
     "followup_browser_verification": "NOT RUN"
   }
 }
