@@ -36,7 +36,7 @@
 - 迁移的“空”指CRMEB已安装且五目标表不存在；零表库缺少system_menus，不能创建第六张表或调用Installer。theme-module实际使用 `--check/--apply`，新MS1 CLI明确支持文档要求的 `check|apply`（兼容同义选项）。只新增五表及精确marketplace菜单/接口登记；原表列/index/旧行保持，system_menus正常新增行与其AUTO_INCREMENT变化单列核对，不能要求新增后checksum仍相同，也不回拨计数器。其他原表结构/数据保持。
 - 现Supervisor声明queue:listen，实版Listener每轮启动queue:work --once，job不复用同一PHP进程。Task1为新marketplace队列声明独立 `queue:work --queue=marketplace --sleep=1 --tries=1` 常驻模式，并用相同命令建立ISO audit-worker；原队列保持。生产声明默认不自动启动，实际发布另行处理。正常空任务的同一PID证据到位后，Task8再运行正常A→B上下文重建；异常/无上下文/伪造载荷/并发场景按用户要求跳过，不冒称M05/M09/M10完整通过。
 
-执行顺序仍以Task1–9为单一清单；Task1源码盘点与普通worker能力、Task2普通迁移、Task3正常上下文与查询范围、Task4商家五接口及正常身份流程、Task5员工/角色管理和Task6平台商家管理普通流程已完成，历史FAIL及原跳过项分别保留。Task7源码、跨应用静态核对、正常后端聊天与后台构建已完成，浏览器验收仍待完成；Task8普通任务上下文已实现并验证；Task9最终交付仍待完成。普通结果不代替完整验收。
+执行顺序仍以Task1–9为单一清单；Task1源码盘点与普通worker能力、Task2普通迁移、Task3正常上下文与查询范围、Task4商家五接口及正常身份流程、Task5员工/角色管理和Task6平台商家管理普通流程已完成，历史FAIL及原跳过项分别保留。Task7源码、跨应用静态核对、正常后端聊天、后台构建与普通admin浏览器/受影响页面看图已完成，uni-app真实运行验收仍待完成；Task8普通任务上下文已实现并验证；Task9最终交付仍待完成。普通结果不代替完整验收。
 
 ## Review Focus
 
@@ -355,6 +355,16 @@ T7B01第十四轮 `20261012064833e676d0`（源码a39b6c419、第五轮真实dist
 
 下一正常列表核对合同（先于编码）：StoreServiceRecordServices.getServiceList实际通过Str::substrUTf8将文本截为前10个UTF-8字符且suffix为空，mobile/chat_list.vue显示该item.message；原计划要求正常会话可见，未要求列表显示全文。仅在本次游客对应单行核实际服务器10字符预览与最近双向消息一致，保留对话区四条全文、4log/4record、真实普通退房、5PNG与原数据保持断言；第十四轮全文断言不符合生产预览合同，其原FAIL不改写。四个普通文本以各自desktop_guest/desktop_kefu/mobile_guest/mobile_kefu名称加现hash构成，使前10个Unicode字符可区分；PHP独立核DB及真实HTTP的list_preview。另有独立生产缺陷：saveRecord首次客服回复的else分支未更新反向staff-owned row，既有if分支反向更新未写更新时间。下一修复共同更新反向行message/message_type/update_time，以双方UID和is_tourist精确限定；不改avatar/nickname/未读计数或会话行数。游客头像独立缺口及uni-app运行仍待验，安全/异常等原跳过项仍NOT RUN。
 
+T7B01第十五轮 `20261012095932496c23`（源码 `12afea74d7b76a4fd2d4fc6af706a01d5a465061`、第六轮真实dist）：bootstrap/prepare/start/after/原teardown native全部0；实际browser exited0/restart0且contexts_closed=true。两合法UI登录、两游客发行、4身份ACK、30真实HTTP、四条双向正文、4真实log/4record、正常移动返回/room0 ACK及服务器DB/真实HTTP第30响应的10字符最近回复preview全部通过。8个实际消息头像（4默认游客/4当前staff）均complete/正intrinsic尺寸，三个修改动作控件实际44×44/45×45及本地SVG居中/父边界通过；五张真实PNG已由根与独立代理看图核对，四条全文/头像、游客tab/preview、返回/发送及无横向溢出在受影响普通admin范围通过。11SQL夹具、46登记键/27实际键精确清理，163表原行/checksum/DDL与旧cache值/绝对期限保持，无snapshot恢复或序号回拨。主/引导实例20261012100124bbe629双标签共12项容器/网络/卷盘点全0，真实crmeb/.env及crmeb/public/install.lock不存在。
+
+第六轮admin构建npm build/docker attach/container native全部0，1074实际输入/副本hash一致、596真实dist，自有构建容器精确清理0；原11条CSS顺序/资源/入口大小警告由根核对、未压制。默认游客2768字节JPEG在真实system_static/js/app.732ab1d1.js中inline，资产SHA256 `0e7fb3a5929e47197238ebfe65f0f06e07c7ce65268e50eaa4bb64b175a4c5b8`；原历史broken图及第十四轮FAIL保留。合成staff实际透明白头像已加载，在浅背景对比弱单列，不强行换用户图。mobile/index.vue:61–72实际composer左words、右emoji/more为原有侧槽；旧外部字体在隔离环境被阻止使这些旧glyph不可见，不把其像素/常用语/emoji/more交互计为已验。原24行（1PASS/23NOT RUN）逐字节追加后557行（10PASS/28FAIL/519NOT RUN），整体SHA256 `06547f0b75663e7f2df1da9ef80a66a64d92ba304e178c0d4f6d1691895a9cca`；此前533行SHA256 `db4cb620f22eeecf159fee6bb30727070109e8a486d91b167a34926b1681002e`与全部历史FAIL原字节保持。人工PNG/hash回执位于仓库外browser-attempt15/manual-screenshot-review.json；完整摘要见records/ms1/task7-progress-summary.json。
+
+- [ ] **客户端整体普通验收：** admin浏览器及uni-app真实运行均完成；当前仅admin子项通过。
+- [x] **admin普通浏览器：** 两尺寸真实收发、归属/preview、正常返回、五PNG和受影响控件/头像人工核对通过（RUN15）。
+- [ ] **uni-app普通客户端：** 真实H5编译终止、合法登录/聊天运行及页面验收；源码/既有编译输出不代替实际runtime。
+
+第十五轮只完成普通admin浏览器，完整Task7/MS1、Task9、人工签收与security baseline仍未完成；本地L2，未push/deploy或写真实库，原安全/拒绝/异常/故障/并发/恢复/DDL拒绝继续NOT RUN。
+
 2026-10-12普通后端交付：第四个独立RUN `20261012020114e0c80a` 在源码 `1682ccc249fa3364fa07eee9075b52c0504fcb71` 上运行，bootstrap、prepare、start-chat、after及teardown原生全部exit0。实际4个正常HTTP请求均200，34个正常WS客户端帧、5个身份ACK、9个房间/正常退房ACK、8条双方文字和2个服务器游客会话；真实Channel事件经实际客服连接收到。17个自有SQL夹具精确清理，37个精确键登记/23个实际键删除；163表原行、checksum和DDL及旧Redis值/绝对期限保持，仅四张实际夹具表自然计数器变化单列，不恢复快照或回拨计数。主实例及四轮引导清理实例共8个RUN最终容器/网络/卷均0，真实.env与install.lock不存在。
 
 第四轮原始24行逐字节追加，`records/ms1/results.jsonl`现195行（8PASS/13FAIL/174NOT RUN），整体SHA256 `24b17f40dfb2b71504a599679ac04a79abde43bafa8d4ffa0d69fc181bf68870`；此前171行、Task1–6的75行和首57行均保持原字节。自然源码缺失基线及前三轮普通失败仍保留为FAIL；第三轮六个未登记readiness键的实际生产者经源码核对，第四轮按原9个配置/幻灯片生产者逐键预备，保留原最终数据/缓存断言。后台第三轮真实Node20构建exit0，1074个构建输入与本次源码一致，596个dist文件、11个原构建警告留存；36个实际后端/前端/辅助/文档路径hash及完整正常摘要见 `records/ms1/task7-progress-summary.json`。浏览器依赖就绪只代表准备完成，浏览器及uni-app运行验收未完成；原A07/M07/K01及安全、异常、故障、并发/断连、恢复和DDL拒绝场景仍NOT RUN。仅本地L2，未推送、部署、写真实库、通知或人工签收。
@@ -414,6 +424,8 @@ Task8首个普通after `20261012092534292cde`（源码 `792ef7f4e5c3c1fc5c189e87
 - [ ] **Step 2–5:** 确认失败 → 实现 → 通过 → 提交 `feat(marketplace): job-scoped MerchantContext with worker regression`。
 
 ### Task 9: 回归与交付
+
+当前普通组合回归设计（先于新入口接入/执行）：按仓库外normal-regression-discovery已核实际入口，新增独立 `help/audit-regressions/isolated/ms1-admin-normal.php` 的T9A01只用当前v2合法login、既有授权商品规则读取、六本人接口、正确旧密码改密后fresh login及正常logout，要求12个正常请求/10条精确日志、原全状态保持及本次夹具/键逆依赖精确清理；不require、调用或绕过blocked旧套件，原安全/拒绝/错误输入/旧凭据/故障/恢复/并发/DDL拒绝保持NOT RUN。该独立admin草稿尚未安装/执行，将先独立审查再接入。全新同源码ISO的组合先做MS0b普通/login-download及Task1（158表），再Task2真实五表迁移，后做163表Tasks3–8；Task1 worker用原默认连接命令，Task8明确 `--context-task8` 与marketplace连接，Task7沿当前已真实构建admin dist及普通浏览器入口。后续必须保留每步真实native退出/原始raw/原状态和双标签资源盘点，并用真实 `route:list` 核merchantapi无product；仅满足普通组合范围，不替代下列原完整回归要求或原验收表，尚未执行不勾Task9，uni-app真实H5客户端仍缺。
 
 - [ ] 在新的 ISO-FULL 环境运行全部 MS0a、MS0b 用例及 MS1 用例；全部 `exit=0`。
 - [ ] 确认 merchantapi 没有任何商品相关路由（`php think route:list` 输出中不含 `product`）。

@@ -1,7 +1,7 @@
 {
   "milestone": "MS1",
   "task": 7,
-  "status": "verified_normal_chat_backend_browser_pending",
+  "status": "verified_backend_and_admin_browser_uni_app_pending",
   "history": [
     {
       "name": "ms1-cross-app-baseline-20261012011827.jsonl",
@@ -166,18 +166,27 @@
       "phase": "after",
       "run_id": "20261012064833e676d0",
       "case": "T7B01"
+    },
+    {
+      "name": "ms1-chat-browser-after-20261012144751.jsonl",
+      "sha256": "2e8529fd76f3f9963dd6fecf6b3a45e2c9e9f34fa4248305ad6e8e1e9483d030",
+      "rows": 24,
+      "commit_sha": "12afea74d7b76a4fd2d4fc6af706a01d5a465061",
+      "phase": "after",
+      "run_id": "20261012095932496c23",
+      "case": "T7B01"
     }
   ],
   "raw_records": {
     "prior_rows": 75,
     "prior_sha256": "976380d291736202a90e0a1ec5c24f6f0ac7201f4899e870634dba612c26540b",
-    "appended_rows": 458,
-    "total_rows": 533,
-    "sha256": "db4cb620f22eeecf159fee6bb30727070109e8a486d91b167a34926b1681002e",
+    "appended_rows": 482,
+    "total_rows": 557,
+    "sha256": "06547f0b75663e7f2df1da9ef80a66a64d92ba304e178c0d4f6d1691895a9cca",
     "counts": {
       "FAIL": 28,
-      "PASS": 9,
-      "NOT RUN": 496
+      "PASS": 10,
+      "NOT RUN": 519
     },
     "prior_bytes_preserved": true,
     "first_171_rows_sha256": "9caddc50f64f7ad5a01e5fd68de914cd6147c53e04f6d7adcf4704be68f153af",
@@ -200,9 +209,11 @@
     "first_483_rows_sha256": "27ae7c86217c73ca83c4e06f9927092d56e9f099e172fa0d1f7a0c454a7af523",
     "first_507_rows_sha256": "9e421c2ec6490cdd006c1111b7d168fff7d1ded2492f8aac66a07ed45732efff",
     "first_531_rows_sha256": "137dd6caac2659710eefbf6f0072e5851a25f5727c8be905095a7b4d422f7d2b",
-    "task7_rows_total_at_last_browser_run": 531,
-    "task7_appended_rows_at_last_browser_run": 456,
-    "first_532_rows_sha256": "127570b872f4f8f3fafa6ef4a2e6d990c9500adbf4322f90094c5a0f44881b18"
+    "task7_rows_total_at_last_browser_run": 557,
+    "task7_appended_rows_at_last_browser_run": 480,
+    "first_532_rows_sha256": "127570b872f4f8f3fafa6ef4a2e6d990c9500adbf4322f90094c5a0f44881b18",
+    "first_533_rows_sha256": "db4cb620f22eeecf159fee6bb30727070109e8a486d91b167a34926b1681002e",
+    "other_task_rows_added_after_base": 2
   },
   "first_run": {
     "run_id": "2026101201134532bd35",
@@ -365,10 +376,10 @@
     "Original refusal, invalid or old credentials, fault, concurrency, disconnect, recovery and DDL-denial scenarios remain NOT RUN.",
     "The natural missing-source baseline and all three ordinary failed attempts remain FAIL in immutable raw history; only the fourth fresh ordinary run is PASS.",
     "The third run failed on six unregistered readiness cache values. The fourth uses the actual nine exact config/slide producers; final preservation assertions were retained.",
-    "Admin compilation is verified; browser and uni-app runtime acceptance remain pending. Prepared browser dependencies do not establish UI acceptance.",
+    "Admin compilation and ordinary actual admin browser acceptance are verified in build round 6 and separate RUN15. Uni-app real runtime acceptance remains pending.",
     "The positive-ID legacy guest history ambiguity remains a documented compatibility limitation.",
     "Local L2 only; no push, deployment, real database write, external notification, human signoff or SECURITY_BASE_SHA.",
-    "Task7 browser acceptance, Task8-9 and full MS1 remain incomplete.",
+    "Task8 ordinary same-PID context is verified separately; Task7 uni-app acceptance, Task9 and full MS1 remain incomplete.",
     "The first ordinary T7B01 run failed before Chromium, business requests or fixtures because of the actual nginx temporary path. Original FAIL is retained; the source correction requires a fresh ordinary run.",
     "The second ordinary T7B01 run reached real HTTP readiness but no browser requests or Chromium. The native Node wait timed out because its UID 1000 could not read producer-owned UID 0 / mode 0600 inputs. Both actual FAILs remain; the identity alignment needs a fresh ordinary run.",
     "Third T7B01 reached no Chromium or browser requests: equivalent Windows/Docker bind presentations failed registration. Actual FAIL and rejected first cleanup remain recorded; actual same-run compatibility registration and standard cleanup succeeded. Fresh browser verification remains pending.",
@@ -376,7 +387,8 @@
     "Fifth T7B01 reached actual Chat/Channel and HTTP preparation, then Chromium launch failed before browser business requests. Isolated offline dependency checks identified Crashpad writable-directory requirements and passed after HOME/XDG paths moved under existing tmpfs; no normal UI acceptance is claimed.",
     "Sixth T7B01 reached real Chromium and a valid current login session but failed exact cache inventory: two known ordinary input-processing config keys remained after scoped cleanup. Original rows/schema/cache values are preserved; full preservation and browser native completion remain unproven. Actual FAIL retained; no UI acceptance is claimed.",
     "Seventh T7B01 passed exact new config preparation/cleanup and preservation, then failed a cross-time listener comparison during normal bind. Actual snapshot metadata proves the timing transition; no browser requests occurred. Bounded coherent observation needs fresh normal verification; UI acceptance remains pending.",
-    "Eighth T7B01 reached real page and one signed current login session, then failed live cache inventory while final scoped cleanup and preservation passed. Specific transient key remains unproven. Producer-registration order is corrected with fixed hashed diagnostics; no UI acceptance or atomic global snapshot is claimed."
+    "Eighth T7B01 reached real page and one signed current login session, then failed live cache inventory while final scoped cleanup and preservation passed. Specific transient key remains unproven. Producer-registration order is corrected with fixed hashed diagnostics; no UI acceptance or atomic global snapshot is claimed.",
+    "RUN15 actual affected admin browser and five-PNG manual review pass. Existing words/emoji/more external-font controls remain outside accepted visual/interaction scope; transparent white fixture staff portrait has weak contrast. Original historical failures and stopped scenarios remain unchanged."
   ],
   "second_run": {
     "run_id": "20261012013347cde0c5",
@@ -5605,5 +5617,995 @@
       "sha256": "98196a612b0ca6fc4e03a2dfb714985030fbdf2c71e45c15ece140cd5d45b342",
       "summary": "task8-worker-summary.json"
     }
-  ]
+  ],
+  "admin_build_round_6": {
+    "round": 6,
+    "finished_at_utc": "2026-10-12T10:00:29.5722249Z",
+    "status": "BUILD_EXIT_ZERO",
+    "source_commit_at_copy": "12afea74d7b76a4fd2d4fc6af706a01d5a465061",
+    "node_image": "sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293",
+    "node_version": "v20.20.2",
+    "npm_version": "10.8.2",
+    "native_exits": {
+      "docker_start_attach": 0,
+      "npm_build": 0,
+      "container": 0
+    },
+    "npm_ci_repeated": false,
+    "dependencies_readonly": true,
+    "source_manifest_sha256": "4efc4773f3af092d7a1e736798e113a29fd4b5122d8482b96ba207188d873913",
+    "tracked_input_count": 1074,
+    "build_input_changes": [],
+    "current_repository_matches_built_inputs": true,
+    "dist_manifest_sha256": "44f512a448ece5a187e356a7553b04f45488cc5b67f0f0a5e5171c5a311fda6f",
+    "dist_file_count": 596,
+    "dist_total_bytes": 40879708.0,
+    "dist_index_sha256": "d1cf14323f8855e9bc16384be5dcef26cdae88bdb025af56fa396cb8183561da",
+    "build_warning_count": 11,
+    "build_warning_categories": [
+      "CSS extraction order",
+      "asset size",
+      "entrypoint size"
+    ],
+    "build_warnings_manual_review": "Root reviewed all eleven retained warnings: CSS extraction order, asset size and entrypoint size; no warnings suppressed",
+    "application_server_started": false,
+    "business_http_or_websocket_requests": 0,
+    "browser_acceptance": "Separate RUN15 ordinary admin browser PASS; uni-app not accepted",
+    "original_skipped_security_negative_fault_scenarios": "NOT RUN",
+    "external_publish_or_push": false,
+    "original_browser_acceptance_at_build": "NOT RUN",
+    "actual_container_cleanup": {
+      "container_id": "f321dce1bff6eb3dbb2f6fbaf05d0bf798f647aff0c8739d82b8f3b318fe9d4b",
+      "prior_state": "exited",
+      "remove_native_exit": 0,
+      "verification_native_exit": 0,
+      "remaining_container": [],
+      "all_source_dist_evidence_preserved": true,
+      "other_containers_touched": false
+    },
+    "default_avatar_inline": {
+      "compiled_files": [
+        "system_static/js/app.732ab1d1.js"
+      ],
+      "sha256": "0e7fb3a5929e47197238ebfe65f0f06e07c7ce65268e50eaa4bb64b175a4c5b8",
+      "bytes": 2768
+    },
+    "actual_manifest_hashes": {
+      "source-manifest-6.json": "4efc4773f3af092d7a1e736798e113a29fd4b5122d8482b96ba207188d873913",
+      "dist-manifest-6.json": "44f512a448ece5a187e356a7553b04f45488cc5b67f0f0a5e5171c5a311fda6f",
+      "build-result-6.json": "10bde715fb384f25ee423502d2fa8e55ce63cc7d6276f7d39dea814fd0a2162a"
+    }
+  },
+  "browser_fifteenth_run": {
+    "run_id": "20261012095932496c23",
+    "cleanup_probe_run_id": "20261012100124bbe629",
+    "commit_sha": "12afea74d7b76a4fd2d4fc6af706a01d5a465061",
+    "status": "PASS",
+    "guard_mode": "read-only",
+    "native_steps": {
+      "bootstrap": {
+        "guard_mode": "read-only",
+        "exit": 0,
+        "completed_at": "2026-10-12T10:01:45.9115288Z"
+      },
+      "prepare": {
+        "exit": 0,
+        "completed_at": "2026-10-12T14:46:50.3534076Z"
+      },
+      "start": {
+        "exit": 0,
+        "completed_at": "2026-10-12T14:47:27.2120794Z"
+      },
+      "after": {
+        "exit": 0,
+        "completed_at": "2026-10-12T14:47:51.8422363Z"
+      },
+      "teardown": {
+        "completed_at": "2026-10-12T14:51:03.5508962Z",
+        "exit": 0
+      }
+    },
+    "browser_terminal": {
+      "container_id": "a5dbfb23f0ee7cb434b4d8c4f9ed3683682f938a1b6d92d45aea4c72d71c4568",
+      "image_id": "sha256:12f8a18ee81e6496442101b53ed2e9b2f68eef56cbb63ed4393b5a81cf9e1dbe",
+      "status": "exited",
+      "running": false,
+      "native_exit": 0,
+      "restart_count": 0,
+      "started_at": "2026-10-12T14:47:21.79210643Z",
+      "finished_at": "2026-10-12T14:47:51.440505423Z"
+    },
+    "contexts_closed": true,
+    "source_inventory": {
+      "actual_files_sha256": {
+        "crmeb/crmeb/services/workerman/chat/GuestChatSession.php": "88718d32b223d8af42aafee0b24fe1d678b09b7977689a57964dd9661cfb8a40",
+        "crmeb/crmeb/services/workerman/chat/ChatIdentity.php": "92c902f84a0385623ba50fd015143809641b5cc796bbee42fd28ae5869410495",
+        "crmeb/crmeb/services/workerman/chat/ChatService.php": "436af1b35bc9c964fcd5a8695ee80dd22f7f119eb3b59cb74d34fd0e5629f023",
+        "crmeb/crmeb/services/workerman/chat/ChatHandle.php": "c5d3e65c933da578e5d4db95accc6424844c26d02c570c0846d2283773c43249",
+        "crmeb/crmeb/services/auth/AuthTokenV2.php": "59518646797c71ea45084326e5ca87da64f402f59d97ce57b655c87d3aa0591b",
+        "crmeb/app/services/kefu/LoginServices.php": "0e69433eb0f936e2bda3163e19815fbaf4f3c6776443ba1391445b2d05ed7822",
+        "crmeb/app/services/user/UserAuthServices.php": "ebe8f0928967d992a0f0a78d75ad740711b01b2274a8e2c47e8248155bd98983",
+        "crmeb/app/kefuapi/controller/Common.php": "08a92f670847693133283a996180a56d3e6d3cdde23c397d8d1bfafc773f4b55",
+        "crmeb/app/kefuapi/route/route.php": "4829c914c8678608642ac8e2175f4d3c93f61cb4b75fa169fdac175c56f8c724",
+        "crmeb/app/kefuapi/KefuApiExceptionHandle.php": "0949c00ae7fad194d50722d224d28828e9343d8eeb5b5b4612517aab60525f88",
+        "crmeb/app/listener/http/HttpEndListener.php": "4416a217c180f3e19ac0da0174282e1144b8a8982b794d5a60f985fbbcc66951",
+        "crmeb/app/services/kefu/KefuServices.php": "270d761d536421162b5f748001f46b6dd43ae7cbbff9726aca264688d76e5b8b",
+        "crmeb/app/services/kefu/service/StoreServiceRecordServices.php": "f8397b47da304080db34662899c732786cb4e8503815adf5335898580189c61e",
+        "crmeb/app/services/system/SystemClearServices.php": "97a3626708c34b926e8ff44d86b781a144b8d0af5f5719ef603340341ec5d69c",
+        "template/admin/src/api/kefu.js": "90bbb634e5abb2be9fd9a1aa8157c1d56262cf3393abfe8a0917a382b45d243b",
+        "template/admin/src/libs/request.js": "bbf70687578183e6b22d5cd9a0413abd896af0c6db331792977c725b1a6d7bfd",
+        "template/admin/src/libs/socket.js": "9c4068f6a2765d1c5216a247753aece8bf3019632929edc840a3cb7b29942366",
+        "template/admin/src/assets/images/moren.jpg": "0e7fb3a5929e47197238ebfe65f0f06e07c7ce65268e50eaa4bb64b175a4c5b8",
+        "template/admin/src/main.js": "1c19a92f99955ce2249bbe48344563f08ba282be8acc1ec82d72bd584fb2319b",
+        "template/admin/src/layout/navBars/breadcrumb/userNews.vue": "4728a22d257b04a5cf4f7f0cb53c57cb603edfe3d7b4213e7a8d4052591252bd",
+        "template/admin/src/pages/kefu/appChat/index.vue": "cfbd48d9dd2902454d9a40f331ea657c1aac0140a890aad8901fdf79ec03bb0e",
+        "template/admin/src/pages/kefu/appChat/mobile/index.vue": "8adbb7ededf91d2c4028008ee78002138772e61efd3b44556a348681ed7ec512",
+        "template/admin/src/pages/kefu/mobile/chat_list.vue": "4b2d6cf9958992f3e3d4b008d39f2c65f76efb08efbd6b0eacca87c6bb278b6f",
+        "template/admin/src/pages/kefu/mobile/index.vue": "27ffd4a5e6f309eb2b11842ef11dd3e0cbe493ccf3fe335a5d8201a6fac20cd8",
+        "template/admin/src/pages/kefu/pc/index.vue": "26e0dc02873e0913dfa414d21772c95fb0357d8606b779a351f2214a5574d18e",
+        "template/admin/src/pages/kefu/pc/components/chatList.vue": "eef91148181e49e6f1e82fe44c01db9221b6d44de7988dba89cf85c8627208d3",
+        "template/admin/src/pages/kefu/pc/components/rightMenu.vue": "0397a02be2e17c0e473830bb94a6158d6c84cf5122e9f49ee947cc4cde12d2db",
+        "template/admin/src/pages/kefu/index.vue": "1af98f34ebca68d2cbb9728f866c1f039cc21b7a548dc150885477921689162f",
+        "crmeb/app/kefuapi/validate/LoginValidate.php": "19017821687afda295c91185192a208688f5fdcbc513e07d788feaf1fdcb72af",
+        "crmeb/crmeb/utils/JwtAuth.php": "c34cc805cdf875c34111b5d9c84b6332141b58ffa64db35ff22db409deadc56a",
+        "crmeb/app/services/other/CacheServices.php": "f16f074c99bae90860ff40f4a20df31b77eea4d5f857d4a768c9418831bb34f5",
+        "crmeb/app/dao/other/CacheDao.php": "efa0f523f1382647e0e1c77137ea76214fbed59d104a65214b5661ef324641c3",
+        "help/audit-regressions/isolated/ms1-chat-browser.php": "0125a89a5d9f4cba548117b03144068efd346fa3e12a75161c2923d6252585ad",
+        "help/audit-regressions/isolated/lib/ms1-chat-browser.mjs": "ea08bce8e12e90094a148f3963d49df04469d1c95287dba16a865daef7f2b9e3",
+        "help/audit-regressions/isolated/lib/ms1-chat-browser-nginx.conf": "730980c7f1002744803d932580233e7700bf5364785adec7e69ae0facb285ce9",
+        "help/audit-regressions/isolated/bootstrap.sh": "0399d2d182cb87e4cbe0f2b2abf4d1147673d4605a7469e9e2b65fc59ddda161",
+        "template/uni-app/libs/new_chat.js": "7771b671c768a5820c2804ec9132021ab83e5b3393269cf5771346bce8aa28e1",
+        "template/uni-app/pages/extension/customer_list/chat.vue": "686f8e0ba491c4044f8ba52f4885c658961ac687c1b8e34e425cc4df0d6bbc6e",
+        "help/audit-regressions/isolated/lib/ms1-chat-entry.php": "d515cbb6049e432ba46fa792fca322c47efe3fe6ed7e0b5e0ad6024d4497d113",
+        "help/audit-regressions/isolated/ms1-cross-app.php": "89f4bfd524c70400398bd6c82df840812c479ab883bff6855427a30cd82aa5f7",
+        "help/audit-regressions/isolated/compose.yml": "e3882126a14d60f354686fd8c8c4bdc2f3bb231bf7f8e8d01f19dfc5742552a2",
+        "help/audit-regressions/isolated/lib/harness.php": "f0ce5d2a08e3df80b07476ab8186f17f0d692a65d7ae308aac3c188a83d84ab1",
+        "help/audit-regressions/isolated/lib/guard.php": "a7a182c3a204dbb55f5669a61f44af099360223acd9835f82d9da3a8bf2f79a8",
+        "crmeb/crmeb/compat/workerman/Events/Select.php": "6994df7c39b722bec9c55120cd39b416f80171a536670fc3a1b1766a16dd60bb",
+        "crmeb/vendor/workerman/workerman/Worker.php": "2f21fda397f42cfa1650e198fb5db2aa392a500037b948bf3eeb3fe5fdd7977b",
+        "crmeb/vendor/workerman/workerman/Connection/TcpConnection.php": "9016266e3fe0273060f6a3b4e09980ab50619c14948245b5402822e71b4f0a96",
+        "docs/multi-merchant/03-test-environment.md": "50ed8082e4e98953e74ff6cff45001c39fd736eaee4a2070736f85717ef02942",
+        "docs/multi-merchant/06-plan-ms1.md": "d17c36fc71b995d99a01e492a28bff1ffdc1e955622dc1238b4a041f6c7c5f1a",
+        "help/audit-regressions/isolated/README.md": "6b95d6e230896c637f6fe69b391937a83e2e2d8aaa38e04bffc4af239886d20d"
+      },
+      "file_count": 49,
+      "layer": "SOURCE inventory only; T7B01 is normal browser UI; original stopped matrix remains NOT RUN"
+    },
+    "build_reuse": {
+      "current_commit": "12afea74d7b76a4fd2d4fc6af706a01d5a465061",
+      "build_round": 6,
+      "build_input_count": 1074,
+      "dist_file_count": 596,
+      "all_actual_source_copy_dist_hashes_match": true,
+      "default_avatar_inline_confirmed_in_actual_compiled_files": [
+        "system_static/js/app.732ab1d1.js"
+      ],
+      "default_avatar_sha256": "0e7fb3a5929e47197238ebfe65f0f06e07c7ce65268e50eaa4bb64b175a4c5b8",
+      "default_avatar_bytes": 2768,
+      "browser_runtime_pass": false
+    },
+    "build_reuse_browser_runtime_flag_context": "The reuse receipt was written before runtime; its browser_runtime_pass=false is retained as a preparation-time fact. Actual separate terminal and browser observations below are PASS.",
+    "registered_client_http": [
+      {
+        "stage": "desktop",
+        "method": "GET",
+        "path": "/adminapi/custom_admin_js",
+        "http": 200,
+        "business_status": null
+      },
+      {
+        "stage": "desktop",
+        "method": "GET",
+        "path": "/adminapi/get_workerman_url",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "desktop",
+        "method": "GET",
+        "path": "/kefuapi/config",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "desktop",
+        "method": "POST",
+        "path": "/kefuapi/login",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "desktop",
+        "method": "GET",
+        "path": "/kefuapi/service/info",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "desktop",
+        "method": "GET",
+        "path": "/kefuapi/user/record",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "desktop",
+        "method": "GET",
+        "path": "/kefuapi/user/record",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "desktop",
+        "method": "GET",
+        "path": "/adminapi/custom_admin_js",
+        "http": 200,
+        "business_status": null
+      },
+      {
+        "stage": "desktop",
+        "method": "GET",
+        "path": "/adminapi/get_workerman_url",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "desktop",
+        "method": "GET",
+        "path": "/kefuapi/tourist/adv",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "desktop",
+        "method": "GET",
+        "path": "/kefuapi/tourist/user",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "desktop",
+        "method": "GET",
+        "path": "/kefuapi/service/list",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "desktop",
+        "method": "GET",
+        "path": "/kefuapi/user/record",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "mobile",
+        "method": "GET",
+        "path": "/adminapi/custom_admin_js",
+        "http": 200,
+        "business_status": null
+      },
+      {
+        "stage": "mobile",
+        "method": "GET",
+        "path": "/adminapi/get_workerman_url",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "mobile",
+        "method": "GET",
+        "path": "/kefuapi/config",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "mobile",
+        "method": "POST",
+        "path": "/kefuapi/login",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "mobile",
+        "method": "GET",
+        "path": "/kefuapi/service/info",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "mobile",
+        "method": "GET",
+        "path": "/kefuapi/user/record",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "mobile",
+        "method": "GET",
+        "path": "/kefuapi/user/record",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "mobile",
+        "method": "GET",
+        "path": "/adminapi/custom_admin_js",
+        "http": 200,
+        "business_status": null
+      },
+      {
+        "stage": "mobile",
+        "method": "GET",
+        "path": "/adminapi/get_workerman_url",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "mobile",
+        "method": "GET",
+        "path": "/kefuapi/tourist/user",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "mobile",
+        "method": "GET",
+        "path": "/kefuapi/service/list",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "mobile",
+        "method": "GET",
+        "path": "/kefuapi/service/transfer_list",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "mobile",
+        "method": "GET",
+        "path": "/kefuapi/service/cate",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "mobile",
+        "method": "GET",
+        "path": "/kefuapi/service/speechcraft",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "mobile",
+        "method": "GET",
+        "path": "/kefuapi/service/info",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "mobile",
+        "method": "GET",
+        "path": "/kefuapi/user/record",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "mobile",
+        "method": "GET",
+        "path": "/kefuapi/user/record",
+        "http": 200,
+        "business_status": 200
+      }
+    ],
+    "registered_client_http_count": 30,
+    "identity_acks": [
+      {
+        "stage": "desktop",
+        "kind": "kefu",
+        "uid": 103
+      },
+      {
+        "stage": "desktop",
+        "kind": "guest",
+        "uid": -1,
+        "expires_at": 1791820057
+      },
+      {
+        "stage": "mobile",
+        "kind": "kefu",
+        "uid": 103
+      },
+      {
+        "stage": "mobile",
+        "kind": "guest",
+        "uid": -2,
+        "expires_at": 1791820063
+      }
+    ],
+    "room_acks": [
+      {
+        "stage": "desktop",
+        "uid": 0,
+        "num": 0
+      },
+      {
+        "stage": "desktop",
+        "uid": 0,
+        "num": 0
+      },
+      {
+        "stage": "desktop",
+        "uid": 103,
+        "num": 0
+      },
+      {
+        "stage": "desktop",
+        "uid": -1,
+        "num": 0
+      },
+      {
+        "stage": "desktop",
+        "uid": 0,
+        "num": 0
+      },
+      {
+        "stage": "desktop",
+        "uid": 0,
+        "num": 0
+      },
+      {
+        "stage": "mobile",
+        "uid": 103,
+        "num": 0
+      },
+      {
+        "stage": "mobile",
+        "uid": -2,
+        "num": 0
+      },
+      {
+        "stage": "mobile",
+        "uid": 0,
+        "num": 0
+      }
+    ],
+    "normal_texts": [
+      {
+        "stage": "desktop",
+        "sender_uid": -1,
+        "recipient_uid": 103,
+        "is_tourist": 1,
+        "message_sha256": "dbcf403a50a5876625db7af7461103f8fd12a5bf054f4a6b19c89cfd21de32dc",
+        "received_via": "history"
+      },
+      {
+        "stage": "desktop",
+        "sender_uid": 103,
+        "recipient_uid": -1,
+        "is_tourist": 1,
+        "message_sha256": "e94d7cb28614b7559eea066f1eb06591e93c01b7401c88b2f66302505c5cfc47",
+        "received_via": "websocket"
+      },
+      {
+        "stage": "mobile",
+        "sender_uid": -2,
+        "recipient_uid": 103,
+        "is_tourist": 1,
+        "message_sha256": "0114ecbb9f8b5c7aab393cfcbf893c44ad922dc1fec53aaddf2dece83d20190f",
+        "received_via": "history"
+      },
+      {
+        "stage": "mobile",
+        "sender_uid": 103,
+        "recipient_uid": -2,
+        "is_tourist": 1,
+        "message_sha256": "e9626d56b6f0c308599c83c021ea238b07f6a9536d0f9db231c19f3bc8529552",
+        "received_via": "websocket"
+      }
+    ],
+    "browser_observations": {
+      "browser_result_sha256": "6903a4c671304056ff2943efbe6607848411a7f11b5dfb8c941c2fb8b0ac884c",
+      "actual_http": 30,
+      "ui_logins": 2,
+      "guest_issues": 2,
+      "identity_acks": 4,
+      "ordinary_texts": 4,
+      "real_log_rows": 4,
+      "real_record_rows": 4,
+      "rendered_chat_screenshots": 4,
+      "rendered_control_screenshots": 1,
+      "controls_geometry_checked": true,
+      "list_preview": {
+        "stage": "mobile",
+        "record_id": 3,
+        "user_id": 103,
+        "to_uid": -2,
+        "is_tourist": 1,
+        "message_type": 1,
+        "preview_sha256": "0e1b04bb722633b3f52977760a5fe98acaadcc4acdf2b7174421867563e012f4",
+        "received_via": "http",
+        "path": "/kefuapi/user/record",
+        "client_http_sequence": 30
+      },
+      "list_preview_independently_verified": true,
+      "message_avatar_count": 8,
+      "staff_message_avatar_count": 4,
+      "guest_message_avatar_count": 4,
+      "header_branding_not_message_evidence": true,
+      "external_requests_blocked_count": 28
+    },
+    "message_avatars": [
+      {
+        "stage": "desktop",
+        "kind": "kefu",
+        "sender_uid": -1,
+        "recipient_uid": 103,
+        "log_id": 1,
+        "message_sha256": "dbcf403a50a5876625db7af7461103f8fd12a5bf054f4a6b19c89cfd21de32dc",
+        "source_kind": "guest_default",
+        "source_ref_sha256": "9732e6bc8c161795161c5107f9ad88cf0980ecfe806dbfea4c31df311db86a56",
+        "complete": true,
+        "natural_width": 200,
+        "natural_height": 200,
+        "lazy_state": "loaded",
+        "bounds": {
+          "left": 460,
+          "right": 500,
+          "top": 172,
+          "bottom": 212,
+          "width": 40,
+          "height": 40
+        },
+        "screenshot_path": "desktop-kefu.png"
+      },
+      {
+        "stage": "desktop",
+        "kind": "kefu",
+        "sender_uid": 103,
+        "recipient_uid": -1,
+        "log_id": 2,
+        "message_sha256": "e94d7cb28614b7559eea066f1eb06591e93c01b7401c88b2f66302505c5cfc47",
+        "source_kind": "staff",
+        "source_ref_sha256": "045461236f21762628c930aa880be1991dd25b49c4f4f36be8cf0a741955fcb2",
+        "complete": true,
+        "natural_width": 720,
+        "natural_height": 180,
+        "lazy_state": "loaded",
+        "bounds": {
+          "left": 980,
+          "right": 1020,
+          "top": 238,
+          "bottom": 278,
+          "width": 40,
+          "height": 40
+        },
+        "screenshot_path": "desktop-kefu.png"
+      },
+      {
+        "stage": "desktop",
+        "kind": "guest",
+        "sender_uid": -1,
+        "recipient_uid": 103,
+        "log_id": 1,
+        "message_sha256": "dbcf403a50a5876625db7af7461103f8fd12a5bf054f4a6b19c89cfd21de32dc",
+        "source_kind": "guest_default",
+        "source_ref_sha256": "9732e6bc8c161795161c5107f9ad88cf0980ecfe806dbfea4c31df311db86a56",
+        "complete": true,
+        "natural_width": 200,
+        "natural_height": 200,
+        "lazy_state": "loaded",
+        "bounds": {
+          "left": 1120,
+          "right": 1160,
+          "top": 70,
+          "bottom": 110,
+          "width": 40,
+          "height": 40
+        },
+        "screenshot_path": "desktop-guest.png"
+      },
+      {
+        "stage": "desktop",
+        "kind": "guest",
+        "sender_uid": 103,
+        "recipient_uid": -1,
+        "log_id": 2,
+        "message_sha256": "e94d7cb28614b7559eea066f1eb06591e93c01b7401c88b2f66302505c5cfc47",
+        "source_kind": "staff",
+        "source_ref_sha256": "045461236f21762628c930aa880be1991dd25b49c4f4f36be8cf0a741955fcb2",
+        "complete": true,
+        "natural_width": 720,
+        "natural_height": 180,
+        "lazy_state": "loaded",
+        "bounds": {
+          "left": 20,
+          "right": 60,
+          "top": 131,
+          "bottom": 171,
+          "width": 40,
+          "height": 40
+        },
+        "screenshot_path": "desktop-guest.png"
+      },
+      {
+        "stage": "mobile",
+        "kind": "kefu",
+        "sender_uid": -2,
+        "recipient_uid": 103,
+        "log_id": 3,
+        "message_sha256": "0114ecbb9f8b5c7aab393cfcbf893c44ad922dc1fec53aaddf2dece83d20190f",
+        "source_kind": "guest_default",
+        "source_ref_sha256": "9732e6bc8c161795161c5107f9ad88cf0980ecfe806dbfea4c31df311db86a56",
+        "complete": true,
+        "natural_width": 200,
+        "natural_height": 200,
+        "lazy_state": "loaded",
+        "bounds": {
+          "left": 15.59375,
+          "right": 57.1875,
+          "top": 88.984375,
+          "bottom": 130.578125,
+          "width": 41.59375,
+          "height": 41.59375
+        },
+        "screenshot_path": "mobile-kefu.png"
+      },
+      {
+        "stage": "mobile",
+        "kind": "kefu",
+        "sender_uid": 103,
+        "recipient_uid": -2,
+        "log_id": 4,
+        "message_sha256": "e9626d56b6f0c308599c83c021ea238b07f6a9536d0f9db231c19f3bc8529552",
+        "source_kind": "staff",
+        "source_ref_sha256": "045461236f21762628c930aa880be1991dd25b49c4f4f36be8cf0a741955fcb2",
+        "complete": true,
+        "natural_width": 720,
+        "natural_height": 180,
+        "lazy_state": "loaded",
+        "bounds": {
+          "left": 332.8125,
+          "right": 374.40625,
+          "top": 158.078125,
+          "bottom": 199.671875,
+          "width": 41.59375,
+          "height": 41.59375
+        },
+        "screenshot_path": "mobile-kefu.png"
+      },
+      {
+        "stage": "mobile",
+        "kind": "guest",
+        "sender_uid": -2,
+        "recipient_uid": 103,
+        "log_id": 3,
+        "message_sha256": "0114ecbb9f8b5c7aab393cfcbf893c44ad922dc1fec53aaddf2dece83d20190f",
+        "source_kind": "guest_default",
+        "source_ref_sha256": "9732e6bc8c161795161c5107f9ad88cf0980ecfe806dbfea4c31df311db86a56",
+        "complete": true,
+        "natural_width": 200,
+        "natural_height": 200,
+        "lazy_state": "native",
+        "bounds": {
+          "left": 332.8125,
+          "right": 374.40625,
+          "top": 88.984375,
+          "bottom": 130.578125,
+          "width": 41.59375,
+          "height": 41.59375
+        },
+        "screenshot_path": "mobile-guest.png"
+      },
+      {
+        "stage": "mobile",
+        "kind": "guest",
+        "sender_uid": 103,
+        "recipient_uid": -2,
+        "log_id": 4,
+        "message_sha256": "e9626d56b6f0c308599c83c021ea238b07f6a9536d0f9db231c19f3bc8529552",
+        "source_kind": "staff",
+        "source_ref_sha256": "045461236f21762628c930aa880be1991dd25b49c4f4f36be8cf0a741955fcb2",
+        "complete": true,
+        "natural_width": 720,
+        "natural_height": 180,
+        "lazy_state": "native",
+        "bounds": {
+          "left": 15.59375,
+          "right": 57.1875,
+          "top": 158.078125,
+          "bottom": 199.671875,
+          "width": 41.59375,
+          "height": 41.59375
+        },
+        "screenshot_path": "mobile-guest.png"
+      }
+    ],
+    "action_controls": [
+      {
+        "stage": "mobile",
+        "kind": "guest",
+        "type": "button",
+        "label": "发送",
+        "disabled": false,
+        "display": "flex",
+        "align_items": "center",
+        "justify_content": "center",
+        "bounds": {
+          "left": 305.4375,
+          "right": 349.4375,
+          "top": 797,
+          "bottom": 841,
+          "width": 44,
+          "height": 44
+        },
+        "parent": {
+          "left": 15.59375,
+          "right": 349.4375,
+          "top": 797,
+          "bottom": 841,
+          "width": 333.84375,
+          "height": 44
+        },
+        "icon": {
+          "left": 315.4375,
+          "right": 339.4375,
+          "top": 807,
+          "bottom": 831,
+          "width": 24,
+          "height": 24
+        },
+        "symbol": "#iconfasong"
+      },
+      {
+        "stage": "mobile",
+        "kind": "kefu",
+        "type": "button",
+        "label": "发送",
+        "disabled": false,
+        "display": "flex",
+        "align_items": "center",
+        "justify_content": "center",
+        "bounds": {
+          "left": 252.390625,
+          "right": 296.390625,
+          "top": 797,
+          "bottom": 841,
+          "width": 44,
+          "height": 44
+        },
+        "parent": {
+          "left": 40.5625,
+          "right": 296.390625,
+          "top": 797,
+          "bottom": 841,
+          "width": 255.828125,
+          "height": 44
+        },
+        "icon": {
+          "left": 262.390625,
+          "right": 286.390625,
+          "top": 807,
+          "bottom": 831,
+          "width": 24,
+          "height": 24
+        },
+        "symbol": "#iconfasong"
+      },
+      {
+        "stage": "mobile",
+        "kind": "kefu",
+        "type": "button",
+        "label": "返回会话列表",
+        "disabled": false,
+        "display": "flex",
+        "align_items": "center",
+        "justify_content": "center",
+        "bounds": {
+          "left": 0,
+          "right": 45,
+          "top": 0,
+          "bottom": 45,
+          "width": 45,
+          "height": 45
+        },
+        "parent": {
+          "left": 0,
+          "right": 390,
+          "top": 0,
+          "bottom": 45,
+          "width": 390,
+          "height": 45
+        },
+        "icon": {
+          "left": 10.5,
+          "right": 34.5,
+          "top": 10.5,
+          "bottom": 34.5,
+          "width": 24,
+          "height": 24
+        },
+        "symbol": "#iconfanhui"
+      }
+    ],
+    "screenshots": [
+      {
+        "stage": "desktop",
+        "kind": "kefu",
+        "path": "desktop-kefu.png"
+      },
+      {
+        "stage": "desktop",
+        "kind": "guest",
+        "path": "desktop-guest.png"
+      },
+      {
+        "stage": "mobile",
+        "kind": "kefu",
+        "path": "mobile-kefu.png"
+      },
+      {
+        "stage": "mobile",
+        "kind": "guest",
+        "path": "mobile-guest.png"
+      },
+      {
+        "stage": "mobile",
+        "kind": "kefu_list",
+        "path": "mobile-kefu-list.png"
+      }
+    ],
+    "manual_screenshot_review": {
+      "status": "PASS_FOR_AFFECTED_ORDINARY_ADMIN_BROWSER_SCOPE",
+      "actual_pngs": [
+        {
+          "path": "desktop-kefu.png",
+          "bytes": 79002,
+          "sha256": "c36bd4a773d86d3a640ded1f078286933fdb8e55132555b8215ac39435f1c55a",
+          "width": 1440,
+          "height": 900
+        },
+        {
+          "path": "desktop-guest.png",
+          "bytes": 55602,
+          "sha256": "daafcd059309e89472c690988d531ac23b4cd5ca6aea164ac403e18bbe328a95",
+          "width": 1440,
+          "height": 900
+        },
+        {
+          "path": "mobile-kefu.png",
+          "bytes": 30172,
+          "sha256": "aff66f31dec037ba5e893b919af90f2362939475f08da71197ea09967fb3d244",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "path": "mobile-guest.png",
+          "bytes": 28993,
+          "sha256": "01ee4b4402c66be6033db4ebd56c27a57228eb0f597cb459e6e5833e9f6dea0d",
+          "width": 390,
+          "height": 844
+        },
+        {
+          "path": "mobile-kefu-list.png",
+          "bytes": 27505,
+          "sha256": "38155e15aa5da1a754da04865adc09023a8e0d153fa3868191c80c8c54118abc",
+          "width": 390,
+          "height": 844
+        }
+      ],
+      "receipt": "H:/天俪商城/artifacts/ms1-task7/browser-attempt15/manual-screenshot-review.json",
+      "receipt_sha256": "6dfbbdad740ae68b81f95d3872feef66058b85daf2b124de1a2dedc27a5bcc87",
+      "reviewers": [
+        "root",
+        "task7_run14_records"
+      ],
+      "limitations": [
+        "Fixture staff portrait is a genuinely loaded transparent white image and has weak contrast on the existing light conversation background; this is not image-load failure and no user portrait was replaced.",
+        "Existing staff composer intentionally has words on the left and emoji/more slots on the right (mobile/index.vue:61-72). Their old external-font glyphs are invisible in the isolated blocked-font environment; words/emoji/more behavior or pixels were not accepted.",
+        "No uni-app runtime, invalid credential, refusal, fault, restore, concurrent or full MS1 acceptance is implied."
+      ]
+    },
+    "fixtures_created": 11,
+    "fixtures_cleaned": true,
+    "owned_keys_registered_count": 46,
+    "owned_keys_removed_count": 27,
+    "preservation": {
+      "tables": 163,
+      "original_rows_and_schema_checksums_preserved": true,
+      "old_cache_values_and_absolute_expiry_unchanged": true,
+      "counter_changes_allowed_only": [
+        "eb_user",
+        "eb_store_service",
+        "eb_store_service_log",
+        "eb_store_service_record"
+      ],
+      "preexisting_sequence_forward_exception": false,
+      "snapshot_restore_used": false,
+      "sequence_rollback_used": false
+    },
+    "final_inventory": {
+      "install_lock_path": "crmeb/public/install.lock",
+      "all_resources_zero": true,
+      "env_absent": true,
+      "install_lock_absent": true,
+      "checks": [
+        {
+          "kind": "containers",
+          "count": 0,
+          "run_id": "20261012095932496c23",
+          "label": "tianli.audit.run=20261012095932496c23"
+        },
+        {
+          "kind": "networks",
+          "count": 0,
+          "run_id": "20261012095932496c23",
+          "label": "tianli.audit.run=20261012095932496c23"
+        },
+        {
+          "kind": "volumes",
+          "count": 0,
+          "run_id": "20261012095932496c23",
+          "label": "tianli.audit.run=20261012095932496c23"
+        },
+        {
+          "kind": "containers",
+          "count": 0,
+          "run_id": "20261012095932496c23",
+          "label": "com.docker.compose.project=tianli-audit-20261012095932496c23"
+        },
+        {
+          "kind": "networks",
+          "count": 0,
+          "run_id": "20261012095932496c23",
+          "label": "com.docker.compose.project=tianli-audit-20261012095932496c23"
+        },
+        {
+          "kind": "volumes",
+          "count": 0,
+          "run_id": "20261012095932496c23",
+          "label": "com.docker.compose.project=tianli-audit-20261012095932496c23"
+        },
+        {
+          "kind": "containers",
+          "count": 0,
+          "run_id": "20261012100124bbe629",
+          "label": "tianli.audit.run=20261012100124bbe629"
+        },
+        {
+          "kind": "networks",
+          "count": 0,
+          "run_id": "20261012100124bbe629",
+          "label": "tianli.audit.run=20261012100124bbe629"
+        },
+        {
+          "kind": "volumes",
+          "count": 0,
+          "run_id": "20261012100124bbe629",
+          "label": "tianli.audit.run=20261012100124bbe629"
+        },
+        {
+          "kind": "containers",
+          "count": 0,
+          "run_id": "20261012100124bbe629",
+          "label": "com.docker.compose.project=tianli-audit-20261012100124bbe629"
+        },
+        {
+          "kind": "networks",
+          "count": 0,
+          "run_id": "20261012100124bbe629",
+          "label": "com.docker.compose.project=tianli-audit-20261012100124bbe629"
+        },
+        {
+          "kind": "volumes",
+          "count": 0,
+          "run_id": "20261012100124bbe629",
+          "label": "com.docker.compose.project=tianli-audit-20261012100124bbe629"
+        }
+      ]
+    },
+    "uni_app_runtime_acceptance": "NOT RUN",
+    "original_stopped_scenarios": "NOT RUN",
+    "full_ms1_acceptance": "PENDING",
+    "push_deploy_human_signoff_security_baseline": false
+  }
 }
