@@ -1,130 +1,463 @@
 {
-  "status": "CURRENT_BUILDS_VERIFIED_CUSTOMER_UI_LOGIN_VERIFIED_CHAT_PENDING",
-  "source_sha_tested": "9a70e126e60846437b7f44e2178e5ec9a6f6b566",
-  "recorded_at_utc": "2026-10-12T20:16:38.441314+00:00",
-  "build_and_route_evidence": {
-    "status": "CURRENT_SOURCE_BUILD_AND_REAL_ROUTE_EVIDENCE_VERIFIED_RUNTIME_PENDING",
-    "source_sha": "9a70e126e60846437b7f44e2178e5ec9a6f6b566",
-    "recorded_at_utc": "2026-10-12T19:54:16.927214+00:00",
-    "uni_build": {
-      "result": "H:\\天俪商城\\artifacts\\ms1-task7\\uni-h5-build-send-control-prep\\evidence\\linux-20261012182148607a5de6\\build-result.json",
-      "result_sha256": "5c105902a5ed95e3f02c6e08b82b60302c16a18303bffbb2276f7006e0e40893",
-      "native_receipt": "H:\\天俪商城\\artifacts\\ms1-task7\\uni-h5-build-send-control-prep\\evidence\\linux-20261012182148607a5de6\\wrapper-native-root.json",
-      "native_exit": 0,
-      "dist_file_count": 333,
-      "dist_bytes": 10176274,
-      "visual_acceptance": false
-    },
-    "admin_build": {
-      "result": "H:\\天俪商城\\artifacts\\ms1-task7\\admin-build7\\evidence\\build-result-7.json",
-      "result_sha256": "5b8bf3ab78afd2cd0e10302b882f8f60f3c70802d84870bd616829a974d9d074",
-      "native_receipt": "H:\\天俪商城\\artifacts\\ms1-task7\\admin-build7\\evidence\\wrapper-native-root.json",
-      "native_exit": 0,
-      "dist_file_count": 596,
-      "dist_bytes": 40879708,
-      "warning_count": 11,
-      "source_copy_sha": "9a70e126e60846437b7f44e2178e5ec9a6f6b566"
-    },
-    "route_only": {
-      "result": "H:\\天俪商城\\artifacts\\ms1-task9\\route-only-independent-observer-attempt1\\observer-result.json",
-      "result_sha256": "604a5918b22099b7f4668ed691aa63677a08e74dfab79695dfe23e09aec21757",
-      "observer_native_exit": 0,
-      "real_check_count": 114,
-      "original_host_native_exit": 1,
-      "full_Task9_acceptance": false
-    },
-    "full_ms1_acceptance": false,
-    "external_publish_or_push": false
+  "schema": 1,
+  "status": "ORDINARY_MS1_LOCAL_DELIVERABLES_INTEGRATED_ORIGINAL_ACCEPTANCE_UNMET",
+  "prepared_at_utc": "2026-10-12T21:26:57.982150+00:00",
+  "repository_clean_at_review": true,
+  "scope": "Local L2 ordinary verification; not full original acceptance or user signoff",
+  "ms1": {
+    "ordinary_completed_tasks": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "ordinary_complete_count": 9,
+    "task_count": 9,
+    "ordinary_fraction": 1.0,
+    "percent_scope": "MS1 ordinary development and local records only; full original acceptance and total project are incomplete",
+    "task7_ordinary_H5": "VERIFIED_TECHNICAL_AND_ROOT_REPORTED_AFFECTED_VISUAL_SCOPE",
+    "task7_original_full_checkbox": "REMAINS_UNMET",
+    "task9_ordinary_closing": "LOCAL_REPORT_AND_RAW_HISTORY_INTEGRATED",
+    "task9_original_full_checkbox": "REMAINS_UNMET",
+    "full_MS1_acceptance": false
   },
-  "failure_history": {
-    "before_rows": 641,
-    "before_sha256": "f0f055d8cba98446137037a225aed924b59ebeb34528bbefd6c2bea6128c901a",
-    "appended_rows": 6,
-    "all_old_bytes_preserved": true,
-    "rows": 647,
-    "sha256": "39a09a36dda807bf95b0df8c55886c31711a71f68e56f3a60284b970374ab88f",
-    "status_counts": {
-      "FAIL": 38,
-      "PASS": 20,
-      "NOT RUN": 589
+  "current_H5_build": {
+    "source_sha": "43cfb032cb5dc63d6cbfec4e3b8cfe9b5840a672",
+    "real_completed_passes": [
+      1,
+      2
+    ],
+    "real_after_emit_passes": [
+      2
+    ],
+    "native_wrapper_compiler_attach_exits": [
+      0,
+      0,
+      0
+    ],
+    "dist": {
+      "files": 333,
+      "bytes": 10176296,
+      "manifest_file_sha256": "53407c13eade0cdd62e5cdb935cef168e440aec265fb3a78c6cd5ccda8f2f31f",
+      "canonical_inventory_sha256": "9e0139c7107942a6403eddb5845451666b6f4ceced61d3fa14ef52a953a4b74a",
+      "all_actual_bytes_hashes_and_inventory_verified": true
     },
-    "actual_runs": [
+    "warnings_retained": true,
+    "evidence_refs": [
       {
-        "attempt": 2,
-        "run_id": "20261012184208565ce5",
-        "host_summary": "H:\\天俪商城\\artifacts\\ms1-task7\\uni-h5-runtime-current-attempt2\\host-summary.json",
-        "host_summary_sha256": "0e82404abba61ede4f79b953638dcc52e2b4795f45f2d5492006aa57c63f1db7",
-        "native_exit": 1,
-        "raw_source": "C:\\Users\\Vwang\\.tianli-audit\\20261012184208565ce5\\evidence\\ms1-chat-uni-after-20261012184550.jsonl",
-        "raw_sha256": "48ac3d85cd2726796d3841ec3086f48eadfb35650bb50e5fb12f2fe685786713",
-        "all12_resources_zero": true,
-        "installation_markers_absent": true
+        "path": "H:/天俪商城/artifacts/ms1-task7/uni-h5-build-socket-task-prep/evidence/linux-20261012202435681bce69/build-result.json",
+        "bytes": 1264,
+        "sha256": "b35e14be458f6adc5488fabe1ff33064bbcfa34e2dcc57d1aba5a64a1dd6da91"
       },
       {
-        "attempt": 3,
-        "run_id": "2026101218550676b756",
-        "host_summary": "H:\\天俪商城\\artifacts\\ms1-task7\\uni-h5-runtime-current-attempt3\\host-summary.json",
-        "host_summary_sha256": "0dd4d9f2acd483b82039290e719e5900631d616c920fbf292dd35a5f8a261887",
-        "native_exit": 1,
-        "raw_source": "C:\\Users\\Vwang\\.tianli-audit\\2026101218550676b756\\evidence\\ms1-chat-uni-after-20261012185825.jsonl",
-        "raw_sha256": "9944fc1f8479744be87f250ab25d5c6eab4e8f378c8d50f79ecebb9cf4026555",
-        "all12_resources_zero": true,
-        "installation_markers_absent": true
+        "path": "H:/天俪商城/artifacts/ms1-task7/uni-h5-build-socket-task-prep/evidence/linux-20261012202435681bce69/adapter-receipt.json",
+        "bytes": 3206,
+        "sha256": "6b22740675ffc00596bcb31f5d8905c5032edeebc1a41fb528432b5c4d3a9b44"
       },
       {
-        "attempt": 4,
-        "run_id": "20261012190818302775",
-        "host_summary": "H:\\天俪商城\\artifacts\\ms1-task7\\uni-h5-runtime-current-attempt4\\host-summary.json",
-        "host_summary_sha256": "da7a7167a08a3ea73d9a746347cdf6cce1ead10eddbced6b742cba77b54ac305",
-        "native_exit": 1,
-        "raw_source": "C:\\Users\\Vwang\\.tianli-audit\\20261012190818302775\\evidence\\ms1-chat-uni-after-20261012191152.jsonl",
-        "raw_sha256": "84887cef6c9f052b7455d19db63d805e38a58cdf7d653f8b0fabcfd863f4a2a2",
-        "all12_resources_zero": true,
-        "installation_markers_absent": true
-      },
-      {
-        "attempt": 5,
-        "run_id": "202610121927163cc28f",
-        "host_summary": "H:\\天俪商城\\artifacts\\ms1-task7\\uni-h5-runtime-current-attempt5\\host-summary.json",
-        "host_summary_sha256": "a67b601c152370d12553193ec44d1c6cbb98514776738d493a054d2df58eb8d4",
-        "native_exit": 1,
-        "raw_source": "C:\\Users\\Vwang\\.tianli-audit\\202610121927163cc28f\\evidence\\ms1-chat-uni-after-20261012193050.jsonl",
-        "raw_sha256": "e952ab47865c3d174fe837ab9195a11808d1000cf406dcbd67fe1dee40c1a088",
-        "all12_resources_zero": true,
-        "installation_markers_absent": true
-      },
-      {
-        "attempt": 6,
-        "run_id": "20261012195823bf48c1",
-        "host_summary": "H:\\天俪商城\\artifacts\\ms1-task7\\uni-h5-runtime-current-attempt6\\host-summary.json",
-        "host_summary_sha256": "aa39061b9d829a873efca34f2a74278c93fdfd603a4d4dc7a58d527c21f4ffbc",
-        "native_exit": 1,
-        "raw_source": "C:\\Users\\Vwang\\.tianli-audit\\20261012195823bf48c1\\evidence\\ms1-chat-uni-after-20261012200213.jsonl",
-        "raw_sha256": "6677ab21d05c4de7a628dd27eda05a1c2b46736280fdc681c2e71c7d0661882e",
-        "all12_resources_zero": true,
-        "installation_markers_absent": true
-      },
-      {
-        "attempt": 7,
-        "run_id": "20261012200525380703",
-        "host_summary": "H:\\天俪商城\\artifacts\\ms1-task7\\uni-h5-runtime-current-attempt7\\host-summary.json",
-        "host_summary_sha256": "9b497ab9b2c5e635bd0b91bd3834bdd4d5c50bbfef3aa4cfc7dcd6badb85dae8",
-        "native_exit": 1,
-        "raw_source": "C:\\Users\\Vwang\\.tianli-audit\\20261012200525380703\\evidence\\ms1-chat-uni-after-20261012200953.jsonl",
-        "raw_sha256": "0b727a775b5d597530c1beba761b4fb44d7657d9ca9993e4a3f426c202288c23",
-        "all12_resources_zero": true,
-        "installation_markers_absent": true
+        "path": "H:/天俪商城/artifacts/ms1-task7/uni-h5-build-socket-task-prep/evidence/linux-20261012202435681bce69/wrapper-native-root.json",
+        "bytes": 348,
+        "sha256": "dc80db302d3b70e4449dd2b521a0d9b41dba2835eb81689af288b1b7fb27f55d"
       }
     ]
   },
-  "ordinary_ms1_tasks_verified": 7,
-  "ms1_task_count": 9,
-  "task7": "Backend/admin ordinary verified; uni actual UI login verified, room/history/chat/visual pending",
-  "task9": "Ordinary business and independent real route evidence verified; final client/report not accepted",
-  "full_ms1_acceptance": false,
-  "original_stopped_cases": "NOT RUN",
-  "push": false,
-  "deployment": false,
-  "real_database_access": false,
-  "connection_fix": "Current SDK connectSocket requires callback form to return real SocketTask; rebuild and real ordinary runtime pending."
+  "current_admin8_build": {
+    "source_sha": "43cfb032cb5dc63d6cbfec4e3b8cfe9b5840a672",
+    "native_exits": {
+      "npm_build": 0,
+      "docker_start_attach": 0,
+      "container": 0
+    },
+    "native_wrapper_exit": 0,
+    "dist": {
+      "files": 596,
+      "bytes": 40879708,
+      "manifest_file_sha256": "44f512a448ece5a187e356a7553b04f45488cc5b67f0f0a5e5171c5a311fda6f",
+      "canonical_inventory_sha256": "1eec5842094bb0bf664a318bcdc3e7ef965c15517a229d0da1733d3eb367164a",
+      "all_actual_bytes_hashes_and_inventory_verified": true
+    },
+    "warnings_retained_count": 11,
+    "warning_categories": [
+      "CSS extraction order",
+      "asset size",
+      "entrypoint size"
+    ],
+    "original_warning_review_marker_retained": "PENDING ROOT",
+    "evidence_refs": [
+      {
+        "path": "H:/天俪商城/artifacts/ms1-task7/admin-build8/evidence/build-result-8.json",
+        "bytes": 1369,
+        "sha256": "b7fbcf8e401b7885e7e769201ddb7de955916ea8bdf1bf01903dde2855c34965"
+      },
+      {
+        "path": "H:/天俪商城/artifacts/ms1-task7/admin-build8/evidence/wrapper-native-root.json",
+        "bytes": 346,
+        "sha256": "fcf45d217832fea541763da8f5236f52c1d0f469e006571a86fe81c134ed21d3"
+      }
+    ]
+  },
+  "normal_current_H5_run": {
+    "run_id": "2026101221140341b1a9",
+    "probe_run_id": "202610122116165c54a6",
+    "exec_session_id_from_root": 74743,
+    "exec_terminal_chunk_from_root": "d8ccb8",
+    "exec_terminal_state": "CLOSED",
+    "native_exit": 0,
+    "original_host_status_preserved": "TECHNICAL_RUNTIME_COMPLETE_VISUAL_PENDING",
+    "original_browser_status": "COMPLETE",
+    "original_raw_status": "PASS",
+    "host_stages": [
+      {
+        "stage": "build-inputs",
+        "native_exit": 0
+      },
+      {
+        "stage": "original-bootstrap",
+        "native_exit": 0
+      },
+      {
+        "stage": "publication",
+        "native_exit": 0
+      },
+      {
+        "stage": "ordinary-uni-runtime",
+        "native_exit": 0
+      }
+    ],
+    "normal_registered_HTTP_count": 51,
+    "normal_registered_HTTP_all_200": true,
+    "native_started_HTTP_metadata_count": 51,
+    "stages": [
+      {
+        "name": "desktop",
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "api_uid": 104,
+        "kefu_uid": 103,
+        "customer_room": 103,
+        "staff_room": 104,
+        "current_identity_ack_verified": true,
+        "plain_login_return_prepared": true,
+        "real_send_control_focus_observed": true,
+        "customer_send_key": "Enter",
+        "normal_uni_page_exit_observed": true,
+        "normal_leave_target": "/pages/users/login/index",
+        "original_login_return_key_consumed": true,
+        "full_conversation_texts_rendered": 2
+      },
+      {
+        "name": "mobile",
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "api_uid": 105,
+        "kefu_uid": 103,
+        "customer_room": 103,
+        "staff_room": 105,
+        "current_identity_ack_verified": true,
+        "plain_login_return_prepared": true,
+        "real_send_control_focus_observed": true,
+        "customer_send_key": "Space",
+        "normal_uni_page_exit_observed": true,
+        "normal_leave_target": "/pages/users/login/index",
+        "original_login_return_key_consumed": true,
+        "full_conversation_texts_rendered": 2
+      }
+    ],
+    "actual_independently_SQL_bound_log_count": 4,
+    "record_count": 4,
+    "loaded_message_avatar_count": 8,
+    "real_log_metadata": [
+      {
+        "id": 1,
+        "uid": 104,
+        "to_uid": 103,
+        "message_sha256": "2c535f560cf0e0e1fa7fc42d0c44486da5778a6ce5cc58705e27d950d16b01ad",
+        "is_tourist": 0
+      },
+      {
+        "id": 2,
+        "uid": 103,
+        "to_uid": 104,
+        "message_sha256": "97eb42da5d5ee509cf8264a702fac099fcb11f2dd90944f7f83fafc5ffebc85d",
+        "is_tourist": 0
+      },
+      {
+        "id": 3,
+        "uid": 105,
+        "to_uid": 103,
+        "message_sha256": "15248c2f2b481bf0e38ab863d24d0adfeedde9c19e2e4bf60c49da6784549290",
+        "is_tourist": 0
+      },
+      {
+        "id": 4,
+        "uid": 103,
+        "to_uid": 105,
+        "message_sha256": "d21ef0ea32a25cf2b721d0ba063878858da31c6366bf2b987f98e27ffae5b2cb",
+        "is_tourist": 0
+      }
+    ],
+    "actual_PNG_count": 5,
+    "same_current_page_resize": "320x844",
+    "resize_additional_business_actions": 0,
+    "owned_keys_registered": 125,
+    "owned_keys_actual_removed": 68,
+    "full163_rows_schema_checksums_cache_value_absolute_deadlines_and_runtime_preserved": true,
+    "natural_counters_only": [
+      "eb_user",
+      "eb_store_service",
+      "eb_store_service_log",
+      "eb_store_service_record"
+    ],
+    "snapshot_restore_used": false,
+    "final12_resource_counts_zero": true,
+    "installation_markers_absent": true,
+    "root_visual_review_ref": "C:\\Users\\Vwang\\.tianli-audit\\2026101221140341b1a9\\browser-evidence\\visual-review-root.json",
+    "original_manual_markers_not_rewritten": true,
+    "evidence_refs": [
+      {
+        "path": "C:/Users/Vwang/.tianli-audit/2026101221140341b1a9/evidence/ms1-chat-uni-after.json",
+        "bytes": 188261,
+        "sha256": "70724a0aba50d6c0639dfe78e605b2de3070c6dd0c6e1c637d4f63632f43a723"
+      },
+      {
+        "path": "C:/Users/Vwang/.tianli-audit/2026101221140341b1a9/browser-evidence/browser.json",
+        "bytes": 23158,
+        "sha256": "84bdf91035b17c19d5a8b664cc2c446fc2fd832dd2b8467ff619b534490b34b3"
+      },
+      {
+        "path": "H:/天俪商城/artifacts/ms1-task7/uni-h5-runtime-current-attempt11/host-summary.json",
+        "bytes": 2337,
+        "sha256": "20db1cbba3446a74ebb8c5dd204b90b19188ffaae375ede1ef220d4ce25669f4"
+      },
+      {
+        "path": "H:/天俪商城/artifacts/ms1-task7/uni-h5-runtime-current-attempt11/ordinary-uni-runtime-native.json",
+        "bytes": 69,
+        "sha256": "c48f9332225317869412600763531aa58a4f65621629615ec9b4de79db523752"
+      }
+    ]
+  },
+  "backend_evidence_reuse": {
+    "tested_source_sha": "f7f001b0f0543f9291ab3de552041183e267fae8",
+    "current_source_sha": "43cfb032cb5dc63d6cbfec4e3b8cfe9b5840a672",
+    "backend_and_harness_unchanged": true,
+    "original_combined_run_id": "202610121728559ecb10",
+    "actual_original_stage_native_exits": [
+      {
+        "stage": "admin-normal",
+        "exit": 0
+      },
+      {
+        "stage": "out-normal",
+        "exit": 0
+      },
+      {
+        "stage": "account-normal",
+        "exit": 0
+      },
+      {
+        "stage": "epoch-normal",
+        "exit": 0
+      },
+      {
+        "stage": "login-download-normal",
+        "exit": 0
+      },
+      {
+        "stage": "task1-prepare",
+        "exit": 0
+      },
+      {
+        "stage": "task1-start",
+        "exit": 0
+      },
+      {
+        "stage": "task1-observe",
+        "exit": 0
+      },
+      {
+        "stage": "task2-migration",
+        "exit": 0
+      },
+      {
+        "stage": "task3-context",
+        "exit": 0
+      },
+      {
+        "stage": "task4-merchantapi",
+        "exit": 0
+      },
+      {
+        "stage": "task5-management",
+        "exit": 0
+      },
+      {
+        "stage": "task6-platform",
+        "exit": 0
+      },
+      {
+        "stage": "task7-chat-start",
+        "exit": 0
+      },
+      {
+        "stage": "task7-backend",
+        "exit": 0
+      },
+      {
+        "stage": "task7-browser-start",
+        "exit": 0
+      },
+      {
+        "stage": "task7-browser",
+        "exit": 0
+      },
+      {
+        "stage": "task8-prepare",
+        "exit": 0
+      },
+      {
+        "stage": "task8-start",
+        "exit": 0
+      },
+      {
+        "stage": "task8-observe",
+        "exit": 0
+      },
+      {
+        "stage": "routes-create",
+        "exit": 0
+      },
+      {
+        "stage": "routes-start",
+        "exit": 0
+      },
+      {
+        "stage": "register-final-identities",
+        "exit": 0
+      },
+      {
+        "stage": "teardown",
+        "exit": 0
+      }
+    ],
+    "all24_native_exits_zero": true,
+    "original_orchestration_status": "FAIL",
+    "original_orchestration_native_exit": 1,
+    "original_unmodified_raw_sources_verified_count": 14,
+    "source_diff_review_ref": "H:/天俪商城/artifacts/ms1-closeout-current43-prep/backend-diff-current43-evidence.json",
+    "no_business_rerun": true
+  },
+  "route_independent_closing": {
+    "status": "OFFLINE_VERIFIED_REAL_ROUTE_RUN_ONLY",
+    "tested_source_sha": "9a70e126e60846437b7f44e2178e5ec9a6f6b566",
+    "backend_route_source_unchanged_to_current43": true,
+    "run_id": "2026101218235581facc",
+    "independent_checks": 114,
+    "all_checks_true": true,
+    "observer_native_exit": 0,
+    "route_container_native_exit": 0,
+    "route_container_restart_count": 0,
+    "actual_merchant_routes": 12,
+    "actual_product_routes": 0,
+    "runtime_counts_before_after_cli_after_own_cleanup": [
+      0,
+      1,
+      0
+    ],
+    "old_runtime_preserved_and_same_hash_own_file_cleaned": true,
+    "original_host_FAIL_native1_retained": true,
+    "evidence_refs": [
+      {
+        "path": "H:/天俪商城/artifacts/ms1-task9/route-only-independent-observer-attempt1/observer-result.json",
+        "bytes": 18258,
+        "sha256": "604a5918b22099b7f4668ed691aa63677a08e74dfab79695dfe23e09aec21757"
+      },
+      {
+        "path": "H:/天俪商城/artifacts/ms1-task9/route-only-independent-observer-attempt1/observer-native.json",
+        "bytes": 245,
+        "sha256": "4fb41f1347648181d78133895ecde37dd0621a15bc6f4f6e6457487be9c18317"
+      }
+    ]
+  },
+  "records": {
+    "before_rows": 647,
+    "before_sha256": "39a09a36dda807bf95b0df8c55886c31711a71f68e56f3a60284b970374ab88f",
+    "all_old_bytes_preserved": true,
+    "appended_original_rows": 3,
+    "rows": 650,
+    "bytes": 286995,
+    "sha256": "0156550730a6095b67f9670dcca3a60a3f586d75359b08a7e376c95aaa50935f",
+    "status_counts": {
+      "FAIL": 40,
+      "PASS": 21,
+      "NOT RUN": 589
+    },
+    "original_raw_sources": [
+      {
+        "path": "C:\\Users\\Vwang\\.tianli-audit\\202610122034324d35d4\\evidence\\ms1-chat-uni-after-20261012203757.jsonl",
+        "sha256": "ee51626e3e8cb8056cd79308ab762054bc6155448dc2a6254674b0e2ba27acb2",
+        "bytes": 539
+      },
+      {
+        "path": "C:\\Users\\Vwang\\.tianli-audit\\20261012204901e8cb20\\evidence\\ms1-chat-uni-after-20261012205225.jsonl",
+        "sha256": "983031309f5369313c5dbc70a52d48d8be034169ae2b19aa069043dde4aedbd8",
+        "bytes": 539
+      },
+      {
+        "path": "C:\\Users\\Vwang\\.tianli-audit\\2026101221140341b1a9\\evidence\\ms1-chat-uni-after-20261012211741.jsonl",
+        "sha256": "4a7320a1d7c493c89ceba5d055f23e5061c776bea537bed4db401e03b7a7ee83",
+        "bytes": 539
+      }
+    ],
+    "preflight_attempt10_no_run_no_business_raw": true
+  },
+  "ms2": {
+    "partial_check_apply_structure": "IMPLEMENTED_AND_REAL_NORMAL_STRUCTURE_SCOPE_VERIFIED",
+    "actual_run_id": "2026101221160570c06b",
+    "actual_wrapper_exit": 0,
+    "summary_ref": "../ms2/structure-normal-summary.json",
+    "backfill_enforce": "Complete external candidate prepared; review/runtime pending",
+    "historical_mapping_and_SP_MS2_1": "UNCONFIRMED",
+    "full_Task2_complete": false,
+    "MS2_to_MS6_complete": false,
+    "overall_project_percentage": "NOT ESTIMATED"
+  },
+  "limitations": [
+    "Existing emoji/image icon-font controls can render square placeholders; those legacy controls were not functionally accepted.",
+    "Synthetic fixture white staff logo is loaded but low contrast on the pale background.",
+    "Native APP/device/safe-area runtime NOT RUN.",
+    "This ordinary affected-flow review does not establish full UI acceptance or original security acceptance."
+  ],
+  "boundaries": {
+    "original_full_acceptance_checkboxes_unmet": true,
+    "stopped_cases": "NOT RUN",
+    "CAPTCHA_solving_or_bypass": "NOT RUN",
+    "native_APP": "NOT RUN",
+    "user_acceptance_signoff": false,
+    "security_baseline_signoff": false,
+    "push": false,
+    "deploy": false,
+    "real_business_database_write": false,
+    "new_business_requests_by_preparer": 0,
+    "Docker_commands_by_preparer": 0,
+    "repo_or_old_raw_modified_by_preparer": false
+  },
+  "recorded_at_utc": "2026-10-12T21:36:33.272112+00:00",
+  "source_sha_tested": "43cfb032cb5dc63d6cbfec4e3b8cfe9b5840a672",
+  "repository_clean_at_review_note": "Baseline43cf was clean during real runs; this archival integration and MS2 CLI are subsequent local changes.",
+  "root_visual_review": {
+    "path": "C:\\Users\\Vwang\\.tianli-audit\\2026101221140341b1a9\\browser-evidence\\visual-review-root.json",
+    "sha256": "f3edffcf7fde013cf5ae88e6e78e38c918d19f46b53dfa56ea649be3ad92d213",
+    "actual_png_count_viewed": 5,
+    "scope": "Ordinary text and affected send/footer layout only",
+    "full_UI_acceptance": false
+  }
 }

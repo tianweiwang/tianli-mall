@@ -305,7 +305,7 @@ WebSocket正常协议：白名单仅kefu_login、login、guest_login、to_chat�
 第三个普通RUN已完成4次业务HTTP、5次合法登录ACK、9次进退房ACK、8条双向在线文字、2次独立游客发行和真实Channel mssage_num到达；整项仍FAIL，最终原缓存核对识别到六个未登记新键。来源是既有GET adminapi/login/info就绪检查的SystemAdminServices.getLoginInfo与QueueTrait.dispatchSecs：五项system_config缓存及data_admin_login_slide，均实际CacheService.remember永久值。补充正常准备仅以真实SystemConfigService.get和sys_data生产者预热现三个聊天配置及上述六键，先登记九个精确值键和九个临时锁，再核对DB来源的完整序列化值、永久期限、恰十四个语言/配置/slide tag成员及其它状态保持；不调用整个loginInfo，不忽略整个prefix，不修改最终保持断言。第三FAIL和原快照保留，新RUN重做同一正常流程；不将已经完成的收发步骤称为整项PASS。
 
 - [x] **普通T7C01：** 真实合法客服、顾客与游客身份/房间/文字回复、精确清理及静态跨应用路径。
-- [ ] **客户端正常验证：** 源码接线、实际构建、正常桌面/移动浏览器结果分别记录；缺口保持待验。
+- [x] **客户端正常文字验证：** 源码接线、实际构建、桌面/移动H5普通收发及根逐图复核已记录；旧工具图标、夹具头像低对比、Native APP和原完整安全验收缺口保留。
 
 普通浏览器T7B01实施补充（2026-10-12，先于界面修复）：实际PC `pc/components/chatList.vue` 的分类头被注释且hdTab只有0，移动 `mobile/chat_list.vue` 的tabList也只有0；record和消息列表按is_tourist过滤，因此游客虽正常收到客服连接，实际页面不能选择游客会话。恢复PC分类头，两端提供用户0/游客1两个真实按钮并保留分页/搜索；分类切换先清空当前选择，PC空选择正常发id=0退房，实际record.is_tourist决定父页面及移动会话分类。右栏只在当前正数真实User且isTourist=0时发用户资料/订单/购买/足迹请求，空选择和游客不形成undefined/负数User请求；移动空列表不调用不存在的scroll ref。新增控制保持原界面方向，文字水平/垂直居中、选中状态含形状/文字重量及aria-pressed，分别核对320px列表头和390px移动宽度，无剪裁/覆盖补偿。
 
@@ -465,3 +465,13 @@ Task9第三普通组合 RUN `202610121728559ecb10`（源码 `f7f001b0f`）：独
 客户端普通宿主attempt1仅构建输入preflight失败，无RUN/业务/raw；attempt2至7的6条实际FAIL逐字节追加，原641行字节保持，总647行（20PASS/38FAIL/589NOT RUN），SHA `39a09a36dda807bf95b0df8c55886c31711a71f68e56f3a60284b970374ab88f`。每轮专用主/引导双标签12库存均全0，env/安装锁无。attempt6用实际原登录页自动初始化响应的UUID哈希与同一快照内确切键匹配，验证7200秒期限并精确清理；不解、不验证或绕过验证码，不调用check/SMS。attempt7的原生uni输入定位和实际vm/$Cache准备通过，正常POST `/api/login`、GET `/api/user`返回200并进入chat；未取得完整聊天认证/room/history，仍FAIL、没有视觉验收。两轮原163表、既有缓存绝对期限/runtime和精确清理核对通过；不补造早期未取得的保持结果。
 
 实施前源决策：实际安装H5的 `core/service/uni.js` 使用 `promisify`，`core/helpers/promise.js` 对没有success/fail/complete回调的connectSocket返回Promise；`libs/new_chat.js` 无回调却调用返回值的onOpen，违反当前SDK合同，符合attempt7在history前止步的现象。窄修在connectSocket传入complete回调，以取得原生SocketTask；ready仍仅由真实onOpen完成，认证ACK、history、room、发送和身份核对全部保持。须重新构建并运行正常客户端/视觉验收后才能记Task7通过。未运行原安全、异常、故障、并发/断连注入或恢复测试；Task7、Task9和完整MS1仍未验收，无push/deploy/真实库操作/签收。
+
+### 2026-10-13 普通H5验证与本地交付收尾
+
+普通T7U01已通过：当前源码43cf的RUN2026101221140341b1a9/probe202610122116165c54a6，宿主四阶段native0，真实当前登录/身份/room/history、桌面Enter/移动Space与正常离页完成，51正常HTTP200。四条消息/四条记录经独立SQL核对，8头像真实加载；同页390→320新增业务动作0，五PNG经根逐张核对全文、新发送控件和footer布局。163原表/缓存值及绝对期限/runtime保持，精确清理及双标签12库存全0；旧图标方框、夹具白色logo低对比及NativeAPP等限制保留，不能代表完整UI或原安全验收。
+
+原647行字节保持，逐字节追加R8FAIL/R9FAIL/R11PASS各539B后650行（21PASS/40FAIL/589NOT RUN），SHA2560156550730a6095b67f9670dcca3a60a3f586d75359b08a7e376c95aaa50935f。R10业务前校验失败无RUN/raw，所有原FAIL和停止项保留。当前两构建H5 333文件、admin8 596文件/11警告，未变后端复用原组合24阶段native0、其整体FAIL保留；独立路由114项/12merchant且0product与runtime精确清理另证。报告、摘要与原始记录已写回，本地提交另由Git记录。
+
+- [x] Task9普通文档交付：records/ms1/report.md、实际raw追加、当前证据摘要；仅普通范围完成。
+
+MS1普通开发与本地记录现为9/9；原完整回归、Task7/Task9安全验收、人工签收和security baseline均未完成，不勾原完整checkbox。MS2普通两命令结构流程已独立通过，完整回填/约束与商品接口、MS2–6继续待办。未push/deploy或写真实业务库。
