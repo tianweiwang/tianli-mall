@@ -28,7 +28,7 @@ const result = {
   status: 'FAIL', contexts_closed: false,
   stages: [{ name: 'desktop', width: 1440, height: 900 }, { name: 'mobile', width: 390, height: 844 }],
   login_http_success: 0, guest_http_success: 0,
-  identity_acks: [], normal_texts: [], room_acks: [], screenshots: [], control_checks: [],
+  identity_acks: [], normal_texts: [], room_acks: [], screenshots: [], control_checks: [], action_controls: [],
   external_requests_blocked_count: 0, external_requests_blocked: [],
   client_http_count: 0, console_counts: { external_blocked: 0, application_error: 0, page_error: 0 },
   resource_counts: {},
@@ -381,6 +381,34 @@ async function controls(page, name) {
   result.control_checks.push({ stage: name, viewport: name === 'desktop' ? { width: 1440, height: 900 } :
     { width: 390, height: 844 }, ...metrics, manual_screenshot_review: 'PENDING ROOT' });
 }
+async function actionControl(page, label, kind) {
+  const button = page.getByRole('button', { name: label, exact: true });
+  await until(async () => await button.count() === 1 && await button.isVisible() && await button.isEnabled(),
+    'NORMAL_ACTION_CONTROL_READY');
+  const metrics = await button.evaluate((node) => {
+    const rect = (element) => {
+      const box = element.getBoundingClientRect();
+      return { left: box.left, right: box.right, top: box.top, bottom: box.bottom,
+        width: box.width, height: box.height };
+    };
+    const style = getComputedStyle(node), svg = node.querySelector('svg');
+    return { type: node.type, label: node.getAttribute('aria-label'), disabled: node.disabled,
+      display: style.display, align_items: style.alignItems, justify_content: style.justifyContent,
+      bounds: rect(node), parent: rect(node.parentElement), icon: svg ? rect(svg) : null,
+      symbol: svg?.querySelector('use')?.getAttribute('href') || svg?.querySelector('use')?.getAttribute('xlink:href') };
+  });
+  const b = metrics.bounds, p = metrics.parent, i = metrics.icon;
+  check(metrics.type === 'button' && metrics.label === label && metrics.disabled === false &&
+    metrics.display === 'flex' && metrics.align_items === 'center' && metrics.justify_content === 'center' &&
+    i && i.width > 0 && i.height > 0 && metrics.symbol === (label === '发送' ? '#iconfasong' : '#iconfanhui'),
+  'NORMAL_ACTION_SEMANTICS');
+  check(b.width >= 44 && b.height >= 44 && b.left >= p.left - 1 && b.right <= p.right + 1 &&
+    b.top >= p.top - 1 && b.bottom <= p.bottom + 1, 'NORMAL_ACTION_BOUNDS');
+  check(Math.abs((i.left + i.right - b.left - b.right) / 2) <= 2 &&
+    Math.abs((i.top + i.bottom - b.top - b.bottom) / 2) <= 2, 'NORMAL_ACTION_ICON_ALIGNMENT');
+  result.action_controls.push({ stage: 'mobile', kind, ...metrics });
+  return button;
+}
 async function textVisible(page, text, code, selector) {
   const scope = selector ? page.locator(selector) : page;
   await until(async () => await scope.getByText(text, { exact: true }).count() > 0 &&
@@ -432,7 +460,7 @@ async function stage(name) {
     await guest.getByRole('button', { name: '发送', exact: true }).click();
   } else {
     await guest.getByPlaceholder('请输入内容', { exact: true }).fill(guestText);
-    await guest.locator('.input-box .iconfasong').click();
+    await (await actionControl(guest, '发送', 'guest')).click();
   }
   await until(() => state.guestEcho, 'GUEST_TEXT_ACKNOWLEDGED');
   await textVisible(guest, guestText, 'GUEST_ECHO_VISIBLE');
@@ -458,7 +486,7 @@ async function stage(name) {
   } else {
     check(new URL(staff.url()).pathname === '/kefu/mobile_chat', 'MOBILE_CHAT_ROUTE');
     await staff.getByPlaceholder('请输入内容', { exact: true }).fill(replyText);
-    await staff.locator('.input-box .iconfasong').click();
+    await (await actionControl(staff, '发送', 'kefu')).click();
   }
   await until(() => result.normal_texts.some((t) => t.stage === name && t.sender_uid === input.staff_uid), 'STAFF_TEXT_RECEIVED');
   await textVisible(staff, replyText, 'STAFF_ECHO_VISIBLE', staffChatSelector);
@@ -470,7 +498,7 @@ async function stage(name) {
   if (name === 'desktop') {
     await staff.getByRole('button', { name: '用户列表', exact: true }).click();
   } else {
-    await staff.locator('.chat-box .head-box .back').click();
+    await (await actionControl(staff, '返回会话列表', 'kefu')).click();
   }
   await until(() => result.room_acks.filter((a) => a.stage === name && a.uid === 0).length > leaveBefore, 'ORDINARY_LEAVE_ACK');
   await drain();

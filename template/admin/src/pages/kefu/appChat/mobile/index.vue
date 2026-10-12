@@ -107,7 +107,11 @@
       </div>
       <div class="input-box">
         <el-input v-model="con" placeholder="请输入内容" />
-        <span class="iconfont iconfasong" v-db-click @click="sendText" :class="{ isSend: isSend }"></span>
+        <button class="send-button" type="button" aria-label="发送" :disabled="!isSend || !chatReady" @click="sendText">
+          <svg class="chat-action-icon" viewBox="0 0 1024 1024" aria-hidden="true" focusable="false">
+            <use href="#iconfasong" xlink:href="#iconfasong"></use>
+          </svg>
+        </button>
       </div>
       <div class="emoji" v-db-click @click="openBox(1)"><span class="iconfont iconbiaoqing2"></span></div>
     </div>
@@ -643,6 +647,11 @@ export default {
 };
 </script>
 
+<style>
+#iconfasong path {
+  fill: currentColor;
+}
+</style>
 <style lang="scss" scoped>
 .head-box {
   position: relative;
@@ -700,7 +709,8 @@ export default {
   .footer-box {
     display: flex;
     align-items: center;
-    height: 1rem;
+    height: 50px;
+    flex-shrink: 0;
     padding: 0 0.3rem;
     color: rgba(0, 0, 0, 0.8);
     background: #f7f7f7;
@@ -714,19 +724,19 @@ export default {
       display: flex;
       align-items: center;
       flex: 1;
-      height: 0.64rem;
-      padding-right: 0.05rem;
+      height: 44px;
+      min-width: 0;
       background-color: #fff;
-      border-radius: 0.32rem;
-      overflow: hidden;
+      border-radius: 22px;
 
-      input {
+      .el-input {
         flex: 1;
-        padding-left: 0.2rem;
-        height: 100%;
-        border: transparent !important;
+        min-width: 0;
       }
       ::v-deep .el-input__inner {
+        height: 44px;
+        line-height: 44px;
+        padding-left: 0.2rem;
         font-size: 0.28rem !important;
       }
       ::v-deep .el-input__inner,
@@ -735,13 +745,39 @@ export default {
         border: transparent;
         box-shadow: none;
       }
-      .iconfont {
-        font-size: 0.5rem;
-        color: #ccc;
-        font-weight: normal;
-      }
-      .isSend {
+      .send-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        flex: 0 0 44px;
+        padding: 0;
+        border: 0;
+        border-radius: 22px;
+        background: transparent;
         color: #3875ea;
+        cursor: pointer;
+        box-sizing: border-box;
+        &:focus-visible {
+          outline: 0;
+          box-shadow: inset 0 0 0 2px currentColor;
+        }
+        &:hover:not(:disabled) {
+          background: #e8f0ff;
+        }
+        &:disabled {
+          color: #b3b8c2;
+          background: #f0f2f5;
+          cursor: not-allowed;
+        }
+        .chat-action-icon {
+          width: 24px;
+          height: 24px;
+          fill: currentColor;
+          flex-shrink: 0;
+          pointer-events: none;
+        }
       }
     }
     .emoji .iconfont {

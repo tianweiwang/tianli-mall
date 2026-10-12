@@ -1,7 +1,11 @@
 <template>
   <div class="chat-box">
     <div class="head-box">
-      <div class="back" v-db-click @click="goBack"><span class="iconfont iconfanhui"></span></div>
+      <button class="back" type="button" aria-label="返回会话列表" v-db-click @click="goBack">
+        <svg class="chat-action-icon" viewBox="0 0 1024 1024" aria-hidden="true" focusable="false">
+          <use href="#iconfanhui" xlink:href="#iconfanhui"></use>
+        </svg>
+      </button>
       <div class="title">{{ nickname }} - 对话详情</div>
     </div>
     <div class="chat-scroll-box">
@@ -58,7 +62,11 @@
       <div class="words" v-db-click @click="showWords"><span class="iconfont iconhuashu1"></span></div>
       <div class="input-box">
         <el-input v-model="con" placeholder="请输入内容" style="font-size: 0.28rem" />
-        <span class="iconfont iconfasong" v-db-click @click="sendText" :class="{ isSend: isSend }"></span>
+        <button class="send-button" type="button" aria-label="发送" :disabled="!isSend || !chatReady" @click="sendText">
+          <svg class="chat-action-icon" viewBox="0 0 1024 1024" aria-hidden="true" focusable="false">
+            <use href="#iconfasong" xlink:href="#iconfasong"></use>
+          </svg>
+        </button>
       </div>
       <div class="emoji" v-db-click @click="openBox(1)"><span class="iconfont iconbiaoqing2"></span></div>
       <div class="more" v-db-click @click="openBox(2)"><span class="iconfont icongengduozhankai1"></span></div>
@@ -584,6 +592,10 @@ html,
 body {
   font-size: 50px;
 }
+#iconfanhui path,
+#iconfasong path {
+  fill: currentColor;
+}
 </style>
 <style lang="scss" scoped>
 .head-box {
@@ -593,15 +605,44 @@ body {
   justify-content: center;
   color: #fff;
   height: 45px;
+  flex-shrink: 0;
   background: linear-gradient(85deg, #3875ea 0%, #1890fc 100%);
-  span {
+  .back {
     position: absolute;
     width: 45px;
-    height: 100%;
+    height: 45px;
     left: 0;
     top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    box-sizing: border-box;
     text-align: center;
-    line-height: 45px;
+    &:focus-visible {
+      outline: 0;
+      box-shadow: inset 0 0 0 2px currentColor;
+    }
+    &:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.16);
+    }
+  }
+  .title {
+    width: 100%;
+    padding: 0 45px;
+    box-sizing: border-box;
+    text-align: center;
+  }
+  .chat-action-icon {
+    width: 24px;
+    height: 24px;
+    fill: currentColor;
+    flex-shrink: 0;
+    pointer-events: none;
   }
 }
 .chat-box {
@@ -642,7 +683,8 @@ body {
   .footer-box {
     display: flex;
     align-items: center;
-    height: 1rem;
+    height: 50px;
+    flex-shrink: 0;
     padding: 0 0.3rem;
     color: rgba(0, 0, 0, 0.8);
     background: #f7f7f7;
@@ -653,18 +695,20 @@ body {
       display: flex;
       align-items: center;
       width: 4.92rem;
-      height: 0.64rem;
-      padding-right: 0.05rem;
+      height: 44px;
+      min-width: 0;
       margin-left: 0.18rem;
       background-color: #fff;
-      border-radius: 0.32rem;
-      overflow: hidden;
+      border-radius: 22px;
 
-      input {
+      .el-input {
         flex: 1;
+        min-width: 0;
+      }
+      ::v-deep .el-input__inner {
+        height: 44px;
+        line-height: 44px;
         padding-left: 0.2rem;
-        height: 100%;
-        border: transparent !important;
       }
       ::v-deep .el-input__inner,
       .el-input__inner:hover,
@@ -672,13 +716,39 @@ body {
         border: transparent;
         box-shadow: none;
       }
-      .iconfont {
-        font-size: 0.5rem;
-        color: #ccc;
-        font-weight: normal;
-      }
-      .isSend {
+      .send-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        flex: 0 0 44px;
+        padding: 0;
+        border: 0;
+        border-radius: 22px;
+        background: transparent;
         color: #3875ea;
+        cursor: pointer;
+        box-sizing: border-box;
+        &:focus-visible {
+          outline: 0;
+          box-shadow: inset 0 0 0 2px currentColor;
+        }
+        &:hover:not(:disabled) {
+          background: #e8f0ff;
+        }
+        &:disabled {
+          color: #b3b8c2;
+          background: #f0f2f5;
+          cursor: not-allowed;
+        }
+        .chat-action-icon {
+          width: 24px;
+          height: 24px;
+          fill: currentColor;
+          flex-shrink: 0;
+          pointer-events: none;
+        }
       }
     }
     .emoji .iconfont {

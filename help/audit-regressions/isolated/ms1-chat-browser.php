@@ -639,6 +639,24 @@ function m7b_browser_result(string $exchange,string $run,string $source,array $u
         &&file_get_contents($exchange.'/mobile-kefu-list.png',false,null,0,8)==="\x89PNG\r\n\x1a\n",'actual mobile list control screenshot is separate from the four chat screenshots');
     audit_expect(is_array($result['control_checks'] ?? null),'real browser geometry observations are present');
     m7b_control_geometry($result['control_checks']);
+    $actions=$result['action_controls'] ?? [];
+    audit_expect(is_array($actions)&&count($actions)===3,'actual mobile actions record both sends and normal return');
+    foreach ([['guest','发送','#iconfasong'],['kefu','发送','#iconfasong'],['kefu','返回会话列表','#iconfanhui']] as [$kind,$label,$symbol]) {
+        $rows=array_values(array_filter($actions,static fn(array $row): bool=>($row['stage'] ?? null)==='mobile'
+            &&($row['kind'] ?? null)===$kind&&($row['label'] ?? null)===$label));
+        audit_expect(count($rows)===1,'actual modified action has one finite geometry observation');
+        $row=$rows[0]; $b=$row['bounds'] ?? []; $p=$row['parent'] ?? []; $i=$row['icon'] ?? [];
+        audit_expect(($row['type'] ?? null)==='button'&&($row['disabled'] ?? null)===false&&($row['symbol'] ?? null)===$symbol
+            &&($row['display'] ?? null)==='flex'&&($row['align_items'] ?? null)==='center'&&($row['justify_content'] ?? null)==='center',
+            'actual modified action is an enabled centered native button with its local symbol');
+        foreach ([$b,$p,$i] as $rect) foreach (['left','right','top','bottom','width','height'] as $axis)
+            audit_expect((is_int($rect[$axis] ?? null)||is_float($rect[$axis] ?? null))&&is_finite((float)$rect[$axis]),'action coordinates are finite');
+        audit_expect($b['width']>=44&&$b['height']>=44&&$b['left']>=$p['left']-1&&$b['right']<=$p['right']+1
+            &&$b['top']>=$p['top']-1&&$b['bottom']<=$p['bottom']+1&&$i['width']>0&&$i['height']>0,
+            'actual mobile action fits its parent and remains a full click target');
+        audit_expect(abs(($i['left']+$i['right']-$b['left']-$b['right'])/2)<=2
+            &&abs(($i['top']+$i['bottom']-$b['top']-$b['bottom'])/2)<=2,'actual local SVG is centered on both axes');
+    }
     audit_expect(is_int($result['external_requests_blocked_count'] ?? null)&&$result['external_requests_blocked_count']>=0,
         'external requests are blocked before send and counted separately');
     return ['browser_result_sha256'=>hash_file('sha256',$file),'actual_http'=>count($evidence['client_http']),
