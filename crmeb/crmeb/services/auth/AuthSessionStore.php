@@ -143,6 +143,20 @@ class AuthSessionStore
         return $this->accountCommand($app, $id, 'init', $this->nonce());
     }
 
+    /** Read an existing authorization version without initialization or renewal. */
+    public function currentAccountVersion(string $app, string $id): string
+    {
+        if (AuthConfigGuard::authConfig()['session_epoch'] !== $this->epoch) {
+            throw new AuthUnavailableException();
+        }
+        $result = $this->execute('read_account', [$this->accountKey($app, $id)], []);
+        $version = $result[1] ?? null;
+        if (!is_string($version) || preg_match('/^[a-f0-9]{32}$/D', $version) !== 1) {
+            throw new AuthUnavailableException();
+        }
+        return $version;
+    }
+
     public function createSession(string $app, string $id, string $expectedVersion, array $session): void
     {
         $account = $this->accountKey($app, $id);
