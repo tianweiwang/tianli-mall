@@ -62,33 +62,42 @@ function m7c_listeners(): array
 }
 function m7c_observe(array $group,array $supervisor,?array &$snapshot=null): array
 {
-    $snapshot=['stage'=>'members','leader_pid'=>$group['leader_pid'],'pgid'=>$group['pgid'],'sid'=>$group['sid']];
-    $members=array_values(array_filter(audit_app_group_members($group,$supervisor),static fn(array $m): bool=>!in_array($m['state'],['Z','X','x'],true)));
-    $snapshot['live_member_count']=count($members); $snapshot['stage']='initial_tcp';
-    $inodes=[]; foreach (audit_app_tcp_rows() as $row) if ($row['state']==='0A' && in_array($row['local_port'],[40001,40002,40003],true)) $inodes[$row['inode']]=$row['local_port'];
-    $initial=array_values(array_unique(array_values($inodes))); sort($initial,SORT_NUMERIC);
-    $snapshot['initial_listener_ports']=$initial; $snapshot['identity_checked_count']=0; $snapshot['stage']='descriptors';
-    $owned=[];
-    foreach ($members as &$member) {
-        $member['listener_ports']=[]; $check=audit_app_proc_stat($member['pid']);
-        if ($check===null || $check['starttime']!==$member['starttime'] || $check['pgid']!==$group['pgid'] || $check['sid']!==$group['sid']) continue;
-        foreach (glob('/proc/'.$member['pid'].'/fd/*') ?: [] as $file) {
-            $target=@readlink($file);
-            if (is_string($target) && preg_match('/^socket:\[(\d+)\]$/D',$target,$m)===1 && isset($inodes[$m[1]])) $member['listener_ports'][]=$inodes[$m[1]];
+    $stableDeadline=microtime(true)+1.0;
+    do {
+        $snapshot=['stage'=>'members','leader_pid'=>$group['leader_pid'],'pgid'=>$group['pgid'],'sid'=>$group['sid']];
+        $members=array_values(array_filter(audit_app_group_members($group,$supervisor),static fn(array $m): bool=>!in_array($m['state'],['Z','X','x'],true)));
+        $snapshot['live_member_count']=count($members); $snapshot['stage']='initial_tcp';
+        $inodes=[]; foreach (audit_app_tcp_rows() as $row) if ($row['state']==='0A' && in_array($row['local_port'],[40001,40002,40003],true)) $inodes[$row['inode']]=$row['local_port'];
+        $initial=array_values(array_unique(array_values($inodes))); sort($initial,SORT_NUMERIC);
+        $snapshot['initial_listener_ports']=$initial; $snapshot['identity_checked_count']=0; $snapshot['stage']='descriptors';
+        $owned=[];
+        foreach ($members as &$member) {
+            $member['listener_ports']=[]; $check=audit_app_proc_stat($member['pid']);
+            if ($check===null || $check['starttime']!==$member['starttime'] || $check['pgid']!==$group['pgid'] || $check['sid']!==$group['sid']) continue;
+            foreach (glob('/proc/'.$member['pid'].'/fd/*') ?: [] as $file) {
+                $target=@readlink($file);
+                if (is_string($target) && preg_match('/^socket:\[(\d+)\]$/D',$target,$m)===1 && isset($inodes[$m[1]])) $member['listener_ports'][]=$inodes[$m[1]];
+            }
+            $check=audit_app_proc_stat($member['pid']);
+            audit_expect($check!==null && $check['starttime']===$member['starttime'] && $check['pgid']===$group['pgid'] && $check['sid']===$group['sid'],'chat process changed during listener observation');
+            $snapshot['identity_checked_count']++;
+            $member['listener_ports']=array_values(array_unique($member['listener_ports'])); sort($member['listener_ports'],SORT_NUMERIC);
+            $owned=array_merge($owned,$member['listener_ports']);
+        } unset($member);
+        $owned=array_values(array_unique($owned)); sort($owned,SORT_NUMERIC);
+        $snapshot['owned_listener_ports']=$owned; $snapshot['stage']='final_tcp';
+        $visible=m7c_listeners(); $snapshot['final_listener_ports']=$visible;
+        audit_expect(!in_array(40001,$visible,true),'ordinary chat does not start the admin notice listener');
+        if ($initial!==$visible) {
+            $snapshot['stage']='tcp_transition';
+            audit_expect(microtime(true)<$stableDeadline,'chat listener snapshot did not stabilize within its bounded observation');
+            usleep(10000);
+            continue;
         }
-        $check=audit_app_proc_stat($member['pid']);
-        audit_expect($check!==null && $check['starttime']===$member['starttime'] && $check['pgid']===$group['pgid'] && $check['sid']===$group['sid'],'chat process changed during listener observation');
-        $snapshot['identity_checked_count']++;
-        $member['listener_ports']=array_values(array_unique($member['listener_ports'])); sort($member['listener_ports'],SORT_NUMERIC);
-        $owned=array_merge($owned,$member['listener_ports']);
-    } unset($member);
-    $owned=array_values(array_unique($owned)); sort($owned,SORT_NUMERIC);
-    $snapshot['owned_listener_ports']=$owned; $snapshot['stage']='final_tcp';
-    $visible=m7c_listeners(); $snapshot['final_listener_ports']=$visible;
-    audit_expect(!in_array(40001,$visible,true),'ordinary chat does not start the admin notice listener');
-    audit_expect($owned===$visible,'dedicated chat listeners must belong to the registered generation');
-    return ['group'=>$group,'supervisor'=>array_intersect_key($supervisor,array_flip(['pid','pgid','sid','starttime'])),
-        'members'=>$members,'listener_ports'=>$owned,'admin_listener_open'=>false];
+        audit_expect($owned===$visible,'dedicated chat listeners must belong to the registered generation');
+        return ['group'=>$group,'supervisor'=>array_intersect_key($supervisor,array_flip(['pid','pgid','sid','starttime'])),
+            'members'=>$members,'listener_ports'=>$owned,'admin_listener_open'=>false];
+    } while (true);
 }
 function m7c_stop(&$process,?array &$group,array $supervisor): array
 {
