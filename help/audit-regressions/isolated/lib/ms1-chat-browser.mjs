@@ -83,13 +83,15 @@ async function command(action, event) {
 }
 async function drain() { await httpQueue; healthy(); }
 async function permission() {
-  const waiting = { state: 'waiting', node_pid: process.pid, hostname: os.hostname() };
+  const waiting = { state: 'waiting', node_pid: process.pid, hostname: os.hostname(),
+    uid: process.getuid(), gid: process.getgid() };
   if (typeof process.env.AUDIT_RUN_ID === 'string') {
     waiting.run_id = process.env.AUDIT_RUN_ID; result.run_id = waiting.run_id;
   }
   if (/^[a-f0-9]{40}$/.test(process.env.AUDIT_SOURCE_SHA || '')) {
     waiting.source_sha = process.env.AUDIT_SOURCE_SHA; result.source_sha = waiting.source_sha;
   }
+  check(waiting.uid === 0 && waiting.gid === 0, 'RUNNER_IDENTITY_MISMATCH');
   const deadline = Date.now() + 900000;
   let wroteStartup = false;
   while (Date.now() < deadline) {
@@ -98,7 +100,9 @@ async function permission() {
         fs.mkdirSync(ROOT, { recursive: true });
         atomic(path.join(ROOT, 'startup.json'), waiting);
         wroteStartup = true;
-      } catch {}
+      } catch (error) {
+        if (error.code === 'EACCES') fail('PREPARATION_OUTPUT_UNWRITABLE');
+      }
     }
     try {
       const terminal = readJson(path.join(ROOT, 'status.json'));
@@ -113,7 +117,9 @@ async function permission() {
       try {
         const permit = readJson(READY);
         if (permit && typeof permit.generation === 'string' && permit.generation.length > 0) return;
-      } catch {}
+      } catch (error) {
+        if (error.code === 'EACCES') fail('PREPARATION_INPUT_UNREADABLE');
+      }
     }
     await pause(250);
   }

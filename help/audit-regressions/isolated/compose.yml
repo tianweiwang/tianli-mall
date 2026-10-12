@@ -127,6 +127,7 @@ services:
     image: sha256:12f8a18ee81e6496442101b53ed2e9b2f68eef56cbb63ed4393b5a81cf9e1dbe
     pull_policy: never
     profiles: [ms1-chat-browser]
+    user: "0:0"
     entrypoint: [node]
     command: [/opt/ms1-chat-browser.mjs]
     read_only: true

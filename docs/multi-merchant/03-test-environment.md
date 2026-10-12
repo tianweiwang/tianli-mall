@@ -97,6 +97,8 @@ Task7普通浏览器接线：可选profile `ms1-chat-browser` 增加同一内部
 
 首次普通T7B01实际启动定位到Nginx默认fastcgi_temp仍指向只读/var/cache/nginx，UI native exit1且没有有效IP，资源核对先于浏览器/夹具而失败。所有HTTP上游临时目录（client、proxy、fastcgi、uwsgi、scgi）必须显式放在本实例/tmp，不关闭rootfs只读设置。Node等待准备许可时亦读取本RUN公开终态；若PHP已finish/abort则正常结束等待并保留失败结果，不空等15分钟或启动Chromium。该轮原163表/cache保持，0业务请求/0夹具，专用主/引导实例资源全部0；实际FAIL留存，修正后用新RUN核对。
 
+第二轮实际元数据确认浏览器镜像默认USER=node（UID/GID1000），而PHP生成的ready/login文件为UID/GID0、0600；故Node无法读取许可，正常窗口最终原生超时，Chromium/浏览器HTTP均0。browser profile显式user=0:0与该专用私密文件生产者一致；仍保持0600、只读输入、只读rootfs、cap_drop=ALL、非privileged、no-new-privileges及唯一内部网络，不增加其它挂载。Node启动记录并核对UID/GID，准备输入/输出若不可访问立即报告固定错误。该轮3个自有SQL行已清理，36精确键登记/18实际移除，163表和原cache保持，主/引导资源均0。没有降低私密文件读取权限或以其它入口代替浏览器验收。
+
 含可选profile的RUN销毁必须用 `audit_compose --profile '*' down --volumes --remove-orphans`，保留原manifest身份核对。Task7首次普通RUN的旧down命令native0却留下1个audit-chat、1网络及3卷，已据真实资源盘点识别，不称清理完成；剩余资源必须逐一与原manifest的ID、标签、网络ID和卷创建身份匹配后，才沿同一project开启该profile完成销毁。以后每次销毁仍核对实际容器/网络/卷全部0，native0不能代替资源结果。
 
 ### 3.5 应用启动
