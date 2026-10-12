@@ -240,6 +240,7 @@ Task5普通交付（2026-10-12）：RUN202610112248420b0204，基线源码f78b95
 **Files:**
 - Create: `crmeb/app/adminapi/route/marketplace.php`、`crmeb/app/adminapi/controller/v1/marketplace/Merchant.php`、`crmeb/app/services/marketplace/MerchantAdminServices.php`、`crmeb/app/services/marketplace/AuditLogServices.php`
 - Create（必要接线）: `PlatformAccessServices.php`、marketplace的AuditLog model/dao、adminapi的MarketplaceBoundaryMiddleware/MarketplaceScopeMiddleware及 `help/audit-regressions/isolated/ms1-platform.php`；Modify（必要调用点）: `app/Request.php`、`AdminApiExceptionHandle.php`、`HttpEndListener.php`、marketplace的MerchantDao/RoleDao/EmployeeDao/PasswordSetupDao、merchantapi/config/database.php。
+- Modify（普通隔离核对的必要接线）: `help/audit-regressions/isolated/lib/guard.php`、`lib/harness.php`、`compose.yml`；显式只读保护模式不改变原身份、内网地址、数据库/Redis标记及精确DML权限检查。
 
 **Interfaces:**
 - Produces: `GET|POST /adminapi/marketplace/merchants`、`GET|PUT /adminapi/marketplace/merchants/:id`、`PUT /adminapi/marketplace/merchants/:id/review`、`PUT /adminapi/marketplace/merchants/:id/flags`（`accept_orders`、`fulfillment_enabled`、`security_locked`）、`POST /adminapi/marketplace/merchants/:id/admin-employee`（创建商家管理员并返回一次性设置链接）；每个写操作都写 `eb_marketplace_audit_log`。
@@ -260,6 +261,8 @@ MerchantAdminServices公共签名：listing(PlatformScope,array query=[]):array�
 新marketplace的AdminApiExceptionHandle分支与HttpEndListener均按选中adminapi应用+服务器路由标记限定，在读取参数/响应正文之前排除记录；新异常只返回固定401/403/404/422/503状态与固定消息，report仅固定事件分类，旧接口包装保持。不通过关闭日志总开关作隐私验收。实版PDOConnection的SQL监控看trigger_sql而非debug，因此Task6边界及merchantapi子应用连接同时显式trigger_sql=false；仅debug=false不能支持普遍禁用SQL正文的结论。Task4/5现有正常配置日志PASS保留历史边界，不改写为任意日志配置或拒绝场景验收。
 
 普通T6P01：先保存实现缺失的真实基线；新ISO-FULL正常准备冻结五表/七登记，runner只持audit_app DML。测试管理员为专用合成Db记录，由现有v2发行器按该记录创建正常有效平台会话；不请求验证码或登录页、不重做停用认证套件。通过真实七接口创建A/B商家（默认角色归属）、审核、建管理员及能力、正常设密/登录/me、资料修改、接单/履约开关及平台正常锁定/解除与列表/详情。锁定时仅平台读取目标，不发送商家受限请求；身份变化后只重新凭据登录。核对每次写实际商家审计、全局读的system_log真实行、权限登记/当前授权、日志无正文及正常有效无变化。夹具按本次真实ID逆FK清理，专用合成平台账号/请求日志/本次缓存精确清理；旧行/结构/checksum及旧Redis值/绝对期限保持，实际夹具表/system_admin/system_log自然计数器变化单列，不能恢复快照掩盖副作用。原D20、M06员工拒绝及旧/无效会话等继续NOT RUN；正常流程不代替完整验收。
+
+2026-10-12复核发现既有 `audit_guard_assert()` 在上述只读检查后仍执行 `CREATE DATABASE audit_guard_probe` 并期望1044；本次源码缺失基线已调用该旧保护路径，原FAIL/0业务请求/0夹具记录保留，不能称该次无任何拒绝探针。后续普通流程取消这一DDL拒绝探针：RUN manifest显式保存 `guard_mode=read-only`，每次guard在相同强只读检查通过后返回；compose/首次prepare显式传播模式，默认 `active-probe` 的旧套件行为保留但不执行。已有专用RUN只补该模式字段，身份、资源、库/cache和权限均不改；最终after要求实际manifest为read-only，证据将DDL探针单列NOT RUN，不把只读核对称作该拒绝测试通过。普通app supervisor、runner及专用迁移准备均读同一manifest，避免只设置runner环境而遗漏既有app进程。
 
 - [ ] **普通T6P01：** 七平台接口、真实商家/角色/管理员归属与能力、状态独立性、事务审计和精确清理。
   普通验证还覆盖已正常授予七登记权限的受限平台管理员list/read，以及A原角色正常改为8权限后，平台为新账号创建全9权限“管理员 2”的合法分支；不重用受影响旧会话，不发送拒绝请求。专用合成system_role的真实ID/旧行保留与自然计数器一并核对。

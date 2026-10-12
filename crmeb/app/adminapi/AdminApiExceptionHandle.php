@@ -47,6 +47,16 @@ class AdminApiExceptionHandle extends Handle
      */
     public function report(Throwable $exception): void
     {
+        if (\app\services\marketplace\PlatformAccessServices::isMarketplace($this->app->request)) {
+            if ($exception instanceof AuthSessionException
+                || ($exception instanceof \think\exception\HttpException
+                    && in_array($exception->getStatusCode(), [401, 403, 404, 422], true))) return;
+            try {
+                $this->app->log->record($exception instanceof AuthUnavailableException
+                    ? 'marketplace.auth_unavailable' : 'marketplace.unhandled_exception', 'error');
+            } catch (Throwable $loggingError) {}
+            return;
+        }
         if (!$this->isIgnoreReport($exception)) {
             try {
                 $data = [
@@ -84,6 +94,15 @@ class AdminApiExceptionHandle extends Handle
      */
     public function render($request, Throwable $e): Response
     {
+        if (\app\services\marketplace\PlatformAccessServices::isMarketplace($request)) {
+            $status = 503;
+            if ($e instanceof AuthSessionException) $status = 401;
+            elseif ($e instanceof \think\exception\HttpException
+                && in_array($e->getStatusCode(), [401, 403, 404, 422], true)) $status = $e->getStatusCode();
+            $messages = [401=>'认证信息无效，请重新登录', 403=>'没有权限访问', 404=>'资源不存在',
+                422=>'请求参数不正确', 503=>'服务暂不可用'];
+            return Response::create(['status'=>$status,'msg'=>$messages[$status],'data'=>[]], 'json', $status);
+        }
         // Controlled v2 errors bypass translation/cache IO and debug context.
         // Both subclasses stay under AuthException's existing report ignore.
         if ($e instanceof AuthUnavailableException) {

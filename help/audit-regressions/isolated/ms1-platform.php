@@ -6,6 +6,10 @@ declare(strict_types=1);
  * Shared ordinary snapshot/language/session helpers copied from the PASS Task5 source.
  */
 require __DIR__ . '/lib/harness.php';
+if ((audit_manifest()['guard_mode'] ?? '') !== 'read-only') {
+    fwrite(STDERR, "BLOCKED ordinary Task6 requires read-only isolation checks\n");
+    exit(2);
+}
 audit_guard_assert();
 putenv('AUDIT_MILESTONE=MS1');
 require_once audit_repo_dir() . '/crmeb/vendor/autoload.php';
@@ -712,12 +716,14 @@ function m6h_cleanup(PDO $pdo,array $owners,array $ownedKeys): int
 
 audit_case('T6P01','normal_platform_merchant_management','INTEGRATION',static function(): array {
     $evidence=['run_id'=>getenv('AUDIT_RUN_ID'),'requests'=>[],'negative_cases_run'=>false,'old_token_requests'=>0,
-        'unapproved_merchant_requests'=>0,'locked_merchant_requests'=>0,'browser_acceptance'=>false];
+        'unapproved_merchant_requests'=>0,'locked_merchant_requests'=>0,'browser_acceptance'=>false,
+        'guard_mode'=>audit_manifest()['guard_mode'] ?? 'active-probe','application_privilege_ddl_probe'=>'NOT RUN'];
     $owners=['merchant'=>[],'role'=>[],'employee'=>[],'password_setup'=>[],'audit_log'=>[],'system_admin'=>[],'system_log'=>[],'system_role'=>[]];
     $subjects=[]; $admin=[]; $ownedKeys=[]; $secrets=[]; $plannedMerchants=[]; $plannedEmployees=[];
     $failure=null; $cleanupFailure=null; $pdo=null; $v2=null; $adminV2=null; $started=false;
     $counterTables=['eb_marketplace_merchant','eb_marketplace_role','eb_marketplace_employee','eb_marketplace_password_setup','eb_marketplace_audit_log','eb_system_admin','eb_system_log','eb_system_role'];
     try {
+        audit_expect($evidence['guard_mode']==='read-only','ordinary Task6 requires explicitly read-only isolation protection');
         $initial=m6h_snapshot(); $evidence['before']=m6h_public_snapshot($initial);
         // Missing implementation is observed before any business request or fixture and before five-table preparation assertions.
         foreach (['crmeb/app/adminapi/route/marketplace.php','crmeb/app/adminapi/controller/v1/marketplace/Merchant.php',

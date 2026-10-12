@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\dao\marketplace;
 
 use app\dao\marketplace\scope\MerchantScope;
+use app\dao\marketplace\scope\PlatformScope;
 use app\model\marketplace\Role;
 use app\services\marketplace\context\MerchantContext;
 use InvalidArgumentException;
@@ -139,6 +140,58 @@ final class RoleDao
         }
         $changes['update_time'] = $now;
         return $query->update($changes);
+    }
+
+    public function listForPlatform(PlatformScope $scope, int $merId, bool $lock = false): array
+    {
+        self::assertPlatformMerchant($scope, $merId);
+        $query = $scope->apply((new Role())->db()->where('mer_id', '=', $merId))
+            ->field(self::MANAGEMENT_FIELDS)->order('id', 'asc');
+        if ($lock) {
+            self::assertTransaction($query);
+            $query->lock(true);
+        }
+        $list = [];
+        foreach ($query->select() as $row) {
+            $data = self::managementRow($row);
+            if ($data === null) {
+                throw new UnexpectedValueException('Incomplete role storage');
+            }
+            $list[] = $data;
+        }
+        return $list;
+    }
+
+    public function createForPlatform(PlatformScope $scope, int $merId, string $name, array $permissions, int $now): int
+    {
+        self::assertPlatformMerchant($scope, $merId);
+        if ($name === '') {
+            throw new InvalidArgumentException('Invalid role name');
+        }
+        self::assertPermissions($permissions);
+        self::assertTime($now);
+        $query = (new Role())->db();
+        self::assertTransaction($query);
+        $id = $query->insertGetId(['mer_id' => $merId, 'name' => $name, 'permissions' => $permissions,
+            'add_time' => $now, 'update_time' => $now]);
+        if ((!is_int($id) && (!is_string($id) || preg_match('/\A[1-9][0-9]*\z/', $id) !== 1))
+            || (int)$id <= 0 || (int)$id > 4294967295) {
+            throw new UnexpectedValueException('Invalid created platform role identity');
+        }
+        return (int)$id;
+    }
+
+    private static function assertPlatformMerchant(PlatformScope $scope, int $merId): void
+    {
+        self::assertPositive($merId);
+        if ($scope->targetMerId === null) {
+            // The service has just inserted and locked this real new merchant.
+            if ($scope->permission !== 'marketplace-merchants-create') {
+                throw new InvalidArgumentException('Invalid platform role creation scope');
+            }
+        } elseif ($scope->targetMerId !== $merId || $scope->permission !== 'marketplace-merchants-admin-employee') {
+            throw new InvalidArgumentException('Invalid platform role merchant');
+        }
     }
 
     private static function managementRow(array|Model|null $row): ?array

@@ -15,6 +15,7 @@ x-php: &php
     AUDIT_REPO_DIR: /workspace
     AUDIT_PROJECT: ${AUDIT_PROJECT:?required}
     AUDIT_SOURCE_SHA: ${AUDIT_SOURCE_SHA:?required}
+    AUDIT_GUARD_MODE: ${AUDIT_GUARD_MODE:-active-probe}
   labels: &labels
     tianli.audit: "1"
     tianli.audit.run: ${AUDIT_RUN_ID}

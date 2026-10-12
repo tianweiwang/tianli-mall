@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\dao\marketplace;
 
 use app\model\marketplace\PasswordSetup;
+use app\dao\marketplace\scope\PlatformScope;
 use app\services\marketplace\context\MerchantContext;
 use crmeb\exceptions\AuthUnavailableException;
 use InvalidArgumentException;
@@ -55,6 +56,25 @@ final class PasswordSetupDao
             'expires_at' => $now + 86400,
             'consumed_at' => null,
             'add_time' => $now,
+        ]);
+        if ($id <= 0) {
+            throw new AuthUnavailableException();
+        }
+        return $id;
+    }
+
+    public function createForPlatform(PlatformScope $scope, int $employeeId, string $raw32Hash, int $now): int
+    {
+        if ($scope->targetMerId === null || $scope->targetMerId > 4294967295
+            || $scope->permission !== 'marketplace-merchants-admin-employee'
+            || $employeeId <= 0 || strlen($raw32Hash) !== 32 || $now <= 0 || $now > 4294967295 - 86400) {
+            throw new InvalidArgumentException('Invalid platform password setup creation');
+        }
+        $query = (new PasswordSetup())->db();
+        self::assertTransaction($query);
+        $id = (int)$query->insertGetId([
+            'mer_id' => $scope->targetMerId, 'employee_id' => $employeeId, 'token_hash' => $raw32Hash,
+            'expires_at' => $now + 86400, 'consumed_at' => null, 'add_time' => $now,
         ]);
         if ($id <= 0) {
             throw new AuthUnavailableException();

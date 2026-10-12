@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\dao\marketplace;
 
 use app\dao\marketplace\scope\MerchantScope;
+use app\dao\marketplace\scope\PlatformScope;
 use app\model\marketplace\Employee;
 use app\model\marketplace\Merchant;
 use app\model\marketplace\Role;
@@ -191,6 +192,70 @@ final class EmployeeDao
         }
         $changes['update_time'] = $now;
         return $query->update($changes);
+    }
+
+    /** Every binding participates in merchant eligibility changes. */
+    public function idsForPlatformMerchant(PlatformScope $scope, bool $lock = false): array
+    {
+        self::assertPlatformTarget($scope);
+        $query = $scope->apply((new Employee())->db())->order('id', 'asc');
+        if ($lock) {
+            self::assertTransaction($query);
+            $query->lock(true);
+        }
+        $ids = [];
+        foreach ($query->column('id') as $value) {
+            $id = (int)$value;
+            if ($id <= 0) {
+                throw new AuthUnavailableException();
+            }
+            $ids[] = $id;
+        }
+        return $ids;
+    }
+
+    public function findForPlatform(PlatformScope $scope, int $employeeId, bool $lock = false): ?array
+    {
+        self::assertPlatformTarget($scope);
+        self::assertPositive($employeeId);
+        $query = $scope->apply((new Employee())->db()->where('id', '=', $employeeId)->where('is_del', '=', 0))
+            ->field(self::MANAGEMENT_FIELDS);
+        if ($lock) {
+            self::assertTransaction($query);
+            $query->lock(true);
+        }
+        return self::managementData($query->find());
+    }
+
+    public function createForPlatform(PlatformScope $scope, array $fields, int $now): int
+    {
+        self::assertPlatformTarget($scope);
+        self::assertTimestamp($now);
+        if ($scope->permission !== 'marketplace-merchants-admin-employee'
+            || array_keys($fields) !== ['account', 'role_id', 'name', 'avatar']
+            || !is_string($fields['account']) || $fields['account'] === ''
+            || !is_int($fields['role_id']) || $fields['role_id'] <= 0
+            || !is_string($fields['name']) || !is_string($fields['avatar'])) {
+            throw new InvalidArgumentException('Invalid platform employee creation');
+        }
+        $query = (new Employee())->db();
+        self::assertTransaction($query);
+        $id = (int)$query->insertGetId([
+            'mer_id' => $scope->targetMerId, 'role_id' => $fields['role_id'],
+            'account' => $fields['account'], 'pwd' => null, 'name' => $fields['name'], 'avatar' => $fields['avatar'],
+            'status' => 1, 'is_del' => 0, 'add_time' => $now, 'update_time' => $now,
+        ]);
+        if ($id <= 0) {
+            throw new AuthUnavailableException();
+        }
+        return $id;
+    }
+
+    private static function assertPlatformTarget(PlatformScope $scope): void
+    {
+        if ($scope->targetMerId === null || $scope->targetMerId > 4294967295) {
+            throw new InvalidArgumentException('Platform employee merchant is required');
+        }
     }
 
     private static function managementData(array|Model|null $row): ?array

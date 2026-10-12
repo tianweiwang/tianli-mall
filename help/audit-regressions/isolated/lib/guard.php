@@ -42,6 +42,8 @@ function audit_guard_assert(): void
 {
     try {
         $manifest = audit_manifest();
+        $guardMode = array_key_exists('guard_mode', $manifest) ? $manifest['guard_mode'] : 'active-probe';
+        if (!in_array($guardMode, ['active-probe', 'read-only'], true)) { throw new RuntimeException('unrecognized isolation guard mode'); }
         $runId = getenv('AUDIT_RUN_ID');
         if (getenv('AUDIT_ISOLATED') !== '1' || !preg_match('/^\d{14}[a-f0-9]{6}$/D', (string)$runId) || ($manifest['run_id'] ?? '') !== $runId || ($manifest['project'] ?? '') !== 'tianli-audit-' . $runId || ($manifest['network_internal'] ?? false) !== true) {
             throw new RuntimeException('run identity or network rejected');
@@ -56,6 +58,9 @@ function audit_guard_assert(): void
         if ($pdo->query('SELECT DATABASE()')->fetchColumn() !== 'audit_auth' || $pdo->query('SELECT run_id FROM audit_sentinel')->fetchAll(PDO::FETCH_COLUMN) !== [$runId]) { throw new RuntimeException('database sentinel rejected'); }
         if (audit_redis()->get('audit:sentinel') !== $runId) { throw new RuntimeException('Redis sentinel rejected'); }
         if (!audit_grants_are_restricted($pdo->query('SHOW GRANTS')->fetchAll(PDO::FETCH_COLUMN))) { throw new RuntimeException('application privileges rejected'); }
+        // Ordinary verification keeps every identity, endpoint and exact DML
+        // grant check above, without executing the stopped DDL denial probe.
+        if ($guardMode === 'read-only') { return; }
         try { $pdo->exec('CREATE DATABASE audit_guard_probe'); } catch (PDOException $error) {
             if ((int)($error->errorInfo[1] ?? 0) === 1044) { return; }
             throw new RuntimeException('unexpected privilege probe failure');
@@ -67,4 +72,10 @@ function audit_guard_assert(): void
         exit(2);
     }
 }
-if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) { audit_guard_assert(); }
+if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
+    if (($argv[1] ?? '') === '--read-only' && (audit_manifest()['guard_mode'] ?? '') !== 'read-only') {
+        fwrite(STDERR, "BLOCKED ordinary runner requires read-only isolation checks\n");
+        exit(2);
+    }
+    audit_guard_assert();
+}

@@ -25,6 +25,7 @@ class HttpEndListener
     {
         // Login/setup responses and request bodies must never enter business logs.
         if (app()->http->getName() === 'merchantapi') return;
+        if (\app\services\marketplace\PlatformAccessServices::isMarketplace(app()->request)) return;
         if (!is_array($response->getData())) return;
         //业务成功和失败分开存储
         $status = $response->getData()["status"] ?? 0;

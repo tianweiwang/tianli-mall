@@ -12,6 +12,7 @@
 namespace app;
 
 use app\services\marketplace\context\MerchantContext;
+use app\dao\marketplace\scope\PlatformScope;
 use crmeb\exceptions\MerchantUnauthenticatedException;
 use Spatie\Macroable\Macroable;
 
@@ -33,6 +34,23 @@ class Request extends \think\Request
 
     /** A verified value belongs only to this request instance. */
     private ?MerchantContext $merchantContextValue = null;
+    private ?PlatformScope $platformScopeValue = null;
+
+    public function setPlatformScope(PlatformScope $scope): void
+    {
+        $this->platformScopeValue = $scope;
+    }
+
+    public function platformScope(): PlatformScope
+    {
+        if ($this->platformScopeValue === null) throw new MerchantUnauthenticatedException();
+        return $this->platformScopeValue;
+    }
+
+    public function clearPlatformScope(): void
+    {
+        $this->platformScopeValue = null;
+    }
 
     public function setMerchantContext(MerchantContext $context): void
     {

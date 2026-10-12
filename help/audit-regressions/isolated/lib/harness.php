@@ -149,6 +149,9 @@ function audit_prepare(bool $buildVendor = true): void
 {
     umask(0077);
     $runId = getenv('AUDIT_RUN_ID');
+    $guardMode = getenv('AUDIT_GUARD_MODE');
+    if ($guardMode === false || $guardMode === '') { $guardMode = 'active-probe'; }
+    audit_expect(in_array($guardMode, ['active-probe', 'read-only'], true), 'invalid bootstrap guard mode');
     audit_expect(getenv('AUDIT_ISOLATED') === '1' && (bool)preg_match('/^\d{14}[a-f0-9]{6}$/D', (string)$runId), 'invalid bootstrap run identity');
     audit_expect(!file_exists(audit_run_dir() . '/manifest.json'), 'run directory already initialized');
     foreach (['/run/audit-bootstrap', '/run/audit-redis', '/run/audit-app', '/run/audit-fixtures'] as $directory) { chmod($directory, 0700); }
@@ -164,7 +167,7 @@ function audit_prepare(bool $buildVendor = true): void
     chmod('/run/audit-redis/redis.conf', 0600);
     if (!is_dir(audit_run_dir() . '/evidence')) { mkdir(audit_run_dir() . '/evidence', 0700); }
     $sql = str_replace("\r", '', file_get_contents(audit_repo_dir() . '/crmeb/public/install/crmeb.sql'));
-    audit_write_json(audit_run_dir() . '/manifest.json', ['run_id' => $runId, 'project' => getenv('AUDIT_PROJECT'), 'created_at' => gmdate(DATE_ATOM), 'commit_sha' => getenv('AUDIT_SOURCE_SHA'), 'isolation' => 'ISO-FULL', 'network_internal' => false, 'fixture_sha256' => hash('sha256', $sql), 'services' => [], 'volumes' => []]);
+    audit_write_json(audit_run_dir() . '/manifest.json', ['run_id' => $runId, 'project' => getenv('AUDIT_PROJECT'), 'created_at' => gmdate(DATE_ATOM), 'commit_sha' => getenv('AUDIT_SOURCE_SHA'), 'isolation' => 'ISO-FULL', 'guard_mode' => $guardMode, 'network_internal' => false, 'fixture_sha256' => hash('sha256', $sql), 'services' => [], 'volumes' => []]);
     audit_write_json(audit_run_dir() . '/credential-check.json', ['root_fingerprint' => substr(hash('sha256', $rootPassword), 0, 12), 'root_absent_from_app_config' => !str_contains(json_encode($config), $rootPassword), 'run_id' => $runId]);
     // Reproduce the existing Dockerfile's Composer build step, offline in a new
     // volume. The tracked vendor autoload files predate the PHP 8.2 classmaps.
