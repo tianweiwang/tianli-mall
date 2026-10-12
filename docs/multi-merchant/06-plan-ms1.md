@@ -433,6 +433,8 @@ Task8首个普通after `20261012092534292cde`（源码 `792ef7f4e5c3c1fc5c189e87
 
 T9A01首轮普通RUN `202610121537033b609f`（源码eaf022df5）引导native0，prepare自然失败native1；0业务/0显式readiness/0SQL夹具、45键登记/实际删除0，原158表及缓存期限/runtime保持。旧辅助仅记RuntimeException@harness.php:14，未捕获具体调用点；源码核对发现其console_remind=false前置与原app.php默认true冲突，修正为保留真实开启状态/原AdminLoginListener并记录实际queue/timer布尔状态，后续仅有限调用文件/行定位，不输出消息或trace参数。第一次原teardown native2因runner自然新增卷尚未登记；用原audit_register登记本RUN实际身份后，原teardown重试native0，主/引导20261012154110cc6d53双标签共12库存全0，真实.env/public安装锁均无。初次原native和1FAIL不覆写；逐字节追加后558行（10PASS/29FAIL/519NOT RUN），此前557行SHA 06547f0b75663e7f2df1da9ef80a66a64d92ba304e178c0d4f6d1691895a9cca保持、当前SHA 5808d996adf9880aa864a5d4e33480c31185a4739854f63d82058f7f082eee12。普通辅助与宿主资源登记窄修后待新RUN，完整组合/uni/MS1仍未完成；见 `records/ms1/task9-admin-normal-summary.json`。
 
+T9A01第二宿主RUN `20261012155400f6fe89`（源码c774ca6f5）：bootstrap native0，normal stage因本机Compose create不支持--no-deps而native1；PHP入口未调用，无业务/无raw，不编造case结果或完整数据保持PASS。原register/teardown native0，主/引导2026101215561338cdb8共12库存全0，env/安装锁均无。本机实际create --help确认支持--no-recreate/--no-build/--pull never；新薄宿主只改create参数，run仍用原支持的--no-deps，已有依赖不重建、不启动默认runner命令。原两轮native/raw保持，558行原记录不增加；第三宿主准备后待真实验证。
+
 - [ ] 在新的 ISO-FULL 环境运行全部 MS0a、MS0b 用例及 MS1 用例；全部 `exit=0`。
 - [ ] 确认 merchantapi 没有任何商品相关路由（`php think route:list` 输出中不含 `product`）。
 - [ ] 写 `records/ms1/report.md`、`results.jsonl`（含迁移演练的前后摘要）；提交；停止，等待验收（11 文档 §5.4）。
