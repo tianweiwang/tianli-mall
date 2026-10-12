@@ -107,6 +107,43 @@ services:
       - worker-runtime:/run/audit-worker-runtime:ro
       - chat-runtime:/run/audit-chat-runtime:ro
       - backup-output:/workspace/crmeb/backup
+  audit-ui:
+    image: sha256:a8b39bd9cf0f83869a2162827a0caf6137ddf759d50a171451b335cecc87d236
+    pull_policy: never
+    profiles: [ms1-chat-browser]
+    user: nginx
+    entrypoint: [nginx]
+    command: [-g, 'daemon off;']
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    networks: [isolation]
+    labels: *labels
+    volumes:
+      - ${AUDIT_BROWSER_DIST:-./artifacts/not-configured-browser-dist}:/srv/admin:ro
+      - ${AUDIT_REPO_DIR}/help/audit-regressions/isolated/lib/ms1-chat-browser-nginx.conf:/etc/nginx/nginx.conf:ro
+  audit-browser:
+    image: sha256:12f8a18ee81e6496442101b53ed2e9b2f68eef56cbb63ed4393b5a81cf9e1dbe
+    pull_policy: never
+    profiles: [ms1-chat-browser]
+    entrypoint: [node]
+    command: [/opt/ms1-chat-browser.mjs]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    shm_size: 1gb
+    networks: [isolation]
+    labels: *labels
+    environment:
+      AUDIT_RUN_ID: ${AUDIT_RUN_ID:?required}
+      AUDIT_SOURCE_SHA: ${AUDIT_SOURCE_SHA:?required}
+    volumes:
+      - ${AUDIT_PLAYWRIGHT_CORE:-./artifacts/not-configured-playwright-core}:/opt/playwright-core:ro
+      - ${AUDIT_REPO_DIR}/help/audit-regressions/isolated/lib/ms1-chat-browser.mjs:/opt/ms1-chat-browser.mjs:ro
+      - ${AUDIT_RUN_DIR}/browser-secret:/run/audit-browser-secret:ro
+      - ${AUDIT_RUN_DIR}/browser-evidence:/run/audit-browser-evidence
 
 networks:
   isolation:

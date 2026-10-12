@@ -20,7 +20,7 @@ audit_collect_resources() {
     : > "$audit_run_path/containers.jsonl"
     while IFS= read -r id; do
         [[ -n "$id" ]] || continue
-        docker inspect --format '{"id":{{json .Id}},"image_id":{{json .Image}},"mounts":{{json .Mounts}},"labels":{{json .Config.Labels}},"networks":{{json .NetworkSettings.Networks}},"ports":{{json .NetworkSettings.Ports}}}' "$id" >> "$audit_run_path/containers.jsonl"
+        docker inspect --format '{"id":{{json .Id}},"image_id":{{json .Image}},"mounts":{{json .Mounts}},"labels":{{json .Config.Labels}},"networks":{{json .NetworkSettings.Networks}},"ports":{{json .NetworkSettings.Ports}},"read_only":{{json .HostConfig.ReadonlyRootfs}},"privileged":{{json .HostConfig.Privileged}},"network_mode":{{json .HostConfig.NetworkMode}}}' "$id" >> "$audit_run_path/containers.jsonl"
     done < <(docker ps -aq --filter "label=com.docker.compose.project=$AUDIT_PROJECT")
     docker volume ls -q --filter "label=com.docker.compose.project=$AUDIT_PROJECT" | sort > "$audit_run_path/volumes.txt"
     : > "$audit_run_path/volumes.jsonl"

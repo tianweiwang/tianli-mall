@@ -187,7 +187,7 @@ function audit_register_resources(): void
     audit_expect($network['Internal'] === true && ($network['Labels']['com.docker.compose.project'] ?? '') === $project && ($network['Labels']['tianli.audit'] ?? '') === '1' && ($network['Labels']['tianli.audit.run'] ?? '') === $manifest['run_id'], 'network is not dedicated and internal');
     $manifest['network_internal'] = true;
     $manifest['network'] = ['id' => $network['Id'], 'name' => $network['Name']];
-    $services = [];
+    $services = []; $browserMounts = null; $appRunSource = null;
     foreach (file(audit_run_dir() . '/containers.jsonl', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
         $item = json_decode($line, true, 512, JSON_THROW_ON_ERROR);
         audit_expect(($item['labels']['tianli.audit.run'] ?? '') === $manifest['run_id'] && ($item['labels']['com.docker.compose.project'] ?? '') === $project, 'container identity rejected');
@@ -196,6 +196,34 @@ function audit_register_resources(): void
         $service = $item['labels']['com.docker.compose.service'];
         audit_expect(is_string($item['image_id'] ?? null) && preg_match('/^sha256:[a-f0-9]{64}$/D', $item['image_id']) === 1, 'container image identity rejected');
         $services[$service] = ['id' => $item['id'], 'address' => $item['networks'][$network['Name']]['IPAddress'], 'image_id' => $item['image_id']];
+        if ($service === 'audit-app') {
+            $runMounts = array_values(array_filter($item['mounts'] ?? [], static fn(array $mount): bool => ($mount['Destination'] ?? '') === '/run/audit'));
+            audit_expect(count($runMounts) === 1 && ($runMounts[0]['Type'] ?? '') === 'bind' && is_string($runMounts[0]['Source'] ?? null), 'application RUN mount identity rejected');
+            $appRunSource = rtrim(str_replace('\\', '/', $runMounts[0]['Source']), '/');
+        }
+        if (in_array($service, ['audit-ui', 'audit-browser'], true)) {
+            $expectedImage = $service === 'audit-ui'
+                ? 'sha256:a8b39bd9cf0f83869a2162827a0caf6137ddf759d50a171451b335cecc87d236'
+                : 'sha256:12f8a18ee81e6496442101b53ed2e9b2f68eef56cbb63ed4393b5a81cf9e1dbe';
+            audit_expect($item['image_id'] === $expectedImage && ($item['read_only'] ?? null) === true
+                && ($item['privileged'] ?? null) === false && ($item['network_mode'] ?? '') === $network['Name'], 'ordinary browser container configuration rejected');
+            $expectedMounts = $service === 'audit-ui'
+                ? ['/srv/admin' => false, '/etc/nginx/nginx.conf' => false]
+                : ['/opt/playwright-core' => false, '/opt/ms1-chat-browser.mjs' => false,
+                   '/run/audit-browser-secret' => false, '/run/audit-browser-evidence' => true];
+            $actualMounts = $item['mounts'] ?? [];
+            audit_expect(count($actualMounts) === count($expectedMounts), 'ordinary browser mount count differs');
+            $seen = [];
+            foreach ($actualMounts as $mount) {
+                $destination = $mount['Destination'] ?? '';
+                audit_expect(is_string($destination) && array_key_exists($destination, $expectedMounts)
+                    && !isset($seen[$destination]) && ($mount['Type'] ?? '') === 'bind'
+                    && ($mount['RW'] ?? null) === $expectedMounts[$destination]
+                    && is_string($mount['Source'] ?? null), 'ordinary browser mount identity rejected');
+                $seen[$destination] = $mount;
+            }
+            if ($service === 'audit-browser') $browserMounts = $seen;
+        }
         if (in_array($service, ['audit-worker', 'audit-chat'], true)) {
             $runtimeName = $service === 'audit-worker' ? 'worker-runtime' : 'chat-runtime';
             $runtimeMounts = array_values(array_filter($item['mounts'] ?? [], static fn(array $mount): bool => ($mount['Destination'] ?? '') === '/workspace/crmeb/runtime'));
@@ -205,6 +233,13 @@ function audit_register_resources(): void
         }
     }
     audit_expect(isset($services['audit-mysql'], $services['audit-redis']), 'database and Redis identities required');
+    if ($browserMounts !== null) {
+        audit_expect(is_string($appRunSource) && $appRunSource !== '', 'browser RUN source anchor unavailable');
+        foreach (['/run/audit-browser-secret' => 'browser-secret', '/run/audit-browser-evidence' => 'browser-evidence'] as $destination => $child) {
+            $source = rtrim(str_replace('\\', '/', $browserMounts[$destination]['Source']), '/');
+            audit_expect($source === $appRunSource . '/' . $child, 'browser belongs to a different RUN directory');
+        }
+    }
     $manifest['services'] = $services;
     $manifest['volumes'] = array_values(array_filter(array_map('trim', file(audit_run_dir() . '/volumes.txt'))));
     $manifest['volume_identities'] = audit_volume_identities($manifest);

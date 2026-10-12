@@ -121,3 +121,30 @@ entry has command, occurrence (one-based), when (before/after), and action
 tests accept strict true or literal OK and also check the actual stored value.
 No token-return or single-use-session guarantee is inferred from adapter tests:
 those require AuthSessionStore/AuthTokenV2 and their integration suites.
+
+Current ordinary MS1 runs use AUDIT_GUARD_MODE=read-only from their first
+bootstrap preparation. The user-stopped security, invalid/old credential,
+fault, concurrency, disconnect, recovery and DDL-denial cases remain NOT RUN.
+The identity, internal network, sentinel and exact DML checks still apply.
+
+T7B01 uses ms1-chat-browser.php __serve with the actual final admin dist and
+bundled Playwright Core. Before its optional ms1-chat-browser profile starts,
+set AUDIT_BROWSER_DIST and AUDIT_PLAYWRIGHT_CORE to the verified directories,
+create this RUN's browser-secret/browser-evidence directories, and write the
+actual internal PNG source receipt as browser-secret/dist-avatar.json.
+Start only audit-chat, audit-ui and audit-browser, then audit_register their
+actual identities. Node waits for the PHP preparation permit before launching
+Chromium or using its private login input. Run the helper directly through
+audit_compose run --rm --no-deps -T audit-runner with the __serve argument;
+it does not use the stopped suite's fault-control host wrapper.
+
+The browser has read-only private inputs and a dedicated writable output
+directory. It uses normal UI login, visitor category selection, four ordinary
+messages and graceful page closure. External resources are blocked before
+network dispatch; internal HTTP/WebSocket responses are never mocked. PHP
+independently checks live source-owned sessions, guest indices, SQL messages,
+conversation records and precise cleanup before acknowledging success. Retain
+both native exits, raw results and five screenshots; inspect the actual desktop
+and mobile rendering before reporting visual acceptance. Syntax or compilation
+alone does not establish BROWSER completion. Teardown still verifies the scoped
+container/network/volume inventory is zero and preserves historical evidence.
