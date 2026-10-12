@@ -307,6 +307,12 @@ WebSocket正常协议：白名单仅kefu_login、login、guest_login、to_chat�
 - [x] **普通T7C01：** 真实合法客服、顾客与游客身份/房间/文字回复、精确清理及静态跨应用路径。
 - [ ] **客户端正常验证：** 源码接线、实际构建、正常桌面/移动浏览器结果分别记录；缺口保持待验。
 
+普通浏览器T7B01实施补充（2026-10-12，先于界面修复）：实际PC `pc/components/chatList.vue` 的分类头被注释且hdTab只有0，移动 `mobile/chat_list.vue` 的tabList也只有0；record和消息列表按is_tourist过滤，因此游客虽正常收到客服连接，实际页面不能选择游客会话。恢复PC分类头，两端提供用户0/游客1两个真实按钮并保留分页/搜索；分类切换先清空当前选择，PC空选择正常发id=0退房，实际record.is_tourist决定父页面及移动会话分类。右栏只在当前正数真实User且isTourist=0时发用户资料/订单/购买/足迹请求，空选择和游客不形成undefined/负数User请求；移动空列表不调用不存在的scroll ref。新增控制保持原界面方向，文字水平/垂直居中、选中状态含形状/文字重量及aria-pressed，分别核对320px列表头和390px移动宽度，无剪裁/覆盖补偿。
+
+T7B01使用新的read-only ISO-FULL，真实当前源码的最终后台构建、内部audit-ui反代及独立Chromium；只读源/vendor/dist/Playwright，独占浏览器证据和临时目录，登记真实容器/镜像/IP/卷身份，没有宿主端口、Docker socket或外部网络。内部应用HTTP/WS不做mock，GET工作服务地址保留含8080的HTTP_HOST；第三方统计等外域资源在浏览器请求发出前阻止并单独登记，不算业务验收。自有客服账号遵守实际登录校验的4–30位字母数字，头像用本次内部真实静态资源；通过现客服登录页面和正常正确账号密码完成登录，不处理CAPTCHA。桌面1440×900和移动390×844顺序使用独立正常会话，游客各自从真实页面发行能力，通过游客列表选择自有会话、各双向发普通文字，核对实际ACK、页面文字、分类、头像与控制边界。页面正常退出后再清理本次服务/夹具。仅白名单元数据/计数、普通文本和截图进入证据，不保存原始凭据、headers、cookie/storage快照、trace或HAR。
+
+浏览器所需额外缓存须先沿实际源列出生产者和精确键；Common.adv沿旧getDbCache会删除过期eb_cache，运行前只读确认旧缓存无已过期或验收时窗内将过期行，再登记实际默认kf_adv新行和精确清理方式，不能扫删/覆盖旧值。实际额外系统配置从原SystemConfigService生产并逐键登记；原数据库163表原行/DDL/checksum、Redis原值/期限和runtime保持断言继续沿用。原浏览器缺口、正常构建历史和完整安全验收缺口均保持可追溯；出现正常页面缺陷时先保留实际失败证据，再修复并用新证据验证。
+
 2026-10-12普通后端交付：第四个独立RUN `20261012020114e0c80a` 在源码 `1682ccc249fa3364fa07eee9075b52c0504fcb71` 上运行，bootstrap、prepare、start-chat、after及teardown原生全部exit0。实际4个正常HTTP请求均200，34个正常WS客户端帧、5个身份ACK、9个房间/正常退房ACK、8条双方文字和2个服务器游客会话；真实Channel事件经实际客服连接收到。17个自有SQL夹具精确清理，37个精确键登记/23个实际键删除；163表原行、checksum和DDL及旧Redis值/绝对期限保持，仅四张实际夹具表自然计数器变化单列，不恢复快照或回拨计数。主实例及四轮引导清理实例共8个RUN最终容器/网络/卷均0，真实.env与install.lock不存在。
 
 第四轮原始24行逐字节追加，`records/ms1/results.jsonl`现195行（8PASS/13FAIL/174NOT RUN），整体SHA256 `24b17f40dfb2b71504a599679ac04a79abde43bafa8d4ffa0d69fc181bf68870`；此前171行、Task1–6的75行和首57行均保持原字节。自然源码缺失基线及前三轮普通失败仍保留为FAIL；第三轮六个未登记readiness键的实际生产者经源码核对，第四轮按原9个配置/幻灯片生产者逐键预备，保留原最终数据/缓存断言。后台第三轮真实Node20构建exit0，1074个构建输入与本次源码一致，596个dist文件、11个原构建警告留存；36个实际后端/前端/辅助/文档路径hash及完整正常摘要见 `records/ms1/task7-progress-summary.json`。浏览器依赖就绪只代表准备完成，浏览器及uni-app运行验收未完成；原A07/M07/K01及安全、异常、故障、并发/断连、恢复和DDL拒绝场景仍NOT RUN。仅本地L2，未推送、部署、写真实库、通知或人工签收。
@@ -320,9 +326,33 @@ WebSocket正常协议：白名单仅kefu_login、login、guest_login、to_chat�
 - Create: `crmeb/app/jobs/marketplace/AuditLogJob.php`
 - Create: `crmeb/app/services/marketplace/context/MerchantJobContext.php`
 - Create: `help/audit-regressions/isolated/ms1-worker.php`
+- Create: `crmeb/crmeb/services/auth/lua/read_account.lua`
+- Modify: `crmeb/crmeb/services/auth/AuthSessionStore.php`（纯只读当前账户版本）
+- Create: `help/audit-regressions/isolated/lib/Ms1ContextWorkerObserver.php`
+- Modify: `help/audit-regressions/isolated/lib/ms1-worker-entry.php`（明确Task8普通观察模式，保留Task1默认模式）
+- Create: `crmeb/app/services/marketplace/queue/MarketplaceRedis.php`（限定真实Redis队列ACK）
+- Modify: `crmeb/crmeb/services/BoundedRedisConnection.php`、`crmeb/config/queue.php`、现marketplace专用Supervisor命令（独立连接，原队列保持）
 
 **Interfaces:**
-- Produces: 任务载荷只包含 `employeeId`、`requestId`、动作、资源；消费者在每个任务开始时调用 `MerchantJobContext::rebuild(int $employeeId, string $requestId): MerchantContext`（从数据库重新取员工与商家，校验状态），在 `finally` 中丢弃；载荷中的 `mer_id` 字段（若有）只用于与重建结果比对，不一致时拒绝。
+- Produces: `AuditLogJob::dispatch(MerchantContext $ctx, string $action, array $resource): string`只向真实Redis的固定marketplace队列提交并返回实际job ID。载荷恰好 `employeeId`、`requestId`、`action`、`resource`、`sessionVersion`、`sourceSignature`六字段；后两个字段是为保留现认证版本语义补充的服务器提交元数据，不携带完整ctx、权限、账号、密码、JWT或sid。消费者每个任务调用 `MerchantJobContext::rebuild(int $employeeId, string $requestId): MerchantContext`，从当前DB重读员工/角色/商家及当前真实账户版本，在 `finally` 中丢弃。商家范围只取DB；此固定载荷不接受mer_id或其它额外字段，原M10完整负向验收仍NOT RUN。
+
+Task8普通实施合同（2026-10-12，先于编码）：仅支持现动作 `merchant.profile.read`、资源 `{type: "merchant", id: 当前ctx.merId}`。提交端ctx来自现EmployeeAuthServices合法login/authenticate；再次联读当前EmployeeDao身份、审核通过且未锁/未关商家、有效未删且已设密员工、同店角色及当前合法权限，版本必须等于提交ctx.sessionVersion。每次任务生成独立32小写hex requestId，不改原HTTPctx。consume每次在真实默认DB事务里重建ctx，核当前版本与提交版全等、ctx.require及MerchantDao.findForContext实际资源；AuditLogServices以merchant actor、当前员工/商家和实际merchant资源新增成功审计，detail=[]，事务真实提交后才实际job.delete、确认限定connector的真实删除ACK并核isDeleted。handler/服务允许容器复用，但ctx只在本次局部变量/closure显式传递，不保存在Request、static/global、实例身份字段或常驻listener中。
+
+真实队列ACK补充（源核对后、编码前）：现Redis.pushRaw忽略RPUSH回复而直接返回本地payload ID，retrieveNextJob忽略reservation ZADD，RedisJob.delete在真实ZREM前已置isDeleted=true；故实际ID/isDeleted不能单独证明入队/保留/删除。新增MarketplaceRedis只继承现connector的payload序列化、pop/真实RedisJob/实际Worker，有限覆盖pushRaw（原RPUSH须原生正int）、retrieveNextJob（保留原LPOP/attempts/PHP reserved格式，ZADD须原生1后才交业务）、deleteReserved（真实getReservedJob的ZREM须原生1）。各命令无Redis错误才确认，失败固定503、不记录底层消息、不重试/回退，不查询整队列或改旧Queue/vendor；不扩展故障恢复或恰好一次结论。实际job ID由原Str.random生成32字母数字，不能误当hex。
+
+新增named connection `marketplace`使用该connector；从现Redis queue配置复制真实host/password/select，固定queue=marketplace、connect2秒/read1秒、nonpersistent、block_for=null、原生serializer=NONE及空prefix。BoundedRedisConnection.fromQueueConfig按真实queue配置建独立有界native连接，不借Cache服务器/DB。实际thinkQueue factory按driver取config且没有注册creator接口，故connections.marketplace与connections[MarketplaceRedis::class]共用同一配置以保持真实__make来源；queue.default和connections.redis不变。生产dispatch走Queue.connection('marketplace')，Task8实际worker命令为 `queue:work marketplace --queue=marketplace --sleep=1 --tries=1 --quiet`；现marketplace专用Supervisor只补连接参数、仍不自动启动，Task1原默认Redis模式保持。新正常观察核connection=marketplace/queue=marketplace/真实RedisJob，不能用不同进程代替同PID要求。
+
+版本来源沿现AuthSessionStore的 `auth:v2:<epoch>:merchantapi:account:<employeeId>`，不造新指纹或调用init/rotate读版本。新增currentAccountVersion与read_account.lua复用现verify_session账户规则：TYPE=hash、永久PTTL=-1、initialized=1、blocked=0、32hex session_version且owner缺失；仅TYPE/PTTL/HMGET，不写、不延长、不重试。每次fromConfig建立现bounded连接，当前严格epoch必须仍一致；身份/保护态沿固定401，可用性/配置沿固定503，不记录底层消息或previous。正常登录发行仍保留原initAccount职责。
+
+提交签名固定字节：C为经有限schema校验后按employeeId、requestId、action、resource（type/id）、sessionVersion顺序重建的无空白ASCII/整数JSON（JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR）；原始收到的JSON文本不作为签名源。cfg每次取严格AuthConfigGuard.authConfig；K=HMAC-SHA256(cfg.signing_key为key、ASCII `tianli:marketplace-task-source:key:v1`为message)的原始32字节。M按NUL分隔 `tianli:marketplace-task-source:v1`、cfg.session_epoch、cfg.issuer、merchantapi、tianli:merchantapi、实际FQCN `app\jobs\marketplace\AuditLogJob`、marketplace、C；sourceSignature为以K签M的小写hex64，用hash_equals核对。仅复用现服务器signing_key作固定用途派生，不增加凭据、表或Redis来源库；签名只证明服务器提交来源，不能代替当前状态/权限/归属读取。版本、派生key、签名和完整payload不进入日志或仓库证据。
+
+队列不会执行HTTP中间件。生产job在其本次私有DB作用域按现HTTP数据库边界配置default mysql的debug=false、trigger_sql=false、utf8mb4、break_reconnect=false，使用fresh-default连接与实际PDO事务；finally恢复原配置/默认连接并丢弃ctx，不更改旧队列或全局AppService。有限schema/身份/权限/可用性失败沿现固定异常，不能静默成功、重新签名/造版本、补成功审计或把未提交任务删成成功；原tries=1保持。此正常一次消费不等于故障恢复、重放或恰好一次验收。
+
+普通T8W01在新read-only ISO保存自然源码缺失baseline（0任务/0夹具，不启动worker制造失败），现真实迁移后完整163表基线上创建A/B各自merchant/role/已设密employee。用两个合法login/authenticate得到真实ctx，由同一生产dispatch顺序提交A/B两条实际AuditLogJob，不推测试子类、不直接fire、不改Queue实现。薄worker-entry的明确Task8模式仅增加实际JobProcessing/JobProcessed事件观察：本RUN实际job ID哈希、FQCN、顺序、真实Redis/marketplace、PID/start_ticks/容器/镜像/卷、生产handler对象ID及实际新增审计归属；listener不构造ctx或执行业务。第二个正常完成后辅助listener只设置真实Worker.shouldQuit，由daemon正常exit0/restart0；不exit/kill/restart或注入异常。要求两个任务同PID/start_ticks、同实际复用handler且A/B真实审计各归本商家，实际delete、无未结束事务；该入口串行执行，原M05异常/无上下文、M09、M10及故障/恢复仍NOT RUN。
+
+任务结束按真实mer/role/employee/两审计ID逆依赖清理；两正常account/session及实际产生键逐键登记，原Redis值与绝对期限保持，不能忽略整namespace或恢复snapshot。三个实际marketplace队列结构prepare前须不存在，正常消费后已空；仅核实生产FQCN/本RUN实际job ID/提交来源后才移除精确自有残留项，不删非自有队列。163表原行/checksum/DDL及原runtime保持，实际夹具表自然计数器变化单列，不回拨；Task1旧158表辅助/原断言及全部历史raw保持。bootstrap/prepare/worker/observe/teardown、实际资源归零和原状态保持到位才作普通PASS，不能替代完整MS1或人工签收。
+
+- [ ] **普通T8W01：** 真实A→B生产任务同PID重建、实际审计/删除、精确清理与原状态保持。
 
 - [ ] **Step 1: 写用例**（WORKER 层，在 `audit-worker` 的同一个 PID 中）：M05（A→B、A 抛异常→B、A→无上下文的任务，审计日志中记录的 `mer_id` 与各自的员工一致，第三个任务因无上下文被拒绝）；M09（如果盘点确认 worker 能并发或交错处理，测交错；否则在报告中写明"该入口串行执行"，不伪造并发测试）；M10（载荷中的 `mer_id` 与员工实际商家不一致、员工已停用 → 拒绝，且下一个任务不受影响）。每条结果附 PID 与镜像标识。
 - [ ] **Step 2–5:** 确认失败 → 实现 → 通过 → 提交 `feat(marketplace): job-scoped MerchantContext with worker regression`。
