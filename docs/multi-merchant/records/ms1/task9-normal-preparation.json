@@ -1,0 +1,36 @@
+{
+  "milestone": "MS1",
+  "task": 9,
+  "status": "NORMAL_ADMIN_ENTRY_INSTALLED_RUNTIME_NOT_RUN",
+  "entrypoint": "help/audit-regressions/isolated/ms1-admin-normal.php",
+  "entrypoint_sha256": "a9e9e7a074835b7b4ec3a8a57503fbd0e851a24b8b581299f8c24a12370d5d74",
+  "final_external_revision": 4,
+  "external_preparation_directory": "H:/天俪商城/artifacts/ms1-task9/admin-normal-drafts/revision-4",
+  "design_sha256": "490d8edba10cb8f1ade86349694240bd374888e5895ad24a56aece7bab25ce16",
+  "actual_offline_syntax": {
+    "native_exit": 0,
+    "image": "sha256:1099f749e2a38ec9453c6b820db8a78174514bc72d14edf5c203e13b82816e0a",
+    "network": "none",
+    "source_readonly": true,
+    "receipt_sha256": "e36fc84e6b56d1ab60f87ea85ef78b6a418ffd1b36c83db3d703ae883ff11ed6",
+    "log_sha256": "dda0a8510a43a43c01fd6a7e158f4383fb95484796d8e16c540de52b87a5748c"
+  },
+  "independent_review": "current normal routes/DTO/cache/source and exact cleanup reviewed; final cleanup change verified by root",
+  "normal_contract": {
+    "business_http_requests": 12,
+    "explicit_readiness_http_requests": 1,
+    "original_helper_readiness": "kept; internal response and attempt count not captured",
+    "current_valid_logins": 2,
+    "exact_visit_log_rows": 10,
+    "source_warm_values": 21,
+    "data_preservation": "complete installed158 or migrated163 tables and old Redis values/absolute expiry/runtime",
+    "exact_owned_cleanup": true
+  },
+  "business_executed": false,
+  "combined_regression_executed": false,
+  "uni_h5_runtime_verified": false,
+  "prior_drafts_and_native_evidence_preserved": true,
+  "stopped_security_negative_fault_recovery_concurrency_ddl_cases": "NOT RUN",
+  "full_ms1_acceptance": "PENDING",
+  "push_deploy_human_signoff_security_baseline": false
+}

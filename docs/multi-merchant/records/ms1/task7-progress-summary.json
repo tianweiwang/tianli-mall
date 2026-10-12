@@ -6607,5 +6607,39 @@
     "original_stopped_scenarios": "NOT RUN",
     "full_ms1_acceptance": "PENDING",
     "push_deploy_human_signoff_security_baseline": false
+  },
+  "uni_h5_explicit_pass_build": {
+    "status": "RUNNING_SECOND_PASS_NOT_YET_VERIFIED",
+    "run_id": "2026101215215907fe3cfc",
+    "exec_session_id": 29451,
+    "source_manifest_sha256": "eae1ca9f058d5236f0ec35d255e2b4ed61fa91ddb693b9543bdca93a8af33944",
+    "source_commit_at_copy": "87f448274f9cb8f74344a09aef3fec389e0e25e5",
+    "tracked_input_count": 536,
+    "all_current_repository_and_copy_hashes_match": true,
+    "preparation_manifest_sha256": "04af979b1a6920c1940680937fad8b51d06b9da13657d753416cc25a94884432",
+    "adapter_sha256": "d2913bb54b14939ece81e3f80b806a990fec3b50877b80f2adda2544c17d8c8b",
+    "wrapper_sha256": "b77a6abf8513e5435ce79ff67bdf3e2e4ade6071bc3b4a890e7dd91feb4b876d",
+    "tooling_adapter": {
+      "original_optimize_enabled": true,
+      "compiler_package_files_unchanged": true,
+      "first_real_callback_after_original_done_hooks": true,
+      "actual_generated_module_cache_purge_count": 8,
+      "public_watching_invalidate_count": 1,
+      "original_compiler_owns_second_pass_emit_and_exit": true,
+      "independent_output_hash_verification_required": true
+    },
+    "actual_first_pass": {
+      "pass": 1,
+      "has_errors": false,
+      "has_warnings": false,
+      "asset_count": 185,
+      "asset_names_sha256": "9c64baba7c2dde8f7083260acc6599cb270aa3b0bec156938931ee353ea015e1"
+    },
+    "native_compiler_exit": null,
+    "final_dist_verified": false,
+    "runtime_browser_verified": false,
+    "old_live_attempts_restarted_or_stopped": false,
+    "business_requests": 0,
+    "evidence_directory": "H:/天俪商城/artifacts/ms1-task7/uni-h5-build-explicit-pass-prep/evidence/linux-2026101215215907fe3cfc"
   }
 }
