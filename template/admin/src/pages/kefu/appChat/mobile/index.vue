@@ -203,6 +203,11 @@ export default {
       fileUrl: '',
       userToken: '',
       tourist_uid: '', //游客的uid
+      guestToken: '',
+      guestExpiresAt: 0,
+      socket: null,
+      chatReady: false,
+      reconnectTimer: null,
       orderId: '',
       orderInfo: '',
       cartInfo: '',
@@ -245,69 +250,104 @@ export default {
     this.productId = this.$route.query.product_id || '';
   },
   mounted() {
-    if (!this.$wechat._isMobile()) this.$router.replace('/kefu/appChat');
-    let that = this;
-    this.getServiceList();
+    if (!this.$wechat._isMobile()) return this.$router.replace('/kefu/appChat');
     if (this.userToken) {
       this.getOrderInfo();
       this.getGoodsInfo();
     }
-    // 上传头部token
     this.header['Authori-zation'] = 'Bearer ' + getCookies('kefu_token');
     Socket.then((ws) => {
-      if (this.userToken) {
-        ws.send({
-          type: 'login',
-          data: this.userToken,
-        });
+      if (this._isDestroyed || this._isBeingDestroyed) return;
+      this.socket = ws;
+      ws.$on(['reply', 'chat'], this.onChatMessage);
+      ws.$on('socket_error', this.onSocketError);
+      ws.$on('error', this.onSocketError);
+      ws.$on('to_transfer', this.onTransfer);
+      ws.$on('online', this.onServiceOnline);
+      ws.$on('socket_open', this.onSocketOpen);
+      ws.$on('close', this.onSocketClose);
+      this.getServiceList();
+    }).catch(this.onSocketError);
+  },
+  beforeDestroy() {
+    clearTimeout(this.reconnectTimer);
+    if (this.socket) {
+      if (this.chatReady && this.socket.isAuthenticated()) {
+        this.socket.send({ type: 'to_chat', data: { id: 0 } }).catch(() => {});
       }
-      // 消息接收
-      ws.$on(['reply', 'chat'], (data) => {
-        if (data.msn_type == 1 || data.msn_type == 2) {
-          data.msn = this.replace_em(data.msn);
-        }
-        this.chatList.push(data);
-        this.$nextTick(() => {
-          this.$refs['scrollBox'].refresh();
-          this.scrollBom();
-        });
-        setTimeout((res) => {
-          this.$refs['scrollBox'].refresh();
-        }, 300);
-      });
-      ws.$on('socket_error', () => {
-        this.$message.error('连接失败');
-      });
-      ws.$on('error', () => {
-        this.$message.error('连接失败');
-      });
-      ws.$on('to_transfer', (data) => {
-        ws.send({
-          data: {
-            id: data.toUid,
-          },
-          type: 'to_chat',
-        });
-      });
-      ws.$on('online', (data) => {
-        if (data.online == 0 && data.uid == that.toUid) {
-          that.$Modal.confirm({
-            title: '提示',
-            content: '客服已离线，是否需要反馈？',
-            okText: '确定',
-            cancelText: '取消',
-            onOk: () => {
-              that.$router.replace({
-                path: '/kefu/mobile_feedback',
-              });
-            },
-          });
-        }
-      });
-    });
-    this.$nextTick(() => {});
+      this.socket.$off(['reply', 'chat'], this.onChatMessage);
+      this.socket.$off('socket_error', this.onSocketError);
+      this.socket.$off('error', this.onSocketError);
+      this.socket.$off('to_transfer', this.onTransfer);
+      this.socket.$off('online', this.onServiceOnline);
+      this.socket.$off('socket_open', this.onSocketOpen);
+      this.socket.$off('close', this.onSocketClose);
+    }
+    this.guestToken = '';
+    this.guestExpiresAt = 0;
+    this.chatReady = false;
   },
   methods: {
+    async joinCurrentRoom() {
+      if (this._isDestroyed || this._isBeingDestroyed || !this.toUid) return;
+      const ws = await Socket;
+      this.socket = ws;
+      if (!this.userToken && this.guestExpiresAt <= Math.floor(Date.now() / 1000)) {
+        this.chatReady = false;
+        throw new Error('游客聊天会话已结束，请刷新页面');
+      }
+      const credential = this.userToken || this.guestToken;
+      const type = this.userToken ? 'login' : 'guest_login';
+      const identity = await ws.authenticate(type, credential, this.$wechat.isWeixin() ? 1 : 3);
+      if (this._isDestroyed || this._isBeingDestroyed) return;
+      this.tourist_uid = identity.uid;
+      this.chatReady = true;
+      await ws.send({ type: 'to_chat', data: { id: Number(this.toUid) } });
+    },
+    onSocketOpen(key) {
+      if (key !== 2 || !this.toUid) return;
+      this.joinCurrentRoom().catch(this.onSocketError);
+    },
+    onSocketClose(data) {
+      if (data.key !== 2) return;
+      this.chatReady = false;
+      if (data.serverClose && data.serverClose !== 'timeout') return;
+      if (!this.userToken && this.guestExpiresAt <= Math.floor(Date.now() / 1000)) return;
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = setTimeout(() => {
+        if (!this._isDestroyed && !this._isBeingDestroyed && this.socket) {
+          this.socket.init(2).catch(this.onSocketError);
+        }
+      }, 2000);
+    },
+    onSocketError() {
+      this.chatReady = false;
+      this.$message.error('聊天室连接未完成');
+    },
+    onTransfer(data) {
+      this.toUid = data.toUid;
+      this.joinCurrentRoom().catch(this.onSocketError);
+    },
+    onChatMessage(data) {
+      if (data.msn_type == 1 || data.msn_type == 2) data.msn = this.replace_em(data.msn);
+      this.chatList.push(data);
+      this.$nextTick(() => {
+        if (this.$refs.scrollBox) {
+          this.$refs.scrollBox.refresh();
+          this.scrollBom();
+        }
+      });
+    },
+    onServiceOnline(data) {
+      if (data.online != 0 || data.uid != this.toUid) return;
+      this.$Modal.confirm({
+        title: '提示',
+        content: '客服已离线，是否需要反馈？',
+        okText: '确定',
+        cancelText: '取消',
+        onOk: () => { this.$router.replace({ path: '/kefu/mobile_feedback' }); },
+      });
+    },
     goBack() {
       this.$router.go(-1);
     },
@@ -345,34 +385,23 @@ export default {
     },
     // 获取随机客服
     getServiceList() {
-      serviceListApi({
-        token: this.userToken,
-      })
-        .then((res) => {
+      return serviceListApi({ token: this.userToken || '' })
+        .then(async (res) => {
+          if (this._isDestroyed || this._isBeingDestroyed) return;
           this.toUid = res.data.uid;
           this.tourist_uid = res.data.tourist_uid;
-          document.title = res.data.nickname;
           this.tourist_avatar = res.data.tourist_avatar;
-          if (this.userToken) {
-            this.getChatList();
-          }
-          let obj = {
-            data: {
-              id: res.data.uid,
-              tourist_uid: this.tourist_uid,
-            },
-            type: 'to_chat',
-          };
-          Socket.then((ws) => {
-            ws.send(obj);
-          });
+          this.guestToken = this.userToken ? '' : res.data.guest_token;
+          this.guestExpiresAt = this.userToken ? 0 : res.data.guest_expires_at;
+          document.title = res.data.nickname;
+          await this.joinCurrentRoom();
+          if (this.userToken) this.getChatList();
         })
         .catch((error) => {
-          this.$message.error(error.msg);
-          setTimeout((res) => {
-            this.$router.replace({
-              path: '/kefu/mobile_feedback',
-            });
+          this.chatReady = false;
+          this.$message.error(error.msg || '聊天室连接未完成');
+          setTimeout(() => {
+            if (!this._isDestroyed && !this._isBeingDestroyed) this.$router.replace({ path: '/kefu/mobile_feedback' });
           }, 2000);
         });
     },
@@ -527,21 +556,14 @@ export default {
     },
     // ws发送
     sendMsg(msn, type) {
-      let obj = {
+      if (!this.chatReady || !this.socket || !this.socket.isAuthenticated(this.userToken ? 'api' : 'guest')) {
+        return this.$message.error('聊天室身份尚未确认');
+      }
+      return this.socket.send({
         type: 'chat',
-        data: {
-          msn,
-          type,
-          is_tourist: this.userToken ? 0 : 1,
-          to_uid: this.toUid,
-          tourist_uid: this.tourist_uid,
-          form_type: this.$wechat.isWeixin() ? 1 : 3,
-          tourist_avatar: this.userToken ? '' : this.tourist_avatar,
-        },
-      };
-      Socket.then((ws) => {
-        ws.send(obj);
-      });
+        data: { msn, type, to_uid: Number(this.toUid) },
+        form_type: this.$wechat.isWeixin() ? 1 : 3,
+      }).catch(this.onSocketError);
     },
     // 图片上传
     uploadImg() {

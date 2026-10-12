@@ -148,7 +148,9 @@ export default {
           title: '用户列表',
         },
       ],
-      wsLogin: JSON.parse(sessionStorage.getItem('wsLogin')),
+      socket: null,
+      chatReady: false,
+      reconnectTimer: null,
     };
   },
   filters: {
@@ -171,20 +173,12 @@ export default {
   },
   mounted() {
     let that = this;
-    // 监听页面刷新
-    window.addEventListener('beforeunload', (e) => {
-      sessionStorage.setItem('wsLogin', false);
-    });
-    // 获取是否登录的key
-    this.wsLogin = JSON.parse(sessionStorage.getItem('wsLogin'));
-    let token = getCookies('kefu_token');
     Socket.then((ws) => {
-      if (!that.wsLogin && token) {
-        ws.send({
-          type: 'kefu_login',
-          data: getCookies('kefu_token'),
-        });
-      }
+      if (this._isDestroyed || this._isBeingDestroyed) return;
+      this.socket = ws;
+      ws.$on('socket_open', this.onSocketOpen);
+      ws.$on('close', this.onSocketClose);
+      this.authenticateChat().catch(this.onChatConnectionError);
       //用户未读消息条数更改
       ws.$on('transfer', (data) => {
         if (data.recored.id) {
@@ -233,14 +227,41 @@ export default {
           }
         }
       });
-      // ws登录成功
-      ws.$on('success', (data) => {
-        sessionStorage.setItem('wsLogin', true);
-      });
-    });
+
+    }).catch(this.onChatConnectionError);
   },
-  beforeDestroy() {},
+  beforeDestroy() {
+    clearTimeout(this.reconnectTimer);
+    if (this.socket) {
+      this.socket.$off('socket_open', this.onSocketOpen);
+      this.socket.$off('close', this.onSocketClose);
+    }
+  },
   methods: {
+    async authenticateChat() {
+      const ws = await Socket;
+      this.socket = ws;
+      await ws.authenticate('kefu_login', getCookies('kefu_token'), this.$wechat.isWeixin() ? 1 : 3);
+      if (!this._isDestroyed && !this._isBeingDestroyed) this.chatReady = true;
+    },
+    onSocketOpen(key) {
+      if (key === 2) this.authenticateChat().catch(this.onChatConnectionError);
+    },
+    onSocketClose(data) {
+      if (data.key !== 2) return;
+      this.chatReady = false;
+      if (data.serverClose && data.serverClose !== 'timeout') return;
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = setTimeout(() => {
+        if (!this._isDestroyed && !this._isBeingDestroyed && this.socket) {
+          this.socket.init(2).catch(this.onChatConnectionError);
+        }
+      }, 2000);
+    },
+    onChatConnectionError() {
+      this.chatReady = false;
+      this.$message.error('聊天室连接未完成');
+    },
     ...mapActions('kefu/', ['logout', 'logoutKefu']),
     // 列表切换
     changeClass(item) {
@@ -252,18 +273,12 @@ export default {
       this.getList();
     },
     // 客服上下线
-    changOnline(key) {
+    async changOnline(key) {
+      const ws = await Socket;
+      await ws.authenticate('kefu_login', getCookies('kefu_token'), this.$wechat.isWeixin() ? 1 : 3);
+      await ws.send({ type: 'online', data: { online: key } });
       this.kefuInfo.online = key;
       this.isOnLine = false;
-      Socket.then((ws) => {
-        let that = this;
-        ws.send({
-          type: 'online',
-          data: {
-            online: key,
-          },
-        });
-      });
     },
     // 客服详细信息
     getKefuInfo() {

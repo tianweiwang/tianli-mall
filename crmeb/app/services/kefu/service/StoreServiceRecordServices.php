@@ -96,7 +96,7 @@ class StoreServiceRecordServices extends BaseServices
      */
     public function saveRecord(int $uid, int $toUid, string $message, int $type, int $messageType, int $num, int $isTourist = 0, string $nickname = '', string $avatar = '')
     {
-        $info = $this->dao->get(['user_id' => $toUid, 'to_uid' => $uid]);
+        $info = $this->dao->get(['user_id' => $toUid, 'to_uid' => $uid, 'is_tourist' => $isTourist]);
         if ($info) {
             $info->type = $type;
             $info->message = $message;
@@ -106,7 +106,7 @@ class StoreServiceRecordServices extends BaseServices
             if ($avatar) $info->avatar = $avatar;
             if ($nickname) $info->nickname = $nickname;
             $info->save();
-            $this->dao->update(['user_id' => $uid, 'to_uid' => $toUid], ['message' => $message, 'message_type' => $messageType]);
+            $this->dao->update(['user_id' => $uid, 'to_uid' => $toUid, 'is_tourist' => $isTourist], ['message' => $message, 'message_type' => $messageType]);
             return $info->toArray();
         } else {
             return $this->dao->save([

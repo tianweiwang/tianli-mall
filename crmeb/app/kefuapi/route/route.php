@@ -92,13 +92,13 @@ Route::group(function () {
         ->option(['mark' => 'service', 'mark_name' => '客服']);
 
     Route::group('tourist', function () {
-        Route::get('user', 'Common/getServiceUser')->name('getServiceUser')->option(['real_name' => '随机客服信息']);//随机客服信息
+        Route::get('user', 'Common/getServiceUser')->name('getServiceUser')->option(['real_name' => '随机客服信息', 'chat_guest' => true]);//随机客服信息
         Route::get('adv', 'Common/getKfAdv')->name('getKfAdv')->option(['real_name' => '获取客服广告']);//获取客服广告
         Route::post('feedback', 'Common/saveFeedback')->name('saveFeedback')->option(['real_name' => '保存客服反馈内容']);//保存客服反馈内容
         Route::get('feedback', 'Common/getFeedbackInfo')->name('getFeedbackInfo')->option(['real_name' => '获取反馈页面广告位内容']);//获取反馈页面广告位内容
         Route::get('order/:order_id', 'Common/getOrderInfo')->name('getOrderInfo')->option(['real_name' => '获取订单信息']);//获取订单信息
         Route::get('product/:id', 'Common/getProductInfo')->name('getProductInfo')->option(['real_name' => '获取商品信息']);//获取商品信息
-        Route::get('chat', 'Common/getChatList')->name('getChatList')->option(['real_name' => '获取聊天记录']);//获取聊天记录
+        Route::get('chat', 'Common/getChatList')->name('getChatList')->option(['real_name' => '获取聊天记录', 'chat_guest' => true]);//获取聊天记录
         Route::post('upload', 'Common/upload')->name('upload')->option(['real_name' => '图片上传']);//图片上传
     })->option(['mark' => 'tourist', 'mark_name' => '游客客服']);
 

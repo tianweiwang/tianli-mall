@@ -256,6 +256,8 @@ export default {
       scrollNum: 0, //滚动次数
       transferId: '', //转接id
       bodyClose: false,
+      chatReady: false,
+      reconnectTimer: null,
       tourist: 0,
     };
   },
@@ -311,7 +313,9 @@ export default {
     // }
   },
   beforeDestroy() {
+    clearTimeout(this.reconnectTimer);
     if (this.ws) {
+      if (this.chatReady && this.ws.isAuthenticated('kefu')) this.ws.send({ type: 'to_chat', data: { id: 0 } }).catch(() => {});
       this.ws.$off('socket_open', this.onSocketOpen);
       this.ws.$off('close', this.onSocketClose);
     }
@@ -336,10 +340,7 @@ export default {
       Socket.then((ws) => {
         if (this._isDestroyed) return;
         this.ws = ws;
-        ws.send({
-          type: 'kefu_login',
-          data: getCookies('kefu_token'),
-        });
+        this.authenticateChat().catch(this.onChatConnectionError);
         ws.$on('socket_open', this.onSocketOpen);
         ws.$on('close', this.onSocketClose);
         ws.$on(['reply', 'chat'], (data) => {
@@ -397,21 +398,45 @@ export default {
     // Socket.init(this,'kefu');
   },
   methods: {
-    onSocketOpen(key) {
-      if (key == 2) {
-        this.ws.send({
-          type: 'kefu_login',
-          data: getCookies('kefu_token'),
-        });
+    async authenticateChat() {
+      const ws = await Socket;
+      this.ws = ws;
+      await ws.authenticate('kefu_login', getCookies('kefu_token'), 3);
+      if (this._isDestroyed || this._isBeingDestroyed) return;
+      if (this.userActive && this.userActive.to_uid) {
+        await ws.send({ type: 'to_chat', data: { id: Number(this.userActive.to_uid) } });
+        this.chatReady = true;
       }
     },
+    async joinChatRoom(id) {
+      this.chatReady = false;
+      const target = Number(id);
+      const ws = await Socket;
+      this.ws = ws;
+      await ws.authenticate('kefu_login', getCookies('kefu_token'), 3);
+      if (this._isDestroyed || this._isBeingDestroyed) return;
+      await ws.send({ type: 'to_chat', data: { id: target } });
+      this.chatReady = target !== 0;
+    },
+    onChatConnectionError() {
+      this.chatReady = false;
+      this.$message.error('聊天室连接未完成');
+    },
+    onSocketOpen(key) {
+      if (key !== 2 || this._isDestroyed || this._isBeingDestroyed) return;
+      this.authenticateChat().catch(this.onChatConnectionError);
+    },
     onSocketClose(data) {
-      if (data.key == 2) {
-        this.$message.error('连接断开，正在尝试重连...');
-        setTimeout(() => {
-          this.ws.init(2);
-        }, 2000);
-      }
+      if (data.key !== 2) return;
+      this.chatReady = false;
+      if (data.serverClose && data.serverClose !== 'timeout') return;
+      this.$message.error('连接断开，正在尝试重连...');
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = setTimeout(() => {
+        if (!this._isDestroyed && !this._isBeingDestroyed && this.ws) {
+          this.ws.init(2).catch(this.onChatConnectionError);
+        }
+      }, 2000);
     },
     beforeUpload(file) {
       return isPicUpload(file);
@@ -514,14 +539,7 @@ export default {
           ? `正在和${data.nickname}对话中 - ${this.kefuInfo.site_name}`
           : '正在和游客对话中 - ' + this.kefuInfo.site_name;
 
-        Socket.then((ws) => {
-          ws.send({
-            data: {
-              id: this.userActive.to_uid,
-            },
-            type: 'to_chat',
-          });
-        });
+        this.joinChatRoom(this.userActive.to_uid).catch(this.onChatConnectionError);
         this.getChatList();
       } else {
         window.document.title = this.kefuInfo.site_name;
@@ -544,24 +562,19 @@ export default {
 
     // 统一发送处理
     sendMsg(msn, type) {
-      let obj = {
+      if (!this.chatReady || !this.ws || !this.ws.isAuthenticated('kefu')) {
+        return this.$message.error('聊天室身份尚未确认');
+      }
+      return this.ws.send({
         type: 'chat',
-        data: {
-          msn,
-          type,
-          to_uid: this.userActive.to_uid,
-          is_tourist: this.tourist,
-        },
-      };
-      Socket.then((ws) => {
-        ws.send(obj);
-      });
+        data: { msn, type, to_uid: Number(this.userActive.to_uid) },
+        form_type: 3,
+      }).catch(this.onChatConnectionError);
     },
-    send(type, data) {
-      Socket.send({
-        data,
-        type,
-      });
+    async send(type, data) {
+      const ws = await Socket;
+      await ws.authenticate('kefu_login', getCookies('kefu_token'), 3);
+      return ws.send({ type, data, form_type: 3 });
     },
     // 获取聊天列表
     getChatList() {
@@ -652,12 +665,7 @@ export default {
       this.transferId = data.id;
       this.isTransfer = false;
       this.$message.success('转接成功');
-      Socket.then((ws) => {
-        ws.send({
-          type: 'to_chat',
-          data: { id: data.uid },
-        });
-      });
+      this.joinChatRoom(data.uid).catch(this.onChatConnectionError);
     },
     // 客服转接确定
     transferOk() {},

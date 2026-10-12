@@ -321,57 +321,34 @@ export default {
     let dom = document.querySelector(".chat-box");
     dom.style.height = window.innerHeight + "px";
     // #endif
-    let initSocket = () => {
-      if (app.globalData.isWsOpen) {
-        this.$socket.send({
-          data: {
-            token: this.$store.state.app.token,
-            //#ifdef MP || APP-PLUS
-            form_type: 2,
-            //#endif
-            //#ifdef H5
-            form_type: this.$wechat.isWeixin() ? 1 : 3,
-            //#endif
-          },
-          type: "login",
-        });
-        this.getChatList();
-      } else {
-        let form_type;
-        //#ifdef MP || APP-PLUS
-        form_type = 2;
-        //#endif
-        //#ifdef H5
-        form_type = this.$wechat.isWeixin() ? 1 : 3;
-        //#endif
-        this.$socket.onStart(this.$store.state.app.token, form_type);
-      }
-      uni.$once("socketOpen", () => {
-        // 登录
-        this.$socket.send({
-          data: this.$store.state.app.token,
-          //#ifdef MP || APP-PLUS
-          form_type: 2,
-          //#endif
-          //#ifdef H5
-          form_type: this.$wechat.isWeixin() ? 1 : 3,
-          //#endif
-          type: "login",
-        });
-        this.$nextTick((e) => {
-          this.getChatList();
-        });
-      });
+    let initSocket = async () => {
+      let form_type;
+      //#ifdef MP || APP-PLUS
+      form_type = 2;
+      //#endif
+      //#ifdef H5
+      form_type = this.$wechat.isWeixin() ? 1 : 3;
+      //#endif
+      await this.$socket.onStart();
+      const identity = await this.$socket.authenticate('login', this.$store.state.app.token, form_type);
+      this.myUid = identity.uid;
+      app.globalData.isWsOpen = true;
+      this.$socket.init();
+      this.getChatList();
     };
-    initSocket();
+    initSocket().catch(() => {
+      uni.hideLoading();
+      this.$util.Tips({ title: this.$t('客服连接未完成') });
+    });
     // 初始化
 
     // 监听客服转接
     uni.$on("to_transfer", (data) => {
       this.toUid = data.toUid;
+      if (!this.$socket.isAuthenticated('api')) return;
       this.$socket.send({
         data: {
-          id: this.toUid,
+          id: Number(this.toUid),
         },
         type: "to_chat",
       });
@@ -388,12 +365,14 @@ export default {
         mask: true,
       });
       this.chatList = [];
-      initSocket();
+      this.$socket.onClose();
+      app.globalData.isWsOpen = false;
+      initSocket().catch(() => {
+        uni.hideLoading();
+        this.$util.Tips({ title: this.$t('客服连接未完成') });
+      });
     });
-    // 链接成功
-    uni.$once("success", () => {
-      this.$socket.init();
-    });
+    uni.$on('socket_close', () => { app.globalData.isWsOpen = false; });
     // 消息接收
     uni.$on(["reply", "chat"], (data) => {
       if (data.msn_type == 1) {
@@ -508,7 +487,7 @@ export default {
       getChatRecord({
         limit: this.limit,
         uidTo: this.uidTo,
-        toUid: this.toUid,
+        toUid: Number(this.toUid),
       })
         .then((res) => {
           let selector = "";
@@ -546,9 +525,10 @@ export default {
               this.isScroll = res.data.serviceList.length >= this.limit;
             }
           });
+          if (!this.$socket.isAuthenticated('api')) return;
           this.$socket.send({
             data: {
-              id: this.toUid,
+              id: Number(this.toUid),
             },
             type: "to_chat",
           });
@@ -588,11 +568,12 @@ export default {
     },
     // ws发送
     sendMsg(msn, type) {
+      if (!this.$socket.isAuthenticated('api')) return this.$util.Tips({ title: this.$t('聊天室身份尚未确认') });
       this.$socket.send({
         data: {
           msn,
           type,
-          to_uid: this.toUid,
+          to_uid: Number(this.toUid),
         },
         //#ifdef MP || APP-PLUS
         form_type: 2,

@@ -23,6 +23,7 @@ use app\services\wechat\WechatReplyServices;
 use app\services\wechat\WechatUserServices;
 use app\services\user\UserAuthServices;
 use crmeb\exceptions\AuthException;
+use crmeb\exceptions\AuthSessionException;
 use crmeb\services\app\WechatService;
 use crmeb\services\workerman\Response;
 use crmeb\utils\Arr;
@@ -62,6 +63,7 @@ class ChatHandle
      */
     public function kefu_login(TcpConnection &$connection, array $res, Response $response)
     {
+        $this->service->detachIdentity($connection);
         if (!isset($res['data']) || !$token = $res['data']) {
             return $response->close([
                 'msg' => '授权失败!'
@@ -92,9 +94,10 @@ class ChatHandle
         /** @var StoreServiceServices $service */
         $service = app()->make(StoreServiceServices::class);
         $service->update(['uid' => $connection->user->uid], ['online' => 1]);
+        $connection->chatIdentity = new ChatIdentity('kefu', (int)$connection->user->uid, $token);
         $this->service->setKefuUser($connection);
 
-        return $response->success();
+        return $response->success(['kind' => 'kefu', 'uid' => (int)$connection->user->uid]);
     }
 
     /**
@@ -106,6 +109,7 @@ class ChatHandle
      */
     public function login(TcpConnection &$connection, array $res, Response $response)
     {
+        $this->service->detachIdentity($connection);
         if (!isset($res['data']) || !$token = $res['data']) {
             return $response->close([
                 'msg' => '授权失败!'
@@ -124,6 +128,7 @@ class ChatHandle
 
         $connection->user = $authInfo['user'];
         $connection->tokenData = $authInfo['tokenData'];
+        $connection->chatIdentity = new ChatIdentity('api', (int)$connection->user->uid, $token);
         $this->service->setUser($connection);
 
         /** @var StoreServiceRecordServices $service */
@@ -141,7 +146,7 @@ class ChatHandle
             $this->service->setKefuUser($conn, false);
         }
 
-        return $response->connection($connection)->success();
+        return $response->connection($connection)->success(['kind' => 'api', 'uid' => (int)$connection->user->uid]);
     }
 
     /**
@@ -152,28 +157,102 @@ class ChatHandle
      */
     public function to_chat(TcpConnection &$connection, array $res, Response $response)
     {
-        $tourist_uid = $res['data']['tourist_uid'] ?? 0;
-        if ($tourist_uid) {
-            $connection->isTourist = true;
-            $connection->user = (object)['uid' => $tourist_uid];
-            $connections = $this->service->user();
-            if (!isset($connections[$tourist_uid])) {
-                $this->service->setUser($connection);
-            }
+        $identity = $this->currentIdentity($connection);
+        $target = $this->roomId($res['data']['id'] ?? null, true);
+        if ($target === 0) {
+            unset($connection->chatToUid, $connection->chatRoomTourist);
+            return $response->send('mssage_num', ['uid' => 0, 'num' => 0, 'recored' => (object)[]]);
         }
-        $connection->chatToUid = $res['data']['id'] ?? 0;
-        if (isset($connection->user)) {
-            $uid = $connection->user->uid;
-            if ($connection->chatToUid && !isset($connection->isTourist)) {
-                /** @var StoreServiceRecordServices $service */
-                $service = app()->make(StoreServiceRecordServices::class);
-                $service->update(['user_id' => $uid, 'to_uid' => $connection->chatToUid], ['mssage_num' => 0]);
-                /** @var StoreServiceLogServices $logServices */
-                $logServices = app()->make(StoreServiceLogServices::class);
-                $logServices->update(['uid' => $connection->chatToUid, 'to_uid' => $uid], ['type' => 1]);
-            }
-            $response->send('mssage_num', ['uid' => $connection->chatToUid, 'num' => 0, 'recored' => (object)[]]);
+        $tourist = $this->roomTourist($identity, $target);
+        $connection->chatToUid = $target;
+        $connection->chatRoomTourist = $tourist;
+        if ($identity->kind !== 'guest') {
+            $records = app()->make(StoreServiceRecordServices::class);
+            $records->update(['user_id' => $identity->uid, 'to_uid' => $target, 'is_tourist' => (int)$tourist], ['mssage_num' => 0]);
+            $logs = app()->make(StoreServiceLogServices::class);
+            $logs->update(['uid' => $target, 'to_uid' => $identity->uid, 'is_tourist' => (int)$tourist], ['type' => 1]);
         }
+        return $response->send('mssage_num', ['uid' => $target, 'num' => 0, 'recored' => (object)[]]);
+    }
+
+    public function guest_login(TcpConnection &$connection, array $res, Response $response)
+    {
+        $this->service->detachIdentity($connection);
+        $token = $res['data'] ?? null;
+        if (!is_string($token)) throw new AuthSessionException();
+        $guest = app()->make(GuestChatSession::class)->verify($token);
+        $identity = new ChatIdentity('guest', $guest['uid'], $token, $guest['expires_at'], $guest['avatar']);
+        $connection->chatIdentity = $identity;
+        $connection->isTourist = true;
+        $connection->user = (object)['uid' => $identity->uid];
+        $this->service->setUser($connection);
+        return $response->success(['kind' => 'guest', 'uid' => $identity->uid, 'expires_at' => $identity->expiresAt]);
+    }
+
+    /** Server Channel consumer shares the actual credential reader; client dispatch stays finite. */
+    public function assertCurrentConnection(TcpConnection $connection): ChatIdentity
+    {
+        return $this->currentIdentity($connection);
+    }
+
+    private function currentIdentity(TcpConnection $connection): ChatIdentity
+    {
+        $identity = $connection->chatIdentity ?? null;
+        if (!$identity instanceof ChatIdentity) throw new AuthSessionException();
+        if ($identity->kind === 'guest') {
+            app()->make(GuestChatSession::class)->assertCurrent($identity);
+        } elseif ($identity->kind === 'kefu') {
+            $current = app()->make(LoginServices::class)->parseToken($identity->credential());
+            if ((int)$current['uid'] !== $identity->uid) throw new AuthSessionException();
+        } else {
+            $current = app()->make(UserAuthServices::class)->parseToken($identity->credential());
+            if ((int)$current['user']['uid'] !== $identity->uid) throw new AuthSessionException();
+        }
+        if ((int)($connection->user->uid ?? 0) !== $identity->uid) throw new AuthSessionException();
+        return $identity;
+    }
+
+    /** Zero is a normal leave-room operation; negative IDs belong to guests. */
+    private function roomId($value, bool $allowZero = false): int
+    {
+        if (!is_int($value) && !(is_string($value) && preg_match('/^(0|-?[1-9][0-9]{0,9})$/D', $value) === 1)) throw new AuthSessionException();
+        $value = (int)$value;
+        if ($value < -2147483647 || $value > 4294967295 || (!$allowZero && $value === 0)) throw new AuthSessionException();
+        return $value;
+    }
+
+    /** Establish the conversation classification from current server records. */
+    private function recipientConnection(ChatIdentity $sender, int $target, bool $tourist): ?TcpConnection
+    {
+        $expected = $sender->kind !== 'kefu' ? 'kefu' : ($tourist ? 'guest' : 'api');
+        $recipient = $expected === 'kefu' ? ($this->service->kefuUser()[$target] ?? null) : $this->service->user($target);
+        if (!$recipient instanceof TcpConnection) return null;
+        $identity = $recipient->chatIdentity ?? null;
+        if (!$identity instanceof ChatIdentity || $identity->uid !== $target || $identity->kind !== $expected) return null;
+        try {
+            $this->currentIdentity($recipient);
+        } catch (AuthException $error) {
+            if (in_array((int)$error->getCode(), [401, 403], true)) return null;
+            throw $error;
+        }
+        return $recipient;
+    }
+
+    /** Establish the conversation classification from current server records. */
+    private function roomTourist(ChatIdentity $identity, int $target): bool
+    {
+        if ($identity->uid === $target) throw new AuthSessionException();
+        if ($identity->kind !== 'kefu') {
+            if ($target <= 0 || !app()->make(StoreServiceServices::class)->get(['uid' => $target, 'status' => 1], ['id'])
+                || !app()->make(UserServices::class)->get(['uid' => $target, 'status' => 1, 'is_del' => 0], ['uid'])) throw new AuthSessionException();
+            return $identity->kind === 'guest';
+        }
+        if ($target < 0 && app()->make(GuestChatSession::class)->findCurrent($target) !== null) return true;
+        $touristRecord = \think\facade\Db::name('store_service_record')->where('user_id', $identity->uid)
+            ->where('to_uid', $target)->where('is_tourist', 1)->value('id');
+        if ($touristRecord) return true;
+        if ($target > 0 && app()->make(UserServices::class)->get(['uid' => $target, 'status' => 1, 'is_del' => 0], ['uid'])) return false;
+        throw new AuthSessionException();
     }
 
     /**
@@ -188,16 +267,16 @@ class ChatHandle
      */
     public function chat(TcpConnection &$connection, array $res, Response $response)
     {
-        $to_uid = $res['data']['to_uid'] ?? 0;
+        $identity = $this->currentIdentity($connection);
+        $to_uid = $this->roomId($res['data']['to_uid'] ?? null);
+        if (($connection->chatToUid ?? null) !== $to_uid) throw new AuthSessionException();
+        $isTourist = $this->roomTourist($identity, $to_uid);
+        $senderIsGuest = $identity->kind === 'guest';
         $msn_type = $res['data']['type'] ?? 0;
         $msn = $res['data']['msn'] ?? '';
         $formType = $res['form_type'] ?? 0;
-        //是否为游客
-        $isTourist = $res['data']['is_tourist'] ?? 0;
-        $tourist_uid = $res['data']['tourist_uid'] ?? 0;
-        $isTourist = $isTourist && $tourist_uid;
-        $tourist_avatar = $res['data']['tourist_avatar'] ?? '';
-        $uid = $isTourist ? $tourist_uid : $connection->user->uid;
+        $tourist_avatar = $identity->avatar;
+        $uid = $identity->uid;
         if (!$to_uid) {
             return $response->send('err_tip', ['msg' => '用户不存在']);
         }
@@ -212,16 +291,16 @@ class ChatHandle
         $msn = trim(strip_tags(str_replace(["\n", "\t", "\r", "&nbsp;"], '', htmlspecialchars_decode($msn))));
         $data = compact('to_uid', 'msn_type', 'msn', 'uid');
         $data['add_time'] = time();
-        $data['is_tourist'] = $res['data']['is_tourist'] ?? 0;
-        $connections = $this->service->user();
-        $online = isset($connections[$to_uid]) && isset($connections[$to_uid]->chatToUid) && $connections[$to_uid]->chatToUid == $uid;
+        $data['is_tourist'] = (int)$isTourist;
+        $recipient = $this->recipientConnection($identity, $to_uid, $isTourist);
+        $online = $recipient !== null && isset($recipient->chatToUid) && $recipient->chatToUid == $uid;
         $data['type'] = $online ? 1 : 0;
         $data = $logServices->save($data);
         $data = $data->toArray();
         $data['_add_time'] = $data['add_time'];
         $data['add_time'] = strtotime($data['add_time']);
-        if (!$isTourist) {
-            if (isset($this->service->kefuUser()[$data['uid']])) {
+        if (!$senderIsGuest) {
+            if ($identity->kind === 'kefu') {
                 /** @var StoreServiceServices $userService */
                 $userService = app()->make(StoreServiceServices::class);
                 $_userInfo = $userService->get(['uid' => $data['uid']], ['nickname', 'avatar']);
@@ -233,9 +312,8 @@ class ChatHandle
             $data['nickname'] = $_userInfo['nickname'];
             $data['avatar'] = set_file_url($_userInfo['avatar']);
         } else {
-            $avatar = sys_config('tourist_avatar');
-            $_userInfo['avatar'] = $tourist_avatar ?: Arr::getArrayRandKey(is_array($avatar) ? $avatar : []);
-            $_userInfo['nickname'] = '游客' . $uid;
+            $_userInfo['avatar'] = $identity->avatar;
+            $_userInfo['nickname'] = '游客' . abs($uid);
             $data['nickname'] = $_userInfo['nickname'];
             $data['avatar'] = set_file_url($_userInfo['avatar']);
         }
@@ -250,7 +328,7 @@ class ChatHandle
         }
         //订单消息类型
         $data['orderInfo'] = [];
-        if ($msn_type == StoreServiceLogServices::MSN_TYPE_ORDER && $msn) {
+        if (!$isTourist && $msn_type == StoreServiceLogServices::MSN_TYPE_ORDER && $msn) {
             /** @var StoreOrderServices $orderServices */
             $orderServices = app()->make(StoreOrderServices::class);
             $order = $orderServices->getUserOrderDetail($msn, $uid);
@@ -272,13 +350,13 @@ class ChatHandle
         $data['recored'] = $serviceRecored->saveRecord($uid, $to_uid, $msn, $formType ?? 0, $msn_type, $unMessagesCount, $isTourist, $data['nickname'], $data['avatar']);
         //是否在线
         if ($online) {
-            $response->connection($this->service->user()[$to_uid])->send('reply', $data);
+            $response->connection($recipient)->send('reply', $data);
         } else {
             //用户在线，可是没有和当前用户进行聊天，给当前用户发送未读条数
-            if (isset($connections[$to_uid])) {
+            if ($recipient !== null) {
                 $data['recored']['nickname'] = $_userInfo['nickname'];
                 $data['recored']['avatar'] = set_file_url($_userInfo['avatar']);
-                $response->connection($this->service->user()[$to_uid])->send('mssage_num', [
+                $response->connection($recipient)->send('mssage_num', [
                     'uid' => $uid,
                     'num' => $unMessagesCount,
                     'recored' => $data['recored']
@@ -310,7 +388,7 @@ class ChatHandle
                 }
             }
         }
-        if (!isset($this->service->kefuUser()[$uid])) {
+        if ($identity->kind !== 'kefu') {
             //判断是否有自动回复
             $wechatKeyServices = app()->make(WechatKeyServices::class);
             $replyId = $wechatKeyServices->value(['keys' => $msn, 'key_type' => 1], 'reply_id');
@@ -325,7 +403,7 @@ class ChatHandle
                 $autoReply['msn'] = $autoReplyMsn;
                 $autoReply['uid'] = $to_uid;
                 $autoReply['add_time'] = time();
-                $autoReply['is_tourist'] = 0;
+                $autoReply['is_tourist'] = (int)$isTourist;
                 $autoReply['type'] = 1;
                 $autoReply = $logServices->save($autoReply);
                 $autoReply = $autoReply->toArray();
@@ -334,7 +412,7 @@ class ChatHandle
                 $kefuInfo = app()->make(StoreServiceServices::class)->get(['uid' => $to_uid], ['nickname', 'avatar']);
                 $replyMessagesCount = $logServices->getMessageNum(['uid' => $to_uid, 'to_uid' => $uid, 'type' => 0, 'is_tourist' => $isTourist ? 1 : 0]);
                 $autoReply['recored'] = $serviceRecored->saveRecord($to_uid, $uid, $autoReplyMsn, $formType ?? 0, $autoReplyData['type'] == 'text' ? 1 : 3, $replyMessagesCount, $isTourist, $kefuInfo['nickname'], $kefuInfo['avatar']);
-                $response->connection($this->service->user()[$uid])->send('reply', $autoReply);
+                $response->connection($connection)->send('reply', $autoReply);
             }
         }
     }
@@ -347,6 +425,8 @@ class ChatHandle
      */
     public function online(TcpConnection &$connection, array $res, Response $response)
     {
+        $identity = $this->currentIdentity($connection);
+        if ($identity->kind !== 'kefu') throw new AuthSessionException();
         $online = $res['data']['online'] ?? 0;
         $connections = $this->service->user();
         if (isset($connection->user->uid)) {
@@ -371,13 +451,13 @@ class ChatHandle
      */
     public function transfer(TcpConnection &$connection, array $res, Response $response)
     {
+        $identity = $this->currentIdentity($connection);
+        if ($identity->kind !== 'kefu') throw new AuthSessionException();
         $data = $res['data'] ?? [];
-        $uid = $data['recored']['uid'] ?? 0;
-        if ($uid && $this->service->user($uid)) {
-            $data['recored']['online'] = 1;
-        } else {
-            $data['recored']['online'] = 0;
-        }
+        if ((int)($data['recored']['user_id'] ?? 0) !== $identity->uid) throw new AuthSessionException();
+        $uid = $this->roomId($data['recored']['to_uid'] ?? null);
+        $tourist = (int)($data['recored']['is_tourist'] ?? 0) === 1;
+        $data['recored']['online'] = $this->recipientConnection($identity, $uid, $tourist) !== null ? 1 : 0;
         $response->send('transfer', $data);
     }
 }

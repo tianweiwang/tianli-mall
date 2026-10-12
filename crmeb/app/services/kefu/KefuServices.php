@@ -93,8 +93,20 @@ class KefuServices extends BaseServices
         $auxiliaryServices = app()->make(StoreServiceAuxiliaryServices::class);
         /** @var StoreServiceLogServices $service */
         $service = app()->make(StoreServiceLogServices::class);
+        /** @var StoreServiceRecordServices $serviceRecord */
+        $serviceRecord = app()->make(StoreServiceRecordServices::class);
+        $recordWhere = ['user_id' => $kfuUid, 'to_uid' => $uid];
+        // Preserve legacy visitor history rather than reinterpret its positive ID as a customer.
+        $ownedRecord = $serviceRecord->get($recordWhere + ['is_tourist' => 1], ['id', 'is_tourist']);
+        if (!$ownedRecord) $ownedRecord = $serviceRecord->get($recordWhere + ['is_tourist' => 0], ['id', 'is_tourist']);
+        if (!$ownedRecord) throw new ApiException('聊天记录不存在');
+        $isTourist = (int)$ownedRecord['is_tourist'];
         $addTime = $auxiliaryServices->value(['binding_id' => $kfuUid, 'relation_id' => $uid], 'update_time');
-        $list = $service->getMessageList(['chat' => [$kfuUid, $uid], 'add_time' => $addTime]);
+        // The existing getMessageList() ignores extra predicates; use its real search API.
+        $list = $service->search(['chat' => [$kfuUid, $uid], 'is_tourist' => $isTourist])
+            ->when($addTime, function ($query) use ($addTime) {
+                $query->where('add_time', '>', $addTime);
+            })->select()->toArray();
         $data = [];
         foreach ($list as $item) {
             if ($item['to_uid'] == $kfuUid) {
@@ -107,7 +119,11 @@ class KefuServices extends BaseServices
             unset($item['id']);
             $data[] = $item;
         }
-        $record = $this->transaction(function () use ($data, $service, $kfuUid, $uid, $kfuToUid, $auxiliaryServices) {
+        $record = $this->transaction(function () use ($data, $service, $kfuUid, $uid, $kfuToUid, $auxiliaryServices, $isTourist) {
+            /** @var StoreServiceRecordServices $serviceRecord */
+            $serviceRecord = app()->make(StoreServiceRecordServices::class);
+            $info = $serviceRecord->get(['user_id' => $kfuUid, 'to_uid' => $uid, 'is_tourist' => $isTourist], ['type', 'message_type', 'is_tourist', 'avatar', 'nickname']);
+            if (!$info) throw new ApiException('聊天记录不存在');
             if ($data) {
                 $num = count($data) - 1;
                 $messageData = $data[$num] ?? [];
@@ -117,10 +133,7 @@ class KefuServices extends BaseServices
                 $res = true;
                 $messageData = [];
             }
-            /** @var StoreServiceRecordServices $serviceRecord */
-            $serviceRecord = app()->make(StoreServiceRecordServices::class);
-            $info = $serviceRecord->get(['user_id' => $kfuUid, 'to_uid' => $uid], ['type', 'message_type', 'is_tourist', 'avatar', 'nickname']);
-            $record = $serviceRecord->saveRecord($uid, $kfuToUid, $messageData['msn'] ?? '', $info['type'] ?? 1, $messageData['message_type'] ?? 1, $num, $info['is_tourist'] ?? 0, $info['nickname'] ?? "", $info['avatar'] ?? '');
+            $record = $serviceRecord->saveRecord($uid, $kfuToUid, $messageData['msn'] ?? '', $info['type'] ?? 1, $messageData['message_type'] ?? 1, $num, $isTourist, $info['nickname'] ?? "", $info['avatar'] ?? '');
             $res = $res && $auxiliaryServices->saveAuxliary(['binding_id' => $kfuUid, 'relation_id' => $uid]);
             if (!$res && !$record) {
                 throw new ApiException('转接客服失败');
@@ -144,12 +157,12 @@ class KefuServices extends BaseServices
             //给转接的客服发送消息通知
             ChannelService::instance()
                 ->setTrigger('crmeb_chat')
-                ->send('transfer', ['recored' => $record, 'kefuInfo' => $keufInfo, 'fun' => true], [$kfuToUid]);
+                ->send('transfer', ['recored' => $record, 'kefuInfo' => $keufInfo], [$kfuToUid]);
             //告知用户对接此用户聊天
             $keufToInfo = $this->dao->get(['uid' => $kfuToUid], ['avatar', 'nickname']);
             ChannelService::instance()
                 ->setTrigger('crmeb_chat')
-                ->send('to_transfer', ['toUid' => $kfuToUid, 'avatar' => $keufToInfo['avatar'] ?? '', 'nickname' => $keufToInfo['nickname'] ?? ''], [$uid]);
+                ->send('to_transfer', ['toUid' => $kfuToUid, 'avatar' => $keufToInfo['avatar'] ?? '', 'nickname' => $keufToInfo['nickname'] ?? '', 'is_tourist' => (int)$record['is_tourist']], [$uid]);
         } catch (\Exception $e) {
         }
         return true;

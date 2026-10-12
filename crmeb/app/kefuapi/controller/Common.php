@@ -26,6 +26,8 @@ use app\services\kefu\service\StoreServiceServices;
 use app\api\validate\user\StoreServiceFeedbackValidate;
 use app\services\kefu\service\StoreServiceFeedbackServices;
 use crmeb\exceptions\AuthException;
+use crmeb\exceptions\AuthSessionException;
+use crmeb\services\workerman\chat\GuestChatSession;
 use app\services\other\UploadService;
 use crmeb\services\CacheService;
 use crmeb\utils\Arr;
@@ -35,7 +37,19 @@ class Common extends BaseController
 {
     protected function initialize()
     {
+    }
 
+    /** Only the selected customer-chat requests supply this explicit header. */
+    private function chatUserToken(): string
+    {
+        if ($this->request->get('token', '') !== '') throw new AuthSessionException();
+        $header = $this->request->header('Authori-zation', '');
+        $standard = $this->request->header('Authorization', '');
+        if ($header !== '' && $standard !== '' && $header !== $standard) throw new AuthSessionException();
+        $header = $header !== '' ? $header : $standard;
+        if ($header === '') return '';
+        if (!is_string($header) || preg_match('/^Bearer ([^\s]+)$/D', $header, $match) !== 1) throw new AuthSessionException();
+        return $match[1];
     }
 
     /**
@@ -59,8 +73,9 @@ class Common extends BaseController
      * @throws \think\db\exception\DbException
      * @throws \think\db\exception\ModelNotFoundException
      */
-    public function getServiceUser(StoreServiceServices $services, UserServices $userServices, StoreServiceRecordServices $recordServices, $token = '')
+    public function getServiceUser(StoreServiceServices $services, UserServices $userServices, StoreServiceRecordServices $recordServices)
     {
+        $token = $this->chatUserToken();
         $serviceInfoList = $services->getServiceList(['status' => 1, 'online' => 1]);
         if (!count($serviceInfoList['list'])) {
             return app('json')->fail('暂无客服人员在线，请稍后联系');
@@ -78,9 +93,8 @@ class Common extends BaseController
                     $toUid = 0;
                 }
             } catch (AuthException $e) {
+                throw new AuthSessionException();
             }
-        } else {
-            $tourist_uid = rand(100000000, 999999999);
         }
         if (!$toUid) {
             $toUid = Arr::getArrayRandKey($uids);
@@ -96,11 +110,17 @@ class Common extends BaseController
                     $userInfo['avatar'] = $infoList[$toUid]['avatar'];
                 }
             }
-            $userInfo['tourist_uid'] = $uid ?: $tourist_uid;
             $tourist_avatar = sys_config('tourist_avatar');
-            $avatar = Arr::getArrayRandKey(is_array($tourist_avatar) ? $tourist_avatar : []);
+            $avatar = (string)Arr::getArrayRandKey(is_array($tourist_avatar) ? $tourist_avatar : []);
+            if (!$uid) {
+                $guest = app()->make(GuestChatSession::class)->issue($avatar);
+                $tourist_uid = $guest['uid'];
+                $userInfo['guest_token'] = $guest['token'];
+                $userInfo['guest_expires_at'] = $guest['expires_at'];
+            }
+            $userInfo['tourist_uid'] = $uid ?: $tourist_uid;
             $userInfo['tourist_avatar'] = $uid ? '' : $avatar;
-            $userInfo['is_tourist'] = (bool)$tourist_uid;
+            $userInfo['is_tourist'] = !$uid;
             return app('json')->success($userInfo->toArray());
         } else {
             return app('json')->fail('暂无客服人员在线，请稍后联系');
@@ -143,8 +163,9 @@ class Common extends BaseController
      * @param $uid
      * @return mixed
      */
-    public function getChatList(Request $request, KefuServices $services, JwtAuth $auth, $token = '')
+    public function getChatList(Request $request, KefuServices $services, JwtAuth $auth)
     {
+        $token = $this->chatUserToken();
         [$uid, $upperId] = $request->postMore([
             ['uid', 0],
             ['upperId', 0],

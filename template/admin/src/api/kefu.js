@@ -476,11 +476,14 @@ export function kefuConfig() {
  * 客户端 随机客服
  * @constructor
  */
-export function serviceListApi(params) {
+export function serviceListApi(params = {}) {
+  const { token = '', ...query } = params;
   return request({
     url: `tourist/user`,
     method: 'get',
-    params,
+    params: query,
+    headers: { 'Authori-zation': token ? 'Bearer ' + token : '' },
+    chatUserAuthorization: true,
     kefu: true,
   });
 }
@@ -501,11 +504,14 @@ export function getAdvApi() {
  * 客户端 聊天记录
  * @constructor
  */
-export function chatListApi(params) {
+export function chatListApi(params = {}) {
+  const { token = '', ...query } = params;
   return request({
     url: `tourist/chat`,
     method: 'get',
-    params,
+    params: query,
+    headers: { 'Authori-zation': token ? 'Bearer ' + token : '' },
+    chatUserAuthorization: true,
     kefu: true,
   });
 }

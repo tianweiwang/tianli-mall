@@ -44,6 +44,11 @@ class KefuApiExceptionHandle extends Handle
      */
     public function report(Throwable $exception): void
     {
+        if (\crmeb\services\workerman\chat\GuestChatSession::isIssuerRequest($this->app->request)) {
+            if ($exception instanceof AuthException && in_array($exception->getCode(), [401, 403], true)) return;
+            try { $this->app->log->record('chat.guest_unavailable', 'error'); } catch (Throwable $loggingError) {}
+            return;
+        }
         if (!$this->isIgnoreReport($exception)) {
             $data = [
                 'file' => $exception->getFile(),
@@ -77,6 +82,11 @@ class KefuApiExceptionHandle extends Handle
      */
     public function render($request, Throwable $e): Response
     {
+        if (\crmeb\services\workerman\chat\GuestChatSession::isIssuerRequest($request)) {
+            $status = $e instanceof AuthException && in_array($e->getCode(), [401, 403], true) ? $e->getCode() : 503;
+            $messages = [401 => '认证信息无效，请重新登录', 403 => '没有权限访问', 503 => '聊天服务暂不可用'];
+            return Response::create(['status' => $status, 'msg' => $messages[$status], 'data' => []], 'json', $status);
+        }
         $massageData = Env::get('app_debug', false) ? [
             'message' => $e->getMessage(),
             'file' => $e->getFile(),

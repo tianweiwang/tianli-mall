@@ -38,6 +38,11 @@ class SystemClearServices extends BaseServices
             $clearData = $table_name;
         }
         foreach ($clearData as $name) {
+            // This permanent allocation ledger must never be reset by cache cleanup.
+            if ($name === 'cache') {
+                Db::name('cache')->where('key', '<>', 'kefu_tourist_uid_seq')->delete();
+                continue;
+            }
             if ($status) {
                 Db::execute('TRUNCATE TABLE ' . $prefix . $name);
             } else {

@@ -34,7 +34,11 @@ service.interceptors.request.use(
     }
     const token = getCookies('token');
     const kefuToken = getCookies('kefu_token');
-    if (token || kefuToken) {
+    if (config.kefu && config.chatUserAuthorization === true) {
+      // Only tourist/user and tourist/chat explicitly select customer or anonymous identity.
+      if (!config.headers['Authori-zation']) config.headers['Authori-zation'] = '';
+      delete config.headers.Authorization;
+    } else if (token || kefuToken) {
       config.headers['Authori-zation'] = config.kefu ? 'Bearer ' + kefuToken : 'Bearer ' + token;
     }
     return config;
