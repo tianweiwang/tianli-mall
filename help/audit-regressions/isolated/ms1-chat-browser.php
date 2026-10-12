@@ -198,7 +198,7 @@ function m7b_system_warm(\think\App $app,string $prefix,array &$ownedKeys,array 
 {
     // Exact production keys for chat and the unchanged admin login/info readiness.
     // Do not call the complete login service here: it can dispatch CheckQueueJob.
-    $names=['site_name','site_url','tourist_avatar','site_logo','site_logo_square','nncnL_crmeb_copyright','login_logo','queue_open','wechat_open_app_id','nncnL_crmeb_copyright_image','custom_admin_js'];
+    $names=['site_name','site_url','tourist_avatar','site_logo','site_logo_square','nncnL_crmeb_copyright','login_logo','queue_open','wechat_open_app_id','nncnL_crmeb_copyright_image','custom_admin_js','param_filter_type','param_filter_data'];
     $configKeys=array_map(static fn(string $name): string=>$prefix.'system_config_'.$name,$names);
     $slideKey=$prefix.'data_admin_login_slide'; $keys=array_merge($configKeys,[$slideKey]); $tag=$prefix.'CRMEB:'.md5('crmeb');
     $before=m7b_snapshot(); $values=[];
@@ -212,7 +212,7 @@ function m7b_system_warm(\think\App $app,string $prefix,array &$ownedKeys,array 
     $actualSlide=sys_data('admin_login_slide');
     audit_expect(is_array($wantSlide)&&$actualSlide===$wantSlide,'normal login slide cache matches the real group-data producer including upload URL normalization');
     $after=m7b_snapshot(); $new=array_values(array_diff(array_keys($after['redis']),array_keys($before['redis']))); sort($new); $expectedNew=$keys; sort($expectedNew);
-    audit_expect($new===$expectedNew,'normal readiness/chat preparation adds exactly its twelve known physical value keys');
+    audit_expect($new===$expectedNew,'normal readiness/chat preparation adds exactly its fourteen known physical value keys');
     $redis=audit_redis();
     foreach ($names as $name) {
         $key=$prefix.'system_config_'.$name; $want=is_numeric($values[$name]) ? (string)$values[$name] : serialize($values[$name]);
@@ -222,7 +222,7 @@ function m7b_system_warm(\think\App $app,string $prefix,array &$ownedKeys,array 
     foreach ($keys as $key) audit_expect($redis->exists($key.'_lock')===0,'normal remember producer removed its precise temporary value lock');
     $members=$redis->sMembers($tag); sort($members); $expected=array_merge($keys,array_map(static fn(string $name): string=>$prefix.$name,
         ['range_name','sys_lang_source_map','type_id_zh-CN','lang_type_data','lang_zh_CN'])); sort($expected);
-    audit_expect($redis->type($tag)===Redis::REDIS_SET&&$members===$expected&&$after['redis'][$tag]['deadline']===-1,'normal shared tag contains exactly seventeen language/config/slide members and its persistent deadline');
+    audit_expect($redis->type($tag)===Redis::REDIS_SET&&$members===$expected&&$after['redis'][$tag]['deadline']===-1,'normal shared tag contains exactly nineteen language/config/slide members and its persistent deadline');
     m7b_same($before,$after,[],array_merge($keys,[$tag]));
     $evidence['system_config_preparation']=['logical_keys'=>array_merge(array_map(static fn(string $name): string=>'system_config_'.$name,$names),['data_admin_login_slide']),
         'exact_value_key_count'=>count($keys),'exact_temporary_lock_key_count'=>count($keys),

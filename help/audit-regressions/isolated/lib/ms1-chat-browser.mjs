@@ -66,6 +66,7 @@ async function until(fn, code, timeout = 60000) {
   fail(code);
 }
 async function command(action, event) {
+  if (observerTerminal()) fail('OBSERVER_TERMINATED');
   const revision = crypto.randomBytes(8).toString('hex');
   atomic(path.join(ROOT, 'control.json'), { run_id: input.run_id, revision, action, ...(event ? { event } : {}) });
   const deadline = Math.min(Date.now() + 30000, ready.normal_deadline * 1000);
@@ -76,6 +77,9 @@ async function command(action, event) {
       check(reply.status === action && (action !== 'client_http' ||
         reply.registered_current_source === true), 'CONTROL_ACK_UNAVAILABLE');
       return reply;
+    }
+    if (reply && reply.run_id === input.run_id && ['abort', 'finish'].includes(reply.status)) {
+      fail('OBSERVER_TERMINATED');
     }
     await pause(25);
   }
