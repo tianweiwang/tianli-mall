@@ -29,6 +29,7 @@ const result = {
   stages: [{ name: 'desktop', width: 1440, height: 900 }, { name: 'mobile', width: 390, height: 844 }],
   login_http_success: 0, guest_http_success: 0,
   identity_acks: [], normal_texts: [], room_acks: [], screenshots: [], control_checks: [], action_controls: [],
+  message_avatars: [], brand_checks: [],
   external_requests_blocked_count: 0, external_requests_blocked: [],
   client_http_count: 0, console_counts: { external_blocked: 0, application_error: 0, page_error: 0 },
   resource_counts: {},
@@ -178,6 +179,13 @@ function scopeInput() {
     os.hostname() === ready.browser_identity.id.slice(0, 12), 'BROWSER_CONTAINER_IDENTITY');
   check(typeof input.staff_avatar === 'string' && new URL(input.staff_avatar).origin === ORIGIN,
     'STAFF_AVATAR_SOURCE');
+  const fallback = input.default_avatar;
+  check(fallback && ['inline', 'file'].includes(fallback.representation) && fallback.jpeg === true &&
+    /^[a-f0-9]{64}$/.test(fallback.sha256) && /^[a-f0-9]{64}$/.test(fallback.source_sha256) &&
+    Number.isSafeInteger(fallback.bytes) && fallback.bytes > 0 &&
+    (fallback.representation === 'inline' ? fallback.path === null :
+      /^\/admin\/system_static\/img\/[a-zA-Z0-9_.-]+\.jpe?g$/.test(fallback.path)), 'DEFAULT_AVATAR_SOURCE');
+  check(typeof input.guest_avatar_site_url === 'string', 'GUEST_AVATAR_SITE_SOURCE');
   const names = ['desktop_guest', 'desktop_kefu', 'mobile_guest', 'mobile_kefu'];
   check(input.texts && names.every((n) => typeof input.texts[n] === 'string' &&
     input.texts[n].length > 0 && input.texts[n].length <= 2000) &&
@@ -251,6 +259,8 @@ function observe(page, name, kind) {
             const uid = Number(envelope.data.tourist_uid);
             check(kind === 'guest' && Number(envelope.data.uid) === input.staff_uid &&
               Number.isSafeInteger(uid) && uid < 0 && Number.isSafeInteger(envelope.data.guest_expires_at), 'GUEST_ISSUER_SUBJECT');
+            check(typeof envelope.data.tourist_avatar === 'string', 'GUEST_AVATAR_ISSUER_FIELD');
+            stage.guestAvatar = envelope.data.tourist_avatar;
             stage.guestUid = uid; meta = 'guest';
           } else if (pathname === '/kefuapi/tourist/chat') {
             check(kind === 'guest' && Number.isSafeInteger(stage.guestUid) && stage.guestUid < 0 &&
@@ -286,6 +296,7 @@ function observe(page, name, kind) {
               // pagination cannot replace the already verified history receipt.
               stage.guestHistory = { stage: name, sender_uid: row.uid, recipient_uid: row.to_uid,
                 is_tourist: 1, message_sha256: sha(text), received_via: 'history' };
+              rememberAvatarMessage(stage, kind, row);
             }
           }
         }
@@ -318,6 +329,7 @@ function observe(page, name, kind) {
       try {
         const frame = JSON.parse(String(payload)), data = frame.data;
         if (!data || typeof data !== 'object') return;
+        if (['chat', 'reply'].includes(frame.type)) rememberAvatarMessage(stage, kind, data);
         if (frame.type === 'success' && ['kefu', 'guest'].includes(data.kind)) {
           check(data.kind === kind && Number.isSafeInteger(data.uid) &&
             (kind === 'kefu' ? data.uid === input.staff_uid : data.uid < 0), 'IDENTITY_ACK_SUBJECT');
@@ -432,25 +444,92 @@ async function textVisible(page, text, code, selector) {
   await until(async () => await scope.getByText(text, { exact: true }).count() > 0 &&
     await scope.getByText(text, { exact: true }).first().isVisible(), code);
 }
-async function avatar(page, name, kind) {
-  if (kind === 'guest' && name === 'mobile') {
-    await until(async () => await page.locator('.chat-box img').evaluateAll((images, expected) =>
-      images.some((img) => img.src === expected && img.complete && img.naturalWidth > 0),
-    input.staff_avatar), 'STAFF_REPLY_AVATAR_VISIBLE');
-    result.control_checks.push({ stage: name, kind, check: 'actual_staff_reply_avatar',
-      complete: true, natural_width_positive: true });
-    return;
-  }
+async function brandingAvatar(page, name, kind) {
   const selector = kind === 'kefu' ?
     (name === 'desktop' ? '.base-header .user_info img' : '.chat-list .left-wrappers img') :
-    (name === 'desktop' ? '.head .image img' : '.chat-box .head-box');
+    '.head .image img';
   await until(async () => await page.locator(selector).first().evaluate((img, expected) =>
     img.src === expected && img.complete && img.naturalWidth > 0, input.staff_avatar), 'STAFF_AVATAR_VISIBLE');
-  result.control_checks.push({ stage: name, kind, check: 'actual_staff_avatar', complete: true, natural_width_positive: true });
+  result.brand_checks.push({ stage: name, kind, check: 'header_branding', complete: true, natural_width_positive: true });
+}
+function rememberAvatarMessage(state, viewKind, data) {
+  const senderKind = data.msn === input.texts[state.name + '_guest'] ? 'guest' :
+    (data.msn === input.texts[state.name + '_kefu'] ? 'kefu' : null);
+  if (!senderKind) return;
+  const sender = senderKind === 'kefu' ? input.staff_uid : state.guestUid;
+  const recipient = senderKind === 'kefu' ? state.guestUid : input.staff_uid;
+  const id = Number(data.id);
+  check(Number.isSafeInteger(id) && id > 0 && data.uid === sender && data.to_uid === recipient &&
+    data.is_tourist === 1 && data.msn_type === 1 && typeof data.avatar === 'string', 'MESSAGE_AVATAR_ACTOR');
+  const previous = state.avatarMessages[viewKind][senderKind];
+  check(!previous || (previous.log_id === id && previous.avatar === data.avatar), 'MESSAGE_AVATAR_SOURCE_CHANGED');
+  state.avatarMessages[viewKind][senderKind] = { log_id: id, sender_uid: sender, recipient_uid: recipient,
+    message_sha256: sha(input.texts[state.name + '_' + senderKind]), avatar: data.avatar };
+}
+function expectedGuestAvatar(state, pageUrl) {
+  const source = state.guestAvatar;
+  check(typeof source === 'string' && source.length > 0, 'GUEST_CONFIG_AVATAR_SOURCE');
+  const produced = source.startsWith('http') || source.startsWith('//') ? source :
+    input.guest_avatar_site_url + source.replaceAll('\\', '/');
+  const url = new URL(produced, pageUrl);
+  check(url.origin === ORIGIN && !url.search && !url.hash, 'GUEST_CONFIG_AVATAR_INTERNAL');
+  return url.href;
+}
+async function messageAvatars(page, name, kind) {
+  const state = stages.get(name);
+  const rowSelector = name === 'desktop' ?
+    (kind === 'kefu' ? '#chat_scroll .chat-item' : '#chat_scroll li') : '#chatBox > [id^="chat_"]';
+  for (const senderKind of ['guest', 'kefu']) {
+    await until(() => state.avatarMessages[kind][senderKind], 'MESSAGE_AVATAR_NATIVE_SOURCE');
+    const native = state.avatarMessages[kind][senderKind];
+    const text = input.texts[name + '_' + senderKind];
+    const row = page.locator(rowSelector).filter({ has: page.getByText(text, { exact: true }) });
+    await until(async () => await row.count() === 1 && await row.isVisible(), 'MESSAGE_AVATAR_ROW_VISIBLE');
+    await textVisible(row, text, 'MESSAGE_AVATAR_FULL_TEXT_VISIBLE');
+    const sourceKind = senderKind === 'kefu' ? 'staff' : (state.guestAvatar === '' ? 'guest_default' : 'guest_config');
+    const expected = sourceKind === 'staff' ? input.staff_avatar :
+      (sourceKind === 'guest_config' ? expectedGuestAvatar(state, page.url()) : null);
+    check(sourceKind === 'guest_default' ? native.avatar === '' :
+      new URL(native.avatar, page.url()).href === expected, 'MESSAGE_AVATAR_NATIVE_BINDING');
+    let metrics;
+    await until(async () => {
+      metrics = await row.evaluate((element) => {
+        const image = element.querySelector('img.avatar, .avatar img');
+        if (!image) return null;
+        const rect = (r) => ({ left: r.left, right: r.right, top: r.top, bottom: r.bottom, width: r.width, height: r.height });
+        return { id: element.id, src: image.currentSrc || image.src, complete: image.complete,
+          natural_width: image.naturalWidth, natural_height: image.naturalHeight,
+          lazy_state: image.getAttribute('lazy') || 'native', bounds: rect(image.getBoundingClientRect()),
+          row_bounds: rect(element.getBoundingClientRect()), width: innerWidth, height: innerHeight };
+      });
+      if (!metrics || !metrics.complete || metrics.natural_width <= 0 || metrics.natural_height <= 0 ||
+        metrics.lazy_state !== (name === 'mobile' && kind === 'guest' ? 'native' : 'loaded')) return false;
+      if (sourceKind !== 'guest_default') return metrics.src === expected;
+      const fallback = input.default_avatar;
+      if (fallback.representation === 'file') return metrics.src === ORIGIN + fallback.path;
+      if (!metrics.src.startsWith('data:image/jpeg;base64,')) return false;
+      const bytes = Buffer.from(metrics.src.slice('data:image/jpeg;base64,'.length), 'base64');
+      return bytes.length === fallback.bytes && sha(bytes) === fallback.sha256;
+    }, 'MESSAGE_AVATAR_LOADED_SOURCE');
+    const b = metrics.bounds, r = metrics.row_bounds;
+    check(metrics.id === 'chat_' + native.log_id && b.width > 0 && b.height > 0 &&
+      b.left >= -1 && b.top >= -1 && b.right <= metrics.width + 1 && b.bottom <= metrics.height + 1 &&
+      b.left >= r.left - 1 && b.right <= r.right + 1 && b.top >= r.top - 1 && b.bottom <= r.bottom + 1,
+    'MESSAGE_AVATAR_RENDER_BOUNDS');
+    const sourceRef = sourceKind === 'guest_default' && input.default_avatar.representation === 'inline' ?
+      'inline:image/jpeg:' + input.default_avatar.sha256 : new URL(metrics.src).pathname;
+    result.message_avatars.push({ stage: name, kind, sender_uid: native.sender_uid, recipient_uid: native.recipient_uid,
+      log_id: native.log_id, message_sha256: native.message_sha256, source_kind: sourceKind,
+      source_ref_sha256: sha(sourceRef), complete: metrics.complete, natural_width: metrics.natural_width,
+      natural_height: metrics.natural_height, lazy_state: metrics.lazy_state, bounds: b,
+      screenshot_path: name + '-' + kind + '.png' });
+    if (senderKind === 'kefu') result.control_checks.push({ stage: name, kind,
+      check: 'actual_staff_message_avatar', complete: true, natural_width_positive: true });
+  }
 }
 async function stage(name) {
   stageName = name;
-  const state = { guestUid: null, loginHttp: false, guestHttp: false,
+  const state = { name, guestUid: null, guestAvatar: null, avatarMessages: { kefu: {}, guest: {} }, loginHttp: false, guestHttp: false,
     guestEcho: false, guestSelectionRequested: false, guestHistory: null,
     expectListPreview: false, listPreview: null };
   stages.set(name, state);
@@ -466,7 +545,7 @@ async function stage(name) {
   await drain();
   const expectedStaffPath = name === 'desktop' ? '/kefu/pc_list' : '/kefu/mobile_list';
   check(new URL(staff.url()).pathname === expectedStaffPath, 'STAFF_ROUTE');
-  await avatar(staff, name, 'kefu');
+  await brandingAvatar(staff, name, 'kefu');
   await staff.getByRole('button', { name: '游客列表', exact: true }).click();
   await drain();
   await guest.goto(ORIGIN + (name === 'desktop' ? '/kefu/appChat' : '/kefu/mobile_user_chat'),
@@ -511,7 +590,9 @@ async function stage(name) {
   await textVisible(staff, replyText, 'STAFF_ECHO_VISIBLE', staffChatSelector);
   await textVisible(guest, replyText, 'GUEST_REPLY_VISIBLE');
   await drain();
-  await avatar(guest, name, 'guest');
+  await messageAvatars(staff, name, 'kefu');
+  await messageAvatars(guest, name, 'guest');
+  if (name === 'desktop') await brandingAvatar(guest, name, 'guest');
   result.screenshots.push(await shot(staff, name, 'kefu'), await shot(guest, name, 'guest'));
   const leaveBefore = result.room_acks.filter((a) => a.stage === name && a.uid === 0).length;
   if (name === 'desktop') {
@@ -548,7 +629,8 @@ async function main() {
   check(result.login_http_success === 2 && result.guest_http_success === 2 &&
     result.identity_acks.length === 4 && result.normal_texts.length === 4 &&
     result.screenshots.length === 4 && result.control_screenshot &&
-    result.control_checks.filter((c) => c.buttons).length === 3, 'NORMAL_TOTALS');
+    result.control_checks.filter((c) => c.buttons).length === 3 && result.message_avatars.length === 8 &&
+    result.control_checks.filter((c) => c.check === 'actual_staff_message_avatar').length === 4, 'NORMAL_TOTALS');
   await browser.close(); browser = null; result.contexts_closed = closedContexts.size === contexts.length;
   check(result.contexts_closed, 'CONTEXTS_NOT_CLOSED');
   await drain();

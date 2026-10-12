@@ -25,7 +25,7 @@
             <div class="chat-item" :class="{ 'right-box': item.uid == kefuInfo.uid }">
               <img
                 class="avatar"
-                v-lazy="item.avatar"
+                v-lazy="item.avatar || defaultAvatar"
                 mode=""
                 v-db-click
                 @click="goUserInfo(item, item.uid == kefuInfo.uid)"
@@ -162,6 +162,7 @@ export default {
   name: 'adminChat_index',
   data() {
     return {
+      defaultAvatar: require('@/assets/images/moren.jpg'),
       ops: {
         vuescroll: {
           mode: 'slide',

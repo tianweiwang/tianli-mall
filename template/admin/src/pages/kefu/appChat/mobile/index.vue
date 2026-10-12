@@ -59,7 +59,7 @@
           <div v-for="(item, index) in records" :key="index" :id="`chat_${item.id}`">
             <div class="day-box" v-if="item.show">{{ item.time }}</div>
             <div class="chat-item" :class="{ 'right-box': item.to_uid == toUid }">
-              <img class="avatar" :src="item.avatar" mode="" />
+              <img class="avatar" :src="item.avatar || defaultAvatar" mode="" @error="onAvatarError" />
               <!-- 消息 -->
               <div class="msg-box" v-if="item.msn_type == 1" v-html="item.msn"></div>
               <!-- 图片 -->
@@ -151,6 +151,7 @@ export default {
   name: 'chat_mobile',
   data() {
     return {
+      defaultAvatar: require('@/assets/images/moren.jpg'),
       ops: {
         vuescroll: {
           mode: 'slide',
@@ -292,6 +293,10 @@ export default {
     this.chatReady = false;
   },
   methods: {
+    onAvatarError(event) {
+      const image = event.target;
+      if (image.getAttribute('src') !== this.defaultAvatar) image.src = this.defaultAvatar;
+    },
     async joinCurrentRoom() {
       if (this._isDestroyed || this._isBeingDestroyed || !this.toUid) return;
       const ws = await Socket;

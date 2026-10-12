@@ -24,7 +24,7 @@
                       {{ item.add_time }}
                     </div>
                     <div class="avatar">
-                      <img v-lazy="item.avatar" />
+                      <img v-lazy="item.avatar || defaultAvatar" />
                     </div>
                     <div class="content" ref="chatContent">
                       <div v-if="item.msn_type === 1" class="text" v-html="item.msn"></div>
@@ -223,6 +223,7 @@ export default {
   },
   data() {
     return {
+      defaultAvatar: require('@/assets/images/moren.jpg'),
       locations: `${location.origin}`,
       change: false,
       emojiGroup: chunk(emojiList, 20), // 表情列表

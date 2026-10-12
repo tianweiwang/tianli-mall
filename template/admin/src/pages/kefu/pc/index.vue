@@ -24,7 +24,7 @@
                   <div class="time" v-show="item.show">{{ item.time }}</div>
                   <div class="flex-box">
                     <div class="avatar">
-                      <img v-lazy="item.avatar" alt="" />
+                      <img v-lazy="item.avatar || defaultAvatar" alt="" />
                     </div>
                     <div class="msg-wrapper">
                       <!-- 文档 -->
@@ -222,6 +222,7 @@ export default {
   },
   data() {
     return {
+      defaultAvatar: require('@/assets/images/moren.jpg'),
       isEmoji: false,
       chatCon: '',
       emojiGroup: chunk(emojiList, 20), // 表情列表

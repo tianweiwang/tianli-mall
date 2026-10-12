@@ -331,6 +331,7 @@ function m7b_sources(array &$evidence): void
         'crmeb/app/listener/http/HttpEndListener.php','crmeb/app/services/kefu/KefuServices.php',
         'crmeb/app/services/kefu/service/StoreServiceRecordServices.php','crmeb/app/services/system/SystemClearServices.php',
         'template/admin/src/api/kefu.js','template/admin/src/libs/request.js','template/admin/src/libs/socket.js',
+        'template/admin/src/assets/images/moren.jpg','template/admin/src/main.js',
         'template/admin/src/layout/navBars/breadcrumb/userNews.vue',
         'template/admin/src/pages/kefu/appChat/index.vue','template/admin/src/pages/kefu/appChat/mobile/index.vue',
         'template/admin/src/pages/kefu/mobile/chat_list.vue','template/admin/src/pages/kefu/mobile/index.vue','template/admin/src/pages/kefu/pc/index.vue',
@@ -567,16 +568,35 @@ function m7b_control_geometry(array $checks): void
                 'actual selected tab feedback includes shape and text weight');
         }
     }
-    $avatars=array_values(array_filter($checks,static fn(array $row): bool=>in_array($row['check'] ?? '',['actual_staff_avatar','actual_staff_reply_avatar'],true)));
-    audit_expect(count($avatars)===4,'actual internal staff avatar is observed in all four normal pages');
+    $avatars=array_values(array_filter($checks,static fn(array $row): bool=>($row['check'] ?? '')==='actual_staff_message_avatar'));
+    audit_expect(count($avatars)===4,'actual internal staff message avatar is observed in all four normal pages');
     foreach (['desktop','mobile'] as $stage) foreach (['kefu','guest'] as $kind) {
         $rows=array_values(array_filter($avatars,static fn(array $row): bool=>($row['stage'] ?? '')===$stage&&($row['kind'] ?? '')===$kind));
         audit_expect(count($rows)===1&&($rows[0]['complete'] ?? null)===true&&($rows[0]['natural_width_positive'] ?? null)===true,
-            'actual page staff avatar loaded successfully from its internal source');
+            'actual message staff avatar loaded successfully from its internal source');
     }
 }
 
-function m7b_browser_result(string $exchange,string $run,string $source,array $users,array $owners,array $messages,array $evidence): array
+function m7b_avatar_source_ref(array $row,string $siteUrl,array $sources): string
+{
+    if ($row['source_kind']==='staff') return $sources['path'];
+    if ($row['source_kind']==='guest_default') {
+        $default=$sources['default_avatar'];
+        return $default['representation']==='inline' ? 'inline:image/jpeg:'.$default['sha256'] : $default['path'];
+    }
+    $avatar=$row['avatar'];
+    $produced=str_starts_with($avatar,'http')||str_starts_with($avatar,'//') ? $avatar : $siteUrl.str_replace('\\','/',$avatar);
+    if (str_starts_with($produced,'//')) $produced='http:'.$produced;
+    elseif (str_starts_with($produced,'/')) $produced='http://audit-ui:8080'.$produced;
+    elseif (!str_starts_with($produced,'http')) $produced='http://audit-ui:8080/kefu/'.$produced;
+    $path=parse_url($produced,PHP_URL_PATH);
+    audit_expect(str_starts_with($produced,'http://audit-ui:8080/')&&is_string($path)
+        &&parse_url($produced,PHP_URL_QUERY)===null&&parse_url($produced,PHP_URL_FRAGMENT)===null
+        &&!preg_match('~(?:^|/)\.{1,2}(?:/|$)~D',$path),'normal configured guest avatar resolves to its actual internal resource');
+    return $path;
+}
+
+function m7b_browser_result(string $exchange,string $run,string $source,array $users,array $owners,array $messages,array $evidence,string $avatarSiteUrl): array
 {
     $file=$exchange.'/browser.json'; audit_expect(is_file($file)&&!is_link($file)&&filesize($file)<131072,'completed ordinary browser result is available');
     $result=json_decode(file_get_contents($file),true,64,JSON_THROW_ON_ERROR);
@@ -655,6 +675,46 @@ function m7b_browser_result(string $exchange,string $run,string $source,array $u
             &&$row['msn']===$message&&$row['msn_type']===1&&$row['is_tourist']===1));
         audit_expect(count($reported)===1&&count($stored)===1,'each real browser message is server classified and matches its exact persisted log');
     }
+    $avatars=$result['message_avatars'] ?? null;
+    audit_expect(is_array($avatars)&&count($avatars)===8,'the two actual messages have loaded avatars in all four normal chat views');
+    foreach ($messages as $name=>$message) {
+        [$stage,$senderKind]=explode('_',$name); $guest=$guestByStage[$stage];
+        $from=$senderKind==='guest' ? $guest : $users['kefu']['uid']; $to=$senderKind==='guest' ? $users['kefu']['uid'] : $guest;
+        $logs=array_values(array_filter($owners['store_service_log'],static fn(array $row): bool=>$row['uid']===$from&&$row['to_uid']===$to
+            &&$row['msn']===$message&&$row['msn_type']===1&&$row['is_tourist']===1));
+        audit_expect(count($logs)===1,'avatar sender and message bind to one independently owned native log');
+        $sourceKind=$senderKind==='kefu' ? 'staff' : ($owners['guest'][$guest]['avatar']==='' ? 'guest_default' : 'guest_config');
+        $sourceRef=m7b_avatar_source_ref(['source_kind'=>$sourceKind,'avatar'=>$owners['guest'][$guest]['avatar']],$avatarSiteUrl,$evidence['staff_avatar_source']);
+        foreach (['kefu','guest'] as $kind) {
+            $rows=array_values(array_filter($avatars,static fn(array $row): bool=>($row['stage'] ?? '')===$stage&&($row['kind'] ?? '')===$kind
+                &&($row['sender_uid'] ?? null)===$from&&($row['recipient_uid'] ?? null)===$to));
+            audit_expect(count($rows)===1,'each actual view has one avatar for each source-owned sender');
+            $row=$rows[0]; $keys=array_keys($row); sort($keys);
+            audit_expect($keys===['bounds','complete','kind','lazy_state','log_id','message_sha256','natural_height','natural_width',
+                'recipient_uid','screenshot_path','sender_uid','source_kind','source_ref_sha256','stage'],'message avatar evidence contains only finite metadata');
+            audit_expect(($row['log_id'] ?? null)===(int)$logs[0]['id']&&$row['message_sha256']===hash('sha256',$message)
+                &&$row['source_kind']===$sourceKind&&$row['source_ref_sha256']===hash('sha256',$sourceRef)
+                &&$row['complete']===true&&is_int($row['natural_width'])&&$row['natural_width']>0
+                &&is_int($row['natural_height'])&&$row['natural_height']>0
+                &&$row['lazy_state']===($stage==='mobile'&&$kind==='guest' ? 'native' : 'loaded')
+                &&$row['screenshot_path']===$stage.'-'.$kind.'.png','actual image binds the native actor, loaded source, full text and rendered screenshot');
+            $bounds=$row['bounds']; $axes=array_keys($bounds); sort($axes);
+            audit_expect($axes===['bottom','height','left','right','top','width'],'message avatar has finite rectangle metadata');
+            foreach ($bounds as $coordinate) audit_expect((is_int($coordinate)||is_float($coordinate))&&is_finite((float)$coordinate),'message avatar coordinates are finite');
+            $width=$stage==='desktop' ? 1440 : 390; $height=$stage==='desktop' ? 900 : 844;
+            audit_expect($bounds['width']>0&&$bounds['height']>0&&$bounds['left']>=-1&&$bounds['top']>=-1
+                &&$bounds['right']<=$width+1&&$bounds['bottom']<=$height+1,'actual message avatar fits the rendered screenshot viewport');
+        }
+    }
+    $brands=$result['brand_checks'] ?? null;
+    audit_expect(is_array($brands)&&count($brands)===3,'three existing header logos are separate branding observations');
+    foreach ([['desktop','kefu'],['mobile','kefu'],['desktop','guest']] as [$stage,$kind]) {
+        $rows=array_values(array_filter($brands,static fn(array $row): bool=>($row['stage'] ?? '')===$stage&&($row['kind'] ?? '')===$kind));
+        audit_expect(count($rows)===1&&($rows[0]['check'] ?? '')==='header_branding'&&($rows[0]['complete'] ?? null)===true
+            &&($rows[0]['natural_width_positive'] ?? null)===true,'header branding loads normally and is not counted as message evidence');
+        $keys=array_keys($rows[0]); sort($keys);
+        audit_expect($keys===['check','complete','kind','natural_width_positive','stage'],'header evidence contains only finite branding metadata');
+    }
     $shots=$result['screenshots'] ?? []; audit_expect(count($shots)===4,'actual browser provides the four required rendered screenshots');
     foreach (['desktop','mobile'] as $stage) foreach (['kefu','guest'] as $kind) {
         $rows=array_values(array_filter($shots,static fn(array $row): bool=>($row['stage'] ?? null)===$stage&&($row['kind'] ?? null)===$kind));
@@ -693,6 +753,8 @@ function m7b_browser_result(string $exchange,string $run,string $source,array $u
         'ui_logins'=>2,'guest_issues'=>2,'identity_acks'=>4,'ordinary_texts'=>4,'real_log_rows'=>4,'real_record_rows'=>4,
         'rendered_chat_screenshots'=>4,'rendered_control_screenshots'=>1,'controls_geometry_checked'=>true,'manual_screenshot_review'=>'PENDING ROOT',
         'list_preview'=>$preview,'list_preview_independently_verified'=>true,
+        'message_avatar_count'=>8,'staff_message_avatar_count'=>4,'guest_message_avatar_count'=>4,
+        'message_avatars'=>$avatars,'header_branding_not_message_evidence'=>true,
         'external_requests_blocked_count'=>$result['external_requests_blocked_count']];
 }
 
@@ -736,6 +798,17 @@ function m7b_serve(): array
             &&is_int($avatarSource['bytes'] ?? null)&&$avatarSource['bytes']>64&&($avatarSource['png'] ?? null)===true,
             'browser staff avatar source is a real PNG from final dist for this RUN/source');
         $evidence['staff_avatar_source']=$avatarSource;
+        $default=$avatarSource['default_avatar'] ?? null; $defaultFile=audit_repo_dir().'/template/admin/src/assets/images/moren.jpg';
+        audit_expect(is_array($default),'actual build receipt includes the normal local default avatar');
+        $defaultKeys=array_keys($default); sort($defaultKeys);
+        audit_expect($defaultKeys===['bytes','jpeg','path','representation','sha256','source_sha256']
+            &&in_array($default['representation'],['inline','file'],true)&&$default['jpeg']===true
+            &&is_int($default['bytes'])&&$default['bytes']>64&&preg_match('/^[a-f0-9]{64}$/D',(string)$default['sha256'])===1
+            &&is_file($defaultFile)&&!is_link($defaultFile)&&$default['source_sha256']===hash_file('sha256',$defaultFile)
+            &&file_get_contents($defaultFile,false,null,0,3)==="\xff\xd8\xff"
+            &&($default['representation']==='inline' ? $default['path']===null :
+                preg_match('~^/admin/system_static/img/[a-zA-Z0-9_.-]+\.jpe?g$~D',(string)$default['path'])===1),
+            'normal default receipt binds the actual compiled JPEG representation to the unchanged public source asset');
         $config=audit_config(); $prefix='audit:http-lang:'.$run.':'.$preparedAt.':'; $app=m7b_app($config,$prefix);
         m7b_warm_language($app,$prefix,$ownedKeys,$evidence); $system=m7b_system_warm($app,$prefix,$ownedKeys,$evidence);
         if ($kfBefore===null) {
@@ -764,7 +837,7 @@ function m7b_serve(): array
         audit_expect(is_string($chatGeneration)&&$chatGeneration!==''&&is_string($appGeneration)&&$appGeneration!=='','browser has actual registered app/chat generations');
         m7b_write_private($secretDir.'/browser-login.json',['run_id'=>$run,'source_sha'=>$source,'url'=>'http://audit-ui:8080',
             'account'=>$users['kefu']['account'],'password'=>$users['kefu']['password'],'staff_uid'=>$users['kefu']['uid'],
-            'staff_avatar'=>$users['kefu']['avatar'],'texts'=>$messages]);
+            'staff_avatar'=>$users['kefu']['avatar'],'default_avatar'=>$default,'guest_avatar_site_url'=>(string)$system['site_url'],'texts'=>$messages]);
         audit_write_json($secretDir.'/ready.json',['run_id'=>$run,'source_sha'=>$source,'guard_mode'=>'read-only','staff_uid'=>$users['kefu']['uid'],
             'generation'=>$chatGeneration,'app_generation'=>$appGeneration,'normal_deadline'=>$deadline,
             'browser_identity'=>$evidence['resources']['audit-browser']]);
@@ -790,7 +863,7 @@ function m7b_serve(): array
                 m7b_same($initial,$observation,['eb_user','eb_store_service','eb_store_service_log','eb_store_service_record','eb_cache'],$ownedKeys,$counterTables);
                 if ($action==='finish') {
                     $finishRequested=true; audit_expect(count($owners['guest'])===2,'ordinary browser has exactly its two real guests');
-                    $evidence['browser_observations']=m7b_browser_result($exchange,$run,$source,$users,$owners,$messages,$evidence);
+                    $evidence['browser_observations']=m7b_browser_result($exchange,$run,$source,$users,$owners,$messages,$evidence,(string)$system['site_url']);
                     audit_app_request('observe'); $appNow=audit_read_control_json(audit_run_dir().'/app-status.json'); $chatNow=m7b_chat_control('observe');
                     audit_expect(($appNow['generation_revision'] ?? '')===$appGeneration&&($chatNow['generation_revision'] ?? '')===$chatGeneration,
                         'finish observes the same registered normal app/chat generation');
