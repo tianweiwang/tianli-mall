@@ -179,25 +179,39 @@ function m7h_register_keys(array $keys,array &$ownedKeys): void
 }
 function m7h_system_warm(\think\App $app,string $prefix,array &$ownedKeys,array &$evidence): array
 {
-    $names=['site_name','site_url','tourist_avatar']; $before=m7h_snapshot(); $values=[];
-    $keys=array_map(static fn(string $n): string=>$prefix.'system_config_'.$n,$names); $tag=$prefix.'CRMEB:'.md5('crmeb');
-    m7h_register_keys(array_merge($keys,array_map(static fn(string $k): string=>$k.'_lock',$keys)),$ownedKeys);
+    // Exact production keys for chat and the unchanged admin login/info readiness.
+    // Do not call the complete login service here: it can dispatch CheckQueueJob.
+    $names=['site_name','site_url','tourist_avatar','site_logo','site_logo_square','nncnL_crmeb_copyright','login_logo','queue_open'];
+    $configKeys=array_map(static fn(string $name): string=>$prefix.'system_config_'.$name,$names);
+    $slideKey=$prefix.'data_admin_login_slide'; $keys=array_merge($configKeys,[$slideKey]); $tag=$prefix.'CRMEB:'.md5('crmeb');
+    $before=m7h_snapshot(); $values=[];
+    m7h_register_keys(array_merge($keys,array_map(static fn(string $key): string=>$key.'_lock',$keys)),$ownedKeys);
     foreach ($names as $name) {
         $want=$app->make(\app\services\system\config\SystemConfigServices::class)->getConfigValue($name);
-        $got=\crmeb\services\SystemConfigService::get($name); audit_expect($got===$want,'normal system cache matches its installed actual DB producer'); $values[$name]=$want;
+        $got=\crmeb\services\SystemConfigService::get($name);
+        audit_expect($got===$want,'normal exact system cache matches its installed actual DB producer'); $values[$name]=$want;
     }
-    $after=m7h_snapshot(); $new=array_values(array_diff(array_keys($after['redis']),array_keys($before['redis']))); sort($new); $wantNew=$keys; sort($wantNew);
-    audit_expect($new===$wantNew,'system warmup adds exactly three known physical keys');
+    $wantSlide=$app->make(\app\services\system\config\SystemGroupDataServices::class)->getConfigNameValue('admin_login_slide',0);
+    $actualSlide=sys_data('admin_login_slide');
+    audit_expect(is_array($wantSlide)&&$actualSlide===$wantSlide,'normal login slide cache matches the real group-data producer including upload URL normalization');
+    $after=m7h_snapshot(); $new=array_values(array_diff(array_keys($after['redis']),array_keys($before['redis']))); sort($new); $expectedNew=$keys; sort($expectedNew);
+    audit_expect($new===$expectedNew,'normal readiness/chat preparation adds exactly its nine known physical value keys');
+    $redis=audit_redis();
     foreach ($names as $name) {
         $key=$prefix.'system_config_'.$name; $want=is_numeric($values[$name]) ? (string)$values[$name] : serialize($values[$name]);
-        audit_expect(audit_redis()->type($key)===Redis::REDIS_STRING && audit_redis()->get($key)===$want && $after['redis'][$key]['deadline']===-1,'system config cache exact value and persistent expiry match producer');
+        audit_expect($redis->type($key)===Redis::REDIS_STRING&&$redis->get($key)===$want&&$after['redis'][$key]['deadline']===-1,'normal exact config serialization and persistent deadline match actual producer');
     }
-    $members=audit_redis()->sMembers($tag); sort($members); $expected=array_merge($keys,array_map(static fn(string $n): string=>$prefix.$n,
+    audit_expect($redis->type($slideKey)===Redis::REDIS_STRING&&$redis->get($slideKey)===serialize($wantSlide)&&$after['redis'][$slideKey]['deadline']===-1,'normal exact slide serialization and persistent deadline match actual producer');
+    foreach ($keys as $key) audit_expect($redis->exists($key.'_lock')===0,'normal remember producer removed its precise temporary value lock');
+    $members=$redis->sMembers($tag); sort($members); $expected=array_merge($keys,array_map(static fn(string $name): string=>$prefix.$name,
         ['range_name','sys_lang_source_map','type_id_zh-CN','lang_type_data','lang_zh_CN'])); sort($expected);
-    audit_expect($members===$expected,'normal shared cache tag contains precisely warm language and system keys');
+    audit_expect($redis->type($tag)===Redis::REDIS_SET&&$members===$expected&&$after['redis'][$tag]['deadline']===-1,'normal shared tag contains exactly fourteen language/config/slide members and its persistent deadline');
     m7h_same($before,$after,[],array_merge($keys,[$tag]));
-    $evidence['system_config_preparation']=['logical_keys'=>array_map(static fn(string $n): string=>'system_config_'.$n,$names),
-        'source'=>'real SystemConfigService::get and installed SystemConfigServices::getConfigValue','values_and_source_expiry_verified'=>true];
+    $evidence['system_config_preparation']=['logical_keys'=>array_merge(array_map(static fn(string $name): string=>'system_config_'.$name,$names),['data_admin_login_slide']),
+        'exact_value_key_count'=>count($keys),'exact_temporary_lock_key_count'=>count($keys),
+        'source'=>'real SystemConfigService::get and sys_data/GroupDataService; installed SystemConfigServices and SystemGroupDataServices DB producers',
+        'readiness_source'=>'SystemAdminServices::getLoginInfo and QueueTrait::dispatchSecs queue_open read',
+        'values_serialization_and_source_persistent_expiry_verified'=>true,'new_key_inventory_and_exact_shared_tag_verified'=>true,'whole_prefix_ignored'=>false];
     return $values;
 }
 function m7h_http(string $path,?string $token,array &$evidence): array

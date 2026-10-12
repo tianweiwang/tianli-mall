@@ -302,6 +302,8 @@ WebSocket正常协议：白名单仅kefu_login、login、guest_login、to_chat�
 
 首次普通运行暴露PHP8.2兼容边界：实版Workerman Worker在构造器2148给未声明workerId赋值，被Think错误处理器转为ErrorException，停在业务请求和WS登录之前。原FAIL、三个自有夹具及其成功清理/163表和旧cache保持证据留存。最小兼容修复在tracked vendor/workerman/workerman/Worker.php声明该实际属性及Channel.Server构造使用的channels数组；第二个正常RUN的实际启动日志又定位到Worker正常状态显示635/638使用的socket/status两字段，一并显式声明，静态核对其它this/worker固定属性均已声明。TcpConnection承载旧WebSocket协议及应用连接metadata的动态属性，按实际producer/consumer增加PHP原生扩展声明，保留原错误级别、类型检查和readonly ChatIdentity，不屏蔽弃用/异常或改断言。实际执行Worker为3.5.19，不能把composer.lock的3.5.34当作运行来源；必要两个vendor路径纳入Task7来源清单。通过新正常ISO验证，不注入故障，也不覆盖首次运行记录。
 
+第三个普通RUN已完成4次业务HTTP、5次合法登录ACK、9次进退房ACK、8条双向在线文字、2次独立游客发行和真实Channel mssage_num到达；整项仍FAIL，最终原缓存核对识别到六个未登记新键。来源是既有GET adminapi/login/info就绪检查的SystemAdminServices.getLoginInfo与QueueTrait.dispatchSecs：五项system_config缓存及data_admin_login_slide，均实际CacheService.remember永久值。补充正常准备仅以真实SystemConfigService.get和sys_data生产者预热现三个聊天配置及上述六键，先登记九个精确值键和九个临时锁，再核对DB来源的完整序列化值、永久期限、恰十四个语言/配置/slide tag成员及其它状态保持；不调用整个loginInfo，不忽略整个prefix，不修改最终保持断言。第三FAIL和原快照保留，新RUN重做同一正常流程；不将已经完成的收发步骤称为整项PASS。
+
 - [ ] **普通T7C01：** 真实合法客服、顾客与游客身份/房间/文字回复、精确清理及静态跨应用路径。
 - [ ] **客户端正常验证：** 源码接线、实际构建、正常桌面/移动浏览器结果分别记录；缺口保持待验。
 
