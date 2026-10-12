@@ -161,7 +161,7 @@ function m7b_old_rows(PDO $pdo,array $old,array $owners,?array $sequenceBefore):
 {
     foreach (['user'=>'uid','store_service'=>'id','store_service_log'=>'id','store_service_record'=>'id'] as $table=>$pk)
         audit_expect(m7b_row_hashes($pdo,'eb_'.$table,$pk,array_keys($owners[$table]))===$old[$table],'every original chat fixture table row remains unchanged');
-    $cache=m7b_row_hashes($pdo,'eb_cache','key',array_merge(['kefu_tourist_uid_seq'],array_keys($owners['sql_cache'] ?? []))); 
+    $cache=m7b_row_hashes($pdo,'eb_cache','key',array_merge(['kefu_tourist_uid_seq'],array_keys($owners['sql_cache'] ?? [])));
     audit_expect($cache===$old['cache_without_sequence'],'every unrelated original SQL cache row remains unchanged');
     $stmt=$pdo->prepare('SELECT * FROM eb_cache WHERE `key`=?'); $stmt->execute(['kefu_tourist_uid_seq']); $row=$stmt->fetch();
     if ($sequenceBefore!==null) {
