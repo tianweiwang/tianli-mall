@@ -38,6 +38,7 @@ const internalApiPaths = new Set([
   '/adminapi/get_workerman_url', '/adminapi/custom_admin_js',
   '/kefuapi/config', '/kefuapi/login', '/kefuapi/service/info',
   '/kefuapi/user/record', '/kefuapi/service/list', '/kefuapi/service/transfer_list',
+  '/kefuapi/service/cate', '/kefuapi/service/speechcraft',
   '/kefuapi/tourist/user', '/kefuapi/tourist/adv', '/kefuapi/tourist/chat',
 ]);
 const stages = new Map();

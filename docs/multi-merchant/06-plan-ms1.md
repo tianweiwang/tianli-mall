@@ -339,6 +339,10 @@ T7B01第十一轮 `202610120537525a6c87`（源码76f05f0aa）：bootstrap/prepar
 
 下一普通客户端观测补充（先于辅助修正）：实际移动顾客appChat/mobile/index.vue的getChatList与滚动handleBeforeDeactivate会通过api/kefu.js.chatListApi读取GET /kefuapi/tourist/chat；PHP有限名单已登记该现生产者，Node名单此前遗漏。因此只补该精确读取及实际当前游客/选中客服UID元数据约束，不改认证头或任意放开接口。HTTP观察catch保留首个固定publicCode（只允许大写字母/数字/下划线，其他异常仍固定分类），不保存消息、headers、token或body，使新的正常失败可直接区分名单/合同/登记原因；历史原码不改写。完整5张截图/移动视觉与消息头像实际像素验收继续待验，桌面部分看图不代替全RUN通过。
 
+T7B01第十二轮 `20261012055028bdb640`（源码87f448274）：四条实际双方文字与桌面两PNG仍取得，但移动阶段固定失败码已明确为UNEXPECTED_INTERNAL_API_PRODUCER；Node实际exited/native1/restart0/contexts_closed，after在browser状态PASS处exit1。25已登记正常HTTP、11SQL夹具、46登记键/27实际键精确清理，163表/原cache保持；原teardown native0，主/引导双标签资源0，真实env/install.lock不存在。24原始行追加后483行（8PASS/25FAIL/450NOT RUN），此前459行保持；原历史HTTP_REGISTRATION_FAILED不改写。
+
+普通移动组件读取名单补充（先于辅助修正）：mobile/index.vue:108无条件挂载words组件，components/words.vue:297–298 mounted即getServiceCate，:339–348分类成功后getWordsList，:357–364再调speeChcraft；api/kefu.js:359–365、168–174分别为GET /kefuapi/service/cate与GET /kefuapi/service/speechcraft。isWords=false只隐藏组件内部弹层，不能阻止mounted，所以二者是正常进入聊天页的必需读取而非仅import；具体失败瞬间是哪一个尚无路径证据。PHP既有有限名单已允许二者，Node只补这两个确切读路径并保持未知路径失败，不执行常用语写入。原观察、四文字/四日志/四会话、五PNG及数据保持标准不变，仍待新完整普通RUN。
+
 2026-10-12普通后端交付：第四个独立RUN `20261012020114e0c80a` 在源码 `1682ccc249fa3364fa07eee9075b52c0504fcb71` 上运行，bootstrap、prepare、start-chat、after及teardown原生全部exit0。实际4个正常HTTP请求均200，34个正常WS客户端帧、5个身份ACK、9个房间/正常退房ACK、8条双方文字和2个服务器游客会话；真实Channel事件经实际客服连接收到。17个自有SQL夹具精确清理，37个精确键登记/23个实际键删除；163表原行、checksum和DDL及旧Redis值/绝对期限保持，仅四张实际夹具表自然计数器变化单列，不恢复快照或回拨计数。主实例及四轮引导清理实例共8个RUN最终容器/网络/卷均0，真实.env与install.lock不存在。
 
 第四轮原始24行逐字节追加，`records/ms1/results.jsonl`现195行（8PASS/13FAIL/174NOT RUN），整体SHA256 `24b17f40dfb2b71504a599679ac04a79abde43bafa8d4ffa0d69fc181bf68870`；此前171行、Task1–6的75行和首57行均保持原字节。自然源码缺失基线及前三轮普通失败仍保留为FAIL；第三轮六个未登记readiness键的实际生产者经源码核对，第四轮按原9个配置/幻灯片生产者逐键预备，保留原最终数据/缓存断言。后台第三轮真实Node20构建exit0，1074个构建输入与本次源码一致，596个dist文件、11个原构建警告留存；36个实际后端/前端/辅助/文档路径hash及完整正常摘要见 `records/ms1/task7-progress-summary.json`。浏览器依赖就绪只代表准备完成，浏览器及uni-app运行验收未完成；原A07/M07/K01及安全、异常、故障、并发/断连、恢复和DDL拒绝场景仍NOT RUN。仅本地L2，未推送、部署、写真实库、通知或人工签收。
