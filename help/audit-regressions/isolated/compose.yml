@@ -79,6 +79,17 @@ services:
       - ${AUDIT_RUN_DIR}:/run/audit
       - app-secrets:/run/audit-app:ro
       - worker-runtime:/workspace/crmeb/runtime
+  audit-chat:
+    <<: *php
+    profiles: [ms1-chat]
+    working_dir: /workspace/crmeb
+    command: [/workspace/help/audit-regressions/isolated/lib/ms1-chat-entry.php, __serve]
+    volumes:
+      - ${AUDIT_REPO_DIR}:/workspace:ro
+      - audit-vendor:/workspace/crmeb/vendor:ro
+      - ${AUDIT_RUN_DIR}:/run/audit
+      - app-secrets:/run/audit-app:ro
+      - chat-runtime:/workspace/crmeb/runtime
   audit-runner:
     <<: *php
     environment:
@@ -94,6 +105,7 @@ services:
       - runner-runtime:/workspace/crmeb/runtime
       - app-runtime:/run/audit-app-runtime:ro
       - worker-runtime:/run/audit-worker-runtime:ro
+      - chat-runtime:/run/audit-chat-runtime:ro
       - backup-output:/workspace/crmeb/backup
 
 networks:
@@ -112,6 +124,8 @@ volumes:
   runner-runtime:
     labels: *labels
   worker-runtime:
+    labels: *labels
+  chat-runtime:
     labels: *labels
   backup-output:
     labels: *labels
