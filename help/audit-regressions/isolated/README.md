@@ -8,6 +8,18 @@ disabled where they select those suites. Keep past evidence; use separate normal
 business checks for further functional development. Do not resume the skipped
 checks through another entry point. See `docs/multi-merchant/05-plan-ms0b.md`.
 
+2026-10-12 ordinary development also skips the legacy `CREATE DATABASE`
+privilege-denial probe. Start new ordinary runs with
+`AUDIT_GUARD_MODE=read-only bash help/audit-regressions/isolated/bootstrap.sh`.
+The RUN manifest records the mode; all original identity, internal endpoint,
+database/Redis sentinel and exact DML-grant checks still run. Ordinary guard
+entry uses `lib/guard.php --read-only`; Task6 requires that manifest mode before
+its first guard call. A resident PHP supervisor needs a normal reload to load
+the changed guard source. Historical bootstrap/baseline probe activity is retained
+as historical execution, while later ordinary evidence records the probe NOT RUN.
+Missing mode preserves the disabled legacy workflow's active-probe behavior;
+unknown values are rejected. This mode does not enable any skipped suite.
+
 This environment implements the approved Windows ISO-FULL adaptation in
 `docs/multi-merchant/03-test-environment.md` §2.1. Use Git Bash on Windows, or Bash
 with Docker Compose. PHP, the application, MySQL and Redis all run in dedicated

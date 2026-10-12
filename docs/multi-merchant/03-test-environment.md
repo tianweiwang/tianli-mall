@@ -89,6 +89,8 @@
 4. Redis 端口等于 manifest 中的端口，`GET audit:sentinel` 等于 `AUDIT_RUN_ID`。
 5. 测试账号执行 `CREATE DATABASE audit_guard_probe` 必须失败（证明没有全局权限）。
 
+2026-10-12普通开发按用户指示停止第5项DDL拒绝探针，原要求保留为NOT RUN。ISO-FULL正常引导使用 `AUDIT_GUARD_MODE=read-only bash help/audit-regressions/isolated/bootstrap.sh`，首次prepare把严格枚举的模式保存到RUN manifest；后续runner、应用supervisor及迁移准备都从该manifest读取。只读模式仍执行原RUN/project/内部网络地址、应用账号、库名、数据库/Redis双哨兵，以及 `SHOW GRANTS` 恰为USAGE和audit_auth库SELECT/INSERT/UPDATE/DELETE且无GRANT OPTION的完整核对，通过后返回。未声明模式的旧流程仍为active-probe，本次不运行；模式未知时拒绝，不能回退旧探针。普通guard CLI使用 `guard.php --read-only` 并在调用前确认模式；常驻PHP已加载的旧guard函数必须通过本专用应用正常重建加载新源码。Task6选择模式前的引导/基线使用旧保护逻辑，不能宣称全过程没有DDL探针；原记录保持，后续after明确记录read-only及探针NOT RUN。
+
 ### 3.5 应用启动
 
 - 应用从**测试 worktree** 启动（例如 MS0a 的 `codex/ms0a` worktree），绝不从备份检出启动。

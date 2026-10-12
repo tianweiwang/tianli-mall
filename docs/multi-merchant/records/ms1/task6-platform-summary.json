@@ -1,0 +1,1606 @@
+{
+  "milestone": "MS1",
+  "task": "Task6 normal platform merchant management",
+  "status": "verified_normal_platform_merchant_management",
+  "source_commit": "b3862f3506c1f2a5a26588bfab9a45fd913f598f",
+  "source_sha256": {
+    "crmeb/app/adminapi/AdminApiExceptionHandle.php": "c7d0e6b89afc7306a753a6ea05571a34816f825091f4505e96e04dced1c3816f",
+    "crmeb/app/adminapi/controller/v1/marketplace/Merchant.php": "16b0b22efcd88ea979c891b95313e1dda4d3d4a77b696ce455f2fdc0828fd4c0",
+    "crmeb/app/adminapi/middleware/MarketplaceBoundaryMiddleware.php": "5d2574f6deea109bb02c49bb4d6c461f5663c5fcef17bd92c69ad388cd04cb8a",
+    "crmeb/app/adminapi/middleware/MarketplaceScopeMiddleware.php": "a6619f6e67c81f3a3529bb512c14b1c072557dfdee8b924272c8f7f078c6373d",
+    "crmeb/app/adminapi/route/marketplace.php": "5ae9dc56cb89be73115b2294575325208249e75bbb5b481259509c14e075a92d",
+    "crmeb/app/dao/marketplace/AuditLogDao.php": "d055a09feef02ffc602793cc1c209232ad2fe2f47ea7c22cfa85ddf31f537f87",
+    "crmeb/app/dao/marketplace/EmployeeDao.php": "88f587a8e20859658d8e9ad800518e9784acc5802083cd1dc1f8fd87d77ff0eb",
+    "crmeb/app/dao/marketplace/MerchantDao.php": "0a725a25ebdec4bb76b38c2ad86968282727509427a392117f3f898cca453bd1",
+    "crmeb/app/dao/marketplace/PasswordSetupDao.php": "89f8301478f323f5afcf195b7bddb5391016c5bcbd3775fcccf79a914fdafcbc",
+    "crmeb/app/dao/marketplace/RoleDao.php": "e5f0f29bfd75cfa8071e8172ba5f42fdd6419b3b32a6f642615f80519e8ac311",
+    "crmeb/app/listener/http/HttpEndListener.php": "02d5ec6ec623c6f378fbe258f1cfed3d90d4f937d9d7384538a1f49d7a4f5a13",
+    "crmeb/app/merchantapi/config/database.php": "f6c075c7b74c957760896755fd7cc0c6b2094d9936f1163b929b8224c197e4a5",
+    "crmeb/app/model/marketplace/AuditLog.php": "8054f927503bf0a6dfe2483eb4822581c148510fee286a347bc7aa736d641f1f",
+    "crmeb/app/Request.php": "0919635bc23c875e7408226a46bfee373ede4c6eeba01b5b72e7ec96dc1e9292",
+    "crmeb/app/services/marketplace/AuditLogServices.php": "68183f537647114972fc53fd2da0ede9bc885076402f6f9f2bf5f7ae22ced02d",
+    "crmeb/app/services/marketplace/MerchantAdminServices.php": "a346617cf452c7b5f845defd60b56c10bb8b94ec6bdb0db77696dacef7728b2b",
+    "crmeb/app/services/marketplace/PlatformAccessServices.php": "cd814b5e34ecc57d202954506f2c7585a63d388d9b92ccc7ff6155dcb7b3674e",
+    "help/audit-regressions/isolated/compose.yml": "2347abca4fd70a36152bea99d61a6468cb2865ef1e24ec35caf46d9ed977ff34",
+    "help/audit-regressions/isolated/lib/guard.php": "a7a182c3a204dbb55f5669a61f44af099360223acd9835f82d9da3a8bf2f79a8",
+    "help/audit-regressions/isolated/lib/harness.php": "31b95b24934a019b34aa5b8c2e4527ddd179521b498b8e995d800ca73de6f98a",
+    "help/audit-regressions/isolated/ms1-platform.php": "e2a4c6056d8019ceda5ebc02b08c90a71f1666ea1e252baa6a419d80b8ec8427"
+  },
+  "environment": {
+    "kind": "ISO-FULL",
+    "run_ids": [
+      "2026101123465067a219",
+      "20261011234811048721"
+    ]
+  },
+  "history": [
+    {
+      "run_id": "2026101123465067a219",
+      "phase": "baseline",
+      "source_commit": "62ae96b9ea7641f63620445ade96214bbc46c313",
+      "status": "FAIL",
+      "native_exit": 1,
+      "native_receipt": "baseline-native.json",
+      "raw_ref": "ms1-platform-baseline-20261012000703.jsonl",
+      "raw_bytes": 4981,
+      "raw_sha256": "e39572bf3023b397bf661fc2b8ea0020119f7417ee4f1d6ef93c83511bb021d0",
+      "evidence_ref": "ms1-platform-baseline.json",
+      "evidence_sha256": "0e00d0ed9f8893768baca8d0e02a48c03ed8fd2951d8e4559a86cbfd38ced77f",
+      "http_requests": 0,
+      "preservation": {
+        "tables": 158,
+        "original_rows_schema_checksums_unchanged": true,
+        "old_cache_values_and_absolute_expiry_unchanged": true,
+        "counter_changes_allowed_only": [],
+        "snapshot_restore_used": false
+      },
+      "fixtures_cleaned": false,
+      "diagnostic": {
+        "class": "RuntimeException",
+        "file": "harness.php",
+        "line": 14
+      },
+      "guard_mode": "active-probe",
+      "application_privilege_ddl_probe": "RUN (historical; no pass assertion)",
+      "guard_metadata_provenance": "legacy source + guard selection receipt"
+    },
+    {
+      "run_id": "2026101123465067a219",
+      "phase": "after",
+      "source_commit": "b3862f3506c1f2a5a26588bfab9a45fd913f598f",
+      "status": "PASS",
+      "native_exit": 0,
+      "native_receipt": "after-native.json",
+      "raw_ref": "ms1-platform-after-20261012001317.jsonl",
+      "raw_bytes": 5081,
+      "raw_sha256": "41d36b110c84a6aeaa6228bc534523cee0e4032a79a2f5acdf988e68d0843a7b",
+      "evidence_ref": "ms1-platform-after.json",
+      "evidence_sha256": "c17703555483276505dfb1f85a8abe1216391bed13abe45936902c98f5e73740",
+      "http_requests": 61,
+      "preservation": {
+        "tables": 163,
+        "original_rows_schema_checksums_unchanged": true,
+        "old_cache_values_and_absolute_expiry_unchanged": true,
+        "counter_changes_allowed_only": [
+          "eb_marketplace_merchant",
+          "eb_marketplace_role",
+          "eb_marketplace_employee",
+          "eb_marketplace_password_setup",
+          "eb_marketplace_audit_log",
+          "eb_system_admin",
+          "eb_system_log",
+          "eb_system_role"
+        ],
+        "snapshot_restore_used": false
+      },
+      "fixtures_cleaned": true,
+      "diagnostic": null,
+      "guard_mode": "read-only",
+      "application_privilege_ddl_probe": "NOT RUN",
+      "guard_metadata_provenance": "actual after evidence"
+    }
+  ],
+  "native_steps": {
+    "bootstrap": 0,
+    "prepare": 0,
+    "teardown": 0,
+    "source_lint": 0,
+    "harness_lint": 0,
+    "app_reload": 0
+  },
+  "guard_application_reload": {
+    "native_receipt": "app-reload-native.json",
+    "native_exit": 0,
+    "completed_at": "2026-10-12T00:12:19.8839437Z",
+    "reason": "load current read-only guard in the dedicated resident supervisor"
+  },
+  "source_files_hashed": 21,
+  "php_lint": {
+    "files": 20,
+    "native_exit": 0,
+    "harness_native_exit": 0
+  },
+  "guard_mode": "read-only",
+  "application_privilege_ddl_probe": "NOT RUN",
+  "guard_mode_selection": {
+    "run_id": "2026101123465067a219",
+    "mode": "read-only",
+    "identity_fields_unchanged": true,
+    "completed_at": "2026-10-12T00:10:13.3594924Z",
+    "historical_baseline_used_active_probe": true,
+    "previous_mode": "active-probe"
+  },
+  "guard_mode_selection_sha256": "b7388a5154d48ff3b9e28ed23c4ba924c6fe4e26b4e7a24d4e77cef40a2e0bef",
+  "normal_requests": [
+    {
+      "method": "GET",
+      "path": "/adminapi/marketplace/merchants",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/adminapi/marketplace/merchants",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/adminapi/marketplace/merchants",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/adminapi/marketplace/merchants",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/adminapi/marketplace/merchants?page=1&limit=1",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/adminapi/marketplace/merchants?page=2&limit=1",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/adminapi/marketplace/merchants?page=1&limit=20&review_status=0",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "PUT",
+      "path": "/adminapi/marketplace/merchants/1/review",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "PUT",
+      "path": "/adminapi/marketplace/merchants/2/review",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/adminapi/marketplace/merchants/1/admin-employee",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/adminapi/marketplace/merchants/1/admin-employee",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/adminapi/marketplace/merchants/2/admin-employee",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/merchantapi/password/setup",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/merchantapi/login",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/merchantapi/me",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/merchantapi/password/setup",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/merchantapi/login",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/merchantapi/me",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/merchantapi/password/setup",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/merchantapi/login",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/merchantapi/me",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/adminapi/marketplace/merchants/1",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/adminapi/marketplace/merchants/2",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "PUT",
+      "path": "/adminapi/marketplace/merchants/1",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "PUT",
+      "path": "/adminapi/marketplace/merchants/1",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/merchantapi/me",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/merchantapi/me",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "PUT",
+      "path": "/adminapi/marketplace/merchants/1/flags",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/merchantapi/login",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/merchantapi/me",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "PUT",
+      "path": "/adminapi/marketplace/merchants/1/flags",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/merchantapi/login",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/merchantapi/me",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "PUT",
+      "path": "/adminapi/marketplace/merchants/1/flags",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "PUT",
+      "path": "/adminapi/marketplace/merchants/1/review",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/adminapi/marketplace/merchants/1",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/adminapi/marketplace/merchants?page=1&limit=20&review_status=0",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "PUT",
+      "path": "/adminapi/marketplace/merchants/1/review",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/merchantapi/login",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/merchantapi/me",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/merchantapi/login",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/merchantapi/me",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "PUT",
+      "path": "/adminapi/marketplace/merchants/1/review",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "PUT",
+      "path": "/adminapi/marketplace/merchants/1/flags",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/adminapi/marketplace/merchants/1",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/adminapi/marketplace/merchants?page=1&limit=20&review_status=1",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "PUT",
+      "path": "/adminapi/marketplace/merchants/1/flags",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/merchantapi/login",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/merchantapi/me",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/merchantapi/login",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/merchantapi/me",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/adminapi/marketplace/merchants/1",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/adminapi/marketplace/merchants/2",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/adminapi/marketplace/merchants",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/adminapi/marketplace/merchants",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/adminapi/marketplace/merchants/1",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "PUT",
+      "path": "/merchantapi/roles/1",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/adminapi/marketplace/merchants/1/admin-employee",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/merchantapi/password/setup",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "POST",
+      "path": "/merchantapi/login",
+      "http": 200,
+      "business_status": 200
+    },
+    {
+      "method": "GET",
+      "path": "/merchantapi/me",
+      "http": 200,
+      "business_status": 200
+    }
+  ],
+  "normal_counts": {
+    "requests": 61,
+    "merchant_audits": 18,
+    "platform_read_logs": 16,
+    "valid_noops": 3,
+    "version_observations": 5
+  },
+  "observations": {
+    "merchant_ids": [
+      1,
+      2
+    ],
+    "administrator_employee_ids": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "local_default_roles_verified": 4,
+    "multiple_administrators_per_merchant_verified": true,
+    "capabilities_consumed_once": 4,
+    "profile_accept_orders_fulfillment_do_not_rotate": true,
+    "review_and_security_protected_employee_count": 2,
+    "valid_noop_count": 3,
+    "normal_disabled_order_and_fulfillment_login_verified": true,
+    "locked_platform_read_verified": true,
+    "old_token_requests": 0,
+    "unapproved_merchant_requests": 0,
+    "locked_merchant_requests": 0,
+    "protected_member_fixture_status": "review/security phases use both current active local administrators; stopped disabled/deleted-actor request acceptance remains NOT RUN",
+    "positive_current_db_role_grants_verified": true,
+    "administrator_role_fallback_name_generation_verified": true,
+    "fallback_role_id": 5,
+    "fallback_employee_id": 4,
+    "original_a_role_permission_count": 8,
+    "original_normal_http_count": 54,
+    "additional_positive_http_count": 7,
+    "final_normal_http_count": 61,
+    "browser_acceptance": false,
+    "log_switches_changed": false
+  },
+  "platform_routes": {
+    "actual_framework_rules": [
+      {
+        "method": "GET",
+        "rule": "marketplace/merchants",
+        "permission": "marketplace-merchants-list",
+        "boundary_auth_scope_order_verified": true
+      },
+      {
+        "method": "POST",
+        "rule": "marketplace/merchants",
+        "permission": "marketplace-merchants-create",
+        "boundary_auth_scope_order_verified": true
+      },
+      {
+        "method": "GET",
+        "rule": "marketplace/merchants/<id>",
+        "permission": "marketplace-merchants-read",
+        "boundary_auth_scope_order_verified": true
+      },
+      {
+        "method": "PUT",
+        "rule": "marketplace/merchants/<id>",
+        "permission": "marketplace-merchants-update",
+        "boundary_auth_scope_order_verified": true
+      },
+      {
+        "method": "PUT",
+        "rule": "marketplace/merchants/<id>/review",
+        "permission": "marketplace-merchants-review",
+        "boundary_auth_scope_order_verified": true
+      },
+      {
+        "method": "PUT",
+        "rule": "marketplace/merchants/<id>/flags",
+        "permission": "marketplace-merchants-flags",
+        "boundary_auth_scope_order_verified": true
+      },
+      {
+        "method": "POST",
+        "rule": "marketplace/merchants/<id>/admin-employee",
+        "permission": "marketplace-merchants-admin-employee",
+        "boundary_auth_scope_order_verified": true
+      }
+    ],
+    "permission_registrations": [
+      {
+        "id": 3465,
+        "method": "GET",
+        "rule": "marketplace/merchants",
+        "permission": "marketplace-merchants-list"
+      },
+      {
+        "id": 3466,
+        "method": "POST",
+        "rule": "marketplace/merchants",
+        "permission": "marketplace-merchants-create"
+      },
+      {
+        "id": 3467,
+        "method": "GET",
+        "rule": "marketplace/merchants/<id>",
+        "permission": "marketplace-merchants-read"
+      },
+      {
+        "id": 3468,
+        "method": "PUT",
+        "rule": "marketplace/merchants/<id>",
+        "permission": "marketplace-merchants-update"
+      },
+      {
+        "id": 3469,
+        "method": "PUT",
+        "rule": "marketplace/merchants/<id>/review",
+        "permission": "marketplace-merchants-review"
+      },
+      {
+        "id": 3470,
+        "method": "PUT",
+        "rule": "marketplace/merchants/<id>/flags",
+        "permission": "marketplace-merchants-flags"
+      },
+      {
+        "id": 3471,
+        "method": "POST",
+        "rule": "marketplace/merchants/<id>/admin-employee",
+        "permission": "marketplace-merchants-admin-employee"
+      }
+    ],
+    "exact_seven_verified": true,
+    "product_routes": 0
+  },
+  "merchant_routes": {
+    "actual_framework_rules": [
+      {
+        "method": "PUT",
+        "rule": "employees/<id>/status",
+        "name": "merchant.employee.status"
+      },
+      {
+        "method": "PUT",
+        "rule": "employees/<id>",
+        "name": "merchant.employee.update"
+      },
+      {
+        "method": "GET",
+        "rule": "employees",
+        "name": "merchant.employee.list"
+      },
+      {
+        "method": "POST",
+        "rule": "employees",
+        "name": "merchant.employee.create"
+      },
+      {
+        "method": "POST",
+        "rule": "login",
+        "name": "merchant.login"
+      },
+      {
+        "method": "POST",
+        "rule": "logout",
+        "name": "merchant.logout"
+      },
+      {
+        "method": "GET",
+        "rule": "me",
+        "name": "merchant.me"
+      },
+      {
+        "method": "POST",
+        "rule": "password/setup",
+        "name": "merchant.password.setup"
+      },
+      {
+        "method": "POST",
+        "rule": "refresh",
+        "name": "merchant.refresh"
+      },
+      {
+        "method": "PUT",
+        "rule": "roles/<id>",
+        "name": "merchant.role.update"
+      },
+      {
+        "method": "GET",
+        "rule": "roles",
+        "name": "merchant.role.list"
+      },
+      {
+        "method": "POST",
+        "rule": "roles",
+        "name": "merchant.role.create"
+      }
+    ],
+    "exact_twelve_verified": true,
+    "product_routes": 0
+  },
+  "platform_identities": [
+    {
+      "admin_id": 105,
+      "level": 0,
+      "role_ids": [],
+      "provenance": "new synthetic Db record -> AuthSessionStore.initAccount -> existing AuthTokenV2.issue with current CredentialStamp",
+      "real_binding_verified": true,
+      "captcha_or_platform_login_requests": 0,
+      "existing_admin_credentials_read": false
+    },
+    {
+      "admin_id": 106,
+      "level": 1,
+      "role_ids": [
+        102
+      ],
+      "provenance": "new synthetic Db record -> AuthSessionStore.initAccount -> existing AuthTokenV2.issue with current CredentialStamp",
+      "real_binding_verified": true,
+      "captcha_or_platform_login_requests": 0,
+      "existing_admin_credentials_read": false
+    }
+  ],
+  "default_roles": [
+    {
+      "mer_id": 1,
+      "administrator_role_id": 1,
+      "operator_role_id": 2,
+      "administrator_permissions": 9,
+      "operator_permissions": 7,
+      "actual_local_rows_verified": true
+    },
+    {
+      "mer_id": 2,
+      "administrator_role_id": 3,
+      "operator_role_id": 4,
+      "administrator_permissions": 9,
+      "operator_permissions": 7,
+      "actual_local_rows_verified": true
+    }
+  ],
+  "administrator_deliveries": [
+    {
+      "mer_id": 1,
+      "employee_id": 1,
+      "role_id": 1,
+      "setup_id": 1,
+      "canonical_hash_and24h_verified": true,
+      "preinitialized_version": false,
+      "administrator_role_fallback_created": false,
+      "original_role_preserved": true
+    },
+    {
+      "mer_id": 1,
+      "employee_id": 2,
+      "role_id": 1,
+      "setup_id": 2,
+      "canonical_hash_and24h_verified": true,
+      "preinitialized_version": false,
+      "administrator_role_fallback_created": false,
+      "original_role_preserved": true
+    },
+    {
+      "mer_id": 2,
+      "employee_id": 3,
+      "role_id": 3,
+      "setup_id": 3,
+      "canonical_hash_and24h_verified": true,
+      "preinitialized_version": false,
+      "administrator_role_fallback_created": false,
+      "original_role_preserved": true
+    },
+    {
+      "mer_id": 1,
+      "employee_id": 4,
+      "role_id": 5,
+      "setup_id": 4,
+      "canonical_hash_and24h_verified": true,
+      "preinitialized_version": false,
+      "administrator_role_fallback_created": true,
+      "original_role_preserved": true
+    }
+  ],
+  "merchant_audits": [
+    {
+      "id": 1,
+      "mer_id": 1,
+      "actor_id": 105,
+      "action": "marketplace-merchants-create",
+      "resource_type": "merchant",
+      "resource_id": 1,
+      "detail": {
+        "changed_fields": [
+          "name",
+          "logo",
+          "after_sale_contact",
+          "shipping_note",
+          "review_status",
+          "accept_orders",
+          "fulfillment_enabled",
+          "security_locked",
+          "closed_at"
+        ],
+        "protected_employee_count": 0
+      },
+      "complete_metadata_verified": true
+    },
+    {
+      "id": 2,
+      "mer_id": 2,
+      "actor_id": 105,
+      "action": "marketplace-merchants-create",
+      "resource_type": "merchant",
+      "resource_id": 2,
+      "detail": {
+        "changed_fields": [
+          "name",
+          "logo",
+          "after_sale_contact",
+          "shipping_note",
+          "review_status",
+          "accept_orders",
+          "fulfillment_enabled",
+          "security_locked",
+          "closed_at"
+        ],
+        "protected_employee_count": 0
+      },
+      "complete_metadata_verified": true
+    },
+    {
+      "id": 3,
+      "mer_id": 1,
+      "actor_id": 105,
+      "action": "marketplace-merchants-review",
+      "resource_type": "merchant",
+      "resource_id": 1,
+      "detail": {
+        "changed_fields": [
+          "review_status"
+        ],
+        "protected_employee_count": 0
+      },
+      "complete_metadata_verified": true
+    },
+    {
+      "id": 4,
+      "mer_id": 2,
+      "actor_id": 105,
+      "action": "marketplace-merchants-review",
+      "resource_type": "merchant",
+      "resource_id": 2,
+      "detail": {
+        "changed_fields": [
+          "review_status"
+        ],
+        "protected_employee_count": 0
+      },
+      "complete_metadata_verified": true
+    },
+    {
+      "id": 5,
+      "mer_id": 1,
+      "actor_id": 105,
+      "action": "marketplace-merchants-admin-employee",
+      "resource_type": "employee",
+      "resource_id": 1,
+      "detail": {
+        "changed_fields": [
+          "role_id",
+          "account",
+          "name",
+          "avatar",
+          "status"
+        ],
+        "employee_id": 1,
+        "role_id": 1,
+        "protected_employee_count": 0
+      },
+      "complete_metadata_verified": true
+    },
+    {
+      "id": 6,
+      "mer_id": 1,
+      "actor_id": 105,
+      "action": "marketplace-merchants-admin-employee",
+      "resource_type": "employee",
+      "resource_id": 2,
+      "detail": {
+        "changed_fields": [
+          "role_id",
+          "account",
+          "name",
+          "avatar",
+          "status"
+        ],
+        "employee_id": 2,
+        "role_id": 1,
+        "protected_employee_count": 0
+      },
+      "complete_metadata_verified": true
+    },
+    {
+      "id": 7,
+      "mer_id": 2,
+      "actor_id": 105,
+      "action": "marketplace-merchants-admin-employee",
+      "resource_type": "employee",
+      "resource_id": 3,
+      "detail": {
+        "changed_fields": [
+          "role_id",
+          "account",
+          "name",
+          "avatar",
+          "status"
+        ],
+        "employee_id": 3,
+        "role_id": 3,
+        "protected_employee_count": 0
+      },
+      "complete_metadata_verified": true
+    },
+    {
+      "id": 8,
+      "mer_id": 1,
+      "actor_id": 105,
+      "action": "marketplace-merchants-update",
+      "resource_type": "merchant",
+      "resource_id": 1,
+      "detail": {
+        "changed_fields": [
+          "name",
+          "logo",
+          "after_sale_contact",
+          "shipping_note"
+        ],
+        "protected_employee_count": 0
+      },
+      "complete_metadata_verified": true
+    },
+    {
+      "id": 9,
+      "mer_id": 1,
+      "actor_id": 105,
+      "action": "marketplace-merchants-update",
+      "resource_type": "merchant",
+      "resource_id": 1,
+      "detail": {
+        "changed_fields": [],
+        "protected_employee_count": 0
+      },
+      "complete_metadata_verified": true
+    },
+    {
+      "id": 10,
+      "mer_id": 1,
+      "actor_id": 105,
+      "action": "marketplace-merchants-flags",
+      "resource_type": "merchant",
+      "resource_id": 1,
+      "detail": {
+        "changed_fields": [
+          "accept_orders",
+          "fulfillment_enabled"
+        ],
+        "protected_employee_count": 0
+      },
+      "complete_metadata_verified": true
+    },
+    {
+      "id": 11,
+      "mer_id": 1,
+      "actor_id": 105,
+      "action": "marketplace-merchants-flags",
+      "resource_type": "merchant",
+      "resource_id": 1,
+      "detail": {
+        "changed_fields": [
+          "accept_orders"
+        ],
+        "protected_employee_count": 0
+      },
+      "complete_metadata_verified": true
+    },
+    {
+      "id": 12,
+      "mer_id": 1,
+      "actor_id": 105,
+      "action": "marketplace-merchants-flags",
+      "resource_type": "merchant",
+      "resource_id": 1,
+      "detail": {
+        "changed_fields": [],
+        "protected_employee_count": 0
+      },
+      "complete_metadata_verified": true
+    },
+    {
+      "id": 13,
+      "mer_id": 1,
+      "actor_id": 105,
+      "action": "marketplace-merchants-review",
+      "resource_type": "merchant",
+      "resource_id": 1,
+      "detail": {
+        "changed_fields": [
+          "review_status"
+        ],
+        "protected_employee_count": 2
+      },
+      "complete_metadata_verified": true
+    },
+    {
+      "id": 14,
+      "mer_id": 1,
+      "actor_id": 105,
+      "action": "marketplace-merchants-review",
+      "resource_type": "merchant",
+      "resource_id": 1,
+      "detail": {
+        "changed_fields": [
+          "review_status"
+        ],
+        "protected_employee_count": 2
+      },
+      "complete_metadata_verified": true
+    },
+    {
+      "id": 15,
+      "mer_id": 1,
+      "actor_id": 105,
+      "action": "marketplace-merchants-review",
+      "resource_type": "merchant",
+      "resource_id": 1,
+      "detail": {
+        "changed_fields": [],
+        "protected_employee_count": 0
+      },
+      "complete_metadata_verified": true
+    },
+    {
+      "id": 16,
+      "mer_id": 1,
+      "actor_id": 105,
+      "action": "marketplace-merchants-flags",
+      "resource_type": "merchant",
+      "resource_id": 1,
+      "detail": {
+        "changed_fields": [
+          "security_locked"
+        ],
+        "protected_employee_count": 2
+      },
+      "complete_metadata_verified": true
+    },
+    {
+      "id": 17,
+      "mer_id": 1,
+      "actor_id": 105,
+      "action": "marketplace-merchants-flags",
+      "resource_type": "merchant",
+      "resource_id": 1,
+      "detail": {
+        "changed_fields": [
+          "security_locked"
+        ],
+        "protected_employee_count": 2
+      },
+      "complete_metadata_verified": true
+    },
+    {
+      "id": 18,
+      "mer_id": 1,
+      "actor_id": 105,
+      "action": "marketplace-merchants-admin-employee",
+      "resource_type": "employee",
+      "resource_id": 4,
+      "detail": {
+        "changed_fields": [
+          "role_id",
+          "account",
+          "name",
+          "avatar",
+          "status"
+        ],
+        "employee_id": 4,
+        "role_id": 5,
+        "protected_employee_count": 0
+      },
+      "complete_metadata_verified": true
+    }
+  ],
+  "platform_read_logs": [
+    {
+      "id": 1,
+      "admin_id": 105,
+      "action": "marketplace-merchants-list",
+      "route": "marketplace/merchants",
+      "complete_metadata_verified": true
+    },
+    {
+      "id": 2,
+      "admin_id": 105,
+      "action": "marketplace-merchants-list",
+      "route": "marketplace/merchants",
+      "complete_metadata_verified": true
+    },
+    {
+      "id": 3,
+      "admin_id": 105,
+      "action": "marketplace-merchants-list",
+      "route": "marketplace/merchants",
+      "complete_metadata_verified": true
+    },
+    {
+      "id": 4,
+      "admin_id": 105,
+      "action": "marketplace-merchants-list",
+      "route": "marketplace/merchants",
+      "complete_metadata_verified": true
+    },
+    {
+      "id": 5,
+      "admin_id": 105,
+      "action": "marketplace-merchants-list",
+      "route": "marketplace/merchants",
+      "complete_metadata_verified": true
+    },
+    {
+      "id": 6,
+      "admin_id": 105,
+      "action": "marketplace-merchants-read",
+      "route": "marketplace/merchants/<id>",
+      "complete_metadata_verified": true
+    },
+    {
+      "id": 7,
+      "admin_id": 105,
+      "action": "marketplace-merchants-read",
+      "route": "marketplace/merchants/<id>",
+      "complete_metadata_verified": true
+    },
+    {
+      "id": 8,
+      "admin_id": 105,
+      "action": "marketplace-merchants-read",
+      "route": "marketplace/merchants/<id>",
+      "complete_metadata_verified": true
+    },
+    {
+      "id": 9,
+      "admin_id": 105,
+      "action": "marketplace-merchants-list",
+      "route": "marketplace/merchants",
+      "complete_metadata_verified": true
+    },
+    {
+      "id": 10,
+      "admin_id": 105,
+      "action": "marketplace-merchants-read",
+      "route": "marketplace/merchants/<id>",
+      "complete_metadata_verified": true
+    },
+    {
+      "id": 11,
+      "admin_id": 105,
+      "action": "marketplace-merchants-list",
+      "route": "marketplace/merchants",
+      "complete_metadata_verified": true
+    },
+    {
+      "id": 12,
+      "admin_id": 105,
+      "action": "marketplace-merchants-read",
+      "route": "marketplace/merchants/<id>",
+      "complete_metadata_verified": true
+    },
+    {
+      "id": 13,
+      "admin_id": 105,
+      "action": "marketplace-merchants-read",
+      "route": "marketplace/merchants/<id>",
+      "complete_metadata_verified": true
+    },
+    {
+      "id": 14,
+      "admin_id": 105,
+      "action": "marketplace-merchants-list",
+      "route": "marketplace/merchants",
+      "complete_metadata_verified": true
+    },
+    {
+      "id": 15,
+      "admin_id": 106,
+      "action": "marketplace-merchants-list",
+      "route": "marketplace/merchants",
+      "complete_metadata_verified": true
+    },
+    {
+      "id": 16,
+      "admin_id": 106,
+      "action": "marketplace-merchants-read",
+      "route": "marketplace/merchants/<id>",
+      "complete_metadata_verified": true
+    }
+  ],
+  "valid_noops": [
+    {
+      "resource": "merchant_profile",
+      "mer_id": 1,
+      "rows_times_and_versions_unchanged": true,
+      "success_audit_inserted": true
+    },
+    {
+      "resource": "merchant_flags",
+      "mer_id": 1,
+      "rows_times_and_versions_unchanged": true,
+      "success_audit_inserted": true
+    },
+    {
+      "resource": "merchant_review",
+      "mer_id": 1,
+      "rows_times_and_versions_unchanged": true,
+      "success_audit_inserted": true
+    }
+  ],
+  "version_observations": [
+    {
+      "operation": "normal_platform_review_eligibility_change",
+      "affected_employee_ids": [
+        1,
+        2
+      ],
+      "changed_and_unblocked": true,
+      "old_token_requests": 0
+    },
+    {
+      "operation": "normal_platform_review_eligibility_change",
+      "affected_employee_ids": [
+        1,
+        2
+      ],
+      "changed_and_unblocked": true,
+      "old_token_requests": 0
+    },
+    {
+      "operation": "normal_platform_flags_eligibility_change",
+      "affected_employee_ids": [
+        1,
+        2
+      ],
+      "changed_and_unblocked": true,
+      "old_token_requests": 0
+    },
+    {
+      "operation": "normal_platform_flags_eligibility_change",
+      "affected_employee_ids": [
+        1,
+        2
+      ],
+      "changed_and_unblocked": true,
+      "old_token_requests": 0
+    },
+    {
+      "operation": "normal_full_nine_role_reduced_before_administrator_fallback",
+      "affected_employee_ids": [
+        1,
+        2
+      ],
+      "changed_and_unblocked": true,
+      "old_token_requests": 0
+    }
+  ],
+  "platform_list_observations": [
+    {
+      "page": 1,
+      "limit": 20,
+      "review_status": null,
+      "count": 0,
+      "returned_ids": [],
+      "explicit_defaults_verified": true
+    },
+    {
+      "page": 1,
+      "limit": 20,
+      "review_status": null,
+      "count": 2,
+      "returned_ids": [
+        1,
+        2
+      ],
+      "explicit_defaults_verified": true
+    },
+    {
+      "page": 1,
+      "limit": 1,
+      "review_status": null,
+      "count": 2,
+      "returned_ids": [
+        1
+      ],
+      "explicit_defaults_verified": false
+    },
+    {
+      "page": 2,
+      "limit": 1,
+      "review_status": null,
+      "count": 2,
+      "returned_ids": [
+        2
+      ],
+      "explicit_defaults_verified": false
+    },
+    {
+      "page": 1,
+      "limit": 20,
+      "review_status": 0,
+      "count": 2,
+      "returned_ids": [
+        1,
+        2
+      ],
+      "explicit_defaults_verified": false
+    },
+    {
+      "page": 1,
+      "limit": 20,
+      "review_status": 0,
+      "count": 1,
+      "returned_ids": [
+        1
+      ],
+      "explicit_defaults_verified": false
+    },
+    {
+      "page": 1,
+      "limit": 20,
+      "review_status": 1,
+      "count": 2,
+      "returned_ids": [
+        1,
+        2
+      ],
+      "explicit_defaults_verified": false
+    },
+    {
+      "page": 1,
+      "limit": 20,
+      "review_status": null,
+      "count": 2,
+      "returned_ids": [
+        1,
+        2
+      ],
+      "explicit_defaults_verified": true
+    },
+    {
+      "page": 1,
+      "limit": 20,
+      "review_status": null,
+      "count": 2,
+      "returned_ids": [
+        1,
+        2
+      ],
+      "explicit_defaults_verified": true
+    }
+  ],
+  "original_normal_flow": {
+    "http_requests": 54,
+    "merchant_write_audits": 17,
+    "platform_read_logs": 14,
+    "valid_noops": 3,
+    "membership_protections": 4,
+    "complete_original_flow_preserved": true
+  },
+  "positive_platform_grants": {
+    "role_id": 102,
+    "menu_ids": [
+      3465,
+      3466,
+      3467,
+      3468,
+      3469,
+      3470,
+      3471
+    ],
+    "level": 1,
+    "status": 1,
+    "source": "new enabled role with actual current seven auth_type=2 menu IDs",
+    "admin_id": 106,
+    "normal_get_requests": 2,
+    "fresh_db_grant_branch_verified": true
+  },
+  "normal_role_reduction": {
+    "role_id": 1,
+    "mer_id": 1,
+    "current_permission_count": 8,
+    "protected_employee_ids": [
+      1,
+      2
+    ],
+    "all_management_and_profile_grants_retained": true,
+    "old_token_requests_after_change": 0
+  },
+  "language_preparation": {
+    "source": "real getLang and installed LangCode/LangType/LangCountry services",
+    "logical_keys": [
+      "range_name",
+      "sys_lang_source_map",
+      "type_id_zh-CN",
+      "lang_type_data",
+      "lang_zh_CN"
+    ],
+    "added_key_hashes": [
+      "ea4d0dbe56b047a16e737767bfa89e6bd410194bc9a4481a6f91ed2891a1fe54",
+      "e5b99882bedeb0839ca81a92c197d62051fbe1b37ba09b2f34a7274450a7c5dc",
+      "5fc85c94ae9bbee0d883d263edc8e8711f6214c0c277e473130c28ad9138977f",
+      "9abd2b2743c14ebeeaab95a50c0e8e2a2c84f9d282f986ec6e09540ada91e552",
+      "a25b5b26791083e583e89ef349d842f59fe165648d1494fc99850b7fbf7e8877",
+      "b34e6eb07d190c57b5c72b0aebbecf064714fbd2b9b8fdfb0361ceb6b0bb0157"
+    ],
+    "exact_values_and_source_expiry_verified": true,
+    "unrelated_state_preserved": true
+  },
+  "owned_row_ids": {
+    "merchant": [
+      1,
+      2
+    ],
+    "role": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "employee": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "password_setup": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "audit_log": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18
+    ],
+    "system_admin": [
+      105,
+      106
+    ],
+    "system_log": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16
+    ],
+    "system_role": [
+      102
+    ]
+  },
+  "owned_keys_registered_count": 32,
+  "owned_keys_removed_count": 24,
+  "preservation": {
+    "tables": 163,
+    "original_rows_schema_checksums_unchanged": true,
+    "old_cache_values_and_absolute_expiry_unchanged": true,
+    "counter_changes_allowed_only": [
+      "eb_marketplace_merchant",
+      "eb_marketplace_role",
+      "eb_marketplace_employee",
+      "eb_marketplace_password_setup",
+      "eb_marketplace_audit_log",
+      "eb_system_admin",
+      "eb_system_log",
+      "eb_system_role"
+    ],
+    "snapshot_restore_used": false
+  },
+  "private_logs_verified_in_normal_configuration": true,
+  "migration_evidence_ref": "ms1-task6-migration-setup.json",
+  "migration_evidence_sha256": "25b1113f3c5231d98a47806491b37d4cbaa5b1ceb2e274bcfb74bf5715ce150e",
+  "resources_before_teardown": {
+    "install_lock_exists": true,
+    "stage": "before",
+    "install_lock_checked_path": "crmeb/public/install.lock",
+    "completed_at": "2026-10-12T00:13:40.7702378Z",
+    "inventory": [
+      {
+        "run_id": "2026101123465067a219",
+        "containers": 3,
+        "volumes": 11,
+        "native_exits": [
+          0,
+          0,
+          0
+        ],
+        "networks": 1
+      },
+      {
+        "run_id": "20261011234811048721",
+        "containers": 0,
+        "volumes": 0,
+        "native_exits": [
+          0,
+          0,
+          0
+        ],
+        "networks": 0
+      }
+    ],
+    "env_file_exists": false
+  },
+  "final_resources": {
+    "inventory": [
+      {
+        "volumes": 0,
+        "networks": 0,
+        "native_exits": [
+          0,
+          0,
+          0
+        ],
+        "containers": 0,
+        "run_id": "2026101123465067a219"
+      },
+      {
+        "volumes": 0,
+        "networks": 0,
+        "native_exits": [
+          0,
+          0,
+          0
+        ],
+        "containers": 0,
+        "run_id": "20261011234811048721"
+      }
+    ],
+    "completed_at": "2026-10-12T00:14:00.2163276Z",
+    "install_lock_exists": false,
+    "stage": "after",
+    "env_file_exists": false,
+    "install_lock_checked_path": "crmeb/public/install.lock"
+  },
+  "inventory_artifact_sha256": {
+    "before": "13f3ab18b97a668dd05f1375b0b4e5e5f544a911210d52503891eaf663068730",
+    "after": "63fd10e37adc6c6178c50e247c5fc018b93b9b4db15de155046fe8e9c7bc15a5"
+  },
+  "results": {
+    "original_rows": 57,
+    "original_sha256": "63a1878f973dd67a2b27af17aac385c174ce2bbe17126e7e04a7777f37485181",
+    "appended_rows": 18,
+    "total_rows": 75,
+    "counts": {
+      "FAIL": 9,
+      "PASS": 7,
+      "NOT RUN": 59
+    },
+    "sha256": "976380d291736202a90e0a1ec5c24f6f0ac7201f4899e870634dba612c26540b"
+  },
+  "limits": [
+    "All eight original stopped Task6 subcases remain NOT RUN; only real original raw bytes are appended.",
+    "Bootstrap and baseline before explicit mode selection used the old active protection logic, which included the application-privilege DDL denial probe. The entire run cannot be described as free of DDL probes; no count or acceptance is inferred. Baseline source 62ae96b9e has no guard evidence fields; its original raw bytes and FAIL are retained unchanged, without relabeling that historical probe NOT RUN or PASS.",
+    "The dedicated resident app was normally rebuilt and registered to load the updated guard, confirmed by its terminal app-reload receipt. Final after uses explicit manifest read-only mode with the original identity, internal endpoint, sentinel and exact DML grant checks retained; the application-privilege DDL probe is NOT RUN for after.",
+    "The original stopped business-request scenarios were not executed: ungranted actor, locked/unapproved merchant request, invalid or old credential/capability, fault, concurrency or recovery. This statement does not include the historical active guard probe.",
+    "Normal platform and granted-role results do not establish original D20/M06 refusal acceptance or browser acceptance.",
+    "Actual normal logs were inspected; logging-switch or failure-case acceptance was not run.",
+    "Historical Task1-5 records are retained exactly; this summary only describes the supplied Task6 terminal artifacts.",
+    "Task7-9 and complete MS1 acceptance remain pending.",
+    "Local L2 only; no push, production database write, deployment, notification, human signoff or SECURITY_BASE_SHA."
+  ]
+}

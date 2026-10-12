@@ -36,7 +36,7 @@
 - 迁移的“空”指CRMEB已安装且五目标表不存在；零表库缺少system_menus，不能创建第六张表或调用Installer。theme-module实际使用 `--check/--apply`，新MS1 CLI明确支持文档要求的 `check|apply`（兼容同义选项）。只新增五表及精确marketplace菜单/接口登记；原表列/index/旧行保持，system_menus正常新增行与其AUTO_INCREMENT变化单列核对，不能要求新增后checksum仍相同，也不回拨计数器。其他原表结构/数据保持。
 - 现Supervisor声明queue:listen，实版Listener每轮启动queue:work --once，job不复用同一PHP进程。Task1为新marketplace队列声明独立 `queue:work --queue=marketplace --sleep=1 --tries=1` 常驻模式，并用相同命令建立ISO audit-worker；原队列保持。生产声明默认不自动启动，实际发布另行处理。正常空任务的同一PID证据到位后，Task8再运行正常A→B上下文重建；异常/无上下文/伪造载荷/并发场景按用户要求跳过，不冒称M05/M09/M10完整通过。
 
-执行顺序仍以Task1–9为单一清单；Task1源码盘点与普通worker能力、Task2普通迁移、Task3正常上下文与查询范围、Task4商家五接口及正常身份流程、Task5员工/角色管理普通流程已完成，历史FAIL及原跳过项分别保留。Task6–9的平台管理接口、跨应用静态核对、任务上下文及最终交付仍待实施；普通结果不代替完整验收。
+执行顺序仍以Task1–9为单一清单；Task1源码盘点与普通worker能力、Task2普通迁移、Task3正常上下文与查询范围、Task4商家五接口及正常身份流程、Task5员工/角色管理和Task6平台商家管理普通流程已完成，历史FAIL及原跳过项分别保留。Task7–9的跨应用静态核对、任务上下文及最终交付仍待实施；普通结果不代替完整验收。
 
 ## Review Focus
 
@@ -264,13 +264,23 @@ MerchantAdminServices公共签名：listing(PlatformScope,array query=[]):array�
 
 2026-10-12复核发现既有 `audit_guard_assert()` 在上述只读检查后仍执行 `CREATE DATABASE audit_guard_probe` 并期望1044；本次源码缺失基线已调用该旧保护路径，原FAIL/0业务请求/0夹具记录保留，不能称该次无任何拒绝探针。后续普通流程取消这一DDL拒绝探针：RUN manifest显式保存 `guard_mode=read-only`，每次guard在相同强只读检查通过后返回；compose/首次prepare显式传播模式，默认 `active-probe` 的旧套件行为保留但不执行。已有专用RUN只补该模式字段，身份、资源、库/cache和权限均不改；最终after要求实际manifest为read-only，证据将DDL探针单列NOT RUN，不把只读核对称作该拒绝测试通过。普通app supervisor、runner及专用迁移准备均读同一manifest，避免只设置runner环境而遗漏既有app进程。
 
-- [ ] **普通T6P01：** 七平台接口、真实商家/角色/管理员归属与能力、状态独立性、事务审计和精确清理。
+- [x] **普通T6P01：** 七平台接口、真实商家/角色/管理员归属与能力、状态独立性、事务审计和精确清理。
   普通验证还覆盖已正常授予七登记权限的受限平台管理员list/read，以及A原角色正常改为8权限后，平台为新账号创建全9权限“管理员 2”的合法分支；不重用受影响旧会话，不发送拒绝请求。专用合成system_role的真实ID/旧行保留与自然计数器一并核对。
 
 - [ ] **Step 1: 写用例**：M01（建立 A、B 商家并审核，分别创建管理员，归属正确）；M06（停止接新单与安全封禁两个开关效果不同；安全封禁后平台仍可查看该商家）；D20（只有旧 `merchant` 门店权限的受限管理员访问 `marketplace` 路由 → 拒绝）；审计日志字段完整，且不含敏感值。
-- [ ] **Step 2–5:** 确认失败 → 实现（含菜单登记，见 Task 2）→ 通过 → 提交 `feat(adminapi): platform merchant management with audit log`。
+- [x] **普通Step 2–5:** 源码缺失的真实FAIL → 实现（菜单登记沿Task2）→ 普通流程PASS → 提交 `feat(adminapi): platform merchant management with audit log`；原拒绝场景未运行。
+
+Task6普通交付（2026-10-12）：RUN2026101123465067a219，基线源码62ae96b9ea7641f63620445ade96214bbc46c313缺少平台实现，T6P01真实FAIL/native1、0业务请求、0夹具，158表及Redis完整快照保持。模式选择前的引导/基线使用既有active保护逻辑，包含建库拒绝探针，原记录不反写、不推断次数，也不把它标为NOT RUN或PASS。随后显式选择manifest read-only，正常重建唯一专用audit-app并重新登记以加载新guard；bootstrap、prepare、app_reload、after及teardown均native0。
+
+源码b3862f3506c1f2a5a26588bfab9a45fd913f598f的普通after实际61次HTTP及业务码均200，七平台/十二商家路由库存准确；18条商家写审计及16条平台读日志核对完整元数据，3次有效无变化保留时间与版本而仍记成功审计，5次正常成员保护核对当前数据库结果。A/B两个商家、四个默认角色及四个管理员的真实归属、32字节能力hash/24h与首次设密完成；正常受限平台管理员按当前七叶节点成功list/read，A原角色合法改为8权限后为新账号建立全9权限“管理员 2”，原角色保持。状态变化后只使用新登录凭据，受锁定或未审核员工请求和旧会话请求为0；原D20/M06等八子项均NOT RUN。新普通流程实际guard_mode=read-only，DDL拒绝探针另记NOT RUN，身份、内网、双哨兵和精确DML核对保持。21个实际源码文件hash及20个PHP文件lint/native0见摘要，旧Task1–5源码/结果仍属其历史版本。
+
+本次夹具按真实ID逆依赖清理，32个精确cache键登记、24个实际键移除；163表原行/checksum/DDL与旧Redis值/绝对期限保持，仅八张实际夹具表的自然计数器变化单列，不恢复快照或回拨计数。销毁前主实例3容器/1网络/11卷，主实例及引导清理实例20261011234811048721最终容器/网络/卷均0，真实crmeb/public/install.lock与.env不存在。两份9行原始记录逐字节追加至原57行，当前75行（7PASS/9FAIL/59NOT RUN），首57行SHA保持，完整SHA976380d291736202a90e0a1ec5c24f6f0ac7201f4899e870634dba612c26540b；摘要见 `records/ms1/task6-platform-summary.json`。仅完成Task6普通L2交付，Task7–9及完整MS1/人工签收仍未完成；未推送、发布、写真实库或通知。
 
 ### Task 7: 跨应用隔离
+
+2026-10-12只读前置盘点（尚未实现/运行Task7）：adminapi/outapi/merchantapi受保护HTTP入口已有AuthTokenV2固定应用、type/audience和当前绑定；kefu/api沿现签名、固定type、白名单及当前账号检查，没有audience/realm校验，公开api的force=false降为匿名属旧合同。WebSocket的ChatHandle.kefu_login/login已复用各自服务，后台notice复用AdminAuthServices，不另造商家type特判。房间/消息边界仍需明确：ChatService.onMessage按method_exists分派，ChatHandle.to_chat/chat可消费客户端tourist_uid/is_tourist建立或改写发送身份；现游客前端通过Common.getServiceUser取得tourist_uid后有无登录的正常聊天流程，不能全面禁游客后称兼容，也不能仅凭登录type检查宣称房间验收通过。后续实现须先记录服务器连接身份、现游客兼容及未覆盖部分的设计，再修改生产者/消费者。
+
+普通真实客服验证的前置仍待落实：ISO尚无Workerman chat/Channel专用服务、runtime及manifest接线；实版chat40002/Channel40003。正常用自有User/启用StoreService及现真实底层发行器，避免BaseServices.createToken的通知事件，双端在线运行合法客服HTTP service/info、双方登录/房间选择与普通文字收发，不发送外部通知。ChatService两秒timer会将所有不在线旧客服/记录更新online=0，须先只读确认旧online为0并全量核对，不能运行后恢复旧行掩盖副作用。A07、M07错应用八组、K01商家身份的HTTP/WS/房间拒绝，以及无效凭证、故障、并发、恢复均继续NOT RUN；源码盘点不代替运行验收。相关事实已核对AuthTokenV2.php、kefu/LoginServices.php、user/UserAuthServices.php、workerman/chat/ChatService.php和ChatHandle.php、kefuapi/controller/Common.php、template/admin/src/pages/kefu/appChat/index.vue及command/Workerman.php。
 
 **Files:**
 - Modify（视盘点结果）: `crmeb/crmeb/services/workerman/` 下客服长连接的鉴权入口
