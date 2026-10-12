@@ -431,6 +431,8 @@ Task8首个普通after `20261012092534292cde`（源码 `792ef7f4e5c3c1fc5c189e87
 
 独立admin实现合同：保持原harness/read-only guard及允许的真实decimal毫秒cache prefix；15源配置、1真实幻灯片和5语言值由原生产者预热，原raw缓存值/TTL/临时lock/精确tag成员分别核对，三个logo DTO另按真实sys_config规范化值。API-only合成角色仅授予既有商品规则列表，不改种子；本人PUT/logout依真实Json::make省略data，正常读/login保留数组DTO，均严格HTTP200/status200。本人资料只改姓名/头像，正确旧密码改密后丢弃旧令牌，仅正常新密码登录与当前退出。实际日志在数量/字段断言前认领，原helper正常stop后再以合成actor精确ID/name补认领实际完整行，再按全列删除；不运行异常/故障请求。原158/163表行/DDL/checksum、旧Redis值及绝对期限/runtime全保持，仅三夹具表自然计数器增长单列；不得恢复或回拨。准备及历史四稿来源见 `records/ms1/task9-normal-preparation.json`，运行证据尚无。
 
+T9A01首轮普通RUN `202610121537033b609f`（源码eaf022df5）引导native0，prepare自然失败native1；0业务/0显式readiness/0SQL夹具、45键登记/实际删除0，原158表及缓存期限/runtime保持。旧辅助仅记RuntimeException@harness.php:14，未捕获具体调用点；源码核对发现其console_remind=false前置与原app.php默认true冲突，修正为保留真实开启状态/原AdminLoginListener并记录实际queue/timer布尔状态，后续仅有限调用文件/行定位，不输出消息或trace参数。第一次原teardown native2因runner自然新增卷尚未登记；用原audit_register登记本RUN实际身份后，原teardown重试native0，主/引导20261012154110cc6d53双标签共12库存全0，真实.env/public安装锁均无。初次原native和1FAIL不覆写；逐字节追加后558行（10PASS/29FAIL/519NOT RUN），此前557行SHA 06547f0b75663e7f2df1da9ef80a66a64d92ba304e178c0d4f6d1691895a9cca保持、当前SHA 5808d996adf9880aa864a5d4e33480c31185a4739854f63d82058f7f082eee12。普通辅助与宿主资源登记窄修后待新RUN，完整组合/uni/MS1仍未完成；见 `records/ms1/task9-admin-normal-summary.json`。
+
 - [ ] 在新的 ISO-FULL 环境运行全部 MS0a、MS0b 用例及 MS1 用例；全部 `exit=0`。
 - [ ] 确认 merchantapi 没有任何商品相关路由（`php think route:list` 输出中不含 `product`）。
 - [ ] 写 `records/ms1/report.md`、`results.jsonl`（含迁移演练的前后摘要）；提交；停止，等待验收（11 文档 §5.4）。

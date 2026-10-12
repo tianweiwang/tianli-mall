@@ -1,11 +1,11 @@
 {
   "milestone": "MS1",
   "task": 9,
-  "status": "NORMAL_ADMIN_ENTRY_INSTALLED_RUNTIME_NOT_RUN",
+  "status": "NORMAL_ADMIN_ENTRY_CORRECTED_AFTER_FIRST_PREPARATION_FAILURE_RETEST_PENDING",
   "entrypoint": "help/audit-regressions/isolated/ms1-admin-normal.php",
-  "entrypoint_sha256": "a9e9e7a074835b7b4ec3a8a57503fbd0e851a24b8b581299f8c24a12370d5d74",
+  "entrypoint_sha256": "b70d4eb8e7592652452717ce9901310fa0f280f6ba9a5e1afe744ccca54e7c26",
   "final_external_revision": 4,
-  "external_preparation_directory": "H:/天俪商城/artifacts/ms1-task9/admin-normal-drafts/revision-4",
+  "external_preparation_directory": "H:/澶╀开鍟嗗煄/artifacts/ms1-task9/admin-normal-drafts/revision-4",
   "design_sha256": "490d8edba10cb8f1ade86349694240bd374888e5895ad24a56aece7bab25ce16",
   "actual_offline_syntax": {
     "native_exit": 0,
@@ -32,5 +32,16 @@
   "prior_drafts_and_native_evidence_preserved": true,
   "stopped_security_negative_fault_recovery_concurrency_ddl_cases": "NOT RUN",
   "full_ms1_acceptance": "PENDING",
-  "push_deploy_human_signoff_security_baseline": false
+  "push_deploy_human_signoff_security_baseline": false,
+  "initial_installed_entrypoint_sha256": "a9e9e7a074835b7b4ec3a8a57503fbd0e851a24b8b581299f8c24a12370d5d74",
+  "source_console_remind_default_preserved": true,
+  "actual_normal_reminder_flags_to_verify": true,
+  "failure_location_metadata": "exception class and file/line plus first caller file/line only; no message/trace arguments",
+  "actual_offline_syntax_after_correction": {
+    "native_exit": 0,
+    "image": "sha256:1099f749e2a38ec9453c6b820db8a78174514bc72d14edf5c203e13b82816e0a",
+    "entrypoint_sha256": "b70d4eb8e7592652452717ce9901310fa0f280f6ba9a5e1afe744ccca54e7c26",
+    "receipt_sha256": "9d85fda40d384afb9ac866fa2bf1849c848b58a314b1929e9cae7f7ef4928a7c"
+  },
+  "first_actual_runtime_summary": "task9-admin-normal-summary.json"
 }

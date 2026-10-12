@@ -139,13 +139,20 @@ function a9_login(string $password,array &$context,array &$evidence): array
     audit_expect($actual===$expected && $account===$wanted && audit_redis()->pttl($context['account_key'])===-1, 'current session and permanent account record differ');
     $expiry=a9_state($context['owned_rows'])['expires'][$session]??-2;
     audit_expect(abs($expiry-($claims['exp']+60)*1000)<=1 && ($data['menus']??null)===[] && is_array($data['unique_auth']??null) && (int)($data['user_info']['id']??0)===$context['admin_id'], 'normal session expiry and role-filtered login DTO differ');
-    $context['admin_row']=$after; $evidence['current_v2_bindings'][]=['subject_id'=>$context['admin_id'],'verified'=>true,'fixed_lifetime_seconds'=>$binding['ttl'],'session_key_hash'=>hash('sha256',$session)];
+    audit_expect(is_bool($data['queue']??null) && is_bool($data['timer']??null), 'normal enabled reminder listener must return its real queue and timer flags');
+    $context['admin_row']=$after; $evidence['current_v2_bindings'][]=['subject_id'=>$context['admin_id'],'verified'=>true,'fixed_lifetime_seconds'=>$binding['ttl'],'session_key_hash'=>hash('sha256',$session),'queue_state_flag'=>$data['queue'],'timer_state_flag'=>$data['timer']];
     return ['token'=>$token,'session'=>$session,'claims'=>$claims,'unique'=>$data['unique_auth']];
 }
 function a9_info(array $data,array $row): void
 {
     audit_expect((int)($data['id']??0)===(int)$row['id'] && ($data['account']??null)===$row['account'] && ($data['real_name']??null)===$row['real_name'] && ($data['head_pic']??null)===$row['head_pic'], 'own info must match the persisted current synthetic profile');
     foreach (['pwd','is_del','status'] as $field) audit_expect(!array_key_exists($field,$data), 'own info must omit hidden credential/state fields');
+}
+function a9_failure_location(Throwable $failure): string
+{
+    $frame=$failure->getTrace()[0]??[];
+    return get_class($failure).'@'.basename($failure->getFile()).':'.$failure->getLine()
+        .'/caller='.basename((string)($frame['file']??$failure->getFile())).':'.(int)($frame['line']??$failure->getLine());
 }
 function a9_cleanup(array &$context): array
 {
@@ -212,7 +219,9 @@ audit_case('T9A01','current_v2_granted_rule_and_own_profile','INTEGRATION',stati
             'DATABASE_HOSTNAME'=>'audit-mysql','DATABASE_HOSTPORT'=>'3306','DATABASE_DATABASE'=>'audit_auth','DATABASE_USERNAME'=>'audit_app','DATABASE_PASSWORD'=>$config['database']['password'],'DATABASE_PREFIX'=>'eb_','DATABASE_DEBUG'=>false,
             'CACHE_DRIVER'=>'redis','REDIS_REDIS_HOSTNAME'=>'audit-redis','REDIS_PORT'=>'6379','REDIS_REDIS_PASSWORD'=>$config['redis_password'],'CACHE_CACHE_PREFIX'=>$prefix,'CACHE_CACHE_TAG_PREFIX'=>'CRMEB:',
             'AUTH_SESSION_EPOCH'=>$config['auth']['session_epoch'],'AUTH_STAMP_KEY'=>$config['auth']['stamp_key'],'AUTH_ISSUER'=>$config['auth']['issuer']]); $app->initialize();
-        audit_expect(!$app->config->get('app.console_remind',false), 'ordinary login must use the existing no-console-reminder configuration');
+        $consoleRemind=$app->config->get('app.console_remind');
+        audit_expect($consoleRemind===true, 'ordinary login must retain the actual enabled console-reminder source configuration');
+        $evidence['console_reminder_source_enabled']=$consoleRemind;
         audit_expect((int)audit_db()->query("SELECT COUNT(*) FROM eb_system_event WHERE mark='admin_login' AND is_del=0 AND is_open=1")->fetchColumn()===0, 'installed normal login must have no executable custom event');
         $q=audit_db()->query("SELECT id FROM eb_system_menus WHERE auth_type=2 AND LOWER(api_url)='product/product/rule' AND LOWER(methods)='get' AND is_del=0 ORDER BY id"); $rules=$q->fetchAll(PDO::FETCH_COLUMN);
         audit_expect(count($rules)===1, 'exact existing granted product rule registration is required'); $permission=(string)$rules[0];
@@ -288,7 +297,7 @@ audit_case('T9A01','current_v2_granted_rule_and_own_profile','INTEGRATION',stati
         a9_http('GET','/adminapi/setting/admin/logout',$fresh['token'],null,$context,$evidence); audit_expect(!audit_redis()->exists($fresh['session']), 'normal logout must consume its exact current session'); unset($fresh);
         audit_expect(count($evidence['requests'])===12 && count($evidence['readiness_requests'])===1 && count($context['logs'])===10 && count($evidence['current_v2_bindings'])===2, 'complete declared normal flow requires12 business requests,one explicit readiness verification,two current logins and10 actual visit logs');
         a9_cache($context); a9_preserve($context['baseline'],a9_state($context['owned_rows']),$context['owned_keys']);
-    } catch (Throwable $failure) { $error=get_class($failure).'@'.basename($failure->getFile()).':'.$failure->getLine(); }
+    } catch (Throwable $failure) { $error=a9_failure_location($failure); }
     finally {
         try { if ($started) audit_app_stop(); $evidence['cleanup']=a9_cleanup($context); if (isset($context['baseline'])) { $final=a9_state(); a9_preserve($context['baseline'],$final,[],true); $evidence['original_state_preserved']=true; $evidence['full_table_count']=count($final['tables']); $evidence['natural_counter_changes']=[];
             foreach (['eb_system_admin','eb_system_role','eb_system_log'] as $t) $evidence['natural_counter_changes'][$t]=[$context['baseline']['ddl'][$t]['counter'],$final['ddl'][$t]['counter']];
@@ -297,7 +306,7 @@ audit_case('T9A01','current_v2_granted_rule_and_own_profile','INTEGRATION',stati
                 'before_runtime_sha256'=>hash('sha256',serialize($context['baseline']['runtime'])),'after_runtime_sha256'=>hash('sha256',serialize($final['runtime'])),
                 'all_schema_and_checksums_verified'=>true,'all_unrelated_absolute_deadlines_verified'=>true,'no_state_restore_or_counter_rollback'=>true]; }
             foreach ([audit_run_dir().'/evidence/app-runtime.log'] as $log) if (is_file($log)) { $bytes=file_get_contents($log); foreach ($context['secrets'] as $secret) audit_expect($secret==='' || !str_contains($bytes,$secret), 'actual normal application log contains private credential material'); }
-        } catch (Throwable $failure) { $cleanupError=get_class($failure).'@'.basename($failure->getFile()).':'.$failure->getLine(); }
+        } catch (Throwable $failure) { $cleanupError=a9_failure_location($failure); }
     }
     $evidence['status']=$error===null && $cleanupError===null ? 'PASS':'FAIL'; $evidence['failure']=$error; $evidence['cleanup_failure']=$cleanupError;
     $ref='evidence/ms1-admin-normal-'.gmdate('YmdHis').'-'.bin2hex(random_bytes(4)).'.json'; audit_write_json(audit_run_dir().'/'.$ref,$evidence);
