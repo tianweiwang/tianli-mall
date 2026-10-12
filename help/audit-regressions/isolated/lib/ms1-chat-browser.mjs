@@ -372,9 +372,10 @@ async function controls(page, name) {
   result.control_checks.push({ stage: name, viewport: name === 'desktop' ? { width: 1440, height: 900 } :
     { width: 390, height: 844 }, ...metrics, manual_screenshot_review: 'PENDING ROOT' });
 }
-async function textVisible(page, text, code) {
-  await until(async () => await page.getByText(text, { exact: true }).count() > 0 &&
-    await page.getByText(text, { exact: true }).first().isVisible(), code);
+async function textVisible(page, text, code, selector) {
+  const scope = selector ? page.locator(selector) : page;
+  await until(async () => await scope.getByText(text, { exact: true }).count() > 0 &&
+    await scope.getByText(text, { exact: true }).first().isVisible(), code);
 }
 async function avatar(page, name, kind) {
   if (kind === 'guest' && name === 'mobile') {
@@ -435,9 +436,10 @@ async function stage(name) {
   state.guestSelectionRequested = true;
   await item.click();
   await until(() => staffActor.roomCount > beforeRooms, 'SELECTED_ROOM_ACK');
+  await until(() => state.guestHistory && state.guestHistory.received_via === 'history', 'GUEST_HISTORY_RECEIVED');
   await drain();
-  await textVisible(staff, guestText, 'STAFF_RECEIVED_TEXT_VISIBLE');
-  check(state.guestHistory && state.guestHistory.received_via === 'history', 'GUEST_HISTORY_RECEIVED');
+  const staffChatSelector = name === 'desktop' ? '#chat_scroll' : '#chatBox';
+  await textVisible(staff, guestText, 'STAFF_RECEIVED_TEXT_VISIBLE', staffChatSelector);
   check(!result.normal_texts.some((t) => t.stage === name && t.sender_uid === state.guestUid), 'DUPLICATE_NORMAL_TEXT');
   result.normal_texts.push(state.guestHistory);
   await until(() => result.normal_texts.some((t) => t.stage === name && t.sender_uid === state.guestUid), 'GUEST_TEXT_RECEIVED');
@@ -450,7 +452,7 @@ async function stage(name) {
     await staff.locator('.input-box .iconfasong').click();
   }
   await until(() => result.normal_texts.some((t) => t.stage === name && t.sender_uid === input.staff_uid), 'STAFF_TEXT_RECEIVED');
-  await textVisible(staff, replyText, 'STAFF_ECHO_VISIBLE');
+  await textVisible(staff, replyText, 'STAFF_ECHO_VISIBLE', staffChatSelector);
   await textVisible(guest, replyText, 'GUEST_REPLY_VISIBLE');
   await drain();
   await avatar(guest, name, 'guest');
