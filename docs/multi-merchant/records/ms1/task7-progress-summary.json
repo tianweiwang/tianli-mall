@@ -157,18 +157,27 @@
       "phase": "after",
       "run_id": "202610120607539b91d2",
       "case": "T7B01"
+    },
+    {
+      "name": "ms1-chat-browser-after-20261012091218.jsonl",
+      "sha256": "e680cab14487142af9d1403501b9ec93afd66bd8a566bd49ecc7392dc7346426",
+      "rows": 24,
+      "commit_sha": "a39b6c4199adc237b967fb27362b5545a9d82d16",
+      "phase": "after",
+      "run_id": "20261012064833e676d0",
+      "case": "T7B01"
     }
   ],
   "raw_records": {
     "prior_rows": 75,
     "prior_sha256": "976380d291736202a90e0a1ec5c24f6f0ac7201f4899e870634dba612c26540b",
-    "appended_rows": 432,
-    "total_rows": 507,
-    "sha256": "9e421c2ec6490cdd006c1111b7d168fff7d1ded2492f8aac66a07ed45732efff",
+    "appended_rows": 456,
+    "total_rows": 531,
+    "sha256": "137dd6caac2659710eefbf6f0072e5851a25f5727c8be905095a7b4d422f7d2b",
     "counts": {
-      "FAIL": 26,
+      "FAIL": 27,
       "PASS": 8,
-      "NOT RUN": 473
+      "NOT RUN": 496
     },
     "prior_bytes_preserved": true,
     "first_171_rows_sha256": "9caddc50f64f7ad5a01e5fd68de914cd6147c53e04f6d7adcf4704be68f153af",
@@ -188,7 +197,8 @@
     "first_411_rows_sha256": "29af63fa423c9fd280501746d4dd1e8df3ba875854c443532efde79c3df6d47e",
     "first_435_rows_sha256": "2288f17703cdeab6d758797cef3de214d22a85aa45b61112d0536d5a8b50d1a5",
     "first_459_rows_sha256": "8a2fea628e0d7b5df779464c496432194f3e6063960420024bdc0d9ad2b9fefe",
-    "first_483_rows_sha256": "27ae7c86217c73ca83c4e06f9927092d56e9f099e172fa0d1f7a0c454a7af523"
+    "first_483_rows_sha256": "27ae7c86217c73ca83c4e06f9927092d56e9f099e172fa0d1f7a0c454a7af523",
+    "first_507_rows_sha256": "9e421c2ec6490cdd006c1111b7d168fff7d1ded2492f8aac66a07ed45732efff"
   },
   "first_run": {
     "run_id": "2026101201134532bd35",
@@ -4906,6 +4916,668 @@
       "dist-manifest-5.json": "b8dd5272ffdd99741b404329d49c358ed9e35862190549696f4d899536e9b272",
       "build-result-5.json": "703eae7606b397e7c4de7dfe383ab71756521c98e24029744768229f8841d5b8"
     },
-    "next_normal_browser_verification": "NOT RUN"
+    "next_normal_browser_verification": "RUN14 used unchanged round 5 dist: three actual mobile action controls and normal room 0 return passed; last-reply list visibility and fifth PNG pending. Entire RUN remains FAIL."
+  },
+  "browser_fourteenth_run": {
+    "run_id": "20261012064833e676d0",
+    "commit_sha": "a39b6c4199adc237b967fb27362b5545a9d82d16",
+    "status": "FAIL",
+    "guard_mode": "read-only",
+    "native_steps": {
+      "bootstrap": {
+        "guard_mode": "read-only",
+        "completed_at": "2026-10-12T06:50:18.8510362Z",
+        "exit": 0
+      },
+      "prepare": {
+        "exit": 0,
+        "completed_at": "2026-10-12T09:10:35.8692839Z"
+      },
+      "start": {
+        "completed_at": "2026-10-12T09:10:48.7364503Z",
+        "exit": 0
+      },
+      "after": {
+        "exit": 1,
+        "completed_at": "2026-10-12T09:12:19.2095150Z"
+      },
+      "teardown": {
+        "completed_at": "2026-10-12T09:13:33.8507017Z",
+        "exit": 0
+      }
+    },
+    "browser_terminal": {
+      "id": "fe1e79d553e326021bca8336b94fdd262d8d1fb2eded0130489d301e919479f1",
+      "name": "/tianli-audit-20261012064833e676d0-audit-browser-1",
+      "status": "exited",
+      "running": false,
+      "exit": 1,
+      "restart_count": 0,
+      "source": "Root direct Docker State observation before teardown"
+    },
+    "browser_failure_code": "MOBILE_REPLY_LIST_VISIBLE",
+    "failure_diagnostic": {
+      "class": "RuntimeException",
+      "file": "harness.php",
+      "line": 14,
+      "caller_file": "ms1-chat-browser.php",
+      "caller_line": 583
+    },
+    "source_inventory": {
+      "actual_files_sha256": {
+        "crmeb/crmeb/services/workerman/chat/GuestChatSession.php": "88718d32b223d8af42aafee0b24fe1d678b09b7977689a57964dd9661cfb8a40",
+        "crmeb/crmeb/services/workerman/chat/ChatIdentity.php": "92c902f84a0385623ba50fd015143809641b5cc796bbee42fd28ae5869410495",
+        "crmeb/crmeb/services/workerman/chat/ChatService.php": "436af1b35bc9c964fcd5a8695ee80dd22f7f119eb3b59cb74d34fd0e5629f023",
+        "crmeb/crmeb/services/workerman/chat/ChatHandle.php": "c5d3e65c933da578e5d4db95accc6424844c26d02c570c0846d2283773c43249",
+        "crmeb/crmeb/services/auth/AuthTokenV2.php": "59518646797c71ea45084326e5ca87da64f402f59d97ce57b655c87d3aa0591b",
+        "crmeb/app/services/kefu/LoginServices.php": "0e69433eb0f936e2bda3163e19815fbaf4f3c6776443ba1391445b2d05ed7822",
+        "crmeb/app/services/user/UserAuthServices.php": "ebe8f0928967d992a0f0a78d75ad740711b01b2274a8e2c47e8248155bd98983",
+        "crmeb/app/kefuapi/controller/Common.php": "08a92f670847693133283a996180a56d3e6d3cdde23c397d8d1bfafc773f4b55",
+        "crmeb/app/kefuapi/route/route.php": "4829c914c8678608642ac8e2175f4d3c93f61cb4b75fa169fdac175c56f8c724",
+        "crmeb/app/kefuapi/KefuApiExceptionHandle.php": "0949c00ae7fad194d50722d224d28828e9343d8eeb5b5b4612517aab60525f88",
+        "crmeb/app/listener/http/HttpEndListener.php": "4416a217c180f3e19ac0da0174282e1144b8a8982b794d5a60f985fbbcc66951",
+        "crmeb/app/services/kefu/KefuServices.php": "270d761d536421162b5f748001f46b6dd43ae7cbbff9726aca264688d76e5b8b",
+        "crmeb/app/services/kefu/service/StoreServiceRecordServices.php": "bd3bd9be020fb73ebb44eeaeab71e6c76b9ed47458632548d7a53f431ecc279c",
+        "crmeb/app/services/system/SystemClearServices.php": "97a3626708c34b926e8ff44d86b781a144b8d0af5f5719ef603340341ec5d69c",
+        "template/admin/src/api/kefu.js": "90bbb634e5abb2be9fd9a1aa8157c1d56262cf3393abfe8a0917a382b45d243b",
+        "template/admin/src/libs/request.js": "bbf70687578183e6b22d5cd9a0413abd896af0c6db331792977c725b1a6d7bfd",
+        "template/admin/src/libs/socket.js": "9c4068f6a2765d1c5216a247753aece8bf3019632929edc840a3cb7b29942366",
+        "template/admin/src/layout/navBars/breadcrumb/userNews.vue": "4728a22d257b04a5cf4f7f0cb53c57cb603edfe3d7b4213e7a8d4052591252bd",
+        "template/admin/src/pages/kefu/appChat/index.vue": "1e9e4ea1b969fcb894ae103df4d7269a688241a23906f2bdbbb36806a92ce30d",
+        "template/admin/src/pages/kefu/appChat/mobile/index.vue": "1c893540c31d195f766f9a23f637a899eb5d962318deb1ecdd73ff7fed11a3ef",
+        "template/admin/src/pages/kefu/mobile/chat_list.vue": "4b2d6cf9958992f3e3d4b008d39f2c65f76efb08efbd6b0eacca87c6bb278b6f",
+        "template/admin/src/pages/kefu/mobile/index.vue": "db4585becf799f5196408c19a4d9c96c0340f46cadfd8d2554c8010914e3f45d",
+        "template/admin/src/pages/kefu/pc/index.vue": "00afc1fb6f948428c7f7c03d1a81b587b6b10a59881a80ed839af7260a1f78f1",
+        "template/admin/src/pages/kefu/pc/components/chatList.vue": "eef91148181e49e6f1e82fe44c01db9221b6d44de7988dba89cf85c8627208d3",
+        "template/admin/src/pages/kefu/pc/components/rightMenu.vue": "0397a02be2e17c0e473830bb94a6158d6c84cf5122e9f49ee947cc4cde12d2db",
+        "template/admin/src/pages/kefu/index.vue": "1af98f34ebca68d2cbb9728f866c1f039cc21b7a548dc150885477921689162f",
+        "crmeb/app/kefuapi/validate/LoginValidate.php": "19017821687afda295c91185192a208688f5fdcbc513e07d788feaf1fdcb72af",
+        "crmeb/crmeb/utils/JwtAuth.php": "c34cc805cdf875c34111b5d9c84b6332141b58ffa64db35ff22db409deadc56a",
+        "crmeb/app/services/other/CacheServices.php": "f16f074c99bae90860ff40f4a20df31b77eea4d5f857d4a768c9418831bb34f5",
+        "crmeb/app/dao/other/CacheDao.php": "efa0f523f1382647e0e1c77137ea76214fbed59d104a65214b5661ef324641c3",
+        "help/audit-regressions/isolated/ms1-chat-browser.php": "e27be51b834d033a7505609e2377f44de69880e1d99aecba7a9516a3d86b14f9",
+        "help/audit-regressions/isolated/lib/ms1-chat-browser.mjs": "44e93f0a7ad71a604fe84affe2daae7a7129c7e53c853822186b4c1118aa5a8d",
+        "help/audit-regressions/isolated/lib/ms1-chat-browser-nginx.conf": "730980c7f1002744803d932580233e7700bf5364785adec7e69ae0facb285ce9",
+        "help/audit-regressions/isolated/bootstrap.sh": "0399d2d182cb87e4cbe0f2b2abf4d1147673d4605a7469e9e2b65fc59ddda161",
+        "template/uni-app/libs/new_chat.js": "7771b671c768a5820c2804ec9132021ab83e5b3393269cf5771346bce8aa28e1",
+        "template/uni-app/pages/extension/customer_list/chat.vue": "686f8e0ba491c4044f8ba52f4885c658961ac687c1b8e34e425cc4df0d6bbc6e",
+        "help/audit-regressions/isolated/lib/ms1-chat-entry.php": "d515cbb6049e432ba46fa792fca322c47efe3fe6ed7e0b5e0ad6024d4497d113",
+        "help/audit-regressions/isolated/ms1-cross-app.php": "89f4bfd524c70400398bd6c82df840812c479ab883bff6855427a30cd82aa5f7",
+        "help/audit-regressions/isolated/compose.yml": "e3882126a14d60f354686fd8c8c4bdc2f3bb231bf7f8e8d01f19dfc5742552a2",
+        "help/audit-regressions/isolated/lib/harness.php": "f0ce5d2a08e3df80b07476ab8186f17f0d692a65d7ae308aac3c188a83d84ab1",
+        "help/audit-regressions/isolated/lib/guard.php": "a7a182c3a204dbb55f5669a61f44af099360223acd9835f82d9da3a8bf2f79a8",
+        "crmeb/crmeb/compat/workerman/Events/Select.php": "6994df7c39b722bec9c55120cd39b416f80171a536670fc3a1b1766a16dd60bb",
+        "crmeb/vendor/workerman/workerman/Worker.php": "2f21fda397f42cfa1650e198fb5db2aa392a500037b948bf3eeb3fe5fdd7977b",
+        "crmeb/vendor/workerman/workerman/Connection/TcpConnection.php": "9016266e3fe0273060f6a3b4e09980ab50619c14948245b5402822e71b4f0a96",
+        "docs/multi-merchant/03-test-environment.md": "50ed8082e4e98953e74ff6cff45001c39fd736eaee4a2070736f85717ef02942",
+        "docs/multi-merchant/06-plan-ms1.md": "24ea58ab8d61ed79b5ab70a0f3515630c1c65f89b8aa7d339fe990d54d142a1b",
+        "help/audit-regressions/isolated/README.md": "6b95d6e230896c637f6fe69b391937a83e2e2d8aaa38e04bffc4af239886d20d"
+      },
+      "file_count": 47,
+      "layer": "SOURCE inventory only; T7B01 is normal browser UI; original stopped matrix remains NOT RUN"
+    },
+    "build_reuse": {
+      "current_commit": "a39b6c4199adc237b967fb27362b5545a9d82d16",
+      "build_round": 5,
+      "build_input_count": 1074,
+      "dist_file_count": 596,
+      "current_repository_input_differences": [],
+      "copied_build_input_differences": [],
+      "dist_manifest_differences": [],
+      "frontend_check_source_differences": [],
+      "scope": "actual build reuse consistency; browser runtime and manual screenshots remain separate"
+    },
+    "registered_client_http": [
+      {
+        "stage": "desktop",
+        "method": "GET",
+        "path": "/adminapi/custom_admin_js",
+        "http": 200,
+        "business_status": null
+      },
+      {
+        "stage": "desktop",
+        "method": "GET",
+        "path": "/adminapi/get_workerman_url",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "desktop",
+        "method": "GET",
+        "path": "/kefuapi/config",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "desktop",
+        "method": "POST",
+        "path": "/kefuapi/login",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "desktop",
+        "method": "GET",
+        "path": "/kefuapi/service/info",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "desktop",
+        "method": "GET",
+        "path": "/kefuapi/user/record",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "desktop",
+        "method": "GET",
+        "path": "/kefuapi/user/record",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "desktop",
+        "method": "GET",
+        "path": "/adminapi/custom_admin_js",
+        "http": 200,
+        "business_status": null
+      },
+      {
+        "stage": "desktop",
+        "method": "GET",
+        "path": "/adminapi/get_workerman_url",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "desktop",
+        "method": "GET",
+        "path": "/kefuapi/tourist/adv",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "desktop",
+        "method": "GET",
+        "path": "/kefuapi/tourist/user",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "desktop",
+        "method": "GET",
+        "path": "/kefuapi/service/list",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "desktop",
+        "method": "GET",
+        "path": "/kefuapi/user/record",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "mobile",
+        "method": "GET",
+        "path": "/adminapi/custom_admin_js",
+        "http": 200,
+        "business_status": null
+      },
+      {
+        "stage": "mobile",
+        "method": "GET",
+        "path": "/adminapi/get_workerman_url",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "mobile",
+        "method": "GET",
+        "path": "/kefuapi/config",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "mobile",
+        "method": "POST",
+        "path": "/kefuapi/login",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "mobile",
+        "method": "GET",
+        "path": "/kefuapi/service/info",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "mobile",
+        "method": "GET",
+        "path": "/kefuapi/user/record",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "mobile",
+        "method": "GET",
+        "path": "/kefuapi/user/record",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "mobile",
+        "method": "GET",
+        "path": "/adminapi/custom_admin_js",
+        "http": 200,
+        "business_status": null
+      },
+      {
+        "stage": "mobile",
+        "method": "GET",
+        "path": "/adminapi/get_workerman_url",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "mobile",
+        "method": "GET",
+        "path": "/kefuapi/tourist/user",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "mobile",
+        "method": "GET",
+        "path": "/kefuapi/service/list",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "mobile",
+        "method": "GET",
+        "path": "/kefuapi/service/transfer_list",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "mobile",
+        "method": "GET",
+        "path": "/kefuapi/service/cate",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "mobile",
+        "method": "GET",
+        "path": "/kefuapi/service/speechcraft",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "mobile",
+        "method": "GET",
+        "path": "/kefuapi/service/info",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "mobile",
+        "method": "GET",
+        "path": "/kefuapi/user/record",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "stage": "mobile",
+        "method": "GET",
+        "path": "/kefuapi/user/record",
+        "http": 200,
+        "business_status": 200
+      }
+    ],
+    "registered_client_http_count": 30,
+    "browser_client_http_count": 30,
+    "identity_acks": [
+      {
+        "stage": "desktop",
+        "kind": "kefu",
+        "uid": 103
+      },
+      {
+        "stage": "desktop",
+        "kind": "guest",
+        "uid": -1,
+        "expires_at": 1791799866
+      },
+      {
+        "stage": "mobile",
+        "kind": "kefu",
+        "uid": 103
+      },
+      {
+        "stage": "mobile",
+        "kind": "guest",
+        "uid": -2,
+        "expires_at": 1791799872
+      }
+    ],
+    "room_acks": [
+      {
+        "stage": "desktop",
+        "uid": 0,
+        "num": 0
+      },
+      {
+        "stage": "desktop",
+        "uid": 0,
+        "num": 0
+      },
+      {
+        "stage": "desktop",
+        "uid": 103,
+        "num": 0
+      },
+      {
+        "stage": "desktop",
+        "uid": -1,
+        "num": 0
+      },
+      {
+        "stage": "desktop",
+        "uid": 0,
+        "num": 0
+      },
+      {
+        "stage": "desktop",
+        "uid": 0,
+        "num": 0
+      },
+      {
+        "stage": "mobile",
+        "uid": 103,
+        "num": 0
+      },
+      {
+        "stage": "mobile",
+        "uid": -2,
+        "num": 0
+      },
+      {
+        "stage": "mobile",
+        "uid": 0,
+        "num": 0
+      }
+    ],
+    "normal_texts": [
+      {
+        "stage": "desktop",
+        "sender_uid": -1,
+        "recipient_uid": 103,
+        "is_tourist": 1,
+        "message_sha256": "669149d2abe434313e10ef028f002a7b7ded04f66761ad5711631f6f0525111e",
+        "received_via": "history"
+      },
+      {
+        "stage": "desktop",
+        "sender_uid": 103,
+        "recipient_uid": -1,
+        "is_tourist": 1,
+        "message_sha256": "7a0b85a72b191eed436fe340cb74d7c3bb3cd732585a8d4f8340e8736cd7535b",
+        "received_via": "websocket"
+      },
+      {
+        "stage": "mobile",
+        "sender_uid": -2,
+        "recipient_uid": 103,
+        "is_tourist": 1,
+        "message_sha256": "8ea7c81dbed9fa11c9bd0ab32963eaec4f05600334bfda45c7cb97f4e696af82",
+        "received_via": "history"
+      },
+      {
+        "stage": "mobile",
+        "sender_uid": 103,
+        "recipient_uid": -2,
+        "is_tourist": 1,
+        "message_sha256": "e43c59fc412b4a5f018f785f0ec307128cf89ea5e50bcfdd2abdd1017ce0e60e",
+        "received_via": "websocket"
+      }
+    ],
+    "screenshots": [
+      {
+        "stage": "desktop",
+        "kind": "kefu",
+        "path": "desktop-kefu.png"
+      },
+      {
+        "stage": "desktop",
+        "kind": "guest",
+        "path": "desktop-guest.png"
+      },
+      {
+        "stage": "mobile",
+        "kind": "kefu",
+        "path": "mobile-kefu.png"
+      },
+      {
+        "stage": "mobile",
+        "kind": "guest",
+        "path": "mobile-guest.png"
+      }
+    ],
+    "action_controls": [
+      {
+        "stage": "mobile",
+        "kind": "guest",
+        "type": "button",
+        "label": "发送",
+        "disabled": false,
+        "display": "flex",
+        "align_items": "center",
+        "justify_content": "center",
+        "bounds": {
+          "left": 305.4375,
+          "right": 349.4375,
+          "top": 797,
+          "bottom": 841,
+          "width": 44,
+          "height": 44
+        },
+        "parent": {
+          "left": 15.59375,
+          "right": 349.4375,
+          "top": 797,
+          "bottom": 841,
+          "width": 333.84375,
+          "height": 44
+        },
+        "icon": {
+          "left": 315.4375,
+          "right": 339.4375,
+          "top": 807,
+          "bottom": 831,
+          "width": 24,
+          "height": 24
+        },
+        "symbol": "#iconfasong"
+      },
+      {
+        "stage": "mobile",
+        "kind": "kefu",
+        "type": "button",
+        "label": "发送",
+        "disabled": false,
+        "display": "flex",
+        "align_items": "center",
+        "justify_content": "center",
+        "bounds": {
+          "left": 252.390625,
+          "right": 296.390625,
+          "top": 797,
+          "bottom": 841,
+          "width": 44,
+          "height": 44
+        },
+        "parent": {
+          "left": 40.5625,
+          "right": 296.390625,
+          "top": 797,
+          "bottom": 841,
+          "width": 255.828125,
+          "height": 44
+        },
+        "icon": {
+          "left": 262.390625,
+          "right": 286.390625,
+          "top": 807,
+          "bottom": 831,
+          "width": 24,
+          "height": 24
+        },
+        "symbol": "#iconfasong"
+      },
+      {
+        "stage": "mobile",
+        "kind": "kefu",
+        "type": "button",
+        "label": "返回会话列表",
+        "disabled": false,
+        "display": "flex",
+        "align_items": "center",
+        "justify_content": "center",
+        "bounds": {
+          "left": 0,
+          "right": 45,
+          "top": 0,
+          "bottom": 45,
+          "width": 45,
+          "height": 45
+        },
+        "parent": {
+          "left": 0,
+          "right": 390,
+          "top": 0,
+          "bottom": 45,
+          "width": 390,
+          "height": 45
+        },
+        "icon": {
+          "left": 10.5,
+          "right": 34.5,
+          "top": 10.5,
+          "bottom": 34.5,
+          "width": 24,
+          "height": 24
+        },
+        "symbol": "#iconfanhui"
+      }
+    ],
+    "contexts_closed": true,
+    "fixtures_created": 11,
+    "fixtures_cleaned": true,
+    "owned_keys_registered_count": 46,
+    "owned_keys_removed_count": 27,
+    "preservation": {
+      "tables": 163,
+      "original_rows_and_schema_checksums_preserved": true,
+      "old_cache_values_and_absolute_expiry_unchanged": true,
+      "counter_changes_allowed_only": [
+        "eb_user",
+        "eb_store_service",
+        "eb_store_service_log",
+        "eb_store_service_record"
+      ],
+      "preexisting_sequence_forward_exception": false,
+      "snapshot_restore_used": false,
+      "sequence_rollback_used": false
+    },
+    "final_inventory": {
+      "install_lock_path": "crmeb/public/install.lock",
+      "install_lock_absent": true,
+      "initial_partial_inventory_preserved": "final-inventory.json",
+      "all_resources_zero": true,
+      "env_absent": true,
+      "checks": [
+        {
+          "run_id": "20261012064833e676d0",
+          "count": 0,
+          "label": "tianli.audit.run=20261012064833e676d0",
+          "kind": "containers"
+        },
+        {
+          "run_id": "20261012064833e676d0",
+          "count": 0,
+          "label": "tianli.audit.run=20261012064833e676d0",
+          "kind": "networks"
+        },
+        {
+          "run_id": "20261012064833e676d0",
+          "count": 0,
+          "label": "tianli.audit.run=20261012064833e676d0",
+          "kind": "volumes"
+        },
+        {
+          "run_id": "20261012064833e676d0",
+          "count": 0,
+          "label": "com.docker.compose.project=tianli-audit-20261012064833e676d0",
+          "kind": "containers"
+        },
+        {
+          "run_id": "20261012064833e676d0",
+          "count": 0,
+          "label": "com.docker.compose.project=tianli-audit-20261012064833e676d0",
+          "kind": "networks"
+        },
+        {
+          "run_id": "20261012064833e676d0",
+          "count": 0,
+          "label": "com.docker.compose.project=tianli-audit-20261012064833e676d0",
+          "kind": "volumes"
+        },
+        {
+          "run_id": "202610120649575c4b46",
+          "count": 0,
+          "label": "tianli.audit.run=202610120649575c4b46",
+          "kind": "containers"
+        },
+        {
+          "run_id": "202610120649575c4b46",
+          "count": 0,
+          "label": "tianli.audit.run=202610120649575c4b46",
+          "kind": "networks"
+        },
+        {
+          "run_id": "202610120649575c4b46",
+          "count": 0,
+          "label": "tianli.audit.run=202610120649575c4b46",
+          "kind": "volumes"
+        },
+        {
+          "run_id": "202610120649575c4b46",
+          "count": 0,
+          "label": "com.docker.compose.project=tianli-audit-202610120649575c4b46",
+          "kind": "containers"
+        },
+        {
+          "run_id": "202610120649575c4b46",
+          "count": 0,
+          "label": "com.docker.compose.project=tianli-audit-202610120649575c4b46",
+          "kind": "networks"
+        },
+        {
+          "run_id": "202610120649575c4b46",
+          "count": 0,
+          "label": "com.docker.compose.project=tianli-audit-202610120649575c4b46",
+          "kind": "volumes"
+        }
+      ]
+    },
+    "failure_cause": "Native mobile return button, normal route and room 0 acknowledgement completed. The helper then expected the full last reply in the list, while the production list contract is a ten UTF-8 character preview. Exact full-text expectation failed; historical FAIL is retained. Independent source inspection also found saveRecord leaves the reverse staff-owned row stale on initial staff reply and does not update reverse-row timestamp on its existing-row path; that production defect still requires repair.",
+    "visual_observation": "Root viewed the two mobile chat PNGs: local return/send SVGs and text are visible. Complete five-PNG acceptance is pending; guest own avatar shows a broken image that requires independent diagnosis.",
+    "next_normal_list_contract": "Check the current visitor row only: actual server ten UTF-8 character preview and latest bidirectional message must agree. Keep four full texts in actual conversation areas, four logs, four records, real normal leave acknowledgement, five PNGs and original preservation assertions. Repair reverse row message/message_type/update_time with both UIDs and is_tourist scoped; preserve avatar, nickname, unread count and row count.",
+    "followup_browser_verification": "NOT RUN"
   }
 }
