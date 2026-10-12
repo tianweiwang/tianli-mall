@@ -95,6 +95,8 @@ Task7普通客服运行接线：profile `ms1-chat` 的专用audit-chat采用同�
 
 Task7普通浏览器接线：可选profile `ms1-chat-browser` 增加同一内部网络的audit-ui和audit-browser，两镜像固定实际ID且pull_policy=never。audit-ui仅8080内部监听，用本次真实后台dist/只读nginx配置服务历史路由，同源HTTP转audit-app:8000、/msg升级到audit-chat:40002，保留原HTTP_HOST端口；没有notice服务或宿主端口。audit-browser使用既有Node20/Chromium镜像及只读bundled Playwright Core、验收脚本，只挂本RUN browser-secret目录为只读输入、browser-evidence独占目录为可写输出，/tmp与共享内存为临时本实例空间；不挂其它RUN、Docker socket、整个RUN的写权限或app/bootstrap秘密卷。外域统计等请求在浏览器发送前阻止并单列，不mock应用HTTP/WS。profile启动前必须显式设置已核验的AUDIT_BROWSER_DIST与AUDIT_PLAYWRIGHT_CORE真实目录；未配置占位目录不作为验收输入。收集并登记两个实际容器的ID/IP/image、唯一内部网络、只读挂载和无宿主端口后，才给浏览器本RUN启动许可；普通服务/夹具准备完成后才允许业务页面。原163表、旧cache值/绝对期限/runtime及精确清理保护保持，两个正常视口结果和实际截图到位才勾浏览器完成。
 
+首次普通T7B01实际启动定位到Nginx默认fastcgi_temp仍指向只读/var/cache/nginx，UI native exit1且没有有效IP，资源核对先于浏览器/夹具而失败。所有HTTP上游临时目录（client、proxy、fastcgi、uwsgi、scgi）必须显式放在本实例/tmp，不关闭rootfs只读设置。Node等待准备许可时亦读取本RUN公开终态；若PHP已finish/abort则正常结束等待并保留失败结果，不空等15分钟或启动Chromium。该轮原163表/cache保持，0业务请求/0夹具，专用主/引导实例资源全部0；实际FAIL留存，修正后用新RUN核对。
+
 含可选profile的RUN销毁必须用 `audit_compose --profile '*' down --volumes --remove-orphans`，保留原manifest身份核对。Task7首次普通RUN的旧down命令native0却留下1个audit-chat、1网络及3卷，已据真实资源盘点识别，不称清理完成；剩余资源必须逐一与原manifest的ID、标签、网络ID和卷创建身份匹配后，才沿同一project开启该profile完成销毁。以后每次销毁仍核对实际容器/网络/卷全部0，native0不能代替资源结果。
 
 ### 3.5 应用启动

@@ -313,6 +313,8 @@ T7B01使用新的read-only ISO-FULL，真实当前源码的最终后台构建、
 
 浏览器所需额外缓存须先沿实际源列出生产者和精确键；Common.adv沿旧getDbCache会删除过期eb_cache，运行前只读确认旧缓存无已过期或验收时窗内将过期行，再登记实际默认kf_adv新行和精确清理方式，不能扫删/覆盖旧值。实际额外系统配置从原SystemConfigService生产并逐键登记；原数据库163表原行/DDL/checksum、Redis原值/期限和runtime保持断言继续沿用。原浏览器缺口、正常构建历史和完整安全验收缺口均保持可追溯；出现正常页面缺陷时先保留实际失败证据，再修复并用新证据验证。
 
+T7B01首轮 `202610120304292a9b0e`（源码16abb75ee）：bootstrap/prepare/start/teardown原生exit0，after exit1；实际Nginx默认fastcgi_temp写只读根目录而native exit1，资源核对在Chromium/业务请求/夹具之前失败。原163表/cache保持，0请求/0夹具，主实例及引导清理实例最终容器/网络/卷均0；24行原始FAIL/23NOT RUN逐字节追加，当前219行（8PASS/14FAIL/197NOT RUN），此前195行保持。源修正将全部上游临时目录置于/tmp，并让Node纯文件等待识别PHP终态；尚需新正常RUN验证。此失败不改写此前正常后端与第四轮前端构建成功证据，实际浏览器与视觉验收仍待完成。
+
 2026-10-12普通后端交付：第四个独立RUN `20261012020114e0c80a` 在源码 `1682ccc249fa3364fa07eee9075b52c0504fcb71` 上运行，bootstrap、prepare、start-chat、after及teardown原生全部exit0。实际4个正常HTTP请求均200，34个正常WS客户端帧、5个身份ACK、9个房间/正常退房ACK、8条双方文字和2个服务器游客会话；真实Channel事件经实际客服连接收到。17个自有SQL夹具精确清理，37个精确键登记/23个实际键删除；163表原行、checksum和DDL及旧Redis值/绝对期限保持，仅四张实际夹具表自然计数器变化单列，不恢复快照或回拨计数。主实例及四轮引导清理实例共8个RUN最终容器/网络/卷均0，真实.env与install.lock不存在。
 
 第四轮原始24行逐字节追加，`records/ms1/results.jsonl`现195行（8PASS/13FAIL/174NOT RUN），整体SHA256 `24b17f40dfb2b71504a599679ac04a79abde43bafa8d4ffa0d69fc181bf68870`；此前171行、Task1–6的75行和首57行均保持原字节。自然源码缺失基线及前三轮普通失败仍保留为FAIL；第三轮六个未登记readiness键的实际生产者经源码核对，第四轮按原9个配置/幻灯片生产者逐键预备，保留原最终数据/缓存断言。后台第三轮真实Node20构建exit0，1074个构建输入与本次源码一致，596个dist文件、11个原构建警告留存；36个实际后端/前端/辅助/文档路径hash及完整正常摘要见 `records/ms1/task7-progress-summary.json`。浏览器依赖就绪只代表准备完成，浏览器及uni-app运行验收未完成；原A07/M07/K01及安全、异常、故障、并发/断连、恢复和DDL拒绝场景仍NOT RUN。仅本地L2，未推送、部署、写真实库、通知或人工签收。

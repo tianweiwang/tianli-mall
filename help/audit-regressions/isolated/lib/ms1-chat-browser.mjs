@@ -100,6 +100,14 @@ async function permission() {
         wroteStartup = true;
       } catch {}
     }
+    try {
+      const terminal = readJson(path.join(ROOT, 'status.json'));
+      if (terminal.run_id === waiting.run_id && ['finish', 'abort'].includes(terminal.status)) {
+        fail('PREPARATION_TERMINATED');
+      }
+    } catch (error) {
+      if (error.publicCode) throw error;
+    }
     // Pure files only: no Chromium import/launch, credential use, HTTP or WS.
     if (fs.existsSync(SECRET) && fs.existsSync(READY)) {
       try {
@@ -469,7 +477,7 @@ main().catch(async (error) => {
   result.status = 'FAIL'; result.stage = stageName;
   result.failure_code = typeof error.publicCode === 'string' && /^[A-Z0-9_]{1,64}$/.test(error.publicCode) ?
     error.publicCode : 'UNEXPECTED_RUNTIME_ERROR';
-  try { atomic(path.join(ROOT, 'closed.json'), { run_id: input && input.run_id,
+  try { atomic(path.join(ROOT, 'closed.json'), { run_id: input ? input.run_id : result.run_id,
     contexts_closed: result.contexts_closed }); } catch {}
   try { await httpQueue; } catch {}
   finishMetadata();
