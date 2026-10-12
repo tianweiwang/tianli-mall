@@ -1,7 +1,7 @@
 {
   "milestone": "MS1",
   "task": 9,
-  "status": "MENU_CONTRACT_CORRECTED_SYNTAX_VERIFIED_COMBINED_RERUN_PENDING",
+  "status": "NORMAL_PROFILE_AND_OWN_CACHE_CONTRACT_CORRECTED_SYNTAX_VERIFIED_COMBINED_RERUN_PENDING",
   "first_run": {
     "run_id": "202610121537033b609f",
     "probe_run_id": "20261012154110cc6d53",
@@ -41,15 +41,15 @@
     "all_first_native_evidence_preserved": true
   },
   "record_append": {
-    "previous_rows": 559,
-    "previous_sha256": "cbd77147d8606d45f62fcc26ca51fe75e06be59b97c657419c2701ac26291750",
-    "current_rows": 560,
+    "previous_rows": 560,
+    "previous_sha256": "5daf5e1e2efafff27f0b43ea9ce84e604a2d3a7c7075ff5d23eacb897cd61ae8",
+    "current_rows": 561,
     "current_counts": {
-      "FAIL": 31,
+      "FAIL": 32,
       "PASS": 10,
       "NOT RUN": 519
     },
-    "current_sha256": "5daf5e1e2efafff27f0b43ea9ce84e604a2d3a7c7075ff5d23eacb897cd61ae8",
+    "current_sha256": "72cb6205a01164fd102951f3e5af6d32fc8b9097b3d3107c836948c10a4e2bf8",
     "previous_bytes_preserved": true
   },
   "full_combined_regression": "STARTED_ADMIN_FAILED_REMAINING_STAGES_NOT_RUN",
@@ -227,7 +227,136 @@
     "draft_source_contract_sha256": "6ef532cdbf06d9dd1211fc569787ac89eee8d1327936c3747806ed5840ba0f57",
     "syntax_native_exit": 0,
     "syntax_receipt_sha256": "0876982969efc26a01440b45e8127a98a1f2aad72238bc9660ec8a246bb9c251",
-    "business_rerun": "NOT RUN at installation",
+    "business_rerun": "Combined second run: actual source/observed both empty; exact source contract verified",
     "all_original_raw_failures_preserved": true
+  },
+  "combined_second_run": {
+    "run_id": "2026101217020942cf88",
+    "probe_run_id": "20261012170422a6036e",
+    "source_commit": "ca47a4fcfa6f9f0c133055eebabcd320be58e4b1",
+    "bootstrap_native_exit": 0,
+    "native_stage_exits": {
+      "admin-normal": 1,
+      "register-final-identities": 0,
+      "teardown": 0
+    },
+    "first_failure_stage": "admin-normal",
+    "failure": "RuntimeException@harness.php:14/caller=ms1-admin-normal.php:324",
+    "cleanup_failure": "RuntimeException@harness.php:14/caller=ms1-admin-normal.php:175",
+    "business_requests": [
+      {
+        "method": "POST",
+        "path": "/adminapi/login",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/adminapi/product/product/rule",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/adminapi/menusList",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/adminapi/menus",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/adminapi/setting/menus/unique",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "method": "GET",
+        "path": "/adminapi/setting/info",
+        "http": 200,
+        "business_status": 200
+      },
+      {
+        "method": "PUT",
+        "path": "/adminapi/setting/update_admin",
+        "http": 200,
+        "business_status": 200
+      }
+    ],
+    "readiness_requests": [
+      {
+        "method": "GET",
+        "path": "/adminapi/login/info",
+        "http": 200,
+        "business_status": 200
+      }
+    ],
+    "search_metadata": {
+      "source_filtered_count": 0,
+      "source_root_ids": [],
+      "expected_reachable_count": 0,
+      "observed_count": 0,
+      "expected_flat_ids": [],
+      "observed_flat_ids": [],
+      "expected_flat_types": [],
+      "observed_flat_types": [],
+      "source": "installed visible non-path menus; Common::menusList and sort_list_tier flat depth-first producer",
+      "full_source_contract_verified": true
+    },
+    "case_cleanup": "FAILED_NOT_VERIFIED",
+    "cleanup_receipt": null,
+    "original_state_preserved": null,
+    "full_table_count": null,
+    "full_preservation_receipt": null,
+    "preservation_fields_absent_after_case_cleanup_failure": true,
+    "remaining_business_stages": "NOT RUN after first admin failure",
+    "all_main_probe_dual_label_counts_zero": true,
+    "repository_runtime_files_absent": {
+      "env": true,
+      "public_install_lock": true
+    },
+    "raw_result_path": "evidence/ms1-admin-normal-after-20261012170502.jsonl",
+    "raw_result_sha256": "acbdaebb5110f8d69e057c55c9bd1843b3ffc67af3255cb89e19528f1705275f",
+    "admin_evidence_sha256": "4fd1a0b17f2fef5873a7a76f4d21e0a150f9715b2c585dac2b941ff56ac96320",
+    "host_orchestration_sha256": "2650f514ff70c32adb965f12fdd87bede51609774fbee12457f5d9b0fa48432a",
+    "original_state_preservation_not_proven_by_resource_teardown": true,
+    "all_prior_native_raw_evidence_preserved": true
+  },
+  "normal_profile_fixture_correction": {
+    "before_sha256": "ed79746a206c592406f31ee35a6c6e4fe1174f627b6306664832448b908c8fdd",
+    "after_sha256": "96dbc9b30001c80e8fa1ffd2c1a4204b3451d28f6fb5023b31a41de54383242d",
+    "source_column_maximum_characters": 16,
+    "previous_updated_name_characters": 17,
+    "new_updated_name_characters": 13,
+    "previous_actual_truncated_row_value_not_captured": true,
+    "previous_truncation_explanation_is_source_supported_inference": true,
+    "complete_profile_row_and_exact_owned_cleanup_assertions_unchanged": true,
+    "limited_failure_observation": "field names and public profile types and character counts only; no raw profile text, password, digest, credential or headers",
+    "production_source_schema_permission_or_seed_changed": false,
+    "syntax_native_exit": 0,
+    "syntax_receipt_sha256": "a9f5655684cbacb5f7dccdca259258d1429a0aa5a6078fd77d00b3136f056577",
+    "draft_source_contract_sha256": "c77b2e506c52db93695b0a2effa001d488700d5469b3b1e5c9053aa664561fdd",
+    "business_rerun": "NOT RUN at installation",
+    "all_prior_raw_evidence_preserved": true,
+    "schema_and_name_precheck_implemented_before_fixture_or_business_write": true,
+    "actual_precheck_execution": "NOT RUN at installation",
+    "final_after_sha256": "3435f51e145f931f78ce3eff70dcf6f85b021be5a8e38f8a0f85567cd1091127",
+    "final_syntax_receipt_sha256": "200f90a39762e5baa3a1ff1be7203c7e1e6e7eaf5c07850e80962187f862b211"
+  },
+  "own_cache_consumption_observation": {
+    "source_base_sha256": "96dbc9b30001c80e8fa1ffd2c1a4204b3451d28f6fb5023b31a41de54383242d",
+    "source_after_sha256": "3435f51e145f931f78ce3eff70dcf6f85b021be5a8e38f8a0f85567cd1091127",
+    "source_contract_sha256": "b3d889fe1e6cc7bd0a7dcf2e49102b082f464aa63b22d8d4d710e6f9f6b55d2b",
+    "capture_implemented": "before/after exact owned prefix key/value hashes and native Redis TIME/PTTL absolute expiry around the same two original normal PUTs",
+    "source_consumption_and_four_language_value_rebuilding_distinguished": true,
+    "native_delete_ack": "NOT CAPTURED by unchanged source",
+    "additional_business_requests_or_cache_writes": 0,
+    "complete_original_state_expiry_runtime_and_cleanup_assertions_unchanged": true,
+    "native_syntax_exit": 0,
+    "runtime_verification": "NOT RUN at installation"
   }
 }

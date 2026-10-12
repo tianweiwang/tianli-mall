@@ -94,9 +94,29 @@ function a9_http(string $method,string $path,?string $token,?array $body,array &
     audit_expect(in_array($method.' '.$path,$allowed,true), 'only fixed valid normal admin routes are available');
     audit_guard_assert(); $start=time(); $headers=['Cb-lang'=>'zh-CN'];
     if ($token!==null) $headers['Authori-zation']='Bearer '.$token;
+    $profileWrite=$method==='PUT' && $path==='/adminapi/setting/update_admin';
+    if ($profileWrite) {
+        a9_cache($context); $cachePattern=$context['cache_prefix'].'*'; $redis=audit_redis();
+        $clearBefore=audit_snapshot(['redis'=>[$cachePattern]])['redis'][$cachePattern]; $beforeMembers=$redis->sMembers($context['tag']); sort($beforeMembers);
+        $beforeKeys=array_keys($clearBefore); $taggedBefore=array_merge($beforeMembers,[$context['tag']]); sort($taggedBefore); sort($beforeKeys);
+        audit_expect($beforeKeys===$taggedBefore, 'normal own cache namespace must exactly equal its validated tag and members before source clear');
+        $cacheClockLua="local t=redis.call('TIME');local n=tonumber(t[1])*1000+math.floor(tonumber(t[2])/1000);local r={n};for i,k in ipairs(KEYS) do local p=redis.call('PTTL',k);if p>=0 then r[i+1]=n+p else r[i+1]=p end end;return r";
+        $beforeClock=$redis->eval($cacheClockLua,$beforeKeys,count($beforeKeys)); audit_expect(is_array($beforeClock) && count($beforeClock)===count($beforeKeys)+1, 'actual pre-clear cache clock observation differs');
+    }
     $response=audit_http($method,'http://audit-app:8000'.$path,$headers,$body); $end=time();
     $captureKey=$path==='/adminapi/login/info' ? 'readiness_requests' : 'requests';
     $evidence[$captureKey][]=['method'=>$method,'path'=>$path,'http'=>$response['http'],'business_status'=>$response['json']['status']??null];
+    if ($profileWrite) {
+        $clearAfter=audit_snapshot(['redis'=>[$cachePattern]])['redis'][$cachePattern]; $afterKeys=array_keys($clearAfter); sort($afterKeys);
+        $afterClock=$redis->eval($cacheClockLua,$afterKeys,count($afterKeys)); audit_expect(is_array($afterClock) && count($afterClock)===count($afterKeys)+1, 'actual post-clear cache clock observation differs');
+        $observed=[];
+        foreach (['before'=>[$beforeKeys,$clearBefore,$beforeClock],'after'=>[$afterKeys,$clearAfter,$afterClock]] as $stage=>[$keys,$values,$clock]) {
+            foreach ($keys as $i=>$key) $observed[$stage][]=['key_sha256'=>hash('sha256',$key),'value_sha256'=>$values[$key],'absolute_expiry_ms'=>$clock[$i+1]];
+        }
+        $clearIndex=count($evidence['cache_clear_observations']??[]); $evidence['cache_clear_observations'][]=['source'=>'updateAdmin CacheService::clear(crmeb), followed by Json/getLang(Cb-lang=zh-CN)',
+            'native_delete_ack'=>'NOT CAPTURED by the unchanged source','before_tag_member_count'=>count($beforeMembers),'before_key_count'=>count($beforeKeys),'after_key_count'=>count($afterKeys),
+            'before_redis_time_ms'=>$beforeClock[0],'after_redis_time_ms'=>$afterClock[0],'observations'=>$observed];
+    }
     if ($token!==null) {
         $q=audit_db()->prepare('SELECT * FROM eb_system_log WHERE admin_id=? AND admin_name=? ORDER BY id'); $q->execute([$context['admin_id'],$context['account']]);
         $new=array_filter($q->fetchAll(),static fn(array $r): bool=>!isset($context['logs'][(int)$r['id']]));
@@ -110,6 +130,21 @@ function a9_http(string $method,string $path,?string $token,?array $body,array &
     }
     $json=$response['json'];
     audit_expect($response['http']===200 && is_array($json) && ($json['status']??null)===200 && is_string($json['msg']??null), 'real normal HTTP and business status must both be200');
+    if ($profileWrite) {
+        // Successful source clear consumes the former owned tag members. Its
+        // response then rebuilds exactly four language values with fresh TTLs.
+        $rebuilt=array_map(static fn(string $name): string=>$context['cache_prefix'].$name,['sys_lang_source_map','type_id_zh-CN','lang_type_data','lang_zh_CN']); sort($rebuilt);
+        $expectedAfter=array_merge($rebuilt,[$context['tag']]); sort($expectedAfter); $afterMembers=$redis->sMembers($context['tag']); sort($afterMembers);
+        a9_cache($context); audit_expect($afterKeys===$expectedAfter && $afterMembers===$rebuilt && $redis->pttl($context['tag'])===-1, 'source clear must leave exactly its response-rebuilt language values and owned tag');
+        foreach ($rebuilt as $key) {
+            $i=array_search($key,$afterKeys,true); $expiry=$afterClock[$i+1];
+            audit_expect(is_int($expiry) && $expiry>=$beforeClock[0]+3600000 && $expiry<=$afterClock[0]+3600000, 'response language value must have its real rebuilt3600-second deadline within this request');
+        }
+        $gone=array_values(array_diff($beforeMembers,$rebuilt));
+        $evidence['cache_clear_observations'][$clearIndex]['permanently_consumed_key_hashes']=array_map(static fn(string $key): string=>hash('sha256',$key),$gone);
+        $evidence['cache_clear_observations'][$clearIndex]['rebuilt_language_key_hashes']=array_map(static fn(string $key): string=>hash('sha256',$key),$rebuilt);
+        $evidence['cache_clear_observations'][$clearIndex]['exact_namespace_and_rebased_language_deadlines_verified']=true;
+    }
     $noData=($method==='PUT' && $path==='/adminapi/setting/update_admin') || ($method==='GET' && $path==='/adminapi/setting/admin/logout');
     $shape=array_keys($json); sort($shape);
     if ($noData) { audit_expect($shape===['msg','status'] && !array_key_exists('data',$json), 'normal own write/logout success must omit data exactly as Json::make'); return []; }
@@ -210,7 +245,7 @@ audit_case('T9A01','current_v2_granted_rule_and_own_profile','INTEGRATION',stati
         $executionMillis=(string)(int)floor(microtime(true)*1000); $prefix='audit:http-lang:'.getenv('AUDIT_RUN_ID').':'.$executionMillis.':';
         audit_expect(preg_match('/^audit:http-lang:'.preg_quote((string)getenv('AUDIT_RUN_ID'),'/').':[0-9]+:$/D',$prefix)===1, 'actual decimal-millisecond prefix must satisfy the unchanged supervisor contract');
         $cursor=null; do { audit_expect((audit_redis()->scan($cursor,$prefix.'*',200)?:[])===[], 'actual fresh millisecond cache namespace must be unique and empty'); } while ($cursor!==0);
-        $context['tag']=$prefix.'CRMEB:'.md5('crmeb'); $evidence['execution_millis']=$executionMillis;
+        $context['tag']=$prefix.'CRMEB:'.md5('crmeb'); $context['cache_prefix']=$prefix; $evidence['execution_millis']=$executionMillis;
         $configNames=['site_name','site_url','tourist_avatar','site_logo','site_logo_square','nncnL_crmeb_copyright','login_logo','queue_open','wechat_open_app_id','nncnL_crmeb_copyright_image','custom_admin_js','param_filter_type','param_filter_data','new_order_audio_link','model_checkbox'];
         $names=array_merge(array_map(static fn(string $n): string=>'system_config_'.$n,$configNames),['data_admin_login_slide','range_name','sys_lang_source_map','type_id_zh-CN','lang_type_data','lang_zh_CN','all_auth']);
         foreach ($names as $name) { $context['owned_keys'][]=$prefix.$name; $context['owned_keys'][]=$prefix.$name.'_lock'; } $context['owned_keys'][]=$context['tag'];
@@ -228,7 +263,16 @@ audit_case('T9A01','current_v2_granted_rule_and_own_profile','INTEGRATION',stati
         audit_expect($rules!==[] && (int)$rules[0]>0, 'one actual existing product rule registration must be available');
         $permission=(string)$rules[0]; $evidence['granted_existing_rule_id']=(int)$permission;
         $context['account']='m9a_'.bin2hex(random_bytes(7)); $context['password']='M9a-'.bin2hex(random_bytes(10)).'-X7'; $context['new_password']='M9b-'.bin2hex(random_bytes(10)).'-X8';
-        $context['names']=['MS1 normal admin','MS1 updated admin']; $context['avatar']='/statics/system_images/default_avatar.jpeg';
+        $context['names']=['MS1 normal admin','MS1 new admin']; $context['avatar']='/statics/system_images/default_avatar.jpeg';
+        // Keep both normal names within the installed schema before creating
+        // any fixture or performing its business/cache writes.
+        $nameColumns=audit_db()->query("SHOW COLUMNS FROM eb_system_admin WHERE Field='real_name'")->fetchAll();
+        audit_expect(count($nameColumns)===1 && ($nameColumns[0]['Field']??null)==='real_name'
+            && preg_match('/^varchar\(([0-9]+)\)$/Di',(string)($nameColumns[0]['Type']??''),$nameWidth)===1, 'actual own profile name column must be the installed varchar source');
+        $actualNameWidth=(int)$nameWidth[1]; $nameLengths=array_map(static fn(string $name): int=>mb_strlen($name,'UTF-8'),$context['names']);
+        $evidence['profile_fixture']=['source_maximum_characters'=>16,'actual_maximum_characters'=>$actualNameWidth,
+            'initial_name_characters'=>$nameLengths[0],'updated_name_characters'=>$nameLengths[1],'prechecked_before_fixture_or_write'=>true];
+        audit_expect($actualNameWidth===16 && $nameLengths[0]>0 && $nameLengths[1]>0 && max($nameLengths)<=$actualNameWidth, 'both normal synthetic names must fit the unchanged installed source column');
         audit_expect(is_file(audit_repo_dir().'/crmeb/public'.$context['avatar']), 'actual existing local profile avatar asset must exist');
         $context['secrets']=[$config['signing_key'],$config['auth']['stamp_key'],$config['redis_password'],$config['database']['password'],$context['account'],$context['password'],$context['new_password']];
         $roleName='M9 role '.bin2hex(random_bytes(6)); $pdo=audit_db();
@@ -321,6 +365,20 @@ audit_case('T9A01','current_v2_granted_rule_and_own_profile','INTEGRATION',stati
         $unique=a9_http('GET','/adminapi/setting/menus/unique',$token,null,$context,$evidence); audit_expect(($unique['menus']??null)===[] && ($unique['uniqueAuth']??null)===$login['unique'], 'own unique permissions remain filtered to the API-only role');
         a9_info(a9_http('GET','/adminapi/setting/info',$token,null,$context,$evidence),$context['admin_row']); a9_cache($context); a9_preserve($context['baseline'],a9_state($context['owned_rows']),$context['owned_keys']);
         $before=a9_row('system_admin',$context['admin_id']); a9_http('PUT','/adminapi/setting/update_admin',$token,['real_name'=>$context['names'][1],'head_pic'=>$context['avatar']],$context,$evidence); $after=a9_row('system_admin',$context['admin_id']);
+        $changedFields=[]; $mismatchedFields=[];
+        foreach ($before as $field=>$value) {
+            if ($after[$field]!==$value) $changedFields[]=$field;
+            $expectedValue=$field==='real_name'?$context['names'][1]:($field==='head_pic'?$context['avatar']:$value);
+            if ($after[$field]!==$expectedValue) $mismatchedFields[]=$field;
+        }
+        // Record finite field identities and public profile shapes only. Never
+        // persist passwords, digests, credentials, headers or actual field text.
+        $profileShapes=[];
+        foreach (['real_name'=>$context['names'][1],'head_pic'=>$context['avatar']] as $field=>$expectedValue) {
+            $profileShapes[$field]=['expected_type'=>get_debug_type($expectedValue),'actual_type'=>get_debug_type($after[$field]),
+                'expected_characters'=>mb_strlen($expectedValue,'UTF-8'),'actual_characters'=>is_string($after[$field])?mb_strlen($after[$field],'UTF-8'):null];
+        }
+        $evidence['profile_update']=['changed_field_names'=>$changedFields,'mismatched_field_names'=>$mismatchedFields,'public_field_shapes'=>$profileShapes];
         foreach ($before as $field=>$value) audit_expect($after[$field]===($field==='real_name'?$context['names'][1]:($field==='head_pic'?$context['avatar']:$value)), 'normal profile update changes only own name and avatar'); $context['admin_row']=$after;
         a9_info(a9_http('GET','/adminapi/setting/info',$token,null,$context,$evidence),$after); a9_cache($context); a9_preserve($context['baseline'],a9_state($context['owned_rows']),$context['owned_keys']);
         a9_http('PUT','/adminapi/setting/update_admin',$token,['real_name'=>$after['real_name'],'head_pic'=>$after['head_pic'],'pwd'=>$context['password'],'new_pwd'=>$context['new_password'],'conf_pwd'=>$context['new_password']],$context,$evidence); $changed=a9_row('system_admin',$context['admin_id']);
