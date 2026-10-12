@@ -379,7 +379,7 @@ function m7b_resources(): array
             audit_expect(($row['id'] ?? null)===($manifest['services']['audit-app']['id'] ?? false)
                 &&($row['image_id'] ?? null)===($manifest['services']['audit-app']['image_id'] ?? false),
                 'RUN source anchor container matches current registered app');
-            $anchor=rtrim(str_replace('\\','/',(string)$mount['Source']),'/');
+            $anchor=audit_canonical_host_bind_source((string)$mount['Source']);
         }
     }
     audit_expect($anchor!==''&&($manifest['services']['audit-app']['id'] ?? '')!=='','registered RUN bind source anchor is available');
@@ -409,7 +409,7 @@ function m7b_resources(): array
                 audit_expect(str_starts_with((string)$mount['Name'],$manifest['project'].'_')
                     &&isset($manifest['volume_identities'][$mount['Name']]),'browser volume is not a registered exclusive RUN volume');
             } else {
-                $normalSource=rtrim(str_replace('\\','/',$source),'/');
+                $normalSource=audit_canonical_host_bind_source($source);
                 if ($name==='audit-browser'&&in_array($destination,['/run/audit-browser-secret','/run/audit-browser-evidence'],true)) {
                     $suffix=$destination==='/run/audit-browser-secret' ? '/browser-secret' : '/browser-evidence';
                     audit_expect($normalSource===$anchor.$suffix&&($mount['RW'] ?? null)===($suffix==='/browser-evidence'),

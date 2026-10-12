@@ -179,6 +179,14 @@ function audit_prepare(bool $buildVendor = true): void
     if ($buildVendor) { echo "Built tracked dependencies and current compatibility classmaps in the dedicated vendor volume\n"; }
     echo "Prepared isolated credentials and manifest; no credential values emitted\n";
 }
+function audit_canonical_host_bind_source(string $source): string
+{
+    // Docker Desktop may report one Windows bind as a drive path or its host mount.
+    if (preg_match('~\A([A-Za-z]):(/.*)\z~', $source, $match) === 1) {
+        return '/run/desktop/mnt/host/' . strtolower($match[1]) . $match[2];
+    }
+    return $source;
+}
 function audit_register_resources(): void
 {
     $manifest = audit_manifest();
@@ -199,7 +207,7 @@ function audit_register_resources(): void
         if ($service === 'audit-app') {
             $runMounts = array_values(array_filter($item['mounts'] ?? [], static fn(array $mount): bool => ($mount['Destination'] ?? '') === '/run/audit'));
             audit_expect(count($runMounts) === 1 && ($runMounts[0]['Type'] ?? '') === 'bind' && is_string($runMounts[0]['Source'] ?? null), 'application RUN mount identity rejected');
-            $appRunSource = rtrim(str_replace('\\', '/', $runMounts[0]['Source']), '/');
+            $appRunSource = audit_canonical_host_bind_source($runMounts[0]['Source']);
         }
         if (in_array($service, ['audit-ui', 'audit-browser'], true)) {
             $expectedImage = $service === 'audit-ui'
@@ -236,7 +244,7 @@ function audit_register_resources(): void
     if ($browserMounts !== null) {
         audit_expect(is_string($appRunSource) && $appRunSource !== '', 'browser RUN source anchor unavailable');
         foreach (['/run/audit-browser-secret' => 'browser-secret', '/run/audit-browser-evidence' => 'browser-evidence'] as $destination => $child) {
-            $source = rtrim(str_replace('\\', '/', $browserMounts[$destination]['Source']), '/');
+            $source = audit_canonical_host_bind_source($browserMounts[$destination]['Source']);
             audit_expect($source === $appRunSource . '/' . $child, 'browser belongs to a different RUN directory');
         }
     }
