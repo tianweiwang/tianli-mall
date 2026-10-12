@@ -93,6 +93,8 @@
 
 Task7普通客服运行接线：profile `ms1-chat` 的专用audit-chat采用同一PHP只读源/vendor、RUN私有DML配置和内部网络；新增本RUN独占chat-runtime，runner仅只读观察。显式启动容器后先收集真实容器ID/IP/image/runtime卷并登记，再由普通harness发启动许可；入口只构造Channel40003和Chat40002，无admin40001、宿主端口或Docker socket。启动应用服务前直接PDO只读核对旧客服/会话online全部为0、实际上个日历周游客自动删除范围为空，不提前构造会扫删记录的DAO。正常结束只停止本次登记的进程代次及精确自有夹具；不恢复旧数据。实际新增卷数和运行结果另按真实资源盘点记录，安全复现和负向测试保持NOT RUN。
 
+含可选profile的RUN销毁必须用 `audit_compose --profile '*' down --volumes --remove-orphans`，保留原manifest身份核对。Task7首次普通RUN的旧down命令native0却留下1个audit-chat、1网络及3卷，已据真实资源盘点识别，不称清理完成；剩余资源必须逐一与原manifest的ID、标签、网络ID和卷创建身份匹配后，才沿同一project开启该profile完成销毁。以后每次销毁仍核对实际容器/网络/卷全部0，native0不能代替资源结果。
+
 ### 3.5 应用启动
 
 - 应用从**测试 worktree** 启动（例如 MS0a 的 `codex/ms0a` worktree），绝不从备份检出启动。

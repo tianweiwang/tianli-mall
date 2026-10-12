@@ -251,7 +251,12 @@ class ChatHandle
         $touristRecord = \think\facade\Db::name('store_service_record')->where('user_id', $identity->uid)
             ->where('to_uid', $target)->where('is_tourist', 1)->value('id');
         if ($touristRecord) return true;
-        if ($target > 0 && app()->make(UserServices::class)->get(['uid' => $target, 'status' => 1, 'is_del' => 0], ['uid'])) return false;
+        if ($target > 0 && app()->make(UserServices::class)->get(['uid' => $target, 'status' => 1, 'is_del' => 0], ['uid'])) {
+            $current = $this->recipientConnection($identity, $target, false);
+            $record = \think\facade\Db::name('store_service_record')->where('user_id', $identity->uid)
+                ->where('to_uid', $target)->where('is_tourist', 0)->value('id');
+            if ($current !== null || $record) return false;
+        }
         throw new AuthSessionException();
     }
 

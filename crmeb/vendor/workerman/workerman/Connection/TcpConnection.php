@@ -20,6 +20,7 @@ use Exception;
 /**
  * TcpConnection.
  */
+#[\AllowDynamicProperties]
 class TcpConnection extends ConnectionInterface
 {
     /**

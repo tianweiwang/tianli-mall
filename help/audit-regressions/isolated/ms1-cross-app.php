@@ -261,6 +261,9 @@ function m7h_chat_control(string $action,array $options=[]): array
     do {
         $status=audit_read_control_json(audit_run_dir().'/ms1-chat-status.json');
         if (($status['run_id'] ?? '')===getenv('AUDIT_RUN_ID') && ($status['revision'] ?? '')===$revision) {
+            $receipt=audit_run_dir().'/evidence/ms1-chat-control-'.$revision.'.json';
+            audit_expect(!file_exists($receipt),'normal lifecycle receipt already exists');
+            audit_write_json($receipt,$status);
             audit_expect(($status['status'] ?? '')===$action,'normal registered chat lifecycle failed'); return $status;
         }
         usleep(10000);
@@ -492,7 +495,9 @@ function m7h_sources(array &$evidence): void
         'template/uni-app/libs/new_chat.js','template/uni-app/pages/extension/customer_list/chat.vue',
         'help/audit-regressions/isolated/lib/ms1-chat-entry.php','help/audit-regressions/isolated/ms1-cross-app.php',
         'help/audit-regressions/isolated/compose.yml','help/audit-regressions/isolated/lib/harness.php','help/audit-regressions/isolated/lib/guard.php',
-        'crmeb/crmeb/compat/workerman/Events/Select.php','docs/multi-merchant/03-test-environment.md',
+        'crmeb/crmeb/compat/workerman/Events/Select.php',
+        'crmeb/vendor/workerman/workerman/Worker.php','crmeb/vendor/workerman/workerman/Connection/TcpConnection.php',
+        'docs/multi-merchant/03-test-environment.md',
         'docs/multi-merchant/06-plan-ms1.md','help/audit-regressions/isolated/README.md'];
     $actual=[]; foreach ($files as $file) {
         $path=audit_repo_dir().'/'.$file;

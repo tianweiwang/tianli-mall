@@ -300,6 +300,8 @@ WebSocket正常协议：白名单仅kefu_login、login、guest_login、to_chat�
 
 普通T7C01：新的read-only ISO-FULL实例，先保存源码缺失的自然基线；启动前只读核对原store_service/store_service_record全部online=0，且StoreServiceRecordDao的last-week游客自动删除范围为0。独立audit-chat只启动实际Channel40003和Chat40002，不启动admin40001、不映射宿主端口，源/vendor只读并用专用runtime，身份/内网/双哨兵/DML保护及实际容器资源登记保持。合法自有User/StoreService用现真实底层发行器和白名单，避免BaseServices用户登录通知；双方保持在线，使用不会命中旧自动回复规则的正常文本。核对合法客服HTTP、顾客/游客登录、房间、文本双方收发、服务器身份/分类和正常退房/重新建立连接，精确清理仅本次ID/凭据键/新序号行及自然计数器，不恢复旧行、不回拨已有序号。原A07/M07/K01、无效凭据、故障、并发/断连及恢复仍NOT RUN；普通结果不替代这些验收。
 
+首次普通运行暴露PHP8.2兼容边界：实版Workerman Worker在构造器2148给未声明workerId赋值，被Think错误处理器转为ErrorException，停在业务请求和WS登录之前。原FAIL、三个自有夹具及其成功清理/163表和旧cache保持证据留存。最小兼容修复在tracked vendor/workerman/workerman/Worker.php声明该实际属性及Channel.Server构造使用的channels数组；TcpConnection承载旧WebSocket协议及应用连接metadata的动态属性，按实际producer/consumer增加PHP原生扩展声明，保留原错误级别、类型检查和readonly ChatIdentity，不屏蔽弃用/异常或改断言。实际执行Worker为3.5.19，不能把composer.lock的3.5.34当作运行来源；必要两个vendor路径纳入Task7来源清单。通过新正常ISO验证，不注入故障，也不覆盖首次运行记录。
+
 - [ ] **普通T7C01：** 真实合法客服、顾客与游客身份/房间/文字回复、精确清理及静态跨应用路径。
 - [ ] **客户端正常验证：** 源码接线、实际构建、正常桌面/移动浏览器结果分别记录；缺口保持待验。
 

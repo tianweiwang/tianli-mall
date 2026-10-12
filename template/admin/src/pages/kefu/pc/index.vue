@@ -490,15 +490,8 @@ export default {
       this.orderId = item.orderInfo.id;
       this.isOrder = true;
     },
-    setOnline(data) {
-      Socket.then((ws) => {
-        ws.send({
-          data: {
-            online: data,
-          },
-          type: 'online',
-        });
-      });
+    async setOnline(data) {
+      await this.send('online', { online: data });
       this.online = data;
     },
     // 阻止浏览器默认换行操作
