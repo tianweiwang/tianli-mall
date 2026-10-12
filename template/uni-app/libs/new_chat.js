@@ -108,6 +108,8 @@ Socket.prototype = {
         url: res.data.chat,
         header: { 'content-type': 'application/json' },
         method: 'GET',
+        // Callback form preserves the SocketTask; readiness still waits for onOpen.
+        complete: () => {},
       });
       this.ws = socket;
       socket.onOpen((event) => {

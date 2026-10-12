@@ -457,3 +457,11 @@ Task9第三普通组合 RUN `202610121728559ecb10`（源码 `f7f001b0f`）：独
 - [ ] 在新的 ISO-FULL 环境运行全部 MS0a、MS0b 用例及 MS1 用例；全部 `exit=0`。
 - [ ] 确认 merchantapi 没有任何商品相关路由（`php think route:list` 输出中不含 `product`）。
 - [ ] 写 `records/ms1/report.md`、`results.jsonl`（含迁移演练的前后摘要）；提交；停止，等待验收（11 文档 §5.4）。
+
+### 2026-10-13 当前源码构建、客户端普通运行与连接修复
+
+源码 `9a70e126e60846437b7f44e2178e5ec9a6f6b566` 的 H5 双阶段真实构建已完成：333文件/10,176,274字节，实际 compiler、attach和wrapper exit0；admin第7轮同源码596文件/40,879,708字节、实际npm/attach/container/wrapper exit0，11条已有构建警告保留。路由补证原宿主native1保留；独立观察原真实运行的114项检查通过，仅补证标准route:list、runtime临时文件精确清理与资源库存，不替代完整Task9验收。汇总见 `records/ms1/current-runtime-recheck-summary.json`。
+
+客户端普通宿主attempt1仅构建输入preflight失败，无RUN/业务/raw；attempt2至7的6条实际FAIL逐字节追加，原641行字节保持，总647行（20PASS/38FAIL/589NOT RUN），SHA `39a09a36dda807bf95b0df8c55886c31711a71f68e56f3a60284b970374ab88f`。每轮专用主/引导双标签12库存均全0，env/安装锁无。attempt6用实际原登录页自动初始化响应的UUID哈希与同一快照内确切键匹配，验证7200秒期限并精确清理；不解、不验证或绕过验证码，不调用check/SMS。attempt7的原生uni输入定位和实际vm/$Cache准备通过，正常POST `/api/login`、GET `/api/user`返回200并进入chat；未取得完整聊天认证/room/history，仍FAIL、没有视觉验收。两轮原163表、既有缓存绝对期限/runtime和精确清理核对通过；不补造早期未取得的保持结果。
+
+实施前源决策：实际安装H5的 `core/service/uni.js` 使用 `promisify`，`core/helpers/promise.js` 对没有success/fail/complete回调的connectSocket返回Promise；`libs/new_chat.js` 无回调却调用返回值的onOpen，违反当前SDK合同，符合attempt7在history前止步的现象。窄修在connectSocket传入complete回调，以取得原生SocketTask；ready仍仅由真实onOpen完成，认证ACK、history、room、发送和身份核对全部保持。须重新构建并运行正常客户端/视觉验收后才能记Task7通过。未运行原安全、异常、故障、并发/断连注入或恢复测试；Task7、Task9和完整MS1仍未验收，无push/deploy/真实库操作/签收。
