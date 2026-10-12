@@ -5616,6 +5616,14 @@
       "status": "PASS",
       "sha256": "98196a612b0ca6fc4e03a2dfb714985030fbdf2c71e45c15ece140cd5d45b342",
       "summary": "task8-worker-summary.json"
+    },
+    {
+      "scope": "current-source ordinary combined MS1 recheck with original closing observer FAIL retained",
+      "run_id": "202610121728559ecb10",
+      "previous_rows": 561,
+      "current_rows": 641,
+      "current_sha256": "f0f055d8cba98446137037a225aed924b59ebeb34528bbefd6c2bea6128c901a",
+      "previous_bytes_preserved": true
     }
   ],
   "admin_build_round_6": {
@@ -6850,5 +6858,156 @@
       "No browser runtime, actual login/chat or mobile client acceptance is established.",
       "Task 7 and MS1 acceptance remain incomplete."
     ]
+  },
+  "combined_normal_recheck": {
+    "run_id": "202610121728559ecb10",
+    "source_commit": "f7f001b0f0543f9291ab3de552041183e267fae8",
+    "task7_backend_native_exit": 0,
+    "task7_browser_native_exit": 0,
+    "browser_exited_native_zero_restart_zero": true,
+    "root_manual_screenshot_review": {
+      "path": "C:/Users/Vwang/.tianli-audit/202610121728559ecb10/browser-evidence/manual-screenshot-review-root.json",
+      "sha256": "09f9123fa3a15d856d1b5f093b70c3b4176448f3a8c8408ce6b3133f172678a1",
+      "png_count": 5,
+      "ordinary_affected_scope_reviewed": true
+    },
+    "raw_ms1_append": {
+      "previous_rows": 561,
+      "previous_sha256": "72cb6205a01164fd102951f3e5af6d32fc8b9097b3d3107c836948c10a4e2bf8",
+      "appended_rows": 80,
+      "appended_counts": {
+        "PASS": 10,
+        "NOT RUN": 70
+      },
+      "current_rows": 641,
+      "current_counts": {
+        "FAIL": 32,
+        "PASS": 20,
+        "NOT RUN": 589
+      },
+      "current_sha256": "f0f055d8cba98446137037a225aed924b59ebeb34528bbefd6c2bea6128c901a",
+      "previous_bytes_preserved": true,
+      "original_raw_sources": [
+        {
+          "path": "evidence/ms1-admin-normal-after-20261012173150.jsonl",
+          "sha256": "c12d982ba3e82a4122e709a69fb439d8d8dffa21ff08cb98ff9fdaa581467272",
+          "rows": 1,
+          "counts": {
+            "PASS": 1
+          }
+        },
+        {
+          "path": "evidence/ms1-worker-functional-after-20261012173423.jsonl",
+          "sha256": "1674d33c48b013a17a02f7ed977adc480ed7e3ef0d5212bae56fc9b5bddcd976",
+          "rows": 1,
+          "counts": {
+            "PASS": 1
+          }
+        },
+        {
+          "path": "evidence/ms1-migration-after-20261012173431.jsonl",
+          "sha256": "f53ba5b5b9a839a6b461b2174ee2c82543beedec22d660437749fc8fc28a4060",
+          "rows": 2,
+          "counts": {
+            "PASS": 1,
+            "NOT RUN": 1
+          }
+        },
+        {
+          "path": "evidence/ms1-context-after-20261012173450.jsonl",
+          "sha256": "7761719a245fe556c4dab7c8ae534c1d54196c9c7be34b427cc8f5095922e834",
+          "rows": 3,
+          "counts": {
+            "PASS": 1,
+            "NOT RUN": 2
+          }
+        },
+        {
+          "path": "evidence/ms1-merchantapi-after-20261012173520.jsonl",
+          "sha256": "1448a74c9fbfc73c2d1372e504696f906f5309acac7f776a1ec0576ada958a86",
+          "rows": 8,
+          "counts": {
+            "PASS": 1,
+            "NOT RUN": 7
+          }
+        },
+        {
+          "path": "evidence/ms1-management-after-20261012173614.jsonl",
+          "sha256": "0601f6ff7318edb6f05448092a421707dd7d9d5b0a1e8fd6b582ab8625681cf5",
+          "rows": 7,
+          "counts": {
+            "PASS": 1,
+            "NOT RUN": 6
+          }
+        },
+        {
+          "path": "evidence/ms1-platform-after-20261012173731.jsonl",
+          "sha256": "cc1d67618a6e1ab07557c80cadeb99a7471f470ef5181d5574d16b7289d81176",
+          "rows": 9,
+          "counts": {
+            "PASS": 1,
+            "NOT RUN": 8
+          }
+        },
+        {
+          "path": "evidence/ms1-cross-app-after-20261012173805.jsonl",
+          "sha256": "78c164b0a9d2df7ddf6128ec1b3969eba70111d554cce13c929bd6a5f41f3d28",
+          "rows": 24,
+          "counts": {
+            "PASS": 1,
+            "NOT RUN": 23
+          }
+        },
+        {
+          "path": "evidence/ms1-chat-browser-after-20261012173855.jsonl",
+          "sha256": "7c8f2b1fae0ceb52a392b69acf797dfb68baeec9c9ec395b8a04694deeb8ad2e",
+          "rows": 24,
+          "counts": {
+            "PASS": 1,
+            "NOT RUN": 23
+          }
+        },
+        {
+          "path": "evidence/ms1-worker-after-20261012173915.jsonl",
+          "sha256": "d57ec130580ba9990f23e3971eb6bad048ef0023f627097cde119c1853951c4b",
+          "rows": 1,
+          "counts": {
+            "PASS": 1
+          }
+        }
+      ]
+    },
+    "all_main_probe_dual_label_counts_zero": true,
+    "original_combined_route_observer_failed": true,
+    "uni_runtime_not_verified": true,
+    "full_Task7_or_MS1_acceptance": false
+  },
+  "uni_runtime_revision4_preparation": {
+    "status": "PRODUCTION_SEND_CONTROL_INSTALLED_CURRENT_BUILD_AND_RUNTIME_PENDING",
+    "preparation_directory": "H:/天俪商城/artifacts/ms1-task7/uni-h5-runtime-revision4-prep",
+    "frozen_file_count": 52,
+    "preparation_manifest_sha256": "4e521cdee337b5da4c13f66f44691129629239882e5d3787142b7c2774d40def",
+    "actual_source_guard_count": 47,
+    "production_files": [
+      {
+        "path": "template/uni-app/pages/extension/customer_list/chat.vue",
+        "before_sha256": "686f8e0ba491c4044f8ba52f4885c658961ac687c1b8e34e425cc4df0d6bbc6e",
+        "after_sha256": "1f7350620aa4ee3ef2e1269b837d19b7082fbb87ae355b08a30b44ace4edcb71",
+        "after_bytes": 27098
+      }
+    ],
+    "entire_business_script_byte_identical": true,
+    "business_script_sha256": "363885fa53ecbe77a3abd82060fc83d09dbb0583e6095bc476b6e6428e72f02e",
+    "original_navigation_pages_and_return_behavior_preserved": true,
+    "real_uni_button_keyboard_listener_transmission_and_compiled_vnode_offline_verified": true,
+    "ordinary_message_and_identity_counts_unchanged": true,
+    "original_four_png_plus_same_mobile_page_320_png": "runtime pending",
+    "request_delta_zero_must_be_actual_observation_not_constant": true,
+    "new_current_source_h5_build": "NOT RUN",
+    "ordinary_runtime_and_root_png_review": "NOT RUN",
+    "native_app_runtime": "NOT RUN",
+    "no_identity_or_response_forgery": true,
+    "source_old_build_success_preserved_as_historic_baseline": true,
+    "external_push_deploy_or_real_database_write": false
   }
 }

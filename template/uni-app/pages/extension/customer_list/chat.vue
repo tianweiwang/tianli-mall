@@ -160,11 +160,16 @@
           confirm-type="send"
           @confirm="sendText"
         />
-        <text
-          class="iconfont icon-fasong"
+        <button
+          class="chat-send-button"
+          role="button"
+          aria-label="发送"
+          tabindex="0"
           @click="sendText"
+          @keydown.enter.prevent="sendText"
+          @keydown.space.prevent="sendText"
           :class="{ isSend: isSend }"
-        ></text>
+        ><text>{{ $t('发送') }}</text></button>
       </view>
       <view class="emoji" @click="isSwiper = !isSwiper"
         ><span class="iconfont icon-biaoqing"></span
@@ -710,18 +715,23 @@ body {
   .footer-box {
     display: flex;
     align-items: center;
+    box-sizing: border-box;
+    flex-shrink: 0;
+    height: auto;
     color: rgba(0, 0, 0, 0.8);
     background: #f7f7f7;
     /* #ifdef APP-PLUS */
     padding: 0 30rpx;
-    height: 70rpx;
-    height: (70rpx + constant(safe-area-inset-bottom)); ///兼容 IOS<11.2/
-    height: calc(70rpx + env(safe-area-inset-bottom)); ///兼容 IOS>11.2/
+    padding-bottom: constant(safe-area-inset-bottom); ///兼容 IOS<11.2/
+    padding-bottom: env(safe-area-inset-bottom); ///兼容 IOS>11.2/
+    min-height: 70rpx;
+    min-height: calc(70rpx + constant(safe-area-inset-bottom));
+    min-height: calc(70rpx + env(safe-area-inset-bottom));
     /* #endif */
 
     /* #ifndef APP-PLUS */
     padding: 0 30rpx 15rpx 30rpx;
-    height: 115rpx;
+    min-height: 115rpx;
 
     /* #endif */
     .words .icon-tupian {
@@ -732,28 +742,54 @@ body {
       display: flex;
       align-items: center;
       flex: 1;
-      height: 64rpx;
-      padding-right: 5rpx;
+      min-width: 0;
+      min-height: 48px;
+      height: auto;
+      padding-right: 4px;
       margin-left: 18rpx;
       background-color: #fff;
       border-radius: 32rpx;
 
       input {
         flex: 1;
+        min-width: 0;
         padding-left: 20rpx;
         height: 100%;
         font-size: 28rpx;
         font-weight: normal;
       }
 
-      .icon-fasong {
-        font-size: 50rpx;
-        color: #ccc;
+      .chat-send-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        flex: 0 0 64px;
+        width: 64px;
+        height: 44px;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        border-radius: 22px;
+        background: transparent;
+        color: #666;
+        font-size: 14px;
         font-weight: normal;
+        line-height: 1;
+        text-align: center;
       }
 
-      .isSend {
-        color: $kf-theme;
+      .chat-send-button::after {
+        border: 0;
+      }
+
+      .chat-send-button:focus-visible {
+        outline: 2px solid $kf-theme;
+      }
+
+      .chat-send-button.isSend {
+        background: $kf-theme;
+        color: #fff;
       }
     }
 
@@ -843,6 +879,7 @@ body {
 
 .chat-scroll-box {
   flex: 1;
+  min-height: 0;
   padding: 30rpx 30rpx 0;
   overflow: hidden;
 

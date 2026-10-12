@@ -1,0 +1,464 @@
+{
+  "milestone": "MS1",
+  "status": "ORDINARY_BUSINESS_STAGES_VERIFIED_ROUTE_OBSERVER_FAILED_UNI_RUNTIME_PENDING",
+  "run_id": "202610121728559ecb10",
+  "cleanup_probe_run_id": "202610121731078ec78e",
+  "source_commit": "f7f001b0f0543f9291ab3de552041183e267fae8",
+  "actual_stage_exits": [
+    {
+      "stage": "admin-normal",
+      "exit": 0
+    },
+    {
+      "stage": "out-normal",
+      "exit": 0
+    },
+    {
+      "stage": "account-normal",
+      "exit": 0
+    },
+    {
+      "stage": "epoch-normal",
+      "exit": 0
+    },
+    {
+      "stage": "login-download-normal",
+      "exit": 0
+    },
+    {
+      "stage": "task1-prepare",
+      "exit": 0
+    },
+    {
+      "stage": "task1-start",
+      "exit": 0
+    },
+    {
+      "stage": "task1-observe",
+      "exit": 0
+    },
+    {
+      "stage": "task2-migration",
+      "exit": 0
+    },
+    {
+      "stage": "task3-context",
+      "exit": 0
+    },
+    {
+      "stage": "task4-merchantapi",
+      "exit": 0
+    },
+    {
+      "stage": "task5-management",
+      "exit": 0
+    },
+    {
+      "stage": "task6-platform",
+      "exit": 0
+    },
+    {
+      "stage": "task7-chat-start",
+      "exit": 0
+    },
+    {
+      "stage": "task7-backend",
+      "exit": 0
+    },
+    {
+      "stage": "task7-browser-start",
+      "exit": 0
+    },
+    {
+      "stage": "task7-browser",
+      "exit": 0
+    },
+    {
+      "stage": "task8-prepare",
+      "exit": 0
+    },
+    {
+      "stage": "task8-start",
+      "exit": 0
+    },
+    {
+      "stage": "task8-observe",
+      "exit": 0
+    },
+    {
+      "stage": "routes-create",
+      "exit": 0
+    },
+    {
+      "stage": "routes-start",
+      "exit": 0
+    },
+    {
+      "stage": "register-final-identities",
+      "exit": 0
+    },
+    {
+      "stage": "teardown",
+      "exit": 0
+    }
+  ],
+  "original_orchestration_status": "FAIL",
+  "original_orchestration_native_exit": 1,
+  "original_finite_diagnostic": {
+    "exception_type": "System.Management.Automation.RuntimeException",
+    "stage": null
+  },
+  "all_business_native_stages_zero": true,
+  "terminal_child_observations": [
+    {
+      "service": "audit-worker",
+      "container_id": "5383c8c9669e2b7031e49613253c369175e39ce69d2b9ecd4d20ba0a9b54cc6e",
+      "state": "exited",
+      "observed_native_exit": 0,
+      "restart_count": 0
+    },
+    {
+      "service": "audit-browser",
+      "container_id": "8e83b0df9b9c4af133a9ce9bdf361bcb57f6e88b83aaa396efc905870e3ca5c0",
+      "state": "exited",
+      "observed_native_exit": 0,
+      "restart_count": 0
+    },
+    {
+      "service": "audit-route-list",
+      "container_id": "5ebc1f1d031f9b9d168875796e40d6472d0df7770042a7b70bcad6af107b0c1d",
+      "state": "exited",
+      "observed_native_exit": 0,
+      "restart_count": 0
+    }
+  ],
+  "final_resources": {
+    "main": {
+      "run_id": "202610121728559ecb10",
+      "scopes": {
+        "project": {
+          "containers": {
+            "count": 0,
+            "identities": []
+          },
+          "networks": {
+            "count": 0,
+            "identities": []
+          },
+          "volumes": {
+            "count": 0,
+            "identities": []
+          }
+        },
+        "run": {
+          "containers": {
+            "count": 0,
+            "identities": []
+          },
+          "networks": {
+            "count": 0,
+            "identities": []
+          },
+          "volumes": {
+            "count": 0,
+            "identities": []
+          }
+        }
+      }
+    },
+    "probe": {
+      "run_id": "202610121731078ec78e",
+      "scopes": {
+        "project": {
+          "containers": {
+            "count": 0,
+            "identities": []
+          },
+          "networks": {
+            "count": 0,
+            "identities": []
+          },
+          "volumes": {
+            "count": 0,
+            "identities": []
+          }
+        },
+        "run": {
+          "containers": {
+            "count": 0,
+            "identities": []
+          },
+          "networks": {
+            "count": 0,
+            "identities": []
+          },
+          "volumes": {
+            "count": 0,
+            "identities": []
+          }
+        }
+      }
+    },
+    "all12_actual_counts_zero": true,
+    "env_absent": true,
+    "install_lock_absent": true
+  },
+  "raw_record_appends": {
+    "ms1": {
+      "previous_rows": 561,
+      "previous_sha256": "72cb6205a01164fd102951f3e5af6d32fc8b9097b3d3107c836948c10a4e2bf8",
+      "appended_rows": 80,
+      "appended_counts": {
+        "PASS": 10,
+        "NOT RUN": 70
+      },
+      "current_rows": 641,
+      "current_counts": {
+        "FAIL": 32,
+        "PASS": 20,
+        "NOT RUN": 589
+      },
+      "current_sha256": "f0f055d8cba98446137037a225aed924b59ebeb34528bbefd6c2bea6128c901a",
+      "previous_bytes_preserved": true,
+      "original_raw_sources": [
+        {
+          "path": "evidence/ms1-admin-normal-after-20261012173150.jsonl",
+          "sha256": "c12d982ba3e82a4122e709a69fb439d8d8dffa21ff08cb98ff9fdaa581467272",
+          "rows": 1,
+          "counts": {
+            "PASS": 1
+          }
+        },
+        {
+          "path": "evidence/ms1-worker-functional-after-20261012173423.jsonl",
+          "sha256": "1674d33c48b013a17a02f7ed977adc480ed7e3ef0d5212bae56fc9b5bddcd976",
+          "rows": 1,
+          "counts": {
+            "PASS": 1
+          }
+        },
+        {
+          "path": "evidence/ms1-migration-after-20261012173431.jsonl",
+          "sha256": "f53ba5b5b9a839a6b461b2174ee2c82543beedec22d660437749fc8fc28a4060",
+          "rows": 2,
+          "counts": {
+            "PASS": 1,
+            "NOT RUN": 1
+          }
+        },
+        {
+          "path": "evidence/ms1-context-after-20261012173450.jsonl",
+          "sha256": "7761719a245fe556c4dab7c8ae534c1d54196c9c7be34b427cc8f5095922e834",
+          "rows": 3,
+          "counts": {
+            "PASS": 1,
+            "NOT RUN": 2
+          }
+        },
+        {
+          "path": "evidence/ms1-merchantapi-after-20261012173520.jsonl",
+          "sha256": "1448a74c9fbfc73c2d1372e504696f906f5309acac7f776a1ec0576ada958a86",
+          "rows": 8,
+          "counts": {
+            "PASS": 1,
+            "NOT RUN": 7
+          }
+        },
+        {
+          "path": "evidence/ms1-management-after-20261012173614.jsonl",
+          "sha256": "0601f6ff7318edb6f05448092a421707dd7d9d5b0a1e8fd6b582ab8625681cf5",
+          "rows": 7,
+          "counts": {
+            "PASS": 1,
+            "NOT RUN": 6
+          }
+        },
+        {
+          "path": "evidence/ms1-platform-after-20261012173731.jsonl",
+          "sha256": "cc1d67618a6e1ab07557c80cadeb99a7471f470ef5181d5574d16b7289d81176",
+          "rows": 9,
+          "counts": {
+            "PASS": 1,
+            "NOT RUN": 8
+          }
+        },
+        {
+          "path": "evidence/ms1-cross-app-after-20261012173805.jsonl",
+          "sha256": "78c164b0a9d2df7ddf6128ec1b3969eba70111d554cce13c929bd6a5f41f3d28",
+          "rows": 24,
+          "counts": {
+            "PASS": 1,
+            "NOT RUN": 23
+          }
+        },
+        {
+          "path": "evidence/ms1-chat-browser-after-20261012173855.jsonl",
+          "sha256": "7c8f2b1fae0ceb52a392b69acf797dfb68baeec9c9ec395b8a04694deeb8ad2e",
+          "rows": 24,
+          "counts": {
+            "PASS": 1,
+            "NOT RUN": 23
+          }
+        },
+        {
+          "path": "evidence/ms1-worker-after-20261012173915.jsonl",
+          "sha256": "d57ec130580ba9990f23e3971eb6bad048ef0023f627097cde119c1853951c4b",
+          "rows": 1,
+          "counts": {
+            "PASS": 1
+          }
+        }
+      ]
+    },
+    "ms0b": {
+      "previous_rows": 1222,
+      "previous_sha256": "12441374368050d31e056c612dbdebf87bf9fcb17aa2d7e917b0a2e4ffa7ae37",
+      "appended_rows": 31,
+      "appended_counts": {
+        "PASS": 30,
+        "NOT RUN": 1
+      },
+      "current_rows": 1253,
+      "current_counts": {
+        "PASS": 644,
+        "FAIL": 602,
+        "NOT RUN": 7
+      },
+      "current_sha256": "c2191173737bb7c714c3bb085e1e38930d72a85be57be06cb43fef0a96577123",
+      "previous_bytes_preserved": true,
+      "original_raw_sources": [
+        {
+          "path": "evidence/ms0b-out-functional-after-20261012173212.jsonl",
+          "sha256": "31a395d43382a94697be19e05f42f99458f777fc643e3814dacf3d799e0138f4",
+          "rows": 6,
+          "counts": {
+            "PASS": 6
+          }
+        },
+        {
+          "path": "evidence/ms0b-account-functional-after-20261012173245.jsonl",
+          "sha256": "ee7c7ecdbee4899e1c0ddf6ddc57c37dbb61fd9c02d4be5684e3965eeac63538",
+          "rows": 16,
+          "counts": {
+            "PASS": 15,
+            "NOT RUN": 1
+          }
+        },
+        {
+          "path": "evidence/ms0b-epoch-functional-after-20261012173314.jsonl",
+          "sha256": "8d7aaa2f303be74ea3cd6c38af43af7afc09fbd0441a0fe162ff5dc7c447db3c",
+          "rows": 3,
+          "counts": {
+            "PASS": 3
+          }
+        },
+        {
+          "path": "evidence/ms0b-login-download-functional-20261012173331448048.jsonl",
+          "sha256": "61abb54feb5a194a6ef00a3ee16267e4a6d90e8132d18d0cebfadd8ecd45cf2f",
+          "rows": 6,
+          "counts": {
+            "PASS": 6
+          }
+        }
+      ]
+    }
+  },
+  "admin_browser_manual_review": {
+    "path": "C:/Users/Vwang/.tianli-audit/202610121728559ecb10/browser-evidence/manual-screenshot-review-root.json",
+    "sha256": "09f9123fa3a15d856d1b5f093b70c3b4176448f3a8c8408ce6b3133f172678a1",
+    "png_count": 5,
+    "ordinary_affected_scope_reviewed": true
+  },
+  "route_cli": {
+    "standard_command": "php think route:list",
+    "scope": "actual merchantapi/route readonly bind to original standard route directory",
+    "source_scope_sha256": "ac661d486ae245da7fb373361555297393fd62892b8f18b3317c383474146d98",
+    "observed_native_exit": 0,
+    "restart_count": 0,
+    "actual_output_sha256": "dad5173f5327a4573b1aeab164210c2a9355884b4e71caf54db864e05d137ba6",
+    "actual_output_bytes": 1355,
+    "independently_parsed_rows": [
+      {
+        "rule": "login",
+        "route": "Login/login",
+        "method": "post",
+        "name": "merchant.login"
+      },
+      {
+        "rule": "password/setup",
+        "route": "Login/setupPassword",
+        "method": "post",
+        "name": "merchant.password.setup"
+      },
+      {
+        "rule": "refresh",
+        "route": "Login/refresh",
+        "method": "post",
+        "name": "merchant.refresh"
+      },
+      {
+        "rule": "logout",
+        "route": "Login/logout",
+        "method": "post",
+        "name": "merchant.logout"
+      },
+      {
+        "rule": "me",
+        "route": "Me/index",
+        "method": "get",
+        "name": "merchant.me"
+      },
+      {
+        "rule": "employees",
+        "route": "Employee/index",
+        "method": "get",
+        "name": "merchant.employee.list"
+      },
+      {
+        "rule": "employees",
+        "route": "Employee/create",
+        "method": "post",
+        "name": "merchant.employee.create"
+      },
+      {
+        "rule": "employees/<id>",
+        "route": "Employee/update",
+        "method": "put",
+        "name": "merchant.employee.update"
+      },
+      {
+        "rule": "employees/<id>/status",
+        "route": "Employee/status",
+        "method": "put",
+        "name": "merchant.employee.status"
+      },
+      {
+        "rule": "roles",
+        "route": "Role/index",
+        "method": "get",
+        "name": "merchant.role.list"
+      },
+      {
+        "rule": "roles",
+        "route": "Role/create",
+        "method": "post",
+        "name": "merchant.role.create"
+      },
+      {
+        "rule": "roles/<id>",
+        "route": "Role/update",
+        "method": "put",
+        "name": "merchant.role.update"
+      }
+    ],
+    "actual_no_product_route": true,
+    "original_collector_status": "FAIL",
+    "confirmed_collector_expectation_error": "expected uppercase HTTP methods; actual framework emits lowercase methods; other columns match",
+    "runtime_before_after_and_exact_own_file_cleanup": "NOT VERIFIED; original assertion failed before these receipts were saved",
+    "original_evidence_not_rewritten": true
+  },
+  "uni_runtime": "NOT VERIFIED",
+  "full_Task9_or_MS1_acceptance": false,
+  "stopped_security_negative_fault_recovery_concurrency_ddl_cases": "NOT RUN",
+  "push_deploy_real_database_write_human_signoff_security_baseline": false
+}

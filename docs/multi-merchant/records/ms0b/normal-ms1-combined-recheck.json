@@ -1,0 +1,68 @@
+{
+  "milestone": "MS0b",
+  "status": "NORMAL_FOUR_SCRIPTS_RECHECK_VERIFIED_FULL_ACCEPTANCE_PENDING",
+  "run_id": "202610121728559ecb10",
+  "source_commit": "f7f001b0f0543f9291ab3de552041183e267fae8",
+  "native_script_exits": {
+    "out-normal": 0,
+    "account-normal": 0,
+    "epoch-normal": 0,
+    "login-download-normal": 0
+  },
+  "raw_record_append": {
+    "previous_rows": 1222,
+    "previous_sha256": "12441374368050d31e056c612dbdebf87bf9fcb17aa2d7e917b0a2e4ffa7ae37",
+    "appended_rows": 31,
+    "appended_counts": {
+      "PASS": 30,
+      "NOT RUN": 1
+    },
+    "current_rows": 1253,
+    "current_counts": {
+      "PASS": 644,
+      "FAIL": 602,
+      "NOT RUN": 7
+    },
+    "current_sha256": "c2191173737bb7c714c3bb085e1e38930d72a85be57be06cb43fef0a96577123",
+    "previous_bytes_preserved": true,
+    "original_raw_sources": [
+      {
+        "path": "evidence/ms0b-out-functional-after-20261012173212.jsonl",
+        "sha256": "31a395d43382a94697be19e05f42f99458f777fc643e3814dacf3d799e0138f4",
+        "rows": 6,
+        "counts": {
+          "PASS": 6
+        }
+      },
+      {
+        "path": "evidence/ms0b-account-functional-after-20261012173245.jsonl",
+        "sha256": "ee7c7ecdbee4899e1c0ddf6ddc57c37dbb61fd9c02d4be5684e3965eeac63538",
+        "rows": 16,
+        "counts": {
+          "PASS": 15,
+          "NOT RUN": 1
+        }
+      },
+      {
+        "path": "evidence/ms0b-epoch-functional-after-20261012173314.jsonl",
+        "sha256": "8d7aaa2f303be74ea3cd6c38af43af7afc09fbd0441a0fe162ff5dc7c447db3c",
+        "rows": 3,
+        "counts": {
+          "PASS": 3
+        }
+      },
+      {
+        "path": "evidence/ms0b-login-download-functional-20261012173331448048.jsonl",
+        "sha256": "61abb54feb5a194a6ef00a3ee16267e4a6d90e8132d18d0cebfadd8ecd45cf2f",
+        "rows": 6,
+        "counts": {
+          "PASS": 6
+        }
+      }
+    ]
+  },
+  "original_combined_orchestration_status": "FAIL at later MS1 route collection",
+  "full_security_or_human_acceptance": false,
+  "stopped_cases": "NOT RUN",
+  "external_push_or_deploy": false
+}
