@@ -286,6 +286,21 @@ Task6普通交付（2026-10-12）：RUN2026101123465067a219，基线源码62ae96
 - Modify（视盘点结果）: `crmeb/crmeb/services/workerman/` 下客服长连接的鉴权入口
 - Create: `help/audit-regressions/isolated/ms1-cross-app.php`
 
+Task7实现合同（2026-10-12，编码前）：保留合法客服、登录顾客和匿名游客的原聊天界面/文本流程，房间与发送身份改由服务器确认。HTTP既有各应用固定认证检查保持其实际范围；不扩大AuthTokenV2应用枚举。必要文件为chat/ChatService.php、ChatHandle.php，新增GuestChatSession.php和ChatIdentity.php，kefuapi/controller/Common.php及route/route.php、KefuApiExceptionHandle.php、HttpEndListener.php、StoreServiceRecordServices.php；客户端精确接线为后台libs/socket.js、游客appChat的桌面/移动两页、客服pc/index.vue和mobile/index.vue/chat_list.vue，以及uni-app/libs/new_chat.js和customer_list/chat.vue。发行HTTP调用按实际api/kefu.js与请求header生产者补齐，不把正常凭据放入URL。专用正常ISO还涉及compose、harness资源登记、独立chat入口/runtime和03说明。无需新增表列或迁移；游客序号使用现eb_cache单个永久键，不调用会扫删旧缓存的getDbCache。
+
+游客发行：固定键kefu_tourist_uid_seq的result为十进制高水位，expire_time=0；用默认Db事务/该PK锁和独立初始化锁先核对再递增，UID取负数，范围-2147483647..-1，不回绕/重置。缺失且已有新负游客日志/记录、计数损坏或耗尽时固定503，不自动恢复；旧正游客历史保持原分类。负ID天然不与UNSIGNED真实User UID碰撞，已核对聊天双方与转接字段SIGNED INT及现非零消费者。移动客服游客消息不导航真实用户资料页，负ID仅显示昵称时可取绝对值。正常发行不新建User或触发登录通知。
+
+GuestChatSession使用独立32随机字节无填充base64url不透明凭据（43字符），不复用JWT或merchant会话。用途固定tianli:kefu-chat:guest，TTL3600秒；用现严格auth配置的epoch及独立有界原生Redis连接，键前缀chat:guest:v1:<epoch>:，只保存凭据原始字节SHA256摘要、服务器UID、服务器选定头像、用途和绝对期限，原生写入/到期均确认。无Cache fallback、延长或自动重试，凭据不入SQL、日志或版本库。issue(string avatar):array返回{uid,token,expires_at}，verify(string token):array及assertCurrent(ChatIdentity):void只按服务端绑定确认有效身份。Common.getServiceUser仅在没有顾客凭据时发行，保留既有uid/tourist_uid/tourist_avatar/is_tourist并追加guest_token/guest_expires_at；顾客凭据从请求header读取，非空验证失败固定失败，不降为游客。对应服务器叶路由加chat_guest标记，异常和HttpEnd在读取正文/参数前按真实kefuapi+标记固定处理，原其它路由保持其合同。
+
+WebSocket正常协议：白名单仅kefu_login、login、guest_login、to_chat、chat、online，ping保持；服务器Channel的transfer通知与客户端消息分开。三种登录均data为凭据字符串、form_type在顶层，服务器成功后返回kind/uid元数据并建立readonly ChatIdentity（凭据私有保存在连接，不能由请求对象写入）；登录后的操作重新按现认证服务或独立游客绑定核对当前身份。to_chat只消费data.id，0为正常退房；顾客/游客目标必须是当前启用客服，客服目标依据当前有效顾客/游客连接或本客服所属真实会话记录确认。chat必须沿本连接已确认房间，发送UID、头像和会话is_tourist均取服务器身份/目标记录；客服回复游客双方日志仍is_tourist=1，不能把客户端收件人标志当作客服身份。saveRecord的同向/反向查询补该真实会话分类；游客不进入真实User订单或微信离线通知分支。online仅合法客服，onClose只移除仍属于本连接的映射。旧正游客记录可供合法客服查看，不能凭正ID建立新游客连接。
+
+客户端先等待getWorkermanUrl完成，再创建socket；认证成功以当前socket收到的对应成功元数据为准，sessionStorage.wsLogin不作权威。新增socket.authenticate(type,credential,formType)的正常ACK时序，游客凭据仅在组件状态中；有效凭据在新正常连接上重新认证后才恢复房间，页面刷新沿原行为重新分配游客。保留id=0退房及服务器record.is_tourist分类，uni-app统一data字符串与顶层form_type并移除URL token。此阶段不新增游客历史HTTP权限。实际构建与正常浏览器验证单列，当前缺依赖/内部浏览器接线不能用旧public/admin构建替代，不宣称源码/语法等同浏览器通过。
+
+普通T7C01：新的read-only ISO-FULL实例，先保存源码缺失的自然基线；启动前只读核对原store_service/store_service_record全部online=0，且StoreServiceRecordDao的last-week游客自动删除范围为0。独立audit-chat只启动实际Channel40003和Chat40002，不启动admin40001、不映射宿主端口，源/vendor只读并用专用runtime，身份/内网/双哨兵/DML保护及实际容器资源登记保持。合法自有User/StoreService用现真实底层发行器和白名单，避免BaseServices用户登录通知；双方保持在线，使用不会命中旧自动回复规则的正常文本。核对合法客服HTTP、顾客/游客登录、房间、文本双方收发、服务器身份/分类和正常退房/重新建立连接，精确清理仅本次ID/凭据键/新序号行及自然计数器，不恢复旧行、不回拨已有序号。原A07/M07/K01、无效凭据、故障、并发/断连及恢复仍NOT RUN；普通结果不替代这些验收。
+
+- [ ] **普通T7C01：** 真实合法客服、顾客与游客身份/房间/文字回复、精确清理及静态跨应用路径。
+- [ ] **客户端正常验证：** 源码接线、实际构建、正常桌面/移动浏览器结果分别记录；缺口保持待验。
+
 - [ ] **Step 1: 写用例**：A07（商家令牌访问平台配置、数据库备份、文件编辑、用户资料、CRUD 生成等 adminapi 接口 → 全部拒绝）；M07（商家令牌 × adminapi/outapi/kefuapi/api，以及 admin/out/kefu/api 令牌 × merchantapi，共 8 组 → 全部拒绝）；K01（商家令牌访问客服 HTTP 接口与 WebSocket 鉴权、房间订阅 → 全部拒绝；平台合法客服仍可用）。
 - [ ] **Step 2–5:** 确认失败 → 修复（若 MS0a 的 type 检查已覆盖 HTTP 部分，只需补 WebSocket 入口）→ 通过 → 提交 `fix: reject merchant tokens outside merchantapi, including kefu websocket`。
 
