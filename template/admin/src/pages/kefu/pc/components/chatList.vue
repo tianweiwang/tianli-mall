@@ -1,16 +1,18 @@
 <template>
   <div class="chatList">
-    <!-- <div class="tab-head">
-      <div
+    <div class="tab-head">
+      <button
+        type="button"
         class="item"
         :class="{ active: item.key == hdTabCur }"
-        v-for="(item, index) in hdTab"
-        :key="index"
+        :aria-pressed="item.key == hdTabCur"
+        v-for="item in hdTab"
+        :key="item.key"
         v-db-click @click="changeTab(item)"
       >
         {{ item.title }}
-      </div>
-    </div> -->
+      </button>
+    </div>
     <div class="scroll-box">
       <vue-scroll :ops="ops" @handle-scroll="handleScroll" v-if="userList.length > 0">
         <div
@@ -134,6 +136,10 @@ export default {
           key: 0,
           title: '用户列表',
         },
+        {
+          key: 1,
+          title: '游客列表',
+        },
       ],
       userList: [],
       curId: '',
@@ -242,7 +248,9 @@ export default {
       this.isScroll = true;
       this.page = 1;
       this.userList = [];
+      this.curId = '';
       this.$emit('changeType', item.key);
+      this.$emit('setDataId', 0);
       this.getList();
     },
     getList() {
@@ -301,24 +309,41 @@ export default {
     justify-content: space-between;
     height: 50px;
     flex-shrink: 0;
-    padding: 0 52px;
+    padding: 0 10px;
+    gap: 8px;
     font-size: 14px;
     color: #000000;
     .item {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      min-width: 0;
+      min-height: 36px;
+      padding: 0 8px;
+      border: 0;
+      background: transparent;
+      font: inherit;
+      color: inherit;
       position: relative;
       cursor: pointer;
+      &:focus-visible {
+        outline: 2px solid var(--prev-color-primary);
+        outline-offset: 2px;
+      }
       &:after {
         display: none;
         content: ' ';
         position: absolute;
         left: 50%;
-        bottom: -15px;
+        bottom: 0;
         transform: translateX(-50%);
         height: 2px;
         width: 100%;
         background: var(--prev-color-primary);
       }
       &.active {
+        font-weight: 600;
         color: var(--prev-color-primary);
         &:after {
           display: block;

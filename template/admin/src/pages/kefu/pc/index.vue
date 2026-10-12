@@ -523,6 +523,7 @@ export default {
     // 获取列表用户信息
     setDataId(data) {
       this.userActive = data;
+      if (data) this.tourist = Number(data.is_tourist);
       this.chatList = [];
       this.upperId = 0;
       this.oldHeight = 0;
@@ -536,6 +537,10 @@ export default {
         this.getChatList();
       } else {
         window.document.title = this.kefuInfo.site_name;
+        this.chatReady = false;
+        if (this.ws && this.ws.isAuthenticated('kefu')) {
+          this.joinChatRoom(0).catch(this.onChatConnectionError);
+        }
       }
     },
     msgClose() {

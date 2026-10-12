@@ -29,15 +29,18 @@
         </div>
       </div>
       <div class="tab-box">
-        <div
+        <button
+          type="button"
           class="tab-item"
           :class="{ on: tabCur == item.key }"
-          v-for="(item, index) in tabList"
+          :aria-pressed="tabCur == item.key"
+          v-for="item in tabList"
+          :key="item.key"
           v-db-click
           @click="changeClass(item)"
         >
           {{ item.title }}
-        </div>
+        </button>
       </div>
       <div class="search-box">
         <el-input v-model="searchTxt" placeholder="搜索用户名称" @change="bindSearch" />
@@ -146,6 +149,10 @@ export default {
         {
           key: 0,
           title: '用户列表',
+        },
+        {
+          key: 1,
+          title: '游客列表',
         },
       ],
       socket: null,
@@ -299,7 +306,7 @@ export default {
         this.list = this.list.concat(res.data);
         this.page++;
         setTimeout(() => {
-          this.$refs.vs.refresh();
+          if (this.$refs.vs) this.$refs.vs.refresh();
         }, 100);
       });
     },
@@ -337,7 +344,7 @@ export default {
         query: {
           toUid: item.to_uid,
           nickname: item.nickname,
-          is_tourist: this.tabCur,
+          is_tourist: item.is_tourist,
         },
       });
     },
@@ -470,13 +477,28 @@ body {
       display: flex;
       padding: 0.2rem 0;
       .tab-item {
+        display: flex;
+        align-items: center;
+        justify-content: center;
         flex: 1;
-        height: 100%;
-        line-height: 0.6rem;
+        min-width: 0;
+        min-height: 0.6rem;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
         text-align: center;
         font-size: 0.3rem;
         &.on {
           color: #3875ea;
+          font-weight: 600;
+          box-shadow: inset 0 -2px #3875ea;
+        }
+        &:focus-visible {
+          outline: 2px solid #3875ea;
+          outline-offset: 2px;
         }
         &:first-child {
           border-right: 1px solid #ddd;

@@ -136,18 +136,22 @@
     }
   },
   "admin_build": {
-    "round": 3,
+    "round": 4,
     "status": "PASS",
+    "source_commit_at_copy": "2f3e48e7e329afaf880ebe76be07be8c70e708d7",
     "node_version": "v20.20.2",
     "npm_version": "10.8.2",
     "native_exits": {
-      "npm-build-3": 0,
-      "docker-run-3": 0
+      "npm-build-4": 0,
+      "docker-run-4": 0
     },
     "round_1_npm_ci_native_exit": 0,
     "tracked_input_count": 1074,
     "current_repository_matches_built_inputs": true,
-    "frontend_manifest_sha256": "bd970b5f63c7c5b858a4e5ed58650a13194b19edaad59272f3bf4007e022bfe3",
+    "source_manifest_sha256": "a3e387cb571cfa312380e6cf16f22fd6cc463b089cb6dc8c82f774f590b8420a",
+    "frontend_manifest_sha256": "5481bdcbc1eab8cf3d576ee31336c0fa92372e4f94aaf5dab9949cad47c72155",
+    "frontend_file_count": 13,
+    "frontend_admin_overlay_count": 11,
     "frontend_sources": [
       {
         "path": "template/admin/src/api/kefu.js",
@@ -175,15 +179,23 @@
       },
       {
         "path": "template/admin/src/pages/kefu/mobile/chat_list.vue",
-        "sha256": "ca3cdb6aa87fccf435867aba4ca9f0f69ac34f00ff91f0bae5e1d3f2edc977e6"
+        "sha256": "4b2d6cf9958992f3e3d4b008d39f2c65f76efb08efbd6b0eacca87c6bb278b6f"
       },
       {
         "path": "template/admin/src/pages/kefu/mobile/index.vue",
         "sha256": "0a907855a8b8a5b62ff83f8154271eaaf971ff0b1723ca3febff7ada1e6cf931"
       },
       {
+        "path": "template/admin/src/pages/kefu/pc/components/chatList.vue",
+        "sha256": "eef91148181e49e6f1e82fe44c01db9221b6d44de7988dba89cf85c8627208d3"
+      },
+      {
+        "path": "template/admin/src/pages/kefu/pc/components/rightMenu.vue",
+        "sha256": "0397a02be2e17c0e473830bb94a6158d6c84cf5122e9f49ee947cc4cde12d2db"
+      },
+      {
         "path": "template/admin/src/pages/kefu/pc/index.vue",
-        "sha256": "bc301d5083bcaf9374d2eac132300c1846349d74bc9ce7c527931f767bc59fa0"
+        "sha256": "00afc1fb6f948428c7f7c03d1a81b587b6b10a59881a80ed839af7260a1f78f1"
       },
       {
         "path": "template/uni-app/libs/new_chat.js",
@@ -194,15 +206,16 @@
         "sha256": "686f8e0ba491c4044f8ba52f4885c658961ac687c1b8e34e425cc4df0d6bbc6e"
       }
     ],
-    "dist_manifest_sha256": "e975306fcaae3005f0d4298691e2def39b70323b4281aa78e0f1d8d4a7c44889",
+    "dist_manifest_sha256": "d9a3eadbfca537e1ad0df814a99677838143ad95bdb4d98541a145b6f401b89a",
     "dist_file_count": 596,
-    "dist_total_bytes": 40874180,
+    "dist_total_bytes": 40876146,
     "build_warning_count": 11,
     "build_warning_categories": [
       "CSS extraction order",
       "asset size",
       "entrypoint size"
-    ]
+    ],
+    "container_isolation_record": "container-isolation-4.json"
   },
   "limits": [
     "Original refusal, invalid or old credentials, fault, concurrency, disconnect, recovery and DDL-denial scenarios remain NOT RUN.",
@@ -804,5 +817,90 @@
     "completed_at": "2026-10-12T02:14:59.1913069Z",
     "env_file_exists": false,
     "install_lock_exists": false
+  },
+  "admin_build_round_3": {
+    "round": 3,
+    "status": "PASS",
+    "node_version": "v20.20.2",
+    "npm_version": "10.8.2",
+    "native_exits": {
+      "npm-build-3": 0,
+      "docker-run-3": 0
+    },
+    "round_1_npm_ci_native_exit": 0,
+    "tracked_input_count": 1074,
+    "current_repository_matches_built_inputs": true,
+    "frontend_manifest_sha256": "bd970b5f63c7c5b858a4e5ed58650a13194b19edaad59272f3bf4007e022bfe3",
+    "frontend_sources": [
+      {
+        "path": "template/admin/src/api/kefu.js",
+        "sha256": "90bbb634e5abb2be9fd9a1aa8157c1d56262cf3393abfe8a0917a382b45d243b"
+      },
+      {
+        "path": "template/admin/src/layout/navBars/breadcrumb/userNews.vue",
+        "sha256": "4728a22d257b04a5cf4f7f0cb53c57cb603edfe3d7b4213e7a8d4052591252bd"
+      },
+      {
+        "path": "template/admin/src/libs/request.js",
+        "sha256": "bbf70687578183e6b22d5cd9a0413abd896af0c6db331792977c725b1a6d7bfd"
+      },
+      {
+        "path": "template/admin/src/libs/socket.js",
+        "sha256": "9c4068f6a2765d1c5216a247753aece8bf3019632929edc840a3cb7b29942366"
+      },
+      {
+        "path": "template/admin/src/pages/kefu/appChat/index.vue",
+        "sha256": "1e9e4ea1b969fcb894ae103df4d7269a688241a23906f2bdbbb36806a92ce30d"
+      },
+      {
+        "path": "template/admin/src/pages/kefu/appChat/mobile/index.vue",
+        "sha256": "8fa985f9a442d8a2485e13bb4e4f73bde4eddd248c6d3ee8893199204d9c9ad8"
+      },
+      {
+        "path": "template/admin/src/pages/kefu/mobile/chat_list.vue",
+        "sha256": "ca3cdb6aa87fccf435867aba4ca9f0f69ac34f00ff91f0bae5e1d3f2edc977e6"
+      },
+      {
+        "path": "template/admin/src/pages/kefu/mobile/index.vue",
+        "sha256": "0a907855a8b8a5b62ff83f8154271eaaf971ff0b1723ca3febff7ada1e6cf931"
+      },
+      {
+        "path": "template/admin/src/pages/kefu/pc/index.vue",
+        "sha256": "bc301d5083bcaf9374d2eac132300c1846349d74bc9ce7c527931f767bc59fa0"
+      },
+      {
+        "path": "template/uni-app/libs/new_chat.js",
+        "sha256": "7771b671c768a5820c2804ec9132021ab83e5b3393269cf5771346bce8aa28e1"
+      },
+      {
+        "path": "template/uni-app/pages/extension/customer_list/chat.vue",
+        "sha256": "686f8e0ba491c4044f8ba52f4885c658961ac687c1b8e34e425cc4df0d6bbc6e"
+      }
+    ],
+    "dist_manifest_sha256": "e975306fcaae3005f0d4298691e2def39b70323b4281aa78e0f1d8d4a7c44889",
+    "dist_file_count": 596,
+    "dist_total_bytes": 40874180,
+    "build_warning_count": 11,
+    "build_warning_categories": [
+      "CSS extraction order",
+      "asset size",
+      "entrypoint size"
+    ]
+  },
+  "ui_followup": {
+    "status": "implemented_build_verified_browser_pending",
+    "affected_paths": [
+      "template/admin/src/pages/kefu/pc/components/chatList.vue",
+      "template/admin/src/pages/kefu/pc/components/rightMenu.vue",
+      "template/admin/src/pages/kefu/pc/index.vue",
+      "template/admin/src/pages/kefu/mobile/chat_list.vue"
+    ],
+    "changes": [
+      "Desktop and mobile expose the actual guest conversation category through centered native buttons.",
+      "Category changes clear the selected desktop room with normal id=0; server records determine guest classification.",
+      "Empty and guest selections omit real User detail/order/product-history calls; mobile empty lists tolerate absent scroll references."
+    ],
+    "browser_acceptance": "NOT RUN",
+    "visual_acceptance": "NOT RUN"
   }
 }

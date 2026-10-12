@@ -425,7 +425,7 @@ export default {
   },
   watch: {
     uid(nVal, oVal) {
-      if (nVal != oVal && this.isTourist == 0) {
+      if (nVal != oVal && this.hasUserContext()) {
         this.orderConfig.page = 1;
         this.isOrderScroll = true;
         this.orderList = [];
@@ -455,10 +455,14 @@ export default {
     this.bus.$on('selectRightMenu', (arg) => {
       this.curStatus = arg;
     });
-    if (this.uid && this.isTourist == 0)
+    if (this.hasUserContext())
       Promise.all[(this.getUserInfo(), this.getOrderList(), this.productCart(), this.getUserGroup())];
   },
   methods: {
+    hasUserContext() {
+      const uid = Number(this.uid);
+      return Number(this.isTourist) === 0 && Number.isSafeInteger(uid) && uid > 0;
+    },
     // 设置分组
     onChange(e) {
       if (e) {
@@ -495,6 +499,7 @@ export default {
     },
     //获取左侧用户列表用户详情
     getUserInfo() {
+      if (!this.hasUserContext()) return;
       userInfo(this.uid)
         .then((res) => {
           this.activeUserInfo = res.data;
@@ -505,7 +510,7 @@ export default {
     },
     // 获取订单列表
     getOrderList() {
-      if (!this.isOrderScroll) return;
+      if (!this.hasUserContext() || !this.isOrderScroll) return;
       getorderList(this.uid, {
         page: this.orderConfig.page,
         limit: this.limit,
@@ -603,7 +608,7 @@ export default {
     },
     // 商品购买记录
     productCart() {
-      if (!this.isGoodsScroll) return;
+      if (!this.hasUserContext() || !this.isGoodsScroll) return;
       productCart(this.uid, {
         store_name: this.storeName,
         page: this.page,
@@ -616,7 +621,7 @@ export default {
     },
     // 商品足迹
     productVisit() {
-      if (!this.isGoodsScroll) return;
+      if (!this.hasUserContext() || !this.isGoodsScroll) return;
       productVisit(this.uid, {
         store_name: this.storeName,
         page: this.page,
@@ -629,6 +634,7 @@ export default {
     },
     // 热销商品
     productHot() {
+      if (!this.hasUserContext()) return;
       productHot(this.uid, {
         store_name: this.storeName,
         page: this.page,
