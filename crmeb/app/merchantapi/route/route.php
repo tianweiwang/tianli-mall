@@ -36,3 +36,9 @@ Route::post('roles', 'Role/create')->option(['merchant_permission' => 'merchant.
     ->middleware([MerchantAuthTokenMiddleware::class, MerchantPermissionMiddleware::class])->name('merchant.role.create');
 Route::put('roles/<id>', 'Role/update')->option(['merchant_permission' => 'merchant.role.manage'])
     ->middleware([MerchantAuthTokenMiddleware::class, MerchantPermissionMiddleware::class])->name('merchant.role.update');
+
+// Register product routes only after this app has cleared prior global routes.
+$registerProducts = require __DIR__ . "/product.php";
+if (!$registerProducts instanceof \Closure) { throw new \LogicException("Invalid product route module"); }
+$registerProducts();
+unset($registerProducts);

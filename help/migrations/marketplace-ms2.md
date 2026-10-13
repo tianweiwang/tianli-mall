@@ -155,7 +155,7 @@ backfill 的确认更新和非 owner 校验在自身事务中进行；失败时�
 
 enforce 要求 SESSION **及** GLOBAL 的实际 sql_mode 至少包含 `STRICT_TRANS_TABLES` 或 `STRICT_ALL_TABLES`。CLI 不设置模式，也不把调用方另行降低 SESSION 的连接当已保护；没有新增正数 CHECK，所以 NOT NULL/no default 不能被宣称可阻止显式写 0。专用新库的旧安装兼容窗口属于另行记录的 bootstrap 初始化，须先恢复后续严格模式，不应用到四命令或业务连接。
 
-MySQL DDL逐条隐式提交；任何失败可能保留合法已完成的列/表/owner 收紧，结果未知时 `changed=null`。不要删原行、恢复旧快照、重造 self、预写状态或把合法最终 owner 放宽。先保留原失败、私有状态和报告，核当时实际 `check`、真实步骤、源/schema/映射绑定及维护前提；只在实际状态仍为 CLI认可的 staged/enforcing/enforced 合法形态时继续原命令。状态/身份/源不一致不能通过猜 ID、重建登记或改 hash 绕过。命令完成与生产恢复、历史确认和完整验收分别记录。
+MySQL DDL逐条隐式提交；任何失败可能保留合法已完成的列/表/owner 收紧，结果未知时 `changed=null`。不要删原行、恢复旧快照、重造 self、预写状态或把合法最终 owner 放宽。先保留原失败、私有状态和报告，核当时实际 `check`、真实步骤、源/schema/映射绑定及维护前提；只在实际状态仍为 CLI认可的 structure/enforcing/enforced 合法形态时继续原命令。状态/身份/源不一致不能通过猜 ID、重建登记或改 hash 绕过。命令完成与生产恢复、历史确认和完整验收分别记录。
 
 ## 已验证范围与待办
 

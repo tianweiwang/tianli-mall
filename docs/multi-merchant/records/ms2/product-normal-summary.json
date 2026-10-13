@@ -1,0 +1,143 @@
+{
+  "schema": 1,
+  "status": "VERIFIED_NORMAL_TASK3_ONLY",
+  "milestone": "MS2",
+  "authorization": "L2 local source integration and commit only",
+  "test_source_before_integration": "eb946973c54f9d6c936f0154999078d84609a1f6",
+  "candidate_manifest_sha256": "c5895f71b4b939d0988cf34e05c0837e52e42fff0f150cc334d8137ccc813413",
+  "normal_kit_manifest_sha256": "144b9e9626803de15cee4bc7866bbe36fe581bfddb1978665e45b4c657e27a1f",
+  "actual_run": "20261013021742b1252a",
+  "actual_cleanup_probe": "202610130219552298b6",
+  "actual_wrapper_native_exit": 0,
+  "actual_child_native_exit": 0,
+  "actual_child_restart_count": 0,
+  "actual_HTTP_requests": 36,
+  "all_HTTP_and_business_status_200": true,
+  "actual_distinct_migration_children": 4,
+  "all_migration_children_native_exit_0": true,
+  "framework_product_routes": 8,
+  "framework_stock_routes": 1,
+  "detail_zero_write_observations": 4,
+  "stock_deltas": [
+    5,
+    4,
+    -2
+  ],
+  "nonempty_stock_ledgers": 3,
+  "physical_root_stock_after_adjustments": 7,
+  "SKU_identity_inventory_retention_verified": true,
+  "normal_create_edit_review_submit_show_batch_hide_soft_delete_repeats_verified": true,
+  "legacy_normal_no_filter_reads_preserved": true,
+  "full_public_snapshot_files": [
+    {
+      "stage": "original-installed-158",
+      "bytes": 867895,
+      "sha256": "676d0a2cc0950b813314ebc799f18378471c74840060cd003f10ad594c0e1a4d"
+    },
+    {
+      "stage": "after-real-ms1-163",
+      "bytes": 894934,
+      "sha256": "e09c1ecef16c8e4416322f02d3564c0e98cbd10461c4b91e2c668c3704b5fc7c"
+    },
+    {
+      "stage": "after-real-ms2-164",
+      "bytes": 909428,
+      "sha256": "076a29a6d928a60ba729106bf82f60d0bf5a1e9d963a264d79a2daf1ceda76c5"
+    },
+    {
+      "stage": "business-original-164",
+      "bytes": 7392376,
+      "sha256": "a276a6420c4794101a2a5a4332081dcfb63ae7a2def48b634a1978e81bbd46f5"
+    },
+    {
+      "stage": "declared-normal-fixtures",
+      "bytes": 7399717,
+      "sha256": "7df1b9f15025e17febb17e10c80043b3436b01fae248bc1ec73ec741fa0c7c9b"
+    },
+    {
+      "stage": "normal-business-before-cleanup",
+      "bytes": 7404768,
+      "sha256": "caf84967a9732aa55f714dc035b6cc4c913ea18cd8a9ee19f7d830fcf3186566"
+    },
+    {
+      "stage": "final-after-own-cleanup-164",
+      "bytes": 7392471,
+      "sha256": "02186c71d5e4220963d59a6dd91f8373a14c7f03c03fa4775be8806519bd5bda"
+    }
+  ],
+  "normal_receipt_sha256": "ccbe3aeb07fa3dbfebe51e1c2e28d29e9e756762fa6860542e149d6875e40731",
+  "exact_new_rows_removed": 44,
+  "exact_registered_source_cache_keys_removed": 29,
+  "exact_private_input_files_removed": 2,
+  "all164_original_rows_PK_paths_nonowner_schema_cache_absolute_expiry_four_runtime_pure_asset_preserved": true,
+  "normal_app_stop_verified": true,
+  "all12_actual_resource_counts_zero": true,
+  "env_absent": true,
+  "install_lock_absent": true,
+  "memory_limit": "128M",
+  "actual_peak_memory_bytes": 123736064,
+  "all235_original_assert_call_sites_unchanged": true,
+  "old_failed_attempts_preserved": true,
+  "formal_PHP_files_integrated": [
+    {
+      "path": "crmeb/app/dao/marketplace/product/MerchantProductDao.php",
+      "after_bytes": 15264,
+      "after_sha256": "41a69f001179ddc2549b8900aba2e702aec8688a416f57d374e8a186cbe26ea3"
+    },
+    {
+      "path": "crmeb/app/merchantapi/controller/Product.php",
+      "after_bytes": 2470,
+      "after_sha256": "308187c6d962bf6b98addbf24adcf4397e71e3f7a88b42c0bccbc923df84ce23"
+    },
+    {
+      "path": "crmeb/app/merchantapi/controller/Stock.php",
+      "after_bytes": 861,
+      "after_sha256": "b4d3c3d9a0852532003bf0dcbed868d7e1f388505a8eb7abeb2c85a2bc197b41"
+    },
+    {
+      "path": "crmeb/app/merchantapi/route/product.php",
+      "after_bytes": 1842,
+      "after_sha256": "15014b4c34aae896e812404df03f9bd2a78344288bb880b87ce31eab4fbd0bdc"
+    },
+    {
+      "path": "crmeb/app/merchantapi/route/route.php",
+      "after_bytes": 2772,
+      "after_sha256": "abecb3c2ef0e37b594f3b50482d4f7226d66ef962d5c4729b564acab89f702db"
+    },
+    {
+      "path": "crmeb/app/model/product/product/StoreProduct.php",
+      "after_bytes": 14902,
+      "after_sha256": "7d952cbcce5f980d6e0d4a6fca6fa66cce0ee7813467b70d27b48df3ea68860e"
+    },
+    {
+      "path": "crmeb/app/services/marketplace/product/MerchantProductInput.php",
+      "after_bytes": 11828,
+      "after_sha256": "47b4f90b053c4ce9e7eec9eb7956e618b295b1d2cc82c9eb5b2a76cd14ca7c01"
+    },
+    {
+      "path": "crmeb/app/services/marketplace/product/MerchantProductServices.php",
+      "after_bytes": 13508,
+      "after_sha256": "c0c4256de3b1e28535f04984086e66cf7808d113869eeef188084f14ea9b0ec7"
+    },
+    {
+      "path": "crmeb/app/services/marketplace/product/MerchantStockServices.php",
+      "after_bytes": 1819,
+      "after_sha256": "0696cf0c8d2163dd7263a681491d25bcd98881300bd71e50482db060f02eebe6"
+    }
+  ],
+  "PHP_syntax": "all nine unchanged from actual previous native0 syntax; actual runtime loaded final same overlay bytes",
+  "platform_review_API": "NOT IMPLEMENTED / NOT RUN",
+  "public_current_SKU_and_order_consumers": "NOT IMPLEMENTED / NOT RUN",
+  "merchant_product_UI": "NOT VERIFIED",
+  "historical_owner_mapping": "UNKNOWN / NOT EXECUTED",
+  "backfill_enforce_in_this_run": "NOT RUN",
+  "enabled": false,
+  "stopped_cases": "NOT RUN",
+  "full_Task3_complete": false,
+  "full_MS2_complete": false,
+  "signoff": "PENDING",
+  "push": false,
+  "deploy": false,
+  "raw_evidence_location": "outside repository; artifact attempt9 and dedicated audit run directory",
+  "scope_note": "normal local integration evidence only; not complete original D or G acceptance"
+}

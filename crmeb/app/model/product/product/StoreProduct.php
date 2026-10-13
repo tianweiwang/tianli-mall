@@ -140,7 +140,17 @@ class StoreProduct extends BaseModel
      */
     public function searchMerIdAttr($query, $value)
     {
-        $query->where('mer_id', $value ?? 0);
+        // Omission/null is a catalog filter choice, never merchant authorization.
+        if ($value === null) {
+            return;
+        }
+        if (is_string($value) && preg_match('/\A[1-9][0-9]{0,9}\z/D', $value) === 1 && (int)$value <= 4294967295) {
+            $value = (int)$value;
+        }
+        if (!is_int($value) || $value < 1 || $value > 4294967295) {
+            throw new \think\exception\HttpException(422, '商家筛选参数不正确');
+        }
+        $query->where('mer_id', $value);
     }
 
     /**
