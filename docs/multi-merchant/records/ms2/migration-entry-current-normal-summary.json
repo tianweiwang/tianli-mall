@@ -1,0 +1,240 @@
+{
+  "schema": 1,
+  "status": "VERIFIED_REPOSITORY_RELATIVE_NORMAL_MIGRATION_ENTRY_ONLY",
+  "milestone": "MS2",
+  "test_source": "fc86eeb19a01da7b4801ad3ade36143277742cb4",
+  "actual_run": "20261013051720abb60b",
+  "actual_wrapper_native_exit": 0,
+  "terminal_tool_chunk": "78020a",
+  "actual_finite_native_exit": 0,
+  "actual_restart_count": 0,
+  "actual_children": 10,
+  "actual_command_counts": {
+    "MS1_apply": 1,
+    "MS2": {
+      "apply-structure": 2,
+      "backfill": 2,
+      "check": 3,
+      "enforce": 2
+    },
+    "MS2_processes": 9,
+    "total_processes": 10
+  },
+  "all_children_native0_and_stdout_exact_verified": true,
+  "entry_uses_repository_relative_inputs": true,
+  "all19_actual_source_files_bound": true,
+  "actual_source_files": [
+    {
+      "path": "crmeb/app/model/product/product/StoreProductRelation.php",
+      "bytes": 1917,
+      "sha256": "a0cc783f295fe0ca66a4f0388a00924930d91ea4445e80fae9df36a8227c4fe8"
+    },
+    {
+      "path": "crmeb/app/services/activity/bargain/StoreBargainServices.php",
+      "bytes": 53937,
+      "sha256": "8e891eaab73c46fc3576f14a673f3abd0da613e40d5421bfa12ce81b1eba5936"
+    },
+    {
+      "path": "crmeb/app/services/activity/combination/StoreCombinationServices.php",
+      "bytes": 33764,
+      "sha256": "685f656f9b1cc05a556344e0be5407f16ed11fad43a7a6b090cecdf2b7ac92bb"
+    },
+    {
+      "path": "crmeb/app/services/activity/seckill/StoreSeckillServices.php",
+      "bytes": 44051,
+      "sha256": "20567192733dffe3dec8df11d39caf630340e9c4bc6a815e5a29f2955b8e748e"
+    },
+    {
+      "path": "crmeb/app/services/order/StoreOrderComputedServices.php",
+      "bytes": 28007,
+      "sha256": "9dad7a45a74219bdbd9b2cfab7a67bca272037f01a34703b25c62fba7b8db370"
+    },
+    {
+      "path": "crmeb/app/services/product/product/StoreDescriptionServices.php",
+      "bytes": 2164,
+      "sha256": "82e7235a7fa1ba80e103662fe529490f615885cf9fe44980f34f15de2120d60c"
+    },
+    {
+      "path": "crmeb/app/services/product/product/StoreProductServices.php",
+      "bytes": 134037,
+      "sha256": "4b5d5a1a522b1e3fd41a6b08bc6112d3fa7ebd3b5cb539b7425e6265b4769b24"
+    },
+    {
+      "path": "crmeb/app/services/system/attachment/SystemAttachmentServices.php",
+      "bytes": 12440,
+      "sha256": "5c22269b7a9acef65cf8ebdefbe7efc3fe4bb8ed8ae4dd0cdfdfe5334ce69104"
+    },
+    {
+      "path": "crmeb/public/install/crmeb.sql",
+      "bytes": 10237372,
+      "sha256": "7af188f42c622db523d8000c0cf50f95fa48df2fe41123969ca2dbb65ffb5eb2"
+    },
+    {
+      "path": "help/audit-regressions/isolated/bootstrap.sh",
+      "bytes": 4849,
+      "sha256": "0399d2d182cb87e4cbe0f2b2abf4d1147673d4605a7469e9e2b65fc59ddda161"
+    },
+    {
+      "path": "help/audit-regressions/isolated/compose.ms2-migration.yml",
+      "bytes": 1335,
+      "sha256": "d4683a99552e22c79f767f21f520457a06c2cd335aeaf784dba8f5c949d97cad"
+    },
+    {
+      "path": "help/audit-regressions/isolated/compose.yml",
+      "bytes": 5807,
+      "sha256": "e3882126a14d60f354686fd8c8c4bdc2f3bb231bf7f8e8d01f19dfc5742552a2"
+    },
+    {
+      "path": "help/audit-regressions/isolated/lib/guard.php",
+      "bytes": 4694,
+      "sha256": "a7a182c3a204dbb55f5669a61f44af099360223acd9835f82d9da3a8bf2f79a8"
+    },
+    {
+      "path": "help/audit-regressions/isolated/lib/harness.php",
+      "bytes": 45535,
+      "sha256": "f0ce5d2a08e3df80b07476ab8186f17f0d692a65d7ae308aac3c188a83d84ab1"
+    },
+    {
+      "path": "help/audit-regressions/isolated/ms2-migration.php",
+      "bytes": 86473,
+      "sha256": "cf2dc5b1ff4bb7a21cbd2b94346307e12c10e0161e95c0340d99898358be6174"
+    },
+    {
+      "path": "help/audit-regressions/isolated/ms2-migration.sh",
+      "bytes": 15243,
+      "sha256": "93c0a2c143e13134a343f3d90ad03f92b5112ab5437573ea5a9fd06e8f8ca8cd"
+    },
+    {
+      "path": "help/audit-regressions/isolated/teardown.sh",
+      "bytes": 1843,
+      "sha256": "06f909f1cb135bfa6b138eb46dd8248587e563bdc946697c6bf5a18f00936bf5"
+    },
+    {
+      "path": "help/migrations/marketplace-ms1.php",
+      "bytes": 38810,
+      "sha256": "9d73229f911b5712ca9c7051a18468c98837ae44f48bf77d20b2c165ac02b17a"
+    },
+    {
+      "path": "help/migrations/marketplace-ms2.php",
+      "bytes": 113988,
+      "sha256": "eeb0a2892e29bffd20d8f644881fceef5fbb8836b8bd0e18f72be119c799a614"
+    }
+  ],
+  "actual_snapshots": [
+    {
+      "stage": "baseline-158",
+      "evidence_ref": "evidence/ms2-migration-baseline-158.json",
+      "bytes": 867189,
+      "sha256": "3aaef8967ea6a40d6669eda2f147a788c5ec760eebbb4715d8e220fc48a53529"
+    },
+    {
+      "stage": "after-ms1-163",
+      "evidence_ref": "evidence/ms2-migration-after-ms1-163.json",
+      "bytes": 894241,
+      "sha256": "16c2eee7b8308ff990a08864c9bfd19700848d39ca39489a5761b37b4070e28e"
+    },
+    {
+      "stage": "initial-check-163",
+      "evidence_ref": "evidence/ms2-migration-initial-check-163.json",
+      "bytes": 894245,
+      "sha256": "02303e35f50aff29ae0a3efa925e539dddafc0003db1016fd240f12e70e972d8"
+    },
+    {
+      "stage": "after-structure-164",
+      "evidence_ref": "evidence/ms2-migration-after-structure-164.json",
+      "bytes": 908740,
+      "sha256": "ffbcc53410157cfc2f54368a1becd03fbfea5e7ea9f998cf13f37c435a8e8312"
+    },
+    {
+      "stage": "declared-normal-fixture",
+      "evidence_ref": "evidence/ms2-migration-declared-normal-fixture.json",
+      "bytes": 909327,
+      "sha256": "978028ba1a26ed0b2399ec9934e6b5aac834c2e9ee623e5da2f632bb1e8e9e85"
+    },
+    {
+      "stage": "mapping-binding-check",
+      "evidence_ref": "evidence/ms2-migration-mapping-binding-check.json",
+      "bytes": 909325,
+      "sha256": "91df3515f10b89b3ef7eefaa6e3154fe38a623c6a325c739aa92749de2dbdb82"
+    },
+    {
+      "stage": "backfill-first",
+      "evidence_ref": "evidence/ms2-migration-backfill-first.json",
+      "bytes": 909316,
+      "sha256": "e8e10726dee775eae0c1ab867bdfe1c23912015c4a1abbb33f2f9b71208443c9"
+    },
+    {
+      "stage": "backfill-repeat",
+      "evidence_ref": "evidence/ms2-migration-backfill-repeat.json",
+      "bytes": 909317,
+      "sha256": "828972390ef9358e7dc129bb7c716a4e633e881042f3af6d1aa50f4a3287e4cb"
+    },
+    {
+      "stage": "enforce-first",
+      "evidence_ref": "evidence/ms2-migration-enforce-first.json",
+      "bytes": 909274,
+      "sha256": "b637cd224beec8bc81891ec11fcfd12552f9a72af8d8e717b78ef9b5bd855176"
+    },
+    {
+      "stage": "enforce-repeat",
+      "evidence_ref": "evidence/ms2-migration-enforce-repeat.json",
+      "bytes": 909275,
+      "sha256": "7426002decf49d274e799c89c65438078e916ae13af5860c77dcf67a8a336c2b"
+    },
+    {
+      "stage": "final-check",
+      "evidence_ref": "evidence/ms2-migration-final-check.json",
+      "bytes": 909272,
+      "sha256": "2b412c9d541cffee47654b9d351d60d28c2140098eebd5dc4b84ac7531057129"
+    },
+    {
+      "stage": "final-structure-repeat",
+      "evidence_ref": "evidence/ms2-migration-final-structure-repeat.json",
+      "bytes": 909283,
+      "sha256": "4e9b0c3fd1c01dc1c04503c1bec736f96d6103661b35209ca39fdffd9d1d60c2"
+    }
+  ],
+  "all12_actual_snapshot_bytes_and_sha256_independently_verified": true,
+  "normal_observations": {
+    "same_actual_self_all_commands": true,
+    "backfill_first_updated_rows": 5,
+    "backfill_repeat_updated_rows": 0,
+    "enforce_first_changed": true,
+    "enforce_repeat_changed": false,
+    "final_check_read_only": true,
+    "final_apply_enforced_unchanged": true,
+    "five_declared_fixture_owners_at_actual_self": true,
+    "all_original_rows_PK_paths_nonowner_fields_preserved": true,
+    "full_schema_only_approved_structure_owner_constraints": true,
+    "Redis_complete_absolute_expiry_and_four_RO_runtime_unchanged": true,
+    "fixture_entire_volume_and_RO_alias_preserved": true,
+    "historical_groups_approved": false,
+    "complete_G01_or_Task2_claimed": false
+  },
+  "initializer_create_only_157_no_install_rows": true,
+  "strict_SESSION_restored_GLOBAL_unchanged": true,
+  "private_same_known_files_removed": 8,
+  "private_cleanup_verified": true,
+  "actual_single_RUN_final_resource_counts": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "all_six_actual_counts_independently_zero": true,
+  "env_and_install_lock_absent": true,
+  "normal_receipt_sha256": "e7c7cb121d09a20297b48ea34ba161bb66153a81e1238583950692ab582433a7",
+  "formal_results_sha256": "597fd5cb1457d657cfe9ffeb6f44030f1b516f7b6070bd47bff89e5be98911bc",
+  "orchestration_sha256": "163155de4d42df9d8b14db2ce88033a39a6a3591b12f6ddab32bde33aed41144",
+  "formal_T2M_NORMAL": "PASS",
+  "original_G01_G07": "NOT RUN",
+  "full_Task2_MS2_complete": false,
+  "real_historical_ownership_mapping": "UNKNOWN / UNAPPROVED",
+  "business_enabled": false,
+  "human_signoff": false,
+  "main_integration": "CURRENT_MAIN_ENTRY_SOURCE_AND_NORMAL_RUNTIME_VERIFIED",
+  "push": false,
+  "deploy": false
+}
