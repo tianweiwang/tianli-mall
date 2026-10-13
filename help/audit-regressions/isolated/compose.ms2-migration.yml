@@ -1,0 +1,30 @@
+# Ordinary CREATE-only migration profile; original services/functions stay intact.
+services:
+  audit-mysql:
+    command: [mysqld, "--sql-mode=STRICT_TRANS_TABLES,ONLY_FULL_GROUP_BY,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION"]
+  audit-bootstrap:
+    image: sha256:1099f749e2a38ec9453c6b820db8a78174514bc72d14edf5c203e13b82816e0a
+    environment:
+      AUDIT_GUARD_MODE: read-only
+  audit-ms2-migration:
+    extends:
+      file: ${AUDIT_REPO_DIR}/help/audit-regressions/isolated/compose.yml
+      service: audit-bootstrap
+    image: sha256:1099f749e2a38ec9453c6b820db8a78174514bc72d14edf5c203e13b82816e0a
+    profiles: [ms2-migration]
+    command: [help/audit-regressions/isolated/ms2-migration.php]
+    environment:
+      AUDIT_GUARD_MODE: read-only
+      AUDIT_MILESTONE: MS2
+      AUDIT_PHASE: normal-only
+    volumes:
+      - audit-vendor:/workspace/crmeb/vendor:ro
+      - bootstrap-secrets:/run/audit-bootstrap:ro
+      - redis-secrets:/run/audit-redis:ro
+      - app-secrets:/run/audit-app:ro
+      - fixture-secrets:/run/audit-fixtures
+      - fixture-secrets:/workspace/crmeb/public/uploads:ro
+      - app-runtime:/run/audit-app-runtime:ro
+      - runner-runtime:/run/audit-runner-runtime:ro
+      - worker-runtime:/run/audit-worker-runtime:ro
+      - chat-runtime:/run/audit-chat-runtime:ro

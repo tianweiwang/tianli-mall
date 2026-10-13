@@ -67,7 +67,8 @@
 - [x] 集成冻结完整 CLI `eeb0a2892e29bffd20d8f644881fceef5fbb8836b8bd0e18f72be119c799a614`、四命令说明和 `records/ms2/four-command-normal-summary.json`，按原字节核对；集成后 PHP 8.2语法/help各native0、说明独立核对通过。说明已补结构完成后无mapping的check，用其真实binding/expectations准备确认映射。本次为窄L2本地交付，完整Task2复选框仍保持未完成。
 - [x] 新声明合成夹具的普通四命令验证：源91ca的实际 ISO `2026101222353843267f`，MS1 apply1及 MS2 check3/apply2/backfill2/enforce2共10个真实不同PID均 native0。回填首次5行、重复0行；约束首次变化、重复不变；最终 check只读、apply保持已收紧 owner；同一实际 self、不重复创建。
 - [x] 普通保持及收尾：原完整行/PK/path/非owner字段、仅批准schema变化、完整 Redis值与绝对期限、四原RO运行卷和新纯PNG卷保持；私有文件精确清理，单真实RUN双标签6项资源0、env/install.lock absent。仅原157 CREATE初始化窗口采用旧镜像兼容模式，随后 SESSION精确恢复，GLOBAL及InnoDB strict不变；四命令实际严格模式检查通过。
-- [ ] 仓库内 `help/audit-regressions/isolated/ms2-migration.php` 和完整 Task 2/G01–G07交付；现有普通原始运行仍保留在仓库外，不能以本次窄验证替代完整验收。用户要求停止的场景继续 NOT RUN，不恢复执行。
+- [x] 独立本地检出已加入仓库相对入口 `help/audit-regressions/isolated/ms2-migration.php`、同名 shell 及专用 Compose profile，并实际验证正常四命令。测试源为 clean `53796fdfd9a378c1f58d6c1bc7c0916c592bb2da`，实际 ISO `20261013032834379c4c`：十个不同 PID 均 native0，回填5→0、约束首次变化/重复不变、最终 check只读/apply不放宽；十二份完整观测按 bytes/SHA-256独立核对，原行/主键/路径/非owner字段、批准之外schema、原缓存绝对期限及四RO runtime保持。先声明新增合法PNG后，全部资产及其RO别名保持；八个已知私有输入精确清理，正常 teardown后单RUN双标签六项资源均0，env/install.lock absent。真实 `T2M_NORMAL=PASS`，原G01–G07仍全部 `NOT RUN`；未启动框架或HTTP、未启用业务。见 `records/ms2/migration-entry-normal-summary.json`，已按三份原源码字节集成到主检出；当前运费提交改变了 Computed 源依赖，须在新 clean 主 HEAD 上重跑，旧记录仍对应独立测试源，不能冒称新主检出完整验收。
+- [ ] 完整 Task 2/G01–G07交付与人工验收；普通原始运行及此前 FAIL 均保留在仓库外，不能以本次窄验证替代完整验收。用户要求停止的场景继续 NOT RUN，不恢复执行。
 - [ ] 真实历史映射、SP-MS2-1签收、L3d/L4及业务启用；UNKNOWN/未批准保持，不操作真实库或业务数据副本。
 
 此前两次完整流程准备在新库 CREATE初始化失败，均未进入 MS1/MS2子命令，原FAIL与清理收据保留。R3的新库原生二维码索引实际191前缀与旧成功安装的完整元数据及SHOW CREATE一致，未修改安装列/索引声明或执行手工ALTER。完整Task2/MS2仍未完成，未推送、部署或填写验收人状态。
