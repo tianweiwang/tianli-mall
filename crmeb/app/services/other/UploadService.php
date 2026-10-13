@@ -43,6 +43,27 @@ class UploadService
             return self::$upload['upload_' . $type];
         }
         $type = (int)$type;
+        return self::$upload['upload_' . $type] = new Upload($type, self::configuration($type));
+    }
+
+    /** New request instance. Explicit storage is an internal, actual SystemStorage record. */
+    public static function fresh(?int $type = null, ?array $storage = null): Upload
+    {
+        if ($type === null) $type = (int)sys_config('upload_type', 1);
+        $driver=$type;
+        if ($storage!==null) {
+            $driver=match($type) {
+                4=>\app\services\marketplace\attachment\MerchantObservedCosUpload::class,
+                6=>\app\services\marketplace\attachment\MerchantObservedObsUpload::class,
+                7=>\app\services\marketplace\attachment\MerchantObservedTyossUpload::class,
+                default=>$type,
+            };
+        }
+        return new Upload($driver, self::configuration($type, $storage));
+    }
+
+    private static function configuration(int $type, ?array $storage = null): array
+    {
         $config = [];
         switch ($type) {
             case 2://七牛
@@ -93,10 +114,15 @@ class UploadService
         if (1 !== $type) {
             /** @var SystemStorageServices $make */
             $make = app()->make(SystemStorageServices::class);
-            $res = $make->getConfig($type);
+            $res = $storage ?? $make->getConfig($type);
+            if ($storage !== null) {
+                foreach (['name','region','domain','cdn'] as $key) {
+                    if (!is_string($storage[$key] ?? null)) throw new UploadException('存储状态暂不可用');
+                }
+            }
             $config['uploadUrl'] = $res['domain'];
             $config['storageName'] = $res['name'];
-            if (5 !== $type) $config['storageRegion'] = $res['region'];
+            if (5 !== $type || $storage !== null) $config['storageRegion'] = $res['region'];
             $config['cdn'] = $res['cdn'];
         }
 
@@ -124,7 +150,7 @@ class UploadService
             'watermark_y'
         ]);
         $config = array_merge($config, ['thumb' => $thumb], ['water' => $water]);
-        return self::$upload['upload_' . $type] = new Upload($type, $config);
+        return $config;
     }
 
     /**

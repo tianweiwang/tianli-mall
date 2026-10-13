@@ -118,6 +118,13 @@ public function adjust(MerchantContext $ctx, int $productId, string $unique, int
 - [ ] **Step 1: 写用例**：D08（A 列出、覆盖、删除 B 的素材 → 404 且文件仍在；A 猜测 B 的素材 ID 用于商品图片 → 422）；D14（A 的员工失去 `attachment.manage` 后，下一次列表请求 403，即使之前有缓存）。
 - [ ] **Step 2–5:** 确认失败 → 实现 → 通过 → 提交 `feat(merchantapi): scoped attachments`。
 
+#### Task 4 普通本地素材实现与验证（2026-10-13）
+
+- [x] 集成十四份 PHP：本家素材分类树/创建/修改、列表、真实上传与未引用删除；窄 DAO/有限输入和独立存储适配，复用当前身份与 attachment.manage。上传路径为真实商家前缀，授权以当前记录归属为准；local/cos/obs 等七种存储路径已有源码，云实际调用未验收。UploadService 新增 fresh 工厂，旧 init 行为保持；唯一 merchant route 仅追加素材模块。
+- [x] 普通 ISO 实际 RUN `2026101302573428dbda`：在 clean bfb7d50 上加载十四份最终字节 overlay，17 次真实 HTTP 传输与业务状态均 200，四独立迁移进程 native0。当前合法员工完成两级分类建立/修改、两次真实 CURLFile PNG 上传、本家分页及分类筛选零写、两未引用素材批量删除和当前正常退出；七条真实审计逐项核对，文件、数据库和实际返回 DTO 对应。上传配置为安装原 local1/thumb0/water0，未改平台配置；删除由业务服务实际执行，helper 未代删上传文件或附件行。
+- [x] 完整保持与收尾：七份完整观测按实际 bytes/SHA-256 复核，164 表原行/主键/路径/非归属字段/结构与原缓存值及绝对期限、四原运行卷及纯资产卷保持。helper 精确移除 12 新身份/分类/审计行、12 个源登记缓存键和六个已知空目录，私有输入精确清理；正常停止后主实例/原探针双标签十二项资源计数均 0，`.env`/`install.lock` absent，128M 峰值 111153152 bytes。
+- [ ] D08/D14 及用户停止项保持 NOT RUN；云 L4、素材前端、真实历史归属、完整 Task4/MS2 和人工签收仍未完成。业务 enabled=false，未推送或部署；窄摘要见 `records/ms2/attachment-normal-summary.json`，原始运行在仓库外，不把普通局部结果作为完整验收。
+
 ### Task 5: 运费模板
 
 **Files:**

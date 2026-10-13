@@ -42,3 +42,9 @@ $registerProducts = require __DIR__ . "/product.php";
 if (!$registerProducts instanceof \Closure) { throw new \LogicException("Invalid product route module"); }
 $registerProducts();
 unset($registerProducts);
+
+$registerAttachments = require __DIR__ . "/attachment.php";
+if (!$registerAttachments instanceof \Closure) {
+    throw new \RuntimeException("Merchant attachment routes unavailable");
+}
+$registerAttachments();

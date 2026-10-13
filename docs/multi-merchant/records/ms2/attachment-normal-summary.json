@@ -1,0 +1,159 @@
+{
+  "schema": 1,
+  "status": "VERIFIED_NORMAL_TASK4_ONLY",
+  "milestone": "MS2",
+  "authorization": "L2 local source integration and commit",
+  "test_source_before_integration": "bfb7d50c2cf03de30615833742caca065ed3a6c2",
+  "candidate_manifest_sha256": "df4323ad3684f010bc8a687effaffbf2ea266324f4156230585a1061f63de2ab",
+  "normal_kit_manifest_sha256": "c227c9d67b7b9d7cc1a81ac105087ca5d5fb284310aea0482766002c44d1bd2f",
+  "actual_run": "2026101302573428dbda",
+  "actual_cleanup_probe": "202610130259497fff27",
+  "actual_wrapper_native_exit": 0,
+  "actual_child_native_exit": 0,
+  "actual_child_restart_count": 0,
+  "actual_HTTP_requests": 17,
+  "all_HTTP_and_business_status_200": true,
+  "actual_distinct_migration_children": 4,
+  "all_migration_children_native_exit_zero": true,
+  "actual_CURLFile_PNG_uploads": 2,
+  "actual_business_audits": 7,
+  "normal_category_create_update_tree_and_owned_pagination_zero_write_verified": true,
+  "actual_service_file_family_and_DB_attachment_delete_verified": true,
+  "helper_upload_file_and_attachment_row_deletions": 0,
+  "actual_profile": "installation local1 thumb0 water0 unchanged",
+  "full_public_snapshot_files": [
+    {
+      "stage": "original-installed-158",
+      "bytes": 867895,
+      "sha256": "e91005c4b6cda607f2922fc8b3b3b7cf42e3eaedc1c2b3e465cd0e893dc75d71"
+    },
+    {
+      "stage": "after-real-ms1-163",
+      "bytes": 894934,
+      "sha256": "a2673d5b47a123000434673fa99f035ca4a0dbe99dbb06abbb839a95076cb65a"
+    },
+    {
+      "stage": "after-real-ms2-164",
+      "bytes": 909429,
+      "sha256": "c58d40fc2e0a19698d4a45f2d38c53616c257b4fe18f5ca61bbae6c0e27a8c9c"
+    },
+    {
+      "stage": "business-original-164",
+      "bytes": 7393985,
+      "sha256": "18148b9fe39998a01c2bdd173e3cccc6a5c6e94e39c423e56b94648b90f8990f"
+    },
+    {
+      "stage": "declared-normal-identity",
+      "bytes": 7396728,
+      "sha256": "fbe3dccfeb3a31fba13f1b278520fb022749accf8e0d2d2e53ce8b8137290a65"
+    },
+    {
+      "stage": "normal-business-before-cleanup",
+      "bytes": 7398863,
+      "sha256": "e2d5da941bfe7e0473d6c06130f6e16734d07e599f10b18cc5e4cfb7a16dfcfa"
+    },
+    {
+      "stage": "final-after-own-cleanup-164",
+      "bytes": 7394044,
+      "sha256": "abbbfc1039165a849177104d303bf90a0f73f2f0735b81550c5d86395dac7570"
+    }
+  ],
+  "normal_receipt_sha256": "99ecf4f6dcb443c3c6c910a62e7fb7ff3a98affc91dfb9e4d0a30cb6d30f3ed6",
+  "exact_helper_identity_category_audit_rows_removed": 12,
+  "exact_source_owned_cache_keys_removed": 12,
+  "exact_known_empty_directories_removed": 6,
+  "exact_private_input_cleanup_verified": true,
+  "all164_original_rows_PK_paths_nonowner_schema_cache_absolute_expiry_four_runtime_pure_assets_preserved": true,
+  "normal_app_stop_verified": true,
+  "all12_actual_resource_counts_zero": true,
+  "env_absent": true,
+  "install_lock_absent": true,
+  "memory_limit": "128M",
+  "actual_peak_memory_bytes": 111153152,
+  "formal_PHP_files_integrated": [
+    {
+      "path": "crmeb/app/dao/marketplace/MerchantAttachmentDao.php",
+      "after_bytes": 9317,
+      "after_sha256": "c4c36eecc0cc2c5bcdaa39a0b05c7c907dd93fad5a44b8a466ef127366a489c3"
+    },
+    {
+      "path": "crmeb/app/merchantapi/controller/Attachment.php",
+      "after_bytes": 2561,
+      "after_sha256": "9dd0bb85560e86e6584279ca72e2961b44870e1013e3183b7836ddac4549daa4"
+    },
+    {
+      "path": "crmeb/app/merchantapi/route/attachment.php",
+      "after_bytes": 1324,
+      "after_sha256": "1d5712c6f75729efb21665b9d9dcc700c7f844cafe0e314cf3ef1c19f12abda0"
+    },
+    {
+      "path": "crmeb/app/merchantapi/route/route.php",
+      "after_bytes": 2983,
+      "after_sha256": "67d193b34407c199577439905e5b3a5c9e3b6b19981094898adf113c20910077"
+    },
+    {
+      "path": "crmeb/app/services/marketplace/attachment/MerchantAttachmentInput.php",
+      "after_bytes": 1222,
+      "after_sha256": "ae717441e21467dc3d0206b365912cecb646fce69c130021fc2d74e2822d7d2b"
+    },
+    {
+      "path": "crmeb/app/services/marketplace/attachment/MerchantAttachmentOperationException.php",
+      "after_bytes": 378,
+      "after_sha256": "b0bb9a2ee89c4e99e2ea1bc209d169ab9c8a8f9ba9325718aa0817ed32aa41be"
+    },
+    {
+      "path": "crmeb/app/services/marketplace/attachment/MerchantAttachmentStorage.php",
+      "after_bytes": 18215,
+      "after_sha256": "732d65d5133c2d7eeb65628e4be0fe3e980672fb1bbb45874462259e81a249dd"
+    },
+    {
+      "path": "crmeb/app/services/marketplace/attachment/MerchantObservedCosClient.php",
+      "after_bytes": 2309,
+      "after_sha256": "1d0f156bf2203458f4622bf83ccd5f9c6838b01b25edf6615677c84b421e7e6f"
+    },
+    {
+      "path": "crmeb/app/services/marketplace/attachment/MerchantObservedCosUpload.php",
+      "after_bytes": 820,
+      "after_sha256": "bc594ea638fb4d00fe58d2e7cf72be929383017ad6b58ea1a6202c860c31f05b"
+    },
+    {
+      "path": "crmeb/app/services/marketplace/attachment/MerchantObservedObsClient.php",
+      "after_bytes": 2048,
+      "after_sha256": "f0432b679165c41743d98c9eeeef9e9a94a3e2d1eed30f21fc63300108f768d3"
+    },
+    {
+      "path": "crmeb/app/services/marketplace/attachment/MerchantObservedObsUpload.php",
+      "after_bytes": 789,
+      "after_sha256": "18ef0d82cd7e5cc56b4fa3415a70d4abafc8660bc1bbbaad3089fe9ba03cb33f"
+    },
+    {
+      "path": "crmeb/app/services/marketplace/attachment/MerchantObservedTyossUpload.php",
+      "after_bytes": 806,
+      "after_sha256": "712ccc11157b583dd5c02957bd7eec77c7e0de5fc699072bb3addc5a1a61b3e8"
+    },
+    {
+      "path": "crmeb/app/services/marketplace/MerchantAttachmentServices.php",
+      "after_bytes": 8239,
+      "after_sha256": "6948e135fc583602c8cd6112cfe220b010796612f423bc7b851c174f506ac5b3"
+    },
+    {
+      "path": "crmeb/app/services/other/UploadService.php",
+      "after_bytes": 7241,
+      "after_sha256": "b89aa9967b6af1400eab958dbf0528eab18bcc57af42f0c64971a0d2b2d360df"
+    }
+  ],
+  "syntax": "all fourteen unchanged actual R3/R2 syntax native0 after exact byte match; new normal main/init/stop actual native0",
+  "test_source_note": "actual normal used exact same fourteen source bytes as integrated; no claim that old Task3 evidence verifies Task4",
+  "cloud_L4": "NOT RUN",
+  "frontend": "NOT RUN",
+  "D08_D14_and_stopped_cases": "NOT RUN",
+  "historical_owner_mapping": "UNKNOWN / NOT EXECUTED",
+  "backfill_enforce_in_this_profile": "NOT RUN",
+  "enabled": false,
+  "full_Task4_complete": false,
+  "full_MS2_complete": false,
+  "signoff": "PENDING",
+  "push": false,
+  "deploy": false,
+  "raw_evidence_location": "outside repository; dedicated audit RUN and artifacts/ms2-attachment-normal-attempt1"
+}
