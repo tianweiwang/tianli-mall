@@ -134,6 +134,13 @@ public function adjust(MerchantContext $ctx, int $productId, string $unique, int
 - [ ] **Step 1: 写用例**：D06（A 引用 B 的运费模板或规格预设保存商品 → 422，无部分写入）；D18（A 的商品引用的模板被删除后，下单前的运费计算报错而不是回退 `id = 1`；省市区字典接口对商家只读可用）。
 - [ ] **Step 2–5:** 确认失败 → 实现 → 通过 → 提交 `feat(merchantapi): merchant-owned freight templates without platform fallback`。
 
+#### Task 5 普通模板维护实现与验证（2026-10-13）
+
+- [x] 集成十三份实际验证的 PHP：本家运费模板列表、详情、新建、编辑、删除及只读省市区字典；完整规则由同 PDO 事务保存，金额保持规范字符串。商品与附件二十七规则原字节保留，追加六运费规则为三十三。新增 marketplace 配置沿实际 Env 读取，默认 enabled=false/self=null，不猜历史归属或自营 ID。
+- [x] 普通 ISO 实际 RUN `20261013045328f10285`：clean 809f192 加载十三份最终字节，26 次真实 HTTP 传输与业务状态均 200，四独立迁移进程 native0。覆盖三种计费类型、完整规则、分页/详情零写、两次正常修改及两次完整相同保存零写、两未引用模板删除、商品引用保留模板及当前正常退出；七模板审计和一商品新建审计逐项核对。四共享商品子表按真实 type=0 核对，分类不加不存在的 type，原五子记录断言保留。
+- [x] root 独立核七完整快照字节/hash；原164表完整行 hash/checksum、元数据与 CREATE SQL（仅允许实际原生计数递增）、原缓存值与绝对期限、四原运行目录和纯素材保持。仅删除本轮24登记行、7精确缓存键、1声明 PNG、2已知空目录和2自有私有输入；App 正常停止，主/原引导探针双标签十二资源实际计数均0，.env/install.lock不存在。实际128M/峰值111153152，有限 shutdown 为 ORDERLY_SHUTDOWN/final_native_return。
+- [ ] 正常顾客下单运费计算尚未验证，D06/D18及用户停止项继续 NOT RUN；真实 self 配置传输、当前可售商品/地址/cart 前提、运费前端、真实历史归属、完整 Task5/MS2及人工签收均未完成。保留此前启动 FAIL 和21请求后原失败/精确夹具清理失败记录，未改断言把失败改为通过。未启用真实业务、推送或部署；摘要见 `records/ms2/freight-normal-summary.json`。
+
 ### Task 6: 分类绑定
 
 **Files:**

@@ -580,6 +580,7 @@ class StoreCartServices extends BaseServices
     public function handleCartList(int $uid, array $cartList, array $addr = [], int $shipping_type = 1)
     {
         if (!$cartList) return [$cartList, [], []];
+        $freightResolved = app()->make(\app\services\marketplace\freight\MerchantFreightPolicy::class)->revalidate($cartList, $shipping_type, 0, isset($addr['city_id']) ? (int)$addr['city_id'] : null, true);
         $tempIds = [];
         $userInfo = [];
         $discount = 100;
@@ -604,12 +605,13 @@ class StoreCartServices extends BaseServices
         if ($shipping_type == 1 && $addr) {
             $cityId = (int)($addr['city_id'] ?? 0);
             if ($cityId) {
-                foreach ($cartList as $item) {
+                foreach ($cartList as $freightCartKey => $item) {
+                    if (($freightResolved[$freightCartKey]['entrant'] ?? false) === true) continue;
                     $tempIds[] = $item['productInfo']['temp_id'];
                 }
                 $tempIds = array_unique($tempIds);
                 $shippingService = app()->make(\app\services\shipping\ShippingTemplatesServices::class);
-                $tempIds = $shippingService->getColumn([['id', 'in', $tempIds], ['no_delivery', '=', 1]], 'id');
+                $tempIds = $tempIds ? $shippingService->getColumn([['id', 'in', $tempIds], ['no_delivery', '=', 1]], 'id') : [];
                 if ($tempIds) {
                     /** @var ShippingTemplatesNoDeliveryServices $noDeliveryServices */
                     $noDeliveryServices = app()->make(ShippingTemplatesNoDeliveryServices::class);
@@ -621,7 +623,7 @@ class StoreCartServices extends BaseServices
         /** @var StoreProductServices $productServices */
         $productServices = app()->make(StoreProductServices::class);
         $valid = $invalid = [];
-        foreach ($cartList as &$item) {
+        foreach ($cartList as $freightCartKey => &$item) {
             if ($item['type'] == 0) $item['min_qty'] = $item['productInfo']['min_qty'];
             $item['productInfo']['express_delivery'] = false;
             $item['productInfo']['store_mention'] = false;
@@ -680,7 +682,8 @@ class StoreCartServices extends BaseServices
                 switch ($shipping_type) {
                     case 1:
                         //不送达
-                        if (in_array($item['productInfo']['temp_id'], $tempIds) || (isset($item['productInfo']['logistics']) && !in_array(1, explode(',', $item['productInfo']['logistics'])) && $item['productInfo']['logistics'] != 0)) {
+                        $freightBlocked = ($freightResolved[$freightCartKey]['entrant'] ?? false) ? $freightResolved[$freightCartKey]['blocked'] : in_array($item['productInfo']['temp_id'], $tempIds);
+                        if ($freightBlocked || (isset($item['productInfo']['logistics']) && !in_array(1, explode(',', $item['productInfo']['logistics'])) && $item['productInfo']['logistics'] != 0)) {
                             $item['is_valid'] = 0;
                             $invalid[] = $item;
                         } else {

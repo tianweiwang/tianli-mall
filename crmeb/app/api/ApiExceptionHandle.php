@@ -45,6 +45,7 @@ class ApiExceptionHandle extends Handle
      */
     public function report(Throwable $exception): void
     {
+        if ($exception instanceof \app\services\marketplace\freight\MerchantFreightException) return;
         if (!$this->isIgnoreReport($exception)) {
             $data = [
                 'file' => $exception->getFile(),
@@ -78,6 +79,9 @@ class ApiExceptionHandle extends Handle
      */
     public function render($request, Throwable $e): Response
     {
+        if ($e instanceof \app\services\marketplace\freight\MerchantFreightException) {
+            return Response::create(['status'=>$e->getCode(),'msg'=>$e->getMessage(),'data'=>[]], 'json', $e->getCode());
+        }
         $massageData = Env::get('app_debug', false) ? [
             'message' => $e->getMessage(),
             'file' => $e->getFile(),

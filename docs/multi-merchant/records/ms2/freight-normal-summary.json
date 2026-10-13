@@ -1,0 +1,175 @@
+{
+  "schema": 1,
+  "status": "VERIFIED_NORMAL_TASK5_ONLY",
+  "milestone": "MS2",
+  "authorization": "L2 local source integration and commit",
+  "test_source_before_integration": "809f1925086b5a46320f4191d1f44d2052ddb4e9",
+  "candidate_manifest_sha256": "85eff3a3ffca607c5286fd216346b948f78feb17b7d7fc8922f7591014df90de",
+  "normal_kit_manifest_sha256": "479962cc97a18477433e2d7896bf41b627a128bad5456b84bb04b6c5f1875880",
+  "actual_run": "20261013045328f10285",
+  "actual_cleanup_probe": "202610130455397645ff",
+  "actual_wrapper_native_exit": 0,
+  "actual_child_native_exit": 0,
+  "actual_child_restart_count": 0,
+  "actual_HTTP_requests": 26,
+  "all_HTTP_and_business_status_200": true,
+  "actual_distinct_migration_children": 4,
+  "all_migration_children_native_exit_zero": true,
+  "actual_framework_merchant_rules": 33,
+  "actual_freight_rules": 6,
+  "three_template_types_full_rules_and_current_product_binding_verified": true,
+  "two_repeat_saves_full_zero_write": true,
+  "actual_freight_business_audits": 7,
+  "actual_product_create_audits": 1,
+  "helper_freight_product_audit_INSERTs": 0,
+  "type0_five_product_child_counts_retained": [
+    1,
+    1,
+    1,
+    1,
+    1
+  ],
+  "full_public_snapshot_files": [
+    {
+      "stage": "original-installed-158",
+      "evidence_ref": "evidence/task5-normal-original-installed-158.json",
+      "bytes": 867896,
+      "sha256": "3d182b9a41a579f5cddf97043ea4a127ee7450537636cb244cf7d39cb4e83e09"
+    },
+    {
+      "stage": "after-real-ms1-163",
+      "evidence_ref": "evidence/task5-normal-after-real-ms1-163.json",
+      "bytes": 894935,
+      "sha256": "bbe9285a03844de84bf1b21b9256f6f34d51a04dba6781b87f4082632d4107e3"
+    },
+    {
+      "stage": "after-real-ms2-164",
+      "evidence_ref": "evidence/task5-normal-after-real-ms2-164.json",
+      "bytes": 909430,
+      "sha256": "a9cffeb1a2072ed8f5ff5f93fa54dda042cb689ef15a8774e2e0a4d1565dda96"
+    },
+    {
+      "stage": "business-original-164",
+      "evidence_ref": "evidence/task5-normal-business-original-164.json",
+      "bytes": 7394924,
+      "sha256": "84342267cda063a59ef87e9683e34f46f0a73dbec6e69bf56f0bac40cdfd2372"
+    },
+    {
+      "stage": "declared-normal-identity",
+      "evidence_ref": "evidence/task5-normal-declared-normal-identity.json",
+      "bytes": 7397306,
+      "sha256": "a4fe69892ea3d040bda2c29b698f9be322abea6d448eefa5d866689923ae9be9"
+    },
+    {
+      "stage": "normal-business-before-cleanup",
+      "evidence_ref": "evidence/task5-normal-normal-business-before-cleanup.json",
+      "bytes": 7400142,
+      "sha256": "901c21c5946128f8890da1e24f6a42135d80b88869977a2739fdadf4f8dca6ec"
+    },
+    {
+      "stage": "final-after-own-cleanup-164",
+      "evidence_ref": "evidence/task5-normal-final-after-own-cleanup-164.json",
+      "bytes": 7395017,
+      "sha256": "585030bc4f91b4c125ef9e4a7136027247e1221debbe617bd4e87f8370063790"
+    }
+  ],
+  "normal_receipt_sha256": "2116892a8027691b828574e40c0b6d0306bae398db4d6331883947fd6fc0e38f",
+  "exact_source_owned_rows_removed": 24,
+  "exact_source_owned_cache_keys_removed": 7,
+  "actual_declared_PNG_removed": 1,
+  "exact_known_empty_directories_removed": 2,
+  "exact_private_inputs_removed": 2,
+  "root_independent_original164_full_hashes_checksums_metadata_CREATE_SQL_cache_absolute_expiry_four_runtime_assets_preserved": true,
+  "native_SHOW_CREATE_counters_monotonic": true,
+  "normal_app_stop_verified": true,
+  "all12_actual_resource_counts_zero": true,
+  "env_absent": true,
+  "install_lock_absent": true,
+  "memory_limit": "128M",
+  "actual_peak_memory_bytes": 111153152,
+  "formal_PHP_files_integrated": [
+    {
+      "path": "crmeb/app/api/ApiExceptionHandle.php",
+      "after_bytes": 4174,
+      "after_sha256": "c0046bd66d3719fd27b9c61cf97101aa91a0fbf8c783cd3b8d2fb842178f71dc"
+    },
+    {
+      "path": "crmeb/app/dao/marketplace/MerchantFreightDao.php",
+      "after_bytes": 7000,
+      "after_sha256": "e9ff77c90d73180b9c1f6cb705d5de3967134a9a97cb60b3886eccd3f9d9740e"
+    },
+    {
+      "path": "crmeb/app/merchantapi/controller/Freight.php",
+      "after_bytes": 1619,
+      "after_sha256": "86ba4b2e8313c830617981aec4ca2b8b78baa0a16ac2d4dfd22d28ac20ab4387"
+    },
+    {
+      "path": "crmeb/app/merchantapi/route/freight.php",
+      "after_bytes": 1142,
+      "after_sha256": "cf9fd2d7150ec2acb6bed4f74ff1927befce88cd718048326b1c14c84fc7784a"
+    },
+    {
+      "path": "crmeb/app/merchantapi/route/route.php",
+      "after_bytes": 3188,
+      "after_sha256": "b93010ff5a570fae75469442d00022faa37d07c862dfecf5bbe122909b42cfc0"
+    },
+    {
+      "path": "crmeb/app/services/marketplace/freight/MerchantFreightException.php",
+      "after_bytes": 498,
+      "after_sha256": "38c950f9a7402cb93ea3329ac640c62ed64b0be45006acb1718db8aebb79ab89"
+    },
+    {
+      "path": "crmeb/app/services/marketplace/freight/MerchantFreightInput.php",
+      "after_bytes": 9316,
+      "after_sha256": "7c9b03d6d6a26646a6dc3a532f2028a464cd5053757b72c6a738a657b4f8e10a"
+    },
+    {
+      "path": "crmeb/app/services/marketplace/freight/MerchantFreightPolicy.php",
+      "after_bytes": 4946,
+      "after_sha256": "b0097a0248e8cb27fb7c832942c9e4a949fdc7bd6dff36d4bf477c5c9b30e06f"
+    },
+    {
+      "path": "crmeb/app/services/marketplace/MerchantFreightServices.php",
+      "after_bytes": 5177,
+      "after_sha256": "3d79f6d11979fdb06fa87041d991957976e8c2d2ee3822093654bed301e01e4a"
+    },
+    {
+      "path": "crmeb/app/services/order/StoreCartServices.php",
+      "after_bytes": 36731,
+      "after_sha256": "664202089e016f7e9a3530f30c969bd7eda3a18c6283cff1d6685c781aecbc3e"
+    },
+    {
+      "path": "crmeb/app/services/order/StoreOrderComputedServices.php",
+      "after_bytes": 28007,
+      "after_sha256": "9dad7a45a74219bdbd9b2cfab7a67bca272037f01a34703b25c62fba7b8db370"
+    },
+    {
+      "path": "crmeb/app/services/order/StoreOrderCreateServices.php",
+      "after_bytes": 49146,
+      "after_sha256": "e438447d4f503d72fc4b9a144204921459025ce81b2fbc77d611509550e7def0"
+    },
+    {
+      "path": "crmeb/config/marketplace.php",
+      "after_bytes": 348,
+      "after_sha256": "e014564929c8409ffe05ce51677f72968def3313a48949051e27cbf94f5e599c"
+    }
+  ],
+  "syntax": "exact R2 application bytes reuse actual DAO a2dfc4 plus other12 36016a; changed normal main actual305ff6; unchanged init/stop actualf7a28e; actual pureCompose7f1292",
+  "test_source_note": "normal used exactly the thirteen integrated application files; unrelated previous evidence is not relabeled as Task5 acceptance",
+  "earlier_attempt1_startup_failure_preserved": true,
+  "earlier_attempt2_native1_and_fixtures_cleaned_false_preserved": true,
+  "normal_active_quote": "NOT RUN",
+  "D06_D18_and_stopped_cases": "NOT RUN",
+  "cloud_L4": "NOT RUN",
+  "frontend": "NOT RUN",
+  "historical_owner_mapping": "UNKNOWN / NOT APPROVED",
+  "backfill_enforce_in_this_profile": "NOT RUN",
+  "enabled": false,
+  "deployment_actual_self_configuration": "PENDING",
+  "full_Task5_complete": false,
+  "full_MS2_complete": false,
+  "signoff": "PENDING",
+  "push": false,
+  "deploy": false,
+  "raw_evidence_location": "outside repository; dedicated audit RUN and artifacts/ms2-freight-normal-attempt3"
+}

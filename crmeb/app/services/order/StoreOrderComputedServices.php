@@ -272,6 +272,12 @@ class StoreOrderComputedServices extends BaseServices
             $shipping_type = 0;
             $addr = [];
         }
+        if (\app\services\marketplace\freight\MerchantFreightPolicy::enabled()) {
+            $courierMode = $shipping_type;
+            if ($courierMode === 2 && !sys_config('store_self_mention')) $courierMode = 1;
+            $currentFreight = app()->make(\app\services\marketplace\freight\MerchantFreightPolicy::class)->revalidate($cartInfo, $courierMode, (int)$is_gift, isset($addr['city_id']) ? (int)$addr['city_id'] : null);
+            foreach ($currentFreight as $entry) if ($entry['entrant']) { $postage = []; break; }
+        }
         if (!$storeFreePostage) {
             $storeFreePostage = floatval(sys_config('store_free_postage')) ?: 0;//满额包邮金额
         }
@@ -309,6 +315,9 @@ class StoreOrderComputedServices extends BaseServices
      */
     public function getOrderPriceGroup($storeFreePostage, $cartInfo, $addr, $userInfo = [], $shipping_type = 1, $is_gift = 0)
     {
+        $freightResolved = app()->make(\app\services\marketplace\freight\MerchantFreightPolicy::class)->revalidate($cartInfo, (int)$shipping_type, (int)$is_gift, isset($addr['city_id']) ? (int)$addr['city_id'] : null);
+        $entrantTemplates = [];
+        foreach ($freightResolved as $entry) if ($entry['entrant'] && !$entry['skip_template']) $entrantTemplates[(int)$entry['root']['temp_id']] = $entry;
         $storePostage = 0;
         $storePostageDiscount = 0;
         $giftPrice = 0;
@@ -351,8 +360,10 @@ class StoreOrderComputedServices extends BaseServices
             } else {
                 //按照运费模板计算每个运费模板下商品的件数/重量/体积以及总金额 按照首重倒序排列
                 $cityId = $addr['city_id'] ?? 0;
-                $tempIds[] = 1;
+                $tempIds = [];
                 foreach ($cartInfo as $key_c => $item_c) {
+                    if (($freightResolved[$key_c]['entrant'] ?? false) === true) continue;
+                    $tempIds[] = 1;
                     if (isset($item_c['productInfo']['freight']) && $item_c['productInfo']['freight'] == 3) {
                         $tempIds[] = $item_c['productInfo']['temp_id'];
                     }
@@ -360,17 +371,19 @@ class StoreOrderComputedServices extends BaseServices
                 $tempIds = array_unique($tempIds);
                 /** @var ShippingTemplatesServices $shippServices */
                 $shippServices = app()->make(ShippingTemplatesServices::class);
-                $temp = $shippServices->getShippingColumn(['id' => $tempIds], 'type,appoint', 'id');
+                $temp = $tempIds ? $shippServices->getShippingColumn(['id' => $tempIds], 'type,appoint', 'id') : [];
                 /** @var ShippingTemplatesRegionServices $regionServices */
                 $regionServices = app()->make(ShippingTemplatesRegionServices::class);
-                $regions = $regionServices->getTempRegionList($tempIds, [$cityId, 0], 'temp_id,first,first_price,continue,continue_price', 'temp_id');
+                $regions = $tempIds ? $regionServices->getTempRegionList($tempIds, [$cityId, 0], 'temp_id,first,first_price,continue,continue_price', 'temp_id') : [];
                 $temp_num = [];
-                foreach ($cartInfo as $cart) {
+                foreach ($cartInfo as $freightCartKey => $cart) {
+                    $entry = $freightResolved[$freightCartKey] ?? null;
+                    if (($entry['entrant'] ?? false) && $entry['skip_template']) continue;
                     if (isset($cart['productInfo']['freight']) && in_array($cart['productInfo']['freight'], [1, 2])) {
                         continue;
                     }
                     $tempId = $cart['productInfo']['temp_id'] ?? 1;
-                    $type = $temp[$tempId]['type'] ?? $temp[1]['type'];
+                    $type = ($entry['entrant'] ?? false) ? $entry['template']['type'] : ($temp[$tempId]['type'] ?? $temp[1]['type']);
                     if ($type == 1) {
                         $num = $cart['cart_num'];
                     } elseif ($type == 2) {
@@ -378,7 +391,7 @@ class StoreOrderComputedServices extends BaseServices
                     } else {
                         $num = $cart['cart_num'] * $cart['productInfo']['attrInfo']['volume'];
                     }
-                    $region = $regions[$tempId] ?? ($regions[1] ?? []);
+                    $region = ($entry['entrant'] ?? false) ? $entry['region'] : ($regions[$tempId] ?? ($regions[1] ?? []));
                     if (!$region) continue;
                     if (!isset($temp_num[$tempId])) {
                         $temp_num[$tempId] = [
@@ -398,9 +411,13 @@ class StoreOrderComputedServices extends BaseServices
                 }
                 /** @var ShippingTemplatesFreeServices $freeServices */
                 $freeServices = app()->make(ShippingTemplatesFreeServices::class);
-                $freeList = $freeServices->isFreeList($tempIds, $addr['city_id'], 0, 'temp_id,number,price', 'temp_id');
-                if ($freeList) {
+                $freeList = $tempIds ? $freeServices->isFreeList($tempIds, $addr['city_id'], 0, 'temp_id,number,price', 'temp_id') : [];
+                if ($freeList || $entrantTemplates) {
                     foreach ($temp_num as $k => $v) {
+                        if (isset($entrantTemplates[$v['temp_id']])) {
+                            if (\app\services\marketplace\freight\MerchantFreightPolicy::free($entrantTemplates[$v['temp_id']], (int)$addr['city_id'], $v['number'], $v['price'])) unset($temp_num[$k]);
+                            continue;
+                        }
                         if (isset($temp[$v['temp_id']]['appoint']) && $temp[$v['temp_id']]['appoint'] && isset($freeList[$v['temp_id']])) {
                             $free = $freeList[$v['temp_id']];
                             $condition = $free['number'] <= $v['number'];

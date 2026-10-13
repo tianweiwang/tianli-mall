@@ -48,3 +48,8 @@ if (!$registerAttachments instanceof \Closure) {
     throw new \RuntimeException("Merchant attachment routes unavailable");
 }
 $registerAttachments();
+
+$registerFreight = require __DIR__ . "/freight.php";
+if (!$registerFreight instanceof \Closure) { throw new \LogicException("Invalid freight route module"); }
+$registerFreight();
+unset($registerFreight);
