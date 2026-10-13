@@ -53,3 +53,8 @@ $registerFreight = require __DIR__ . "/freight.php";
 if (!$registerFreight instanceof \Closure) { throw new \LogicException("Invalid freight route module"); }
 $registerFreight();
 unset($registerFreight);
+
+$registerCategories = require __DIR__ . "/category.php";
+if (!$registerCategories instanceof \Closure) { throw new \LogicException("Invalid category route module"); }
+$registerCategories();
+unset($registerCategories);

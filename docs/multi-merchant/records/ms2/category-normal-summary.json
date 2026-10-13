@@ -1,0 +1,143 @@
+{
+  "schema": 1,
+  "status": "VERIFIED_NORMAL_TASK6_ONLY",
+  "milestone": "MS2",
+  "authorization": "L2 local source integration and commit",
+  "test_source_before_integration": "62d3de5c1c383672e3ecd76269fb9068b1a8e539",
+  "candidate_manifest_sha256": "bce8c90be5e1b9fdd3d1c1d754d87ab3afe66ffb9d29e9e38e2a83932c9a6f4a",
+  "normal_kit_manifest_sha256": "30934cdbbe1f657194fa695dd64d0260e4a9ee7ae9bbc39909a3bf49627562c1",
+  "actual_run": "20261013074341c2ee7f",
+  "actual_cleanup_probe": "202610130745523709e6",
+  "actual_wrapper_native_exit": 0,
+  "actual_child_native_exit": 0,
+  "actual_child_restart_count": 0,
+  "actual_HTTP_requests": 20,
+  "all_HTTP_and_business_status_200": true,
+  "actual_distinct_migration_children": 4,
+  "all_migration_children_native_exit_zero": true,
+  "actual_framework_merchant_rules": 34,
+  "actual_category_rules": 1,
+  "actual_full_category_reads_zero_write": 4,
+  "actual_product_detail_reads_zero_write": 3,
+  "actual_platform_category_changes": 2,
+  "current_binding_repairs": 2,
+  "true_same_after_state_repeats_full_zero_write": 2,
+  "actual_product_stock_business_audits": 4,
+  "actual_native_platform_access_logs": 3,
+  "real_stock_delta": 5,
+  "real_nonempty15_ledger_preserved": true,
+  "platform_review_API_verified": false,
+  "new_review_show_state": "DECLARED_NEW_FIXTURE_ONLY_NOT_TASK7_PROOF",
+  "full_public_snapshot_files": [
+    {
+      "stage": "original-installed-158",
+      "evidence_ref": "evidence/task6-normal-original-installed-158.json",
+      "bytes": 867896,
+      "sha256": "a05c0fc14cd6b25a18f827715781256ea0846dcea6dc80db0650f4d69f02ebbc"
+    },
+    {
+      "stage": "after-real-ms1-163",
+      "evidence_ref": "evidence/task6-normal-after-real-ms1-163.json",
+      "bytes": 894935,
+      "sha256": "f8676a94f97315e8bc640963716c297ce7fc84cf0ef58286ffc6e7d23029ae95"
+    },
+    {
+      "stage": "after-real-ms2-164",
+      "evidence_ref": "evidence/task6-normal-after-real-ms2-164.json",
+      "bytes": 909429,
+      "sha256": "ce0d5ea1e7391654dd9709c31b14a2b39f7e4454b3d5a6bfa5cb96a96aa05f64"
+    },
+    {
+      "stage": "business-original-164",
+      "evidence_ref": "evidence/task6-normal-business-original-164.json",
+      "bytes": 7395459,
+      "sha256": "fcc5429bbc81a75792d3bcc8ddf602a220cc22ea44bfb26123f40167fba94c39"
+    },
+    {
+      "stage": "declared-normal-identity",
+      "evidence_ref": "evidence/task6-normal-declared-normal-identity.json",
+      "bytes": 7399945,
+      "sha256": "202683253acb5912955610db2b2a81f09c6bac4b431435ab5369d9c91902359a"
+    },
+    {
+      "stage": "normal-business-before-cleanup",
+      "evidence_ref": "evidence/task6-normal-normal-business-before-cleanup.json",
+      "bytes": 7402442,
+      "sha256": "712c981786239dea33f498cdf71aca37468d7c18d74a4c3fcaf100d61f8b1067"
+    },
+    {
+      "stage": "final-after-own-cleanup-164",
+      "evidence_ref": "evidence/task6-normal-final-after-own-cleanup-164.json",
+      "bytes": 7395550,
+      "sha256": "370f3ea06a50d832c236c988e82832dbe5cd1fecda735a0dfdb5ea1498c3a94c"
+    }
+  ],
+  "normal_receipt_sha256": "b8df53c2f7745799e9542b046fd9027380ae0ba14353f1cfbb76faf358cb1cf8",
+  "exact_source_owned_rows_removed": 22,
+  "exact_source_owned_cache_keys_removed": 17,
+  "actual_declared_PNG_removed": 1,
+  "exact_known_empty_directories_removed": 2,
+  "exact_private_inputs_removed": 2,
+  "root_independent_original164_full_hashes_checksums_metadata_CREATE_SQL_cache_absolute_expiry_four_runtime_assets_preserved": true,
+  "native_SHOW_CREATE_counters_monotonic": true,
+  "normal_app_stop_verified": true,
+  "all12_actual_resource_counts_zero": true,
+  "env_absent": true,
+  "install_lock_absent": true,
+  "memory_limit": "128M",
+  "actual_peak_memory_bytes": 111153152,
+  "formal_PHP_files_integrated": [
+    {
+      "path": "crmeb/app/dao/marketplace/product/MerchantProductDao.php",
+      "after_bytes": 18022,
+      "after_sha256": "f30265a1dcd54b83592e2a97a03c841b2e0b35fed9de9b3d3ec704f10ca0f0f6"
+    },
+    {
+      "path": "crmeb/app/merchantapi/controller/Category.php",
+      "after_bytes": 722,
+      "after_sha256": "3a1e0845ec79d04a7a7b76b918ceaf2d5564d520570d549f1a49320420a9a0a4"
+    },
+    {
+      "path": "crmeb/app/merchantapi/route/category.php",
+      "after_bytes": 497,
+      "after_sha256": "2c218e4bfb3460cb753aacb9845c2a077fd9575327016dce441392cee305204b"
+    },
+    {
+      "path": "crmeb/app/merchantapi/route/route.php",
+      "after_bytes": 3407,
+      "after_sha256": "5f33879c840e336e76e4600078d814523156aff4f8941f97a2cc78c53f1da60a"
+    },
+    {
+      "path": "crmeb/app/services/marketplace/category/MerchantCategoryPolicy.php",
+      "after_bytes": 2915,
+      "after_sha256": "909111eb3258edd73107ed2648f3395e27ce284c66624034118187bfaf2160da"
+    },
+    {
+      "path": "crmeb/app/services/marketplace/MerchantCategoryServices.php",
+      "after_bytes": 911,
+      "after_sha256": "0839bf525265d7067fd7c3165bd8b148a079da81c61a68697d9f65944c93268b"
+    },
+    {
+      "path": "crmeb/app/services/marketplace/product/MerchantProductServices.php",
+      "after_bytes": 13913,
+      "after_sha256": "58c13fbbcec6591c1bf24e128b151e21f68583349ad7580d22e72bfe1c46ea1e"
+    }
+  ],
+  "syntax": "six exact prior actual syntax plus current route58511a; R4 normal main a5692b; init/stop exact actual5a2e39; pureCompose/host e8b416",
+  "root_actual_runtime_closure": "bfe6e9",
+  "earlier_R2_actual_native1_configuration_failure_preserved": true,
+  "earlier_R3_actual_native1_response_assertion_and_fixture_cleanup_failure_preserved": true,
+  "normal_active_quote": "NOT RUN",
+  "D17_and_stopped_cases": "NOT RUN",
+  "cloud_L4": "NOT RUN",
+  "frontend": "NOT RUN",
+  "historical_owner_mapping": "UNKNOWN / NOT APPROVED",
+  "backfill_enforce_in_this_profile": "NOT RUN",
+  "enabled": false,
+  "full_Task6_complete": false,
+  "full_MS2_complete": false,
+  "signoff": "PENDING",
+  "push": false,
+  "deploy": false,
+  "raw_evidence_location": "outside repository; dedicated audit RUN and artifacts/ms2-category-normal-attempt3"
+}

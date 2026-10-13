@@ -10,6 +10,7 @@ use app\model\shipping\ShippingTemplates;
 use app\model\system\attachment\SystemAttachment;
 use app\services\marketplace\context\MerchantContext;
 use app\services\marketplace\product\MerchantProductInput as Input;
+use app\services\marketplace\category\MerchantCategoryPolicy;
 use crmeb\exceptions\AuthUnavailableException;
 use crmeb\exceptions\MerchantNotFoundException;
 use PDO;
@@ -83,13 +84,42 @@ final class MerchantProductDao
         $this->find($ctx,$id,$lock);$q=Db::name('store_product_description')->where('product_id',$id)->where('type',0);if($lock){self::transaction($q);$q->lock(true);} $rows=$q->select()->toArray();
         if(count($rows)>1)throw new AuthUnavailableException();return $rows?htmlspecialchars_decode($rows[0]['description']):'';
     }
-    public function references(MerchantContext $ctx,array $input,array $definitions): void
+    /** Complete actual bindings in the caller's product/category write transaction. */
+    public function currentCategoryBindings(MerchantContext $ctx,int $id): array
     {
-        $categoryQuery=Db::name('store_category')->whereIn('id',$input['categories'])->where('is_show',1);self::transaction($categoryQuery);$categories=$categoryQuery->lock(true)->column('pid','id');
+        $this->find($ctx,$id,true);
+        $query=Db::name('store_product_cate')->where('product_id',$id)->field(['cate_id','cate_pid'])->order('cate_id');
+        self::transaction($query);$rows=$query->lock(true)->select()->toArray();
+        foreach($rows as &$row){
+            $row['cate_id']=Input::integer($row['cate_id'],1,2147483647,true);
+            // Platform root edits can persist 0; observe it as a difference, never a new binding.
+            $row['cate_pid']=Input::integer($row['cate_pid'],0,2147483647,true);
+        }unset($row);
+        return $rows;
+    }
+    public function references(MerchantContext $ctx,array $input,array $definitions): array
+    {
+        // The GET limit also bounds this write preflight; current locks follow separately.
+        $inventory=Db::name('store_category')->field('id')->order('id')->limit(MerchantCategoryPolicy::ROW_MAX+1);
+        self::transaction($inventory);if(count($inventory->select())>MerchantCategoryPolicy::ROW_MAX)throw new AuthUnavailableException();
+        $fields=['id','pid','cate_name','sort','is_show'];
+        $categoryQuery=Db::name('store_category')->whereIn('id',$input['categories'])->field($fields)->order('id');
+        self::transaction($categoryQuery);$categories=$categoryQuery->lock(true)->select()->toArray();
         if(count($categories)!==count($input['categories']))Input::invalid();
+        $parentIds=array_values(array_diff(MerchantCategoryPolicy::parentIds($categories),$input['categories']));
+        if($parentIds){
+            $parentQuery=Db::name('store_category')->whereIn('id',$parentIds)->field($fields)->order('id');
+            self::transaction($parentQuery);$categories=array_merge($categories,$parentQuery->lock(true)->select()->toArray());
+        }
+        $eligible=MerchantCategoryPolicy::eligible($categories);$categoryParents=[];
+        foreach($input['categories'] as $category){
+            if(!isset($eligible[$category]))Input::invalid();$row=$eligible[$category];
+            $categoryParents[$category]=$row['pid']===0?$category:$row['pid'];
+        }
         $temp=$input['root']['temp_id'];if($input['root']['freight']===3){$q=MerchantScope::apply((new ShippingTemplates())->db()->where('id',$temp),$ctx);self::transaction($q);if(self::raw($q->lock(true)->find())===null)Input::invalid();}
         $media=array_merge($input['slider'],$definitions['media'],Input::htmlMedia($input['description']));if($input['root']['video_link']!=='')$media[]=$input['root']['video_link'];
         foreach(array_unique($media)as$value){$q=(new SystemAttachment())->db()->where(static function(Query $q)use($value):void{$q->where('att_dir',$value)->whereOr('satt_dir',$value);});$q=MerchantScope::apply($q,$ctx);self::transaction($q);$rows=$q->field(['att_id','mer_id'])->lock(true)->limit(2)->select()->toArray();if(count($rows)!==1)Input::invalid();MerchantScope::assertOwned($rows[0],$ctx);}
+        return $categoryParents;
     }
     public function preset(MerchantContext $ctx,int $id): ?array
     {
@@ -118,15 +148,24 @@ final class MerchantProductDao
         $q=(new StoreProductAttrValue())->db()->where('id',$skuId)->where('product_id',$id)->where('type',0);self::transaction($q);$n=$q->update($patch);if(!is_int($n)||$n<0||$n>1)throw new AuthUnavailableException();$after=self::raw((new StoreProductAttrValue())->db()->where('id',$skuId)->where('product_id',$id)->where('type',0)->find());if($after===null)throw new AuthUnavailableException();
         foreach($patch as$key=>$value)if((string)$after[$key]!== (string)$value)throw new AuthUnavailableException();
     }
-    public function replaceDefinition(MerchantContext $ctx,int $id,array $result,array $input): void
+    public function replaceDefinition(MerchantContext $ctx,int $id,array $result,array $input,array $categoryParents): void
     {
+        if(array_keys($categoryParents)!==$input['categories'])throw new AuthUnavailableException();
+        foreach($categoryParents as $parent)Input::integer($parent,1,2147483647);
         $this->find($ctx,$id,true);foreach(['store_product_attr','store_product_attr_result']as$table){$q=Db::name($table)->where('product_id',$id)->where('type',0);self::transaction($q);$q->delete();}
         foreach($result['attr']as$item)Db::name('store_product_attr')->insert(['product_id'=>$id,'type'=>0,'attr_name'=>$item['value'],'attr_values'=>implode(',',array_column($item['detail'],'value'))]);
         // TEXT JSON and HTML are encoded once, matching the inspected legacy mutators.
         Db::name('store_product_attr_result')->insert(['product_id'=>$id,'type'=>0,'result'=>Input::json($result),'change_time'=>time()]);
         $q=Db::name('store_product_description')->where('product_id',$id)->where('type',0);self::transaction($q);$q->delete();Db::name('store_product_description')->insert(['product_id'=>$id,'type'=>0,'description'=>htmlspecialchars($input['description'])]);
-        $q=Db::name('store_product_cate')->where('product_id',$id);self::transaction($q);$q->delete();$cats=Db::name('store_category')->whereIn('id',$input['categories'])->column('pid','id');
-        foreach($input['categories']as$category)Db::name('store_product_cate')->insert(['product_id'=>$id,'cate_id'=>$category,'cate_pid'=>$cats[$category]?:$category,'status'=>0,'add_time'=>time()]);
+        $q=Db::name('store_product_cate')->where('product_id',$id);self::transaction($q);$q->delete();
+        foreach($input['categories']as$category){
+            if(Db::name('store_product_cate')->insert(['product_id'=>$id,'cate_id'=>$category,'cate_pid'=>$categoryParents[$category],'status'=>0,'add_time'=>time()])!==1)throw new AuthUnavailableException();
+        }
+        $bindings=Db::name('store_product_cate')->where('product_id',$id)->field(['cate_id','cate_pid'])->order('cate_id');self::transaction($bindings);
+        $actual=$bindings->select()->toArray();$expected=[];
+        foreach($categoryParents as $category=>$parent)$expected[]=['cate_id'=>$category,'cate_pid'=>$parent];
+        foreach($actual as &$binding){$binding['cate_id']=Input::integer($binding['cate_id'],1,2147483647,true);$binding['cate_pid']=Input::integer($binding['cate_pid'],1,2147483647,true);}unset($binding);
+        if($actual!==$expected)throw new AuthUnavailableException();
         if($this->currentResult($ctx,$id,true)!==$result||$this->description($ctx,$id,true)!==$input['description'])throw new AuthUnavailableException();
     }
     public function batchShow(MerchantContext $ctx,array $ids,bool $show): void

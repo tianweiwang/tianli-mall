@@ -150,6 +150,13 @@ public function adjust(MerchantContext $ctx, int $productId, string $unique, int
 - [ ] **Step 1: 写用例** D17：商家读取分类树成功；尝试新增、修改分类 → 路由不存在或 403；使用停用分类保存商品 → 422；修改他店商品的分类绑定 → 404。
 - [ ] **Step 2–5:** 确认失败 → 实现 → 通过 → 提交 `feat(merchantapi): read-only platform categories`。
 
+#### Task 6 普通分类读取与当前绑定实现及验证（2026-10-13）
+
+- [x] 集成七份实际验证的 PHP：商家按 product.read 读取平台启用分类树，服务按真实父分类核对当前商品映射；平台分类正常修改后，相同合法商品内容可修复实际分类绑定并转待审隐藏。完整相同后态再次保存保持零写。商品、附件、运费三十三规则原字节保留，仅追加一分类规则为三十四。
+- [x] 普通 ISO 实际 RUN `20261013074341c2ee7f`：clean62d3 加载七份最终字节，20 次真实 HTTP 传输与业务状态均200，四独立迁移进程 native0。四次完整分类GET与三次商品详情零写；真实平台分类PUT修改P名称及将C改为根，两个当前映射修复与两个真正相同后态重复。真实库存+5产生非空十五列ledger，SKU身份/库存/原ledger保持；四业务审计、三原生平台访问日志逐项核对。
+- [x] root 独立核七完整快照字节/hash；原164表完整行hash/checksum、元数据与CREATE SQL（仅允许实际原生计数递增）、原缓存值与绝对期限、四原运行目录和纯素材保持。仅删除本轮22登记行、17精确缓存键、1声明PNG、2已知空目录和2自有私有输入；App正常停止，主/原引导探针双标签十二资源fresh实际计数均0，.env/install.lock不存在。实际128M/峰值111153152，有限shutdown为ORDERLY_SHUTDOWN/final_native_return。
+- [ ] D17拒绝/无效/跨店及用户停止项继续NOT RUN，完整Task6/MS2、前端、真实历史归属与人工签收未完成。本轮两次新商品approved/show仅声明夹具前提，平台商品审核API仍未验证，不能计为Task7。保留R2日志namespace原失败与R3缺data错误断言/精确夹具清理失败；R4按真实Json精确status/msg格式验证平台分类PUT与当前logout，不放宽其它接口/全原保持断言。未启用真实业务、推送或部署；摘要见 `records/ms2/category-normal-summary.json`。
+
 ### Task 7: 审核与平台管理
 
 **Files:**

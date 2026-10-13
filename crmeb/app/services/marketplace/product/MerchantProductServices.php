@@ -71,10 +71,10 @@ final class MerchantProductServices
         return $this->write($ctx,'product.write',function()use($ctx,$productId,$input):int{
             $before=$productId?$this->products->find($ctx,$productId,true):null;if($before!==null&&(int)$before['is_del']!==0)MerchantProductInput::invalid();
             $old=$productId?$this->products->skus($ctx,$productId,true):[];$stock=$this->products->physicalStock($old);if($before!==null&&$stock!==(int)$before['stock'])throw new AuthUnavailableException();
-            $definitions=MerchantProductInput::definitions($input,$this->products->preset($ctx,$input['rule_id']));$this->products->references($ctx,$input,$definitions);
+            $definitions=MerchantProductInput::definitions($input,$this->products->preset($ctx,$input['rule_id']));$categoryParents=$this->products->references($ctx,$input,$definitions);
             $root=$input['root'];$values=array_column($definitions['skus'],'row');$default=array_values(array_filter($values,static fn(array$r):bool=>$r['is_default_select']===1));
             foreach(['price','cost','ot_price']as$key)$root[$key]=$default?$default[0][$key]:MerchantProductInput::minimum(array_column($values,$key));$root['vip_price']=MerchantProductInput::minimum(array_column($values,'vip_price'));$root['stock']=$stock;$root['default_sku']=$default?$default[0]['suk']:'';
-            if($productId===0){$id=$this->products->create($ctx,$root);$result=$this->products->saveSkus($ctx,$id,$definitions,[]);$this->products->replaceDefinition($ctx,$id,$result,$input);$fields=array_keys($root);$action='product.create';}
+            if($productId===0){$id=$this->products->create($ctx,$root);$result=$this->products->saveSkus($ctx,$id,$definitions,[]);$this->products->replaceDefinition($ctx,$id,$result,$input,$categoryParents);$fields=array_merge(array_keys($root),['categories']);$action='product.create';}
             else{$id=$productId;$oldResult=$this->products->currentResult($ctx,$id,true);$oldDescription=$this->products->description($ctx,$id,true);
                 // Predict existing identities before any SKU write; a truly repeated body is a no-op.
                 $predicted=[];$allExisting=true;$used=[];$skuChanges=false;
@@ -84,10 +84,12 @@ final class MerchantProductServices
                     $entry=$spec['row']+['id'=>(int)$r['id'],'product_id'=>$id,'type'=>0,'unique'=>$r['unique'],'detail'=>$spec['detail'],'attr_arr'=>array_values($spec['detail'])];$entry['pic']=$entry['image'];unset($entry['image']);$predicted[]=$entry;
                 }
                 $fields=[];foreach($root as$key=>$value)if((string)$before[$key]!== (string)$value)$fields[]=$key;
-                $definitionChanged=!$allExisting||$skuChanges||$oldResult!==['attr'=>$definitions['items'],'value'=>$predicted];$descriptionChanged=$oldDescription!==$input['description'];$same=!$definitionChanged&&!$descriptionChanged&&$fields===[];
+                $expectedCategories=[];foreach($categoryParents as$category=>$parent)$expectedCategories[]=['cate_id'=>$category,'cate_pid'=>$parent];
+                $categoriesChanged=$this->products->currentCategoryBindings($ctx,$id)!==$expectedCategories;
+                $definitionChanged=!$allExisting||$skuChanges||$oldResult!==['attr'=>$definitions['items'],'value'=>$predicted];$descriptionChanged=$oldDescription!==$input['description'];$same=!$definitionChanged&&!$descriptionChanged&&!$categoriesChanged&&$fields===[];
                 foreach($old as$r)if(!isset($used[(int)$r['id']])&&((int)$r['is_show']!==0||(int)$r['is_default_select']!==0))$same=false;
                 if($same)return $id;
-                $result=$this->products->saveSkus($ctx,$id,$definitions,$old);$root+=['review_status'=>1,'review_reason'=>'','review_admin_id'=>null,'review_time'=>null,'is_show'=>0];$this->products->updateRoot($ctx,$id,$root);$this->products->replaceDefinition($ctx,$id,$result,$input);if($definitionChanged)$fields[]='specification';if($descriptionChanged)$fields[]='description';$fields=array_values(array_unique(array_merge($fields,['review_status','is_show'])));$action='product.update';
+                $result=$this->products->saveSkus($ctx,$id,$definitions,$old);$root+=['review_status'=>1,'review_reason'=>'','review_admin_id'=>null,'review_time'=>null,'is_show'=>0];$this->products->updateRoot($ctx,$id,$root);$this->products->replaceDefinition($ctx,$id,$result,$input,$categoryParents);if($definitionChanged)$fields[]='specification';if($descriptionChanged)$fields[]='description';if($categoriesChanged)$fields[]='categories';$fields=array_values(array_unique(array_merge($fields,['review_status','is_show'])));$action='product.update';
             }
             $after=$this->products->skus($ctx,$id,true);if($this->products->physicalStock($after)!==$stock)throw new AuthUnavailableException();
             foreach($old as$r){$match=array_values(array_filter($after,static fn(array$v):bool=>(int)$v['id']===(int)$r['id']));if(count($match)!==1)throw new AuthUnavailableException();foreach(['id','unique','product_id','type','stock']as$key)if((string)$match[0][$key]!== (string)$r[$key])throw new AuthUnavailableException();}
