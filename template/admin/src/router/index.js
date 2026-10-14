@@ -1,3 +1,6 @@
+import { getPlatformToken } from '@/utils/storage';
+import { formatFlatteningRoutes } from '@/libs/system';
+import { clearPlatformAuth } from '@/utils/storage';
 // +----------------------------------------------------------------------
 // | CRMEB [ CRMEB赋能开发者，助力企业发展 ]
 // +----------------------------------------------------------------------
@@ -13,7 +16,7 @@ import Router from 'vue-router';
 import routes from './routers';
 import Setting from '@/setting';
 import store from '@/store';
-import { removeCookies, getCookies, setTitle } from '@/libs/util';
+import { getCookies, setTitle } from '@/libs/util';
 import { includeArray } from '@/libs/auth';
 import { PrevLoading } from '@/utils/loading.js';
 
@@ -118,6 +121,41 @@ export function delayNProgressDone(time = 300) {
  * 权限验证
  */
 
+let platformSessionToken = '';
+let platformSessionPending = null;
+async function refreshPlatformSession(token) {
+  if (platformSessionToken === token && store.state.userInfo.userInfo) return;
+  if (!platformSessionPending) {
+    platformSessionPending = (async () => {
+      const { AccountInfo, menusApi } = await import('@/api/account');
+      const [info, menu] = await Promise.all([AccountInfo(), menusApi()]);
+      if (getPlatformToken() !== token) throw new Error('平台会话已改变，请重新进入');
+      const current = info.data;
+      const data = menu.data;
+      if (!current || !current.id || !data || !Array.isArray(data.menus) || !Array.isArray(data.unique)) {
+        throw new Error('平台会话数据不完整');
+      }
+      const actor = { id: current.id, account: current.account, head_pic: current.head_pic, level: current.level, real_name: current.real_name };
+      store.commit('userInfo/userInfo', actor);
+      store.commit('userInfo/uniqueAuth', data.unique);
+      store.commit('userInfo/access', data.unique);
+      store.commit('userInfo/name', actor.account);
+      store.commit('userInfo/avatar', actor.head_pic);
+      store.commit('menus/setopenMenus', []);
+      store.commit('menus/getmenusNav', data.menus);
+      await store.dispatch('routesList/setRoutesList', data.menus);
+      store.commit('menus/setOneLvMenus', formatFlatteningRoutes(router.options.routes));
+      store.commit('menus/setOneLvRoute', formatFlatteningRoutes(data.menus));
+      platformSessionToken = token;
+    })();
+  }
+  try {
+    await platformSessionPending;
+  } finally {
+    platformSessionPending = null;
+  }
+}
+
 router.beforeEach(async (to, from, next) => {
   // PrevLoading.start();
   keepAliveSplice(to);
@@ -130,6 +168,12 @@ router.beforeEach(async (to, from, next) => {
     // 这里依据 token 判断是否登录，可视情况修改
     const token = getCookies('token');
     if (token && token !== 'undefined') {
+      try {
+        await refreshPlatformSession(token);
+      } catch (error) {
+        if (!getPlatformToken()) return next({ name: 'login', query: { redirect: to.fullPath } });
+        return next(error);
+      }
       const access = store.state.userInfo.uniqueAuth;
       const isPermission = includeArray(to.meta.auth, access); //  判断是否有权限  TODO
       if (access.length) {
@@ -142,10 +186,7 @@ router.beforeEach(async (to, from, next) => {
               redirect: to.fullPath,
             },
           });
-          localStorage.clear();
-          removeCookies('token');
-          removeCookies('expires_time');
-          removeCookies('uuid');
+          clearPlatformAuth();
         } else {
           next({
             name: '403',
@@ -162,10 +203,7 @@ router.beforeEach(async (to, from, next) => {
           redirect: to.fullPath,
         },
       });
-      localStorage.clear();
-      removeCookies('token');
-      removeCookies('expires_time');
-      removeCookies('uuid');
+      clearPlatformAuth();
     }
   } else {
     // 不需要身份校验 直接通过

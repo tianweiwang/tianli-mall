@@ -1,0 +1,16 @@
+.marketplace-console { min-width: 0; }
+.marketplace-console *, .marketplace-dialog * { box-sizing: border-box; }
+.marketplace-console .marketplace-heading { margin: 0 0 20px; font-size: 20px; color: #303133; }
+.marketplace-console .marketplace-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 0 0 18px; }
+.marketplace-toolbar .el-select { width: 240px; max-width: 100%; }
+.marketplace-console .marketplace-feedback { margin-bottom: 18px; }
+.marketplace-console .marketplace-actions, .marketplace-dialog .marketplace-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.marketplace-console .el-button, .marketplace-dialog .el-button { display: inline-flex; align-items: center; justify-content: center; text-align: center; max-width: 100%; white-space: normal; }
+.marketplace-console .el-button > span, .marketplace-dialog .el-button > span { display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
+.marketplace-actions .el-button + .el-button, .marketplace-toolbar .el-button + .el-button { margin-left: 0; }
+.marketplace-console .marketplace-pagination { display: flex; justify-content: flex-end; margin-top: 20px; max-width: 100%; }
+.marketplace-console .marketplace-image { width: 48px; height: 48px; object-fit: contain; border: 1px solid #ebeef5; }
+.marketplace-console .marketplace-product-name { display: flex; align-items: center; gap: 12px; overflow-wrap: anywhere; }
+.marketplace-dialog .marketplace-note { color: #606266; line-height: 1.7; margin: 12px 0; }
+.marketplace-dialog .el-form-item .el-input, .marketplace-dialog .el-form-item .el-textarea { width: 100%; }
+@media (max-width: 760px) { .marketplace-console .marketplace-pagination { justify-content: flex-start; } .marketplace-console .el-card__body { padding: 16px; } }

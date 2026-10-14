@@ -208,6 +208,7 @@
 </template>
 
 <script>
+import { PlatformRaw } from '@/utils/storage';
 import vuedraggable from 'vuedraggable';
 import storeLabelList from '@/components/storeLabelList';
 import goodsList from '@/components/goodsList';
@@ -377,8 +378,8 @@ export default {
     },
     addHotTxt() {
       if (this.configData.list.length == 0) {
-        let storage = window.localStorage;
-        this.itemObj = JSON.parse(storage.getItem('itemObj'));
+        const storage = PlatformRaw;
+        this.itemObj = JSON.parse(storage.get('itemObj'));
         if (this.itemObj.link) {
           this.itemObj.link.activeVal = 0;
         }
@@ -415,8 +416,8 @@ export default {
       if (this.configData.list.length == 1) {
         let itemObj = this.configData.list[0];
         this.itemObj = itemObj;
-        let storage = window.localStorage;
-        storage.setItem('itemObj', JSON.stringify(itemObj));
+        const storage = PlatformRaw;
+        storage.set('itemObj', JSON.stringify(itemObj));
       }
       this.configData.list.splice(index, 1);
       this.configData.tabCur = 0;

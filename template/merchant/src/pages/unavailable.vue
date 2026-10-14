@@ -1,0 +1,1 @@
+<template><section class="panel"><h1>页面暂不可用</h1><el-alert :title="$route.query.reason === 'profile' ? '员工信息暂无法读取，请稍后重试' : '当前账号无此页面权限，或页面不存在'" type="warning" :closable="false" show-icon /><div class="actions"><el-button @click="$router.push('/')">重新读取本店信息</el-button><el-button @click="$router.push('/login')">返回登录</el-button></div></section></template>

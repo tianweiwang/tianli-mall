@@ -59,6 +59,7 @@
   </div>
 </template>
 <script type="text/babel">
+import { PlatformRaw } from '@/utils/storage';
 /**
  * VerifyPoints
  * @description 点选
@@ -240,7 +241,7 @@ export default {
     getPictrue() {
       const data = {
         captchaType: this.captchaType,
-        clientUid: localStorage.getItem('point'),
+        clientUid: PlatformRaw.get('point'),
         ts: Date.now(), // 现在的时间戳
       };
       ajCaptcha(data).then((res) => {

@@ -35,6 +35,7 @@
 </template>
 
 <script>
+import { PlatformRaw } from '@/utils/storage';
 import formCreate from '@form-create/element-ui';
 import { headerListApi, dataFromApi } from '@/api/setting';
 import request from '@/libs/request';
@@ -237,7 +238,7 @@ export default {
         .then((res) => {
           this.$message.success(res.msg);
           if (formData.site_name) {
-            localStorage.setItem('ADMIN_TITLE', formData.site_name);
+            PlatformRaw.set('ADMIN_TITLE', formData.site_name);
             this.$store.commit('setAdminTitle', formData.site_name);
             window.document.title = `${formData.site_name} - 系统设置`;
           }

@@ -1,0 +1,14 @@
+<template><section class="page-panel"><h1 class="page-heading">运费模板</h1><el-alert v-if="error" :title="error" type="error" :closable="false" show-icon class="feedback" /><el-alert v-if="notice" :title="notice" role="status" aria-live="polite" aria-atomic="true" type="success" :closable="false" show-icon class="feedback" /><div class="toolbar"><el-input v-model="name" placeholder="模板名称" maxlength="255" @keyup.enter.native="search" :id="fieldId('freight-search')" :label="'模板名称'" /><el-button :disabled="loading || busy" @click="search">查询</el-button><el-button type="primary" @click="$router.push('/freight/new')">新建模板</el-button></div><el-table v-loading="loading" :data="rows" border><el-table-column prop="id" label="编号" width="90" /><el-table-column prop="name" label="模板名称" min-width="180" /><el-table-column label="计费方式" min-width="100"><template slot-scope="scope">{{ ['','按件数','按重量','按体积'][scope.row.type] }}</template></el-table-column><el-table-column prop="sort" label="排序" width="90" /><el-table-column label="操作" min-width="150"><template slot-scope="scope"><el-button size="mini" @click="$router.push('/freight/' + scope.row.id + '/edit')">编辑</el-button><el-button size="mini" :disabled="busy" @click="remove(scope.row)">删除</el-button></template></el-table-column></el-table><div class="pagination"><el-pagination :current-page="page" :page-size="limit" :pager-count="5" :total="count" layout="prev, pager, next" @current-change="changePage" /></div></section></template>
+<script>
+import { fieldNames } from '../../accessibility';
+import { api } from '../../api';
+export default {
+  mixins: [fieldNames],
+  data: () => ({ rows: [], count: 0, page: 1, limit: 20, name: '', loading: false, busy: false, error: '', notice: '' }), created() { this.load(); },
+  methods: {
+    search() { this.page = 1; this.load(); }, changePage(page) { if (!this.loading) { this.page = page; this.load(); } },
+    async load(propagate = false) { if (this.loading) return; this.loading = true; this.error = ''; try { const data = await api.freightTemplates({ name: this.name.trim(), page: this.page, limit: this.limit }); if (!Array.isArray(data.list) || !Number.isInteger(data.count)) throw new Error('运费模板列表返回不完整'); this.rows = data.list; this.count = data.count; } catch (error) { this.error = error.message; if (propagate) throw error; } finally { this.loading = false; } },
+    async remove(row) { if (this.busy) return; try { await this.$confirm('删除运费模板“' + row.name + '”？正在使用的模板不能删除。', '删除模板', { type: 'warning' }); } catch (action) { return; } this.busy = true; this.error = ''; this.notice = ''; let deleted = false; try { await api.deleteFreight(row.id); deleted = true; await this.load(true); this.notice = '运费模板已删除'; } catch (error) { this.error = (deleted ? '模板已删除，列表刷新未完成：' : '') + error.message; } finally { this.busy = false; } },
+  },
+};
+</script>

@@ -72,6 +72,7 @@
   </div>
 </template>
 <script>
+import { PlatformRaw } from '@/utils/storage';
 import { AccountLogin, loginInfoApi } from '@/api/account';
 import { getWorkermanUrl } from '@/api/kefu';
 import { setCookies } from '@/libs/util';
@@ -139,7 +140,7 @@ export default {
         .then((res) => {
           const data = res.data || {};
           document.title = `${data.site_name} - 登录`;
-          localStorage.setItem('ADMIN_TITLE', data.site_name || '');
+          PlatformRaw.set('ADMIN_TITLE', data.site_name || '');
           this.$store.commit('setAdminTitle', data.site_name);
           this.login_logo = data.login_logo || require('@/assets/images/logo.png');
           this.swiperList = data.slide && data.slide.length ? data.slide : [{ slide: this.defaultSwiperList }];

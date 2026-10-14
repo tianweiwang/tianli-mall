@@ -1,0 +1,79 @@
+{
+  "schema": 1,
+  "status": "LOCAL_FRONTEND_SOURCE_CHECKPOINT_PARTIAL_MS3",
+  "source_base": "477732e3e03ed4ba1dbb6b44a94dbba75f7e1978",
+  "product_scope": "generic multi-merchant marketplace",
+  "merchant_source_files": 39,
+  "actual_npm_generated_merchant_lock": {
+    "bytes": 630978,
+    "sha256": "2567a1e22714e899f57e16c0fc1ebc03f16505a3116e707d58c0c3d8decb0158"
+  },
+  "platform_selected_source_files": 28,
+  "target_source_checks": [
+    {
+      "check": "merchant-sources",
+      "native_exit": 0,
+      "actual_script_in_target": true,
+      "parser_dependencies": "previously installed exact build lock"
+    },
+    {
+      "check": "platform-sources",
+      "native_exit": 0,
+      "actual_script_in_target": true,
+      "parser_dependencies": "previously installed exact build lock"
+    }
+  ],
+  "merchant_actual_build_native_exits": {
+    "npm-lock-metadata": 0,
+    "npm-ci": 0,
+    "npm-build": 0
+  },
+  "platform_actual_build_native_exits": {
+    "npm-ci": 0,
+    "npm-build": 0
+  },
+  "merchant_build_receipt": {
+    "bytes": 11737,
+    "sha256": "553ad9dc8bccd34ae5bfc3f13cfcce106f025b83a2f7a59af4e20b5dd96c2c91"
+  },
+  "platform_build_receipt": {
+    "bytes": 3966,
+    "sha256": "3ba7b0921e06d3a0cbae03d0cd4403c24cfc287eff3b6245605a0c0875c2c1a3"
+  },
+  "default_public_UI": {
+    "scenes": 4,
+    "corrected_receipt": {
+      "bytes": 8148,
+      "sha256": "33f0c08ac23ed79b9af7020d43b697798d96f564f66b3c1de596ea9cd8b16287"
+    },
+    "login_or_password_submission": false
+  },
+  "configured_brand_actual_build_native_exit": 0,
+  "implemented": [
+    "merchant login and password-setup source",
+    "owned product and SKU editing",
+    "stock adjustment",
+    "attachments and freight",
+    "employees and roles",
+    "platform merchant management and product review",
+    "platform storage namespace and current actor reload"
+  ],
+  "pending_ordinary_verification": [
+    "F01 real login and setup",
+    "F02 same and dual tab refresh and logout",
+    "F03 ordinary product workflow and DB evidence",
+    "platform ordinary business UI workflows",
+    "Task5 H5 and real public storefront UI/API",
+    "remaining required backend ordinary checks"
+  ],
+  "stopped_tests_not_run": [
+    "refusal",
+    "fault",
+    "concurrency",
+    "restoration",
+    "real payment"
+  ],
+  "full_MS3_acceptance": false,
+  "main_or_current_RUN5_changed": false,
+  "pushed_or_deployed": false
+}

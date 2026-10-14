@@ -1,3 +1,4 @@
+import { PlatformRaw } from '@/utils/storage';
 // +---------------------------------------------------------------------
 // | CRMEB [ CRMEB赋能开发者，助力企业发展 ]
 // +---------------------------------------------------------------------
@@ -125,13 +126,13 @@ export const showTitle = (item, vm) => {
  * @description 本地存储和获取标签导航列表
  */
 export const setTagNavListInLocalstorage = (list) => {
-  localStorage.tagNaveList = JSON.stringify(list);
+  PlatformRaw.set('tagNaveList', JSON.stringify(list));
 };
 /**
  * @returns {Array} 其中的每个元素只包含路由原信息中的name, path, meta三项
  */
 export const getTagNavListFromLocalstorage = () => {
-  const list = localStorage.tagNaveList;
+  const list = PlatformRaw.get('tagNaveList');
   return list ? JSON.parse(list) : [];
 };
 
@@ -363,11 +364,11 @@ export const routeHasExist = (tagNavList, routeItem) => {
 };
 
 export const localSave = (key, value) => {
-  localStorage.setItem(key, value);
+  PlatformRaw.set(key, value);
 };
 
 export const localRead = (key) => {
-  return localStorage.getItem(key) || '';
+  return PlatformRaw.get(key) || '';
 };
 
 // scrollTop animation
@@ -411,7 +412,7 @@ export const scrollTop = (el, from = 0, to, duration = 500, endCallback) => {
  * @param {Object} vm Vue实例
  */
 export const setTitle = (routeItem, vm) => {
-  let winTitle = localStorage.getItem('ADMIN_TITLE') || title;
+  let winTitle = PlatformRaw.get('ADMIN_TITLE') || title;
   const handledRoute = getRouteTitleHandled(routeItem);
   const pageTitle = showTitle(handledRoute, vm);
   const resTitle = pageTitle ? `${winTitle} - ${pageTitle}` : winTitle;

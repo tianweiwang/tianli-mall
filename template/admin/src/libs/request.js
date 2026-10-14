@@ -1,3 +1,4 @@
+import { clearPlatformAuth } from '@/utils/storage';
 // +---------------------------------------------------------------------
 // | CRMEB [ CRMEB赋能开发者，助力企业发展 ]
 // +---------------------------------------------------------------------
@@ -67,10 +68,7 @@ service.interceptors.response.use(
       case 200:
         return obj;
       case 401:
-        localStorage.clear();
-        removeCookies('token');
-        removeCookies('expires_time');
-        removeCookies('uuid');
+        clearPlatformAuth();
         router.replace({ name: 'login' }).catch(() => {});
         return Promise.reject({ msg: '未登录' });
       case 402:

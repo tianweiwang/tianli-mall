@@ -57,9 +57,9 @@
 </template>
 
 <script>
+import { clearPlatformAuth } from '@/utils/storage';
 import screenfull from 'screenfull';
 import { AccountLogout } from '@/api/account';
-import { removeCookies } from '@/libs/util';
 import { Session, Local } from '@/utils/storage.js';
 import UserNews from '@/layout/navBars/breadcrumb/userNews.vue';
 import Search from '@/layout/navBars/breadcrumb/search.vue';
@@ -78,7 +78,7 @@ export default {
   computed: {
     // 获取用户信息
     getUserInfos() {
-      return this.$store.state.userInfo.userInfo;
+      return this.$store.state.userInfo.userInfo || { account: '', head_pic: '' };
     },
     // 设置弹性盒子布局 flex
     layoutUserFlexNum() {
@@ -213,12 +213,9 @@ export default {
                   .then((res) => {
                     done();
                     this.$message.success('您已成功退出');
-                    this.$store.commit('clearAll');
+                    clearPlatformAuth();
                     // localStorage.clear();
                     // sessionStorage.clear();
-                    removeCookies('token');
-                    removeCookies('expires_time');
-                    removeCookies('uuid');
                     // this.$router.replace({ path: `${settings.routePre}/login` });
                   })
                   .finally(() => {

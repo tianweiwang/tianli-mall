@@ -32,7 +32,7 @@
 </template>
 
 <script>
-import { Local, Session } from '@/utils/storage';
+import { Local, clearPlatformAuth } from '@/utils/storage';
 import config from '../../../package.json';
 import setting from '../../setting';
 export default {
@@ -60,8 +60,7 @@ export default {
       this.isLoading = true;
       this.btnTxt = this.$t('message.upgrade.btnTwoLoading');
       setTimeout(() => {
-        Local.clear();
-        Session.clear();
+        clearPlatformAuth();
         Local.set('version', this.version);
         this.$router.push({ path: `${setting.routePre}/login` });
       }, 2000);

@@ -131,6 +131,7 @@
 </template>
 
 <script>
+import { clearPlatformAuth } from '@/utils/storage';
 import {
   upgradeCapabilityApi,
   upgradeListApi,
@@ -143,7 +144,7 @@ import {
 } from '@/api/system';
 import axios from 'axios';
 import { AccountLogout } from '@/api/account';
-import { getCookies,removeCookies} from '@/libs/util';
+import { getCookies } from '@/libs/util';
 
 import Setting from '@/setting';
 export default {
@@ -460,10 +461,7 @@ export default {
         .then((res) => {
           this.$message.success('您已成功退出');
           this.$router.replace(this.$routeProStr + '/login');
-          localStorage.clear();
-          removeCookies('token');
-          removeCookies('expires_time');
-          removeCookies('uuid');
+          clearPlatformAuth();
           // window.location.reload()
         })
         .catch((res) => {});

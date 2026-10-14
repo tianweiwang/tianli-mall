@@ -30,6 +30,7 @@
   </div>
 </template>
 <script type="text/babel">
+import { PlatformRaw } from '@/utils/storage';
 /**
  * Verify 验证码组件
  * @description 分发验证码使用
@@ -153,11 +154,11 @@ export default {
       var slider = 'slider' + '-' + s.join('');
       var point = 'point' + '-' + s.join('');
       // 判断下是否存在 slider
-      if (!localStorage.getItem('slider')) {
-        localStorage.setItem('slider', slider);
+      if (!PlatformRaw.get('slider')) {
+        PlatformRaw.set('slider', slider);
       }
-      if (!localStorage.getItem('point')) {
-        localStorage.setItem('point', point);
+      if (!PlatformRaw.get('point')) {
+        PlatformRaw.set('point', point);
       }
     },
     /**

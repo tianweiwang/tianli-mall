@@ -1,5 +1,3 @@
-import { Session } from '@/utils/storage.js';
-
 const userInfosModule = {
   namespaced: true,
   state: {
@@ -17,7 +15,7 @@ const userInfosModule = {
       if (data) {
         commit('getUserInfos', data);
       } else {
-        if (Session.get('userInfo')) commit('getUserInfos', Session.get('userInfo'));
+        commit('getUserInfos', {});
       }
     },
   },

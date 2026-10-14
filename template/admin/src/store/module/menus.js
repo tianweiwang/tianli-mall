@@ -13,12 +13,8 @@
  * */
 import { menusApi } from '@/api/account';
 function getMenusName() {
-  let storage = window.localStorage;
-  let menuList = JSON.parse(storage.getItem('menuList'));
-  if (typeof menuList !== 'object' || menuList === null) {
-    menuList = [];
-  }
-  return menuList;
+  // Current menus come from the authenticated API, never a legacy origin-wide snapshot.
+  return [];
 }
 export default {
   namespaced: true,

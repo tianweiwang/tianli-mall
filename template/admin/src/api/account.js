@@ -63,3 +63,7 @@ export function menusListApi() {
 }
 
 export function AccountRegister() {}
+
+export function AccountInfo() {
+  return request({ url: '/setting/info', method: 'get' });
+}

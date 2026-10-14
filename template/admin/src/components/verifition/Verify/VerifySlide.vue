@@ -66,6 +66,7 @@
   </div>
 </template>
 <script type="text/babel">
+import { PlatformRaw } from '@/utils/storage';
 /**
  * VerifySlide
  * @description 滑块
@@ -366,7 +367,7 @@ export default {
     getPictrue() {
       const data = {
         captchaType: this.captchaType,
-        clientUid: localStorage.getItem('slider'),
+        clientUid: PlatformRaw.get('slider'),
         ts: Date.now(), // 现在的时间戳
       };
       ajCaptcha(data)

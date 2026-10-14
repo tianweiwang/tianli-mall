@@ -251,6 +251,7 @@
 </template>
 
 <script>
+import { PlatformRaw } from '@/utils/storage';
 import {
   getExpressData,
   putDelivery,
@@ -320,7 +321,7 @@ export default {
   mounted() {
     this.kuaidiComsList(1);
     let delData;
-    if (localStorage.getItem('DELIVERY_DATA')) delData = JSON.parse(localStorage.getItem('DELIVERY_DATA'));
+    if (PlatformRaw.get('DELIVERY_DATA')) delData = JSON.parse(PlatformRaw.get('DELIVERY_DATA'));
     if (delData) {
       this.formItem.delivery_name = delData.delivery_name;
       this.formItem.delivery_code = delData.delivery_code;
@@ -532,7 +533,7 @@ export default {
           .then((res) => {
             this.modals = false;
             this.$message.success(res.msg);
-            localStorage.setItem('DELIVERY_DATA', JSON.stringify(this.formItem));
+            PlatformRaw.set('DELIVERY_DATA', JSON.stringify(this.formItem));
             this.$emit('submitFail');
             this.reset();
             this.splitSwitch = false;
@@ -546,7 +547,7 @@ export default {
           .then(async (res) => {
             this.modals = false;
             this.$message.success(res.msg);
-            localStorage.setItem('DELIVERY_DATA', JSON.stringify(this.formItem));
+            PlatformRaw.set('DELIVERY_DATA', JSON.stringify(this.formItem));
             this.splitSwitch = false;
             this.$emit('submitFail');
             this.reset();
