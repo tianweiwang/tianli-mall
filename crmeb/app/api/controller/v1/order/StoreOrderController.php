@@ -99,7 +99,7 @@ class StoreOrderController
      */
     public function confirm(Request $request, ShippingTemplatesServices $services)
     {
-        if (!$services->get(1, ['id'])) {
+        if (!\app\services\marketplace\freight\MerchantFreightPolicy::enabled() && !$services->get(1, ['id'])) {
             return app('json')->fail('默认运费模板未配置，无法下单');
         }
         [$cartId, $new, $addressId, $shipping_type, $is_gift] = $request->postMore([
@@ -113,7 +113,7 @@ class StoreOrderController
             return app('json')->fail('请提交购买的商品');
         }
         $user = $request->user()->toArray();
-        return app('json')->success($this->services->getOrderConfirmData($user, $cartId, !!$new, $addressId, (int)$shipping_type, (int)$is_gift));
+        return app('json')->success(app()->make(\app\services\marketplace\PublicCatalogServices::class)->quoteOutput($this->services->getOrderConfirmData($user, $cartId, !!$new, $addressId, (int)$shipping_type, (int)$is_gift),(int)$request->uid()));
     }
 
     /**

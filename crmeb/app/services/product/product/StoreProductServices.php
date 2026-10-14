@@ -1276,7 +1276,7 @@ class StoreProductServices extends BaseServices
         }
         [$page, $limit] = $this->getPageValue();
         $where['vip_user'] = $uid ? app()->make(UserServices::class)->value(['uid' => $uid], 'is_money_level') : 0;
-        $list = $this->dao->getSearchList($where, $page, $limit, ['id,store_name,cate_id,image,IFNULL(sales, 0) + IFNULL(ficti, 0) as sales,price,stock,activity,ot_price,spec_type,recommend_image,unit_name,is_vip,vip_price,is_virtual,presale,custom_form,virtual_type,min_qty,label_list']);
+        $list = $this->dao->getPublicSearchList($where, $page, $limit, ['id,store_name,cate_id,image,IFNULL(sales, 0) + IFNULL(ficti, 0) as sales,price,stock,activity,ot_price,spec_type,recommend_image,unit_name,is_vip,vip_price,is_virtual,presale,custom_form,virtual_type,min_qty,label_list']);
         /** @var MemberCardServices $memberCardService */
         $memberCardService = app()->make(MemberCardServices::class);
         $vipStatus = $memberCardService->isOpenMemberCard('vip_price');
@@ -1317,7 +1317,7 @@ class StoreProductServices extends BaseServices
         }
         $list = $this->getActivityList($list);
         $list = $this->getProduceOtherList($list, $uid, !!$where['type']);
-        return $list;
+        return app()->make(\app\services\marketplace\PublicCatalogServices::class)->listOutput($list);
     }
 
     /**
@@ -1337,7 +1337,8 @@ class StoreProductServices extends BaseServices
             $services = app()->make(StoreProductAttrValueServices::class);
             $attList = $services->getColumn([
                 'product_id' => $productIds,
-                'type' => 0
+                'type' => 0,
+                'is_show' => 1
             ], 'count(*)', 'product_id');
             if ($uid) {
                 /** @var StoreCartServices $cartServices */
@@ -1488,9 +1489,9 @@ class StoreProductServices extends BaseServices
             $page = 1;
             $limit = $num;
         }
-        $list = $this->dao->getSearchList($where, $page, $limit, ['id,store_name,cate_id,image,IFNULL(sales, 0) + IFNULL(ficti, 0) as sales,price,stock,activity,unit_name,presale,is_vip,vip_price']);
+        $list = $this->dao->getPublicSearchList($where, $page, $limit, ['id,store_name,cate_id,image,IFNULL(sales, 0) + IFNULL(ficti, 0) as sales,price,stock,activity,unit_name,presale,is_vip,vip_price']);
         $list = $this->getActivityList($list);
-        return $list;
+        return app()->make(\app\services\marketplace\PublicCatalogServices::class)->listOutput($list);
     }
 
     /**
@@ -1508,12 +1509,11 @@ class StoreProductServices extends BaseServices
         $uid = (int)$request->uid();
         $data['uid'] = $uid;
 
-        $storeInfo = $this->dao->getOne(['id' => $id, 'is_show' => 1, 'is_del' => 0], '*', ['description']);
-        if (!$storeInfo) {
-            throw new AdminException('商品不存在');
-        } else {
-            $storeInfo = $storeInfo->toArray();
-        }
+        $catalog = app()->make(\app\services\marketplace\PublicCatalogServices::class);
+        $definition = $catalog->ordinaryDefinition($id,$uid,$type);
+        $storeInfo = $catalog->displayRoot($definition['root']);
+        $storeInfo['stock'] = $definition['stock'];
+        $storeInfo['default_sku'] = $definition['default_sku'];
         $siteUrl = sys_config('site_url');
         $storeInfo['image'] = set_file_url($storeInfo['image'], $siteUrl);
         $storeInfo['image_base'] = set_file_url($storeInfo['image'], $siteUrl);
@@ -1579,7 +1579,8 @@ class StoreProductServices extends BaseServices
 
         /** @var StoreProductAttrServices $storeProductAttrServices */
         $storeProductAttrServices = app()->make(StoreProductAttrServices::class);
-        list($productAttr, $productValue) = $storeProductAttrServices->getProductAttrDetail($id, $uid, $type, 0);
+        $productAttr = $definition['attributes'];
+        $productValue = $definition['raw_values'];
         $attrPics = [];
         foreach ($productAttr as $attrValues) {
             foreach ($attrValues['attr_value'] as $picArr) {
@@ -1589,48 +1590,13 @@ class StoreProductServices extends BaseServices
             }
         }
         $storeInfo['attrPics'] = $attrPics;
-        //无属性添加默认属性
-        if (empty($productValue)) {
-            $attr = [
-                [
-                    'value' => '规格',
-                    'detailValue' => '',
-                    'attrHidden' => '',
-                    'detail' => ['默认']
-                ]
-            ];
-            $detail[0] = [
-                'value1' => '默认',
-                'detail' => ['规格' => '默认'],
-                'pic' => $storeInfo['image'],
-                'price' => $storeInfo['price'],
-                'cost' => $storeInfo['cost'],
-                'ot_price' => $storeInfo['ot_price'],
-                'stock' => $storeInfo['stock'],
-                'bar_code' => '',
-                'bar_code_number' => '',
-                'weight' => 0,
-                'volume' => 0,
-                'brokerage' => 0,
-                'brokerage_two' => 0,
-            ];
-            $skuList = $this->validateProductAttr($attr, $detail, $id, 0, 1, true);
-            $storeProductAttrServices->saveProductAttr($skuList, $id, 0);
-        }
         $attrValue = $productValue;
+        $data['spec_unique'] = $definition['spec_unique'];
         if (!$storeInfo['spec_type']) {
             $productAttr = [];
             $productValue = [];
-            $data['spec_unique'] = $attrValue['默认']['unique'];
-        } else {
-            foreach ($productValue as &$sku) {
-                if ($sku['is_show'] == 0) {
-                    $storeInfo['stock'] = $storeInfo['stock'] - $sku['stock'];
-                    $sku['stock'] = 0;
-                }
-            }
-            $data['spec_unique'] = '';
         }
+        if (!$definition['definition_complete']) $storeInfo['cart_button'] = 0;
         $data['productAttr'] = $productAttr;
         $data['productValue'] = $productValue;
         $data['storeInfo'] = $storeInfo;
@@ -1658,7 +1624,7 @@ class StoreProductServices extends BaseServices
                     $user->is_promoter = 1;
                 }
             }
-            $data['priceName'] = $this->getPacketPrice($storeInfo, $attrValue, $uid);
+            $data['priceName'] = $attrValue ? $this->getPacketPrice($storeInfo, $attrValue, $uid) : 0;
             //用户访问事件
             event('UserVisitListener', [$uid, $id, 'product', $storeInfo['cate_id'], 'view']);
         }
@@ -1669,7 +1635,7 @@ class StoreProductServices extends BaseServices
         [$replyCount, $goodReply, $replyChance] = $storeProductReplyService->getProductReplyData($id);
         $data['replyChance'] = $replyChance;
         $data['replyCount'] = $replyCount;
-        $data['mer_id'] = 0;
+        $data['mer_id'] = $definition['root']['mer_id'];
         $vip_user = $uid ? app()->make(UserServices::class)->value(['uid' => $uid], 'is_money_level') : 0;
         if ($storeInfo['recommend_list'] != '') {
             $recommend_list = explode(',', $storeInfo['recommend_list']);
@@ -1696,7 +1662,7 @@ class StoreProductServices extends BaseServices
             'visit_time' => date('Y-m-d H:i:s'),
         ]]);
 
-        return $data;
+        return $catalog->detailOutput($data,$definition);
     }
 
     /**
@@ -2020,37 +1986,37 @@ class StoreProductServices extends BaseServices
                         $k = 0;
                         if ($is_num) {
                             $bastNumber = (int)sys_config('bast_number', 0); //TODO 精品推荐个数
-                            $list = $bastNumber ? $list = $this->dao->getRecommendProduct($where, $field, $bastNumber, $page, $limit) : [];
+                            $list = $bastNumber ? $list = $this->dao->getPublicRecommendProduct($where, $field, $bastNumber, $page, $limit) : [];
                         } else {
-                            $list = $this->dao->getRecommendProduct($where, $field, 0, $page, $limit);
+                            $list = $this->dao->getPublicRecommendProduct($where, $field, 0, $page, $limit);
                         }
                         break;
                     case 'is_new': //首发新品
                         $k = 1;
                         if ($is_num) {
                             $firstNumber = (int)sys_config('first_number', 0); //TODO 首发新品个数
-                            $list = $firstNumber ? $list = $this->dao->getRecommendProduct($where, $field, $firstNumber, $page, $limit) : [];
+                            $list = $firstNumber ? $list = $this->dao->getPublicRecommendProduct($where, $field, $firstNumber, $page, $limit) : [];
                         } else {
-                            $list = $this->dao->getRecommendProduct($where, $field, 0, $page, $limit);
+                            $list = $this->dao->getPublicRecommendProduct($where, $field, 0, $page, $limit);
                         }
                         break;
                     case 'is_benefit': //首页促销单品
                         $k = 2;
                         if ($is_num) {
                             $promotionNumber = (int)sys_config('promotion_number', 0); //TODO 首发新品个数
-                            $list = $promotionNumber ? $list = $this->dao->getRecommendProduct($where, $field, $promotionNumber, $page, $limit) : [];
+                            $list = $promotionNumber ? $list = $this->dao->getPublicRecommendProduct($where, $field, $promotionNumber, $page, $limit) : [];
                         } else {
-                            $list = $this->dao->getRecommendProduct($where, $field, 0, $page, $limit);
+                            $list = $this->dao->getPublicRecommendProduct($where, $field, 0, $page, $limit);
                         }
                         break;
                     case 'is_hot': //热门榜单
                         $k = 3;
                         $hotNumber = $is_num ? 3 : 0;
-                        $list = $this->dao->getRecommendProduct($where, $field, $hotNumber, $page, $limit);
+                        $list = $this->dao->getPublicRecommendProduct($where, $field, $hotNumber, $page, $limit);
                         break;
                     case 'is_vip': //会员
                         $k = 4;
-                        $list = $this->dao->getRecommendProduct($where, $field, 0, $page, $limit);
+                        $list = $this->dao->getPublicRecommendProduct($where, $field, 0, $page, $limit);
                         break;
                 }
                 if ($list) {
@@ -2062,7 +2028,7 @@ class StoreProductServices extends BaseServices
                         }
                     }
                 }
-                if (isset($k)) $data[$k] = $list;
+                if (isset($k)) $data[$k] = app()->make(\app\services\marketplace\PublicCatalogServices::class)->listOutput($this->publicListDisplay($list));
             }
         }
         return $data;
@@ -2083,7 +2049,7 @@ class StoreProductServices extends BaseServices
     {
         [$page, $limit] = $this->getPageValue();
         $where['vip_user'] = $uid ? app()->make(UserServices::class)->value(['uid' => $uid], 'is_money_level') : 0;
-        $list = $this->dao->getRecommendProduct($where, $field, $num, $page, $limit);
+        $list = $this->dao->getPublicRecommendProduct($where, $field, $num, $page, $limit);
         if ($list) {
             $list = get_thumb_water($list, $type);
             $list = $this->getActivityList($list);
@@ -2096,7 +2062,7 @@ class StoreProductServices extends BaseServices
                 }
             }
         }
-        return $list;
+        return app()->make(\app\services\marketplace\PublicCatalogServices::class)->listOutput($this->publicListDisplay($list));
     }
 
     /**
@@ -2133,7 +2099,7 @@ class StoreProductServices extends BaseServices
      */
     public function getProductWords(int $productId)
     {
-        $productInfo = $this->dao->getOne(['is_del' => 0, 'is_show' => 1, 'id' => $productId]);
+        $productInfo = app()->make(\app\services\marketplace\PublicCatalogServices::class)->ordinaryRoot($productId);
         $keyWords = "";
         if ($productInfo) {
             $oneKey = "crmeb-fu致文本 Http:/ZБ";
@@ -2225,6 +2191,7 @@ class StoreProductServices extends BaseServices
         $data = $this->dao->getAdvanceList($where, $page, $limit);
         foreach ($data['list'] as &$item) {
         }
+        $data['list'] = app()->make(\app\services\marketplace\PublicCatalogServices::class)->listOutput($this->publicListDisplay($data['list']));
         return $data;
     }
 
@@ -2237,13 +2204,14 @@ class StoreProductServices extends BaseServices
      */
     public function getCode(int $id, string $userType, $user)
     {
+        app()->make(\app\services\marketplace\PublicCatalogServices::class)->ordinaryRoot($id);
         if (!$id || !$this->isValidProduct($id, 'id')) {
             throw new ApiException('商品不存在');
         }
         if ($userType == 'routine') {
             /** @var QrcodeServices $qrcodeService */
             $qrcodeService = app()->make(QrcodeServices::class);
-            $url = $qrcodeService->getRoutineQrcodePath($id, $user['uid'], 0, ['is_promoter' => $user['is_promoter']]);
+            $url = $qrcodeService->getCatalogRoutineQrcodePath($id, $user['uid'], 0, ['is_promoter' => $user['is_promoter']]);
             if (!$url) {
                 throw new ApiException('二维码生成失败');
             } else {
@@ -2738,6 +2706,10 @@ class StoreProductServices extends BaseServices
      */
     public function realPrice($uid, $id, $unique)
     {
+        $catalog = app()->make(\app\services\marketplace\PublicCatalogServices::class);
+        $definition = $catalog->ordinaryDefinition((int)$id,(int)$uid);
+        $visible = array_column($definition['raw_values'],null,'unique');
+        if (!is_string($unique) || !isset($visible[$unique])) throw new ApiException('商品规格已失效');
         $isMember = $isVip = $levelPrice = $memberPrice = $realPrice = $price = 0;
         $levelDiscount = 100;
         if ($uid) {
@@ -2746,9 +2718,8 @@ class StoreProductServices extends BaseServices
                 $levelDiscount = app()->make(UserLevelServices::class)->getUerLevelInfoByUid($uid, 'discount');
             }
         }
-        $productIsVip = $this->dao->value(['id' => $id], 'is_vip');
-        $attrInfo = app()->make(StoreProductAttrValueServices::class)->get(['unique' => $unique, 'product_id' => $id, 'type' => 0], ['price', 'vip_price', 'ot_price']);
-        $attrInfo = $attrInfo->toArray();
+        $productIsVip = $definition['root']['is_vip'];
+        $attrInfo = $visible[$unique];
         $realPrice = $price = $attrInfo['price'];
         $levelPrice = bcmul($attrInfo['price'], bcdiv($levelDiscount, 100, 2), 2);
         $memberPrice = $attrInfo['vip_price'];
@@ -2881,6 +2852,58 @@ class StoreProductServices extends BaseServices
             $item['cate_name'] = $item['cateName'][0]['cate_name'];
             unset($item['cateName']);
         }
+        if ($where['ids'] == '') return $list;
+        // 将$list转换为以id为键的数组
+        $list = array_column($list, null, 'id');
+        $data = [];
+        // 遍历where中的ids，按顺序取出对应商品
+        foreach (explode(',', $where['ids']) as $id) {
+            if (isset($list[$id])) {
+                $data[] = $list[$id];
+            }
+        }
+        return $data;
+    }
+    /** Public-only aliases keep the shared admin/raw methods and their fields unchanged. */
+    public function getPublicCount(array $where)
+    {
+        return $this->dao->getPublicCount($where);
+    }
+    public function getPublicSearchList(array $where,int $page=0,int $limit=0,array $field=['*'],array $with=[])
+    {
+        return $this->dao->getPublicSearchList($where,$page,$limit,$field,$with);
+    }
+    /** Actual final display conversion for direct/recommend list producers. */
+    public function publicListDisplay(array $list):array
+    {
+        foreach($list as&$row){
+            if(isset($row['star'])&&is_array($row['star']))$row['star']=$row['star']?bcdiv((string)array_sum(array_column($row['star'],'product_score')),(string)count($row['star']),1):'5.0';
+            if(isset($row['label_list'])&&is_string($row['label_list']))$row['label_list']=$row['label_list']!==''?app()->make(StoreProductLabelServices::class)->labelListByIds(explode(',',$row['label_list'])):[];
+        }unset($row);
+        return $this->getActivityList($list);
+    }
+
+    public function getPublicThemeProduct($where)
+    {
+        $sort = $where['sort'] ? 'asc' : 'desc';
+        switch ($where['order']) {
+            case 0:
+                $order = 'sales ' . $sort;
+                break;
+            case 1:
+                $order = 'price ' . $sort;
+                break;
+            default:
+                $order = 'sort desc';
+                break;
+        }
+        $limit = $where['ids'] == '' ? (int)$where['limit'] : 1000;
+        $list = $this->dao->getPublicThemeProduct($where, $order, $limit);
+        foreach ($list as &$item) {
+            $item['cate_name'] = $item['cateName'][0]['cate_name'] ?? '';
+            unset($item['cateName']);
+        }
+        $list = app()->make(\app\services\marketplace\PublicCatalogServices::class)->listOutput($this->publicListDisplay($list));
         if ($where['ids'] == '') return $list;
         // 将$list转换为以id为键的数组
         $list = array_column($list, null, 'id');

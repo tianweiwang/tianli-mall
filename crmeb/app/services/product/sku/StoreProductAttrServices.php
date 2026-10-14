@@ -198,4 +198,20 @@ class StoreProductAttrServices extends BaseServices
         }
         return [$attrDetail, $values];
     }
+    /** Public-only pure reader; original raw/admin reader remains intact. */
+    public function getPublicProductAttrDetail(int $id,int $uid,int $type,int $typeId=0,int $productId=0):array
+    {
+        $catalog=app()->make(\app\services\marketplace\PublicCatalogServices::class);
+        $definition=$typeId?$catalog->nativeDefinition($typeId,$id,$productId,$uid,$type):$catalog->ordinaryDefinition($id,$uid,$type);
+        $attributes=$definition['attributes'];
+        if(!$typeId&&(int)$definition['root']['spec_type']===0&&$definition['definition_complete']){
+            $axes=$this->dao->getProductAttr(['product_id'=>$id,'type'=>0]);
+            foreach($axes as$axis){
+                $options=[];foreach($axis['attr_values']as$option)$options[]=['attr'=>$option,'check'=>false,'pic'=>''];
+                $attributes[]=['attr_name'=>$axis['attr_name'],'attr_values'=>$axis['attr_values'],'attr_value'=>$options];
+            }
+        }
+        return [$attributes,$definition['raw_values']];
+    }
+
 }

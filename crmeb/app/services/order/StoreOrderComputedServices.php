@@ -77,7 +77,7 @@ class StoreOrderComputedServices extends BaseServices
      * @param int $shipping_type
      * @return array
      */
-    public function computedOrder(int $uid, array $userInfo, array $cartGroup, int $addressId, string $payType, bool $useIntegral = false, int $couponId = 0, bool $isCreate = false, int $shippingType = 1, int $is_gift = 0)
+    public function computedOrder(int $uid, array $userInfo, array &$cartGroup, int $addressId, string $payType, bool $useIntegral = false, int $couponId = 0, bool $isCreate = false, int $shippingType = 1, int $is_gift = 0)
     {
         $offlinePayStatus = (int)sys_config('offline_pay_status') ?? (int)2;
         $systemPayType = PayServices::PAY_TYPE;
@@ -94,18 +94,19 @@ class StoreOrderComputedServices extends BaseServices
         $priceGroup = $cartGroup['priceGroup'];
         $other = $cartGroup['other'];
         $payPrice = (float)$priceGroup['totalPrice'];
-        $addr = $cartGroup['addr'] ?? [];
-        $postage = $priceGroup;
-        if (!$addr || $addr['id'] != $addressId) {
-            /** @var UserAddressServices $addressServices */
-            $addressServices = app()->make(UserAddressServices::class);
-            $addr = $addressServices->getAddress($addressId) ?? [];
-            if ($addr) {
-                $addr = $addr->toArray();
-            }
-            //改变地址重新计算邮费
-            $postage = [];
-        }
+        $previousAddress = $cartGroup['addr'] ?? [];
+        /** @var UserAddressServices $addressServices */
+        $addressServices = app()->make(UserAddressServices::class);
+        $currentAddress = $addressId ? $addressServices->getOne(['id' => $addressId, 'uid' => $uid, 'is_del' => 0]) : null;
+        $addr = $currentAddress ? $currentAddress->toArray() : [];
+        $postage = $previousAddress === $addr ? $priceGroup : [];
+        $cartServices=app()->make(\app\services\order\StoreCartServices::class);
+        [$cartInfo,$valid,$invalid]=$cartServices->handleCartList($uid,$cartInfo,$addr,(int)$shippingType);
+        if($invalid)throw new ApiException('商品不支持当前购买或配送方式');
+        $priceGroup=$this->getOrderPriceGroup(floatval(sys_config('store_free_postage'))?:0,$valid,$addr,$userInfo,$shippingType,$is_gift);
+        $cartInfo=$priceGroup['cartInfo']??$valid;
+        $cartGroup['cartInfo']=$cartInfo;$cartGroup['priceGroup']=$priceGroup;$cartGroup['addr']=$addr;
+        $payPrice=(float)$priceGroup['totalPrice'];$postage=$priceGroup;
         $combinationId = $this->paramData['combinationId'] ?? 0;
         $seckillId = $this->paramData['seckill_id'] ?? 0;
         $bargainId = $this->paramData['bargainId'] ?? 0;
@@ -353,7 +354,7 @@ class StoreOrderComputedServices extends BaseServices
         $postageArr = [];
         if (isset($cartInfo[0]['productInfo']['is_virtual']) && $cartInfo[0]['productInfo']['is_virtual'] == 1) {
             $storePostage = 0;
-        } elseif ($storeFreePostage && $cartInfo && $addr) {
+        } elseif ($storeFreePostage && $cartInfo && $addr && (!\app\services\marketplace\freight\MerchantFreightPolicy::enabled() || $freightResolved !== [])) {
             if ($sumPrice >= $storeFreePostage) {//如果总价大于等于满额包邮 邮费等于0
                 $isStoreFreePostage = true;
                 $storePostage = 0;

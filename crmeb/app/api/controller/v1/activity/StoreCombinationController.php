@@ -35,7 +35,8 @@ class StoreCombinationController
      */
     public function lst()
     {
-        $list = $this->services->getCombinationList();
+        $where = $request->getMore([['mer_id', null]]);
+        $list = $this->services->getCombinationList($where['mer_id']);
         return app('json')->success(get_thumb_water($list));
     }
 
@@ -124,7 +125,7 @@ class StoreCombinationController
     {
         /** @var QrcodeServices $qrcodeService */
         $qrcodeService = app()->make(QrcodeServices::class);
-        $url = $qrcodeService->getRoutineQrcodePath($id, $request->uid(), 1);
+        $url = $qrcodeService->getCatalogRoutineQrcodePath((int)$id, (int)$request->uid(), 3);
         if ($url) {
             return app('json')->success(['code' => $url]);
         } else {

@@ -306,6 +306,7 @@ class DiyServices extends BaseServices
                 $data = $StoreBargainServices->getHomeList($where);
                 break;
         }
+        if(!isset($data['list']))return $data;
         foreach ($data['list'] as &$item) {
             $item['image'] = set_file_url($item['image'], sys_config('site_url'));
         }
@@ -423,4 +424,10 @@ class DiyServices extends BaseServices
         $QrcodeService = app()->make(QrcodeServices::class);
         return $QrcodeService->getRoutineQrcodePath($id, 0, 6, [], false);
     }
+    /** Public adapter hydrates each cache/saved snapshot read; admin getDiy is unchanged. */
+    public function getPublicDiy(int $id,int $uid):array
+    {
+        return app()->make(\app\services\marketplace\PublicCatalogServices::class)->hydrateConfiguration($this->getDiy($id),$uid);
+    }
+
 }

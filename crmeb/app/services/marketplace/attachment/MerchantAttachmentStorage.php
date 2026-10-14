@@ -50,6 +50,27 @@ final class MerchantAttachmentStorage
         $maximum = Config::get('upload.filesize');
         if (!is_int($maximum) || $maximum<=0) MerchantAttachmentInput::unavailable();
         if ($size===false || $size<=0 || $size>$maximum) MerchantAttachmentInput::invalid();
+        $video = strtolower(pathinfo($original,PATHINFO_EXTENSION))==='mp4';
+        $videoHash=null;
+        if ($video) {
+            clearstatcache(true,$path);
+            $videoStat=lstat($path);
+            if (!is_array($videoStat) || ($videoStat['mode'] & 0170000)!==0100000
+                || is_link($path) || $videoStat['size']!==$size) MerchantAttachmentInput::invalid();
+            $extension='mp4';
+            $mime=mime_content_type($path);
+            $allowedExt=array_values(array_intersect(['mp4'],Config::get('upload.fileExt',[])));
+            $allowedMime=array_values(array_intersect(['video/mp4'],Config::get('upload.fileMime',[])));
+            if ($mime!=='video/mp4' || !in_array($extension,$allowedExt,true)
+                || !in_array($mime,$allowedMime,true)) MerchantAttachmentInput::invalid();
+            $videoHash=hash_file('sha256',$path);
+            if (!is_string($videoHash) || strlen($videoHash)!==64) MerchantAttachmentInput::invalid();
+            clearstatcache(true,$path);
+            $videoAfter=lstat($path);
+            foreach (['dev','ino','mode','uid','gid','size','mtime'] as $field) {
+                if (!is_array($videoAfter) || $videoAfter[$field]!==$videoStat[$field]) MerchantAttachmentInput::invalid();
+            }
+        } else {
         $image = getimagesize($path);
         $types = [IMAGETYPE_JPEG=>['jpg','jpeg'],IMAGETYPE_PNG=>['png'],IMAGETYPE_GIF=>['gif'],IMAGETYPE_WEBP=>['webp']];
         $extension = strtolower(pathinfo($original,PATHINFO_EXTENSION));
@@ -69,10 +90,12 @@ final class MerchantAttachmentStorage
             if ($decoded instanceof \GdImage) imagedestroy($decoded);
             unset($decoded,$bytes);
         }
+        }
         $configured = sys_config('upload_type',1);
         if (is_string($configured) && preg_match('/\A[1-7]\z/D',$configured)===1) $configured=(int)$configured;
         if (!is_int($configured) || $configured<1 || $configured>7) MerchantAttachmentInput::unavailable();
         $type=$configured;
+        if ($video && $type!==1) MerchantAttachmentInput::invalid();
         $storage = $type===1 ? null : $this->activeStorage($type);
         $directory = 'merchant/'.$ctx->merId.'/'.bin2hex(random_bytes(16));
         $localRoot = $type===1 ? realpath(Config::get('filesystem.disks.public.root','')) : null;
@@ -86,6 +109,7 @@ final class MerchantAttachmentStorage
         }
         $object = ['type'=>$type,'directory'=>$directory,'local_root'=>$localRoot,'storage'=>$storage,'files'=>[],'key'=>null];
         $upload = UploadService::fresh($type,$storage);
+        if ($video) $upload->setAuthThumb(false);
         $receipt['phase']='physical_upload';
         $receipt['physical_changed']=null;
         $result = $upload->to($type===1 ? $directory : 'uploads/'.$directory)
@@ -110,6 +134,18 @@ final class MerchantAttachmentStorage
             clearstatcache(true,$originalPath);
             $savedSize=filesize($originalPath);$savedMime=mime_content_type($originalPath);
             if ($savedSize===false || $savedSize<=0 || !is_string($savedMime) || !in_array($savedMime,$allowedMime,true)) MerchantAttachmentInput::unavailable();
+            if ($video) {
+                $savedStat=lstat($originalPath);
+                $savedHash=hash_file('sha256',$originalPath);
+                clearstatcache(true,$originalPath);
+                $savedAfter=lstat($originalPath);
+                if (!is_array($savedStat) || ($savedStat['mode'] & 0170000)!==0100000
+                    || is_link($originalPath) || $savedSize!==$size || $savedMime!==$mime
+                    || $savedHash!==$videoHash) MerchantAttachmentInput::unavailable();
+                foreach (['dev','ino','mode','uid','gid','size','mtime'] as $field) {
+                    if (!is_array($savedAfter) || $savedAfter[$field]!==$savedStat[$field]) MerchantAttachmentInput::unavailable();
+                }
+            }
             $row['att_size']=(string)$savedSize;$row['att_type']=$savedMime;
         }
         $receipt['physical_changed']=true;
@@ -125,7 +161,9 @@ final class MerchantAttachmentStorage
             $relative = substr($canonical,strlen('/uploads/'));
             self::key($relative);
             $family = [$canonical];
-            foreach (['big','mid','small'] as $prefix) $family[] = substr($canonical,0,strrpos($canonical,'/')+1).$prefix.'_'.basename($canonical);
+            if (($row['att_type']??null)!=='video/mp4') {
+                foreach (['big','mid','small'] as $prefix) $family[] = substr($canonical,0,strrpos($canonical,'/')+1).$prefix.'_'.basename($canonical);
+            }
             if (!in_array($row['satt_dir'],$family,true)) MerchantAttachmentInput::unavailable();
             $files=[];
             foreach ($family as $index=>$url) {

@@ -406,6 +406,7 @@ Route::group(function () {
         Route::get('product/detail/:id/[:type]', 'v1.store.StoreProductController/detail')->name('detail')->option(['real_name' => '商品详情']);//商品详情
         Route::get('groom/list/:type', 'v1.store.StoreProductController/groom_list')->name('groomList')->option(['real_name' => '获取首页推荐不同类型商品的轮播图和商品']);//获取首页推荐不同类型商品的轮播图和商品
         Route::get('products', 'v1.store.StoreProductController/lst')->name('products')->option(['real_name' => '商品列表']);//商品列表
+        Route::get('marketplace/stores/:id', 'v1.store.PublicStoreController/read')->name('publicMarketplaceStore')->option(['real_name' => '公开店铺资料']);
         Route::get('product/hot', 'v1.store.StoreProductController/product_hot')->name('productHot')->option(['real_name' => '为你推荐']);//为你推荐
         Route::get('reply/list/:id', 'v1.store.StoreProductController/reply_list')->name('replyList')->option(['real_name' => '商品评价列表']);//商品评价列表
         Route::get('reply/config/:id', 'v1.store.StoreProductController/reply_config')->name('replyConfig')->option(['real_name' => '商品评价数量和好评度']);//商品评价数量和好评度

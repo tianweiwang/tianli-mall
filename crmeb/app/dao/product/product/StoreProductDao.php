@@ -200,6 +200,69 @@ class StoreProductDao extends BaseDao
      * @throws \think\db\exception\DbException
      * @throws \think\db\exception\ModelNotFoundException
      */
+    /** Public-only builder: all native searchers are grouped before the qualified channel. */
+    public function publicSearchQuery(array $where): \think\db\Query
+    {
+        $model=$this->getModel();$reflection=new \ReflectionClass($model);$fields=[];
+        foreach($where as$key=>$value)if($key!=='mer_id'&&$reflection->hasMethod('search'.\think\helper\Str::studly((string)$key).'Attr'))$fields[]=$key;
+        $query=$model->db()->alias('catalog_product')->where(static function(\think\db\Query $group)use($fields,$where):void{$group->withSearch($fields,$where);});
+        $query->when(isset($where['sid']) && $where['sid'], function ($query) use ($where) {
+            $query->whereIn('id', function ($query) use ($where) {
+                $query->name('store_product_cate')->where('cate_id', is_array($where['sid']) ? 'in' : '=', $where['sid'])->field('product_id')->select();
+            });
+        })->when(isset($where['cid']) && $where['cid'], function ($query) use ($where) {
+            $query->whereIn('id', function ($query) use ($where) {
+                $query->name('store_product_cate')->whereIn('cate_id', function ($query) use ($where) {
+                    $query->name('store_category')->where('pid', is_array($where['cid']) ? 'in' : '=', $where['cid'])
+                        ->whereOr('id', is_array($where['cid']) ? 'in' : '=', $where['cid'])->field('id')->select();
+                })->field('product_id')->select();
+            });
+        })->when(!empty($where['coupon_category_id']), function ($query) use ($where) {
+            $where['coupon_category_id'] = toIntArray($where['coupon_category_id']);
+            $query->whereIn('id', function ($query) use ($where) {
+                $query->name('store_product_cate')->whereIn('cate_id', function ($query) use ($where) {
+                    $query->name('store_category')->whereIn('pid', $where['coupon_category_id'])->field('id')->select();
+                })->whereOr('cate_id', 'in', $where['coupon_category_id'])->field('product_id')->select();
+            });
+        })->when(isset($where['ids']) && $where['ids'], function ($query) use ($where) {
+            if ((isset($where['priceOrder']) && $where['priceOrder'] != '') || (isset($where['salesOrder']) && $where['salesOrder'] != '')) {
+                $query->whereIn('id', $where['ids']);
+            } else {
+                $query->whereIn('id', $where['ids'])->orderField('id', $where['ids'], 'asc');
+            }
+        })->when(isset($where['is_live']) && $where['is_live'] == 1, function ($query) use ($where) {
+            $query->whereNotIn('id', function ($query) {
+                $query->name('live_goods')->where('is_del', 0)->where('audit_status', '<>', 3)->field('product_id')->select();
+            });
+        })->when(isset($where['priceOrder']) && $where['priceOrder'] != '', function ($query) use ($where) {
+            $query->order($where['priceOrder']==='desc'?'price desc':'price asc');
+        })->when(isset($where['newsOrder']) && $where['newsOrder'] != '', function ($query) use ($where) {
+            if ($where['newsOrder'] === 'news') $query->order('id desc');
+        })->when(isset($where['salesOrder']) && $where['salesOrder'] != '', function ($query) use ($where) {
+            $query->order($where['salesOrder']==='desc'?'sales desc':'sales asc');
+        })->when(!isset($where['ids']), function ($query) use ($where) {
+            if (isset($where['timeOrder']) && $where['timeOrder'] == 1) $query->order('id desc');
+            elseif (isset($where['is_best']) && $where['is_best'] == 1) $query->order('sales desc,sort desc');
+            else $query->order('sort desc,id desc');
+        })->when(isset($where['store_label_id']), function ($query) use ($where) {
+            $query->where(function ($query) use ($where) {
+                foreach ($where['store_label_id'] as $value) $query->whereOr('FIND_IN_SET(:value, label_list)', ['value'=>$value]);
+            });
+        })->order('sort desc');
+        return app()->make(\app\services\marketplace\publiccatalog\PublicCatalogQuery::class)->constrain($query,'catalog_product',\app\services\marketplace\PublicCatalogServices::merchantFilter($where['mer_id']??null));
+    }
+    public function getPublicSearchList(array $where,int $page=0,int $limit=0,array $field=['*'],array $with=[]):array
+    {
+        if(isset($where['star']))$with[]='star';
+        $query=$this->publicSearchQuery($where)->with($with);
+        if($page&&$limit)$query->page($page,$limit);elseif($limit)$query->limit($limit);
+        $field[]='catalog_product.mer_id';
+        return $query->field($field)->select()->toArray();
+    }
+    public function getPublicCount(array $where):int
+    {
+        return (int)$this->publicSearchQuery($where)->count();
+    }
     public function getSearchList(array $where, int $page = 0, int $limit = 0, array $field = ['*'], array $with = [])
     {
         if (isset($where['star'])) $with[] = 'star';
@@ -414,7 +477,7 @@ class StoreProductDao extends BaseDao
      */
     public function getAdvanceList($where, $page, $limit)
     {
-        $model = $this->getModel()->where('presale', 1)->where('is_del', 0)->where('is_show', 1)->where(function ($query) use ($where) {
+        $model = $this->getModel()->db()->alias('catalog_product')->where('presale', 1)->where('is_del', 0)->where('is_show', 1)->where(function ($query) use ($where) {
             switch ($where['time_type']) {
                 case 1:
                     $query->where('presale_start_time', '>', time());
@@ -427,7 +490,8 @@ class StoreProductDao extends BaseDao
                     break;
             }
         });
-        $count = $model->count();
+        app()->make(\app\services\marketplace\publiccatalog\PublicCatalogQuery::class)->constrain($model,'catalog_product');
+        $count = (clone $model)->count();
         $list = $model->when($page && $limit, function ($query) use ($page, $limit) {
             $query->page($page, $limit);
         })->order('add_time desc')->select()->toArray();
@@ -467,6 +531,48 @@ class StoreProductDao extends BaseDao
     public function getThemeProduct($where, $order, $limit)
     {
         $model = $this->getModel()->with('cateName')->where('is_del', 0)->where('is_show', 1);
+        if ($where['ids'] != '') {
+            $ids = explode(',', $where['ids']);
+            $list = $model->whereIn('id', $ids)->order($order)->limit($limit)->select()->toArray();
+        } else {
+            $list = $model->when($where['cate_ids'] != '', function ($query) use ($where) {
+                $cate_ids = explode(',', $where['cate_ids']);
+                $query->whereIn('id', function ($query) use ($cate_ids) {
+                    $query->name('store_product_cate')->where('cate_id', 'in', $cate_ids)->whereOr('cate_pid', 'in', $cate_ids)->field('product_id')->select();
+                });
+            })->order($order)->limit($limit)->select()->toArray();
+        }
+        return $list;
+    }
+    public function getPublicRecommendProduct(array $where, string $field, int $num = 0, int $page = 0, int $limit = 0)
+    {
+        $where['is_show'] = 1;
+        $where['is_del'] = 0;
+        return $this->publicSearchQuery($where)->removeOption('order')->with(['couponId', 'star'])
+            ->field(['catalog_product.mer_id', 'id', 'image', 'store_name', 'store_info', 'cate_id', 'price', 'ot_price', 'IFNULL(sales,0) + IFNULL(ficti,0) as sales', 'unit_name', 'sort', 'activity', 'stock', 'vip_price', 'is_vip'])
+            ->when(in_array($field, ['is_best', 'is_new', 'is_benefit', 'is_hot', 'is_vip']), function ($query) use ($field) {
+                if ($field != 'is_vip') {
+                    $query->where($field, 1);
+                } else {
+                    $query->where('is_vip', 1)->where('vip_price', '>', 0);
+                }
+            })
+            ->when($num, function ($query) use ($num) {
+                $query->limit($num);
+            })
+            ->when($page, function ($query) use ($page, $limit) {
+                $query->page($page, $limit);
+            })
+            ->when($limit, function ($query) use ($limit) {
+                $query->limit($limit);
+            })
+            ->order(in_array($field, ['is_hot', 'is_best']) ? 'sales DESC,sort DESC, id desc' : 'sort DESC, id desc')->select()->toArray();
+
+    }
+    public function getPublicThemeProduct($where, $order, $limit)
+    {
+        $model = $this->getModel()->db()->alias('catalog_product')->with('cateName')->where('is_del', 0)->where('is_show', 1);
+        app()->make(\app\services\marketplace\publiccatalog\PublicCatalogQuery::class)->constrain($model,'catalog_product');
         if ($where['ids'] != '') {
             $ids = explode(',', $where['ids']);
             $list = $model->whereIn('id', $ids)->order($order)->limit($limit)->select()->toArray();

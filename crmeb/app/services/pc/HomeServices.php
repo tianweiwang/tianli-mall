@@ -33,9 +33,9 @@ class HomeServices extends BaseServices
         $product = app()->make(StoreProductServices::class);
         $vip_user = $uid ? app()->make(UserServices::class)->value(['uid' => $uid], 'is_money_level') : 0;
         [$page, $limit] = $this->getPageValue();
-        $list = $category->getCid($page, $limit);
+        $list = $category->getPublicCid($page,$limit,(int)$vip_user);
         foreach ($list as $key => &$info) {
-            $productList = $product->getSearchList(['cid' => $info['id'], 'star' => 1, 'is_show' => 1, 'is_del' => 0, 'vip_user' => $vip_user], 1, 8, ['id,store_name,image,IFNULL(sales, 0) + IFNULL(ficti, 0) as sales,price,ot_price,presale']);
+            $productList = $product->getPublicSearchList(['cid' => $info['id'], 'star' => 1, 'is_show' => 1, 'is_del' => 0, 'vip_user' => $vip_user], 1, 8, ['id,store_name,image,IFNULL(sales, 0) + IFNULL(ficti, 0) as sales,price,ot_price,presale']);
             if (!count($productList)) unset($list[$key]);
             foreach ($productList as &$item) {
                 if (count($item['star'])) {
@@ -45,10 +45,10 @@ class HomeServices extends BaseServices
                 }
                 $item['checkCoupon'] = app()->make(StoreCouponIssueServices::class)->checkProductCoupon($item['id']);
             }
-            $info['productList'] = get_thumb_water($productList, 'big');
+            $info['productList'] = app()->make(\app\services\marketplace\PublicCatalogServices::class)->listOutput(get_thumb_water($productList, 'big'));
         }
         $data['list'] = array_merge($list);
-        $data['count'] = $category->getCidCount();
+        $data['count'] = $category->getPublicCidCount((int)$vip_user);
         return $data;
     }
 }

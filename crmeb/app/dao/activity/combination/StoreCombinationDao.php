@@ -170,9 +170,11 @@ class StoreCombinationDao extends BaseDao
      * @throws \think\db\exception\DbException
      * @throws \think\db\exception\ModelNotFoundException
      */
-    public function combinationList(array $where, int $page, int $limit)
+    public function combinationList(array $where, int $page, int $limit, ?int $merchantFilter = null)
     {
-        return $this->search($where)->with('getPrice')->page($page, $limit)->order('sort desc,id desc')->select()->toArray();
+        $catalog = app()->make(\app\services\marketplace\PublicCatalogServices::class);
+        return $catalog->constrainNative($this->search($where)->alias('catalog_native'), 'catalog_native', 3, $merchantFilter)
+            ->with('getPrice')->page($page, $limit)->order('sort desc,id desc')->select()->toArray();
     }
 
     /**
@@ -247,5 +249,34 @@ class StoreCombinationDao extends BaseDao
     {
         return $this->getModel()->where('product_id', 'in', $productIds)->where('is_del', 0)
             ->group('product_id')->column('COUNT(*) as count', 'product_id');
+    }
+    public function getPublicHomeList(array $where, int $page = 0, int $limit = 0)
+    {
+        return app()->make(\app\services\marketplace\PublicCatalogServices::class)->constrainNative($this->search($where)->alias('catalog_native'),'catalog_native',3,app()->make(\app\services\marketplace\PublicCatalogServices::class)::merchantFilter($where['mer_id']??null))
+            ->when($page != 0 && $limit != 0, function ($query) use ($page, $limit) {
+                $query->page($page, $limit);
+            })->when(isset($where['priceOrder']) && $where['priceOrder'] != '', function ($query) use ($where) {
+                if ($where['priceOrder'] === 'desc') {
+                    $query->order("price desc");
+                } else {
+                    $query->order("price asc");
+                }
+            })->when(isset($where['newsOrder']) && $where['newsOrder'] != '', function ($query) use ($where) {
+                if ($where['newsOrder'] === 'news') {
+                    $query->order("id desc");
+                }
+            })->when(isset($where['salesOrder']) && $where['salesOrder'] != '', function ($query) use ($where) {
+                if ($where['salesOrder'] === 'desc') {
+                    $query->order("sales desc");
+                } else {
+                    $query->order("sales asc");
+                }
+            })->when(isset($where['ids']) && $where['ids'], function ($query) use ($where) {
+                if ((isset($where['priceOrder']) && $where['priceOrder'] != '') || (isset($where['salesOrder']) && $where['salesOrder'] != '')) {
+                    $query->whereIn('id', $where['ids']);
+                } else {
+                    $query->whereIn('id', $where['ids'])->orderField('id', $where['ids'], 'asc');
+                }
+            })->with(['getPrice'])->select()->toArray();
     }
 }

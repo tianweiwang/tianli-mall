@@ -189,6 +189,14 @@ public function adjust(MerchantContext $ctx, int $productId, string $unique, int
 - [ ] **Step 1: 写用例**：D10（A、B 的已发布商品都能在公众列表、详情中看到；未发布、待审、驳回的看不到；商家被封禁后其商品看不到）；D11（公众列表与详情的 JSON 中不出现 `cost`、`mer_use`、`review_*`、其他顾客信息；用字段白名单逐键比对）；D15 的公众子场景（不传 `mer_id` 返回全部已发布商品）；D16（详情顶层 `mer_id` 等于数据库值，`store` 信息与该商家一致）；G03（迁移后的自营历史商品、图片在顾客端仍可访问）。
 - [ ] **Step 2–5:** 确认失败 → 实现 → 通过 → 提交 `feat(api): public catalog shows merchant store and only published products`。
 
+#### 当前公众链生产源码集成（2026-10-15）
+
+在独立 `feature/ms4-single-store` 工作区先同步既有公众商品、真实购物车/确认引用和通用店铺展示的完整生产调用链，作为09的订单依赖；原主仓库477732及当前MS3验收profile不变。Files采用已核对的 `effective67_inputs` 真实生产清单（原索引SHA256 `e1b2f206e73d8ba2f2889c5933bd69a5f900e916d23bc47f1e32bdfb20528de7`）：51 PHP、11 Vue、4 JS、1 pages.json，56既有文件、11新文件；不包含测试、初始化、保护gate、vendor、迁移或敏感配置。保留实际商户MP4本地上传修复及MS3的公众店铺增量，不能只复制一个旧缓存消费者。
+
+接口继续沿本Task8与08的合同：公众可售商品和固定店铺DTO；购物车临时缓存写入及读取绑定真实UID，持久行按真实本人/未支付/未删除/非临时限定，确认引用重新核对真实商品、物理SKU及商户。只同步现有生产源字节，不执行数据迁移、历史权益改写、外部渠道或支付。源码字节和PHP语法检查结果写 `records/ms2/public-catalog-source-composition-summary.json`；业务验收继续等待当前RUN7及原责任，Task8/9/10、完整MS2/MS3和停止项不因源码同步而记完成。
+
+源码集成检查完成：67份原输入与最终源码逐文件核对，仅11份文件统一CRLF→LF及store.js的16行注释尾空白整理，执行代码保持；51 PHP实际语法检查通过，4 JS按官方H5条件编译预处理后Node检查通过，pages.json按官方解析确认店铺分包路由存在。当前独立工作区未重新构建Vue或做页面验收。RUN7初始化及20子进程已通过，但页面验收前因原应用启动观察20秒到期退出；同请求实际22.872秒后才收到启动成功回执，尚无业务请求或Cua截图，必须修复观察与未完成上下文的停机责任后再验收。
+
 ### Task 9: 统计、列表与缓存
 
 - [ ] **Step 1: 写用例** D07：A 的商品统计、分页总数只计本店；merchantapi 不提供导出接口（验证路由不存在），商家令牌访问 adminapi 导出接口被拒绝；公众列表缓存命中后，换成 B 的筛选条件不返回 A 的结果。

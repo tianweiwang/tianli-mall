@@ -380,4 +380,13 @@ class StoreCategoryServices extends BaseServices
         }
         return [];
     }
+    public function getPublicCid(int $page,int $limit,int $vipUser):array
+    {
+        return $this->dao->getPublicCid($page,$limit,$vipUser);
+    }
+    public function getPublicCidCount(int $vipUser):int
+    {
+        return $this->dao->getPublicCidCount($vipUser);
+    }
+
 }

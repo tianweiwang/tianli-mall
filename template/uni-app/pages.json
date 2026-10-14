@@ -79,6 +79,7 @@
 	],
 	// 模块分包
 	"subPackages": [
+        { "root": "pages/store", "name": "marketplace_store", "pages": [{ "path": "index", "style": { "navigationBarTitleText": "店铺" } }] },
 			{
 			"root": "pages/goods_details",
 			"name": "goods_details",

@@ -61,15 +61,16 @@ export default {
 			}
 			//sort();排序函数:数字-英文-汉字；
 			let productSelect = this.productValue[value.join(",")];
+            if (!productAttr.length) { const current = Object.values(this.productValue || {}); if (current.length === 1) productSelect = current[0]; }
 			this.$set(this.attr.productSelect,"store_name",this.storeName);
-			if (productSelect && productAttr.length) {
+			if (productSelect) {
 				this.$set(this.attr.productSelect, "image", productSelect.image);
 				this.$set(this.attr.productSelect, "price", productSelect.price);
 				this.$set(this.attr.productSelect, "stock", productSelect.stock);
 				this.$set(this.attr.productSelect, "unique", productSelect.unique);
 				this.$set(this.attr.productSelect, "cart_num", this.storeInfo.min_qty);
 				this.$set(this.attr.productSelect, 'vip_price', productSelect.vip_price);
-				this.$set(this, "attrValue", value.join(","));
+				this.$set(this, "attrValue", productAttr.length ? value.join(",") : productSelect.suk);
 			} else if (!productSelect && productAttr.length) {
 				this.$set(this.attr.productSelect, "image", this.storeInfo.image);
 				this.$set(this.attr.productSelect, "price", this.storeInfo.price);
@@ -81,8 +82,8 @@ export default {
 			} else if (!productSelect && !productAttr.length) {
 				this.$set(this.attr.productSelect, "image", this.storeInfo.image);
 				this.$set(this.attr.productSelect, "price", this.storeInfo.price);
-				this.$set(this.attr.productSelect, "stock", this.storeInfo.stock);
-				this.$set(this.attr.productSelect,"unique",this.storeInfo.unique || "");
+				this.$set(this.attr.productSelect, "stock", 0);
+				this.$set(this.attr.productSelect,"unique","");
 				this.$set(this.attr.productSelect, "cart_num", this.storeInfo.min_qty);
 				this.$set(this, "attrValue", "");
 				this.$set(this.attr.productSelect, 'vip_price', this.storeInfo.vip_price);
@@ -292,10 +293,23 @@ export default {
 				product_id: id,
 				num: duo ? that.attr.productSelect.cart_num : 1,
 				type: type,
-				unique: duo ? that.attr.productSelect.unique : cart ? unique : ""
+				unique: duo ? that.attr.productSelect.unique : unique || ""
 			};
 
-			postCartNum(q)
+            if (!/^[A-Za-z0-9]{8}$/.test(q.unique || '')) {
+                if (!duo && !cart && !unique) {
+                    return getAttr(id, 0).then(res => {
+                        const values = Object.values(res.data.productValue || {});
+                        const root = res.data.storeInfo || {};
+                        if (Number(root.id) !== Number(id) || Number(root.spec_type) !== 0 || values.length !== 1 || Number(values[0].product_id) !== Number(id) || Number(values[0].type) !== 0 || !/^[A-Za-z0-9]{8}$/.test(values[0].unique || '')) {
+                            return that.$util.Tips({ title: "请选择有效的商品规格" });
+                        }
+                        return that.goCat(duo, id, type, cart, values[0].unique);
+                    }).catch(error => that.$util.Tips({ title: error.msg || error.message || "商品暂不可用" }));
+                }
+                return that.$util.Tips({ title: "请选择有效的商品规格" });
+            }
+            postCartNum(q)
 				.then(function(res) {
 					if (duo) {
 						that.attr.cartAttr = false;

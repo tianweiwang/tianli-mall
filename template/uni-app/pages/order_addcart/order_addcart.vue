@@ -140,16 +140,16 @@
                 <view class="invalid">{{ $t(`失效`) }}</view>
                 <view class="pictrue">
                   <image
-                    v-if="item.productInfo.attrInfo"
+                    v-if="item.productInfo && item.productInfo.attrInfo"
                     :src="item.productInfo.attrInfo.image"
                   ></image>
-                  <image v-else :src="item.productInfo.image"></image>
+                  <image v-else-if="item.productInfo && item.productInfo.image" :src="item.productInfo.image"></image>
                 </view>
                 <view class="text acea-row row-column-between">
                   <view class="line1 name">{{
-                    item.productInfo.store_name
+                    (item.productInfo && item.productInfo.store_name) || $t(`该商品已失效`)
                   }}</view>
-                  <view class="infor line1" v-if="item.productInfo.attrInfo"
+                  <view class="infor line1" v-if="item.productInfo && item.productInfo.attrInfo"
                     >{{ $t(`属性`) }}：{{ item.productInfo.attrInfo.suk }}</view
                   >
                   <view class="acea-row row-between-wrapper">

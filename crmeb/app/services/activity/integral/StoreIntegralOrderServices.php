@@ -334,6 +334,7 @@ class StoreIntegralOrderServices extends BaseServices
      */
     public function getOrderConfirmData(array $user, $unique, $num)
     {
+        app()->make(\app\services\marketplace\PublicCatalogServices::class)->integralIdentity($unique,(int)$user['uid'],(int)$num);
         /** @var StoreProductAttrValueServices $StoreProductAttrValueServices */
         $StoreProductAttrValueServices = app()->make(StoreProductAttrValueServices::class);
         $attrValue = $StoreProductAttrValueServices->uniqueByField($unique, 'product_id,suk,price,image,unique');

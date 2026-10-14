@@ -2,13 +2,14 @@
 	<view :style="colorStyle">
 		<view class='collectionGoods' v-if="collectProductList.length">
 			<view class="title-admin">
-				<view>{{$t(`当前共`)}} <text class="text"> {{count}} </text> {{$t(`件商品`)}}</view>
+				<view v-if="count !== null">{{$t(`当前共`)}} <text class="text"> {{count}} </text> {{$t(`件商品`)}}</view>
+				<view v-else role="status" aria-live="polite">{{loading?$t(`正在更新收藏列表`):$t(`收藏已更新，列表待刷新`)}}</view>
 				<view class="admin" @click="showRadio">{{checkbox_show?$t(`取消`):$t(`管理`)}}</view>
 			</view>
 			<checkbox-group @change.stop="checkboxChange">
 				<view class='item acea-row' v-for="(item,index) in collectProductList" :key="index">
 					<view class="left">
-						<checkbox v-show="checkbox_show" :value="item.pid.toString()" :checked="item.checked" />
+						<checkbox v-show="checkbox_show" :value="collectionKey(item)" :checked="item.checked" :disabled="collectionDeleting" />
 						<view class='pictrue' @click="jump(item)">
 							<image :src="item.image"></image>
 							<view class="invalid acea-row row-center-wrapper" v-if="!item.is_show">
@@ -39,12 +40,12 @@
 		<view class='footer acea-row row-between-wrapper' v-if="checkbox_show && collectProductList.length">
 			<view>
 				<checkbox-group @change="checkboxAllChange">
-					<checkbox value="all" :checked="!!isAllSelect" />
+					<checkbox value="all" :checked="!!isAllSelect" :disabled="collectionDeleting" />
 					<text class='checkAll'>{{$t(`全选`)}}({{ids.length}})</text>
 				</checkbox-group>
 			</view>
 			<view class='button acea-row row-middle'>
-				<button class='bnt' formType="submit" @click="subDel">{{$t(`取关`)}}</button>
+				<button class='bnt' formType="submit" :disabled="loading || collectionDeleting" @click="subDel">{{collectionDeleting?$t(`正在取关`):$t(`取关`)}}</button>
 			</view>
 		</view>
 		<!-- #ifdef MP -->
@@ -90,6 +91,9 @@
 			return {
 				imgHost: HTTP_REQUEST_URL,
 				ids: [],
+				collectionRetryKeys: [],
+				collectionDeleting: false,
+				collectionReload: false,
 				hostProduct: [],
 				checkbox_show: false,
 				loadTitle: this.$t(`加载更多`),
@@ -132,6 +136,7 @@
 		},
 		methods: {
 			showRadio() {
+				if (this.collectionDeleting) return;
 				this.checkbox_show = !this.checkbox_show
 			},
 			checkboxChange(e) {
@@ -141,27 +146,51 @@
 					this.$set(this, 'isAllSelect', true);
 				}
 				this.$set(this, 'ids', e.detail.value);
+				this.collectionRetryKeys = e.detail.value.slice();
+				const selected = new Set(e.detail.value);
+				this.collectProductList.forEach(item => { item.checked = selected.has(this.collectionKey(item)); });
 			},
-			subDel() {
-				let that = this
-				if (this.ids.length) {
-					collectDel(that.ids).then(res => {
-						that.loadend = false;
-						that.$util.Tips({
-							title: res.msg
-						});
-						that.page = 1;
-						that.collectProductList = [];
-						this.getUserCollectProduct();
-						this.ids.length = '';
-					});
-				} else {
-					return that.$util.Tips({
-						title: that.$t(`请选择商品`)
-					});
-				}
-
-			},
+			collectionKey(item) {
+                return item.category + ':' + item.product_id;
+            },
+            async subDel() {
+                if (this.loading || this.collectionDeleting) return;
+                if (!this.ids.length) return this.$util.Tips({ title: this.$t(`请选择商品`) });
+                const selected = new Set(this.ids);
+                const groups = {};
+                this.collectProductList.forEach(item => {
+                    if (selected.has(this.collectionKey(item))) {
+                        if (!groups[item.category]) groups[item.category] = [];
+                        groups[item.category].push(item.product_id);
+                    }
+                });
+                let removed = 0;
+                this.collectionDeleting = true;
+                try {
+                    for (const category of Object.keys(groups)) {
+                        await collectDel(groups[category], category);
+                        const done = new Set(groups[category].map(id => category + ':' + id));
+                        const before = this.collectProductList.length;
+                        this.collectProductList = this.collectProductList.filter(item => !done.has(this.collectionKey(item)));
+                        removed += before - this.collectProductList.length;
+                        this.ids = this.ids.filter(key => !done.has(key));
+                    }
+                    this.$util.Tips({ title: this.$t(`取消收藏成功`) });
+                } catch (error) {
+                    this.$util.Tips({ title: removed ? this.$t(`部分已取消，其余请重试`) : (error.msg || error.message || this.$t(`取消失败，请重试`)) });
+                } finally {
+                    this.collectionDeleting = false;
+                    this.isAllSelect = false;
+                }
+                if (removed) {
+                    this.collectionRetryKeys = this.ids.slice();
+                    this.page = 1;
+                    this.loadend = false;
+                    this.collectionReload = true;
+                    this.count = null;
+                    await this.getUserCollectProduct();
+                }
+            },
 			checkboxAllChange(event) {
 				let value = event.detail.value;
 				if (value.length > 0) {
@@ -178,7 +207,7 @@
 					let newValid = valid.map(item => {
 						if (status) {
 							item.checked = true;
-							selectValue.push(item.pid);
+							selectValue.push(that.collectionKey(item));
 							that.isAllSelect = true;
 						} else {
 							item.checked = false;
@@ -188,20 +217,28 @@
 					});
 					that.$set(that, 'collectProductList', newValid);
 					that.$set(that, 'ids', selectValue);
+					that.collectionRetryKeys = selectValue.slice();
 				}
 			},
 			jump(item) {
-				if (item.is_show) {
-					uni.navigateTo({
-						url: "/pages/goods_details/index?id=" + item.pid
-					})
-				} else {
-					this.$util.Tips({
-						title: this.$t(`该商品已下架`)
-					})
-				}
-
-			},
+                const hasType = Object.prototype.hasOwnProperty.call(item, 'collection_type');
+                const hasId = Object.prototype.hasOwnProperty.call(item, 'collection_id');
+                const legacy = !hasType && !hasId;
+                if (hasType !== hasId) return this.$util.Tips({ title: this.$t(`商品信息暂不可用`) });
+                const type = legacy ? 0 : Number(item.collection_type);
+                const id = Number(legacy ? item.pid : item.collection_id);
+                const pages = { 0: '/pages/goods_details/index', 1: '/pages/activity/goods_seckill_details/index', 6: '/pages/activity/presell_details/index' };
+                if (!item.is_show || !pages[type] || !Number.isSafeInteger(id) || id < 1) {
+                    return this.$util.Tips({ title: this.$t(`该商品已下架`) });
+                }
+                let url = pages[type] + '?id=' + id;
+                if (type === 1) {
+                    const slot = Number(item.collection_time_id);
+                    if (!Number.isSafeInteger(slot) || slot < 1) return this.$util.Tips({ title: this.$t(`活动暂不可用`) });
+                    url += '&time_id=' + slot;
+                }
+                uni.navigateTo({ url });
+            },
 			/**
 			 * 授权回调
 			 */
@@ -220,35 +257,33 @@
 			 * 获取收藏产品
 			 */
 			getUserCollectProduct() {
-				let that = this;
-				if (this.loading) return;
-				if (this.loadend) return;
-				that.loading = true;
-				that.loadTitle = "";
-				getCollectUserList({
-					page: that.page,
-					limit: that.limit
-				}).then(res => {
-					this.count = res.data.count;
-					let collectProductList = res.data.list;
-					collectProductList.map(e => {
-						e.checked = false
-					})
-
-					let loadend = collectProductList.length < that.limit;
-					that.collectProductList = that.$util.SplitArray(collectProductList, that
-						.collectProductList);
-					that.$set(that, 'collectProductList', that.collectProductList);
-					that.loadend = loadend;
-					that.loadTitle = loadend ? that.$t(`我也是有底线的`) : that.$t(`加载更多`);
-					if (!that.collectProductList.length && that.page == 1) this.get_host_product();
-					that.page = that.page + 1;
-					that.loading = false;
-				}).catch(err => {
-					that.loading = false;
-					that.loadTitle = that.$t(`加载更多`);
-				});
-			},
+                if (this.loading || this.collectionDeleting || this.loadend) return;
+                const replace = this.collectionReload;
+                const requestPage = replace ? 1 : this.page;
+                this.loading = true;
+                this.loadTitle = "";
+                return getCollectUserList({ page: requestPage, limit: this.limit }).then(res => {
+                    const retry = new Set(this.collectionRetryKeys);
+                    const rows = res.data.list.map(item => {
+                        item.checked = retry.has(this.collectionKey(item));
+                        return item;
+                    });
+                    this.count = res.data.count;
+                    this.collectProductList = replace ? rows : this.$util.SplitArray(rows, this.collectProductList);
+                    this.$set(this, 'collectProductList', this.collectProductList);
+                    this.ids = this.collectProductList.filter(item => item.checked).map(item => this.collectionKey(item));
+                    this.isAllSelect = !!this.collectProductList.length && this.ids.length === this.collectProductList.length;
+                    this.loadend = rows.length < this.limit;
+                    this.loadTitle = this.loadend ? this.$t(`我也是有底线的`) : this.$t(`加载更多`);
+                    this.collectionReload = false;
+                    this.page = requestPage + 1;
+                    if (!this.collectProductList.length && requestPage === 1) this.get_host_product();
+                    this.loading = false;
+                }).catch(error => {
+                    this.loading = false;
+                    this.loadTitle = this.collectionReload ? this.$t(`加载失败，请上拉重试`) : this.$t(`加载更多`);
+                });
+            },
 			/**
 			 * 获取我的推荐
 			 */

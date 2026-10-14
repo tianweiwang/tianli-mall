@@ -814,6 +814,7 @@ export default {
         });
       }
       this.isOpen = false;
+      if (!productSelect || !/^[A-Za-z0-9]{8}$/.test(productSelect.unique || '') || Number(productSelect.product_id) !== Number(this.storeInfo.id) || Number(productSelect.type) !== 4) return this.$util.Tips({ title: this.$t(`请选择有效的商品规格`) });
       uni.navigateTo({
         url: `/pages/points_mall/integral_order?unique=${
           productSelect.unique

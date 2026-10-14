@@ -89,17 +89,19 @@ class StoreCartServices extends BaseServices
             $cartIds = explode(',', $cartIds);
             $cartInfo = [];
             foreach ($cartIds as $key) {
-                $info = CacheService::get($key);
+                $payload = CacheService::get($key);
+                $info = $payload ? app()->make(\app\services\marketplace\PublicCatalogServices::class)->temporaryCartData($payload,(int)$uid) : null;
                 if ($info) {
                     $cartInfo[] = $info;
                 }
             }
         } else {
-            $cartInfo = $this->dao->getCartList(['uid' => $uid, 'status' => 1, 'id' => $cartIds], 0, 0, ['productInfo', 'attrInfo']);
+            $cartInfo = $this->dao->getCartList(['uid' => $uid, 'status' => 1, 'is_pay' => 0, 'is_new' => 0, 'is_del' => 0, 'id' => $cartIds], 0, 0, ['productInfo', 'attrInfo']);
         }
         if (!$cartInfo) {
             throw new ApiException('获取购物车信息失败');
         }
+        $cartInfo = app()->make(\app\services\marketplace\PublicCatalogServices::class)->currentConfirmationRows($cartInfo,(int)$uid);
         if ($is_gift == 1) {
             $addr = [];
             $shipping_type = 0;
@@ -150,6 +152,16 @@ class StoreCartServices extends BaseServices
     {
         /** @var StoreProductAttrValueServices $attrValueServices */
         $attrValueServices = app()->make(StoreProductAttrValueServices::class);
+        $catalog=app()->make(\app\services\marketplace\PublicCatalogServices::class);
+        if($type===0){
+            $definition=$catalog->ordinaryPurchaseDefinition((int)$productId,$uid);
+            $visible=array_column($definition['raw_values'],null,'unique');
+            if($unique===''&&$definition['spec_unique']!=='')$unique=$definition['spec_unique'];
+            if(!isset($visible[$unique]))throw new ApiException('请选择有效的商品属性');
+        }else{
+            $nativeId=match($type){1=>$seckillId,2=>$bargainId,3=>$combinationId,6=>$advanceId,default=>throw new ApiException('请刷新后重试')};
+            $catalog->nativePurchaseBase($type,$nativeId,(int)$productId);
+        }
         switch ($type) {
             case 0://普通
                 if ($unique == '') {
@@ -161,7 +173,7 @@ class StoreCartServices extends BaseServices
                 if (!$productInfo) {
                     throw new ApiException('该商品已下架或删除');
                 }
-                $attrInfo = $attrValueServices->getOne(['unique' => $unique, 'type' => 0]);
+                $attrInfo = $attrValueServices->getOne(['unique' => $unique, 'product_id' => $productId, 'type' => 0, 'is_show' => 1]);
                 if (!$unique || !$attrInfo || $attrInfo['product_id'] != $productId) {
                     throw new ApiException('请选择有效的商品属性');
                 }
@@ -176,11 +188,13 @@ class StoreCartServices extends BaseServices
                         throw new ApiException('您要购买的优惠券已失效，无法购买');
                     }
                 }
-                $stockNum = $this->dao->value(['product_id' => $productId, 'product_attr_unique' => $unique, 'uid' => $uid, 'status' => 1], 'cart_num') ?: 0;
+                $currentWhere = ['product_id' => $productId, 'product_attr_unique' => $unique, 'uid' => $uid, 'type' => 0, 'status' => 1, 'is_pay' => 0, 'is_new' => 0, 'is_del' => 0];
+                $currentCart = $this->dao->getOne($currentWhere);
+                $stockNum = $currentCart ? (int)$currentCart['cart_num'] : 0;
                 if ($nowStock < ($cartNum + $stockNum)) {
                     $surplusStock = $nowStock - $cartNum;//剩余库存
-                    if ($surplusStock < $stockNum) {
-                        $this->dao->update(['product_id' => $productId, 'product_attr_unique' => $unique, 'uid' => $uid, 'status' => 1], ['cart_num' => $surplusStock]);
+                    if ($currentCart && $surplusStock < $stockNum) {
+                        $this->dao->update(array_merge($currentWhere, ['id' => (int)$currentCart['id']]), ['cart_num' => $surplusStock]);
                     }
                 }
                 break;
@@ -207,9 +221,11 @@ class StoreCartServices extends BaseServices
             default:
                 throw new ApiException('请刷新后重试');
         }
+        $current=['uid'=>$uid,'type'=>$type,'product_id'=>(int)$productId,'product_attr_unique'=>$unique,'seckill_id'=>$seckillId,'bargain_id'=>$bargainId,'combination_id'=>$combinationId,'advance_id'=>$advanceId,'attrInfo'=>$attrInfo->toArray()];
+        if($catalog->cartIdentity($current,$uid)===null)throw new ApiException('商品规格已失效');
         if ($type && $type != 6) {
             //根商品规格库存
-            $product_stock = $attrValueServices->value(['product_id' => $productInfo['product_id'], 'suk' => $attrInfo['suk'], 'type' => 0], 'stock');
+            $product_stock = $attrValueServices->value(['product_id' => $productInfo['product_id'], 'suk' => $attrInfo['suk'], 'type' => 0, 'is_show' => 1], 'stock');
             if ($product_stock < $cartNum) {
                 throw new ApiException('该商品库存不足{:num}', ['num' => $cartNum]);
             }
@@ -248,6 +264,7 @@ class StoreCartServices extends BaseServices
             $storeOrderCreateService = app()->make(StoreOrderCreateServices::class);
             $key = $storeOrderCreateService->getNewOrderId((string)$uid);
             $info['id'] = $key;
+            $info['uid'] = $uid;
             $info['type'] = $type;
             $info['seckill_id'] = $seckill_id;
             $info['bargain_id'] = $bargain_id;
@@ -275,14 +292,24 @@ class StoreCartServices extends BaseServices
             $info['trueStock'] = $info['productInfo']['attrInfo']['stock'];
             $info['costPrice'] = $info['productInfo']['attrInfo']['cost'];
             try {
-                CacheService::set($key, $info, 3600);
+                CacheService::set($key, app()->make(\app\services\marketplace\PublicCatalogServices::class)->temporaryCart($info,$uid), 3600);
             } catch (\Throwable $e) {
                 throw new ApiException($e->getMessage());
             }
             return $key;
         } else {//加入购物车记录
+            $nativeIds = ['seckill_id' => 0, 'bargain_id' => 0, 'combination_id' => 0, 'advance_id' => 0];
+            if ($type !== 0) {
+                $nativeField = match ($type) {1 => 'seckill_id', 2 => 'bargain_id', 3 => 'combination_id', 6 => 'advance_id', default => throw new ApiException('请刷新后重试')};
+                $nativeIds[$nativeField] = (int)$productInfo['id'];
+            }
+            $cartWhere = array_merge(['type' => $type, 'uid' => $uid, 'product_id' => $product_id, 'product_attr_unique' => $product_attr_unique, 'is_del' => 0, 'is_new' => 0, 'is_pay' => 0, 'status' => 1], $nativeIds);
+            $cart = $this->dao->getOne($cartWhere);
+            if ($cart && in_array($type, [1, 2, 3, 6], true)) {
+                $mergedCartNum = (int)$cart['cart_num'] + $cart_num;
+                $this->checkProductStock($uid, $mergedCartNum, $product_attr_unique, $type, $product_id, $nativeIds['seckill_id'], $nativeIds['bargain_id'], $nativeIds['combination_id'], $nativeIds['advance_id']);
+            }
             ProductLogJob::dispatch(['cart', ['uid' => $uid, 'product_id' => $product_id, 'cart_num' => $cart_num]]);
-            $cart = $this->dao->getOne(['type' => $type, 'uid' => $uid, 'product_id' => $product_id, 'product_attr_unique' => $product_attr_unique, 'is_del' => 0, 'is_new' => 0, 'is_pay' => 0, 'status' => 1]);
 
             //自定义事件-加入购物车
             event('CustomEventListener', ['user_add_cart', [
@@ -295,11 +322,11 @@ class StoreCartServices extends BaseServices
             if ($cart) {
                 $cart->cart_num = $cart_num + $cart->cart_num;
                 $cart->add_time = time();
-                $cart->save();
+                $this->dao->update(array_merge($cartWhere, ['id' => (int)$cart->id]), ['cart_num' => $cart->cart_num, 'add_time' => $cart->add_time]);
                 return $cart->id;
             } else {
                 $add_time = time();
-                return $this->dao->save(compact('uid', 'product_id', 'cart_num', 'product_attr_unique', 'type', 'add_time'))->id;
+                return $this->dao->save(array_merge(compact('uid', 'product_id', 'cart_num', 'product_attr_unique', 'type', 'add_time'), $nativeIds))->id;
             }
         }
     }
@@ -327,9 +354,12 @@ class StoreCartServices extends BaseServices
     public function changeUserCartNum($id, $number, $uid)
     {
         if (!$id || !$number || !$uid) return false;
-        $where = ['uid' => $uid, 'id' => $id];
-        $carInfo = $this->dao->getOne($where, 'product_id,combination_id,seckill_id,bargain_id,product_attr_unique,cart_num');
+        $where = ['uid' => $uid, 'id' => $id, 'is_pay'=>0, 'is_new'=>0, 'is_del'=>0];
+        $carInfo = $this->dao->getOne($where, '*');
 
+        if(!$carInfo)throw new ApiException('购物车不存在');
+        $identity=app()->make(\app\services\marketplace\PublicCatalogServices::class)->cartIdentity($carInfo->toArray(),(int)$uid);
+        if($identity===null)throw new ApiException('商品已下架或规格已失效');
         //购物车修改数量检查限购
         /** @var StoreProductServices $productServices */
         $productServices = app()->make(StoreProductServices::class);
@@ -353,11 +383,11 @@ class StoreCartServices extends BaseServices
             }
         }
 
-        $stock = $productServices->getProductStock($carInfo->product_id, $carInfo->product_attr_unique);
+        $stock = $identity['sku']['stock'];
         if (!$stock) throw new ApiException('暂无库存');
         if ($stock < $number) throw new ApiException('该商品库存不足{:num}', ['num' => $number]);
         if ($carInfo->cart_num == $number) return true;
-        return $this->dao->changeUserCartNum(['uid' => $uid, 'id' => $id], (int)$number);
+        return $this->dao->changeUserCartNum(['uid' => $uid, 'id' => $id, 'product_id'=>$carInfo->product_id, 'type'=>$carInfo->type, 'is_pay'=>0, 'is_new'=>0, 'is_del'=>0], (int)$number);
     }
 
     /**
@@ -401,9 +431,9 @@ class StoreCartServices extends BaseServices
         $discountId = array_unique(array_column($list, 'discount_id'));
         $deduction = ['seckill_id' => $seckillIds[0] ?? 0, 'bargain_id' => $bargainIds[0] ?? 0, 'combination_id' => $combinationId[0] ?? 0, 'discount_id' => $discountId[0] ?? 0];
         if ($status == 1) {
-            return ['valid' => $list, 'invalid' => [], 'deduction' => $deduction];
+            return ['valid' => app()->make(\app\services\marketplace\PublicCatalogServices::class)->cartRows($valid,$uid), 'invalid' => app()->make(\app\services\marketplace\PublicCatalogServices::class)->cartRows($invalid,$uid), 'deduction' => $deduction];
         } else {
-            return ['valid' => [], 'invalid' => $list, 'deduction' => $deduction];
+            return ['valid' => [], 'invalid' => app()->make(\app\services\marketplace\PublicCatalogServices::class)->cartRows($list,$uid), 'deduction' => $deduction];
         }
     }
 
@@ -413,13 +443,17 @@ class StoreCartServices extends BaseServices
      * @param int $product_id
      * @param string $unique
      */
-    public function modifyCart(int $cart_id, int $product_id, string $unique)
+    public function modifyCart(int $cart_id, int $product_id, string $unique,int $uid)
     {
+        $row=$this->dao->getOne(['id'=>$cart_id,'uid'=>$uid,'product_id'=>$product_id,'type'=>0,'is_pay'=>0,'is_new'=>0,'is_del'=>0]);
+        if(!$row)throw new ApiException('购物车不存在');
+        $next=$row->toArray();$next['product_attr_unique']=$unique;unset($next['productInfo'],$next['attrInfo']);
+        if(app()->make(\app\services\marketplace\PublicCatalogServices::class)->cartIdentity($next,$uid)===null)throw new ApiException('请选择有效的商品属性');
         /** @var StoreProductAttrValueServices $attrService */
         $attrService = app()->make(StoreProductAttrValueServices::class);
         $stock = $attrService->value(['product_id' => $product_id, 'unique' => $unique, 'type' => 0], 'stock');
         if ($stock > 0) {
-            $this->dao->update($cart_id, ['product_attr_unique' => $unique, 'cart_num' => 1]);
+            $this->dao->update(['id'=>$cart_id,'uid'=>$uid,'product_id'=>$product_id,'type'=>0,'is_pay'=>0,'is_new'=>0,'is_del'=>0], ['product_attr_unique' => $unique, 'cart_num' => 1]);
         } else {
             throw new ApiException('选择的规格库存不足');
         }
@@ -436,16 +470,25 @@ class StoreCartServices extends BaseServices
      * @throws \think\db\exception\DbException
      * @throws \think\db\exception\ModelNotFoundException
      */
-    public function resetCart($id, $uid, $productId, $unique, $num)
+    public function resetCart($id,$uid,$productId,$unique,$num)
     {
-        $res = $this->dao->getOne(['uid' => $uid, 'product_id' => $productId, 'product_attr_unique' => $unique]);
-        if ($res) {
-            $res->cart_num = $res->cart_num + $num;
-            $res->save();
-            $this->dao->delete($id);
-        } else {
-            $this->dao->update($id, ['product_attr_unique' => $unique, 'cart_num' => $num]);
-        }
+        return $this->transaction(function()use($id,$uid,$productId,$unique,$num){
+            $where=['id'=>$id,'uid'=>$uid,'is_pay'=>0,'is_new'=>0,'is_del'=>0];
+            $original=$this->dao->getOwnedCartForUpdate((int)$uid,(int)$id);
+            if(!$original||(int)$original['product_id']!==(int)$productId)throw new ApiException('购物车不存在');
+            $next=$original->toArray();$next['product_attr_unique']=$unique;unset($next['attrInfo'],$next['productInfo']);
+            $identity=app()->make(\app\services\marketplace\PublicCatalogServices::class)->cartIdentity($next,(int)$uid);
+            if($identity===null)throw new ApiException('请选择有效的商品属性');
+            $number=(int)$num;if($number<1||(int)$identity['sku']['stock']<$number)throw new ApiException('选择的规格库存不足');
+            $target=$this->dao->getOtherOwnedCartForUpdate((int)$uid,(int)$productId,(int)$original['type'],$unique,(int)$id);
+            if($target){
+                $merged=(int)$target['cart_num']+$number;
+                if((int)$identity['sku']['stock']<$merged)throw new ApiException('选择的规格库存不足');
+                $this->dao->update(['id'=>$target['id'],'uid'=>$uid,'product_id'=>$productId,'type'=>$original['type'],'product_attr_unique'=>$unique,'is_pay'=>0,'is_new'=>0,'is_del'=>0],['cart_num'=>$merged]);
+                $this->dao->delete($where);
+            }else $this->dao->update($where+['product_id'=>$productId,'type'=>$original['type']],['product_attr_unique'=>$unique,'cart_num'=>$number]);
+            return true;
+        });
     }
 
     /**
@@ -462,6 +505,10 @@ class StoreCartServices extends BaseServices
      */
     public function setCartNum($uid, $productId, $num, $unique, $type)
     {
+        $definition=app()->make(\app\services\marketplace\PublicCatalogServices::class)->ordinaryPurchaseDefinition((int)$productId,(int)$uid);
+        $values=array_column($definition['raw_values'],null,'unique');
+        if($unique===''&&$definition['spec_unique']!=='')$unique=$definition['spec_unique'];
+        if(!isset($values[$unique]))throw new ApiException('请选择有效的商品属性');
         if ($type == 1) {
             //检查限购
             $this->checkLimit($uid, $productId, $num, 0);
@@ -486,7 +533,7 @@ class StoreCartServices extends BaseServices
             throw new ApiException('该商品库存不足{:num}', ['num' => $num]);
         }
 
-        $cart = $this->dao->getOne(['uid' => $uid, 'product_id' => $productId, 'product_attr_unique' => $unique]);
+        $cart = $this->dao->getOne(['uid' => $uid, 'product_id' => $productId, 'product_attr_unique' => $unique, 'type'=>0,'is_pay'=>0,'is_new'=>0,'is_del'=>0]);
         $min_qty = $productServices->value(['id' => $productId], 'min_qty');
         if ($cart) {
             if ($type == -1) {
@@ -494,16 +541,17 @@ class StoreCartServices extends BaseServices
             } elseif ($type == 0) {
                 $cart->cart_num = $cart->cart_num - $num;
                 if ($cart->cart_num < $min_qty) {
-                    return $this->dao->delete($cart->id);
+                    return $this->dao->delete(['id'=>$cart->id,'uid'=>$uid,'product_id'=>$productId,'type'=>0,'is_pay'=>0,'is_new'=>0,'is_del'=>0]);
                 }
             } elseif ($type == 1) {
                 $cart->cart_num = $cart->cart_num + $num;
             }
             if ($cart->cart_num === 0) {
-                return $this->dao->delete($cart->id);
+                return $this->dao->delete(['id'=>$cart->id,'uid'=>$uid,'product_id'=>$productId,'type'=>0,'is_pay'=>0,'is_new'=>0,'is_del'=>0]);
             } else {
                 $cart->add_time = time();
-                $cart->save();
+                if((int)$values[$unique]['stock']<(int)$cart->cart_num)throw new ApiException('商品库存不足');
+                $this->dao->update(['id'=>$cart->id,'uid'=>$uid,'product_id'=>$productId,'product_attr_unique'=>$unique,'type'=>0,'is_pay'=>0,'is_new'=>0,'is_del'=>0],['cart_num'=>$cart->cart_num,'add_time'=>$cart->add_time]);
                 return $cart->id;
             }
         } else {
@@ -550,6 +598,9 @@ class StoreCartServices extends BaseServices
                 $discount = $systemLevel->value(['id' => $userInfo['level'], 'is_del' => 0, 'is_show' => 1], 'discount') ?: 100;
             }
             foreach ($cartList as &$item) {
+                $fresh=app()->make(\app\services\marketplace\PublicCatalogServices::class)->freshCart($item,$uid);
+                if($fresh===null)continue;
+                $item=$fresh;
                 $productInfo = $item['productInfo'];
                 if (isset($productInfo['attrInfo']['product_id']) && $item['product_attr_unique']) {
                     [$truePrice, $vip_truePrice, $type] = $productServices->setLevelPrice($productInfo['attrInfo']['price'] ?? 0, $uid, $userInfo, $vipStatus, $discount, $productInfo['attrInfo']['vip_price'] ?? 0, $productInfo['is_vip'] ?? 0, true);
@@ -589,6 +640,13 @@ class StoreCartServices extends BaseServices
     public function handleCartList(int $uid, array $cartList, array $addr = [], int $shipping_type = 1)
     {
         if (!$cartList) return [$cartList, [], []];
+        $catalog=app()->make(\app\services\marketplace\PublicCatalogServices::class);$unavailable=[];$originalOrder=array_keys($cartList);
+        foreach($cartList as$key=>$row){
+            $fresh=$catalog->freshCart($row,$uid);
+            if($fresh===null){$row['status']=0;$row['attrStatus']=false;$row['is_valid']=0;$unavailable[$key]=\app\services\marketplace\publiccatalog\PublicCatalogProjection::invalidCart($row);unset($cartList[$key]);}
+            else $cartList[$key]=$fresh;
+        }
+        if(!$cartList)return [array_values($unavailable),[],array_values($unavailable)];
         $freightResolved = app()->make(\app\services\marketplace\freight\MerchantFreightPolicy::class)->revalidate($cartList, $shipping_type, 0, isset($addr['city_id']) ? (int)$addr['city_id'] : null, true);
         $tempIds = [];
         $userInfo = [];
@@ -718,7 +776,8 @@ class StoreCartServices extends BaseServices
             }
             unset($item['attrInfo']);
         }
-        return [$cartList, $valid, $invalid];
+        $all=[];foreach($originalOrder as$key)$all[]=$cartList[$key]??$unavailable[$key];
+        return [$all,$valid,array_merge($invalid,array_values($unavailable))];
     }
 
     /**

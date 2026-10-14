@@ -313,14 +313,20 @@ class StoreCombinationServices extends BaseServices
      * @throws \think\db\exception\ModelNotFoundException
      */
 
-    public function getCombinationList()
+    public function getCombinationList($merId = null)
     {
         [$page, $limit] = $this->getPageValue();
-        $list = $this->dao->combinationList(['is_del' => 0, 'is_show' => 1, 'pinkIngTime' => true, 'storeProductId' => true], $page, $limit);
+        $catalog = app()->make(\app\services\marketplace\PublicCatalogServices::class);
+        $list = $this->dao->combinationList(['is_del' => 0, 'is_show' => 1, 'pinkIngTime' => true, 'storeProductId' => true], $page, $limit, $catalog::merchantFilter($merId));
         foreach ($list as &$item) {
             $item['image'] = set_file_url($item['image']);
             $item['price'] = floatval($item['price']);
             $item['product_price'] = floatval($item['product_price']);
+        }
+        unset($item);
+        $public = $catalog->nativeListOutput($list, 3, 0);
+        foreach ($list as $index => $item) {
+            $list[$index] = \app\services\marketplace\publiccatalog\PublicCatalogProjection::take(array_replace($item, $public[$index]), 'activity-list-3');
         }
         return $list;
     }
@@ -341,13 +347,14 @@ class StoreCombinationServices extends BaseServices
         $where['pinkIngTime'] = true;
         $where['storeProductId'] = true;
         $data = [];
-        $list = $this->dao->getHomeList($where, $page, $limit);
+        $list = $this->dao->getPublicHomeList($where, $page, $limit);
         foreach ($list as &$item) {
             $item['image'] = set_file_url($item['image']);
             $item['price'] = floatval($item['price']);
             $item['product_price'] = floatval($item['product_price']);
         }
         $data['list'] = $list;
+        $data['list']=app()->make(\app\services\marketplace\PublicCatalogServices::class)->nativeListOutput($data['list'],3,(int)request()->uid());
         return $data;
     }
 
@@ -392,7 +399,7 @@ class StoreCombinationServices extends BaseServices
     public function combinationDetail(Request $request, int $id)
     {
         $uid = (int)$request->uid();
-        $storeInfo = $this->dao->getOne(['id' => $id], '*', ['description', 'total']);
+        $storeInfo = app()->make(\app\services\marketplace\PublicCatalogServices::class)->nativeModel(3,$id,['description', 'total']);
         if (!$storeInfo) {
             throw new ApiException('商品已被删除');
         } else {
@@ -406,7 +413,7 @@ class StoreCombinationServices extends BaseServices
         if ($storeInfo['stock'] > 0) $storeInfo['sale_stock'] = 1;
         /** @var StoreProductRelationServices $storeProductRelationServices */
         $storeProductRelationServices = app()->make(StoreProductRelationServices::class);
-        $storeInfo['userCollect'] = $storeProductRelationServices->isProductRelation(['uid' => $uid, 'product_id' => $id, 'type' => 'collect', 'category' => 'product']);
+        $storeInfo['userCollect'] = $storeProductRelationServices->isProductRelation(['uid' => $uid, 'product_id' => $storeInfo['product_id'], 'type' => 'collect', 'category' => 'product']);
         $storeInfo['userLike'] = false;
         $storeInfo['store_name'] = $storeInfo['title'];
         $storeInfo['product_is_show'] = app()->make(StoreProductServices::class)->value($storeInfo['product_id'], 'is_show');
@@ -445,7 +452,7 @@ class StoreCombinationServices extends BaseServices
 
         /** @var StoreProductAttrServices $storeProductAttrServices */
         $storeProductAttrServices = app()->make(StoreProductAttrServices::class);
-        list($productAttr, $productValue) = $storeProductAttrServices->getProductAttrDetail($id, $uid, 0, 3, $storeInfo['product_id']);
+        list($productAttr, $productValue) = $storeProductAttrServices->getPublicProductAttrDetail($id, $uid, 0, 3, $storeInfo['product_id']);
         $data['productAttr'] = $productAttr;
         $data['productValue'] = $productValue;
         $data['routine_contact_type'] = sys_config('routine_contact_type', 0);
@@ -454,7 +461,7 @@ class StoreCombinationServices extends BaseServices
         event('UserVisitListener', [$uid, $id, 'combination', $storeInfo['product_id'], 'view']);
         //浏览记录
         ProductLogJob::dispatch(['visit', ['uid' => $uid, 'product_id' => $storeInfo['product_id']]]);
-        return $data;
+        return app()->make(\app\services\marketplace\PublicCatalogServices::class)->activityOutput($data,3,(int)$uid);
     }
 
     /**
@@ -633,6 +640,7 @@ class StoreCombinationServices extends BaseServices
      */
     public function checkCombinationStock(int $uid, int $combinationId, int $cartNum = 1, string $unique = '')
     {
+        app()->make(\app\services\marketplace\PublicCatalogServices::class)->nativePurchaseBase(3, $combinationId);
         /** @var StoreProductAttrValueServices $attrValueServices */
         $attrValueServices = app()->make(StoreProductAttrValueServices::class);
         if ($unique == '') {

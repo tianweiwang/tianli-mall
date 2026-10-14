@@ -71,7 +71,7 @@ class PublicController
         ], true);
         /** @var DiyServices $diyService */
         $diyService = app()->make(DiyServices::class);
-        $data = $diyService->getDiy($id);
+        $data = $diyService->getPublicDiy((int)$id,(int)$request->uid());
         return app('json')->success($data);
     }
 

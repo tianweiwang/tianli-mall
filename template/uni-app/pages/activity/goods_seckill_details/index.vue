@@ -1170,6 +1170,7 @@ export default {
         return app.$util.Tips({
           title: that.$t(`请选择属性`),
         });
+      if (!productSelect || !/^[A-Za-z0-9]{8}$/.test(productSelect.unique || '') || Number(productSelect.product_id) !== Number(this.storeInfo.id) || Number(productSelect.type) !== 1) return this.$util.Tips({ title: this.$t(`请选择有效的商品规格`) });
       postCartAdd({
         productId: that.storeInfo.product_id,
         secKillId: that.id,
@@ -1349,7 +1350,7 @@ export default {
         this.$set(this.attribute.productSelect, "image", productSelect.image);
         this.$set(this.attribute.productSelect, "price", productSelect.price);
         this.$set(this.attribute.productSelect, "stock", productSelect.stock);
-        this.$set(this.attribute.productSelect, "unique", productSelect.id);
+        this.$set(this.attribute.productSelect, "unique", productSelect.unique);
         this.$set(
           this.attribute.productSelect,
           "vipPrice",

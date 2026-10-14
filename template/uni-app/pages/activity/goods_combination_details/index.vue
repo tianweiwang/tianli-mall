@@ -1194,6 +1194,7 @@ export default {
         return that.$util.Tips({
           title: this.$t(`请选择`),
         });
+      if (!productSelect || !/^[A-Za-z0-9]{8}$/.test(productSelect.unique || '') || Number(productSelect.product_id) !== Number(this.storeInfo.id) || Number(productSelect.type) !== 3) return this.$util.Tips({ title: this.$t(`请选择有效的商品规格`) });
       var data = {
         productId: that.storeInfo.product_id,
         secKillId: 0,

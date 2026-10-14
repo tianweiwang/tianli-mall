@@ -1,0 +1,868 @@
+{
+  "schema": 1,
+  "status": "SOURCE_COMPOSITION_VERIFIED_RUNTIME_PENDING",
+  "scope": "generic_multi_merchant_public_catalog_source_only",
+  "created_at_utc": "2026-10-14T18:40:29.988Z",
+  "worktree_branch": "feature/ms4-single-store",
+  "worktree_HEAD": "614afd4eabe3a6e22faa2b062cc359e2e3200219",
+  "source_authority_commit": "477732e3e03ed4ba1dbb6b44a94dbba75f7e1978",
+  "source_index": {
+    "path": "artifacts/ms3-normal-validation-preparation-source477732/source-inputs.json",
+    "bytes": 113470,
+    "sha256": "e1b2f206e73d8ba2f2889c5933bd69a5f900e916d23bc47f1e32bdfb20528de7",
+    "field": "effective67_inputs"
+  },
+  "baseline_index": {
+    "path": "artifacts/ms3-normal-profile-candidate/source477732-final-bootstrap-admin-label/profile/overlay-files.json",
+    "bytes": 33883,
+    "sha256": "248dbc2a82df0010ccb1d92eb0b41876ac671f0255dcc9323dc13a1e15fb2378",
+    "field": "files[].final_base_bytes/final_base_sha256"
+  },
+  "counts": {
+    "total": 67,
+    "types": {
+      "php": 51,
+      "vue": 11,
+      "js": 4,
+      "pages_json": 1
+    },
+    "existing_files": 56,
+    "new_files": 11
+  },
+  "source_verification": {
+    "original_inputs_bytes_and_sha256_match": 67,
+    "HEAD_final_base_bytes_and_sha256_or_absence_match": 67,
+    "raw_to_allowed_normalized_full_bytes_match": 67,
+    "all_final_files_LF": true,
+    "CRLF_normalized_files": 11,
+    "doc_comment_trailing_whitespace_lines": 16,
+    "allowed_rules_only": true,
+    "all67_raw_equal": false,
+    "transformations": [
+      {
+        "path": "crmeb/app/api/controller/v1/store/PublicStoreController.php",
+        "CRLF_to_LF_count": 15,
+        "doc_comment_trailing_whitespace_line_numbers": []
+      },
+      {
+        "path": "crmeb/app/dao/marketplace/PublicStoreDao.php",
+        "CRLF_to_LF_count": 24,
+        "doc_comment_trailing_whitespace_line_numbers": []
+      },
+      {
+        "path": "crmeb/app/dao/product/product/StoreProductDao.php",
+        "CRLF_to_LF_count": 19,
+        "doc_comment_trailing_whitespace_line_numbers": []
+      },
+      {
+        "path": "crmeb/app/services/marketplace/PublicStoreServices.php",
+        "CRLF_to_LF_count": 33,
+        "doc_comment_trailing_whitespace_line_numbers": []
+      },
+      {
+        "path": "template/uni-app/api/store.js",
+        "CRLF_to_LF_count": 307,
+        "doc_comment_trailing_whitespace_line_numbers": [
+          21,
+          76,
+          84,
+          106,
+          118,
+          120,
+          131,
+          132,
+          152,
+          168,
+          187,
+          197,
+          204,
+          281,
+          299,
+          307
+        ]
+      },
+      {
+        "path": "template/uni-app/components/marketplaceStore/index.vue",
+        "CRLF_to_LF_count": 25,
+        "doc_comment_trailing_whitespace_line_numbers": []
+      },
+      {
+        "path": "template/uni-app/components/productWindow/index.vue",
+        "CRLF_to_LF_count": 570,
+        "doc_comment_trailing_whitespace_line_numbers": []
+      },
+      {
+        "path": "template/uni-app/config/marketplace.js",
+        "CRLF_to_LF_count": 2,
+        "doc_comment_trailing_whitespace_line_numbers": []
+      },
+      {
+        "path": "template/uni-app/pages/store/index.vue",
+        "CRLF_to_LF_count": 84,
+        "doc_comment_trailing_whitespace_line_numbers": []
+      },
+      {
+        "path": "template/uni-app/pages/users/user_goods_collection/index.vue",
+        "CRLF_to_LF_count": 467,
+        "doc_comment_trailing_whitespace_line_numbers": []
+      },
+      {
+        "path": "template/uni-app/utils/public-store.js",
+        "CRLF_to_LF_count": 19,
+        "doc_comment_trailing_whitespace_line_numbers": []
+      }
+    ]
+  },
+  "syntax_checks": {
+    "PHP": {
+      "status": "PASS",
+      "performed_by": "root",
+      "layer": "SOURCE_SYNTAX",
+      "tool_output_id": "bd0935",
+      "image": "sha256:1099f749e2a38ec9453c6b820db8a78174514bc72d14edf5c203e13b82816e0a",
+      "method": "Docker -i PHP 8.2 -l; no application load",
+      "files": 51,
+      "all_exit_codes": 0,
+      "stderr_bytes": 0
+    },
+    "H5_JS": {
+      "status": "PASS",
+      "performed_by": "ms4_postage_implementation",
+      "runtime": "v22.23.3",
+      "method": "official H5 preprocessing then Node --input-type=module --check via stdin",
+      "platform": "h5",
+      "compiler_version": "5.24",
+      "selected_context": {
+        "H5": true,
+        "WEB": true,
+        "VUE2": true,
+        "VUE3": false,
+        "MP": false,
+        "APP_PLUS": false
+      },
+      "official_modules": [
+        {
+          "id": "@dcloudio/uni-cli-shared/lib/preprocess",
+          "bytes": 2452,
+          "sha256": "92463279828459390d446735d90c4618b1dc345e547012211362e1ec5b37f219"
+        },
+        {
+          "id": "@dcloudio/vue-cli-plugin-uni/packages/webpack-preprocess-loader/preprocess",
+          "bytes": 13968,
+          "sha256": "f624fb4045c5caf062a0c843625194c202f938bdb9084da2df83dc46dbf444f3"
+        },
+        {
+          "id": "@dcloudio/uni-cli-shared/lib/json",
+          "bytes": 1325,
+          "sha256": "9905b11b9097ffe324ca02fd9576af7fb145a3d7170995558be96d365141f9bf"
+        },
+        {
+          "id": "@dcloudio/webpack-uni-pages-loader/package.json",
+          "bytes": 669,
+          "sha256": "606822b50596c0b871a539df21a3bf2f592ab9ed5387e0d046a7198a08291ae5"
+        }
+      ],
+      "files": [
+        {
+          "path": "template/uni-app/api/store.js",
+          "source_sha256": "a899336404754d710e5b609fc07d0a201f298575cd3682cc895cb2180b8582a1",
+          "preprocessed_bytes": 5752,
+          "preprocessed_sha256": "3f23ae5fe91360c142cbc4769f7dbe3ffce97fe16adc6f31cb5899efa6777f47",
+          "exit_code": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "path": "template/uni-app/config/marketplace.js",
+          "source_sha256": "1e6f96ced31060e9f81b1ae2b4281dc392dc1c60f3e870f9ec27756ef37fb591",
+          "preprocessed_bytes": 138,
+          "preprocessed_sha256": "1e6f96ced31060e9f81b1ae2b4281dc392dc1c60f3e870f9ec27756ef37fb591",
+          "exit_code": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "path": "template/uni-app/mixins/skuSelect.js",
+          "source_sha256": "3b876d87c6e404b9cbe008202102f41b8265c435a4d7d4bad192ae70dd0c42f5",
+          "preprocessed_bytes": 12734,
+          "preprocessed_sha256": "3b876d87c6e404b9cbe008202102f41b8265c435a4d7d4bad192ae70dd0c42f5",
+          "exit_code": 0,
+          "stderr_bytes": 0
+        },
+        {
+          "path": "template/uni-app/utils/public-store.js",
+          "source_sha256": "495f580533b1efc417efd0fbdba9de798b6b357168e94f61170d299a4adaa2b3",
+          "preprocessed_bytes": 985,
+          "preprocessed_sha256": "495f580533b1efc417efd0fbdba9de798b6b357168e94f61170d299a4adaa2b3",
+          "exit_code": 0,
+          "stderr_bytes": 0
+        }
+      ]
+    },
+    "pages_json": {
+      "status": "PASS",
+      "method": "official JS H5 preprocessor then @dcloudio/uni-cli-shared/lib/json.parseJson(preprocessed,false)",
+      "preprocessed_bytes": 22812,
+      "preprocessed_sha256": "5a97efbe90f0ac6a71efb5087473e8328431d14e0255741874b94a2b9199ce7a",
+      "parser_exit_code": 0,
+      "top_level_pages": 5,
+      "subpackage_count": 11,
+      "public_store_subpackage_route_present": true
+    },
+    "Vue": {
+      "status": "NOT_RUN",
+      "reason": "No new Vue compiler or build run in this source composition check; previous H5 build exit 0 belongs to its existing source artifact."
+    },
+    "git_diff_check": {
+      "exit_code": 0,
+      "stderr_bytes": 0
+    },
+    "earlier_attempts": [
+      {
+        "performed_by": "root",
+        "tool_output_id": "ce112e",
+        "method": "PHP container without open stdin",
+        "status": "NOT_EXECUTED"
+      },
+      {
+        "performed_by": "root",
+        "method": "bare Node --check on conditional uni-app store.js",
+        "status": "NOT_VALID_CHECK",
+        "reason": "H5 and MP branches must first use official conditional preprocessing; no source changed to fit this method."
+      },
+      {
+        "performed_by": "ms4_postage_implementation",
+        "tool_output_id": "6e0556",
+        "exit_code": 1,
+        "status": "CHECKER_ASSUMPTION_CORRECTED",
+        "reason": "Four preprocessed JS syntax children passed and pages parser succeeded; checker wrongly looked only in top-level pages. Final check follows the actual pages/store subpackage."
+      }
+    ]
+  },
+  "files": [
+    {
+      "path": "crmeb/app/api/controller/pc/ProductController.php",
+      "bytes": 4701,
+      "sha256": "997e73e5c04244f17800cd030a099d394e847a6d7092ed543072a6c1532d874d",
+      "original_bytes": 4701,
+      "original_sha256": "997e73e5c04244f17800cd030a099d394e847a6d7092ed543072a6c1532d874d",
+      "final_base_bytes": 4822,
+      "final_base_sha256": "add7660cf8b93e58dec9a8486dfcbb6e8337d938b0ccb6a30140d90eda9441f3"
+    },
+    {
+      "path": "crmeb/app/api/controller/v1/PublicController.php",
+      "bytes": 47412,
+      "sha256": "46f4f503ebe65843e83b42b9f4e8c51b93bd5d445528413114e7715ba271eb96",
+      "original_bytes": 47412,
+      "original_sha256": "46f4f503ebe65843e83b42b9f4e8c51b93bd5d445528413114e7715ba271eb96",
+      "final_base_bytes": 47186,
+      "final_base_sha256": "b5be50cc24e6e201ffb6cb96074fade89899e858c26eba2497c0115983cf6453"
+    },
+    {
+      "path": "crmeb/app/api/controller/v1/activity/StoreBargainController.php",
+      "bytes": 8240,
+      "sha256": "f54feaa078d7f7ade8520c871b32f7d2ba0ab74dbdf86e8b9c3ef85280305665",
+      "original_bytes": 8240,
+      "original_sha256": "f54feaa078d7f7ade8520c871b32f7d2ba0ab74dbdf86e8b9c3ef85280305665",
+      "final_base_bytes": 8168,
+      "final_base_sha256": "f06037b0bae4b43b0747e2f6ed1813a41fb162b6236a2ced7260489db22a592d"
+    },
+    {
+      "path": "crmeb/app/api/controller/v1/activity/StoreCombinationController.php",
+      "bytes": 4214,
+      "sha256": "1e0bcf18d87aac0b905fe9ffb48aafa60e41a00a0bca1021996677e6d5f4e25c",
+      "original_bytes": 4214,
+      "original_sha256": "1e0bcf18d87aac0b905fe9ffb48aafa60e41a00a0bca1021996677e6d5f4e25c",
+      "final_base_bytes": 4125,
+      "final_base_sha256": "0cb033355bf409129ac30ff0abfd66c3708218bab506e81d73b6fcaa10317621"
+    },
+    {
+      "path": "crmeb/app/api/controller/v1/activity/StoreIntegralController.php",
+      "bytes": 2218,
+      "sha256": "60923e6867b3364b2a78ef9a82c1836a1c329986a599f00d58ad50f89f253c04",
+      "original_bytes": 2218,
+      "original_sha256": "60923e6867b3364b2a78ef9a82c1836a1c329986a599f00d58ad50f89f253c04",
+      "final_base_bytes": 2188,
+      "final_base_sha256": "73784b14233fa1ad56aea2d4b2a17ba43d021ec1aa3f605c1aa93951d9e3c2cd"
+    },
+    {
+      "path": "crmeb/app/api/controller/v1/activity/StoreSeckillController.php",
+      "bytes": 6406,
+      "sha256": "6d0f1c1df4d25008c2215919e654d41696e72712f091595a913720d3e5316ee9",
+      "original_bytes": 6406,
+      "original_sha256": "6d0f1c1df4d25008c2215919e654d41696e72712f091595a913720d3e5316ee9",
+      "final_base_bytes": 6297,
+      "final_base_sha256": "70a45e68661efcf36b762cf34582e53d34da0febb86cdd979adb3d666b29b00f"
+    },
+    {
+      "path": "crmeb/app/api/controller/v1/order/StoreIntegralOrderController.php",
+      "bytes": 6252,
+      "sha256": "43e70a85ec8c0499a99d1739f4e9e56f0963d525d4226a444286cea17e8ca6bd",
+      "original_bytes": 6252,
+      "original_sha256": "43e70a85ec8c0499a99d1739f4e9e56f0963d525d4226a444286cea17e8ca6bd",
+      "final_base_bytes": 6020,
+      "final_base_sha256": "c4d34d98e746bd4f456fc73be61686af4914d994909ad253961bbaeedf850164"
+    },
+    {
+      "path": "crmeb/app/api/controller/v1/order/StoreOrderController.php",
+      "bytes": 43035,
+      "sha256": "42159960cdfea8332340b150b3ec81bb6495f28e33d2761763d6f21dfed7e0dc",
+      "original_bytes": 43035,
+      "original_sha256": "42159960cdfea8332340b150b3ec81bb6495f28e33d2761763d6f21dfed7e0dc",
+      "final_base_bytes": 42861,
+      "final_base_sha256": "48e74f99e8f044871a1766330888a9d11d3a5eaace0433e22a3b817b080b9ad3"
+    },
+    {
+      "path": "crmeb/app/api/controller/v1/store/PublicStoreController.php",
+      "bytes": 338,
+      "sha256": "5de6f1e0c40d2c6ef7140d4b75cb60359329e29128ae5abc2b796b433811cd4c",
+      "original_bytes": 353,
+      "original_sha256": "25df2c1209164fcecf72e7a5bbfc4c3f15fcf34159825d7794144089ac0beeb6",
+      "final_base_bytes": null,
+      "final_base_sha256": null
+    },
+    {
+      "path": "crmeb/app/api/controller/v1/store/StoreCartController.php",
+      "bytes": 6393,
+      "sha256": "7fa58ba652d5d468a5c724fe6ab33637bc7dca09adf165ae3be6f7692bb93e44",
+      "original_bytes": 6393,
+      "original_sha256": "7fa58ba652d5d468a5c724fe6ab33637bc7dca09adf165ae3be6f7692bb93e44",
+      "final_base_bytes": 6371,
+      "final_base_sha256": "ffd7088accd72581acc60437c627578e821f6857cac416068fbadf615ceab9ae"
+    },
+    {
+      "path": "crmeb/app/api/controller/v1/store/StoreProductController.php",
+      "bytes": 9059,
+      "sha256": "e87cd736d241f3b69154a0cdaec7f1039157e296b4f4d8cfd62284c7704f3e47",
+      "original_bytes": 9059,
+      "original_sha256": "e87cd736d241f3b69154a0cdaec7f1039157e296b4f4d8cfd62284c7704f3e47",
+      "final_base_bytes": 8745,
+      "final_base_sha256": "f674295457a55be40b77589930e6d01671431c2463240e339fc7fa2bab672a99"
+    },
+    {
+      "path": "crmeb/app/api/controller/v2/PublicController.php",
+      "bytes": 5432,
+      "sha256": "47c3411bae33f81d810f99d3a52b453f6d760ea911a644d2a9fb4ef2fc1293e1",
+      "original_bytes": 5432,
+      "original_sha256": "47c3411bae33f81d810f99d3a52b453f6d760ea911a644d2a9fb4ef2fc1293e1",
+      "final_base_bytes": 5400,
+      "final_base_sha256": "54258a2c0b864d6c401456284c1b1221adb9ce7f94e9601bc56caeb722ed4c15"
+    },
+    {
+      "path": "crmeb/app/api/controller/v2/store/StoreCartController.php",
+      "bytes": 2919,
+      "sha256": "35e94f82d2e0d66839106d05cc72505c491d765e532b2eb30ad5ea6011fad297",
+      "original_bytes": 2919,
+      "original_sha256": "35e94f82d2e0d66839106d05cc72505c491d765e532b2eb30ad5ea6011fad297",
+      "final_base_bytes": 2835,
+      "final_base_sha256": "f17968682380fde73354210c3bc72ce47309e5d07dd40a9c6df49b1d26e207d9"
+    },
+    {
+      "path": "crmeb/app/api/controller/v2/store/StoreProductController.php",
+      "bytes": 2342,
+      "sha256": "775e42c9ad5c30ab69d3c78134ffb6b2e3ab42a1fe6432c58969b9e1b784ff29",
+      "original_bytes": 2342,
+      "original_sha256": "775e42c9ad5c30ab69d3c78134ffb6b2e3ab42a1fe6432c58969b9e1b784ff29",
+      "final_base_bytes": 1743,
+      "final_base_sha256": "0483645bd0f5b3b1b4e2a152dc2cbaa6db0cb491dc1d9f0258b558330b5773c2"
+    },
+    {
+      "path": "crmeb/app/api/route/v1.php",
+      "bytes": 57653,
+      "sha256": "409867caa24a82b5fde2f4c558c2e30c059497cd4d4622df9bb4c9b1e5acc24b",
+      "original_bytes": 57653,
+      "original_sha256": "409867caa24a82b5fde2f4c558c2e30c059497cd4d4622df9bb4c9b1e5acc24b",
+      "final_base_bytes": 57489,
+      "final_base_sha256": "d6efc6476303bb614e6566525f2b86dd61daf8459c932286780ca6deb6bf20f1"
+    },
+    {
+      "path": "crmeb/app/dao/activity/bargain/StoreBargainDao.php",
+      "bytes": 13871,
+      "sha256": "c8b8a2bb87a7f06acffe2b967c20a0e7bddfb61450cc1a0a25467ce75aa6e672",
+      "original_bytes": 13871,
+      "original_sha256": "c8b8a2bb87a7f06acffe2b967c20a0e7bddfb61450cc1a0a25467ce75aa6e672",
+      "final_base_bytes": 10797,
+      "final_base_sha256": "d431babea0b14172768d425faf306b7aa5b554f47b064bf078408bc7090591d9"
+    },
+    {
+      "path": "crmeb/app/dao/activity/combination/StoreCombinationDao.php",
+      "bytes": 11882,
+      "sha256": "bd202d51c49f5b3cf1939ff592cf5c390892737d12161673f668ce3fb1fc4f8f",
+      "original_bytes": 11882,
+      "original_sha256": "bd202d51c49f5b3cf1939ff592cf5c390892737d12161673f668ce3fb1fc4f8f",
+      "final_base_bytes": 9821,
+      "final_base_sha256": "7187f0857b2d740ba556c52096239cbe84ec0f2dab9f3a6b7937e18ab61e0ee3"
+    },
+    {
+      "path": "crmeb/app/dao/activity/integral/StoreIntegralDao.php",
+      "bytes": 5118,
+      "sha256": "39a463810651040cd74f06ae478917dbc59b402697f9e9c9f2b24e8815f696c4",
+      "original_bytes": 5118,
+      "original_sha256": "39a463810651040cd74f06ae478917dbc59b402697f9e9c9f2b24e8815f696c4",
+      "final_base_bytes": 3475,
+      "final_base_sha256": "57557ad1af57a1463f0ea92418171916b7d853363a683cf51a2889b046752f3b"
+    },
+    {
+      "path": "crmeb/app/dao/activity/seckill/StoreSeckillDao.php",
+      "bytes": 12926,
+      "sha256": "2fe334f7913d07b88ddd1cd1ba27be33f0683131093b322d7a32ad1526d662d3",
+      "original_bytes": 12926,
+      "original_sha256": "2fe334f7913d07b88ddd1cd1ba27be33f0683131093b322d7a32ad1526d662d3",
+      "final_base_bytes": 10397,
+      "final_base_sha256": "ede0c822db7a104d8170f97afd84e8632496d0012bc3b759ff5590b948cb47df"
+    },
+    {
+      "path": "crmeb/app/dao/marketplace/PublicStoreDao.php",
+      "bytes": 881,
+      "sha256": "723781caaae07492e4cde81ad339e3d7e2c31169ebad1f8871893e5057fddc21",
+      "original_bytes": 905,
+      "original_sha256": "c4a02f5c95d992a82bf016180c4d44d82651fb95960fdadfa2d313035c0f32e1",
+      "final_base_bytes": null,
+      "final_base_sha256": null
+    },
+    {
+      "path": "crmeb/app/dao/marketplace/scope/PublicCatalogScope.php",
+      "bytes": 387,
+      "sha256": "e2d88ebaf0e7aef7cb5c10ab77a501ed5b8ad5aeed2ec641c7a1a12b7b744c38",
+      "original_bytes": 387,
+      "original_sha256": "e2d88ebaf0e7aef7cb5c10ab77a501ed5b8ad5aeed2ec641c7a1a12b7b744c38",
+      "final_base_bytes": 874,
+      "final_base_sha256": "f75e2275e4f78f510286147948c58265e753924abddd68640463bafcd04dc943"
+    },
+    {
+      "path": "crmeb/app/dao/order/StoreCartDao.php",
+      "bytes": 7045,
+      "sha256": "ea6ee832ec34795bd1bee0f507375d0fad036e6a860e034197d475b1a32819ee",
+      "original_bytes": 7045,
+      "original_sha256": "ea6ee832ec34795bd1bee0f507375d0fad036e6a860e034197d475b1a32819ee",
+      "final_base_bytes": 6411,
+      "final_base_sha256": "bdc7b043bfea16053bfbb92447e33c2fe210e0c490282e56612479eeb6f9b5e7"
+    },
+    {
+      "path": "crmeb/app/dao/product/product/StoreCategoryDao.php",
+      "bytes": 9604,
+      "sha256": "daad706ac3739d38a0ed1fd1c711573b5fa87ba9eb8e59a078540629cce45257",
+      "original_bytes": 9604,
+      "original_sha256": "daad706ac3739d38a0ed1fd1c711573b5fa87ba9eb8e59a078540629cce45257",
+      "final_base_bytes": 7612,
+      "final_base_sha256": "1c1377628ccadd9dd0928ca102407fe67ef8480c67cfbd20c041f869db2fc25d"
+    },
+    {
+      "path": "crmeb/app/dao/product/product/StoreProductDao.php",
+      "bytes": 32377,
+      "sha256": "d42eb1d17cc5728c75d9a5337bed7698ce77362d9ffb8123f6b12fe762855472",
+      "original_bytes": 32396,
+      "original_sha256": "11b4ba2c1bebc1a665be4021aeefd1427e77a901023dd1a62cfc2f2522c5a38c",
+      "final_base_bytes": 25032,
+      "final_base_sha256": "3ff3e12028ab1c3b77def6e32672f438d37adc7a8e30efed38bd4d0036f000be"
+    },
+    {
+      "path": "crmeb/app/dao/product/product/StoreProductRelationDao.php",
+      "bytes": 3293,
+      "sha256": "c1ed692fd040759523bc1c9d6fac5489dd587b896eb7afe84f85ed6b970986c9",
+      "original_bytes": 3293,
+      "original_sha256": "c1ed692fd040759523bc1c9d6fac5489dd587b896eb7afe84f85ed6b970986c9",
+      "final_base_bytes": 1534,
+      "final_base_sha256": "6e4116d0b451160fe941b056ee27ef0ae24ea2726ffd2c2a2e2d0c99515199aa"
+    },
+    {
+      "path": "crmeb/app/services/activity/advance/StoreAdvanceServices.php",
+      "bytes": 21613,
+      "sha256": "05c58b98bd68d420585f542e24b50e41efaab86c20076986281ba279d88ded4d",
+      "original_bytes": 21613,
+      "original_sha256": "05c58b98bd68d420585f542e24b50e41efaab86c20076986281ba279d88ded4d",
+      "final_base_bytes": 21224,
+      "final_base_sha256": "98452e7382f1ab9be2de2cb846f6a21f091378660c2a86512e9e3405793d2c05"
+    },
+    {
+      "path": "crmeb/app/services/activity/bargain/StoreBargainServices.php",
+      "bytes": 54839,
+      "sha256": "9f34ac0f9199540e3b9d5bbd1125a50fe69289b9866c83022349a5649f7e81bb",
+      "original_bytes": 54839,
+      "original_sha256": "9f34ac0f9199540e3b9d5bbd1125a50fe69289b9866c83022349a5649f7e81bb",
+      "final_base_bytes": 53937,
+      "final_base_sha256": "8e891eaab73c46fc3576f14a673f3abd0da613e40d5421bfa12ce81b1eba5936"
+    },
+    {
+      "path": "crmeb/app/services/activity/combination/StoreCombinationServices.php",
+      "bytes": 34634,
+      "sha256": "31b7bcf07204d565a9dd4fc0e41a6dc6f7885076de1093639ec7d56bdd9bef50",
+      "original_bytes": 34634,
+      "original_sha256": "31b7bcf07204d565a9dd4fc0e41a6dc6f7885076de1093639ec7d56bdd9bef50",
+      "final_base_bytes": 33764,
+      "final_base_sha256": "685f656f9b1cc05a556344e0be5407f16ed11fad43a7a6b090cecdf2b7ac92bb"
+    },
+    {
+      "path": "crmeb/app/services/activity/integral/StoreIntegralOrderServices.php",
+      "bytes": 28640,
+      "sha256": "98922b1d66b6977ebf8052e096435f2bb0f0ead447f0a8b91e99845261477de2",
+      "original_bytes": 28640,
+      "original_sha256": "98922b1d66b6977ebf8052e096435f2bb0f0ead447f0a8b91e99845261477de2",
+      "final_base_bytes": 28508,
+      "final_base_sha256": "22050a8b34fdce89388f0ec068749b651a58540ce40fa04a4721773fd90dfa89"
+    },
+    {
+      "path": "crmeb/app/services/activity/integral/StoreIntegralServices.php",
+      "bytes": 20980,
+      "sha256": "82459009ed151c58104ed7538132c2fe1e0748726267e2ef99472c387063cbcc",
+      "original_bytes": 20980,
+      "original_sha256": "82459009ed151c58104ed7538132c2fe1e0748726267e2ef99472c387063cbcc",
+      "final_base_bytes": 20206,
+      "final_base_sha256": "359bd53044ac794633492e0ba1a5b2971ccdc3686f5882018e2a9b75f2a6a0d0"
+    },
+    {
+      "path": "crmeb/app/services/activity/seckill/StoreSeckillServices.php",
+      "bytes": 44372,
+      "sha256": "435d65d14766d4bb27e47c86005f93dc04b855cede18a75be88261f5d167a195",
+      "original_bytes": 44372,
+      "original_sha256": "435d65d14766d4bb27e47c86005f93dc04b855cede18a75be88261f5d167a195",
+      "final_base_bytes": 44051,
+      "final_base_sha256": "20567192733dffe3dec8df11d39caf630340e9c4bc6a815e5a29f2955b8e748e"
+    },
+    {
+      "path": "crmeb/app/services/diy/DiyServices.php",
+      "bytes": 15984,
+      "sha256": "5912363f0687c92717eb29d7b8a48d603ceb0a156f3c7ca27fd301b8f7a2768b",
+      "original_bytes": 15984,
+      "original_sha256": "5912363f0687c92717eb29d7b8a48d603ceb0a156f3c7ca27fd301b8f7a2768b",
+      "final_base_bytes": 15642,
+      "final_base_sha256": "2783776662ead5576a7b9f158a2e98c3ace3100c15803686ced034a6e300f4d9"
+    },
+    {
+      "path": "crmeb/app/services/marketplace/PublicCatalogServices.php",
+      "bytes": 36484,
+      "sha256": "0cc32401277486f1353141ad9395b8404b391ea9ed5acba0582824558135d3e9",
+      "original_bytes": 36484,
+      "original_sha256": "0cc32401277486f1353141ad9395b8404b391ea9ed5acba0582824558135d3e9",
+      "final_base_bytes": null,
+      "final_base_sha256": null
+    },
+    {
+      "path": "crmeb/app/services/marketplace/PublicStoreServices.php",
+      "bytes": 1325,
+      "sha256": "24e2837834a4ad7c3d1dc6da50ad4cc645f92bcb4ac603776caf110ef3ed9896",
+      "original_bytes": 1358,
+      "original_sha256": "ab46ccbd03eab6d15ecaa2359e98f1766e78a055856616163d43463ca68749e5",
+      "final_base_bytes": null,
+      "final_base_sha256": null
+    },
+    {
+      "path": "crmeb/app/services/marketplace/attachment/MerchantAttachmentStorage.php",
+      "bytes": 20470,
+      "sha256": "8faf9b528ac8ffdae189ddc23a09e2bd31fcacf70f2d6796f5762bdbbeda33e5",
+      "original_bytes": 20470,
+      "original_sha256": "8faf9b528ac8ffdae189ddc23a09e2bd31fcacf70f2d6796f5762bdbbeda33e5",
+      "final_base_bytes": 18215,
+      "final_base_sha256": "732d65d5133c2d7eeb65628e4be0fe3e980672fb1bbb45874462259e81a249dd"
+    },
+    {
+      "path": "crmeb/app/services/marketplace/freight/MerchantFreightPolicy.php",
+      "bytes": 5076,
+      "sha256": "229379548d08b3798993c1b3d778981e3b728daa47778c43209771d8b6d668c9",
+      "original_bytes": 5076,
+      "original_sha256": "229379548d08b3798993c1b3d778981e3b728daa47778c43209771d8b6d668c9",
+      "final_base_bytes": 4946,
+      "final_base_sha256": "b0097a0248e8cb27fb7c832942c9e4a949fdc7bd6dff36d4bf477c5c9b30e06f"
+    },
+    {
+      "path": "crmeb/app/services/marketplace/publiccatalog/PublicCatalogProjection.php",
+      "bytes": 18001,
+      "sha256": "119ee71dae0c30984f983ce5b3eed9295cf1bf464a3c531f4103cf812cddd020",
+      "original_bytes": 18001,
+      "original_sha256": "119ee71dae0c30984f983ce5b3eed9295cf1bf464a3c531f4103cf812cddd020",
+      "final_base_bytes": null,
+      "final_base_sha256": null
+    },
+    {
+      "path": "crmeb/app/services/marketplace/publiccatalog/PublicCatalogQuery.php",
+      "bytes": 7602,
+      "sha256": "cc041ed5b97f7469ce82e7d82dfa839fdf2749bf3eae66c8d5036b5db137b6a9",
+      "original_bytes": 7602,
+      "original_sha256": "cc041ed5b97f7469ce82e7d82dfa839fdf2749bf3eae66c8d5036b5db137b6a9",
+      "final_base_bytes": null,
+      "final_base_sha256": null
+    },
+    {
+      "path": "crmeb/app/services/marketplace/publiccatalog/PublicCatalogSku.php",
+      "bytes": 4442,
+      "sha256": "002612c7359a96f29a385b144019a48f7407b72e074ce9cf3f46dd96f028b12c",
+      "original_bytes": 4442,
+      "original_sha256": "002612c7359a96f29a385b144019a48f7407b72e074ce9cf3f46dd96f028b12c",
+      "final_base_bytes": null,
+      "final_base_sha256": null
+    },
+    {
+      "path": "crmeb/app/services/order/StoreCartServices.php",
+      "bytes": 44300,
+      "sha256": "5d7d48241db776266146fbcfcbfb134cbdd1889807eb7f77fe7982bd04673559",
+      "original_bytes": 44300,
+      "original_sha256": "5d7d48241db776266146fbcfcbfb134cbdd1889807eb7f77fe7982bd04673559",
+      "final_base_bytes": 37386,
+      "final_base_sha256": "8a5a5b7fef0228249800f30fc28f3d00dfb54b8789fa7748f384245c751307fe"
+    },
+    {
+      "path": "crmeb/app/services/order/StoreOrderComputedServices.php",
+      "bytes": 28701,
+      "sha256": "2c04b16e70b128933b921b23b2c68889378c622a0c7f44a7c4751731267f2190",
+      "original_bytes": 28701,
+      "original_sha256": "2c04b16e70b128933b921b23b2c68889378c622a0c7f44a7c4751731267f2190",
+      "final_base_bytes": 28007,
+      "final_base_sha256": "9dad7a45a74219bdbd9b2cfab7a67bca272037f01a34703b25c62fba7b8db370"
+    },
+    {
+      "path": "crmeb/app/services/order/StoreOrderServices.php",
+      "bytes": 144818,
+      "sha256": "a6afe2af1e6562ef3c4909dc37f6b0f732f0078022e4965fb000199aa1f7eecd",
+      "original_bytes": 144818,
+      "original_sha256": "a6afe2af1e6562ef3c4909dc37f6b0f732f0078022e4965fb000199aa1f7eecd",
+      "final_base_bytes": 143719,
+      "final_base_sha256": "550f9436e27bf7c28aa43a16ac14764146a06d30b3647045cee860ec06fde795"
+    },
+    {
+      "path": "crmeb/app/services/other/QrcodeServices.php",
+      "bytes": 20253,
+      "sha256": "7b01a0c6e66370ea0dc1af1dfb4fe6ded7cbedcbd726ab291eaf3b50f7823c1f",
+      "original_bytes": 20253,
+      "original_sha256": "7b01a0c6e66370ea0dc1af1dfb4fe6ded7cbedcbd726ab291eaf3b50f7823c1f",
+      "final_base_bytes": 14562,
+      "final_base_sha256": "d6b70bc5d7a13f1a3bb5545c4a4cabafbb21198a921bb5c07e0830b32c2fdbb2"
+    },
+    {
+      "path": "crmeb/app/services/pc/CartServices.php",
+      "bytes": 4846,
+      "sha256": "493f572347177244c9fbd08e42c6e738c1b01c423cd5fd989e420880453a7463",
+      "original_bytes": 4846,
+      "original_sha256": "493f572347177244c9fbd08e42c6e738c1b01c423cd5fd989e420880453a7463",
+      "final_base_bytes": 4305,
+      "final_base_sha256": "13181cad417209c031b3991ebc817eb84248a6d2e85581714f03dbe770642b77"
+    },
+    {
+      "path": "crmeb/app/services/pc/HomeServices.php",
+      "bytes": 2647,
+      "sha256": "049a9dc0176491309ab561e87e0d8047af38d044569118e8fc6d8cc2487be1db",
+      "original_bytes": 2647,
+      "original_sha256": "049a9dc0176491309ab561e87e0d8047af38d044569118e8fc6d8cc2487be1db",
+      "final_base_bytes": 2520,
+      "final_base_sha256": "00ef26d5b2d105c5749322f75ccbf9e95be8cc72907eeb910b95cf78dfbdd5fc"
+    },
+    {
+      "path": "crmeb/app/services/pc/ProductServices.php",
+      "bytes": 5757,
+      "sha256": "a56474c2cd33c4f5ee9aac8b41fb5b518ebc864ee1cf33e59a7352214176a86b",
+      "original_bytes": 5757,
+      "original_sha256": "a56474c2cd33c4f5ee9aac8b41fb5b518ebc864ee1cf33e59a7352214176a86b",
+      "final_base_bytes": 4884,
+      "final_base_sha256": "079a1cf64255f986416b62661e0459ef38661f1707fae01488750afc0d8a7464"
+    },
+    {
+      "path": "crmeb/app/services/pc/UserServices.php",
+      "bytes": 2382,
+      "sha256": "c5e107fab79cf4c6c166df5448de0eb09d74903ea034579beebd4b134caaaa01",
+      "original_bytes": 2382,
+      "original_sha256": "c5e107fab79cf4c6c166df5448de0eb09d74903ea034579beebd4b134caaaa01",
+      "final_base_bytes": 3611,
+      "final_base_sha256": "af5a93228de560fe902d2d3195b2c80b0ce5a301fb03eb81bf1ce263ff97b71a"
+    },
+    {
+      "path": "crmeb/app/services/product/product/StoreCategoryServices.php",
+      "bytes": 13635,
+      "sha256": "d8ce601d84fe99bb5d406db74a0fc6fc700b6bba0c3104a98d94fb4f845a60a7",
+      "original_bytes": 13635,
+      "original_sha256": "d8ce601d84fe99bb5d406db74a0fc6fc700b6bba0c3104a98d94fb4f845a60a7",
+      "final_base_bytes": 13360,
+      "final_base_sha256": "c1f68a3b39b1e17d9f1ccf3ad16a4dc748da41a5a122e1502913b7200ca62c10"
+    },
+    {
+      "path": "crmeb/app/services/product/product/StoreProductRelationServices.php",
+      "bytes": 6860,
+      "sha256": "561a2a3185a10ac39fcda99a8e9e181f1cefbfe62f76b6d0a88f850888ab141a",
+      "original_bytes": 6860,
+      "original_sha256": "561a2a3185a10ac39fcda99a8e9e181f1cefbfe62f76b6d0a88f850888ab141a",
+      "final_base_bytes": 6386,
+      "final_base_sha256": "7bedd1c6f0e1ee1e9ac4a9cfdbe5b3eb62a9a475bc5ef33f154f2f06de86a936"
+    },
+    {
+      "path": "crmeb/app/services/product/product/StoreProductServices.php",
+      "bytes": 143624,
+      "sha256": "f7e193b2b30771b88cc6642583e2bbfe046a559dc3082fc77fa3e10eeb022099",
+      "original_bytes": 143624,
+      "original_sha256": "f7e193b2b30771b88cc6642583e2bbfe046a559dc3082fc77fa3e10eeb022099",
+      "final_base_bytes": 141559,
+      "final_base_sha256": "edbb2605ce1692cebd420ac890f57d0ad73a21c73f640a634dc1ce6faeda54cd"
+    },
+    {
+      "path": "crmeb/app/services/product/sku/StoreProductAttrServices.php",
+      "bytes": 10227,
+      "sha256": "381bd44bb164c88fdfd4b7524f7e2d0c6c64f8d544d1cd241324d89066ff7535",
+      "original_bytes": 10227,
+      "original_sha256": "381bd44bb164c88fdfd4b7524f7e2d0c6c64f8d544d1cd241324d89066ff7535",
+      "final_base_bytes": 9216,
+      "final_base_sha256": "8b41c9c891c55696ef4b4225bf96092db4f57a7d87e70d32450b14065444f1da"
+    },
+    {
+      "path": "template/uni-app/api/store.js",
+      "bytes": 5933,
+      "sha256": "a899336404754d710e5b609fc07d0a201f298575cd3682cc895cb2180b8582a1",
+      "original_bytes": 6256,
+      "original_sha256": "35863bb66cc48b7fb52db72142d69cdfba7a45491aa880323a4181347e2be1e9",
+      "final_base_bytes": 6058,
+      "final_base_sha256": "a498f2b8d1bb24df94abc309579120769c646c4209969afc18815bc1817aeb0b"
+    },
+    {
+      "path": "template/uni-app/components/marketplaceStore/index.vue",
+      "bytes": 1721,
+      "sha256": "8baee6944ca035d07d4ed7e8a047514bef695c862997a0e218f9e0bde03c3a6a",
+      "original_bytes": 1746,
+      "original_sha256": "cb2c14cc106d13b606cd631bb6f3d2efc05b47aa0d9d3e873cd9a519df28dd4a",
+      "final_base_bytes": null,
+      "final_base_sha256": null
+    },
+    {
+      "path": "template/uni-app/components/productWindow/index.vue",
+      "bytes": 13985,
+      "sha256": "2c1c4f937500f5e8399a64f63b3327402e187ba2877e570caa1f20129c098170",
+      "original_bytes": 14555,
+      "original_sha256": "1aa45683894ba41a614b9bdb256696780ebb43b63b925a7d5a841394fdc2e644",
+      "final_base_bytes": 14039,
+      "final_base_sha256": "9c6480185a8915fe7761d30a7df91805fcb0d55b8b9ab6b2cbf76429ecb80a18"
+    },
+    {
+      "path": "template/uni-app/config/marketplace.js",
+      "bytes": 138,
+      "sha256": "1e6f96ced31060e9f81b1ae2b4281dc392dc1c60f3e870f9ec27756ef37fb591",
+      "original_bytes": 140,
+      "original_sha256": "ca134b3b0c5da0c6210f8f01b281b5050bfc52a8bad9af4c89067ef35671d4c3",
+      "final_base_bytes": null,
+      "final_base_sha256": null
+    },
+    {
+      "path": "template/uni-app/mixins/skuSelect.js",
+      "bytes": 12734,
+      "sha256": "3b876d87c6e404b9cbe008202102f41b8265c435a4d7d4bad192ae70dd0c42f5",
+      "original_bytes": 12734,
+      "original_sha256": "3b876d87c6e404b9cbe008202102f41b8265c435a4d7d4bad192ae70dd0c42f5",
+      "final_base_bytes": 11606,
+      "final_base_sha256": "cef2f8bd42bc579245f5645f7ddbfd3c5201159cd32eedf9768a9b71c477b957"
+    },
+    {
+      "path": "template/uni-app/pages.json",
+      "bytes": 36260,
+      "sha256": "1144426dc83a6a3dc3a7fd5c46f278220833a4e7983a82f85885cba7ab4c8918",
+      "original_bytes": 36260,
+      "original_sha256": "1144426dc83a6a3dc3a7fd5c46f278220833a4e7983a82f85885cba7ab4c8918",
+      "final_base_bytes": 36115,
+      "final_base_sha256": "c2617bf696f37a741fcd35d662d273e0a8c230cae516a032b00c81fe39f461ec"
+    },
+    {
+      "path": "template/uni-app/pages/activity/goods_bargain_details/index.vue",
+      "bytes": 37337,
+      "sha256": "25b02f1ba64d0b73283d2cf0d4d90699d7cbb14e064d8113289f9b1419a9a3d5",
+      "original_bytes": 37337,
+      "original_sha256": "25b02f1ba64d0b73283d2cf0d4d90699d7cbb14e064d8113289f9b1419a9a3d5",
+      "final_base_bytes": 37044,
+      "final_base_sha256": "e97f28fa756e5466501b4f9cd9f2ef2070155984731e41f188dd9f371c3ac8cb"
+    },
+    {
+      "path": "template/uni-app/pages/activity/goods_combination_details/index.vue",
+      "bytes": 57131,
+      "sha256": "d580d04055b8902305cfb508dd491be3a529254d1a7b331b6f6700169ac0c3f2",
+      "original_bytes": 57131,
+      "original_sha256": "d580d04055b8902305cfb508dd491be3a529254d1a7b331b6f6700169ac0c3f2",
+      "final_base_bytes": 56869,
+      "final_base_sha256": "07f3d27a609d3244757d9b046b48a191d603059bb233688ef4dbd3f94c341641"
+    },
+    {
+      "path": "template/uni-app/pages/activity/goods_seckill_details/index.vue",
+      "bytes": 57370,
+      "sha256": "198b95a6b9b78808e1cc03ca8955e4fffd7e57fe6a48a2b1c84afe616d1b0097",
+      "original_bytes": 57370,
+      "original_sha256": "198b95a6b9b78808e1cc03ca8955e4fffd7e57fe6a48a2b1c84afe616d1b0097",
+      "final_base_bytes": 57104,
+      "final_base_sha256": "eb96c6ec8d8f56e07b65c86587f2a440cb64a8192270fa1031f15669327d073a"
+    },
+    {
+      "path": "template/uni-app/pages/activity/presell_details/index.vue",
+      "bytes": 83616,
+      "sha256": "d56345621b95eee2368fbb2bcc05f077b5a6fa0f3d21bdf1c26b77ce14fd953e",
+      "original_bytes": 83616,
+      "original_sha256": "d56345621b95eee2368fbb2bcc05f077b5a6fa0f3d21bdf1c26b77ce14fd953e",
+      "final_base_bytes": 83239,
+      "final_base_sha256": "18d30c6271464d6c70cc9c9f213e458063f9de1f91d752747fc984ab1bc41341"
+    },
+    {
+      "path": "template/uni-app/pages/goods_details/index.vue",
+      "bytes": 53589,
+      "sha256": "669505a33a1b72e5a7ba232a847979efb9c56b9c0fd23ea4a97e7c2b90b54fea",
+      "original_bytes": 53589,
+      "original_sha256": "669505a33a1b72e5a7ba232a847979efb9c56b9c0fd23ea4a97e7c2b90b54fea",
+      "final_base_bytes": 52466,
+      "final_base_sha256": "97016b75e63df7d11e195ceec271b51eee9d58d40bfdf47da2f693f06e6afb9c"
+    },
+    {
+      "path": "template/uni-app/pages/order_addcart/order_addcart.vue",
+      "bytes": 43861,
+      "sha256": "46ed4275301e9d1ae8bdc85db1b6252e167ec9750fa93f70120645427311bbac",
+      "original_bytes": 43861,
+      "original_sha256": "46ed4275301e9d1ae8bdc85db1b6252e167ec9750fa93f70120645427311bbac",
+      "final_base_bytes": 43723,
+      "final_base_sha256": "2a4cd5cc72126ceaa9a64771d977ba411e88ebcd9eb455668f3c67e430fdf968"
+    },
+    {
+      "path": "template/uni-app/pages/points_mall/integral_goods_details.vue",
+      "bytes": 34360,
+      "sha256": "664ee70cb314baf80ac6a642d3409efc674e6224cc005464d09442cec5abd641",
+      "original_bytes": 34360,
+      "original_sha256": "664ee70cb314baf80ac6a642d3409efc674e6224cc005464d09442cec5abd641",
+      "final_base_bytes": 34098,
+      "final_base_sha256": "ac35ef54965ee5a3edcb7d977d002f08d6fc1ac465c1e5f56c5bdbe5afd92b61"
+    },
+    {
+      "path": "template/uni-app/pages/store/index.vue",
+      "bytes": 7061,
+      "sha256": "2706861a79f6c64e50fe8cdd9127a6b98fa84d4cfe7594b7e39a72dd4814b636",
+      "original_bytes": 7145,
+      "original_sha256": "928f8a28a12747e1467de933e1e19de729b408a338298375cd73cb3559afc522",
+      "final_base_bytes": null,
+      "final_base_sha256": null
+    },
+    {
+      "path": "template/uni-app/pages/users/user_goods_collection/index.vue",
+      "bytes": 14516,
+      "sha256": "273785039ed3e56745fdc2a8d171adcd3e3ba38822c2be97604b57d6cd38b736",
+      "original_bytes": 14983,
+      "original_sha256": "dc2fa1cb497fd33a74e70de280ddde514e9b0c6ca602656ff18f84651bdad00a",
+      "final_base_bytes": 10597,
+      "final_base_sha256": "7d79f9bdcc5d0e39b07c77bee3871b287416a222a5edf5178c42d6fab538ed20"
+    },
+    {
+      "path": "template/uni-app/utils/public-store.js",
+      "bytes": 985,
+      "sha256": "495f580533b1efc417efd0fbdba9de798b6b357168e94f61170d299a4adaa2b3",
+      "original_bytes": 1004,
+      "original_sha256": "28e7f7255e6ce3fe0dfd1665c3136cf5e66f244df12f3fc9e0efdded1b85b071",
+      "final_base_bytes": null,
+      "final_base_sha256": null
+    }
+  ],
+  "completion": {
+    "runtime_complete": false,
+    "UI_acceptance_complete": false,
+    "current_RUN7_business_acceptance_complete": false,
+    "full_MS2_complete": false,
+    "full_MS3_complete": false,
+    "full_MS4_complete": false,
+    "new_H5_build_performed": false,
+    "Task8_complete": false,
+    "Task9_complete": false,
+    "Task10_complete": false
+  },
+  "boundaries": {
+    "business_source_changed_by_this_check": false,
+    "application_framework_SQL_or_payment_loaded": false,
+    "network_access_performed": false,
+    "dependency_install_performed": false,
+    "stopped_cases_run": false,
+    "main_repository_or_current_profile_changed": false,
+    "committed": false,
+    "pushed": false,
+    "deployed": false
+  }
+}

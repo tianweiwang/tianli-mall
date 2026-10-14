@@ -38,9 +38,16 @@ class StoreProductController
         if (!$id) return app('json')->fail('参数错误');
         /** @var StoreProductAttrServices $storeProductAttrServices */
         $storeProductAttrServices = app()->make(StoreProductAttrServices::class);
-        list($data['productAttr'], $data['productValue']) = $storeProductAttrServices->getProductAttrDetail($id, $request->uid(), $type);
-        $storeInfo = $this->services->getOne(['id' => $id]);
-        $data['storeInfo'] = $storeInfo ? $storeInfo->toArray() : [];
+        list($data['productAttr'], $data['productValue']) = $storeProductAttrServices->getPublicProductAttrDetail($id, $request->uid(), $type);
+        $catalog=app()->make(\app\services\marketplace\PublicCatalogServices::class);
+        $definition=$catalog->ordinaryDefinition((int)$id,(int)$request->uid(),(int)$type);
+        $projection=\app\services\marketplace\publiccatalog\PublicCatalogProjection::class;
+        $storeInfo=$catalog->displayRoot($definition['root']);
+        $storeInfo['default_sku']=$definition['default_sku'];
+        if(!$this->services->vipIsOpen((bool)$storeInfo['is_vip']))$storeInfo['vip_price']=0;
+        $data['storeInfo']=$projection::skuSummary($storeInfo,$definition['stock']);
+        $data['productAttr']=$projection::attributes($data['productAttr']);
+        $data['productValue']=$projection::values($data['productValue']);
         return app('json')->success($data);
     }
 }

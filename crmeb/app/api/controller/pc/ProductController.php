@@ -35,6 +35,7 @@ class ProductController
     public function getProductList(Request $request, StoreCategoryServices $services)
     {
         $where = $request->getMore([
+            ['mer_id', null],
             [['sid', 'd'], 0],
             [['cid', 'd'], 0],
             ['keyword', '', '', 'store_name'],
@@ -103,14 +104,8 @@ class ProductController
             $data['list'] = $product->getRecommendProduct($request->uid(), 'is_benefit', 0, 'mid');//TODO 促销单品
             $where['is_benefit'] = 1;
         }
-        foreach ($data['list'] as &$item) {
-            if (count($item['star'])) {
-                $item['star'] = bcdiv((string)array_sum(array_column($item['star'], 'product_score')), (string)count($item['star']), 1);
-            } else {
-                $item['star'] = '5.0';
-            }
-        }
-        $data['count'] = $product->getCount($where);
+        $where['vip_user']=$request->uid()?app()->make(\app\services\user\UserServices::class)->value(['uid'=>$request->uid()],'is_money_level'):0;
+        $data['count'] = $product->getPublicCount($where);
         return app('json')->success($data);
     }
 

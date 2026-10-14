@@ -185,9 +185,10 @@ class StoreSeckillDao extends BaseDao
      * @throws \think\db\exception\DbException
      * @throws \think\db\exception\ModelNotFoundException
      */
-    public function getListByTime(int $time, int $page, int $limit)
+    public function getListByTime(int $time, int $page, int $limit, ?int $merchantFilter = null)
     {
-        return $this->search(['is_del' => 0, 'status' => 1])->with(['product'])
+        $catalog = app()->make(\app\services\marketplace\PublicCatalogServices::class);
+        return $catalog->constrainNative($this->search(['is_del' => 0, 'status' => 1])->alias('catalog_native'), 'catalog_native', 1, $merchantFilter)->with(['product'])
             ->where('start_time', '<=', time())
             ->where('stop_time', '>=', time() - 86400)
             ->whereFindInSet('time_id', $time)
@@ -235,5 +236,40 @@ class StoreSeckillDao extends BaseDao
     {
         return $this->getModel()->where('product_id', 'in', $productIds)->where('is_show', 1)->where('is_del', 0)
             ->group('product_id')->column('COUNT(*) as count', 'product_id');
+    }
+    public function getPublicHomeList(array $where, int $page = 0, int $limit = 0)
+    {
+        return app()->make(\app\services\marketplace\PublicCatalogServices::class)->constrainNative($this->search($where)->alias('catalog_native'),'catalog_native',1,app()->make(\app\services\marketplace\PublicCatalogServices::class)::merchantFilter($where['mer_id']??null))->where('is_del', 0)->where('status', 1)
+            ->where('start_time', '<=', time())
+            ->where('stop_time', '>=', time() - 86400)
+            ->when($page != 0 && $limit != 0, function ($query) use ($page, $limit) {
+                $query->page($page, $limit);
+            })->when(isset($where['priceOrder']) && $where['priceOrder'] != '', function ($query) use ($where) {
+                if ($where['priceOrder'] === 'desc') {
+                    $query->order("price desc");
+                } else {
+                    $query->order("price asc");
+                }
+            })->when(isset($where['newsOrder']) && $where['newsOrder'] != '', function ($query) use ($where) {
+                if ($where['newsOrder'] === 'news') {
+                    $query->order("id desc");
+                }
+            })->when(isset($where['salesOrder']) && $where['salesOrder'] != '', function ($query) use ($where) {
+                if ($where['salesOrder'] === 'desc') {
+                    $query->order("sales desc");
+                } else {
+                    $query->order("sales asc");
+                }
+            })->when(isset($where['ids']) && $where['ids'], function ($query) use ($where) {
+                if ((isset($where['priceOrder']) && $where['priceOrder'] != '') || (isset($where['salesOrder']) && $where['salesOrder'] != '')) {
+                    $query->whereIn('id', $where['ids']);
+                } else {
+                    $query->whereIn('id', $where['ids'])->orderField('id', $where['ids'], 'asc');
+                }
+            })->when(isset($where['activity_name']) && $where['activity_name'] != '', function ($query) use ($where) {
+                $query->whereIn('activity_id', function ($query) use ($where) {
+                    $query->name('store_activity')->whereLike('title', $where['activity_name'])->field('id')->select();
+                });
+            })->with(['product'])->select()->toArray();
     }
 }

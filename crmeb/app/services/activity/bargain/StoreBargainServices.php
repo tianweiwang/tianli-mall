@@ -386,17 +386,23 @@ class StoreBargainServices extends BaseServices
      * 砍价列表
      * @return array
      */
-    public function getBargainList()
+    public function getBargainList($merId = null)
     {
         /** @var StoreBargainUserServices $bargainUserService */
         $bargainUserService = app()->make(StoreBargainUserServices::class);
         [$page, $limit] = $this->getPageValue();
-        $field = 'id,product_id,title,min_price,image,price';
-        $list = $this->dao->BargainList($page, $limit, $field);
+        $catalog = app()->make(\app\services\marketplace\PublicCatalogServices::class);
+        $field = 'id,product_id,title,min_price,image,price,stock';
+        $list = $this->dao->BargainList($page, $limit, $field, $catalog::merchantFilter($merId));
         foreach ($list as &$item) {
             $item['people'] = $bargainUserService->getUserIdList($item['id']);
             $item['price'] = floatval($item['price']);
             $item['product_price'] = floatval($item['product_price']);
+        }
+        unset($item);
+        $public = $catalog->nativeListOutput($list, 2, 0);
+        foreach ($list as $index => $item) {
+            $list[$index] = \app\services\marketplace\publiccatalog\PublicCatalogProjection::take(array_replace($item, $public[$index]), 'activity-list-2');
         }
         return $list;
     }
@@ -445,11 +451,12 @@ class StoreBargainServices extends BaseServices
         $where['is_del'] = 0;
         $where['is_show'] = 1;
         $data = [];
-        $list = $this->dao->getHomeList($where, $page, $limit);
+        $list = $this->dao->getPublicHomeList($where, $page, $limit);
         foreach ($list as &$item) {
             $item['price'] = floatval($item['price']);
         }
         $data['list'] = $list;
+        $data['list']=app()->make(\app\services\marketplace\PublicCatalogServices::class)->nativeListOutput($data['list'],2,(int)request()->uid());
         return $data;
     }
 
@@ -473,10 +480,11 @@ class StoreBargainServices extends BaseServices
         $bargainUserService = app()->make(StoreBargainUserServices::class);
 
         //获取砍价商品信息
-        $bargain = $this->dao->getOne(['id' => $id], '*', ['description']);
+        $bargain = app()->make(\app\services\marketplace\PublicCatalogServices::class)->nativeModel(2,$id,['description']);
         if (!$bargain) throw new ApiException('砍价商品不存在');
+        $bargain = $bargain->toArray();
         if ($bargain['stop_time'] < time()) throw new ApiException('砍价已结束');
-        list($productAttr, $productValue) = $storeProductAttrServices->getProductAttrDetail($id, $request->uid(), 0, 2, $bargain['product_id']);
+        list($productAttr, $productValue) = $storeProductAttrServices->getPublicProductAttrDetail($id, $request->uid(), 0, 2, $bargain['product_id']);
         foreach ($productValue as $v) {
             $bargain['attr'] = $v;
         }
@@ -537,7 +545,7 @@ class StoreBargainServices extends BaseServices
 
         //浏览记录
         ProductLogJob::dispatch(['visit', ['uid' => $user['uid'], 'product_id' => $bargain['product_id']]]);
-        return $data;
+        return app()->make(\app\services\marketplace\PublicCatalogServices::class)->activityOutput($data,2,(int)$request->uid());
     }
 
     /**
@@ -991,6 +999,7 @@ class StoreBargainServices extends BaseServices
      */
     public function checkBargainStock(int $uid, int $bargainId, int $cartNum = 1, string $unique = '')
     {
+        app()->make(\app\services\marketplace\PublicCatalogServices::class)->nativePurchaseBase(2, $bargainId);
         if (!$this->validBargain($bargainId)) {
             throw new ApiException('该商品已下架或删除');
         }

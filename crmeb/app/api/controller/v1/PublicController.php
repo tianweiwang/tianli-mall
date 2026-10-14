@@ -467,7 +467,7 @@ class PublicController
      */
     public function getDiy(DiyServices $services, $id = 0)
     {
-        return app('json')->success($services->getDiy((int)$id));
+        return app('json')->success($services->getPublicDiy((int)$id,(int)request()->uid()));
     }
 
     /**
@@ -967,6 +967,7 @@ class PublicController
             }
         }
 
+        if(in_array($type,['home','detail','user'],true))$themeInfo=app()->make(\app\services\marketplace\PublicCatalogServices::class)->hydrateConfiguration($themeInfo,(int)$request->uid());
         return app('json')->success($themeInfo);
     }
 
@@ -1088,7 +1089,7 @@ class PublicController
             ['sort', 0],
             ['limit', 10],
         ]);
-        $data = app()->make(StoreProductServices::class)->getThemeProduct($where);
+        $data = app()->make(StoreProductServices::class)->getPublicThemeProduct($where);
         return app('json')->success($data);
     }
 

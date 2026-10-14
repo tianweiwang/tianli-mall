@@ -277,16 +277,17 @@ class StoreSeckillServices extends BaseServices
                 break;
             }
         }
-        if ($timeInfo['time'] == 0) return [];
+        if (empty($timeInfo['id'])) return [];
         $data['time'] = $timeInfo['time'] . ':00';
         $activityEndHour = bcadd($timeInfo['time'], $timeInfo['continued'], 0);
         $data['stop'] = (int)bcadd((string)$today, bcmul($activityEndHour, '3600', 0));
         $where['time_id'] = $timeInfo['id'];
         [$page, $limit] = $this->getPageValue();
-        $data['list'] = $this->dao->getHomeList($where, $page, $limit);
+        $data['list'] = $this->dao->getPublicHomeList($where, $page, $limit);
         foreach ($data['list'] as &$item) {
             $item['price'] = floatval($item['price']);
         }
+        $data['list']=app()->make(\app\services\marketplace\PublicCatalogServices::class)->nativeListOutput($data['list'],1,(int)request()->uid());
         return $data;
 
     }
@@ -417,10 +418,11 @@ class StoreSeckillServices extends BaseServices
      * @throws \think\db\exception\DbException
      * @throws \think\db\exception\ModelNotFoundException
      */
-    public function getListByTime(int $time)
+    public function getListByTime(int $time, $merId = null)
     {
         [$page, $limit] = $this->getPageValue();
-        $seckillInfo = $this->dao->getListByTime($time, $page, $limit);
+        $catalog = app()->make(\app\services\marketplace\PublicCatalogServices::class);
+        $seckillInfo = $this->dao->getListByTime($time, $page, $limit, $catalog::merchantFilter($merId));
         if (count($seckillInfo)) {
             foreach ($seckillInfo as $key => &$item) {
                 if ($item['quota'] > 0) {
@@ -434,6 +436,11 @@ class StoreSeckillServices extends BaseServices
                 $item['price'] = floatval($item['price']);
                 $item['ot_price'] = floatval($item['ot_price']);
             }
+        }
+        unset($item);
+        $public = $catalog->nativeListOutput($seckillInfo, 1, 0);
+        foreach ($seckillInfo as $index => $item) {
+            $seckillInfo[$index] = \app\services\marketplace\publiccatalog\PublicCatalogProjection::take(array_replace($item, $public[$index]), 'activity-list-1');
         }
         return $seckillInfo;
     }
@@ -450,12 +457,13 @@ class StoreSeckillServices extends BaseServices
     public function seckillDetail(Request $request, int $id, int $time_id = 0)
     {
         $uid = (int)$request->uid();
-        $storeInfo = $this->dao->getOne(['id' => $id], '*', ['description', 'product']);
+        $storeInfo = app()->make(\app\services\marketplace\PublicCatalogServices::class)->nativeModel(1,$id,['description', 'product']);
         if (!$storeInfo) {
             throw new ApiException('商品不存在');
         } else {
             $storeInfo = $storeInfo->toArray();
         }
+        $catalogSlot=app()->make(\app\services\marketplace\PublicCatalogServices::class)->seckillSlot($id,$time_id);
         $siteUrl = sys_config('site_url');
         $storeInfo['image'] = set_file_url($storeInfo['image'], $siteUrl);
         $storeInfo['image_base'] = set_file_url($storeInfo['image'], $siteUrl);
@@ -497,13 +505,7 @@ class StoreSeckillServices extends BaseServices
             } elseif (($storeInfo['stop_time'] + 86400) < time()) {
                 $storeInfo['status'] = 0;
             } else {
-                /** @var SystemGroupDataServices $systemGroupDataService */
-                $systemGroupDataService = app()->make(SystemGroupDataServices::class);
-                $seckillTime = array_column($systemGroupDataService->getConfigNameValue('routine_seckill_time'), null, 'id');
-                $config = $seckillTime[$time_id] ?? false;
-                if (!$config) {
-                    throw new ApiException('活动已结束');
-                }
+                $config=$catalogSlot;
                 $now_hour = date('H', time());
                 $start_hour = $config['time'];
                 $end_hour = (int)$start_hour + (int)$config['continued'];
@@ -519,11 +521,8 @@ class StoreSeckillServices extends BaseServices
             $storeInfo['status'] = 0;
         }
 
-        /** @var SystemGroupDataServices $groupDataService */
-        $groupDataService = app()->make(SystemGroupDataServices::class);
-        $timeInfo = json_decode($groupDataService->value(['id' => $time_id], 'value'), true);
         $today = strtotime(date('Y-m-d'));
-        $activityEndHour = $timeInfo['time']['value'] + $timeInfo['continued']['value'];
+        $activityEndHour = $catalogSlot['time'] + $catalogSlot['continued'];
         $storeInfo['last_time'] = (int)bcadd((string)$today, (string)bcmul((string)$activityEndHour, '3600', 0));
 
         //商品详情
@@ -540,7 +539,7 @@ class StoreSeckillServices extends BaseServices
 
         /** @var StoreProductAttrServices $storeProductAttrServices */
         $storeProductAttrServices = app()->make(StoreProductAttrServices::class);
-        list($productAttr, $productValue) = $storeProductAttrServices->getProductAttrDetail($id, $uid, 0, 1, $storeInfo['product_id']);
+        list($productAttr, $productValue) = $storeProductAttrServices->getPublicProductAttrDetail($id, $uid, 0, 1, $storeInfo['product_id']);
         $data['productAttr'] = $productAttr;
         $data['productValue'] = $productValue;
         $data['routine_contact_type'] = sys_config('routine_contact_type', 0);
@@ -549,7 +548,7 @@ class StoreSeckillServices extends BaseServices
         event('UserVisitListener', [$uid, $id, 'seckill', $storeInfo['product_id'], 'view']);
         //浏览记录
         ProductLogJob::dispatch(['visit', ['uid' => $uid, 'product_id' => $storeInfo['product_id']]]);
-        return $data;
+        return app()->make(\app\services\marketplace\PublicCatalogServices::class)->activityOutput($data,1,(int)$uid);
     }
 
     /**
@@ -594,6 +593,7 @@ class StoreSeckillServices extends BaseServices
      */
     public function checkSeckillStock(int $uid, int $seckillId, int $cartNum = 1, string $unique = '')
     {
+        app()->make(\app\services\marketplace\PublicCatalogServices::class)->nativePurchaseBase(1, $seckillId);
         /** @var StoreProductAttrValueServices $attrValueServices */
         $attrValueServices = app()->make(StoreProductAttrValueServices::class);
         if ($unique == '') {

@@ -104,10 +104,11 @@ class StoreSeckillController
      * @throws \think\db\exception\DbException
      * @throws \think\db\exception\ModelNotFoundException
      */
-    public function lst($time)
+    public function lst(Request $request, $time)
     {
         if (!$time) return app('json')->fail('参数错误');
-        $seckillInfo = $this->services->getListByTime($time);
+        $where = $request->getMore([['mer_id', null]]);
+        $seckillInfo = $this->services->getListByTime($time, $where['mer_id']);
         return app('json')->success(get_thumb_water($seckillInfo));
     }
 
@@ -142,7 +143,7 @@ class StoreSeckillController
         ], true);
         /** @var QrcodeServices $qrcodeService */
         $qrcodeService = app()->make(QrcodeServices::class);
-        $url = $qrcodeService->getRoutineQrcodePath($id, $request->uid(), 2, ['time_id' => $time_id]);
+        $url = $qrcodeService->getCatalogRoutineQrcodePath((int)$id, (int)$request->uid(), 1, ['time_id' => $time_id]);
         if ($url) {
             return app('json')->success(['code' => $url]);
         } else {

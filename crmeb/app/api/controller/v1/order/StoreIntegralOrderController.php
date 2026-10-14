@@ -41,7 +41,7 @@ class StoreIntegralOrderController
             return app('json')->fail('请提交购买的商品');
         }
         $user = $request->user()->toArray();
-        return app('json')->success($this->services->getOrderConfirmData($user, $unique, $num));
+        return app('json')->success(app()->make(\app\services\marketplace\PublicCatalogServices::class)->integralConfirmOutput($this->services->getOrderConfirmData($user, $unique, $num),(int)$request->uid()));
     }
 
     /**
@@ -63,6 +63,7 @@ class StoreIntegralOrderController
             ['unique', ''],
             [['num', 'd'], 0]
         ], true);
+        app()->make(\app\services\marketplace\PublicCatalogServices::class)->integralIdentity($unique,$uid,(int)$num);
         $productInfo = $storeProductAttrValueServices->uniqueByField($unique);
         if (!$productInfo || !isset($productInfo['storeIntegral']) || !$productInfo['storeIntegral']) {
             return app('json')->fail('商品不存在，请重新选择商品下单');

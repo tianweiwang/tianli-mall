@@ -249,7 +249,7 @@ class StoreAdvanceServices extends BaseServices
     public function getAdvanceinfo(Request $request, int $id)
     {
         $uid = (int)$request->uid();
-        $storeInfo = $this->dao->getOne(['id' => $id], '*', ['description']);
+        $storeInfo = app()->make(\app\services\marketplace\PublicCatalogServices::class)->nativeModel(6,$id,['description']);
         if (!$storeInfo) {
             throw new ApiException('商品不存在');
         } else {
@@ -277,7 +277,8 @@ class StoreAdvanceServices extends BaseServices
 
         /** @var QrcodeServices $qrcodeService */
         $qrcodeService = app()->make(QrcodeServices::class);
-        $storeInfo['code_base'] = $qrcodeService->getWechatQrcodePath($id . '_product_advance_detail_wap.jpg', 'pages/activity/presell_details/index?id=' . $id);
+        $storeInfo['code_base'] = $request->isRoutine() ? $qrcodeService->getCatalogRoutineQrcodePath($id,$uid,6) : $qrcodeService->getCatalogAdvanceWechatQrcodePath($id);
+        if(!is_string($storeInfo['code_base'])||$storeInfo['code_base']==='unpublished')$storeInfo['code_base']='';
 
         /** @var StoreOrderServices $storeOrderServices */
         $storeOrderServices = app()->make(StoreOrderServices::class);
@@ -309,7 +310,7 @@ class StoreAdvanceServices extends BaseServices
 
         /** @var StoreProductAttrServices $storeProductAttrServices */
         $storeProductAttrServices = app()->make(StoreProductAttrServices::class);
-        list($productAttr, $productValue) = $storeProductAttrServices->getProductAttrDetail($id, $uid, 0, 6, $storeInfo['product_id']);
+        list($productAttr, $productValue) = $storeProductAttrServices->getPublicProductAttrDetail($id, $uid, 0, 6, $storeInfo['product_id']);
         $data['productAttr'] = $productAttr;
         $data['productValue'] = $productValue;
         $data['routine_contact_type'] = sys_config('routine_contact_type', 0);
@@ -317,7 +318,7 @@ class StoreAdvanceServices extends BaseServices
         event('UserVisitListener', [$uid, $id, 'advance', $storeInfo['product_id'], 'view']);
         //浏览记录
         ProductLogJob::dispatch(['visit', ['uid' => $uid, 'product_id' => $storeInfo['product_id']]]);
-        return $data;
+        return app()->make(\app\services\marketplace\PublicCatalogServices::class)->activityOutput($data,6,(int)$uid);
     }
 
     /**
@@ -397,6 +398,7 @@ class StoreAdvanceServices extends BaseServices
      */
     public function checkAdvanceStock(int $uid, int $advanceId, int $cartNum = 1, string $unique = '')
     {
+        app()->make(\app\services\marketplace\PublicCatalogServices::class)->nativePurchaseBase(6, $advanceId);
         $productInfo = $this->dao->getOne(['id' => $advanceId, 'status' => 1, 'is_del' => 0], '*,title as store_name');
         if (!$productInfo) throw new ApiException('商品已下架或已删除');
         /** @var StoreProductAttrValueServices $attrValueServices */

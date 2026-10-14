@@ -159,7 +159,7 @@
       <view
         class="joinBnt bg-color"
         v-if="
-          iSbnt &&
+          iSbnt && hasSelectedSku &&
           attr.productSelect.product_stock > 0 &&
           attr.productSelect.quota > 0
         "
@@ -168,24 +168,25 @@
         {{ $t(`我要参团`) }}
       </view>
       <view
-        class="joinBnt on"
+        class="stock-status" role="status" aria-live="polite"
         v-else-if="
+          (iSbnt && !hasSelectedSku) ||
           (iSbnt && attr.productSelect.quota <= 0) ||
           (iSbnt && attr.productSelect.product_stock <= 0)
         "
       >
-        {{ $t(`已售罄`) }}
+        {{ hasSelectedSku ? $t(`已售罄`) : $t(`请选择有效规格`) }}
       </view>
       <view
         class="joinBnt bg-color"
-        v-if="iScart && attr.productSelect.stock"
+        v-if="iScart && hasSelectedSku && attr.productSelect.stock"
         @click="goCat"
         >{{ $t(`确定`) }}</view
       >
       <view
-        class="joinBnt on"
-        v-else-if="iScart && !attr.productSelect.stock"
-        >{{ $t(`已售罄`) }}</view
+        class="stock-status" role="status" aria-live="polite"
+        v-else-if="iScart && (!hasSelectedSku || !attr.productSelect.stock)"
+        >{{ hasSelectedSku ? $t(`已售罄`) : $t(`请选择有效规格`) }}</view
       >
     </view>
     <view
@@ -253,6 +254,11 @@ export default {
       bottomVal: "",
     };
   },
+  computed: {
+    hasSelectedSku() {
+      return /^[A-Za-z0-9]{8}$/.test((this.attr.productSelect || {}).unique || '');
+    },
+  },
   mounted() {},
   methods: {
     inputBindFocus(e) {
@@ -271,6 +277,7 @@ export default {
       });
     },
     goCat: function () {
+      if (!this.hasSelectedSku) return;
       this.$emit("goCat");
     },
     /**
@@ -559,4 +566,5 @@ export default {
   background-color: #bbb;
   color: #fff;
 }
+.stock-status { padding: 20rpx 0; text-align: center; font-size: 28rpx; }
 </style>

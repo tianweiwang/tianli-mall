@@ -49,6 +49,7 @@ class StoreIntegralController
             ['store_name', ''],
             ['priceOrder', ''],
             ['salesOrder', ''],
+            ['mer_id', null],
         ]);
         $where['is_show'] = 1;
         $list = $this->services->getIntegralList($where);

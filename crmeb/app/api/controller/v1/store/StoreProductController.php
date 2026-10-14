@@ -49,6 +49,7 @@ class StoreProductController
     public function lst(Request $request, StoreCategoryServices $services)
     {
         $where = $request->getMore([
+            ['mer_id', null],
             [['sid', 'd'], 0],
             [['cid', 'd'], 0],
             ['keyword', '', '', 'store_name'],
@@ -188,6 +189,7 @@ class StoreProductController
      */
     public function reply_config($id)
     {
+        app()->make(\app\services\marketplace\PublicCatalogServices::class)->publishedRoot((int)$id);
         /** @var StoreProductReplyServices $replyService */
         $replyService = app()->make(StoreProductReplyServices::class);
         $count = $replyService->productReplyCount($id);
@@ -205,13 +207,14 @@ class StoreProductController
      */
     public function reply_list(Request $request, $id)
     {
+        app()->make(\app\services\marketplace\PublicCatalogServices::class)->publishedRoot((int)$id);
         [$type] = $request->getMore([
             [['type', 'd'], 0]
         ], true);
         /** @var StoreProductReplyServices $replyService */
         $replyService = app()->make(StoreProductReplyServices::class);
         $list = $replyService->getProductReplyList($id, $type);
-        return app('json')->success(get_thumb_water($list, 'big', ['pics']));
+        return app('json')->success(app()->make(\app\services\marketplace\PublicCatalogServices::class)->replyRows(get_thumb_water($list, 'big', ['pics'])));
     }
 
     /**

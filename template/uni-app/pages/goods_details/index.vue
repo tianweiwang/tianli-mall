@@ -77,6 +77,7 @@
             @openModal="openModal"
             @goActivity="goActivity"
           ></PageDesign>
+          <marketplaceStore :store="merchantStore" />
         </view>
         <view class="uni-p-b-98"></view>
       </view>
@@ -300,6 +301,8 @@ import specs from "./components/specs/index.vue";
 import serviceModal from "./components/serviceModal/index.vue";
 import PageDesign from "@/subpackage/diyComponents/pageDesign.vue";
 import productBottom from "@/subpackage/diyComponents/productBottom.vue";
+import marketplaceStore from "@/components/marketplaceStore/index.vue";
+import { publicStore, merchantIdentity } from "@/utils/public-store";
 export default {
   components: {
     couponListWindow,
@@ -317,6 +320,7 @@ export default {
     serviceModal,
     PageDesign,
     productBottom,
+    marketplaceStore,
   },
   directives: {
     trigger: {
@@ -353,6 +357,8 @@ export default {
       replyCount: 0, //总评论数量
       reply: [], //评论列表
       storeInfo: {}, //商品详情
+      merchantStore: null,
+      singleSkuUnique: "",
       productValue: [], //系统属性
       couponList: [], //优惠券
       cart_num: 1, //购买数量
@@ -822,6 +828,7 @@ export default {
       }
     },
     setRealPrice(id, unique) {
+      if (!/^[A-Za-z0-9]{8}$/.test(unique || '')) return false;
       realPrice(id, unique).then((res) => {
         this.realPriceData = res.data;
         this.$set(this.attr.productSelect, "price", res.data.real_price);
@@ -845,6 +852,7 @@ export default {
      */
     getGoodsDetails() {
       let that = this;
+      that.$set(that, "merchantStore", null);
       uni.showLoading({
         title: "加载中",
         mask: true,
@@ -853,6 +861,9 @@ export default {
         .then((res) => {
           uni.hideLoading();
           let storeInfo = res.data.storeInfo;
+          const owner = merchantIdentity(res.data.mer_id);
+          if (!storeInfo || merchantIdentity(storeInfo.mer_id) !== owner) throw new Error('店铺信息暂未完整取得');
+          that.$set(that, "merchantStore", publicStore(res.data.store, owner));
           let good_list = res.data.good_list || [];
           this.is_gift = res.data.storeInfo.is_gift;
           that.$set(that, "storeInfo", storeInfo);
@@ -947,10 +958,11 @@ export default {
           // #ifndef H5
           that.downloadFilestoreImage();
           // #endif
+          this.singleSkuUnique = /^[A-Za-z0-9]{8}$/.test(res.data.spec_unique || '') ? res.data.spec_unique : '';
           if (!res.data.productAttr.length) {
             // 单规格
             that.DefaultSelect();
-            this.setRealPrice(storeInfo.id, res.data.spec_unique);
+            if (this.singleSkuUnique) this.setRealPrice(storeInfo.id, this.singleSkuUnique);
           } else {
             // 多规格
             that.DefaultSelect();
@@ -982,7 +994,7 @@ export default {
     DefaultSelect: function () {
       let productAttr = this.attr.productAttr;
       let value = [];
-      if (this.storeInfo.default_sku) {
+      if (this.storeInfo.default_sku && Object.prototype.hasOwnProperty.call(this.productValue, this.storeInfo.default_sku)) {
         value = this.storeInfo.default_sku.split(",");
       } else {
         for (var key in this.productValue) {
@@ -1038,11 +1050,11 @@ export default {
         );
         this.$set(this.attr.productSelect, "image", this.storeInfo.image);
         this.$set(this.attr.productSelect, "price", this.storeInfo.price);
-        this.$set(this.attr.productSelect, "stock", this.storeInfo.stock);
+        this.$set(this.attr.productSelect, "stock", this.singleSkuUnique ? this.storeInfo.stock : 0);
         this.$set(
           this.attr.productSelect,
           "unique",
-          this.storeInfo.unique || ""
+          this.singleSkuUnique || ""
         );
         this.$set(this.attr.productSelect, "cart_num", this.storeInfo.min_qty);
         this.$set(
@@ -1226,6 +1238,8 @@ export default {
      * 加入购物车
      */
     goCat(news) {
+      const selectedUnique = this.attr.productSelect && this.attr.productSelect.unique;
+      if (!/^[A-Za-z0-9]{8}$/.test(selectedUnique || '')) return this.$util.Tips({ title: this.$t(`请选择有效的商品规格`) });
       let that = this,
         productSelect = that.productValue[this.attrValue];
       that.currentPage = false;

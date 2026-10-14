@@ -51,7 +51,7 @@ class StoreCartController
         $uid = (int)$request->uid();
         $data = $this->services->getCartList(['uid' => $uid, 'is_del' => 0, 'is_new' => 0, 'is_pay' => 0, 'combination_id' => 0, 'seckill_id' => 0, 'bargain_id' => 0], 0, 0, ['productInfo', 'attrInfo']);
         [$data, $valid, $invalid] = $this->services->handleCartList($uid, $data);
-        return app('json')->success($data);
+        return app('json')->success(app()->make(\app\services\marketplace\PublicCatalogServices::class)->cartRows($data,$uid));
     }
 
     /**

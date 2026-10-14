@@ -161,7 +161,7 @@ class StoreCartController
             ['product_id', 0],
             ['unique', '']
         ], true);
-        $this->services->modifyCart($cart_id, $product_id, $unique);
+        $this->services->modifyCart($cart_id, $product_id, $unique, (int)$request->uid());
         return app('json')->success('重选成功');
     }
 }

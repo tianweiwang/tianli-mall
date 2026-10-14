@@ -217,4 +217,31 @@ class StoreCategoryDao extends BaseDao
                 $query->limit($limit);
             })->order('sort DESC')->select()->toArray();
     }
+    /** Qualification precedes category count/page and does not multiply roots/SKUs. */
+    public function publicCategoryQuery(int $vipUser):\think\db\Query
+    {
+        $query=$this->getModel()->db()->alias('catalog_category')->where('catalog_category.is_show',1)->where('catalog_category.pid',0);
+        $query->whereExists(function(\think\db\Query $map)use($vipUser):void{
+            $map->name('store_product_cate')->alias('catalog_map')->field('product_id')->where('catalog_map.status',1)->whereColumn('catalog_map.cate_pid','catalog_category.id');
+            $map->whereExists(function(\think\db\Query $product)use($vipUser):void{
+                $product->name('store_product')->alias('catalog_product')->field('id')->whereColumn('catalog_product.id','catalog_map.product_id');
+                $product->whereIn('catalog_map.cate_id',function($category):void{
+                    $category->name('store_category')->alias('catalog_selected_category')->field('id')->where(function($selected):void{
+                        $selected->whereColumn('catalog_selected_category.id','catalog_category.id')->whereOr(function($child):void{$child->whereColumn('catalog_selected_category.pid','catalog_category.id');});
+                    });
+                });
+                if($vipUser===0)$product->where(function($vip):void{$vip->where('vip_product',0)->whereOr(function($alternative):void{$alternative->where('vip_product',1)->where('vip_product_type',1);});});
+                app()->make(\app\services\marketplace\publiccatalog\PublicCatalogQuery::class)->constrain($product,'catalog_product');
+            });
+        });return $query;
+    }
+    public function getPublicCid(int $page,int $limit,int $vipUser):array
+    {
+        return $this->publicCategoryQuery($vipUser)->page($page,$limit)->order('sort DESC,id DESC')->select()->toArray();
+    }
+    public function getPublicCidCount(int $vipUser):int
+    {
+        return $this->publicCategoryQuery($vipUser)->count();
+    }
+
 }

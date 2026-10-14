@@ -31,15 +31,17 @@ final class MerchantFreightPolicy
     }
     public function revalidate(array &$cartInfo,int $shippingType=1,int $isGift=0,?int $cityId=null,bool $allowBlocked=false):array
     {
-        if (!self::enabled()||$shippingType!==1||$isGift===1||!$cartInfo) return [];
+        if (!self::enabled()||$isGift===1||!$cartInfo) return [];
+        if ($shippingType===2&&!sys_config('store_self_mention')) $shippingType=1;
+        if ($shippingType!==1) return [];
         try {
-            if (count($cartInfo)>500) MerchantFreightInput::unavailable();$self=self::selfId();$resolved=[];$cities=null;
+            if (count($cartInfo)>500) MerchantFreightInput::unavailable();self::selfId();$resolved=[];$cities=null;
             foreach ($cartInfo as $key=>&$item) {
                 if (!is_array($item)||!is_array($item['productInfo']??null)) MerchantFreightInput::unavailable();
                 $id=self::positive($item['product_id']??null,8388607);
                 $model=(new StoreProduct())->db()->where('id',$id)->field(['id','mer_id','freight','temp_id','is_virtual'])->find();
                 if ($model===null) MerchantFreightInput::unavailable();$root=$model->getData();$owner=self::positive($root['mer_id'],4294967295);
-                if ($owner===$self) { $resolved[$key]=['entrant'=>false];continue; }
+                // In enabled mode the existing private branch covers every known owner, including confirmed self.
                 if (Db::name('marketplace_merchant')->where('mer_id',$owner)->field('mer_id')->find()===null) MerchantFreightInput::unavailable();
                 $mode=\app\services\marketplace\MerchantManagementInput::integer($root['freight'],1,3,true);
                 $virtual=\app\services\marketplace\MerchantManagementInput::integer($root['is_virtual'],0,1,true);

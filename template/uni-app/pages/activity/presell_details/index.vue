@@ -236,7 +236,6 @@
 <script>
 	import {
 		getPresellProductDetail,
-		getProductCode,
 		collectAdd,
 		collectDel,
 		postCartAdd
@@ -476,7 +475,7 @@
 			return {
 				title: that.storeInfo.store_name || '',
 				imageUrl: that.storeInfo.image || '',
-				path: '/pages/goods_details/index?id=' + that.id + '&pid=' + that.uid
+				path: '/pages/activity/presell_details/index?id=' + that.id + '&pid=' + that.uid
 			};
 		},
 		// #endif
@@ -1010,6 +1009,8 @@
 					uniqueId: that.attr.productSelect !== undefined ? that.attr.productSelect.unique : '',
 					'new': 1
 				};
+                const currentSku = that.productValue[that.attrValue];
+                if (!currentSku || !/^[A-Za-z0-9]{8}$/.test(currentSku.unique || '') || currentSku.unique !== q.uniqueId || Number(currentSku.product_id) !== Number(that.storeInfo.id) || Number(currentSku.type) !== 6) return that.$util.Tips({ title: that.$t(`请选择有效的商品规格`) });
 				postCartAdd(q)
 					.then(function(res) {
 						that.isOpen = false;
@@ -1113,28 +1114,19 @@
 			 *
 			 */
 			downloadFilePromotionCode: function(successFn) {
-				let that = this;
-				getProductCode(that.storeInfo.product_id)
-					.then(res => {
-						uni.downloadFile({
-							url: that.setDomain(res.data.code),
-							success: function(res) {
-								that.$set(that, 'isDown', false);
-								if (typeof successFn == 'function') successFn && successFn(res
-									.tempFilePath);
-								else that.$set(that, 'PromotionCode', res.tempFilePath);
-							},
-							fail: function() {
-								that.$set(that, 'isDown', false);
-								that.$set(that, 'PromotionCode', '');
-							}
-						});
-					})
-					.catch(err => {
-						that.$set(that, 'isDown', false);
-						that.$set(that, 'PromotionCode', '');
-					});
-			},
+                let that = this;
+                const code = that.storeInfo.code_base;
+                if (!code) { that.$set(that, 'isDown', false); return; }
+                uni.downloadFile({
+                    url: that.setDomain(code),
+                    success(res) {
+                        that.$set(that, 'isDown', false);
+                        if (typeof successFn === 'function') successFn(res.tempFilePath);
+                        else that.$set(that, 'PromotionCode', res.tempFilePath);
+                    },
+                    fail() { that.$set(that, 'isDown', false); that.$set(that, 'PromotionCode', ''); }
+                });
+            },
 			getImageBase64: function() {
 				let that = this;
 				imageBase64(that.storeImage, that.PromotionCode)
@@ -1217,7 +1209,7 @@
 						extraData: {
 							productInfo: {
 								title: this.storeInfo.store_name,
-								path: '/pages/goods_details/index?id=' + this.storeInfo.id,
+								path: '/pages/activity/presell_details/index?id=' + this.storeInfo.id,
 								thumbUrl: this.storeInfo.image
 							}
 						}

@@ -33,7 +33,7 @@ class CartServices extends BaseServices
         $storeCartServices = app()->make(StoreCartServices::class);
         /** @var StoreProductServices $productServices */
         $productServices = app()->make(StoreProductServices::class);
-        $list = $storeCartServices->getCartList(['uid' => $uid], 0, 0, ['productInfo', 'attrInfo']);
+        $list = $storeCartServices->getCartList(['uid' => $uid,'is_del'=>0,'is_new'=>0,'is_pay'=>0], 0, 0, ['productInfo', 'attrInfo']);
         /** @var MemberCardServices $memberCardService */
         $memberCardService = app()->make(MemberCardServices::class);
         $vipStatus = $memberCardService->isOpenMemberCard('vip_price', false);
@@ -49,6 +49,9 @@ class CartServices extends BaseServices
         }
         $valid = $invalid = [];
         foreach ($list as &$item) {
+            $fresh=app()->make(\app\services\marketplace\PublicCatalogServices::class)->freshCart($item,$uid);
+            if($fresh===null){$item['status']=0;$item['attrStatus']=false;$item['is_valid']=0;$invalid[]=\app\services\marketplace\publiccatalog\PublicCatalogProjection::invalidCart($item);continue;}
+            $item=$fresh;
             $is_valid = $item['attrInfo']['suk'] ?? 0;
             $item['productInfo']['attrInfo'] = $item['attrInfo'] ?? [];
             $item['productInfo']['attrInfo']['image'] = $item['attrInfo']['image'] ?? $item['productInfo']['image'];
@@ -79,6 +82,6 @@ class CartServices extends BaseServices
                 $invalid[] = $item;
             }
         }
-        return ['valid' => $valid, 'invalid' => $invalid];
+        return ['valid' => app()->make(\app\services\marketplace\PublicCatalogServices::class)->cartRows($valid,$uid), 'invalid' => app()->make(\app\services\marketplace\PublicCatalogServices::class)->cartRows($invalid,$uid)];
     }
 }

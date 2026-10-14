@@ -1691,7 +1691,7 @@ HTML;
         /** @var UserAddressServices $addressServices */
         $addressServices = app()->make(UserAddressServices::class);
         if ($addressId) {
-            $addr = $addressServices->getAddress($addressId);
+            $addr = $addressServices->getOne(['id' => $addressId, 'uid' => (int)$user['uid'], 'is_del' => 0]);
         }
         //没传地址id或地址已删除未找到 ||获取默认地址
         if (!$addr) {
@@ -1839,7 +1839,14 @@ HTML;
     {
         $cacheName = 'user_order_' . $uid . $key;
         if (!CacheService::has($cacheName)) return null;
-        return CacheService::get($cacheName);
+        $group=CacheService::get($cacheName);
+        if(!is_array($group)||!is_array($group['cartInfo']??null))throw new ApiException('订单已过期,请刷新当前页面');
+        $catalog=app()->make(\app\services\marketplace\PublicCatalogServices::class);
+        $rows=$catalog->currentConfirmationRows($group['cartInfo'],$uid);
+        [$rows,$valid,$invalid]=app()->make(StoreCartServices::class)->handleCartList($uid,$rows,[],0);
+        if($invalid)throw new ApiException('商品已下架或规格已失效');
+        $group['cartInfo']=$rows;
+        return $group;
     }
 
     /**
@@ -2716,11 +2723,13 @@ HTML;
      */
     public function checkShipping($uid, $cartIds, $new)
     {
+        $catalog = app()->make(\app\services\marketplace\PublicCatalogServices::class);
         if ($new) {
             $cartIds = explode(',', $cartIds);
             $cartInfo = [];
             foreach ($cartIds as $key) {
-                $info = CacheService::get($key);
+                $payload = CacheService::get($key);
+                $info = $payload ? $catalog->temporaryCartData($payload, (int)$uid) : null;
                 if ($info) {
                     $cartInfo[] = $info;
                 }
@@ -2728,14 +2737,17 @@ HTML;
         } else {
             /** @var StoreCartServices $cartServices */
             $cartServices = app()->make(StoreCartServices::class);
-            $cartInfo = $cartServices->getCartList(['uid' => $uid, 'status' => 1, 'id' => $cartIds], 0, 0, ['productInfo', 'attrInfo']);
+            $cartInfo = $cartServices->getCartList(['uid' => $uid, 'status' => 1, 'is_pay' => 0, 'is_new' => 0, 'is_del' => 0, 'id' => $cartIds], 0, 0, ['productInfo', 'attrInfo']);
         }
         if (!$cartInfo) {
             throw new ApiException('数据不存在');
         }
         $arr = [];
         foreach ($cartInfo as $item) {
-            $arr[] = $item['productInfo']['logistics'];
+            if ($catalog->cartIdentity($item, (int)$uid) === null) throw new ApiException('商品已下架或规格已失效');
+            $current = $catalog->freshCart($item, (int)$uid);
+            if ($current === null) throw new ApiException('商品已下架或规格已失效');
+            $arr[] = $current['productInfo']['logistics'];
         }
         $res = array_unique(explode(',', implode(',', $arr)));
         if (count($res) == 2) {

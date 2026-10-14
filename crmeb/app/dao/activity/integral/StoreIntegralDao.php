@@ -92,4 +92,30 @@ class StoreIntegralDao extends BaseDao
         $where = ['is_show' => 1, 'is_del' => 0];
         return $this->search($where)->where('id', $id)->field($field)->order('add_time desc')->find();
     }
+    /** Public native list only; admin getList keeps its original behavior. */
+    public function getPublicList(array $where, int $page = 0, int $limit = 0, string $field = '*', ?int $merchantFilter = null)
+    {
+        $catalog = app()->make(\app\services\marketplace\PublicCatalogServices::class);
+        return $catalog->constrainNative($this->search($where, false)->alias('catalog_native'), 'catalog_native', 4, $merchantFilter)->where('is_del', 0)
+            ->when(isset($where['integral_time']) && $where['integral_time'] !== '', function ($query) use ($where) {
+                list($startTime, $endTime) = explode('-', $where['integral_time']);
+                $query->where('add_time', '>', strtotime($startTime))
+                    ->where('add_time', '<', strtotime($endTime) + 24 * 3600);
+            })->when(isset($where['priceOrder']) && $where['priceOrder'] != '', function ($query) use ($where) {
+                if ($where['priceOrder'] === 'desc') {
+                    $query->order("price desc");
+                } else {
+                    $query->order("price asc");
+                }
+            })->when(isset($where['salesOrder']) && $where['salesOrder'] != '', function ($query) use ($where) {
+                if ($where['salesOrder'] === 'desc') {
+                    $query->order("sales desc");
+                } else {
+                    $query->order("sales asc");
+                }
+            })->when($page != 0 && $limit != 0, function ($query) use ($page, $limit) {
+                $query->page($page, $limit);
+            })->field($field)->order('sort desc,id desc')->select()->toArray();
+    }
+
 }

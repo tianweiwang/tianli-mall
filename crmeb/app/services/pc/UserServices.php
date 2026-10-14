@@ -65,28 +65,6 @@ class UserServices extends BaseServices
      */
     public function getCollectList(int $uid)
     {
-        /** @var StoreProductRelationServices $relation */
-        $relation = app()->make(StoreProductRelationServices::class);
-        $where['uid'] = $uid;
-        $where['type'] = 'collect';
-        [$page, $limit] = $this->getPageValue();
-        $count = $relation->count($where);
-        $list = $relation->getList($where, 'product_id,category', $page, $limit);
-        foreach ($list as $k => $product) {
-            if ($product['product'] && isset($product['product']['id'])) {
-                $list[$k]['pid'] = $product['product']['id'] ?? 0;
-                $list[$k]['store_name'] = $product['product']['store_name'] ?? 0;
-                $list[$k]['price'] = $product['product']['price'] ?? 0;
-                $list[$k]['ot_price'] = $product['product']['ot_price'] ?? 0;
-                $list[$k]['sales'] = $product['product']['sales'] ?? 0;
-                $list[$k]['image'] = get_thumb_water($product['product']['image'] ?? 0, 'mid');
-                $list[$k]['is_del'] = $product['product']['is_del'] ?? 0;
-                $list[$k]['is_show'] = $product['product']['is_show'] ?? 0;
-                $list[$k]['is_fail'] = $product['product']['is_del'] && $product['product']['is_show'];
-            } else {
-                unset($list[$k]);
-            }
-        }
-        return compact('list', 'count');
+        return app()->make(StoreProductRelationServices::class)->getUserCollectProduct($uid,'mid');
     }
 }

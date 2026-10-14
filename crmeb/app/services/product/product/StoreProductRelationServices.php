@@ -71,29 +71,19 @@ class StoreProductRelationServices extends BaseServices
      * @email 442384644@qq.com
      * @date 2023/03/01
      */
-    public function getUserCollectProduct(int $uid)
+    public function getUserCollectProduct(int $uid,string $thumbnail='')
     {
-        $where['uid'] = $uid;
-        $where['type'] = 'collect';
-        [$page, $limit] = $this->getPageValue();
-        $list = $this->dao->getList($where, 'product_id,category', $page, $limit);
-        foreach ($list as $k => $product) {
-            if ($product['product'] && isset($product['product']['id'])) {
-                $list[$k]['pid'] = $product['product']['id'] ?? 0;
-                $list[$k]['store_name'] = $product['product']['store_name'] ?? 0;
-                $list[$k]['price'] = $product['product']['price'] ?? 0;
-                $list[$k]['ot_price'] = $product['product']['ot_price'] ?? 0;
-                $list[$k]['sales'] = $product['product']['sales'] ?? 0;
-                $list[$k]['image'] = get_thumb_water($product['product']['image'] ?? 0);
-                $list[$k]['is_del'] = $product['product']['is_del'] ?? 0;
-                $list[$k]['is_show'] = $product['product']['is_show'] ?? 0;
-                $list[$k]['is_fail'] = $product['product']['is_del'] && $product['product']['is_show'];
-            } else {
-                unset($list[$k]);
-            }
-        }
-        $count = $this->dao->count($where);
-        return compact('list', 'count');
+        $catalog=app()->make(\app\services\marketplace\PublicCatalogServices::class);$context=$catalog->collectionContext($uid);
+        [$page,$limit]=$this->getPageValue();$data=$this->dao->getPublicCollection($uid,$context,$page,$limit);
+        foreach($data['list']as&$row){
+            $channel=$catalog->requireCollectionChannel($row['category'],(int)$row['product_id'],$context);$root=$channel['root'];
+            $row['pid']=$root['id'];$row['store_name']=$root['store_name'];$row['price']=$root['price'];$row['ot_price']=$root['ot_price'];$row['sales']=$root['sales'];
+            $row['image']=$thumbnail===''?get_thumb_water($root['image']):get_thumb_water($root['image'],$thumbnail);
+            $row['is_del']=$root['is_del'];$row['is_show']=$root['is_show'];$row['is_fail']=false;
+            $row['collection_type']=$channel['collection_type'];$row['collection_id']=$channel['collection_id'];
+            if(isset($channel['collection_time_id']))$row['collection_time_id']=$channel['collection_time_id'];
+            $row=\app\services\marketplace\publiccatalog\PublicCatalogProjection::collection($row);
+        }unset($row);return $data;
     }
 
     /**
@@ -108,6 +98,8 @@ class StoreProductRelationServices extends BaseServices
     {
         $relationType = strtolower($relationType);
         $category = strtolower($category);
+        $catalog=app()->make(\app\services\marketplace\PublicCatalogServices::class);$context=$catalog->collectionContext($uid,$category,[$productId]);
+        $catalog->requireCollectionChannel($category,$productId,$context);
         $data = ['uid' => $uid, 'product_id' => $productId, 'type' => $relationType, 'category' => $category];
         if ($this->dao->getOne($data)) {
             return true;
@@ -164,6 +156,8 @@ class StoreProductRelationServices extends BaseServices
     {
         $relationType = strtolower($relationType);
         $category = strtolower($category);
+        $catalog=app()->make(\app\services\marketplace\PublicCatalogServices::class);$context=$catalog->collectionContext($uid,$category,$productIdS);
+        foreach($productIdS as$productId)$catalog->requireCollectionChannel($category,(int)$productId,$context);
         $relationData = [];
         $productIdS = array_unique($productIdS);
         $relationProductIdS = $this->dao->getColumn(['uid' => $uid, 'type' => $relationType, 'category' => $category, 'product_id' => $productIdS], 'product_id');

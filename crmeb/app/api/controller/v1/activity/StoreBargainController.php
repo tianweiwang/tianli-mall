@@ -48,7 +48,8 @@ class StoreBargainController
      */
     public function lst(Request $request)
     {
-        $bargainList = $this->services->getBargainList();
+        $where = $request->getMore([['mer_id', null]]);
+        $bargainList = $this->services->getBargainList($where['mer_id']);
         return app('json')->success(get_thumb_water($bargainList));
     }
 

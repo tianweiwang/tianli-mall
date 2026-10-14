@@ -390,4 +390,115 @@ class QrcodeServices extends BaseServices
     {
         return !!$this->dao->getCount(['third_id' => $thirdId, 'third_type' => $thirdType]);
     }
+    public function getCatalogRoutineQrcodePath(int $id,int $uid,int $family,array $param=[])
+    {
+        /** @var SystemAttachmentServices $systemAttachmentService */
+        $systemAttachmentService = app()->make(SystemAttachmentServices::class);
+        $catalog=app()->make(\app\services\marketplace\PublicCatalogServices::class);
+        $root=$family===0?$catalog->ordinaryRoot($id):$catalog->nativeBase($family,$id);
+        $owner=(int)$root['mer_id'];$isSaveAttach=true;
+        $page=match($family){0=>'pages/goods_details/index',1=>'pages/activity/goods_seckill_details/index',3=>'pages/activity/goods_combination_details/index',6=>'pages/activity/presell_details/index',default=>throw new \crmeb\exceptions\ApiException('商品类型错误')};
+        $data='id='.$id.'&pid='.$uid;
+        if($family===1){
+            $slot=\app\services\marketplace\publiccatalog\PublicCatalogQuery::positive($param['time_id']??null);
+            $catalog->seckillSlot($id,$slot);
+            $data.='&time_id='.$slot;
+        }
+        $namePath='catalog_'.$owner.'_'.$family.'_'.$id.'_'.$uid.'_'.(int)($param['time_id']??0).'.jpg';
+        try {
+            if (!$isSaveAttach) {
+                $imageInfo = "";
+            } else {
+                $imageInfo = $systemAttachmentService->getOne(['name' => $namePath,'mer_id'=>$owner]);
+            }
+            $siteUrl = sys_config('site_url');
+            if (!$imageInfo) {
+                $res = MiniProgramService::appCodeUnlimitService($data, $page, 280);
+                if (!$res) return false;
+                if ($res->getSize() < 100) return 'unpublished';
+                $uploadType = (int)sys_config('upload_type', 1);
+                $upload = UploadService::init();
+                $res = (string)EntityBody::factory($res);
+                $res = $upload->to('routine/product')->validate()->setAuthThumb(false)->stream($res, $namePath);
+                if ($res === false) {
+                    return false;
+                }
+                $imageInfo = $upload->getUploadInfo();
+                $imageInfo['image_type'] = $uploadType;
+                if ($imageInfo['image_type'] == 1) $remoteImage = PosterServices::remoteImage($siteUrl . $imageInfo['dir']);
+                else $remoteImage = PosterServices::remoteImage($imageInfo['dir']);
+                if (!$remoteImage['status']) return false;
+                if ($isSaveAttach) {
+                    $systemAttachmentService->save([
+                        'name' => $imageInfo['name'],
+                        'mer_id'=>$owner,
+                        'att_dir' => $imageInfo['dir'],
+                        'satt_dir' => $imageInfo['thumb_path'],
+                        'att_size' => $imageInfo['size'],
+                        'att_type' => $imageInfo['type'],
+                        'image_type' => $imageInfo['image_type'],
+                        'module_type' => 2,
+                        'time' => time(),
+                        'pid' => 1,
+                        'type' => 2
+                    ]);
+                }
+                $url = $imageInfo['dir'];
+            } else $url = $imageInfo['att_dir'];
+            if ($imageInfo['image_type'] == 1) $url = $siteUrl . $url;
+            return $url;
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+    public function getCatalogAdvanceWechatQrcodePath(int $id)
+    {
+        $root=app()->make(\app\services\marketplace\PublicCatalogServices::class)->nativeBase(6,$id);$owner=(int)$root['mer_id'];
+        $name='catalog_'.$owner.'_6_'.$id.'_product_advance_detail_wap.jpg';
+        $link='/pages/activity/presell_details/index?id='.$id;$force=false;$isSaveAttach=true;
+        /** @var SystemAttachmentServices $systemAttachmentService */
+        $systemAttachmentService = app()->make(SystemAttachmentServices::class);
+        try {
+            if (!$isSaveAttach) {
+                $imageInfo = "";
+            } else {
+                $imageInfo = $systemAttachmentService->getOne(['name' => $name,'mer_id'=>$owner]);
+            }
+            $siteUrl = sys_config('site_url');
+            if (!$imageInfo) {
+                $codeUrl = PosterServices::setHttpType($siteUrl . $link, request()->isSsl() ? 0 : 1);//二维码链接
+                $imageInfo = PosterServices::getQRCodePath($codeUrl, $name);
+                if (is_string($imageInfo) && $force)
+                    return false;
+                if (is_array($imageInfo)) {
+                    if ($isSaveAttach) {
+                        $systemAttachmentService->save([
+                            'name' => $imageInfo['name'],
+                            'mer_id'=>$owner,
+                            'att_dir' => $imageInfo['dir'],
+                            'satt_dir' => $imageInfo['thumb_path'],
+                            'att_size' => $imageInfo['size'],
+                            'att_type' => $imageInfo['type'],
+                            'image_type' => $imageInfo['image_type'],
+                            'module_type' => 2,
+                            'time' => time(),
+                            'pid' => 1,
+                            'type' => 1
+                        ]);
+                    }
+                    $url = $imageInfo['dir'];
+                } else {
+                    $url = '';
+                    $imageInfo = ['image_type' => 0];
+                }
+            } else $url = $imageInfo['att_dir'];
+            if ($imageInfo['image_type'] == 1 && $url) $url = $siteUrl . $url;
+            return $url;
+        } catch (\Throwable $e) {
+            if ($force)
+                return false;
+            else
+                return '';
+        }
+    }
 }

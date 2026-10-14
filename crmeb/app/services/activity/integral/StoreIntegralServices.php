@@ -294,7 +294,7 @@ class StoreIntegralServices extends BaseServices
      */
     public function integralDetail(Request $request, int $id)
     {
-        $storeInfo = $this->dao->getOne(['id' => $id], '*', ['getPrice']);
+        $storeInfo = app()->make(\app\services\marketplace\PublicCatalogServices::class)->nativeModel(4,$id,['getPrice']);
         if (!$storeInfo) {
             throw new AdminException('商品不存在');
         } else {
@@ -316,7 +316,7 @@ class StoreIntegralServices extends BaseServices
 
         /** @var StoreProductAttrServices $storeProductAttrServices */
         $storeProductAttrServices = app()->make(StoreProductAttrServices::class);
-        list($productAttr, $productValue) = $storeProductAttrServices->getProductAttrDetail($id, $uid, 0, 4, $storeInfo['product_id']);
+        list($productAttr, $productValue) = $storeProductAttrServices->getPublicProductAttrDetail($id, $uid, 0, 4, $storeInfo['product_id']);
         foreach ($productValue as &$item) {
             $item['cost'] = (int)$item['cost'];
             $item['ot_price'] = (int)$item['ot_price'];
@@ -331,7 +331,7 @@ class StoreIntegralServices extends BaseServices
         $data['routine_contact_type'] = sys_config('routine_contact_type', 0);
         //浏览记录
         ProductLogJob::dispatch(['visit', ['uid' => $uid, 'product_id' => $storeInfo['product_id']]]);
-        return $data;
+        return app()->make(\app\services\marketplace\PublicCatalogServices::class)->activityOutput($data,4,(int)$uid);
     }
 
     /**
@@ -387,6 +387,7 @@ class StoreIntegralServices extends BaseServices
      */
     public function checkoutProductStock(int $uid, int $integralId, int $num = 1, string $unique = '')
     {
+        app()->make(\app\services\marketplace\PublicCatalogServices::class)->nativePurchaseBase(4, $integralId);
         /** @var StoreProductAttrValueServices $attrValueServices */
         $attrValueServices = app()->make(StoreProductAttrValueServices::class);
         if ($unique == '') {
@@ -426,7 +427,14 @@ class StoreIntegralServices extends BaseServices
     public function getIntegralList(array $where)
     {
         [$page, $limit] = $this->getPageValue();
-        $list = $this->dao->getList($where, $page, $limit, 'id,image,title,price,sales');
+        $catalog = app()->make(\app\services\marketplace\PublicCatalogServices::class);
+        $merchantFilter = $catalog::merchantFilter($where['mer_id'] ?? null);
+        unset($where['mer_id']);
+        $list = $this->dao->getPublicList($where, $page, $limit, 'id,product_id,image,title,price,sales,stock', $merchantFilter);
+        $public = $catalog->nativeListOutput($list, 4, 0);
+        foreach ($list as $index => $item) {
+            $list[$index] = \app\services\marketplace\publiccatalog\PublicCatalogProjection::take(array_replace($item, $public[$index]), 'activity-list-4');
+        }
         return $list;
     }
 }

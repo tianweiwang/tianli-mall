@@ -38,9 +38,9 @@ class ProductServices extends BaseServices
         $where['is_show'] = 1;
         $where['is_del'] = 0;
         $where['vip_user'] = $uid ? app()->make(UserServices::class)->value(['uid' => $uid], 'is_money_level') : 0;
-        $data['count'] = $product->getCount($where);
+        $data['count'] = $product->getPublicCount($where);
         [$page, $limit] = $this->getPageValue();
-        $list = $product->getSearchList($where + ['star' => 1], $page, $limit, ['id,store_name,cate_id,image,IFNULL(sales, 0) + IFNULL(ficti, 0) as sales,price,stock,activity,ot_price,spec_type,recommend_image,unit_name,presale']);
+        $list = $product->getPublicSearchList($where + ['star' => 1], $page, $limit, ['id,store_name,cate_id,image,IFNULL(sales, 0) + IFNULL(ficti, 0) as sales,price,stock,activity,ot_price,spec_type,recommend_image,unit_name,presale']);
         foreach ($list as &$item) {
             if (count($item['star'])) {
                 $item['star'] = bcdiv((string)array_sum(array_column($item['star'], 'product_score')), (string)count($item['star']), 1);
@@ -50,6 +50,7 @@ class ProductServices extends BaseServices
         }
         $list = $product->getActivityList($list);
         $data['list'] = get_thumb_water($product->getProduceOtherList($list, $uid, !!$where['type']), 'mid');
+        $data['list']=app()->make(\app\services\marketplace\PublicCatalogServices::class)->listOutput($data['list']);
         return $data;
     }
 
@@ -61,12 +62,22 @@ class ProductServices extends BaseServices
      */
     public function getProductRoutineCode(int $product_id, string $type = 'product')
     {
+        $catalog = app()->make(\app\services\marketplace\PublicCatalogServices::class);
+        if ($type === 'product') $catalogRoot=$catalog->ordinaryRoot($product_id);
+        elseif (in_array($type,['seckill','product_seckill'],true)) $catalogRoot=$catalog->nativeBase(1,$product_id);
+        else throw new \crmeb\exceptions\ApiException('商品类型错误');
         try {
             $namePath = $type == 'product' ? 'routine_product_' . $product_id . '.jpg' : 'routine_seckill_product_' . $product_id . '.jpg';
             $data = 'id=' . $product_id;
+            if($type!=='product'){
+                $slotId=$catalog->canonicalSeckillSlot($product_id);
+                $data.='&time_id='.$slotId;
+                $namePath='slot_'.$slotId.'_'.$namePath;
+            }
+            $namePath='catalog_'.$catalogRoot['mer_id'].'_'.$namePath;
             /** @var SystemAttachmentServices $systemAttachmentService */
             $systemAttachmentService = app()->make(SystemAttachmentServices::class);
-            $imageInfo = $systemAttachmentService->getOne(['name' => $namePath]);
+            $imageInfo = $systemAttachmentService->getOne(['name' => $namePath,'mer_id'=>$catalogRoot['mer_id']]);
             $siteUrl = sys_config('site_url');
             if (!$imageInfo) {
                 $page = $type == 'product' ? 'pages/goods_details/index' : 'pages/activity/goods_seckill_details/index';
@@ -86,6 +97,7 @@ class ProductServices extends BaseServices
                 if (!$remoteImage['status']) return false;
                 $systemAttachmentService->save([
                     'name' => $imageInfo['name'],
+                    'mer_id'=>$catalogRoot['mer_id'],
                     'att_dir' => $imageInfo['dir'],
                     'satt_dir' => $imageInfo['thumb_path'],
                     'att_size' => $imageInfo['size'],

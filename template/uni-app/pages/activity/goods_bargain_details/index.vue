@@ -645,11 +645,13 @@ export default {
 		goPay() {
 			//立即支付
 			var that = this;
+            const sku = that.bargainInfo.attr;
+            if (!sku || !/^[A-Za-z0-9]{8}$/.test(sku.unique || '') || Number(sku.product_id) !== Number(that.id) || Number(sku.type) !== 2) return that.$util.Tips({ title: that.$t(`商品规格暂不可用`) });
 			var data = {
 				productId: that.bargainInfo.product_id,
 				bargainId: that.id,
 				cartNum: 1,
-				uniqueId: '',
+				uniqueId: sku.unique,
 				combinationId: 0,
 				secKillId: 0,
 				new: 1
@@ -676,8 +678,8 @@ export default {
 					that.userBargainInfo = res.data.userBargainInfo;
 					that.bargainPrice = res.data.bargain.price;
 					that.userInfo = res.data.userInfo;
-					that.productStock = res.data.bargain.attr.product_stock;
-					that.quota = res.data.bargain.attr.quota;
+					that.productStock = (res.data.bargain.attr || {}).product_stock || 0;
+					that.quota = (res.data.bargain.attr || {}).quota || 0;
 					that.datatime = res.data.bargain.stop_time;
 					that.pages = '/pages/activity/goods_bargain_details/index?id=' + that.id + '&bargain=' + that.bargainUid + '&scene=' + that.userInfo.uid;
 					uni.setNavigationBarTitle({
