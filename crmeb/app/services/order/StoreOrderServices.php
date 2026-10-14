@@ -17,6 +17,8 @@ use app\services\activity\combination\StorePinkServices;
 use app\services\activity\coupon\StoreCouponUserServices;
 use app\services\activity\seckill\StoreSeckillServices;
 use app\services\BaseServices;
+use app\services\marketplace\order\MarketplaceCartSelection;
+use app\services\marketplace\order\MarketplaceTradePolicy;
 use app\services\other\PosterServices;
 use app\services\other\QrcodeServices;
 use app\services\other\UploadService;
@@ -37,6 +39,7 @@ use app\services\user\UserLevelServices;
 use app\services\wechat\WechatUserServices;
 use crmeb\exceptions\AdminException;
 use crmeb\exceptions\ApiException;
+use crmeb\exceptions\AuthUnavailableException;
 use crmeb\exceptions\PayException;
 use crmeb\services\app\MiniProgramService;
 use crmeb\services\CacheService;
@@ -1685,13 +1688,16 @@ HTML;
      * @throws \think\db\exception\DbException
      * @throws \think\db\exception\ModelNotFoundException
      */
-    public function getOrderConfirmData(array $user, $cartId, bool $new, int $addressId, int $shipping_type = 1, int $is_gift = 0)
+    public function getOrderConfirmData(array $user, $cartId, bool $new, int $addressId, int $shipping_type = 1, int $is_gift = 0, ?array $marketplaceChoice = null)
     {
+        $marketplace=$marketplaceChoice!==null;
+        if(!$marketplace&&MarketplaceTradePolicy::active())throw new ApiException('请选择店铺并重新确认');
         $addr = [];
         /** @var UserAddressServices $addressServices */
         $addressServices = app()->make(UserAddressServices::class);
         if ($addressId) {
             $addr = $addressServices->getOne(['id' => $addressId, 'uid' => (int)$user['uid'], 'is_del' => 0]);
+            if($marketplace&&!$addr)throw new ApiException('收货地址不存在');
         }
         //没传地址id或地址已删除未找到 ||获取默认地址
         if (!$addr) {
@@ -1709,13 +1715,27 @@ HTML;
         }
         /** @var StoreCartServices $cartServices */
         $cartServices = app()->make(StoreCartServices::class);
-        $cartGroup = $cartServices->getUserProductCartListV1($user['uid'], $cartId, $new, $addr, $shipping_type, $is_gift);
+        $cartGroup = $cartServices->getUserProductCartListV1($user['uid'], $cartId, $new, $addr, $shipping_type, $is_gift, $marketplace);
+        $frame=[];
+        if($marketplace){
+            if($cartGroup['invalid'])throw new ApiException('商品不支持当前购买或配送方式');
+            $frame=app()->make(MarketplaceCartSelection::class)->capture((int)$user['uid'],$marketplaceChoice['mer_id'],
+                $marketplaceChoice['source_kind'],$marketplaceChoice['cart_refs'],$cartGroup['valid']);
+        }
         $data = [];
-        $data['storeFreePostage'] = $storeFreePostage = floatval(sys_config('store_free_postage')) ?: 0;//满额包邮金额
+        // The trusted quote reads the exact raw configuration; this legacy argument is unused there.
+        $data['storeFreePostage'] = $storeFreePostage = $marketplace?'0.00':(floatval(sys_config('store_free_postage')) ?: 0);//满额包邮金额
         $validCartInfo = $cartGroup['valid'];
         /** @var StoreOrderComputedServices $computedServices */
         $computedServices = app()->make(StoreOrderComputedServices::class);
-        $priceGroup = $computedServices->getOrderPriceGroup($storeFreePostage, $validCartInfo, $addr, $user, $shipping_type, $is_gift);
+        $priceGroup = $computedServices->getOrderPriceGroup($storeFreePostage, $validCartInfo, $addr, $user, $shipping_type, $is_gift, $marketplace);
+        if($marketplace){
+            $data['storeFreePostage']=$priceGroup['storeFreePostage'];
+            $weights=$priceGroup['marketplace_postage_weights']??null;
+            if(!is_array($weights)||!array_is_list($weights)||count($weights)!==count($validCartInfo))throw new AuthUnavailableException();
+            $frame['marketplace_postage_weights']=$weights;
+            unset($priceGroup['marketplace_postage_weights']);
+        }
         $validCartInfo = $priceGroup['cartInfo'] ?? $validCartInfo;
         $other = [
             'offlinePostage' => sys_config('offline_postage'),
@@ -1744,7 +1764,11 @@ HTML;
         $data['custom_form'] = json_decode($cartGroup['cartInfo'][0]['productInfo']['custom_form'], true) ?? [];
         if (!is_array($data['custom_form'])) $data['custom_form'] = [];
         $data['priceGroup'] = $priceGroup;
-        $data['orderKey'] = $this->cacheOrderInfo($user['uid'], $validCartInfo, $priceGroup, $other);
+        $data['orderKey'] = $this->cacheOrderInfo($user['uid'], $validCartInfo, $priceGroup, $other, 600, $frame);
+        if($marketplace){
+            foreach(['marketplace_confirmation_version','mer_id','source_kind','store']as$field)$data[$field]=$frame[$field];
+            $data['marketplace_create_enabled']=false;
+        }
         $data['offlinePostage'] = $other['offlinePostage'];
         /** @var UserLevelServices $levelServices */
         $levelServices = app()->make(UserLevelServices::class);
@@ -1780,8 +1804,14 @@ HTML;
         $data['usable_integral'] = bcsub((string)$user['integral'], (string)$userBillServices->getBillSum(['uid' => $user['uid'], 'is_frozen' => 1]), 0);
         $data['integral_open'] = sys_config('integral_ratio', 0) > 0;
 
+        if($marketplace){
+            $data['integral_open']=false;
+            $data['yue_pay_status']=2;
+            $data['store_self_mention']=0;
+        }
+
         //自动领取优惠券
-        app()->make(StoreCouponUserServices::class)->autoReceiveCoupon($user['uid'], $cartGroup);
+        if(!$marketplace)app()->make(StoreCouponUserServices::class)->autoReceiveCoupon($user['uid'], $cartGroup);
         return $data;
     }
 
@@ -1795,10 +1825,17 @@ HTML;
      * @return string
      * @throws \Psr\SimpleCache\InvalidArgumentException
      */
-    public function cacheOrderInfo($uid, $cartInfo, $priceGroup, $other = [], $cacheTime = 600)
+    public function cacheOrderInfo($uid, $cartInfo, $priceGroup, $other = [], $cacheTime = 600, array $marketplaceFrame = [])
     {
         $key = $this->getCacheKey();
-        CacheService::set('user_order_' . $uid . $key, compact('cartInfo', 'priceGroup', 'other'), $cacheTime);
+        $payload=compact('cartInfo', 'priceGroup', 'other');
+        if($marketplaceFrame){
+            MarketplaceCartSelection::frame($marketplaceFrame,(int)$uid);
+            foreach(['marketplace_confirmation_version','marketplace_uid','mer_id','source_kind','cart_refs','selection','store','marketplace_postage_weights']as$field){
+                if(array_key_exists($field,$marketplaceFrame))$payload[$field]=$marketplaceFrame[$field];
+            }
+        }
+        CacheService::set('user_order_' . $uid . $key, $payload, $cacheTime);
         return $key;
     }
 
@@ -1841,12 +1878,34 @@ HTML;
         if (!CacheService::has($cacheName)) return null;
         $group=CacheService::get($cacheName);
         if(!is_array($group)||!is_array($group['cartInfo']??null))throw new ApiException('订单已过期,请刷新当前页面');
+        if(array_key_exists('marketplace_confirmation_version',$group)){
+            $frame=MarketplaceCartSelection::frame($group,$uid);
+            $cartGroup=app()->make(StoreCartServices::class)->getUserProductCartListV1($uid,implode(',',$frame['cart_refs']),
+                $frame['source_kind']==='temporary',[],1,0,true);
+            if($cartGroup['invalid'])throw new ApiException('商品已下架或规格已失效');
+            $current=app()->make(MarketplaceCartSelection::class)->recheck($group,$uid,$cartGroup['valid']);
+            $group['cartInfo']=$cartGroup['valid'];$group['store']=$current['store'];
+            return $group;
+        }
+        if(MarketplaceTradePolicy::active())throw new ApiException('请按店铺重新确认商品');
         $catalog=app()->make(\app\services\marketplace\PublicCatalogServices::class);
         $rows=$catalog->currentConfirmationRows($group['cartInfo'],$uid);
         [$rows,$valid,$invalid]=app()->make(StoreCartServices::class)->handleCartList($uid,$rows,[],0);
         if($invalid)throw new ApiException('商品已下架或规格已失效');
         $group['cartInfo']=$rows;
         return $group;
+    }
+
+    /** Header only: route an existing new frame without recalculating a quote or changing it. */
+    public function hasMarketplaceConfirmation(int $uid,string $key):bool
+    {
+        $cacheName='user_order_'.$uid.$key;
+        if(!CacheService::has($cacheName))return false;
+        $group=CacheService::get($cacheName);
+        if(!is_array($group))throw new ApiException('订单已过期,请刷新当前页面');
+        if(!array_key_exists('marketplace_confirmation_version',$group))return false;
+        MarketplaceCartSelection::frame($group,$uid);
+        return true;
     }
 
     /**

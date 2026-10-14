@@ -6,4 +6,8 @@ use think\facade\Env;
 return [
     'enabled'=>Env::get('marketplace.enabled',false),
     'self_operated_mer_id'=>Env::get('marketplace.self_operated_mer_id',null),
+    'trade'=>[
+        'enabled'=>Env::get('marketplace.trade.enabled',false),
+        'disabled_features'=>['coupon','integral','balance','brokerage','activity'],
+    ],
 ];

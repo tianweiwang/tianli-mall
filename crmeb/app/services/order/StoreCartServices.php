@@ -83,7 +83,7 @@ class StoreCartServices extends BaseServices
      * @throws \think\db\exception\DbException
      * @throws \think\db\exception\ModelNotFoundException
      */
-    public function getUserProductCartListV1($uid, $cartIds, bool $new, $addr = [], int $shipping_type = 1, $is_gift = 0)
+    public function getUserProductCartListV1($uid, $cartIds, bool $new, $addr = [], int $shipping_type = 1, $is_gift = 0, bool $marketplace = false)
     {
         if ($new) {
             $cartIds = explode(',', $cartIds);
@@ -92,6 +92,7 @@ class StoreCartServices extends BaseServices
                 $payload = CacheService::get($key);
                 $info = $payload ? app()->make(\app\services\marketplace\PublicCatalogServices::class)->temporaryCartData($payload,(int)$uid) : null;
                 if ($info) {
+                    if ($marketplace) $info['marketplace_cart_ref'] = $key;
                     $cartInfo[] = $info;
                 }
             }
@@ -106,7 +107,7 @@ class StoreCartServices extends BaseServices
             $addr = [];
             $shipping_type = 0;
         }
-        [$cartInfo, $valid, $invalid] = $this->handleCartList($uid, $cartInfo, $addr, $shipping_type);
+        [$cartInfo, $valid, $invalid] = $this->handleCartList($uid, $cartInfo, $addr, $shipping_type, $marketplace);
         $seckillIds = array_unique(array_column($cartInfo, 'seckill_id'));
         $bargainIds = array_unique(array_column($cartInfo, 'bargain_id'));
         $combinationId = array_unique(array_column($cartInfo, 'combination_id'));
@@ -636,7 +637,7 @@ class StoreCartServices extends BaseServices
      * @email 442384644@qq.com
      * @date 2023/02/16
      */
-    public function handleCartList(int $uid, array $cartList, array $addr = [], int $shipping_type = 1)
+    public function handleCartList(int $uid, array $cartList, array $addr = [], int $shipping_type = 1, bool $marketplace = false)
     {
         if (!$cartList) return [$cartList, [], []];
         $catalog=app()->make(\app\services\marketplace\PublicCatalogServices::class);$unavailable=[];$originalOrder=array_keys($cartList);
@@ -720,7 +721,7 @@ class StoreCartServices extends BaseServices
                 $item['truePrice'] = $productInfo['attrInfo']['price'] ?? 0;
                 $item['sum_price'] = $productInfo['attrInfo']['price'] ?? 0;
                 if (!$is_activity) {
-                    [$truePrice, $vip_truePrice, $type] = $productServices->setLevelPrice($productInfo['attrInfo']['price'] ?? 0, $uid, $userInfo, $vipStatus, $discount, $productInfo['attrInfo']['vip_price'] ?? 0, $productInfo['is_vip'] ?? 0, true);
+                    [$truePrice, $vip_truePrice, $type] = $productServices->setLevelPrice($productInfo['attrInfo']['price'] ?? 0, $uid, $userInfo, $vipStatus, $discount, $productInfo['attrInfo']['vip_price'] ?? 0, $productInfo['is_vip'] ?? 0, true, $marketplace);
                     $item['truePrice'] = $truePrice;
                     $item['vip_truePrice'] = $vip_truePrice;
                     $item['price_type'] = $type;
@@ -733,7 +734,7 @@ class StoreCartServices extends BaseServices
                 $item['truePrice'] = $item['productInfo']['price'] ?? 0;
                 $item['sum_price'] = $item['productInfo']['price'] ?? 0;
                 if (!$is_activity) {
-                    [$truePrice, $vip_truePrice, $type] = $productServices->setLevelPrice($item['productInfo']['price'] ?? 0, $uid, $userInfo, $vipStatus, $discount, $item['productInfo']['vip_price'] ?? 0, $item['productInfo']['is_vip'] ?? 0, true);
+                    [$truePrice, $vip_truePrice, $type] = $productServices->setLevelPrice($item['productInfo']['price'] ?? 0, $uid, $userInfo, $vipStatus, $discount, $item['productInfo']['vip_price'] ?? 0, $item['productInfo']['is_vip'] ?? 0, true, $marketplace);
                     $item['truePrice'] = $truePrice;
                     $item['vip_truePrice'] = $vip_truePrice;
                     $item['price_type'] = $type;

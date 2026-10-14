@@ -11,6 +11,8 @@
 namespace app\api\controller\v1\order;
 
 use app\Request;
+use app\services\marketplace\order\MarketplaceOrderInput;
+use app\services\marketplace\order\MarketplaceTradePolicy;
 use app\services\pay\PayServices;
 use app\services\shipping\ExpressServices;
 use app\services\system\admin\SystemAdminServices;
@@ -35,6 +37,8 @@ use app\services\pay\YuePayServices;
 use app\services\product\product\StoreProductReplyServices;
 use app\services\shipping\ShippingTemplatesServices;
 use crmeb\services\CacheService;
+use crmeb\exceptions\ApiException;
+use crmeb\exceptions\AuthUnavailableException;
 use Psr\SimpleCache\InvalidArgumentException;
 use think\db\exception\DataNotFoundException;
 use think\db\exception\DbException;
@@ -99,6 +103,17 @@ class StoreOrderController
      */
     public function confirm(Request $request, ShippingTemplatesServices $services)
     {
+        if(MarketplaceTradePolicy::active()){
+            $raw=$request->param(false);
+            if(!is_array($raw))throw new ApiException('参数错误');
+            $choice=MarketplaceOrderInput::confirm($raw);
+            MarketplaceTradePolicy::preview($raw,$choice);
+            $uid=(int)$request->uid();$user=$request->user()->toArray();
+            if((int)($user['uid']??0)!==$uid)throw new AuthUnavailableException();
+            $data=$this->services->getOrderConfirmData($user,$choice['cartId'],$choice['new'],$choice['addressId'],
+                $choice['shipping_type'],$choice['is_gift'],$choice);
+            return app('json')->success(app()->make(\app\services\marketplace\PublicCatalogServices::class)->quoteOutput($data,$uid));
+        }
         if (!\app\services\marketplace\freight\MerchantFreightPolicy::enabled() && !$services->get(1, ['id'])) {
             return app('json')->fail('默认运费模板未配置，无法下单');
         }
@@ -127,8 +142,31 @@ class StoreOrderController
     {
         if (!$key) return app('json')->fail('参数错误');
         $uid = $request->uid();
-        if ($this->services->be(['order_id|unique' => $key, 'uid' => $uid, 'is_del' => 0]))
+        $marketplace=MarketplaceTradePolicy::active()||$this->services->hasMarketplaceConfirmation((int)$uid,(string)$key);
+        if($marketplace){
+            $saved=$this->services->getOne(['order_id|unique'=>$key,'uid'=>$uid,'is_del'=>0]);
+            if($saved){
+                if(MarketplaceTradePolicy::savedOrderIsLegacy($saved->toArray()))return app('json')->status('extend_order','订单不存在',['orderId'=>$key,'key'=>$key]);
+                MarketplaceTradePolicy::guardCreate();
+            }
+            $raw=$request->param(false);
+            if(!is_array($raw))throw new ApiException('参数错误');
+            $options=MarketplaceOrderInput::computed($raw);
+            MarketplaceTradePolicy::preview($raw,$options);
+            $cartGroup=$this->services->getCacheOrderInfo((int)$uid,(string)$key);
+            if(!$cartGroup)throw new ApiException('订单已过期,请刷新当前页面');
+            if(($cartGroup['marketplace_confirmation_version']??null)!==MarketplaceTradePolicy::CONFIRMATION_VERSION)throw new ApiException('请按店铺重新确认商品');
+            if(array_key_exists('mer_id',$raw)&&MarketplaceOrderInput::unsigned($raw['mer_id'],'mer_id')!==$cartGroup['mer_id'])throw new ApiException('请重新确认结算店铺');
+            $result=$computedServices->setParamData([])->computedOrder((int)$uid,$request->user()->toArray(),$cartGroup,
+                $options['addressId'],$options['payType'],false,0,false,$options['shipping_type'],$options['is_gift'],true);
+            foreach(['marketplace_confirmation_version','mer_id','source_kind','store']as$field)$result[$field]=$cartGroup[$field];
+            $result['marketplace_create_enabled']=false;
+            return app('json')->status('NONE','操作成功',$result);
+        }
+        if ($saved=$this->services->getOne(['order_id|unique' => $key, 'uid' => $uid, 'is_del' => 0])){
+            if(!MarketplaceTradePolicy::savedOrderIsLegacy($saved->toArray()))MarketplaceTradePolicy::guardCreate();
             return app('json')->status('extend_order', '订单不存在', ['orderId' => $key, 'key' => $key]);
+        }
         list($addressId, $couponId, $payType, $useIntegral, $mark, $combinationId, $pinkId, $seckill_id, $bargainId, $shipping_type, $is_gift) = $request->postMore([
             'addressId',
             'couponId',
@@ -171,7 +209,14 @@ class StoreOrderController
     {
         if (!$key) return app('json')->fail('参数错误');
         $userInfo = $request->user()->toArray();
-        if ($checkOrder = $this->services->getOne(['order_id|unique' => $key, 'uid' => $userInfo['uid'], 'is_del' => 0]))
+        $uid=(int)$request->uid();
+        if((int)($userInfo['uid']??0)!==$uid)throw new AuthUnavailableException();
+        $active=MarketplaceTradePolicy::active();
+        $checkOrder=$this->services->getOne(['order_id|unique'=>$key,'uid'=>$uid,'is_del'=>0]);
+        if($checkOrder&&!MarketplaceTradePolicy::savedOrderIsLegacy($checkOrder->toArray()))MarketplaceTradePolicy::guardCreate();
+        if(!$checkOrder&&$active)MarketplaceTradePolicy::guardCreate();
+        if($this->services->hasMarketplaceConfirmation($uid,(string)$key))MarketplaceTradePolicy::guardCreate();
+        if ($checkOrder)
             return app('json')->status('extend_order', '订单已创建，请点击查看完成支付', ['orderId' => $checkOrder['order_id'], 'key' => $key]);
         [$addressId, $couponId, $payType, $useIntegral, $mark, $combinationId, $pinkId, $seckillId, $bargainId, $shipping_type, $real_name, $phone, $storeId, $news, $invoice_id, $advanceId, $customForm, $is_gift, $gift_mark] = $request->postMore([
             [['addressId', 'd'], 0],

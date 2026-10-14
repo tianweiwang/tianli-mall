@@ -1782,9 +1782,13 @@ class StoreProductServices extends BaseServices
      * @param bool $is_show
      * @return array|float|int|mixed|string
      */
-    public function setLevelPrice($price, int $uid, $userInfo, $vipStatus, $discount = 0, $vipPrice = 0.00, $is_vip = 0, $is_show = false)
+    public function setLevelPrice($price, int $uid, $userInfo, $vipStatus, $discount = 0, $vipPrice = 0.00, $is_vip = 0, $is_show = false, bool $marketplace = false)
     {
-        if (!(float)$price) return [0, 0, 'level'];
+        if ($marketplace) {
+            $price = \app\services\marketplace\order\MarketplaceDecimal::value($price);
+            if (bccomp($price, '0.00', 2) === 0) return ['0.00', '0.00', 'level'];
+            $vipPrice = $vipPrice === 0.00 ? '0.00' : \app\services\marketplace\order\MarketplaceDecimal::value($vipPrice);
+        } elseif (!(float)$price) return [0, 0, 'level'];
         if (!$vipStatus) $is_vip = 0;
         //已登录
         if ($uid) {
@@ -1805,9 +1809,15 @@ class StoreProductServices extends BaseServices
             //没登录
             $discount = 100;
         }
+        if ($marketplace) $discount = \app\services\marketplace\order\MarketplaceDecimal::value($discount);
         $discount = bcdiv((string)$discount, '100', 2);
         //执行减去会员优惠金额
-        [$truePrice, $vip_truePrice, $type] = $this->isPayLevelPrice($uid, $userInfo, $vipStatus, $price, $discount, $vipPrice, $is_vip, $is_show);
+        [$truePrice, $vip_truePrice, $type] = $this->isPayLevelPrice($uid, $userInfo, $vipStatus, $price, $discount, $vipPrice, $is_vip, $is_show, $marketplace);
+        if ($marketplace) {
+            $truePrice = bccomp($truePrice, '0.01', 2) < 0 ? '0.01' : $truePrice;
+            $vip_truePrice = bccomp($vip_truePrice, $price, 2) === 0 ? bcsub($vip_truePrice, '0.01', 2) : $vip_truePrice;
+            return [$truePrice, $vip_truePrice, $type];
+        }
         //返回优惠后的总金额
         $truePrice = $truePrice < 0.01 ? 0.01 : $truePrice;
         //优惠的金额
@@ -2124,18 +2134,29 @@ class StoreProductServices extends BaseServices
      * @param bool $is_show
      * @return float|int|mixed|string
      */
-    public function isPayLevelPrice(int $uid, $userInfo, $vipStatus, $price, string $discount, $payVipPrice = 0.00, $is_vip = 0, $is_show = false)
+    public function isPayLevelPrice(int $uid, $userInfo, $vipStatus, $price, string $discount, $payVipPrice = 0.00, $is_vip = 0, $is_show = false, bool $marketplace = false)
     {
+        if ($marketplace) {
+            $price = \app\services\marketplace\order\MarketplaceDecimal::value($price);
+            $payVipPrice = $payVipPrice === 0.00 ? '0.00' : \app\services\marketplace\order\MarketplaceDecimal::value($payVipPrice);
+            $discount = \app\services\marketplace\order\MarketplaceDecimal::value($discount);
+        }
         //is_vip == 0表示会员价格不启用，展示为零
-        if ($is_vip == 0) $payVipPrice = 0;
+        if ($is_vip == 0) $payVipPrice = $marketplace ? '0.00' : 0;
         if (!$userInfo && $uid) {
             //检测用户是否是付费会员
             /** @var  UserServices $userService */
             $userService = app()->make(UserServices::class);
             $userInfo = $userService->getUserInfo($uid);
         }
-        $noPayVipPrice = ($discount && $discount != 0.00) ? bcmul((string)$discount, (string)$price, 2) : $price;
-        if ($payVipPrice < $noPayVipPrice && $payVipPrice > 0) {
+        if ($marketplace) {
+            $noPayVipPrice = bccomp($discount, '0.00', 2) !== 0 ? bcmul($discount, $price, 2) : $price;
+        } else {
+            $noPayVipPrice = ($discount && $discount != 0.00) ? bcmul((string)$discount, (string)$price, 2) : $price;
+        }
+        if ($marketplace
+            ? (bccomp($payVipPrice, $noPayVipPrice, 2) < 0 && bccomp($payVipPrice, '0.00', 2) > 0)
+            : ($payVipPrice < $noPayVipPrice && $payVipPrice > 0)) {
             $vipPrice = $payVipPrice;
             $type = 'member';
         } else {

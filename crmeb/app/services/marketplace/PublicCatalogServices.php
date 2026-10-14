@@ -386,7 +386,15 @@ final class PublicCatalogServices
         $data['cartInfo']=$this->cartRows($data['cartInfo'],$uid);
         $data['custom_form']=Projection::formConfig($data['custom_form']);
         if(is_array($data['priceGroup']['cartInfo']??null))$data['priceGroup']['cartInfo']=$this->cartRows($data['priceGroup']['cartInfo'],$uid);
-        unset($data['priceGroup']['costPrice']);
+        if(($data['marketplace_confirmation_version']??null)===\app\services\marketplace\order\MarketplaceTradePolicy::CONFIRMATION_VERSION){
+            $kind=$data['source_kind']??null;if(!is_string($kind))throw new AuthUnavailableException();
+            foreach($data['cartInfo']as&$row)$row['id']=\app\services\marketplace\order\MarketplaceOrderInput::reference($row['id']??null,$kind);unset($row);
+            if(is_array($data['priceGroup']['cartInfo']??null)){
+                foreach($data['priceGroup']['cartInfo']as&$row)$row['id']=\app\services\marketplace\order\MarketplaceOrderInput::reference($row['id']??null,$kind);unset($row);
+            }
+        }
+        unset($data['priceGroup']['costPrice'],$data['priceGroup']['marketplace_postage_weights'],$data['priceGroup']['selection'],$data['priceGroup']['marketplace_uid']);
+        unset($data['costPrice'],$data['marketplace_uid'],$data['selection'],$data['cart_refs'],$data['marketplace_postage_weights']);
         return $data;
     }
 

@@ -24,6 +24,7 @@ use app\services\shipping\ShippingTemplatesServices;
 use app\services\user\UserInvoiceServices;
 use app\services\wechat\WechatUserServices;
 use app\services\BaseServices;
+use app\services\marketplace\order\MarketplaceTradePolicy;
 use crmeb\exceptions\ApiException;
 use crmeb\exceptions\ApiStatusException;
 use crmeb\services\CacheService;
@@ -147,6 +148,7 @@ class StoreOrderCreateServices extends BaseServices
     {
         /** @var StoreOrderServices $orderService */
         $storeOrderServices = app()->make(StoreOrderServices::class);
+        if(MarketplaceTradePolicy::active()||$storeOrderServices->hasMarketplaceConfirmation((int)$uid,(string)$key))MarketplaceTradePolicy::guardCreate();
         $bargainServices = app()->make(StoreBargainServices::class);
         $cartGroup = $storeOrderServices->getCacheOrderInfo($uid, $key);
         if (!$cartGroup) {

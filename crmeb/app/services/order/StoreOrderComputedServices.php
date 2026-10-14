@@ -12,6 +12,8 @@
 namespace app\services\order;
 
 use app\services\BaseServices;
+use app\services\marketplace\order\MarketplaceDecimal;
+use app\services\marketplace\order\MarketplacePostageAllocation;
 use app\dao\order\StoreOrderDao;
 use app\services\pay\PayServices;
 use app\services\product\product\StoreCategoryServices;
@@ -77,8 +79,12 @@ class StoreOrderComputedServices extends BaseServices
      * @param int $shipping_type
      * @return array
      */
-    public function computedOrder(int $uid, array $userInfo, array &$cartGroup, int $addressId, string $payType, bool $useIntegral = false, int $couponId = 0, bool $isCreate = false, int $shippingType = 1, int $is_gift = 0)
+    public function computedOrder(int $uid, array $userInfo, array &$cartGroup, int $addressId, string $payType, bool $useIntegral = false, int $couponId = 0, bool $isCreate = false, int $shippingType = 1, int $is_gift = 0, bool $marketplace = false)
     {
+        if ($marketplace && (($cartGroup['marketplace_confirmation_version'] ?? null) !== 1 || ($cartGroup['marketplace_uid'] ?? null) !== $uid || $uid < 1)) {
+            throw new ApiException('请重新确认本店商品');
+        }
+        if ($marketplace && ($useIntegral || $couponId !== 0 || $payType === 'yue')) throw new ApiException('新商城暂不支持此交易权益');
         $offlinePayStatus = (int)sys_config('offline_pay_status') ?? (int)2;
         $systemPayType = PayServices::PAY_TYPE;
         if ($offlinePayStatus == 2) unset($systemPayType['offline']);
@@ -93,25 +99,29 @@ class StoreOrderComputedServices extends BaseServices
         $cartInfo = $cartGroup['cartInfo'];
         $priceGroup = $cartGroup['priceGroup'];
         $other = $cartGroup['other'];
-        $payPrice = (float)$priceGroup['totalPrice'];
+        $payPrice = $marketplace ? MarketplaceDecimal::value($priceGroup['totalPrice']) : (float)$priceGroup['totalPrice'];
         $previousAddress = $cartGroup['addr'] ?? [];
         /** @var UserAddressServices $addressServices */
         $addressServices = app()->make(UserAddressServices::class);
         $currentAddress = $addressId ? $addressServices->getOne(['id' => $addressId, 'uid' => $uid, 'is_del' => 0]) : null;
+        if ($marketplace && $addressId > 0 && !$currentAddress) throw new ApiException('请选择本人有效收货地址');
         $addr = $currentAddress ? $currentAddress->toArray() : [];
         $postage = $previousAddress === $addr ? $priceGroup : [];
         $cartServices=app()->make(\app\services\order\StoreCartServices::class);
-        [$cartInfo,$valid,$invalid]=$cartServices->handleCartList($uid,$cartInfo,$addr,(int)$shippingType);
+        [$cartInfo,$valid,$invalid]=$cartServices->handleCartList($uid,$cartInfo,$addr,(int)$shippingType,$marketplace);
         if($invalid)throw new ApiException('商品不支持当前购买或配送方式');
-        $priceGroup=$this->getOrderPriceGroup(floatval(sys_config('store_free_postage'))?:0,$valid,$addr,$userInfo,$shippingType,$is_gift);
+        $priceGroup=$this->getOrderPriceGroup($marketplace ? '0.00' : (floatval(sys_config('store_free_postage'))?:0),$valid,$addr,$userInfo,$shippingType,$is_gift,$marketplace);
+        $weights = $marketplace ? $priceGroup['marketplace_postage_weights'] : [];
+        if ($marketplace) unset($priceGroup['marketplace_postage_weights']);
         $cartInfo=$priceGroup['cartInfo']??$valid;
         $cartGroup['cartInfo']=$cartInfo;$cartGroup['priceGroup']=$priceGroup;$cartGroup['addr']=$addr;
-        $payPrice=(float)$priceGroup['totalPrice'];$postage=$priceGroup;
+        $payPrice=$marketplace ? MarketplaceDecimal::value($priceGroup['totalPrice']) : (float)$priceGroup['totalPrice'];$postage=$priceGroup;
+        if ($marketplace) $postage['marketplace_postage_weights'] = $weights;
         $combinationId = $this->paramData['combinationId'] ?? 0;
         $seckillId = $this->paramData['seckill_id'] ?? 0;
         $bargainId = $this->paramData['bargainId'] ?? 0;
         $isActivity = $combinationId || $seckillId || $bargainId;
-        if (!$isActivity) {
+        if (!$isActivity && !$marketplace) {
             //使用优惠劵
             [$payPrice, $couponPrice] = $this->useCouponId($couponId, $uid, $cartInfo, $payPrice, $isCreate);
             //使用积分
@@ -119,7 +129,19 @@ class StoreOrderComputedServices extends BaseServices
         }
 
         //计算邮费
-        [$payPrice, $payPostage, $storePostageDiscount, $storeFreePostage, $isStoreFreePostage] = $this->computedPayPostage($shippingType, $payType, $cartInfo, $addr, $payPrice, $postage, $other, $userInfo, $is_gift);
+        $postageResult = $this->computedPayPostage($shippingType, $payType, $cartInfo, $addr, $payPrice, $postage, $other, $userInfo, $is_gift, $marketplace);
+        [$payPrice, $payPostage, $storePostageDiscount, $storeFreePostage, $isStoreFreePostage] = $postageResult;
+        if ($marketplace) {
+            $weights = $postageResult[5];
+            $allocated = MarketplacePostageAllocation::allocate($payPostage, $weights);
+            foreach ($allocated as $index => $line) $cartInfo[$index]['postage_price'] = $line['postage'];
+            $cartGroup['marketplace_postage_weights'] = $weights;
+            $cartGroup['cartInfo'] = $cartGroup['priceGroup']['cartInfo'] = $cartInfo;
+            $cartGroup['priceGroup']['storePostage'] = $payPostage;
+            $cartGroup['priceGroup']['storePostageDiscount'] = $storePostageDiscount;
+            $couponPrice = $deductionPrice = '0.00';
+            $usedIntegral = $SurplusIntegral = 0;
+        }
 
         //赠送商品计算
         $payPrice = bcadd($payPrice, $priceGroup['giftPrice'], 2);
@@ -127,7 +149,7 @@ class StoreOrderComputedServices extends BaseServices
         $result = [
             'total_price' => $priceGroup['totalPrice'],
             'gift_price' => $priceGroup['giftPrice'],
-            'pay_price' => $payPrice > 0 ? $payPrice : 0,
+            'pay_price' => $marketplace ? (bccomp($payPrice, '0', 2) > 0 ? MarketplaceDecimal::value($payPrice) : '0.00') : ($payPrice > 0 ? $payPrice : 0),
             'pay_postage' => $payPostage,
             'coupon_price' => $couponPrice ?? 0,
             'deduction_price' => $deductionPrice ?? 0,
@@ -264,9 +286,10 @@ class StoreOrderComputedServices extends BaseServices
      * @param array $other
      * @return array
      */
-    public function computedPayPostage(int $shipping_type, string $payType, array $cartInfo, array $addr, string $payPrice, array $postage, array $other, $userInfo = [], $is_gift = 0)
+    public function computedPayPostage(int $shipping_type, string $payType, array $cartInfo, array $addr, string $payPrice, array $postage, array $other, $userInfo = [], $is_gift = 0, bool $marketplace = false)
     {
-        $storePostageDiscount = 0;
+        $weights = $marketplace ? ($postage['marketplace_postage_weights'] ?? []) : [];
+        $storePostageDiscount = $marketplace ? '0.00' : 0;
         $storeFreePostage = $postage['storeFreePostage'] ?? 0;
         $isStoreFreePostage = false;
         if ($is_gift == 1) {
@@ -279,11 +302,11 @@ class StoreOrderComputedServices extends BaseServices
             $currentFreight = app()->make(\app\services\marketplace\freight\MerchantFreightPolicy::class)->revalidate($cartInfo, $courierMode, (int)$is_gift, isset($addr['city_id']) ? (int)$addr['city_id'] : null);
             foreach ($currentFreight as $entry) if ($entry['entrant']) { $postage = []; break; }
         }
-        if (!$storeFreePostage) {
-            $storeFreePostage = floatval(sys_config('store_free_postage')) ?: 0;//满额包邮金额
+        if ($marketplace ? MarketplaceDecimal::compare((string)$storeFreePostage, '0') === 0 : !$storeFreePostage) {
+            $storeFreePostage = $marketplace ? MarketplaceDecimal::configuration('store_free_postage') : (floatval(sys_config('store_free_postage')) ?: 0);//满额包邮金额
         }
         if (!$addr && !isset($addr['id']) || !$cartInfo) {
-            $payPostage = 0;
+            $payPostage = $marketplace ? '0.00' : 0;
         } else {
             //$shipping_type = 1 快递发货 $shipping_type = 2 门店自提
             if ($shipping_type == 2) {
@@ -292,19 +315,22 @@ class StoreOrderComputedServices extends BaseServices
             }
             //门店自提 || （线下支付 && 线下支付包邮） 没有邮费支付
             if ($shipping_type === 2 || ($payType == 'offline' && ((isset($other['offlinePostage']) && $other['offlinePostage']) || sys_config('offline_postage')) == 1)) {
-                $payPostage = 0;
+                $payPostage = $marketplace ? '0.00' : 0;
             } else {
                 if (!$postage || !isset($postage['storePostage']) || !isset($postage['storePostageDiscount'])) {
-                    $postage = $this->getOrderPriceGroup($storeFreePostage, $cartInfo, $addr, $userInfo);
+                    $postage = $marketplace ? $this->getOrderPriceGroup($storeFreePostage, $cartInfo, $addr, $userInfo, $shipping_type, $is_gift, true) : $this->getOrderPriceGroup($storeFreePostage, $cartInfo, $addr, $userInfo);
+                    if ($marketplace) $weights = $postage['marketplace_postage_weights'];
                 }
                 $payPostage = $postage['storePostage'];
                 $storePostageDiscount = $postage['storePostageDiscount'];
                 $isStoreFreePostage = $postage['isStoreFreePostage'] ?? false;
 
-                $payPrice = (float)bcadd((string)$payPrice, (string)$payPostage, 2);
+                $payPrice = $marketplace ? bcadd($payPrice, $payPostage, 2) : (float)bcadd((string)$payPrice, (string)$payPostage, 2);
             }
         }
-        return [$payPrice, $payPostage, $storePostageDiscount, $storeFreePostage, $isStoreFreePostage];
+        $result = [$payPrice, $payPostage, $storePostageDiscount, $storeFreePostage, $isStoreFreePostage];
+        if ($marketplace) $result[] = $weights;
+        return $result;
     }
 
     /**
@@ -314,14 +340,16 @@ class StoreOrderComputedServices extends BaseServices
      * @param array $userInfo
      * @return array
      */
-    public function getOrderPriceGroup($storeFreePostage, $cartInfo, $addr, $userInfo = [], $shipping_type = 1, $is_gift = 0)
+    public function getOrderPriceGroup($storeFreePostage, $cartInfo, $addr, $userInfo = [], $shipping_type = 1, $is_gift = 0, bool $marketplace = false)
     {
+        if ($marketplace) $storeFreePostage = MarketplaceDecimal::configuration('store_free_postage');
         $freightResolved = app()->make(\app\services\marketplace\freight\MerchantFreightPolicy::class)->revalidate($cartInfo, (int)$shipping_type, (int)$is_gift, isset($addr['city_id']) ? (int)$addr['city_id'] : null);
         $entrantTemplates = [];
         foreach ($freightResolved as $entry) if ($entry['entrant'] && !$entry['skip_template']) $entrantTemplates[(int)$entry['root']['temp_id']] = $entry;
-        $storePostage = 0;
-        $storePostageDiscount = 0;
-        $giftPrice = 0;
+        $weights = [];
+        $storePostage = $marketplace ? '0.00' : 0;
+        $storePostageDiscount = $marketplace ? '0.00' : 0;
+        $giftPrice = $marketplace ? '0.00' : 0;
         $isStoreFreePostage = false;//是否满额包邮
         $sumPrice = $this->getOrderSumPrice($cartInfo, 'sum_price');//获取订单原总金额
         $totalPrice = $this->getOrderSumPrice($cartInfo, 'truePrice');//获取订单svip、用户等级优惠之后总金额
@@ -332,32 +360,36 @@ class StoreOrderComputedServices extends BaseServices
 
         // 判断商品包邮和固定运费
         foreach ($cartInfo as $key => &$item) {
-            $item['postage_price'] = 0;
+            $item['postage_price'] = $marketplace ? '0.00' : 0;
+            if ($marketplace) $weights[$key] = ['cart_ref' => $item['marketplace_cart_ref'] ?? (string)($item['id'] ?? ''),
+                'sku_id' => $item['productInfo']['attrInfo']['id'] ?? null, 'weight' => '0.000000'];
             if ($shipping_type == 1) {
                 if ($item['productInfo']['freight'] == 1) {
-                    $item['postage_price'] = 0;
+                    $item['postage_price'] = $marketplace ? '0.00' : 0;
                 } elseif ($item['productInfo']['freight'] == 2) {
                     $item['postage_price'] = bcmul((string)$item['productInfo']['postage'], (string)$item['cart_num'], 2);
                     $item['origin_postage_price'] = bcmul((string)$item['productInfo']['postage'], (string)$item['cart_num'], 2);
                     $storePostage = bcadd((string)$storePostage, (string)$item['postage_price'], 2);
                 }
-                if ($sumPrice >= $storeFreePostage) {
-                    $item['postage_price'] = $item['origin_postage_price'] = $storePostage = 0;
+                if ($marketplace ? MarketplaceDecimal::compare($sumPrice, (string)$storeFreePostage) >= 0 : $sumPrice >= $storeFreePostage) {
+                    $item['postage_price'] = $item['origin_postage_price'] = $storePostage = ($marketplace ? '0.00' : 0);
+                    if ($marketplace) $weights[$key]['weight'] = '0.000000';
                 }
             }
             if ($is_gift == 1) {
-                $item['postage_price'] = $item['origin_postage_price'] = $storePostage = 0;
+                $item['postage_price'] = $item['origin_postage_price'] = $storePostage = ($marketplace ? '0.00' : 0);
+                    if ($marketplace) $weights[$key]['weight'] = '0.000000';
                 $giftPrice = bcadd((string)$giftPrice, (string)$item['productInfo']['gift_price'], 2);
                 $addr = [];
             }
         }
         $postageArr = [];
         if (isset($cartInfo[0]['productInfo']['is_virtual']) && $cartInfo[0]['productInfo']['is_virtual'] == 1) {
-            $storePostage = 0;
-        } elseif ($storeFreePostage && $cartInfo && $addr && (!\app\services\marketplace\freight\MerchantFreightPolicy::enabled() || $freightResolved !== [])) {
-            if ($sumPrice >= $storeFreePostage) {//如果总价大于等于满额包邮 邮费等于0
+            $storePostage = $marketplace ? '0.00' : 0;
+        } elseif (($marketplace ? MarketplaceDecimal::compare((string)$storeFreePostage, '0') !== 0 : $storeFreePostage) && $cartInfo && $addr && (!\app\services\marketplace\freight\MerchantFreightPolicy::enabled() || $freightResolved !== [])) {
+            if ($marketplace ? MarketplaceDecimal::compare($sumPrice, (string)$storeFreePostage) >= 0 : $sumPrice >= $storeFreePostage) {//如果总价大于等于满额包邮 邮费等于0
                 $isStoreFreePostage = true;
-                $storePostage = 0;
+                $storePostage = $marketplace ? '0.00' : 0;
             } else {
                 //按照运费模板计算每个运费模板下商品的件数/重量/体积以及总金额 按照首重倒序排列
                 $cityId = $addr['city_id'] ?? 0;
@@ -388,9 +420,9 @@ class StoreOrderComputedServices extends BaseServices
                     if ($type == 1) {
                         $num = $cart['cart_num'];
                     } elseif ($type == 2) {
-                        $num = $cart['cart_num'] * $cart['productInfo']['attrInfo']['weight'];
+                        $num = $marketplace ? bcmul((string)$cart['cart_num'], MarketplaceDecimal::value($cart['productInfo']['attrInfo']['weight'], 6), 6) : $cart['cart_num'] * $cart['productInfo']['attrInfo']['weight'];
                     } else {
-                        $num = $cart['cart_num'] * $cart['productInfo']['attrInfo']['volume'];
+                        $num = $marketplace ? bcmul((string)$cart['cart_num'], MarketplaceDecimal::value($cart['productInfo']['attrInfo']['volume'], 6), 6) : $cart['cart_num'] * $cart['productInfo']['attrInfo']['volume'];
                     }
                     $region = ($entry['entrant'] ?? false) ? $entry['region'] : ($regions[$tempId] ?? ($regions[1] ?? []));
                     if (!$region) continue;
@@ -406,8 +438,8 @@ class StoreOrderComputedServices extends BaseServices
                             'temp_id' => $tempId
                         ];
                     } else {
-                        $temp_num[$tempId]['number'] += $num;
-                        $temp_num[$tempId]['price'] += bcmul($cart['cart_num'], $cart['truePrice'], 2);
+                        $temp_num[$tempId]['number'] = $marketplace ? bcadd((string)$temp_num[$tempId]['number'], (string)$num, 6) : $temp_num[$tempId]['number'] + $num;
+                        $temp_num[$tempId]['price'] = $marketplace ? bcadd($temp_num[$tempId]['price'], bcmul((string)$cart['cart_num'], $cart['truePrice'], 2), 2) : $temp_num[$tempId]['price'] + bcmul($cart['cart_num'], $cart['truePrice'], 2);
                     }
                 }
                 /** @var ShippingTemplatesFreeServices $freeServices */
@@ -421,15 +453,15 @@ class StoreOrderComputedServices extends BaseServices
                         }
                         if (isset($temp[$v['temp_id']]['appoint']) && $temp[$v['temp_id']]['appoint'] && isset($freeList[$v['temp_id']])) {
                             $free = $freeList[$v['temp_id']];
-                            $condition = $free['number'] <= $v['number'];
-                            if ($free['price'] <= $v['price'] && $condition) {
+                            $condition = $marketplace ? bccomp((string)$free['number'], (string)$v['number'], 6) <= 0 : $free['number'] <= $v['number'];
+                            if (($marketplace ? bccomp((string)$free['price'], $v['price'], 2) <= 0 : $free['price'] <= $v['price']) && $condition) {
                                 unset($temp_num[$k]);
                             }
                         }
                     }
                 }
                 //首件运费最大值
-                $maxFirstPrice = $temp_num ? max(array_column($temp_num, 'first_price')) : 0;
+                $maxFirstPrice = $temp_num ? ($marketplace ? MarketplaceDecimal::greatest(array_column($temp_num, 'first_price')) : max(array_column($temp_num, 'first_price'))) : ($marketplace ? '0.00' : 0);
                 //初始运费为0
                 $storePostage_arr = [];
 
@@ -437,18 +469,18 @@ class StoreOrderComputedServices extends BaseServices
                 //循环运费数组
                 foreach ($temp_num as $fk => $fv) {
                     //找到首件运费等于最大值
-                    if ($fv['first_price'] == $maxFirstPrice) {
+                    if ($marketplace ? bccomp((string)$fv['first_price'], (string)$maxFirstPrice, 2) === 0 : $fv['first_price'] == $maxFirstPrice) {
                         //每次循环设置初始值
                         $tempArr = $temp_num;
                         $Postage = 0;
                         //计算首件运费
-                        if ($fv['number'] <= $fv['first']) {
+                        if ($marketplace ? bccomp((string)$fv['number'], (string)$fv['first'], 6) <= 0 : $fv['number'] <= $fv['first']) {
                             $Postage = bcadd($Postage, $fv['first_price'], 2);
                         } else {
-                            if ($fv['continue'] <= 0) {
+                            if ($marketplace ? bccomp((string)$fv['continue'], '0', 6) <= 0 : $fv['continue'] <= 0) {
                                 $Postage = $Postage;
                             } else {
-                                $Postage = bcadd(bcadd($Postage, $fv['first_price'], 2), bcmul(ceil(bcdiv(bcsub($fv['number'], $fv['first'], 2), $fv['continue'] ?? 0, 2)), $fv['continue_price'], 4), 2);
+                                $Postage = bcadd(bcadd($Postage, $fv['first_price'], 2), bcmul(($marketplace ? MarketplaceDecimal::ceil(bcdiv(bcsub($fv['number'], $fv['first'], 2), $fv['continue'] ?? 0, 2)) : ceil(bcdiv(bcsub($fv['number'], $fv['first'], 2), $fv['continue'] ?? 0, 2))), $fv['continue_price'], 4), 2);
                             }
                         }
                         $postageArr[$i]['data'][$fk] = $Postage;
@@ -457,10 +489,10 @@ class StoreOrderComputedServices extends BaseServices
                         unset($tempArr[$fk]);
                         //循环计算剩余运费
                         foreach ($tempArr as $ck => $cv) {
-                            if ($cv['continue'] <= 0) {
+                            if ($marketplace ? bccomp((string)$cv['continue'], '0', 6) <= 0 : $cv['continue'] <= 0) {
                                 $Postage = $Postage;
                             } else {
-                                $one_postage = bcmul(ceil(bcdiv($cv['number'], $cv['continue'] ?? 0, 2)), $cv['continue_price'], 2);
+                                $one_postage = bcmul(($marketplace ? MarketplaceDecimal::ceil(bcdiv($cv['number'], $cv['continue'] ?? 0, 2)) : ceil(bcdiv($cv['number'], $cv['continue'] ?? 0, 2))), $cv['continue_price'], 2);
                                 $Postage = bcadd($Postage, $one_postage, 2);
                                 $postageArr[$i]['data'][$ck] = $one_postage;
                             }
@@ -470,14 +502,14 @@ class StoreOrderComputedServices extends BaseServices
                     }
                 }
                 if (count($storePostage_arr)) {
-                    $maxStorePostage = max($storePostage_arr);
+                    $maxStorePostage = $marketplace ? MarketplaceDecimal::greatest($storePostage_arr) : max($storePostage_arr);
                     //获取运费计算中的最大值
                     $storePostage = bcadd((string)$storePostage, (string)$maxStorePostage, 2);
                 }
             }
         }
         //会员邮费享受折扣
-        if ($storePostage) {
+        if ($marketplace ? bccomp((string)$storePostage, '0', 2) > 0 : $storePostage) {
             $express_rule_number = 100;
             if (!$userInfo) {
                 /** @var UserServices $userService */
@@ -491,19 +523,23 @@ class StoreOrderComputedServices extends BaseServices
                 $express_rule_number = $memberCardService->isOpenMemberCard('express');
                 $express_rule_number = $express_rule_number <= 0 ? 0 : $express_rule_number;
             }
-            $discountRate = bcdiv($express_rule_number, 100, 4);
+            $applyPostageDiscount = $marketplace
+                ? bccomp((string)$express_rule_number, '0', 4) > 0 && bccomp((string)$express_rule_number, '100', 4) < 0
+                : ($express_rule_number && $express_rule_number < 100);
+            $discountRate = $marketplace && !$applyPostageDiscount ? '1.0000' : bcdiv($express_rule_number, 100, 4);
             $truePostageArr = [];
             foreach ($postageArr as $postitem) {
-                if ($postitem['sum'] == ($maxStorePostage ?? 0)) {
+                if ($marketplace ? bccomp((string)$postitem['sum'], (string)($maxStorePostage ?? '0'), 2) === 0 : $postitem['sum'] == ($maxStorePostage ?? 0)) {
                     $truePostageArr = $postitem['data'];
                     break;
                 }
             }
             $cartAlready = [];
-            foreach ($cartInfo as &$item) {
+            foreach ($cartInfo as $postageKey => &$item) {
                 if (isset($item['productInfo']['freight']) && in_array($item['productInfo']['freight'], [1, 2])) {
                     if ($item['productInfo']['freight'] == 2) {
-                        $item['postage_price'] = sprintf("%.2f", bcmul($item['postage_price'], $discountRate, 6));
+                        $item['postage_price'] = $marketplace ? bcmul($item['postage_price'], $discountRate, 6) : sprintf("%.2f", bcmul($item['postage_price'], $discountRate, 6));
+                        if ($marketplace) $weights[$postageKey]['weight'] = bcadd($item['postage_price'], '0', 6);
                     }
                     continue;
                 }
@@ -517,11 +553,11 @@ class StoreOrderComputedServices extends BaseServices
                 if ($type == 1) {
                     $num = $item['cart_num'];
                 } elseif ($type == 2) {
-                    $num = $item['cart_num'] * $item['productInfo']['attrInfo']['weight'];
+                    $num = $marketplace ? bcmul((string)$item['cart_num'], MarketplaceDecimal::value($item['productInfo']['attrInfo']['weight'], 6), 6) : $item['cart_num'] * $item['productInfo']['attrInfo']['weight'];
                 } else {
-                    $num = $item['cart_num'] * $item['productInfo']['attrInfo']['volume'];
+                    $num = $marketplace ? bcmul((string)$item['cart_num'], MarketplaceDecimal::value($item['productInfo']['attrInfo']['volume'], 6), 6) : $item['cart_num'] * $item['productInfo']['attrInfo']['volume'];
                 }
-                if ((($cartAlready[$tempId]['number'] ?? 0) + $num) >= $tempNumber) {
+                if ($marketplace ? bccomp(bcadd((string)($cartAlready[$tempId]['number'] ?? '0'), (string)$num, 6), (string)$tempNumber, 6) >= 0 : (($cartAlready[$tempId]['number'] ?? 0) + $num) >= $tempNumber) {
                     $price = isset($cartAlready[$tempId]['price']) ? bcsub((string)$tempPostage, (string)$cartAlready[$tempId]['price'], 6) : $tempPostage;
                 } else {
                     $price = bcmul((string)$tempPostage, bcdiv((string)$num, (string)$tempNumber, 6), 6);
@@ -529,12 +565,13 @@ class StoreOrderComputedServices extends BaseServices
                 $cartAlready[$tempId]['number'] = bcadd((string)($cartAlready[$tempId]['number'] ?? 0), (string)$num, 4);
                 $cartAlready[$tempId]['price'] = bcadd((string)($cartAlready[$tempId]['price'] ?? 0.00), (string)$price, 4);
 
-                if ($express_rule_number && $express_rule_number < 100) {
+                if ($applyPostageDiscount) {
                     $price = bcmul($price, $discountRate, 4);
                 }
-                $item['postage_price'] = sprintf("%.2f", $price);
+                if ($marketplace) $weights[$postageKey]['weight'] = bcadd((string)$price, '0', 6);
+                $item['postage_price'] = $marketplace ? bcadd((string)$price, '0', 6) : sprintf("%.2f", $price);
             }
-            if ($express_rule_number && $express_rule_number < 100) {
+            if ($applyPostageDiscount) {
                 $storePostageDiscount = $storePostage;
                 $storePostage = bcmul($storePostage, bcdiv($express_rule_number, 100, 4), 2);
                 $storePostageDiscount = bcsub($storePostageDiscount, $storePostage, 2);
@@ -543,7 +580,12 @@ class StoreOrderComputedServices extends BaseServices
                 $storePostage = $storePostage;
             }
         }
-        return compact('storePostage', 'storeFreePostage', 'isStoreFreePostage', 'sumPrice', 'totalPrice', 'costPrice', 'vipPrice', 'storePostageDiscount', 'cartInfo', 'levelPrice', 'memberPrice', 'giftPrice');
+        $result = compact('storePostage', 'storeFreePostage', 'isStoreFreePostage', 'sumPrice', 'totalPrice', 'costPrice', 'vipPrice', 'storePostageDiscount', 'cartInfo', 'levelPrice', 'memberPrice', 'giftPrice');
+        if ($marketplace) {
+            foreach (['storePostage','storePostageDiscount','giftPrice','sumPrice','totalPrice','costPrice','vipPrice','levelPrice','memberPrice'] as $money) $result[$money] = MarketplaceDecimal::value($result[$money]);
+            $result['marketplace_postage_weights'] = array_values($weights);
+        }
+        return $result;
     }
 
     /**
