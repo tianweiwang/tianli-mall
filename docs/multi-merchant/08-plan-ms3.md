@@ -27,6 +27,8 @@ Run8 的有限收尾使用独立 `ms3-failed-run-closeout-source477732-202610141
 
 后继收尾结果（2026-10-15）：`successor-ui-empty-ports` 单独来源复制原完整 verify_fact/current_native，仅在实际空映射的 null/[] 表示及真实唯一 HostConfig/PublishAllPorts=false 校验处派生，不改写 fact。Root 实际复核十个来源指纹、两个完整字节逆变换及三份 Python AST 后执行 observe：原生 exit0，实际六文件 stat/hash、三控制目录为空及 browser-secret 空，未输出内容。随后同来源 close 实际 exit0，六个声明私有文件按原身份清除；App 显式 SIGTERM、UI/MySQL/Redis 原正常 stop 参数，均要求 terminal0/PID0/restart0，再精确删除七个登记容器、21 个卷和内部网络。原失败、旧 source/MF/收据均保留。收尾十二项计数全0，Root 随后独立执行同 RUN/PROBE 的十二个 Docker 原生查询亦全0（`root-independent-zero.json`）；这是 `ACTUAL_FAILED_RUN_CLOSED_NOT_MS3_PASS`，不是 MS3、Task8、业务 API 或 UI 验收通过。原未运行的页面和业务验收仍保留。
 
+通用 UI 源码整合（2026-10-15）：在本次 MS4 隔离迁移实例正常关闭并独立核零后，Root 将 UI 分支提交 `10732124e111bc795d0b926c8fd645218a893639` 三方 cherry-pick 到交易开发分支，得到本地提交 `7b241fc64622290c89b30b0761cc0fdb2ffbdccb`。实际合入 69 文件：独立商家后台、平台商家管理/商品审核及原源码检查记录；唯一重叠的本文件三方合并结果与合并前完整字节一致，四段 Run8 证据未丢失。平台/商家 UI 与来源提交逐字节一致；当前商家源码脚本实际通过 28 段语法和 63 项本地 import，九条纯普通领域检查 exit0，不加载 API、账号或数据库。商家默认品牌仍为“多商户商城”，统一由 `VUE_APP_MARKETPLACE_NAME` 配置；原平台品牌由已有配置取得。原 checkpoint 的 `source_base` 是其历史构建来源，`full_MS3_acceptance=false` 保留。整合不构成当前真实登录、双后台会话、商品操作、顾客页或视觉验收；没有推送或部署。
+
 ## Review Focus
 
 - **同浏览器双登录**：平台和商家在同一浏览器中同时登录，刷新、退出其中一个不影响另一个；商家页面里请求平台接口被服务端拒绝（F02）。
