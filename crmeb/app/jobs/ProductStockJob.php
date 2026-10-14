@@ -15,6 +15,8 @@ use app\services\product\product\OutStoreProductServices;
 use crmeb\basic\BaseJobs;
 use crmeb\traits\QueueTrait;
 use think\facade\Log;
+use app\services\marketplace\product\LegacyProductWriteServices;
+use crmeb\exceptions\AuthUnavailableException;
 
 class ProductStockJob extends BaseJobs
 {
@@ -29,10 +31,13 @@ class ProductStockJob extends BaseJobs
     {
         try {
             foreach ($data as $key => $item) {
-                ProductStockJob::dispatch('calcValueStock', [$key]);
+                $id=LegacyProductWriteServices::id($key);
+                app()->make(LegacyProductWriteServices::class)->selfWorker([$id],static function()use($id):bool{
+                    LegacyProductWriteServices::afterCommit(static fn()=>ProductStockJob::dispatch('calcValueStock',[$id]));return true;
+                });
             }
-        } catch (\Exception $e) {
-            Log::error(['msg' => '拆分计算失败,错误原因:' . $e->getMessage(), 'data' => $data]);
+        } catch (\Throwable $e) {
+            self::unavailable('distribute');
         }
         return true;
     }
@@ -48,9 +53,15 @@ class ProductStockJob extends BaseJobs
             /** @var OutStoreProductServices $services */
             $services = app()->make(OutStoreProductServices::class);
             $services->calcStockByAttrValue($id);
-        } catch (\Exception $e) {
-            Log::error(['msg' => '计算商品库存失败,错误原因:' . $e->getMessage(), 'data' => $id]);
+        } catch (\Throwable $e) {
+            self::unavailable('calculate');
         }
         return true;
+    }
+    private static function unavailable(string $phase): never
+    {
+        $record='{"event":"legacy_product_stock_unavailable","phase":"'.$phase.'"}';
+        try{Log::error($record);}catch(\Throwable $ignored){error_log($record);}
+        throw new AuthUnavailableException();
     }
 }

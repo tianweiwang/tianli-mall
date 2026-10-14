@@ -220,6 +220,8 @@ class StoreProduct extends AuthController
      */
     public function save($id)
     {
+        $id=\app\services\marketplace\product\LegacyProductWriteServices::routeId($id,true);
+        \app\services\marketplace\product\LegacyProductWriteServices::assertRawBody($this->request->post());
         $data = $this->request->postMore([
             ['virtual_type', 0],// 商品类型
             ['cate_id', []],//分类id
@@ -270,7 +272,7 @@ class StoreProduct extends AuthController
             ['is_gift', 0],//是否礼品
             ['gift_price', 0],//礼品附加费
         ]);
-        $this->service->save((int)$id, $data);
+        $this->service->save($id, $data);
         return app('json')->success('保存成功');
     }
 
@@ -282,6 +284,8 @@ class StoreProduct extends AuthController
      */
     public function delete($id)
     {
+        $id=\app\services\marketplace\product\LegacyProductWriteServices::routeId($id);
+        return app()->make(\app\services\marketplace\product\LegacyProductWriteServices::class)->run([$id],function()use($id){
         //删除商品检测是否有参与活动
         $this->service->checkActivity($id);
         $res = $this->service->del($id);
@@ -289,6 +293,7 @@ class StoreProduct extends AuthController
         $cartService = app()->make(StoreCartServices::class);
         $cartService->changeStatus($id, 0);
         return app('json')->success($res);
+        });
     }
 
     /**
@@ -455,6 +460,7 @@ class StoreProduct extends AuthController
      */
     public function batchSetting()
     {
+        \app\services\marketplace\product\LegacyProductWriteServices::assertRawBody($this->request->post());
         $data = $this->request->postMore([
             ['ids', []],
             ['cate_id', []],
@@ -550,6 +556,8 @@ class StoreProduct extends AuthController
 
     public function otherSave($id, $type)
     {
+        $id=\app\services\marketplace\product\LegacyProductWriteServices::routeId($id);
+        \app\services\marketplace\product\LegacyProductWriteServices::assertRawBody($this->request->post());
         $data = $this->request->postMore([
             ['is_sub', 0],
             ['is_vip', 0],

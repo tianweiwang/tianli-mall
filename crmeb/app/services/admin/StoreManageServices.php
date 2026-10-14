@@ -212,6 +212,11 @@ class StoreManageServices extends BaseServices
      */
     public function saveProductAttr($id, $attr_value)
     {
+        $id=\app\services\marketplace\product\LegacyProductWriteServices::routeId($id);
+        return app()->make(\app\services\marketplace\product\LegacyProductWriteServices::class)->run([$id],fn()=>$this->legacySaveProductAttr($id,$attr_value),false,true);
+    }
+    private function legacySaveProductAttr($id, $attr_value)
+    {
         $storeProductServices = app()->make(StoreProductServices::class);
         $storeProductAttrValueServices = app()->make(StoreProductAttrValueServices::class);
 
@@ -232,29 +237,50 @@ class StoreManageServices extends BaseServices
         }
 
         $product_stock = $product_price = $product_ot_price = $product_cost = 0;
-        $attrs = $storeProductAttrValueServices->selectList(['product_id' => $id, 'type' => 0])->toArray();
+        $attrs = \think\facade\Db::name('store_product_attr_value')->where('product_id',$id)->where('type',0)->order('id')->lock(true)->select()->toArray();
         $attr_value = array_combine(array_column($attr_value, 'unique'), $attr_value);
         foreach ($attrs as $item) {
             $attr = $attr_value[$item['unique']] ?? [];
             if ($attr) {
-                $storeProductAttrValueServices->update($item['id'], [
+                $guard=\app\services\marketplace\product\LegacyProductWriteServices::class;$guard::assertParent($id);
+                $stock=$attr['stock'];if(is_string($stock)&&preg_match('/\A(?:0|[1-9][0-9]{0,9})\z/D',$stock)===1)$stock=(int)$stock;
+                if(!is_int($stock)||$stock<0||$stock>4294967295)throw new ApiException('库存数量不正确');
+                if($guard::preserveSkus($id)&&(string)$stock!==(string)$item['stock'])throw new ApiException('商品已有持久库存流水，请使用独立库存入口');
+                foreach(['price','cost','ot_price']as$field)$attr[$field]=$guard::money($attr[$field]);
+                $query=\think\facade\Db::name('store_product_attr_value')->where('id',$item['id'])->where('product_id',$id)->where('type',0)->where('unique',$item['unique']);$guard::query($query);
+                $patch=[
                     'price' => $attr['price'],
-                    'stock' => $attr['stock'],
+                    'stock' => $stock,
                     'cost' => $attr['cost'],
                     'ot_price' => $attr['ot_price']
-                ]);
+                ];$affected=$query->update($patch);
+                if(!is_int($affected)||$affected<0||$affected>1)throw new \crmeb\exceptions\AuthUnavailableException();
+                $actual=$query->find();if(!is_array($actual))throw new \crmeb\exceptions\AuthUnavailableException();
+                foreach($patch as$field=>$value)if((string)$actual[$field]!==(string)$value)throw new \crmeb\exceptions\AuthUnavailableException();
             }
 
             $product_array = $attr ?: $item;
+            foreach(['price','cost','ot_price']as$field)$product_array[$field]=\app\services\marketplace\product\LegacyProductWriteServices::money($product_array[$field]);
             // 计算商品库存
             $product_stock = bcadd((string)$product_stock, (string)$product_array['stock'], 0);
+            if(bccomp($product_stock,'16777215',0)>0)throw new ApiException('商品总库存超出范围');
             // 更新商品价格
-            $product_price = max($product_price, $product_array['price']);
+            if(bccomp((string)$product_price,$product_array['price'],2)<0)$product_price=$product_array['price'];
             // 更新商品原价
-            $product_ot_price = max($product_ot_price, $product_array['ot_price']);
+            if(bccomp((string)$product_ot_price,$product_array['ot_price'],2)<0)$product_ot_price=$product_array['ot_price'];
             // 更新商品成本
-            $product_cost = max($product_cost, $product_array['cost']);
+            if(bccomp((string)$product_cost,$product_array['cost'],2)<0)$product_cost=$product_array['cost'];
         }
+        $guard=\app\services\marketplace\product\LegacyProductWriteServices::class;$guard::assertParent($id);
+        $current=\think\facade\Db::name('store_product_attr_value')->where('product_id',$id)->where('type',0)->order('id')->select()->toArray();$values=[];
+        foreach($current as$row){if(isset($values[$row['unique']]))throw new \crmeb\exceptions\AuthUnavailableException();$values[$row['unique']]=$row;}
+        $resultQuery=\think\facade\Db::name('store_product_attr_result')->where('product_id',$id)->where('type',0)->lock(true);$guard::query($resultQuery);$results=$resultQuery->select()->toArray();
+        if(count($results)>1)throw new \crmeb\exceptions\AuthUnavailableException();
+        if($results){$result=json_decode($results[0]['result'],true,512,JSON_THROW_ON_ERROR);if(!is_array($result)||!is_array($result['value']??null))throw new \crmeb\exceptions\AuthUnavailableException();
+            foreach($result['value']as$key=>$value){$sku=$values[$value['unique']??'']??null;if(!is_array($sku))throw new \crmeb\exceptions\AuthUnavailableException();
+                foreach(['price','cost','ot_price','stock']as$field)$result['value'][$key][$field]=$sku[$field];}
+            $resultQuery->where('id',$results[0]['id'])->update(['result'=>json_encode($result,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR)]);
+            if(json_decode($resultQuery->value('result'),true,512,JSON_THROW_ON_ERROR)!==$result)throw new \crmeb\exceptions\AuthUnavailableException();}
         // 修改商品库存等信息
         $storeProductServices->update($id, [
             'stock' => $product_stock,

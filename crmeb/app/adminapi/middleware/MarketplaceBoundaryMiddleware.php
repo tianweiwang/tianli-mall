@@ -17,7 +17,7 @@ final class MarketplaceBoundaryMiddleware
         $request->clearPlatformScope();
         $original = null; $configured = null; $configurationChanged = false;
         try {
-            if (!PlatformAccessServices::isMarketplace($request)) throw new AuthUnavailableException();
+            if (!PlatformAccessServices::isMarketplace($request) && !\app\services\marketplace\product\LegacyProductAccessServices::isWriter($request)) throw new AuthUnavailableException();
             $original = app()->config->get('database');
             if (!is_array($original) || ($original['default'] ?? '') !== 'mysql'
                 || !is_array($original['connections']['mysql'] ?? null)) throw new AuthUnavailableException();

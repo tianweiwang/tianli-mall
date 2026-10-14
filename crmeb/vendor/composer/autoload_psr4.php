@@ -6,13 +6,11 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
-    'xin\\helper\\' => array($vendorDir . '/xin/helper/src'),
-    'xin\\container\\' => array($vendorDir . '/xin/container/src'),
     'think\\view\\driver\\' => array($vendorDir . '/topthink/think-view/src'),
     'think\\migration\\' => array($vendorDir . '/topthink/think-migration/src'),
     'think\\captcha\\' => array($vendorDir . '/topthink/think-captcha/src'),
     'think\\app\\' => array($vendorDir . '/topthink/think-multi-app/src'),
-    'think\\' => array($vendorDir . '/topthink/framework/src/think', $vendorDir . '/topthink/think-factory/src', $vendorDir . '/topthink/think-filesystem/src', $vendorDir . '/topthink/think-helper/src', $vendorDir . '/topthink/think-image/src', $vendorDir . '/topthink/think-orm/src', $vendorDir . '/topthink/think-queue/src', $vendorDir . '/topthink/think-template/src'),
+    'think\\' => array($vendorDir . '/topthink/think-queue/src', $vendorDir . '/topthink/think-image/src', $vendorDir . '/topthink/think-filesystem/src', $vendorDir . '/topthink/think-template/src', $vendorDir . '/topthink/think-factory/src', $vendorDir . '/topthink/framework/src/think', $vendorDir . '/topthink/think-orm/src', $vendorDir . '/topthink/think-helper/src'),
     'dh2y\\qrcode\\' => array($vendorDir . '/dh2y/think-qrcode/src'),
     'crmeb\\' => array($baseDir . '/crmeb'),
     'app\\' => array($baseDir . '/app'),
@@ -79,7 +77,7 @@ return array(
     'Doctrine\\Common\\Lexer\\' => array($vendorDir . '/doctrine/lexer/lib/Doctrine/Common/Lexer'),
     'Darabonba\\OpenApi\\' => array($vendorDir . '/alibabacloud/darabonba-openapi/src'),
     'Darabonba\\GatewaySpi\\' => array($vendorDir . '/alibabacloud/gateway-spi/src'),
-    'Crmeb\\Easypay\\' => array($vendorDir . '/crmeb/easypay/src'),
+    'Composer\\Pcre\\' => array($vendorDir . '/composer/pcre/src'),
     'Complex\\' => array($vendorDir . '/markbaker/complex/classes/src'),
     'Channel\\' => array($vendorDir . '/workerman/channel/src'),
     'Carbon\\' => array($vendorDir . '/nesbot/carbon/src/Carbon'),

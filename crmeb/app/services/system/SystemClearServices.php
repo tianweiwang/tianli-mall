@@ -37,6 +37,13 @@ class SystemClearServices extends BaseServices
         } else {
             $clearData = $table_name;
         }
+        $protected=['store_product','store_product_attr','store_product_attr_result','store_product_attr_value',
+            'store_product_description','store_product_cate','store_product_coupon','store_product_reply','store_product_virtual',
+            'system_attachment','system_attachment_category','shipping_templates','shipping_templates_region','shipping_templates_free','shipping_templates_no_delivery',
+            'store_product_rule','marketplace_merchant','marketplace_employee','marketplace_role','marketplace_employee_role',
+            'marketplace_audit_log','marketplace_stock_log'];
+        // Stop before any statement in this batch; these global operations have no owned migration contract.
+        if(array_intersect($clearData,$protected)!==[])throw new \crmeb\exceptions\AuthUnavailableException();
         foreach ($clearData as $name) {
             // This permanent allocation ledger must never be reset by cache cleanup.
             if ($name === 'cache') {
@@ -82,6 +89,8 @@ class SystemClearServices extends BaseServices
      */
     public function replaceSiteUrl(string $url)
     {
+        // The old wholesale SQL also rewrites shared historic product/order snapshots; it is a stopped operation.
+        throw new \crmeb\exceptions\AuthUnavailableException();
         // 获取站点 URL
         $siteUrl = sys_config('site_url');
         // 解析站点 URL 的协议

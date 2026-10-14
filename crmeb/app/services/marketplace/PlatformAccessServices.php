@@ -9,6 +9,8 @@ use app\model\system\SystemMenus;
 use app\model\system\admin\SystemAdmin;
 use app\model\system\admin\SystemRole;
 use app\services\system\admin\SystemRoleServices;
+use app\services\marketplace\product\LegacyProductAccessServices;
+use app\services\marketplace\product\LegacyProductWriteServices;
 use crmeb\exceptions\AuthException;
 use crmeb\exceptions\AuthSessionException;
 use crmeb\exceptions\AuthUnavailableException;
@@ -27,6 +29,11 @@ final class PlatformAccessServices
         'marketplace-merchants-review' => ['PUT', 'marketplace/merchants/<id>/review', true],
         'marketplace-merchants-flags' => ['PUT', 'marketplace/merchants/<id>/flags', true],
         'marketplace-merchants-admin-employee' => ['POST', 'marketplace/merchants/<id>/admin-employee', true],
+        'marketplace-products-list' => ['GET', 'marketplace/products', false],
+        'marketplace-products-review' => ['PUT', 'marketplace/products/<id>/review', false],
+        'marketplace-products-off-shelf' => ['PUT', 'marketplace/products/<id>/off-shelf', false],
+        'marketplace-products-stock-adjust' => ['POST', 'marketplace/products/<id>/stock', false],
+        'marketplace-products-submit-review' => ['PUT', 'marketplace/products/<id>/submit-review', false],
     ];
 
     public static function isMarketplace(\think\Request $request): bool
@@ -76,6 +83,19 @@ final class PlatformAccessServices
         } catch (\Throwable $error) {
             throw new AuthUnavailableException();
         }
+    }
+
+    /** Add the actual independent stock grant to this real legacy save scope, without constructing a stock request. */
+    public function additionalStockGrant(PlatformScope $scope): void
+    {
+        try {
+            LegacyProductWriteServices::transaction();
+            if (LegacyProductWriteServices::rawScope() !== $scope || $scope->targetMerId !== null
+                || !in_array($scope->permission,['legacy-product-save','legacy-product-import'],true)) throw new HttpException(403, '没有权限访问');
+            app()->make(LegacyProductAccessServices::class)->authorizeScope($scope);
+            $this->authorizeCurrent($scope->adminId, 'marketplace-products-stock-adjust');
+        } catch (AuthException|HttpException $error) { throw $error; }
+        catch (\Throwable $error) { throw new AuthUnavailableException(); }
     }
 
     private static function assertRoute(Request $request, string $permission): void

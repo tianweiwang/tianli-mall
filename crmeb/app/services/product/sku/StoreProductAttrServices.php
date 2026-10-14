@@ -42,6 +42,9 @@ class StoreProductAttrServices extends BaseServices
      */
     public function saveProductAttr(array $data, int $id, int $type = 0, $is_vip = 0, $is_virtual = 0)
     {
+        if (\app\services\marketplace\product\LegacyProductWriteServices::preserveSkus($id, $type)) {
+            return app()->make(\app\services\marketplace\product\LegacyProductDefinitionServices::class)->save($data,$id,$type,$is_vip,$is_virtual);
+        }
         /** @var StoreProductAttrResultServices $storeProductAttrResultServices */
         $storeProductAttrResultServices = app()->make(StoreProductAttrResultServices::class);
         /** @var StoreProductAttrValueServices $storeProductAttrValueServices */

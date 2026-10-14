@@ -22,6 +22,16 @@ Route::group('marketplace', function () {
         ->option(['marketplace_permission'=>'marketplace-merchants-flags']);
     Route::post('merchants/<id>/admin-employee', 'v1.marketplace.Merchant/createAdminEmployee')->name('marketplace-merchants-admin-employee')
         ->option(['marketplace_permission'=>'marketplace-merchants-admin-employee']);
+    Route::get('products', 'v1.marketplace.ProductReview/index')->name('marketplace-products-list')
+        ->option(['marketplace_permission'=>'marketplace-products-list']);
+    Route::put('products/<id>/review', 'v1.marketplace.ProductReview/review')->name('marketplace-products-review')
+        ->option(['marketplace_permission'=>'marketplace-products-review']);
+    Route::put('products/<id>/off-shelf', 'v1.marketplace.ProductReview/offShelf')->name('marketplace-products-off-shelf')
+        ->option(['marketplace_permission'=>'marketplace-products-off-shelf']);
+    Route::post('products/<id>/stock', 'v1.marketplace.ProductStock/adjust')->name('marketplace-products-stock-adjust')
+        ->option(['marketplace_permission'=>'marketplace-products-stock-adjust']);
+    Route::put('products/<id>/submit-review', 'v1.marketplace.ProductSubmission/submitReview')->name('marketplace-products-submit-review')
+        ->option(['marketplace_permission'=>'marketplace-products-submit-review']);
 })->option(['marketplace_api'=>true, 'mark'=>'marketplace', 'mark_name'=>'经营商家'])
     ->middleware([AllowOriginMiddleware::class, MarketplaceBoundaryMiddleware::class,
         AdminAuthTokenMiddleware::class, MarketplaceScopeMiddleware::class]);

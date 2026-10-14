@@ -23,6 +23,84 @@ use think\facade\Log;
  */
 class StoreProductDao extends BaseDao
 {
+    /** Preserve legacy return contracts while narrowing each managed root DML to id AND current owner. */
+    public function update($id, array $data, ?string $key = null)
+    {
+        $guard=\app\services\marketplace\product\LegacyProductWriteServices::class;
+        if(!$guard::active())return parent::update($id,$data,$key);
+        $guard::transaction();$where=is_array($id)?$id:[is_null($key)?$this->getPk():$key=>$id];$last=null;
+        foreach($guard::targetIds()as$productId){$owner=$guard::owner($productId);
+            $query=$this->getModel()->where($where)->where('id',$productId)->where('mer_id',$owner);
+            $guard::query($query);
+            if($query->count()===0)continue;$patch=$this->managedPatch($productId,$data);$root=$guard::assertParent($productId);$effective=$this->effectivePatch($root,$patch);
+            if($effective===[]){$last=$this->getModel()->where('id',$productId)->where('mer_id',$owner)->find();if(!$last instanceof \think\Model)throw new \crmeb\exceptions\AuthUnavailableException();continue;}
+            $last=$this->getModel()::update($effective,['id'=>$productId,'mer_id'=>$owner]);
+            $after=$guard::assertParent($productId);foreach($patch as$field=>$value){
+                if($value===null?$after[$field]!==null:(string)$after[$field]!== (string)$value)throw new \crmeb\exceptions\AuthUnavailableException();}
+        }
+        return $last;
+    }
+    public function batchUpdate(array $ids,array $data,?string $key=null)
+    {
+        $guard=\app\services\marketplace\product\LegacyProductWriteServices::class;
+        if(!$guard::active())return parent::batchUpdate($ids,$data,$key);
+        if($key!==null&&$key!=='id')throw new \crmeb\exceptions\AuthUnavailableException();$count=0;
+        foreach($guard::ids($ids)as$id){$owner=$guard::owner($id);$patch=$this->managedPatch($id,$data);
+            $query=$this->getModel()->where('id',$id)->where('mer_id',$owner);$guard::transaction();
+            $guard::query($query);
+            $effective=$this->effectivePatch($guard::assertParent($id),$patch);$changed=$effective===[]?0:$query->update($effective);if(!is_int($changed)||$changed<0||$changed>1)throw new \crmeb\exceptions\AuthUnavailableException();$count+=$changed;
+            $after=$guard::assertParent($id);foreach($patch as$field=>$value)if($value===null?$after[$field]!==null:(string)$after[$field]!== (string)$value)throw new \crmeb\exceptions\AuthUnavailableException();}
+        return $count;
+    }
+    public function save(array $data)
+    {
+        $guard=\app\services\marketplace\product\LegacyProductWriteServices::class;
+        if(!$guard::active())return parent::save($data);$guard::transaction();
+        $guard::query($this->getModel()->db());$data=$guard::createFields($data);foreach(['price','vip_price','ot_price','postage','cost','gift_price']as$field)
+            if(array_key_exists($field,$data))$data[$field]=$guard::money($data[$field]);
+        $result=parent::save($data);if(!$result instanceof \think\Model)throw new \crmeb\exceptions\AuthUnavailableException();$guard::created($result);return $result;
+    }
+    public function saveAll(array $data)
+    {
+        $guard=\app\services\marketplace\product\LegacyProductWriteServices::class;
+        if(!$guard::active())return parent::saveAll($data);$models=[];
+        foreach($data as$row){if(!is_array($row))throw new \crmeb\exceptions\AuthUnavailableException();
+            if(isset($row['id'])){$id=$guard::id($row['id']);unset($row['id']);$model=$this->update($id,$row);}
+            else{$model=$this->save($row);}if(!$model instanceof \think\Model)throw new \crmeb\exceptions\AuthUnavailableException();$models[]=$model;}
+        return $this->getModel()->toCollection($models);
+    }
+    public function delete($id,?string $key=null)
+    {
+        $guard=\app\services\marketplace\product\LegacyProductWriteServices::class;
+        if(!$guard::active())return parent::delete($id,$key);$guard::transaction();
+        $where=is_array($id)?$id:[is_null($key)?$this->getPk():$key=>$id];$count=0;
+        foreach($guard::targetIds()as$productId){$owner=$guard::owner($productId);
+            $query=$this->getModel()->where($where)->where('id',$productId)->where('mer_id',$owner);$guard::query($query);$n=$query->delete();
+            if(!is_int($n)||$n<0||$n>1)throw new \crmeb\exceptions\AuthUnavailableException();$count+=$n;}
+        return $count;
+    }
+    private function managedPatch(int $id,array $data): array
+    {
+        $guard=\app\services\marketplace\product\LegacyProductWriteServices::class;$root=$guard::assertParent($id);
+        if(isset($data['id'])&&(string)$data['id']!== (string)$id)throw new \crmeb\exceptions\AuthUnavailableException();unset($data['id']);
+        if(isset($data['mer_id'])&&(string)$data['mer_id']!== (string)$root['mer_id'])throw new \crmeb\exceptions\AuthUnavailableException();unset($data['mer_id']);
+        if(array_key_exists('virtual_type',$data)&&(string)$data['virtual_type']!==(string)$root['virtual_type'])throw new \crmeb\exceptions\AdminException('商品类型不能切换');
+        foreach(['price','vip_price','ot_price','postage','cost','gift_price']as$field)if(array_key_exists($field,$data))$data[$field]=$guard::money($data[$field]);
+        foreach(['slider_image','custom_form','params_list']as$field)if(isset($data[$field])&&is_string($data[$field])&&array_key_exists($field,$root)){
+            $new=json_decode($data[$field],true);$newValid=json_last_error()===JSON_ERROR_NONE;
+            $old=is_string($root[$field])?json_decode($root[$field],true):null;$oldValid=is_string($root[$field])&&json_last_error()===JSON_ERROR_NONE;
+            if($newValid&&(($oldValid&&$new===$old)||(in_array($field,['custom_form','params_list'],true)&&$new===[]&&($root[$field]===null||$root[$field]===''))))$data[$field]=$root[$field];
+        }
+        if($guard::preserveSkus($id)&&array_key_exists('stock',$data))$data['stock']=$root['stock'];
+        if(isset($data['is_show'])&&(int)$data['is_show']===1
+            &&((int)$root['review_status']!==2||(int)$root['is_del']!==0))throw new \crmeb\exceptions\AdminException('商品尚未审核通过');
+        // The existing Model discards non-column presentation fields, rather than rejecting valid legacy body families.
+        return array_intersect_key($data,$root);
+    }
+    private function effectivePatch(array $root,array $patch): array
+    {
+        $effective=[];foreach($patch as$field=>$value)if($value===null?$root[$field]!==null:($root[$field]===null||(string)$root[$field]!== (string)$value))$effective[$field]=$value;return $effective;
+    }
     /**
      * 设置模型
      * @return string
@@ -361,7 +439,16 @@ class StoreProductDao extends BaseDao
      */
     public function downAdvance()
     {
-        $this->getModel()->where('presale', 1)->where('presale_end_time', '<', time())->update(['is_show' => 0]);
+        $guard=\app\services\marketplace\product\LegacyProductWriteServices::class;$self=$guard::selfId();$now=time();
+        $ids=$this->getModel()->where('mer_id',$self)->where('presale',1)->where('presale_end_time','<',$now)->column('id');
+        return app()->make($guard)->selfWorker($guard::ids($ids),function()use($ids,$now,$guard):void{
+            foreach($ids as$id){$id=$guard::id($id);$root=$guard::assertParent($id);
+                if((int)$root['presale']!==1||(int)$root['presale_end_time']>=$now)continue;
+                $this->update($id,['is_show'=>0]);
+                $query=\think\facade\Db::name('store_product_cate')->where('product_id',$id);$guard::query($query);$query->update(['status'=>0]);
+                app()->make(\app\services\order\StoreCartServices::class)->changeStatus($id,0);
+            }
+        });
     }
 
     /**

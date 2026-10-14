@@ -23,6 +23,11 @@ use app\adminapi\controller\AuthController;
 use app\services\system\SystemClearServices;
 use app\services\product\product\StoreProductServices;
 use app\services\system\attachment\SystemAttachmentServices;
+use app\services\marketplace\product\LegacyProductWriteServices;
+use crmeb\exceptions\AdminException;
+use crmeb\exceptions\AuthUnavailableException;
+use think\db\Query;
+use think\facade\Db;
 
 
 /**
@@ -102,60 +107,60 @@ class SystemClearData extends AuthController
      */
     public function recycleProduct($id = 0)
     {
-        /** @var StoreProductServices $product */
-        $product = app()->make(StoreProductServices::class);
-        if ($id) {
-            $ids = [$id];
-        } else {
-            $ids = $product->getColumn(['is_del' => 1], 'id');
-        }
-        //清除规格表数据
-        /** @var StoreProductAttrServices $ProductAttr */
-        $productAttr = app()->make(StoreProductAttrServices::class);
-        $productAttr->delete([['product_id', 'in', $ids], ['type', '=', '0']]);
+        $all = $id === 0 || $id === '0';
+        // The full_del route's invalid id0 must not become the separate global recycle operation.
+        if ($all && $this->request->rule()->getOption('legacy_product_write') !== 'legacy-product-recycle')
+            throw new AdminException('请求参数不正确');
+        $ids = $all ? Db::name('store_product')->where('is_del',1)->order('id')->column('id') : [LegacyProductWriteServices::id($id)];
+        $ids = LegacyProductWriteServices::ids($ids);
+        app()->make(LegacyProductWriteServices::class)->run($ids,function()use($ids,$all):void{
+            $roots = []; $cards = [];
+            // Qualify every actual target before deleting any root or child.
+            LegacyProductWriteServices::hardDeleteEligibility($ids);
+            foreach ($ids as $productId) {
+                $root = LegacyProductWriteServices::assertParent($productId);
+                if ($all && (string)$root['is_del'] !== '1') throw new AdminException('回收站商品状态已变化');
+                $roots[$productId] = $root;
+                $rows = $this->productChildQuery('store_product_virtual',$productId)->order('id')->lock(true)->select()->toArray();
+                foreach ($rows as $row) if ((string)$row['uid'] !== '0' || (string)$row['order_id'] !== '')
+                    throw new AdminException('商品存在已发出的虚拟卡密，不能彻底删除');
+                $cards[$productId] = $rows;
+            }
+            foreach ($ids as $productId) {
+                if ($cards[$productId]) {
+                    $cardIds = []; foreach ($cards[$productId] as $card) $cardIds[] = LegacyProductWriteServices::id($card['id'],4294967295);
+                    $query = $this->productChildQuery('store_product_virtual',$productId)->whereIn('id',$cardIds)->where('uid',0)->where('order_id','');
+                    if ($query->delete() !== count($cardIds)) throw new AuthUnavailableException();
+                }
+                if ($this->productChildQuery('store_product_virtual',$productId)->count() !== 0) throw new AuthUnavailableException();
+                foreach (['store_product_attr','store_product_attr_result','store_product_attr_value','store_product_description',
+                    'store_product_cate','store_product_coupon','store_product_reply'] as $table) $this->deleteProductChildren($table,$productId);
+                $owner = LegacyProductWriteServices::owner($productId);
+                if ((string)$owner !== (string)$roots[$productId]['mer_id']) throw new AuthUnavailableException();
+                $query = Db::name('store_product')->where('id',$productId)->where('mer_id',$owner); LegacyProductWriteServices::query($query);
+                if ($query->delete() !== 1) throw new AuthUnavailableException();
+                $query = Db::name('store_product')->where('id',$productId); LegacyProductWriteServices::query($query);
+                if ($query->count() !== 0) throw new AuthUnavailableException();
+            }
+        });
+        return $all ? app('json')->success('清除数据成功') : true;
+    }
 
-        /** @var StoreProductAttrResultServices $productAttrResult */
-        $productAttrResult = app()->make(StoreProductAttrResultServices::class);
-        $productAttrResult->delete([['product_id', 'in', $ids], ['type', '=', '0']]);
-
-        /** @var StoreProductAttrValueServices $productAttrValue */
-        $productAttrValue = app()->make(StoreProductAttrValueServices::class);
-        $productAttrValue->delete([['product_id', 'in', $ids], ['type', '=', '0']]);
-
-        //删除商品详情
-        /** @var StoreDescriptionServices $productDescription */
-        $productDescription = app()->make(StoreDescriptionServices::class);
-        $productDescription->delete([['product_id', 'in', $ids], ['type', '=', '0']]);
-
-        //删除商品关联分类数据
-        /** @var StoreProductCateServices $productCate */
-        $productCate = app()->make(StoreProductCateServices::class);
-        $productCate->delete([['product_id', 'in', $ids]]);
-
-        //删除商品关联优惠券数据
-        /** @var StoreProductCouponServices $productCoupon */
-        $productCoupon = app()->make(StoreProductCouponServices::class);
-        $productCoupon->delete([['product_id', 'in', $ids]]);
-
-        //删除商品收藏记录
-        /** @var StoreProductReplyServices $productRelation */
-        $productRelation = app()->make(StoreProductReplyServices::class);
-        $productRelation->delete([['product_id', 'in', $ids], ['reply_type', '=', 'product']]);
-
-        //删除商品的评论
-        /** @var StoreProductReplyServices $productReply */
-        $productReply = app()->make(StoreProductReplyServices::class);
-        $productReply->delete([['product_id', 'in', $ids]]);
-
-        /** @var StoreProductServices $services */
-        $services = app()->make(StoreProductServices::class);
-        if ($id) {
-            $services->delete($id);
-            return true;
-        } else {
-            $services->delete(1, 'is_del');
-            return app('json')->success('清除数据成功');
-        }
+    private function productChildQuery(string $table, int $productId): Query
+    {
+        if (!in_array($table,['store_product_attr','store_product_attr_result','store_product_attr_value','store_product_description',
+            'store_product_cate','store_product_coupon','store_product_reply','store_product_virtual'],true)) throw new AuthUnavailableException();
+        LegacyProductWriteServices::assertParent($productId);
+        $query = Db::name($table)->where('product_id',$productId);
+        if (in_array($table,['store_product_attr','store_product_attr_result','store_product_attr_value','store_product_description'],true)) $query->where('type',0);
+        if ($table === 'store_product_reply') $query->where('reply_type','product');
+        LegacyProductWriteServices::query($query); return $query;
+    }
+    private function deleteProductChildren(string $table, int $productId): void
+    {
+        $before = $this->productChildQuery($table,$productId)->lock(true)->select()->toArray();
+        if ($before && $this->productChildQuery($table,$productId)->delete() !== count($before)) throw new AuthUnavailableException();
+        if ($this->productChildQuery($table,$productId)->count() !== 0) throw new AuthUnavailableException();
     }
 
     /**

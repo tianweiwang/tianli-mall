@@ -187,6 +187,8 @@ class StoreProduct extends AuthController
      */
     public function delete($id)
     {
+        $id=\app\services\marketplace\product\LegacyProductWriteServices::routeId($id);
+        return app()->make(\app\services\marketplace\product\LegacyProductWriteServices::class)->run([$id],function()use($id){
         //删除商品检测是否有参与活动
         $this->services->checkActivity($id);
         $res = $this->services->del($id);
@@ -194,6 +196,7 @@ class StoreProduct extends AuthController
         $cartService = app()->make(StoreCartServices::class);
         $cartService->changeStatus($id, 0);
         return app('json')->success($res);
+        });
     }
 
     /**

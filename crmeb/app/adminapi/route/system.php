@@ -82,7 +82,7 @@ Route::group('system', function () {
     /** 数据清除 */
     Route::group(function () {
         //清除用户数据
-        Route::get('clear/:type', 'v1.system.SystemClearData/index')->option(['real_name' => '清除用户数据']);
+        Route::get('clear/:type', 'v1.system.SystemClearData/index')->option(['legacy_product_write'=>'legacy-product-recycle', 'real_name' => '清除用户数据']);
         //清除缓存
         Route::get('refresh_cache/cache', 'v1.system.Clear/refresh_cache')->option(['real_name' => '清除系统缓存']);
         //清除日志
@@ -281,7 +281,9 @@ Route::group('system', function () {
 
 })->middleware([
     \app\http\middleware\AllowOriginMiddleware::class,
+    \app\adminapi\middleware\LegacyProductBoundaryMiddleware::class,
     \app\adminapi\middleware\AdminAuthTokenMiddleware::class,
+    \app\adminapi\middleware\LegacyProductScopeMiddleware::class,
     \app\adminapi\middleware\AdminCheckRoleMiddleware::class,
     \app\adminapi\middleware\AdminLogMiddleware::class
 ])->option(['mark' => 'system', 'mark_name' => '系统维护']);
@@ -308,7 +310,9 @@ Route::group('system', function () {
     Route::post('file/mark/save', 'v1.system.SystemFile/fileMarkSave')->option(['real_name' => '目录文件备注保存']);
 })->middleware([
     \app\http\middleware\AllowOriginMiddleware::class,
+    \app\adminapi\middleware\LegacyProductBoundaryMiddleware::class,
     \app\adminapi\middleware\AdminAuthTokenMiddleware::class,
+    \app\adminapi\middleware\LegacyProductScopeMiddleware::class,
     \app\adminapi\middleware\AdminCheckRoleMiddleware::class,
     \app\adminapi\middleware\AdminEditorTokenMiddleware::class,
     \app\adminapi\middleware\AdminLogMiddleware::class

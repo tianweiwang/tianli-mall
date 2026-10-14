@@ -20,6 +20,9 @@ use crmeb\basic\BaseJobs;
 use crmeb\services\CacheService;
 use crmeb\traits\QueueTrait;
 use think\facade\Log;
+use app\services\marketplace\product\LegacyProductWriteServices;
+use think\facade\Db;
+use crmeb\exceptions\AuthUnavailableException;
 
 /**
  * 复制商品
@@ -38,6 +41,8 @@ class ProductCopyJob extends BaseJobs
     public function copyDescriptionImage($id, $description, $image, $count)
     {
         try {
+            $id=LegacyProductWriteServices::id($id);
+            return app()->make(LegacyProductWriteServices::class)->selfWorker([$id],function()use($id,$description,$image,$count):bool{
             /** @var CopyTaobaoServices $copyTaobao */
             $copyTaobao = app()->make(CopyTaobaoServices::class);
             /** @var StoreDescriptionServices $storeDescriptionServices */
@@ -63,10 +68,11 @@ class ProductCopyJob extends BaseJobs
                 CacheService::set('desc_images_' . $id, $description_cache);
                 CacheService::set('desc_images_count' . $id, $desc_count);
             }
+            return true;
+            });
         } catch (\Throwable $e) {
-            Log::error('下载商品详情图片失败，失败原因:' . $e->getMessage() . '_' . $e->getFile() . '_' . $e->getLine());
+            self::unavailable('description');
         }
-        return true;
     }
 
     /**
@@ -77,6 +83,8 @@ class ProductCopyJob extends BaseJobs
     public function copySliderImage($id, $image, $count)
     {
         try {
+            $id=LegacyProductWriteServices::id($id);
+            return app()->make(LegacyProductWriteServices::class)->selfWorker([$id],function()use($id,$image,$count):bool{
             /** @var CopyTaobaoServices $copyTaobao */
             $copyTaobao = app()->make(CopyTaobaoServices::class);
             /** @var StoreProductServices $StoreProductServices */
@@ -98,10 +106,11 @@ class ProductCopyJob extends BaseJobs
             } else {
                 CacheService::set('slider_images_' . $id, $slider_images);
             }
+            return true;
+            });
         } catch (\Throwable $e) {
-            Log::error('下载商品轮播图片失败，失败原因:' . $e->getMessage() . '_' . $e->getFile() . '_' . $e->getLine());
+            self::unavailable('slider');
         }
-        return true;
     }
 
     /**
@@ -113,16 +122,29 @@ class ProductCopyJob extends BaseJobs
     public function copyAttrImage($value_id, $value_image)
     {
         try {
+            $value_id=LegacyProductWriteServices::id($value_id,2147483647);
+            $row=Db::name('store_product_attr_value')->where('id',$value_id)->where('type',0)->field(['id','product_id','unique'])->find();
+            if(!is_array($row))throw new AuthUnavailableException();$id=LegacyProductWriteServices::id($row['product_id']);
+            return app()->make(LegacyProductWriteServices::class)->selfWorker([$id],function()use($id,$value_id,$value_image,$row):bool{
+            $query=Db::name('store_product_attr_value')->where('id',$value_id)->where('product_id',$id)->where('type',0)->where('unique',$row['unique'])->lock(true);
+            LegacyProductWriteServices::query($query);$current=$query->find();if(!is_array($current))throw new AuthUnavailableException();
             /** @var CopyTaobaoServices $copyTaobao */
             $copyTaobao = app()->make(CopyTaobaoServices::class);
             /** @var StoreProductAttrValueServices $StoreProductAttrValueServices */
             $StoreProductAttrValueServices = app()->make(StoreProductAttrValueServices::class);
             //下载图片
             $res = $copyTaobao->downloadCopyImage($value_image);
-            $StoreProductAttrValueServices->update($value_id, ['image' => $res]);
+            $affected=$query->update(['image'=>$res]);if(!is_int($affected)||$affected<0||$affected>1||$query->value('image')!==$res)throw new AuthUnavailableException();
+            return true;
+            });
         } catch (\Throwable $e) {
-            Log::error('下载商品规格图片失败，失败原因:' . $e->getMessage() . '_' . $e->getFile() . '_' . $e->getLine());
+            self::unavailable('attribute');
         }
-        return true;
+    }
+    private static function unavailable(string $phase): never
+    {
+        $record='{"event":"legacy_product_copy_unavailable","phase":"'.$phase.'"}';
+        try{Log::error($record);}catch(\Throwable $ignored){error_log($record);}
+        throw new AuthUnavailableException();
     }
 }

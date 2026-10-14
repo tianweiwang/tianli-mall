@@ -50,13 +50,13 @@ Route::group('product', function () {
         //商品列表头
         Route::get('product/type_header', 'v1.product.StoreProduct/type_header')->option(['real_name' => '商品列表头部数据']);
         //修改商品状态
-        Route::put('product/set_show/:id/:is_show', 'v1.product.StoreProduct/set_show')->option(['real_name' => '修改商品状态']);
+        Route::put('product/set_show/:id/:is_show', 'v1.product.StoreProduct/set_show')->option(['legacy_product_write'=>'legacy-product-show', 'real_name' => '修改商品状态']);
         //商品快速编辑
 //        Route::put('product/set_product/:id', 'v1.product.StoreProduct/set_product')->option(['real_name' => '商品快速编辑']);
         //设置批量商品上架
-        Route::put('product/product_show', 'v1.product.StoreProduct/product_show')->option(['real_name' => '设置批量商品上架']);
+        Route::put('product/product_show', 'v1.product.StoreProduct/product_show')->option(['legacy_product_write'=>'legacy-product-batch-show', 'real_name' => '设置批量商品上架']);
         //设置批量商品下架
-        Route::put('product/product_unshow', 'v1.product.StoreProduct/product_unshow')->option(['real_name' => '设置批量商品下架']);
+        Route::put('product/product_unshow', 'v1.product.StoreProduct/product_unshow')->option(['legacy_product_write'=>'legacy-product-batch-hide', 'real_name' => '设置批量商品下架']);
         //规则列表
         Route::get('product/rule', 'v1.product.StoreProductRule/index')->option(['real_name' => '商品规则列表']);
         //规则 保存新建或编辑
@@ -78,28 +78,28 @@ Route::group('product', function () {
         //商品详情
         Route::get('product/:id', 'v1.product.StoreProduct/get_product_info')->option(['real_name' => '商品详情']);
         //加入回收站
-        Route::delete('product/:id', 'v1.product.StoreProduct/delete')->option(['real_name' => '商品放入回收站']);
+        Route::delete('product/:id', 'v1.product.StoreProduct/delete')->option(['legacy_product_write'=>'legacy-product-delete', 'real_name' => '商品放入回收站']);
         //加入回收站
-        Route::post('product/batch_delete', 'v1.product.StoreProduct/batchDelete')->option(['real_name' => '商品批量放入回收站']);
+        Route::post('product/batch_delete', 'v1.product.StoreProduct/batchDelete')->option(['legacy_product_write'=>'legacy-product-batch-delete', 'real_name' => '商品批量放入回收站']);
         //批量从回收站恢复
-        Route::post('product/batch_recover', 'v1.product.StoreProduct/batchRecover')->option(['real_name' => '批量从回收站恢复']);
+        Route::post('product/batch_recover', 'v1.product.StoreProduct/batchRecover')->option(['legacy_product_write'=>'legacy-product-batch-recover', 'real_name' => '批量从回收站恢复']);
         //保存新建或保存
-        Route::post('product/:id', 'v1.product.StoreProduct/save')->option(['real_name' => '新建或修改商品']);
+        Route::post('product/:id', 'v1.product.StoreProduct/save')->option(['legacy_product_write'=>'legacy-product-save', 'real_name' => '新建或修改商品']);
         //生成属性
         Route::post('generate_attr/:id/:type', 'v1.product.StoreProduct/is_format_attr')->option(['real_name' => '生成商品规格列表']);
         //商品批量操作
-        Route::post('batch/setting', 'v1.product.StoreProduct/batchSetting')->option(['real_name' => '商品批量设置']);
+        Route::post('batch/setting', 'v1.product.StoreProduct/batchSetting')->option(['legacy_product_write'=>'legacy-product-batch-setting', 'real_name' => '商品批量设置']);
         //商品类型接口
         Route::get('product_type_config', 'v1.product.StoreProduct/productTypeConfig')->option(['real_name' => '商品类型接口']);
         //商品迁移导出
         Route::get('product_export', 'v1.product.StoreProduct/productExport')->option(['real_name' => '商品迁移导出']);
         //商品迁移导入
-        Route::post('product_import', 'v1.product.StoreProduct/productImport')->option(['real_name' => '商品迁移导出']);
+        Route::post('product_import', 'v1.product.StoreProduct/productImport')->option(['legacy_product_write'=>'legacy-product-import', 'real_name' => '商品迁移导出']);
         //回收站商品彻底删除
-        Route::delete('full_del/:id', 'v1.product.StoreProduct/fullDel')->option(['real_name' => '回收站商品彻底删除']);
+        Route::delete('full_del/:id', 'v1.product.StoreProduct/fullDel')->option(['legacy_product_write'=>'legacy-product-full-delete', 'real_name' => '回收站商品彻底删除']);
 
         Route::get('other_info/:id/:type', 'v1.product.StoreProduct/otherInfo')->option(['real_name' => '商品其他信息']);
-        Route::post('other_save/:id/:type', 'v1.product.StoreProduct/otherSave')->option(['real_name' => '修改商品其他信息']);
+        Route::post('other_save/:id/:type', 'v1.product.StoreProduct/otherSave')->option(['legacy_product_write'=>'legacy-product-other-save', 'real_name' => '修改商品其他信息']);
 
     })->option(['parent' => 'product', 'cate_name' => '商品']);
 
@@ -108,17 +108,17 @@ Route::group('product', function () {
         //评论列表
         Route::get('reply', 'v1.product.StoreProductReply/index')->option(['real_name' => '商品评论列表']);
         //回复评论
-        Route::put('reply/set_reply/:id', 'v1.product.StoreProductReply/set_reply')->option(['real_name' => '商品回复评论']);
+        Route::put('reply/set_reply/:id', 'v1.product.StoreProductReply/set_reply')->option(['legacy_product_write'=>'legacy-product-reply-write', 'real_name' => '商品回复评论']);
         //删除评论
-        Route::delete('reply/:id', 'v1.product.StoreProductReply/delete')->option(['real_name' => '删除商品评论']);
+        Route::delete('reply/:id', 'v1.product.StoreProductReply/delete')->option(['legacy_product_write'=>'legacy-product-reply-delete', 'real_name' => '删除商品评论']);
         //调起虚拟评论表单
         Route::get('reply/fictitious_reply/:product_id', 'v1.product.StoreProductReply/fictitious_reply')->option(['real_name' => '虚拟评论表单']);
         //保存虚拟评论
-        Route::post('reply/save_fictitious_reply', 'v1.product.StoreProductReply/save_fictitious_reply')->option(['real_name' => '保存虚拟评论']);
+        Route::post('reply/save_fictitious_reply', 'v1.product.StoreProductReply/save_fictitious_reply')->option(['legacy_product_write'=>'legacy-product-reply-create', 'real_name' => '保存虚拟评论']);
         //审核商品评论
-        Route::put('reply/set_status/:id/:status', 'v1.product.StoreProductReply/set_status')->option(['real_name' => '审核商品评论']);
+        Route::put('reply/set_status/:id/:status', 'v1.product.StoreProductReply/set_status')->option(['legacy_product_write'=>'legacy-product-reply-review', 'real_name' => '审核商品评论']);
         //批量审核商品评论
-        Route::post('reply/batch_set_status', 'v1.product.StoreProductReply/batch_set_status')->option(['real_name' => '批量审核商品评论']);
+        Route::post('reply/batch_set_status', 'v1.product.StoreProductReply/batch_set_status')->option(['legacy_product_write'=>'legacy-product-reply-batch-review', 'real_name' => '批量审核商品评论']);
     })->option(['parent' => 'product', 'cate_name' => '商品评论']);
 
     /** 商品采集 */
@@ -171,7 +171,9 @@ Route::group('product', function () {
 
 })->middleware([
     \app\http\middleware\AllowOriginMiddleware::class,
+    \app\adminapi\middleware\LegacyProductBoundaryMiddleware::class,
     \app\adminapi\middleware\AdminAuthTokenMiddleware::class,
+    \app\adminapi\middleware\LegacyProductScopeMiddleware::class,
     \app\adminapi\middleware\AdminCheckRoleMiddleware::class,
     \app\adminapi\middleware\AdminLogMiddleware::class
 ])->option(['mark' => 'product', 'mark_name' => '商品管理']);

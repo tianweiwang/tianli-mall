@@ -367,6 +367,15 @@ class StoreCartServices extends BaseServices
      */
     public function changeStatus(int $productId, $status = 0)
     {
+        $guard=\app\services\marketplace\product\LegacyProductWriteServices::class;
+        if($guard::active()){
+            $guard::assertParent($productId);
+            // Normal-product lifecycle never rewrites activity carts or paid cart/order snapshots.
+            $query=\think\facade\Db::name('store_cart')->where('product_id',$productId)->where('type',0)->where('is_pay',0);
+            $guard::query($query);(clone$query)->lock(true)->select();(clone$query)->update(['status'=>$status]);
+            if((clone$query)->where('status','<>',$status)->count()>0)throw new \crmeb\exceptions\AuthUnavailableException();
+            return;
+        }
         $this->dao->update($productId, ['status' => $status], 'product_id');
     }
 

@@ -214,6 +214,13 @@ class StoreProductServices extends BaseServices
      */
     public function setShow(array $ids, int $is_show)
     {
+        return app()->make(\app\services\marketplace\product\LegacyProductWriteServices::class)->run($ids,function()use($ids,$is_show){
+            \app\services\marketplace\product\LegacyProductWriteServices::showEligibility($ids,(bool)$is_show);
+            return $this->legacySetShow($ids,$is_show);
+        });
+    }
+    private function legacySetShow(array $ids, int $is_show)
+    {
         if (empty($ids)) throw new AdminException('参数错误');
 //        if ($is_show == 0) {
 //            //下架检测是否有参与活动商品
@@ -330,7 +337,8 @@ class StoreProductServices extends BaseServices
         $productInfo['protection_list'] = $productInfo['protection_list'] != '' ? array_map('intval', explode(',', $productInfo['protection_list'])) : [];
         /** @var StoreProductAttrServices $storeProductAttrServices */
         $storeProductAttrServices = app()->make(StoreProductAttrServices::class);
-        //无属性添加默认属性
+        $temporaryDefault = null; $temporaryDefinition = null;
+        // Missing definitions are synthesized for this response; GET never repairs persistent SKU identity.
         if (!$storeProductAttrResultServices->getResult(['product_id' => $id, 'type' => 0])) {
             $attr = [
                 [
@@ -356,12 +364,25 @@ class StoreProductServices extends BaseServices
                 'brokerage' => 0,
                 'brokerage_two' => 0,
             ];
-            $skuList = $this->validateProductAttr($attr, $detail, $id, 0, 1, true);
-            $storeProductAttrServices->saveProductAttr($skuList, $id, 0);
-            $this->dao->update($id, ['spec_type' => 0]);
+            $temporaryDefault = ['image'=>$productInfo['image'],'vip_price'=>$productInfo['vip_price'] ?? 0,
+                'price'=>$productInfo['price'],'cost'=>$productInfo['cost'],'ot_price'=>$productInfo['ot_price'],
+                'stock'=>$productInfo['stock'],'bar_code'=>'','bar_code_number'=>'','weight'=>0,'volume'=>0,
+                'brokerage'=>0,'brokerage_two'=>0,'unique'=>'','coupon_id'=>0,'disk_info'=>''];
+            $persisted = \think\facade\Db::name('store_product_attr_value')->where('product_id',$id)->where('type',0)->order('id','asc')->select()->toArray();
+            if (count($persisted) === 1) $temporaryDefault = array_merge($temporaryDefault,$persisted[0]);
+            $productInfo['spec_type'] = 0;
+            if (count($persisted) > 1) {
+                $temporaryDefinition = ['attr'=>[['value'=>'规格','detail'=>array_values(array_unique(array_column($persisted,'suk')))]],'value'=>[]];
+                foreach ($persisted as $sku) {
+                    $entry = $sku; $entry['detail'] = ['规格'=>$sku['suk']]; $entry['attr_arr'] = [$sku['suk']]; $entry['pic'] = $sku['image'];
+                    $entry['virtual_list'] = app()->make(StoreProductVirtualServices::class)->getArr($sku['unique'],$id);
+                    $temporaryDefinition['value'][] = $entry;
+                }
+                $productInfo['spec_type'] = 1;
+            }
         }
         if ($productInfo['spec_type'] == 1) {
-            $result = $storeProductAttrResultServices->getResult(['product_id' => $id, 'type' => 0]);
+            $result = $temporaryDefinition ?? $storeProductAttrResultServices->getResult(['product_id' => $id, 'type' => 0]);
             $attrInfo = $storeProductAttrValueServices->getColumn(['product_id' => $id, 'type' => 0]);
             foreach ($result['value'] as $k => $v) {
                 if (!isset($v['is_show'])) {
@@ -402,7 +423,7 @@ class StoreProductServices extends BaseServices
         } else {
             /** @var StoreProductVirtualServices $virtualService */
             $virtualService = app()->make(StoreProductVirtualServices::class);
-            $result = $storeProductAttrValueServices->getOne(['product_id' => $id, 'type' => 0]);
+            $result = $temporaryDefault ?? $storeProductAttrValueServices->getOne(['product_id' => $id, 'type' => 0]);
             $productInfo['items'] = [];
             $productInfo['attrs'] = [];
             $productInfo['attr'] = [
@@ -591,7 +612,7 @@ class StoreProductServices extends BaseServices
      */
     public function createSpu()
     {
-        return substr(implode(NULL, array_map('ord', str_split(substr(uniqid(), 7, 13), 1))), 0, 8) . str_pad((string)mt_rand(1, 99999), 5, '0', STR_PAD_LEFT);
+        return substr(implode('', array_map('ord', str_split(substr(uniqid(), 7, 13), 1))), 0, 8) . str_pad((string)mt_rand(1, 99999), 5, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -600,6 +621,13 @@ class StoreProductServices extends BaseServices
      * @param array $data
      */
     public function save(int $id, array $data)
+    {
+        return app()->make(\app\services\marketplace\product\LegacyProductWriteServices::class)->run($id?[$id]:[],function()use($id,$data){
+            \app\services\marketplace\product\LegacyProductWriteServices::saveReferences($id,$data);
+            return $this->legacySave($id,$data);
+        },$id===0,true);
+    }
+    private function legacySave(int $id, array $data)
     {
         if (count($data['cate_id']) < 1) throw new AdminException('请选择商品分类');
         if (!$data['store_name']) throw new AdminException('请输入商品名称');
@@ -648,7 +676,9 @@ class StoreProductServices extends BaseServices
                 $item['brokerage'] = 0;
                 $item['brokerage_two'] = 0;
             }
-            if (($item['brokerage'] + $item['brokerage_two']) > $item['price']) {
+            $amount=\app\services\marketplace\product\LegacyProductWriteServices::class;
+            $item['brokerage']=$amount::money($item['brokerage']);$item['brokerage_two']=$amount::money($item['brokerage_two']);$item['price']=$amount::money($item['price']);
+            if (bccomp(bcadd($item['brokerage'], $item['brokerage_two'], 2), $item['price'], 2)>0) {
                 throw new AdminException('一二级返佣相加不能大于商品售价');
             }
             if (isset($item['detail'])) {
@@ -684,17 +714,18 @@ class StoreProductServices extends BaseServices
                 $filtered = array_filter($detail, function ($item) {
                     return $item['is_show'] == 1;
                 });
-                $data['price'] = min(array_column($filtered, 'price'));
-                $data['ot_price'] = min(array_column($filtered, 'ot_price'));
-                $data['cost'] = isset($data['cost']) ? min(array_column($filtered, 'cost')) : 0;
+                if($filtered===[])$filtered=$detail;
+                $data['price'] = \app\services\marketplace\product\LegacyProductWriteServices::minimum(array_column($filtered, 'price'));
+                $data['ot_price'] = \app\services\marketplace\product\LegacyProductWriteServices::minimum(array_column($filtered, 'ot_price'));
+                $data['cost'] = \app\services\marketplace\product\LegacyProductWriteServices::minimum(array_column($filtered, 'cost'));
                 if (!$data['cost']) {
                     $data['cost'] = 0;
                 }
             }
         } else {
-            $data['price'] = min(array_column($detail, 'price'));
-            $data['ot_price'] = min(array_column($detail, 'ot_price'));
-            $data['cost'] = isset($data['cost']) ? min(array_column($detail, 'cost')) : 0;
+            $data['price'] = \app\services\marketplace\product\LegacyProductWriteServices::minimum(array_column($detail, 'price'));
+            $data['ot_price'] = \app\services\marketplace\product\LegacyProductWriteServices::minimum(array_column($detail, 'ot_price'));
+            $data['cost'] = \app\services\marketplace\product\LegacyProductWriteServices::minimum(array_column($detail, 'cost'));
             if (!$data['cost']) {
                 $data['cost'] = 0;
             }
@@ -724,7 +755,7 @@ class StoreProductServices extends BaseServices
         if (isset($data['description_images'])) {
             $descriptionImages = $data['description_images'];
         }
-        $this->transaction(function () use ($id, $is_copy, $data, $descriptionImages, $description, $cate_id, $storeDescriptionServices, $storeProductCateServices, $storeProductAttrServices, $storeProductCouponServices, $storeCategoryServices, $detail, $attr, $coupon_ids, $type, $slider_image) {
+        return $this->transaction(function () use ($id, $is_copy, $data, $descriptionImages, $description, $cate_id, $storeDescriptionServices, $storeProductCateServices, $storeProductAttrServices, $storeProductCouponServices, $storeCategoryServices, $detail, $attr, $coupon_ids, $type, $slider_image) {
             if ($data['spec_type'] == 0) {
                 $attr = [
                     [
@@ -756,20 +787,16 @@ class StoreProductServices extends BaseServices
                 $storeDescriptionServices->saveDescription($id, $description);
                 $cateData = [];
                 $time = time();
-                $cateGory = $storeCategoryServices->getColumn([['id', 'IN', $cate_id]], 'id,pid', 'id');
+                $currentParents = \app\services\marketplace\product\LegacyProductWriteServices::categories($cate_id);
                 foreach ($cate_id as $cid) {
-                    if ($cid && isset($cateGory[$cid]['pid'])) {
-                        $cateData[] = ['product_id' => $id, 'cate_id' => $cid, 'cate_pid' => $cateGory[$cid]['pid'] ?: $cid, 'status' => $data['is_show'], 'add_time' => $time];
+                    if ($cid && isset($currentParents[$cid])) {
+                        $cateData[] = ['product_id' => $id, 'cate_id' => $cid, 'cate_pid' => $currentParents[$cid], 'status' => $data['is_show'], 'add_time' => $time];
                     }
                 }
                 $storeProductCateServices->change($id, $cateData);
                 $skuList = $this->validateProductAttr($attr, $detail, $id);
                 $attrRes = $storeProductAttrServices->saveProductAttr($skuList, $id, 0, $data['is_vip'], $data['virtual_type']);
-                if (!empty($coupon_ids)) {
-                    $storeProductCouponServices->setCoupon($id, $coupon_ids);
-                } else {
-                    $storeProductCouponServices->delete(['product_id' => $id]);
-                }
+                \app\services\marketplace\product\LegacyProductWriteServices::coupons($id,$coupon_ids);
                 if (!$attrRes) throw new AdminException('添加失败');
             } else {
                 $data['add_time'] = time();
@@ -779,16 +806,16 @@ class StoreProductServices extends BaseServices
                 $storeDescriptionServices->saveDescription($res->id, $description);
                 $cateData = [];
                 $time = time();
-                $cateGory = $storeCategoryServices->getColumn([['id', 'IN', $cate_id]], 'id,pid', 'id');
+                $currentParents = \app\services\marketplace\product\LegacyProductWriteServices::categories($cate_id);
                 foreach ($cate_id as $cid) {
-                    if ($cid && isset($cateGory[$cid]['pid'])) {
-                        $cateData[] = ['product_id' => $res->id, 'cate_id' => $cid, 'cate_pid' => $cateGory[$cid]['pid'], 'status' => $data['is_show'], 'add_time' => $time];
+                    if ($cid && isset($currentParents[$cid])) {
+                        $cateData[] = ['product_id' => $res->id, 'cate_id' => $cid, 'cate_pid' => $currentParents[$cid], 'status' => $data['is_show'], 'add_time' => $time];
                     }
                 }
                 $storeProductCateServices->change($res->id, $cateData);
                 $skuList = $this->validateProductAttr($attr, $detail, $res->id, 0, 1, true);
                 $attrRes = $storeProductAttrServices->saveProductAttr($skuList, $res->id, 0, $data['is_vip'], $data['virtual_type']);
-                if (!empty($coupon_ids)) $storeProductCouponServices->setCoupon($res->id, $coupon_ids);
+                \app\services\marketplace\product\LegacyProductWriteServices::coupons((int)$res->id,$coupon_ids);
                 if (!$attrRes) throw new AdminException('添加失败');
 
                 //采集商品下载图片
@@ -797,7 +824,7 @@ class StoreProductServices extends BaseServices
                     //下载商品轮播图
                     foreach ($slider_image as $s_image) {
                         if (sys_config('queue_open', 0) == 1) {
-                            ProductCopyJob::dispatch('copySliderImage', [$res->id, $s_image, count($slider_image)]);
+                            \app\services\marketplace\product\LegacyProductWriteServices::afterCommit(static fn()=>ProductCopyJob::dispatch('copySliderImage', [$res->id, $s_image, count($slider_image)]));
                         } else {
                             //下载图片
                             $s_image_down[] = app()->make(CopyTaobaoServices::class)->downloadCopyImage(!is_int(strpos($s_image, 'http')) ? 'http://' . ltrim($s_image, '\//') : $s_image);
@@ -808,7 +835,7 @@ class StoreProductServices extends BaseServices
                     preg_match_all('#<img.*?src="([^"]*)"[^>]*>#i', $description, $match);
                     foreach ($match[1] as $d_image) {
                         if (sys_config('queue_open', 0) == 1) {
-                            ProductCopyJob::dispatch('copyDescriptionImage', [$res->id, $description, $d_image, count($match[1])]);
+                            \app\services\marketplace\product\LegacyProductWriteServices::afterCommit(static fn()=>ProductCopyJob::dispatch('copyDescriptionImage', [$res->id, $description, $d_image, count($match[1])]));
                         } else {
                             $d_img = app()->make(CopyTaobaoServices::class)->downloadCopyImage(!is_int(strpos($d_image, 'http')) ? 'http://' . ltrim($d_image, '\//') : $d_image);
                             $description = str_replace($d_image, $d_img, $description);
@@ -820,10 +847,13 @@ class StoreProductServices extends BaseServices
                     $attrValueList = $productAttrValue->getColumn(['product_id' => $res->id, 'type' => 0], 'image', 'id');
                     foreach ($attrValueList as $value_id => $value_image) {
                         if (sys_config('queue_open', 0) == 1) {
-                            ProductCopyJob::dispatch('copyAttrImage', [$value_id, $value_image]);
+                            \app\services\marketplace\product\LegacyProductWriteServices::afterCommit(static fn()=>ProductCopyJob::dispatch('copyAttrImage', [$value_id, $value_image]));
                         } else {
                             $v_img = app()->make(CopyTaobaoServices::class)->downloadCopyImage(!is_int(strpos($value_image, 'http')) ? 'http://' . ltrim($value_image, '\//') : $value_image);
-                            $productAttrValue->update($value_id, ['image' => $v_img]);
+                            $guard=\app\services\marketplace\product\LegacyProductWriteServices::class;$guard::assertParent((int)$res->id);
+                            $query=\think\facade\Db::name('store_product_attr_value')->where('id',$value_id)->where('product_id',$res->id)->where('type',0);
+                            $guard::query($query);$affected=$query->update(['image'=>$v_img]);
+                            if(!is_int($affected)||$affected<0||$affected>1||$query->value('image')!==$v_img)throw new \crmeb\exceptions\AuthUnavailableException();
                         }
                     }
 
@@ -833,6 +863,7 @@ class StoreProductServices extends BaseServices
                     }
                 }
             }
+            return $id ?: (int)$res->id;
         });
     }
 
@@ -978,6 +1009,10 @@ class StoreProductServices extends BaseServices
      */
     public function del(int $id)
     {
+        return app()->make(\app\services\marketplace\product\LegacyProductWriteServices::class)->run([$id],fn()=>$this->legacyDelete($id));
+    }
+    private function legacyDelete(int $id)
+    {
         if (!$id) throw new AdminException('参数错误');
         $productInfo = $this->dao->get($id);
         if (!$productInfo) throw new AdminException('商品不存在');
@@ -986,7 +1021,7 @@ class StoreProductServices extends BaseServices
         if ($productInfo['is_del'] == 1) {
             $data['is_del'] = 0;
             $res = $this->dao->update($id, $data);
-            $storeProductCateServices->update(['product_id' => $id], ['status' => 1]);
+            $storeProductCateServices->update(['product_id' => $id], ['status' => \app\services\marketplace\product\LegacyProductWriteServices::categoryStatus($id)]);
             if (!$res) throw new AdminException('恢复失败');
             return '恢复成功';
         } else {
@@ -1213,6 +1248,10 @@ class StoreProductServices extends BaseServices
      * @return mixed
      */
     public function create(array $data)
+    {
+        return app()->make(\app\services\marketplace\product\LegacyProductWriteServices::class)->run([],fn()=>$this->legacyCreate($data),true);
+    }
+    private function legacyCreate(array $data)
     {
         return $this->dao->save($data);
     }
@@ -2223,6 +2262,18 @@ class StoreProductServices extends BaseServices
      */
     public function batchSetting($data)
     {
+        return app()->make(\app\services\marketplace\product\LegacyProductWriteServices::class)->run($data['ids'],function()use($data){
+            $guard=\app\services\marketplace\product\LegacyProductWriteServices::class;
+            if((int)$data['type']===1)$guard::categories($data['cate_id']);
+            if((int)$data['type']===2)foreach($guard::targetIds()as$id){
+                $parent=$guard::assertParent($id);
+                if((int)$parent['virtual_type']===0)$guard::freight($guard::owner($id),$data['freight'],$data['temp_id']);
+            }
+            return $this->legacyBatchSetting($data);
+        },false,true);
+    }
+    private function legacyBatchSetting($data)
+    {
         $ids = $data['ids'];
         $batchData = [];
         if (!count($ids)) throw new AdminException('请选择商品');
@@ -2232,14 +2283,13 @@ class StoreProductServices extends BaseServices
                 if (!count($cate_id)) throw new AdminException('请选择分类');
                 /** @var StoreCategoryServices $storeCategoryServices */
                 $storeCategoryServices = app()->make(StoreCategoryServices::class);
-                $cateGory = $storeCategoryServices->getColumn([['id', 'IN', $cate_id]], 'id,pid', 'id');
-                if (!$cateGory) throw new AdminException('分类不存在');
+                $currentParents = \app\services\marketplace\product\LegacyProductWriteServices::categories($cate_id);
                 $time = time();
                 $cateData = [];
                 foreach ($cate_id as $cid) {
-                    if ($cid && isset($cateGory[$cid]['pid'])) {
+                    if ($cid && isset($currentParents[$cid])) {
                         foreach ($ids as $product_id) {
-                            $cateData[$product_id][] = ['product_id' => $product_id, 'cate_id' => $cid, 'cate_pid' => $cateGory[$cid]['pid'], 'status' => 1, 'add_time' => $time];
+                            $cateData[$product_id][] = ['product_id' => $product_id, 'cate_id' => $cid, 'cate_pid' => $currentParents[$cid], 'status' => \app\services\marketplace\product\LegacyProductWriteServices::categoryStatus($product_id), 'add_time' => $time];
                         }
                     }
                 }
@@ -2277,11 +2327,7 @@ class StoreProductServices extends BaseServices
                 /** @var StoreProductCouponServices $storeProductCouponServices */
                 $storeProductCouponServices = app()->make(StoreProductCouponServices::class);
                 foreach ($ids as $product_id) {
-                    if (!empty($data['coupon_ids'])) {
-                        $storeProductCouponServices->setCoupon($product_id, $data['coupon_ids']);
-                    } else {
-                        $storeProductCouponServices->delete(['product_id' => $product_id]);
-                    }
+                    \app\services\marketplace\product\LegacyProductWriteServices::coupons((int)$product_id,$data['coupon_ids']);
                 }
                 break;
             case 5:
@@ -2622,55 +2668,64 @@ class StoreProductServices extends BaseServices
 
     public function otherSave($id, $type, $data)
     {
-        $upProductData = [];
-        if ($type == 1) {
-            $upProductData = [
-                'is_sub' => $data['is_sub'],
-            ];
-        } elseif ($type == 2) {
-            $upProductData = [
-                'is_vip' => $data['is_vip'],
-                'vip_product' => $data['vip_product'],
-                'vip_product_type' => $data['vip_product_type'],
-            ];
+        return app()->make(\app\services\marketplace\product\LegacyProductWriteServices::class)->run([$id],function()use($id,$type,$data){
+            return $this->legacyOtherSave($id,$type,$data);
+        },false,true);
+    }
+    private function legacyOtherSave($id, $type, $data)
+    {
+        $guard=\app\services\marketplace\product\LegacyProductWriteServices::class;
+        $guard::assertParent($id);$type=(int)$type;
+        $upProductData=[];
+        if($type===1)$upProductData=['is_sub'=>$data['is_sub']];
+        elseif($type===2)$upProductData=['is_vip'=>$data['is_vip'],'vip_product'=>$data['vip_product'],'vip_product_type'=>$data['vip_product_type']];
+        if($upProductData)$this->dao->update($id,$upProductData);
+        $query=\think\facade\Db::name('store_product_attr_result')->where('product_id',$id)->where('type',0);
+        $guard::query($query);$rows=(clone$query)->lock(true)->select()->toArray();
+        if(count($rows)!==1)throw new \crmeb\exceptions\AuthUnavailableException();
+        $attrResult=json_decode($rows[0]['result'],true,512,JSON_THROW_ON_ERROR);
+        if(!is_array($attrResult)||!is_array($attrResult['value']??null))throw new \crmeb\exceptions\AuthUnavailableException();
+        $originalResult=$attrResult;
+        // Only these known decimal fields have numeric semantics; all other definition fields stay strict.
+        $sameDecimal=static function(mixed $existing,string $wanted):bool{
+            if(!is_int($existing)&&!is_float($existing)&&!is_string($existing))return false;
+            $text=(string)$existing;
+            return preg_match('/\A[0-9]+(?:\.[0-9]{1,2})?\z/D',$text)===1&&bccomp($text,$wanted,2)===0;
+        };
+        $seen=[];
+        foreach($data['attr_value']as$item){
+            $skuId=$guard::id($item['id']??null,2147483647);$unique=$item['unique']??null;
+            if(!is_string($unique)||isset($seen[$skuId]))throw new AdminException('请求参数不正确');$seen[$skuId]=true;
+            $skuQuery=\think\facade\Db::name('store_product_attr_value')->where('id',$skuId)->where('product_id',$id)->where('type',0)->where('unique',$unique);
+            $guard::query($skuQuery);$sku=(clone$skuQuery)->lock(true)->find();if(!is_array($sku))throw new AdminException('规格不存在');
+            $patch=[];
+            if($type===1){$patch=['brokerage'=>$guard::money($data['is_sub']?$item['brokerage']:0),'brokerage_two'=>$guard::money($data['is_sub']?$item['brokerage_two']:0)];
+                if(bccomp(bcadd($patch['brokerage'],$patch['brokerage_two'],2),$guard::money($sku['price']),2)>0)throw new AdminException('一二级返佣相加不能大于商品售价');
+            }elseif($type===2)$patch=['vip_price'=>$guard::money($data['is_vip']?$item['vip_price']:0)];
+            if($patch!==[]){$effective=[];foreach($patch as$field=>$value)if(!$sameDecimal($sku[$field],$value))$effective[$field]=$value;
+                if($effective!==[]){$changed=(clone$skuQuery)->update($effective);if(!is_int($changed)||$changed<0||$changed>1)throw new \crmeb\exceptions\AuthUnavailableException();}
+                $after=(clone$skuQuery)->find();
+                if(!is_array($after))throw new \crmeb\exceptions\AuthUnavailableException();foreach($patch as$field=>$value)if((string)$after[$field]!==$value)throw new \crmeb\exceptions\AuthUnavailableException();}
+            $matches=0;
+            foreach($attrResult['value']as$key=>$result)if(($result['unique']??null)===$unique){
+                $matches++;foreach($patch as$field=>$value)if(!array_key_exists($field,$result)||!$sameDecimal($result[$field],$value))$attrResult['value'][$key][$field]=$value;
+                if($type===2){$price=$guard::money($sku['price']);$vip=$patch['vip_price'];
+                    $proportion=bccomp($price,'0.00',2)===0?'0.00':bcmul(bcdiv($vip,$price,4),'100',2);
+                    if(!array_key_exists('vip_proportion',$result)||!$sameDecimal($result['vip_proportion'],$proportion))$attrResult['value'][$key]['vip_proportion']=$proportion;}
+            }
+            if($matches>1||($matches===0&&(int)$sku['is_show']!==0))throw new \crmeb\exceptions\AuthUnavailableException();
         }
-        if ($upProductData) $this->dao->update($id, $upProductData);
-        /** @var StoreProductAttrValueServices $storeProductAttrValueServices */
-        $storeProductAttrValueServices = app()->make(StoreProductAttrValueServices::class);
-        /** @var StoreProductAttrResultServices $storeProductAttrValueServices */
-        $storeProductAttrResultServices = app()->make(StoreProductAttrResultServices::class);
-        $attrResult = json_decode($storeProductAttrResultServices->get(['product_id' => $id, 'type' => 0])->toArray()['result'], true);
-        foreach ($data['attr_value'] as $item) {
-            $upAttrData = [];
-            if ($type == 1) {
-                $upAttrData = [
-                    'brokerage' => $data['is_sub'] ? $item['brokerage'] : 0,
-                    'brokerage_two' => $data['is_sub'] ? $item['brokerage_two'] : 0
-                ];
-            } elseif ($type == 2) {
-                $upAttrData = [
-                    'vip_price' => $data['is_vip'] ? $item['vip_price'] : 0
-                ];
-            }
-            if ($upAttrData) $storeProductAttrValueServices->update($item['id'], $upAttrData);
-            foreach ($attrResult['value'] as $key => $result) {
-                if (isset($result['unique'])) {
-                    if ($result['unique'] == $item['unique']) {
-                        if ($type == 1) {
-                            $attrResult['value'][$key]['brokerage'] = $data['is_sub'] ? $item['brokerage'] : 0;
-                            $attrResult['value'][$key]['brokerage_two'] = $data['is_sub'] ? $item['brokerage_two'] : 0;
-                        } elseif ($type == 2) {
-                            $attrResult['value'][$key]['vip_price'] = $data['is_vip'] ? $item['vip_price'] : 0;
-                            $attrResult['value'][$key]['vip_proportion'] = $data['is_vip'] ? bcmul(bcdiv($item['vip_price'], $item['price'], 4), 100, 2) : 0;
-                        }
-                    }
-                }
-            }
-            $storeProductAttrResultServices->update(['product_id' => $id, 'type' => 0], ['result' => json_encode($attrResult)]);
+        if($attrResult!==$originalResult){
+            $encoded=json_encode($attrResult,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);
+            $changed=(clone$query)->update(['result'=>$encoded]);if(!is_int($changed)||$changed<0||$changed>1)throw new \crmeb\exceptions\AuthUnavailableException();
+            $after=(clone$query)->value('result');
+            if(!is_string($after)||$after!==$encoded||json_decode($after,true,512,JSON_THROW_ON_ERROR)!==$attrResult)throw new \crmeb\exceptions\AuthUnavailableException();
+        }else{
+            $after=(clone$query)->value('result');
+            if(!is_string($after)||$after!==$rows[0]['result']||json_decode($after,true,512,JSON_THROW_ON_ERROR)!==$originalResult)throw new \crmeb\exceptions\AuthUnavailableException();
         }
         return true;
     }
-
     /**
      * 真实价格
      * @param $uid
@@ -2759,6 +2814,10 @@ class StoreProductServices extends BaseServices
      */
     public function batchDelete($ids)
     {
+        return app()->make(\app\services\marketplace\product\LegacyProductWriteServices::class)->run($ids,fn()=>$this->legacyBatchDelete($ids));
+    }
+    private function legacyBatchDelete($ids)
+    {
         $passNum = 0;
         foreach ($ids as $id) {
             //删除商品检测是否有参与活动
@@ -2770,6 +2829,7 @@ class StoreProductServices extends BaseServices
                 app()->make(StoreProductCateServices::class)->update(['product_id' => $id], ['status' => 0]);
                 app()->make(StoreCartServices::class)->changeStatus($id, 0);
             } else {
+                \app\services\marketplace\product\LegacyProductWriteServices::skip((int)$id);
                 $passNum++;
             }
         }
@@ -2778,10 +2838,14 @@ class StoreProductServices extends BaseServices
 
     public function batchRecover($ids)
     {
+        return app()->make(\app\services\marketplace\product\LegacyProductWriteServices::class)->run($ids,fn()=>$this->legacyBatchRecover($ids));
+    }
+    private function legacyBatchRecover($ids)
+    {
         foreach ($ids as $id) {
             $data['is_del'] = 0;
             $this->dao->update($id, $data);
-            app()->make(StoreProductCateServices::class)->update(['product_id' => $id], ['status' => 1]);
+            app()->make(StoreProductCateServices::class)->update(['product_id' => $id], ['status' => \app\services\marketplace\product\LegacyProductWriteServices::categoryStatus($id)]);
         }
         return true;
     }

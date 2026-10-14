@@ -1,0 +1,560 @@
+{
+  "schema": 1,
+  "status": "VERIFIED_ORDINARY_TASK7_PARTIAL_WITH_REQUIRED_PENDING",
+  "milestone": "MS2",
+  "authorization": "L2 local source integration and commit",
+  "test_source_before_integration": "16b9a835c2dc8d7b32735f0d7db24953441d6a62",
+  "production_candidate_manifest_sha256": "0d2c20097eaf6ddda5e16983f87de89e3b20a782ab4bd977b5ab978b811a81db",
+  "normal_kit_manifest_sha256": "40a2d41bb3b99f1ac46ca71ef5a0ac59d389581d8535b5ab7c9152b9f7c1746e",
+  "locked_vendor_manifest_sha256": "70aa2190a117f78411ced495c43a7b1fdf089930cc32e0f394a61dabfed644ef",
+  "actual_run": "2026101402500854275a",
+  "actual_cleanup_probe": "202610140252285e3d20",
+  "actual_child_native_exit": 0,
+  "actual_child_restart_count": 0,
+  "actual_original_host_observation": "NEEDS_OBSERVATION/native2; outer native1; preserved original timeout, same child observed without restart",
+  "actual_same_run_continuation_native_exit": 0,
+  "actual_root_full_observer_native_exit": 0,
+  "actual_HTTP_requests": 133,
+  "all_HTTP_and_business_status_200": true,
+  "actual_distinct_CLI_children": 19,
+  "all_CLI_children_native_exit_zero": true,
+  "actual_business_baseline_table_count": 164,
+  "normal_business_complete": true,
+  "full_public_snapshot_files": [
+    {
+      "stage": "original-installed-158",
+      "evidence_ref": "evidence/task7-normal-original-installed-158.json",
+      "bytes": 869318,
+      "sha256": "b6fde3a1037b09996a03b0d815d7ee2c0543a97094284a23c309f49be0aa4c92"
+    },
+    {
+      "stage": "after-real-ms1-163",
+      "evidence_ref": "evidence/task7-normal-after-real-ms1-163.json",
+      "bytes": 896357,
+      "sha256": "1053f909a63cf064171ebe2d5f4ed714896f2f1e634d18a37e2359005992a275"
+    },
+    {
+      "stage": "after-real-ms2-164",
+      "evidence_ref": "evidence/task7-normal-after-real-ms2-164.json",
+      "bytes": 910852,
+      "sha256": "c868814b5a48cf4eb4be81cd70a236eb7d63b63119f11ababc6c9ed1cc9d21c7"
+    },
+    {
+      "stage": "after-real-three-menu-sequences",
+      "evidence_ref": "evidence/task7-normal-after-real-three-menu-sequences.json",
+      "bytes": 910865,
+      "sha256": "dc4268ecd16eb877af05703f1489693a6ef6430de0c11505b390e819aab37ba3"
+    },
+    {
+      "stage": "business-original-164",
+      "evidence_ref": "evidence/task7-normal-business-original-164.json",
+      "bytes": 7399294,
+      "sha256": "5bed2df2f259ae7de840ae60562399ef9b685a7185a52cbf145a0b44a238cb61"
+    },
+    {
+      "stage": "declared-H-and-dictionary-prerequisites",
+      "evidence_ref": "evidence/task7-normal-declared-H-and-dictionary-prerequisites.json",
+      "bytes": 7409125,
+      "sha256": "6537bf63f0c87eec8662927c4e373e048895a7dd15dfe292410c4a7085945848"
+    },
+    {
+      "stage": "declared-three-current-employees-PNGs",
+      "evidence_ref": "evidence/task7-normal-declared-three-current-employees-PNGs.json",
+      "bytes": 7414163,
+      "sha256": "2f2cabfdb6eb83baf381f205e6946894e13a46bfa1a3242e5f798bd696bbb5d2"
+    },
+    {
+      "stage": "normal-business-before-cleanup",
+      "evidence_ref": "evidence/task7-normal-normal-business-before-cleanup.json",
+      "bytes": 7456529,
+      "sha256": "ebeaa7434bd6a873849db51fc9787a8cb897e4b4fcb6d631b025cb9f49d3527f"
+    },
+    {
+      "stage": "final-after-own-cleanup-164",
+      "evidence_ref": "evidence/task7-normal-final-after-own-cleanup-164.json",
+      "bytes": 7408764,
+      "sha256": "60b8844951a96b2f7f42bbfdfe0aa2b9b5f689352151c91468284ed07c827c9d"
+    }
+  ],
+  "normal_receipt_sha256": "f6edfb93dc3998449b62f06402bc22c2f54d3d9c726918e2ad1a6b4e9f58c14e",
+  "root_full_preservation_and_closure_sha256": "dbe19fb14493b129a1203f773d51cbf513ceea4b7b00cd94fb96d77958e99de9",
+  "required_gaps": {
+    "customer_cart": "N19_Pending_actual_legal_customer_login_cart_producer",
+    "issued_orders": "N20_Pending_actual_authorized_issued_card_order_reference_profile",
+    "video": "nonempty_legal_video_media_producer_NOT_RUN"
+  },
+  "ordinary_coverage": {
+    "N01": {
+      "status": "PREPARED_NORMAL_SUBSET_ACTUALLY_OBSERVED",
+      "actual_HTTP_calls": 18,
+      "pending": [],
+      "full_Task7_acceptance_claimed": false
+    },
+    "N02": {
+      "status": "PREPARED_NORMAL_SUBSET_ACTUALLY_OBSERVED",
+      "actual_HTTP_calls": 1,
+      "pending": [],
+      "full_Task7_acceptance_claimed": false
+    },
+    "N03": {
+      "status": "PREPARED_NORMAL_SUBSET_ACTUALLY_OBSERVED",
+      "actual_HTTP_calls": 4,
+      "pending": [],
+      "full_Task7_acceptance_claimed": false
+    },
+    "N04": {
+      "status": "PREPARED_NORMAL_SUBSET_ACTUALLY_OBSERVED",
+      "actual_HTTP_calls": 3,
+      "pending": [],
+      "full_Task7_acceptance_claimed": false
+    },
+    "N07": {
+      "status": "PARTIAL_WITH_REQUIRED_PENDING",
+      "actual_HTTP_calls": 2,
+      "pending": [
+        "nonempty_legal_video_producer_NOT_RUN"
+      ],
+      "full_Task7_acceptance_claimed": false
+    },
+    "N05": {
+      "status": "PREPARED_NORMAL_SUBSET_ACTUALLY_OBSERVED",
+      "actual_HTTP_calls": 5,
+      "pending": [],
+      "full_Task7_acceptance_claimed": false
+    },
+    "N06": {
+      "status": "PREPARED_NORMAL_SUBSET_ACTUALLY_OBSERVED",
+      "actual_HTTP_calls": 4,
+      "pending": [],
+      "full_Task7_acceptance_claimed": false
+    },
+    "N08": {
+      "status": "PREPARED_NORMAL_SUBSET_ACTUALLY_OBSERVED",
+      "actual_HTTP_calls": 3,
+      "pending": [],
+      "full_Task7_acceptance_claimed": false
+    },
+    "N09": {
+      "status": "PREPARED_NORMAL_SUBSET_ACTUALLY_OBSERVED",
+      "actual_HTTP_calls": 7,
+      "pending": [],
+      "full_Task7_acceptance_claimed": false
+    },
+    "N10": {
+      "status": "PARTIAL_WITH_REQUIRED_PENDING",
+      "actual_HTTP_calls": 14,
+      "pending": [
+        "actual_issued_cards_and_old_order_reference_N20_PENDING"
+      ],
+      "full_Task7_acceptance_claimed": false
+    },
+    "N11": {
+      "status": "PREPARED_NORMAL_SUBSET_ACTUALLY_OBSERVED",
+      "actual_HTTP_calls": 6,
+      "pending": [],
+      "full_Task7_acceptance_claimed": false
+    },
+    "N12": {
+      "status": "PREPARED_NORMAL_SUBSET_ACTUALLY_OBSERVED",
+      "actual_HTTP_calls": 6,
+      "pending": [],
+      "full_Task7_acceptance_claimed": false
+    },
+    "N13": {
+      "status": "PREPARED_NORMAL_SUBSET_ACTUALLY_OBSERVED",
+      "actual_HTTP_calls": 4,
+      "pending": [],
+      "full_Task7_acceptance_claimed": false
+    },
+    "N14": {
+      "status": "PREPARED_NORMAL_SUBSET_ACTUALLY_OBSERVED",
+      "actual_HTTP_calls": 25,
+      "pending": [],
+      "full_Task7_acceptance_claimed": false
+    },
+    "N15": {
+      "status": "PREPARED_NORMAL_SUBSET_ACTUALLY_OBSERVED",
+      "actual_HTTP_calls": 5,
+      "pending": [],
+      "full_Task7_acceptance_claimed": false
+    },
+    "N16": {
+      "status": "PREPARED_NORMAL_SUBSET_ACTUALLY_OBSERVED",
+      "actual_HTTP_calls": 7,
+      "pending": [],
+      "full_Task7_acceptance_claimed": false
+    },
+    "N17": {
+      "status": "PREPARED_NORMAL_SUBSET_ACTUALLY_OBSERVED",
+      "actual_HTTP_calls": 3,
+      "pending": [],
+      "full_Task7_acceptance_claimed": false
+    },
+    "N18": {
+      "status": "PREPARED_NORMAL_SUBSET_ACTUALLY_OBSERVED",
+      "actual_HTTP_calls": 6,
+      "pending": [],
+      "full_Task7_acceptance_claimed": false
+    },
+    "N19": {
+      "status": "PENDING_ACTUAL_NORMAL_CUSTOMER_CURRENT_SKU_CART_PRODUCER_NOT_RUN",
+      "actual_HTTP_calls": 0,
+      "required_for_complete": true
+    },
+    "N20": {
+      "status": "PENDING_REAL_ISSUED_ORDER_REFERENCE_PRODUCER_AND_AUTHORIZED_PROFILE_NOT_RUN",
+      "actual_HTTP_calls": 0,
+      "required_for_complete": true
+    },
+    "N21": {
+      "status": "PREPARED_NORMAL_SUBSET_ACTUALLY_OBSERVED",
+      "actual_HTTP_calls": 10,
+      "pending": [],
+      "full_Task7_acceptance_claimed": false
+    },
+    "N22": {
+      "status": "FULL_ORIGINAL_PRESERVATION_AND_EXACT_OWNED_CLEANUP_OBSERVED",
+      "actual_HTTP_calls": 0,
+      "full_Task7_acceptance_claimed": false
+    }
+  },
+  "root_independent_original164_full_hashes_checksums_metadata_CREATE_SQL_cache_absolute_expiry_runtime_assets_preserved": true,
+  "native_SHOW_CREATE_counters_monotonic": true,
+  "fixtures_cleaned": true,
+  "private_cleanup_verified": true,
+  "normal_app_stop_verified": true,
+  "all12_fresh_actual_resource_counts_zero": true,
+  "env_absent": true,
+  "install_lock_absent": true,
+  "formal_production_files_integrated": [
+    {
+      "path": "crmeb/app/adminapi/controller/v1/marketplace/ProductReview.php",
+      "after_bytes": 1131,
+      "after_sha256": "46c32bd8f93f58fe4615bc10bb2af53aead7f2d532ca8d18e850514d52d1cd8d"
+    },
+    {
+      "path": "crmeb/app/adminapi/controller/v1/marketplace/ProductStock.php",
+      "after_bytes": 693,
+      "after_sha256": "6090910c84a10bc974730eb0f82528233fd8a53752415202ace0921645157ad4"
+    },
+    {
+      "path": "crmeb/app/adminapi/controller/v1/marketplace/ProductSubmission.php",
+      "after_bytes": 715,
+      "after_sha256": "fe6a2e2f8092be1b92778b3fafaa15ddcae5a41770eecda162284c7fb2cc1f51"
+    },
+    {
+      "path": "crmeb/app/adminapi/controller/v1/product/StoreProduct.php",
+      "after_bytes": 17569,
+      "after_sha256": "0df6fa56eaa223acf750648640cb24357f67e7603e399b421ccff7c39963be17"
+    },
+    {
+      "path": "crmeb/app/adminapi/controller/v1/product/StoreProductReply.php",
+      "after_bytes": 10885,
+      "after_sha256": "a7828ef5c37c4f472e522c960288dcbc3920d16ce0731249c3bf8363c257c0cb"
+    },
+    {
+      "path": "crmeb/app/adminapi/controller/v1/system/SystemClearData.php",
+      "after_bytes": 16624,
+      "after_sha256": "d66b2450bd92e54b01c7010cad83a2daab2c8b06ec6a5c8d773624fd76751386"
+    },
+    {
+      "path": "crmeb/app/adminapi/middleware/LegacyProductBoundaryMiddleware.php",
+      "after_bytes": 530,
+      "after_sha256": "638789f096bb5576919d906bc216393c31503d8f680304da471c091c15c00925"
+    },
+    {
+      "path": "crmeb/app/adminapi/middleware/LegacyProductScopeMiddleware.php",
+      "after_bytes": 495,
+      "after_sha256": "4ebb689497fd5318129a8fa2c61c20d33bea18a5c9ea6b88e8e1ff12e87a8b58"
+    },
+    {
+      "path": "crmeb/app/adminapi/middleware/MarketplaceBoundaryMiddleware.php",
+      "after_bytes": 3203,
+      "after_sha256": "c33d533d70bf608723622b15ca3fcf3db8848a32c9363eab36d286c08c68bb3a"
+    },
+    {
+      "path": "crmeb/app/adminapi/route/marketplace.php",
+      "after_bytes": 2881,
+      "after_sha256": "23852fddee16af68e838a449597e11a52e42e37171543edbcb407712fd723a0b"
+    },
+    {
+      "path": "crmeb/app/adminapi/route/product.php",
+      "after_bytes": 14514,
+      "after_sha256": "15a3f722319040f49fb9c23723cb813b6f8789b01dbfc91af0f290d12445d5f3"
+    },
+    {
+      "path": "crmeb/app/adminapi/route/system.php",
+      "after_bytes": 22013,
+      "after_sha256": "c24a40af81d1c24d888f7ca30e532b225fdb8f45d41b726cd0456668227d7f9a"
+    },
+    {
+      "path": "crmeb/app/dao/marketplace/PlatformProductDao.php",
+      "after_bytes": 6367,
+      "after_sha256": "3ad43dee35ac45509dbc9173a499e695b411a9a9cdef347f63d560d2cc498371"
+    },
+    {
+      "path": "crmeb/app/dao/marketplace/PlatformProductSubmissionDao.php",
+      "after_bytes": 11662,
+      "after_sha256": "c2edfaf8846c26349101c81d8e4f0664f52147580f5e51b364150d1bbb0e401e"
+    },
+    {
+      "path": "crmeb/app/dao/product/product/StoreProductDao.php",
+      "after_bytes": 25032,
+      "after_sha256": "3ff3e12028ab1c3b77def6e32672f438d37adc7a8e30efed38bd4d0036f000be"
+    },
+    {
+      "path": "crmeb/app/jobs/ProductCopyJob.php",
+      "after_bytes": 6881,
+      "after_sha256": "c27088ed625ee64f0432453125088d610025eb30241b2ba9cfb6c5d089e41026"
+    },
+    {
+      "path": "crmeb/app/jobs/ProductStockJob.php",
+      "after_bytes": 2322,
+      "after_sha256": "974d464b3603428eed5245ae21e1486ee83f5c0b6a578a8e3c112ae0bdcef607"
+    },
+    {
+      "path": "crmeb/app/outapi/controller/StoreProduct.php",
+      "after_bytes": 7817,
+      "after_sha256": "0bda8103cb0490aa8f33e7556c916dcbe9bae72a7af059dfafdc7097372dbef0"
+    },
+    {
+      "path": "crmeb/app/services/admin/StoreManageServices.php",
+      "after_bytes": 26005,
+      "after_sha256": "d0153852e8b1eb5ce7ac987e0d3271d4549c954e8777640fe2f87f3b4beb10bc"
+    },
+    {
+      "path": "crmeb/app/services/marketplace/AuditLogServices.php",
+      "after_bytes": 11148,
+      "after_sha256": "7c988e6b16ca834be5f61accc1e4560a2e49ac62f6c0bbbd6852e5dcbfd88d9f"
+    },
+    {
+      "path": "crmeb/app/services/marketplace/PlatformAccessServices.php",
+      "after_bytes": 8429,
+      "after_sha256": "f4167d4fdd1555067ae0c4802891315339d2a0a01ff8ad85bedfa111a43ae919"
+    },
+    {
+      "path": "crmeb/app/services/marketplace/PlatformProductReviewServices.php",
+      "after_bytes": 9933,
+      "after_sha256": "a9d9614df23d4530581603a9882bd1aec0b445581c67b792f1c854ac3ff1e8c6"
+    },
+    {
+      "path": "crmeb/app/services/marketplace/PlatformProductSubmissionServices.php",
+      "after_bytes": 4304,
+      "after_sha256": "f524af51122d57a8cdbb0f2ffe8c120ac583513567d67f404ff152fc74cb2688"
+    },
+    {
+      "path": "crmeb/app/services/marketplace/product/LegacyProductAccessServices.php",
+      "after_bytes": 7085,
+      "after_sha256": "329e4b1218e67c41bfae831d94e3f4b560f908458585b45d3be8efe7f6f02188"
+    },
+    {
+      "path": "crmeb/app/services/marketplace/product/LegacyProductDefinitionServices.php",
+      "after_bytes": 27485,
+      "after_sha256": "6a5f63aa6af8e5a0d95bf9829b5ebb9454d0ce13d48dc3f6ede9170cbac00940"
+    },
+    {
+      "path": "crmeb/app/services/marketplace/product/LegacyProductWriteServices.php",
+      "after_bytes": 39860,
+      "after_sha256": "955666eb0c997a90c018e30c2fff283b0e150b96b95d32ec9bd64529917f5e23"
+    },
+    {
+      "path": "crmeb/app/services/marketplace/product/PlatformProductStockServices.php",
+      "after_bytes": 28490,
+      "after_sha256": "1dd734044cf34314321558dfcb173be0c1e316b50627d2004469cd9bd4ead0a2"
+    },
+    {
+      "path": "crmeb/app/services/order/StoreCartServices.php",
+      "after_bytes": 37386,
+      "after_sha256": "8a5a5b7fef0228249800f30fc28f3d00dfb54b8789fa7748f384245c751307fe"
+    },
+    {
+      "path": "crmeb/app/services/product/product/OutStoreProductServices.php",
+      "after_bytes": 27325,
+      "after_sha256": "6ea5ff7f77f501d2c499d4671445a029ccb162df3d70a1730fc6072ad2e1105e"
+    },
+    {
+      "path": "crmeb/app/services/product/product/StoreProductCateServices.php",
+      "after_bytes": 4246,
+      "after_sha256": "5a3a6f36a6a16bc498fdcc95c929b96d6d4ea94f4b8159f58a71123d5dc92366"
+    },
+    {
+      "path": "crmeb/app/services/product/product/StoreProductServices.php",
+      "after_bytes": 141559,
+      "after_sha256": "edbb2605ce1692cebd420ac890f57d0ad73a21c73f640a634dc1ce6faeda54cd"
+    },
+    {
+      "path": "crmeb/app/services/product/sku/StoreProductAttrResultServices.php",
+      "after_bytes": 2019,
+      "after_sha256": "2ea9a7cb00c6e31571d4657a510e0c23010230c0689b92985df0cd2924737c8d"
+    },
+    {
+      "path": "crmeb/app/services/product/sku/StoreProductAttrServices.php",
+      "after_bytes": 9216,
+      "after_sha256": "8b41c9c891c55696ef4b4225bf96092db4f57a7d87e70d32450b14065444f1da"
+    },
+    {
+      "path": "crmeb/app/services/system/SystemClearServices.php",
+      "after_bytes": 12639,
+      "after_sha256": "1b23b8f488c0b522cb48d4dc26516ee1ca57c1a5aa571ca79677c919c1483672"
+    },
+    {
+      "path": "help/migrations/marketplace-ms2-task7-menus.md",
+      "after_bytes": 2401,
+      "after_sha256": "56d77d0e5da998483cb439c1e8f7c3509021e5ca46568db3d141ea55a0a73949"
+    },
+    {
+      "path": "help/migrations/marketplace-ms2-task7-menus.php",
+      "after_bytes": 20295,
+      "after_sha256": "6595a16a5ce0e0d9a608c32e8141ba33e5151dacd7ed230305f6183cd46f4766"
+    },
+    {
+      "path": "help/migrations/marketplace-ms2-task7-stock-menu.md",
+      "after_bytes": 1396,
+      "after_sha256": "916d08b62f261904bbd3393ce28d2216b869d74191c2f5a24eb3ebc88b320a9b"
+    },
+    {
+      "path": "help/migrations/marketplace-ms2-task7-stock-menu.php",
+      "after_bytes": 20153,
+      "after_sha256": "f8c2f92aeb709884ea7c559d446e29defbc6df420d5f0c15904ba7b11815e239"
+    },
+    {
+      "path": "help/migrations/marketplace-ms2-task7-submit-menu.md",
+      "after_bytes": 1900,
+      "after_sha256": "91af5e5426e2bdb85d1af08a499eaedaf1fe8c63d4b014038db5f462ee384330"
+    },
+    {
+      "path": "help/migrations/marketplace-ms2-task7-submit-menu.php",
+      "after_bytes": 20171,
+      "after_sha256": "0e74cf70684bdc188a66e2e03ea0128362c0b1ac3dace6dcd6f43f95603ce72d"
+    }
+  ],
+  "formal_integrated_PHP_syntax": {
+    "php": "8.2.33",
+    "memory_limit": "128M",
+    "files": 37,
+    "all_native_exit_zero": true,
+    "receipt": {
+      "bytes": 9315,
+      "sha256": "f6df3d303315b1d76540f301199faa307e9fb95cd8d63f8c059df7d215a01001"
+    },
+    "application_booted": false
+  },
+  "locked_dependency_repair": {
+    "changed_packages": [
+      "phpoffice/phpspreadsheet",
+      "composer/pcre",
+      "ezyang/htmlpurifier",
+      "markbaker/complex",
+      "markbaker/matrix",
+      "myclabs/php-enum",
+      "symfony/polyfill-mbstring"
+    ],
+    "official_direct_files": [
+      "autoload.php",
+      "composer/ClassLoader.php",
+      "composer/InstalledVersions.php",
+      "composer/autoload_classmap.php",
+      "composer/autoload_files.php",
+      "composer/autoload_namespaces.php",
+      "composer/autoload_psr4.php",
+      "composer/autoload_real.php",
+      "composer/autoload_static.php",
+      "composer/installed.json",
+      "composer/installed.php",
+      "composer/platform_check.php"
+    ],
+    "counts": {
+      "create": 719,
+      "replace": 275,
+      "delete_exact_file": 79,
+      "operations": 1073
+    },
+    "actual_vendor_files": 9477,
+    "original8458_protected_files_all_byte_exact": true,
+    "extra_unchanged_official_support_files": [
+      "composer/LICENSE"
+    ],
+    "composer_json_and_lock_unchanged": true,
+    "actual_installed_packages": 92,
+    "locked_closure_packages": {
+      "composer/pcre": {
+        "version": "3.4.0",
+        "source_reference": "d5a341b3fb61f3001970940afb1d332968a183ed"
+      },
+      "ezyang/htmlpurifier": {
+        "version": "v4.19.0",
+        "source_reference": "b287d2a16aceffbf6e0295559b39662612b77fcf"
+      },
+      "maennchen/zipstream-php": {
+        "version": "2.1.0",
+        "source_reference": "c4c5803cc1f93df3d2448478ef79394a5981cc58"
+      },
+      "markbaker/complex": {
+        "version": "3.0.2",
+        "source_reference": "95c56caa1cf5c766ad6d65b6344b807c1e8405b9"
+      },
+      "markbaker/matrix": {
+        "version": "3.0.1",
+        "source_reference": "728434227fe21be27ff6d86621a1b13107a2562c"
+      },
+      "myclabs/php-enum": {
+        "version": "1.8.5",
+        "source_reference": "e7be26966b7398204a234f8673fdad5ac6277802"
+      },
+      "phpoffice/phpspreadsheet": {
+        "version": "1.30.6",
+        "source_reference": "a416375ffc8bf5b661c1bb4e6c60d8f3fddbe5ce"
+      },
+      "psr/http-message": {
+        "version": "1.0.1",
+        "source_reference": "f6561bf28d520154e4b0ec72be95418abe6d9363"
+      },
+      "psr/simple-cache": {
+        "version": "1.0.1",
+        "source_reference": "408d5eafb83c57f6365a3ca330ff23aa4a5fa39b"
+      },
+      "symfony/polyfill-mbstring": {
+        "version": "v1.38.2",
+        "source_reference": "d3d318bad5e7a1bfbd026009c8bfb8d8f99ae6b6"
+      }
+    },
+    "preexisting_missing_source_package_names": [
+      "crmeb/easypay",
+      "xin/container",
+      "xin/helper"
+    ],
+    "preexisting_missing_source_packages_restored": false,
+    "full_dependencies_ready": false
+  },
+  "actual_local_integration_bytes": {
+    "plan_sha256": "bc092f086c65d805dd27e335d4edfdbf03121f3fc1b6fa0f6395f0967f775a59",
+    "operations": 1113,
+    "production": 40,
+    "root_byte_check_receipt": {
+      "bytes": 2037,
+      "sha256": "83c4184ac6c490a5d718d3ee752c9957dad23c053e92d1ca9788f239deb5b250"
+    },
+    "original_application_native_exit": 1,
+    "original_application_failure_preserved": true,
+    "reason": "Final bookkeeping count included unchanged Composer LICENSE in8459; original8458 domain and all8459 actual protected files fully verified. No copy/deletion rerun, no business assertion changed."
+  },
+  "initial_source_lint_container_setup_failure_preserved": {
+    "native_exit": 1,
+    "reason": "Default image entrypoint attempted chown on read-only image directories; no PHP lint/App ran. Corrected by explicit PHP entrypoint for successful37-file syntax check."
+  },
+  "earlier_actual_normal15_import_failure_preserved": true,
+  "normal_scope_is_partial_with_required_pending": true,
+  "normal_paid_issued_and_order_reference": "NOT RUN",
+  "refusal_negative_security_fault_concurrency_recovery_and_other_user_stopped_cases": "NOT RUN",
+  "cloud_L4": "NOT RUN",
+  "frontend": "NOT RUN",
+  "historical_owner_mapping": "UNKNOWN / NOT APPROVED",
+  "enabled": false,
+  "D13_complete": false,
+  "full_Task7_complete": false,
+  "full_MS2_complete": false,
+  "signoff": "PENDING",
+  "push": false,
+  "deploy": false,
+  "raw_evidence_location": "outside repository; dedicated audit RUN and artifacts/ms2-product-review-normal-attempt16; source packets and local integration receipts under artifacts"
+}

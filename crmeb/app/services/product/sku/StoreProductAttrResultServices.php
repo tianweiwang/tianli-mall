@@ -39,7 +39,8 @@ class StoreProductAttrResultServices extends BaseServices
      */
     public function getResult(array $where)
     {
-        return json_decode($this->dao->value($where, 'result'), true);
+        $result = $this->dao->value($where, 'result');
+        return $result === null ? null : json_decode($result, true);
     }
 
     /**
