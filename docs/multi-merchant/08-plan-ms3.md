@@ -19,6 +19,12 @@
 - 不升级 Vue 大版本，不在本里程碑改平台后台的构建配置。
 - 截图与录屏只用合成数据。
 
+**当前普通运行的观测与收尾责任（2026-10-15）：** Run8 `20261014193917f1197f` 的安装初始化实际 exit 0，启动观察完成，管理员普通登录 HTTP/业务 200；随后 `new_native_context` 和停止后的完整 checkpoint 均失败，通用断言被收据简化为 `other_source:5`，故不能唯一判定失败条件，也不能记 MS3 通过或清零。原失败收据、冻结 profile 和私有运行记录保持原状。后继只在新 `source477732-assertion-observation` 来源的 `ms3-init-functions.php::t8e_failure` 增加 `assertion_code`：仅输出与本次完整实际七 helper 源码中固定大写 literal 白名单严格相等的代码，其他固定输出 `UNKNOWN_FIXED_ASSERTION`；收集器复核 literal 与完整源字节，原断言、期望、异常字段、业务动作、清理和时间窗均不改。经完整逆变换、PHP 语法和原 prepare-only 重新闭合 authority/collector/source-profile/manifest 后才能另开普通运行，不重启 Run8，不运行用户已停止的拒绝、冲突、故障等样本。
+
+Run8 的有限收尾使用独立 `ms3-failed-run-closeout-source477732-20261014193917f1197f` 候选，复用已有同职责 source 和原 immutable/global-consumer 保护。只读 metadata observer 先核当前五个 Task8 私有文件及 bootstrap runtime、控制目录为空、真实 hash/stat；不能从初始化推断当前数量。保留同 revision 的进程组已停/监听关闭证明，限定本次实际登记的七 roles、21 新卷和内部网络；App 父容器按当前生产者用 SIGTERM 正常退出，UI/DB/Redis 保持原正常 stop 参数。删除前后重核实际 identity、全机卷消费者及网络成员，禁 force/prune、未知消费者和无关资源。该收尾不改业务断言、不修复失败数据、不将原失败替换成通过；实际收尾与独立零残留证据仍待执行。
+
+2026-10-15 收尾实测：Root 对已独立复核的候选执行一次 observe，原命令实际 exit 1；逐阶段只读诊断确认公开输入、来源依赖及主仓来源核验通过，失败在完整 native 状态核验，固定码为 `MS3_LOOPBACK_UI_PORT_ONLY`，observer 尚未创建。实际 UI 容器仍 running/restart 0，`NetworkSettings.Ports` 为 `{"8080/tcp":[]}`，真实 `HostConfig.PortBindings` 严格只有 `127.0.0.1:59371`；冻结守卫允许同键 null，却未处理此处实际空数组。两项真实观察不能证明 UI 已可访问，也不能唯一解释原业务阶段失败。后继有限收尾来源须保留未经改写的实际 fact 和完整 native/消费者保护，仅区分无映射的 null/空数组，并额外核真实声明的唯一 loopback 绑定；原 Run8 producer/MF/FAIL 均保持。未停止或删除任何登记资源，六个私有文件的当前数量及清零仍待实际观察。
+
 ## Review Focus
 
 - **同浏览器双登录**：平台和商家在同一浏览器中同时登录，刷新、退出其中一个不影响另一个；商家页面里请求平台接口被服务端拒绝（F02）。
