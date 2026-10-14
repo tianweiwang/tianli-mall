@@ -256,16 +256,57 @@ final class PublicCatalogServices
         if(($cart['is_valid']??null)===0&&($cart['productInfo']??null)===[])return Projection::invalidCart($cart);
         $identity=$this->cartIdentity($cart,$uid,false);
         if($identity===null)return Projection::invalidCart($cart);
+        return $this->projectCart($cart,$uid,$identity);
+    }
+    /** The current identity is shared by the public row and its shop grouping. */
+    private function projectCart(array $cart,int $uid,array $identity):array
+    {
         if(!app()->make(StoreProductServices::class)->vipIsOpen((bool)$identity['root']['is_vip'])){
             if(isset($cart['productInfo']['vip_price']))$cart['productInfo']['vip_price']=0;
             if(isset($cart['productInfo']['attrInfo']['vip_price']))$cart['productInfo']['attrInfo']['vip_price']=0;
         }
-        if($identity['type']===0){$stocks=$this->activeStocks([$identity['root']['id']]);return Projection::cart($cart,(int)($stocks[$identity['root']['id']]??0));}
+        if($identity['type']===0){
+            $cart['productInfo']['mer_id']=PublicCatalogQuery::positive($identity['root']['mer_id']);
+            $stocks=$this->activeStocks([$identity['root']['id']]);return Projection::cart($cart,(int)($stocks[$identity['root']['id']]??0));
+        }
         return Projection::activityCart($cart,$identity['type'],$identity['root'],$uid);
     }
     public function cartRows(array $rows,int $uid):array
     {
         foreach($rows as&$row)$row=$this->cartOutput($row,$uid);unset($row);return $rows;
+    }
+    /** Preserve database BIGINT references through JSON without floating-point conversion. */
+    private static function cartReference(mixed $reference):string
+    {
+        if(is_int($reference)&&$reference>0)return (string)$reference;
+        if(is_string($reference)&&preg_match('/\A[1-9][0-9]*\z/D',$reference)===1)return $reference;
+        throw new AuthUnavailableException();
+    }
+    /** Groups describe this page's own valid rows; they never enable a trade entry. */
+    public function cartPageOutput(array $valid,array $invalid,int $uid):array
+    {
+        $rows=[];$invalidRows=$this->cartRows($invalid,$uid);$groups=[];$groupIndexes=[];
+        foreach($invalidRows as&$row)$row['id']=self::cartReference($row['id']??null);unset($row);
+        foreach($valid as$cart){
+            $cart['id']=self::cartReference($cart['id']??null);
+            $identity=$this->cartIdentity($cart,$uid,false);
+            if($identity===null||(int)($cart['is_valid']??0)!==1){
+                $cart['status']=0;$cart['attrStatus']=false;$cart['is_valid']=0;
+                $invalidRows[]=Projection::invalidCart($cart);
+                continue;
+            }
+            $row=$this->projectCart($cart,$uid,$identity);
+            unset($row['productInfo']['uid']);
+            $owner=PublicCatalogQuery::positive($identity['root']['mer_id']);
+            if(!isset($groupIndexes[$owner])){
+                $groupIndexes[$owner]=count($groups);
+                $groups[]=['mer_id'=>$owner,'store'=>Projection::store($identity['root']),'cart_refs'=>[],'rows'=>[]];
+            }
+            $index=$groupIndexes[$owner];
+            $groups[$index]['cart_refs'][]=$row['id'];$groups[$index]['rows'][]=$row;
+            $rows[]=$row;
+        }
+        return ['valid'=>$rows,'invalid'=>$invalidRows,'groups'=>$groups];
     }
     public function quoteIdentity(array $cartInfo,int $uid):void
     {

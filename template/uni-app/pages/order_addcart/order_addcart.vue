@@ -35,87 +35,101 @@
       >
         <view class="list">
           <checkbox-group @change="checkboxChange">
-            <block v-for="(item, index) in cartList.valid" :key="index">
-              <view class="item acea-row row-between-wrapper">
-                <!-- #ifndef MP -->
-                <checkbox
-                  :value="item.id.toString()"
-                  :checked="item.checked"
-                  :disabled="!item.attrStatus && footerswitch"
-                />
-                <!-- <checkbox :value="(item.id).toString()" :checked="item.checked" :disabled="item.attrStatus?false:true" /> -->
-                <!-- #endif -->
-                <!-- #ifdef MP -->
-                <checkbox
-                  :value="item.id"
-                  :checked="item.checked"
-                  :disabled="!item.attrStatus && footerswitch"
-                />
-                <!-- #endif -->
-                <navigator
-                  :url="'/pages/goods_details/index?id=' + item.product_id"
-                  hover-class="none"
-                  class="picTxt acea-row row-between-wrapper"
-                >
-                  <view class="pictrue">
-                    <image
-                      v-if="item.productInfo.attrInfo"
-                      :src="item.productInfo.attrInfo.image"
-                    ></image>
-                    <image v-else :src="item.productInfo.image"></image>
-                  </view>
-                  <view class="text">
-                    <view
-                      class="line2"
-                      :class="item.attrStatus ? '' : 'reColor'"
-                    >
-                      {{ item.productInfo.store_name }}
+            <view v-for="group in cartGroups" :key="String(group.mer_id)" class="store-group">
+              <view class="store-header">
+                <view class="store-title">
+                  <text class="store-name">{{ group.store.name }}</text>
+                  <text v-if="footerswitch && isCheckoutStore(group)" class="store-selected">{{ $t(`当前结算店铺`) }}</text>
+                </view>
+                <button
+                  v-if="footerswitch && !isCheckoutStore(group)"
+                  class="store-select"
+                  :disabled="!canCheckoutStore(group)"
+                  @click="selectCheckoutStore(group)"
+                >{{ $t(`选择本店`) }}</button>
+              </view>
+              <block v-for="entry in group.entries" :key="String(entry.item.id)">
+                <view class="item acea-row row-between-wrapper">
+                  <!-- #ifndef MP -->
+                  <checkbox
+                    :value="entry.item.id.toString()"
+                    :checked="entry.item.checked"
+                    :disabled="!entry.item.attrStatus && footerswitch"
+                  />
+                  <!-- <checkbox :value="(entry.item.id).toString()" :checked="entry.item.checked" :disabled="entry.item.attrStatus?false:true" /> -->
+                  <!-- #endif -->
+                  <!-- #ifdef MP -->
+                  <checkbox
+                    :value="entry.item.id"
+                    :checked="entry.item.checked"
+                    :disabled="!entry.item.attrStatus && footerswitch"
+                  />
+                  <!-- #endif -->
+                  <navigator
+                    :url="'/pages/goods_details/index?id=' + entry.item.product_id"
+                    hover-class="none"
+                    class="picTxt acea-row row-between-wrapper"
+                  >
+                    <view class="pictrue">
+                      <image
+                        v-if="entry.item.productInfo.attrInfo"
+                        :src="entry.item.productInfo.attrInfo.image"
+                      ></image>
+                      <image v-else :src="entry.item.productInfo.image"></image>
                     </view>
-                    <view class="infor line1" v-if="item.productInfo.attrInfo"
-                      >{{ $t(`属性`) }}：{{
-                        item.productInfo.attrInfo.suk
-                      }}</view
-                    >
-                    <view class="money" v-if="item.attrStatus"
-                      >{{ $t(`￥`) }}{{ item.truePrice }}</view
-                    >
-                    <view
-                      class="reElection acea-row row-between-wrapper"
-                      v-else
-                    >
-                      <view class="title">{{ $t(`请重新选择商品规格`) }}</view>
+                    <view class="text">
                       <view
-                        class="reBnt cart-color acea-row row-center-wrapper"
-                        @click.stop="reElection(item)"
-                        >{{ $t(`重选`) }}</view
+                        class="line2"
+                        :class="entry.item.attrStatus ? '' : 'reColor'"
+                      >
+                        {{ entry.item.productInfo.store_name }}
+                      </view>
+                      <view class="infor line1" v-if="entry.item.productInfo.attrInfo"
+                        >{{ $t(`属性`) }}：{{
+                          entry.item.productInfo.attrInfo.suk
+                        }}</view
+                      >
+                      <view class="money" v-if="entry.item.attrStatus"
+                        >{{ $t(`￥`) }}{{ entry.item.truePrice }}</view
+                      >
+                      <view
+                        class="reElection acea-row row-between-wrapper"
+                        v-else
+                      >
+                        <view class="title">{{ $t(`请重新选择商品规格`) }}</view>
+                        <view
+                          class="reBnt cart-color acea-row row-center-wrapper"
+                          @click.stop="reElection(entry.item)"
+                          >{{ $t(`重选`) }}</view
+                        >
+                      </view>
+                    </view>
+                    <view
+                      class="carnum acea-row row-center-wrapper"
+                      v-if="entry.item.attrStatus"
+                    >
+                      <view class="reduce" @click.stop="subCart(entry.index)">-</view>
+                      <!-- <view class='num'>{{entry.item.cart_num}}</view> -->
+                      <view class="num">
+                        <input
+                          type="number"
+                          v-model="entry.item.cart_num"
+                          @click.stop
+                          @input="iptCartNum(entry.index)"
+                          @blur="blurInput(entry.index)"
+                        />
+                      </view>
+                      <view
+                        class="plus"
+                        :class="entry.item.numAdd && !disabledChangeNumber ? 'on' : ''"
+                        @click.stop="addCart(entry.index)"
+                        >+</view
                       >
                     </view>
-                  </view>
-                  <view
-                    class="carnum acea-row row-center-wrapper"
-                    v-if="item.attrStatus"
-                  >
-                    <view class="reduce" @click.stop="subCart(index)">-</view>
-                    <!-- <view class='num'>{{item.cart_num}}</view> -->
-                    <view class="num">
-                      <input
-                        type="number"
-                        v-model="item.cart_num"
-                        @click.stop
-                        @input="iptCartNum(index)"
-                        @blur="blurInput(index)"
-                      />
-                    </view>
-                    <view
-                      class="plus"
-                      :class="item.numAdd && !disabledChangeNumber ? 'on' : ''"
-                      @click.stop="addCart(index)"
-                      >+</view
-                    >
-                  </view>
-                </navigator>
-              </view>
-            </block>
+                  </navigator>
+                </view>
+              </block>
+            </view>
           </checkbox-group>
         </view>
         <view class="invalidGoods" v-if="cartList.invalid.length > 0">
@@ -201,7 +215,7 @@
           <checkbox-group @change="checkboxAllChange">
             <checkbox value="all" :checked="!!isAllSelect" />
             <text class="checkAll"
-              >{{ $t(`全选`) }}({{ selectValue.length }})</text
+              >{{ footerswitch ? $t(`本店全选`) : $t(`全选`) }}({{ selectValue.length }})</text
             >
           </checkbox-group>
         </view>
@@ -234,7 +248,7 @@
       @ChangeAttr="ChangeAttr"
       @ChangeCartNum="ChangeCartNum"
       @attrVal="attrVal"
-      @iptCartNum="iptCartNum"
+      @iptCartNum="iptWindowCartNum"
       @goCat="reGoCat"
       id="product-window"
     ></productWindow>
@@ -297,6 +311,8 @@ export default {
         valid: [],
         invalid: [],
       },
+      serverGroups: [],
+      selectedMerId: null,
       isAllSelect: false, //全选
       selectValue: [], //选中的数据
       selectCountPrice: 0.0,
@@ -339,6 +355,20 @@ export default {
   },
   computed: {
     ...mapGetters(["isLogin"]),
+    cartGroups() {
+      const byReference = Object.create(null);
+      this.cartList.valid.forEach((item, index) => {
+        byReference[String(item.id)] = { item, index };
+      });
+      return this.serverGroups.map((group) => ({
+        mer_id: group.mer_id,
+        store: group.store,
+        entries: group.cart_refs.map((reference) => byReference[String(reference)]).filter(Boolean),
+      })).filter((group) => group.entries.length > 0);
+    },
+    checkoutGroup() {
+      return this.cartGroups.find((group) => this.isCheckoutStore(group));
+    },
     componentStyle() {
       if (this.btmNum) {
         let styleObject = {};
@@ -378,6 +408,8 @@ export default {
       this.loadend = false;
       this.page = 1;
       this.cartList.valid = [];
+      this.serverGroups = [];
+      this.selectedMerId = null;
       this.getCartList(1);
       this.loadendInvalid = false;
       this.pageInvalid = 1;
@@ -411,6 +443,57 @@ export default {
     }
   },
   methods: {
+    // Only server cart references associate rows with a store; product/cache labels do not.
+    mergeCartGroups(groups) {
+      groups.forEach((incoming) => {
+        let group = this.serverGroups.find((current) => String(current.mer_id) === String(incoming.mer_id));
+        if (!group) {
+          group = { mer_id: incoming.mer_id, store: incoming.store, cart_refs: [] };
+          this.serverGroups.push(group);
+        } else {
+          group.store = incoming.store;
+        }
+        incoming.cart_refs.forEach((reference) => {
+          if (!this.inArray(reference, group.cart_refs)) group.cart_refs.push(reference);
+        });
+      });
+    },
+    mergeInvalidRows(rows) {
+      const invalid = this.cartList.invalid.slice();
+      rows.forEach((row) => {
+        if (!invalid.some((current) => String(current.id) === String(row.id))) invalid.push(row);
+      });
+      this.$set(this.cartList, "invalid", invalid);
+    },
+    resetLoadedCart() {
+      this.cartList.valid = [];
+      this.serverGroups = [];
+      this.selectValue = [];
+      this.isAllSelect = false;
+      this.selectCountPrice = 0;
+    },
+    isCheckoutStore(group) {
+      return this.selectedMerId !== null && String(group.mer_id) === String(this.selectedMerId);
+    },
+    canCheckoutStore(group) {
+      return group.entries.some((entry) => entry.item.attrStatus);
+    },
+    selectCheckoutStore(group) {
+      if (!this.footerswitch || !this.canCheckoutStore(group)) return;
+      this.selectedMerId = group.mer_id;
+      this.selectValue = group.entries.filter((entry) => entry.item.attrStatus).map((entry) => entry.item.id);
+      this.switchSelect();
+    },
+    restoreCheckoutStore() {
+      const group = this.cartGroups.find((candidate) => this.isCheckoutStore(candidate) && this.canCheckoutStore(candidate))
+        || this.cartGroups.find((candidate) => this.canCheckoutStore(candidate));
+      if (group) this.selectCheckoutStore(group);
+      else {
+        this.selectedMerId = null;
+        this.selectValue = [];
+        this.switchSelect();
+      }
+    },
     // 授权关闭
     authColse: function (e) {
       this.isShowAuth = e;
@@ -447,7 +530,7 @@ export default {
             success: () => {
               that.loadend = false;
               that.page = 1;
-              that.cartList.valid = [];
+              that.resetLoadedCart();
               that.getCartList();
               that.getCartNum();
             },
@@ -618,7 +701,7 @@ export default {
      * 购物车手动填写
      *
      */
-    iptCartNum: function (e) {
+    iptWindowCartNum: function (e) {
       this.$set(this.attr.productSelect, "cart_num", e);
     },
     subDel: function (event) {
@@ -628,7 +711,7 @@ export default {
         cartDel(selectValue).then((res) => {
           that.loadend = false;
           that.page = 1;
-          that.cartList.valid = [];
+          that.resetLoadedCart();
           that.getCartList();
           that.getCartNum();
         });
@@ -675,132 +758,58 @@ export default {
       }
     },
     subOrder(event) {
-      let that = this,
-        selectValue = that.selectValue;
-      if (selectValue.length > 0) {
+      this.switchSelect();
+      if (this.footerswitch && this.checkoutGroup && this.selectValue.length > 0) {
+        // This is the customer's store choice, not server-side ownership or trade authorization.
         uni.navigateTo({
-          url:
-            "/pages/goods/order_confirm/index?cartId=" + selectValue.join(","),
+          url: "/pages/goods/order_confirm/index?cartId=" + this.selectValue.join(",")
+            + "&mer_id=" + encodeURIComponent(String(this.checkoutGroup.mer_id)),
         });
       } else {
-        return that.$util.Tips({
-          title: that.$t(`请选择产品`),
-        });
+        return this.$util.Tips({ title: this.$t(`请选择本店产品`) });
       }
     },
     checkboxAllChange: function (event) {
-      let value = event.detail.value;
-      if (value.length > 0) {
-        this.setAllSelectValue(1);
-      } else {
-        this.setAllSelectValue(0);
-      }
+      this.setAllSelectValue(event.detail.value.length > 0);
     },
     setAllSelectValue: function (status) {
-      let that = this;
-      let selectValue = [];
-      let valid = that.cartList.valid;
-      if (valid.length > 0) {
-        let newValid = valid.map((item) => {
-          if (status) {
-            if (that.footerswitch) {
-              if (item.attrStatus) {
-                item.checked = true;
-                selectValue.push(item.id);
-              } else {
-                item.checked = false;
-              }
-            } else {
-              item.checked = true;
-              selectValue.push(item.id);
-            }
-            that.isAllSelect = true;
-          } else {
-            item.checked = false;
-            that.isAllSelect = false;
-          }
-          return item;
-        });
-        that.$set(that.cartList, "valid", newValid);
-        that.selectValue = selectValue;
-        that.switchSelect();
-      }
+      const candidates = this.footerswitch
+        ? (this.checkoutGroup ? this.checkoutGroup.entries.filter((entry) => entry.item.attrStatus).map((entry) => entry.item) : [])
+        : this.cartList.valid;
+      this.selectValue = status ? candidates.map((item) => item.id) : [];
+      this.switchSelect();
     },
     checkboxChange: function (event) {
-      let that = this;
       let value = event.detail.value;
-      let valid = that.cartList.valid;
-      let arr1 = [];
-      let arr2 = [];
-      let arr3 = [];
-      let newValid = valid.map((item) => {
-        if (that.inArray(item.id, value)) {
-          if (that.footerswitch) {
-            if (item.attrStatus) {
-              item.checked = true;
-              arr1.push(item);
-            } else {
-              item.checked = false;
-            }
-          } else {
-            item.checked = true;
-            arr1.push(item);
-          }
-        } else {
-          item.checked = false;
-          arr2.push(item);
-        }
-        return item;
-      });
-      if (that.footerswitch) {
-        arr3 = arr2.filter((item) => !item.attrStatus);
+      if (this.footerswitch) {
+        const added = value.find((reference) => !this.inArray(reference, this.selectValue));
+        const nextGroup = this.cartGroups.find((group) => group.entries.some((entry) =>
+          entry.item.attrStatus && String(entry.item.id) === String(added)));
+        if (nextGroup) this.selectedMerId = nextGroup.mer_id;
+        const references = this.checkoutGroup
+          ? this.checkoutGroup.entries.filter((entry) => entry.item.attrStatus).map((entry) => entry.item.id) : [];
+        value = value.filter((reference) => this.inArray(reference, references));
       }
-      // for (let index in valid) {
-      // 	if (that.inArray(valid[index].id, value)){
-      // 		if(valid[index].attrStatus){
-      // 			valid[index].checked = true;
-      // 		}else{
-      // 			valid[index].checked = false;
-      // 		}
-      // 	} else {
-      // 		valid[index].checked = false;
-      // 	}
-      // }
-      that.$set(that.cartList, "valid", newValid);
-      // let newArr = that.cartList.valid.filter(item => item.attrStatus);
-      that.isAllSelect = newValid.length === arr1.length + arr3.length;
-      that.selectValue = value;
-      that.switchSelect();
+      this.selectValue = value;
+      this.switchSelect();
     },
     inArray: function (search, array) {
-      for (let i in array) {
-        if (array[i] == search) {
-          return true;
-        }
-      }
-      return false;
+      return array.some((value) => String(value) === String(search));
     },
     switchSelect: function () {
-      let that = this;
-      let validList = that.cartList.valid;
-      let selectValue = that.selectValue;
-      let selectCountPrice = 0.0;
-      if (selectValue.length < 1) {
-        that.selectCountPrice = selectCountPrice;
-      } else {
-        for (let index in validList) {
-          if (that.inArray(validList[index].id, selectValue)) {
-            selectCountPrice = that.$util.$h.Add(
-              selectCountPrice,
-              that.$util.$h.Mul(
-                validList[index].cart_num,
-                validList[index].truePrice
-              )
-            );
-          }
-        }
-        that.selectCountPrice = selectCountPrice;
-      }
+      const candidates = this.footerswitch
+        ? (this.checkoutGroup ? this.checkoutGroup.entries.filter((entry) => entry.item.attrStatus).map((entry) => entry.item) : [])
+        : this.cartList.valid;
+      const selected = candidates.filter((item) => this.inArray(item.id, this.selectValue));
+      const references = selected.map((item) => item.id);
+      this.cartList.valid.forEach((item) => {
+        this.$set(item, "checked", this.inArray(item.id, references));
+      });
+      this.selectValue = references;
+      this.isAllSelect = candidates.length > 0 && selected.length === candidates.length;
+      this.selectCountPrice = selected.reduce((total, item) => this.$util.$h.Add(
+        total, this.$util.$h.Mul(item.cart_num, item.truePrice)
+      ), 0);
     },
     /**
      * 购物车手动填写
@@ -841,12 +850,14 @@ export default {
               this.cartCount = this.cartCount - item.cart_num;
               cartDel([item.id]).then((res) => {
                 that.loadend = false;
-                that.cartList.valid.splice(index, 1);
+                const currentIndex = that.cartList.valid.findIndex((row) => String(row.id) === String(item.id));
+                if (currentIndex >= 0) that.cartList.valid.splice(currentIndex, 1);
+                that.selectValue = that.selectValue.filter((reference) => String(reference) !== String(item.id));
+                if (that.footerswitch && (!that.checkoutGroup || !that.canCheckoutStore(that.checkoutGroup))) {
+                  that.restoreCheckoutStore();
+                } else that.switchSelect();
                 this.$store.commit("indexData/setCartNum", that.cartCount);
               });
-              // 删除选中中的数据
-              this.selectValue = this.selectValue.filter((i) => i != item.id);
-              this.switchSelect();
             }
           },
         });
@@ -998,64 +1009,22 @@ export default {
         for (let i = 0; i < Math.ceil(c.data.ids.length / that.limit); i++) {
           let cartList = await this.getCartData(data);
           data.page = data.page + 1;
-          let valid = cartList.valid;
-          let validList = that.$util.SplitArray(valid, that.cartList.valid);
-
-          let numSub = [
-            {
-              numSub: true,
-            },
-            {
-              numSub: false,
-            },
-          ];
-          let numAdd = [
-              {
-                numAdd: true,
-              },
-              {
-                numAdd: false,
-              },
-            ],
-            selectValue = [];
-          if (validList.length > 0) {
-            for (let index in validList) {
-              if (validList[index].cart_num == 1) {
-                validList[index].numSub = true;
-              } else {
-                validList[index].numSub = false;
-              }
-              let productInfo = validList[index].productInfo;
-              if (
-                productInfo.hasOwnProperty("attrInfo") &&
-                validList[index].cart_num ==
-                  validList[index].productInfo.attrInfo.stock
-              ) {
-                validList[index].numAdd = true;
-              } else if (
-                validList[index].cart_num == validList[index].productInfo.stock
-              ) {
-                validList[index].numAdd = true;
-              } else {
-                validList[index].numAdd = false;
-              }
-              if (validList[index].attrStatus) {
-                validList[index].checked = true;
-                selectValue.push(validList[index].id);
-              } else {
-                validList[index].checked = false;
-              }
-            }
-          }
+          const validList = that.cartList.valid.slice();
+          cartList.valid.forEach((item) => {
+            if (validList.some((current) => String(current.id) === String(item.id))) return;
+            item.numSub = item.cart_num == 1;
+            const productInfo = item.productInfo;
+            item.numAdd = productInfo.hasOwnProperty("attrInfo")
+              ? item.cart_num == productInfo.attrInfo.stock : item.cart_num == productInfo.stock;
+            item.checked = false;
+            validList.push(item);
+          });
           that.$set(that.cartList, "valid", validList);
-
-          // that.goodsHidden = cartList.valid.length <= 0 ? false : true;
-          that.selectValue = selectValue;
-          let newArr = validList.filter((item) => item.attrStatus);
-          that.isAllSelect =
-            newArr.length == selectValue.length && newArr.length;
-          that.switchSelect();
+          that.mergeCartGroups(cartList.groups);
+          that.mergeInvalidRows(cartList.invalid);
         }
+        if (that.footerswitch) that.restoreCheckoutStore();
+        else that.switchSelect();
         that.loading = false;
         this.canShow = true;
         uni.hideLoading();
@@ -1075,11 +1044,7 @@ export default {
           let cartList = res.data,
             invalid = cartList.invalid,
             loadendInvalid = invalid.length < that.limitInvalid;
-          let invalidList = that.$util.SplitArray(
-            invalid,
-            that.cartList.invalid
-          );
-          that.$set(that.cartList, "invalid", invalidList);
+          that.mergeInvalidRows(invalid);
           that.loadendInvalid = loadendInvalid;
           that.loadTitleInvalid = loadendInvalid
             ? that.$t(`我也是有底线的`)
@@ -1119,35 +1084,9 @@ export default {
       });
     },
     manage: function () {
-      let that = this;
-      that.footerswitch = !that.footerswitch;
-      let arr1 = [];
-      let arr2 = [];
-      let newValid = that.cartList.valid.map((item) => {
-        if (that.footerswitch) {
-          if (item.attrStatus) {
-            if (item.checked) {
-              arr1.push(item.id);
-            }
-          } else {
-            item.checked = false;
-            arr2.push(item);
-          }
-        } else {
-          if (item.checked) {
-            arr1.push(item.id);
-          }
-        }
-        return item;
-      });
-      that.cartList.valid = newValid;
-      if (that.footerswitch) {
-        that.isAllSelect = newValid.length === arr1.length + arr2.length;
-      } else {
-        that.isAllSelect = newValid.length === arr1.length;
-      }
-      that.selectValue = arr1;
-      that.switchSelect();
+      this.footerswitch = !this.footerswitch;
+      if (this.footerswitch) this.restoreCheckoutStore();
+      else this.switchSelect();
     },
     unsetCart: function () {
       let that = this,
@@ -1257,6 +1196,60 @@ export default {
 
 .shoppingCart .list {
   margin-top: 171rpx;
+}
+
+.shoppingCart .list .store-group {
+  margin-bottom: 15rpx;
+}
+
+.shoppingCart .list .store-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  padding: 22rpx 30rpx;
+  box-sizing: border-box;
+  background: #fff;
+  border-bottom: 1rpx solid #f5f5f5;
+}
+
+.shoppingCart .list .store-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 28rpx;
+  color: #282828;
+  overflow-wrap: anywhere;
+}
+
+.shoppingCart .list .store-selected {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 24rpx;
+  color: #868686;
+}
+
+.shoppingCart .list .store-select {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 180rpx;
+  width: 180rpx;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 58rpx;
+  margin: 0;
+  padding: 8rpx 16rpx;
+  box-sizing: border-box;
+  font-size: 24rpx;
+  line-height: 1.4;
+  text-align: center;
+  border: 1rpx solid #a4a4a4;
+  border-radius: 6rpx;
+  background: #fff;
+}
+
+.shoppingCart .list .store-select::after {
+  border: 0;
 }
 
 .shoppingCart .list .item {

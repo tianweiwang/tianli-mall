@@ -430,11 +430,10 @@ class StoreCartServices extends BaseServices
         $combinationId = array_unique(array_column($list, 'combination_id'));
         $discountId = array_unique(array_column($list, 'discount_id'));
         $deduction = ['seckill_id' => $seckillIds[0] ?? 0, 'bargain_id' => $bargainIds[0] ?? 0, 'combination_id' => $combinationId[0] ?? 0, 'discount_id' => $discountId[0] ?? 0];
-        if ($status == 1) {
-            return ['valid' => app()->make(\app\services\marketplace\PublicCatalogServices::class)->cartRows($valid,$uid), 'invalid' => app()->make(\app\services\marketplace\PublicCatalogServices::class)->cartRows($invalid,$uid), 'deduction' => $deduction];
-        } else {
-            return ['valid' => [], 'invalid' => app()->make(\app\services\marketplace\PublicCatalogServices::class)->cartRows($list,$uid), 'deduction' => $deduction];
-        }
+        $catalog=app()->make(\app\services\marketplace\PublicCatalogServices::class);
+        $output=$catalog->cartPageOutput($status==1?$valid:[],$status==1?$invalid:$list,$uid);
+        $output['deduction']=$deduction;
+        return $output;
     }
 
     /**
