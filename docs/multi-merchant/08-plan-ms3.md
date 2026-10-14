@@ -25,6 +25,8 @@ Run8 的有限收尾使用独立 `ms3-failed-run-closeout-source477732-202610141
 
 2026-10-15 收尾实测：Root 对已独立复核的候选执行一次 observe，原命令实际 exit 1；逐阶段只读诊断确认公开输入、来源依赖及主仓来源核验通过，失败在完整 native 状态核验，固定码为 `MS3_LOOPBACK_UI_PORT_ONLY`，observer 尚未创建。实际 UI 容器仍 running/restart 0，`NetworkSettings.Ports` 为 `{"8080/tcp":[]}`，真实 `HostConfig.PortBindings` 严格只有 `127.0.0.1:59371`；冻结守卫允许同键 null，却未处理此处实际空数组。两项真实观察不能证明 UI 已可访问，也不能唯一解释原业务阶段失败。后继有限收尾来源须保留未经改写的实际 fact 和完整 native/消费者保护，仅区分无映射的 null/空数组，并额外核真实声明的唯一 loopback 绑定；原 Run8 producer/MF/FAIL 均保持。未停止或删除任何登记资源，六个私有文件的当前数量及清零仍待实际观察。
 
+后继收尾结果（2026-10-15）：`successor-ui-empty-ports` 单独来源复制原完整 verify_fact/current_native，仅在实际空映射的 null/[] 表示及真实唯一 HostConfig/PublishAllPorts=false 校验处派生，不改写 fact。Root 实际复核十个来源指纹、两个完整字节逆变换及三份 Python AST 后执行 observe：原生 exit0，实际六文件 stat/hash、三控制目录为空及 browser-secret 空，未输出内容。随后同来源 close 实际 exit0，六个声明私有文件按原身份清除；App 显式 SIGTERM、UI/MySQL/Redis 原正常 stop 参数，均要求 terminal0/PID0/restart0，再精确删除七个登记容器、21 个卷和内部网络。原失败、旧 source/MF/收据均保留。收尾十二项计数全0，Root 随后独立执行同 RUN/PROBE 的十二个 Docker 原生查询亦全0（`root-independent-zero.json`）；这是 `ACTUAL_FAILED_RUN_CLOSED_NOT_MS3_PASS`，不是 MS3、Task8、业务 API 或 UI 验收通过。原未运行的页面和业务验收仍保留。
+
 ## Review Focus
 
 - **同浏览器双登录**：平台和商家在同一浏览器中同时登录，刷新、退出其中一个不影响另一个；商家页面里请求平台接口被服务端拒绝（F02）。
