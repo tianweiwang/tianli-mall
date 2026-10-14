@@ -1,5 +1,8 @@
 <template>
 	<view :style="colorStyle">
+		<view v-if="marketplaceParentRequired && !marketplaceCheckout" class="marketplace-parent-notice">
+			{{$t(`原确认页连接不可用，暂未恢复结算内容。请返回原确认页。`)}}
+		</view>
 		<form @submit="formSubmit">
 			<view class='addAddress'>
 				<view class='list'>
@@ -85,6 +88,9 @@
 		mixins: [colors],
 		data() {
 			return {
+				marketplaceCheckout: null,
+				marketplaceParentRequired: false,
+				marketplaceChannelUnavailable: false,
 				regionDval: [this.$t(`浙江省`), this.$t(`杭州市`), this.$t(`滨江区`)],
 				cartId: '', //购物车id
 				pinkId: 0, //拼团id
@@ -121,13 +127,34 @@
 			}
 		},
 		onLoad(options) {
+			this.marketplaceParentRequired = typeof options.orderKey === 'string' && options.orderKey !== '';
+			let channel = null;
+			try {
+				if (typeof this.getOpenerEventChannel === 'function') channel = this.getOpenerEventChannel();
+			} catch (error) {
+				this.marketplaceChannelUnavailable = true;
+			}
+			if (channel && typeof channel.on === 'function' && typeof channel.emit === 'function') {
+				channel.on('marketplaceCheckoutContext', (context) => {
+					if (context && context.version === 1 && context.mer_id && typeof context.orderKey === 'string' &&
+						context.orderKey && typeof context.cartId === 'string' && context.cartId &&
+						['persistent', 'temporary'].includes(context.source_kind) &&
+						(!this.marketplaceParentRequired || (context.orderKey === options.orderKey && String(context.mer_id) === String(options.mer_id)))) {
+						this.marketplaceCheckout = context;
+						this.news = context.source_kind === 'temporary' ? 1 : 0;
+						this._marketplaceCheckoutChannel = channel;
+					}
+				});
+			} else {
+				this.marketplaceChannelUnavailable = true;
+			}
 			if (this.isLogin) {
 				this.cartId = options.cartId || '';
 				this.pinkId = options.pinkId || 0;
 				this.couponId = options.couponId || 0;
 				this.id = options.id || 0;
 				this.noCoupon = options.noCoupon || 0;
-				this.news = options.new || '';
+				this.news = this.marketplaceCheckout ? (this.marketplaceCheckout.source_kind === 'temporary' ? 1 : 0) : options.new || '';
 				this.is_gift = options.is_gift || '';
 				this.orderId = options.order_id || '';
 				uni.setNavigationBarTitle({
@@ -140,6 +167,20 @@
 			}
 		},
 		methods: {
+			returnMarketplaceAddress(addressId) {
+				if (!this.marketplaceCheckout) return false;
+				if (!addressId) {
+					uni.hideLoading();
+					this.$util.Tips({title: this.$t(`地址保存结果暂未完整取得，请返回地址列表选择`)});
+					return true;
+				}
+				this._marketplaceCheckoutChannel.emit('marketplaceAddressSelected', {
+					orderKey: this.marketplaceCheckout.orderKey, mer_id: this.marketplaceCheckout.mer_id, addressId
+				});
+				uni.hideLoading();
+				uni.navigateBack({delta: 1});
+				return true;
+			},
 			// #ifdef APP-PLUS
 			// 获取选择的地区
 			handleGetRegion(region) {
@@ -280,6 +321,7 @@
 			},
 			// 导入共享地址（小程序）
 			getWxAddress: function() {
+				if (this.marketplaceParentRequired && !this.marketplaceCheckout) return this.$util.Tips({title: this.$t(`原确认页连接不可用，请返回原确认页`)});
 				let that = this;
 				uni.authorize({
 					scope: 'scope.address',
@@ -300,6 +342,7 @@
 									id: 0,
 									type: 1,
 								}).then(res => {
+									if (that.returnMarketplaceAddress(res.data.id)) return;
 									setTimeout(function() {
 										if (that.cartId) {
 											let cartId = that.cartId;
@@ -372,6 +415,7 @@
 			},
 			// 导入共享地址（微信）；
 			getAddress() {
+				if (this.marketplaceParentRequired && !this.marketplaceCheckout) return this.$util.Tips({title: this.$t(`原确认页连接不可用，请返回原确认页`)});
 				let that = this;
 				that.$wechat.openAddress().then(userInfo => {
 					editAddress({
@@ -389,6 +433,7 @@
 							type: 1,
 						})
 						.then((res) => {
+							if (that.returnMarketplaceAddress(res.data.id)) return;
 							// close();
 							that.$util.Tips({
 								title: that.$t(`添加成功`),
@@ -431,6 +476,7 @@
 			 * 
 			 */
 			formSubmit: function(e) {
+				if (this.marketplaceParentRequired && !this.marketplaceCheckout) return this.$util.Tips({title: this.$t(`原确认页连接不可用，请返回原确认页`)});
 				let that = this,
 					value = e.detail.value;
 				if (!value.real_name.trim()) return that.$util.Tips({
@@ -463,6 +509,7 @@
 					mask: true
 				})
 				editAddress(value).then(res => {
+					if (that.returnMarketplaceAddress(that.id || res.data.id)) return;
 					if (that.id)
 						that.$util.Tips({
 							title: that.$t(`修改成功`),
@@ -594,5 +641,12 @@
 		font-size: 32rpx;
 		color: var(--view-theme);
 		border: 1px solid var(--view-theme);
+	}
+	.marketplace-parent-notice {
+		margin: 20rpx 30rpx;
+		color: #868686;
+		font-size: 28rpx;
+		line-height: 1.5;
+		text-align: left;
 	}
 </style>

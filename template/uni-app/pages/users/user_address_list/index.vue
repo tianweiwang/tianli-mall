@@ -1,5 +1,8 @@
 <template>
 	<view :style="colorStyle">
+		<view v-if="marketplaceParentRequired && !marketplaceCheckout" class="marketplace-parent-notice">
+			{{$t(`原确认页连接不可用，暂未恢复结算内容。请返回原确认页。`)}}
+		</view>
 		<view class='address-management' :class='addressList.length < 1 && page > 1 ? "fff":""'>
 			<view class='line'>
 				<image src='../../../static/images/line.jpg' v-if="addressList.length"></image>
@@ -102,6 +105,10 @@
 		mixins: [colors],
 		data() {
 			return {
+				marketplaceCheckout: null,
+				marketplaceParentRequired: false,
+				marketplaceChannelUnavailable: false,
+				marketplacePendingAddress: null,
 				imgHost: HTTP_REQUEST_URL,
 				addressList: [],
 				cartId: '',
@@ -122,12 +129,33 @@
 		},
 		computed: mapGetters(['isLogin']),
 		onLoad(options) {
+			this.marketplaceParentRequired = typeof options.orderKey === 'string' && options.orderKey !== '';
+			let channel = null;
+			try {
+				if (typeof this.getOpenerEventChannel === 'function') channel = this.getOpenerEventChannel();
+			} catch (error) {
+				this.marketplaceChannelUnavailable = true;
+			}
+			if (channel && typeof channel.on === 'function' && typeof channel.emit === 'function') {
+				channel.on('marketplaceCheckoutContext', (context) => {
+					if (context && context.version === 1 && context.mer_id && typeof context.orderKey === 'string' &&
+						context.orderKey && typeof context.cartId === 'string' && context.cartId &&
+						['persistent', 'temporary'].includes(context.source_kind) &&
+						(!this.marketplaceParentRequired || (context.orderKey === options.orderKey && String(context.mer_id) === String(options.mer_id)))) {
+						this.marketplaceCheckout = context;
+						this.news = context.source_kind === 'temporary' ? 1 : 0;
+						this._marketplaceCheckoutChannel = channel;
+					}
+				});
+			} else {
+				this.marketplaceChannelUnavailable = true;
+			}
 			if (this.isLogin) {
 				this.cartId = options.cartId || '';
 				this.noCoupon = options.noCoupon || 0;
 				this.pinkId = options.pinkId || 0;
 				this.couponId = options.couponId || 0;
-				this.news = options.news || 0;
+				this.news = this.marketplaceCheckout ? (this.marketplaceCheckout.source_kind === 'temporary' ? 1 : 0) : options.news || 0;
 				this.orderId = options.order_id || 0;
 				this.is_gift = options.is_gift || 0;
 				this.getAddressList(true);
@@ -136,10 +164,49 @@
 			}
 		},
 		onShow: function() {
+			if (this.marketplacePendingAddress) {
+				const value = this.marketplacePendingAddress;
+				this.marketplacePendingAddress = null;
+				return this.returnMarketplaceAddress(value.addressId);
+			}
 			let that = this;
 			that.getAddressList(true);
 		},
 		methods: {
+			returnMarketplaceAddress(addressId) {
+				if (!this.marketplaceCheckout || !addressId) return;
+				this._marketplaceCheckoutChannel.emit('marketplaceAddressSelected', {
+					orderKey: this.marketplaceCheckout.orderKey, mer_id: this.marketplaceCheckout.mer_id, addressId
+				});
+				uni.navigateBack({delta: 1});
+			},
+			openMarketplaceAddressForm(id) {
+				const context = this.marketplaceCheckout;
+				const parentPage = getCurrentPages().slice(-1)[0];
+				uni.navigateTo({
+					url: '/pages/users/user_address/index?orderKey=' + encodeURIComponent(context.orderKey) +
+						'&mer_id=' + encodeURIComponent(context.mer_id) + (id ? '&id=' + encodeURIComponent(id) : ''),
+					events: {marketplaceAddressSelected: (value) => {
+						if (value && value.orderKey === context.orderKey && String(value.mer_id) === String(context.mer_id)) {
+							this.marketplacePendingAddress = value;
+						}
+					}},
+					success: (res) => {
+						if (!res.eventChannel || typeof res.eventChannel.emit !== 'function') {
+							const pages = getCurrentPages();
+							const current = pages[pages.length - 1];
+							const previous = pages[pages.length - 2];
+							const owner = previous && (previous.$vm || previous);
+							if (current && String(current.route).replace(/^\//, '') === 'pages/users/user_address/index' &&
+								previous === parentPage && owner && owner.marketplaceCheckout &&
+								owner.marketplaceCheckout.orderKey === context.orderKey &&
+								String(owner.marketplaceCheckout.mer_id) === String(context.mer_id)) uni.navigateBack({delta: 1});
+							return this.$util.Tips({title: this.$t(`当前页面不能返回原确认页，请返回后再选择`)});
+						}
+						res.eventChannel.emit('marketplaceCheckoutContext', context);
+					}
+				});
+			},
 			onLoadFun: function() {
 				this.getAddressList();
 			},
@@ -311,6 +378,8 @@
 			 * 编辑地址
 			 */
 			editAddress: function(id) {
+				if (this.marketplaceParentRequired && !this.marketplaceCheckout) return this.$util.Tips({title: this.$t(`原确认页连接不可用，请返回原确认页`)});
+				if (this.marketplaceCheckout) return this.openMarketplaceAddressForm(id);
 				let cartId = this.cartId,
 					pinkId = this.pinkId,
 					couponId = this.couponId;
@@ -350,6 +419,8 @@
 			 * 新增地址
 			 */
 			addAddress: function() {
+				if (this.marketplaceParentRequired && !this.marketplaceCheckout) return this.$util.Tips({title: this.$t(`原确认页连接不可用，请返回原确认页`)});
+				if (this.marketplaceCheckout) return this.openMarketplaceAddressForm();
 				let cartId = this.cartId,
 					pinkId = this.pinkId,
 					couponId = this.couponId;
@@ -362,6 +433,8 @@
 				})
 			},
 			goOrder: function(id) {
+				if (this.marketplaceParentRequired && !this.marketplaceCheckout) return this.$util.Tips({title: this.$t(`原确认页连接不可用，请返回原确认页`)});
+				if (this.marketplaceCheckout) return this.returnMarketplaceAddress(id);
 				let cartId = '';
 				let pinkId = '';
 				let couponId = '';
@@ -483,5 +556,12 @@
 
 	.address-management .footer .addressBnt.wxbnt {
 		background-color: #FE960F;
+	}
+	.marketplace-parent-notice {
+		margin: 20rpx 30rpx;
+		color: #868686;
+		font-size: 28rpx;
+		line-height: 1.5;
+		text-align: left;
 	}
 </style>

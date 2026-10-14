@@ -30,7 +30,8 @@
 										</view>
 										<view v-else class="number">{{$t(`企业税号`)}}{{item.duty_number}}</view>
 									</view>
-									<navigator v-if="!isOrder" class="navigator"
+									<button v-if="marketplaceCheckout && !isOrder" class="navigator marketplace-invoice-action" @tap.stop="$emit('manage-invoice', item.id)"><text class="iconfont icon-bianji"></text>{{$t(`编辑`)}}</button>
+									<navigator v-else-if="!isOrder" class="navigator"
 										:url="`/pages/users/user_invoice_form/index?from=order_confirm&id=${item.id}&${urlQuery}`"
 										hover-class="none"><text class="iconfont icon-bianji"></text>{{$t(`编辑`)}}
 									</navigator>
@@ -49,7 +50,8 @@
 				</view>
 			</scroll-view>
 			<view class="popup-ft">
-				<navigator v-if="!isOrder" class="navigator"
+				<button v-if="marketplaceCheckout && !isOrder" class="navigator marketplace-invoice-action" @tap="$emit('manage-invoice', '')"><text class="iconfont icon-fapiao"></text>{{$t(`添加新的抬头`)}}</button>
+				<navigator v-else-if="!isOrder" class="navigator"
 					:url="`/pages/users/user_invoice_form/index?from=order_confirm&${urlQuery}`" hover-class="none">
 					<text class="iconfont icon-fapiao"></text>{{$t(`添加新的抬头`)}}
 				</navigator>
@@ -77,6 +79,7 @@
 			}
 		},
 		props: {
+			marketplaceCheckout: {type: Boolean, default: false},
 			invShow: {
 				type: Boolean,
 				default: false
@@ -316,4 +319,21 @@
 			margin-bottom: 20rpx;
 		}
 	}
+	.marketplace-invoice-action {
+		box-sizing: border-box;
+		padding: 0;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		background: transparent;
+		font: inherit;
+	}
+	.popup-ft .marketplace-invoice-action {
+		width: 100%;
+		margin: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+	.marketplace-invoice-action::after { border: 0; }
 </style>

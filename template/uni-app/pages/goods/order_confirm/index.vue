@@ -1,17 +1,24 @@
 <template>
 	<view :style="colorStyle">
 		<view class='order-submission'>
+			<view v-if="marketplaceV1" class="marketplace-checkout-notice">
+				<view>{{marketplaceConfirmation.store.name}}</view>
+				<view v-if="!marketplaceCanCreate">{{$t(`当前可确认金额和收货信息，暂未开放提交订单。`)}}</view>
+			</view>
+			<view v-if="marketplaceResumeUnavailable" class="marketplace-checkout-notice">
+				{{$t(`原确认页面已关闭，暂不能恢复完整确认内容。请返回商品或购物车重新确认。`)}}
+			</view>
 			<view class="allAddress" :style="store_self_mention && is_shipping ? '':'padding-top:10rpx'"
 				v-if="!virtual_type && (!is_gift || is_gift == 2)">
 				<view class="nav acea-row">
 					<view class="item font-num" :class="shippingType == 0 ? 'on' : 'on2'" @tap="addressType(0)"
-						v-if='store_self_mention && is_shipping'>
+						v-if='!marketplaceV1 && store_self_mention && is_shipping'>
 						<view class="before">
 							{{$t(`快递配送`)}}
 						</view>
 					</view>
 					<view class="item font-num" :class="shippingType == 1 ? 'on' : 'on2'" @tap="addressType(1)"
-						v-if='store_self_mention && is_shipping'>
+						v-if='!marketplaceV1 && store_self_mention && is_shipping'>
 						<view class="before">
 							{{$t(`到店自提`)}}
 						</view>
@@ -107,7 +114,7 @@
 			</view>
 			<view class='wrapper' v-if="!is_gift || is_gift == 1">
 				<view class='item acea-row row-between-wrapper' @tap='couponTap'
-					v-if="!pinkId && !BargainId && !combinationId && !seckillId&& !noCoupon && !discountId && !advanceId">
+					v-if="!marketplaceV1 && !pinkId && !BargainId && !combinationId && !seckillId&& !noCoupon && !discountId && !advanceId">
 					<view>{{$t(`优惠券`)}}</view>
 					<view class='discount'>
 						{{couponTitle}}
@@ -115,7 +122,7 @@
 					</view>
 				</view>
 				<view class='item acea-row row-between-wrapper'
-					v-if="!pinkId && !BargainId && !combinationId && !seckillId && !advanceId && integral_open">
+					v-if="!marketplaceV1 && !pinkId && !BargainId && !combinationId && !seckillId && !advanceId && integral_open">
 					<view>{{$t(`积分抵扣`)}}</view>
 					<view class='discount acea-row row-middle'>
 						<view> {{useIntegral ? $t(`剩余积分`):$t(`当前积分`)}}
@@ -276,24 +283,25 @@
 				<view>{{$t(`合计`)}}:
 					<text class='font-color'>{{$t(`￥`)}}{{totalPrice || 0}}</text>
 				</view>
-				<view class='settlement' style='z-index:100' @tap.stop="Debounce(SubOrder())"
-					v-if="(valid_count>0&&!discount_id) || (valid_count==cartInfo.length&&discount_id)">{{$t(`提交订单`)}}
+				<button v-if="marketplaceV1 || marketplaceResumeUnavailable" class="settlement marketplace-submit"
+					:disabled="!marketplaceCanCreate || marketplaceComputing" @tap.stop="SubOrder">{{$t(`提交订单`)}}</button>
+				<view v-else-if="(valid_count>0&&!discount_id) || (valid_count==cartInfo.length&&discount_id)" class='settlement' style='z-index:100' @tap.stop="Debounce(SubOrder())">{{$t(`提交订单`)}}
 				</view>
 				<view class='settlement bg-color-hui' style='z-index:100' v-else>{{$t(`提交订单`)}}</view>
 			</view>
 		</view>
 		<view class="alipaysubmit" v-html="formContent"></view>
-		<couponListWindow :coupon='coupon' @ChangCouponsClone="ChangCouponsClone" :openType='openType' :cartId='cartId'
+		<couponListWindow v-if="!marketplaceV1" :coupon='coupon' @ChangCouponsClone="ChangCouponsClone" :openType='openType' :cartId='cartId'
 			@ChangCoupons="ChangCoupons"></couponListWindow>
 		<addressWindow ref="addressWindow" @changeTextareaStatus="changeTextareaStatus" :news='news' :address='address'
-			:pagesUrl="pagesUrl" @OnChangeAddress="OnChangeAddress" @changeClose="changeClose"
+			:pagesUrl="pagesUrl" :marketplace-checkout="marketplaceV1" @manage-address="openMarketplaceAddressList" @OnChangeAddress="OnChangeAddress" @changeClose="changeClose"
 			@onHaveAddressList="onHaveAddressList"></addressWindow>
 		<!-- #ifdef MP -->
 		<!-- <authorize @onLoadFun="onLoadFun" :isAuto="isAuto" :isShowAuth="isShowAuth" @authColse="authColse"></authorize> -->
 		<!-- #endif -->
 		<home v-show="!invShow"></home>
 		<invoice-picker :inv-show="invShow" :inv-list="invList" :inv-checked="invChecked" :is-special="special_invoice"
-			:url-query="urlQuery" @inv-close="invClose" @inv-change="invChange" @inv-cancel="invCancel">
+			:url-query="urlQuery" :marketplace-checkout="marketplaceV1" @manage-invoice="openMarketplaceInvoice" @inv-close="invClose" @inv-change="invChange" @inv-cancel="invCancel">
 		</invoice-picker>
 		<canvas canvas-id="canvas" v-if="canvasStatus"
 			:style="{width: canvasWidth + 'px', height: canvasHeight + 'px',position: 'absolute',left:'-100000px',top:'-100000px'}"></canvas>
@@ -360,6 +368,11 @@
 				format: true
 			})
 			return {
+				marketplaceConfirmation: null,
+				marketplaceMerIntent: '',
+				marketplaceResumeUnavailable: false,
+				marketplaceComputing: false,
+				marketplaceComputeRevision: 0,
 				confirm: '', //自定义留言
 				date: this.$t(`请选择`),
 				time: this.$t(`请选择`),
@@ -491,7 +504,15 @@
 				giftData: null
 			};
 		},
-		computed: mapGetters(['isLogin']),
+		computed: {
+			...mapGetters(['isLogin']),
+			marketplaceV1() {
+				return !!this.marketplaceConfirmation && this.marketplaceConfirmation.marketplace_confirmation_version === 1;
+			},
+			marketplaceCanCreate() {
+				return this.marketplaceV1 && !this.marketplaceResumeUnavailable && this.marketplaceConfirmation.marketplace_create_enabled === true;
+			}
+		},
 		// watch: {
 		// 	startDate() {
 		// 		return this.getDate('start');
@@ -524,6 +545,7 @@
 			this.pinkId = options.pinkId ? parseInt(options.pinkId) : 0;
 			this.addressId = options.addressId || 0;
 			this.cartId = options.cartId;
+			this.marketplaceMerIntent = options.mer_id || '';
 			this.orderId = options.order_id || 0
 			this.is_address = options.is_address ? true : false;
 			this.news = !options.new || options.new === '0' ? 0 : 1;
@@ -540,6 +562,11 @@
 			// #ifndef APP-PLUS
 			this.textareaStatus = true;
 			// #endif
+			// A key in a reconstructed URL is not a full confirmation DTO or a restored parent page.
+			if (options.orderKey && !this.is_gift && !this.orderId) {
+				this.marketplaceResumeUnavailable = true;
+				return;
+			}
 			if (this.isLogin && this.toPay == false && (this.is_gift == 0 || this.is_gift == 1)) {
 				this.checkShipping();
 			}else if(this.is_gift && this.isLogin){
@@ -569,6 +596,96 @@
 
 		},
 		methods: {
+			applyMarketplaceMetadata(data) {
+				if (!data || data.marketplace_confirmation_version !== 1 || this.is_gift || this.orderId) {
+					if (this.marketplaceV1) throw new Error(this.$t(`本店确认响应不完整，请重新确认商品`));
+					return;
+				}
+				if (!data.store || String(data.store.mer_id) !== String(data.mer_id) || typeof data.store.name !== 'string' || !data.store.name ||
+					!['persistent', 'temporary'].includes(data.source_kind) || typeof data.marketplace_create_enabled !== 'boolean' ||
+					(this.marketplaceV1 && (String(data.mer_id) !== String(this.marketplaceConfirmation.mer_id) ||
+						data.source_kind !== this.marketplaceConfirmation.source_kind))) {
+					throw new Error(this.$t(`店铺确认信息暂未完整取得`));
+				}
+				this.marketplaceConfirmation = {
+					marketplace_confirmation_version: 1,
+					marketplace_create_enabled: data.marketplace_create_enabled === true,
+					mer_id: data.mer_id,
+					source_kind: data.source_kind,
+					store: data.store
+				};
+				this.news = data.source_kind === 'temporary' ? 1 : 0;
+				this.couponId = 0;
+				this.useIntegral = false;
+				this.integral_open = false;
+				this.cartArr[2].payStatus = 0;
+				if (this.payType === 'yue') this.payType = '';
+			},
+			marketplaceMoneyFields(data, fields) {
+				if (!data || fields.some(field => typeof data[field] !== 'string' || !/^(0|[1-9][0-9]*)\.[0-9]{2}$/.test(data[field]))) {
+					throw new Error(this.$t(`本店金额响应不完整，请重新计算`));
+				}
+			},
+			marketplaceCheckoutContext() {
+				return {
+					version: 1, mer_id: this.marketplaceConfirmation.mer_id, orderKey: this.orderKey,
+					cartId: this.cartId, source_kind: this.marketplaceConfirmation.source_kind,
+					new: this.marketplaceConfirmation.source_kind === 'temporary' ? 1 : 0
+				};
+			},
+			openMarketplacePage(url, event, selected) {
+				if (!this.marketplaceV1 || !this.orderKey) return;
+				let capability = null;
+				try {
+					if (typeof this.getOpenerEventChannel === 'function') capability = this.getOpenerEventChannel();
+				} catch (error) {
+					return this.$util.Tips({title: this.$t(`当前页面不支持返回原确认页，请保持当前确认内容`)});
+				}
+				if (!capability || typeof capability.on !== 'function' || typeof capability.emit !== 'function') {
+					return this.$util.Tips({title: this.$t(`当前页面不支持返回原确认页，请保持当前确认内容`)});
+				}
+				const context = this.marketplaceCheckoutContext();
+				const parentPage = getCurrentPages().slice(-1)[0];
+				const targetRoute = url.split('?')[0].replace(/^\//, '');
+				// The URL carries only a real parent identity hint. Only the eventChannel supplies the V1 DTO.
+				url += (url.includes('?') ? '&' : '?') + 'orderKey=' + encodeURIComponent(context.orderKey) +
+					'&mer_id=' + encodeURIComponent(context.mer_id);
+				const events = {};
+				events[event] = (value) => {
+					if (this.orderKey === context.orderKey && value && value.orderKey === context.orderKey &&
+						String(value.mer_id) === String(context.mer_id)) selected(value);
+				};
+				uni.navigateTo({
+					url, events,
+					success: (res) => {
+						if (!res.eventChannel || typeof res.eventChannel.emit !== 'function') {
+							const pages = getCurrentPages();
+							const current = pages[pages.length - 1];
+							const previous = pages[pages.length - 2];
+							const owner = previous && (previous.$vm || previous);
+							if (current && String(current.route).replace(/^\//, '') === targetRoute && previous === parentPage && owner &&
+								owner.orderKey === context.orderKey && owner.marketplaceConfirmation &&
+								String(owner.marketplaceConfirmation.mer_id) === String(context.mer_id)) uni.navigateBack({delta: 1});
+							return this.$util.Tips({title: this.$t(`当前页面不支持返回原确认页，请保持当前确认内容`)});
+						}
+						res.eventChannel.emit('marketplaceCheckoutContext', context);
+					}
+				});
+			},
+			openMarketplaceAddressList() {
+				this.openMarketplacePage('/pages/users/user_address_list/index', 'marketplaceAddressSelected',
+					(value) => this.OnChangeAddress(value.addressId));
+			},
+			openMarketplaceInvoice(id) {
+				this.invShow = false;
+				const url = '/pages/users/user_invoice_form/index?from=order_confirm&specialInvoice=' +
+					this.special_invoice + (id ? '&id=' + encodeURIComponent(id) : '');
+				this.openMarketplacePage(url, 'marketplaceInvoiceSelected', (value) => {
+					this.invChecked = String(value.invoiceId);
+					this.header_type = String(value.headerType);
+					this.getInvoiceList();
+				});
+			},
 			/**
 			 * 刷新定位并更新门店列表
 			 */
@@ -771,6 +888,30 @@
 				this.computedPrice()
 			},
 			computedPrice() {
+				if (this.marketplaceResumeUnavailable) return;
+				if (this.marketplaceV1) {
+					const key = this.orderKey;
+					const revision = ++this.marketplaceComputeRevision;
+					this.marketplaceComputing = true;
+					return postOrderComputed(key, {
+						addressId: this.addressId, shipping_type: 1, payType: this.payType,
+						mer_id: this.marketplaceConfirmation.mer_id, couponId: 0, useIntegral: 0
+					}).then(res => {
+						if (key !== this.orderKey || revision !== this.marketplaceComputeRevision) return;
+						const result = res.data.result;
+						this.applyMarketplaceMetadata(result);
+						this.marketplaceMoneyFields(result, ['pay_price', 'pay_postage', 'storePostageDiscount', 'deduction_price', 'coupon_price']);
+						this.totalPrice = result.pay_price;
+						this.$set(this.priceGroup, 'storePostage', result.pay_postage);
+						this.$set(this.priceGroup, 'storePostageDiscount', result.storePostageDiscount);
+						this.integral_price = result.deduction_price;
+						this.coupon_price = result.coupon_price;
+					}).catch(error => {
+						if (revision === this.marketplaceComputeRevision) this.$util.Tips({title: error.message || error});
+					}).finally(() => {
+						if (revision === this.marketplaceComputeRevision) this.marketplaceComputing = false;
+					});
+				}
 				let shippingType = this.shippingType;
 				let data = {
 					addressId: this.addressId,
@@ -793,6 +934,10 @@
 				})
 			},
 			addressType(e) {
+				if (this.marketplaceV1) {
+					this.shippingType = 0;
+					return this.computedPrice();
+				}
 				let index = e;
 				let that = this;
 				if (this.shippingType == parseInt(index)) return
@@ -885,6 +1030,7 @@
 			 * 使用积分抵扣
 			 */
 			ChangeIntegral: function() {
+				if (this.marketplaceV1) return;
 				this.useIntegral = !this.useIntegral;
 				this.computedPrice();
 			},
@@ -898,7 +1044,7 @@
 				this.address.address = false;
 				this.getaddressInfo();
 				if(!this.is_gift){
-					this.getConfirm()
+					if (!this.marketplaceV1) this.getConfirm()
 					this.computedPrice();
 				}
 			},
@@ -939,6 +1085,8 @@
 			 * 
 			 */
 			getConfirm: function() {
+				if (this.marketplaceResumeUnavailable) return;
+				if (this.marketplaceV1) return this.computedPrice();
 				let that = this;
 				// return;
 				uni.showLoading({
@@ -952,7 +1100,10 @@
 					shipping_type: that.shippingType + 1
 				}
 				if (that.is_gift) data.is_gift = that.is_gift
+				if (!that.is_gift && !that.orderId && that.marketplaceMerIntent) data.mer_id = that.marketplaceMerIntent;
 				orderConfirm(data).then(res => {
+					that.applyMarketplaceMetadata(res.data);
+					if (that.marketplaceV1) that.marketplaceMoneyFields(res.data.priceGroup, ['totalPrice', 'sumPrice', 'storePostage', 'storePostageDiscount', 'vipPrice', 'levelPrice', 'memberPrice']);
 					that.$set(that, 'userInfo', res.data.userInfo);
 					that.$set(that, 'confirm', res.data.custom_form || []);
 					this.confirm.map(e => {
@@ -971,18 +1122,23 @@
 					that.$set(that, 'valid_count', res.data.valid_count);
 					that.$set(that, 'discount_id', res.data.discount_id)
 					that.$set(that, 'priceGroup', res.data.priceGroup);
+					if (that.marketplaceV1) {
+						that.totalPrice = res.data.priceGroup.totalPrice;
+						that.allPrice = res.data.priceGroup.sumPrice;
+					} else {
 					that.$set(that, 'totalPrice', that.$util.$h.Add(parseFloat(res.data.priceGroup.totalPrice),
 						parseFloat(res.data
 							.priceGroup.storePostage)));
 					that.$set(that, 'allPrice', that.$util.$h.Add(parseFloat(res.data.priceGroup.totalPrice),
 						parseFloat(res.data
 							.priceGroup.vipPrice)).toFixed(2));
+					}
 					that.$set(that, 'seckillId', parseInt(res.data.seckill_id));
 					that.$set(that, 'invoice_func', res.data.invoice_func);
 					that.$set(that, 'special_invoice', res.data.special_invoice);
 					that.$set(that, 'store_self_mention', res.data.store_self_mention);
 					that.$set(that, 'virtual_type', res.data.virtual_type || 0);
-					that.$set(that, 'integral_open', res.data.integral_open);
+					that.$set(that, 'integral_open', !that.marketplaceV1 && res.data.integral_open);
 					uni.hideLoading()
 					//微信支付是否开启
 					that.cartArr[0].payStatus = res.data.pay_weixin_open || 0
@@ -994,7 +1150,7 @@
 					//余额支付是否开启
 					// that.cartArr[2].title = '可用余额:' + res.data.userInfo.now_money;
 					that.cartArr[2].number = res.data.userInfo.now_money;
-					that.cartArr[2].payStatus = res.data.yue_pay_status == 1 ? res.data.yue_pay_status : 0
+					that.cartArr[2].payStatus = !that.marketplaceV1 && res.data.yue_pay_status == 1 ? res.data.yue_pay_status : 0
 					if (res.data.offline_pay_status == 2 || res.data.deduction) {
 						that.cartArr[3].payStatus = 0
 					} else {
@@ -1004,11 +1160,15 @@
 					that.cartArr[4].payStatus = res.data.friend_pay_status || 0;
 					// that.$set(that, 'cartArr', that.cartArr);
 					that.$set(that, 'ChangePrice', that.totalPrice);
-					that.getBargainId();
+					if (!that.marketplaceV1) that.getBargainId();
 					setTimeout(() => {
-						that.getCouponList();
+						if (!that.marketplaceV1) that.getCouponList();
 					}, 500);
-					if (this.addressId && !this.is_gift) {
+					if (that.marketplaceV1) {
+						this.getaddressInfo().then(() => this.computedPrice()).catch(error => {
+							this.$util.Tips({title: error.message || error});
+						});
+					} else if (this.addressId && !this.is_gift) {
 						this.computedPrice();
 					}
 				}).catch(err => {
@@ -1048,6 +1208,7 @@
 			 * 
 			 */
 			getCouponList: function() {
+				if (this.marketplaceV1) return;
 				let shippingType = this.shippingType;
 				let that = this;
 				let data = {
@@ -1068,8 +1229,10 @@
 			 */
 			getaddressInfo: function() {
 				let that = this;
-				let fnc = that.addressId ? getAddressDetail : getAddressDefault
-				fnc(that.addressId).then(res => {
+				const requestedAddressId = that.addressId;
+				let fnc = requestedAddressId ? getAddressDetail : getAddressDefault
+				return fnc(requestedAddressId).then(res => {
+					if (that.marketplaceV1 && String(that.addressId) !== String(requestedAddressId)) return;
 					if (!Array.isArray(res.data)) {
 						res.data.is_default = parseInt(res.data.is_default);
 						that.addressInfo = res.data || {};
@@ -1093,6 +1256,7 @@
 				}, 500);
 			},
 			couponTap: function() {
+				if (this.marketplaceV1) return;
 				this.coupon.coupon = true;
 				this.coupon.list.forEach((item, index) => {
 					if (item.id == this.couponId) {
@@ -1108,6 +1272,10 @@
 				that.animated = false;
 			},
 			onAddress: function() {
+				if (this.marketplaceV1 && !this.addressInfo.real_name && !this.haveAddressList) {
+					return this.openMarketplacePage('/pages/users/user_address/index', 'marketplaceAddressSelected',
+						(value) => this.OnChangeAddress(value.addressId));
+				}
 				let that = this;
 				if (this.addressInfo.real_name || this.haveAddressList) {
 					this.$refs.addressWindow.getAddressList();
@@ -1149,6 +1317,9 @@
 				})
 			},
 			payment(data) {
+				if (this.marketplaceResumeUnavailable || (this.marketplaceV1 && !this.marketplaceCanCreate)) {
+					return this.$util.Tips({title: this.$t(`当前商城暂未开放提交订单`)});
+				}
 				let that = this;
 				orderCreate(that.orderKey, data).then(res => {
 					let url = `/pages/goods/cashier/index?order_id=${res.data.result.orderId}&from_type=order`
@@ -1166,6 +1337,9 @@
 				this.$refs.textarea.focus()
 			},
 			SubOrder(e) {
+				if (this.marketplaceResumeUnavailable || (this.marketplaceV1 && !this.marketplaceCanCreate)) {
+					return this.$util.Tips({title: this.$t(`当前商城暂未开放提交订单`)});
+				}
 				let that = this,
 					data = {};
 				if (!that.addressId && !that.shippingType && !that.virtual_type && !that.is_gift) return that.$util.Tips({
@@ -1837,6 +2011,29 @@
 		border-radius: 50rpx;
 		text-align: center;
 		line-height: 70rpx;
+	}
+
+	.marketplace-checkout-notice {
+		margin: 20rpx 30rpx;
+		color: #333;
+		font-size: 28rpx;
+		line-height: 1.5;
+		text-align: left;
+	}
+
+	.order-submission .footer .marketplace-submit {
+		box-sizing: border-box;
+		padding: 0;
+		margin: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+	}
+
+	.order-submission .footer .marketplace-submit[disabled] {
+		background-color: #eee;
+		color: #868686;
 	}
 
 	.footer .transparent {

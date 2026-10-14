@@ -33,6 +33,7 @@
 	} from '@/config/app';
 	export default {
 		props: {
+			marketplaceCheckout: {type: Boolean, default: false},
 			pagesUrl: {
 				type: String,
 				default: '',
@@ -73,6 +74,7 @@
 			goAddressPages: function() {
 				this.$emit('changeClose');
 				this.$emit('changeTextareaStatus');
+				if (this.marketplaceCheckout) return this.$emit('manage-address');
 				uni.navigateTo({
 					url: this.pagesUrl
 				});

@@ -1287,7 +1287,8 @@ export default {
           if (news) {
             let url =
               "/pages/goods/order_confirm/index?new=1&cartId=" +
-              res.data.cartId;
+              encodeURIComponent(res.data.cartId);
+            if (!this.isGiftOrder && that.merchantStore) url += "&mer_id=" + merchantIdentity(that.merchantStore.mer_id);
             if (this.isGiftOrder) url += "&is_gift=" + this.isGiftOrder;
             uni.navigateTo({
               url,

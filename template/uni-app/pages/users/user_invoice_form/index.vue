@@ -1,5 +1,8 @@
 <template>
 	<view :style="colorStyle">
+		<view v-if="marketplaceParentRequired && !marketplaceCheckout" class="marketplace-parent-notice">
+			{{$t(`原确认页连接不可用，暂未恢复结算内容。请返回原确认页。`)}}
+		</view>
 		<form @submit="formSubmit">
 			<view class="panel">
 				<view class="acea-row row-middle">
@@ -63,7 +66,8 @@
 			</checkbox-group>
 			<view class="button-section">
 				<button class="button" form-type="submit">{{$t(`保存`)}}</button>
-				<navigator class="navigator" :url="backUrl" hover-class="none">{{$t(`取消`)}}</navigator>
+				<navigator v-if="marketplaceCheckout || marketplaceParentRequired" class="navigator" open-type="navigateBack" hover-class="none">{{$t(`取消`)}}</navigator>
+				<navigator v-else class="navigator" :url="backUrl" hover-class="none">{{$t(`取消`)}}</navigator>
 			</view>
 		</form>
 		<view :class="{ mask: popupType }"></view>
@@ -104,6 +108,9 @@
 		mixins: [colors],
 		data() {
 			return {
+				marketplaceCheckout: null,
+				marketplaceParentRequired: false,
+				marketplaceChannelUnavailable: false,
 				invoiceTypeList: [{
 						name: this.$t(`增值税电子普通发票`),
 						value: '1',
@@ -149,9 +156,30 @@
 			}
 		},
 		onHide() {
-			this.from = ''
+			if (!this.marketplaceCheckout) this.from = ''
 		},
 		onLoad(options) {
+			this.marketplaceParentRequired = typeof options.orderKey === 'string' && options.orderKey !== '';
+			let channel = null;
+			try {
+				if (typeof this.getOpenerEventChannel === 'function') channel = this.getOpenerEventChannel();
+			} catch (error) {
+				this.marketplaceChannelUnavailable = true;
+			}
+			if (channel && typeof channel.on === 'function' && typeof channel.emit === 'function') {
+				channel.on('marketplaceCheckoutContext', (context) => {
+					if (context && context.version === 1 && context.mer_id && typeof context.orderKey === 'string' &&
+						context.orderKey && typeof context.cartId === 'string' && context.cartId &&
+						['persistent', 'temporary'].includes(context.source_kind) &&
+						(!this.marketplaceParentRequired || (context.orderKey === options.orderKey && String(context.mer_id) === String(options.mer_id)))) {
+						this.marketplaceCheckout = context;
+						this.news = context.source_kind === 'temporary' ? 1 : 0;
+						this._marketplaceCheckoutChannel = channel;
+					}
+				});
+			} else {
+				this.marketplaceChannelUnavailable = true;
+			}
 
 			if (options.id) uni.setNavigationBarTitle({
 				title: '编辑发票'
@@ -218,6 +246,7 @@
 			},
 			// 保存
 			formSubmit(e) {
+				if (this.marketplaceParentRequired && !this.marketplaceCheckout) return this.$util.Tips({title: this.$t(`原确认页连接不可用，请返回原确认页`)});
 				let that = this;
 				const formData = e.detail.value;
 				formData.type = this.type;
@@ -380,6 +409,23 @@
 					title: that.$t(`保存中`)
 				});
 				invoiceSave(formData).then(res => {
+					if (that.marketplaceCheckout) {
+						const invoiceId = that.id || res.data.id;
+						if (!invoiceId) {
+							uni.hideLoading();
+							return that.$util.Tips({title: that.$t(`发票保存结果暂未完整取得，请返回发票列表选择`)});
+						}
+						if (invoiceId) {
+							that._marketplaceCheckoutChannel.emit('marketplaceInvoiceSelected', {
+								orderKey: that.marketplaceCheckout.orderKey, mer_id: that.marketplaceCheckout.mer_id,
+								invoiceId, headerType: formData.header_type
+							});
+							uni.hideLoading();
+							uni.navigateBack({delta: 1});
+							return;
+						}
+					}
+
 					uni.showToast({
 						title: res.msg,
 						icon: 'success',
@@ -659,5 +705,12 @@
 		line-height: 86rpx;
 		text-align: center;
 		color: var(--view-theme);
+	}
+	.marketplace-parent-notice {
+		margin: 20rpx 30rpx;
+		color: #868686;
+		font-size: 28rpx;
+		line-height: 1.5;
+		text-align: left;
 	}
 </style>
