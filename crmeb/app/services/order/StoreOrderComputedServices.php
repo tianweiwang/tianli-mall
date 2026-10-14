@@ -134,7 +134,11 @@ class StoreOrderComputedServices extends BaseServices
         if ($marketplace) {
             $weights = $postageResult[5];
             $allocated = MarketplacePostageAllocation::allocate($payPostage, $weights);
-            foreach ($allocated as $index => $line) $cartInfo[$index]['postage_price'] = $line['postage'];
+            foreach ($allocated as $index => $line) {
+                $cartInfo[$index]['postage_price'] = $line['postage'];
+                // V1 keeps the original charged line amount for refund/split consumers.
+                $cartInfo[$index]['origin_postage_price'] = $line['postage'];
+            }
             $cartGroup['marketplace_postage_weights'] = $weights;
             $cartGroup['cartInfo'] = $cartGroup['priceGroup']['cartInfo'] = $cartInfo;
             $cartGroup['priceGroup']['storePostage'] = $payPostage;

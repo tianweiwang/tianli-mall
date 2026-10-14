@@ -6,6 +6,7 @@
 
 ## Global Constraints
 
+- 目标为通用多商户商城，商品、规格、价格和公共计算沿用现有通用能力；不新增天俪专属预约、检测、区域代理、定制会员或补贴业务。旧仓库名称和平台品牌配置不作为交易需求。
 - 一笔订单只属于一个商家；订单及其子单、订单项、售后、发货记录的 `mer_id` 与订单一致，创建后不可修改。
 - 首版不启用：跨店支付、充值余额、积分抵扣、优惠券、分销与活动叠加。这些入口在服务端由配置 `marketplace.trade.disabled_features` 控制并拒绝；不删除历史数据，不改历史余额与积分。
 - 金额沿用现有以元计的 `decimal` 字段；到支付接口的分值转换只在支付适配层做，用整数运算，并单独测试。
@@ -95,14 +96,18 @@ Files：`crmeb/app/services/marketplace/order/MarketplaceOrderInput.php`；普�
 - custom_form 只核最多十行的闭集 title/label/value/status，status 为 bool；label 为 text/number/email/data/time/id/phone/img，日期名称为 data；普通值为 UTF-8 string，图片值为 UTF-8 string[]。顺序及内容进入摘要，不拿客户端 title/status 当定义授权。首次创建另绑定真实商品定义与必填条件；多商品表单关联、实际库存事务、已提交重放、收尾及创建接线仍待设计/实现。纯 helper 不访问配置/缓存/SQL/身份/支付，不能代表真实下单验收；普通纯输入检查不运行用户已停止的拒绝、冲突或故障样本。
 - 2026-10-15 纯输入检查点：上述两个纯方法与普通脚本已实现，原 confirm/computed 等方法的内容未改；独立代码后源复核有限 SOURCE PASS。Root 在既有 PHP 8.2 镜像、network none、只读源和根文件系统下，两 PHP `-l` 均 exit0，十九条普通编码断言 exit0：包含 UINT64 字符串精度、正常空发票/联系人、对象键与引用归一、列表顺序、Unicode/原文本、二进制摘要长度及临时来源。样例编号只验证编码，不建立认证演员。实际控制器、持久幂等、写单/库存事务、商品表单定义校验和写入容量仍未接线；创建 gate 保持关闭，不记 Task 4、O03 或真实下单通过。
 
-**创建持久化执行设计（下一步，尚未实现）：** 新增单一 `crmeb/app/dao/marketplace/order/MarketplaceOrderDao.php`，由服务独占一个真实 `Db::transaction` 并传同一 PDO；每次读写核该 PDO 在事务中且就是默认连接当前 PDO。仅使用已校验的实际表前缀和固定表/列；新 DAO 用原生 PDO，金额、BIGINT 引用及 BINARY 摘要明确按字符串/二进制绑定，避免当前 ORM 按 schema 将 decimal 绑定为 float、BIGINT 绑定为 PARAM_INT。原生 INSERT 后立即取同 PDO 的 lastInsertId、核真实列范围并读回；movement/cart 引用保持 UINT64 十进制 string，不用 Number、float 或无条件 int。
+**创建持久化执行合同（DAO 源码已实现，实际 SQL 与服务接线待验证）：** 新增单一 `crmeb/app/dao/marketplace/order/MarketplaceOrderDao.php`，由服务独占一个真实 `Db::transaction` 并传同一 PDO；每次读写核该 PDO 在事务中且就是默认连接当前 PDO。仅使用已校验的实际表前缀和固定表/列；新 DAO 用原生 PDO，金额、BIGINT 引用及 BINARY 摘要明确按字符串/二进制绑定，避免当前 ORM 按 schema 将 decimal 绑定为 float、BIGINT 绑定为 PARAM_INT。原生 INSERT 后立即取同 PDO 的 lastInsertId、核真实列范围并读回；movement/cart 引用保持 UINT64 十进制 string，不用 Number、float 或无条件 int。
 
 - DAO 六个内部边界：`claim`（真实 UID/idem/摘要/confirmation_ref 的持久占位和已提交重放）、`lockInputs`（当前商家、真实商品/物理 SKU、本人地址/发票及持久 cart）、`insertOrder`（原订单与原发票快照）、`reserve`（实际库存与 reserve）、`insertItems`（原订单项及实际 reserve 血缘）、`markCreated`（本事务登记已提交订单和收尾责任）。不伪造 MerchantContext；控制器、真实价格服务、收尾/取消、公开详情和开票接线仍须后续实现，gate 不开放。
-- 持久重放先于确认缓存：只返回真实同 UID、mer、request_digest、版本1订单且其原 unique 的 SHA256 匹配 confirmation_ref；重放不重算价、扣库存或发权益。首次占位 state0 与新订单、库存、订单项、invoice、state1/order_id/post_commit_done=0/cancel_at 同事务提交，不能单独提交占位。旧 version0/NULL 不当作新订单。
+- 持久重放先于确认缓存：只返回真实同 UID、mer、request_digest、版本1订单且其原 unique 的 SHA256 匹配 confirmation_ref；重放不重算价、扣库存或发权益。同 UID/confirmation_ref 使用不同 idem_key 而规范 request_digest 完全相同时，正常复用原已提交订单及原持久 idem，不新增 alias 表；不同请求返回409，已存在但未完成的 state0 不能冒称已提交。首次占位 state0 与新订单、库存、订单项、invoice、state1/order_id/post_commit_done=0/cancel_at 同事务提交，不能单独提交占位。旧 version0/NULL 不当作新订单。
 - 固定锁序为商家 → 商品根升序 → 物理 SKU 升序 → 运费模板及子行升序 → 本人地址/发票/持久 cart。商家 review_status=1/accept_orders=1/security_locked=0/closed_at=NULL；商品 review_status=2/is_show=1/is_del=0，active SKU 必须实际同 product/type=0/unique。运费沿锁定商品中的模板归属，锁同商家真实 template 和 region/free/no_delivery 子行，不能把未加锁的公众 lookup 或员工授权上下文作为顾客下单授权。
-- UID 和新 order PK 受现有 item/invoice/pay_uid 的 signed INT 共同上限 2147483647 约束；商品 PK 最大8388607，SKU PK 最大2147483647；root stock/sales 最大16777215，SKU stock/sales 最大4294967295。金额按非负 DECIMAL(12,2) 最大9999999999.99 核，地址快照100字符、HTML 转义后 mark512字符，cart_info/custom_form UTF-8 JSON 各最多65535字节。纯输入 UINT32 校验和 Decimal 格式化不替代写入范围。
-- 同一真实 SKU 的多个 cart 项聚合一条 reserve（order_item_id=NULL）；SKU UPDATE 同时带实际 id/product_id/type/unique 和前值/数量条件；商品根 UPDATE 使用实际 id/mer_id、stock/sales 前值及数量/容量条件，两者实际影响行数均必须1。逐 SKU 更新根与 SKU stock/sales，并记录本次实际前后值；不能只按 unique 更新、先统一改根后编造中间值。每个订单项保存其实际 cart 引用/SKU/reserve，内部成本取真实私有报价，公众报价不能当成本来源。
+- UID 和新 order PK 受现有 item/invoice/pay_uid 的 signed INT 共同上限 2147483647 约束；商品 PK 最大8388607，SKU PK 最大2147483647；root stock/sales 最大16777215，SKU stock/sales 最大4294967295。金额按非负 DECIMAL(12,2) 最大9999999999.99 核，地址快照100字符、HTML 转义后 mark512字符，cart_info/custom_form UTF-8 JSON 各最多65535字节。普通页面也发送 gift_mark，沿旧创建语义把纯输入中已规范的原文本写入原 VARCHAR(255)，不截断或额外转义；is_gift 仍固定0，不开放礼物流程。纯输入 UINT32 校验和 Decimal 格式化不替代写入范围。
+- 同一真实 SKU 的多个 cart 项聚合一条 reserve（order_item_id=NULL）；SKU UPDATE 同时带实际 id/product_id/type/unique 和前值/数量条件；商品根 UPDATE 使用实际 id/mer_id、stock/sales 前值及数量/容量条件，两者实际影响行数均必须1。逐 SKU 更新根与 SKU stock/sales，并记录本次实际前后值；不能只按 unique 更新、先统一改根后编造中间值。每个订单项保存其实际 cart 引用/SKU/reserve，内部成本取真实私有报价，公众报价不能当成本来源。 V1 最终运费分配生产端同时明确写 postage_price 与 origin_postage_price，两者在创建时都是实际收取的整行运费；origin 是该行首次收费快照（最终主预算为零时亦为0.00），不是内部权重或会员折扣前费用。后续 V1 退款/拆单沿此实际收费与整行单位处理，不能沿旧单价公式扩大金额；旧 version0/NULL 数据与计算不改，DAO不把缺失字段猜成零或邮费。
 - 原发票表可复用，选中抬头应在同事务锁本人有效记录并复制原十项字段；旧事务外 makeUp 会派发任务且不具备此幂等合同，不能直接当创建步骤。custom_form 仍须绑定锁定商品的真实定义和必填条件，多商品定义关联待补；不得用客户端 title/status 当授权。V1 行运费是整行金额，旧开票将其当单价的地方须适配；原 orderCreateAfter 会重写整份 cart_info，新收尾须持久登记并自行保留血缘。V1 订单详情及 refund_cartInfo 须按保存快照脱敏成本/UID/内部选择/流水，不调用会重读当前商品的目录投影。这些后续消费者完成前不开放创建。
+
+2026-10-15 DAO 源码检查点：六个方法已实现；持久 cart 沿已有查询兼容真实 status=NULL 或1，其他本人、商品、规格、数量与未消费状态约束保持。独立源复核通过，当前 DAO 在既有 PHP 8.2 镜像中语法 exit0。真实 vendor/Think App/默认 Db 配置和 File cache 下的有限构造探针已通过；首次缺少 cache 配置的实际失败保留。探针未 initialize 应用、建立 PDO、执行 SQL 或认证，不能记实际创建成功。V1 计算生产端已明确生成两项整行运费快照，独立源复核和原普通纯分摊脚本 28 条断言通过；旧版本计算保持原样。
+
+下一步普通 SQL 验证新增有限入口 `help/audit-regressions/isolated/ms4-order-normal.php`：在新专用实例实际完成原有限初始化和 MS4 结构迁移后，以真实默认 `Db::transaction` 的 PDO 调用 DAO。原 `audit_db()` 仅做事务外只读隔离保护和提交后独立查询，不充当业务 PDO；保护使用已确认的 read-only 模式，不运行已停止的拒绝、冲突、并发、故障或恢复样本。夹具的用户、商品、SKU、购物车、地址与发票均由专用库原生自增并读回，真实确认服务 capture/frame 和共享重算提供内部价格，不手工拼期望价或伪造认证。先核普通固定运费、两个 SKU/三行购物车的聚合 reserve、真实库存前后值、订单/发票/项与血缘、金额和两运费快照，再正常重放同请求并核订单及库存不重复变化。该入口须独立记录本次实际角色和源码来源，不能借旧迁移八文件证明；结果只代表内部 DAO 数据事务，HTTP 认证、创建 API、模板运费、非空表单、取消、售后与支付各自保留待验证。
 
 **Interfaces:**
 - Produces（待实现）：`MarketplaceOrderCreateServices::create(int $uid, string $routeKey, array $rawPost): array` 消费真实 Request 和上述纯输入，完成持久幂等 → 锁定与真实报价 → 条件库存/原订单/订单项/发票/reserve 原子提交 → 持久收尾，保持原 `result.orderId` 成功包装。相关取消、库存硬删保护、定时收尾、拆单、售后和支付版本适配仍保留原任务。
