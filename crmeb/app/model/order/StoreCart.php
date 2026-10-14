@@ -15,6 +15,7 @@ use app\model\product\sku\StoreProductAttrValue;
 use crmeb\basic\BaseModel;
 use crmeb\traits\ModelTrait;
 use think\Model;
+use think\db\Query;
 
 /**
  * 购物车Model
@@ -36,6 +37,15 @@ class StoreCart extends BaseModel
      * @var string
      */
     protected $name = 'store_cart';
+
+    /** Keep the unsigned BIGINT basket reference exact in every SQL predicate. */
+    public function db($scope = []): Query
+    {
+        $query = parent::db($scope);
+        $types = $query->getFieldsType();
+        $types['id'] = 'string';
+        return $query->setFieldType($types);
+    }
 
     /**
      * 自动添加字段

@@ -109,6 +109,12 @@ Files：`crmeb/app/services/marketplace/order/MarketplaceOrderInput.php`；普�
 
 下一步普通 SQL 验证新增有限入口 `help/audit-regressions/isolated/ms4-order-normal.php`：在新专用实例实际完成原有限初始化和 MS4 结构迁移后，以真实默认 `Db::transaction` 的 PDO 调用 DAO。原 `audit_db()` 仅做事务外只读隔离保护和提交后独立查询，不充当业务 PDO；保护使用已确认的 read-only 模式，不运行已停止的拒绝、冲突、并发、故障或恢复样本。夹具的用户、商品、SKU、购物车、地址与发票均由专用库原生自增并读回，真实确认服务 capture/frame 和共享重算提供内部价格，不手工拼期望价或伪造认证。先核普通固定运费、两个 SKU/三行购物车的聚合 reserve、真实库存前后值、订单/发票/项与血缘、金额和两运费快照，再正常重放同请求并核订单及库存不重复变化。该入口须独立记录本次实际角色和源码来源，不能借旧迁移八文件证明；结果只代表内部 DAO 数据事务，HTTP 认证、创建 API、模板运费、非空表单、取消、售后与支付各自保留待验证。
 
+该验证初始化使用真实 AppService 注册/boot、ModelService boot 和原 common，File cache/log/runtime 只写进程自己的 tmpfs，不触发完整 App 初始化或 HTTP 身份。测试配置的 self_operated_mer_id 只取本次原初始化收据中的实际 MS2 自增结果，核同来源子进程及真实商家行，不把新夹具商家擅当已确认部署自营身份。宿主沿 r5 在仓库外派生有限准备：原四次迁移成功并保留其正式 manifest 后，按原 created CID 正常移除迁移角色，重新创建/登记 audit-ms4-order-normal、MySQL、Redis 三角色；首次实际 DB/Redis、六卷与内部网络身份继续固定。业务角色只挂只读 audit_app 私有配置，不读取 migrator。新来源绑定冻结完整 app/crmeb/vendor/config 常规文件根及入口/harness/guard/composer 文件，核真实已加载文件处于闭集；新的 created/source/观察和普通清理证据各自记录。准备与语法检查尚不代表实际 SQL 通过。
+
+持久 cart 的必要调用点补齐：实际 StoreCartDao 的 id/IN 查询仍按 schema 将 BIGINT 绑定为 PARAM_INT，仅在请求编码和新 DAO 保留字符串不能保证共享确认/修改路径精度。Files 补 `crmeb/app/model/order/StoreCart.php`、`crmeb/app/dao/order/StoreCartDao.php`、`crmeb/app/services/order/StoreCartServices.php`：Model 查询工厂沿 parent 的真实默认连接与 scope，先取得完整字段映射，再仅将 id 设为 string；不能用部分 schema 覆盖全部列。普通库存调整、修改规格和 resetCart 使用已有纯 reference(..., persistent) 核完整 UINT64 字符串，去掉 cart PK 的 int 转换及下游 typed-int 边界，UID/商品/数量的各自整数范围保持。该映射只改 SQL 绑定，不强制改旧小 ID 的 Model JSON 类型。普通 DAO 验证额外核实际 cart Query 的完整映射和 id 的 PARAM_STR；不造大编号演员，不以普通小主键实测声称 UINT64 极值 SQL 或全部购物车 API 已验收。
+
+2026-10-15 普通入口源码检查点：上述三 cart 必要调用点和普通 CLI 已实现并经独立有限 SOURCE PASS，四 PHP 在既有 PHP 8.2 镜像下语法 exit0。当前入口 SHA256 为 `4366884cfc8399da229fb6ed3ffbc7e263e42f6572f4a31edf468fc4a6df609b`；独立读回还核保存项的真实 SKU 单价/私有成本/整行金额、零权益佣金及累计商品额/成本/运费到订单。宿主派生 v3 的完整逆变换恢复 r5、原 seed 函数不变，YAML/Python AST/initializer PHP 语法与独立 preparation/close 消费字段复核通过。新完整业务树仅在新业务登记/授权阶段及入口自身前后核对，原 initializer 不为每个 CREATE 重复扫描无关业务树。该检查点未执行新实例、SQL 或 HTTP，不记 Task 4/O03 通过。
+
 **Interfaces:**
 - Produces（待实现）：`MarketplaceOrderCreateServices::create(int $uid, string $routeKey, array $rawPost): array` 消费真实 Request 和上述纯输入，完成持久幂等 → 锁定与真实报价 → 条件库存/原订单/订单项/发票/reserve 原子提交 → 持久收尾，保持原 `result.orderId` 成功包装。相关取消、库存硬删保护、定时收尾、拆单、售后和支付版本适配仍保留原任务。
 - 用例：O02（混合商家、商品与规格错配 → 拒绝，库存与订单表不变）、O03（同一幂等键重复提交返回同一订单；同一键换商品或商家 → 409）、O04（两个并发请求抢最后一件，恰好一个成功）、O05（下单后改价、改店铺名，订单快照不变）、O07（使用他人地址 → 拒绝）、R05 的下单子场景（带优惠券、积分、余额参数 → 拒绝）。

@@ -195,7 +195,8 @@ class StoreCartServices extends BaseServices
                 if ($nowStock < ($cartNum + $stockNum)) {
                     $surplusStock = $nowStock - $cartNum;//剩余库存
                     if ($currentCart && $surplusStock < $stockNum) {
-                        $this->dao->update(array_merge($currentWhere, ['id' => (int)$currentCart['id']]), ['cart_num' => $surplusStock]);
+                        $cartRef = \app\services\marketplace\order\MarketplaceOrderInput::reference($currentCart['id'], 'persistent');
+                        $this->dao->update(array_merge($currentWhere, ['id' => $cartRef]), ['cart_num' => $surplusStock]);
                     }
                 }
                 break;
@@ -439,12 +440,13 @@ class StoreCartServices extends BaseServices
 
     /**
      * 购物车重选
-     * @param int $cart_id
+     * @param int|string $cart_id
      * @param int $product_id
      * @param string $unique
      */
-    public function modifyCart(int $cart_id, int $product_id, string $unique,int $uid)
+    public function modifyCart(mixed $cart_id, int $product_id, string $unique,int $uid)
     {
+        $cart_id = \app\services\marketplace\order\MarketplaceOrderInput::reference($cart_id, 'persistent');
         $row=$this->dao->getOne(['id'=>$cart_id,'uid'=>$uid,'product_id'=>$product_id,'type'=>0,'is_pay'=>0,'is_new'=>0,'is_del'=>0]);
         if(!$row)throw new ApiException('购物车不存在');
         $next=$row->toArray();$next['product_attr_unique']=$unique;unset($next['productInfo'],$next['attrInfo']);
@@ -472,15 +474,16 @@ class StoreCartServices extends BaseServices
      */
     public function resetCart($id,$uid,$productId,$unique,$num)
     {
+        $id = \app\services\marketplace\order\MarketplaceOrderInput::reference($id, 'persistent');
         return $this->transaction(function()use($id,$uid,$productId,$unique,$num){
             $where=['id'=>$id,'uid'=>$uid,'is_pay'=>0,'is_new'=>0,'is_del'=>0];
-            $original=$this->dao->getOwnedCartForUpdate((int)$uid,(int)$id);
+            $original=$this->dao->getOwnedCartForUpdate((int)$uid,$id);
             if(!$original||(int)$original['product_id']!==(int)$productId)throw new ApiException('购物车不存在');
             $next=$original->toArray();$next['product_attr_unique']=$unique;unset($next['attrInfo'],$next['productInfo']);
             $identity=app()->make(\app\services\marketplace\PublicCatalogServices::class)->cartIdentity($next,(int)$uid);
             if($identity===null)throw new ApiException('请选择有效的商品属性');
             $number=(int)$num;if($number<1||(int)$identity['sku']['stock']<$number)throw new ApiException('选择的规格库存不足');
-            $target=$this->dao->getOtherOwnedCartForUpdate((int)$uid,(int)$productId,(int)$original['type'],$unique,(int)$id);
+            $target=$this->dao->getOtherOwnedCartForUpdate((int)$uid,(int)$productId,(int)$original['type'],$unique,$id);
             if($target){
                 $merged=(int)$target['cart_num']+$number;
                 if((int)$identity['sku']['stock']<$merged)throw new ApiException('选择的规格库存不足');

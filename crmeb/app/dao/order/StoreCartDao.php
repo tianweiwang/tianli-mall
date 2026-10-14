@@ -213,11 +213,11 @@ class StoreCartDao extends BaseDao
         })->field("FROM_UNIXTIME(add_time,'$timeType') as days,$str as num")->group('days')->select()->toArray();
     }
     /** Current own unpaid basket row; this is used inside resetCart's existing transaction. */
-    public function getOwnedCartForUpdate(int $uid,int $id)
+    public function getOwnedCartForUpdate(int $uid,string $id)
     {
         return $this->getModel()->db()->where(['uid'=>$uid,'id'=>$id,'is_pay'=>0,'is_new'=>0,'is_del'=>0])->lock(true)->find();
     }
-    public function getOtherOwnedCartForUpdate(int $uid,int $parent,int $type,string $unique,int $originalId)
+    public function getOtherOwnedCartForUpdate(int $uid,int $parent,int $type,string $unique,string $originalId)
     {
         return $this->getModel()->db()->where(['uid'=>$uid,'product_id'=>$parent,'type'=>$type,'product_attr_unique'=>$unique,'is_pay'=>0,'is_new'=>0,'is_del'=>0])->where('id','<>',$originalId)->lock(true)->find();
     }
