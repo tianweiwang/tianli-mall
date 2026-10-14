@@ -12,9 +12,10 @@
 
 ## Global Constraints
 
+- 产品适用范围为通用多商户商城，不新增天俪专属业务规则、字段或流程。新商家后台默认品牌为“多商户商城”，由一处 `VUE_APP_MARKETPLACE_NAME` 配置统一供页面与浏览器标题使用；真实店铺名称来自商家记录。仓库路径、原系统历史名称及来源标识属于技术记录，不作为产品品牌或需求。
 - `template/merchant/` 不复制平台后台的动态菜单、系统工具、全局 axios 拦截器；只复用经过挑选、没有权限副作用的展示组件（复制到 `template/merchant/src/components/` 并注明来源文件）。
 - 构建输出：`template/merchant/dist/`；部署路径 `/merchant/`（`publicPath: '/merchant'`）。是否复制到 `crmeb/public/merchant/` 随 Q2 决定，本里程碑只在隔离环境中部署。
-- token 存储键 `tianli_merchant_token`，与平台后台不同；401 时清除 token 并跳转商家登录页；403 显示无权限提示；404 显示"不存在或无权访问"。
+- token 存储键 `marketplace_merchant_token`，与平台后台不同；401 时清除 token 并跳转商家登录页；403 显示无权限提示；404 显示"不存在或无权访问"。
 - 不升级 Vue 大版本，不在本里程碑改平台后台的构建配置。
 - 截图与录屏只用合成数据。
 
@@ -33,7 +34,7 @@
 - Create: `help/audit-regressions/merchant-frontend.cjs`
 
 **Interfaces:**
-- Produces: `src/api/request.js` 导出 `request(method, url, data)`，基础路径 `/merchantapi`，从 `tianli_merchant_token` 读取 token，按 §Global Constraints 处理 401/403/404。
+- Produces: `src/api/request.js` 导出 `request(method, url, data)`，基础路径 `/merchantapi`，从 `marketplace_merchant_token` 读取 token，按 §Global Constraints 处理 401/403/404。
 
 - [ ] **Step 1: 写测试**（BROWSER 层，`merchant-frontend.cjs`）：F01 的构建子场景（干净目录 `npm ci`、`npm run build` 退出码 0，`dist/index.html` 中资源路径以 `/merchant/` 开头）；登录页用员工账号登录成功后进入首页；一次性设置链接页面可以设置密码。
 - [ ] **Step 2–5:** 确认失败 → 实现 → 通过 → 提交 `feat(merchant-ui): standalone merchant console skeleton`。
