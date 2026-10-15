@@ -408,10 +408,22 @@ HTTP 启动实际未通过：原 App 和 UI 各一次 start 均 native0，两个
 
 r3源码检查点：builder `2de1f9ef807fabeb8ae2511eb7985a02786fdaf19cfbdb187cfddbe6810c6ba6` 经独立G1–G8源审和Root实际create-only派生，生成15份来源、完整inverse及独立正常关闭源。host摘要 `6ee269d29567ba374d6e83c1ea5556f1504566f3d79933e09feba0f2a6cbc45a`、close `0112a9bba3f617bbb2b3dad9184bbff570ab38ca252c3d6f1f451a175f27ad61`、inverse `3da7a3e2cfccd0c207a6fde6a84deb17041a72318d910fe57f0d518521f68b12`。完整逆回r2/v5、原38 legacy函数字节保持；实际原生docker port观察、TCP/PNG、App有效SIGTERM及双网正常关闭证明均已接线，仍须新Run实际核。Root核生成文件完整字节/AST，并用公开解析输入执行Compose config native0/stderr空，确认仅UI双网/固定回环端口、其余角色单backend、App SIGTERM及十卷；第一次纯解析缺少必需dist路径输入时失败，没有创建资源，补齐公开解析路径后通过。源码/配置检查收据摘要 `d15c4ade8bb3e02e08a139f89c61dd3007fa26b7e2afdeafa6966a92199cdb66`；PHP业务、四接口文档及两个browser模块未改，源码通过不替代新完整Run或页面验收。
 
+r3新Run实际结果（2026-10-15）：clean来源 `483a43f99c1c2df733a2683de8fb4b36c4350fc7`，Run `20261015105237da81d9`，freeze `f9f41f8acd8357b3bfe308a3c13e3c58460a6e470fc6a97e13c569e62af6f894`。专用初始化、四命令结构迁移、原普通订单内部链和20笔真实创建准备均正常；原内部结果摘要 `25f05067bfb8eb73515a31dfc0a5969847478a32acb21d4291ee426a4a89aa43`、准备子结果 `66e972dacbb1940e562bcc396ae61b34fb9498011a95739f5bd8d4e01f97e3b9`，断言计数包含源码检查，不能当作业务案例数。实际仅UI双网，App有效SIGTERM、真实端口映射、native docker port、Windows回环TCP及同源PNG HTTP200/完整117字节均通过；页面入口收据摘要 `e270066079811ebcb08ac90c59a65b957e6be910a7e89080cdf595823367bf60`。同原App source-ready完成完整来源检查，摘要 `db98dbf736e33e5c5f1a1650c2e0619c84e065bbaaddbc90d3be375af4ddd4d5`；三名真实演员已私有交接后正常移除原bootstrap，未输出口令或令牌。
+
+本轮未开始HTTP子进程或DOM步骤：真实runtime与plan读取分别约34.3和33.4秒，按既定串行调用量估算会挤占原3600秒窗口。Root先保留窗口与全部校验条件，独立无网络只读PHP普通测量核10812条路径：严格成员检查约92.6毫秒，双根21624次真实realpath约33613.3毫秒；纯测量结果 `artifacts/ms4-merchant-http-preparation/performance-source-membership-v1/result.json` 摘要 `085608d0b8e65188cf4e71a7fd9cda720d8f16eb91ef5bbcce38cbb510e4e6ac`。已证根因是每次入口解析全部未加载文件的物理路径，不能把改set成员查找当作主要修复，也不能据估算宣布完整窗口通过。
+
+修改源码前已关闭该Run。原入口getter和原生元数据/top/inspect实核同一个监督进程、8000监听0、supervisor请求/响应0、commands/captures/acks/screenshots各0且无active，观察摘要 `fb7e4835fb459b8b311b5e15c5b588c4f3b2e8d3c321e5e814b66fa8e093e462`；getter保留既有私有配置、SQL/Redis只读门禁。临时演员内存已释放，未建浏览器tab。有限正常关闭源 `normal-close-ready-no-child-20261015105237da81d9.py` 摘要 `6f52ee23dd98e6198140e49bc5bb2727aeaad30767c49b5f0a0c39c27b1e1543` 经独立源审和Root读回后执行，四个运行服务均单次正常stop并真实exit0/PID0/restart0；原五CID、两原空网络、十原卷非force精确移除。关闭结果摘要 `4a1ecf1b8026fbfec563d1110ac6b5c5cb1a249baa00faab79bfedafa34e0dda`，Root独立六原生标签查询全0，摘要 `20d73da50dbb8f66d5c89e0cb020693df2f7456f4bfb8a4bbf9475eceb5aec58`，41份原公开来源/业务/准备/页面入口证据字节保持。HTTP/DOM仍NOT RUN，不重开原Run。
+
+性能修复依据（实施前）：仅改现有 `help/audit-regressions/isolated/ms4-merchant-http.php` 的非full来源遍历；继续严格核全部descriptor的成员、唯一、类型、大小/SHA格式及排序闭集。非full先用原绑定建立双根绝对路径表，再只对实际get_included_files逐个realpath、精确命中并核原is_file/非link/大小/SHA；fresh includes还须全部已完成本轮hash。原full的完整inventory和双根逐文件物理校验保持，最终audit仍full；返回included保留完整集合，但不把该词法集合当作本轮全文件hash证明。这是对已经完整启动核过、canonical且无link并保持冻结来源的有限集合换序，不宣称任意可变/带alias树都等价，RO挂载本身不证明宿主永不改动。实施前在已关闭Run的原10812行来源上，用真实require的harness/guard两文件做纯正常对照，核原/新所有descriptor、21624返回路径、实际hash文件集合和前后字节严格相同，随后实施同一候选、语法与独立源审，并以新clean来源Run核真实入口耗时；两文件纯测量不替代实际三文件入口、34步骤或完整验收。业务逻辑、金额、演员、隔离拓扑、23表只读事实、34/25/9及3600秒保持原合同，用户停止样本继续NOT RUN。
+
+性能修复源码检查点：纯正常对照已实际native0/stderr空，原循环39783.053毫秒、候选117.482毫秒；10812描述符及排序闭集、21624双根included键、两个真实已加载文件的大小/SHA集合严格全等，两次均clearstatcache，前后完整10812绑定字节保持。结果 `artifacts/ms4-merchant-http-preparation/performance-source-bound-inverse-v2/result.json` 摘要 `a62595e061fff0c49aa6cdd58996f6745860bd10f07f39a50990ef616b9a7337`，范围仅实际PHP-r加载的harness/guard；未调用App/SQL/Redis/演员/HTTP。已将同一候选块完整字节落入现有HTTP入口，源码摘要 `9aca3b43d181e5b052293208f7daf6439f669157bd0edb85d3125d81bac4a69d`；独立源审通过，替回原块即可逐字节还原整份原入口，原full物理循环和其余内容保持。Root实际PHP8.2隔离语法检查native0/stderr空，原normal/read/prepare/browser-normal四份PHP字节未变，检查收据摘要 `33107b64bef01ca76c9f41094765ea3b72311c2317e9052aac757d0d342105b8`。真实三文件入口、新完整Run及34步仍待实际验证，不由纯测量宣布通过。
+
 - [x] 修复后的完整内部普通链、20笔真实准备及原事实保持；记录本轮页面入口失败与单次正常TERM修复，独立核资源零残留。
 - [x] 派生 r3 新来源，接入 HTTP 阶段专用双网、仅UI入口及App有效SIGTERM；保留完整可逆来源与原v5行为，并完成独立源审和必要静态/语法检查（运行结果待新Run）。
-- [ ] 重新冻结 clean HEAD，以新Run执行初始化、结构迁移、原普通链及20单准备，核全体真实来源/权限/资源身份。
-- [ ] 核实际UI发布映射、Windows回环TCP及固定同源PNG的真实HTTP/字节；再按原source-ready、私有交接与真实supervisor合同开始浏览器。
+- [x] 重新冻结 clean HEAD，以r3新Run执行初始化、结构迁移、原普通链及20单准备，核全体真实来源/权限/资源身份；该Run已正常关闭，HTTP/DOM未执行。
+- [x] r3实核UI发布映射、Windows回环TCP、固定同源PNG真实HTTP/字节及原source-ready；本项只证明本轮页面入口，不代替业务页面。
+- [x] 完成来源遍历纯正常对照、相同候选实施和聚焦检查；本项只证明上述纯计算/源码范围。
+- [ ] 以性能修复后的新clean来源重新冻结并执行原完整准备，记录真实入口耗时，保留原窗口。
 - [ ] 完成原34步骤/25主capture/9原字节JPEG/9人工复核、实际手机横向可达、23表SQL及最终完整来源核对；原3600秒窗口不延长。
 - [ ] 实际关闭owned tab/重置viewport、正常停止真实HTTP子进程和原App，再精确移除原五容器、两个空端点原网络及十卷，独立六查询核零。
 - [ ] 按实际有限范围记录HTTP/DOM结果；完整Task6/MS4、生产创建门禁和用户停止样本的原状态保持，未验收项继续保留。

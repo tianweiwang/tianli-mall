@@ -215,18 +215,26 @@ function m4h_source(bool $full=true): array
     m4h_assert($tmpfs,'M4H_ACTUAL_TMPFS');
     $expected=$full?m4h_inventory('/source'):array_column($binding['source_files'],'path');
     if($full)m4h_assert(m4h_inventory('/workspace')===$expected,'M4H_SAME_SOURCE_CLOSURE');
-    $seen=[];$included=[];
+    $seen=[];$included=[];$bound=[];
     foreach($binding['source_files'] as $row){$path=$row['path']??'';
         m4h_assert(is_string($path)&&in_array($path,$expected,true)&&!isset($seen[$path])&&is_int($row['bytes']??null)
             &&preg_match('/\A[a-f0-9]{64}\z/D',(string)($row['sha256']??''))===1,'M4H_BOUND_FILE');$seen[$path]=true;
         foreach(['/source','/workspace'] as $root){$file=$root.'/'.$path;
+            if(!$full){$included[$file]=true;$bound[$file]=$row;continue;}
             if($full||in_array(realpath($file),get_included_files(),true))
                 m4h_assert(is_file($file)&&!is_link($file)&&filesize($file)===$row['bytes']
                     &&hash_file('sha256',$file)===$row['sha256'],'M4H_FULL_SOURCE_BYTES');
             $included[realpath($file)]=true;}
     }
     $paths=array_keys($seen);sort($paths,SORT_STRING);m4h_assert($paths===$expected,'M4H_COMPLETE_SOURCE_BINDING');
-    foreach(get_included_files() as $path)m4h_assert(isset($included[realpath($path)]),'M4H_INCLUDED_SOURCE');
+    if(!$full){$checked=[];
+        foreach(get_included_files() as $path){$file=realpath($path);
+            m4h_assert(is_string($file)&&isset($bound[$file]),'M4H_INCLUDED_SOURCE');$row=$bound[$file];
+            m4h_assert(is_file($file)&&!is_link($file)&&filesize($file)===$row['bytes']
+                &&hash_file('sha256',$file)===$row['sha256'],'M4H_FULL_SOURCE_BYTES');$checked[$file]=true;}
+    }
+    foreach(get_included_files() as $path){$file=realpath($path);
+        m4h_assert(is_string($file)&&isset($included[$file])&&($full||isset($checked[$file])),'M4H_INCLUDED_SOURCE');}
     m4h_assert($binding['normal_receipt_sha256']===hash_file('sha256',$base.'ms4-order-normal.json')
         &&$binding['public_receipt_sha256']===hash_file('sha256',$base.'ms4-http-public.json'),'M4H_PRECONDITION_RECEIPTS');
     $normal=m4h_read($base.'ms4-order-normal.json');
