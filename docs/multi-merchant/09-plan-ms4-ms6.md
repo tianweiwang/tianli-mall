@@ -296,7 +296,7 @@ MS5 Task2只增加 `crmeb/services/pay/marketplace/` 下PaymentAdapter/PaymentAc
 
 ### Task 6: 商家订单操作
 
-2026-10-15只读盘点（尚未实施）：当前merchantapi与商家前端均无订单路由、页面或上述三项订单权限。后续读取须沿真实MerchantContext与EmployeeAuthServices重新授权，DAO强制同店保存V1订单和其保存项；新增独立商家投影，不能直接返回顾客/平台DTO。列表不含收货联系方式、表单或自由文本备注；详情只增履约必要保存收货快照、顾客留言和原定义表单，排除成本、支付标识、发票银行资料及内部ledger/reserve。成交单价、商品行金额和整行运费分别沿保存truePrice/sum_true_price/postage_price，不从当前SKU重新计价。商家端现有默认品牌已为“多商户商城”。
+2026-10-15开工时只读盘点（当时尚未实施，后续实现及验证见下）：merchantapi与商家前端均无订单路由、页面或上述三项订单权限。后续读取须沿真实MerchantContext与EmployeeAuthServices重新授权，DAO强制同店保存V1订单和其保存项；新增独立商家投影，不能直接返回顾客/平台DTO。列表不含收货联系方式、表单或自由文本备注；详情只增履约必要保存收货快照、顾客留言和原定义表单，排除成本、支付标识、发票银行资料及内部ledger/reserve。成交单价、商品行金额和整行运费分别沿保存truePrice/sum_true_price/postage_price，不从当前SKU重新计价。商家端现有默认品牌已为“多商户商城”。
 
 原delivery/splitDelivery/doDelivery已保护保存V1，旧equalSplit含float金额与旧pid/split语义，不能松开门禁直接套用。部分发货仍需先闭合稳定付款根、履约子单、同店归属、精确分币、真实原reserve及退款血缘、持久幂等与三端list/count不重复统计合同；当前仅盘点设计，未选择或实现该拆单结构。现无独立包裹表，是否需要额外结构须先以完整合同评估。真实paid写链尚未实现，不能伪改paid来验收发货；发货、拆单、售后与完整Task6责任均保留。
 
@@ -321,6 +321,12 @@ DESIGN SPECIFICATION：用途为本店查单与保存履约资料只读查看；
 普通helper新增 `help/audit-regressions/isolated/lib/ms4-merchant-read-normal.php`，与现 `ms4-order-normal.php` 的require/源码闭集/真实App初始化/事实表和evidence接线同属本合同必要文件。使用原订单真实mer_id为有单店与停接店插入原生role/employee/password_setup，真实setupPassword→login→authenticate；另建真实空店，均经独立PDO核原生PK与保存归属。权限仅merchant.profile.read/order.read，不改历史角色、不伪paid。读取预期以本店全部真实根订单为准（原persistent与keeper两单），至少核两页/count、完整号查询、paid/is_cancel普通过滤、真实详情与保存价格/表单、停接店仍读及空店0结果；比较读前后SQL事实，不输出口令/capability/JWT。必要追加原生夹具/事实表为已有marketplace_role/employee/password_setup，无新表。host下一版本仅做上述新增源闭集/真实环境绑定/严格结果wrapper和正常关闭扩展，原v4全部证明保留。
 
 2026-10-15本地源码检查点：上述8个后端、7个商家前端和普通CLI/helper已实现并经独立源码复核。已有Node22执行商家source-check通过（31脚本语法、73本地import），不是构建或DOM验收。PHP8.2对后端8文件与CLI语法全exit0；源审发现CLI误从不存在的app配置键核签名键，已窄修沿实际AuthConfigGuard使用的Env getter，最终CLI与helper两文件再次语法exit0且前后源码不变；最终收据 `artifacts/ms4-merchant-read-source/20261015-v1/lint-final-wiring-result.json` 摘要 `fa934d33a8ae18b2b5f57c4b5dccc698fe7ef2d0c55c92b90d37e38f299a9571`。helper最终摘要 `26e151cd4991a7238ff1317daa81f7c8709f1409f44d6f10e3fa3250e43b5e48`，paid=1在实际未付夹具上只核正常空结果，不伪造已付单。此检查点尚未freeze/运行新Run，真实商家认证、SQL读取、HTTP/浏览器与完整Task6均未验收；后续真实构建和新Run结果另记，不以源码检查勾完成。
+
+实际普通读取结果：03环境说明独立本地提交 `49dcb6af2`，18文件实现检查点为clean `38a9df05a4473ada0a8b4abc9c6f44ce803e7324`；新v5 freeze摘要 `08a5ac0deb1228ba367db3999c36ccfef26f50ac542d6a2eea489453a0cc9d3a`，实际RUN `20261015052122973093`。原prepare、有限initializer、四命令结构迁移、原生登记均正常通过；实际普通订单容器native0/exited/PID0，phase=final_source，业务收据 `evidence/ms4-order-normal.json` 摘要 `aaa7e0e0b1b45ff1df99dfc819dbfa025ae61b7538ef27f7aa27bb1af0e9207d`。原direct DAO、两来源真实创建、会员计价、保存读取、持久收尾及普通取消的完整v4证明在启动即默认Redis的新环境中均再次通过，原两个测试支付ENV与新增单公开cache ENV的native/receipt/source binding均闭合。新增三套原生商家角色/员工/setup经真实setupPassword→login→authenticate；本店实际2单、停接店1单、空店0单，两个分页与同过滤count、完整订单号、paid/is_cancel普通筛选（paid=1正常空结果）、三个实际详情及保存金额/收货快照/原定义表单均核一致，读取前后SQL事实保持。认证本身真实写入隔离Redis会话，不能将SQL不变误写成Redis不变。Root独立消费完整v5严格wrapper通过；范围仅 `NORMAL_MERCHANT_ORDER_INTERNAL_AUTHENTICATED_READ_ONLY` 加原普通内部链，不是HTTP或DOM验收。
+
+同源商家前端实际离线构建：仓库外 `artifacts/ms4-merchant-console-build/source38a9df05-v1/` 使用已有Node22.23.3/npm10.9.9及复制的新缓存，npm ci --offline与npm run build（含prebuild的31脚本/73import检查）均native0，无联网安装或换包。43个源码文件与冻结源逐文件bytes/SHA一致，25个dist文件；HTML资源与CSS相对字体解析均保持/merchant/，标题为“多商户商城 · 商家后台”。原builder尾部因两份清单JSON键顺序不同而误报exit1，其FAIL收据、源码和原生日志完整保留；独立postcheck对同一批产物按精确路径闭集及逐文件bytes/SHA复核native0，未重跑ci/build或放宽实际文件/资源要求。新收据 `build-postcheck-verified.json` 摘要 `7b670d296d4b9b7113c862392d1773a63402f153ad821bdd9646ddfd29cb4b8f`，Root另核全部dist及实际HTML资源。旧依赖的EBADENGINE/deprecated及两条包体积warning保留；未把构建当成真实页面或登录验收。
+
+同RUN关闭已真实完成：原authorize-order-cleanup helper正常exit0并按原ID移除，固定v5关闭源摘要 `9e18ff39012675e78c31949ac3889bb7a7f805586c35eec9865ffc3284727924` 核完整新旧证明及同Run/source/CID/freeze后正常stop原MySQL/Redis，原生进程和容器均exit0/PID0，再非force精确移除原3容器/唯一内部网/6卷。Root独立检查源摘要 `7f4689f65430edb9f8720777b06a130a435353de351e70badd5bbf582cdb815d` 实际6条双标签原生查询exit0/stderr空/count0，保留业务收据字节不变。本RUN已关闭，不重开；HTTP/浏览器320/390/1440布局及相邻导航、发货/部分拆单/售后、真实支付退款、跨进程attempt及wallclock daemon仍未验收，用户停止的样本仍NOT RUN，创建gate保持关闭，不勾完整Task6或MS4。后续发货只读设计已比较store_order履约子单与独立shipment模型；00的pid树及10的O09既有拆单要求仍是原约束，尚未选择或实施新表示及迁移，不能以没有商业子单真空通过O09。
 
 ### Task 7: 退款额度与库存行为
 
