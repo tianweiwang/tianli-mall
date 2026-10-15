@@ -84,6 +84,19 @@ final class MarketplaceOrderCreateServices
         });
     }
 
+    /** A point-in-time owner-only result lookup, not cancellation or proof that a delayed request ended. */
+    public function lookupConfirmation(int $uid,string $key):array
+    {
+        if(MarketplaceOrderInput::unsigned($uid,'uid',2147483647)===0)throw new ApiException('顾客编号格式错误');
+        $key=MarketplaceOrderInput::confirmationKey($key);
+        return Db::transaction(function(ConnectionInterface $connection)use($uid,$key):array{
+            $pdo=self::pdo($connection);
+            $result=$this->dao->lookupConfirmation($pdo,$uid,$key);
+            if(self::pdo($connection)!==$pdo)throw new AuthUnavailableException();
+            return $result;
+        });
+    }
+
     /** Exact raw JSON hours from the existing configuration producer; zero disables timeout. */
     public static function cancelAt(int $now,mixed $rawHours):int
     {

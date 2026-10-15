@@ -84,8 +84,7 @@ final class MarketplaceOrderDao
         self::integer($now, 1, self::UINT_MAX);
         self::integer($cancelAt, $cancelAt === 0 ? 0 : $now, self::UINT_MAX);
         // Every create/replay uses this actual customer row before any ledger lock.
-        $user = $this->one($pdo, 'user', ['uid'], '`uid` = ?', [$uid]);
-        if ($user === null || self::integer($user['uid'], 1, self::INT_MAX) !== $uid) self::conflict();
+        $this->lockCustomer($pdo, $uid);
         $digest = hash('sha256', MarketplaceOrderInput::canonical($request), true);
         $confirmation = hash('sha256', $request['confirm_key'], true);
         $row = $this->one($pdo, 'marketplace_order_idempotency', self::IDEM_FIELDS,
@@ -496,6 +495,46 @@ final class MarketplaceOrderDao
         }
     }
 
+    /** Read-only resolution serialized with create on the same actual UID, never a new claim. */
+    public function lookupConfirmation(PDO $pdo, int $uid, string $key): array
+    {
+        $this->transaction($pdo); self::integer($uid,1,self::INT_MAX);
+        $key=MarketplaceOrderInput::confirmationKey($key); self::text($key,32,true);
+        $this->lockCustomer($pdo,$uid);
+        $confirmation=hash('sha256',$key,true);
+        $row=$this->one($pdo,'marketplace_order_idempotency',self::IDEM_FIELDS,
+            '`uid` = ? AND `confirmation_ref` = ?',[$uid,$confirmation]);
+        if($row===null)return ['state'=>'not_found','key'=>$key];
+        if(self::integer($row['uid'],1,self::INT_MAX)!==$uid || !is_string($row['confirmation_ref'])
+            || !hash_equals($confirmation,$row['confirmation_ref']))self::unavailable();
+        if(self::integer($row['state'],0,1)===0){
+            if($row['order_id']!==null || self::integer($row['post_commit_done'],0,1)!==0)self::unavailable();
+            return ['state'=>'processing','key'=>$key];
+        }
+        $order=$this->committedOrder($pdo,$row);
+        if($order['unique']!==$key)self::unavailable();
+        return ['state'=>'created','key'=>$key,'orderId'=>$order['order_id']];
+    }
+
+    private function lockCustomer(PDO $pdo, int $uid): void
+    {
+        $user=$this->one($pdo,'user',['uid'],'`uid` = ?',[$uid]);
+        if($user===null || self::integer($user['uid'],1,self::INT_MAX)!==$uid)self::conflict();
+    }
+
+    /** Preserve the saved-order identity checks shared by replay and the owner-only lookup. */
+    private function committedOrder(PDO $pdo, array $row): array
+    {
+        if(self::integer($row['state'],0,1)!==1 || !is_string($row['confirmation_ref'])
+            || strlen($row['confirmation_ref'])!==32)self::unavailable();
+        $refs=self::references(self::decode($row['cart_refs']),$row['source_kind']);
+        $order=$this->order($pdo,self::integer($row['uid'],1,self::INT_MAX),self::integer($row['mer_id'],1,self::UINT_MAX),
+            self::integer($row['order_id'],1,self::INT_MAX),false);
+        if(!hash_equals($row['confirmation_ref'],hash('sha256',$order['unique'],true))
+            || self::decode($order['cart_id'])!==$refs)self::unavailable();
+        return $order;
+    }
+
     private function replay(PDO $pdo, array $row, array $request, string $digest, string $confirmation): array
     {
         if (self::integer($row['uid'],1,self::INT_MAX) !== $request['uid']
@@ -503,9 +542,7 @@ final class MarketplaceOrderDao
             || !is_string($row['request_digest']) || !hash_equals($row['request_digest'],$digest)
             || !is_string($row['confirmation_ref']) || !hash_equals($row['confirmation_ref'],$confirmation)
             || $row['source_kind'] !== $request['source_kind'] || self::decode($row['cart_refs']) !== $request['cart_refs']) self::conflict();
-        if (self::integer($row['state'],0,1) !== 1) self::unavailable();
-        $order = $this->order($pdo,$request['uid'],$request['mer_id'],self::integer($row['order_id'],1,self::INT_MAX),false);
-        if (!hash_equals($confirmation,hash('sha256',$order['unique'],true)) || self::decode($order['cart_id']) !== $request['cart_refs']) self::unavailable();
+        $order = $this->committedOrder($pdo,$row);
         return ['claimed'=>false,'idem_key'=>$row['idem_key'],'request_digest'=>$digest,'confirmation_ref'=>$confirmation,
             'request'=>$request,'order'=>$order,'cancel_at'=>self::integer($row['cancel_at'],0,self::UINT_MAX),
             'post_commit_done'=>self::integer($row['post_commit_done'],0,1)];

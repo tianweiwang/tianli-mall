@@ -196,6 +196,15 @@ class StoreOrderController
             return app('json')->fail('获取失败');
     }
 
+    /** Result lookup stays available for the authenticated owner without opening creation. */
+    public function confirmation(Request $request, MarketplaceOrderCreateServices $services, $key)
+    {
+        $uid=(int)$request->uid();
+        $user=$request->user()->toArray();
+        if($uid<1 || (int)($user['uid']??0)!==$uid)throw new AuthUnavailableException();
+        return app('json')->success($services->lookupConfirmation($uid,(string)$key));
+    }
+
     /**
      * 订单创建
      * @param Request $request

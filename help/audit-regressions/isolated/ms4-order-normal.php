@@ -6,11 +6,13 @@ require __DIR__ . '/lib/harness.php';
 use app\dao\marketplace\order\MarketplaceOrderDao;
 use app\services\marketplace\order\MarketplaceCartSelection;
 use app\services\marketplace\order\MarketplaceOrderInput;
+use app\services\marketplace\order\MarketplaceOrderCreateServices;
 use app\services\marketplace\order\MarketplaceOrderCustomForm;
 use app\services\marketplace\order\MarketplaceOrderLockedQuote;
 use app\services\order\StoreOrderComputedServices;
 use app\services\order\StoreOrderCreateServices;
 use app\services\order\StoreOrderServices;
+use app\services\order\StoreCartServices;
 use app\services\user\UserInvoiceServices;
 use app\services\user\UserServices;
 use crmeb\services\CacheService;
@@ -23,7 +25,8 @@ const M4O_FILES = ['crmeb/composer.json','crmeb/composer.lock','help/audit-regre
 const M4O_FIXTURE_TABLES = ['eb_user','eb_marketplace_merchant','eb_store_product','eb_store_product_attr',
     'eb_store_product_attr_value','eb_store_cart','eb_user_address','eb_user_invoice','eb_system_config'];
 const M4O_FACT_TABLES = ['eb_store_order','eb_store_order_invoice','eb_store_order_cart_info',
-    'eb_marketplace_order_idempotency','eb_marketplace_stock_movement','eb_store_product','eb_store_product_attr_value','eb_store_cart'];
+    'eb_marketplace_order_idempotency','eb_marketplace_stock_movement','eb_store_product','eb_store_product_attr_value','eb_store_cart',
+    'eb_user','eb_marketplace_merchant','eb_store_product_attr','eb_user_address','eb_user_invoice','eb_system_config'];
 
 function m4o_expect(bool $ok, string $code): void
 {
@@ -230,7 +233,7 @@ function m4o_fixture(): array
             m4o_expect((int)m4o_rows($pdo,'SELECT COUNT(*) AS `n` FROM `'.$table.'`')[0]['n'] === 0,'FRESH_FIXTURE_TABLE');
         foreach (['store_free_postage'=>'10000.00','image_thumb_status'=>0,'member_func_status'=>0,'member_card_status'=>0,
             'member_price_status'=>0,'store_self_mention'=>0,'invoice_func_status'=>1,'special_invoice_status'=>0,'offline_pay_status'=>1,
-            'offline_postage'=>0,'integral_ratio'=>'0.00','queue_open'=>0] as $key=>$value)
+            'offline_postage'=>0,'integral_ratio'=>'0.00','queue_open'=>0,'order_cancel_time'=>'0'] as $key=>$value)
             m4o_insert($pdo,'eb_system_config',['menu_name'=>$key,'type'=>'text','value'=>json_encode($value,JSON_THROW_ON_ERROR)]);
         $user = m4o_insert($pdo,'eb_user',['account'=>'ms4-'.getenv('AUDIT_RUN_ID'),'nickname'=>'普通验证顾客','user_type'=>'h5','is_money_level'=>0,'add_time'=>$now],'uid');
         $merchant = m4o_insert($pdo,'eb_marketplace_merchant',['name'=>'普通验证店铺','review_status'=>1,'accept_orders'=>1,'fulfillment_enabled'=>1,
@@ -259,7 +262,9 @@ function m4o_facts(PDO $pdo): array
 {
     $facts = [];
     foreach (M4O_FACT_TABLES as $table) {
-        $rows = m4o_rows($pdo,'SELECT * FROM `'.$table.'` ORDER BY `'.($table === 'eb_marketplace_order_idempotency' ? 'uid' : 'id').'`');
+        $order = match ($table) { 'eb_marketplace_order_idempotency'=>'`uid`,`idem_key`',
+            'eb_user'=>'`uid`','eb_marketplace_merchant'=>'`mer_id`',default=>'`id`' };
+        $rows = m4o_rows($pdo,'SELECT * FROM `'.$table.'` ORDER BY '.$order);
         $facts[$table] = ['count'=>count($rows),'sha256'=>hash('sha256',serialize($rows))];
     }
     return $facts;
@@ -341,10 +346,255 @@ function m4o_verify(PDO $pdo, array $fixture, array $created): array
         'fixture_identity_sha256'=>hash('sha256',serialize([$uid,$mer,$fixture['product']['id'],array_column($fixture['skus'],'id'),
             array_column($fixture['carts'],'id'),$fixture['unselected_cart']['id']]))];
 }
+/** Separate real records for each internal-service case; the original DAO fixture remains intact. */
+function m4o_service_fixture(string $kind): array
+{
+    m4o_expect(in_array($kind,['persistent','temporary'],true),'ORDINARY_SERVICE_SOURCE_KIND');
+    return Db::transaction(static function (\think\db\ConnectionInterface $connection) use ($kind): array {
+        $pdo=m4o_business_pdo($connection);$now=time();
+        $config=m4o_rows($pdo,'SELECT `id`,`value` FROM `eb_system_config` WHERE `menu_name` = ? FOR UPDATE',['order_cancel_time']);
+        $previous=$kind==='persistent'?'0':'0.5';$hours=$kind==='persistent'?'0.5':'0';
+        m4o_expect(count($config)===1&&$config[0]['value']===json_encode($previous,JSON_THROW_ON_ERROR),'ACTUAL_OWN_CANCEL_CONFIGURATION_BEFORE');
+        $value=json_encode($hours,JSON_THROW_ON_ERROR);
+        $statement=$pdo->prepare('UPDATE `eb_system_config` SET `value` = ? WHERE `id` = ? AND `menu_name` = ? AND `value` = ?');
+        m4o_expect($statement instanceof PDOStatement,'ACTUAL_CANCEL_CONFIGURATION_PREPARE');
+        foreach([$value,(string)$config[0]['id'],'order_cancel_time',$config[0]['value']] as $index=>$part)
+            m4o_expect($statement->bindValue($index+1,$part,PDO::PARAM_STR),'ACTUAL_CANCEL_CONFIGURATION_BIND');
+        m4o_expect($statement->execute()&&$statement->rowCount()===1,'ACTUAL_CANCEL_CONFIGURATION_UPDATE');
+        $stored=m4o_rows($pdo,'SELECT `id`,`value` FROM `eb_system_config` WHERE `id` = ?',[$config[0]['id']]);
+        m4o_expect(count($stored)===1&&$stored[0]['value']===$value,'ACTUAL_CANCEL_CONFIGURATION_READBACK');
+        $user=m4o_insert($pdo,'eb_user',['account'=>'ms4-'.getenv('AUDIT_RUN_ID').($kind==='persistent'?'-p':'-t'),
+            'nickname'=>'内部创建顾客','user_type'=>'h5','is_money_level'=>0,'add_time'=>$now],'uid');
+        $merchant=m4o_insert($pdo,'eb_marketplace_merchant',['name'=>'内部创建店铺','review_status'=>1,'accept_orders'=>1,
+            'fulfillment_enabled'=>1,'security_locked'=>0,'add_time'=>$now,'update_time'=>$now],'mer_id');
+        $products=$skus=$first=[];
+        foreach(['甲','乙'] as $index=>$name){
+            $forms=[['title'=>'同名资料','label'=>'text','status'=>true,'value'=>'']];
+            if($index===0)$forms[]=['title'=>'同名资料','label'=>'number','status'=>false,'value'=>''];
+            $product=m4o_insert($pdo,'eb_store_product',['mer_id'=>$merchant['mer_id'],'store_name'=>'内部创建商品'.$name,
+                'unit_name'=>'件','spec_type'=>1,'stock'=>20,'sales'=>0,'price'=>'20.15','cost'=>'7.45','postage'=>'2.67',
+                'freight'=>2,'temp_id'=>0,'is_show'=>1,'review_status'=>2,'is_vip'=>0,'logistics'=>'1','min_qty'=>1,
+                'custom_form'=>json_encode($forms,JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR),'add_time'=>$now]);
+            $products[(int)$product['id']]=$product;
+            m4o_insert($pdo,'eb_store_product_attr',['product_id'=>$product['id'],'type'=>0,'attr_name'=>'规格','attr_values'=>'甲,乙']);
+            foreach([['suk'=>'甲','stock'=>8,'price'=>'20.15','cost'=>'7.45'],['suk'=>'乙','stock'=>12,'price'=>'30.25','cost'=>'9.35']] as $position=>$data){
+                $sku=m4o_insert($pdo,'eb_store_product_attr_value',$data+['product_id'=>$product['id'],'type'=>0,
+                    'unique'=>bin2hex(random_bytes(4)),'sales'=>0,'is_show'=>1,'is_virtual'=>0,'weight'=>'0.00','volume'=>'0.00']);
+                $skus[(int)$sku['id']]=$sku;if($position===0)$first[]=$sku;
+            }
+        }
+        $plan=[['sku'=>$first[0],'qty'=>2],['sku'=>$first[0],'qty'=>1],['sku'=>$first[1],'qty'=>2]];$carts=[];
+        if($kind==='persistent')foreach($plan as $index=>$line)$carts[]=m4o_insert($pdo,'eb_store_cart',[
+            'uid'=>$user['uid'],'type'=>'0','product_id'=>$line['sku']['product_id'],'product_attr_unique'=>$line['sku']['unique'],
+            'cart_num'=>$line['qty'],'add_time'=>$now+$index,'is_pay'=>0,'is_del'=>0,'is_new'=>0,'status'=>1]);
+        $unselected=m4o_insert($pdo,'eb_store_cart',['uid'=>$user['uid'],'type'=>'0','product_id'=>$first[0]['product_id'],
+            'product_attr_unique'=>$first[0]['unique'],'cart_num'=>1,'add_time'=>$now+3,'is_pay'=>0,'is_del'=>0,'is_new'=>0,'status'=>1]);
+        $address=m4o_insert($pdo,'eb_user_address',['uid'=>$user['uid'],'real_name'=>'内部验证','phone'=>'00000000000',
+            'province'=>'验证省','city'=>'验证市','district'=>'验证区','detail'=>'专用内部验证地址','is_default'=>1,'add_time'=>$now]);
+        $invoice=m4o_insert($pdo,'eb_user_invoice',['uid'=>$user['uid'],'header_type'=>1,'type'=>1,'name'=>'内部验证抬头','is_default'=>1,'add_time'=>$now]);
+        return compact('user','merchant','products','skus','plan','carts','unselected','address','invoice','hours');
+    });
+}
+
+/** Actual lookup and its complete SQL/cache no-write observation; no synthetic ledger states. */
+function m4o_service_lookup(MarketplaceOrderCreateServices $service,int $uid,string $key,?string $orderNumber): void
+{
+    $before=m4o_facts(audit_db());$cached=CacheService::get('user_order_'.$uid.$key);
+    $temporary=[];if(is_array($cached)&&($cached['source_kind']??null)==='temporary')
+        foreach($cached['cart_refs'] as $ref)$temporary[$ref]=CacheService::get($ref);
+    $result=$service->lookupConfirmation($uid,$key);
+    m4o_expect(m4o_facts(audit_db())===$before&&CacheService::get('user_order_'.$uid.$key)===$cached,'ACTUAL_LOOKUP_NO_SQL_OR_CONFIRMATION_WRITE');
+    foreach($temporary as $ref=>$payload)m4o_expect(CacheService::get((string)$ref)===$payload,'ACTUAL_LOOKUP_TEMPORARY_CACHE_UNCHANGED');
+    $keys=array_keys($result);sort($keys,SORT_STRING);
+    m4o_expect(($result['state']??null)===($orderNumber===null?'not_found':'created')&&($result['key']??null)===$key,
+        'ACTUAL_LOOKUP_NORMAL_STATE_AND_KEY');
+    m4o_expect($keys===($orderNumber===null?['key','state']:['key','orderId','state'])
+        &&($orderNumber===null||$result['orderId']===$orderNumber),'ACTUAL_LOOKUP_CREATED_IDENTITY');
+    m4o_expect(!Db::connect()->getPdo()->inTransaction()&&!audit_db()->inTransaction(),'LOOKUP_OWN_TRANSACTION_FINISHED');
+}
+
+/** Independent real rows, not a second expected-price payload derived from service output. */
+function m4o_verify_service(PDO $pdo,array $fixture,array $request,string $idemKey,array $frame,array $answers,array $result,string $kind,array $sqlCartBefore): array
+{
+    $uid=(int)$fixture['user']['uid'];$mer=(int)$fixture['merchant']['mer_id'];
+    m4o_expect(!$pdo->inTransaction()&&!Db::connect()->getPdo()->inTransaction()&&$pdo!==Db::connect()->getPdo(),'SERVICE_COMMITTED_INDEPENDENT_PDO');
+    $orders=m4o_rows($pdo,'SELECT * FROM `eb_store_order` WHERE `uid` = ? AND `order_id` = ?',[$uid,$result['order_id']]);
+    m4o_expect(count($orders)===1,'SERVICE_ACTUAL_ORDER_READBACK');$order=$orders[0];$id=(int)$order['id'];
+    m4o_expect((int)$order['mer_id']===$mer&&(int)$order['marketplace_trade_version']===1&&$order['unique']===$request['confirm_key']
+        &&$result['key']===$request['confirm_key']&&(int)$order['paid']===0&&(int)$order['is_gift']===0,'SERVICE_ACTUAL_ORDER_IDENTITY');
+    m4o_expect(json_decode($order['cart_id'],true,32,JSON_THROW_ON_ERROR)===$request['cart_refs']
+        &&$order['mark']===$request['options']['mark']&&$order['gift_mark']===$request['options']['gift_mark']
+        &&$order['pay_type']===$request['options']['payType'],'SERVICE_ACTUAL_INPUT_SNAPSHOTS');
+    $address=$fixture['address'];
+    m4o_expect($order['real_name']===$address['real_name']&&$order['user_phone']===$address['phone']
+        &&$order['user_address']===$address['province'].' '.$address['city'].' '.$address['district'].' '.$address['detail']
+        &&$order['merchant_name_snapshot']===$fixture['merchant']['name']
+        &&$order['merchant_after_sale_contact_snapshot']===$fixture['merchant']['after_sale_contact'],'SERVICE_ACTUAL_ADDRESS_SHOP_SNAPSHOT');
+    $items=m4o_rows($pdo,'SELECT * FROM `eb_store_order_cart_info` WHERE `oid` = ? ORDER BY `id`',[$id]);
+    $moves=m4o_rows($pdo,'SELECT * FROM `eb_marketplace_stock_movement` WHERE `order_id` = ? ORDER BY `sku_id`',[$id]);
+    m4o_expect(count($items)===3&&count($moves)===2,'SERVICE_THREE_ITEMS_TWO_RESERVES');
+    $selected=[];foreach($frame['selection'] as $line)$selected[$line['cart_ref']]=$line;
+    $byMovement=[];foreach($moves as $move)$byMovement[(string)$move['id']]=$move;
+    $quantities=$seen=[];$goods=$cost=$postage='0.00';$total=0;
+    foreach($items as $item){
+        $cart=json_decode($item['cart_info'],true,32,JSON_THROW_ON_ERROR);$ref=(string)$item['cart_id'];$line=$selected[$ref]??null;
+        m4o_expect(is_array($line)&&!isset($seen[$ref]),'SERVICE_ACTUAL_SELECTED_ITEM');$seen[$ref]=true;
+        $sku=$fixture['skus'][$line['sku_id']];$root=$fixture['products'][$line['product_id']];$qty=$line['qty'];$lineage=$cart['marketplace'];
+        m4o_expect((int)$item['uid']===$uid&&(int)$item['mer_id']===$mer&&(int)$item['product_id']===$line['product_id']
+            &&(int)$item['cart_num']===$qty&&(int)$item['surplus_num']===$qty&&(int)$item['refund_num']===0
+            &&$cart['id']===$ref&&$cart['cart_num']===$qty&&$item['unique']===md5($ref.$id),'SERVICE_SAVED_ITEM_SELECTION');
+        m4o_expect($lineage['cart_ref']===$ref&&$lineage['sku_id']===$line['sku_id']&&$lineage['sku_type']===0
+            &&$lineage['sku_unique']===$sku['unique']&&is_string($lineage['reserve_id'])&&isset($byMovement[$lineage['reserve_id']]),
+            'SERVICE_SAVED_RESERVE_LINEAGE');
+        m4o_expect((int)$cart['productInfo']['id']===$line['product_id']&&(int)$cart['productInfo']['mer_id']===$mer
+            &&(int)$cart['productInfo']['attrInfo']['id']===$line['sku_id']&&(int)$cart['productInfo']['attrInfo']['type']===0
+            &&(int)$cart['productInfo']['attrInfo']['product_id']===$line['product_id']&&$cart['productInfo']['attrInfo']['unique']===$sku['unique'],
+            'SERVICE_SAVED_PHYSICAL_PRODUCT_SKU');
+        $move=$byMovement[$lineage['reserve_id']];
+        m4o_expect((int)$move['product_id']===$line['product_id']&&(int)$move['sku_id']===$line['sku_id']
+            &&$move['sku_unique']===$sku['unique'],'SERVICE_REAL_PHYSICAL_SKU');
+        m4o_expect($cart['sum_price']===$sku['price']&&$cart['truePrice']===$sku['price']&&$cart['costPrice']===$sku['cost']
+            &&$cart['productInfo']['attrInfo']['price']===$sku['price']&&$cart['productInfo']['attrInfo']['cost']===$sku['cost']
+            &&$cart['sum_true_price']===bcmul($sku['price'],(string)$qty,2),'SERVICE_REAL_PRIVATE_PRICE_COST');
+        m4o_expect($cart['postage_price']===bcmul($root['postage'],(string)$qty,2)
+            &&$cart['origin_postage_price']===$cart['postage_price'],'SERVICE_ACTUAL_FIXED_CHARGED_LINE_POSTAGE');
+        foreach(['coupon_price','integral_price','one_brokerage','two_brokerage','staff_brokerage','agent_brokerage','division_brokerage'] as $field)
+            m4o_expect($cart[$field]==='0.00','SERVICE_ZERO_DISABLED_RIGHTS_SNAPSHOT');
+        $goods=bcadd($goods,$cart['sum_true_price'],2);$cost=bcadd($cost,bcmul($sku['cost'],(string)$qty,2),2);
+        $postage=bcadd($postage,$cart['postage_price'],2);$total+=$qty;
+        $quantities[$lineage['reserve_id']]=($quantities[$lineage['reserve_id']]??0)+$qty;
+    }
+    m4o_expect(count($seen)===count($selected)&&$goods===$order['total_price']&&$cost===$order['cost']
+        &&$postage===$order['pay_postage']&&$postage===$order['total_postage']&&bcadd($goods,$postage,2)===$order['pay_price']
+        &&(int)$order['total_num']===$total,'SERVICE_INDEPENDENT_ORDER_TOTALS');
+    $rootState=[];foreach($fixture['products'] as $productId=>$root)$rootState[$productId]=['stock'=>(int)$root['stock'],'sales'=>(int)$root['sales']];
+    foreach($moves as $move){
+        $skuId=(int)$move['sku_id'];$productId=(int)$move['product_id'];$sku=$fixture['skus'][$skuId];$qty=(int)$move['qty'];
+        m4o_expect((int)$move['mer_id']===$mer&&$move['kind']==='reserve'&&$move['actor_type']==='customer'
+            &&(int)$move['actor_id']===$uid&&(int)$move['sku_type']===0&&$move['parent_reserve_id']===null
+            &&$move['order_item_id']===null&&$move['refund_id']===null&&$qty===$quantities[(string)$move['id']],
+            'SERVICE_ACTUAL_RESERVE_ACTOR_AND_QUANTITY');
+        m4o_expect((int)$move['root_stock_before']===$rootState[$productId]['stock']&&(int)$move['root_sales_before']===$rootState[$productId]['sales']
+            &&(int)$move['sku_stock_before']===(int)$sku['stock']&&(int)$move['sku_sales_before']===(int)$sku['sales'],'SERVICE_REAL_STOCK_BEFORE');
+        $rootState[$productId]['stock']-=$qty;$rootState[$productId]['sales']+=$qty;
+        m4o_expect((int)$move['root_stock_after']===$rootState[$productId]['stock']&&(int)$move['root_sales_after']===$rootState[$productId]['sales']
+            &&(int)$move['sku_stock_after']===(int)$sku['stock']-$qty&&(int)$move['sku_sales_after']===(int)$sku['sales']+$qty,'SERVICE_REAL_STOCK_AFTER');
+        $actual=m4o_rows($pdo,'SELECT `stock`,`sales` FROM `eb_store_product_attr_value` WHERE `id` = ?',[$skuId])[0];
+        m4o_expect((int)$actual['stock']===(int)$move['sku_stock_after']&&(int)$actual['sales']===(int)$move['sku_sales_after'],'SERVICE_INDEPENDENT_SKU_STOCK');
+    }
+    foreach($rootState as $productId=>$state){
+        $actual=m4o_rows($pdo,'SELECT `stock`,`sales` FROM `eb_store_product` WHERE `id` = ?',[$productId])[0];
+        m4o_expect((int)$actual['stock']===$state['stock']&&(int)$actual['sales']===$state['sales'],'SERVICE_INDEPENDENT_ROOT_STOCK');
+    }
+    $ledger=m4o_rows($pdo,'SELECT * FROM `eb_marketplace_order_idempotency` WHERE `uid` = ? AND `confirmation_ref` = ?',
+        [$uid,hash('sha256',$request['confirm_key'],true)]);
+    m4o_expect(count($ledger)===1&&(int)$ledger[0]['state']===1&&(int)$ledger[0]['order_id']===$id&&(int)$ledger[0]['mer_id']===$mer
+        &&$ledger[0]['source_kind']===$kind&&json_decode($ledger[0]['cart_refs'],true,32,JSON_THROW_ON_ERROR)===$request['cart_refs']
+        &&$ledger[0]['idem_key']===$idemKey&&(int)$ledger[0]['post_commit_done']===0
+        &&hash_equals($ledger[0]['request_digest'],hash('sha256',MarketplaceOrderInput::canonical($request),true)),
+        'SERVICE_ACTUAL_COMMITTED_LEDGER');
+    $cancelConfig=m4o_rows($pdo,'SELECT `value` FROM `eb_system_config` WHERE `menu_name` = ?',['order_cancel_time']);
+    m4o_expect(count($cancelConfig)===1&&$cancelConfig[0]['value']===json_encode($fixture['hours'],JSON_THROW_ON_ERROR),'SERVICE_REAL_CANCEL_CONFIGURATION_UNCHANGED');
+    $hours=json_decode($cancelConfig[0]['value'],true,8,JSON_THROW_ON_ERROR);
+    $deadline=$hours==='0'?0:(int)$order['add_time']+(int)bcmul($hours,'3600',0);
+    m4o_expect((int)$ledger[0]['add_time']===(int)$order['add_time']
+        &&(int)$ledger[0]['cancel_at']===$deadline&&$deadline===($kind==='persistent'?(int)$order['add_time']+1800:0),'SERVICE_ACTUAL_CONFIGURED_DEADLINE');
+    $storedForms=json_decode($order['custom_form'],true,32,JSON_THROW_ON_ERROR);
+    m4o_expect(is_array($storedForms)&&count($storedForms)===2&&count($frame['custom_form'])===2,'SERVICE_TWO_SAVED_FORM_GROUPS');
+    $answerByProduct=[];foreach($answers as $answer)$answerByProduct[$answer['product_id']]=$answer;
+    $required=0;$zero=false;
+    foreach($frame['custom_form'] as $index=>$definition){
+        $saved=$storedForms[$index];$productId=$definition['product_id'];$root=$fixture['products'][$productId];
+        m4o_expect($saved['product_id']===$productId&&$saved['product_name']===$root['store_name']
+            &&$saved['cart_refs']===$definition['cart_refs']&&$saved['definition_sha256']===$definition['definition_sha256']
+            &&count($saved['fields'])===count($definition['fields']),'SERVICE_SAVED_FORM_IDENTITY_AND_ORIGINAL_HASH');
+        $rawFields=json_decode($root['custom_form'],true,32,JSON_THROW_ON_ERROR);$values=[];
+        foreach($answerByProduct[$productId]['values'] as $answer)$values[$answer['field_index']]=$answer['value'];
+        foreach($definition['fields'] as $fieldIndex=>$field){
+            $stored=$saved['fields'][$fieldIndex];$raw=$rawFields[$fieldIndex];
+            m4o_expect($stored['field_index']===$fieldIndex&&$stored['title']===$raw['title']&&$stored['label']===$raw['label']
+                &&$stored['status']===$raw['status']&&$stored['value']===$values[$fieldIndex],'SERVICE_REAL_DEFINITION_AND_ANSWER_SNAPSHOT');
+            if($raw['status']){m4o_expect(is_string($stored['value'])&&trim($stored['value'])!=='','SERVICE_NONEMPTY_REQUIRED_FORM');++$required;}
+            if(!$raw['status']&&$raw['label']==='number'&&$stored['value']==='0')$zero=true;
+        }
+    }
+    m4o_expect($required===2&&$zero,'SERVICE_NONEMPTY_MULTI_PRODUCT_AND_OPTIONAL_ZERO');
+    $remaining=m4o_rows($pdo,'SELECT * FROM `eb_store_cart` WHERE `uid` = ? ORDER BY `id`',[$uid]);
+    if($kind==='persistent'){
+        m4o_expect(count($remaining)===1&&(string)$remaining[0]['id']===(string)$fixture['unselected']['id'],'SERVICE_ONLY_UNSELECTED_CART_REMAINS');
+        m4o_expect(array_keys($remaining[0])===array_keys($fixture['unselected']),'SERVICE_UNSELECTED_CART_COLUMNS_COMPLETE');
+        foreach($fixture['unselected'] as $field=>$value)m4o_expect($value===null?$remaining[0][$field]===null
+            :$remaining[0][$field]!==null&&(string)$remaining[0][$field]===(string)$value,'SERVICE_UNSELECTED_CART_VALUE_UNCHANGED');
+        $remainingRefs=array_map(static fn(array $row):string=>(string)$row['id'],$remaining);
+        foreach($request['cart_refs'] as $ref)m4o_expect(!in_array($ref,$remainingRefs,true),'SERVICE_SELECTED_CART_CONSUMED');
+    }else m4o_expect($remaining===$sqlCartBefore,'SERVICE_TEMPORARY_SQL_CART_COMPLETE_UNCHANGED');
+    $invoices=m4o_rows($pdo,'SELECT * FROM `eb_store_order_invoice` WHERE `order_id` = ?',[$id]);
+    m4o_expect(count($invoices)===1&&(int)$invoices[0]['uid']===$uid&&(int)$invoices[0]['invoice_id']===(int)$fixture['invoice']['id']
+        &&(int)$invoices[0]['is_pay']===0,'SERVICE_ACTUAL_INVOICE_SNAPSHOT');
+    foreach(['header_type','type','name','duty_number','drawer_phone','email','tell','address','bank','card_number'] as $field)
+        m4o_expect((string)$invoices[0][$field]===(string)$fixture['invoice'][$field],'SERVICE_ACTUAL_INVOICE_HEADING');
+    return ['order_id'=>$id,'item_count'=>count($items),'reserve_count'=>count($moves),'form_group_count'=>count($storedForms),
+        'fixture_identity_sha256'=>hash('sha256',serialize([$uid,$mer,array_keys($fixture['products']),array_keys($fixture['skus']),$request['cart_refs']]))];
+}
+
+function m4o_service_case(\think\App $app,string $kind): array
+{
+    $GLOBALS['m4o_phase']='service_'.$kind.'_fixtures';$fixture=m4o_service_fixture($kind);
+    $uid=(int)$fixture['user']['uid'];$mer=(int)$fixture['merchant']['mer_id'];$addressId=(int)$fixture['address']['id'];
+    $sqlBefore=m4o_rows(audit_db(),'SELECT * FROM `eb_store_cart` WHERE `uid` = ? ORDER BY `id`',[$uid]);$refs=[];
+    if($kind==='temporary'){
+        $GLOBALS['m4o_phase']='service_temporary_actual_cart_producer';$cartService=$app->make(StoreCartServices::class);
+        foreach($fixture['plan'] as $line){
+            $sku=$line['sku'];$ref=$cartService->setCart($uid,(int)$sku['product_id'],$line['qty'],$sku['unique'],0,true);
+            m4o_expect(is_string($ref)&&MarketplaceOrderInput::reference($ref,'temporary')===$ref&&!in_array($ref,$refs,true),'ACTUAL_TEMPORARY_PRODUCER_REFERENCE');
+            $payload=CacheService::get($ref);
+            m4o_expect(is_array($payload)&&($payload['catalog_cart_version']??null)===1&&($payload['uid']??null)===$uid
+                &&($payload['cartData']['id']??null)===$ref&&($payload['cartData']['uid']??null)===$uid
+                &&($payload['cartData']['product_id']??null)===(int)$sku['product_id']&&($payload['cartData']['product_attr_unique']??null)===$sku['unique']
+                &&($payload['cartData']['cart_num']??null)===$line['qty'],'ACTUAL_TEMPORARY_CACHE_READBACK');
+            $refs[]=$ref;
+        }
+        m4o_expect(m4o_rows(audit_db(),'SELECT * FROM `eb_store_cart` WHERE `uid` = ? ORDER BY `id`',[$uid])===$sqlBefore,'TEMPORARY_PRODUCER_NO_SQL_CART_CHANGE');
+    }else $refs=array_map(static fn(array $row):string=>(string)$row['id'],$fixture['carts']);
+    $GLOBALS['m4o_phase']='service_'.$kind.'_actual_confirmation';
+    $choice=MarketplaceOrderInput::confirm(['mer_id'=>$mer,'cartId'=>implode(',',$refs),'addressId'=>$addressId,'new'=>$kind==='temporary']);
+    $user=$app->make(UserServices::class)->getUserInfo($uid);m4o_expect($user!==null&&(int)$user->getData('uid')===$uid,'SERVICE_REAL_USER_MODEL');
+    $orders=$app->make(StoreOrderServices::class);
+    $confirmation=$orders->getOrderConfirmData($user->toArray(),$choice['cartId'],$choice['new'],$addressId,1,0,$choice);
+    $key=$confirmation['orderKey'];$cached=CacheService::get('user_order_'.$uid.$key);
+    m4o_expect(is_string($key)&&is_array($cached),'SERVICE_REAL_CONFIRMATION_CACHE');$frame=MarketplaceCartSelection::frame($cached,$uid);
+    m4o_expect($frame['mer_id']===$mer&&$frame['source_kind']===$kind&&$frame['cart_refs']===$choice['cart_refs']
+        &&count($frame['selection'])===3&&count($frame['custom_form'])===2,'SERVICE_ACTUAL_MULTI_PRODUCT_FRAME');
+    $answers=[];foreach($frame['custom_form'] as $group){
+        $values=[];foreach($group['fields'] as $field)$values[]=['field_index'=>$field['field_index'],
+            'value'=>$field['label']==='number'?'0':'内部填写'.$group['product_name']];
+        $answers[]=['product_id'=>$group['product_id'],'definition_sha256'=>$group['definition_sha256'],'values'=>$values];
+    }
+    $raw=['mer_id'=>$mer,'cartId'=>$choice['cartId'],'new'=>$choice['new'],'addressId'=>$addressId,
+        'invoice_id'=>(int)$fixture['invoice']['id'],'idem_key'=>'internal-'.bin2hex(random_bytes(16)),
+        'payType'=>'','mark'=>'内部创建普通验证','gift_mark'=>'内部普通文本','custom_form'=>$answers];
+    $input=MarketplaceOrderInput::create($uid,$key,$raw);$service=$app->make(MarketplaceOrderCreateServices::class);
+    $GLOBALS['m4o_phase']='service_'.$kind.'_lookup_before';m4o_service_lookup($service,$uid,$key,null);
+    $GLOBALS['m4o_phase']='service_'.$kind.'_actual_creation';
+    m4o_expect(!Db::connect()->getPdo()->inTransaction(),'NO_TEST_OUTER_CREATE_TRANSACTION');$result=$service->create($uid,$key,$raw);
+    $GLOBALS['m4o_phase']='service_'.$kind.'_independent_readback';audit_guard_assert();
+    $proof=m4o_verify_service(audit_db(),$fixture,$input['request'],$input['idem_key'],$frame,$input['request']['options']['custom_form'],$result,$kind,$sqlBefore);
+    $GLOBALS['m4o_phase']='service_'.$kind.'_lookup_created';m4o_service_lookup($service,$uid,$key,$result['order_id']);
+    $GLOBALS['m4o_phase']='service_'.$kind.'_ordinary_replay';$before=m4o_facts(audit_db());
+    $replay=$service->create($uid,$key,$raw);
+    m4o_expect($replay===$result&&m4o_facts(audit_db())===$before,'SERVICE_NORMAL_REPLAY_SAME_ORDER_NO_DATA_WRITE');
+    m4o_expect(!Db::connect()->getPdo()->inTransaction()&&$app->config->get('marketplace.trade.enabled')===false,'SERVICE_OWN_COMMIT_GATE_CLOSED');
+    $proof+=['verified'=>true,'replay_unchanged'=>true,'lookup_created'=>true,
+        'cancel_mode'=>$kind==='persistent'?'configured_hours':'disabled'];
+    if($kind==='persistent')$proof+=['cart_consumed'=>true,'unselected_unchanged'=>true];
+    else $proof+=['sql_cart_unchanged'=>true,'ledger_retained'=>true];
+    return $proof;
+}
+
 function m4o_main(): int
 {
-    $phase = 'source'; $evidence = ['schema'=>1,'status'=>'FAIL','scope'=>'NORMAL_DAO_ONLY','binding'=>null,
-        'HTTP_authentication_creation_UI_payment_refund_cancel_template_freight_nonempty_forms'=>'NOT RUN',
+    $phase = 'source'; $evidence = ['schema'=>1,'status'=>'FAIL','scope'=>'NORMAL_ORDER_INTERNAL_ONLY','binding'=>null,
+        'HTTP_authentication_creation_UI_DOM_membership_discount_payment_refund_cancel_post_commit_template_freight'=>'NOT RUN',
         'stopped_cases'=>'NOT RUN','private_credentials_emitted'=>false]; $included = [];
     $GLOBALS['m4o_phase'] =& $phase;
     try {
@@ -410,11 +660,13 @@ function m4o_main(): int
         });
         m4o_expect($replay['claimed'] === false && (int)$replay['order']['id'] === $created['order_id'] && $replay['idem_key'] === $idem,'ACTUAL_SAME_ORDER_REPLAY');
         m4o_expect(m4o_facts(audit_db()) === $before,'REPLAY_NO_ORDER_STOCK_ITEM_OR_CART_WRITE');
+        $evidence['service_creations']['persistent'] = m4o_service_case($app,'persistent');
+        $evidence['service_creations']['temporary'] = m4o_service_case($app,'temporary');
         $phase = 'final_source'; $finalSet = []; m4o_expect(m4o_source($finalSet) === $evidence['binding'] && $finalSet === $included,'FINAL_SOURCE_UNCHANGED');
         foreach (get_included_files() as $file) m4o_expect(isset($included[realpath($file)]),'ACTUAL_INCLUDED_SOURCE_CLOSED');
         audit_guard_assert(); m4o_expect($app->config->get('marketplace.trade.enabled') === false,'FINAL_GATE_CLOSED');
         $evidence['included_files'] = count(get_included_files()); $evidence['replay_unchanged'] = true;
-        $evidence['status'] = 'VERIFIED_NORMAL_DAO_ONLY';
+        $evidence['status'] = 'VERIFIED_NORMAL_ORDER_INTERNAL';
     } catch (Throwable $error) {
         $evidence['diagnostic'] = ['class'=>get_class($error),'file'=>basename($error->getFile()),'line'=>$error->getLine(),
             'assertion_code'=>$GLOBALS['m4o_failed_assertion'] ?? ($error instanceof RuntimeException && $error->getMessage() === 'PHP_RUNTIME_WARNING' ? 'PHP_RUNTIME_WARNING' : 'UNCLASSIFIED_APPLICATION_FAILURE')];
@@ -423,10 +675,10 @@ function m4o_main(): int
     $evidence['assertions_by_phase'] = $GLOBALS['m4o_phase_assertions'] ?? [];
     $evidence['pdo_observations'] = $GLOBALS['m4o_pdo_observations'] ?? [];
     $evidence['address_projection'] = $GLOBALS['m4o_address_projection'] ?? null;
-    $evidence['native_exit'] = $evidence['status'] === 'VERIFIED_NORMAL_DAO_ONLY' ? 0 : 1;
+    $evidence['native_exit'] = $evidence['status'] === 'VERIFIED_NORMAL_ORDER_INTERNAL' ? 0 : 1;
     try { m4o_new(audit_run_dir().'/evidence/ms4-order-normal.json',$evidence); }
-    catch (Throwable $error) { echo m4o_json(['status'=>'FAIL','scope'=>'NORMAL_DAO_ONLY','native_exit'=>1,'phase'=>'receipt_write']); return 1; }
-    echo m4o_json(['status'=>$evidence['status'],'scope'=>'NORMAL_DAO_ONLY','native_exit'=>$evidence['native_exit'],'phase'=>$phase,
+    catch (Throwable $error) { echo m4o_json(['status'=>'FAIL','scope'=>'NORMAL_ORDER_INTERNAL_ONLY','native_exit'=>1,'phase'=>'receipt_write']); return 1; }
+    echo m4o_json(['status'=>$evidence['status'],'scope'=>'NORMAL_ORDER_INTERNAL_ONLY','native_exit'=>$evidence['native_exit'],'phase'=>$phase,
         'assertions'=>$evidence['assertions'],'evidence_ref'=>'evidence/ms4-order-normal.json','HTTP_acceptance'=>'NOT RUN']);
     return $evidence['native_exit'];
 }

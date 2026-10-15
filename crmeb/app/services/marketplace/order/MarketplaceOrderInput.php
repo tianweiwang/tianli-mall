@@ -83,8 +83,7 @@ final class MarketplaceOrderInput
             if(!is_string($field)||!in_array($field,self::CREATE_FIELDS,true))throw new ApiException('订单参数未登记');
         }
         if(self::unsigned($uid,'uid')===0)throw new ApiException('顾客编号格式错误');
-        $key=self::text($routeKey,'确认引用',32);
-        if($key==='')throw new ApiException('确认引用格式错误');
+        $key=self::confirmationKey($routeKey);
         $idem=$rawPost['idem_key']??null;
         if(!is_string($idem)||preg_match('/\A[\x20-\x7e]{1,128}\z/D',$idem)!==1||$idem[0]===' '||substr($idem,-1)===' '){
             throw new ApiException('idem_key格式错误');
@@ -113,6 +112,14 @@ final class MarketplaceOrderInput
             'source_kind'=>$choice['source_kind'],'cart_refs'=>$choice['cart_refs'],
             'address_id'=>self::unsigned($rawPost['addressId']??0,'addressId',16777215),
             'confirm_key'=>$key,'options'=>$options]];
+    }
+
+    /** Same actual server-key wire boundary for create and the owner-scoped result lookup. */
+    public static function confirmationKey(string $key):string
+    {
+        $key=self::text($key,'确认引用',32);
+        if($key==='')throw new ApiException('确认引用格式错误');
+        return $key;
     }
 
     /** Stable bytes for a server-side SHA256; this is neither a price nor an identity check. */
