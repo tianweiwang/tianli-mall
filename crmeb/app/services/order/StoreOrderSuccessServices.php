@@ -16,6 +16,7 @@ use app\dao\order\StoreOrderDao;
 use app\services\activity\lottery\LuckLotteryServices;
 use app\services\activity\combination\StorePinkServices;
 use app\services\BaseServices;
+use app\services\marketplace\order\MarketplaceTradePolicy;
 use app\services\pay\PayServices;
 use crmeb\exceptions\ApiException;
 
@@ -48,6 +49,9 @@ class StoreOrderSuccessServices extends BaseServices
      */
     public function zeroYuanPayment(array $orderInfo, int $uid, string $payType = PayServices::YUE_PAY)
     {
+        $savedOrder = $this->dao->get($orderInfo['id'], ['id', 'marketplace_trade_version']);
+        if (!$savedOrder) throw new ApiException('订单不存在');
+        MarketplaceTradePolicy::assertLegacyOrder($savedOrder->toArray());
         if ($orderInfo['paid']) {
             throw new ApiException('该订单已支付');
         }
@@ -67,6 +71,9 @@ class StoreOrderSuccessServices extends BaseServices
      */
     public function paySuccess(array $orderInfo, string $paytype = PayServices::WEIXIN_PAY, array $other = [])
     {
+        $savedOrder = $this->dao->get($orderInfo['id'], ['id', 'marketplace_trade_version']);
+        if (!$savedOrder) throw new ApiException('订单不存在');
+        MarketplaceTradePolicy::assertLegacyOrder($savedOrder->toArray());
         $updata = ['paid' => 1, 'pay_type' => $paytype, 'pay_time' => time()];
         $orderInfo['pay_time'] = $updata['pay_time'];
         $orderInfo['pay_type'] = $paytype;

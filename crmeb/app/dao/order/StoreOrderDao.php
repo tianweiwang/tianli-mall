@@ -593,6 +593,7 @@ class StoreOrderDao extends BaseDao
     public function getOrderUnPaidList(array $field = ['*'])
     {
         return $this->getModel()->where(['paid' => 0, 'is_cancel' => 0, 'is_del' => 0, 'status' => 0, 'refund_status' => 0])
+            ->whereRaw('(`marketplace_trade_version` IS NULL OR `marketplace_trade_version` = 0)')
             ->where('pay_type', '<>', 'offline')->field($field)->select();
     }
 

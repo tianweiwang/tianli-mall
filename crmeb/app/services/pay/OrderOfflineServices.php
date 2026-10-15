@@ -14,6 +14,7 @@ namespace app\services\pay;
 
 use app\services\activity\combination\StorePinkServices;
 use app\services\BaseServices;
+use app\services\marketplace\order\MarketplaceTradePolicy;
 use app\services\order\StoreOrderDeliveryServices;
 use app\services\order\StoreOrderInvoiceServices;
 use app\services\order\StoreOrderServices;
@@ -44,6 +45,7 @@ class OrderOfflineServices extends BaseServices
         if (!$orderInfo) {
             throw new ApiException('订单不存在');
         }
+        MarketplaceTradePolicy::assertLegacyOrder($orderInfo->toArray());
 
         if ($orderInfo->paid) {
             throw new ApiException('订单已支付');

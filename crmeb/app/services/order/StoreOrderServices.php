@@ -18,6 +18,7 @@ use app\services\activity\coupon\StoreCouponUserServices;
 use app\services\activity\seckill\StoreSeckillServices;
 use app\services\BaseServices;
 use app\services\marketplace\order\MarketplaceCartSelection;
+use app\services\marketplace\order\MarketplaceOrderCancelServices;
 use app\services\marketplace\order\MarketplaceOrderSnapshotProjection as SavedOrder;
 use app\services\marketplace\order\MarketplaceTradePolicy;
 use app\services\other\PosterServices;
@@ -1991,8 +1992,10 @@ HTML;
         if (($count = strpos($orderId, '_')) !== false) {
             $orderId = substr($orderId, $count + 1);
         }
+        $orderInfo = $this->dao->get(['order_id' => $orderId]);
+        if (!$orderInfo) return false;
+        MarketplaceTradePolicy::assertLegacyOrder($orderInfo->toArray());
         if (sys_config('offline_postage', 0) == 1) {
-            $orderInfo = $this->dao->get(['order_id' => $orderId]);
             $cartInfoService = app()->make(StoreOrderCartInfoServices::class);
             $cartInfo = $cartInfoService->getColumn(['oid' => $orderInfo['id']], 'cart_info', 'id');
             foreach ($cartInfo as $key => &$item) {
@@ -2055,6 +2058,11 @@ HTML;
         $order = $this->dao->getOne(['order_id' => $order_id, 'uid' => $uid, 'is_del' => 0]);
         if (!$order) {
             throw new ApiException('订单不存在');
+        }
+        if (!MarketplaceTradePolicy::savedOrderIsLegacy($order->getData())) {
+            $result = app()->make(MarketplaceOrderCancelServices::class)->cancelForCustomer($uid, $order->getData('order_id'));
+            if (in_array($result['state'], ['cancelled', 'already_cancelled'], true)) return true;
+            throw new ApiException('支付状态待确认，请稍后重试');
         }
         if ($order->is_cancel == 1) {
             throw new ApiException('订单已取消，请勿重复操作！');
@@ -2277,6 +2285,23 @@ HTML;
      */
     public function orderUnpaidCancel()
     {
+        // V1 uses its saved deadline and durable release ledger, before any legacy zero-hours return.
+        $deadlineCursor = $orderCursor = 0;
+        try {
+            $hint = CacheService::get('marketplace_order_cancel_cursor');
+            if (is_array($hint) && count($hint) === 2 && isset($hint['deadline'], $hint['order_id'])) {
+                $deadlineCursor = \app\services\marketplace\order\MarketplaceOrderInput::unsigned($hint['deadline'], '到期游标');
+                $orderCursor = \app\services\marketplace\order\MarketplaceOrderInput::unsigned($hint['order_id'], '订单游标', 2147483647);
+            }
+        } catch (\Throwable $ignored) { $deadlineCursor = $orderCursor = 0; }
+        try {
+            $scan = app()->make(MarketplaceOrderCancelServices::class)->scanExpired($deadlineCursor, $orderCursor, 100);
+            if (!CacheService::set('marketplace_order_cancel_cursor', ['deadline'=>$scan['next_deadline'], 'order_id'=>$scan['next_order_id']])) {
+                try { Log::error('MARKETPLACE_CANCEL_CURSOR_PENDING'); } catch (\Throwable $ignored) {}
+            }
+        } catch (\Throwable $error) {
+            try { Log::error('MARKETPLACE_CANCEL_SCAN_PENDING'); } catch (\Throwable $ignored) {}
+        }
         //系统预设取消订单时间段
         $keyValue = ['order_cancel_time', 'order_activity_time', 'order_bargain_time', 'order_seckill_time', 'order_pink_time'];
         //获取配置
@@ -2886,6 +2911,11 @@ HTML;
      */
     public function getCashierInfo(int $uid, string $orderId, string $type)
     {
+        if ($type === 'order') {
+            $info = $this->dao->get(['order_id' => $orderId], ['id', 'pay_price', 'add_time', 'combination_id', 'seckill_id', 'bargain_id', 'pay_postage', 'is_gift', 'marketplace_trade_version']);
+            if (!$info) throw new PayException('您支付的订单不存在');
+            MarketplaceTradePolicy::assertLegacyOrder($info->toArray());
+        }
         //支付类型开关
         $data = [
             'ali_pay_status' => sys_config('ali_pay_status', '0') != '0',
@@ -2901,10 +2931,6 @@ HTML;
 
         switch ($type) {
             case 'order':
-                $info = $this->dao->get(['order_id' => $orderId], ['id', 'pay_price', 'add_time', 'combination_id', 'seckill_id', 'bargain_id', 'pay_postage', 'is_gift']);
-                if (!$info) {
-                    throw new PayException('您支付的订单不存在');
-                }
                 $orderCancelTime = sys_config('order_cancel_time', 0);
                 $orderActivityTime = sys_config('order_activity_time', 0);
                 if ($info->combination_id) {

@@ -15,6 +15,7 @@ namespace app\services\pay;
 use app\services\order\OtherOrderServices;
 use app\services\order\StoreOrderCartInfoServices;
 use app\services\order\StoreOrderServices;
+use app\services\marketplace\order\MarketplaceTradePolicy;
 use app\services\wechat\WechatUserServices;
 use crmeb\exceptions\ApiException;
 use crmeb\services\CacheService;
@@ -106,6 +107,11 @@ class OrderPayServices
      */
     public function beforePay(array $orderInfo, string $payType, array $options = [])
     {
+        if (!isset($orderInfo['member_type'])) {
+            $savedOrder = app()->make(StoreOrderServices::class)->get($orderInfo['id'], ['id', 'marketplace_trade_version']);
+            if (!$savedOrder) throw new ApiException('订单不存在');
+            MarketplaceTradePolicy::assertLegacyOrder($savedOrder->toArray());
+        }
         $wechat = $payType == PayServices::WEIXIN_PAY;
 
         $payType = $this->getPayType($payType);

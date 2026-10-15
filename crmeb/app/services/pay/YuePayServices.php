@@ -12,6 +12,7 @@
 namespace app\services\pay;
 
 use app\services\BaseServices;
+use app\services\marketplace\order\MarketplaceTradePolicy;
 use app\services\order\OtherOrderServices;
 use app\services\order\StoreOrderSuccessServices;
 use app\services\user\UserMoneyServices;
@@ -43,12 +44,13 @@ class YuePayServices extends BaseServices
         $services = app()->make(UserServices::class);
         $orderServices = app()->make($isMember ? OtherOrderServices::class : StoreOrderSuccessServices::class);
 
-        return $this->transaction(function () use ($services, $orderServices, $orderInfo, $uid, $type) {
+        return $this->transaction(function () use ($services, $orderServices, $orderInfo, $uid, $type, $isMember) {
             // Lock the order before the account so duplicate requests cannot debit twice.
             $order = $orderServices->selectModel(['id' => $orderInfo['id']])->lock(true)->find();
             if (!$order) {
                 throw new ApiException('订单不存在');
             }
+            if (!$isMember) MarketplaceTradePolicy::assertLegacyOrder($order->toArray());
             if ($order['paid']) {
                 throw new ApiException('订单已支付');
             }

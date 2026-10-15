@@ -12,9 +12,13 @@ namespace app;
 
 use crmeb\compat\think\Db as CompatDb;
 use crmeb\compat\CarbonErrorCompatibility;
+use crmeb\exceptions\AuthUnavailableException;
 use crmeb\services\SystemConfigService;
 use crmeb\services\GroupDataService;
 use crmeb\utils\Json;
+use crmeb\services\pay\marketplace\PaymentAccount;
+use crmeb\services\pay\marketplace\PaymentAdapter;
+use crmeb\services\pay\marketplace\TestPaymentDriver;
 use think\Service;
 
 class AppService extends Service
@@ -26,6 +30,16 @@ class AppService extends Service
         'sysConfig' => SystemConfigService::class,
         'sysGroupData' => GroupDataService::class
     ];
+
+    public function register()
+    {
+        // Lazy: ordinary component boot registers services before loading marketplace configuration.
+        $this->app->bind(PaymentAdapter::class, function () {
+            if(app()!==$this->app)throw new AuthUnavailableException();
+            PaymentAccount::assertTesting();
+            return $this->app->make(TestPaymentDriver::class);
+        });
+    }
 
     public function boot()
     {

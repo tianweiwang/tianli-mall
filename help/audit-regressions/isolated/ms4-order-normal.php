@@ -4,6 +4,7 @@ declare(strict_types=1);
 require __DIR__ . '/lib/harness.php';
 require __DIR__ . '/lib/ms4-saved-order-normal.php';
 require __DIR__ . '/lib/ms4-post-commit-normal.php';
+require __DIR__ . '/lib/ms4-cancel-normal.php';
 
 use app\dao\marketplace\order\MarketplaceOrderDao;
 use app\services\marketplace\order\MarketplaceCartSelection;
@@ -25,7 +26,8 @@ const M4O_ROOTS = ['crmeb/app','crmeb/crmeb','crmeb/vendor','crmeb/config'];
 const M4O_FILES = ['crmeb/composer.json','crmeb/composer.lock','help/audit-regressions/isolated/ms4-order-normal.php',
     'help/audit-regressions/isolated/lib/harness.php','help/audit-regressions/isolated/lib/guard.php',
     'help/audit-regressions/isolated/lib/ms4-saved-order-normal.php',
-    'help/audit-regressions/isolated/lib/ms4-post-commit-normal.php'];
+    'help/audit-regressions/isolated/lib/ms4-post-commit-normal.php',
+    'help/audit-regressions/isolated/lib/ms4-cancel-normal.php'];
 const M4O_FIXTURE_TABLES = ['eb_user','eb_marketplace_merchant','eb_store_product','eb_store_product_attr',
     'eb_store_product_attr_value','eb_store_cart','eb_user_address','eb_user_invoice','eb_system_config',
     'eb_system_user_level','eb_user_level','eb_member_right'];
@@ -83,6 +85,7 @@ function m4o_source(array &$includedSet): array
     $base = audit_run_dir().'/evidence/'; $manifest = audit_manifest();
     $facts = m4o_read($base.'ms4-order-normal-container-created.json');
     $binding = m4o_read($base.'ms4-order-normal-source-binding.json');
+    $environment = m4o_read($base.'ms4-order-test-environment.json');
     $run = getenv('AUDIT_RUN_ID'); $sha = getenv('AUDIT_SOURCE_SHA');
     m4o_expect(PHP_SAPI === 'cli' && PHP_INT_SIZE >= 8 && realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__
         && count($_SERVER['argv']) === 1 && audit_repo_dir() === '/workspace' && audit_run_dir() === '/run/audit','ACTUAL_NORMAL_ENTRY');
@@ -94,6 +97,25 @@ function m4o_source(array &$includedSet): array
     $roles = array_keys($manifest['services'] ?? []); sort($roles,SORT_STRING);
     m4o_expect($roles === ['audit-ms4-order-normal','audit-mysql','audit-redis'],'EXACT_NORMAL_ROLES');
     $service = $manifest['services']['audit-ms4-order-normal'];
+    $freezePath = audit_run_dir().'/preparation-source-binding.json';
+    $publicEnvironment = ['APP_ENV'=>'testing','PHP_MARKETPLACE_PAYMENT_TEST_ENABLED'=>'true'];
+    $environmentLines = ['APP_ENV=testing','PHP_MARKETPLACE_PAYMENT_TEST_ENABLED=true'];
+    $environmentHashes = [];
+    foreach ([$environmentLines,array_reverse($environmentLines)] as $lines) {
+        foreach (["\n","\n\n"] as $ending) $environmentHashes[] = hash('sha256',implode("\n",$lines).$ending);
+    }
+    m4o_expect(is_file($freezePath) && !is_link($freezePath)
+        && ($environment['schema'] ?? null) === 1 && ($environment['scope'] ?? '') === 'MS4_TEST_PAYMENT_ENVIRONMENT'
+        && ($environment['run_id'] ?? '') === $run && ($environment['source_sha'] ?? '') === $sha
+        && ($environment['container_id'] ?? '') === ($service['id'] ?? null)
+        && ($environment['freeze_sha256'] ?? '') === hash_file('sha256',$freezePath)
+        && ($environment['environment'] ?? null) === $publicEnvironment
+        && ($environment['native_inspect']['exit_code'] ?? null) === 0
+        && ($environment['native_inspect']['stderr_sha256'] ?? '') === hash('sha256','')
+        && in_array($environment['native_inspect']['stdout_sha256'] ?? '',$environmentHashes,true)
+        && ($binding['test_environment_sha256'] ?? '') === hash_file('sha256',$base.'ms4-order-test-environment.json')
+        && getenv('APP_ENV') === 'testing' && getenv('PHP_MARKETPLACE_PAYMENT_TEST_ENABLED') === 'true',
+        'ACTUAL_CREATED_TEST_PAYMENT_ENVIRONMENT');
     m4o_expect(($facts['run_id'] ?? '') === $run && ($binding['run_id'] ?? '') === $run
         && ($facts['source_sha'] ?? '') === $sha && ($binding['source_sha'] ?? '') === $sha
         && preg_match('/\A[a-f0-9]{64}\z/D',(string)($service['id'] ?? '')) === 1 && ($facts['id'] ?? '') === $service['id']
@@ -146,6 +168,7 @@ function m4o_source(array &$includedSet): array
     $actual = array_keys($paths); sort($actual,SORT_STRING); m4o_expect($actual === $expected,'COMPLETE_SOURCE_CLOSURE');
     return ['container_id'=>$service['id'],'entry_namespace_pid'=>getmypid(),'source_sha'=>$sha,
         'binding_sha256'=>hash_file('sha256',$base.'ms4-order-normal-source-binding.json'),
+        'test_environment_sha256'=>hash_file('sha256',$base.'ms4-order-test-environment.json'),
         'native_created_sha256'=>hash_file('sha256',$base.'ms4-order-normal-container-created.json'),'source_files'=>count($actual)];
 }
 function m4o_prerequisites(): int
@@ -229,6 +252,8 @@ function m4o_app(): \think\App
     $app->register(\think\service\ModelService::class); $app->bootService($app->getService(\think\service\ModelService::class));
     date_default_timezone_set($app->config->get('app.default_timezone','Asia/Shanghai'));
     m4o_expect($app->db instanceof \crmeb\compat\think\Db && $app->config->get('marketplace.trade.enabled') === false,'REAL_APP_SERVICES_GATE_CLOSED');
+    m4o_expect(getenv('APP_ENV') === 'testing' && getenv('PHP_MARKETPLACE_PAYMENT_TEST_ENABLED') === 'true'
+        && $app->config->get('marketplace.payment.test_enabled') === true,'REAL_TEST_PAYMENT_ENVIRONMENT_LOADED');
     return $app;
 }
 function m4o_fixture(): array
@@ -421,7 +446,7 @@ function m4o_service_lookup(MarketplaceOrderCreateServices $service,int $uid,str
 }
 
 /** Independent real rows, not a second expected-price payload derived from service output. */
-function m4o_verify_service(PDO $pdo,array $fixture,array $request,string $idemKey,array $frame,array $answers,array $result,string $kind,array $sqlCartBefore,?array $membership=null): array
+function m4o_verify_service(PDO $pdo,array $fixture,array $request,string $idemKey,array $frame,array $answers,array $result,string $kind,array $sqlCartBefore,?array $membership=null,?int $cancelSeconds=null): array
 {
     $uid=(int)$fixture['user']['uid'];$mer=(int)$fixture['merchant']['mer_id'];
     m4o_expect(!$pdo->inTransaction()&&!Db::connect()->getPdo()->inTransaction()&&$pdo!==Db::connect()->getPdo(),'SERVICE_COMMITTED_INDEPENDENT_PDO');
@@ -527,8 +552,15 @@ function m4o_verify_service(PDO $pdo,array $fixture,array $request,string $idemK
     m4o_expect(count($cancelConfig)===1&&$cancelConfig[0]['value']===json_encode($fixture['hours'],JSON_THROW_ON_ERROR),'SERVICE_REAL_CANCEL_CONFIGURATION_UNCHANGED');
     $hours=json_decode($cancelConfig[0]['value'],true,8,JSON_THROW_ON_ERROR);
     $deadline=$hours==='0'?0:(int)$order['add_time']+(int)bcmul($hours,'3600',0);
+    if($cancelSeconds===null){
     m4o_expect((int)$ledger[0]['add_time']===(int)$order['add_time']
         &&(int)$ledger[0]['cancel_at']===$deadline&&$deadline===($kind==='persistent'?(int)$order['add_time']+1800:0),'SERVICE_ACTUAL_CONFIGURED_DEADLINE');
+    }else{
+        m4o_expect($kind==='persistent'&&$fixture['hours']==='0.0000001'&&$cancelSeconds===0
+            &&bccomp($hours,'0',7)>0&&(int)$ledger[0]['add_time']===(int)$order['add_time']
+            &&(int)$ledger[0]['cancel_at']===$deadline&&$deadline===(int)$order['add_time']+$cancelSeconds,
+            'SERVICE_ACTUAL_POSITIVE_SUBSECOND_DEADLINE');
+    }
     $storedForms=json_decode($order['custom_form'],true,32,JSON_THROW_ON_ERROR);
     m4o_expect(is_array($storedForms)&&count($storedForms)===2&&count($frame['custom_form'])===2,'SERVICE_TWO_SAVED_FORM_GROUPS');
     $answerByProduct=[];foreach($answers as $answer)$answerByProduct[$answer['product_id']]=$answer;
@@ -567,9 +599,31 @@ function m4o_verify_service(PDO $pdo,array $fixture,array $request,string $idemK
         'fixture_identity_sha256'=>hash('sha256',serialize([$uid,$mer,array_keys($fixture['products']),array_keys($fixture['skus']),$request['cart_refs']]))];
 }
 
-function m4o_service_case(\think\App $app,string $kind,array &$contexts): array
+function m4o_service_case(\think\App $app,string $kind,array &$contexts,?string $fixtureHours=null,?int $cancelSeconds=null): array
 {
-    $GLOBALS['m4o_phase']='service_'.$kind.'_fixtures';$fixture=m4o_service_fixture($kind);
+    $phaseKind=$fixtureHours===null&&$cancelSeconds===null?$kind:$kind.'_cancel_tiny';
+    $GLOBALS['m4o_phase']='service_'.$phaseKind.'_fixtures';$fixture=m4o_service_fixture($kind);
+    if($fixtureHours!==null||$cancelSeconds!==null){
+        m4o_expect($kind==='persistent'&&$fixtureHours==='0.0000001'&&$cancelSeconds===0&&$fixture['hours']==='0.5',
+            'ORDINARY_TINY_FIXTURE_ONLY');
+        Db::transaction(static function(\think\db\ConnectionInterface $connection)use($fixtureHours):void{
+            $pdo=m4o_business_pdo($connection);
+            $rows=m4o_rows($pdo,'SELECT `id`,`value` FROM `eb_system_config` WHERE `menu_name` = ?',['order_cancel_time']);
+            m4o_expect(count($rows)===1&&$rows[0]['value']===json_encode('0.5',JSON_THROW_ON_ERROR),'TINY_CONFIG_ACTUAL_BEFORE');
+            $value=json_encode($fixtureHours,JSON_THROW_ON_ERROR);
+            $statement=$pdo->prepare('UPDATE `eb_system_config` SET `value` = ? WHERE `id` = ? AND `menu_name` = ? AND `value` = ?');
+            m4o_expect($statement instanceof PDOStatement,'TINY_CONFIG_NATIVE_PREPARE');
+            foreach([$value,(string)$rows[0]['id'],'order_cancel_time',$rows[0]['value']]as$i=>$part)
+                m4o_expect($statement->bindValue($i+1,$part,PDO::PARAM_STR),'TINY_CONFIG_NATIVE_BIND');
+            m4o_expect($statement->execute()&&$statement->rowCount()===1,'TINY_CONFIG_CONDITIONAL_WRITE');
+            m4o_expect(m4o_rows($pdo,'SELECT `value` FROM `eb_system_config` WHERE `id` = ?',[$rows[0]['id']])===[['value'=>$value]],
+                'TINY_CONFIG_ACTUAL_READBACK');
+            m4o_expect(m4o_business_pdo($connection)===$pdo,'TINY_CONFIG_SAME_DEFAULT_PDO');
+        });
+        $fixture['hours']=$fixtureHours;
+        CacheService::delete('system_config_order_cancel_time');
+        m4o_expect(sys_config('order_cancel_time')===$fixtureHours,'TINY_CONFIG_REAL_GETTER');
+    }
     $uid=(int)$fixture['user']['uid'];$mer=(int)$fixture['merchant']['mer_id'];$addressId=(int)$fixture['address']['id'];
     $sqlBefore=m4o_rows(audit_db(),'SELECT * FROM `eb_store_cart` WHERE `uid` = ? ORDER BY `id`',[$uid]);$refs=[];
     if($kind==='temporary'){
@@ -586,7 +640,7 @@ function m4o_service_case(\think\App $app,string $kind,array &$contexts): array
         }
         m4o_expect(m4o_rows(audit_db(),'SELECT * FROM `eb_store_cart` WHERE `uid` = ? ORDER BY `id`',[$uid])===$sqlBefore,'TEMPORARY_PRODUCER_NO_SQL_CART_CHANGE');
     }else $refs=array_map(static fn(array $row):string=>(string)$row['id'],$fixture['carts']);
-    $GLOBALS['m4o_phase']='service_'.$kind.'_actual_confirmation';
+    $GLOBALS['m4o_phase']='service_'.$phaseKind.'_actual_confirmation';
     $choice=MarketplaceOrderInput::confirm(['mer_id'=>$mer,'cartId'=>implode(',',$refs),'addressId'=>$addressId,'new'=>$kind==='temporary']);
     $user=$app->make(UserServices::class)->getUserInfo($uid);m4o_expect($user!==null&&(int)$user->getData('uid')===$uid,'SERVICE_REAL_USER_MODEL');
     $orders=$app->make(StoreOrderServices::class);
@@ -604,14 +658,14 @@ function m4o_service_case(\think\App $app,string $kind,array &$contexts): array
         'invoice_id'=>(int)$fixture['invoice']['id'],'idem_key'=>'internal-'.bin2hex(random_bytes(16)),
         'payType'=>'','mark'=>'内部创建普通验证','gift_mark'=>'内部普通文本','custom_form'=>$answers];
     $input=MarketplaceOrderInput::create($uid,$key,$raw);$service=$app->make(MarketplaceOrderCreateServices::class);
-    $GLOBALS['m4o_phase']='service_'.$kind.'_lookup_before';m4o_service_lookup($service,$uid,$key,null);
-    $GLOBALS['m4o_phase']='service_'.$kind.'_actual_creation';
+    $GLOBALS['m4o_phase']='service_'.$phaseKind.'_lookup_before';m4o_service_lookup($service,$uid,$key,null);
+    $GLOBALS['m4o_phase']='service_'.$phaseKind.'_actual_creation';
     m4o_expect(!Db::connect()->getPdo()->inTransaction(),'NO_TEST_OUTER_CREATE_TRANSACTION');$result=$service->create($uid,$key,$raw);
-    $GLOBALS['m4o_phase']='service_'.$kind.'_independent_readback';audit_guard_assert();
-    $proof=m4o_verify_service(audit_db(),$fixture,$input['request'],$input['idem_key'],$frame,$input['request']['options']['custom_form'],$result,$kind,$sqlBefore);
-    $GLOBALS['m4o_phase']='service_'.$kind.'_post_commit';$proof['post_commit']=m4o_post_commit_verify($app,audit_db(),$proof['order_id']);
-    $GLOBALS['m4o_phase']='service_'.$kind.'_lookup_created';m4o_service_lookup($service,$uid,$key,$result['order_id']);
-    $GLOBALS['m4o_phase']='service_'.$kind.'_ordinary_replay';$before=m4o_facts(audit_db());
+    $GLOBALS['m4o_phase']='service_'.$phaseKind.'_independent_readback';audit_guard_assert();
+    $proof=m4o_verify_service(audit_db(),$fixture,$input['request'],$input['idem_key'],$frame,$input['request']['options']['custom_form'],$result,$kind,$sqlBefore,null,$cancelSeconds);
+    $GLOBALS['m4o_phase']='service_'.$phaseKind.'_post_commit';$proof['post_commit']=m4o_post_commit_verify($app,audit_db(),$proof['order_id']);
+    $GLOBALS['m4o_phase']='service_'.$phaseKind.'_lookup_created';m4o_service_lookup($service,$uid,$key,$result['order_id']);
+    $GLOBALS['m4o_phase']='service_'.$phaseKind.'_ordinary_replay';$before=m4o_facts(audit_db());
     $replay=$service->create($uid,$key,$raw);
     m4o_expect($replay===$result&&m4o_facts(audit_db())===$before,'SERVICE_NORMAL_REPLAY_SAME_ORDER_NO_DATA_WRITE');
     m4o_expect(!Db::connect()->getPdo()->inTransaction()&&$app->config->get('marketplace.trade.enabled')===false,'SERVICE_OWN_COMMIT_GATE_CLOSED');
@@ -883,7 +937,8 @@ function m4o_membership_case(\think\App $app,string $case): array
 function m4o_main(): int
 {
     $phase = 'source'; $evidence = ['schema'=>1,'status'=>'FAIL','scope'=>'NORMAL_ORDER_INTERNAL_ONLY','binding'=>null,
-        'HTTP_authentication_creation_UI_DOM_payment_refund_cancel_template_freight'=>'NOT RUN',
+        'HTTP_authentication_creation_UI_DOM_actual_payment_refund_template_freight'=>'NOT RUN',
+        'cancel_wallclock_daemon_and_crossprocess_payment'=>'NOT RUN',
         'post_commit_wallclock_daemon'=>'NOT RUN',
         'stopped_cases'=>'NOT RUN','private_credentials_emitted'=>false]; $included = [];
     $GLOBALS['m4o_phase'] =& $phase;
@@ -958,6 +1013,7 @@ function m4o_main(): int
         $evidence['membership_creations']['level']=m4o_membership_case($app,'level');
         $evidence['membership_creations']['paid']=m4o_membership_case($app,'paid');
         $phase='saved_reads';$evidence['saved_reads']=m4o_saved_order_normal($app,audit_db(),$contexts);
+        $phase='ordinary_cancel';$evidence['cancellations']=m4o_cancel_normal($app,audit_db(),$evidence['service_creations'],$evidence['membership_creations']);
         $phase = 'final_source'; $finalSet = []; m4o_expect(m4o_source($finalSet) === $evidence['binding'] && $finalSet === $included,'FINAL_SOURCE_UNCHANGED');
         foreach (get_included_files() as $file) m4o_expect(isset($included[realpath($file)]),'ACTUAL_INCLUDED_SOURCE_CLOSED');
         audit_guard_assert(); m4o_expect($app->config->get('marketplace.trade.enabled') === false,'FINAL_GATE_CLOSED');

@@ -386,7 +386,10 @@ final class LegacyProductWriteServices
     private function hasLedger(int $id): bool { return self::hasPersistentStock($id); }
     private static function hasPersistentStock(int $id): bool
     {
-        self::assertParent($id);if(Db::name('marketplace_stock_log')->where('product_id',$id)->count()>0)return true;
+        self::assertParent($id);
+        $movement=Db::name('marketplace_stock_movement')->where('product_id',$id)->field(['id'])->order('id')->lock(true);
+        self::query($movement);if($movement->find()!==null)return true;
+        if(Db::name('marketplace_stock_log')->where('product_id',$id)->count()>0)return true;
         $rows=Db::name('marketplace_audit_log')->where('mer_id',self::$operation['owners'][$id])->where('actor_type','admin')
             ->where('action','marketplace-products-stock-adjust')->where('resource_type','product-stock')->where('result','success')
             ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(`detail`, '$.product_id')) = ?",[(string)$id])->field(['resource_id','detail'])->select()->toArray();

@@ -12,6 +12,7 @@
 namespace app\services\pay;
 
 use app\services\order\OtherOrderServices;
+use app\services\marketplace\order\MarketplaceTradePolicy;
 use app\services\order\StoreOrderSuccessServices;
 use app\services\user\UserRechargeServices;
 
@@ -38,6 +39,7 @@ class PayNotifyServices
             $services = app()->make(StoreOrderSuccessServices::class);
             $orderInfo = $services->getOne(['order_id' => $order_id]);
             if (!$orderInfo) return true;
+            MarketplaceTradePolicy::assertLegacyOrder($orderInfo->toArray());
             if ($orderInfo->paid) return true;
             return $services->paySuccess($orderInfo->toArray(), $payType, ['trade_no' => $trade_no]);
         } catch (\Exception $e) {

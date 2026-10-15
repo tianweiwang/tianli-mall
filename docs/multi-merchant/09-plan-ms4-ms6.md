@@ -257,10 +257,38 @@ Task4持久收尾源码检查点：上述7个生产/注册文件、唯一普通C
 
 仓库外新 `candidate-internal-v3-post-commit` 五文件与 `normal-close-order-internal-v3-post-commit.py` 从原v2-final完整可逆派生，原compose/initializer/seed字节不变；host仅新增helper源闭集及更强收尾证明，原完整v2业务/隔离/native/关闭条件保留。host摘要 `c05d728d7d20c5f65eb7e0491e0c854cc33b2c43d7a70fbb9a6a76c5112456ff`、close摘要 `fdd4e3713284d4bac90f1382d160066410ff95861d6eb23a9fd1635f56c32ad6`，三Python AST/完整逆变换及独立SOURCE PASS；尚未freeze/启动新Run，不改旧Run。真实收尾/注册/handler普通结果仍待新实例，wallclock daemon与HTTP/DOM等原未验收项保持pending。
 
+持久收尾普通实测结果（2026-10-15）：clean源码 `583ef7541de80f1929c9b9432b14fea8df675b8c`、新Run `202610150359426fc7a7`、freeze摘要 `e19775bab6c28819add5bfc97066cd05ad235cc0e7b6ed758bdab4f3dc7ef04d`；有限初始化、四个迁移子进程及订单CLI实际exit0，phase=final_source、VERIFIED_NORMAL_ORDER_INTERNAL。原direct/双来源创建/两类会员计价/保存读取断言均保留通过。四张实际CreateServices单各done1/唯一创建状态/三条逐保存项统计/准确缓存缺席，真实重复finish和原请求重放均无额外业务写；自然direct done0由真实注册mark handler处理为done1，同样独立保存事实核过。原生timer ID10，完整注册两次第二次字段/facts不变，实际handler processed1/completed1，真实hint回绕0。
+
+同Run业务收据摘要 `91d783ab15734b8b57b60109fb572eb4d8a3fa17a20d84bf3e6dd07804358414`。原cleanup helper实际0后按原ID移除，固定fdd4e371关闭源实际正常stop MySQL/Redis且原生进程/容器均0，原三CID/唯一内部网/六卷精确非force移除；Root独立核对源 `0db5680f185f7d163c932407f7741fe8049545094b9a0b9c91cb28856c95ee49` 实际六条双标签原生查询exit0/stderr空/count0，保留业务字节不变。该Run已关闭，不重开；只证明583内部持久收尾及有限同handler，wallclock daemon、HTTP/DOM、取消、真实支付等仍pending。当前主树之后的旧支付边界/Task5新源码不包含在此Run结果中，不据此标Task4/MS4整体完成或打开gate。
+
 ### Task 5: 取消与超时释放
 
 - 接口：整笔未支付且未发货的取消/超时按真实父reserve聚合release，`idem_key = "release:<store_order.id>:<parent_reserve_id>"`；两项为真实已提交PK，尾段是规范U64字符串，不能用非全局唯一的SKU八字节unique。动作摘要绑定保存顾客/商家/订单/父reserve/SKU/数量，顾客取消与系统超时共用动作，演员仅记首次真实执行者；重复不重复释放。未来Task7部分退款用独立真实退款动作键，共同核累计release+return_in不超过父reserve.qty。关单前走可信支付query→close→query closed；unknown或无可信attempt不释放，已支付转待处理，不制造paid或回退平台账户。MS5决定前仅显式testing驱动可做普通未付关单。
 - 用例：O06。
+
+**创建开放前的旧支付入口版本边界（源实施合同）：** 现下单gate仍关闭，新真实支付尚未接入；仍必须阻止保存V1落入会改订单编号/pay_uid/pay_type、保存金额、余额、paid、发票或资金流水的旧链。复用既有 `MarketplaceTradePolicy::assertLegacyOrder`，只传真实保存行（显式select含marketplace_trade_version），不相信请求版本或先更新后判断。NULL/0原行为及会员OtherOrder/充值分支保留；不接真实渠道或冒称MS5完成。
+
+必要Files/位置为顾客 `api/controller/v1/order/StoreOrderController.php::pay` 在旧缓存锁和编号/pay_uid/is_channel更新之前；`services/order/StoreOrderServices.php::getCashierInfo` 在旧收银台/当前取消配置逻辑之前、`setOrderTypePayOffline` 在运费/订单金额改写之前；`services/pay/OrderPayServices.php::beforePay` 商品订单分支在pay_type更新/SDK前；`services/pay/YuePayServices.php::yueOrderPay` 商品订单分支在余额锁/扣款/流水前；`services/order/StoreOrderSuccessServices.php::paySuccess` 实际重读后、paid短路/写入和事件之前；同文件公开 `zeroYuanPayment` 在其原caller paid判断之前也重读实际保存版本，保持原零元语义；`services/pay/PayNotifyServices.php::wechatProduct` 实际版本分流先于旧paid短路/确认成功；`services/pay/OrderOfflineServices.php::orderOffline` 在实际订单读取后、paid分支及任何状态/发票/资本流水/任务之前。按实际源定位修正命名路径，不复制不一致的客户端订单payload作版本证据。
+
+此处只补已盘点旧入口对V1的必要边界，不增加V1支付/取消能力、不改路由/权限种子或全局旧业务公式。先只读盘点真实查询和producer/consumer字段，再窄实现、聚焦PHP语法及独立源码复核；不运行V1拒绝、权限、冲突、并发、故障/恢复或支付样本。当前583ef7541普通Run固定在另一clean侧树，本段后续源码在主树独立推进，不改正在运行的源或证据。取消/旧库存回退的分流与硬删血缘保护继续由Task5服务合同处理。
+
+**Task5与MS5 Task2实施设计（开始编码前记录）：** 新 `MarketplaceOrderCancelServices::cancelForCustomer(actualUid,orderNo)` / `cancelExpired(actualOrderPK)` 只处理真实保存V1整笔未支付未发货订单；提示读取在事务外，默认PDO顶层事务内按UID→ledger→order→原商家→roots升序→SKUs升序→items→父reserve及children重核保存版本/确认hash/引用/SKU/数量及提示集合。顾客UID沿现AuthToken Request传入，不新增模拟上下文；商家/商品/SKU仅锁身份，停用、下架、退役不阻止存量释放，不用创建准入方法。
+
+首次释放前必须有可信非空完整attempt集合且逐项query→close→query closed，原orderPK/订单号/UID/mer/精确金额/币种/原测试账户ref及version全部相同；unknown、空集合、新进程或缺真实渠道能力保持pending，不把paid0当机构未付，不写paid。生产取消返回确认中并保留订单，现HTTP wrapper不得忽略pending却报已取消。完整真实取消和canonical release证明齐全时可正常重放，不重查当前账户/重复释放；paid或无法解释的既有状态只记录脱敏待处理，不制造财务成功或重写历史。
+
+库存逐父reserve使用上面已明确的release键；摘要只含保存业务身份/数量，不含当次演员或原因。原生锁定并逐行核全部release/return_in子流水，累计不超过父qty，不用float SUM；保存items聚合与真实父reserve匹配，首次整单取消不得猜未定义的部分退款状态。按当前锁定值逐SKU对根/规格条件更新stock+qty、sales−qty，真实影响行数/前后值、release、订单is_cancel及一条真实取消状态同事务；根上限16777215、SKU上限4294967295。首次演员如实customer/实际UID或system/NULL，原金额/发票/表单/cart与ledger永久refs保留，不能恢复成reserve历史before值。取消服务返回固定state=cancelled/already_cancelled/not_due/pending及原保存order_id；HTTP仅前两态报成功，pending固定“支付状态待确认，请稍后重试”。真实取消状态为cancel_order/订单取消/服务器now，首次演员沿release保存，不在重放改写。
+
+超时按真实ledger state1/cancel_at>0/due的(deadline,orderPK)有界游标，每单独立处理，pending不阻塞后项，不按post_commit_done/商家当前状态筛选；0只关闭自动超时，顾客正常取消仍沿同服务。新scanExpired显式(deadline,orderPK,batch≤100)，跨tick缓存hint仅影响起点，缺失/无效从0、到尾回绕，不当完成证据。旧StoreOrderServices::cancelOrder在退权益/旧库存前分V1，orderUnpaidCancel先跑新扫描再进入旧配置0早返；旧DAO getOrderUnPaidList只选NULL/0，旧UnpaidOrderCancelJob实际读取后分流V1，regressionStock在实际保存V1前阻断旧恢复。LegacyProductWriteServices::hasPersistentStock补真实marketplace_stock_movement血缘，存在任何历史流水均不硬删根/规格，不按净量0猜可删。
+
+MS5 Task2只增加 `crmeb/services/pay/marketplace/` 下PaymentAdapter/PaymentAccount/PaymentAccountResolver/TestPaymentDriver四类、`config/marketplace.php` 显式开关和AppService惰性绑定。六方法按00原合同保留：createPayment/queryPayment/closePayment/createRefund/queryRefund/verifyAndParseNotification；当前driver只正常pending→closed，后三方法明确unsupported，本阶段记Task2部分。订单表当前没有currency列，测试Value明确只接受配置CNY，不伪造订单币种列或替用户决定真实渠道币种。实际启用同时要求getenv('APP_ENV')==='testing'及config显式bool true；下一专用Run真实声明APP_ENV=testing与PHP_MARKETPLACE_PAYMENT_TEST_ENABLED=true并纳入原生绑定，helper不临时伪改Env/开关，当前583Run环境不变。
+
+测试账户仅source=test_config/account_id=NULL/test命名空间ref/不可变版本/真实mer/币种，不冒充机构验证或不存在的数据库账户PK。Resolver注册测试配置时核真实商家，forOrder重读实际保存订单及金额/归属；不回退平台账户。TestDriver私有记录只在同一App实例有效，额外内部attemptsForOrder返回显式known/unknown且known必须包含该实例非空全量尝试；query/close沿原快照，不重选当前账户。独立进程、真实账户/attempt持久化、回调、退款、支付竞态和真实渠道继续pending，不能把内部driver结果当真实支付关单。
+
+普通验证沿既有完整创建/会员/保存读取断言之后新增独立原生订单及真实driver pending→closed、两父reserve释放/三项血缘/库存独立读回、正常重放不变；自动到期用真实正小数小时截秒0的新创建，不回改deadline/伪造时钟；另核保存0自动跳过与创建后商家停用仍释放。新增 `help/audit-regressions/isolated/lib/ms4-cancel-normal.php` 普通helper及下一版外部隔离准备须先闭集真实环境/来源并独立审，当前不执行。普通helper可在原完整创建/保存读取之后用另一个原生顾客、本人地址、真实确认/表单和CreateServices顺序购买相同SKU，再取消前一单，以独立当前库存+本次真实reserve数量证明不是历史before绝对回填；不用模拟并发。立即到期场景沿既有service_case增加可选新fixture配置小时参数和明确期望整秒数，原默认两个场景及原1800/0断言保留，新订单真实正值截秒0，不修改旧订单期限。必要库存Files为新MarketplaceOrderCancelServices、既有MarketplaceOrderDao/StoreOrderServices/StoreOrderDao/UnpaidOrderCancelJob/LegacyProductWriteServices，以及真实regressionStock所在 `crmeb/app/services/order/StoreOrderRefundServices.php`（仅按实际保存父订单版本保护旧恢复，不改退款计算/额度）；支付六源文件由上述独立范围负责。无新业务表、支付账户或attempt表，不运行已停止的拒绝/权限/冲突/并发/故障/恢复样本，不开放创建gate。
+
+2026-10-15 本地源码检查点：七个取消/库存必要文件、七个旧支付入口文件（StoreOrderServices为共同必要调用点）及六个测试支付契约/配置文件已实现；独立源码复核通过。新硬删历史检查曾沿普通一致性读，源码复核发现可能沿用事务旧快照，已窄修为同一默认PDO当前锁读，保留原库存日志保护。PHP8.2首次检查20个文件实际exit0，逐文件源码前后摘要不变，证据 `artifacts/ms4-cancel-source/20261015-v1/lint-result.json` 摘要 `16f8890090aacd3c506dd103133ce7a4982f0cab90ec99da67b24d2bc61a485c`。此后普通CLI增加原生测试环境收据绑定，待与新增取消helper一并再次语法检查及独立复核；尚未执行取消普通场景，不记Task5或MS5完成，不开放创建gate。
+
+取消普通验证源码已固定：新helper摘要 `835c6dd77e4ce5556258436ebe6f9fa8ffd8ad44cf1465d0939a764500130c77`，真实第二顾客顺序购买同物理SKU后，按独立当前库存加回本次reserve数量，完整核对五类可变业务表及其余观察事实、真实父U64、动作摘要、首次演员、状态、原保存项/金额/表单/发票/ledger与正常重放；另核保存0期限跳过、真实正小数小时新单自然到期及商家停用后原handler释放。两次实际attempt保持同App测试范围，无paid或财务写。普通CLI摘要 `d54c327b3372db3155b3d61952108cebf9932ebb424d953754098605253ed11a`，真实环境收据/进程开关闭集核对通过独立源码审，tiny仅新增独立phase名称，原PDO观察不被同名覆盖。最终CLI/helper两文件PHP8.2语法实际exit0，前后源码不变，收据摘要 `18c504e79545319c5f4a6f19442c0b5cd7c3bf5f982d726ad90eda272ac7b1d5`；加上前19个未变生产源，共21文件。外部final准备只增严格取消proof并保留全部原创建/会员/读取/持久收尾断言，完整逆变换、AST/help为源码检查，不表示已运行普通取消。
 
 ### Task 6: 商家订单操作
 

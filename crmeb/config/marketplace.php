@@ -10,4 +10,8 @@ return [
         'enabled'=>Env::get('marketplace.trade.enabled',false),
         'disabled_features'=>['coupon','integral','balance','brokerage','activity'],
     ],
+    'payment'=>[
+        // Think Env reads PHP_MARKETPLACE_PAYMENT_TEST_ENABLED; APP_ENV is checked separately at resolution.
+        'test_enabled'=>Env::get('marketplace.payment.test_enabled',false),
+    ],
 ];

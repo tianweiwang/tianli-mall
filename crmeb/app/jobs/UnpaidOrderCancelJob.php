@@ -16,6 +16,8 @@ use app\services\activity\seckill\StoreSeckillServices;
 use app\services\order\StoreOrderCartInfoServices;
 use app\services\order\StoreOrderRefundServices;
 use app\services\order\StoreOrderServices;
+use app\services\marketplace\order\MarketplaceOrderCancelServices;
+use app\services\marketplace\order\MarketplaceTradePolicy;
 use crmeb\basic\BaseJobs;
 use crmeb\traits\QueueTrait;
 use think\facade\Log;
@@ -37,6 +39,10 @@ class UnpaidOrderCancelJob extends BaseJobs
         $orderInfo = $services->get($orderId);
         if (!$orderInfo) {
             return true;
+        }
+        if (!MarketplaceTradePolicy::savedOrderIsLegacy($orderInfo->getData())) {
+            $result = app()->make(MarketplaceOrderCancelServices::class)->cancelExpired((int)$orderInfo->getData('id'));
+            return in_array($result['state'], ['cancelled', 'already_cancelled', 'not_due'], true);
         }
         if ($orderInfo->paid) {
             return true;

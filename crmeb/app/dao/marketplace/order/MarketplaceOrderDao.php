@@ -63,6 +63,9 @@ final class MarketplaceOrderDao
     private const STATUS_FIELDS = ['oid','change_type','change_message','change_time'];
     private const PRODUCT_LOG_FIELDS = ['id','type','product_id','uid','visit_num','cart_num','order_num','pay_num',
         'pay_price','cost_price','pay_uid','refund_num','refund_price','collect_num','add_time'];
+    private const CANCEL_FIELDS = ['id','uid','mer_id','order_id','unique','marketplace_trade_version','cart_id','total_num',
+        'pay_price','paid','is_cancel','status','refund_status','pid','shipping_type','is_gift','delivery_type','delivery_id','delivery_name'];
+    private const CANCEL_STATUS = 'cancel_order';
 
     private string $prefix;
 
@@ -582,6 +585,192 @@ final class MarketplaceOrderDao
         return ['post_commit_done'=>1,'completed_now'=>true];
     }
 
+    /** Real owner/order locators only, read outside the following top-level transaction. */
+    public function customerCancellationCandidate(PDO $pdo, int $uid, string $orderNo): ?array
+    {
+        self::integer($uid,1,self::INT_MAX);self::text($orderNo,32,true);
+        return $this->cancellationCandidate($pdo,'`uid` = ? AND `order_id` = ?',[$uid,$orderNo]);
+    }
+
+    public function expiryCancellationCandidate(PDO $pdo, int $orderId): ?array
+    {
+        self::integer($orderId,1,self::INT_MAX);
+        return $this->cancellationCandidate($pdo,'`id` = ?',[$orderId]);
+    }
+
+    /** Saved deadline/order cursor; no current configuration, merchant state or post-commit filter. */
+    public function expiredCancellationCandidates(PDO $pdo, int $deadline, int $orderId, int $now, int $batch): array
+    {
+        self::integer($deadline,0,self::UINT_MAX);self::integer($orderId,0,self::INT_MAX);
+        self::integer($now,1,self::UINT_MAX);self::integer($batch,1,100);
+        $rows=$this->postCommitRead($pdo,'SELECT `cancel_at`,`order_id` FROM '.$this->table('marketplace_order_idempotency').
+            ' FORCE INDEX (`idx_ms4_cancel`) WHERE `state` = 1 AND `cancel_at` > 0 AND `cancel_at` <= ?'.
+            ' AND (`cancel_at` > ? OR (`cancel_at` = ? AND `order_id` > ?)) ORDER BY `cancel_at`,`order_id` LIMIT '.$batch,
+            [$now,$deadline,$deadline,$orderId]);
+        $out=[];foreach($rows as$row)$out[]=['deadline'=>self::integer($row['cancel_at'],1,self::UINT_MAX),
+            'order_id'=>self::integer($row['order_id'],1,self::INT_MAX)];return $out;
+    }
+
+    /**
+     * UID -> ledger -> order -> raw merchant -> roots -> physical SKUs -> items -> reserves/children.
+     * Returns state ready/already_cancelled/not_due/pending plus private actual locked facts.
+     * Candidate root/SKU IDs are hints and must exactly match the newly locked saved items.
+     */
+    public function lockCancellation(PDO $pdo, array $candidate, int $now, bool $expired): array
+    {
+        $this->transaction($pdo);self::integer($now,1,self::UINT_MAX);
+        foreach(['root_ids'=>self::ROOT_MAX,'sku_ids'=>self::INT_MAX] as$field=>$max){
+            $ids=$candidate[$field]??null;if(!is_array($ids)||!array_is_list($ids)||!$ids)self::unavailable();
+            foreach($ids as$value)self::integer($value,1,$max);
+            $sorted=array_values(array_unique($ids,SORT_NUMERIC));sort($sorted,SORT_NUMERIC);
+            if($sorted!==$ids)self::unavailable();
+        }
+        $uid=self::integer($candidate['uid']??null,1,self::INT_MAX);$id=self::integer($candidate['order_id']??null,1,self::INT_MAX);
+        $this->lockCustomer($pdo,$uid);
+        $ledger=$this->one($pdo,'marketplace_order_idempotency',self::IDEM_FIELDS,'`uid` = ? AND `order_id` = ?',[$uid,$id]);
+        if($ledger===null)self::unavailable();$saved=$this->committedOrder($pdo,$ledger);
+        $order=$this->one($pdo,'store_order',self::CANCEL_FIELDS,'`id` = ? AND `uid` = ? AND `mer_id` = ?',[$id,$uid,$ledger['mer_id']]);
+        if($order===null||$order['order_id']!==$candidate['order_no'])self::unavailable();
+        $result=['state'=>'pending','candidate'=>$candidate,'ledger'=>$ledger,'order'=>$order,'selection'=>[],'reserves'=>[]];
+        if(self::integer($order['paid'],0,1)!==0)return $result;
+        $cancelled=self::integer($order['is_cancel'],0,1)===1;
+        $deadline=self::integer($ledger['cancel_at'],0,self::UINT_MAX);
+        if($expired&&!$cancelled&&($deadline===0||$deadline>$now)){$result['state']='not_due';return $result;}
+        $merId=self::integer($ledger['mer_id'],1,self::UINT_MAX);
+        if(self::integer($candidate['mer_id']??null,1,self::UINT_MAX)!==$merId)self::unavailable();
+        if($this->one($pdo,'marketplace_merchant',['mer_id'],'`mer_id` = ?',[$merId])===null)self::unavailable();
+        foreach($candidate['root_ids'] as$rootId){
+            self::integer($rootId,1,self::ROOT_MAX);
+            if($this->one($pdo,'store_product',['id','mer_id','stock','sales'],'`id` = ? AND `mer_id` = ?',[$rootId,$merId])===null)self::unavailable();
+        }
+        $lockedSkus=[];foreach($candidate['sku_ids'] as$skuId){
+            self::integer($skuId,1,self::INT_MAX);
+            $sku=$this->one($pdo,'store_product_attr_value',['id','product_id','type','unique','stock','sales'],'`id` = ?',[$skuId]);
+            if($sku===null||!in_array(self::integer($sku['product_id'],1,self::ROOT_MAX),$candidate['root_ids'],true)
+                ||self::integer($sku['type'],0,0)!==0)self::unavailable();
+            $lockedSkus[$skuId]=$sku;
+        }
+        $selection=$this->postCommitItems($pdo,$ledger,$saved);$roots=$skus=$groups=[];
+        foreach($selection as$line){
+            self::stored($lockedSkus[$line['sku_id']]??[],['product_id'=>$line['product_id'],'type'=>0,'unique'=>$line['unique']]);
+            $roots[$line['product_id']]=$line['product_id'];$skus[$line['sku_id']]=$line['sku_id'];
+            $parent=self::bigint($line['cart_info']['marketplace']['reserve_id']);
+            if(!isset($groups[$parent]))$groups[$parent]=['product_id'=>$line['product_id'],'sku_id'=>$line['sku_id'],
+                'unique'=>$line['unique'],'qty'=>0,'cart_refs'=>[]];
+            if($groups[$parent]['product_id']!==$line['product_id']||$groups[$parent]['sku_id']!==$line['sku_id']
+                ||$groups[$parent]['unique']!==$line['unique'])self::unavailable();
+            $groups[$parent]['qty']+=$line['qty'];self::integer($groups[$parent]['qty'],1,self::UINT_MAX);
+            $groups[$parent]['cart_refs'][]=$line['cart_ref'];
+        }
+        sort($roots,SORT_NUMERIC);sort($skus,SORT_NUMERIC);
+        if($roots!==$candidate['root_ids']||$skus!==$candidate['sku_ids'])self::unavailable();
+        $items=$this->rows($pdo,'store_order_cart_info',self::ITEM_FIELDS,'`oid` = ?',[$id],'`id` ASC');
+        foreach($items as$item){if((string)$item['split_status']!=='0'||(string)$item['refund_num']!=='0'
+            ||(string)$item['surplus_num']!==(string)$item['cart_num'])return $result;}
+        foreach(['status','refund_status','pid','is_gift'] as$field)if((string)$order[$field]!=='0')return $result;
+        if((string)$order['shipping_type']!=='1'||$order['delivery_type']!==''||$order['delivery_id']!==''||$order['delivery_name']!=='')return $result;
+        $parents=$this->rows($pdo,'marketplace_stock_movement',self::MOVEMENT_FIELDS,
+            '`order_id` = ? AND `kind` = ?',[$id,'reserve'],'`id` ASC');
+        if(count($parents)!==count($groups))self::unavailable();$reserves=[];$released=0;$first=null;$childIds=[];
+        foreach($parents as$parent){
+            $parentId=self::bigint($parent['id']);$group=$groups[$parentId]??null;if($group===null)self::unavailable();
+            self::stored($parent,['mer_id'=>$merId,'order_id'=>$id,'product_id'=>$group['product_id'],'sku_id'=>$group['sku_id'],
+                'sku_type'=>0,'sku_unique'=>$group['unique'],'qty'=>$group['qty'],'kind'=>'reserve','parent_reserve_id'=>null,
+                'order_item_id'=>null,'refund_id'=>null,'actor_type'=>'customer','actor_id'=>$uid,'idem_key'=>'reserve:'.$id.':'.$group['sku_id']]);
+            $action=['contract_version'=>1,'uid'=>$uid,'mer_id'=>$merId,'order_id'=>$id,'product_id'=>$group['product_id'],
+                'sku_id'=>$group['sku_id'],'sku_type'=>0,'sku_unique'=>$group['unique'],'qty'=>$group['qty'],'kind'=>'reserve','cart_refs'=>$group['cart_refs']];
+            self::movementDigest($parent,$action);self::reserveArithmetic($parent);
+            $children=$this->rows($pdo,'marketplace_stock_movement',self::MOVEMENT_FIELDS,'`parent_reserve_id` = ?',[$parentId],'`id` ASC');
+            $credited=0;$release=null;
+            foreach($children as$child){
+                $childIds[self::bigint($child['id'])]=true;
+                self::stored($child,['mer_id'=>$merId,'order_id'=>$id,'product_id'=>$group['product_id'],'sku_id'=>$group['sku_id'],
+                    'sku_type'=>0,'sku_unique'=>$group['unique'],'parent_reserve_id'=>$parentId]);
+                if(!in_array($child['kind'],['release','return_in'],true))self::unavailable();
+                $qty=self::integer($child['qty'],1,self::UINT_MAX);
+                if($qty>$group['qty']-$credited)self::unavailable();$credited+=$qty;
+                if($child['kind']==='release'){
+                    $expected=$this->releaseAction($uid,$merId,$id,$parentId,$group);
+                    self::stored($child,['idem_key'=>'release:'.$id.':'.$parentId,'qty'=>$group['qty'],
+                        'order_item_id'=>null,'refund_id'=>null]);self::movementDigest($child,$expected);self::releaseArithmetic($child);
+                    if($release!==null)self::unavailable();$release=$child;
+                }
+            }
+            if($children!==[]){
+                if(count($children)!==1||$release===null||$credited!==$group['qty'])return $result;
+                $actor=$release['actor_type'];$actorId=$release['actor_id'];
+                if(!($actor==='customer'&&(string)$actorId===(string)$uid)&&!($actor==='system'&&$actorId===null))self::unavailable();
+                $stamp=[self::integer($release['add_time'],1,self::UINT_MAX),$actor,$actorId===null?null:(string)$actorId];
+                if($first!==null&&$first!==$stamp)self::unavailable();$first=$stamp;++$released;
+            }
+            $reserves[]=$parent+['release_group'=>$group];
+        }
+        $allChildren=$this->rows($pdo,'marketplace_stock_movement',['id'],
+            '`order_id` = ? AND `kind` IN (?,?)',[$id,'release','return_in'],'`id` ASC');
+        if(count($allChildren)!==count($childIds))self::unavailable();
+        foreach($allChildren as$child)if(!isset($childIds[self::bigint($child['id'])]))self::unavailable();
+        if($cancelled){
+            if($released!==count($parents)||$first===null)return $result;
+            $statuses=$this->rows($pdo,'store_order_status',self::STATUS_FIELDS,'`oid` = ? AND `change_type` = ?',[$id,self::CANCEL_STATUS],'',2);
+            if(count($statuses)!==1)return $result;
+            self::stored($statuses[0],['oid'=>$id,'change_type'=>self::CANCEL_STATUS,'change_message'=>'订单取消','change_time'=>$first[0]]);
+            $result['state']='already_cancelled';return $result;
+        }
+        if($released!==0)return $result;
+        $result['state']='ready';$result['selection']=$selection;$result['reserves']=$reserves;return $result;
+    }
+
+    /** Trusted payment proof has been checked by the service; stock/cancel facts commit together. */
+    public function releaseCancellation(PDO $pdo, array $locked, int $now, string $actorType, ?int $actorId): void
+    {
+        $current=$this->lockCancellation($pdo,$locked['candidate'],$now,$actorType==='system');
+        if($current['state']!=='ready')self::unavailable();$order=$current['order'];
+        $uid=self::integer($order['uid'],1,self::INT_MAX);$merId=self::integer($order['mer_id'],1,self::UINT_MAX);$id=self::integer($order['id'],1,self::INT_MAX);
+        if(!($actorType==='customer'&&$actorId===$uid)&&!($actorType==='system'&&$actorId===null))self::unavailable();
+        $reserves=$current['reserves'];usort($reserves,static fn(array $a,array $b):int=>(int)$a['sku_id']<=>(int)$b['sku_id']);
+        foreach($reserves as$parent){
+            $parentId=self::bigint($parent['id']);$group=$parent['release_group'];$qty=$group['qty'];
+            $root=$this->one($pdo,'store_product',['id','mer_id','stock','sales'],'`id` = ? AND `mer_id` = ?',[$group['product_id'],$merId]);
+            $sku=$this->one($pdo,'store_product_attr_value',['id','product_id','type','unique','stock','sales'],'`id` = ?',[$group['sku_id']]);
+            if($root===null||$sku===null)self::unavailable();self::stored($sku,['product_id'=>$group['product_id'],'type'=>0,'unique'=>$group['unique']]);
+            $ss=self::integer($sku['stock'],0,self::UINT_MAX);$sa=self::integer($sku['sales'],0,self::UINT_MAX);
+            $rs=self::integer($root['stock'],0,self::ROOT_STOCK_MAX);$ra=self::integer($root['sales'],0,self::ROOT_STOCK_MAX);
+            if($qty>self::UINT_MAX-$ss||$qty>self::ROOT_STOCK_MAX-$rs||$qty>$sa||$qty>$ra)self::unavailable();
+            $n=$this->execute($pdo,'UPDATE '.$this->table('store_product_attr_value').
+                ' SET `stock` = ?, `sales` = ? WHERE `id` = ? AND `product_id` = ? AND `type` = 0 AND BINARY `unique` = ? AND `stock` = ? AND `sales` = ?',
+                [$ss+$qty,$sa-$qty,$group['sku_id'],$group['product_id'],$group['unique'],$ss,$sa])->rowCount();
+            if($n!==1)self::unavailable();
+            $n=$this->execute($pdo,'UPDATE '.$this->table('store_product').
+                ' SET `stock` = ?, `sales` = ? WHERE `id` = ? AND `mer_id` = ? AND `stock` = ? AND `sales` = ?',
+                [$rs+$qty,$ra-$qty,$group['product_id'],$merId,$rs,$ra])->rowCount();if($n!==1)self::unavailable();
+            $afterSku=$this->one($pdo,'store_product_attr_value',['id','stock','sales'],'`id` = ?',[$group['sku_id']]);
+            $afterRoot=$this->one($pdo,'store_product',['id','stock','sales'],'`id` = ?',[$group['product_id']]);
+            if($afterSku===null||$afterRoot===null)self::unavailable();
+            self::stored($afterSku,['stock'=>$ss+$qty,'sales'=>$sa-$qty]);self::stored($afterRoot,['stock'=>$rs+$qty,'sales'=>$ra-$qty]);
+            $action=$this->releaseAction($uid,$merId,$id,$parentId,$group);
+            $movement=['mer_id'=>$merId,'order_id'=>$id,'product_id'=>$group['product_id'],'sku_id'=>$group['sku_id'],
+                'sku_type'=>0,'sku_unique'=>$group['unique'],'qty'=>$qty,'kind'=>'release','idem_key'=>'release:'.$id.':'.$parentId,
+                'parent_reserve_id'=>$parentId,'order_item_id'=>null,'refund_id'=>null,'actor_type'=>$actorType,'actor_id'=>$actorId,
+                'request_digest'=>hash('sha256',MarketplaceOrderInput::canonical($action),true),'sku_stock_before'=>$ss,'sku_stock_after'=>$ss+$qty,
+                'sku_sales_before'=>$sa,'sku_sales_after'=>$sa-$qty,'root_stock_before'=>$rs,'root_stock_after'=>$rs+$qty,
+                'root_sales_before'=>$ra,'root_sales_after'=>$ra-$qty,'add_time'=>$now];
+            $movementId=$this->insert($pdo,'marketplace_stock_movement',$movement,'18446744073709551615');
+            $read=$this->one($pdo,'marketplace_stock_movement',self::MOVEMENT_FIELDS,'`id` = ?',[$movementId]);
+            if($read===null)self::unavailable();self::stored($read,['id'=>$movementId]+$movement);
+        }
+        if($this->rows($pdo,'store_order_status',self::STATUS_FIELDS,'`oid` = ? AND `change_type` = ?',[$id,self::CANCEL_STATUS],'',2))self::unavailable();
+        $status=['oid'=>$id,'change_type'=>self::CANCEL_STATUS,'change_message'=>'订单取消','change_time'=>$now];
+        $this->insert($pdo,'store_order_status',$status,null);
+        $n=$this->execute($pdo,'UPDATE '.$this->table('store_order').
+            ' SET `is_cancel` = 1 WHERE `id` = ? AND `uid` = ? AND `mer_id` = ? AND `marketplace_trade_version` = 1'.
+            ' AND `paid` = 0 AND `is_cancel` = 0 AND `status` = 0 AND `refund_status` = 0',[$id,$uid,$merId])->rowCount();
+        if($n!==1)self::unavailable();
+        $read=$this->one($pdo,'store_order',self::CANCEL_FIELDS,'`id` = ?',[$id]);
+        if($read===null)self::unavailable();$expected=$order;$expected['is_cancel']=1;self::stored($read,$expected);
+        $statuses=$this->rows($pdo,'store_order_status',self::STATUS_FIELDS,'`oid` = ? AND `change_type` = ?',[$id,self::CANCEL_STATUS],'',2);
+        if(count($statuses)!==1)self::unavailable();self::stored($statuses[0],$status);
+    }
+
     /** Read-only resolution serialized with create on the same actual UID, never a new claim. */
     public function lookupConfirmation(PDO $pdo, int $uid, string $key): array
     {
@@ -601,6 +790,59 @@ final class MarketplaceOrderDao
         $order=$this->committedOrder($pdo,$row);
         if($order['unique']!==$key)self::unavailable();
         return ['state'=>'created','key'=>$key,'orderId'=>$order['order_id']];
+    }
+
+    private function cancellationCandidate(PDO $pdo, string $where, array $values): ?array
+    {
+        $rows=$this->postCommitRead($pdo,'SELECT `id`,`uid`,`mer_id`,`order_id`,`marketplace_trade_version` FROM '.
+            $this->table('store_order').' WHERE '.$where.' LIMIT 2',$values);
+        if(count($rows)>1)self::unavailable();if(!$rows)return null;$order=$rows[0];
+        self::integer($order['marketplace_trade_version'],1,1);$id=self::integer($order['id'],1,self::INT_MAX);
+        $uid=self::integer($order['uid'],1,self::INT_MAX);$merId=self::integer($order['mer_id'],1,self::UINT_MAX);
+        $items=$this->postCommitRead($pdo,'SELECT `product_id`,`cart_info` FROM '.$this->table('store_order_cart_info').
+            ' WHERE `oid` = ? ORDER BY `id`',[$id]);if(!$items)self::unavailable();$roots=$skus=[];
+        foreach($items as$item){
+            $rootId=self::integer($item['product_id'],1,self::ROOT_MAX);$cart=self::decode($item['cart_info']);
+            if(!is_array($cart['marketplace']??null))self::unavailable();
+            $skuId=self::integer($cart['marketplace']['sku_id']??null,1,self::INT_MAX);
+            $roots[$rootId]=$rootId;$skus[$skuId]=$skuId;
+        }
+        sort($roots,SORT_NUMERIC);sort($skus,SORT_NUMERIC);
+        return ['uid'=>$uid,'mer_id'=>$merId,'order_id'=>$id,'order_no'=>self::text($order['order_id'],32,true),
+            'root_ids'=>$roots,'sku_ids'=>$skus];
+    }
+
+    private function releaseAction(int $uid,int $merId,int $id,string $parentId,array $group):array
+    {
+        return ['contract_version'=>1,'uid'=>$uid,'mer_id'=>$merId,'order_id'=>$id,'product_id'=>$group['product_id'],
+            'sku_id'=>$group['sku_id'],'sku_type'=>0,'sku_unique'=>$group['unique'],'qty'=>$group['qty'],
+            'kind'=>'release','parent_reserve_id'=>$parentId];
+    }
+
+    private static function movementDigest(array $movement,array $action):void
+    {
+        if(!is_string($movement['request_digest'])||strlen($movement['request_digest'])!==32
+            ||!hash_equals($movement['request_digest'],hash('sha256',MarketplaceOrderInput::canonical($action),true)))self::unavailable();
+    }
+
+    private static function releaseArithmetic(array $movement):void
+    {
+        $qty=self::integer($movement['qty'],1,self::UINT_MAX);
+        foreach(['sku'=>self::UINT_MAX,'root'=>self::ROOT_STOCK_MAX] as$part=>$max){
+            $stock=self::integer($movement[$part.'_stock_before'],0,$max);$sales=self::integer($movement[$part.'_sales_before'],0,$max);
+            if($qty>$max-$stock||$qty>$sales)self::unavailable();
+            self::stored($movement,[$part.'_stock_after'=>$stock+$qty,$part.'_sales_after'=>$sales-$qty]);
+        }
+    }
+
+    private static function reserveArithmetic(array $movement):void
+    {
+        $qty=self::integer($movement['qty'],1,self::UINT_MAX);
+        foreach(['sku'=>self::UINT_MAX,'root'=>self::ROOT_STOCK_MAX] as$part=>$max){
+            $stock=self::integer($movement[$part.'_stock_before'],0,$max);$sales=self::integer($movement[$part.'_sales_before'],0,$max);
+            if($qty>$stock||$qty>$max-$sales)self::unavailable();
+            self::stored($movement,[$part.'_stock_after'=>$stock-$qty,$part.'_sales_after'=>$sales+$qty]);
+        }
     }
 
     /** Saved item facts only, including exact opaque refs and original physical SKU lineage. */

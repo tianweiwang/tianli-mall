@@ -576,6 +576,10 @@ class StoreOrderRefundServices extends BaseServices
      */
     public function regressionStock($order)
     {
+        // All existing producers pass the actual StoreOrder header (including split-order headers), never a refund PK.
+        $savedOrder = $this->storeOrderServices->get($order['id'], ['id', 'marketplace_trade_version']);
+        if (!$savedOrder) throw new ApiException('订单不存在');
+        MarketplaceTradePolicy::assertLegacyOrder($savedOrder->getData());
         if ($order['status'] == -2 || $order['is_del']) return true;
         $combination_id = $order['combination_id'];
         $seckill_id = $order['seckill_id'];
