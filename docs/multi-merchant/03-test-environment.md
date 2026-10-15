@@ -46,7 +46,13 @@ MS4取消与MS5 Task2普通内部测试适配：仅新建的专用普通订单�
 
 MS4商家保存订单普通读取的下一专用版本：因真实AuthSessionStore要求默认Redis，该角色另声明公开PHP_CACHE_DRIVER=redis，从同一App启动起使用本Run专用Redis及既有private App配置的真实Redis密码、独立signing/stamp key、session epoch和issuer；不临时切facade、不假ctx或自签JWT。保留原测试支付两个环境值与收据，新增只筛PHP_CACHE_DRIVER=redis的原生created容器观察及独立merchant环境收据，交叉绑定同Run/source/CID/freeze及source binding SHA，不导出完整ENV或私有配置。原普通下单/会员/读取/持久收尾/取消全部断言在该Redis配置下新Run复跑，旧File结果仅保留原范围。正式runner仍只用audit_app DML和原private App卷，无migrator挂载；真实role/employee/setup仅本Run原生夹具，经真实setupPassword/login/authenticate后测普通本店读取。配置、凭据、capability、JWT不进入公开证据或仓库。无新业务表，其余原三角色/六卷/内部网络/无端口/完整source绑定与精确正常关闭保持；HTTP/DOM另按既有隔离profile验证，内部服务不代替其验收，已停止样本不恢复。
 
+MS4商家订单HTTP/DOM专用新profile合同（准备阶段，尚未运行）：先在全新Run复跑上述v5完整普通链；该阶段仍仅原订单CLI/MySQL/Redis三角色，CLI源码与三角色断言保持原值。其native0且完整普通收据核过后，才创建并登记AppHTTP和NginxUI。最终为5个固定容器身份、唯一内部网络、10个新专用卷：原6卷加http-runtime/http-control/http-browser-secrets/http-public。新增卷可在prepare创建并绑定原生名称/创建时间，不能用数量变化省略旧六卷身份核对。只有UI发布一个固定127.0.0.1端口到8080，App仅内部8000，无宿主端口；PHP/应用源码、配置和已核merchant产物均只读，App无migrator、Docker socket或浏览器秘密卷。主树保持无.env/install.lock；有限bootstrap从冻结的当前public闭集创建独立public快照，仅增加本Run安装标记、同源合成图片与当前merchant构建，之后App/UI只读挂载。bootstrap用audit_migrator真实writeMd5/checkFile/版本缓存，再以独立DML子进程创建HTTP演员和20笔真实新单，不让HTTP App继承migrator连接。新profile登记/启动/关闭使用专用严格矩阵，不放宽原harness分支。
+
+HTTP演员是本Run原生角色/员工/setup，经真实设密后仅将既有账号密码及必要原生ID交付至0700目录内create-only 0600私有文件；不包含JWT、setup capability或密码hash。桥仅从本Run已正常退出且source-bound的bootstrap原CID通过原生Docker文件管道读取到内存，在按原ID移除该helper前完成；此通道必须实际验证，不假设已退出容器可exec，不给App挂载秘密卷。浏览器重新正常填写登录，响应体和完整秘密摘要仅入私有控制通道，公开证据不含凭据，认证响应摘要只留前12位。普通订单/库存SQL基线在20单及引导校验完成后固定，正常登录Redis会话变化允许，HTTP读前后SQL事实必须一致。Cua只操作本任务owned tab；按320/390/1440实际viewport核DOM和截图，截图前排除密码输入值、token/capability URL。先真实退出/关闭owned tab，再通过原生control请求正常停止HTTP进程组并核SID/PGID/starttime、成员消失与8000无监听；不使用超时SIGKILL、重启或force。五容器/网络/十卷须按原身份正常终态精确移除，独立六条双标签查询核零；HTTP/DOM、正常关闭与源检查分别记证据，不改已关闭v5 Run，不恢复已停止样本。
+
 §3 中的 127.0.0.1、宿主 PHP 与凭据文件位置适用于 ISO-MIN；本节是 ISO-FULL 的等效约束，不取消其他启动保护。新增 `run.sh` 属于本次批准的启动脚本范围。
+
+HTTP普通控制补充合同（source准备，尚未运行）：在原五个private ingress模式之外增加只读`supervisor`，仅核同Run/source/CID/freeze/epoch和当前active-supervisor原nonce，返回实际对应响应或明确not_ready/null；native0只证明有限读取完成，不能替代真实HTTP成员/监听ready。正常stop只终止已登记HTTP子进程组，核成员消失/8000无监听并写真实响应后，原supervisor以同PID空闲且禁止再start；桥读回后再由原ID正常docker stop time=-1发送SIGTERM，核容器exit0/PID0，不使用超时升级。runtime窗口固定实际time()起3600秒，过期不重启或改时钟。CUA原始截图为JPEG，保留原字节为.jpg并核image/jpeg、SHA及实际像素；CSS viewport/DPR另核，不转码或强制二者同尺寸。商品合成PNG合同保持。最终浏览器覆盖计划、私有capture/DOM核对与公开终态收据未齐前，新profile运行及关闭总门禁保持关闭；准备源码不记HTTP/DOM通过。
 
 ## 3. ISO-MIN 环境（MS0a 交付）
 
