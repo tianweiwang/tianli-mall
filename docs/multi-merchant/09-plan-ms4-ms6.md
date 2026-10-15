@@ -221,6 +221,16 @@ Files：`crmeb/app/services/marketplace/order/MarketplaceOrderSnapshotProjection
 
 同Run原cleanup helper实际exit0并按原ID移除；独立审过的 `normal-close-order-internal-v1.py`（摘要 `64eca95270b070956442d2c066bf76954eec85357e06d21975ac2bd5b3705931`）实际执行正常stop MySQL/Redis，两次原native进程及容器均0；原三个CID、内部网络、六卷按原身份非force移除。Root固定来源的独立verifier（摘要 `dd8d40e0ffd811cfb338abd06d745eb136a12ea8ea3fc3259ad5173f42dde9fc`）实际六条双标签原生查询均exit0/stderr0/count0，业务字节摘要仍相同，Run已关闭。完整上下文及证据保留在仓库外该Run目录。这仅证明eb08内部创建与正常重复提交，不覆盖本检查点之后列表/门禁/会员显示的新源码，也不证明HTTP认证/创建API、真实页面、会员折扣或模板运费、取消/超时/持久收尾/售后/支付及任何已停止样本；这些和其他尚未盘点消费者继续pending。
 
+**下一普通内部验证合同（源码准备，尚未运行）：** 保留已有 direct DAO 与 persistent/temporary 两个 CreateServices 场景、精确原收据键和全部原断言，追加两个独立真实用户/商家/商品/SKU的会员价格场景；不新建支付、开通或退款记录。沿安装既有 `system_user_level`、`user_level`、`member_right` 三表原生自增ID，user.level与真实level_id一致且在该列1..255范围；等级90.00，实际SKU A20.15/VIP16.00/成本7.45、B30.25/VIP28.00/成本9.35，A两行数量2/1、B一行2，固定每件运费2.67。等级场景独立期望商品原额120.95、成交108.83、等级优惠12.12、会员优惠0.00、成本41.05、运费13.35、应付122.18；有效付费资格加等级场景成交102.44、等级优惠6.06、会员优惠12.45、成本41.05、实收运费10.68、应付113.12，三行实收运费4.27/2.14/4.27。金额按原BC2截位和既有整分分摊，不从待测输出反推。
+
+原无优惠场景先完成，再按真实配置ID及旧JSON0条件只更新 member_func_status/member_card_status/member_price_status 为1，独立读回，仅失效三个对应system_config缓存键，由真实sys_config重读；不清整个缓存、不写伪缓存标志。付费资格沿真实 UserServices::setMemberOverdueTime(30, actualUid, 1, 'month') 保存并以调用前后时间和独立PDO核对；只证明已有有效资格下复用价格，不声称购买/支付/到期工作流通过。两个新场景各核确认、完整创建、保存项实际价格类型/优惠/成本、整行运费、表单/发票/库存/cart、正常重放和只读lookup，另输出 membership_creations.level/paid，原 service_creations 两键不变。
+
+追加 saved_reads 阶段复用原两张实际创建订单，从独立PDO保存事实建立期望，调用真实顾客/平台/旧移动订单列表、本人详情及三端真实空退款列表；核保存版本、商家、引用字符串、成交金额/整行运费、实际别名和表单，不注入身份或构造Request替身。生产列表使用真实默认分页；真实DAO以显式page1/2和limit1核两张订单分页与相同筛选count。读前后事实摘要保持不变。空退款只证明空查询，不证明非空父单批取；不在未付款订单插合成退款或改paid，非空退款与真实申请链继续pending。必要Files为既有 `help/audit-regressions/isolated/ms4-order-normal.php`（唯一入口、源码/fixture/facts闭集及调用接线）和新 `lib/ms4-saved-order-normal.php`（普通实际读取检查）；新helper必须列入完整源指纹。仓库外 preparation 从现candidate-internal-v1可逆派生v2，保留完整原业务/隔离/原生退出/关闭条件，再要求新增会员与读取证明；旧Run不重开、不改证据。
+
+另已盘点顾客订单列表 onLoad 的 wx.getEnterOptionsSync 仅属于原小程序支付返回逻辑，H5不能注入fake wx掩盖；必要修复仅在 `template/uni-app/pages/goods/order_list/index.vue` 用官方MP-WEIXIN条件包围该原块，保留小程序语义并核官方H5/MP/App编译。此处修复及普通内部SQL验证不等于HTTP/DOM验收；真实浏览器仍须fresh构建、正常真实账号及原ISO-FULL内网，本轮未具备前不声称通过。
+
+本合同的H5必要修复已完成源码验证：订单列表只增加两条官方MP-WEIXIN条件指令，H5/App正常onLoad不再访问wx，小程序预处理后原支付返回块逐非空行保持；六列表普通组件45条、14组官方模板/JS/Sass均通过且Vue warnings为空。证据在仓库外 `artifacts/ms4-list-ui-source/20261015-v3-mp-api-guard/`，Root实核六Vue产物hash一致；这仍不是支付返回流程或真实DOM验收。外部 `candidate-internal-v2-final` 和 `normal-close-order-internal-v2-final.py` 完整逆变换原v1五文件/关闭源、AST/help及独立源审通过，host摘要 `cc18ca9458de79ca5f8af26f6a301b31ff87e4d74a620ab000e5228369472978`、close摘要 `9b532551247110c558cf840781998a83cb44d9e4532c19aaaad80fd8682becbf`；仅增加新helper源指纹和会员/保存读取必备证明，原隔离/原生退出/关闭条件不变。未补helper闭集的早期v2只作未运行来源保留，不用它freeze或启动。
+
 ### Task 5: 取消与超时释放
 
 - 接口：取消与超时关单都通过 `release` 流水释放库存，`idem_key = "release:<order_id>:<unique>"`，重复执行不重复释放。超时关单前先查询支付状态（MS5 之前用测试驱动），已支付的不关单，转入异常处理。

@@ -191,6 +191,7 @@ export default {
 	 */
 	onLoad: function (options) {
 		if (options.status) this.orderStatus = options.status;
+		// #ifdef MP-WEIXIN
 		let EnOptions = wx.getEnterOptionsSync();
 		if (EnOptions.scene == '1038' && EnOptions.referrerInfo.appId == 'wxef277996acc166c3' && this.initIn) {
 			// 代表从收银台小程序返回
@@ -208,6 +209,7 @@ export default {
 				}
 			}
 		}
+		// #endif
 	},
 	onShow() {
 		if (this.isLogin) {
