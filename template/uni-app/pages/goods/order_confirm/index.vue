@@ -7,6 +7,7 @@
 				<view v-if="marketplaceSubmitState === 'submitting'">{{$t(`正在提交本次订单，请稍候。`)}}</view>
 				<view v-if="marketplaceSubmitState === 'uncertain'">
 					<view>{{$t(`提交结果尚未确认，本次信息已锁定。重试将发送上一次提交的相同内容。`)}}</view>
+					<view v-if="marketplaceAttempt && marketplaceAttempt.generation !== marketplaceEditGeneration">{{$t(`重试原提交，不包含尚未提交的调整内容。`)}}</view>
 					<button class="marketplace-adjust" :disabled="marketplaceLookupPending" @tap="adjustMarketplaceOrder">{{$t(`调整信息`)}}</button>
 				</view>
 				<view v-if="marketplaceEditGeneration > 0 && marketplaceSubmitState === 'editing'">{{$t(`原提交仍可能随后完成；若订单已生成，将显示原订单，调整内容不会另生成一单。`)}}</view>

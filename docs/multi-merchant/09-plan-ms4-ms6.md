@@ -193,6 +193,8 @@ Files：修改 `MarketplaceOrderInput.php` 提取create共用confirmationKey边�
 
 同轮提交UI源码检查点：上述七个前端/普通检查文件已实现稳定真实key和idem、完整冻结body、原快照重试、四态编辑约束及lookup后的明确调整；上传沿原producer增加可选completion，地址/发票/报价/确认及eventChannel保留实际key、代次与pending责任。普通提交状态29条、既有表单27条通过，确认页及两个快捷分类页各经官方H5/MP/App条件预处理、模板、JS与Sass检查；独立源审通过，Root核实际产物的文件hash与结果。产物在仓库外 `artifacts/ms4-submit-ui-source/20261015-v1/`。初次harness缺只读uni平台适配及raw跨平台util解析问题按实际官方预处理修正，未改业务断言；没有运行HTTP/App/SQL/DOM、未知结果调整或迟到/失败/冲突/恢复样本。源码中的未知结果处理仍需相应实际验收，硬刷新、再次购、真实地址/发票往返和视觉验收继续pending，gate不变。
 
+后续仅补一行代次不同的uncertain说明，明确“重试原提交，不包含尚未提交的调整内容”，未改快照/方法/状态/key/idem。确认页新hash与实际更新产物 `artifacts/ms4-submit-ui-source/20261015-v2-copy/` 核对一致，普通29/27及原三端编译仍通过，独立窄差分源审通过；v1产物保留。未知结果、迟到、故障、DOM等未运行项不变。
+
 其他端详情源码检查点：以上五个生产PHP、四个Vue、既有纯快照和新增普通staff UI检查共11文件已实现。平台沿真实既有认证/角色出口返回固定保存DTO；旧移动V1只调用真实Request UID的本人wrapper，v0原路径。V1只读分组保留保存hash/字段序号/重名/字符串0/图片顺序，隐藏未接管理动作和返佣，不发raw `_info`、成本、库存血缘或完整用户资料。源码复核发现的旧赠品缺字段.length问题以隐藏widget本地空状态修正，不造订单字段；商品金额直接展示保存total_price字符串，旧浮点加会员优惠和会员优惠区仅保留v0。六PHP语法、普通纯投影32条、真实组件方法状态65条及平台1/移动3×三端共10组模板/JS/Sass通过，后端与前端分别独立源审通过；Root核实际11文件hash和产物。证据在仓库外 `artifacts/ms4-staff-detail-source/20261015-task4-v1/`。以上不含App/SQL/HTTP、真实API/角色/DOM或已停止样本；列表和其他订单消费者仍未完成，不标Task4/MS4验收，不开放gate。
 
 ### Task 5: 取消与超时释放
