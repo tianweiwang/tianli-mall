@@ -423,10 +423,20 @@ r3新Run实际结果（2026-10-15）：clean来源 `483a43f99c1c2df733a2683de8fb
 - [x] 重新冻结 clean HEAD，以r3新Run执行初始化、结构迁移、原普通链及20单准备，核全体真实来源/权限/资源身份；该Run已正常关闭，HTTP/DOM未执行。
 - [x] r3实核UI发布映射、Windows回环TCP、固定同源PNG真实HTTP/字节及原source-ready；本项只证明本轮页面入口，不代替业务页面。
 - [x] 完成来源遍历纯正常对照、相同候选实施和聚焦检查；本项只证明上述纯计算/源码范围。
-- [ ] 以性能修复后的新clean来源重新冻结并执行原完整准备，记录真实入口耗时，保留原窗口。
+- [x] 以性能修复后的新clean来源重新冻结并执行原完整准备，记录真实入口耗时，保留原窗口；实际有限结果与本轮自然失败见下。
 - [ ] 完成原34步骤/25主capture/9原字节JPEG/9人工复核、实际手机横向可达、23表SQL及最终完整来源核对；原3600秒窗口不延长。
-- [ ] 实际关闭owned tab/重置viewport、正常停止真实HTTP子进程和原App，再精确移除原五容器、两个空端点原网络及十卷，独立六查询核零。
+- [ ] 后继完整Run实际关闭owned tab/重置viewport、正常停止真实HTTP子进程和原App，再精确移除原五容器、两个空端点原网络及十卷，独立六查询核零；本轮partial Run已按此资源标准关闭。
 - [ ] 按实际有限范围记录HTTP/DOM结果；完整Task6/MS4、生产创建门禁和用户停止样本的原状态保持，未验收项继续保留。
+
+性能修复后的实际普通Run（2026-10-15）：clean来源 `87311e7494f7d4261358a06c25216b7faa17181d`，Run `20261015115830de6671`，freeze `5a7cba61afe20a51e3c9fee4a220fd4e15538e96691b57773257cb936314f383`。原专用初始化、四命令结构迁移、内部正常订单链、20笔真实创建准备及UI入口均再次通过；内部结果摘要 `8bd5f3b6c621fa31720e5721badbc2daefd4b81858720989d65a1cf626ccf2d7`，准备子结果摘要 `e7c5032803efab6d66257917af3015d920147a71a5d18a06fe0e4f4c7b8e2ed9`。实际原runtime/plan getter为521/531毫秒，保持34步、9人工复核和原3600秒窗口，公开测量为同Run `evidence/root-http-ingress-performance.json`。仅真实字节的跨REPL类型适配先自然失败，改用 `Uint8Array.from(actualBytes)` 保留原字节后继续；没有修改冻结模块、帧或认证数据，也不将原类型失败记成通过。
+
+本轮首次实际HTTP/DOM只完成前两步：真实商家登录、订单列表均HTTP200/business200，原capture和ACK已写入。第3步 `owned-list-320` 在 `MS4_ACTUAL_TABLE_RETURNED_TO_LEFT_EDGE` 自然失败，未写该步capture、ACK、计划截图或人工复核，后续步骤及最终23表SQL审计未运行。失败摘要 `b664bc3590187b253b614c629a1545df42cf5a3953e79ad4d17a2f7e5eb871ca`。后续普通键盘诊断读回：真实滚动区宽239/内容1170、tabIndex=-1；焦点在最右列首个“查看详情”按钮，按一次ArrowLeft从211.333反而移至920.667，再按一次仍为920.667。原始诊断JPEG独立保存在同Run `evidence/root-scroll-diagnostic-320.jpg`，50021字节、摘要 `73a6ec137c3e334d6ee36991a6f8e56222273638758db75b65048c65bdff9d4b`；它不是原计划第3步截图。源码也确认列表选择末列按钮，列表/详情真实body-wrapper均没有显式键盘焦点。这证明当前检查目标不能完成该次正常横向往返，不宣称已验证工具内部实现。
+
+该partial Run已完整正常关闭：owned tab9关闭、viewport复位、临时演员内存释放；原bridge正常停止同一HTTP子进程，保留真实TERM15、空group、监听关闭以及原child exitcode/proc_close=-1，不改写为0。只读观察实核原监督进程、3个计划命令/2个ACK/2个capture文件名/0计划截图及第3步缺证，观察摘要 `1448a46dfd99cdaf8da1c5efc8f3bd57caae84065d6b34b70127e07022a582d9`。有限关闭源 `normal-close-browser-partial-20261015115830de6671.py` 经独立源码复核和Root读回后，四个原服务分别单次正常stop并真实exit0/PID0/restart0，随后非force精确移除原五容器、两个空端点原网络及十卷。关闭摘要 `c00cc36c4a9a7f96d2077086fc13c4aa07d154460da219f3fa4a71690d368675`；Root另执行六条原生标签查询全0，摘要 `2e47fe8df4b3861697f8243709479fb5b8d539abb5f9da171d0448ef47974b95`，46份原公开PASS/FAIL/来源证据字节保持。不重开该Run，完整浏览器验收、Task6/MS4仍未完成。
+
+后继键盘修复实施依据（实施前，通用商城）：只在商家前端 `src/accessibility.js` 复用现有Vue指令模式，为列表/详情各自真实 `.el-table__body-wrapper` 设置tabindex=0、具名region及专用class；两页局部注册和声明，`src/styles.css` 仅加内部可见焦点环。不给表格根冒充滚动区，不增加键盘事件处理器、强制focus或scrollLeft赋值，不改表格布局/金额/接口/权限。新建仓库外r4浏览器来源，统一用真实滚动区发送原ArrowRight/ArrowLeft，逐次只读核焦点确为该具名region，保留两端/末格几何、64按键上限和原证明对象闭集；仅更新新来源的focus说明，旧r3与失败证据保持。使用已有依赖在新目录离线构建，先完成聚焦源码检查和独立源审；实际键盘、320/390/1440视觉及完整HTTP/DOM仍须后继新clean来源Run，不能据源码修复宣称通过。
+
+键盘修复源码检查点：上述四个产品文件已按此最小方案实现，`main.js`、业务/API和原验证断言均未修改。已有Node22实际执行原 `template/merchant/scripts/source-check.cjs`，31脚本语法、74本地导入通过；Root读回四文件差异并核 `git diff --check` 通过，四文件保持LF。这只证明源码范围；离线构建、新r4来源及实际浏览器验证仍待完成。
 
 ### Task 7: 退款额度与库存行为
 

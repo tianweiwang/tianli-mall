@@ -19,7 +19,7 @@
       </el-form-item>
       <el-form-item><el-button type="primary" native-type="submit" :loading="loading" :disabled="loading">查询</el-button></el-form-item>
     </el-form>
-    <el-table v-loading="loading" :data="rows" border :empty-text="loading ? '正在读取订单' : error ? '订单未读取' : '暂无符合条件的订单'">
+    <el-table v-table-scroll="'订单列表，可横向滚动'" v-loading="loading" :data="rows" border :empty-text="loading ? '正在读取订单' : error ? '订单未读取' : '暂无符合条件的订单'">
       <el-table-column label="订单" min-width="205"><template slot-scope="scope">
         <div class="order-text">{{ scope.row.order_id }}</div><p class="field-note">{{ time(scope.row.add_time) }}</p>
       </template></el-table-column>
@@ -47,11 +47,12 @@
 </template>
 <script>
 import { api } from '../../api';
-import { fieldNames } from '../../accessibility';
+import { fieldNames, tableScroll } from '../../accessibility';
 import { orderList, orderQuery, orderRecordId, orderStatus } from '../../domain/order';
 import { formatTime } from '../../domain/people';
 
 export default {
+  directives: { 'table-scroll': tableScroll },
   mixins: [fieldNames],
   data: () => ({ filters: { order_id: '', paid: '', is_cancel: '' }, rows: [], count: 0, page: 1, limit: 20, loading: false, error: '', revision: 0 }),
   created() { this.load(); },

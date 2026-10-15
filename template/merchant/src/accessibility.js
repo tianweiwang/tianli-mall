@@ -17,3 +17,15 @@ function applyControlLabel(element, binding) {
   });
 }
 export const controlLabel = { inserted: applyControlLabel, componentUpdated: applyControlLabel };
+
+function applyTableScroll(element, binding) {
+  if (typeof binding.value !== 'string' || !binding.value.trim()) throw new Error('表格滚动区域名称不能为空');
+  const wrappers = element.querySelectorAll('.el-table__body-wrapper');
+  if (wrappers.length !== 1) throw new Error('表格必须有唯一的滚动区域');
+  const wrapper = wrappers[0];
+  wrapper.setAttribute('tabindex', '0');
+  wrapper.setAttribute('role', 'region');
+  wrapper.setAttribute('aria-label', binding.value.trim());
+  wrapper.classList.add('marketplace-table-scroll');
+}
+export const tableScroll = { inserted: applyTableScroll, componentUpdated: applyTableScroll };

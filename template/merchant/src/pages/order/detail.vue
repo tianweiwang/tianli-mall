@@ -24,7 +24,7 @@
         <div class="full-row"><dt>收货地址</dt><dd>{{ order.recipient.user_address }}</dd></div>
       </dl>
       <h2 class="section-heading">保存商品</h2>
-      <el-table :data="order.items" border>
+      <el-table v-table-scroll="'保存商品，可横向滚动'" :data="order.items" border>
         <el-table-column label="商品及规格" min-width="260"><template slot-scope="scope">
           <div class="order-item"><img :src="scope.row.image" class="table-image" alt="商品保存图片">
             <div class="order-text"><div>{{ scope.row.product_name }}</div><p class="field-note">{{ scope.row.sku_name }}</p></div></div>
@@ -57,10 +57,12 @@
 </template>
 <script>
 import { api } from '../../api';
+import { tableScroll } from '../../accessibility';
 import { orderDetail, orderRecordId, orderStatus } from '../../domain/order';
 import { formatTime } from '../../domain/people';
 
 export default {
+  directives: { 'table-scroll': tableScroll },
   data: () => ({ order: null, loading: false, error: '', revision: 0 }),
   created() { this.load(); },
   watch: { '$route.params.id'() { this.load(); } },
