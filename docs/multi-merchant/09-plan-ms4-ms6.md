@@ -300,6 +300,23 @@ MS5 Task2只增加 `crmeb/services/pay/marketplace/` 下PaymentAdapter/PaymentAc
 
 原delivery/splitDelivery/doDelivery已保护保存V1，旧equalSplit含float金额与旧pid/split语义，不能松开门禁直接套用。部分发货仍需先闭合稳定付款根、履约子单、同店归属、精确分币、真实原reserve及退款血缘、持久幂等与三端list/count不重复统计合同；当前仅盘点设计，未选择或实现该拆单结构。现无独立包裹表，是否需要额外结构须先以完整合同评估。真实paid写链尚未实现，不能伪改paid来验收发货；发货、拆单、售后与完整Task6责任均保留。
 
+**Task6纯分配实现合同（实施前，通用多商户）：** 在独立 `feature/ms4-fulfillment-plan` / `worktrees/ms4-fulfillment-plan` 从clean `5fc4232d1a97c7cddc4841dd4a95be72cbba3bf2` 继续必要的金额前置能力；本轮前端构建所在主树保持其来源，不由此开启任何发货入口。Files仅新 `crmeb/app/services/marketplace/order/MarketplaceOrderFulfillmentPlan.php`、现有 `MarketplaceOrderSnapshotProjection.php` 的新方法、新普通纯计算入口 `help/audit-regressions/isolated/ms4-fulfillment-plan.php` 及本记录。
+
+接口为 `MarketplaceOrderFulfillmentPlan::plan(savedRoot,savedItems,savedReserves,occupiedRanges,requestedQuantities):array` 与 `MarketplaceOrderSnapshotProjection::fulfillmentPlan(savedRoot,savedItems,plan):array`；另公开纯数值 `sliceMoney(savedLineAmount,originalQuantity,unitStart,unitEnd):string` 供相同算法复用和无身份数学检查。前两接口只消费调用者已经取得的真实保存V1/pid0根和完整原items/reserves，不读取当前商品/会员/商家配置，不建立认证上下文或写数据库。沿现有完整merchantOrder投影先核根/全部保存行守恒，再读取真实cart_info（JSON_BIGINT_AS_STRING）及marketplace血缘。原root/item PK与数量沿现INT/UINT界限，reserve规范U64字符串、不转PHP整数；同reserve的原item数量之和必须等于原reserve.qty，逐项核原order/mer/product/SKU/type/unique/原customer actor及父空值，不把同SKU两原行的金额合并。
+
+`occupiedRanges=[{source_item_id,unit_start,unit_end}]` 使用原Q内0-based绝对半开区间；`requestedQuantities=[{source_item_id,quantity}]` 按原item排序，确定性选最低未占用单位，可跨多个剩余区间，工作量跟输入区间数相关、不逐件展开。原Q永远是分母；对整行整数分预算M使用 `F(k)=floor(M/Q)*k+min(k,M%Q)`，区间值为F(end)-F(start)。商品额沿保存truePrice×Q/sum_true_price，运费及origin沿原整行保存收费预算，成本沿costPrice×Q，基础额与优惠沿sum_price/vip_truePrice×Q；优惠按保存price_type分level/member桶，净商品额不再加回优惠，应付只为商品额+邮费。原保存金额核DECIMAL(12,2)，派生基础/优惠乘积用BC字符串可超过该列和PHP整数范围，不复用窄化的DAO money方法。
+
+内部plan含plan_version、真实root_order_id、规范化保存来源摘要、按原行的reserve/绝对区间/数量与各金额、合计数量/净商品额/邮费/应付/成本/基础额/优惠及两优惠桶；来源摘要不冒充持久幂等键，真实writer仍须在原锁内重算并处理已占用区间。公开projection只暴露真实来源订单、原item ID、保存商品名称/规格/图片、计划数量/成交价/商品行金额/邮费和所选产品原保存表单，排除成本、reserve、区间与摘要；先核完整保存集，不把子集交给只接受完整订单的merchantOrder。NULL/0旧方法字节和当前V1旧发货门禁保持；本次不新增表/列或真实paid/发货/库存写，不把纯能力当履约子单已经持久化。
+
+执行与验收跟踪：
+
+- [x] 实现纯plan、严格保存来源/区间计算和允许字段projection，完成独立源码复核。
+- [x] 实际PHP8.2语法和仅sliceMoney普通数值检查；包含1/2分钱分配、顺序部分分配守恒、同SKU两行各自预算及大整数派生预算。数学样本没有UID/JWT/演员/paid/PDO/App，不能构造保存业务行冒充真实实例。
+- [ ] 后续用真实隔离保存根/items/reserves补完整plan/projection的普通验证；本阶段若尚未执行则如实保留。
+- [ ] 后续真实发货/拆单writer、持久区间/幂等、三端根单统计、售后与支付前提继续按原Task6义务完成，不因纯计算勾选而签收Task6或MS4。
+
+纯分配本地检查点（2026-10-15）：三个PHP文件已实现，独立源码复核无必须修正项；原Projection仅新增公开方法，移除该方法可逐字节回到原HEAD。Root使用既有PHP8.2镜像、network none、只读根与AUX源码、独立临时/tmp，实际三文件-l及普通数值入口全通过，原生exit0/stderr空，30条数学断言包含24固定值、5份原预算守恒及1次区间重组。检查前后全部三源bytes/SHA保持，精确临时容器名查询native0/空结果；收据 `artifacts/ms4-fulfillment-plan-source/20261015-v1/lint-math-result.json` 摘要 `519b9b5f7da5a866836ee61e84329dbaa6dafd650bb27066f4ff13c9e3b6de40`。这是纯数值计算及源码检查，未加载App、SQL、身份、支付或发货；完整真实保存plan/projection、writer、持久区间/幂等和Task6/MS4仍未完成。主交易工作树及其当前Run保持冻结，尚未合入此AUX变更。
+
 **Interfaces:**
 - Produces: merchantapi 订单列表、详情（只含履约所需的收货快照）、发货（数量不超过未发货数量）、售后处理；权限码新增 `order.read`、`order.ship`、`aftersale.handle`（加入 `MerchantPermissions`）。
 - 用例：O08（A 查询、发货、取消、导出 B 的订单或售后 → 404，零副作用）、O09（拆单后子单 `mer_id` 与父单一致）、O10（`accept_orders = 0` 时禁止新单，存量订单仍可发货、售后，不被删除）。

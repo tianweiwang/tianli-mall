@@ -248,6 +248,12 @@ final class MarketplaceOrderSnapshotProjection
         return $out;
     }
 
+    /** Public subset of a checked pure plan; complete saved root/items must be supplied, never just the selected rows. */
+    public static function fulfillmentPlan(array $savedRoot,array $savedItems,array $plan):array
+    {
+        return MarketplaceOrderFulfillmentPlan::savedProjection($savedRoot,$savedItems,$plan);
+    }
+
     private static function merchantInteger(mixed $value,int $minimum,int $maximum):int
     {
         if((!is_int($value)&&!is_string($value))||preg_match('/\A(?:0|-?[1-9][0-9]{0,9})\z/D',(string)$value)!==1
