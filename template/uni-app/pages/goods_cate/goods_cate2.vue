@@ -91,7 +91,7 @@
 					{{ $t(`￥`) }}
 					<text class="num">{{ totalPrice }}</text>
 				</view>
-				<view class="bnt" @click="subOrder">{{ $t(`去付款`) }}</view>
+				<button class="bnt" @click="subOrder">{{ $t(`去结算`) }}</button>
 			</view>
 		</view>
 		<cartList :cartData="cartData" @closeList="closeList" @ChangeCartNumDan="ChangeCartList" @ChangeSubDel="ChangeSubDel" @ChangeOneDel="ChangeOneDel"></cartList>
@@ -200,14 +200,10 @@ export default {
 		// 生成订单；
 		subOrder: function () {
 			let that = this,
-				list = that.cartData.cartList,
-				ids = [];
+				list = that.cartData.cartList;
 			if (list.length) {
-				list.forEach((item) => {
-					ids.push(item.id);
-				});
-				uni.navigateTo({
-					url: '/pages/goods/order_confirm/index?cartId=' + ids.join(',')
+				uni.switchTab({
+					url: '/pages/order_addcart/order_addcart'
 				});
 				that.cartData.iScart = false;
 			} else {
@@ -1072,6 +1068,13 @@ page {
 			}
 
 			.bnt {
+				box-sizing: border-box;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				padding: 0;
+				margin: 0 0 0 24rpx;
+				font: inherit;
 				width: 222rpx;
 				height: 76rpx;
 				background: var(--view-theme);
@@ -1079,7 +1082,7 @@ page {
 				line-height: 76rpx;
 				text-align: center;
 				color: #fff;
-				margin-left: 24rpx;
+				&::after { border: 0; }
 			}
 		}
 	}

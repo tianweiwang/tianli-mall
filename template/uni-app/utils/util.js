@@ -585,9 +585,24 @@ export default {
     opt,
     successCallback,
     errorCallback,
-    sizeCallback
+    sizeCallback,
+    completionCallback
   ) {
     let that = this;
+    let completed = false;
+    const finish = () => {
+      if (!completed) {
+        completed = true;
+        if (completionCallback) {
+          uni.hideLoading();
+          completionCallback();
+        }
+      }
+    };
+    const guarded = callback => function (...args) {
+      try { return callback.apply(this, args); }
+      catch (error) { finish(); throw error; }
+    };
     if (typeof opt === "string") {
       let url = opt;
       opt = {};
@@ -600,16 +615,16 @@ export default {
       uploadUrl = opt.url || "",
       inputName = opt.name || "pics",
       fileType = opt.fileType || "image";
-    uni.chooseImage({
+    try { uni.chooseImage({
       count: count, //最多可以选择的图片总数
       sizeType: sizeType, // 可以指定是原图还是压缩图，默认二者都有
       sourceType: sourceType, // 可以指定来源是相册还是相机，默认二者都有
-      success: function (res) {
+      success: guarded(function (res) {
         //启动上传等待中...
         let imgSrc;
         uni.getImageInfo({
           src: res.tempFilePaths[0],
-          success(ress) {
+          success: guarded(function (ress) {
             uni.showLoading({
               title: i18n.t(`图片上传中`),
             });
@@ -642,27 +657,30 @@ export default {
             canvas.drawImage(ress.path, 0, 0, canvasWidth, canvasHeight);
             canvas.save();
             // 这里的画布drawImage是一种异步属性  可能存在未绘制全就执行了draw的问题  so添加延迟
-            setTimeout((e) => {
-              canvas.draw(true, () => {
+            setTimeout(guarded((e) => {
+              canvas.draw(true, guarded(() => {
                 uni.canvasToTempFilePath({
                   canvasId: "canvas",
                   fileType: "JPEG",
                   destWidth: canvasWidth,
                   destHeight: canvasHeight,
                   quality: 0.7,
-                  success: function (canvasPath) {
+                  success: guarded(function (canvasPath) {
                     uploadImg(canvasPath.tempFilePath);
-                  },
+                  }),
+                  fail: finish,
                 });
-              });
-            }, 200);
-          },
+              }));
+            }), 200);
+          }),
+          fail: finish,
         });
-      },
-    });
+      }),
+      fail: finish,
+    }); } catch (error) { finish(); throw error; }
 
     function uploadImg(filePath) {
-      uni.uploadFile({
+      try { uni.uploadFile({
         url: HTTP_REQUEST_URL + "/api/" + uploadUrl,
         filePath,
         fileType: fileType,
@@ -676,7 +694,7 @@ export default {
           // #endif
           [TOKENNAME]: "Bearer " + store.state.app.token,
         },
-        success: function (res) {
+        success: guarded(function (res) {
           uni.hideLoading();
           if (res.statusCode == 403) {
             that.Tips({
@@ -693,14 +711,15 @@ export default {
               });
             }
           }
-        },
-        fail: function (res) {
+        }),
+        fail: guarded(function (res) {
           uni.hideLoading();
           that.Tips({
             title: i18n.t(`上传图片失败`),
           });
-        },
-      });
+        }),
+        complete: finish,
+      }); } catch (error) { finish(); throw error; }
     }
   },
   /**

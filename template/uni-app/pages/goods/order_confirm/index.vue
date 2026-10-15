@@ -3,7 +3,13 @@
 		<view class='order-submission'>
 			<view v-if="marketplaceV1" class="marketplace-checkout-notice">
 				<view>{{marketplaceConfirmation.store.name}}</view>
-				<view v-if="!marketplaceCanCreate">{{$t(`当前可确认金额和收货信息，暂未开放提交订单。`)}}</view>
+				<view v-if="!marketplaceCreateAvailable">{{$t(`当前可确认金额和收货信息，暂未开放提交订单。`)}}</view>
+				<view v-if="marketplaceSubmitState === 'submitting'">{{$t(`正在提交本次订单，请稍候。`)}}</view>
+				<view v-if="marketplaceSubmitState === 'uncertain'">
+					<view>{{$t(`提交结果尚未确认，本次信息已锁定。重试将发送上一次提交的相同内容。`)}}</view>
+					<button class="marketplace-adjust" :disabled="marketplaceLookupPending" @tap="adjustMarketplaceOrder">{{$t(`调整信息`)}}</button>
+				</view>
+				<view v-if="marketplaceEditGeneration > 0 && marketplaceSubmitState === 'editing'">{{$t(`原提交仍可能随后完成；若订单已生成，将显示原订单，调整内容不会另生成一单。`)}}</view>
 			</view>
 			<view v-if="marketplaceResumeUnavailable" class="marketplace-checkout-notice">
 				{{$t(`原确认页面已关闭，暂不能恢复完整确认内容。请返回商品或购物车重新确认。`)}}
@@ -89,7 +95,7 @@
 			<view v-if="is_gift == 1" class="gift-msg acea-row row-between-wrapper">
 				<view>{{$t(`好友留言`)}}</view>
 				<view class="discount">
-					<input style="text-align: right;" v-model="gift_mark" type="text" :placeholder="$t(`填写好友留言，最多40字`)"
+					<input style="text-align: right;" :value="gift_mark" @input="setCheckoutText($event,'gift_mark')" :disabled="marketplaceV1 && !marketplaceCanEdit" type="text" :placeholder="$t(`填写好友留言，最多40字`)"
 						placeholder-class="placeholder"></input>
 				</view>
 			</view>
@@ -97,14 +103,14 @@
 				<view class="item acea-row row-between-wrapper">
 					<view>{{$t(`用户姓名`)}}</view>
 					<view class="discount">
-						<input style="text-align: right;" v-model="contacts" type="text" :placeholder="$t(`请输入姓名`)"
+						<input style="text-align: right;" :value="contacts" @input="setCheckoutText($event,'contacts')" :disabled="marketplaceV1 && !marketplaceCanEdit" type="text" :placeholder="$t(`请输入姓名`)"
 							placeholder-class="placeholder"></input>
 					</view>
 				</view>
 				<view class="item acea-row row-between-wrapper">
 					<view>{{$t(`联系电话`)}}</view>
 					<view class="discount">
-						<input style="text-align: right;" v-model="contactsTel" type="text" :placeholder="$t(`请输入手机号`)"
+						<input style="text-align: right;" :value="contactsTel" @input="setCheckoutText($event,'contactsTel')" :disabled="marketplaceV1 && !marketplaceCanEdit" type="text" :placeholder="$t(`请输入手机号`)"
 							placeholder-class="placeholder"></input>
 					</view>
 				</view>
@@ -144,14 +150,14 @@
 					<view class="item acea-row row-between-wrapper">
 						<view>{{$t(`用户姓名`)}}</view>
 						<view class="discount">
-							<input style="text-align: right;" v-model="contacts" type="text" :placeholder="$t(`请输入姓名`)"
+							<input style="text-align: right;" :value="contacts" @input="setCheckoutText($event,'contacts')" :disabled="marketplaceV1 && !marketplaceCanEdit" type="text" :placeholder="$t(`请输入姓名`)"
 								placeholder-class="placeholder"></input>
 						</view>
 					</view>
 					<view class="item acea-row row-between-wrapper">
 						<view>{{$t(`联系电话`)}}</view>
 						<view class="discount">
-							<input style="text-align: right;" v-model="contactsTel" type="text" :placeholder="$t(`请输入手机号`)"
+							<input style="text-align: right;" :value="contactsTel" @input="setCheckoutText($event,'contactsTel')" :disabled="marketplaceV1 && !marketplaceCanEdit" type="text" :placeholder="$t(`请输入手机号`)"
 								placeholder-class="placeholder"></input>
 						</view>
 					</view>
@@ -163,7 +169,7 @@
 					</view>
 					<textarea placeholder-class='placeholder' :placeholder="$t(`填写备注信息，100字以内`)"
 						v-if="!coupon.coupon && inputTrip" @input='bindHideKeyboard' :focus="focus" @blur="inputTrip = false"
-						:value="mark" :maxlength="150" name="mark">
+						:value="mark" :disabled="marketplaceV1 && !marketplaceCanEdit" :maxlength="150" name="mark">
 						</textarea>
 				</view>
 			</view>
@@ -177,12 +183,13 @@
 							{{item.title}}
 						</view>
 						<view v-if="item.label=='text' || item.label=='number' || item.label=='email'" class="confirm">
-							<input type="text" :placeholder="$t(`请填写`)+item.title" :value="item.value"
+							<input type="text" :placeholder="$t(`请填写`)+item.title" :value="item.value" :disabled="!marketplaceCanEdit"
 								@input="setMarketplaceFormValue($event,group.product_id,group.definition_sha256,item.field_index)" />
 						</view>
 						<view v-if="item.label=='data'" class="uni-list">
 							<view class="uni-list-cell"><view class="uni-list-cell-db">
 								<picker mode="date" :value="item.value"
+									:disabled="!marketplaceCanEdit"
 									@change="setMarketplaceFormValue($event,group.product_id,group.definition_sha256,item.field_index)">
 									<view v-if="item.value == ''" class="fontC">{{date+item.title}}<text class='iconfont icon-jiantou'></text></view>
 									<view v-else class="uni-input">{{item.value}}</view>
@@ -191,28 +198,29 @@
 						</view>
 						<view v-if="item.label=='time'">
 							<picker mode="time" :value="item.value" start="00:00" end="23:59"
+								:disabled="!marketplaceCanEdit"
 								@change="setMarketplaceFormValue($event,group.product_id,group.definition_sha256,item.field_index)">
 								<view v-if="item.value == ''" class="fontC">{{time+item.title}}<text class='iconfont icon-jiantou'></text></view>
 								<view v-else>{{item.value}}</view>
 							</picker>
 						</view>
 						<view v-if="item.label=='id'" class="confirm">
-							<input type="idcard" :placeholder="$t(`请填写`)+item.title" :value="item.value"
+							<input type="idcard" :placeholder="$t(`请填写`)+item.title" :value="item.value" :disabled="!marketplaceCanEdit"
 								@input="setMarketplaceFormValue($event,group.product_id,group.definition_sha256,item.field_index)" />
 						</view>
 						<view v-if="item.label=='phone'" class="confirm">
-							<input type="tel" :placeholder="$t(`请填写`)+item.title" :value="item.value"
+							<input type="tel" :placeholder="$t(`请填写`)+item.title" :value="item.value" :disabled="!marketplaceCanEdit"
 								@input="setMarketplaceFormValue($event,group.product_id,group.definition_sha256,item.field_index)" />
 						</view>
 						<view v-if="item.label=='img'" class="confirmImg">
 							<view class='list acea-row row-middle'>
 								<view class='pictrue' v-for="(image,imageIndex) in item.value" :key="imageIndex">
 									<image :src='image' class="img"></image>
-									<text class='iconfont icon-guanbi1 font-num del'
+									<text v-if="marketplaceCanEdit" class='iconfont icon-guanbi1 font-num del'
 										@click="deleteMarketplaceFormImage(group.product_id,group.definition_sha256,item.field_index,imageIndex)"></text>
 								</view>
 								<view class='pictrue acea-row row-center-wrapper row-column bor'
-									@click="uploadMarketplaceFormImage(group.product_id,group.definition_sha256,item.field_index)" v-if="item.value.length < 8">
+									@click="uploadMarketplaceFormImage(group.product_id,group.definition_sha256,item.field_index)" v-if="marketplaceCanEdit && !marketplaceUploadPending && item.value.length < 8">
 									<text class='iconfont icon-icon25201'></text>
 									<view>{{$t(`上传图片`)}}</view>
 								</view>
@@ -338,7 +346,8 @@
 					<text class='font-color'>{{$t(`￥`)}}{{totalPrice || 0}}</text>
 				</view>
 				<button v-if="marketplaceV1 || marketplaceResumeUnavailable" class="settlement marketplace-submit"
-					:disabled="!marketplaceCanCreate || marketplaceComputing" @tap.stop="SubOrder">{{$t(`提交订单`)}}</button>
+					:disabled="marketplaceSubmitState === 'uncertain' ? !marketplaceCreateAvailable || marketplaceLookupPending : !marketplaceCanSubmit"
+					:loading="marketplaceSubmitState === 'submitting'" @tap.stop="handleMarketplaceSubmit">{{marketplaceSubmitState === 'uncertain' ? $t(`重试本次提交`) : $t(`提交订单`)}}</button>
 				<view v-else-if="(valid_count>0&&!discount_id) || (valid_count==cartInfo.length&&discount_id)" class='settlement' style='z-index:100' @tap.stop="Debounce(SubOrder())">{{$t(`提交订单`)}}
 				</view>
 				<view class='settlement bg-color-hui' style='z-index:100' v-else>{{$t(`提交订单`)}}</view>
@@ -366,6 +375,7 @@
 		orderConfirm,
 		getCouponsOrderPrice,
 		orderCreate,
+		orderConfirmation,
 		postOrderComputed,
 		checkShipping,
 		getGiftOrderDetail,
@@ -408,6 +418,8 @@
 		initializeMarketplaceForms, retainMarketplaceForms, marketplaceFormAnswers,
 		marketplaceFormIdentity, findMarketplaceFormField, firstMissingMarketplaceAnswer
 	} from '@/utils/marketplace-order-form.js';
+	import {bindMarketplaceSubmission, snapshotMarketplaceSubmission, marketplaceConfirmationResult, marketplaceCreateResult}
+		from '@/utils/marketplace-order-submit.js';
 	export default {
 		components: {
 			payment,
@@ -433,6 +445,19 @@
 				marketplaceComputeRevision: 0,
 				marketplaceFormGroups: [],
 				marketplaceFormsReady: false,
+				marketplaceSubmitBinding: null,
+				marketplaceAttempt: null,
+				marketplaceSendRevision: 0,
+				marketplaceSubmitState: 'editing',
+				marketplaceEditGeneration: 0,
+				marketplaceLookupPending: false,
+				marketplaceLookupTask: null,
+				marketplacePendingEdits: 0,
+				marketplaceNavigationPending: false,
+				marketplaceUploadPending: false,
+				marketplaceQuoteReady: false,
+				marketplaceConfirmPending: 0,
+				marketplaceConfirmRevision: 0,
 				confirm: '', //自定义留言
 				date: this.$t(`请选择`),
 				time: this.$t(`请选择`),
@@ -571,6 +596,16 @@
 			},
 			marketplaceCanCreate() {
 				return this.marketplaceV1 && this.marketplaceFormsReady && !this.marketplaceResumeUnavailable && this.marketplaceConfirmation.marketplace_create_enabled === true;
+			},
+			marketplaceCreateAvailable() {
+				return this.marketplaceV1 && this.marketplaceConfirmation.marketplace_create_enabled === true;
+			},
+			marketplaceCanEdit() {
+				return this.marketplaceSubmitState === 'editing' && !this.marketplaceLookupPending && !this.marketplaceResumeUnavailable;
+			},
+			marketplaceCanSubmit() {
+				return this.marketplaceCanCreate && this.marketplaceCanEdit && !!this.marketplaceSubmitBinding && this.marketplaceQuoteReady &&
+					!this.marketplaceComputing && !this.marketplaceConfirmPending && !this.marketplacePendingEdits && !this.marketplaceNavigationPending && !this.marketplaceUploadPending;
 			}
 		},
 		// watch: {
@@ -640,9 +675,10 @@
 		 */
 		onShow() {
 			let _this = this
+			this.marketplaceNavigationPending = false;
 
 			uni.$on("handClick", res => {
-				if (res) {
+				if (res && (!this.marketplaceV1 || this.marketplaceCanEdit)) {
 					_this.system_store = res.address
 				}
 				// 清除监听
@@ -656,6 +692,97 @@
 
 		},
 		methods: {
+			setCheckoutText(event, field) {
+				if (this.marketplaceV1 && !this.marketplaceCanEdit) return;
+				if (['contacts', 'contactsTel', 'gift_mark'].includes(field) && event.detail && typeof event.detail.value === 'string') this[field] = event.detail.value;
+			},
+			handleMarketplaceSubmit() {
+				if (!this.marketplaceV1) return this.SubOrder();
+				return this.marketplaceSubmitState === 'uncertain' ? this.retryMarketplaceOrder() : this.submitMarketplaceOrder();
+			},
+			queryMarketplaceOrder() {
+				if (this.marketplaceLookupPending && this.marketplaceLookupTask) return this.marketplaceLookupTask;
+				const key = this.marketplaceSubmitBinding.key;
+				this.marketplaceLookupPending = true;
+				const task = orderConfirmation(key).then(res => marketplaceConfirmationResult(res.data, key))
+					.finally(() => { this.marketplaceLookupPending = false; this.marketplaceLookupTask = null; });
+				this.marketplaceLookupTask = task;
+				return task;
+			},
+			completeMarketplaceOrder(result, fromLookup, generation) {
+				if (!this.marketplaceSubmitBinding || result.key !== this.marketplaceSubmitBinding.key || this.marketplaceSubmitState === 'done') return;
+				this.marketplaceSubmitState = 'done';
+				const earlier = generation !== this.marketplaceEditGeneration;
+				const details = fromLookup || earlier || this.marketplaceEditGeneration > 0;
+				const navigate = () => uni.reLaunch({url: details ? '/pages/goods/order_details/index?order_id=' + encodeURIComponent(result.orderId) :
+					'/pages/goods/cashier/index?order_id=' + encodeURIComponent(result.orderId) + '&from_type=order'});
+				if (earlier || (fromLookup && this.marketplaceEditGeneration > 0)) uni.showModal({title: this.$t(`订单已生成`),
+					content: earlier ? this.$t(`原提交已生成订单，调整内容未另行下单。请查看订单详情中的实际信息。`) :
+						this.$t(`订单已生成，请以订单详情中的实际收货信息和表单为准。调整不会另生成第二笔订单。`),
+					showCancel: false, success: navigate});
+				else navigate();
+			},
+			sendMarketplaceAttempt(attempt) {
+				if (!this.marketplaceCreateAvailable || this.marketplaceSubmitState === 'done' ||
+					!this.marketplaceSubmitBinding || attempt.key !== this.marketplaceSubmitBinding.key) return Promise.resolve();
+				this.marketplaceSubmitState = 'submitting';
+				const sendRevision = ++this.marketplaceSendRevision;
+				this.invShow = false; this.address.address = false; this.inputTrip = false;
+				return orderCreate(attempt.key, attempt.body).then(res => {
+					this.completeMarketplaceOrder(marketplaceCreateResult(res, attempt.key), false, attempt.generation);
+				}).catch(() => {
+					if (this.marketplaceSubmitState === 'done') return;
+					const current = sendRevision === this.marketplaceSendRevision;
+					if (current) this.marketplaceSubmitState = 'uncertain';
+					return this.queryMarketplaceOrder().then(result => {
+						if (result.state === 'created') this.completeMarketplaceOrder(result, true, attempt.generation);
+					}).catch(() => {
+						if (sendRevision === this.marketplaceSendRevision && this.marketplaceSubmitState !== 'done') this.marketplaceSubmitState = 'uncertain';
+					});
+				});
+			},
+			submitMarketplaceOrder() {
+				if (!this.marketplaceCanSubmit) return Promise.resolve();
+				if (!this.addressId) return this.$util.Tips({title: this.$t(`请选择收货地址`)});
+				const missing = firstMissingMarketplaceAnswer(this.marketplaceFormGroups);
+				if (missing) return this.$util.Tips({title: missing.product_name + '：' + this.$t(`请填写正确的`) + missing.title});
+				const capture = () => {
+					if (!this.marketplaceCanSubmit) return;
+					this.marketplaceAttempt = snapshotMarketplaceSubmission(this.marketplaceSubmitBinding, {
+						addressId: this.addressId, invoice_id: this.invChecked, payType: this.payType,
+						mark: this.mark, gift_mark: this.gift_mark, real_name: typeof this.contacts === 'string' ? this.contacts : '',
+						phone: typeof this.contactsTel === 'string' ? this.contactsTel : ''
+					}, marketplaceFormAnswers(this.marketplaceFormGroups), this.marketplaceEditGeneration);
+					return this.sendMarketplaceAttempt(this.marketplaceAttempt);
+				};
+				if (!this.marketplaceAttempt || this.marketplaceAttempt.generation === this.marketplaceEditGeneration) return capture();
+				return this.queryMarketplaceOrder().then(result => {
+					if (this.marketplaceSubmitState === 'done') return;
+					if (result.state === 'created') return this.completeMarketplaceOrder(result, true, this.marketplaceAttempt.generation);
+					if (result.state === 'not_found') return capture();
+					this.marketplaceSubmitState = 'uncertain';
+				}).catch(() => {if (this.marketplaceSubmitState !== 'done') this.marketplaceSubmitState = 'uncertain';});
+			},
+			retryMarketplaceOrder() {
+				if (this.marketplaceSubmitState !== 'uncertain' || this.marketplaceLookupPending || !this.marketplaceAttempt) return;
+				return this.sendMarketplaceAttempt(this.marketplaceAttempt);
+			},
+			adjustMarketplaceOrder() {
+				if (this.marketplaceSubmitState !== 'uncertain' || this.marketplaceLookupPending) return;
+				return this.queryMarketplaceOrder().then(result => {
+					if (this.marketplaceSubmitState === 'done') return;
+					if (result.state === 'created') return this.completeMarketplaceOrder(result, true, this.marketplaceAttempt.generation);
+					if (result.state !== 'not_found') return;
+					uni.showModal({title: this.$t(`调整订单信息`), content: this.$t(`当前未查到订单，原提交仍可能随后完成。若订单已生成，将显示原订单，调整不会另生成一单。`),
+						confirmText: this.$t(`继续调整`), cancelText: this.$t(`保持原信息`), success: res => {
+							if (!res.confirm || this.marketplaceSubmitState !== 'uncertain') return;
+							this.marketplaceEditGeneration++;
+							this.marketplaceSubmitState = 'editing';
+							this.marketplaceQuoteReady = false;
+							this.computedPrice();
+						}});
+				}).catch(() => {if (this.marketplaceSubmitState !== 'done') this.marketplaceSubmitState = 'uncertain';});
+			},
 			marketplaceFormIdentity,
 			applyMarketplaceForms(definitions, retainAnswers = false) {
 				this.marketplaceFormsReady = false;
@@ -664,28 +791,34 @@
 				this.marketplaceFormsReady = true;
 			},
 			setMarketplaceFormValue(event, productId, definitionHash, fieldIndex) {
+				if (!this.marketplaceCanEdit) return;
 				const field = findMarketplaceFormField(this.marketplaceFormGroups, productId, definitionHash, fieldIndex);
 				if (field && field.label !== 'img' && event.detail && typeof event.detail.value === 'string') {
 					field.value = event.detail.value;
 				}
 			},
 			deleteMarketplaceFormImage(productId, definitionHash, fieldIndex, imageIndex) {
+				if (!this.marketplaceCanEdit) return;
 				const field = findMarketplaceFormField(this.marketplaceFormGroups, productId, definitionHash, fieldIndex);
 				if (field && field.label === 'img') field.value.splice(imageIndex, 1);
 			},
 			uploadMarketplaceFormImage(productId, definitionHash, fieldIndex) {
+				if (!this.marketplaceCanEdit || this.marketplaceUploadPending) return;
+				const generation = this.marketplaceEditGeneration, key = this.orderKey;
+				this.marketplaceUploadPending = true;
 				this.canvasStatus = true;
+				const finish = () => { this.canvasStatus = false; this.marketplaceUploadPending = false; };
 				this.$util.uploadImageChange('upload/image', (res) => {
 					// Resolve again after upload: replacement definitions must not receive a stale callback.
 					const field = findMarketplaceFormField(this.marketplaceFormGroups, productId, definitionHash, fieldIndex);
-					if (field && field.label === 'img' && field.value.length < 8 &&
+					if (this.marketplaceCanEdit && generation === this.marketplaceEditGeneration && key === this.orderKey && field && field.label === 'img' && field.value.length < 8 &&
 						res && res.data && typeof res.data.url === 'string') field.value.push(res.data.url);
 				}, () => {
-					this.canvasStatus = false;
+					finish();
 				}, (res) => {
 					this.canvasWidth = res.w;
 					this.canvasHeight = res.h;
-				});
+				}, finish);
 			},
 			applyMarketplaceMetadata(data) {
 				if (!data || data.marketplace_confirmation_version !== 1 || this.is_gift || this.orderId) {
@@ -725,7 +858,7 @@
 				};
 			},
 			openMarketplacePage(url, event, selected) {
-				if (!this.marketplaceV1 || !this.orderKey) return;
+				if (!this.marketplaceV1 || !this.orderKey || !this.marketplaceCanEdit) return;
 				let capability = null;
 				try {
 					if (typeof this.getOpenerEventChannel === 'function') capability = this.getOpenerEventChannel();
@@ -736,6 +869,7 @@
 					return this.$util.Tips({title: this.$t(`当前页面不支持返回原确认页，请保持当前确认内容`)});
 				}
 				const context = this.marketplaceCheckoutContext();
+				const generation = this.marketplaceEditGeneration;
 				const parentPage = getCurrentPages().slice(-1)[0];
 				const targetRoute = url.split('?')[0].replace(/^\//, '');
 				// The URL carries only a real parent identity hint. Only the eventChannel supplies the V1 DTO.
@@ -743,11 +877,13 @@
 					'&mer_id=' + encodeURIComponent(context.mer_id);
 				const events = {};
 				events[event] = (value) => {
-					if (this.orderKey === context.orderKey && value && value.orderKey === context.orderKey &&
+					if (this.marketplaceCanEdit && generation === this.marketplaceEditGeneration && this.orderKey === context.orderKey && value && value.orderKey === context.orderKey &&
 						String(value.mer_id) === String(context.mer_id)) selected(value);
 				};
+				this.marketplaceNavigationPending = true;
 				uni.navigateTo({
 					url, events,
+					fail: () => { this.marketplaceNavigationPending = false; },
 					success: (res) => {
 						if (!res.eventChannel || typeof res.eventChannel.emit !== 'function') {
 							const pages = getCurrentPages();
@@ -850,12 +986,14 @@
 
 			// 不开发票
 			invCancel() {
+				if (this.marketplaceV1 && !this.marketplaceCanEdit) return;
 				this.invChecked = '';
 				this.invTitle = this.$t(`不开发票`)
 				this.invShow = false;
 			},
 			// 选择发票
 			invChange(id) {
+				if (this.marketplaceV1 && !this.marketplaceCanEdit) return;
 				let name = '';
 				this.invChecked = id;
 				this.invShow = false;
@@ -878,10 +1016,15 @@
 				this.getInvoiceList()
 			},
 			getInvoiceList() {
+				if (this.marketplaceV1 && !this.marketplaceCanEdit) return Promise.resolve();
+				const v1 = this.marketplaceV1, generation = this.marketplaceEditGeneration, key = this.orderKey;
+				if (v1) this.marketplacePendingEdits++;
 				uni.showLoading({
 					title: this.$t(`正在加载中`)
 				})
-				invoiceList().then(res => {
+				return invoiceList().then(res => {
+					if (this.marketplaceV1 && !this.marketplaceCanEdit) return;
+					if (v1 && (!this.marketplaceCanEdit || generation !== this.marketplaceEditGeneration || key !== this.orderKey)) return;
 					uni.hideLoading();
 					this.invList = res.data.map(item => {
 						item.id = item.id.toString();
@@ -900,12 +1043,13 @@
 						title: err,
 						icon: 'none'
 					});
-				});
+				}).finally(() => {if (v1) this.marketplacePendingEdits--;});
 			},
 			/**
 			 * 开发票
 			 */
 			goInvoice: function() {
+				if (this.marketplaceV1 && !this.marketplaceCanEdit) return;
 				this.getInvoiceList()
 				this.invShow = true;
 				this.urlQuery =
@@ -935,9 +1079,11 @@
 				this.pay_close = false;
 			},
 			goPay() {
+				if (this.marketplaceV1 && !this.marketplaceCanEdit) return;
 				this.pay_close = true;
 			},
 			payCheck(type) {
+				if (this.marketplaceV1 && !this.marketplaceCanEdit) return;
 				this.payType = type;
 				this.SubOrder();
 			},
@@ -975,20 +1121,24 @@
 				}
 			},
 			changePayType(type) {
+				if (this.marketplaceV1 && !this.marketplaceCanEdit) return;
 				this.payType = type
 				this.computedPrice()
 			},
 			computedPrice() {
 				if (this.marketplaceResumeUnavailable) return;
 				if (this.marketplaceV1) {
+					if (!this.marketplaceCanEdit) return Promise.resolve();
 					const key = this.orderKey;
+					const generation = this.marketplaceEditGeneration;
 					const revision = ++this.marketplaceComputeRevision;
 					this.marketplaceComputing = true;
+					this.marketplaceQuoteReady = false;
 					return postOrderComputed(key, {
 						addressId: this.addressId, shipping_type: 1, payType: this.payType,
 						mer_id: this.marketplaceConfirmation.mer_id, couponId: 0, useIntegral: 0
 					}).then(res => {
-						if (key !== this.orderKey || revision !== this.marketplaceComputeRevision) return;
+						if (!this.marketplaceCanEdit || generation !== this.marketplaceEditGeneration || key !== this.orderKey || revision !== this.marketplaceComputeRevision) return;
 						const result = res.data.result;
 						this.applyMarketplaceMetadata(result);
 						this.marketplaceMoneyFields(result, ['pay_price', 'pay_postage', 'storePostageDiscount', 'deduction_price', 'coupon_price']);
@@ -998,6 +1148,7 @@
 						this.$set(this.priceGroup, 'storePostageDiscount', result.storePostageDiscount);
 						this.integral_price = result.deduction_price;
 						this.coupon_price = result.coupon_price;
+						this.marketplaceQuoteReady = true;
 					}).catch(error => {
 						if (revision === this.marketplaceComputeRevision) this.$util.Tips({title: error.message || error});
 					}).finally(() => {
@@ -1026,6 +1177,7 @@
 				})
 			},
 			addressType(e) {
+				if (this.marketplaceV1 && !this.marketplaceCanEdit) return;
 				if (this.marketplaceV1) {
 					this.shippingType = 0;
 					return this.computedPrice();
@@ -1068,6 +1220,7 @@
 				})
 			},
 			bindPickerChange: function(e) {
+				if (this.marketplaceV1) return;
 				let value = e.detail.value;
 				this.shippingType = value;
 				this.computedPrice();
@@ -1089,6 +1242,7 @@
 			 * 
 			 */
 			ChangCoupons: function(e) {
+				if (this.marketplaceV1) return;
 				// this.usableCoupon = e
 				// this.coupon.coupon = false
 				let index = e,
@@ -1131,6 +1285,11 @@
 			 * @param object e
 			 */
 			OnChangeAddress: function(e) {
+				if (this.marketplaceV1) {
+					if (!this.marketplaceCanEdit) return;
+					this.addressId = e; this.address.address = false; this.textareaStatus = true; this.marketplaceQuoteReady = false;
+					return this.getaddressInfo().then(() => this.computedPrice()).catch(error => this.$util.Tips({title: error.message || error}));
+				}
 				this.textareaStatus = true;
 				this.addressId = e;
 				this.address.address = false;
@@ -1141,6 +1300,7 @@
 				}
 			},
 			bindHideKeyboard: function(e) {
+				if (this.marketplaceV1 && !this.marketplaceCanEdit) return;
 				this.mark = e.detail.value;
 			},
 			getOrderDetail() {
@@ -1180,6 +1340,8 @@
 				if (this.marketplaceResumeUnavailable) return;
 				if (this.marketplaceV1) return this.computedPrice();
 				let that = this;
+				const confirmationRevision = ++this.marketplaceConfirmRevision;
+				this.marketplaceConfirmPending++;
 				// return;
 				uni.showLoading({
 					title: that.$t(`正在加载中`),
@@ -1193,7 +1355,9 @@
 				}
 				if (that.is_gift) data.is_gift = that.is_gift
 				if (!that.is_gift && !that.orderId && that.marketplaceMerIntent) data.mer_id = that.marketplaceMerIntent;
-				orderConfirm(data).then(res => {
+				return orderConfirm(data).then(res => {
+					if (res.data.marketplace_confirmation_version === 1 &&
+						(confirmationRevision !== this.marketplaceConfirmRevision || this.marketplaceSubmitState !== 'editing')) return;
 					that.applyMarketplaceMetadata(res.data);
 					if (that.marketplaceV1) that.marketplaceMoneyFields(res.data.priceGroup, ['totalPrice', 'sumPrice', 'storePostage', 'storePostageDiscount', 'vipPrice', 'levelPrice', 'memberPrice']);
 					that.$set(that, 'userInfo', res.data.userInfo);
@@ -1214,6 +1378,7 @@
 					that.$set(that, 'integralRatio', res.data.integralRatio);
 					that.$set(that, 'offlinePostage', res.data.offlinePostage);
 					that.$set(that, 'orderKey', res.data.orderKey);
+					if (that.marketplaceV1) that.marketplaceSubmitBinding = bindMarketplaceSubmission(res.data);
 					that.$set(that, 'valid_count', res.data.valid_count);
 					that.$set(that, 'discount_id', res.data.discount_id)
 					that.$set(that, 'priceGroup', res.data.priceGroup);
@@ -1271,7 +1436,7 @@
 					return this.$util.Tips({
 						title: err
 					});
-				});
+				}).finally(() => {this.marketplaceConfirmPending--;});
 			},
 			/*
 			 * 提取砍价和拼团id
@@ -1324,9 +1489,14 @@
 			 */
 			getaddressInfo: function() {
 				let that = this;
+				if (that.marketplaceV1 && !that.marketplaceCanEdit) return Promise.resolve();
+				const v1 = that.marketplaceV1, generation = that.marketplaceEditGeneration, key = that.orderKey;
+				if (v1) that.marketplacePendingEdits++;
 				const requestedAddressId = that.addressId;
 				let fnc = requestedAddressId ? getAddressDetail : getAddressDefault
 				return fnc(requestedAddressId).then(res => {
+					if (that.marketplaceV1 && !that.marketplaceCanEdit) return;
+					if (v1 && (!that.marketplaceCanEdit || generation !== that.marketplaceEditGeneration || key !== that.orderKey)) return;
 					if (that.marketplaceV1 && String(that.addressId) !== String(requestedAddressId)) return;
 					if (!Array.isArray(res.data)) {
 						res.data.is_default = parseInt(res.data.is_default);
@@ -1334,12 +1504,13 @@
 						that.addressId = res.data.id || 0;
 						that.address.addressId = res.data.id || 0;
 					}
-				})
+				}).finally(() => {if (v1) that.marketplacePendingEdits--;});
 			},
 			onHaveAddressList() {
 				this.haveAddressList = true
 			},
 			payItem: function(e) {
+				if (this.marketplaceV1 && !this.marketplaceCanEdit) return;
 				let that = this;
 				let active = e;
 				that.active = active;
@@ -1367,6 +1538,7 @@
 				that.animated = false;
 			},
 			onAddress: function() {
+				if (this.marketplaceV1 && !this.marketplaceCanEdit) return;
 				if (this.marketplaceV1 && !this.addressInfo.real_name && !this.haveAddressList) {
 					return this.openMarketplacePage('/pages/users/user_address/index', 'marketplaceAddressSelected',
 						(value) => this.OnChangeAddress(value.addressId));
@@ -1412,6 +1584,7 @@
 				})
 			},
 			payment(data) {
+				if (this.marketplaceV1) return this.submitMarketplaceOrder();
 				if (this.marketplaceResumeUnavailable || (this.marketplaceV1 && !this.marketplaceCanCreate)) {
 					return this.$util.Tips({title: this.$t(`当前商城暂未开放提交订单`)});
 				}
@@ -1429,9 +1602,11 @@
 				});
 			},
 			clickTextArea() {
+				if (this.marketplaceV1 && !this.marketplaceCanEdit) return;
 				this.$refs.textarea.focus()
 			},
 			SubOrder(e) {
+				if (this.marketplaceV1) return this.submitMarketplaceOrder();
 				if (this.marketplaceResumeUnavailable || (this.marketplaceV1 && !this.marketplaceCanCreate)) {
 					return this.$util.Tips({title: this.$t(`当前商城暂未开放提交订单`)});
 				}
@@ -1620,6 +1795,7 @@
 				// that.$set(that, 'pics', that.pics);
 			},
 			inputTripClick() {
+				if (this.marketplaceV1 && !this.marketplaceCanEdit) return;
 				this.inputTrip = true
 				// this.$refs.trip.foucs()
 			},
@@ -2136,6 +2312,28 @@
 	.order-submission .footer .marketplace-submit[disabled] {
 		background-color: #eee;
 		color: #868686;
+	}
+
+	.marketplace-adjust {
+		box-sizing: border-box;
+		width: 100%;
+		margin: 16rpx 0 0;
+		padding: 10rpx 20rpx;
+		min-height: 64rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		text-align: center;
+		font: inherit;
+		line-height: 1.4;
+		color: #333;
+		background-color: #fff;
+		border: 1rpx solid #ddd;
+	}
+
+	.marketplace-adjust::after,
+	.marketplace-submit::after {
+		border: 0;
 	}
 
 	.footer .transparent {

@@ -128,9 +128,9 @@
           {{ $t(`￥`) }}
           <text class="num">{{ totalPrice }}</text>
         </view>
-        <view class="bnt" :class="cartCount ? '' : 'on'" @click="subOrder">{{
-          $t(`去付款`)
-        }}</view>
+        <button class="bnt" :class="cartCount ? '' : 'on'" @click="subOrder">{{
+          $t(`去结算`)
+        }}</button>
       </view>
     </view>
     <cartList
@@ -332,14 +332,10 @@ export default {
     // 生成订单；
     subOrder: function () {
       let that = this,
-        list = that.cartData.cartList,
-        ids = [];
+        list = that.cartData.cartList;
       if (list.length) {
-        list.forEach((item) => {
-          ids.push(item.id);
-        });
-        uni.navigateTo({
-          url: "/pages/goods/order_confirm/index?cartId=" + ids.join(","),
+        uni.switchTab({
+          url: "/pages/order_addcart/order_addcart",
         });
         that.cartData.iScart = false;
       } else {
@@ -1288,6 +1284,13 @@ page {
     }
 
     .bnt {
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      margin: 0 30rpx 0 0;
+      font: inherit;
       width: 222rpx;
       height: 76rpx;
       background-color: var(--view-theme);
@@ -1296,7 +1299,7 @@ page {
       text-align: center;
       color: #fff;
       font-size: 28rpx;
-      margin-right: 30rpx;
+      &::after { border: 0; }
 
       &.on {
         background: #bbbbbb;

@@ -191,6 +191,8 @@ Files：修改 `MarketplaceOrderInput.php` 提取create共用confirmationKey边�
 
 2026-10-15 内部创建验证源码检查点：五个lookup生产PHP和扩展普通CLI语法通过，既有普通wire输入19条仍通过；独立源审核同一实际默认事务/PDO、UID-first锁序、只读查询、原replay身份检查和仍关闭的create gate。Root独立复核CLI保留原direct执行块及全部验证，新增真实persistent/temporary服务场景、非空表单保存、原请求正常重放、结果查询无写入及独立PDO全列读回；仅跨PDO行的scalar表示沿原direct逐列null/string比较，未放宽业务值。仓库外 `candidate-internal-v1` 和 `normal-close-order-internal-v1.py` 完整逆变换原五文件及原正常关闭源、AST/help和独立源审通过；只升级准确scope/status、强制双服务证据及新host字节绑定。该检查点尚未freeze或运行新实例，不据源码标记实际内部创建、HTTP或UI通过；其他端详情及提交UI各自继续实施和验证。
 
+同轮提交UI源码检查点：上述七个前端/普通检查文件已实现稳定真实key和idem、完整冻结body、原快照重试、四态编辑约束及lookup后的明确调整；上传沿原producer增加可选completion，地址/发票/报价/确认及eventChannel保留实际key、代次与pending责任。普通提交状态29条、既有表单27条通过，确认页及两个快捷分类页各经官方H5/MP/App条件预处理、模板、JS与Sass检查；独立源审通过，Root核实际产物的文件hash与结果。产物在仓库外 `artifacts/ms4-submit-ui-source/20261015-v1/`。初次harness缺只读uni平台适配及raw跨平台util解析问题按实际官方预处理修正，未改业务断言；没有运行HTTP/App/SQL/DOM、未知结果调整或迟到/失败/冲突/恢复样本。源码中的未知结果处理仍需相应实际验收，硬刷新、再次购、真实地址/发票往返和视觉验收继续pending，gate不变。
+
 ### Task 5: 取消与超时释放
 
 - 接口：取消与超时关单都通过 `release` 流水释放库存，`idem_key = "release:<order_id>:<unique>"`，重复执行不重复释放。超时关单前先查询支付状态（MS5 之前用测试驱动），已支付的不关单，转入异常处理。

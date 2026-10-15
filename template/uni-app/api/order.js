@@ -240,7 +240,12 @@ export function getCouponsOrderPrice(price, data) {
  * 
  */
 export function orderCreate(key, data) {
-	return request.post('order/create/' + key, data);
+	return request.post('order/create/' + encodeURIComponent(key), data);
+}
+
+/** Read only: result for the caller's actual confirmation; not_found does not close a request. */
+export function orderConfirmation(key) {
+	return request.post('order/confirmation/' + encodeURIComponent(key), {});
 }
 
 /**
