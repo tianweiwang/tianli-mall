@@ -356,6 +356,8 @@ v3来源澄清：当前正式CUA文档中的cua/dom_cua wheel属性在新owned�
 
 v3源码检查点：新HTTP完整实现摘要`c0c808abea55c30537fb34593420f84ee72c4e13094c5cff972e9ea3b56deec8`、浏览器producer`6e22ab01211e1454f3eae4f937c96c7b50ed82cf6434edf346410c4600672347`、私有桥`b9fd27519c0b91f5a91fbc557679b0ce908a71d8fc01d06c16484200818c1c68`均已获独立SOURCE PASS；Root分别只运行PHP8.2 -l和Node22 --check，3项native0/stderr0/检查前后字节保持，实际收据`source-syntax-root-v4-v3.json`。源审发现的空列表pager应active1已按冻结ElementUI真实行为窄修，未改业务API或停止样本。此前普通业务Run状态保持已关闭；本轮没有新App/SQL/HTTP/DOM运行或视觉通过，外部final候选的实际stage/五身份十卷关闭源仍在独立核对，不据准备完成勾Task6。
 
+普通验证来源准入（2026-10-15，尚无运行验收）：外部final三草稿builder`8a1b572ec2e63bd937e004cfd5059fddb6ed296e2b760c2d1b336dc48ea38166`、阶段扩展`3aee1981e607902c03da73a101acc4246f7ef1a09f90ced748e9aacf5685a264`、独立关闭`00f1d4a2392f68186f4b5fc0b4da70c487b4ce26aff2a84a845312b0c6b9ce72`已双独立SOURCE PASS。Root实际执行默认纯内存派生native0：完整inverse至source1/v5、38原函数AST及原业务verifier保持，原候选/所有旧Run均未修改。依已固定4份设计合同、2个浏览器模块和HTTP源码检查，允许在未生成final的builder中仅将HTTP_PROFILE_SOURCE_READY改为true并记录完整inverse；README与source记录明确这只是可开始普通验证的来源准入，不是HTTP/DOM或任何业务PASS。所有原身份、私有交付、全normal proof、34/25/9真实核对和正常五容器十卷关闭门禁保持。正式candidate生成后还须实际静态核对及新initializer/public-copy语法，再freeze clean HEAD并启动新Run；不得把此准入用于旧Run或真实环境。
+
 ### Task 7: 退款额度与库存行为
 
 - 接口：申请退款时在事务中锁定订单行，校验"已退金额 + 处理中金额 + 本次金额 ≤ 实付"；三类库存行为分别写 `release`（未发货取消）、`return_in`（退货验收入库）、不写（仅退款）。
