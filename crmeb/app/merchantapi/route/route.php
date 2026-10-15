@@ -58,3 +58,8 @@ $registerCategories = require __DIR__ . "/category.php";
 if (!$registerCategories instanceof \Closure) { throw new \LogicException("Invalid category route module"); }
 $registerCategories();
 unset($registerCategories);
+
+$registerOrders = require __DIR__ . "/order.php";
+if (!$registerOrders instanceof \Closure) { throw new \LogicException("Invalid order route module"); }
+$registerOrders();
+unset($registerOrders);

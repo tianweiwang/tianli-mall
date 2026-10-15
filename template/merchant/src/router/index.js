@@ -12,6 +12,8 @@ const router = new Router({
     { path: '/password-setup', name: 'password-setup', component: () => import('../pages/password-setup/index.vue'), meta: { public: true, title: '设置密码' } },
     { path: '/', component: Layout, children: [
       { path: '', name: 'home', component: () => import('../pages/home/index.vue'), meta: { title: '本店信息' } },
+      { path: 'orders', name: 'orders', component: () => import('../pages/order/list.vue'), meta: { title: '订单列表', permission: 'order.read' } },
+      { path: 'orders/:id', name: 'order-detail', component: () => import('../pages/order/detail.vue'), meta: { title: '订单详情', permission: 'order.read' } },
       { path: 'products', name: 'products', component: () => import('../pages/product/list.vue'), meta: { title: '商品列表', permission: 'product.read' } },
       { path: 'products/new', name: 'product-new', component: () => import('../pages/product/edit.vue'), meta: { title: '新建商品', permission: 'product.write' } },
       { path: 'products/:id/edit', name: 'product-edit', component: () => import('../pages/product/edit.vue'), meta: { title: '编辑商品', permission: 'product.read' } },

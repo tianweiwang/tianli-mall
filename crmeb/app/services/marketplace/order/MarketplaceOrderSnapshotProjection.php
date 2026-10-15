@@ -184,6 +184,83 @@ final class MarketplaceOrderSnapshotProjection
         return $out;
     }
 
+    /** Independent merchant DTO; the caller has already queried and authorized this saved owner. */
+    public static function merchantOrder(array $saved,array $items,bool $detail=false):array
+    {
+        if(self::merchantInteger($saved['marketplace_trade_version']??null,1,1)!==1
+            ||self::merchantInteger($saved['pid']??null,0,0)!==0
+            ||self::merchantInteger($saved['is_system_del']??null,0,0)!==0)self::unavailable();
+        $id=self::merchantInteger($saved['id']??null,1,2147483647);
+        $uid=self::merchantInteger($saved['uid']??null,1,2147483647);
+        $mer=self::merchantInteger($saved['mer_id']??null,1,4294967295);
+        $number=self::text($saved['order_id']??null);
+        if($number===''||strlen($number)>32||trim($number)!==$number)self::unavailable();
+        $out=['id'=>$id,'order_id'=>$number,'marketplace_trade_version'=>1,
+            'add_time'=>self::merchantInteger($saved['add_time']??null,1,4294967295),
+            'paid'=>self::merchantInteger($saved['paid']??null,0,1),
+            'status'=>self::merchantInteger($saved['status']??null,-128,127),
+            'is_cancel'=>self::merchantInteger($saved['is_cancel']??null,0,1),
+            'refund_status'=>self::merchantInteger($saved['refund_status']??null,0,255),
+            'shipping_type'=>self::merchantInteger($saved['shipping_type']??null,1,2),
+            'total_num'=>self::merchantInteger($saved['total_num']??null,1,4294967295),
+            'total_price'=>self::merchantMoney($saved['total_price']??null),
+            'pay_price'=>self::merchantMoney($saved['pay_price']??null),
+            'pay_postage'=>self::merchantMoney($saved['pay_postage']??null),'items'=>[]];
+        if(!array_is_list($items)||!$items||count($items)>500)self::unavailable();
+        $seen=[];$products=[];$quantityTotal=0;$goods='0.00';$postage='0.00';
+        foreach($items as $item){
+            $item=self::row($item);$itemId=self::merchantInteger($item['id']??null,1,2147483647);
+            $productId=self::productId($item['product_id']??null);
+            $quantity=self::merchantInteger($item['cart_num']??null,1,2147483647);
+            if(isset($seen[$itemId])||self::merchantInteger($item['oid']??null,1,2147483647)!==$id
+                ||self::merchantInteger($item['uid']??null,1,2147483647)!==$uid
+                ||self::merchantInteger($item['mer_id']??null,1,4294967295)!==$mer)self::unavailable();
+            $raw=$item['cart_info']??null;
+            if(!is_string($raw)||strlen($raw)>65535)self::unavailable();
+            try{$cart=json_decode($raw,true,64,JSON_THROW_ON_ERROR|JSON_BIGINT_AS_STRING);}
+            catch(\JsonException $error){self::unavailable();}
+            $cart=self::row($cart);$product=self::row($cart['productInfo']??null);$sku=self::row($product['attrInfo']??null);
+            if(self::productId($cart['product_id']??null)!==$productId||self::productId($product['id']??null)!==$productId
+                ||self::productId($sku['product_id']??null)!==$productId
+                ||self::merchantInteger($cart['cart_num']??null,1,2147483647)!==$quantity
+                ||self::merchantInteger($cart['uid']??null,1,2147483647)!==$uid
+                ||self::merchantInteger($product['mer_id']??null,1,4294967295)!==$mer)self::unavailable();
+            $unit=self::merchantMoney($cart['truePrice']??null);$line=self::merchantMoney($cart['sum_true_price']??null);
+            $linePostage=self::merchantMoney($cart['postage_price']??null);
+            if(bcmul($unit,(string)$quantity,2)!==$line)self::unavailable();
+            $productImage=self::text($product['image']??null);$skuImage=self::text($sku['image']??null);
+            $out['items'][]=['id'=>$itemId,'product_id'=>$productId,
+                'product_name'=>self::text($product['store_name']??null),'sku_name'=>self::text($sku['suk']??null),
+                'image'=>$skuImage!==''?$skuImage:$productImage,'quantity'=>$quantity,
+                'unit_price'=>$unit,'line_price'=>$line,'postage_price'=>$linePostage];
+            $seen[$itemId]=true;$products[$productId]=true;$quantityTotal+=$quantity;
+            $goods=bcadd($goods,$line,2);$postage=bcadd($postage,$linePostage,2);
+        }
+        if($quantityTotal!==$out['total_num']||$goods!==$out['total_price']||$postage!==$out['pay_postage']
+            ||bcadd($goods,$postage,2)!==$out['pay_price'])self::unavailable();
+        if($detail){
+            $out['recipient']=[];
+            foreach(['real_name','user_phone','user_address'] as $key)$out['recipient'][$key]=self::text($saved[$key]??null);
+            $out['mark']=self::text($saved['mark']??null);
+            $out['custom_form']=self::customForms($saved['custom_form']??null);
+            foreach($out['custom_form'] as $group)if(!isset($products[$group['product_id']]))self::unavailable();
+        }
+        return $out;
+    }
+
+    private static function merchantInteger(mixed $value,int $minimum,int $maximum):int
+    {
+        if((!is_int($value)&&!is_string($value))||preg_match('/\A(?:0|-?[1-9][0-9]{0,9})\z/D',(string)$value)!==1
+            ||(int)$value<$minimum||(int)$value>$maximum)self::unavailable();
+        return (int)$value;
+    }
+
+    private static function merchantMoney(mixed $value):string
+    {
+        if(!is_string($value)||preg_match('/\A(?:0|[1-9][0-9]{0,9})\.[0-9]{2}\z/D',$value)!==1)self::unavailable();
+        return $value;
+    }
+
     /** Display saved answers; hash is an opaque original-definition marker, NEVER rehashed over filled values. */
     public static function customForms(mixed $raw,?array $productIds=null):array
     {

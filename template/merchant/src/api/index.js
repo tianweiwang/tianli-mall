@@ -1,4 +1,5 @@
 import { request } from './request';
+import { orderRecordId } from '../domain/order';
 function id(value) { if (!Number.isSafeInteger(value) || value <= 0) throw new Error('缺少有效的实际记录编号'); return value; }
 export const api = {
   login: (body) => request('POST', 'login', body, { public: true }),
@@ -6,6 +7,8 @@ export const api = {
   me: () => request('GET', 'me'),
   logout: () => request('POST', 'logout', {}),
   refresh: () => request('POST', 'refresh', {}),
+  orders: (query) => request('GET', 'orders', query),
+  order: (value) => request('GET', 'orders/' + orderRecordId(value)),
   products: (query) => request('GET', 'products', query),
   product: (value) => request('GET', 'products/' + id(value)),
   saveProduct: (value, body) => value ? request('PUT', 'products/' + id(value), body) : request('POST', 'products', body),

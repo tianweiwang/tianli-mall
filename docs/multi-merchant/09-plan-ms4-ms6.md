@@ -304,6 +304,24 @@ MS5 Task2只增加 `crmeb/services/pay/marketplace/` 下PaymentAdapter/PaymentAc
 - Produces: merchantapi 订单列表、详情（只含履约所需的收货快照）、发货（数量不超过未发货数量）、售后处理；权限码新增 `order.read`、`order.ship`、`aftersale.handle`（加入 `MerchantPermissions`）。
 - 用例：O08（A 查询、发货、取消、导出 B 的订单或售后 → 404，零副作用）、O09（拆单后子单 `mer_id` 与父单一致）、O10（`accept_orders = 0` 时禁止新单，存量订单仍可发货、售后，不被删除）。
 
+**本店保存订单读取实施合同（编码前记录）：** 新GET `merchantapi/orders`、GET `merchantapi/orders/<id>` 共用 `order.read`，保留真实AuthToken/Permission中间件及服务层ctx.require＋EmployeeAuthServices当前重授权，不接收客户端mer_id或UID。权限目录登记原三项码；BUILTIN_ADMIN随ALL供新建角色，既有角色不自动补权，BUILTIN_OPERATOR不默认扩权。读取不检查accept_orders，店铺停接新单不隐藏存量订单。
+
+列表query闭集为page（默认1）、limit（默认20/最多100）、order_id（可选完整订单号）、paid/is_cancel（可选0或1）；顺序id DESC，返回 `{list,count}`。列表/count只读本ctx.merId的保存V1、is_system_del=0、pid=0根订单；不因顾客is_del隐藏商家的履约历史。详情按实际原生订单PK查询同一范围。根单与未来包裹消费者的完整扩展仍须在发货实施前闭合，当前没有制造子单或改旧V0查询。DAO在所有业务条件完成后应用MerchantScope，商品项批量按已验证oid及同mer_id读取，逐项再核保存归属；count与分页同过滤，不调用旧平台/顾客服务，不查当前商品/价格。
+
+两接口共用独立merchant保存DTO：头字段闭集 `id/order_id/marketplace_trade_version/add_time/paid/status/is_cancel/refund_status/shipping_type/total_num/total_price/pay_price/pay_postage/items`。金额均保存两位十进制字符串。items闭集为原生 `id/product_id`、保存 `product_name/sku_name/image`、`quantity/unit_price/line_price/postage_price`；单价/行价/整行运费分别从保存truePrice/sum_true_price/postage_price取得，规格和图片沿保存productInfo/attrInfo，严禁重报价。详情仅额外提供 `recipient:{real_name,user_phone,user_address}`、保存 `mark` 与 `custom_form`，沿既有customForms投影保留原definition_sha256；不返回raw cart、UID、mer_id、成本、内部备注remark、支付/确认标识、invoice、ledger/reserve或当前商品资料。现阶段不展示有配送人电话复用歧义的delivery_*原包；后续按真实配送类型提供明确物流DTO。
+
+Files：新增 `crmeb/app/services/marketplace/order/MerchantOrderInput.php`、`MerchantOrderServices.php`、`crmeb/app/dao/marketplace/order/MerchantOrderDao.php`、`crmeb/app/merchantapi/controller/Order.php`、`crmeb/app/merchantapi/route/order.php`；必要修改既有merchantapi路由入口、MerchantPermissions及MarketplaceOrderSnapshotProjection（保留所有旧方法）。前端修改 `template/merchant/src/api/index.js`、`router/index.js`、`layout/index.vue`、`domain/people.js`，新增 `domain/order.js`、`pages/order/list.vue`、`pages/order/detail.vue`。沿现Vue2/Element UI/真实商家session与hash路由，不新增依赖/认证旁路/全局store副本。页面路径orders与orders/:id均order.read，详情链接使用实际PK，顾客/平台旧页面与所有发货门禁不改。
+
+DESIGN SPECIFICATION：用途为本店查单与保存履约资料只读查看；沿现有工具型后台的左侧208px导航/右侧内容、#1f2d3d/#2d8cf0/#ffffff/#f5f7f9配色和Microsoft YaHei/PingFang SC字体，不作视觉重设计。桌面订单摘要表格＋详情分区，小屏沿现760px断点保持父容器边界；自由文本和表单用文本节点/只读列表，不用v-html或可编辑输入冒充展示；图片仅真实保存URL。状态/空结果/错误均用既有notice/alert语义，实际操作仅查询、分页、查看/返回；按钮组双轴居中、平衡内边距，长文本可换行，不能靠裁切隐藏溢出。沿既有设计系统替代ui-design对新概念稿的不对称/字体现设要求，保留其可读性与质量检查。
+
+验证责任：先独立源审、PHP8.2语法及现有商家source-check/真实构建；再新固定来源隔离Run，用实际原生员工/角色、真实credential login→authenticate得到MerchantContext（不new伪上下文或自签JWT），沿原普通下单夹具核本店分页/count/精确搜索/详情、金额表单原值与只读无副作用，另用真实空店普通空结果。HTTP与真实浏览器从正常登录入口检查新路由、查询分页和详情、必要320/390/1440布局及相邻导航；不注入localStorage/JWT或使用假响应。原普通取消证明保留，用户停止的样本不恢复。源码/构建/内部服务/HTTP/DOM分别记录，不能以某一层代替其余；未验证前不勾Task6，也不遗漏部分发货、拆单和售后责任。
+
+真实商家普通身份的环境补充（实现前）：AuthSessionStore的BoundedRedisConnection明确要求默认cache为Redis，原m4o_app为File且未load auth，不能临时切facade/缓存或伪造ctx。下一专用普通订单角色额外真实声明公开 `PHP_CACHE_DRIVER=redis`，沿同一真实App从启动即load原cache/auth配置，Redis连接和auth.session_epoch/stamp_key/issuer只来自本Run既有audit_prepare私有App配置；原signing key及DML连接保持既有来源，不输出私有值。新增独立原生created容器的cache环境收据及source binding SHA，保留原两个测试支付环境值及其收据，不改旧Run/旧配置/旧证明。原direct、创建、会员、保存读取、收尾与取消全套普通断言在Redis配置下重新实际运行，不能直接沿用File Run为新环境通过。
+
+普通helper新增 `help/audit-regressions/isolated/lib/ms4-merchant-read-normal.php`，与现 `ms4-order-normal.php` 的require/源码闭集/真实App初始化/事实表和evidence接线同属本合同必要文件。使用原订单真实mer_id为有单店与停接店插入原生role/employee/password_setup，真实setupPassword→login→authenticate；另建真实空店，均经独立PDO核原生PK与保存归属。权限仅merchant.profile.read/order.read，不改历史角色、不伪paid。读取预期以本店全部真实根订单为准（原persistent与keeper两单），至少核两页/count、完整号查询、paid/is_cancel普通过滤、真实详情与保存价格/表单、停接店仍读及空店0结果；比较读前后SQL事实，不输出口令/capability/JWT。必要追加原生夹具/事实表为已有marketplace_role/employee/password_setup，无新表。host下一版本仅做上述新增源闭集/真实环境绑定/严格结果wrapper和正常关闭扩展，原v4全部证明保留。
+
+2026-10-15本地源码检查点：上述8个后端、7个商家前端和普通CLI/helper已实现并经独立源码复核。已有Node22执行商家source-check通过（31脚本语法、73本地import），不是构建或DOM验收。PHP8.2对后端8文件与CLI语法全exit0；源审发现CLI误从不存在的app配置键核签名键，已窄修沿实际AuthConfigGuard使用的Env getter，最终CLI与helper两文件再次语法exit0且前后源码不变；最终收据 `artifacts/ms4-merchant-read-source/20261015-v1/lint-final-wiring-result.json` 摘要 `fa934d33a8ae18b2b5f57c4b5dccc698fe7ef2d0c55c92b90d37e38f299a9571`。helper最终摘要 `26e151cd4991a7238ff1317daa81f7c8709f1409f44d6f10e3fa3250e43b5e48`，paid=1在实际未付夹具上只核正常空结果，不伪造已付单。此检查点尚未freeze/运行新Run，真实商家认证、SQL读取、HTTP/浏览器与完整Task6均未验收；后续真实构建和新Run结果另记，不以源码检查勾完成。
+
 ### Task 7: 退款额度与库存行为
 
 - 接口：申请退款时在事务中锁定订单行，校验"已退金额 + 处理中金额 + 本次金额 ≤ 实付"；三类库存行为分别写 `release`（未发货取消）、`return_in`（退货验收入库）、不写（仅退款）。

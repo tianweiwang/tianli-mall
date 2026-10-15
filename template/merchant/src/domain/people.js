@@ -1,4 +1,4 @@
-// Bound to main 477732 MerchantPermissions::ALL, not a fictitious permission API.
+// Keep this directory aligned with the real MerchantPermissions::ALL.
 export const permissions = [
   { value: 'merchant.profile.read', label: '本店信息', description: '读取本人和本店资料；商家后台进入页面需要此项' },
   { value: 'merchant.employee.manage', label: '员工管理', description: '读取、新建和维护本店员工' },
@@ -9,6 +9,9 @@ export const permissions = [
   { value: 'stock.adjust', label: '库存调整', description: '按实际 SKU 增减库存并填写原因' },
   { value: 'attachment.manage', label: '素材管理', description: '维护本店素材与素材分类' },
   { value: 'freight.manage', label: '运费模板', description: '维护本店运费模板' },
+  { value: 'order.read', label: '订单查看', description: '读取本店订单列表及保存的订单详情' },
+  { value: 'order.ship', label: '订单发货', description: '订单履约权限；发货功能尚未开放' },
+  { value: 'aftersale.handle', label: '售后处理', description: '订单售后权限；售后处理功能尚未开放' },
 ];
 const known = permissions.map((item) => item.value);
 const phpTrim = (value) => value.replace(/^[ \t\n\r\u0000\u000b]+|[ \t\n\r\u0000\u000b]+$/g, '');

@@ -11,6 +11,7 @@ final class MerchantPermissions
         'merchant.profile.read', 'merchant.employee.manage', 'merchant.role.manage',
         'product.read', 'product.write', 'product.submit_review', 'stock.adjust',
         'attachment.manage', 'freight.manage',
+        'order.read', 'order.ship', 'aftersale.handle',
     ];
     public const BUILTIN_ADMIN = self::ALL;
     public const BUILTIN_OPERATOR = [

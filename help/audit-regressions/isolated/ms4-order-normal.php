@@ -5,6 +5,7 @@ require __DIR__ . '/lib/harness.php';
 require __DIR__ . '/lib/ms4-saved-order-normal.php';
 require __DIR__ . '/lib/ms4-post-commit-normal.php';
 require __DIR__ . '/lib/ms4-cancel-normal.php';
+require __DIR__ . '/lib/ms4-merchant-read-normal.php';
 
 use app\dao\marketplace\order\MarketplaceOrderDao;
 use app\services\marketplace\order\MarketplaceCartSelection;
@@ -27,14 +28,17 @@ const M4O_FILES = ['crmeb/composer.json','crmeb/composer.lock','help/audit-regre
     'help/audit-regressions/isolated/lib/harness.php','help/audit-regressions/isolated/lib/guard.php',
     'help/audit-regressions/isolated/lib/ms4-saved-order-normal.php',
     'help/audit-regressions/isolated/lib/ms4-post-commit-normal.php',
-    'help/audit-regressions/isolated/lib/ms4-cancel-normal.php'];
+    'help/audit-regressions/isolated/lib/ms4-cancel-normal.php',
+    'help/audit-regressions/isolated/lib/ms4-merchant-read-normal.php'];
 const M4O_FIXTURE_TABLES = ['eb_user','eb_marketplace_merchant','eb_store_product','eb_store_product_attr',
     'eb_store_product_attr_value','eb_store_cart','eb_user_address','eb_user_invoice','eb_system_config',
-    'eb_system_user_level','eb_user_level','eb_member_right'];
+    'eb_system_user_level','eb_user_level','eb_member_right',
+    'eb_marketplace_role','eb_marketplace_employee','eb_marketplace_password_setup'];
 const M4O_FACT_TABLES = ['eb_store_order','eb_store_order_invoice','eb_store_order_cart_info',
     'eb_marketplace_order_idempotency','eb_marketplace_stock_movement','eb_store_product','eb_store_product_attr_value','eb_store_cart',
     'eb_user','eb_marketplace_merchant','eb_store_product_attr','eb_user_address','eb_user_invoice','eb_system_config',
-    'eb_system_user_level','eb_user_level','eb_member_right','eb_store_order_status','eb_store_product_log','eb_system_timer'];
+    'eb_system_user_level','eb_user_level','eb_member_right','eb_store_order_status','eb_store_product_log','eb_system_timer',
+    'eb_marketplace_role','eb_marketplace_employee','eb_marketplace_password_setup'];
 
 function m4o_expect(bool $ok, string $code): void
 {
@@ -86,6 +90,7 @@ function m4o_source(array &$includedSet): array
     $facts = m4o_read($base.'ms4-order-normal-container-created.json');
     $binding = m4o_read($base.'ms4-order-normal-source-binding.json');
     $environment = m4o_read($base.'ms4-order-test-environment.json');
+    $merchantEnvironment = m4o_read($base.'ms4-order-merchant-environment.json');
     $run = getenv('AUDIT_RUN_ID'); $sha = getenv('AUDIT_SOURCE_SHA');
     m4o_expect(PHP_SAPI === 'cli' && PHP_INT_SIZE >= 8 && realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__
         && count($_SERVER['argv']) === 1 && audit_repo_dir() === '/workspace' && audit_run_dir() === '/run/audit','ACTUAL_NORMAL_ENTRY');
@@ -116,6 +121,18 @@ function m4o_source(array &$includedSet): array
         && ($binding['test_environment_sha256'] ?? '') === hash_file('sha256',$base.'ms4-order-test-environment.json')
         && getenv('APP_ENV') === 'testing' && getenv('PHP_MARKETPLACE_PAYMENT_TEST_ENABLED') === 'true',
         'ACTUAL_CREATED_TEST_PAYMENT_ENVIRONMENT');
+    m4o_expect(($merchantEnvironment['schema'] ?? null) === 1
+        && ($merchantEnvironment['scope'] ?? '') === 'MS4_MERCHANT_CACHE_ENVIRONMENT'
+        && ($merchantEnvironment['run_id'] ?? '') === $run && ($merchantEnvironment['source_sha'] ?? '') === $sha
+        && ($merchantEnvironment['container_id'] ?? '') === ($service['id'] ?? null)
+        && ($merchantEnvironment['freeze_sha256'] ?? '') === hash_file('sha256',$freezePath)
+        && ($merchantEnvironment['environment'] ?? null) === ['PHP_CACHE_DRIVER'=>'redis']
+        && ($merchantEnvironment['native_inspect']['exit_code'] ?? null) === 0
+        && ($merchantEnvironment['native_inspect']['stderr_sha256'] ?? '') === hash('sha256','')
+        && in_array($merchantEnvironment['native_inspect']['stdout_sha256'] ?? '',
+            [hash('sha256',"PHP_CACHE_DRIVER=redis\n"),hash('sha256',"PHP_CACHE_DRIVER=redis\n\n")],true)
+        && ($binding['merchant_environment_sha256'] ?? '') === hash_file('sha256',$base.'ms4-order-merchant-environment.json')
+        && getenv('PHP_CACHE_DRIVER') === 'redis','ACTUAL_CREATED_MERCHANT_REDIS_ENVIRONMENT');
     m4o_expect(($facts['run_id'] ?? '') === $run && ($binding['run_id'] ?? '') === $run
         && ($facts['source_sha'] ?? '') === $sha && ($binding['source_sha'] ?? '') === $sha
         && preg_match('/\A[a-f0-9]{64}\z/D',(string)($service['id'] ?? '')) === 1 && ($facts['id'] ?? '') === $service['id']
@@ -169,6 +186,7 @@ function m4o_source(array &$includedSet): array
     return ['container_id'=>$service['id'],'entry_namespace_pid'=>getmypid(),'source_sha'=>$sha,
         'binding_sha256'=>hash_file('sha256',$base.'ms4-order-normal-source-binding.json'),
         'test_environment_sha256'=>hash_file('sha256',$base.'ms4-order-test-environment.json'),
+        'merchant_environment_sha256'=>hash_file('sha256',$base.'ms4-order-merchant-environment.json'),
         'native_created_sha256'=>hash_file('sha256',$base.'ms4-order-normal-container-created.json'),'source_files'=>count($actual)];
 }
 function m4o_prerequisites(): int
@@ -229,7 +247,7 @@ function m4o_insert(PDO $pdo, string $table, array $values, string $pk = 'id'): 
     foreach ($values as $field=>$value) m4o_expect($value === null ? $rows[0][$field] === null : (string)$rows[0][$field] === (string)$value,'FIXTURE_FIELDS_READBACK');
     return $rows[0];
 }
-/** Register and boot the real application/model services, without HTTP/auth or AppInit jobs. */
+/** Register the real application/model services and dedicated Redis/auth configuration, without HTTP or AppInit jobs. */
 function m4o_app(): \think\App
 {
     require_once '/workspace/crmeb/vendor/autoload.php';
@@ -239,12 +257,21 @@ function m4o_app(): \think\App
     m4o_expect(function_exists('app') && app() === $app && !$app->initialized(),'REAL_FRAMEWORK_HELPER_WITHOUT_APP_INIT');
     $runtime = '/tmp/ms4-order-normal-'.getenv('AUDIT_RUN_ID').'/';
     m4o_expect(!file_exists($runtime) && mkdir($runtime,0700),'OWN_RUNTIME_CREATE'); $app->setRuntimePath($runtime);
+    m4o_expect(getenv('PHP_CACHE_DRIVER') === 'redis'
+        && ($config['auth']['session_epoch'] ?? '') === 'audit-http-'.getenv('AUDIT_RUN_ID')
+        && is_string($config['auth']['stamp_key'] ?? null) && strlen($config['auth']['stamp_key']) >= 32
+        && is_string($config['auth']['issuer'] ?? null) && $config['auth']['issuer'] !== '',
+        'DEDICATED_ORIGINAL_AUTH_CONFIGURATION');
+    $cachePrefix = 'audit:'.getenv('AUDIT_RUN_ID').':ms4-app:';
     $app->env->set(['APP_DEBUG'=>false,'APP_APP_KEY'=>$config['signing_key'],'DATABASE_HOSTNAME'=>'audit-mysql','DATABASE_HOSTPORT'=>'3306','DATABASE_DATABASE'=>'audit_auth',
         'DATABASE_USERNAME'=>'audit_app','DATABASE_PASSWORD'=>$config['database']['password'],'DATABASE_PREFIX'=>'eb_','DATABASE_CHARSET'=>'utf8mb4',
-        'DATABASE_DEBUG'=>false,'CACHE_DRIVER'=>'file']);
+        'DATABASE_DEBUG'=>false,'REDIS_REDIS_HOSTNAME'=>'audit-redis','REDIS_PORT'=>'6379',
+        'REDIS_REDIS_PASSWORD'=>$config['redis_password'],'REDIS_SELECT'=>0,'CACHE_CACHE_PREFIX'=>$cachePrefix,
+        'AUTH_SESSION_EPOCH'=>$config['auth']['session_epoch'],'AUTH_STAMP_KEY'=>$config['auth']['stamp_key'],
+        'AUTH_ISSUER'=>$config['auth']['issuer']]);
     $app->register(\app\AppService::class); $app->bootService($app->getService(\app\AppService::class));
     $app->bind(require '/workspace/crmeb/app/provider.php');
-    foreach (['app','cache','log','marketplace'] as $name) $app->config->set(require '/workspace/crmeb/config/'.$name.'.php',$name);
+    foreach (['app','cache','log','marketplace','auth'] as $name) $app->config->set(require '/workspace/crmeb/config/'.$name.'.php',$name);
     $database = require '/workspace/crmeb/config/database.php';
     $database['connections']['mysql']['params'] = [PDO::ATTR_EMULATE_PREPARES=>false,PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION];
     $database['connections']['mysql']['break_reconnect'] = false; $app->config->set($database,'database');
@@ -254,6 +281,17 @@ function m4o_app(): \think\App
     m4o_expect($app->db instanceof \crmeb\compat\think\Db && $app->config->get('marketplace.trade.enabled') === false,'REAL_APP_SERVICES_GATE_CLOSED');
     m4o_expect(getenv('APP_ENV') === 'testing' && getenv('PHP_MARKETPLACE_PAYMENT_TEST_ENABLED') === 'true'
         && $app->config->get('marketplace.payment.test_enabled') === true,'REAL_TEST_PAYMENT_ENVIRONMENT_LOADED');
+    m4o_expect($app->config->get('cache.default') === 'redis'
+        && $app->config->get('cache.stores.redis.type') === 'redis'
+        && $app->config->get('cache.stores.redis.host') === 'audit-redis'
+        && (string)$app->config->get('cache.stores.redis.port') === '6379'
+        && $app->config->get('cache.stores.redis.select') === 0
+        && $app->config->get('cache.stores.redis.prefix') === $cachePrefix
+        && $app->config->get('cache.stores.redis.password') === $config['redis_password']
+        && $app->env->get('app.app_key') === $config['signing_key']
+        && $app->config->get('auth.session_epoch') === $config['auth']['session_epoch']
+        && $app->config->get('auth.stamp_key') === $config['auth']['stamp_key']
+        && $app->config->get('auth.issuer') === $config['auth']['issuer'],'REAL_DEFAULT_REDIS_AND_PRIVATE_AUTH_LOADED');
     return $app;
 }
 function m4o_fixture(): array
@@ -1014,6 +1052,7 @@ function m4o_main(): int
         $evidence['membership_creations']['paid']=m4o_membership_case($app,'paid');
         $phase='saved_reads';$evidence['saved_reads']=m4o_saved_order_normal($app,audit_db(),$contexts);
         $phase='ordinary_cancel';$evidence['cancellations']=m4o_cancel_normal($app,audit_db(),$evidence['service_creations'],$evidence['membership_creations']);
+        $phase='merchant_saved_reads';$evidence['merchant_reads']=m4o_merchant_read_normal($app,audit_db(),$evidence['service_creations'],$evidence['cancellations']);
         $phase = 'final_source'; $finalSet = []; m4o_expect(m4o_source($finalSet) === $evidence['binding'] && $finalSet === $included,'FINAL_SOURCE_UNCHANGED');
         foreach (get_included_files() as $file) m4o_expect(isset($included[realpath($file)]),'ACTUAL_INCLUDED_SOURCE_CLOSED');
         audit_guard_assert(); m4o_expect($app->config->get('marketplace.trade.enabled') === false,'FINAL_GATE_CLOSED');
