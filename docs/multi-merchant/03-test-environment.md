@@ -44,6 +44,8 @@
 
 MS4取消与MS5 Task2普通内部测试适配：仅新建的专用普通订单角色声明公开非敏感 APP_ENV=testing、PHP_MARKETPLACE_PAYMENT_TEST_ENABLED=true，运行时核真实getenv和Think配置strict bool；不通过helper临时设置Env/开关。该角色仍为原三角色协议中的只读源码/DML App/唯一内部网络/六个新卷/无宿主端口、无Docker socket；不更改原MS0a/MS0b角色或已关闭Run。新准备版本在实际容器created后用原生inspect只筛出这两个精确公开ENV值，保存同Run/source/CID/freeze绑定收据；该环境核对不导出完整ENV、不读取MySQL/root或私有卷值。入口同时校验原生收据及真实进程值，完整源码闭集包含新普通helper。TestDriver仅同App进程内pending→closed且不写paid/财务表；此结果不是HTTP/WORKER、跨进程attempt、真实渠道/退款或daemon验收。旧环境、正常关闭、独立六项零残留及已停止样本NOT RUN要求不变。
 
+MS4商家保存订单普通读取的下一专用版本：因真实AuthSessionStore要求默认Redis，该角色另声明公开PHP_CACHE_DRIVER=redis，从同一App启动起使用本Run专用Redis及既有private App配置的真实Redis密码、独立signing/stamp key、session epoch和issuer；不临时切facade、不假ctx或自签JWT。保留原测试支付两个环境值与收据，新增只筛PHP_CACHE_DRIVER=redis的原生created容器观察及独立merchant环境收据，交叉绑定同Run/source/CID/freeze及source binding SHA，不导出完整ENV或私有配置。原普通下单/会员/读取/持久收尾/取消全部断言在该Redis配置下新Run复跑，旧File结果仅保留原范围。正式runner仍只用audit_app DML和原private App卷，无migrator挂载；真实role/employee/setup仅本Run原生夹具，经真实setupPassword/login/authenticate后测普通本店读取。配置、凭据、capability、JWT不进入公开证据或仓库。无新业务表，其余原三角色/六卷/内部网络/无端口/完整source绑定与精确正常关闭保持；HTTP/DOM另按既有隔离profile验证，内部服务不代替其验收，已停止样本不恢复。
+
 §3 中的 127.0.0.1、宿主 PHP 与凭据文件位置适用于 ISO-MIN；本节是 ISO-FULL 的等效约束，不取消其他启动保护。新增 `run.sh` 属于本次批准的启动脚本范围。
 
 ## 3. ISO-MIN 环境（MS0a 交付）
