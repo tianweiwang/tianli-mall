@@ -643,8 +643,9 @@ function m4o_membership_configuration(): void
     foreach($keys as $key){
         $rows=m4o_rows(audit_db(),'SELECT `value` FROM `eb_system_config` WHERE `menu_name` = ?',[$key]);
         m4o_expect(count($rows)===1&&$rows[0]['value']==='1','MEMBERSHIP_CONFIGURATION_INDEPENDENT_READBACK');
+        m4o_expect(app()->make(\app\services\system\config\SystemConfigServices::class)->getConfigValue($key)===1,'MEMBERSHIP_ACTUAL_JSON_CONFIGURATION_GETTER');
         CacheService::delete('system_config_'.$key);
-        m4o_expect(sys_config($key)===1&&CacheService::get('system_config_'.$key)===1,'MEMBERSHIP_ACTUAL_CONFIGURATION_GETTER');
+        m4o_expect(sys_config($key)==='1'&&CacheService::get('system_config_'.$key)==='1','MEMBERSHIP_ACTUAL_CONFIGURATION_GETTER');
     }
 }
 
@@ -739,7 +740,7 @@ function m4o_membership_expected(\think\App $app,array $fixture): array
         'MEMBERSHIP_REAL_LEVEL_ONLY_QUALIFICATION');
     foreach(['member_func_status','member_card_status','member_price_status'] as $key){
         $config=m4o_rows($pdo,'SELECT `value` FROM `eb_system_config` WHERE `menu_name` = ?',[$key]);
-        m4o_expect(count($config)===1&&$config[0]['value']==='1'&&sys_config($key)===1,'MEMBERSHIP_REAL_CONFIGURATION_UNCHANGED');
+        m4o_expect(count($config)===1&&$config[0]['value']==='1'&&sys_config($key)==='1','MEMBERSHIP_REAL_CONFIGURATION_UNCHANGED');
     }
     $rights=[];foreach(['vip_price'=>1,'express'=>80] as $type=>$number){
         $rows=m4o_rows($pdo,'SELECT * FROM `eb_member_right` WHERE `right_type` = ?',[$type]);

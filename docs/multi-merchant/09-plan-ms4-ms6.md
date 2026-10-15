@@ -235,6 +235,12 @@ Files：`crmeb/app/services/marketplace/order/MarketplaceOrderSnapshotProjection
 
 本合同源码检查点：会员普通CLI固定摘要 `d2085d6abf24096c209206e43ffccd2777f8b7f7b5f1553b8e4ba813601223b4`，新增保存读取helper摘要 `522e05e05e48a4d164884a699fac6dc920275329d69ad076f9a664b56765297b`，CartInfo必要producer摘要 `80cb7815cad77cfdfc57c7904642ac5ba69ad314f5ee01869fb074f99f33a0b4`；三PHP隔离语法均exit0。财务/fixture、非财务原业务保留与接线、CartInfo源和helper分别获得独立SOURCE PASS。Root另核原20个函数中17个完整字节不变，三个必要变化仅可选会员验证、真实上下文和主接线；原direct执行、原价格/库存/cart/表单/发票断言保留。初始新fixture对资格writer返回值的行数假设，已在执行前按真实User Model修正，独立PDO时间窗/flags/getter未放宽。此检查点尚未执行新SQL，不把SOURCE PASS当作列表/会员实测。
 
+本合同首次真实运行（失败证据保留，已关闭）：clean `feb1d0fd3f255929515166e5881067ddb8e36dc5`、Run `20261015025911deb022`、freeze摘要 `0b03bc585842ad4b4c5d89f35fa41cf54ee85d7db5ce1618c8428c5f8a879d68`；initializer实际exit0/6children，check/apply/check/apply四个迁移子进程均exit0/stderr0。订单CLI原direct与persistent/temporary两个完整创建、保存事实、只读lookup和正常replay已执行到各自末尾，但整轮实际exit1/PID0，停于 membership_configuration 的 `MEMBERSHIP_ACTUAL_CONFIGURATION_GETTER`，会员两个场景与saved_reads均尚未开始，不记整体通过。初始化已正常结束后误发一次只接受created状态的initializer-resume，主机阶段按原保护返回1且没有重启；随后driver-create按同一实际exit0 initializer继续，原实例未重开。
+
+失败源因已确证为新增CLI类型假设：`common.php:145–150` 将sys_config非数组结果明确转字符串；当前普通CLI的File缓存按Think cache Driver数字序列化/反序列化规则读回数字文本；真实 `SystemConfigServices::getConfigValue` 则JSON解码为int。不是已证明的缓存失效缺陷，三个精确键和delete正确。下一修正只在既有CLI严格核 sys_config==='1'、File CacheService::get==='1'，同时增加真实getConfigValue===1及保留独立PDO原JSON值'1'读回；不改生产配置/价格、放宽为loose比较或写伪缓存。先保留原失败收据并按精确Run/source/CID的失败关闭协议正常停止/非force移除，独立核零残留，再固定新源码启动全新Run；旧Run及候选不修改、不重启。
+
+同Run失败关闭已实际完成：原metadata cleanup helper实际exit0后移除；固定失败关闭源摘要 `c40888874949d1438accd8248ad382c1af4fbcd17e60675fa031afe2407a4296` 保持业务FAIL_PRESERVED，原MySQL/Redis正常stop的原生进程及容器均exit0，原三CID、唯一内部网与六卷按原身份非force移除。Root独立关闭核对源摘要 `328a8100661c6a90d5c9759b31ea5933ca964a6482a981e3c93369f949a4fe37` 实际六条原生双标签查询均exit0/stderr空/count0；原业务收据摘要仍为 `236dce2d063dbe1b94cee1be25f8a23e60f20f5135dc169256cfe2b72ccc98c8`。旧Run不重开。CLI实际类型窄修摘要 `d7ea8bf2f10fe685b2719ddbeb42303eaee3c5bd5503004c91dd7be4f99e51b4`，仅增加原始JSON getter int1并将两个包装/缓存读回严格核string1；Root PHP82语法exit0、diffcheck0，原金额/资格/direct/service断言不变，真实会员与saved_reads重试仍待全新Run。fresh前端离线构建另固定main的feb1d0fd3来源，构建期间主树保持该clean SHA；不把构建或旧Run原两场景结果写成会员/HTTP/DOM通过。
+
 ### Task 5: 取消与超时释放
 
 - 接口：取消与超时关单都通过 `release` 流水释放库存，`idem_key = "release:<order_id>:<unique>"`，重复执行不重复释放。超时关单前先查询支付状态（MS5 之前用测试驱动），已支付的不关单，转入异常处理。
