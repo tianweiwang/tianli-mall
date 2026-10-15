@@ -398,8 +398,18 @@ HTTP 启动实际未通过：原 App 和 UI 各一次 start 均 native0，两个
 
 本子阶段继续使用本节唯一执行清单，原 Task6 发货/拆单/售后义务不取消：
 
+完整新Run之前可先行做独立普通页面网络正向检查：仅原固定Nginx镜像、同user101/只读配置与公开PNG/cap_drop/no-new-privileges/tmpfs、全新两个项目网络和一个UI容器，不建立App、数据库、员工或命名卷。核真实双网、固定IPv4回环发布、TCP及原PNG HTTP200/完整字节，随后按原身份正常停止UI、非force精确删除三资源并独立核标签零；失败保留实际状态。它只证明本机该页面网络拓扑可行，不代替商城新Run的私有交接、应用、34步或DOM验收，也不测试外连、拒绝或故障样本。
+
+独立页面检查的首次实际准备在创建第一个空backend后停止：Run `20261015104119eb13e1`、source `fc9c1a36e9a2925208d5053b129a849220a6a24c9417e83bf87aca6d1424183f`，固定码 `NEW_NETWORK_NATIVE_IDENTITY`。本机Docker给新bridge的Options自动加入 `com.docker.network.enable_ipv4=true`，与检查器假设的空Options不符；原网络真实Internal=true/EnableIPv6=false/无端点，尚无frontend、容器或卷，不据此声称网络方案失败。保留原源与FAIL，按创建stdout摘要和实际完整身份关闭这一个空原网，独立核标签零；后继新来源须精确核本机该IPv4真值选项，并保留frontend原masquerade=false、IPv6=false和其余完整身份，不删除实际字段或改写旧证据。此必要原生表示适配同时进入尚未生成的r3来源，原v5/backend合同及业务验收条件不改。
+
+首个空网已按原创建摘要和完整身份非force删除，关闭native0、六查询0。普通检查v2 `20261015104334fa7de4` 真实两网创建、单次UI启动native0；随后仅因直接Docker CLI返回Windows反斜杠bind Source，而检查器只接纳POSIX/WSL表示，固定码 `EXACT_PUBLIC_CONFIG_READONLY_BIND` 停止，尚未发HTTP。原同CID仍可只读核实，无需重启：后继独立观察只对同一绝对文件增加Windows规范字符串等价表示，严格保留两精确只读bind、同容器及双网原身份，再继续尚未执行的普通TCP/PNG与正常关闭。保留原v2失败，不把观察后继结果改写成原脚本通过；这项宿主路径表示不影响使用Compose的商城r3路径合同。
+
+独立网络检查后继实际通过：同v2原UI未重启。首两个观察入口在HTTP/intent前分别因导入后漏重绑本Run标签、误要求镜像80/tcp:null必须出现而停止；原源保留。第三来源 `observe-close-smoke-v2-20261015104334fa7de4-r3.py` 摘要 `c184917d5d18b31291c1b83c7e533f427d367890ac9432aef79d3ea864ca6958`，严格核同真实CID、两原完整网络、两个精确只读路径、仅实际8080回环发布（未发布80可缺省或null），随后普通TCP及唯一PNG GET真实200、117字节、摘要与原公开PNG一致、未跟随重定向；原UI一次正常SIGQUIT stop后真实exit0/PID0/restart0，非force删除原UI及两个空端点原网络。实际后继收据 `8f3fc1208f7afcfd8516bdaf4ae9cb2a0a823d08537dfb427268730f1dec490e`；Root独立六个标签原生查询均0，摘要 `e3ecf84a5c09a2c906d75edbb2a772bf7bf71f6e6c46b1da56c190cc12ab932d`。首空网Run的独立六查询也0，摘要 `416c2547ef59b0afb617c5707ddb11639c96f966ef8516519513ce9edc8880cb`。这证明本机此双网回环静态页面入口可行，不是商城HTTP/DOM、业务或原v2脚本通过。
+
+r3源码检查点：builder `2de1f9ef807fabeb8ae2511eb7985a02786fdaf19cfbdb187cfddbe6810c6ba6` 经独立G1–G8源审和Root实际create-only派生，生成15份来源、完整inverse及独立正常关闭源。host摘要 `6ee269d29567ba374d6e83c1ea5556f1504566f3d79933e09feba0f2a6cbc45a`、close `0112a9bba3f617bbb2b3dad9184bbff570ab38ca252c3d6f1f451a175f27ad61`、inverse `3da7a3e2cfccd0c207a6fde6a84deb17041a72318d910fe57f0d518521f68b12`。完整逆回r2/v5、原38 legacy函数字节保持；实际原生docker port观察、TCP/PNG、App有效SIGTERM及双网正常关闭证明均已接线，仍须新Run实际核。Root核生成文件完整字节/AST，并用公开解析输入执行Compose config native0/stderr空，确认仅UI双网/固定回环端口、其余角色单backend、App SIGTERM及十卷；第一次纯解析缺少必需dist路径输入时失败，没有创建资源，补齐公开解析路径后通过。源码/配置检查收据摘要 `d15c4ade8bb3e02e08a139f89c61dd3007fa26b7e2afdeafa6966a92199cdb66`；PHP业务、四接口文档及两个browser模块未改，源码通过不替代新完整Run或页面验收。
+
 - [x] 修复后的完整内部普通链、20笔真实准备及原事实保持；记录本轮页面入口失败与单次正常TERM修复，独立核资源零残留。
-- [ ] 派生 r3 新来源，接入 HTTP 阶段专用双网、仅UI入口及App有效SIGTERM；保留完整可逆来源与原v5行为，并完成独立源审和必要静态/语法检查。
+- [x] 派生 r3 新来源，接入 HTTP 阶段专用双网、仅UI入口及App有效SIGTERM；保留完整可逆来源与原v5行为，并完成独立源审和必要静态/语法检查（运行结果待新Run）。
 - [ ] 重新冻结 clean HEAD，以新Run执行初始化、结构迁移、原普通链及20单准备，核全体真实来源/权限/资源身份。
 - [ ] 核实际UI发布映射、Windows回环TCP及固定同源PNG的真实HTTP/字节；再按原source-ready、私有交接与真实supervisor合同开始浏览器。
 - [ ] 完成原34步骤/25主capture/9原字节JPEG/9人工复核、实际手机横向可达、23表SQL及最终完整来源核对；原3600秒窗口不延长。
