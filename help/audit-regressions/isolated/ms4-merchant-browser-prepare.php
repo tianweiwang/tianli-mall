@@ -15,6 +15,7 @@ function m4mb_source_contract(): array
             'crmeb/public/index.php','crmeb/public/router.php','crmeb/think',
             'help/audit-regressions/isolated/lib/guard.php','help/audit-regressions/isolated/lib/harness.php',
             'help/audit-regressions/isolated/lib/ms4-cancel-normal.php',
+            'help/audit-regressions/isolated/lib/ms4-fulfillment-plan-normal.php',
             'help/audit-regressions/isolated/lib/ms4-merchant-browser-normal.php',
             'help/audit-regressions/isolated/lib/ms4-merchant-read-normal.php',
             'help/audit-regressions/isolated/lib/ms4-post-commit-normal.php',

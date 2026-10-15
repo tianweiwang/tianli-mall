@@ -6,6 +6,7 @@ require __DIR__ . '/lib/ms4-saved-order-normal.php';
 require __DIR__ . '/lib/ms4-post-commit-normal.php';
 require __DIR__ . '/lib/ms4-cancel-normal.php';
 require __DIR__ . '/lib/ms4-merchant-read-normal.php';
+require __DIR__ . '/lib/ms4-fulfillment-plan-normal.php';
 
 use app\dao\marketplace\order\MarketplaceOrderDao;
 use app\services\marketplace\order\MarketplaceCartSelection;
@@ -29,7 +30,8 @@ const M4O_FILES = ['crmeb/composer.json','crmeb/composer.lock','help/audit-regre
     'help/audit-regressions/isolated/lib/ms4-saved-order-normal.php',
     'help/audit-regressions/isolated/lib/ms4-post-commit-normal.php',
     'help/audit-regressions/isolated/lib/ms4-cancel-normal.php',
-    'help/audit-regressions/isolated/lib/ms4-merchant-read-normal.php'];
+    'help/audit-regressions/isolated/lib/ms4-merchant-read-normal.php',
+    'help/audit-regressions/isolated/lib/ms4-fulfillment-plan-normal.php'];
 const M4O_FIXTURE_TABLES = ['eb_user','eb_marketplace_merchant','eb_store_product','eb_store_product_attr',
     'eb_store_product_attr_value','eb_store_cart','eb_user_address','eb_user_invoice','eb_system_config',
     'eb_system_user_level','eb_user_level','eb_member_right',
@@ -1051,6 +1053,7 @@ function m4o_main(): int
         $evidence['membership_creations']['level']=m4o_membership_case($app,'level');
         $evidence['membership_creations']['paid']=m4o_membership_case($app,'paid');
         $phase='saved_reads';$evidence['saved_reads']=m4o_saved_order_normal($app,audit_db(),$contexts);
+        $phase='fulfillment_plans';$evidence['fulfillment_plans']=m4o_fulfillment_plan_normal($independent,$evidence['committed'],$evidence['service_creations'],$evidence['membership_creations']);
         $phase='ordinary_cancel';$evidence['cancellations']=m4o_cancel_normal($app,audit_db(),$evidence['service_creations'],$evidence['membership_creations']);
         $phase='merchant_saved_reads';$evidence['merchant_reads']=m4o_merchant_read_normal($app,audit_db(),$evidence['service_creations'],$evidence['cancellations']);
         $phase = 'final_source'; $finalSet = []; m4o_expect(m4o_source($finalSet) === $evidence['binding'] && $finalSet === $included,'FINAL_SOURCE_UNCHANGED');

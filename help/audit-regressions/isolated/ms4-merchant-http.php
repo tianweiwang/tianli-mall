@@ -20,6 +20,7 @@ const M4H_ROOTS=['crmeb/app','crmeb/crmeb','crmeb/vendor','crmeb/config'];
 const M4H_EXTRA=['crmeb/composer.json','crmeb/composer.lock','crmeb/public/index.php','crmeb/public/router.php','crmeb/think',
     'help/audit-regressions/isolated/lib/guard.php','help/audit-regressions/isolated/lib/harness.php',
     'help/audit-regressions/isolated/lib/ms4-cancel-normal.php','help/audit-regressions/isolated/lib/ms4-merchant-browser-normal.php',
+    'help/audit-regressions/isolated/lib/ms4-fulfillment-plan-normal.php',
     'help/audit-regressions/isolated/lib/ms4-merchant-read-normal.php','help/audit-regressions/isolated/lib/ms4-post-commit-normal.php',
     'help/audit-regressions/isolated/lib/ms4-saved-order-normal.php',
     'help/audit-regressions/isolated/ms4-merchant-browser-prepare.php','help/audit-regressions/isolated/ms4-merchant-http.php',
