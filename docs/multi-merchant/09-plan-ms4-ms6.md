@@ -119,6 +119,10 @@ Files：`crmeb/app/services/marketplace/order/MarketplaceOrderInput.php`；普�
 
 修复普通入口的组件引导：真实 Think App 构造后显式 require 原 framework helper，核全局 app() 就是该真实实例且 App 未 initialize；继续原 AppService/ModelService/common、私有 DML 账户和 tmpfs File cache/log/runtime。单独真实组件引导在现有 PHP 8.2 镜像、只读源、无网络下实际 native0；没有 PDO/SQL/HTTP/认证，实际 DAO 写单须另建新 Run。补齐普通 setCart 已有行合并路径残留的 cart PK int 转换，使用同一 persistent reference 字符串规则；不据小主键样本声称极值或全部购物车 API 通过。
 
+2026-10-15 二次普通 DAO 实测：clean 来源 `f285954bb70a44b58e3dd0ce71ba873c5eb686c8`、RUN `202610150007134dfa97` 的六初始化和四结构迁移命令全部 native0/stderr0、私有配置清理通过；真实 framework helper 引导已通过（app_services四条断言）。业务入口仍实际退出1，phase=`actual_fixtures`，首个 `ACTUAL_DEFAULT_TRANSACTION_PDO` 断言失败，尚未进入业务夹具 INSERT、确认或写单。原 FAIL、来源及原生终态保持；原 metadata cleanup helper 实际正常0，原3容器/内网/6卷正常精确关闭，Root 独立六个原生查询全0并核原业务收据哈希不变。
+
+镜像只读核实实际 PHP 为8.2.33、pdo_mysql已加载。[该版本官方 MySQL getter](https://github.com/php/php-src/blob/php-8.2.33/ext/pdo_mysql/mysql_driver.c#L509-L512) 使用 ZVAL_LONG 返回模拟预处理标志，关闭值为整数0，因此入口原先的 `=== false` 与其返回表示不兼容。修复仅严格接受 false 或整数0；真实事务 callback 的 Connection 必须与默认 Db::connect() 同一实例，返回 PDO 也须同一对象、仍在事务中、driver=mysql、ERRMODE_EXCEPTION，金额/库存/重放及原 DAO 条件保持。每个阶段在断言前记录最后一次只含布尔值与类型的连接观察，不输出配置、账户、DSN、PDO对象或驱动错误参数。原 f285 入口没有保存该属性现场值，其他现场连接条件仍须新 Run 重新核；本次源修复不计实际 DAO 写单或完整下单通过。
+
 **后续生产创建/消费补充合同（尚未实现，普通六 DAO 持久化检查不替代）：** 所有 V1 创建和 ledger/ref 消费入口统一在同默认 PDO 事务最先锁真实 user.uid，再 claim/正常 replay。新 claim 在 merchant 锁之前按 UID 主键前缀完整分页读取已提交 temporary ledger，使用已存 source_kind/cart_refs 对原字节引用做严格消费检查；不按商家、待支付、取消时点或缓存过期缩小历史，不额外新增引用表或伪造锁用演员。后续锁序为 merchant→root→SKU→运费父子→本人地址/发票/cart；真实 order/reserve/items 核实后、state1 更新前，对 persistent refs 做本人UID、精确PK、商品/SKU unique、数量、普通类型、未消费状态的逐行条件物理 DELETE（真实 status=NULL 或1仍兼容），每行影响1并读回所选 refs不存在。temporary 没有对应 SQL cart，state1 的现有 ledger 就是持久消费事实，取消与提交后缓存清理不能抹去它。生产服务和未来内部调用必须消费同一协议，不能只在验证 CLI 内加锁。最小普通验证后续补真实持久 cart 创建/仅所选行删除/未选行保持/同请求重放，以及真实 setCart(new=true) 的临时引用创建/ledger留存/无SQL cart变化/正常重放；用户已停止的拒绝、冲突、并发、故障样本继续不运行。
 
 **Interfaces:**

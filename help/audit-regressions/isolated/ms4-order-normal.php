@@ -163,10 +163,21 @@ function m4o_rows(PDO $pdo, string $sql, array $args = []): array
     foreach (array_values($args) as $i=>$value) m4o_expect($statement->bindValue($i+1,$value === null ? null : (string)$value,$value === null ? PDO::PARAM_NULL : PDO::PARAM_STR),'EXACT_SQL_BIND');
     m4o_expect($statement->execute(),'ACTUAL_EXECUTE'); return $statement->fetchAll(PDO::FETCH_ASSOC);
 }
-function m4o_business_pdo(): PDO
+function m4o_business_pdo(\think\db\ConnectionInterface $transactionConnection): PDO
 {
-    $pdo = Db::connect()->getPdo(); m4o_expect($pdo instanceof PDO && $pdo->inTransaction()
-        && $pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'mysql' && $pdo->getAttribute(PDO::ATTR_EMULATE_PREPARES) === false,'ACTUAL_DEFAULT_TRANSACTION_PDO'); return $pdo;
+    $connection = Db::connect(); $pdo = $transactionConnection->getPdo(); $native = $pdo instanceof PDO;
+    $emulate = $native ? $pdo->getAttribute(PDO::ATTR_EMULATE_PREPARES) : null;
+    $state = ['callback_connection_same'=>$transactionConnection === $connection,
+        'default_pdo_same'=>$native && $pdo === $connection->getPdo(), 'pdo_instance'=>$native,
+        'in_transaction'=>$native && $pdo->inTransaction(),
+        'driver_mysql'=>$native && $pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'mysql',
+        'exception_error_mode'=>$native && $pdo->getAttribute(PDO::ATTR_ERRMODE) === PDO::ERRMODE_EXCEPTION,
+        'emulate_type'=>get_debug_type($emulate), 'emulate_off_false'=>$emulate === false, 'emulate_off_zero'=>$emulate === 0];
+    $GLOBALS['m4o_pdo_observations'][$GLOBALS['m4o_phase']] = $state;
+    m4o_expect($state['callback_connection_same'] && $state['default_pdo_same'] && $state['pdo_instance']
+        && $state['in_transaction'] && $state['driver_mysql'] && $state['exception_error_mode']
+        && ($state['emulate_off_false'] || $state['emulate_off_zero']),'ACTUAL_DEFAULT_TRANSACTION_PDO');
+    return $pdo;
 }
 function m4o_insert(PDO $pdo, string $table, array $values, string $pk = 'id'): array
 {
@@ -211,8 +222,8 @@ function m4o_app(): \think\App
 }
 function m4o_fixture(): array
 {
-    return Db::transaction(static function (): array {
-        $pdo = m4o_business_pdo(); $now = time();
+    return Db::transaction(static function (\think\db\ConnectionInterface $transactionConnection): array {
+        $pdo = m4o_business_pdo($transactionConnection); $now = time();
         foreach (['eb_user','eb_store_product','eb_store_cart','eb_user_address','eb_user_invoice','eb_system_config'] as $table)
             m4o_expect((int)m4o_rows($pdo,'SELECT COUNT(*) AS `n` FROM `'.$table.'`')[0]['n'] === 0,'FRESH_FIXTURE_TABLE');
         foreach (['store_free_postage'=>'10000.00','image_thumb_status'=>0,'member_func_status'=>0,'member_card_status'=>0,
@@ -348,15 +359,15 @@ function m4o_main(): int
         $input = MarketplaceOrderInput::create($uid,$key,['mer_id'=>$mer,'cartId'=>$choice['cartId'],'addressId'=>$addressId,
             'invoice_id'=>(int)$fixture['invoice']['id'],'idem_key'=>$idem,'payType'=>'','mark'=>'普通订单验证','gift_mark'=>'普通文本快照']);
         $phase = 'atomic_dao_creation';
-        $created = Db::transaction(static function () use ($app,$dao,$orders,$uid,$mer,$frame,$addressId,$fixture,$input,$key,$idem,$user): array {
-            $pdo = m4o_business_pdo(); $now = time(); $claim = $dao->claim($pdo,$input['request'],$idem,$now,$now+3600);
+        $created = Db::transaction(static function (\think\db\ConnectionInterface $transactionConnection) use ($app,$dao,$orders,$uid,$mer,$frame,$addressId,$fixture,$input,$key,$idem,$user): array {
+            $pdo = m4o_business_pdo($transactionConnection); $now = time(); $claim = $dao->claim($pdo,$input['request'],$idem,$now,$now+3600);
             m4o_expect($claim['claimed'] === true && $claim['order'] === null,'REAL_FIRST_CLAIM');
             $locked = $dao->lockInputs($pdo,$uid,$mer,$frame,$addressId,(int)$fixture['invoice']['id']);
             $group = $orders->getCacheOrderInfo($uid,$key); $current = MarketplaceCartSelection::frame($group,$uid);
-            m4o_expect($current === $frame && m4o_business_pdo() === $pdo,'LOCKED_ACTUAL_FRAME');
+            m4o_expect($current === $frame && m4o_business_pdo($transactionConnection) === $pdo,'LOCKED_ACTUAL_FRAME');
             $app->make(UserInvoiceServices::class)->checkInvoice((int)$fixture['invoice']['id'],$uid);
             $computed = $app->make(StoreOrderComputedServices::class)->setParamData([])->computedOrder($uid,$user,$group,$addressId,'',false,0,true,1,0,true);
-            m4o_expect(m4o_business_pdo() === $pdo && bccomp($computed['pay_postage'],'0.00',2) > 0,'ACTUAL_LOCKED_SHARED_QUOTE');
+            m4o_expect(m4o_business_pdo($transactionConnection) === $pdo && bccomp($computed['pay_postage'],'0.00',2) > 0,'ACTUAL_LOCKED_SHARED_QUOTE');
             $byRef = []; foreach ($group['cartInfo'] as $cart) $byRef[(string)$cart['id']] = $cart;
             $cartInfo = []; foreach ($locked['selection'] as $line) {
                 $cart = $byRef[$line['cart_ref']] ?? null; m4o_expect(is_array($cart),'ACTUAL_QUOTE_CART_REF');
@@ -382,15 +393,15 @@ function m4o_main(): int
                 'merchant_after_sale_contact_snapshot'=>$locked['merchant']['after_sale_contact']];
             $id = $dao->insertOrder($pdo,$payload,$locked['invoice']); $reserves = $dao->reserve($pdo,$uid,$mer,$id,$locked,$now);
             $items = $dao->insertItems($pdo,$uid,$mer,$id,$cartInfo,$reserves); $dao->markCreated($pdo,$uid,$claim['idem_key'],$id);
-            m4o_expect(m4o_business_pdo() === $pdo && count($items) === 3 && count($reserves) === 2,'SIX_DAO_BOUNDARIES_SAME_PDO');
+            m4o_expect(m4o_business_pdo($transactionConnection) === $pdo && count($items) === 3 && count($reserves) === 2,'SIX_DAO_BOUNDARIES_SAME_PDO');
             return ['order_id'=>$id,'key'=>$key,'idem'=>$idem,'request'=>$input['request'],'payload'=>$payload];
         });
         $phase = 'independent_committed_facts'; audit_guard_assert(); $independent = audit_db();
         m4o_expect(!$independent->inTransaction() && !Db::connect()->getPdo()->inTransaction() && $independent !== Db::connect()->getPdo(),'COMMITTED_INDEPENDENT_CONNECTION');
         $evidence['committed'] = m4o_verify($independent,$fixture,$created); $before = m4o_facts($independent);
         $phase = 'ordinary_same_request_replay';
-        $replay = Db::transaction(static function () use ($dao,$input,$idem): array {
-            $pdo = m4o_business_pdo(); $now = time(); return $dao->claim($pdo,$input['request'],$idem,$now,$now+3600);
+        $replay = Db::transaction(static function (\think\db\ConnectionInterface $transactionConnection) use ($dao,$input,$idem): array {
+            $pdo = m4o_business_pdo($transactionConnection); $now = time(); return $dao->claim($pdo,$input['request'],$idem,$now,$now+3600);
         });
         m4o_expect($replay['claimed'] === false && (int)$replay['order']['id'] === $created['order_id'] && $replay['idem_key'] === $idem,'ACTUAL_SAME_ORDER_REPLAY');
         m4o_expect(m4o_facts(audit_db()) === $before,'REPLAY_NO_ORDER_STOCK_OR_ITEM_WRITE');
@@ -405,6 +416,7 @@ function m4o_main(): int
     }
     $evidence['phase'] = $phase; $evidence['assertions'] = $GLOBALS['m4o_assertions'] ?? 0;
     $evidence['assertions_by_phase'] = $GLOBALS['m4o_phase_assertions'] ?? [];
+    $evidence['pdo_observations'] = $GLOBALS['m4o_pdo_observations'] ?? [];
     $evidence['native_exit'] = $evidence['status'] === 'VERIFIED_NORMAL_DAO_ONLY' ? 0 : 1;
     try { m4o_new(audit_run_dir().'/evidence/ms4-order-normal.json',$evidence); }
     catch (Throwable $error) { echo m4o_json(['status'=>'FAIL','scope'=>'NORMAL_DAO_ONLY','native_exit'=>1,'phase'=>'receipt_write']); return 1; }
