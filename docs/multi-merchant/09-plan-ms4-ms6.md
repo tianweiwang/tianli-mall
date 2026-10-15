@@ -344,6 +344,18 @@ HTTP准备源码检查点（2026-10-15，未freeze/未运行新Run）：上述�
 
 后继普通停止源审：新HTTP入口的无条件warning handler会把原harness以@读取已退出PID的正常ENOENT路径误判为失败。窄修只尊重error_reporting中已抑制的severity，其余仍抛固定脱敏错误；原harness/PID/组检查不改。实际新HTTP摘要`6383c2d3e4250d9a4d24261fd458b167553c24722d0b3fee6664cc28c7246c53`获完整独立SOURCE PASS，Root仅重-l该变化文件native0/stderr0/字节保持，收据`source-syntax-root-v3-http-handler.json`。三新PHP可作本地准备代码检查点；全计划HTTP/DOM和最终关闭仍未执行，不打开运行门禁。
 
+最终普通浏览器覆盖合同（实现前）：以仓库外`interface-v3-coverage.json`（设计摘要`29c48a1c431366ed40b699fb2651149d369c468979011feb9dfafadd428be4a5`）固定34步、25主接口响应和9张320/390/1440×900原始JPEG。owned沿正常登录→列表20/22→三尺寸→next两行→prev→真实完整号→未支付且未取消→取消筛选→已支付正常空结果→清筛选→真实新单详情/刷新→三尺寸→返回/刷新列表→本店信息→退出；stopped沿正常登录/唯一保存单列表详情/返回/退出，empty沿正常登录/0列表/三尺寸/刷新/本店信息/退出。不加跨店、拒绝、冲突或其他停测样本。N/P必须来自真实新20单且位于默认第一页，S/Q来自停接店唯一原保存单；不猜ID。
+
+HTTP supervisor在实际source/oracle后、ready前一次生成私有plan及随机唯一步骤nonce；新增只读plan getter。write command必须与计划下一完整消息精确相同，前步已有实际ACK才允许推进；COMMAND/PLAN的capture.query明确编码JSON对象（空{}），内部严格数组及浏览器精确比较不放宽。完整34份结构化DOM ACK核实际列表单元格、分页active/disabled、详情金额/收货/留言与逐组字段、重复标题和原字符串0；definition hash/product_id/status仍由HTTP+SQL核，不伪称HTML可见。新商品真实同源PNG须加载32×32；原空/外域快照不改，不声称八种表单或表单图片已视觉验收。详情刷新等真实loading消失和保存订单号出现，截图使用fullPage原JPEG，CSS viewport/DPR和编码像素分别记录。人工实看九张原图后才写绑定原nonce/scene/摘要的私有review；手机表格实际横向可达接口未定前仍保留缺口，不以DOM scrollWidth假代操作。
+
+最终audit核原计划/25真实capture与独立保存oracle/34 DOM/9实际JPEG与9人工review，另保留独立23表SQL收据和最终全source/public重核，owned tab确已关闭且viewport reset后才输出有限公开HTTP_DOM_AUDIT。原始鉴权响应及其完整摘要继续私有，公开仅计数、覆盖结论、来源和截图工件；本轮不代表发货/售后/支付/全库验收。宿主桥核返回公开闭集/身份/原截图文件后create-only写`evidence/ms4-merchant-http-browser.json`，原App不能写宿主Run。真实start/stop仅从同nonce supervisor响应发布独立收据，pending不算stop。Files沿三个新PHP和仓库外browser/bridge/host/close；不增角色、表、控制目录或生产API。最终候选另建，不覆盖source1；所有源/工具/实际终态缺口补齐前HTTP运行门禁保持false。
+
+v3来源澄清：当前正式CUA文档中的cua/dom_cua wheel属性在新owned空白页实际均未开放，不能借内部接口绕过。横向验证选已文档化Locator.press普通方向键：列表聚焦真实“查看详情”按钮，详情聚焦实际表格scroll container，逐次真实ArrowRight/read-only DOM读回，只有实际到最右且末格横向落在wrapper内才算可达；同目标ArrowLeft读回到左端后取原全页JPEG。每向最多64个正常按键，若实际无效保留未完成而不造scrollLeft。空列表/实际无overflow只记实测不需要滚动；普通焦点引起纵向滚动允许，分别记录scrollX/Y。新只读timezone offset支持保存日期与浏览器本地格式比较。source能调用普通键盘只满足允许开始真实验证，不代表可达已通过。公开终态闭集另增horizontal_table_reach_verified；截图条目仅scene/path/bytes/SHA/viewport/pixels。固定scope_limit为NORMAL_MERCHANT_ORDER_HTTP_DOM_ONLY_OBSERVED_23_SQL_TABLES，两未运行字段固定NOT RUN；详细有限边界见同目录interface-v3-clarifications.json，仍无真实HTTP/DOM结果。
+
+正常启动观察澄清（依赖实现前）：HTTP serve需先真实核完整来源/生成计划才发布source-ready。宿主每次仅作一次原AppCID的固定文件cp；文件尚未取到时，只有原创建/source身份仍完整、该同CID实际running/PID>0/restart0才记录PENDING_OBSERVATION及真实native结果，后续仍观察同一实例，不能因观察未就绪重启或换CID。只有实际cp0/真实source-ready内容/绑定与原supervisor身份核过才记READY，不以容器running代替。最终native子进程被正常SIGTERM终止可有真实143/signal15，proc_close可能-1；原值保留且拒KILL，不能伪称child自然exit0。原supervisor/App容器最终正常exit0/PID0另外原生核验。
+
+v3源码检查点：新HTTP完整实现摘要`c0c808abea55c30537fb34593420f84ee72c4e13094c5cff972e9ea3b56deec8`、浏览器producer`6e22ab01211e1454f3eae4f937c96c7b50ed82cf6434edf346410c4600672347`、私有桥`b9fd27519c0b91f5a91fbc557679b0ce908a71d8fc01d06c16484200818c1c68`均已获独立SOURCE PASS；Root分别只运行PHP8.2 -l和Node22 --check，3项native0/stderr0/检查前后字节保持，实际收据`source-syntax-root-v4-v3.json`。源审发现的空列表pager应active1已按冻结ElementUI真实行为窄修，未改业务API或停止样本。此前普通业务Run状态保持已关闭；本轮没有新App/SQL/HTTP/DOM运行或视觉通过，外部final候选的实际stage/五身份十卷关闭源仍在独立核对，不据准备完成勾Task6。
+
 ### Task 7: 退款额度与库存行为
 
 - 接口：申请退款时在事务中锁定订单行，校验"已退金额 + 处理中金额 + 本次金额 ≤ 实付"；三类库存行为分别写 `release`（未发货取消）、`return_in`（退货验收入库）、不写（仅退款）。
