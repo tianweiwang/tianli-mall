@@ -189,7 +189,10 @@ function m4o_app(): \think\App
 {
     require_once '/workspace/crmeb/vendor/autoload.php';
     $config = audit_config(); m4o_expect(($config['database']['username'] ?? '') === 'audit_app','APP_DML_CONFIG');
-    $app = new \think\App('/workspace/crmeb/'); $runtime = '/tmp/ms4-order-normal-'.getenv('AUDIT_RUN_ID').'/';
+    $app = new \think\App('/workspace/crmeb/');
+    require_once '/workspace/crmeb/vendor/topthink/framework/src/helper.php';
+    m4o_expect(function_exists('app') && app() === $app && !$app->initialized(),'REAL_FRAMEWORK_HELPER_WITHOUT_APP_INIT');
+    $runtime = '/tmp/ms4-order-normal-'.getenv('AUDIT_RUN_ID').'/';
     m4o_expect(!file_exists($runtime) && mkdir($runtime,0700),'OWN_RUNTIME_CREATE'); $app->setRuntimePath($runtime);
     $app->env->set(['APP_DEBUG'=>false,'APP_APP_KEY'=>$config['signing_key'],'DATABASE_HOSTNAME'=>'audit-mysql','DATABASE_HOSTPORT'=>'3306','DATABASE_DATABASE'=>'audit_auth',
         'DATABASE_USERNAME'=>'audit_app','DATABASE_PASSWORD'=>$config['database']['password'],'DATABASE_PREFIX'=>'eb_','DATABASE_CHARSET'=>'utf8mb4',

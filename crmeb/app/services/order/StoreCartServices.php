@@ -324,7 +324,8 @@ class StoreCartServices extends BaseServices
             if ($cart) {
                 $cart->cart_num = $cart_num + $cart->cart_num;
                 $cart->add_time = time();
-                $this->dao->update(array_merge($cartWhere, ['id' => (int)$cart->id]), ['cart_num' => $cart->cart_num, 'add_time' => $cart->add_time]);
+                $cartRef = \app\services\marketplace\order\MarketplaceOrderInput::reference($cart->id, 'persistent');
+                $this->dao->update(array_merge($cartWhere, ['id' => $cartRef]), ['cart_num' => $cart->cart_num, 'add_time' => $cart->add_time]);
                 return $cart->id;
             } else {
                 $add_time = time();
