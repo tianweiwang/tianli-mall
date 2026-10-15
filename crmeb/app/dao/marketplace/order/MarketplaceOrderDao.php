@@ -82,7 +82,7 @@ final class MarketplaceOrderDao
         $uid = self::integer($request['uid'], 1, self::INT_MAX);
         $merId = self::integer($request['mer_id'], 1, self::UINT_MAX);
         self::integer($now, 1, self::UINT_MAX);
-        self::integer($cancelAt, $now, self::UINT_MAX);
+        self::integer($cancelAt, $cancelAt === 0 ? 0 : $now, self::UINT_MAX);
         // Every create/replay uses this actual customer row before any ledger lock.
         $user = $this->one($pdo, 'user', ['uid'], '`uid` = ?', [$uid]);
         if ($user === null || self::integer($user['uid'], 1, self::INT_MAX) !== $uid) self::conflict();
@@ -395,7 +395,7 @@ final class MarketplaceOrderDao
     }
 
     /** Verifies saved facts and consumes the actual locked selection before commit. */
-    public function markCreated(PDO $pdo, int $uid, string $idemKey, int $orderId, array $lockedInputs): void
+    public function markCreated(PDO $pdo, int $uid, string $idemKey, int $orderId, array $lockedInputs, ?int $cancelAt = null): void
     {
         $this->transaction($pdo); self::integer($uid,1,self::INT_MAX); self::integer($orderId,1,self::INT_MAX);
         $row = $this->one($pdo,'marketplace_order_idempotency',self::IDEM_FIELDS,'`uid` = ? AND `idem_key` = ?',[$uid,$idemKey]);
@@ -403,6 +403,8 @@ final class MarketplaceOrderDao
             || self::integer($row['post_commit_done'],0,1) !== 0) self::unavailable();
         $merId = self::integer($row['mer_id'],1,self::UINT_MAX);
         $order = $this->order($pdo,$uid,$merId,$orderId,true);
+        $cancelAt = $cancelAt ?? self::integer($row['cancel_at'],0,self::UINT_MAX);
+        self::integer($cancelAt,$cancelAt === 0 ? 0 : self::integer($order['add_time'],1,self::UINT_MAX),self::UINT_MAX);
         if (!hash_equals($row['confirmation_ref'],hash('sha256',$order['unique'],true))) self::conflict();
         $refs = self::references(self::decode($row['cart_refs']),$row['source_kind']);
         if (self::decode($order['cart_id']) !== $refs) self::conflict();
@@ -443,12 +445,12 @@ final class MarketplaceOrderDao
         if (count($all) !== count($reserved) || $total !== self::integer($order['total_num'],1,self::UINT_MAX)) self::unavailable();
         if ($row['source_kind'] === 'persistent') $this->consumePersistentCarts($pdo, $uid, $selection);
         $n = $this->execute($pdo,'UPDATE '.$this->table('marketplace_order_idempotency').
-            ' SET `state` = 1, `order_id` = ?, `post_commit_done` = 0 WHERE `uid` = ? AND `idem_key` = ?'.
+            ' SET `state` = 1, `order_id` = ?, `post_commit_done` = 0, `cancel_at` = ? WHERE `uid` = ? AND `idem_key` = ?'.
             ' AND `state` = 0 AND `order_id` IS NULL AND `request_digest` = ? AND `confirmation_ref` = ?',
-            [$orderId,$uid,$idemKey,$row['request_digest'],$row['confirmation_ref']])->rowCount();
+            [$orderId,$cancelAt,$uid,$idemKey,$row['request_digest'],$row['confirmation_ref']])->rowCount();
         if ($n !== 1) self::unavailable();
         $stored = $this->one($pdo,'marketplace_order_idempotency',self::IDEM_FIELDS,'`uid` = ? AND `idem_key` = ?',[$uid,$idemKey]);
-        if ($stored === null) self::unavailable(); self::stored($stored,['state'=>1,'order_id'=>$orderId,'post_commit_done'=>0,'cancel_at'=>$row['cancel_at']]);
+        if ($stored === null) self::unavailable(); self::stored($stored,['state'=>1,'order_id'=>$orderId,'post_commit_done'=>0,'cancel_at'=>$cancelAt]);
     }
 
     /** UID is already locked by claim; read the whole committed temporary history. */
@@ -505,7 +507,7 @@ final class MarketplaceOrderDao
         $order = $this->order($pdo,$request['uid'],$request['mer_id'],self::integer($row['order_id'],1,self::INT_MAX),false);
         if (!hash_equals($confirmation,hash('sha256',$order['unique'],true)) || self::decode($order['cart_id']) !== $request['cart_refs']) self::unavailable();
         return ['claimed'=>false,'idem_key'=>$row['idem_key'],'request_digest'=>$digest,'confirmation_ref'=>$confirmation,
-            'request'=>$request,'order'=>$order,'cancel_at'=>self::integer($row['cancel_at'],1,self::UINT_MAX),
+            'request'=>$request,'order'=>$order,'cancel_at'=>self::integer($row['cancel_at'],0,self::UINT_MAX),
             'post_commit_done'=>self::integer($row['post_commit_done'],0,1)];
     }
 

@@ -6,6 +6,8 @@ require __DIR__ . '/lib/harness.php';
 use app\dao\marketplace\order\MarketplaceOrderDao;
 use app\services\marketplace\order\MarketplaceCartSelection;
 use app\services\marketplace\order\MarketplaceOrderInput;
+use app\services\marketplace\order\MarketplaceOrderCustomForm;
+use app\services\marketplace\order\MarketplaceOrderLockedQuote;
 use app\services\order\StoreOrderComputedServices;
 use app\services\order\StoreOrderCreateServices;
 use app\services\order\StoreOrderServices;
@@ -380,32 +382,11 @@ function m4o_main(): int
             $app->make(UserInvoiceServices::class)->checkInvoice((int)$fixture['invoice']['id'],$uid);
             $computed = $app->make(StoreOrderComputedServices::class)->setParamData([])->computedOrder($uid,$user,$group,$addressId,'',false,0,true,1,0,true);
             m4o_expect(m4o_business_pdo($transactionConnection) === $pdo && bccomp($computed['pay_postage'],'0.00',2) > 0,'ACTUAL_LOCKED_SHARED_QUOTE');
-            $byRef = []; foreach ($group['cartInfo'] as $cart) $byRef[(string)$cart['id']] = $cart;
-            $cartInfo = []; foreach ($locked['selection'] as $line) {
-                $cart = $byRef[$line['cart_ref']] ?? null; m4o_expect(is_array($cart),'ACTUAL_QUOTE_CART_REF');
-                $sku = $cart['productInfo']['attrInfo']; $rawSku = $locked['skus'][$line['sku_id']]; $rawRoot = $locked['products'][$line['product_id']];
-                m4o_expect((int)$cart['cart_num'] === $line['qty'] && (int)$cart['productInfo']['id'] === $line['product_id']
-                    && (int)$cart['productInfo']['mer_id'] === $mer && (int)$sku['id'] === $line['sku_id'] && (int)$sku['type'] === 0
-                    && $sku['unique'] === $line['unique'] && $cart['costPrice'] === $rawSku['cost'] && $cart['sum_price'] === $rawSku['price']
-                    && (string)$cart['productInfo']['freight'] === (string)$rawRoot['freight'] && (string)$cart['productInfo']['temp_id'] === (string)$rawRoot['temp_id'], 'LOCKED_QUOTE_IDENTITY_PRICE_FREIGHT');
-                $cart['id'] = $line['cart_ref']; $cartInfo[] = $cart;
-            }
-            $address = $locked['address'];
-            m4o_expect(is_array($address) && array_key_exists('id',$address) && (string)$address['id'] === (string)$addressId
-                && array_key_exists('uid',$address) && (string)$address['uid'] === (string)$uid
-                && array_key_exists('is_del',$address) && (string)$address['is_del'] === '0','ACTUAL_LOCKED_ADDRESS_IDENTITY');
-            m4o_expect(is_array($group['addr'] ?? null),'ACTUAL_QUOTE_ADDRESS_OBJECT');
-            $visibleAddress = array_diff_key($address,['add_time'=>true,'is_del'=>true]);
-            $expectedFields = array_keys($visibleAddress); $actualFields = array_keys($group['addr']);
-            sort($expectedFields,SORT_STRING); sort($actualFields,SORT_STRING);
-            $changedFields = [];
-            foreach ($visibleAddress as $field=>$value) if (array_key_exists($field,$group['addr'])
-                && (string)$group['addr'][$field] !== (string)$value) $changedFields[] = $field;
-            $GLOBALS['m4o_address_projection'] = ['missing_fields'=>array_values(array_diff($expectedFields,$actualFields)),
-                'extra_fields'=>array_values(array_diff($actualFields,$expectedFields)),'changed_fields'=>$changedFields];
-            m4o_expect($actualFields === $expectedFields,'ACTUAL_QUOTE_ADDRESS_KEYS');
-            foreach ($visibleAddress as $field=>$value) m4o_expect(array_key_exists($field,$group['addr'])
-                && (string)$group['addr'][$field] === (string)$value,'ACTUAL_LOCKED_QUOTE_ADDRESS');
+            $GLOBALS['m4o_address_projection'] = MarketplaceOrderLockedQuote::addressProjection($locked['address'],$group['addr'] ?? null);
+            $quote = MarketplaceOrderLockedQuote::verify($uid,$mer,$addressId,$locked,$group,$computed,'m4o_expect');
+            $cartInfo = $quote['cartInfo']; $address = $quote['address'];
+            $customForm = MarketplaceOrderCustomForm::snapshot($frame['custom_form'],$input['request']['options']['custom_form'],
+                $locked['products'],$locked['selection'],$locked['source_kind']);
             $payload = ['uid'=>$uid,'mer_id'=>$mer,'order_id'=>$app->make(StoreOrderCreateServices::class)->getNewOrderId('cp'),
                 'unique'=>$key,'cart_id'=>$locked['cart_refs'],'total_num'=>array_sum(array_column($locked['selection'],'qty')),
                 'total_price'=>$group['priceGroup']['totalPrice'],'total_postage'=>$computed['pay_postage'],'pay_price'=>$computed['pay_price'],
@@ -413,7 +394,7 @@ function m4o_main(): int
                 'real_name'=>$address['real_name'],'user_phone'=>$address['phone'],
                 'user_address'=>$address['province'].' '.$address['city'].' '.$address['district'].' '.$address['detail'],
                 'mark'=>$input['request']['options']['mark'],'gift_mark'=>$input['request']['options']['gift_mark'],'pay_type'=>'','channel_type'=>$user['user_type'],
-                'province'=>'','custom_form'=>$input['request']['options']['custom_form'],'merchant_name_snapshot'=>$locked['merchant']['name'],
+                'province'=>'','custom_form'=>$customForm,'merchant_name_snapshot'=>$locked['merchant']['name'],
                 'merchant_after_sale_contact_snapshot'=>$locked['merchant']['after_sale_contact']];
             $id = $dao->insertOrder($pdo,$payload,$locked['invoice']); $reserves = $dao->reserve($pdo,$uid,$mer,$id,$locked,$now);
             $items = $dao->insertItems($pdo,$uid,$mer,$id,$cartInfo,$reserves); $dao->markCreated($pdo,$uid,$claim['idem_key'],$id,$locked);

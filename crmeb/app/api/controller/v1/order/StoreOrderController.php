@@ -12,6 +12,7 @@ namespace app\api\controller\v1\order;
 
 use app\Request;
 use app\services\marketplace\order\MarketplaceOrderInput;
+use app\services\marketplace\order\MarketplaceOrderCreateServices;
 use app\services\marketplace\order\MarketplaceTradePolicy;
 use app\services\pay\PayServices;
 use app\services\shipping\ExpressServices;
@@ -213,9 +214,13 @@ class StoreOrderController
         if((int)($userInfo['uid']??0)!==$uid)throw new AuthUnavailableException();
         $active=MarketplaceTradePolicy::active();
         $checkOrder=$this->services->getOne(['order_id|unique'=>$key,'uid'=>$uid,'is_del'=>0]);
-        if($checkOrder&&!MarketplaceTradePolicy::savedOrderIsLegacy($checkOrder->toArray()))MarketplaceTradePolicy::guardCreate();
-        if(!$checkOrder&&$active)MarketplaceTradePolicy::guardCreate();
-        if($this->services->hasMarketplaceConfirmation($uid,(string)$key))MarketplaceTradePolicy::guardCreate();
+        if(($checkOrder&&!MarketplaceTradePolicy::savedOrderIsLegacy($checkOrder->toArray()))||(!$checkOrder&&$active)
+            ||$this->services->hasMarketplaceConfirmation($uid,(string)$key)){
+            MarketplaceTradePolicy::guardCreate();
+            $order=app()->make(MarketplaceOrderCreateServices::class)->create($uid,(string)$key,$request->post(false));
+            $orderId=$order['order_id'];
+            return app('json')->status('success','订单创建成功',compact('orderId','key'));
+        }
         if ($checkOrder)
             return app('json')->status('extend_order', '订单已创建，请点击查看完成支付', ['orderId' => $checkOrder['order_id'], 'key' => $key]);
         [$addressId, $couponId, $payType, $useIntegral, $mark, $combinationId, $pinkId, $seckillId, $bargainId, $shipping_type, $real_name, $phone, $storeId, $news, $invoice_id, $advanceId, $customForm, $is_gift, $gift_mark] = $request->postMore([
@@ -522,7 +527,7 @@ class StoreOrderController
         if ($type == 'refund') {
             /** @var StoreOrderRefundServices $refundService */
             $refundService = app()->make(StoreOrderRefundServices::class);
-            $order = $refundService->refundDetail($uni);
+            $order = $refundService->getUserRefundDetail((string)$uni,(int)$request->uid());
             $express = $order['refund_express'];
             $cacheName = $uni . $express;
             $orderInfo = [];

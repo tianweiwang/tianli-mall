@@ -2581,7 +2581,12 @@ HTML;
     {
         $order = $this->getUserOrderDetail($uni, $uid, ['split', 'invoice', 'user']);
         if (!$order) throw new ApiException('商品不存在');
+        $savedCustomForm = $order->getData('custom_form');
         $order = $order->toArray();
+        if(!MarketplaceTradePolicy::savedOrderIsLegacy($order)){
+            if($uid<1 || (string)($order['uid'] ?? '')!==(string)$uid)throw new ApiException('订单不存在');
+            $order['custom_form']=$savedCustomForm;
+        }
         $splitNum = [];
         //是否开启门店自提
         $store_self_mention = sys_config('store_self_mention');
@@ -2751,7 +2756,7 @@ HTML;
             $orderData['gift_code'] = $qrcodeService->getRoutineQrcodePath($order['id'], $order['uid'], 7, ['gift_key' => $orderData['gift_key']]);
         }
         $orderData['avatar'] = set_file_url($orderData['avatar']);
-        return $orderData;
+        return \app\services\marketplace\order\MarketplaceOrderSnapshotProjection::customerOrder($orderData);
     }
 
     /**

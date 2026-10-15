@@ -58,7 +58,7 @@ class StoreOrderRefundController
      */
     public function refundDetail(Request $request, $uni)
     {
-        $orderData = $this->services->refundDetail($uni);
+        $orderData = $this->services->getUserRefundDetail((string)$uni,(int)$request->uid());
         return app('json')->success($orderData);
     }
 

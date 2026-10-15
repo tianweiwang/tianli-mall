@@ -317,8 +317,15 @@ class StoreOrderComputedServices extends BaseServices
                 $store_self_mention = sys_config('store_self_mention') ?? 0;
                 if (!$store_self_mention) $shipping_type = 1;
             }
+            // V1 creation supplies the current value; explicit zero must not fall back to an older cache.
+            $offlineFreePostage = false;
+            if ($shipping_type !== 2 && $payType == 'offline') {
+                $offlineFreePostage = $marketplace && array_key_exists('offlinePostage', $other)
+                    ? $other['offlinePostage'] == 1
+                    : ((isset($other['offlinePostage']) && $other['offlinePostage']) || sys_config('offline_postage')) == 1;
+            }
             //门店自提 || （线下支付 && 线下支付包邮） 没有邮费支付
-            if ($shipping_type === 2 || ($payType == 'offline' && ((isset($other['offlinePostage']) && $other['offlinePostage']) || sys_config('offline_postage')) == 1)) {
+            if ($shipping_type === 2 || $offlineFreePostage) {
                 $payPostage = $marketplace ? '0.00' : 0;
             } else {
                 if (!$postage || !isset($postage['storePostage']) || !isset($postage['storePostageDiscount'])) {

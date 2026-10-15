@@ -1199,6 +1199,23 @@ class StoreOrderRefundServices extends BaseServices
      * @email 442384644@qq.com
      * @date 2023/02/17
      */
+    /** Customer-only saved response. Keep the shared internal/admin refundDetail path separate. */
+    public function getUserRefundDetail(string $uni,int $uid):array
+    {
+        if($uid<1 || !strlen(trim($uni)))throw new ApiException('订单不存在');
+        $owned=$this->dao->get(['order_id'=>$uni,'uid'=>$uid],['id','uid','store_order_id']);
+        if(!$owned)throw new ApiException('订单不存在');
+        $parent=$this->storeOrderServices->get(['id'=>$owned['store_order_id'],'uid'=>$uid]);
+        if(!$parent)throw new ApiException('订单不存在');
+        $parentData=$parent->toArray();
+        $data=$this->refundDetail($uni);
+        if((string)($data['uid'] ?? '')!==(string)$uid
+            || (string)($data['store_order_id'] ?? '')!==(string)$owned['store_order_id'])throw new ApiException('订单不存在');
+        if(\app\services\marketplace\order\MarketplaceTradePolicy::savedOrderIsLegacy($parentData))return $data;
+        $parentData['custom_form']=$parent->getData('custom_form');
+        return \app\services\marketplace\order\MarketplaceOrderSnapshotProjection::customerRefund($data,$parentData);
+    }
+
     public function refundDetail($uni)
     {
         if (!strlen(trim($uni))) throw new ApiException('参数错误');

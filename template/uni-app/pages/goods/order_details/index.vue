@@ -336,7 +336,23 @@
 					</view>
 				</view>
 			</view>
-			<view class="wrapper" v-if="customForm && customForm.length">
+			<view class="wrapper" v-if="savedMarketplaceFormsV1 && savedMarketplaceFormGroups.length">
+				<view class="marketplace-saved-form-product" v-for="group in savedMarketplaceFormGroups"
+					:key="String(group.product_id) + ':' + group.definition_sha256">
+					<view class="item marketplace-saved-form-product-name">{{group.product_name}}</view>
+					<view class="item" v-for="field in group.fields" :key="field.field_index">
+						<view>{{field.field_index + 1}}. {{field.title}}：</view>
+						<view v-if="field.label === 'img'" class="upload">
+							<view class="pictrue" v-for="(image,imageIndex) in field.value" :key="imageIndex">
+								<image :src="image" mode="aspectFit"></image>
+							</view>
+						</view>
+						<view v-else class="marketplace-saved-form-value">{{field.value}}</view>
+					</view>
+				</view>
+				<button class="marketplace-saved-form-copy" @tap="copyText()">{{$t(`复制表单`)}}</button>
+			</view>
+			<view class="wrapper" v-if="!savedMarketplaceFormsV1 && customForm && customForm.length">
 				<view class="item acea-row row-between" v-for="(item, index) in customForm" :key="index">
 					<view class="upload" v-if="item.label == 'img'">
 						<view class="diy-from-title">{{ item.title }}：</view>
@@ -597,6 +613,7 @@ export default {
 		return {
 			imgHost: HTTP_REQUEST_URL,
 			customForm: '', //自定义留言
+			savedMarketplaceFormGroups: [],
 			//二维码参数
 			codeShow: false,
 			cid: '1',
@@ -701,7 +718,13 @@ export default {
 			mpGiftImg: HTTP_REQUEST_URL + '/statics/images/gift_share.jpg'
 		};
 	},
-	computed: mapGetters(['isLogin']),
+	computed: {
+		...mapGetters(['isLogin']),
+		savedMarketplaceFormsV1() {
+			const version = this.orderInfo.marketplace_trade_version;
+			return version === 1 || version === '1';
+		}
+	},
 	onLoad: function (options) {
 		if (options.order_id) {
 			this.$set(this, 'order_id', options.order_id);
@@ -990,14 +1013,7 @@ export default {
 					let _type = res.data._status._type;
 					uni.hideLoading();
 					that.$set(that, 'orderInfo', res.data);
-					//处理自定义留言非必填项的数据展示
-					let arr = [];
-					that.orderInfo.custom_form.map((i) => {
-						if (i.value != '') {
-							arr.push(i);
-						}
-					});
-					that.$set(that, 'customForm', arr);
+					that.applySavedCustomForm(that.orderInfo);
 					that.$set(that, 'cartInfo', res.data.cartInfo);
 					that.$set(that, 'pid', res.data.pid);
 					that.$set(that, 'split', res.data.split);
@@ -1192,10 +1208,53 @@ export default {
 			});
 		},
 		// #endif
+		applySavedCustomForm(order) {
+			this.customForm = [];
+			this.savedMarketplaceFormGroups = [];
+			const version = order.marketplace_trade_version;
+			if (version === 1 || version === '1') {
+				// This is a saved public snapshot, not editable definitions. Keep its original hash and indexes.
+				const labels = ['text', 'number', 'email', 'data', 'time', 'id', 'phone', 'img'];
+				if (!Array.isArray(order.custom_form)) throw new Error(this.$t(`订单表单信息不完整`));
+				this.savedMarketplaceFormGroups = order.custom_form.map(group => {
+					if (!group || !/^[1-9][0-9]*$/.test(String(group.product_id)) || typeof group.product_name !== 'string' ||
+						typeof group.definition_sha256 !== 'string' || !/^[0-9a-f]{64}$/.test(group.definition_sha256) ||
+						!Array.isArray(group.fields)) throw new Error(this.$t(`订单表单信息不完整`));
+					const fields = group.fields.map(field => {
+						if (!field || typeof field.field_index !== 'number' || field.field_index % 1 !== 0 ||
+							field.field_index < 0 || field.field_index > 9 || typeof field.title !== 'string' ||
+							!labels.includes(field.label) || typeof field.status !== 'boolean' ||
+							(field.label === 'img' ? !Array.isArray(field.value) || field.value.some(image => typeof image !== 'string') :
+								typeof field.value !== 'string')) throw new Error(this.$t(`订单表单信息不完整`));
+						return {field_index: field.field_index, title: field.title, label: field.label, status: field.status,
+							value: Array.isArray(field.value) ? field.value.slice() : field.value};
+					}).filter(field => field.value !== '' && !(Array.isArray(field.value) && field.value.length === 0));
+					return {product_id: group.product_id, product_name: group.product_name,
+						definition_sha256: group.definition_sha256, fields};
+				}).filter(group => group.fields.length);
+				return;
+			}
+			if (version !== undefined && version !== null && version !== 0 && version !== '0') {
+				throw new Error(this.$t(`订单表单版本暂不可用`));
+			}
+			// Retain the historical flat display rule and copy path.
+			let arr = [];
+			order.custom_form.map((i) => {
+				if (i.value != '') arr.push(i);
+			});
+			this.customForm = arr;
+		},
+		savedMarketplaceFormText() {
+			return this.savedMarketplaceFormGroups.map(group => group.product_name + '\n' + group.fields.map(field =>
+				(field.field_index + 1) + '. ' + field.title + '：' +
+				(Array.isArray(field.value) ? field.value.join('\n') : field.value)).join('\n')).join('\n\n');
+		},
 		copyText(text) {
 			let str = '';
 			if (text) {
 				str = text;
+			} else if (this.savedMarketplaceFormsV1) {
+				str = this.savedMarketplaceFormText();
 			} else {
 				this.customForm.map((e) => {
 					if (e.label !== 'img') {
@@ -2441,6 +2500,47 @@ export default {
 	border: 0.5px solid #666;
 	padding: 1px 7px;
 	margin-left: auto;
+}
+
+.marketplace-saved-form-product + .marketplace-saved-form-product {
+	border-top: 1rpx solid #eee;
+	margin-top: 28rpx;
+	padding-top: 28rpx;
+}
+
+.marketplace-saved-form-product-name {
+	font-weight: 600;
+	word-break: break-all;
+}
+
+.marketplace-saved-form-value {
+	color: #868686;
+	word-break: break-all;
+	white-space: pre-wrap;
+}
+
+.marketplace-saved-form-copy {
+	box-sizing: border-box;
+	width: 100%;
+	max-width: 100%;
+	min-height: 64rpx;
+	margin: 24rpx 0 0;
+	padding: 10rpx 20rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	font-family: inherit;
+	font-size: 26rpx;
+	line-height: 1.4;
+	color: #333;
+	background-color: #fff;
+	border: 1rpx solid #666;
+	border-radius: 3rpx;
+}
+
+.marketplace-saved-form-copy::after {
+	border: 0;
 }
 
 .upload .pictrue {
