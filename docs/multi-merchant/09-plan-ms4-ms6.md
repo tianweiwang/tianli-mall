@@ -290,7 +290,15 @@ MS5 Task2只增加 `crmeb/services/pay/marketplace/` 下PaymentAdapter/PaymentAc
 
 取消普通验证源码已固定：新helper摘要 `835c6dd77e4ce5556258436ebe6f9fa8ffd8ad44cf1465d0939a764500130c77`，真实第二顾客顺序购买同物理SKU后，按独立当前库存加回本次reserve数量，完整核对五类可变业务表及其余观察事实、真实父U64、动作摘要、首次演员、状态、原保存项/金额/表单/发票/ledger与正常重放；另核保存0期限跳过、真实正小数小时新单自然到期及商家停用后原handler释放。两次实际attempt保持同App测试范围，无paid或财务写。普通CLI摘要 `d54c327b3372db3155b3d61952108cebf9932ebb424d953754098605253ed11a`，真实环境收据/进程开关闭集核对通过独立源码审，tiny仅新增独立phase名称，原PDO观察不被同名覆盖。最终CLI/helper两文件PHP8.2语法实际exit0，前后源码不变，收据摘要 `18c504e79545319c5f4a6f19442c0b5cd7c3bf5f982d726ad90eda272ac7b1d5`；加上前19个未变生产源，共21文件。外部final准备只增严格取消proof并保留全部原创建/会员/读取/持久收尾断言，完整逆变换、AST/help为源码检查，不表示已运行普通取消。
 
+**取消普通内部实测结果（2026-10-15）：** clean来源 `1a1de7daf2adf10077b6d9b9da0810aad2730251`、新Run `202610150441573d0e33`、freeze摘要 `dd6535a0a13013b6bb2e59a2eb65d8a9ed16b14de68d2f2d758f7473d36eb3bc`；有限初始化六子步骤、四次迁移检查及订单CLI均实际exit0。订单CLI phase=final_source、VERIFIED_NORMAL_ORDER_INTERNAL，业务收据摘要 `b253756f5c569dfea19f41d5bcdecf4c6101697a99467e32bef3d68dbcfbdb4c`。原direct/两来源创建/两类既有会员计价/保存读取/持久收尾证明全保留通过；两新实际订单分别为另一原生顾客同SKU购买1件与正小数小时自然到期新单。真实顾客取消与既有orderCancel handler系统取消均各生成2条父reserve release、3保存项血缘完整、当前库存按本单数量加回、金额/表单/发票/cart/ledger与其余观察事实保持，正常重放无额外写；另一单1件预留始终保留，不能历史before绝对回填。保存0期限真实返回not_due且无写；创建后商家停用不阻止到期释放。两个同App测试attempt真实pending→closed、保存paid保持0，无成功支付或财务记录。
+
+同Run关闭已实际完成：原cleanup helper实际exit0后按原ID移除；固定final关闭工具摘要 `e50c518c91b4c06d6852f273ecac5b40f16d59f8f8905ce4590c1661be0afc6b` 严格核完整普通证明及环境绑定，原MySQL/Redis正常stop，原3容器/唯一内部网络/6卷按原身份非force移除。Root独立复核源摘要 `954aa1dd725566e9658dfbe4ec188210bd111f17decd403a21724620916bc707` 实际6条双标签原生查询exit0/stderr空/count0，业务收据摘要未变。环境公开两值均由原生created容器核对并绑定同Run/source/CID/freeze。此结果限NORMAL_CANCEL_INTERNAL_TEST_DRIVER_ONLY及原普通内部链，不能据此完成Task5全部、MS4或MS5；HTTP/真实认证/DOM、真实支付/退款、跨进程attempt、wallclock daemon及用户停止的样本仍NOT RUN，创建gate仍关闭。两实现提交为 `cf285465c`（03环境说明）与上述 `1a1de7daf`（21PHP/09），均仅本地。
+
 ### Task 6: 商家订单操作
+
+2026-10-15只读盘点（尚未实施）：当前merchantapi与商家前端均无订单路由、页面或上述三项订单权限。后续读取须沿真实MerchantContext与EmployeeAuthServices重新授权，DAO强制同店保存V1订单和其保存项；新增独立商家投影，不能直接返回顾客/平台DTO。列表不含收货联系方式、表单或自由文本备注；详情只增履约必要保存收货快照、顾客留言和原定义表单，排除成本、支付标识、发票银行资料及内部ledger/reserve。成交单价、商品行金额和整行运费分别沿保存truePrice/sum_true_price/postage_price，不从当前SKU重新计价。商家端现有默认品牌已为“多商户商城”。
+
+原delivery/splitDelivery/doDelivery已保护保存V1，旧equalSplit含float金额与旧pid/split语义，不能松开门禁直接套用。部分发货仍需先闭合稳定付款根、履约子单、同店归属、精确分币、真实原reserve及退款血缘、持久幂等与三端list/count不重复统计合同；当前仅盘点设计，未选择或实现该拆单结构。现无独立包裹表，是否需要额外结构须先以完整合同评估。真实paid写链尚未实现，不能伪改paid来验收发货；发货、拆单、售后与完整Task6责任均保留。
 
 **Interfaces:**
 - Produces: merchantapi 订单列表、详情（只含履约所需的收货快照）、发货（数量不超过未发货数量）、售后处理；权限码新增 `order.read`、`order.ship`、`aftersale.handle`（加入 `MerchantPermissions`）。
