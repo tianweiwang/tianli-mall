@@ -42,6 +42,8 @@
 
 - 2026-10-12 MS0b Task8普通下载检查：依据05计划同一调用点设计，app/runner共用本RUN新建的`backup-output`命名卷，挂载真实生产者固定的`/workspace/crmeb/backup`写入路径；不复制宿主或业务备份。源码/vendor继续只读，内部网络/无宿主端口/DML账号和全部启动保护保持。卷沿实际标签进入manifest，并由既有teardown精确清理；文件生产、内容和最终清理分别记录。此项只用于正常CRUD/备份下载，停止的复现、负向和故障验证不恢复。
 
+MS4取消与MS5 Task2普通内部测试适配：仅新建的专用普通订单角色声明公开非敏感 APP_ENV=testing、PHP_MARKETPLACE_PAYMENT_TEST_ENABLED=true，运行时核真实getenv和Think配置strict bool；不通过helper临时设置Env/开关。该角色仍为原三角色协议中的只读源码/DML App/唯一内部网络/六个新卷/无宿主端口、无Docker socket；不更改原MS0a/MS0b角色或已关闭Run。新准备版本在实际容器created后用原生inspect只筛出这两个精确公开ENV值，保存同Run/source/CID/freeze绑定收据；该环境核对不导出完整ENV、不读取MySQL/root或私有卷值。入口同时校验原生收据及真实进程值，完整源码闭集包含新普通helper。TestDriver仅同App进程内pending→closed且不写paid/财务表；此结果不是HTTP/WORKER、跨进程attempt、真实渠道/退款或daemon验收。旧环境、正常关闭、独立六项零残留及已停止样本NOT RUN要求不变。
+
 §3 中的 127.0.0.1、宿主 PHP 与凭据文件位置适用于 ISO-MIN；本节是 ISO-FULL 的等效约束，不取消其他启动保护。新增 `run.sh` 属于本次批准的启动脚本范围。
 
 ## 3. ISO-MIN 环境（MS0a 交付）
