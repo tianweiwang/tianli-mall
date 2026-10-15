@@ -1216,6 +1216,22 @@ class StoreOrderRefundServices extends BaseServices
         return \app\services\marketplace\order\MarketplaceOrderSnapshotProjection::customerRefund($data,$parentData);
     }
 
+    /** Read-only platform endpoint adapter; existing administrator/role middleware remains authoritative. */
+    public function getPlatformRefundDetail(string $uni):array
+    {
+        $refund=$this->dao->get(['order_id'=>$uni],['id','store_order_id']);
+        if(!$refund)throw new ApiException('订单不存在');
+        $parent=$this->storeOrderServices->get($refund['store_order_id']);
+        if(!$parent)throw new ApiException('订单不存在');
+        $data=$this->refundDetail($uni);
+        if((string)($data['id'] ?? '')!==(string)$refund['id']
+            ||(string)($data['store_order_id'] ?? '')!==(string)$refund['store_order_id'])throw new ApiException('订单不存在');
+        $parentData=$parent->toArray();
+        if(\app\services\marketplace\order\MarketplaceTradePolicy::savedOrderIsLegacy($parentData))return $data;
+        $parentData['custom_form']=$parent->getData('custom_form');
+        return \app\services\marketplace\order\MarketplaceOrderSnapshotProjection::platformRefund($data,$parentData);
+    }
+
     public function refundDetail($uni)
     {
         if (!strlen(trim($uni))) throw new ApiException('参数错误');

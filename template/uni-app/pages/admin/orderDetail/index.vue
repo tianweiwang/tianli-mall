@@ -19,7 +19,7 @@
         <view class="state">{{ title }}</view>
         <view
           v-if="
-            orderInfo.status == 0 &&
+            !savedMarketplaceV1 && orderInfo.status == 0 &&
             orderInfo.paid == 0 &&
             orderInfo.pay_type != 'offline'
           "
@@ -53,7 +53,7 @@
       <view
         class="remarks acea-row row-middle"
         @click="modify('1')"
-        v-if="goname != 'looks'"
+        v-if="!savedMarketplaceV1 && goname != 'looks'"
       >
         <text class="iconfont icon-ic_notes"></text>
         <view class="p-20 flex-1 fs-28 flex-y-center">{{
@@ -87,7 +87,11 @@
           <image src="/static/images/line.jpg" />
         </view>
       </view>
-      <view class="acea-row row-middle user-box">
+      <view class="wrapper" v-if="savedMarketplaceV1">
+        <view>已保存订单，仅供本人只读查看</view>
+        <view v-if="orderInfo.remark">备注：{{orderInfo.remark}}</view>
+      </view>
+      <view class="acea-row row-middle user-box" v-if="!savedMarketplaceV1">
         <image :src="userInfo.avatar" class="image"></image>
         <view class="text">
           <view class="acea-row row-middle name">
@@ -242,7 +246,7 @@
             </view>
           </view>
         </navigator>
-        <view class="giveGoods">
+        <view class="giveGoods" v-if="!savedMarketplaceV1">
           <view
             class="item acea-row row-between-wrapper"
             v-for="(item, index) in giveCartInfo"
@@ -326,7 +330,7 @@
           <view class="conter">{{ orderInfo.virtual_info }}</view>
         </view>
       </view>
-      <customForm :customForm="orderInfo.custom_form"></customForm>
+      <customForm :customForm="orderInfo.custom_form" :tradeVersion="orderInfo.marketplace_trade_version"></customForm>
       <view class="wrapper">
         <view class="item acea-row row-between">
           <view>订单编号</view>
@@ -437,8 +441,8 @@
       </view>
       <view class="wrapper">
         <view class="item acea-row row-between">
-          <view>商品总价</view>
-          <view class="conter" v-if="statusType == -3">
+          <view>{{savedMarketplaceV1 ? '商品金额' : '商品总价'}}</view>
+          <view class="conter" v-if="savedMarketplaceV1 || statusType == -3">
             ￥{{ orderInfo.total_price }}</view
           >
           <view class="conter" v-else>
@@ -458,7 +462,7 @@
           <view class="conter">￥{{ orderInfo.pay_postage }}</view>
         </view>
         <view
-          v-if="orderInfo.vip_true_price > 0"
+          v-if="!savedMarketplaceV1 && orderInfo.vip_true_price > 0"
           class="item acea-row row-between"
         >
           <view>会员商品优惠</view>
@@ -518,7 +522,7 @@
       <view class="height-add"></view>
       <view
         class="footer acea-row row-right row-middle"
-        v-if="goname != 'looks'"
+        v-if="!savedMarketplaceV1 && goname != 'looks'"
       >
         <view class="more"></view>
         <view class="bnt cancel" @click="modify('0')" v-if="types == 0">
@@ -590,6 +594,7 @@
         >
       </view>
       <PriceChange
+        v-if="!savedMarketplaceV1"
         :change="change"
         :orderInfo="orderInfo"
         :isRefund="isRefund"
@@ -599,8 +604,8 @@
         :status="status"
       ></PriceChange>
     </view>
-    <view v-if="confirmShow" class="mask"></view>
-    <view v-if="confirmShow" class="confirm-popup">
+    <view v-if="!savedMarketplaceV1 && confirmShow" class="mask"></view>
+    <view v-if="!savedMarketplaceV1 && confirmShow" class="confirm-popup">
       <view class="title">确认付款</view>
       <view class="info">确认该订单用户已付款</view>
       <view class="acea-row btn-box">
@@ -685,6 +690,7 @@ export default {
     },
   },
   computed: {
+    savedMarketplaceV1() { return this.orderInfo.marketplace_trade_version===1 || this.orderInfo.marketplace_trade_version==='1'; },
     identity() {
       return this.$store.state.app.identity;
     },
@@ -712,6 +718,7 @@ export default {
   },
   methods: {
     verify() {
+      if(this.savedMarketplaceV1)return;
       uni.showModal({
         title: '操作提示',
         content: '是否确认核销该订单？',
@@ -742,6 +749,7 @@ export default {
       });
     },
     goDelivery(orderInfo) {
+      if(this.savedMarketplaceV1)return;
       uni.navigateTo({
         url:
           "/pages/admin/delivery/index?id=" +
@@ -765,9 +773,11 @@ export default {
       });
     },
     more: function () {
+      if(this.savedMarketplaceV1)return;
       this.order = !this.order;
     },
     modify(status, type) {
+      if(this.savedMarketplaceV1)return;
       this.change = true;
       this.status = status;
       if (status == 2) {
@@ -791,8 +801,7 @@ export default {
           that.types = res.data._status._type;
           that.title = res.data._status._title;
           that.payType = res.data._status._payType;
-          that.giveData.give_coupon = res.data.give_coupon;
-          that.giveData.give_integral = res.data.give_integral;
+          that.applyOrderBenefits(res.data);
           let cartObj = [],
             giftObj = [];
           res.data.cartInfo.forEach((item, index) => {
@@ -815,7 +824,16 @@ export default {
           });
         });
     },
+    applyOrderBenefits(data) {
+      if(data.marketplace_trade_version===1 || data.marketplace_trade_version==='1'){
+        // Reset only the unsupported legacy widget; do not invent saved-order benefits.
+        this.giveData={give_coupon:[],give_integral:0};return;
+      }
+      this.giveData.give_coupon=data.give_coupon;
+      this.giveData.give_integral=data.give_integral;
+    },
     objOrderRefund(data) {
+      if(this.savedMarketplaceV1)return;
       let that = this;
       setOrderRefund(data).then(
         (res) => {
@@ -834,6 +852,7 @@ export default {
       );
     },
     async savePrice(opt) {
+      if(this.savedMarketplaceV1)return;
       let that = this,
         data = {},
         price = opt.price,
@@ -930,6 +949,7 @@ export default {
       }
     },
     offlinePay: function () {
+      if(this.savedMarketplaceV1)return;
       setOfflinePay({
         order_id: this.orderInfo.order_id,
       }).then(
@@ -954,6 +974,7 @@ export default {
       });
     },
     getUserInfo() {
+      if(this.savedMarketplaceV1){this.userInfo={};return;}
       getUserInfo(this.orderInfo.uid).then((res) => {
         this.userInfo = res.data;
       });

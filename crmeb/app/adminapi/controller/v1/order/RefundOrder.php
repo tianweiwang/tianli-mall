@@ -67,10 +67,16 @@ class RefundOrder extends AuthController
      */
     public function getRefundInfo($uni)
     {
-        $data['orderInfo'] = $this->services->refundDetail($uni);
+        $data['orderInfo'] = $this->services->getPlatformRefundDetail((string)$uni);
         /** @var UserServices $userServices */
         $userServices = app()->make(UserServices::class);
-        $data['userInfo'] = $userServices->get($data['orderInfo']['uid']);
+        if(\app\services\marketplace\order\MarketplaceTradePolicy::savedOrderIsLegacy($data['orderInfo'])){
+            $data['userInfo'] = $userServices->get($data['orderInfo']['uid']);
+        }else{
+            $refund=$this->services->get(['order_id'=>$uni],['uid']);
+            if(!$refund)return app('json')->fail('订单不存在');
+            $data['userInfo']=['real_name'=>$userServices->value(['uid'=>$refund['uid']],'real_name')];
+        }
         return app('json')->success($data);
     }
 

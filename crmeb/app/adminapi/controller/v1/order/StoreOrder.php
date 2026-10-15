@@ -554,10 +554,13 @@ class StoreOrder extends AuthController
         if (!$id || !($orderInfo = $this->services->get($id, [], ['refund', 'invoice']))) {
             return app('json')->fail('订单不存在');
         }
+        $savedCustomForm=$orderInfo->getData('custom_form');
+        $legacy=\app\services\marketplace\order\MarketplaceTradePolicy::savedOrderIsLegacy($orderInfo->toArray());
         /** @var UserServices $services */
         $services = app()->make(UserServices::class);
-        $userInfo = $services->get($orderInfo['uid']);
+        $userInfo = $legacy ? $services->get($orderInfo['uid']) : $services->get($orderInfo['uid'],['real_name']);
         if (!$userInfo) return app('json')->fail('用户信息不存在');
+        if($legacy){
         $userInfo = $userInfo->hidden(['pwd', 'add_ip', 'last_ip', 'login_type']);
         $userInfo['spread_name'] = '无';
         if ($userInfo['spread_uid']) {
@@ -570,8 +573,10 @@ class StoreOrder extends AuthController
         } else {
             $userInfo['spread_uid'] = '';
         }
+        }
 
         $orderInfo = $this->services->tidyOrder($orderInfo->toArray(), true, true);
+        if(!$legacy)$orderInfo['custom_form']=$savedCustomForm;
         //核算优惠金额
         $vipTruePrice = $levelPrice = $memberPrice = 0;
         foreach ($orderInfo['cartInfo'] as $cart) {
@@ -589,7 +594,7 @@ class StoreOrder extends AuthController
             $orderInfo['_store_name'] = $storeServices->value(['id' => $orderInfo['store_id']], 'name');
         } else
             $orderInfo['_store_name'] = '';
-        $orderInfo['spread_name'] = $services->value(['uid' => $orderInfo['spread_uid']], 'nickname') ?? '无';
+        if($legacy)$orderInfo['spread_name'] = $services->value(['uid' => $orderInfo['spread_uid']], 'nickname') ?? '无';
         $orderInfo['_info'] = app()->make(StoreOrderCartInfoServices::class)->getOrderCartInfo((int)$orderInfo['id']);
         $cart_num = 0;
         $refund_num = array_sum(array_column($orderInfo['refund'], 'refund_num'));
@@ -597,7 +602,8 @@ class StoreOrder extends AuthController
             $cart_num += $items['cart_info']['cart_num'];
         }
         $orderInfo['is_all_refund'] = $refund_num == $cart_num;
-        $userInfo = $userInfo->toArray();
+        $userInfo = $legacy ? $userInfo->toArray() : ['real_name'=>$userInfo['real_name']];
+        if(!$legacy)$orderInfo=\app\services\marketplace\order\MarketplaceOrderSnapshotProjection::platformOrder($orderInfo);
         return app('json')->success(compact('orderInfo', 'userInfo'));
     }
 

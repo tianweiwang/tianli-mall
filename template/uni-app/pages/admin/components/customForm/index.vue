@@ -1,6 +1,20 @@
 <template>
+	<view>
+		<view class="wrapper card" v-if="savedMarketplaceV1 && savedGroups.length">
+			<view class="saved-product" v-for="group in savedGroups" :key="String(group.product_id)+':'+group.definition_sha256">
+				<view class="saved-product-name">{{group.product_name}}</view>
+				<view class="saved-field" v-for="field in group.fields" :key="field.field_index">
+					<view class="saved-title">{{field.field_index+1}}. {{field.title}}：</view>
+					<view v-if="field.label==='img'" class="saved-images">
+						<image v-for="(image,index) in field.value" :key="index" :src="image" mode="aspectFill"
+							@click="previewSavedImages(field.value,index)"></image>
+					</view>
+					<view v-else class="saved-value">{{field.value}}</view>
+				</view>
+			</view>
+		</view>
 	<!-- 自定义组件 -->
-	<view class='wrapper card' v-if="customForm && customForm.length && isShow">
+	<view class='wrapper card' v-if="!savedMarketplaceV1 && customForm && customForm.length && isShow">
 		<view class='item acea-row row-between' v-for="(item,index) in customForm" :key="index" v-if="(item.value && ['uploadPicture','dateranges'].indexOf(item.name) == -1) || (item.value.length && ['uploadPicture','dateranges'].indexOf(item.name) != -1)">
 			<view class="title">{{item.titleConfig.value}}：</view>
 			<view v-if="item.name == 'uploadPicture'" class='conter'>
@@ -15,15 +29,28 @@
 		</view>
 		<slot name="bottom"></slot>
 	</view>
+	</view>
 </template>
 
 <script>
 	export default {
 		name: 'customForm',
 		props: {
+			tradeVersion: {type: [Number,String], default: 0},
 			customForm:{
 				type: Array,
 				default: () => []
+			}
+		},
+		computed: {
+			savedMarketplaceV1() { return this.tradeVersion===1 || this.tradeVersion==='1'; },
+			savedGroups() {
+				if(!this.savedMarketplaceV1)return [];
+				return this.customForm.map(group => ({product_id:group.product_id,product_name:group.product_name,
+					definition_sha256:group.definition_sha256,fields:group.fields.map(field => ({field_index:field.field_index,
+						title:field.title,label:field.label,status:field.status,value:Array.isArray(field.value)?field.value.slice():field.value}))
+						.filter(field => field.value!=='' && !(Array.isArray(field.value)&&field.value.length===0))}))
+					.filter(group => group.fields.length);
 			}
 		},
 		data() {
@@ -45,6 +72,7 @@
 		created() {},
 		mounted() {},
 		methods: {
+			previewSavedImages(images,index) { uni.previewImage({urls:images.slice(),current:images[index]}); },
 			getCustomForm: function(index,indexn) {
 				uni.previewImage({
 					urls: this.customForm[index].value,
@@ -56,6 +84,13 @@
 </script>
 
 <style lang="scss">
+	.saved-product + .saved-product { margin-top: 24rpx; }
+	.saved-product-name { font-weight: bold; margin-bottom: 16rpx; overflow-wrap: anywhere; }
+	.saved-field { margin-top: 16rpx; font-size: 28rpx; }
+	.saved-title,.saved-value { white-space: pre-wrap; overflow-wrap: anywhere; }
+	.saved-value { margin-top: 8rpx; color: #666; }
+	.saved-images { display: flex; flex-wrap: wrap; gap: 12rpx; margin-top: 8rpx; }
+	.saved-images image { width: 100rpx; height: 100rpx; border-radius: 6rpx; }
 	.wrapper{
 		    background-color: #fff;
 		    margin-top: 6px;

@@ -15,14 +15,18 @@
 					订单号：{{ orderInfo.store_order_sn }}
 				</view>
 			</view>
-			<view class="remarks acea-row row-middle  h-100" v-if="goname != 'looks'" @click="modify('1')">
+			<view class="remarks acea-row row-middle  h-100" v-if="!savedMarketplaceV1 && goname != 'looks'" @click="modify('1')">
 				<text class="iconfont icon-ic_notes mr-10"></text>
 				<text class="line1" style="text-align: left;">{{ orderInfo.remark ? orderInfo.remark : '订单未备注，点击添加备注信息' }}</text>
 			</view>
 			<!-- <view class="orderingUser acea-row row-middle" v-if="orderInfo.nickname">
 				<span class="iconfont icon-yonghu2"></span>{{ orderInfo.nickname }}
 			</view> -->
-			<view class="acea-row row-middle user-box">
+			<view class="wrapper" v-if="savedMarketplaceV1">
+				<view>已保存退款，仅供本人只读查看</view>
+				<view v-if="orderInfo.remark">备注：{{orderInfo.remark}}</view>
+			</view>
+			<view class="acea-row row-middle user-box" v-if="!savedMarketplaceV1">
 				<image :src="userInfo.avatar" class="image"></image>
 				<view class="text">
 					<view class="acea-row row-middle name">
@@ -88,7 +92,7 @@
 						</view>
 					</view>
 				</navigator>
-				<view class="giveGoods">
+				<view class="giveGoods" v-if="!savedMarketplaceV1">
 					<view class="item acea-row row-between-wrapper" v-for="(item,index) in giveCartInfo" :key="index">
 						<view class="picTxt acea-row row-middle">
 							<view class="pictrue">
@@ -146,7 +150,7 @@
 					<view class='conter'>{{orderInfo.refund_num}}</view>
 				</view>
 			</view>
-			<customForm :customForm="orderInfo.custom_form"></customForm>
+				<customForm :customForm="orderInfo.custom_form" :tradeVersion="orderInfo.marketplace_trade_version"></customForm>
 			<view class="wrapper">
 				<view class="item acea-row row-between">
 					<view>订单编号：</view>
@@ -248,7 +252,7 @@
 				</view>
 			</view>
 			<view class="height-add"></view>
-			<view class="footer acea-row row-right row-middle" v-if="goname != 'looks'">
+			<view class="footer acea-row row-right row-middle" v-if="!savedMarketplaceV1 && goname != 'looks'">
 				<view class="more"></view>
 				<view class="btn cancel" @click="modify('1')">订单备注</view>
 				<view class="btn delivery" v-if="orderInfo.refund_type == 1" @click="modify('2',1)">退款审核</view>
@@ -256,7 +260,7 @@
 				<view class="btn" v-if="orderInfo.refund_type == 5" @click="goLogistics(orderInfo)">查看物流</view>
 				<view class="btn delivery" v-if="orderInfo.refund_type == 5" @click="modify('2',1)">确认收货</view>
 			</view>
-			<PriceChange :change="change" :orderInfo="orderInfo" :isRefund="isRefund" @closechange="changeclose" @savePrice="savePrice" :status="status">
+			<PriceChange v-if="!savedMarketplaceV1" :change="change" :orderInfo="orderInfo" :isRefund="isRefund" @closechange="changeclose" @savePrice="savePrice" :status="status">
 			</PriceChange>
 		</view>
 	</view>
@@ -323,6 +327,9 @@
 				userInfo: {},
 			};
 		},
+		computed: {
+			savedMarketplaceV1() { return this.orderInfo.marketplace_trade_version===1 || this.orderInfo.marketplace_trade_version==='1'; }
+		},
 		watch: {
 			"$route.params.oid": function(newVal) {
 				let that = this;
@@ -358,6 +365,7 @@
 				})
 			},
 			goDelivery(orderInfo) {
+				if(this.savedMarketplaceV1)return;
 				if (this.openErp) return
 				uni.navigateTo({
 					url: '/pages/admin/delivery/index?id=' + orderInfo.order_id + '&listId=' + orderInfo.id + '&totalNum=' + orderInfo.total_num + '&orderStatus=' + orderInfo.status +
@@ -380,9 +388,11 @@
 				});
 			},
 			more() {
+				if(this.savedMarketplaceV1)return;
 				this.order = !this.order;
 			},
 			modify(status, type) {
+				if(this.savedMarketplaceV1)return;
 				this.change = true;
 				this.status = status;
 				if (status == 2) {
@@ -405,8 +415,7 @@
 					that.types = res.data._status._type;
 					that.title = res.data._status._title;
 					that.payType = res.data._status._payType;
-					that.giveData.give_coupon = res.data.give_coupon;
-					that.giveData.give_integral = res.data.give_integral;
+					that.applyOrderBenefits(res.data);
 					let cartObj = [],
 						giftObj = [];
 					res.data.cartInfo.forEach((item, index) => {
@@ -428,7 +437,16 @@
 					});
 				})
 			},
+			applyOrderBenefits(data) {
+				if(data.marketplace_trade_version===1 || data.marketplace_trade_version==='1'){
+					// Reset only the unsupported legacy widget; do not invent saved-order benefits.
+					this.giveData={give_coupon:[],give_integral:0};return;
+				}
+				this.giveData.give_coupon=data.give_coupon;
+				this.giveData.give_integral=data.give_integral;
+			},
 			objOrderRefund(data) {
+				if(this.savedMarketplaceV1)return;
 				let that = this;
 				setOrderRefund(data).then(
 					res => {
@@ -447,6 +465,7 @@
 				);
 			},
 			async savePrice(opt) {
+				if(this.savedMarketplaceV1)return;
 				let that = this,
 					data = {},
 					price = opt.price,
@@ -546,6 +565,7 @@
 				}
 			},
 			offlinePay: function() {
+				if(this.savedMarketplaceV1)return;
 				if (this.openErp) return
 				setOfflinePay({
 					order_id: this.orderInfo.order_id
@@ -582,6 +602,7 @@
 			},
 			// #endif
 			getUserInfo() {
+				if(this.savedMarketplaceV1){this.userInfo={};return;}
 				getUserInfo(this.orderInfo.uid).then(res => {
 					this.userInfo = res.data;
 				});

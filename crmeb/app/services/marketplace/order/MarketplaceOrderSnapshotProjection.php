@@ -82,6 +82,32 @@ final class MarketplaceOrderSnapshotProjection
         return self::customerOrder($refund);
     }
 
+    /** Existing platform order-read authorization belongs to the endpoint, never to this pure projection. */
+    public static function platformOrder(array $saved):array
+    {
+        if(MarketplaceTradePolicy::savedOrderIsLegacy($saved))return $saved;
+        $out=self::customerOrder($saved);
+        if(array_key_exists('is_all_refund',$saved))$out+=self::scalars($saved,['is_all_refund']);
+        if(array_key_exists('refunded_price',$saved))$out['refunded_price']=self::money($saved['refunded_price']);
+        if(array_key_exists('refund',$saved)){
+            $out['refund']=[];
+            foreach(self::list($saved['refund']) as $refund){
+                $refund=self::row($refund);
+                $summary=self::scalars($refund,['id','order_id','store_order_id','refund_type','refund_num','is_cancel','add_time']);
+                if(array_key_exists('refund_price',$refund))$summary['refund_price']=self::money($refund['refund_price']);
+                $out['refund'][]=$summary;
+            }
+        }
+        // No _info, raw refund cart JSON, costs or unsupported brokerage fields leave this DTO.
+        return $out;
+    }
+
+    /** Parent and refund are actual saved rows read by the platform-authorized caller. */
+    public static function platformRefund(array $refund,array $parent):array
+    {
+        return self::customerRefund($refund,$parent);
+    }
+
     /** Display saved answers; hash is an opaque original-definition marker, NEVER rehashed over filled values. */
     public static function customForms(mixed $raw,?array $productIds=null):array
     {

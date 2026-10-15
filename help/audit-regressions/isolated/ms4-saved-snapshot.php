@@ -60,5 +60,17 @@ $check(Saved::customerOrder($legacy)===$legacy);
 $check(Saved::customerRefund($legacy,['marketplace_trade_version'=>0])===$legacy);
 $check(Saved::customForms('[]')===[]);
 $check(json_decode(json_encode($out,JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR),true,32,JSON_THROW_ON_ERROR)===$out);
+$platform=$raw+['cart_info'=>$raw['cartInfo'],'is_all_refund'=>false,'refunded_price'=>'0.00','one_brokerage'=>'3.21',
+    'refund'=>[['id'=>29,'order_id'=>'saved-refund','store_order_id'=>19,'refund_type'=>1,'refund_num'=>1,'refund_price'=>'12.34',
+        'cart_info'=>[$cart(7,'18446744073709551615','原商品甲')],'cost'=>'private']]];
+$platformBefore=serialize($platform);$staff=Saved::platformOrder($platform);
+$check($staff['is_all_refund']===false && $staff['refunded_price']==='0.00');
+$check($staff['cartInfo']===$staff['cart_info'] && $staff['cartInfo']===$staff['refund_cartInfo']);
+$check(!array_key_exists('_info',$staff)&&!array_key_exists('cost',$staff)&&!array_key_exists('one_brokerage',$staff));
+$check($staff['refund']===[['id'=>29,'order_id'=>'saved-refund','store_order_id'=>19,'refund_type'=>1,'refund_num'=>1,'refund_price'=>'12.34']]);
+$check($staff['custom_form']===$out['custom_form'] && serialize($platform)===$platformBefore);
+$check(Saved::platformRefund($refund,['marketplace_trade_version'=>1,'custom_form'=>json_encode($forms,JSON_THROW_ON_ERROR)])===$refundOut);
+$check(Saved::platformOrder($legacy)===$legacy);
+$check(Saved::platformRefund($legacy,['marketplace_trade_version'=>0])===$legacy);
 echo json_encode(['status'=>'PASS','scope'=>'PURE_ORDINARY_SAVED_SNAPSHOT','assertions'=>$checks,
     'App_SQL_auth_cache_HTTP_or_stopped_samples_run'=>false],JSON_THROW_ON_ERROR).PHP_EOL;

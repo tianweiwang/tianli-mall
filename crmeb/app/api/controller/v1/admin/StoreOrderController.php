@@ -11,6 +11,8 @@
 namespace app\api\controller\v1\admin;
 
 use app\Request;
+use app\services\marketplace\order\MarketplaceTradePolicy;
+use crmeb\exceptions\ApiException;
 use app\services\order\DeliveryServiceServices;
 use app\services\order\StoreOrderCartInfoServices;
 use app\services\order\StoreOrderCreateServices;
@@ -58,12 +60,13 @@ class StoreOrderController
      * @throws \think\db\exception\DbException
      * @throws \think\db\exception\ModelNotFoundException
      */
-    public function express(StoreOrderServices $orderServices, StoreOrderCartInfoServices $services, ExpressServices $expressServices, $uni, $type = '')
+    public function express(Request $request, StoreOrderServices $orderServices, StoreOrderCartInfoServices $services, ExpressServices $expressServices, $uni, $type = '')
     {
         if ($type == 'refund') {
             /** @var StoreOrderRefundServices $refundService */
             $refundService = app()->make(StoreOrderRefundServices::class);
-            $order = $refundService->refundDetail($uni);
+            $order = $this->savedMarketplaceRefund($refundService,$orderServices,(string)$uni)
+                ? $refundService->getUserRefundDetail((string)$uni,(int)$request->uid()) : $refundService->refundDetail($uni);
             $express = $order['refund_express'];
             $cacheName = $uni . $express;
             $orderInfo = [];
@@ -86,6 +89,9 @@ class StoreOrderController
         } else {
             if (!$uni || !($order = $orderServices->getUserOrderDetail($uni, 0, []))) {
                 return app('json')->fail('订单不存在');
+            }
+            if(!MarketplaceTradePolicy::savedOrderIsLegacy($order->toArray())){
+                $order=$orderServices->getUserOrderByKey(app()->make(StoreOrderEconomizeServices::class),(string)$uni,(int)$request->uid());
             }
             if ($type != 'refund' && ($order['delivery_type'] != 'express' || !$order['delivery_id'])) {
                 return app('json')->fail('快递单号不存在');
@@ -192,6 +198,10 @@ class StoreOrderController
     public function detail(Request $request, StoreOrderServices $services, UserServices $userServices, $orderId)
     {
         $economizeServices = app()->make(StoreOrderEconomizeServices::class);
+        $saved=$services->getOne(['order_id|unique'=>$orderId],'id,marketplace_trade_version');
+        if($saved&&!MarketplaceTradePolicy::savedOrderIsLegacy($saved->toArray())){
+            return app('json')->success($services->getUserOrderByKey($economizeServices,(string)$orderId,(int)$request->uid()));
+        }
         $orderData = $services->getUserOrderByKey($economizeServices, $orderId, 0);
         $orderData['nickname'] = $userServices->value(['uid' => $orderData['uid']], 'nickname');
         return app('json')->success($orderData);
@@ -633,10 +643,21 @@ class StoreOrderController
      * @param $uni
      * @return mixed
      */
-    public function refundOrderDetail(StoreOrderRefundServices $services, $uni)
+    public function refundOrderDetail(Request $request, StoreOrderRefundServices $services, StoreOrderServices $orders, $uni)
     {
-        $data = $services->refundDetail($uni);
+        $data = $this->savedMarketplaceRefund($services,$orders,(string)$uni)
+            ? $services->getUserRefundDetail((string)$uni,(int)$request->uid()) : $services->refundDetail($uni);
         return app('json')->success($data);
+    }
+
+    /** Version comes from the real saved parent, never current config or a client's requested role. */
+    private function savedMarketplaceRefund(StoreOrderRefundServices $refunds,StoreOrderServices $orders,string $uni):bool
+    {
+        $refund=$refunds->get(['order_id'=>$uni],['store_order_id']);
+        if(!$refund)return false;
+        $parent=$orders->get($refund['store_order_id'],['marketplace_trade_version']);
+        if(!$parent)throw new ApiException('订单不存在');
+        return !MarketplaceTradePolicy::savedOrderIsLegacy($parent->toArray());
     }
 
     /**

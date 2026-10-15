@@ -129,7 +129,7 @@
                 </li>
               </ul>
             </div>
-            <div class="section">
+            <div class="section" v-if="!savedMarketplaceV1">
               <div class="title">返佣信息(金额｜用户UID)</div>
               <ul class="list">
                 <li class="item">
@@ -225,7 +225,7 @@
                   v-if="orderDatalist.orderInfo.invoice.header_type === 2 && orderDatalist.orderInfo.invoice.type === 1"
                 >
                   <div>联系电话：</div>
-                  <div class="value">{{ orderDatalist.orderInfo.invoice.user_phone || '' }}</div>
+                  <div class="value">{{ (savedMarketplaceV1 ? orderDatalist.orderInfo.invoice.drawer_phone : orderDatalist.orderInfo.invoice.user_phone) || '' }}</div>
                 </li>
                 <li
                   class="item"
@@ -251,7 +251,20 @@
                 </li>
               </ul>
             </div>
-            <div class="section" v-if="orderDatalist.orderInfo.custom_form.length">
+            <div class="section" v-if="savedMarketplaceV1 && savedGroups.length">
+              <div class="title">已保存表单</div>
+              <div class="saved-product" v-for="group in savedGroups" :key="String(group.product_id)+':'+group.definition_sha256">
+                <div class="saved-product-name">{{group.product_name}}</div>
+                <div class="saved-field" v-for="field in group.fields" :key="field.field_index">
+                  <div class="saved-title">{{field.field_index+1}}. {{field.title}}：</div>
+                  <div v-if="field.label==='img'" class="saved-images">
+                    <img v-for="(image,index) in field.value" :key="index" v-viewer :src="image" alt="已保存图片" />
+                  </div>
+                  <div v-else class="saved-value">{{field.value}}</div>
+                </div>
+              </div>
+            </div>
+            <div class="section" v-if="!savedMarketplaceV1 && orderDatalist.orderInfo.custom_form.length">
               <div class="title">表单信息</div>
               <ul class="list">
                 <li
@@ -421,6 +434,20 @@ export default {
       default: 0,
     },
   },
+  computed: {
+    savedMarketplaceV1() {
+      const version=this.orderDatalist && this.orderDatalist.orderInfo && this.orderDatalist.orderInfo.marketplace_trade_version;
+      return version===1 || version==='1';
+    },
+    savedGroups() {
+      if(!this.savedMarketplaceV1)return [];
+      return this.orderDatalist.orderInfo.custom_form.map(group => ({product_id:group.product_id,product_name:group.product_name,
+        definition_sha256:group.definition_sha256,fields:group.fields.map(field => ({field_index:field.field_index,
+          title:field.title,label:field.label,status:field.status,value:Array.isArray(field.value)?field.value.slice():field.value}))
+          .filter(field => field.value!=='' && !(Array.isArray(field.value)&&field.value.length===0))}))
+        .filter(group => group.fields.length);
+    },
+  },
   watch: {
     modals(val) {
       if (val) {
@@ -482,6 +509,13 @@ export default {
 };
 </script>
 <style lang="scss" scoped>
+.saved-product + .saved-product { margin-top: 20px; }
+.saved-product-name { font-weight: 600; margin-bottom: 12px; overflow-wrap: anywhere; }
+.saved-field { margin-top: 12px; }
+.saved-title,.saved-value { white-space: pre-wrap; overflow-wrap: anywhere; }
+.saved-value { margin-top: 6px; color: #666; }
+.saved-images { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+.saved-images img { width: 80px; height: 80px; object-fit: cover; }
 ::v-deep .el-tabs--border-card > .el-tabs__header .el-tabs__item.is-active {
   border-bottom: none;
 }
