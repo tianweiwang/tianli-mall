@@ -384,6 +384,28 @@ v3源码检查点：新HTTP完整实现摘要`c0c808abea55c30537fb34593420f84ee7
 
 库存核对源码检查点：helper 摘要 `26cb691f4f9fa510fef7ee49a0b63b84a536e821032f802eeab91877d5434afe` 已按上述依据修正，独立源审通过；仅三行显式身份链和错误列期望的替换，其余业务断言可逐字节逆回修复前 helper。Root 实际执行该文件 PHP8.2 语法检查 native0/stderr空/前后字节保持，收据 `artifacts/ms4-merchant-warning-source/20261015-stock-customer-v1/lint-result.json` 摘要 `623869fc76de93aef43320aa1f3fc7d5bc3d4adc95584d83fe1ad35e83755930`。这是验证器修复的源码检查点；修复后的整批准备、HTTP 与真实浏览器结果尚待新 Run，不以本地提交替代运行验收。
 
+修复后的实际普通结果（2026-10-15）：冻结 clean 来源 `5d3a2f8a0e210140f29b6a7501640e46813d501e`，freeze 摘要 `11ab5549103449c2308d228a62e5cf1d5eec79c8ccb6f873a810e48c6744c264`，新 Run `202610150910096935b1`。初始化、四次结构迁移及原完整内部订单链均实际 native0；订单收据摘要 `6021062172a7634f5d1e652a4d134e11615d29028936878e8fc3da2961a00b86`，scope `NORMAL_ORDER_INTERNAL_ONLY`、phase `final_source`。原真实创建、会员价格、保存读取、持久收尾、取消释放及三原生商家正常认证读取完整保留。随后真实正常清理授权 helper 结束并移除，才进入 HTTP 准备。
+
+本轮 HTTP 准备首次完整通过：有限 bootstrap 实际 native0/PID0/restart0，父收据摘要 `2b8638efc2f9b5eb6e095aba455a2610f39dc9193c6e52596467a47d66e5a10b`，真实 audit_migrator 文件校验生成1218项并核当前源码版本，随后切回 audit_app DML-only。业务子收据摘要 `7454938d2a10709e139ac28f6e7fd1818e8fc914df67ff42cee2c649f0402bfa`，`VERIFIED_MERCHANT_BROWSER_PREPARATION_ONLY`、native0、phase `final_source`；20笔新订单全部真实创建并收尾，保存 order.uid、ledger.uid、customer actor_id 的身份链均通过，库存20→0、销量20，三店订单22/1/0、分页20+2、全部未支付且取消期限0。原普通事实保持，源码与 public 闭集绑定核过：2536原 public、25 merchant dist、marker和PNG共2563文件。Root 从原正常终态 bootstrap 经真实 Docker 文件管道只交接至内存，再按原ID移除；未把凭据写入宿主文件，后续已清空演员内存。该准备结果不代表真实 HTTP/DOM 通过。
+
+HTTP 启动实际未通过：原 App 和 UI 各一次 start 均 native0，两个同CID真实 running/PID>0/restart0；其后严格 collector 因 UI `NetworkSettings.Ports={"8080/tcp":[]}` 拒绝。虽然 HostConfig 声明精确 `127.0.0.1:18974→8080`，真实 docker port 返回1/空stdout，Windows该IPv4回环监听数0，普通回环TCP连接10061拒绝；Root 观察收据摘要 `39b1f7e41721e8fa8601c1d9048c80bad0a0e98c986d63d06db7cf81bc1b47f6`。这是本机该内部网络配置下页面端口未实际发布，不是订单 API 的失败响应。Root 沿原 AppCID 获取真实 source-ready，摘要 `e087239650fb5ad28f4177072c72a7ba197f9b8a6db9a3719b715a485d49d0c3`；原 runtime getter、控制目录和 /proc 观察证明同一个 PHP supervisor、无 active请求、请求/响应文件各0、8000监听0，收据摘要 `8c979416f40ad43e8e888da393348c94db6a66fbcad5df9f24c5f9b2c0d307a5`。该 getter 沿既有只读来源/身份门禁读取 SQL 哨兵、权限和 Redis；不能称整个观察“完全无SQL”或“不读取应用私有配置”。无业务写、HTTP业务子进程或浏览器操作，34步及视觉验收仍 NOT RUN。
+
+本轮正常关闭另遇实际默认信号差异：固定关闭源 `normal-close-failed-http-start-202610150910096935b1.py`（摘要 `5653f3543e4f71c60c3447ae6341f1fa7c45859b50790d11e7b6f043f109c59c`）通过 Root 和独立源审，绑定30份原公开收据、五个原CID、同内部网和十卷。首个原 docker stop time=-1 进程37532持续等待；原生核实 PHP-FPM 镜像继承 Config.StopSignal=SIGQUIT，而 CLI supervisor 仅注册 SIGTERM。未改正在运行的关闭源或重发 stop。另建有限 `normal-term-ready-supervisor-202610150910096935b1.py`（摘要 `d6bd3ef93e736b524e1df24b35c542257e2a9fa53078b32f02a88e2f1c50f538`），经独立源审、Python AST 和固定 PHP8.2 仅语法检查后，以 create-only 收据锁定单次执行；核原停止进程完整argv/创建时间、App原身份/PID/starttime及实际TERM handler、无child/控制请求/8000监听，再仅向原PID1发送一次正常 SIGTERM。sender真实 native0/原进程信号接受，收据摘要 `16e99057ee6933ae6f0f5135a3d37bcb5ff66ae3608ca017611cb9530313ca0f`；随后原停止句柄37532真实 native0，原App真实 exit0/PID0，才继续 UI/MySQL/Redis 各原停止句柄的正常退出。不能声称原关闭源在没有这次修复时已自行成功，也不把发送成功当作退出证据。
+
+关闭实际完成：原五容器、同空端点内网、原十卷均非 force 精确移除，关闭收据摘要 `7bd53e86687ef4dface2fe97fd208ae140bd5cff34452bf71a9963a9f41022fd`；Root 另执行独立六条 project/run 标签原生查询，全部 native0/stderr空/count0，收据摘要 `58ec95b46a2cb33e3647dec429f230ef709df1386e2c473dceb2194345a61029`，30份原 PASS/启动失败/上下文/freeze 字节保持。独立零残留记录另绑定实际TERM修复、原停止句柄及原App终态，不把本次操作写成无修复关闭。追加获取 signal-stop 文件的只读观察在原生cp正常门禁失败，包装进程exit1且未保留原生cp细节；该文件读回仍 `UNVERIFIED`，缺口摘要 `92a6ff166c0a6a6dec8ae01c1473c50bfb490160f5e93d92c9c8cd0578087f95`，不据此猜文件不存在。实际正常退出与资源清理有各自独立证明。本Run已关闭，不重建原运行；HTTP/DOM、发货/拆单/售后、真实支付退款及原未验收范围保持未完成。
+
+后继 r3 实施依据：沿03新增的“仅UI双网”合同修正测试入口。原v5三角色阶段仍精确单内网；完整普通链通过后，HTTP阶段才创建本Run frontend bridge，UI双网，App/MySQL/Redis/CLI/bootstrap仍各自仅原backend内网，UI只持有只读公开快照与配置、只发布固定IPv4回环端口。frontend关闭 masquerade 不等于已证明无外连；不为修复测试入口更改宿主全局网络或连接业务实例。HTTP App显式 stop_signal:SIGTERM，并用实际原生观察核其有效值。新builder/candidate/inverse/关闭源使用新路径；HTTP专用 collector、两网 ownership/global consumer、manifest拓扑、原生端口及关闭证明同步设计，原单内网迁移/CLI分支和业务断言不放宽。沿[Docker frontend bridge/backend internal说明](https://docs.docker.com/engine/network/#connecting-to-multiple-networks)；实现前记录此必要配置修正，不把新设计记作验证通过。
+
+本子阶段继续使用本节唯一执行清单，原 Task6 发货/拆单/售后义务不取消：
+
+- [x] 修复后的完整内部普通链、20笔真实准备及原事实保持；记录本轮页面入口失败与单次正常TERM修复，独立核资源零残留。
+- [ ] 派生 r3 新来源，接入 HTTP 阶段专用双网、仅UI入口及App有效SIGTERM；保留完整可逆来源与原v5行为，并完成独立源审和必要静态/语法检查。
+- [ ] 重新冻结 clean HEAD，以新Run执行初始化、结构迁移、原普通链及20单准备，核全体真实来源/权限/资源身份。
+- [ ] 核实际UI发布映射、Windows回环TCP及固定同源PNG的真实HTTP/字节；再按原source-ready、私有交接与真实supervisor合同开始浏览器。
+- [ ] 完成原34步骤/25主capture/9原字节JPEG/9人工复核、实际手机横向可达、23表SQL及最终完整来源核对；原3600秒窗口不延长。
+- [ ] 实际关闭owned tab/重置viewport、正常停止真实HTTP子进程和原App，再精确移除原五容器、两个空端点原网络及十卷，独立六查询核零。
+- [ ] 按实际有限范围记录HTTP/DOM结果；完整Task6/MS4、生产创建门禁和用户停止样本的原状态保持，未验收项继续保留。
+
 ### Task 7: 退款额度与库存行为
 
 - 接口：申请退款时在事务中锁定订单行，校验"已退金额 + 处理中金额 + 本次金额 ≤ 实付"；三类库存行为分别写 `release`（未发货取消）、`return_in`（退货验收入库）、不写（仅退款）。
