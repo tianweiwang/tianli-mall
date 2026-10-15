@@ -15,6 +15,9 @@ use crmeb\utils\Str;
 use app\services\BaseServices;
 use crmeb\services\CacheService;
 use app\dao\order\StoreOrderCartInfoDao;
+use app\services\marketplace\order\MarketplaceOrderInput;
+use app\services\marketplace\order\MarketplaceTradePolicy;
+use crmeb\exceptions\AuthUnavailableException;
 
 /**
  * Class StoreOrderCartInfoServices
@@ -54,6 +57,28 @@ class StoreOrderCartInfoServices extends BaseServices
      */
     public function getOrderCartInfo(int $oid)
     {
+        $order = app()->make(StoreOrderServices::class)->get($oid, ['id', 'marketplace_trade_version']);
+        if (!$order) throw new AuthUnavailableException();
+        if (!MarketplaceTradePolicy::savedOrderIsLegacy($order->getData())) {
+            // Saved V1 rows precede the old aggregate cache. Do not sum a ref across other orders.
+            $rows = $this->dao->getColumn(['oid' => $oid], 'cart_info,cart_id,refund_num', 'id');
+            $info = [];
+            foreach ($rows as $row) {
+                $ref = $row['cart_id'];
+                if (!is_string($ref) || $ref === '' || strlen($ref) > 50 || !is_string($row['cart_info']))
+                    throw new AuthUnavailableException();
+                $cart = json_decode($row['cart_info'], true, 512, JSON_THROW_ON_ERROR);
+                if (!is_array($cart) || ($cart['id'] ?? null) !== $ref || !is_array($cart['productInfo'] ?? null))
+                    throw new AuthUnavailableException();
+                $cart['refund_num'] = MarketplaceOrderInput::unsigned($row['refund_num'], '已退款数量', 2147483647);
+                if (isset($cart['productInfo']['attrInfo'])) {
+                    $cart['productInfo']['attrInfo'] = get_thumb_water($cart['productInfo']['attrInfo']);
+                }
+                $cart['productInfo'] = get_thumb_water($cart['productInfo']);
+                $info[$ref] = ['cart_info' => $cart];
+            }
+            return $info;
+        }
         $cartInfo = CacheService::get(md5('store_order_cart_info_' . $oid));
         if ($cartInfo) return $cartInfo;
         $cart_info = $this->dao->getColumn(['oid' => $oid], 'cart_info', 'cart_id');

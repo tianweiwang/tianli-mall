@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require __DIR__ . '/lib/harness.php';
+require __DIR__ . '/lib/ms4-saved-order-normal.php';
 
 use app\dao\marketplace\order\MarketplaceOrderDao;
 use app\services\marketplace\order\MarketplaceCartSelection;
@@ -21,12 +22,15 @@ use think\facade\Db;
 const M4O_IMAGE = 'sha256:1099f749e2a38ec9453c6b820db8a78174514bc72d14edf5c203e13b82816e0a';
 const M4O_ROOTS = ['crmeb/app','crmeb/crmeb','crmeb/vendor','crmeb/config'];
 const M4O_FILES = ['crmeb/composer.json','crmeb/composer.lock','help/audit-regressions/isolated/ms4-order-normal.php',
-    'help/audit-regressions/isolated/lib/harness.php','help/audit-regressions/isolated/lib/guard.php'];
+    'help/audit-regressions/isolated/lib/harness.php','help/audit-regressions/isolated/lib/guard.php',
+    'help/audit-regressions/isolated/lib/ms4-saved-order-normal.php'];
 const M4O_FIXTURE_TABLES = ['eb_user','eb_marketplace_merchant','eb_store_product','eb_store_product_attr',
-    'eb_store_product_attr_value','eb_store_cart','eb_user_address','eb_user_invoice','eb_system_config'];
+    'eb_store_product_attr_value','eb_store_cart','eb_user_address','eb_user_invoice','eb_system_config',
+    'eb_system_user_level','eb_user_level','eb_member_right'];
 const M4O_FACT_TABLES = ['eb_store_order','eb_store_order_invoice','eb_store_order_cart_info',
     'eb_marketplace_order_idempotency','eb_marketplace_stock_movement','eb_store_product','eb_store_product_attr_value','eb_store_cart',
-    'eb_user','eb_marketplace_merchant','eb_store_product_attr','eb_user_address','eb_user_invoice','eb_system_config'];
+    'eb_user','eb_marketplace_merchant','eb_store_product_attr','eb_user_address','eb_user_invoice','eb_system_config',
+    'eb_system_user_level','eb_user_level','eb_member_right'];
 
 function m4o_expect(bool $ok, string $code): void
 {
@@ -414,7 +418,7 @@ function m4o_service_lookup(MarketplaceOrderCreateServices $service,int $uid,str
 }
 
 /** Independent real rows, not a second expected-price payload derived from service output. */
-function m4o_verify_service(PDO $pdo,array $fixture,array $request,string $idemKey,array $frame,array $answers,array $result,string $kind,array $sqlCartBefore): array
+function m4o_verify_service(PDO $pdo,array $fixture,array $request,string $idemKey,array $frame,array $answers,array $result,string $kind,array $sqlCartBefore,?array $membership=null): array
 {
     $uid=(int)$fixture['user']['uid'];$mer=(int)$fixture['merchant']['mer_id'];
     m4o_expect(!$pdo->inTransaction()&&!Db::connect()->getPdo()->inTransaction()&&$pdo!==Db::connect()->getPdo(),'SERVICE_COMMITTED_INDEPENDENT_PDO');
@@ -436,6 +440,7 @@ function m4o_verify_service(PDO $pdo,array $fixture,array $request,string $idemK
     $selected=[];foreach($frame['selection'] as $line)$selected[$line['cart_ref']]=$line;
     $byMovement=[];foreach($moves as $move)$byMovement[(string)$move['id']]=$move;
     $quantities=$seen=[];$goods=$cost=$postage='0.00';$total=0;
+    $membershipOriginal=$membershipLevel=$membershipPaid='0.00';
     foreach($items as $item){
         $cart=json_decode($item['cart_info'],true,32,JSON_THROW_ON_ERROR);$ref=(string)$item['cart_id'];$line=$selected[$ref]??null;
         m4o_expect(is_array($line)&&!isset($seen[$ref]),'SERVICE_ACTUAL_SELECTED_ITEM');$seen[$ref]=true;
@@ -453,11 +458,28 @@ function m4o_verify_service(PDO $pdo,array $fixture,array $request,string $idemK
         $move=$byMovement[$lineage['reserve_id']];
         m4o_expect((int)$move['product_id']===$line['product_id']&&(int)$move['sku_id']===$line['sku_id']
             &&$move['sku_unique']===$sku['unique'],'SERVICE_REAL_PHYSICAL_SKU');
+        if($membership===null){
         m4o_expect($cart['sum_price']===$sku['price']&&$cart['truePrice']===$sku['price']&&$cart['costPrice']===$sku['cost']
             &&$cart['productInfo']['attrInfo']['price']===$sku['price']&&$cart['productInfo']['attrInfo']['cost']===$sku['cost']
             &&$cart['sum_true_price']===bcmul($sku['price'],(string)$qty,2),'SERVICE_REAL_PRIVATE_PRICE_COST');
         m4o_expect($cart['postage_price']===bcmul($root['postage'],(string)$qty,2)
             &&$cart['origin_postage_price']===$cart['postage_price'],'SERVICE_ACTUAL_FIXED_CHARGED_LINE_POSTAGE');
+        }else{
+            $expected=$membership['lines'][$line['sku_id'].':'.$qty]??null;
+            m4o_expect(is_array($expected)&&$cart['sum_price']===$expected['base']&&$cart['sum_price']===$sku['price']
+                &&$cart['truePrice']===$expected['unit']&&$cart['vip_truePrice']===$expected['saving']
+                &&$cart['price_type']===$expected['type']&&$cart['costPrice']===$expected['cost']&&$cart['costPrice']===$sku['cost']
+                &&$cart['productInfo']['attrInfo']['price']===$expected['base']
+                &&$cart['productInfo']['attrInfo']['vip_price']===$expected['vip']
+                &&$cart['productInfo']['attrInfo']['cost']===$expected['cost']
+                &&$cart['sum_true_price']===bcmul($expected['unit'],(string)$qty,2),'MEMBERSHIP_REAL_PRIVATE_PRICE_COST_AND_TYPE');
+            m4o_expect($cart['postage_price']===$expected['postage']&&$cart['origin_postage_price']===$expected['postage'],
+                'MEMBERSHIP_INDEPENDENT_CHARGED_LINE_POSTAGE');
+            $membershipOriginal=bcadd($membershipOriginal,bcmul($cart['sum_price'],(string)$qty,2),2);
+            $savedSaving=bcmul($cart['vip_truePrice'],(string)$qty,2);
+            if($cart['price_type']==='member')$membershipPaid=bcadd($membershipPaid,$savedSaving,2);
+            else $membershipLevel=bcadd($membershipLevel,$savedSaving,2);
+        }
         foreach(['coupon_price','integral_price','one_brokerage','two_brokerage','staff_brokerage','agent_brokerage','division_brokerage'] as $field)
             m4o_expect($cart[$field]==='0.00','SERVICE_ZERO_DISABLED_RIGHTS_SNAPSHOT');
         $goods=bcadd($goods,$cart['sum_true_price'],2);$cost=bcadd($cost,bcmul($sku['cost'],(string)$qty,2),2);
@@ -467,6 +489,11 @@ function m4o_verify_service(PDO $pdo,array $fixture,array $request,string $idemK
     m4o_expect(count($seen)===count($selected)&&$goods===$order['total_price']&&$cost===$order['cost']
         &&$postage===$order['pay_postage']&&$postage===$order['total_postage']&&bcadd($goods,$postage,2)===$order['pay_price']
         &&(int)$order['total_num']===$total,'SERVICE_INDEPENDENT_ORDER_TOTALS');
+    if($membership!==null)m4o_expect($membershipOriginal===$membership['amounts']['goods_original']
+        &&$membershipLevel===$membership['amounts']['level_discount']&&$membershipPaid===$membership['amounts']['member_discount']
+        &&$goods===$membership['amounts']['goods_charged']&&$cost===$membership['amounts']['cost']
+        &&$postage===$membership['amounts']['postage']&&$order['pay_price']===$membership['amounts']['payable'],
+        'MEMBERSHIP_SAVED_ITEM_SUMS_AND_DISCOUNT_CLASSIFICATION');
     $rootState=[];foreach($fixture['products'] as $productId=>$root)$rootState[$productId]=['stock'=>(int)$root['stock'],'sales'=>(int)$root['sales']];
     foreach($moves as $move){
         $skuId=(int)$move['sku_id'];$productId=(int)$move['product_id'];$sku=$fixture['skus'][$skuId];$qty=(int)$move['qty'];
@@ -537,7 +564,7 @@ function m4o_verify_service(PDO $pdo,array $fixture,array $request,string $idemK
         'fixture_identity_sha256'=>hash('sha256',serialize([$uid,$mer,array_keys($fixture['products']),array_keys($fixture['skus']),$request['cart_refs']]))];
 }
 
-function m4o_service_case(\think\App $app,string $kind): array
+function m4o_service_case(\think\App $app,string $kind,array &$contexts): array
 {
     $GLOBALS['m4o_phase']='service_'.$kind.'_fixtures';$fixture=m4o_service_fixture($kind);
     $uid=(int)$fixture['user']['uid'];$mer=(int)$fixture['merchant']['mer_id'];$addressId=(int)$fixture['address']['id'];
@@ -588,13 +615,269 @@ function m4o_service_case(\think\App $app,string $kind): array
         'cancel_mode'=>$kind==='persistent'?'configured_hours':'disabled'];
     if($kind==='persistent')$proof+=['cart_consumed'=>true,'unselected_unchanged'=>true];
     else $proof+=['sql_cart_unchanged'=>true,'ledger_retained'=>true];
+    $contexts[$kind]=['source_kind'=>$kind,'uid'=>$uid,'order_no'=>$result['order_id']];
+    return $proof;
+}
+
+/** Change only this run's three original switches; real getters repopulate their exact keys. */
+function m4o_membership_configuration(): void
+{
+    $keys=['member_func_status','member_card_status','member_price_status'];
+    Db::transaction(static function(\think\db\ConnectionInterface $connection)use($keys):void{
+        $pdo=m4o_business_pdo($connection);$now=time();
+        foreach(['eb_system_user_level','eb_user_level','eb_member_right'] as $table)
+            m4o_expect((int)m4o_rows($pdo,'SELECT COUNT(*) AS `n` FROM `'.$table.'`')[0]['n']===0,'FRESH_MEMBERSHIP_FIXTURE_TABLE');
+        foreach($keys as $key){
+            $rows=m4o_rows($pdo,'SELECT `id`,`value` FROM `eb_system_config` WHERE `menu_name` = ? FOR UPDATE',[$key]);
+            m4o_expect(count($rows)===1&&$rows[0]['value']==='0','ACTUAL_MEMBERSHIP_CONFIGURATION_BEFORE');
+            $statement=$pdo->prepare('UPDATE `eb_system_config` SET `value` = ? WHERE `id` = ? AND `menu_name` = ? AND `value` = ?');
+            m4o_expect($statement instanceof PDOStatement,'ACTUAL_MEMBERSHIP_CONFIGURATION_PREPARE');
+            foreach(['1',(string)$rows[0]['id'],$key,$rows[0]['value']] as $index=>$part)
+                m4o_expect($statement->bindValue($index+1,$part,PDO::PARAM_STR),'ACTUAL_MEMBERSHIP_CONFIGURATION_BIND');
+            m4o_expect($statement->execute()&&$statement->rowCount()===1,'ACTUAL_MEMBERSHIP_CONFIGURATION_UPDATE');
+        }
+        foreach(['vip_price'=>1,'express'=>80] as $type=>$number)
+            m4o_insert($pdo,'eb_member_right',['right_type'=>$type,'title'=>'普通报价权益','number'=>$number,'status'=>1,'add_time'=>$now]);
+        m4o_expect(m4o_business_pdo($connection)===$pdo,'MEMBERSHIP_CONFIGURATION_SAME_DEFAULT_PDO');
+    });
+    foreach($keys as $key){
+        $rows=m4o_rows(audit_db(),'SELECT `value` FROM `eb_system_config` WHERE `menu_name` = ?',[$key]);
+        m4o_expect(count($rows)===1&&$rows[0]['value']==='1','MEMBERSHIP_CONFIGURATION_INDEPENDENT_READBACK');
+        CacheService::delete('system_config_'.$key);
+        m4o_expect(sys_config($key)===1&&CacheService::get('system_config_'.$key)===1,'MEMBERSHIP_ACTUAL_CONFIGURATION_GETTER');
+    }
+}
+
+/** Existing tables and real eligibility writer only; no payment, member-order or card records. */
+function m4o_membership_fixture(\think\App $app,string $case): array
+{
+    m4o_expect(in_array($case,['level','paid'],true),'ORDINARY_MEMBERSHIP_CASE');
+    return Db::transaction(static function(\think\db\ConnectionInterface $connection)use($app,$case):array{
+        $pdo=m4o_business_pdo($connection);$now=time();$kind=$case==='level'?'persistent':'temporary';
+        $config=m4o_rows($pdo,'SELECT `id`,`value` FROM `eb_system_config` WHERE `menu_name` = ? FOR UPDATE',['order_cancel_time']);
+        $previous=$kind==='persistent'?'0':'0.5';$hours=$kind==='persistent'?'0.5':'0';
+        m4o_expect(count($config)===1&&$config[0]['value']===json_encode($previous,JSON_THROW_ON_ERROR),'MEMBERSHIP_CANCEL_CONFIGURATION_BEFORE');
+        $statement=$pdo->prepare('UPDATE `eb_system_config` SET `value` = ? WHERE `id` = ? AND `menu_name` = ? AND `value` = ?');
+        m4o_expect($statement instanceof PDOStatement,'MEMBERSHIP_CANCEL_CONFIGURATION_PREPARE');
+        foreach([json_encode($hours,JSON_THROW_ON_ERROR),(string)$config[0]['id'],'order_cancel_time',$config[0]['value']] as $index=>$part)
+            m4o_expect($statement->bindValue($index+1,$part,PDO::PARAM_STR),'MEMBERSHIP_CANCEL_CONFIGURATION_BIND');
+        m4o_expect($statement->execute()&&$statement->rowCount()===1,'MEMBERSHIP_CANCEL_CONFIGURATION_UPDATE');
+        $level=m4o_insert($pdo,'eb_system_user_level',['name'=>'普通九折等级','discount'=>'90.00','is_show'=>1,'is_del'=>0,
+            'grade'=>1,'is_pay'=>0,'money'=>'0.00','valid_date'=>30,'is_forever'=>0,'add_time'=>$now]);
+        m4o_expect(bccomp((string)$level['id'],'0',0)>0&&bccomp((string)$level['id'],'255',0)<=0,'NATIVE_LEVEL_ID_FITS_USER_COLUMN');
+        $user=m4o_insert($pdo,'eb_user',['account'=>'ms4-'.getenv('AUDIT_RUN_ID').'-m-'.$case,'nickname'=>'会员价格验证顾客',
+            'user_type'=>'h5','level'=>$level['id'],'is_money_level'=>0,'is_ever_level'=>0,'overdue_time'=>0,'add_time'=>$now],'uid');
+        $userLevel=m4o_insert($pdo,'eb_user_level',['uid'=>$user['uid'],'level_id'=>$level['id'],'grade'=>1,'status'=>1,'is_del'=>0,
+            'discount'=>90,'valid_time'=>bcadd((string)$now,'2592000',0),'is_forever'=>0,'add_time'=>$now]);
+        $qualificationBefore=$qualificationAfter=$now;
+        if($case==='paid'){
+            $qualificationBefore=time();
+            $changed=$app->make(UserServices::class)->setMemberOverdueTime(30,(int)$user['uid'],1,'month');
+            $qualificationAfter=time();
+            m4o_expect($changed instanceof \app\model\user\User&&(string)$changed->getData('is_money_level')==='1'
+                &&(string)$changed->getData('is_ever_level')==='0','REAL_EXISTING_QUALIFICATION_WRITER');
+            $rows=m4o_rows($pdo,'SELECT * FROM `eb_user` WHERE `uid` = ?',[$user['uid']]);
+            m4o_expect(count($rows)===1,'QUALIFICATION_NATIVE_USER_READBACK');$user=$rows[0];
+        }
+        $merchant=m4o_insert($pdo,'eb_marketplace_merchant',['name'=>'会员价格验证店铺','review_status'=>1,'accept_orders'=>1,
+            'fulfillment_enabled'=>1,'security_locked'=>0,'add_time'=>$now,'update_time'=>$now],'mer_id');
+        $products=$skus=$selected=[];
+        foreach(['甲','乙'] as $index=>$name){
+            $forms=[['title'=>'同名资料','label'=>'text','status'=>true,'value'=>'']];
+            if($index===0)$forms[]=['title'=>'同名资料','label'=>'number','status'=>false,'value'=>''];
+            $product=m4o_insert($pdo,'eb_store_product',['mer_id'=>$merchant['mer_id'],'store_name'=>'会员价格商品'.$name,
+                'unit_name'=>'件','spec_type'=>1,'stock'=>20,'sales'=>0,'price'=>'20.15','cost'=>'7.45','vip_price'=>'16.00',
+                'postage'=>'2.67','freight'=>2,'temp_id'=>0,'is_show'=>1,'review_status'=>2,'is_vip'=>1,'logistics'=>'1','min_qty'=>1,
+                'custom_form'=>json_encode($forms,JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR),'add_time'=>$now]);
+            $products[(int)$product['id']]=$product;
+            m4o_insert($pdo,'eb_store_product_attr',['product_id'=>$product['id'],'type'=>0,'attr_name'=>'规格','attr_values'=>'甲,乙']);
+            foreach([['suk'=>'甲','stock'=>8,'price'=>'20.15','vip_price'=>'16.00','cost'=>'7.45'],
+                ['suk'=>'乙','stock'=>12,'price'=>'30.25','vip_price'=>'28.00','cost'=>'9.35']] as $position=>$data){
+                $sku=m4o_insert($pdo,'eb_store_product_attr_value',$data+['product_id'=>$product['id'],'type'=>0,
+                    'unique'=>bin2hex(random_bytes(4)),'sales'=>0,'is_show'=>1,'is_virtual'=>0,'weight'=>'0.00','volume'=>'0.00']);
+                $skus[(int)$sku['id']]=$sku;if($position===$index)$selected[]=$sku;
+            }
+        }
+        $plan=[['sku'=>$selected[0],'qty'=>2],['sku'=>$selected[0],'qty'=>1],['sku'=>$selected[1],'qty'=>2]];$carts=[];
+        if($kind==='persistent')foreach($plan as $index=>$line)$carts[]=m4o_insert($pdo,'eb_store_cart',[
+            'uid'=>$user['uid'],'type'=>'0','product_id'=>$line['sku']['product_id'],'product_attr_unique'=>$line['sku']['unique'],
+            'cart_num'=>$line['qty'],'add_time'=>$now+$index,'is_pay'=>0,'is_del'=>0,'is_new'=>0,'status'=>1]);
+        $unselected=m4o_insert($pdo,'eb_store_cart',['uid'=>$user['uid'],'type'=>'0','product_id'=>$selected[0]['product_id'],
+            'product_attr_unique'=>$selected[0]['unique'],'cart_num'=>1,'add_time'=>$now+3,'is_pay'=>0,'is_del'=>0,'is_new'=>0,'status'=>1]);
+        $address=m4o_insert($pdo,'eb_user_address',['uid'=>$user['uid'],'real_name'=>'内部验证','phone'=>'00000000000',
+            'province'=>'验证省','city'=>'验证市','district'=>'验证区','detail'=>'专用内部验证地址','is_default'=>1,'add_time'=>$now]);
+        $invoice=m4o_insert($pdo,'eb_user_invoice',['uid'=>$user['uid'],'header_type'=>1,'type'=>1,'name'=>'会员报价验证抬头','is_default'=>1,'add_time'=>$now]);
+        m4o_expect(m4o_business_pdo($connection)===$pdo,'MEMBERSHIP_FIXTURE_SAME_DEFAULT_PDO');
+        return compact('user','merchant','products','skus','plan','carts','unselected','address','invoice','hours','level','userLevel',
+            'qualificationBefore','qualificationAfter','kind','case');
+    });
+}
+
+/** Derive expectations from independent raw records, not any quote or saved order output. */
+function m4o_membership_expected(\think\App $app,array $fixture): array
+{
+    $pdo=audit_db();$uid=(int)$fixture['user']['uid'];$case=$fixture['case'];
+    m4o_expect(!$pdo->inTransaction()&&!Db::connect()->getPdo()->inTransaction()&&$pdo!==Db::connect()->getPdo(),'MEMBERSHIP_EXPECTATION_INDEPENDENT_PDO');
+    $users=m4o_rows($pdo,'SELECT * FROM `eb_user` WHERE `uid` = ?',[$uid]);
+    $levels=m4o_rows($pdo,'SELECT * FROM `eb_system_user_level` WHERE `id` = ?',[$fixture['level']['id']]);
+    $userLevels=m4o_rows($pdo,'SELECT * FROM `eb_user_level` WHERE `uid` = ?',[$uid]);
+    m4o_expect(count($users)===1&&count($levels)===1&&count($userLevels)===1,'MEMBERSHIP_NATIVE_QUALIFICATION_ROWS');
+    $user=$users[0];$level=$levels[0];$userLevel=$userLevels[0];
+    m4o_expect((string)$user['level']===(string)$level['id']&&(string)$userLevel['level_id']===(string)$level['id']
+        &&(string)$userLevel['id']===(string)$fixture['userLevel']['id']&&$level['discount']==='90.00'
+        &&(int)$level['is_show']===1&&(int)$level['is_del']===0&&(int)$userLevel['status']===1&&(int)$userLevel['is_del']===0
+        &&(int)$userLevel['valid_time']>time(),'MEMBERSHIP_REAL_LEVEL_MAPPING_AND_VALIDITY');
+    $model=$app->make(UserServices::class)->getUserInfo($uid);
+    m4o_expect($model!==null,'MEMBERSHIP_REAL_QUALIFICATION_GETTER');
+    foreach(['uid','level','is_money_level','is_ever_level','overdue_time'] as $field)
+        m4o_expect((string)$model->getData($field)===(string)$user[$field],'MEMBERSHIP_GETTER_MATCHES_INDEPENDENT_USER');
+    if($case==='paid')m4o_expect((int)$user['is_money_level']===1&&(int)$user['is_ever_level']===0
+        &&bccomp((string)$user['overdue_time'],bcadd((string)$fixture['qualificationBefore'],'2592000',0),0)>=0
+        &&bccomp((string)$user['overdue_time'],bcadd((string)$fixture['qualificationAfter'],'2592000',0),0)<=0
+        &&bccomp((string)$user['overdue_time'],(string)time(),0)>0,'MEMBERSHIP_ACTUAL_SAVED_ACTIVE_QUALIFICATION');
+    else m4o_expect((int)$user['is_money_level']===0&&(int)$user['is_ever_level']===0&&(string)$user['overdue_time']==='0',
+        'MEMBERSHIP_REAL_LEVEL_ONLY_QUALIFICATION');
+    foreach(['member_func_status','member_card_status','member_price_status'] as $key){
+        $config=m4o_rows($pdo,'SELECT `value` FROM `eb_system_config` WHERE `menu_name` = ?',[$key]);
+        m4o_expect(count($config)===1&&$config[0]['value']==='1'&&sys_config($key)===1,'MEMBERSHIP_REAL_CONFIGURATION_UNCHANGED');
+    }
+    $rights=[];foreach(['vip_price'=>1,'express'=>80] as $type=>$number){
+        $rows=m4o_rows($pdo,'SELECT * FROM `eb_member_right` WHERE `right_type` = ?',[$type]);
+        m4o_expect(count($rows)===1&&(int)$rows[0]['status']===1&&(int)$rows[0]['number']===$number,'MEMBERSHIP_REAL_SINGLE_RIGHT_ROW');
+        $rights[$type]=$rows[0];
+    }
+    $factor=bcdiv($level['discount'],'100',2);$active=(int)$user['is_money_level']>0;
+    $rate=$active?bcdiv((string)$rights['express']['number'],'100',4):'1.0000';
+    $lines=$weights=[];$gross=$goods=$levelDiscount=$memberDiscount=$cost=$originalPostage=$chargedPostage='0.00';
+    $targetPostage=$case==='paid'?['4.27','2.14','4.27']:['5.34','2.67','5.34'];
+    foreach($fixture['plan'] as $index=>$line){
+        $rows=m4o_rows($pdo,'SELECT * FROM `eb_store_product_attr_value` WHERE `id` = ?',[$line['sku']['id']]);
+        m4o_expect(count($rows)===1,'MEMBERSHIP_NATIVE_EXPECTED_SKU');$sku=$rows[0];$qty=$line['qty'];
+        $roots=m4o_rows($pdo,'SELECT * FROM `eb_store_product` WHERE `id` = ?',[$sku['product_id']]);
+        m4o_expect(count($roots)===1&&(int)$roots[0]['is_vip']===1&&(int)$roots[0]['freight']===2
+            &&$roots[0]['postage']==='2.67'&&(int)$roots[0]['mer_id']===(int)$fixture['merchant']['mer_id'],'MEMBERSHIP_NATIVE_EXPECTED_ROOT');
+        m4o_expect($sku['price']===($index===2?'30.25':'20.15')&&$sku['vip_price']===($index===2?'28.00':'16.00')
+            &&$sku['cost']===($index===2?'9.35':'7.45')&&$qty===($index===1?1:2),'MEMBERSHIP_EXACT_ORDINARY_PRICE_INPUTS');
+        $levelUnit=bcmul($sku['price'],$factor,2);
+        $useMember=$active&&bccomp($sku['vip_price'],'0.00',2)>0&&bccomp($sku['vip_price'],$levelUnit,2)<0;
+        $unit=$useMember?$sku['vip_price']:$levelUnit;$type=$useMember?'member':'level';$saving=bcsub($sku['price'],$unit,2);
+        $lineKey=$sku['id'].':'.$qty;m4o_expect(!isset($lines[$lineKey]),'MEMBERSHIP_DISTINCT_EXPECTED_SELECTION');
+        $lines[$lineKey]=['base'=>$sku['price'],'vip'=>$sku['vip_price'],'unit'=>$unit,'saving'=>$saving,'type'=>$type,
+            'cost'=>$sku['cost'],'postage'=>$targetPostage[$index]];
+        $gross=bcadd($gross,bcmul($sku['price'],(string)$qty,2),2);$goods=bcadd($goods,bcmul($unit,(string)$qty,2),2);
+        $discount=bcmul($saving,(string)$qty,2);
+        if($type==='member')$memberDiscount=bcadd($memberDiscount,$discount,2);else $levelDiscount=bcadd($levelDiscount,$discount,2);
+        $cost=bcadd($cost,bcmul($sku['cost'],(string)$qty,2),2);
+        $linePostage=bcmul($roots[0]['postage'],(string)$qty,2);$originalPostage=bcadd($originalPostage,$linePostage,2);
+        $weights[]=bcmul($linePostage,$rate,6);$chargedPostage=bcadd($chargedPostage,$targetPostage[$index],2);
+    }
+    $postage=bcmul($originalPostage,$rate,2);$budget=bcmul($postage,'100',0);$weightTotal='0.000000';$floorTotal='0';$remainders=[];
+    foreach($weights as $weight)$weightTotal=bcadd($weightTotal,$weight,6);
+    foreach($weights as $index=>$weight){
+        $product=bcmul($budget,$weight,6);$floor=bcdiv($product,$weightTotal,0);$floorTotal=bcadd($floorTotal,$floor,0);
+        $remainders[$index]=bcsub($product,bcmul($floor,$weightTotal,6),6);
+        $expectedCents=bcadd($floor,$case==='paid'&&$index===1?'1':'0',0);
+        m4o_expect($expectedCents===bcmul($targetPostage[$index],'100',0),'MEMBERSHIP_INDEPENDENT_WHOLE_CENT_ALLOCATION');
+    }
+    m4o_expect(bcsub($budget,$floorTotal,0)===($case==='paid'?'1':'0')
+        &&($case!=='paid'||(bccomp($remainders[1],$remainders[0],6)>0&&bccomp($remainders[1],$remainders[2],6)>0))
+        &&$postage===$chargedPostage,'MEMBERSHIP_INDEPENDENT_REMAINDER_AND_POSTAGE_BUDGET');
+    $amounts=['goods_original'=>$gross,'goods_charged'=>$goods,'level_discount'=>$levelDiscount,'member_discount'=>$memberDiscount,
+        'cost'=>$cost,'postage'=>$postage,'payable'=>bcadd($goods,$postage,2)];
+    $target=$case==='paid'?['120.95','102.44','6.06','12.45','41.05','10.68','113.12']
+        :['120.95','108.83','12.12','0.00','41.05','13.35','122.18'];
+    m4o_expect(array_values($amounts)===$target&&$originalPostage==='13.35','MEMBERSHIP_INDEPENDENT_EXACT_AMOUNTS');
+    return ['lines'=>$lines,'amounts'=>$amounts,'postage_discount'=>bcsub($originalPostage,$postage,2)];
+}
+
+/** Inspect the real shared confirmation and creation inputs against raw-record expectations. */
+function m4o_membership_quote(array $group,array $expected): void
+{
+    $prices=$group['priceGroup'];$amounts=$expected['amounts'];
+    foreach(['sumPrice'=>'goods_original','totalPrice'=>'goods_charged','costPrice'=>'cost','levelPrice'=>'level_discount',
+        'memberPrice'=>'member_discount','storePostage'=>'postage'] as $field=>$key)
+        m4o_expect($prices[$field]===$amounts[$key],'MEMBERSHIP_SHARED_QUOTE_EXACT_AMOUNTS');
+    m4o_expect($prices['vipPrice']===bcadd($amounts['level_discount'],$amounts['member_discount'],2)
+        &&$prices['storePostageDiscount']===$expected['postage_discount'],'MEMBERSHIP_SHARED_QUOTE_DISCOUNT_CLASSIFICATION');
+    m4o_expect(count($group['cartInfo'])===3,'MEMBERSHIP_SHARED_QUOTE_THREE_LINES');$seen=[];
+    foreach($group['cartInfo'] as $cart){
+        $key=$cart['productInfo']['attrInfo']['id'].':'.$cart['cart_num'];$line=$expected['lines'][$key]??null;
+        m4o_expect(is_array($line)&&!isset($seen[$key])&&$cart['sum_price']===$line['base']&&$cart['truePrice']===$line['unit']
+            &&$cart['vip_truePrice']===$line['saving']&&$cart['price_type']===$line['type']&&$cart['costPrice']===$line['cost'],
+            'MEMBERSHIP_SHARED_QUOTE_TRUE_PRICES');$seen[$key]=true;
+    }
+    m4o_expect(count($seen)===count($expected['lines']),'MEMBERSHIP_SHARED_QUOTE_COMPLETE_SELECTION');
+}
+
+function m4o_membership_case(\think\App $app,string $case): array
+{
+    $GLOBALS['m4o_phase']='membership_'.$case.'_fixtures';$fixture=m4o_membership_fixture($app,$case);$kind=$fixture['kind'];
+    $uid=(int)$fixture['user']['uid'];$mer=(int)$fixture['merchant']['mer_id'];$addressId=(int)$fixture['address']['id'];
+    $expected=m4o_membership_expected($app,$fixture);
+    $sqlBefore=m4o_rows(audit_db(),'SELECT * FROM `eb_store_cart` WHERE `uid` = ? ORDER BY `id`',[$uid]);$refs=[];
+    if($kind==='temporary'){
+        $GLOBALS['m4o_phase']='membership_paid_actual_cart_producer';$cartService=$app->make(StoreCartServices::class);
+        foreach($fixture['plan'] as $line){
+            $sku=$line['sku'];$ref=$cartService->setCart($uid,(int)$sku['product_id'],$line['qty'],$sku['unique'],0,true);
+            m4o_expect(is_string($ref)&&MarketplaceOrderInput::reference($ref,'temporary')===$ref&&!in_array($ref,$refs,true),'MEMBERSHIP_ACTUAL_TEMPORARY_REFERENCE');
+            $payload=CacheService::get($ref);
+            m4o_expect(is_array($payload)&&($payload['catalog_cart_version']??null)===1&&($payload['uid']??null)===$uid
+                &&($payload['cartData']['id']??null)===$ref&&($payload['cartData']['uid']??null)===$uid
+                &&($payload['cartData']['product_id']??null)===(int)$sku['product_id']
+                &&($payload['cartData']['product_attr_unique']??null)===$sku['unique']&&($payload['cartData']['cart_num']??null)===$line['qty'],
+                'MEMBERSHIP_ACTUAL_TEMPORARY_CACHE_READBACK');$refs[]=$ref;
+        }
+        m4o_expect(m4o_rows(audit_db(),'SELECT * FROM `eb_store_cart` WHERE `uid` = ? ORDER BY `id`',[$uid])===$sqlBefore,'MEMBERSHIP_TEMPORARY_PRODUCER_NO_SQL_CHANGE');
+    }else $refs=array_map(static fn(array $row):string=>(string)$row['id'],$fixture['carts']);
+    $GLOBALS['m4o_phase']='membership_'.$case.'_actual_confirmation';
+    $choice=MarketplaceOrderInput::confirm(['mer_id'=>$mer,'cartId'=>implode(',',$refs),'addressId'=>$addressId,'new'=>$kind==='temporary']);
+    $user=$app->make(UserServices::class)->getUserInfo($uid);m4o_expect($user!==null&&(int)$user->getData('uid')===$uid,'MEMBERSHIP_REAL_USER_MODEL');
+    $orders=$app->make(StoreOrderServices::class);
+    $confirmation=$orders->getOrderConfirmData($user->toArray(),$choice['cartId'],$choice['new'],$addressId,1,0,$choice);
+    $key=$confirmation['orderKey'];$cached=CacheService::get('user_order_'.$uid.$key);
+    m4o_expect(is_string($key)&&is_array($cached),'MEMBERSHIP_REAL_CONFIRMATION_CACHE');$frame=MarketplaceCartSelection::frame($cached,$uid);
+    m4o_expect($frame['mer_id']===$mer&&$frame['source_kind']===$kind&&$frame['cart_refs']===$choice['cart_refs']
+        &&count($frame['selection'])===3&&count($frame['custom_form'])===2,'MEMBERSHIP_ACTUAL_MULTI_PRODUCT_FRAME');
+    m4o_membership_quote($confirmation,$expected);m4o_membership_quote($cached,$expected);
+    m4o_expect(($confirmation['userInfo']['vip']??null)===true
+        &&(string)($confirmation['userInfo']['vip_id']??'')===(string)$fixture['userLevel']['id']
+        &&($confirmation['userInfo']['discount']??null)===90,'MEMBERSHIP_CONFIRMATION_REAL_LEVEL_METADATA');
+    $answers=[];foreach($frame['custom_form'] as $group){
+        $values=[];foreach($group['fields'] as $field)$values[]=['field_index'=>$field['field_index'],
+            'value'=>$field['label']==='number'?'0':'会员报价填写'.$group['product_name']];
+        $answers[]=['product_id'=>$group['product_id'],'definition_sha256'=>$group['definition_sha256'],'values'=>$values];
+    }
+    $raw=['mer_id'=>$mer,'cartId'=>$choice['cartId'],'new'=>$choice['new'],'addressId'=>$addressId,
+        'invoice_id'=>(int)$fixture['invoice']['id'],'idem_key'=>'membership-'.bin2hex(random_bytes(16)),
+        'payType'=>'','mark'=>'会员价格普通验证','gift_mark'=>'普通文本','custom_form'=>$answers];
+    $input=MarketplaceOrderInput::create($uid,$key,$raw);$service=$app->make(MarketplaceOrderCreateServices::class);
+    $GLOBALS['m4o_phase']='membership_'.$case.'_lookup_before';m4o_service_lookup($service,$uid,$key,null);
+    $GLOBALS['m4o_phase']='membership_'.$case.'_actual_creation';
+    m4o_expect(!Db::connect()->getPdo()->inTransaction(),'MEMBERSHIP_NO_TEST_OUTER_TRANSACTION');$result=$service->create($uid,$key,$raw);
+    $GLOBALS['m4o_phase']='membership_'.$case.'_independent_readback';audit_guard_assert();
+    $proof=m4o_verify_service(audit_db(),$fixture,$input['request'],$input['idem_key'],$frame,$input['request']['options']['custom_form'],
+        $result,$kind,$sqlBefore,$expected);
+    $actual=m4o_rows(audit_db(),'SELECT `total_price`,`cost`,`pay_postage`,`total_postage`,`pay_price` FROM `eb_store_order` WHERE `uid` = ? AND `order_id` = ?',
+        [$uid,$result['order_id']]);$amounts=$expected['amounts'];
+    m4o_expect(count($actual)===1&&$actual[0]['total_price']===$amounts['goods_charged']&&$actual[0]['cost']===$amounts['cost']
+        &&$actual[0]['pay_postage']===$amounts['postage']&&$actual[0]['total_postage']===$amounts['postage']
+        &&$actual[0]['pay_price']===$amounts['payable'],'MEMBERSHIP_SAVED_ORDER_INDEPENDENT_EXACT_AMOUNTS');
+    m4o_expect(m4o_membership_expected($app,$fixture)===$expected,'MEMBERSHIP_QUALIFICATION_AND_RAW_INPUTS_UNCHANGED');
+    $GLOBALS['m4o_phase']='membership_'.$case.'_lookup_created';m4o_service_lookup($service,$uid,$key,$result['order_id']);
+    $GLOBALS['m4o_phase']='membership_'.$case.'_ordinary_replay';$before=m4o_facts(audit_db());$replay=$service->create($uid,$key,$raw);
+    m4o_expect($replay===$result&&m4o_facts(audit_db())===$before,'MEMBERSHIP_NORMAL_REPLAY_NO_WRITE');
+    m4o_expect(!Db::connect()->getPdo()->inTransaction()&&$app->config->get('marketplace.trade.enabled')===false,'MEMBERSHIP_COMMITTED_GATE_CLOSED');
+    $proof+=['verified'=>true,'prices_verified'=>true,'qualification_verified'=>true,'amounts'=>$amounts,
+        'replay_unchanged'=>true,'lookup_created'=>true,'source_kind'=>$kind,'cancel_mode'=>$kind==='persistent'?'configured_hours':'disabled'];
+    if($kind==='persistent')$proof+=['cart_consumed'=>true,'unselected_unchanged'=>true];
+    else $proof+=['sql_cart_unchanged'=>true,'ledger_retained'=>true];
     return $proof;
 }
 
 function m4o_main(): int
 {
     $phase = 'source'; $evidence = ['schema'=>1,'status'=>'FAIL','scope'=>'NORMAL_ORDER_INTERNAL_ONLY','binding'=>null,
-        'HTTP_authentication_creation_UI_DOM_membership_discount_payment_refund_cancel_post_commit_template_freight'=>'NOT RUN',
+        'HTTP_authentication_creation_UI_DOM_payment_refund_cancel_post_commit_template_freight'=>'NOT RUN',
         'stopped_cases'=>'NOT RUN','private_credentials_emitted'=>false]; $included = [];
     $GLOBALS['m4o_phase'] =& $phase;
     try {
@@ -660,8 +943,13 @@ function m4o_main(): int
         });
         m4o_expect($replay['claimed'] === false && (int)$replay['order']['id'] === $created['order_id'] && $replay['idem_key'] === $idem,'ACTUAL_SAME_ORDER_REPLAY');
         m4o_expect(m4o_facts(audit_db()) === $before,'REPLAY_NO_ORDER_STOCK_ITEM_OR_CART_WRITE');
-        $evidence['service_creations']['persistent'] = m4o_service_case($app,'persistent');
-        $evidence['service_creations']['temporary'] = m4o_service_case($app,'temporary');
+        $contexts=[];
+        $evidence['service_creations']['persistent'] = m4o_service_case($app,'persistent',$contexts);
+        $evidence['service_creations']['temporary'] = m4o_service_case($app,'temporary',$contexts);
+        $phase='membership_configuration';m4o_membership_configuration();
+        $evidence['membership_creations']['level']=m4o_membership_case($app,'level');
+        $evidence['membership_creations']['paid']=m4o_membership_case($app,'paid');
+        $phase='saved_reads';$evidence['saved_reads']=m4o_saved_order_normal($app,audit_db(),$contexts);
         $phase = 'final_source'; $finalSet = []; m4o_expect(m4o_source($finalSet) === $evidence['binding'] && $finalSet === $included,'FINAL_SOURCE_UNCHANGED');
         foreach (get_included_files() as $file) m4o_expect(isset($included[realpath($file)]),'ACTUAL_INCLUDED_SOURCE_CLOSED');
         audit_guard_assert(); m4o_expect($app->config->get('marketplace.trade.enabled') === false,'FINAL_GATE_CLOSED');

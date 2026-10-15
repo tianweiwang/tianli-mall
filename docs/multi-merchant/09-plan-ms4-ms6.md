@@ -231,6 +231,10 @@ Files：`crmeb/app/services/marketplace/order/MarketplaceOrderSnapshotProjection
 
 本合同的H5必要修复已完成源码验证：订单列表只增加两条官方MP-WEIXIN条件指令，H5/App正常onLoad不再访问wx，小程序预处理后原支付返回块逐非空行保持；六列表普通组件45条、14组官方模板/JS/Sass均通过且Vue warnings为空。证据在仓库外 `artifacts/ms4-list-ui-source/20261015-v3-mp-api-guard/`，Root实核六Vue产物hash一致；这仍不是支付返回流程或真实DOM验收。外部 `candidate-internal-v2-final` 和 `normal-close-order-internal-v2-final.py` 完整逆变换原v1五文件/关闭源、AST/help及独立源审通过，host摘要 `cc18ca9458de79ca5f8af26f6a301b31ff87e4d74a620ab000e5228369472978`、close摘要 `9b532551247110c558cf840781998a83cb44d9e4532c19aaaad80fd8682becbf`；仅增加新helper源指纹和会员/保存读取必备证明，原隔离/原生退出/关闭条件不变。未补helper闭集的早期v2只作未运行来源保留，不用它freeze或启动。
 
+普通保存读取源审发现必要producer修复：`StoreOrderCartInfoServices::getOrderCartInfo` 原先按cart_id跨订单SUM退款数量，真实ThinkORM sum固定返回float，V1列表的严格保存投影不能消费该类型。新增必要Files仅 `crmeb/app/services/order/StoreOrderCartInfoServices.php`：在缓存之前读取真实父订单保存版本，V1按同oid读取每条真实订单项的cart_info/cart_id/refund_num，用范围内整数数量及原字节引用，不读取其他订单相同cart引用、不放宽公共投影接受float。V1先沿实际保存行读取而不复用旧聚合缓存；旧NULL/0行为及缓存保持。未知保存版本沿既有策略处理，不从客户端或当前开关推断版本。保持原普通helper断言，以后续实际列表/详情证明修复；此处源审发现不是已运行失败，未执行任何拒绝样本。
+
+本合同源码检查点：会员普通CLI固定摘要 `d2085d6abf24096c209206e43ffccd2777f8b7f7b5f1553b8e4ba813601223b4`，新增保存读取helper摘要 `522e05e05e48a4d164884a699fac6dc920275329d69ad076f9a664b56765297b`，CartInfo必要producer摘要 `80cb7815cad77cfdfc57c7904642ac5ba69ad314f5ee01869fb074f99f33a0b4`；三PHP隔离语法均exit0。财务/fixture、非财务原业务保留与接线、CartInfo源和helper分别获得独立SOURCE PASS。Root另核原20个函数中17个完整字节不变，三个必要变化仅可选会员验证、真实上下文和主接线；原direct执行、原价格/库存/cart/表单/发票断言保留。初始新fixture对资格writer返回值的行数假设，已在执行前按真实User Model修正，独立PDO时间窗/flags/getter未放宽。此检查点尚未执行新SQL，不把SOURCE PASS当作列表/会员实测。
+
 ### Task 5: 取消与超时释放
 
 - 接口：取消与超时关单都通过 `release` 流水释放库存，`idem_key = "release:<order_id>:<unique>"`，重复执行不重复释放。超时关单前先查询支付状态（MS5 之前用测试驱动），已支付的不关单，转入异常处理。
