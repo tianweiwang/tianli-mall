@@ -14,12 +14,14 @@ use app\services\activity\combination\StorePinkServices;
 use app\services\activity\live\LiveGoodsServices;
 use app\services\activity\live\LiveRoomServices;
 use app\services\agent\AgentManageServices;
+use app\services\marketplace\order\MarketplaceOrderPostCommitServices;
 use app\services\order\StoreOrderInvoiceServices;
 use app\services\order\StoreOrderServices;
 use app\services\order\StoreOrderTakeServices;
 use app\services\product\product\StoreProductServices;
 use app\services\system\attachment\SystemAttachmentServices;
 use app\services\user\UserSignServices;
+use think\facade\Cache;
 use think\facade\Log;
 
 /**
@@ -36,6 +38,7 @@ class CrontabRunServices
      */
     public $markList = [
         'orderCancel' => '未支付自动取消订单',
+        'marketplaceOrderPostCommit' => '多商户订单提交后收尾',
         'pinkExpiration' => '拼团到期订单处理',
         'agentUnbind' => '到期自动解绑上级',
         'liveProductStatus' => '自动更新直播商品状态',
@@ -48,6 +51,28 @@ class CrontabRunServices
         'signRemind' => '未签到提醒',
         'customTimer' => '自定义定时任务',
     ];
+
+    /** Scan only durable V1 post-commit responsibilities; this does not dispatch other timers. */
+    public function marketplaceOrderPostCommit(): array
+    {
+        // A progress hint only: candidates and completion always come from the durable ledger.
+        $cursor = 0;
+        try {
+            $hint = Cache::get('marketplace_order_post_commit_cursor');
+            if ((is_int($hint) || is_string($hint)) && preg_match('/\A(?:0|[1-9][0-9]{0,9})\z/D', (string)$hint) === 1
+                && (int)$hint <= 2147483647) $cursor = (int)$hint;
+        } catch (\Throwable $error) {
+            try { Log::error('MARKETPLACE_POST_COMMIT_CURSOR_READ_UNAVAILABLE'); } catch (\Throwable $ignored) {}
+        }
+        $result = app()->make(MarketplaceOrderPostCommitServices::class)->scanPending($cursor, 100);
+        $stored = false;
+        try { $stored = Cache::set('marketplace_order_post_commit_cursor', $result['next_cursor']) === true; }
+        catch (\Throwable $error) {}
+        if (!$stored) {
+            try { Log::error('MARKETPLACE_POST_COMMIT_CURSOR_WRITE_UNAVAILABLE'); } catch (\Throwable $ignored) {}
+        }
+        return $result;
+    }
 
     /**
      * 调用不存在的方法

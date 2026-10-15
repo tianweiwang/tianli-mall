@@ -31,6 +31,7 @@ return [
         'util' => \crmeb\command\Util::class,
         'npm' => \crmeb\command\Npm::class,
         'license:cleanup' => \crmeb\command\LicenseAlignmentCleanup::class,
-        'auth:epoch-rotate' => \app\command\AuthEpochRotate::class
+        'auth:epoch-rotate' => \app\command\AuthEpochRotate::class,
+        'marketplace:post-commit-install' => \app\command\MarketplaceOrderPostCommitInstall::class
     ],
 ];

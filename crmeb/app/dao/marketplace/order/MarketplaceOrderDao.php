@@ -29,7 +29,7 @@ final class MarketplaceOrderDao
     private const TABLES = ['user', 'marketplace_order_idempotency', 'marketplace_stock_movement', 'marketplace_merchant',
         'store_product', 'store_product_attr_value', 'shipping_templates', 'shipping_templates_region',
         'shipping_templates_free', 'shipping_templates_no_delivery', 'user_address', 'user_invoice',
-        'store_cart', 'store_order', 'store_order_invoice', 'store_order_cart_info'];
+        'store_cart', 'store_order', 'store_order_invoice', 'store_order_cart_info', 'store_order_status', 'store_product_log'];
     private const IDEM_FIELDS = ['uid','mer_id','idem_key','request_digest','confirmation_ref','source_kind',
         'cart_refs','state','order_id','post_commit_done','cancel_at','add_time'];
     private const MERCHANT_FIELDS = ['mer_id','name','logo','after_sale_contact','shipping_note','review_status',
@@ -59,6 +59,10 @@ final class MarketplaceOrderDao
         'idem_key','parent_reserve_id','order_item_id','refund_id','actor_type','actor_id','request_digest',
         'sku_stock_before','sku_stock_after','sku_sales_before','sku_sales_after','root_stock_before',
         'root_stock_after','root_sales_before','root_sales_after','add_time'];
+    private const CREATED_STATUS = 'cache_key_create_order';
+    private const STATUS_FIELDS = ['oid','change_type','change_message','change_time'];
+    private const PRODUCT_LOG_FIELDS = ['id','type','product_id','uid','visit_num','cart_num','order_num','pay_num',
+        'pay_price','cost_price','pay_uid','refund_num','refund_price','collect_num','add_time'];
 
     private string $prefix;
 
@@ -495,6 +499,89 @@ final class MarketplaceOrderDao
         }
     }
 
+    /** Autocommit identity read only; the following transaction must lock the real UID first. */
+    public function postCommitCandidate(PDO $pdo, int $orderId): ?array
+    {
+        self::integer($orderId,1,self::INT_MAX);
+        $rows=$this->postCommitRead($pdo,'SELECT `uid`,`order_id` FROM '.$this->table('marketplace_order_idempotency').
+            ' WHERE `order_id` = ? AND `state` = 1 LIMIT 2',[$orderId]);
+        if(count($rows)>1)self::unavailable();
+        if(!$rows)return null;
+        return ['uid'=>self::integer($rows[0]['uid'],1,self::INT_MAX),
+            'order_id'=>self::integer($rows[0]['order_id'],1,self::INT_MAX)];
+    }
+
+    /** Nonlocking candidates are hints only. Every finish re-locks and verifies its saved order. */
+    public function pendingPostCommits(PDO $pdo, int $cursor, int $batch): array
+    {
+        self::integer($cursor,0,self::INT_MAX);self::integer($batch,1,100);
+        $rows=$this->postCommitRead($pdo,'SELECT `order_id` FROM '.$this->table('marketplace_order_idempotency').
+            ' FORCE INDEX (`idx_ms4_finalize`) WHERE `post_commit_done` = 0 AND `state` = 1 AND `order_id` > ?'.
+            ' ORDER BY `order_id` ASC LIMIT '.$batch,[$cursor]);
+        $ids=[];
+        foreach($rows as$row){$id=self::integer($row['order_id'],1,self::INT_MAX);
+            if($id<=$cursor)self::unavailable();$ids[]=$id;$cursor=$id;}
+        return $ids;
+    }
+
+    /**
+     * Default transaction lock order: UID, ledger, actual saved order, saved items by PK.
+     * Returns post_commit_done, raw ledger/order and selection rows containing the exact
+     * cart_ref/product_id/sku_id/sku_type/unique/qty plus private saved cart_info.
+     * Current merchant admission, catalog and price services have no role in this path.
+     */
+    public function lockPostCommit(PDO $pdo, int $uid, int $orderId): array
+    {
+        $this->transaction($pdo);self::integer($uid,1,self::INT_MAX);self::integer($orderId,1,self::INT_MAX);
+        $this->lockCustomer($pdo,$uid);
+        $row=$this->one($pdo,'marketplace_order_idempotency',self::IDEM_FIELDS,
+            '`uid` = ? AND `order_id` = ?',[$uid,$orderId]);
+        if($row===null)self::unavailable();
+        self::stored($row,['uid'=>$uid,'order_id'=>$orderId,'state'=>1]);
+        self::text($row['idem_key'],128,true);
+        if(!is_string($row['request_digest'])||strlen($row['request_digest'])!==32)self::unavailable();
+        $done=self::integer($row['post_commit_done'],0,1);$order=$this->committedOrder($pdo,$row);
+        return ['post_commit_done'=>$done,'ledger'=>$row,'order'=>$order,
+            'selection'=>$done===1?[]:$this->postCommitItems($pdo,$row,$order)];
+    }
+
+    /**
+     * After the service has observed all precisely owned caches absent, complete the
+     * database responsibility atomically. No caller-supplied statistics or status data.
+     * The legacy tables lack an order/effect unique key; the locked ledger is the deduper.
+     */
+    public function completePostCommit(PDO $pdo, int $uid, string $idemKey, int $orderId): array
+    {
+        $locked=$this->lockPostCommit($pdo,$uid,$orderId);$row=$locked['ledger'];$order=$locked['order'];
+        if($row['idem_key']!==$idemKey)self::unavailable();
+        if($locked['post_commit_done']===1)return ['post_commit_done'=>1,'completed_now'=>false];
+        $createdAt=self::integer($order['add_time'],1,self::INT_MAX);
+        // There is no status PK/unique key. An unexplained existing row is not proof of completion.
+        if($this->rows($pdo,'store_order_status',self::STATUS_FIELDS,
+            '`oid` = ? AND `change_type` = ?',[$orderId,self::CREATED_STATUS],'',2))self::unavailable();
+        $status=['oid'=>$orderId,'change_type'=>self::CREATED_STATUS,'change_message'=>'订单生成','change_time'=>$createdAt];
+        $this->insert($pdo,'store_order_status',$status,null);
+        $saved=$this->rows($pdo,'store_order_status',self::STATUS_FIELDS,
+            '`oid` = ? AND `change_type` = ?',[$orderId,self::CREATED_STATUS],'',2);
+        if(count($saved)!==1)self::unavailable();self::stored($saved[0],$status);
+        foreach($locked['selection'] as$line){
+            $log=['type'=>'order','product_id'=>$line['product_id'],'uid'=>$uid,'visit_num'=>0,'cart_num'=>0,
+                'order_num'=>$line['qty'],'pay_num'=>0,'pay_price'=>'0.00','cost_price'=>'0.00','pay_uid'=>0,
+                'refund_num'=>0,'refund_price'=>'0.00','collect_num'=>0,'add_time'=>$createdAt];
+            $id=$this->insert($pdo,'store_product_log',$log,self::INT_MAX);
+            $saved=$this->one($pdo,'store_product_log',self::PRODUCT_LOG_FIELDS,'`id` = ?',[$id]);
+            if($saved===null)self::unavailable();self::stored($saved,['id'=>$id]+$log);
+        }
+        $n=$this->execute($pdo,'UPDATE '.$this->table('marketplace_order_idempotency').
+            ' SET `post_commit_done` = 1 WHERE `uid` = ? AND `idem_key` = ? AND `order_id` = ?'.
+            ' AND `mer_id` = ? AND `state` = 1 AND `post_commit_done` = 0 AND `request_digest` = ? AND `confirmation_ref` = ?',
+            [$uid,$idemKey,$orderId,$row['mer_id'],$row['request_digest'],$row['confirmation_ref']])->rowCount();
+        if($n!==1)self::unavailable();
+        $saved=$this->one($pdo,'marketplace_order_idempotency',self::IDEM_FIELDS,'`uid` = ? AND `idem_key` = ?',[$uid,$idemKey]);
+        if($saved===null)self::unavailable();self::stored($saved,['uid'=>$uid,'order_id'=>$orderId,'state'=>1,'post_commit_done'=>1]);
+        return ['post_commit_done'=>1,'completed_now'=>true];
+    }
+
     /** Read-only resolution serialized with create on the same actual UID, never a new claim. */
     public function lookupConfirmation(PDO $pdo, int $uid, string $key): array
     {
@@ -514,6 +601,56 @@ final class MarketplaceOrderDao
         $order=$this->committedOrder($pdo,$row);
         if($order['unique']!==$key)self::unavailable();
         return ['state'=>'created','key'=>$key,'orderId'=>$order['order_id']];
+    }
+
+    /** Saved item facts only, including exact opaque refs and original physical SKU lineage. */
+    private function postCommitItems(PDO $pdo, array $ledger, array $order): array
+    {
+        $uid=self::integer($order['uid'],1,self::INT_MAX);$merId=self::integer($order['mer_id'],1,self::UINT_MAX);
+        $orderId=self::integer($order['id'],1,self::INT_MAX);
+        $refs=self::references(self::decode($ledger['cart_refs']),$ledger['source_kind']);
+        $rows=$this->rows($pdo,'store_order_cart_info',self::ITEM_FIELDS,'`oid` = ?',[$orderId],'`id` ASC');
+        if(count($rows)!==count($refs))self::unavailable();$byRef=[];$total=0;
+        foreach($rows as$item){
+            self::stored($item,['oid'=>$orderId,'uid'=>$uid,'mer_id'=>$merId]);
+            $itemId=self::integer($item['id'],1,self::INT_MAX);
+            $ref=MarketplaceOrderInput::reference($item['cart_id'],$ledger['source_kind']);
+            if(!is_string($item['cart_id'])||$ref!==$item['cart_id']||isset($byRef[$ref]))self::unavailable();
+            $productId=self::integer($item['product_id'],1,self::ROOT_MAX);$qty=self::integer($item['cart_num'],1,self::INT_MAX);
+            $cart=self::decode($item['cart_info']);$product=$cart['productInfo']??null;$lineage=$cart['marketplace']??null;
+            if(!is_array($product)||!is_array($product['attrInfo']??null)||!is_array($lineage)
+                ||($cart['id']??null)!==$ref||($lineage['cart_ref']??null)!==$ref)self::unavailable();
+            self::stored($cart,['product_id'=>$productId,'cart_num'=>$qty]);
+            self::stored($product,['id'=>$productId,'mer_id'=>$merId]);
+            $skuId=self::integer($lineage['sku_id']??null,1,self::INT_MAX);
+            self::integer($lineage['sku_type']??null,0,0);$unique=self::unique($lineage['sku_unique']??null);
+            self::bigint($lineage['reserve_id']??null);
+            self::stored($product['attrInfo'],['id'=>$skuId,'product_id'=>$productId,'type'=>0,'unique'=>$unique]);
+            $byRef[$ref]=['item_id'=>$itemId,'cart_ref'=>$ref,'product_id'=>$productId,'sku_id'=>$skuId,
+                'sku_type'=>0,'unique'=>$unique,'qty'=>$qty,'cart_info'=>$cart];
+            $total+=$qty;self::integer($total,1,self::UINT_MAX);
+        }
+        if($total!==self::integer($order['total_num'],1,self::UINT_MAX))self::unavailable();$selection=[];
+        foreach($refs as$ref){if(!isset($byRef[$ref]))self::unavailable();$selection[]=$byRef[$ref];}
+        return $selection;
+    }
+
+    /** Autocommit reads cannot establish an older consistent snapshot inside the lock transaction. */
+    private function postCommitRead(PDO $pdo, string $sql, array $values): array
+    {
+        $connection=Db::connect();
+        if(PHP_INT_SIZE<8||$pdo->inTransaction()||$connection->getPdo()!==$pdo
+            ||$connection->getConfig('prefix')!==$this->prefix||$pdo->getAttribute(PDO::ATTR_DRIVER_NAME)!=='mysql'
+            ||$pdo->getAttribute(PDO::ATTR_ERRMODE)!==PDO::ERRMODE_EXCEPTION||$pdo->getAttribute(PDO::ATTR_EMULATE_PREPARES))self::unavailable();
+        try{
+            $statement=$pdo->prepare($sql);if(!$statement instanceof PDOStatement)self::unavailable();
+            foreach(array_values($values) as$i=>$value){
+                if(!is_string($value)&&!is_int($value))self::unavailable();
+                if(!$statement->bindValue($i+1,(string)$value,PDO::PARAM_STR))self::unavailable();
+            }
+            if(!$statement->execute())self::unavailable();$rows=$statement->fetchAll(PDO::FETCH_ASSOC);
+        }catch(PDOException $error){self::unavailable();}
+        if(!is_array($rows))self::unavailable();return $rows;
     }
 
     private function lockCustomer(PDO $pdo, int $uid): void

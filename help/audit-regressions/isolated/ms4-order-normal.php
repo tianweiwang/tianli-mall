@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/lib/harness.php';
 require __DIR__ . '/lib/ms4-saved-order-normal.php';
+require __DIR__ . '/lib/ms4-post-commit-normal.php';
 
 use app\dao\marketplace\order\MarketplaceOrderDao;
 use app\services\marketplace\order\MarketplaceCartSelection;
@@ -23,14 +24,15 @@ const M4O_IMAGE = 'sha256:1099f749e2a38ec9453c6b820db8a78174514bc72d14edf5c203e1
 const M4O_ROOTS = ['crmeb/app','crmeb/crmeb','crmeb/vendor','crmeb/config'];
 const M4O_FILES = ['crmeb/composer.json','crmeb/composer.lock','help/audit-regressions/isolated/ms4-order-normal.php',
     'help/audit-regressions/isolated/lib/harness.php','help/audit-regressions/isolated/lib/guard.php',
-    'help/audit-regressions/isolated/lib/ms4-saved-order-normal.php'];
+    'help/audit-regressions/isolated/lib/ms4-saved-order-normal.php',
+    'help/audit-regressions/isolated/lib/ms4-post-commit-normal.php'];
 const M4O_FIXTURE_TABLES = ['eb_user','eb_marketplace_merchant','eb_store_product','eb_store_product_attr',
     'eb_store_product_attr_value','eb_store_cart','eb_user_address','eb_user_invoice','eb_system_config',
     'eb_system_user_level','eb_user_level','eb_member_right'];
 const M4O_FACT_TABLES = ['eb_store_order','eb_store_order_invoice','eb_store_order_cart_info',
     'eb_marketplace_order_idempotency','eb_marketplace_stock_movement','eb_store_product','eb_store_product_attr_value','eb_store_cart',
     'eb_user','eb_marketplace_merchant','eb_store_product_attr','eb_user_address','eb_user_invoice','eb_system_config',
-    'eb_system_user_level','eb_user_level','eb_member_right'];
+    'eb_system_user_level','eb_user_level','eb_member_right','eb_store_order_status','eb_store_product_log','eb_system_timer'];
 
 function m4o_expect(bool $ok, string $code): void
 {
@@ -267,6 +269,7 @@ function m4o_facts(PDO $pdo): array
     $facts = [];
     foreach (M4O_FACT_TABLES as $table) {
         $order = match ($table) { 'eb_marketplace_order_idempotency'=>'`uid`,`idem_key`',
+            'eb_store_order_status'=>'`oid`,`change_type`,`change_message`,`change_time`',
             'eb_user'=>'`uid`','eb_marketplace_merchant'=>'`mer_id`',default=>'`id`' };
         $rows = m4o_rows($pdo,'SELECT * FROM `'.$table.'` ORDER BY '.$order);
         $facts[$table] = ['count'=>count($rows),'sha256'=>hash('sha256',serialize($rows))];
@@ -517,7 +520,7 @@ function m4o_verify_service(PDO $pdo,array $fixture,array $request,string $idemK
         [$uid,hash('sha256',$request['confirm_key'],true)]);
     m4o_expect(count($ledger)===1&&(int)$ledger[0]['state']===1&&(int)$ledger[0]['order_id']===$id&&(int)$ledger[0]['mer_id']===$mer
         &&$ledger[0]['source_kind']===$kind&&json_decode($ledger[0]['cart_refs'],true,32,JSON_THROW_ON_ERROR)===$request['cart_refs']
-        &&$ledger[0]['idem_key']===$idemKey&&(int)$ledger[0]['post_commit_done']===0
+        &&$ledger[0]['idem_key']===$idemKey&&(int)$ledger[0]['post_commit_done']===1
         &&hash_equals($ledger[0]['request_digest'],hash('sha256',MarketplaceOrderInput::canonical($request),true)),
         'SERVICE_ACTUAL_COMMITTED_LEDGER');
     $cancelConfig=m4o_rows($pdo,'SELECT `value` FROM `eb_system_config` WHERE `menu_name` = ?',['order_cancel_time']);
@@ -606,6 +609,7 @@ function m4o_service_case(\think\App $app,string $kind,array &$contexts): array
     m4o_expect(!Db::connect()->getPdo()->inTransaction(),'NO_TEST_OUTER_CREATE_TRANSACTION');$result=$service->create($uid,$key,$raw);
     $GLOBALS['m4o_phase']='service_'.$kind.'_independent_readback';audit_guard_assert();
     $proof=m4o_verify_service(audit_db(),$fixture,$input['request'],$input['idem_key'],$frame,$input['request']['options']['custom_form'],$result,$kind,$sqlBefore);
+    $GLOBALS['m4o_phase']='service_'.$kind.'_post_commit';$proof['post_commit']=m4o_post_commit_verify($app,audit_db(),$proof['order_id']);
     $GLOBALS['m4o_phase']='service_'.$kind.'_lookup_created';m4o_service_lookup($service,$uid,$key,$result['order_id']);
     $GLOBALS['m4o_phase']='service_'.$kind.'_ordinary_replay';$before=m4o_facts(audit_db());
     $replay=$service->create($uid,$key,$raw);
@@ -858,6 +862,7 @@ function m4o_membership_case(\think\App $app,string $case): array
     $GLOBALS['m4o_phase']='membership_'.$case.'_independent_readback';audit_guard_assert();
     $proof=m4o_verify_service(audit_db(),$fixture,$input['request'],$input['idem_key'],$frame,$input['request']['options']['custom_form'],
         $result,$kind,$sqlBefore,$expected);
+    $GLOBALS['m4o_phase']='membership_'.$case.'_post_commit';$proof['post_commit']=m4o_post_commit_verify($app,audit_db(),$proof['order_id']);
     $actual=m4o_rows(audit_db(),'SELECT `total_price`,`cost`,`pay_postage`,`total_postage`,`pay_price` FROM `eb_store_order` WHERE `uid` = ? AND `order_id` = ?',
         [$uid,$result['order_id']]);$amounts=$expected['amounts'];
     m4o_expect(count($actual)===1&&$actual[0]['total_price']===$amounts['goods_charged']&&$actual[0]['cost']===$amounts['cost']
@@ -878,7 +883,8 @@ function m4o_membership_case(\think\App $app,string $case): array
 function m4o_main(): int
 {
     $phase = 'source'; $evidence = ['schema'=>1,'status'=>'FAIL','scope'=>'NORMAL_ORDER_INTERNAL_ONLY','binding'=>null,
-        'HTTP_authentication_creation_UI_DOM_payment_refund_cancel_post_commit_template_freight'=>'NOT RUN',
+        'HTTP_authentication_creation_UI_DOM_payment_refund_cancel_template_freight'=>'NOT RUN',
+        'post_commit_wallclock_daemon'=>'NOT RUN',
         'stopped_cases'=>'NOT RUN','private_credentials_emitted'=>false]; $included = [];
     $GLOBALS['m4o_phase'] =& $phase;
     try {
@@ -944,6 +950,7 @@ function m4o_main(): int
         });
         m4o_expect($replay['claimed'] === false && (int)$replay['order']['id'] === $created['order_id'] && $replay['idem_key'] === $idem,'ACTUAL_SAME_ORDER_REPLAY');
         m4o_expect(m4o_facts(audit_db()) === $before,'REPLAY_NO_ORDER_STOCK_ITEM_OR_CART_WRITE');
+        $phase='post_commit_registered_handler';$evidence['post_commit_schedule']=m4o_post_commit_schedule($app,$independent,$created['order_id']);
         $contexts=[];
         $evidence['service_creations']['persistent'] = m4o_service_case($app,'persistent',$contexts);
         $evidence['service_creations']['temporary'] = m4o_service_case($app,'temporary',$contexts);

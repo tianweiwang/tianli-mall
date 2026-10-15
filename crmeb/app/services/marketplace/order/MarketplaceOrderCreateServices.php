@@ -27,17 +27,19 @@ final class MarketplaceOrderCreateServices
 
     public function __construct(private MarketplaceOrderDao $dao,private StoreOrderServices $orders,
         private StoreOrderComputedServices $computed,private UserServices $users,private UserInvoiceServices $invoices,
-        private SystemConfigDao $configuration,private StoreOrderCreateServices $orderNumbers) {}
+        private SystemConfigDao $configuration,private StoreOrderCreateServices $orderNumbers,
+        private MarketplaceOrderPostCommitServices $postCommit) {}
 
     /** The caller supplies the actual authenticated UID, route key, and unfiltered parsed POST. */
     public function create(int $uid,string $routeKey,array $rawPost):array
     {
         $input=MarketplaceOrderInput::create($uid,$routeKey,$rawPost);$request=$input['request'];
-        return Db::transaction(function(ConnectionInterface $connection)use($uid,$routeKey,$rawPost,$input,$request):array{
+        $committed=Db::transaction(function(ConnectionInterface $connection)use($uid,$routeKey,$rawPost,$input,$request):array{
             $pdo=self::pdo($connection);$now=time();
             // UID lock and durable replay precede every cache/current-configuration dependency.
             $claim=$this->dao->claim($pdo,$request,$input['idem_key'],$now,0);
-            if(!$claim['claimed'])return ['order_id'=>$claim['order']['order_id'],'key'=>$routeKey];
+            if(!$claim['claimed'])return ['order_id'=>$claim['order']['order_id'],'key'=>$routeKey,
+                'order_pk'=>MarketplaceOrderInput::unsigned($claim['order']['id'],'订单编号',2147483647)];
             if(!MarketplaceTradePolicy::active())throw new ApiException('当前商城下单尚未开放');
             $options=$request['options'];MarketplaceTradePolicy::preview($rawPost,$options);
             $cached=CacheService::get('user_order_'.$uid.$routeKey);
@@ -79,9 +81,15 @@ final class MarketplaceOrderCreateServices
             $reserves=$this->dao->reserve($pdo,$uid,$request['mer_id'],$orderId,$locked,$now);
             $this->dao->insertItems($pdo,$uid,$request['mer_id'],$orderId,$quote['cartInfo'],$reserves);
             $this->dao->markCreated($pdo,$uid,$claim['idem_key'],$orderId,$locked,$cancelAt);
-            // post_commit_done=0 is durable responsibility, not permission to run the legacy listener.
-            return ['order_id'=>$orderNumber,'key'=>$routeKey];
+            // The internal PK wakes the finisher only after this transaction actually ends.
+            return ['order_id'=>$orderNumber,'key'=>$routeKey,'order_pk'=>$orderId];
         });
+        // Only completion is best effort. A post-commit/logging error must not turn an existing order into a create failure.
+        try{
+            $finished=$this->postCommit->finish($committed['order_pk']);
+            if($finished['post_commit_done']!==1)MarketplaceOrderPostCommitServices::recordPending($committed['order_pk']);
+        }catch(\Throwable $error){MarketplaceOrderPostCommitServices::recordPending($committed['order_pk']);}
+        return ['order_id'=>$committed['order_id'],'key'=>$committed['key']];
     }
 
     /** A point-in-time owner-only result lookup, not cancellation or proof that a delayed request ended. */
