@@ -52,7 +52,7 @@
 				</view>
 				<view class="pos-order-goods">
 					<view class="goods acea-row" @click="toDetail(item)">
-						<scroll-view class="picTxt scroll-view" scroll-x="true" v-if="item.cart_id.length > 1">
+						<scroll-view class="picTxt scroll-view" scroll-x="true" v-if="isSavedMarketplaceV1(item) ? item._info.length > 1 : item.cart_id.length > 1">
 							<view class="pictrue" v-for="(val, key) in item._info" :key="key">
 								<image :src="val.cart_info.productInfo.attrInfo?val.cart_info.productInfo.attrInfo.image:val.cart_info.productInfo.image" />
 							</view>
@@ -75,12 +75,17 @@
 						</view>
 						<view class="money">
 							<!-- <view class="x-money">￥{{ item.pay_price }}</view> -->
-							<BaseMoney :money="item.pay_price" symbolSize="20" integerSize="32" decimalSize="20"></BaseMoney>
+							<text v-if="isSavedMarketplaceV1(item)" class="saved-list-money">￥{{item.pay_price}}</text>
+							<BaseMoney v-else :money="item.pay_price" symbolSize="20" integerSize="32" decimalSize="20"></BaseMoney>
 							<view class="num">共{{ item.total_num }}件</view>
 						</view>
 					</view>
 				</view>
-				<view class="operation acea-row row-between-wrapper">
+				<view v-if="isSavedMarketplaceV1(item)" class="operation acea-row row-between-wrapper">
+					<text class="saved-list-note">已保存订单，仅供查看</text>
+					<button class="bnt saved-list-details" @tap="toDetail(item)">查看详情</button>
+				</view>
+				<view v-else class="operation acea-row row-between-wrapper">
 					<view class="more">
 					</view>
 					<view class="acea-row row-middle">
@@ -111,7 +116,7 @@
 			</view>
 		</scroll-view>
 		<Loading :loaded="loaded" :loading="loading"></Loading>
-		<PriceChange :change="change" :orderInfo="orderInfo" :isRefund="isRefund" v-on:statusChange="statusChange($event)" v-on:closechange="changeclose($event)" v-on:savePrice="savePrice"
+		<PriceChange v-if="!isSavedMarketplaceV1(orderInfo)" :change="change" :orderInfo="orderInfo" :isRefund="isRefund" v-on:statusChange="statusChange($event)" v-on:closechange="changeclose($event)" v-on:savePrice="savePrice"
 			:status="status"></PriceChange>
 		<view class="mask" v-if="filterShow" @click="filterShow = false"></view>
 		<view class="filter-popup" :class="{ on: filterShow }">
@@ -136,8 +141,8 @@
 				</view>
 			</view>
 		</view>
-		<view v-if="confirmShow" class="mask"></view>
-		<view v-if="confirmShow" class="confirm-popup">
+		<view v-if="confirmShow && !isSavedMarketplaceV1(confirmOrder)" class="mask"></view>
+		<view v-if="confirmShow && !isSavedMarketplaceV1(confirmOrder)" class="confirm-popup">
 			<view class="title">确认付款</view>
 			<view class="info">确认该订单用户已付款</view>
 			<view class="acea-row btn-box">
@@ -299,7 +304,11 @@
 			}).exec();
 		},
 		methods: {
+			isSavedMarketplaceV1(row) {
+				return !!row && (row.marketplace_trade_version === 1 || row.marketplace_trade_version === '1');
+			},
 			verify(item) {
+				if (this.isSavedMarketplaceV1(item)) return;
 				uni.showModal({
 					title: '操作提示',
 					content: '是否确认核销该订单？',
@@ -322,13 +331,11 @@
 					}
 				});
 			},
-			searchSubmit() {
-
-			},
 			statusChange(e) {
 				this.status = e;
 			},
 			goDelivery(item) {
+				if (this.isSavedMarketplaceV1(item)) return;
 				if (this.openErp) return
 				uni.navigateTo({
 					url: '/pages/admin/delivery/index?id=' + item.order_id + '&listId=' + item.id + '&totalNum=' + item.total_num + '&orderStatus=' + item._status + '&comeType=1&productType=' +
@@ -391,6 +398,7 @@
 			},
 			// 商品操作
 			modify: function(item, status, type) {
+				if (this.isSavedMarketplaceV1(item)) return;
 				if (this.openErp && status != 1) return
 				this.change = true;
 				this.status = status.toString();
@@ -403,6 +411,7 @@
 				this.change = msg;
 			},
 			objOrderRefund(data) {
+				if (this.isSavedMarketplaceV1(this.orderInfo)) return;
 				let that = this;
 				setOrderRefund(data).then(
 					res => {
@@ -421,6 +430,7 @@
 				);
 			},
 			async savePrice(opt) {
+				if (this.isSavedMarketplaceV1(this.orderInfo)) return;
 				let that = this,
 					data = {},
 					price = opt.price,
@@ -531,10 +541,11 @@
 			},
 			toDetail(item) {
 				uni.navigateTo({
-					url: `/pages/admin/orderDetail/index?id=${item.order_id}&types=${this.where.status}`
+					url: `/pages/admin/orderDetail/index?id=${this.isSavedMarketplaceV1(item) ? encodeURIComponent(item.order_id) : item.order_id}&types=${this.where.status}`
 				})
 			},
 			offlinePay: function() {
+				if (this.isSavedMarketplaceV1(this.confirmOrder)) return;
 				if (this.openErp) return
 				setOfflinePay({
 					order_id: this.confirmOrder.order_id
@@ -553,6 +564,7 @@
 				);
 			},
 			confirmPay(item) {
+				if (this.isSavedMarketplaceV1(item)) return;
 				this.confirmOrder = item;
 				this.confirmShow = true;
 			},
@@ -594,6 +606,13 @@
 </script>
 
 <style lang="scss" scoped>
+	.saved-list-note { color: #666; font-size: 24rpx; line-height: 1.5; }
+	.saved-list-money { font-size: 32rpx; }
+	.pos-order-list .list .item .operation .saved-list-details {
+		box-sizing: border-box; padding: 0; margin: 0 0 0 16rpx; flex-shrink: 0;
+		display: flex; align-items: center; justify-content: center;
+	}
+	.saved-list-details::after { border: 0; }
 	.pos-order-list {
 		::v-deep.navbar {
 			.content {

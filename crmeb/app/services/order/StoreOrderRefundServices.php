@@ -18,6 +18,8 @@ use app\services\activity\combination\StoreCombinationServices;
 use app\services\activity\combination\StorePinkServices;
 use app\services\activity\seckill\StoreSeckillServices;
 use app\services\BaseServices;
+use app\services\marketplace\order\MarketplaceOrderSnapshotProjection as SavedOrder;
+use app\services\marketplace\order\MarketplaceTradePolicy;
 use app\services\activity\coupon\StoreCouponIssueUserServices;
 use app\services\activity\coupon\StoreCouponUserServices;
 use app\services\pay\PayServices;
@@ -1129,15 +1131,25 @@ class StoreOrderRefundServices extends BaseServices
      * @param $where
      * @return array
      */
-    public function refundList($where)
+    public function refundList($where, string $marketplaceScope = '', int $viewerUid = 0)
     {
+        $viewer=SavedOrder::listViewer($marketplaceScope,$viewerUid);
         [$page, $limit] = $this->getPageValue();
-        $list = $this->dao->getList($where, $page, $limit);
-        $count = $this->dao->count($where);
-        $orderInfoList = $this->storeOrderServices->getColumn([['id', 'in', array_column($list, 'store_order_id')]], 'order_id,status', 'id');
+        $list = $this->dao->getList($where, $page, $limit, '*', [], $viewer);
+        $count = $viewer===null ? $this->dao->count($where) : $this->dao->countVisibleMarketplaceList($where,$viewer);
+        $parentIds=array_values(array_unique(array_column($list,'store_order_id')));
+        $parentFields=$marketplaceScope===''?'order_id,status':'order_id,status,marketplace_trade_version,uid,mer_id';
+        $orderInfoList = $parentIds ? $this->storeOrderServices->getColumn([['id', 'in', $parentIds]], $parentFields, 'id') : [];
         $store_order_status = [-2 => '已退款', -1 => '退款中', '未发货', '待收货', '待评价', '已完成'];
         if ($list) {
             foreach ($list as &$item) {
+                $parent=$orderInfoList[$item['store_order_id']] ?? null;$publicV1=false;
+                if($marketplaceScope!==''){
+                    if(!is_array($parent) || !array_key_exists('marketplace_trade_version',$parent))throw new \crmeb\exceptions\AuthUnavailableException();
+                    $publicV1=!MarketplaceTradePolicy::savedOrderIsLegacy($parent);
+                    if($publicV1 && $viewer!==null && ((string)$item['uid']!==(string)$viewer
+                        ||(string)$parent['uid']!==(string)$viewer))throw new \crmeb\exceptions\AuthUnavailableException();
+                }
                 $item['paid'] = 1;
                 $item['add_time'] = $item['_add_time'] = isset($item['add_time']) ? date('Y-m-d H:i:s', (int)$item['add_time']) : '';
                 $item['cartInfo'] = $item['cart_info'];
@@ -1153,7 +1165,8 @@ class StoreOrderRefundServices extends BaseServices
                 }
                 $item['total_num'] = $item['refund_num'];
                 $item['pay_price'] = $item['refund_price'];
-                $item['pay_postage'] = floatval($this->getOrderSumPrice($item['cart_info'], 'postage_price', false));
+                $postage=$this->getOrderSumPrice($item['cart_info'], 'postage_price', false);
+                $item['pay_postage'] = $publicV1 ? $postage : floatval($postage);
 
                 if (in_array($item['refund_type'], [1, 2, 4, 5])) {
                     $_type = -1;
@@ -1171,19 +1184,24 @@ class StoreOrderRefundServices extends BaseServices
                 ];
                 $item['store_order_order_id'] = $orderInfoList[$item['store_order_id']]['order_id'] ?? '';
                 $item['store_order_status'] = $store_order_status[$orderInfoList[$item['store_order_id']]['status'] ?? -3] ?? '';
+                if($publicV1)$item=SavedOrder::refundListRow($item,$parent,$marketplaceScope);
             }
         }
         $data['list'] = $list;
         $data['count'] = $count;
         $del_where = ['is_cancel' => 0];
+        if($marketplaceScope==='customer')$del_where['uid']=$viewer;
+        $bucketCount=function(array $bucket)use($viewer){
+            return $viewer===null?$this->dao->count($bucket):$this->dao->countVisibleMarketplaceList($bucket,$viewer);
+        };
         $data['num'] = [
-            0 => ['name' => '全部', 'num' => $this->dao->count($del_where)],
-            1 => ['name' => '仅退款', 'num' => $this->dao->count($del_where + ['refund_type' => 1])],
-            2 => ['name' => '退货退款', 'num' => $this->dao->count($del_where + ['refund_type' => 2])],
-            3 => ['name' => '拒绝退款', 'num' => $this->dao->count($del_where + ['refund_type' => 3])],
-            4 => ['name' => '商品待退货', 'num' => $this->dao->count($del_where + ['refund_type' => 4])],
-            5 => ['name' => '退货待收货', 'num' => $this->dao->count($del_where + ['refund_type' => 5])],
-            6 => ['name' => '已退款', 'num' => $this->dao->count($del_where + ['refund_type' => 6])]
+            0 => ['name' => '全部', 'num' => $bucketCount($del_where)],
+            1 => ['name' => '仅退款', 'num' => $bucketCount($del_where + ['refund_type' => 1])],
+            2 => ['name' => '退货退款', 'num' => $bucketCount($del_where + ['refund_type' => 2])],
+            3 => ['name' => '拒绝退款', 'num' => $bucketCount($del_where + ['refund_type' => 3])],
+            4 => ['name' => '商品待退货', 'num' => $bucketCount($del_where + ['refund_type' => 4])],
+            5 => ['name' => '退货待收货', 'num' => $bucketCount($del_where + ['refund_type' => 5])],
+            6 => ['name' => '已退款', 'num' => $bucketCount($del_where + ['refund_type' => 6])]
         ];
         return $data;
     }

@@ -162,7 +162,12 @@
         </el-table-column>
         <el-table-column fixed="right" label="操作" width="80">
           <template slot-scope="scope">
-            <el-dropdown size="small" @command="changeMenu(scope.row, $event)">
+            <div v-if="isSavedMarketplaceV1(scope.row)" class="saved-list-actions">
+              <span class="saved-list-note">仅供查看</span>
+              <el-button type="text" @click="changeMenu(scope.row, '2')">退款详情</el-button>
+              <el-button type="text" @click="changeMenu(scope.row, '3')">原单详情</el-button>
+            </div>
+            <el-dropdown v-else size="small" @command="changeMenu(scope.row, $event)">
               <span class="el-dropdown-link">更多<i class="el-icon-arrow-down el-icon--right"></i> </span>
               <el-dropdown-menu slot="dropdown">
                 <el-dropdown-item
@@ -287,6 +292,9 @@ export default {
     this.getOrderList();
   },
   methods: {
+    isSavedMarketplaceV1(row) {
+      return !!row && (row.marketplace_trade_version === 1 || row.marketplace_trade_version === '1');
+    },
     onchangeCode(e) {
       this.animal = e;
       this.qrcodeShow();
@@ -304,6 +312,7 @@ export default {
     },
     // 操作
     changeMenu(row, name) {
+      if (this.isSavedMarketplaceV1(row) && !['2', '3'].includes(name)) return;
       this.orderId = row.id;
       switch (name) {
         case '1':
@@ -459,6 +468,7 @@ export default {
     },
     // 删除单条订单
     delOrder(row, data) {
+      if (this.isSavedMarketplaceV1(row)) return;
       if (row.is_del === 1) {
         this.$modalSure(data)
           .then((res) => {
@@ -529,6 +539,9 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.saved-list-note { color: #666; font-size: 12px; line-height: 1.5; }
+.saved-list-actions { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.saved-list-actions .el-button { box-sizing: border-box; max-width: 100%; margin: 0; }
 .code {
   position: relative;
 }

@@ -37,7 +37,7 @@
 			<view class="list">
 				<view class="item" v-for="(item, index) in orderList" :key="index">
 					<view @click="goOrderDetails(item.order_id)">
-						<view class="acea-row row-middle gift" v-if="item.is_gift == 1">
+						<view class="acea-row row-middle gift" v-if="!isSavedMarketplaceV1(item) && item.is_gift == 1">
 							<text class="iconfont icon-ic_gift2 mr-16"></text>
 							<view v-if="item.gift_uid === 0">礼物未赠送</view>
 							<view v-else-if="item.uid === uid">送给 {{ item.gift_user_info.gift_nickname }} 的礼物</view>
@@ -88,21 +88,28 @@
 							<view class="text row-between">
 								<text class="name line2">{{ items.productInfo.store_name }}</text>
 								<view class="money">
-									<template v-if="item.gift_uid !== uid">
+									<template v-if="isSavedMarketplaceV1(item) || item.gift_uid !== uid">
+										<view v-if="isSavedMarketplaceV1(item)">{{ $t(`￥`) }}{{ items.truePrice }}</view>
+										<template v-else>
 										<view v-if="items.productInfo.attrInfo">{{ $t(`￥`) }}{{ items.productInfo.attrInfo.price }}</view>
 										<view v-else>{{ $t(`￥`) }}{{ items.productInfo.price }}</view>
+										</template>
 									</template>
 									<view>x{{ items.cart_num }}</view>
-									<view v-if="items.refund_num && item._status._type != -2 && item.gift_uid !== uid" class="return">{{ items.refund_num }}{{ $t(`件退款中`) }}</view>
+									<view v-if="items.refund_num && item._status._type != -2 && (isSavedMarketplaceV1(item) || item.gift_uid !== uid)" class="return">{{ items.refund_num }}{{ $t(`件退款中`) }}</view>
 								</view>
 							</view>
 						</view>
-						<view class="totalPrice" v-show="item.gift_uid !== uid">
+						<view class="totalPrice" v-show="isSavedMarketplaceV1(item) || item.gift_uid !== uid">
 							{{ $t(`共`) }}{{ item.total_num || 0 }}{{ $t(`件商品，总金额`) }}
 							<text class="money">{{ $t(`￥`) }}{{ item.pay_price }}</text>
 						</view>
 					</view>
-					<view class="bottom acea-row row-right row-middle">
+					<view v-if="isSavedMarketplaceV1(item)" class="bottom acea-row row-between-wrapper">
+						<text class="saved-list-note">{{$t(`已保存订单，仅供查看`)}}</text>
+						<button class="bnt bg-color saved-list-details" @tap="goOrderDetails(item.order_id)">{{$t(`查看详情`)}}</button>
+					</view>
+					<view v-else class="bottom acea-row row-right row-middle">
 						<view class="bnt cancelBnt" v-if="(item._status._type == 0 || item._status._type == 9) && item.is_cancel == 0" @click="cancelOrder(index, item.order_id)">
 							{{ $t(`取消订单`) }}
 						</view>
@@ -216,6 +223,9 @@ export default {
 		}
 	},
 	methods: {
+		isSavedMarketplaceV1(row) {
+			return !!row && (row.marketplace_trade_version === 1 || row.marketplace_trade_version === '1');
+		},
 		onLoadFun() {
 			this.getOrderData();
 		},
@@ -256,6 +266,7 @@ export default {
 		 *
 		 */
 		cancelOrder: function (index, order_id) {
+			if (this.isSavedMarketplaceV1(this.orderList[index])) return;
 			let that = this;
 			if (!order_id)
 				return that.$util.Tips({
@@ -296,6 +307,7 @@ export default {
 		 *
 		 */
 		goPay: function (pay_price, order_id) {
+			if (this.isSavedMarketplaceV1(this.orderList.find(row => row.order_id === order_id))) return;
 			uni.navigateTo({
 				url: `/pages/goods/cashier/index?order_id=${order_id}&from_type=order`
 			});
@@ -304,6 +316,9 @@ export default {
 		 * 去订单详情
 		 */
 		goOrderDetails: function (order_id) {
+			if (this.isSavedMarketplaceV1(this.orderList.find(row => row.order_id === order_id))) {
+				return uni.navigateTo({url: '/pages/goods/order_details/index?order_id=' + encodeURIComponent(order_id)});
+			}
 			let that = this;
 			if (!order_id)
 				return that.$util.Tips({
@@ -375,6 +390,7 @@ export default {
 		 * 删除订单
 		 */
 		delOrder: function (order_id, index) {
+			if (this.isSavedMarketplaceV1(this.orderList[index])) return;
 			let that = this;
 			uni.showModal({
 				title: that.$t(`删除订单`),
@@ -595,6 +611,13 @@ export default {
 .my-order .list .item .bottom .bnt ~ .bnt {
 	margin-left: 17rpx;
 }
+
+.saved-list-note { color: #666; font-size: 24rpx; line-height: 1.5; }
+.my-order .list .item .bottom .saved-list-details {
+	box-sizing: border-box; padding: 0; margin: 0 0 0 16rpx; flex-shrink: 0;
+	display: flex; align-items: center; justify-content: center;
+}
+.saved-list-details::after { border: 0; }
 
 .noCart {
 	margin-top: 171rpx;

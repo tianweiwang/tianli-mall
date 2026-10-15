@@ -462,11 +462,12 @@
           <view class="conter">￥{{ orderInfo.pay_postage }}</view>
         </view>
         <view
-          v-if="!savedMarketplaceV1 && orderInfo.vip_true_price > 0"
+          v-if="orderInfo.vip_true_price > 0"
           class="item acea-row row-between"
         >
-          <view>会员商品优惠</view>
-          <view class="conter"
+          <view>{{savedMarketplaceV1 ? '会员优惠（已计入商品金额）' : '会员商品优惠'}}</view>
+          <view class="conter" v-if="savedMarketplaceV1">-￥{{ orderInfo.vip_true_price }}</view>
+          <view class="conter" v-else
             >-￥{{ parseFloat(orderInfo.vip_true_price).toFixed(2) }}</view
           >
         </view>

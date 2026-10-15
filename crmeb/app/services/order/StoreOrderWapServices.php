@@ -14,6 +14,8 @@ namespace app\services\order;
 
 use app\dao\order\StoreOrderDao;
 use app\services\BaseServices;
+use app\services\marketplace\order\MarketplaceOrderSnapshotProjection as SavedOrder;
+use app\services\marketplace\order\MarketplaceTradePolicy;
 
 /**
  * Class StoreOrderWapServices
@@ -74,20 +76,26 @@ class StoreOrderWapServices extends BaseServices
      * @throws \think\db\exception\DbException
      * @throws \think\db\exception\ModelNotFoundException
      */
-    public function getWapAdminOrderList(array $where)
+    public function getWapAdminOrderList(array $where, string $marketplaceScope = '', int $viewerUid = 0)
     {
+        $viewer=SavedOrder::listViewer($marketplaceScope,$viewerUid);
         [$page, $limit] = $this->getPageValue();
-        $list = $this->dao->getOrderList($where, ['*'], $page, $limit, ['pink']);
+        $list = $this->dao->getOrderList($where, ['*'], $page, $limit, ['pink'], 'add_time DESC,id DESC', $viewer);
         /** @var StoreOrderServices $orderServices */
         $orderServices = app()->make(StoreOrderServices::class);
         $list = $orderServices->tidyOrderList($list);
         foreach ($list as &$item) {
+            if($marketplaceScope!=='' && !array_key_exists('marketplace_trade_version',$item))throw new \crmeb\exceptions\AuthUnavailableException();
             $refund_num = array_sum(array_column($item['refund'], 'refund_num'));
             $cart_num = 0;
             foreach ($item['_info'] as $items) {
                 $cart_num += $items['cart_info']['cart_num'];
             }
             $item['is_all_refund'] = $refund_num == $cart_num ? true : false;
+            if($marketplaceScope!=='' && !MarketplaceTradePolicy::savedOrderIsLegacy($item)){
+                if($viewer!==null && (string)$item['uid']!==(string)$viewer)throw new \crmeb\exceptions\AuthUnavailableException();
+                $item=SavedOrder::orderListRow($item,$marketplaceScope);
+            }
         }
         return $list;
     }

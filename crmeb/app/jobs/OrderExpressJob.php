@@ -42,6 +42,9 @@ class OrderExpressJob extends BaseJobs
             'service_type' => '',
         ];
         try {
+            $actual=app()->make(\app\services\order\StoreOrderServices::class)->get($id,['id','marketplace_trade_version']);
+            if(!$actual)throw new \crmeb\exceptions\ApiException('订单不存在');
+            \app\services\marketplace\order\MarketplaceTradePolicy::assertLegacyOrder($actual->getData());
             app()->make(StoreOrderDeliveryServices::class)->splitDelivery($id, $data, false);
         } catch (\Throwable $e) {
             Log::error('订单ID' . $id . '发货失败,失败原因:' . $e->getMessage());

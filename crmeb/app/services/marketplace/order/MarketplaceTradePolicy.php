@@ -58,6 +58,15 @@ final class MarketplaceTradePolicy
         throw new AuthUnavailableException();
     }
 
+    /** Actual saved-row guard for an old operation, before any preview, queue or mutation. No current config. */
+    public static function assertLegacyOrder(array $actualSavedRow):void
+    {
+        if(!array_key_exists('marketplace_trade_version',$actualSavedRow))throw new AuthUnavailableException();
+        $version=$actualSavedRow['marketplace_trade_version'];
+        if($version===null || $version===0 || $version==='0')return;
+        throw new ApiException('当前操作尚未适配多商户订单');
+    }
+
     /** No fallthrough to legacy creation, even if the unfinished feature is enabled by mistake. */
     public static function guardCreate():never
     {

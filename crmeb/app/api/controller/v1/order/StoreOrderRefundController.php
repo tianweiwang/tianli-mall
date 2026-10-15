@@ -46,7 +46,7 @@ class StoreOrderRefundController
         $where['uid'] = $request->uid();
         $where['is_cancel'] = 0;
         $where['is_del'] = 0;
-        $data = $this->services->refundList($where);
+        $data = $this->services->refundList($where,'customer',(int)$request->uid());
         return app('json')->success($data);
     }
 

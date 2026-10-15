@@ -82,7 +82,10 @@ class ExportServices extends BaseServices
         $export = $fileKey = [];
         /** @var StoreOrderServices $orderServices */
         $orderServices = app()->make(StoreOrderServices::class);
+        // Check the full original filter, including empty/nonempty ids, before the first exported page.
+        $orderServices->assertLegacyOrderSelection($where);
         $data = $orderServices->getOrderList($where)['data'];
+        foreach($data as $actualSavedRow)\app\services\marketplace\order\MarketplaceTradePolicy::assertLegacyOrder($actualSavedRow);
         if (!empty($data)) {
             $i = 0;
             foreach ($data as $item) {
@@ -221,7 +224,10 @@ class ExportServices extends BaseServices
         $export = $fileKey = [];
         /** @var StoreOrderServices $orderServices */
         $orderServices = app()->make(StoreOrderServices::class);
-        $data = $orderServices->getOrderList(['status' => 1, 'shipping_type' => 1, 'virtual_type' => 0, 'pid' => 0])['data'];
+        $where=['status' => 1, 'shipping_type' => 1, 'virtual_type' => 0, 'pid' => 0];
+        $orderServices->assertLegacyOrderSelection($where);
+        $data = $orderServices->getOrderList($where)['data'];
+        foreach($data as $actualSavedRow)\app\services\marketplace\order\MarketplaceTradePolicy::assertLegacyOrder($actualSavedRow);
         if (!empty($data)) {
             $i = 0;
             foreach ($data as $item) {

@@ -181,7 +181,7 @@ class StoreOrderController
         if (!in_array($where['status'], [-1, -2, -3])) {
             $where['pid'] = 0;
         }
-        return app('json')->success($this->service->getWapAdminOrderList($where));
+        return app('json')->success($this->service->getWapAdminOrderList($where,'mobile',(int)$request->uid()));
     }
 
     /**
@@ -633,7 +633,7 @@ class StoreOrderController
             ['keywords', '', '', 'real_name'],
         ]);
         $where['is_cancel'] = 0;
-        $data = $services->refundList($where)['list'];
+        $data = $services->refundList($where,'mobile',(int)$request->uid())['list'];
         return app('json')->success($data);
     }
 

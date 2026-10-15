@@ -96,11 +96,34 @@ class StoreOrderRefundDao extends BaseDao
      * @throws \think\db\exception\DbException
      * @throws \think\db\exception\ModelNotFoundException
      */
-    public function getList($where, $page = 0, $limit = 0, $field = '*', $with = [])
+    public function getList($where, $page = 0, $limit = 0, $field = '*', $with = [], ?int $marketplaceUid = null)
     {
-        return $this->search($where)->field($field)->with(array_merge(['user'], $with))->when($page && $limit, function ($query) use ($page, $limit) {
+        return $this->visibleMarketplaceList($this->search($where),$marketplaceUid)->field($field)->with(array_merge(['user'], $with))->when($page && $limit, function ($query) use ($page, $limit) {
             $query->page($page, $limit);
         })->order('id DESC')->select()->toArray();
+    }
+
+    /** Refund visibility uses the real saved parent before both paging and counting. */
+    public function countVisibleMarketplaceList(array $where,int $uid):int
+    {
+        return $this->visibleMarketplaceList($this->search($where,false),$uid)->count();
+    }
+
+    private function visibleMarketplaceList($query,?int $uid)
+    {
+        if($uid===null)return $query;
+        if($uid<1 || $uid>2147483647)throw new \crmeb\exceptions\AuthUnavailableException();
+        return $query->where(function($visible)use($uid){
+            $visible->whereIn('store_order_id',function($parent){
+                $parent->name('store_order')->field('id')->where(function($legacy){
+                    $legacy->whereNull('marketplace_trade_version')->whereOr('marketplace_trade_version',0);
+                });
+            })->whereOr(function($owned)use($uid){
+                $owned->where('uid',$uid)->whereIn('store_order_id',function($parent)use($uid){
+                    $parent->name('store_order')->field('id')->where('marketplace_trade_version',1)->where('uid',$uid);
+                });
+            });
+        });
     }
 
     /**

@@ -59,6 +59,7 @@ class StoreOrderWriteOffServices extends BaseServices
         if (!$orderInfo) {
             throw new ApiException('订单不存在');
         }
+        \app\services\marketplace\order\MarketplaceTradePolicy::assertLegacyOrder($orderInfo->getData());
         if (($orderInfo['status'] > 0 && $orderInfo->shipping_type == 2) || ($orderInfo['status'] > 1 && $orderInfo->delivery_type == 'send')) {
             throw new ApiException('该订单已被核销');
         }

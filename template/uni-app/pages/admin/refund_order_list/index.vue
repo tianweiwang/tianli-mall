@@ -69,7 +69,8 @@
 						</view>
 						<view class="money">
 							<!-- <view class="x-money">￥{{ item.pay_price }}</view> -->
-							<BaseMoney :money="item.pay_price" symbolSize="20" integerSize="32" decimalSize="20"></BaseMoney>
+							<text v-if="isSavedMarketplaceV1(item)" class="saved-list-money">￥{{item.pay_price}}</text>
+							<BaseMoney v-else :money="item.pay_price" symbolSize="20" integerSize="32" decimalSize="20"></BaseMoney>
 							<view class="num">共{{ item.total_num }}件</view>
 							<!-- 	<view class="y-money">
 								￥{{ val.cart_info.productInfo.ot_price }}
@@ -85,7 +86,11 @@
 	          }}
 					)
 				</view> -->
-				<view class="operation acea-row row-between-wrapper">
+				<view v-if="isSavedMarketplaceV1(item)" class="operation acea-row row-between-wrapper">
+					<text class="saved-list-note">已保存退款，仅供查看</text>
+					<button class="btn saved-list-details" @tap="toDetail(item)">查看详情</button>
+				</view>
+				<view v-else class="operation acea-row row-between-wrapper">
 					<view v-if="item.refund_type == 1" class="more acea-row row-middle">
 						<text class="iconfont icon-ic_returnmoney"></text>仅退款
 					</view>
@@ -109,7 +114,7 @@
 		</view>
 		<emptyPage v-else title="暂无订单～" src="/statics/images/noOrder.gif"></emptyPage>
 		<Loading :loaded="loaded" :loading="loading"></Loading>
-		<PriceChange :change="change" :orderInfo="orderInfo" :isRefund="isRefund" v-on:statusChange="statusChange($event)" v-on:closechange="changeclose($event)" v-on:savePrice="savePrice"
+		<PriceChange v-if="!isSavedMarketplaceV1(orderInfo)" :change="change" :orderInfo="orderInfo" :isRefund="isRefund" v-on:statusChange="statusChange($event)" v-on:closechange="changeclose($event)" v-on:savePrice="savePrice"
 			:status="status"></PriceChange>
 		<view class="mask" v-if="filterShow" @click="filterShow = false"></view>
 		<view class="filter-popup" :class="{ on: filterShow }">
@@ -243,13 +248,14 @@ import home from '@/components/home';
 			// }
 		},
 		methods: {
-			searchSubmit() {
-
+			isSavedMarketplaceV1(row) {
+				return !!row && (row.marketplace_trade_version === 1 || row.marketplace_trade_version === '1');
 			},
 			statusChange(e) {
 				this.status = e;
 			},
 			goDelivery(item) {
+				if (this.isSavedMarketplaceV1(item)) return;
 				if (this.openErp) return
 				uni.navigateTo({
 					url: '/pages/admin/delivery/index?id=' + item.order_id + '&listId=' + item.id + '&totalNum=' + item.total_num + '&orderStatus=' + item._status + '&comeType=1&productType=' +
@@ -307,6 +313,7 @@ import home from '@/components/home';
 			},
 			// 商品操作
 			modify: function(item, status, type) {
+				if (this.isSavedMarketplaceV1(item)) return;
 				if (this.openErp && status != 1) return
 				this.change = true;
 				this.status = status.toString();
@@ -320,6 +327,7 @@ import home from '@/components/home';
 				this.orderInfo = {};
 			},
 			objOrderRefund(data) {
+				if (this.isSavedMarketplaceV1(this.orderInfo)) return;
 				let that = this;
 				setOrderRefund(data).then(
 					res => {
@@ -338,6 +346,7 @@ import home from '@/components/home';
 				);
 			},
 			async savePrice(opt) {
+				if (this.isSavedMarketplaceV1(this.orderInfo)) return;
 				let that = this,
 					data = {},
 					price = opt.price,
@@ -447,10 +456,11 @@ import home from '@/components/home';
 			},
 			toDetail(item) {
 				uni.navigateTo({
-					url: `/pages/admin/refund_order_detail/index?id=${item.order_id}`
+					url: `/pages/admin/refund_order_detail/index?id=${this.isSavedMarketplaceV1(item) ? encodeURIComponent(item.order_id) : item.order_id}`
 				})
 			},
 			offlinePay: function(item) {
+				if (this.isSavedMarketplaceV1(item)) return;
 				if (this.openErp) return
 				setOfflinePay({
 					order_id: item.order_id
@@ -479,6 +489,7 @@ import home from '@/components/home';
 				this.init();
 			},
 			goLogistics(orderInfo) {
+				if (this.isSavedMarketplaceV1(orderInfo)) return;
 				uni.navigateTo({
 					url: '/pages/admin/logistics/index?type=refund&orderId=' + orderInfo.order_id
 				})
@@ -491,6 +502,13 @@ import home from '@/components/home';
 </script>
 
 <style lang="scss" scoped>
+	.saved-list-note { color: #666; font-size: 24rpx; line-height: 1.5; }
+	.saved-list-money { font-size: 32rpx; }
+	.pos-order-list .list .item .operation .saved-list-details {
+		box-sizing: border-box; margin: 0 0 0 16rpx; flex-shrink: 0;
+		display: flex; align-items: center; justify-content: center;
+	}
+	.saved-list-details::after { border: 0; }
 	.pos-order-list {
 		padding-bottom: constant(safe-area-inset-bottom); ///兼容 IOS<11.2/
 		padding-bottom: env(safe-area-inset-bottom); ///兼容 IOS>11.2/

@@ -108,6 +108,82 @@ final class MarketplaceOrderSnapshotProjection
         return self::customerRefund($refund,$parent);
     }
 
+    /** Only controllers choose this internal output context; no wire role or UID is consumed. */
+    public static function listViewer(string $scope,int $uid=0):?int
+    {
+        if($scope==='' || $scope==='platform')return null;
+        if(!in_array($scope,['customer','mobile'],true))self::unavailable();
+        return MarketplaceOrderInput::unsigned($uid,'列表顾客',2147483647) ?: self::unavailable();
+    }
+
+    /** List status and cart wrappers differ from the detail DTO; keep only their saved display fields. */
+    public static function orderListRow(array $saved,string $scope):array
+    {
+        if(!array_key_exists('marketplace_trade_version',$saved))self::unavailable();
+        if(MarketplaceTradePolicy::savedOrderIsLegacy($saved))return $saved;
+        return self::listRow($saved,$scope,false);
+    }
+
+    /** The caller supplies the one batch-read real parent, not a client or current-config version. */
+    public static function refundListRow(array $saved,array $parent,string $scope):array
+    {
+        if(!array_key_exists('marketplace_trade_version',$parent))self::unavailable();
+        if(MarketplaceTradePolicy::savedOrderIsLegacy($parent))return $saved;
+        $saved['marketplace_trade_version']=1;
+        if(array_key_exists('mer_id',$parent))$saved['mer_id']=$parent['mer_id'];
+        return self::listRow($saved,$scope,true);
+    }
+
+    private static function listRow(array $saved,string $scope,bool $refund):array
+    {
+        if(!in_array($scope,['customer','platform','mobile'],true))self::unavailable();
+        $out=self::scalars($saved,['id','order_id','store_order_id','store_order_order_id','store_order_status','mer_id','pid',
+            'type','status','paid','pay_type','shipping_type','delivery_type','is_cancel','is_del','is_gift','virtual_type',
+            'refund_status','refund_type','refund_num','total_num','is_all_refund','add_time','_add_time','pay_time','_pay_time',
+            '_refund_time','pay_type_name','pink_name','color','mark','remark','refuse_reason','refund_express','refund_reason',
+            'merchant_name_snapshot','merchant_after_sale_contact_snapshot']);
+        $out['marketplace_trade_version']=1;
+        foreach(['total_price','pay_price','total_postage','pay_postage','refund_price','refunded_price'] as $key)
+            if(array_key_exists($key,$saved))$out[$key]=self::money($saved[$key]);
+        if($scope==='platform')$out+=self::scalars($saved,['uid','nickname']);
+        if(isset($saved['_status'])){
+            if($refund || $scope==='customer')$out['_status']=self::scalars(self::row($saved['_status']),self::STATUS);
+            else {
+                if(!is_int($saved['_status']))self::unavailable();
+                $out['_status']=$saved['_status'];
+            }
+        }
+        if(isset($saved['status_name'])){
+            $status=self::row($saved['status_name']);$out['status_name']=self::scalars($status,['status_name']);
+            if(array_key_exists('pics',$status))$out['status_name']['pics']=self::images($status['pics']);
+        }
+        foreach(['cartInfo','cart_info','refund_cartInfo'] as $key)
+            if(array_key_exists($key,$saved))$out[$key]=self::carts($saved[$key]);
+        if(array_key_exists('_info',$saved)){
+            $out['_info']=[];
+            foreach(self::row($saved['_info']) as $wrapper){
+                $wrapper=self::row($wrapper);
+                $out['_info'][]=['cart_info'=>self::carts([self::row($wrapper['cart_info'] ?? null)])[0]];
+            }
+        }
+        if(array_key_exists('cart_id',$saved)){
+            $out['cart_id']=[];foreach(self::list($saved['cart_id']) as $ref)$out['cart_id'][]=self::text($ref);
+        }
+        if(array_key_exists('refund',$saved)){
+            $out['refund']=[];
+            foreach(self::list($saved['refund']) as $row){
+                $row=self::row($row);$summary=self::scalars($row,['id','order_id','store_order_id','refund_type','refund_num','is_cancel','add_time']);
+                if(array_key_exists('refund_price',$row))$summary['refund_price']=self::money($row['refund_price']);
+                $out['refund'][]=$summary;
+            }
+        }
+        if(array_key_exists('split',$saved)){
+            $out['split']=[];foreach(self::list($saved['split']) as $row)$out['split'][]=self::scalars(self::row($row),['id','pid']);
+        }
+        if(array_key_exists('refund_img',$saved))$out['refund_img']=self::images($saved['refund_img']===''?[]:$saved['refund_img']);
+        return $out;
+    }
+
     /** Display saved answers; hash is an opaque original-definition marker, NEVER rehashed over filled values. */
     public static function customForms(mixed $raw,?array $productIds=null):array
     {

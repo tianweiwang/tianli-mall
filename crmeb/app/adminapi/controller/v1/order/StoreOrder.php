@@ -91,7 +91,7 @@ class StoreOrder extends AuthController
         if ($where['status'] == 1) $where = $where + ['shipping_type' => 1];
         return app('json')->success($this->services->getOrderList($where, ['*'], ['split' => function ($query) {
             $query->field('id,pid');
-        }, 'pink', 'invoice', 'division']));
+        }, 'pink', 'invoice', 'division'],'platform'));
     }
 
     /**
@@ -207,6 +207,7 @@ class StoreOrder extends AuthController
             ['ids', []],
         ], true);
         if (!count($ids)) return app('json')->fail('请选择需要删除的订单');
+        $this->services->assertLegacyOrderSelection(['ids'=>$ids]);
         if ($this->services->getOrderIdsCount($ids))
             return app('json')->fail('您选择的的订单存在用户未删除的订单');
         if ($this->services->batchUpdate($ids, ['is_system_del' => 1]))
@@ -587,7 +588,7 @@ class StoreOrder extends AuthController
         $orderInfo['vip_true_price'] = $vipTruePrice;
         $orderInfo['levelPrice'] = $levelPrice;
         $orderInfo['memberPrice'] = $memberPrice;
-        $orderInfo['total_price'] = bcadd($orderInfo['total_price'], $orderInfo['vip_true_price'], 2);
+        if($legacy)$orderInfo['total_price'] = bcadd($orderInfo['total_price'], $orderInfo['vip_true_price'], 2);
         if ($orderInfo['store_id'] && $orderInfo['shipping_type'] == 2) {
             /** @var  $storeServices */
             $storeServices = app()->make(SystemStoreServices::class);
@@ -921,6 +922,8 @@ class StoreOrder extends AuthController
             return app('json')->fail('文件格式不正确，请上传xls或xlsx格式的文件！');
         }
         $expressData = app()->make(FileService::class)->readExcel($file, 'express', 2, ucfirst($suffix));
+        // Every actual target is checked before any job is dispatched; an empty import remains a no-op.
+        if($expressData)$this->services->assertLegacyOrderSelection(['ids'=>array_column($expressData,'id')]);
         foreach ($expressData as $item) {
             OrderExpressJob::dispatch([$item]);
         }

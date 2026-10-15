@@ -24,7 +24,7 @@ const files = {
   refund: 'template/uni-app/pages/admin/refund_order_detail/index.vue',
   form: 'template/uni-app/pages/admin/components/customForm/index.vue'
 };
-const compiled = [], components = {}, asts = {}, sources = {};
+const compiled = [], components = {}, asts = {}, sources = {}, templates = {};
 const sha = value => crypto.createHash('sha256').update(value).digest('hex');
 const globals = fs.readFileSync(path.join(root, 'template/uni-app/uni.scss'), 'utf8');
 for (const [name, relative] of Object.entries(files)) {
@@ -69,7 +69,7 @@ for (const [name, relative] of Object.entries(files)) {
       evaluated = evaluated.slice(0,row.start)+row.value+evaluated.slice(row.end);
     });
     vm.createContext(sandbox);new vm.Script(evaluated,{filename:file}).runInContext(sandbox);
-    components[name] = sandbox.component;asts[name] = result.ast;
+    components[name] = sandbox.component;asts[name] = result.ast;templates[name] = template.trim();
   }
 }
 let assertions = 0;
@@ -146,6 +146,38 @@ for (const name of ['order','refund']) {
   page.applyOrderBenefits(oldBenefits);
   ordinary(page.giveData,{give_coupon:oldBenefits.give_coupon,give_integral:3},'Historical benefit values retain their old producer contract');
 }
+// Compile and render the real two amount rows as VNodes; no mount, DOM, imports or transport.
+const amountRows=nodes(asts.order).filter(row=>row.tag==='view' &&
+  (row.children||[]).some(child=>child.type===1&&(child.children||[]).some(text=>
+    text.type===2 && /商品金额|会员优惠（已计入商品金额）/.test(text.text))));
+assert.equal(amountRows.length,2);
+const amountTemplate='<view>'+amountRows.map(row=>templates.order.slice(row.start,row.end)).join('')+'</view>';
+const amountCompiled=compiler.compile(amountTemplate);
+assert.deepEqual(amountCompiled.errors,[]);assert.deepEqual(amountCompiled.tips,[]);
+const amountRender=new Function(amountCompiled.render);
+const amountStatics=amountCompiled.staticRenderFns.map(source=>new Function(source));
+const vnodeTexts=node=>node.text ? (node.text.trim()?[node.text.trim()]:[]) : (node.children||[]).flatMap(vnodeTexts);
+const displayAmounts=(orderInfo,statusType='')=>{
+  const page=new Vue({data:()=>({orderInfo,statusType}),computed:components.order.computed,
+    render:amountRender,staticRenderFns:amountStatics});
+  return vnodeTexts(page._render());
+};
+for(const version of [1,'1']){
+  const amount={marketplace_trade_version:version,total_price:'24.68',vip_true_price:'2.46'};
+  const before=JSON.stringify(amount);
+  ordinary(displayAmounts(amount),['商品金额','￥24.68','会员优惠（已计入商品金额）','-￥2.46'],
+    'Saved V1 transaction amount and included membership saving retain their original strings');
+  ordinary(JSON.stringify(amount),before,'Read-only membership display does not alter saved amounts');
+}
+ordinary(displayAmounts({marketplace_trade_version:1,total_price:'9999999999.99',vip_true_price:'0.01'}),
+  ['商品金额','￥9999999999.99','会员优惠（已计入商品金额）','-￥0.01'],
+  'Maximum saved money remains exact and the membership saving is never added back');
+ordinary(displayAmounts({marketplace_trade_version:1,total_price:'24.68',vip_true_price:'0.00'}),
+  ['商品金额','￥24.68'],'An ordinary zero membership saving leaves the amount visible without an empty discount row');
+ordinary(displayAmounts({marketplace_trade_version:0,total_price:'24.68',vip_true_price:'2.46'}),
+  ['商品总价','￥27.14','会员商品优惠','-￥2.46'],'Historical amount and membership formulas retain their previous output');
+ordinary(displayAmounts({marketplace_trade_version:0,total_price:'24.68',vip_true_price:'2.46'},-3),
+  ['商品总价','￥24.68','会员商品优惠','-￥2.46'],'Historical refund amount keeps its existing direct-price branch');
 const brokerage=nodes(asts.platform).find(row=>row.attrsMap.class==='section'&&
   (row.children||[]).some(child=>child.type===1&&(child.children||[]).some(text=>text.text==='返佣信息(金额｜用户UID)')));
 assert.ok(brokerage&&brokerage.if);

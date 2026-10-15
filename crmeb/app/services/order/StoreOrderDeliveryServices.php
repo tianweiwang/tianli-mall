@@ -56,6 +56,7 @@ class StoreOrderDeliveryServices extends BaseServices
         if (!$orderInfo) {
             throw new AdminException('订单未能查到,不能发货');
         }
+        \app\services\marketplace\order\MarketplaceTradePolicy::assertLegacyOrder($orderInfo->getData());
         if ($orderInfo->is_del) {
             throw new AdminException('订单已删除,不能发货');
         }
@@ -388,6 +389,7 @@ class StoreOrderDeliveryServices extends BaseServices
         if (!$orderInfo) {
             throw new AdminException('订单未能查到,不能发货');
         }
+        \app\services\marketplace\order\MarketplaceTradePolicy::assertLegacyOrder($orderInfo->getData());
         if ($orderInfo->is_del) {
             throw new AdminException('订单已删除,不能发货');
         }
@@ -446,6 +448,9 @@ class StoreOrderDeliveryServices extends BaseServices
      */
     public function doDelivery(int $id, $orderInfo, array $data)
     {
+        $actual=$this->dao->get($id,['id','marketplace_trade_version']);
+        if(!$actual)throw new AdminException('订单未能查到,不能发货');
+        \app\services\marketplace\order\MarketplaceTradePolicy::assertLegacyOrder($actual->getData());
         $type = (int)$data['type'];
         unset($data['type']);
         //获取购物车内的商品标题

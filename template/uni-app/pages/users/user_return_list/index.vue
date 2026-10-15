@@ -8,7 +8,8 @@
 		</view>
 		<view class='return-list' v-if="orderList.length">
 			<view class='goodWrapper' v-for="(item,index) in orderList" :key="index"
-				@click='goOrderDetails(item.order_id)'>
+				@click='goOrderDetails(item.order_id,item)'>
+				<view v-if="isSavedMarketplaceV1(item)" class="saved-list-note">{{$t(`已保存退款，仅供查看`)}}</view>
 				<view class='iconfont icon-shenqingzhong powder' v-if="item.refund_type==1 ||item.refund_type==2">
 				</view>
 				<view class='iconfont icon-yijujue' v-if="item.refund_type==3"></view>
@@ -29,7 +30,8 @@
 						<view class='attr line1' v-if="items.productInfo.attrInfo">{{items.productInfo.attrInfo.suk}}
 						</view>
 						<view class='attr line1' v-else>{{items.productInfo.store_name}}</view>
-						<view class='money'>
+							<view v-if="isSavedMarketplaceV1(item)" class='money'>{{$t(`￥`)}}{{items.truePrice}}</view>
+							<view v-else class='money'>
 							{{$t(`￥`)}}{{items.productInfo.attrInfo?items.productInfo.attrInfo.price:items.productInfo.price}}</view>
 					</view>
 				</view>
@@ -136,6 +138,9 @@
 			this.getOrderList();
 		},
 		methods: {
+			isSavedMarketplaceV1(row) {
+				return !!row && (row.marketplace_trade_version === 1 || row.marketplace_trade_version === '1');
+			},
 			onLoadFun() {
 				this.getOrderList();
 			},
@@ -146,12 +151,12 @@
 			/**
 			 * 去订单详情
 			 */
-			goOrderDetails: function(order_id) {
+			goOrderDetails: function(order_id,row) {
 				if (!order_id) return that.$util.Tips({
 					title: that.$t(`缺少订单号无法查看订单详情`)
 				});
 				uni.navigateTo({
-					url: '/pages/goods/order_details/index?order_id=' + order_id + '&isReturn=1'
+					url: '/pages/goods/order_details/index?order_id=' + (this.isSavedMarketplaceV1(row) ? encodeURIComponent(order_id) : order_id) + '&isReturn=1'
 				})
 			},
 			changeTabs(index) {
@@ -195,6 +200,7 @@
 </script>
 
 <style lang="scss" scoped>
+.saved-list-note { color: #666; font-size: 24rpx; line-height: 1.5; margin-bottom: 12rpx; }
 	.return-list .goodWrapper {
 		background-color: #fff;
 		margin-top: 13rpx;

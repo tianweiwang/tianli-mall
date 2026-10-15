@@ -38,10 +38,11 @@
     >
       <el-table-column type="expand">
         <template slot-scope="scope">
-          <expandRow :row="scope.row"></expandRow>
+          <div v-if="isSavedMarketplaceV1(scope.row)" class="saved-list-note">已保存订单，仅供查看，请打开详情查看实际保存信息。</div>
+          <expandRow v-else :row="scope.row"></expandRow>
         </template>
       </el-table-column>
-      <el-table-column type="selection" width="55"> </el-table-column>
+      <el-table-column type="selection" :selectable="canSelectLegacyRow" width="55"> </el-table-column>
       <el-table-column label="订单号 | 类型" width="200">
         <template slot-scope="scope">
           <div>{{ scope.row.order_id }}</div>
@@ -135,6 +136,11 @@
       </el-table-column>
       <el-table-column label="操作" fixed="right" width="170">
         <template slot-scope="scope">
+          <div v-if="isSavedMarketplaceV1(scope.row)" class="saved-list-actions">
+            <span class="saved-list-note">仅供查看</span>
+            <el-button type="text" @click="changeMenu(scope.row, '2')">详情</el-button>
+          </div>
+          <template v-else>
           <a v-db-click @click="changeMenu(scope.row, '2')">详情</a>
           <el-divider direction="vertical" />
           <a
@@ -229,6 +235,7 @@
                 <el-dropdown-item command="13" v-show="scope.row.paid">配货单打印</el-dropdown-item>
               </el-dropdown-menu>
             </el-dropdown>
+          </template>
           </template>
         </template>
       </el-table-column>
@@ -474,6 +481,10 @@ export default {
     },
   },
   methods: {
+    isSavedMarketplaceV1(row) {
+      return !!row && (row.marketplace_trade_version === 1 || row.marketplace_trade_version === '1');
+    },
+    canSelectLegacyRow(row) { return !this.isSavedMarketplaceV1(row); },
     ...mapMutations('order', ['getOrderStatus', 'onChangeTabs', 'getIsDel', 'getisDelIdListl']),
     batchShipment() {},
     beforeUpload(file) {
@@ -481,6 +492,7 @@ export default {
     },
     // 操作
     changeMenu(row, name) {
+      if (this.isSavedMarketplaceV1(row) && name !== '2') return;
       this.orderId = row.id;
       switch (name) {
         case '1':
@@ -612,6 +624,7 @@ export default {
       }
     },
     shipmentClear(row) {
+      if (this.isSavedMarketplaceV1(row)) return;
       this.orderId = row.id;
       this.$refs.shipment.modals = true;
     },
@@ -663,7 +676,7 @@ export default {
     },
     handleSelectRow(selection) {
       let ids = [];
-      selection.map((e) => {
+      selection.filter(row => this.canSelectLegacyRow(row)).map((e) => {
         ids.push(e.id);
       });
       this.selectedIds = ids;
@@ -673,19 +686,19 @@ export default {
       });
     },
     setChecked() {
-      //将new Set()转化为数组
+      // Preserve the selected legacy IDs as an array.
       let ids = [...this.selectedIds];
       this.getisDelIdListl(ids);
       // 找到绑定的table的ref对应的dom，找到table的objData对象，objData保存的是当前页的数据
       let objData = this.$refs.table.objData;
       for (let index in objData) {
-        if (this.selectedIds.has(objData[index].id)) {
+        if (this.canSelectLegacyRow(objData[index]) && this.selectedIds.includes(objData[index].id)) {
           objData[index]._isChecked = true;
         }
       }
     },
     isDel(selection) {
-      if (selection.findIndex((target) => target.is_del === 0) == -1) {
+      if (selection.filter(row => this.canSelectLegacyRow(row)).findIndex((target) => target.is_del === 0) == -1) {
         this.getIsDel(1);
       } else {
         this.getIsDel(0);
@@ -693,10 +706,12 @@ export default {
     },
     // 编辑
     edit(row) {
+      if (this.isSavedMarketplaceV1(row)) return;
       this.getOrderData(row.id);
     },
     // 删除单条订单
     delOrder(row, data) {
+      if (this.isSavedMarketplaceV1(row)) return;
       if (row.is_del === 1) {
         this.$modalSure(data)
           .then((res) => {
@@ -780,6 +795,7 @@ export default {
     },
     // 发送货
     sendOrder(row) {
+      if (this.isSavedMarketplaceV1(row)) return;
       if (row.user_address) {
         this.$refs.send.userSendmsg = {
           real_name: row.real_name,
@@ -801,6 +817,7 @@ export default {
     },
     // 配送信息表单数据
     delivery(row) {
+      if (this.isSavedMarketplaceV1(row)) return;
       getDistribution(row.id)
         .then(async (res) => {
           this.FromData = res.data;
@@ -812,6 +829,7 @@ export default {
     },
     // 核销订单
     bindWrite(row) {
+      if (this.isSavedMarketplaceV1(row)) return;
       let self = this;
       this.$msgbox({
         title: '提示',
@@ -994,6 +1012,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.saved-list-note { color: #666; font-size: 12px; line-height: 1.5; }
+.saved-list-actions { display: flex; align-items: center; justify-content: center; gap: 8px; }
 ::v-deep .el-upload,
 ::v-deep .el-upload-dragger {
   width: 100%;

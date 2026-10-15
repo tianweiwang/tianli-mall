@@ -18,6 +18,7 @@ use app\services\activity\coupon\StoreCouponUserServices;
 use app\services\activity\seckill\StoreSeckillServices;
 use app\services\BaseServices;
 use app\services\marketplace\order\MarketplaceCartSelection;
+use app\services\marketplace\order\MarketplaceOrderSnapshotProjection as SavedOrder;
 use app\services\marketplace\order\MarketplaceTradePolicy;
 use app\services\other\PosterServices;
 use app\services\other\QrcodeServices;
@@ -100,13 +101,21 @@ class StoreOrderServices extends BaseServices
      * @throws \think\db\exception\DbException
      * @throws \think\db\exception\ModelNotFoundException
      */
-    public function getOrderList(array $where, array $field = ['*'], array $with = [])
+    public function assertLegacyOrderSelection(array $where):void
     {
+        if($this->dao->hasNonLegacyOrderSelection($where))throw new ApiException('当前操作尚未适配多商户订单');
+    }
+
+    public function getOrderList(array $where, array $field = ['*'], array $with = [], string $marketplaceScope = '', int $viewerUid = 0)
+    {
+        $viewer=SavedOrder::listViewer($marketplaceScope,$viewerUid);
         [$page, $limit] = $this->getPageValue();
-        $data = $this->dao->getOrderList($where, $field, $page, $limit, $with);
-        $count = $this->dao->count($where, false);
+        $data = $this->dao->getOrderList($where, $field, $page, $limit, $with, 'add_time DESC,id DESC', $viewer);
+        $count = $viewer===null ? $this->dao->count($where, false) : $this->dao->countVisibleMarketplaceList($where,$viewer);
         $data = $this->tidyOrderList($data);
         foreach ($data as &$item) {
+            if($marketplaceScope!=='' && !array_key_exists('marketplace_trade_version',$item))throw new AuthUnavailableException();
+            $publicV1=$marketplaceScope!=='' && !MarketplaceTradePolicy::savedOrderIsLegacy($item);
             $refund_num = array_sum(array_column($item['refund'], 'refund_num'));
             $cart_num = 0;
             $vipTruePrice = 0;
@@ -114,9 +123,12 @@ class StoreOrderServices extends BaseServices
                 $cart_num += $items['cart_info']['cart_num'];
                 $vipTruePrice = bcadd((string)$vipTruePrice, bcmul((string)$items['cart_info']['vip_truePrice'], (string)$items['cart_info']['cart_num'], 2), 2);
             }
-            $item['total_price'] = bcadd($item['total_price'], $vipTruePrice, 2);
+            if(!$publicV1)$item['total_price'] = bcadd($item['total_price'], $vipTruePrice, 2);
             $item['is_all_refund'] = $refund_num == $cart_num;
-            $item['pay_price'] = (float)$item['pay_price'];
+            if($publicV1){
+                if($viewer!==null && (string)$item['uid']!==(string)$viewer)throw new AuthUnavailableException();
+                $item=SavedOrder::orderListRow($item,$marketplaceScope);
+            }else $item['pay_price'] = (float)$item['pay_price'];
         }
         return compact('data', 'count');
     }
@@ -131,11 +143,15 @@ class StoreOrderServices extends BaseServices
      * @throws \think\db\exception\DbException
      * @throws \think\db\exception\ModelNotFoundException
      */
-    public function getOrderApiList(array $where, array $field = ['*'], array $with = [])
+    public function getOrderApiList(array $where, array $field = ['*'], array $with = [], string $marketplaceScope = '', int $viewerUid = 0)
     {
+        $viewer=SavedOrder::listViewer($marketplaceScope,$viewerUid);
         [$page, $limit] = $this->getPageValue();
-        $data = $this->dao->getOrderList($where, $field, $page, $limit, $with);
+        $data = $this->dao->getOrderList($where, $field, $page, $limit, $with, 'add_time DESC,id DESC', $viewer);
         foreach ($data as &$item) {
+            if($marketplaceScope!=='' && !array_key_exists('marketplace_trade_version',$item))throw new AuthUnavailableException();
+            $publicV1=$marketplaceScope!=='' && !MarketplaceTradePolicy::savedOrderIsLegacy($item);
+            if($publicV1 && $viewer!==null && (string)$item['uid']!==(string)$viewer)throw new AuthUnavailableException();
             $item = $this->tidyOrder($item, true);
             foreach ($item['cartInfo'] ?: [] as $key => $product) {
                 if ($item['_status']['_type'] == 3) {
@@ -150,6 +166,7 @@ class StoreOrderServices extends BaseServices
             } else {
                 $item['is_all_refund'] = false;
             }
+            if($publicV1)$item=SavedOrder::orderListRow($item,$marketplaceScope);
         }
         return $data;
     }

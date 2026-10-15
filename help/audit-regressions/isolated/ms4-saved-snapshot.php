@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-// Ordinary saved DTO data only. No UID/auth actor, App, database, cache or transport is constructed.
+// Ordinary DTO encoding only, including identity-like fields below; no authentication actor, App, database, cache or transport is constructed.
 require dirname(__DIR__,3).'/crmeb/vendor/autoload.php';
 
 use app\services\marketplace\order\MarketplaceOrderSnapshotProjection as Saved;
@@ -72,5 +72,50 @@ $check($staff['custom_form']===$out['custom_form'] && serialize($platform)===$pl
 $check(Saved::platformRefund($refund,['marketplace_trade_version'=>1,'custom_form'=>json_encode($forms,JSON_THROW_ON_ERROR)])===$refundOut);
 $check(Saved::platformOrder($legacy)===$legacy);
 $check(Saved::platformRefund($legacy,['marketplace_trade_version'=>0])===$legacy);
+$list=$platform;
+$list['cart_id']=['18446744073709551615','opaque-ref'];
+$list['_info']=[['cart_info'=>$cart(7,'18446744073709551615','原商品甲'),'private'=>'wrapper'],
+    ['cart_info'=>$cart(8,'opaque-ref','原商品乙')]];
+$list['uid']=27;$list['nickname']='列表昵称';$list['gift_uid']=99;
+$list['pay_price']='9999999999.99';$list['status_name']=['status_name'=>'未发货','pics'=>['saved-refund.png'],'private'=>'hidden'];
+$list['split']=[['id'=>31,'pid'=>19,'uid'=>27,'private'=>'hidden']];
+$list['spread']=['private'=>'hidden'];$list['division']=['private'=>'hidden'];
+$listBefore=serialize($list);$customerList=Saved::orderListRow($list,'customer');
+$check($customerList['_status']===['_type'=>0,'_title'=>'待支付','_msg'=>'请完成支付']);
+$check($customerList['pay_price']==='9999999999.99'&&$customerList['pay_postage']==='2.02');
+$check($customerList['cartInfo'][0]['id']==='18446744073709551615'&&$customerList['cart_id']===$list['cart_id']);
+$check($customerList['_info'][0]===['cart_info'=>$customerList['cartInfo'][0]]);
+$check($customerList['cartInfo']===$customerList['cart_info']&&$customerList['cartInfo']===$customerList['refund_cartInfo']);
+$check(array_intersect(['cost','user','spread','division','invoice','custom_form','uid','gift_uid'],array_keys($customerList))===[]);
+$check($customerList['refund']===$staff['refund']&&$customerList['split']===[['id'=>31,'pid'=>19]]);
+$check($customerList['status_name']===['status_name'=>'未发货','pics'=>['saved-refund.png']]);
+$check(serialize($list)===$listBefore);
+$list['_status']=2;$platformList=Saved::orderListRow($list,'platform');$mobileList=Saved::orderListRow($list,'mobile');
+$check($platformList['_status']===2&&$mobileList['_status']===2);
+$check($platformList['uid']===27&&$platformList['nickname']==='列表昵称'&&!array_key_exists('uid',$mobileList)
+    &&!array_key_exists('nickname',$mobileList));
+$check($platformList['_info']===$mobileList['_info']&&$platformList['_info'][0]['cart_info']['id']==='18446744073709551615');
+$check(!array_key_exists('marketplace',$platformList['_info'][0]['cart_info'])
+    &&!array_key_exists('costPrice',$platformList['_info'][0]['cart_info'])
+    &&!array_key_exists('stock',$platformList['_info'][0]['cart_info']['productInfo']));
+$listRefund=$refund+['uid'=>27,'nickname'=>'列表昵称','pay_price'=>'24.68','pay_postage'=>'1.01',
+    'store_order_order_id'=>'ordinary-order','store_order_status'=>'未发货','refund_type'=>1,
+    '_status'=>['_type'=>-1,'_title'=>'申请退款中'],
+    '_info'=>[['cart_info'=>$cart(8,'opaque-ref','原商品乙'),'private'=>'wrapper']],
+    'refund_img'=>['saved-refund.png']];
+$parent=['marketplace_trade_version'=>1,'mer_id'=>3];
+$refundList=Saved::refundListRow($listRefund,$parent,'customer');
+$check($refundList['marketplace_trade_version']===1&&$refundList['mer_id']===3
+    &&$refundList['store_order_order_id']==='ordinary-order'&&$refundList['store_order_status']==='未发货');
+$check($refundList['pay_postage']==='1.01'&&$refundList['cart_info'][0]['origin_postage_price']==='1.01');
+$check($refundList['_status']===['_type'=>-1,'_title'=>'申请退款中']&&$refundList['refund_img']===['saved-refund.png']);
+$check($refundList['cartInfo']===$refundList['cart_info']&&$refundList['_info']===[['cart_info'=>$refundList['cart_info'][0]]]);
+$check(!array_key_exists('cost',$refundList)&&!array_key_exists('uid',$refundList)&&!array_key_exists('custom_form',$refundList));
+$check(Saved::refundListRow($listRefund,$parent,'platform')['uid']===27
+    &&!array_key_exists('uid',Saved::refundListRow($listRefund,$parent,'mobile')));
+$check(Saved::orderListRow($legacy,'customer')===$legacy&&Saved::orderListRow($legacy,'platform')===$legacy
+    &&Saved::orderListRow($legacy,'mobile')===$legacy);
+$check(Saved::refundListRow($legacy,['marketplace_trade_version'=>null],'customer')===$legacy);
+$check(json_decode(json_encode($platformList,JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR),true,32,JSON_THROW_ON_ERROR)===$platformList);
 echo json_encode(['status'=>'PASS','scope'=>'PURE_ORDINARY_SAVED_SNAPSHOT','assertions'=>$checks,
     'App_SQL_auth_cache_HTTP_or_stopped_samples_run'=>false],JSON_THROW_ON_ERROR).PHP_EOL;

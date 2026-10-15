@@ -267,11 +267,34 @@ class StoreOrderDao extends BaseDao
      * @throws \think\db\exception\DbException
      * @throws \think\db\exception\ModelNotFoundException
      */
-    public function getOrderList(array $where, array $field, int $page = 0, int $limit = 0, array $with = [], $order = 'add_time DESC,id DESC')
+    public function getOrderList(array $where, array $field, int $page = 0, int $limit = 0, array $with = [], $order = 'add_time DESC,id DESC', ?int $marketplaceUid = null)
     {
-        return $this->search($where)->field($field)->with(array_merge(['user', 'spread', 'refund'], $with))->when($page && $limit, function ($query) use ($page, $limit) {
+        return $this->visibleMarketplaceList($this->search($where),$marketplaceUid)->field($field)->with(array_merge(['user', 'spread', 'refund'], $with))->when($page && $limit, function ($query) use ($page, $limit) {
             $query->page($page, $limit);
         })->order($order)->select()->toArray();
+    }
+
+    /** Same pre-pagination visibility for explicit customer/mobile list counts. */
+    public function countVisibleMarketplaceList(array $where,int $uid):int
+    {
+        return $this->visibleMarketplaceList($this->search($where,false),$uid)->count();
+    }
+
+    /** Full original selection, without page/limit or a silent version filter. */
+    public function hasNonLegacyOrderSelection(array $where):bool
+    {
+        return $this->search($where)->whereNotNull('marketplace_trade_version')
+            ->where('marketplace_trade_version','<>',0)->count()>0;
+    }
+
+    private function visibleMarketplaceList($query,?int $uid)
+    {
+        if($uid===null)return $query;
+        if($uid<1 || $uid>2147483647)throw new \crmeb\exceptions\AuthUnavailableException();
+        return $query->where(function($visible)use($uid){
+            $visible->whereNull('marketplace_trade_version')->whereOr('marketplace_trade_version',0)
+                ->whereOr(function($owned)use($uid){$owned->where('marketplace_trade_version',1)->where('uid',$uid);});
+        });
     }
 
     /**

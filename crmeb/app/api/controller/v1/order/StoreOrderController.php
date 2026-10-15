@@ -392,7 +392,7 @@ class StoreOrderController
         } elseif (in_array($where['status'], [0, 1, 2, 3, 4, 9])) {
             $where['pid'] = 0;
         }
-        $list = $this->services->getOrderApiList($where);
+        $list = $this->services->getOrderApiList($where,['*'],[],'customer',(int)$request->uid());
         return app('json')->success($list);
     }
 
