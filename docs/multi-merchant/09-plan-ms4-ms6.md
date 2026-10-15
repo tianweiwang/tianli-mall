@@ -241,9 +241,21 @@ Files：`crmeb/app/services/marketplace/order/MarketplaceOrderSnapshotProjection
 
 同Run失败关闭已实际完成：原metadata cleanup helper实际exit0后移除；固定失败关闭源摘要 `c40888874949d1438accd8248ad382c1af4fbcd17e60675fa031afe2407a4296` 保持业务FAIL_PRESERVED，原MySQL/Redis正常stop的原生进程及容器均exit0，原三CID、唯一内部网与六卷按原身份非force移除。Root独立关闭核对源摘要 `328a8100661c6a90d5c9759b31ea5933ca964a6482a981e3c93369f949a4fe37` 实际六条原生双标签查询均exit0/stderr空/count0；原业务收据摘要仍为 `236dce2d063dbe1b94cee1be25f8a23e60f20f5135dc169256cfe2b72ccc98c8`。旧Run不重开。CLI实际类型窄修摘要 `d7ea8bf2f10fe685b2719ddbeb42303eaee3c5bd5503004c91dd7be4f99e51b4`，仅增加原始JSON getter int1并将两个包装/缓存读回严格核string1；Root PHP82语法exit0、diffcheck0，原金额/资格/direct/service断言不变，真实会员与saved_reads重试仍待全新Run。fresh前端离线构建另固定main的feb1d0fd3来源，构建期间主树保持该clean SHA；不把构建或旧Run原两场景结果写成会员/HTTP/DOM通过。
 
+**会员与保存读取普通实测结果（2026-10-15）：** 全新clean来源 `d5386f27537d8e0905af622943e2d7d24327e410`、Run `202610150324398d7db0`、freeze摘要 `2e4e18b482a0872874d4b9c9028caccedf6c175e5827f4b792240f66c59ff9d7`；有限初始化、四个独立迁移子进程及订单CLI均实际exit0，phase=final_source，状态 `VERIFIED_NORMAL_ORDER_INTERNAL`。原direct及persistent/temporary创建断言保留；新增level/paid真实资格、确认、创建、独立保存价格/优惠/成本/运费/库存/表单/发票/cart与重放均通过，精确金额分别为上面合同122.18/113.12，不改paid或创建支付记录。真实saved_reads三端订单各2、本人详情2、DAO两页/count2及三端空退款通过，保存金额/别名/表单/发票与读前后事实一致。业务收据摘要 `0452681216a9e023b8178fade303b3ae8f2a2d6795bcd6ceb85824349e168e50`。同Run cleanup helper实际0后按原ID移除，正常关闭源9b532551实际停止并按原身份非force移除原三CID/内部网络/六卷；Root独立源d0e84515实际六条双标签原生查询exit0/stderr空/count0。原失败Run保留、不重启。本结果限内部普通链，不覆盖HTTP/真实认证/DOM、购买会员、非空退款、持久收尾、取消或真实支付。
+
+fresh前端另固定clean `feb1d0fd3`，后台和H5真实原生构建与最终静态资源检查均exit0；后台600文件、H5 334文件与各自dist逐字节一致。完整报告 `artifacts/ms4-browser-preparation/feb1d0fd3-source-v1/BUILD-REPORT.json` 摘要 `b2003251c13f74a7fe98a19ed67403671aae3fc4ecb2eb8e291e70cd5b82b26b`。首轮checker错误拒绝合法相对manifest路径的失败保留；仅标准URL相对解析窄修后重验同一原生产物，原前缀/无越界/实际资源要求不变。沿已有本地依赖，无安装下载；原CSS顺序/包体积告警完整保留。此处不是实际登录页、品牌配置或DOM验收，中性通用品牌仍待真实新Run配置及页面核对。
+
+**Task4持久收尾实施合同（开始编码前记录）：** 新 `MarketplaceOrderPostCommitServices::finish(actualOrderPK)` 只在原创建事务物理提交后运行。先在事务外只读真实ledger定位UID，再用真实默认PDO事务按UID→ledger→order→保存items锁定，复用committedOrder核已提交身份/版本/确认hash及refs；已有外层事务时不提前收尾。done1只读返回；done0以保存order.add_time写一条cache_key_create_order/订单生成状态及保存items实际UID/product/qty的order统计，最后条件写done1；状态、统计、完成标志同事务。两个旧表没有足够唯一键，幂等以锁定ledger及同一事务保证；存在无法解释的创建状态不得猜作完成。不调用旧listener、重新报价/佣金/默认地址或第二次删除SQL cart，不改金额/库存/支付/取消期限。
+
+确认缓存只清真实UID+原key；present时核真实frame与保存mer/source/refs。temporary只清持久ledger已消费原字节refs，present时逐项核保存UID/版本/product/SKU/qty；永久ledger不删，不动未选SQL cart。真实缺席或删除后缺席才成功，不要求不存在键的delete返回true；异常或仍存在保持done0。CreateServices事务内保留真实orderPK，fresh/replay在事务结束后都尝试同finish，公开order_id/key响应形状不变；只捕获已提交后的收尾异常，记录固定脱敏码与内部订单关联，返回已创建结果，不能返回创建失败。state1/done0是持久责任，scanner按原索引/真实orderPK每页最多100，各单独立finish、失败留pending且继续后项，游标到尾回绕，不按当前商家/商品状态、开关、TTL或cancel_at过滤。
+
+复用既有system_timer/CrontabRunServices调度体系，新增mark及真实handler；独立 `MarketplaceOrderPostCommitTimer` 以默认连接GET_LOCK串行、事务重核保存注册、原生PK和既有getTimerStr生成每分钟任务（type2/minute1/open1/notdeleted/customCode为空），刷新真实crontabCache。重复安装严格核原记录、不覆盖异形或人为停用记录；单独Think命令 `marketplace:post-commit-install` 提供明确DML安装入口，不改变已有structure-only迁移。当前无需新队列连接/Job；旧marketplace连接专属AuditLogJob且queue0延时不执行，不能假称可靠补办。Files为既有 `MarketplaceOrderDao.php`、`MarketplaceOrderCreateServices.php`、新 `MarketplaceOrderPostCommitServices.php`/`MarketplaceOrderPostCommitTimer.php`、既有 `system/crontab/CrontabRunServices.php`、新 `app/command/MarketplaceOrderPostCommitInstall.php` 及 `config/console.php`，沿当前唯一普通CLI和仓库外准备协议补验证，不新增业务表。
+
+普通验证保留全部原价格/库存/cart/表单/发票/会员/保存读取断言，生产CreateServices现应done1并精确核真实状态、统计、缓存缺席；重复finish/replay没有额外写。原direct DAO自然留下done0，由真实注册mark的同一handler补办，再核done1和不重复；不把已完成flag改回0制造恢复样本。注册真实原生ID/字段及第二次无变化、真实handler调用独立读回；不运行全局所有timer，daemon与wallclock调度仍pending。此合同先源码/语法/独立审，再新固定来源的普通隔离Run；不运行已停止的权限、拒绝、冲突、并发、故障或恢复样本，不开放创建gate。
+
 ### Task 5: 取消与超时释放
 
-- 接口：取消与超时关单都通过 `release` 流水释放库存，`idem_key = "release:<order_id>:<unique>"`，重复执行不重复释放。超时关单前先查询支付状态（MS5 之前用测试驱动），已支付的不关单，转入异常处理。
+- 接口：整笔未支付且未发货的取消/超时按真实父reserve聚合release，`idem_key = "release:<store_order.id>:<parent_reserve_id>"`；两项为真实已提交PK，尾段是规范U64字符串，不能用非全局唯一的SKU八字节unique。动作摘要绑定保存顾客/商家/订单/父reserve/SKU/数量，顾客取消与系统超时共用动作，演员仅记首次真实执行者；重复不重复释放。未来Task7部分退款用独立真实退款动作键，共同核累计release+return_in不超过父reserve.qty。关单前走可信支付query→close→query closed；unknown或无可信attempt不释放，已支付转待处理，不制造paid或回退平台账户。MS5决定前仅显式testing驱动可做普通未付关单。
 - 用例：O06。
 
 ### Task 6: 商家订单操作
