@@ -1761,8 +1761,11 @@ HTML;
         $data['bargain_id'] = $bargain_id;
         $data['advance_id'] = $advance_id;
         $data['cartInfo'] = $cartGroup['cartInfo'];
-        $data['custom_form'] = json_decode($cartGroup['cartInfo'][0]['productInfo']['custom_form'], true) ?? [];
-        if (!is_array($data['custom_form'])) $data['custom_form'] = [];
+        if($marketplace)$data['custom_form']=$frame['custom_form'];
+        else{
+            $data['custom_form'] = json_decode($cartGroup['cartInfo'][0]['productInfo']['custom_form'], true) ?? [];
+            if (!is_array($data['custom_form'])) $data['custom_form'] = [];
+        }
         $data['priceGroup'] = $priceGroup;
         $data['orderKey'] = $this->cacheOrderInfo($user['uid'], $validCartInfo, $priceGroup, $other, 600, $frame);
         if($marketplace){
@@ -1831,7 +1834,7 @@ HTML;
         $payload=compact('cartInfo', 'priceGroup', 'other');
         if($marketplaceFrame){
             MarketplaceCartSelection::frame($marketplaceFrame,(int)$uid);
-            foreach(['marketplace_confirmation_version','marketplace_uid','mer_id','source_kind','cart_refs','selection','store','marketplace_postage_weights']as$field){
+            foreach(['marketplace_confirmation_version','marketplace_uid','mer_id','source_kind','cart_refs','selection','store','custom_form','marketplace_postage_weights']as$field){
                 if(array_key_exists($field,$marketplaceFrame))$payload[$field]=$marketplaceFrame[$field];
             }
         }

@@ -25,7 +25,8 @@ final class MarketplaceOrderDao
     private const UINT_MAX = 4294967295;
     private const ROOT_MAX = 8388607;
     private const ROOT_STOCK_MAX = 16777215;
-    private const TABLES = ['marketplace_order_idempotency', 'marketplace_stock_movement', 'marketplace_merchant',
+    private const TEMPORARY_PAGE_SIZE = 100;
+    private const TABLES = ['user', 'marketplace_order_idempotency', 'marketplace_stock_movement', 'marketplace_merchant',
         'store_product', 'store_product_attr_value', 'shipping_templates', 'shipping_templates_region',
         'shipping_templates_free', 'shipping_templates_no_delivery', 'user_address', 'user_invoice',
         'store_cart', 'store_order', 'store_order_invoice', 'store_order_cart_info'];
@@ -39,7 +40,8 @@ final class MarketplaceOrderDao
         'min_qty','logistics','presale','give_integral'];
     private const SKU_FIELDS = ['id','product_id','type','unique','suk','image','price','cost','ot_price','vip_price',
         'stock','sales','weight','volume','is_show','is_virtual','coupon_id'];
-    private const ADDRESS_FIELDS = ['id','uid','real_name','phone','province','city','city_id','district','detail','is_del'];
+    private const ADDRESS_FIELDS = ['id','uid','real_name','phone','province','city','city_id','district','detail',
+        'post_code','longitude','latitude','is_default','is_del','add_time'];
     private const INVOICE_FIELDS = ['id','uid','header_type','type','name','duty_number','drawer_phone','email',
         'tell','address','bank','card_number','is_del'];
     private const INVOICE_HEADING = ['header_type','type','name','duty_number','drawer_phone','email','tell','address','bank','card_number'];
@@ -81,6 +83,9 @@ final class MarketplaceOrderDao
         $merId = self::integer($request['mer_id'], 1, self::UINT_MAX);
         self::integer($now, 1, self::UINT_MAX);
         self::integer($cancelAt, $now, self::UINT_MAX);
+        // Every create/replay uses this actual customer row before any ledger lock.
+        $user = $this->one($pdo, 'user', ['uid'], '`uid` = ?', [$uid]);
+        if ($user === null || self::integer($user['uid'], 1, self::INT_MAX) !== $uid) self::conflict();
         $digest = hash('sha256', MarketplaceOrderInput::canonical($request), true);
         $confirmation = hash('sha256', $request['confirm_key'], true);
         $row = $this->one($pdo, 'marketplace_order_idempotency', self::IDEM_FIELDS,
@@ -88,6 +93,7 @@ final class MarketplaceOrderDao
         if ($row === null) $row = $this->one($pdo, 'marketplace_order_idempotency', self::IDEM_FIELDS,
             '`uid` = ? AND `confirmation_ref` = ?', [$uid, $confirmation]);
         if ($row !== null) return $this->replay($pdo, $row, $request, $digest, $confirmation);
+        if ($request['source_kind'] === 'temporary') $this->assertTemporaryUnconsumed($pdo, $uid, $request['cart_refs']);
         $data = ['uid'=>$uid,'mer_id'=>$merId,'idem_key'=>$idemKey,'request_digest'=>$digest,
             'confirmation_ref'=>$confirmation,'source_kind'=>$request['source_kind'],
             'cart_refs'=>self::json($request['cart_refs']),'state'=>0,'order_id'=>null,'post_commit_done'=>0,
@@ -388,8 +394,8 @@ final class MarketplaceOrderDao
         return $result;
     }
 
-    /** Verifies actual order/items/reserves before the transaction owner may commit. */
-    public function markCreated(PDO $pdo, int $uid, string $idemKey, int $orderId): void
+    /** Verifies saved facts and consumes the actual locked selection before commit. */
+    public function markCreated(PDO $pdo, int $uid, string $idemKey, int $orderId, array $lockedInputs): void
     {
         $this->transaction($pdo); self::integer($uid,1,self::INT_MAX); self::integer($orderId,1,self::INT_MAX);
         $row = $this->one($pdo,'marketplace_order_idempotency',self::IDEM_FIELDS,'`uid` = ? AND `idem_key` = ?',[$uid,$idemKey]);
@@ -400,6 +406,11 @@ final class MarketplaceOrderDao
         if (!hash_equals($row['confirmation_ref'],hash('sha256',$order['unique'],true))) self::conflict();
         $refs = self::references(self::decode($row['cart_refs']),$row['source_kind']);
         if (self::decode($order['cart_id']) !== $refs) self::conflict();
+        if (($lockedInputs['uid'] ?? null) !== $uid || ($lockedInputs['mer_id'] ?? null) !== $merId
+            || ($lockedInputs['source_kind'] ?? null) !== $row['source_kind']
+            || ($lockedInputs['cart_refs'] ?? null) !== $refs) self::conflict();
+        $selection = self::selection($lockedInputs['selection'] ?? [], $refs, $row['source_kind']);
+        $selected = []; foreach ($selection as $line) $selected[$line['cart_ref']] = $line;
         $items = $this->rows($pdo,'store_order_cart_info',self::ITEM_FIELDS,'`oid` = ?',[$orderId],'`id` ASC');
         if (count($items) !== count($refs)) self::unavailable();
         $seen = $reserved = []; $total = 0;
@@ -411,6 +422,10 @@ final class MarketplaceOrderDao
             if (!is_array($lineage) || ($lineage['cart_ref'] ?? null) !== $ref || ($snapshot['id'] ?? null) !== $ref) self::unavailable();
             $qty = self::integer($item['cart_num'],1,self::INT_MAX);
             if (self::integer($item['surplus_num'],1,self::INT_MAX) !== $qty || ($snapshot['cart_num'] ?? null) !== $qty) self::unavailable();
+            $line = $selected[$ref];
+            if ($qty !== $line['qty'] || self::integer($item['product_id'],1,self::ROOT_MAX) !== $line['product_id']
+                || ($lineage['sku_id'] ?? null) !== $line['sku_id'] || ($lineage['sku_type'] ?? null) !== 0
+                || ($lineage['sku_unique'] ?? null) !== $line['unique']) self::conflict();
             $id = self::bigint($lineage['reserve_id'] ?? null);
             if (!isset($reserved[$id])) {
                 $movement = $this->one($pdo,'marketplace_stock_movement',self::MOVEMENT_FIELDS,'`id` = ?',[$id]);
@@ -426,6 +441,7 @@ final class MarketplaceOrderDao
         foreach ($reserved as $entry) if ($entry['qty'] !== self::integer($entry['row']['qty'],1,self::UINT_MAX)) self::unavailable();
         $all = $this->rows($pdo,'marketplace_stock_movement',['id'],'`order_id` = ? AND `kind` = ?',[$orderId,'reserve'],'`id` ASC');
         if (count($all) !== count($reserved) || $total !== self::integer($order['total_num'],1,self::UINT_MAX)) self::unavailable();
+        if ($row['source_kind'] === 'persistent') $this->consumePersistentCarts($pdo, $uid, $selection);
         $n = $this->execute($pdo,'UPDATE '.$this->table('marketplace_order_idempotency').
             ' SET `state` = 1, `order_id` = ?, `post_commit_done` = 0 WHERE `uid` = ? AND `idem_key` = ?'.
             ' AND `state` = 0 AND `order_id` IS NULL AND `request_digest` = ? AND `confirmation_ref` = ?',
@@ -433,6 +449,49 @@ final class MarketplaceOrderDao
         if ($n !== 1) self::unavailable();
         $stored = $this->one($pdo,'marketplace_order_idempotency',self::IDEM_FIELDS,'`uid` = ? AND `idem_key` = ?',[$uid,$idemKey]);
         if ($stored === null) self::unavailable(); self::stored($stored,['state'=>1,'order_id'=>$orderId,'post_commit_done'=>0,'cancel_at'=>$row['cancel_at']]);
+    }
+
+    /** UID is already locked by claim; read the whole committed temporary history. */
+    private function assertTemporaryUnconsumed(PDO $pdo, int $uid, array $refs): void
+    {
+        $cursor = null;
+        do {
+            $where = '`uid` = ? AND `source_kind` = ? AND `state` = 1';
+            $values = [$uid, 'temporary'];
+            if ($cursor !== null) { $where .= ' AND `idem_key` > ?'; $values[] = $cursor; }
+            $statement = $this->execute($pdo, 'SELECT `uid`,`idem_key`,`source_kind`,`cart_refs`,`state`,`order_id` FROM '.
+                $this->table('marketplace_order_idempotency').' FORCE INDEX (`PRIMARY`) WHERE '.$where.
+                ' ORDER BY `idem_key` ASC LIMIT '.self::TEMPORARY_PAGE_SIZE.' FOR UPDATE', $values);
+            try { $page = $statement->fetchAll(PDO::FETCH_ASSOC); }
+            catch (PDOException $error) { self::unavailable(); }
+            if (!is_array($page)) self::unavailable();
+            foreach ($page as $row) {
+                self::stored($row, ['uid'=>$uid,'source_kind'=>'temporary','state'=>1]);
+                self::integer($row['order_id'],1,self::INT_MAX);
+                $key = self::text($row['idem_key'],128,true);
+                if ($cursor !== null && strcmp($key,$cursor) <= 0) self::unavailable();
+                foreach (self::references(self::decode($row['cart_refs']),'temporary') as $used) {
+                    if (in_array($used,$refs,true)) self::conflict();
+                }
+                $cursor = $key;
+            }
+        } while (count($page) === self::TEMPORARY_PAGE_SIZE);
+    }
+
+    /** Same PDO/transaction: only the selected, unchanged ordinary own rows disappear. */
+    private function consumePersistentCarts(PDO $pdo, int $uid, array $selection): void
+    {
+        foreach ($selection as $line) {
+            $ref = self::bigint($line['cart_ref']);
+            $n = $this->execute($pdo, 'DELETE FROM '.$this->table('store_cart').
+                ' WHERE `id` = ? AND `uid` = ? AND `product_id` = ? AND BINARY `product_attr_unique` = ? AND `cart_num` = ?'.
+                ' AND `type` = 0 AND `is_pay` = 0 AND `is_new` = 0 AND `is_del` = 0'.
+                ' AND `combination_id` = 0 AND `seckill_id` = 0 AND `bargain_id` = 0 AND `advance_id` = 0'.
+                ' AND (`status` IS NULL OR `status` = 1)',
+                [$ref,$uid,$line['product_id'],$line['unique'],$line['qty']])->rowCount();
+            if ($n !== 1) self::conflict();
+            if ($this->one($pdo,'store_cart',['id'],'`id` = ? AND `uid` = ?',[$ref,$uid]) !== null) self::unavailable();
+        }
     }
 
     private function replay(PDO $pdo, array $row, array $request, string $digest, string $confirmation): array

@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 // Pure wire examples only: numeric values do not establish actors or database identities.
-require dirname(__DIR__,3).'/crmeb/app/services/marketplace/order/MarketplaceOrderInput.php';
+require dirname(__DIR__,3).'/crmeb/vendor/autoload.php';
 
 use app\services\marketplace\order\MarketplaceOrderInput;
 
@@ -15,8 +15,8 @@ $raw=['cartId'=>'18446744073709551615,2,9007199254740993,2','mer_id'=>'23','idem
     'addressId'=>'16777215','new'=>0,'invoice_id'=>'','couponId'=>0,'useIntegral'=>false,
     'bargainId'=>'','shipping_type'=>1,'store_id'=>0,'real_name'=>'普通联系人','phone'=>'contact-wire',
     'gift_mark'=>'普通页面同时携带的留言','mark'=>'备注<&> 保留原字节',
-    'custom_form'=>[['title'=>'说明','label'=>'text','value'=>'中文与 / 路径','status'=>false],
-        ['title'=>'附件','label'=>'img','value'=>['image-a.png','image-b.png'],'status'=>true]],
+    'custom_form'=>[['product_id'=>7,'definition_sha256'=>str_repeat('a',64),'values'=>[
+        ['field_index'=>0,'value'=>'中文与 / 路径'],['field_index'=>1,'value'=>['image-a.png','image-b.png']]]]],
     'formId'=>'','discountId'=>0,'from'=>'h5','quitUrl'=>'unused-local-path'];
 $first=MarketplaceOrderInput::create(17,'ordinary-confirmation-key',$raw);
 $request=$first['request'];
@@ -43,7 +43,7 @@ $objectOrder=array_reverse($request,true);
 $objectOrder['options']=array_reverse($request['options'],true);
 $objectOrder['options']['custom_form'][0]=array_reverse($request['options']['custom_form'][0],true);
 $check(MarketplaceOrderInput::canonical($objectOrder)===$bytes);
-$check(json_decode($bytes,true,32,JSON_THROW_ON_ERROR)['options']['custom_form'][1]['value']===['image-a.png','image-b.png']);
+$check(json_decode($bytes,true,32,JSON_THROW_ON_ERROR)['options']['custom_form'][0]['values'][1]['value']===['image-a.png','image-b.png']);
 
 $temporary=['cartId'=>'temp-b,temp-A','mer_id'=>23,'idem_key'=>'ordinary-temporary',
     'is_new'=>'1','addressId'=>1,'invoice_id'=>'2147483647','payType'=>'WeIxIn','store_id'=>'2147483647'];

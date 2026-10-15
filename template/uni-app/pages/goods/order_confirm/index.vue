@@ -167,7 +167,61 @@
 						</textarea>
 				</view>
 			</view>
-			<view class='wrapper' v-if="confirm.length && (!is_gift || is_gift == 1)">
+			<view v-if="marketplaceV1">
+				<view class='wrapper' v-for="group in marketplaceFormGroups" :key="String(group.product_id) + ':' + group.definition_sha256">
+					<view class='item'>{{group.product_name}}</view>
+					<view class='item acea-row row-between-wrapper' v-for="item in group.fields" :key="marketplaceFormIdentity(group,item)">
+						<view>
+							<span v-if="item.status" style="color: red;">*</span>
+							<span v-else style="marginLeft: 8px;"></span>
+							{{item.title}}
+						</view>
+						<view v-if="item.label=='text' || item.label=='number' || item.label=='email'" class="confirm">
+							<input type="text" :placeholder="$t(`请填写`)+item.title" :value="item.value"
+								@input="setMarketplaceFormValue($event,group.product_id,group.definition_sha256,item.field_index)" />
+						</view>
+						<view v-if="item.label=='data'" class="uni-list">
+							<view class="uni-list-cell"><view class="uni-list-cell-db">
+								<picker mode="date" :value="item.value"
+									@change="setMarketplaceFormValue($event,group.product_id,group.definition_sha256,item.field_index)">
+									<view v-if="item.value == ''" class="fontC">{{date+item.title}}<text class='iconfont icon-jiantou'></text></view>
+									<view v-else class="uni-input">{{item.value}}</view>
+								</picker>
+							</view></view>
+						</view>
+						<view v-if="item.label=='time'">
+							<picker mode="time" :value="item.value" start="00:00" end="23:59"
+								@change="setMarketplaceFormValue($event,group.product_id,group.definition_sha256,item.field_index)">
+								<view v-if="item.value == ''" class="fontC">{{time+item.title}}<text class='iconfont icon-jiantou'></text></view>
+								<view v-else>{{item.value}}</view>
+							</picker>
+						</view>
+						<view v-if="item.label=='id'" class="confirm">
+							<input type="idcard" :placeholder="$t(`请填写`)+item.title" :value="item.value"
+								@input="setMarketplaceFormValue($event,group.product_id,group.definition_sha256,item.field_index)" />
+						</view>
+						<view v-if="item.label=='phone'" class="confirm">
+							<input type="tel" :placeholder="$t(`请填写`)+item.title" :value="item.value"
+								@input="setMarketplaceFormValue($event,group.product_id,group.definition_sha256,item.field_index)" />
+						</view>
+						<view v-if="item.label=='img'" class="confirmImg">
+							<view class='list acea-row row-middle'>
+								<view class='pictrue' v-for="(image,imageIndex) in item.value" :key="imageIndex">
+									<image :src='image' class="img"></image>
+									<text class='iconfont icon-guanbi1 font-num del'
+										@click="deleteMarketplaceFormImage(group.product_id,group.definition_sha256,item.field_index,imageIndex)"></text>
+								</view>
+								<view class='pictrue acea-row row-center-wrapper row-column bor'
+									@click="uploadMarketplaceFormImage(group.product_id,group.definition_sha256,item.field_index)" v-if="item.value.length < 8">
+									<text class='iconfont icon-icon25201'></text>
+									<view>{{$t(`上传图片`)}}</view>
+								</view>
+							</view>
+						</view>
+					</view>
+				</view>
+			</view>
+			<view class='wrapper' v-if="!marketplaceV1 && confirm.length && (!is_gift || is_gift == 1)">
 				<view class='item acea-row row-between-wrapper' v-for="(item,index) in confirm" :key="index">
 					<view>
 						<span v-if="item.status" style="color: red;">*</span>
@@ -350,6 +404,10 @@
 	import payment from '@/components/payment';
 	import colors from "@/mixins/color";
 	import Debounce from "@/mixins/debounce";
+	import {
+		initializeMarketplaceForms, retainMarketplaceForms, marketplaceFormAnswers,
+		marketplaceFormIdentity, findMarketplaceFormField, firstMissingMarketplaceAnswer
+	} from '@/utils/marketplace-order-form.js';
 	export default {
 		components: {
 			payment,
@@ -373,6 +431,8 @@
 				marketplaceResumeUnavailable: false,
 				marketplaceComputing: false,
 				marketplaceComputeRevision: 0,
+				marketplaceFormGroups: [],
+				marketplaceFormsReady: false,
 				confirm: '', //自定义留言
 				date: this.$t(`请选择`),
 				time: this.$t(`请选择`),
@@ -510,7 +570,7 @@
 				return !!this.marketplaceConfirmation && this.marketplaceConfirmation.marketplace_confirmation_version === 1;
 			},
 			marketplaceCanCreate() {
-				return this.marketplaceV1 && !this.marketplaceResumeUnavailable && this.marketplaceConfirmation.marketplace_create_enabled === true;
+				return this.marketplaceV1 && this.marketplaceFormsReady && !this.marketplaceResumeUnavailable && this.marketplaceConfirmation.marketplace_create_enabled === true;
 			}
 		},
 		// watch: {
@@ -596,6 +656,37 @@
 
 		},
 		methods: {
+			marketplaceFormIdentity,
+			applyMarketplaceForms(definitions, retainAnswers = false) {
+				this.marketplaceFormsReady = false;
+				this.marketplaceFormGroups = retainAnswers ? retainMarketplaceForms(definitions, this.marketplaceFormGroups) :
+					initializeMarketplaceForms(definitions);
+				this.marketplaceFormsReady = true;
+			},
+			setMarketplaceFormValue(event, productId, definitionHash, fieldIndex) {
+				const field = findMarketplaceFormField(this.marketplaceFormGroups, productId, definitionHash, fieldIndex);
+				if (field && field.label !== 'img' && event.detail && typeof event.detail.value === 'string') {
+					field.value = event.detail.value;
+				}
+			},
+			deleteMarketplaceFormImage(productId, definitionHash, fieldIndex, imageIndex) {
+				const field = findMarketplaceFormField(this.marketplaceFormGroups, productId, definitionHash, fieldIndex);
+				if (field && field.label === 'img') field.value.splice(imageIndex, 1);
+			},
+			uploadMarketplaceFormImage(productId, definitionHash, fieldIndex) {
+				this.canvasStatus = true;
+				this.$util.uploadImageChange('upload/image', (res) => {
+					// Resolve again after upload: replacement definitions must not receive a stale callback.
+					const field = findMarketplaceFormField(this.marketplaceFormGroups, productId, definitionHash, fieldIndex);
+					if (field && field.label === 'img' && field.value.length < 8 &&
+						res && res.data && typeof res.data.url === 'string') field.value.push(res.data.url);
+				}, () => {
+					this.canvasStatus = false;
+				}, (res) => {
+					this.canvasWidth = res.w;
+					this.canvasHeight = res.h;
+				});
+			},
 			applyMarketplaceMetadata(data) {
 				if (!data || data.marketplace_confirmation_version !== 1 || this.is_gift || this.orderId) {
 					if (this.marketplaceV1) throw new Error(this.$t(`本店确认响应不完整，请重新确认商品`));
@@ -901,6 +992,7 @@
 						const result = res.data.result;
 						this.applyMarketplaceMetadata(result);
 						this.marketplaceMoneyFields(result, ['pay_price', 'pay_postage', 'storePostageDiscount', 'deduction_price', 'coupon_price']);
+						if (Object.prototype.hasOwnProperty.call(result, 'custom_form')) this.applyMarketplaceForms(result.custom_form, true);
 						this.totalPrice = result.pay_price;
 						this.$set(this.priceGroup, 'storePostage', result.pay_postage);
 						this.$set(this.priceGroup, 'storePostageDiscount', result.storePostageDiscount);
@@ -1105,10 +1197,13 @@
 					that.applyMarketplaceMetadata(res.data);
 					if (that.marketplaceV1) that.marketplaceMoneyFields(res.data.priceGroup, ['totalPrice', 'sumPrice', 'storePostage', 'storePostageDiscount', 'vipPrice', 'levelPrice', 'memberPrice']);
 					that.$set(that, 'userInfo', res.data.userInfo);
-					that.$set(that, 'confirm', res.data.custom_form || []);
-					this.confirm.map(e => {
-						if (e.label === 'img') e.value = []
-					})
+					if (that.marketplaceV1) that.applyMarketplaceForms(res.data.custom_form);
+					else {
+						that.$set(that, 'confirm', res.data.custom_form || []);
+						this.confirm.map(e => {
+							if (e.label === 'img') e.value = []
+						})
+					}
 					that.$set(that, 'integral', res.data.usable_integral);
 					that.$set(that, 'usable_integral', res.data.usable_integral);
 					that.$set(that, 'contacts', res.data.userInfo.real_name);
@@ -1365,7 +1460,14 @@
 						title: that.$t(`暂无门店,请选择其他方式`)
 					});
 				}
-				for (var i = 0; i < that.confirm.length; i++) {
+				if (that.marketplaceV1) {
+					const missing = firstMissingMarketplaceAnswer(that.marketplaceFormGroups);
+					if (missing) return uni.showToast({
+						title: missing.product_name + '：' + that.$t(missing.label === 'img' ? `请上传` : `请填写正确的`) + missing.title,
+						icon: 'none'
+					});
+				}
+				for (var i = 0; !that.marketplaceV1 && i < that.confirm.length; i++) {
 					let data = that.confirm[i]
 					if (data.status) {
 						if (data.label === 'text' || data.label === 'data' || data.label === 'time' || data.label ===
@@ -1412,7 +1514,7 @@
 					}
 				}
 				data = {
-					custom_form: that.confirm,
+					custom_form: that.marketplaceV1 ? marketplaceFormAnswers(that.marketplaceFormGroups) : that.confirm,
 					gift_mark: that.gift_mark, // 礼物留言
 					real_name: that.contacts,
 					phone: that.contactsTel,

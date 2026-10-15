@@ -384,7 +384,12 @@ final class PublicCatalogServices
     public function quoteOutput(array $data,int $uid):array
     {
         $data['cartInfo']=$this->cartRows($data['cartInfo'],$uid);
-        $data['custom_form']=Projection::formConfig($data['custom_form']);
+        if(($data['marketplace_confirmation_version']??null)===\app\services\marketplace\order\MarketplaceTradePolicy::CONFIRMATION_VERSION){
+            $selection=[];$kind=$data['source_kind']??null;if(!is_string($kind))throw new AuthUnavailableException();
+            foreach($data['cartInfo']as$row)$selection[]=['cart_ref'=>\app\services\marketplace\order\MarketplaceOrderInput::reference($row['id']??null,$kind),
+                'product_id'=>$row['productInfo']['id']??null];
+            $data['custom_form']=\app\services\marketplace\order\MarketplaceOrderCustomForm::configuration($data['custom_form'],$selection,$kind);
+        }else $data['custom_form']=Projection::formConfig($data['custom_form']);
         if(is_array($data['priceGroup']['cartInfo']??null))$data['priceGroup']['cartInfo']=$this->cartRows($data['priceGroup']['cartInfo'],$uid);
         if(($data['marketplace_confirmation_version']??null)===\app\services\marketplace\order\MarketplaceTradePolicy::CONFIRMATION_VERSION){
             $kind=$data['source_kind']??null;if(!is_string($kind))throw new AuthUnavailableException();

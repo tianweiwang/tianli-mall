@@ -21,7 +21,7 @@ const M4O_FILES = ['crmeb/composer.json','crmeb/composer.lock','help/audit-regre
 const M4O_FIXTURE_TABLES = ['eb_user','eb_marketplace_merchant','eb_store_product','eb_store_product_attr',
     'eb_store_product_attr_value','eb_store_cart','eb_user_address','eb_user_invoice','eb_system_config'];
 const M4O_FACT_TABLES = ['eb_store_order','eb_store_order_invoice','eb_store_order_cart_info',
-    'eb_marketplace_order_idempotency','eb_marketplace_stock_movement','eb_store_product','eb_store_product_attr_value'];
+    'eb_marketplace_order_idempotency','eb_marketplace_stock_movement','eb_store_product','eb_store_product_attr_value','eb_store_cart'];
 
 function m4o_expect(bool $ok, string $code): void
 {
@@ -245,10 +245,12 @@ function m4o_fixture(): array
         foreach ([[0,2],[0,1],[1,2]] as $index=>$line) $carts[] = m4o_insert($pdo,'eb_store_cart',['uid'=>$user['uid'],'type'=>'0',
             'product_id'=>$product['id'],'product_attr_unique'=>$skus[$line[0]]['unique'],'cart_num'=>$line[1],'add_time'=>$now+$index,
             'is_pay'=>0,'is_del'=>0,'is_new'=>0,'status'=>1]);
+        $unselected_cart = m4o_insert($pdo,'eb_store_cart',['uid'=>$user['uid'],'type'=>'0','product_id'=>$product['id'],
+            'product_attr_unique'=>$skus[0]['unique'],'cart_num'=>1,'add_time'=>$now+3,'is_pay'=>0,'is_del'=>0,'is_new'=>0,'status'=>1]);
         $address = m4o_insert($pdo,'eb_user_address',['uid'=>$user['uid'],'real_name'=>'隔离验证','phone'=>'00000000000',
             'province'=>'验证省','city'=>'验证市','district'=>'验证区','detail'=>'专用隔离地址','is_default'=>1,'add_time'=>$now]);
         $invoice = m4o_insert($pdo,'eb_user_invoice',['uid'=>$user['uid'],'header_type'=>1,'type'=>1,'name'=>'普通验证抬头','is_default'=>1,'add_time'=>$now]);
-        return compact('user','merchant','product','skus','carts','address','invoice');
+        return compact('user','merchant','product','skus','carts','unselected_cart','address','invoice');
     });
 }
 function m4o_facts(PDO $pdo): array
@@ -319,13 +321,23 @@ function m4o_verify(PDO $pdo, array $fixture, array $created): array
     m4o_expect(count($idem) === 1 && (int)$idem[0]['state'] === 1 && (int)$idem[0]['order_id'] === $id && (int)$idem[0]['post_commit_done'] === 0
         && hash_equals($idem[0]['request_digest'],hash('sha256',MarketplaceOrderInput::canonical($created['request']),true))
         && hash_equals($idem[0]['confirmation_ref'],hash('sha256',$created['key'],true)),'COMMITTED_PERSISTENT_IDEMPOTENCY');
+    $remaining = m4o_rows($pdo,'SELECT * FROM `eb_store_cart` WHERE `uid` = ? ORDER BY `id`',[$uid]);
+    m4o_expect(count($remaining) === 1 && (string)$remaining[0]['id'] === (string)$fixture['unselected_cart']['id'],
+        'ONLY_REAL_UNSELECTED_CART_REMAINS');
+    $remainingRefs = array_map(static fn(array $row): string => (string)$row['id'],$remaining);
+    foreach ($fixture['carts'] as $selected) m4o_expect(!in_array((string)$selected['id'],$remainingRefs,true),'COMMITTED_SELECTED_CART_CONSUMED');
+    m4o_expect(array_keys($remaining[0]) === array_keys($fixture['unselected_cart']),'UNSELECTED_CART_COLUMNS_COMPLETE');
+    foreach ($fixture['unselected_cart'] as $field=>$value) m4o_expect($value === null ? $remaining[0][$field] === null
+        : $remaining[0][$field] !== null && (string)$remaining[0][$field] === (string)$value,'UNSELECTED_CART_VALUE_UNCHANGED');
     $invoices = m4o_rows($pdo,'SELECT * FROM `eb_store_order_invoice` WHERE `order_id` = ?',[$id]);
     m4o_expect(count($invoices) === 1 && (int)$invoices[0]['uid'] === $uid && (int)$invoices[0]['invoice_id'] === (int)$fixture['invoice']['id']
         && (int)$invoices[0]['is_pay'] === 0,'COMMITTED_ACTUAL_INVOICE');
     foreach (['header_type','type','name','duty_number','drawer_phone','email','tell','address','bank','card_number'] as $field)
         m4o_expect((string)$invoices[0][$field] === (string)$fixture['invoice'][$field],'ACTUAL_INVOICE_HEADING_SNAPSHOT');
     return ['order_id'=>$id,'item_count'=>count($items),'reserve_count'=>count($movements),'line_postage_sum'=>$postage,
-        'fixture_identity_sha256'=>hash('sha256',serialize([$uid,$mer,$fixture['product']['id'],array_column($fixture['skus'],'id'),array_column($fixture['carts'],'id')]))];
+        'persistent_cart_consumption'=>['selected_count'=>count($fixture['carts']),'remaining_count'=>count($remaining),'unselected_unchanged'=>true],
+        'fixture_identity_sha256'=>hash('sha256',serialize([$uid,$mer,$fixture['product']['id'],array_column($fixture['skus'],'id'),
+            array_column($fixture['carts'],'id'),$fixture['unselected_cart']['id']]))];
 }
 function m4o_main(): int
 {
@@ -379,8 +391,20 @@ function m4o_main(): int
                 $cart['id'] = $line['cart_ref']; $cartInfo[] = $cart;
             }
             $address = $locked['address'];
+            m4o_expect(is_array($address) && array_key_exists('id',$address) && (string)$address['id'] === (string)$addressId
+                && array_key_exists('uid',$address) && (string)$address['uid'] === (string)$uid
+                && array_key_exists('is_del',$address) && (string)$address['is_del'] === '0','ACTUAL_LOCKED_ADDRESS_IDENTITY');
             m4o_expect(is_array($group['addr'] ?? null),'ACTUAL_QUOTE_ADDRESS_OBJECT');
-            foreach ($address as $field=>$value) m4o_expect(array_key_exists($field,$group['addr'])
+            $visibleAddress = array_diff_key($address,['add_time'=>true,'is_del'=>true]);
+            $expectedFields = array_keys($visibleAddress); $actualFields = array_keys($group['addr']);
+            sort($expectedFields,SORT_STRING); sort($actualFields,SORT_STRING);
+            $changedFields = [];
+            foreach ($visibleAddress as $field=>$value) if (array_key_exists($field,$group['addr'])
+                && (string)$group['addr'][$field] !== (string)$value) $changedFields[] = $field;
+            $GLOBALS['m4o_address_projection'] = ['missing_fields'=>array_values(array_diff($expectedFields,$actualFields)),
+                'extra_fields'=>array_values(array_diff($actualFields,$expectedFields)),'changed_fields'=>$changedFields];
+            m4o_expect($actualFields === $expectedFields,'ACTUAL_QUOTE_ADDRESS_KEYS');
+            foreach ($visibleAddress as $field=>$value) m4o_expect(array_key_exists($field,$group['addr'])
                 && (string)$group['addr'][$field] === (string)$value,'ACTUAL_LOCKED_QUOTE_ADDRESS');
             $payload = ['uid'=>$uid,'mer_id'=>$mer,'order_id'=>$app->make(StoreOrderCreateServices::class)->getNewOrderId('cp'),
                 'unique'=>$key,'cart_id'=>$locked['cart_refs'],'total_num'=>array_sum(array_column($locked['selection'],'qty')),
@@ -392,7 +416,7 @@ function m4o_main(): int
                 'province'=>'','custom_form'=>$input['request']['options']['custom_form'],'merchant_name_snapshot'=>$locked['merchant']['name'],
                 'merchant_after_sale_contact_snapshot'=>$locked['merchant']['after_sale_contact']];
             $id = $dao->insertOrder($pdo,$payload,$locked['invoice']); $reserves = $dao->reserve($pdo,$uid,$mer,$id,$locked,$now);
-            $items = $dao->insertItems($pdo,$uid,$mer,$id,$cartInfo,$reserves); $dao->markCreated($pdo,$uid,$claim['idem_key'],$id);
+            $items = $dao->insertItems($pdo,$uid,$mer,$id,$cartInfo,$reserves); $dao->markCreated($pdo,$uid,$claim['idem_key'],$id,$locked);
             m4o_expect(m4o_business_pdo($transactionConnection) === $pdo && count($items) === 3 && count($reserves) === 2,'SIX_DAO_BOUNDARIES_SAME_PDO');
             return ['order_id'=>$id,'key'=>$key,'idem'=>$idem,'request'=>$input['request'],'payload'=>$payload];
         });
@@ -404,7 +428,7 @@ function m4o_main(): int
             $pdo = m4o_business_pdo($transactionConnection); $now = time(); return $dao->claim($pdo,$input['request'],$idem,$now,$now+3600);
         });
         m4o_expect($replay['claimed'] === false && (int)$replay['order']['id'] === $created['order_id'] && $replay['idem_key'] === $idem,'ACTUAL_SAME_ORDER_REPLAY');
-        m4o_expect(m4o_facts(audit_db()) === $before,'REPLAY_NO_ORDER_STOCK_OR_ITEM_WRITE');
+        m4o_expect(m4o_facts(audit_db()) === $before,'REPLAY_NO_ORDER_STOCK_ITEM_OR_CART_WRITE');
         $phase = 'final_source'; $finalSet = []; m4o_expect(m4o_source($finalSet) === $evidence['binding'] && $finalSet === $included,'FINAL_SOURCE_UNCHANGED');
         foreach (get_included_files() as $file) m4o_expect(isset($included[realpath($file)]),'ACTUAL_INCLUDED_SOURCE_CLOSED');
         audit_guard_assert(); m4o_expect($app->config->get('marketplace.trade.enabled') === false,'FINAL_GATE_CLOSED');
@@ -417,6 +441,7 @@ function m4o_main(): int
     $evidence['phase'] = $phase; $evidence['assertions'] = $GLOBALS['m4o_assertions'] ?? 0;
     $evidence['assertions_by_phase'] = $GLOBALS['m4o_phase_assertions'] ?? [];
     $evidence['pdo_observations'] = $GLOBALS['m4o_pdo_observations'] ?? [];
+    $evidence['address_projection'] = $GLOBALS['m4o_address_projection'] ?? null;
     $evidence['native_exit'] = $evidence['status'] === 'VERIFIED_NORMAL_DAO_ONLY' ? 0 : 1;
     try { m4o_new(audit_run_dir().'/evidence/ms4-order-normal.json',$evidence); }
     catch (Throwable $error) { echo m4o_json(['status'=>'FAIL','scope'=>'NORMAL_DAO_ONLY','native_exit'=>1,'phase'=>'receipt_write']); return 1; }

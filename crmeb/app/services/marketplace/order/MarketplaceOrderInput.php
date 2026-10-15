@@ -102,7 +102,7 @@ final class MarketplaceOrderInput
             'store_id'=>self::unsigned($rawPost['store_id']??0,'store_id',2147483647),
             'invoice_id'=>self::unsigned($invoice,'invoice_id',2147483647),
             'gift_mark'=>self::text($rawPost['gift_mark']??'','礼物留言',255),
-            'custom_form'=>self::form($rawPost['custom_form']??[])];
+            'custom_form'=>MarketplaceOrderCustomForm::answers($rawPost['custom_form']??[])];
         foreach(['combinationId','pinkId','seckill_id','bargainId','advanceId']as$field){
             $value=$rawPost[$field]??0;
             if($field==='bargainId'&&$value==='')$value=0;
@@ -126,26 +126,6 @@ final class MarketplaceOrderInput
         if(!is_string($value)||preg_match('//u',$value)!==1||str_contains($value,"\0")
             ||($max!==null&&mb_strlen($value,'UTF-8')>$max))throw new ApiException($name.'格式错误');
         return $value;
-    }
-
-    private static function form(mixed $value):array
-    {
-        if(!is_array($value)||!array_is_list($value)||count($value)>10)throw new ApiException('自定义表单格式错误');
-        $out=[];
-        foreach($value as$row){
-            if(!is_array($row)||count($row)!==4||array_diff(array_keys($row),['title','label','value','status'])
-                ||!array_key_exists('status',$row)||!is_bool($row['status']))throw new ApiException('自定义表单格式错误');
-            $title=self::text($row['title']??null,'表单标题');
-            $label=self::text($row['label']??null,'表单类型');
-            if(!in_array($label,['text','number','email','data','time','id','phone','img'],true))throw new ApiException('自定义表单类型错误');
-            if($label==='img'){
-                $images=$row['value'];
-                if(!is_array($images)||!array_is_list($images))throw new ApiException('表单图片格式错误');
-                $input=[];foreach($images as$image)$input[]=self::text($image,'表单图片');
-            }else $input=self::text($row['value'],'表单内容');
-            $out[]=['title'=>$title,'label'=>$label,'value'=>$input,'status'=>$row['status']];
-        }
-        return $out;
     }
 
     private static function canonicalValue(mixed $value,int $depth):mixed

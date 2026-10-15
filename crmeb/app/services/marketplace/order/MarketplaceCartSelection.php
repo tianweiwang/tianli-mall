@@ -25,15 +25,17 @@ final class MarketplaceCartSelection
         if(!is_array($refs)||!array_is_list($refs)||!$refs||!is_array($selection)||!array_is_list($selection)||count($selection)!==count($refs))throw new AuthUnavailableException();
         foreach($refs as$ref)if(!is_string($ref)||MarketplaceOrderInput::reference($ref,$kind)!==$ref)throw new AuthUnavailableException();
         if(MarketplaceOrderInput::references(implode(',',$refs),$kind)!==$refs)throw new AuthUnavailableException();
+        $forms=$group['custom_form']??null;if(!is_array($forms))throw new AuthUnavailableException();
+        $forms=MarketplaceOrderCustomForm::configuration($forms,$selection,$kind);
         return ['marketplace_confirmation_version'=>MarketplaceTradePolicy::CONFIRMATION_VERSION,'marketplace_uid'=>$uid,
-            'mer_id'=>$owner,'source_kind'=>$kind,'cart_refs'=>$refs,'selection'=>$selection];
+            'mer_id'=>$owner,'source_kind'=>$kind,'cart_refs'=>$refs,'selection'=>$selection,'custom_form'=>$forms];
     }
 
     public function capture(int $uid,int $merId,string $sourceKind,array $refs,array $rows):array
     {
         PublicCatalogQuery::positive($uid);PublicCatalogQuery::positive($merId);
         if(!$rows||count($rows)!==count($refs))throw new ApiException('购物车选择已变化，请重新确认');
-        $selection=[];$store=null;
+        $selection=[];$store=null;$products=[];
         foreach($rows as$cart){
             if(!is_array($cart))throw new AuthUnavailableException();
             if(MarketplaceOrderInput::unsigned($cart['type']??0,'商品类型')!==0)MarketplaceTradePolicy::denyFeature('activity');
@@ -48,11 +50,13 @@ final class MarketplaceCartSelection
             $selection[$ref]=['cart_ref'=>$ref,'product_id'=>PublicCatalogQuery::positive($identity['root']['id'],8388607),
                 'sku_id'=>PublicCatalogQuery::positive($identity['sku']['id'],2147483647),'sku_type'=>0,
                 'unique'=>$identity['sku']['unique'],'qty'=>$quantity];
+            $products[$selection[$ref]['product_id']]=$identity['root'];
             if($store===null)$store=PublicCatalogProjection::store($identity['root']);
         }
         $ordered=[];foreach($refs as$ref){if(!isset($selection[$ref]))throw new ApiException('购物车选择已变化，请重新确认');$ordered[]=$selection[$ref];}
         return ['marketplace_confirmation_version'=>MarketplaceTradePolicy::CONFIRMATION_VERSION,'marketplace_uid'=>$uid,
-            'mer_id'=>$merId,'source_kind'=>$sourceKind,'cart_refs'=>$refs,'selection'=>$ordered,'store'=>$store];
+            'mer_id'=>$merId,'source_kind'=>$sourceKind,'cart_refs'=>$refs,'selection'=>$ordered,'store'=>$store,
+            'custom_form'=>MarketplaceOrderCustomForm::definitions($products,$ordered,$sourceKind)];
     }
 
     public function recheck(array $group,int $uid,array $rows):array
@@ -60,6 +64,7 @@ final class MarketplaceCartSelection
         $frozen=self::frame($group,$uid);
         $current=$this->capture($uid,$frozen['mer_id'],$frozen['source_kind'],$frozen['cart_refs'],$rows);
         if($current['selection']!==$frozen['selection'])throw new ApiException('购物车选择已变化，请重新确认');
+        if($current['custom_form']!==$frozen['custom_form'])throw new ApiException('商品表单已变化，请重新确认');
         return $current;
     }
 }
