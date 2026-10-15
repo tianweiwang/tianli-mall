@@ -328,6 +328,22 @@ DESIGN SPECIFICATION：用途为本店查单与保存履约资料只读查看；
 
 同RUN关闭已真实完成：原authorize-order-cleanup helper正常exit0并按原ID移除，固定v5关闭源摘要 `9e18ff39012675e78c31949ac3889bb7a7f805586c35eec9865ffc3284727924` 核完整新旧证明及同Run/source/CID/freeze后正常stop原MySQL/Redis，原生进程和容器均exit0/PID0，再非force精确移除原3容器/唯一内部网/6卷。Root独立检查源摘要 `7f4689f65430edb9f8720777b06a130a435353de351e70badd5bbf582cdb815d` 实际6条双标签原生查询exit0/stderr空/count0，保留业务收据字节不变。本RUN已关闭，不重开；HTTP/浏览器320/390/1440布局及相邻导航、发货/部分拆单/售后、真实支付退款、跨进程attempt及wallclock daemon仍未验收，用户停止的样本仍NOT RUN，创建gate保持关闭，不勾完整Task6或MS4。后续发货只读设计已比较store_order履约子单与独立shipment模型；00的pid树及10的O09既有拆单要求仍是原约束，尚未选择或实施新表示及迁移，不能以没有商业子单真空通过O09。
 
+**下一普通HTTP/DOM实施依据（编码前）：** 复用已核新merchant构建和当前CUA的CDP/viewport能力，保持原正常CLI、商家只读helper及公开2/1/0 proof不变。全新profile先原三角色跑完整v5并正常退出，再有限bootstrap/独立DML子进程按原订单真实mer_id生成三套HTTP-only角色/员工/setup及私有账号密码，正常设密后交付，不复用已关闭Run或已消费capability。新建普通非会员顾客、真实地址及同owned商家单SKU商品，初始stock20/sales0，每单qty1，逐笔真实setCart(false)→确认→CreateServices::create→持久收尾，共20单；不直接插store_order、不造paid/库存回填。原取消配置tiny deadline须按实际行条件更新为JSON字符串0并精确清缓存/getter核回；只影响新订单保存cancel_at0，不改旧期限或已通过proof。原owned两单及停接店/空店保持，新分页为22单的20＋2；独立PDO核20根/20项/20reserve/done1、20→0库存及0→20销量、保存金额与原单事实。新增商品首次保存时绑定冻结的真实同源合成PNG，原空图片快照不修改。
+
+新库前置和表示合同沿03专用profile：原6卷加4个HTTP专用卷；App/UI只在原普通CLI native0及proof通过后创建，最终5身份。原普通源码与守卫不改为多角色；新HTTP准备/源绑定/角色矩阵/ready及关闭单独校验。public快照来自当前冻结完整目录，仅增加Run安装标记、合成PNG及已核merchant产物，主树不写运行文件。引导md5使用专用migrator，DML演员/订单另起真实子进程，HTTP App始终仅DML。私有桥从实际已正常退出的bootstrap原CID读取有限私有actor文件（原生文件管道须实证），先取内存再精确移除helper，不exec已退出CLI，不给App挂浏览器密码卷。
+
+浏览器正常链：真实员工账号/密码登录→实际me→点击订单菜单→page1/limit20/20行/count22→实际btn-next及page2/2行→btn-prev→完整号/paid/is_cancel普通筛选及paid1空态→按实际订单号所属行查看nativePK详情→返回/刷新/相邻本店信息。真实退出后分别登录停接店与空店，核1单可读和正常0结果；不加拒绝或跨店样本。通过实际CDP requestId/loadingFinished/getResponseBody绑定同origin/method/path/query、HTTP200/business200及独立SQL DTO预期，不能拦截改响应或注入token/storage。响应体入私有通道，公开仅必要状态/字节/摘要；认证响应不输出完整凭据或完整秘密摘要。订单列表、详情和空态在320/390/1440实际尺寸核外界、表格内部滚动、控件双轴居中和保存表单/新图片，截图只在无密码/token URL的页面，真实字节/SHA绑定步骤并人工看图。只关闭owned tab、reset viewport；SQL事实与正常HTTP组停止/监听消失、五身份/网络/十卷零残留闭合后才记录本轮结果，不能据准备源码/构建标HTTP或DOM通过。
+
+Files：新增 `help/audit-regressions/isolated/ms4-merchant-browser-prepare.php`、`lib/ms4-merchant-browser-normal.php`（含有限私有文件与原生DML准备函数）、`ms4-merchant-http.php`（HTTP supervisor/正常control/有限private ingress和最终SQL审计）。必要时按明确用途拆分同目录有限辅助文件，先在本合同补路径再实施；不修改生产API、正常CLI或前端以迁就夹具。仓库外新增v6 HTTP profile的compose/host/initialize/public-copy/nginx/browser步骤/私有桥/close及完整inverse，旧v5和旧MS3原文件不变。准备、语法/独立源审、真实新Run的HTTP、DOM、正常关闭逐项留证；本合同未代表上述步骤已执行。
+
+HTTP控制补充执行合同（仍为准备、未运行）：有限private ingress增加只读`supervisor` getter，按当前请求原nonce返回实际响应或not_ready/null，不把getter native0当ready。stop正常终止原HTTP组、核无成员/8000监听并写响应后，原supervisor保持同PID空闲且禁止再次start；桥读回真实stop后才按原CID正常SIGTERM结束supervisor。运行窗口固定实际time()起3600秒，不能重启或改时钟续期。实际CUA截图返回JPEG，整条保存和接收链用.jpg/image/jpeg并核原字节/SHA/像素，CSS viewport/DPR另核；合成商品PNG不变。桥仅在本Run原bootstrap实际exit0/PID0后原生docker cp→内存tar单文件读取成功才发布独立私有交付公开收据，明确HTTP_DOM_acceptance=NOT RUN，不打印actor值或保存宿主凭据文件。浏览器最终覆盖计划、私有command/capture/DOM完整核对及公开终态合同尚待补齐，v6候选运行/close总门禁保持false；仅语法或源审不能消除此缺口。
+
+HTTP准备源码检查点（2026-10-15，未freeze/未运行新Run）：上述三个新PHP已写入工作树；Root用固定PHP8.2镜像仅-l，三个原生退出均0/stderr0，检查前后源码字节相同。正常CLI和merchant-read helper与HEAD字节仍相同。首次syntax容器未声明可写/tmp，原生254及失败收据保留；后继仅给语法容器加私有tmpfs，未加载App或业务，完整五项收据为仓库外`artifacts/ms4-merchant-http-preparation/source-syntax-root-v2.json`（含浏览器步骤和私有桥的Node22 --check各0）。夹具helper获得独立财务/native段源审；私有桥完整binding/public冻结合同与原字节JPEG保存源审通过。HTTP完整源审及最终浏览器覆盖核对仍待补，不能据语法签收。
+
+仓库外`candidate-internal-v6-merchant-http`首版仅为有门禁的来源候选：原五文件/关闭源可完整逆变换回固定v5，原38函数AST、六Python AST、两个help原生退出0与合成PNG CRC检查已记录；HTTP_PROFILE_SOURCE_READY仍false。该版后继必须另建，补入interface-v2、私有桥、实际HTTP/DOM/SQL和正常停止终态核对，并修正镜像固有未发布80/tcp:null表示及有限DML子进程真实退出码保存；不得覆盖首版或打开半成品运行入口。本轮仅语法容器运行，App/SQL/HTTP/DOM/新业务样本均NOT RUN；owned空白浏览器页已关闭，无新HTTP进程或业务Run。原MS4发货/拆单/售后及MS5/MS6责任继续保留。
+
+后继普通停止源审：新HTTP入口的无条件warning handler会把原harness以@读取已退出PID的正常ENOENT路径误判为失败。窄修只尊重error_reporting中已抑制的severity，其余仍抛固定脱敏错误；原harness/PID/组检查不改。实际新HTTP摘要`6383c2d3e4250d9a4d24261fd458b167553c24722d0b3fee6664cc28c7246c53`获完整独立SOURCE PASS，Root仅重-l该变化文件native0/stderr0/字节保持，收据`source-syntax-root-v3-http-handler.json`。三新PHP可作本地准备代码检查点；全计划HTTP/DOM和最终关闭仍未执行，不打开运行门禁。
+
 ### Task 7: 退款额度与库存行为
 
 - 接口：申请退款时在事务中锁定订单行，校验"已退金额 + 处理中金额 + 本次金额 ≤ 实付"；三类库存行为分别写 `release`（未发货取消）、`return_in`（退货验收入库）、不写（仅退款）。
