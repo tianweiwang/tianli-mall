@@ -438,6 +438,10 @@ r3新Run实际结果（2026-10-15）：clean来源 `483a43f99c1c2df733a2683de8fb
 
 键盘修复源码检查点：上述四个产品文件已按此最小方案实现，`main.js`、业务/API和原验证断言均未修改。已有Node22实际执行原 `template/merchant/scripts/source-check.cjs`，31脚本语法、74本地导入通过；Root读回四文件差异并核 `git diff --check` 通过，四文件保持LF。这只证明源码范围；离线构建、新r4来源及实际浏览器验证仍待完成。
 
+键盘修复离线构建（2026-10-15）：前端来源为clean `5fc4232d1a97c7cddc4841dd4a95be72cbba3bf2`。首次新目录复制依赖时自然FileNotFoundError，原FAIL摘要 `15fa2ee2e4af7e28148247d64c662a680209202d815f7294b93174ae1aa7081c`；当时尚未运行npm build。只读核实原文件路径258字符、新路径267字符、本机LongPathsEnabled=0。沿同一冻结builder和全部26540项依赖，仅将已有output参数改为新的短目录 `artifacts/ms4-merchant-console-build/5fc4232d-k2`，完整清单最长路径252字符，不改源码/依赖/检查条件或系统设置；诊断摘要 `52cb8b5af2c420195cab60df2ebc62e7a486dcee7a750bc8d04a2dcc1092566e`。新构建实际terminal0，8个原生阶段全0，原prebuild31脚本/74导入通过；原依赖前后完整字节保持、新副本仅缓存可变，43份源码及副本保持，实际25份dist与通用标题/26个本地资源引用核对通过。成功构建摘要 `d8db1a4d53524dec4483a3c9402ec5987cf9d55a120f8757f27d0aa76f7614e3`；Root独立只读postcheck摘要 `a448f5ba268abefd68b5acb75f7c08df4cc7603e8ea289dfaff17ec9dceee80d`，实际重核源码/副本、dist、原生日志和进程收据，依赖全树部分明确消费原builder证据，不冒称再次全树复验。未安装或重跑build，原FAIL保留；构建不等于HTTP/DOM验收。
+
+r4键盘来源已实际create-only生成，builder摘要 `e3dc21bd9e819a46d622f8c597734cf67aa8dc8ac4ef2d631d0bbf662c6347e3`；Root读源和纯逆变换/原38函数保护通过，新browser的Node语法检查exit0。原host字节保持，因此仍指向旧38a9前端构建；本轮尚未尝试用它freeze新前端，不能写成冻结失败或运行就绪。后继build绑定实施依据：新建 `candidate-internal-v6-merchant-http-final-r4-build1` 及对应close/inverse，host只换实际新build目录、上述真实postcheck SHA及其真实前端source SHA三值，完整原43源码/25产物、逐文件hash、普通业务及34/25/9/23/3600门禁保留；close只改新HOST路径和真实host SHA，其函数保持。旧r4/r3与构建FAIL不覆盖。新后继须完整逆回既有来源并独立源审后，才用后续clean主树重新freeze；主树后续仅文档/后端变动仍需逐文件证明其43前端源码等于该实际构建，不能借用不匹配产物。
+
 ### Task 7: 退款额度与库存行为
 
 - 接口：申请退款时在事务中锁定订单行，校验"已退金额 + 处理中金额 + 本次金额 ≤ 实付"；三类库存行为分别写 `release`（未发货取消）、`return_in`（退货验收入库）、不写（仅退款）。
