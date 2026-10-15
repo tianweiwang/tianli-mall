@@ -134,8 +134,9 @@ function m4mb_create_one(\think\App $app,PDO $pdo,array $fixture,int $ordinal): 
 {
     $uid=m4mr_integer($fixture['user']['uid'],1);$mer=m4mr_integer($fixture['product']['mer_id'],1,4294967295);
     $product=m4mr_integer($fixture['product']['id'],1,8388607);$address=m4mr_integer($fixture['address']['id'],1,16777215);
-    $GLOBALS['m4o_phase']='browser_create_'.$ordinal;
+    $GLOBALS['m4o_phase']='browser_create_'.$ordinal.'_set_cart';
     $ref=MerchantBrowserInput::reference($app->make(MerchantBrowserCarts::class)->setCart($uid,$product,1,$fixture['sku']['unique'],0,false),'persistent');
+    $GLOBALS['m4o_phase']='browser_create_'.$ordinal.'_confirm';
     $choice=MerchantBrowserInput::confirm(['mer_id'=>$mer,'cartId'=>$ref,'addressId'=>$address,'new'=>false]);
     $user=$app->make(MerchantBrowserUsers::class)->getUserInfo($uid);
     m4mb_expect($user!==null&&(int)$user->getData('uid')===$uid,'BROWSER_NATIVE_BUYER_MODEL');
@@ -151,8 +152,10 @@ function m4mb_create_one(\think\App $app,PDO $pdo,array $fixture,int $ordinal): 
     $raw=['mer_id'=>$mer,'cartId'=>$ref,'new'=>false,'addressId'=>$address,'invoice_id'=>0,'payType'=>'',
         'idem_key'=>'browser-'.bin2hex(random_bytes(16)),'mark'=>'普通分页订单 '.$ordinal,
         'custom_form'=>[['product_id'=>$group['product_id'],'definition_sha256'=>$group['definition_sha256'],'values'=>$answers]]];
+    $GLOBALS['m4o_phase']='browser_create_'.$ordinal.'_create';
     m4mb_expect(!MerchantBrowserDb::connect()->getPdo()->inTransaction(),'BROWSER_CREATE_NO_OUTER_TRANSACTION');
     $result=$app->make(MerchantBrowserCreate::class)->create($uid,$key,$raw);
+    $GLOBALS['m4o_phase']='browser_create_'.$ordinal.'_readback';
     m4mb_expect(is_string($result['order_id']??null)&&strlen($result['order_id'])<=32&&($result['key']??null)===$key,
         'BROWSER_REAL_CREATED_ORDER_NUMBER');
     $rows=m4mb_query($pdo,'SELECT * FROM `eb_store_order` WHERE `uid` = ? AND `order_id` = ?',[$uid,$result['order_id']]);
@@ -259,7 +262,8 @@ function m4mb_prepare(\think\App $app,PDO $pdo,array $normal,array $binding): ar
         'BROWSER_REAL_ZERO_CANCEL_CONFIGURATION_GETTER');
     $created=[];$ids=$numbers=$keys=$refs=[];
     for($i=1;$i<=20;$i++){
-        $current=m4mb_create_one($app,$pdo,$fixture,$i);$proof=m4mb_verify_order($pdo,$fixture,$current);
+        $current=m4mb_create_one($app,$pdo,$fixture,$i);
+        $GLOBALS['m4o_phase']='browser_create_'.$i.'_verify_order';$proof=m4mb_verify_order($pdo,$fixture,$current);
         m4mb_expect(!in_array($proof['id'],$ids,true)&&!in_array($proof['order_id'],$numbers,true)
             &&!in_array($current['key'],$keys,true)&&!in_array($current['ref'],$refs,true),'BROWSER_DISTINCT_REAL_ORDER_IDENTITIES');
         $ids[]=$proof['id'];$numbers[]=$proof['order_id'];$keys[]=$current['key'];$refs[]=$current['ref'];$created[]=$proof;

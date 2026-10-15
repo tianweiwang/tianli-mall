@@ -364,6 +364,16 @@ v3源码检查点：新HTTP完整实现摘要`c0c808abea55c30537fb34593420f84ee7
 
 后继最小修复依据（实施前）：另建-r2来源，不覆盖原final/失败Run；只在initializer的四卷空目录chmod成功和六control子目录create-only mkdir成功之后调用`clearstatcache(true, $path)`，再执行原0700及publisher UID严格读回。空目录、真实mount/Run归属、chmod/mkdir成功、原mode/owner标准全部保留；不将void调用塞入布尔表达式，不使用全局缓存清除。builder、candidate、close、inverse和静态收据均新路径；close只更新实际候选位置，完整逆变换仍回source1/v5，额外核两hunk可逆回旧final initializer。其余host业务、四设计文档、两浏览器模块、public复制、34/25/9及正常关闭合同不变。实际静态/语法核对后重新freeze clean来源并用新Run验证；本次失败和修复准备不记HTTP/DOM、完整Task6或MS4通过。
 
+后继普通验证实际结果（2026-10-15）：r2 最小目录状态缓存修复已通过独立源审、完整逆变换及 PHP8.2 语法检查。冻结 clean 来源 `dc07eb9ef3c0d9ba83478f5fc80daa1234b91f26`，新 Run `20261015072823be1023` 的初始化、正常结构迁移及完整内部订单链实际通过；普通订单收据摘要 `d31e35ddc506d0b893c73bf8ed26d87f7b077a993c5365ec8637de17474a3024`，native0/final_source，保留真实下单、会员价格、保存资料读取、持久收尾、取消释放及三个原生商家账号的正常认证读取。首次 HTTP 创建命令遗漏既有清理授权前置步骤，尚未创建 HTTP 资源即停止；随后实际执行原授权 helper、核其正常退出并移除，观察记录保留，未改业务源码或断言。
+
+随后 HTTP 准备的安装校验及 DML 应用账号检查均成功，但实际分页订单准备在 `browser_create_1` 出现运行警告，子收据为 FAIL/native1，摘要 `d32860b8480dec4c91e294e941bedf52d2448f3473e9b831184fdf269a372a19`；父 FAIL 摘要 `ab3f7f861e1c458b480dc0743188b360b7bd31e90c9d3ecd36c6d76b8e4ddc09`。当前入口 handler 覆盖了原始警告文件和行号，故具体触发原因未知；该 phase 覆盖购物车、确认、创建及保存核对，不能据此断言订单尚未提交。父 children 为空源于失败子调用未正常返回，独立子 FAIL 已真实落盘。App/UI 始终 created、未启动，HTTP/DOM 未运行；不归因于 Redis、图片或某个被抑制调用，不将安装成功当成准备通过。
+
+该失败 Run 已实际关闭：有限关闭源摘要 `bb69ba08a78cc971570badef4d0ecb51f61fbfc4db27bf7aa88b92d57de65925` 经独立源码复核；仅原 MySQL/Redis 各一次正常 stop，原六容器、原内网和十卷按原身份非 force 移除。关闭收据摘要 `ad04799da7091158ad0ccb4a58809de1992d99134811045a735ec16f3298041b`；Root 另实际执行六条 project/run 标签查询，均 native0/stderr空/count0，独立收据摘要 `fab3b1b54d02d2eea82e3cf368987d492317bb9163695b38a3d34886e3ead50a`。原普通 PASS、父子 FAIL、上下文和 freeze 的 25 份原字节保持；可能存在的部分 SQL 写入随专用卷销毁，不冒称事务已回滚，不重开该 Run。
+
+后继诊断实施依据（实施前）：仅修改现有 `ms4-merchant-browser-prepare.php` 和 `lib/ms4-merchant-browser-normal.php`。入口仍让所有原警告失败，只记录真实 severity、文件 basename、行号及当前 error_reporting mask 是否包含该级别的布尔值；不保存原消息、参数、trace、完整路径或身份信息。用本地异常对象身份关联来源，仅当前捕获的同一警告异常附来源并分类为 `PHP_RUNTIME_WARNING`，避免旧警告污染业务断言。正常购物车、确认、创建、独立读回和保存核对前细化 phase；成功终态仍为 final_source。所有金额、库存、20 笔真实持久购物车下单、正常认证、HTTP/DOM 和关闭断言不变；不跳过被 mask 排除的警告来取得通过。先实际语法检查及独立源审，再以新 clean 来源和新 Run 获取真实诊断；本次仍不勾 Task6 或 MS4 完成。
+
+诊断源码检查点：入口摘要 `83de4db4d8586fcb66c29cf7338c2883af54e637f719ced7ce2a623b2f99bdc1`、helper 摘要 `bb373733d294fbeb50ba4568fa5c5a6770f9b5f6a47178f85d0e0584bceb36ab` 已完成上述最小补充并通过独立源码复核。helper 完整逆回原版本，入口成功业务段和收据写入尾部原字节保持；Root 对这两文件实际执行 PHP8.2 语法检查，均 native0/stderr空/前后字节保持，收据 `artifacts/ms4-merchant-warning-source/20261015-origin-v1/lint-result.json` 摘要 `2954f518e759a16ad6bf9bf90cb6a99446b0954ca3657d6222537c3bf9a15476`。reported=false 仅表示当前 mask 不包含该级别，不能单独证明使用了 `@`。这只是诊断修复，尚未证明原运行警告的原因或业务已修复；新 Run 的正常验证仍待执行。
+
 ### Task 7: 退款额度与库存行为
 
 - 接口：申请退款时在事务中锁定订单行，校验"已退金额 + 处理中金额 + 本次金额 ≤ 实付"；三类库存行为分别写 `release`（未发货取消）、`return_in`（退货验收入库）、不写（仅退款）。

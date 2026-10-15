@@ -208,13 +208,16 @@ function m4mb_source(array &$included): array
 
 function m4mb_main(): int
 {
-    $phase='source';$GLOBALS['m4o_phase']=&$phase;$included=[];
+    $phase='source';$GLOBALS['m4o_phase']=&$phase;$included=[];$runtimeWarning=null;$warningOrigin=null;
     $result=['schema'=>1,'status'=>'FAIL','scope'=>'NORMAL_MERCHANT_BROWSER_PREPARATION_ONLY',
         'run_id'=>getenv('AUDIT_RUN_ID'),'source_sha'=>getenv('AUDIT_SOURCE_SHA'),'binding'=>null,
         'private_credentials_emitted'=>false,'HTTP_DOM_acceptance'=>'NOT RUN'];
     try{
         ini_set('display_errors','0');ini_set('log_errors','0');ini_set('zend.exception_ignore_args','1');umask(0077);
-        set_error_handler(static function():never{throw new RuntimeException('PHP_RUNTIME_WARNING');});
+        set_error_handler(static function(int $severity,string $unusedMessage,string $file,int $line)use(&$runtimeWarning,&$warningOrigin):never{
+            $warningOrigin=['severity'=>$severity,'file'=>basename($file),'line'=>$line,'reported'=>(error_reporting()&$severity)!==0];
+            $runtimeWarning=new RuntimeException('PHP_RUNTIME_WARNING');throw $runtimeWarning;
+        });
         $binding=m4mb_source($included);$result['binding']=$binding;audit_guard_assert();
         $phase='actual_prerequisites';$self=m4o_prerequisites();$phase='actual_app';$app=m4o_app();
         $marketplace=$app->config->get('marketplace');$marketplace['enabled']=true;$marketplace['self_operated_mer_id']=$self;
@@ -225,8 +228,11 @@ function m4mb_main(): int
         foreach(get_included_files()as$file)m4mb_expect(isset($included[realpath($file)]),'BROWSER_INCLUDED_SOURCE_CLOSED');
         audit_guard_assert();m4mb_expect($app->config->get('marketplace.trade.enabled')===false,'BROWSER_FINAL_CREATE_GATE_CLOSED');
         $result['status']='VERIFIED_MERCHANT_BROWSER_PREPARATION_ONLY';
-    }catch(Throwable $error){$result['diagnostic']=['class'=>get_class($error),'file'=>basename($error->getFile()),'line'=>$error->getLine(),
-        'assertion_code'=>$GLOBALS['m4o_failed_assertion']??'UNCLASSIFIED_BROWSER_PREPARATION_FAILURE'];}
+    }catch(Throwable $error){$isRuntimeWarning=$error===$runtimeWarning;
+        $result['diagnostic']=['class'=>get_class($error),'file'=>basename($error->getFile()),'line'=>$error->getLine(),
+            'assertion_code'=>$isRuntimeWarning?'PHP_RUNTIME_WARNING':($GLOBALS['m4o_failed_assertion']??'UNCLASSIFIED_BROWSER_PREPARATION_FAILURE')];
+        if($isRuntimeWarning)$result['diagnostic']['warning_origin']=$warningOrigin;
+    }
     $result['phase']=$phase;$result['assertions']=$GLOBALS['m4o_assertions']??0;
     $result['native_exit']=$result['status']==='VERIFIED_MERCHANT_BROWSER_PREPARATION_ONLY'?0:1;
     try{m4o_new('/run/audit/evidence/ms4-merchant-browser-prepare.json',$result);}
