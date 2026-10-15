@@ -374,6 +374,16 @@ v3源码检查点：新HTTP完整实现摘要`c0c808abea55c30537fb34593420f84ee7
 
 诊断源码检查点：入口摘要 `83de4db4d8586fcb66c29cf7338c2883af54e637f719ced7ce2a623b2f99bdc1`、helper 摘要 `bb373733d294fbeb50ba4568fa5c5a6770f9b5f6a47178f85d0e0584bceb36ab` 已完成上述最小补充并通过独立源码复核。helper 完整逆回原版本，入口成功业务段和收据写入尾部原字节保持；Root 对这两文件实际执行 PHP8.2 语法检查，均 native0/stderr空/前后字节保持，收据 `artifacts/ms4-merchant-warning-source/20261015-origin-v1/lint-result.json` 摘要 `2954f518e759a16ad6bf9bf90cb6a99446b0954ca3657d6222537c3bf9a15476`。reported=false 仅表示当前 mask 不包含该级别，不能单独证明使用了 `@`。这只是诊断修复，尚未证明原运行警告的原因或业务已修复；新 Run 的正常验证仍待执行。
 
+带来源诊断的实际验证（2026-10-15）：冻结 clean 来源 `2f8cbaee6935b56d6b88989e584bf9da5e10c462`，freeze 摘要 `6913d83d7ce4961b3c68948ccd85c2656e85602975dce81bcf392f8673e44c4d`。新 Run `20261015082622fd1758` 的初始化六个原生子命令、正常结构迁移四个子命令及完整内部订单链实际 native0。普通业务收据摘要 `e42a29cd21e257faf268555416839af814935edcc7c83af75510220d1547dc2a`，已独立核对真实创建、会员价格、持久收尾、保存读取、取消和三商家正常认证读取；10,806 个源文件、两项测试环境、Redis 环境、原 created 与 terminal 均完整绑定。随后原清理授权 helper 实际正常结束并移除，才创建 HTTP/UI；这两角色始终 created，未启动。
+
+本轮实际子 FAIL/native1 摘要 `831dcccce2dedff34c7a32e559920d27558be8f12e117353850a45935a356f8e`，phase 为 `browser_create_1_verify_order`，分类 `PHP_RUNTIME_WARNING`，真实来源为 `ms4-merchant-browser-normal.php:214`、severity2、reported=true。定点核实新 helper 的库存流水期望首项误读不存在的 `uid` 列：MS4 迁移、生产 DAO 字段闭集及实际 reserve 写入均使用 `actor_type=customer` 与 `actor_id`；顾客 UID 另在保存订单、幂等记录及规范动作摘要中绑定。原正常校验也使用 actor_id。本次首单 create 已正常返回，保存订单、ledger state1/post_commit_done1 的读取先于错误通过；失败属于新独立验证器的字段假设，不是该单创建失败。其他流水字段与迁移、生产写入及旧正常检查一致，后续20单与HTTP义务仍待实际验证。父 FAIL 摘要 `6aa1dd0da30ce31392e4624194b78f56f8d97f46c779fd428d081f51db9f7a5b`，安装六项仍成功，不用其替代准备通过。
+
+该失败 Run 已实际正常关闭。有限关闭源摘要 `292707a9e9b90b73601ff33c9d91dbeb4539976c948f0f7d798963c06d908b72` 经独立增量源审，其余七个函数 AST 与已审关闭源一致；仅原 DB/Redis 各一次正常 stop 后，原六容器、同网、十卷按原身份非 force 移除。关闭收据摘要 `894e0efcee528c671152423d3272187aa762dc62d47fa2e1b73724ab7da7a0b9`，Root 独立六条标签查询 native0/stderr空/count0，收据摘要 `c49a3728993099ce63d1f33596eaf7477ca4ab2586f8f81368baf71a113c8cee`。25份原 PASS/FAIL/上下文/freeze 字节保持，不重开该 Run；HTTP/DOM 仍未运行。
+
+库存核对修复依据（实施前）：只修改现有 `lib/ms4-merchant-browser-normal.php`，移除对不存在 movement.uid 的列期望，改为显式核对保存 order.uid、ledger.uid、customer actor_id 均等于实际夹具顾客 UID。保留已有 actor_id、actor_type、商品/规格/数量/库存销量前后值、原动作摘要中 uid 和所有金额、20单、分页、只读事实断言；警告仍严格失败。生产业务、数据库结构和初始化权限保持既定合同。实际语法检查及独立源审后重新 freeze clean 来源，以新 Run 验证整批准备及后续真实 HTTP/DOM；不把本次定位或源码修复标为 Task6/MS4 完成。
+
+库存核对源码检查点：helper 摘要 `26cb691f4f9fa510fef7ee49a0b63b84a536e821032f802eeab91877d5434afe` 已按上述依据修正，独立源审通过；仅三行显式身份链和错误列期望的替换，其余业务断言可逐字节逆回修复前 helper。Root 实际执行该文件 PHP8.2 语法检查 native0/stderr空/前后字节保持，收据 `artifacts/ms4-merchant-warning-source/20261015-stock-customer-v1/lint-result.json` 摘要 `623869fc76de93aef43320aa1f3fc7d5bc3d4adc95584d83fe1ad35e83755930`。这是验证器修复的源码检查点；修复后的整批准备、HTTP 与真实浏览器结果尚待新 Run，不以本地提交替代运行验收。
+
 ### Task 7: 退款额度与库存行为
 
 - 接口：申请退款时在事务中锁定订单行，校验"已退金额 + 处理中金额 + 本次金额 ≤ 实付"；三类库存行为分别写 `release`（未发货取消）、`return_in`（退货验收入库）、不写（仅退款）。

@@ -207,7 +207,10 @@ function m4mb_verify_order(PDO $pdo,array $fixture,array $created): array
         m4mb_expect(($cart[$field]??null)===$expected,'BROWSER_SAVED_PRIVATE_AND_PUBLIC_PRICE');
     m4mb_expect(($cart['productInfo']['image']??null)===$fixture['product']['image']
         &&($cart['productInfo']['attrInfo']['image']??null)===$fixture['sku']['image'],'BROWSER_SAVED_SAME_ORIGIN_PNG');
-    foreach(['uid'=>$uid,'mer_id'=>$mer,'order_id'=>$id,'product_id'=>$product,'sku_id'=>$skuId,'sku_type'=>0,'qty'=>1,
+    m4mb_expect(m4mr_integer($order['uid'],1,4294967295)===$uid&&m4mr_integer($ledger['uid'],1,4294967295)===$uid
+        &&$movement['actor_type']==='customer'&&m4mr_integer($movement['actor_id'],1,4294967295)===$uid,
+        'BROWSER_SAVED_CUSTOMER_IDENTITY');
+    foreach(['mer_id'=>$mer,'order_id'=>$id,'product_id'=>$product,'sku_id'=>$skuId,'sku_type'=>0,'qty'=>1,
         'actor_id'=>$uid,'sku_stock_before'=>20-$index,'sku_stock_after'=>19-$index,'root_stock_before'=>20-$index,
         'root_stock_after'=>19-$index,'sku_sales_before'=>$index,'sku_sales_after'=>$index+1,
         'root_sales_before'=>$index,'root_sales_after'=>$index+1]as$field=>$expected)
