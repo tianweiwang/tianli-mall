@@ -54,6 +54,8 @@ HTTP演员是本Run原生角色/员工/setup，经真实设密后仅将既有账
 
 HTTP普通控制补充合同（source准备，尚未运行）：在原五个private ingress模式之外增加只读`supervisor`，仅核同Run/source/CID/freeze/epoch和当前active-supervisor原nonce，返回实际对应响应或明确not_ready/null；native0只证明有限读取完成，不能替代真实HTTP成员/监听ready。正常stop只终止已登记HTTP子进程组，核成员消失/8000无监听并写真实响应后，原supervisor以同PID空闲且禁止再start；桥读回后再由原ID正常docker stop time=-1发送SIGTERM，核容器exit0/PID0，不使用超时升级。runtime窗口固定实际time()起3600秒，过期不重启或改时钟。CUA原始截图为JPEG，保留原字节为.jpg并核image/jpeg、SHA及实际像素；CSS viewport/DPR另核，不转码或强制二者同尺寸。商品合成PNG合同保持。最终浏览器覆盖计划、私有capture/DOM核对与公开终态收据未齐前，新profile运行及关闭总门禁保持关闭；准备源码不记HTTP/DOM通过。
 
+HTTP最终普通页面核对合同（编码前）：新增只读`plan` ingress，读取同HTTP进程在真实oracle/source门禁后一次生成的固定34步骤/25主capture/9visual私有计划；每步nonce由真实random_bytes产生，write command只接纳计划中下一步原完整消息且前步实际ACK存在，不开放任意命令或凭据参数。capture.query的空map在线上编码为JSON对象{}，不放宽浏览器的精确查询比较。原6个控制子目录保持，9份人工图像复核写入已有screenshots目录的独立create-only review文件，严格绑定原nonce/scene/实际JPEG摘要。audit必须逐项核完整计划、真实响应与保存oracle、结构化DOM/原字节全页JPEG/人工实看记录、owned tab关闭/viewport reset、23表事实和完整来源，才经宿主私有桥发布有限公开结果；App的Run挂载继续只读。新的只读plan、review种类和完整终态实现后仍须来源审查，不能据计划生成签收；手机表格实际横向可达的工具接口尚在核对，未实际操作前不记该项通过。
+
 ## 3. ISO-MIN 环境（MS0a 交付）
 
 ### 3.1 文件
