@@ -136,6 +136,7 @@
 - 后端不得用fresh confirm、remember/set或延TTL恢复；前端不得从URL/缓存UID造身份或完整DTO。真实created优先、unknown只查询、完整attempt先写读回再HTTP、none不改默认、原fresh/legacy兼容及原未完成范围均保持。
 - 当前不可用的原payType意图保持未解决，不阻断完整只读DTO恢复、不替换客户端选择。内部报价复用现validatePayment及真实当前配置判断；仅其明确业务ApiException可转为空渠道基准计算，当前有效渠道保持原值，配置或基础设施错误继续失败。关闭的offline不得继续套用offline免运费；不新增响应schema、不改create支付验证、不发起支付。fresh完整DTO共用组装分为商品/表单/价格前段与用户/能力尾段，原唯一cacheOrderInfo仍在两段之间，legacy自动领券仍只在fresh末尾。
 - 身份代理文件清单扩至上述13个既定调用点（原10文件加手机弹层、routine_phone与binding_phone）；仅完成同一真实USERINFO/代次合同，不能顺带改其他业务。libs/routine.js现旧展示写入不能授予verifiedUid，本轮不据其兼容显示声称MP已完整验收。
+- 原仍存活页面明确确认的live“调整信息”代次继续保留；这不构成刷新恢复或解除未知提交锁。子页仅在实际原父栈对象/真实channel、owner/账号代次、parent实例/key/binding/新编辑generation均匹配，且父页内存原不可变attempt与本owner封存副本全等时，允许同一live编辑往返；仍保留原attempt和原同key幂等责任，不自动创建/重发。缺少任一真实关联，或本地仅剩unknown anchor，一律同key只查询；持久send-intent刷新仍不能恢复为editing。
 
 ## 11. 实际源码检查点
 
