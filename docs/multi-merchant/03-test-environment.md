@@ -94,6 +94,8 @@ customer verify容器有本内网alias audit-app、无宿主端口，显式stop_
 
 再次购买后继H5完整打包合同：新增共用工具与组件使当前完整tracked前端输入实际变为544份；旧542份复用门禁不覆盖新增修改来源。从新clean提交重新冻结实际544路径/字节，在新的短目录执行原离线完整构建流程，沿原29930工具依赖、Node/CLI/Vue/Webpack/Sass版本及原两轮afterEmit/本地资源门禁，不下载依赖、不改原报告。只更新真实HEAD、目录、输入清单/计数及其摘要绑定；已有长路径失败目录保持。完整打包和真实页面结果分别记录，实际顾客、品牌配置、API和视觉责任仍保留。
 
+再次购买来源H5完整构建实际通过（2026-10-16）：clean Main `b803687d089baecd8b37cee716bbd54d857dd42e`，独立短目录 `artifacts/ms4-h5/b803687d0-r1/`。Root唯一执行原离线流程，544份真实输入及29930份原工具/副本前后字节保持；实际原生编译和最终静态门禁均exit0。两轮pass为1/2，afterEmit仅2，一次invalidate、8次purge；实际dist为334文件/10290912B，完整清单摘要 `cd26d49a4f32fb2aa42531d061e5cb3f2cc3f25510b23dec474a7c5b02f30b46`，三个index本地引用和唯一店铺chunk核对通过。第二轮保留实际asset/entrypoint size警告；未屏蔽警告或据index无远程引用推断运行时无统计请求。`BUILD-REPORT.json` 为3815B、摘要 `637a25c7838318bbc5bef78e3aa06c43f9cd92dba33c0f9b189816419f735ed0`；本次仅构建及静态资源检查，PHP/API/SQL/浏览器、真实登录交易和部署均非该构建的证明范围，原未完成项与用户停止样本保持。
+
 ## 3. ISO-MIN 环境（MS0a 交付）
 
 ### 3.1 文件

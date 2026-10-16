@@ -321,6 +321,8 @@ enabled 顾客验证源码检查点（2026-10-16）：上述两PHP已实现并�
 
 再次购买本地源码检查点（2026-10-16）：上述6个必要源码已整合，原againOrder及原可见按钮条件保持，发票页只补遗留方法。Root完整读差异并独立SOURCE复核，导航锁已按本机H5 router.push/afterEach实际调用顺序修正为成功保持、fail/onShow释放；没有运行并发或故障样本。两PHP在既有只读/network none PHP8.2镜像实际语法native0/stderr空，原源前后保持，收据 `artifacts/ms4-again-source/20261016-r1/php-syntax-result.json` 摘要 `2766f610ebef1dbeada9d959d6db88af576e582224265aeaec65d8b880e11ae3`。三Vue经官方H5/MP-Weixin/App-plus预处理、Vue2.6.14模板、Node22.22.2脚本及原Sass实际9组全通过；10条普通纯wire解析/URL解码/组件选择与取消意图检查通过，源码字节前后保持，收据同目录 `ui-source-result.json` 摘要 `274b685b2019521c52e7fbc16340da1f881ea2ddd2c406e37700a4ef56a74f2f`。这些没有伪造认证、订单或API；实际temporary/again接口、完整打包、DOM/视觉仍PENDING。前述d7的12HTTP结果保持其真实来源，不自动归给本次修改后的源码；原Task4/MS4复选状态不变。
 
+对应b803687d0前端完整打包已实际完成：Root沿新短目录和冻结544份输入执行编译、最终静态资源门禁，均native0，完整源/29930依赖前后保持。实际334份dist及本地资源核对通过；第二轮体积警告如实保留。构建报告摘要 `637a25c7838318bbc5bef78e3aa06c43f9cd92dba33c0f9b189816419f735ed0`，详情见03。只解除上述完整打包PENDING，不据此解除真实temporary/again接口、顾客DOM/视觉、确认恢复或Task4/MS4的未完成状态。
+
 ### Task 5: 取消与超时释放
 
 - 接口：整笔未支付且未发货的取消/超时按真实父reserve聚合release，`idem_key = "release:<store_order.id>:<parent_reserve_id>"`；两项为真实已提交PK，尾段是规范U64字符串，不能用非全局唯一的SKU八字节unique。动作摘要绑定保存顾客/商家/订单/父reserve/SKU/数量，顾客取消与系统超时共用动作，演员仅记首次真实执行者；重复不重复释放。未来Task7部分退款用独立真实退款动作键，共同核累计release+return_in不超过父reserve.qty。关单前走可信支付query→close→query closed；unknown或无可信attempt不释放，已支付转待处理，不制造paid或回退平台账户。MS5决定前仅显式testing驱动可做普通未付关单。
