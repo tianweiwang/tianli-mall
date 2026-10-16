@@ -363,6 +363,18 @@ H5入口/阶段已实际整合到现两PHP：serve/七ingress/原actor只读交�
 
 SD1/SD2后继SOURCE/PARSE检查点（2026-10-17）：最终OrderDao为84262B/SHA256 `0e95dabf49d6537ca7c5fdf4f1723f121f8eaa1e0602bd824dac941944bb9d16`，StoreOrderServices为156931B/SHA256 `ecf2695a30bcad1418704b6cb98f417a849e0301208d93dde99fe8420d846d88`；Root真实收据`H:/天俪商城/artifacts/ms4-confirmation-restore-source/20261017-deadline-r1/php-syntax-result.json`的SHA256为`c7a267a8e65f7de717c52a3b841440340657fd0192666133f18cec55fcdde5b0`。checker为4806B/SHA256 `3063ed3e8418e4dc006e24a4090de5d8cb7a69f2705698408372287c4845dca5`，8处有限替换、整文逆回和AST已由Root实际核过；未import/App/SQL/样本。完整范围及检查时四来源保持说明见[设计§5](records/ms4/saved-payment-deadline-display.md#5-root-sourceparse检查点)。本轮仅记录源码/解析完成，SD3、Restore/RC8及完整MS4责任仍未完成；用户停止的拒绝/越权/冲突/并发/故障/恢复样本不运行，本窄修复也不运行原tiny内部取消样本。
 
+商品详情售价字段修正（2026-10-17，先登记实施依据）：Root已采纳只读诊断。正常商品甲/乙/丙及真实SKU保存的price为20.15/30.25/24.35；ot_price未填写时按安装结构合法默认为0.00，其语义是市场/划线价。现productInfo把“售价”错绑ot_price，不能通过改fixture、价格、主题或断言隐藏。既有realPrice按真实可见SKU unique返回price（SKU售价）、real_price（原优惠后到手价）和ot_price（划线价），页面将真实响应经PageDesign传入priceData。
+
+本次仅改template/uni-app/subpackage/diyComponents/productInfo.vue：售价取当前priceData.price，computed不再让组件local selectedIndex的sku.price或sku.real_price覆盖售价；到手价仍取real_price，原价仍用ot_price，会员字段和原处理保持。默认规格和弹窗ChangeAttr继续沿原父层setRealPrice回传props，无新增SKU金额缓存、请求、DTO或根价回退，不改变原选中unique、真实加购和legacy路径；既有父层异步响应顺序不在本次组件窄改中扩大处理，不能由本源码宣称快速并发切换已验证。只读核父层与PageDesign，不改20前端恢复/5PHP、SD/RC8或Main/R6来源。
+
+- [x] SP1：完成该组件template/computed窄源码实施并经Root/独立SOURCE复核；与解析、运行分开记录。
+- [ ] SP2：对实际新来源完成必要官方预处理/模板、JS和样式解析及后继完整构建；当前未运行，不沿用原20前端结果。
+- [ ] SP3：新来源正常页面核三商品，会员关闭时售价/到手价与真实SKU响应一致；甲20.15↔24.35需包含原内联及弹窗选择的正常顺序往返，不能固定第一个SKU或把优惠后价当售价；保留原划线价语义、真实加购/订单金额，正常关闭及独立核零另记。当前未运行/未验收，不运行用户已停止的冲突/并发/故障/恢复样本，不据本窄修复签收Task4/MS4。
+
+售价字段本地SOURCE实施检查点（2026-10-17）：上述组件已完成唯一售价绑定替换、price改为只读props来源和移除两行local SKU覆盖；完整逆回可恢复本轮前组件字节，父层goods_details/index.vue与PageDesign全文保持。未新增缓存/事件/请求，real_price、ot_price、会员/库存及原规格事件分支未改；仍待Root/独立源审、官方解析/构建与SP3正常页面验收，SP1–SP3及原SD3/RC8/Task4/MS4未勾。
+
+售价字段后继SOURCE/PARSE检查点：Root已读回完整窄差分和实际computed/父setRealPrice接缝，独立price_display_review有限SOURCE PASS，SP1至此完成。最终组件33680B/SHA256 `746bd45a7680d871f91b794a593858aacd2a8e3b8b408577df5a10e69fcc30f1`；Root以原官方uni预处理器、Vue模板编译器、Babel/Node及SCSS工具对H5/mp-weixin/app-plus三组真实源码解析，均native0、无模板错误和stderr，前后组件字节保持。实际收据 `H:/天俪商城/artifacts/ms4-confirmation-restore-source/20261017-price-r1/price-syntax-result.json`，摘要 `41608a20ad3ccb93647eb03fff4fc2f23d68296b692c798f7b56e221b088d70a`；6341B checker摘要 `002667e6ee4dba1c1a5573bffd56593e248041c9cebaaa72852e6cbd92369cc3`，从已读原checker作5处有限替换、整文逆回及Node --check均已核。未执行组件方法、App、HTTP/SQL或浏览器；SP2仍缺后继完整构建、SP3正常页面仍未验收，其他原责任保持。
+
 #### Task4 RC：完整确认上下文刷新恢复
 
 沿[完整实施依据](records/ms4/confirmation-restore-design.md)的R1–R10/A1–A9执行；r1只读API/URL带key不得替代完整恢复。本次在独立 `ms4-confirmation-restore` 工作树源开发，Main当前H5 Run沿冻结源继续。无新表、服务端草稿、支付或上传重放；复用现完整DTO/报价/frame/owner lookup，完整保留本人选择与分组表单。当前真实GET user及账号代次才可确认owner；提交前完整不可变attempt必须持久写入读回，unknown/not_found不能自动解锁。地址none不取默认，未知key容量统一计数；每记录1MiB、owner 5MiB/5完整上下文/20未知key，不能截断旧未知attempt或缩窄既有合法业务输入。Root复核补充和代理写入接口已在设计记录中统一。
