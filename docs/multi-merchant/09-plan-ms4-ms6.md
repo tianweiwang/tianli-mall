@@ -357,6 +357,8 @@ H5入口/阶段已实际整合到现两PHP：serve/七ingress/原actor只读交�
 
 R3本轮实际结果：Run `202610161242280276cd` 的原六步初始化、四步结构、文件引导及顾客prepare均正常，public copy在source阶段因新public空卷遮罩安装SQL而自然exit1。Root已从同原停态CID确认/source完整源与/workspace目标缺失的实际差异；未创建H5后继App/UI或订单，不记顾客页面通过。部分正常关闭和Root独立六查询零已完成，原copy exit1、全部旧公开证据及Main冻结字节均保持，详见03。本Run不重开；下一来源只修该固定遮罩路径映射，完整source/manifest/hash及原浏览器/SQL验收责任保持。
 
+R4 source-only后继：在保留旧R3与原失败/关闭证据后，新27文件profile仅修bootstrap的固定copy/workspace安装SQL遮罩读点及两项来源说明，原7/host/close/zero/browser完全保持；整文件逆回、5AST/3help/1PHP-l及27源前后保持均已实际通过，见03。不能由这9项源码检查推断复制或H5页面运行成功，原完整运行与验收清单不变。
+
 ### Task 5: 取消与超时释放
 
 - 接口：整笔未支付且未发货的取消/超时按真实父reserve聚合release，`idem_key = "release:<store_order.id>:<parent_reserve_id>"`；两项为真实已提交PK，尾段是规范U64字符串，不能用非全局唯一的SKU八字节unique。动作摘要绑定保存顾客/商家/订单/父reserve/SKU/数量，顾客取消与系统超时共用动作，演员仅记首次真实执行者；重复不重复释放。未来Task7部分退款用独立真实退款动作键，共同核累计release+return_in不超过父reserve.qty。关单前走可信支付query→close→query closed；unknown或无可信attempt不释放，已支付转待处理，不制造paid或回退平台账户。MS5决定前仅显式testing驱动可做普通未付关单。

@@ -156,6 +156,8 @@ R3实际部分Run（2026-10-16）：冻结clean Main `9e53170a7db817c36a209e26a8
 
 同Run部分正常关闭：专用源 `customer-h5-copy-failed-close-r1/normal-close.py` 摘要 `3b067167392354f89441f0cb3dd3e395635e9e950d185902037dcfb08f68f169` 经Root全文读、AST和独立SOURCE复核后唯一实际执行native0。保留copy原terminal1；MySQL/Redis分别一次正常stop time=-1，同原生进程12776/2884均真正正常结束，原容器exit0/PID0/restart0；非force精确移除原3CID、空端点internal网络及10原卷。既有全部公开evidence与4注册输入字节保持；关闭摘要 `aa9af693ca921ae156b39503cb533211be772003f5d5eca85f9c640383635638`。Root另外独立六原生查询均native0、stdout/stderr原字节空，2435B核零收据摘要 `3860a93a87adf712f15ea31c386795d615935ffa1b81425b7d0dcd7bd6b8fe12`；Main仍原9e/clean后才解除冻结。只记PARTIAL_RUN_NORMAL_CLOSED，完整H5/DOM/订单验收仍INCOMPLETE，不重开原Run。后继修复须保留真实/source全量哈希与目标public完整manifest，仅区分copy时被新public卷遮罩的固定SQL读取位置；在新来源/新实例验证，不删freeze条目或修改期望hash。停止样本继续NOT RUN。
 
+R4后继源码检查点：Root在旧Run已关闭并独立核零后，create-only生成 `candidate-h5-r4`，仍为原7+20共27文件，原7、host/close/zero与浏览器模块逐字保持；仅bootstrap固定copy/workspace安装SQL读取映射及两项来源说明变化。bootstrap新73753B/摘要 `0f5f7935d46a09bd2b902221b06b8633dab93e64f0cc0173cb1133e857fb8ef5`，整文件逆替换恢复原73448B/摘要 `921242c4f55935454155fdb5511c80247eebfc4e12dcb77349554839b884748b`。Root与独立复核组装逻辑；实际5 Python AST、3 CLI help和固定PHP8.2 network-none只读php-l均通过，原R3与新R4全部27源前后字节保持；10927B收据摘要 `a364dd2130dcf664e52c37b229012f471e121cc519203e7a4d957cba3068693d`。来源闭集、源hash与目标完整public manifest未减少；仅SOURCE/PARSE检查，没有新freeze、Run、App/SQL/HTTP/DOM或H5验收结果，后继正常运行仍须新实例。
+
 ## 3. ISO-MIN 环境（MS0a 交付）
 
 ### 3.1 文件
