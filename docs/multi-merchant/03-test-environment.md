@@ -177,6 +177,12 @@ R6后继实施合同：只把UI capture比较的右侧原frame经相同structure
 
 R6实际SOURCE/PARSE检查点：首次组装在创建新profile前native1，Root只读核27原长度/hash保持，定位8个文件的lstat/fstat仅ctime表示不同且各自前后稳定。原builder/失败收据保留；后继18403B组装源（摘要 `50568d201521fb87758c391239a109f4ed4d91f1a8b99fbe057663da41b74333`）只将跨API比较限定为其余六项身份，各API自身仍核七项前后稳定。Root完整窄逆回/AST及独立SOURCE复核后唯一实际运行native0，生成R6原27文件，精确4变化/23不变、全27逆回R5。11093B组装收据摘要 `3632ca19c036b6da695daca4773920a6dc96a64f9174a5fd2c8e7b1dab91cd61`。Root再核实际两个代码literal差分，使用本机bundled Node v24.19.0仅对变化两模块执行--check，均native0/stdout与stderr空，R5/R6源前后保持；5597B收据摘要 `4d415501117b4611734ca4e58973428e5516bb72f5410ff6ad573525e8a233df`。新bridge41741B/摘要 `f86753d6dca1a99d960e0f47d1c9dde3fe8f15f95f0d97aaae447604119c7c60`，driver15080B/摘要 `cdcdef248c6b69e23bb659996f0379d3fc7f1df660fb810d7c4f2c5ca6a89328`。只记源码生成/解析，无新freeze、Run或HTTP/DOM验收；完整顾客、商家及交易未完成范围保持。
 
+R6实际正常业务与有限收尾（2026-10-17）：clean Main `d6bd762a218203265a3af391740e389332b01f78`，Run `2026101618001052f852`，freeze摘要 `a2b94394c707fdd83a1a14dc405bd19c3b871d15730888630f3639b6036831c5`。真实登录、两商家三商品/规格报价、按店购物车、原地址/个人发票/分组表单、单次创建和真实未支付详情GET已沿原driver完成；店A商品70.55、运费8.01、应付78.56，另一商家未混入。B0–B4均经原入口真实SELECT验证25业务+7辅助表，B4在原HTTP child实际正常停止后读取，核原ledger的cancel_at=0。未执行付款、发货或退款。
+
+完整页面验收仍INCOMPLETE：原协议仅保存3份capture、3原生JPEG、2份Root人工复核，均为登录空态；1440宽第三原图实际裁剪/缩放与当时DOM不符，不能记为人工通过。普通native截图另保留购物车/确认/未支付详情诊断图，但不替代原27图、Final32、finish-browser/browser-closed/sql-audit。原截图超时、辅助投影身份不符等诊断保留，不补造缺失证据。Root有限观察2352B，摘要 `8d3a3c8c0cf2dde9233f750843d8013bf9141e0c39931f5e34baf3221dde16df`；原tab关闭未获ACK，独立浏览器清单确认其已不存在，viewport复位、driver私有引用释放及bridge演员忘记均已完成。
+
+R6有限关闭源 `customer-h5-r6-partial-normal-close/` 的PLAN/close/zero经Root全文读回、独立SOURCE及两AST/两个help检查；解析收据摘要 `c475c606a6715515753dc9669a791a5daed53d5583448bfa1ca46b2a24ecb91b`。Root唯一执行close实际native0：四服务各单次normal stop(time=-1)，所有原停止句柄真正terminal0、容器PID0/restart0，随后非force精确移除原4容器、2空网络、10专用卷。关闭收据绑定24份真实回执，摘要 `a325273b4a6c43234f5f06019ea7d97f73cd4e0b4ed83e6ccf7f69ca8f6f93b5`。独立zero实际native0，六条原生双标签查询stdout/stderr均空，原公开证据、六输入、完整冻结来源及全局消费者均保持，3580B收据摘要 `4a9e0fc275b7695b5110ea2b3d546b5cca568ad2bce1f7475146b1aad2b61953`。结论为PARTIAL_RUN_NORMAL_CLOSED / CUSTOMER_H5_INCOMPLETE；实际核零后才解除Main冻结，不重开旧Run，原完整多商家/交易/商家验收和已停止样本责任保持。
+
 ## 3. ISO-MIN 环境（MS0a 交付）
 
 ### 3.1 文件
