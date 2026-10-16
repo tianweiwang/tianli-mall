@@ -282,9 +282,11 @@ function m4cb_fixture_load(array $source): array
     $value=json_decode($raw,true,64,JSON_THROW_ON_ERROR);$path='/run/audit/evidence/ms4-customer-prepare.json';
     m4c_expect(is_file($path)&&!is_link($path)&&filesize($path)<=1048576,'M4C_ACTUAL_PUBLIC_PREPARE_RECEIPT');
     $publicRaw=file_get_contents($path);$prepare=json_decode($publicRaw,true,64,JSON_THROW_ON_ERROR);
+    $privateEnvironment=$value['environment'];$actualEnvironment=$source['environment'];
+    ksort($privateEnvironment,SORT_STRING);ksort($actualEnvironment,SORT_STRING);
     m4c_expect(is_array($value)&&$value['schema']===1&&$value['scope']==='MS4_CUSTOMER_PRIVATE_FIXTURE'
         &&$value['run_id']===$source['run_id']&&$value['source_sha']===$source['source_sha']&&$value['freeze_sha256']===$source['freeze_sha256']
-        &&$value['environment']===$source['environment']&&$value['self_operated_mer_id']===$source['self_operated_mer_id']
+        &&$privateEnvironment===$actualEnvironment&&$value['self_operated_mer_id']===$source['self_operated_mer_id']
         &&$prepare['schema']===1&&$prepare['scope']==='CUSTOMER_HTTP_FIXTURE_PREPARATION_ONLY'
         &&$prepare['status']==='VERIFIED_CUSTOMER_HTTP_FIXTURE_PREPARED_ONLY'&&$prepare['native_exit']===0
         &&$prepare['phase']==='final_source'&&$prepare['full_source_unchanged']===true

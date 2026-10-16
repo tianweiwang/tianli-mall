@@ -288,6 +288,7 @@ function m4c_entry_run(string $mode): int
                 $failureMeta=[$GLOBALS['m4c_phase']??null,$GLOBALS['m4c_failed_assertion']??null,$GLOBALS['m4c_warning']??null];}
                 usleep(20000);}
         }while($childProof===null||!$childProof['stopped']);}}
+    $GLOBALS['m4c_child_proof']=$childProof;
     if($failure!==null){[$GLOBALS['m4c_phase'],$GLOBALS['m4c_failed_assertion'],$GLOBALS['m4c_warning']]=$failureMeta;throw $failure;}
     $GLOBALS['m4c_phase']='final_source';audit_guard_assert();m4c_entry_full_source($source);
     $rule=$source['rule'];$result=['schema'=>1,'scope'=>$rule['scope'],'status'=>$rule['status'],
@@ -311,7 +312,9 @@ if(realpath($_SERVER['SCRIPT_FILENAME']??'')===__FILE__){
         $safe=['schema'=>1,'status'=>'FAIL_PRESERVED','scope'=>$rule['scope']??'MS4_CUSTOMER_HTTP_SOURCE_ONLY',
             'phase'=>$GLOBALS['m4c_phase']??'source','class'=>get_class($error),
             'code'=>is_string($code)&&preg_match('/\AM4C_[A-Z0-9_]+\z/D',$code)===1?$code:'M4C_UNCLASSIFIED',
-            'native_exit'=>1,'actual_customer_HTTP'=>'INCOMPLETE','browser_visual_acceptance'=>'NOT RUN'];
+            'native_exit'=>1,'actual_customer_HTTP'=>'INCOMPLETE','browser_visual_acceptance'=>'NOT RUN',
+            'http_calls_completed'=>(int)($GLOBALS['m4c_http_call_count']??0),
+            'child'=>$GLOBALS['m4c_child_proof']??null];
         if(is_array($source)){foreach(['run_id','source_sha','container_id','freeze_sha256'] as $key)$safe[$key]=$source[$key];
             if(isset($GLOBALS['m4c_warning']))$safe['warning']=$GLOBALS['m4c_warning'];
             try{m4c_entry_publish('/run/audit/evidence/'.$source['rule']['proof'].'-failure.json',$safe);}catch(Throwable $ignored){}}

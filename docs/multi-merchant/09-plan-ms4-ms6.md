@@ -295,6 +295,12 @@ enabled 顾客验证源码检查点（2026-10-16）：上述两PHP已实现并�
 
 首个新enabled顾客Run在任何角色启动前因Docker缺失StopSignal元数据读取自然失败，完整实际记录及正常关闭/独立零见03；本轮没有顾客HTTP、业务SQL或实际认证结果。原Main两PHP保持，不改业务断言。后继仅修仓库外candidate-r2的原生字段读取和相应来源pins，原persistent正常链、25表oracle、默认生产gate及商家/顾客页面原未完成验收均保留。
 
+第二个 enabled 顾客 Run 的有限初始化、结构迁移、专用文件引导和 fixture prepare 实际正常，verify 在首个登录请求前自然失败，已保留失败并正常关闭、独立六查询核零，具体来源与摘要见03。Root 只读诊断确认私有 fixture 与 verify 环境的字段名称、值、类型全部一致，仅数组键顺序不同；新验证器原先使用 PHP 数组严格比较，误将对象字段排列顺序作为业务绑定条件。此结果不证明顾客真实下单链通过，原12请求/25表、页面与其他 case 责任继续保留。
+
+字段顺序与失败记录修复合同（实施前，原 Run 已关闭核零）：只修改现有两份 customer PHP。fixture_load 对两个环境数组副本按 SORT_STRING 排序，再以严格 === 比较，继续保留全部字段/值/类型、原 fixture 字节摘要及其余来源条件；不重写旧 fixture 或放宽为松散比较。入口在实际 finally 收尾完成后保存真实 childProof，并在未来失败收据记录该对象或 null，以及 audit_http 实际已返回的次数 http_calls_completed；次数不代表业务成功，null 不代表 child 从未启动。原 shared guard 直接 exit 路径仍不由此 catch 覆盖，不声称补齐所有 fatal 记录。历史 Run 的 child 证明仍 NOT_PERSISTED，不回填。默认生产 gate、业务实现、原失败证据、candidate-r1/r2、12请求及25表断言均不改；后继从新 clean 来源启动新 Run。
+
+该窄修仓库外两文件已独立源码复核通过；Root 在原只读/network none 的 PHP8.2镜像实际语法检查，两子进程均 native0/stderr空、源字节前后保持。收据 artifacts/ms4-customer-http-preparation/syntax-binding-fix-r2-result.json 摘要 f56b0e11b6ef80d5cbe45960467a36f45eeabf7290f12b162b8ba08aa41c4553。源码和语法检查不计实际 HTTP、DOM 或 MS4 完成；整合时须核 Main 两文件与该已检查来源逐字节相同。
+
 ### Task 5: 取消与超时释放
 
 - 接口：整笔未支付且未发货的取消/超时按真实父reserve聚合release，`idem_key = "release:<store_order.id>:<parent_reserve_id>"`；两项为真实已提交PK，尾段是规范U64字符串，不能用非全局唯一的SKU八字节unique。动作摘要绑定保存顾客/商家/订单/父reserve/SKU/数量，顾客取消与系统超时共用动作，演员仅记首次真实执行者；重复不重复释放。未来Task7部分退款用独立真实退款动作键，共同核累计release+return_in不超过父reserve.qty。关单前走可信支付query→close→query closed；unknown或无可信attempt不释放，已支付转待处理，不制造paid或回退平台账户。MS5决定前仅显式testing驱动可做普通未付关单。
