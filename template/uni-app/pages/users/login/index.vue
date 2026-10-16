@@ -100,7 +100,7 @@
 <script>
 import dayjs from '@/plugin/dayjs/dayjs.min.js';
 import sendVerifyCode from '@/mixins/SendVerifyCode';
-import { loginH5, loginMobile, registerVerify, register, getCodeApi, getUserInfo, appleLogin } from '@/api/user';
+import { loginH5, loginMobile, registerVerify, register, getCodeApi, appleLogin } from '@/api/user';
 import attrs, { required, alpha_num, chs_phone } from '@/utils/validate';
 import { getLogo } from '@/api/public';
 // import cookie from "@/utils/store/cookie";
@@ -142,6 +142,7 @@ export default {
 			appleUserInfo: null,
 			appleShow: false, // 苹果登录版本必须要求ios13以上的
 			keyLock: true,
+			identityPageActive: true,
 			captchaType: 'clickWord',
 			configData: Cache.get('BASIC_CONFIG')
 		};
@@ -156,6 +157,7 @@ export default {
 		}
 	},
 	onLoad() {
+		this.identityPageActive = true;
 		let self = this;
 		uni.getSystemInfo({
 			success: (res) => {
@@ -168,11 +170,31 @@ export default {
 			this.copyRight = uni.getStorageSync('copyRight').copyrightContext;
 		}
 	},
+	onUnload() {
+		this.identityPageActive = false;
+	},
 	mounted() {
 		// this.getCode();
 		this.getLogoImage();
 	},
 	methods: {
+		identityScope() {
+			return { revision: this.$store.state.app.authRevision, token: this.$store.state.app.token };
+		},
+		isIdentityScope(scope) {
+			return this.identityPageActive && this.$store.state.app.authRevision === scope.revision && this.$store.state.app.token === scope.token;
+		},
+		async acceptVerifiedLogin(data, scope) {
+			const changed = () => Object.assign(new Error(this.$t(`登录状态已变化，请重试`)), { staleIdentity: true });
+			if (!this.isIdentityScope(scope)) throw changed();
+			this.$store.commit('LOGIN', { token: data.token, time: data.expires_time - this.$Cache.time() });
+			Object.assign(scope, this.identityScope());
+			if (!scope.token || scope.token !== data.token) throw new Error(this.$t(`登录信息未能保存在本机，请重试`));
+			const user = await this.$store.dispatch('USERINFO', true);
+			if (!this.isIdentityScope(scope) ||
+				this.$store.state.app.verifiedUid !== String(user.uid)) throw changed();
+			return user;
+		},
 		ChangeIsDefault(e) {
 			this.$set(this, 'protocol', !this.protocol);
 		},
@@ -191,6 +213,7 @@ export default {
 		// 苹果登录
 		appleLogin() {
 			let self = this;
+			const scope = this.identityScope();
 			this.account = '';
 			this.captcha = '';
 			if (!self.protocol) {
@@ -206,13 +229,16 @@ export default {
 				provider: 'apple',
 				timeout: 10000,
 				success(loginRes) {
+					if (!self.isIdentityScope(scope)) return;
 					uni.getUserInfo({
 						provider: 'apple',
 						success: function (infoRes) {
+							if (!self.isIdentityScope(scope)) return;
 							self.appleUserInfo = infoRes.userInfo;
-							self.appleLoginApi();
+							self.appleLoginApi(scope);
 						},
 						fail() {
+							if (!self.isIdentityScope(scope)) return;
 							uni.showToast({
 								title: self.$t(`获取用户信息失败`),
 								icon: 'none',
@@ -220,31 +246,35 @@ export default {
 							});
 						},
 						complete() {
-							uni.hideLoading();
+							if (self.isIdentityScope(scope)) uni.hideLoading();
 						}
 					});
 				},
 				fail(error) {
+					if (!self.isIdentityScope(scope)) return;
 					console.log(error);
 				}
 			});
 		},
 		// 苹果登录Api
-		appleLoginApi() {
+		appleLoginApi(scope = this.identityScope()) {
 			let self = this;
+			if (!self.isIdentityScope(scope)) return;
 			appleLogin({
 				openId: self.appleUserInfo.openId,
 				email: self.appleUserInfo.email || '',
 				phone: this.account,
 				captcha: this.captcha
 			})
-				.then(({ data }) => {
+				.then(async ({ data }) => {
+					if (!self.isIdentityScope(scope)) return;
 					if (data.isbind) {
 						uni.showModal({
 							title: self.$t(`提示`),
 							content: self.$t(`请绑定手机号后，继续操作`),
 							showCancel: false,
 							success: function (res) {
+								if (!self.isIdentityScope(scope)) return;
 								if (res.confirm) {
 									self.current = 1;
 									self.appleLoginStatus = true;
@@ -252,19 +282,17 @@ export default {
 							}
 						});
 					} else {
-						self.$store.commit('LOGIN', {
-							token: data.token,
-							time: data.expires_time - self.$Cache.time()
-						});
+						await self.acceptVerifiedLogin(data, scope);
+						if (!self.isIdentityScope(scope)) return;
 						let backUrl = self.$Cache.get(BACK_URL) || '/pages/index/index';
 						self.$Cache.clear(BACK_URL);
-						self.$store.commit('SETUID', data.userInfo.uid);
 						uni.reLaunch({
 							url: backUrl
 						});
 					}
 				})
 				.catch((error) => {
+					if (!self.isIdentityScope(scope) || (error && error.staleIdentity)) return;
 					uni.showModal({
 						title: self.$t(`提示`),
 						content: self.$t(`错误信息`) + `${error}`,
@@ -281,6 +309,7 @@ export default {
 		// App微信登录
 		wxLogin() {
 			let self = this;
+			const scope = this.identityScope();
 			this.account = '';
 			this.captcha = '';
 			if (!self.protocol) {
@@ -295,14 +324,17 @@ export default {
 			uni.login({
 				provider: 'weixin',
 				success: function (loginRes) {
+					if (!self.isIdentityScope(scope)) return;
 					// 获取用户信息
 					uni.getUserInfo({
 						provider: 'weixin',
 						success: function (infoRes) {
+							if (!self.isIdentityScope(scope)) return;
 							self.appUserInfo = infoRes.userInfo;
-							self.wxLoginApi();
+							self.wxLoginApi(scope);
 						},
 						fail() {
+							if (!self.isIdentityScope(scope)) return;
 							uni.showToast({
 								title: self.$t(`获取用户信息失败`),
 								icon: 'none',
@@ -310,11 +342,12 @@ export default {
 							});
 						},
 						complete() {
-							uni.hideLoading();
+							if (self.isIdentityScope(scope)) uni.hideLoading();
 						}
 					});
 				},
 				fail() {
+					if (!self.isIdentityScope(scope)) return;
 					uni.showToast({
 						title: self.$t(`登录失败`),
 						icon: 'none',
@@ -324,20 +357,23 @@ export default {
 			});
 		},
 
-		wxLoginApi() {
+		wxLoginApi(scope = this.identityScope()) {
 			let self = this;
+			if (!self.isIdentityScope(scope)) return;
 			wechatAppAuth({
 				userInfo: self.appUserInfo,
 				phone: this.account,
 				code: this.captcha
 			})
-				.then(({ data }) => {
+				.then(async ({ data }) => {
+					if (!self.isIdentityScope(scope)) return;
 					if (data.isbind) {
 						uni.showModal({
 							title: self.$t(`提示`),
 							content: self.$t(`请绑定手机号后，继续操作`),
 							showCancel: false,
 							success: function (res) {
+								if (!self.isIdentityScope(scope)) return;
 								if (res.confirm) {
 									self.current = 1;
 									self.appLoginStatus = true;
@@ -345,19 +381,17 @@ export default {
 							}
 						});
 					} else {
-						self.$store.commit('LOGIN', {
-							token: data.token,
-							time: data.expires_time - self.$Cache.time()
-						});
+						await self.acceptVerifiedLogin(data, scope);
+						if (!self.isIdentityScope(scope)) return;
 						let backUrl = self.$Cache.get(BACK_URL) || '/pages/index/index';
 						self.$Cache.clear(BACK_URL);
-						self.$store.commit('SETUID', data.userInfo.uid);
 						uni.reLaunch({
 							url: backUrl
 						});
 					}
 				})
 				.catch((error) => {
+					if (!self.isIdentityScope(scope) || (error && error.staleIdentity)) return;
 					uni.showModal({
 						title: self.$t(`提示`),
 						content: self.$t(`错误信息`) + `${error}`,
@@ -447,35 +481,28 @@ export default {
 						title: that.$t(`请勿重复点击`)
 					});
 				}
+				const scope = this.identityScope();
 				loginMobile({
 					phone: that.account,
 					captcha: that.captcha,
 					spread: that.$Cache.get('spread'),
 					agent_id: that.$Cache.get('agent_id') || 0
 				})
-					.then((res) => {
+					.then(async (res) => {
 						let data = res.data;
-						that.$store.commit('LOGIN', {
-							token: data.token,
-							time: data.expires_time - this.$Cache.time()
-						});
+						await that.acceptVerifiedLogin(data, scope);
+						if (!that.isIdentityScope(scope)) return;
 						let backUrl = that.$Cache.get(BACK_URL) || '/pages/index/index';
 						that.$Cache.clear(BACK_URL);
-						getUserInfo().then((res) => {
-							this.keyLock = true;
-							that.$store.commit('SETUID', res.data.uid);
-							if (backUrl.indexOf('/pages/users/login/index') !== -1) {
-								backUrl = '/pages/index/index';
-							}
-							uni.reLaunch({
-								url: backUrl
-							});
-						});
+						this.keyLock = true;
+						if (backUrl.indexOf('/pages/users/login/index') !== -1) backUrl = '/pages/index/index';
+						uni.reLaunch({url: backUrl});
 					})
 					.catch((res) => {
+						if (!this.isIdentityScope(scope) || (res && res.staleIdentity)) return;
 						this.keyLock = true;
 						that.$util.Tips({
-							title: res
+							title: (res && (res.msg || res.message)) || res
 						});
 					});
 			}
@@ -597,35 +624,27 @@ export default {
 					title: that.$t(`请勿重复点击`)
 				});
 			}
+			const scope = this.identityScope();
 			loginH5({
 				account: that.account,
 				password: that.password,
 				spread: that.$Cache.get('spread'),
 				agent_id: that.$Cache.get('agent_id') || 0
 			})
-				.then(({ data }) => {
-					that.$store.commit('LOGIN', {
-						token: data.token,
-						time: data.expires_time - this.$Cache.time()
-					});
+				.then(async ({ data }) => {
+					await that.acceptVerifiedLogin(data, scope);
+					if (!that.isIdentityScope(scope)) return;
 					let backUrl = that.$Cache.get(BACK_URL) || '/pages/index/index';
 					that.$Cache.clear(BACK_URL);
-					getUserInfo()
-						.then((res) => {
-							this.keyLock = true;
-							that.$store.commit('SETUID', res.data.uid);
-							uni.reLaunch({
-								url: backUrl
-							});
-						})
-						.catch((error) => {
-							this.keyLock = true;
-						});
+					this.keyLock = true;
+					if (backUrl.indexOf('/pages/users/login/index') !== -1) backUrl = '/pages/index/index';
+					uni.reLaunch({url: backUrl});
 				})
 				.catch((e) => {
+					if (!this.isIdentityScope(scope) || (e && e.staleIdentity)) return;
 					this.keyLock = true;
 					that.$util.Tips({
-						title: e
+						title: (e && (e.msg || e.message)) || e
 					});
 				});
 		}

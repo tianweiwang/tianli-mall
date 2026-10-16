@@ -76,7 +76,6 @@
 	import {
 		loginMobile,
 		getCodeApi,
-		getUserInfo,
 		phoneSilenceAuth
 	} from "@/api/user.js";
 	import {
@@ -108,9 +107,12 @@
 				pageTitle: '绑定手机号',
 				configData: Cache.get('BASIC_CONFIG'),
 				canGetPrivacySetting: false,
+				identityPageActive: true,
+				identityAttemptRevision: 0,
 			}
 		},
 		onLoad(options) {
+			this.identityPageActive = true;
 			if (options.authKey) {
 				this.authKey = options.authKey
 			}
@@ -133,7 +135,19 @@
 				this.isHome = false;
 			}
 		},
+		onUnload() {
+			this.identityPageActive = false;
+			this.identityAttemptRevision++;
+		},
 		methods: {
+			identityScope() {
+				return { revision: this.$store.state.app.authRevision, token: this.$store.state.app.token,
+					attempt: this.identityAttemptRevision };
+			},
+			isIdentityScope(scope) {
+				return this.identityPageActive && scope.attempt === this.identityAttemptRevision &&
+					this.$store.state.app.authRevision === scope.revision && this.$store.state.app.token === scope.token;
+			},
 			onAgree() {
 				this.protocol = true
 			},
@@ -183,28 +197,33 @@
 			},
 			isLogin() {
 				if (!this.rules()) return
+				this.identityAttemptRevision++;
+				let scope = this.identityScope();
 
 				uni.showLoading({
 					title: this.$t(`正在登录中`)
 				});
 				Routine.getCode()
 					.then(code => {
-						phoneLogin({
+						if (!this.isIdentityScope(scope)) return;
+						return phoneLogin({
 								code,
 								spread_spid: app.globalData.spid,
 								spread_code: app.globalData.code,
 								phone: this.phone,
 								captcha: this.captcha,
 							}).then(res => {
-								uni.hideLoading();
+								if (!this.isIdentityScope(scope)) return;
 								let time = res.data.expires_time - this.$Cache.time();
 								this.$store.commit('LOGIN', {
 									token: res.data.token,
 									time: time
 								});
-								this.getUserInfo(res.data.bindName);
+								scope = this.identityScope();
+								return this.getUserInfo(res.data.bindName, scope);
 							})
 							.catch(err => {
+								if (!this.isIdentityScope(scope) || (err && err.staleIdentity)) return;
 								uni.hideLoading();
 								uni.showToast({
 									title: err,
@@ -214,10 +233,14 @@
 							});
 					})
 					.catch(err => {
+						if (!this.isIdentityScope(scope) || (err && err.staleIdentity)) return;
+						uni.hideLoading();
 						console.log(err)
 					});
 			},
 			phoneAuth(key) {
+				this.identityAttemptRevision++;
+				let scope = this.identityScope();
 				uni.showLoading({
 					title: this.$t(`正在登录中`)
 				});
@@ -228,18 +251,21 @@
 				// #ifndef MP
 				met = wechatBindingPhone
 				// #endif
-				met({
+				return met({
 					phone: this.phone,
 					captcha: this.captcha,
 					key
 				}).then(res => {
+					if (!this.isIdentityScope(scope)) return;
 					let time = res.data.expires_time - this.$Cache.time();
 					this.$store.commit('LOGIN', {
 						token: res.data.token,
 						time: time
 					});
-					this.getUserInfo(res.data.bindName);
+					scope = this.identityScope();
+					return this.getUserInfo(res.data.bindName, scope);
 				}).catch(error => {
+					if (!this.isIdentityScope(scope) || (error && error.staleIdentity)) return;
 					uni.hideLoading()
 					this.$util.Tips({
 						title: error
@@ -249,13 +275,12 @@
 			/**
 			 * 获取个人用户信息
 			 */
-			getUserInfo(new_user) {
+			getUserInfo(new_user, scope = this.identityScope()) {
 				let that = this;
-				getUserInfo().then(res => {
+				return this.$store.dispatch('USERINFO', true).then(user => {
+					if (!this.isIdentityScope(scope) || this.$store.state.app.verifiedUid !== String(user.uid)) return;
 					uni.hideLoading();
-					that.userInfo = res.data;
-					that.$store.commit('SETUID', res.data.uid);
-					that.$store.commit('UPDATE_USERINFO', res.data);
+					that.userInfo = JSON.parse(JSON.stringify(user));
 					if (new_user) {
 						this.isShow = true
 					} else {

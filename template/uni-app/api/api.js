@@ -269,6 +269,7 @@ export function phoneRegisterReset(data) {
 export function phoneLogin(data) {
   return request.post("login", data, {
     noAuth: true,
+    identitySensitive: true,
   });
 }
 
@@ -496,6 +497,7 @@ export function siteConfig(data) {
 export function wechatAppAuth(data) {
   return request.post("wechat/app_auth", data, {
     noAuth: true,
+    identitySensitive: true,
   });
 }
 /**

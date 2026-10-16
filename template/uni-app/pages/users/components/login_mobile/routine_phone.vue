@@ -17,8 +17,7 @@
 	import Routine from '@/libs/routine';
 	import {
 		loginMobile,
-		getCodeApi,
-		getUserInfo
+		getCodeApi
 	} from "@/api/user";
 	import {
 		getLogo,
@@ -47,28 +46,53 @@
 				keyCode: '',
 				account: '',
 				codeNum: '',
-				isStatus: false
+				isStatus: false,
+				identityActive: true,
+				identityAttemptRevision: 0,
+				userInfo: {}
 			}
 		},
 		mounted() {},
+		beforeDestroy() {
+			this.identityActive = false;
+			this.identityAttemptRevision++;
+		},
+		watch: {
+			isPhoneBox(value) {
+				if (!value) this.identityAttemptRevision++;
+			}
+		},
 		methods: {
+			identityScope() {
+				return { revision: this.$store.state.app.authRevision, token: this.$store.state.app.token,
+					attempt: this.identityAttemptRevision };
+			},
+			isIdentityScope(scope) {
+				return this.identityActive && this.isPhoneBox && scope.attempt === this.identityAttemptRevision &&
+					this.$store.state.app.authRevision === scope.revision && this.$store.state.app.token === scope.token;
+			},
 			// #ifdef MP
 			// 小程序获取手机号码
 			getphonenumber(e) {
+				this.identityAttemptRevision++;
+				const scope = this.identityScope();
 				uni.showLoading({
 					title: this.$t(`正在登录中`)
 				});
 				Routine.getCode()
 					.then(code => {
-						this.getUserPhoneNumber(e.detail.encryptedData, e.detail.iv, code);
+						if (!this.isIdentityScope(scope)) return;
+						return this.getUserPhoneNumber(e.detail.encryptedData, e.detail.iv, code, scope);
 					})
 					.catch(error => {
+						if (!this.isIdentityScope(scope) || (error && error.staleIdentity)) return;
 						uni.hideLoading();
 					});
 			},
 			// 小程序获取手机号码回调
-			getUserPhoneNumber(encryptedData, iv, code) {
-				routineBindingPhone({
+			getUserPhoneNumber(encryptedData, iv, code, scope = this.identityScope()) {
+				if (!this.isIdentityScope(scope)) return;
+				return routineBindingPhone({
 						encryptedData: encryptedData,
 						iv: iv,
 						code: code,
@@ -76,38 +100,44 @@
 						spread_code: app.globalData.code,
 						key: this.authKey
 					})
-					.then(res => {
+					.then(async res => {
+						if (!this.isIdentityScope(scope)) return;
 						let time = res.data.expires_time - this.$Cache.time();
 						this.$store.commit('LOGIN', {
 							token: res.data.token,
 							time: time
 						});
-						// this.getUserInfo();
+						scope = this.identityScope();
+						const user = await this.getUserInfo(scope);
+						if (!user || !this.isIdentityScope(scope)) return;
 						this.$emit('loginSuccess', {
 							isStatus: true,
 							new_user: res.data.userInfo.new_user
 						})
 					})
 					.catch(res => {
+						if (!this.isIdentityScope(scope) || (res && res.staleIdentity)) return;
 						uni.hideLoading();
+						this.$util.Tips({title: (res && (res.msg || res.message)) || res});
 					});
 			},
 			/**
 			 * 获取个人用户信息
 			 */
-			getUserInfo: function() {
+			getUserInfo: function(scope = this.identityScope()) {
 				let that = this;
-				getUserInfo().then(res => {
+				return this.$store.dispatch('USERINFO', true).then(user => {
+					if (!this.isIdentityScope(scope) || this.$store.state.app.verifiedUid !== String(user.uid)) return null;
 					uni.hideLoading();
-					that.userInfo = res.data
-					that.$store.commit("SETUID", res.data.uid);
-					that.$store.commit("UPDATE_USERINFO", res.data);
+					that.userInfo = JSON.parse(JSON.stringify(user));
 					that.isStatus = true
-					this.close(res.data.new_user || 0)
+					return user;
 				});
 			},
 			// #endif
 			close(new_user) {
+				if (!this.identityActive) return;
+				this.identityAttemptRevision++;
 				this.$emit('close', {
 					isStatus: this.isStatus,
 					new_user

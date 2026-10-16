@@ -1,6 +1,6 @@
 # Task4 完整确认上下文刷新恢复：实施依据与源码检查点
 
-状态：IMPLEMENTATION BASIS / NOT IMPLEMENTED / NOT RUN。Root在现Task4原范围内采用已审r2及Root补充，任务状态只在09文档的一份RC清单记录。源基线为 `9e53170a7db817c36a209e26a8e34404ac60d612`；原r2主文24230B、摘要 `de61385f3889aa4226f56f9facec2ac4d07d1cd7e1730445956df7f1266f4f49` 保留在仓库外，本记录合入其必要修订。实施工作树R=`H:/天俪商城/worktrees/ms4-confirmation-restore`，分支 `feature/ms4-confirmation-restore`，U=`R/template/uni-app`，B=`R/crmeb`。当前Main的顾客H5 Run继续使用原冻结工作树，本分支不得写入该实例或把其结果作为新产品源的运行证据。仅L2本地开发；用户停止的运行样本保持NOT RUN。
+状态：SOURCE CHECKPOINT / RESTORE RUNTIME NOT RUN。Root在现Task4原范围内采用已审r2及Root补充，任务状态只在09文档的一份RC清单记录。源基线为 `9e53170a7db817c36a209e26a8e34404ac60d612`；原r2主文24230B、摘要 `de61385f3889aa4226f56f9facec2ac4d07d1cd7e1730445956df7f1266f4f49` 保留在仓库外，本记录合入其必要修订。实施工作树R=`H:/天俪商城/worktrees/ms4-confirmation-restore`，分支 `feature/ms4-confirmation-restore`，U=`R/template/uni-app`，B=`R/crmeb`。当前Main的顾客H5 Run继续使用原冻结工作树，本分支不得写入该实例或把其结果作为新产品源的运行证据。仅L2本地开发；用户停止的运行样本保持NOT RUN。
 
 
 ## 1. 完整要求与边界
@@ -114,7 +114,7 @@
 | A8原责任保持 | 原普通fresh/legacy/历史快照/temporary生成消费/幂等/价格库存表单校验和既有正常12HTTP/商家34/25/9/23责任独立；新改动后只能凭当时真实最小回归记录通过，旧结果不冒作新验证。 |
 | A9UI反馈与界面 | “正在恢复/结果待确认/资料已保存但未恢复选择”为持久notice，非按钮；查询/返回/查看订单为独立动作。控件整体居中、边界/禁用/长文字/320/390/1440与实际页面状态实看，按control-quality；本轮无视觉验收。 |
 
-本轮只交实施依据和源指纹，没有执行任一上述样本或测试。用户已停止的拒绝、故障、恢复、并发等运行不得由本草案自动恢复；相关验收保持INCOMPLETE，不能改成降低断言/模拟响应/伪造UID/注入组件状态。Root可以先登记并实施已授权的产品源码、进行允许的静态/最小检查，运行范围另按当前用户授权执行。未完成上述完整原责任前，不将“只读restore API完成”或“URL带key”报为完整恢复通过。
+上述实际运行样本均未执行；源码和解析检查的真实结果单独见§11。用户已停止的拒绝、故障、恢复、并发等运行不得由本草案自动恢复；相关验收保持INCOMPLETE，不能改成降低断言/模拟响应/伪造UID/注入组件状态。Root可以先登记并实施已授权的产品源码、进行允许的静态/最小检查，运行范围另按当前用户授权执行。未完成上述完整原责任前，不将“只读restore API完成”或“URL带key”报为完整恢复通过。
 
 
 ## 9. Root独立复核补充
@@ -142,4 +142,8 @@
 
 ## 11. 实际源码检查点
 
-2026-10-16后端五PHP已实现并经Root与独立源码复核；Root的实际PHP8.2语法检查5/5 native0、stderr空，前后字节相同。收据位于仓库外 `artifacts/ms4-confirmation-restore-source/20261016-r1/php-syntax-result.json`，摘要 `c5c90ced1fff0f33379adf071f2460db230007c6ea5225e607bac105e259cc43`。本次仅后端SOURCE/PARSE，不加载App/SQL/HTTP；前端仍在实现，整体恢复未验收。开头的NOT IMPLEMENTED/NOT RUN为最初实施依据登记时状态，后继进度只按09的RC清单及本节实际证据，不以Main旧结果代替本源运行。
+2026-10-16后端五PHP已实现并经Root与独立源码复核；Root的实际PHP8.2语法检查5/5 native0、stderr空，前后字节相同。收据位于仓库外 `artifacts/ms4-confirmation-restore-source/20261016-r1/php-syntax-result.json`，摘要 `c5c90ced1fff0f33379adf071f2460db230007c6ea5225e607bac105e259cc43`。该后端检查仅SOURCE/PARSE，不加载App/SQL/HTTP。后继进度只按09的RC清单及本节实际证据，不以Main旧结果代替本源运行。
+
+前端20文件已实施；身份13文件和提交/子页/上传7文件分别经独立有限SOURCE复核，Root核当前差分及必要生产消费者。上传producer、三子页onShow真实身份/owner lookup、完整回调守卫及原业务保持均纳入最终复核。Root实际执行现有官方三平台预处理、Vue模板编译、Node/Babel脚本解析、本地导入解析及样式编译：11 SFC与9 JS在h5/mp-weixin/app-plus共60组通过，issues为空，20源前后字节相同。最终 `ui-syntax-result-r4.json` 摘要 `78b5455dab40812205b588d12c9817d4b247dedce15865814d1d8b36906caddf`，实际Node22.22.2，仅使用既有离线依赖。r3同样20/60通过，摘要 `080454650e3131f4600779275aae81f20a07de5a807c7cb14d3b4ef6b1c32702`；其后只清api/user.js的27行注释尾空格，r4不改检查断言，仅换新输出文件名并重新核最终字节。
+
+最初r1检查因遗漏现有Vue CLI的目录index.vue解析而报12项本地导入缺失，原FAIL源码/收据保持；Root核实际目录与既有官方解析配置后，r2仅补index.vue候选，19源57组通过，原收据保持。后继r3纳入新增必要util.js producer成为20源60组。以上检查不执行组件方法、登录、故障/换号样本、应用、SQL、HTTP或DOM；恢复运行、三端及视觉验收仍NOT RUN，RC8与完整Task4/MS4未完成。

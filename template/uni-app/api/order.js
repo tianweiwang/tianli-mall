@@ -248,6 +248,11 @@ export function orderConfirmation(key) {
 	return request.post('order/confirmation/' + encodeURIComponent(key), {});
 }
 
+/** Full V1 preview for the same owner/key; never creates or extends a confirmation. */
+export function orderConfirmationRestore(key, data) {
+	return request.post('order/confirmation/' + encodeURIComponent(key) + '/restore', data);
+}
+
 /**
  * 计算订单金额
  * @param key
@@ -255,7 +260,7 @@ export function orderConfirmation(key) {
  * @returns {*}
  */
 export function postOrderComputed(key, data) {
-	return request.post("order/computed/" + key, data);
+	return request.post("order/computed/" + encodeURIComponent(key), data);
 }
 
 /**

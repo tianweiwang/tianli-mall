@@ -361,14 +361,16 @@ H5入口/阶段已实际整合到现两PHP：serve/七ingress/原actor只读交�
 
 - [x] RC1：恢复完整要求、设计、文件与运行边界登记；仅实施依据，不是验收。
 - [x] RC2：后端完整DTO共用组装、同key只读restore与created/processing前后优先；仅后端源码检查点，实际restore运行未验收。
-- [ ] RC3：真实USERINFO、账号代次、缓存/请求/登录切号生产消费者。
-- [ ] RC4：单owner有界持久上下文、revision保护、完整attempt先写读回和未知anchor责任。
-- [ ] RC5：确认页完整hydrate、全部编辑保存、unknown/key-only分流与历史替换。
-- [ ] RC6：地址/发票子页真实channel关联、父丢失同key恢复与真实ID保存。
-- [ ] RC7：Root聚焦静态/语法及原fresh/legacy兼容源码核对，记录实际范围。
+- [x] RC3：真实USERINFO、账号代次、缓存/请求/登录切号生产消费者；仅源码实施与有限复核，运行未验。
+- [x] RC4：单owner有界持久上下文、revision保护、完整attempt先写读回和未知anchor责任；仅源码，未运行恢复样本。
+- [x] RC5：确认页完整hydrate、全部编辑保存、unknown/key-only分流与历史替换；仅源码，页面未验。
+- [x] RC6：地址/发票子页真实channel关联、父丢失同key恢复与真实ID保存；仅源码，返回与恢复运行未验。
+- [x] RC7：Root聚焦静态/语法及原fresh/legacy兼容源码核对，20文件60组三平台官方预处理/解析通过，实际范围见实施依据§11。
 - [ ] RC8：按当时允许范围取得新源正常运行/页面/数据证据；停止样本保持未验，不能据RC2或源码检查完成整项。
 
 RC2后端源码检查点（2026-10-16）：仅独立恢复工作树的五PHP新增本人原key只读restore与两段共用完整DTO组装，原fresh唯一600秒缓存及legacy领券顺序保持。Root与独立复核均未发现确定源码缺陷；真实lookup先于提示/配置/frame，预览成功或异常后二查，失效选择不换默认，不可用支付只按无渠道基准报价。Root在原固定PHP8.2镜像、network none/只读根与源码/cap-drop ALL/no-new-privileges下实际逐文件php -l，5项全部native0/stderr空，前后完整源码字节相同；收据 `artifacts/ms4-confirmation-restore-source/20261016-r1/php-syntax-result.json` 摘要 `c5c90ced1fff0f33379adf071f2460db230007c6ea5225e607bac105e259cc43`。此检查不加载App/SQL/HTTP，不使用Main当前Run；前端仍在实现，RC3–8及完整恢复运行保持未完成。
+
+RC3–7前端源码检查点（2026-10-16）：身份13文件与提交/子页/唯一上传producer7文件已实施并分别独立有限SOURCE复核；Root核实际必要差分。实际既有官方预处理/Vue模板/Node+Babel/本地导入/样式解析最终20源60组native0、issues空、前后字节相同，收据 `artifacts/ms4-confirmation-restore-source/20261016-r1/ui-syntax-result-r4.json`，摘要 `78b5455dab40812205b588d12c9817d4b247dedce15865814d1d8b36906caddf`。最初检查器遗漏index.vue导致的原FAIL保留，修正及后继收据见实施依据§11；没有删除用例或放松业务断言。以上只交源码检查点，不执行组件/App/SQL/HTTP/DOM、用户停止样本或三端验收；RC8及完整原Task4/MS4责任仍未完成。
 
 ### Task 5: 取消与超时释放
 

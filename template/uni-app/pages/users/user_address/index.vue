@@ -1,9 +1,10 @@
 <template>
 	<view :style="colorStyle">
-		<view v-if="marketplaceParentRequired && !marketplaceCheckout" class="marketplace-parent-notice">
-			{{$t(`原确认页连接不可用，暂未恢复结算内容。请返回原确认页。`)}}
+		<view v-if="marketplaceParentRequired && (!marketplaceCheckout || marketplaceNotice || marketplaceRevalidating)" class="marketplace-parent-notice" aria-live="polite">
+			<view>{{marketplaceNotice || $t(`正在核实本人原确认内容，请稍候。`)}}</view>
+			<button class="marketplace-return-action" @tap="returnToMarketplaceConfirmation">{{$t(`返回原确认页`)}}</button>
 		</view>
-		<form @submit="formSubmit">
+		<form v-show="!marketplaceParentRequired || (marketplaceCheckout && !marketplaceRevalidating)" @submit="formSubmit">
 			<view class='addAddress'>
 				<view class='list'>
 					<view class='item acea-row row-between-wrapper'>
@@ -39,7 +40,7 @@
 					</checkbox-group>
 				</view>
 
-				<button class='keepBnt bg-color' form-type="submit">{{$t(`立即保存`)}}</button>
+				<button class='keepBnt bg-color' :disabled="marketplaceParentRequired && (marketplaceSaved || marketplaceSaving)" form-type="submit">{{$t(`立即保存`)}}</button>
 				<!-- #ifdef MP -->
 				<view class="wechatAddress" v-if="!id" @click="getWxAddress">{{$t(`导入微信地址`)}}</view>
 				<!-- #endif -->
@@ -78,6 +79,9 @@
 	// #endif
 	import home from '@/components/home';
 	import colors from '@/mixins/color.js';
+	import {orderConfirmation, orderConfirmationRestore} from '@/api/order.js';
+	import {prepareMarketplaceCheckoutChild, returnMarketplaceCheckoutSelection, marketplaceChildCurrent, marketplaceChildLifetimeCurrent, marketplaceChildGuard, hideMarketplaceCheckoutChild, revalidateMarketplaceCheckoutChild,
+		marketplaceConfirmationUrl} from '@/utils/marketplace-confirmation-draft.js';
 	export default {
 		components: {
 			// #ifdef MP
@@ -89,6 +93,11 @@
 		data() {
 			return {
 				marketplaceCheckout: null,
+				marketplaceNotice: '',
+				marketplaceRevalidating: false,
+				marketplaceOrderKey: '',
+				marketplaceSaved: false,
+				marketplaceSaving: false,
 				marketplaceParentRequired: false,
 				marketplaceChannelUnavailable: false,
 				regionDval: [this.$t(`浙江省`), this.$t(`杭州市`), this.$t(`滨江区`)],
@@ -117,6 +126,11 @@
 		},
 		computed: mapGetters(['isLogin']),
 		watch: {
+			'$store.state.app.authRevision'() {
+				if (!this.marketplaceParentRequired) return;
+				this._marketplaceAlive = false; this.marketplaceCheckout = null; this.userAddress = {}; this.region = [];
+				this.marketplaceNotice = this.$t(`登录身份已变化，请返回原确认页查询。`);
+			},
 			isLogin: {
 				handler: function(newV, oldV) {
 					if (newV) {
@@ -128,6 +142,15 @@
 		},
 		onLoad(options) {
 			this.marketplaceParentRequired = typeof options.orderKey === 'string' && options.orderKey !== '';
+			if (this.marketplaceParentRequired) {
+				this.marketplaceOrderKey = options.orderKey; this.id = options.id || 0;
+				let childChannel = null;
+				try { childChannel = this.getOpenerEventChannel(); } catch (error) { /* Recover the same owner/key below. */ }
+				prepareMarketplaceCheckoutChild(this, options, childChannel, {lookup: orderConfirmation, restore: orderConfirmationRestore}).then(ready => {
+					if (ready && this._marketplaceChildEpoch === 0 && marketplaceChildCurrent(this)) { this.getUserAddress(); this.getCityList(); }
+				}).catch(error => { if (this._marketplaceChildEpoch === 0 && marketplaceChildLifetimeCurrent(this)) this.marketplaceNotice = error.message || this.$t(`原确认暂不能恢复，请查询原订单。`); });
+				return;
+			}
 			let channel = null;
 			try {
 				if (typeof this.getOpenerEventChannel === 'function') channel = this.getOpenerEventChannel();
@@ -166,31 +189,46 @@
 				toLogin();
 			}
 		},
+		onShow() {
+			if (!this.marketplaceParentRequired) return;
+			if (!this._marketplaceDidShow) { this._marketplaceDidShow = true; return; }
+			return revalidateMarketplaceCheckoutChild(this, {lookup: orderConfirmation});
+		},
+		onHide() { hideMarketplaceCheckoutChild(this); },
+		onUnload() { this._marketplaceAlive = false; },
 		methods: {
+			returnToMarketplaceConfirmation() { uni.redirectTo({url: marketplaceConfirmationUrl(this.marketplaceOrderKey)}); },
 			returnMarketplaceAddress(addressId) {
-				if (!this.marketplaceCheckout) return false;
+				if (!this.marketplaceParentRequired) return false;
+				if (!marketplaceChildCurrent(this)) return true;
+				const current = marketplaceChildGuard(this, 'return-address-result');
+				this.marketplaceSaved = true;
 				if (!addressId) {
 					uni.hideLoading();
+					this.marketplaceNotice = this.$t(`保存结果缺少地址编号，结算选择尚未恢复，请返回原确认页查询。`);
 					this.$util.Tips({title: this.$t(`地址保存结果暂未完整取得，请返回地址列表选择`)});
 					return true;
 				}
-				this._marketplaceCheckoutChannel.emit('marketplaceAddressSelected', {
-					orderKey: this.marketplaceCheckout.orderKey, mer_id: this.marketplaceCheckout.mer_id, addressId
-				});
 				uni.hideLoading();
-				uni.navigateBack({delta: 1});
+				returnMarketplaceCheckoutSelection(this, 'address', addressId, {lookup: orderConfirmation, detail: getAddressDetail}).catch(error => {
+					if (current()) this.marketplaceNotice = this.$t(`地址资料已保存，结算选择尚未恢复。`) + (error.message || '');
+				});
 				return true;
 			},
 			// #ifdef APP-PLUS
 			// 获取选择的地区
 			handleGetRegion(region) {
+				if (this.marketplaceParentRequired && !marketplaceChildCurrent(this)) return;
 				this.region = region
 			},
 			// #endif
 			// 回去地址数据
 			getCityList: function() {
 				let that = this;
+				const current = marketplaceChildGuard(this, 'city-list');
+				if (!current()) return;
 				getCity().then(res => {
+					if (!current()) return;
 					this.district = res.data
 					that.initialize();
 				})
@@ -227,6 +265,7 @@
 
 			},
 			bindRegionChange: function(e) {
+				if (this.marketplaceParentRequired && !marketplaceChildCurrent(this)) return;
 				let multiIndex = this.multiIndex,
 					province = this.district[multiIndex[0]] || {
 						c: []
@@ -246,6 +285,7 @@
 				this.initialize();
 			},
 			bindMultiPickerColumnChange: function(e) {
+				if (this.marketplaceParentRequired && !marketplaceChildCurrent(this)) return;
 				let that = this,
 					column = e.detail.column,
 					value = e.detail.value,
@@ -300,18 +340,23 @@
 				this.isShowAuth = e
 			},
 			toggleTab(str) {
+				if (this.marketplaceParentRequired && !marketplaceChildCurrent(this)) return;
 				this.$refs[str].show();
 			},
 			// bindRegionChange: function(e) {
 			// 	this.$set(this, 'region', e.detail.value);
 			// },
 			onConfirm(val) {
+				if (this.marketplaceParentRequired && !marketplaceChildCurrent(this)) return;
 				this.region = val.checkArr[0] + '-' + val.checkArr[1] + '-' + val.checkArr[2];
 			},
 			getUserAddress: function() {
 				if (!this.id) return false;
 				let that = this;
+				const current = marketplaceChildGuard(this, 'address-detail');
+				if (!current()) return;
 				getAddressDetail(this.id).then(res => {
+					if (!current()) return;
 					// let region = [res.data.province, res.data.city, res.data.district];
 					let region = [res.data.province, res.data.city, res.data.district];
 					that.$set(that, 'userAddress', res.data);
@@ -321,13 +366,18 @@
 			},
 			// 导入共享地址（小程序）
 			getWxAddress: function() {
+				if (this.marketplaceParentRequired && (this.marketplaceSaved || this.marketplaceSaving)) return;
 				if (this.marketplaceParentRequired && !this.marketplaceCheckout) return this.$util.Tips({title: this.$t(`原确认页连接不可用，请返回原确认页`)});
 				let that = this;
+				const current = marketplaceChildGuard(this, 'import-native');
+				if (!current()) return;
 				uni.authorize({
 					scope: 'scope.address',
 					success: function(res) {
+						if (!current()) return;
 						uni.chooseAddress({
 							success: function(res) {
+								if (!current()) return;
 								let addressP = {};
 								addressP.province = res.provinceName;
 								addressP.city = res.cityName;
@@ -342,8 +392,10 @@
 									id: 0,
 									type: 1,
 								}).then(res => {
+									if (!current()) return;
 									if (that.returnMarketplaceAddress(res.data.id)) return;
 									setTimeout(function() {
+										if (!current()) return;
 										if (that.cartId) {
 											let cartId = that.cartId;
 											let pinkId = that.pinkId;
@@ -381,12 +433,14 @@
 										icon: 'success'
 									});
 								}).catch(err => {
+									if (!current()) return;
 									return that.$util.Tips({
 										title: err
 									});
 								});
 							},
 							fail: function(res) {
+								if (!current()) return;
 								if (res.errMsg == 'chooseAddress:cancel') return that.$util
 									.Tips({
 										title: that.$t(`取消选择`)
@@ -395,13 +449,17 @@
 						})
 					},
 					fail: function(res) {
+						if (!current()) return;
 						uni.showModal({
 							title: that.$t(`您已拒绝导入微信地址权限`),
 							content: that.$t(`是否进入权限管理，调整授权？`),
 							success(res) {
+								if (!current()) return;
 								if (res.confirm) {
 									uni.openSetting({
-										success: function(res) {}
+										success: function(res) {
+											if (!current()) return;
+										}
 									});
 								} else if (res.cancel) {
 									return that.$util.Tips({
@@ -415,9 +473,13 @@
 			},
 			// 导入共享地址（微信）；
 			getAddress() {
+				if (this.marketplaceParentRequired && (this.marketplaceSaved || this.marketplaceSaving)) return;
 				if (this.marketplaceParentRequired && !this.marketplaceCheckout) return this.$util.Tips({title: this.$t(`原确认页连接不可用，请返回原确认页`)});
 				let that = this;
+				const current = marketplaceChildGuard(this, 'import-wechat');
+				if (!current()) return;
 				that.$wechat.openAddress().then(userInfo => {
+					if (!current()) return;
 					editAddress({
 							id: this.id,
 							real_name: userInfo.userName,
@@ -433,12 +495,14 @@
 							type: 1,
 						})
 						.then((res) => {
+							if (!current()) return;
 							if (that.returnMarketplaceAddress(res.data.id)) return;
 							// close();
 							that.$util.Tips({
 								title: that.$t(`添加成功`),
 								icon: 'success'
 							}, () => {
+								if (!current()) return;
 								if (that.cartId) {
 									let cartId = that.cartId;
 									let pinkId = that.pinkId;
@@ -464,21 +528,27 @@
 							});
 						})
 						.catch(err => {
+							if (!current()) return;
 							// close();
 							return that.$util.Tips({
 								title: err || that.$t(`添加失败`)
 							});
 						});
-				}).catch(err => {});
+				}).catch(err => {
+					if (!current()) return;
+				});
 			},
 			/**
 			 * 提交用户添加地址
 			 * 
 			 */
 			formSubmit: function(e) {
+				if (this.marketplaceParentRequired && (this.marketplaceSaved || this.marketplaceSaving)) return;
 				if (this.marketplaceParentRequired && !this.marketplaceCheckout) return this.$util.Tips({title: this.$t(`原确认页连接不可用，请返回原确认页`)});
 				let that = this,
 					value = e.detail.value;
+				const current = marketplaceChildGuard(this, 'address-save');
+				if (!current()) return;
 				if (!value.real_name.trim()) return that.$util.Tips({
 					title: that.$t(`请填写收货人姓名`)
 				});
@@ -508,7 +578,9 @@
 					title: that.$t(`保存中`),
 					mask: true
 				})
+				if (this.marketplaceParentRequired) this.marketplaceSaving = true;
 				editAddress(value).then(res => {
+					if (!current()) return;
 					if (that.returnMarketplaceAddress(that.id || res.data.id)) return;
 					if (that.id)
 						that.$util.Tips({
@@ -521,6 +593,7 @@
 							icon: 'success'
 						});
 					setTimeout(function() {
+						if (!current()) return;
 						if (that.cartId) {
 							let cartId = that.cartId;
 							let pinkId = that.pinkId;
@@ -549,12 +622,15 @@
 						}
 					}, 1000);
 				}).catch(err => {
+					if (!current()) return;
+					if (that.marketplaceParentRequired) that.marketplaceSaving = false;
 					return that.$util.Tips({
 						title: err
 					});
 				})
 			},
 			ChangeIsDefault: function(e) {
+				if (this.marketplaceParentRequired && !marketplaceChildCurrent(this)) return;
 				this.$set(this.userAddress, 'is_default', !this.userAddress.is_default);
 			}
 		}
@@ -621,8 +697,13 @@
 	}
 
 	.addAddress .keepBnt {
-		width: 690rpx;
+		box-sizing: border-box;
+		width: calc(100% - 60rpx);
 		height: 86rpx;
+		padding: 0 20rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 		border-radius: 50rpx;
 		text-align: center;
 		line-height: 86rpx;
@@ -630,6 +711,7 @@
 		font-size: 32rpx;
 		color: #fff;
 	}
+	.addAddress .keepBnt[disabled] { opacity: 0.55; }
 
 	.addAddress .wechatAddress {
 		width: 690rpx;
@@ -643,10 +725,27 @@
 		border: 1px solid var(--view-theme);
 	}
 	.marketplace-parent-notice {
+		overflow-wrap: anywhere;
 		margin: 20rpx 30rpx;
 		color: #868686;
 		font-size: 28rpx;
 		line-height: 1.5;
 		text-align: left;
 	}
+	.marketplace-return-action {
+		box-sizing: border-box;
+		width: 100%;
+		margin: 16rpx 0 0;
+		padding: 12rpx 20rpx;
+		min-height: 64rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		text-align: center;
+		font: inherit;
+		line-height: 1.4;
+		background: #fff;
+		border: 1rpx solid #ddd;
+	}
+	.marketplace-return-action::after { border: 0; }
 </style>

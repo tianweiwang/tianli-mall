@@ -307,6 +307,8 @@ audit_finish(): never                 // 汇总，写 JSONL，有 FAIL 时以退
 
 `finding_kind` 取值：`待复现风险`、`既有拒绝回归`、`既有修复回归`、`新增契约`。
 
+恢复分支前端有限检查（2026-10-16）：Root仅用既有离线官方预处理/Vue编译器、Node22/Babel及样式工具，核11 SFC/9 JS在h5/mp-weixin/app-plus共60组，全部解析/导入/样式检查通过，20源前后字节相同。最终收据 `artifacts/ms4-confirmation-restore-source/20261016-r1/ui-syntax-result-r4.json` 摘要 `78b5455dab40812205b588d12c9817d4b247dedce15865814d1d8b36906caddf`；原检查器index.vue候选缺失造成的FAIL、修正后r2及新增必要util.js后的r3结果均保留，范围与修正见恢复实施依据§11。无安装或网络回退，不执行组件方法/App/SQL/HTTP/DOM或任何停止样本；只证明当前源码可解析，不代表真实恢复或三端/视觉验收。
+
 ## 6. 现有脚本的使用规则
 
 | 脚本 | 层级 | 规则 |

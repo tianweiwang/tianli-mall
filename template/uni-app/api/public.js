@@ -41,6 +41,7 @@ export function wechatAuth(code, spread, login_type) {
     },
     {
       noAuth: true,
+      identitySensitive: true,
     },
   );
 }
@@ -66,6 +67,7 @@ export function getLogo() {
 export function login(data) {
   return request.post("wechat/mp_auth", data, {
     noAuth: true,
+    identitySensitive: true,
   });
 }
 
@@ -107,6 +109,7 @@ export function getShare() {
 export function wechatAuthLogin(data) {
   return request.get("v2/wechat/auth_login", data, {
     noAuth: true,
+    identitySensitive: true,
   });
 }
 
@@ -141,6 +144,7 @@ export function authType(data) {
 export function authLogin(data) {
   return request.get("v2/routine/auth_login", data, {
     noAuth: true,
+    identitySensitive: true,
   });
 }
 
@@ -195,6 +199,7 @@ export function getShopConfig() {
 export function routineBindingPhone(data) {
   return request.post("v2/routine/auth_binding_phone", data, {
     noAuth: true,
+    identitySensitive: true,
   });
 }
 /**
@@ -204,6 +209,7 @@ export function routineBindingPhone(data) {
 export function wechatBindingPhone(data) {
   return request.post("v2/wechat/auth_binding_phone", data, {
     noAuth: true,
+    identitySensitive: true,
   });
 }
 /**
@@ -213,6 +219,7 @@ export function wechatBindingPhone(data) {
 export function phoneLogin(data) {
   return request.post("v2/routine/phone_login", data, {
     noAuth: true,
+    identitySensitive: true,
   });
 }
 
@@ -223,6 +230,7 @@ export function phoneLogin(data) {
 export function routineLogin(data) {
   return request.get("v2/wechat/routine_auth", data, {
     noAuth: true,
+    identitySensitive: true,
   });
 }
 
@@ -239,6 +247,7 @@ export function wechatAuthV2(code, spread) {
     },
     {
       noAuth: true,
+      identitySensitive: true,
     },
   );
 }
@@ -337,5 +346,6 @@ export function getSystemVersion() {
 export function remoteRegister(data) {
   return request.get(`remote_register`, data, {
     noAuth: true,
+    identitySensitive: true,
   });
 }

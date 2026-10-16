@@ -21,10 +21,7 @@ import auth from './wechat';
 // #endif
 
 import {
-	LOGIN_STATUS,
-	USER_INFO,
-	EXPIRES_TIME,
-	STATE_R_KEY
+	LOGIN_STATUS
 } from './../config/cache';
 import Routine from '@/libs/routine';
 
@@ -32,6 +29,7 @@ import Routine from '@/libs/routine';
 function prePage() {
 	let pages = getCurrentPages();
 	let prePage = pages[pages.length - 1];
+	if (!prePage) return '';
 	// #ifndef APP-PLUS
 	return prePage.route;
 	// #endif
@@ -44,27 +42,25 @@ function prePage() {
 
 
 
-export const toLogin = Debounce(_toLogin, 800)
+// The debounce may outlive a login. Recheck the requesting session at execution time too.
+const deferredLogin = Debounce((push, pathLogin, revision, token) => {
+	try {
+		if ((Cache.get(LOGIN_STATUS) || false) !== token) return;
+	} catch (error) { return; }
+	if (store.state.app.authRevision === revision && store.state.app.token === token) _toLogin(push, pathLogin);
+}, 800);
+export function toLogin(push, pathLogin) {
+	deferredLogin(push, pathLogin, store.state.app.authRevision, store.state.app.token);
+}
 
 function _toLogin(push, pathLogin) {
-	// #ifdef H5
-	if (isWeixin()) {
-		if (!uni.getStorageSync('authIng')) {
-			store.commit("LOGOUT");
-		}
-	} else {
-		store.commit("LOGOUT");
-	}
-	// #endif
-	// #ifndef H5
 	store.commit("LOGOUT");
-	// #endif
 	let path = prePage();
 
 	// #ifdef H5
 	path = location.pathname + location.search;
 	// #endif
-	const BASIC_CONFIG = Cache.get('BASIC_CONFIG')
+	const BASIC_CONFIG = Cache.get('BASIC_CONFIG') || {}
 	if (!pathLogin)
 		pathLogin = '/pages/users/login/index'
 	if (path !== pathLogin) {
@@ -105,24 +101,14 @@ function _toLogin(push, pathLogin) {
 
 
 export function checkLogin() {
-	let token = Cache.get(LOGIN_STATUS);
-	// let token
-	let expiresTime = Cache.get(EXPIRES_TIME);
-	// let newTime = Math.round(new Date() / 1000);
-	if (!token) {
-		uni.setStorageSync('authIng', false)
-		Cache.clear(LOGIN_STATUS);
-		Cache.clear(EXPIRES_TIME);
-		Cache.clear(USER_INFO);
-		Cache.clear(STATE_R_KEY);
+	let token = false;
+	try { token = Cache.get(LOGIN_STATUS); } catch (error) { /* Treat an unreadable token as an unverified session. */ }
+	if (typeof token !== 'string' || !token) {
+		store.commit('LOGOUT', { onlySyncMissingToken: true });
 		return false;
 	} else {
 		store.commit('UPDATE_LOGIN', token);
-		let userInfo = Cache.get(USER_INFO, true);
-		if (userInfo) {
-			store.commit('UPDATE_USERINFO', userInfo);
-		}
-		return true;
+		return store.state.app.token === token;
 	}
 
 }

@@ -27,7 +27,6 @@
 		loginMobile,
 		registerVerify,
 		getCodeApi,
-		getUserInfo,
 		phoneSilenceAuth,
 		phoneWxSilenceAuth
 	} from "@/api/user";
@@ -60,14 +59,34 @@
 			return {
 				keyCode: '',
 				account: '',
-				codeNum: ''
+				codeNum: '',
+				identityActive: true,
+				identityAttemptRevision: 0,
+				userInfo: {}
 			}
 		},
 		mixins: [sendVerifyCode],
 		mounted() {
 			this.getCode();
 		},
+		beforeDestroy() {
+			this.identityActive = false;
+			this.identityAttemptRevision++;
+		},
+		watch: {
+			isUp(value) {
+				if (!value) this.identityAttemptRevision++;
+			}
+		},
 		methods: {
+			identityScope() {
+				return { revision: this.$store.state.app.authRevision, token: this.$store.state.app.token,
+					attempt: this.identityAttemptRevision };
+			},
+			isIdentityScope(scope) {
+				return this.identityActive && this.isUp && scope.attempt === this.identityAttemptRevision &&
+					this.$store.state.app.authRevision === scope.revision && this.$store.state.app.token === scope.token;
+			},
 			success(data) {
 				let that = this;
 				this.$refs.verify.hide()
@@ -113,12 +132,15 @@
 			},
 			close(new_user) {
 				if (this.canClose) {
+					this.identityAttemptRevision++;
 					this.$emit('close', new_user)
 				}
 			},
 			// 登录
 			loginBtn() {
 				let that = this
+				this.identityAttemptRevision++;
+				const scope = this.identityScope();
 				// #ifdef MP
 				if (!that.account) return that.$util.Tips({
 					title: that.$t(`请填写手机号码`)
@@ -137,9 +159,11 @@
 				});
 				Routine.getCode()
 					.then(code => {
-						this.phoneSilenceAuth(code);
+						if (!this.isIdentityScope(scope)) return;
+						return this.phoneSilenceAuth(code, scope);
 					})
 					.catch(error => {
+						if (!this.isIdentityScope(scope) || (error && error.staleIdentity)) return;
 						uni.hideLoading();
 					});
 				// #endif
@@ -168,20 +192,25 @@
 				// #endif
 			},
 			phoneAuth(key) {
-				phoneWxSilenceAuth({
+				let scope = this.identityScope();
+				if (!this.isIdentityScope(scope)) return;
+				return phoneWxSilenceAuth({
 					spid: app.globalData.spid,
 					spread: app.globalData.code,
 					phone: this.account,
 					captcha: this.codeNum,
 					key
 				}).then(res => {
+					if (!this.isIdentityScope(scope)) return;
 					let time = res.data.expires_time - this.$Cache.time();
 					this.$store.commit('LOGIN', {
 						token: res.data.token,
 						time: time
 					});
-					this.getUserInfo();
+					scope = this.identityScope();
+					return this.getUserInfo(undefined, scope);
 				}).catch(error => {
+					if (!this.isIdentityScope(scope) || (error && error.staleIdentity)) return;
 					uni.hideLoading()
 					this.$util.Tips({
 						title: error
@@ -189,22 +218,27 @@
 				})
 			},
 			// #ifdef MP
-			phoneSilenceAuth(code) {
+			phoneSilenceAuth(code, scope = this.identityScope()) {
 				let self = this
-				phoneSilenceAuth({
+				if (!this.isIdentityScope(scope)) return;
+				return phoneSilenceAuth({
 					code: code,
 					spread_spid: app.globalData.spid,
 					spread_code: app.globalData.code,
 					phone: this.account,
 					captcha: this.codeNum
 				}).then(res => {
+					if (!this.isIdentityScope(scope)) return;
 					let time = res.data.expires_time - this.$Cache.time();
 					this.$store.commit('LOGIN', {
 						token: res.data.token,
 						time: time
 					});
-					this.getUserInfo(res.data.new_user);
+					scope = this.identityScope();
+					return this.getUserInfo(res.data.new_user, scope);
 				}).catch(error => {
+					if (!this.isIdentityScope(scope) || (error && error.staleIdentity)) return;
+					uni.hideLoading();
 					self.$util.Tips({
 						title: error
 					})
@@ -214,13 +248,12 @@
 			/**
 			 * 获取个人用户信息
 			 */
-			getUserInfo: function(new_user) {
+			getUserInfo: function(new_user, scope = this.identityScope()) {
 				let that = this;
-				getUserInfo().then(res => {
+				return this.$store.dispatch('USERINFO', true).then(user => {
+					if (!this.isIdentityScope(scope) || this.$store.state.app.verifiedUid !== String(user.uid)) return;
 					uni.hideLoading();
-					that.userInfo = res.data
-					that.$store.commit("SETUID", res.data.uid);
-					that.$store.commit("UPDATE_USERINFO", res.data);
+					that.userInfo = JSON.parse(JSON.stringify(user));
 					// #ifdef MP
 					if (!new_user) {
 						that.$util.Tips({
