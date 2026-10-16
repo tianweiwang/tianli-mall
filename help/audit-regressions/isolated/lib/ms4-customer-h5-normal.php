@@ -382,3 +382,659 @@ function m4ch_prepare(array $source): array
         'event_preconditions'=>$events+['product_visit_custom_event_count'=>0],
         'HTTP_executed'=>false,'order_creation_executed'=>false,'credential_login_authenticated'=>false,'HTTP_DOM'=>'NOT RUN'];
 }
+
+/** Finite H5 readback. The entry owns source/live-parent gates and the only HTTP child. */
+const M4CH_STAGE_CONTROL='/run/audit-http-control';
+const M4CH_STAGE_IDENTITIES=['run_id','source_sha','container_id','freeze_sha256','epoch','step_nonce','not_before','deadline'];
+const M4CH_STAGE_IDENTITY_KEYS=['schema','run_id','source_sha','freeze_sha256','container_id','native_created_sha256',
+    'source_binding_sha256','public_copy_sha256','public_source_sha256','runtime_origin','input_bindings','environment',
+    'self_operated_mer_id','base_fixture_sha256','base_prepare_receipt_sha256','base_prepare_container_id',
+    'base_prepare_native_created_sha256','base_prepare_source_binding_sha256'];
+
+function m4ch_stage_keys(array $value,array $keys): void
+{
+    $actual=array_keys($value);sort($actual,SORT_STRING);sort($keys,SORT_STRING);
+    m4c_expect($actual===$keys,'M4C_H5_STAGE_EXACT_KEYS');
+}
+function m4ch_stage_hex(mixed $value,int $length=64): bool
+{
+    return is_string($value)&&preg_match('/\A[a-f0-9]{'.$length.'}\z/D',$value)===1;
+}
+function m4ch_stage_positive(mixed $value,int $maximum=4294967295): int
+{
+    m4c_expect((is_int($value)&&$value>0&&$value<=$maximum)||(is_string($value)
+        &&preg_match('/\A[1-9][0-9]*\z/D',$value)===1&&strlen($value)<=strlen((string)$maximum)
+        &&(strlen($value)<strlen((string)$maximum)||strcmp($value,(string)$maximum)<=0)), 'M4C_H5_STAGE_ACTUAL_POSITIVE_ID');
+    return (int)$value;
+}
+function m4ch_stage_ref(mixed $value): string
+{
+    if(is_int($value)&&$value>0)$value=(string)$value;
+    $maximum='18446744073709551615';
+    m4c_expect(is_string($value)&&preg_match('/\A[1-9][0-9]*\z/D',$value)===1&&strlen($value)<=20
+        &&(strlen($value)<20||strcmp($value,$maximum)<=0),'M4C_H5_STAGE_REAL_PERSISTENT_REFERENCE');return $value;
+}
+function m4ch_stage_refs(string $csv): array
+{
+    $refs=[];foreach(explode(',',$csv)as$value)$refs[]=m4ch_stage_ref($value);
+    m4c_expect(count($refs)>0&&count($refs)<=500&&count(array_unique($refs,SORT_STRING))===count($refs),'M4C_H5_STAGE_UNIQUE_REFS');
+    usort($refs,static fn(string$a,string$b):int=>strlen($a)<=>strlen($b)?:strcmp($a,$b));return $refs;
+}
+function m4ch_stage_shape(array $snapshot): void
+{
+    m4ch_stage_keys($snapshot,['facts','auxiliary_rows']);
+    m4c_expect(array_keys($snapshot['facts'])===M4CB_TABLES&&array_keys($snapshot['auxiliary_rows'])===M4CH_AUX_TABLES,
+        'M4C_H5_STAGE_EXACT_THIRTY_TWO_TABLES');$cells=0;
+    foreach([...$snapshot['facts'],...$snapshot['auxiliary_rows']]as$rows){
+        m4c_expect(is_array($rows)&&array_is_list($rows)&&count($rows)<=100000,'M4C_H5_STAGE_NATIVE_ROW_LIST');
+        foreach($rows as$row){m4c_expect(is_array($row)&&!array_is_list($row)&&count($row)<=512,'M4C_H5_STAGE_NATIVE_COLUMN_MAP');
+            foreach($row as$column=>$value){m4c_expect(is_string($column)&&preg_match('/\A[a-z_][a-z0-9_]*\z/D',$column)===1
+                &&($value===null||is_string($value)||is_int($value)||is_bool($value)||(is_float($value)&&is_finite($value))),
+                'M4C_H5_STAGE_NATIVE_SCALAR_TYPES');m4c_expect(++$cells<=1000000,'M4C_H5_STAGE_BOUNDED_NATIVE_CELLS');}
+        }
+    }
+}
+function m4ch_stage_snapshot(PDO $pdo): array
+{
+    m4c_expect(!$pdo->inTransaction(),'M4C_H5_STAGE_REAL_NATIVE_READER_OUTSIDE_TRANSACTION');$auxiliary=[];
+    foreach(M4CH_AUX_TABLES as$table)$auxiliary[$table]=m4cb_rows($pdo,'SELECT * FROM `'.$table.'` ORDER BY `id`');
+    $snapshot=['facts'=>m4cb_snapshot($pdo),'auxiliary_rows'=>$auxiliary];m4ch_stage_shape($snapshot);return $snapshot;
+}
+function m4ch_stage_serialized(array $snapshot): array
+{
+    m4ch_stage_shape($snapshot);$bytes=serialize($snapshot);
+    m4c_expect(strlen($bytes)<=1572864,'M4C_H5_STAGE_BOUNDED_NATIVE_SERIALIZATION');
+    return ['snapshot_base64'=>base64_encode($bytes),'snapshot_sha256'=>hash('sha256',$bytes)];
+}
+function m4ch_stage_unserialize(array $stage): array
+{
+    m4c_expect(is_string($stage['snapshot_base64']??null)&&strlen($stage['snapshot_base64'])<=2097152
+        &&m4ch_stage_hex($stage['snapshot_sha256']??null),'M4C_H5_STAGE_SEALED_NATIVE_ENCODING');
+    $bytes=base64_decode($stage['snapshot_base64'],true);
+    m4c_expect(is_string($bytes)&&strlen($bytes)>0&&strlen($bytes)<=1572864
+        &&base64_encode($bytes)===$stage['snapshot_base64']&&hash('sha256',$bytes)===$stage['snapshot_sha256'],
+        'M4C_H5_STAGE_FULL_NATIVE_SERIALIZED_DIGEST');
+    $value=unserialize($bytes,['allowed_classes'=>false,'max_depth'=>16]);
+    m4c_expect(is_array($value)&&serialize($value)===$bytes,'M4C_H5_STAGE_NATIVE_UNSERIALIZE_NO_OBJECT_OR_REWRITE');
+    m4ch_stage_shape($value);return $value;
+}
+function m4ch_stage_sealed(array $source): array
+{
+    $baselinePath=M4CH_STAGE_CONTROL.'/sql-baseline.json';$oraclePath=M4CH_STAGE_CONTROL.'/customer-oracle.json';
+    $before=['baseline'=>m4ch_http_meta($baselinePath),'oracle'=>m4ch_http_meta($oraclePath)];
+    $baseline=m4ch_http_private_read($baselinePath);$oracle=m4ch_http_private_read($oraclePath);
+    m4ch_stage_keys($baseline,[...M4CH_STAGE_IDENTITY_KEYS,'scope','facts','auxiliary_rows','facts_sha256','auxiliary_sha256']);
+    m4ch_stage_keys($oracle,[...M4CH_STAGE_IDENTITY_KEYS,'scope','fixture','second_store','public_stores',
+        'configuration_rows','configuration_values','auxiliary_rows','ui_intent','actor_descriptor']);
+    m4c_expect($baseline['schema']===1&&$baseline['scope']==='NORMAL_CUSTOMER_H5_SQL_BASELINE'
+        &&$oracle['scope']==='NORMAL_CUSTOMER_H5_PRIVATE_ORACLE','M4C_H5_STAGE_ORIGINAL_SEALED_PRODUCER_SCOPES');
+    $prepare=$source['prepare_identity'];m4ch_stage_keys($prepare,['container_id','native_created_sha256','source_binding_sha256','prepare_result_sha256']);
+    foreach(M4CH_STAGE_IDENTITY_KEYS as$key)m4c_expect($baseline[$key]===$oracle[$key],'M4C_H5_STAGE_SAME_ORIGINAL_SEALED_IDENTITY');
+    foreach(['run_id','source_sha','freeze_sha256','environment','self_operated_mer_id']as$key)
+        m4c_expect($baseline[$key]===$source[$key],'M4C_H5_STAGE_SEALED_SOURCE_IDENTITY');
+    foreach(['container_id','native_created_sha256','source_binding_sha256']as$key)
+        m4c_expect($baseline[$key]===$prepare[$key],'M4C_H5_STAGE_REAL_H5_PREPARE_IDENTITY');
+    foreach(['public_copy_sha256','public_source_sha256','runtime_origin']as$key)
+        m4c_expect($baseline[$key]===$source['h5'][$key],'M4C_H5_STAGE_SEALED_PUBLIC_MATERIAL_IDENTITY');
+    m4c_expect($baseline['input_bindings']===$source['h5']['inputs']
+        &&m4ch_http_meta(M4CH_STAGE_CONTROL.'/prepare-result.json')['sha256']===$prepare['prepare_result_sha256'],
+        'M4C_H5_STAGE_ORIGINAL_INPUTS_AND_PREPARE_RESULT');
+    $loaded=m4cb_fixture_load($source);$private=$loaded['private'];
+    m4c_expect($baseline['base_fixture_sha256']===$loaded['sha256']
+        &&$baseline['base_prepare_receipt_sha256']===$loaded['prepare_receipt_sha256']
+        &&$baseline['base_prepare_container_id']===$private['prepare_container_id']
+        &&$baseline['base_prepare_native_created_sha256']===$private['prepare_native_created_sha256']
+        &&$baseline['base_prepare_source_binding_sha256']===$private['prepare_source_binding_sha256']
+        &&$oracle['fixture']['user']===$private['fixture']['user']&&$oracle['fixture']['selected']===$private['fixture']['selected']
+        &&$oracle['fixture']['merchant']===$private['fixture']['merchant']&&$oracle['fixture']['address']===$private['fixture']['address']
+        &&$oracle['fixture']['invoice']===$private['fixture']['invoice'],'M4C_H5_STAGE_ORIGINAL_BASE_FIXTURE_RELATIONSHIPS');
+    $snapshot=['facts'=>$baseline['facts'],'auxiliary_rows'=>$baseline['auxiliary_rows']];m4ch_stage_shape($snapshot);
+    m4c_expect(hash('sha256',m4cb_json($baseline['facts']))===$baseline['facts_sha256']
+        &&hash('sha256',m4cb_json($baseline['auxiliary_rows']))===$baseline['auxiliary_sha256']
+        &&$oracle['auxiliary_rows']===$baseline['auxiliary_rows'],'M4C_H5_STAGE_FULL_PREPARED_NATIVE_BASELINE');
+    m4c_expect($before===['baseline'=>m4ch_http_meta($baselinePath),'oracle'=>m4ch_http_meta($oraclePath)],
+        'M4C_H5_STAGE_SEALED_FILES_REMAIN_ORIGINAL');unset($private,$loaded);
+    return ['baseline'=>$snapshot,'oracle'=>$oracle,'metadata'=>$before];
+}
+/** Exact UI-only private handoff; no cost/configuration/authentication material leaves the oracle. */
+function m4ch_browser_intent(array $oracle): array
+{
+    $fixture=$oracle['fixture'];$intent=$oracle['ui_intent'];$lines=$intent['cart_lines'];
+    m4c_expect(is_array($lines)&&array_is_list($lines)&&count($lines)===3&&count($fixture['selected'])===2,
+        'M4C_H5_STAGE_THREE_REAL_UI_PRODUCT_LINES');
+    $a=m4ch_stage_positive($fixture['merchant']['mer_id']);$b=m4ch_stage_positive($oracle['second_store']['merchant']['mer_id']);
+    m4c_expect($a!==$b&&(int)$intent['checkout_mer_id']===$a&&$intent['selected_lines']===$fixture['selected']
+        &&$lines===[...$fixture['selected'],$intent['unselected_cart_line']]
+        &&$intent['unselected_cart_line']===['product_id'=>(int)$oracle['second_store']['product']['id'],
+            'sku_id'=>(int)$oracle['second_store']['sku']['id'],'qty'=>1], 'M4C_H5_STAGE_REAL_TWO_STORE_UI_INTENT');
+    $products=[];$skuPairs=[];$productIds=[];
+    foreach($lines as$i=>$line){m4ch_stage_keys($line,['product_id','sku_id','qty']);
+        $pid=m4ch_stage_positive($line['product_id'],8388607);$sid=m4ch_stage_positive($line['sku_id'],2147483647);
+        $product=$fixture['products'][$pid]??null;$sku=$fixture['skus'][$sid]??null;
+        m4c_expect(is_array($product)&&is_array($sku)&&(int)$product['id']===$pid&&(int)$sku['id']===$sid
+            &&(int)$sku['product_id']===$pid&&(int)$sku['type']===0&&(int)$product['mer_id']===($i<2?$a:$b)
+            &&$line['qty']===($i===0?2:1)&&is_string($sku['unique'])&&preg_match('/\A[A-Za-z0-9]{8}\z/D',$sku['unique'])===1
+            &&is_string($sku['suk'])&&$sku['suk']!==''&&is_string($product['store_name'])&&$product['store_name']!=='',
+            'M4C_H5_STAGE_REAL_UI_ROOT_SKU_QUANTITY');
+        $products[]=['product_id'=>$pid,'store_name'=>$product['store_name'],'mer_id'=>(int)$product['mer_id'],
+            'sku_id'=>$sid,'unique'=>$sku['unique'],'suk'=>$sku['suk'],'qty'=>$line['qty'],'selected'=>$i<2];
+        $productIds[]=$pid;$skuPairs[]=['productId'=>$pid,'unique'=>$sku['unique']];
+    }
+    m4c_expect(count(array_unique($productIds))===3,'M4C_H5_STAGE_THREE_DISTINCT_UI_PRODUCTS');
+    $address=[];foreach(['id','real_name','phone','province','city','district','detail']as$key)$address[$key]=$fixture['address'][$key];
+    $invoice=[];foreach(['id','name','header_type','type']as$key)$invoice[$key]=$fixture['invoice'][$key];
+    $address['id']=m4ch_stage_positive($address['id'],16777215);$invoice['id']=m4ch_stage_positive($invoice['id'],2147483647);
+    m4c_expect($address['id']===$intent['address_id']&&$invoice['id']===$intent['invoice_id']
+        &&$intent['target_order_state']==='unpaid'&&is_string($intent['mark'])&&$intent['mark']!=='',
+        'M4C_H5_STAGE_REAL_OWNED_UI_ADDRESS_INVOICE');
+    $forms=[];m4c_expect(is_array($intent['custom_form_inputs'])&&array_is_list($intent['custom_form_inputs'])
+        &&count($intent['custom_form_inputs'])===2,'M4C_H5_STAGE_EXACT_TWO_UI_FORM_INTENTS');
+    foreach($intent['custom_form_inputs']as$i=>$group){m4ch_stage_keys($group,['product_id','fields']);
+        m4c_expect($group['product_id']===$products[$i]['product_id']&&is_array($group['fields'])&&array_is_list($group['fields'])
+            &&count($group['fields'])===($i===0?2:1),'M4C_H5_STAGE_UI_FORM_INTENT_PRODUCT');$fields=[];
+        foreach($group['fields']as$j=>$field){m4ch_stage_keys($field,['field_index','label','value']);
+            m4c_expect($field['field_index']===$j&&in_array($field['label'],['text','number'],true)&&is_string($field['value'])
+                &&strlen($field['value'])<=512&&preg_match('//u',$field['value'])===1,'M4C_H5_STAGE_FINITE_UI_FORM_VALUE');
+            $fields[]=['field_index'=>$j,'label'=>$field['label'],'value'=>$field['value']];}
+        $forms[]=['product_id'=>$group['product_id'],'fields'=>$fields];}
+    return ['public_ids'=>['merchantIds'=>[$a,$b],'productIds'=>$productIds,'addressIds'=>[$address['id']],
+        'invoiceIds'=>[$invoice['id']],'skuPairs'=>$skuPairs],
+        'ui_intent'=>['customer_uid'=>m4ch_stage_positive($fixture['user']['uid']),'checkout_mer_id'=>$a,
+            'stores'=>[['mer_id'=>$a,'name'=>$fixture['merchant']['name']],['mer_id'=>$b,'name'=>$oracle['second_store']['merchant']['name']]],
+            'products'=>$products,'address'=>$address,'invoice'=>$invoice,'custom_form_inputs'=>$forms,
+            'mark'=>$intent['mark'],'target_order_state'=>'unpaid']];
+}
+function m4ch_stage_target(string $url,string $method,mixed $body,array $source,array $oracle): string
+{
+    $origin=$source['h5']['runtime_origin'];$parts=parse_url($url);
+    m4c_expect(is_array($parts)&&!isset($parts['user'])&&!isset($parts['pass'])&&!isset($parts['fragment'])
+        &&($parts['scheme']??null)==='http'&&($parts['host']??null)==='127.0.0.1'
+        &&$origin==='http://127.0.0.1:'.($parts['port']??0),'M4C_H5_STAGE_ACTUAL_SAME_ORIGIN_API');
+    $path=$parts['path']??'';$query=[];
+    if(isset($parts['query']))foreach(explode('&',$parts['query'])as$pair){$kv=explode('=',$pair,2);
+        $key=rawurldecode(str_replace('+',' ',$kv[0]));$value=rawurldecode(str_replace('+',' ',$kv[1]??''));
+        m4c_expect(preg_match('/\A[A-Za-z_][A-Za-z0-9_]*\z/D',$key)===1&&!array_key_exists($key,$query)
+            &&strlen($value)<=2048&&!str_contains($value,"\0"),'M4C_H5_STAGE_FINITE_QUERY_SCALARS');$query[$key]=$value;}
+    $ids=m4ch_browser_intent($oracle)['public_ids'];$label=null;$allowedQuery=[];
+    $gets=['basic_config','theme_info/theme','theme_info/detail','lang_version','get_lang_json','copyright','wechat/get_logo',
+        'theme/navigation','v2/diy/get_version/0','user','cart/count','cart/list','product/hot','v2/invoice','address/default',
+        'address/list','get_customer_type','get_script'];
+    $posts=['image_base64','cart/add','cart/num','order/check_shipping','order/confirm'];
+    if($method==='GET'&&in_array(substr($path,5),$gets,true)&&str_starts_with($path,'/api/')){
+        $label=$path;$allowedQuery=match($path){'/api/cart/count'=>['numType'],'/api/cart/list'=>['page','limit','status'],
+            '/api/product/hot','/api/address/list'=>['page','limit'],default=>[]};
+    }elseif($method==='POST'&&in_array(substr($path,5),$posts,true)&&str_starts_with($path,'/api/'))$label=$path;
+    elseif($method==='GET'&&$path==='/api/products'){
+        m4c_expect(isset($query['mer_id'])&&in_array(m4ch_stage_positive($query['mer_id']),$ids['merchantIds'],true),
+            'M4C_H5_STAGE_ACTUAL_STORE_PRODUCTS_QUERY');$label=$path;$allowedQuery=['mer_id','page','limit'];
+    }elseif($method==='GET'&&preg_match('~\A/api/marketplace/stores/([1-9][0-9]*)\z~D',$path,$m)===1){
+        m4c_expect(in_array(m4ch_stage_positive($m[1]),$ids['merchantIds'],true),'M4C_H5_STAGE_REAL_STORE_PATH');$label='/api/marketplace/stores/:merchant';
+    }elseif($method==='GET'&&preg_match('~\A/api/product/detail/([1-9][0-9]*)\z~D',$path,$m)===1){
+        m4c_expect(in_array(m4ch_stage_positive($m[1]),$ids['productIds'],true),'M4C_H5_STAGE_REAL_PRODUCT_PATH');$label='/api/product/detail/:product';
+    }elseif($method==='GET'&&preg_match('~\A/api/product/real_price/([1-9][0-9]*)/([A-Za-z0-9]{8})\z~D',$path,$m)===1){
+        m4c_expect(in_array(['productId'=>m4ch_stage_positive($m[1]),'unique'=>$m[2]],$ids['skuPairs'],true),
+            'M4C_H5_STAGE_REAL_SKU_PRICE_PATH');$label='/api/product/real_price/:product/:sku';
+    }elseif($method==='GET'&&preg_match('~\A/api/address/detail/([1-9][0-9]*)\z~D',$path,$m)===1){
+        m4c_expect(in_array(m4ch_stage_positive($m[1]),$ids['addressIds'],true),'M4C_H5_STAGE_REAL_OWNED_ADDRESS_PATH');$label='/api/address/detail/:address';
+    }elseif($method==='POST'&&preg_match('~\A/api/order/(computed|create)/([^/]+)\z~D',$path,$m)===1){
+        $key=rawurldecode($m[2]);m4c_expect(preg_match('/\A[\x21-\x7e]{1,32}\z/D',$key)===1,'M4C_H5_STAGE_ACTUAL_CONFIRMATION_ROUTE_KEY');
+        $label='/api/order/'.$m[1].'/:confirmation';
+    }elseif($method==='GET'&&preg_match('~\A/api/order/detail/([^/]+)\z~D',$path,$m)===1){
+        $number=rawurldecode($m[1]);m4c_expect($number!==''&&strlen($number)<=64&&!str_contains($number,"\0"),
+            'M4C_H5_STAGE_ACTUAL_ORDER_DETAIL_PATH');$label='/api/order/detail/:order';
+    }
+    m4c_expect(is_string($label)&&array_diff(array_keys($query),$allowedQuery)===[],'M4C_H5_STAGE_ONLY_NORMAL_BOUND_API');
+    foreach($query as$key=>$value){if(in_array($key,['page','limit'],true))m4ch_stage_positive($value,100);
+        elseif($key==='status')m4c_expect(in_array($value,['0','1'],true),'M4C_H5_STAGE_NORMAL_CART_STATUS');
+        elseif($key==='numType')m4c_expect($value==='0','M4C_H5_STAGE_NORMAL_CART_COUNT_TYPE');}
+    if($method==='GET')m4c_expect($body===null,'M4C_H5_STAGE_REAL_GET_WITHOUT_BODY');
+    else m4c_expect(is_array($body)&&!array_is_list($body),'M4C_H5_STAGE_REAL_POST_OBJECT');
+    return $label;
+}
+function m4ch_stage_network(array $request,array $source,array $oracle,array $oldStages): void
+{
+    $network=$request['network'];$captures=$request['captures'];$stage=$request['stage'];
+    m4c_expect(is_array($network)&&array_is_list($network)&&count($network)<=4096&&is_array($captures)
+        &&array_is_list($captures)&&count($captures)<=4096,'M4C_H5_STAGE_BOUNDED_NETWORK_COLLECTION');$seen=[];
+    foreach($oldStages as$old)foreach($old['network']as$row)$seen[$row['request_id']]=true;
+    $byId=[];$login=0;
+    foreach($network as$row){m4c_expect(is_array($row),'M4C_H5_STAGE_NETWORK_ROW');m4ch_stage_keys($row,['request_id','projection']);
+        $id=$row['request_id'];$p=$row['projection'];m4c_expect(is_string($id)&&$id!==''&&strlen($id)<=256&&!isset($seen[$id])
+            &&!isset($byId[$id])&&is_array($p),'M4C_H5_STAGE_UNIQUE_ACTUAL_REQUEST_ID');
+        m4ch_stage_keys($p,['scope','method','path_template','http_status','response_kind','business_status','nested_status',
+            'response_bytes','response_sha256_prefix','private_capture_sha256_prefix']);
+        m4c_expect($p['scope']==='NETWORK_ONLY_NOT_DOM_ACTION_ACK_JPEG_OR_UI_ACCEPTANCE'
+            &&in_array($p['method'],['GET','POST'],true)&&$p['http_status']===200
+            &&is_string($p['path_template'])&&is_int($p['response_bytes'])&&$p['response_bytes']>=0&&$p['response_bytes']<=2097152
+            &&m4ch_stage_hex($p['response_sha256_prefix'],12)&&m4ch_stage_hex($p['private_capture_sha256_prefix'],12),
+            'M4C_H5_STAGE_ACTUAL_SAFE_NETWORK_PROJECTION');
+        if($p['path_template']==='/api/get_script')m4c_expect($p['response_kind']==='raw_text'&&$p['business_status']===null
+            &&$p['nested_status']===null,'M4C_H5_STAGE_REAL_RAW_STATISTICS_TEXT');
+        else m4c_expect($p['response_kind']==='json'&&$p['business_status']===200,'M4C_H5_STAGE_REAL_BUSINESS_SUCCESS');
+        $getTemplates=['/api/basic_config','/api/theme_info/theme','/api/theme_info/detail','/api/lang_version','/api/get_lang_json',
+            '/api/copyright','/api/wechat/get_logo','/api/theme/navigation','/api/v2/diy/get_version/0','/api/user','/api/cart/count',
+            '/api/cart/list','/api/product/hot','/api/v2/invoice','/api/address/default','/api/address/list','/api/get_customer_type',
+            '/api/get_script','/api/products','/api/marketplace/stores/:merchant','/api/product/detail/:product',
+            '/api/product/real_price/:product/:sku','/api/address/detail/:address','/api/order/detail/:order'];
+        $postTemplates=match($stage){'B1'=>['/api/login'],'B2'=>['/api/image_base64','/api/cart/add','/api/cart/num'],
+            'B3'=>['/api/image_base64','/api/order/check_shipping','/api/order/confirm','/api/order/computed/:confirmation'],
+            'B4'=>['/api/order/create/:confirmation'],default=>[]};
+        m4c_expect(in_array($p['path_template'],$p['method']==='GET'?$getTemplates:$postTemplates,true),
+            'M4C_H5_STAGE_FINITE_ACTUAL_PROJECTION_API_PHASE');
+        if(!in_array($p['path_template'],['/api/order/computed/:confirmation','/api/order/create/:confirmation'],true))
+            m4c_expect($p['nested_status']===null,'M4C_H5_STAGE_NORMAL_NON_NESTED_PROJECTION');
+        if($p['path_template']==='/api/login'){++$login;m4c_expect($stage==='B1'&&$p['method']==='POST'
+            &&$p['nested_status']===null,'M4C_H5_STAGE_LOGIN_PROJECTION_ONLY');}
+        $byId[$id]=$p;
+    }
+    $captured=[];
+    foreach($captures as$capture){m4c_expect(is_array($capture),'M4C_H5_STAGE_PRIVATE_CAPTURE_OBJECT');
+        m4ch_stage_keys($capture,['scope','request','response','path_template','business_status','nested_status','private_capture_sha256']);
+        $wire=$capture['request'];$response=$capture['response'];m4c_expect(is_array($wire)&&is_array($response),'M4C_H5_STAGE_ACTUAL_WIRE_OBJECTS');
+        m4ch_stage_keys($wire,['request_id','url','method','post_data','body']);
+        m4ch_stage_keys($response,['http_status','mime_type','body_bytes','body_sha256','body_base64','text','envelope']);
+        $id=$wire['request_id'];m4c_expect(is_string($id)&&isset($byId[$id])&&!isset($captured[$id])
+            &&$capture['scope']==='PRIVATE_ACTUAL_CUSTOMER_NETWORK_ONLY'&&m4ch_stage_hex($capture['private_capture_sha256'])
+            &&is_string($wire['url'])&&strlen($wire['url'])<=8192&&in_array($wire['method'],['GET','POST'],true),
+            'M4C_H5_STAGE_ACTUAL_PRIVATE_OBSERVER_CAPTURE');
+        if($wire['method']==='POST')m4c_expect(is_string($wire['post_data'])&&strlen($wire['post_data'])<=2097152
+            &&json_decode($wire['post_data'],true,128,JSON_THROW_ON_ERROR)===$wire['body'],
+            'M4C_H5_STAGE_ORIGINAL_POST_DATA_PARSED_WITHOUT_RECONSTRUCTION');
+        else m4c_expect($wire['post_data']===null&&$wire['body']===null,'M4C_H5_STAGE_ACTUAL_EMPTY_GET_BODY');
+        $label=m4ch_stage_target($wire['url'],$wire['method'],$wire['body'],$source,$oracle);
+        m4c_expect($capture['path_template']===$label&&$label!=='/api/login','M4C_H5_STAGE_NO_AUTH_BODY_OR_TOKEN_CAPTURE');
+        $raw=base64_decode($response['body_base64'],true);
+        m4c_expect(is_string($raw)&&base64_encode($raw)===$response['body_base64']&&is_int($response['body_bytes'])
+            &&strlen($raw)===$response['body_bytes']&&strlen($raw)<=2097152&&m4ch_stage_hex($response['body_sha256'])
+            &&hash('sha256',$raw)===$response['body_sha256']&&$raw===$response['text']&&preg_match('//u',$raw)===1
+            &&$response['http_status']===200&&is_string($response['mime_type']),'M4C_H5_STAGE_ORIGINAL_RESPONSE_BYTES_AND_FULL_HASH');
+        $envelope=$response['envelope'];$nested=null;
+        if($label==='/api/get_script')m4c_expect($envelope===null&&$capture['business_status']===null,'M4C_H5_STAGE_RAW_TEXT_NOT_JSON');
+        else{m4c_expect($raw!==''&&is_array($envelope)&&json_decode($raw,true,128,JSON_THROW_ON_ERROR)===$envelope
+                &&($envelope['status']??null)===200&&is_string($envelope['msg']??null)&&$capture['business_status']===200,
+                'M4C_H5_STAGE_ORIGINAL_BUSINESS_JSON_ENVELOPE');
+            if(in_array($label,['/api/order/computed/:confirmation','/api/order/create/:confirmation'],true)){
+                $data=$envelope['data']??null;m4c_expect(is_array($data)&&is_array($data['result']??null),'M4C_H5_STAGE_ACTUAL_NESTED_RESULT');
+                $nested=$data['status']??null;m4c_expect($label==='/api/order/create/:confirmation'?$nested==='SUCCESS':in_array($nested,['NONE','SUCCESS'],true),
+                    'M4C_H5_STAGE_NORMAL_NESTED_RESULT_STATUS');}
+        }
+        $projection=$byId[$id];m4c_expect($capture['nested_status']===$nested&&$projection['method']===$wire['method']
+            &&$projection['path_template']===$label&&$projection['business_status']===$capture['business_status']
+            &&$projection['nested_status']===$nested&&$projection['response_bytes']===$response['body_bytes']
+            &&$projection['response_sha256_prefix']===substr($response['body_sha256'],0,12)
+            &&$projection['private_capture_sha256_prefix']===substr($capture['private_capture_sha256'],0,12),
+            'M4C_H5_STAGE_CAPTURE_MATCHES_ACTUAL_SAFE_PROJECTION');
+        m4c_expect($stage!=='B1'||$label==='/api/user','M4C_H5_STAGE_LOGIN_STAGE_ONLY_PRIVATE_USER_RESPONSE');
+        if($wire['method']==='POST')m4c_expect(match($stage){
+            'B2'=>in_array($label,['/api/cart/add','/api/cart/num','/api/image_base64'],true),
+            'B3'=>in_array($label,['/api/order/check_shipping','/api/order/confirm','/api/order/computed/:confirmation','/api/image_base64'],true),
+            'B4'=>$label==='/api/order/create/:confirmation',default=>false},'M4C_H5_STAGE_NORMAL_WRITE_PHASE');
+        $captured[$id]=true;
+    }
+    if($stage==='B0')m4c_expect($network===[]&&$captures===[],'M4C_H5_STAGE_PRENAVIGATION_EMPTY_OBSERVER_BASELINE');
+    elseif($stage==='B1')m4c_expect($login===1&&$captures!==[],'M4C_H5_STAGE_ONE_REAL_LOGIN_PROJECTION_AND_USER_CAPTURE');
+    else m4c_expect(count($captured)===count($byId),'M4C_H5_STAGE_ALL_NONAUTH_API_RESPONSES_CAPTURED');
+}
+function m4ch_stage_captures(array $stages,?string $template=null): array
+{
+    $all=[];foreach($stages as$stage)foreach($stage['captures']as$capture)
+        if($template===null||$capture['path_template']===$template)$all[]=$capture;return $all;
+}
+function m4ch_stage_data(array $capture): mixed { return $capture['response']['envelope']['data']??null; }
+function m4ch_stage_previous(array $source,array $runtime,string $stage): array
+{
+    $order=['B0','B1','B2','B3','B4'];$position=array_search($stage,$order,true);m4c_expect(is_int($position),'M4C_H5_STAGE_FIXED_ORDER');$prior=[];
+    foreach($order as$i=>$name){$path=M4CH_STAGE_CONTROL.'/stage-'.$name.'.json';
+        if($i>=$position){m4c_expect(!file_exists($path)&&!is_link($path),'M4C_H5_STAGE_NO_REPEAT_OR_FUTURE_STAGE');continue;}
+        $value=m4ch_http_private_read($path);m4ch_stage_keys($value,['schema','scope',...M4CH_STAGE_IDENTITIES,'stage','network','captures',
+            'snapshot_base64','snapshot_sha256','business']);m4ch_http_identity($value,$source,$runtime);
+        m4c_expect($value['scope']==='MS4_CUSTOMER_H5_PRIVATE_STAGE'&&$value['stage']===$name,'M4C_H5_STAGE_ORIGINAL_PREVIOUS_STAGE');
+        m4ch_stage_unserialize($value);$prior[]=$value;
+    }return $prior;
+}
+function m4ch_stage_auxiliary_equal(array $before,array $after): void
+{
+    m4c_expect($before['auxiliary_rows']===$after['auxiliary_rows'],'M4C_H5_STAGE_ALL_SEVEN_AUXILIARY_TABLES_UNCHANGED');
+}
+function m4ch_stage_auth_captures(array $stages,int $uid): void
+{
+    $captures=m4ch_stage_captures($stages,'/api/user');m4c_expect($captures!==[],'M4C_H5_STAGE_REAL_USER_RESPONSE_REQUIRED');
+    foreach($captures as$capture){$data=m4ch_stage_data($capture);m4c_expect(is_array($data)&&m4ch_stage_positive($data['uid']??null)===$uid,
+        'M4C_H5_STAGE_REAL_AUTHENTICATED_OWNER_RESPONSE');}
+}
+function m4ch_stage_producer_stats(array $snapshot,array $stages,array $oracle,array $runtime): void
+{
+    $uid=(int)$oracle['fixture']['user']['uid'];$expected=[];
+    foreach(m4ch_stage_captures($stages)as$capture){$label=$capture['path_template'];$request=$capture['request'];
+        if($label==='/api/product/detail/:product'){
+            $pid=m4ch_stage_positive(basename(parse_url($request['url'],PHP_URL_PATH)));$data=m4ch_stage_data($capture);
+            m4c_expect(is_array($data)&&(int)($data['storeInfo']['id']??0)===$pid
+                &&(int)($data['mer_id']??0)===(int)$oracle['fixture']['products'][$pid]['mer_id'],
+                'M4C_H5_STAGE_ACTUAL_VISITED_PRODUCT_RESPONSE');$expected[]='visit:'.$pid.':1';
+        }elseif($label==='/api/cart/add'){
+            $body=$request['body'];$pid=m4ch_stage_positive($body['productId']??null,8388607);
+            $qty=m4ch_stage_positive($body['cartNum']??null,65535);$expected[]='cart:'.$pid.':'.$qty;
+        }
+    }
+    $actual=[];$keys=['id','type','product_id','uid','visit_num','cart_num','order_num','pay_num','pay_price','cost_price',
+        'pay_uid','refund_num','refund_price','collect_num','add_time'];
+    foreach($snapshot['facts']['eb_store_product_log']as$row){m4ch_stage_keys($row,$keys);
+        m4c_expect(in_array($row['type'],['visit','cart'],true)&&(int)$row['uid']===$uid
+            &&m4ch_stage_positive($row['id'],2147483647)>0&&(int)$row['add_time']>=$runtime['not_before']
+            &&(int)$row['add_time']<=time(),'M4C_H5_STAGE_REAL_VISIT_CART_STAT_OWNER_AND_TIME');
+        $pid=(int)$row['product_id'];m4c_expect(isset($oracle['fixture']['products'][$pid]),'M4C_H5_STAGE_STAT_REAL_PRODUCT');
+        foreach(['order_num','pay_num','pay_uid','refund_num','collect_num']as$field)
+            m4c_expect((int)$row[$field]===0,'M4C_H5_STAGE_STATS_NO_UNOBSERVED_ACTION');
+        foreach(['pay_price','cost_price','refund_price']as$field)m4c_expect($row[$field]==='0.00','M4C_H5_STAGE_STATS_NO_FINANCIAL_EFFECT');
+        if($row['type']==='visit'){m4c_expect((int)$row['visit_num']===1&&(int)$row['cart_num']===0,'M4C_H5_STAGE_VISIT_STAT_DEFAULT_COLUMNS');
+            $actual[]='visit:'.$pid.':1';}
+        else{m4c_expect((int)$row['visit_num']===0&&(int)$row['cart_num']>0,'M4C_H5_STAGE_CART_STAT_DEFAULT_COLUMNS');
+            $actual[]='cart:'.$pid.':'.(int)$row['cart_num'];}
+    }
+    sort($expected,SORT_STRING);sort($actual,SORT_STRING);
+    m4c_expect($expected===$actual,'M4C_H5_STAGE_EXACT_ACTUAL_DETAIL_AND_CART_PRODUCER_MULTISET');
+}
+/** Match all three real cart producers, native full rows, and a complete observed two-store public listing. */
+function m4ch_stage_carts(array $snapshot,array $stages,array $oracle,array $runtime): array
+{
+    $fixture=$oracle['fixture'];$uid=(int)$fixture['user']['uid'];$intent=m4ch_browser_intent($oracle)['ui_intent'];$expected=[];
+    foreach(m4ch_stage_captures($stages)as$capture){$label=$capture['path_template'];$body=$capture['request']['body'];
+        if($label==='/api/cart/add'){
+            $pid=m4ch_stage_positive($body['productId']??null,8388607);$qty=m4ch_stage_positive($body['cartNum']??null,65535);
+            $unique=$body['uniqueId']??null;$matches=array_values(array_filter($intent['products'],
+                static fn(array$p):bool=>$p['product_id']===$pid&&$p['unique']===$unique));
+            m4c_expect(count($matches)===1&&in_array($body['new']??0,[0,'0'],true)&&in_array($body['is_new']??0,[0,'0'],true),
+                'M4C_H5_STAGE_OWN_REAL_PERSISTENT_CART_PRODUCER');
+            foreach(['combinationId','secKillId','bargainId','advanceId','pinkId','virtual_type']as$field)
+                m4c_expect(in_array($body[$field]??0,[0,'0'],true),'M4C_H5_STAGE_CART_NO_DISABLED_ACTIVITY');
+            $data=m4ch_stage_data($capture);m4c_expect(is_array($data),'M4C_H5_STAGE_ACTUAL_CART_ADD_RESPONSE');$ref=m4ch_stage_ref($data['cartId']??null);
+            if(isset($expected[$ref]))m4c_expect($expected[$ref]['product_id']===$pid&&$expected[$ref]['unique']===$unique,
+                'M4C_H5_STAGE_SAME_CART_REF_SAME_REAL_SKU');
+            $expected[$ref]=['ref'=>$ref,'product_id'=>$pid,'unique'=>$unique,'sku_id'=>$matches[0]['sku_id'],
+                'qty'=>($expected[$ref]['qty']??0)+$qty,'mer_id'=>$matches[0]['mer_id']];
+        }elseif($label==='/api/cart/num'){
+            $ref=m4ch_stage_ref($body['id']??null);m4c_expect(isset($expected[$ref]),'M4C_H5_STAGE_CART_NUMBER_FROM_REAL_ADD');
+            $expected[$ref]['qty']=m4ch_stage_positive($body['number']??null,65535);
+        }
+    }
+    m4c_expect(count($expected)===3&&count($snapshot['facts']['eb_store_cart'])===3,'M4C_H5_STAGE_EXACT_THREE_NATIVE_CART_LINES');
+    $seen=[];$byProduct=[];$cartKeys=['id','uid','type','product_id','product_attr_unique','cart_num','add_time','is_pay','is_del','is_new',
+        'combination_id','seckill_id','bargain_id','advance_id','status'];
+    foreach($snapshot['facts']['eb_store_cart']as$row){m4ch_stage_keys($row,$cartKeys);$ref=m4ch_stage_ref($row['id']);$e=$expected[$ref]??null;
+        m4c_expect(is_array($e)&&!isset($seen[$ref])&&(int)$row['uid']===$uid&&(int)$row['product_id']===$e['product_id']
+            &&$row['product_attr_unique']===$e['unique']&&(int)$row['cart_num']===$e['qty']&&(int)$row['type']===0
+            &&(int)$row['status']===1&&(int)$row['add_time']>=$runtime['not_before']&&(int)$row['add_time']<=time(),
+            'M4C_H5_STAGE_COMPLETE_REAL_NATIVE_CART_SELECTION');
+        foreach(['is_pay','is_del','is_new','combination_id','seckill_id','bargain_id','advance_id']as$field)
+            m4c_expect((int)$row[$field]===0,'M4C_H5_STAGE_NATIVE_CART_DEFAULT_FLAGS');
+        $product=$fixture['products'][$e['product_id']];$sku=$fixture['skus'][$e['sku_id']];
+        m4c_expect((int)$product['mer_id']===$e['mer_id']&&(int)$sku['product_id']===$e['product_id']&&$sku['unique']===$e['unique']
+            &&!isset($byProduct[$e['product_id']]),'M4C_H5_STAGE_CART_REAL_ROOT_SKU_MERCHANT_JOIN');
+        $seen[$ref]=true;$byProduct[$e['product_id']]=$e;
+    }
+    foreach($intent['products']as$product)m4c_expect(isset($byProduct[$product['product_id']])
+        &&$byProduct[$product['product_id']]['qty']===$product['qty']&&$byProduct[$product['product_id']]['sku_id']===$product['sku_id'],
+        'M4C_H5_STAGE_A_TWO_B_ONE_C_ONE_REAL_QUANTITIES');
+    $complete=0;
+    foreach(m4ch_stage_captures($stages,'/api/cart/list')as$capture){$data=m4ch_stage_data($capture);
+        if(!is_array($data)||count($data['valid']??[])!==3||count($data['groups']??[])!==2)continue;
+        m4c_expect(($data['invalid']??null)===[],'M4C_H5_STAGE_NO_INVALID_EXPECTED_CART');$refs=[];
+        foreach($data['valid']as$row){$ref=m4ch_stage_ref($row['id']??null);$e=$expected[$ref]??null;
+            m4c_expect(is_array($e)&&!isset($refs[$ref])&&(int)($row['cart_num']??0)===$e['qty']
+                &&(int)($row['productInfo']['id']??0)===$e['product_id']&&(int)($row['productInfo']['mer_id']??0)===$e['mer_id']
+                &&($row['productInfo']['attrInfo']['unique']??null)===$e['unique'],'M4C_H5_STAGE_PUBLIC_CART_MATCHES_NATIVE_ROWS');$refs[$ref]=true;}
+        $groupRefs=[];$merchants=[];
+        foreach($data['groups']as$group){$mer=(int)($group['mer_id']??0);m4c_expect(in_array($mer,[(int)$fixture['merchant']['mer_id'],
+                (int)$oracle['second_store']['merchant']['mer_id']],true)&&!isset($merchants[$mer])
+                &&(int)($group['store']['mer_id']??0)===$mer&&($group['store']['name']??null)===$fixture['merchants'][$mer]['name']
+                &&is_array($group['cart_refs']??null)&&is_array($group['rows']??null),'M4C_H5_STAGE_TWO_REAL_PUBLIC_STORE_GROUPS');
+            $rowRefs=[];foreach($group['rows']as$row){$ref=m4ch_stage_ref($row['id']??null);
+                m4c_expect(isset($expected[$ref])&&$expected[$ref]['mer_id']===$mer&&!isset($rowRefs[$ref]),
+                    'M4C_H5_STAGE_PUBLIC_GROUP_ROW_REAL_OWNER');$rowRefs[$ref]=true;}
+            $declared=[];foreach($group['cart_refs']as$value){$ref=m4ch_stage_ref($value);m4c_expect(isset($rowRefs[$ref])&&!isset($declared[$ref])
+                    &&!isset($groupRefs[$ref]),'M4C_H5_STAGE_PUBLIC_GROUP_EXACT_REFERENCE_PARTITION');$declared[$ref]=true;$groupRefs[$ref]=true;}
+            m4c_expect(count($declared)===count($rowRefs),'M4C_H5_STAGE_PUBLIC_GROUP_COMPLETE_ROWS');$merchants[$mer]=true;
+        }
+        m4c_expect(count($refs)===3&&count($groupRefs)===3,'M4C_H5_STAGE_FULL_TWO_STORE_CART_LIST_CAPTURE');++$complete;
+    }
+    m4c_expect($complete>0,'M4C_H5_STAGE_COMPLETE_THREE_LINE_PUBLIC_CART_OBSERVED');$countObserved=false;
+    foreach(m4ch_stage_captures($stages,'/api/cart/count')as$capture){$data=m4ch_stage_data($capture);
+        if(!is_array($data)||(int)($data['count']??-1)!==4||!is_array($data['ids']??null))continue;
+        $refs=array_map('m4ch_stage_ref',$data['ids']);$wanted=array_map('strval',array_keys($expected));sort($refs,SORT_STRING);sort($wanted,SORT_STRING);
+        if($refs===$wanted)$countObserved=true;
+    }
+    m4c_expect($countObserved,'M4C_H5_STAGE_REAL_CART_COUNT_FOUR_UNITS_THREE_IDS');return $byProduct;
+}
+function m4ch_stage_default_pdo(PDO $reader): PDO
+{
+    $connection=Db::connect();$default=$connection->getPdo();
+    if(!$default instanceof PDO){$connection->query('SELECT 1',[],true);$default=$connection->getPdo();}
+    m4c_expect($default instanceof PDO&&$connection===Db::connect()&&$default===Db::connect()->getPdo()
+        &&$reader!==$default&&!$reader->inTransaction()&&!$default->inTransaction(),
+        'M4C_H5_STAGE_ACTUAL_DEFAULT_AND_INDEPENDENT_NATIVE_PDOS');return $default;
+}
+function m4ch_stage_default_stable(PDO $reader,PDO $default): void
+{
+    m4c_expect(Db::connect()->getPdo()===$default&&$reader!==$default&&!$reader->inTransaction()&&!$default->inTransaction(),
+        'M4C_H5_STAGE_SAME_ACTUAL_DEFAULT_PDO_RETAINED');
+}
+function m4ch_stage_app_attempt(array $source,array $runtime,array $request): void
+{
+    $stage=$request['stage'];$mode=match($stage){'B3'=>'prepare','B4'=>'verify',default=>null};
+    m4c_expect(is_string($mode)&&empty($GLOBALS['m4c_app_started']),'M4C_H5_STAGE_ONE_FRESH_REAL_APP_PROCESS');
+    $attempt=m4ch_http_header($request,'MS4_CUSTOMER_H5_APP_ATTEMPT')+['stage'=>$stage,'mode'=>$mode,
+        'runtime_path'=>'/tmp/ms4-customer-http-'.$source['run_id'].'-'.$mode.'/'];
+    m4ch_http_publish(M4CH_STAGE_CONTROL.'/stage-'.$stage.'-attempt.json',$attempt);
+    m4c_app($mode,$source);
+}
+function m4ch_stage_frame(array $stages,array $source,array $oracle,array $byProduct): array
+{
+    $fixture=$oracle['fixture'];$uid=(int)$fixture['user']['uid'];$mer=(int)$fixture['merchant']['mer_id'];
+    $confirmations=m4ch_stage_captures($stages,'/api/order/confirm');m4c_expect($confirmations!==[],'M4C_H5_STAGE_REAL_CONFIRM_RESPONSE_REQUIRED');
+    $key=null;$confirmData=null;$refs=[];
+    foreach($fixture['selected']as$line)$refs[]=$byProduct[$line['product_id']]['ref'];$refs=m4ch_stage_refs(implode(',',$refs));
+    foreach($confirmations as$capture){$data=m4ch_stage_data($capture);$body=$capture['request']['body'];
+        m4c_expect(is_array($data)&&($data['marketplace_confirmation_version']??null)===1
+            &&($data['marketplace_create_enabled']??null)===true&&($data['mer_id']??null)===$mer
+            &&($data['source_kind']??null)==='persistent'&&is_string($data['orderKey']??null)
+            &&m4ch_stage_refs($body['cartId']??'')===$refs&&(int)($body['mer_id']??0)===$mer
+            &&in_array($body['new']??0,[0,'0'],true)&&(int)($body['shipping_type']??1)===1,
+            'M4C_H5_STAGE_ACTUAL_SINGLE_STORE_CONFIRMATION');
+        $actual=MarketplaceOrderInput::confirmationKey($data['orderKey']);
+        m4c_expect($key===null||$actual===$key,'M4C_H5_STAGE_ONE_ORIGINAL_CONFIRMATION_KEY_NO_REBUILD');$key=$actual;$confirmData=$data;
+        m4cb_public_money($data['priceGroup'],'totalPrice','70.55');
+    }
+    $computed=m4ch_stage_captures($stages,'/api/order/computed/:confirmation');m4c_expect($computed!==[],'M4C_H5_STAGE_ACTUAL_COMPUTED_BEFORE_CREATE');
+    $last=$computed[count($computed)-1];$body=$last['request']['body'];$data=m4ch_stage_data($last);
+    $routeKey=rawurldecode(basename(parse_url($last['request']['url'],PHP_URL_PATH)));
+    m4c_expect($routeKey===$key&&($data['status']??null)==='NONE'&&is_array($data['result']??null)
+        &&($data['result']['marketplace_create_enabled']??null)===true&&($data['result']['marketplace_confirmation_version']??null)===1
+        &&($data['result']['mer_id']??null)===$mer&&($data['result']['source_kind']??null)==='persistent'
+        &&(int)($body['addressId']??0)===(int)$fixture['address']['id']
+        &&(int)($body['mer_id']??0)===$mer&&($body['payType']??null)===''&&(int)($body['shipping_type']??0)===1
+        &&in_array($body['useIntegral']??0,[0,'0',false],true)&&(int)($body['couponId']??0)===0,
+        'M4C_H5_STAGE_LAST_REAL_COMPUTED_OWN_ADDRESS_AND_ORIGINAL_KEY');
+    m4cb_public_money($data['result'],'pay_price','78.56');m4cb_public_money($data['result'],'pay_postage','8.01');
+    $cached=\crmeb\services\CacheService::get('user_order_'.$uid.$key);
+    m4c_expect(is_array($cached),'M4C_H5_STAGE_ACTUAL_UNEXPIRED_OWNER_CONFIRMATION_CACHE');
+    $frame=\app\services\marketplace\order\MarketplaceCartSelection::frame($cached,$uid);
+    m4c_expect($frame['mer_id']===$mer&&$frame['source_kind']==='persistent'&&$frame['cart_refs']===$refs
+        &&count($frame['selection'])===2&&count($frame['custom_form'])===2&&$frame['custom_form']===$confirmData['custom_form'],
+        'M4C_H5_STAGE_PRIVATE_FRAME_MATCHES_ACTUAL_PUBLIC_CONFIRMATION');
+    foreach($frame['selection']as$line){$expected=$byProduct[$line['product_id']]??null;
+        m4c_expect(is_array($expected)&&$expected['mer_id']===$mer&&$line['cart_ref']===$expected['ref']
+            &&$line['sku_id']===$expected['sku_id']&&$line['unique']===$expected['unique']&&$line['sku_type']===0
+            &&$line['qty']===$expected['qty'],'M4C_H5_STAGE_ORIGINAL_FRAME_REAL_CART_SKU_SELECTION');}
+    foreach($frame['custom_form']as$definition){$product=$fixture['products'][$definition['product_id']]??null;
+        m4c_expect(is_array($product)&&$definition['product_name']===$product['store_name'],'M4C_H5_STAGE_FRAME_FORM_REAL_PRODUCT');
+        $raw=json_decode($product['custom_form'],true,32,JSON_THROW_ON_ERROR);$fields=[];
+        foreach($raw as$i=>$field)$fields[]=['field_index'=>$i]+$field;
+        m4c_expect($definition['fields']===$fields&&$definition['definition_sha256']===hash('sha256',MarketplaceOrderInput::canonical([
+            'product_id'=>$definition['product_id'],'fields'=>$fields])),'M4C_H5_STAGE_FULL_ORIGINAL_FORM_DEFINITION_HASH');
+    }
+    $addresses=m4ch_stage_captures($stages,'/api/address/detail/:address');$addressObserved=false;
+    foreach($addresses as$capture){$row=m4ch_stage_data($capture);if(!is_array($row)||(int)($row['id']??0)!==(int)$fixture['address']['id'])continue;
+        foreach(['real_name','phone','province','city','district','detail']as$field)m4c_expect(($row[$field]??null)===$fixture['address'][$field],
+            'M4C_H5_STAGE_ACTUAL_OWNED_ADDRESS_RESPONSE');$addressObserved=true;}
+    m4c_expect($addressObserved,'M4C_H5_STAGE_REAL_UI_OWN_ADDRESS_SELECTED');$invoiceObserved=false;
+    foreach(m4ch_stage_captures($stages,'/api/v2/invoice')as$capture){$rows=m4ch_stage_data($capture);m4c_expect(is_array($rows)&&array_is_list($rows),
+            'M4C_H5_STAGE_ACTUAL_INVOICE_LIST');foreach($rows as$row)if((int)($row['id']??0)===(int)$fixture['invoice']['id']){
+                foreach(['name','header_type','type']as$field)m4c_expect((string)($row[$field]??'')===(string)$fixture['invoice'][$field],
+                    'M4C_H5_STAGE_ACTUAL_OWNED_INVOICE_HEADING');$invoiceObserved=true;}}
+    m4c_expect($invoiceObserved,'M4C_H5_STAGE_REAL_UI_OWN_INVOICE_AVAILABLE');return ['key'=>$key,'frame'=>$frame];
+}
+function m4ch_stage_answers(array $request,array $frame,array $oracle): void
+{
+    $answers=$request['options']['custom_form'];$intent=$oracle['ui_intent'];$definitions=$frame['custom_form'];
+    m4c_expect(count($answers)===2&&count($intent['custom_form_inputs'])===2,'M4C_H5_STAGE_TWO_REAL_NONEMPTY_ANSWER_GROUPS');
+    foreach($definitions as$i=>$definition){$answer=$answers[$i]??null;$target=$intent['custom_form_inputs'][$i]??null;
+        m4c_expect(is_array($answer)&&is_array($target)&&$answer['product_id']===$definition['product_id']
+            &&$target['product_id']===$definition['product_id']&&$answer['definition_sha256']===$definition['definition_sha256']
+            &&count($answer['values'])===count($definition['fields'])&&count($target['fields'])===count($definition['fields']),
+            'M4C_H5_STAGE_ANSWERS_BOUND_TO_ORIGINAL_PRODUCT_HASH');
+        foreach($definition['fields']as$j=>$field)m4c_expect(($answer['values'][$j]['field_index']??null)===$field['field_index']
+            &&($target['fields'][$j]['field_index']??null)===$field['field_index']&&($target['fields'][$j]['label']??null)===$field['label']
+            &&($answer['values'][$j]['value']??null)===$target['fields'][$j]['value'],
+            'M4C_H5_STAGE_REAL_UI_ANSWER_TEXT_AND_STRING_ZERO_PRESERVED');
+    }
+    m4c_expect($request['options']['mark']===$intent['mark']&&$request['options']['invoice_id']===$intent['invoice_id']
+        &&$request['address_id']===$intent['address_id']&&$request['options']['payType']==='',
+        'M4C_H5_STAGE_REAL_SUBMITTED_MARK_ADDRESS_INVOICE_UNPAID_INTENT');
+}
+function m4ch_stage_detail(array $stages,array $frame,array $input,array $oracle,string $number): void
+{
+    $fixture=$oracle['fixture'];$details=m4ch_stage_captures($stages,'/api/order/detail/:order');
+    m4c_expect($details!==[],'M4C_H5_STAGE_REAL_SAVED_ORDER_DETAIL_CAPTURE_REQUIRED');
+    $expectedForms=$frame['custom_form'];foreach($expectedForms as$i=>&$group){unset($group['cart_refs']);
+        foreach($group['fields']as$j=>&$field)$field['value']=$input['request']['options']['custom_form'][$i]['values'][$j]['value'];unset($field);}unset($group);
+    foreach($details as$capture){$data=m4ch_stage_data($capture);
+        m4c_expect(rawurldecode(basename(parse_url($capture['request']['url'],PHP_URL_PATH)))===$number&&is_array($data)
+            &&($data['order_id']??null)===$number&&($data['marketplace_trade_version']??null)===1&&(int)($data['paid']??-1)===0
+            &&(int)($data['mer_id']??0)===(int)$fixture['merchant']['mer_id']&&($data['custom_form']??null)===$expectedForms
+            &&($data['merchant_name_snapshot']??null)===$fixture['merchant']['name'],
+            'M4C_H5_STAGE_ACTUAL_UNPAID_DETAIL_STORE_AND_SAVED_FORMS');
+        foreach(['total_price'=>'70.55','pay_price'=>'78.56','pay_postage'=>'8.01']as$field=>$value)m4cb_public_money($data,$field,$value);
+        m4c_expect(($data['real_name']??null)===$fixture['address']['real_name']&&($data['user_phone']??null)===$fixture['address']['phone']
+            &&($data['user_address']??null)===$fixture['address']['province'].' '.$fixture['address']['city'].' '.$fixture['address']['district'].' '.$fixture['address']['detail']
+            &&(int)($data['invoice']['invoice_id']??0)===(int)$fixture['invoice']['id'],'M4C_H5_STAGE_ACTUAL_SAVED_ADDRESS_INVOICE_DETAIL');
+        $carts=$data['cartInfo']??null;m4c_expect(is_array($carts)&&array_is_list($carts)&&count($carts)===2,'M4C_H5_STAGE_DETAIL_EXACT_TWO_SAVED_ITEMS');$seen=[];
+        foreach($carts as$row){$ref=m4ch_stage_ref($row['id']??null);$selected=array_values(array_filter($frame['selection'],
+                static fn(array$line):bool=>$line['cart_ref']===$ref));m4c_expect(count($selected)===1&&!isset($seen[$ref]),'M4C_H5_STAGE_DETAIL_ORIGINAL_CART_REFERENCE');
+            $line=$selected[0];m4c_expect((int)($row['cart_num']??0)===$line['qty']&&(int)($row['productInfo']['id']??0)===$line['product_id']
+                &&(int)($row['productInfo']['mer_id']??0)===(int)$fixture['merchant']['mer_id']
+                &&($row['productInfo']['store_name']??null)===$fixture['products'][$line['product_id']]['store_name']
+                &&($row['productInfo']['attrInfo']['unique']??null)===$fixture['skus'][$line['sku_id']]['unique'],
+                'M4C_H5_STAGE_DETAIL_REAL_SELECTED_SKU_QUANTITY');$seen[$ref]=true;}
+    }
+}
+/** One finite call per B0..B4. No HTTP request, business writer or invented authenticated context. */
+function m4ch_stage(array $source,array $runtime,array $request): array
+{
+    m4ch_stage_keys($request,['schema','scope',...M4CH_STAGE_IDENTITIES,'stage','network','captures']);
+    m4ch_http_identity($request,$source,$runtime);
+    m4c_expect($request['scope']==='MS4_CUSTOMER_H5_STAGE_REQUEST'&&in_array($request['stage'],['B0','B1','B2','B3','B4'],true),
+        'M4C_H5_STAGE_FINITE_REQUEST');$stage=$request['stage'];m4cb_phase('business_h5_stage_'.strtolower($stage));
+    $loaded=m4ch_stage_sealed($source);$oracle=$loaded['oracle'];$baseline=$loaded['baseline'];
+    $prior=m4ch_stage_previous($source,$runtime,$stage);m4ch_stage_network($request,$source,$oracle,$prior);
+    $all=[...$prior,$request];$uid=(int)$oracle['fixture']['user']['uid'];$reader=audit_db();
+    m4c_expect(!$reader->inTransaction()&&empty($GLOBALS['m4c_app_started']),'M4C_H5_STAGE_NO_APP_BEFORE_NATIVE_SNAPSHOT');
+    $pre=m4ch_stage_snapshot($reader);$previous=$prior===[]?$baseline:m4ch_stage_unserialize($prior[count($prior)-1]);
+    m4ch_stage_auxiliary_equal($baseline,$pre);$business=[];$snapshot=$pre;
+    if($stage==='B0'){
+        m4c_expect($pre===$baseline,'M4C_H5_STAGE_B0_ALL_PREPARED_NATIVE_ROWS_EQUAL');
+        $users=array_values(array_filter($pre['facts']['eb_user'],static fn(array$row):bool=>(int)$row['uid']===$uid));
+        m4c_expect(count($users)===1,'M4C_H5_STAGE_B0_ONE_ORIGINAL_CUSTOMER');m4cb_equal_row($users[0],$oracle['fixture']['user']);
+        foreach(['eb_store_cart','eb_store_order','eb_store_order_cart_info','eb_marketplace_stock_movement',
+            'eb_marketplace_order_idempotency','eb_store_product_log']as$table)m4c_expect($pre['facts'][$table]===[],'M4C_H5_STAGE_B0_EMPTY_BUSINESS_PRODUCERS');
+        $business=['baseline_rows_equal'=>true,'base_user_equal'=>true,'empty_cart_order'=>true];
+    }elseif($stage==='B1'){
+        m4cb_preserved($previous['facts'],$pre['facts'],$uid,[],true);m4ch_stage_auth_captures($all,$uid);
+        m4c_expect($pre['facts']['eb_store_cart']===[]&&$pre['facts']['eb_store_order']===[],'M4C_H5_STAGE_B1_LOGIN_ONLY_NO_CART_ORDER');
+        $business=['owner_auth_only'=>true,'actual_login_capture'=>true,'actual_user_capture'=>true];
+    }elseif($stage==='B2'){
+        m4cb_preserved($previous['facts'],$pre['facts'],$uid,['eb_store_cart','eb_store_product_log']);
+        m4ch_stage_auth_captures($all,$uid);m4ch_stage_carts($pre,$all,$oracle,$runtime);m4ch_stage_producer_stats($pre,$all,$oracle,$runtime);
+        $stores=[];$products=[];
+        foreach(m4ch_stage_captures($all,'/api/marketplace/stores/:merchant')as$capture){$data=m4ch_stage_data($capture);$mer=(int)($data['mer_id']??0);
+            m4c_expect(isset($oracle['fixture']['merchants'][$mer])&&($data['name']??null)===$oracle['fixture']['merchants'][$mer]['name'],
+                'M4C_H5_STAGE_TWO_ACTUAL_STORE_RESPONSES');$stores[$mer]=true;}
+        foreach(m4ch_stage_captures($all,'/api/product/detail/:product')as$capture){$data=m4ch_stage_data($capture);$products[(int)$data['storeInfo']['id']]=true;}
+        m4c_expect(count($stores)===2&&count($products)===3,'M4C_H5_STAGE_BOTH_SHOPS_THREE_PRODUCTS_ACTUALLY_VISITED');
+        $business=['cart_rows_verified'=>true,'visit_logs_verified'=>true,'auxiliary_producers_verified'=>true];
+    }elseif($stage==='B3'){
+        m4cb_preserved($previous['facts'],$pre['facts'],$uid);m4ch_stage_auth_captures($all,$uid);
+        $byProduct=m4ch_stage_carts($pre,$all,$oracle,$runtime);m4ch_stage_producer_stats($pre,$all,$oracle,$runtime);
+        m4ch_stage_app_attempt($source,$runtime,$request);$default=m4ch_stage_default_pdo($reader);
+        $postApp=m4ch_stage_snapshot($reader);m4c_expect($postApp===$pre,'M4C_H5_STAGE_B3_REAL_APP_INITIALIZATION_ALL_ROWS_UNCHANGED');
+        $confirmation=m4ch_stage_frame($all,$source,$oracle,$byProduct);$postRead=m4ch_stage_snapshot($reader);
+        m4ch_stage_default_stable($reader,$default);m4c_expect($postRead===$pre,'M4C_H5_STAGE_B3_CACHE_READ_ALL_ROWS_UNCHANGED');
+        $encoded=m4ch_stage_serialized($pre);$snapshot=$pre;
+        $business=['before_create_snapshot_sha256'=>$encoded['snapshot_sha256'],'confirmation_key'=>$confirmation['key'],
+            'confirmation_frame'=>$confirmation['frame'],'app_initialization_rows_unchanged'=>true,'frame_read_rows_unchanged'=>true,
+            'native_independent_pdo_verified'=>true];
+    }else{
+        $stop=m4ch_http_child_stop($source,$runtime);m4c_expect(($stop['action']??null)==='stop'&&($stop['status']??null)==='stop'
+            &&($stop['term_attempted']??null)===true&&($stop['remaining_members']??null)===[]&&($stop['listener_open']??null)===false
+            &&($stop['native_child']['running']??null)===false&&is_int($stop['native_proc_close']??null),
+            'M4C_H5_STAGE_B4_ORIGINAL_CHILD_ACTUALLY_STOPPED');
+        $stopPath=M4CH_STAGE_CONTROL.'/supervisor-responses/'.$stop['step_nonce'].'.json';$stopMeta=m4ch_http_meta($stopPath);
+        $b3=$prior[3];m4c_expect($b3['stage']==='B3'&&$b3['business']['before_create_snapshot_sha256']===$b3['snapshot_sha256'],
+            'M4C_H5_STAGE_B4_ORIGINAL_B3_BEFORE_CREATE_SNAPSHOT');
+        $frame=$b3['business']['confirmation_frame'];$key=$b3['business']['confirmation_key'];$creates=m4ch_stage_captures([$request],'/api/order/create/:confirmation');
+        m4c_expect(count($creates)===1,'M4C_H5_STAGE_EXACTLY_ONE_ACTUAL_UI_CREATE');$create=$creates[0];
+        m4c_expect(rawurldecode(basename(parse_url($create['request']['url'],PHP_URL_PATH)))===$key,
+            'M4C_H5_STAGE_REAL_CREATE_ORIGINAL_ROUTE_KEY');
+        m4ch_stage_app_attempt($source,$runtime,$request);$default=m4ch_stage_default_pdo($reader);$postApp=m4ch_stage_snapshot($reader);
+        m4c_expect($postApp===$pre,'M4C_H5_STAGE_B4_REAL_APP_INITIALIZATION_ALL_ROWS_UNCHANGED');
+        $input=MarketplaceOrderInput::create($uid,$key,$create['request']['body']);
+        m4c_expect($input['request']['mer_id']===(int)$oracle['fixture']['merchant']['mer_id']
+            &&$input['request']['source_kind']==='persistent'&&$input['request']['cart_refs']===$frame['cart_refs']
+            &&$input['idem_key']==='confirm:'.$key,'M4C_H5_STAGE_ACTUAL_PRODUCTION_CREATE_INPUT_AND_IDEMPOTENCY');
+        m4ch_stage_answers($input['request'],$frame,$oracle);$number=m4cb_wire_created(m4ch_stage_data($create),$key);
+        $saved=m4cb_saved($reader,$oracle['fixture'],$input['request'],$input['idem_key'],$frame,
+            $input['request']['options']['custom_form'],$number,$previous['facts'],$oracle['ui_intent']['unselected_cart_line']);
+        $postSaved=m4ch_stage_snapshot($reader);m4ch_stage_default_stable($reader,$default);
+        m4c_expect($saved===$postSaved['facts']&&$postSaved===$pre,'M4C_H5_STAGE_B4_SAVED_READBACK_ALL_ROWS_UNCHANGED');
+        m4ch_stage_auxiliary_equal($baseline,$postSaved);m4ch_stage_auth_captures($all,$uid);
+        m4ch_stage_detail([$request],$frame,$input,$oracle,$number);
+        m4c_expect(m4ch_http_meta($stopPath)===$stopMeta,'M4C_H5_STAGE_B4_ORIGINAL_PRIVATE_STOP_UNCHANGED');$snapshot=$postSaved;
+        $business=['child_stop_sha256'=>$stopMeta['sha256'],'saved_order_verified'=>true,
+            'app_initialization_rows_unchanged'=>true,'saved_readback_rows_unchanged'=>true];
+    }
+    m4cb_guard_readonly();m4c_expect(m4cb_events($reader)['custom_event_count']===0&&m4cb_rows($reader,
+        'SELECT * FROM `eb_system_event` WHERE `mark` = ? AND `is_del` = 0 AND `is_open` = 1',['user_product_visit'])===[],
+        'M4C_H5_STAGE_REAL_EVENT_PRODUCER_PRECONDITIONS');
+    m4c_expect(m4ch_stage_snapshot($reader)===$snapshot,'M4C_H5_STAGE_FINAL_NATIVE_READBACK_UNCHANGED');
+    m4c_expect($loaded['metadata']===['baseline'=>m4ch_http_meta(M4CH_STAGE_CONTROL.'/sql-baseline.json'),
+        'oracle'=>m4ch_http_meta(M4CH_STAGE_CONTROL.'/customer-oracle.json')],'M4C_H5_STAGE_ORIGINAL_SEALED_PRODUCERS_UNCHANGED');
+    $value=m4ch_http_header($request,'MS4_CUSTOMER_H5_PRIVATE_STAGE')+['stage'=>$stage,'network'=>$request['network'],'captures'=>$request['captures']]
+        +m4ch_stage_serialized($snapshot)+['business'=>$business];
+    $meta=m4ch_http_publish(M4CH_STAGE_CONTROL.'/stage-'.$stage.'.json',$value);
+    return m4ch_http_header($request,'MS4_CUSTOMER_H5_SQL_STAGE_RESULT')+['stage'=>$stage,'business_table_count'=>25,
+        'auxiliary_table_count'=>7,'private_stage_sha256_prefix'=>substr($meta['sha256'],0,12)];
+}
+
+/** Final independent native read only. The entry publishes only after its final full-source/meta gates pass. */
+function m4ch_stage_final(array $source,array $runtime): array
+{
+    m4cb_phase('business_h5_final_native');m4c_expect(empty($GLOBALS['m4c_app_started']),'M4C_H5_STAGE_FINAL_NO_SECOND_APP');
+    $loaded=m4ch_stage_sealed($source);$b4=m4ch_http_private_read(M4CH_STAGE_CONTROL.'/stage-B4.json');
+    m4ch_stage_keys($b4,['schema','scope',...M4CH_STAGE_IDENTITIES,'stage','network','captures','snapshot_base64','snapshot_sha256','business']);
+    m4ch_http_identity($b4,$source,$runtime);m4c_expect($b4['scope']==='MS4_CUSTOMER_H5_PRIVATE_STAGE'&&$b4['stage']==='B4'
+        &&($b4['business']['saved_order_verified']??null)===true,'M4C_H5_STAGE_FINAL_REAL_B4_SAVED_PROOF');
+    $before=m4ch_stage_unserialize($b4);$stop=m4ch_http_child_stop($source,$runtime);
+    m4c_expect(m4ch_http_meta(M4CH_STAGE_CONTROL.'/supervisor-responses/'.$stop['step_nonce'].'.json')['sha256']===$b4['business']['child_stop_sha256'],
+        'M4C_H5_STAGE_FINAL_ORIGINAL_CHILD_STOP_BINDING');
+    $closed=m4ch_http_private_read(M4CH_STAGE_CONTROL.'/browser-closed.json',16384);m4ch_http_identity($closed,$source,$runtime);
+    m4c_expect($closed['scope']==='MS4_CUSTOMER_H5_BROWSER_CLOSED'&&($closed['viewport_reset']??null)===true
+        &&is_array($closed['closed_owned_tab_ids']??null)&&count($closed['closed_owned_tab_ids'])===1,
+        'M4C_H5_STAGE_FINAL_ACTUAL_BROWSER_CLOSED');
+    $reader=audit_db();m4c_expect(!$reader->inTransaction(),'M4C_H5_STAGE_FINAL_INDEPENDENT_NATIVE_READER');
+    $actual=m4ch_stage_snapshot($reader);m4c_expect($actual===$before,'M4C_H5_STAGE_FINAL_ALL_THIRTY_TWO_TABLES_EQUAL_B4');
+    m4ch_stage_auxiliary_equal($loaded['baseline'],$actual);m4cb_guard_readonly();
+    m4c_expect(m4ch_stage_snapshot($reader)===$actual&&$loaded['metadata']===['baseline'=>m4ch_http_meta(M4CH_STAGE_CONTROL.'/sql-baseline.json'),
+        'oracle'=>m4ch_http_meta(M4CH_STAGE_CONTROL.'/customer-oracle.json')],'M4C_H5_STAGE_FINAL_NATIVE_AND_SEALED_METADATA_UNCHANGED');
+    return m4ch_http_header($closed,'MS4_CUSTOMER_H5_SQL_AUDIT')+['verified'=>true,'business_table_count'=>25,'auxiliary_table_count'=>7,
+        'private_snapshot_sha256_prefix'=>substr(hash('sha256',serialize($actual)),0,12),'full_source_unchanged'=>true,
+        'scope_limit'=>'OBSERVED_25_BUSINESS_PLUS_7_AUXILIARY_TABLES_ONLY'];
+}
