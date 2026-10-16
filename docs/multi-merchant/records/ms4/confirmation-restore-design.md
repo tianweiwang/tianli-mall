@@ -131,4 +131,5 @@
 - Root唯一维护本工作树03/09和本记录、Git暂存/提交及任何实际检查/运行。Main与AUX均不得由本分支代理修改。产品代理仅在已分配的新工作树文件内写源码，不执行测试、import/CLI、Docker、SQL、网络或浏览器，不读取原Run/私有材料，不提交。
 - 真实身份接口继续 `store.dispatch('USERINFO', true)`，resolve真实本次接口返回的user对象，失败必须reject。`store.state.app.authRevision` 为非负安全整数；`store.state.app.verifiedUid` 为真实GET user核过的规范正十进制字符串，未核为 `''`。普通SETUID/UPDATE_USERINFO不能设verifiedUid。页面与草稿工具都用规范字符串ownerUid；现展示用uid兼容字段保持。
 - 身份代理负责app模块、login/request生产消费者和真实登录/切号入口。提交页代理负责持久工具、order API、确认页及三个地址/发票子页。后端代理只负责五个既定PHP调用点。跨代理契约变化须先回Root更新本记录，再写依赖代码，不各自猜接口。
+- 草稿工具对身份模块仅导出同步 `pruneMarketplaceConfirmationOwner(ownerUid): boolean`：清本owner的完整草稿/PII/body，原send-intent转最小unknown anchor，保留原未知key责任；不存在记录视为成功，损坏/配额/IO失败返回false，不丢未知内容、不阻止退出身份。身份模块先定位旧owner（已核verifiedUid优先，旧uid只可作本机清理提示、不可授权恢复），清理后无论结果都使旧身份/回包失效；`state.app.confirmationCleanupFailed` 记录失败，确认页据此显示持久notice并停止新create，成功清理才解除该失败标记。该方法不得读取/显示其他owner的业务上下文，不增加Vuex模块或通用持久框架。
 - 后端不得用fresh confirm、remember/set或延TTL恢复；前端不得从URL/缓存UID造身份或完整DTO。真实created优先、unknown只查询、完整attempt先写读回再HTTP、none不改默认、原fresh/legacy兼容及原未完成范围均保持。
