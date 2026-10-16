@@ -271,8 +271,15 @@ class StoreOrderController
         list($uni) = $request->postMore([
             ['uni', ''],
         ], true);
-        $cateId = $this->services->againOrder($services, $uni, (int)$request->uid());
-        return app('json')->success(['cateId' => implode(',', $cateId)]);
+        $uid = (int)$request->uid();
+        $cateId = $this->services->againOrder($services, $uni, $uid);
+        $result = ['cateId' => implode(',', $cateId)];
+        if (MarketplaceTradePolicy::active()) {
+            $result['marketplace_again_version'] = 1;
+            $result['source_kind'] = 'temporary';
+            $result['groups'] = $services->getTemporaryCartGroups($uid, $cateId);
+        }
+        return app('json')->success($result);
     }
 
     /**

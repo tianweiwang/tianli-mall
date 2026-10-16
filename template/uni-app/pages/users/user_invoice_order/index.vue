@@ -161,6 +161,8 @@
 				</view> -->
 			</view>
 		</view>
+		<marketplace-again-store-picker :visible="againGroups.length > 1" :groups="againGroups"
+			:disabled="againNavigating" @select="selectAgainStore" @cancel="cancelAgainStore"></marketplace-again-store-picker>
 		<!-- #ifndef MP -->
 		<home></home>
 		<!-- #endif -->
@@ -541,6 +543,9 @@
 		openOrderRefundSubscribe
 	} from '@/utils/SubscribeMessage.js';
 	import home from '@/components/home';
+	import marketplaceAgainStorePicker from '@/components/marketplaceAgainStorePicker/index.vue';
+	import { parseAgainPurchase, againConfirmationUrl } from '@/utils/marketplace-again-purchase.js';
+	import { storefrontMessage } from '@/utils/public-store.js';
 	import payment from '@/components/payment';
 	import orderGoods from "@/components/orderGoods";
 	import ClipboardJS from "@/plugin/clipboard/clipboard.js";
@@ -558,6 +563,7 @@
 		components: {
 			payment,
 			home,
+			marketplaceAgainStorePicker,
 			orderGoods,
 			// #ifdef MP
 			authorize
@@ -567,6 +573,10 @@
 		data() {
 			return {
 				order_id: '',
+				againPending: false,
+				againNavigating: false,
+				againGroups: [],
+				againGeneration: 0,
 				evaluate: 0,
 				cartInfo: [], //购物车产品
 				orderInfo: {
@@ -591,6 +601,7 @@
 			}
 		},
 		onShow() {
+			this.againNavigating = false;
 			if (this.isLogin) {
 				this.getOrderInfo();
 			} else {
@@ -599,6 +610,12 @@
 		},
 		onHide: function() {
 			this.isClose = true;
+			this.againGeneration++;
+			this.againGroups = [];
+		},
+		onUnload() {
+			this.againGeneration++;
+			this.againGroups = [];
 		},
 		onReady: function() {
 			// #ifdef H5
@@ -763,12 +780,42 @@
 			 * 再此购买
 			 * 
 			 */
-			goOrderConfirm: function() {
-				let that = this;
-				orderAgain(that.orderInfo.order_id).then(res => {
-					return uni.navigateTo({
-						url: '/pages/goods/order_confirm/index?new=1&cartId=' + res.data.cateId
-					});
+			goOrderConfirm: function () {
+				if (this.againPending || this.againNavigating || this.againGroups.length) return;
+				this.againPending = true;
+				const generation = this.againGeneration;
+				orderAgain(this.orderInfo.order_id).then(res => {
+					this.againPending = false;
+					if (generation !== this.againGeneration) return;
+					const purchase = parseAgainPurchase(res.data);
+					if (purchase.legacyUrl) return this.openAgainConfirmation(purchase.legacyUrl);
+					if (purchase.groups.length === 1) return this.openAgainConfirmation(againConfirmationUrl(purchase.groups[0]));
+					this.againGroups = purchase.groups;
+				}).catch(error => {
+					this.againPending = false;
+					if (generation === this.againGeneration) this.$util.Tips({title: storefrontMessage(error)});
+				});
+			},
+			selectAgainStore(merId) {
+				if (this.againPending || this.againNavigating) return;
+				const group = this.againGroups.find(row => row.mer_id === merId);
+				if (!group) return;
+				const url = againConfirmationUrl(group);
+				this.againGroups = [];
+				this.openAgainConfirmation(url);
+			},
+			cancelAgainStore() {
+				this.againGroups = [];
+			},
+			openAgainConfirmation(url) {
+				if (this.againNavigating) return;
+				this.againNavigating = true;
+				uni.navigateTo({
+					url,
+					fail: () => {
+						this.againNavigating = false;
+						this.$util.Tips({title: this.$t(`页面暂未打开，请稍后再试`)});
+					}
 				});
 			},
 			confirmOrder: function() {

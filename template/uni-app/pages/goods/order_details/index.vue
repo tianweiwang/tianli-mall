@@ -508,7 +508,10 @@
 					<view class="bnt bg-color" v-if="status.class_status == 3 && !split.length" @click="confirmOrder()">
 						{{ $t(`确认收货`) }}
 					</view>
-					<view class="bnt bg-color" v-if="orderInfo.paid == 1 && !is_gift && isReturn != 1" @tap="goOrderConfirm">{{ $t(`再次购买`) }}</view>
+					<button class="bnt bg-color marketplace-again-button" v-if="orderInfo.paid == 1 && !is_gift && isReturn != 1"
+						:disabled="againPending || againNavigating || againGroups.length > 0" @tap="goOrderConfirm">
+						{{ againPending ? $t(`正在准备`) : againNavigating ? $t(`正在打开`) : $t(`再次购买`) }}
+					</button>
 					<view class="bnt bg-color" v-if="orderInfo.paid == 1 && is_gift != 0 && orderInfo.gift_uid == 0" @tap="giftModalShow = true">{{ $t(`送给好友`) }}</view>
 					<view
 						class="bnt bg-color"
@@ -572,6 +575,8 @@
 			@inv-change="invSub"
 			@inv-cancel="invCancel"
 		></invoice-picker>
+		<marketplace-again-store-picker :visible="againGroups.length > 1" :groups="againGroups"
+			:disabled="againNavigating" @select="selectAgainStore" @cancel="cancelAgainStore"></marketplace-again-store-picker>
 	</view>
 </template>
 
@@ -582,6 +587,9 @@ import { getCustomerType } from '@/api/api.js';
 import { getCustomer } from '@/utils/index.js';
 import { getUserInfo, invoiceList, makeUpinvoice } from '@/api/user.js';
 import home from '@/components/home';
+import marketplaceAgainStorePicker from '@/components/marketplaceAgainStorePicker/index.vue';
+import { parseAgainPurchase, againConfirmationUrl } from '@/utils/marketplace-again-purchase.js';
+import { storefrontMessage } from '@/utils/public-store.js';
 import orderGoods from '@/components/orderGoods';
 import ClipboardJS from '@/plugin/clipboard/clipboard.js';
 import { toLogin } from '@/libs/login.js';
@@ -599,6 +607,7 @@ import { userShare } from '@/api/user.js';
 export default {
 	components: {
 		home,
+		marketplaceAgainStorePicker,
 		invoicePicker,
 		invoiceModal,
 		orderGoods,
@@ -614,6 +623,10 @@ export default {
 			imgHost: HTTP_REQUEST_URL,
 			customForm: '', //自定义留言
 			savedMarketplaceFormGroups: [],
+			againPending: false,
+			againNavigating: false,
+			againGroups: [],
+			againGeneration: 0,
 			//二维码参数
 			codeShow: false,
 			cid: '1',
@@ -736,6 +749,7 @@ export default {
 	},
 
 	onShow() {
+		this.againNavigating = false;
 		if (this.isLogin) {
 			this.getOrderInfo();
 			this.getUserInfo();
@@ -772,6 +786,12 @@ export default {
 	},
 	onHide: function () {
 		this.isClose = true;
+		this.againGeneration++;
+		this.againGroups = [];
+	},
+	onUnload() {
+		this.againGeneration++;
+		this.againGroups = [];
 	},
 	onReady: function () {
 		// #ifdef H5
@@ -1323,18 +1343,42 @@ export default {
 		 *
 		 */
 		goOrderConfirm: function () {
-			let that = this;
-			orderAgain(that.orderInfo.order_id)
-				.then((res) => {
-					return uni.navigateTo({
-						url: '/pages/goods/order_confirm/index?new=1&cartId=' + res.data.cateId
-					});
-				})
-				.catch((err) => {
-					return that.$util.Tips({
-						title: err
-					});
-				});
+			if (this.againPending || this.againNavigating || this.againGroups.length) return;
+			this.againPending = true;
+			const generation = this.againGeneration;
+			orderAgain(this.orderInfo.order_id).then(res => {
+				this.againPending = false;
+				if (generation !== this.againGeneration) return;
+				const purchase = parseAgainPurchase(res.data);
+				if (purchase.legacyUrl) return this.openAgainConfirmation(purchase.legacyUrl);
+				if (purchase.groups.length === 1) return this.openAgainConfirmation(againConfirmationUrl(purchase.groups[0]));
+				this.againGroups = purchase.groups;
+			}).catch(error => {
+				this.againPending = false;
+				if (generation === this.againGeneration) this.$util.Tips({title: storefrontMessage(error)});
+			});
+		},
+		selectAgainStore(merId) {
+			if (this.againPending || this.againNavigating) return;
+			const group = this.againGroups.find(row => row.mer_id === merId);
+			if (!group) return;
+			const url = againConfirmationUrl(group);
+			this.againGroups = [];
+			this.openAgainConfirmation(url);
+		},
+		cancelAgainStore() {
+			this.againGroups = [];
+		},
+		openAgainConfirmation(url) {
+			if (this.againNavigating) return;
+			this.againNavigating = true;
+			uni.navigateTo({
+				url,
+				fail: () => {
+					this.againNavigating = false;
+					this.$util.Tips({title: this.$t(`页面暂未打开，请稍后再试`)});
+				}
+			});
 		},
 		confirmOrder(orderId) {
 			let that = this;
@@ -2602,5 +2646,28 @@ export default {
 	position: absolute;
 	bottom: 40000rpx;
 	right: 30000rpx;
+}
+</style>
+<style scoped lang="scss">
+.order-details .footer button.marketplace-again-button {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
+	min-width: 0;
+	max-width: 100%;
+	height: auto;
+	min-height: 60rpx;
+	margin: 0;
+	padding: 8rpx 16rpx;
+	line-height: 1.4;
+	text-align: center;
+	white-space: normal;
+}
+.order-details .footer button.marketplace-again-button::after {
+	border: 0;
+}
+.order-details .footer .bnt ~ button.marketplace-again-button {
+	margin-left: 18rpx;
 }
 </style>

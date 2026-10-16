@@ -319,6 +319,8 @@ enabled 顾客验证源码检查点（2026-10-16）：上述两PHP已实现并�
 - 必要旧副作用修复：checkProductStock 尾加缺省true的 `adjustPersistentCart`，仅包住普通商品已有持久行读取/下调块；setCart首次调用仅多商户启用且new=true时传false。所有当前商品/SKU、实际库存数量检查与原五元返回保持，persistent和关闭开关分支及活动持久合并复检保持。临时购买保持已有持久cart原值；原逐项temporary失败可能留下前项缓存，沿原3600秒自然到期，不自动重试或宣称整批事务。
 - 本节原Task4清单继续执行：先整合并核实际字节/独立源审，执行聚焦PHP语法、普通解析/单次状态检查、官方H5/MP-Weixin/App-plus预处理与Vue/Sass编译；再从新clean来源做真实本人原单/V1保存单、同店与跨店当前根的temporary/API验证及实际页面。正常库存样本用库存充足的已有持久2/临时3/库存10核原值保持。触发旧下调条件及并发/故障/恢复等用户已停止样本不运行，边界分支仅源码核对，不据普通样本宣称边界实测。320/390/1440的长店名、滚动、外边界和居中视觉仍需实际验收。
 
+再次购买本地源码检查点（2026-10-16）：上述6个必要源码已整合，原againOrder及原可见按钮条件保持，发票页只补遗留方法。Root完整读差异并独立SOURCE复核，导航锁已按本机H5 router.push/afterEach实际调用顺序修正为成功保持、fail/onShow释放；没有运行并发或故障样本。两PHP在既有只读/network none PHP8.2镜像实际语法native0/stderr空，原源前后保持，收据 `artifacts/ms4-again-source/20261016-r1/php-syntax-result.json` 摘要 `2766f610ebef1dbeada9d959d6db88af576e582224265aeaec65d8b880e11ae3`。三Vue经官方H5/MP-Weixin/App-plus预处理、Vue2.6.14模板、Node22.22.2脚本及原Sass实际9组全通过；10条普通纯wire解析/URL解码/组件选择与取消意图检查通过，源码字节前后保持，收据同目录 `ui-source-result.json` 摘要 `274b685b2019521c52e7fbc16340da1f881ea2ddd2c406e37700a4ef56a74f2f`。这些没有伪造认证、订单或API；实际temporary/again接口、完整打包、DOM/视觉仍PENDING。前述d7的12HTTP结果保持其真实来源，不自动归给本次修改后的源码；原Task4/MS4复选状态不变。
+
 ### Task 5: 取消与超时释放
 
 - 接口：整笔未支付且未发货的取消/超时按真实父reserve聚合release，`idem_key = "release:<store_order.id>:<parent_reserve_id>"`；两项为真实已提交PK，尾段是规范U64字符串，不能用非全局唯一的SKU八字节unique。动作摘要绑定保存顾客/商家/订单/父reserve/SKU/数量，顾客取消与系统超时共用动作，演员仅记首次真实执行者；重复不重复释放。未来Task7部分退款用独立真实退款动作键，共同核累计release+return_in不超过父reserve.qty。关单前走可信支付query→close→query closed；unknown或无可信attempt不释放，已支付转待处理，不制造paid或回退平台账户。MS5决定前仅显式testing驱动可做普通未付关单。

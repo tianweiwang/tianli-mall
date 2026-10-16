@@ -22,7 +22,13 @@ use app\services\system\SystemUserLevelServices;
 use app\services\user\member\MemberCardServices;
 use app\services\user\UserServices;
 use app\jobs\ProductLogJob;
+use app\services\marketplace\PublicCatalogServices;
+use app\services\marketplace\order\MarketplaceOrderInput;
+use app\services\marketplace\order\MarketplaceTradePolicy;
+use app\services\marketplace\publiccatalog\PublicCatalogProjection;
+use app\services\marketplace\publiccatalog\PublicCatalogQuery;
 use crmeb\exceptions\ApiException;
+use crmeb\exceptions\AuthUnavailableException;
 use crmeb\services\CacheService;
 use app\services\activity\seckill\StoreSeckillServices;
 use app\services\activity\bargain\StoreBargainServices;
@@ -116,6 +122,51 @@ class StoreCartServices extends BaseServices
         return ['cartInfo' => $cartInfo, 'valid' => $valid, 'invalid' => $invalid, 'deduction' => $deduction];
     }
 
+    /** Groups only the supplied real temporary refs; no quote or new confirmation is created. */
+    public function getTemporaryCartGroups(int $uid, array $refs): array
+    {
+        PublicCatalogQuery::positive($uid);
+        if (!$refs || !array_is_list($refs)) throw new ApiException('请重新选择购买商品');
+        $catalog = app()->make(PublicCatalogServices::class);
+        $groups = [];
+        $groupIndexes = [];
+        $seen = [];
+        foreach ($refs as $ref) {
+            if (!is_string($ref) || MarketplaceOrderInput::reference($ref, 'temporary') !== $ref || isset($seen[$ref])) {
+                throw new ApiException('临时购物车引用已变化，请重新选择商品');
+            }
+            $seen[$ref] = true;
+            $cart = $catalog->temporaryCartData(CacheService::get($ref), $uid);
+            if (($cart['id'] ?? null) !== $ref) throw new AuthUnavailableException();
+            if (MarketplaceOrderInput::unsigned($cart['type'] ?? null, '商品类型') !== 0) {
+                throw new ApiException('当前再次购买仅支持普通商品');
+            }
+            if (MarketplaceOrderInput::unsigned($cart['cart_num'] ?? null, '商品数量') === 0) {
+                throw new ApiException('购买数量错误');
+            }
+            $identity = $catalog->cartIdentity($cart, $uid, true);
+            if ($identity === null) throw new ApiException('商品已下架或规格已失效');
+            $owner = PublicCatalogQuery::positive($identity['root']['mer_id']);
+            if (!isset($groupIndexes[$owner])) {
+                $store = PublicCatalogProjection::store($identity['root']);
+                if (PublicCatalogQuery::positive($store['mer_id']) !== $owner) throw new AuthUnavailableException();
+                $store['mer_id'] = (string)$owner;
+                $groupIndexes[$owner] = count($groups);
+                $groups[] = ['mer_id' => (string)$owner, 'store' => $store, 'cart_refs' => []];
+            }
+            $groups[$groupIndexes[$owner]]['cart_refs'][] = $ref;
+        }
+        $partition = [];
+        foreach ($groups as $group) {
+            foreach ($group['cart_refs'] as $ref) $partition[] = $ref;
+        }
+        $expected = $refs;
+        sort($expected, SORT_STRING);
+        sort($partition, SORT_STRING);
+        if (!$groups || $partition !== $expected) throw new AuthUnavailableException();
+        return $groups;
+    }
+
     /**
      * 使用雪花算法生成订单ID
      * @return string
@@ -149,7 +200,7 @@ class StoreCartServices extends BaseServices
      * @throws \think\db\exception\DbException
      * @throws \think\db\exception\ModelNotFoundException
      */
-    public function checkProductStock(int $uid, int $cartNum, string $unique, int $type, $productId, int $seckillId, int $bargainId, int $combinationId, int $advanceId)
+    public function checkProductStock(int $uid, int $cartNum, string $unique, int $type, $productId, int $seckillId, int $bargainId, int $combinationId, int $advanceId, bool $adjustPersistentCart = true)
     {
         /** @var StoreProductAttrValueServices $attrValueServices */
         $attrValueServices = app()->make(StoreProductAttrValueServices::class);
@@ -189,14 +240,16 @@ class StoreCartServices extends BaseServices
                         throw new ApiException('您要购买的优惠券已失效，无法购买');
                     }
                 }
-                $currentWhere = ['product_id' => $productId, 'product_attr_unique' => $unique, 'uid' => $uid, 'type' => 0, 'status' => 1, 'is_pay' => 0, 'is_new' => 0, 'is_del' => 0];
-                $currentCart = $this->dao->getOne($currentWhere);
-                $stockNum = $currentCart ? (int)$currentCart['cart_num'] : 0;
-                if ($nowStock < ($cartNum + $stockNum)) {
-                    $surplusStock = $nowStock - $cartNum;//剩余库存
-                    if ($currentCart && $surplusStock < $stockNum) {
-                        $cartRef = \app\services\marketplace\order\MarketplaceOrderInput::reference($currentCart['id'], 'persistent');
-                        $this->dao->update(array_merge($currentWhere, ['id' => $cartRef]), ['cart_num' => $surplusStock]);
+                if ($adjustPersistentCart) {
+                    $currentWhere = ['product_id' => $productId, 'product_attr_unique' => $unique, 'uid' => $uid, 'type' => 0, 'status' => 1, 'is_pay' => 0, 'is_new' => 0, 'is_del' => 0];
+                    $currentCart = $this->dao->getOne($currentWhere);
+                    $stockNum = $currentCart ? (int)$currentCart['cart_num'] : 0;
+                    if ($nowStock < ($cartNum + $stockNum)) {
+                        $surplusStock = $nowStock - $cartNum;//剩余库存
+                        if ($currentCart && $surplusStock < $stockNum) {
+                            $cartRef = \app\services\marketplace\order\MarketplaceOrderInput::reference($currentCart['id'], 'persistent');
+                            $this->dao->update(array_merge($currentWhere, ['id' => $cartRef]), ['cart_num' => $surplusStock]);
+                        }
                     }
                 }
                 break;
@@ -260,7 +313,8 @@ class StoreCartServices extends BaseServices
             $this->checkLimit($uid, $product_id, $cart_num, $new);
         }
         //检测库存限量
-        [$attrInfo, $product_attr_unique, $bargainPriceMin, $cart_num, $productInfo] = $this->checkProductStock($uid, $cart_num, $product_attr_unique, $type, $product_id, $seckill_id, $bargain_id, $combination_id, $advance_id);
+        $adjustPersistentCart = !$new || !MarketplaceTradePolicy::active();
+        [$attrInfo, $product_attr_unique, $bargainPriceMin, $cart_num, $productInfo] = $this->checkProductStock($uid, $cart_num, $product_attr_unique, $type, $product_id, $seckill_id, $bargain_id, $combination_id, $advance_id, $adjustPersistentCart);
         if ($new) {
             /** @var StoreOrderCreateServices $storeOrderCreateService */
             $storeOrderCreateService = app()->make(StoreOrderCreateServices::class);

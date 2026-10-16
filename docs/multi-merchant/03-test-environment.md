@@ -92,6 +92,8 @@ customer verify容器有本内网alias audit-app、无宿主端口，显式stop_
 
 同一clean d7来源的H5复用字节门禁已实际通过：当前完整tracked路径集542份与原06662f420构建输入一致、全部大小/摘要相同，原build报告字节匹配。仓库外 `artifacts/ms4-customer-http-preparation/h5-source-reuse-d7c9310ef.json` 为720B、摘要 `996f1ccfc94f5a03c8b2aa41d014ed668be12ef766983c9dcaa902b4338927e1`；没有重跑编译或页面，也未改写原构建source SHA。后继若修改前端，必须重新取得对应来源的构建/页面证明。
 
+再次购买后继H5完整打包合同：新增共用工具与组件使当前完整tracked前端输入实际变为544份；旧542份复用门禁不覆盖新增修改来源。从新clean提交重新冻结实际544路径/字节，在新的短目录执行原离线完整构建流程，沿原29930工具依赖、Node/CLI/Vue/Webpack/Sass版本及原两轮afterEmit/本地资源门禁，不下载依赖、不改原报告。只更新真实HEAD、目录、输入清单/计数及其摘要绑定；已有长路径失败目录保持。完整打包和真实页面结果分别记录，实际顾客、品牌配置、API和视觉责任仍保留。
+
 ## 3. ISO-MIN 环境（MS0a 交付）
 
 ### 3.1 文件
