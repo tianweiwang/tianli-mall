@@ -195,6 +195,10 @@ Restore新H5完整构建（2026-10-17）：Root从clean Main `38a14b889bf2a726cc
 
 独立无业务截图校准仍不完整：本地页1440的原整页JPEG1424×1200，CSS边界原生JPEG1440×1200，后者两次字节相同；390原生capture仍15秒超时，三宽度未通过，不能据此认定截图问题已修或产品布局有缺陷。Root保留原图及诊断，没有转码/裁剪替代验收；owned tab正常关闭并从清单消失、viewport复位。原stdin管道已关闭，随后核原PID/命令和本地唯一调试target，调用原自有stop handler，原服务句柄实际native0、PID及18988/调试端点已消失，无强制终止；有限关闭观察摘要 `f23c93970549207c9b403bd6d24e4817aae6446ed384b1e2ac49ebec6c6df8b5`。该诊断不计业务或完整H5验收，已停止样本仍NOT RUN。
 
+正常H5 R7实际来源与材料（2026-10-17）：Root全文读回prep/customer-h5-restore-profile-r1/PLAN.md、INVERSE.md、assemble-r7.py并采纳独立有限SOURCE PASS，builder30717B/摘要 `1fbbc712658f8363b9036552b4588f5e018869ffbc3b4f89b1f51639142028c7`。实际单AST通过，五源前后保持，收据摘要 `714234fbf5b4026d2ea25035ebceb91a00390c7f4de095f59f21c2db1149780b`；随后仅执行create-only builder，原生会话97340实际exit0，生成candidate-h5-r7完整27文件/三目录。真实新materials producer重核Main1821869完整545前端路径/blob/字节及原/副本29930工具，沿真实新build38a14/报告3271b9ff身份，不重编译或改署；实际采public2536文件/279目录、dist334文件/23目录及两批准输入。
+
+Root另独立用实际字节逆回全部27文件：原7逐字、总21文件未变，只有H5-README、observer、derivation、materials-result、h5-dist manifest及materials producer六项变化；重新采集的四metadata明确使用硬pin且前后保持的R6原字节preimage，不冒称从新摘要恢复旧内容。生成materials producer AST通过，实际13build来源、27候选/原源前后保持，完整收据 `prep/customer-h5-restore-profile-r1-source-check/profile-result.json` 摘要 `91f183551ba5653c2d1cef0448725a295609fe550d9f3edf4846e68ddf7a3e03`。新material结果1748B/摘要 `f4a1c91e63745edc79609501e90cddf1c8b8d114592db40620c3ea71612fc262`，derivation29543B/摘要 `fbb6aad50bb8522f9cbf6c14eacb2c9e2fcfadce8c323898e60a2e5d0ef8b727`。仅SOURCE/真实材料采集，未freeze/Run/HTTP/DOM/27原生JPEG；原截图390超时未修、旧R6保持关闭，完整HC2/EK3/RC8/SD3/SP3与停止样本原责任不变。详见确认设计§12.4。
+
 ## 3. ISO-MIN 环境（MS0a 交付）
 
 ### 3.1 文件

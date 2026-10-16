@@ -185,3 +185,15 @@
 3. 真正新build并记录完整前端source/tool来源、实际输出全文件/目录manifest及摘要。旧b803 build的“所有前端字节相同”已被20文件及新增utility改变，不能再借旧复用收据；不猜新source/asset数量或为通过而放宽旧固定数量门禁，按实际新产物登记完整闭集和正常质量门禁。
 4. 用最终Main产品/H5入口helper和实际新build创建新source successor/profile/freeze，完整绑定source、dist、public-copy、inputs、原native资源与新文件校验/初始化。保留原7＋20 profile来源闭集及已有正常停止/双网/十卷保护；若实际新增profile文件，须先明确更新闭集，不静默扩大。原R6/旧build/旧Run及失败、关闭、zero证据保留真实来源，不改署。
 5. 只在当时实际授权范围执行新的正常完整H5/SQL/视觉、原生正常close及独立zero并分别记证据。新普通流程通过也不等于完整刷新恢复、身份故障、跨号、过期/容量、子页父丢失或未知提交样本通过；用户已停止的刷新/恢复/拒绝/冲突/故障/并发等样本继续NOT RUN。RC8、Task4完整恢复、三端视觉和MS4未完成责任不得由本设计或新正常结果代替。
+
+### 12.4 R7实际source profile与真实材料检查点
+
+Root在已集成的clean Main `182186945d6afa9dddb9b1b804183b6bdbc15911`实际采用仓库外 `prep/customer-h5-restore-profile-r1/` 三源；全文读回与独立有限SOURCE PASS后，单AST真实通过，三prep及Main两PHP前后字节保持。builder为30717B/摘要 `1fbbc712658f8363b9036552b4588f5e018869ffbc3b4f89b1f51639142028c7`，解析收据在同级 `customer-h5-restore-profile-r1-source-check/source-parse-result.json`，摘要 `714234fbf5b4026d2ea25035ebceb91a00390c7f4de095f59f21c2db1149780b`。
+
+随后create-only builder原生会话97340真实exit0，生成 `H:/天俪商城/artifacts/ms4-customer-http-preparation/candidate-h5-r7` 的完整27文件/三目录；仅先写22源码，原materials producer真实重采四metadata、读回后才一次写derivation。材料保留实际新build `restore-context-20261017-r1` 的原HEAD `38a14b889bf2a726ccd86f4f0ea1f1192370fa87`、3815B报告摘要 `3271b9ff34ba3da0a08654a1742fe5aa6438403b3117944374219f707eff2687`，并真实重核当前1821869完整545前端路径/blob/原字节及原/副本29930工具相符；没有重编译、改署报告或调用仅接受原build HEAD的verify_frozen_inputs。
+
+实际public-source为2536文件/279目录、h5-dist为334文件/23目录，完整files/directories含空目录及两批准输入按原schema采集；334产物10378944B/库存签名 `3dbc1438339156e1bedf582c28cd6c7708b6cac63ea68561a07a96032400d8e6`。新materials-result1748B/摘要 `f4a1c91e63745edc79609501e90cddf1c8b8d114592db40620c3ea71612fc262`，h5-derivation29543B/摘要 `fbb6aad50bb8522f9cbf6c14eacb2c9e2fcfadce8c323898e60a2e5d0ef8b727`。
+
+Root另以生成后的实际字节独立逆回27文件，原7逐字、21文件未变；实际变化只有H5-README、observer、h5-derivation、h5-materials-result、manifests/h5-dist及ms4-h5-materials。四个真实重新采集metadata的逆回明确依赖硬pin且首尾未变的R6原字节preimage，未将旧收据当新结果；其余源码由有限四literal/两observer hunk/README前缀/derivation字段完整逆回。生成materials producer AST通过，候选/原源和13项build provenance前后保持，独立结果在 `prep/customer-h5-restore-profile-r1-source-check/profile-result.json`，摘要 `91f183551ba5653c2d1cef0448725a295609fe550d9f3edf4846e68ddf7a3e03`。
+
+本检查点只证明新SOURCE和实际材料形成；没有新freeze/Run/HTTP/DOM/SQL、27原生JPEG或Final32验收。390截图超时与原1440截取观察仍保留，未改driver/bridge/host/bootstrap/close/zero来掩盖问题，也未使用校准图代替业务图。原R6保持已关闭，原HC2/EK3/RC8/SD3/SP3、完整恢复/交易/支付/履约/商家和停止样本责任保持；后继新clean来源的freeze将另核完整当前字节，不把本次追加文档当作前述1821869材料来源。

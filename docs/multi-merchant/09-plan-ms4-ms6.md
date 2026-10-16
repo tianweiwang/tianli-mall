@@ -420,6 +420,8 @@ Restore成套集成检查点（2026-10-17）：Root在R6真实关闭及独立zer
 
 后继构建与正常确认观察接线检查点（2026-10-17）：clean Main38a14已实际完成完整545前端输入的新H5构建和最终静态检查，29930原/副本工具字节及完整源码前后保持；334资源库存签名 `3dbc1438339156e1bedf582c28cd6c7708b6cac63ea68561a07a96032400d8e6`，报告摘要 `3271b9ff34ba3da0a08654a1742fe5aa6438403b3117944374219f707eff2687`，原体积提示保留。Root随后仅整合已独立复核/完整逆回/解析的H5 helper及entry，字节等r2候选；正常B3新增同fresh key的lookup/restore与完整DTO/selection/报价、capture→B3→Final关联，observer仍在新外部候选待profile。非零发票日期按真实getter完整核对，不改fixture或期望业务。03记录实际来源与两PHP解析收据；前端未随此接线改变，构建报告保留原38a14身份。新profile/freeze/完整正常HTTP/DOM/SQL与原截图验收尚未运行；无业务截图校准390宽仍原生超时、已正常关闭，不改变HC2/EK3/RC8/SD3/SP3、完整MS4或停止样本责任。
 
+正常H5 R7来源已形成（2026-10-17）：Root全文读回/独立SOURCE/单AST后实际执行create-only builder native0，candidate-h5-r7完整27源/三目录和真实新materials已生成；原7逐字、总21未变，实际六变化闭集及全27逆回另由Root独立核过。当前Main1821869的545前端与实际新build38a14完整路径/blob/字节相符，原/副本29930工具及原报告身份保持；真实public2536文件/279目录、dist334文件/23目录和两输入均由原producer重采。材料结果摘要 `f4a1c91e63745edc79609501e90cddf1c8b8d114592db40620c3ea71612fc262`，独立生成检查收据摘要 `91f183551ba5653c2d1cef0448725a295609fe550d9f3edf4846e68ddf7a3e03`，完整来源见03/确认设计§12.4。本项没有新freeze/Run、完整HTTP/DOM/原27JPEG或Final32证明，390截图问题仍未修；HC2/EK3/RC8/SD3/SP3及完整MS4/停止样本状态保持，不据source profile提前勾选。
+
 ### Task 5: 取消与超时释放
 
 - 接口：整笔未支付且未发货的取消/超时按真实父reserve聚合release，`idem_key = "release:<store_order.id>:<parent_reserve_id>"`；两项为真实已提交PK，尾段是规范U64字符串，不能用非全局唯一的SKU八字节unique。动作摘要绑定保存顾客/商家/订单/父reserve/SKU/数量，顾客取消与系统超时共用动作，演员仅记首次真实执行者；重复不重复释放。未来Task7部分退款用独立真实退款动作键，共同核累计release+return_in不超过父reserve.qty。关单前走可信支付query→close→query closed；unknown或无可信attempt不释放，已支付转待处理，不制造paid或回退平台账户。MS5决定前仅显式testing驱动可做普通未付关单。
