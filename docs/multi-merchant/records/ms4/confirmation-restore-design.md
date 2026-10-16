@@ -147,3 +147,41 @@
 前端20文件已实施；身份13文件和提交/子页/上传7文件分别经独立有限SOURCE复核，Root核当前差分及必要生产消费者。上传producer、三子页onShow真实身份/owner lookup、完整回调守卫及原业务保持均纳入最终复核。Root实际执行现有官方三平台预处理、Vue模板编译、Node/Babel脚本解析、本地导入解析及样式编译：11 SFC与9 JS在h5/mp-weixin/app-plus共60组通过，issues为空，20源前后字节相同。最终 `ui-syntax-result-r4.json` 摘要 `78b5455dab40812205b588d12c9817d4b247dedce15865814d1d8b36906caddf`，实际Node22.22.2，仅使用既有离线依赖。r3同样20/60通过，摘要 `080454650e3131f4600779275aae81f20a07de5a807c7cb14d3b4ef6b1c32702`；其后只清api/user.js的27行注释尾空格，r4不改检查断言，仅换新输出文件名并重新核最终字节。
 
 最初r1检查因遗漏现有Vue CLI的目录index.vue解析而报12项本地导入缺失，原FAIL源码/收据保持；Root核实际目录与既有官方解析配置后，r2仅补index.vue候选，19源57组通过，原收据保持。后继r3纳入新增必要util.js producer成为20源60组。以上检查不执行组件方法、登录、故障/换号样本、应用、SQL、HTTP或DOM；恢复运行、三端及视觉验收仍NOT RUN，RC8与完整Task4/MS4未完成。
+
+
+## 12. 正常 H5 successor适配：实施合同与后续任务
+
+2026-10-17，基于当前 Restore产品源码与Main/R6联调入口的有限只读比较补充。仅本节设计已记录，尚未适配helper/observer、生成新build/profile或执行正常H5；不改写§11历史证据，不勾RC8，不授权恢复已停止样本。实施须在Root完成现R6原Run正常close及独立zero后，保留Main已有修正再整合；本次只编辑本记录，Main和冻结profile不动。
+
+### 12.1 本次真正的正常路径
+
+正常V1确认已实际改为：当前真实USERINFO(true) → 原check_shipping/fresh confirm一次 → 完整DTO/草稿同步保存并读回 → redirectTo同页仅orderKey → 再真实USERINFO(true)及owner lookup → 无attempt的完整editing才调用只读restore → 共用完整DTO hydrate、本人选择/能力核对与真实computed → 完整不可变attempt封存读回 → 原单次create → 真实未付详情。此自动history替换是正常fresh路径的一部分，不是执行浏览器刷新/恢复样本；不得为沿用旧H5断言取消redirect、跳过lookup/restore或注入组件状态。
+
+源接缝：Restore template/uni-app/pages/goods/order_confirm/index.vue:1734–1748、871–934、1038–1053；api/order.js:247–263。原fresh仍由真实cart/SKU/数量及本商家选择生成唯一原key；后继只能沿同key，不再confirm/cache/set/new cart/again，不续服务端600秒。created/processing始终先按真实owner结果处理，不强求预览或frame。
+
+### 12.2 三层观察和原key的完整绑定
+
+| 层与必要Files/方法 | 有限适配合同 |
+| --- | --- |
+| 新successor browser-v1/customer-network-observer.mjs的template及真实response解析 | 只新增两个POST模板 /api/order/confirmation/:confirmation 与 /api/order/confirmation/:confirmation/restore，沿真实编码key解析，不加任意URL白名单。key须来自本次真实fresh confirm；lookup正文为原始空JSON对象{}，restore仅addressId/invoice_id/payType三字段，地址/发票沿本人实际ID或显式0，不能从oracle重造请求。原始请求/响应字节、完整hash、request_id及实际来源保持；restore从data.confirmation读取完整DTO，不当computed.result或新fresh确认覆盖原绑定。 |
+| Main help/audit-regressions/isolated/lib/ms4-customer-h5-normal.php的m4ch_stage_target、m4ch_stage_network | 正常阶段仅B3纳入上述两个实际POST模板；GET user继续非空且逐条核真实本UID，不改成恰好一次。PHP assoc解码{}为[]，须仅对lookup结合原始post_data核“空object”形状，不全局放宽POST数组。restore精确key/type交给既定有限输入合同；保留原JSON/envelope/实际字节及同request_id投影比对。两新模板public nested_status仍NULL，真实data.state在私有完整capture核验，不伪造computed/create的嵌套SUCCESS。 |
+| 同helper的m4ch_stage_frame及正常B3/Final DTO、selection核验 | 正常预览要求真实lookup/restore均为not_found且key等于原fresh key；unexpected created/processing如实终止本预览阶段，不假造not_found。核restore.confirmation.orderKey、V1/mer/source、完整字符串refs、product/SKU/qty、两组表单定义/hash、用户与报价消费和原confirm/实际owner cache frame一致；selection三字段提示与真实本人记录、none/resolved/unavailable保持原语义。用实际restore DTO及最终computed绑定本次所见视图和报价，不能只允许新路由而不验内容，不能复用旧价格为授权。 |
+| Main help/audit-regressions/isolated/ms4-customer-h5.php的m4ch_http_ui_network、m4ch_http_ui_capture | 只同步新增上述两个有限network模板。confirm-filled接受正常redirect后的同源 /pages/goods/order_confirm/index?orderKey=原key，严格唯一query键、规范解码key、无额外身份/凭据参数；不再强求已被正常history替换的cartId/mer_id。入口不把URL本身当授权：原key、mer及refs最终与本次真实fresh/lookup/restore/frame和实际confirm-filled capture完整关联。 |
+
+时序必须无循环：confirm-filled capture通常先于B3 stage封存。入口在写capture时先核同源/有限URL/完整I8及真实DOM、network；B3 oracle再用已经存在的原始network/capture将URL orderKey与原confirm key/frame核等，最终coverage重核关联。不得让入口等待未来stage-B3文件、预先写假的key/DTO或改动已封存capture。R6 browser的sceneMatches(confirm-filled)本已核可编辑DOM而未强制cartId，不为此无谓重写；其他真实动作/截图/review门禁保持。
+
+新增观察仍只在原私有capture/pipe内保存完整body；公开投影保持既定字段和私密hash prefix12，不能把本地draft、PII/body/token或完整私有消息复制到公共evidence。未实际走到的地址编辑、发票新建或upload接口不因此整批加白；原child-return/onShow/owner核和upload第六current合同必须随产品源码保留，但不据正常下单结果声称这些停止中的样本已验收。
+
+### 12.3 保持的断言、新来源和实施顺序
+
+原25个完整业务表＋7辅助表、真实默认PDO/原owner认证允许增量、B0–B4及Final、原sealed inputs/fixture身份与完整SQL读回继续保持。正常仍为两商家/三cart行、仅目标商家两行创建一笔未付订单；原78.56总额、8.01运费、24.25成本、字符串0表单答案、发票/地址/完整form/hash/refs、未选cart保留、ledger/reserve/root/SKU/日志/库存守恒等已有断言不因新增只读POST而降低。lookup/restore不造cart、frame、ledger claim或库存消费；实际认证的user.last_time按原owner_auth_only规则核验，不冒称数据库绝对零写。新正常B3必须仍在唯一create之前核原key/完整frame，B4仍核真实create wire、唯一保存结果和真实详情，不能靠localStorage或UI显示冒充已保存订单。
+
+当前Restore中的H5 helper仍为91294B，Main为91453B；Main:474跨producer environment使用m4ch_http_same_environment的修正必须保留，不能整目录复制回退。R6已采用的capture structuredClone比较及native截图成功后才record的顺序也须由新successor原样继承，不修改旧R6 source/收据来冒称新产品验证。
+
+后续实施顺序如下，状态仍只由09现RC执行清单记录，本节不另设完成勾选：
+
+1. Root审本合同，完成原R6正常关闭/独立zero后整合已核5PHP与20前端，保留13身份/7提交子页上传的完整配套；不遗漏新增marketplace-confirmation-draft.js或util producer。user.js及手机登录弹层已有CRLF→LF、注释尾空白变化必须如实纳入最终源字节，不能在build identity中口头忽略。
+2. 仅依§12.2适配observer/Main H5 helper/entry及必要DTO/frame oracle，独立SOURCE与允许的最小语法/来源检查后才形成新clean源。原HTTP shared/helper和原12HTTP责任不因H5新增模板改成另一套接口；不扩大原PHP source-extra白名单或业务DML权限。
+3. 真正新build并记录完整前端source/tool来源、实际输出全文件/目录manifest及摘要。旧b803 build的“所有前端字节相同”已被20文件及新增utility改变，不能再借旧复用收据；不猜新source/asset数量或为通过而放宽旧固定数量门禁，按实际新产物登记完整闭集和正常质量门禁。
+4. 用最终Main产品/H5入口helper和实际新build创建新source successor/profile/freeze，完整绑定source、dist、public-copy、inputs、原native资源与新文件校验/初始化。保留原7＋20 profile来源闭集及已有正常停止/双网/十卷保护；若实际新增profile文件，须先明确更新闭集，不静默扩大。原R6/旧build/旧Run及失败、关闭、zero证据保留真实来源，不改署。
+5. 只在当时实际授权范围执行新的正常完整H5/SQL/视觉、原生正常close及独立zero并分别记证据。新普通流程通过也不等于完整刷新恢复、身份故障、跨号、过期/容量、子页父丢失或未知提交样本通过；用户已停止的刷新/恢复/拒绝/冲突/故障/并发等样本继续NOT RUN。RC8、Task4完整恢复、三端视觉和MS4未完成责任不得由本设计或新正常结果代替。
