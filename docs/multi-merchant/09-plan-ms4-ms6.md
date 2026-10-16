@@ -289,7 +289,7 @@ verify正式容器自身启动真实setsid PHP HTTP child，以同内网alias `a
 读回闭集为原23业务表加system_event/system_notification，共25表。请求前只读核真实login_success通知渠道关闭、user_login/user_add_cart启用自定义事件为空、queue_open=0，不跳过生产事件。三次cart/add的合法商品统计实际核后建立create基线；登录只允许本人last_time/last_ip正常变化，其余列/其他用户保持，后续鉴权只允许本人last_time。逐项核两订单项/两reserve与保存版本/真实UID/mer/SKU/原cart引用、金额/库存/血缘、原发票内部orderPK及抬头/状态、两组定义/hash/答案、ledger完整原请求摘要/state1/post_commit_done1/cancel_at0、选中cart消费与未选行全列保持；replay/lookup/已存computed的业务事实保持，订单仍未支付。源复核/语法不能代替这条真实HTTP链，源、native终态、正常关闭与Root独立核零分别记录。
 
 - [x] 完成上述两文件及必要仓库外customer profile，独立审源和聚焦PHP语法通过；原生产源码/closed驱动不改。
-- [ ] 从新clean来源运行该有限persistent正常HTTP链，取得25表独立读回及真实child正常退出证据，再逐项勾对应范围；原页面与其他case责任不取消。
+- [x] 以clean 012988来源完成该有限persistent正常HTTP链：12HTTP、25表独立读回、真实child收尾、正常关闭和独立六查询零均完成，见下方Run记录。此勾选仅该原来源范围，原页面与其他case责任不取消，新H5/C分支不据此通过。
 
 enabled 顾客验证源码检查点（2026-10-16）：上述两PHP已实现并整合，源审修正fixture账号长度、extras排序、原生terminal与created字段区别，以及正常/proc消失的warning抑制。live child区间保留完整read-only隔离检查并改为可抛异常，以确保单次TERM/finally收尾；收尾自身异常保留原句柄及首失败，不升级。仓库外profile沿原22个host函数与R7三个terminal函数完整字节复用，独立源审覆盖各真实阶段和正常关闭；新business消费者只核helper实际返回字段。Root实际执行三个PHP8.2语法子进程、三Python AST、原函数字节核对及Compose无插值配置检查，四个原生子进程均0/stderr空，11份来源前后不变；收据 `artifacts/ms4-customer-http-preparation/final-source-check-result-r1.json` 摘要 `4a6616c56591dd6803c48148d984e8e5fba64013476b7d8fce5ec02b514a2f22`。Main两文件与该实际语法检查来源逐字节相同。此检查没有创建Run、App、SQL、HTTP、认证演员或DOM；真实12请求/25表与正常关闭、独立核零仍待新clean来源运行，不据源码勾下一项或签收MS4。
 
@@ -340,6 +340,8 @@ H5准备入口/helper已写入上述两新PHP，独立源审、Root两处TERM最
 当前012988普通persistent回归已完成：新Run `2026101610263631270f` 真实12HTTP/25表全部通过，结果摘要 `2efbc7a842394687f5195346c48dfb96ba40c32257e3c6786d13ff5a6cf95e82`，正常关闭摘要 `8312f410444b78fd7aa9b5d46077a892969f79e7f0efe7deae082ae1f02dba2b`，独立六查询零摘要 `11e3f10d707b1dfcb6d87e06e0a94f14a140d1b1536772643e8ab6f42acd65c9`。真实child单次TERM、原生负exit/proc_close保留，原3CID/1网/6卷正常非force移除后才解除Main冻结；仅此来源的API范围通过，不记H5/DOM或Task4/MS4完整完成。
 
 H5源码准备按03取得独立copier/bootstrap语法、R1纯freeze及新R2调度SOURCE/AST/help结果；新R2缺serve/ingress/浏览器/十卷关闭核零，仍不启动。顾客网络观察器仅SOURCE/Node语法，不能充当真实页面证明。继续本Task4同一清单：按03先将shared saved追加默认null第九参数保留原8arg路径，新增真实C未结算cart核验；在原三sealed文件内先封actor并把完整descriptor仅存私有oracle，后续serve仅RO消费原browser卷，经真实producer/最终files/serve身份与固定getter和Root内存桥核对。原金额、表单、库存、25+7表、真实UI producer、temporary/again/确认刷新、商家原验收及后续责任保持；完成必要源码/语法后仍须新clean来源真实运行，不挪用本次012988结果。
+
+shared saved可选C分支与H5私有actor descriptor已按上述合同整合，Root完整逆回/独立源审及两PHP语法native0完成，实际收据1388B/摘要 `fec877bdf9270df5632e0f3ff6993d194f389ceb8cfeebee7a0cf9d63b8e4a2d`。旧8参数/default路径和全部业务断言保持；只是SOURCE/PHP语法，新的H5真实prepare、C购物车/UI、actor内存交接、25+7阶段后验和正常关闭仍未运行，Task4/MS4保持未完成。
 
 ### Task 5: 取消与超时释放
 

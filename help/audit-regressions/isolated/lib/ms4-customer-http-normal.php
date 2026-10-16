@@ -337,7 +337,7 @@ function m4cb_cart_stats(array $rows,array $fixture,int $from,int $through): voi
         $actual[]=(int)$row['product_id'].':'.(int)$row['cart_num'];
     }sort($actual,SORT_STRING);sort($expected,SORT_STRING);m4c_expect($actual===$expected,'M4C_EXACT_CART_STAT_MULTISET');
 }
-function m4cb_saved(PDO $pdo,array $fixture,array $request,string $idem,array $frame,array $answers,string $number,array $before): array
+function m4cb_saved(PDO $pdo,array $fixture,array $request,string $idem,array $frame,array $answers,string $number,array $before,?array $secondStoreLine=null): array
 {
     $uid=(int)$fixture['user']['uid'];$mer=(int)$fixture['merchant']['mer_id'];
     $connection=Db::connect();$parentPdo=$connection->getPdo();
@@ -420,9 +420,57 @@ function m4cb_saved(PDO $pdo,array $fixture,array $request,string $idem,array $f
     $stored=json_decode($order['custom_form'],true,32,JSON_THROW_ON_ERROR);$expectedForms=$frame['custom_form'];
     foreach($expectedForms as$i=>&$group){foreach($group['fields']as$j=>&$field)$field['value']=$answers[$i]['values'][$j]['value'];unset($field);}unset($group);
     m4c_expect($stored===$expectedForms&&count($stored)===2&&$stored[0]['fields'][1]['value']==='0','M4C_COMPLETE_NONEMPTY_SAVED_PRODUCT_FORMS');
+    if($secondStoreLine===null){
     $remaining=m4cb_rows($pdo,'SELECT * FROM `eb_store_cart` WHERE `uid` = ? ORDER BY `id`',[$uid]);
     $oldUnselected=array_values(array_filter($before['eb_store_cart'],static fn(array $row):bool=>$row['product_attr_unique']===$fixture['skus'][$fixture['unselected']['sku_id']]['unique']));
     m4c_expect(count($remaining)===count($oldUnselected)&&count($remaining)===1,'M4C_ONLY_UNSELECTED_CART_REMAINS');m4cb_equal_row($remaining[0],$oldUnselected[0]);
+    }else{
+    $remaining=m4cb_rows($pdo,'SELECT * FROM `eb_store_cart` WHERE `uid` = ? ORDER BY `id`',[$uid]);
+    $lineKeys=array_keys($secondStoreLine);sort($lineKeys,SORT_STRING);
+    m4c_expect($lineKeys===['product_id','qty','sku_id']&&is_int($secondStoreLine['product_id'])&&$secondStoreLine['product_id']>0
+        &&is_int($secondStoreLine['sku_id'])&&$secondStoreLine['sku_id']>0&&is_int($secondStoreLine['qty'])&&$secondStoreLine['qty']>0,
+        'M4C_H5_ACTUAL_SECOND_STORE_INTENT_LINE');
+    $otherProduct=$fixture['products'][$secondStoreLine['product_id']]??null;$otherSku=$fixture['skus'][$secondStoreLine['sku_id']]??null;
+    $sameStoreLine=$fixture['unselected'];$sameStoreProduct=$fixture['products'][$sameStoreLine['product_id']]??null;
+    $sameStoreSku=$fixture['skus'][$sameStoreLine['sku_id']]??null;
+    m4c_expect(is_array($otherProduct)&&is_array($otherSku)&&is_array($sameStoreProduct)&&is_array($sameStoreSku),
+        'M4C_H5_ACTUAL_TWO_DISTINCT_UNSELECTED_SKU_SOURCES');
+    $otherMer=(int)$otherProduct['mer_id'];$otherMerchant=$fixture['merchants'][$otherMer]??null;
+    m4c_expect((int)$otherProduct['id']===$secondStoreLine['product_id']&&(int)$otherSku['id']===$secondStoreLine['sku_id']
+        &&(int)$otherSku['product_id']===$secondStoreLine['product_id']&&(int)$otherSku['type']===0
+        &&is_string($otherSku['unique'])&&$otherSku['unique']!==''&&$otherMer>0&&$otherMer!==$mer
+        &&is_array($otherMerchant)&&(int)$otherMerchant['mer_id']===$otherMer
+        &&($fixture['merchants'][$mer]??null)===$fixture['merchant'],'M4C_H5_REAL_SECOND_STORE_ROOT_SKU_AND_MERCHANT');
+    m4c_expect((int)$sameStoreProduct['id']===$sameStoreLine['product_id']&&(int)$sameStoreProduct['mer_id']===$mer
+        &&(int)$sameStoreSku['id']===$sameStoreLine['sku_id']&&(int)$sameStoreSku['product_id']===$sameStoreLine['product_id']
+        &&(int)$sameStoreSku['type']===0&&is_string($sameStoreSku['unique'])&&$sameStoreSku['unique']!==''
+        &&$secondStoreLine['product_id']!==$sameStoreLine['product_id']&&$secondStoreLine['sku_id']!==$sameStoreLine['sku_id'],
+        'M4C_H5_ORIGINAL_SAME_STORE_UNSELECTED_SKU_SEPARATE');
+    $expectedSelection=$actualSelection=[];
+    foreach($fixture['selected']as$line)$expectedSelection[]=$line['product_id'].':'.$line['sku_id'].':'.$line['qty'];
+    foreach($selection as$line)$actualSelection[]=$line['product_id'].':'.$line['sku_id'].':'.$line['qty'];
+    sort($expectedSelection,SORT_STRING);sort($actualSelection,SORT_STRING);
+    m4c_expect(count($expectedSelection)===2&&count($actualSelection)===2&&$actualSelection===$expectedSelection,
+        'M4C_H5_ORIGINAL_ACTUAL_SELECTED_PRODUCT_SKU_QUANTITIES');
+    $oldUnselected=array_values(array_filter($before['eb_store_cart'],static fn(array $row):bool=>(int)$row['uid']===$uid
+        &&(int)$row['product_id']===$secondStoreLine['product_id']&&(int)$row['type']===0&&$row['product_attr_unique']===$otherSku['unique']));
+    m4c_expect(count($oldUnselected)===1,'M4C_H5_ONE_REAL_SECOND_STORE_CART_BEFORE_CREATE');
+    $nativeUnselected=m4cb_rows($pdo,'SELECT c.* FROM `eb_store_cart` c'
+        .' INNER JOIN `eb_store_product` p ON p.`id` = c.`product_id`'
+        .' INNER JOIN `eb_store_product_attr_value` s ON s.`product_id` = p.`id` AND s.`unique` = c.`product_attr_unique` AND s.`type` = c.`type`'
+        .' INNER JOIN `eb_marketplace_merchant` m ON m.`mer_id` = p.`mer_id`'
+        .' WHERE c.`id` = ? AND c.`uid` = ? AND c.`product_id` = ? AND c.`product_attr_unique` = ? AND s.`id` = ? AND m.`mer_id` = ? AND c.`cart_num` = ?'
+        .' AND c.`type` = 0 AND c.`status` = 1 AND c.`is_del` = 0 AND c.`is_pay` = 0 AND c.`is_new` = 0'
+        .' AND c.`seckill_id` = 0 AND c.`bargain_id` = 0 AND c.`combination_id` = 0 AND c.`advance_id` = 0',
+        [$oldUnselected[0]['id'],$uid,$secondStoreLine['product_id'],$otherSku['unique'],$secondStoreLine['sku_id'],$otherMer,$secondStoreLine['qty']]);
+    m4c_expect(count($nativeUnselected)===1&&count($remaining)===1,'M4C_H5_ONLY_REAL_SECOND_STORE_CART_REMAINS');
+    m4cb_equal_row($nativeUnselected[0],$oldUnselected[0]);m4cb_equal_row($remaining[0],$oldUnselected[0]);
+    $sameStoreBefore=array_values(array_filter($before['eb_store_cart'],static fn(array $row):bool=>(int)$row['uid']===$uid
+        &&(int)$row['product_id']===$sameStoreLine['product_id']&&$row['product_attr_unique']===$sameStoreSku['unique']));
+    $sameStoreAfter=m4cb_rows($pdo,'SELECT * FROM `eb_store_cart` WHERE `uid` = ? AND `product_id` = ? AND `product_attr_unique` = ? ORDER BY `id`',
+        [$uid,$sameStoreLine['product_id'],$sameStoreSku['unique']]);
+    m4c_expect($sameStoreBefore===[]&&$sameStoreAfter===[],'M4C_H5_ORIGINAL_SAME_STORE_UNSELECTED_SKU_HAS_NO_CART');
+    }
     $status=m4cb_rows($pdo,'SELECT * FROM `eb_store_order_status` WHERE `oid` = ?',[$id]);
     m4c_expect(count($status)===1&&(int)$status[0]['oid']===$id&&$status[0]['change_type']==='cache_key_create_order'
         &&$status[0]['change_message']==='订单生成'&&(int)$status[0]['change_time']===(int)$order['add_time'],'M4C_ONE_PRODUCTION_POST_COMMIT_STATUS');

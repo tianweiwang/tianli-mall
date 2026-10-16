@@ -360,12 +360,19 @@ function m4ch_prepare(array $source): array
             'custom_form_inputs'=>$formInputs,'mark'=>'普通顾客页面下单','target_order_state'=>'unpaid']];
     $actors=$identity+['scope'=>'NORMAL_CUSTOMER_H5_PRIVATE_ACTORS','actors'=>['customer'=>
         ['uid'=>$uid,'account'=>$private['account'],'password'=>$private['password']]]];
+    $actorPath='/run/audit-http-browser/customer-actors.json';$actorProof=m4ch_private_new($actorPath,$actors);
+    clearstatcache(true,$actorPath);$actorStat=lstat($actorPath);
+    m4c_expect(is_array($actorStat)&&($actorStat['mode']&0170000)===0100000&&!is_link($actorPath)
+        &&($actorStat['mode']&0777)===0600&&$actorStat['uid']===posix_geteuid()&&$actorStat['size']===$actorProof['bytes'],
+        'M4C_H5_ACTORS_REAL_PRIVATE_DESCRIPTOR_FILE');
+    $oracle['actor_descriptor']=['path'=>$actorPath,'sha256'=>$actorProof['sha256'],'bytes'=>$actorProof['bytes'],
+        'owner_uid'=>$actorStat['uid'],'mode'=>'0600'];
     $sealed=[];
     foreach(['sql-baseline'=>['/run/audit-http-control/sql-baseline.json',$baseline],
-        'customer-oracle'=>['/run/audit-http-control/customer-oracle.json',$oracle],
-        'customer-actors'=>['/run/audit-http-browser/customer-actors.json',$actors]]as$name=>[$path,$value]){
+        'customer-oracle'=>['/run/audit-http-control/customer-oracle.json',$oracle]]as$name=>[$path,$value]){
         $proof=m4ch_private_new($path,$value);$sealed[$name]=['sha256_prefix'=>$proof['prefix'],'bytes'=>$proof['bytes']];
     }
+    $sealed['customer-actors']=['sha256_prefix'=>$actorProof['prefix'],'bytes'=>$actorProof['bytes']];
     unset($private,$loaded,$again,$actors,$value);
     return ['fixture_counts'=>['customers'=>1,'merchants'=>2,'products'=>3,'skus'=>4,'cart_rows'=>0,'orders'=>0],
         'configuration_keys'=>array_keys($configuration['fixed_values']),'language_counts'=>['types'=>1,'countries'=>1,'user_codes'=>1179],

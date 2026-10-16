@@ -130,6 +130,8 @@ H5仓库外源码后继检查点：R1的guarded bootstrap、copier主入口及�
 
 账号交接选择同一现有browser-secrets卷由后续真实serve角色只读挂载；compose/host/entry/私有桥的精确mount/source/环境门禁同步新增这一项RO，保留prepare/files原终态后移除顺序，不给files扩卷或持久保存host凭证。先在新H5 helper真实封actor，将同一原文件完整sha256/bytes/实际owner_uid/0600描述置于既有私有oracle.actor_descriptor，再create-only封oracle；仅三原私密文件，不公开完整私密hash，避免把prefix12当完整producer校验或形成循环绑定。最终真实serve进程固定actor-meta只读getter和Root内存桥必须同时核原prepare terminal/result/binding、同原十卷身份、完整私有descriptor及同producer内容、真实serve CID/env/mount和最终files成功后才消费真实账号。当前只改必要producer与saved接口；serve/ingress/桥/阶段SQL/正常关闭和独立zero沿原Task4继续实施，未实现前不启动新H5 Run。
 
+保存行/私有actor接口源码检查点（2026-10-16）：上述两项必要修改已整合。shared helper为56335B/摘要 `9d2e58d408306c8a43e8dd6ca254a711409f2909cf930c4606d2d286c57527cc`，H5 helper为32854B/摘要 `86f523bbbbac1ca9b467991f6b563b311af32e119391146163033e6f09313c74`；Root分别完整字节逆回到原文件，独立源审确认只改签名与null/C购物车块、末端actor封存及私有descriptor，旧8参数caller/默认分支、原writer及所有业务/公开result合同保持。Root在原只读/network none PHP8.2镜像执行两项聚焦语法检查，native0/stderr空、两源前后相同；`artifacts/ms4-customer-h5-oracle-source/20261016-r1/php-syntax-result.json` 1388B/摘要 `fec877bdf9270df5632e0f3ff6993d194f389ceb8cfeebee7a0cf9d63b8e4a2d`。此项未加载App/SQL/HTTP/DOM或创建H5 Run，C分支和新actor实际封存/消费仍待新来源运行；012988普通通过不重标到新源。
+
 ## 3. ISO-MIN 环境（MS0a 交付）
 
 ### 3.1 文件
