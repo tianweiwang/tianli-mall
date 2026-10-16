@@ -62,6 +62,8 @@ HTTP最终普通页面核对合同（编码前）：新增只读`plan` ingress�
 
 本机浏览器运行限制（2026-10-16）：后继普通复验使用Edge或Chrome中本任务实际创建并核归属的标签，原owned-tab关闭证明由外部浏览器真实完成。内置浏览器IAB仅可复用或导航，不自动执行tab.close/browser.close、CDP Target.closeTarget/Browser.close、关闭快捷键或等价操作，不主动复现客户端退出；当前拦截钩子尚未获信任，不能依赖其保护。若后续用户明确指定IAB，保留其选择并先调整必要收尾记录，不能伪造closed证明。此限制不改变已执行R5的历史事实或业务验收结果。
 
+普通助手终态记录修复合同（2026-10-16，R6关闭并独立核零后实施）：真实助手观察超时只表示仍在运行；Root等待同一CID的原生wait实际结束后，仍沿原observe/finish-helper入口核对。统一终态保存函数只接纳真实inspect的exited、严格整数PID0/restart0/exit_code，保留观察到的真实非0退出值。observe每次见到终态均create-only保存或严格比对；普通remove_finished和HTTP同名路径在原身份、完整mount及正常exit0核对后、任何rm之前调用同一保存函数。已有终态必须字段键集合相同，完整mount对象多重集及重复计数相同，其余字段的JSON类型和值逐项严格相同；不覆盖、不从created/result或哈希补造。原HTTP前置必须有完整auth terminal的断言保持。当前已删除助手的缺失终态继续缺失，本轮只能有限正常关闭，不能重开或冒认HTTP通过。新来源仍须原34/25/9/23、独立空表4图、正常关闭和独立核零共同验收；只运行已授权的普通样本。
+
 ## 3. ISO-MIN 环境（MS0a 交付）
 
 ### 3.1 文件
