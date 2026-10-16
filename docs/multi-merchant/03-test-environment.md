@@ -96,6 +96,8 @@ customer verify容器有本内网alias audit-app、无宿主端口，显式stop_
 
 再次购买来源H5完整构建实际通过（2026-10-16）：clean Main `b803687d089baecd8b37cee716bbd54d857dd42e`，独立短目录 `artifacts/ms4-h5/b803687d0-r1/`。Root唯一执行原离线流程，544份真实输入及29930份原工具/副本前后字节保持；实际原生编译和最终静态门禁均exit0。两轮pass为1/2，afterEmit仅2，一次invalidate、8次purge；实际dist为334文件/10290912B，完整清单摘要 `cd26d49a4f32fb2aa42531d061e5cb3f2cc3f25510b23dec474a7c5b02f30b46`，三个index本地引用和唯一店铺chunk核对通过。第二轮保留实际asset/entrypoint size警告；未屏蔽警告或据index无远程引用推断运行时无统计请求。`BUILD-REPORT.json` 为3815B、摘要 `637a25c7838318bbc5bef78e3aa06c43f9cd92dba33c0f9b189816419f735ed0`；本次仅构建及静态资源检查，PHP/API/SQL/浏览器、真实登录交易和部署均非该构建的证明范围，原未完成项与用户停止样本保持。
 
+顾客页面联调的共享账号修正合同（实施前）：只修改 `help/audit-regressions/isolated/lib/ms4-customer-http-normal.php` 中的隔离夹具账号生成和格式校验。原Run拼接账号不符合页面maxlength=11及账号规则，改用 `bin2hex(random_bytes(5))`，生成/加载均核恰好10位小写十六进制；UID仍取真实INSERT/lastInsertId，密码仍为24位且走原生产reset及native读回。原private schema/owner/0600/哈希和prepare绑定、顶层account与fixture.user.account严格相等保持；完整用户native行比较仍由原verify在登录前执行，不能搬到任意加载时点。原9-extra源码闭集、12HTTP/25表、全部数量及断言保持。Root先做聚焦语法和来源差分检查，再从新clean来源运行独立完整普通HTTP及正常关闭/核零；这项修正不等于顾客H5实际登录已验收，也不修改旧Run结果。
+
 ## 3. ISO-MIN 环境（MS0a 交付）
 
 ### 3.1 文件

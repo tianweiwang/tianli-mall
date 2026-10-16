@@ -323,6 +323,10 @@ enabled 顾客验证源码检查点（2026-10-16）：上述两PHP已实现并�
 
 对应b803687d0前端完整打包已实际完成：Root沿新短目录和冻结544份输入执行编译、最终静态资源门禁，均native0，完整源/29930依赖前后保持。实际334份dist及本地资源核对通过；第二轮体积警告如实保留。构建报告摘要 `637a25c7838318bbc5bef78e3aa06c43f9cd92dba33c0f9b189816419f735ed0`，详情见03。只解除上述完整打包PENDING，不据此解除真实temporary/again接口、顾客DOM/视觉、确认恢复或Task4/MS4的未完成状态。
 
+顾客页面联调准备仍沿本Task4清单：先按03仅修共享夹具账号为真实10位随机十六进制并重跑原独立12HTTP/25表模式。H5后继另扩第二店、真实页面配置/主题及独立oracle；原9-extra顾客来源字段保持，新增H5来源单独绑定；DML和HTTP子进程均沿原顾客完整环境传递，不能照搬缺少marketplace/trade/self字段的商家白名单。H5商品访问事件、visit统计及必要配置的实际生产者须先核清再记录实施合同，不能把原25表或源码设计当作完整页面无副作用证明。真实顾客DOM、temporary/again、完整确认恢复、原商家验收及Task4/MS4继续未完成。
+
+共享账号源码检查点：仅上述生成/加载两处必要hunk已整合，完整候选差分经Root逐字节复算；密码和全部原业务断言保持。固定PHP8.2只读/network none语法检查实际native0/stderr空，源前后保持；收据 `artifacts/ms4-customer-account-source/20261016-r1/php-syntax-result.json` 841B，摘要 `1b7106812d3f9012787df74663a764a8d472059e78f1dbe52a621cc057932458`。尚未在本检查点发出业务请求，新的原12HTTP/25表及H5验证另记，不挪用旧Run通过结果。
+
 ### Task 5: 取消与超时释放
 
 - 接口：整笔未支付且未发货的取消/超时按真实父reserve聚合release，`idem_key = "release:<store_order.id>:<parent_reserve_id>"`；两项为真实已提交PK，尾段是规范U64字符串，不能用非全局唯一的SKU八字节unique。动作摘要绑定保存顾客/商家/订单/父reserve/SKU/数量，顾客取消与系统超时共用动作，演员仅记首次真实执行者；重复不重复释放。未来Task7部分退款用独立真实退款动作键，共同核累计release+return_in不超过父reserve.qty。关单前走可信支付query→close→query closed；unknown或无可信attempt不释放，已支付转待处理，不制造paid或回退平台账户。MS5决定前仅显式testing驱动可做普通未付关单。

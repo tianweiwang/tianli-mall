@@ -228,7 +228,8 @@ function m4c_prepare_fixture(array $source): array
             'member_card_status'=>0,'member_price_status'=>0,'store_self_mention'=>0,'invoice_func_status'=>1,'special_invoice_status'=>0,
             'offline_pay_status'=>1,'offline_postage'=>0,'integral_ratio'=>'0.00','queue_open'=>0,'order_cancel_time'=>'0']as$key=>$value)
             m4cb_insert($pdo,'eb_system_config',['menu_name'=>$key,'type'=>'text','value'=>json_encode($value,JSON_THROW_ON_ERROR)]);
-        $user=m4cb_insert($pdo,'eb_user',['account'=>'ms4c-'.getenv('AUDIT_RUN_ID'),'nickname'=>'普通HTTP顾客','user_type'=>'h5',
+        $account=bin2hex(random_bytes(5));m4c_expect(preg_match('/\A[a-f0-9]{10}\z/D',$account)===1,'M4C_UI_COMPATIBLE_RANDOM_ACCOUNT');
+        $user=m4cb_insert($pdo,'eb_user',['account'=>$account,'nickname'=>'普通HTTP顾客','user_type'=>'h5',
             'is_money_level'=>0,'status'=>1,'is_del'=>0,'spread_uid'=>0,'add_time'=>$now],'uid');
         $merchant=m4cb_insert($pdo,'eb_marketplace_merchant',['name'=>'通用HTTP店铺','review_status'=>1,'accept_orders'=>1,'fulfillment_enabled'=>1,
             'security_locked'=>0,'after_sale_contact'=>'专用隔离售后','add_time'=>$now,'update_time'=>$now],'mer_id');
@@ -295,7 +296,8 @@ function m4cb_fixture_load(array $source): array
         &&$prepare['source_binding_sha256']===$value['prepare_source_binding_sha256']
         &&$prepare['business']['fixture_sha256_prefix']===substr(hash('sha256',$raw),0,12)
         &&$prepare['business']['fixture_bytes']===strlen($raw),'M4C_PRIVATE_FIXTURE_BOUND_TO_ACTUAL_PREPARE_RESULT');
-    m4c_expect(is_string($value['account'])&&$value['account']===$value['fixture']['user']['account']
+    m4c_expect(is_string($value['account'])&&preg_match('/\A[a-f0-9]{10}\z/D',$value['account'])===1
+        &&$value['account']===$value['fixture']['user']['account']
         &&is_string($value['password'])&&strlen($value['password'])===24,'M4C_PRIVATE_REAL_LOGIN_MATERIAL');
     return ['private'=>$value,'sha256'=>hash('sha256',$raw),'stat'=>array_intersect_key($stat,array_fill_keys(['dev','ino','uid','mode','size'],true)),
         'prefix'=>substr(hash('sha256',$raw),0,12),
