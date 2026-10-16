@@ -379,6 +379,45 @@ R5实际Run `20261016153300e2dec7` 已完成正常准备及B0，但顾客端仅�
 
 R6实际有限结果（2026-10-17）：冻结clean Main `d6bd762a218203265a3af391740e389332b01f78`，Run `2026101618001052f852`。原driver已完成真实顾客登录、两店三商品/规格报价、按店购物车、地址/发票/分组表单、单次未付下单及详情GET；B0–B4各真实核25+7表，B4在原child停止后完成。原协议仅3capture/3JPEG/2人工复核，第三1440原图与实际DOM不符，完整27图、Final32及finish/audit未完成，普通截图诊断不替代验收。Root实际正常移除原4容器/2网/10卷，关闭摘要 `a325273b4a6c43234f5f06019ea7d97f73cd4e0b4ed83e6ccf7f69ca8f6f93b5`，独立核零摘要 `4a9e0fc275b7695b5110ea2b3d546b5cca568ad2bce1f7475146b1aad2b61953`；原24关闭回执、公开证据及六输入保持，详见03。HC2/EK3/Task4/MS4仍INCOMPLETE，无付款/发货/退款，不重开此Run。
 
+保存付款期限文案修正（2026-10-17，设计先行）：依据[简洁设计](records/ms4/saved-payment-deadline-display.md)，Root已从Main本轮B4真实保存读回确认该单cancel_at=0；零表示禁用自动超时，旧详情仍以当前零小时加下单时间生成截止提示。仅在独立Restore树拟改MarketplaceOrderDao只读原绑定ledger期限、StoreOrderServices本人V1普通未付详情最终_msg：零用无截止文案，正值使用原保存秒。两PHP以外产品源、DTO、前端、fixture和deadline不改；不新增列表逐行读取，缺ledger不猜零。原restore/lookup、20前端/5PHP、RC8及Task4/MS4责任保持，Main/R6继续冻结。
+
+- [x] SD1：Root已读回采用先登记设计，完成上述两PHP窄源码实施；Root完整读回差异并核实际ORM/config/model getter，again独立SOURCE PASS，原Restore接缝及其他责任保持。
+- [x] SD2：Root对最终两PHP实际完成PHP8.2.33单文件`-l`，两child及outer均native0、stderr空，核两PHP及检查时设计/09四来源前后不变；不是沿用旧5PHP结果。
+- [ ] SD3：按Root后续允许范围取得新来源正常HTTP/页面文案与保存期限/原事实不变证明，正常关闭和独立核零分别记录；未运行，不借Main原B4/R6通过，不运行已停止样本。
+
+SD1/SD2后继SOURCE/PARSE检查点（2026-10-17）：最终OrderDao为84262B/SHA256 `0e95dabf49d6537ca7c5fdf4f1723f121f8eaa1e0602bd824dac941944bb9d16`，StoreOrderServices为156931B/SHA256 `ecf2695a30bcad1418704b6cb98f417a849e0301208d93dde99fe8420d846d88`；Root真实收据`H:/天俪商城/artifacts/ms4-confirmation-restore-source/20261017-deadline-r1/php-syntax-result.json`的SHA256为`c7a267a8e65f7de717c52a3b841440340657fd0192666133f18cec55fcdde5b0`。checker为4806B/SHA256 `3063ed3e8418e4dc006e24a4090de5d8cb7a69f2705698408372287c4845dca5`，8处有限替换、整文逆回和AST已由Root实际核过；未import/App/SQL/样本。完整范围及检查时四来源保持说明见[设计§5](records/ms4/saved-payment-deadline-display.md#5-root-sourceparse检查点)。本轮仅记录源码/解析完成，SD3、Restore/RC8及完整MS4责任仍未完成；用户停止的拒绝/越权/冲突/并发/故障/恢复样本不运行，本窄修复也不运行原tiny内部取消样本。
+
+商品详情售价字段修正（2026-10-17，先登记实施依据）：Root已采纳只读诊断。正常商品甲/乙/丙及真实SKU保存的price为20.15/30.25/24.35；ot_price未填写时按安装结构合法默认为0.00，其语义是市场/划线价。现productInfo把“售价”错绑ot_price，不能通过改fixture、价格、主题或断言隐藏。既有realPrice按真实可见SKU unique返回price（SKU售价）、real_price（原优惠后到手价）和ot_price（划线价），页面将真实响应经PageDesign传入priceData。
+
+本次仅改template/uni-app/subpackage/diyComponents/productInfo.vue：售价取当前priceData.price，computed不再让组件local selectedIndex的sku.price或sku.real_price覆盖售价；到手价仍取real_price，原价仍用ot_price，会员字段和原处理保持。默认规格和弹窗ChangeAttr继续沿原父层setRealPrice回传props，无新增SKU金额缓存、请求、DTO或根价回退，不改变原选中unique、真实加购和legacy路径；既有父层异步响应顺序不在本次组件窄改中扩大处理，不能由本源码宣称快速并发切换已验证。只读核父层与PageDesign，不改20前端恢复/5PHP、SD/RC8或Main/R6来源。
+
+- [x] SP1：完成该组件template/computed窄源码实施并经Root/独立SOURCE复核；与解析、运行分开记录。
+- [ ] SP2：对实际新来源完成必要官方预处理/模板、JS和样式解析及后继完整构建；当前未运行，不沿用原20前端结果。
+- [ ] SP3：新来源正常页面核三商品，会员关闭时售价/到手价与真实SKU响应一致；甲20.15↔24.35需包含原内联及弹窗选择的正常顺序往返，不能固定第一个SKU或把优惠后价当售价；保留原划线价语义、真实加购/订单金额，正常关闭及独立核零另记。当前未运行/未验收，不运行用户已停止的冲突/并发/故障/恢复样本，不据本窄修复签收Task4/MS4。
+
+售价字段本地SOURCE实施检查点（2026-10-17）：上述组件已完成唯一售价绑定替换、price改为只读props来源和移除两行local SKU覆盖；完整逆回可恢复本轮前组件字节，父层goods_details/index.vue与PageDesign全文保持。未新增缓存/事件/请求，real_price、ot_price、会员/库存及原规格事件分支未改；仍待Root/独立源审、官方解析/构建与SP3正常页面验收，SP1–SP3及原SD3/RC8/Task4/MS4未勾。
+
+售价字段后继SOURCE/PARSE检查点：Root已读回完整窄差分和实际computed/父setRealPrice接缝，独立price_display_review有限SOURCE PASS，SP1至此完成。最终组件33680B/SHA256 `746bd45a7680d871f91b794a593858aacd2a8e3b8b408577df5a10e69fcc30f1`；Root以原官方uni预处理器、Vue模板编译器、Babel/Node及SCSS工具对H5/mp-weixin/app-plus三组真实源码解析，均native0、无模板错误和stderr，前后组件字节保持。实际收据 `H:/天俪商城/artifacts/ms4-confirmation-restore-source/20261017-price-r1/price-syntax-result.json`，摘要 `41608a20ad3ccb93647eb03fff4fc2f23d68296b692c798f7b56e221b088d70a`；6341B checker摘要 `002667e6ee4dba1c1a5573bffd56593e248041c9cebaaa72852e6cbd92369cc3`，从已读原checker作5处有限替换、整文逆回及Node --check均已核。未执行组件方法、App、HTTP/SQL或浏览器；SP2仍缺后继完整构建、SP3正常页面仍未验收，其他原责任保持。
+
+#### Task4 RC：完整确认上下文刷新恢复
+
+沿[完整实施依据](records/ms4/confirmation-restore-design.md)的R1–R10/A1–A9执行；r1只读API/URL带key不得替代完整恢复。本次在独立 `ms4-confirmation-restore` 工作树源开发，Main当前H5 Run沿冻结源继续。无新表、服务端草稿、支付或上传重放；复用现完整DTO/报价/frame/owner lookup，完整保留本人选择与分组表单。当前真实GET user及账号代次才可确认owner；提交前完整不可变attempt必须持久写入读回，unknown/not_found不能自动解锁。地址none不取默认，未知key容量统一计数；每记录1MiB、owner 5MiB/5完整上下文/20未知key，不能截断旧未知attempt或缩窄既有合法业务输入。Root复核补充和代理写入接口已在设计记录中统一。
+
+- [x] RC1：恢复完整要求、设计、文件与运行边界登记；仅实施依据，不是验收。
+- [x] RC2：后端完整DTO共用组装、同key只读restore与created/processing前后优先；仅后端源码检查点，实际restore运行未验收。
+- [x] RC3：真实USERINFO、账号代次、缓存/请求/登录切号生产消费者；仅源码实施与有限复核，运行未验。
+- [x] RC4：单owner有界持久上下文、revision保护、完整attempt先写读回和未知anchor责任；仅源码，未运行恢复样本。
+- [x] RC5：确认页完整hydrate、全部编辑保存、unknown/key-only分流与历史替换；仅源码，页面未验。
+- [x] RC6：地址/发票子页真实channel关联、父丢失同key恢复与真实ID保存；仅源码，返回与恢复运行未验。
+- [x] RC7：Root聚焦静态/语法及原fresh/legacy兼容源码核对，20文件60组三平台官方预处理/解析通过，实际范围见实施依据§11。
+- [ ] RC8：按当时允许范围取得新源正常运行/页面/数据证据；停止样本保持未验，不能据RC2或源码检查完成整项。
+
+RC2后端源码检查点（2026-10-16）：仅独立恢复工作树的五PHP新增本人原key只读restore与两段共用完整DTO组装，原fresh唯一600秒缓存及legacy领券顺序保持。Root与独立复核均未发现确定源码缺陷；真实lookup先于提示/配置/frame，预览成功或异常后二查，失效选择不换默认，不可用支付只按无渠道基准报价。Root在原固定PHP8.2镜像、network none/只读根与源码/cap-drop ALL/no-new-privileges下实际逐文件php -l，5项全部native0/stderr空，前后完整源码字节相同；收据 `artifacts/ms4-confirmation-restore-source/20261016-r1/php-syntax-result.json` 摘要 `c5c90ced1fff0f33379adf071f2460db230007c6ea5225e607bac105e259cc43`。此检查不加载App/SQL/HTTP，不使用Main当前Run；前端仍在实现，RC3–8及完整恢复运行保持未完成。
+
+RC3–7前端源码检查点（2026-10-16）：身份13文件与提交/子页/唯一上传producer7文件已实施并分别独立有限SOURCE复核；Root核实际必要差分。实际既有官方预处理/Vue模板/Node+Babel/本地导入/样式解析最终20源60组native0、issues空、前后字节相同，收据 `artifacts/ms4-confirmation-restore-source/20261016-r1/ui-syntax-result-r4.json`，摘要 `78b5455dab40812205b588d12c9817d4b247dedce15865814d1d8b36906caddf`。最初检查器遗漏index.vue导致的原FAIL保留，修正及后继收据见实施依据§11；没有删除用例或放松业务断言。以上只交源码检查点，不执行组件/App/SQL/HTTP/DOM、用户停止样本或三端验收；RC8及完整原Task4/MS4责任仍未完成。
+
+Restore成套集成检查点（2026-10-17）：Root在R6真实关闭及独立zero之后，将Restore `5e7b12ca6b45935f79949ffdfc0fae55d6903190` 的27产品文件（原20前端/5PHP、期限只读OrderDao及售价组件）合入Main，逐文件等原已核来源；原Main H5两源/排序比较、again utility和StoreCartServices保持。两份文档冲突双方原行按序完整保留，没有覆盖旧R3–R6结果或Restore/期限/售价责任。实际集成后6PHP全部-l native0、21前端三平台63组官方解析通过且前后源不变，PHP收据摘要 `1c36fda8a4bf51771e70a96614a1212ad790c78aa9b3594f0c6cab9c9bd3d82b`、UI收据摘要 `dfcb6a35deadda6ec24de0e32cfa9320c326a497b8f5a4d2af19298217282c0a`，详见03。后继须沿确认设计§12适配正常lookup/restore/key与完整DTO/frame观察，并真正新build/freeze/正常运行；当前仍未执行这些项目，不将旧R6 B4归给新源。RC8、SD3、SP2–3、HC2/EK3及完整交易/支付/履约/商家验收保持未完成。
+
 ### Task 5: 取消与超时释放
 
 - 接口：整笔未支付且未发货的取消/超时按真实父reserve聚合release，`idem_key = "release:<store_order.id>:<parent_reserve_id>"`；两项为真实已提交PK，尾段是规范U64字符串，不能用非全局唯一的SKU八字节unique。动作摘要绑定保存顾客/商家/订单/父reserve/SKU/数量，顾客取消与系统超时共用动作，演员仅记首次真实执行者；重复不重复释放。未来Task7部分退款用独立真实退款动作键，共同核累计release+return_in不超过父reserve.qty。关单前走可信支付query→close→query closed；unknown或无可信attempt不释放，已支付转待处理，不制造paid或回退平台账户。MS5决定前仅显式testing驱动可做普通未付关单。

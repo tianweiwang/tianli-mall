@@ -1,9 +1,10 @@
 <template>
 	<view :style="colorStyle">
-		<view v-if="marketplaceParentRequired && !marketplaceCheckout" class="marketplace-parent-notice">
-			{{$t(`原确认页连接不可用，暂未恢复结算内容。请返回原确认页。`)}}
+		<view v-if="marketplaceParentRequired && (!marketplaceCheckout || marketplaceNotice || marketplaceRevalidating)" class="marketplace-parent-notice" aria-live="polite">
+			<view>{{marketplaceNotice || $t(`正在核实本人原确认内容，请稍候。`)}}</view>
+			<button class="marketplace-return-action" @tap="returnToMarketplaceConfirmation">{{$t(`返回原确认页`)}}</button>
 		</view>
-		<view class='address-management' :class='addressList.length < 1 && page > 1 ? "fff":""'>
+		<view v-show="!marketplaceParentRequired || (marketplaceCheckout && !marketplaceRevalidating)" class='address-management' :class='addressList.length < 1 && page > 1 ? "fff":""'>
 			<view class='line'>
 				<image src='../../../static/images/line.jpg' v-if="addressList.length"></image>
 			</view>
@@ -79,7 +80,8 @@
 		setAddressDefault,
 		delAddress,
 		editAddress,
-		postAddress
+		postAddress,
+		getAddressDetail
 	} from '@/api/user.js';
 	import {
 		toLogin
@@ -92,6 +94,9 @@
 	// #endif
 	import home from '@/components/home';
 	import colors from '@/mixins/color.js';
+	import {orderConfirmation, orderConfirmationRestore} from '@/api/order.js';
+	import {prepareMarketplaceCheckoutChild, returnMarketplaceCheckoutSelection, marketplaceChildCurrent, marketplaceChildLifetimeCurrent, marketplaceChildGuard, hideMarketplaceCheckoutChild, revalidateMarketplaceCheckoutChild,
+		marketplaceConfirmationUrl} from '@/utils/marketplace-confirmation-draft.js';
 	import {
 		HTTP_REQUEST_URL
 	} from '@/config/app';
@@ -106,6 +111,10 @@
 		data() {
 			return {
 				marketplaceCheckout: null,
+				marketplaceNotice: '',
+				marketplaceRevalidating: false,
+				marketplaceReturning: false,
+				marketplaceOrderKey: '',
 				marketplaceParentRequired: false,
 				marketplaceChannelUnavailable: false,
 				marketplacePendingAddress: null,
@@ -130,6 +139,15 @@
 		computed: mapGetters(['isLogin']),
 		onLoad(options) {
 			this.marketplaceParentRequired = typeof options.orderKey === 'string' && options.orderKey !== '';
+			if (this.marketplaceParentRequired) {
+				this.marketplaceOrderKey = options.orderKey;
+				let childChannel = null;
+				try { childChannel = this.getOpenerEventChannel(); } catch (error) { /* Same-key recovery does not need an opener. */ }
+				prepareMarketplaceCheckoutChild(this, options, childChannel, {lookup: orderConfirmation, restore: orderConfirmationRestore}).then(ready => {
+					if (ready && this._marketplaceChildEpoch === 0 && marketplaceChildCurrent(this)) { this.news = this.marketplaceCheckout.source_kind === 'temporary' ? 1 : 0; this.getAddressList(true); }
+				}).catch(error => { if (this._marketplaceChildEpoch === 0 && marketplaceChildLifetimeCurrent(this)) this.marketplaceNotice = error.message || this.$t(`原确认暂不能恢复，请查询原订单。`); });
+				return;
+			}
 			let channel = null;
 			try {
 				if (typeof this.getOpenerEventChannel === 'function') channel = this.getOpenerEventChannel();
@@ -164,6 +182,18 @@
 			}
 		},
 		onShow: function() {
+			if (this.marketplaceParentRequired) {
+				if (!this._marketplaceDidShow) { this._marketplaceDidShow = true; return; }
+				const task = revalidateMarketplaceCheckoutChild(this, {lookup: orderConfirmation}), epoch = this._marketplaceChildEpoch;
+				return task.then(ready => {
+					if (!ready || this._marketplaceChildEpoch !== epoch || !marketplaceChildCurrent(this)) return;
+					if (this.marketplacePendingAddress) {
+						const value = this.marketplacePendingAddress; this.marketplacePendingAddress = null;
+						return this.returnMarketplaceAddress(value.addressId);
+					}
+					this.loading = false; this.getAddressList(true);
+				});
+			}
 			if (this.marketplacePendingAddress) {
 				const value = this.marketplacePendingAddress;
 				this.marketplacePendingAddress = null;
@@ -172,36 +202,43 @@
 			let that = this;
 			that.getAddressList(true);
 		},
+		onHide() { hideMarketplaceCheckoutChild(this); },
+		onUnload() { this._marketplaceAlive = false; },
+		watch: {
+			'$store.state.app.authRevision'() {
+				if (!this.marketplaceParentRequired) return;
+				this._marketplaceAlive = false; this.marketplaceCheckout = null; this.addressList = [];
+				this.marketplaceNotice = this.$t(`登录身份已变化，请返回原确认页查询。`);
+			}
+		},
 		methods: {
+			returnToMarketplaceConfirmation() { uni.redirectTo({url: marketplaceConfirmationUrl(this.marketplaceOrderKey)}); },
 			returnMarketplaceAddress(addressId) {
-				if (!this.marketplaceCheckout || !addressId) return;
-				this._marketplaceCheckoutChannel.emit('marketplaceAddressSelected', {
-					orderKey: this.marketplaceCheckout.orderKey, mer_id: this.marketplaceCheckout.mer_id, addressId
-				});
-				uni.navigateBack({delta: 1});
+				if (!marketplaceChildCurrent(this) || this.marketplaceReturning) return;
+				const current = marketplaceChildGuard(this, 'return-address-result');
+				this.marketplaceReturning = true;
+				return returnMarketplaceCheckoutSelection(this, 'address', addressId, {lookup: orderConfirmation, detail: getAddressDetail}).catch(error => {
+					if (current()) this.marketplaceNotice = error.message || this.$t(`选择尚未保存到原确认页，请返回查询。`);
+				}).finally(() => { if (current()) this.marketplaceReturning = false; });
 			},
 			openMarketplaceAddressForm(id) {
-				const context = this.marketplaceCheckout;
-				const parentPage = getCurrentPages().slice(-1)[0];
+				if (!marketplaceChildCurrent(this) || this.marketplaceReturning) return;
+				const original = this.marketplaceCheckout, context = {...original, parentInstance: this._marketplaceInstance};
+				const related = () => marketplaceChildLifetimeCurrent(this) && this.marketplaceCheckout === original &&
+					this._marketplaceInstance === context.parentInstance && original.ownerUid === context.ownerUid && original.authRevision === context.authRevision &&
+					original.orderKey === context.orderKey && original.generation === context.generation && String(original.mer_id) === String(context.mer_id);
 				uni.navigateTo({
 					url: '/pages/users/user_address/index?orderKey=' + encodeURIComponent(context.orderKey) +
 						'&mer_id=' + encodeURIComponent(context.mer_id) + (id ? '&id=' + encodeURIComponent(id) : ''),
 					events: {marketplaceAddressSelected: (value) => {
-						if (value && value.orderKey === context.orderKey && String(value.mer_id) === String(context.mer_id)) {
+						if (related() && value && value.generation === context.generation && value.ownerUid === context.ownerUid && value.authRevision === context.authRevision &&
+							value.parentInstance === context.parentInstance && value.orderKey === context.orderKey && String(value.mer_id) === String(context.mer_id)) {
 							this.marketplacePendingAddress = value;
 						}
 					}},
 					success: (res) => {
-						if (!res.eventChannel || typeof res.eventChannel.emit !== 'function') {
-							const pages = getCurrentPages();
-							const current = pages[pages.length - 1];
-							const previous = pages[pages.length - 2];
-							const owner = previous && (previous.$vm || previous);
-							if (current && String(current.route).replace(/^\//, '') === 'pages/users/user_address/index' &&
-								previous === parentPage && owner && owner.marketplaceCheckout &&
-								owner.marketplaceCheckout.orderKey === context.orderKey &&
-								String(owner.marketplaceCheckout.mer_id) === String(context.mer_id)) uni.navigateBack({delta: 1});
-							return this.$util.Tips({title: this.$t(`当前页面不能返回原确认页，请返回后再选择`)});
+						if (!related() || !res.eventChannel || typeof res.eventChannel.emit !== 'function') {
+							return;
 						}
 						res.eventChannel.emit('marketplaceCheckoutContext', context);
 					}
@@ -219,11 +256,15 @@
 			 */
 			getWxAddress: function() {
 				let that = this;
+				const current = marketplaceChildGuard(this, 'import-native');
+				if (!current()) return;
 				uni.authorize({
 					scope: 'scope.address',
 					success: function(res) {
+						if (!current()) return;
 						uni.chooseAddress({
 							success: function(res) {
+								if (!current()) return;
 								let addressP = {};
 								addressP.province = res.provinceName;
 								addressP.city = res.cityName;
@@ -239,19 +280,23 @@
 									id: 0,
 									type: 1
 								}).then(res => {
+									if (!current()) return;
 									that.$util.Tips({
 										title: that.$t(`添加成功`),
 										icon: 'success'
 									}, function() {
+										if (!current()) return;
 										that.getAddressList(true);
 									});
 								}).catch(err => {
+									if (!current()) return;
 									return that.$util.Tips({
 										title: err
 									});
 								});
 							},
 							fail: function(err) {
+								if (!current()) return;
 								if (err.errMsg == 'chooseAddress:cancel') return that.$util
 									.Tips({
 										title: that.$t(`取消选择`)
@@ -260,13 +305,17 @@
 						})
 					},
 					fail: function(res) {
+						if (!current()) return;
 						uni.showModal({
 							title: that.$t(`您已拒绝导入微信地址权限`),
 							content: that.$t(`是否进入权限管理，调整授权？`),
 							success(res) {
+								if (!current()) return;
 								if (res.confirm) {
 									uni.openSetting({
-										success: function(res) {}
+										success: function(res) {
+											if (!current()) return;
+										}
 									});
 								} else if (res.cancel) {
 									return that.$util.Tips({
@@ -283,7 +332,10 @@
 			 */
 			getAddress() {
 				let that = this;
+				const current = marketplaceChildGuard(this, 'import-wechat');
+				if (!current()) return;
 				that.$wechat.openAddress().then(userInfo => {
+					if (!current()) return;
 					// open();
 					editAddress({
 							real_name: userInfo.userName,
@@ -299,15 +351,18 @@
 							type: 1
 						})
 						.then(() => {
+							if (!current()) return;
 							that.$util.Tips({
 								title: that.$t(`添加成功`),
 								icon: 'success'
 							}, function() {
+								if (!current()) return;
 								// close();
 								that.getAddressList(true);
 							});
 						})
 						.catch(err => {
+							if (!current()) return;
 							// close();
 							return that.$util.Tips({
 								title: err || that.$t(`添加失败`)
@@ -320,6 +375,7 @@
 			 * 
 			 */
 			getAddressList: function(isPage) {
+				if (this.marketplaceParentRequired && !marketplaceChildCurrent(this)) return;
 				let that = this;
 				if (isPage) {
 					that.loadend = false;
@@ -328,12 +384,15 @@
 				};
 				if (that.loading) return;
 				if (that.loadend) return;
+				const current = marketplaceChildGuard(this, 'address-list');
+				if (!current()) return;
 				that.loading = true;
 				that.loadTitle = '';
 				getAddressList({
 					page: that.page,
 					limit: that.limit
 				}).then(res => {
+					if (!current()) return;
 					let list = res.data;
 					let loadend = list.length < that.limit;
 					that.addressList = that.$util.SplitArray(list, that.addressList);
@@ -343,6 +402,7 @@
 					that.page = that.page + 1;
 					that.loading = false;
 				}).catch(err => {
+					if (!current()) return;
 					that.loading = false;
 					that.loadTitle = that.$t(`加载更多`);
 				});
@@ -353,11 +413,14 @@
 			radioChange: function(e) {
 				let index = parseInt(e.detail.value),
 					that = this;
+				const current = marketplaceChildGuard(this, 'address-default');
+				if (!current()) return;
 				let address = this.addressList[index];
 				if (address == undefined) return that.$util.Tips({
 					title: that.$t(`您设置的默认地址不存在!`)
 				});
 				setAddressDefault(address.id).then(res => {
+					if (!current()) return;
 					for (let i = 0, len = that.addressList.length; i < len; i++) {
 						if (i == index) that.addressList[i].is_default = true;
 						else that.addressList[i].is_default = false;
@@ -366,9 +429,11 @@
 						title: that.$t(`设置成功`),
 						icon: 'success'
 					}, function() {
+						if (!current()) return;
 						that.$set(that, 'addressList', that.addressList);
 					});
 				}).catch(err => {
+					if (!current()) return;
 					return that.$util.Tips({
 						title: err
 					});
@@ -398,18 +463,23 @@
 			delAddress: function(index) {
 				let that = this,
 					address = this.addressList[index];
+				const current = marketplaceChildGuard(this, 'address-delete');
+				if (!current()) return;
 				if (address == undefined) return that.$util.Tips({
 					title: that.$t(`您删除的地址不存在!`)
 				});
 				delAddress(address.id).then(res => {
+					if (!current()) return;
 					that.$util.Tips({
 						title: that.$t(`删除成功`),
 						icon: 'success'
 					}, function() {
+						if (!current()) return;
 						that.addressList.splice(index, 1);
 						that.$set(that, 'addressList', that.addressList);
 					});
 				}).catch(err => {
+					if (!current()) return;
 					return that.$util.Tips({
 						title: err
 					});
@@ -558,10 +628,27 @@
 		background-color: #FE960F;
 	}
 	.marketplace-parent-notice {
+		overflow-wrap: anywhere;
 		margin: 20rpx 30rpx;
 		color: #868686;
 		font-size: 28rpx;
 		line-height: 1.5;
 		text-align: left;
 	}
+	.marketplace-return-action {
+		box-sizing: border-box;
+		width: 100%;
+		margin: 16rpx 0 0;
+		padding: 12rpx 20rpx;
+		min-height: 64rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		text-align: center;
+		font: inherit;
+		line-height: 1.4;
+		background: #fff;
+		border: 1rpx solid #ddd;
+	}
+	.marketplace-return-action::after { border: 0; }
 </style>

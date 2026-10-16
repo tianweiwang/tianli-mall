@@ -183,6 +183,12 @@ R6实际正常业务与有限收尾（2026-10-17）：clean Main `d6bd762a218203
 
 R6有限关闭源 `customer-h5-r6-partial-normal-close/` 的PLAN/close/zero经Root全文读回、独立SOURCE及两AST/两个help检查；解析收据摘要 `c475c606a6715515753dc9669a791a5daed53d5583448bfa1ca46b2a24ecb91b`。Root唯一执行close实际native0：四服务各单次normal stop(time=-1)，所有原停止句柄真正terminal0、容器PID0/restart0，随后非force精确移除原4容器、2空网络、10专用卷。关闭收据绑定24份真实回执，摘要 `a325273b4a6c43234f5f06019ea7d97f73cd4e0b4ed83e6ccf7f69ca8f6f93b5`。独立zero实际native0，六条原生双标签查询stdout/stderr均空，原公开证据、六输入、完整冻结来源及全局消费者均保持，3580B收据摘要 `4a9e0fc275b7695b5110ea2b3d546b5cca568ad2bce1f7475146b1aad2b61953`。结论为PARTIAL_RUN_NORMAL_CLOSED / CUSTOMER_H5_INCOMPLETE；实际核零后才解除Main冻结，不重开旧Run，原完整多商家/交易/商家验收和已停止样本责任保持。
 
+完整确认恢复的并行源开发边界：Main `ms4-generic-trade@9e53170a7` 仍冻结用于原顾客H5 Run `202610161242280276cd`。Root从同一clean基线另建 `H:/天俪商城/worktrees/ms4-confirmation-restore` / `feature/ms4-confirmation-restore`，沿现L2开发，完整合同见[恢复实施依据](records/ms4/confirmation-restore-design.md)。本分支不写原Run、不用旧运行结果证明新产品源。Root独占文档/Git/实际检查与运行；三个产品代理只改明确分配的源码，不执行任何程序或访问私有Run。仅允许Root进行相应静态/语法检查；任何新产品实际运行仍须其实际来源和专用隔离实例。原恢复、故障、拒绝、并发等停止样本保持NOT RUN，不因并行开发重新启用。Main原Run正常结束并独立核零后，再审查整合本分支，原H5/商家UI/订单/发货/售后及MS5/MS6责任不变。
+
+恢复分支后端有限检查：Root实际对既定五PHP执行原固定PHP8.2镜像下的纯 `php -l`，network none、只读根及新工作树源码、cap-drop ALL、no-new-privileges，未挂载任何Run/密钥/数据库卷；五项native0/stderr空，五源前后SHA256相同。检查脚本与原始收据在仓库外 `artifacts/ms4-confirmation-restore-source/20261016-r1/`，结果摘要 `c5c90ced1fff0f33379adf071f2460db230007c6ea5225e607bac105e259cc43`。只证明解析与源码保持；未加载应用、SQL、HTTP或浏览器，未运行任何停止样本，不能记完整恢复或RC8完成。
+
+Restore集成SOURCE/PARSE检查点（2026-10-17）：R6原Run关闭和独立核零后，Root将Restore `5e7b12ca6b45935f79949ffdfc0fae55d6903190` 的原20前端、原5PHP、deadline新增OrderDao及售价组件共27产品文件成套合入Main，逐文件实际字节与原已核来源一致。Main原H5 entry/helper、环境排序、again解析器及StoreCartServices逐字保持；两份文档冲突以双方原行按序完整保留解决。Root对实际集成后6PHP重新执行固定PHP8.2单文件-l，全部native0/stderr空；21前端在三平台完成63组官方预处理、模板/JS/样式解析，issues空，所有产品检查前后字节保持。真实收据位于 `artifacts/ms4-confirmation-restore-source/20261017-main-integration-r1/`：PHP摘要 `1c36fda8a4bf51771e70a96614a1212ad790c78aa9b3594f0c6cab9c9bd3d82b`，UI摘要 `dfcb6a35deadda6ec24de0e32cfa9320c326a497b8f5a4d2af19298217282c0a`。仅源码/解析；尚未新build、适配H5 lookup/restore观察或运行集成后App/HTTP/DOM，不借旧R6订单/B4证明新源通过，RC8/SD3/SP2–3/完整Task4/MS4及其他原责任保持。
+
 ## 3. ISO-MIN 环境（MS0a 交付）
 
 ### 3.1 文件
@@ -333,6 +339,8 @@ audit_finish(): never                 // 汇总，写 JSONL，有 FAIL 时以退
 ```
 
 `finding_kind` 取值：`待复现风险`、`既有拒绝回归`、`既有修复回归`、`新增契约`。
+
+恢复分支前端有限检查（2026-10-16）：Root仅用既有离线官方预处理/Vue编译器、Node22/Babel及样式工具，核11 SFC/9 JS在h5/mp-weixin/app-plus共60组，全部解析/导入/样式检查通过，20源前后字节相同。最终收据 `artifacts/ms4-confirmation-restore-source/20261016-r1/ui-syntax-result-r4.json` 摘要 `78b5455dab40812205b588d12c9817d4b247dedce15865814d1d8b36906caddf`；原检查器index.vue候选缺失造成的FAIL、修正后r2及新增必要util.js后的r3结果均保留，范围与修正见恢复实施依据§11。无安装或网络回退，不执行组件方法/App/SQL/HTTP/DOM或任何停止样本；只证明当前源码可解析，不代表真实恢复或三端/视觉验收。
 
 ## 6. 现有脚本的使用规则
 

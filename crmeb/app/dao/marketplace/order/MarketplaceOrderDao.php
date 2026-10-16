@@ -514,6 +514,53 @@ final class MarketplaceOrderDao
             'order_id'=>self::integer($rows[0]['order_id'],1,self::INT_MAX)];
     }
 
+    /** Owner-authorized saved root deadline only; no lock, current configuration or mutation. */
+    public function savedPaymentDeadline(array $actualSavedOrder): int
+    {
+        $id=self::integer($actualSavedOrder['id']??null,1,self::INT_MAX);
+        $uid=self::integer($actualSavedOrder['uid']??null,1,self::INT_MAX);
+        $merId=self::integer($actualSavedOrder['mer_id']??null,1,self::UINT_MAX);
+        if(self::integer($actualSavedOrder['marketplace_trade_version']??null,1,1)!==1
+            ||self::integer($actualSavedOrder['pid']??null,0,0)!==0)self::unavailable();
+        $number=self::text($actualSavedOrder['order_id']??null,32,true);
+        $key=self::text($actualSavedOrder['unique']??null,32,true);
+        if(strlen($number)>32||strlen($key)>32)self::unavailable();
+        $added=self::integer($actualSavedOrder['add_time']??null,1,self::UINT_MAX);
+        try{
+            $connection=Db::connect();
+            // The adopted single-database connection is the primary; do not borrow a read replica or open another PDO.
+            if($connection->getConfig('deploy')!==0||$connection->getConfig('rw_separate')!==false)self::unavailable();
+            $pdo=$connection->getPdo();
+            if(!$pdo instanceof PDO){$connection->query('SELECT 1',[],true);$pdo=$connection->getPdo();}
+            if(!$pdo instanceof PDO)self::unavailable();
+            $rows=$this->postCommitRead($pdo,'SELECT l.`uid`,l.`mer_id`,l.`state`,l.`order_id`,l.`cancel_at`,l.`add_time`,'.
+                'l.`source_kind`,l.`cart_refs`,l.`confirmation_ref`,o.`order_id` AS `order_no`,'.
+                'o.`unique` AS `confirmation_key`,o.`cart_id` AS `saved_cart_id`,o.`add_time` AS `order_add_time`'.
+                ' FROM '.$this->table('marketplace_order_idempotency').' l JOIN '.$this->table('store_order').' o'.
+                ' ON o.`id` = l.`order_id` AND o.`uid` = l.`uid` AND o.`mer_id` = l.`mer_id`'.
+                ' WHERE l.`order_id` = ? AND l.`uid` = ? AND l.`mer_id` = ? AND l.`state` = 1'.
+                ' AND o.`marketplace_trade_version` = 1 AND o.`pid` = 0 AND o.`paid` = 0 AND o.`is_cancel` = 0'.
+                ' AND BINARY o.`order_id` = BINARY ? AND BINARY o.`unique` = BINARY ? LIMIT 2',
+                [$id,$uid,$merId,$number,$key]);
+            if($connection!==Db::connect()||$connection->getPdo()!==$pdo||$pdo->inTransaction())self::unavailable();
+        }catch(\Throwable $error){self::unavailable();}
+        if(count($rows)!==1)self::unavailable();$row=$rows[0];
+        if(self::integer($row['uid'],1,self::INT_MAX)!==$uid
+            ||self::integer($row['mer_id'],1,self::UINT_MAX)!==$merId
+            ||self::integer($row['state'],1,1)!==1||self::integer($row['order_id'],1,self::INT_MAX)!==$id
+            ||$row['order_no']!==$number||$row['confirmation_key']!==$key
+            ||self::integer($row['add_time'],1,self::UINT_MAX)!==$added
+            ||self::integer($row['order_add_time'],1,self::UINT_MAX)!==$added
+            ||!is_string($row['confirmation_ref'])||strlen($row['confirmation_ref'])!==32
+            ||!hash_equals($row['confirmation_ref'],hash('sha256',$key,true)))self::unavailable();
+        $refs=self::references(self::decode($row['cart_refs']),$row['source_kind']);
+        if(self::references($actualSavedOrder['cart_id']??null,$row['source_kind'])!==$refs
+            ||self::decode($row['saved_cart_id'])!==$refs)self::unavailable();
+        $deadline=self::integer($row['cancel_at'],0,self::UINT_MAX);
+        if($deadline!==0&&$deadline<$added)self::unavailable();
+        return $deadline;
+    }
+
     /** Nonlocking candidates are hints only. Every finish re-locks and verifies its saved order. */
     public function pendingPostCommits(PDO $pdo, int $cursor, int $batch): array
     {

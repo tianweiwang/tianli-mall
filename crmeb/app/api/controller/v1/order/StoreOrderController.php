@@ -206,6 +206,14 @@ class StoreOrderController
         return app('json')->success($services->lookupConfirmation($uid,(string)$key));
     }
 
+    /** Restore only this owner's original V1 confirmation; durable results take precedence. */
+    public function restoreConfirmation(Request $request, MarketplaceOrderCreateServices $services, $key)
+    {
+        $uid=(int)$request->uid();$user=$request->user()->toArray();
+        if($uid<1||(int)($user['uid']??0)!==$uid)throw new AuthUnavailableException();
+        return app('json')->success($services->restoreConfirmation($uid,(string)$key,$user,$request->post(false)));
+    }
+
     /**
      * 订单创建
      * @param Request $request

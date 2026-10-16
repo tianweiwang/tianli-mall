@@ -105,6 +105,34 @@ final class MarketplaceOrderCreateServices
         });
     }
 
+    /** Same-key read only. A not_found result never proves that an earlier request ended. */
+    public function restoreConfirmation(int $uid,string $key,array $user,array $rawPost):array
+    {
+        if($uid<1||(int)($user['uid']??0)!==$uid)throw new AuthUnavailableException();
+        $key=MarketplaceOrderInput::confirmationKey($key);
+        $result=$this->lookupConfirmation($uid,$key);
+        if($result['state']!=='not_found')return $result;
+        try{
+            // Do not even parse preview hints until the durable owner result was checked.
+            $options=MarketplaceOrderInput::restore($rawPost);
+            $rawConfiguration=$this->configuration->getConfigAll(self::CONFIGURATION);
+            $quotePayType=$options['payType'];
+            try{self::validatePayment($quotePayType,$rawConfiguration);}
+            catch(ApiException $error){$quotePayType='';}
+            $preview=$this->orders->restoreOrderConfirmData($user,$key,$options,$quotePayType);
+            $preview['confirmation']=app()->make(\app\services\marketplace\PublicCatalogServices::class)
+                ->quoteOutput($preview['confirmation'],$uid);
+        }catch(\Throwable $error){
+            // A concurrent normal commit may have consumed the original cart/frame.
+            $latest=$this->lookupConfirmation($uid,$key);
+            if($latest['state']!=='not_found')return $latest;
+            throw $error;
+        }
+        $latest=$this->lookupConfirmation($uid,$key);
+        if($latest['state']!=='not_found')return $latest;
+        return ['state'=>'not_found','key'=>$key,'confirmation'=>$preview['confirmation'],'selection'=>$preview['selection']];
+    }
+
     /** Exact raw JSON hours from the existing configuration producer; zero disables timeout. */
     public static function cancelAt(int $now,mixed $rawHours):int
     {

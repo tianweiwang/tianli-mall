@@ -1,9 +1,10 @@
 <template>
 	<view :style="colorStyle">
-		<view v-if="marketplaceParentRequired && !marketplaceCheckout" class="marketplace-parent-notice">
-			{{$t(`原确认页连接不可用，暂未恢复结算内容。请返回原确认页。`)}}
+		<view v-if="marketplaceParentRequired && (!marketplaceCheckout || marketplaceNotice || marketplaceRevalidating)" class="marketplace-parent-notice" aria-live="polite">
+			<view>{{marketplaceNotice || $t(`正在核实本人原确认内容，请稍候。`)}}</view>
+			<button class="marketplace-return-action" @tap="returnToMarketplaceConfirmation">{{$t(`返回原确认页`)}}</button>
 		</view>
-		<form @submit="formSubmit">
+		<form v-show="!marketplaceParentRequired || (marketplaceCheckout && !marketplaceRevalidating)" @submit="formSubmit">
 			<view class="panel">
 				<view class="acea-row row-middle">
 					<view>{{$t(`抬头类型`)}}</view>
@@ -65,13 +66,13 @@
 				</label>
 			</checkbox-group>
 			<view class="button-section">
-				<button class="button" form-type="submit">{{$t(`保存`)}}</button>
+				<button class="button" :disabled="marketplaceParentRequired && (marketplaceSaved || marketplaceSaving)" form-type="submit">{{$t(`保存`)}}</button>
 				<navigator v-if="marketplaceCheckout || marketplaceParentRequired" class="navigator" open-type="navigateBack" hover-class="none">{{$t(`取消`)}}</navigator>
 				<navigator v-else class="navigator" :url="backUrl" hover-class="none">{{$t(`取消`)}}</navigator>
 			</view>
 		</form>
-		<view :class="{ mask: popupType }"></view>
-		<view class="popup" :class="{ on: popupType }">
+		<view v-show="!marketplaceParentRequired || (marketplaceCheckout && !marketplaceRevalidating)" :class="{ mask: popupType }"></view>
+		<view v-show="!marketplaceParentRequired || (marketplaceCheckout && !marketplaceRevalidating)" class="popup" :class="{ on: popupType }">
 			<view class="title">{{$t(`发票类型选择`)}}<text class="iconfont icon-guanbi" @click="closeType"></text></view>
 			<scroll-view scroll-y="true">
 				<radio-group name="invoice-type" @change="changeType">
@@ -101,6 +102,9 @@
 		invoiceDetail
 	} from '@/api/user.js';
 	import colors from '@/mixins/color.js';
+	import {orderConfirmation, orderConfirmationRestore} from '@/api/order.js';
+	import {prepareMarketplaceCheckoutChild, returnMarketplaceCheckoutSelection, marketplaceChildCurrent, marketplaceChildLifetimeCurrent, marketplaceChildGuard, hideMarketplaceCheckoutChild, revalidateMarketplaceCheckoutChild,
+		marketplaceConfirmationUrl} from '@/utils/marketplace-confirmation-draft.js';
 	export default {
 		components: {
 			home
@@ -109,6 +113,11 @@
 		data() {
 			return {
 				marketplaceCheckout: null,
+				marketplaceNotice: '',
+				marketplaceRevalidating: false,
+				marketplaceOrderKey: '',
+				marketplaceSaved: false,
+				marketplaceSaving: false,
 				marketplaceParentRequired: false,
 				marketplaceChannelUnavailable: false,
 				invoiceTypeList: [{
@@ -156,10 +165,23 @@
 			}
 		},
 		onHide() {
+			hideMarketplaceCheckoutChild(this);
+			if (this.marketplaceParentRequired) this.popupType = false;
 			if (!this.marketplaceCheckout) this.from = ''
 		},
 		onLoad(options) {
 			this.marketplaceParentRequired = typeof options.orderKey === 'string' && options.orderKey !== '';
+			if (this.marketplaceParentRequired) {
+				this.marketplaceOrderKey = options.orderKey; this.id = options.id || '';
+				this.specialInvoice = options.specialInvoice !== 'false';
+				let childChannel = null;
+				try { childChannel = this.getOpenerEventChannel(); } catch (error) { /* Same-key recovery is independent of the channel. */ }
+				prepareMarketplaceCheckoutChild(this, options, childChannel, {lookup: orderConfirmation, restore: orderConfirmationRestore}).then(ready => {
+					if (ready && this._marketplaceChildEpoch === 0 && marketplaceChildCurrent(this) && this.id) this.getInvoiceDetail();
+				}).catch(error => { if (this._marketplaceChildEpoch === 0 && marketplaceChildLifetimeCurrent(this)) this.marketplaceNotice = error.message || this.$t(`原确认暂不能恢复，请查询原订单。`); });
+				this.typeName = this.invoiceTypeList.find(item => item.value === this.type).name;
+				return;
+			}
 			let channel = null;
 			try {
 				if (typeof this.getOpenerEventChannel === 'function') channel = this.getOpenerEventChannel();
@@ -216,13 +238,32 @@
 			const invoiceItem = this.invoiceTypeList.find(item => item.value === this.type);
 			this.typeName = invoiceItem.name;
 		},
+		onShow() {
+			if (!this.marketplaceParentRequired) return;
+			if (!this._marketplaceDidShow) { this._marketplaceDidShow = true; return; }
+			return revalidateMarketplaceCheckoutChild(this, {lookup: orderConfirmation});
+		},
+		onUnload() { this._marketplaceAlive = false; },
+		watch: {
+			'$store.state.app.authRevision'() {
+				if (!this.marketplaceParentRequired) return;
+				this._marketplaceAlive = false; this.marketplaceCheckout = null;
+				this.popupType = false;
+				for (const field of ['name', 'drawer_phone', 'email', 'duty_number', 'bank', 'card_number', 'address', 'tell']) this[field] = '';
+				this.marketplaceNotice = this.$t(`登录身份已变化，请返回原确认页查询。`);
+			}
+		},
 		methods: {
+			returnToMarketplaceConfirmation() { uni.redirectTo({url: marketplaceConfirmationUrl(this.marketplaceOrderKey)}); },
 			// 获取发票数据
 			getInvoiceDetail() {
+				const current = marketplaceChildGuard(this, 'invoice-detail');
+				if (!current()) return;
 				uni.showLoading({
 					title: this.$t(`加载中`)
 				});
 				invoiceDetail(this.id).then(res => {
+					if (!current()) return;
 					uni.hideLoading();
 					this.header_type = res.data.header_type.toString();
 					this.type = res.data.type.toString();
@@ -238,6 +279,7 @@
 					this.tell = res.data.tell;
 					this.is_default = res.data.is_default ? [''] : [];
 				}).catch(err => {
+					if (!current()) return;
 					uni.showToast({
 						title: err,
 						icon: 'none'
@@ -246,9 +288,13 @@
 			},
 			// 保存
 			formSubmit(e) {
+				if (this.marketplaceParentRequired && !marketplaceChildCurrent(this)) return;
+				if (this.marketplaceParentRequired && (this.marketplaceSaved || this.marketplaceSaving)) return;
 				if (this.marketplaceParentRequired && !this.marketplaceCheckout) return this.$util.Tips({title: this.$t(`原确认页连接不可用，请返回原确认页`)});
 				let that = this;
 				const formData = e.detail.value;
+				const current = marketplaceChildGuard(this, 'invoice-save');
+				if (!current()) return;
 				formData.type = this.type;
 				if (formData.header_type === '1') {
 					if (!formData.name) {
@@ -408,20 +454,23 @@
 				uni.showLoading({
 					title: that.$t(`保存中`)
 				});
+				if (this.marketplaceParentRequired) this.marketplaceSaving = true;
 				invoiceSave(formData).then(res => {
+					if (!current()) return;
+					if (that.marketplaceParentRequired && !marketplaceChildCurrent(that)) return;
 					if (that.marketplaceCheckout) {
+						that.marketplaceSaved = true;
 						const invoiceId = that.id || res.data.id;
 						if (!invoiceId) {
 							uni.hideLoading();
+							that.marketplaceNotice = that.$t(`保存结果缺少发票编号，结算选择尚未恢复，请返回原确认页查询。`);
 							return that.$util.Tips({title: that.$t(`发票保存结果暂未完整取得，请返回发票列表选择`)});
 						}
 						if (invoiceId) {
-							that._marketplaceCheckoutChannel.emit('marketplaceInvoiceSelected', {
-								orderKey: that.marketplaceCheckout.orderKey, mer_id: that.marketplaceCheckout.mer_id,
-								invoiceId, headerType: formData.header_type
-							});
 							uni.hideLoading();
-							uni.navigateBack({delta: 1});
+							returnMarketplaceCheckoutSelection(that, 'invoice', invoiceId, {lookup: orderConfirmation, detail: invoiceDetail}).catch(error => {
+								if (current()) that.marketplaceNotice = that.$t(`发票资料已保存，结算选择尚未恢复。`) + (error.message || '');
+							});
 							return;
 						}
 					}
@@ -431,6 +480,7 @@
 						icon: 'success',
 					});
 					setTimeout(e => {
+						if (!current()) return;
 						switch (that.from) {
 							case 'order_confirm':
 								if (that.id) {
@@ -462,6 +512,11 @@
 						}
 					}, 1000)
 				}).catch(err => {
+					if (!current()) return;
+					if (that.marketplaceParentRequired) {
+						if (!marketplaceChildCurrent(that)) return;
+						that.marketplaceSaving = false;
+					}
 					uni.showToast({
 						title: err,
 						icon: 'none'
@@ -470,6 +525,7 @@
 			},
 			// 调起发票类型弹窗
 			callType() {
+				if (this.marketplaceParentRequired && !marketplaceChildCurrent(this)) return;
 				if (this.header_type == 2) {
 					this.popupType = true;
 				} else {
@@ -481,6 +537,7 @@
 			},
 			// 选择发票类型
 			changeType(e) {
+				if (this.marketplaceParentRequired && !marketplaceChildCurrent(this)) return;
 				const type = e.detail.value,
 					invoiceItem = this.invoiceTypeList.find(item => item.value === type);
 				if (type === '2' && this.header_type === '1') {
@@ -492,10 +549,12 @@
 			},
 			// 关闭发票弹窗
 			closeType() {
+				if (this.marketplaceParentRequired && !marketplaceChildCurrent(this)) return;
 				this.popupType = false;
 			},
 			// 选择抬头类型
 			changeTitleType(e) {
+				if (this.marketplaceParentRequired && !marketplaceChildCurrent(this)) return;
 				this.header_type = e.detail.value;
 				this.type = '1';
 			}
@@ -688,13 +747,21 @@
 	}
 
 	.button-section .button {
+		box-sizing: border-box;
+		width: 100%;
 		height: 86rpx;
+		padding: 0 20rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		text-align: center;
 		border-radius: 43rpx;
 		background-color: var(--view-theme);
 		font-size: 30rpx;
 		line-height: 86rpx;
 		color: #FFFFFF;
 	}
+	.button-section .button[disabled] { opacity: 0.55; }
 
 	.button-section .navigator {
 		height: 86rpx;
@@ -707,10 +774,27 @@
 		color: var(--view-theme);
 	}
 	.marketplace-parent-notice {
+		overflow-wrap: anywhere;
 		margin: 20rpx 30rpx;
 		color: #868686;
 		font-size: 28rpx;
 		line-height: 1.5;
 		text-align: left;
 	}
+	.marketplace-return-action {
+		box-sizing: border-box;
+		width: 100%;
+		margin: 16rpx 0 0;
+		padding: 12rpx 20rpx;
+		min-height: 64rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		text-align: center;
+		font: inherit;
+		line-height: 1.4;
+		background: #fff;
+		border: 1rpx solid #ddd;
+	}
+	.marketplace-return-action::after { border: 0; }
 </style>

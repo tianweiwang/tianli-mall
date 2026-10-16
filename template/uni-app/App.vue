@@ -17,6 +17,8 @@ import colors from "@/mixins/color.js";
 import Cache from "@/utils/cache";
 import { debug } from "util";
 import { applyTheme } from "@/utils/theme.js";
+import { checkLogin } from "@/libs/login.js";
+import { LOGIN_STATUS } from "@/config/cache";
 
 export default {
   globalData: {
@@ -59,6 +61,8 @@ export default {
     },
   },
   onShow() {
+    // Reconcile an expired token or a session changed in another H5 tab; cached user data never grants an owner.
+    checkLogin();
     const queryData = uni.getEnterOptionsSync(); // uni-app版本 3.5.1+ 支持
     if (queryData.query.spread) {
       this.$Cache.set("spread", queryData.query.spread);
@@ -111,12 +115,19 @@ export default {
     // #endif
   },
   async onLaunch(option) {
+    this._identityAppActive = true;
     uni.hideTabBar();
     let that = this;
     basicConfig().then((res) => {
       uni.setStorageSync("BASIC_CONFIG", res.data);
     });
     // #ifdef H5
+    this._identityStorageListener = (event) => {
+      if (!this._identityAppActive) return;
+      if (event.key !== LOGIN_STATUS && event.key !== null) return;
+      if (checkLogin()) this.$store.dispatch('USERINFO', true).catch(() => {});
+    };
+    window.addEventListener('storage', this._identityStorageListener);
     if (
       option.query.hasOwnProperty("mdType") &&
       option.query.mdType == "iframeWindow"
@@ -292,6 +303,12 @@ export default {
       uni.setStorageSync("copyRight", res.data);
     });
   },
+  beforeDestroy() {
+    this._identityAppActive = false;
+    // #ifdef H5
+    if (this._identityStorageListener) window.removeEventListener('storage', this._identityStorageListener);
+    // #endif
+  },
   onHide() {
     // #ifdef H5
     this.$Cache.clear("snsapiKey");
@@ -300,9 +317,13 @@ export default {
   },
   methods: {
     remoteRegister(remote_token) {
-      remoteRegister({
+      const scope = { revision: this.$store.state.app.authRevision, token: this.$store.state.app.token };
+      const current = () => this._identityAppActive && this.$store.state.app.authRevision === scope.revision && this.$store.state.app.token === scope.token;
+      if (!current()) return Promise.resolve();
+      return remoteRegister({
         remote_token,
-      }).then((res) => {
+      }).then(async (res) => {
+        if (!current()) return;
         let data = res.data;
         if (data.get_remote_login_url) {
           location.href = data.get_remote_login_url;
@@ -311,9 +332,15 @@ export default {
             token: data.token,
             time: data.expires_time - this.$Cache.time(),
           });
-          this.$store.commit("SETUID", data.userInfo.uid);
+          Object.assign(scope, { revision: this.$store.state.app.authRevision, token: this.$store.state.app.token });
+          const user = await this.$store.dispatch('USERINFO', true);
+          if (!current() ||
+            this.$store.state.app.verifiedUid !== String(user.uid)) return;
           location.reload();
         }
+      }).catch((error) => {
+        if (!current() || (error && error.staleIdentity)) return;
+        this.$util.Tips({title: (error && (error.msg || error.message)) || error});
       });
     },
     // 小程序静默授权

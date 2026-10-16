@@ -157,7 +157,6 @@
 
 <script>
 	import {
-		getUserInfo,
 		userEdit,
 		getLogout,
 		getLangList,
@@ -194,6 +193,8 @@
 		data() {
 			return {
 				userInfo: {},
+				identityPageActive: true,
+				userInfoRequestRevision: 0,
 				loginType: 'h5', //app.globalData.loginType
 				userIndex: 0,
 				switchUserInfo: [],
@@ -211,6 +212,11 @@
 		},
 		computed: mapGetters(['isLogin']),
 		watch: {
+			'$store.state.app.authRevision'() {
+				this.userInfo = {};
+				this.switchUserInfo = [];
+				this.canvasStatus = false;
+			},
 			isLogin: {
 				handler: function(newV, oldV) {
 					if (newV) {
@@ -221,6 +227,7 @@
 			}
 		},
 		onLoad() {
+			this.identityPageActive = true;
 			if (this.isLogin) {
 				this.getUserInfo();
 				this.getLangList()
@@ -235,7 +242,19 @@
 				toLogin();
 			}
 		},
+		onUnload() {
+			this.identityPageActive = false;
+			this.userInfoRequestRevision++;
+		},
 		methods: {
+			identityScope() {
+				return { revision: this.$store.state.app.authRevision, token: this.$store.state.app.token,
+					uid: this.$store.state.app.verifiedUid };
+			},
+			isIdentityScope(scope) {
+				return this.identityPageActive && this.$store.state.app.authRevision === scope.revision &&
+					this.$store.state.app.token === scope.token && this.$store.state.app.verifiedUid === scope.uid;
+			},
 			getLangList() {
 				getLangList().then(res => {
 					this.array = res.data
@@ -248,27 +267,33 @@
 				});
 			},
 			getphonenumber(e) {
+				const scope = this.identityScope();
+				if (!scope.uid) return;
 				if (e.detail.errMsg == 'getPhoneNumber:ok') {
 					Routine.getCode()
 						.then(code => {
+							if (!this.isIdentityScope(scope)) return;
 							let data = {
 								code,
 								iv: e.detail.iv,
 								encryptedData: e.detail.encryptedData,
 							}
 							mpBindingPhone(data).then(res => {
+								if (!this.isIdentityScope(scope)) return;
 								this.getUserInfo()
 								this.$util.Tips({
 									title: res.msg,
 									icon: 'success'
 								});
 							}).catch(err => {
+								if (!this.isIdentityScope(scope) || (err && err.staleIdentity)) return;
 								return this.$util.Tips({
 									title: err
 								});
 							})
 						})
 						.catch(error => {
+							if (!this.isIdentityScope(scope)) return;
 							uni.hideLoading();
 						});
 				}
@@ -393,22 +418,28 @@
 					title: that.$t(`切换的账号不存在`)
 				});
 				if (userInfo.user_type === 'h5') {
+					let scope = that.identityScope();
 					uni.showLoading({
 						title: that.$t(`正在切换中`)
 					});
 					switchH5Login().then(res => {
-						uni.hideLoading();
+						if (!that.isIdentityScope(scope)) return;
 						that.$store.commit("LOGIN", {
 							'token': res.data.token,
 							'time': this.$Cache.strTotime(res.data.expires_time) - this.$Cache.time()
 						});
-						that.getUserInfo();
+						scope = that.identityScope();
+						return that.getUserInfo();
 					}).catch(err => {
+						if (!that.isIdentityScope(scope) || (err && err.staleIdentity)) return;
 						uni.hideLoading();
 						return that.$util.Tips({
 							title: err
 						});
-					})
+					}).finally(() => {
+						if (that.identityPageActive && that.$store.state.app.authRevision === scope.revision &&
+							that.$store.state.app.token === scope.token) uni.hideLoading();
+					});
 				} else {
 					that.$store.commit("LOGOUT");
 					uni.showLoading({
@@ -423,14 +454,17 @@
 			 */
 			outLogin: function() {
 				let that = this;
+				const scope = that.identityScope();
 				if (that.loginType == 'h5') {
 					uni.showModal({
 						title: that.$t(`提示`),
 						content: that.$t(`确认退出登录`),
 						success: function(res) {
+							if (!that.isIdentityScope(scope)) return;
 							if (res.confirm) {
 								getLogout()
 									.then(res => {
+										if (!that.isIdentityScope(scope)) return;
 										// uni.clearStorage()
 										that.$store.commit("LOGOUT");
 										uni.reLaunch({
@@ -448,9 +482,14 @@
 			 */
 			getUserInfo: function() {
 				let that = this;
-				getUserInfo().then(res => {
-					that.$set(that, 'userInfo', res.data);
-					let switchUserInfo = res.data.switchUserInfo || [];
+				const scope = that.identityScope(), revision = ++that.userInfoRequestRevision;
+				return that.$store.dispatch('USERINFO', true).then(user => {
+					if (!that.identityPageActive || that.$store.state.app.authRevision !== scope.revision ||
+						that.$store.state.app.token !== scope.token || revision !== that.userInfoRequestRevision ||
+						that.$store.state.app.verifiedUid !== String(user.uid)) return null;
+					const display = JSON.parse(JSON.stringify(user));
+					that.$set(that, 'userInfo', display);
+					let switchUserInfo = Array.isArray(display.switchUserInfo) ? display.switchUserInfo.slice() : [];
 					for (let i = 0; i < switchUserInfo.length; i++) {
 						if (switchUserInfo[i].uid == that.userInfo.uid) that.userIndex = i;
 						// 切割h5用户；user_type状态：h5、routine（小程序）、wechat（公众号）；注：只有h5未注册手机号时，h5才可和小程序或是公众号数据想通；
@@ -464,6 +503,13 @@
 						//#endif
 					}
 					that.$set(that, "switchUserInfo", switchUserInfo);
+					return user;
+				}).catch(error => {
+					if (!that.identityPageActive || that.$store.state.app.authRevision !== scope.revision ||
+						that.$store.state.app.token !== scope.token || revision !== that.userInfoRequestRevision ||
+						(error && error.staleIdentity)) return null;
+					that.$util.Tips({title: (error && (error.msg || error.message)) || error});
+					return null;
 				});
 			},
 			/**
@@ -472,8 +518,11 @@
 			 */
 			uploadpic: function() {
 				let that = this;
+				const scope = that.identityScope();
+				if (!scope.uid) return;
 				this.canvasStatus = true
 				that.$util.uploadImageChange('upload/image', (res) => {
+					if (!that.isIdentityScope(scope)) return;
 					let userInfo = that.switchUserInfo[that.userIndex];
 					if (userInfo !== undefined) {
 						that.userInfo.avatar = res.data.url;
@@ -482,20 +531,28 @@
 					that.$set(that, 'switchUserInfo', that.switchUserInfo);
 					this.canvasStatus = false
 				}, (res) => {
+					if (!that.isIdentityScope(scope)) return;
 					this.canvasStatus = false
 				}, (res) => {
+					if (!that.isIdentityScope(scope)) return;
 					this.canvasWidth = res.w
 					this.canvasHeight = res.h
-				});
+				}, () => {
+					if (that.isIdentityScope(scope)) that.canvasStatus = false;
+				}, () => that.isIdentityScope(scope));
 			},
 			// 微信头像获取
 			onChooseAvatar(e) {
+				const scope = this.identityScope();
+				if (!scope.uid) return;
 				const {
 					avatarUrl
 				} = e.detail
 				this.$util.uploadImgs('upload/image', avatarUrl, (res) => {
+					if (!this.isIdentityScope(scope)) return;
 					this.userInfo.avatar = res.data.url
 				}, (err) => {
+					if (!this.isIdentityScope(scope)) return;
 					console.log(err)
 				})
 			},
@@ -506,11 +563,14 @@
 				let that = this,
 					value = e.detail.value,
 					userInfo = that.switchUserInfo[that.userIndex];
+				const scope = that.identityScope();
+				if (!scope.uid) return;
 				if (!value.nickname) return that.$util.Tips({
 					title: that.$t(`请输入姓名`)
 				});
 				value.avatar = this.userInfo.avatar;
 				userEdit(value).then(res => {
+					if (!that.isIdentityScope(scope)) return;
 					return that.$util.Tips({
 						title: res.msg,
 						icon: 'success'
@@ -519,6 +579,7 @@
 						url: 1
 					});
 				}).catch(msg => {
+					if (!that.isIdentityScope(scope) || (msg && msg.staleIdentity)) return;
 					return that.$util.Tips({
 						title: msg || that.$t(`保存失败`)
 					}, {

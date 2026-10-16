@@ -12,6 +12,7 @@
 namespace app\services\order;
 
 use app\dao\order\StoreOrderDao;
+use app\dao\marketplace\order\MarketplaceOrderDao;
 use app\jobs\AutoCommentJob;
 use app\services\activity\combination\StorePinkServices;
 use app\services\activity\coupon\StoreCouponUserServices;
@@ -1759,12 +1760,26 @@ HTML;
             'offlinePostage' => sys_config('offline_postage'),
             'integralRatio' => sys_config('integral_ratio')
         ];
-        $cartIdA = explode(',', $cartId);
+        $data=$this->confirmationProductData($cartGroup,$validCartInfo,$addr,$priceGroup,$data['storeFreePostage'],
+            count(explode(',',$cartId)),$frame);
+        $data['orderKey'] = $this->cacheOrderInfo($user['uid'], $validCartInfo, $priceGroup, $other, 600, $frame);
+        $data=$this->formatOrderConfirmation($data,$user,$other,$frame);
+
+        //自动领取优惠券仍只属于原fresh旧版确认，不属于同key恢复。
+        if(!$marketplace)app()->make(StoreCouponUserServices::class)->autoReceiveCoupon($user['uid'], $cartGroup);
+        return $data;
+    }
+
+    /** Common complete product/form/price view, before the fresh-only cache write. */
+    private function confirmationProductData(array $cartGroup,array $validCartInfo,array $addr,array $priceGroup,
+        mixed $storeFreePostage,int $cartCount,array $frame):array
+    {
+        $marketplace=$frame!==[];$data=['storeFreePostage'=>$storeFreePostage];
         $seckill_id = 0;
         $combination_id = 0;
         $bargain_id = 0;
         $advance_id = 0;
-        if (count($cartIdA) == 1) {
+        if ($cartCount == 1) {
             $seckill_id = $cartGroup['deduction']['seckill_id'] ?? 0;
             $combination_id = $cartGroup['deduction']['combination_id'] ?? 0;
             $bargain_id = $cartGroup['deduction']['bargain_id'] ?? 0;
@@ -1785,7 +1800,13 @@ HTML;
             if (!is_array($data['custom_form'])) $data['custom_form'] = [];
         }
         $data['priceGroup'] = $priceGroup;
-        $data['orderKey'] = $this->cacheOrderInfo($user['uid'], $validCartInfo, $priceGroup, $other, 600, $frame);
+        return $data;
+    }
+
+    /** Common complete authenticated-user and current-capability view; never writes a confirmation. */
+    private function formatOrderConfirmation(array $data,array $user,array $other,array $frame):array
+    {
+        $marketplace=$frame!==[];
         if($marketplace){
             foreach(['marketplace_confirmation_version','mer_id','source_kind','store']as$field)$data[$field]=$frame[$field];
             $data['marketplace_create_enabled']=MarketplaceTradePolicy::v1CreateEnabled();
@@ -1831,9 +1852,51 @@ HTML;
             $data['store_self_mention']=0;
         }
 
-        //自动领取优惠券
-        if(!$marketplace)app()->make(StoreCouponUserServices::class)->autoReceiveCoupon($user['uid'], $cartGroup);
         return $data;
+    }
+
+    /** Read the existing owner frame and current records; never create a cart/key or extend its TTL. */
+    public function restoreOrderConfirmData(array $user,string $key,array $options,string $quotePayType):array
+    {
+        $uid=(int)($user['uid']??0);
+        if($uid<1)throw new AuthUnavailableException();
+        if(!$this->hasMarketplaceConfirmation($uid,$key))throw new ApiException('原店铺确认已失效，无法恢复');
+        $group=$this->getCacheOrderInfo($uid,$key);
+        if(!is_array($group)||($group['marketplace_confirmation_version']??null)!==MarketplaceTradePolicy::CONFIRMATION_VERSION)
+            throw new ApiException('原店铺确认已失效，无法恢复');
+        $frame=MarketplaceCartSelection::frame($group,$uid);
+
+        $addressId=$options['addressId'];$invoiceId=$options['invoice_id'];
+        $address=['mode'=>$addressId===0?'none':'id','id'=>$addressId,'status'=>$addressId===0?'none':'unavailable'];
+        $resolvedAddressId=0;
+        if($addressId!==0){
+            $record=app()->make(UserAddressServices::class)->getOne(['id'=>$addressId,'uid'=>$uid,'is_del'=>0]);
+            if($record){$resolvedAddressId=$addressId;$address['status']='resolved';}
+        }
+        $invoice=['mode'=>$invoiceId===0?'none':'id','id'=>$invoiceId,'status'=>$invoiceId===0?'none':'unavailable','invoice'=>[]];
+        if($invoiceId!==0){
+            try{
+                $invoice['invoice']=app()->make(UserInvoiceServices::class)->checkInvoice($invoiceId,$uid);
+                $invoice['status']='resolved';
+            }catch(ApiException $error){
+                // Missing, foreign and currently disabled choices share one response.
+                $invoice['invoice']=[];
+            }
+        }
+        $other=['offlinePostage'=>sys_config('offline_postage'),'integralRatio'=>sys_config('integral_ratio')];
+        $group['other']=$other;
+        // The caller checked the current channel. An unavailable saved intent
+        // gets only a no-channel preview, without replacing the original intent.
+        app()->make(StoreOrderComputedServices::class)->setParamData([])->computedOrder($uid,$user,$group,
+            $resolvedAddressId,$quotePayType,false,0,false,1,0,true);
+        $current=app()->make(MarketplaceCartSelection::class)->recheck($group,$uid,$group['cartInfo']);
+        $frame['store']=$current['store'];
+        $addr=$resolvedAddressId===0?[]:$group['addr'];
+        $data=$this->confirmationProductData(['cartInfo'=>$group['cartInfo']],$group['cartInfo'],$addr,$group['priceGroup'],
+            $group['priceGroup']['storeFreePostage'],count($frame['cart_refs']),$frame);
+        $data['orderKey']=$key;
+        $data=$this->formatOrderConfirmation($data,$user,$other,$frame);
+        return ['confirmation'=>$data,'selection'=>['address'=>$address,'invoice'=>$invoice]];
     }
 
     /**
@@ -2625,7 +2688,8 @@ HTML;
         if (!$order) throw new ApiException('商品不存在');
         $savedCustomForm = $order->getData('custom_form');
         $order = $order->toArray();
-        if(!MarketplaceTradePolicy::savedOrderIsLegacy($order)){
+        $savedMarketplaceV1 = !MarketplaceTradePolicy::savedOrderIsLegacy($order);
+        if($savedMarketplaceV1){
             if($uid<1 || (string)($order['uid'] ?? '')!==(string)$uid)throw new ApiException('订单不存在');
             $order['custom_form']=$savedCustomForm;
         }
@@ -2711,6 +2775,13 @@ HTML;
         $order['ali_pay_status'] = sys_config('ali_pay_status', '0') != '0';//支付包支付 1 开启 0 关闭
         $order['friend_pay_status'] = (int)sys_config('friend_pay_status') ?? 0;//好友代付 1 开启 0 关闭
         $orderData = $this->tidyOrder($order, true, true);
+        if($savedMarketplaceV1 && in_array($order['pid']??null,[0,'0'],true)
+            &&in_array($order['paid']??null,[0,'0'],true)&&in_array($order['is_cancel']??null,[0,'0'],true)
+            &&($order['pay_type']??null)!==PayServices::OFFLINE_PAY&&($orderData['_status']['_type']??null)===0){
+            $deadline=app()->make(MarketplaceOrderDao::class)->savedPaymentDeadline($order);
+            $orderData['_status']['_msg']=$deadline===0?'订单尚未支付，请完成支付':
+                '请在'.date('m-d H:i:s',$deadline).'前完成支付!';
+        }
         $vipTruePrice = $memberPrice = $levelPrice = 0;
         foreach ($orderData['cartInfo'] ?? [] as $key => $cart) {
             $vipTruePrice = bcadd((string)$vipTruePrice, (string)$cart['vip_sum_truePrice'], 2);

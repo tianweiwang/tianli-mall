@@ -129,7 +129,6 @@ import {
   wechatAuthLogin,
 } from "@/api/public";
 import { LOGO_URL, EXPIRES_TIME, USER_INFO, STATE_R_KEY } from "@/config/cache";
-import { getUserInfo } from "@/api/user.js";
 import Routine from "@/libs/routine";
 import wechat from "@/libs/wechat";
 import colors from "@/mixins/color.js";
@@ -164,6 +163,7 @@ export default {
       mp_is_new: this.$Cache.get("MP_VERSION_ISNEW") || false,
       configData: Cache.get("BASIC_CONFIG"),
       bindPhone: false,
+      identityPageActive: true,
     };
   },
   components: {
@@ -173,6 +173,7 @@ export default {
     privacyAgreementPopup,
   },
   onLoad(options) {
+    this.identityPageActive = true;
     if (uni.getUserProfile) {
       this.canUseGetUserProfile = true;
     }
@@ -209,13 +210,24 @@ export default {
       this.isHome = false;
     }
   },
+  onUnload() {
+    this.identityPageActive = false;
+  },
   methods: {
+    identityScope() {
+      return { revision: this.$store.state.app.authRevision, token: this.$store.state.app.token };
+    },
+    isIdentityScope(scope) {
+      return this.identityPageActive && this.$store.state.app.authRevision === scope.revision && this.$store.state.app.token === scope.token;
+    },
     wechatAuthLogin(d, back_url) {
+      const scope = this.identityScope();
       uni.showLoading({
         title: this.$t(`正在登录中`),
       });
       wechatAuthLogin(d)
         .then((res) => {
+          if (!this.isIdentityScope(scope)) return;
           uni.hideLoading();
           if (res.data.bindPhone) {
             this.authKey = res.data.key;
@@ -228,10 +240,12 @@ export default {
               token: res.data.token,
               time: time,
             });
-            this.getUserInfo(0, back_url);
+            Object.assign(scope, this.identityScope());
+            return this.getUserInfo(0, back_url, scope);
           }
         })
         .catch((err) => {
+          if (!this.isIdentityScope(scope) || (err && err.staleIdentity)) return;
           uni.hideLoading();
           uni.showToast({
             title: err,
@@ -245,6 +259,8 @@ export default {
     },
     // 小程序 22.11.8日删除getUserProfile 接口获取用户昵称头像
     userLogin() {
+      const revision = this.$store.state.app.authRevision, token = this.$store.state.app.token;
+      const current = () => this.identityPageActive && this.$store.state.app.authRevision === revision && this.$store.state.app.token === token;
       // if (!this.protocol) {
       // 	uni.showToast({
       // 		title: this.$t('请先阅读并同意协议'),
@@ -255,6 +271,7 @@ export default {
       // }
       Routine.getCode()
         .then((code) => {
+          if (!current()) return;
           // uni.showLoading({
           // 	title: this.$t(`正在登录中`)
           // });
@@ -264,6 +281,7 @@ export default {
             spread_code: app.globalData.code,
           })
             .then((res) => {
+              if (!current()) return;
               uni.hideLoading();
               this.authKey = res.data.key;
               this.bindPhone = res.data.bindPhone;
@@ -272,6 +290,7 @@ export default {
               // })
             })
             .catch((err) => {
+              if (!current() || (err && err.staleIdentity)) return;
               uni.hideLoading();
               uni.showToast({
                 title: err,
@@ -281,6 +300,7 @@ export default {
             });
         })
         .catch((err) => {
+          if (!current()) return;
           console.log(err);
         });
     },
@@ -294,6 +314,7 @@ export default {
         });
         return;
       }
+      const scope = this.identityScope();
       uni.showLoading({
         title: this.$t(`正在登录中`),
       });
@@ -301,14 +322,17 @@ export default {
         key: this.authKey,
       })
         .then((res) => {
+          if (!this.isIdentityScope(scope)) return;
           let time = res.data.expires_time - this.$Cache.time();
           this.$store.commit("LOGIN", {
             token: res.data.token,
             time: time,
           });
-          this.getUserInfo(res.data.bindName);
+          Object.assign(scope, this.identityScope());
+          return this.getUserInfo(res.data.bindName, undefined, scope);
         })
         .catch((err) => {
+          if (!this.isIdentityScope(scope) || (err && err.staleIdentity)) return;
           uni.hideLoading();
           uni.showToast({
             title: err,
@@ -406,21 +430,25 @@ export default {
         });
         return;
       }
+      const scope = this.identityScope();
       uni.showLoading({
         title: this.$t(`正在登录中`),
       });
       Routine.getCode()
         .then((code) => {
-          this.getUserPhoneNumber(e.detail.encryptedData, e.detail.iv, code);
+          if (!this.isIdentityScope(scope)) return;
+          return this.getUserPhoneNumber(e.detail.encryptedData, e.detail.iv, code, scope);
         })
         .catch((error) => {
+          if (!this.isIdentityScope(scope) || (error && error.staleIdentity)) return;
           uni.$emit("closePage", false);
           uni.hideLoading();
         });
     },
     // 小程序获取手机号码回调
-    getUserPhoneNumber(encryptedData, iv, code) {
-      routineBindingPhone({
+    getUserPhoneNumber(encryptedData, iv, code, scope = this.identityScope()) {
+      if (!this.isIdentityScope(scope)) return;
+      return routineBindingPhone({
         encryptedData: encryptedData,
         iv: iv,
         code: code,
@@ -430,16 +458,18 @@ export default {
         key: this.authKey,
       })
         .then((res) => {
+          if (!this.isIdentityScope(scope)) return;
           let time = res.data.expires_time - this.$Cache.time();
           this.$store.commit("LOGIN", {
             token: res.data.token,
             time: time,
           });
+          Object.assign(scope, this.identityScope());
           // this.userInfo = res.data.userInfo;
           // this.$store.commit('SETUID', res.data.userInfo.uid);
           // this.$store.commit('UPDATE_USERINFO', res.data.userInfo);
           this.$Cache.clear("snsapiKey");
-          this.getUserInfo(res.data.bindName);
+          return this.getUserInfo(res.data.bindName, undefined, scope);
           // this.$util.Tips({
           // 	title: this.$t(`登录成功`),
           // 	icon: 'success'
@@ -448,6 +478,7 @@ export default {
           // });
         })
         .catch((res) => {
+          if (!this.isIdentityScope(scope) || (res && res.staleIdentity)) return;
           uni.hideLoading();
         });
     },
@@ -455,14 +486,15 @@ export default {
     /**
      * 获取个人用户信息
      */
-    getUserInfo(new_user, back_url) {
+    getUserInfo(new_user, back_url, scope = this.identityScope()) {
       let that = this;
-      getUserInfo()
-        .then((res) => {
+      if (!this.isIdentityScope(scope)) return Promise.resolve();
+      return this.$store.dispatch('USERINFO', true)
+        .then((user) => {
+          if (!this.isIdentityScope(scope) ||
+            this.$store.state.app.verifiedUid !== String(user.uid)) return;
           uni.hideLoading();
-          that.userInfo = res.data;
-          that.$store.commit("SETUID", res.data.uid);
-          that.$store.commit("UPDATE_USERINFO", res.data);
+          that.userInfo = JSON.parse(JSON.stringify(user));
           if (new_user) {
             this.isShow = true;
           } else {
@@ -492,9 +524,11 @@ export default {
           }
         })
         .catch((err) => {
+          if (!this.isIdentityScope(scope) ||
+            (err && err.staleIdentity)) return;
           uni.hideLoading();
           uni.showToast({
-            title: err.msg,
+            title: (err && (err.msg || err.message)) || err,
             icon: "none",
             duration: 2000,
           });
@@ -544,6 +578,8 @@ export default {
 
     // 输入手机号后的回调
     wechatPhone() {
+      const scope = this.identityScope();
+      if (!this.isIdentityScope(scope) || !this.$store.state.app.verifiedUid) return;
       this.$Cache.clear("snsapiKey");
       if (this.options.back_url) {
         let url = uni.getStorageSync("snRouter");
@@ -560,6 +596,7 @@ export default {
           icon: "none",
         });
         setTimeout((res) => {
+          if (!this.isIdentityScope(scope)) return;
           location.href = url;
         }, 800);
       } else {
@@ -569,6 +606,7 @@ export default {
           icon: "none",
         });
         setTimeout((res) => {
+          if (!this.isIdentityScope(scope)) return;
           location.href = "/pages/index/index";
         }, 800);
       }

@@ -586,11 +586,23 @@ export default {
     successCallback,
     errorCallback,
     sizeCallback,
-    completionCallback
+    completionCallback,
+    current
   ) {
     let that = this;
+    const scoped = typeof current === "function";
+    const original = scoped ? {token: store.state.app.token, authRevision: store.state.app.authRevision, verifiedUid: store.state.app.verifiedUid} : null;
+    const active = () => {
+      if (!scoped) return true;
+      try {
+        return typeof original.token === "string" && !!original.token && Number.isSafeInteger(original.authRevision) && original.authRevision >= 0 &&
+          typeof original.verifiedUid === "string" && /^[1-9][0-9]*$/.test(original.verifiedUid) && current() === true &&
+          store.state.app.token === original.token && store.state.app.authRevision === original.authRevision && store.state.app.verifiedUid === original.verifiedUid;
+      } catch (error) { return false; }
+    };
     let completed = false;
     const finish = () => {
+      if (!active()) return;
       if (!completed) {
         completed = true;
         if (completionCallback) {
@@ -600,9 +612,11 @@ export default {
       }
     };
     const guarded = callback => function (...args) {
+      if (!active()) return;
       try { return callback.apply(this, args); }
-      catch (error) { finish(); throw error; }
+      catch (error) { if (!active()) return; finish(); throw error; }
     };
+    if (!active()) return;
     if (typeof opt === "string") {
       let url = opt;
       opt = {};
@@ -622,6 +636,7 @@ export default {
       success: guarded(function (res) {
         //启动上传等待中...
         let imgSrc;
+        if (!active()) return;
         uni.getImageInfo({
           src: res.tempFilePaths[0],
           success: guarded(function (ress) {
@@ -650,6 +665,7 @@ export default {
                 w: canvasWidth,
                 h: canvasHeight,
               });
+            if (!active()) return;
             let canvas = uni.createCanvasContext("canvas");
             canvas.width = canvasWidth;
             canvas.height = canvasHeight;
@@ -658,7 +674,9 @@ export default {
             canvas.save();
             // 这里的画布drawImage是一种异步属性  可能存在未绘制全就执行了draw的问题  so添加延迟
             setTimeout(guarded((e) => {
+              if (!active()) return;
               canvas.draw(true, guarded(() => {
+                if (!active()) return;
                 uni.canvasToTempFilePath({
                   canvasId: "canvas",
                   fileType: "JPEG",
@@ -677,9 +695,10 @@ export default {
         });
       }),
       fail: finish,
-    }); } catch (error) { finish(); throw error; }
+    }); } catch (error) { if (!active()) return; finish(); throw error; }
 
     function uploadImg(filePath) {
+      if (!active()) return;
       try { uni.uploadFile({
         url: HTTP_REQUEST_URL + "/api/" + uploadUrl,
         filePath,
@@ -692,7 +711,7 @@ export default {
           // #ifdef MP
           "Content-Type": "multipart/form-data",
           // #endif
-          [TOKENNAME]: "Bearer " + store.state.app.token,
+          [TOKENNAME]: "Bearer " + (scoped ? original.token : store.state.app.token),
         },
         success: guarded(function (res) {
           uni.hideLoading();
@@ -703,10 +722,10 @@ export default {
           } else {
             let data = res.data ? JSON.parse(res.data) : {};
             if (data.status == 200) {
-              successCallback && successCallback(data);
+              if (active()) successCallback && successCallback(data);
             } else {
-              errorCallback && errorCallback(data);
-              that.Tips({
+              if (active()) errorCallback && errorCallback(data);
+              if (active()) that.Tips({
                 title: data.msg,
               });
             }
@@ -719,7 +738,7 @@ export default {
           });
         }),
         complete: finish,
-      }); } catch (error) { finish(); throw error; }
+      }); } catch (error) { if (!active()) return; finish(); throw error; }
     }
   },
   /**
