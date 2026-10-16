@@ -467,6 +467,12 @@ r3新Run实际结果（2026-10-15）：clean来源 `483a43f99c1c2df733a2683de8fb
 
 r4键盘来源已实际create-only生成，builder摘要 `e3dc21bd9e819a46d622f8c597734cf67aa8dc8ac4ef2d631d0bbf662c6347e3`；Root读源和纯逆变换/原38函数保护通过，新browser的Node语法检查exit0。原host字节保持，因此仍指向旧38a9前端构建；本轮尚未尝试用它freeze新前端，不能写成冻结失败或运行就绪。后继build绑定实施依据：新建 `candidate-internal-v6-merchant-http-final-r4-build1` 及对应close/inverse，host只换实际新build目录、上述真实postcheck SHA及其真实前端source SHA三值，完整原43源码/25产物、逐文件hash、普通业务及34/25/9/23/3600门禁保留；close只改新HOST路径和真实host SHA，其函数保持。旧r4/r3与构建FAIL不覆盖。新后继须完整逆回既有来源并独立源审后，才用后续clean主树重新freeze；主树后续仅文档/后端变动仍需逐文件证明其43前端源码等于该实际构建，不能借用不匹配产物。
 
+**手机空态后继修复合同（2026-10-16，实施前）：** Main仍固定e2902198f的原Run，不能修改其源或重开窗口；本轮已实际完成29个机械步骤，但第29步的空态截图人工复核失败，原记录 `root-empty-state-320-diagnostic.json` 摘要 `1fe730d7cd060c32fb5cda91eb3ba26f42ad20db9282bec03dc20986cf9e4194`。真实320宽下body-wrapper宽254，ElementUI空态块inline宽1170、文字框x325.833/宽585，故原“正尺寸即visible”不足以证明文字在屏内。先沿原PID1 SIGTERM机制关闭已过期的原HTTP组与实例，不续期、不重启、不伪造原stop或完整验收证据。
+
+修复在独立AUX进行：产品仅 `template/merchant/src/styles.css` 对实际 `.marketplace-table-scroll` 的空态块限定可视宽度并适配正常横向位置，文字使用满宽/合理padding及line-height，保留静态消息语义；不改变原表格宽度、键盘滚动、金额、接口或权限。必要验证Files为现 `help/audit-regressions/isolated/ms4-merchant-http.php` 的DOM消费者及仓库外新browser来源/后继候选；原r4/fulfillment1来源和29步/7图/6人工记录保留。新增只读 `empty_entries`，保存原文、文字/空态块/真实wrapper的矩形及实际clientWidth/scrollWidth、display/visibility；空rows要求唯一精确原文且文字/空态块均完整落在wrapper和文档宽度内、文字无横向溢出，非空rows要求无空态项。保留原empty字符串、所有既有DOM与34/25/9/23/3600断言，不全局修改visible()或以滚动写入/裁剪掩盖缺陷。先source/独立审查和同源离线构建，再在新clean来源Run验证320/390/1440及正常筛选空结果、真实横向操作与实际截图；尚未实施或运行的项目不能记通过。
+
+手机空态源码检查点（AUX，2026-10-16）：CSS仅新增上述两条空态规则，摘要 `8cc2a33de3ccab54137ea7d359adaabac504a12b282f3e3bd41551976be32389`；DOM消费者摘要 `86e590a702cba609ceeca9e308ff685ca90b196260524b8eeca5323a8a578e02`；仓库外新来源 `artifacts/ms4-merchant-http-preparation/browser-empty-state-v1/ms4-merchant-browser.mjs` 摘要 `b8a15a3d519b2e4f51cc3e917880dd33a89a5720eefb90c922b326a265b605ca`。Root完整读回差异，独立源审有限SOURCE PASS，原visible过滤及其断言、横向往返、34/25/9/23/3600保持；新empty_entries直接记录全部真实项，不先过滤隐藏项。Root实际PHP8.2语法及Node22 --check均native0/stderr空，临时语法容器精确查询零，三份源码前后字节保持；收据 `artifacts/ms4-merchant-empty-source/20261016-v1/syntax-result.json` 摘要 `8740e41c75409ccc3a426aad579e84d979d497573da6e12af0c2e88047550390`，仅PHP_NODE_SYNTAX_ONLY。离线构建、sticky在非零横向滚动时的表现和新Run实际视觉/业务验收仍PENDING；Main仍冻结原e290来源，未因源码通过修改当前Run或宣布第29步通过。
+
 ### Task 7: 退款额度与库存行为
 
 - 接口：申请退款时在事务中锁定订单行，校验"已退金额 + 处理中金额 + 本次金额 ≤ 实付"；三类库存行为分别写 `release`（未发货取消）、`return_in`（退货验收入库）、不写（仅退款）。

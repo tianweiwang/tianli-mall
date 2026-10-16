@@ -761,7 +761,7 @@ function m4h_dom(array $dom,array $command,array $plan,array $source,array $runt
         &&is_bool($dom['login_form_visible']??null)&&is_bool($dom['logout_button_visible']??null),'M4H_REAL_DOM_VIEWPORT_SECRET_AND_DOCUMENT_BOUNDS');
     if($command['action']==='visual')m4h_assert($dom['width']===$command['args']['viewport']['width']
         &&$dom['height']===$command['args']['viewport']['height'],'M4H_PLANNED_CSS_VIEWPORT');
-    foreach(['headings','row_cells','row_items','fact_entries','fact_grids','saved_groups','empty','images','controls','tables','messages'] as $key)
+    foreach(['headings','row_cells','row_items','fact_entries','fact_grids','saved_groups','empty','empty_entries','images','controls','tables','messages'] as $key)
         m4h_assert(is_array($dom[$key]??null)&&array_is_list($dom[$key]),'M4H_RENDERED_STRUCTURED_COLLECTION');
     foreach($dom['controls'] as $control){
         m4h_assert(in_array($control['tag']??null,['BUTTON','INPUT','DIV'],true)&&is_string($control['label']??null)
@@ -818,6 +818,32 @@ function m4h_dom(array $dom,array $command,array $plan,array $source,array $runt
             foreach($row['items'] as $itemIndex=>$item)m4h_item_dom($items[$itemIndex],$item,false,$runtime);
         }
         m4h_assert($dom['empty']===($rows===[]?['暂无符合条件的订单']:[]),'M4H_REAL_FILTER_EMPTY_TEXT');
+        m4h_assert(count($dom['empty_entries'])===($rows===[]?1:0),'M4H_REAL_EMPTY_GEOMETRY_COUNT');
+        if($rows===[]){$entry=$dom['empty_entries'][0];
+            m4h_assert(is_array($entry),'M4H_REAL_EMPTY_GEOMETRY_ENTRY');
+            m4h_keys($entry,['text','text_geometry','block_geometry','wrapper_geometry']);
+            m4h_assert($entry['text']==='暂无符合条件的订单','M4H_REAL_EMPTY_GEOMETRY_TEXT');
+            $boxes=[];
+            foreach(['text_geometry','block_geometry','wrapper_geometry'] as $key){$geometry=$entry[$key];
+                m4h_assert(is_array($geometry),'M4H_REAL_EMPTY_GEOMETRY_OBJECT');
+                m4h_keys($geometry,['bounds','client_width','scroll_width','display','visibility']);
+                $boxes[$key]=m4h_box($geometry['bounds']);
+                m4h_assert($boxes[$key]['width']>0&&$boxes[$key]['height']>0
+                    &&is_int($geometry['client_width'])&&$geometry['client_width']>0
+                    &&is_int($geometry['scroll_width'])&&$geometry['scroll_width']>=$geometry['client_width']
+                    &&is_string($geometry['display'])&&$geometry['display']!==''&&$geometry['display']!=='none'
+                    &&$geometry['visibility']==='visible','M4H_REAL_EMPTY_POSITIVE_DISPLAYED_GEOMETRY');
+            }
+            $text=$boxes['text_geometry'];$block=$boxes['block_geometry'];$wrapper=$boxes['wrapper_geometry'];
+            m4h_inside($text,$block);m4h_inside($block,$wrapper);
+            foreach([$text,$block] as $box)m4h_assert($box['x']>=-2&&$box['x']+$box['width']<=$dom['width']+2,
+                'M4H_REAL_EMPTY_TEXT_AND_BLOCK_INSIDE_DOCUMENT');
+            m4h_assert($entry['text_geometry']['scroll_width']<=$entry['text_geometry']['client_width']+1,
+                'M4H_REAL_EMPTY_TEXT_WITHOUT_HORIZONTAL_OVERFLOW');
+            m4h_close_box($wrapper,m4h_box($dom['tables'][0]['bounds']));
+            foreach(['client_width','scroll_width'] as $key)m4h_assert($entry['wrapper_geometry'][$key]===$dom['tables'][0][$key],
+                'M4H_REAL_EMPTY_SAME_TABLE_SCROLL_METRICS');
+        }
         $page=(int)($scene['query']['page']??1);
         m4h_assert(m4h_same($dom['pagination'],['page'=>$page,
             'prev_disabled'=>$page===1,'next_disabled'=>$page*20>=$data['count']]),'M4H_REAL_PAGER_ACTIVE_AND_DISABLED');return;
