@@ -132,6 +132,10 @@ H5仓库外源码后继检查点：R1的guarded bootstrap、copier主入口及�
 
 保存行/私有actor接口源码检查点（2026-10-16）：上述两项必要修改已整合。shared helper为56335B/摘要 `9d2e58d408306c8a43e8dd6ca254a711409f2909cf930c4606d2d286c57527cc`，H5 helper为32854B/摘要 `86f523bbbbac1ca9b467991f6b563b311af32e119391146163033e6f09313c74`；Root分别完整字节逆回到原文件，独立源审确认只改签名与null/C购物车块、末端actor封存及私有descriptor，旧8参数caller/默认分支、原writer及所有业务/公开result合同保持。Root在原只读/network none PHP8.2镜像执行两项聚焦语法检查，native0/stderr空、两源前后相同；`artifacts/ms4-customer-h5-oracle-source/20261016-r1/php-syntax-result.json` 1388B/摘要 `fec877bdf9270df5632e0f3ff6993d194f389ceb8cfeebee7a0cf9d63b8e4a2d`。此项未加载App/SQL/HTTP/DOM或创建H5 Run，C分支和新actor实际封存/消费仍待新来源运行；012988普通通过不重标到新源。
 
+H5阶段读回补充合同（实施前）：公开confirm DTO由quoteOutput移除内部UID/selection/cart_refs，不能充当saved的完整真实frame；正常create随后由MarketplaceOrderPostCommitServices::finish→clearConfirmation→clearOwnedCache实际删确认缓存并核has=false，B4再读取不仅可能过600秒，也可能已被正常删除。因此B3必须在实际computed完成、真实create之前，沿原CacheService读取真实owner/key缓存，调用MarketplaceCartSelection::frame核真实完整内容，并私有封存该frame及当时完整native beforeCreate；不重建frame、不续/扩大600秒、不更改postCommit清理。B3的新原生ingress进程只调用一次原m4c_app('prepare',source)建立真实只读审计App，B4另一个新进程只调用一次原m4c_app('verify',source)；这些mode只选择各自固定create-only /tmp目录，不调用fixture/12HTTP/业务kernel。两阶段各在App前写固定attempt，只允许原目录一次，不换mode/Run/folder或删目录重试。B0/B1/B2/Final及serve父保持无App；B3/B4用各自保留的真实native PDO作32表初始化前后/核验前后完整相等，并与实际默认PDO不同且双方事务外；audit_db每次新建PDO，不能伪造其对象恒等。B4在Root正常停同一业务child、组空/监听关闭且保留父监督后，用真实create请求/响应及B3原frame/beforeCreate调用原saved；Final只native核B4，不再建App或读已删缓存。
+
+B4完整native ledger/movement含二进制digest，stage私有资料不能直接JSON编码原行；保留PDO原生类型，按实际serialize字节加完整私有摘要后base64封在有界JSON中，读回只允许固定文件、严格大小/键集、allowed_classes=false解码及完整25+7数组形状校验，不以公共DTO替代原行。完整私密hash仍不公开。运行窗口仍沿原实际3600秒，不能以它代替确认缓存600秒；实际serve父在完整source/资源门禁后，凭已核实际CID/父进程及冻结origin生成一次私有runtime，再发布source-ready。source binding不引用尚不存在的runtime；不增加有写control权限的metadata角色或循环启动前置。全流程未实施/运行，本段只纠正旧仓库外MAP/ADDENDUM的B3无App和B4延后取cache假设，旧原文/摘要保留。
+
 ## 3. ISO-MIN 环境（MS0a 交付）
 
 ### 3.1 文件
