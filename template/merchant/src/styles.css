@@ -24,9 +24,9 @@ a { color: #2d8cf0; }
 .actions .el-button + .el-button, .toolbar .el-button + .el-button { margin-left: 0; }
 .el-button--primary { background: #2d8cf0; border-color: #2d8cf0; }
 .el-table { max-width: 100%; }
-.marketplace-table-scroll:focus-visible { outline: 2px solid #2d8cf0; outline-offset: -2px; }
-.marketplace-table-scroll > .el-table__empty-block { max-width: 100%; position: sticky; left: 0; }
-.marketplace-table-scroll > .el-table__empty-block > .el-table__empty-text { width: 100%; padding: 18px 16px; line-height: 1.6; overflow-wrap: anywhere; }
+.marketplace-table-scroll > .el-table__body-wrapper:focus-visible { outline: 2px solid #2d8cf0; outline-offset: -2px; }
+.marketplace-table-scroll > .el-table__body-wrapper > .el-table__empty-block { max-width: 100%; position: sticky; left: 0; }
+.marketplace-table-scroll > .el-table__body-wrapper > .el-table__empty-block > .el-table__empty-text { width: 100%; padding: 18px 16px; line-height: 1.6; overflow-wrap: anywhere; }
 .table-image { width: 52px; height: 52px; object-fit: contain; border: 1px solid #ebeef5; }
 .image-strip { display: flex; flex-wrap: wrap; gap: 12px; }
 .image-item { width: 110px; }

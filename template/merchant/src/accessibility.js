@@ -26,6 +26,5 @@ function applyTableScroll(element, binding) {
   wrapper.setAttribute('tabindex', '0');
   wrapper.setAttribute('role', 'region');
   wrapper.setAttribute('aria-label', binding.value.trim());
-  wrapper.classList.add('marketplace-table-scroll');
 }
 export const tableScroll = { inserted: applyTableScroll, componentUpdated: applyTableScroll };

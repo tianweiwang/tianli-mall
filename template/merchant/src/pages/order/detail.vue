@@ -24,7 +24,7 @@
         <div class="full-row"><dt>收货地址</dt><dd>{{ order.recipient.user_address }}</dd></div>
       </dl>
       <h2 class="section-heading">保存商品</h2>
-      <el-table v-table-scroll="'保存商品，可横向滚动'" :data="order.items" border>
+      <el-table class="marketplace-table-scroll" v-table-scroll="'保存商品，可横向滚动'" :data="order.items" border>
         <el-table-column label="商品及规格" min-width="260"><template slot-scope="scope">
           <div class="order-item"><img :src="scope.row.image" class="table-image" alt="商品保存图片">
             <div class="order-text"><div>{{ scope.row.product_name }}</div><p class="field-note">{{ scope.row.sku_name }}</p></div></div>
