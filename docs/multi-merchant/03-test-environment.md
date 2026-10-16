@@ -108,6 +108,8 @@ H5真实加购必要修复合同（实施前）：保留当前两商品的非空
 
 加购必要修复源码检查点（2026-10-16）：上述两import/三表达式及一处对应注释已实施。独立源审核三处均为普通商品producer，保留legacy、预售、虚拟及详情definition_complete收口，公开投影继续使用真实cart_button；Root逐字节复算候选加唯一注释差分，未扩展来源或变更表单。最终两源145259B/40332B，摘要分别 `4ac7deffe12cdccb2143d4891363bbe3ee08c809769ea9f39ce030757f75af69` / `fe4a8471ead0447f102b4c673847a123616171d08dde36ce025ca4264884ab0f`。固定现有PHP8.2镜像只读/network none语法检查两次native0/stderr空，文件前后相同；仓库外 `artifacts/ms4-form-cart-source/20261016-r1/php-syntax-result.json` 1366B/摘要 `0c369ccb539043ed03e600040c99c472a13b16a4156c0ade64d8b82a81326ea2`。本检查未加载App、SQL、HTTP或浏览器；新来源实际按钮及双店普通链仍待H5验证，未借旧56e0结果标记通过。
 
+H5准备入口实施细化：选择独立原生DML角色 `audit-ms4-customer-h5-prepare`，proof `customer-h5-prepare`，有限命令为新 `ms4-customer-h5.php prepare`；完整复用原customer fixture准备的真实终态/原文件，另要求独立public-copy原生终态0。该DML只挂原source/prep/Run/app/fixture为RO，public为RO，http-runtime/control/browser三专用卷RW及唯一/tmp tmpfs，结果只写control/prepare-result.json。原四source根/9-extra不扩展，新两PHP单列h5_source_files；固定public-source/h5-dist/inputs三清单由host冻结并独立核实际公开副本的完整字节/空目录/权限，不将清单当编译证明。原b803报告保持原SHA，当前完整前端字节复用门禁由host单列。独立public-copy角色创建十卷中四个新空卷并核归属/模式，DML真实终态0后另由独立migrator执行最终writeMd5；B0、真实应用和UI仍依原r3后续顺序，不在DML中调用第二App或提前伪造API通过。profile在仓库外新candidate-h5-r1派生，原customer profile及历史Run不改。该选择细化03既有有限合同，不增加任何生产业务开关、权益或支付决定。
+
 ## 3. ISO-MIN 环境（MS0a 交付）
 
 ### 3.1 文件
