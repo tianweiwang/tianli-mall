@@ -86,6 +86,12 @@ customer verify容器有本内网alias audit-app、无宿主端口，显式stop_
 
 当前顾客 H5 离线构建（2026-10-16）：同一冻结Main06662f420的542个完整前端源与原29930个离线依赖分别冻结，未安装或下载依赖。首个长目录在编译前输入预核native1；只读诊断f506baf9867daabc73f659ea5cbe9ed753968c34f307439f6d8c1fef2cd45536证明263字符路径普通stat失败，而扩展路径真实文件2501B及摘要与冻结一致。保留该失败目录，另建短目录artifacts/ms4-h5/06662f420-r1，最长工具输入225字符，实际新复制、原adapter三路径逆变换与两轮编译、最终静态gate均正常。真实Node22.22.2/HBuilder CLI5.24、两轮无errors，第二轮保留asset/entrypoint size原生告警；334个dist、3个index本地资源、1个店铺chunk均核对真实afterEmit清单，完整542源及原始/克隆29930依赖前后不变。报告摘要ffc4782fc812e91645c513f76bb92b1d32612369e0457ff46d2b0dc4fb059f09，dist清单摘要a81e589d38e848c1f0678361fe2bb4790a3c381928d9a4100cb21d14a72360d8。仅CURRENT_MAIN_CUSTOMER_H5_BUILD_STATIC_ONLY，不证明页面运行、CDN动态请求、登录、下单、DOM或视觉；后续提交不改写该报告的真实source SHA，复用时须逐项匹配当前542份前端字节。
 
+第四个顾客 Run 已实际完整通过（2026-10-16）：clean Main `d7c9310ef91efe878fdc026e7c16b18a4dbd4975`，Run `202610160756345e5b99`，freeze `1ffb3703089381f8451838ba7dfd182c0c25dea801ace50e3b3b9654fa09b07d`。有限初始化六子命令、MS4 四次结构命令、专用文件引导及真实 fixture prepare 均正常；customer 实际 native0/PID0/restart0，结果 `VERIFIED_NORMAL_CUSTOMER_HTTP_PERSISTENT_ONLY` / `final_source`，收据2525B、摘要 `7c872e2b27609f385211ecaf5e984837fad14aac016bb2b1db1d899f6d474b82`。真实凭据登录、三次加购、列表、确认、计算、创建前查询、首次创建、原样顺序重放、创建后查询及已存 computed 共12次HTTP均通过。事务外独立PDO核25表，实际1订单、2订单项、2reserve、1ledger、1发票，选中cart消费且未选行保持；商品70.55、两整行运费5.34/2.67、总运费8.01、应付78.56，两商品非空表单含字符串“0”及真实发票快照均核对。重放及两次查询后业务事实保持，订单仍未支付。已确认修正版越过完整独立读回；旧失败收据保持原结论。
+
+本 Run 的 HTTP child 单次正常TERM15后成员空、监听关闭；实际 child exitcode/proc_close 为-1/-1，原值保留。Root随后实际执行原 reviewed normal-close-customer-r2，MySQL/Redis的同一原生stop进程与容器均exit0/PID0；原3容器、1空内部网络、6专用卷非force精确移除，关闭摘要 `f3e76e0f9fd47db4c1129f7755a35ab4a0c7ac13a806e5d1d3322297d90267b9`。Root另实际执行原独立zero，双标签三类六查询均native0、stdout/stderr空，摘要 `6834976d0674746a33a73c8087943ad5e948f67d22c6386b0a3faf77d78da9f2`；原完整源码、公开业务/终态收据及Main clean来源保持后解除冻结。本 Run 不重开。仅普通persistent顾客API链通过；temporary、再次购买、硬刷新完整恢复、顾客DOM/视觉、原商家浏览器及发货/售后/支付等原责任仍待完成，已停止样本保持NOT RUN。
+
+同一clean d7来源的H5复用字节门禁已实际通过：当前完整tracked路径集542份与原06662f420构建输入一致、全部大小/摘要相同，原build报告字节匹配。仓库外 `artifacts/ms4-customer-http-preparation/h5-source-reuse-d7c9310ef.json` 为720B、摘要 `996f1ccfc94f5a03c8b2aa41d014ed668be12ef766983c9dcaa902b4338927e1`；没有重跑编译或页面，也未改写原构建source SHA。后继若修改前端，必须重新取得对应来源的构建/页面证明。
+
 ## 3. ISO-MIN 环境（MS0a 交付）
 
 ### 3.1 文件

@@ -309,6 +309,16 @@ enabled 顾客验证源码检查点（2026-10-16）：上述两PHP已实现并�
 
 当前Main06662f420的完整顾客H5已真实离线构建及静态gate通过，542源/29930原始与克隆依赖保持、334份产物与原生afterEmit一致，报告及长路径预核失败/短目录后继证据见03。此结果仅给下一真实页面验证提供产物，不是顾客HTTP/DOM、品牌配置或视觉验收；完整Task4/MS4及原34/25/9/23商家浏览器要求仍未完成。
 
+2026-10-16 顾客完整普通HTTP检查点：新clean来源d7c9310ef、Run `202610160756345e5b99` 已实际完成12个真实请求及25表独立已提交读回，收据 `7c872e2b27609f385211ecaf5e984837fad14aac016bb2b1db1d899f6d474b82`。同请求顺序重放返回原单且不再扣库存/改业务事实；owner结果查询、saved computed、真实发票、两商品非空表单及整行运费均通过。Root正常关闭原3容器/1内网/6卷并独立六查询全0，详情与原生终态见03。范围只记普通persistent顾客API链；原Task4/MS4、temporary、页面、再次购买、完整刷新恢复和后续责任继续保留，不据源码一致性断言数量增加业务用例数。
+
+**再次购买实施依据（原Run关闭并独立核零后、整合前）：** 保持 `StoreOrderServices::againOrder` 按本人原单逐项创建真实temporary refs的array返回，不从旧商品缓存或历史mer_id推断当前店铺。新增 `StoreCartServices::getTemporaryCartGroups(int $uid,array $refs)`：读取真实UID封装，核原ref/id、普通类型及正数量，再经既有 `cartIdentity(...,true)` 重读当前根/SKU，按真实当前mer分组，店铺只用 `PublicCatalogProjection::store`。分组精确覆盖本批refs，无遗漏/重复/额外；refs保持字符串，不续期、不造cart、不计算地址/运费或生成confirmation key。
+
+- API保持原路径与 `cateId` temporary逗号串。仅多商户启用时追加整数 `marketplace_again_version:1`、`source_kind:temporary`、非空 `groups:[{mer_id,store,cart_refs}]`；组及store的mer_id为规范正十进制string，组按本批refs首次出现的当前商家顺序输出。旧客户端仍取得同含义cateId，但缺mer的旧确认不冒称完整兼容；新版遇已声明V1的不完整数据须提示，不猜店铺或退回旧路径。
+- Files：现有 `crmeb/app/services/order/StoreCartServices.php`、v1 `StoreOrderController.php`，两个既有Vue consumer `pages/goods/order_details/index.vue` / `pages/users/user_invoice_order/index.vue`，及必要共用 `template/uni-app/utils/marketplace-again-purchase.js`、`components/marketplaceAgainStorePicker/index.vue`。后四项均属template/uni-app。两个分类快捷结算已转现有按店主购物车，保持原实现及实际页面验证责任。
+- UI共用解析/URL编码及可滚动选店组件：单组直接确认，多组明确选择一家后只携本组真实refs和mer；不携旧key/价/答案，不自动拆单。保留旧无版本响应导航。订单详情保留原可见条件、使用真实按钮并在请求/选择/成功导航期间防重复；成功导航锁在返回本页onShow释放，实际fail才释放并提示，离页代次屏蔽旧响应。原发票页没有再次购买按钮，仅有遗留方法，本次只补方法兼容，不新增入口或声称该页可点击验收。
+- 必要旧副作用修复：checkProductStock 尾加缺省true的 `adjustPersistentCart`，仅包住普通商品已有持久行读取/下调块；setCart首次调用仅多商户启用且new=true时传false。所有当前商品/SKU、实际库存数量检查与原五元返回保持，persistent和关闭开关分支及活动持久合并复检保持。临时购买保持已有持久cart原值；原逐项temporary失败可能留下前项缓存，沿原3600秒自然到期，不自动重试或宣称整批事务。
+- 本节原Task4清单继续执行：先整合并核实际字节/独立源审，执行聚焦PHP语法、普通解析/单次状态检查、官方H5/MP-Weixin/App-plus预处理与Vue/Sass编译；再从新clean来源做真实本人原单/V1保存单、同店与跨店当前根的temporary/API验证及实际页面。正常库存样本用库存充足的已有持久2/临时3/库存10核原值保持。触发旧下调条件及并发/故障/恢复等用户已停止样本不运行，边界分支仅源码核对，不据普通样本宣称边界实测。320/390/1440的长店名、滚动、外边界和居中视觉仍需实际验收。
+
 ### Task 5: 取消与超时释放
 
 - 接口：整笔未支付且未发货的取消/超时按真实父reserve聚合release，`idem_key = "release:<store_order.id>:<parent_reserve_id>"`；两项为真实已提交PK，尾段是规范U64字符串，不能用非全局唯一的SKU八字节unique。动作摘要绑定保存顾客/商家/订单/父reserve/SKU/数量，顾客取消与系统超时共用动作，演员仅记首次真实执行者；重复不重复释放。未来Task7部分退款用独立真实退款动作键，共同核累计release+return_in不超过父reserve.qty。关单前走可信支付query→close→query closed；unknown或无可信attempt不释放，已支付转待处理，不制造paid或回退平台账户。MS5决定前仅显式testing驱动可做普通未付关单。
