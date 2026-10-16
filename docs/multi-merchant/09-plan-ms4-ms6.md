@@ -360,13 +360,15 @@ H5入口/阶段已实际整合到现两PHP：serve/七ingress/原actor只读交�
 沿[完整实施依据](records/ms4/confirmation-restore-design.md)的R1–R10/A1–A9执行；r1只读API/URL带key不得替代完整恢复。本次在独立 `ms4-confirmation-restore` 工作树源开发，Main当前H5 Run沿冻结源继续。无新表、服务端草稿、支付或上传重放；复用现完整DTO/报价/frame/owner lookup，完整保留本人选择与分组表单。当前真实GET user及账号代次才可确认owner；提交前完整不可变attempt必须持久写入读回，unknown/not_found不能自动解锁。地址none不取默认，未知key容量统一计数；每记录1MiB、owner 5MiB/5完整上下文/20未知key，不能截断旧未知attempt或缩窄既有合法业务输入。Root复核补充和代理写入接口已在设计记录中统一。
 
 - [x] RC1：恢复完整要求、设计、文件与运行边界登记；仅实施依据，不是验收。
-- [ ] RC2：后端完整DTO共用组装、同key只读restore与created/processing前后优先。
+- [x] RC2：后端完整DTO共用组装、同key只读restore与created/processing前后优先；仅后端源码检查点，实际restore运行未验收。
 - [ ] RC3：真实USERINFO、账号代次、缓存/请求/登录切号生产消费者。
 - [ ] RC4：单owner有界持久上下文、revision保护、完整attempt先写读回和未知anchor责任。
 - [ ] RC5：确认页完整hydrate、全部编辑保存、unknown/key-only分流与历史替换。
 - [ ] RC6：地址/发票子页真实channel关联、父丢失同key恢复与真实ID保存。
 - [ ] RC7：Root聚焦静态/语法及原fresh/legacy兼容源码核对，记录实际范围。
 - [ ] RC8：按当时允许范围取得新源正常运行/页面/数据证据；停止样本保持未验，不能据RC2或源码检查完成整项。
+
+RC2后端源码检查点（2026-10-16）：仅独立恢复工作树的五PHP新增本人原key只读restore与两段共用完整DTO组装，原fresh唯一600秒缓存及legacy领券顺序保持。Root与独立复核均未发现确定源码缺陷；真实lookup先于提示/配置/frame，预览成功或异常后二查，失效选择不换默认，不可用支付只按无渠道基准报价。Root在原固定PHP8.2镜像、network none/只读根与源码/cap-drop ALL/no-new-privileges下实际逐文件php -l，5项全部native0/stderr空，前后完整源码字节相同；收据 `artifacts/ms4-confirmation-restore-source/20261016-r1/php-syntax-result.json` 摘要 `c5c90ced1fff0f33379adf071f2460db230007c6ea5225e607bac105e259cc43`。此检查不加载App/SQL/HTTP，不使用Main当前Run；前端仍在实现，RC3–8及完整恢复运行保持未完成。
 
 ### Task 5: 取消与超时释放
 

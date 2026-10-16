@@ -154,6 +154,8 @@ H5入口/阶段实际源码整合检查点（2026-10-16）：现两PHP已整合s
 
 完整确认恢复的并行源开发边界：Main `ms4-generic-trade@9e53170a7` 仍冻结用于原顾客H5 Run `202610161242280276cd`。Root从同一clean基线另建 `H:/天俪商城/worktrees/ms4-confirmation-restore` / `feature/ms4-confirmation-restore`，沿现L2开发，完整合同见[恢复实施依据](records/ms4/confirmation-restore-design.md)。本分支不写原Run、不用旧运行结果证明新产品源。Root独占文档/Git/实际检查与运行；三个产品代理只改明确分配的源码，不执行任何程序或访问私有Run。仅允许Root进行相应静态/语法检查；任何新产品实际运行仍须其实际来源和专用隔离实例。原恢复、故障、拒绝、并发等停止样本保持NOT RUN，不因并行开发重新启用。Main原Run正常结束并独立核零后，再审查整合本分支，原H5/商家UI/订单/发货/售后及MS5/MS6责任不变。
 
+恢复分支后端有限检查：Root实际对既定五PHP执行原固定PHP8.2镜像下的纯 `php -l`，network none、只读根及新工作树源码、cap-drop ALL、no-new-privileges，未挂载任何Run/密钥/数据库卷；五项native0/stderr空，五源前后SHA256相同。检查脚本与原始收据在仓库外 `artifacts/ms4-confirmation-restore-source/20261016-r1/`，结果摘要 `c5c90ced1fff0f33379adf071f2460db230007c6ea5225e607bac105e259cc43`。只证明解析与源码保持；未加载应用、SQL、HTTP或浏览器，未运行任何停止样本，不能记完整恢复或RC8完成。
+
 ## 3. ISO-MIN 环境（MS0a 交付）
 
 ### 3.1 文件

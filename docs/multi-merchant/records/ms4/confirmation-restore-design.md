@@ -1,4 +1,4 @@
-# Task4 完整确认上下文刷新恢复：实施依据
+# Task4 完整确认上下文刷新恢复：实施依据与源码检查点
 
 状态：IMPLEMENTATION BASIS / NOT IMPLEMENTED / NOT RUN。Root在现Task4原范围内采用已审r2及Root补充，任务状态只在09文档的一份RC清单记录。源基线为 `9e53170a7db817c36a209e26a8e34404ac60d612`；原r2主文24230B、摘要 `de61385f3889aa4226f56f9facec2ac4d07d1cd7e1730445956df7f1266f4f49` 保留在仓库外，本记录合入其必要修订。实施工作树R=`H:/天俪商城/worktrees/ms4-confirmation-restore`，分支 `feature/ms4-confirmation-restore`，U=`R/template/uni-app`，B=`R/crmeb`。当前Main的顾客H5 Run继续使用原冻结工作树，本分支不得写入该实例或把其结果作为新产品源的运行证据。仅L2本地开发；用户停止的运行样本保持NOT RUN。
 
@@ -134,3 +134,7 @@
 - 草稿工具对身份模块仅导出同步 `pruneMarketplaceConfirmationOwner(ownerUid): boolean`：清本owner的完整草稿/PII/body，原send-intent转最小unknown anchor，保留原未知key责任；不存在记录视为成功，损坏/配额/IO失败返回false，不丢未知内容、不阻止退出身份。身份模块先定位旧owner（已核verifiedUid优先，旧uid只可作本机清理提示、不可授权恢复），清理后无论结果都使旧身份/回包失效；`state.app.confirmationCleanupFailed` 记录失败，确认页据此显示持久notice并停止新create，成功清理才解除该失败标记。该方法不得读取/显示其他owner的业务上下文，不增加Vuex模块或通用持久框架。
 - 后端不得用fresh confirm、remember/set或延TTL恢复；前端不得从URL/缓存UID造身份或完整DTO。真实created优先、unknown只查询、完整attempt先写读回再HTTP、none不改默认、原fresh/legacy兼容及原未完成范围均保持。
 - 当前不可用的原payType意图保持未解决，不阻断完整只读DTO恢复、不替换客户端选择。内部报价复用现validatePayment及真实当前配置判断；仅其明确业务ApiException可转为空渠道基准计算，当前有效渠道保持原值，配置或基础设施错误继续失败。关闭的offline不得继续套用offline免运费；不新增响应schema、不改create支付验证、不发起支付。fresh完整DTO共用组装分为商品/表单/价格前段与用户/能力尾段，原唯一cacheOrderInfo仍在两段之间，legacy自动领券仍只在fresh末尾。
+
+## 11. 实际源码检查点
+
+2026-10-16后端五PHP已实现并经Root与独立源码复核；Root的实际PHP8.2语法检查5/5 native0、stderr空，前后字节相同。收据位于仓库外 `artifacts/ms4-confirmation-restore-source/20261016-r1/php-syntax-result.json`，摘要 `c5c90ced1fff0f33379adf071f2460db230007c6ea5225e607bac105e259cc43`。本次仅后端SOURCE/PARSE，不加载App/SQL/HTTP；前端仍在实现，整体恢复未验收。开头的NOT IMPLEMENTED/NOT RUN为最初实施依据登记时状态，后继进度只按09的RC清单及本节实际证据，不以Main旧结果代替本源运行。

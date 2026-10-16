@@ -215,6 +215,7 @@ Route::group(function () {
         Route::post('order/check_shipping', 'v1.order.StoreOrderController/checkShipping')->name('checkShipping')->option(['real_name' => '检测是否显示快递和自提标签']); //检测是否显示快递和自提标签
         Route::post('order/confirm', 'v1.order.StoreOrderController/confirm')->name('orderConfirm')->option(['real_name' => '订单确认']); //订单确认
         Route::post('order/computed/:key', 'v1.order.StoreOrderController/computedOrder')->name('computedOrder')->option(['real_name' => '计算订单金额']); //计算订单金额
+        Route::post('order/confirmation/:key/restore', 'v1.order.StoreOrderController/restoreConfirmation')->name('orderConfirmationRestore')->option(['real_name' => '恢复订单确认']);
         Route::post('order/confirmation/:key', 'v1.order.StoreOrderController/confirmation')->name('orderConfirmation')->option(['real_name' => '订单提交结果']);
         Route::post('order/create/:key', 'v1.order.StoreOrderController/create')->name('orderCreate')->middleware(BlockerMiddleware::class)->option(['real_name' => '订单创建']); //订单创建
         Route::get('order/data', 'v1.order.StoreOrderController/data')->name('orderData')->option(['real_name' => '订单统计数据']); //订单统计数据

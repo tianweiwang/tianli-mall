@@ -76,6 +76,16 @@ final class MarketplaceOrderInput
             'is_gift'=>self::unsigned($raw['is_gift']??0,'is_gift',2),'payType'=>strtolower($payType)];
     }
 
+    /** Explicit preview hints only; no client identity, selection or default-record fallback. */
+    public static function restore(array $raw):array
+    {
+        $fields=array_keys($raw);sort($fields,SORT_STRING);
+        if($fields!==['addressId','invoice_id','payType'])throw new ApiException('恢复确认参数不完整或未登记');
+        return ['addressId'=>self::unsigned($raw['addressId'],'addressId',16777215),
+            'invoice_id'=>self::unsigned($raw['invoice_id'],'invoice_id',2147483647),
+            'payType'=>strtolower(self::text($raw['payType'],'payType',32))];
+    }
+
     /** The caller supplies its verified UID and route key; this method performs no authorization. */
     public static function create(int $uid,string $routeKey,array $rawPost):array
     {
