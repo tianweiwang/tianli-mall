@@ -92,7 +92,7 @@
 | `template/uni-app/utils/marketplace-confirmation-draft.js`（新） | 单owner有界完整记录、验证/写读回、不可变attempts、到期PII剥除/只查询anchor及受控清理；无新store/表。 |
 | `template/uni-app/api/order.js`；`template/uni-app/pages/goods/order_confirm/index.vue` | restore wrapper、完整共用hydrate、key-only分流/history replace、所有保存点/unknown门/无binding created、生命周期守卫。postOrderComputed的key同时统一encodeURIComponent，现wrapper未编码。 |
 | `template/uni-app/store/modules/app.js`；`template/uni-app/libs/login.js`；`template/uni-app/utils/request.js` | 修真实缓存生产消费者/账号代次/force身份/旧响应及401/header隔离。 |
-| `template/uni-app/api/user.js`；`template/uni-app/api/public.js` | 仅真实token-producing API的identitySensitive选项；getUserInfo仍原GET user，不造身份。 |
+| `template/uni-app/api/user.js`；`template/uni-app/api/public.js`；`template/uni-app/api/api.js` | 仅真实token-producing API的identitySensitive选项；api/api.js限phoneLogin与wechatAppAuth两处，受保护的switchH5Login保持；getUserInfo仍原GET user，不造身份。 |
 | `template/uni-app/pages/users/login/index.vue`；`template/uni-app/pages/users/wechat_login/index.vue`；`template/uni-app/pages/users/user_info/index.vue`；`template/uni-app/App.vue` | 实际H5登录/切号/remoteRegister消费统一真实USERINFO action和代次，不只缓存UID；MP/App既有入口仍受中央失效守卫，若其直接UPDATE_USERINFO需同步改成非授权展示/同action，不宣称跨平台已验收。 |
 | `template/uni-app/pages/users/user_address_list/index.vue`；`template/uni-app/pages/users/user_address/index.vue`；`template/uni-app/pages/users/user_invoice_form/index.vue` | 原channel关联/父丢失同key恢复/真实ID持久回传；非V1个人资料与旧历史开票分支保持。 |
 
@@ -133,3 +133,4 @@
 - 身份代理负责app模块、login/request生产消费者和真实登录/切号入口。提交页代理负责持久工具、order API、确认页及三个地址/发票子页。后端代理只负责五个既定PHP调用点。跨代理契约变化须先回Root更新本记录，再写依赖代码，不各自猜接口。
 - 草稿工具对身份模块仅导出同步 `pruneMarketplaceConfirmationOwner(ownerUid): boolean`：清本owner的完整草稿/PII/body，原send-intent转最小unknown anchor，保留原未知key责任；不存在记录视为成功，损坏/配额/IO失败返回false，不丢未知内容、不阻止退出身份。身份模块先定位旧owner（已核verifiedUid优先，旧uid只可作本机清理提示、不可授权恢复），清理后无论结果都使旧身份/回包失效；`state.app.confirmationCleanupFailed` 记录失败，确认页据此显示持久notice并停止新create，成功清理才解除该失败标记。该方法不得读取/显示其他owner的业务上下文，不增加Vuex模块或通用持久框架。
 - 后端不得用fresh confirm、remember/set或延TTL恢复；前端不得从URL/缓存UID造身份或完整DTO。真实created优先、unknown只查询、完整attempt先写读回再HTTP、none不改默认、原fresh/legacy兼容及原未完成范围均保持。
+- 当前不可用的原payType意图保持未解决，不阻断完整只读DTO恢复、不替换客户端选择。内部报价复用现validatePayment及真实当前配置判断；仅其明确业务ApiException可转为空渠道基准计算，当前有效渠道保持原值，配置或基础设施错误继续失败。关闭的offline不得继续套用offline免运费；不新增响应schema、不改create支付验证、不发起支付。fresh完整DTO共用组装分为商品/表单/价格前段与用户/能力尾段，原唯一cacheOrderInfo仍在两段之间，legacy自动领券仍只在fresh末尾。
