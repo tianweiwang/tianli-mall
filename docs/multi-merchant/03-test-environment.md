@@ -118,6 +118,18 @@ H5公开材料实际生成检查点：Root在clean `b40d22872f6e2999f9b37c95d5ff
 
 仓库外H5 profile仍为未运行的实现中材料：原customer七文件字节原样保留，两固定输入/原PNG、新材料生成器和三准备角色overlay已写；public复制函数及nginx源已核必要差分并复制，前八公共复制helper4483B与原R7完全相同。复制目标按真实H5根加载，static JS/CSS/map只取新dist，缺失返回404；非代码static可回原public，静态路径不回HTML。guarded copier主入口、metadata登记、最终独立migrator/B0及实际serve/桥/DOM/25+7后验/正常关闭核零仍待接完，本profile不标READY，不启动不完整Run。既有12HTTP通过及商家原未完成责任不变。
 
+最新完整普通链（2026-10-16）：冻结clean Main `012988d196a2a52392d77e88a7bd2e642b224dfc`，Run `2026101610263631270f`，freeze摘要 `716ae83534aedbb673ac6e724d0c80eefb1cfea822158bbd0558e5b0b5f97fbc`。原有限初始化、结构四命令、独立文件引导和真实账号夹具均native0；随后12个真实HTTP/business200及25表独立已提交读回全部完成。实际结果2525B/摘要 `2efbc7a842394687f5195346c48dfb96ba40c32257e3c6786d13ff5a6cf95e82`，phase=final_source、完整源保持。真实账号登录、非空逐商品表单（含字符串0）、原发票、整行运费和应付78.56、同原请求顺序重放不改事实、owner查询及saved computed已核。精确1未付订单/2items/2reserves/1invoice/1ledger/1剩余cart/3cart统计/2order统计/1creation status，未支付或发货；断言数量不等于业务用例数。
+
+同Run正常关闭和独立核零：真实child单次TERM15、attempted=true、原组为空/监听关闭；native exitcode/proc_close=-1/-1原样保留。原MySQL/Redis正常stop进程44888/19280均native0，原容器exit0/PID0/restart0；三原CID、原空端点internal网络及六专用卷非force移除。关闭摘要 `8312f410444b78fd7aa9b5d46077a892969f79e7f0efe7deae082ae1f02dba2b`；Root独立project/run各三类共六原生查询均native0且stdout/stderr空，2845 B收据摘要 `11e3f10d707b1dfcb6d87e06e0a94f14a140d1b1536772643e8ab6f42acd65c9`。Main原HEAD/clean及全部冻结来源保持后才解除冻结，本Run不重开。该结果只属012988来源的普通persistent API；H5/DOM/temporary/again、完整确认恢复、商家页面、发货售后、支付及发布原责任均保留。
+
+H5仓库外源码后继检查点：R1的guarded bootstrap、copier主入口及独立最终migrator现已补齐源码，Root完整源读和独立复核，固定PHP8.2只读/network none语法两项native0/stderr空；收据1219B/摘要 `e35dffe22a9c7548af57240f8e8f4cc96ca66ebaec4407186eb41850b338d467`。clean 012988来源的纯H5准备freeze已实际完成native0，摘要 `b0daffb76d15e1bf68377183fb26dae011f0e42d944e50cf1df558b5b16538ba`，仅元数据，不是Run或实际副本。原R1及其15文件保持；新 `candidate-h5-r2` 接入已复核的有限copy/DML/files调度、两次先采集再创建metadata helper、21/15/8键及实际5项环境、完整10卷/全局消费者、同CID终态保存后再移除和两个固定公开control结果的原字节提取。源审发现phase正则误拒绝真实business_h5_*名称，新R2只将其修为准确字母数字合同，原计数和全和核对保留；Root两Python AST及CLI help实际0，995B收据摘要 `ebeaa2948bf0a640c4c8835fee2a28c08f2acef82b7a9069c4c2301f0c6f7bf4`。新R2未freeze、未创建H5 Run；serve/ingress、浏览器、10卷关闭/zero仍缺，禁止以此启动不完整业务Run。nginx语法/HTTP仍NOT RUN。
+
+顾客网络观察器候选17874B/摘要 `daf5492c722960f96653557c90d0d6cf5908b044cd4096fadd9d0dbebb985228` 已独立源审，Root用原Node22.22.2执行--check实际native0。模块导入不操作页面；在真实同源PNG上安装外域阻止后才由Root导航H5，按同一真实requestId保存原POST/响应body；get_script保留原文，computed/create核真实嵌套状态。完整URL/query/账号/token/frame/ref/key/order仅Root私有内存，公开只模板/状态/字节及12位摘要；缺POST原体不得补造。本项没有DOM/ACK/JPEG/SQL或H5实际运行，不能挪用原商家34/25/9/23证明。
+
+后继保存行与账号交接实施合同（原Run关闭/独立零后、实施前）：复用现 `m4cb_saved`，只在末尾追加 `?array $secondStoreLine=null`；null分支逐字保留原三行及原8参数caller，H5分支只从sealed oracle的真实C意图、当前根/SKU/商家和创建前完整25表核唯一另一店cart整行保留、原同店未选SKU前后无cart、实际A2/B1选择。原金额/成本/库存/ledger/发票/非空表单字符串0/status/log及完整25表断言全部不动，不克隆整段函数或重写base.unselected；独立候选56335B/摘要 `9d2e58d408306c8a43e8dd6ca254a711409f2909cf930c4606d2d286c57527cc` 已源码逆回和独立复核，尚未整合/语法或运行。后继B4必须满足原真实App/defaultPDO与独立nativePDO约束，不能无App直接调用Facade或造PDO；页面实际请求/响应及beforeCreate仍待真实取得，不借012988结果宣称新C分支通过。
+
+账号交接选择同一现有browser-secrets卷由后续真实serve角色只读挂载；compose/host/entry/私有桥的精确mount/source/环境门禁同步新增这一项RO，保留prepare/files原终态后移除顺序，不给files扩卷或持久保存host凭证。先在新H5 helper真实封actor，将同一原文件完整sha256/bytes/实际owner_uid/0600描述置于既有私有oracle.actor_descriptor，再create-only封oracle；仅三原私密文件，不公开完整私密hash，避免把prefix12当完整producer校验或形成循环绑定。最终真实serve进程固定actor-meta只读getter和Root内存桥必须同时核原prepare terminal/result/binding、同原十卷身份、完整私有descriptor及同producer内容、真实serve CID/env/mount和最终files成功后才消费真实账号。当前只改必要producer与saved接口；serve/ingress/桥/阶段SQL/正常关闭和独立zero沿原Task4继续实施，未实现前不启动新H5 Run。
+
 ## 3. ISO-MIN 环境（MS0a 交付）
 
 ### 3.1 文件

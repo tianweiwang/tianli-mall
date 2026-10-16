@@ -337,6 +337,10 @@ H5准备实现按03采用独立public-copy/DML/最终migrator顺序；新entry�
 
 H5准备入口/helper已写入上述两新PHP，独立源审、Root两处TERM最终检查差分及实际PHP语法两项native0完成，收据1361B/摘要 `b9d4148832d61f2db86f0b0a996377d2efa947a2d798c7596d2276f15bd465d6`。clean b40d22872的完整544前端/双29930依赖/334dist复用与三清单实际生成native0，材料收据1748B/摘要 `aac390f893a6a90f4297c40c450026b547750c2e8d1174e54a418289de8b1314`；原b803构建来源不改。仓库外新profile仍缺guarded bootstrap/最终B0/真实服务和浏览器接线，未启动新业务Run，不记HTTP/DOM或Task4完成；细节、自然工具调用失败与保留边界见03。
 
+当前012988普通persistent回归已完成：新Run `2026101610263631270f` 真实12HTTP/25表全部通过，结果摘要 `2efbc7a842394687f5195346c48dfb96ba40c32257e3c6786d13ff5a6cf95e82`，正常关闭摘要 `8312f410444b78fd7aa9b5d46077a892969f79e7f0efe7deae082ae1f02dba2b`，独立六查询零摘要 `11e3f10d707b1dfcb6d87e06e0a94f14a140d1b1536772643e8ab6f42acd65c9`。真实child单次TERM、原生负exit/proc_close保留，原3CID/1网/6卷正常非force移除后才解除Main冻结；仅此来源的API范围通过，不记H5/DOM或Task4/MS4完整完成。
+
+H5源码准备按03取得独立copier/bootstrap语法、R1纯freeze及新R2调度SOURCE/AST/help结果；新R2缺serve/ingress/浏览器/十卷关闭核零，仍不启动。顾客网络观察器仅SOURCE/Node语法，不能充当真实页面证明。继续本Task4同一清单：按03先将shared saved追加默认null第九参数保留原8arg路径，新增真实C未结算cart核验；在原三sealed文件内先封actor并把完整descriptor仅存私有oracle，后续serve仅RO消费原browser卷，经真实producer/最终files/serve身份与固定getter和Root内存桥核对。原金额、表单、库存、25+7表、真实UI producer、temporary/again/确认刷新、商家原验收及后续责任保持；完成必要源码/语法后仍须新clean来源真实运行，不挪用本次012988结果。
+
 ### Task 5: 取消与超时释放
 
 - 接口：整笔未支付且未发货的取消/超时按真实父reserve聚合release，`idem_key = "release:<store_order.id>:<parent_reserve_id>"`；两项为真实已提交PK，尾段是规范U64字符串，不能用非全局唯一的SKU八字节unique。动作摘要绑定保存顾客/商家/订单/父reserve/SKU/数量，顾客取消与系统超时共用动作，演员仅记首次真实执行者；重复不重复释放。未来Task7部分退款用独立真实退款动作键，共同核累计release+return_in不超过父reserve.qty。关单前走可信支付query→close→query closed；unknown或无可信attempt不释放，已支付转待处理，不制造paid或回退平台账户。MS5决定前仅显式testing驱动可做普通未付关单。
