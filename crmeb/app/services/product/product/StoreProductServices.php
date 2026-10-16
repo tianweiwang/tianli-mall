@@ -20,6 +20,7 @@ use app\services\activity\coupon\StoreCouponUserServices;
 use app\services\activity\seckill\StoreSeckillServices;
 use app\services\BaseServices;
 use app\services\activity\coupon\StoreCouponIssueServices;
+use app\services\marketplace\order\MarketplaceTradePolicy;
 use app\services\order\StoreCartServices;
 use app\services\order\StoreOrderServices;
 use app\services\other\QrcodeServices;
@@ -1305,7 +1306,7 @@ class StoreProductServices extends BaseServices
             if (!$this->vipIsOpen(!!$item['is_vip'], $vipStatus)) {
                 $item['vip_price'] = 0;
             }
-            $item['cart_button'] = $item['is_virtual'] || $item['virtual_type'] == 3 || $item['presale'] || json_decode($item['custom_form'], true) ? 0 : 1;
+            $item['cart_button'] = $item['is_virtual'] || $item['virtual_type'] == 3 || $item['presale'] || (json_decode($item['custom_form'], true) && !MarketplaceTradePolicy::v1CreateEnabled()) ? 0 : 1;
             if (count($item['star'])) {
                 $item['star'] = bcdiv((string)array_sum(array_column($item['star'], 'product_score')), (string)count($item['star']), 1);
             } else {
@@ -1574,8 +1575,8 @@ class StoreProductServices extends BaseServices
         $storeInfo['presale_start_time'] = date('Y-m-d H:i', $storeInfo['presale_start_time']);
         $storeInfo['presale_end_time'] = date('Y-m-d H:i', $storeInfo['presale_end_time']);
 
-        //有自定义表单或预售或虚拟不展示加入购物车按钮
-        $storeInfo['cart_button'] = $storeInfo['custom_form'] || $storeInfo['presale'] || $storeInfo['is_virtual'] || $storeInfo['virtual_type'] == 3 ? 0 : 1;
+        // V1普通商品在确认页填写表单；其他情况保持原加购限制
+        $storeInfo['cart_button'] = ($storeInfo['custom_form'] && !MarketplaceTradePolicy::v1CreateEnabled()) || $storeInfo['presale'] || $storeInfo['is_virtual'] || $storeInfo['virtual_type'] == 3 ? 0 : 1;
 
         /** @var StoreProductAttrServices $storeProductAttrServices */
         $storeProductAttrServices = app()->make(StoreProductAttrServices::class);

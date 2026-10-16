@@ -106,6 +106,8 @@ customer verify容器有本内网alias audit-app、无宿主端口，显式stop_
 
 H5真实加购必要修复合同（实施前）：保留当前两商品的非空表单。仅修改 `crmeb/app/services/product/product/StoreProductServices.php` 的普通列表/详情及 `crmeb/app/services/marketplace/PublicCatalogServices.php::hydrateOrdinarySnapshot` 三处cart_button计算，以原 `MarketplaceTradePolicy::v1CreateEnabled()` 双真实布尔开关为依据：V1启用时表单在确认页逐商品填写，不再仅因custom_form非空隐藏加购；未启用V1的原逻辑及预售/is_virtual/virtual_type=3、详情definition_complete、服务端SKU/库存/归属/物流/表单校验保持。只新增两必要import、三表达式和相应注释，不新增配置、DTO或通用框架。先聚焦PHP语法及源差分，再从新来源用真实H5商品/规格/按钮加A2/B1/C1、只结算店A并核25+7表；旧12HTTP结果不等于这些新接口/DOM通过，用户停止样本仍NOT RUN。
 
+加购必要修复源码检查点（2026-10-16）：上述两import/三表达式及一处对应注释已实施。独立源审核三处均为普通商品producer，保留legacy、预售、虚拟及详情definition_complete收口，公开投影继续使用真实cart_button；Root逐字节复算候选加唯一注释差分，未扩展来源或变更表单。最终两源145259B/40332B，摘要分别 `4ac7deffe12cdccb2143d4891363bbe3ee08c809769ea9f39ce030757f75af69` / `fe4a8471ead0447f102b4c673847a123616171d08dde36ce025ca4264884ab0f`。固定现有PHP8.2镜像只读/network none语法检查两次native0/stderr空，文件前后相同；仓库外 `artifacts/ms4-form-cart-source/20261016-r1/php-syntax-result.json` 1366B/摘要 `0c369ccb539043ed03e600040c99c472a13b16a4156c0ade64d8b82a81326ea2`。本检查未加载App、SQL、HTTP或浏览器；新来源实际按钮及双店普通链仍待H5验证，未借旧56e0结果标记通过。
+
 ## 3. ISO-MIN 环境（MS0a 交付）
 
 ### 3.1 文件

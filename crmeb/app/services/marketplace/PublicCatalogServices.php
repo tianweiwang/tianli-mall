@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\services\marketplace;
 
+use app\services\marketplace\order\MarketplaceTradePolicy;
 use app\services\marketplace\publiccatalog\PublicCatalogProjection as Projection;
 use app\services\marketplace\publiccatalog\PublicCatalogQuery;
 use app\services\marketplace\publiccatalog\PublicCatalogSku;
@@ -521,7 +522,7 @@ final class PublicCatalogServices
         $rows=$products->getPublicSearchList(['ids'=>array_values(array_unique($ids))],0,0);
         foreach($rows as&$row){
             if(!$products->vipIsOpen((bool)$row['is_vip']))$row['vip_price']=0;
-            $row['cart_button']=$row['is_virtual']||$row['virtual_type']==3||$row['presale']||json_decode($row['custom_form'],true)?0:1;
+            $row['cart_button']=$row['is_virtual']||$row['virtual_type']==3||$row['presale']||(json_decode($row['custom_form'],true)&&!MarketplaceTradePolicy::v1CreateEnabled())?0:1;
         }unset($row);
         $rows=$products->getProduceOtherList($products->publicListDisplay($rows),$uid);
         $rows=$this->listOutput($rows);$byId=array_column($rows,null,'id');$out=[];
