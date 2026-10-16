@@ -355,6 +355,14 @@ H5入口/阶段已实际整合到现两PHP：serve/七ingress/原actor只读交�
 
 完整R3已实际组合到仓库外新 `candidate-h5-r3/`：原7+20共27文件，原7保持；默认freeze/验证统一20项、八个final CLI已接。Root实际5项Python AST和三个CLI help均通过、前后来源保持，完整摘要及2419B收据见03；独立host接线源审通过，close/zero继续核其实际producer字段及正常生命周期。当前仍未freeze/建H5 Run，解析和help不构成页面、32表或正常关闭验收。
 
+保存付款期限文案修正（2026-10-17，设计先行）：依据[简洁设计](records/ms4/saved-payment-deadline-display.md)，Root已从Main本轮B4真实保存读回确认该单cancel_at=0；零表示禁用自动超时，旧详情仍以当前零小时加下单时间生成截止提示。仅在独立Restore树拟改MarketplaceOrderDao只读原绑定ledger期限、StoreOrderServices本人V1普通未付详情最终_msg：零用无截止文案，正值使用原保存秒。两PHP以外产品源、DTO、前端、fixture和deadline不改；不新增列表逐行读取，缺ledger不猜零。原restore/lookup、20前端/5PHP、RC8及Task4/MS4责任保持，Main/R6继续冻结。
+
+- [x] SD1：Root已读回采用先登记设计，完成上述两PHP窄源码实施；Root完整读回差异并核实际ORM/config/model getter，again独立SOURCE PASS，原Restore接缝及其他责任保持。
+- [x] SD2：Root对最终两PHP实际完成PHP8.2.33单文件`-l`，两child及outer均native0、stderr空，核两PHP及检查时设计/09四来源前后不变；不是沿用旧5PHP结果。
+- [ ] SD3：按Root后续允许范围取得新来源正常HTTP/页面文案与保存期限/原事实不变证明，正常关闭和独立核零分别记录；未运行，不借Main原B4/R6通过，不运行已停止样本。
+
+SD1/SD2后继SOURCE/PARSE检查点（2026-10-17）：最终OrderDao为84262B/SHA256 `0e95dabf49d6537ca7c5fdf4f1723f121f8eaa1e0602bd824dac941944bb9d16`，StoreOrderServices为156931B/SHA256 `ecf2695a30bcad1418704b6cb98f417a849e0301208d93dde99fe8420d846d88`；Root真实收据`H:/天俪商城/artifacts/ms4-confirmation-restore-source/20261017-deadline-r1/php-syntax-result.json`的SHA256为`c7a267a8e65f7de717c52a3b841440340657fd0192666133f18cec55fcdde5b0`。checker为4806B/SHA256 `3063ed3e8418e4dc006e24a4090de5d8cb7a69f2705698408372287c4845dca5`，8处有限替换、整文逆回和AST已由Root实际核过；未import/App/SQL/样本。完整范围及检查时四来源保持说明见[设计§5](records/ms4/saved-payment-deadline-display.md#5-root-sourceparse检查点)。本轮仅记录源码/解析完成，SD3、Restore/RC8及完整MS4责任仍未完成；用户停止的拒绝/越权/冲突/并发/故障/恢复样本不运行，本窄修复也不运行原tiny内部取消样本。
+
 #### Task4 RC：完整确认上下文刷新恢复
 
 沿[完整实施依据](records/ms4/confirmation-restore-design.md)的R1–R10/A1–A9执行；r1只读API/URL带key不得替代完整恢复。本次在独立 `ms4-confirmation-restore` 工作树源开发，Main当前H5 Run沿冻结源继续。无新表、服务端草稿、支付或上传重放；复用现完整DTO/报价/frame/owner lookup，完整保留本人选择与分组表单。当前真实GET user及账号代次才可确认owner；提交前完整不可变attempt必须持久写入读回，unknown/not_found不能自动解锁。地址none不取默认，未知key容量统一计数；每记录1MiB、owner 5MiB/5完整上下文/20未知key，不能截断旧未知attempt或缩窄既有合法业务输入。Root复核补充和代理写入接口已在设计记录中统一。

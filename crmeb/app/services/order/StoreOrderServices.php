@@ -12,6 +12,7 @@
 namespace app\services\order;
 
 use app\dao\order\StoreOrderDao;
+use app\dao\marketplace\order\MarketplaceOrderDao;
 use app\jobs\AutoCommentJob;
 use app\services\activity\combination\StorePinkServices;
 use app\services\activity\coupon\StoreCouponUserServices;
@@ -2687,7 +2688,8 @@ HTML;
         if (!$order) throw new ApiException('商品不存在');
         $savedCustomForm = $order->getData('custom_form');
         $order = $order->toArray();
-        if(!MarketplaceTradePolicy::savedOrderIsLegacy($order)){
+        $savedMarketplaceV1 = !MarketplaceTradePolicy::savedOrderIsLegacy($order);
+        if($savedMarketplaceV1){
             if($uid<1 || (string)($order['uid'] ?? '')!==(string)$uid)throw new ApiException('订单不存在');
             $order['custom_form']=$savedCustomForm;
         }
@@ -2773,6 +2775,13 @@ HTML;
         $order['ali_pay_status'] = sys_config('ali_pay_status', '0') != '0';//支付包支付 1 开启 0 关闭
         $order['friend_pay_status'] = (int)sys_config('friend_pay_status') ?? 0;//好友代付 1 开启 0 关闭
         $orderData = $this->tidyOrder($order, true, true);
+        if($savedMarketplaceV1 && in_array($order['pid']??null,[0,'0'],true)
+            &&in_array($order['paid']??null,[0,'0'],true)&&in_array($order['is_cancel']??null,[0,'0'],true)
+            &&($order['pay_type']??null)!==PayServices::OFFLINE_PAY&&($orderData['_status']['_type']??null)===0){
+            $deadline=app()->make(MarketplaceOrderDao::class)->savedPaymentDeadline($order);
+            $orderData['_status']['_msg']=$deadline===0?'订单尚未支付，请完成支付':
+                '请在'.date('m-d H:i:s',$deadline).'前完成支付!';
+        }
         $vipTruePrice = $memberPrice = $levelPrice = 0;
         foreach ($orderData['cartInfo'] ?? [] as $key => $cart) {
             $vipTruePrice = bcadd((string)$vipTruePrice, (string)$cart['vip_sum_truePrice'], 2);
