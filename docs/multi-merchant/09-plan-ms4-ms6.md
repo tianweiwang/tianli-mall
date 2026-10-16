@@ -369,6 +369,14 @@ R4实际Run `2026101613490780a575` 的public copy与DML prepare均正常0，前�
 
 R5源码实际检查点：Main stage91453B/摘要 `bb38cc6b9808ddcc1ec95aab79928e09272c81b90f9d4455ba88e645fea22b9d`，新bootstrap73805B/摘要 `81376b4122eedcfa40de298f6035192c5bc4c8634ce92a3c0974e1ccb3a79485`。Root与独立源审、实际组装及两项解析通过，收据摘要 `38160f296e56ff666283ff983ee3b296f7dc2b5ea69560e35ad3b74a7471c6d6`，详见03及记录。原R4与失败仍保持，未从源码通过推断新Run或H5验收完成。
 
+R5实际Run `20261016153300e2dec7` 已完成正常准备及B0，但顾客端仅登录页：2份capture、1原生JPEG/人工复核，没有登录或下单。第二场景因capture跨执行域prototype比较自然失败；B1–B4/Final32/完整27图/finish/audit未完成。原4容器/2网/10卷已正常非force关闭，独立六查询核零、3080份原公开文件和六输入保持，实际关闭摘要 `693ad7c6f0631895728d45d441d615bc1811b7fbf8a28f44349bc7a5b7a166cf`，独立zero摘要 `7621129bbd7043e5e01648a06623f25d0e172a2accc3f7c293294aae86a64542`；详见03。EK3及Task4/MS4仍未完成。
+
+截图兼容修复沿03的R6合同及仓库外 `customer-h5-capture-realm-fix-r1/PLAN.md`，只统一真实frame的builtin副本比较，并将capture发布移到原生截图取得后；不改变产品或原业务/页面验收责任。唯一清单继续在本处：
+
+- [x] HC1：已实际生成新R6四文件窄修复，完整27字节逆回、23项不变、独立源码复核及两项Node语法解析通过；仅SOURCE/PARSE，收据详见03。
+- [ ] HC2：以新clean来源冻结并运行完整正常顾客端链，实际27原生JPEG人工复核、B0–B4及Final32表。
+- [ ] HC3：该新Run真实正常关闭、独立核零并记录有限结果；商家原验收、发货售后、支付退款、发布及停止样本原责任保持。
+
 ### Task 5: 取消与超时释放
 
 - 接口：整笔未支付且未发货的取消/超时按真实父reserve聚合release，`idem_key = "release:<store_order.id>:<parent_reserve_id>"`；两项为真实已提交PK，尾段是规范U64字符串，不能用非全局唯一的SKU八字节unique。动作摘要绑定保存顾客/商家/订单/父reserve/SKU/数量，顾客取消与系统超时共用动作，演员仅记首次真实执行者；重复不重复释放。未来Task7部分退款用独立真实退款动作键，共同核累计release+return_in不超过父reserve.qty。关单前走可信支付query→close→query closed；unknown或无可信attempt不释放，已支付转待处理，不制造paid或回退平台账户。MS5决定前仅显式testing驱动可做普通未付关单。
