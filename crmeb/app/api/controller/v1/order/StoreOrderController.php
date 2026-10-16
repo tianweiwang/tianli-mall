@@ -143,13 +143,18 @@ class StoreOrderController
     {
         if (!$key) return app('json')->fail('参数错误');
         $uid = $request->uid();
+        // Inspect only the original order table before depending on new schema, config or cache.
+        $saved=$this->services->getOne(['order_id|unique'=>$key,'uid'=>$uid,'is_del'=>0]);
+        if($saved){
+            if(MarketplaceTradePolicy::savedOrderIsLegacy($saved->toArray()))return app('json')->status('extend_order','订单不存在',['orderId'=>$key,'key'=>$key]);
+            $confirmationKey=(string)$saved['unique'];
+            $result=app()->make(MarketplaceOrderCreateServices::class)->lookupConfirmation((int)$uid,$confirmationKey);
+            if($result['state']!=='created'||$result['key']!==$confirmationKey||$result['orderId']!==$saved['order_id'])
+                throw new AuthUnavailableException();
+            return app('json')->status('SUCCESS','订单已创建',$result);
+        }
         $marketplace=MarketplaceTradePolicy::active()||$this->services->hasMarketplaceConfirmation((int)$uid,(string)$key);
         if($marketplace){
-            $saved=$this->services->getOne(['order_id|unique'=>$key,'uid'=>$uid,'is_del'=>0]);
-            if($saved){
-                if(MarketplaceTradePolicy::savedOrderIsLegacy($saved->toArray()))return app('json')->status('extend_order','订单不存在',['orderId'=>$key,'key'=>$key]);
-                MarketplaceTradePolicy::guardCreate();
-            }
             $raw=$request->param(false);
             if(!is_array($raw))throw new ApiException('参数错误');
             $options=MarketplaceOrderInput::computed($raw);
@@ -161,12 +166,8 @@ class StoreOrderController
             $result=$computedServices->setParamData([])->computedOrder((int)$uid,$request->user()->toArray(),$cartGroup,
                 $options['addressId'],$options['payType'],false,0,false,$options['shipping_type'],$options['is_gift'],true);
             foreach(['marketplace_confirmation_version','mer_id','source_kind','store']as$field)$result[$field]=$cartGroup[$field];
-            $result['marketplace_create_enabled']=false;
+            $result['marketplace_create_enabled']=MarketplaceTradePolicy::v1CreateEnabled();
             return app('json')->status('NONE','操作成功',$result);
-        }
-        if ($saved=$this->services->getOne(['order_id|unique' => $key, 'uid' => $uid, 'is_del' => 0])){
-            if(!MarketplaceTradePolicy::savedOrderIsLegacy($saved->toArray()))MarketplaceTradePolicy::guardCreate();
-            return app('json')->status('extend_order', '订单不存在', ['orderId' => $key, 'key' => $key]);
         }
         list($addressId, $couponId, $payType, $useIntegral, $mark, $combinationId, $pinkId, $seckill_id, $bargainId, $shipping_type, $is_gift) = $request->postMore([
             'addressId',
@@ -221,11 +222,9 @@ class StoreOrderController
         $userInfo = $request->user()->toArray();
         $uid=(int)$request->uid();
         if((int)($userInfo['uid']??0)!==$uid)throw new AuthUnavailableException();
-        $active=MarketplaceTradePolicy::active();
         $checkOrder=$this->services->getOne(['order_id|unique'=>$key,'uid'=>$uid,'is_del'=>0]);
-        if(($checkOrder&&!MarketplaceTradePolicy::savedOrderIsLegacy($checkOrder->toArray()))||(!$checkOrder&&$active)
+        if(($checkOrder&&!MarketplaceTradePolicy::savedOrderIsLegacy($checkOrder->toArray()))||(!$checkOrder&&MarketplaceTradePolicy::active())
             ||$this->services->hasMarketplaceConfirmation($uid,(string)$key)){
-            MarketplaceTradePolicy::guardCreate();
             $order=app()->make(MarketplaceOrderCreateServices::class)->create($uid,(string)$key,$request->post(false));
             $orderId=$order['order_id'];
             return app('json')->status('success','订单创建成功',compact('orderId','key'));

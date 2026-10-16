@@ -67,6 +67,20 @@ final class MarketplaceTradePolicy
         throw new ApiException('当前操作尚未适配多商户订单');
     }
 
+    /** Current fresh V1 capability only; durable replay does not depend on it. */
+    public static function v1CreateEnabled():bool
+    {
+        $marketplace=self::active();
+        $trade=Config::get('marketplace.trade.enabled',false);
+        if(!is_bool($trade))throw new AuthUnavailableException();
+        return $marketplace&&$trade;
+    }
+
+    public static function assertV1CreateEnabled():void
+    {
+        if(!self::v1CreateEnabled())throw new ApiException('当前商城下单尚未开放');
+    }
+
     /** No fallthrough to legacy creation, even if the unfinished feature is enabled by mistake. */
     public static function guardCreate():never
     {

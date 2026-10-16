@@ -18,7 +18,7 @@ use PDO;
 use think\db\ConnectionInterface;
 use think\facade\Db;
 
-/** Internal V1 creation. The HTTP controller still enforces the unfinished trade gate. */
+/** V1 creation on real authenticated input; fresh permission follows durable replay. */
 final class MarketplaceOrderCreateServices
 {
     private const UINT_MAX=4294967295;
@@ -40,7 +40,7 @@ final class MarketplaceOrderCreateServices
             $claim=$this->dao->claim($pdo,$request,$input['idem_key'],$now,0);
             if(!$claim['claimed'])return ['order_id'=>$claim['order']['order_id'],'key'=>$routeKey,
                 'order_pk'=>MarketplaceOrderInput::unsigned($claim['order']['id'],'订单编号',2147483647)];
-            if(!MarketplaceTradePolicy::active())throw new ApiException('当前商城下单尚未开放');
+            MarketplaceTradePolicy::assertV1CreateEnabled();
             $options=$request['options'];MarketplaceTradePolicy::preview($rawPost,$options);
             $cached=CacheService::get('user_order_'.$uid.$routeKey);
             if(!is_array($cached)||!is_array($cached['cartInfo']??null))throw new ApiException('订单已过期,请刷新当前页面');

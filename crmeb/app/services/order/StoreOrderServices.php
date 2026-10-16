@@ -1788,7 +1788,7 @@ HTML;
         $data['orderKey'] = $this->cacheOrderInfo($user['uid'], $validCartInfo, $priceGroup, $other, 600, $frame);
         if($marketplace){
             foreach(['marketplace_confirmation_version','mer_id','source_kind','store']as$field)$data[$field]=$frame[$field];
-            $data['marketplace_create_enabled']=false;
+            $data['marketplace_create_enabled']=MarketplaceTradePolicy::v1CreateEnabled();
         }
         $data['offlinePostage'] = $other['offlinePostage'];
         /** @var UserLevelServices $levelServices */

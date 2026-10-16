@@ -10,7 +10,8 @@ const parser = require(modules + '/@babel/parser');
 const preprocess = require(modules + '/@dcloudio/vue-cli-plugin-uni/packages/webpack-preprocess-loader/preprocess/lib/preprocess');
 const contexts = require(modules + '/@dcloudio/uni-cli-shared/lib/preprocess');
 const sass = require(process.env.UNI_SASS_MODULES || 'H:/天俪商城/artifacts/ms3-storefront-h5-build/source477732-r1/toolchain/plugins/compile-dart-sass/node_modules/sass');
-const vueFiles = ['pages/goods/order_confirm/index.vue', 'pages/goods_cate/goods_cate2.vue', 'pages/goods_cate/goods_cate3.vue'];
+const quickCartFiles = ['pages/goods_cate/goods_cate2.vue', 'pages/goods_cate/goods_cate3.vue'];
+const vueFiles = ['pages/goods/order_confirm/index.vue', 'pages/goods/order_details/index.vue', ...quickCartFiles];
 const jsFiles = ['utils/marketplace-order-submit.js', 'api/order.js', 'utils/util.js'];
 const fingerprint = (file, bytes) => ({path: file, bytes: bytes.length, sha256: crypto.createHash('sha256').update(bytes).digest('hex')});
 let checks = 0;
@@ -33,6 +34,13 @@ for (const relative of vueFiles) {
     assert.deepEqual(result.errors, []); assert.deepEqual(result.tips, []); inspectSyntax(script);
     const ast = parser.parse(script, {sourceType: 'module'});
     const exported = ast.program.body.find(node => node.type === 'ExportDefaultDeclaration');
+    if (relative === 'pages/goods/order_details/index.vue') {
+      const onShow = exported.declaration.properties.find(node => node.key.name === 'onShow');
+      const shown = script.slice(onShow.start, onShow.end);
+      assert.equal(shown.includes('wx.getEnterOptionsSync()'), platform === 'mp-weixin');
+      for (const method of ['getOrderInfo', 'getUserInfo', 'getCustomerType'])
+        assert.equal(shown.includes('this.' + method + '();'), true);
+    }
     const methods = exported.declaration.properties.find(node => node.key.name === 'methods').value.properties;
     const names = methods.map(node => node.key.name || node.key.value);
     assert.equal(new Set(names).size, names.length);
@@ -76,7 +84,7 @@ async function main() {
   equal(submit.snapshotMarketplaceSubmission(binding, fields, answers, 0).body, attempt.body, 'Ordinary repeated payload is byte-equivalent');
   const temporary = submit.bindMarketplaceSubmission({...dto, source_kind: 'temporary', cartInfo: [{id: 'opaque/原引用'}]});
   equal(submit.snapshotMarketplaceSubmission(temporary, fields, answers, 0).body.new, 1, 'Temporary source is encoded by new only');
-  let navigation, posts = [];
+  let navigation, posts = [], computedCreated = null, computedRequest;
   const sandbox = {uni: {reLaunch(value) {navigation = value.url;}, switchTab(value) {navigation = value.url;}, hideLoading() {},
     getWindowInfo() {return {windowHeight: 800, statusBarHeight: 0, windowTop: 0};},
     getSystemInfo() {return {titleBarHeight: 0};}}, mapGetters: () => ({})};
@@ -91,8 +99,11 @@ async function main() {
     sandbox.mapGetters = () => ({});
     sandbox.orderCreate = (key, body) => {posts.push({key, body}); return Promise.resolve({status: 200, data: {status: 'SUCCESS', result: {key, orderId: 'ordinary-codec-order'}}});};
     sandbox.orderConfirmation = key => Promise.resolve({data: {state: 'created', key, orderId: 'ordinary-codec-order'}});
-    sandbox.postOrderComputed = () => Promise.resolve({data: {result: {...dto, pay_price: '20.00', pay_postage: '0.00',
-      storePostageDiscount: '0.00', deduction_price: '0.00', coupon_price: '0.00'}}});
+    sandbox.postOrderComputed = (key, body) => {
+      computedRequest = {key, body};
+      return Promise.resolve({data: {result: computedCreated || {...dto, pay_price: '20.00', pay_postage: '0.00',
+        storePostageDiscount: '0.00', deduction_price: '0.00', coupon_price: '0.00'}}});
+    };
     sandbox.getAddressDetail = id => Promise.resolve({data: {id, is_default: '0', real_name: '普通地址展示样例'}});
     edits.push({start: exported.start, end: exported.declaration.start, value: 'globalThis.component = '});
     edits.sort((a, b) => b.start - a.start).forEach(row => {script = script.slice(0, row.start) + row.value + script.slice(row.end);});
@@ -121,12 +132,28 @@ async function main() {
   equal(posts.length, 1, 'First ordinary submission sends one frozen request');
   equal(posts[0].body.addressId, '32', 'Submission uses the selected address after quote completion');
   equal(posts[0].body.custom_form[0].values[1].value, ['/uploads/ordinary.png'], 'Submission uses completed image answers');
-  equal(navigation, '/pages/goods/cashier/index?order_id=ordinary-codec-order&from_type=order', 'Valid ordinary completion keeps the existing cashier route');
+  equal(navigation, '/pages/goods/order_details/index?order_id=ordinary-codec-order', 'Valid ordinary V1 completion opens the supplied business order');
   await editor.submitMarketplaceOrder();
   equal(posts.length, 1, 'Completed state prevents another ordinary click from creating a new request');
   equal(await editor.queryMarketplaceOrder(), {state: 'created', key: dto.orderKey, orderId: 'ordinary-codec-order'}, 'Valid lookup result retains the actual supplied key');
   equal(editor.marketplaceLookupPending, false, 'Ordinary lookup completion clears pending state');
-  for (const file of vueFiles.slice(1)) {
+  // This is one ordinary same-binding DTO response, not a saved order or runtime HTTP sample.
+  const saved = page();
+  saved.marketplaceConfirmation = {...dto}; saved.marketplaceSubmitBinding = binding; saved.orderKey = binding.key;
+  const savedMetadata = saved.marketplaceConfirmation;
+  saved.addressId = '32'; saved.totalPrice = '20.00';
+  computedCreated = {state: 'created', key: binding.key, orderId: 'ordinary-codec-saved-order'};
+  await saved.computedPrice();
+  equal([computedRequest.key, computedRequest.body.mer_id], [binding.key, binding.merId], 'Ordinary computed request retains the original binding');
+  equal(saved.marketplaceSubmitBinding === binding, true, 'Created DTO consumption preserves the original binding object');
+  equal(saved.marketplaceConfirmation === savedMetadata, true, 'Created DTO is not reapplied as confirmation metadata');
+  equal([saved.marketplaceSubmitState, saved.marketplaceQuoteReady, saved.marketplaceComputing], ['done', false, false],
+    'Valid created DTO completes through the real result parser without becoming a quote');
+  equal(navigation, '/pages/goods/order_details/index?order_id=ordinary-codec-saved-order', 'Valid computed completion opens the supplied business order');
+  equal(saved.totalPrice, '20.00', 'Created DTO does not replace price fields with absent quote amounts');
+  equal(posts.length, 1, 'Reading a valid computed-created DTO does not submit another order');
+  computedCreated = null;
+  for (const file of quickCartFiles) {
     const quick = component(file);
     quick.methods.subOrder.call({cartData: {cartList: [{id: '9007199254740995'}], iScart: true}});
     equal(navigation, '/pages/order_addcart/order_addcart', 'Shortcut uses the real grouped cart tab');

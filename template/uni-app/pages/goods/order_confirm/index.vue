@@ -714,9 +714,7 @@
 				if (!this.marketplaceSubmitBinding || result.key !== this.marketplaceSubmitBinding.key || this.marketplaceSubmitState === 'done') return;
 				this.marketplaceSubmitState = 'done';
 				const earlier = generation !== this.marketplaceEditGeneration;
-				const details = fromLookup || earlier || this.marketplaceEditGeneration > 0;
-				const navigate = () => uni.reLaunch({url: details ? '/pages/goods/order_details/index?order_id=' + encodeURIComponent(result.orderId) :
-					'/pages/goods/cashier/index?order_id=' + encodeURIComponent(result.orderId) + '&from_type=order'});
+				const navigate = () => uni.reLaunch({url: '/pages/goods/order_details/index?order_id=' + encodeURIComponent(result.orderId)});
 				if (earlier || (fromLookup && this.marketplaceEditGeneration > 0)) uni.showModal({title: this.$t(`订单已生成`),
 					content: earlier ? this.$t(`原提交已生成订单，调整内容未另行下单。请查看订单详情中的实际信息。`) :
 						this.$t(`订单已生成，请以订单详情中的实际收货信息和表单为准。调整不会另生成第二笔订单。`),
@@ -1130,6 +1128,7 @@
 				if (this.marketplaceResumeUnavailable) return;
 				if (this.marketplaceV1) {
 					if (!this.marketplaceCanEdit) return Promise.resolve();
+					const binding = this.marketplaceSubmitBinding;
 					const key = this.orderKey;
 					const generation = this.marketplaceEditGeneration;
 					const revision = ++this.marketplaceComputeRevision;
@@ -1139,8 +1138,16 @@
 						addressId: this.addressId, shipping_type: 1, payType: this.payType,
 						mer_id: this.marketplaceConfirmation.mer_id, couponId: 0, useIntegral: 0
 					}).then(res => {
-						if (!this.marketplaceCanEdit || generation !== this.marketplaceEditGeneration || key !== this.orderKey || revision !== this.marketplaceComputeRevision) return;
 						const result = res.data.result;
+						if (result && result.state === 'created') {
+							if (!binding) return;
+							const created = marketplaceConfirmationResult(result, binding.key);
+							if (binding.key === key && this.marketplaceSubmitBinding === binding && this.orderKey === key) {
+								this.completeMarketplaceOrder(created, true, generation);
+							}
+							return;
+						}
+						if (!this.marketplaceCanEdit || generation !== this.marketplaceEditGeneration || key !== this.orderKey || revision !== this.marketplaceComputeRevision) return;
 						this.applyMarketplaceMetadata(result);
 						this.marketplaceMoneyFields(result, ['pay_price', 'pay_postage', 'storePostageDiscount', 'deduction_price', 'coupon_price']);
 						if (Object.prototype.hasOwnProperty.call(result, 'custom_form')) this.applyMarketplaceForms(result.custom_form, true);

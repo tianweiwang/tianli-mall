@@ -64,6 +64,12 @@ HTTP最终普通页面核对合同（编码前）：新增只读`plan` ingress�
 
 普通助手终态记录修复合同（2026-10-16，R6关闭并独立核零后实施）：真实助手观察超时只表示仍在运行；Root等待同一CID的原生wait实际结束后，仍沿原observe/finish-helper入口核对。统一终态保存函数只接纳真实inspect的exited、严格整数PID0/restart0/exit_code，保留观察到的真实非0退出值。observe每次见到终态均create-only保存或严格比对；普通remove_finished和HTTP同名路径在原身份、完整mount及正常exit0核对后、任何rm之前调用同一保存函数。已有终态必须字段键集合相同，完整mount对象多重集及重复计数相同，其余字段的JSON类型和值逐项严格相同；不覆盖、不从created/result或哈希补造。原HTTP前置必须有完整auth terminal的断言保持。当前已删除助手的缺失终态继续缺失，本轮只能有限正常关闭，不能重开或冒认HTTP通过。新来源仍须原34/25/9/23、独立空表4图、正常关闭和独立核零共同验收；只运行已授权的普通样本。
 
+R7 实际运行与收尾（2026-10-16）：新 Run `20261016042215b87fcf` 绑定 clean Main `a74f2b27275229dcb089581039dc30020afb4f32`、freeze `600404b61d2c6d276fec10a80db8c42b55aa7da94fceb6b70e7026f1d55f5416`。修复后的 host 实际完成有限 initializer 六子命令、结构迁移四命令和原完整内部普通订单，均 native0；授权助手的真实终态在删除前保存、删除后字节保持，解决新 Run 的终态缺口，未补造 R6 文件。商家准备实际 native0，创建20笔真实分页订单，随后完整 source-ready、UI smoke、原 HTTP 子进程正常启动均成功。
+
+本次原浏览器第1步真实账号登录 HTTP/business200并进入通用商家后台，但 Root 调用 hash callback 时把实际响应转成 Node Buffer，跨执行域后不满足 bridge 的 `instanceof Uint8Array`，自然报 `MS4_BRIDGE_ACTUAL_BYTE_INPUT`。实际同一登录页 JPEG 的原 bytes 与当前域 `Uint8Array.from(bytes)` 均通过原 hash 校验且摘要完全相同，Node Buffer 版本被原类型断言拒绝；后继调用适配使用当前域 Uint8Array 的逐字节副本，不改 bridge/浏览器原断言、不转图像格式。该失败是 Root 适配问题，不是业务接口失败；原 command1/capture0/ACK0/计划截图0，后续原34步/9人工复核、空表四图和最终23表审计未执行。不重放命令、不补 ACK/终审、不把额外诊断 JPEG 当原计划证据。失败收据摘要 `ae4bd8dcf4ca4eea2ee1e53e6116dd8f91348c86c5ca818dffffc0e461cc1969`。
+
+原 bridge 正常请求并确认同一 child 停止：stop_signal15、remaining_members空、listener关闭，实际 native_proc_close/child exitcode均-1、termsig0，原值保留。仅关闭自建 Edge 标签1338870427并复位 viewport、释放专用演员内存，IAB未操作。Root 按已独立源审的只读 observer `a17db3f6d42b768707d29a9ad8a1746e18873a4ff0701e3f56148bac97b6a2e5` 实际核原私有窗口/plan/第一command、1/0/0/0封闭集及仅原监督进程，native0；公开观察摘要 `4fc253aa4d7f2a2e0790c4484ea20be97b9b84d36d8ceafef9420beb76d2dfe7`。后继有限关闭源 `76d9cd8503fc5140853aa8cbe853c5ea61f75a0d906f70f867a379e61dd60df1` 复用原R7完整身份/全消费者和单次正常stop，原四服务与对应原生CLI均0，再非force精确移除原5CID、2空网络和10卷；实际关闭摘要 `29c91c77caa3a4e2cd9fcd75288d76ca303d1155227af5a780e88e164acea008`。Root独立源 `8ad9ffc78fde3be377ebde954aac09a9ab4879b5e466eac90cd0f59a9eec636a` 另做六条原生project/run标签查询全0，并核1563份原公开文件字节及Main原HEAD/clean保持；核零摘要 `db458077d838835837fb4b72d2c08d4c4dc0028eb3fea0aaa2c190467d06ef0f`。本Run关闭，不重开，完整浏览器/Task6/MS4仍INCOMPLETE。之后才解除Main源码冻结并实施09的顾客正常HTTP接线合同。
+
 ## 3. ISO-MIN 环境（MS0a 交付）
 
 ### 3.1 文件

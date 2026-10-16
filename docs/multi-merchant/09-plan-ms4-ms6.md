@@ -261,6 +261,25 @@ Task4持久收尾源码检查点：上述7个生产/注册文件、唯一普通C
 
 同Run业务收据摘要 `91d783ab15734b8b57b60109fb572eb4d8a3fa17a20d84bf3e6dd07804358414`。原cleanup helper实际0后按原ID移除，固定fdd4e371关闭源实际正常stop MySQL/Redis且原生进程/容器均0，原三CID/唯一内部网/六卷精确非force移除；Root独立核对源 `0db5680f185f7d163c932407f7741fe8049545094b9a0b9c91cb28856c95ee49` 实际六条双标签原生查询exit0/stderr空/count0，保留业务字节不变。该Run已关闭，不重开；只证明583内部持久收尾及有限同handler，wallclock daemon、HTTP/DOM、取消、真实支付等仍pending。当前主树之后的旧支付边界/Task5新源码不包含在此Run结果中，不据此标Task4/MS4整体完成或打开gate。
 
+**顾客正常 HTTP 下单后继合同（2026-10-16，沿 Task3/4）：** 在当前 R7 正常关闭并由 Root 独立核零后实施；当前商品、规格、会员价格、地址、发票、运费和分组表单继续复用既有通用服务。目标为真实顾客登录、本人按店购物车、确认/计算、保存未支付订单、本人结果查询与同完整请求的顺序重放，以及成功后读取真实订单详情。只补现有 V1 路径，不接支付/发货/退款或外发通知。默认 `marketplace.enabled` 和 `marketplace.trade.enabled` 仍 false；后继专用 ISO-FULL 实例在 App 读取配置前，用真实 `PHP_MARKETPLACE_ENABLED=true` 与 `PHP_MARKETPLACE_TRADE_ENABLED=true` 开启，按严格 bool 核实际配置，不改生产或当前运行配置。
+
+新增单一 V1 创建能力查询与断言；原 `guardCreate(): never`、旧创建服务及历史 version0 兼容行为保留。新断言位于 DAO fresh claim 后、确认缓存/当前配置重算之前，已提交原请求仍先由持久身份/摘要核对后返回，不依赖现开关或 600 秒预览缓存。confirm/computed 的 capability 同取当前真实查询，前端保留原 disabled、表单与报价/编辑条件，不硬写开放。
+
+computed 先复用原 `store_order` 本人 `order_id|unique`、UID、is_del 查询，投影仍 `*`，不先访问新 ledger 或引用新列；保存 NULL/0/缺版本列沿原 legacy，真实 V1 才以该行真实 unique 和 Request UID 调用原 owner lookup，再核真实订单号/key/state。未命中保存行仍沿原当前开关/真实服务端确认帧重算；客户端 mer_id 不证明迁移。前端 created 结果先用原 binding.key 和既有解析器校验，当前页仍持同一 binding/key 才交统一完成方法，不作为报价或重建确认 DTO；所有 V1 首次创建、lookup/computed 命中均去编码后真实业务 orderId 的详情页，legacy 导航保持。详情小程序返回段仅在 MP-WEIXIN 编译，公共详情/用户/客服读取保留。
+
+实际验证使用新的 enabled 顾客普通入口与准确来源合同；现 `ms4-order-normal.php` 的五处严格 CLOSED 断言和 R7/历史 closed 证明保持，不以换 true 环境原样运行或改写旧收据冒充 enabled 通过。复用原有限初始化/迁移、ISO 保护、真实 HTTP 客户端与正常关闭算法；不把商家读取验证器当顾客下单证明，不引入平行价格算法。新顾客用专用库真实自增 UID 和生产口令服务，仅经实际 login/认证中间件取得身份，不注入 Request、UID、JWT 或 Facade。登录前核专用实例实际通知关闭及自定义登录事件为空/关闭；不凭源码声称无外发。正常登录/鉴权的 IP、last_time 变化单独记，不要求整张 user 表跨请求不变。
+
+验收应独立读回本人的实际订单/项/商家/发票/非空表单/金额与库存 reserve、选中 cart 消费和未选行保持；正常重复提交返回同单，业务事实不再变化；创建前 not_found、创建后 created 及保存后 computed 使用真实持久结果。订单仍 unpaid，600 秒只限制未提交预览，不删 TTL/改时钟造生命周期结果。普通页面、地址/发票往返、真实详情和相关尺寸需实际验证，源码/编译不替代；硬刷新恢复、再次购、其他原消费者及 Task5–10/MS5/MS6 责任继续保留。用户已停止的拒绝/权限/冲突/并发/故障/恢复样本继续 NOT RUN。
+
+必要 Files 为现 `MarketplaceTradePolicy.php`、`MarketplaceOrderCreateServices.php`、`StoreOrderServices.php`、顾客 v1 `StoreOrderController.php`、顾客确认/详情两页；同步现普通 `ms4-order-submit-ui.cjs` 的 V1 详情导航预期、同 binding 合法 created DTO 消费和详情三端官方预处理/模板/JS/Sass检查。后继 enabled 普通入口与专用宿主的具体最小文件在源盘点后归入此同一清单。
+
+- [x] 将本合同归并现有 Task3/4，并保留 R7 未通过事实和旧 closed 证明。
+- [x] 完成上述六个生产文件接线与既有普通 UI 检查更新，独立源码复核、PHP 语法、普通组件状态和三端编译通过；仅为本地源码交付检查点，真实HTTP和DOM另记。
+- [ ] 在新 clean 来源/新专用实例完成真实顾客正常 HTTP 链与独立业务读回；商家原 34/25/9/23 及空表横滚四图责任另行保留。
+- [ ] 完成实际页面/地址发票往返/真实订单详情和适配尺寸验证，正常关闭并独立核零，逐项记录实际证据后才能勾相应子项；不据本清单签收整个 Task4/MS4。
+
+顾客HTTP接线本地源码检查点（2026-10-16）：上述四PHP与确认/详情两Vue已按本合同实现，现普通UI检查同步新详情导航与同binding合法created结果消费，并将真实详情SFC纳入三端官方预处理。Root与独立执行方对实际修改后源码分别复核通过；默认配置、旧never guard、旧创建服务、价格/库存/幂等摘要和历史closed驱动未改。Root在已有PHP8.2.33镜像、network none/只读源及根/tmpfs/cap-drop ALL/no-new-privileges下实际核四PHP语法全部native0/stderr空，收据 `artifacts/ms4-customer-http-source/20261016-r1/php-syntax-result.json` 摘要 `550b975da144f46365396d4ef39c2b6b015ed9ffd397de53358b7194787b8a8b`。Node22沿原依赖实际运行现UI检查，36条普通DTO/组件断言与4Vue×H5/MP-Weixin/App共12组模板/JS/Sass检查均0、stderr空；收据 `ui-source-result.json` 摘要 `82a9cbe2e47b2e88d103a5ba473178d0bdf6fa55dc87bad8b47f68b5303008ad`。两检查均核7个实现/检查文件前后字节保持，无App/SQL/HTTP/认证演员/DOM/视觉。下一入口设计仍为新enabled顾客prepare/verify及有限宿主，复用真实cart/add时以两选中不同SKU和一不同SKU未选行核真实producer，不为凑旧三项oracle手造重复购物车；实施前具体文件/来源继续归并本清单。当前真实顾客API/页面和原商家浏览器责任均未完成，不能记Task4/MS4或生产开放。
+
 ### Task 5: 取消与超时释放
 
 - 接口：整笔未支付且未发货的取消/超时按真实父reserve聚合release，`idem_key = "release:<store_order.id>:<parent_reserve_id>"`；两项为真实已提交PK，尾段是规范U64字符串，不能用非全局唯一的SKU八字节unique。动作摘要绑定保存顾客/商家/订单/父reserve/SKU/数量，顾客取消与系统超时共用动作，演员仅记首次真实执行者；重复不重复释放。未来Task7部分退款用独立真实退款动作键，共同核累计release+return_in不超过父reserve.qty。关单前走可信支付query→close→query closed；unknown或无可信attempt不释放，已支付转待处理，不制造paid或回退平台账户。MS5决定前仅显式testing驱动可做普通未付关单。
@@ -506,6 +525,8 @@ R6有限正常关闭及独立核零已实际完成：固定公开binding摘要 `
 终态记录修复实施合同：按03上述统一保存函数修复，仅改变后继host的observe、remove_finished、http_remove_finished并新增persist_terminal；原HTTP完整前置、业务断言、保存plan严格wrapper、34/25/9/23及10/16来源闭集不改。已有终态全字段及mount多重集严格比较，删除前必须真实保存，observe保留非0归档；不扩大助手权限，不补历史文件。仓库外patch `fb7815a42423a19028d34bb8569e7c6f84250b74268a330f0b1e09c22c363ce9` 和R7 builder `f4ff349c633b6ef46b1550837eada2bc2170fcba7e565862c05fa68aa73ab52a` 已Root全读、独立SOURCE PASS及builder AST/LF检查；这些只证明源码准备，尚未生成新来源或运行新实例。后继须完整字节逆回R6及其完整历史链；因确实改observe/remove_finished，直接不变v5函数数诚实改为35，完整逆回38保持；其余14/15候选来源和close全部函数保持，仅close路径/host摘要随新来源更新。复用原真实离线构建时仍须43前端源码字节相同；新Run验收完成前，Task6/MS4及顾客实际下单、发货售后、支付退款、发布原未完成项均保留。
 
 R7来源生成实际检查点：R6上述正常关闭及独立核零后，Root唯一执行已审builder --write，真实native0；新host为142628B/摘要 `d9f19c0fae04e9826b4abd434860e7be9600fdce71ea85b3ee43e1854e50487b`，close28269B/摘要 `4be81ee06dcaaaba0485958c414010833d45aa0bcf9fde8ed530aafbd84a97ba`，inverse527127B/摘要 `9d633b98cb81682789fa65c91894676462af9c8b37dcc5897c7e23aed1c722ab`。实际生成断言通过：R6重派生JSON全字节等于原inverse、14候选文件保持、仅三旧函数/一新函数、close仅两绑定而全部函数保持、10/16闭集、完整逆回R6及v5、直接35/完整逆回38；原HTTP前置和保存plan函数逐字节保持。Root全读实际host/close差异并核AST/LF，通过仅source范围；未运行新Run、HTTP/DOM或完整业务验收。
+
+R7实际结果（2026-10-16，详见03）：clean `a74f2b27275229dcb089581039dc30020afb4f32` 上有限初始化、迁移、完整内部正常订单及20笔商家分页准备均真实成功，授权助手终态真实保存后删除，原缺口修复在新Run成立。第1步商家真实登录HTTP/business200，但Root跨域字节适配失败发生在capture/ACK写入前，原计划实际1command/0capture/0ACK/0截图；未重放或补通过。原child正常stop、专用Edge关闭/viewport复位/演员释放后，只读观察确认原plan前缀和监督进程；原5容器/2网络/10卷正常非force关闭，Root独立六条查询全0、1563份原证据及Main原HEAD/clean保持。关闭摘要 `29c91c77caa3a4e2cd9fcd75288d76ca303d1155227af5a780e88e164acea008`，独立核零 `db458077d838835837fb4b72d2c08d4c4dc0028eb3fea0aaa2c190467d06ef0f`。R7不重开，原34/25/9/23、空表四图与完整Task6/MS4仍未通过；后继顾客源码实施发生在本次关闭/独立核零之后，不能替代这些原验收。
 
 ### Task 7: 退款额度与库存行为
 

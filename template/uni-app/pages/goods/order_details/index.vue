@@ -740,6 +740,7 @@ export default {
 			this.getOrderInfo();
 			this.getUserInfo();
 			this.getCustomerType();
+			// #ifdef MP-WEIXIN
 			let opt = wx.getEnterOptionsSync();
 			if (opt.scene == '1038' && opt.referrerInfo.appId == 'wxef277996acc166c3') {
 				// 代表从收银台小程序返回
@@ -764,6 +765,7 @@ export default {
 					}
 				}
 			}
+			// #endif
 		} else {
 			toLogin();
 		}
