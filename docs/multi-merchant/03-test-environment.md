@@ -110,6 +110,14 @@ H5真实加购必要修复合同（实施前）：保留当前两商品的非空
 
 H5准备入口实施细化：选择独立原生DML角色 `audit-ms4-customer-h5-prepare`，proof `customer-h5-prepare`，有限命令为新 `ms4-customer-h5.php prepare`；完整复用原customer fixture准备的真实终态/原文件，另要求独立public-copy原生终态0。该DML只挂原source/prep/Run/app/fixture为RO，public为RO，http-runtime/control/browser三专用卷RW及唯一/tmp tmpfs，结果只写control/prepare-result.json。原四source根/9-extra不扩展，新两PHP单列h5_source_files；固定public-source/h5-dist/inputs三清单由host冻结并独立核实际公开副本的完整字节/空目录/权限，不将清单当编译证明。原b803报告保持原SHA，当前完整前端字节复用门禁由host单列。独立public-copy角色创建十卷中四个新空卷并核归属/模式，DML真实终态0后另由独立migrator执行最终writeMd5；B0、真实应用和UI仍依原r3后续顺序，不在DML中调用第二App或提前伪造API通过。profile在仓库外新candidate-h5-r1派生，原customer profile及历史Run不改。该选择细化03既有有限合同，不增加任何生产业务开关、权益或支付决定。
 
+新prepare入口结果发布合同：沿原正常TERM标记，在helper返回后，以及最终完整来源/公开副本后验结束、结果发布前后再次检查同一标记。最后后验期间已经收到停止请求不能继续当正常成功；不覆盖create-only结果，最终必须同时核原生进程实际终态0和原结果绑定，单独状态字符串不构成通过。本项只修源码，不运行用户停止的中断/故障样本。
+
+H5准备源码检查点（2026-10-16）：新 `help/audit-regressions/isolated/ms4-customer-h5.php` 有限prepare入口和 `lib/ms4-customer-h5-normal.php` 已整合；前者29923B/摘要 `1640d970ffc6fa6390caeee49bdd9493fc95bd4a5f0183783cc49320591459c0`，后者保持已源审r2的32210B/摘要 `c220b9a31a059a1b317e584112fbe4755cdccbf491644f2d7434b7cf74fd8dbf`。独立源审确认四键h5映射、原9-extra加独立2PHP、10个精确非tmpfs挂载、Run/fixtures/public RO、原copier terminal及完整public文件/空目录/owner/mode、唯一真实App与仅prefix私密摘要；指出的长后验TERM窗口按前述合同修正，r1候选原字节保留，Root复算仅两处同标记检查差分。固定PHP8.2只读/network none语法两项native0/stderr空、源前后相同；仓库外 `artifacts/ms4-customer-h5-entry-source/20261016-r1/php-syntax-result.json` 1361B/摘要 `b9d4148832d61f2db86f0b0a996377d2efa947a2d798c7596d2276f15bd465d6`。这只实现prepare，不含serve、ingress、浏览器或H5订单验收。
+
+H5公开材料实际生成检查点：Root在clean `b40d22872f6e2999f9b37c95d5ff4db2fef32b0a` 唯一执行新仓库外 `candidate-h5-r1/ms4-h5-materials.py`，实际native0。544份当前前端路径/Git blob/实际字节与b803源相同，两套29930份完整依赖树、原适配器及原生编译/日志绑定、334份实际dist全部复核；未重跑编译或重标旧报告。新三清单为完整public2536文件/279目录、H5 dist334文件/23目录、原定两输入；材料收据1748B/摘要 `aac390f893a6a90f4297c40c450026b547750c2e8d1174e54a418289de8b1314`。Root另复算目标集合预期2872文件/305目录，只是来源并集，未称已复制实际卷。首次调用因Root给错完整source参数在clean门禁自然退出1，未写材料；读取真实rev-parse后才运行上述成功调用。离线YAML解析通过；首次自写挂载唯一性检查误拆`${...:?required}`中的冒号退出1，修正该检查的目标提取后通过，原YAML未改，未运行业务样本。
+
+仓库外H5 profile仍为未运行的实现中材料：原customer七文件字节原样保留，两固定输入/原PNG、新材料生成器和三准备角色overlay已写；public复制函数及nginx源已核必要差分并复制，前八公共复制helper4483B与原R7完全相同。复制目标按真实H5根加载，static JS/CSS/map只取新dist，缺失返回404；非代码static可回原public，静态路径不回HTML。guarded copier主入口、metadata登记、最终独立migrator/B0及实际serve/桥/DOM/25+7后验/正常关闭核零仍待接完，本profile不标READY，不启动不完整Run。既有12HTTP通过及商家原未完成责任不变。
+
 ## 3. ISO-MIN 环境（MS0a 交付）
 
 ### 3.1 文件
