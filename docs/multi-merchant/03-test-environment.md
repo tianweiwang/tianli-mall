@@ -144,6 +144,10 @@ Root桥的固定私有读取除演员文件外仅source-ready/runtime/sql-audit�
 
 Root桥/driver源码检查点：新 `customer-h5-bridge-implementation-draft-r1/browser-v1/` 已包含真实私有transport、有限CUA动作/网络/DOM/截图driver及原observer逐字副本。Root沿原Node22仅执行三模块 `--check`，三项实际native0、stderr空、完整来源前后相同；收据 `node-syntax-result-r2.json` 1564B/摘要 `d57211c8f1f99532dac80570021ec50caa6c23aa5707e37e419b459bb2b06cb0`。driver由Root在真实DOM提供唯一可见可用locator后点击/输入，以真实request_id取原响应，禁止造API响应、注入页面状态或重试create；跨realm截图逐字复制为当前Uint8Array，原JPEG保存后才由Root实际看图并登记review。该项仅JS解析，不import执行三模块；入口/阶段/最终登记仍在源码整合，完整接口复核、真实H5联调和关闭/核零尚未完成。
 
+入口/阶段源码整合的必要修正依据（实施前）：stage调用的MarketplaceCartSelection未在本文件import，须只将该处改全限定类名，保持原32854B前缀。serve runtime不能对原bootstrap已真实创建的supervisor-requests/responses再次要求不存在；对这两个原目录严格核owner/0700/no-link及实际为空，仅新增三UI目录create-only，原runtime本身仍create-only，不删旧目录或修改preUI producer。完整entry候选移除新增块和唯一dispatch行可逐字逆回原29923B；原prepare函数/handler保持。Root已在仓库外组合候选核三PHP语法native0及host Python AST，收据2317B/摘要 `c5cd93824597b1b0eba0cfac2ada8c3c610ef30a3966115cd48f79c882c266af`；其对应修目录前来源，不当作修正后或实际serve运行证明。浏览器driver另核真实uni-button disabled属性，避免把禁用按钮记为可用；确认/库存/金额/身份及原600/3600秒断言不变。
+
+H5入口/阶段实际源码整合检查点（2026-10-16）：现两PHP已整合serve/七ingress、完整binding/source true/false、真实父runtime/单child/actor-meta/UI原始证据写入，以及B0–B4和Final的真实32表读回。entry为114081B/摘要 `fbe7966bd54cb006a535d8e9d1c512b03223f867602250d9dc7e51f2d867819f`，helper为91294B/摘要 `2c9d71cec23283df54bc72960f2fb7394ea96e2ad63e7504cdbeb04b5af4df8b`；独立源审确认上述唯一目录修正及helper全限定调用，原prepare字节逆回/原helper前缀保持。Root修正后仅复跑变化entry PHP语法与driver Node解析，两项native0，未变helper/bridge/observer按完整实际字节复用前次检查；收据1663B/摘要 `d7c9a9238de7a6f7223afa25aa4be053e5e06a3f857b2ad47ab73b5f080d0252`。Main两源逐字等已检查候选，整合收据1048B/摘要 `0507c005f48abe80f54b01e5c683c78e218b00170ebcda6c682ca12747a04964`。独立复核已对齐桥/driver的actor/stage/停止/截图/finish/audit接口；driver禁用状态与严格无横溢出阈值均保持。三浏览器模块最终manifest728B/摘要 `a0fd5614123766d23f403d7e679ab75e998fff0218a329fc935886c35b9978d4`，只记录源码。外部final host/compose/register-final三候选也已写出并获有限接口SOURCE复核，默认freeze仍15项、final须20项且CLI/关闭/独立核零未接；当前不形成可启动完整profile。未建立新H5 Run，没有App/SQL/HTTP/DOM/图片人工验收；以上SOURCE/语法证据不能计Task4或MS4通过。
+
 ## 3. ISO-MIN 环境（MS0a 交付）
 
 ### 3.1 文件

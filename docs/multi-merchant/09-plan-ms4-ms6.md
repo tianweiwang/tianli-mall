@@ -349,6 +349,8 @@ H5后继阶段按03补充：B3在真实computed后/create前用独立唯一审�
 
 Root三浏览器模块已形成实际源码候选：原observer保持字节，新私有桥与有限CUA driver完成三项Node解析native0/源前后相同（1564B收据见03）。实际入口/阶段helper/final登记分工实施，尚未整合或启动；本项只是SOURCE/JS语法，不计页面、订单或MS4验收通过，原未完成清单保持。
 
+H5入口/阶段已实际整合到现两PHP：serve/七ingress/原actor只读交接、B0–B4及Final完整25+7原生事实、B3创建前真实frame封存与B4原beforeCreate/生产输入/shared saved接线均已实现。Root及独立源审修正全限定类名、原监督目录复用与入口argv，并核prepare逆回及helper原前缀；变化entry/driver聚焦语法native0，Main实际字节等已检查候选（完整摘要/收据见03）。桥/driver/final-register/host候选已有源码，后继完整20项freeze、final CLI、关闭/独立核零及真实页面联调仍待完成；本轮没有新H5业务Run，Task4/MS4、确认刷新、temporary/again、原商家验收、发货/售后及MS5/MS6原责任均未完成。
+
 ### Task 5: 取消与超时释放
 
 - 接口：整笔未支付且未发货的取消/超时按真实父reserve聚合release，`idem_key = "release:<store_order.id>:<parent_reserve_id>"`；两项为真实已提交PK，尾段是规范U64字符串，不能用非全局唯一的SKU八字节unique。动作摘要绑定保存顾客/商家/订单/父reserve/SKU/数量，顾客取消与系统超时共用动作，演员仅记首次真实执行者；重复不重复释放。未来Task7部分退款用独立真实退款动作键，共同核累计release+return_in不超过父reserve.qty。关单前走可信支付query→close→query closed；unknown或无可信attempt不释放，已支付转待处理，不制造paid或回退平台账户。MS5决定前仅显式testing驱动可做普通未付关单。
