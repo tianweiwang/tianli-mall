@@ -471,7 +471,9 @@ function m4ch_stage_sealed(array $source): array
     $prepare=$source['prepare_identity'];m4ch_stage_keys($prepare,['container_id','native_created_sha256','source_binding_sha256','prepare_result_sha256']);
     foreach(M4CH_STAGE_IDENTITY_KEYS as$key)m4c_expect($baseline[$key]===$oracle[$key],'M4C_H5_STAGE_SAME_ORIGINAL_SEALED_IDENTITY');
     foreach(['run_id','source_sha','freeze_sha256','environment','self_operated_mer_id']as$key)
-        m4c_expect($baseline[$key]===$source[$key],'M4C_H5_STAGE_SEALED_SOURCE_IDENTITY');
+        m4c_expect($key==='environment'
+            ? is_array($baseline[$key])&&is_array($source[$key])&&m4ch_http_same_environment($baseline[$key],$source[$key])
+            : $baseline[$key]===$source[$key],'M4C_H5_STAGE_SEALED_SOURCE_IDENTITY');
     foreach(['container_id','native_created_sha256','source_binding_sha256']as$key)
         m4c_expect($baseline[$key]===$prepare[$key],'M4C_H5_STAGE_REAL_H5_PREPARE_IDENTITY');
     foreach(['public_copy_sha256','public_source_sha256','runtime_origin']as$key)

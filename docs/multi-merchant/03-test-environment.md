@@ -158,6 +158,14 @@ R3实际部分Run（2026-10-16）：冻结clean Main `9e53170a7db817c36a209e26a8
 
 R4后继源码检查点：Root在旧Run已关闭并独立核零后，create-only生成 `candidate-h5-r4`，仍为原7+20共27文件，原7、host/close/zero与浏览器模块逐字保持；仅bootstrap固定copy/workspace安装SQL读取映射及两项来源说明变化。bootstrap新73753B/摘要 `0f5f7935d46a09bd2b902221b06b8633dab93e64f0cc0173cb1133e857fb8ef5`，整文件逆替换恢复原73448B/摘要 `921242c4f55935454155fdb5511c80247eebfc4e12dcb77349554839b884748b`。Root与独立复核组装逻辑；实际5 Python AST、3 CLI help和固定PHP8.2 network-none只读php-l均通过，原R3与新R4全部27源前后字节保持；10927B收据摘要 `a364dd2130dcf664e52c37b229012f471e121cc519203e7a4d957cba3068693d`。来源闭集、源hash与目标完整public manifest未减少；仅SOURCE/PARSE检查，没有新freeze、Run、App/SQL/HTTP/DOM或H5验收结果，后继正常运行仍须新实例。
 
+R4后续实际Run（2026-10-16）：clean来源 `40f8b07c1cbdc6f3f92ba5b2513274a076bad5a5`，Run `2026101613490780a575`，freeze `229f0604666fba786174cd7d4022ae5ea9dbcf2a7e499d5ceaff6ea0e649ec49`。原初始化、结构迁移、文件引导、customer prepare及H5 public copy/DML prepare均实际正常0；copy原缺口已越过。files原CID `e5f0297fe8aae59cd8156fb38d7435161bc413e2cee08ffda8bb668a98a5d414` 自然exited1/PID0/restart0，在h5_files_before的公开DML绑定比较失败，尚未启动其migrator。Root实际只读五公共环境键和值/类型相同、插入顺序不同，PHP严格数组比较误拒；观察摘要 `91c48132236f351214f699a9dc29bd00c781f781d4e66ba2e963e413942bd811`，诊断摘要 `67d4fa3241198588988b747264ac00e8a0613821ad417f73ad9db0bd9366c951`。此前prepare的真实App/SQL不改写为未运行；后续serve/HTTP/UI/订单创建及DOM未运行。
+
+Root全文审查并AST核有限关闭源 `75e7193a30147033d78a90b3415df2fc455d7067a750a45326478a84de01b24a`，唯一实际运行native0；DB/Redis各单次正常stop(time=-1)，原进程PID41784/25264均真实0，原files失败1保持；精确非force移除原3CID/1内部网/10卷。关闭摘要 `52a90b2272fa0eb96419a973bfcec4052b43446a917156c47d80b04c12dc8ecc`。Root另以独立原生六查询核零，stdout/stderr均空，3006份旧公开文件、四注册输入和Main原HEAD/clean保持，独立摘要 `f2a2d8ec7f83f687a04eb7759ebb9661749a4bfe49bbb9a35f53f7c0addb79f1`。仅PARTIAL_RUN_NORMAL_CLOSED/H5 INCOMPLETE，不重开旧Run。
+
+后继源修复实施前沿09 EK清单及 `records/ms4/h5-environment-key-order-design.md`：Main stage的一处跨producer环境比较与新R5 bootstrap的两处使用既有排序后严格helper；完整键和值类型、所有来源/原生/32表/页面断言不变。新来源、语法、freeze、Run与HTTP/DOM分别记录，不从局部修复或旧API结果推断页面通过。
+
+R5 SOURCE/PARSE实际结果：Root与独立复核Main及8770B组装程序（摘要 `45e0c6333312d1cceb6af835cdaa56626eb9bb45f72e800921aa35458d5ac17d`）后，实际create-only派生27文件，只有bootstrap及两项说明不同，其他24字节保持。Main stage91453B/摘要 `bb38cc6b9808ddcc1ec95aab79928e09272c81b90f9d4455ba88e645fea22b9d`，bootstrap73805B/摘要 `81376b4122eedcfa40de298f6035192c5bc4c8634ce92a3c0974e1ccb3a79485`；整文件分别逆回原40f8与R4，两边全部源和Main检查前后相同。固定PHP8.2.33、network none、只读挂载、tmpfs与原权限限制下，仅两个php-l子进程及外层实际native0/stderr空。11890B源检查收据摘要 `38160f296e56ff666283ff983ee3b296f7dc2b5ea69560e35ad3b74a7471c6d6`；无App/SQL/HTTP/DOM执行，尚无新R5 freeze或Run结果，不替代原32表和27原生截图验收。
+
 ## 3. ISO-MIN 环境（MS0a 交付）
 
 ### 3.1 文件

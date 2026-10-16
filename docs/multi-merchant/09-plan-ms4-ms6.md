@@ -359,6 +359,16 @@ R3本轮实际结果：Run `202610161242280276cd` 的原六步初始化、四步
 
 R4 source-only后继：在保留旧R3与原失败/关闭证据后，新27文件profile仅修bootstrap的固定copy/workspace安装SQL遮罩读点及两项来源说明，原7/host/close/zero/browser完全保持；整文件逆回、5AST/3help/1PHP-l及27源前后保持均已实际通过，见03。不能由这9项源码检查推断复制或H5页面运行成功，原完整运行与验收清单不变。
 
+R4实际Run `2026101613490780a575` 的public copy与DML prepare均正常0，前一遮罩缺陷在新Run已越过；files在其migrator前因跨producer环境数组键顺序不同自然exit1。Root实际核五键、值与类型相同，并保留原失败。已正常非force关闭原3CID/1网/10卷，独立六查询真零、3006份原公开文件及Main原HEAD/clean保持，详见03。HTTP/DOM与原完整验收仍NOT RUN。
+
+后继实施前合同见 [h5-environment-key-order-design.md](records/ms4/h5-environment-key-order-design.md)。仅三个跨producer环境比较改用既有排序后严格helper；同producer原完整比较、实际五环境值与全部来源/业务/浏览器断言保持。旧R4不重开，R5须新clean来源和新Run。
+
+- [x] EK1：Main单源与新R5两处bootstrap最小修复，独立复核Main/组装源，Root核实际生成差分；仅SOURCE。
+- [x] EK2：两源完整逆回、27来源及Main前后字节保持、实际PHP8.2.33两项语法解析native0；不代替运行证明。
+- [ ] EK3：新Run完整正常H5/HTTP/DOM、原截图与32表、正常关闭及独立核零；原未完成责任不减少。
+
+R5源码实际检查点：Main stage91453B/摘要 `bb38cc6b9808ddcc1ec95aab79928e09272c81b90f9d4455ba88e645fea22b9d`，新bootstrap73805B/摘要 `81376b4122eedcfa40de298f6035192c5bc4c8634ce92a3c0974e1ccb3a79485`。Root与独立源审、实际组装及两项解析通过，收据摘要 `38160f296e56ff666283ff983ee3b296f7dc2b5ea69560e35ad3b74a7471c6d6`，详见03及记录。原R4与失败仍保持，未从源码通过推断新Run或H5验收完成。
+
 ### Task 5: 取消与超时释放
 
 - 接口：整笔未支付且未发货的取消/超时按真实父reserve聚合release，`idem_key = "release:<store_order.id>:<parent_reserve_id>"`；两项为真实已提交PK，尾段是规范U64字符串，不能用非全局唯一的SKU八字节unique。动作摘要绑定保存顾客/商家/订单/父reserve/SKU/数量，顾客取消与系统超时共用动作，演员仅记首次真实执行者；重复不重复释放。未来Task7部分退款用独立真实退款动作键，共同核累计release+return_in不超过父reserve.qty。关单前走可信支付query→close→query closed；unknown或无可信attempt不释放，已支付转待处理，不制造paid或回退平台账户。MS5决定前仅显式testing驱动可做普通未付关单。
