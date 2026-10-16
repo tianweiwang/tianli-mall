@@ -152,6 +152,10 @@ H5入口/阶段实际源码整合检查点（2026-10-16）：现两PHP已整合s
 
 完整R3来源组合与入口检查点（2026-10-16）：Root在仓库外新建 `artifacts/ms4-customer-http-preparation/candidate-h5-r3/`，实际原7文件+20项H5材料共27文件，原7逐字等R2；三浏览器模块沿原已检查字节。host为106590B/摘要 `a5ac7a63322d50d7eae2ce3a09f0bc726b01a938568a90803983c046376714f9`，正常关闭源45731B/摘要 `9f9165662838e40e08bf9672918c0da9adc4e5149eed8701873124d5154e62d8`，独立核零源30358B/摘要 `6037354aa90ab188cd83d39626fb261a8b537ac3272219a662c843fde2069d25`。实际Python AST解析5项通过，host/close/zero三个真实CLI help均native0/stderr空、27份来源前后保持；收据 `customer-h5-final-profile-source-check-r1/source-check-result.json` 2419B/摘要 `38510938ed020db59c0ebcbb51549c2c7b065ed44ad92e1df711573256d14a21`。独立有限host接线源审通过；close/zero另做producer字段与生命周期复核。该检查没有创建freeze或Run，没有App/SQL/HTTP/DOM或关闭/核零实际结果；normal-only源码不接受partial为通过，原完整验收责任保持。
 
+R3实际部分Run（2026-10-16）：冻结clean Main `9e53170a7db817c36a209e26a8e34404ac60d612`，Run `202610161242280276cd`，完整freeze摘要 `c213e82420dbd130ce9048f4deea3b6e1680d88178cf0c1d9730e70c1acd2412`。原初始化六子命令、结构四命令、真实文件引导和customer prepare均正常native0；随后H5 public copy原CID自然exit1，phase=source、`M4C_H5_BOOTSTRAP_ALL_FROZEN_SOURCE_BYTES`，未进入复制或H5后继App/UI/订单。Root用该原停态CID两次只读docker cp确认，`/source/crmeb/public/install/crmeb.sql`完整大小/hash匹配freeze，而新空卷遮罩的 `/workspace/crmeb/public` 中同文件实际不存在。安全失败观察与差异诊断保留在原evidence，不公开原SQL、配置或演员资料。
+
+同Run部分正常关闭：专用源 `customer-h5-copy-failed-close-r1/normal-close.py` 摘要 `3b067167392354f89441f0cb3dd3e395635e9e950d185902037dcfb08f68f169` 经Root全文读、AST和独立SOURCE复核后唯一实际执行native0。保留copy原terminal1；MySQL/Redis分别一次正常stop time=-1，同原生进程12776/2884均真正正常结束，原容器exit0/PID0/restart0；非force精确移除原3CID、空端点internal网络及10原卷。既有全部公开evidence与4注册输入字节保持；关闭摘要 `aa9af693ca921ae156b39503cb533211be772003f5d5eca85f9c640383635638`。Root另外独立六原生查询均native0、stdout/stderr原字节空，2435B核零收据摘要 `3860a93a87adf712f15ea31c386795d615935ffa1b81425b7d0dcd7bd6b8fe12`；Main仍原9e/clean后才解除冻结。只记PARTIAL_RUN_NORMAL_CLOSED，完整H5/DOM/订单验收仍INCOMPLETE，不重开原Run。后继修复须保留真实/source全量哈希与目标public完整manifest，仅区分copy时被新public卷遮罩的固定SQL读取位置；在新来源/新实例验证，不删freeze条目或修改期望hash。停止样本继续NOT RUN。
+
 ## 3. ISO-MIN 环境（MS0a 交付）
 
 ### 3.1 文件
