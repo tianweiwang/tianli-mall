@@ -327,6 +327,10 @@ enabled 顾客验证源码检查点（2026-10-16）：上述两PHP已实现并�
 
 共享账号源码检查点：仅上述生成/加载两处必要hunk已整合，完整候选差分经Root逐字节复算；密码和全部原业务断言保持。固定PHP8.2只读/network none语法检查实际native0/stderr空，源前后保持；收据 `artifacts/ms4-customer-account-source/20261016-r1/php-syntax-result.json` 841B，摘要 `1b7106812d3f9012787df74663a764a8d472059e78f1dbe52a621cc057932458`。尚未在本检查点发出业务请求，新的原12HTTP/25表及H5验证另记，不挪用旧Run通过结果。
 
+共享账号完整普通链已实际通过：clean 56e0e95d5、新Run `20261016091832fabe06` 的12HTTP/25表全部完成，结果摘要 `d000ddc8948edc791fbcaae5b0d218e55b60ded74979ad22a26f2ddc035e5cd6`；真实登录、非空表单/发票、整行运费、创建/原样顺序重放/owner查询/保存computed均已核，订单仍未支付。原资源正常关闭及独立六查询零完成，摘要分别 `c82eb5e00b22a0da7870f890d134d63ff06603a7b4b75316d3612ce3a04cd902` / `35b39ffb86f88fcb2a3d89df362104ce50f8325023a0425bfb32a173fd86305c`；详情见03。Main/旧profile冻结在关闭和独立零后才解除；该Run不重开，仍非顾客页面或Task4/MS4完整验收。
+
+页面联调的H5来源、真实主题/中文输入、25+7表副作用合同及helper候选源码/语法检查点见03；入口、运行profile和实际页面仍待实施。已确认原普通商品因非空custom_form隐藏加购，与V1确认已支持逐商品表单不一致；按03必要调用点合同，仅修普通列表、详情及普通配置快照三处能力，保持原关闭V1/预售/虚拟/规格/库存等条件。后续必须由真实商品UI加购及真实确认/创建证明，不删表单、改主题强开按钮或用API直加冒充页面。原temporary/again、完整确认恢复、商家验收、发货/售后/支付等未完成项保持，本Task4清单不另起或勾销。
+
 ### Task 5: 取消与超时释放
 
 - 接口：整笔未支付且未发货的取消/超时按真实父reserve聚合release，`idem_key = "release:<store_order.id>:<parent_reserve_id>"`；两项为真实已提交PK，尾段是规范U64字符串，不能用非全局唯一的SKU八字节unique。动作摘要绑定保存顾客/商家/订单/父reserve/SKU/数量，顾客取消与系统超时共用动作，演员仅记首次真实执行者；重复不重复释放。未来Task7部分退款用独立真实退款动作键，共同核累计release+return_in不超过父reserve.qty。关单前走可信支付query→close→query closed；unknown或无可信attempt不释放，已支付转待处理，不制造paid或回退平台账户。MS5决定前仅显式testing驱动可做普通未付关单。
