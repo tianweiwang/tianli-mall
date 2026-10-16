@@ -58,6 +58,10 @@ HTTP普通控制补充合同（source准备，完整HTTP仍待运行）：在原
 
 HTTP最终普通页面核对合同（编码前）：新增只读`plan` ingress，读取同HTTP进程在真实oracle/source门禁后一次生成的固定34步骤/25主capture/9visual私有计划；每步nonce由真实random_bytes产生，write command只接纳计划中下一步原完整消息且前步实际ACK存在，不开放任意命令或凭据参数。capture.query的空map在线上编码为JSON对象{}，不放宽浏览器的精确查询比较。原6个控制子目录保持，9份人工图像复核写入已有screenshots目录的独立create-only review文件，严格绑定原nonce/scene/实际JPEG摘要。audit必须逐项核完整计划、真实响应与保存oracle、结构化DOM/原字节全页JPEG/人工实看记录、owned tab关闭/viewport reset、23表事实和完整来源，才经宿主私有桥发布有限公开结果；App的Run挂载继续只读。新的只读plan、review种类和完整终态实现后仍须来源审查，不能据计划生成签收；手机表格实际横向可达的工具接口尚在核对，未实际操作前不记该项通过。
 
+空表横向滚动补充验收合同（2026-10-16，实施前）：沿上述原34步骤/25capture/9visual/23表/3600秒合同，原非空表键盘及末列断言、私有command/ACK/PHP严格字段集合保持。新增浏览器模块独立导出的普通空表观察，在原第31步空商家列表完成后、第32步前调用；不增加或改写原计划command/ACK，不把补充图片计入原9图。在320/390实际有溢出的视口，使用真实具名body-wrapper的ArrowRight/ArrowLeft，核首次非零、实际最右及恢复左侧；逐处读取未过滤的文字/空块/滚动区几何、实际scrollLeft、宽度、焦点、tabindex/role/aria-label、模板根class、三个选择器匹配及computed sticky/left，保持原空态几何断言。每种手机宽度另存首次非零和最右的两张原始JPEG并实际人工复核，共4图；1440先实测，无溢出仅记measured-not-required，不能制造滚动。所有补充结果和图片在原Run目录外单独记账，绑定实际Run/source/CID/freeze、原窗口、第31步上下文及模块来源摘要，完整nonce不进入公开结果。调用结束实际回左并复位viewport，才继续原流程。该修复的验收要求是原完整浏览器/23表证明与补充空表观察及4图人工复核同时通过，再正常关闭和独立核零；原required=false或9张静止图不能单独证明修复完成。仅运行正常空数据/键盘操作，用户停止的其他样本保持NOT RUN。
+
+本机浏览器运行限制（2026-10-16）：后继普通复验使用Edge或Chrome中本任务实际创建并核归属的标签，原owned-tab关闭证明由外部浏览器真实完成。内置浏览器IAB仅可复用或导航，不自动执行tab.close/browser.close、CDP Target.closeTarget/Browser.close、关闭快捷键或等价操作，不主动复现客户端退出；当前拦截钩子尚未获信任，不能依赖其保护。若后续用户明确指定IAB，保留其选择并先调整必要收尾记录，不能伪造closed证明。此限制不改变已执行R5的历史事实或业务验收结果。
+
 ## 3. ISO-MIN 环境（MS0a 交付）
 
 ### 3.1 文件

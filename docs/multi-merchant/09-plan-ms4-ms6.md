@@ -483,6 +483,16 @@ e290来源普通Run的实际有限结果（2026-10-15，恢复核验2026-10-16�
 
 后继r5来源已在原Run关闭后实际create-only生成：builder摘要 `e12c2381a2a0bc2225b2e2b57b527ed8b4fc1002cfab69a9fd45ca14028dd41a`，host `18c3c5aa5be6617f5f384b77744054dfa8a6251d6cc23f26161533e66378b615`、close `9462c75cb992aac93fbb1e077bc6015b19a3cec6238e539aa48f99edbacabbd4`、inverse `7fc37e053b36667195a2d3bba333e47862474fc2ac43ebbc95af1668eeaebbf1`。保留fulfillment1原保存plan严格wrapper及10/16来源闭集；仅换新实际build三绑定、空态browser及其DOM说明、close路径/host摘要，其余12来源原字节保持。完整实际逆回fulfillment1/r4-build1/r4/r3/r2/v5，37旧函数直接不变、38旧函数完整逆回；Root全源读及独立有限源审通过。这只是来源生成，不是新Run、正常保存plan集成、34/25/9/23完整验收或实际发货；后继仍须新clean来源、全新隔离实例和原窗口正常验证，用户停止样本保持NOT RUN。
 
+R5实际有限结果及关闭（2026-10-16）：冻结clean Main来源 `ddc4d1dd37bdf58a60f9a272160c7c6a72f1221a`，Run `20261016011456c71ffa`，freeze `b679fae0914df5016ac2513976c0e41bafbcfe05c245ab3f0116b74d317f8dff`。初始化、结构迁移、完整内部普通订单链及HTTP准备正常；内部订单收据摘要 `5cb9cb03ef2893323170f859ff243de1321d5c0dd1f22727d9fe08514f4af28b`，其中真实已保存的5种权益来源订单完成25份纯发货分配plan和20份projection，SQL及保存行前后保持；它们的根订单均未支付，paid案例指付费会员，不是已支付订单；未写发货、未执行支付或物流。原浏览器34步/25capture/9JPEG/9次人工复核已执行，但补充普通空表横滚失败：320下首次scrollLeft=2后，手工wrapper class被组件动态class重写，空块恢复static/1170宽、文字出屏。失败图摘要 `048b4d03f948539fd4e7e2a935c1fe2c629ef8ed8a0a46efb192276cbe66e0b4`，不计原9图。工具重置后原bridge/演员绑定不可访问；真实浏览器清单确认原owned tab2已不存在并复位viewport，未重建演员。只读历史观察实际native0，摘要 `ebc4ddf7230ed1fac4efc67c386920182f91f1f1d0e94d5778ac38d45c429851`，核原finish/closed帧确已存在且同源；仅认历史元数据，不重放过期入口、续期或补造forgetActors。最终23表SQL未运行，完整验收INCOMPLETE。
+
+R5已按原身份正常关闭并独立核零：关闭源摘要 `545243969c22edb6a4962e3ffad619518a6c89ef43bbee7e179f2aff94af5367`，Root唯一执行实际native0。App单次正常stop后真实PID1信号证明摘要 `5b872c98a0c044c6205ccaa1ecf700cb50078c07b10f54b14753ced0f7d07aeb`，TERM15、原group成员空/8000无监听，原child exitcode及proc_close=-1如实保留；之后UI/MySQL/Redis各单次正常stop，四服务实际exit0/PID0/restart0，原普通容器终态保持。非force精确移除原5容器/2空网络/10专用卷，关闭摘要 `1fd0351a3c270a586989b0fcd28b3f3b2243acecf9ae49735c9027722463b4cc`。Root再用不导入helper的有限独立来源执行六条双标签原生查询，均native0且stdout/stderr为空，Main仍ddc4/clean；核零摘要 `190f7ccdcaebfeef6aaa86b3ebe7b1f90a359dd88d63a0ccc46b146d6d15d4a8`。42份原公开来源证据、观察与补充FAIL保持，未把关闭成功记作业务验收，不重开此Run。
+
+稳定样式锚点实施合同（实施前）：在上述正常关闭及独立核零后，仅给订单list/detail两页原el-table声明静态 `marketplace-table-scroll` 类；从 `accessibility.js::applyTableScroll` 删除手工wrapper class追加，保留唯一wrapper及tabindex/region/aria-label和生命周期；styles.css的焦点和两条空态规则改为从稳定表根经直接body-wrapper定位，原样式值与业务/API/权限不变。不新增补class监听、合成事件、scrollLeft写入、裁切或偏移。沿现有31脚本/74导入检查和已有依赖离线构建，冻结新clean来源；原浏览器runMerchantStep/horizontalReach/PHP schema与34/25/9/23合同保持，独立空表辅助导出及正常观察按03新增必要合同执行。新Run完整证明、空表非零横滚4图人工复核、最终23表及正常关闭/独立零必须同时通过；本合同和源码通过本身不构成Task6/MS4完成。
+
+稳定锚点源码检查点：上述4个产品文件已按合同最小修改，Root读回实际diff，独立源码复核SOURCE PASS。原Node22实际运行 `template/merchant/scripts/source-check.cjs`，31段脚本语法及74项本地导入通过，`git diff --check`通过；接口、权限、原浏览器/PHP断言未改。本项仅源码检查；离线构建、真实非零横滚/4图、完整HTTP/DOM/23表与新Run关闭仍待完成。
+
+下一轮浏览器运行约束：依03新增本机限制，选用Edge的本任务新标签，真实核对归属后执行原34步及正常关闭证明；不再自动关闭IAB标签或用其他等价入口复现退出，不依赖尚未信任的拦截钩子。该运行选择保留原页面、窗口、截图与完整验收要求。
+
 ### Task 7: 退款额度与库存行为
 
 - 接口：申请退款时在事务中锁定订单行，校验"已退金额 + 处理中金额 + 本次金额 ≤ 实付"；三类库存行为分别写 `release`（未发货取消）、`return_in`（退货验收入库）、不写（仅退款）。
