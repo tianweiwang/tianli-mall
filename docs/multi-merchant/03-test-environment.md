@@ -136,6 +136,14 @@ H5阶段读回补充合同（实施前）：公开confirm DTO由quoteOutput移�
 
 B4完整native ledger/movement含二进制digest，stage私有资料不能直接JSON编码原行；保留PDO原生类型，按实际serialize字节加完整私有摘要后base64封在有界JSON中，读回只允许固定文件、严格大小/键集、allowed_classes=false解码及完整25+7数组形状校验，不以公共DTO替代原行。完整私密hash仍不公开。运行窗口仍沿原实际3600秒，不能以它代替确认缓存600秒；实际serve父在完整source/资源门禁后，凭已核实际CID/父进程及冻结origin生成一次私有runtime，再发布source-ready。source binding不引用尚不存在的runtime；不增加有写control权限的metadata角色或循环启动前置。全流程未实施/运行，本段只纠正旧仓库外MAP/ADDENDUM的B3无App和B4延后取cache假设，旧原文/摘要保留。
 
+H5共同接口采用仓库外 `customer-h5-serve-contract-draft-r1/CONTRACT.md`（36095B，摘要 `7e138d50a2633a0aeb28f8668badce360903efd48fbc8a2e5e1750b2e8e99c28`）及以下必要修正作为实施依据，仍沿Task4同一清单。新增serve/七种有限ingress/真实阶段读回仅在现两H5 PHP；final-register/host/compose与Root私有桥、真实浏览器driver在新来源分别实现，Root独占Main写入及运行操作，不重写R1/R2或原商家证据。完整20项artifact、真实来源和关闭/独立核零源码齐备前不启动新Run。
+
+共同接口公开投影修正（实施前）：原合同把完整私有H/I8写入E的source-ready、start/stop、最终audit和forgotten，与私密字段边界不一致，不能照搬R7旧出口。完整epoch/step_nonce/generation、runtime/SQL/私有stop摘要只在K或Root私有pipe；E只发布实际原消息的安全派生投影，秘密字段及这些私有摘要最多前12位，禁止先把原私有JSON或tar归档到E再脱敏。公开固定身份保留schema/scope/run_id/source_sha/container_id/freeze_sha256，非秘密时间及真实进程状态保留；B4直接核K中的原停止收据。截图公开路径改为本Run顺序四位号与scene（如 `evidence/browser-screenshots/0001-login-empty.jpg`），不把完整nonce放文件名；K内仍用原nonce严格绑定capture/截图/review，实际JPEG字节/hash/像素和Root人工看图要求不变。公共投影不是原私有字节副本，不借prefix代替内部完整身份检查；原历史证据保持。
+
+Root桥的固定私有读取除演员文件外仅source-ready/runtime/sql-audit，均只在内存解包、完整比对原身份及真实文件摘要后才发布安全投影，不保留私有tar/stdout或其完整摘要；正常关闭在原CID仍存活时复读对应K原件，核完整身份并重新计算投影，不能只比较两个12位前缀。actor-meta必要数据通路补齐：同一有限私有getter增加public_ids与ui_intent，前者只含sealed oracle真实merchantIds/productIds/skuPairs/addressIds/invoiceIds，后者仅顾客页面选择所需店/商品/SKU名称与编号、数量、地址/发票展示、表单普通输入与备注；不交整个oracle、成本、配置或账号密码。演员仍从原RO卷单文件内存读取，两个新增字段不进入公开handoff。该通路只提供真实UI输入意图，不调用业务API或把DTO写入页面状态。
+
+Root桥/driver源码检查点：新 `customer-h5-bridge-implementation-draft-r1/browser-v1/` 已包含真实私有transport、有限CUA动作/网络/DOM/截图driver及原observer逐字副本。Root沿原Node22仅执行三模块 `--check`，三项实际native0、stderr空、完整来源前后相同；收据 `node-syntax-result-r2.json` 1564B/摘要 `d57211c8f1f99532dac80570021ec50caa6c23aa5707e37e419b459bb2b06cb0`。driver由Root在真实DOM提供唯一可见可用locator后点击/输入，以真实request_id取原响应，禁止造API响应、注入页面状态或重试create；跨realm截图逐字复制为当前Uint8Array，原JPEG保存后才由Root实际看图并登记review。该项仅JS解析，不import执行三模块；入口/阶段/最终登记仍在源码整合，完整接口复核、真实H5联调和关闭/核零尚未完成。
+
 ## 3. ISO-MIN 环境（MS0a 交付）
 
 ### 3.1 文件
