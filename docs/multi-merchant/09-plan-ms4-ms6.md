@@ -493,6 +493,12 @@ R5已按原身份正常关闭并独立核零：关闭源摘要 `545243969c22edb6
 
 下一轮浏览器运行约束：依03新增本机限制，选用Edge的本任务新标签，真实核对归属后执行原34步及正常关闭证明；不再自动关闭IAB标签或用其他等价入口复现退出，不依赖尚未信任的拦截钩子。该运行选择保留原页面、窗口、截图与完整验收要求。
 
+稳定锚点离线构建（2026-10-16）：实际clean Main来源 `2b7bb5547287ef0a7e0051a178c7dcc444f2a411`，新短输出 `artifacts/ms4-merchant-console-build/2b7bb554-s2`。Root唯一执行有限builder，摘要 `17d6bf823a92b103a78c22d8b8f370a4d3c6e9fd534409ad59b2ff7b3fdc2b71`；沿原Node22/npm10.9.9和完整26540项既有依赖的真实字节复制，无安装或网络回退。8个原生阶段全0，含原prebuild31脚本/74导入；43源/副本前后保持、25dist及26本地HTML资源核对通过，标题保持“多商户商城 · 商家后台”。实际build收据10080B，摘要 `f306f9d14bf07a2f73a5dc1f7012548824b9284611c067569a527a29ac44b7cd`；Root另唯一执行独立只读postcheck，native0，收据16656B/摘要 `470dd8ac6e62ffa8f33d07f48b0370c6cdb854786b96af0f5039e847ecc54ce8`。source-before摘要 `6bb31ddcec3f3bbf95b7f380aa1eb35f8c6540f73fcd676e00fdebdac8abb425`、dist-inventory摘要 `6a67f016af2d7ef76b0f40433c8168473603dd5d4e911840ba7250ddab4eaf54`。postcheck独立核43源/25dist、原生进程/日志和选定依赖清单，完整依赖树前后证明仍来自原builder，未冒称第二次全树复算。仅OFFLINE_BUILD，不构成非零滚动或HTTP/DOM验收。
+
+独立空表观察源码检查点：仓库外最终候选 `browser-empty-scroll-v2-r3/ms4-merchant-browser.mjs` 为45273B/摘要 `23377aa3b617cd124d1554f1f0d355c0c125dd95d4f4901cc67cdeb3c9fb6622`，保留原27216B浏览器逐字节前缀，仅追加 `runEmptyTableScrollSupplement`；private bridge仍32719B/摘要 `b9fd27519c0b91f5a91fbc557679b0ce908a71d8fc01d06c16484200818c1c68`。Root已读原追加及完整修订，独立SOURCE PASS，两个真实Node22 --check均native0；前两份候选保留，未用其证明运行通过。helper核真实runtime与原31，输入 `sourceBinding.source_binding_sha256` 明确为 `preparation-source-binding.json` 的实际freeze摘要，须等于runtime.freeze_sha256，不能混用HTTP其他绑定文件。仅普通键盘驱动，依据实际offsetWidth与Element阈值等自然动态class更新，手机首次非零为middle/right、最右为right、实际回左至0、桌面无溢出为none；原每向64次上限保持。跨realm原始Uint8Array仅等价复制，不转码JPEG；4额外图与原9图分开、人工状态保持PENDING。该检查未导入或实际调用helper，没有创建浏览器验收证据；完整运行仍待新实例。
+
+R6来源准备检查点：Root实际create-only生成后继来源，builder摘要 `3cb179708213d9086cfc81a1a864f1a3201757ac226769f482779cd785c69472`，host `08d96f136fd25c783ab001afeba839f97737f8965e55e9a8dd4c9cbb49599c49`、close `0bc5c4753385a79a29e35c89dc8346816dd3c20ea7374c669ee16f37fc3e32ed`、inverse `3b164482426f54640d7a74b854a4533decfa81300c3a1ae0fb97a028bb0eee66`。Root全读前代builder及新diff，独立源码复核通过；生成实际native0，保留完整fulfillment1/r4-build1/r4/r3/r2/v5逆回、37直接不变/38完整逆回函数、10/16闭集及保存plan严格wrapper。相对R5仅替换新build的三项host绑定、新浏览器完整字节与空态说明、close路径与host摘要，另12来源字节保持，原close函数全字节保持。新增独立观察和4图人工复核仍是原完整证明之外的必要条件；本项仅来源生成，新的隔离实例、业务/浏览器/最终23表和关闭均NOT RUN。
+
 ### Task 7: 退款额度与库存行为
 
 - 接口：申请退款时在事务中锁定订单行，校验"已退金额 + 处理中金额 + 本次金额 ≤ 实付"；三类库存行为分别写 `release`（未发货取消）、`return_in`（退货验收入库）、不写（仅退款）。
