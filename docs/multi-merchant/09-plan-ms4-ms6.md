@@ -293,6 +293,8 @@ verify正式容器自身启动真实setsid PHP HTTP child，以同内网alias `a
 
 enabled 顾客验证源码检查点（2026-10-16）：上述两PHP已实现并整合，源审修正fixture账号长度、extras排序、原生terminal与created字段区别，以及正常/proc消失的warning抑制。live child区间保留完整read-only隔离检查并改为可抛异常，以确保单次TERM/finally收尾；收尾自身异常保留原句柄及首失败，不升级。仓库外profile沿原22个host函数与R7三个terminal函数完整字节复用，独立源审覆盖各真实阶段和正常关闭；新business消费者只核helper实际返回字段。Root实际执行三个PHP8.2语法子进程、三Python AST、原函数字节核对及Compose无插值配置检查，四个原生子进程均0/stderr空，11份来源前后不变；收据 `artifacts/ms4-customer-http-preparation/final-source-check-result-r1.json` 摘要 `4a6616c56591dd6803c48148d984e8e5fba64013476b7d8fce5ec02b514a2f22`。Main两文件与该实际语法检查来源逐字节相同。此检查没有创建Run、App、SQL、HTTP、认证演员或DOM；真实12请求/25表与正常关闭、独立核零仍待新clean来源运行，不据源码勾下一项或签收MS4。
 
+首个新enabled顾客Run在任何角色启动前因Docker缺失StopSignal元数据读取自然失败，完整实际记录及正常关闭/独立零见03；本轮没有顾客HTTP、业务SQL或实际认证结果。原Main两PHP保持，不改业务断言。后继仅修仓库外candidate-r2的原生字段读取和相应来源pins，原persistent正常链、25表oracle、默认生产gate及商家/顾客页面原未完成验收均保留。
+
 ### Task 5: 取消与超时释放
 
 - 接口：整笔未支付且未发货的取消/超时按真实父reserve聚合release，`idem_key = "release:<store_order.id>:<parent_reserve_id>"`；两项为真实已提交PK，尾段是规范U64字符串，不能用非全局唯一的SKU八字节unique。动作摘要绑定保存顾客/商家/订单/父reserve/SKU/数量，顾客取消与系统超时共用动作，演员仅记首次真实执行者；重复不重复释放。未来Task7部分退款用独立真实退款动作键，共同核累计release+return_in不超过父reserve.qty。关单前走可信支付query→close→query closed；unknown或无可信attempt不释放，已支付转待处理，不制造paid或回退平台账户。MS5决定前仅显式testing驱动可做普通未付关单。
