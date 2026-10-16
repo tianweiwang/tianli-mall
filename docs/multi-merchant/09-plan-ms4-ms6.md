@@ -280,6 +280,19 @@ computed 先复用原 `store_order` 本人 `order_id|unique`、UID、is_del 查�
 
 顾客HTTP接线本地源码检查点（2026-10-16）：上述四PHP与确认/详情两Vue已按本合同实现，现普通UI检查同步新详情导航与同binding合法created结果消费，并将真实详情SFC纳入三端官方预处理。Root与独立执行方对实际修改后源码分别复核通过；默认配置、旧never guard、旧创建服务、价格/库存/幂等摘要和历史closed驱动未改。Root在已有PHP8.2.33镜像、network none/只读源及根/tmpfs/cap-drop ALL/no-new-privileges下实际核四PHP语法全部native0/stderr空，收据 `artifacts/ms4-customer-http-source/20261016-r1/php-syntax-result.json` 摘要 `550b975da144f46365396d4ef39c2b6b015ed9ffd397de53358b7194787b8a8b`。Node22沿原依赖实际运行现UI检查，36条普通DTO/组件断言与4Vue×H5/MP-Weixin/App共12组模板/JS/Sass检查均0、stderr空；收据 `ui-source-result.json` 摘要 `82a9cbe2e47b2e88d103a5ba473178d0bdf6fa55dc87bad8b47f68b5303008ad`。两检查均核7个实现/检查文件前后字节保持，无App/SQL/HTTP/认证演员/DOM/视觉。下一入口设计仍为新enabled顾客prepare/verify及有限宿主，复用真实cart/add时以两选中不同SKU和一不同SKU未选行核真实producer，不为凑旧三项oracle手造重复购物车；实施前具体文件/来源继续归并本清单。当前真实顾客API/页面和原商家浏览器责任均未完成，不能记Task4/MS4或生产开放。
 
+**enabled 顾客 HTTP 最小执行设计（编码前，2026-10-16）：** 新增且仅新增 `help/audit-regressions/isolated/ms4-customer-http-normal.php` 和 `lib/ms4-customer-http-normal.php`。入口固定 `prepare|verify` 两模式，分别核自身真实created CID/模式/角色/来源/环境与原隔离保护；helper只含必要真实App引导、原生夹具、HTTP链及独立PDO逐项读回。沿既有四源码根和九必要文件建立完整闭集；不导入/调用旧closed主入口、m4o_app或任何内部创建订单helper，不修改shared harness。仓库外执行接口为 `artifacts/ms4-customer-http-preparation/interface-v1.json`（当前设计摘要 `1669b8b816e5bc045cdc7badc7cedae239e172045bdc85bd6cd59ca9ac9f30ad`），只规定生产者/消费者的字段、角色、路径和case，不是运行证明。
+
+普通夹具固定一个真实自增顾客、一个可交易商家、两商品/三真实SKU：选中甲SKU数量2、单价20.15；选中乙SKU数量1、单价30.25；另一不同SKU仅加入未选购物车。固定运费每件2.67，独立期望商品70.55、邮费8.01、应付78.56；两项整行运费分别5.34/2.67，成本只在私有oracle核对。两商品有两个真实表单组和必填文字，另保留optional数字文本0；本人地址与真实发票。prepare只插夹具并通过生产LoginServices::reset设置有效口令，不插cart/order/items/ledger/reserve/paid/支付尝试。商家自营配置必须来自本Run原MS2真实结果，不用此新fixture商家代替。
+
+verify正式容器自身启动真实setsid PHP HTTP child，以同内网alias `audit-app` 接收原audit_http请求；parent作为有限真实HTTP客户端和独立SQL观察者，不注入Request/身份。正常链为login、cart/add三次、cart/list、confirm、computed、创建前confirmation、首次create、独立读回、原key/idem/完整body顺序重放、created查询与已存computed，再核事实保持。保留真实认证和原Blocker，正常成功响应已释放mutex，不改TTL/锁/中间件。共享价格/运费服务不另写；parent/child均从实际容器环境加载两开关true及原自营ID、同真实DML/auth/Redis/cache前缀，不事后硬设Config开关。
+
+读回闭集为原23业务表加system_event/system_notification，共25表。请求前只读核真实login_success通知渠道关闭、user_login/user_add_cart启用自定义事件为空、queue_open=0，不跳过生产事件。三次cart/add的合法商品统计实际核后建立create基线；登录只允许本人last_time/last_ip正常变化，其余列/其他用户保持，后续鉴权只允许本人last_time。逐项核两订单项/两reserve与保存版本/真实UID/mer/SKU/原cart引用、金额/库存/血缘、原发票内部orderPK及抬头/状态、两组定义/hash/答案、ledger完整原请求摘要/state1/post_commit_done1/cancel_at0、选中cart消费与未选行全列保持；replay/lookup/已存computed的业务事实保持，订单仍未支付。源复核/语法不能代替这条真实HTTP链，源、native终态、正常关闭与Root独立核零分别记录。
+
+- [x] 完成上述两文件及必要仓库外customer profile，独立审源和聚焦PHP语法通过；原生产源码/closed驱动不改。
+- [ ] 从新clean来源运行该有限persistent正常HTTP链，取得25表独立读回及真实child正常退出证据，再逐项勾对应范围；原页面与其他case责任不取消。
+
+enabled 顾客验证源码检查点（2026-10-16）：上述两PHP已实现并整合，源审修正fixture账号长度、extras排序、原生terminal与created字段区别，以及正常/proc消失的warning抑制。live child区间保留完整read-only隔离检查并改为可抛异常，以确保单次TERM/finally收尾；收尾自身异常保留原句柄及首失败，不升级。仓库外profile沿原22个host函数与R7三个terminal函数完整字节复用，独立源审覆盖各真实阶段和正常关闭；新business消费者只核helper实际返回字段。Root实际执行三个PHP8.2语法子进程、三Python AST、原函数字节核对及Compose无插值配置检查，四个原生子进程均0/stderr空，11份来源前后不变；收据 `artifacts/ms4-customer-http-preparation/final-source-check-result-r1.json` 摘要 `4a6616c56591dd6803c48148d984e8e5fba64013476b7d8fce5ec02b514a2f22`。Main两文件与该实际语法检查来源逐字节相同。此检查没有创建Run、App、SQL、HTTP、认证演员或DOM；真实12请求/25表与正常关闭、独立核零仍待新clean来源运行，不据源码勾下一项或签收MS4。
+
 ### Task 5: 取消与超时释放
 
 - 接口：整笔未支付且未发货的取消/超时按真实父reserve聚合release，`idem_key = "release:<store_order.id>:<parent_reserve_id>"`；两项为真实已提交PK，尾段是规范U64字符串，不能用非全局唯一的SKU八字节unique。动作摘要绑定保存顾客/商家/订单/父reserve/SKU/数量，顾客取消与系统超时共用动作，演员仅记首次真实执行者；重复不重复释放。未来Task7部分退款用独立真实退款动作键，共同核累计release+return_in不超过父reserve.qty。关单前走可信支付query→close→query closed；unknown或无可信attempt不释放，已支付转待处理，不制造paid或回退平台账户。MS5决定前仅显式testing驱动可做普通未付关单。
