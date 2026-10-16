@@ -338,7 +338,10 @@ function m4cb_cart_stats(array $rows,array $fixture,int $from,int $through): voi
 function m4cb_saved(PDO $pdo,array $fixture,array $request,string $idem,array $frame,array $answers,string $number,array $before): array
 {
     $uid=(int)$fixture['user']['uid'];$mer=(int)$fixture['merchant']['mer_id'];
-    m4c_expect(!$pdo->inTransaction()&&!Db::connect()->getPdo()->inTransaction()&&$pdo!==Db::connect()->getPdo(),'M4C_NATIVE_INDEPENDENT_COMMITTED_ORACLE');
+    $connection=Db::connect();$parentPdo=$connection->getPdo();
+    if(!$parentPdo instanceof PDO){$connection->query('SELECT 1',[],true);$parentPdo=$connection->getPdo();}
+    m4c_expect($parentPdo instanceof PDO&&!$pdo->inTransaction()&&!$parentPdo->inTransaction()
+        &&$connection===Db::connect()&&$parentPdo===Db::connect()->getPdo()&&$pdo!==$parentPdo,'M4C_NATIVE_INDEPENDENT_COMMITTED_ORACLE');
     $orders=m4cb_rows($pdo,'SELECT * FROM `eb_store_order` WHERE `uid` = ? AND `order_id` = ?',[$uid,$number]);
     m4c_expect(count($orders)===1,'M4C_EXACTLY_ONE_REAL_SAVED_ORDER');$order=$orders[0];$id=(int)$order['id'];
     m4c_expect($id>0&&(int)$order['uid']===$uid&&(int)$order['pay_uid']===$uid&&(int)$order['mer_id']===$mer

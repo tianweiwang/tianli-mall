@@ -311,6 +311,7 @@ if(realpath($_SERVER['SCRIPT_FILENAME']??'')===__FILE__){
         $code=$GLOBALS['m4c_failed_assertion']??'';
         $safe=['schema'=>1,'status'=>'FAIL_PRESERVED','scope'=>$rule['scope']??'MS4_CUSTOMER_HTTP_SOURCE_ONLY',
             'phase'=>$GLOBALS['m4c_phase']??'source','class'=>get_class($error),
+            'error_location'=>['file'=>basename($error->getFile()),'line'=>$error->getLine()],
             'code'=>is_string($code)&&preg_match('/\AM4C_[A-Z0-9_]+\z/D',$code)===1?$code:'M4C_UNCLASSIFIED',
             'native_exit'=>1,'actual_customer_HTTP'=>'INCOMPLETE','browser_visual_acceptance'=>'NOT RUN',
             'http_calls_completed'=>(int)($GLOBALS['m4c_http_call_count']??0),

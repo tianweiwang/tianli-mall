@@ -301,6 +301,14 @@ enabled 顾客验证源码检查点（2026-10-16）：上述两PHP已实现并�
 
 该窄修仓库外两文件已独立源码复核通过；Root 在原只读/network none 的 PHP8.2镜像实际语法检查，两子进程均 native0/stderr空、源字节前后保持。收据 artifacts/ms4-customer-http-preparation/syntax-binding-fix-r2-result.json 摘要 f56b0e11b6ef80d5cbe45960467a36f45eeabf7290f12b162b8ba08aa41c4553。源码和语法检查不计实际 HTTP、DOM 或 MS4 完成；整合时须核 Main 两文件与该已检查来源逐字节相同。
 
+第三个enabled顾客Run已实际越过fixture交接并完成前9次正常HTTP响应断言，首次create正常返回订单标识；独立读回阶段发生Error，原失败、真实child收尾及正常关闭/独立六查询核零记录见03。原12请求/25表项目保持未勾选，不能把HTTP创建响应或此次部分结果当作完整交易验收。顾客页面与原商家浏览器、后续发货/售后/支付等责任不取消。
+
+默认PDO窄修合同（实施前，原Run已关闭核零且H5构建终态已取得）：Think PDOConnection::getPdo在尚未连接时返回false，新customer helper却在m4cb_saved中直接调用其inTransaction；验证父进程主要使用原生独立PDO和HTTP，并不保证默认连接已建立。这是源码确认的不安全解引用；原Error未记录抛错位置，不能据源码宣称已证明该次历史精确行。只在现helper沿生产MarketplaceOrderPostCommitServices::defaultPdo模式，取真实默认Connection、非PDO时执行真实只读SELECT 1，再严格核实际PDO、同一默认连接/同PDO、与audit_db原生PDO不同及双方无事务。原所有金额、库存、cart、发票、表单、ledger、events、25表及12请求断言不变，不使用false/null宽松替代、不造PDO或改业务写入。入口未来失败仅新增实际Throwable的basename/line，不含message、完整路径、stack或args，不回填旧失败位置。
+
+此两文件窄修已在仓库外drafts-r3完成并获独立SOURCE PASS，Root在原network none/只读PHP8.2镜像实际检查两PHP语法，均native0/stderr空；收据syntax-default-pdo-r3-result.json摘要612e0cb790381c7f0298ec51917a3e948b05accbe858e2554a7959c48722d328。整合须核Main与该检查来源逐字节一致；随后从新clean来源运行原完整正常链，不能据源码或语法将历史Error改成PASS。生产默认gate、业务实现、r1/r2 profile和用户停止的样本均保持。
+
+当前Main06662f420的完整顾客H5已真实离线构建及静态gate通过，542源/29930原始与克隆依赖保持、334份产物与原生afterEmit一致，报告及长路径预核失败/短目录后继证据见03。此结果仅给下一真实页面验证提供产物，不是顾客HTTP/DOM、品牌配置或视觉验收；完整Task4/MS4及原34/25/9/23商家浏览器要求仍未完成。
+
 ### Task 5: 取消与超时释放
 
 - 接口：整笔未支付且未发货的取消/超时按真实父reserve聚合release，`idem_key = "release:<store_order.id>:<parent_reserve_id>"`；两项为真实已提交PK，尾段是规范U64字符串，不能用非全局唯一的SKU八字节unique。动作摘要绑定保存顾客/商家/订单/父reserve/SKU/数量，顾客取消与系统超时共用动作，演员仅记首次真实执行者；重复不重复释放。未来Task7部分退款用独立真实退款动作键，共同核累计release+return_in不超过父reserve.qty。关单前走可信支付query→close→query closed；unknown或无可信attempt不释放，已支付转待处理，不制造paid或回退平台账户。MS5决定前仅显式testing驱动可做普通未付关单。
