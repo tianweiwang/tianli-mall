@@ -546,7 +546,7 @@ function m4ch_browser_intent(array $oracle): array
             'products'=>$products,'address'=>$address,'invoice'=>$invoice,'custom_form_inputs'=>$forms,
             'mark'=>$intent['mark'],'target_order_state'=>'unpaid']];
 }
-function m4ch_stage_target(string $url,string $method,mixed $body,array $source,array $oracle): string
+function m4ch_stage_target(string $url,string $method,mixed $body,array $source,array $oracle,?string $postData=null): string
 {
     $origin=$source['h5']['runtime_origin'];$parts=parse_url($url);
     m4c_expect(is_array($parts)&&!isset($parts['user'])&&!isset($parts['pass'])&&!isset($parts['fragment'])
@@ -578,6 +578,22 @@ function m4ch_stage_target(string $url,string $method,mixed $body,array $source,
             'M4C_H5_STAGE_REAL_SKU_PRICE_PATH');$label='/api/product/real_price/:product/:sku';
     }elseif($method==='GET'&&preg_match('~\A/api/address/detail/([1-9][0-9]*)\z~D',$path,$m)===1){
         m4c_expect(in_array(m4ch_stage_positive($m[1]),$ids['addressIds'],true),'M4C_H5_STAGE_REAL_OWNED_ADDRESS_PATH');$label='/api/address/detail/:address';
+    }elseif($method==='POST'&&preg_match('~\A/api/order/confirmation/([^/]+)(/restore)?\z~D',$path,$m)===1){
+        $key=rawurldecode($m[1]);$encoded=str_replace(['%21','%27','%28','%29','%2A'],['!',"'",'(',')','*'],rawurlencode($key));
+        m4c_expect(preg_match('/\A[\x21-\x7e]{1,32}\z/D',$key)===1&&$encoded===$m[1],
+            'M4C_H5_STAGE_CANONICAL_RESTORE_ROUTE_KEY');
+        $label='/api/order/confirmation/:confirmation'.(isset($m[2])?'/restore':'');
+        if(isset($m[2])){
+            m4c_expect(is_array($body)&&!array_is_list($body),'M4C_H5_STAGE_REAL_RESTORE_OBJECT');
+            m4ch_stage_keys($body,['addressId','invoice_id','payType']);
+            foreach(['addressId'=>'addressIds','invoice_id'=>'invoiceIds']as$field=>$bound){$value=$body[$field];
+                m4c_expect((is_int($value)||is_string($value))&&preg_match('/\A(?:0|[1-9][0-9]*)\z/D',(string)$value)===1
+                    &&((string)$value==='0'||in_array(m4ch_stage_positive($value),$ids[$bound],true)),
+                    'M4C_H5_STAGE_RESTORE_OWN_ID_OR_EXPLICIT_NONE');}
+            m4c_expect($body['payType']==='','M4C_H5_STAGE_NORMAL_RESTORE_ORIGINAL_NO_CHANNEL_INTENT');
+        }else m4c_expect($body===[]&&is_string($postData)
+            &&preg_match('/\A[ \t\r\n]*\{[ \t\r\n]*\}[ \t\r\n]*\z/D',$postData)===1,
+            'M4C_H5_STAGE_LOOKUP_ORIGINAL_EMPTY_JSON_OBJECT');
     }elseif($method==='POST'&&preg_match('~\A/api/order/(computed|create)/([^/]+)\z~D',$path,$m)===1){
         $key=rawurldecode($m[2]);m4c_expect(preg_match('/\A[\x21-\x7e]{1,32}\z/D',$key)===1,'M4C_H5_STAGE_ACTUAL_CONFIRMATION_ROUTE_KEY');
         $label='/api/order/'.$m[1].'/:confirmation';
@@ -590,7 +606,8 @@ function m4ch_stage_target(string $url,string $method,mixed $body,array $source,
         elseif($key==='status')m4c_expect(in_array($value,['0','1'],true),'M4C_H5_STAGE_NORMAL_CART_STATUS');
         elseif($key==='numType')m4c_expect($value==='0','M4C_H5_STAGE_NORMAL_CART_COUNT_TYPE');}
     if($method==='GET')m4c_expect($body===null,'M4C_H5_STAGE_REAL_GET_WITHOUT_BODY');
-    else m4c_expect(is_array($body)&&!array_is_list($body),'M4C_H5_STAGE_REAL_POST_OBJECT');
+    else m4c_expect(($label==='/api/order/confirmation/:confirmation'&&$body===[])
+        ||(is_array($body)&&!array_is_list($body)),'M4C_H5_STAGE_REAL_POST_OBJECT');
     return $label;
 }
 function m4ch_stage_network(array $request,array $source,array $oracle,array $oldStages): void
@@ -619,7 +636,8 @@ function m4ch_stage_network(array $request,array $source,array $oracle,array $ol
             '/api/get_script','/api/products','/api/marketplace/stores/:merchant','/api/product/detail/:product',
             '/api/product/real_price/:product/:sku','/api/address/detail/:address','/api/order/detail/:order'];
         $postTemplates=match($stage){'B1'=>['/api/login'],'B2'=>['/api/image_base64','/api/cart/add','/api/cart/num'],
-            'B3'=>['/api/image_base64','/api/order/check_shipping','/api/order/confirm','/api/order/computed/:confirmation'],
+            'B3'=>['/api/image_base64','/api/order/check_shipping','/api/order/confirm','/api/order/confirmation/:confirmation',
+                '/api/order/confirmation/:confirmation/restore','/api/order/computed/:confirmation'],
             'B4'=>['/api/order/create/:confirmation'],default=>[]};
         m4c_expect(in_array($p['path_template'],$p['method']==='GET'?$getTemplates:$postTemplates,true),
             'M4C_H5_STAGE_FINITE_ACTUAL_PROJECTION_API_PHASE');
@@ -643,7 +661,7 @@ function m4ch_stage_network(array $request,array $source,array $oracle,array $ol
             &&json_decode($wire['post_data'],true,128,JSON_THROW_ON_ERROR)===$wire['body'],
             'M4C_H5_STAGE_ORIGINAL_POST_DATA_PARSED_WITHOUT_RECONSTRUCTION');
         else m4c_expect($wire['post_data']===null&&$wire['body']===null,'M4C_H5_STAGE_ACTUAL_EMPTY_GET_BODY');
-        $label=m4ch_stage_target($wire['url'],$wire['method'],$wire['body'],$source,$oracle);
+        $label=m4ch_stage_target($wire['url'],$wire['method'],$wire['body'],$source,$oracle,$wire['post_data']);
         m4c_expect($capture['path_template']===$label&&$label!=='/api/login','M4C_H5_STAGE_NO_AUTH_BODY_OR_TOKEN_CAPTURE');
         $raw=base64_decode($response['body_base64'],true);
         m4c_expect(is_string($raw)&&base64_encode($raw)===$response['body_base64']&&is_int($response['body_bytes'])
@@ -669,7 +687,8 @@ function m4ch_stage_network(array $request,array $source,array $oracle,array $ol
         m4c_expect($stage!=='B1'||$label==='/api/user','M4C_H5_STAGE_LOGIN_STAGE_ONLY_PRIVATE_USER_RESPONSE');
         if($wire['method']==='POST')m4c_expect(match($stage){
             'B2'=>in_array($label,['/api/cart/add','/api/cart/num','/api/image_base64'],true),
-            'B3'=>in_array($label,['/api/order/check_shipping','/api/order/confirm','/api/order/computed/:confirmation','/api/image_base64'],true),
+            'B3'=>in_array($label,['/api/order/check_shipping','/api/order/confirm','/api/order/confirmation/:confirmation',
+                '/api/order/confirmation/:confirmation/restore','/api/order/computed/:confirmation','/api/image_base64'],true),
             'B4'=>$label==='/api/order/create/:confirmation',default=>false},'M4C_H5_STAGE_NORMAL_WRITE_PHASE');
         $captured[$id]=true;
     }
@@ -829,7 +848,129 @@ function m4ch_stage_app_attempt(array $source,array $runtime,array $request): vo
     m4ch_http_publish(M4CH_STAGE_CONTROL.'/stage-'.$stage.'-attempt.json',$attempt);
     m4c_app($mode,$source);
 }
-function m4ch_stage_frame(array $stages,array $source,array $oracle,array $byProduct): array
+/** Pure checks of the actual complete formatter DTO; never calls a producer or reads/writes a frame. */
+function m4ch_stage_confirmation_dto(array $data,array $oracle,array $frame,string $key,int $addressId): void
+{
+    $fixture=$oracle['fixture'];$uid=(int)$fixture['user']['uid'];$mer=(int)$fixture['merchant']['mer_id'];
+    m4ch_stage_keys($data,['storeFreePostage','valid_count','virtual_type','deduction','addressInfo','seckill_id','combination_id',
+        'bargain_id','advance_id','cartInfo','custom_form','priceGroup','orderKey','marketplace_confirmation_version','mer_id',
+        'source_kind','store','marketplace_create_enabled','offlinePostage','userInfo','integralRatio','offline_pay_status',
+        'yue_pay_status','pay_weixin_open','friend_pay_status','store_self_mention','ali_pay_status','system_store','invoice_func',
+        'special_invoice','usable_integral','integral_open']);
+    m4c_expect($data['orderKey']===$key&&$data['marketplace_confirmation_version']===1&&$data['mer_id']===$mer
+        &&$data['source_kind']==='persistent'&&$data['marketplace_create_enabled']===true&&$data['valid_count']===2
+        &&$data['virtual_type']===false&&$data['deduction']===false,'M4C_H5_STAGE_FULL_V1_RESTORE_DTO');
+    foreach(['seckill_id','combination_id','bargain_id','advance_id']as$field)
+        m4c_expect($data[$field]===0,'M4C_H5_STAGE_FULL_NORMAL_CONFIRMATION_ACTIVITY_FIELDS');
+    $store=['mer_id'=>$mer];foreach(['name','logo','after_sale_contact','shipping_note']as$field)$store[$field]=$fixture['merchant'][$field];
+    m4c_expect(is_array($data['store'])&&m4ch_http_same($data['store'],$store)
+        &&is_array($data['userInfo'])&&m4ch_stage_positive($data['userInfo']['uid']??null)===$uid
+        &&($data['userInfo']['vip']??null)===false&&!array_key_exists('pwd',$data['userInfo']),
+        'M4C_H5_STAGE_FULL_CONFIRMATION_ACTUAL_STORE_AND_USER');
+    foreach(['now_money','integral']as$field)m4c_expect(isset($data['userInfo'][$field])
+        &&(string)$data['userInfo'][$field]===(string)$fixture['user'][$field],'M4C_H5_STAGE_REAL_CONFIRMATION_USER_BALANCES');
+    m4c_expect($data['pay_weixin_open']===false&&$data['ali_pay_status']===false&&$data['yue_pay_status']===2
+        &&$data['offline_pay_status']===1&&$data['friend_pay_status']===0&&$data['store_self_mention']===0
+        &&$data['integral_open']===false&&$data['invoice_func']===true&&$data['special_invoice']===false
+        &&$data['system_store']===[]&&$data['usable_integral']==='0','M4C_H5_STAGE_FULL_CURRENT_NORMAL_CAPABILITIES');
+    $address=$fixture['address'];unset($address['add_time'],$address['is_del']);
+    m4c_expect(($addressId===0&&$data['addressInfo']===[])||($addressId===(int)$fixture['address']['id']
+        &&is_array($data['addressInfo'])&&m4ch_http_same($data['addressInfo'],$address)),
+        'M4C_H5_STAGE_FULL_DTO_ACTUAL_OWN_ADDRESS_OR_NONE');
+    m4c_expect(is_array($data['cartInfo'])&&array_is_list($data['cartInfo'])&&count($data['cartInfo'])===2
+        &&is_array($data['custom_form'])&&m4ch_http_same($data['custom_form'],$frame['custom_form'])
+        &&is_array($data['priceGroup']),'M4C_H5_STAGE_COMPLETE_CART_FORMS_AND_PRICE_DTO');
+    $refs=[];foreach($data['cartInfo']as$i=>$row){m4c_expect(is_array($row)&&is_string($row['id']??null)
+            &&is_array($row['productInfo']??null)&&is_array($row['productInfo']['attrInfo']??null),'M4C_H5_STAGE_FULL_PUBLIC_CART_SKU_DTO');
+        $line=$frame['selection'][$i]??null;$product=$row['productInfo'];$sku=$product['attrInfo'];
+        m4c_expect(is_array($line)&&$row['id']===$line['cart_ref']&&(int)($row['product_id']??0)===$line['product_id']
+            &&(int)($row['type']??-1)===0&&(int)($row['cart_num']??0)===$line['qty']
+            &&($row['product_attr_unique']??null)===$line['unique']&&(int)($product['id']??0)===$line['product_id']
+            &&($product['mer_id']??null)===$mer&&($product['store_name']??null)===$fixture['products'][$line['product_id']]['store_name']
+            &&(int)($sku['id']??0)===$line['sku_id']&&($sku['unique']??null)===$line['unique']
+            &&($sku['suk']??null)===$fixture['skus'][$line['sku_id']]['suk'],'M4C_H5_STAGE_DTO_EXACT_ORIGINAL_STRING_REF_PRODUCT_SKU_QUANTITY');
+        $refs[]=$row['id'];}
+    m4c_expect($refs===$frame['cart_refs'],'M4C_H5_STAGE_DTO_COMPLETE_ORIGINAL_CART_REF_ORDER');
+    $price=$data['priceGroup'];m4ch_stage_keys($price,['storePostage','storeFreePostage','isStoreFreePostage','sumPrice','totalPrice',
+        'vipPrice','storePostageDiscount','cartInfo','levelPrice','memberPrice','giftPrice']);
+    m4c_expect(is_bool($price['isStoreFreePostage'])&&m4ch_http_same($price['cartInfo'],$data['cartInfo'])
+        &&$data['storeFreePostage']===$price['storeFreePostage'],'M4C_H5_STAGE_COMPLETE_PRICE_GROUP_CART_AND_THRESHOLD');
+    foreach(['storePostage','storeFreePostage','sumPrice','totalPrice','vipPrice','storePostageDiscount','levelPrice','memberPrice','giftPrice']as$field)
+        m4c_expect(is_string($price[$field])&&preg_match('/\A(?:0|[1-9][0-9]*)\.[0-9]{2}\z/D',$price[$field])===1,
+            'M4C_H5_STAGE_FULL_PRICE_GROUP_EXACT_DECIMAL_STRINGS');
+    foreach(['totalPrice'=>'70.55','sumPrice'=>'70.55','vipPrice'=>'0.00','levelPrice'=>'0.00','memberPrice'=>'0.00','giftPrice'=>'0.00']as$field=>$expected)
+        m4cb_public_money($price,$field,$expected);
+}
+/** Same fresh key and real readonly previews. Complete private bodies stay in the original stage captures. */
+function m4ch_stage_restore_chain(array $stages,array $oracle,array $frame,string $key): void
+{
+    $fresh=m4ch_stage_captures($stages,'/api/order/confirm');
+    m4c_expect(count($fresh)===1,'M4C_H5_STAGE_EXACTLY_ONE_FRESH_CONFIRMATION_NO_REBUILD');
+    $original=m4ch_stage_data($fresh[0]);m4c_expect(is_array($original),'M4C_H5_STAGE_FULL_ORIGINAL_CONFIRMATION_DTO');
+    $addressId=(int)($original['addressInfo']['id']??0);m4ch_stage_confirmation_dto($original,$oracle,$frame,$key,$addressId);
+    $lookups=m4ch_stage_captures($stages,'/api/order/confirmation/:confirmation');
+    $restores=m4ch_stage_captures($stages,'/api/order/confirmation/:confirmation/restore');
+    m4c_expect($lookups!==[]&&$restores!==[],'M4C_H5_STAGE_REAL_FRESH_REDIRECT_LOOKUP_AND_RESTORE_REQUIRED');
+    foreach($lookups as$capture){$data=m4ch_stage_data($capture);m4c_expect(is_array($data),'M4C_H5_STAGE_REAL_LOOKUP_DTO');
+        m4ch_stage_keys($data,['state','key']);m4cb_lookup_result($data,$key,null);
+        $path=parse_url($capture['request']['url'],PHP_URL_PATH);m4c_expect(is_string($path)
+            &&preg_match('~\A/api/order/confirmation/([^/]+)\z~D',$path,$match)===1&&rawurldecode($match[1])===$key,
+            'M4C_H5_STAGE_LOOKUP_ORIGINAL_FRESH_ROUTE_KEY');}
+    $resolved=[];
+    foreach($restores as$capture){$result=m4ch_stage_data($capture);$body=$capture['request']['body'];
+        m4c_expect(is_array($result)&&is_array($body),'M4C_H5_STAGE_REAL_RESTORE_RESPONSE_AND_HINTS');
+        m4ch_stage_keys($result,['state','key','confirmation','selection']);m4cb_lookup_result($result,$key,null);
+        $path=parse_url($capture['request']['url'],PHP_URL_PATH);m4c_expect(is_string($path)
+            &&preg_match('~\A/api/order/confirmation/([^/]+)/restore\z~D',$path,$match)===1&&rawurldecode($match[1])===$key,
+            'M4C_H5_STAGE_RESTORE_ORIGINAL_FRESH_ROUTE_KEY');
+        m4ch_stage_keys($body,['addressId','invoice_id','payType']);m4c_expect($body['payType']==='',
+            'M4C_H5_STAGE_RESTORE_ACTUAL_NORMAL_PAYMENT_INTENT');
+        $selection=$result['selection'];m4c_expect(is_array($selection),'M4C_H5_STAGE_COMPLETE_ACTUAL_RESTORE_SELECTION');
+        m4ch_stage_keys($selection,['address','invoice']);
+        foreach(['address'=>'addressId','invoice'=>'invoice_id']as$kind=>$field){$hint=$body[$field];
+            m4c_expect((is_int($hint)||is_string($hint))&&preg_match('/\A(?:0|[1-9][0-9]*)\z/D',(string)$hint)===1,
+                'M4C_H5_STAGE_ACTUAL_RESTORE_HINT_NATIVE_TYPE');$hint=(int)$hint;$owned=(int)$oracle['fixture'][$kind]['id'];
+            m4c_expect($hint===0||$hint===$owned,'M4C_H5_STAGE_ACTUAL_OWN_RESTORE_HINT_OR_NONE');$row=$selection[$kind];
+            m4c_expect(is_array($row),'M4C_H5_STAGE_ACTUAL_RESTORE_SELECTION_ROW');
+            m4ch_stage_keys($row,$kind==='address'?['mode','id','status']:['mode','id','status','invoice']);
+            m4c_expect($row['id']===$hint&&$row['mode']===($hint===0?'none':'id')
+                &&$row['status']===($hint===0?'none':'resolved'),'M4C_H5_STAGE_NORMAL_OWN_HINT_RESOLVED_WITHOUT_DEFAULT_SUBSTITUTION');
+            if($kind==='invoice'){
+                $expectedInvoice=$oracle['fixture']['invoice'];
+                $expectedInvoice['add_time']=empty($expectedInvoice['add_time'])?'':(new \DateTimeImmutable('@'.m4ch_stage_positive($expectedInvoice['add_time'])))
+                    ->setTimezone(new \DateTimeZone('Asia/Shanghai'))->format('Y-m-d H:i:s');
+                m4c_expect($hint===0?$row['invoice']===[]:is_array($row['invoice'])
+                    &&m4ch_http_same($row['invoice'],$expectedInvoice),'M4C_H5_STAGE_RESTORE_COMPLETE_OWN_INVOICE_OR_NONE');
+            }
+        }
+        $data=$result['confirmation'];m4c_expect(is_array($data),'M4C_H5_STAGE_COMPLETE_RESTORED_CONFIRMATION');
+        m4ch_stage_confirmation_dto($data,$oracle,$frame,$key,(int)$body['addressId']);
+        $stable=$data;$before=$original;foreach(['addressInfo','priceGroup','userInfo']as$field){unset($stable[$field],$before[$field]);}
+        m4c_expect(m4ch_http_same($stable,$before)&&m4ch_http_same($data['cartInfo'],$original['cartInfo']),
+            'M4C_H5_STAGE_RESTORE_COMPLETE_ORIGINAL_FORMS_CAPABILITIES_AND_CART_DTO');
+        $user=$data['userInfo'];$oldUser=$original['userInfo'];m4ch_stage_keys($user,array_keys($oldUser));
+        unset($user['last_time'],$oldUser['last_time']);
+        m4c_expect(m4ch_http_same($user,$oldUser),'M4C_H5_STAGE_RESTORE_COMPLETE_USER_AUTH_TIME_ONLY');
+        if((int)$body['addressId']===(int)$oracle['fixture']['address']['id'])$resolved[]=$data;
+    }
+    m4c_expect($resolved!==[],'M4C_H5_STAGE_REAL_RESTORE_OWN_ADDRESS_PREVIEW_REQUIRED');
+    $computed=m4ch_stage_captures($stages,'/api/order/computed/:confirmation');
+    m4c_expect($computed!==[],'M4C_H5_STAGE_REAL_RESTORED_COMPUTED_REQUIRED');$last=m4ch_stage_data($computed[count($computed)-1]);
+    m4c_expect(is_array($last)&&($last['status']??null)==='NONE'&&is_array($last['result']??null),
+        'M4C_H5_STAGE_RESTORE_FINAL_REAL_COMPUTED_NONE');$price=$last['result'];
+    m4ch_stage_keys($price,['total_price','gift_price','pay_price','pay_postage','coupon_price','deduction_price','usedIntegral',
+        'SurplusIntegral','storePostageDiscount','isStoreFreePostage','storeFreePostage','marketplace_confirmation_version','mer_id',
+        'source_kind','store','marketplace_create_enabled']);
+    foreach(['total_price'=>'70.55','gift_price'=>'0.00','pay_price'=>'78.56','pay_postage'=>'8.01','coupon_price'=>'0.00',
+        'deduction_price'=>'0.00','storePostageDiscount'=>'0.00']as$field=>$expected)m4cb_public_money($price,$field,$expected);
+    $view=$resolved[count($resolved)-1];m4c_expect($price['usedIntegral']===0&&$price['SurplusIntegral']===0
+        &&$price['isStoreFreePostage']===$view['priceGroup']['isStoreFreePostage']
+        &&$price['storeFreePostage']===$view['priceGroup']['storeFreePostage']&&$price['marketplace_confirmation_version']===1
+        &&$price['marketplace_create_enabled']===true&&$price['mer_id']===$view['mer_id']&&$price['source_kind']===$view['source_kind']
+        &&m4ch_http_same($price['store'],$view['store'])&&$price['pay_postage']===$view['priceGroup']['storePostage'],
+        'M4C_H5_STAGE_RESTORED_DTO_SELECTION_AND_FINAL_REAL_QUOTE_BOUND');
+}
+function m4ch_stage_frame(array $stages,array $source,array $oracle,array $runtime,array $byProduct): array
 {
     $fixture=$oracle['fixture'];$uid=(int)$fixture['user']['uid'];$mer=(int)$fixture['merchant']['mer_id'];
     $confirmations=m4ch_stage_captures($stages,'/api/order/confirm');m4c_expect($confirmations!==[],'M4C_H5_STAGE_REAL_CONFIRM_RESPONSE_REQUIRED');
@@ -874,6 +1015,20 @@ function m4ch_stage_frame(array $stages,array $source,array $oracle,array $byPro
         m4c_expect($definition['fields']===$fields&&$definition['definition_sha256']===hash('sha256',MarketplaceOrderInput::canonical([
             'product_id'=>$definition['product_id'],'fields'=>$fields])),'M4C_H5_STAGE_FULL_ORIGINAL_FORM_DEFINITION_HASH');
     }
+    m4ch_stage_restore_chain($stages,$oracle,$frame,$key);
+    $ui=0;$entries=0;m4ch_http_directory(M4CH_STAGE_CONTROL.'/ui-captures');
+    foreach(new DirectoryIterator(M4CH_STAGE_CONTROL.'/ui-captures')as$file){if($file->isDot())continue;
+        m4c_expect(++$entries<=4096&&$file->isFile()&&!$file->isLink()
+            &&preg_match('/\A[a-f0-9]{48}\.json\z/D',$file->getFilename())===1,'M4C_H5_STAGE_FINITE_ORIGINAL_UI_CAPTURES');
+        $capture=m4ch_http_private_read(M4CH_STAGE_CONTROL.'/ui-captures/'.$file->getFilename());
+        if(($capture['scene']??null)!=='confirm-filled')continue;
+        m4ch_http_identity($capture,$source,$runtime);m4ch_http_ui_capture($capture,$source,$runtime);
+        m4c_expect(m4ch_http_confirmation_url($capture['dom']['url'],$source)===$key,'M4C_H5_STAGE_REAL_CAPTURE_ORIGINAL_CONFIRMATION_KEY');
+        $actual=[];foreach($stages as$stage)foreach($stage['network']as$row)$actual[$row['request_id']]=$row['projection'];
+        foreach($capture['network']as$row)m4c_expect(isset($actual[$row['request_id']])&&m4ch_http_same($actual[$row['request_id']],$row['projection']),
+            'M4C_H5_STAGE_CONFIRM_CAPTURE_REAL_OBSERVED_NETWORK');++$ui;
+    }
+    m4c_expect($ui>0,'M4C_H5_STAGE_ORIGINAL_CONFIRM_CAPTURE_BEFORE_B3_NO_FUTURE_DEPENDENCY');
     $addresses=m4ch_stage_captures($stages,'/api/address/detail/:address');$addressObserved=false;
     foreach($addresses as$capture){$row=m4ch_stage_data($capture);if(!is_array($row)||(int)($row['id']??0)!==(int)$fixture['address']['id'])continue;
         foreach(['real_name','phone','province','city','district','detail']as$field)m4c_expect(($row[$field]??null)===$fixture['address'][$field],
@@ -968,7 +1123,7 @@ function m4ch_stage(array $source,array $runtime,array $request): array
         $byProduct=m4ch_stage_carts($pre,$all,$oracle,$runtime);m4ch_stage_producer_stats($pre,$all,$oracle,$runtime);
         m4ch_stage_app_attempt($source,$runtime,$request);$default=m4ch_stage_default_pdo($reader);
         $postApp=m4ch_stage_snapshot($reader);m4c_expect($postApp===$pre,'M4C_H5_STAGE_B3_REAL_APP_INITIALIZATION_ALL_ROWS_UNCHANGED');
-        $confirmation=m4ch_stage_frame($all,$source,$oracle,$byProduct);$postRead=m4ch_stage_snapshot($reader);
+        $confirmation=m4ch_stage_frame($all,$source,$oracle,$runtime,$byProduct);$postRead=m4ch_stage_snapshot($reader);
         m4ch_stage_default_stable($reader,$default);m4c_expect($postRead===$pre,'M4C_H5_STAGE_B3_CACHE_READ_ALL_ROWS_UNCHANGED');
         $encoded=m4ch_stage_serialized($pre);$snapshot=$pre;
         $business=['before_create_snapshot_sha256'=>$encoded['snapshot_sha256'],'confirmation_key'=>$confirmation['key'],

@@ -392,7 +392,7 @@ SD1/SD2后继SOURCE/PARSE检查点（2026-10-17）：最终OrderDao为84262B/SHA
 本次仅改template/uni-app/subpackage/diyComponents/productInfo.vue：售价取当前priceData.price，computed不再让组件local selectedIndex的sku.price或sku.real_price覆盖售价；到手价仍取real_price，原价仍用ot_price，会员字段和原处理保持。默认规格和弹窗ChangeAttr继续沿原父层setRealPrice回传props，无新增SKU金额缓存、请求、DTO或根价回退，不改变原选中unique、真实加购和legacy路径；既有父层异步响应顺序不在本次组件窄改中扩大处理，不能由本源码宣称快速并发切换已验证。只读核父层与PageDesign，不改20前端恢复/5PHP、SD/RC8或Main/R6来源。
 
 - [x] SP1：完成该组件template/computed窄源码实施并经Root/独立SOURCE复核；与解析、运行分开记录。
-- [ ] SP2：对实际新来源完成必要官方预处理/模板、JS和样式解析及后继完整构建；当前未运行，不沿用原20前端结果。
+- [x] SP2：实际集成后21前端三平台63组官方预处理/模板、JS和样式解析通过；clean38a14完整545源的新H5构建及最终静态verify均native0，实际334资源/入口外链0，来源和体积提示见03。仅当前H5构建完成，三端运行与视觉不据此签收。
 - [ ] SP3：新来源正常页面核三商品，会员关闭时售价/到手价与真实SKU响应一致；甲20.15↔24.35需包含原内联及弹窗选择的正常顺序往返，不能固定第一个SKU或把优惠后价当售价；保留原划线价语义、真实加购/订单金额，正常关闭及独立核零另记。当前未运行/未验收，不运行用户已停止的冲突/并发/故障/恢复样本，不据本窄修复签收Task4/MS4。
 
 售价字段本地SOURCE实施检查点（2026-10-17）：上述组件已完成唯一售价绑定替换、price改为只读props来源和移除两行local SKU覆盖；完整逆回可恢复本轮前组件字节，父层goods_details/index.vue与PageDesign全文保持。未新增缓存/事件/请求，real_price、ot_price、会员/库存及原规格事件分支未改；仍待Root/独立源审、官方解析/构建与SP3正常页面验收，SP1–SP3及原SD3/RC8/Task4/MS4未勾。
@@ -417,6 +417,8 @@ RC2后端源码检查点（2026-10-16）：仅独立恢复工作树的五PHP新�
 RC3–7前端源码检查点（2026-10-16）：身份13文件与提交/子页/唯一上传producer7文件已实施并分别独立有限SOURCE复核；Root核实际必要差分。实际既有官方预处理/Vue模板/Node+Babel/本地导入/样式解析最终20源60组native0、issues空、前后字节相同，收据 `artifacts/ms4-confirmation-restore-source/20261016-r1/ui-syntax-result-r4.json`，摘要 `78b5455dab40812205b588d12c9817d4b247dedce15865814d1d8b36906caddf`。最初检查器遗漏index.vue导致的原FAIL保留，修正及后继收据见实施依据§11；没有删除用例或放松业务断言。以上只交源码检查点，不执行组件/App/SQL/HTTP/DOM、用户停止样本或三端验收；RC8及完整原Task4/MS4责任仍未完成。
 
 Restore成套集成检查点（2026-10-17）：Root在R6真实关闭及独立zero之后，将Restore `5e7b12ca6b45935f79949ffdfc0fae55d6903190` 的27产品文件（原20前端/5PHP、期限只读OrderDao及售价组件）合入Main，逐文件等原已核来源；原Main H5两源/排序比较、again utility和StoreCartServices保持。两份文档冲突双方原行按序完整保留，没有覆盖旧R3–R6结果或Restore/期限/售价责任。实际集成后6PHP全部-l native0、21前端三平台63组官方解析通过且前后源不变，PHP收据摘要 `1c36fda8a4bf51771e70a96614a1212ad790c78aa9b3594f0c6cab9c9bd3d82b`、UI收据摘要 `dfcb6a35deadda6ec24de0e32cfa9320c326a497b8f5a4d2af19298217282c0a`，详见03。后继须沿确认设计§12适配正常lookup/restore/key与完整DTO/frame观察，并真正新build/freeze/正常运行；当前仍未执行这些项目，不将旧R6 B4归给新源。RC8、SD3、SP2–3、HC2/EK3及完整交易/支付/履约/商家验收保持未完成。
+
+后继构建与正常确认观察接线检查点（2026-10-17）：clean Main38a14已实际完成完整545前端输入的新H5构建和最终静态检查，29930原/副本工具字节及完整源码前后保持；334资源库存签名 `3dbc1438339156e1bedf582c28cd6c7708b6cac63ea68561a07a96032400d8e6`，报告摘要 `3271b9ff34ba3da0a08654a1742fe5aa6438403b3117944374219f707eff2687`，原体积提示保留。Root随后仅整合已独立复核/完整逆回/解析的H5 helper及entry，字节等r2候选；正常B3新增同fresh key的lookup/restore与完整DTO/selection/报价、capture→B3→Final关联，observer仍在新外部候选待profile。非零发票日期按真实getter完整核对，不改fixture或期望业务。03记录实际来源与两PHP解析收据；前端未随此接线改变，构建报告保留原38a14身份。新profile/freeze/完整正常HTTP/DOM/SQL与原截图验收尚未运行；无业务截图校准390宽仍原生超时、已正常关闭，不改变HC2/EK3/RC8/SD3/SP3、完整MS4或停止样本责任。
 
 ### Task 5: 取消与超时释放
 

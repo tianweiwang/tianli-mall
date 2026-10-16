@@ -964,6 +964,20 @@ function m4ch_http_box(array $value): void
         &&is_finite((float)$number),'M4C_H5_HTTP_ACTUAL_FINITE_DOM_BOX');
     m4c_expect($value['width']>=0&&$value['height']>=0,'M4C_H5_HTTP_NONNEGATIVE_DOM_BOX');
 }
+/** Pure normal redirect URL gate. The original fresh key is bound later by B3 and final coverage. */
+function m4ch_http_confirmation_url(string $url,array $source): string
+{
+    $parts=parse_url($url);m4c_expect(strlen($url)<=8192&&is_array($parts)&&!isset($parts['user'])&&!isset($parts['pass'])
+        &&!isset($parts['fragment'])&&($parts['scheme']??null)==='http'&&($parts['host']??null)==='127.0.0.1'
+        &&'http://127.0.0.1:'.($parts['port']??0)===$source['h5']['runtime_origin']
+        &&($parts['path']??null)==='/pages/goods/order_confirm/index'&&is_string($parts['query']??null),
+        'M4C_H5_HTTP_NORMAL_REDIRECT_ACTUAL_ORIGIN_AND_PATH');
+    $pairs=explode('&',$parts['query']);m4c_expect(count($pairs)===1,'M4C_H5_HTTP_REDIRECT_ONLY_ONE_ORDER_KEY_QUERY');
+    $pair=explode('=',$pairs[0],2);m4c_expect(count($pair)===2&&$pair[0]==='orderKey','M4C_H5_HTTP_REDIRECT_ONLY_ORDER_KEY');
+    $key=rawurldecode($pair[1]);$encoded=str_replace(['%21','%27','%28','%29','%2A'],['!',"'",'(',')','*'],rawurlencode($key));
+    m4c_expect(preg_match('/\A[\x21-\x7e]{1,32}\z/D',$key)===1&&$encoded===$pair[1],
+        'M4C_H5_HTTP_CANONICAL_REAL_REDIRECT_CONFIRMATION_KEY');return$key;
+}
 function m4ch_http_ui_network(array $network): void
 {
     m4c_expect(array_is_list($network)&&count($network)<=4096,'M4C_H5_HTTP_BOUNDED_UI_NETWORK');$seen=[];
@@ -973,6 +987,7 @@ function m4ch_http_ui_network(array $network): void
         '/api/product/real_price/:product/:sku','/api/address/default','/api/address/list','/api/address/detail/:address',
         '/api/v2/invoice','/api/order/detail/:order','/api/get_customer_type','/api/get_script'];
     $posts=['/api/login','/api/image_base64','/api/cart/add','/api/cart/num','/api/order/check_shipping','/api/order/confirm',
+        '/api/order/confirmation/:confirmation','/api/order/confirmation/:confirmation/restore',
         '/api/order/computed/:confirmation','/api/order/create/:confirmation'];
     foreach($network as$row){m4c_expect(is_array($row),'M4C_H5_HTTP_UI_NETWORK_ROW');m4c_entry_keys($row,['request_id','projection']);
         $id=$row['request_id'];$p=$row['projection'];m4c_expect(is_string($id)&&$id!==''&&strlen($id)<=256&&!isset($seen[$id])&&is_array($p),
@@ -1029,10 +1044,10 @@ function m4ch_http_ui_capture(array $payload,array $source,array $runtime): void
     elseif($scene==='cart-three-lines')m4c_expect($path==='/pages/order_addcart/order_addcart'&&$query===[]
         &&str_contains($dom['body_text'],$intent['stores'][0]['name'])&&str_contains($dom['body_text'],$intent['stores'][1]['name']),
         'M4C_H5_HTTP_UI_REAL_TWO_STORE_CART');
-    elseif($scene==='confirm-filled')m4c_expect($path==='/pages/goods/order_confirm/index'
-        &&array_diff(array_keys($query),['cartId','mer_id'])===[]&&isset($query['cartId'])&&$query['cartId']!==''
-        &&($query['mer_id']??null)===(string)$intent['checkout_mer_id']&&str_contains($dom['body_text'],'提交订单'),
-        'M4C_H5_HTTP_UI_REAL_CONFIRMATION_PAGE');
+    elseif($scene==='confirm-filled'){
+        m4ch_http_confirmation_url($dom['url'],$source);
+        m4c_expect(str_contains($dom['body_text'],'提交订单'),'M4C_H5_HTTP_UI_REAL_CONFIRMATION_PAGE');
+    }
     else m4c_expect($path==='/pages/goods/order_details/index'&&array_keys($query)===['order_id']&&$query['order_id']!==''
         &&str_contains($dom['body_text'],$intent['stores'][0]['name']),'M4C_H5_HTTP_UI_REAL_UNPAID_DETAIL_PAGE');
     m4c_expect(is_array($dom['controls'])&&array_is_list($dom['controls'])&&count($dom['controls'])<=1024
@@ -1094,12 +1109,20 @@ function m4ch_http_ui_coverage(array $source,array $runtime): array
             m4c_expect($file->isFile()&&!$file->isLink()&&preg_match('/\A[a-f0-9]{48}\.json\z/D',$file->getFilename())===1,
                 'M4C_H5_HTTP_CLOSED_UI_METADATA_FILENAMES');$names[]=$file->getFilename();}sort($names,SORT_STRING);$directories[$directory]=$names;}
     m4c_expect($directories['ui-captures']===$directories['ui-screenshots']&&$directories['ui-captures']===$directories['ui-reviews'],
-        'M4C_H5_HTTP_EVERY_ACTUAL_CAPTURE_HAS_ORIGINAL_JPEG_AND_REVIEW');$coverage=[];$network=[];
+        'M4C_H5_HTTP_EVERY_ACTUAL_CAPTURE_HAS_ORIGINAL_JPEG_AND_REVIEW');$coverage=[];$network=[];$stages=[];
     foreach(['B0','B1','B2','B3','B4']as$stage){$record=m4ch_http_private_read(M4CH_HTTP_CONTROL.'/stage-'.$stage.'.json');
         m4ch_http_identity($record,$source,$runtime);m4c_expect(($record['stage']??null)===$stage,'M4C_H5_HTTP_COMPLETE_REAL_SQL_STAGES');
+        $stages[]=$record;
         foreach($record['network']as$row){m4c_expect(!isset($network[$row['request_id']]),'M4C_H5_HTTP_UNIQUE_REAL_STAGE_REQUESTS');$network[$row['request_id']]=$row['projection'];}}
+    $b3=$stages[3];$key=$b3['business']['confirmation_key']??null;$frame=$b3['business']['confirmation_frame']??null;
+    m4c_expect(is_string($key)&&preg_match('/\A[\x21-\x7e]{1,32}\z/D',$key)===1&&is_array($frame)
+        &&($b3['business']['frame_read_rows_unchanged']??null)===true,'M4C_H5_HTTP_ORIGINAL_B3_CONFIRMATION_PROOF');
+    $sealed=m4ch_http_sealed_inputs($source);m4ch_stage_restore_chain($stages,$sealed['oracle'],$frame,$key);unset($sealed);
     foreach($directories['ui-captures']as$name){$capture=m4ch_http_private_read(M4CH_HTTP_CONTROL.'/ui-captures/'.$name);
-        m4ch_http_ui_capture($capture,$source,$runtime);$shot=m4ch_http_private_read(M4CH_HTTP_CONTROL.'/ui-screenshots/'.$name);
+        m4ch_http_ui_capture($capture,$source,$runtime);
+        if($capture['scene']==='confirm-filled')m4c_expect(m4ch_http_confirmation_url($capture['dom']['url'],$source)===$key,
+            'M4C_H5_HTTP_FINAL_CAPTURE_ORIGINAL_B3_KEY_AND_RESTORE');
+        $shot=m4ch_http_private_read(M4CH_HTTP_CONTROL.'/ui-screenshots/'.$name);
         m4ch_http_screenshot($shot,$source,$runtime);$review=m4ch_http_private_read(M4CH_HTTP_CONTROL.'/ui-reviews/'.$name);
         m4ch_http_review($review,$source,$runtime);$coverage[$capture['scene']][$capture['viewport']['width']]=true;
         foreach($capture['network']as$row)m4c_expect(isset($network[$row['request_id']])&&m4ch_http_same($network[$row['request_id']],$row['projection']),
