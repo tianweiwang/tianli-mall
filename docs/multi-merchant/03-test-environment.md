@@ -152,6 +152,8 @@ H5入口/阶段实际源码整合检查点（2026-10-16）：现两PHP已整合s
 
 完整R3来源组合与入口检查点（2026-10-16）：Root在仓库外新建 `artifacts/ms4-customer-http-preparation/candidate-h5-r3/`，实际原7文件+20项H5材料共27文件，原7逐字等R2；三浏览器模块沿原已检查字节。host为106590B/摘要 `a5ac7a63322d50d7eae2ce3a09f0bc726b01a938568a90803983c046376714f9`，正常关闭源45731B/摘要 `9f9165662838e40e08bf9672918c0da9adc4e5149eed8701873124d5154e62d8`，独立核零源30358B/摘要 `6037354aa90ab188cd83d39626fb261a8b537ac3272219a662c843fde2069d25`。实际Python AST解析5项通过，host/close/zero三个真实CLI help均native0/stderr空、27份来源前后保持；收据 `customer-h5-final-profile-source-check-r1/source-check-result.json` 2419B/摘要 `38510938ed020db59c0ebcbb51549c2c7b065ed44ad92e1df711573256d14a21`。独立有限host接线源审通过；close/zero另做producer字段与生命周期复核。该检查没有创建freeze或Run，没有App/SQL/HTTP/DOM或关闭/核零实际结果；normal-only源码不接受partial为通过，原完整验收责任保持。
 
+完整确认恢复的并行源开发边界：Main `ms4-generic-trade@9e53170a7` 仍冻结用于原顾客H5 Run `202610161242280276cd`。Root从同一clean基线另建 `H:/天俪商城/worktrees/ms4-confirmation-restore` / `feature/ms4-confirmation-restore`，沿现L2开发，完整合同见[恢复实施依据](records/ms4/confirmation-restore-design.md)。本分支不写原Run、不用旧运行结果证明新产品源。Root独占文档/Git/实际检查与运行；三个产品代理只改明确分配的源码，不执行任何程序或访问私有Run。仅允许Root进行相应静态/语法检查；任何新产品实际运行仍须其实际来源和专用隔离实例。原恢复、故障、拒绝、并发等停止样本保持NOT RUN，不因并行开发重新启用。Main原Run正常结束并独立核零后，再审查整合本分支，原H5/商家UI/订单/发货/售后及MS5/MS6责任不变。
+
 ## 3. ISO-MIN 环境（MS0a 交付）
 
 ### 3.1 文件

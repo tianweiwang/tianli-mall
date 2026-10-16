@@ -355,6 +355,19 @@ H5入口/阶段已实际整合到现两PHP：serve/七ingress/原actor只读交�
 
 完整R3已实际组合到仓库外新 `candidate-h5-r3/`：原7+20共27文件，原7保持；默认freeze/验证统一20项、八个final CLI已接。Root实际5项Python AST和三个CLI help均通过、前后来源保持，完整摘要及2419B收据见03；独立host接线源审通过，close/zero继续核其实际producer字段及正常生命周期。当前仍未freeze/建H5 Run，解析和help不构成页面、32表或正常关闭验收。
 
+#### Task4 RC：完整确认上下文刷新恢复
+
+沿[完整实施依据](records/ms4/confirmation-restore-design.md)的R1–R10/A1–A9执行；r1只读API/URL带key不得替代完整恢复。本次在独立 `ms4-confirmation-restore` 工作树源开发，Main当前H5 Run沿冻结源继续。无新表、服务端草稿、支付或上传重放；复用现完整DTO/报价/frame/owner lookup，完整保留本人选择与分组表单。当前真实GET user及账号代次才可确认owner；提交前完整不可变attempt必须持久写入读回，unknown/not_found不能自动解锁。地址none不取默认，未知key容量统一计数；每记录1MiB、owner 5MiB/5完整上下文/20未知key，不能截断旧未知attempt或缩窄既有合法业务输入。Root复核补充和代理写入接口已在设计记录中统一。
+
+- [x] RC1：恢复完整要求、设计、文件与运行边界登记；仅实施依据，不是验收。
+- [ ] RC2：后端完整DTO共用组装、同key只读restore与created/processing前后优先。
+- [ ] RC3：真实USERINFO、账号代次、缓存/请求/登录切号生产消费者。
+- [ ] RC4：单owner有界持久上下文、revision保护、完整attempt先写读回和未知anchor责任。
+- [ ] RC5：确认页完整hydrate、全部编辑保存、unknown/key-only分流与历史替换。
+- [ ] RC6：地址/发票子页真实channel关联、父丢失同key恢复与真实ID保存。
+- [ ] RC7：Root聚焦静态/语法及原fresh/legacy兼容源码核对，记录实际范围。
+- [ ] RC8：按当时允许范围取得新源正常运行/页面/数据证据；停止样本保持未验，不能据RC2或源码检查完成整项。
+
 ### Task 5: 取消与超时释放
 
 - 接口：整笔未支付且未发货的取消/超时按真实父reserve聚合release，`idem_key = "release:<store_order.id>:<parent_reserve_id>"`；两项为真实已提交PK，尾段是规范U64字符串，不能用非全局唯一的SKU八字节unique。动作摘要绑定保存顾客/商家/订单/父reserve/SKU/数量，顾客取消与系统超时共用动作，演员仅记首次真实执行者；重复不重复释放。未来Task7部分退款用独立真实退款动作键，共同核累计release+return_in不超过父reserve.qty。关单前走可信支付query→close→query closed；unknown或无可信attempt不释放，已支付转待处理，不制造paid或回退平台账户。MS5决定前仅显式testing驱动可做普通未付关单。
