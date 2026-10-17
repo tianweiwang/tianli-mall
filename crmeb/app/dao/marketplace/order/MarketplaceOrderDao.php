@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace app\dao\marketplace\order;
 
+use app\dao\marketplace\payment\MarketplacePaymentDao;
 use app\services\marketplace\order\MarketplaceCartSelection;
 use app\services\marketplace\order\MarketplaceOrderInput;
 use app\services\marketplace\freight\MerchantFreightInput;
@@ -49,7 +50,7 @@ final class MarketplaceOrderDao
         'is_new','combination_id','seckill_id','bargain_id','advance_id','status'];
     private const ORDER_FIELDS = ['id','uid','mer_id','order_id','unique','marketplace_trade_version','cart_id',
         'total_num','total_price','total_postage','pay_price','pay_postage','cost','paid','is_cancel','is_del',
-        'is_system_del','pay_uid','add_time','merchant_name_snapshot','merchant_after_sale_contact_snapshot'];
+        'is_system_del','pay_uid','add_time','merchant_name_snapshot','merchant_after_sale_contact_snapshot','pay_type','pay_time','trade_no'];
     private const ORDER_INPUT = ['uid','mer_id','order_id','unique','cart_id','total_num','total_price','total_postage',
         'pay_price','pay_postage','cost','add_time','real_name','user_phone','user_address','mark','gift_mark','pay_type',
         'channel_type','province','custom_form','merchant_name_snapshot','merchant_after_sale_contact_snapshot'];
@@ -69,7 +70,7 @@ final class MarketplaceOrderDao
 
     private string $prefix;
 
-    public function __construct()
+    public function __construct(private MarketplacePaymentDao $payments)
     {
         $prefix = Db::connect()->getConfig('prefix');
         if (!is_string($prefix) || preg_match('/\A[A-Za-z0-9_]*\z/D', $prefix) !== 1) self::unavailable();
@@ -250,6 +251,7 @@ final class MarketplaceOrderDao
             $read = $this->one($pdo, 'store_order_invoice', array_keys($snapshot), '`id` = ?', [$invoicePk]);
             if ($read === null) self::unavailable(); self::stored($read, $snapshot);
         }
+        $this->payments->birth($pdo,$uid,$claim['idem_key'],$id,$data['add_time']);
         return $id;
     }
 
@@ -449,6 +451,7 @@ final class MarketplaceOrderDao
         foreach ($reserved as $entry) if ($entry['qty'] !== self::integer($entry['row']['qty'],1,self::UINT_MAX)) self::unavailable();
         $all = $this->rows($pdo,'marketplace_stock_movement',['id'],'`order_id` = ? AND `kind` = ?',[$orderId,'reserve'],'`id` ASC');
         if (count($all) !== count($reserved) || $total !== self::integer($order['total_num'],1,self::UINT_MAX)) self::unavailable();
+        $this->payments->assertFreshBirth($pdo,$uid,$row['idem_key'],$orderId);
         if ($row['source_kind'] === 'persistent') $this->consumePersistentCarts($pdo, $uid, $selection);
         $n = $this->execute($pdo,'UPDATE '.$this->table('marketplace_order_idempotency').
             ' SET `state` = 1, `order_id` = ?, `post_commit_done` = 0, `cancel_at` = ? WHERE `uid` = ? AND `idem_key` = ?'.
@@ -632,6 +635,120 @@ final class MarketplaceOrderDao
         return ['post_commit_done'=>1,'completed_now'=>true];
     }
 
+    /**
+     * Called after PaymentDao's common locks on this same transaction. Historical
+     * reserve facts are independent of today's catalog, stock, price and admission.
+     * A completed post-commit flag never substitutes for the actual saved item set.
+     */
+    public function lockPaymentApplicationFacts(PDO $pdo, int $uid, int $orderId): array
+    {
+        $this->transaction($pdo);self::integer($uid,1,self::INT_MAX);self::integer($orderId,1,self::INT_MAX);
+        $this->lockCustomer($pdo,$uid);
+        $ledger=$this->one($pdo,'marketplace_order_idempotency',self::IDEM_FIELDS,
+            '`uid` = ? AND `order_id` = ?',[$uid,$orderId]);
+        if($ledger===null)self::unavailable();
+        self::stored($ledger,['uid'=>$uid,'order_id'=>$orderId,'state'=>1]);
+        self::text($ledger['idem_key'],128,true);self::integer($ledger['post_commit_done'],0,1);
+        if(!is_string($ledger['request_digest'])||strlen($ledger['request_digest'])!==32)self::unavailable();
+        $order=$this->committedOrder($pdo,$ledger);$merId=self::integer($order['mer_id'],1,self::UINT_MAX);
+        $orderNo=self::text($order['order_id'],32,true);
+        $selection=$this->postCommitItems($pdo,$ledger,$order);
+        $items=$this->rows($pdo,'store_order_cart_info',self::ITEM_FIELDS,'`oid` = ?',[$orderId],'`id` ASC');
+        if(count($items)!==count($selection))self::unavailable();$groups=[];
+        foreach($items as$item){
+            $qty=self::integer($item['cart_num'],1,self::INT_MAX);
+            self::integer($item['refund_num'],0,$qty);self::integer($item['surplus_num'],0,$qty);
+            self::integer($item['split_status'],0,2);self::text($item['unique'],32,true);
+        }
+        foreach($selection as$line){
+            $parentId=self::bigint($line['cart_info']['marketplace']['reserve_id']);
+            if(!isset($groups[$parentId]))$groups[$parentId]=['product_id'=>$line['product_id'],
+                'sku_id'=>$line['sku_id'],'unique'=>$line['unique'],'qty'=>0,'cart_refs'=>[]];
+            $group=&$groups[$parentId];
+            if($group['product_id']!==$line['product_id']||$group['sku_id']!==$line['sku_id']
+                ||$group['unique']!==$line['unique'])self::unavailable();
+            $group['qty']+=$line['qty'];self::integer($group['qty'],1,self::UINT_MAX);
+            $group['cart_refs'][]=$line['cart_ref'];unset($group);
+        }
+        $parents=$this->rows($pdo,'marketplace_stock_movement',self::MOVEMENT_FIELDS,
+            '`order_id` = ? AND `kind` = ?',[$orderId,'reserve'],'`id` ASC');
+        if(count($parents)!==count($groups))self::unavailable();$reserves=[];$byChild=[];$seenParents=[];
+        foreach($parents as$parent){
+            $parent=self::paymentMovement($parent);$parentId=$parent['id'];
+            $group=$groups[$parentId]??null;
+            if($group===null||isset($seenParents[$parentId]))self::unavailable();$seenParents[$parentId]=true;
+            self::stored($parent,['mer_id'=>$merId,'order_id'=>$orderId,'product_id'=>$group['product_id'],
+                'sku_id'=>$group['sku_id'],'sku_type'=>0,'sku_unique'=>$group['unique'],'qty'=>$group['qty'],
+                'kind'=>'reserve','parent_reserve_id'=>null,'order_item_id'=>null,'refund_id'=>null,
+                'actor_type'=>'customer','actor_id'=>$uid,'idem_key'=>'reserve:'.$orderId.':'.$group['sku_id']]);
+            $action=['contract_version'=>1,'uid'=>$uid,'mer_id'=>$merId,'order_id'=>$orderId,
+                'product_id'=>$group['product_id'],'sku_id'=>$group['sku_id'],'sku_type'=>0,'sku_unique'=>$group['unique'],
+                'qty'=>$group['qty'],'kind'=>'reserve','cart_refs'=>$group['cart_refs']];
+            self::movementDigest($parent,$action);self::reserveArithmetic($parent);$reserves[]=$parent;
+            $children=$this->rows($pdo,'marketplace_stock_movement',self::MOVEMENT_FIELDS,
+                '`parent_reserve_id` = ?',[$parentId],'`id` ASC');$credited=0;$released=false;
+            foreach($children as$child){
+                $child=self::paymentMovement($child);$childId=$child['id'];
+                if(isset($byChild[$childId]))self::unavailable();
+                self::stored($child,['mer_id'=>$merId,'order_id'=>$orderId,'product_id'=>$group['product_id'],
+                    'sku_id'=>$group['sku_id'],'sku_type'=>0,'sku_unique'=>$group['unique'],'parent_reserve_id'=>$parentId]);
+                if(!in_array($child['kind'],['release','return_in'],true))self::unavailable();
+                $qty=self::integer($child['qty'],1,self::UINT_MAX);
+                if($qty>$group['qty']-$credited)self::unavailable();$credited+=$qty;
+                if($child['kind']==='release'){
+                    if($released)self::unavailable();$released=true;
+                    self::stored($child,['idem_key'=>'release:'.$orderId.':'.$parentId,'qty'=>$group['qty'],
+                        'order_item_id'=>null,'refund_id'=>null]);
+                    if(!($child['actor_type']==='customer'&&(string)$child['actor_id']===(string)$uid)
+                        &&!($child['actor_type']==='system'&&$child['actor_id']===null))self::unavailable();
+                    self::movementDigest($child,$this->releaseAction($uid,$merId,$orderId,$parentId,$group));
+                    self::releaseArithmetic($child);
+                }
+                // return_in has no approved writer/action yet: retain its real full
+                // row and budget, without claiming a release digest proves a refund.
+                $byChild[$childId]=$child;
+            }
+        }
+        $children=$this->rows($pdo,'marketplace_stock_movement',self::MOVEMENT_FIELDS,
+            '`order_id` = ? AND `kind` IN (?,?)',[$orderId,'release','return_in'],'`id` ASC');
+        if(count($children)!==count($byChild))self::unavailable();
+        foreach($children as&$child){
+            $child=self::paymentMovement($child);
+            if(!isset($byChild[$child['id']])||$byChild[$child['id']]!==$child)self::unavailable();
+        }unset($child);
+        $childOrders=$this->rows($pdo,'store_order',['id','uid','mer_id','pid','marketplace_trade_version',
+            'order_id','paid','status','refund_status','is_cancel'],'`pid` = ?',[$orderId],'`id` ASC');
+        foreach($childOrders as$child){
+            self::integer($child['id'],1,self::INT_MAX);self::stored($child,['pid'=>$orderId]);
+            self::integer($child['uid'],0,self::INT_MAX);
+            if($child['mer_id']!==null)self::integer($child['mer_id'],0,self::UINT_MAX);
+            if($child['marketplace_trade_version']!==null)self::integer($child['marketplace_trade_version'],0,255);
+            self::text($child['order_id'],32,true);self::integer($child['paid'],0,1);self::integer($child['is_cancel'],0,1);
+            self::integer($child['status'],-128,127);self::integer($child['refund_status'],0,255);
+        }
+        return ['root'=>['id'=>$orderId,'uid'=>$uid,'mer_id'=>$merId,'order_no'=>$orderNo],
+            'items'=>$items,'selection'=>$selection,'reserves'=>$reserves,'children'=>$children,'child_orders'=>$childOrders];
+    }
+
+    /** Validate every stored movement field; only U64 references are normalized. */
+    private static function paymentMovement(array $row): array
+    {
+        self::keys($row,self::MOVEMENT_FIELDS);$row['id']=self::bigint($row['id']);
+        if($row['parent_reserve_id']!==null)$row['parent_reserve_id']=self::bigint($row['parent_reserve_id']);
+        foreach(['order_item_id','refund_id'] as$field)
+            if($row[$field]!==null)self::integer($row[$field],1,self::INT_MAX);
+        self::integer($row['mer_id'],1,self::UINT_MAX);self::integer($row['order_id'],1,self::INT_MAX);
+        self::integer($row['product_id'],1,self::ROOT_MAX);self::integer($row['sku_id'],1,self::INT_MAX);
+        self::integer($row['sku_type'],0,0);self::unique($row['sku_unique']);self::integer($row['qty'],1,self::UINT_MAX);
+        if(!in_array($row['kind'],['reserve','release','return_in'],true))self::unavailable();
+        self::text($row['idem_key'],128,true);self::text($row['actor_type'],32,true);
+        if($row['actor_id']!==null)self::integer($row['actor_id'],1,self::UINT_MAX);
+        if(!is_string($row['request_digest'])||strlen($row['request_digest'])!==32)self::unavailable();
+        foreach(['sku'=>self::UINT_MAX,'root'=>self::ROOT_STOCK_MAX] as$part=>$max)
+            foreach(['stock_before','stock_after','sales_before','sales_after'] as$field)self::integer($row[$part.'_'.$field],0,$max);
+        self::integer($row['add_time'],1,self::UINT_MAX);return $row;
+    }
+
     /** Real owner/order locators only, read outside the following top-level transaction. */
     public function customerCancellationCandidate(PDO $pdo, int $uid, string $orderNo): ?array
     {
@@ -659,11 +776,11 @@ final class MarketplaceOrderDao
     }
 
     /**
-     * UID -> ledger -> order -> raw merchant -> roots -> physical SKUs -> items -> reserves/children.
+     * UID -> ledger -> order -> raw merchant -> registry/attempts -> roots -> SKUs -> items -> reserves/children.
      * Returns state ready/already_cancelled/not_due/pending plus private actual locked facts.
      * Candidate root/SKU IDs are hints and must exactly match the newly locked saved items.
      */
-    public function lockCancellation(PDO $pdo, array $candidate, int $now, bool $expired): array
+    public function lockCancellation(PDO $pdo, array $candidate, int $now, bool $expired, ?array $paymentProof = null): array
     {
         $this->transaction($pdo);self::integer($now,1,self::UINT_MAX);
         foreach(['root_ids'=>self::ROOT_MAX,'sku_ids'=>self::INT_MAX] as$field=>$max){
@@ -678,14 +795,20 @@ final class MarketplaceOrderDao
         if($ledger===null)self::unavailable();$saved=$this->committedOrder($pdo,$ledger);
         $order=$this->one($pdo,'store_order',self::CANCEL_FIELDS,'`id` = ? AND `uid` = ? AND `mer_id` = ?',[$id,$uid,$ledger['mer_id']]);
         if($order===null||$order['order_id']!==$candidate['order_no'])self::unavailable();
-        $result=['state'=>'pending','candidate'=>$candidate,'ledger'=>$ledger,'order'=>$order,'selection'=>[],'reserves'=>[]];
+        $merId=self::integer($ledger['mer_id'],1,self::UINT_MAX);
+        if(self::integer($candidate['mer_id']??null,1,self::UINT_MAX)!==$merId)self::unavailable();
+        if($this->one($pdo,'marketplace_merchant',['mer_id'],'`mer_id` = ?',[$merId])===null)self::unavailable();
+        // Payment's complete common-lock set is acquired before any inventory row.
+        // A no-proof read only captures facts for a later, transaction-free close.
+        $payment=$paymentProof===null
+            ?$this->payments->lockPayment($pdo,$uid,$id,$order['order_id'])
+            :$this->payments->assertCancellationProof($pdo,$uid,$id,$order['order_id'],$paymentProof);
+        $result=['state'=>'pending','candidate'=>$candidate,'ledger'=>$ledger,'order'=>$order,'selection'=>[],'reserves'=>[],
+            'payment'=>$payment,'payment_stage'=>null];
         if(self::integer($order['paid'],0,1)!==0)return $result;
         $cancelled=self::integer($order['is_cancel'],0,1)===1;
         $deadline=self::integer($ledger['cancel_at'],0,self::UINT_MAX);
         if($expired&&!$cancelled&&($deadline===0||$deadline>$now)){$result['state']='not_due';return $result;}
-        $merId=self::integer($ledger['mer_id'],1,self::UINT_MAX);
-        if(self::integer($candidate['mer_id']??null,1,self::UINT_MAX)!==$merId)self::unavailable();
-        if($this->one($pdo,'marketplace_merchant',['mer_id'],'`mer_id` = ?',[$merId])===null)self::unavailable();
         foreach($candidate['root_ids'] as$rootId){
             self::integer($rootId,1,self::ROOT_MAX);
             if($this->one($pdo,'store_product',['id','mer_id','stock','sales'],'`id` = ? AND `mer_id` = ?',[$rootId,$merId])===null)self::unavailable();
@@ -761,19 +884,23 @@ final class MarketplaceOrderDao
             $statuses=$this->rows($pdo,'store_order_status',self::STATUS_FIELDS,'`oid` = ? AND `change_type` = ?',[$id,self::CANCEL_STATUS],'',2);
             if(count($statuses)!==1)return $result;
             self::stored($statuses[0],['oid'=>$id,'change_type'=>self::CANCEL_STATUS,'change_message'=>'订单取消','change_time'=>$first[0]]);
+            if($paymentProof===null){$result['payment_stage']='close';return $result;}
             $result['state']='already_cancelled';return $result;
         }
         if($released!==0)return $result;
-        $result['state']='ready';$result['selection']=$selection;$result['reserves']=$reserves;return $result;
+        $result['selection']=$selection;$result['reserves']=$reserves;
+        if($paymentProof===null)$result['payment_stage']='close';else $result['state']='ready';
+        return $result;
     }
 
-    /** Trusted payment proof has been checked by the service; stock/cancel facts commit together. */
-    public function releaseCancellation(PDO $pdo, array $locked, int $now, string $actorType, ?int $actorId): void
+    /** Independently recheck the same durable proof before the original stock writes. */
+    public function releaseCancellation(PDO $pdo, array $locked, int $now, string $actorType, ?int $actorId, array $paymentProof): array
     {
-        $current=$this->lockCancellation($pdo,$locked['candidate'],$now,$actorType==='system');
-        if($current['state']!=='ready')self::unavailable();$order=$current['order'];
+        $current=$this->lockCancellation($pdo,$locked['candidate'],$now,$actorType==='system',$paymentProof);
+        $order=$current['order'];
         $uid=self::integer($order['uid'],1,self::INT_MAX);$merId=self::integer($order['mer_id'],1,self::UINT_MAX);$id=self::integer($order['id'],1,self::INT_MAX);
         if(!($actorType==='customer'&&$actorId===$uid)&&!($actorType==='system'&&$actorId===null))self::unavailable();
+        if($current['state']!=='ready')return $current;
         $reserves=$current['reserves'];usort($reserves,static fn(array $a,array $b):int=>(int)$a['sku_id']<=>(int)$b['sku_id']);
         foreach($reserves as$parent){
             $parentId=self::bigint($parent['id']);$group=$parent['release_group'];$qty=$group['qty'];
@@ -816,6 +943,7 @@ final class MarketplaceOrderDao
         if($read===null)self::unavailable();$expected=$order;$expected['is_cancel']=1;self::stored($read,$expected);
         $statuses=$this->rows($pdo,'store_order_status',self::STATUS_FIELDS,'`oid` = ? AND `change_type` = ?',[$id,self::CANCEL_STATUS],'',2);
         if(count($statuses)!==1)self::unavailable();self::stored($statuses[0],$status);
+        $current['state']='cancelled';$current['order']=$read;return $current;
     }
 
     /** Read-only resolution serialized with create on the same actual UID, never a new claim. */

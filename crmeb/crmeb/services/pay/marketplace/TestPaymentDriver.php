@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace crmeb\services\pay\marketplace;
 
 use app\services\marketplace\order\MarketplaceOrderInput;
+use app\services\marketplace\payment\MarketplacePaymentServices;
 use crmeb\exceptions\AuthUnavailableException;
 
 /** Only this instance knows its attempts. No database/cache persistence, SDK, paid write or successful refund. */
@@ -24,6 +25,7 @@ final class TestPaymentDriver implements PaymentAdapter
     public function createPayment(array $actualOrder, PaymentAccount $account, string $idempotencyKey): array
     {
         $this->assertScope();
+        $this->app->make(MarketplacePaymentServices::class)->consumeCreateContext($this,$actualOrder,$account,$idempotencyKey);
         if(strlen($idempotencyKey)>128||preg_match('/\A[A-Za-z0-9][A-Za-z0-9._:-]*\z/D',$idempotencyKey)!==1)
             throw new AuthUnavailableException();
         $binding=self::binding($actualOrder,$account);$slot=$binding['order_pk']."\0".$idempotencyKey;
@@ -43,7 +45,7 @@ final class TestPaymentDriver implements PaymentAdapter
         do{$reference='test-attempt:'.bin2hex(random_bytes(16));}while(isset($this->attempts[$reference]));
         $saved=['state'=>'pending','binding'=>$binding,
             'binding_sha256'=>hash('sha256',MarketplaceOrderInput::canonical($binding)),
-            'idempotency_key'=>$idempotencyKey,'request_digest'=>$digest];
+            'idempotency_key'=>$idempotencyKey,'request_digest'=>$digest,'provider_trade_no'=>null];
         $this->attempts[$reference]=$saved;$this->byIdempotency[$slot]=$reference;
         $this->byOrder[$binding['order_pk']][]=$reference;
         return self::result($reference,$saved);
@@ -60,7 +62,19 @@ final class TestPaymentDriver implements PaymentAdapter
     {
         $this->assertScope();$reference=$this->knownReference($paymentAttempt);
         if($reference===null)return self::unknown();
-        $this->attempts[$reference]['state']='closed';
+        if($this->attempts[$reference]['state']==='pending')$this->attempts[$reference]['state']='closed';
+        return self::result($reference,$this->attempts[$reference]);
+    }
+
+    /** Internal testing control only; this reference never represents an institution transaction. */
+    public function completeTestPayment(array $originalAttempt): array
+    {
+        $this->assertScope();$reference=$this->knownReference($originalAttempt);
+        if($reference===null)return self::unknown();
+        if($this->attempts[$reference]['state']==='pending'){
+            $this->attempts[$reference]['provider_trade_no']='test-payment:'.substr($reference,strlen('test-attempt:'));
+            $this->attempts[$reference]['state']='succeeded';
+        }
         return self::result($reference,$this->attempts[$reference]);
     }
 
@@ -143,7 +157,8 @@ final class TestPaymentDriver implements PaymentAdapter
     private static function result(string $reference, array $saved): array
     {
         return ['state'=>$saved['state'],'scope'=>self::SCOPE,'attempt_ref'=>$reference,
-            'binding_sha256'=>$saved['binding_sha256'],'binding'=>$saved['binding'],'provider_trade_no'=>null];
+            'binding_sha256'=>$saved['binding_sha256'],'binding'=>$saved['binding'],
+            'provider_trade_no'=>$saved['provider_trade_no']];
     }
 
     private static function unknown(): array
