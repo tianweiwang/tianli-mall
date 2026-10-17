@@ -711,6 +711,8 @@ R7实际结果（2026-10-16，详见03）：clean `a74f2b27275229dcb089581039dc3
 
 同日付款核心 Main 整合见 [持久测试付款核心整合到 Main](records/ms5/payment-core-integration.md)：三新产品类、测试驱动、OrderDao 窄接线、取消服务及两份现有增量迁移源。Main restore/deadline/过期游标增量保持；源码整合与原普通验证、API/DOM、真实渠道验收分别记录。
 
+2026-10-17 Main顾客H5最新完整构建与静态资源门真实通过：clean af0bcd9c7e46d17609461fb0df2620c62d6b2a52，完整545源、29930离线工具前后保持，原两pass均无errors，334产物/10380318B，结果摘要fc358a6a9514b7ef2db2cf52d101b0b639a4c0386b306b68471eb60619411d51；详见保存测试付款消费者记录。商家完整构建先前通过；平台完整构建、实际27/34/25消费者/API/DOM及完整MS4/履约/售后/真实金融/发布仍未完成，停止样本不运行。
+
 ### Task 3: 收款账户
 
 - 表 `eb_marketplace_payment_account(id, mer_id, channel, account_ref, version, status, verified_at, add_time)`；`account_ref` 只保存配置引用，不保存密钥明文。订单发起支付时把账户 ID 与版本写入支付尝试记录，之后不可更改。
