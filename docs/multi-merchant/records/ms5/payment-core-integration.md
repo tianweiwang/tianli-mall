@@ -257,3 +257,13 @@ Root已全文采用外部 `h5-native-failure-observability-source-r1/NATIVE-FAIL
 
 
 Main实际应用与语法检查点（2026-10-18）：唯一新entry已逐字写入，前后均等于已审101356B/`8ad9926a13ca06ae7731e2acb56a515f434be0fdb44a25a1089a0e2310eafc91`候选；Root对实际Main文件用已有固定PHP8.2镜像、network none、只读根和单文件bind、cap-drop ALL执行php -l，实际native0/stderr空，临时自建容器前后原生库存严格空。收据2428B/`054dc201c64f98d49a5ce4f8fdc3897a1d563e62d42a0c077da13ea13863ba8c`。这只证明已应用与语法；未启动新paid profile/Run、App/SQL/付款生产者或三端API/DOM，完整09范围和原停止样本保持未验。
+
+### 独立已付入口真实身份断言失败、正常收口及新来源修正
+
+2026-10-18，clean Main `6773096b5c4b345391b4cf88078b96e52ee4d729`、Run `202610171643134392e6` 的九初始化/四MS5命令/files真实 writeMd5/C3 均实际正常0；唯一 paid producer 容器实际退出1，PHP 自报 native_exit 仍为 NULL，二者不混。原21键失败结果1266B/`63bfbe6654fcb658f9579a857ca2e771198eaa753e8f88a439d50c6f2dace305` 停在 paid_identity_real_user_get，完整父终端4607B/`19a7b76d5665c03ce8c9fcdd8dcecd927cf6cff34f91280907de7200de23c8ff` 保留。真实用户接口 HTTP/JSON200 及正UID已观察，原复合 UID/account 断言整体失败，不能据此宣称 UID 相等已经独立证明；同 factory 付款生产者尚未进入，三端 paid API/DOM 全部 NOT RUN。正常 child 停止保留其实际 -1/proc_close -1，不伪造0。
+
+Root 与独立源码复核实际 User Model hidden account/pwd，UserController 的 toArray/personalHome 没有恢复这两字段。故原测试要求公开 GET/user 返回 account 与真实接口合同矛盾。采用两组窄修：独立严格核真实返回 UID 等于本 Run 准备 UID、公开 account/pwd 均缺席；再按此真实 UID 读取私有实际行，将保存 account 同时与真实登录账号及封存夹具账号比较。校验未改为 loose，未写 UID/JWT、改公开字段或跳过真实登录。新 entry101556B/`76a65823d693a08ae6690b7435079935975a6b6f691289ff16a05170bc5d4df6` 全文正逆回原件且 SOURCE/PHP语法通过，现沿19文件集成清单合入 Main；不能把修正当 paid 生产成功。
+
+原Run在 Main/P 完全冻结时按专用失败设计收口：close33012B/`5144deb1bd1dc7c4d53ed712de87460fa02ce0310293bbe9d4c296f20f4b567b`、independent zero87361B/`a8026e89aef13d149ac21d64a89d7efadd995d24a63b8d5401dc19d3665e6b3c` 均独立 SOURCE、完整正逆、Root compile/help通过。close 实际原生0，正常停止原 MySQL/Redis、原生终端0后，非force精确移除原3CID/1内网/6卷；原失败 producer1 和失败公件保持。close结果33906B/`2dc5bcc10bb32c4309b04822cf1995207b2c5bb0cb6370e0aab016e393efcd1c`；随后 independent zero 实际原生0，六条新鲜原生查询严格空且前后各53个现有容器无原资源消费者，结果71261B/`3c0a0bbd4efd245488da8681512d149944711e4d9fb0c8ef3493ef36d7a8fab7`。只在该真实核零之后解冻 Main；原Run/P/freeze不再修改、重开或重跑，失败与完整验收未完成事实保持。
+
+新 `paid-profile-source-r2` 沿原九artifact完整派生，唯一业务测试修正为上述真实身份合同；实际interface14988B/`92253c6ebaf96bc0916ce962c9cce759fbc3768429e9bed98756a623cd4e06e9`、host107783B/`0f8bda0f5400b7e9b332a5e827438bd018905a073f86c3e0b123b646c97a64aa`、normal close25584B/`dc905b7cab2ede5618fdf0cad32d739cf38debf4e0a5221a3aaa94fba279ff73`、zero88263B/`8f1163e156a84a115298def72e881a347c94ff3c51a14c70e496d54f365ff375`、D1 6300B/`5e6144d766561c599c4248a6453367a824794e51e8252d7870b8f5262bf468e5`。四文件逐字保原；六组完整正逆和八非self实际来源独审 SOURCE PASS。Root 后续仍须解析/组装、以新真实clean Main冻结及启动全新空库Run，不能复用旧Run成功前置或旧来源收据。producer-only角色/3CID1网6卷和完整来源合同保持；不在此profile偷加三端演员、服务或UI生命周期。原正常 paid生产/27+7封存、三端API/DOM、履约售后、真实金融、历史与发布责任仍未完成。

@@ -59,7 +59,10 @@ class StoreOrderSplitServices extends BaseServices
 
         $ids = array_unique(array_column($cart_ids, 'cart_id'));
         if (!$cart_ids || !$ids) return false;
-        if (!$orderInfo) $orderInfo = $this->dao->get($id, ['*']);
+        $actualOrder = $this->dao->get($id, ['*']);
+        if (!$actualOrder) throw new AdminException('订单不存在');
+        \app\services\marketplace\order\MarketplaceTradePolicy::assertLegacyOrder($actualOrder->getData());
+        if (!$orderInfo) $orderInfo = $actualOrder;
         if (!$orderInfo) throw new AdminException('订单不存在');
         $old_order = $orderInfo;
         $orderInfo = $orderInfoOld = is_object($orderInfo) ? $orderInfo->toArray() : $orderInfo;
@@ -202,8 +205,13 @@ class StoreOrderSplitServices extends BaseServices
         if (!$cart_ids || !$ids) {
             return false;
         }
+        $actualOrder = $this->dao->get($id, ['*']);
+        if (!$actualOrder) {
+            throw new AdminException('订单不存在');
+        }
+        \app\services\marketplace\order\MarketplaceTradePolicy::assertLegacyOrder($actualOrder->getData());
         if (!$orderInfo) {
-            $orderInfo = $this->dao->get($id, ['*']);
+            $orderInfo = $actualOrder;
         }
         if (!$orderInfo) {
             throw new AdminException('订单不存在');
@@ -283,6 +291,11 @@ class StoreOrderSplitServices extends BaseServices
      */
     public function splitComputeOrder(int $id, array $cart_info_data, float $order_pay_price = 0.00, float $pay_price = 0.00, float $pre_pay_price = 0.00)
     {
+        $actualOrder = $this->dao->get($id, ['*']);
+        if (!$actualOrder) {
+            throw new AdminException('订单不存在');
+        }
+        \app\services\marketplace\order\MarketplaceTradePolicy::assertLegacyOrder($actualOrder->getData());
         $order_update['cart_id'] = array_column($cart_info_data, 'cart_id');
         $order_update['total_num'] = array_sum(array_column($cart_info_data, 'cart_num'));
         $total_price = $coupon_price = $deduction_price = $use_integral = $pay_postage = $gainIntegral = $one_brokerage = $two_brokerage = $staffBrokerage = $agentBrokerage = $divisionBrokerage = 0;

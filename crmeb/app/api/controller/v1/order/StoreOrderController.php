@@ -653,6 +653,12 @@ class StoreOrderController
         $orderInfo = $this->services->get($cartInfo['oid']);
         if (!$orderInfo) return app('json')->fail('订单不存在');
         if ($uid != $orderInfo['uid'] && $uid != $orderInfo['gift_uid']) return app('json')->fail('不是您自己的订单，无法评价');
+        MarketplaceTradePolicy::assertLegacyOrder($orderInfo->getData());
+        if ($orderInfo['pid'] > 0) {
+            $parentOrder = $this->services->get((int)$orderInfo['pid'], ['id', 'marketplace_trade_version']);
+            if (!$parentOrder) return app('json')->fail('订单不存在');
+            MarketplaceTradePolicy::assertLegacyOrder($parentOrder->getData());
+        }
         if ($replyServices->be(['oid' => $cartInfo['oid'], 'unique' => $unique]))
             return app('json')->fail('订单商品已评价');
         $group['comment'] = htmlspecialchars(trim($group['comment']));
@@ -938,6 +944,10 @@ class StoreOrderController
                     $update['delivery_id'] = $data['kuaidinum'];
                 }
                 if (isset($data['task_id'])) {
+                    $matchedOrders = $this->services->selectList(['kuaidi_task_id' => $data['task_id']], 'id,marketplace_trade_version');
+                    foreach ($matchedOrders as $matchedOrder) {
+                        MarketplaceTradePolicy::assertLegacyOrder($matchedOrder->getData());
+                    }
                     $this->services->update(['kuaidi_task_id' => $data['task_id']], $update);
                 }
                 break;
@@ -948,6 +958,10 @@ class StoreOrderController
                         return app('json')->fail('订单不存在');
                     }
                     $this->services->transaction(function () use ($data, $orderInfo) {
+                        $matchedOrders = $this->services->selectList(['kuaidi_task_id' => $data['data']['task_id']], 'id,marketplace_trade_version');
+                        foreach ($matchedOrders as $matchedOrder) {
+                            MarketplaceTradePolicy::assertLegacyOrder($matchedOrder->getData());
+                        }
                         $this->services->update(['kuaidi_task_id' => $data['data']['task_id']], [
                             'status' => 1,
                             'is_stock_up' => 0
@@ -968,6 +982,10 @@ class StoreOrderController
                     $orderInfo = $this->services->get(['kuaidi_task_id' => $data['data']['task_id']]);
                     if (!$orderInfo) {
                         return app('json')->fail('订单不存在');
+                    }
+                    $matchedOrders = $this->services->selectList(['kuaidi_task_id' => $data['data']['task_id']], 'id,marketplace_trade_version');
+                    foreach ($matchedOrders as $matchedOrder) {
+                        MarketplaceTradePolicy::assertLegacyOrder($matchedOrder->getData());
                     }
                     if ($orderInfo->is_stock_up && $orderInfo->status == 0) {
                         app()->make(StoreOrderStatusServices::class)->save([

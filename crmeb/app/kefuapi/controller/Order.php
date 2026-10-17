@@ -216,6 +216,12 @@ class Order extends AuthController
         if (!strlen(trim($orderId))) return app('json')->fail('参数错误');
         $orderInfo = $this->services->getOne(['order_id' => $orderId]);
         if (!$orderInfo) return app('json')->fail('数据不存在');
+        \app\services\marketplace\order\MarketplaceTradePolicy::assertLegacyOrder($orderInfo->getData());
+        if ($orderInfo['pid'] > 0) {
+            $actualParent = $this->services->get($orderInfo['pid'], ['*']);
+            if (!$actualParent) return app('json')->fail('数据不存在');
+            \app\services\marketplace\order\MarketplaceTradePolicy::assertLegacyOrder($actualParent->getData());
+        }
         //仅退款类型
         if ($orderInfo['refund_type'] != 1) {
             return app('json')->fail('请去后台售后订单列表处理');

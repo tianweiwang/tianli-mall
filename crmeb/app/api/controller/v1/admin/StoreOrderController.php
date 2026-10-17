@@ -412,6 +412,13 @@ class StoreOrderController
         if (!$orderRefund) {
             //主动退款主订单详情
             $orderRefund = $orderServices->getOne(['order_id' => $orderId]);
+            if (!$orderRefund) return app('json')->fail('数据不存在');
+            MarketplaceTradePolicy::assertLegacyOrder($orderRefund->getData());
+            if ($orderRefund['pid'] > 0) {
+                $actualParent = $orderServices->get($orderRefund['pid'], ['*']);
+                if (!$actualParent) return app('json')->fail('数据不存在');
+                MarketplaceTradePolicy::assertLegacyOrder($actualParent->getData());
+            }
             $is_admin = 1;
             if ($services->count(['store_order_id' => $orderRefund['id'], 'refund_type' => [0, 1, 2, 4, 5], 'is_cancel' => 0, 'is_del' => 0])) {
                 return app('json')->fail('请先处理售后申请');
@@ -427,6 +434,12 @@ class StoreOrderController
             $orderInfo = $this->service->get((int)$orderRefund['store_order_id']);
             if (!$orderInfo) {
                 return app('json')->fail('数据不存在');
+            }
+            MarketplaceTradePolicy::assertLegacyOrder($orderInfo->getData());
+            if ($orderInfo['pid'] > 0) {
+                $actualParent = $orderServices->get($orderInfo['pid'], ['*']);
+                if (!$actualParent) return app('json')->fail('数据不存在');
+                MarketplaceTradePolicy::assertLegacyOrder($actualParent->getData());
             }
             if (!in_array($orderRefund['refund_type'], [1, 2, 5])) {
                 return app('json')->fail('售后订单状态不支持该操作');

@@ -57,6 +57,29 @@ final class MarketplaceOrderFulfillmentPlan
     }
 
     /**
+     * Exact ORIGINAL source coordinates, already split by the real caller at ship-parent boundaries.
+     * SQL parent/child identity and live eligibility remain the authorized caller's responsibility.
+     * Adjacent segments stay separate; every amount uses the saved full line budget and original Q.
+     *
+     * @param array $exactRanges nonempty list<{source_item_id:int|string,unit_start:int|string,unit_end:int|string}>
+     * @return array{plan_version:int,root_order_id:int,source_snapshot_sha256:string,allocations:array,totals:array}
+     */
+    public static function exactRangesPlan(array $savedRoot,array $savedItems,array $savedReserves,array $exactRanges):array
+    {
+        $source=self::source($savedRoot,$savedItems);
+        self::reserves($source,$savedReserves);
+        if(!$exactRanges)self::unavailable();
+        $selected=self::ranges($source['lines'],$exactRanges);
+        ksort($selected,SORT_NUMERIC);$allocations=[];
+        foreach($selected as $id=>$ranges){
+            $line=$source['lines'][$id];
+            foreach($ranges as $range)$allocations[]=self::allocation($line,$range['unit_start'],$range['unit_end']);
+        }
+        return ['plan_version'=>1,'root_order_id'=>$source['root']['id'],
+            'source_snapshot_sha256'=>$source['fingerprint'],'allocations'=>$allocations,'totals'=>self::totals($allocations)];
+    }
+
+    /**
      * Exact integer-cent prefix slice F(end)-F(start), with the ORIGINAL quantity as denominator.
      * Monetary budgets may be derived and exceed saved DECIMAL(12,2) and native integer capacity.
      * mixed parameters deliberately prevent weak callers silently coercing floats/bools before validation.

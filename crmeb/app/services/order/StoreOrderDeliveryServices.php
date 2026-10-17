@@ -284,6 +284,7 @@ class StoreOrderDeliveryServices extends BaseServices
         if (!$order) {
             throw new AdminException('数据不存在');
         }
+        \app\services\marketplace\order\MarketplaceTradePolicy::assertLegacyOrder($order->getData());
         switch ($order['delivery_type']) {
             case 'send':
                 if (!$data['delivery_name']) {
@@ -721,6 +722,11 @@ class StoreOrderDeliveryServices extends BaseServices
      */
     public function virtualSend($orderInfo)
     {
+        $actualOrder = $this->dao->get((int)$orderInfo['id'], ['*']);
+        if (!$actualOrder) {
+            throw new AdminException('订单未能查到,不能发货');
+        }
+        \app\services\marketplace\order\MarketplaceTradePolicy::assertLegacyOrder($actualOrder->getData());
         /** @var StoreOrderStatusServices $statusService */
         $statusService = app()->make(StoreOrderStatusServices::class);
         /** @var StoreOrderCartInfoServices $services */

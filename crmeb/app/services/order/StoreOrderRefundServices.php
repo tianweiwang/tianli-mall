@@ -65,6 +65,63 @@ class StoreOrderRefundServices extends BaseServices
         $this->storeOrderServices = $storeOrderServices;
     }
 
+    /** Local legacy boundary only: supplied business values remain untouched after real saved identity checks. */
+    private function assertLegacySavedOrder($id, $provided = [], ?int $expectedUid = null)
+    {
+        if (!is_int($id) && !is_string($id)) {
+            throw new ApiException('订单不存在');
+        }
+        $saved = $this->storeOrderServices->get($id, ['*']);
+        if (!$saved) throw new ApiException('订单不存在');
+        $actual = $saved->getData();
+        MarketplaceTradePolicy::assertLegacyOrder($actual);
+        if ($provided instanceof \think\Model) $provided = $provided->getData();
+        if (!is_array($provided)) throw new ApiException('订单不存在');
+        foreach (['id', 'uid', 'pid', 'order_id'] as $field) {
+            if (array_key_exists($field, $provided)
+                && ((!is_int($provided[$field]) && !is_string($provided[$field]))
+                    || !array_key_exists($field, $actual) || (string)$provided[$field] !== (string)$actual[$field])) {
+                throw new ApiException('订单不存在');
+            }
+        }
+        if ($expectedUid !== null && (!array_key_exists('uid', $actual) || (string)$actual['uid'] !== (string)$expectedUid)) {
+            throw new ApiException('订单不存在');
+        }
+        if (!array_key_exists('pid', $actual)) throw new ApiException('订单不存在');
+        if ($actual['pid'] > 0) {
+            $parent = $this->storeOrderServices->get($actual['pid'], ['*']);
+            if (!$parent) throw new ApiException('订单不存在');
+            MarketplaceTradePolicy::assertLegacyOrder($parent->getData());
+        }
+        return $saved;
+    }
+
+    /** Fresh PK lookup deliberately has no is_cancel predicate: cancelApply has already cancelled its real row. */
+    private function assertLegacySavedRefund($id, ?int $expectedOrderId = null, $provided = [])
+    {
+        if (!is_int($id) && !is_string($id)) {
+            throw new ApiException('售后订单不存在');
+        }
+        $saved = $this->dao->get($id, ['*']);
+        if (!$saved) throw new ApiException('售后订单不存在');
+        $actual = $saved->getData();
+        if (!array_key_exists('store_order_id', $actual)) throw new ApiException('售后订单不存在');
+        if ($expectedOrderId !== null && (string)$actual['store_order_id'] !== (string)$expectedOrderId) {
+            throw new ApiException('售后订单不存在');
+        }
+        if ($provided instanceof \think\Model) $provided = $provided->getData();
+        if (!is_array($provided)) throw new ApiException('售后订单不存在');
+        foreach (['id', 'uid', 'store_order_id'] as $field) {
+            if (array_key_exists($field, $provided)
+                && ((!is_int($provided[$field]) && !is_string($provided[$field]))
+                    || !array_key_exists($field, $actual) || (string)$provided[$field] !== (string)$actual[$field])) {
+                throw new ApiException('售后订单不存在');
+            }
+        }
+        $this->assertLegacySavedOrder($actual['store_order_id']);
+        return $saved;
+    }
+
     /**
      * 订单退款表单
      * @param int $id
@@ -127,6 +184,7 @@ class StoreOrderRefundServices extends BaseServices
             //退款拆分
             $orderRefundInfo = $this->dao->get($id);
             if (!$orderRefundInfo) throw new AdminException('数据不存在');
+            $this->assertLegacySavedRefund($id, null, $orderRefundInfo);
             $cart_ids = [];
             if ($orderRefundInfo['cart_info']) {
                 foreach ($orderRefundInfo['cart_info'] as $cart) {
@@ -320,6 +378,7 @@ class StoreOrderRefundServices extends BaseServices
     {
         $order = $this->dao->get($id, ['refund_type']);
         if (!$order) throw new AdminException('数据不存在');
+        $this->assertLegacySavedRefund($id);
         if ($order['refund_type'] == 4) {
             return true;
         }
@@ -336,6 +395,7 @@ class StoreOrderRefundServices extends BaseServices
      */
     public function payOrderRefund(int $type, $order, array $refundData)
     {
+        $this->assertLegacySavedOrder($order['id'] ?? null, $order);
         return $this->transaction(function () use ($type, $order, $refundData) {
 
             //回退积分和优惠卷
@@ -437,6 +497,7 @@ class StoreOrderRefundServices extends BaseServices
      */
     public function yueRefund($order, array $refundData)
     {
+        $this->assertLegacySavedOrder($order['id'] ?? null, $order);
         return $this->transaction(function () use ($order, $refundData) {
             /** @var UserServices $userServices */
             $userServices = app()->make(UserServices::class);
@@ -463,6 +524,7 @@ class StoreOrderRefundServices extends BaseServices
      */
     public function integralAndCouponBack($order, $type = 'refund')
     {
+        $this->assertLegacySavedOrder($order['id'] ?? null, $order);
         /** @var StoreOrderStatusServices $statusService */
         $statusService = app()->make(StoreOrderStatusServices::class);
         $res = true;
@@ -500,6 +562,7 @@ class StoreOrderRefundServices extends BaseServices
      */
     public function regressionIntegral($order)
     {
+        $this->assertLegacySavedOrder($order['id'] ?? null, $order);
         /** @var UserServices $userServices */
         $userServices = app()->make(UserServices::class);
         $userInfo = $userServices->get($order['uid'], ['integral']);
@@ -626,6 +689,7 @@ class StoreOrderRefundServices extends BaseServices
      */
     public function storeProductOrderRefundY($data, $order, $refund_price)
     {
+        $this->assertLegacySavedOrder($order['id'] ?? null, $order);
         /** @var StoreOrderStatusServices $statusService */
         $statusService = app()->make(StoreOrderStatusServices::class);
         $statusService->save([
@@ -657,6 +721,7 @@ class StoreOrderRefundServices extends BaseServices
      */
     public function storeProductOrderRefundYFasle(int $id, $refund_price)
     {
+        $this->assertLegacySavedOrder($id);
         /** @var StoreOrderStatusServices $statusService */
         $statusService = app()->make(StoreOrderStatusServices::class);
         $statusService->save([
@@ -674,6 +739,7 @@ class StoreOrderRefundServices extends BaseServices
      */
     public function storeProductOrderRefundNo(int $id, string $refundReason)
     {
+        $this->assertLegacySavedOrder($id);
         /** @var StoreOrderStatusServices $statusService */
         $statusService = app()->make(StoreOrderStatusServices::class);
         $statusService->save([
@@ -720,6 +786,7 @@ class StoreOrderRefundServices extends BaseServices
         if (!$orderRefundInfo) {
             throw new ApiException('售后订单不存在');
         }
+        $this->assertLegacySavedRefund($id, null, $orderRefundInfo);
         /** @var StoreOrderServices $storeOrderServices */
         $storeOrderServices = app()->make(StoreOrderServices::class);
         $this->transaction(function () use ($id, $data, $orderRefundInfo, $storeOrderServices) {
@@ -735,7 +802,7 @@ class StoreOrderRefundServices extends BaseServices
             /** @var StoreOrderStatusServices $statusService */
             $statusService = app()->make(StoreOrderStatusServices::class);
             $statusService->save([
-                'oid' => $id,
+                'oid' => $oid,
                 'change_type' => 'refund_n',
                 'change_message' => '不退款原因:' . ($data['refuse_reason'] ?? ''),
                 'change_time' => time()
@@ -791,6 +858,7 @@ class StoreOrderRefundServices extends BaseServices
      */
     public function refundIntegral($orderInfo, $back_integral)
     {
+        $this->assertLegacySavedOrder($orderInfo['id'] ?? null, $orderInfo);
         /** @var UserServices $userServices */
         $userServices = app()->make(UserServices::class);
         $integral = $userServices->value(['uid' => $orderInfo['uid']], 'integral');
@@ -830,6 +898,7 @@ class StoreOrderRefundServices extends BaseServices
         if (!$order) {
             throw new ApiException('订单不存在');
         }
+        $this->assertLegacySavedOrder($order['id'] ?? null, $order);
         if ($order['refund_status'] == 2) {
             throw new ApiException('订单已退款');
         }
@@ -932,11 +1001,12 @@ class StoreOrderRefundServices extends BaseServices
     {
         $this->transaction(function () use ($data) {
             $id = $data['id'];
+            $actualRefund = $this->assertLegacySavedRefund($id);
             $data['refund_type'] = 5;
             /** @var StoreOrderStatusServices $statusService */
             $statusService = app()->make(StoreOrderStatusServices::class);
             $res1 = false !== $statusService->save([
-                    'oid' => $id,
+                    'oid' => $actualRefund->getData('store_order_id'),
                     'change_type' => 'refund_express',
                     'change_message' => '用户已退货，订单号：' . $data['refund_express'],
                     'change_time' => time()
@@ -978,6 +1048,7 @@ class StoreOrderRefundServices extends BaseServices
         if (!$order) {
             throw new ApiException('订单不存在');
         }
+        $this->assertLegacySavedOrder($id, $order, $uid);
 
         $is_now = $this->dao->getCount([
             ['store_order_id', '=', $id],
@@ -1412,6 +1483,7 @@ class StoreOrderRefundServices extends BaseServices
         if (!$orderRefundInfo) {
             throw new ApiException('订单不存在');
         }
+        $this->assertLegacySavedRefund($id, $oid, $orderRefundInfo);
         $cart_ids = array_column($orderRefundInfo['cart_info'], 'id');
         /** @var StoreOrderCartInfoServices $storeOrderCartInfoServices */
         $storeOrderCartInfoServices = app()->make(StoreOrderCartInfoServices::class);
@@ -1465,6 +1537,7 @@ class StoreOrderRefundServices extends BaseServices
         if (!$order = $this->dao->get($id)) {
             throw new AdminException('订单不存在');
         }
+        $this->assertLegacySavedRefund($id, null, $order);
         $order->remark = $remark;
         if (!$order->save()) {
             throw new AdminException('备注失败');

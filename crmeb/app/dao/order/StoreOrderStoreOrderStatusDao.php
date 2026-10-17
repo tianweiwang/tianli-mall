@@ -90,7 +90,10 @@ class StoreOrderStoreOrderStatusDao extends BaseDao
      */
     public function getTakeOrderIds(array $where, int $limit = 0)
     {
-        return $this->search($where)->whereIn('refund_type', [0, 3])->where('pid', '<>', -1)->field([$this->alias . '.*'])
+        return $this->search($where)->whereIn('refund_type', [0, 3])->where('pid', '<>', -1)
+            ->where(function ($query) {
+                $query->whereNull($this->alias . '.marketplace_trade_version')->whereOr($this->alias . '.marketplace_trade_version', 0);
+            })->field([$this->alias . '.*'])
             ->when($limit != 0, function ($query) use ($limit) {
                 $query->limit($limit);
             })->select()->toArray();

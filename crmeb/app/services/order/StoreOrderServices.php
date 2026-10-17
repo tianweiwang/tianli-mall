@@ -2093,6 +2093,7 @@ HTML;
         if (!$order) {
             throw new ApiException('订单不存在');
         }
+        MarketplaceTradePolicy::assertLegacyOrder($order->getData());
         $order = $this->tidyOrder($order);
         if ($order['_status']['_type'] != 0 && $order['_status']['_type'] != -2 && $order['_status']['_type'] != 4)
             throw new ApiException('该订单无法删除');
@@ -2176,6 +2177,14 @@ HTML;
      */
     public function checkOrderOver($replyServices, array $uniqueList, $oid)
     {
+        $actualOrder = $this->dao->get((int)$oid, ['id', 'pid', 'marketplace_trade_version']);
+        if (!$actualOrder) return;
+        MarketplaceTradePolicy::assertLegacyOrder($actualOrder->getData());
+        if ($actualOrder['pid'] > 0) {
+            $actualParent = $this->dao->get((int)$actualOrder['pid'], ['id', 'marketplace_trade_version']);
+            if (!$actualParent) return;
+            MarketplaceTradePolicy::assertLegacyOrder($actualParent->getData());
+        }
         //订单商品全部评价完成
         $replyServices->count(['unique' => $uniqueList, 'oid' => $oid]);
         if ($replyServices->count(['unique' => $uniqueList, 'oid' => $oid]) >= count($uniqueList)) {
@@ -2189,9 +2198,12 @@ HTML;
                 'change_message' => '用户评价',
                 'change_time' => time()
             ]);
-            $order = $this->dao->get((int)$oid, ['id,pid,status']);
+            $order = $this->dao->get((int)$oid, ['id,pid,status,marketplace_trade_version']);
+            if ($order) MarketplaceTradePolicy::assertLegacyOrder($order->getData());
             if ($order && $order['pid'] > 0) {
-                $p_order = $this->dao->get((int)$order['pid'], ['id,pid,status']);
+                $p_order = $this->dao->get((int)$order['pid'], ['id,pid,status,marketplace_trade_version']);
+                if (!$p_order) return;
+                MarketplaceTradePolicy::assertLegacyOrder($p_order->getData());
                 //主订单全部收货 且子订单没有待评价 有已完成
                 if ($p_order['status'] == 2 && !$this->dao->count(['pid' => $order['pid'], 'status' => 3]) && $this->dao->count(['pid' => $order['pid'], 'status' => 4])) {
                     $this->dao->update($p_order['id'], ['status' => 3]);
@@ -2968,6 +2980,7 @@ HTML;
             'change_type' => ['take_delivery', 'user_take_delivery']
         ], 30);
         foreach ($orderList as $item) {
+            MarketplaceTradePolicy::assertLegacyOrder($item);
             AutoCommentJob::dispatch([$item['id'], $item['cart_id']]);
         }
         return true;

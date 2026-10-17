@@ -40,10 +40,17 @@ class UnpaidOrderCancelJob extends BaseJobs
         if (!$orderInfo) {
             return true;
         }
-        if (!MarketplaceTradePolicy::savedOrderIsLegacy($orderInfo->getData())) {
+        $savedOrder = $orderInfo->getData();
+        if (!array_key_exists('marketplace_trade_version', $savedOrder)) throw new \crmeb\exceptions\AuthUnavailableException();
+        if (!MarketplaceTradePolicy::savedOrderIsLegacy($savedOrder)) {
+            $pid = $savedOrder['pid'] ?? null;
+            if ((!is_int($pid) && !is_string($pid)) || preg_match('/\A(?:0|[1-9][0-9]*)\z/D', (string)$pid) !== 1
+                || bccomp((string)$pid, '2147483647', 0) > 0) throw new \crmeb\exceptions\AuthUnavailableException();
+            if ((int)$pid > 0) return true;
             $result = app()->make(MarketplaceOrderCancelServices::class)->cancelExpired((int)$orderInfo->getData('id'));
             return in_array($result['state'], ['cancelled', 'already_cancelled', 'not_due'], true);
         }
+        MarketplaceTradePolicy::assertLegacyOrder($savedOrder);
         if ($orderInfo->paid) {
             return true;
         }

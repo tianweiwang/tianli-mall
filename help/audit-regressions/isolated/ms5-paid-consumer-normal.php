@@ -995,8 +995,10 @@ function m5pc_authenticated_owner(array $source,array $loaded,PDO $db): array
             &&is_array($reply['json']['data']??null)&&is_string($reply['raw'])&&strlen($reply['raw'])>0
             &&strlen($reply['raw'])<=1048576,'M4C_PAID_REAL_FULL_USER_HTTP_RESPONSE');
         $data=$reply['json']['data'];$uid=m5pcp_int($data['uid']??null,1);
-        m4c_expect($uid===$expectedUid&&($data['account']??null)===$fixture['user']['account']
-            &&$GLOBALS['m4c_http_call_count']===2,'M4C_PAID_UID_ONLY_REAL_USER_GET_AND_SEALED_ACCOUNT');
+        m4c_expect($uid===$expectedUid,'M4C_PAID_REAL_USER_UID_EQUALS_PREPARED_OWNER');
+        m4c_expect($GLOBALS['m4c_http_call_count']===2,'M4C_PAID_EXACT_REAL_LOGIN_AND_USER_CALLS');
+        m4c_expect(!array_key_exists('account',$data)&&!array_key_exists('pwd',$data),
+            'M4C_PAID_PUBLIC_USER_CREDENTIAL_FIELDS_HIDDEN');
         $afterUser=m5pc_native_snapshot($db);m5pc_native_auth_delta($afterLogin,$afterUser,$uid);
         m5pc_native_auth_delta($before,$afterUser,$uid,true);
         $afterDatabase=m5pcp_database_snapshot($db);m5pc_non_target_database($beforeDatabase,$afterDatabase,['eb_user']);
@@ -1006,7 +1008,8 @@ function m5pc_authenticated_owner(array $source,array $loaded,PDO $db): array
             &&$afterDatabase['tables']['eb_user']['projection']===m5pc_projection_rows($afterUser['facts']['eb_user']),
             'M4C_PAID_AUTH_USER_METADATA_AND_SCHEMA_UNCHANGED');
         $row=m4cb_rows($db,'SELECT * FROM `eb_user` WHERE `uid` = ?',[$uid]);
-        m4c_expect(count($row)===1&&$row[0]['account']===$private['account'],'M4C_PAID_GET_UID_SAME_REAL_SAVED_USER');
+        m4c_expect(count($row)===1&&$row[0]['account']===$private['account']
+            &&$row[0]['account']===$fixture['user']['account'],'M4C_PAID_GET_UID_SAME_REAL_SAVED_USER');
         $owner=['schema'=>1,'run_id'=>$source['run_id'],'source_sha'=>$source['source_sha'],'container_id'=>$source['container_id'],
             'freeze_sha256'=>$source['freeze_sha256'],'uid'=>$uid,'account'=>$row[0]['account'],'actual_user'=>$row[0],
             'fixture_sha256'=>$loaded['sha256'],'prepare_receipt_sha256'=>$loaded['prepare_receipt_sha256'],

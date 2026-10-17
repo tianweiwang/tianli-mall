@@ -81,6 +81,18 @@ class StoreOrderRefundController
         if (!in_array($orderRefund['refund_type'], [1, 2, 4, 5])) {
             return app('json')->fail('当前状态不能取消申请');
         }
+        /** @var StoreOrderServices $orderServices */
+        $orderServices = app()->make(StoreOrderServices::class);
+        $actualOrder = $orderServices->get((int)$orderRefund['store_order_id'], ['*']);
+        if (!$actualOrder || (string)$actualOrder['uid'] !== (string)$request->uid()) {
+            return app('json')->fail('订单不存在');
+        }
+        \app\services\marketplace\order\MarketplaceTradePolicy::assertLegacyOrder($actualOrder->getData());
+        if ($actualOrder['pid'] > 0) {
+            $actualParent = $orderServices->get($actualOrder['pid'], ['*']);
+            if (!$actualParent) return app('json')->fail('订单不存在');
+            \app\services\marketplace\order\MarketplaceTradePolicy::assertLegacyOrder($actualParent->getData());
+        }
         $this->services->update($orderRefund['id'], ['is_cancel' => 1]);
         $this->services->cancelOrderRefundCartInfo((int)$orderRefund['id'], (int)$orderRefund['store_order_id'], $orderRefund);
 
@@ -129,7 +141,33 @@ class StoreOrderRefundController
      */
     public function delRefund(Request $request, $uni)
     {
+        $actualRefunds = $this->services->selectList(['order_id' => $uni, 'uid' => $request->uid()], 'id,store_order_id', 0, 0, 'id ASC');
+        if (!$actualRefunds->count()) return app('json')->fail('删除失败');
+        /** @var StoreOrderServices $actualOrderServices */
+        $actualOrderServices = app()->make(StoreOrderServices::class);
+        foreach ($actualRefunds as $actualRefund) {
+            $actualOrder = $actualOrderServices->get((int)$actualRefund['store_order_id'], ['*']);
+            if (!$actualOrder || (string)$actualOrder['uid'] !== (string)$request->uid()) {
+                return app('json')->fail('订单不存在');
+            }
+            \app\services\marketplace\order\MarketplaceTradePolicy::assertLegacyOrder($actualOrder->getData());
+            if ($actualOrder['pid'] > 0) {
+                $actualParent = $actualOrderServices->get($actualOrder['pid'], ['*']);
+                if (!$actualParent) return app('json')->fail('订单不存在');
+                \app\services\marketplace\order\MarketplaceTradePolicy::assertLegacyOrder($actualParent->getData());
+            }
+        }
         $oid = $this->services->value(['order_id' => $uni, 'uid' => $request->uid()], 'store_order_id');
+        $actualSelectedOrder = $actualOrderServices->get($oid, ['*']);
+        if (!$actualSelectedOrder || (string)$actualSelectedOrder['uid'] !== (string)$request->uid()) {
+            return app('json')->fail('订单不存在');
+        }
+        \app\services\marketplace\order\MarketplaceTradePolicy::assertLegacyOrder($actualSelectedOrder->getData());
+        if ($actualSelectedOrder['pid'] > 0) {
+            $actualSelectedParent = $actualOrderServices->get($actualSelectedOrder['pid'], ['*']);
+            if (!$actualSelectedParent) return app('json')->fail('订单不存在');
+            \app\services\marketplace\order\MarketplaceTradePolicy::assertLegacyOrder($actualSelectedParent->getData());
+        }
         $res = $this->services->update(['order_id' => $uni, 'uid' => $request->uid()], ['is_del' => 1]);
         /** @var StoreOrderServices $orderServices */
         $orderServices = app()->make(StoreOrderServices::class);

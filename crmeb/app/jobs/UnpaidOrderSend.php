@@ -33,6 +33,16 @@ class UnpaidOrderSend extends BaseJobs
         if (!$orderInfo) {
             return true;
         }
+        $savedOrder = $orderInfo->getData();
+        if (!array_key_exists('marketplace_trade_version', $savedOrder)) throw new \crmeb\exceptions\AuthUnavailableException();
+        if (!\app\services\marketplace\order\MarketplaceTradePolicy::savedOrderIsLegacy($savedOrder)) {
+            $pid = $savedOrder['pid'] ?? null;
+            if ((!is_int($pid) && !is_string($pid)) || preg_match('/\A(?:0|[1-9][0-9]*)\z/D', (string)$pid) !== 1
+                || bccomp((string)$pid, '2147483647', 0) > 0) throw new \crmeb\exceptions\AuthUnavailableException();
+            if ((int)$pid > 0) return true;
+        } else {
+            \app\services\marketplace\order\MarketplaceTradePolicy::assertLegacyOrder($savedOrder);
+        }
         if ($orderInfo->paid) {
             return true;
         }

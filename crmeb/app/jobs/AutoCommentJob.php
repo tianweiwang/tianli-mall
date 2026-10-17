@@ -37,7 +37,43 @@ class AutoCommentJob extends BaseJobs
         $replyServices = app()->make(StoreProductReplyServices::class);
         /** @var StoreOrderServices $orderServices */
         $orderServices = app()->make(StoreOrderServices::class);
+        $targetOrder = $orderServices->get((int)$id, ['id', 'pid', 'marketplace_trade_version']);
+        if (!$targetOrder) return true;
+        $targetSaved = $targetOrder->getData();
+        if (!array_key_exists('marketplace_trade_version', $targetSaved)) throw new \crmeb\exceptions\AuthUnavailableException();
+        if (!\app\services\marketplace\order\MarketplaceTradePolicy::savedOrderIsLegacy($targetSaved)) return true;
+        \app\services\marketplace\order\MarketplaceTradePolicy::assertLegacyOrder($targetSaved);
+        if ($targetSaved['pid'] > 0) {
+            $targetParent = $orderServices->get((int)$targetSaved['pid'], ['id', 'marketplace_trade_version']);
+            if (!$targetParent) return true;
+            $parentSaved = $targetParent->getData();
+            if (!array_key_exists('marketplace_trade_version', $parentSaved)) throw new \crmeb\exceptions\AuthUnavailableException();
+            if (!\app\services\marketplace\order\MarketplaceTradePolicy::savedOrderIsLegacy($parentSaved)) return true;
+            \app\services\marketplace\order\MarketplaceTradePolicy::assertLegacyOrder($parentSaved);
+        }
         $list = $cartInfoServices->getColumn([['cart_id', 'in', $cart_ids]], 'cart_info,uid,oid,unique,product_id');
+        if ($list) {
+            $actualOrders = $orderServices->getColumn([['id', 'in', array_values(array_unique(array_column($list, 'oid'), SORT_REGULAR))]], 'id,pid,marketplace_trade_version', 'id');
+            $parentIds = [];
+            foreach ($list as $item) {
+                $actualOrder = $actualOrders[$item['oid']] ?? null;
+                if (!$actualOrder) return true;
+                if (!array_key_exists('marketplace_trade_version', $actualOrder)) throw new \crmeb\exceptions\AuthUnavailableException();
+                if (!\app\services\marketplace\order\MarketplaceTradePolicy::savedOrderIsLegacy($actualOrder)) return true;
+                \app\services\marketplace\order\MarketplaceTradePolicy::assertLegacyOrder($actualOrder);
+                if ($actualOrder['pid'] > 0) $parentIds[] = $actualOrder['pid'];
+            }
+            if ($parentIds) {
+                $actualParents = $orderServices->getColumn([['id', 'in', array_values(array_unique($parentIds, SORT_REGULAR))]], 'id,marketplace_trade_version', 'id');
+                foreach ($parentIds as $parentId) {
+                    $actualParent = $actualParents[$parentId] ?? null;
+                    if (!$actualParent) return true;
+                    if (!array_key_exists('marketplace_trade_version', $actualParent)) throw new \crmeb\exceptions\AuthUnavailableException();
+                    if (!\app\services\marketplace\order\MarketplaceTradePolicy::savedOrderIsLegacy($actualParent)) return true;
+                    \app\services\marketplace\order\MarketplaceTradePolicy::assertLegacyOrder($actualParent);
+                }
+            }
+        }
         $uids = array_column($list, 'uid');
         $userInfos = $userServices->getColumn([['uid', 'in', $uids]], 'nickname,avatar', 'uid');
         $reply = [];

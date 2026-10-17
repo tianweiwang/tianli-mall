@@ -226,6 +226,7 @@ class StoreOrder extends AuthController
     {
         if (!$id || !($orderInfo = $this->services->get($id)))
             return app('json')->fail('订单不存在');
+        MarketplaceTradePolicy::assertLegacyOrder($orderInfo->getData());
         if (!$orderInfo->is_del)
             return app('json')->fail('您选择的的订单存在用户未删除的订单');
         $orderInfo->is_system_del = 1;
@@ -681,6 +682,12 @@ class StoreOrder extends AuthController
     {
         if (!$id || !($orderInfo = $this->services->get($id)))
             return app('json')->fail('订单不存在');
+        MarketplaceTradePolicy::assertLegacyOrder($orderInfo->getData());
+        if ($orderInfo['pid'] > 0) {
+            $actualParent = $this->services->get($orderInfo['pid'], ['*']);
+            if (!$actualParent) return app('json')->fail('订单不存在');
+            MarketplaceTradePolicy::assertLegacyOrder($actualParent->getData());
+        }
         [$refund_reason] = $this->request->postMore([['refund_reason', '']], true);
         if (!$refund_reason) {
             return app('json')->fail('拒绝理由不能为空');
