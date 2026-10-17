@@ -423,7 +423,9 @@ class StoreOrderServices extends BaseServices
             }
         }
         if (isset($order['pay_type']))
-            $status['_payType'] = $status['_type'] == 0 ? '' : PayServices::PAY_TYPE[$order['pay_type']] ?? '其他方式';
+            $status['_payType'] = $status['_type'] == 0 ? '' :
+                (in_array($order['marketplace_trade_version'] ?? null, [1, '1'], true) && $order['pay_type'] === 'marketplace_test'
+                    ? '测试支付' : (PayServices::PAY_TYPE[$order['pay_type']] ?? '其他方式'));
         if (isset($order['delivery_type']))
             $status['_deliveryType'] = $this->deliveryType[$order['delivery_type']] ?? '其他方式';
         $order['_status'] = $status;
@@ -554,7 +556,10 @@ class StoreOrderServices extends BaseServices
                     $item['color'] = '#8956E8';
                 }
             }
-            if ($item['paid'] == 1) {
+            if ($item['paid'] == 1 && in_array($item['marketplace_trade_version'] ?? null, [1, '1'], true)
+                && $item['pay_type'] === 'marketplace_test') {
+                $item['pay_type_name'] = '测试支付';
+            } elseif ($item['paid'] == 1) {
                 switch ($item['pay_type']) {
                     case PayServices::WEIXIN_PAY:
                         $item['pay_type_name'] = '微信支付';

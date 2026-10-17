@@ -198,6 +198,7 @@ final class MarketplaceOrderSnapshotProjection
         $out=['id'=>$id,'order_id'=>$number,'marketplace_trade_version'=>1,
             'add_time'=>self::merchantInteger($saved['add_time']??null,1,4294967295),
             'paid'=>self::merchantInteger($saved['paid']??null,0,1),
+            'pay_type'=>self::text($saved['pay_type']??null),
             'status'=>self::merchantInteger($saved['status']??null,-128,127),
             'is_cancel'=>self::merchantInteger($saved['is_cancel']??null,0,1),
             'refund_status'=>self::merchantInteger($saved['refund_status']??null,0,255),

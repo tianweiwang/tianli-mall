@@ -31,11 +31,11 @@
         </div>
       </template></el-table-column>
       <el-table-column label="状态" min-width="130"><template slot-scope="scope">
-        <div>{{ status(scope.row) }}</div><p class="field-note">{{ scope.row.paid === 1 ? '已支付' : '未支付' }} · {{ scope.row.is_cancel === 1 ? '已取消' : '未取消' }}</p>
+        <div>{{ status(scope.row) }}</div><p class="field-note">{{ paymentStatus(scope.row) }} · {{ scope.row.is_cancel === 1 ? '已取消' : '未取消' }}</p>
       </template></el-table-column>
       <el-table-column prop="total_num" label="数量" width="80" />
       <el-table-column label="商品金额（元）" min-width="130"><template slot-scope="scope">{{ scope.row.total_price }}</template></el-table-column>
-      <el-table-column label="结算金额（元）" min-width="130"><template slot-scope="scope">{{ scope.row.pay_price }}</template></el-table-column>
+      <el-table-column label="结算金额（元）" min-width="130"><template slot-scope="scope">{{ scope.row.pay_price }}<p v-if="testPayment(scope.row)" class="field-note">测试金额</p></template></el-table-column>
       <el-table-column label="邮费（元）" min-width="115"><template slot-scope="scope">{{ scope.row.pay_postage }}</template></el-table-column>
       <el-table-column label="操作" min-width="100"><template slot-scope="scope">
         <el-button size="mini" :disabled="loading" @click="view(scope.row)">查看详情</el-button>
@@ -59,6 +59,8 @@ export default {
   beforeDestroy() { this.revision += 1; },
   methods: {
     time: formatTime, status: orderStatus,
+    testPayment(order) { return (order.marketplace_trade_version === 1 || order.marketplace_trade_version === '1') && order.pay_type === 'marketplace_test'; },
+    paymentStatus(order) { if (order.paid !== 1) return '未支付'; return this.testPayment(order) ? '已支付（测试支付）' : '已支付'; },
     search() { if (this.loading) return; this.page = 1; this.load(); },
     changePage(page) { if (this.loading) return; this.page = page; this.load(); },
     view(order) { this.$router.push({ name: 'order-detail', params: { id: orderRecordId(order.id) } }); },

@@ -29,7 +29,7 @@
               </div>
             </li>
             <li class="item">
-              <div class="title">实际支付</div>
+              <div class="title">{{ savedTestPayment ? '测试支付金额' : '实际支付' }}</div>
               <div>¥ {{ orderDatalist.orderInfo.pay_price || '0.0' }}</div>
             </li>
             <li class="item" v-if="orderDatalist.orderInfo.refund_status == 2">
@@ -38,7 +38,7 @@
             </li>
             <li class="item">
               <div class="title">支付方式</div>
-              <div>{{ orderDatalist.orderInfo.pay_type | payType }}</div>
+              <div>{{ orderDatalist.orderInfo.pay_type | payType(savedMarketplaceV1) }}</div>
             </li>
             <li class="item">
               <div class="title">支付时间</div>
@@ -124,7 +124,7 @@
                   <div class="value">{{ orderDatalist.orderInfo.memberPrice || '0.0' }}</div>
                 </li>
                 <li class="item">
-                  <div>实际支付：</div>
+                  <div>{{ savedTestPayment ? '测试支付金额' : '实际支付' }}：</div>
                   <div class="value">{{ orderDatalist.orderInfo.pay_price || '0.0' }}</div>
                 </li>
               </ul>
@@ -439,6 +439,9 @@ export default {
       const version=this.orderDatalist && this.orderDatalist.orderInfo && this.orderDatalist.orderInfo.marketplace_trade_version;
       return version===1 || version==='1';
     },
+    savedTestPayment() {
+      return this.savedMarketplaceV1 && this.orderDatalist.orderInfo.pay_type === 'marketplace_test';
+    },
     savedGroups() {
       if(!this.savedMarketplaceV1)return [];
       return this.orderDatalist.orderInfo.custom_form.map(group => ({product_id:group.product_id,product_name:group.product_name,
@@ -456,7 +459,8 @@ export default {
     },
   },
   filters: {
-    payType(val) {
+    payType(val, savedV1) {
+      if (savedV1 === true && val === 'marketplace_test') return '测试支付';
       let obj = {
         yue: '余额',
         weixin: '微信支付',

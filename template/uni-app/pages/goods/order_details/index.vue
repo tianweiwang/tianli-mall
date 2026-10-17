@@ -309,7 +309,7 @@
 				</view>
 				<view class="item acea-row row-between">
 					<view>{{ $t(`支付状态`) }}：</view>
-					<view class="conter" v-if="orderInfo.paid">{{ $t(`已支付`) }}</view>
+					<view class="conter" v-if="orderInfo.paid">{{ $t(savedTestPayment ? '已支付（测试）' : '已支付') }}</view>
 					<view class="conter" v-else>{{ $t(`未支付`) }}</view>
 				</view>
 				<view class="item acea-row row-between" v-if="orderInfo.paid">
@@ -430,35 +430,35 @@
 			<view class="wrapper" v-if="orderInfo.total_price && (is_gift == 0 || is_gift == 1)">
 				<view class="item acea-row row-between">
 					<view>{{ $t(`商品总价`) }}：</view>
-					<view class="conter">{{ $t(`￥`) }}{{ (parseFloat(orderInfo.total_price) + parseFloat(orderInfo.vip_true_price)).toFixed(2) }}</view>
+					<view class="conter">{{ $t(`￥`) }}{{ savedMarketplaceFormsV1 ? addSavedMoney(orderInfo.total_price, orderInfo.vip_true_price) : (parseFloat(orderInfo.total_price) + parseFloat(orderInfo.vip_true_price)).toFixed(2) }}</view>
 				</view>
 				<view class="item acea-row row-between" v-if="orderInfo.pay_postage > 0">
 					<view>{{ $t(`配送运费`) }}：</view>
-					<view class="conter">{{ $t(`￥`) }}{{ parseFloat(orderInfo.pay_postage).toFixed(2) }}</view>
+					<view class="conter">{{ $t(`￥`) }}{{ savedMarketplaceFormsV1 ? strictSavedMoney(orderInfo.pay_postage) : parseFloat(orderInfo.pay_postage).toFixed(2) }}</view>
 				</view>
 				<view v-if="orderInfo.levelPrice > 0" class="item acea-row row-between">
 					<view>{{ $t(`用户等级优惠`) }}：</view>
-					<view class="conter">-{{ $t(`￥`) }}{{ parseFloat(orderInfo.levelPrice).toFixed(2) }}</view>
+					<view class="conter">-{{ $t(`￥`) }}{{ savedMarketplaceFormsV1 ? strictSavedMoney(orderInfo.levelPrice) : parseFloat(orderInfo.levelPrice).toFixed(2) }}</view>
 				</view>
 				<view v-if="orderInfo.memberPrice > 0" class="item acea-row row-between">
 					<view>{{ $t(`付费会员优惠`) }}：</view>
-					<view class="conter">-{{ $t(`￥`) }}{{ parseFloat(orderInfo.memberPrice).toFixed(2) }}</view>
+					<view class="conter">-{{ $t(`￥`) }}{{ savedMarketplaceFormsV1 ? strictSavedMoney(orderInfo.memberPrice) : parseFloat(orderInfo.memberPrice).toFixed(2) }}</view>
 				</view>
 				<view v-if="orderInfo.gift_price > 0" class="item acea-row row-between">
 					<view>{{ $t(`礼品附加费用`) }}：</view>
-					<view class="conter">-{{ $t(`￥`) }}{{ parseFloat(orderInfo.gift_price).toFixed(2) }}</view>
+					<view class="conter">-{{ $t(`￥`) }}{{ savedMarketplaceFormsV1 ? strictSavedMoney(orderInfo.gift_price) : parseFloat(orderInfo.gift_price).toFixed(2) }}</view>
 				</view>
 				<view class="item acea-row row-between" v-if="orderInfo.coupon_price > 0">
 					<view>{{ $t(`优惠券抵扣`) }}：</view>
-					<view class="conter">-{{ $t(`￥`) }}{{ parseFloat(orderInfo.coupon_price).toFixed(2) }}</view>
+					<view class="conter">-{{ $t(`￥`) }}{{ savedMarketplaceFormsV1 ? strictSavedMoney(orderInfo.coupon_price) : parseFloat(orderInfo.coupon_price).toFixed(2) }}</view>
 				</view>
 				<view class="item acea-row row-between" v-if="orderInfo.use_integral > 0">
 					<view>{{ $t(`积分抵扣`) }}：</view>
-					<view class="conter">-{{ $t(`￥`) }}{{ parseFloat(orderInfo.deduction_price).toFixed(2) }}</view>
+					<view class="conter">-{{ $t(`￥`) }}{{ savedMarketplaceFormsV1 ? strictSavedMoney(orderInfo.deduction_price) : parseFloat(orderInfo.deduction_price).toFixed(2) }}</view>
 				</view>
 				<view class="actualPay acea-row row-right" v-if="!orderInfo.help_info.help_status">
-					{{ $t(`实付款`) }}：
-					<text class="money font-color">{{ $t(`￥`) }}{{ parseFloat(orderInfo.pay_price).toFixed(2) }}</text>
+					{{ $t(savedTestPayment ? '测试支付金额' : '实付款') }}：
+					<text class="money font-color">{{ $t(`￥`) }}{{ savedMarketplaceFormsV1 ? strictSavedMoney(orderInfo.pay_price) : parseFloat(orderInfo.pay_price).toFixed(2) }}</text>
 				</view>
 				<view class="actualPay acea-row row-right" v-else>
 					<view class="pay-people">
@@ -468,7 +468,7 @@
 						</view>
 					</view>
 					{{ $t(`总代付`) }}：
-					<text class="money font-color">{{ $t(`￥`) }}{{ parseFloat(orderInfo.pay_price).toFixed(2) }}</text>
+					<text class="money font-color">{{ $t(`￥`) }}{{ savedMarketplaceFormsV1 ? strictSavedMoney(orderInfo.pay_price) : parseFloat(orderInfo.pay_price).toFixed(2) }}</text>
 				</view>
 			</view>
 			<view style="height: 120rpx"></view>
@@ -604,6 +604,30 @@ import giftModal from '../order_pay_status/components/giftModal.vue';
 import zbCode from '@/components/zb-code/zb-code.vue';
 import { HTTP_REQUEST_URL } from '@/config/app.js';
 import { userShare } from '@/api/user.js';
+
+function strictSavedMoney(value) {
+	if (typeof value !== 'string' || value.trim() !== value || !/^(0|[1-9][0-9]*)\.[0-9]{2}$/.test(value)) {
+		throw new Error('订单金额不可用');
+	}
+	return value;
+}
+
+function addSavedMoney(left, right) {
+	left = strictSavedMoney(left).replace('.', '');
+	right = strictSavedMoney(right).replace('.', '');
+	let i = left.length - 1;
+	let j = right.length - 1;
+	let carry = 0;
+	let digits = '';
+	while (i >= 0 || j >= 0 || carry) {
+		const sum = (i >= 0 ? left.charCodeAt(i--) - 48 : 0) + (j >= 0 ? right.charCodeAt(j--) - 48 : 0) + carry;
+		digits = String.fromCharCode(48 + sum % 10) + digits;
+		carry = sum > 9 ? 1 : 0;
+	}
+	digits = (digits.replace(/^0+/, '') || '0').padStart(3, '0');
+	return digits.slice(0, -2) + '.' + digits.slice(-2);
+}
+
 export default {
 	components: {
 		home,
@@ -736,6 +760,9 @@ export default {
 		savedMarketplaceFormsV1() {
 			const version = this.orderInfo.marketplace_trade_version;
 			return version === 1 || version === '1';
+		},
+		savedTestPayment() {
+			return this.savedMarketplaceFormsV1 && this.orderInfo.pay_type === 'marketplace_test';
 		}
 	},
 	onLoad: function (options) {
@@ -840,6 +867,8 @@ export default {
 	},
 	// #endif
 	methods: {
+		strictSavedMoney,
+		addSavedMoney,
 		// #ifdef H5
 		// 微信分享；
 		setOpenShare: function () {

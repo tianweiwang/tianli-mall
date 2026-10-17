@@ -36,6 +36,7 @@ export function orderRow(value) {
   const order = row(value);
   if (order.marketplace_trade_version !== 1 || !Array.isArray(order.items) || !order.items.length) unavailable();
   return { id: integer(order.id, 1), order_id: text(order.order_id), marketplace_trade_version: 1,
+    pay_type: text(order.pay_type),
     add_time: integer(order.add_time, 0, UINT_MAX), paid: integer(order.paid, 0, 1), status: integer(order.status, -INT_MAX - 1),
     is_cancel: integer(order.is_cancel, 0, 1), refund_status: integer(order.refund_status), shipping_type: integer(order.shipping_type),
     total_num: integer(order.total_num, 1, UINT_MAX), total_price: money(order.total_price), pay_price: money(order.pay_price),

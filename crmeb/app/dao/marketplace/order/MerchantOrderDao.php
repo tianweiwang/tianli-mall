@@ -14,7 +14,7 @@ use think\facade\Db;
 final class MerchantOrderDao
 {
     private const HEADER = ['id','uid','mer_id','pid','is_system_del','order_id','marketplace_trade_version',
-        'add_time','paid','status','is_cancel','refund_status','shipping_type','total_num','total_price','pay_price','pay_postage'];
+        'add_time','paid','pay_type','status','is_cancel','refund_status','shipping_type','total_num','total_price','pay_price','pay_postage'];
     private const DETAIL = ['real_name','user_phone','user_address','mark','custom_form'];
     private const ITEM = ['id','oid','uid','mer_id','product_id','cart_num','cart_info'];
 

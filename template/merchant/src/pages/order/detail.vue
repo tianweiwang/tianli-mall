@@ -8,13 +8,13 @@
         <div><dt>订单号</dt><dd>{{ order.order_id }}</dd></div>
         <div><dt>下单时间</dt><dd>{{ time(order.add_time) }}</dd></div>
         <div><dt>订单状态</dt><dd>{{ status(order) }}</dd></div>
-        <div><dt>支付状态</dt><dd>{{ order.paid === 1 ? '已支付' : '未支付' }}</dd></div>
+        <div><dt>支付状态</dt><dd>{{ paymentStatus(order) }}</dd></div>
         <div><dt>取消状态</dt><dd>{{ order.is_cancel === 1 ? '已取消' : '未取消' }}</dd></div>
         <div><dt>退款状态码</dt><dd>{{ order.refund_status }}</dd></div>
         <div><dt>配送方式</dt><dd>{{ shipping(order.shipping_type) }}</dd></div>
         <div><dt>商品数量</dt><dd>{{ order.total_num }}</dd></div>
         <div><dt>商品金额（元）</dt><dd>{{ order.total_price }}</dd></div>
-        <div><dt>{{ order.paid === 1 ? '实付金额（元）' : '应付金额（元）' }}</dt><dd>{{ order.pay_price }}</dd></div>
+        <div><dt>{{ order.paid === 1 ? testPayment(order) ? '测试支付金额（元）' : '实付金额（元）' : '应付金额（元）' }}</dt><dd>{{ order.pay_price }}</dd></div>
         <div><dt>邮费（元）</dt><dd>{{ order.pay_postage }}</dd></div>
       </dl>
       <h2 class="section-heading">收货信息</h2>
@@ -69,6 +69,8 @@ export default {
   beforeDestroy() { this.revision += 1; },
   methods: {
     time: formatTime, status: orderStatus,
+    testPayment(order) { return (order.marketplace_trade_version === 1 || order.marketplace_trade_version === '1') && order.pay_type === 'marketplace_test'; },
+    paymentStatus(order) { if (order.paid !== 1) return '未支付'; return this.testPayment(order) ? '已支付（测试支付）' : '已支付'; },
     shipping(value) { return ({ 1: '快递配送', 2: '到店自提' })[value] || '配送方式：' + value; },
     async load() {
       const revision = ++this.revision; this.order = null; this.loading = true; this.error = '';
