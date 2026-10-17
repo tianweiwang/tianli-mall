@@ -71,7 +71,7 @@ class OutStoreOrderServices extends BaseServices
             'total_price', 'total_postage', 'pay_price', 'coupon_price', 'deduction_price', 'paid', 'pay_time', 'pay_type', 'add_time',
             'shipping_type', 'status', 'refund_status', 'delivery_name', 'delivery_code', 'delivery_id'];
         $data = $this->dao->getOutOrderList($where, $field, $page, $limit);
-        $count = $this->dao->commercialCount($where);
+        $count = $this->dao->countLegacyOutOrderList($where);
         $list = $this->tidyOrderList($data);
         return compact('list', 'count');
     }
@@ -108,7 +108,7 @@ class OutStoreOrderServices extends BaseServices
     {
         $field = ['id', 'pid', 'order_id', 'trade_no', 'uid', 'freight_price', 'real_name', 'user_phone', 'user_address', 'total_num',
             'total_price', 'total_postage', 'pay_price', 'coupon_price', 'deduction_price', 'paid', 'pay_time', 'pay_type', 'add_time',
-            'shipping_type', 'status', 'refund_status', 'delivery_name', 'delivery_code', 'delivery_id', 'refund_type', 'delivery_type', 'pink_id', 'use_integral', 'back_integral'];
+            'shipping_type', 'status', 'refund_status', 'delivery_name', 'delivery_code', 'delivery_id', 'refund_type', 'delivery_type', 'pink_id', 'use_integral', 'back_integral', 'marketplace_trade_version'];
 
         if ($id > 0) {
             $where = $id;
@@ -120,13 +120,16 @@ class OutStoreOrderServices extends BaseServices
             throw new ApiException('订单不存在');
         }
 
+        MarketplaceTradePolicy::assertLegacyOrder($orderInfo->getData());
         if (!$orderInfo['invoice']) {
             $orderInfo['invoice'] = new \StdClass();
         } else {
             $orderInfo['invoice']->hidden(['uid', 'category', 'id', 'order_id', 'add_time']);
         }
 
-        $orderInfo = $this->tidyOrder($orderInfo->toArray(), true);
+        $legacyOrder = $orderInfo->toArray();
+        unset($legacyOrder['marketplace_trade_version']);
+        $orderInfo = $this->tidyOrder($legacyOrder, true);
         //核算优惠金额
         $vipTruePrice = array_column($orderInfo['items'], 'vip_sum_truePrice');
         $vipTruePrice = round(array_sum($vipTruePrice), 2);
@@ -296,6 +299,7 @@ class OutStoreOrderServices extends BaseServices
             throw new ApiException('订单不存在');
         }
 
+        MarketplaceTradePolicy::assertLegacyOrder($order->getData());
         $list = [];
         /** @var StoreOrderCartInfoServices $services */
         $services = app()->make(StoreOrderCartInfoServices::class);

@@ -215,12 +215,13 @@ class StoreOrderController
      */
     public function delivery_gain(UserServices $userServices, $orderId)
     {
-        $order = $this->service->getOne(['order_id' => $orderId], 'real_name,user_phone,user_address,order_id,uid,status,paid,id');
+        $order = $this->service->getOne(['order_id' => $orderId], 'real_name,user_phone,user_address,order_id,uid,status,paid,id,marketplace_trade_version');
         if (!$order) return app('json')->fail('订单不存在');
+        MarketplaceTradePolicy::assertLegacyOrder($order->getData());
         if ($order['paid']) {
             $order['nickname'] = $userServices->value(['uid' => $order['uid']], 'nickname');
             $order['config_export_open'] = (bool)((int)sys_config('config_export_open'));
-            $order = $order->hidden(['uid', 'status', 'paid'])->toArray();
+            $order = $order->hidden(['uid', 'status', 'paid', 'marketplace_trade_version'])->toArray();
             return app('json')->success($order);
         }
         return app('json')->fail('获取失败');

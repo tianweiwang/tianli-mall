@@ -96,11 +96,28 @@ class StoreOrderRefundDao extends BaseDao
      * @throws \think\db\exception\DbException
      * @throws \think\db\exception\ModelNotFoundException
      */
-    public function getList($where, $page = 0, $limit = 0, $field = '*', $with = [], ?int $marketplaceUid = null)
+    public function getList($where, $page = 0, $limit = 0, $field = '*', $with = [], ?int $marketplaceUid = null, bool $legacyOnly = false)
     {
-        return $this->visibleMarketplaceList($this->search($where),$marketplaceUid)->field($field)->with(array_merge(['user'], $with))->when($page && $limit, function ($query) use ($page, $limit) {
+        $query=$this->visibleMarketplaceList($this->search($where),$marketplaceUid);
+        if($legacyOnly)$query=$this->legacyParentReads($query);
+        return $query->field($field)->with(array_merge(['user'], $with))->when($page && $limit, function ($query) use ($page, $limit) {
             $query->page($page, $limit);
         })->order('id DESC')->select()->toArray();
+    }
+
+    /** Legacy-only reads join the actual parent identity through one SQL subquery. */
+    private function legacyParentReads($query)
+    {
+        return $query->whereIn('store_order_id',function($parent){
+            $parent->name('store_order')->field('id')->where(function($legacy){
+                $legacy->whereNull('marketplace_trade_version')->whereOr('marketplace_trade_version',0);
+            });
+        });
+    }
+
+    public function countLegacyParentList(array $where):int
+    {
+        return $this->legacyParentReads($this->search($where,false))->count();
     }
 
     /** Refund visibility uses the real saved parent before both paging and counting. */

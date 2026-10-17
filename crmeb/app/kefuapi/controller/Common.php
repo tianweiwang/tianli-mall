@@ -17,6 +17,7 @@ use app\services\kefu\KefuServices;
 use app\services\kefu\ProductServices;
 use app\services\kefu\service\StoreServiceRecordServices;
 use app\services\order\StoreOrderServices;
+use app\services\marketplace\order\MarketplaceTradePolicy;
 use app\services\system\attachment\SystemAttachmentServices;
 use app\services\user\UserAuthServices;
 use crmeb\basic\BaseController;
@@ -220,7 +221,9 @@ class Common extends BaseController
         } catch (AuthException $e) {
             return app('json')->fail('无效的token不能查找到用户聊天记录');
         }
-        return app('json')->success($services->tidyOrder($services->getUserOrderDetail($order_id, $authInfo['user']['uid'])->toArray(), true));
+        $orderInfo = $services->getUserOrderDetail($order_id, $authInfo['user']['uid']);
+        if($orderInfo)MarketplaceTradePolicy::assertLegacyOrder($orderInfo->getData());
+        return app('json')->success($services->tidyOrder($orderInfo->toArray(), true));
     }
 
     /**

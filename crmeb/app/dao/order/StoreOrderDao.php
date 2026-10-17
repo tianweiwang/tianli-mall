@@ -267,9 +267,11 @@ class StoreOrderDao extends BaseDao
      * @throws \think\db\exception\DbException
      * @throws \think\db\exception\ModelNotFoundException
      */
-    public function getOrderList(array $where, array $field, int $page = 0, int $limit = 0, array $with = [], $order = 'add_time DESC,id DESC', ?int $marketplaceUid = null)
+    public function getOrderList(array $where, array $field, int $page = 0, int $limit = 0, array $with = [], $order = 'add_time DESC,id DESC', ?int $marketplaceUid = null, bool $legacyOnly = false)
     {
-        return $this->commercialRoots($this->visibleMarketplaceList($this->search($where),$marketplaceUid))->field($field)->with(array_merge(['user', 'spread', 'refund'], $with))->when($page && $limit, function ($query) use ($page, $limit) {
+        $query=$this->commercialRoots($this->visibleMarketplaceList($this->search($where),$marketplaceUid));
+        if($legacyOnly)$query=$this->legacyOrderReads($query);
+        return $query->field($field)->with(array_merge(['user', 'spread', 'refund'], $with))->when($page && $limit, function ($query) use ($page, $limit) {
             $query->page($page, $limit);
         })->order($order)->select()->toArray();
     }
@@ -288,6 +290,14 @@ class StoreOrderDao extends BaseDao
                 ->whereOr(function ($root) {
                     $root->where('marketplace_trade_version', 1)->where('pid', 0);
                 });
+        });
+    }
+
+    /** Only explicitly unadapted read callers use this; old write selections stay complete. */
+    private function legacyOrderReads($query)
+    {
+        return $query->where(function($legacy){
+            $legacy->whereNull('marketplace_trade_version')->whereOr('marketplace_trade_version',0);
         });
     }
 
@@ -978,9 +988,14 @@ class StoreOrderDao extends BaseDao
      */
     public function getOutOrderList(array $where, array $field, int $page = 0, int $limit = 0, array $with = [], string $order = 'add_time DESC,id DESC'): array
     {
-        return $this->commercialSearch($where)->field($field)->with($with)->when($page && $limit, function ($query) use ($page, $limit) {
+        return $this->legacyOrderReads($this->commercialSearch($where))->field($field)->with($with)->when($page && $limit, function ($query) use ($page, $limit) {
             $query->page($page, $limit);
         })->order($order)->select()->toArray();
+    }
+
+    public function countLegacyOutOrderList(array $where):int
+    {
+        return $this->legacyOrderReads($this->commercialSearch($where,true))->count();
     }
 
     /**

@@ -145,11 +145,11 @@ class StoreOrderServices extends BaseServices
      * @throws \think\db\exception\DbException
      * @throws \think\db\exception\ModelNotFoundException
      */
-    public function getOrderApiList(array $where, array $field = ['*'], array $with = [], string $marketplaceScope = '', int $viewerUid = 0)
+    public function getOrderApiList(array $where, array $field = ['*'], array $with = [], string $marketplaceScope = '', int $viewerUid = 0, bool $legacyOnly = false)
     {
         $viewer=SavedOrder::listViewer($marketplaceScope,$viewerUid);
         [$page, $limit] = $this->getPageValue();
-        $data = $this->dao->getOrderList($where, $field, $page, $limit, $with, 'add_time DESC,id DESC', $viewer);
+        $data = $this->dao->getOrderList($where, $field, $page, $limit, $with, 'add_time DESC,id DESC', $viewer, $legacyOnly);
         foreach ($data as &$item) {
             if($marketplaceScope!=='' && !array_key_exists('marketplace_trade_version',$item))throw new AuthUnavailableException();
             $publicV1=$marketplaceScope!=='' && !MarketplaceTradePolicy::savedOrderIsLegacy($item);

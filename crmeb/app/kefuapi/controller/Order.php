@@ -71,9 +71,9 @@ class Order extends AuthController
             unset($where['status']);
             $where['is_cancel'] = 0;
             $refundServices = app()->make(StoreOrderRefundServices::class);
-            $data = $refundServices->refundList($where)['list'];
+            $data = $refundServices->refundList($where,'',0,true)['list'];
         } else {
-            $data = $this->services->getOrderApiList($where);
+            $data = $this->services->getOrderApiList($where,['*'],[],'',0,true);
         }
         return app('json')->success($data);
     }
@@ -276,6 +276,7 @@ class Order extends AuthController
         if (!$id || !($orderInfo = $this->services->get($id))) {
             return app('json')->fail('订单不存在');
         }
+        \app\services\marketplace\order\MarketplaceTradePolicy::assertLegacyOrder($orderInfo->getData());
         /** @var UserServices $services */
         $services = app()->make(UserServices::class);
         $userInfo = $services->get($orderInfo['uid']);

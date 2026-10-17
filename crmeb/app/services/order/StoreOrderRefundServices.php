@@ -1206,12 +1206,13 @@ class StoreOrderRefundServices extends BaseServices
      * @param $where
      * @return array
      */
-    public function refundList($where, string $marketplaceScope = '', int $viewerUid = 0)
+    public function refundList($where, string $marketplaceScope = '', int $viewerUid = 0, bool $legacyOnly = false)
     {
         $viewer=SavedOrder::listViewer($marketplaceScope,$viewerUid);
         [$page, $limit] = $this->getPageValue();
-        $list = $this->dao->getList($where, $page, $limit, '*', [], $viewer);
-        $count = $viewer===null ? $this->dao->count($where) : $this->dao->countVisibleMarketplaceList($where,$viewer);
+        $list = $this->dao->getList($where, $page, $limit, '*', [], $viewer, $legacyOnly);
+        $count = $legacyOnly ? $this->dao->countLegacyParentList($where)
+            : ($viewer===null ? $this->dao->count($where) : $this->dao->countVisibleMarketplaceList($where,$viewer));
         $parentIds=array_values(array_unique(array_column($list,'store_order_id')));
         $parentFields=$marketplaceScope===''?'order_id,status':'order_id,status,marketplace_trade_version,uid,mer_id';
         $orderInfoList = $parentIds ? $this->storeOrderServices->getColumn([['id', 'in', $parentIds]], $parentFields, 'id') : [];
@@ -1266,7 +1267,8 @@ class StoreOrderRefundServices extends BaseServices
         $data['count'] = $count;
         $del_where = ['is_cancel' => 0];
         if($marketplaceScope==='customer')$del_where['uid']=$viewer;
-        $bucketCount=function(array $bucket)use($viewer){
+        $bucketCount=function(array $bucket)use($viewer,$legacyOnly){
+            if($legacyOnly)return $this->dao->countLegacyParentList($bucket);
             return $viewer===null?$this->dao->count($bucket):$this->dao->countVisibleMarketplaceList($bucket,$viewer);
         };
         $data['num'] = [
