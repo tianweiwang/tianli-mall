@@ -205,6 +205,8 @@ Root另独立用实际字节逆回全部27文件：原7逐字、总21文件未�
 
 完整原 MS4 订单回归接 MS5 前置（2026-10-17，实施中）：依据 [核心整合记录的实施前设计](records/ms5/payment-core-integration.md)，继续原 `ms4-order-normal.php` 全链；新业务角色固定 `audit-ms4-order-normal-ms5`，三角色/内网/六专用新卷、双只读源和 DML 配置合同不变。另迁入现有 `ms5-payment-migration.php` 四子进程入口，原九个初始化子进程后执行真实 MS5 check/apply/check/apply。新增业务角色的测试收据精确绑定 APP_ENV、测试付款、marketplace.enabled、trade.enabled 四项原生声明及原 stdout hash；Redis 声明另有原单键收据。source 另绑定八份前置公开收据及完整十源迁移 descriptor，迁移 formal manifest 必须在其原 CID 移除前 create-only 复制读回。旧 MS4 六步前置函数及商家无参调用保持；新角色的共享 trade 期望从真实入口/角色/原生环境核得，产品准入 guard 保持。新 host/profile/close/zero 须与本入口及同 Run/source 实际 CID 一致；当前新增/适配源码不等于完整订单、HTTP/DOM 或正常关闭验收，停止样本不恢复。
 
+本轮完整原订单入口源码检查点：本地 `50c252997981a25023988ce6a446ee92c1573010` 已接入上述来源/角色及9＋4合同、五未付出生/25事实和正常取消路径。Root固定PHP8.2.33版本及六变化PHP语法七命令均native0/stderr空，21检查来源前后保持；7221B收据 `artifacts/ms4-order-ms5-source/20261017-full-original-r1/php-syntax-result.json` 摘要 `216eaa2dba515ebe243252ba414a3d1e7462da5fe09811815be8023edcd189a9`。四helper完整逆回/检查器AST亦实际0，独立SOURCE审查通过；详见核心整合记录后记。仅SOURCE/PARSE，未运行App/SQL/Redis/订单/HTTP/DOM。现有两付款profile的host/zero业务合同仍须换为完整原M4合同，再由新clean来源真实运行；新profile及完整业务/关闭验收均未完成。
+
 ## 3. ISO-MIN 环境（MS0a 交付）
 
 ### 3.1 文件

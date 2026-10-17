@@ -67,3 +67,19 @@ H5 的 lib/ms4-customer-h5-normal.php prepare baseline目前把完整facts交给
 2026-10-17，AUX clean ca41929df3b89e2d8207fd4cc1db5a4125c1c994 的新Run202610170434553aa79a已实际通过原9→4与两笔persistent/temporary真实producer内部测试付款create→内部complete→query保存/跨秒重放；原结果2603985B/4c5acecd20209d7bb2327c8ebb2ea3acc3de6b965689af154dea204146bc0dd4为NORMAL_RETURN/entry0/nativeNULL，原同CID真实terminal0。独立只读观察SESSION统计设0后GLOBAL/其他模式保持，原生attempt自增1→3/2行、全168表与15Redis按有限delta保持。实例已正常关闭且独立六raw核零0，zero927a8ea89c0dece19612a7958cfca2f89656bb2b0bc4cde6fbe7235e7ce814a1。该证据证明AUX内部普通测试付款，不开放真实金融或签收Main。
 
 Main产品付款源码已整合，但fresh创建还有本记录前述实际trade门禁与原完整回归/共享helper接缝，因此Main业务验收仍未完成。下一步先按第41行后的完整原入口设计落实真实native开关、来源/9+4/publisher、五未付/payment_birth/planner与90秒/tiny取消；再适配原27/H5 34/商家25及实际已付API/DOM。两笔付款结果不能替代这些原范围，原未验项和停止样本边界保持。
+
+## 完整原入口 SOURCE/PARSE 检查点
+
+2026-10-17，上述完整原入口及最小支持文件已实施，本地代码提交 `50c252997981a25023988ce6a446ee92c1573010`。原入口为130491B/SHA256 `c4b14534b9f01f514cfb2404b66be6cfba7ce8cb233945c74326fae1496c4355`；新增迁移检查入口42083B/`3043688e5b4813b93cddacebbc1880987e1ec4fc08a4a20cdcbb6af4bc475c71`，与既有 AUX 入口逐字相同。四 helper 分别为 cancel54010B/`776638ef105bcdb5782f0e587dd2f076831fd3b4082b8d93f7747be7dac9cc1b`、fulfillment19157B/`936a343bde60a41c94cf636b171a4e8147bbfd34da2a9ccf958975544633ee62`、saved18990B/`94fe4678909c514fcbde1dfe46aecb98b8bc9b0ae0d68945df3b0f25729b62c8`、merchant20484B/`90f825fc6db4198d96c35614766bced47a9e67df56ed60c164972de1a6bfcd7a`。旧共享前置函数、原四 roots/十 files 保持字节；25事实、完整出生读回、两种固定正期限及原五未付/planner/取消链已接入，尚无本轮业务运行。
+
+独立稳定 SOURCE 审查无确定阻断。与原 Main 比较的24个原函数中16个字节不变；变更仅 source/app/main/facts/verify/verify_service/service_case/membership_case。facts/payment_birth/两 verify 与已审 AUX 相同，service_case/membership_case 只额外适配真实角色 trade 比较。四 helper 的四处 trade 表达式/说明逆回后全文严格等于 AUX（fulfillment 本身逐字相同）。Root 实际执行完整四 helper 逆回及检查器 AST，native0，1913B结果 `artifacts/ms4-order-ms5-source/20261017-full-original-r1/helpers-source-result.json` 摘要 `7be0b1a2a6444593ac390e0cd9b6154695811e3d6d05b78ee4c25a9c17e5019b`；不是业务样本。
+
+Root 在原固定 PHP 8.2.33 镜像、无网络、只读源码及根文件系统、专用临时 tmpfs 中实际完成版本和六个变化 PHP 的语法检查，七条命令全部 native0/stderr空，检查时21份来源前后保持。结果 `artifacts/ms4-order-ms5-source/20261017-full-original-r1/php-syntax-result.json` 为7221B/摘要 `216eaa2dba515ebe243252ba414a3d1e7462da5fe09811815be8023edcd189a9`；代码提交后再实际核这21份来源仍相同，随后才补写本后记。`git diff --check` 通过。无 App/SQL/Redis/普通订单或 HTTP/DOM，本次不能记录完整 MS4 回归通过，也不更改验收勾选。
+
+公开结果沿原 `evidence/ms4-order-normal.json`，scope=`MS4_ORDER_NORMAL_WITH_MS5_PREREQUISITES_INTERNAL_ONLY`、成功 status=`VERIFIED_MS4_ORDER_NORMAL_WITH_MS5_PREREQUISITES_INTERNAL`。原安全业务 section 路径/布尔/数量保留，显式 native 支付字段和非 UTF8 字节仅投影为有类型说明的 bytes/hash 摘要；完整原 evidence 另存 `native_proof_archive={encoding:php-serialize-base64-v1,bytes,sha256,base64}`。封存前递归核仅 array/string/int/bool/null，深度≤64、节点≤200000、字符串/键总和及 serialize raw 均≤8MiB；严格 base64 解码、无类反序列化及原类型/重序列化字节/hash 全比较。独立审查已沿各真实 proof 返回确认此合同相容。publisher 单次 create-only，正常 entry0/1 与 shutdown entryNULL 分开，native_exit 始终 NULL/HOST_NATIVE_REQUIRED；宿主须另核同 CID 真实终态。
+
+### 后继 profile 的既有接线边界
+
+仍沿09同一 Task2 和本记录前置设计，从现有仓库外 `ms5-payment-normal-preparation/candidate-normal-r2/` 及其 `prep/normal-r2` close/zero 有限派生新的完整订单 profile。initializer 原9子进程可保持字节；compose/host/close/zero 的角色、argv、三份原订单公开来源收据、两份环境收据及精确 scope/status 同步本入口。host/独立 zero 的 normal_inventory 只取原 M4O_FILES 与四 roots，不能重复追加已在十文件中的原入口，也不能继续要求 M5PN_ENTRY；独立迁移 DRIVER 仍是十源。原六前置摘要补齐 formal/binding 成八份，四 ENV 原 stdout hash 同步全部24排列及原单/双LF。freeze九键、binding十二键、本体来源十一键分别严格核对。
+
+host 与独立 zero 现有 normal_result 都是“两笔已付订单”专属合同，必须整体替换为本原入口全部 section、五未付/payment_birth、保存读回、原25份 plan/20份 projection、顾客G1取消/90秒自然到期/tinyG0/keeper及商家读取的完整合同；不能只替换名称或沿两笔数量硬断言。实际完整 archive 的长度/hash与安全投影也须绑定。本体完整语法通过后仍需完成这套宿主 SOURCE/解析/闭环，再从新 clean 来源运行原九＋四及完整业务，正常 observe/finish/close/独立六 raw 核零；原迁移 formal 必须沿现有移除前 create-only 复制读回。当前新 profile 尚未生成或运行，原顾客27/H5 34/商家25、已付 API/DOM、履约/售后/真实金融/历史/发布及已停止样本责任保持。

@@ -715,6 +715,8 @@ R7实际结果（2026-10-16，详见03）：clean `a74f2b27275229dcb089581039dc3
 
 2026-10-17 AUX内部两producer测试付款已在新Run202610170434553aa79a实际通过并正常关闭/独立核零0，原结果摘要4c5acecd20209d7bb2327c8ebb2ea3acc3de6b965689af154dea204146bc0dd4；详见核心整合记录的证据范围。Main产品源码整合已完成，Main真实gate/完整原M4及27/H5 34/商家25/API/DOM仍待，不以AUX测试或H5构建替代；真实履约/售后/金融/历史/发布范围保留。
 
+2026-10-17 完整原MS4回归接线已有本地源码提交 `50c252997981a25023988ce6a446ee92c1573010`：原入口/四helper及最小MS5迁移检查入口、实际角色/原生开关/八前置与9＋4合同已实现；旧共享前置字节和原完整业务链保持。独立SOURCE审查及Root四helper全文逆回/检查器AST通过；固定PHP8.2.33版本加六语法命令均native0/stderr空，21来源检查时前后保持，结果摘要 `216eaa2dba515ebe243252ba414a3d1e7462da5fe09811815be8023edcd189a9`。这是SOURCE/PARSE检查点：完整新host/profile/close/独立zero仍待适配和真实运行，不记原M4、顾客27/H5 34/商家25、实际API/DOM或任何里程碑通过。完整后继范围见核心整合记录的profile接线边界，继续本Task2，不新建或勾销原清单。
+
 ### Task 3: 收款账户
 
 - 表 `eb_marketplace_payment_account(id, mer_id, channel, account_ref, version, status, verified_at, add_time)`；`account_ref` 只保存配置引用，不保存密钥明文。订单发起支付时把账户 ID 与版本写入支付尝试记录，之后不可更改。
