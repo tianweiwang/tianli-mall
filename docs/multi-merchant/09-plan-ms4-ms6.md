@@ -721,6 +721,8 @@ Out/客服/移动旧读取边界实施采用（2026-10-18）：Root全文采用 
 
 三端同快照根读取详细合同采用（2026-10-18，实施前）：采用 `design-source-r1/READ-THREE-ROOT-SELECTORS-r1.md` 28757B/`085d5e068d64f865289edcb775262f248fbdc4e8cfb4c68960d2de7386c289fd` 及唯一R2附录 `READ-THREE-ROOT-SELECTORS-r2-raw-header-addendum.md` 3930B/`32bf2cbffcb3998aa70a9b5b4e36c368de2adc58b22119a43080820e2d76ea32`，Root全文/完整虚拟正逆及独立SOURCE已核。六固定实际业务入口复用现owned生命周期，native首查保原真实actor、Model+DAO全筛选/时间/pay_type/详情LIMIT1无ORDER与mobile双探测；count与page同predicate，原page或limit为0的未分页全集在同RR按≤100块读全，legacy混排/原关联格式保持。新V1 DTO不回旧ORM/缓存补事实，display aux按实际需要同PDO有限批读。OrderDao原savedPaymentDeadline提纯保持旧public Model数组/SQL/门/return；新batch只对完整raw cart_id严格decode一次再原references，共用原owner/ledger/confirmation/时间校核，且仅原V1/pid0/paid0/is_cancel0/非offline/type0调用集合，取消/其它未付不强制。后继在原Input/FulfillmentDAO/Service/Projection/OrderDao及三端现caller实施，不改原writer/共享search Model/商家完整读取，不在本片实现child/售后或激活新写接口。此为设计采用，产品接线/语法/实际三端及页面仍待，原唯一Task6与全部未验范围保留。
 
+履约结构普通验证入口源码接入（2026-10-18）：沿已采用Task6QA合同，新增 `help/audit-regressions/isolated/ms4-fulfillment-migration.php`，完整等于外部已审64015B/`c2c5f7b125285baa14a018283b335b168e61b7af95a70af8538a2fef8b591153`候选。只从原42083B MS5迁移入口机械派生独立身份/11实源闭集、四真实CLI及两表独立元数据预期；原完整双流、同handle退出、私有配置清理、全动态库每行/DDL/Redis绝对期限保留。Root16组完整正逆、两整段真实迁移来源和新增行为全文审，独立SOURCE PASS及固定PHP8.2语法实际0，语法容器前后无残留。新正式profile尚未实现，真实履约DDL/ship/receive仍NOT RUN，不能凭入口源码签收Task6。后继profile必须先在真实三角色阶段完整验证并封存原paid结果/阶段manifest/terminal/来源闭包，再登记本履约角色转换正式四角色；不能在四角色manifest上直接重跑旧三角色verify_paid_result，也不能修改旧paid证明。新wrapper只保原paid六公证据hash及有限正常前置，不能替代原paid完整验收；Stage6业务、来源绑定及正常close/independentzero仍须按原唯一清单实施，三端/child/Worker/售后/金融/历史/发布及停止样本责任保持。
+
 ### Task 7: 退款额度与库存行为
 
 - 接口：申请退款时在事务中锁定订单行，校验"已退金额 + 处理中金额 + 本次金额 ≤ 实付"；三类库存行为分别写 `release`（未发货取消）、`return_in`（退货验收入库）、不写（仅退款）。
