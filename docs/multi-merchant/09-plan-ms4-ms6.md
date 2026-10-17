@@ -719,6 +719,8 @@ R7实际结果（2026-10-16，详见03）：clean `a74f2b27275229dcb089581039dc3
 
 2026-10-17 完整原M4新profile已实际运行：clean Main `32fa2f1309e091544ca19f959521e0b3344e9ab7`、Run `20261017060341315379`，九初始化/四迁移实际native0；原normal在商家保存DTO严格比较自然native1，49705B FAIL摘要 `526247c380f77cb4a03ab2c5704333e79b054f17b6219434b9dace2018710d55`。SOURCE定位为oracle遗漏保存pay_type，现仅补同一原生保存值，原完整比较和全部业务责任保持；helper20539B/`bcb620febe5e2e0c1bafb758ff226cb2d9a4e2f57ff292a7d3af5949b4843eef`，固定PHP语法实际0。原Run已专用关闭/独立六raw核零0，关闭摘要 `2e6ae2337d0f88788001848b37791cd046002a942895b77e8db319ca9b7b19a6`、zero摘要 `0e8429a1f3628cfcc1a2b414031b6ed6dc09a9cb7d55316c59e6ee4d2617aea7`，业务FAIL保留，详见03及核心记录。下一步从新clean来源重跑原完整normal，不因中间proof/关闭通过勾销原M4、27/34/25消费者及API/DOM、履约售后、真实金融、历史与发布任务。
 
+2026-10-17 单字段修复后的完整内部原M4复测通过：被测clean来源 `2e6d7e04ccce63a90484e6817188f64a72597446`、Run `2026101706593515e7a6`，原9＋4及normal实际native0，完整结果50884B/`0a27dacdff83ad6fa6ecb9d1d5af7c12eea72ed7534de4e4abd825b8eb576706` 已由宿主和独立zero的完整normal_result验证，phase=final_source；原五未付/保存/planner/正常取消/自然90秒/极小正期限/商家读回和最终来源责任均保留并通过。原三CID/单网/六卷正常关闭及独立六raw核零实际0，关闭 `8694e2ada49d43bfdcf2a1cc5429fc89417089cf5ddb629f47ca23f3d7794e70`、zero `3b0f81cb9097801de5d1d3b921714aee4021bb3c2aef7697725ccf34081b9984`，详见03/core。本项仅完整内部普通回归，不签收完整MS4；下一实施按core后继顾客合同完成独立空库9＋4＋一次files-bootstrap/27表/原12HTTP，再推进H5 34/商家25与独立paid API/DOM。履约、售后、真实金融、非空历史、发布及原页面验收继续保留，停止样本不运行。
+
 ### Task 3: 收款账户
 
 - 表 `eb_marketplace_payment_account(id, mer_id, channel, account_ref, version, status, verified_at, add_time)`；`account_ref` 只保存配置引用，不保存密钥明文。订单发起支付时把账户 ID 与版本写入支付尝试记录，之后不可更改。

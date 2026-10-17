@@ -213,6 +213,10 @@ Root与独立 SOURCE 审查确认原因是共享商家 oracle 漏读已批准的
 
 原 FAIL Run 已沿专用失败关闭后继正常收尾：两源最终独立 SOURCE PASS、Root四AST/两help native0，检查收据 `93e84134ca447d7be26d248d9ecf5f4b3a5261b8b50cc8bf80a41d0cfb1f6391`；不调用或补丁正常 PASS validator，只接受原固定 normal CID 的真实 exit1，其余原生终态均须0。原cleanup helper实际 native0并原ID移除；原MySQL/Redis同句柄 `stop --time -1` 的原生进程与容器均0，精确原3CID/1内网/6卷非force移除。189671B关闭结果 `2e6ae2337d0f88788001848b37791cd046002a942895b77e8db319ca9b7b19a6` 与19849B独立六raw核零结果 `0e8429a1f3628cfcc1a2b414031b6ed6dc09a9cb7d55316c59e6ee4d2617aea7` 均实际 native0；原892公开文件、17输入、完整FAIL/native archive及所有旧来源保持。业务状态仍为 FAIL_PRESERVED，完成核零后才解除Main冻结并应用上述单字段修复。下一轮使用新clean来源和新Run，原Run不重开；完整M4、顾客/H5/商家API/DOM、履约售后、真实金融与发布仍待，停止样本保持。
 
+单字段修复后的完整内部复测（2026-10-17）：新clean Main `2e6d7e04ccce63a90484e6817188f64a72597446`、freeze `feafcbc4684dda4ae19edc86277f93aeca505b418c923ed8b928f9f840a7f5df`、新Run `2026101706593515e7a6`，沿同一未改R2 profile重新完成九初始化/四迁移，均实际native0。原normal CID `75dbf978e9431543b4f704093004ce65bb21ac89dae78b48dea0d2174cb2c497` 从07:13:50.462146906Z执行至07:20:44.719175106Z，真实exit0/PID0/restart0；50884B结果 `0a27dacdff83ad6fa6ecb9d1d5af7c12eea72ed7534de4e4abd825b8eb576706` 为VERIFIED_MS4_ORDER_NORMAL_WITH_MS5_PREREQUISITES_INTERNAL/NORMAL_RETURN/entry0/nativeNULL、phase=final_source。宿主完整normal_result及后继独立zero均实际消费全部成功section，原五未付创建/出生、保存读取、25plan/20projection、正常取消/自然90秒/极小正期限、商家3真实context/3详情/两页与最终源码闭集通过；paid会员种类仍是未付订单，不是本Run成功付款。
+
+原cleanup helper `b092a0c1d8e22952102d8afea80eec46a7aa4245e3e43bb3b50ca4bf4a80ca99` 实际native0并原ID移除；原MySQL/Redis同句柄stop --time -1，原生CLI和容器均0，精确原3CID/1内网/6卷nonforce移除。未改正常close源 `46a507d30f6202d63f382a5086c2a8aa2b15f9c15c98550e3f4998b07b2956ce` 生成160014B结果 `8694e2ada49d43bfdcf2a1cc5429fc89417089cf5ddb629f47ca23f3d7794e70`；未改独立zero源 `e89762d9f421785d5237dbc6293c6c22463e1ddf6a601cf8289c7161e08a4946` 生成19528B结果 `3b0f81cb9097801de5d1d3b921714aee4021bb3c2aef7697725ccf34081b9984`，实际六raw native0/严格空stdout与stderr，全局无原网/卷消费者，原业务证据和来源保持。close/zero中的business_acceptance=NOT RUN仅表示清理脚本不签收业务，不覆盖上述完整内部成功结果。原FAIL Run保持，Main在本新Run核零后才解除冻结；HTTP/DOM、实际已付展示、发货售后、真实金融、历史和发布仍未完成。
+
 ## 3. ISO-MIN 环境（MS0a 交付）
 
 ### 3.1 文件
