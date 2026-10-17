@@ -717,6 +717,8 @@ R7实际结果（2026-10-16，详见03）：clean `a74f2b27275229dcb089581039dc3
 
 2026-10-17 完整原MS4回归接线已有本地源码提交 `50c252997981a25023988ce6a446ee92c1573010`：原入口/四helper及最小MS5迁移检查入口、实际角色/原生开关/八前置与9＋4合同已实现；旧共享前置字节和原完整业务链保持。独立SOURCE审查及Root四helper全文逆回/检查器AST通过；固定PHP8.2.33版本加六语法命令均native0/stderr空，21来源检查时前后保持，结果摘要 `216eaa2dba515ebe243252ba414a3d1e7462da5fe09811815be8023edcd189a9`。这是SOURCE/PARSE检查点：完整新host/profile/close/独立zero仍待适配和真实运行，不记原M4、顾客27/H5 34/商家25、实际API/DOM或任何里程碑通过。完整后继范围见核心整合记录的profile接线边界，继续本Task2，不新建或勾销原清单。
 
+2026-10-17 完整原M4新profile已实际运行：clean Main `32fa2f1309e091544ca19f959521e0b3344e9ab7`、Run `20261017060341315379`，九初始化/四迁移实际native0；原normal在商家保存DTO严格比较自然native1，49705B FAIL摘要 `526247c380f77cb4a03ab2c5704333e79b054f17b6219434b9dace2018710d55`。SOURCE定位为oracle遗漏保存pay_type，现仅补同一原生保存值，原完整比较和全部业务责任保持；helper20539B/`bcb620febe5e2e0c1bafb758ff226cb2d9a4e2f57ff292a7d3af5949b4843eef`，固定PHP语法实际0。原Run已专用关闭/独立六raw核零0，关闭摘要 `2e6ae2337d0f88788001848b37791cd046002a942895b77e8db319ca9b7b19a6`、zero摘要 `0e8429a1f3628cfcc1a2b414031b6ed6dc09a9cb7d55316c59e6ee4d2617aea7`，业务FAIL保留，详见03及核心记录。下一步从新clean来源重跑原完整normal，不因中间proof/关闭通过勾销原M4、27/34/25消费者及API/DOM、履约售后、真实金融、历史与发布任务。
+
 ### Task 3: 收款账户
 
 - 表 `eb_marketplace_payment_account(id, mer_id, channel, account_ref, version, status, verified_at, add_time)`；`account_ref` 只保存配置引用，不保存密钥明文。订单发起支付时把账户 ID 与版本写入支付尝试记录，之后不可更改。

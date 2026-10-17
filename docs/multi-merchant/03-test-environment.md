@@ -207,6 +207,12 @@ Root另独立用实际字节逆回全部27文件：原7逐字、总21文件未�
 
 本轮完整原订单入口源码检查点：本地 `50c252997981a25023988ce6a446ee92c1573010` 已接入上述来源/角色及9＋4合同、五未付出生/25事实和正常取消路径。Root固定PHP8.2.33版本及六变化PHP语法七命令均native0/stderr空，21检查来源前后保持；7221B收据 `artifacts/ms4-order-ms5-source/20261017-full-original-r1/php-syntax-result.json` 摘要 `216eaa2dba515ebe243252ba414a3d1e7462da5fe09811815be8023edcd189a9`。四helper完整逆回/检查器AST亦实际0，独立SOURCE审查通过；详见核心整合记录后记。仅SOURCE/PARSE，未运行App/SQL/Redis/订单/HTTP/DOM。现有两付款profile的host/zero业务合同仍须换为完整原M4合同，再由新clean来源真实运行；新profile及完整业务/关闭验收均未完成。
 
+完整原订单新 profile 的实际结果（2026-10-17）：仓库外 `ms4-order-ms5-normal-preparation/candidate-full-order-r2` 已完成同源生成、独立 SOURCE 审查及解析/help，host 摘要 `6d4496e07c402771b5558285170cea6ce7e2514e8e1a33e817c8ce9110178ad9`。冻结 clean Main `32fa2f1309e091544ca19f959521e0b3344e9ab7`，freeze 摘要 `43f8af484e4a745ce6cf53320a0db72da647136be6f876c53dbdbece0e86ccd8`，真实 Run `20261017060341315379` 完成九项初始化和四项迁移子进程，均 native0。原 normal CID 从06:22:44.673160507Z执行至06:27:07.563795806Z，实际 native1/PID0/restart0；49705B结果 `526247c380f77cb4a03ab2c5704333e79b054f17b6219434b9dace2018710d55` 保留 FAIL/NORMAL_RETURN/entry1/nativeNULL，失败阶段 `merchant_saved_order_reads`，断言 `MERCHANT_READ_DEFAULT_LIST_COUNT_EXACT_SAVED_DTO`。此前保存读取、pure planner及自然90秒取消的中间 proof 已生成，不将它们等同于完整回归通过。
+
+Root与独立 SOURCE 审查确认原因是共享商家 oracle 漏读已批准的保存 `pay_type`，产品 DAO/投影/domain 已包含该字段；本轮仅在同一原生保存行的 expected DTO 增一项严格 `m4mr_text($order['pay_type'])`，原完整比较、详情/分页/过滤及 paid 空结果保持。最终 helper 为20539B/`bcb620febe5e2e0c1bafb758ff226cb2d9a4e2f57ff292a7d3af5949b4843eef`；完整单项逆回相同，固定PHP8.2.33语法 native0/stderr空，仓库外收据 `prep/failed-full-order-r2/merchant-oracle-php-l-native-r2.json` 摘要 `e76662dd81ffd33fa23f67e0d8884094acd425b6493b1023f5834ecccd1a5ec7`。首次语法容器缺临时/tmp而初始化失败的收据保持，修正隔离容器参数后才取得上述语法通过；没有更改业务断言或产品逻辑。
+
+原 FAIL Run 已沿专用失败关闭后继正常收尾：两源最终独立 SOURCE PASS、Root四AST/两help native0，检查收据 `93e84134ca447d7be26d248d9ecf5f4b3a5261b8b50cc8bf80a41d0cfb1f6391`；不调用或补丁正常 PASS validator，只接受原固定 normal CID 的真实 exit1，其余原生终态均须0。原cleanup helper实际 native0并原ID移除；原MySQL/Redis同句柄 `stop --time -1` 的原生进程与容器均0，精确原3CID/1内网/6卷非force移除。189671B关闭结果 `2e6ae2337d0f88788001848b37791cd046002a942895b77e8db319ca9b7b19a6` 与19849B独立六raw核零结果 `0e8429a1f3628cfcc1a2b414031b6ed6dc09a9cb7d55316c59e6ee4d2617aea7` 均实际 native0；原892公开文件、17输入、完整FAIL/native archive及所有旧来源保持。业务状态仍为 FAIL_PRESERVED，完成核零后才解除Main冻结并应用上述单字段修复。下一轮使用新clean来源和新Run，原Run不重开；完整M4、顾客/H5/商家API/DOM、履约售后、真实金融与发布仍待，停止样本保持。
+
 ## 3. ISO-MIN 环境（MS0a 交付）
 
 ### 3.1 文件

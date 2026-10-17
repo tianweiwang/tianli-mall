@@ -171,6 +171,7 @@ function m4mr_saved(PDO $pdo,int $merId): array
         $items=m4o_rows($pdo,'SELECT * FROM `eb_store_order_cart_info` WHERE `oid` = ? ORDER BY `id` ASC',[$id]);
         $dto=['id'=>$id,'order_id'=>m4mr_text($order['order_id']),'marketplace_trade_version'=>1,
             'add_time'=>m4mr_integer($order['add_time'],1,4294967295),'paid'=>m4mr_integer($order['paid'],0,1),
+            'pay_type'=>m4mr_text($order['pay_type']),
             'status'=>m4mr_integer($order['status'],-128,127),'is_cancel'=>m4mr_integer($order['is_cancel'],0,1),
             'refund_status'=>m4mr_integer($order['refund_status'],0,255),'shipping_type'=>m4mr_integer($order['shipping_type'],1,2),
             'total_num'=>m4mr_integer($order['total_num'],1,4294967295),'total_price'=>m4s_money($order['total_price']),
