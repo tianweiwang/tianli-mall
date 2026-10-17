@@ -17,6 +17,7 @@ use app\services\BaseServices;
 use app\services\pay\PayServices;
 use crmeb\exceptions\AdminException;
 use crmeb\exceptions\ApiException;
+use app\services\marketplace\order\MarketplaceTradePolicy;
 
 /**
  * Class OutStoreOrderServices
@@ -320,6 +321,7 @@ class OutStoreOrderServices extends BaseServices
             throw new ApiException('订单不存在');
         }
 
+        MarketplaceTradePolicy::assertLegacyOrder($order->getData());
         if ($order['status'] == 2) {
             throw new ApiException('不能重复收货');
         }

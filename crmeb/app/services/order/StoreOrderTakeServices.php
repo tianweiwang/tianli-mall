@@ -13,6 +13,8 @@ namespace app\services\order;
 
 
 use app\dao\order\StoreOrderDao;
+use app\services\marketplace\order\MarketplaceTradePolicy;
+use crmeb\exceptions\AuthUnavailableException;
 use app\services\activity\bargain\StoreBargainServices;
 use app\services\activity\combination\StoreCombinationServices;
 use app\services\activity\combination\StorePinkServices;
@@ -62,6 +64,7 @@ class StoreOrderTakeServices extends BaseServices
         if (!$order) {
             return true;
         }
+        MarketplaceTradePolicy::assertLegacyOrder($order->getData());
         if ($order['pid'] == -1) {  // 有子订单
             // 查找待收货的子订单
             $son_order_list = $this->dao->getSubOrderNotSendList((int)$order['id']);
@@ -87,6 +90,7 @@ class StoreOrderTakeServices extends BaseServices
         if (!$order) {
             throw new ApiException('订单不存在');
         }
+        MarketplaceTradePolicy::assertLegacyOrder($order->getData());
         $refundServices = app()->make(StoreOrderRefundServices::class);
         $orderIsRefund = $refundServices->orderIsRefund((int)$order['id']);
         if($orderIsRefund){
@@ -117,6 +121,17 @@ class StoreOrderTakeServices extends BaseServices
      */
     public function storeProductOrderUserTakeDelivery($order, bool $isTran = true)
     {
+        $receiptSource = $order instanceof \think\Model ? $order->getData() : $order;
+        if (!is_array($receiptSource) || !isset($receiptSource['id'])
+            || (!is_int($receiptSource['id']) && !is_string($receiptSource['id']))
+            || preg_match('/\A[1-9][0-9]*\z/D', (string)$receiptSource['id']) !== 1) {
+            throw new AuthUnavailableException();
+        }
+        $actualOrder = $this->dao->get($receiptSource['id'], ['id', 'marketplace_trade_version']);
+        if (!$actualOrder) {
+            throw new AuthUnavailableException();
+        }
+        MarketplaceTradePolicy::assertLegacyOrder($actualOrder->getData());
         /** @var UserServices $userServices */
         $userServices = app()->make(UserServices::class);
         $userInfo = $userServices->get((int)$order['uid']);
@@ -648,6 +663,11 @@ class StoreOrderTakeServices extends BaseServices
             'change_type' => ['delivery_goods', 'delivery_fictitious', 'delivery']
         ]);
         foreach ($orderList as $order) {
+            if (array_key_exists('marketplace_trade_version', $order)
+                && in_array($order['marketplace_trade_version'], [1, '1'], true)) {
+                continue;
+            }
+            MarketplaceTradePolicy::assertLegacyOrder($order);
             if ($order['status'] == 2) {
                 continue;
             }
@@ -689,7 +709,11 @@ class StoreOrderTakeServices extends BaseServices
      */
     public function checkMaster($pid)
     {
-        $p_order = $this->dao->get((int)$pid, ['id,pid,status']);
+        $p_order = $this->dao->get((int)$pid, ['id', 'pid', 'status', 'marketplace_trade_version']);
+        if (!$p_order) {
+            return;
+        }
+        MarketplaceTradePolicy::assertLegacyOrder($p_order->getData());
         //主订单全部发货 且子订单没有待收货 有待评价
         if ($p_order['status'] == 1 && !$this->dao->count(['pid' => $pid, 'status' => 2]) && $this->dao->count(['pid' => $pid, 'status' => 3])) {
             $this->dao->update($p_order['id'], ['status' => 2]);

@@ -15,6 +15,7 @@ namespace app\jobs;
 use app\services\order\StoreOrderServices;
 use app\services\order\StoreOrderStatusServices;
 use app\services\order\StoreOrderTakeServices;
+use app\services\marketplace\order\MarketplaceTradePolicy;
 use crmeb\basic\BaseJobs;
 use crmeb\traits\QueueTrait;
 use think\facade\Log;
@@ -40,6 +41,12 @@ class TakeOrderJob extends BaseJobs
         if (!$orderInfo) {
             return true;
         }
+        $actualReceipt = $orderInfo->getData();
+        if (array_key_exists('marketplace_trade_version', $actualReceipt)
+            && in_array($actualReceipt['marketplace_trade_version'], [1, '1'], true)) {
+            return true;
+        }
+        MarketplaceTradePolicy::assertLegacyOrder($actualReceipt);
         if (!$orderInfo->paid) {
             return true;
         }

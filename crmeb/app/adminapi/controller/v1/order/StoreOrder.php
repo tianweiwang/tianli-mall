@@ -26,6 +26,7 @@ use app\services\order\{StoreOrderCartInfoServices,
     StoreOrderServices
 };
 use app\services\pay\OrderOfflineServices;
+use app\services\marketplace\order\MarketplaceTradePolicy;
 use app\services\shipping\ExpressServices;
 use app\services\system\store\SystemStoreServices;
 use app\services\user\UserServices;
@@ -413,6 +414,7 @@ class StoreOrder extends AuthController
         $order = $this->services->get($id);
         if (!$order)
             return app('json')->fail('订单不存在');
+        MarketplaceTradePolicy::assertLegacyOrder($order->getData());
         if ($order['status'] == 2)
             return app('json')->fail('不能重复收货');
         if ($order['paid'] == 1 && $order['status'] == 1)

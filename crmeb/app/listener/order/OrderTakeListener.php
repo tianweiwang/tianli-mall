@@ -12,6 +12,8 @@ namespace app\listener\order;
 
 use app\services\order\StoreOrderStatusServices;
 use app\services\order\StoreOrderTakeServices;
+use app\services\marketplace\order\MarketplaceTradePolicy;
+use crmeb\exceptions\AuthUnavailableException;
 use app\services\user\UserBillServices;
 use crmeb\interfaces\ListenerInterface;
 use think\facade\Log;
@@ -26,6 +28,23 @@ class OrderTakeListener implements ListenerInterface
     public function handle($event): void
     {
         [$order, $userInfo, $storeTitle] = $event;
+        $receiptSource = $order instanceof \think\Model ? $order->getData() : $order;
+        if (!is_array($receiptSource) || !isset($receiptSource['id'])
+            || (!is_int($receiptSource['id']) && !is_string($receiptSource['id']))
+            || preg_match('/\A[1-9][0-9]*\z/D', (string)$receiptSource['id']) !== 1) {
+            throw new AuthUnavailableException();
+        }
+        $receiptServices = app()->make(StoreOrderTakeServices::class);
+        $actualOrder = $receiptServices->get($receiptSource['id'], ['id', 'marketplace_trade_version']);
+        if (!$actualOrder) {
+            return;
+        }
+        $actualReceipt = $actualOrder->getData();
+        if (array_key_exists('marketplace_trade_version', $actualReceipt)
+            && in_array($actualReceipt['marketplace_trade_version'], [1, '1'], true)) {
+            return;
+        }
+        MarketplaceTradePolicy::assertLegacyOrder($actualReceipt);
         try {
             //修改收货状态
             /** @var UserBillServices $userBillServices */
