@@ -123,15 +123,23 @@ function m4c_entry_prerequisite_names(string $mode): array
     m4c_expect(isset(M4C_MODE[$mode]),'M4C_PREREQUISITE_KNOWN_MODE');
     return array_merge(M4C_COMMON_PREREQUISITES,M4C_FILES_PREREQUISITES,$mode==='verify'?M4C_PREPARE_PREREQUISITES:[]);
 }
-function m4c_entry_environment(array $binding,array $context,string $proof): array
+function m4c_entry_environment(array $binding,array $context,string $proof,string $expectedScope='MS4_CUSTOMER_REAL_ENVIRONMENT'): array
 {
+    m4c_expect(in_array($expectedScope,['MS4_CUSTOMER_REAL_ENVIRONMENT','MS4_CUSTOMER_H5_MS5_REAL_ENVIRONMENT'],true),'M4C_FIXED_REAL_ENVIRONMENT_SCOPE');
     $base='/run/audit/evidence/';$environment=m4c_entry_read($base.$proof.'-environment.json');
     m4c_entry_keys($environment,['schema','scope','run_id','source_sha','container_id','freeze_sha256','environment','native_projection_sha256']);
-    m4c_expect($environment['schema']===1&&$environment['scope']==='MS4_CUSTOMER_REAL_ENVIRONMENT'
+    m4c_expect($environment['schema']===1&&$environment['scope']===$expectedScope
         &&$environment['run_id']===$binding['run_id']&&$environment['source_sha']===$binding['source_sha']
         &&$environment['container_id']===$binding['container_id']&&$environment['freeze_sha256']===$context['freeze_sha256'],
         'M4C_ACTUAL_ENVIRONMENT_BINDING');
     $values=$environment['environment'];m4c_expect(is_array($values),'M4C_PUBLIC_ENVIRONMENT_OBJECT');
+    $native=m4c_entry_read($base.$proof.'-environment-native.json');
+    m4c_expect($native['stdout_sha256']===$environment['native_projection_sha256'],'M4C_ACTUAL_ENVIRONMENT_NATIVE_PROJECTION_BINDING');
+    return m4c_entry_native_environment($values,$native);
+}
+/** Shared native six-value proof only; callers own their real receipt/binding/descriptor identities. */
+function m4c_entry_native_environment(array $values,array $native): array
+{
     m4c_entry_keys($values,['APP_ENV','PHP_MARKETPLACE_ENABLED','PHP_MARKETPLACE_TRADE_ENABLED',
         'PHP_MARKETPLACE_PAYMENT_TEST_ENABLED','PHP_MARKETPLACE_SELF_OPERATED_MER_ID','PHP_CACHE_DRIVER']);
     m4c_expect($values['APP_ENV']==='testing'&&$values['PHP_MARKETPLACE_ENABLED']==='true'
@@ -141,12 +149,10 @@ function m4c_entry_environment(array $binding,array $context,string $proof): arr
         &&bccomp($values['PHP_MARKETPLACE_SELF_OPERATED_MER_ID'],'4294967295',0)<=0,'M4C_REAL_ENABLED_CONFIGURATION_VALUES');
     $lines=[];foreach($values as$key=>$value){m4c_expect(getenv($key)===$value,'M4C_ACTUAL_PROCESS_ENVIRONMENT');
         $lines[]=json_encode($key.'='.$value,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);}
-    $native=m4c_entry_read($base.$proof.'-environment-native.json');
     m4c_expect($native['stage']==='customer-public-environment-inspect'&&$native['native_exit']===0
         &&$native['stderr_bytes']===0&&$native['stderr_sha256']===hash('sha256','')&&$native['private_environment_logs_omitted']===true
         &&is_int($native['stdout_bytes'])&&$native['stdout_bytes']>0&&is_string($native['stdout_sha256'])
-        &&preg_match('/\A[a-f0-9]{64}\z/D',$native['stdout_sha256'])===1
-        &&$native['stdout_sha256']===$environment['native_projection_sha256'],'M4C_REAL_NATIVE_ENVIRONMENT_PROJECTION');
+        &&preg_match('/\A[a-f0-9]{64}\z/D',$native['stdout_sha256'])===1,'M4C_REAL_NATIVE_ENVIRONMENT_PROJECTION');
     $matched=false;$permutations=0;
     $visit=static function(array $remaining,array $ordered)use(&$visit,&$matched,&$permutations,$native):void{
         if($remaining===[]){++$permutations;foreach(["\n","\n\n"]as$ending){$raw=implode("\n",$ordered).$ending;
@@ -210,11 +216,68 @@ function m4c_entry_predecessor(array $source,string $proof,string $role,array $c
         &&strtotime($terminal[$key])>0,'M4C_PREDECESSOR_REAL_START_FINISH');
     m4c_expect(strtotime($terminal['finished_at'])>=strtotime($terminal['started_at']),'M4C_PREDECESSOR_TERMINAL_TIME_ORDER');return $created;
 }
-function m4c_entry_ms5_prerequisites(array $source): void
+/** Fixed historical G8+F4 only; current callers retain their own live-role and endpoint gates. */
+function m4c_entry_ms5_history(array $source): array
 {
-    $base='/run/audit/evidence/';$hashes=$source['prerequisites_sha256'];m4c_expect(is_array($hashes),'M4C_PREREQUISITE_HASH_OBJECT');
-    m4c_entry_keys($hashes,m4c_entry_prerequisite_names($source['mode']));
-    foreach(m4c_entry_prerequisite_names($source['mode'])as$name)m4c_expect($hashes[$name]===m4c_entry_hash($base.$name),'M4C_ORIGINAL_COMPLETE_PREREQUISITE_HASH');
+    $base='/run/audit/evidence/';$names=array_merge(M4C_COMMON_PREREQUISITES,M4C_FILES_PREREQUISITES);$hashes=[];
+    m4c_expect(is_array($source['prerequisites_sha256']??null),'M4C_HISTORY_PREREQUISITE_HASH_OBJECT');
+    foreach($names as$name){$hash=m4c_entry_hash($base.$name);
+        m4c_expect(($source['prerequisites_sha256'][$name]??null)===$hash,'M4C_HISTORY_COMPLETE_ORIGINAL_HASH');$hashes[$name]=$hash;}
+    $contextPath='/run/audit/actual-run-context.json';$contextHash=m4c_entry_hash($contextPath);$context=m4c_entry_read($contextPath);
+    $freezePath='/run/audit/preparation-source-binding.json';
+    m4c_expect($context===$source['context']&&$contextHash===m4c_entry_hash($contextPath)
+        &&$context['run_id']===$source['run_id']&&$context['source_sha']===$source['source_sha']
+        &&$context['project']==='tianli-audit-'.$source['run_id']&&$context['freeze_sha256']===$source['freeze_sha256']
+        &&$context['repo_dir']===$source['requested_repo_source']&&$context['run_dir']===$source['requested_run_source']
+        &&$context['prep_dir']===$source['requested_prep_source']&&m4c_entry_hash($freezePath)===$source['freeze_sha256']
+        &&m4c_entry_read($freezePath)===$source['freeze'],'M4C_HISTORY_ACTUAL_COMPLETE_ORIGINAL_CONTEXT_AND_FREEZE');
+    $network=$context['initial_network'];m4c_entry_keys($network,['Id','Name','Internal','Labels']);
+    m4c_expect(is_string($context['network_id'])&&preg_match('/\A[a-f0-9]{64}\z/D',$context['network_id'])===1
+        &&$network['Id']===$context['network_id']&&$network['Name']===$context['project'].'_isolation'&&$network['Internal']===true
+        &&$network['Labels']['tianli.audit']==='1'&&$network['Labels']['tianli.audit.run']===$source['run_id']
+        &&$network['Labels']['com.docker.compose.project']===$context['project'],'M4C_HISTORY_ORIGINAL_NATIVE_INTERNAL_NETWORK');
+    m4c_entry_keys($context['initial_service_ids'],['audit-mysql','audit-redis']);
+    m4c_entry_keys($context['initial_service_created'],['audit-mysql','audit-redis']);
+    m4c_expect(count(array_unique(array_values($context['initial_service_ids']),SORT_STRING))===2,'M4C_HISTORY_TWO_ORIGINAL_DB_CIDS');
+    $dbImages=['audit-mysql'=>'sha256:c7a313f1402365dc91253bdbdb1e74c6a361b036106d8bd25b8ec8e2dd0069f4',
+        'audit-redis'=>'sha256:6c8f6edc1aa871a76a257ef86a2089d108e64b78d16f45b89f09c6a4ab30d07e'];
+    foreach($dbImages as$role=>$image){$facts=$context['initial_service_created'][$role];
+        m4c_entry_keys($facts,['id','image','hostname','user','stop_signal','labels','mounts','tmpfs','read_only','privileged',
+            'network_mode','status','command','entrypoint','workdir','restart_count','pid','exit_code','networks','ports',
+            'port_bindings','cap_drop','security_options','started_at','finished_at','created_at']);
+        m4c_expect(is_string($facts['id'])&&preg_match('/\A[a-f0-9]{64}\z/D',$facts['id'])===1
+            &&$facts['id']===$context['initial_service_ids'][$role]&&$facts['image']===$image
+            &&$facts['hostname']===substr($facts['id'],0,12)&&$facts['status']==='created'&&$facts['pid']===0
+            &&$facts['restart_count']===0&&$facts['labels']['tianli.audit']==='1'&&$facts['labels']['tianli.audit.run']===$source['run_id']
+            &&$facts['labels']['com.docker.compose.project']===$context['project']&&$facts['labels']['com.docker.compose.service']===$role
+            &&$facts['network_mode']===$network['Name']&&array_keys($facts['networks'])===[$network['Name']]
+            &&in_array($facts['networks'][$network['Name']]['NetworkID'],['',$network['Id']],true)
+            &&is_string($facts['networks'][$network['Name']]['IPAddress'])
+            &&($facts['networks'][$network['Name']]['IPAddress']===''
+                ||filter_var($facts['networks'][$network['Name']]['IPAddress'],FILTER_VALIDATE_IP,FILTER_FLAG_IPV4)!==false)
+            &&in_array($facts['port_bindings'],[null,[]],true),'M4C_HISTORY_COMPLETE_ORIGINAL_DB_CREATED_IDENTITY');
+        m4c_expect($facts['ports']===null||is_array($facts['ports']),'M4C_HISTORY_ORIGINAL_DB_NATIVE_PORT_MAP');
+        foreach($facts['ports']??[]as$value)m4c_expect(in_array($value,[null,[]],true),'M4C_HISTORY_ORIGINAL_DB_NO_PUBLISHED_PORTS');
+        $mounts=$role==='audit-mysql'?['/var/lib/mysql'=>['mysql-data',true],'/run/audit-bootstrap'=>['bootstrap-secrets',false]]
+            :['/run/audit-redis'=>['redis-secrets',false],'/data'=>['redis-data',true]];
+        m4c_expect(is_array($facts['mounts'])&&array_is_list($facts['mounts'])&&count($facts['mounts'])===count($mounts),
+            'M4C_HISTORY_COMPLETE_ORIGINAL_DB_MOUNT_SET');$seen=[];
+        foreach($facts['mounts']as$mount){$destination=$mount['Destination'];
+            m4c_expect(isset($mounts[$destination])&&!isset($seen[$destination])&&$mount['Type']==='volume'
+                &&$mount['Name']===$context['project'].'_'.$mounts[$destination][0]&&$mount['RW']===$mounts[$destination][1],
+                'M4C_HISTORY_ORIGINAL_DB_NATIVE_VOLUME_MOUNT');$seen[$destination]=true;}}
+    $volumeNames=[];$volumeIdentities=[];
+    m4c_expect(is_array($context['initial_volumes'])&&array_is_list($context['initial_volumes'])&&count($context['initial_volumes'])===6,
+        'M4C_HISTORY_ORIGINAL_SIX_NATIVE_VOLUME_ROWS');
+    foreach($context['initial_volumes']as$row){m4c_entry_keys($row,['name','created_at','labels']);
+        m4c_expect(is_string($row['name'])&&!isset($volumeIdentities[$row['name']])&&is_string($row['created_at'])&&$row['created_at']!==''
+            &&$row['labels']['tianli.audit']==='1'&&$row['labels']['tianli.audit.run']===$source['run_id']
+            &&$row['labels']['com.docker.compose.project']===$context['project'],'M4C_HISTORY_COMPLETE_ORIGINAL_VOLUME_IDENTITY');
+        $volumeNames[]=$row['name'];$volumeIdentities[$row['name']]=$row['created_at'];}
+    $wantedVolumes=[];foreach(['app-secrets','bootstrap-secrets','fixture-secrets','mysql-data','redis-data','redis-secrets']as$name)
+        $wantedVolumes[]=$context['project'].'_'.$name;
+    $sortedVolumes=$volumeNames;sort($sortedVolumes,SORT_STRING);sort($wantedVolumes,SORT_STRING);
+    m4c_expect($sortedVolumes===$wantedVolumes,'M4C_HISTORY_EXACT_ORIGINAL_SIX_VOLUME_NAMES');
     $created=m4c_entry_predecessor($source,'initializer','audit-ms4-initialize',['/run/ms4-prep/ms4-initialize.php'],
         'initializer-created.json','initializer-completed-terminal.json');$init=m4c_entry_read($base.'initializer-result.json');
     m4c_expect(($init['schema']??null)===1&&($init['scope']??null)==='MS5_PAYMENT_PREREQUISITES_ONLY'
@@ -250,15 +313,23 @@ function m4c_entry_ms5_prerequisites(array $source): void
         'M4C_ACTUAL_MS4_STRUCTURE_BEFORE_MS5');
     $migrationCreated=m4c_entry_predecessor($source,'driver','audit-ms5-payment-migration',
         ['help/audit-regressions/isolated/ms5-payment-migration.php'],'ms5-payment-migration-container-created.json','driver-terminal.json');
-    m4c_expect(count(array_unique([$created['id'],$migrationCreated['id'],$source['container_id']]))===3,'M4C_DISTINCT_REAL_PREDECESSOR_AND_CUSTOMER_CIDS');
-    $formal=m4c_entry_read($base.'ms5-payment-migration-formal-manifest.json');$manifest=audit_manifest();
-    foreach(['run_id','commit_sha','project','guard_mode','isolation','network_internal','network','volumes','volume_identities']as$key)
-        m4c_entry_same($formal[$key],$manifest[$key]);
+    m4c_expect($created['id']!==$migrationCreated['id'],'M4C_HISTORY_DISTINCT_INITIALIZER_AND_MIGRATION_CIDS');
+    $formal=m4c_entry_read($base.'ms5-payment-migration-formal-manifest.json');
+    m4c_expect($formal['run_id']===$source['run_id']&&$formal['commit_sha']===$source['source_sha']
+        &&$formal['project']===$context['project']&&$formal['guard_mode']==='read-only'&&$formal['isolation']==='ISO-FULL'
+        &&$formal['network_internal']===true,'M4C_HISTORY_ORIGINAL_FORMAL_ISOLATION');
+    m4c_entry_same($formal['network'],['id'=>$network['Id'],'name'=>$network['Name']]);
+    $formalVolumes=$formal['volumes'];sort($formalVolumes,SORT_STRING);
+    m4c_expect($formalVolumes===$sortedVolumes,'M4C_HISTORY_FORMAL_EXACT_ORIGINAL_SIX_VOLUMES');
+    m4c_entry_same($formal['volume_identities'],$volumeIdentities);
     m4c_entry_keys($formal['services'],['audit-ms5-payment-migration','audit-mysql','audit-redis']);
     m4c_expect($formal['services']['audit-ms5-payment-migration']['id']===$migrationCreated['id']
         &&$formal['services']['audit-ms5-payment-migration']['image_id']===M4C_IMAGE,'M4C_ORIGINAL_MIGRATION_FORMAL_ROLE');
-    foreach(['audit-mysql','audit-redis']as$role)foreach(['id','image_id','address']as$key)
-        m4c_expect($formal['services'][$role][$key]===$manifest['services'][$role][$key],'M4C_ORIGINAL_SHARED_NATIVE_ENDPOINTS');
+    foreach($dbImages as$role=>$image){m4c_entry_keys($formal['services'][$role],['id','address','image_id']);
+        m4c_expect($formal['services'][$role]['id']===$context['initial_service_ids'][$role]
+            &&$formal['services'][$role]['image_id']===$image&&is_string($formal['services'][$role]['address'])
+            &&filter_var($formal['services'][$role]['address'],FILTER_VALIDATE_IP,FILTER_FLAG_IPV4)!==false,
+            'M4C_HISTORY_ORIGINAL_FORMAL_DB_IDENTITY_AND_IPV4');}
     $binding=m4c_entry_read($base.'ms5-payment-migration-source-binding.json');
     m4c_entry_keys($binding,['schema','run_id','source_sha','requested_repo_source','requested_run_source','entry_sha256','cli_sha256','source_files']);
     m4c_expect($binding['schema']===1&&$binding['run_id']===$source['run_id']&&$binding['source_sha']===$source['source_sha']
@@ -294,7 +365,7 @@ function m4c_entry_ms5_prerequisites(array $source): void
             &&$result['pending_steps']===($index===0?$steps:[])&&$result['applied_steps']===($index===1?$steps:[]),
             'M4C_EXACT_FOUR_REAL_MS5_CLI_RESULTS');}
     $bootstrap=m4c_entry_terminal($source,'files-bootstrap','audit-bootstrap',['/run/ms4-prep/ms4-initialize.php','files-bootstrap']);
-    m4c_expect(!in_array($bootstrap['id'],[$created['id'],$migrationCreated['id'],$source['container_id']],true),'M4C_DISTINCT_REAL_FILES_BOOTSTRAP_CID');
+    m4c_expect(!in_array($bootstrap['id'],[$created['id'],$migrationCreated['id']],true),'M4C_DISTINCT_REAL_FILES_BOOTSTRAP_CID');
     $installed=m4c_entry_read($base.'files-bootstrap-result.json');$installation=$installed['installation'];$shutdown=m4c_entry_read($base.'files-bootstrap-shutdown.json');
     m4c_expect($installed['schema']===1&&$installed['scope']==='MS5_PAYMENT_PREREQUISITES_ONLY'
         &&$installed['status']==='VERIFIED_CUSTOMER_FILES_BOOTSTRAP_ONLY'&&$installed['native_exit']===0
@@ -308,9 +379,33 @@ function m4c_entry_ms5_prerequisites(array $source): void
         &&$installation['application_account']==='audit_app'&&$installation['application_dml_only']===true
         &&$shutdown['phase']==='files-bootstrap'&&$shutdown['fatal']===false&&$shutdown['primary_failure']===null&&$shutdown['cleanup_failure']===null,
         'M4C_REAL_ONCE_ONLY_MIGRATOR_FILES_BOOTSTRAP');
+    foreach($names as$name)m4c_expect($hashes[$name]===m4c_entry_hash($base.$name),'M4C_HISTORY_ORIGINAL_BYTES_UNCHANGED');
+    m4c_expect(m4c_entry_hash($contextPath)===$contextHash&&m4c_entry_read($contextPath)===$context
+        &&$context===$source['context']&&m4c_entry_hash($freezePath)===$source['freeze_sha256']
+        &&m4c_entry_read($freezePath)===$source['freeze'],'M4C_HISTORY_ORIGINAL_CONTEXT_AND_FREEZE_BYTES_UNCHANGED');
+    return ['self_operated_mer_id'=>$self,'initializer_id'=>$created['id'],'migration_id'=>$migrationCreated['id'],
+        'files_id'=>$bootstrap['id'],'formal'=>$formal,'context_sha256'=>$contextHash,'history_sha256'=>$hashes];
+}
+function m4c_entry_ms5_prerequisites(array $source): void
+{
+    $base='/run/audit/evidence/';$hashes=$source['prerequisites_sha256'];m4c_expect(is_array($hashes),'M4C_PREREQUISITE_HASH_OBJECT');
+    m4c_entry_keys($hashes,m4c_entry_prerequisite_names($source['mode']));
+    foreach(m4c_entry_prerequisite_names($source['mode'])as$name)m4c_expect($hashes[$name]===m4c_entry_hash($base.$name),'M4C_ORIGINAL_COMPLETE_PREREQUISITE_HASH');
+    $history=m4c_entry_ms5_history($source);
+    m4c_entry_same($history['history_sha256'],array_intersect_key($hashes,array_flip(array_merge(M4C_COMMON_PREREQUISITES,M4C_FILES_PREREQUISITES))));
+    m4c_expect(count(array_unique([$history['initializer_id'],$history['migration_id'],$source['container_id']]))===3,'M4C_DISTINCT_REAL_PREDECESSOR_AND_CUSTOMER_CIDS');
+    $formal=$history['formal'];$manifest=audit_manifest();
+    foreach(['run_id','commit_sha','project','guard_mode','isolation','network_internal','network','volumes','volume_identities']as$key)
+        m4c_entry_same($formal[$key],$manifest[$key]);
+    m4c_entry_keys($formal['services'],['audit-ms5-payment-migration','audit-mysql','audit-redis']);
+    m4c_expect($formal['services']['audit-ms5-payment-migration']['id']===$history['migration_id']
+        &&$formal['services']['audit-ms5-payment-migration']['image_id']===M4C_IMAGE,'M4C_ORIGINAL_MIGRATION_FORMAL_ROLE');
+    foreach(['audit-mysql','audit-redis']as$role)foreach(['id','image_id','address']as$key)
+        m4c_expect($formal['services'][$role][$key]===$manifest['services'][$role][$key],'M4C_ORIGINAL_SHARED_NATIVE_ENDPOINTS');
+    m4c_expect(!in_array($history['files_id'],[$history['initializer_id'],$history['migration_id'],$source['container_id']],true),'M4C_DISTINCT_REAL_FILES_BOOTSTRAP_CID');
     if($source['mode']==='verify'){
         $prepare=m4c_entry_terminal($source,'customer-prepare',M4C_MODE['prepare']['role'],[M4C_ENTRY,'prepare']);
-        m4c_expect(!in_array($prepare['id'],[$created['id'],$migrationCreated['id'],$bootstrap['id'],$source['container_id']],true),
+        m4c_expect(!in_array($prepare['id'],[$history['initializer_id'],$history['migration_id'],$history['files_id'],$source['container_id']],true),
             'M4C_DISTINCT_REAL_PREPARE_AND_VERIFY_CIDS');
         $prepareBinding=m4c_entry_read($base.M4C_MODE['prepare']['binding']);$wanted=$source;
         $wanted=array_intersect_key($wanted,array_flip(['schema','scope','run_id','source_sha','container_id','native_created_sha256','freeze_sha256',
@@ -383,7 +478,8 @@ function m4c_entry_source(string $mode): array
         &&filter_var(gethostbyname('audit-app'),FILTER_VALIDATE_IP,FILTER_FLAG_IPV4)!==false
         &&gethostbyname('audit-app')===gethostbyname(gethostname()),'M4C_REAL_SELF_HTTP_NETWORK_ALIAS');
     $binds=['/workspace'=>[$context['repo_dir'],false],'/source'=>[$context['repo_dir'],false],
-        '/run/ms4-prep'=>[$context['prep_dir'],false],'/run/audit'=>[$context['run_dir'],true]];
+        '/run/ms4-prep'=>[$context['prep_dir'],false],'/run/audit'=>[$context['run_dir'],true],
+        '/workspace/crmeb/public/install/crmeb.sql'=>[$context['repo_dir'].'/crmeb/public/install/crmeb.sql',false]];
     $volumes=['/run/audit-app'=>['app-secrets',false],'/run/audit-fixtures'=>['fixture-secrets',$mode==='prepare']];
     $nativeMounts=[];$tmpMounts=[];
     foreach($created['mounts']as$mount){if($mount['Type']!=='tmpfs'){$nativeMounts[]=$mount;continue;}
@@ -412,11 +508,24 @@ function m4c_entry_source(string $mode): array
     m4c_entry_ms5_prerequisites($source);
     return $source;
 }
-function m4c_entry_public_materials(): void
+function m4c_entry_public_materials(array $source): void
 {
-    foreach(['/workspace/crmeb/public','/workspace/crmeb/runtime'] as $directory){
-        m4c_expect(is_dir($directory)&&!is_link($directory)&&count(scandir($directory))===2,'M4C_OWN_EMPTY_TMPFS');
-        m4c_expect(chmod($directory,0700),'M4C_OWN_TMPFS_MODE');}
+    $public='/workspace/crmeb/public';$install=$public.'/install';$runtime='/workspace/crmeb/runtime';
+    m4c_expect(is_dir($public)&&!is_link($public)&&realpath($public)===$public
+        &&scandir($public)===['.','..','install'],'M4C_OWN_PUBLIC_INSTALL_ONLY');
+    m4c_expect(is_dir($install)&&!is_link($install)&&realpath($install)===$install
+        &&scandir($install)===['.','..','crmeb.sql'],'M4C_OWN_INSTALL_SQL_ONLY');
+    m4c_expect(is_dir($runtime)&&!is_link($runtime)&&count(scandir($runtime))===2,'M4C_OWN_EMPTY_TMPFS');
+    foreach([$public,$runtime]as$directory)m4c_expect(chmod($directory,0700),'M4C_OWN_TMPFS_MODE');
+    $rows=$source['freeze']['driver_source_files'];m4c_expect(is_array($rows)&&array_is_list($rows),'M4C_PUBLIC_FROZEN_DRIVER_SOURCE_LIST');
+    $matches=array_values(array_filter($rows,static fn(array $row):bool=>$row['path']==='crmeb/public/install/crmeb.sql'));
+    m4c_expect(count($matches)===1,'M4C_PUBLIC_UNIQUE_FROZEN_INSTALL_SOURCE');$row=$matches[0];
+    m4c_entry_keys($row,['path','bytes','sha256']);
+    m4c_expect(is_int($row['bytes'])&&$row['bytes']>=0&&is_string($row['sha256'])
+        &&preg_match('/\A[a-f0-9]{64}\z/D',$row['sha256'])===1,'M4C_PUBLIC_FROZEN_INSTALL_DESCRIPTOR');
+    foreach(['/source','/workspace']as$root){$path=$root.'/'.$row['path'];clearstatcache(true,$path);
+        m4c_expect(is_file($path)&&!is_link($path)&&realpath($path)===$path&&filesize($path)===$row['bytes']
+            &&m4c_entry_hash($path)===$row['sha256']&&!is_writable($path),'M4C_PUBLIC_DUAL_ORIGINAL_INSTALL_BYTES_READONLY');}
     foreach(['index.php','router.php'] as $file){$path='/workspace/crmeb/public/'.$file;$raw=file_get_contents('/source/crmeb/public/'.$file);
         m4c_expect(is_string($raw)&&file_put_contents($path,$raw,LOCK_EX)===strlen($raw)
             &&chmod($path,0600)&&file_get_contents($path)===$raw,'M4C_ACTUAL_PUBLIC_ENTRY_COPY');}
@@ -466,7 +575,7 @@ function m4c_entry_stop(&$process,?array &$group,array $supervisor,bool &$sent,b
 function m4c_entry_run(string $mode): int
 {
     $GLOBALS['m4c_phase']='source';$source=m4c_entry_source($mode);$GLOBALS['m4c_entry_source']=$source;
-    m4c_entry_public_materials();m4c_entry_full_source($source);$GLOBALS['m4c_phase']='app';m4c_app($mode,$source);
+    m4c_entry_public_materials($source);m4c_entry_full_source($source);$GLOBALS['m4c_phase']='app';m4c_app($mode,$source);
     $process=null;$group=null;$sent=false;$attempted=false;$childProof=null;$business=null;$failure=null;$failureMeta=null;
     $supervisor=audit_app_proc_stat(getmypid());
     m4c_expect($supervisor!==null,'M4C_REAL_SUPERVISOR');

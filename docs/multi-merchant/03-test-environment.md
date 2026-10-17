@@ -388,3 +388,8 @@ audit_finish(): never                 // 汇总，写 JSONL，有 FAIL 时以退
 - `teardown.sh <RUN_ID>`：读取 manifest，执行 `docker compose -p tianli-audit-<RUN_ID> down -v`，停止应用进程，删除带本次哨兵的 `crmeb/.env` 与 `install.lock`。
 - 失败时保留运行目录作为证据，不自动删除。
 - 不对 manifest 之外的任何容器、卷、数据库、键执行删除。
+
+
+顾客R2实际复测与失败关闭（2026-10-17）：clean `c25b879880791ce81dc0dc16ae22ca9920b165a6`、Run `202610170844240f83f1`的九初始化、四MS5及真实files-bootstrap均0；prepare在source门禁M4C_TEN_MIGRATION_DUAL_RO_SOURCE_BYTES实际1，HTTP0/childNULL、夹具未运行。只读诊断确认public tmpfs仅遮workspace的安装SQL；单file RO bind正面诊断全部20源匹配且SQL不可写。原实例按固定1087原件/原3CID1网6卷关闭，两个同CLI stop-1真实0、nonforce移除；关闭 `317028fb0a8d3e31bc0512b9aa69a9559bdf2059d390e24205e8441ca1239b53`、独立六raw/全局核零 `61456e9a01e40a522b374c7cbf2a08d6e97b4469c369c4c6b680546c90889319`均实际0，原prepare raw1保持。Main在zero0后才解冻。
+
+后继普通顾客R3采用两个role唯一SQL RO bind、严格public install-only/SQL-only和runtime空态，host/独立zero同项闭集同步；源文件、SQL原件和原20检查不跳过。公共history/ENV有限提取与R3来源通过独立SOURCE及Root语法/AST/help/YAML/JSON，实际新业务仍待新clean来源运行；完整原因、pin与实施设计见[core记录](records/ms5/payment-core-integration.md)。H5 copy的空卷时序单独未接线，停止样本不恢复，SOURCE/PARSE不作为12HTTP或页面验收。

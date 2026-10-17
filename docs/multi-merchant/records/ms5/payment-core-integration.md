@@ -148,3 +148,24 @@ paid API/DOM采用独立后继Run/明确生产后只读baseline，不污染上�
 future profile `candidate-customer-http-r2` 只替换该initializer/README/derivation，host/compose/interface/seed保持R1字节；配套正常close/zero只改profile路径、文件名及实际pin，全文逆回等于原版，独立SOURCE PASS、AST/help0。此R2尚未冻结或运行，下一步从新clean本地来源启动全新独立空库，沿9＋4→files→prepare→原12HTTP验证；本次9＋4与失败关闭不能替代该HTTP或付款验收。
 
 并行H5 shared仅在外部形成108045B/`c75a2a855812ba1a90698417e097acc8fc57ccc0004d466c293d6fc6459e4b3e`候选，原18身份+scope改单native_snapshot四键，完整facts27+aux7保原native类型/大小/权限/stage wire，独立SOURCE和Root全文逆回/固定PHP语法0（收据 `d21dede164b60a18f854b65427ca43ba28a8ac01e12b1d6a6f2bf80acadc28f4`）。未写Main；H5 entry/bootstrap及host/bridge/close/zero仍须同源适配，原B0–B4/Final、页面验收、独立paid、履约售后、历史、真实金融和发布全部保留。
+
+
+### 顾客R2真实files通过、source失败与正常关闭
+
+2026-10-17，clean Main `c25b879880791ce81dc0dc16ae22ca9920b165a6`、freeze `4e9b272aceb9facc3a24557726b2a2b5e83a62e73d8900209ad413d634b9df5e`、新Run `202610170844240f83f1`。九项initializer与四项MS5 CLI均实际native0；修正后的files原CID从09:04:24.79929493Z至09:09:04.419136958Z实际0/PID0/restart0，真实migrator文件校验、版本缓存与DML切回经宿主完整核验通过。此前R1的formal/helper混用已在此新实例越过，旧FAIL不改。
+
+顾客prepare原CID `93fc636cc75471946c05568df9f8610c5a12593eb87f3d4cdd8742dae99e6700` 于09:17:04.176425833Z至09:19:33.699563275Z实际exit1/PID0/restart0，code=`M4C_TEN_MIGRATION_DUAL_RO_SOURCE_BYTES`、phase=source、HTTP0/childNULL；夹具、App和原12HTTP未执行。source尚未返回，原catch只输出398B FAIL_PRESERVED，未生成业务result/failure.json。Root逐字节保存stdout、空stderr和真实日志capture，capture的CLI0与容器1分别保留，实际非fatal prepare-shutdown不冒充业务成功。
+
+无网络、只读源且不加载App/SQL的几何诊断确认：十迁移源×双root的20项中，仅 `/workspace/crmeb/public/install/crmeb.sql` 被原public tmpfs遮住；另19项保持。诊断5908B/`1d585fed4336befdb0269fb2ffbc951c474cc1dc70a3777a8c24a7ba9aa33689`。单文件RO bind正面诊断6294B/`e3ef6907be3aeef3daa0a756485da808fdc7a412ab6ff37f2c1cc9b17346ee7c`已核全部20项且SQL不可写。辅助诊断最初遗漏原private /tmp使PHP锁文件失败，未加载App，不计业务证据；补齐原tmpfs后才取得以上结果。
+
+本Run未重启、未修改冻结源。沿固定失败关闭模式，264923B plan `fe4fee29298380e18f9053038a8bb0ea79426ee682c208b730f95c66927bc0ce`固定1087原公共输入、原3CID/1网/6卷；两关闭源独立SOURCE PASS，Root AST/全局符号闭集/help0，收据 `f33bef1cad6fd6e4b24dd4900cf0af560d72f9891356128d37c3378b875346f7`。同一MySQL/Redis stop --time -1 CLI PID4860/46396均真实0，DB容器0/PID0，prepare原raw1保持；精确nonforce移除原3CID/1网/6卷，无新helper/force/restart/retry。关闭native0，6736B结果 `317028fb0a8d3e31bc0512b9aa69a9559bdf2059d390e24205e8441ca1239b53`；不导入host/close的独立zero实际0，39268B结果 `61456e9a01e40a522b374c7cbf2a08d6e97b4469c369c4c6b680546c90889319`，六raw严格空、全局无原消费者、1087原件及原source/FAIL保持。业务仍FAILURE_PRESERVED/HTTP NOT RUN，Main只在此zero0后解除冻结；旧zero不对后续Main重跑。
+
+### 顾客R3只读public源修复与公共验证实施合同
+
+先保留原public/runtime tmpfs、十迁移源双RO和全部原12HTTP。只给prepare/verify两个普通role新增原仓库SQL文件到 `/workspace/crmeb/public/install/crmeb.sql` 的唯一RO bind；同步Main source闭集5bind+2volume、host与独立zero对应7项native mount，其余角色及所有字段/完整mount多重集不放宽。public初态精确只有install，install精确只有crmeb.sql；无link、realpath精确，取实际freeze唯一SQL descriptor核双源完整bytes/hash且均不可写；runtime仍真空。原index/router/install.lock复制与App、UID、HTTP child、金额/库存及G0断言保持。七profile artifacts、四roots/九extras、十driver源、六卷/单网不扩大。
+
+为H5后继复用，原customer entry内部有限提取 `m4c_entry_ms5_history(source)`：固定G8+F4十二原件，保原nine/four/files完整语义，新增原create-only context完整SHA/六卷/网/两DB created到历史formal的独立核验，不拿当前H5十卷作历史依据；返回self、initializer/migration/files三CID、已核formal、context_sha256和十二键history_sha256 map。普通wrapper保12/15闭集、原currentformal/DB端点与当前CID差异、真实prepare13键/ENV/result。原ENV消费者增加固定默认scope（原顾客/新H5两值），并有限提取六真实值/native完整720排列校验；原收据身份和projection相等仍在wrapper。临时H5 bootstrap没有独立environment.json，未来须用其真实binding/native原件调用纯helper，不补假收据。无新App/SQL/PDO、wire或source文件。
+
+外部候选已独立SOURCE PASS、全文逆回与固定PHP语法0：最终entry59523B/`c7a6ed64dd28126f3c108ccfbec49d076919a0eb8facac95adca9a44739df7c7`。R3 profile从R2有限派生：仅compose/host/interface/README/derivation及正常close/zero对应路径、实际hash和单file闭集；initializer/seed原字节。host `12087e60329fa8249bd6039441c13d3268c42facdbcf85ed94427f2c6afa7283`，normal close `94e93611bcdc11fed072231d7f1f2266871c8dbab4d0e8b9997c267796f403d4`，zero `c07134d4eb8352855baf713093636fb07640bd2e1fafdccf290ae43ae9894045`。独立SOURCE/完整逆回及Root AST/符号/help/YAML/JSON/PHP均通过，收据 `b4ffdfd34aa4c4caafc8f5e4583412e85851120e45c0f4f2d38b19caee574b47`。本段先记录设计，再落入上述已审entry；后继须新clean freeze和全新空库9+4/files/prepare/12HTTP，源码诊断不替代该业务验证。
+
+H5仅有外部baseline/entry候选及已审设计，未写Main，不计HTTP/DOM。H5自己的16/26 binding、分阶段前置map及真实网络合同仍须接全；历史六卷context与当前四新增卷A1分开。原前端网络Internal=false且ip_masquerade=false、后端Internal=true，不误称两内网。public-copy原卷须真空并create-only复制SQL，与公共history在copy前的双RO十源存在尚未解决时序接缝，不能将普通SQL bind推广H5 copy或静默跳过源码。entry本身不新增PDO；独立native比较由shared/原bootstrap承担。已停止刷新/恢复保持NOT RUN，依赖restore captures的完整B3/Final/27capture不得自动运行、伪造或宣称通过。商家25、独立paid API/DOM、持久履约/售后、历史、真实金融和发布继续保留，沿09原唯一清单推进。

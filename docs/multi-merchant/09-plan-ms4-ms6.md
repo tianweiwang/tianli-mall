@@ -725,6 +725,8 @@ R7实际结果（2026-10-16，详见03）：clean `a74f2b27275229dcb089581039dc3
 
 顾客files-bootstrap实际失败与正常关闭（2026-10-17）：clean Main `95bbd14f38b04f4d57ede24cebcedf6bfb8c8a7e`、Run `20261017080054d24516`的九初始化/四MS5 CLI完整实际0；files原CID真实1，诊断CUSTOMER_EXACT_PHASE_MANIFEST，专用files migrator/customer prepare/12HTTP未启动。原因是新consumer错误要求临时files helper出现在正式manifest；原host实际保持MS5 driver正式清单不变。原FAIL/冻结来源未改，本Run按固定677原件/原3CID1网6卷正常关闭，两stop同CLI实际0，关闭结果 `ad6c44953603a76dd7c0a5b66bdf21c0ec051f54600e103227496d8ed9124bb9`、独立六raw/全局无消费者核零 `64e2c10d9c62d6fac3460581ab30d3c489494200c596a1339522820902ef1201`均实际native0，仍标FAILURE_PRESERVED。Main只在zero0后解冻。新独立R2严格分开原formal与真实files-created/gate身份，SOURCE/逆回/PHP语法通过，future profile已同源派生但未冻结/运行；下一新空库仍须完整9＋4/files/prepare/原12HTTP，不计业务或DOM通过。完整原因、来源与后继见core。 继续本Task2，原H5 34/商家25、paid API/DOM及其余未验项不勾选。
 
+顾客R2实测检查点（2026-10-17）：新Run `202610170844240f83f1`的9+4/真实files均native0；prepare因public tmpfs遮安装SQL，在M4C_TEN_MIGRATION_DUAL_RO_SOURCE_BYTES/source实际1，HTTP0、夹具未运行。固定1087原件和原FAIL保持，原3CID/1网/6卷正常关闭及独立六raw/全局无消费者均实际0；关闭摘要 `317028fb0a8d3e31bc0512b9aa69a9559bdf2059d390e24205e8441ca1239b53`，zero `61456e9a01e40a522b374c7cbf2a08d6e97b4469c369c4c6b680546c90889319`。Main只在zero0后解冻。普通R3按core有限修正两role单SQL只读bind、严格public初态、host/独立zero闭集，合并公共history/ENV复用；独立SOURCE和Root检查通过，后继新clean复测尚待。仍沿本Task2，原12HTTP/H5 34/商家25、paid API/DOM、持久履约售后/历史/金融/发布不勾选；停止的刷新/恢复及相依完整B3/Final仍NOT RUN。详见[core实施与结果](records/ms5/payment-core-integration.md)。
+
 ### Task 3: 收款账户
 
 - 表 `eb_marketplace_payment_account(id, mer_id, channel, account_ref, version, status, verified_at, add_time)`；`account_ref` 只保存配置引用，不保存密钥明文。订单发起支付时把账户 ID 与版本写入支付尝试记录，之后不可更改。
