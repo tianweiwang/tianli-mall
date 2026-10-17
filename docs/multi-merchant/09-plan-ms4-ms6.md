@@ -692,6 +692,9 @@ R7实际结果（2026-10-16，详见03）：clean `a74f2b27275229dcb089581039dc3
 
 履约结构只读接缝实际应用（2026-10-18）：采用已全文读取的READ-STRUCTURE-SEAMS设计和两组机械增量，MarketplaceOrderFulfillmentDao新readStructureReadiness仅在调用方自有原生读段内使用。全原metadata/列索引/FK/CHECK/触发器比较不变；十九实际迁移约束名称探针参数化共享，只允许两表皆缺或operation完整/range缺为SCHEMA_PENDING，两表完整才READY，range-only/不兼容/查询错误严格失败。同真实default Connection/PDO、getter depth0及原生属性首末核，finally还原临时schema读取状态；原writer的逐表检查顺序和立即失败时点展开后逐字不变。已独立SOURCE PASS，Root完整S01/S02正逆、E01环境和N01迁移来源机械核对及固定PHP8.2语法均实际通过；唯一源47136B/`fc56165472cf72fec95ae289eb5ee94edb4bf824ce428ac7f69965d10175ea0b`。这是本地源码接线，尚未实际执行新readiness SQL/自有RR生命周期或两履约表迁移；SCHEMA_PENDING仍须同快照读取真实完整children/logs/已存在operation，不证明空family。原history/summary/child DTO/API/DOM/Worker/售后及完整验收责任保持。
 
+
+Order事实批量接缝实际应用（2026-10-18）：Root独立全文读取新增两组raw后采用 `read-order-batch-source-r1/MarketplaceOrderDao.php.candidate` 108621B/`2c38a1e60e228a468a33baae589f3df99dd8b4558871d6e44fff5be70ddce93c`。同原Connection/PDO和真实getter门下，0..100个已授权同快照raw根24列+pid，经固定user/ledger/items/movement/child五条完整SELECT取得原八键事实，逐根仅调用原pure六输出；单movement OR/真实reserve子查询保order-local及全部父关联双视图，U64仍按规范十进制字符串，单条最多201绑定，无parent N+1、截断、预滤坏关联或第二金额/库存算法。原writer、pure及全部旧方法经两组完整正逆逐字保持。Root实际PHP8.2语法0、仅两路径本地应用及staged diff-check通过；没有调用这些SQL或接入三端API/DOM。真实RR READ ONLY生命周期、完整family/history/summary/child DTO及原全部后继验收继续本Task6，不以批量接缝宣称完整读取或付款winner已核。
+
 ### Task 7: 退款额度与库存行为
 
 - 接口：申请退款时在事务中锁定订单行，校验"已退金额 + 处理中金额 + 本次金额 ≤ 实付"；三类库存行为分别写 `release`（未发货取消）、`return_in`（退货验收入库）、不写（仅退款）。
