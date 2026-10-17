@@ -636,6 +636,122 @@ final class MarketplaceOrderFulfillmentDao
         return $rows;
     }
 
+    /** Complete cross-merchant root items; actual authorization and the owned snapshot belong to the caller. */
+    public function readOriginalRootItemsForRoots(ConnectionInterface $connection,PDO $pdo,array $fullAuthorizedRoots):array
+    {
+        $this->readStructureConnection($connection,$pdo);
+        if(!array_is_list($fullAuthorizedRoots)||count($fullAuthorizedRoots)>100)self::unavailable();$items=[];$owners=[];
+        foreach($fullAuthorizedRoots as$root){
+            if(!is_array($root))self::unavailable();
+            foreach($root as$value)if($value!==null&&!is_int($value)&&!is_string($value))self::unavailable();
+            $id=self::integer($root['id']??null,1,self::INT_MAX);$uid=self::integer($root['uid']??null,1,self::INT_MAX);
+            $mer=self::integer($root['mer_id']??null,1,self::UINT_MAX);
+            self::stored($root,['marketplace_trade_version'=>1,'pid'=>0]);self::text($root['order_id']??null,32,true);
+            if(isset($items[$id]))self::unavailable();$items[$id]=[];$owners[$id]=['uid'=>$uid,'mer_id'=>$mer];
+        }
+        if($items===[]){$this->readStructureConnection($connection,$pdo);return [];}
+        $ids=array_keys($items);sort($ids,SORT_NUMERIC);
+        $rows=$this->rootSnapshotRows($connection,$pdo,'SELECT * FROM '.$this->table('store_order_cart_info').
+            ' WHERE oid IN ('.implode(',',array_fill(0,count($ids),'?')).') ORDER BY oid,id',$ids);
+        $seen=[];$lastRoot=0;$lastItem=0;
+        foreach($rows as$row){
+            $id=self::integer($row['id']??null,1,self::INT_MAX);$oid=self::integer($row['oid']??null,1,self::INT_MAX);
+            if(!isset($items[$oid])||isset($seen[$id])||$oid<$lastRoot||($oid===$lastRoot&&$id<=$lastItem))self::unavailable();
+            self::stored($row,$owners[$oid]);$items[$oid][]=$row;
+            if(count($items[$oid])>500)self::unavailable();$seen[$id]=true;$lastRoot=$oid;$lastItem=$id;
+        }
+        foreach($items as$list)if($list===[])self::unavailable();
+        $this->readStructureConnection($connection,$pdo);return $items;
+    }
+
+    /** Preserve every observed display log and its native sequence; no type filter, synthetic ID or ordering. */
+    public function readRootDisplayStatusLogs(ConnectionInterface $connection,PDO $pdo,array $fullAuthorizedRoots):array
+    {
+        $this->readStructureConnection($connection,$pdo);
+        if(!array_is_list($fullAuthorizedRoots)||count($fullAuthorizedRoots)>100)self::unavailable();$roots=[];
+        foreach($fullAuthorizedRoots as$root){
+            if(!is_array($root))self::unavailable();
+            foreach($root as$value)if($value!==null&&!is_int($value)&&!is_string($value))self::unavailable();
+            $id=self::integer($root['id']??null,1,self::INT_MAX);self::integer($root['uid']??null,1,self::INT_MAX);
+            self::integer($root['mer_id']??null,1,self::UINT_MAX);
+            self::stored($root,['marketplace_trade_version'=>1,'pid'=>0]);self::text($root['order_id']??null,32,true);
+            if(isset($roots[$id]))self::unavailable();$roots[$id]=true;
+        }
+        if($roots===[]){$this->readStructureConnection($connection,$pdo);return [];}
+        $ids=array_keys($roots);sort($ids,SORT_NUMERIC);
+        $rows=$this->rootSnapshotRows($connection,$pdo,'SELECT oid,change_type,change_message,change_time FROM '.$this->table('store_order_status').
+            ' WHERE oid IN ('.implode(',',array_fill(0,count($ids),'?')).')',$ids);
+        foreach($rows as$row){
+            self::keys($row,['oid','change_type','change_message','change_time']);$oid=self::integer($row['oid'],1,self::INT_MAX);
+            if(!isset($roots[$oid]))self::unavailable();
+            self::text($row['change_type'],128);self::text($row['change_message'],1024);self::integer($row['change_time'],0,self::UINT_MAX);
+        }
+        // The service cross-checks the fulfillment-log multiset against its complete family; repeated logs stay here.
+        $this->readStructureConnection($connection,$pdo);return $rows;
+    }
+
+    /** Raw committed ship operations only; the caller first validates the whole family/history, then maps this page. */
+    public function readFulfillmentChildrenPage(ConnectionInterface $connection,PDO $pdo,array $fullAuthorizedRoot,int $page,int $limit):array
+    {
+        $this->readStructureConnection($connection,$pdo);
+        foreach($fullAuthorizedRoot as$value)if($value!==null&&!is_int($value)&&!is_string($value))self::unavailable();
+        $id=self::integer($fullAuthorizedRoot['id']??null,1,self::INT_MAX);
+        $uid=self::integer($fullAuthorizedRoot['uid']??null,1,self::INT_MAX);$mer=self::integer($fullAuthorizedRoot['mer_id']??null,1,self::UINT_MAX);
+        self::stored($fullAuthorizedRoot,['marketplace_trade_version'=>1,'pid'=>0]);self::text($fullAuthorizedRoot['order_id']??null,32,true);
+        self::integer($page,1,PHP_INT_MAX);self::integer($limit,1,100);
+        if($page-1>intdiv(PHP_INT_MAX,$limit))self::unavailable();$offset=($page-1)*$limit;
+        $predicate=' FROM '.$this->table('marketplace_fulfillment_operation').' WHERE root_order_id=? AND action=? AND state=?';
+        $parameters=[$id,'ship',1];
+        $counts=$this->rootSnapshotRows($connection,$pdo,'SELECT COUNT(*) AS aggregate'.$predicate,$parameters);
+        if(count($counts)!==1)self::unavailable();self::keys($counts[0],['aggregate']);
+        $count=self::integer($counts[0]['aggregate'],0,PHP_INT_MAX);
+        $rows=$this->rootSnapshotRows($connection,$pdo,'SELECT *'.$predicate.' ORDER BY id DESC LIMIT ? OFFSET ?',array_merge($parameters,[$limit,$offset]));
+        if(count($rows)!==($offset>=$count?0:min($limit,$count-$offset)))self::unavailable();
+        $last=null;$children=[];
+        foreach($rows as$row){
+            self::keys($row,array_keys(self::newTables()['marketplace_fulfillment_operation']['columns']));$operationId=self::u64($row['id']);
+            if($last!==null&&bccomp($operationId,$last,0)>=0)self::unavailable();
+            $child=self::integer($row['child_order_id'],1,self::INT_MAX);
+            if($child===$id||isset($children[$child]))self::unavailable();
+            self::stored($row,['contract_version'=>1,'root_order_id'=>$id,'uid'=>$uid,'mer_id'=>$mer,'action'=>'ship','state'=>1]);
+            $last=$operationId;$children[$child]=true;
+        }
+        // JSON/BINARY and native U64 values are not decoded or rewritten. Count/list correspondence to history is the service's job.
+        $this->readStructureConnection($connection,$pdo);return ['count'=>$count,'list'=>$rows];
+    }
+
+    /** Resolve the actual saved child pid without reselecting that child or adding list deletion predicates. */
+    public function readFulfillmentParentForChild(ConnectionInterface $connection,PDO $pdo,array $fullLocatedChild):array
+    {
+        $this->readStructureConnection($connection,$pdo);
+        foreach($fullLocatedChild as$value)if($value!==null&&!is_int($value)&&!is_string($value))self::unavailable();
+        $child=self::integer($fullLocatedChild['id']??null,1,self::INT_MAX);$parent=self::integer($fullLocatedChild['pid']??null,1,self::INT_MAX);
+        $uid=self::integer($fullLocatedChild['uid']??null,1,self::INT_MAX);$mer=self::integer($fullLocatedChild['mer_id']??null,1,self::UINT_MAX);
+        self::stored($fullLocatedChild,['marketplace_trade_version'=>1]);self::text($fullLocatedChild['order_id']??null,32,true);
+        if($child===$parent)self::unavailable();
+        $rows=$this->rootSnapshotRows($connection,$pdo,'SELECT * FROM '.$this->table('store_order').' WHERE id=?',[$parent]);
+        if(count($rows)!==1)self::unavailable();$root=$rows[0];
+        self::stored($root,['id'=>$parent,'uid'=>$uid,'mer_id'=>$mer,'marketplace_trade_version'=>1,'pid'=>0]);
+        self::text($root['order_id']??null,32,true);
+        // Actual child membership in a committed ship is proved later from the full parent facts/history by the caller.
+        $this->readStructureConnection($connection,$pdo);return $root;
+    }
+
+    /** Platform detail's first buyer observation precedes items/history and children-page normalization. */
+    public function readPlatformDetailBuyerForHeader(ConnectionInterface $connection,PDO $pdo,array $fullSelectedV1Header):?array
+    {
+        $this->readStructureConnection($connection,$pdo);
+        foreach($fullSelectedV1Header as$value)if($value!==null&&!is_int($value)&&!is_string($value))self::unavailable();
+        self::integer($fullSelectedV1Header['id']??null,1,self::INT_MAX);$uid=self::integer($fullSelectedV1Header['uid']??null,1,self::INT_MAX);
+        self::integer($fullSelectedV1Header['mer_id']??null,1,self::UINT_MAX);self::integer($fullSelectedV1Header['pid']??null,0,self::INT_MAX);
+        self::stored($fullSelectedV1Header,['marketplace_trade_version'=>1]);
+        $rows=$this->rootSnapshotRows($connection,$pdo,'SELECT uid,real_name FROM '.$this->table('user').' WHERE uid=?',[$uid]);
+        if(count($rows)>1)self::unavailable();
+        if($rows===[]){$this->readStructureConnection($connection,$pdo);return null;}
+        self::keys($rows[0],['uid','real_name']);self::stored($rows[0],['uid'=>$uid]);self::text($rows[0]['real_name'],100);
+        $this->readStructureConnection($connection,$pdo);return $rows[0];
+    }
+
     /** Original merchant predicates, count and saved headers in the same caller-owned native snapshot. */
     public function readMerchantRootPage(ConnectionInterface $connection,PDO $pdo,int $merId,array $filter,int $page,int $limit):array
     {

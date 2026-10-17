@@ -79,6 +79,10 @@ class StoreOrderWapServices extends BaseServices
     public function getWapAdminOrderList(array $where, string $marketplaceScope = '', int $viewerUid = 0)
     {
         $viewer=SavedOrder::listViewer($marketplaceScope,$viewerUid);
+        if($marketplaceScope==='mobile'){
+            [$page,$limit]=$this->getPageValue();
+            return app()->make(StoreOrderServices::class)->readMobileOrderPage($viewerUid,$where,$page,$limit);
+        }
         [$page, $limit] = $this->getPageValue();
         $list = $this->dao->getOrderList($where, ['*'], $page, $limit, ['pink'], 'add_time DESC,id DESC', $viewer);
         /** @var StoreOrderServices $orderServices */

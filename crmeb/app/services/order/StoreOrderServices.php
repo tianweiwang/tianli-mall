@@ -114,24 +114,7 @@ class StoreOrderServices extends BaseServices
         [$page, $limit] = $this->getPageValue();
         $data = $this->dao->getOrderList($where, $field, $page, $limit, $with, 'add_time DESC,id DESC', $viewer);
         $count = $this->dao->countVisibleMarketplaceList($where,$viewer);
-        $data = $this->tidyOrderList($data);
-        foreach ($data as &$item) {
-            if($marketplaceScope!=='' && !array_key_exists('marketplace_trade_version',$item))throw new AuthUnavailableException();
-            $publicV1=$marketplaceScope!=='' && !MarketplaceTradePolicy::savedOrderIsLegacy($item);
-            $refund_num = array_sum(array_column($item['refund'], 'refund_num'));
-            $cart_num = 0;
-            $vipTruePrice = 0;
-            foreach ($item['_info'] as $items) {
-                $cart_num += $items['cart_info']['cart_num'];
-                $vipTruePrice = bcadd((string)$vipTruePrice, bcmul((string)$items['cart_info']['vip_truePrice'], (string)$items['cart_info']['cart_num'], 2), 2);
-            }
-            if(!$publicV1)$item['total_price'] = bcadd($item['total_price'], $vipTruePrice, 2);
-            $item['is_all_refund'] = $refund_num == $cart_num;
-            if($publicV1){
-                if($viewer!==null && (string)$item['uid']!==(string)$viewer)throw new AuthUnavailableException();
-                $item=SavedOrder::orderListRow($item,$marketplaceScope);
-            }else $item['pay_price'] = (float)$item['pay_price'];
-        }
+        $data=$this->formatSelectedPlatformOrders($data,$marketplaceScope,$viewer);
         return compact('data', 'count');
     }
 
@@ -150,6 +133,194 @@ class StoreOrderServices extends BaseServices
         $viewer=SavedOrder::listViewer($marketplaceScope,$viewerUid);
         [$page, $limit] = $this->getPageValue();
         $data = $this->dao->getOrderList($where, $field, $page, $limit, $with, 'add_time DESC,id DESC', $viewer, $legacyOnly);
+        return $this->formatSelectedCustomerOrders($data,$marketplaceScope,$viewer);
+    }
+
+    /** Fixed authenticated customer read; an internal snapshot plan never becomes the response. */
+    public function readCustomerOrderPage(int $actualUid,array $query):array
+    {
+        [$page,$limit]=$this->getPageValue();
+        $plan=app()->make(\app\services\marketplace\order\MarketplaceOrderFulfillmentServices::class)->readCustomerPage($actualUid,$query,$page,$limit);
+        return $this->finishSelectedOrderPage($plan,'customer_page','customer_list');
+    }
+
+    public function readPlatformOrderPage(int $actualAdminId,array $query):array
+    {
+        [$page,$limit]=$this->getPageValue();
+        $plan=app()->make(\app\services\marketplace\order\MarketplaceOrderFulfillmentServices::class)->readPlatformPage($actualAdminId,$query,$page,$limit);
+        return ['data'=>$this->finishSelectedOrderPage($plan,'platform_page','platform_list'),'count'=>$plan['count']];
+    }
+
+    /** Page and limit are the existing Wap service's actual getPageValue results. */
+    public function readMobileOrderPage(int $actualUid,array $query,int $page,int $limit):array
+    {
+        $plan=app()->make(\app\services\marketplace\order\MarketplaceOrderFulfillmentServices::class)->readMobilePage($actualUid,$query,$page,$limit);
+        return $this->finishSelectedOrderPage($plan,'mobile_page','mobile_list');
+    }
+
+    public function readCustomerOrderDetail(StoreOrderEconomizeServices $services,string $uni,int $actualUid,mixed $childrenPage=1,mixed $childrenLimit=20):array
+    {
+        $plan=app()->make(\app\services\marketplace\order\MarketplaceOrderFulfillmentServices::class)->readCustomerRoot($actualUid,$uni,$childrenPage,$childrenLimit);
+        $slot=$this->selectedOrderDetailSlot($plan,'customer_root');
+        if($slot===null)throw new ApiException('商品不存在');
+        if(!$slot['legacy'])return $this->finishSavedOrderImages($slot['dto'],'customer_detail');
+        $models=$this->dao->materializeSelectedLegacyOrders([$slot['header']],'customer_detail');
+        return $this->formatSelectedOrderDetail($services,$models[0],$actualUid);
+    }
+
+    public function readMobileOrderDetail(StoreOrderEconomizeServices $services,string $uni,int $actualUid,mixed $childrenPage=1,mixed $childrenLimit=20):array
+    {
+        $plan=app()->make(\app\services\marketplace\order\MarketplaceOrderFulfillmentServices::class)->readMobileRoot($actualUid,$uni,$childrenPage,$childrenLimit);
+        $slot=$this->selectedOrderDetailSlot($plan,'mobile_root');
+        if($slot===null)throw new ApiException('商品不存在');
+        if(!$slot['legacy'])return $this->finishSavedOrderImages($slot['dto'],'mobile_detail');
+        $models=$this->dao->materializeSelectedLegacyOrders([$slot['header']],'mobile_detail');
+        $data=$this->formatSelectedOrderDetail($services,$models[0],0);
+        $data['nickname']=app()->make(UserServices::class)->value(['uid'=>$data['uid']],'nickname');
+        return $data;
+    }
+
+    /** Only actual missing facts map to the original controller's two fail responses. */
+    public function readPlatformOrderDetail(int $actualAdminId,int|string $actualPk,mixed $childrenPage=1,mixed $childrenLimit=20):array|false|null
+    {
+        $plan=app()->make(\app\services\marketplace\order\MarketplaceOrderFulfillmentServices::class)->readPlatformRoot($actualAdminId,$actualPk,$childrenPage,$childrenLimit);
+        $slot=$this->selectedOrderDetailSlot($plan,'platform_root');
+        if($plan['detail']['state']==='BUYER_NOT_FOUND')return false;
+        if($slot===null)return null;
+        if(!$slot['legacy'])return ['orderInfo'=>$this->finishSavedOrderImages($slot['dto'],'platform_detail'),'userInfo'=>$plan['detail']['user_info']];
+        $models=$this->dao->materializeSelectedLegacyOrders([$slot['header']],'platform_detail');
+        return $this->formatSelectedPlatformOrder($models[0]);
+    }
+
+    private function selectedOrderPlan(array $plan,string $kind):void
+    {
+        \app\dao\marketplace\order\MarketplaceOrderFulfillmentDao::keys($plan,['kind','slots','count','detail']);
+        if($plan['kind']!==$kind||!is_array($plan['slots'])||!array_is_list($plan['slots'])
+            ||!is_int($plan['count'])||$plan['count']<0)throw new AuthUnavailableException();
+        $seen=[];
+        foreach($plan['slots'] as$slot){
+            if(!is_array($slot))throw new AuthUnavailableException();
+            \app\dao\marketplace\order\MarketplaceOrderFulfillmentDao::keys($slot,['id','legacy','header','dto']);
+            if(!is_int($slot['id'])||$slot['id']<1||$slot['id']>4294967295||isset($seen[$slot['id']])||!is_bool($slot['legacy']))throw new AuthUnavailableException();
+            $seen[$slot['id']]=true;
+            if($slot['legacy']){
+                if(!is_array($slot['header'])||$slot['dto']!==null||!array_key_exists('marketplace_trade_version',$slot['header'])
+                    ||!MarketplaceTradePolicy::savedOrderIsLegacy($slot['header'])||(string)$slot['header']['id']!==(string)$slot['id'])throw new AuthUnavailableException();
+            }elseif($slot['header']!==null||!is_array($slot['dto']))throw new AuthUnavailableException();
+        }
+    }
+
+    private function finishSelectedOrderPage(array $plan,string $kind,string $view):array
+    {
+        $this->selectedOrderPlan($plan,$kind);if($plan['detail']!==null)throw new AuthUnavailableException();
+        $headers=[];
+        foreach($plan['slots'] as$slot)if($slot['legacy'])$headers[]=$slot['header'];
+        $models=$this->dao->materializeSelectedLegacyOrders($headers,$view);$legacy=[];
+        foreach($models as$model)$legacy[]=$model->toArray();
+        if($view==='customer_list')$legacy=$this->formatSelectedCustomerOrders($legacy);
+        elseif($view==='platform_list')$legacy=$this->formatSelectedPlatformOrders($legacy);
+        elseif($view==='mobile_list')$legacy=$this->formatSelectedMobileOrders($legacy);
+        else throw new AuthUnavailableException();
+        if(count($legacy)!==count($headers))throw new AuthUnavailableException();
+        $list=[];$index=0;
+        foreach($plan['slots'] as$slot){
+            if($slot['legacy'])$list[]=$legacy[$index++];
+            else $list[]=$this->finishSavedOrderImages($slot['dto'],$view);
+        }
+        return $list;
+    }
+
+    private function selectedOrderDetailSlot(array $plan,string $kind):?array
+    {
+        $this->selectedOrderPlan($plan,$kind);
+        if(!is_array($plan['detail']))throw new AuthUnavailableException();
+        \app\dao\marketplace\order\MarketplaceOrderFulfillmentDao::keys($plan['detail'],['state','user_info']);
+        $state=$plan['detail']['state'];
+        if(!in_array($state,['FOUND','ROOT_NOT_FOUND','BUYER_NOT_FOUND'],true))throw new AuthUnavailableException();
+        if($state!=='FOUND'){
+            if($plan['slots']!==[]||$plan['count']!==0||$plan['detail']['user_info']!==null
+                ||($state==='BUYER_NOT_FOUND'&&$kind!=='platform_root'))throw new AuthUnavailableException();
+            return null;
+        }
+        if(count($plan['slots'])!==1||$plan['count']!==1)throw new AuthUnavailableException();
+        return $plan['slots'][0];
+    }
+
+    /** All storage/config/cache/thumbnail work happens after successful owned commit. */
+    private function finishSavedOrderImages(array $dto,string $view):array
+    {
+        $images=[];
+        foreach(['cartInfo','refund_cartInfo','cart_info'] as$key)if(array_key_exists($key,$dto)){
+            foreach($dto[$key] as&$cart)$cart=$this->finishSavedOrderCartImage($cart,$images);
+            unset($cart);
+        }
+        if(array_key_exists('_info',$dto)){
+            foreach($dto['_info'] as&$wrapper)$wrapper['cart_info']=$this->finishSavedOrderCartImage($wrapper['cart_info'],$images);
+            unset($wrapper);
+        }
+        if(in_array($view,['customer_detail','mobile_detail'],true)&&array_key_exists('avatar',$dto))$dto['avatar']=set_file_url($dto['avatar']);
+        if(isset($dto['fulfillment_children'])&&is_array($dto['fulfillment_children'])){
+            foreach($dto['fulfillment_children']['list'] as&$child)$child=$this->finishSavedFulfillmentChildImages($child);
+            unset($child);
+        }
+        if(($dto['scope']??null)==='marketplace_fulfillment_child_v1')$dto=$this->finishSavedFulfillmentChildImages($dto);
+        return $dto;
+    }
+
+    private function finishSavedOrderCartImage(array $cart,array &$images):array
+    {
+        if(!isset($cart['productInfo'])||!is_array($cart['productInfo'])||!isset($cart['id'])||!is_string($cart['id'])||$cart['id']==='')throw new AuthUnavailableException();
+        $key='c:'.$cart['id'];
+        $source=$cart['productInfo'];
+        if(isset($images[$key])){
+            if($images[$key]['source']!==$source)throw new AuthUnavailableException();
+            $cart['productInfo']=$images[$key]['display'];return $cart;
+        }
+        $product=$source;
+        if(isset($product['attrInfo']))$product['attrInfo']=get_thumb_water($product['attrInfo']);
+        $product=get_thumb_water($product);
+        $images[$key]=['source'=>$source,'display'=>$product];$cart['productInfo']=$product;return $cart;
+    }
+
+    private function finishSavedFulfillmentChildImages(array $child):array
+    {
+        if(($child['scope']??null)!=='marketplace_fulfillment_child_v1'||!isset($child['items'])||!is_array($child['items']))throw new AuthUnavailableException();
+        foreach($child['items'] as&$item){
+            if(!is_array($item)||!isset($item['image'])||!is_string($item['image']))throw new AuthUnavailableException();
+            $image=get_thumb_water(['image'=>$item['image']]);
+            if(!is_array($image)||!array_key_exists('image',$image)||!is_string($image['image']))throw new AuthUnavailableException();
+            $item['image']=$image['image'];
+        }unset($item);
+        return $child;
+    }
+
+    /** Original selected platform list formatter; relations/cache/thumb reads remain after commit. */
+    private function formatSelectedPlatformOrders(array $data,string $marketplaceScope='',?int $viewer=null):array
+    {
+        $data = $this->tidyOrderList($data);
+        foreach ($data as &$item) {
+            if($marketplaceScope!=='' && !array_key_exists('marketplace_trade_version',$item))throw new AuthUnavailableException();
+            $publicV1=$marketplaceScope!=='' && !MarketplaceTradePolicy::savedOrderIsLegacy($item);
+            $refund_num = array_sum(array_column($item['refund'], 'refund_num'));
+            $cart_num = 0;
+            $vipTruePrice = 0;
+            foreach ($item['_info'] as $items) {
+                $cart_num += $items['cart_info']['cart_num'];
+                $vipTruePrice = bcadd((string)$vipTruePrice, bcmul((string)$items['cart_info']['vip_truePrice'], (string)$items['cart_info']['cart_num'], 2), 2);
+            }
+            if(!$publicV1)$item['total_price'] = bcadd($item['total_price'], $vipTruePrice, 2);
+            $item['is_all_refund'] = $refund_num == $cart_num;
+            if($publicV1){
+                if($viewer!==null && (string)$item['uid']!==(string)$viewer)throw new AuthUnavailableException();
+                $item=SavedOrder::orderListRow($item,$marketplaceScope);
+            }else $item['pay_price'] = (float)$item['pay_price'];
+        }
+        return $data;
+    }
+
+    /** Original selected customer list formatter, without any root selection. */
+    private function formatSelectedCustomerOrders(array $data,string $marketplaceScope='',?int $viewer=null):array
+    {
         foreach ($data as &$item) {
             if($marketplaceScope!=='' && !array_key_exists('marketplace_trade_version',$item))throw new AuthUnavailableException();
             $publicV1=$marketplaceScope!=='' && !MarketplaceTradePolicy::savedOrderIsLegacy($item);
@@ -171,6 +342,263 @@ class StoreOrderServices extends BaseServices
             if($publicV1)$item=SavedOrder::orderListRow($item,$marketplaceScope);
         }
         return $data;
+    }
+
+    /** Original mobile list post-selection body; legacy fields and math stay unchanged. */
+    private function formatSelectedMobileOrders(array $list):array
+    {
+        $list=$this->tidyOrderList($list);
+        foreach($list as&$item){
+            $refund_num=array_sum(array_column($item['refund'],'refund_num'));$cart_num=0;
+            foreach($item['_info'] as$items)$cart_num+=$items['cart_info']['cart_num'];
+            $item['is_all_refund']=$refund_num==$cart_num?true:false;
+        }unset($item);
+        return $list;
+    }
+
+    /** Original post-selection detail formatter; legacy helpers retain their post-commit boundary. */
+    private function formatSelectedOrderDetail(StoreOrderEconomizeServices $services,$order,int $uid):array
+    {
+        $savedCustomForm = $order->getData('custom_form');
+        $order = $order->toArray();
+        $savedMarketplaceV1 = !MarketplaceTradePolicy::savedOrderIsLegacy($order);
+        if($savedMarketplaceV1){
+            if($uid<1 || (string)($order['uid'] ?? '')!==(string)$uid)throw new ApiException('订单不存在');
+            $order['custom_form']=$savedCustomForm;
+        }
+        $splitNum = [];
+        //是否开启门店自提
+        $store_self_mention = sys_config('store_self_mention');
+        //关闭门店自提后 订单隐藏门店信息
+        if ($store_self_mention == 0) $order['shipping_type'] = 1;
+        if ($order['verify_code']) {
+            $verify_code = $order['verify_code'];
+            $verify[] = substr($verify_code, 0, 4);
+            $verify[] = substr($verify_code, 4, 4);
+            $verify[] = substr($verify_code, 8);
+            $order['_verify_code'] = implode(' ', $verify);
+        }
+        $order['add_time_y'] = date('Y-m-d', $order['add_time']);
+        $order['add_time_h'] = date('H:i:s', $order['add_time']);
+        $order['system_store'] = false;
+        if ($order['store_id']) {
+            /** @var SystemStoreServices $storeServices */
+            $storeServices = app()->make(SystemStoreServices::class);
+            $order['system_store'] = $storeServices->getStoreDispose($order['store_id']);
+        }
+        $order['code'] = '';
+        if (($order['shipping_type'] === 2 || $order['delivery_uid'] != 0) && $order['verify_code']) {
+//            $name = $order['verify_code'] . '.jpg';
+//            /** @var SystemAttachmentServices $attachmentServices */
+//            $attachmentServices = app()->make(SystemAttachmentServices::class);
+//            $imageInfo = $attachmentServices->getInfo(['name' => $name]);
+//            $siteUrl = sys_config('site_url');
+//            if (!$imageInfo) {
+//                $imageInfo = PosterServices::getQRCodePath($order['verify_code'], $name);
+//                if (is_array($imageInfo)) {
+//                    $attachmentServices->attachmentAdd($imageInfo['name'], $imageInfo['size'], $imageInfo['type'], $imageInfo['dir'], $imageInfo['thumb_path'], 1, $imageInfo['image_type'], $imageInfo['time'], 2);
+//                    $url = $imageInfo['dir'];
+//                } else
+//                    $url = '';
+//            } else $url = $imageInfo['att_dir'];
+//            if (isset($imageInfo['image_type']) && $imageInfo['image_type'] == 1) $url = $siteUrl . $url;
+//            $order['code'] = $url;
+            try {
+                $verifyName = 'verify_code_' . $order['verify_code'] . '.jpg';
+                $data = 'verify_code=' . $order['verify_code'];
+                /** @var SystemAttachmentServices $systemAttachmentService */
+                $systemAttachmentService = app()->make(SystemAttachmentServices::class);
+                $imageInfo = $systemAttachmentService->getOne(['name' => $verifyName]);
+                $siteUrl = sys_config('site_url');
+                if (!$imageInfo) {
+                    $res = MiniProgramService::appCodeUnlimitService($data, 'pages/admin/order_cancellation/index', 280);
+                    if (!$res) throw new ApiException('小程序核销码生成失败');
+                    $uploadType = (int)sys_config('upload_type', 1);
+                    $upload = UploadService::init();
+                    $res = (string)EntityBody::factory($res);
+                    $res = $upload->to('routine/product')->validate()->setAuthThumb(false)->stream($res, $verifyName);
+                    if ($res === false) throw new ApiException('小程序核销码生成失败');
+                    $imageInfo = $upload->getUploadInfo();
+                    $imageInfo['image_type'] = $uploadType;
+                    if ($imageInfo['image_type'] == 1) $remoteImage = PosterServices::remoteImage($siteUrl . $imageInfo['dir']);
+                    else $remoteImage = PosterServices::remoteImage($imageInfo['dir']);
+                    if (!$remoteImage['status']) throw new ApiException('小程序核销码生成失败');
+                    $systemAttachmentService->save([
+                        'name' => $imageInfo['name'],
+                        'att_dir' => $imageInfo['dir'],
+                        'satt_dir' => $imageInfo['thumb_path'],
+                        'att_size' => $imageInfo['size'],
+                        'att_type' => $imageInfo['type'],
+                        'image_type' => $imageInfo['image_type'],
+                        'module_type' => 2,
+                        'time' => time(),
+                        'pid' => 1,
+                        'type' => 2
+                    ]);
+                    $url = $imageInfo['dir'];
+                } else $url = $imageInfo['att_dir'];
+                if ($imageInfo['image_type'] == 1) $url = $siteUrl . $url;
+                $order['code'] = $url;
+            } catch (\Exception $e) {
+            }
+        }
+        $order['mapKey'] = sys_config('tengxun_map_key');
+        $order['yue_pay_status'] = (int)sys_config('balance_func_status') && (int)sys_config('yue_pay_status') == 1 ? (int)1 : (int)2;//余额支付 1 开启 2 关闭
+        $order['pay_weixin_open'] = sys_config('pay_weixin_open') != '0';//微信支付 1 开启 0 关闭
+        $order['ali_pay_status'] = sys_config('ali_pay_status', '0') != '0';//支付包支付 1 开启 0 关闭
+        $order['friend_pay_status'] = (int)sys_config('friend_pay_status') ?? 0;//好友代付 1 开启 0 关闭
+        $orderData = $this->tidyOrder($order, true, true);
+        if($savedMarketplaceV1 && in_array($order['pid']??null,[0,'0'],true)
+            &&in_array($order['paid']??null,[0,'0'],true)&&in_array($order['is_cancel']??null,[0,'0'],true)
+            &&($order['pay_type']??null)!==PayServices::OFFLINE_PAY&&($orderData['_status']['_type']??null)===0){
+            $deadline=app()->make(MarketplaceOrderDao::class)->savedPaymentDeadline($order);
+            $orderData['_status']['_msg']=$deadline===0?'订单尚未支付，请完成支付':
+                '请在'.date('m-d H:i:s',$deadline).'前完成支付!';
+        }
+        $vipTruePrice = $memberPrice = $levelPrice = 0;
+        foreach ($orderData['cartInfo'] ?? [] as $key => $cart) {
+            $vipTruePrice = bcadd((string)$vipTruePrice, (string)$cart['vip_sum_truePrice'], 2);
+            if ($cart['price_type'] == 'member') $memberPrice = bcadd((string)$memberPrice, (string)$cart['vip_sum_truePrice'], 2);
+            if ($cart['price_type'] == 'level') $levelPrice = bcadd((string)$levelPrice, (string)$cart['vip_sum_truePrice'], 2);
+            if (isset($splitNum[$cart['id']])) {
+                $orderData['cartInfo'][$key]['cart_num'] = $cart['cart_num'] - $splitNum[$cart['id']];
+                if ($orderData['cartInfo'][$key]['cart_num'] == 0) unset($orderData['cartInfo'][$key]);
+            }
+        }
+        $orderData['cartInfo'] = array_merge($orderData['cartInfo']);
+        $orderData['vip_true_price'] = $vipTruePrice;
+        $orderData['levelPrice'] = $levelPrice;
+        $orderData['memberPrice'] = $memberPrice;
+        $economize = $services->get(['order_id' => $order['order_id']], ['postage_price', 'member_price']);
+        if ($economize) {
+            $orderData['postage_price'] = $economize['postage_price'];
+            $orderData['member_price'] = $economize['member_price'];
+        } else {
+            $orderData['postage_price'] = 0;
+            $orderData['member_price'] = 0;
+        }
+        $orderData['routine_contact_type'] = sys_config('routine_contact_type', 0);
+        /** @var UserInvoiceServices $userInvoice */
+        $userInvoice = app()->make(UserInvoiceServices::class);
+        $invoice_func = $userInvoice->invoiceFuncStatus();
+        $orderData['invoice_func'] = $invoice_func['invoice_func'];
+        $orderData['special_invoice'] = $invoice_func['special_invoice'];
+        $orderData['refund_cartInfo'] = $orderData['cartInfo'];
+        $orderData['refund_total_num'] = $orderData['total_num'];
+        $orderData['refund_pay_price'] = $orderData['pay_price'];
+        $orderData['is_apply_refund'] = true;
+        $orderData['help_info'] = [
+            'pay_uid' => $orderData['pay_uid'],
+            'pay_nickname' => '',
+            'pay_avatar' => '',
+            'help_status' => 0
+        ];
+        $orderData['gift_user_info'] = [
+            'gift_uid' => $orderData['gift_uid'],
+            'gift_nickname' => '',
+            'gift_avatar' => '',
+        ];
+        if ($orderData['uid'] != $orderData['pay_uid']) {
+            /** @var UserServices $userServices */
+            $userServices = app()->make(UserServices::class);
+            $payUser = $userServices->get($orderData['pay_uid'], ['nickname', 'avatar']);
+            $orderData['help_info'] = [
+                'pay_uid' => $orderData['pay_uid'],
+                'pay_nickname' => $payUser['nickname'],
+                'pay_avatar' => $payUser['avatar'],
+                'help_status' => 1
+            ];
+        }
+        if ($orderData['gift_uid'] != 0) {
+            /** @var UserServices $userServices */
+            $userServices = app()->make(UserServices::class);
+            $giftUser = $userServices->get($orderData['gift_uid'], ['nickname', 'avatar']);
+            $orderData['gift_user_info'] = [
+                'gift_uid' => $orderData['gift_uid'],
+                'gift_nickname' => $giftUser['nickname'],
+                'gift_avatar' => $giftUser['avatar'],
+            ];
+        }
+        // 判断是否开启小程序订单管理
+        $orderData['order_shipping_open'] = false;
+        if (sys_config('order_shipping_open', 0) && $order['pay_price'] > 0 && $order['is_channel'] == 1 && $order['pay_type'] == 'weixin' && MiniOrderService::isManaged()) {
+            // 判断是否存在子未收货子订单
+            if ($order['pid'] > 0) {
+                if ($this->checkSubOrderNotTake((int)$order['pid'], (int)$order['id'])) {
+                    $orderData['order_shipping_open'] = true;
+                }
+            } else {
+                $orderData['order_shipping_open'] = true;
+            }
+
+        }
+        $orderData['is_refund_available'] = $this->isRefundAvailable((int)$order['id']);
+
+        $orderData['gift_key'] = $orderData['gift_code'] = '';
+        if ($order['is_gift'] == 1) {
+            $orderData['gift_key'] = md5($order['id'] . '_' . $order['order_id'] . '_' . $order['uid']);
+            /** @var QrcodeServices $qrcodeService */
+            $qrcodeService = app()->make(QrcodeServices::class);
+            $orderData['gift_code'] = $qrcodeService->getRoutineQrcodePath($order['id'], $order['uid'], 7, ['gift_key' => $orderData['gift_key']]);
+        }
+        $orderData['avatar'] = set_file_url($orderData['avatar']);
+        return \app\services\marketplace\order\MarketplaceOrderSnapshotProjection::customerOrder($orderData);
+    }
+
+    /** Original platform selected-row detail body, with the original missing-buyer sentinel. */
+    private function formatSelectedPlatformOrder($orderInfo):array|false
+    {
+        $savedCustomForm=$orderInfo->getData('custom_form');
+        $legacy=\app\services\marketplace\order\MarketplaceTradePolicy::savedOrderIsLegacy($orderInfo->toArray());
+        /** @var UserServices $services */
+        $services = app()->make(UserServices::class);
+        $userInfo = $legacy ? $services->get($orderInfo['uid']) : $services->get($orderInfo['uid'],['real_name']);
+        if (!$userInfo) return false;
+        if($legacy){
+        $userInfo = $userInfo->hidden(['pwd', 'add_ip', 'last_ip', 'login_type']);
+        $userInfo['spread_name'] = '无';
+        if ($userInfo['spread_uid']) {
+            $spreadName = $services->value(['uid' => $userInfo['spread_uid']], 'nickname');
+            if ($spreadName) {
+                $userInfo['spread_name'] = $spreadName;
+            } else {
+                $userInfo['spread_uid'] = '';
+            }
+        } else {
+            $userInfo['spread_uid'] = '';
+        }
+        }
+
+        $orderInfo = $this->tidyOrder($orderInfo->toArray(), true, true);
+        if(!$legacy)$orderInfo['custom_form']=$savedCustomForm;
+        //核算优惠金额
+        $vipTruePrice = $levelPrice = $memberPrice = 0;
+        foreach ($orderInfo['cartInfo'] as $cart) {
+            $vipTruePrice = bcadd((string)$vipTruePrice, (string)$cart['vip_sum_truePrice'], 2);
+            if ($cart['price_type'] == 'member') $memberPrice = bcadd((string)$memberPrice, (string)$cart['vip_sum_truePrice'], 2);
+            if ($cart['price_type'] == 'level') $levelPrice = bcadd((string)$levelPrice, (string)$cart['vip_sum_truePrice'], 2);
+        }
+        $orderInfo['vip_true_price'] = $vipTruePrice;
+        $orderInfo['levelPrice'] = $levelPrice;
+        $orderInfo['memberPrice'] = $memberPrice;
+        if($legacy)$orderInfo['total_price'] = bcadd($orderInfo['total_price'], $orderInfo['vip_true_price'], 2);
+        if ($orderInfo['store_id'] && $orderInfo['shipping_type'] == 2) {
+            /** @var  $storeServices */
+            $storeServices = app()->make(SystemStoreServices::class);
+            $orderInfo['_store_name'] = $storeServices->value(['id' => $orderInfo['store_id']], 'name');
+        } else
+            $orderInfo['_store_name'] = '';
+        if($legacy)$orderInfo['spread_name'] = $services->value(['uid' => $orderInfo['spread_uid']], 'nickname') ?? '无';
+        $orderInfo['_info'] = app()->make(StoreOrderCartInfoServices::class)->getOrderCartInfo((int)$orderInfo['id']);
+        $cart_num = 0;
+        $refund_num = array_sum(array_column($orderInfo['refund'], 'refund_num'));
+        foreach ($orderInfo['_info'] as $items) {
+            $cart_num += $items['cart_info']['cart_num'];
+        }
+        $orderInfo['is_all_refund'] = $refund_num == $cart_num;
+        $userInfo = $legacy ? $userInfo->toArray() : ['real_name'=>$userInfo['real_name']];
+        if(!$legacy)$orderInfo=\app\services\marketplace\order\MarketplaceOrderSnapshotProjection::platformOrder($orderInfo);
+        return compact('orderInfo','userInfo');
     }
 
     /**
@@ -2703,190 +3131,7 @@ HTML;
     {
         $order = $this->getUserOrderDetail($uni, $uid, ['split', 'invoice', 'user']);
         if (!$order) throw new ApiException('商品不存在');
-        $savedCustomForm = $order->getData('custom_form');
-        $order = $order->toArray();
-        $savedMarketplaceV1 = !MarketplaceTradePolicy::savedOrderIsLegacy($order);
-        if($savedMarketplaceV1){
-            if($uid<1 || (string)($order['uid'] ?? '')!==(string)$uid)throw new ApiException('订单不存在');
-            $order['custom_form']=$savedCustomForm;
-        }
-        $splitNum = [];
-        //是否开启门店自提
-        $store_self_mention = sys_config('store_self_mention');
-        //关闭门店自提后 订单隐藏门店信息
-        if ($store_self_mention == 0) $order['shipping_type'] = 1;
-        if ($order['verify_code']) {
-            $verify_code = $order['verify_code'];
-            $verify[] = substr($verify_code, 0, 4);
-            $verify[] = substr($verify_code, 4, 4);
-            $verify[] = substr($verify_code, 8);
-            $order['_verify_code'] = implode(' ', $verify);
-        }
-        $order['add_time_y'] = date('Y-m-d', $order['add_time']);
-        $order['add_time_h'] = date('H:i:s', $order['add_time']);
-        $order['system_store'] = false;
-        if ($order['store_id']) {
-            /** @var SystemStoreServices $storeServices */
-            $storeServices = app()->make(SystemStoreServices::class);
-            $order['system_store'] = $storeServices->getStoreDispose($order['store_id']);
-        }
-        $order['code'] = '';
-        if (($order['shipping_type'] === 2 || $order['delivery_uid'] != 0) && $order['verify_code']) {
-//            $name = $order['verify_code'] . '.jpg';
-//            /** @var SystemAttachmentServices $attachmentServices */
-//            $attachmentServices = app()->make(SystemAttachmentServices::class);
-//            $imageInfo = $attachmentServices->getInfo(['name' => $name]);
-//            $siteUrl = sys_config('site_url');
-//            if (!$imageInfo) {
-//                $imageInfo = PosterServices::getQRCodePath($order['verify_code'], $name);
-//                if (is_array($imageInfo)) {
-//                    $attachmentServices->attachmentAdd($imageInfo['name'], $imageInfo['size'], $imageInfo['type'], $imageInfo['dir'], $imageInfo['thumb_path'], 1, $imageInfo['image_type'], $imageInfo['time'], 2);
-//                    $url = $imageInfo['dir'];
-//                } else
-//                    $url = '';
-//            } else $url = $imageInfo['att_dir'];
-//            if (isset($imageInfo['image_type']) && $imageInfo['image_type'] == 1) $url = $siteUrl . $url;
-//            $order['code'] = $url;
-            try {
-                $verifyName = 'verify_code_' . $order['verify_code'] . '.jpg';
-                $data = 'verify_code=' . $order['verify_code'];
-                /** @var SystemAttachmentServices $systemAttachmentService */
-                $systemAttachmentService = app()->make(SystemAttachmentServices::class);
-                $imageInfo = $systemAttachmentService->getOne(['name' => $verifyName]);
-                $siteUrl = sys_config('site_url');
-                if (!$imageInfo) {
-                    $res = MiniProgramService::appCodeUnlimitService($data, 'pages/admin/order_cancellation/index', 280);
-                    if (!$res) throw new ApiException('小程序核销码生成失败');
-                    $uploadType = (int)sys_config('upload_type', 1);
-                    $upload = UploadService::init();
-                    $res = (string)EntityBody::factory($res);
-                    $res = $upload->to('routine/product')->validate()->setAuthThumb(false)->stream($res, $verifyName);
-                    if ($res === false) throw new ApiException('小程序核销码生成失败');
-                    $imageInfo = $upload->getUploadInfo();
-                    $imageInfo['image_type'] = $uploadType;
-                    if ($imageInfo['image_type'] == 1) $remoteImage = PosterServices::remoteImage($siteUrl . $imageInfo['dir']);
-                    else $remoteImage = PosterServices::remoteImage($imageInfo['dir']);
-                    if (!$remoteImage['status']) throw new ApiException('小程序核销码生成失败');
-                    $systemAttachmentService->save([
-                        'name' => $imageInfo['name'],
-                        'att_dir' => $imageInfo['dir'],
-                        'satt_dir' => $imageInfo['thumb_path'],
-                        'att_size' => $imageInfo['size'],
-                        'att_type' => $imageInfo['type'],
-                        'image_type' => $imageInfo['image_type'],
-                        'module_type' => 2,
-                        'time' => time(),
-                        'pid' => 1,
-                        'type' => 2
-                    ]);
-                    $url = $imageInfo['dir'];
-                } else $url = $imageInfo['att_dir'];
-                if ($imageInfo['image_type'] == 1) $url = $siteUrl . $url;
-                $order['code'] = $url;
-            } catch (\Exception $e) {
-            }
-        }
-        $order['mapKey'] = sys_config('tengxun_map_key');
-        $order['yue_pay_status'] = (int)sys_config('balance_func_status') && (int)sys_config('yue_pay_status') == 1 ? (int)1 : (int)2;//余额支付 1 开启 2 关闭
-        $order['pay_weixin_open'] = sys_config('pay_weixin_open') != '0';//微信支付 1 开启 0 关闭
-        $order['ali_pay_status'] = sys_config('ali_pay_status', '0') != '0';//支付包支付 1 开启 0 关闭
-        $order['friend_pay_status'] = (int)sys_config('friend_pay_status') ?? 0;//好友代付 1 开启 0 关闭
-        $orderData = $this->tidyOrder($order, true, true);
-        if($savedMarketplaceV1 && in_array($order['pid']??null,[0,'0'],true)
-            &&in_array($order['paid']??null,[0,'0'],true)&&in_array($order['is_cancel']??null,[0,'0'],true)
-            &&($order['pay_type']??null)!==PayServices::OFFLINE_PAY&&($orderData['_status']['_type']??null)===0){
-            $deadline=app()->make(MarketplaceOrderDao::class)->savedPaymentDeadline($order);
-            $orderData['_status']['_msg']=$deadline===0?'订单尚未支付，请完成支付':
-                '请在'.date('m-d H:i:s',$deadline).'前完成支付!';
-        }
-        $vipTruePrice = $memberPrice = $levelPrice = 0;
-        foreach ($orderData['cartInfo'] ?? [] as $key => $cart) {
-            $vipTruePrice = bcadd((string)$vipTruePrice, (string)$cart['vip_sum_truePrice'], 2);
-            if ($cart['price_type'] == 'member') $memberPrice = bcadd((string)$memberPrice, (string)$cart['vip_sum_truePrice'], 2);
-            if ($cart['price_type'] == 'level') $levelPrice = bcadd((string)$levelPrice, (string)$cart['vip_sum_truePrice'], 2);
-            if (isset($splitNum[$cart['id']])) {
-                $orderData['cartInfo'][$key]['cart_num'] = $cart['cart_num'] - $splitNum[$cart['id']];
-                if ($orderData['cartInfo'][$key]['cart_num'] == 0) unset($orderData['cartInfo'][$key]);
-            }
-        }
-        $orderData['cartInfo'] = array_merge($orderData['cartInfo']);
-        $orderData['vip_true_price'] = $vipTruePrice;
-        $orderData['levelPrice'] = $levelPrice;
-        $orderData['memberPrice'] = $memberPrice;
-        $economize = $services->get(['order_id' => $order['order_id']], ['postage_price', 'member_price']);
-        if ($economize) {
-            $orderData['postage_price'] = $economize['postage_price'];
-            $orderData['member_price'] = $economize['member_price'];
-        } else {
-            $orderData['postage_price'] = 0;
-            $orderData['member_price'] = 0;
-        }
-        $orderData['routine_contact_type'] = sys_config('routine_contact_type', 0);
-        /** @var UserInvoiceServices $userInvoice */
-        $userInvoice = app()->make(UserInvoiceServices::class);
-        $invoice_func = $userInvoice->invoiceFuncStatus();
-        $orderData['invoice_func'] = $invoice_func['invoice_func'];
-        $orderData['special_invoice'] = $invoice_func['special_invoice'];
-        $orderData['refund_cartInfo'] = $orderData['cartInfo'];
-        $orderData['refund_total_num'] = $orderData['total_num'];
-        $orderData['refund_pay_price'] = $orderData['pay_price'];
-        $orderData['is_apply_refund'] = true;
-        $orderData['help_info'] = [
-            'pay_uid' => $orderData['pay_uid'],
-            'pay_nickname' => '',
-            'pay_avatar' => '',
-            'help_status' => 0
-        ];
-        $orderData['gift_user_info'] = [
-            'gift_uid' => $orderData['gift_uid'],
-            'gift_nickname' => '',
-            'gift_avatar' => '',
-        ];
-        if ($orderData['uid'] != $orderData['pay_uid']) {
-            /** @var UserServices $userServices */
-            $userServices = app()->make(UserServices::class);
-            $payUser = $userServices->get($orderData['pay_uid'], ['nickname', 'avatar']);
-            $orderData['help_info'] = [
-                'pay_uid' => $orderData['pay_uid'],
-                'pay_nickname' => $payUser['nickname'],
-                'pay_avatar' => $payUser['avatar'],
-                'help_status' => 1
-            ];
-        }
-        if ($orderData['gift_uid'] != 0) {
-            /** @var UserServices $userServices */
-            $userServices = app()->make(UserServices::class);
-            $giftUser = $userServices->get($orderData['gift_uid'], ['nickname', 'avatar']);
-            $orderData['gift_user_info'] = [
-                'gift_uid' => $orderData['gift_uid'],
-                'gift_nickname' => $giftUser['nickname'],
-                'gift_avatar' => $giftUser['avatar'],
-            ];
-        }
-        // 判断是否开启小程序订单管理
-        $orderData['order_shipping_open'] = false;
-        if (sys_config('order_shipping_open', 0) && $order['pay_price'] > 0 && $order['is_channel'] == 1 && $order['pay_type'] == 'weixin' && MiniOrderService::isManaged()) {
-            // 判断是否存在子未收货子订单
-            if ($order['pid'] > 0) {
-                if ($this->checkSubOrderNotTake((int)$order['pid'], (int)$order['id'])) {
-                    $orderData['order_shipping_open'] = true;
-                }
-            } else {
-                $orderData['order_shipping_open'] = true;
-            }
-
-        }
-        $orderData['is_refund_available'] = $this->isRefundAvailable((int)$order['id']);
-
-        $orderData['gift_key'] = $orderData['gift_code'] = '';
-        if ($order['is_gift'] == 1) {
-            $orderData['gift_key'] = md5($order['id'] . '_' . $order['order_id'] . '_' . $order['uid']);
-            /** @var QrcodeServices $qrcodeService */
-            $qrcodeService = app()->make(QrcodeServices::class);
-            $orderData['gift_code'] = $qrcodeService->getRoutineQrcodePath($order['id'], $order['uid'], 7, ['gift_key' => $orderData['gift_key']]);
-        }
-        $orderData['avatar'] = set_file_url($orderData['avatar']);
-        return \app\services\marketplace\order\MarketplaceOrderSnapshotProjection::customerOrder($orderData);
+        return $this->formatSelectedOrderDetail($services,$order,$uid);
     }
 
     /**

@@ -87,12 +87,7 @@ class StoreOrder extends AuthController
             ['order', ''],
             ['field_key', ''],
         ]);
-        $where['is_system_del'] = 0;
-        $where['pid'] = 0;
-        if ($where['status'] == 1) $where = $where + ['shipping_type' => 1];
-        return app('json')->success($this->services->getOrderList($where, ['*'], ['split' => function ($query) {
-            $query->field('id,pid');
-        }, 'pink', 'invoice', 'division'],'platform'));
+        return app('json')->success($this->services->readPlatformOrderPage((int)$this->request->adminId(),$where));
     }
 
     /**
@@ -555,60 +550,12 @@ class StoreOrder extends AuthController
      */
     public function order_info($id)
     {
-        if (!$id || !($orderInfo = $this->services->get($id, [], ['refund', 'invoice']))) {
-            return app('json')->fail('订单不存在');
-        }
-        $savedCustomForm=$orderInfo->getData('custom_form');
-        $legacy=\app\services\marketplace\order\MarketplaceTradePolicy::savedOrderIsLegacy($orderInfo->toArray());
-        /** @var UserServices $services */
-        $services = app()->make(UserServices::class);
-        $userInfo = $legacy ? $services->get($orderInfo['uid']) : $services->get($orderInfo['uid'],['real_name']);
-        if (!$userInfo) return app('json')->fail('用户信息不存在');
-        if($legacy){
-        $userInfo = $userInfo->hidden(['pwd', 'add_ip', 'last_ip', 'login_type']);
-        $userInfo['spread_name'] = '无';
-        if ($userInfo['spread_uid']) {
-            $spreadName = $services->value(['uid' => $userInfo['spread_uid']], 'nickname');
-            if ($spreadName) {
-                $userInfo['spread_name'] = $spreadName;
-            } else {
-                $userInfo['spread_uid'] = '';
-            }
-        } else {
-            $userInfo['spread_uid'] = '';
-        }
-        }
-
-        $orderInfo = $this->services->tidyOrder($orderInfo->toArray(), true, true);
-        if(!$legacy)$orderInfo['custom_form']=$savedCustomForm;
-        //核算优惠金额
-        $vipTruePrice = $levelPrice = $memberPrice = 0;
-        foreach ($orderInfo['cartInfo'] as $cart) {
-            $vipTruePrice = bcadd((string)$vipTruePrice, (string)$cart['vip_sum_truePrice'], 2);
-            if ($cart['price_type'] == 'member') $memberPrice = bcadd((string)$memberPrice, (string)$cart['vip_sum_truePrice'], 2);
-            if ($cart['price_type'] == 'level') $levelPrice = bcadd((string)$levelPrice, (string)$cart['vip_sum_truePrice'], 2);
-        }
-        $orderInfo['vip_true_price'] = $vipTruePrice;
-        $orderInfo['levelPrice'] = $levelPrice;
-        $orderInfo['memberPrice'] = $memberPrice;
-        if($legacy)$orderInfo['total_price'] = bcadd($orderInfo['total_price'], $orderInfo['vip_true_price'], 2);
-        if ($orderInfo['store_id'] && $orderInfo['shipping_type'] == 2) {
-            /** @var  $storeServices */
-            $storeServices = app()->make(SystemStoreServices::class);
-            $orderInfo['_store_name'] = $storeServices->value(['id' => $orderInfo['store_id']], 'name');
-        } else
-            $orderInfo['_store_name'] = '';
-        if($legacy)$orderInfo['spread_name'] = $services->value(['uid' => $orderInfo['spread_uid']], 'nickname') ?? '无';
-        $orderInfo['_info'] = app()->make(StoreOrderCartInfoServices::class)->getOrderCartInfo((int)$orderInfo['id']);
-        $cart_num = 0;
-        $refund_num = array_sum(array_column($orderInfo['refund'], 'refund_num'));
-        foreach ($orderInfo['_info'] as $items) {
-            $cart_num += $items['cart_info']['cart_num'];
-        }
-        $orderInfo['is_all_refund'] = $refund_num == $cart_num;
-        $userInfo = $legacy ? $userInfo->toArray() : ['real_name'=>$userInfo['real_name']];
-        if(!$legacy)$orderInfo=\app\services\marketplace\order\MarketplaceOrderSnapshotProjection::platformOrder($orderInfo);
-        return app('json')->success(compact('orderInfo', 'userInfo'));
+        if(!$id)return app('json')->fail('订单不存在');
+        $data=$this->services->readPlatformOrderDetail((int)$this->request->adminId(),$id,
+            $this->request->get('fulfillment_page',1,''),$this->request->get('fulfillment_limit',20,''));
+        if($data===null)return app('json')->fail('订单不存在');
+        if($data===false)return app('json')->fail('用户信息不存在');
+        return app('json')->success($data);
     }
 
     /**

@@ -755,6 +755,10 @@ V1 六纯 DTO 和专用 child 复用实际保存金额/数量校核及根履约�
 
 原失败按专用已审close/independentzero实际收口：两数据库各一次正常停止且容器退出0/PID0，paid自然0及migration自然1保持；非force精确删除原4CID/1内网/6卷。两工具均真实native0/空stderr，六次fresh资源查询双流全空，前后各53个现存容器扫描均无原资源消费者；关闭结果摘要`183c60335357b247f148eedbc7f2d104c49d3d3f269c9b7903966eca16419c7a`，独立核零`8f231d252fad6c733cc5133d7ec80aefc2d3307eeef8f671b444661b19b51c36`。原4291份公开原件、原P/freeze和失败均保全，仅独立zero0后解冻Main；不重开旧Run，不把资源收尾升级为业务通过。详见[首轮履约来源校验失败记录](records/ms4/fulfillment-migration-source-failure.md)。发货/收货、三端API/DOM、Worker、Task7与全部原后继范围仍未验收，停止样本保持NOT RUN。
 
+三端owned读取有限补充采用（2026-10-18，先于接入）：采用原外部 `read-three-owned-service-source-r1/ROOT-FACTS-ADDENDUM-r1.md` 5028B/`b796b7497f687b476f8d7bf5c38c4da8f55c89e65a2c270bed0ad8aa19c25753` 及 `ROOT-ACTIVITY-DOMAIN-ADDENDUM-r1.md` 2272B/`1b14f661ceb2b95e02055ed7f418c8ddd2d96183d017b26731825060ff34f402`，原设计及采用原件保持。六纯DTO的facts仅增加真实保存payment_deadline至九键，null与实际0分开；仅原顾客/移动详情适用未付子集批读保存期限，不重算当前配置。真实缺buyer关系保null，平台详情先行缺buyer响应保持；仅成功owned commit后按原实际配置及保存weixin/is_channel条件调用原MiniOrder观察。真实0秒旧日志保原显示，缺履约事件不补0。新三端V1普通交易域沿既有创建政策检查七活动flag为0，legacy与原merchant未付方法不改，不新增is_channel0或paid1门。
+
+三端owned读取九PHP源码接入检查点（2026-10-18）：在失败Run独立zero0后，按原已审候选接入FulfillmentDao、SnapshotProjection、StoreOrderDao、FulfillmentServices、StoreOrderServices、WapServices与顾客/平台/移动三个既有控制器。Root此前全文读取、完整字节正逆及独立SOURCE复核保持；接入前再次核实际供体和候选，固定PHP8.2语法九件全部native0/空stderr，专用语法容器前后为空，外部20件合并语法收据15447B/`5746e06037fe073be2836eaf7d56ecaaeee379514c3e1a4dbafee564e2807bce`。六端点共用同owned RR读取完整根/items/payment/original/family/history及批读显示事实，平台详情buyer先行，child实际授权及独立分页；legacy保存原header/顺序/count后才在commit外物化原formatter，图片仍在commit外沿原引擎。此为源码及语法检查点，尚无新SQL/HTTP/DOM或六端点真实读取通过证据；原页面消费者、新五条履约API及操作表单、完整普通回归/Worker和所有原后继验收责任仍保留，不能据此勾选Task6。
+
 ### Task 7: 退款额度与库存行为
 
 - 接口：申请退款时在事务中锁定订单行，校验"已退金额 + 处理中金额 + 本次金额 ≤ 实付"；三类库存行为分别写 `release`（未发货取消）、`return_in`（退货验收入库）、不写（仅退款）。

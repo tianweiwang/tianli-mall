@@ -177,10 +177,6 @@ class StoreOrderController
             ['keyword', '', '', 'real_name'],
             ['pay_type', ''],
         ]);
-        $where['is_system_del'] = 0;
-        if (!in_array($where['status'], [-1, -2, -3])) {
-            $where['pid'] = 0;
-        }
         return app('json')->success($this->service->getWapAdminOrderList($where,'mobile',(int)$request->uid()));
     }
 
@@ -197,13 +193,9 @@ class StoreOrderController
      */
     public function detail(Request $request, StoreOrderServices $services, UserServices $userServices, $orderId)
     {
-        $economizeServices = app()->make(StoreOrderEconomizeServices::class);
-        $saved=$services->getOne(['order_id|unique'=>$orderId],'id,marketplace_trade_version');
-        if($saved&&!MarketplaceTradePolicy::savedOrderIsLegacy($saved->toArray())){
-            return app('json')->success($services->getUserOrderByKey($economizeServices,(string)$orderId,(int)$request->uid()));
-        }
-        $orderData = $services->getUserOrderByKey($economizeServices, $orderId, 0);
-        $orderData['nickname'] = $userServices->value(['uid' => $orderData['uid']], 'nickname');
+        $economizeServices=app()->make(StoreOrderEconomizeServices::class);
+        $orderData=$services->readMobileOrderDetail($economizeServices,(string)$orderId,(int)$request->uid(),
+            $request->get('fulfillment_page',1,''),$request->get('fulfillment_limit',20,''));
         return app('json')->success($orderData);
     }
 

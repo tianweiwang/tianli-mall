@@ -400,15 +400,7 @@ class StoreOrderController
             ['search', '', '', 'real_name'],
             ['refund_type', '', '', 'refundTypes']
         ]);
-        $where['uid'] = $request->uid();
-        $where['is_del'] = 0;
-        $where['is_system_del'] = 0;
-        if (in_array($where['status'], [-1, -2, -3])) {
-            $where['not_pid'] = 1;
-        } elseif (in_array($where['status'], [0, 1, 2, 3, 4, 9])) {
-            $where['pid'] = 0;
-        }
-        $list = $this->services->getOrderApiList($where,['*'],[],'customer',(int)$request->uid());
+        $list=$this->services->readCustomerOrderPage((int)$request->uid(),$where);
         return app('json')->success($list);
     }
 
@@ -425,7 +417,8 @@ class StoreOrderController
     public function detail(Request $request, StoreOrderEconomizeServices $services, $uni)
     {
         if (!strlen(trim($uni))) return app('json')->fail('参数错误');
-        $orderData = $this->services->getUserOrderByKey($services, $uni, (int)$request->uid());
+        $orderData=$this->services->readCustomerOrderDetail($services,$uni,(int)$request->uid(),
+            $request->get('fulfillment_page',1,''),$request->get('fulfillment_limit',20,''));
         return app('json')->success($orderData);
     }
 

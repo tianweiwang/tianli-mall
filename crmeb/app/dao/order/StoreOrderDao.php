@@ -37,6 +37,44 @@ class StoreOrderDao extends BaseDao
         return StoreOrder::class;
     }
 
+
+    /** Selected legacy headers only; invoked after the owned reader has committed. No root re-selection. */
+    public function materializeSelectedLegacyOrders(array $headers,string $view):array
+    {
+        if(!array_is_list($headers)||!in_array($view,['customer_list','platform_list','mobile_list','customer_detail','platform_detail','mobile_detail'],true))
+            throw new \crmeb\exceptions\AuthUnavailableException();
+        $prototype=new StoreOrder();$models=[];$ids=[];
+        foreach($headers as$header){
+            if(!is_array($header)||!array_key_exists('marketplace_trade_version',$header)
+                ||!\app\services\marketplace\order\MarketplaceTradePolicy::savedOrderIsLegacy($header))
+                throw new \crmeb\exceptions\AuthUnavailableException();
+            foreach($header as$value)if($value!==null&&!is_string($value)&&!is_int($value))throw new \crmeb\exceptions\AuthUnavailableException();
+            $id=$header['id']??null;
+            if((!is_int($id)&&(!is_string($id)||preg_match('/\A[1-9][0-9]{0,9}\z/D',$id)!==1))
+                ||(int)$id<1||(int)$id>4294967295||isset($ids[(int)$id]))throw new \crmeb\exceptions\AuthUnavailableException();
+            $ids[(int)$id]=true;$models[]=$prototype->newInstance($header);
+        }
+        if($models===[])return [];
+        switch($view){
+            case 'customer_list':$with=['user','spread','refund'];break;
+            case 'platform_list':$with=['user','spread','refund','split'=>static function($query){$query->field('id,pid');},'pink','invoice','division'];break;
+            case 'mobile_list':$with=['user','spread','refund','pink'];break;
+            case 'customer_detail':case 'mobile_detail':$with=['split','invoice','user'];break;
+            case 'platform_detail':$with=['refund','invoice'];break;
+            default:throw new \crmeb\exceptions\AuthUnavailableException();
+        }
+        if(str_ends_with($view,'_detail')){
+            if(count($models)!==1)throw new \crmeb\exceptions\AuthUnavailableException();
+            $prototype->eagerlyResult($models[0],$with);
+        }else $prototype->eagerlyResultSet($models,$with);
+        foreach($models as$index=>$model){
+            $actual=$model->getData();
+            foreach($headers[$index] as$field=>$value)if(!array_key_exists($field,$actual)||$actual[$field]!==$value)
+                throw new \crmeb\exceptions\AuthUnavailableException();
+        }
+        return $models;
+    }
+
     /**
      * 订单搜索
      * @param array $where
