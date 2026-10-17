@@ -695,6 +695,9 @@ R7实际结果（2026-10-16，详见03）：clean `a74f2b27275229dcb089581039dc3
 
 Order事实批量接缝实际应用（2026-10-18）：Root独立全文读取新增两组raw后采用 `read-order-batch-source-r1/MarketplaceOrderDao.php.candidate` 108621B/`2c38a1e60e228a468a33baae589f3df99dd8b4558871d6e44fff5be70ddce93c`。同原Connection/PDO和真实getter门下，0..100个已授权同快照raw根24列+pid，经固定user/ledger/items/movement/child五条完整SELECT取得原八键事实，逐根仅调用原pure六输出；单movement OR/真实reserve子查询保order-local及全部父关联双视图，U64仍按规范十进制字符串，单条最多201绑定，无parent N+1、截断、预滤坏关联或第二金额/库存算法。原writer、pure及全部旧方法经两组完整正逆逐字保持。Root实际PHP8.2语法0、仅两路径本地应用及staged diff-check通过；没有调用这些SQL或接入三端API/DOM。真实RR READ ONLY生命周期、完整family/history/summary/child DTO及原全部后继验收继续本Task6，不以批量接缝宣称完整读取或付款winner已核。
 
+
+完整家族读取实施采用（2026-10-18，先于代码）：Root全文采用 `artifacts/ms4-fulfillment-writer-preparation/design-source-r1/READ-FAMILY-HISTORY-SEAMS-r2.md` 20823B/`eb4e477c7fc796b863cfcd75a1f7a2d2663c4fec7eb49ff072d264174ecb67a3`，六组完整正逆精确回R1。本片在原FulfillmentServices加无SQL/Auth/时间的readHistoryFromFacts，严格实际付款observation两键/根一致及原创建来源后仅调原paid/history，原history八键/summary十一键/三digest/写锁时点不改；原FulfillmentDao增加固定同PDO六类完整家族读取。child items/refunds/两类logs用同快照真实child子查询，绑定只随最多100个root增长，日志最多202参数且重复保多重集，无历史条数截断或parent N+1。本页有paid根时真实探表并对全部roots读取现存op/range，含未付根的实际冲突；全未付不强制探表，未观察或缺失明确null而非空历史。原normal/history失败不转nullable，本片不启用尚未完成的售后兼容闭集；Task7及原READ-SEAMS的完整消费责任保留。本项只采用函数级合同，后继仍须独审、语法、真实RR/结构/普通履约与三端API/DOM，不勾选Task6或商城验收。
+
 ### Task 7: 退款额度与库存行为
 
 - 接口：申请退款时在事务中锁定订单行，校验"已退金额 + 处理中金额 + 本次金额 ≤ 实付"；三类库存行为分别写 `release`（未发货取消）、`return_in`（退货验收入库）、不写（仅退款）。
