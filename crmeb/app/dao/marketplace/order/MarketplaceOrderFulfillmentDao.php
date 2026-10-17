@@ -21,7 +21,8 @@ final class MarketplaceOrderFulfillmentDao
     private const MARKER='marketplace-ms4-fulfillment-v1';
     private const TABLES=['user','store_order','store_order_cart_info','store_order_refund','store_order_status',
         'marketplace_fulfillment_operation','marketplace_fulfillment_range','marketplace_merchant','marketplace_stock_movement',
-        'store_product','store_bargain','store_combination','store_seckill'];
+        'store_product','store_bargain','store_combination','store_seckill',
+        'store_order_invoice','store_order_economize','store_product_reply','system_store'];
     private string $prefix;
     private string $database='';
     private ?PDO $schemaPdo=null;
@@ -464,7 +465,7 @@ final class MarketplaceOrderFulfillmentDao
         if(preg_match('//u',$locator)!==1||str_contains($locator,"\0"))self::unavailable();
     }
 
-    /** Only this fixed selector family calls this ordinary native reader; no transaction lifecycle or ORM. */
+    /** Only fixed root selectors and display auxiliaries call this native reader; no lifecycle or ORM. */
     private function rootSnapshotRows(ConnectionInterface $connection,PDO $pdo,string $sql,array $parameters):array
     {
         $this->readStructureConnection($connection,$pdo);
@@ -478,6 +479,159 @@ final class MarketplaceOrderFulfillmentDao
         foreach($rows as$row){
             if(!is_array($row))self::unavailable();
             foreach($row as$value)if($value!==null&&!is_string($value)&&!is_int($value))self::unavailable();
+        }
+        return $rows;
+    }
+
+    /** Fixed V1 display facts only. Authorization, complete item correspondence and lifecycle stay with the caller. */
+    public function readDisplayAuxiliariesForRoots(ConnectionInterface $connection,PDO $pdo,array $fullAuthorizedRoots,string $view):array
+    {
+        $this->readStructureConnection($connection,$pdo);
+        if(!in_array($view,['customer_list','platform_list','mobile_list','customer_detail','platform_detail','mobile_detail'],true))self::unavailable();
+        $roots=$this->displayAuxRoots($fullAuthorizedRoots);
+        $out=['users'=>null,'invoices'=>null,'economize'=>null,'reply_counts'=>null,'stores'=>null];
+        if(in_array($view,['platform_list','customer_detail','platform_detail','mobile_detail'],true))
+            $out['users']=$this->displayAuxUsers($connection,$pdo,$roots,$view);
+        if(in_array($view,['customer_detail','platform_detail','mobile_detail'],true))
+            $out['invoices']=$this->displayAuxInvoices($connection,$pdo,$roots);
+        if(in_array($view,['customer_detail','mobile_detail'],true))
+            $out['economize']=$this->displayAuxEconomize($connection,$pdo,$roots);
+        if(in_array($view,['customer_list','customer_detail','platform_detail','mobile_detail'],true))
+            $out['reply_counts']=$this->displayAuxReplyCounts($connection,$pdo,$roots);
+        if(in_array($view,['customer_detail','mobile_detail'],true))
+            $out['stores']=$this->displayAuxStores($connection,$pdo,$roots);
+        $this->readStructureConnection($connection,$pdo);return $out;
+    }
+
+    private function displayAuxRoots(array $fullAuthorizedRoots):array
+    {
+        if(!array_is_list($fullAuthorizedRoots)||count($fullAuthorizedRoots)>100)self::unavailable();$roots=[];
+        foreach($fullAuthorizedRoots as$root){
+            if(!is_array($root))self::unavailable();
+            foreach($root as$value)if($value!==null&&!is_int($value)&&!is_string($value))self::unavailable();
+            $id=self::integer($root['id']??null,1,self::INT_MAX);
+            $uid=self::integer($root['uid']??null,1,self::INT_MAX);$mer=self::integer($root['mer_id']??null,1,self::UINT_MAX);
+            self::stored($root,['marketplace_trade_version'=>1,'pid'=>0]);
+            $number=self::text($root['order_id']??null,32,true);$signed=[];
+            foreach(['pay_uid','store_id']as$field){
+                $value=$root[$field]??null;
+                if(!is_int($value)&&(!is_string($value)||preg_match('/\A(?:0|-?[1-9][0-9]{0,9})\z/D',$value)!==1))self::unavailable();
+                $n=(int)$value;if($n< -2147483648||$n>self::INT_MAX)self::unavailable();$signed[$field]=$n;
+            }
+            if(isset($roots[$id]))self::unavailable();
+            $roots[$id]=['uid'=>$uid,'mer_id'=>$mer,'order_id'=>$number,'pay_uid'=>$signed['pay_uid'],'store_id'=>$signed['store_id']];
+        }
+        ksort($roots,SORT_NUMERIC);return $roots;
+    }
+
+    private function displayAuxUsers(ConnectionInterface $connection,PDO $pdo,array $roots,string $view):array
+    {
+        if($view==='platform_list'){$columns='uid,nickname';$lengths=['nickname'=>240];}
+        elseif(in_array($view,['customer_detail','mobile_detail'],true)){$columns='uid,nickname,avatar';$lengths=['nickname'=>240,'avatar'=>1024];}
+        elseif($view==='platform_detail'){$columns='uid,real_name';$lengths=['real_name'=>100];}
+        else self::unavailable();
+        $wanted=[];
+        foreach($roots as$root){
+            $wanted[$root['uid']]=true;
+            if(in_array($view,['customer_detail','mobile_detail'],true)&&$root['pay_uid']!==$root['uid'])$wanted[$root['pay_uid']]=true;
+        }
+        if($wanted===[])return [];$ids=array_keys($wanted);sort($ids,SORT_NUMERIC);
+        $rows=$this->rootSnapshotRows($connection,$pdo,'SELECT '.$columns.' FROM '.$this->table('user').
+            ' WHERE uid IN ('.implode(',',array_fill(0,count($ids),'?')).') ORDER BY uid',$ids);
+        $last=0;
+        foreach($rows as$row){
+            self::keys($row,explode(',',$columns));$id=self::integer($row['uid'],1,self::UINT_MAX);
+            if(!isset($wanted[$id])||$id<=$last)self::unavailable();$last=$id;
+            foreach($lengths as$field=>$max)self::text($row[$field],$max);
+        }
+        // Absence stays observable; the platform detail caller preserves its original missing-user response.
+        return $rows;
+    }
+
+    private function displayAuxInvoices(ConnectionInterface $connection,PDO $pdo,array $roots):array
+    {
+        if($roots===[])return [];$ids=array_keys($roots);
+        $columns='id,uid,order_id,invoice_id,category,header_type,type,name,duty_number,drawer_phone,email,tell,address,bank,card_number,is_pay,is_invoice,remark,invoice_number,invoice_time,add_time';
+        $rows=$this->rootSnapshotRows($connection,$pdo,'SELECT '.$columns.' FROM '.$this->table('store_order_invoice').
+            ' WHERE order_id IN ('.implode(',',array_fill(0,count($ids),'?')).') ORDER BY order_id,id',$ids);
+        $seen=[];$lastRoot=0;
+        foreach($rows as$row){
+            self::keys($row,explode(',',$columns));$id=self::integer($row['id'],1,self::INT_MAX);
+            $oid=self::integer($row['order_id'],1,self::INT_MAX);
+            if(!isset($roots[$oid])||isset($seen[$id])||$oid<=$lastRoot)self::unavailable();
+            self::stored($row,['uid'=>$roots[$oid]['uid']]);self::integer($row['invoice_id'],0,self::INT_MAX);
+            foreach(['header_type'=>127,'type'=>127,'is_pay'=>127,'is_invoice'=>127,'invoice_time'=>self::INT_MAX,'add_time'=>self::INT_MAX]as$field=>$max){
+                $value=$row[$field];
+                if(!is_int($value)&&(!is_string($value)||preg_match('/\A(?:0|-?[1-9][0-9]{0,9})\z/D',$value)!==1))self::unavailable();
+                $n=(int)$value;if($n< -$max-1||$n>$max)self::unavailable();
+            }
+            foreach(['category'=>40,'name'=>400,'duty_number'=>200,'drawer_phone'=>120,'email'=>400,'tell'=>120,
+                'address'=>1020,'bank'=>200,'card_number'=>200,'remark'=>1020,'invoice_number'=>200]as$field=>$max)self::text($row[$field],$max);
+            $seen[$id]=true;$lastRoot=$oid;
+        }
+        // Raw add_time remains untouched; the pure DTO retains the original model accessor's type-sensitive rule.
+        return $rows;
+    }
+
+    private function displayAuxEconomize(ConnectionInterface $connection,PDO $pdo,array $roots):array
+    {
+        if($roots===[])return [];$numbers=[];$owners=[];
+        foreach($roots as$root){
+            $key='n:'.$root['order_id'];if(isset($owners[$key]))self::unavailable();
+            $numbers[]=$root['order_id'];$owners[$key]=$root['uid'];
+        }
+        $rows=$this->rootSnapshotRows($connection,$pdo,'SELECT id,order_id,uid,postage_price,member_price FROM '.$this->table('store_order_economize').
+            ' WHERE order_id IN ('.implode(',',array_fill(0,count($numbers),'?')).') ORDER BY order_id,uid,id',$numbers);
+        $seenIds=[];$seenNumbers=[];
+        foreach($rows as$row){
+            self::keys($row,['id','order_id','uid','postage_price','member_price']);
+            $id=self::integer($row['id'],1,self::UINT_MAX);$number=self::text($row['order_id'],32,true);$key='n:'.$number;
+            if(!isset($owners[$key])||isset($seenIds[$id])||isset($seenNumbers[$key]))self::unavailable();
+            self::stored($row,['uid'=>$owners[$key]]);
+            foreach(['postage_price','member_price']as$field)
+                if(!is_string($row[$field])||preg_match('/\A(?:0|[1-9][0-9]{0,9})\.[0-9]{2}\z/D',$row[$field])!==1)self::unavailable();
+            $seenIds[$id]=true;$seenNumbers[$key]=true;
+        }
+        return $rows;
+    }
+
+    private function displayAuxReplyCounts(ConnectionInterface $connection,PDO $pdo,array $roots):array
+    {
+        if($roots===[])return [];$ids=array_keys($roots);
+        // Keep the original global unique-only database comparison, including its collation; no reply owner/deletion filter.
+        $rows=$this->rootSnapshotRows($connection,$pdo,'SELECT ci.id AS item_id,ci.oid AS root_order_id,ci.uid,ci.mer_id,ci.`unique`,COUNT(r.id) AS reply_count FROM '.
+            '(SELECT id,oid,uid,mer_id,`unique` FROM '.$this->table('store_order_cart_info').' WHERE oid IN ('.
+            implode(',',array_fill(0,count($ids),'?')).')) ci LEFT JOIN '.$this->table('store_product_reply').' r ON r.`unique`=ci.`unique`'.
+            ' GROUP BY ci.id,ci.oid,ci.uid,ci.mer_id,ci.`unique` ORDER BY ci.oid,ci.id',$ids);
+        $seen=[];$unique=[];$counts=[];$lastRoot=0;$lastItem=0;
+        foreach($roots as$id=>$root){$counts[$id]=0;$unique[$id]=[];}
+        foreach($rows as$row){
+            self::keys($row,['item_id','root_order_id','uid','mer_id','unique','reply_count']);
+            $id=self::integer($row['item_id'],1,self::INT_MAX);$oid=self::integer($row['root_order_id'],1,self::INT_MAX);
+            if(!isset($roots[$oid])||isset($seen[$id])||$oid<$lastRoot||($oid===$lastRoot&&$id<=$lastItem))self::unavailable();
+            self::stored($row,['uid'=>$roots[$oid]['uid'],'mer_id'=>$roots[$oid]['mer_id']]);
+            $key='u:'.self::text($row['unique'],128);self::integer($row['reply_count'],0,PHP_INT_MAX);
+            if(isset($unique[$oid][$key])||++$counts[$oid]>500)self::unavailable();
+            $unique[$oid][$key]=true;$seen[$id]=true;$lastRoot=$oid;$lastItem=$id;
+        }
+        foreach($counts as$count)if($count===0)self::unavailable();
+        // No full saved item set is supplied here. The service must compare both complete sets before publication.
+        return $rows;
+    }
+
+    private function displayAuxStores(ConnectionInterface $connection,PDO $pdo,array $roots):array
+    {
+        $wanted=[];foreach($roots as$root)if($root['store_id']!==0)$wanted[$root['store_id']]=true;
+        if($wanted===[])return [];$ids=array_keys($wanted);sort($ids,SORT_NUMERIC);
+        $columns='id,name,phone,address,detailed_address,image,latitude,longitude,day_time';
+        $rows=$this->rootSnapshotRows($connection,$pdo,'SELECT '.$columns.' FROM '.$this->table('system_store').
+            ' WHERE id IN ('.implode(',',array_fill(0,count($ids),'?')).') ORDER BY id',$ids);
+        $last=0;
+        foreach($rows as$row){
+            self::keys($row,explode(',',$columns));$id=self::integer($row['id'],1,self::UINT_MAX);
+            if(!isset($wanted[$id])||$id<=$last)self::unavailable();$last=$id;
+            foreach(['name'=>400,'phone'=>100,'address'=>1020,'detailed_address'=>1020,'image'=>1020,
+                'latitude'=>100,'longitude'=>100,'day_time'=>400]as$field=>$max)self::text($row[$field],$max);
         }
         return $rows;
     }
