@@ -715,6 +715,8 @@ Out/客服/移动旧读取边界实施采用（2026-10-18）：Root全文采用 
 
 商家原正常读取用例接线（2026-10-18）：沿原Task6新增wire合同，采用外部merchant-read-normal-source-r1唯一候选22134B/`c5a823a9f36e30f0f8e337fe8d62eab24774eb09680fa33fcee292caaa524a09`。原独立observer保存行完整重建DTO、价格/规格/地址/表单、三实际账号及两页/取消/空店/paid1空结果断言全部保持；只对真实paid0/pay_time0/trade_no空增加独立字面fulfillment_summary=null与双动作false，且每次原成功读取后核原业务Connection/PDO、实际compat depth0及observer不同/native非事务。原m4pc_context、原证明键和父profile闭集不变。Root十组全文正逆、独立SOURCE及固定PHP8.2语法实际0；这是本地测试接线，新的完整隔离正常回归尚待运行，不据此勾选MySQL/已付/发货收货/API/DOM或Task6。原未付普通全链使用既有candidate-full-order-r2不改程序，以新clean来源/new freeze/new Run复测；已停止样本不运行。
 
+履约普通真实验证接缝采用（2026-10-18，实施前）：采用外部 `design-source-r1/TASK6-NORMAL-VALIDATION-SEAMS-r1.md` 9896B/`26eee884937d1a4c6c3ad1013d702453837984c0026c3237bd7306aab2def6de`。沿原Task6，在新的独立profile/Run保留原9+4/files/C3及真实paid生产者阶段，新增有限履约迁移CLI wrapper和普通业务CLI；四个实际check/apply/check/apply子进程只用专用migrator，业务仍DML-only。真实同Run已认证本人来源、实际商家setup/login/order.ship、原2+1数量依次分批发货和三次收货，独立保存行/原Q/分币/全库与Redis目标差分为证，不覆盖原paid结果/封存或以Projection自证。仅专用新配置system_delivery_time JSON0，Worker不激活；新profile须完整登记/绑定两role和来源，精确正常关闭及独立核零不能借旧P2三角色结果。旧Run/P2/原证据保持；商家helper已于本地2cc1524接线，设计中其20539B旧供体仅保留来源，后继用真实22134B新源。当前只是设计采用，各新入口/材料及真实迁移/ship/receive尚未运行，三端API/DOM、child分页、售后/金融/历史/发布仍保留原任务；已停止样本不恢复。
+
 ### Task 7: 退款额度与库存行为
 
 - 接口：申请退款时在事务中锁定订单行，校验"已退金额 + 处理中金额 + 本次金额 ≤ 实付"；三类库存行为分别写 `release`（未发货取消）、`return_in`（退货验收入库）、不写（仅退款）。
