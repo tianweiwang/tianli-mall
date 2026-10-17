@@ -111,6 +111,140 @@ final class MarketplaceOrderFulfillmentDao
         }
     }
 
+    /**
+     * Complete page-local family facts inside the caller-owned native read snapshot.
+     * Saved owners are data; authorization and RR READ ONLY ownership remain with the caller.
+     */
+    public function readFamiliesForRoots(ConnectionInterface $connection,PDO $pdo,array $fullAuthorizedRoots):array
+    {
+        $this->readStructureConnection($connection,$pdo);
+        if(!array_is_list($fullAuthorizedRoots)||count($fullAuthorizedRoots)>100)self::unavailable();
+        $roots=[];$families=[];$hasPaid=false;
+        foreach($fullAuthorizedRoots as$root){
+            if(!is_array($root))self::unavailable();
+            foreach($root as$value)if($value!==null&&!is_string($value)&&!is_int($value))self::unavailable();
+            $id=self::integer($root['id']??null,1,self::INT_MAX);
+            $uid=self::integer($root['uid']??null,1,self::INT_MAX);
+            $mer=self::integer($root['mer_id']??null,1,self::UINT_MAX);
+            self::text($root['order_id']??null,32,true);
+            self::integer($root['marketplace_trade_version']??null,1,1);self::integer($root['pid']??null,0,0);
+            $paid=self::integer($root['paid']??null,0,1);
+            if(isset($roots[$id]))self::unavailable();
+            $roots[$id]=['uid'=>$uid,'mer_id'=>$mer,'paid'=>$paid];
+            $families[$id]=['children'=>[],'child_items'=>[],'refunds'=>[],'logs'=>[],'operations'=>null,'ranges'=>null];
+            if($paid===1)$hasPaid=true;
+        }
+        if($roots===[]){$this->readStructureConnection($connection,$pdo);return ['readiness'=>null,'roots'=>[]];}
+        $ids=array_keys($roots);sort($ids,SORT_NUMERIC);$marks=implode(',',array_fill(0,count($ids),'?'));
+        $readiness=$hasPaid?$this->readStructureReadiness($connection,$pdo):null;
+        foreach($families as&$family){
+            if($readiness!==null&&$readiness['operation_present'])$family['operations']=[];
+            if($readiness!==null&&$readiness['range_present'])$family['ranges']=[];
+        }unset($family);
+        $orders=$this->table('store_order');$childMap=[];$lastPid=0;$lastChild=0;
+        $rows=$this->familySnapshotRows($connection,$pdo,'SELECT * FROM '.$orders.
+            ' WHERE pid IN ('.$marks.') ORDER BY pid,id',$ids);
+        foreach($rows as$row){
+            $id=self::integer($row['id']??null,1,self::INT_MAX);$pid=self::integer($row['pid']??null,1,self::INT_MAX);
+            if(!isset($roots[$pid])||isset($childMap[$id])||isset($roots[$id])
+                ||$pid<$lastPid||($pid===$lastPid&&$id<=$lastChild))self::unavailable();
+            self::stored($row,['uid'=>$roots[$pid]['uid'],'mer_id'=>$roots[$pid]['mer_id'],'marketplace_trade_version'=>1]);
+            self::text($row['order_id']??null,32,true);$lastPid=$pid;$lastChild=$id;
+            $childMap[$id]=$pid;$families[$pid]['children'][]=$row;
+        }
+        $childQuery='SELECT child.id FROM '.$orders.' child WHERE child.pid IN ('.$marks.')';
+        $itemMap=[];$lastOid=0;$lastItem=0;
+        $rows=$this->familySnapshotRows($connection,$pdo,'SELECT ci.* FROM '.$this->table('store_order_cart_info').
+            ' ci WHERE ci.oid IN ('.$childQuery.') ORDER BY ci.oid,ci.id',$ids);
+        foreach($rows as$row){
+            $id=self::integer($row['id']??null,1,self::INT_MAX);$oid=self::integer($row['oid']??null,1,self::INT_MAX);
+            if(!isset($childMap[$oid])||isset($itemMap[$id])||$oid<$lastOid||($oid===$lastOid&&$id<=$lastItem))self::unavailable();
+            $rid=$childMap[$oid];self::stored($row,['uid'=>$roots[$rid]['uid'],'mer_id'=>$roots[$rid]['mer_id']]);
+            $lastOid=$oid;$lastItem=$id;$itemMap[$id]=['root'=>$rid,'child'=>$oid];$families[$rid]['child_items'][]=$row;
+        }
+        $both=array_merge($ids,$ids);$refundIds=[];$lastOid=0;$lastRefund=0;
+        $rows=$this->familySnapshotRows($connection,$pdo,'SELECT rf.* FROM '.$this->table('store_order_refund').
+            ' rf WHERE (rf.store_order_id IN ('.$marks.') OR rf.store_order_id IN ('.$childQuery.')) ORDER BY rf.store_order_id,rf.id',$both);
+        foreach($rows as$row){
+            $id=self::integer($row['id']??null,1,self::INT_MAX);$oid=self::integer($row['store_order_id']??null,1,self::INT_MAX);
+            $rid=isset($roots[$oid])?$oid:($childMap[$oid]??null);
+            if($rid===null||isset($refundIds[$id])||$oid<$lastOid||($oid===$lastOid&&$id<=$lastRefund))self::unavailable();
+            self::stored($row,['uid'=>$roots[$rid]['uid'],'mer_id'=>$roots[$rid]['mer_id']]);
+            if(!array_key_exists('marketplace_refund_mode',$row))self::unavailable();
+            if($row['marketplace_refund_mode']!==null)self::text($row['marketplace_refund_mode'],16);
+            $refundIds[$id]=true;$lastOid=$oid;$lastRefund=$id;
+            $families[$rid]['refunds'][]=$row;
+        }
+        $types=['marketplace_fulfillment_ship','marketplace_fulfillment_receive'];
+        $rows=$this->familySnapshotRows($connection,$pdo,'SELECT st.oid,st.change_type,st.change_message,st.change_time FROM '.
+            $this->table('store_order_status').' st WHERE (st.oid IN ('.$marks.') OR st.oid IN ('.$childQuery.
+            ')) AND st.change_type IN (?,?)',array_merge($both,$types));
+        foreach($rows as$row){
+            self::keys($row,['oid','change_type','change_message','change_time']);
+            $rid=self::integer($row['oid'],1,self::INT_MAX);
+            if(!isset($roots[$rid])||!in_array(self::text($row['change_type'],32,true),$types,true))self::unavailable();
+            self::text($row['change_message'],256);self::integer($row['change_time'],1,self::UINT_MAX);
+            $families[$rid]['logs'][]=$row;
+        }
+        $operationMap=[];$lastOperation=[];$lastRange=[];$rangeIds=[];
+        foreach($ids as$id){$lastOperation[$id]='0';$lastRange[$id]='0';}
+        if($readiness!==null&&$readiness['operation_present']){
+            $rows=$this->familySnapshotRows($connection,$pdo,'SELECT * FROM '.$this->table('marketplace_fulfillment_operation').
+                ' WHERE root_order_id IN ('.$marks.') ORDER BY root_order_id,id',$ids);
+            foreach($rows as$row){
+                $row=self::operation($row);$id=self::u64($row['id']);$rid=self::integer($row['root_order_id'],1,self::INT_MAX);
+                $child=self::integer($row['child_order_id'],1,self::INT_MAX);
+                if(!isset($roots[$rid])||$roots[$rid]['paid']!==1||$readiness['state']!=='READY'
+                    ||isset($operationMap[$id])||bccomp($id,$lastOperation[$rid],0)<=0
+                    ||!isset($childMap[$child])||$childMap[$child]!==$rid
+                    ||$row['uid']!==$roots[$rid]['uid']||$row['mer_id']!==$roots[$rid]['mer_id'])self::unavailable();
+                $lastOperation[$rid]=$id;$operationMap[$id]=$row;$families[$rid]['operations'][]=$row;
+            }
+        }
+        if($readiness!==null&&$readiness['range_present']){
+            $rows=$this->familySnapshotRows($connection,$pdo,'SELECT * FROM '.$this->table('marketplace_fulfillment_range').
+                ' WHERE root_order_id IN ('.$marks.') ORDER BY root_order_id,id',$ids);
+            foreach($rows as$row){
+                $row=self::rangeRow($row);$id=self::u64($row['id']);$rid=self::integer($row['root_order_id'],1,self::INT_MAX);
+                $child=self::integer($row['child_order_id'],1,self::INT_MAX);$item=self::integer($row['child_item_id'],1,self::INT_MAX);
+                $operation=$operationMap[self::u64($row['operation_id'])]??null;
+                if(!isset($roots[$rid])||$roots[$rid]['paid']!==1||isset($rangeIds[$id])||bccomp($id,$lastRange[$rid],0)<=0
+                    ||!isset($childMap[$child])||$childMap[$child]!==$rid||!isset($itemMap[$item])
+                    ||$itemMap[$item]!==['root'=>$rid,'child'=>$child]||$operation===null
+                    ||$operation['root_order_id']!==$rid||$operation['child_order_id']!==$child
+                    ||$operation['action']!==$row['operation_action']
+                    ||$row['uid']!==$roots[$rid]['uid']||$row['mer_id']!==$roots[$rid]['mer_id'])self::unavailable();
+                $lastRange[$rid]=$id;$rangeIds[$id]=true;$families[$rid]['ranges'][]=$row;
+            }
+        }
+        foreach($families as$id=>$family){
+            $hasHistory=$family['children']!==[]||$family['child_items']!==[]||$family['logs']!==[]
+                ||($family['operations']!==null&&$family['operations']!==[])||($family['ranges']!==null&&$family['ranges']!==[]);
+            if($hasHistory&&($roots[$id]['paid']===0||($readiness!==null&&$readiness['state']==='SCHEMA_PENDING')))self::unavailable();
+        }
+        if($readiness!==null&&$this->readStructureReadiness($connection,$pdo)!==$readiness)self::unavailable();
+        $this->readStructureConnection($connection,$pdo);
+        return ['readiness'=>$readiness,'roots'=>$families];
+    }
+
+    /** Only the six fixed full-family SELECT sites above call this helper. */
+    private function familySnapshotRows(ConnectionInterface $connection,PDO $pdo,string $sql,array $parameters):array
+    {
+        $this->readStructureConnection($connection,$pdo);
+        if(!array_is_list($parameters)||count($parameters)>202)self::unavailable();
+        $statement=$this->query($pdo,$sql,$parameters);$rows=null;$failure=null;$closed=false;
+        try{$rows=$statement->fetchAll(PDO::FETCH_ASSOC);}catch(Throwable $error){$failure=$error;}
+        try{$closed=$statement->closeCursor();}catch(Throwable $error){if($failure===null)$failure=$error;}
+        unset($statement);$this->readStructureConnection($connection,$pdo);
+        if($failure!==null)throw $failure;
+        if($closed!==true||!is_array($rows)||!array_is_list($rows))self::unavailable();
+        foreach($rows as$row){
+            if(!is_array($row))self::unavailable();
+            foreach($row as$value)if($value!==null&&!is_string($value)&&!is_int($value))self::unavailable();
+        }
+        return $rows;
+    }
+
     public function merchantCandidate(PDO $pdo,int $id,int $merId):array
     {
         $this->native($pdo,false);

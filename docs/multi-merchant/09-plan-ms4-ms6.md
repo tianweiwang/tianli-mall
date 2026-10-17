@@ -703,6 +703,9 @@ Order事实批量接缝实际应用（2026-10-18）：Root独立全文读取新�
 
 Out/客服/移动旧读取边界实施采用（2026-10-18）：Root全文采用 `design-source-r1/OUT-KEFU-MOBILE-READ-SEAMS-r1.md` 12208B/`2c9147a7ffdf4cc25abda98455aedb9a6aaa7275646cde152d60491bdef4d9f1`，选择先隔离未适配的V1旧读取并保legacy。Out现专用list及同谓词count在SQL分页前限定保存version NULL/0；getInfo/getCartList在invoice/cart/tidy前核真实投影version，影响共享旧推送producer如实记录但不运行外部发送。客服普通list由既有Service/DAO受控内部legacyOnly=false末参兼容、唯一旧客服caller传常量true；详情在userInfo/tidy前核实际保存行。客服refund分支也须以真实refund.store_order_id→父单版本的SQL同源谓词覆盖list/count/桶数，不能页后过滤或给refund表猜version；顾客Common辅助入口及移动delivery_gain在未接新读流程前同样按真实保存版本隔离。移动已有真实UID/mobile白名单及legacy原管理可见性保持，后继V1 root/child走已采用新读取，不把Out账号/客服/旧员工变成新merchant或平台actor。源复核/语法与实际API/DOM分开，原完整范围继续本Task6，不另起或勾销清单。
 
+
+完整家族读取源码实际应用（2026-10-18）：上述R2合同的两原文件有限插入已独立全文复核，Root实际全文正逆及固定PHP8.2两语法均0。FulfillmentDao57056B/`50271c6f531a0a076a3f386cceec7f0457817057d0dd2cf09540a6d543b9941e`在同原PDO/Connection门内读取六种完整家族集合，子查询绑定最多202；同页已探表时包括全部roots上的实际op/range，日志重复保留，首末readiness相等才返回。退款列按真实MS4兼容迁移核，保真实mer_id/mode，不把原安装DDL当当前schema。Service57219B/`f3f1687773eee41aeb9217689aa6017e1ab78eda244c1d49b5a35f83de5905af`只新增六参数纯readHistoryFromFacts，核真实付款observation/根及原创建来源，直接原paid→history；原writer/summary/三digest/算法及所有旧方法字节保持。本项已本地应用，未执行新SQL、建立读事务或开启路由/Worker；完整ownedRead/基础selector/DTO/三端首次查询分流、实际迁移/发货收货/API/DOM及Task7仍待，未宣称实际履约通过。
+
 ### Task 7: 退款额度与库存行为
 
 - 接口：申请退款时在事务中锁定订单行，校验"已退金额 + 处理中金额 + 本次金额 ≤ 实付"；三类库存行为分别写 `release`（未发货取消）、`return_in`（退货验收入库）、不写（仅退款）。

@@ -35,6 +35,39 @@ final class MarketplaceOrderFulfillmentServices
     public function __construct(private Facts $dao,private MarketplaceOrderDao $orders,private MarketplacePaymentDao $payments,
         private EmployeeAuthServices $auth,private StoreOrderCreateServices $numbers,private SystemConfigDao $configuration){}
 
+    /**
+     * Pure internal consumer of complete, separately authorized same-snapshot facts.
+     * Saved owner IDs are data, never actor credentials; no nullable after-sale fallback.
+     */
+    public function readHistoryFromFacts(array $root,array $paymentObservation,array $original,array $family,array $operations,array $logs):array
+    {
+        if(PHP_INT_SIZE<8)self::unavailable();
+        Facts::keys($paymentObservation,['locked','root_payment_consistent']);
+        if($paymentObservation['root_payment_consistent']!==true||!is_array($paymentObservation['locked']))self::unavailable();
+        $payment=$paymentObservation['locked'];Facts::keys($payment,['ledger','root','merchant','registry','attempts']);
+        foreach($payment as$value)if(!is_array($value))self::unavailable();
+        if(!array_is_list($payment['attempts']))self::unavailable();
+        foreach($payment['attempts'] as$row)if(!is_array($row))self::unavailable();
+        Facts::integer($root['marketplace_trade_version']??null,1,1);Facts::integer($root['pid']??null,0,0);
+        $candidate=['root_order_id'=>Facts::integer($root['id']??null,1,self::INT_MAX),
+            'root_order_no'=>Facts::text($root['order_id']??null,32,true),
+            'uid'=>Facts::integer($root['uid']??null,1,self::INT_MAX),'mer_id'=>Facts::integer($root['mer_id']??null,1,self::UINT_MAX)];
+        Facts::keys($original,['root','items','selection','reserves','children','child_orders']);
+        if(!is_array($original['root']))self::unavailable();
+        Facts::keys($original['root'],['id','uid','mer_id','order_no']);
+        Facts::stored($original['root'],['id'=>$candidate['root_order_id'],'uid'=>$candidate['uid'],
+            'mer_id'=>$candidate['mer_id'],'order_no'=>$candidate['root_order_no']]);
+        foreach(['items','selection','reserves','children','child_orders'] as$key)
+            if(!is_array($original[$key])||!array_is_list($original[$key]))self::unavailable();
+        Facts::keys($family,['children','items','ranges','refunds']);
+        foreach($family as$value)if(!is_array($value)||!array_is_list($value))self::unavailable();
+        if(!array_is_list($operations)||!array_is_list($logs))self::unavailable();
+        foreach($operations as$row)if(!is_array($row))self::unavailable();
+        foreach($logs as$row)if(!is_array($row))self::unavailable();
+        self::paid($candidate,$root,$payment);
+        return $this->history($root,$original,$family,$operations,$logs);
+    }
+
     public function ship(MerchantContext $ctx,mixed $rootId,array $raw):array
     {
         $normalized=MarketplaceOrderFulfillmentInput::ship($rootId,$raw);
