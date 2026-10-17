@@ -166,6 +166,7 @@ function m4ch_entry_full_source(array $source): void
     foreach(['/source','/workspace']as$root)foreach($rows as$row){$path=$root.'/'.$row['path'];
         m4c_expect(is_file($path)&&!is_link($path)&&realpath($path)===$path&&filesize($path)===$row['bytes']
             &&hash_file('sha256',$path)===$row['sha256'],'M4C_H5_BOTH_ROOTS_ACTUAL_ADDITIONAL_SOURCE_BYTES');}
+    m4ch_ms5_prerequisites($source,'prepare');
 }
 function m4ch_entry_source(): array
 {
@@ -191,8 +192,8 @@ function m4ch_entry_source(): array
         &&$freeze['customer_source_roots']===M4C_ROOTS&&$freeze['customer_source_extra']===$sortedExtra,
         'M4C_H5_ORIGINAL_CUSTOMER_SOURCE_CONTRACT_UNCHANGED');
     m4c_entry_keys($binding,['schema','scope','run_id','source_sha','container_id','native_created_sha256','freeze_sha256',
-        'requested_repo_source','requested_run_source','requested_prep_source','entry_sha256','source_files','h5_source_files','h5_materials','public_copy']);
-    m4c_expect($binding['schema']===1&&$binding['scope']==='MS4_CUSTOMER_H5_PREPARE_SOURCE'&&$binding['run_id']===$run
+        'requested_repo_source','requested_run_source','requested_prep_source','entry_sha256','source_files','h5_source_files','h5_materials','public_copy','prerequisites_sha256']);
+    m4c_expect($binding['schema']===1&&$binding['scope']==='MS4_CUSTOMER_H5_PREPARE_MS5_SOURCE'&&$binding['run_id']===$run
         &&$binding['source_sha']===$sha&&$binding['container_id']===$cid&&$binding['freeze_sha256']===$freezeHash
         &&$binding['native_created_sha256']===hash_file('sha256',$evidence.M4CH_PROOF.'-created.json')
         &&$binding['requested_repo_source']===$context['repo_dir']&&$binding['requested_run_source']===$context['run_dir']
@@ -235,50 +236,12 @@ function m4ch_entry_source(): array
         'M4C_H5_EXACT_SINGLE_NATIVE_TMPFS');
     m4c_expect(!file_exists('/source/crmeb/.env')&&!file_exists('/workspace/crmeb/.env')
         &&!file_exists('/source/crmeb/public/install.lock'),'M4C_H5_NO_HOST_RUNTIME_CONFIGURATION');
-    m4c_entry_keys($environment,['schema','scope','run_id','source_sha','container_id','freeze_sha256','environment','native_projection_sha256']);
-    m4c_expect($environment['schema']===1&&$environment['scope']==='MS4_CUSTOMER_H5_REAL_ENVIRONMENT'
-        &&$environment['run_id']===$run&&$environment['source_sha']===$sha&&$environment['container_id']===$cid
-        &&$environment['freeze_sha256']===$freezeHash,'M4C_H5_ACTUAL_PREPARE_ENVIRONMENT_BINDING');
-    $values=$environment['environment'];m4c_entry_keys($values,['APP_ENV','PHP_MARKETPLACE_ENABLED','PHP_MARKETPLACE_TRADE_ENABLED',
-        'PHP_MARKETPLACE_SELF_OPERATED_MER_ID','PHP_CACHE_DRIVER']);
-    m4c_expect($values['APP_ENV']==='testing'&&$values['PHP_MARKETPLACE_ENABLED']==='true'&&$values['PHP_MARKETPLACE_TRADE_ENABLED']==='true'
-        &&$values['PHP_CACHE_DRIVER']==='redis'&&is_string($values['PHP_MARKETPLACE_SELF_OPERATED_MER_ID'])
-        &&preg_match('/\A[1-9][0-9]{0,9}\z/D',$values['PHP_MARKETPLACE_SELF_OPERATED_MER_ID'])===1
-        &&bccomp($values['PHP_MARKETPLACE_SELF_OPERATED_MER_ID'],'4294967295',0)<=0,'M4C_H5_REAL_ENABLED_PUBLIC_ENVIRONMENT_VALUES');
-    foreach($values as$key=>$value)m4c_expect(getenv($key)===$value,'M4C_H5_ACTUAL_PROCESS_ENVIRONMENT');
-    $native=m4c_entry_read($evidence.M4CH_PROOF.'-environment-native.json');
-    m4c_expect($native['native_exit']===0&&$native['stderr_bytes']===0&&$native['stderr_sha256']===hash('sha256','')
-        &&is_int($native['stdout_bytes'])&&$native['stdout_bytes']>0&&$native['stdout_sha256']===$environment['native_projection_sha256'],
-        'M4C_H5_REAL_NATIVE_ENVIRONMENT_PROJECTION');
-    $source=$binding+['mode'=>'prepare','rule'=>['role'=>M4CH_ROLE,'proof'=>M4CH_PROOF,'scope'=>'NORMAL_CUSTOMER_H5_PREPARATION_ONLY',
-        'status'=>'VERIFIED_CUSTOMER_H5_PREPARATION_ONLY'],'environment'=>$values,
+    $values=m4c_entry_environment($binding,$context,M4CH_PROOF,'MS4_CUSTOMER_H5_MS5_REAL_ENVIRONMENT');
+    $source=$binding+['mode'=>'prepare','rule'=>['role'=>M4CH_ROLE,'proof'=>M4CH_PROOF,'scope'=>'NORMAL_CUSTOMER_H5_WITH_MS5_PREREQUISITES_PREPARATION_ONLY',
+        'status'=>'VERIFIED_CUSTOMER_H5_WITH_MS5_PREREQUISITES_PREPARATION_ONLY'],'environment'=>$values,
         'self_operated_mer_id'=>(int)$values['PHP_MARKETPLACE_SELF_OPERATED_MER_ID'],'context'=>$context,'freeze'=>$freeze,
         'source_binding_sha256'=>hash_file('sha256',$bindingPath),'environment_sha256'=>hash_file('sha256',$environmentPath)];
     m4ch_entry_full_source($source);
-    $bootstrap=m4c_entry_terminal($source,'files-bootstrap','audit-bootstrap',['/run/ms4-prep/ms4-initialize.php','files-bootstrap']);
-    $installed=m4c_entry_read($evidence.'files-bootstrap-result.json');$installation=$installed['installation'];
-    $shutdown=m4c_entry_read($evidence.'files-bootstrap-shutdown.json');$initializer=m4c_entry_read($evidence.'initializer-result.json');
-    m4c_expect($installed['schema']===1&&$installed['scope']==='MS4_PREREQUISITES_ONLY'
-        &&$installed['status']==='VERIFIED_CUSTOMER_FILES_BOOTSTRAP_ONLY'&&$installed['native_exit']===0
-        &&$installed['run_id']===$run&&$installed['source_sha']===$sha&&$installed['binding']['source_sha']===$sha
-        &&$installed['binding']['container_id']===$bootstrap['id']&&$installed['binding']['freeze_sha256']===$freezeHash
-        &&$installed['binding']['created_sha256']===hash_file('sha256',$evidence.'files-bootstrap-created.json')
-        &&$installed['actual_self_mer_id']===$source['self_operated_mer_id']&&$initializer['actual_self_mer_id']===$source['self_operated_mer_id']
-        &&$installed['initializer_result_sha256']===hash_file('sha256',$evidence.'initializer-result.json')
-        &&$installed['migration_result_sha256']===hash_file('sha256',$evidence.'ms4-migration-normal.json')
-        &&$installation['account']==='audit_migrator'&&is_int($installation['checksum_rows'])&&$installation['checksum_rows']>0
-        &&$installation['source_matches']===true&&$installation['version_marker_matches']===true
-        &&$installation['application_account']==='audit_app'&&$installation['application_dml_only']===true
-        &&$shutdown['phase']==='files-bootstrap'&&$shutdown['fatal']===false&&$shutdown['primary_failure']===null
-        &&$shutdown['cleanup_failure']===null,'M4C_H5_REAL_ORIGINAL_DEDICATED_FILES_BOOTSTRAP');
-    $prepared=m4c_entry_terminal($source,'customer-prepare',M4C_MODE['prepare']['role'],[M4C_ENTRY,'prepare']);
-    $base=m4c_entry_read($evidence.'ms4-customer-prepare.json');
-    m4c_expect($base['schema']===1&&$base['scope']===M4C_MODE['prepare']['scope']&&$base['status']===M4C_MODE['prepare']['status']
-        &&$base['run_id']===$run&&$base['source_sha']===$sha&&$base['freeze_sha256']===$freezeHash
-        &&$base['container_id']===$prepared['id']&&$base['native_created_sha256']===hash_file('sha256',$evidence.'customer-prepare-created.json')
-        &&$base['source_binding_sha256']===hash_file('sha256',$evidence.M4C_MODE['prepare']['binding'])
-        &&$base['phase']==='final_source'&&$base['native_exit']===0&&$base['full_source_unchanged']===true,
-        'M4C_H5_ORIGINAL_CUSTOMER_PREPARE_TERMINAL_AND_RESULT');
     $source['h5']=m4ch_entry_materials($source);m4cb_guard_readonly();return $source;
 }
 function m4ch_entry_run(): int
@@ -388,9 +351,10 @@ function m4ch_http_bound_files(string $root,array $rows): void
 function m4ch_http_environment(array $values): void
 {
     m4c_entry_keys($values,['APP_ENV','PHP_MARKETPLACE_ENABLED','PHP_MARKETPLACE_TRADE_ENABLED',
-        'PHP_MARKETPLACE_SELF_OPERATED_MER_ID','PHP_CACHE_DRIVER']);
+        'PHP_MARKETPLACE_PAYMENT_TEST_ENABLED','PHP_MARKETPLACE_SELF_OPERATED_MER_ID','PHP_CACHE_DRIVER']);
     m4c_expect($values['APP_ENV']==='testing'&&$values['PHP_MARKETPLACE_ENABLED']==='true'
-        &&$values['PHP_MARKETPLACE_TRADE_ENABLED']==='true'&&$values['PHP_CACHE_DRIVER']==='redis'
+        &&$values['PHP_MARKETPLACE_TRADE_ENABLED']==='true'&&$values['PHP_MARKETPLACE_PAYMENT_TEST_ENABLED']==='true'
+        &&$values['PHP_CACHE_DRIVER']==='redis'
         &&is_string($values['PHP_MARKETPLACE_SELF_OPERATED_MER_ID'])
         &&preg_match('/\A[1-9][0-9]{0,9}\z/D',$values['PHP_MARKETPLACE_SELF_OPERATED_MER_ID'])===1
         &&bccomp($values['PHP_MARKETPLACE_SELF_OPERATED_MER_ID'],'4294967295',0)<=0,'M4C_H5_HTTP_ENABLED_ENVIRONMENT');
@@ -499,37 +463,13 @@ function m4ch_http_included(array $source,bool $full): void
 function m4ch_http_preparation(array $source): array
 {
     $evidence='/run/audit/evidence/';$run=$source['run_id'];$sha=$source['source_sha'];$freezeHash=$source['freeze_sha256'];
-    $bootstrap=m4c_entry_terminal($source,'files-bootstrap','audit-bootstrap',['/run/ms4-prep/ms4-initialize.php','files-bootstrap']);
-    $original=m4c_entry_read($evidence.'files-bootstrap-result.json');$installation=$original['installation'];
-    $shutdown=m4c_entry_read($evidence.'files-bootstrap-shutdown.json');$initializer=m4c_entry_read($evidence.'initializer-result.json');
-    m4c_expect($original['schema']===1&&$original['scope']==='MS4_PREREQUISITES_ONLY'
-        &&$original['status']==='VERIFIED_CUSTOMER_FILES_BOOTSTRAP_ONLY'&&$original['native_exit']===0
-        &&$original['run_id']===$run&&$original['source_sha']===$sha&&$original['binding']['source_sha']===$sha
-        &&$original['binding']['container_id']===$bootstrap['id']&&$original['binding']['freeze_sha256']===$freezeHash
-        &&$original['binding']['created_sha256']===hash_file('sha256',$evidence.'files-bootstrap-created.json')
-        &&$original['actual_self_mer_id']===$source['self_operated_mer_id']&&$initializer['actual_self_mer_id']===$source['self_operated_mer_id']
-        &&$original['initializer_result_sha256']===hash_file('sha256',$evidence.'initializer-result.json')
-        &&$original['migration_result_sha256']===hash_file('sha256',$evidence.'ms4-migration-normal.json')
-        &&$installation['account']==='audit_migrator'&&is_int($installation['checksum_rows'])&&$installation['checksum_rows']>0
-        &&$installation['source_matches']===true&&$installation['version_marker_matches']===true
-        &&$installation['application_account']==='audit_app'&&$installation['application_dml_only']===true
-        &&$shutdown['phase']==='files-bootstrap'&&$shutdown['fatal']===false&&$shutdown['primary_failure']===null
-        &&$shutdown['cleanup_failure']===null,'M4C_H5_HTTP_ORIGINAL_FILES_PREREQUISITE');
-    $nativeBase=m4c_entry_terminal($source,'customer-prepare',M4C_MODE['prepare']['role'],[M4C_ENTRY,'prepare']);
-    $base=m4c_entry_read($evidence.'ms4-customer-prepare.json');
-    m4c_expect($base['schema']===1&&$base['scope']===M4C_MODE['prepare']['scope']&&$base['status']===M4C_MODE['prepare']['status']
-        &&$base['run_id']===$run&&$base['source_sha']===$sha&&$base['freeze_sha256']===$freezeHash
-        &&$base['container_id']===$nativeBase['id']&&$base['native_created_sha256']===hash_file('sha256',$evidence.'customer-prepare-created.json')
-        &&$base['source_binding_sha256']===hash_file('sha256',$evidence.M4C_MODE['prepare']['binding'])
-        &&$base['phase']==='final_source'&&$base['native_exit']===0&&$base['full_source_unchanged']===true,
-        'M4C_H5_HTTP_ORIGINAL_NATIVE_CUSTOMER_PREPARE');
     $prepared=m4c_entry_terminal($source,M4CH_PROOF,M4CH_ROLE,[M4CH_ENTRY,'prepare']);
     $result=m4ch_entry_json($source['prepare_result'],M4CH_HTTP_CONTROL.'/prepare-result.json');
     m4ch_http_meta(M4CH_HTTP_CONTROL.'/prepare-result.json');
     $binding=m4c_entry_read($evidence.'ms4-customer-h5-prepare-source-binding.json');
     $environment=m4c_entry_read($evidence.'customer-h5-prepare-environment.json');
-    m4c_expect($result['schema']===1&&$result['scope']==='NORMAL_CUSTOMER_H5_PREPARATION_ONLY'
-        &&$result['status']==='VERIFIED_CUSTOMER_H5_PREPARATION_ONLY'&&$result['run_id']===$source['run_id']
+    m4c_expect($result['schema']===1&&$result['scope']==='NORMAL_CUSTOMER_H5_WITH_MS5_PREREQUISITES_PREPARATION_ONLY'
+        &&$result['status']==='VERIFIED_CUSTOMER_H5_WITH_MS5_PREREQUISITES_PREPARATION_ONLY'&&$result['run_id']===$source['run_id']
         &&$result['source_sha']===$source['source_sha']&&$result['container_id']===$prepared['id']
         &&$result['freeze_sha256']===$source['freeze_sha256']&&$result['native_created_sha256']===hash_file('sha256',$evidence.M4CH_PROOF.'-created.json')
         &&$result['source_binding_sha256']===hash_file('sha256',$evidence.'ms4-customer-h5-prepare-source-binding.json')
@@ -544,29 +484,29 @@ function m4ch_http_preparation(array $source): array
         &&$binding['public_copy']===$source['public_copy']&&m4ch_http_same_environment($environment['environment'],$source['environment']),
         'M4C_H5_HTTP_ORIGINAL_H5_PREPARE_TERMINAL_RESULT_BINDING');
     m4c_expect($result['business']['fixture_counts']===['customers'=>1,'merchants'=>2,'products'=>3,'skus'=>4,'cart_rows'=>0,'orders'=>0]
-        &&$result['business']['business_table_count']===25&&$result['business']['auxiliary_table_count']===7
+        &&$result['business']['business_table_count']===27&&$result['business']['auxiliary_table_count']===7
         &&$result['business']['base_fixture_preserved']===true&&$result['business']['production_configuration_published_and_read_back']===true
         &&$result['business']['theme_service_saved_enabled_and_read_back']===true&&$result['business']['language_native_ids_and_full_package_verified']===true,
         'M4C_H5_HTTP_REAL_PREPARATION_ONLY_COUNTS');
     $files=m4c_entry_terminal($source,'customer-h5-files','audit-ms4-customer-h5-files',['/run/ms4-prep/ms4-h5-bootstrap.php','files-bootstrap']);
     $installed=m4ch_entry_json($source['files_result'],M4CH_HTTP_CONTROL.'/files-result.json');m4ch_http_meta(M4CH_HTTP_CONTROL.'/files-result.json');
     $filesBinding=m4c_entry_read($evidence.'customer-h5-files-source-binding.json');$business=$installed['business'];$installation=$business['installation'];
-    m4c_expect($installed['schema']===1&&$installed['scope']==='CUSTOMER_H5_BOOTSTRAP_PREPARATION_ONLY'
-        &&$installed['status']==='VERIFIED_CUSTOMER_H5_FILES_BOOTSTRAP_ONLY'&&$installed['phase']==='files-bootstrap'
+    m4c_expect($installed['schema']===1&&$installed['scope']==='CUSTOMER_H5_BOOTSTRAP_WITH_MS5_PREREQUISITES_PREPARATION_ONLY'
+        &&$installed['status']==='VERIFIED_CUSTOMER_H5_WITH_MS5_FILES_BOOTSTRAP_ONLY'&&$installed['phase']==='files-bootstrap'
         &&$installed['proof_name']==='customer-h5-files'&&$installed['run_id']===$source['run_id']&&$installed['source_sha']===$source['source_sha']
         &&$installed['container_id']===$files['id']&&$installed['freeze_sha256']===$source['freeze_sha256']
         &&$installed['native_created_sha256']===hash_file('sha256',$evidence.'customer-h5-files-created.json')
         &&$installed['source_binding_sha256']===hash_file('sha256',$evidence.'customer-h5-files-source-binding.json')
         &&$installed['native_exit']===0&&$installed['full_source_unchanged']===true&&$installed['HTTP_DOM']==='NOT RUN'
         &&$filesBinding['public_copy']===$source['public_copy']&&$filesBinding['prepare_result']===$source['prepare_result']
-        &&$business['business_tables']===25&&$business['auxiliary_tables']===7&&$business['complete_native_rows_unchanged']===true
+        &&$business['business_tables']===27&&$business['auxiliary_tables']===7&&$business['complete_native_rows_unchanged']===true
         &&$business['sealed_baseline_and_base_fixture_unchanged']===true&&$business['DML_prepare_actual_terminal_zero_verified']===true
         &&$business['public_materials_unchanged']===true&&$business['HTTP_executed']===false
         &&$business['credential_login_authenticated']===false&&$business['order_creation_executed']===false
         &&$installation['account']==='audit_migrator'&&is_int($installation['checksum_rows'])&&$installation['checksum_rows']>0
         &&$installation['source_matches']===true&&$installation['version_marker_matches']===true
         &&$installation['application_account']==='audit_app'&&$installation['application_dml_only']===true,
-        'M4C_H5_HTTP_FINAL_DEDICATED_FILES_TERMINAL_AND_NATIVE_32_BASELINE');
+        'M4C_H5_HTTP_FINAL_DEDICATED_FILES_TERMINAL_AND_NATIVE_34_BASELINE');
     return ['container_id'=>$prepared['id'],'native_created_sha256'=>$result['native_created_sha256'],
         'source_binding_sha256'=>$result['source_binding_sha256'],'prepare_result_sha256'=>$source['prepare_result']['sha256']];
 }
@@ -584,7 +524,7 @@ function m4ch_http_source(bool $full): array
     m4c_entry_keys($binding,['schema','scope','run_id','source_sha','container_id','native_created_sha256','freeze_sha256',
         'requested_repo_source','requested_run_source','requested_prep_source','entry_sha256','source_files','h5_source_files',
         'artifact_files','h5_artifact_files','h5_materials','public_copy','prepare_result','files_result','registration_result',
-        'environment','network_receipts','stop_signal','manifest','registration_inputs']);
+        'environment','network_receipts','stop_signal','manifest','registration_inputs','prerequisites_sha256']);
     $run=getenv('AUDIT_RUN_ID');$sha=getenv('AUDIT_SOURCE_SHA');$freezeHash=hash_file('sha256','/run/audit/preparation-source-binding.json');
     m4c_expect(getenv('AUDIT_ISOLATED')==='1'&&getenv('AUDIT_GUARD_MODE')==='read-only'&&getenv('MS4_PROOF_NAME')===M4CH_HTTP_PROOF
         &&preg_match('/\A\d{14}[a-f0-9]{6}\z/D',(string)$run)===1&&preg_match('/\A[a-f0-9]{40}\z/D',(string)$sha)===1
@@ -598,7 +538,7 @@ function m4ch_http_source(bool $full): array
         'M4C_H5_HTTP_ORIGINAL_SOURCE_CLOSURE_AND_SEPARATE_H5_SET');
     $created=m4c_entry_read($evidence.M4CH_HTTP_PROOF.'-created.json');$cid=$created['id'];
     m4c_expect(is_string($cid)&&preg_match('/\A[a-f0-9]{64}\z/D',$cid)===1&&gethostname()===substr($cid,0,12)
-        &&$binding['schema']===1&&$binding['scope']==='MS4_CUSTOMER_H5_HTTP_SOURCE'&&$binding['run_id']===$run
+        &&$binding['schema']===1&&$binding['scope']==='MS4_CUSTOMER_H5_HTTP_MS5_SOURCE'&&$binding['run_id']===$run
         &&$binding['source_sha']===$sha&&$binding['container_id']===$cid&&$binding['freeze_sha256']===$freezeHash
         &&$binding['native_created_sha256']===hash_file('sha256',$evidence.M4CH_HTTP_PROOF.'-created.json')
         &&$binding['requested_repo_source']===$context['repo_dir']&&$binding['requested_run_source']===$context['run_dir']
@@ -620,17 +560,10 @@ function m4ch_http_source(bool $full): array
     $identityNames=array_keys($manifest['volume_identities']);sort($identityNames,SORT_STRING);
     m4c_expect($actual===$wanted&&$identityNames===$wanted,'M4C_H5_HTTP_EXACT_TEN_REGISTERED_VOLUME_IDENTITIES');
     $environment=m4ch_entry_json($binding['environment'],$evidence.'customer-h5-serve-environment.json');
-    m4c_entry_keys($environment,['schema','scope','run_id','source_sha','container_id','freeze_sha256','environment','native_projection_sha256']);
-    m4c_expect($environment['schema']===1&&$environment['scope']==='MS4_CUSTOMER_H5_REAL_ENVIRONMENT'
-        &&$environment['run_id']===$run&&$environment['source_sha']===$sha&&$environment['container_id']===$cid
-        &&$environment['freeze_sha256']===$freezeHash,'M4C_H5_HTTP_REAL_ENVIRONMENT_BINDING');
-    $source['environment']=$environment['environment'];m4ch_http_environment($source['environment']);
+    $source['environment']=m4c_entry_environment($binding,$context,M4CH_HTTP_PROOF,'MS4_CUSTOMER_H5_MS5_REAL_ENVIRONMENT');
+    m4ch_http_environment($source['environment']);
     $source['environment_sha256']=$binding['environment']['sha256'];
     $source['self_operated_mer_id']=(int)$source['environment']['PHP_MARKETPLACE_SELF_OPERATED_MER_ID'];
-    $native=m4c_entry_read($evidence.'customer-h5-serve-environment-native.json');
-    m4c_expect($native['native_exit']===0&&$native['stderr_bytes']===0&&$native['stderr_sha256']===hash('sha256','')
-        &&is_int($native['stdout_bytes'])&&$native['stdout_bytes']>0&&$native['stdout_sha256']===$environment['native_projection_sha256'],
-        'M4C_H5_HTTP_ACTUAL_NATIVE_ENVIRONMENT_PROJECTION');
     m4c_entry_keys($source['network_receipts'],['backend','frontend']);$networks=m4ch_http_networks($source,$manifest);$backend=$networks['backend'];
     m4c_expect($created['run_id']===$run&&$created['source_sha']===$sha&&$created['proof_name']===M4CH_HTTP_PROOF
         &&$created['image']===M4C_IMAGE&&$created['hostname']===gethostname()&&$created['status']==='created'
@@ -680,8 +613,8 @@ function m4ch_http_source(bool $full): array
     $register=m4c_entry_terminal($source,'register-customer-h5-serve','audit-ms4-customer-h5-register',
         ['/run/ms4-prep/ms4-h5-bootstrap.php','register-final']);
     $registered=m4ch_entry_json($source['registration_result'],$evidence.'register-customer-h5-serve-result.json');
-    m4c_expect($registered['schema']===1&&$registered['scope']==='CUSTOMER_H5_BOOTSTRAP_PREPARATION_ONLY'
-        &&$registered['status']==='REGISTERED_CUSTOMER_H5_FINAL_RESOURCES_ONLY'&&$registered['phase']==='register-final'
+    m4c_expect($registered['schema']===1&&$registered['scope']==='CUSTOMER_H5_BOOTSTRAP_WITH_MS5_PREREQUISITES_PREPARATION_ONLY'
+        &&$registered['status']==='REGISTERED_CUSTOMER_H5_WITH_MS5_FINAL_RESOURCES_ONLY'&&$registered['phase']==='register-final'
         &&$registered['run_id']===$run&&$registered['source_sha']===$sha&&$registered['container_id']===$register['id']
         &&$registered['freeze_sha256']===$freezeHash&&$registered['native_exit']===0&&$registered['full_source_unchanged']===true
         &&$registered['native_created_sha256']===hash_file('sha256',$evidence.'register-customer-h5-serve-created.json')
@@ -689,6 +622,7 @@ function m4ch_http_source(bool $full): array
         &&$registered['business']['registered_roles']===$roles&&$registered['business']['input_inventory_excludes_transient_helper']===true
         &&$registered['business']['manifest_sha256']===$source['manifest']['sha256'],'M4C_H5_HTTP_REAL_FINAL_REGISTRATION_TERMINAL');
     m4ch_http_included($source,$full);$source['h5']=m4ch_http_materials($source,$full);
+    m4ch_ms5_prerequisites($source,'serve');
     $source['prepare_identity']=m4ch_http_preparation($source);m4cb_guard_readonly();return $source;
 }
 function m4ch_http_identity(array $value,array $source,?array $runtime=null,bool $live=true): void
@@ -733,11 +667,12 @@ function m4ch_http_sealed_inputs(array $source): array
 {
     $baseline=m4ch_http_private_read(M4CH_HTTP_CONTROL.'/sql-baseline.json');
     $oracle=m4ch_http_private_read(M4CH_HTTP_CONTROL.'/customer-oracle.json');
-    m4c_entry_keys($baseline,[...M4CH_HTTP_PREPARED_IDENTITIES,'scope','facts','auxiliary_rows','facts_sha256','auxiliary_sha256']);
+    m4c_entry_keys($baseline,[...M4CH_HTTP_PREPARED_IDENTITIES,'scope','native_snapshot']);
     m4c_entry_keys($oracle,[...M4CH_HTTP_PREPARED_IDENTITIES,'scope','fixture','second_store','public_stores','configuration_rows',
         'configuration_values','auxiliary_rows','ui_intent','actor_descriptor']);
     foreach(M4CH_HTTP_PREPARED_IDENTITIES as$key)m4c_expect($baseline[$key]===$oracle[$key],'M4C_H5_HTTP_PRIVATE_SAME_NATIVE_PRODUCER');
     $base=m4cb_fixture_load($source);$identity=$source['prepare_identity'];
+    $snapshot=m4ch_native_snapshot_restore($baseline['native_snapshot']);
     m4c_expect($baseline['schema']===1&&$baseline['scope']==='NORMAL_CUSTOMER_H5_SQL_BASELINE'
         &&$oracle['scope']==='NORMAL_CUSTOMER_H5_PRIVATE_ORACLE'&&$baseline['run_id']===$source['run_id']
         &&$baseline['source_sha']===$source['source_sha']&&$baseline['freeze_sha256']===$source['freeze_sha256']
@@ -751,15 +686,15 @@ function m4ch_http_sealed_inputs(array $source): array
         &&$baseline['base_prepare_container_id']===$base['private']['prepare_container_id']
         &&$baseline['base_prepare_native_created_sha256']===$base['private']['prepare_native_created_sha256']
         &&$baseline['base_prepare_source_binding_sha256']===$base['private']['prepare_source_binding_sha256']
-        &&array_keys($baseline['facts'])===M4CB_TABLES&&array_keys($baseline['auxiliary_rows'])===M4CH_AUX_TABLES
-        &&$baseline['facts_sha256']===hash('sha256',m4cb_json($baseline['facts']))
-        &&$baseline['auxiliary_sha256']===hash('sha256',m4cb_json($baseline['auxiliary_rows'])),
+        &&array_keys($snapshot['facts'])===M4CB_TABLES&&array_keys($snapshot['auxiliary_rows'])===M4CH_AUX_TABLES
+        &&$oracle['auxiliary_rows']===$snapshot['auxiliary_rows'],
         'M4C_H5_HTTP_FULL_NATIVE_BASELINE_ORACLE_BINDINGS');
     $result=m4ch_http_private_read(M4CH_HTTP_CONTROL.'/prepare-result.json');
     foreach(['sql-baseline','customer-oracle']as$name){$path=M4CH_HTTP_CONTROL.'/'.$name.'.json';$meta=m4ch_http_meta($path);
         $public=$result['business']['sealed_files'][$name];m4c_entry_keys($public,['sha256_prefix','bytes']);
         m4c_expect($public['bytes']===$meta['bytes']&&$public['sha256_prefix']===substr($meta['sha256'],0,12),
             'M4C_H5_HTTP_PREPARE_REAL_SEALED_FILE_SUMMARY');}
+    $baseline['facts']=$snapshot['facts'];$baseline['auxiliary_rows']=$snapshot['auxiliary_rows'];
     return ['baseline'=>$baseline,'oracle'=>$oracle,'base'=>$base];
 }
 function m4ch_http_actor_meta(array $source,array $runtime): array
@@ -1181,9 +1116,9 @@ function m4ch_http_audit(array $source,array $runtime): array
     m4c_entry_keys($proof,['schema','scope',...M4CH_HTTP_IDENTITIES,'verified','business_table_count','auxiliary_table_count',
         'private_snapshot_sha256_prefix','full_source_unchanged','scope_limit']);m4ch_http_identity($proof,$source,$runtime);
     foreach(M4CH_HTTP_IDENTITIES as$key)m4c_expect($proof[$key]===$finish[$key],'M4C_H5_HTTP_SQL_AUDIT_SAME_FINISH');
-    m4c_expect($proof['scope']==='MS4_CUSTOMER_H5_SQL_AUDIT'&&$proof['verified']===true&&$proof['business_table_count']===25
+    m4c_expect($proof['scope']==='MS4_CUSTOMER_H5_SQL_AUDIT'&&$proof['verified']===true&&$proof['business_table_count']===27
         &&$proof['auxiliary_table_count']===7&&$proof['full_source_unchanged']===true
-        &&$proof['scope_limit']==='OBSERVED_25_BUSINESS_PLUS_7_AUXILIARY_TABLES_ONLY'
+        &&$proof['scope_limit']==='OBSERVED_27_BUSINESS_PLUS_7_AUXILIARY_TABLES_ONLY'
         &&preg_match('/\A[a-f0-9]{12}\z/D',$proof['private_snapshot_sha256_prefix'])===1,'M4C_H5_HTTP_FINITE_FINAL_SQL_AUDIT_PROOF');
     m4ch_http_publish(M4CH_HTTP_CONTROL.'/sql-audit.json',$proof);return$proof;
 }
@@ -1214,7 +1149,7 @@ if(realpath($_SERVER['SCRIPT_FILENAME']??'')===__FILE__){
         $GLOBALS['m4c_failed_assertion']='M4C_PHP_WARNING';throw new RuntimeException('M4C_PHP_WARNING');});
     try{exit(m4ch_entry_run());}
     catch(Throwable$error){$source=$GLOBALS['m4ch_entry_source']??null;$code=$GLOBALS['m4c_failed_assertion']??'';
-        $safe=['schema'=>1,'status'=>'FAIL_PRESERVED','scope'=>'NORMAL_CUSTOMER_H5_PREPARATION_ONLY',
+        $safe=['schema'=>1,'status'=>'FAIL_PRESERVED','scope'=>'NORMAL_CUSTOMER_H5_WITH_MS5_PREREQUISITES_PREPARATION_ONLY',
             'phase'=>$GLOBALS['m4c_phase']??'source','class'=>get_class($error),
             'error_location'=>['file'=>basename($error->getFile()),'line'=>$error->getLine()],
             'code'=>is_string($code)&&preg_match('/\AM4C_[A-Z0-9_]+\z/D',$code)===1?$code:'M4C_UNCLASSIFIED',
