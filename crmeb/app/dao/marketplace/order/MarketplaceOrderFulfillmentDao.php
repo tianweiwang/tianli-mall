@@ -20,7 +20,8 @@ final class MarketplaceOrderFulfillmentDao
     private const UINT_MAX=4294967295;
     private const MARKER='marketplace-ms4-fulfillment-v1';
     private const TABLES=['user','store_order','store_order_cart_info','store_order_refund','store_order_status',
-        'marketplace_fulfillment_operation','marketplace_fulfillment_range','marketplace_merchant','marketplace_stock_movement'];
+        'marketplace_fulfillment_operation','marketplace_fulfillment_range','marketplace_merchant','marketplace_stock_movement',
+        'store_product','store_bargain','store_combination','store_seckill'];
     private string $prefix;
     private string $database='';
     private ?PDO $schemaPdo=null;
@@ -232,6 +233,242 @@ final class MarketplaceOrderFulfillmentDao
     {
         $this->readStructureConnection($connection,$pdo);
         if(!array_is_list($parameters)||count($parameters)>202)self::unavailable();
+        $statement=$this->query($pdo,$sql,$parameters);$rows=null;$failure=null;$closed=false;
+        try{$rows=$statement->fetchAll(PDO::FETCH_ASSOC);}catch(Throwable $error){$failure=$error;}
+        try{$closed=$statement->closeCursor();}catch(Throwable $error){if($failure===null)$failure=$error;}
+        unset($statement);$this->readStructureConnection($connection,$pdo);
+        if($failure!==null)throw $failure;
+        if($closed!==true||!is_array($rows)||!array_is_list($rows))self::unavailable();
+        foreach($rows as$row){
+            if(!is_array($row))self::unavailable();
+            foreach($row as$value)if($value!==null&&!is_string($value)&&!is_int($value))self::unavailable();
+        }
+        return $rows;
+    }
+
+
+    /** Fixed first-root reads. Actual route authorization and transaction ownership belong to the caller. */
+    public function readCustomerRootCount(ConnectionInterface $connection,PDO $pdo,int $actualUid,array $filter):int
+    {
+        self::integer($actualUid,1,self::UINT_MAX);
+        return $this->rootReadCount($connection,$pdo,$filter,$actualUid,true);
+    }
+
+    public function readCustomerRootWindow(ConnectionInterface $connection,PDO $pdo,int $actualUid,array $filter,array $page,?array $after=null):array
+    {
+        self::integer($actualUid,1,self::UINT_MAX);
+        return $this->rootReadWindow($connection,$pdo,$filter,$page,$after,$actualUid,true);
+    }
+
+    public function readPlatformRootCount(ConnectionInterface $connection,PDO $pdo,array $filter):int
+    {
+        return $this->rootReadCount($connection,$pdo,$filter,null,false);
+    }
+
+    public function readPlatformRootWindow(ConnectionInterface $connection,PDO $pdo,array $filter,array $page,?array $after=null):array
+    {
+        return $this->rootReadWindow($connection,$pdo,$filter,$page,$after,null,false);
+    }
+
+    public function readMobileRootCount(ConnectionInterface $connection,PDO $pdo,int $actualUid,array $filter):int
+    {
+        self::integer($actualUid,1,self::UINT_MAX);
+        return $this->rootReadCount($connection,$pdo,$filter,$actualUid,false);
+    }
+
+    public function readMobileRootWindow(ConnectionInterface $connection,PDO $pdo,int $actualUid,array $filter,array $page,?array $after=null):array
+    {
+        self::integer($actualUid,1,self::UINT_MAX);
+        return $this->rootReadWindow($connection,$pdo,$filter,$page,$after,$actualUid,false);
+    }
+
+    /** Preserve uid|gift_uid and the missing-versus-gift-only error order; no raw row is a DTO or authorization. */
+    public function readCustomerRoot(ConnectionInterface $connection,PDO $pdo,int $actualUid,string $locator):?array
+    {
+        self::integer($actualUid,1,self::UINT_MAX);$this->rootReadLocatorText($locator);
+        $rows=$this->rootSnapshotRows($connection,$pdo,'SELECT o.* FROM '.$this->table('store_order').' o WHERE '.
+            '(o.order_id=? OR o.'.self::quote('unique').' = ?) AND o.is_del=0 AND (o.uid=? OR o.gift_uid=?) LIMIT 1',
+            [$locator,$locator,$actualUid,$actualUid]);
+        if($rows===[])return null;
+        if(count($rows)!==1)self::unavailable();$this->rootReadHeader($rows[0],false,null);return $rows[0];
+    }
+
+    /** The original PK lookup has no list deletion filter. Admin authorization is never inferred here. */
+    public function readPlatformRoot(ConnectionInterface $connection,PDO $pdo,int|string $actualPk):?array
+    {
+        if(is_string($actualPk))$this->rootReadLocatorText($actualPk);
+        $rows=$this->rootSnapshotRows($connection,$pdo,'SELECT o.* FROM '.$this->table('store_order').' o WHERE o.id=? LIMIT 1',[(int)$actualPk]);
+        if($rows===[])return null;
+        if(count($rows)!==1)self::unavailable();$this->rootReadHeader($rows[0],false,null);return $rows[0];
+    }
+
+    /** Two original fixed native selections, including their different deletion/owner predicates. */
+    public function readMobileRoot(ConnectionInterface $connection,PDO $pdo,int $actualUid,string $locator):array
+    {
+        self::integer($actualUid,1,self::UINT_MAX);$this->rootReadLocatorText($locator);
+        $base=' FROM '.$this->table('store_order').' o WHERE (o.order_id=? OR o.'.self::quote('unique').' = ?)';
+        $probeRows=$this->rootSnapshotRows($connection,$pdo,'SELECT o.id,o.marketplace_trade_version'.$base.' LIMIT 1',[$locator,$locator]);
+        if(count($probeRows)>1)self::unavailable();$probe=$probeRows[0]??null;$lookupUid=0;
+        if($probe!==null){
+            self::keys($probe,['id','marketplace_trade_version']);self::integer($probe['id'],1,self::UINT_MAX);
+            if(!$this->rootReadLegacy($probe))$lookupUid=$actualUid;
+        }
+        $sql='SELECT o.*'.$base.' AND o.is_del=0';$parameters=[$locator,$locator];
+        if($lookupUid>0){$sql.=' AND (o.uid=? OR o.gift_uid=?)';$parameters[]=$lookupUid;$parameters[]=$lookupUid;}
+        $rows=$this->rootSnapshotRows($connection,$pdo,$sql.' LIMIT 1',$parameters);
+        if(count($rows)>1)self::unavailable();$root=$rows[0]??null;
+        if($root!==null)$this->rootReadHeader($root,false,null);
+        return ['probe'=>$probe,'lookup_uid'=>$lookupUid,'root'=>$root];
+    }
+
+    private function rootReadCount(ConnectionInterface $connection,PDO $pdo,array $filter,?int $uid,bool $customer):int
+    {
+        [$where,$parameters]=$this->rootReadPredicate($filter,$uid,$customer);
+        $rows=$this->rootSnapshotRows($connection,$pdo,'SELECT COUNT(*) AS aggregate FROM '.$this->table('store_order').' o WHERE '.$where,$parameters);
+        if(count($rows)!==1)self::unavailable();self::keys($rows[0],['aggregate']);
+        return self::integer($rows[0]['aggregate'],0,self::UINT_MAX);
+    }
+
+    private function rootReadWindow(ConnectionInterface $connection,PDO $pdo,array $filter,array $page,?array $after,?int $uid,bool $customer):array
+    {
+        self::keys($page,['mode','offset','limit']);
+        if(!in_array($page['mode'],['all','page'],true)||!is_int($page['offset'])||$page['offset']<0
+            ||!is_int($page['limit'])||$page['limit']<1||$page['limit']>100)self::unavailable();
+        if($page['mode']==='all'&&($page['offset']!==0||$page['limit']!==100))self::unavailable();
+        [$where,$parameters]=$this->rootReadPredicate($filter,$uid,$customer);$previous=null;
+        if($after!==null){
+            if($page['mode']!=='all')self::unavailable();self::keys($after,['add_time','id']);
+            $time=self::integer($after['add_time'],0,self::UINT_MAX);$id=self::integer($after['id'],1,self::UINT_MAX);
+            $where.=' AND (o.add_time < ? OR (o.add_time = ? AND o.id < ?))';
+            array_push($parameters,$time,$time,$id);$previous=[$time,$id];
+        }
+        $parameters[]=$page['limit'];$parameters[]=$page['offset'];
+        $rows=$this->rootSnapshotRows($connection,$pdo,'SELECT o.* FROM '.$this->table('store_order').' o WHERE '.$where.
+            ' ORDER BY o.add_time DESC,o.id DESC LIMIT ? OFFSET ?',$parameters);
+        if(count($rows)>$page['limit'])self::unavailable();$seen=[];
+        foreach($rows as$row){
+            $id=$this->rootReadHeader($row,true,$uid);$time=self::integer($row['add_time'],0,self::UINT_MAX);
+            if(isset($seen[$id])||($previous!==null&&($time>$previous[0]||($time===$previous[0]&&$id>=$previous[1]))))self::unavailable();
+            $seen[$id]=true;$previous=[$time,$id];
+        }
+        return $rows;
+    }
+
+    /** Only the eight closed value slots above reach these literal predicates; no identifier or operator input. */
+    private function rootReadPredicate(array $filter,?int $uid,bool $customer):array
+    {
+        MarketplaceOrderInput::assertReadFilter($filter);
+        $where='(o.marketplace_trade_version IS NULL OR o.marketplace_trade_version=0 OR '.
+            '(o.marketplace_trade_version=1 AND o.pid=0)) AND o.is_system_del=0';$parameters=[];
+        if($uid!==null){
+            self::integer($uid,1,self::UINT_MAX);
+            $where.=' AND (o.marketplace_trade_version IS NULL OR o.marketplace_trade_version=0 OR '.
+                '(o.marketplace_trade_version=1 AND o.uid=?))';$parameters[]=$uid;
+            if($customer){$where.=' AND (o.uid=? OR o.gift_uid=?)';$parameters[]=$uid;$parameters[]=$uid;}
+        }elseif($customer)self::unavailable();
+        if($filter['legacy_pid']==='nonnegative')$where.=' AND o.pid>=0';
+        elseif($filter['legacy_pid']==='not_minus_one')$where.=' AND o.pid<>-1';
+        if($filter['deleted']['enabled']){$where.=' AND o.is_del=?';$parameters[]=(int)$filter['deleted']['value'];}
+        $states=[
+            0=>'o.paid=0 AND o.status=0 AND o.refund_status=0 AND o.is_del=0 AND o.is_cancel=0',
+            1=>'o.paid=1 AND o.status=0 AND o.refund_status IN (0,3) AND o.is_del=0',
+            7=>'o.paid=1 AND o.status=4 AND o.refund_status IN (0,3) AND o.is_del=0',
+            2=>'o.paid=1 AND o.status=1 AND o.refund_status IN (0,3) AND o.is_del=0',
+            3=>'o.paid=1 AND o.status=2 AND o.refund_status IN (0,3) AND o.is_del=0',
+            4=>'o.paid=1 AND o.status=3 AND o.refund_status IN (0,3) AND o.is_del=0',
+            5=>'o.paid=1 AND o.status=0 AND o.refund_status=0 AND o.shipping_type=2 AND o.is_del=0',
+            6=>'o.paid=1 AND o.status IN (2,3) AND o.refund_status=0 AND o.shipping_type=2 AND o.is_del=0',
+            -1=>'o.paid=1 AND o.refund_status IN (1,4) AND o.is_del=0',
+            -2=>'o.paid=1 AND o.refund_status=2 AND o.is_del=0',
+            -3=>'o.paid=1 AND o.refund_status IN (1,2,4) AND o.is_del=0',
+            -4=>'o.is_del=1',9=>'o.refund_status IN (0,3) AND o.is_del=0'];
+        $code=$filter['status_case']['code'];if($code!=='none')$where.=' AND ('.$states[$code].')';
+        if($filter['status_case']['shipping_only'])$where.=' AND o.shipping_type=1';
+        $activity=[1=>'o.combination_id=0 AND o.seckill_id=0 AND o.bargain_id=0 AND o.advance_id=0',
+            2=>'(o.pink_id>0 OR o.combination_id>0)',3=>'o.seckill_id>0',4=>'o.bargain_id>0',5=>'o.advance_id>0',
+            6=>'(o.one_brokerage>0 OR o.two_brokerage>0)'];
+        if($filter['activity']!=='none')$where.=' AND ('.$activity[$filter['activity']].')';
+        $time=$filter['time'];
+        if($time['kind']==='between'){$where.=' AND o.add_time BETWEEN ? AND ?';array_push($parameters,$time['start'],$time['end']);}
+        elseif($time['kind']==='before'){$where.=' AND o.add_time < ?';$parameters[]=$time['end'];}
+        elseif($time['kind']==='from'){$where.=' AND o.add_time >= ?';$parameters[]=$time['start'];}
+        foreach($filter['payment']['equalities']as$value){
+            if($value===null)$where.=' AND o.pay_type IS NULL';
+            else{$where.=' AND o.pay_type=?';$parameters[]=$value;}
+        }
+        $values=$filter['payment']['in_values'];
+        if($values!==null){
+            if($values===[])$values=[''];
+            $where.=' AND o.pay_type IN ('.implode(',',array_fill(0,count($values),'?')).')';
+            foreach($values as$value)$parameters[]=$value;
+        }
+        $refund=[1=>'o.refund_type IN (1,2)',2=>'o.refund_type=4',3=>'o.refund_type=5',4=>'o.refund_type=6'];
+        if($filter['refund_types']!=='none')$where.=' AND ('.$refund[$filter['refund_types']].')';
+        [$keyword,$keywordParameters]=$this->rootReadKeyword($filter['keyword']);
+        if($keyword!==''){$where.=' AND ('.$keyword.')';array_push($parameters,...$keywordParameters);}
+        return [$where,$parameters];
+    }
+
+    private function rootReadKeyword(array $keyword):array
+    {
+        $mode=$keyword['mode'];$value=$keyword['value'];if($mode==='none')return ['',[]];
+        switch($mode){
+            case 'uid':return ['o.uid=?',[(int)$value]];
+            case 'order_id':return ['o.order_id=?',[$value]];
+            case 'real_name':return ['o.real_name=?',[$value]];
+            case 'user_phone':return ['o.user_phone=?',[$value]];
+        }
+        $like='%'.$value.'%';
+        $product='o.id IN (SELECT ci.oid FROM '.$this->table('store_order_cart_info').' ci WHERE '.
+            'ci.product_id IN (SELECT p.id FROM '.$this->table('store_product').' p WHERE (p.store_name LIKE ? OR p.keyword LIKE ?)) OR '.
+            'ci.product_id IN (SELECT b.id FROM '.$this->table('store_bargain').' b WHERE (b.title LIKE ? OR b.info LIKE ?)) OR '.
+            'ci.product_id IN (SELECT c.id FROM '.$this->table('store_combination').' c WHERE (c.title LIKE ? OR c.info LIKE ?)) OR '.
+            'ci.product_id IN (SELECT s.id FROM '.$this->table('store_seckill').' s WHERE (s.title LIKE ? OR s.info LIKE ?)))';
+        $parameters=array_fill(0,8,$like);
+        if($mode==='title')return [$product,$parameters];
+        if($mode!=='fuzzy')self::unavailable();
+        return ['o.order_id LIKE ? OR o.real_name LIKE ? OR o.user_phone LIKE ? OR '.
+            'o.uid IN (SELECT u.uid FROM '.$this->table('user').' u WHERE (u.nickname LIKE ? OR u.uid LIKE ? OR u.phone LIKE ?)) OR '.$product,
+            array_merge(array_fill(0,6,$like),$parameters)];
+    }
+
+    private function rootReadLegacy(array $row):bool
+    {
+        if(!array_key_exists('marketplace_trade_version',$row))self::unavailable();$version=$row['marketplace_trade_version'];
+        if($version===null||$version===0||$version==='0')return true;
+        if($version===1||$version==='1')return false;self::unavailable();
+    }
+
+    /** UINT raw legacy headers remain raw; only real V1 rows use the adopted INT contract. */
+    private function rootReadHeader(array $row,bool $listing,?int $uid):int
+    {
+        foreach($row as$value)if($value!==null&&!is_int($value)&&!is_string($value))self::unavailable();
+        foreach(['id','uid','pid','add_time']as$field)if(!array_key_exists($field,$row))self::unavailable();
+        $id=self::integer($row['id'],1,self::UINT_MAX);self::integer($row['uid'],0,self::UINT_MAX);
+        $pid=$row['pid'];
+        if((!is_int($pid)&&(!is_string($pid)||preg_match('/\A(?:0|-?[1-9][0-9]{0,9})\z/D',$pid)!==1))
+            ||(int)$pid< -2147483648||(int)$pid>self::INT_MAX)self::unavailable();
+        self::integer($row['add_time'],0,self::UINT_MAX);
+        if(!$this->rootReadLegacy($row)){
+            self::integer($row['id'],1,self::INT_MAX);self::integer($row['uid'],1,self::INT_MAX);
+            if($listing){
+                self::stored($row,['pid'=>0,'is_system_del'=>0]);
+                if($uid!==null)self::stored($row,['uid'=>$uid]);
+            }
+        }
+        return $id;
+    }
+
+    private function rootReadLocatorText(string $locator):void
+    {
+        if(preg_match('//u',$locator)!==1||str_contains($locator,"\0"))self::unavailable();
+    }
+
+    /** Only this fixed selector family calls this ordinary native reader; no transaction lifecycle or ORM. */
+    private function rootSnapshotRows(ConnectionInterface $connection,PDO $pdo,string $sql,array $parameters):array
+    {
+        $this->readStructureConnection($connection,$pdo);
+        if(!array_is_list($parameters)||count($parameters)>65535)self::unavailable();
         $statement=$this->query($pdo,$sql,$parameters);$rows=null;$failure=null;$closed=false;
         try{$rows=$statement->fetchAll(PDO::FETCH_ASSOC);}catch(Throwable $error){$failure=$error;}
         try{$closed=$statement->closeCursor();}catch(Throwable $error){if($failure===null)$failure=$error;}
