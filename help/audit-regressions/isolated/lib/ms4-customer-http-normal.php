@@ -17,7 +17,8 @@ const M4CB_TABLES = ['eb_store_order','eb_store_order_invoice','eb_store_order_c
     'eb_store_cart','eb_user','eb_marketplace_merchant','eb_store_product_attr','eb_user_address','eb_user_invoice',
     'eb_system_config','eb_system_user_level','eb_user_level','eb_member_right','eb_store_order_status',
     'eb_store_product_log','eb_system_timer','eb_marketplace_role','eb_marketplace_employee',
-    'eb_marketplace_password_setup','eb_system_event','eb_system_notification'];
+    'eb_marketplace_password_setup','eb_system_event','eb_system_notification',
+    'eb_marketplace_payment_registry','eb_marketplace_payment_attempt'];
 const M4CB_INSERT_TABLES = ['eb_user','eb_marketplace_merchant','eb_store_product','eb_store_product_attr',
     'eb_store_product_attr_value','eb_user_address','eb_user_invoice','eb_system_config'];
 
@@ -110,7 +111,8 @@ function m4cb_snapshot(PDO $pdo): array
 {
     m4c_expect(!$pdo->inTransaction(),'M4C_INDEPENDENT_READ_OUTSIDE_TRANSACTION');$out=[];
     foreach(M4CB_TABLES as$table){$order=match($table){
-        'eb_marketplace_order_idempotency'=>'`uid`,`idem_key`','eb_store_order_status'=>'`oid`,`change_type`,`change_message`,`change_time`',
+        'eb_marketplace_order_idempotency'=>'`uid`,`idem_key`','eb_marketplace_payment_registry'=>'`order_id`',
+        'eb_marketplace_payment_attempt'=>'`id`','eb_store_order_status'=>'`oid`,`change_type`,`change_message`,`change_time`',
         'eb_user'=>'`uid`','eb_marketplace_merchant'=>'`mer_id`',default=>'`id`'};
         $out[$table]=m4cb_rows($pdo,'SELECT * FROM `'.$table.'` ORDER BY '.$order);
     }return $out;
@@ -129,7 +131,7 @@ function m4cb_owner_auth_only(array $before,array $after,int $uid,bool $login=fa
 }
 function m4cb_preserved(array $before,array $after,int $uid,array $changed=[],bool $login=false): void
 {
-    m4c_expect(array_keys($before)===M4CB_TABLES&&array_keys($after)===M4CB_TABLES,'M4C_EXACT_TWENTY_FIVE_FACT_TABLES');
+    m4c_expect(array_keys($before)===M4CB_TABLES&&array_keys($after)===M4CB_TABLES,'M4C_EXACT_TWENTY_SEVEN_FACT_TABLES');
     foreach(M4CB_TABLES as$table){
         if($table==='eb_user'){m4cb_owner_auth_only($before[$table],$after[$table],$uid,$login);continue;}
         if(in_array($table,$changed,true))continue;
@@ -175,7 +177,8 @@ function m4c_app(string $mode,array $source): \think\App
     $GLOBALS['m4c_app_started']=true;require_once '/workspace/crmeb/vendor/autoload.php';
     $config=audit_config();m4c_expect(($config['run_id']??null)===$source['run_id']&&($config['database']['username']??null)==='audit_app'
         &&getenv('APP_ENV')==='testing'&&getenv('PHP_MARKETPLACE_ENABLED')==='true'&&getenv('PHP_MARKETPLACE_TRADE_ENABLED')==='true'
-        &&getenv('PHP_CACHE_DRIVER')==='redis','M4C_REAL_ENABLED_PRIVATE_APP_CONFIGURATION');
+        &&getenv('PHP_MARKETPLACE_PAYMENT_TEST_ENABLED')==='true'&&getenv('PHP_CACHE_DRIVER')==='redis',
+        'M4C_REAL_ENABLED_PRIVATE_APP_CONFIGURATION');
     foreach($source['environment']as$name=>$value)m4c_expect(getenv($name)===$value,'M4C_SOURCE_BOUND_REAL_ENVIRONMENT_VALUE');
     m4c_expect(($config['auth']['session_epoch']??null)==='audit-http-'.$source['run_id']
         &&is_string($config['signing_key']??null)&&strlen($config['signing_key'])>=32
@@ -201,7 +204,8 @@ function m4c_app(string $mode,array $source): \think\App
     $app->bootService($app->getService(\think\service\ModelService::class));date_default_timezone_set($app->config->get('app.default_timezone','Asia/Shanghai'));
     $self=MarketplaceOrderInput::unsigned($app->config->get('marketplace.self_operated_mer_id'),'self_operated_mer_id');
     m4c_expect($app->db instanceof \crmeb\compat\think\Db&&$app->config->get('marketplace.enabled')===true
-        &&$app->config->get('marketplace.trade.enabled')===true&&MarketplaceTradePolicy::v1CreateEnabled()===true
+        &&$app->config->get('marketplace.trade.enabled')===true&&$app->config->get('marketplace.payment.test_enabled')===true
+        &&MarketplaceTradePolicy::v1CreateEnabled()===true
         &&$self>0&&$self===$source['self_operated_mer_id'],'M4C_LOADED_REAL_ENABLED_BOOLS_AND_SELF_ID');
     m4c_expect($app->config->get('cache.default')==='redis'&&$app->config->get('cache.stores.redis.type')==='redis'
         &&$app->config->get('cache.stores.redis.host')==='audit-redis'&&(string)$app->config->get('cache.stores.redis.port')==='6379'
@@ -288,8 +292,8 @@ function m4cb_fixture_load(array $source): array
     m4c_expect(is_array($value)&&$value['schema']===1&&$value['scope']==='MS4_CUSTOMER_PRIVATE_FIXTURE'
         &&$value['run_id']===$source['run_id']&&$value['source_sha']===$source['source_sha']&&$value['freeze_sha256']===$source['freeze_sha256']
         &&$privateEnvironment===$actualEnvironment&&$value['self_operated_mer_id']===$source['self_operated_mer_id']
-        &&$prepare['schema']===1&&$prepare['scope']==='CUSTOMER_HTTP_FIXTURE_PREPARATION_ONLY'
-        &&$prepare['status']==='VERIFIED_CUSTOMER_HTTP_FIXTURE_PREPARED_ONLY'&&$prepare['native_exit']===0
+        &&$prepare['schema']===1&&$prepare['scope']==='CUSTOMER_HTTP_FIXTURE_WITH_MS5_PREREQUISITES_PREPARATION_ONLY'
+        &&$prepare['status']==='VERIFIED_CUSTOMER_HTTP_FIXTURE_WITH_MS5_PREREQUISITES_PREPARED_ONLY'&&$prepare['native_exit']===0
         &&$prepare['phase']==='final_source'&&$prepare['full_source_unchanged']===true
         &&$prepare['run_id']===$source['run_id']&&$prepare['source_sha']===$source['source_sha']&&$prepare['freeze_sha256']===$source['freeze_sha256']
         &&$prepare['container_id']===$value['prepare_container_id']&&$prepare['native_created_sha256']===$value['prepare_native_created_sha256']
@@ -350,6 +354,21 @@ function m4cb_saved(PDO $pdo,array $fixture,array $request,string $idem,array $f
         &&(int)$order['marketplace_trade_version']===1&&$order['unique']===$request['confirm_key']&&$order['order_id']===$number
         &&json_decode($order['cart_id'],true,32,JSON_THROW_ON_ERROR)===$request['cart_refs'],'M4C_SAVED_NATIVE_ORDER_IDENTITY');
     foreach(['paid','is_cancel','is_gift','status','refund_status']as$field)m4c_expect((int)$order[$field]===0,'M4C_SAVED_ORDER_STILL_UNPAID_AND_UNFULFILLED');
+    // Independent native readback of insertOrder's same-transaction payment birth; never synthesize a missing registry.
+    $births=m4cb_rows($pdo,'SELECT * FROM `eb_marketplace_payment_registry` WHERE `order_id` = ?',[$id]);
+    m4c_expect(count($births)===1,'M4C_PAYMENT_BIRTH_ONE_REAL_REGISTRY');$birth=$births[0];
+    $birthFields=['order_id','uid','mer_id','payment_contract_version','born_at','attempt_generation',
+        'winner_attempt_id','fulfillment_hold','hold_reason','hold_attempt_id','hold_at'];
+    $birthKeys=array_keys($birth);sort($birthKeys,SORT_STRING);sort($birthFields,SORT_STRING);
+    m4c_expect($birthKeys===$birthFields,'M4C_PAYMENT_BIRTH_COMPLETE_ELEVEN_COLUMNS');
+    $bornAt=(int)$order['add_time'];m4c_expect($bornAt>0&&$bornAt<=4294967295,'M4C_PAYMENT_BIRTH_REAL_ROOT_TIME');
+    foreach(['order_id'=>$id,'uid'=>$uid,'mer_id'=>$mer,'payment_contract_version'=>1,'born_at'=>$bornAt,'fulfillment_hold'=>0]as$field=>$expected)
+        m4c_expect($birth[$field]===$expected||$birth[$field]===(string)$expected,'M4C_PAYMENT_BIRTH_NATIVE_IDENTITY_VALUE');
+    m4c_expect($birth['attempt_generation']===0||$birth['attempt_generation']==='0','M4C_PAYMENT_BIRTH_CANONICAL_ZERO_GENERATION');
+    foreach(['winner_attempt_id','hold_reason','hold_attempt_id','hold_at']as$field)
+        m4c_expect($birth[$field]===null,'M4C_PAYMENT_BIRTH_ACTUAL_NULL_POINTERS');
+    m4c_expect(m4cb_rows($pdo,'SELECT * FROM `eb_marketplace_payment_attempt` WHERE `order_id` = ? ORDER BY `id`',[$id])===[],
+        'M4C_PAYMENT_BIRTH_REAL_EMPTY_ATTEMPT_SET');
     foreach(['total_price'=>'70.55','total_postage'=>'8.01','pay_postage'=>'8.01','pay_price'=>'78.56','cost'=>'24.25']as$field=>$value)
         m4c_expect($order[$field]===$value,'M4C_INDEPENDENT_SAVED_DECIMAL_TOTAL');
     $address=$fixture['address'];m4c_expect((int)$order['total_num']===3&&(int)$order['shipping_type']===1&&$order['pay_type']===''
@@ -483,6 +502,17 @@ function m4cb_saved(PDO $pdo,array $fixture,array $request,string $idem,array $f
     sort($actualStats,SORT_STRING);sort($expectedStats,SORT_STRING);m4c_expect($actualStats===$expectedStats,'M4C_EXACT_ORDER_STAT_MULTISET');
     $after=m4cb_snapshot($pdo);$newCounts=['eb_store_order'=>1,'eb_store_order_invoice'=>1,'eb_store_order_cart_info'=>2,
         'eb_marketplace_order_idempotency'=>1,'eb_marketplace_stock_movement'=>2,'eb_store_order_status'=>1];
+    // Preserve every original native payment row; the only insertion is this actual root's verified G0 birth.
+    $remainingRegistries=[];$birthCount=0;
+    foreach($after['eb_marketplace_payment_registry']as$row){
+        if($row['order_id']===$id||$row['order_id']===(string)$id){
+            ++$birthCount;m4c_expect($row===$birth,'M4C_PAYMENT_BIRTH_FULL_NATIVE_ROW_STABLE');
+        }else $remainingRegistries[]=$row;
+    }
+    m4c_expect($birthCount===1&&count($after['eb_marketplace_payment_registry'])===count($before['eb_marketplace_payment_registry'])+1
+        &&$remainingRegistries===$before['eb_marketplace_payment_registry'],'M4C_PAYMENT_BIRTH_ONLY_NEW_TARGET_REGISTRY');
+    m4c_expect($after['eb_marketplace_payment_attempt']===$before['eb_marketplace_payment_attempt'],
+        'M4C_PAYMENT_BIRTH_ALL_ORIGINAL_NATIVE_ATTEMPTS_UNCHANGED');
     foreach($newCounts as$table=>$count)m4c_expect($before[$table]===[]&&count($after[$table])===$count,'M4C_EXACT_ONLY_NEW_ORDER_EFFECT_COUNTS');
     m4c_expect(count($after['eb_store_product_log'])===count($before['eb_store_product_log'])+2,'M4C_ONLY_TWO_NEW_ORDER_STATS');
     m4c_expect(count($after['eb_store_product'])===count($before['eb_store_product'])
@@ -490,7 +520,8 @@ function m4cb_saved(PDO $pdo,array $fixture,array $request,string $idem,array $f
         &&$after['eb_store_cart']===$remaining,'M4C_EXISTING_PRODUCT_AND_REMAINING_CART_SET');
     $oldLogs=array_values(array_filter($after['eb_store_product_log'],static fn(array $row):bool=>$row['type']!=='order'));
     m4c_expect($oldLogs===$before['eb_store_product_log'],'M4C_PRIOR_CART_STATS_FULLY_PRESERVED');
-    m4cb_preserved($before,$after,$uid,[...array_keys($newCounts),'eb_store_product','eb_store_product_attr_value','eb_store_cart','eb_store_product_log']);
+    m4cb_preserved($before,$after,$uid,[...array_keys($newCounts),'eb_store_product','eb_store_product_attr_value','eb_store_cart','eb_store_product_log',
+        'eb_marketplace_payment_registry']);
     return $after;
 }
 
@@ -572,7 +603,7 @@ function m4c_verify_http(array $source): array
         &&array_intersect_key($still,array_fill_keys(['dev','ino','uid','mode','size'],true))===$loaded['stat'],'M4C_PRIVATE_FIXTURE_REMAINS_ORIGINAL');
     unset($headers,$lookupHeaders,$raw,$wire,$cached,$private,$fixture,$login);m4cb_guard_readonly();
     return ['http_call_count'=>12,'fixture_sha256_prefix'=>$loaded['prefix'],'prepare_receipt_sha256'=>$loaded['prepare_receipt_sha256'],
-        'fact_table_count'=>25,'saved_counts'=>['orders'=>1,'items'=>2,'reserves'=>2,'invoices'=>1,'ledger'=>1,'unselected_cart'=>1,
+        'fact_table_count'=>27,'saved_counts'=>['orders'=>1,'items'=>2,'reserves'=>2,'invoices'=>1,'ledger'=>1,'unselected_cart'=>1,
             'cart_stat_rows'=>3,'order_stat_rows'=>2,'creation_status_rows'=>1],
         'real_credential_login'=>true,'real_request_uid_and_production_handlers'=>true,'real_enabled_configuration'=>true,
         'independent_committed_sql_verified'=>true,'same_request_replay_unchanged'=>true,'owner_lookup_unchanged'=>true,

@@ -721,6 +721,8 @@ R7实际结果（2026-10-16，详见03）：clean `a74f2b27275229dcb089581039dc3
 
 2026-10-17 单字段修复后的完整内部原M4复测通过：被测clean来源 `2e6d7e04ccce63a90484e6817188f64a72597446`、Run `2026101706593515e7a6`，原9＋4及normal实际native0，完整结果50884B/`0a27dacdff83ad6fa6ecb9d1d5af7c12eea72ed7534de4e4abd825b8eb576706` 已由宿主和独立zero的完整normal_result验证，phase=final_source；原五未付/保存/planner/正常取消/自然90秒/极小正期限/商家读回和最终来源责任均保留并通过。原三CID/单网/六卷正常关闭及独立六raw核零实际0，关闭 `8694e2ada49d43bfdcf2a1cc5429fc89417089cf5ddb629f47ca23f3d7794e70`、zero `3b0f81cb9097801de5d1d3b921714aee4021bb3c2aef7697725ccf34081b9984`，详见03/core。本项仅完整内部普通回归，不签收完整MS4；下一实施按core后继顾客合同完成独立空库9＋4＋一次files-bootstrap/27表/原12HTTP，再推进H5 34/商家25与独立paid API/DOM。履约、售后、真实金融、非空历史、发布及原页面验收继续保留，停止样本不运行。
 
+2026-10-17 顾客后继SOURCE/PARSE检查点：已按core有限接Main原entry与shared，实际27表/完整G0/原12HTTP保持，新9＋4/一次files-bootstrap、13键binding、12/15前置hash、六真实ENV和同一child合同已接。独立SOURCE审查通过；固定PHP语法及新profile/close/zero的AST/help实际0，仓库外两收据摘要 `a8169b9ad18a0a65c70ab7b228e6e90f99cadee012ac742370670de8c2e8636e` / `0cc5b13f359db428453ab32e8e6dd9222269fa7db6f783248bf4c5d6d1ce09f5`。新正常close/独立zero亦独立SOURCE PASS，新顾客Run未启动；继续本Task2，不勾选原12HTTP/H5 34/商家25、paid API/DOM或其余履约售后、金融、历史及发布任务。范围、来源和保留项见03/core。
+
 ### Task 3: 收款账户
 
 - 表 `eb_marketplace_payment_account(id, mer_id, channel, account_ref, version, status, verified_at, add_time)`；`account_ref` 只保存配置引用，不保存密钥明文。订单发起支付时把账户 ID 与版本写入支付尝试记录，之后不可更改。

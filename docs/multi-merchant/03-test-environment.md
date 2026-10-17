@@ -217,6 +217,8 @@ Root与独立 SOURCE 审查确认原因是共享商家 oracle 漏读已批准的
 
 原cleanup helper `b092a0c1d8e22952102d8afea80eec46a7aa4245e3e43bb3b50ca4bf4a80ca99` 实际native0并原ID移除；原MySQL/Redis同句柄stop --time -1，原生CLI和容器均0，精确原3CID/1内网/6卷nonforce移除。未改正常close源 `46a507d30f6202d63f382a5086c2a8aa2b15f9c15c98550e3f4998b07b2956ce` 生成160014B结果 `8694e2ada49d43bfdcf2a1cc5429fc89417089cf5ddb629f47ca23f3d7794e70`；未改独立zero源 `e89762d9f421785d5237dbc6293c6c22463e1ddf6a601cf8289c7161e08a4946` 生成19528B结果 `3b0f81cb9097801de5d1d3b921714aee4021bb3c2aef7697725ccf34081b9984`，实际六raw native0/严格空stdout与stderr，全局无原网/卷消费者，原业务证据和来源保持。close/zero中的business_acceptance=NOT RUN仅表示清理脚本不签收业务，不覆盖上述完整内部成功结果。原FAIL Run保持，Main在本新Run核零后才解除冻结；HTTP/DOM、实际已付展示、发货售后、真实金融、历史和发布仍未完成。
 
+顾客MS5前置适配SOURCE/PARSE（2026-10-17）：Main原顾客入口和shared已接同源9＋4/一次files-bootstrap、13键binding、12/15前置hash、六项真实ENV及27表G0出生读回，保原12HTTP和同一child监督；独立SOURCE PASS。仓库外新顾客profile `ms5-payment-consumer-preparation/candidate-customer-http-r1` 的host76625B/`c9c130efc42894090b7e07cd53a0e27ae13e01221b7c9d91ff0dbf2bf0ceb4a3`、initializer57617B/`b370d9ea1b032113f4884b6802b1dc35a40dfc73559d548828d89a247394c33b`及compose/interface亦独立SOURCE PASS；旧版本和证据不改。三个PHP在固定8.2.33/no-network/只读来源/tmpfs中语法实际0，host/close/zero的AST与help实际0，检查摘要 `a8169b9ad18a0a65c70ab7b228e6e90f99cadee012ac742370670de8c2e8636e` / `0cc5b13f359db428453ab32e8e6dd9222269fa7db6f783248bf4c5d6d1ce09f5`。close/zero亦独立SOURCE PASS，新业务Run尚未启动；不作为12HTTP、正常关闭/独立核零、DOM或付款验收，详见核心记录的顾客检查点。
+
 ## 3. ISO-MIN 环境（MS0a 交付）
 
 ### 3.1 文件
