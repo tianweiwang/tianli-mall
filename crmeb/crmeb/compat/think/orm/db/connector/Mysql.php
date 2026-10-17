@@ -7,6 +7,12 @@ use PDO;
 
 class Mysql extends \think\db\connector\Mysql
 {
+    /** Observe the real ORM depth without joining or changing a transaction. */
+    public function transactionDepth(): int
+    {
+        return $this->transTimes;
+    }
+
     public function getBuilderClass(): string
     {
         return \think\db\builder\Mysql::class;

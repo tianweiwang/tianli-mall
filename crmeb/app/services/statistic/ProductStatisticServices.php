@@ -79,28 +79,28 @@ class ProductStatisticServices extends BaseServices
         $data['browse'] = $productLog->count($where + ['type' => 'visit']);//商品浏览量
         $data['user'] = $productLog->getDistinctCount($where + ['type' => 'visit'], 'uid');//商品访客数
         $data['cart'] = $storeCart->getSum($where, 'cart_num');//加入购物车件数
-        $data['order'] = $storeOrder->sum($where + ['pid' => 0], 'total_num', true);//下单件数
-        $data['pay'] = $storeOrder->sum([
+        $data['order'] = $storeOrder->commercialSum($where + ['pid' => 0], 'total_num', true);//下单件数
+        $data['pay'] = $storeOrder->commercialSum([
             ['paid', '=', 1],
             ['pay_time', '>=', strtotime($time[0])],
             ['pay_time', '<', strtotime($time[1]) + 86400],
             ['pid', '>=', 0]
         ], 'total_num');//支付件数
-        $data['payPrice'] = $storeOrder->sum([
+        $data['payPrice'] = $storeOrder->commercialSum([
             ['paid', '=', 1],
             ['pay_time', '>=', strtotime($time[0])],
             ['pay_time', '<', strtotime($time[1]) + 86400],
             ['pid', '>=', 0]
         ], 'pay_price');//支付金额
-        $data['cost'] = $storeOrder->sum([
+        $data['cost'] = $storeOrder->commercialSum([
             ['paid', '=', 1],
             ['pay_time', '>=', strtotime($time[0])],
             ['pay_time', '<', strtotime($time[1]) + 86400],
             ['pid', '>=', 0]
         ], 'cost');//成本金额
-        $data['refundPrice'] = $storeOrder->sum($where + ['refund_status' => 2], 'pay_price', true);//退款金额
-        $data['refund'] = $storeOrder->sum($where + ['refund_status' => 2], 'total_num', true);//退款件数
-        $payPeople = $storeOrder->getDistinctCount($where + ['paid' => 1], 'uid');//成交用户数
+        $data['refundPrice'] = $storeOrder->commercialSum($where + ['refund_status' => 2], 'pay_price', true);//退款金额
+        $data['refund'] = $storeOrder->commercialSum($where + ['refund_status' => 2], 'total_num', true);//退款件数
+        $payPeople = $storeOrder->getCommercialDistinctCount($where + ['paid' => 1], 'uid');//成交用户数
         $data['payPercent'] = $data['user'] > 0 ? bcmul(bcdiv($payPeople, $data['user'], 4), 100, 2) : 0;//访问-付款转化率
         return $data;
     }

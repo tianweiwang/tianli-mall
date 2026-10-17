@@ -32,10 +32,10 @@ class OrderStatisticServices extends BaseServices
         if (count($time) != 2) throw new AdminException('请选择时间');
         /** @var StoreOrderServices $orderService */
         $orderService = app()->make(StoreOrderServices::class);
-        $data['pay_price'] = $orderService->sum(['paid' => 1, 'pid' => 0, 'time' => $where['time']], 'pay_price', true);
-        $data['pay_count'] = $orderService->count(['paid' => 1, 'pid' => 0, 'time' => $where['time']]);
-        $data['refund_price'] = $orderService->sum(['paid' => 1, 'pid' => 0, 'is_refund' => 1, 'time' => $where['time']], 'pay_price', true);
-        $data['refund_count'] = $orderService->count(['paid' => 1, 'pid' => 0, 'is_refund' => 1, 'time' => $where['time']]);
+        $data['pay_price'] = $orderService->commercialSum(['paid' => 1, 'pid' => 0, 'time' => $where['time']], 'pay_price', true);
+        $data['pay_count'] = $orderService->commercialCount(['paid' => 1, 'pid' => 0, 'time' => $where['time']]);
+        $data['refund_price'] = $orderService->commercialSum(['paid' => 1, 'pid' => 0, 'is_refund' => 1, 'time' => $where['time']], 'pay_price', true);
+        $data['refund_count'] = $orderService->commercialCount(['paid' => 1, 'pid' => 0, 'is_refund' => 1, 'time' => $where['time']]);
         return $data;
     }
 
@@ -129,7 +129,7 @@ class OrderStatisticServices extends BaseServices
         foreach ($bing_xdata as $key => $item) {
             $bing_data[] = [
                 'name' => $item,
-                'value' => $orderService->count(['paid' => 1, 'pid' => 0, 'is_channel' => $key, 'time' => $where['time']]),
+                'value' => $orderService->commercialCount(['paid' => 1, 'pid' => 0, 'is_channel' => $key, 'time' => $where['time']]),
                 'itemStyle' => ['color' => $color[$key]]
             ];
         }
@@ -167,7 +167,7 @@ class OrderStatisticServices extends BaseServices
             if (!in_array('combination', $model_checkbox) && $key == 3) continue;
             $bing_data[] = [
                 'name' => $item,
-                'value' => $orderService->together(['paid' => 1, 'pid' => 0, 'activity_type' => $key, 'time' => $where['time']], 'pay_price', 'sum'),
+                'value' => $orderService->commercialTogether(['paid' => 1, 'pid' => 0, 'activity_type' => $key, 'time' => $where['time']], 'pay_price', 'sum'),
                 'itemStyle' => ['color' => $color[$key]]
             ];
         }

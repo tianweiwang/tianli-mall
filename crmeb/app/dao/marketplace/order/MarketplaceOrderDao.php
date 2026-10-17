@@ -646,14 +646,94 @@ final class MarketplaceOrderDao
         $this->lockCustomer($pdo,$uid);
         $ledger=$this->one($pdo,'marketplace_order_idempotency',self::IDEM_FIELDS,
             '`uid` = ? AND `order_id` = ?',[$uid,$orderId]);
-        if($ledger===null)self::unavailable();
-        self::stored($ledger,['uid'=>$uid,'order_id'=>$orderId,'state'=>1]);
-        self::text($ledger['idem_key'],128,true);self::integer($ledger['post_commit_done'],0,1);
-        if(!is_string($ledger['request_digest'])||strlen($ledger['request_digest'])!==32)self::unavailable();
+        $ledger=self::applicationLedger($uid,$orderId,$ledger);
         $order=$this->committedOrder($pdo,$ledger);$merId=self::integer($order['mer_id'],1,self::UINT_MAX);
         $orderNo=self::text($order['order_id'],32,true);
         $selection=$this->postCommitItems($pdo,$ledger,$order);
         $items=$this->rows($pdo,'store_order_cart_info',self::ITEM_FIELDS,'`oid` = ?',[$orderId],'`id` ASC');
+        $groups=self::applicationGroups($items,$selection);
+        $parents=$this->rows($pdo,'marketplace_stock_movement',self::MOVEMENT_FIELDS,
+            '`order_id` = ? AND `kind` = ?',[$orderId,'reserve'],'`id` ASC');
+        if(count($parents)!==count($groups))self::unavailable();$reserves=[];$byChild=[];$seenParents=[];
+        foreach($parents as$parent){
+            [$parent,$parentId,$group,$seenParents]=self::applicationReserve($uid,$merId,$orderId,$parent,$groups,$seenParents);
+            $reserves[]=$parent;
+            $children=$this->rows($pdo,'marketplace_stock_movement',self::MOVEMENT_FIELDS,
+                '`parent_reserve_id` = ?',[$parentId],'`id` ASC');
+            $byChild=$this->applicationCredits($uid,$merId,$orderId,$parentId,$group,$children,$byChild);
+        }
+        $children=$this->rows($pdo,'marketplace_stock_movement',self::MOVEMENT_FIELDS,
+            '`order_id` = ? AND `kind` IN (?,?)',[$orderId,'release','return_in'],'`id` ASC');
+        $children=self::applicationAllCredits($children,$byChild);
+        $childOrders=$this->rows($pdo,'store_order',['id','uid','mer_id','pid','marketplace_trade_version',
+            'order_id','paid','status','refund_status','is_cancel'],'`pid` = ?',[$orderId],'`id` ASC');
+        $childOrders=self::applicationChildOrders($childOrders,$orderId);
+        return self::applicationResult($uid,$orderId,$merId,$orderNo,$items,$selection,$reserves,$children,$childOrders);
+    }
+
+    /**
+     * Pure original saved facts supplied by a separately authorized same-snapshot reader.
+     * Owner UID is data, not actor authority. This method never loads or locks a row.
+     */
+    public function readPaymentApplicationFactsFromFacts(int $ownerUid,int $orderId,array $facts):array
+    {
+        if(PHP_INT_SIZE<8)self::unavailable();self::integer($ownerUid,1,self::INT_MAX);self::integer($orderId,1,self::INT_MAX);
+        self::keys($facts,['customer','ledger','root','items','reserves','reserve_children','credits','child_orders']);
+        foreach(['customer'=>['uid'],'ledger'=>self::IDEM_FIELDS,'root'=>self::ORDER_FIELDS] as$name=>$fields){
+            if(!is_array($facts[$name]))self::unavailable();self::keys($facts[$name],$fields);
+            foreach($facts[$name] as$value)if($value!==null&&!is_string($value)&&!is_int($value))self::unavailable();
+        }
+        $childFields=['id','uid','mer_id','pid','marketplace_trade_version','order_id','paid','status','refund_status','is_cancel'];
+        foreach(['items'=>self::ITEM_FIELDS,'reserves'=>self::MOVEMENT_FIELDS,'reserve_children'=>self::MOVEMENT_FIELDS,
+            'credits'=>self::MOVEMENT_FIELDS,'child_orders'=>$childFields] as$name=>$fields){
+            $rows=$facts[$name];if(!is_array($rows)||!array_is_list($rows))self::unavailable();$previous=null;
+            foreach($rows as$row){
+                if(!is_array($row))self::unavailable();self::keys($row,$fields);
+                foreach($row as$value)if($value!==null&&!is_string($value)&&!is_int($value))self::unavailable();
+                $id=self::bigint($row['id']);
+                if($previous!==null&&(strlen($id)<strlen($previous)||(strlen($id)===strlen($previous)&&strcmp($id,$previous)<=0)))self::unavailable();
+                $previous=$id;
+            }
+        }
+        self::customerFacts($facts['customer'],$ownerUid);
+        $ledger=self::applicationLedger($ownerUid,$orderId,$facts['ledger']);
+        $refs=self::committedReferences($ledger);
+        $uid=self::integer($ledger['uid'],1,self::INT_MAX);$merId=self::integer($ledger['mer_id'],1,self::UINT_MAX);
+        $id=self::integer($ledger['order_id'],1,self::INT_MAX);
+        $order=self::savedOrderFacts($facts['root'],false);
+        self::integer($order['id'],1,self::INT_MAX);self::integer($order['uid'],1,self::INT_MAX);self::integer($order['mer_id'],1,self::UINT_MAX);
+        self::stored($order,['id'=>$id,'uid'=>$uid,'mer_id'=>$merId]);
+        $order=self::committedOrderReferences($ledger,$order,$refs);
+        $merId=self::integer($order['mer_id'],1,self::UINT_MAX);$orderNo=self::text($order['order_id'],32,true);
+        $identity=self::postCommitIdentity($ledger,$order);
+        $items=$facts['items'];$selection=self::postCommitItemsFromRows($ledger,$order,$items,$identity);
+        $groups=self::applicationGroups($items,$selection);$parents=$facts['reserves'];
+        if(count($parents)!==count($groups))self::unavailable();$reserves=[];$byChild=[];$seenParents=[];$linked=[];
+        foreach($facts['reserve_children'] as$child){
+            $parentId=self::bigint($child['parent_reserve_id']);$linked[$parentId][]=$child;
+        }
+        foreach($parents as$parent){
+            [$parent,$parentId,$group,$seenParents]=self::applicationReserve($ownerUid,$merId,$orderId,$parent,$groups,$seenParents);
+            $reserves[]=$parent;
+            $byChild=$this->applicationCredits($ownerUid,$merId,$orderId,$parentId,$group,$linked[$parentId]??[],$byChild);
+        }
+        if(array_diff_key($linked,$seenParents)!==[])self::unavailable();
+        $children=self::applicationAllCredits($facts['credits'],$byChild);
+        $childOrders=self::applicationChildOrders($facts['child_orders'],$orderId);
+        return self::applicationResult($ownerUid,$orderId,$merId,$orderNo,$items,$selection,$reserves,$children,$childOrders);
+    }
+
+    private static function applicationLedger(int $uid,int $orderId,?array $ledger):array
+    {
+        if($ledger===null)self::unavailable();
+        self::stored($ledger,['uid'=>$uid,'order_id'=>$orderId,'state'=>1]);
+        self::text($ledger['idem_key'],128,true);self::integer($ledger['post_commit_done'],0,1);
+        if(!is_string($ledger['request_digest'])||strlen($ledger['request_digest'])!==32)self::unavailable();
+        return $ledger;
+    }
+
+    private static function applicationGroups(array $items,array $selection):array
+    {
         if(count($items)!==count($selection))self::unavailable();$groups=[];
         foreach($items as$item){
             $qty=self::integer($item['cart_num'],1,self::INT_MAX);
@@ -670,54 +750,64 @@ final class MarketplaceOrderDao
             $group['qty']+=$line['qty'];self::integer($group['qty'],1,self::UINT_MAX);
             $group['cart_refs'][]=$line['cart_ref'];unset($group);
         }
-        $parents=$this->rows($pdo,'marketplace_stock_movement',self::MOVEMENT_FIELDS,
-            '`order_id` = ? AND `kind` = ?',[$orderId,'reserve'],'`id` ASC');
-        if(count($parents)!==count($groups))self::unavailable();$reserves=[];$byChild=[];$seenParents=[];
-        foreach($parents as$parent){
-            $parent=self::paymentMovement($parent);$parentId=$parent['id'];
-            $group=$groups[$parentId]??null;
-            if($group===null||isset($seenParents[$parentId]))self::unavailable();$seenParents[$parentId]=true;
-            self::stored($parent,['mer_id'=>$merId,'order_id'=>$orderId,'product_id'=>$group['product_id'],
-                'sku_id'=>$group['sku_id'],'sku_type'=>0,'sku_unique'=>$group['unique'],'qty'=>$group['qty'],
-                'kind'=>'reserve','parent_reserve_id'=>null,'order_item_id'=>null,'refund_id'=>null,
-                'actor_type'=>'customer','actor_id'=>$uid,'idem_key'=>'reserve:'.$orderId.':'.$group['sku_id']]);
-            $action=['contract_version'=>1,'uid'=>$uid,'mer_id'=>$merId,'order_id'=>$orderId,
-                'product_id'=>$group['product_id'],'sku_id'=>$group['sku_id'],'sku_type'=>0,'sku_unique'=>$group['unique'],
-                'qty'=>$group['qty'],'kind'=>'reserve','cart_refs'=>$group['cart_refs']];
-            self::movementDigest($parent,$action);self::reserveArithmetic($parent);$reserves[]=$parent;
-            $children=$this->rows($pdo,'marketplace_stock_movement',self::MOVEMENT_FIELDS,
-                '`parent_reserve_id` = ?',[$parentId],'`id` ASC');$credited=0;$released=false;
-            foreach($children as$child){
-                $child=self::paymentMovement($child);$childId=$child['id'];
-                if(isset($byChild[$childId]))self::unavailable();
-                self::stored($child,['mer_id'=>$merId,'order_id'=>$orderId,'product_id'=>$group['product_id'],
-                    'sku_id'=>$group['sku_id'],'sku_type'=>0,'sku_unique'=>$group['unique'],'parent_reserve_id'=>$parentId]);
-                if(!in_array($child['kind'],['release','return_in'],true))self::unavailable();
-                $qty=self::integer($child['qty'],1,self::UINT_MAX);
-                if($qty>$group['qty']-$credited)self::unavailable();$credited+=$qty;
-                if($child['kind']==='release'){
-                    if($released)self::unavailable();$released=true;
-                    self::stored($child,['idem_key'=>'release:'.$orderId.':'.$parentId,'qty'=>$group['qty'],
-                        'order_item_id'=>null,'refund_id'=>null]);
-                    if(!($child['actor_type']==='customer'&&(string)$child['actor_id']===(string)$uid)
-                        &&!($child['actor_type']==='system'&&$child['actor_id']===null))self::unavailable();
-                    self::movementDigest($child,$this->releaseAction($uid,$merId,$orderId,$parentId,$group));
-                    self::releaseArithmetic($child);
-                }
-                // return_in has no approved writer/action yet: retain its real full
-                // row and budget, without claiming a release digest proves a refund.
-                $byChild[$childId]=$child;
+        return $groups;
+    }
+
+    private static function applicationReserve(int $uid,int $merId,int $orderId,array $parent,array $groups,array $seenParents):array
+    {
+        $parent=self::paymentMovement($parent);$parentId=$parent['id'];
+        $group=$groups[$parentId]??null;
+        if($group===null||isset($seenParents[$parentId]))self::unavailable();$seenParents[$parentId]=true;
+        self::stored($parent,['mer_id'=>$merId,'order_id'=>$orderId,'product_id'=>$group['product_id'],
+            'sku_id'=>$group['sku_id'],'sku_type'=>0,'sku_unique'=>$group['unique'],'qty'=>$group['qty'],
+            'kind'=>'reserve','parent_reserve_id'=>null,'order_item_id'=>null,'refund_id'=>null,
+            'actor_type'=>'customer','actor_id'=>$uid,'idem_key'=>'reserve:'.$orderId.':'.$group['sku_id']]);
+        $action=['contract_version'=>1,'uid'=>$uid,'mer_id'=>$merId,'order_id'=>$orderId,
+            'product_id'=>$group['product_id'],'sku_id'=>$group['sku_id'],'sku_type'=>0,'sku_unique'=>$group['unique'],
+            'qty'=>$group['qty'],'kind'=>'reserve','cart_refs'=>$group['cart_refs']];
+        self::movementDigest($parent,$action);self::reserveArithmetic($parent);
+        return [$parent,$parentId,$group,$seenParents];
+    }
+
+    private function applicationCredits(int $uid,int $merId,int $orderId,string $parentId,array $group,array $children,array $byChild):array
+    {
+        $credited=0;$released=false;
+        foreach($children as$child){
+            $child=self::paymentMovement($child);$childId=$child['id'];
+            if(isset($byChild[$childId]))self::unavailable();
+            self::stored($child,['mer_id'=>$merId,'order_id'=>$orderId,'product_id'=>$group['product_id'],
+                'sku_id'=>$group['sku_id'],'sku_type'=>0,'sku_unique'=>$group['unique'],'parent_reserve_id'=>$parentId]);
+            if(!in_array($child['kind'],['release','return_in'],true))self::unavailable();
+            $qty=self::integer($child['qty'],1,self::UINT_MAX);
+            if($qty>$group['qty']-$credited)self::unavailable();$credited+=$qty;
+            if($child['kind']==='release'){
+                if($released)self::unavailable();$released=true;
+                self::stored($child,['idem_key'=>'release:'.$orderId.':'.$parentId,'qty'=>$group['qty'],
+                    'order_item_id'=>null,'refund_id'=>null]);
+                if(!($child['actor_type']==='customer'&&(string)$child['actor_id']===(string)$uid)
+                    &&!($child['actor_type']==='system'&&$child['actor_id']===null))self::unavailable();
+                self::movementDigest($child,$this->releaseAction($uid,$merId,$orderId,$parentId,$group));
+                self::releaseArithmetic($child);
             }
+            // return_in has no approved writer/action yet: retain its real full
+            // row and budget, without claiming a release digest proves a refund.
+            $byChild[$childId]=$child;
         }
-        $children=$this->rows($pdo,'marketplace_stock_movement',self::MOVEMENT_FIELDS,
-            '`order_id` = ? AND `kind` IN (?,?)',[$orderId,'release','return_in'],'`id` ASC');
+        return $byChild;
+    }
+
+    private static function applicationAllCredits(array $children,array $byChild):array
+    {
         if(count($children)!==count($byChild))self::unavailable();
         foreach($children as&$child){
             $child=self::paymentMovement($child);
             if(!isset($byChild[$child['id']])||$byChild[$child['id']]!==$child)self::unavailable();
         }unset($child);
-        $childOrders=$this->rows($pdo,'store_order',['id','uid','mer_id','pid','marketplace_trade_version',
-            'order_id','paid','status','refund_status','is_cancel'],'`pid` = ?',[$orderId],'`id` ASC');
+        return $children;
+    }
+
+    private static function applicationChildOrders(array $childOrders,int $orderId):array
+    {
         foreach($childOrders as$child){
             self::integer($child['id'],1,self::INT_MAX);self::stored($child,['pid'=>$orderId]);
             self::integer($child['uid'],0,self::INT_MAX);
@@ -726,6 +816,12 @@ final class MarketplaceOrderDao
             self::text($child['order_id'],32,true);self::integer($child['paid'],0,1);self::integer($child['is_cancel'],0,1);
             self::integer($child['status'],-128,127);self::integer($child['refund_status'],0,255);
         }
+        return $childOrders;
+    }
+
+    private static function applicationResult(int $uid,int $orderId,int $merId,string $orderNo,array $items,array $selection,
+        array $reserves,array $children,array $childOrders):array
+    {
         return ['root'=>['id'=>$orderId,'uid'=>$uid,'mer_id'=>$merId,'order_no'=>$orderNo],
             'items'=>$items,'selection'=>$selection,'reserves'=>$reserves,'children'=>$children,'child_orders'=>$childOrders];
     }
@@ -1023,10 +1119,22 @@ final class MarketplaceOrderDao
     /** Saved item facts only, including exact opaque refs and original physical SKU lineage. */
     private function postCommitItems(PDO $pdo, array $ledger, array $order): array
     {
+        $identity=self::postCommitIdentity($ledger,$order);[$uid,$merId,$orderId,$refs]=$identity;
+        $rows=$this->rows($pdo,'store_order_cart_info',self::ITEM_FIELDS,'`oid` = ?',[$orderId],'`id` ASC');
+        return self::postCommitItemsFromRows($ledger,$order,$rows,$identity);
+    }
+
+    private static function postCommitIdentity(array $ledger,array $order):array
+    {
         $uid=self::integer($order['uid'],1,self::INT_MAX);$merId=self::integer($order['mer_id'],1,self::UINT_MAX);
         $orderId=self::integer($order['id'],1,self::INT_MAX);
         $refs=self::references(self::decode($ledger['cart_refs']),$ledger['source_kind']);
-        $rows=$this->rows($pdo,'store_order_cart_info',self::ITEM_FIELDS,'`oid` = ?',[$orderId],'`id` ASC');
+        return [$uid,$merId,$orderId,$refs];
+    }
+
+    private static function postCommitItemsFromRows(array $ledger,array $order,array $rows,array $identity):array
+    {
+        [$uid,$merId,$orderId,$refs]=$identity;
         if(count($rows)!==count($refs))self::unavailable();$byRef=[];$total=0;
         foreach($rows as$item){
             self::stored($item,['oid'=>$orderId,'uid'=>$uid,'mer_id'=>$merId]);
@@ -1073,17 +1181,33 @@ final class MarketplaceOrderDao
     private function lockCustomer(PDO $pdo, int $uid): void
     {
         $user=$this->one($pdo,'user',['uid'],'`uid` = ?',[$uid]);
+        self::customerFacts($user,$uid);
+    }
+
+    private static function customerFacts(?array $user,int $uid):void
+    {
         if($user===null || self::integer($user['uid'],1,self::INT_MAX)!==$uid)self::conflict();
     }
 
     /** Preserve the saved-order identity checks shared by replay and the owner-only lookup. */
     private function committedOrder(PDO $pdo, array $row): array
     {
+        $refs=self::committedReferences($row);
+        $order=$this->order($pdo,self::integer($row['uid'],1,self::INT_MAX),self::integer($row['mer_id'],1,self::UINT_MAX),
+            self::integer($row['order_id'],1,self::INT_MAX),false);
+        return self::committedOrderReferences($row,$order,$refs);
+    }
+
+    private static function committedReferences(array $row):array
+    {
         if(self::integer($row['state'],0,1)!==1 || !is_string($row['confirmation_ref'])
             || strlen($row['confirmation_ref'])!==32)self::unavailable();
         $refs=self::references(self::decode($row['cart_refs']),$row['source_kind']);
-        $order=$this->order($pdo,self::integer($row['uid'],1,self::INT_MAX),self::integer($row['mer_id'],1,self::UINT_MAX),
-            self::integer($row['order_id'],1,self::INT_MAX),false);
+        return $refs;
+    }
+
+    private static function committedOrderReferences(array $row,array $order,array $refs):array
+    {
         if(!hash_equals($row['confirmation_ref'],hash('sha256',$order['unique'],true))
             || self::decode($order['cart_id'])!==$refs)self::unavailable();
         return $order;
@@ -1114,6 +1238,11 @@ final class MarketplaceOrderDao
     {
         self::integer($uid,1,self::INT_MAX); self::integer($merId,1,self::UINT_MAX); self::integer($id,1,self::INT_MAX);
         $row = $this->one($pdo,'store_order',self::ORDER_FIELDS,'`id` = ? AND `uid` = ? AND `mer_id` = ?',[$id,$uid,$merId]);
+        return self::savedOrderFacts($row,$creating);
+    }
+
+    private static function savedOrderFacts(?array $row,bool $creating):array
+    {
         if ($row === null || self::integer($row['marketplace_trade_version'],1,1) !== 1) self::unavailable();
         self::text($row['unique'],32,true);
         if ($creating) self::stored($row,['paid'=>0,'is_cancel'=>0,'is_del'=>0,'is_system_del'=>0]);

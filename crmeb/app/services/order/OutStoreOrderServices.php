@@ -71,7 +71,7 @@ class OutStoreOrderServices extends BaseServices
             'total_price', 'total_postage', 'pay_price', 'coupon_price', 'deduction_price', 'paid', 'pay_time', 'pay_type', 'add_time',
             'shipping_type', 'status', 'refund_status', 'delivery_name', 'delivery_code', 'delivery_id'];
         $data = $this->dao->getOutOrderList($where, $field, $page, $limit);
-        $count = $this->dao->count($where);
+        $count = $this->dao->commercialCount($where);
         $list = $this->tidyOrderList($data);
         return compact('list', 'count');
     }

@@ -113,7 +113,7 @@ class StoreOrderServices extends BaseServices
         $viewer=SavedOrder::listViewer($marketplaceScope,$viewerUid);
         [$page, $limit] = $this->getPageValue();
         $data = $this->dao->getOrderList($where, $field, $page, $limit, $with, 'add_time DESC,id DESC', $viewer);
-        $count = $viewer===null ? $this->dao->count($where, false) : $this->dao->countVisibleMarketplaceList($where,$viewer);
+        $count = $this->dao->countVisibleMarketplaceList($where,$viewer);
         $data = $this->tidyOrderList($data);
         foreach ($data as &$item) {
             if($marketplaceScope!=='' && !array_key_exists('marketplace_trade_version',$item))throw new AuthUnavailableException();
@@ -181,8 +181,8 @@ class StoreOrderServices extends BaseServices
      */
     public function getOrderData(int $uid = 0)
     {
-        $data['order_count'] = (string)$this->dao->count(['uid' => $uid, 'refund_status' => [0, 3], 'pid' => 0, 'is_del' => 0, 'is_system_del' => 0]);
-        $data['sum_price'] = (string)$this->dao->sum([
+        $data['order_count'] = (string)$this->dao->commercialCount(['uid' => $uid, 'refund_status' => [0, 3], 'pid' => 0, 'is_del' => 0, 'is_system_del' => 0]);
+        $data['sum_price'] = (string)$this->dao->commercialSum([
             ['uid', '=', $uid],
             ['paid', '=', 1],
             ['refund_status', '=', 0],
@@ -192,11 +192,11 @@ class StoreOrderServices extends BaseServices
         if ($uid) {
             $countWhere['uid'] = $uid;
         }
-        $data['unpaid_count'] = (string)$this->dao->count(['status' => 0] + $countWhere);
-        $data['unshipped_count'] = (string)$this->dao->count(['status' => 1] + $countWhere + ['pid' => 0]);
-        $data['received_count'] = (string)$this->dao->count(['status' => 2] + $countWhere + ['pid' => 0]);
-        $data['evaluated_count'] = (string)$this->dao->count(['status' => 3] + $countWhere + ['pid' => 0]);
-        $data['complete_count'] = (string)$this->dao->count(['status' => 4] + $countWhere + ['pid' => 0]);
+        $data['unpaid_count'] = (string)$this->dao->commercialCount(['status' => 0] + $countWhere);
+        $data['unshipped_count'] = (string)$this->dao->commercialCount(['status' => 1] + $countWhere + ['pid' => 0]);
+        $data['received_count'] = (string)$this->dao->commercialCount(['status' => 2] + $countWhere + ['pid' => 0]);
+        $data['evaluated_count'] = (string)$this->dao->commercialCount(['status' => 3] + $countWhere + ['pid' => 0]);
+        $data['complete_count'] = (string)$this->dao->commercialCount(['status' => 4] + $countWhere + ['pid' => 0]);
 
         /** @var StoreOrderRefundServices $storeOrderRefundServices */
         $storeOrderRefundServices = app()->make(StoreOrderRefundServices::class);
@@ -705,14 +705,14 @@ HTML;
         if ($where['status'] == '' && $where['pay_type'] != 3) {
             $whereData['paid'] = 1;
         }
-        $ids = $this->dao->column($where + $whereData, 'id');
+        $ids = $this->dao->commercialColumn($where + $whereData, 'id');
         if (count($ids)) {
             /** @var UserBillServices $services */
             $services = app()->make(UserBillServices::class);
             $price['brokerage'] = $services->getBrokerageNumSum($ids);
         }
-        $price['refund_price'] = $this->dao->together($where + ['is_del' => 0, 'paid' => 1, 'refund_status' => 2], 'refund_price');
-        $sumNumber = $this->dao->search($where + $whereData)->field([
+        $price['refund_price'] = $this->dao->commercialTogether($where + ['is_del' => 0, 'paid' => 1, 'refund_status' => 2], 'refund_price');
+        $sumNumber = $this->dao->commercialSearch($where + $whereData)->field([
             'sum(total_num) as sum_total_num',
             'count(id) as count_sum',
             'sum(pay_price) as sum_pay_price',
@@ -730,7 +730,7 @@ HTML;
             $price['back_integral'] = $sumNumber['sum_back_integral'];
             $price['deduction_price'] = $sumNumber['sum_deduction_price'];
         }
-        $list = $this->dao->column($where + $whereData, 'sum(pay_price) as sum_pay_price,pay_type', 'id', 'pay_type');
+        $list = $this->dao->commercialColumn($where + $whereData, 'sum(pay_price) as sum_pay_price,pay_type', 'id', 'pay_type');
         foreach ($list as $v) {
             if ($v['pay_type'] == 'weixin') {
                 $price['pay_price_wx'] = $v['sum_pay_price'];
@@ -743,7 +743,7 @@ HTML;
             }
         }
         $where['time'] = 'today';
-        $sumNumber = $this->dao->search($where + $whereData)->field([
+        $sumNumber = $this->dao->commercialSearch($where + $whereData)->field([
             'count(id) as today_count_sum',
             'sum(pay_price) as today_pay_price',
         ])->find();
@@ -811,8 +811,8 @@ HTML;
     {
         $where['is_system_del'] = 0;
         $where['pid'] = 0;
-        $data['un_paid'] = $this->dao->count($where + ['status' => 0], false);
-        $data['un_send'] = $this->dao->count($where + ['status' => 1, 'shipping_type' => 1], false);
+        $data['un_paid'] = $this->dao->commercialCount($where + ['status' => 0], false);
+        $data['un_send'] = $this->dao->commercialCount($where + ['status' => 1, 'shipping_type' => 1], false);
         return $data;
     }
 
@@ -1594,7 +1594,7 @@ HTML;
         //订单日同比
         $order_today_ratio = $this->growth($today_order, $yesterday_order);
         //总订单量
-        $total_order = $this->dao->count(['time' => 'month', 'paid' => 1, 'refund_status' => 0, 'pid' => 0]);
+        $total_order = $this->dao->commercialCount(['time' => 'month', 'paid' => 1, 'refund_status' => 0, 'pid' => 0]);
         $order = [
             'today' => $today_order,
             'yesterday' => $yesterday_order,
@@ -2238,7 +2238,7 @@ HTML;
         [$page, $limit] = $this->getPageValue();
         $where = ['uid' => $uid, 'paid' => 1, 'refund_status' => 0, 'pid' => 0];
         $list = $this->dao->getStairOrderList($where, 'order_id,real_name,total_num,total_price,pay_price,FROM_UNIXTIME(pay_time,"%Y-%m-%d") as pay_time,paid,pay_type,pink_id,seckill_id,bargain_id', $page, $limit);
-        $count = $this->dao->count($where);
+        $count = $this->dao->commercialCount($where);
         return compact('list', 'count');
     }
 
@@ -2286,7 +2286,7 @@ HTML;
         $where_data['pid'] = 0;
         [$page, $limit] = $this->getPageValue();
         $list = $this->dao->getStairOrderList($where_data, '*', $page, $limit);
-        $count = $this->dao->count($where_data);
+        $count = $this->dao->commercialCount($where_data);
         return compact('list', 'count');
     }
 
@@ -2300,7 +2300,7 @@ HTML;
      */
     public function getExportList(array $where)
     {
-        $list = $this->dao->search($where)->order('id desc')->select()->toArray();
+        $list = $this->dao->commercialSearch($where)->order('id desc')->select()->toArray();
         foreach ($list as &$item) {
             /** @var StoreOrderCartInfoServices $orderCart */
             $orderCart = app()->make(StoreOrderCartInfoServices::class);

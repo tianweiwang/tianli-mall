@@ -52,7 +52,7 @@ class UserStatisticServices extends BaseServices
         $now['people'] = $userVisit->getDistinctCount($where, 'uid');//访客数
         $now['browse'] = $userVisit->count($where);//访问量
         $now['newUser'] = $user->count($where + ['user_type' => $where['channel_type']]);//新增用户数
-        $now['payPeople'] = $order->getDistinctCount($where + ['paid' => 1], 'uid');//成交用户数
+        $now['payPeople'] = $order->getCommercialDistinctCount($where + ['paid' => 1], 'uid');//成交用户数
         $now['payUser'] = $otherOrder->getDistinctCount($where + ['member_type' => -1], 'uid');//激活付费会员数
         $now['cumulativeUser'] = $user->count($cumulativeUserWhere);//累计用户数
 
@@ -67,7 +67,7 @@ class UserStatisticServices extends BaseServices
         $last['people'] = $userVisit->getDistinctCount($where, 'uid');//访客数
         $last['browse'] = $userVisit->count($where);//访问量
         $last['newUser'] = $user->count($where + ['user_type' => $where['channel_type']]);//新增用户数
-        $last['payPeople'] = $order->getDistinctCount($where + ['paid' => 1], 'uid');//成交用户数
+        $last['payPeople'] = $order->getCommercialDistinctCount($where + ['paid' => 1], 'uid');//成交用户数
         $last['payUser'] = $otherOrder->getDistinctCount($where + ['member_type' => -1], 'uid');//激活付费会员数
         $cumulativeUserWhere['time'] = $toEndTime;
         $last['cumulativeUser'] = $user->count($cumulativeUserWhere);//累计用户数

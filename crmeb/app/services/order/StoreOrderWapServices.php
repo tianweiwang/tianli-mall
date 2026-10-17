@@ -41,17 +41,17 @@ class StoreOrderWapServices extends BaseServices
     {
         $where = ['timeKey' => 'add_time', 'paid' => 1, 'refund_status' => 0, 'pid' => 0];
         //今日成交额
-        $data['todayPrice'] = $this->dao->together($where + ['time' => 'today'], 'pay_price');
+        $data['todayPrice'] = $this->dao->commercialTogether($where + ['time' => 'today'], 'pay_price');
         //今日订单数
-        $data['todayCount'] = $this->dao->count($where + ['time' => 'today']);
+        $data['todayCount'] = $this->dao->commercialCount($where + ['time' => 'today']);
         //昨日成交额
-        $data['proPrice'] = $this->dao->together($where + ['time' => 'yesterday'], 'pay_price');
+        $data['proPrice'] = $this->dao->commercialTogether($where + ['time' => 'yesterday'], 'pay_price');
         //昨日订单数
-        $data['proCount'] = $this->dao->count($where + ['time' => 'yesterday']);
+        $data['proCount'] = $this->dao->commercialCount($where + ['time' => 'yesterday']);
         //本月成交额
-        $data['monthPrice'] = $this->dao->together($where + ['time' => 'month'], 'pay_price');
+        $data['monthPrice'] = $this->dao->commercialTogether($where + ['time' => 'month'], 'pay_price');
         //本月订单数
-        $data['monthCount'] = $this->dao->count($where + ['time' => 'month']);
+        $data['monthCount'] = $this->dao->commercialCount($where + ['time' => 'month']);
         return $data;
     }
     

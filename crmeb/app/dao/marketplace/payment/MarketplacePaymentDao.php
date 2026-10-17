@@ -168,11 +168,162 @@ final class MarketplacePaymentDao
     {
         $this->transaction($pdo);
         if(Db::connect()->getConfig('deploy')!==0||Db::connect()->getConfig('rw_separate')!==false)self::unavailable();
+        self::observationLocator($uid,$orderId,$orderNo);
+        $customer=$this->one($pdo,'user',['uid'],'uid = ?',[$uid]);
+        self::observationCustomer($customer,$uid);
+        $ledger=$this->one($pdo,'marketplace_order_idempotency',self::LEDGER_FIELDS,'uid = ? AND order_id = ?',[$uid,$orderId]);
+        [$ledger,$refs]=self::observationLedger($ledger,$uid,$orderId);
+        $root=$this->one($pdo,'store_order',self::PAYMENT_ROOT_FIELDS,'id = ? AND uid = ? AND mer_id = ?',[$orderId,$uid,$ledger['mer_id']]);
+        $root=self::observationRoot($root,$uid,$orderId,$orderNo,$ledger,$refs);
+        $merchant=$this->one($pdo,'marketplace_merchant',self::PAYMENT_MERCHANT_FIELDS,'mer_id = ?',[$root['mer_id']]);
+        $merchant=self::observationMerchant($merchant,$root);
+        $registry=$this->one($pdo,'marketplace_payment_registry',self::REGISTRY_FIELDS,'order_id = ?',[$orderId]);
+        $registry=self::observationRegistry($registry,$uid,$orderId,$root);
+        $attempts=$this->rows($pdo,'marketplace_payment_attempt',self::ATTEMPT_FIELDS,'order_id = ?',[$orderId],'id ASC');
+        return self::observationResult($uid,$orderId,$orderNo,$ledger,$root,$merchant,$registry,$attempts);
+    }
+
+    /**
+     * Internal pure saved facts only; ownerUid is data, never authentication or an actor capability.
+     * Caller owns actual authorization and one fixed-PDO snapshot containing every same-root attempt.
+     * Ordered keys: customer/ledger/root/merchant/registry/attempts; native row projections, no defaults.
+     * A missing single row is null and fails its original stage. A page is never a complete attempt list.
+     */
+    public static function readObservationFromFacts(int $ownerUid,int $orderId,string $orderNo,array $facts): array
+    {
+        self::observationLocator($ownerUid,$orderId,$orderNo);
+        if(array_keys($facts)!==['customer','ledger','root','merchant','registry','attempts'])self::unavailable();
+        $customer=$facts['customer'];
+        if($customer!==null)self::observationFields($customer,['uid']);
+        self::observationCustomer($customer,$ownerUid);
+        $ledger=$facts['ledger'];
+        if($ledger!==null)self::observationFields($ledger,self::LEDGER_FIELDS);
+        [$ledger,$refs]=self::observationLedger($ledger,$ownerUid,$orderId);
+        $root=$facts['root'];
+        if($root!==null)self::observationFields($root,self::PAYMENT_ROOT_FIELDS);
+        $root=self::observationRoot($root,$ownerUid,$orderId,$orderNo,$ledger,$refs);
+        $merchant=$facts['merchant'];
+        if($merchant!==null)self::observationFields($merchant,self::PAYMENT_MERCHANT_FIELDS);
+        $merchant=self::observationMerchant($merchant,$root);
+        $registry=$facts['registry'];
+        if($registry!==null)self::observationFields($registry,self::REGISTRY_FIELDS);
+        $registry=self::observationRegistry($registry,$ownerUid,$orderId,$root);
+        $attempts=$facts['attempts'];
+        if(!is_array($attempts)||!array_is_list($attempts))self::unavailable();
+        foreach($attempts as $row)self::observationFields($row,self::ATTEMPT_FIELDS);
+        return self::observationResult($ownerUid,$orderId,$orderNo,$ledger,$root,$merchant,$registry,$attempts);
+    }
+
+    /** Complete authorized same-snapshot native headers; saved owners are data, never actor capabilities. */
+    public function readObservationsForRoots(PDO $pdo,array $roots): array
+    {
+        $connection=Db::connect();$this->readSnapshotConnection($connection,$pdo);
+        if(!array_is_list($roots)||count($roots)>100)self::unavailable();
+        if(!$roots){$this->readSnapshotConnection($connection,$pdo);return [];}
+        $byRoot=[];$owners=[];$merchants=[];
+        foreach($roots as $header){
+            if(!is_array($header))self::unavailable();$root=[];
+            foreach(self::PAYMENT_ROOT_FIELDS as $field){
+                if(!array_key_exists($field,$header))self::unavailable();$value=$header[$field];
+                if($value!==null&&!is_string($value)&&!is_int($value))self::unavailable();$root[$field]=$value;
+            }
+            $id=self::integer($root['id'],1,self::INT_MAX);$owner=self::integer($root['uid'],1,self::INT_MAX);
+            $merchant=self::integer($root['mer_id'],1,self::UINT_MAX);
+            if(!is_string($root['order_id']))self::unavailable();self::observationLocator($owner,$id,$root['order_id']);
+            self::integer($root['marketplace_trade_version'],1,1);self::integer($root['pid'],0,0);
+            if(array_key_exists($id,$byRoot))self::unavailable();
+            $byRoot[$id]=['owner'=>$owner,'merchant'=>$merchant,'row'=>$root];
+            $owners[$owner]=$owner;$merchants[$merchant]=$merchant;
+        }
+        $rootIds=array_keys($byRoot);sort($rootIds,SORT_NUMERIC);
+        $ownerIds=array_values($owners);sort($ownerIds,SORT_NUMERIC);
+        $merchantIds=array_values($merchants);sort($merchantIds,SORT_NUMERIC);
+        $byOwner=[];
+        foreach($this->readSnapshotRows($connection,$pdo,'user',$ownerIds) as $row){
+            $uid=self::integer($row['uid'],1,self::INT_MAX);
+            if(!isset($owners[$uid])||array_key_exists($uid,$byOwner))self::unavailable();$byOwner[$uid]=$row;
+        }
+        $ledgers=[];
+        foreach($this->readSnapshotRows($connection,$pdo,'marketplace_order_idempotency',$rootIds) as $row){
+            $id=self::integer($row['order_id'],1,self::INT_MAX);
+            if(!isset($byRoot[$id])||array_key_exists($id,$ledgers))self::unavailable();$ledgers[$id]=$row;
+        }
+        $byMerchant=[];
+        foreach($this->readSnapshotRows($connection,$pdo,'marketplace_merchant',$merchantIds) as $row){
+            $id=self::integer($row['mer_id'],1,self::UINT_MAX);
+            if(!isset($merchants[$id])||array_key_exists($id,$byMerchant))self::unavailable();$byMerchant[$id]=$row;
+        }
+        $registries=[];
+        foreach($this->readSnapshotRows($connection,$pdo,'marketplace_payment_registry',$rootIds) as $row){
+            $id=self::integer($row['order_id'],1,self::INT_MAX);
+            if(!isset($byRoot[$id])||array_key_exists($id,$registries))self::unavailable();$registries[$id]=$row;
+        }
+        $attempts=[];
+        foreach($this->readSnapshotRows($connection,$pdo,'marketplace_payment_attempt',$rootIds) as $row){
+            $id=self::integer($row['order_id'],1,self::INT_MAX);
+            if(!isset($byRoot[$id]))self::unavailable();$attempts[$id][]=$row;
+        }
+        $result=[];
+        foreach($byRoot as $id=>$saved){
+            $facts=['customer'=>$byOwner[$saved['owner']]??null,'ledger'=>$ledgers[$id]??null,
+                'root'=>$saved['row'],'merchant'=>$byMerchant[$saved['merchant']]??null,
+                'registry'=>$registries[$id]??null,'attempts'=>$attempts[$id]??[]];
+            $result[$id]=self::readObservationFromFacts($saved['owner'],$id,$saved['row']['order_id'],$facts);
+        }
+        $this->readSnapshotConnection($connection,$pdo);return $result;
+    }
+
+    /** Recheck the captured default connection; the caller owns actual RR/READ ONLY and its whole lifecycle. */
+    private function readSnapshotConnection(\think\db\ConnectionInterface $connection,PDO $pdo): void
+    {
+        $this->transaction($pdo);
+        if(!($connection instanceof \crmeb\compat\think\orm\db\connector\Mysql)
+            ||$connection!==Db::connect()||$connection->getPdo()!==$pdo||$connection->getConfig('prefix')!==$this->prefix
+            ||$connection->getConfig('deploy')!==0||$connection->getConfig('rw_separate')!==false
+            ||!method_exists($connection,'transactionDepth')||$connection->transactionDepth()!==0)self::unavailable();
+    }
+
+    /** Five closed complete SELECTs only: no generic predicate, page, lock or implicit initialization. */
+    private function readSnapshotRows(\think\db\ConnectionInterface $connection,PDO $pdo,string $table,array $ids): array
+    {
+        $this->readSnapshotConnection($connection,$pdo);
+        [$fields,$key,$order]=match($table){
+            'user'=>[['uid'],'uid','`uid` ASC'],
+            'marketplace_order_idempotency'=>[self::LEDGER_FIELDS,'order_id','`order_id` ASC,`uid` ASC,`idem_key` ASC'],
+            'marketplace_merchant'=>[self::PAYMENT_MERCHANT_FIELDS,'mer_id','`mer_id` ASC'],
+            'marketplace_payment_registry'=>[self::REGISTRY_FIELDS,'order_id','`order_id` ASC'],
+            'marketplace_payment_attempt'=>[self::ATTEMPT_FIELDS,'order_id','`order_id` ASC,`id` ASC'],
+            default=>self::unavailable(),
+        };
+        if(!array_is_list($ids)||!$ids||count($ids)>100)self::unavailable();$seen=[];
+        $maximum=$table==='marketplace_merchant'?self::UINT_MAX:self::INT_MAX;
+        foreach($ids as $id){
+            if(!is_int($id)||self::integer($id,1,$maximum)!==$id||isset($seen[$id]))self::unavailable();$seen[$id]=true;
+        }
+        $sql='SELECT '.implode(',',array_map(self::column(...),$fields)).' FROM '.$this->table($table).
+            ' WHERE '.self::column($key).' IN ('.implode(',',array_fill(0,count($ids),'?')).') ORDER BY '.$order;
+        $rows=$this->fetched($this->prepared($pdo,$sql,$ids));
+        if(!array_is_list($rows))self::unavailable();
+        foreach($rows as $row){
+            self::observationFields($row,$fields);
+            foreach($row as $value)if($value!==null&&!is_string($value)&&!is_int($value))self::unavailable();
+        }
+        $this->readSnapshotConnection($connection,$pdo);return $rows;
+    }
+
+    private static function observationLocator(int $uid,int $orderId,string $orderNo): void
+    {
         self::integer($uid,1,self::INT_MAX);self::integer($orderId,1,self::INT_MAX);
         self::paymentText($orderNo,32,false);
-        $customer=$this->one($pdo,'user',['uid'],'uid = ?',[$uid]);
+    }
+
+    private static function observationCustomer(?array $customer,int $uid): void
+    {
         if($customer===null||self::integer($customer['uid'],1,self::INT_MAX)!==$uid)self::unavailable();
-        $ledger=$this->one($pdo,'marketplace_order_idempotency',self::LEDGER_FIELDS,'uid = ? AND order_id = ?',[$uid,$orderId]);
+    }
+
+    private static function observationLedger(?array $ledger,int $uid,int $orderId): array
+    {
         if($ledger===null)self::unavailable();
         foreach(['uid'=>self::INT_MAX,'mer_id'=>self::UINT_MAX,'order_id'=>self::INT_MAX,'add_time'=>self::UINT_MAX] as $field=>$maximum)
             $ledger[$field]=self::integer($ledger[$field],1,$maximum);
@@ -184,7 +335,11 @@ final class MarketplacePaymentDao
             if(!is_string($ledger[$field])||strlen($ledger[$field])!==32)self::unavailable();
         if(!in_array($ledger['source_kind'],['persistent','temporary'],true))self::unavailable();
         self::cartRefs($ledger['cart_refs'],$ledger['source_kind']);$refs=self::paymentJson($ledger['cart_refs']);
-        $root=$this->one($pdo,'store_order',self::PAYMENT_ROOT_FIELDS,'id = ? AND uid = ? AND mer_id = ?',[$orderId,$uid,$ledger['mer_id']]);
+        return [$ledger,$refs];
+    }
+
+    private static function observationRoot(?array $root,int $uid,int $orderId,string $orderNo,array $ledger,array $refs): array
+    {
         if($root===null)self::unavailable();
         foreach(['id'=>self::INT_MAX,'uid'=>self::INT_MAX,'mer_id'=>self::UINT_MAX,'pay_uid'=>self::INT_MAX,'add_time'=>self::UINT_MAX] as $field=>$maximum)
             $root[$field]=self::integer($root[$field],1,$maximum);
@@ -199,14 +354,22 @@ final class MarketplacePaymentDao
             ||$root['order_id']!==$orderNo||$root['add_time']!==$ledger['add_time']
             ||!hash_equals($ledger['confirmation_ref'],hash('sha256',$root['unique'],true))
             ||self::paymentJson($root['cart_id'])!==$refs)self::unavailable();
-        $merchant=$this->one($pdo,'marketplace_merchant',self::PAYMENT_MERCHANT_FIELDS,'mer_id = ?',[$root['mer_id']]);
+        return $root;
+    }
+
+    private static function observationMerchant(?array $merchant,array $root): array
+    {
         if($merchant===null)self::unavailable();
         $merchant['mer_id']=self::integer($merchant['mer_id'],1,self::UINT_MAX);
         $merchant['review_status']=self::integer($merchant['review_status'],0,255);
         foreach(['accept_orders','security_locked','fulfillment_enabled'] as $field)$merchant[$field]=self::integer($merchant[$field],0,1);
         if($merchant['closed_at']!==null)$merchant['closed_at']=self::integer($merchant['closed_at'],1,self::UINT_MAX);
         if($merchant['mer_id']!==$root['mer_id'])self::unavailable();
-        $registry=$this->one($pdo,'marketplace_payment_registry',self::REGISTRY_FIELDS,'order_id = ?',[$orderId]);
+        return $merchant;
+    }
+
+    private static function observationRegistry(?array $registry,int $uid,int $orderId,array $root): array
+    {
         if($registry===null)self::unavailable(); // Historical roots are never backfilled here.
         foreach(['order_id'=>self::INT_MAX,'uid'=>self::INT_MAX,'mer_id'=>self::UINT_MAX,'born_at'=>self::UINT_MAX] as $field=>$maximum)
             $registry[$field]=self::integer($registry[$field],1,$maximum);
@@ -222,7 +385,11 @@ final class MarketplacePaymentDao
             if(!is_string($registry['hold_reason'])||!in_array($registry['hold_reason'],self::HOLD_REASONS,true))self::unavailable();
             $registry['hold_at']=self::integer($registry['hold_at'],1,self::UINT_MAX);
         }
-        $attempts=$this->rows($pdo,'marketplace_payment_attempt',self::ATTEMPT_FIELDS,'order_id = ?',[$orderId],'id ASC');
+        return $registry;
+    }
+
+    private static function observationResult(int $uid,int $orderId,string $orderNo,array $ledger,array $root,array $merchant,array $registry,array $attempts): array
+    {
         foreach($attempts as &$row){
             $row['id']=self::positiveU64($row['id']);$row['admitted_generation']=self::positiveU64($row['admitted_generation']);
             foreach(['order_id'=>self::INT_MAX,'uid'=>self::INT_MAX,'mer_id'=>self::UINT_MAX,'created_at'=>self::UINT_MAX] as $field=>$maximum)
@@ -240,6 +407,11 @@ final class MarketplacePaymentDao
             foreach(['account_snapshot','evidence'] as $field)$row[$field]=self::canonicalValue($row[$field]);
         unset($row);
         return ['locked'=>$locked,'root_payment_consistent'=>$consistent];
+    }
+
+    private static function observationFields(mixed $row,array $fields): void
+    {
+        if(!is_array($row)||array_keys($row)!==$fields)self::unavailable();
     }
 
     /** A fresh intent is written only here; same-key reuse precedes every new-admission predicate and overflow check. */
@@ -1072,7 +1244,7 @@ final class MarketplacePaymentDao
         $statement=$this->execute($pdo,$sql.' FOR UPDATE',$values);
         try{$rows=$statement->fetchAll(PDO::FETCH_ASSOC);}catch(PDOException $error){self::unavailable();}
         if(!is_array($rows))self::unavailable();
-        foreach($rows as $row)if(!is_array($row)||array_keys($row)!==$fields)self::unavailable();
+        foreach($rows as $row)self::observationFields($row,$fields);
         return $rows;
     }
 

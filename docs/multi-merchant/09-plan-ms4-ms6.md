@@ -682,6 +682,13 @@ R7来源生成实际检查点：R6上述正常关闭及独立核零后，Root唯
 
 R7实际结果（2026-10-16，详见03）：clean `a74f2b27275229dcb089581039dc30020afb4f32` 上有限初始化、迁移、完整内部正常订单及20笔商家分页准备均真实成功，授权助手终态真实保存后删除，原缺口修复在新Run成立。第1步商家真实登录HTTP/business200，但Root跨域字节适配失败发生在capture/ACK写入前，原计划实际1command/0capture/0ACK/0截图；未重放或补通过。原child正常stop、专用Edge关闭/viewport复位/演员释放后，只读观察确认原plan前缀和监督进程；原5容器/2网络/10卷正常非force关闭，Root独立六条查询全0、1563份原证据及Main原HEAD/clean保持。关闭摘要 `29c91c77caa3a4e2cd9fcd75288d76ca303d1155227af5a780e88e164acea008`，独立核零 `db458077d838835837fb4b72d2c08d4c4dc0028eb3fea0aaa2c190467d06ef0f`。R7不重开，原34/25/9/23、空表四图与完整Task6/MS4仍未通过；后继顾客源码实施发生在本次关闭/独立核零之后，不能替代这些原验收。
 
+
+只读接缝实际采用（2026-10-18，继续本Task6）：在独立paid R2正常关闭及核零后，Root采用十二份已独审且实际PHP8.2语法0的源码：commercial-roots R2九份，原MarketplacePaymentDao纯事实提取与同原PDO五批量查询合并一份，MarketplaceOrderDao原八键/六输出纯事实提取一份，以及compat Mysql只读transactionDepth getter一份。商业根筛选在SQL分页/数量/求和/分组/导出前执行，原version0/NULL兼容与各原业务条件保留；商品、规格、保存价格及原金额算法复用。付款尝试全量保原序，原写路径/锁序/检查时点与算法经完整正逆核保持。最终十二源/语法收据 `artifacts/ms4-fulfillment-writer-preparation/source-checks-read-final-and-php-r1.json` 25801B/`6aace663aec25c211c478c20a5157bdae42f85cd684d39e4819783a61dcde4f5`。这是SOURCE/PARSE及本地应用责任，未调用新的批量SQL、建立只读事务或证明三端API/DOM。
+
+沿已采用READ-SEAMS/READ-SNAPSHOT继续实施：真实Auth先于自有原生RR READ ONLY段；同实际default Connection/PDO、ORM depth0、非分布式/非读写分离及原生属性全程核清，原生SET-next/begin/首个一致读/一次commit与异常仅自有段收口须实际验证，getter本身不证明快照。Root全文采用 `read-order-facts-source-r1/BATCH-LOADER-DESIGN-r1.md` 15303B/`0e1802f341ab503a86aab3de0ec0d4d7a60c8ac1af96771988fa31ceed9c9e05` 后才实施Order批量loader：真实根24列+pid、五条完整查询，movement一次OR/真实reserve子查询保全部order-local与parent-linked双视图，原U64/NULL/BINARY/JSON不改，无parent N+1、截断或第二计算引擎。原商家header缺列须同快照真实补齐，不从DTO/默认值拼造。该loader以及已审READ-STRUCTURE设计的inside-only完整元数据readiness继续在原Task6跟踪，不以设计或外部候选冒称已应用/SQL通过。
+
+本次paid R2实际结果见MS5 core同日记录：真实凭据登录/GET UID、持久购物车确认创建、同App/factory测试付款及独立27+7原生封存已通过，原3CID/1网/6卷正常关闭、独立六raw核零实际0。它只证明内部普通测试付款producer；原两履约表实际迁移、保存发货/收货、全family/history/summary/child DTO、三端paid API/DOM、Out/kefu适配或隔离、Worker实际接线、Task7售后、真实金融、非空历史及发布仍待验证或实施。未激活Worker，不恢复用户已停止样本，不勾选Task6/MS4/MS5或README验收状态。
+
 ### Task 7: 退款额度与库存行为
 
 - 接口：申请退款时在事务中锁定订单行，校验"已退金额 + 处理中金额 + 本次金额 ≤ 实付"；三类库存行为分别写 `release`（未发货取消）、`return_in`（退货验收入库）、不写（仅退款）。

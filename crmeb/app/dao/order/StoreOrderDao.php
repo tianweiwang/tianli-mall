@@ -232,7 +232,7 @@ class StoreOrderDao extends BaseDao
      */
     public function getMonthCount(array $where, string $month)
     {
-        return $this->search($where)->whereMonth('add_time', $month)->count();
+        return $this->commercialSearch($where)->whereMonth('add_time', $month)->count();
     }
 
     /**
@@ -269,15 +269,69 @@ class StoreOrderDao extends BaseDao
      */
     public function getOrderList(array $where, array $field, int $page = 0, int $limit = 0, array $with = [], $order = 'add_time DESC,id DESC', ?int $marketplaceUid = null)
     {
-        return $this->visibleMarketplaceList($this->search($where),$marketplaceUid)->field($field)->with(array_merge(['user', 'spread', 'refund'], $with))->when($page && $limit, function ($query) use ($page, $limit) {
+        return $this->commercialRoots($this->visibleMarketplaceList($this->search($where),$marketplaceUid))->field($field)->with(array_merge(['user', 'spread', 'refund'], $with))->when($page && $limit, function ($query) use ($page, $limit) {
             $query->page($page, $limit);
         })->order($order)->select()->toArray();
     }
 
-    /** Same pre-pagination visibility for explicit customer/mobile list counts. */
-    public function countVisibleMarketplaceList(array $where,int $uid):int
+    /** Same pre-pagination commercial-root visibility for platform/customer/mobile counts. */
+    public function countVisibleMarketplaceList(array $where,?int $uid=null):int
     {
-        return $this->visibleMarketplaceList($this->search($where,false),$uid)->count();
+        return $this->commercialRoots($this->visibleMarketplaceList($this->search($where,false),$uid))->count();
+    }
+
+    /** Commercial reads only; never apply this predicate to an old writer's complete selection. */
+    private function commercialRoots($query)
+    {
+        return $query->where(function ($commercial) {
+            $commercial->whereNull('marketplace_trade_version')->whereOr('marketplace_trade_version', 0)
+                ->whereOr(function ($root) {
+                    $root->where('marketplace_trade_version', 1)->where('pid', 0);
+                });
+        });
+    }
+
+    public function commercialSearch(array $where = [], bool $search = false)
+    {
+        return $this->commercialRoots($this->search($where, $search));
+    }
+
+    public function commercialCount(array $where = [], bool $search = true)
+    {
+        return $this->commercialSearch($where, $search)->count();
+    }
+
+    public function commercialSum(array $where, string $field, bool $search = false)
+    {
+        if ($search) {
+            return $this->commercialSearch($where)->sum($field);
+        } else {
+            return $this->commercialRoots($this->getModel()->where($where))->sum($field);
+        }
+    }
+
+    public function commercialTogether(array $where, string $field, string $together = 'sum')
+    {
+        if (!in_array($together, ['sum', 'max', 'min', 'avg'])) {
+            return 0;
+        }
+        return $this->commercialSearch($where)->{$together}($field);
+    }
+
+    public function commercialColumn(array $where, string $field, string $key = '', string $group = '')
+    {
+        return $this->commercialSearch($where)->when($group, function ($query) use ($group) {
+            $query->group($group);
+        })->column($field, $key);
+    }
+
+    public function getCommercialDistinctCount(array $where, $field, bool $search = true)
+    {
+        if ($search) {
+            return $this->commercialSearch($where)->field('COUNT(distinct(' . $field . ')) as count')->select()->toArray()[0]['count'] ?? 0;
+        } else {
+            return $this->commercialRoots($this->getModel()->where($where))->field('COUNT(distinct(' . $field . ')) as count')->select()->toArray()[0]['count'] ?? 0;
+        }
     }
 
     /** Full original selection, without page/limit or a silent version filter. */
@@ -357,7 +411,7 @@ class StoreOrderDao extends BaseDao
      */
     public function orderAddTimeList($datebefor, $dateafter, $timeType = "week")
     {
-        return $this->getModel()->where('add_time', 'between time', [$datebefor, $dateafter])->where('paid', 1)->where('refund_status', 0)->whereIn('pid', [-1, 0])
+        return $this->commercialRoots($this->getModel())->where('add_time', 'between time', [$datebefor, $dateafter])->where('paid', 1)->where('refund_status', 0)->whereIn('pid', [-1, 0])
             ->when($timeType, function ($query) use ($timeType) {
                 $timeUnix = "%w";
                 switch ($timeType) {
@@ -392,7 +446,7 @@ class StoreOrderDao extends BaseDao
      */
     public function preTotalFind($pre_datebefor, $pre_dateafter)
     {
-        return $this->getModel()->where('add_time', 'between time', [$pre_datebefor, $pre_dateafter])
+        return $this->commercialRoots($this->getModel())->where('add_time', 'between time', [$pre_datebefor, $pre_dateafter])
             ->field("count(*) as count,sum(pay_price) as price")
             ->find();
     }
@@ -405,7 +459,7 @@ class StoreOrderDao extends BaseDao
      */
     public function nowOrderList($now_datebefor, $now_dateafter, $timeType = "week")
     {
-        return $this->getModel()->where('add_time', 'between time', [$now_datebefor, $now_dateafter])->where('paid', 1)->where('refund_status', 0)->whereIn('pid', [-1, 0])
+        return $this->commercialRoots($this->getModel())->where('add_time', 'between time', [$now_datebefor, $now_dateafter])->where('paid', 1)->where('refund_status', 0)->whereIn('pid', [-1, 0])
             ->when($timeType, function ($query) use ($timeType) {
                 $timeUnix = "%w";
                 switch ($timeType) {
@@ -432,7 +486,7 @@ class StoreOrderDao extends BaseDao
      */
     public function storeOrderCount()
     {
-        return $this->search(['paid' => 1, 'is_del' => 0, 'refund_status' => 0, 'status' => 1, 'shipping_type' => 1, 'pid' => 0])->count();
+        return $this->commercialSearch(['paid' => 1, 'is_del' => 0, 'refund_status' => 0, 'status' => 1, 'shipping_type' => 1, 'pid' => 0])->count();
     }
 
     /**
@@ -442,7 +496,7 @@ class StoreOrderDao extends BaseDao
      */
     public function todaySales($time)
     {
-        return $this->search(['paid' => 1, 'refund_status' => 0, 'time' => $time ?: 'today', 'timekey' => 'pay_time', 'pid' => 0])->sum('pay_price');
+        return $this->commercialSearch(['paid' => 1, 'refund_status' => 0, 'time' => $time ?: 'today', 'timekey' => 'pay_time', 'pid' => 0])->sum('pay_price');
     }
 
     /**
@@ -452,7 +506,7 @@ class StoreOrderDao extends BaseDao
      */
     public function thisWeekSales($time)
     {
-        return $this->search(['paid' => 1, 'refund_status' => 0, 'time' => $time ?: 'week', 'timeKey' => 'pay_time', 'pid' => 0])->sum('pay_price');
+        return $this->commercialSearch(['paid' => 1, 'refund_status' => 0, 'time' => $time ?: 'week', 'timeKey' => 'pay_time', 'pid' => 0])->sum('pay_price');
     }
 
     /**
@@ -461,7 +515,7 @@ class StoreOrderDao extends BaseDao
      */
     public function totalSales($time)
     {
-        return $this->search(['paid' => 1, 'refund_status' => 0, 'time' => $time ?: 'today', 'timekey' => 'pay_time', 'pid' => 0])->sum('pay_price');
+        return $this->commercialSearch(['paid' => 1, 'refund_status' => 0, 'time' => $time ?: 'today', 'timekey' => 'pay_time', 'pid' => 0])->sum('pay_price');
     }
 
     public function newOrderUpdates($newOrderId)
@@ -478,9 +532,9 @@ class StoreOrderDao extends BaseDao
     {
         switch ($week) {
             case 1:
-                return $this->search(['time' => $time ?: 'today', 'timeKey' => 'add_time', 'paid' => 1, 'refund_status' => 0, 'pid' => 0])->count();
+                return $this->commercialSearch(['time' => $time ?: 'today', 'timeKey' => 'add_time', 'paid' => 1, 'refund_status' => 0, 'pid' => 0])->count();
             case 2:
-                return $this->search(['time' => $time ?: 'week', 'timeKey' => 'add_time', 'paid' => 1, 'refund_status' => 0, 'pid' => 0])->count();
+                return $this->commercialSearch(['time' => $time ?: 'week', 'timeKey' => 'add_time', 'paid' => 1, 'refund_status' => 0, 'pid' => 0])->count();
         }
     }
 
@@ -515,7 +569,7 @@ class StoreOrderDao extends BaseDao
      */
     public function getStairOrderList(array $where, string $field, int $page, int $limit, array $with = [])
     {
-        return $this->search($where)->with($with)->field($field)->page($page, $limit)->order('id DESC')->select()->toArray();
+        return $this->commercialSearch($where)->with($with)->field($field)->page($page, $limit)->order('id DESC')->select()->toArray();
     }
 
     /**
@@ -526,7 +580,7 @@ class StoreOrderDao extends BaseDao
      */
     public function getOrderDataPriceCount(array $where, array $field, int $page, int $limit)
     {
-        return $this->search($where)
+        return $this->commercialSearch($where)
             ->field($field)->group("FROM_UNIXTIME(add_time, '%Y-%m-%d')")
             ->order('add_time DESC')->page($page, $limit)->select()->toArray();
     }
@@ -539,7 +593,7 @@ class StoreOrderDao extends BaseDao
      */
     public function chartTimePrice($start, $stop)
     {
-        return $this->search(['pid' => 0, 'is_del' => 0, 'paid' => 1, 'refund_status' => [0, 3]])
+        return $this->commercialSearch(['pid' => 0, 'is_del' => 0, 'paid' => 1, 'refund_status' => [0, 3]])
             ->where('add_time', '>=', $start)
             ->where('add_time', '<', $stop)
             ->field('sum(pay_price) as num,FROM_UNIXTIME(add_time, \'%Y-%m-%d\') as time')
@@ -555,7 +609,7 @@ class StoreOrderDao extends BaseDao
      */
     public function chartTimeNumber($start, $stop)
     {
-        return $this->search(['pid' => 0, 'is_del' => 0, 'paid' => 1, 'refund_status' => [0, 3]])
+        return $this->commercialSearch(['pid' => 0, 'is_del' => 0, 'paid' => 1, 'refund_status' => [0, 3]])
             ->where('add_time', '>=', $start)
             ->where('add_time', '<', $stop)
             ->field('count(id) as num,FROM_UNIXTIME(add_time, \'%Y-%m-%d\') as time')
@@ -604,7 +658,7 @@ class StoreOrderDao extends BaseDao
     public function getOrderMoneyByTime(array $where)
     {
         if (isset($where['day'])) {
-            return $this->getModel()->where(['refund_status' => 0, 'paid' => 1])->whereDay('add_time', date("Y-m-d", strtotime($where['day'])))->sum('pay_price');
+            return $this->commercialRoots($this->getModel())->where(['refund_status' => 0, 'paid' => 1])->whereDay('add_time', date("Y-m-d", strtotime($where['day'])))->sum('pay_price');
         }
         return 0;
     }
@@ -619,7 +673,7 @@ class StoreOrderDao extends BaseDao
      */
     public function getTrendData($time, $type, $timeType, $str)
     {
-        return $this->getModel()->when($type != '', function ($query) use ($type) {
+        return $this->commercialRoots($this->getModel())->when($type != '', function ($query) use ($type) {
             $query->where('channel_type', $type);
         })->where(function ($query) use ($time) {
             if ($time[0] == $time[1]) {
@@ -640,7 +694,7 @@ class StoreOrderDao extends BaseDao
      */
     public function getRegion($time, $userType)
     {
-        return $this->getModel()->when($userType != '', function ($query) use ($userType) {
+        return $this->commercialRoots($this->getModel())->when($userType != '', function ($query) use ($userType) {
             $query->where('channel_type', $userType);
         })->where(function ($query) use ($time) {
             if ($time[0] == $time[1]) {
@@ -663,7 +717,7 @@ class StoreOrderDao extends BaseDao
      */
     public function getProductTrend($time, $timeType, $field, $str, $orderStatus = '')
     {
-        return $this->getModel()->where(function ($query) use ($field, $orderStatus) {
+        return $this->commercialRoots($this->getModel())->where(function ($query) use ($field, $orderStatus) {
             if ($field == 'pay_time') {
                 $query->where('paid', 1)->where('pid', '>=', 0);
             } elseif ($field == 'refund_reason_time') {
@@ -692,7 +746,7 @@ class StoreOrderDao extends BaseDao
      */
     public function getDayTotalMoney(array $where, string $sumField)
     {
-        return $this->search($where)
+        return $this->commercialSearch($where)
             ->when(isset($where['timeKey']), function ($query) use ($where) {
                 $query->whereBetweenTime('pay_time', $where['timeKey']['start_time'], $where['timeKey']['end_time']);
             })
@@ -706,7 +760,7 @@ class StoreOrderDao extends BaseDao
      */
     public function getDayOrderCount(array $where, string $countField = "*")
     {
-        return $this->search($where)
+        return $this->commercialSearch($where)
             ->when(isset($where['timeKey']), function ($query) use ($where) {
                 $query->whereBetweenTime('pay_time', $where['timeKey']['start_time'], $where['timeKey']['end_time']);
             })
@@ -720,7 +774,7 @@ class StoreOrderDao extends BaseDao
      */
     public function getDayGroupMoney(array $where, string $sumField, string $group)
     {
-        return $this->search($where)
+        return $this->commercialSearch($where)
             ->when(isset($where['timeKey']), function ($query) use ($where, $sumField, $group) {
                 $query->whereBetweenTime('pay_time', $where['timeKey']['start_time'], $where['timeKey']['end_time']);
                 $timeUinx = "%H";
@@ -748,7 +802,7 @@ class StoreOrderDao extends BaseDao
      */
     public function getOrderGroupCount(array $where, string $sumField = "*")
     {
-        return $this->search($where)
+        return $this->commercialSearch($where)
             ->when(isset($where['timeKey']), function ($query) use ($where, $sumField) {
                 $query->whereBetweenTime('pay_time', $where['timeKey']['start_time'], $where['timeKey']['end_time']);
                 $timeUinx = "%H";
@@ -775,7 +829,7 @@ class StoreOrderDao extends BaseDao
      */
     public function getPayOrderPeople($where)
     {
-        return $this->search($where)
+        return $this->commercialSearch($where)
             ->when(isset($where['timeKey']), function ($query) use ($where) {
                 $query->whereBetweenTime('pay_time', $where['timeKey']['start_time'], $where['timeKey']['end_time']);
             })
@@ -790,7 +844,7 @@ class StoreOrderDao extends BaseDao
      */
     public function getPayOrderGroupPeople($where)
     {
-        return $this->search($where)
+        return $this->commercialSearch($where)
             ->when(isset($where['timeKey']), function ($query) use ($where) {
                 $query->whereBetweenTime('pay_time', $where['timeKey']['start_time'], $where['timeKey']['end_time']);
                 if ($where['timeKey']['days'] == 1) {
@@ -829,7 +883,7 @@ class StoreOrderDao extends BaseDao
         $where['is_del'] = 0;
         $where['shipping_type'] = 1;
         $where['is_system_del'] = 0;
-        return $this->search($where)->field($filed)->select()->toArray();
+        return $this->commercialSearch($where)->field($filed)->select()->toArray();
     }
 
     /**
@@ -842,7 +896,7 @@ class StoreOrderDao extends BaseDao
      */
     public function getOrderListByWhere(array $where, $field = "*")
     {
-        return $this->search($where)->field($field)->select()->toArray();
+        return $this->commercialSearch($where)->field($field)->select()->toArray();
     }
 
     /**批量修改订单
@@ -924,7 +978,7 @@ class StoreOrderDao extends BaseDao
      */
     public function getOutOrderList(array $where, array $field, int $page = 0, int $limit = 0, array $with = [], string $order = 'add_time DESC,id DESC'): array
     {
-        return $this->search($where)->field($field)->with($with)->when($page && $limit, function ($query) use ($page, $limit) {
+        return $this->commercialSearch($where)->field($field)->with($with)->when($page && $limit, function ($query) use ($page, $limit) {
             $query->page($page, $limit);
         })->order($order)->select()->toArray();
     }
@@ -1123,7 +1177,7 @@ class StoreOrderDao extends BaseDao
      */
     public function divisionStatistics($field, $time, $page, $limit, $sort, $order)
     {
-        $model = $this->getModel()
+        $model = $this->commercialRoots($this->getModel())
             ->where('paid', 1)
             ->where('pid', '>=', 0)
             ->where('refund_status', 0)
