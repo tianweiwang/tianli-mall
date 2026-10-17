@@ -705,6 +705,10 @@ R7实际结果（2026-10-16，详见03）：clean `a74f2b27275229dcb089581039dc3
 - Produces: `crmeb\services\pay\marketplace\PaymentAdapter` 接口（方法见 00 文档 §9）；`TestPaymentDriver`（只在 `APP_ENV=testing` 且配置显式开启时可注册）；`PaymentAccountResolver::forOrder(array $order): PaymentAccount`（按订单 `mer_id` 取已验证且启用的账户，缺失则抛异常，不回退平台账户）。
 - 用例：P02、P11。
 
+2026-10-17 Main 的保存测试付款消费者实施合同见 [保存的测试付款在三端的读取与展示](records/ms5/saved-test-payment-consumers.md)。限该记录八个实际文件：商家查询/投影/domain 贯穿保存 pay_type，StoreOrderServices 和三端仅按保存 V1 + marketplace_test 显示测试性质；原金额/商品规格、legacy、创建 allowlist、微信条件及 Main restore/deadline 增量保持。本片只属于 Task 2 测试驱动范围，Q4/Q5、真实机构及其后任务未因此完成。
+
+按该记录先补字段、再补局部文案、做源码/编译检查，随后依赖真实付款核心/新普通实例完成 API/DOM 验证；原事实与来源消费者的 27/34/25 表适配及完整履约/金融/发布仍待执行。当前仅先登记，不以文字或构建冒称付款展示验收。
+
 ### Task 3: 收款账户
 
 - 表 `eb_marketplace_payment_account(id, mer_id, channel, account_ref, version, status, verified_at, add_time)`；`account_ref` 只保存配置引用，不保存密钥明文。订单发起支付时把账户 ID 与版本写入支付尝试记录，之后不可更改。
