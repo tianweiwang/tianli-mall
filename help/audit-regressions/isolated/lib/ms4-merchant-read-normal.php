@@ -31,6 +31,15 @@ function m4mr_same(mixed $actual,mixed $expected): bool
     return true;
 }
 
+/** Success-only observation of the original real connection; no replacement PDO or depth mutation. */
+function m4mr_read_connection(\think\App $app,PDO $observer,\think\db\ConnectionInterface $connection,PDO $business): void
+{
+    m4o_expect(app()===$app&&$connection instanceof \crmeb\compat\think\orm\db\connector\Mysql
+        &&$connection===\think\facade\Db::connect()&&$connection->getPdo()===$business
+        &&$connection->transactionDepth()===0&&!$business->inTransaction()&&!$observer->inTransaction()
+        &&$observer!==$business,'MERCHANT_READ_SUCCESS_ORIGINAL_CONNECTION_PDO_DEPTH_ZERO');
+}
+
 /** JSON columns are compared as actual typed JSON, without changing the shared byte-exact fixture writer. */
 function m4mr_role(PDO $pdo,int $merId,string $name,array $permissions,int $now): array
 {
@@ -176,6 +185,9 @@ function m4mr_saved(PDO $pdo,int $merId): array
             'refund_status'=>m4mr_integer($order['refund_status'],0,255),'shipping_type'=>m4mr_integer($order['shipping_type'],1,2),
             'total_num'=>m4mr_integer($order['total_num'],1,4294967295),'total_price'=>m4s_money($order['total_price']),
             'pay_price'=>m4s_money($order['pay_price']),'pay_postage'=>m4s_money($order['pay_postage']),'items'=>[]];
+        m4o_expect($dto['paid']===0&&m4mr_integer($order['pay_time']??null,0,0)===0
+            &&($order['trade_no']??null)==='','MERCHANT_READ_REAL_UNPAID_EXTENSION_ORACLE');
+        $dto['fulfillment_summary']=null;$dto['allowed_actions']=['ship'=>false,'receive'=>false];
         $products=[];$quantity=0;$goods='0.00';$postage='0.00';
         m4o_expect(count($items)>=1,'MERCHANT_READ_ORACLE_ACTUAL_ITEMS');
         foreach($items as $item){
@@ -231,7 +243,11 @@ function m4o_merchant_read_normal(\think\App $app,PDO $pdo,array $serviceProofs,
     m4o_expect(count($stopped)===1&&m4mr_integer($stopped[0]['accept_orders'],0,0)===0,'MERCHANT_READ_EXISTING_STOPPED_STORE');
     $fixtures=m4mr_fixtures($pdo,$ownedMer,$stoppedMer);$authentication=$app->make(MerchantReadNormalAuth::class);$contexts=[];
     foreach($fixtures as $label=>$fixture)$contexts[$label]=m4mr_actor($app,$pdo,$authentication,$fixture);
-    $GLOBALS['m4o_phase']='merchant_saved_order_reads';$before=m4o_facts($pdo);$expected=[];
+    $GLOBALS['m4o_phase']='merchant_saved_order_reads';
+    $readConnection=\think\facade\Db::connect();$readPdo=$readConnection->getPdo();
+    m4o_expect($readPdo instanceof PDO,'MERCHANT_READ_CAPTURE_ACTUAL_DEFAULT_PDO');
+    m4mr_read_connection($app,$pdo,$readConnection,$readPdo);
+    $before=m4o_facts($pdo);$expected=[];
     foreach($fixtures as $label=>$fixture)$expected[$label]=m4mr_saved($pdo,$fixture['merId']);
     m4o_expect(count($expected['owned'])===2&&count($expected['stopped'])===1&&$expected['empty']===[],
         'MERCHANT_READ_ACTUAL_OWNED_STOPPED_EMPTY_COUNTS');
@@ -243,27 +259,36 @@ function m4o_merchant_read_normal(\think\App $app,PDO $pdo,array $serviceProofs,
     foreach($contexts as $label=>$ctx){
         $rows=array_column($expected[$label],'list');$actual=$orders->list($ctx);
         m4o_expect(m4mr_same($actual,['list'=>$rows,'count'=>count($rows)]),'MERCHANT_READ_DEFAULT_LIST_COUNT_EXACT_SAVED_DTO');
+        m4mr_read_connection($app,$pdo,$readConnection,$readPdo);
         foreach($expected[$label] as $row){
             m4o_expect(m4mr_same($orders->detail($ctx,$row['list']['id']),$row['detail']),
                 'MERCHANT_READ_DETAIL_EXACT_SAVED_RECIPIENT_FORM_AND_AMOUNTS');$details++;
+            m4mr_read_connection($app,$pdo,$readConnection,$readPdo);
         }
     }
-    foreach([1,2] as $page)m4o_expect(m4mr_same($orders->list($contexts['owned'],['page'=>$page,'limit'=>1]),
-        ['list'=>[$expected['owned'][$page-1]['list']],'count'=>2]),'MERCHANT_READ_TWO_ACTUAL_PAGES_SAME_COUNT');
+    foreach([1,2] as $page){
+        m4o_expect(m4mr_same($orders->list($contexts['owned'],['page'=>$page,'limit'=>1]),
+            ['list'=>[$expected['owned'][$page-1]['list']],'count'=>2]),'MERCHANT_READ_TWO_ACTUAL_PAGES_SAME_COUNT');
+        m4mr_read_connection($app,$pdo,$readConnection,$readPdo);
+    }
     $first=$expected['owned'][0]['list'];
     m4o_expect(m4mr_same($orders->list($contexts['owned'],['order_id'=>$first['order_id']]),['list'=>[$first],'count'=>1]),
         'MERCHANT_READ_FULL_SAVED_ORDER_NUMBER');
+    m4mr_read_connection($app,$pdo,$readConnection,$readPdo);
     foreach([['paid'=>0],['is_cancel'=>0],['is_cancel'=>1],['paid'=>0,'is_cancel'=>1]] as $filter){
         $selected=[];
         foreach($expected['owned'] as $row){$matches=true;foreach($filter as $key=>$value)if($row['list'][$key]!==$value)$matches=false;
             if($matches)$selected[]=$row['list'];}
         m4o_expect($selected!==[]&&m4mr_same($orders->list($contexts['owned'],$filter),['list'=>$selected,'count'=>count($selected)]),
             'MERCHANT_READ_NORMAL_PAID_AND_CANCELLATION_FILTERS');
+        m4mr_read_connection($app,$pdo,$readConnection,$readPdo);
     }
     m4o_expect(array_filter($expected['owned'],static fn(array $row):bool=>$row['list']['paid']===1)===[]
         &&m4mr_same($orders->list($contexts['owned'],['paid'=>1]),['list'=>[],'count'=>0]),
         'MERCHANT_READ_VALID_PAID_FILTER_ACTUAL_EMPTY_RESULT');
+    m4mr_read_connection($app,$pdo,$readConnection,$readPdo);
     m4pc_context($app,$pdo);
+    m4mr_read_connection($app,$pdo,$readConnection,$readPdo);
     m4o_expect($details===3&&m4o_facts($pdo)===$before,'MERCHANT_READ_ALL_SAVED_READ_FACTS_UNCHANGED');
     m4o_expect($app->config->get('marketplace.trade.enabled')===m4o_trade_expected(),'MERCHANT_READ_ROLE_TRADE_EXPECTATION_RETAINED');
     audit_guard_assert();

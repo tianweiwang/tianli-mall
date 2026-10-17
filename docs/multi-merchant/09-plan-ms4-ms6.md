@@ -712,6 +712,9 @@ Out/客服/移动旧读取边界实施采用（2026-10-18）：Root全文采用 
 
 旧读取边界源码实际应用（2026-10-18）：上述Out/客服/移动辅助入口采用合同的八候选已独立SOURCE通过，Root20组完整正逆及固定PHP8.2八语法实际0。Out仅旧版本NULL/0进入原专用分页与同门count，实际详情/getCartList保存版本先门；原invoice eager关联SQL保留，门在展示/商品格式化前，不冒称查询前。客服普通list经末位内部legacyOnly=true（默认false保三端），退款list/count及全部桶数用真实store_order_id→父单版本同一SQL子查询；详情、Common真实UserAuth辅助、mobile delivery_gain都在旧展示前核实际保存version，不猜缺字段。新增内部version投影在legacy输出移除/hidden，原legacy字段/数学/排序/缺行/实际Auth、已有V1本人白名单及所有旧写guard保留。原Out推送两个producer复用同一旧详情门，本次未发送外部消息或启用V1客服功能。八源来源及最终pins见 `legacy-read-boundaries-source-r1/SOURCE-DIFF-AND-INVERSE.md` 15209B/`599dfd9b4f6415507422232ff58ac05b07c9819111e07e448fc380b44ba3d59c`。本项为本地源码接线与语法，实际旧接口正常SQL/API/DOM尚未复跑；新三端根/child读取、正常完整履约/Task7/金融/历史/发布仍沿原清单未完成，停止样本不恢复。
 
+
+商家原正常读取用例接线（2026-10-18）：沿原Task6新增wire合同，采用外部merchant-read-normal-source-r1唯一候选22134B/`c5a823a9f36e30f0f8e337fe8d62eab24774eb09680fa33fcee292caaa524a09`。原独立observer保存行完整重建DTO、价格/规格/地址/表单、三实际账号及两页/取消/空店/paid1空结果断言全部保持；只对真实paid0/pay_time0/trade_no空增加独立字面fulfillment_summary=null与双动作false，且每次原成功读取后核原业务Connection/PDO、实际compat depth0及observer不同/native非事务。原m4pc_context、原证明键和父profile闭集不变。Root十组全文正逆、独立SOURCE及固定PHP8.2语法实际0；这是本地测试接线，新的完整隔离正常回归尚待运行，不据此勾选MySQL/已付/发货收货/API/DOM或Task6。原未付普通全链使用既有candidate-full-order-r2不改程序，以新clean来源/new freeze/new Run复测；已停止样本不运行。
+
 ### Task 7: 退款额度与库存行为
 
 - 接口：申请退款时在事务中锁定订单行，校验"已退金额 + 处理中金额 + 本次金额 ≤ 实付"；三类库存行为分别写 `release`（未发货取消）、`return_in`（退货验收入库）、不写（仅退款）。
