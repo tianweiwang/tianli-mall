@@ -32,6 +32,11 @@
       </template></el-table-column>
       <el-table-column label="状态" min-width="130"><template slot-scope="scope">
         <div>{{ status(scope.row) }}</div><p class="field-note">{{ paymentStatus(scope.row) }} · {{ scope.row.is_cancel === 1 ? '已取消' : '未取消' }}</p>
+        <p v-if="scope.row.fulfillment_summary === null" class="field-note">履约资料暂不可用</p>
+        <template v-else>
+          <p class="field-note">已发货 {{ scope.row.fulfillment_summary.shipped }} / {{ scope.row.fulfillment_summary.original }} 件</p>
+          <p class="field-note">已收货 {{ scope.row.fulfillment_summary.received }} 件 · {{ scope.row.fulfillment_summary.child_count }} 个包裹</p>
+        </template>
       </template></el-table-column>
       <el-table-column prop="total_num" label="数量" width="80" />
       <el-table-column label="商品金额（元）" min-width="130"><template slot-scope="scope">{{ scope.row.total_price }}</template></el-table-column>

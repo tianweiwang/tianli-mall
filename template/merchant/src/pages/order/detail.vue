@@ -17,6 +17,16 @@
         <div><dt>{{ order.paid === 1 ? testPayment(order) ? '测试支付金额（元）' : '实付金额（元）' : '应付金额（元）' }}</dt><dd>{{ order.pay_price }}</dd></div>
         <div><dt>邮费（元）</dt><dd>{{ order.pay_postage }}</dd></div>
       </dl>
+      <h2 class="section-heading">履约信息</h2>
+      <p v-if="order.fulfillment_summary === null" class="field-note" role="status">履约资料暂不可用</p>
+      <dl v-else class="order-facts">
+        <div><dt>履约商品数量</dt><dd>{{ order.fulfillment_summary.original }}</dd></div>
+        <div><dt>已发货数量</dt><dd>{{ order.fulfillment_summary.shipped }}</dd></div>
+        <div><dt>待发货数量</dt><dd>{{ order.fulfillment_summary.to_ship }}</dd></div>
+        <div><dt>已收货数量</dt><dd>{{ order.fulfillment_summary.received }}</dd></div>
+        <div><dt>待收货数量</dt><dd>{{ order.fulfillment_summary.to_receive }}</dd></div>
+        <div><dt>包裹数量</dt><dd>{{ order.fulfillment_summary.child_count }}</dd></div>
+      </dl>
       <h2 class="section-heading">收货信息</h2>
       <dl class="order-facts">
         <div><dt>收货人</dt><dd>{{ order.recipient.real_name }}</dd></div>

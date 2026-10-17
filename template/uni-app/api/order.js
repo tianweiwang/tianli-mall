@@ -9,6 +9,7 @@
 // +----------------------------------------------------------------------
 
 import request from "@/utils/request.js";
+import { fulfillmentPageQuery } from "@/utils/marketplace-fulfillment.js";
 
 /**
  * 获取购物车列表
@@ -410,4 +411,10 @@ export function getInvoiceLink(id) {
  */
 export function orderReceiveGift(orderId, data) {
 	return request.post("order/receive_gift/" + orderId, data);
+}
+
+/** Read one saved order and its independent fulfillment page. */
+export async function getSavedOrderFulfillment(uni, page = 1, limit = 20) {
+  if (typeof uni !== 'string' || !uni || uni.length > 128) throw new Error('订单号不可用');
+  return request.get('order/detail/' + encodeURIComponent(uni), fulfillmentPageQuery(page, limit));
 }

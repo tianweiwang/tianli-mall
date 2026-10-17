@@ -9,6 +9,7 @@
 // +----------------------------------------------------------------------
 
 import request from "@/utils/request.js";
+import { fulfillmentPageQuery } from "@/utils/marketplace-fulfillment.js";
 
 /**
  * 统计数据
@@ -401,4 +402,10 @@ export function orderCartInfo(data) {
  */
 export function orderWriteoff(data) {
   return request.post("store/order/writeoff", data);
+}
+
+/** Read one saved order and its independent fulfillment page. */
+export async function getAdminFulfillmentDetail(orderNo, page = 1, limit = 20) {
+  if (typeof orderNo !== 'string' || !orderNo || orderNo.length > 128) throw new Error('订单号不可用');
+  return request.get('admin/order/detail/' + encodeURIComponent(orderNo), fulfillmentPageQuery(page, limit), { login: true });
 }

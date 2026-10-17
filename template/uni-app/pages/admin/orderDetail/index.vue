@@ -14,7 +14,10 @@
       <view :style="{ height: `${getHeight.barHeight}px` }"></view>
       <view class="inner"></view>
     </view>
-    <view class="order-details pos-order-details">
+    <marketplace-fulfillment class="standalone-fulfillment" v-if="statusType != -3 && fulfillmentKind !== 'root' && (fulfillmentKind !== 'legacy' || fulfillmentLoading || fulfillmentError)"
+      :view="fulfillmentView" :loading="fulfillmentLoading" :error="fulfillmentError" :can-view-package="true"
+      @page-change="changeFulfillmentPage" @retry="retryFulfillment" @view-package="viewFulfillmentPackage"></marketplace-fulfillment>
+    <view class="order-details pos-order-details" v-if="fulfillmentKind === 'legacy' || fulfillmentKind === 'root'">
       <view class="header">
         <view class="state">{{ title }}</view>
         <view
@@ -40,13 +43,13 @@
           >
           </countDown>
         </view>
-        <view v-if="orderInfo._status._type == 1" class="data"
+        <view v-if="fulfillmentKind === 'legacy' && orderInfo._status._type == 1" class="data"
           >用户已付款，需要您尽快发货哦～</view
         >
-        <view v-if="orderInfo._status._type == 2" class="data"
+        <view v-if="fulfillmentKind === 'legacy' && orderInfo._status._type == 2" class="data"
           >商家已发货，等待用户收货</view
         >
-        <view v-if="orderInfo._status._type == 5" class="data"
+        <view v-if="fulfillmentKind === 'legacy' && orderInfo._status._type == 5" class="data"
           >需用户出示二维码或数字即可核销</view
         >
       </view>
@@ -91,6 +94,9 @@
         <view>已保存订单，仅供本人只读查看</view>
         <view v-if="orderInfo.remark">备注：{{orderInfo.remark}}</view>
       </view>
+      <marketplace-fulfillment v-if="fulfillmentKind === 'root'" :view="fulfillmentView" :loading="fulfillmentLoading"
+        :error="fulfillmentError" :can-view-package="true" @page-change="changeFulfillmentPage"
+        @retry="retryFulfillment" @view-package="viewFulfillmentPackage"></marketplace-fulfillment>
       <view class="acea-row row-middle user-box" v-if="!savedMarketplaceV1">
         <image :src="userInfo.avatar" class="image"></image>
         <view class="text">
@@ -113,7 +119,7 @@
       <view
         v-for="(j, indexw) in orderInfo.split"
         :key="indexw"
-        v-if="orderInfo.split && orderInfo.split.length"
+        v-if="fulfillmentKind === 'legacy' && orderInfo.split && orderInfo.split.length"
       >
         <view class="splitTitle acea-row row-between-wrapper">
           <view>订单包裹{{ indexw + 1 }}</view>
@@ -180,8 +186,8 @@
 						核销记录<text class="iconfont icon-ic_rightarrow"></text>
 					</navigator> -->
         </view>
-        <navigator
-          :url="`/pages/goods_details/index?id=${item.product_id}`"
+        <view
+          @click="viewOriginalProduct(item)"
           hover-class="none"
           class="goods acea-row"
           v-for="(item, index) in orderInfo.cartInfo"
@@ -199,14 +205,15 @@
             </view>
             <view class="text">
               <view class="info line1">{{ item.productInfo.store_name }}</view>
-              <view class="attr line1">{{
+              <view class="attr line1" v-if="item.productInfo.attrInfo">{{
                 item.productInfo.attrInfo.suk
               }}</view>
             </view>
           </view>
           <view class="money">
             <!-- <view class="x-money">￥{{ item.productInfo.attrInfo?item.productInfo.attrInfo.price:item.productInfo.price }}</view> -->
-            <BaseMoney
+            <text v-if="fulfillmentKind === 'root'" class="saved-unit-price">￥{{ item.truePrice }}</text>
+            <BaseMoney v-else
               :money="
                 item.productInfo.attrInfo
                   ? item.productInfo.attrInfo.price
@@ -245,7 +252,7 @@
               </view>
             </view>
           </view>
-        </navigator>
+        </view>
         <view class="giveGoods" v-if="!savedMarketplaceV1">
           <view
             class="item acea-row row-between-wrapper"
@@ -348,7 +355,7 @@
         <view class="item acea-row row-between">
           <view>支付状态</view>
           <view class="conter">
-            {{ orderInfo.paid == 1 ? "已支付" : "未支付" }}
+            {{ orderInfo.paid == 1 ? (orderInfo.pay_type === 'marketplace_test' ? '已支付（测试）' : '已支付') : '未支付' }}
           </view>
         </view>
         <view class="item acea-row row-between">
@@ -409,7 +416,7 @@
       <view
         class="wrapper"
         v-if="
-          orderInfo.delivery_type != 'fictitious' &&
+          fulfillmentKind === 'legacy' && orderInfo.delivery_type != 'fictitious' &&
           orderInfo._status._type === 2 &&
           (!orderInfo.split || !orderInfo.split.length)
         "
@@ -481,7 +488,7 @@
         >
           <view>积分抵扣</view>
           <view class="conter"
-            >-￥{{ parseFloat(orderInfo.deduction_price).toFixed(2) }}</view
+            >-￥{{ fulfillmentKind === 'root' ? orderInfo.deduction_price : parseFloat(orderInfo.deduction_price).toFixed(2) }}</view
           >
         </view>
         <view class="item acea-row row-between" v-if="orderInfo.yue_price > 0">
@@ -511,7 +518,8 @@
         </view>
         <view class="actualPay acea-row row-right">
           实付款
-          <BaseMoney
+          <text v-if="fulfillmentKind === 'root'" class="saved-unit-price">￥{{ orderInfo.pay_price }}</text>
+          <BaseMoney v-else
             :money="orderInfo.pay_price"
             symbolSize="24"
             integerSize="40"
@@ -621,11 +629,13 @@
 import PriceChange from "../components/PriceChange/index.vue";
 import customForm from "../components/customForm";
 import countDown from "@/components/countDown/index.vue";
+import marketplaceFulfillment from "@/components/marketplaceFulfillment/index.vue";
+import { readOrderFulfillment, rootFulfillmentText } from "@/utils/marketplace-fulfillment.js";
 // #ifdef MP || APP-PLUS
 import NavBar from "@/components/NavBar.vue";
 // #endif
 import {
-  getAdminOrderDetail,
+  getAdminFulfillmentDetail,
   getAdminRefundDetail,
   setAdminOrderPrice,
   setAdminRefundRemark,
@@ -647,6 +657,7 @@ export default {
     PriceChange,
     customForm,
     countDown,
+    marketplaceFulfillment,
     // #ifdef MP || APP-PLUS
     NavBar,
     // #endif
@@ -678,10 +689,22 @@ export default {
       isScrolling: false,
       getHeight: this.$util.getWXStatusHeight(),
       confirmShow: false,
+      fulfillmentView: null,
+      fulfillmentKind: '',
+      fulfillmentLoading: false,
+      fulfillmentError: '',
+      fulfillmentPendingPage: 1,
+      fulfillmentRevision: 0,
+      fulfillmentIdentity: '',
       userInfo: {},
     };
   },
   watch: {
+    fulfillmentActor() {
+      this.clearSavedFulfillment();
+      if (this.marketplaceLoggedIn && this.order_id) this.getIndex(1);
+    },
+    marketplaceLoggedIn(value) { if (!value) this.clearSavedFulfillment(); },
     "$route.params.oid": function (newVal) {
       let that = this;
       if (newVal != undefined) {
@@ -691,6 +714,8 @@ export default {
     },
   },
   computed: {
+    fulfillmentActor() { return String(this.$store.state.app.uid) + ':' + String(this.identity); },
+    marketplaceLoggedIn() { return this.$store.getters.isLogin; },
     savedMarketplaceV1() { return this.orderInfo.marketplace_trade_version===1 || this.orderInfo.marketplace_trade_version==='1'; },
     identity() {
       return this.$store.state.app.identity;
@@ -706,6 +731,8 @@ export default {
     this.getIndex();
     // this.getErpConfig();
   },
+  onHide() { this.fulfillmentRevision++; this.fulfillmentLoading = false; },
+  onUnload() { this.fulfillmentRevision++; this.fulfillmentLoading = false; },
   onPageScroll(e) {
     // #ifdef MP || APP-PLUS
     if (e.scrollTop > 50) {
@@ -788,16 +815,77 @@ export default {
     changeclose: function (msg) {
       this.change = msg;
     },
-    getIndex: function () {
+    clearSavedFulfillment() {
+      this.fulfillmentRevision++;
+      this.fulfillmentIdentity = '';
+      this.fulfillmentView = null;
+      this.fulfillmentKind = '';
+      this.fulfillmentLoading = false;
+      this.fulfillmentError = '';
+      this.fulfillmentPendingPage = 1;
+      this.orderInfo = { _status: {} };
+      this.userInfo = {};
+      this.types = '';
+      this.title = '';
+      this.payType = '';
+      this.totalNmu = 0;
+      this.giveCartInfo = [];
+      this.giveData = { give_coupon: [], give_integral: 0 };
+      this.confirmShow = false;
+      this.change = false;
+    },
+    viewOriginalProduct(item) {
+      if (this.fulfillmentKind !== 'legacy') return;
+      uni.navigateTo({ url: '/pages/goods_details/index?id=' + item.product_id });
+    },
+    changeFulfillmentPage(page) { if (this.fulfillmentKind === 'root' && !this.fulfillmentLoading) this.getIndex(page); },
+    retryFulfillment() { this.getIndex(this.fulfillmentPendingPage); },
+    viewFulfillmentPackage(child) {
+      if (this.fulfillmentLoading || this.fulfillmentError || this.fulfillmentKind !== 'root' || !this.fulfillmentView.children ||
+          !this.fulfillmentView.children.list.some(row => row.id === child.id && row.order_id === child.order_id)) return;
+      uni.navigateTo({ url: '/pages/admin/orderDetail/index?id=' + encodeURIComponent(child.order_id) });
+    },
+    getIndex: function (page) {
       let that = this;
+      const identity = this.fulfillmentActor + ':' + this.order_id;
+      if (identity !== this.fulfillmentIdentity) {
+        this.fulfillmentView = null;
+        this.fulfillmentKind = '';
+        this.fulfillmentIdentity = identity;
+      }
+      const revision = ++this.fulfillmentRevision;
+      const requestedPage = page === undefined ? (this.fulfillmentView && this.fulfillmentView.children ? this.fulfillmentView.children.page : 1) : page;
+      this.fulfillmentPendingPage = requestedPage;
+      this.fulfillmentLoading = true;
+      this.fulfillmentError = '';
       let obj = "";
       if (that.statusType == -3) {
         obj = getAdminRefundDetail(that.order_id);
       } else {
-        obj = getAdminOrderDetail(that.order_id);
+        obj = getAdminFulfillmentDetail(that.order_id, requestedPage, 20);
       }
       obj
         .then((res) => {
+          if (revision !== this.fulfillmentRevision || identity !== this.fulfillmentActor + ':' + this.order_id) return;
+          if (!this.marketplaceLoggedIn) { this.clearSavedFulfillment(); return; }
+          const view = this.statusType == -3 ? { kind: 'legacy', order: res.data } : readOrderFulfillment(res.data, true);
+          if (view.kind !== 'legacy') {
+            if (view.order.order_id !== this.order_id) throw new Error('订单身份不一致，请重新加载');
+            this.orderInfo = view.order;
+            this.types = view.kind === 'root' ? view.order._status._type : '';
+            this.title = view.kind === 'root' ? (view.summary === null ? view.order._status._title : rootFulfillmentText(view.summary)) : '';
+            this.payType = view.kind === 'root' ? view.order._status._payType : view.package.pay_type_name;
+            this.totalNmu = view.kind === 'root' ? view.order.total_num : view.package.original;
+            this.applyOrderBenefits(view.order);
+            this.userInfo = {};
+            this.fulfillmentView = view;
+            this.fulfillmentKind = view.kind;
+            this.fulfillmentLoading = false;
+            return;
+          }
+          this.fulfillmentKind = 'legacy';
+          this.fulfillmentView = view;
+          this.fulfillmentLoading = false;
           let num = 0;
           that.types = res.data._status._type;
           that.title = res.data._status._title;
@@ -820,6 +908,10 @@ export default {
           that.getUserInfo();
         })
         .catch((err) => {
+          if (revision !== this.fulfillmentRevision || identity !== this.fulfillmentActor + ':' + this.order_id) return;
+          this.fulfillmentLoading = false;
+          this.fulfillmentError = typeof err === 'string' ? err : (err && err.message || '订单读取失败，请重试');
+          if (this.statusType != -3) return;
           return that.$util.Tips({
             title: err.msg,
           });
@@ -976,7 +1068,11 @@ export default {
     },
     getUserInfo() {
       if(this.savedMarketplaceV1){this.userInfo={};return;}
-      getUserInfo(this.orderInfo.uid).then((res) => {
+      const actor = this.fulfillmentActor;
+      const revision = this.fulfillmentRevision;
+      const buyer = this.orderInfo.uid;
+      getUserInfo(buyer).then((res) => {
+        if (actor !== this.fulfillmentActor || revision !== this.fulfillmentRevision || buyer !== this.orderInfo.uid || !this.marketplaceLoggedIn) return;
         this.userInfo = res.data;
       });
     },
@@ -985,6 +1081,9 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.standalone-fulfillment { position: relative; z-index: 1; }
+.pos-order-details { box-sizing: border-box; }
+.saved-unit-price { color: #ff7e00; font-size: 32rpx; overflow-wrap: anywhere; }
 .headerBg {
   position: absolute;
   top: 0;

@@ -8,6 +8,32 @@ function text(value) { if (typeof value !== 'string' || value.includes('\u0000')
 function integer(value, min = 0, max = INT_MAX) { if (!Number.isInteger(value) || value < min || value > max) unavailable(); return value; }
 function money(value) { if (typeof value !== 'string' || !/^(0|[1-9][0-9]{0,9})\.[0-9]{2}$/.test(value)) unavailable(); return value; }
 
+function exactKeys(value, names) {
+  const data = row(value);
+  if (Object.keys(data).length !== names.length || names.some((key) => !Object.prototype.hasOwnProperty.call(data, key))) unavailable();
+  return data;
+}
+
+function fulfillmentSummary(value, totalNum) {
+  if (value === null) return null;
+  const summary = exactKeys(value, ['shipping_state', 'receipt_state', 'closed', 'original', 'shipped', 'received',
+    'cancelled_unshipped', 'returned_accepted', 'to_ship', 'to_receive', 'child_count']);
+  if (!['unshipped', 'partial', 'shipped'].includes(summary.shipping_state)
+    || !['not_shipped', 'pending', 'partial', 'received'].includes(summary.receipt_state)
+    || typeof summary.closed !== 'boolean' || summary.original !== integer(totalNum, 1, UINT_MAX)) unavailable();
+  return { shipping_state: summary.shipping_state, receipt_state: summary.receipt_state, closed: summary.closed,
+    original: integer(summary.original, 1, UINT_MAX), shipped: integer(summary.shipped, 0, UINT_MAX),
+    received: integer(summary.received, 0, UINT_MAX), cancelled_unshipped: integer(summary.cancelled_unshipped, 0, UINT_MAX),
+    returned_accepted: integer(summary.returned_accepted, 0, UINT_MAX), to_ship: integer(summary.to_ship, 0, UINT_MAX),
+    to_receive: integer(summary.to_receive, 0, UINT_MAX), child_count: integer(summary.child_count, 0, UINT_MAX) };
+}
+
+function fulfillmentActions(value, summary) {
+  const actions = exactKeys(value, ['ship', 'receive']);
+  if (typeof actions.ship !== 'boolean' || actions.receive !== false || (summary === null && actions.ship !== false)) unavailable();
+  return { ship: actions.ship, receive: actions.receive };
+}
+
 // Native order PKs fit signed INT; route strings remain strings without numeric conversion.
 export function orderRecordId(value) {
   if (typeof value === 'number') { integer(value, 1); return String(value); }
@@ -35,12 +61,14 @@ function savedItem(value) {
 export function orderRow(value) {
   const order = row(value);
   if (order.marketplace_trade_version !== 1 || !Array.isArray(order.items) || !order.items.length) unavailable();
+  const summary = fulfillmentSummary(order.fulfillment_summary, order.total_num);
+  const actions = fulfillmentActions(order.allowed_actions, summary);
   return { id: integer(order.id, 1), order_id: text(order.order_id), marketplace_trade_version: 1,
     pay_type: text(order.pay_type),
     add_time: integer(order.add_time, 0, UINT_MAX), paid: integer(order.paid, 0, 1), status: integer(order.status, -INT_MAX - 1),
     is_cancel: integer(order.is_cancel, 0, 1), refund_status: integer(order.refund_status), shipping_type: integer(order.shipping_type),
     total_num: integer(order.total_num, 1, UINT_MAX), total_price: money(order.total_price), pay_price: money(order.pay_price),
-    pay_postage: money(order.pay_postage), items: order.items.map(savedItem) };
+    pay_postage: money(order.pay_postage), items: order.items.map(savedItem), fulfillment_summary: summary, allowed_actions: actions };
 }
 
 export function orderList(value) {
@@ -81,6 +109,15 @@ export function orderStatus(order) {
   if (order.is_cancel === 1) return '已取消';
   if (order.paid === 0) return '待支付';
   if (order.refund_status !== 0) return '退款状态：' + order.refund_status;
+  const summary = order.fulfillment_summary;
+  if (summary !== null) {
+    if (summary.shipping_state === 'partial') return '部分发货';
+    if (summary.shipping_state === 'shipped') {
+      if (summary.receipt_state === 'received') return '已收货';
+      return order.shipping_type === 2 ? '已提货' : '待收货';
+    }
+    return order.shipping_type === 2 ? '待提货' : '待发货';
+  }
   const names = { 0: order.shipping_type === 2 ? '待提货' : '待发货', 1: order.shipping_type === 2 ? '已提货' : '待收货', 2: '已收货', 3: '已完成' };
   return names[order.status] || '订单状态：' + order.status;
 }

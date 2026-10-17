@@ -1,6 +1,9 @@
 <template>
 	<view :style="colorStyle">
-		<view class="order-details">
+		<marketplace-fulfillment v-if="!isReturn && fulfillmentKind !== 'root' && (fulfillmentKind !== 'legacy' || fulfillmentLoading || fulfillmentError)"
+			:view="fulfillmentView" :loading="fulfillmentLoading" :error="fulfillmentError" :can-view-package="true"
+			@page-change="changeFulfillmentPage" @retry="retryFulfillment" @view-package="viewFulfillmentPackage"></marketplace-fulfillment>
+		<view class="order-details" v-if="fulfillmentKind === 'legacy' || fulfillmentKind === 'root'">
 			<!-- 给header上与data上加on为退款订单-->
 			<view class="header bg-color acea-row row-middle" :class="isGoodsReturn ? 'on' : ''">
 				<view class="pictrue" v-if="isGoodsReturn == false">
@@ -14,6 +17,9 @@
 					</view>
 				</view>
 			</view>
+			<marketplace-fulfillment v-if="fulfillmentKind === 'root'" :view="fulfillmentView" :loading="fulfillmentLoading"
+				:error="fulfillmentError" :can-view-package="true" @page-change="changeFulfillmentPage"
+				@retry="retryFulfillment" @view-package="viewFulfillmentPackage"></marketplace-fulfillment>
 			<view class="refund-msg" v-if="[4, 5].includes(orderInfo.refund_type)">
 				<view v-if="orderInfo._status.refund_name != ''">
 					<view class="refund-msg-user">
@@ -47,7 +53,7 @@
 				<image src="@/static/images/line.jpg"></image>
 			</view>
 			<view class="mb-16" v-if="isGoodsReturn == false">
-				<view class="nav" v-if="is_gift != 2">
+				<view class="nav" v-if="fulfillmentKind === 'legacy' && is_gift != 2">
 					<view class="navCon acea-row row-between-wrapper" v-if="!is_gift">
 						<view :class="status.type == 0 || status.type == -9 ? 'on' : ''">{{ $t(`待付款`) }}</view>
 						<view :class="status.type == 1 || status.type == 5 ? 'on' : ''">
@@ -213,6 +219,7 @@
 				</view>
 			</view>
 			<orderGoods
+				v-if="fulfillmentKind === 'legacy'"
 				v-for="(item, index) in split"
 				:key="item.id"
 				:evaluate="item._status._type == 3 ? 3 : 0"
@@ -233,6 +240,7 @@
 				@openSubcribe="openSubcribe"
 			></orderGoods>
 			<orderGoods
+				:read-only="fulfillmentKind === 'root'"
 				:evaluate="evaluate"
 				:deliveryType="orderInfo.shipping_type"
 				:statusType="status.type"
@@ -472,7 +480,14 @@
 				</view>
 			</view>
 			<view style="height: 120rpx"></view>
-			<view class="footer acea-row row-right row-middle" v-if="isGoodsReturn == false || status.type == 9 || orderInfo.refund_type || orderInfo.is_apply_refund">
+			<view class="wrapper" v-if="fulfillmentKind === 'root' && orderInfo.paid == 1 && !is_gift && isReturn != 1">
+				<button v-if="invoiceData" class="fulfillment-again" :disabled="fulfillmentLoading || !!fulfillmentError" @tap="aleartStatusChange">{{ $t('查看发票') }}</button>
+					<button class="marketplace-again-button fulfillment-again" v-if="orderInfo.paid == 1 && !is_gift && isReturn != 1"
+						:disabled="fulfillmentLoading || !!fulfillmentError || againPending || againNavigating || againGroups.length > 0" @tap="goOrderConfirm">
+						{{ againPending ? $t(`正在准备`) : againNavigating ? $t(`正在打开`) : $t(`再次购买`) }}
+					</button>
+			</view>
+			<view class="footer acea-row row-right row-middle" v-if="fulfillmentKind === 'legacy' && (isGoodsReturn == false || status.type == 9 || orderInfo.refund_type || orderInfo.is_apply_refund)">
 				<view class="more" v-if="(invoice_func || invoiceData) && orderInfo.paid && !orderInfo.refund_status" @click="more">
 					{{ $t(`更多`) }}
 					<span class="iconfont icon-xiangshang"></span>
@@ -581,7 +596,7 @@
 </template>
 
 <script>
-import { getOrderDetail, refundOrderDetail, orderAgain, orderTake, orderDel, refundOrderDel, orderCancel, refundExpress, cancelRefundOrder } from '@/api/order.js';
+import { getSavedOrderFulfillment, refundOrderDetail, orderAgain, orderTake, orderDel, refundOrderDel, orderCancel, refundExpress, cancelRefundOrder } from '@/api/order.js';
 import { openOrderRefundSubscribe } from '@/utils/SubscribeMessage.js';
 import { getCustomerType } from '@/api/api.js';
 import { getCustomer } from '@/utils/index.js';
@@ -591,6 +606,8 @@ import marketplaceAgainStorePicker from '@/components/marketplaceAgainStorePicke
 import { parseAgainPurchase, againConfirmationUrl } from '@/utils/marketplace-again-purchase.js';
 import { storefrontMessage } from '@/utils/public-store.js';
 import orderGoods from '@/components/orderGoods';
+import marketplaceFulfillment from '@/components/marketplaceFulfillment/index.vue';
+import { readOrderFulfillment } from '@/utils/marketplace-fulfillment.js';
 import ClipboardJS from '@/plugin/clipboard/clipboard.js';
 import { toLogin } from '@/libs/login.js';
 import { mapGetters } from 'vuex';
@@ -635,6 +652,7 @@ export default {
 		invoicePicker,
 		invoiceModal,
 		orderGoods,
+		marketplaceFulfillment,
 		giftModal,
 		zbCode,
 		// #ifdef MP
@@ -651,6 +669,13 @@ export default {
 			againNavigating: false,
 			againGroups: [],
 			againGeneration: 0,
+			fulfillmentView: null,
+			fulfillmentKind: '',
+			fulfillmentLoading: false,
+			fulfillmentError: '',
+			fulfillmentPendingPage: 1,
+			fulfillmentRevision: 0,
+			fulfillmentIdentity: '',
 			//二维码参数
 			codeShow: false,
 			cid: '1',
@@ -757,6 +782,7 @@ export default {
 	},
 	computed: {
 		...mapGetters(['isLogin']),
+		fulfillmentActor() { return String(this.$store.state.app.uid); },
 		savedMarketplaceFormsV1() {
 			const version = this.orderInfo.marketplace_trade_version;
 			return version === 1 || version === '1';
@@ -764,6 +790,13 @@ export default {
 		savedTestPayment() {
 			return this.savedMarketplaceFormsV1 && this.orderInfo.pay_type === 'marketplace_test';
 		}
+	},
+	watch: {
+		fulfillmentActor() {
+			this.clearSavedFulfillment();
+			if (this.isLogin && this.order_id) this.getOrderInfo(1);
+		},
+		isLogin(value) { if (!value) this.clearSavedFulfillment(); }
 	},
 	onLoad: function (options) {
 		if (options.order_id) {
@@ -812,12 +845,22 @@ export default {
 		}
 	},
 	onHide: function () {
+		uni.hideLoading();
+		this.fulfillmentRevision++;
+		this.fulfillmentLoading = false;
 		this.isClose = true;
 		this.againGeneration++;
+		this.againPending = false;
+		this.againNavigating = false;
 		this.againGroups = [];
 	},
 	onUnload() {
+		uni.hideLoading();
+		this.fulfillmentRevision++;
+		this.fulfillmentLoading = false;
 		this.againGeneration++;
+		this.againPending = false;
+		this.againNavigating = false;
 		this.againGroups = [];
 	},
 	onReady: function () {
@@ -1022,7 +1065,9 @@ export default {
 		 */
 		getUserInfo: function () {
 			let that = this;
+			const actor = this.$store.state.app.uid;
 			getUserInfo().then((res) => {
+				if (actor !== this.$store.state.app.uid || !this.isLogin) return;
 				that.userInfo = res.data;
 				// #ifdef H5
 				that.payMode[2].number = res.data.now_money;
@@ -1040,8 +1085,59 @@ export default {
 		 * 获取订单详细信息
 		 *
 		 */
-		getOrderInfo: function () {
+		clearSavedFulfillment() {
+			uni.hideLoading();
+			this.fulfillmentRevision++;
+			this.fulfillmentIdentity = '';
+			this.fulfillmentView = null;
+			this.fulfillmentKind = '';
+			this.fulfillmentLoading = false;
+			this.fulfillmentError = '';
+			this.fulfillmentPendingPage = 1;
+			this.orderInfo = { help_info: {}, system_store: {}, _status: {} };
+			this.cartInfo = [];
+			this.status = {};
+			this.savedMarketplaceFormGroups = [];
+			this.customForm = [];
+			this.againGeneration++;
+			this.againPending = false;
+			this.againNavigating = false;
+			this.againGroups = [];
+			this.invoiceData = null;
+			this.invoice_func = false;
+			this.special_invoice = false;
+			this.aleartStatus = false;
+			this.invShow = false;
+			this.moreBtn = false;
+			this.giftModalShow = false;
+			this.giftData = null;
+			this.giftModalData = null;
+			this.userInfo = {};
+			this.is_gift = 0;
+			this.isGoodsReturn = false;
+		},
+		changeFulfillmentPage(page) {
+			if (this.fulfillmentKind === 'root' && !this.fulfillmentLoading) this.getOrderInfo(page);
+		},
+		retryFulfillment() { this.getOrderInfo(this.fulfillmentPendingPage); },
+		viewFulfillmentPackage(child) {
+			if (this.fulfillmentLoading || this.fulfillmentError || this.fulfillmentKind !== 'root' || !this.fulfillmentView.children ||
+				!this.fulfillmentView.children.list.some(row => row.id === child.id && row.order_id === child.order_id)) return;
+			uni.navigateTo({ url: '/pages/goods/order_details/index?order_id=' + encodeURIComponent(child.order_id) });
+		},
+		getOrderInfo: function (page) {
 			let that = this;
+			const identity = String(this.$store.state.app.uid) + ':' + this.order_id;
+			if (identity !== this.fulfillmentIdentity) {
+				this.fulfillmentView = null;
+				this.fulfillmentKind = '';
+				this.fulfillmentIdentity = identity;
+			}
+			const revision = ++this.fulfillmentRevision;
+			const requestedPage = page === undefined ? (this.fulfillmentView && this.fulfillmentView.children ? this.fulfillmentView.children.page : 1) : page;
+			this.fulfillmentPendingPage = requestedPage;
+			this.fulfillmentLoading = true;
+			this.fulfillmentError = '';
 			uni.showLoading({
 				title: this.$t(`正在加载中`)
 			});
@@ -1049,10 +1145,32 @@ export default {
 			if (that.isReturn) {
 				obj = refundOrderDetail(this.order_id);
 			} else {
-				obj = getOrderDetail(this.order_id);
+				obj = getSavedOrderFulfillment(this.order_id, requestedPage, 20);
 			}
 			obj
 				.then((res) => {
+					if (revision !== this.fulfillmentRevision || identity !== String(this.$store.state.app.uid) + ':' + this.order_id || !this.isLogin) return;
+					const view = that.isReturn ? { kind: 'legacy', order: res.data } : readOrderFulfillment(res.data, true);
+					if (view.kind !== 'legacy') {
+						if ((view.kind === 'root' && view.order.order_id !== this.order_id) || (view.kind === 'child' && view.package.order_id !== this.order_id)) throw new Error('订单身份不一致，请重新加载');
+						if (view.kind === 'root') this.applySavedCustomForm(view.order);
+						this.orderInfo = view.order;
+						this.cartInfo = view.kind === 'root' ? view.order.cartInfo : [];
+						this.pid = view.kind === 'root' ? view.order.pid : view.package.root_order_id;
+						this.evaluate = 0;
+						this.system_store = view.kind === 'root' ? view.order.system_store : {};
+						this.invoiceData = view.kind === 'root' ? view.order.invoice : null;
+						this.isGoodsReturn = false;
+						this.status = {};
+						this.fulfillmentView = view;
+						this.fulfillmentKind = view.kind;
+						this.fulfillmentLoading = false;
+						uni.hideLoading();
+						return;
+					}
+					this.fulfillmentKind = 'legacy';
+					this.fulfillmentView = view;
+					this.fulfillmentLoading = false;
 					if (res.data.pid && res.data.pid == -1) {
 						that.$util.Tips(
 							{
@@ -1149,7 +1267,11 @@ export default {
 					that.getOrderStatus();
 				})
 				.catch((err) => {
+					if (revision !== this.fulfillmentRevision || identity !== String(this.$store.state.app.uid) + ':' + this.order_id || !this.isLogin) return;
+					this.fulfillmentLoading = false;
+					this.fulfillmentError = typeof err === 'string' ? err : (err && err.message || '订单读取失败，请重试');
 					uni.hideLoading();
+					if (!that.isReturn) return;
 					that.$util.Tips(
 						{
 							title: err
@@ -1376,13 +1498,14 @@ export default {
 			this.againPending = true;
 			const generation = this.againGeneration;
 			orderAgain(this.orderInfo.order_id).then(res => {
-				this.againPending = false;
 				if (generation !== this.againGeneration) return;
+				this.againPending = false;
 				const purchase = parseAgainPurchase(res.data);
 				if (purchase.legacyUrl) return this.openAgainConfirmation(purchase.legacyUrl);
 				if (purchase.groups.length === 1) return this.openAgainConfirmation(againConfirmationUrl(purchase.groups[0]));
 				this.againGroups = purchase.groups;
 			}).catch(error => {
+				if (generation !== this.againGeneration) return;
 				this.againPending = false;
 				if (generation === this.againGeneration) this.$util.Tips({title: storefrontMessage(error)});
 			});
@@ -1410,6 +1533,7 @@ export default {
 			});
 		},
 		confirmOrder(orderId) {
+			if (this.fulfillmentKind !== 'legacy' || this.savedMarketplaceFormsV1) return;
 			let that = this;
 			// #ifdef MP
 			if (wx.openBusinessView && this.orderInfo.order_shipping_open && this.orderInfo.trade_no && this.orderInfo.uid == this.orderInfo.pay_uid) {
@@ -1441,6 +1565,7 @@ export default {
 			// #endif
 		},
 		defaultTake(orderId) {
+			if (this.fulfillmentKind !== 'legacy' || this.savedMarketplaceFormsV1) return;
 			let that = this;
 			uni.showModal({
 				title: that.$t(`确认收货`),
@@ -1558,6 +1683,7 @@ export default {
 };
 </script>
 <style scoped lang="scss">
+.fulfillment-again { display: flex; align-items: center; justify-content: center; box-sizing: border-box; width: 100%; max-width: 100%; min-width: 0; min-height: 44px; height: auto; margin: 0; padding: 12px 18px; font-size: 28rpx; line-height: 1.4; text-align: center; white-space: normal; }
 .refund-tip {
 	font-size: 24rpx;
 	margin-top: 10rpx;

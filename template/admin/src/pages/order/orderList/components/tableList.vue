@@ -137,7 +137,8 @@
       <el-table-column label="操作" fixed="right" width="170">
         <template slot-scope="scope">
           <div v-if="isSavedMarketplaceV1(scope.row)" class="saved-list-actions">
-            <span class="saved-list-note">仅供查看</span>
+            <span class="saved-list-note" v-if="scope.row.fulfillment_summary">已发 {{ scope.row.fulfillment_summary.shipped }} / 已收 {{ scope.row.fulfillment_summary.received }} 件 · {{ scope.row.fulfillment_summary.child_count }} 个包裹</span>
+            <span class="saved-list-note" v-else>履约资料暂不可用</span>
             <el-button type="text" @click="changeMenu(scope.row, '2')">详情</el-button>
           </div>
           <template v-else>
@@ -240,13 +241,16 @@
         </template>
       </el-table-column>
     </el-table>
+    <div v-if="listError" class="fulfillment-list-error" role="alert"><p>{{ listError }}</p><el-button class="fulfillment-retry" :disabled="loading" @click="getList">重新加载</el-button></div>
     <div class="acea-row row-right page">
       <pagination v-if="total" :total="total" :page.sync="page.page" :limit.sync="page.limit" @pagination="getList" />
     </div>
     <!-- 编辑 退款 退积分 不退款-->
     <edit-from ref="edits" :FromData="FromData" @submitFail="submitFail"></edit-from>
     <!-- 详情 -->
-    <details-from ref="details" :orderDatalist="orderDatalist" :orderId="orderId"></details-from>
+    <details-from ref="details" :orderDatalist="orderDatalist" :orderId="orderId" :fulfillment-view="fulfillmentView"
+      :fulfillment-loading="fulfillmentLoading" :fulfillment-error="fulfillmentError" @fulfillment-page="changeFulfillmentPage"
+      @fulfillment-retry="retryFulfillment" @fulfillment-package="viewFulfillmentPackage" @fulfillment-parent="viewFulfillmentParent" @detail-close="clearFulfillment"></details-from>
     <!-- 备注 -->
     <order-remark ref="remarks" :orderId="orderId" @submitFail="submitFail"></order-remark>
     <!-- 取消寄件 -->
@@ -355,7 +359,7 @@ import printJS from 'print-js';
 import {
   orderList,
   getOrdeDatas,
-  getDataInfo,
+  getPlatformFulfillmentDetail,
   getRefundFrom,
   getnoRefund,
   refundIntegral,
@@ -369,6 +373,7 @@ import {
 import { mapState, mapMutations } from 'vuex';
 import editFrom from '../../../../components/from/from';
 import detailsFrom from '../handle/orderDetails';
+import { readPlatformFulfillment } from './fulfillmentPackages.vue';
 import orderRemark from '../handle/orderRemark';
 import orderSend from '../handle/orderSend';
 import orderRefund from '../handle/orderRefund';
@@ -431,6 +436,14 @@ export default {
       data: [],
       FromData: null,
       orderDatalist: null,
+      fulfillmentView: null,
+      fulfillmentLoading: false,
+      fulfillmentError: '',
+      fulfillmentPendingPage: 1,
+      fulfillmentRevision: 0,
+      fulfillmentOrderId: null,
+      listError: '',
+      listRevision: 0,
       // modalTitleSs: '',
       selectedIds: [], //选中合并项的id
       currentTab: 'null',
@@ -455,6 +468,7 @@ export default {
     };
   },
   computed: {
+    fulfillmentActor() { const info = this.$store.state.userInfo.userInfo; return info ? String(info.id) : ''; },
     ...mapState('order', [
       'orderPayType',
       'orderStatus',
@@ -474,7 +488,10 @@ export default {
     this.getList();
     this.getToken();
   },
+  beforeDestroy() { this.fulfillmentRevision++; this.listRevision++; },
   watch: {
+    fulfillmentActor() { this.clearFulfillment(); this.listRevision++; this.orderList = []; this.loading = false; this.getList(1); },
+    '$route.fullPath'() { this.clearFulfillment(); this.listRevision++; this.orderList = []; this.loading = false; this.getList(1); },
     orderType: function () {
       this.page.page = 1;
       this.getList();
@@ -647,6 +664,9 @@ export default {
     getList(res) {
       this.page.page = res === 1 ? 1 : this.page.page;
       this.loading = true;
+      this.listError = '';
+      const revision = ++this.listRevision;
+      const actor = this.fulfillmentActor;
       orderList({
         page: this.page.page,
         limit: this.page.limit,
@@ -658,20 +678,24 @@ export default {
         type: this.orderType === 0 ? '' : this.orderType,
       })
         .then(async (res) => {
-          let data = res.data;
+          if (revision !== this.listRevision || actor !== this.fulfillmentActor) return;
+          const data = res.data;
+          if (!data || !Array.isArray(data.data) || !Number.isSafeInteger(data.count) || data.count < 0) throw new Error('订单列表资料不可用');
+          data.data.forEach(row => { const view = readPlatformFulfillment(row); if (view.kind === 'child') throw new Error('订单列表资料不可用'); });
           this.orderList = data.data;
-          this.orderCards = data.stat;
+          if (Object.prototype.hasOwnProperty.call(data, 'stat')) this.orderCards = data.stat;
           this.total = data.count;
           this.$nextTick(() => {
             //确保dom加载完毕
             this.setChecked();
           });
-          this.$emit('on-changeCards', data.stat);
+          if (Object.prototype.hasOwnProperty.call(data, 'stat')) this.$emit('on-changeCards', data.stat);
           this.loading = false;
         })
         .catch((res) => {
+          if (revision !== this.listRevision || actor !== this.fulfillmentActor) return;
           this.loading = false;
-          this.$message.error(res.msg);
+          this.listError = typeof res === 'string' ? res : (res && (res.message || res.msg) || '订单读取失败，请重试');
         });
     },
     handleSelectRow(selection) {
@@ -737,23 +761,54 @@ export default {
         });
     },
     // 获取详情表单数据
-    getData(id) {
-      getDataInfo(id)
-        .then(async (res) => {
-          this.$refs.details.modals = true;
-          this.orderDatalist = res.data;
-          if (this.orderDatalist.orderInfo.refund_reason_wap_img) {
-            try {
-              this.orderDatalist.orderInfo.refund_reason_wap_img = JSON.parse(
-                this.orderDatalist.orderInfo.refund_reason_wap_img,
-              );
-            } catch (e) {
-              this.orderDatalist.orderInfo.refund_reason_wap_img = [];
-            }
+    clearFulfillment() {
+      if (this.$refs.details) this.$refs.details.modals = false;
+      this.fulfillmentRevision++;
+      this.fulfillmentLoading = false;
+      this.fulfillmentView = null;
+      this.fulfillmentError = '';
+      this.fulfillmentOrderId = null;
+      this.orderDatalist = null;
+    },
+    changeFulfillmentPage(page) { if (!this.fulfillmentLoading && this.fulfillmentView && this.fulfillmentView.kind === 'root') this.getData(this.fulfillmentOrderId, page); },
+    retryFulfillment() { if (this.fulfillmentOrderId !== null) this.getData(this.fulfillmentOrderId, this.fulfillmentPendingPage); },
+    viewFulfillmentPackage(child) {
+      const view = this.fulfillmentView;
+      if (this.fulfillmentLoading || this.fulfillmentError || !view || view.kind !== 'root' || !view.children || !view.children.list.some(row => row.id === child.id)) return;
+      this.getData(child.id);
+    },
+    viewFulfillmentParent() {
+      if (!this.fulfillmentLoading && !this.fulfillmentError && this.fulfillmentView && this.fulfillmentView.kind === 'child') this.getData(this.fulfillmentView.order.root_order_id);
+    },
+    getData(id, page = 1) {
+      if (String(id) !== String(this.fulfillmentOrderId)) { this.fulfillmentView = null; this.orderDatalist = null; }
+      this.fulfillmentOrderId = id;
+      this.fulfillmentPendingPage = page;
+      this.fulfillmentLoading = true;
+      this.fulfillmentError = '';
+      const revision = ++this.fulfillmentRevision;
+      const actor = this.fulfillmentActor;
+      this.$refs.details.modals = true;
+      getPlatformFulfillmentDetail(id, page, 20)
+        .then(res => {
+          if (revision !== this.fulfillmentRevision || actor !== this.fulfillmentActor || String(id) !== String(this.fulfillmentOrderId)) return;
+          const data = res.data;
+          if (!data || !data.orderInfo || !data.userInfo) throw new Error('订单资料不可用');
+          const view = readPlatformFulfillment(data.orderInfo, true);
+          if (String(view.order.id) !== String(id)) throw new Error('订单身份不一致，请重新加载');
+          if (view.kind === 'legacy' && data.orderInfo.refund_reason_wap_img) {
+            try { data.orderInfo.refund_reason_wap_img = JSON.parse(data.orderInfo.refund_reason_wap_img); }
+            catch (error) { data.orderInfo.refund_reason_wap_img = []; }
           }
+          this.orderDatalist = data;
+          this.fulfillmentView = view;
+          this.orderId = Number(id);
+          this.fulfillmentLoading = false;
         })
-        .catch((res) => {
-          this.$message.error(res.msg);
+        .catch(error => {
+          if (revision !== this.fulfillmentRevision || actor !== this.fulfillmentActor) return;
+          this.fulfillmentLoading = false;
+          this.fulfillmentError = typeof error === 'string' ? error : (error && (error.message || error.msg) || '订单读取失败，请重试');
         });
     },
     submitSuccess() {
@@ -1012,6 +1067,10 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.fulfillment-list-error { padding: 16px; background: #fef0f0; color: #9b3232; overflow-wrap: anywhere; }
+.fulfillment-retry { display: flex; align-items: center; justify-content: center; box-sizing: border-box; max-width: 100%; min-width: 0; min-height: 44px; height: auto; margin: 0; padding: 10px 16px; line-height: 1.4; white-space: normal; text-align: center; }
+.saved-list-actions { flex-wrap: wrap; min-width: 0; gap: 6px; }
+.saved-list-actions .saved-list-note { overflow-wrap: anywhere; }
 .saved-list-note { color: #666; font-size: 12px; line-height: 1.5; }
 .saved-list-actions { display: flex; align-items: center; justify-content: center; gap: 8px; }
 ::v-deep .el-upload,

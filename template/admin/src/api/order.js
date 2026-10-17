@@ -694,3 +694,17 @@ export function editAddress(data) {
     data,
   });
 }
+
+/** Read the existing platform detail route with an independent fulfillment page. */
+export async function getPlatformFulfillmentDetail(pk, page = 1, limit = 20) {
+  if (!/^[1-9][0-9]{0,9}$/.test(String(pk)) || Number(pk) > 4294967295 ||
+      !Number.isSafeInteger(page) || page < 1 || page > 4294967295 ||
+      !Number.isSafeInteger(limit) || limit < 1 || limit > 100) {
+    throw new Error('订单包裹分页参数不可用');
+  }
+  return request({
+    url: `/order/info/${encodeURIComponent(String(pk))}`,
+    method: 'get',
+    params: { fulfillment_page: page, fulfillment_limit: limit },
+  });
+}

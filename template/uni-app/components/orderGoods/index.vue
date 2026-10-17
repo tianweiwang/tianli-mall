@@ -39,7 +39,8 @@
 						</view>
 						<view class='attr line1' v-if="item.productInfo.attrInfo">{{item.productInfo.attrInfo.suk}}
 						</view>
-						<view class='money font-color pic' v-if="item.productInfo.attrInfo">
+						<view class='money font-color pic' v-if="readOnly">￥{{item.truePrice}}</view>
+						<view class='money font-color pic' v-else-if="item.productInfo.attrInfo">
 							<text v-show="is_gift != 2" :class="{gray:!item.is_valid}">
 								{{$t(`￥`)}}{{item.productInfo.attrInfo.price}}
 							</text>
@@ -58,7 +59,7 @@
 					
 				</view>
 
-				<view class="botton-btn">
+				<view class="botton-btn" v-if="!readOnly">
 					<view class='logistics' v-if="item.is_reply==0 && evaluate==3 && pid != -1 && isShow"
 						@click.stop="evaluateTap(item.unique,orderId)">
 						{{$t(`评价`)}}</view>
@@ -84,6 +85,7 @@
 	export default {
 		computed: mapGetters(['uid']),
 		props: {
+			readOnly: { type: Boolean, default: false },
 			// 订单状态
 			statusType: {
 				type: Number,
@@ -210,11 +212,13 @@
 		},
 		methods: {
 			evaluateTap: function(unique, orderId) {
+				if (this.readOnly) return;
 				uni.navigateTo({
 					url: "/pages/goods/goods_comment_con/index?unique=" + unique + "&uni=" + orderId
 				})
 			},
 			jumpCon(item) {
+				if (this.readOnly) return;
 				if (this.jump) {
 					let url = '';
 					if (item.type == 0) {
@@ -236,17 +240,20 @@
 				}
 			},
 			logistics(order_id) {
+				if (this.readOnly) return;
 				uni.navigateTo({
 					url: '/pages/goods/goods_logistics/index?orderId=' + order_id
 				})
 			},
 			confirmOrder(orderId) {
+				if (this.readOnly) return;
 				this.$emit('confirmOrder', orderId)
 			},
 			changeOperation() {
 				this.operationModel = !this.operationModel
 			},
 			openSubcribe(item) {
+				if (this.readOnly) return;
 				let cartList = [];
 				cartList.push({
 					cart_id: item.id,

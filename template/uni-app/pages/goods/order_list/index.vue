@@ -52,6 +52,7 @@
 								<view>{{ item._add_time }}</view>
 							</view>
 							<view v-if="item.is_cancel == 1" class="font-color">{{ $t(`已取消`) }}</view>
+							<view v-else-if="isSavedMarketplaceV1(item)" class="font-color">{{ rootFulfillmentText(item.fulfillment_summary) }}</view>
 							<view v-else-if="item._status._type == 9" class="font-color">{{ $t(`线下付款,未支付`) }}</view>
 							<view v-else-if="item._status._type == 0" class="font-color">{{ $t(`待付款`) }}</view>
 							<view v-else-if="item._status._type == 1 && item.shipping_type == 1" class="font-color">
@@ -106,7 +107,8 @@
 						</view>
 					</view>
 					<view v-if="isSavedMarketplaceV1(item)" class="bottom acea-row row-between-wrapper">
-						<text class="saved-list-note">{{$t(`已保存订单，仅供查看`)}}</text>
+						<text v-if="item.fulfillment_summary" class="saved-list-note">已发 {{ item.fulfillment_summary.shipped }} / 已收 {{ item.fulfillment_summary.received }} 件 · {{ item.fulfillment_summary.child_count }} 个包裹</text>
+						<text v-else class="saved-list-note">{{$t(`已保存订单，仅供查看`)}}</text>
 						<button class="bnt bg-color saved-list-details" @tap="goOrderDetails(item.order_id)">{{$t(`查看详情`)}}</button>
 					</view>
 					<view v-else class="bottom acea-row row-right row-middle">
@@ -133,7 +135,8 @@
 				<text class="loading iconfont icon-jiazai" :hidden="loading == false"></text>
 				{{ loadTitle }}
 			</view>
-			<view v-if="orderList.length == 0">
+			<view v-if="listError" class="saved-list-error" role="alert"><text>{{ listError }}</text><button class="saved-list-retry" :disabled="loading" @tap="getOrderList">重新加载</button></view>
+			<view v-if="orderList.length == 0 && !listError">
 				<emptyPage v-if="!loading" :title="$t(`暂无订单`)"></emptyPage>
 				<view class="loadingicon acea-row row-center-wrapper">
 					<text class="loading iconfont icon-jiazai" :hidden="loading == false"></text>
@@ -157,6 +160,7 @@ import authorize from '@/components/Authorize';
 // #endif
 import emptyPage from '@/components/emptyPage.vue';
 import colors from '@/mixins/color.js';
+import { readOrderFulfillment, rootFulfillmentText } from '@/utils/marketplace-fulfillment.js';
 export default {
 	components: {
 		home,
@@ -180,12 +184,21 @@ export default {
 			pay_order_id: '',
 			totalPrice: '0',
 			initIn: false,
+			listError: '',
+			listRevision: 0,
 			isAuto: false, //没有授权的不会自动授权
 			isShowAuth: false, //是否隐藏授权
 			uid: 0
 		};
 	},
 	computed: mapGetters(['isLogin']),
+	watch: {
+		'$store.state.app.uid'() {
+			this.clearSavedOrderList();
+			if (this.isLogin) { this.onLoadFun(); this.getOrderList(); }
+		},
+		isLogin(value) { if (!value) this.clearSavedOrderList(); }
+	},
 	/**
 	 * 生命周期函数--监听页面加载
 	 */
@@ -212,6 +225,9 @@ export default {
 		// #endif
 	},
 	onShow() {
+		this.listRevision++;
+		this.loading = false;
+		this.listError = '';
 		if (this.isLogin) {
 			this.page = 1;
 			this.orderList = [];
@@ -225,6 +241,16 @@ export default {
 		}
 	},
 	methods: {
+		rootFulfillmentText,
+		clearSavedOrderList() {
+			this.listRevision++;
+			this.orderList = [];
+			this.orderData = {};
+			this.page = 1;
+			this.loadend = false;
+			this.loading = false;
+			this.listError = '';
+		},
 		isSavedMarketplaceV1(row) {
 			return !!row && (row.marketplace_trade_version === 1 || row.marketplace_trade_version === '1');
 		},
@@ -259,7 +285,9 @@ export default {
 		 */
 		getOrderData: function () {
 			let that = this;
+			const actor = this.$store.state.app.uid;
 			orderData().then((res) => {
+				if (actor !== this.$store.state.app.uid || !this.isLogin) return;
 				that.$set(that, 'orderData', res.data);
 			});
 		},
@@ -352,6 +380,9 @@ export default {
 		 */
 		statusClick: function (status) {
 			if (status == this.orderStatus) return;
+			this.listRevision++;
+			this.loading = false;
+			this.listError = '';
 			this.orderStatus = status;
 			this.loadend = false;
 			this.page = 1;
@@ -367,13 +398,20 @@ export default {
 			if (that.loading) return;
 			that.loading = true;
 			that.loadTitle = that.$t(`加载更多`);
+			that.listError = '';
+			const revision = this.listRevision;
+			const actor = this.$store.state.app.uid;
 			getOrderList({
 				type: that.orderStatus,
 				page: that.page,
 				limit: that.limit
 			})
 				.then((res) => {
-					let list = res.data || [];
+					if (revision !== this.listRevision || actor !== this.$store.state.app.uid) return;
+					if (!this.isLogin) { this.clearSavedOrderList(); return; }
+					if (!Array.isArray(res.data)) throw new Error('订单列表资料不可用');
+					const list = res.data;
+					list.forEach(row => { if (readOrderFulfillment(row).kind === 'child') throw new Error('订单列表资料不可用'); });
 					let loadend = list.length < that.limit;
 					that.orderList = that.$util.SplitArray(list, that.orderList);
 					that.$set(that, 'orderList', that.orderList);
@@ -383,6 +421,8 @@ export default {
 					that.page = that.page + 1;
 				})
 				.catch((err) => {
+					if (revision !== this.listRevision || actor !== this.$store.state.app.uid) return;
+					that.listError = typeof err === 'string' ? err : (err && err.message || '订单读取失败，请重试');
 					that.loading = false;
 					that.loadTitle = that.$t(`加载更多`);
 				});
@@ -436,6 +476,9 @@ export default {
 </script>
 
 <style scoped lang="scss">
+.saved-list-error { padding: 30rpx; background: #fff4f4; color: #9b3232; overflow-wrap: anywhere; }
+.saved-list-error > text { display: block; }
+.saved-list-retry { display: flex; align-items: center; justify-content: center; box-sizing: border-box; max-width: 100%; min-height: 44px; margin: 16rpx 0 0; padding: 10px 16px; height: auto; font-size: 28rpx; line-height: 1.4; text-align: center; white-space: normal; }
 .my-order .header {
 	height: 260rpx;
 	padding: 0 30rpx;

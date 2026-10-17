@@ -1,7 +1,11 @@
 <template>
   <div>
-    <el-drawer title="订单详情" :size="1000" :visible.sync="modals" wrapperClosable :before-close="handleClose">
-      <div v-if="orderDatalist">
+    <el-drawer class="fulfillment-drawer" title="订单详情" size="100%" :visible.sync="modals" wrapperClosable :before-close="handleClose">
+      <fulfillment-packages v-if="fulfillmentView && fulfillmentView.kind !== 'legacy' || fulfillmentLoading || fulfillmentError"
+        :view="fulfillmentView" :loading="fulfillmentLoading" :error="fulfillmentError"
+        @page-change="$emit('fulfillment-page', $event)" @retry="$emit('fulfillment-retry')" @view-package="$emit('fulfillment-package', $event)"></fulfillment-packages>
+      <div v-if="fulfillmentView && fulfillmentView.kind === 'child'" class="fulfillment-parent"><el-button class="fulfillment-control" :disabled="fulfillmentLoading || !!fulfillmentError" @click="$emit('fulfillment-parent')">查看付款订单</el-button></div>
+      <div v-if="orderDatalist && (!fulfillmentView || fulfillmentView.kind !== 'child')">
         <div class="head">
           <div class="full">
             <img class="order_icon" :src="orderImg" alt="" />
@@ -169,7 +173,7 @@
                   <div>{{ orderDatalist.orderInfo.delivery_type == 'express' ? '物流单号：' : '送货人电话：' }}</div>
                   <div class="value">
                     {{ orderDatalist.orderInfo.delivery_id }}
-                    <a v-if="orderDatalist.orderInfo.delivery_type == 'express'" v-db-click @click="openLogistics"
+                    <a v-if="!savedFulfillmentReadonly && orderDatalist.orderInfo.delivery_type == 'express'" v-db-click @click="openLogistics"
                       >物流查询</a
                     >
                   </div>
@@ -307,7 +311,7 @@
                             ? scope.row.productInfo.attrInfo.image
                             : scope.row.productInfo.image
                         "
-                        :preview-src-list="[scope.row.productInfo.attrInfo.image]"
+                        :preview-src-list="[scope.row.productInfo.attrInfo ? scope.row.productInfo.attrInfo.image : scope.row.productInfo.image]"
                       />
                     </div>
                     <div>
@@ -348,7 +352,7 @@
               </el-table-column> -->
             </el-table>
           </el-tab-pane>
-          <el-tab-pane label="订单记录" name="orderList">
+          <el-tab-pane v-if="!savedFulfillmentReadonly" label="订单记录" name="orderList">
             <el-table class="mt20" :data="recordData" v-loading="loading" empty-text="暂无数据" highlight-current-row>
               <el-table-column label="订单ID" min-width="100">
                 <template slot-scope="scope">
@@ -395,9 +399,11 @@
 </template>
 <script>
 import { getExpress } from '@/api/order';
+import fulfillmentPackages from '../components/fulfillmentPackages.vue';
 import { getOrderRecord } from '@/api/order';
 export default {
   name: 'orderDetails',
+  components: { fulfillmentPackages },
   data() {
     return {
       activeName: 'detail',
@@ -421,6 +427,9 @@ export default {
     };
   },
   props: {
+    fulfillmentView: { type: Object, default: null },
+    fulfillmentLoading: { type: Boolean, default: false },
+    fulfillmentError: { type: String, default: '' },
     orderDatalist: {
       type: Object,
       default: () => {
@@ -435,6 +444,7 @@ export default {
     },
   },
   computed: {
+    savedFulfillmentReadonly() { return !!this.fulfillmentView && this.fulfillmentView.kind !== 'legacy'; },
     savedMarketplaceV1() {
       const version=this.orderDatalist && this.orderDatalist.orderInfo && this.orderDatalist.orderInfo.marketplace_trade_version;
       return version===1 || version==='1';
@@ -455,6 +465,8 @@ export default {
     modals(val) {
       if (val) {
         this.activeName = 'detail';
+      } else {
+        this.$emit('detail-close');
       }
     },
   },
@@ -472,10 +484,12 @@ export default {
   },
   methods: {
     openLogistics() {
+      if (this.savedFulfillmentReadonly) return;
       this.getOrderData();
     },
     // 获取订单物流信息
     getOrderData() {
+      if (this.savedFulfillmentReadonly) return;
       getExpress(this.orderId)
         .then(async (res) => {
           this.result = res.data.result;
@@ -494,6 +508,7 @@ export default {
       this.modals = false;
     },
     getRecordList() {
+      if (this.savedFulfillmentReadonly) return;
       let data = {
         id: this.is_refund ? this.orderDatalist.orderInfo.store_order_id : this.orderDatalist.orderInfo.id,
         datas: this.page,
@@ -513,6 +528,10 @@ export default {
 };
 </script>
 <style lang="scss" scoped>
+.fulfillment-drawer ::v-deep .el-drawer { max-width: 1000px; }
+.fulfillment-parent { display: flex; justify-content: center; box-sizing: border-box; padding: 20px; }
+.fulfillment-control { display: flex; align-items: center; justify-content: center; box-sizing: border-box; max-width: 100%; min-width: 0; min-height: 44px; height: auto; margin: 0; padding: 10px 16px; line-height: 1.4; text-align: center; white-space: normal; }
+.fulfillment-control ::v-deep > span { display: flex; align-items: center; justify-content: center; min-width: 0; white-space: normal; text-align: center; }
 .saved-product + .saved-product { margin-top: 20px; }
 .saved-product-name { font-weight: 600; margin-bottom: 12px; overflow-wrap: anywhere; }
 .saved-field { margin-top: 12px; }

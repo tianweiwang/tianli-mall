@@ -759,6 +759,10 @@ V1 六纯 DTO 和专用 child 复用实际保存金额/数量校核及根履约�
 
 三端owned读取九PHP源码接入检查点（2026-10-18）：在失败Run独立zero0后，按原已审候选接入FulfillmentDao、SnapshotProjection、StoreOrderDao、FulfillmentServices、StoreOrderServices、WapServices与顾客/平台/移动三个既有控制器。Root此前全文读取、完整字节正逆及独立SOURCE复核保持；接入前再次核实际供体和候选，固定PHP8.2语法九件全部native0/空stderr，专用语法容器前后为空，外部20件合并语法收据15447B/`5746e06037fe073be2836eaf7d56ecaaeee379514c3e1a4dbafee564e2807bce`。六端点共用同owned RR读取完整根/items/payment/original/family/history及批读显示事实，平台详情buyer先行，child实际授权及独立分页；legacy保存原header/顺序/count后才在commit外物化原formatter，图片仍在commit外沿原引擎。此为源码及语法检查点，尚无新SQL/HTTP/DOM或六端点真实读取通过证据；原页面消费者、新五条履约API及操作表单、完整普通回归/Worker和所有原后继验收责任仍保留，不能据此勾选Task6。
 
+三端与商家只读履约UI实施采用（2026-10-18，先于接入）：采用外部 `read-fulfillment-ui-source-r2/IMPLEMENTATION-DECISIONS.md` 18456B/`9c32219954a4585968113a1122edf49832da27f59f6c3238064ef08275a5cb28` 及其1196B Root采用记录。沿原商品/规格/价格与页面工程，在旧_status/cartInfo/split消费前分legacy、V1根和真实履约child；根只读，旧根收货入口保持关闭，child平铺保存商品并分开显示父付款与包裹履约事实。顾客与移动根商品单价直接用保存cart.truePrice十进制串，平台及商家沿既有保存字段，不新增价格算法或跨工程import。独立子页保null/真0/分页/末页空及持续错误重试，当前actor/locator/revision匹配后才更新；身份变化立即清旧资料。商家只在原domain核summary11/actions2并显示数量，不据只读DTO生成新操作资格。
+
+只读UI源码接入检查点（2026-10-18）：采用外部UI R2的13件及商家3件，原R1/R2候选保持；Root完整新增/变动源码核对、实际UI157段与R1修订77段整文正逆、三个新路径缺席、商家六段正逆通过。两项有限修正另保完整raw：平台详情新SCSS的两个/deep/改为原Vue2支持的::v-deep，修复真实Dart Sass编译失败；顾客列表V1根summary=null改走已有“履约资料暂不可用”，不掉回旧状态标签，原取消优先分支不变。实际Node22及uni官方三端预处理/Vue2.6.14、平台Vue2.7源码模板、Node语法、Sass与Vue scoped CSS共31目标0错误/0tips/0重复，null修正后另聚焦3目标同样通过；商家三源解析此前实际0。外部UI检查收据15447B/`9a7c7a0d1a19afb4eb4087004c2f59a55911a6cce10c7e361a93cd58dcbf3118`与1813B/`7360c8c038df4335f0936b99de90b3401462989ba10d462bbadffc834f046c1a`；两次检查器设置失败和实际SCSS失败均保留。这些是源码/预处理检查，完整构建、真实HTTP/DOM/各尺寸反馈与真机仍未运行；五条新履约API的前端调用、发货及全部/部分收货表单、未知结果同key处理、Worker和原后继验收仍必须完成，Task6不勾选。
+
 ### Task 7: 退款额度与库存行为
 
 - 接口：申请退款时在事务中锁定订单行，校验"已退金额 + 处理中金额 + 本次金额 ≤ 实付"；三类库存行为分别写 `release`（未发货取消）、`return_in`（退货验收入库）、不写（仅退款）。

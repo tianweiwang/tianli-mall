@@ -82,7 +82,8 @@
 					</view>
 				</view>
 				<view v-if="isSavedMarketplaceV1(item)" class="operation acea-row row-between-wrapper">
-					<text class="saved-list-note">已保存订单，仅供查看</text>
+					<text v-if="item.fulfillment_summary" class="saved-list-note">已发 {{ item.fulfillment_summary.shipped }} / 已收 {{ item.fulfillment_summary.received }} 件 · {{ item.fulfillment_summary.child_count }} 个包裹</text>
+					<text v-else class="saved-list-note">履约资料暂不可用</text>
 					<button class="bnt saved-list-details" @tap="toDetail(item)">查看详情</button>
 				</view>
 				<view v-else class="operation acea-row row-between-wrapper">
@@ -111,10 +112,11 @@
 				</view>
 				</view>
 			</view>
-			<view v-else class="px-20 mt-20 empty-wrapper">
+			<view v-else-if="!loading && !listError" class="px-20 mt-20 empty-wrapper">
 				<emptyPage title="暂无订单～" src="/statics/images/noOrder.gif"></emptyPage>
 			</view>
 		</scroll-view>
+		<view v-if="listError" class="saved-list-error" role="alert"><text>{{ listError }}</text><button class="saved-list-retry" :disabled="loading" @tap="getIndex">重新加载</button></view>
 		<Loading :loaded="loaded" :loading="loading"></Loading>
 		<PriceChange v-if="!isSavedMarketplaceV1(orderInfo)" :change="change" :orderInfo="orderInfo" :isRefund="isRefund" v-on:statusChange="statusChange($event)" v-on:closechange="changeclose($event)" v-on:savePrice="savePrice"
 			:status="status"></PriceChange>
@@ -170,6 +172,7 @@
 	// import {
 	// 	erpConfig
 	// } from "@/api/esp.js";
+	import { readOrderFulfillment } from '@/utils/marketplace-fulfillment.js';
 	import Loading from '@/components/Loading/index'
 	import PriceChange from '../components/PriceChange/index.vue'
 	import footerPage from '../components/footerPage/index.vue'
@@ -221,6 +224,8 @@
 				list: [],
 				loaded: false,
 				loading: false,
+				listError: '',
+				listRevision: 0,
 				orderInfo: {},
 				status: "",
 				state: -1,
@@ -273,6 +278,17 @@
 				confirmShow: false,
 			};
 		},
+		computed: {
+			marketplaceReadActor() { return String(this.$store.state.app.uid) + ':' + String(this.$store.state.app.identity); },
+			marketplaceLoggedIn() { return this.$store.getters.isLogin; }
+		},
+		watch: {
+			marketplaceReadActor() {
+				this.clearSavedOrderList();
+				if (this.marketplaceLoggedIn) this.getIndex();
+			},
+			marketplaceLoggedIn(value) { if (!value) this.clearSavedOrderList(); }
+		},
 		onLoad(option) {
 			let type = option.types;
 			this.where.status = type || '';
@@ -304,6 +320,18 @@
 			}).exec();
 		},
 		methods: {
+			clearSavedOrderList() {
+				this.listRevision++;
+				this.list = [];
+				this.where.page = 1;
+				this.loaded = false;
+				this.loading = false;
+				this.listError = '';
+				this.orderInfo = {};
+				this.confirmOrder = {};
+				this.confirmShow = false;
+				this.change = false;
+			},
 			isSavedMarketplaceV1(row) {
 				return !!row && (row.marketplace_trade_version === 1 || row.marketplace_trade_version === '1');
 			},
@@ -353,31 +381,32 @@
 			},
 			// 获取数据
 			getIndex: function() {
-				let that = this;
-				if (that.loading || that.loaded) return;
-				that.loading = true;
-				let obj = '';
-				if (this.where.status == -3) {
-					obj = adminRefundList(that.where);
-				} else {
-					obj = getAdminOrderList(that.where);
-				}
-				obj.then(
-					res => {
-						that.loading = false;
-						that.loaded = res.data.length < that.where.limit;
-						that.list.push.apply(that.list, res.data);
-						that.where.page = that.where.page + 1;
-					},
-					err => {
-						that.$util.Tips({
-							title: err
-						})
-					}
-				);
+				if (this.loading || this.loaded) return;
+				this.loading = true;
+				this.listError = '';
+				const revision = this.listRevision;
+				const actor = this.marketplaceReadActor;
+				const refund = this.where.status == -3;
+				const request = refund ? adminRefundList(this.where) : getAdminOrderList(this.where);
+				request.then(res => {
+					if (revision !== this.listRevision || actor !== this.marketplaceReadActor) return;
+					if (!this.marketplaceLoggedIn) { this.clearSavedOrderList(); return; }
+					if (!Array.isArray(res.data)) throw new Error('订单列表资料不可用');
+					if (!refund) res.data.forEach(row => { if (readOrderFulfillment(row).kind === 'child') throw new Error('订单列表资料不可用'); });
+					this.loaded = res.data.length < this.where.limit;
+					this.list = this.list.concat(res.data);
+					this.where.page++;
+					this.loading = false;
+				}).catch(err => {
+					if (revision !== this.listRevision || actor !== this.marketplaceReadActor) return;
+					this.loading = false;
+					this.listError = typeof err === 'string' ? err : (err && err.message || '订单读取失败，请重试');
+				});
 			},
 			// 初始化
 			init: function() {
+				this.listRevision++;
+				this.listError = '';
 				this.list = [];
 				this.where.page = 1;
 				this.loaded = false;
@@ -606,6 +635,9 @@
 </script>
 
 <style lang="scss" scoped>
+.saved-list-error { padding: 30rpx; background: #fff4f4; color: #9b3232; overflow-wrap: anywhere; }
+.saved-list-error > text { display: block; }
+.saved-list-retry { display: flex; align-items: center; justify-content: center; box-sizing: border-box; max-width: 100%; min-height: 44px; height: auto; margin: 16rpx 0 0; padding: 10px 16px; font-size: 28rpx; line-height: 1.4; text-align: center; white-space: normal; }
 	.saved-list-note { color: #666; font-size: 24rpx; line-height: 1.5; }
 	.saved-list-money { font-size: 32rpx; }
 	.pos-order-list .list .item .operation .saved-list-details {
