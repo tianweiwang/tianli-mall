@@ -215,3 +215,27 @@ Main两份H5接线及此前记录已本地提交 `fe9d4bc4e7357e206c0cdcfde01ef7
 Root全文采用partial目录的 `UI-EVIDENCE-ADDENDUM.md` 5490B/`991024fffe18f47d1c0da72174911551e8e36fccd6c61baa242bfaaf1c112eee`，独立SOURCE审阅通过，补充已采用DESIGN。三份create-only UTF-8 JSON是Root真实工具调用的安全投影：完整共同Run/source/freeze/serve及UI CID/context/binding/browser/tab身份；实际毫秒时间；同tab原始尺寸、真实viewport.reset返回undefined及后读回相等；实际tab.close返回undefined；随后新发browser.tabs.list的ID-only安全投影且目标缺失。三原件完整bytes/hash在Root观察绑定，close和独立zero各自重读、核exact shape与身份时间顺序，不能只信摘要或布尔值。空白页探测的尺寸/ID/时间不写入商城证据；不冒称工具原生JSON、native0或不存在的raw body，不持久化URL/title/凭据。
 
 partial来源由真实DESIGN/本附录/两个脚本四descriptor绑定，不用循环SHA常量，不扩原二十artifact。Root此时未操作商城页面、新Run或收据；上述采用先于依赖它的UI consumer实施，完整B3/Final/27capture、商家/独立paid/履约售后/历史/金融/发布及停止样本状态均保持。下一步先记录新clean来源并生成实际材料与freeze；原partial脚本仍须独立审源和必要解析通过后才可开始新实例。
+
+### 材料producer引用过时构建的实际诊断与实施依据
+
+实际 `h5-materialize-native-r1.json` 1080B/`967c9f7f40147991fa7410f9e7e99ce7bb945f425f29a47dde6d1fcc406362d2` 保存原PID10064、11:53:06.797208Z至11:53:33.978427Z、native1及完整双流；stderr1177B/`25c84e573790f64d98dec49bf64a2d5428d9d31bdca261b776dfe03d92496767`，失败点为当前545源码blob与旧38a14构建不符。四个create-only材料目标实际全部不存在，Main仍clean9c5ac646，未启动App/SQL/HTTP/DOM或任何Run。首次PowerShell解释器路径选择得到多路径数组，尚未启动producer即失败；改用实际Python314单一路径后的这次native1为真实producer结果，不将两者混记为业务失败或成功。
+
+Root只读诊断确认旧构建差异仅 `template/uni-app/pages/goods/order_details/index.vue`，正是原八文件保存测试付款文案增量。原记录 `saved-test-payment-consumers.md` 已有真实较新构建 `artifacts/ms4-h5/pay-uni-af0-r1`；Root重核该3815B BUILD-REPORT完整SHA `fc358a6a9514b7ef2db2cf52d101b0b639a4c0386b306b68471eb60619411d51`、原HEAD `af0bcd9c7e46d17609461fb0df2620c62d6b2a52`、13项实际references，以及当前545全部路径/blob/字节和该build/source副本完全一致。诊断收据 `h5-current-build-source-diagnosis-r1.json` 2811B/`80617ee639786f213d1a3b1abe5c0c0cb970009a6b13268938765ba4cccee56e`；此时尚未宣称双工具树或dist全核通过。
+
+采用最小修正：仅新profile的 `ms4-h5-materials.py` 三个常量BUILD/BUILD_REPORT_SHA/OLD_HEAD分别引用上述真实目录/报告/hash与原HEAD；其余完整校验正文和供体旧文件保持。新P的说明/derivation须把旧nested pin标作历史，并记录实际采用的af0来源，不能把原编译HEAD改成当前Main。Root核三替换完整逆回及独立SOURCE后，再用本记录提交后的真实clean HEAD启动新的create-only材料producer；全545路径/blob/字节、两套完整29930工具树、Node/原helper、adapter/compiler回执、全部dist/空目录和批准输入均须仍按原检查实际通过，再核新receipt.source_sha/build_reuse.current_head。旧native1全保留，修正不改变业务、UI/full验收、停止样本或原09唯一清单。
+
+新producer现为9908B/`4d0940a446c309320ee4922edc72d78e1a02d4303afab2af19e57621aa489eed`，三处唯一常量替换全文逆回原9921B/332c0d29…，独立SOURCE及Root AST/compile通过。P内两README仅前置实际采用说明，历史正文完整保留；derivation改历史键名、加实际来源段及有限84行CRLF→LF，按原换行序号可全文逆回。四文件采用收据 `source-checks-h5-build-adoption-r1.json` 3222B/`119780c9dffc62bc7f243ded01d7b4502b686af4b38adee06cb15f8d7f11dab9`，七组文字变化加一组换行归一，不增加运行gate。初次说明生成器在发现旧JSON混合换行时停止，随后只从两已完成的精确README字节继续完成该有限变换，旧供体/失败producer/四材料不存在事实保持；不是重跑业务。
+
+### B0–B2 partial pair源码与解析检查点
+
+最终外部close53564B/`e85c46c0b4fa2bf1d873afad9cebe4af35e69b5228b87b5a021b97dbb9eec193`、zero141570B/`eeb7001b54d04e542156af3e3e9fb45975d8f2386a5ae77fa2b34f44f3d922b1`独立SOURCE复核通过。原三stage producer不改；新capture消费者按本stage真实request_id关联原network、B1 user及B2完整集合，保正常config GET；UI整数schema、原三ACK bool/int精确类型与完整对象比较均核。Root实际读取完整非截断replacement数据，6组close全文逆回R6、4组zero全文逆回已审full zero，AST/compile、22/68顶层定义唯一、六个明确在close内从已审full源绑定的global helper及其余名称检查通过。最初检查器未计这六个真实函数内global赋值而报未解析，Root按实际赋值和供体定义修正检查器，候选未因此改写。
+
+两个真实 `--help` 子进程native0/stderr空，前后候选及供体字节保持，Root收据 `source-checks-h5-partial-pair-r1.json` 5223B/`7501877e0beb99d03b52fa695f7a4893993e6b693096faa64cab9a9aeb67ced3`。来源说明10629B/`7b44e8da7cb1dce8bebb27f056e7e8fdeb8f77f8776e6554390e2ae5d549407c`及replacement161569B/`0c023261845d63e5b8507a1119ae8ebb524a60c92bd2137dd67d8e6ad2b568a5`保全。仅SOURCE/PARSE/HELP；没有启动新H5 Run、实际Root UI操作或执行partial close/zero，原full B3/Final/27capture、HTTP/DOM与完整商城验收仍未完成。
+
+### 独立已付消费者producer设计采用
+
+Root全文审原R1与R2六组完整文字差异，采用 `artifacts/ms5-payment-consumer-preparation/paid-consumer-source-r1/DESIGN-r2.md` 24533B/`537d3e49a1023e3d1a28f62f1c915e1ac533df4213dd8fdafb66b2fc7c32561d`，原R1保持。六组forward/inverse全文相等的Root收据 `source-checks-paid-design-r2.json` 393B/`bd597bbd63dba15ddaeb38ed35e3d5d3ece13cae9e15a2a089679ce5d1b46f5f`；原独立评审指出的public tmpfs材料初始化与平台第三端责任均显式补入，未扩 `/api/user` 写字段allowlist。
+
+沿原Task2先在仓库外编写唯一 `ms5-paid-consumer-normal.php` 候选，尚不把未审候选写Main。新paid独立role/proof/argv、自己的十三键binding与paid_source_*明确含专属第10extra；普通原九extra、C3实际原十三键/entryhash及原未付/H5/商家夹具保持。真实public材料先于父唯一App/身份HTTP child，POST login后只从真实GET/user核buyer UID，正常停止同child后父App同Connection/PDO/factory原driver完成真实cart→confirm→create/G0→test account/create→原六键descriptor complete→query持久winner/application。独立PDO完整27+7原生封存保持BINARY/U64/JSON/NULL类型及原codec/私有字节权限上界；不造UID/JWT、付款SQL、假scope或跨进程driver状态，不新增测试付款HTTP API。
+
+后继三端消费者仍须分别真实鉴权及API/DOM证据：顾客本人、商家真实mer context、平台adminapi order_info/tidyOrder与admin详情测试金额文案；不把两端或源码构建记为三端完成。原未付链、原H5/商家全部视觉责任、持久履约/收货/售后退款、非空历史、真实金融及发布验收保留，已停止样本不恢复。本采用先于paid候选实施，当前没有新entry实现/paid Run或baseline，后续SOURCE/PARSE/producer/封存/HTTP/DOM/正常关闭和独立核零分别取证，不新建第二执行清单。
