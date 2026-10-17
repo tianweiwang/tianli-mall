@@ -706,6 +706,9 @@ Out/客服/移动旧读取边界实施采用（2026-10-18）：Root全文采用 
 
 完整家族读取源码实际应用（2026-10-18）：上述R2合同的两原文件有限插入已独立全文复核，Root实际全文正逆及固定PHP8.2两语法均0。FulfillmentDao57056B/`50271c6f531a0a076a3f386cceec7f0457817057d0dd2cf09540a6d543b9941e`在同原PDO/Connection门内读取六种完整家族集合，子查询绑定最多202；同页已探表时包括全部roots上的实际op/range，日志重复保留，首末readiness相等才返回。退款列按真实MS4兼容迁移核，保真实mer_id/mode，不把原安装DDL当当前schema。Service57219B/`f3f1687773eee41aeb9217689aa6017e1ab78eda244c1d49b5a35f83de5905af`只新增六参数纯readHistoryFromFacts，核真实付款observation/根及原创建来源，直接原paid→history；原writer/summary/三digest/算法及所有旧方法字节保持。本项已本地应用，未执行新SQL、建立读事务或开启路由/Worker；完整ownedRead/基础selector/DTO/三端首次查询分流、实际迁移/发货收货/API/DOM及Task7仍待，未宣称实际履约通过。
 
+
+商家自有读取源码实际接线（2026-10-18）：在上述完整family源上叠加 `read-merchant-snapshot-source-r2` 四候选，真实MerchantOrderServices列表/详情现在委托同一FulfillmentServices业务入口。原order.read fresh授权先于参数解析，order.ship只实际判断一次并仅明确Forbidden转false；原三filter、id DESC、同快照count/list、404及原基础merchantOrder字段/规格/价格保持。原PDO next-only SET RR READ ONLY→begin→完整原生根/项及已付事实/family→原history/纯DTO→末结构观察→一次commit后发布，无段内ORM、外部回调或DML；已有调用者事务不接管，异常只清本段捕获PDO/连接，未知结果不回部分数据。wire仅加真实fulfillment_summary及allowed_actions，root.receive永远false，未付/pending不造空history；缺口R1已保留，R2仅按原paymentCollection补已读取的未付pay_time必须0、trade_no必须空，不给未付强制winner/MS5门。独立SOURCE R2通过，Root四源完整正逆和固定PHP8.2四语法实际0。四最终源分别Service70139B/`ceb7915dc8694cadf1deb6410b83dd9900a83ce65e04efbfb88586940d2153b4`、DAO62702B/`d070f4bdcc606aed9ca2f092b7d10680c8c02a6fbe49d03cb72f097373192d1c`、Projection23899B/`b46ea64a639994352b895c627a9c4619f9fe51e3f4483ecfbd0d028ff6ebd179`、MerchantServices659B/`4426524f36186c33a711ffc16b74573f897bd0271c4aebf9e3b4918305547fa9`。这是本地产品接线及语法检查，真实MySQL next-only/RR/实际商家API/DOM尚未运行；原正常fixture需按已采用新增两wire字段同源接线再实测，不据源码宣称通过。顾客/平台/移动完整读取、child DTO/分页、实际履约两表迁移/分批发货/多次收货、Worker及Task7/金融/历史/发布仍沿原清单保留。
+
 ### Task 7: 退款额度与库存行为
 
 - 接口：申请退款时在事务中锁定订单行，校验"已退金额 + 处理中金额 + 本次金额 ≤ 实付"；三类库存行为分别写 `release`（未发货取消）、`return_in`（退货验收入库）、不写（仅退款）。

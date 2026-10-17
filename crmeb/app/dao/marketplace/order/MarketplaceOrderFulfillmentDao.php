@@ -245,6 +245,87 @@ final class MarketplaceOrderFulfillmentDao
         return $rows;
     }
 
+    /** Original merchant predicates, count and saved headers in the same caller-owned native snapshot. */
+    public function readMerchantRootPage(ConnectionInterface $connection,PDO $pdo,int $merId,array $filter,int $page,int $limit):array
+    {
+        $this->readStructureConnection($connection,$pdo);self::integer($merId,1,self::UINT_MAX);
+        $input=\app\services\marketplace\order\MerchantOrderInput::listing($filter+['page'=>$page,'limit'=>$limit]);
+        if($input['filter']!==$filter||$input['page']!==$page||$input['limit']!==$limit)self::unavailable();
+        $where='`marketplace_trade_version`=1 AND `pid`=0 AND `is_system_del`=0 AND `mer_id`=?';$parameters=[$merId];
+        foreach($filter as$key=>$value){
+            if(!in_array($key,['order_id','paid','is_cancel'],true))self::unavailable();
+            $where.=' AND '.self::quote($key).'=?';$parameters[]=$value;
+        }
+        $rows=$this->merchantSnapshotRows($connection,$pdo,'SELECT COUNT(*) AS aggregate FROM '.$this->table('store_order').' WHERE '.$where,$parameters);
+        if(count($rows)!==1)self::unavailable();self::keys($rows[0],['aggregate']);$count=self::integer($rows[0]['aggregate'],0,self::UINT_MAX);
+        $rows=$this->merchantSnapshotRows($connection,$pdo,'SELECT * FROM '.$this->table('store_order').' WHERE '.$where.
+            ' ORDER BY `id` DESC LIMIT ? OFFSET ?',array_merge($parameters,[$limit,($page-1)*$limit]));
+        $seen=[];$last=null;
+        foreach($rows as$row){
+            $id=$this->merchantReadRoot($row,$merId);
+            if(isset($seen[$id])||($last!==null&&$id>=$last))self::unavailable();$seen[$id]=true;$last=$id;
+        }
+        if(count($rows)>$limit||count($rows)>$count)self::unavailable();
+        $this->readStructureConnection($connection,$pdo);return ['list'=>$rows,'count'=>$count];
+    }
+
+    public function readMerchantRoot(ConnectionInterface $connection,PDO $pdo,int $merId,int $rootId):array
+    {
+        self::integer($merId,1,self::UINT_MAX);self::integer($rootId,1,self::INT_MAX);
+        $rows=$this->merchantSnapshotRows($connection,$pdo,'SELECT * FROM '.$this->table('store_order').
+            ' WHERE `id`=? AND `marketplace_trade_version`=1 AND `pid`=0 AND `is_system_del`=0 AND `mer_id`=? LIMIT 2',[$rootId,$merId]);
+        if($rows===[])throw new \crmeb\exceptions\MerchantNotFoundException();
+        if(count($rows)!==1||$this->merchantReadRoot($rows[0],$merId)!==$rootId)self::unavailable();return $rows[0];
+    }
+
+    /** All original items for the verified root page; do not filter out a broken saved owner. */
+    public function readMerchantRootItems(ConnectionInterface $connection,PDO $pdo,int $merId,array $roots):array
+    {
+        $this->readStructureConnection($connection,$pdo);self::integer($merId,1,self::UINT_MAX);
+        if(!array_is_list($roots)||count($roots)>100)self::unavailable();$items=[];$owners=[];
+        foreach($roots as$root){
+            if(!is_array($root))self::unavailable();$id=$this->merchantReadRoot($root,$merId);
+            if(isset($items[$id]))self::unavailable();$items[$id]=[];$owners[$id]=self::integer($root['uid'],1,self::INT_MAX);
+        }
+        if($items===[]){$this->readStructureConnection($connection,$pdo);return [];}
+        $ids=array_keys($items);sort($ids,SORT_NUMERIC);
+        $rows=$this->merchantSnapshotRows($connection,$pdo,'SELECT * FROM '.$this->table('store_order_cart_info').
+            ' WHERE `oid` IN ('.implode(',',array_fill(0,count($ids),'?')).') ORDER BY `oid`,`id`',$ids);
+        $seen=[];$lastOid=0;$lastItem=0;
+        foreach($rows as$row){
+            $id=self::integer($row['id']??null,1,self::INT_MAX);$oid=self::integer($row['oid']??null,1,self::INT_MAX);
+            if(!isset($items[$oid])||isset($seen[$id])||$oid<$lastOid||($oid===$lastOid&&$id<=$lastItem))self::unavailable();
+            self::stored($row,['uid'=>$owners[$oid],'mer_id'=>$merId]);$items[$oid][]=$row;
+            if(count($items[$oid])>500)self::unavailable();$seen[$id]=true;$lastOid=$oid;$lastItem=$id;
+        }
+        foreach($items as$rows)if($rows===[])self::unavailable();
+        $this->readStructureConnection($connection,$pdo);return $items;
+    }
+
+    private function merchantReadRoot(array $root,int $merId):int
+    {
+        foreach($root as$value)if($value!==null&&!is_int($value)&&!is_string($value))self::unavailable();
+        self::stored($root,['mer_id'=>$merId,'marketplace_trade_version'=>1,'pid'=>0,'is_system_del'=>0]);
+        self::integer($root['uid']??null,1,self::INT_MAX);self::text($root['order_id']??null,32,true);
+        return self::integer($root['id']??null,1,self::INT_MAX);
+    }
+
+    private function merchantSnapshotRows(ConnectionInterface $connection,PDO $pdo,string $sql,array $parameters):array
+    {
+        $this->readStructureConnection($connection,$pdo);
+        if(!array_is_list($parameters)||count($parameters)>100)self::unavailable();
+        $statement=$this->query($pdo,$sql,$parameters);$rows=null;$failure=null;$closed=false;
+        try{$rows=$statement->fetchAll(PDO::FETCH_ASSOC);}catch(Throwable $error){$failure=$error;}
+        try{$closed=$statement->closeCursor();}catch(Throwable $error){if($failure===null)$failure=$error;}
+        unset($statement);$this->readStructureConnection($connection,$pdo);
+        if($failure!==null)throw $failure;
+        if($closed!==true||!is_array($rows)||!array_is_list($rows))self::unavailable();
+        foreach($rows as$row){
+            if(!is_array($row))self::unavailable();foreach($row as$value)if($value!==null&&!is_int($value)&&!is_string($value))self::unavailable();
+        }
+        return $rows;
+    }
+
     public function merchantCandidate(PDO $pdo,int $id,int $merId):array
     {
         $this->native($pdo,false);

@@ -249,6 +249,25 @@ final class MarketplaceOrderSnapshotProjection
         return $out;
     }
 
+    /** Checked current root extension only; no raw family, actor, payment or reserve facts leave this DTO. */
+    public static function merchantOrderWithFulfillment(array $saved,array $items,?array $summary,array $actions,bool $detail=false):array
+    {
+        $out=self::merchantOrder($saved,$items,$detail);
+        if(array_keys($actions)!==['ship','receive']||!is_bool($actions['ship'])||$actions['receive']!==false)self::unavailable();
+        if($summary===null){if($actions['ship']!==false)self::unavailable();}
+        else{
+            if(array_keys($summary)!==['shipping_state','receipt_state','closed','original','shipped','received',
+                'cancelled_unshipped','returned_accepted','to_ship','to_receive','child_count']
+                ||!in_array($summary['shipping_state'],['unshipped','partial','shipped'],true)
+                ||!in_array($summary['receipt_state'],['not_shipped','pending','partial','received'],true)
+                ||!is_bool($summary['closed']))self::unavailable();
+            foreach(['original','shipped','received','cancelled_unshipped','returned_accepted','to_ship','to_receive','child_count'] as$key)
+                if(!is_int($summary[$key])||$summary[$key]<0||$summary[$key]>4294967295)self::unavailable();
+            if($summary['original']!==$out['total_num']||$summary['cancelled_unshipped']!==0||$summary['returned_accepted']!==0)self::unavailable();
+        }
+        $out['fulfillment_summary']=$summary;$out['allowed_actions']=$actions;return $out;
+    }
+
     /** Public subset of a checked pure plan; complete saved root/items must be supplied, never just the selected rows. */
     public static function fulfillmentPlan(array $savedRoot,array $savedItems,array $plan):array
     {
