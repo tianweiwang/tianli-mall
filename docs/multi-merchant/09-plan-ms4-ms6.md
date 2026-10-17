@@ -713,6 +713,8 @@ R7实际结果（2026-10-16，详见03）：clean `a74f2b27275229dcb089581039dc3
 
 2026-10-17 Main顾客H5最新完整构建与静态资源门真实通过：clean af0bcd9c7e46d17609461fb0df2620c62d6b2a52，完整545源、29930离线工具前后保持，原两pass均无errors，334产物/10380318B，结果摘要fc358a6a9514b7ef2db2cf52d101b0b639a4c0386b306b68471eb60619411d51；详见保存测试付款消费者记录。商家完整构建先前通过；平台完整构建、实际27/34/25消费者/API/DOM及完整MS4/履约/售后/真实金融/发布仍未完成，停止样本不运行。
 
+2026-10-17 AUX内部两producer测试付款已在新Run202610170434553aa79a实际通过并正常关闭/独立核零0，原结果摘要4c5acecd20209d7bb2327c8ebb2ea3acc3de6b965689af154dea204146bc0dd4；详见核心整合记录的证据范围。Main产品源码整合已完成，Main真实gate/完整原M4及27/H5 34/商家25/API/DOM仍待，不以AUX测试或H5构建替代；真实履约/售后/金融/历史/发布范围保留。
+
 ### Task 3: 收款账户
 
 - 表 `eb_marketplace_payment_account(id, mer_id, channel, account_ref, version, status, verified_at, add_time)`；`account_ref` 只保存配置引用，不保存密钥明文。订单发起支付时把账户 ID 与版本写入支付尝试记录，之后不可更改。
