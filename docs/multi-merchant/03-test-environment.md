@@ -219,6 +219,8 @@ Root与独立 SOURCE 审查确认原因是共享商家 oracle 漏读已批准的
 
 顾客MS5前置适配SOURCE/PARSE（2026-10-17）：Main原顾客入口和shared已接同源9＋4/一次files-bootstrap、13键binding、12/15前置hash、六项真实ENV及27表G0出生读回，保原12HTTP和同一child监督；独立SOURCE PASS。仓库外新顾客profile `ms5-payment-consumer-preparation/candidate-customer-http-r1` 的host76625B/`c9c130efc42894090b7e07cd53a0e27ae13e01221b7c9d91ff0dbf2bf0ceb4a3`、initializer57617B/`b370d9ea1b032113f4884b6802b1dc35a40dfc73559d548828d89a247394c33b`及compose/interface亦独立SOURCE PASS；旧版本和证据不改。三个PHP在固定8.2.33/no-network/只读来源/tmpfs中语法实际0，host/close/zero的AST与help实际0，检查摘要 `a8169b9ad18a0a65c70ab7b228e6e90f99cadee012ac742370670de8c2e8636e` / `0cc5b13f359db428453ab32e8e6dd9222269fa7db6f783248bf4c5d6d1ce09f5`。close/zero亦独立SOURCE PASS，新业务Run尚未启动；不作为12HTTP、正常关闭/独立核零、DOM或付款验收，详见核心记录的顾客检查点。
 
+顾客files-bootstrap实际失败与正常关闭（2026-10-17）：clean Main `95bbd14f38b04f4d57ede24cebcedf6bfb8c8a7e`、Run `20261017080054d24516`的九初始化/四MS5 CLI完整实际0；files原CID真实1，诊断CUSTOMER_EXACT_PHASE_MANIFEST，专用files migrator/customer prepare/12HTTP未启动。原因是新consumer错误要求临时files helper出现在正式manifest；原host实际保持MS5 driver正式清单不变。原FAIL/冻结来源未改，本Run按固定677原件/原3CID1网6卷正常关闭，两stop同CLI实际0，关闭结果 `ad6c44953603a76dd7c0a5b66bdf21c0ec051f54600e103227496d8ed9124bb9`、独立六raw/全局无消费者核零 `64e2c10d9c62d6fac3460581ab30d3c489494200c596a1339522820902ef1201`均实际native0，仍标FAILURE_PRESERVED。Main只在zero0后解冻。新独立R2严格分开原formal与真实files-created/gate身份，SOURCE/逆回/PHP语法通过，future profile已同源派生但未冻结/运行；下一新空库仍须完整9＋4/files/prepare/原12HTTP，不计业务或DOM通过。完整原因、来源与后继见core。
+
 ## 3. ISO-MIN 环境（MS0a 交付）
 
 ### 3.1 文件

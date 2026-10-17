@@ -723,6 +723,8 @@ R7实际结果（2026-10-16，详见03）：clean `a74f2b27275229dcb089581039dc3
 
 2026-10-17 顾客后继SOURCE/PARSE检查点：已按core有限接Main原entry与shared，实际27表/完整G0/原12HTTP保持，新9＋4/一次files-bootstrap、13键binding、12/15前置hash、六真实ENV和同一child合同已接。独立SOURCE审查通过；固定PHP语法及新profile/close/zero的AST/help实际0，仓库外两收据摘要 `a8169b9ad18a0a65c70ab7b228e6e90f99cadee012ac742370670de8c2e8636e` / `0cc5b13f359db428453ab32e8e6dd9222269fa7db6f783248bf4c5d6d1ce09f5`。新正常close/独立zero亦独立SOURCE PASS，新顾客Run未启动；继续本Task2，不勾选原12HTTP/H5 34/商家25、paid API/DOM或其余履约售后、金融、历史及发布任务。范围、来源和保留项见03/core。
 
+顾客files-bootstrap实际失败与正常关闭（2026-10-17）：clean Main `95bbd14f38b04f4d57ede24cebcedf6bfb8c8a7e`、Run `20261017080054d24516`的九初始化/四MS5 CLI完整实际0；files原CID真实1，诊断CUSTOMER_EXACT_PHASE_MANIFEST，专用files migrator/customer prepare/12HTTP未启动。原因是新consumer错误要求临时files helper出现在正式manifest；原host实际保持MS5 driver正式清单不变。原FAIL/冻结来源未改，本Run按固定677原件/原3CID1网6卷正常关闭，两stop同CLI实际0，关闭结果 `ad6c44953603a76dd7c0a5b66bdf21c0ec051f54600e103227496d8ed9124bb9`、独立六raw/全局无消费者核零 `64e2c10d9c62d6fac3460581ab30d3c489494200c596a1339522820902ef1201`均实际native0，仍标FAILURE_PRESERVED。Main只在zero0后解冻。新独立R2严格分开原formal与真实files-created/gate身份，SOURCE/逆回/PHP语法通过，future profile已同源派生但未冻结/运行；下一新空库仍须完整9＋4/files/prepare/原12HTTP，不计业务或DOM通过。完整原因、来源与后继见core。 继续本Task2，原H5 34/商家25、paid API/DOM及其余未验项不勾选。
+
 ### Task 3: 收款账户
 
 - 表 `eb_marketplace_payment_account(id, mer_id, channel, account_ref, version, status, verified_at, add_time)`；`account_ref` 只保存配置引用，不保存密钥明文。订单发起支付时把账户 ID 与版本写入支付尝试记录，之后不可更改。
