@@ -751,6 +751,10 @@ Out/客服/移动旧读取边界实施采用（2026-10-18）：Root全文采用 
 
 V1 六纯 DTO 和专用 child 复用实际保存金额/数量校核及根履约扩展，legacy 使用同 snapshot 已选 header/原顺序/count，成功 commit 后才按原 Model 关系/formatter 物化，明确旧缓存、关联和图片不冒充同 RR。图片沿原引擎成功后处理，不能进事务；paid/history 仍原 normal 域，不伪改删除态或 catch 成空摘要。V1 详情用独立 `fulfillment_children {page,limit,count,list}` 取代旧 split，parent 保存付款事实与 child 履约事实分开，根 receive 始终 false。Root/独立源码盘点已确认顾客旧 split/orderGoods、平台详情、移动详情及商家 domain 仍无新字段消费者，顾客 `!split.length` 与根号回退会误导根收货，必须同步分流及接入真实包裹分页，不能仅删后端字段。最小产品范围为 FulfillmentServices/Facts DAO/SnapshotProjection、StoreOrderServices/StoreOrderDao/WapServices、三控制器六 caller 及原已列页面/封装；候选在仓库外分工准备，Main 在真实隔离 Run 关闭并独立核零前保持冻结。本设计尚未编码/运行接线，不签收 Task6；真实发货收货、三端及商家 API/DOM、Worker、售后退款、评价、历史、金融、发布与停止样本全部原责任保持。
 
+普通履约首轮失败与收尾（2026-10-18）：clean `cf3138f601f549c8e2bb4ceb08aab5e3f6719819`、Run `202610172227139806f6` 的原9 initializer、4 MS5 CLI、files/C3 与真实 paid 前置均正常退出0；履约迁移在 source 阶段自然退出1，未创建私有迁移配置、未执行四个DDL子命令，履约业务未启动。确定源码缺陷是迁移 predecessor 读取者向原26键Docker terminal索取不存在的 run_id/source_sha；修复仅改用已完整摘要绑定的原terminal与created的真实id/image/labels对应，保留created的run/source及全部付款前置检查。另独立发现履约业务入口三处TASK6标签误投给只接受M4C前缀的断言接收器，仅改为原m4fn_expect，原条件和标签不动；此项未在该Run执行，不能归为本次实际失败原因。两修复已整文逆回、独立SOURCE复核和固定PHP8.2语法0，后继新Run仍须验证。
+
+原失败按专用已审close/independentzero实际收口：两数据库各一次正常停止且容器退出0/PID0，paid自然0及migration自然1保持；非force精确删除原4CID/1内网/6卷。两工具均真实native0/空stderr，六次fresh资源查询双流全空，前后各53个现存容器扫描均无原资源消费者；关闭结果摘要`183c60335357b247f148eedbc7f2d104c49d3d3f269c9b7903966eca16419c7a`，独立核零`8f231d252fad6c733cc5133d7ec80aefc2d3307eeef8f671b444661b19b51c36`。原4291份公开原件、原P/freeze和失败均保全，仅独立zero0后解冻Main；不重开旧Run，不把资源收尾升级为业务通过。详见[首轮履约来源校验失败记录](records/ms4/fulfillment-migration-source-failure.md)。发货/收货、三端API/DOM、Worker、Task7与全部原后继范围仍未验收，停止样本保持NOT RUN。
+
 ### Task 7: 退款额度与库存行为
 
 - 接口：申请退款时在事务中锁定订单行，校验"已退金额 + 处理中金额 + 本次金额 ≤ 实付"；三类库存行为分别写 `release`（未发货取消）、`return_in`（退货验收入库）、不写（仅退款）。

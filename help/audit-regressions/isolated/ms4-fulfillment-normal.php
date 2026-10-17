@@ -111,13 +111,13 @@ function m4fn_source(): array
         &&$manifest['project']===$context['project']&&$manifest['isolation']==='ISO-FULL'
         &&$manifest['guard_mode']==='read-only'&&$manifest['network_internal']===true,'M4C_SAME_REAL_ISOLATION_SOURCE');
     $roles=array_keys($manifest['services']);sort($roles,SORT_STRING);$wanted=[$rule['role'],'audit-ms5-paid-producer','audit-mysql','audit-redis'];sort($wanted,SORT_STRING);
-    m4c_expect($roles===$wanted&&is_string($cid)&&preg_match('/\A[a-f0-9]{64}\z/D',$cid)===1
+    m4fn_expect($roles===$wanted&&is_string($cid)&&preg_match('/\A[a-f0-9]{64}\z/D',$cid)===1
         &&$manifest['services'][$rule['role']]['id']===$cid&&gethostname()===substr($cid,0,12),'TASK6_ONLY_FOUR_ACTUAL_ROLE_IDENTITIES');
     $freezeHash=hash_file('sha256','/run/audit/preparation-source-binding.json');
     $sortedExtra=M4C_EXTRA;sort($sortedExtra,SORT_STRING);
     m4c_expect($context['freeze_sha256']===$freezeHash&&$freeze['source_sha']===$sha&&$freeze['status']==='CLEAN_SOURCE_FROZEN_ONLY'
         &&$freeze['customer_source_roots']===M4C_ROOTS&&$freeze['customer_source_extra']===$sortedExtra,'M4C_FROZEN_CUSTOMER_SOURCE_CONTRACT');
-    m4c_expect($freeze['fulfillment_source_roots']===M4C_ROOTS&&$freeze['fulfillment_source_extra']===m4fn_extra(),
+    m4fn_expect($freeze['fulfillment_source_roots']===M4C_ROOTS&&$freeze['fulfillment_source_extra']===m4fn_extra(),
         'TASK6_REAL_FOUR_ROOTS_FINITE_EXTRA_CLOSURE');
     m4c_entry_keys($binding,['schema','scope','run_id','source_sha','container_id','native_created_sha256','freeze_sha256',
         'requested_repo_source','requested_run_source','requested_prep_source','entry_sha256','source_files','prerequisites_sha256']);
@@ -144,7 +144,7 @@ function m4fn_source(): array
         &&in_array($created['port_bindings'],[null,[]],true),'M4C_ONE_ORIGINAL_INTERNAL_NETWORK_NO_PORT_BINDINGS');
     m4c_expect($created['ports']===null||is_array($created['ports']),'M4C_NATIVE_PORTS_OBJECT_OR_NULL');
     foreach($created['ports']??[] as $mapping)m4c_expect(in_array($mapping,[null,[]],true),'M4C_NO_PUBLISHED_NATIVE_PORT');
-    m4c_expect($created['stop_signal']==='SIGTERM'&&getmypid()===1,'TASK6_REAL_PID_ONE_SIGTERM_NO_HTTP_CHILD');
+    m4fn_expect($created['stop_signal']==='SIGTERM'&&getmypid()===1,'TASK6_REAL_PID_ONE_SIGTERM_NO_HTTP_CHILD');
     $binds=['/workspace'=>[$context['repo_dir'],false],'/source'=>[$context['repo_dir'],false],
         '/run/ms4-prep'=>[$context['prep_dir'],false],'/run/audit'=>[$context['run_dir'],true],
         '/workspace/crmeb/public/install/crmeb.sql'=>[$context['repo_dir'].'/crmeb/public/install/crmeb.sql',false]];

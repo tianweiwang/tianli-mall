@@ -197,8 +197,8 @@ function m4fm_paid_predecessor(array $manifest, array $binding, string $run, str
         && ($created['labels']['com.docker.compose.project'] ?? null) === $manifest['project']
         && ($created['labels']['com.docker.compose.service'] ?? null) === 'audit-ms5-paid-producer'
         && ($created['command'] ?? null) === ['help/audit-regressions/isolated/ms5-paid-consumer-normal.php', 'produce']
-        && ($terminal['id'] ?? null) === $created['id'] && ($terminal['run_id'] ?? null) === $run
-        && ($terminal['source_sha'] ?? null) === $sha && ($terminal['image'] ?? null) === $created['image']
+        && ($terminal['id'] ?? null) === $created['id'] && ($terminal['image'] ?? null) === $created['image']
+        && ($terminal['labels'] ?? null) === $created['labels']
         && ($terminal['status'] ?? null) === 'exited' && ($terminal['pid'] ?? null) === 0
         && ($terminal['restart_count'] ?? null) === 0 && ($terminal['exit_code'] ?? null) === 0, 'REAL_ORIGINAL_PAID_TERMINAL_ZERO');
     m4fm_expect(m4fm_keys($result, ['schema', 'scope', 'status', 'run_id', 'source_sha', 'container_id', 'freeze_sha256',
