@@ -253,6 +253,12 @@ final class MarketplaceOrderSnapshotProjection
     public static function merchantOrderWithFulfillment(array $saved,array $items,?array $summary,array $actions,bool $detail=false):array
     {
         $out=self::merchantOrder($saved,$items,$detail);
+        return self::rootWithFulfillment($out,$summary,$actions);
+    }
+
+    /** Append only to an already allowlisted saved root DTO; authorization and facts belong to the caller. */
+    public static function rootWithFulfillment(array $out,?array $summary,array $actions):array
+    {
         if(array_keys($actions)!==['ship','receive']||!is_bool($actions['ship'])||$actions['receive']!==false)self::unavailable();
         if($summary===null){if($actions['ship']!==false)self::unavailable();}
         else{
@@ -263,7 +269,7 @@ final class MarketplaceOrderSnapshotProjection
                 ||!is_bool($summary['closed']))self::unavailable();
             foreach(['original','shipped','received','cancelled_unshipped','returned_accepted','to_ship','to_receive','child_count'] as$key)
                 if(!is_int($summary[$key])||$summary[$key]<0||$summary[$key]>4294967295)self::unavailable();
-            if($summary['original']!==$out['total_num']||$summary['cancelled_unshipped']!==0||$summary['returned_accepted']!==0)self::unavailable();
+            if($summary['original']!==self::merchantInteger($out['total_num']??null,1,4294967295)||$summary['cancelled_unshipped']!==0||$summary['returned_accepted']!==0)self::unavailable();
         }
         $out['fulfillment_summary']=$summary;$out['allowed_actions']=$actions;return $out;
     }
