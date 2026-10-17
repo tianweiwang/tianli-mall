@@ -723,6 +723,8 @@ Out/客服/移动旧读取边界实施采用（2026-10-18）：Root全文采用 
 
 履约结构普通验证入口源码接入（2026-10-18）：沿已采用Task6QA合同，新增 `help/audit-regressions/isolated/ms4-fulfillment-migration.php`，完整等于外部已审64015B/`c2c5f7b125285baa14a018283b335b168e61b7af95a70af8538a2fef8b591153`候选。只从原42083B MS5迁移入口机械派生独立身份/11实源闭集、四真实CLI及两表独立元数据预期；原完整双流、同handle退出、私有配置清理、全动态库每行/DDL/Redis绝对期限保留。Root16组完整正逆、两整段真实迁移来源和新增行为全文审，独立SOURCE PASS及固定PHP8.2语法实际0，语法容器前后无残留。新正式profile尚未实现，真实履约DDL/ship/receive仍NOT RUN，不能凭入口源码签收Task6。后继profile必须先在真实三角色阶段完整验证并封存原paid结果/阶段manifest/terminal/来源闭包，再登记本履约角色转换正式四角色；不能在四角色manifest上直接重跑旧三角色verify_paid_result，也不能修改旧paid证明。新wrapper只保原paid六公证据hash及有限正常前置，不能替代原paid完整验收；Stage6业务、来源绑定及正常close/independentzero仍须按原唯一清单实施，三端/child/Worker/售后/金融/历史/发布及停止样本责任保持。
 
+保存付款期限同快照批读源码接入（2026-10-18）：在原OrderDao108621B供体上仅应用三组完整可逆差异，最终112838B/`3cd1a103f6aa4127da240a8b4e009dd455c373c29c33400e03b7d18567cb6d39`。原savedPaymentDeadline的Model数组输入、原1634B SQL/try/连接门/恰一行检查及refs→JOIN JSON→日期校核顺序保持，三private pure只机械提取原身份/refs/期限算法。新readSavedPaymentDeadlinesForRoots在既有同default compat Connection/PDO/depth0/原生事务门内，一次完整IDEM_FIELDS IN读取≤100个已授权原active未付根，保原调用子集，raw cart_id仅严格decode一次；不state/owner预过滤、不FOR UPDATE/当前配置重算，空输入仍原pair门且零SQL。原writer、八键事实和既有五批读取其余全文未改。Root三组整文正逆/全部新增代码与机械来源、独立SOURCE及固定PHP8.2语法实际0，临时语法容器前后为空。该项是产品读取基础方法，三端Service/纯DTO/caller尚未接此新方法，新的真实业务调用仍NOT RUN；此前normal成功仅对应其明确e42被测来源，不向此新代码扩大验收。原Task6/child/实际履约/售后/金融/历史/发布责任保持。
+
 ### Task 7: 退款额度与库存行为
 
 - 接口：申请退款时在事务中锁定订单行，校验"已退金额 + 处理中金额 + 本次金额 ≤ 实付"；三类库存行为分别写 `release`（未发货取消）、`return_in`（退货验收入库）、不写（仅退款）。

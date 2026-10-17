@@ -521,15 +521,7 @@ final class MarketplaceOrderDao
     /** Owner-authorized saved root deadline only; no lock, current configuration or mutation. */
     public function savedPaymentDeadline(array $actualSavedOrder): int
     {
-        $id=self::integer($actualSavedOrder['id']??null,1,self::INT_MAX);
-        $uid=self::integer($actualSavedOrder['uid']??null,1,self::INT_MAX);
-        $merId=self::integer($actualSavedOrder['mer_id']??null,1,self::UINT_MAX);
-        if(self::integer($actualSavedOrder['marketplace_trade_version']??null,1,1)!==1
-            ||self::integer($actualSavedOrder['pid']??null,0,0)!==0)self::unavailable();
-        $number=self::text($actualSavedOrder['order_id']??null,32,true);
-        $key=self::text($actualSavedOrder['unique']??null,32,true);
-        if(strlen($number)>32||strlen($key)>32)self::unavailable();
-        $added=self::integer($actualSavedOrder['add_time']??null,1,self::UINT_MAX);
+        [$id,$uid,$merId,$number,$key,$added]=self::savedPaymentDeadlineIdentity($actualSavedOrder);
         try{
             $connection=Db::connect();
             // The adopted single-database connection is the primary; do not borrow a read replica or open another PDO.
@@ -549,6 +541,80 @@ final class MarketplaceOrderDao
             if($connection!==Db::connect()||$connection->getPdo()!==$pdo||$pdo->inTransaction())self::unavailable();
         }catch(\Throwable $error){self::unavailable();}
         if(count($rows)!==1)self::unavailable();$row=$rows[0];
+        $refs=self::savedPaymentDeadlineReferences($actualSavedOrder,$row,$id,$uid,$merId,$number,$key,$added);
+        if(self::decode($row['saved_cart_id'])!==$refs)self::unavailable();
+        return self::savedPaymentDeadlineValue($row,$added);
+    }
+
+    /**
+     * Deadlines for the caller's actual eligible raw roots in one owned read snapshot.
+     * The caller owns Auth and RR READ ONLY; this DAO does not establish either.
+     * Returns root PK => saved cancel_at in input order, including an actual zero.
+     */
+    public function readSavedPaymentDeadlinesForRoots(ConnectionInterface $connection,PDO $pdo,array $fullUnpaidRoots):array
+    {
+        $this->readSnapshotConnection($connection,$pdo);
+        if(!array_is_list($fullUnpaidRoots)||count($fullUnpaidRoots)>100)self::unavailable();
+        $roots=[];$rootOrder=[];$identities=[];$savedCarts=[];
+        foreach($fullUnpaidRoots as$header){
+            if(!is_array($header))self::unavailable();
+            foreach($header as$value)if($value!==null&&!is_string($value)&&!is_int($value))self::unavailable();
+            foreach(self::ORDER_FIELDS as$field)if(!array_key_exists($field,$header))self::unavailable();
+            if(!array_key_exists('pid',$header))self::unavailable();
+            $identity=self::savedPaymentDeadlineIdentity($header);[$id]=$identity;
+            self::integer($header['paid'],0,0);self::integer($header['is_cancel'],0,0);
+            // The old tidyOrder branch is type zero for precisely this unpaid, uncancelled, non-offline subset.
+            if(!is_string($header['pay_type'])||$header['pay_type']==='offline')self::unavailable();
+            if(isset($roots[$id]))self::unavailable();
+            $roots[$id]=$header;$rootOrder[]=$id;$identities[$id]=$identity;
+            $savedCarts[$id]=self::decode($header['cart_id']);
+        }
+        if($roots===[]){$this->readSnapshotConnection($connection,$pdo);return [];}
+        $rootIds=array_keys($roots);sort($rootIds,SORT_NUMERIC);
+        $marks=implode(',',array_fill(0,count($rootIds),'?'));
+        $rows=$this->paymentApplicationSnapshotRows($connection,$pdo,'marketplace_order_idempotency',self::IDEM_FIELDS,
+            '`order_id` IN ('.$marks.')',$rootIds,'`order_id` ASC');
+        $ledgers=[];$previous=0;
+        foreach($rows as$row){
+            $id=self::integer($row['order_id'],1,self::INT_MAX);
+            if($id<=$previous||!isset($roots[$id])||isset($ledgers[$id]))self::unavailable();
+            $ledgers[$id]=$row;$previous=$id;
+        }
+        if(count($ledgers)!==count($roots))self::unavailable();
+        $result=[];
+        foreach($rootOrder as$id){
+            $this->readSnapshotConnection($connection,$pdo);
+            $header=$roots[$id];[$id,$uid,$merId,$number,$key,$added]=$identities[$id];
+            $order=$header;$order['cart_id']=$savedCarts[$id];
+            // These aliases are exact columns of the already selected same-snapshot root, not another query.
+            $row=$ledgers[$id];$row['order_no']=$header['order_id'];
+            $row['confirmation_key']=$header['unique'];$row['order_add_time']=$header['add_time'];
+            $refs=self::savedPaymentDeadlineReferences($order,$row,$id,$uid,$merId,$number,$key,$added);
+            if($savedCarts[$id]!==$refs)self::unavailable();
+            $result[$id]=self::savedPaymentDeadlineValue($row,$added);
+        }
+        $this->readSnapshotConnection($connection,$pdo);return $result;
+    }
+
+    /** The original saved-header identity checks, before either caller reads ledger facts. */
+    private static function savedPaymentDeadlineIdentity(array $actualSavedOrder):array
+    {
+        $id=self::integer($actualSavedOrder['id']??null,1,self::INT_MAX);
+        $uid=self::integer($actualSavedOrder['uid']??null,1,self::INT_MAX);
+        $merId=self::integer($actualSavedOrder['mer_id']??null,1,self::UINT_MAX);
+        if(self::integer($actualSavedOrder['marketplace_trade_version']??null,1,1)!==1
+            ||self::integer($actualSavedOrder['pid']??null,0,0)!==0)self::unavailable();
+        $number=self::text($actualSavedOrder['order_id']??null,32,true);
+        $key=self::text($actualSavedOrder['unique']??null,32,true);
+        if(strlen($number)>32||strlen($key)>32)self::unavailable();
+        $added=self::integer($actualSavedOrder['add_time']??null,1,self::UINT_MAX);
+        return [$id,$uid,$merId,$number,$key,$added];
+    }
+
+    /** Both callers supply their actual saved header and ledger facts; no SQL or Auth here. */
+    private static function savedPaymentDeadlineReferences(array $actualSavedOrder,array $row,int $id,int $uid,int $merId,
+        string $number,string $key,int $added):array
+    {
         if(self::integer($row['uid'],1,self::INT_MAX)!==$uid
             ||self::integer($row['mer_id'],1,self::UINT_MAX)!==$merId
             ||self::integer($row['state'],1,1)!==1||self::integer($row['order_id'],1,self::INT_MAX)!==$id
@@ -558,8 +624,13 @@ final class MarketplaceOrderDao
             ||!is_string($row['confirmation_ref'])||strlen($row['confirmation_ref'])!==32
             ||!hash_equals($row['confirmation_ref'],hash('sha256',$key,true)))self::unavailable();
         $refs=self::references(self::decode($row['cart_refs']),$row['source_kind']);
-        if(self::references($actualSavedOrder['cart_id']??null,$row['source_kind'])!==$refs
-            ||self::decode($row['saved_cart_id'])!==$refs)self::unavailable();
+        if(self::references($actualSavedOrder['cart_id']??null,$row['source_kind'])!==$refs)self::unavailable();
+        return $refs;
+    }
+
+    /** Preserve the original zero-or-saved deadline semantics. */
+    private static function savedPaymentDeadlineValue(array $row,int $added):int
+    {
         $deadline=self::integer($row['cancel_at'],0,self::UINT_MAX);
         if($deadline!==0&&$deadline<$added)self::unavailable();
         return $deadline;
