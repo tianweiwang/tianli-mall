@@ -698,6 +698,11 @@ Order事实批量接缝实际应用（2026-10-18）：Root独立全文读取新�
 
 完整家族读取实施采用（2026-10-18，先于代码）：Root全文采用 `artifacts/ms4-fulfillment-writer-preparation/design-source-r1/READ-FAMILY-HISTORY-SEAMS-r2.md` 20823B/`eb4e477c7fc796b863cfcd75a1f7a2d2663c4fec7eb49ff072d264174ecb67a3`，六组完整正逆精确回R1。本片在原FulfillmentServices加无SQL/Auth/时间的readHistoryFromFacts，严格实际付款observation两键/根一致及原创建来源后仅调原paid/history，原history八键/summary十一键/三digest/写锁时点不改；原FulfillmentDao增加固定同PDO六类完整家族读取。child items/refunds/两类logs用同快照真实child子查询，绑定只随最多100个root增长，日志最多202参数且重复保多重集，无历史条数截断或parent N+1。本页有paid根时真实探表并对全部roots读取现存op/range，含未付根的实际冲突；全未付不强制探表，未观察或缺失明确null而非空历史。原normal/history失败不转nullable，本片不启用尚未完成的售后兼容闭集；Task7及原READ-SEAMS的完整消费责任保留。本项只采用函数级合同，后继仍须独审、语法、真实RR/结构/普通履约与三端API/DOM，不勾选Task6或商城验收。
 
+
+真实读取生命周期实施采用（2026-10-18，先于代码）：Root全文采用 `design-source-r1/READ-LIFECYCLE-IMPLEMENTATION-r1.md` 26001B/`04362e76193df21dea40829cb263619b10f31c5a8c795d46c1aa9809dd7c7d4c`。在原FulfillmentServices增加有限真实actor读取入口/private runRead；所有Auth及规范输入先完成，捕获真实default Connection/PDO、compat depth0、原生属性/固定prefix，next-only SET RR READ ONLY→原PDO begin→首个root count/detail一致读→完整原批量事实/family/纯history→末结构比较→一次commit后发布。已有调用者事务不接管；SET/begin/commit不明只清理本段捕获对象、不重试重连或发部分结果。Native唯一纯history包装稳定后机械叠加；基础原生selector的完整旧筛选、混合legacy页顺序/count、三端首次查询分流/纯DTO及专用child分页须同段真实实现，不把旧ORM/二维码上传/配置缓存/副作用套入只读事务。可按商家根页/详情先接共用生命周期，再沿同一合同完成顾客/平台/移动实际入口；完整三端及原Task7/API/DOM责任不缩减，本采用不宣称业务已完成。
+
+Out/客服/移动旧读取边界实施采用（2026-10-18）：Root全文采用 `design-source-r1/OUT-KEFU-MOBILE-READ-SEAMS-r1.md` 12208B/`2c9147a7ffdf4cc25abda98455aedb9a6aaa7275646cde152d60491bdef4d9f1`，选择先隔离未适配的V1旧读取并保legacy。Out现专用list及同谓词count在SQL分页前限定保存version NULL/0；getInfo/getCartList在invoice/cart/tidy前核真实投影version，影响共享旧推送producer如实记录但不运行外部发送。客服普通list由既有Service/DAO受控内部legacyOnly=false末参兼容、唯一旧客服caller传常量true；详情在userInfo/tidy前核实际保存行。客服refund分支也须以真实refund.store_order_id→父单版本的SQL同源谓词覆盖list/count/桶数，不能页后过滤或给refund表猜version；顾客Common辅助入口及移动delivery_gain在未接新读流程前同样按真实保存版本隔离。移动已有真实UID/mobile白名单及legacy原管理可见性保持，后继V1 root/child走已采用新读取，不把Out账号/客服/旧员工变成新merchant或平台actor。源复核/语法与实际API/DOM分开，原完整范围继续本Task6，不另起或勾销清单。
+
 ### Task 7: 退款额度与库存行为
 
 - 接口：申请退款时在事务中锁定订单行，校验"已退金额 + 处理中金额 + 本次金额 ≤ 实付"；三类库存行为分别写 `release`（未发货取消）、`return_in`（退货验收入库）、不写（仅退款）。
