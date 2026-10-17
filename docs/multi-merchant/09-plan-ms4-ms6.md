@@ -689,6 +689,9 @@ R7实际结果（2026-10-16，详见03）：clean `a74f2b27275229dcb089581039dc3
 
 本次paid R2实际结果见MS5 core同日记录：真实凭据登录/GET UID、持久购物车确认创建、同App/factory测试付款及独立27+7原生封存已通过，原3CID/1网/6卷正常关闭、独立六raw核零实际0。它只证明内部普通测试付款producer；原两履约表实际迁移、保存发货/收货、全family/history/summary/child DTO、三端paid API/DOM、Out/kefu适配或隔离、Worker实际接线、Task7售后、真实金融、非空历史及发布仍待验证或实施。未激活Worker，不恢复用户已停止样本，不勾选Task6/MS4/MS5或README验收状态。
 
+
+履约结构只读接缝实际应用（2026-10-18）：采用已全文读取的READ-STRUCTURE-SEAMS设计和两组机械增量，MarketplaceOrderFulfillmentDao新readStructureReadiness仅在调用方自有原生读段内使用。全原metadata/列索引/FK/CHECK/触发器比较不变；十九实际迁移约束名称探针参数化共享，只允许两表皆缺或operation完整/range缺为SCHEMA_PENDING，两表完整才READY，range-only/不兼容/查询错误严格失败。同真实default Connection/PDO、getter depth0及原生属性首末核，finally还原临时schema读取状态；原writer的逐表检查顺序和立即失败时点展开后逐字不变。已独立SOURCE PASS，Root完整S01/S02正逆、E01环境和N01迁移来源机械核对及固定PHP8.2语法均实际通过；唯一源47136B/`fc56165472cf72fec95ae289eb5ee94edb4bf824ce428ac7f69965d10175ea0b`。这是本地源码接线，尚未实际执行新readiness SQL/自有RR生命周期或两履约表迁移；SCHEMA_PENDING仍须同快照读取真实完整children/logs/已存在operation，不证明空family。原history/summary/child DTO/API/DOM/Worker/售后及完整验收责任保持。
+
 ### Task 7: 退款额度与库存行为
 
 - 接口：申请退款时在事务中锁定订单行，校验"已退金额 + 处理中金额 + 本次金额 ≤ 实付"；三类库存行为分别写 `release`（未发货取消）、`return_in`（退货验收入库）、不写（仅退款）。

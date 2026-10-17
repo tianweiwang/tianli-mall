@@ -4,7 +4,9 @@ declare(strict_types=1);
 namespace app\dao\marketplace\order;
 
 use app\services\marketplace\order\MarketplaceOrderInput;
+use crmeb\compat\think\orm\db\connector\Mysql as ReadMysql;
 use crmeb\exceptions\AuthUnavailableException;
+use think\db\ConnectionInterface;
 use PDO;
 use PDOStatement;
 use RuntimeException;
@@ -36,19 +38,77 @@ final class MarketplaceOrderFulfillmentDao
     {
         $this->native($pdo,false);$this->schemaPdo=$pdo;
         try{
-            $database=$this->query($pdo,'SELECT DATABASE()')->fetchColumn();
-            if(!is_string($database)||$database==='')self::unavailable();self::quote($database);$this->database=$database;
-            $version=$this->query($pdo,'SELECT VERSION()')->fetchColumn();
-            if(!is_string($version)||preg_match('/\A(8\.[0-9]+\.[0-9]+)(?:[-+].*)?\z/D',$version,$m)!==1
-                ||stripos($version,'mariadb')!==false||version_compare($m[1],'8.0.16','<'))self::unavailable();
-            $mode=$this->query($pdo,'SELECT @@SESSION.sql_mode')->fetchColumn();
-            if(!is_string($mode)||array_intersect(['STRICT_TRANS_TABLES','STRICT_ALL_TABLES'],explode(',',strtoupper($mode)))===[])self::unavailable();
+            $this->structureEnvironment($pdo);
             foreach(self::newTables() as$name=>$definition){
                 $meta=$this->metadata($name);
                 if($meta===null||!$this->sameNewTable($meta,$definition))self::unavailable();
             }
             $this->native($pdo,false);
         }finally{$this->schemaPdo=null;}
+    }
+
+    /**
+     * Internal structure observation inside the caller-owned native RR/READ ONLY snapshot.
+     * Does not prove authorization, family emptiness, payment or the transaction characteristics.
+     * Caller reobserves before publication and keeps complete same-snapshot family/history gates.
+     */
+    public function readStructureReadiness(ConnectionInterface $connection,PDO $pdo):array
+    {
+        $this->readStructureConnection($connection,$pdo);
+        if($this->schemaPdo!==null)self::unavailable();
+        $previousDatabase=$this->database;$this->schemaPdo=$pdo;
+        try{
+            $this->structureEnvironment($pdo);$database=$this->database;
+            $definitions=self::newTables();
+            if(array_keys($definitions)!==['marketplace_fulfillment_operation','marketplace_fulfillment_range'])self::unavailable();
+            $present=[];
+            foreach($definitions as$name=>$definition){
+                $meta=$this->metadata($name);
+                if($meta!==null&&!$this->sameNewTable($meta,$definition))self::unavailable();
+                $this->assertStructureConstraintNames($name,$definition,$meta);
+                $present[$name]=$meta!==null;
+            }
+            $operation=$present['marketplace_fulfillment_operation'];$range=$present['marketplace_fulfillment_range'];
+            if(!$operation&&$range)self::unavailable();
+            $result=['state'=>$operation&&$range?'READY':'SCHEMA_PENDING',
+                'operation_present'=>$operation,'range_present'=>$range];
+            $this->readStructureConnection($connection,$pdo);
+            if($this->query($pdo,'SELECT DATABASE()')->fetchColumn()!==$database)self::unavailable();
+            $this->readStructureConnection($connection,$pdo);
+            return $result;
+        }finally{$this->schemaPdo=null;$this->database=$previousDatabase;}
+    }
+
+    private function readStructureConnection(ConnectionInterface $connection,PDO $pdo):void
+    {
+        if(!$connection instanceof ReadMysql||$connection!==Db::connect()||$connection->getPdo()!==$pdo
+            ||$connection->transactionDepth()!==0||$connection->getConfig('deploy')!==0
+            ||$connection->getConfig('rw_separate')!==false||$connection->getConfig('prefix')!==$this->prefix)self::unavailable();
+        $this->native($pdo,true);
+    }
+
+    private function structureEnvironment(PDO $pdo):void
+    {
+        $database=$this->query($pdo,'SELECT DATABASE()')->fetchColumn();
+        if(!is_string($database)||$database==='')self::unavailable();self::quote($database);$this->database=$database;
+        $version=$this->query($pdo,'SELECT VERSION()')->fetchColumn();
+        if(!is_string($version)||preg_match('/\A(8\.[0-9]+\.[0-9]+)(?:[-+].*)?\z/D',$version,$m)!==1
+            ||stripos($version,'mariadb')!==false||version_compare($m[1],'8.0.16','<'))self::unavailable();
+        $mode=$this->query($pdo,'SELECT @@SESSION.sql_mode')->fetchColumn();
+        if(!is_string($mode)||array_intersect(['STRICT_TRANS_TABLES','STRICT_ALL_TABLES'],explode(',',strtoupper($mode)))===[])self::unavailable();
+    }
+
+    private function assertStructureConstraintNames(string $name,array $definition,?array $meta):void
+    {
+        foreach (['foreign' => 'FOREIGN KEY', 'checks' => 'CHECK'] as $kind => $type) {
+            foreach (array_keys($definition[$kind]) as $constraint) {
+                $occupied = $this->schemaRows('SELECT TABLE_NAME,CONSTRAINT_TYPE FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA=? AND CONSTRAINT_NAME=?', [$this->database, $this->prefix . $constraint]);
+                if (count($occupied) > 1 || ($occupied !== [] && ($occupied[0]['TABLE_NAME'] !== $this->prefix . $name
+                    || $occupied[0]['CONSTRAINT_TYPE'] !== $type || $meta === null))) {
+                    self::unavailable();
+                }
+            }
+        }
     }
 
     public function merchantCandidate(PDO $pdo,int $id,int $merId):array
