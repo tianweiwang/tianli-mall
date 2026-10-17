@@ -27,3 +27,13 @@ Main 的 restoreConfirmation、markCreated(cancelAt)、savedPaymentDeadline 和 
 AUX 本轮普通付款实例在 account registration 的完整保持检查失败：168 表、模式、序列及目标行相同，仅 Redis 一个键消失。消失摘要已唯一匹配执行窗口中的裸毫秒键，源 Snowflake resolver 对该类键使用 PSETEX1000；原记录未保存该键的绝对到期点，不能补造历史 TTL。原 FAIL 保留，本轮已正常关闭并独立六查询全零；后继须加入绑定真实 producer 序列键的只读自然到期观测，再在新实例重测，不能因 Main 整合就宣称问题解决。
 
 Main 旧取消 helper 仍直接调用 driver.createPayment，新增门禁后必须按原 PP5 合同适配；27/34/25 事实及来源消费者、原完整 MS4 五未付与自然90秒取消、履约售后、真实金融与发布等原待办全部保留。已停止样本不执行，不补假身份、假响应、paid fixture 或时间。
+
+## 后继消费者的已定位接缝（尚未实施）
+
+顾客共享 lib/ms4-customer-http-normal.php 的 M4CB_TABLES 需25→27，registry按order_id排序、attempt按id，m4cb_saved另核真实完整11列G0/零attempt与唯一允许出生行，保原未付/发票/库存/统计/12HTTP。顾客入口原旧files-bootstrap/MS4前置须接真实9child→4MS5 CLI及实际ENV测试开关；不能只改App内存。
+
+H5 的 lib/ms4-customer-h5-normal.php prepare baseline目前把完整facts交给JSON，非空attempt的BINARY32会失败。应复用既有有界native serialize/base64/摘要方法，同步stage封存读取而不全行字符串化；ms4-customer-h5.php的prepare/计数/环境/审计getter同步27+7=34。原B4未付详情、同一child、唯一App和Final只读责任保持，真实paid producer另设步骤，不藏进只读阶段。
+
+商家 lib/ms4-merchant-browser-normal.php 的facts23→25、registry排序，同时需原ms4-order-normal.php的M4O_FACT_TABLES/m4o_facts，不能漏该相依源。现两facts已经native serialize，不改成JSON。ms4-merchant-browser-prepare.php接新前置，在真实创建后/oracle发布前另加同owner的真实付款case；lib/ms4-merchant-read-normal.php保原三详情与owned-paid-empty，再另加paid oracle。ms4-merchant-http.php同步25表/来源scope，保原34steps/25captures/9screens、空结果和键盘/响应式/金融零增量；实际paid读取另计证明。
+
+该来源映射涉及上述八个既定helper及原M4相依源，不代表已完成实施设计或运行。实际paid owner必须等于真实登录actor，不能拿另一批MS5普通实例UID套用H5身份；使用同App真实账户→Services create→原driver complete→Services query持久保存，再核完整registry/attempt/winner/根四字段。非空二进制与JSON原生类型、U64/NULL必须保持，禁止raw BINARY交给JSON、JSON_BIGINT_AS_STRING或统一转字符串。相应profile、source/freeze、ENV、前置与close/zero须同一来源闭集，原完整验收不缩减。
