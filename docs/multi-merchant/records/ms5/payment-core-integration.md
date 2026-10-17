@@ -239,3 +239,21 @@ Root全文审原R1与R2六组完整文字差异，采用 `artifacts/ms5-payment-
 沿原Task2先在仓库外编写唯一 `ms5-paid-consumer-normal.php` 候选，尚不把未审候选写Main。新paid独立role/proof/argv、自己的十三键binding与paid_source_*明确含专属第10extra；普通原九extra、C3实际原十三键/entryhash及原未付/H5/商家夹具保持。真实public材料先于父唯一App/身份HTTP child，POST login后只从真实GET/user核buyer UID，正常停止同child后父App同Connection/PDO/factory原driver完成真实cart→confirm→create/G0→test account/create→原六键descriptor complete→query持久winner/application。独立PDO完整27+7原生封存保持BINARY/U64/JSON/NULL类型及原codec/私有字节权限上界；不造UID/JWT、付款SQL、假scope或跨进程driver状态，不新增测试付款HTTP API。
 
 后继三端消费者仍须分别真实鉴权及API/DOM证据：顾客本人、商家真实mer context、平台adminapi order_info/tidyOrder与admin详情测试金额文案；不把两端或源码构建记为三端完成。原未付链、原H5/商家全部视觉责任、持久履约/收货/售后退款、非空历史、真实金融及发布验收保留，已停止样本不恢复。本采用先于paid候选实施，当前没有新entry实现/paid Run或baseline，后续SOURCE/PARSE/producer/封存/HTTP/DOM/正常关闭和独立核零分别取证，不新建第二执行清单。
+
+
+### H5 实际 B0/B1 通过、B2 失败保留与独立正常收口
+
+2026-10-18（Asia/Taipei），沿原09 Task2。Run `202610171222555a7646` 来源为 clean Main `e9438df017d71f03ec33d178c980f81f6e8e0608`；原9初始化、4个MS5迁移命令、files/C3、H5公共复制/prepare/files及final登记均已实际正常0并保留原件。真实消费者登录和两店三商品加购（甲2、乙1、丙1）已在通用多商户页面观察；只有B0/B1完成原27业务＋7辅助表SQL断言。B2唯一次 `verifyCustomerSqlStage` 原调用拒绝，仅有 `M4CH_BRIDGE_NATIVE_TERMINAL_CHECK`；旧桥已清掉双流，原生退出及底层断言均不可知，不能宣称PHP1、SQL原因或B2通过，也未重跑B2。
+
+原390宽整页截图在record前超时，原pipeline capture/JPEG/review均为0。两张Run外原生观察图只作观察，不计原27capture或视觉验收；未执行确认/创建/支付，B3/B4/Final及原停止样本仍NOT RUN。原HTTP child已通过原bridge一次正常stop/observe；Root真实release/forget、恢复原viewport、关闭owned tab及新清单观察已保存为完整安全收据。cleanup真实晚于业务deadline，专用设计只允许正常收尾观察在期限后，原B0/B1及child业务期限保持，未补历史原件。
+
+采用外部 `h5-b0-b1-failed-b2-close-source-r1` 四SOURCE，独立审查及Root完整32/31/7组正逆回、AST/compile/help均通过，检查收据5346B/`214b16c8620e074895666ab57f98787e1957616165053366c1bafd5e9703f779`。Root观察4310B/`a94217991d2945408428bc8aaee1aecd67f7bb55e70b40ad092f41cb4bbb91fa`只承认两stage六flags、B2失败未知底层和零capture。原UI/serve/MySQL/Redis四父各用同一原生进程正常stop；serve在最终完整来源核对后正常退出，没有强制停止或重启。关闭程序实际native0，原4CID/2网/10卷非force精确移除，结果SHA256 `d33f2e4d7fe1e10e73e802f1bfca3292d9c3827fbdec512caded9027f85ea81a`。随后独立zero实际native0、六raw查询严格空、前后各53个现有容器全局扫描无原资源消费者，结果72975B/`4d86fcefbcba7eead6f91c4628928eac3c78ed422fdeae39f4c336906f59283d`。两结果均明确FAILURE_PRESERVED/商城INCOMPLETE；只在zero0后解冻Main。该Run已关闭，原P/freeze和失败保持历史，不再重开或在新来源重跑旧核零。
+
+### 后继错误诊断候选与测试付款入口实际接线依据
+
+Root已全文采用外部 `h5-native-failure-observability-source-r1/NATIVE-FAILURE-OBSERVABILITY-DESIGN-r1.md` 12765B/`c625d5c4fe45e1acd0ab6fcb3a8040257df97b48b8c33669e8e75a58b32115f3`。bridge successor 54063B/`c6b653f76958f836e6dcdae793c6723a3fd627dc7e14797b1c3165a07cec7b98`独立SOURCE PASS，Root六组完整正逆回及Node24.18.0的仅语法检查native0，收据1642B/`a6f4bb0a8aea35e5c6ec25320b63572fbf4b7ef235e21973f3bacc4619156cdf`。它保留真实close code/signal、完整双流bytes/hash和错误标志，仅投影完整严格安全PHP失败；create-only收据后仍抛同一错误，原成功wire及stage尝试/成功递增不变。尚未组装后继P/冻结/运行，不补当前B2原因或历史，也不恢复停止样本；后继必须完整传播实际20来源及材料/freeze。
+
+本记录在依赖它的Main接线前采用已审外部 `paid-consumer-source-r1/ms5-paid-consumer-normal.php.candidate`，101356B/`8ad9926a13ca06ae7731e2acb56a515f434be0fdb44a25a1089a0e2310eafc91`：只逐字新建Main `help/audit-regressions/isolated/ms5-paid-consumer-normal.php`。其完整来源、独立SOURCE审查和原固定PHP语法已通过；不改原未付/H5/商家入口、付款HTTP API或真实金融配置。新独立paid profile仍须从实际clean Main形成source9与paid专属第10extra、完整9+4/files/C3和九artifact实际来源。真实登录GET UID、同父App/factory真实cart-confirm-create/G0/test-driver complete-query、独立PDO27+7原生封存及三端API/DOM、正常关闭/独立核零仍须另行真实执行，接线或语法通过不算paid验收。
+
+
+Main实际应用与语法检查点（2026-10-18）：唯一新entry已逐字写入，前后均等于已审101356B/`8ad9926a13ca06ae7731e2acb56a515f434be0fdb44a25a1089a0e2310eafc91`候选；Root对实际Main文件用已有固定PHP8.2镜像、network none、只读根和单文件bind、cap-drop ALL执行php -l，实际native0/stderr空，临时自建容器前后原生库存严格空。收据2428B/`054dc201c64f98d49a5ce4f8fdc3897a1d563e62d42a0c077da13ea13863ba8c`。这只证明已应用与语法；未启动新paid profile/Run、App/SQL/付款生产者或三端API/DOM，完整09范围和原停止样本保持未验。

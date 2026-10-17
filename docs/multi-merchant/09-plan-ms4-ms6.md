@@ -745,6 +745,12 @@ H5材料与partial源码检查点（2026-10-17）：新material producer实际99
 
 独立已付消费者producer实施采用（2026-10-17，沿本Task2）：Root已全文读原R1及完整六组R2差异，采用外部 `paid-consumer-source-r1/DESIGN-r2.md` 24533B/`537d3e49a1023e3d1a28f62f1c915e1ac533df4213dd8fdafb66b2fc7c32561d`，Root整文正逆回收据393B/`bd597bbd63dba15ddaeb38ed35e3d5d3ece13cae9e15a2a089679ce5d1b46f5f`。仅先另写唯一新entry外部候选：新独立Run/真实登录GET UID、父App/同factory真实cart-confirm-create-G0-test-driver-create/原descriptor-complete-query、独立PDO完整27+7 native封存；public真实材料必须先于父App/HTTP child，不能伪UID/付款SQL/跨进程driver或新增付款HTTP入口。paid专属第10extra与独立role/binding保原C3十三键和普通九extra，原未付H5/商家夹具不被替代。顾客、商家、平台API/DOM各自仍待独立验证；持久履约售后、金融、历史、发布和停止样本原范围保持。未写Main新entry或执行付款；外部候选及后续profile仍须独审/解析/实际冻结与运行分别取证。
 
+H5实际失败状态收口与后继（2026-10-18）：Run `202610171222555a7646` 的原9+4/files/C3/H5前置均实际0；仅B0/B1完整27+7通过，B2唯一次调用拒绝且底层退出/断言不可知，原capture/JPEG/review为0。按准确失败scope正常关闭原4CID/2网/10卷并独立核零，两程序native0，前后各53容器全局无原消费者；结果摘要分别 `d33f2e4d7fe1e10e73e802f1bfca3292d9c3827fbdec512caded9027f85ea81a` / `4d86fcefbcba7eead6f91c4628928eac3c78ed422fdeae39f4c336906f59283d`。仅zero0后解冻Main；失败、原P/freeze和NOT RUN责任保持，不重开旧Run。后继bridge诊断候选已独审/整文逆回/Node语法0，未组装或运行；原B2原因仍未知，不能因此勾选原H5/商家/paid/履约售后/金融/历史/发布任务。完整事实见core。
+
+独立已付入口Main接线采用（2026-10-18，实施前）：依core及已审R2设计，将实际外部101356B/`8ad9926a13ca06ae7731e2acb56a515f434be0fdb44a25a1089a0e2310eafc91`候选逐字新建为 `help/audit-regressions/isolated/ms5-paid-consumer-normal.php`，只属于本Task2的测试驱动验证入口。保原source9/C3及paid专属第10extra、真实身份/同factory订单付款/独立27+7原生封存合同；新paid九artifact profile需新clean来源后组装冻结，生产者、三端API/DOM及其正常生命周期尚未运行，不接真实渠道或结算。继续原唯一清单及全部未验范围。
+
+已付入口应用检查点（2026-10-18）：实际Main新entry完整bytes/hash等于已审候选，固定PHP8.2镜像对实际文件语法native0/stderr空，临时容器前后库存空；收据2428B/`054dc201c64f98d49a5ce4f8fdc3897a1d563e62d42a0c077da13ea13863ba8c`。仅SOURCE/APPLY/PARSE，不是新paid Run或三端验收；实际新profile、冻结、生产者/封存与API/DOM仍待。
+
 ### Task 3: 收款账户
 
 - 表 `eb_marketplace_payment_account(id, mer_id, channel, account_ref, version, status, verified_at, add_time)`；`account_ref` 只保存配置引用，不保存密钥明文。订单发起支付时把账户 ID 与版本写入支付尝试记录，之后不可更改。
