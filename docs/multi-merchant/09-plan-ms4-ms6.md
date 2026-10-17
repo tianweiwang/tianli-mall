@@ -737,6 +737,8 @@ H5实施采用（2026-10-17，沿本Task2）：收货旧链五源已本地提交
 
 H5两源应用及部分收尾设计检查点（2026-10-17）：Main两源实际等于已审候选，Root实际文件固定PHP语法均0，应用收据2594B/`99e67e134a4e0e17f7c60293532749c6ee9135829c202c60c3f9c570f48ba63e`；尚无H5业务运行。采用B0–B2阶段准确关闭设计13775B/`97c62d0fa4acf25ad0f1ea49b63fb5d586890f90591bbad52ca3fb9ad56e47b7`（见core）：保原三stage真实SQL/来源/身份，Root真实操作及读回核tab关闭/viewport复位，独立stop/forget/release，不调用或伪造fullFinish/audit；固定部分scope/NOT RUN/INCOMPLETE并按实际capture/JPEG/review保全，原四CID/两网/十卷正常非force收口与独立六raw/全局核零。部分pair尚待SOURCE实现、独审及解析，不属于原20artifact，也不完成full B3/Final/27capture或其余原范围。本记录先于依赖它的部分关闭代码。
 
+H5静态组装及UI收尾附录采用（2026-10-17）：两份Main H5源已本地提交 `fe9d4bc4e7357e206c0cdcfde01ef78e8c8e9209`，提交后clean。Root按实际供体整文bytes/hash在新 `candidate-h5-ms5-r1` create-only复制23份静态文件，四份生成材料仍不存在；组装收据7282B/`f6282fc5c0390a6c041e116affcff984df0fd4bb173eccc8526bbba26fed40a4`，尚未materialize/freeze/Run。另采用partial同目录 `UI-EVIDENCE-ADDENDUM.md` 5490B/`991024fffe18f47d1c0da72174911551e8e36fccd6c61baa242bfaaf1c112eee`，Root全文审及独立SOURCE PASS：三份Root实际工具安全投影保存同Run完整身份、毫秒时间、reset前后同tab尺寸、真实close的undefined返回类型及close后fresh ID-only列表；close/zero分别重算原件完整bytes/hash。空白页接口探测不是商城证据，不将投影称作原生JSON/exit0，不写full finish/closed/audit，四个partial来源由实际descriptor绑定。该采用先于依赖它的UI consumer代码；商城页面操作和原完整验收仍未发生。
+
 ### Task 3: 收款账户
 
 - 表 `eb_marketplace_payment_account(id, mer_id, channel, account_ref, version, status, verified_at, add_time)`；`account_ref` 只保存配置引用，不保存密钥明文。订单发起支付时把账户 ID 与版本写入支付尝试记录，之后不可更改。

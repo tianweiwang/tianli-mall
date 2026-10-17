@@ -207,3 +207,11 @@ Root采用新外部目录 `artifacts/ms5-payment-consumer-preparation/candidate-
 部分收尾只用原bridge独立stop/observe、forgetActors及driver release，保同child一次TERM15、空组/无listener与原native_proc_close；Root在原tab仍可观察时实际复位viewport、读回，再真实关闭本任务owned tab并用新inventory核其消失，保存实际操作/读回安全摘要，不把两项布尔自述当证据。绝不调用full requestFinish/confirmOwnedTabClosed/publishFinalAudit，B3/B4/attempt/finish/browser-closed/SQL/full audit实际缺失须保真。新partial固定scope/status和三stage/缺两stage/NOT RUN/INCOMPLETE字面值按设计逐项实现，不复用full成功值，不将缺图或缺review改作三宽或完整27张通过。
 
 新partial pair只在该外部目录另行SOURCE实现，绑定真实context/Root观察SHA/自身与peer/full profile实际来源；不加进原H5二十artifact、不改full pair。close按真实MS5/H5全部前置、完整四role/两网/十卷身份与全局消费者，分别一次同PID stop --time -1、native0及非force精确移除；独立zero不import host/close/App、不开私有K、不执行PHP/SQL或mutation，自含必要来源/历史与partial证据消费者、六raw严格native0且双流空和前后全局无原消费者。若三stage未真实成功，保失败另按实际状态处理，不能补造stage套正常合同。当前只有已采用设计，partial代码/独审/解析和新Run均未发生；完成这些前不启动本次H5实例。
+
+### 静态组装与Root UI安全观察附录采用
+
+Main两份H5接线及此前记录已本地提交 `fe9d4bc4e7357e206c0cdcfde01ef78e8c8e9209`，Root实际提交后确认clean。按11700B/`8f5413caf0c5197275694a8cb02e620c771212af18daca90950b15eb49a87fc7`的组装说明，Root先确认目标不存在，再在新 `candidate-h5-ms5-r1` create-only复制实际23份供体，逐份核原件和目标完整bytes/hash及精确闭集；不拷四份旧材料。实际收据 `source-checks-h5-profile-assembly-r1.json` 7282B/`f6282fc5c0390a6c041e116affcff984df0fd4bb173eccc8526bbba26fed40a4`，四个生成目标全部仍不存在，materialize/freeze/Run均NOT RUN。材料必须在本记录提交后的最终clean来源重新真实生成，不能沿fe9d4bc旧header。
+
+Root全文采用partial目录的 `UI-EVIDENCE-ADDENDUM.md` 5490B/`991024fffe18f47d1c0da72174911551e8e36fccd6c61baa242bfaaf1c112eee`，独立SOURCE审阅通过，补充已采用DESIGN。三份create-only UTF-8 JSON是Root真实工具调用的安全投影：完整共同Run/source/freeze/serve及UI CID/context/binding/browser/tab身份；实际毫秒时间；同tab原始尺寸、真实viewport.reset返回undefined及后读回相等；实际tab.close返回undefined；随后新发browser.tabs.list的ID-only安全投影且目标缺失。三原件完整bytes/hash在Root观察绑定，close和独立zero各自重读、核exact shape与身份时间顺序，不能只信摘要或布尔值。空白页探测的尺寸/ID/时间不写入商城证据；不冒称工具原生JSON、native0或不存在的raw body，不持久化URL/title/凭据。
+
+partial来源由真实DESIGN/本附录/两个脚本四descriptor绑定，不用循环SHA常量，不扩原二十artifact。Root此时未操作商城页面、新Run或收据；上述采用先于依赖它的UI consumer实施，完整B3/Final/27capture、商家/独立paid/履约售后/历史/金融/发布及停止样本状态均保持。下一步先记录新clean来源并生成实际材料与freeze；原partial脚本仍须独立审源和必要解析通过后才可开始新实例。
