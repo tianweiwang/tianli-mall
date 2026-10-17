@@ -264,7 +264,7 @@ function m4o_merchant_read_normal(\think\App $app,PDO $pdo,array $serviceProofs,
         'MERCHANT_READ_VALID_PAID_FILTER_ACTUAL_EMPTY_RESULT');
     m4pc_context($app,$pdo);
     m4o_expect($details===3&&m4o_facts($pdo)===$before,'MERCHANT_READ_ALL_SAVED_READ_FACTS_UNCHANGED');
-    m4o_expect($app->config->get('marketplace.trade.enabled')===false,'MERCHANT_READ_CREATION_GATE_STAYS_CLOSED');
+    m4o_expect($app->config->get('marketplace.trade.enabled')===m4o_trade_expected(),'MERCHANT_READ_ROLE_TRADE_EXPECTATION_RETAINED');
     audit_guard_assert();
     return ['verified'=>true,'scope'=>'NORMAL_MERCHANT_ORDER_INTERNAL_AUTHENTICATED_READ_ONLY',
         'actors'=>['count'=>3,'native_fixtures_verified'=>true,'credential_login_authenticated'=>true,

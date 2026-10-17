@@ -24,6 +24,12 @@ use crmeb\services\CacheService;
 use think\facade\Db;
 
 const M4O_IMAGE = 'sha256:1099f749e2a38ec9453c6b820db8a78174514bc72d14edf5c203e13b82816e0a';
+const M4O_MS5_ROLE = 'audit-ms4-order-normal-ms5';
+const M4O_MS5_SCOPE = 'MS4_ORDER_NORMAL_WITH_MS5_PREREQUISITES_INTERNAL_ONLY';
+const M4O_MS5_VERIFIED = 'VERIFIED_MS4_ORDER_NORMAL_WITH_MS5_PREREQUISITES_INTERNAL';
+const M4O_MS5_PREREQUISITES = ['driver-terminal.json','initializer-completed-terminal.json','initializer-created.json',
+    'initializer-result.json','ms5-payment-migration-container-created.json','ms5-payment-migration-normal.json',
+    'ms5-payment-migration-formal-manifest.json','ms5-payment-migration-source-binding.json'];
 const M4O_ROOTS = ['crmeb/app','crmeb/crmeb','crmeb/vendor','crmeb/config'];
 const M4O_FILES = ['crmeb/composer.json','crmeb/composer.lock','help/audit-regressions/isolated/ms4-order-normal.php',
     'help/audit-regressions/isolated/lib/harness.php','help/audit-regressions/isolated/lib/guard.php',
@@ -40,7 +46,8 @@ const M4O_FACT_TABLES = ['eb_store_order','eb_store_order_invoice','eb_store_ord
     'eb_marketplace_order_idempotency','eb_marketplace_stock_movement','eb_store_product','eb_store_product_attr_value','eb_store_cart',
     'eb_user','eb_marketplace_merchant','eb_store_product_attr','eb_user_address','eb_user_invoice','eb_system_config',
     'eb_system_user_level','eb_user_level','eb_member_right','eb_store_order_status','eb_store_product_log','eb_system_timer',
-    'eb_marketplace_role','eb_marketplace_employee','eb_marketplace_password_setup'];
+    'eb_marketplace_role','eb_marketplace_employee','eb_marketplace_password_setup',
+    'eb_marketplace_payment_registry','eb_marketplace_payment_attempt'];
 
 function m4o_expect(bool $ok, string $code): void
 {
@@ -85,6 +92,83 @@ function m4o_inventory(string $root): array
     }
     sort($paths,SORT_STRING); m4o_expect(count($paths) === count(array_unique($paths,SORT_STRING)),'SOURCE_UNIQUE_PATHS'); return $paths;
 }
+function m4o_ms5_keys(array $value,array $expected): bool
+{
+    $keys=array_keys($value);sort($keys,SORT_STRING);sort($expected,SORT_STRING);return $keys===$expected;
+}
+function m4o_ms5_same(mixed $actual,mixed $expected): void
+{
+    if(!is_array($expected)){m4o_expect($actual===$expected,'MS5_EXACT_NATIVE_VALUE_AND_TYPE');return;}
+    m4o_expect(is_array($actual)&&array_is_list($actual)===array_is_list($expected)
+        &&m4o_ms5_keys($actual,array_keys($expected)),'MS5_EXACT_NATIVE_ARRAY_SHAPE');
+    foreach($expected as$key=>$value)m4o_ms5_same($actual[$key],$value);
+}
+function m4o_ms5_hash(string $path): string
+{
+    m4o_expect(is_file($path)&&!is_link($path),'MS5_REGULAR_BOUND_SOURCE');$hash=hash_file('sha256',$path);
+    m4o_expect(is_string($hash),'MS5_BOUND_SOURCE_HASH');return $hash;
+}
+function m4o_ms5_descriptors(array $descriptors,array $expected,array &$included): void
+{
+    m4o_expect(array_is_list($descriptors),'MS5_DESCRIPTOR_LIST');$paths=[];
+    foreach($descriptors as$item){
+        m4o_expect(is_array($item)&&m4o_ms5_keys($item,['path','bytes','sha256'])&&is_string($item['path'])
+            &&in_array($item['path'],$expected,true)&&!isset($paths[$item['path']])&&is_int($item['bytes'])&&$item['bytes']>=0
+            &&is_string($item['sha256'])&&preg_match('/\A[a-f0-9]{64}\z/D',$item['sha256'])===1,'MS5_EXACT_DESCRIPTOR');
+        $paths[$item['path']]=true;
+        foreach(['/workspace','/source']as$root){$path=$root.'/'.$item['path'];
+            m4o_expect(is_file($path)&&!is_link($path)&&filesize($path)===$item['bytes']
+                &&m4o_ms5_hash($path)===$item['sha256'],'MS5_DUAL_RO_DESCRIPTOR_BYTES');
+            $real=realpath($path);m4o_expect(is_string($real),'MS5_REAL_INCLUDED_SOURCE');$included[$real]=true;}
+    }
+    $actual=array_keys($paths);sort($actual,SORT_STRING);m4o_expect($actual===$expected,'MS5_COMPLETE_DESCRIPTOR_CLOSURE');
+}
+function m4o_ms5_manifest(array $manifest,string $role): void
+{
+    m4o_expect(($manifest['run_id']??null)===getenv('AUDIT_RUN_ID')&&($manifest['commit_sha']??null)===getenv('AUDIT_SOURCE_SHA')
+        &&($manifest['project']??null)==='tianli-audit-'.getenv('AUDIT_RUN_ID')&&($manifest['guard_mode']??null)==='read-only'
+        &&($manifest['isolation']??null)==='ISO-FULL'&&($manifest['network_internal']??null)===true,'MS5_CURRENT_ISOLATION');
+    $roles=array_keys($manifest['services']??[]);sort($roles,SORT_STRING);$expected=[$role,'audit-mysql','audit-redis'];sort($expected,SORT_STRING);
+    m4o_expect($roles===$expected,'MS5_EXACT_THREE_PHASE_ROLES');$network=$manifest['network']??[];
+    m4o_expect(is_string($network['id']??null)&&preg_match('/\A[a-f0-9]{64}\z/D',$network['id'])===1
+        &&($network['name']??null)===$manifest['project'].'_isolation','MS5_DEDICATED_INTERNAL_NETWORK');
+    $volumes=[];foreach(['app-secrets','bootstrap-secrets','fixture-secrets','mysql-data','redis-data','redis-secrets']as$suffix)
+        $volumes[]=$manifest['project'].'_'.$suffix;
+    sort($volumes,SORT_STRING);$actual=$manifest['volumes']??[];sort($actual,SORT_STRING);
+    m4o_expect($actual===$volumes&&is_array($manifest['volume_identities']??null)
+        &&m4o_ms5_keys($manifest['volume_identities'],$volumes),'MS5_EXACT_SIX_VOLUME_IDENTITIES');
+    foreach($volumes as$volume)m4o_expect(is_string($manifest['volume_identities'][$volume])
+        &&$manifest['volume_identities'][$volume]!=='','MS5_REAL_VOLUME_IDENTITY');
+    foreach(['audit-mysql','audit-redis']as$host){$endpoint=$manifest['services'][$host];
+        m4o_expect(is_string($endpoint['id']??null)&&preg_match('/\A[a-f0-9]{64}\z/D',$endpoint['id'])===1
+            &&is_string($endpoint['image_id']??null)&&preg_match('/\Asha256:[a-f0-9]{64}\z/D',$endpoint['image_id'])===1
+            &&filter_var($endpoint['address']??null,FILTER_VALIDATE_IP,FILTER_FLAG_IPV4)!==false,'MS5_REAL_ENDPOINT_IDENTITY');}
+}
+/** Imported legacy helpers keep their closed-gate expectation; no caller-supplied marker grants this role. */
+function m4o_trade_expected(): bool
+{
+    if(PHP_SAPI!=='cli'||realpath($_SERVER['SCRIPT_FILENAME']??'')!==__FILE__)return false;
+    $run=getenv('AUDIT_RUN_ID');$sha=getenv('AUDIT_SOURCE_SHA');$manifest=audit_manifest();m4o_ms5_manifest($manifest,M4O_MS5_ROLE);
+    $base=audit_run_dir().'/evidence/';$created=m4o_read($base.'ms4-order-normal-container-created.json');
+    $binding=m4o_read($base.'ms4-order-normal-source-binding.json');$service=$manifest['services'][M4O_MS5_ROLE];
+    m4o_expect(PHP_INT_SIZE>=8&&count($_SERVER['argv'])===1&&getenv('AUDIT_ISOLATED')==='1'
+        &&getenv('AUDIT_GUARD_MODE')==='read-only'&&audit_repo_dir()==='/workspace'&&audit_run_dir()==='/run/audit'
+        &&getenv('AUDIT_PROJECT')===$manifest['project']
+        &&preg_match('/\A\d{14}[a-f0-9]{6}\z/D',(string)$run)===1&&preg_match('/\A[a-f0-9]{40}\z/D',(string)$sha)===1
+        &&($binding['run_id']??null)===$run&&($binding['source_sha']??null)===$sha
+        &&($created['run_id']??null)===$run&&($created['source_sha']??null)===$sha
+        &&is_string($service['id']??null)&&preg_match('/\A[a-f0-9]{64}\z/D',$service['id'])===1
+        &&($created['id']??null)===$service['id']&&gethostname()===substr($service['id'],0,12)
+        &&($created['hostname']??null)===gethostname()&&($created['image']??null)===M4O_IMAGE&&($service['image_id']??null)===M4O_IMAGE
+        &&($created['labels']['com.docker.compose.service']??null)===M4O_MS5_ROLE
+        &&($created['command']??null)===['help/audit-regressions/isolated/ms4-order-normal.php']
+        &&($binding['entry_sha256']??null)===m4o_ms5_hash(__FILE__)
+        &&($binding['native_created_sha256']??null)===m4o_ms5_hash($base.'ms4-order-normal-container-created.json'),
+        'ACTUAL_MS5_MAIN_ROLE_TRADE_EXPECTATION');
+    foreach(['APP_ENV'=>'testing','PHP_MARKETPLACE_PAYMENT_TEST_ENABLED'=>'true','PHP_MARKETPLACE_ENABLED'=>'true',
+        'PHP_MARKETPLACE_TRADE_ENABLED'=>'true']as$key=>$value)m4o_expect(getenv($key)===$value,'ACTUAL_MS5_ROLE_NATIVE_ENVIRONMENT');
+    return true;
+}
 /** This entry has its own actual role/full source proof; no old migration proof is substituted. */
 function m4o_source(array &$includedSet): array
 {
@@ -95,24 +179,32 @@ function m4o_source(array &$includedSet): array
     $merchantEnvironment = m4o_read($base.'ms4-order-merchant-environment.json');
     $run = getenv('AUDIT_RUN_ID'); $sha = getenv('AUDIT_SOURCE_SHA');
     m4o_expect(PHP_SAPI === 'cli' && PHP_INT_SIZE >= 8 && realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__
-        && count($_SERVER['argv']) === 1 && audit_repo_dir() === '/workspace' && audit_run_dir() === '/run/audit','ACTUAL_NORMAL_ENTRY');
+        && count($_SERVER['argv']) === 1 && audit_repo_dir() === '/workspace' && audit_run_dir() === '/run/audit'
+        && getenv('AUDIT_REPO_DIR') === '/workspace' && getenv('AUDIT_RUN_DIR') === '/run/audit','ACTUAL_NORMAL_ENTRY');
     m4o_expect(getenv('AUDIT_ISOLATED') === '1' && getenv('AUDIT_GUARD_MODE') === 'read-only'
+        &&getenv('AUDIT_PROJECT')==='tianli-audit-'.$run
         && preg_match('/\A\d{14}[a-f0-9]{6}\z/D',(string)$run) === 1 && preg_match('/\A[a-f0-9]{40}\z/D',(string)$sha) === 1
         && ($manifest['run_id'] ?? '') === $run && ($manifest['commit_sha'] ?? '') === $sha
         && ($manifest['project'] ?? '') === 'tianli-audit-'.$run && ($manifest['guard_mode'] ?? '') === 'read-only'
         && ($manifest['isolation'] ?? '') === 'ISO-FULL' && ($manifest['network_internal'] ?? null) === true,'ACTUAL_ISOLATION_SOURCE');
-    $roles = array_keys($manifest['services'] ?? []); sort($roles,SORT_STRING);
-    m4o_expect($roles === ['audit-ms4-order-normal','audit-mysql','audit-redis'],'EXACT_NORMAL_ROLES');
-    $service = $manifest['services']['audit-ms4-order-normal'];
+    m4o_ms5_manifest($manifest,M4O_MS5_ROLE);$service = $manifest['services'][M4O_MS5_ROLE];
+    m4o_expect(m4o_ms5_keys($binding,['schema','run_id','source_sha','requested_repo_source','requested_run_source','entry_sha256',
+        'preparation_sha256','native_created_sha256','test_environment_sha256','merchant_environment_sha256','prerequisites_sha256','source_files'])
+        &&$binding['schema']===1&&is_string($binding['requested_repo_source'])&&$binding['requested_repo_source']!==''
+        &&is_string($binding['requested_run_source'])&&$binding['requested_run_source']!=='','MS5_EXACT_TWELVE_KEY_SOURCE_BINDING');
     $freezePath = audit_run_dir().'/preparation-source-binding.json';
-    $publicEnvironment = ['APP_ENV'=>'testing','PHP_MARKETPLACE_PAYMENT_TEST_ENABLED'=>'true'];
-    $environmentLines = ['APP_ENV=testing','PHP_MARKETPLACE_PAYMENT_TEST_ENABLED=true'];
+    $publicEnvironment = ['APP_ENV'=>'testing','PHP_MARKETPLACE_PAYMENT_TEST_ENABLED'=>'true',
+        'PHP_MARKETPLACE_ENABLED'=>'true','PHP_MARKETPLACE_TRADE_ENABLED'=>'true'];
+    $environmentLines = [];foreach($publicEnvironment as$key=>$value){
+        m4o_expect(getenv($key)===$value,'MS5_ACTUAL_NATIVE_TEST_AND_TRADE_ENVIRONMENT');$environmentLines[]=$key.'='.$value;}
     $environmentHashes = [];
-    foreach ([$environmentLines,array_reverse($environmentLines)] as $lines) {
-        foreach (["\n","\n\n"] as $ending) $environmentHashes[] = hash('sha256',implode("\n",$lines).$ending);
-    }
+    $permutations=static function(array $remaining,array $lines)use(&$permutations,&$environmentHashes):void{
+        if($remaining===[]){foreach(["\n","\n\n"]as$ending)$environmentHashes[]=hash('sha256',implode("\n",$lines).$ending);return;}
+        foreach($remaining as$i=>$line){$next=$remaining;unset($next[$i]);$permutations($next,[...$lines,$line]);}
+    };$permutations($environmentLines,[]);
+    m4o_expect(count($environmentHashes)===48&&count(array_unique($environmentHashes,SORT_STRING))===48,'EXACT_24_NATIVE_ENVIRONMENT_ORDERS');
     m4o_expect(is_file($freezePath) && !is_link($freezePath)
-        && ($environment['schema'] ?? null) === 1 && ($environment['scope'] ?? '') === 'MS4_TEST_PAYMENT_ENVIRONMENT'
+        && ($environment['schema'] ?? null) === 1 && ($environment['scope'] ?? '') === 'MS4_MS5_TEST_PAYMENT_ENVIRONMENT'
         && ($environment['run_id'] ?? '') === $run && ($environment['source_sha'] ?? '') === $sha
         && ($environment['container_id'] ?? '') === ($service['id'] ?? null)
         && ($environment['freeze_sha256'] ?? '') === hash_file('sha256',$freezePath)
@@ -124,7 +216,7 @@ function m4o_source(array &$includedSet): array
         && getenv('APP_ENV') === 'testing' && getenv('PHP_MARKETPLACE_PAYMENT_TEST_ENABLED') === 'true',
         'ACTUAL_CREATED_TEST_PAYMENT_ENVIRONMENT');
     m4o_expect(($merchantEnvironment['schema'] ?? null) === 1
-        && ($merchantEnvironment['scope'] ?? '') === 'MS4_MERCHANT_CACHE_ENVIRONMENT'
+        && ($merchantEnvironment['scope'] ?? '') === 'MS4_MS5_MERCHANT_CACHE_ENVIRONMENT'
         && ($merchantEnvironment['run_id'] ?? '') === $run && ($merchantEnvironment['source_sha'] ?? '') === $sha
         && ($merchantEnvironment['container_id'] ?? '') === ($service['id'] ?? null)
         && ($merchantEnvironment['freeze_sha256'] ?? '') === hash_file('sha256',$freezePath)
@@ -142,14 +234,15 @@ function m4o_source(array &$includedSet): array
         && ($facts['image'] ?? '') === M4O_IMAGE && ($service['image_id'] ?? '') === M4O_IMAGE
         && ($facts['status'] ?? '') === 'created' && ($facts['read_only'] ?? null) === true && ($facts['privileged'] ?? null) === false
         && ($facts['network_mode'] ?? '') === ($manifest['network']['name'] ?? null)
+        &&is_array($facts['networks']??null)&&array_keys($facts['networks'])===[$manifest['network']['name']]
         && ($facts['labels']['tianli.audit'] ?? '') === '1' && ($facts['labels']['tianli.audit.run'] ?? '') === $run
         && ($facts['labels']['com.docker.compose.project'] ?? '') === $manifest['project']
-        && ($facts['labels']['com.docker.compose.service'] ?? '') === 'audit-ms4-order-normal'
+        && ($facts['labels']['com.docker.compose.service'] ?? '') === M4O_MS5_ROLE
         && ($facts['entrypoint'] ?? null) === ['php'] && ($facts['command'] ?? null) === ['help/audit-regressions/isolated/ms4-order-normal.php']
         && ($facts['workdir'] ?? '') === '/workspace' && ($facts['restart_count'] ?? null) === 0
         && ($facts['cap_drop'] ?? null) === ['ALL']
         && in_array($facts['security_options'] ?? null,[['no-new-privileges'],['no-new-privileges:true']],true),'NATIVE_CREATED_NORMAL_ROLE');
-    m4o_expect(empty($facts['port_bindings']),'NO_PUBLISHED_PORT');
+    m4o_expect(empty($facts['port_bindings'])&&is_array($facts['ports']??null),'NO_PUBLISHED_PORT');
     foreach ($facts['ports'] ?? [] as $value) m4o_expect($value === null || $value === [],'NO_NATIVE_HOST_PORT');
     foreach (['/workspace','/source'] as $destination) {
         $mount = m4o_mount($facts,$destination);
@@ -162,20 +255,37 @@ function m4o_source(array &$includedSet): array
     $mount = m4o_mount($facts,'/run/audit-app'); $volume = $manifest['project'].'_app-secrets';
     m4o_expect(($mount['Type'] ?? '') === 'volume' && ($mount['RW'] ?? null) === false && ($mount['Name'] ?? '') === $volume
         && in_array($volume,$manifest['volumes'] ?? [],true) && isset($manifest['volume_identities'][$volume]),'OWN_APP_CONFIG_RO');
-    foreach ($facts['mounts'] ?? [] as $mount) m4o_expect(!str_contains((string)($mount['Source'] ?? ''),'docker.sock')
-        && !str_contains((string)($mount['Destination'] ?? ''),'docker.sock') && ($mount['Destination'] ?? '') !== '/run/audit-bootstrap','NO_SOCKET_OR_MIGRATOR_MOUNT');
-    m4o_expect(isset($facts['tmpfs']['/tmp']),'TMPFS_CREATED'); $tmpfs = false;
+    $seenMounts=[];foreach ($facts['mounts'] ?? [] as $mount){$destination=$mount['Destination']??'';
+        m4o_expect(in_array($destination,['/workspace','/source','/run/audit','/run/audit-app','/tmp'],true)&&!isset($seenMounts[$destination])
+            &&!str_contains((string)($mount['Source']??''),'docker.sock'),'ONLY_MS5_NORMAL_DML_MOUNTS');$seenMounts[$destination]=true;}
+    m4o_expect(is_array($facts['tmpfs']??null)&&array_keys($facts['tmpfs'])===['/tmp'],'TMPFS_CREATED'); $tmpfs = false;
     foreach (file('/proc/self/mountinfo',FILE_IGNORE_NEW_LINES) as $line) {
         $parts = explode(' - ',$line,2); $left = explode(' ',$parts[0]); $right = explode(' ',$parts[1] ?? '');
         if (($left[4] ?? '') === '/tmp' && ($right[0] ?? '') === 'tmpfs') $tmpfs = true;
     }
-    m4o_expect($tmpfs && !file_exists('/workspace/crmeb/.env') && !file_exists('/workspace/crmeb/public/install.lock'),'OWN_RUNTIME_NO_HOST_CONFIG');
-    m4o_expect(($binding['schema'] ?? null) === 1 && ($binding['entry_sha256'] ?? '') === hash_file('sha256',__FILE__),'OWN_ENTRY_BINDING');
+    m4o_expect($tmpfs && !file_exists('/workspace/crmeb/.env')&&!is_link('/workspace/crmeb/.env')
+        &&!file_exists('/workspace/crmeb/public/install.lock')&&!is_link('/workspace/crmeb/public/install.lock'),'OWN_RUNTIME_NO_HOST_CONFIG');
+    m4o_expect($binding['entry_sha256']===m4o_ms5_hash(__FILE__)
+        &&$binding['preparation_sha256']===m4o_ms5_hash($freezePath)
+        &&$binding['native_created_sha256']===m4o_ms5_hash($base.'ms4-order-normal-container-created.json'),'OWN_ENTRY_AND_NATIVE_BINDING');
+    m4o_expect(is_array($binding['prerequisites_sha256'])&&array_keys($binding['prerequisites_sha256'])===M4O_MS5_PREREQUISITES,
+        'EXACT_EIGHT_MS5_PREREQUISITE_HASH_KEYS');
+    foreach(M4O_MS5_PREREQUISITES as$name)m4o_expect($binding['prerequisites_sha256'][$name]===m4o_ms5_hash($base.$name),
+        'ACTUAL_EIGHT_MS5_PREREQUISITE_BYTES');
+    $freeze=m4o_read($freezePath);$migrationBinding=m4o_read($base.'ms5-payment-migration-source-binding.json');
+    m4o_expect(m4o_ms5_keys($freeze,['schema','status','source_sha','requested_repo_source','driver_source_files',
+        'preparation_source_references','artifact_files','runtime_SQL_App','normal_source_files'])
+        &&$freeze['schema']===1&&$freeze['status']==='CLEAN_SOURCE_FROZEN_ONLY'&&$freeze['runtime_SQL_App']==='NOT RUN'
+        &&$freeze['source_sha']===$sha&&$freeze['requested_repo_source']===$binding['requested_repo_source']
+        &&$freeze['normal_source_files']===$binding['source_files']&&$freeze['driver_source_files']===($migrationBinding['source_files']??null),
+        'MS5_EXACT_NINE_KEY_FROZEN_SOURCE_CLOSURE');
     $expected = m4o_inventory('/workspace'); m4o_expect(m4o_inventory('/source') === $expected,'SAME_COMPLETE_SOURCE_INVENTORY');
     $paths = []; $includedSet = [];
-    foreach ($binding['source_files'] ?? [] as $item) {
+    m4o_expect(is_array($binding['source_files'])&&array_is_list($binding['source_files']),'MS5_SOURCE_DESCRIPTOR_LIST');
+    foreach ($binding['source_files'] as $item) {
         $relative = $item['path'] ?? '';
-        m4o_expect(is_string($relative) && in_array($relative,$expected,true) && !isset($paths[$relative]) && is_int($item['bytes'] ?? null)
+        m4o_expect(is_array($item)&&m4o_ms5_keys($item,['path','bytes','sha256'])&&is_string($relative)
+            && in_array($relative,$expected,true) && !isset($paths[$relative]) && is_int($item['bytes'] ?? null)&&$item['bytes']>=0
             && preg_match('/\A[a-f0-9]{64}\z/D',(string)($item['sha256'] ?? '')) === 1,'EXACT_BOUND_SOURCE');
         $paths[$relative] = true;
         foreach (['/workspace','/source'] as $root) {
@@ -185,11 +295,151 @@ function m4o_source(array &$includedSet): array
         }
     }
     $actual = array_keys($paths); sort($actual,SORT_STRING); m4o_expect($actual === $expected,'COMPLETE_SOURCE_CLOSURE');
-    return ['container_id'=>$service['id'],'entry_namespace_pid'=>getmypid(),'source_sha'=>$sha,
+    foreach(get_included_files()as$file)m4o_expect(isset($includedSet[realpath($file)]),'ACTUAL_INCLUDED_SOURCE_CLOSED_AT_SOURCE');
+    return ['run_id'=>$run,'source_sha'=>$sha,'container_id'=>$service['id'],'entry_namespace_pid'=>getmypid(),
         'binding_sha256'=>hash_file('sha256',$base.'ms4-order-normal-source-binding.json'),
         'test_environment_sha256'=>hash_file('sha256',$base.'ms4-order-test-environment.json'),
         'merchant_environment_sha256'=>hash_file('sha256',$base.'ms4-order-merchant-environment.json'),
-        'native_created_sha256'=>hash_file('sha256',$base.'ms4-order-normal-container-created.json'),'source_files'=>count($actual)];
+        'native_created_sha256'=>hash_file('sha256',$base.'ms4-order-normal-container-created.json'),
+        'preparation_sha256'=>$binding['preparation_sha256'],'prerequisites_sha256'=>$binding['prerequisites_sha256'],'source_files'=>count($actual)];
+}
+/** Compare actual immutable native fields; Docker mount ordering is not identity. */
+function m4o_ms5_terminal(array $created,array $terminal,string $role,array $command,array $manifest): void
+{
+    foreach(['id','image','hostname','labels','tmpfs','read_only','privileged','network_mode','command','entrypoint',
+        'workdir','port_bindings','cap_drop','security_options','created_at']as$field)
+        m4o_expect(array_key_exists($field,$created)&&array_key_exists($field,$terminal)&&$created[$field]===$terminal[$field],
+            'ORIGINAL_PREDECESSOR_IMMUTABLE_IDENTITY');
+    $mounts=static function(array $rows): array{$out=[];foreach($rows as$row)$out[]=serialize($row);sort($out,SORT_STRING);return $out;};
+    m4o_expect(is_array($created['mounts']??null)&&is_array($terminal['mounts']??null)
+        &&$mounts($created['mounts'])===$mounts($terminal['mounts']),'ORIGINAL_COMPLETE_MOUNT_MULTISET');
+    m4o_expect(is_string($created['id'])&&preg_match('/\A[a-f0-9]{64}\z/D',$created['id'])===1
+        &&$created['image']===M4O_IMAGE&&$created['hostname']===substr($created['id'],0,12)
+        &&$created['labels']['tianli.audit']==='1'&&$created['labels']['tianli.audit.run']===getenv('AUDIT_RUN_ID')
+        &&$created['labels']['com.docker.compose.project']===$manifest['project']
+        &&$created['labels']['com.docker.compose.service']===$role&&$created['entrypoint']===['php']
+        &&$created['command']===$command&&$created['workdir']==='/workspace'&&$created['status']==='created'
+        &&$created['network_mode']===$manifest['network']['name']&&$created['read_only']===true&&$created['privileged']===false
+        &&$terminal['status']==='exited'&&$terminal['exit_code']===0&&$terminal['pid']===0&&$terminal['restart_count']===0,
+        'ACTUAL_ORIGINAL_PREDECESSOR_TERMINAL_ZERO');
+    m4o_expect(is_string($terminal['started_at']??null)&&is_string($terminal['finished_at']??null)
+        &&strtotime($terminal['started_at'])!==false&&strtotime($terminal['finished_at'])!==false
+        &&strtotime($terminal['started_at'])>0&&strtotime($terminal['finished_at'])>=strtotime($terminal['started_at']),
+        'ACTUAL_PREDECESSOR_START_FINISH');
+}
+function m4o_ms5_child(array $child): void
+{
+    m4o_expect(is_int($child['pid']??null)&&$child['pid']>0&&($child['native_exit']??null)===0
+        &&array_key_exists('capture_error_class',$child)&&$child['capture_error_class']===null&&is_int($child['stdout_bytes']??null)
+        &&$child['stdout_bytes']>0&&$child['stdout_bytes']<=1048576&&($child['stderr_bytes']??null)===0
+        &&($child['stderr_sha256']??null)===hash('sha256','')&&is_string($child['stdout_sha256']??null)
+        &&preg_match('/\A[a-f0-9]{64}\z/D',$child['stdout_sha256'])===1,'REAL_NORMAL_PREREQUISITE_CHILD');
+    $close=$child['proc_close_exit']??null;$terminal=$child['same_handle_terminal']??null;
+    m4o_expect(in_array($close,[0,-1],true)&&($close===0||$terminal!==null),'SAME_HANDLE_NATIVE_RETURN');
+    if($terminal!==null)m4o_ms5_same($terminal,['running'=>false,'signaled'=>false,'stopped'=>false,'exitcode'=>0]);
+}
+/** These are the new nine real prerequisites, not the old six-child MS4 contract. */
+function m4o_ms5_prerequisites(array $source): array
+{
+    $base='/run/audit/evidence/';$manifest=audit_manifest();$created=m4o_read($base.'initializer-created.json');
+    $terminal=m4o_read($base.'initializer-completed-terminal.json');$init=m4o_read($base.'initializer-result.json');
+    m4o_ms5_terminal($created,$terminal,'audit-ms4-initialize',['/run/ms4-prep/ms4-initialize.php'],$manifest);
+    m4o_expect(($init['schema']??null)===1&&($init['scope']??null)==='MS5_PAYMENT_PREREQUISITES_ONLY'
+        &&($init['status']??null)==='VERIFIED_MS5_PAYMENT_PREREQUISITES_ONLY'&&($init['native_exit']??null)===0
+        &&($init['run_id']??null)===$source['run_id']&&($init['source_sha']??null)===$source['source_sha']
+        &&($init['private_cleanup_verified']??null)===true&&($init['binding']['container_id']??null)===$created['id']
+        &&($init['binding']['source_sha']??null)===$source['source_sha']
+        &&($init['binding']['created_sha256']??null)===m4o_ms5_hash($base.'initializer-created.json')
+        &&($init['binding']['freeze_sha256']??null)===$source['preparation_sha256'],'ACTUAL_NINE_PREREQUISITE_BINDING');
+    $sequence=[['marketplace-ms1.php','check'],['marketplace-ms1.php','apply'],['marketplace-ms1.php','check'],
+        ['marketplace-ms2.php','check'],['marketplace-ms2.php','apply-structure'],['marketplace-ms2.php','check'],
+        ['marketplace-ms4.php','check'],['marketplace-ms4.php','apply-structure'],['marketplace-ms4.php','check']];
+    m4o_expect(is_array($init['children']??null)&&array_is_list($init['children'])&&count($init['children'])===9,'NINE_ACTUAL_CHILDREN');
+    $pids=[];
+    foreach($sequence as$i=>[$script,$mode]){$child=$init['children'][$i];m4o_ms5_child($child);
+        m4o_expect(($child['script']??null)===$script&&($child['mode']??null)===$mode
+            &&($child['script_sha256']??null)===m4o_ms5_hash('/workspace/help/migrations/'.$script)
+            &&!isset($pids[$child['pid']])&&is_array($child['result']??null),'EXACT_NINE_SOURCE_BOUND_CHILDREN');
+        $pids[$child['pid']]=true;$result=$child['result'];
+        m4o_expect(($result['mode']??null)===$mode&&($result['issues']??null)===[]
+            &&($result['state']??null)===($i%3===0?'applicable':'completed')
+            &&($result['changed']??null)===($i%3===1),'ACTUAL_NINE_NORMAL_RESULTS');
+        if($i>=6)m4o_expect(($result['native_exit']??null)===0
+            &&($result['source_sha256']??null)===$child['script_sha256']&&($result['marker']??null)==='marketplace-ms4-structure-v1'
+            &&($result['pending_steps_known']??null)===true&&array_key_exists('failure_phase',$result)&&$result['failure_phase']===null
+            &&($result['trade_enabled']??null)===false&&($result['acceptance']??null)==='NOT RUN','ACTUAL_MS4_PREDECESSOR_STRUCTURE');
+    }
+    $self=$init['actual_self_mer_id']??null;
+    m4o_expect(is_int($self)&&$self>0&&$self<=4294967295&&($init['children'][4]['result']['self_mer_id']??null)===$self
+        &&($init['children'][5]['result']['self_mer_id']??null)===$self
+        &&($init['children'][5]['result']['ownership_phase']??null)==='structure'
+        &&($init['children'][5]['result']['enabled']??null)===false,'ORIGINAL_NATIVE_SELF_ID');
+    $structure=$init['prerequisite_structure']??[];
+    m4o_expect(($structure['pre_ms4_count']??null)===164&&($structure['post_ms4_count']??null)===166
+        &&($structure['added_tables']??null)===['eb_marketplace_order_idempotency','eb_marketplace_stock_movement']
+        &&($structure['ms4_completed']??null)===true&&($structure['ms5_tables_absent']??null)===true
+        &&($structure['ms4_source_sha256']??null)===m4o_ms5_hash('/workspace/help/migrations/marketplace-ms4.php'),
+        'REAL_PREPAYMENT_STRUCTURE');
+    $migrationCreated=m4o_read($base.'ms5-payment-migration-container-created.json');
+    $migrationTerminal=m4o_read($base.'driver-terminal.json');$migration=m4o_read($base.'ms5-payment-migration-normal.json');
+    $formal=m4o_read($base.'ms5-payment-migration-formal-manifest.json');m4o_ms5_manifest($formal,'audit-ms5-payment-migration');
+    foreach(['network','volumes','volume_identities']as$field)m4o_ms5_same($formal[$field],$manifest[$field]);
+    foreach(['audit-mysql','audit-redis']as$role)foreach(['id','image_id','address']as$field)
+        m4o_expect($formal['services'][$role][$field]===$manifest['services'][$role][$field],'ORIGINAL_SHARED_ENDPOINT_IDENTITY');
+    m4o_ms5_terminal($migrationCreated,$migrationTerminal,'audit-ms5-payment-migration',
+        ['help/audit-regressions/isolated/ms5-payment-migration.php'],$formal);
+    m4o_expect($formal['services']['audit-ms5-payment-migration']['id']===$migrationCreated['id']
+        &&$migrationCreated['id']!==$manifest['services'][M4O_MS5_ROLE]['id'],'DISTINCT_ACTUAL_MIGRATION_AND_NORMAL_ROLES');
+    $migrationBinding=m4o_read($base.'ms5-payment-migration-source-binding.json');
+    $normalBinding=m4o_read($base.'ms4-order-normal-source-binding.json');
+    m4o_expect(m4o_ms5_keys($migrationBinding,['schema','run_id','source_sha','requested_repo_source','requested_run_source',
+        'entry_sha256','cli_sha256','source_files'])&&$migrationBinding['schema']===1&&$migrationBinding['run_id']===$source['run_id']
+        &&$migrationBinding['source_sha']===$source['source_sha']
+        &&$migrationBinding['requested_repo_source']===$normalBinding['requested_repo_source']
+        &&$migrationBinding['requested_run_source']===$normalBinding['requested_run_source']
+        &&$migrationBinding['entry_sha256']===m4o_ms5_hash('/workspace/help/audit-regressions/isolated/ms5-payment-migration.php')
+        &&$migrationBinding['cli_sha256']===m4o_ms5_hash('/workspace/help/migrations/marketplace-ms5-payment.php'),
+        'ACTUAL_PREDECESSOR_SOURCE_BINDING');
+    $migrationPaths=['crmeb/public/install/crmeb.sql','help/audit-regressions/isolated/lib/guard.php',
+        'help/audit-regressions/isolated/lib/harness.php','help/audit-regressions/isolated/ms5-payment-migration.php',
+        'help/migrations/marketplace-ms1.php','help/migrations/marketplace-ms2.php','help/migrations/marketplace-ms4.md',
+        'help/migrations/marketplace-ms4.php','help/migrations/marketplace-ms5-payment.md','help/migrations/marketplace-ms5-payment.php'];
+    sort($migrationPaths,SORT_STRING);$unused=[];m4o_ms5_descriptors($migrationBinding['source_files'],$migrationPaths,$unused);
+    m4o_expect(($migration['schema']??null)===1&&($migration['scope']??null)==='MS5_PAYMENT_NORMAL_STRUCTURE_ONLY'
+        &&($migration['status']??null)==='VERIFIED_MS5_PAYMENT_NORMAL_STRUCTURE_ONLY'
+        &&array_key_exists('native_exit',$migration)&&$migration['native_exit']===null
+        &&($migration['native_exit_observation']??null)==='HOST_NATIVE_REQUIRED'&&($migration['entry_return_code']??null)===0
+        &&($migration['termination']??null)==='NORMAL_RETURN'&&($migration['private_cleanup_verified']??null)===true
+        &&($migration['private_cleanup_state']??null)==='OWN_FILE_REMOVED'
+        &&($migration['binding']['container_id']??null)===$migrationCreated['id']
+        &&($migration['binding']['run_id']??null)===$source['run_id']&&($migration['binding']['source_sha']??null)===$source['source_sha']
+        &&($migration['binding']['native_created_sha256']??null)===m4o_ms5_hash($base.'ms5-payment-migration-container-created.json')
+        &&($migration['binding']['binding_sha256']??null)===m4o_ms5_hash($base.'ms5-payment-migration-source-binding.json')
+        &&($migration['binding']['cli_sha256']??null)===$migrationBinding['cli_sha256']
+        &&($migration['actual_command_counts']??null)===['check'=>2,'apply-structure'=>2]
+        &&is_array($migration['children']??null)&&count($migration['children'])===4,'ACTUAL_MS5_STRUCTURE_NORMAL_RETURN');
+    $pids=[];$steps=['marketplace_payment_registry','marketplace_payment_attempt'];
+    foreach(['check','apply-structure','check','apply-structure']as$i=>$mode){$child=$migration['children'][$i];m4o_ms5_child($child);
+        m4o_expect(($child['mode']??null)===$mode&&!isset($pids[$child['pid']]),'FOUR_DISTINCT_NORMAL_CLI_PIDS');$pids[$child['pid']]=true;
+        $result=$child['result']??[];
+        m4o_expect(m4o_ms5_keys($result,['mode','state','native_exit','changed','applied_steps','pending_steps','pending_steps_known',
+            'issues','failure_phase','marker','source_sha256','history_mapping','payment_producer','acceptance'])
+            &&$result['mode']===$mode&&$result['native_exit']===0&&$result['state']===($i===0?'applicable':'completed')
+            &&$result['changed']===($i===1)&&$result['pending_steps_known']===true&&$result['issues']===[]
+            &&$result['failure_phase']===null&&$result['marker']==='marketplace-ms5-payment-structure-v1'
+            &&$result['source_sha256']===$migrationBinding['cli_sha256']&&$result['history_mapping']==='NOT RUN'
+            &&$result['payment_producer']==='NOT IMPLEMENTED'&&$result['acceptance']==='NOT RUN'
+            &&$result['pending_steps']===($i===0?$steps:[])&&$result['applied_steps']===($i===1?$steps:[]),'EXACT_FOUR_MS5_NORMAL_CLI_RESULTS');
+    }
+    $selfPdo=audit_db();m4o_expect(!$selfPdo->inTransaction()&&$selfPdo->setAttribute(PDO::ATTR_EMULATE_PREPARES,false),
+        'MS5_INDEPENDENT_NATIVE_SELF_READ');
+    $selfRows=m4o_rows($selfPdo,'SELECT `mer_id` FROM `eb_marketplace_merchant` WHERE `mer_id` = ?',[$self]);
+    m4o_expect(count($selfRows)===1&&m4pc_integer($selfRows[0]['mer_id'],1,4294967295)===$self,'MS5_ACTUAL_INITIALIZED_SELF_ROW');
+    m4o_expect(($migration['binding']['entry_sha256']??null)===$migrationBinding['entry_sha256']
+        &&($migration['binding']['source_files']??null)===10,'MS5_FULL_MIGRATION_RESULT_SOURCE');
+    return ['self_mer_id'=>$self,'initializer_id'=>$created['id'],'migration_id'=>$migrationCreated['id'],
+        'initializer_children'=>9,'migration_children'=>4,'migration_formal_sha256'=>m4o_ms5_hash($base.'ms5-payment-migration-formal-manifest.json'),
+        'migration_binding_sha256'=>m4o_ms5_hash($base.'ms5-payment-migration-source-binding.json')];
 }
 function m4o_prerequisites(): int
 {
@@ -250,8 +500,9 @@ function m4o_insert(PDO $pdo, string $table, array $values, string $pk = 'id'): 
     return $rows[0];
 }
 /** Register the real application/model services and dedicated Redis/auth configuration, without HTTP or AppInit jobs. */
-function m4o_app(): \think\App
+function m4o_app(bool $expectedTrade=false): \think\App
 {
+    m4o_expect($expectedTrade===m4o_trade_expected(),'APP_EXPECTATION_FROM_ACTUAL_ENTRY_ROLE');
     require_once '/workspace/crmeb/vendor/autoload.php';
     $config = audit_config(); m4o_expect(($config['database']['username'] ?? '') === 'audit_app','APP_DML_CONFIG');
     $app = new \think\App('/workspace/crmeb/');
@@ -280,7 +531,11 @@ function m4o_app(): \think\App
     require_once '/workspace/crmeb/app/common.php';
     $app->register(\think\service\ModelService::class); $app->bootService($app->getService(\think\service\ModelService::class));
     date_default_timezone_set($app->config->get('app.default_timezone','Asia/Shanghai'));
-    m4o_expect($app->db instanceof \crmeb\compat\think\Db && $app->config->get('marketplace.trade.enabled') === false,'REAL_APP_SERVICES_GATE_CLOSED');
+    m4o_expect($app->db instanceof \crmeb\compat\think\Db
+        &&$app->config->get('marketplace.trade.enabled')===$expectedTrade,'REAL_APP_SERVICES_MATCH_ROLE_TRADE_EXPECTATION');
+    if($expectedTrade)m4o_expect($app->config->get('marketplace.enabled')===true
+        &&$app->env->get('marketplace.enabled')===true&&$app->env->get('marketplace.trade.enabled')===true,
+        'REAL_MAIN_ENABLED_AND_TRADE_NATIVE_CONFIGURATION_LOADED');
     m4o_expect(getenv('APP_ENV') === 'testing' && getenv('PHP_MARKETPLACE_PAYMENT_TEST_ENABLED') === 'true'
         && $app->config->get('marketplace.payment.test_enabled') === true,'REAL_TEST_PAYMENT_ENVIRONMENT_LOADED');
     m4o_expect($app->config->get('cache.default') === 'redis'
@@ -334,6 +589,7 @@ function m4o_facts(PDO $pdo): array
     $facts = [];
     foreach (M4O_FACT_TABLES as $table) {
         $order = match ($table) { 'eb_marketplace_order_idempotency'=>'`uid`,`idem_key`',
+            'eb_marketplace_payment_registry'=>'`order_id`',
             'eb_store_order_status'=>'`oid`,`change_type`,`change_message`,`change_time`',
             'eb_user'=>'`uid`','eb_marketplace_merchant'=>'`mer_id`',default=>'`id`' };
         $rows = m4o_rows($pdo,'SELECT * FROM `'.$table.'` ORDER BY '.$order);
@@ -341,6 +597,28 @@ function m4o_facts(PDO $pdo): array
     }
     return $facts;
 }
+/** Independently read the actual same-transaction birth, before any payment attempt exists. */
+function m4o_payment_birth(PDO $pdo,array $order): array
+{
+    $id=m4pc_integer($order['id'],1);$uid=m4pc_integer($order['uid'],1);$mer=m4pc_integer($order['mer_id'],1,4294967295);
+    $rows=m4o_rows($pdo,'SELECT * FROM `eb_marketplace_payment_registry` WHERE `order_id` = ?',[$id]);
+    m4o_expect(count($rows)===1,'PAYMENT_BIRTH_ONE_REAL_REGISTRY');$row=$rows[0];
+    $fields=['order_id','uid','mer_id','payment_contract_version','born_at','attempt_generation',
+        'winner_attempt_id','fulfillment_hold','hold_reason','hold_attempt_id','hold_at'];
+    $keys=array_keys($row);sort($keys,SORT_STRING);sort($fields,SORT_STRING);
+    m4o_expect($keys===$fields,'PAYMENT_BIRTH_COMPLETE_ELEVEN_COLUMNS');
+    foreach(['order_id'=>$id,'uid'=>$uid,'mer_id'=>$mer,'payment_contract_version'=>1,
+        'born_at'=>m4pc_integer($order['add_time'],1,4294967295),'fulfillment_hold'=>0] as $field=>$value)
+        m4o_expect(m4pc_integer($row[$field],0,4294967295)===$value,'PAYMENT_BIRTH_NATIVE_IDENTITY_VALUE');
+    m4o_expect((is_int($row['attempt_generation'])||is_string($row['attempt_generation']))
+        &&(string)$row['attempt_generation']==='0','PAYMENT_BIRTH_CANONICAL_ZERO_GENERATION');
+    foreach(['winner_attempt_id','hold_reason','hold_attempt_id','hold_at'] as $field)
+        m4o_expect($row[$field]===null,'PAYMENT_BIRTH_ACTUAL_NULL_POINTERS');
+    m4o_expect(m4o_rows($pdo,'SELECT * FROM `eb_marketplace_payment_attempt` WHERE `order_id` = ? ORDER BY `id`',[$id])===[],
+        'PAYMENT_BIRTH_REAL_EMPTY_ATTEMPT_SET');
+    return ['verified'=>true,'order_id'=>$id,'generation'=>'0','attempt_count'=>0];
+}
+
 function m4o_verify(PDO $pdo, array $fixture, array $created): array
 {
     $id = $created['order_id']; $uid = (int)$fixture['user']['uid']; $mer = (int)$fixture['merchant']['mer_id'];
@@ -414,6 +692,7 @@ function m4o_verify(PDO $pdo, array $fixture, array $created): array
     foreach (['header_type','type','name','duty_number','drawer_phone','email','tell','address','bank','card_number'] as $field)
         m4o_expect((string)$invoices[0][$field] === (string)$fixture['invoice'][$field],'ACTUAL_INVOICE_HEADING_SNAPSHOT');
     return ['order_id'=>$id,'item_count'=>count($items),'reserve_count'=>count($movements),'line_postage_sum'=>$postage,
+        'payment_birth'=>m4o_payment_birth($pdo,$order),
         'persistent_cart_consumption'=>['selected_count'=>count($fixture['carts']),'remaining_count'=>count($remaining),'unselected_unchanged'=>true],
         'fixture_identity_sha256'=>hash('sha256',serialize([$uid,$mer,$fixture['product']['id'],array_column($fixture['skus'],'id'),
             array_column($fixture['carts'],'id'),$fixture['unselected_cart']['id']]))];
@@ -596,10 +875,10 @@ function m4o_verify_service(PDO $pdo,array $fixture,array $request,string $idemK
     m4o_expect((int)$ledger[0]['add_time']===(int)$order['add_time']
         &&(int)$ledger[0]['cancel_at']===$deadline&&$deadline===($kind==='persistent'?(int)$order['add_time']+1800:0),'SERVICE_ACTUAL_CONFIGURED_DEADLINE');
     }else{
-        m4o_expect($kind==='persistent'&&$fixture['hours']==='0.0000001'&&$cancelSeconds===0
+        m4o_expect($kind==='persistent'&&in_array([$fixture['hours'],$cancelSeconds],[['0.0000001',0],['0.025',90]],true)
             &&bccomp($hours,'0',7)>0&&(int)$ledger[0]['add_time']===(int)$order['add_time']
             &&(int)$ledger[0]['cancel_at']===$deadline&&$deadline===(int)$order['add_time']+$cancelSeconds,
-            'SERVICE_ACTUAL_POSITIVE_SUBSECOND_DEADLINE');
+            'SERVICE_ACTUAL_FIXED_POSITIVE_CANCEL_DEADLINE');
     }
     $storedForms=json_decode($order['custom_form'],true,32,JSON_THROW_ON_ERROR);
     m4o_expect(is_array($storedForms)&&count($storedForms)===2&&count($frame['custom_form'])===2,'SERVICE_TWO_SAVED_FORM_GROUPS');
@@ -636,16 +915,17 @@ function m4o_verify_service(PDO $pdo,array $fixture,array $request,string $idemK
     foreach(['header_type','type','name','duty_number','drawer_phone','email','tell','address','bank','card_number'] as $field)
         m4o_expect((string)$invoices[0][$field]===(string)$fixture['invoice'][$field],'SERVICE_ACTUAL_INVOICE_HEADING');
     return ['order_id'=>$id,'item_count'=>count($items),'reserve_count'=>count($moves),'form_group_count'=>count($storedForms),
+        'payment_birth'=>m4o_payment_birth($pdo,$order),
         'fixture_identity_sha256'=>hash('sha256',serialize([$uid,$mer,array_keys($fixture['products']),array_keys($fixture['skus']),$request['cart_refs']]))];
 }
 
 function m4o_service_case(\think\App $app,string $kind,array &$contexts,?string $fixtureHours=null,?int $cancelSeconds=null): array
 {
-    $phaseKind=$fixtureHours===null&&$cancelSeconds===null?$kind:$kind.'_cancel_tiny';
+    $phaseKind=$fixtureHours===null&&$cancelSeconds===null?$kind:($cancelSeconds===0?$kind.'_cancel_tiny':$kind.'_cancel_pending');
     $GLOBALS['m4o_phase']='service_'.$phaseKind.'_fixtures';$fixture=m4o_service_fixture($kind);
     if($fixtureHours!==null||$cancelSeconds!==null){
-        m4o_expect($kind==='persistent'&&$fixtureHours==='0.0000001'&&$cancelSeconds===0&&$fixture['hours']==='0.5',
-            'ORDINARY_TINY_FIXTURE_ONLY');
+        m4o_expect($kind==='persistent'&&in_array([$fixtureHours,$cancelSeconds],[['0.0000001',0],['0.025',90]],true)&&$fixture['hours']==='0.5',
+            'ORDINARY_FIXED_CANCEL_FIXTURE_ONLY');
         Db::transaction(static function(\think\db\ConnectionInterface $connection)use($fixtureHours):void{
             $pdo=m4o_business_pdo($connection);
             $rows=m4o_rows($pdo,'SELECT `id`,`value` FROM `eb_system_config` WHERE `menu_name` = ?',['order_cancel_time']);
@@ -708,7 +988,8 @@ function m4o_service_case(\think\App $app,string $kind,array &$contexts,?string 
     $GLOBALS['m4o_phase']='service_'.$phaseKind.'_ordinary_replay';$before=m4o_facts(audit_db());
     $replay=$service->create($uid,$key,$raw);
     m4o_expect($replay===$result&&m4o_facts(audit_db())===$before,'SERVICE_NORMAL_REPLAY_SAME_ORDER_NO_DATA_WRITE');
-    m4o_expect(!Db::connect()->getPdo()->inTransaction()&&$app->config->get('marketplace.trade.enabled')===false,'SERVICE_OWN_COMMIT_GATE_CLOSED');
+    m4o_expect(!Db::connect()->getPdo()->inTransaction()&&$app->config->get('marketplace.trade.enabled')===m4o_trade_expected(),
+        'SERVICE_OWN_COMMIT_MATCHES_ROLE_TRADE_EXPECTATION');
     $proof+=['verified'=>true,'replay_unchanged'=>true,'lookup_created'=>true,
         'cancel_mode'=>$kind==='persistent'?'configured_hours':'disabled'];
     if($kind==='persistent')$proof+=['cart_consumed'=>true,'unselected_unchanged'=>true];
@@ -966,7 +1247,8 @@ function m4o_membership_case(\think\App $app,string $case): array
     $GLOBALS['m4o_phase']='membership_'.$case.'_lookup_created';m4o_service_lookup($service,$uid,$key,$result['order_id']);
     $GLOBALS['m4o_phase']='membership_'.$case.'_ordinary_replay';$before=m4o_facts(audit_db());$replay=$service->create($uid,$key,$raw);
     m4o_expect($replay===$result&&m4o_facts(audit_db())===$before,'MEMBERSHIP_NORMAL_REPLAY_NO_WRITE');
-    m4o_expect(!Db::connect()->getPdo()->inTransaction()&&$app->config->get('marketplace.trade.enabled')===false,'MEMBERSHIP_COMMITTED_GATE_CLOSED');
+    m4o_expect(!Db::connect()->getPdo()->inTransaction()&&$app->config->get('marketplace.trade.enabled')===m4o_trade_expected(),
+        'MEMBERSHIP_COMMITTED_MATCHES_ROLE_TRADE_EXPECTATION');
     $proof+=['verified'=>true,'prices_verified'=>true,'qualification_verified'=>true,'amounts'=>$amounts,
         'replay_unchanged'=>true,'lookup_created'=>true,'source_kind'=>$kind,'cancel_mode'=>$kind==='persistent'?'configured_hours':'disabled'];
     if($kind==='persistent')$proof+=['cart_consumed'=>true,'unselected_unchanged'=>true];
@@ -974,27 +1256,109 @@ function m4o_membership_case(\think\App $app,string $case): array
     return $proof;
 }
 
+/** Bound the native proof before serialization; no object hooks, resources or floating-point values are accepted. */
+function m4o_ms5_native_shape(mixed $value,int $depth,int &$nodes,int &$stringBytes): void
+{
+    m4o_expect($depth<=64&&++$nodes<=200000,'BOUNDED_NATIVE_PROOF_DEPTH_AND_NODES');
+    if(is_array($value)){
+        foreach($value as$key=>$item){m4o_expect(is_int($key)||is_string($key),'NATIVE_PROOF_ARRAY_KEY');
+            if(is_string($key)){$stringBytes+=strlen($key);m4o_expect($stringBytes<=8388608,'BOUNDED_NATIVE_PROOF_KEY_BYTES');}
+            m4o_ms5_native_shape($item,$depth+1,$nodes,$stringBytes);}
+        return;
+    }
+    m4o_expect($value===null||is_bool($value)||is_int($value)||is_string($value),'NATIVE_PROOF_SCALARS_WITHOUT_FLOAT_OR_CLASS');
+    if(is_string($value)){$stringBytes+=strlen($value);m4o_expect($stringBytes<=8388608,'BOUNDED_NATIVE_PROOF_STRING_BYTES');}
+}
+/** Seal every original section and native byte; the public projection is not the complete proof. */
+function m4o_ms5_native_archive(array $evidence): array
+{
+    $nodes=0;$stringBytes=0;m4o_ms5_native_shape($evidence,0,$nodes,$stringBytes);$raw=serialize($evidence);
+    m4o_expect(strlen($raw)>0&&strlen($raw)<=8388608,'BOUNDED_EIGHT_MIB_NATIVE_PROOF_ARCHIVE');
+    $encoded=base64_encode($raw);$decoded=base64_decode($encoded,true);
+    m4o_expect(is_string($decoded)&&$decoded===$raw&&base64_encode($decoded)===$encoded,'STRICT_NATIVE_PROOF_BASE64_READBACK');
+    $restored=unserialize($decoded,['allowed_classes'=>false,'max_depth'=>64]);
+    $restoredNodes=0;$restoredBytes=0;m4o_ms5_native_shape($restored,0,$restoredNodes,$restoredBytes);
+    m4o_expect($restored===$evidence&&serialize($restored)===$raw&&hash('sha256',$decoded)===hash('sha256',$raw),
+        'STRICT_NO_CLASS_FULL_NATIVE_PROOF_READBACK');
+    return ['encoding'=>'php-serialize-base64-v1','bytes'=>strlen($raw),'sha256'=>hash('sha256',$raw),'base64'=>$encoded];
+}
+/** Keep existing safe section paths. Native payment records and non-UTF8 bytes stay only in the sealed full proof. */
+function m4o_ms5_public_proof(mixed $value): mixed
+{
+    $summary=static function(mixed $native):array{$raw=serialize($native);
+        return ['encoding'=>'native-value-sha256-v1','bytes'=>strlen($raw),'sha256'=>hash('sha256',$raw)];};
+    if(is_string($value))return preg_match('//u',$value)===1?$value:$summary($value);
+    if(!is_array($value))return $value;
+    $public=[];
+    foreach($value as$key=>$item){
+        if(is_string($key)&&preg_match('//u',$key)!==1)return $summary($value);
+        if((is_string($key)&&in_array($key,['intent','account_snapshot','request_digest','binding_digest','account_domain_digest',
+            'native_payment_proof','raw_payment_proof','payment_closed_proof','closed_proof','native_attempt','native_registry'],true)
+            )||($key==='payment_closed'&&is_array($item)))$public[$key]=$summary($item);
+        else $public[$key]=m4o_ms5_public_proof($item);
+    }
+    return $public;
+}
+/** Exactly one create-only publication attempt, including shutdown; native exit belongs to the host. */
+function m4o_publish(array &$evidence,bool &$attempted,bool $sourceBound): bool
+{
+    if($attempted)return false;$attempted=true;$written=false;
+    if($sourceBound){
+        try{
+            $allowed=['schema','status','scope','binding','termination','entry_return_code','native_exit','native_exit_observation',
+                'HTTP_authentication_creation_UI_DOM_actual_payment_refund_template_freight',
+                'cancel_wallclock_daemon_and_crossprocess_payment','post_commit_wallclock_daemon','stopped_cases','private_credentials_emitted',
+                'prerequisites','committed','post_commit_schedule','service_creations','membership_creations','saved_reads','fulfillment_plans',
+                'cancellations','merchant_reads','included_files','replay_unchanged','diagnostic','phase','assertions','assertions_by_phase',
+                'pdo_observations','address_projection'];
+            foreach(array_keys($evidence)as$key)m4o_expect(in_array($key,$allowed,true),'CLOSED_PUBLIC_NORMAL_EVIDENCE_SECTIONS');
+            $archive=m4o_ms5_native_archive($evidence);$public=m4o_ms5_public_proof($evidence);$public['native_proof_archive']=$archive;
+            m4o_new(audit_run_dir().'/evidence/ms4-order-normal.json',$public);$written=true;
+        }catch(Throwable $error){$evidence['status']='FAIL';$evidence['publication_failure']=['class'=>get_class($error),
+            'file'=>basename($error->getFile()),'line'=>$error->getLine()];}
+    }
+    if(!$written&&$evidence['termination']==='NORMAL_RETURN')$evidence['entry_return_code']=1;
+    $result=['status'=>$written?$evidence['status']:'FAIL','scope'=>M4O_MS5_SCOPE,'entry_return_code'=>$evidence['entry_return_code'],
+        'native_exit'=>null,'native_exit_observation'=>'HOST_NATIVE_REQUIRED','termination'=>$evidence['termination'],
+        'phase'=>$evidence['phase'],'assertions'=>$evidence['assertions']??0,'receipt_write_verified'=>$written,
+        'evidence_ref'=>$written?'evidence/ms4-order-normal.json':null,'HTTP_acceptance'=>'NOT RUN'];
+    if(isset($evidence['publication_failure']))$result['publication_failure']=$evidence['publication_failure'];
+    echo m4o_json($result);return $written;
+}
+
 function m4o_main(): int
 {
-    $phase = 'source'; $evidence = ['schema'=>1,'status'=>'FAIL','scope'=>'NORMAL_ORDER_INTERNAL_ONLY','binding'=>null,
+    $phase = 'source'; $evidence = ['schema'=>1,'status'=>'FAIL','scope'=>M4O_MS5_SCOPE,'binding'=>null,
+        'termination'=>'IN_PROGRESS','entry_return_code'=>null,'native_exit'=>null,'native_exit_observation'=>'HOST_NATIVE_REQUIRED',
         'HTTP_authentication_creation_UI_DOM_actual_payment_refund_template_freight'=>'NOT RUN',
         'cancel_wallclock_daemon_and_crossprocess_payment'=>'NOT RUN',
         'post_commit_wallclock_daemon'=>'NOT RUN',
         'stopped_cases'=>'NOT RUN','private_credentials_emitted'=>false]; $included = [];
+    $sourceBound=false;$publicationAttempted=false;$finished=false;
     $GLOBALS['m4o_phase'] =& $phase;
+    register_shutdown_function(static function()use(&$phase,&$evidence,&$sourceBound,&$publicationAttempted,&$finished):void{
+        if($finished)return;$evidence['status']='FAIL';$evidence['phase']=$phase;$evidence['termination']='SHUTDOWN_WITHOUT_NORMAL_RETURN';
+        $evidence['entry_return_code']=null;$evidence['native_exit']=null;$evidence['native_exit_observation']='HOST_NATIVE_REQUIRED';
+        $evidence['assertions']=$GLOBALS['m4o_assertions']??0;$evidence['assertions_by_phase']=$GLOBALS['m4o_phase_assertions']??[];
+        $evidence['pdo_observations']=$GLOBALS['m4o_pdo_observations']??[];$evidence['address_projection']=$GLOBALS['m4o_address_projection']??null;
+        try{m4o_publish($evidence,$publicationAttempted,$sourceBound);}
+        catch(Throwable $error){fwrite(STDERR,"FAIL normal publication unavailable; host native observation required\n");}
+    });
     try {
         ini_set('display_errors','0'); ini_set('log_errors','0'); ini_set('zend.exception_ignore_args','1'); umask(0077);
         set_error_handler(static function (): never { throw new RuntimeException('PHP_RUNTIME_WARNING'); });
-        $evidence['binding'] = m4o_source($included); audit_guard_assert();
-        $phase = 'prerequisites'; $self = m4o_prerequisites();
-        $phase = 'app_services'; $app = m4o_app();
+        $evidence['binding'] = m4o_source($included);$sourceBound=true; audit_guard_assert();
+        $phase = 'prerequisites'; $prerequisites=m4o_ms5_prerequisites($evidence['binding']);$evidence['prerequisites']=$prerequisites;
+        $self=$prerequisites['self_mer_id'];
+        $phase = 'app_services'; $expectedTrade=m4o_trade_expected();$app = m4o_app($expectedTrade);
         $phase = 'actual_fixtures'; $fixture = m4o_fixture();
         $cartQuery = (new \app\model\order\StoreCart())->db();
         $nativeTypes = $cartQuery->getConnection()->getFieldsType($cartQuery->getTable());
         m4o_expect($cartQuery->getFieldBindType('id') === PDO::PARAM_STR
             && $cartQuery->getFieldsType() === array_replace($nativeTypes,['id'=>'string']),'ACTUAL_CART_FULL_TYPE_MAP_STRING_ID');
-        $marketplace = $app->config->get('marketplace'); $marketplace['enabled'] = true; $marketplace['self_operated_mer_id'] = $self;
-        $app->config->set($marketplace,'marketplace'); m4o_expect($app->config->get('marketplace.trade.enabled') === false,'CREATE_GATE_REMAINS_CLOSED');
+        $marketplace = $app->config->get('marketplace'); $marketplace['self_operated_mer_id'] = $self;
+        $app->config->set($marketplace,'marketplace'); m4o_expect($app->config->get('marketplace.enabled')===true
+            &&$app->config->get('marketplace.trade.enabled')===m4o_trade_expected(),'CREATE_MATCHES_REAL_ROLE_ENABLED_AND_TRADE_CONFIGURATION');
         $uid = (int)$fixture['user']['uid']; $mer = (int)$fixture['merchant']['mer_id']; $addressId = (int)$fixture['address']['id'];
         $refs = array_map(static fn(array $row): string => (string)$row['id'],$fixture['carts']);
         $choice = MarketplaceOrderInput::confirm(['mer_id'=>$mer,'cartId'=>implode(',',$refs),'addressId'=>$addressId]);
@@ -1057,10 +1421,12 @@ function m4o_main(): int
         $phase='ordinary_cancel';$evidence['cancellations']=m4o_cancel_normal($app,audit_db(),$evidence['service_creations'],$evidence['membership_creations']);
         $phase='merchant_saved_reads';$evidence['merchant_reads']=m4o_merchant_read_normal($app,audit_db(),$evidence['service_creations'],$evidence['cancellations']);
         $phase = 'final_source'; $finalSet = []; m4o_expect(m4o_source($finalSet) === $evidence['binding'] && $finalSet === $included,'FINAL_SOURCE_UNCHANGED');
+        m4o_expect(m4o_ms5_prerequisites($evidence['binding'])===$prerequisites,'FINAL_FULL_NINE_PLUS_FOUR_PREDECESSORS_UNCHANGED');
         foreach (get_included_files() as $file) m4o_expect(isset($included[realpath($file)]),'ACTUAL_INCLUDED_SOURCE_CLOSED');
-        audit_guard_assert(); m4o_expect($app->config->get('marketplace.trade.enabled') === false,'FINAL_GATE_CLOSED');
+        audit_guard_assert(); m4o_expect($app->config->get('marketplace.trade.enabled')===m4o_trade_expected()
+            &&$app->config->get('marketplace.enabled')===true,'FINAL_REAL_ROLE_TRADE_CONFIGURATION_UNCHANGED');
         $evidence['included_files'] = count(get_included_files()); $evidence['replay_unchanged'] = true;
-        $evidence['status'] = 'VERIFIED_NORMAL_ORDER_INTERNAL';
+        $evidence['status'] = M4O_MS5_VERIFIED;
     } catch (Throwable $error) {
         $evidence['diagnostic'] = ['class'=>get_class($error),'file'=>basename($error->getFile()),'line'=>$error->getLine(),
             'assertion_code'=>$GLOBALS['m4o_failed_assertion'] ?? ($error instanceof RuntimeException && $error->getMessage() === 'PHP_RUNTIME_WARNING' ? 'PHP_RUNTIME_WARNING' : 'UNCLASSIFIED_APPLICATION_FAILURE')];
@@ -1069,12 +1435,9 @@ function m4o_main(): int
     $evidence['assertions_by_phase'] = $GLOBALS['m4o_phase_assertions'] ?? [];
     $evidence['pdo_observations'] = $GLOBALS['m4o_pdo_observations'] ?? [];
     $evidence['address_projection'] = $GLOBALS['m4o_address_projection'] ?? null;
-    $evidence['native_exit'] = $evidence['status'] === 'VERIFIED_NORMAL_ORDER_INTERNAL' ? 0 : 1;
-    try { m4o_new(audit_run_dir().'/evidence/ms4-order-normal.json',$evidence); }
-    catch (Throwable $error) { echo m4o_json(['status'=>'FAIL','scope'=>'NORMAL_ORDER_INTERNAL_ONLY','native_exit'=>1,'phase'=>'receipt_write']); return 1; }
-    echo m4o_json(['status'=>$evidence['status'],'scope'=>'NORMAL_ORDER_INTERNAL_ONLY','native_exit'=>$evidence['native_exit'],'phase'=>$phase,
-        'assertions'=>$evidence['assertions'],'evidence_ref'=>'evidence/ms4-order-normal.json','HTTP_acceptance'=>'NOT RUN']);
-    return $evidence['native_exit'];
+    $evidence['termination']='NORMAL_RETURN';$returnCode=$evidence['status']===M4O_MS5_VERIFIED?0:1;
+    $evidence['entry_return_code']=$returnCode;$evidence['native_exit']=null;$evidence['native_exit_observation']='HOST_NATIVE_REQUIRED';
+    $written=m4o_publish($evidence,$publicationAttempted,$sourceBound);$finished=true;return $written?$returnCode:1;
 }
 
 if (PHP_SAPI === 'cli' && realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) exit(m4o_main());

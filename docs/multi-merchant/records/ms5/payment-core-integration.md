@@ -54,6 +54,14 @@ H5 的 lib/ms4-customer-h5-normal.php prepare baseline目前把完整facts交给
 
 **结果发布与后续宿主闭环。** publisher接缝为 `m4o_main()` 的evidence汇总/final_source与 `m4o_new()`：必须保留原全部phase、proof和失败，不用两笔付款结果拼接成功；只有上述完整链、末次全来源及实际included核均成功后才发布完整内部普通回归结果。新结果分别声明本体entry_return_code/termination和HOST_NATIVE_REQUIRED的native_exit=NULL，宿主再从原同一句柄取得真实terminal/exit0；NULL不能当0。完整native行/二进制proof不直接交m4o_json；内存逐列核验，需封存时用有界serialize/base64与完整hash、严格无类读回，公开结果只保留必要安全字段/数量/摘要。后继host的create/bind/start/observe/finish、环境原生筛选、完整source freeze、normal结果及新close/zero须精确绑定同一原入口/实际CID和九+四前置。observe仍running时继续观察同进程，不以超时重建；close仅在完整普通结果及真实normal终态/授权helper均核全后，沿原same-handle stop -1、原三CID/单网/六卷非force移除及独立六raw查询/global消费者责任。当前只记录设计，尚未实施/解析/运行；现有检查勾选和全部未验项保持，用户已停止的拒绝/安全/冲突/并发/故障/恢复样本不恢复。
 
+### 实施前补充：新入口角色、最小支持文件和共享期望
+
+2026-10-17，Main clean `fbe4e89912b06ec0e0a57e0d90c53b0c97aaa3bd` 源码盘点确认，最小新增支持文件仅 `help/audit-regressions/isolated/ms5-payment-migration.php`；沿 AUX 现有四子进程结构检查入口迁入，产品 CLI、说明、harness/guard 及其真实依赖均已存在，不复制另一个付款业务本体。原完整订单入口仍是 `ms4-order-normal.php`，新 profile 的唯一业务角色为 `audit-ms4-order-normal-ms5`，与 mysql/redis 构成三角色；旧 frozen profile 和旧商家 prepare 无参合同保持。
+
+原测试环境收据严格四键 `APP_ENV=testing`、`PHP_MARKETPLACE_PAYMENT_TEST_ENABLED=true`、`PHP_MARKETPLACE_ENABLED=true`、`PHP_MARKETPLACE_TRADE_ENABLED=true`；另一个收据严格单键 `PHP_CACHE_DRIVER=redis`。四行原生筛选的 hash 只接受这四个精确行的全部24种排列及原有单/双换行末尾，不能仅核正/反两序、放宽键值或丢掉原 stdout hash。新 `m4o_trade_expected():bool` 只对实际执行本原入口、manifest 中唯一新角色与实际 hostname/CID、同 Run/source 和四项原生环境均匹配的已核路径返回 true；其余原导入调用保持 false。`m4o_app(bool $expectedTrade=false)` 必须核参数等于此实际角色期望，新 main 显式传该期望，所有九处 trade 比较复用同一函数；新路径另核真实加载的 enabled/trade 两配置为 true，main 只设置真实初始化 self ID，不以配置内存赋值代替 enabled 来源。
+
+新 source binding 的前置摘要闭集为原六文件 `driver-terminal.json`、`initializer-completed-terminal.json`、`initializer-created.json`、`initializer-result.json`、`ms5-payment-migration-container-created.json`、`ms5-payment-migration-normal.json`，再追加 `ms5-payment-migration-formal-manifest.json`、`ms5-payment-migration-source-binding.json`，共八个；十源迁移 descriptor 按前述盘点另行逐项双 RO 核验，不并入或替代原四 roots/十 files。新主体验证结果用独立 scope/status 标明 MS5 前置合同，并保留所有原业务 proof 与停止样本边界；结果自身不声明 native0。以上是本轮实施依据，实际实现、语法及完整业务运行分别记录，仍沿09中原唯一执行清单。
+
 ## 已取得的隔离内部证据与 Main 待验范围
 
 2026-10-17，AUX clean ca41929df3b89e2d8207fd4cc1db5a4125c1c994 的新Run202610170434553aa79a已实际通过原9→4与两笔persistent/temporary真实producer内部测试付款create→内部complete→query保存/跨秒重放；原结果2603985B/4c5acecd20209d7bb2327c8ebb2ea3acc3de6b965689af154dea204146bc0dd4为NORMAL_RETURN/entry0/nativeNULL，原同CID真实terminal0。独立只读观察SESSION统计设0后GLOBAL/其他模式保持，原生attempt自增1→3/2行、全168表与15Redis按有限delta保持。实例已正常关闭且独立六raw核零0，zero927a8ea89c0dece19612a7958cfca2f89656bb2b0bc4cde6fbe7235e7ce814a1。该证据证明AUX内部普通测试付款，不开放真实金融或签收Main。

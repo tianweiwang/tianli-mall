@@ -235,7 +235,7 @@ function m4o_saved_order_normal(\think\App $app,PDO $pdo,array $contexts): array
     m4o_expect(m4o_rows($pdo,'SELECT `id` FROM `eb_store_order_refund` ORDER BY `id`') === []
         && m4o_facts($pdo) === $before,'SAVED_READ_DATABASE_FACTS_UNCHANGED');
     m4o_expect(!$pdo->inTransaction() && !SavedNormalDb::connect()->getPdo()->inTransaction()
-        && $app->config->get('marketplace.trade.enabled') === false,'SAVED_READ_FINISHED_GATE_CLOSED');
+        && $app->config->get('marketplace.trade.enabled') === m4o_trade_expected(),'SAVED_READ_FINISHED_ROLE_TRADE_EXPECTATION');
     return ['verified'=>true,'scope'=>'NORMAL_SAVED_ORDER_INTERNAL_READ_ONLY',
         'orders'=>['customer_count'=>$customerCount,'platform_count'=>count($platformSeen),'mobile_count'=>$mobileCount],
         'details'=>$details,'dao_pages'=>count($pageIds),'dao_count'=>$daoCount,

@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+use app\dao\marketplace\payment\MarketplacePaymentDao as CancelNormalPaymentDao;
+use app\services\marketplace\payment\MarketplacePaymentServices as CancelNormalPayments;
 use app\services\marketplace\order\MarketplaceCartSelection as CancelNormalSelection;
 use app\services\marketplace\order\MarketplaceOrderCancelServices as CancelNormalService;
 use app\services\marketplace\order\MarketplaceOrderCreateServices as CancelNormalCreate;
@@ -16,9 +18,9 @@ use crmeb\services\pay\marketplace\TestPaymentDriver as CancelNormalDriver;
 use think\facade\Db as CancelNormalDb;
 
 /** U64 movement identities stay canonical decimal strings, including above PHP's signed range. */
-function m4cn_u64(mixed $value): string
+function m4cn_u64(mixed $value,bool $zero=false): string
 {
-    m4o_expect((is_int($value)||is_string($value))&&preg_match('/\A[1-9][0-9]{0,19}\z/D',(string)$value)===1
+    m4o_expect((is_int($value)||is_string($value))&&(($zero&&(string)$value==='0')||preg_match('/\A[1-9][0-9]{0,19}\z/D',(string)$value)===1)
         &&bccomp((string)$value,'18446744073709551615',0)<=0,'CANCEL_NATIVE_U64');
     return (string)$value;
 }
@@ -28,13 +30,181 @@ function m4cn_text_rows(array $rows): array
     return array_map('m4pc_row_text',$rows);
 }
 
-/** All five permitted cancellation tables are read completely; other tables retain their original facts. */
+const M4CN_REGISTRY_FIELDS=['order_id','uid','mer_id','payment_contract_version','born_at','attempt_generation',
+    'winner_attempt_id','fulfillment_hold','hold_reason','hold_attempt_id','hold_at'];
+const M4CN_ATTEMPT_FIELDS=['id','order_id','uid','mer_id','payment_contract_version','admitted_generation','order_no',
+    'idem_key','amount','currency','account_snapshot','request_digest','binding_digest','account_domain_digest',
+    'created_at','attempt_ref','applied_trade_no','evidence'];
+
+function m4cn_keys(array $value,array $fields): void
+{
+    $keys=array_keys($value);sort($keys,SORT_STRING);sort($fields,SORT_STRING);
+    m4o_expect($keys===$fields,'CANCEL_PAYMENT_COMPLETE_FIELD_SET');
+}
+function m4cn_object(mixed $bytes): array
+{
+    m4o_expect(is_string($bytes),'CANCEL_PAYMENT_NATIVE_JSON_TEXT');
+    $node=json_decode($bytes,false,64,JSON_THROW_ON_ERROR);
+    m4o_expect($node instanceof stdClass,'CANCEL_PAYMENT_REAL_JSON_OBJECT');
+    $shape=static function(mixed $value)use(&$shape): mixed{
+        if($value instanceof stdClass){
+            $fields=get_object_vars($value);
+            m4o_expect(!array_is_list($fields),'CANCEL_PAYMENT_NONEMPTY_NAMED_JSON_OBJECT');
+            foreach($fields as $key=>$child)$fields[$key]=$shape($child);
+            return $fields;
+        }
+        if(is_array($value)){
+            m4o_expect(array_is_list($value),'CANCEL_PAYMENT_REAL_JSON_ARRAY');
+            foreach($value as $key=>$child)$value[$key]=$shape($child);
+            return $value;
+        }
+        m4o_expect(is_int($value)||is_bool($value)||is_string($value)||$value===null,'CANCEL_PAYMENT_ORIGINAL_JSON_SCALAR_TYPE');
+        return $value;
+    };
+    return $shape($node);
+}
+function m4cn_payment_rows(PDO $pdo): array
+{
+    return ['eb_marketplace_payment_registry'=>m4o_rows($pdo,'SELECT * FROM `eb_marketplace_payment_registry` ORDER BY `order_id`'),
+        'eb_marketplace_payment_attempt'=>m4o_rows($pdo,'SELECT * FROM `eb_marketplace_payment_attempt` ORDER BY `id`')];
+}
+function m4cn_registry(array $row,array $order,string $generation): void
+{
+    m4cn_keys($row,M4CN_REGISTRY_FIELDS);
+    foreach(['order_id'=>m4pc_integer($order['id'],1),'uid'=>m4pc_integer($order['uid'],1),
+        'mer_id'=>m4pc_integer($order['mer_id'],1,4294967295),'payment_contract_version'=>1,
+        'born_at'=>m4pc_integer($order['add_time'],1,4294967295),'fulfillment_hold'=>0] as $field=>$value)
+        m4o_expect(m4pc_integer($row[$field],0,4294967295)===$value,'CANCEL_PAYMENT_REGISTRY_REAL_IDENTITY');
+    m4o_expect(m4cn_u64($row['attempt_generation'],true)===$generation,'CANCEL_PAYMENT_REGISTRY_GENERATION');
+    foreach(['winner_attempt_id','hold_reason','hold_attempt_id','hold_at'] as $field)
+        m4o_expect($row[$field]===null,'CANCEL_PAYMENT_NO_WINNER_OR_HOLD');
+}
+
+/** Normalize only designated SQL numeric values for the private typed proof, never the raw table oracle. */
+function m4cn_payment_attempt(array $raw,array $order,array $dto): array
+{
+    m4cn_keys($raw,M4CN_ATTEMPT_FIELDS);
+    m4cn_keys($dto,['schema','scope','order_pk','order_no','attempt_id','admitted_generation','account_snapshot','state','create_result']);
+    $id=m4pc_integer($order['id'],1);$uid=m4pc_integer($order['uid'],1);$mer=m4pc_integer($order['mer_id'],1,4294967295);
+    m4o_expect($dto['schema']===1&&$dto['scope']==='testing_persisted_payment_v1'&&$dto['order_pk']===$id
+        &&$dto['order_no']===$order['order_id']&&$dto['state']==='pending'&&$dto['admitted_generation']==='1'
+        &&is_string($dto['attempt_id'])&&m4cn_u64($dto['attempt_id'])===$dto['attempt_id'],
+        'CANCEL_REAL_NINE_FIELD_PENDING_DTO');
+    $row=$raw;$row['id']=m4cn_u64($raw['id']);$row['admitted_generation']=m4cn_u64($raw['admitted_generation']);
+    m4o_expect($row['id']===$dto['attempt_id']&&$row['admitted_generation']==='1','CANCEL_REAL_SAVED_ATTEMPT_U64');
+    foreach(['order_id'=>$id,'uid'=>$uid,'mer_id'=>$mer,'payment_contract_version'=>1] as $field=>$value){
+        $row[$field]=m4pc_integer($raw[$field],1,4294967295);
+        m4o_expect($row[$field]===$value,'CANCEL_PAYMENT_SAVED_ATTEMPT_IDENTITY');
+    }
+    m4o_expect($raw['order_no']===$order['order_id']&&$raw['idem_key']==='cancel-normal:'.$id
+        &&$raw['amount']===$order['pay_price']&&$raw['currency']==='CNY','CANCEL_SAVED_ATTEMPT_ORIGINAL_INTENT');
+    $row['created_at']=m4pc_integer($raw['created_at'],1,4294967295);
+    $account=m4cn_object($raw['account_snapshot']);
+    m4cn_keys($account,['source','account_id','account_ref','version','mer_id','channel','currency','verification_scope']);
+    m4o_expect($account===$dto['account_snapshot']||CancelNormalInput::canonical($account)===CancelNormalInput::canonical($dto['account_snapshot']),
+        'CANCEL_SAVED_ACCOUNT_ACTUAL_DTO_SNAPSHOT');
+    m4o_expect($account['source']==='test_config'&&$account['account_id']===null&&$account['version']===1&&$account['mer_id']===$mer
+        &&$account['account_ref']==='test:cancel:'.getenv('AUDIT_RUN_ID').':'.$mer&&$account['channel']==='test'
+        &&$account['currency']==='CNY'&&$account['verification_scope']==='test_driver_only','CANCEL_COMPLETE_REAL_TEST_ACCOUNT');
+    $row['account_snapshot']=$account;
+    $binding=['order_pk'=>$id,'order_no'=>$order['order_id'],'uid'=>$uid,'mer_id'=>$mer,'amount'=>$order['pay_price'],
+        'currency'=>'CNY','channel'=>'test','account_source'=>'test_config','account_id'=>null,
+        'account_ref'=>$account['account_ref'],'account_version'=>1];
+    foreach(['request_digest'=>['binding'=>$binding,'idempotency_key'=>$raw['idem_key']],
+        'binding_digest'=>$binding,'account_domain_digest'=>['source'=>'test_config','channel'=>'test','account_ref'=>$account['account_ref']]] as $field=>$value)
+        m4o_expect(is_string($raw[$field])&&strlen($raw[$field])===32
+            &&hash_equals(hash('sha256',CancelNormalInput::canonical($value),true),$raw[$field]),'CANCEL_COMPLETE_NATIVE_PAYMENT_DIGEST');
+    $descriptor=$dto['create_result'];m4o_expect(is_array($descriptor),'CANCEL_ACTUAL_CREATE_DESCRIPTOR');
+    m4cn_keys($descriptor,['state','scope','attempt_ref','binding_sha256','binding','provider_trade_no']);
+    m4o_expect($descriptor['state']==='pending'&&$descriptor['scope']==='testing_process_only'&&$descriptor['provider_trade_no']===null
+        &&is_string($raw['attempt_ref'])&&preg_match('/\Atest-attempt:[a-f0-9]{32}\z/D',$raw['attempt_ref'])===1
+        &&$descriptor['attempt_ref']===$raw['attempt_ref']&&$descriptor['binding_sha256']===bin2hex($raw['binding_digest'])
+        &&$descriptor['binding']===$binding&&$raw['applied_trade_no']===null,'CANCEL_ORIGINAL_DESCRIPTOR_ONLY_FROM_DTO');
+    $evidence=m4cn_object($raw['evidence']);
+    m4cn_keys($evidence,['schema','observations','first_closed','first_succeeded','application','exceptions']);
+    m4o_expect($evidence['schema']===1&&is_array($evidence['observations'])&&array_is_list($evidence['observations'])
+        &&count($evidence['observations'])>=1&&count($evidence['observations'])<=8&&$evidence['first_succeeded']===null
+        &&$evidence['application']===null&&$evidence['exceptions']===[],'CANCEL_REAL_NORMAL_PAYMENT_ENVELOPE');
+    $facts=[];$firstClosed=null;$creates=0;
+    foreach($evidence['observations'] as $observation){
+        m4o_expect(is_array($observation),'CANCEL_PAYMENT_OBSERVATION_OBJECT');m4cn_keys($observation,['key','received_at','fact']);
+        m4o_expect(is_int($observation['received_at'])&&$observation['received_at']>=$row['created_at']
+            &&$observation['received_at']<=time(),'CANCEL_REAL_OBSERVATION_TIME');
+        $fact=$observation['fact'];m4o_expect(is_array($fact),'CANCEL_PAYMENT_FACT_OBJECT');
+        m4cn_keys($fact,['op','attempt_id','generation','account_sha256','result']);
+        m4o_expect(in_array($fact['op'],['createPayment','queryPayment','closePayment'],true)
+            &&$fact['attempt_id']===$row['id']&&$fact['generation']==='1'
+            &&$fact['account_sha256']===hash('sha256',CancelNormalInput::canonical($account)),'CANCEL_FULL_PAYMENT_FACT_BINDING');
+        $result=$fact['result'];m4o_expect(is_array($result),'CANCEL_PAYMENT_RESULT_OBJECT');
+        m4cn_keys($result,['state','scope','attempt_ref','binding_sha256','binding','provider_trade_no']);
+        m4o_expect(in_array($result['state'],['pending','closed'],true)&&$result['scope']==='testing_process_only'
+            &&$result['attempt_ref']===$raw['attempt_ref']&&$result['binding_sha256']===bin2hex($raw['binding_digest'])
+            &&is_array($result['binding'])&&CancelNormalInput::canonical($result['binding'])===CancelNormalInput::canonical($binding)
+            &&$result['provider_trade_no']===null,'CANCEL_COMPLETE_REAL_RESULT_BINDING');
+        if($fact['op']==='createPayment'){
+            ++$creates;m4o_expect(CancelNormalInput::canonical($result)===CancelNormalInput::canonical($descriptor),
+                'CANCEL_RETAIN_ORIGINAL_PENDING_CREATE');
+        }
+        if($fact['op']==='closePayment')m4o_expect($result['state']==='closed','CANCEL_ONLY_REAL_CLOSED_CLOSE_RESULT');
+        $key=hash('sha256',"marketplace-payment-fact:v1\n".CancelNormalInput::canonical($fact));
+        m4o_expect(is_string($observation['key'])&&hash_equals($key,$observation['key'])&&!isset($facts[$key]),
+            'CANCEL_INDEPENDENT_CANONICAL_FACT_KEY');$facts[$key]=$observation;
+        if($result['state']==='closed'&&$firstClosed===null)$firstClosed=$key;
+    }
+    m4o_expect($creates===1&&$evidence['first_closed']===$firstClosed,'CANCEL_COMPLETE_CREATE_AND_FIRST_CLOSED_POINTER');
+    $row['evidence']=$evidence;return ['row'=>$row,'facts'=>$facts];
+}
+
+/** Read actual proof references in a real short transaction, then independently resolve every field against native SQL. */
+function m4cn_payment_proof(\think\App $app,PDO $pdo,array $saved,?array $dto): array
+{
+    m4pc_context($app,$pdo);$before=m4o_facts($pdo);$order=$saved['order'];$id=m4pc_integer($order['id'],1);
+    $uid=m4pc_integer($order['uid'],1);$mer=m4pc_integer($order['mer_id'],1,4294967295);$dao=$app->make(CancelNormalPaymentDao::class);
+    $proof=CancelNormalDb::transaction(static function(\think\db\ConnectionInterface $connection)use($dao,$uid,$id,$order):array{
+        $native=m4o_business_pdo($connection);$locked=$dao->lockPayment($native,$uid,$id,$order['order_id']);
+        $proof=$dao->closedCancellationProof($native,$uid,$id,$order['order_id'],$locked);
+        m4o_expect(is_array($proof)&&$dao->assertCancellationProof($native,$uid,$id,$order['order_id'],$proof)===$locked,
+            'CANCEL_REAL_COMPLETE_DURABLE_PROOF_READBACK');
+        m4o_expect(m4o_business_pdo($connection)===$native,'CANCEL_PROOF_SAME_DEFAULT_PDO');return $proof;
+    });
+    m4pc_context($app,$pdo);m4o_expect(m4o_facts($pdo)===$before,'CANCEL_PROOF_READ_ALL_25_TABLES_UNCHANGED');
+    m4cn_keys($proof,['schema','root','generation','attempts']);
+    m4o_expect($proof['schema']===1&&$proof['root']===['id'=>$id,'uid'=>$uid,'mer_id'=>$mer,'order_no'=>$order['order_id']]
+        &&$proof['generation']===($dto===null?'0':'1')&&is_array($proof['attempts'])&&array_is_list($proof['attempts']),
+        'CANCEL_INDEPENDENT_PROOF_ROOT_GENERATION');
+    $registries=m4o_rows($pdo,'SELECT * FROM `eb_marketplace_payment_registry` WHERE `order_id` = ?',[$id]);
+    m4o_expect(count($registries)===1,'CANCEL_PROOF_COMPLETE_REGISTRY');m4cn_registry($registries[0],$order,$proof['generation']);
+    $rows=m4o_rows($pdo,'SELECT * FROM `eb_marketplace_payment_attempt` WHERE `order_id` = ? ORDER BY `id`',[$id]);
+    if($dto===null){m4o_expect($rows===[]&&$proof['attempts']===[],'CANCEL_ACTUAL_G0_EMPTY_PROOF');}
+    else{
+        m4o_expect(count($rows)===1&&count($proof['attempts'])===1,'CANCEL_COMPLETE_PROOF_ATTEMPT_SET');
+        $checked=m4cn_payment_attempt($rows[0],$order,$dto);$row=$checked['row'];$entry=$proof['attempts'][0];
+        m4o_expect(is_array($entry),'CANCEL_COMPLETE_PROOF_ENTRY');m4cn_keys($entry,['intent','attempt_ref','query_before','close','query_after']);
+        m4o_expect(is_array($entry['intent'])&&$entry['attempt_ref']===$row['attempt_ref'],'CANCEL_PROOF_ORIGINAL_REFERENCE');
+        $fields=array_slice(M4CN_ATTEMPT_FIELDS,0,15);m4cn_keys($entry['intent'],$fields);
+        foreach($fields as $field)m4o_expect($field==='account_snapshot'
+            ?CancelNormalInput::canonical($entry['intent'][$field])===CancelNormalInput::canonical($row[$field])
+            :$entry['intent'][$field]===$row[$field],'CANCEL_PROOF_FULL_IMMUTABLE_INTENT');
+        foreach(['query_before'=>['queryPayment',['pending','closed']],'close'=>['closePayment',['closed']],
+            'query_after'=>['queryPayment',['closed']]] as $field=>[$op,$states]){
+            $fact=$checked['facts'][$entry[$field]]??null;
+            m4o_expect(is_array($fact)&&$fact['fact']['op']===$op&&in_array($fact['fact']['result']['state'],$states,true),
+                'CANCEL_PROOF_REAL_QUERY_CLOSE_QUERY_FACT');
+        }
+        m4o_expect($row['evidence']['first_closed']!==null,'CANCEL_PROOF_REAL_FIRST_CLOSED');
+    }
+    return ['verified'=>true,'generation'=>$proof['generation'],'attempt_count'=>count($rows),'empty_proof'=>$dto===null];
+}
+
+/** Read the five exact business deltas and both complete payment tables; every other table stays fixed. */
 function m4cn_capture(PDO $pdo): array
 {
     $tables=[];
-    foreach(['eb_store_order','eb_store_product','eb_store_product_attr_value','eb_marketplace_stock_movement','eb_store_order_status'] as $table){
+    foreach(['eb_store_order','eb_store_product','eb_store_product_attr_value','eb_marketplace_stock_movement','eb_store_order_status',
+        'eb_marketplace_payment_registry','eb_marketplace_payment_attempt'] as $table){
         m4o_expect(in_array($table,M4O_FACT_TABLES,true),'CANCEL_CAPTURE_CLOSED_TABLE');
-        $order=$table==='eb_store_order_status'?'`oid`,`change_type`,`change_message`,`change_time`':'`id`';
+        $order=match($table){'eb_store_order_status'=>'`oid`,`change_type`,`change_message`,`change_time`',
+            'eb_marketplace_payment_registry'=>'`order_id`',default=>'`id`'};
         $tables[$table]=m4o_rows($pdo,'SELECT * FROM `'.$table.'` ORDER BY '.$order);
     }
     return ['tables'=>$tables,'facts'=>m4o_facts($pdo)];
@@ -177,39 +347,63 @@ function m4cn_keeper(\think\App $app,PDO $pdo,array $original,array $parents): a
         &&$field['value']===$answers[0]['values'][$index]['value'],'CANCEL_KEEPER_REAL_FORM_ANSWERS');
     return ['saved'=>$saved,'parents'=>$reserves,'sku_id'=>$skuId,'product_id'=>$productId,
         'proof'=>['verified'=>true,'order_id'=>$id,'item_count'=>1,'reserve_count'=>1,'quantity'=>1,
-            'different_native_uid'=>true,'same_physical_sku'=>true,'cancel_at'=>0,'post_commit_verified'=>true]];
+            'different_native_uid'=>true,'same_physical_sku'=>true,'cancel_at'=>0,'post_commit_verified'=>true,
+            'payment_birth'=>m4o_payment_birth($pdo,$order)]];
 }
 
-/** Only the real factory and resolver create the same-App nonempty pending attempt. */
+/** Real service admission owns the single driver create; only its retained DTO supplies the original descriptor. */
 function m4cn_attempt(\think\App $app,PDO $pdo,CancelNormalDriver $driver,array $saved): array
 {
     m4pc_context($app,$pdo);$order=$saved['order'];$id=m4pc_integer($order['id'],1);$mer=m4pc_integer($order['mer_id'],1,4294967295);
-    $before=m4o_facts($pdo);$resolver=$app->make(CancelNormalAccounts::class);
-    $reference='test:cancel:'.getenv('AUDIT_RUN_ID').':'.$mer;
+    m4o_payment_birth($pdo,$order);$before=m4o_facts($pdo);$old=m4cn_payment_rows($pdo);
+    $resolver=$app->make(CancelNormalAccounts::class);$reference='test:cancel:'.getenv('AUDIT_RUN_ID').':'.$mer;
     $account=$resolver->registerTestAccount($mer,$reference,1,'CNY');$resolved=$resolver->forOrder($order);
     m4o_expect($resolved===$account&&$account->source==='test_config'&&$account->account_id===null
         &&$account->account_ref===$reference&&$account->version===1&&$account->mer_id===$mer
         &&$account->channel==='test'&&$account->currency==='CNY'&&$account->verification_scope==='test_driver_only',
         'CANCEL_REAL_TEST_CONFIG_ACCOUNT');
-    $attempt=$driver->createPayment($order,$account,'cancel-normal:'.$id);
-    $expected=['order_pk'=>$id,'order_no'=>$order['order_id'],'uid'=>m4pc_integer($order['uid'],1),'mer_id'=>$mer,
-        'amount'=>$order['pay_price'],'currency'=>'CNY','channel'=>'test','account_source'=>'test_config',
-        'account_id'=>null,'account_ref'=>$reference,'account_version'=>1];
-    m4o_expect($attempt['state']==='pending'&&$attempt['scope']==='testing_process_only'&&$attempt['binding']===$expected
-        &&is_string($attempt['attempt_ref'])&&preg_match('/\Atest-attempt:[a-f0-9]{32}\z/D',$attempt['attempt_ref'])===1
-        &&$attempt['binding_sha256']===hash('sha256',CancelNormalInput::canonical($expected))&&$attempt['provider_trade_no']===null,
-        'CANCEL_REAL_PENDING_ATTEMPT_COMPLETE_BINDING');
-    m4o_expect($driver->queryPayment($attempt)===$attempt&&$driver->attemptsForOrder($order)
-        ===['state'=>'known','scope'=>'testing_process_only','attempts'=>[$attempt]],'CANCEL_SAME_APP_NONEMPTY_KNOWN_ATTEMPTS');
-    m4o_expect(m4o_facts($pdo)===$before,'CANCEL_TEST_DRIVER_NO_SQL_WRITE');
-    return $attempt;
+    $started=time();$dto=$app->make(CancelNormalPayments::class)->createForCustomer(m4pc_integer($order['uid'],1),$order['order_id'],'cancel-normal:'.$id);
+    $ended=time();m4pc_context($app,$pdo);
+    m4o_expect($driver===$app->make(CancelNormalAdapter::class)&&$driver===$app->make(CancelNormalDriver::class),
+        'CANCEL_PERSISTED_CREATE_SAME_APP_FACTORY');
+    $after=m4o_facts($pdo);$actual=m4cn_payment_rows($pdo);
+    foreach($before as $table=>$facts)if(!array_key_exists($table,$old))
+        m4o_expect($after[$table]===$facts,'CANCEL_CREATE_ORIGINAL_23_COMPLETE_TABLES_UNCHANGED');
+    $registries=$actual['eb_marketplace_payment_registry'];$oldRegistries=$old['eb_marketplace_payment_registry'];
+    m4o_expect(count($registries)===count($oldRegistries),'CANCEL_CREATE_NO_REGISTRY_INSERT');$found=0;
+    foreach($registries as $index=>$row){
+        $original=$oldRegistries[$index];
+        if(m4pc_integer($row['order_id'],1)===$id){
+            ++$found;m4cn_registry($original,$order,'0');m4cn_registry($row,$order,'1');
+            unset($original['attempt_generation'],$row['attempt_generation']);
+        }
+        m4o_expect($row===$original,'CANCEL_CREATE_ONLY_REAL_TARGET_GENERATION_CHANGED');
+    }
+    m4o_expect($found===1,'CANCEL_CREATE_TARGET_REGISTRY_COMPLETE');$new=null;$oldAfter=[];
+    foreach($actual['eb_marketplace_payment_attempt'] as $row){
+        if(m4cn_u64($row['id'])===($dto['attempt_id']??null)){
+            m4o_expect($new===null,'CANCEL_CREATE_SINGLE_ACTUAL_ATTEMPT');$new=$row;
+        }else $oldAfter[]=$row;
+    }
+    m4o_expect(is_array($new)&&$oldAfter===$old['eb_marketplace_payment_attempt'],'CANCEL_CREATE_EXACT_ONE_ATTEMPT_ALL_OLD_NATIVE_ROWS_UNCHANGED');
+    foreach($old['eb_marketplace_payment_attempt'] as $row)
+        m4o_expect(m4cn_u64($row['id'])!==$dto['attempt_id'],'CANCEL_CREATE_FRESH_NATIVE_U64_ID');
+    $checked=m4cn_payment_attempt($new,$order,$dto);
+    m4o_expect($checked['row']['created_at']>=$started&&$checked['row']['created_at']<=$ended
+        &&$checked['row']['evidence']['first_closed']===null&&count($checked['facts'])===1
+        &&CancelNormalInput::canonical($checked['row']['account_snapshot'])===CancelNormalInput::canonical($account->snapshot()),
+        'CANCEL_REAL_SINGLE_CREATE_SAVED_BEFORE_CLOSE');
+    $descriptor=$dto['create_result'];
+    m4o_expect($driver->queryPayment($descriptor)===$descriptor&&$driver->attemptsForOrder($order)
+        ===['state'=>'known','scope'=>'testing_process_only','attempts'=>[$descriptor]],'CANCEL_SAME_APP_NONEMPTY_KNOWN_ATTEMPTS');
+    m4o_expect(m4o_facts($pdo)===$after,'CANCEL_DRIVER_ORACLE_READ_NO_EXTRA_SQL');return $dto;
 }
 
 /** Independent current-value oracle, complete preserved tables, native release identities and actor. */
 function m4cn_verify_cancel(\think\App $app,PDO $pdo,array $saved,array $parents,array $before,
-    string $actor,?int $actorId,int $started,int $ended,CancelNormalDriver $driver,array $attempt): array
+    string $actor,?int $actorId,int $started,int $ended,CancelNormalDriver $driver,?array $attempt): array
 {
-    m4pc_context($app,$pdo);$id=m4pc_integer($saved['order']['id'],1);$uid=m4pc_integer($saved['order']['uid'],1);
+    m4pc_context($app,$pdo);$order=$saved['order'];$id=m4pc_integer($order['id'],1);$uid=m4pc_integer($order['uid'],1);
     $mer=m4pc_integer($saved['order']['mer_id'],1,4294967295);$after=m4cn_capture($pdo);
     foreach($before['facts'] as $table=>$facts)if(!isset($before['tables'][$table]))
         m4o_expect($after['facts'][$table]===$facts,'CANCEL_OTHER_COMPLETE_TABLES_UNCHANGED');
@@ -260,22 +454,52 @@ function m4cn_verify_cancel(\think\App $app,PDO $pdo,array $saved,array $parents
     $expectedStatuses[]=['oid'=>$id,'change_type'=>'cancel_order','change_message'=>'订单取消','change_time'=>$stamp];
     $sort=static function(array $rows):array{$rows=m4cn_text_rows($rows);usort($rows,static fn(array $a,array $b):int=>strcmp(serialize($a),serialize($b)));return $rows;};
     m4o_expect($sort($newStatuses)===$sort($expectedStatuses),'CANCEL_ONE_STATUS_AND_ALL_OLD_STATUSES_PRESERVED');
-    $closed=$attempt;$closed['state']='closed';
-    m4o_expect($driver->queryPayment($attempt)===$closed&&$driver->attemptsForOrder($saved['order'])
-        ===['state'=>'known','scope'=>'testing_process_only','attempts'=>[$closed]],'CANCEL_REAL_DRIVER_CLOSED_ORIGINAL_BINDING');
+    m4o_expect($after['tables']['eb_marketplace_payment_registry']===$before['tables']['eb_marketplace_payment_registry'],
+        'CANCEL_REGISTRY_ALL_NATIVE_ROWS_AND_GENERATIONS_UNCHANGED');
+    $oldAttempts=$before['tables']['eb_marketplace_payment_attempt'];$newAttempts=$after['tables']['eb_marketplace_payment_attempt'];
+    m4o_expect(count($newAttempts)===count($oldAttempts),'CANCEL_NO_ATTEMPT_INSERT_OR_DELETE');$found=0;
+    foreach($newAttempts as $index=>$row){
+        $original=$oldAttempts[$index];
+        if($attempt!==null&&m4cn_u64($row['id'])===$attempt['attempt_id']){
+            ++$found;$beforeChecked=m4cn_payment_attempt($original,$order,$attempt);$checked=m4cn_payment_attempt($row,$order,$attempt);
+            $oldEvidence=$beforeChecked['row']['evidence'];$newEvidence=$checked['row']['evidence'];
+            m4o_expect(array_slice($newEvidence['observations'],0,count($oldEvidence['observations']))===$oldEvidence['observations']
+                &&$oldEvidence['first_closed']===null&&$newEvidence['first_closed']!==null,'CANCEL_ONLY_APPEND_REAL_CLOSE_OBSERVATIONS');
+            $triplet=['pending_query'=>false,'closed_close'=>false,'closed_query'=>false];
+            foreach($checked['facts'] as $key=>$observation){
+                $fact=$observation['fact'];
+                if(!isset($beforeChecked['facts'][$key]))m4o_expect(in_array($fact['op'],['queryPayment','closePayment'],true)
+                    &&$observation['received_at']>=$started&&$observation['received_at']<=$ended,'CANCEL_REAL_NEW_OBSERVATION_TIME_AND_OPERATION');
+                if($fact['op']==='queryPayment'&&$fact['result']['state']==='pending')$triplet['pending_query']=true;
+                if($fact['op']==='closePayment'&&$fact['result']['state']==='closed')$triplet['closed_close']=true;
+                if($fact['op']==='queryPayment'&&$fact['result']['state']==='closed')$triplet['closed_query']=true;
+            }
+            m4o_expect(!in_array(false,$triplet,true),'CANCEL_ACTUAL_PERSISTED_PENDING_QUERY_CLOSE_CLOSED_QUERY');
+            unset($original['evidence'],$row['evidence']);
+        }
+        m4o_expect($row===$original,'CANCEL_ONLY_TARGET_EVIDENCE_CHANGED_ALL_NATIVE_COLUMNS');
+    }
+    m4o_expect($found===($attempt===null?0:1),'CANCEL_COMPLETE_TARGET_ATTEMPT_SET');
+    $paymentProof=m4cn_payment_proof($app,$pdo,$saved,$attempt);
+    if($attempt!==null){
+        $descriptor=$attempt['create_result'];$closed=$descriptor;$closed['state']='closed';
+        m4o_expect($driver->queryPayment($descriptor)===$closed&&$driver->attemptsForOrder($saved['order'])
+            ===['state'=>'known','scope'=>'testing_process_only','attempts'=>[$closed]],'CANCEL_REAL_DRIVER_CLOSED_ORIGINAL_BINDING');
+    }
     return ['verified'=>true,'order_id'=>$id,'item_count'=>count($saved['items']),'reserve_count'=>count($parents),
         'release_count'=>count($newMoves),'actor_type'=>$actor,'current_stock_verified'=>true,
-        'saved_snapshots_unchanged'=>true,'payment_closed'=>true];
+        'saved_snapshots_unchanged'=>true,'payment_closed'=>$attempt!==null,'payment_proof'=>$paymentProof];
 }
 
 function m4cn_replay(\think\App $app,PDO $pdo,CancelNormalService $service,array $saved,
-    CancelNormalDriver $driver,array $attempt,bool $expired): void
+    CancelNormalDriver $driver,?array $attempt,bool $expired): void
 {
-    $before=m4o_facts($pdo);$closed=$driver->queryPayment($attempt);$order=$saved['order'];
+    $before=m4o_facts($pdo);$descriptor=$attempt===null?null:$attempt['create_result'];
+    $closed=$descriptor===null?null:$driver->queryPayment($descriptor);$order=$saved['order'];
     $result=$expired?$service->cancelExpired(m4pc_integer($order['id'],1))
         :$service->cancelForCustomer(m4pc_integer($order['uid'],1),$order['order_id']);
     m4o_expect($result===['state'=>'already_cancelled','order_id'=>$order['order_id']],'CANCEL_ORDINARY_REPLAY_SAME_ORDER');
-    m4pc_context($app,$pdo);m4o_expect(m4o_facts($pdo)===$before&&$driver->queryPayment($attempt)===$closed,
+    m4pc_context($app,$pdo);m4o_expect(m4o_facts($pdo)===$before&&($descriptor===null||$driver->queryPayment($descriptor)===$closed),
         'CANCEL_ORDINARY_REPLAY_ALL_FACTS_AND_ORIGINAL_PAYMENT_UNCHANGED');
 }
 
@@ -285,7 +509,7 @@ function m4o_cancel_normal(\think\App $app,PDO $pdo,array $originalServiceProofs
     m4pc_context($app,$pdo);audit_guard_assert();
     m4o_expect(getenv('APP_ENV')==='testing'&&getenv('PHP_MARKETPLACE_PAYMENT_TEST_ENABLED')==='true'
         &&$app->config->get('marketplace.payment.test_enabled')===true
-        &&$app->config->get('marketplace.trade.enabled')===false,'CANCEL_ACTUAL_DECLARED_TESTING_ENVIRONMENT');
+        &&$app->config->get('marketplace.trade.enabled')===m4o_trade_expected(),'CANCEL_ACTUAL_DECLARED_TESTING_ROLE_TRADE_CONFIGURATION');
     $driver=$app->make(CancelNormalAdapter::class);
     m4o_expect($driver instanceof CancelNormalDriver&&$driver===$app->make(CancelNormalDriver::class)
         &&$driver===$app->make(CancelNormalAdapter::class),'CANCEL_REAL_FACTORY_SAME_APP_DRIVER');
@@ -319,13 +543,72 @@ function m4o_cancel_normal(\think\App $app,PDO $pdo,array $originalServiceProofs
     m4o_expect($notDue===['state'=>'not_due','order_id'=>$member['order']['order_id']]&&m4o_facts($pdo)===$facts,
         'CANCEL_REAL_ZERO_DEADLINE_NOT_DUE_NO_DATA_WRITE');
     $disabled=['verified'=>true,'order_id'=>m4pc_integer($member['order']['id'],1),'state'=>'not_due','cancel_at'=>0,'facts_unchanged'=>true];
+    $GLOBALS['m4o_phase']='cancel_pending_ninety_second_creation';$pendingContexts=[];
+    $pendingProof=m4o_service_case($app,'persistent',$pendingContexts,'0.025',90);
+    $pending=m4pc_order($pdo,$pendingProof['order_id'],1);$pendingParents=m4cn_reserves($pdo,$pending);
+    $pendingDeadline=m4pc_integer($pending['ledger']['cancel_at'],1,4294967295);
+    m4o_expect($pendingDeadline===m4pc_integer($pending['order']['add_time'],1,4294967295)+90,
+        'CANCEL_REAL_SAVED_NINETY_SECOND_DEADLINE');
+    $pendingAttempt=m4cn_attempt($app,$pdo,$driver,$pending);$admittedAt=time();
+    m4o_expect($admittedAt<$pendingDeadline&&$pendingAttempt['create_result']['attempt_ref']!==$attempt['create_result']['attempt_ref'],
+        'CANCEL_DISTINCT_REAL_PENDING_ADMITTED_BEFORE_DEADLINE');
+    $dueSql='SELECT `o`.`id` FROM `eb_store_order` AS `o` INNER JOIN `eb_marketplace_order_idempotency` AS `l` ON `l`.`order_id` = `o`.`id`'
+        .' WHERE `o`.`marketplace_trade_version` = 1 AND `o`.`paid` = 0 AND `o`.`is_cancel` = 0 AND `l`.`state` = 1 AND `l`.`cancel_at` > 0 AND `l`.`cancel_at` <= ? ORDER BY `l`.`cancel_at`,`o`.`id`';
+    m4o_expect(m4o_rows($pdo,$dueSql,[$admittedAt])===[],'CANCEL_PENDING_NOT_DUE_BEFORE_REAL_WAIT');
+    $waitFacts=m4o_facts($pdo);$waitStarted=time();$waitSegments=[];$lastClock=$waitStarted;
+    $GLOBALS['m4o_phase']='cancel_pending_natural_wallclock_wait';
+    while(($remaining=$pendingDeadline-time())>0){
+        $clock=time();m4o_expect($clock>=$lastClock&&count($waitSegments)<90,'CANCEL_NATURAL_CLOCK_FORWARD_BOUNDED_WAIT');
+        $seconds=min(5,$remaining);m4o_expect(sleep($seconds)===0,'CANCEL_REAL_WAIT_NOT_INTERRUPTED');$returned=time();
+        m4o_expect($returned>=$clock,'CANCEL_REAL_WAIT_CLOCK_NOT_REWOUND');
+        $waitSegments[]=['started'=>$clock,'requested_seconds'=>$seconds,'returned'=>$returned];$lastClock=$returned;
+    }
+    $waitEnded=time();m4pc_context($app,$pdo);audit_guard_assert();
+    m4o_expect($waitEnded>=$pendingDeadline&&m4o_facts($pdo)===$waitFacts,'CANCEL_NATURAL_DEADLINE_NO_SQL_MUTATION');
+    $due=m4o_rows($pdo,$dueSql,[$waitEnded]);
+    m4o_expect(count($due)===1&&m4pc_integer($due[0]['id'],1)===$pendingProof['order_id'],
+        'CANCEL_ONLY_REAL_PENDING_ORDER_NATURALLY_DUE');
+    $GLOBALS['m4o_phase']='cancel_pending_existing_handler';$before=m4cn_capture($pdo);$started=time();
+    $pendingRunner=$app->make(CancelNormalRunner::class);
+    m4o_expect(($pendingRunner->markList['orderCancel']??null)==='未支付自动取消订单'&&method_exists($pendingRunner,'orderCancel'),
+        'CANCEL_PENDING_REAL_EXISTING_TIMER_MARK');
+    $pendingRunner->orderCancel();$ended=time();
+    $pendingExpiry=m4cn_verify_cancel($app,$pdo,$pending,$pendingParents,$before,'system',null,$started,$ended,$driver,$pendingAttempt);
+    m4cn_replay($app,$pdo,$service,$pending,$driver,$pendingAttempt,true);
+    $pendingExpiry+=['repeat_unchanged'=>true,'configured_seconds'=>90,'saved_deadline'=>$pendingDeadline,
+        'admitted_at'=>$admittedAt,'wait_started'=>$waitStarted,'wait_ended'=>$waitEnded,'wait_segments'=>$waitSegments,
+        'natural_wallclock_due'=>true,'existing_handler_verified'=>true];
+    $GLOBALS['m4o_phase']='cancel_pending_restore_own_configuration';$configBefore=m4o_facts($pdo);
+    $configRows=m4o_rows($pdo,'SELECT * FROM `eb_system_config` ORDER BY `id`');
+    CancelNormalDb::transaction(static function(\think\db\ConnectionInterface $connection):void{
+        $native=m4o_business_pdo($connection);
+        $rows=m4o_rows($native,'SELECT `id`,`value` FROM `eb_system_config` WHERE `menu_name` = ? FOR UPDATE',['order_cancel_time']);
+        m4o_expect(count($rows)===1&&$rows[0]['value']===json_encode('0.025',JSON_THROW_ON_ERROR),'CANCEL_NINETY_CONFIG_ACTUAL_BEFORE_RESET');
+        $zero=json_encode('0',JSON_THROW_ON_ERROR);
+        $statement=$native->prepare('UPDATE `eb_system_config` SET `value` = ? WHERE `id` = ? AND `menu_name` = ? AND `value` = ?');
+        m4o_expect($statement instanceof PDOStatement,'CANCEL_NINETY_CONFIG_RESET_PREPARE');
+        foreach([$zero,(string)$rows[0]['id'],'order_cancel_time',$rows[0]['value']] as $i=>$value)
+            m4o_expect($statement->bindValue($i+1,$value,PDO::PARAM_STR),'CANCEL_NINETY_CONFIG_RESET_BIND');
+        m4o_expect($statement->execute()&&$statement->rowCount()===1,'CANCEL_NINETY_CONFIG_REAL_CAS_RESET');
+        m4o_expect(m4o_rows($native,'SELECT `value` FROM `eb_system_config` WHERE `id` = ?',[$rows[0]['id']])===[['value'=>$zero]]
+            &&m4o_business_pdo($connection)===$native,'CANCEL_NINETY_CONFIG_RESET_REAL_READBACK');
+    });
+    $changed=0;foreach($configRows as &$row)if($row['menu_name']==='order_cancel_time'){
+        ++$changed;m4o_expect($row['value']===json_encode('0.025',JSON_THROW_ON_ERROR),'CANCEL_RESET_ONLY_KNOWN_OWN_CONFIG');
+        $row['value']=json_encode('0',JSON_THROW_ON_ERROR);
+    }unset($row);
+    m4o_expect($changed===1&&m4o_rows($pdo,'SELECT * FROM `eb_system_config` ORDER BY `id`')===$configRows,
+        'CANCEL_RESET_ONE_VALUE_ALL_NATIVE_CONFIG_ROWS');
+    foreach(m4o_facts($pdo) as $table=>$facts)if($table!=='eb_system_config')
+        m4o_expect($facts===$configBefore[$table],'CANCEL_RESET_OTHER_24_TABLES_UNCHANGED');
+    CancelNormalCache::delete('system_config_order_cancel_time');
+    m4o_expect(sys_config('order_cancel_time')==='0','CANCEL_RESET_EXACT_CACHE_REAL_GETTER');
     $GLOBALS['m4o_phase']='cancel_positive_subsecond_fresh_creation';$extraContexts=[];
     $tinyProof=m4o_service_case($app,'persistent',$extraContexts,'0.0000001',0);
     $tiny=m4pc_order($pdo,$tinyProof['order_id'],1);$tinyParents=m4cn_reserves($pdo,$tiny);
     m4o_expect(count($tiny['items'])===3&&count($tinyParents)===2&&m4pc_integer($tiny['ledger']['cancel_at'],1,4294967295)
         ===m4pc_integer($tiny['order']['add_time'],1,4294967295),'CANCEL_REAL_POSITIVE_HOURS_NATURALLY_DUE');
-    $tinyAttempt=m4cn_attempt($app,$pdo,$driver,$tiny);
-    m4o_expect($tinyAttempt['attempt_ref']!==$attempt['attempt_ref'],'CANCEL_DISTINCT_REAL_DRIVER_ATTEMPTS');
+    $tinyBirth=m4o_payment_birth($pdo,$tiny['order']);
     $mer=m4pc_integer($tiny['order']['mer_id'],1,4294967295);$merchant=m4cn_native_row($pdo,'eb_marketplace_merchant','mer_id',$mer);
     CancelNormalDb::transaction(static function(\think\db\ConnectionInterface $connection)use($mer):void{
         $native=m4o_business_pdo($connection);$statement=$native->prepare('UPDATE `eb_marketplace_merchant` SET `accept_orders` = 0 WHERE `mer_id` = ? AND `accept_orders` = 1');
@@ -341,17 +624,18 @@ function m4o_cancel_normal(\think\App $app,PDO $pdo,array $originalServiceProofs
     $runner=$app->make(CancelNormalRunner::class);
     m4o_expect(($runner->markList['orderCancel']??null)==='未支付自动取消订单'&&method_exists($runner,'orderCancel'),'CANCEL_REAL_EXISTING_TIMER_MARK');
     $runner->orderCancel();$ended=time();
-    $expiry=m4cn_verify_cancel($app,$pdo,$tiny,$tinyParents,$before,'system',null,$started,$ended,$driver,$tinyAttempt);
+    $expiry=m4cn_verify_cancel($app,$pdo,$tiny,$tinyParents,$before,'system',null,$started,$ended,$driver,null);
     m4o_expect(m4cn_native_row($pdo,'eb_marketplace_merchant','mer_id',$mer)===$disabledMerchant,'CANCEL_EXPIRY_KEEPS_MERCHANT_DISABLED');
-    m4cn_replay($app,$pdo,$service,$tiny,$driver,$tinyAttempt,true);
+    m4cn_replay($app,$pdo,$service,$tiny,$driver,null,true);
     $expiry+=['repeat_unchanged'=>true,'merchant_disabled'=>true,'positive_hours_truncated_seconds'=>0,
-        'saved_deadline_equals_add_time'=>true,'existing_handler_verified'=>true];
+        'saved_deadline_equals_add_time'=>true,'existing_handler_verified'=>true,'payment_birth'=>$tinyBirth];
     $keeperFinal=m4pc_order($pdo,$keeper['proof']['order_id'],1);
     m4o_expect($keeperFinal===$keeper['saved']&&m4cn_reserves($pdo,$keeperFinal)===$keeper['parents'],'CANCEL_KEEPER_REMAINS_HELD_AFTER_EXPIRY_HANDLER');
     m4pc_context($app,$pdo);audit_guard_assert();
-    m4o_expect($app->config->get('marketplace.trade.enabled')===false,'CANCEL_CREATE_GATE_STAYS_CLOSED');
+    m4o_expect($app->config->get('marketplace.trade.enabled')===m4o_trade_expected(),'CANCEL_ROLE_TRADE_EXPECTATION_RETAINED');
     return ['verified'=>true,'scope'=>'NORMAL_CANCEL_INTERNAL_TEST_DRIVER_ONLY','customer'=>$customer,
-        'disabled_deadline'=>$disabled,'expiry'=>$expiry,'keeper'=>$keeper['proof'],
-        'test_driver'=>['scope'=>'testing_process_only','known_nonempty'=>true,'attempt_count'=>2,'closed_count'=>2,
+        'disabled_deadline'=>$disabled,'pending_expiry'=>$pendingExpiry,'expiry'=>$expiry,'keeper'=>$keeper['proof'],
+        'test_driver'=>['scope'=>'testing_process_only','known_nonempty'=>true,'attempt_count'=>count([$attempt,$pendingAttempt]),
+            'closed_count'=>$customer['payment_proof']['attempt_count']+$pendingExpiry['payment_proof']['attempt_count'],
             'account_source'=>'test_config','account_ids_null'=>true]];
 }

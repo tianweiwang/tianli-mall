@@ -203,6 +203,8 @@ R2正常关闭记录801B/摘要 `30a04510beba27977f50c09fb9428769180d7d75815d64d
 
 Root另独立用实际字节逆回全部27文件：原7逐字、总21文件未变，只有H5-README、observer、derivation、materials-result、h5-dist manifest及materials producer六项变化；重新采集的四metadata明确使用硬pin且前后保持的R6原字节preimage，不冒称从新摘要恢复旧内容。生成materials producer AST通过，实际13build来源、27候选/原源前后保持，完整收据 `prep/customer-h5-restore-profile-r1-source-check/profile-result.json` 摘要 `91f183551ba5653c2d1cef0448725a295609fe550d9f3edf4846e68ddf7a3e03`。新material结果1748B/摘要 `f4a1c91e63745edc79609501e90cddf1c8b8d114592db40620c3ea71612fc262`，derivation29543B/摘要 `fbb6aad50bb8522f9cbf6c14eacb2c9e2fcfadce8c323898e60a2e5d0ef8b727`。仅SOURCE/真实材料采集，未freeze/Run/HTTP/DOM/27原生JPEG；原截图390超时未修、旧R6保持关闭，完整HC2/EK3/RC8/SD3/SP3与停止样本原责任不变。详见确认设计§12.4。
 
+完整原 MS4 订单回归接 MS5 前置（2026-10-17，实施中）：依据 [核心整合记录的实施前设计](records/ms5/payment-core-integration.md)，继续原 `ms4-order-normal.php` 全链；新业务角色固定 `audit-ms4-order-normal-ms5`，三角色/内网/六专用新卷、双只读源和 DML 配置合同不变。另迁入现有 `ms5-payment-migration.php` 四子进程入口，原九个初始化子进程后执行真实 MS5 check/apply/check/apply。新增业务角色的测试收据精确绑定 APP_ENV、测试付款、marketplace.enabled、trade.enabled 四项原生声明及原 stdout hash；Redis 声明另有原单键收据。source 另绑定八份前置公开收据及完整十源迁移 descriptor，迁移 formal manifest 必须在其原 CID 移除前 create-only 复制读回。旧 MS4 六步前置函数及商家无参调用保持；新角色的共享 trade 期望从真实入口/角色/原生环境核得，产品准入 guard 保持。新 host/profile/close/zero 须与本入口及同 Run/source 实际 CID 一致；当前新增/适配源码不等于完整订单、HTTP/DOM 或正常关闭验收，停止样本不恢复。
+
 ## 3. ISO-MIN 环境（MS0a 交付）
 
 ### 3.1 文件

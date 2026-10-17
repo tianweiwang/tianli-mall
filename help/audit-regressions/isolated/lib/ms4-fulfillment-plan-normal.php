@@ -255,7 +255,8 @@ function m4o_fulfillment_plan_normal(PDO $pdo,array $direct,array $service,array
     $default=FulfillmentNormalDb::connect()->getPdo();
     m4o_expect($default instanceof PDO&&$pdo!==$default&&!$pdo->inTransaction()&&!$default->inTransaction()
         &&$pdo->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql'&&PHP_INT_SIZE===8,'FULFILLMENT_REAL_INDEPENDENT_PDO');
-    m4o_expect(count(M4O_FACT_TABLES)===23,'FULFILLMENT_ORIGINAL_23_FACT_TABLES');
+    m4o_expect(count(M4O_FACT_TABLES)===23+2&&in_array('eb_marketplace_payment_registry',M4O_FACT_TABLES,true)
+        &&in_array('eb_marketplace_payment_attempt',M4O_FACT_TABLES,true),'FULFILLMENT_ORIGINAL_23_PLUS_TWO_FACT_TABLES');
     $ids=['direct'=>$direct['order_id'],'persistent'=>$service['persistent']['order_id'],'temporary'=>$service['temporary']['order_id'],
         'level'=>$membership['level']['order_id'],'paid'=>$membership['paid']['order_id']];
     foreach($ids as $id)m4o_expect(is_int($id)&&$id>0&&$id<=2147483647,'FULFILLMENT_EXISTING_NATIVE_PROOF_PK');
