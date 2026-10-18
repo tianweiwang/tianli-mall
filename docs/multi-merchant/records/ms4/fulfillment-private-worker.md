@@ -84,3 +84,9 @@ Root已完整读取NORMAL-LIFECYCLE-PROFILE-CONTRACT-r1及NORMAL-LEGACY-TASK-PRE
 ### 公件KEEP候选r2实际PHP语法检查
 
 仅在Run20261018110755b1391e实际正常close0及独立zero0后，Root对已独审/六组完整正逆的196010 B /a69741e3ed413315d03a38209a39e1bed71a8c04d77b4e47658495fa5b20aa4b候选执行固定PHP8.2镜像单文件-l。真实native0/stderr空，语法容器无网络/只读挂载，前后精确查询均空；只含三条真实原生收据，结果SHA256 9714cca0c7cbd50c1893505c5b91a92b3414557f5f6df74786b575fd5e2fa001。候选及本轮zero原件前后保持。此为SOURCE/PARSE候选，不是Main接入、KEEP真实写读或Worker/API/DOM验收；后继消费者、Worker入口/profile及实际普通验证原任务继续未完成。
+
+## 完整普通 Worker 入口实施采用
+
+沿本记录与原09 Task6，采用仓库外WORKER-ENTRY-IMPLEMENTATION-DECISION-r1.md（SHA256 e27474def82a0e2f3fe350c3330cd21d32c2e831cf0c367e70be3cb28bfd5a2b）。先在外部实现完整独立ms4-worker-normal.php候选，并有限增加原native archive的before/after两条固定私有路径；原业务/Timer不改。公开来源包实际93件逐件等于705提交，另含修后九件post-C3登记profile和KEEP r2候选，共103件；源manifest19540 B /34fc98550b02b75be8259323aba3eec98dfbae2ba29e45e8d2673e8c0d6efb08。当前705来源Run/P与validation保持，候选不冒用其结果。
+
+采用现有任务/cache合同的自然空分支，但必须由实际全任务表及原生cache读回证明；非空或异常不启动、不修改数据，原完整预读责任保持。完整正常Worker直接证明实际proc/pcntl/posix、同resource主子身份、自然60秒tick、完整实际日志/缓存及同resource SIGTERM/proc_close；撤回额外薄API组件前置，不改变原验收。完整原SQL/Redis/files/source/公件和新旧formal/历史/精确正常退役、close/独立zero都继续要求；当前只做SOURCE，实际PHP语法须等本轮完整正常收尾及独立zero后。所有原业务、页面、金融、历史和发布缺口及停止样本责任保持。
