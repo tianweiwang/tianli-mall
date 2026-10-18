@@ -10,7 +10,7 @@
 
 | 范围 | 已有证据及当前缺口 |
 | --- | --- |
-| 交易与履约 | 发货、全部/部分收货API及页面源码已接入，三端已有完整构建记录。最新clean ceadbcff、Run 202610181718152c21cc的29次前置、files/C3、post-C3登记及真实登录/购物车/下单/内部测试付款均正常；同请求正常重放保持。原PHP128M限制下files峰值80379904字节、无fatal。本轮3CID/1内网/7卷已正常退役并独立核零0，4801原公件保持。完整Task6、售后评价业务、三端API/DOM、Worker与非空历史仍待；具体历史失败及修订留在下方记录。 |
+| 交易与履约 | 发货、全部/部分收货API及页面源码已接入，三端已有完整构建记录。最新clean468063d、Run20261018184338543405的29次前置、files/C3和canonical内部测试付款正常；Task6在真实legacy child的TYPE读取断言自然1，三读stage/call0、business=null，售后/评价/Worker未启动。原四CID/一内网/七卷正常close0及独立zero0，6379公件保持。已用同PHP82/PhpRedis6.2.0及Redis镜像证实直接TYPE返回bool true、只读bulk方式返回正确none/string/set且值/绝对期限保持；有限五调用修订已接Main，完整新回归仍待。非空历史、三端API/DOM及完整Task6未验收。 |
 | 售后退款 | 核心、迁移、凭证、读取和S2消费者共61件源码已接入，44个PHP语法检查通过；另23件三端售后操作页和入口源码已接入，22个JS/Vue的34个目标语法检查通过。最新0d5499ec三端完整构建均通过；统一结构迁移与两组权限菜单的early16已在本轮空表隔离实例通过，非空历史、业务、非空凭证及HTTP/页面正常链尚未验证。 |
 | 评价 | 三核心、八条后端路由、权限审计和旧入口隔离共20个PHP文件已接入并通过语法检查；三端15件最终页面已接入，14个JS/Vue的22个目标与pages.json检查通过，商家39脚本/93导入检查通过。最新0d5499ec三端完整构建均通过，平台manifest已实际输出/admin/manifest.json并通过原资源门。真实正常业务、非空公众图片和三端页面尚未验证，Task8未完成。 |
 | 支付、退款与对账 | 本轮真实凭据登录、持久购物车确认/下单、同App测试工厂付款、正常重放及数据库/Redis保护已通过内部隔离验证；不代表真实渠道。真实支付退款、对账及外部验收仍待原MS5范围完成。 |
@@ -860,6 +860,14 @@ Run `202610181718152c21cc` 的原初始化9项、MS5四命令、早期16项、fi
 
 延迟加载修订已精确接入 `template/admin/src/pages/order/orderList/handle/orderSend.vue`：只有两处源码变化，整文逆回原件，template/style与原发送逻辑保持。独立SOURCE全文复核及原父开启链通过（3548B/SHA `a93d7662918b6757ae284d205f13966c9573e936fa626c97f5e80ec7b7299ad4`）；实际Vue2.6.14模板errors/tips均空，Node22脚本语法退出0/空stderr，源码前后保持。该结果不是完整新平台构建、只读首跳或legacy弹窗DOM通过；这些页面验收及两读取叶的权限迁移仍待，当前Run不改动。
 
+两读取叶实施采用：新独立 `help/migrations/marketplace-ms4-order-read-menus.php`/`MarketplaceMs4OrderReadMenus`，marker=`marketplace-ms4-order-read-menus-v1`，只登记GET `order/list`/`order/chart`，unique_auth分别为`order-list-read`/`order-chart-read`，其余API叶字段沿原Task7/8菜单迁移。动态核真实旧订单根及`admin-order-storeOrder-index`导航，将两叶pid绑定后者实际ID；不改原导航为空的api_url，不修改原GET info叶或其分组，不写固定PK，不赋权既有role或增加登录白名单。沿原read-only check、完整22列/schema、normalized route/unique/marker碰撞、named lock+自有事务+锁内重检、真实insert/commit/release及repeat no-op合同，保非目标菜单/所有role及全部其他DB/Redis/文件。正常验收只check→apply→check→repeat，独立核两精确新增行与自然计数器，其余全状态保持；编译和新实例验证待完成。
+
+该独立迁移现已按完整审查的23217B/SHA `ba3cac05d865312221e4d1cc957e4ebdc7e50e57b2e367135beda10114a4ce36` 候选接Main。独立SOURCE4076B/SHA `8cd0c1f8fde3072f01c6a81ae264160e2032e1e22c2fc5255c58bbde20ef7a8b`及Root整包pins/三原迁移字节/六复用块核对通过，原三迁移保持。应用收据1073B/SHA `27057f7c9579448764f1bbc27ee8b5983a39ac6d7f5f0986b021358b62702ac5`；尚未进行PHP语法、实际check/apply或新UI请求，不能将源码接入记作迁移/授权或页面通过。
+
+缓存与准备顺序：本迁移仅菜单PDO DML，不执行Redis失效。后继paid真实0后仍只登记原7卷内UI准备角色，先用原m4fn_prerequisites/owner和完整DB/Redis付后基线验证，再做两叶class正常迁移及真实actors/私有凭据交接；该完整准备窗口独立核允许差分。注册必须早于第一个all_auth生产和最终新角色首次登录，实际缓存须原本冷；不冷时不能擅删/flush或用重新登录冒称失效。最终UI角色须原10默认之外另按新两叶、原info及真实必要导航组成完整授权，新actor接缝尚未实现。只有UI准备正常退出封存后才追加web/网关等资源，不改变原formal来迁就已改变的manifest，不将旧完整H5的B3/Final已停止责任删去。本采用先于新迁移候选实现，当前R10源码/profile/Run均不动。
+
+专用UI角色接缝采用：`m4ar_actors`在现有可选凭据sink后新增第6参数`bool $uiOrderRead=false`，原四/五参数及false路径不增加DB/Redis/文件行为、原10项spec与10项计数断言保持。仅true路径在角色INSERT及首次平台login前，用真实PDO读唯一有效GET list/chart/info三叶和原订单根/管理页两个auth_type1导航，核实际parent链及有效展示字段，追加恰5个真实且互异的native ID，完整最终集合为原10加5。菜单DAO/model已明确导航只取auth_type1且按传入IDs筛选，API授权亦只按角色已选ID，不自动扩整组详情权限；不加入auth_type3详情组或发货等能力。原6商家权限、31/49/24字节密码、登录与差分/凭据sink/原返回保持；不在首次login后再SQL补规则。此为内部正常夹具的有限可选行为，不修改生产角色政策或默认正常套件；两读取叶及冷缓存等前置仍须由真实UI准备入口先验证，接缝源码/语法及true路径正常验证均待完成。
+
 ### Task 7: 退款额度与库存行为
 
 - 接口：申请退款时在事务中锁定订单行，校验"已退金额 + 处理中金额 + 本次金额 ≤ 实付"；三类库存行为分别写 `release`（未发货取消）、`return_in`（退货验收入库）、不写（仅退款）。
@@ -1047,3 +1055,13 @@ Root普通只读保存数据/源码核对：C3正常移除后，实际collector�
 随后独立zero（不import Host/close）实际native0：fresh六查询真正stdout/stderr空，前后各53全局容器无原CID/卷/网络/container-mode消费者，完整冻结四组来源/driver/引用/九件P及3640原公件前后保持。结果85847 B /093280e451be716bb9693ca73e92e2e3f05e452ca87e2bdcd3cde942ec5c8fe2。仅此之后解除本轮validation/P的活动运行冻结；旧Run/P原件保留且不重开，资源核零不计业务通过。
 
 后继源码合同及PHP消费者附记均已全文核：真实distinct register-paid-after-c3由原bootstrap/register重建三角色formal，原early四收据保持；新四件受Host与独立zero mandatory验证，paid历史29扩33、Task6公件59扩63/历史61扩65、完整normal80扩84。原PHP业务wire15/25/34及全部paid/Task6/Task78结果、业务和shutdown键保持。Root已作实施前采用，九件后继profile源码候选正在仓库外编写，尚未接入运行或据此勾任务完成。
+
+专用UI角色源码接入检查点（2026-10-19）：Root全文核新helper、完整diff/seams、独立SOURCE审查及14/13闭集，三处整文正逆逐字节还原原198397字节；已将200672字节候选接入Main。默认false保持原10项，true在原role创建和首次登录前形成精确15项。此项仅SOURCE已接入，PHP8.2语法、真实两菜单迁移/冷缓存、普通true路径、私有凭据交接与三端DOM仍待；冻结R10继续测试原197976字节AR，不能据其结果签收当前Main增量。
+
+三端正常运行入口实施采用（2026-10-19，编码前）：新增独立UI准备/注册与正常backend、固定三凭据只读传输及三端Nginx/公开图子树。先真实paid0与原7卷fresh owner完整基线，再两菜单迁移、实际warm、首次完整15项UI角色及三登录/私有writer，完整准备差分及native0封存后才追加web资源；不改原formal满足已变manifest。固定私有传输只读真实owned fixture卷、原writer的0600文件和实际三ID，完整native created/mounts/volume及前后metadata/bytes/hash绑定；它仅为传输原语，调用者须独立核实际source/freeze/prepare terminal0及完整窗口oracle。三端静态按当前实际build base映射H5根、/merchant/、/admin/，API同一内网backend，唯一公开评价图子树PHP RW/网关RO，网关不持私有卷；真实公开目录0755/文件0644仅在HTTP child spawn继承0022，parent立即恢复0077，私有仍显式0700/0600，不递归chmod。详见仓库外ui-normal-transport-inputs-r1/ROOT-ADOPTION.md。源码候选后仍须实际正常FS/HTTP/三表单登录、N1/发货/部分及全部收货/N2审核回复公开图、320/390/1440 DOM、完整副作用及正常close/独立zero；原102/13-15-5和旧H5 B3/Final责任保持。当前R10及validation/profile/Run冻结，本采用不创建任何新运行资源。
+
+R10正常联调原始失败与退役采用（2026-10-19）：clean468063d、Run20261018184338543405的初始化/early16/files/C3/原canonical内部付款均正常；Task6原CID自然1，停three_true_legacy_cli，原setsid子进程真实同handle1/proc_close-1、组已排空、无listener/未TERM。原bounded child诊断为TASK6_THREE_ORIGINAL_CRMEB_TAG_NATIVE_TYPE；同原Redis只读CLI确认原标签TYPE=set，PHP客户端返回表示仍待核，不据此宣称已修复。三读stage/call均0、business=null，售后/评价/Worker未启动，原失败不改为通过。先独立源审专用正常close/zero：原paid0和Task6失败1保持，仅原DB自然stop0，精确四CID/一空内网/七卷非force退役，原公件/源码完整保持；独立六raw和全局消费者核零后才解除本轮冻结、做新PHP验证或新实例。此退役不是故障注入或重启原业务，亦不签收Task6。
+
+缓存类型读取修订候选采用（2026-10-19，实际应用前）：R10原Redis标签只读TYPE=set，客户端原rawCommand状态响应的PHP表示尚待独立实测。拟在既有ms4-three-read-normal.php内增加一个固定EVAL_RO TYPE .ok bulk-string读取helper，替换同文件五处TYPE原读取；沿已实际运行的m5pcp_atomic_redis同一只读Redis来源，不改全局client选项或Redis状态，不放宽任何原none/set/string、完整值/标签/hash/绝对期限/DB/source/child断言。SOURCE候选与整文逆回已生成，Main/helper、冻结validation/profile/Run保持；独审、R10正常close及独立zero、实际PHP与原生表示检查后才应用，再用新clean来源完整普通回归，旧失败保留。
+
+TYPE客户端原生复现与接入检查点（2026-10-19）：R10正常close0摘要ddf17fa4a041、独立zero0摘要5dd8a210dcb1，6379原公件及五组完整源/九profile保持。新专用无业务Redis/PHP原语检查第一次在启动前因PHP镜像继承的旧compose标签检查不符停止；核真实image labels与原两CID完整created不变后，只首次启动同一未启动pair，没有重建或重启。实际PHP8.2.33/PhpRedis6.2.0三例none/string/set的原rawCommand均为bool true，EVAL_RO bulk均为准确字符串，原值/绝对期限未变；该pair自然0、正常stop/remove两CID/一内网、无named volume并双selector核零，原准备58公件保持，完整材料在仓库外redis-type-client-native-continuation-r1。该原语检查不等于App或业务通过。当前Main的AR/私有writer/两菜单迁移及候选TYPE helper/metadata/原语脚本六PHP在同固定8.2镜像128M只读network-none语法全部0，原文件保持，临时容器前后为空；Root全文独审与整文逆回后接入TYPE helper五调用，原234断言文本与全部业务/退出/全状态门保持，原R10失败保留。后继须新clean来源/profile完整Task6及AR/N2/Worker，UI角色true/迁移/私有交接/三端DOM仍各自待核。

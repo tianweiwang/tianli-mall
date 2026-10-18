@@ -103,10 +103,16 @@ function m4tr_sequence_expiry_barrier(PDO $db,array $sequence): array
         'complete_database_strictly_unchanged'=>true,'all_database_and_non_target_cache_preserved'=>true];
 }
 
+/** Read actual Redis TYPE as a bulk string without changing the client's status-reply options. */
+function m4tr_redis_type(Redis $redis,string $name):string
+{
+    $type=$redis->rawCommand('EVAL_RO',"return redis.call('TYPE',KEYS[1]).ok",1,$name);
+    m4fn_expect(is_string($type),'TASK6_THREE_NATIVE_TYPE_BULK_STRING');return $type;
+}
 /** Read complete existing tag membership. Names are private in-memory native facts, never public output. */
 function m4tr_crmeb_tag_members():array
 {
-    $redis=audit_redis();$name='c:CRMEB:'.md5('crmeb');$type=$redis->rawCommand('TYPE',$name);
+    $redis=audit_redis();$name='c:CRMEB:'.md5('crmeb');$type=m4tr_redis_type($redis,$name);
     m4fn_expect(in_array($type,['none','set'],true),'TASK6_THREE_ORIGINAL_CRMEB_TAG_NATIVE_TYPE');
     $members=$type==='none'?[]:$redis->rawCommand('SMEMBERS',$name);
     m4fn_expect(is_array($members)&&array_is_list($members),'TASK6_THREE_COMPLETE_NATIVE_TAG_MEMBERS');
@@ -131,7 +137,7 @@ function m4tr_cache_delta(array $before,array $after,array $expectedPhysicalRaw,
         m4fn_expect(is_string($name)&&str_starts_with($name,'c:')&&$name!==$tagName&&is_string($raw),
             'TASK6_THREE_FIXED_PRODUCER_CACHE_NAME_AND_BYTES');$hash=hash('sha256',$name);$actual=$after['keys'][$hash]??null;
         $expires=$originalConfirmationExpiry[$name]??-1;
-        m4fn_expect($redis->rawCommand('TYPE',$name)==='string'&&$redis->rawCommand('GET',$name)===$raw
+        m4fn_expect(m4tr_redis_type($redis,$name)==='string'&&$redis->rawCommand('GET',$name)===$raw
             &&$redis->rawCommand('PEXPIRETIME',$name)===$expires&&is_array($actual)&&$actual['type']==='string'&&$actual['expires']===$expires,
             'TASK6_THREE_INDEPENDENT_REAL_CACHE_VALUE_TYPE_AND_ABSOLUTE_EXPIRY');$expected[$hash]=$actual;
     }
@@ -339,7 +345,7 @@ function m4tr_current_one_after_saved_zero(\think\App $app,PDO $db,array $owner,
     foreach($logical as$name){$physical='c:'.$name;$present=array_key_exists(hash('sha256',$physical),$before['redis']['keys']);
         $exists[$name]=$present;
         m4fn_expect($redis->rawCommand('EXISTS',$physical)===($present?1:0),'TASK6_THREE_CONFIG_ACTUAL_PREDELETE_EXISTENCE');
-        if($present)m4fn_expect($redis->rawCommand('TYPE',$physical)==='string'&&$redis->rawCommand('GET',$physical)===$oldRaw[$name]
+        if($present)m4fn_expect(m4tr_redis_type($redis,$physical)==='string'&&$redis->rawCommand('GET',$physical)===$oldRaw[$name]
             &&$redis->rawCommand('PEXPIRETIME',$physical)===-1,'TASK6_THREE_CONFIG_ORIGINAL_WARM_CACHE_REAL_ZERO_INPUT');
     }
     \think\facade\Db::transaction(static function(\think\db\ConnectionInterface $active)use($original,$oldValue,$newValue):void{
@@ -489,7 +495,7 @@ function m4tr_v1_member_preparation(\think\App $app,PDO $db,array $owner):array
     m4fn_expect($before['redis']['keys']===$written['redis']['keys'],'TASK6_THREE_MEMBERSHIP_NATIVE_WRITER_COMPLETE_CACHE_ZERO');
     $expectedCache=[];$physical=[];$redis=audit_redis();
     foreach($keys as$key){$logical='system_config_'.$key;$name='c:'.$logical;$present=array_key_exists(hash('sha256',$name),$written['redis']['keys']);
-        if($present)m4fn_expect($redis->rawCommand('TYPE',$name)==='string'&&$redis->rawCommand('GET',$name)==='0'
+        if($present)m4fn_expect(m4tr_redis_type($redis,$name)==='string'&&$redis->rawCommand('GET',$name)==='0'
             &&$redis->rawCommand('PEXPIRETIME',$name)===-1,'TASK6_THREE_MEMBERSHIP_OLD_REAL_CONFIGURATION_CACHE_ZERO');
         m4fn_expect(\crmeb\services\CacheService::delete($logical)===$present&&$redis->rawCommand('EXISTS',$name)===0,
             'TASK6_THREE_MEMBERSHIP_ORIGINAL_EXACT_INVALIDATION');
@@ -577,7 +583,7 @@ function m4tr_v1_create_one(\think\App $app,PDO $db,array $owner,array $fixture,
     $confirmation=$orders->getOrderConfirmData($user->toArray(),$choice['cartId'],false,$a,1,0,$choice);$confirmEnd=time();$key=$confirmation['orderKey']??null;
     m4fn_expect(is_string($key)&&\app\services\marketplace\order\MarketplaceOrderInput::confirmationKey($key)===$key,'TASK6_THREE_TRUE_V1_CONFIRMATION_KEY');$confirmationName='c:user_order_'.$uid.$key;$redis=audit_redis();
     $cached=\crmeb\services\CacheService::get('user_order_'.$uid.$key);
-    m4fn_expect(is_array($cached)&&$redis->rawCommand('TYPE',$confirmationName)==='string'
+    m4fn_expect(is_array($cached)&&m4tr_redis_type($redis,$confirmationName)==='string'
         &&$redis->rawCommand('GET',$confirmationName)===serialize($cached),'TASK6_THREE_TRUE_V1_CONFIRMATION_NATIVE_BYTES');
     $expiry=$redis->rawCommand('PEXPIRETIME',$confirmationName);
     m4fn_expect(is_int($expiry)&&$expiry>=($confirmStart+600)*1000&&$expiry<($confirmEnd+601)*1000,
