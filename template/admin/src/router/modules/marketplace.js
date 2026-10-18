@@ -6,6 +6,7 @@ import { menusApi } from '@/api/account';
 import { platformCan } from '@/libs/marketplace-navigation';
 import { marketplaceError } from '@/api/marketplace';
 import { captureContext, currentContext, closeContext, currentPermissions } from '@/api/marketplace-aftersale';
+import { refreshPermissions as refreshReviewPermissions } from '@/api/marketplace-review';
 
 function currentPermission(permission) {
   return async (to, from, next) => {
@@ -32,13 +33,34 @@ function aftersalePermission(permission) {
     finally { closeContext(context); }
   };
 }
+function reviewPermission(permission) {
+  return async (to, from, next) => {
+    let context; let router;
+    try {
+      // Resolve the already initialized router inside the hook to avoid a module cycle.
+      const module = await import('@/router'); router = module.default;
+      if (!router || !router.history) throw new Error('页面导航尚未就绪');
+      if (router.history.pending !== to) { next(); return; }
+      context = captureContext(store);
+      await refreshReviewPermissions(context, () => router.history.pending === to && currentContext(context));
+      if (router.history.pending !== to) { next(); return; }
+      if (!currentContext(context)) { next(false); return; }
+      if (platformCan(store, permission)) next(); else next({ name: '403' });
+    } catch (error) {
+      if (router && router.history.pending !== to) { next(); return; }
+      if (!context || currentContext(context)) Vue.prototype.$message.error(error.message || '当前评价权限读取失败'); next(false);
+    } finally { closeContext(context); }
+  };
+}
 export default {
   path: setting.routePre + '/marketplace', name: 'marketplace', header: 'marketplace', component: LayoutMain,
-  meta: { title: '经营商家', auth: ['marketplace-merchants-list', 'marketplace-products-list', 'marketplace-aftersales-list', 'marketplace-aftersales-read', 'marketplace-aftersales-approve', 'marketplace-aftersales-reject', 'marketplace-aftersales-return-accept', 'marketplace-aftersale-files-ticket', 'marketplace-aftersale-files-read'] },
+  meta: { title: '经营商家', auth: ['marketplace-merchants-list', 'marketplace-products-list', 'marketplace-aftersales-list', 'marketplace-aftersales-read', 'marketplace-aftersales-approve', 'marketplace-aftersales-reject', 'marketplace-aftersales-return-accept', 'marketplace-aftersale-files-ticket', 'marketplace-aftersale-files-read', 'marketplace-reviews-list', 'marketplace-reviews-read', 'marketplace-reviews-moderate'] },
   children: [
     { path: 'merchants', name: 'marketplace_merchants', meta: { title: '入驻商家', auth: ['marketplace-merchants-list'] }, beforeEnter: currentPermission('marketplace-merchants-list'), component: () => import('@/pages/marketplace/merchant/index.vue') },
     { path: 'products', name: 'marketplace_products', meta: { title: '商品审核', auth: ['marketplace-products-list'] }, beforeEnter: currentPermission('marketplace-products-list'), component: () => import('@/pages/marketplace/productReview/index.vue') },
     { path: 'aftersales', name: 'marketplace_aftersales', meta: { title: '多商户售后', auth: ['marketplace-aftersales-list'] }, beforeEnter: aftersalePermission('marketplace-aftersales-list'), component: () => import('@/pages/marketplace/aftersale/index.vue') },
     { path: 'aftersales/:id', name: 'marketplace_aftersale_detail', meta: { title: '售后详情', auth: ['marketplace-aftersales-read'] }, beforeEnter: aftersalePermission('marketplace-aftersales-read'), component: () => import('@/pages/marketplace/aftersale/index.vue') },
+    { path: 'reviews', name: 'marketplace_reviews', meta: { title: '商品评价', auth: ['marketplace-reviews-list'] }, beforeEnter: reviewPermission('marketplace-reviews-list'), component: () => import('@/pages/marketplace/review/index.vue') },
+    { path: 'reviews/:id', name: 'marketplace_review_detail', meta: { title: '评价详情', auth: ['marketplace-reviews-read'] }, beforeEnter: reviewPermission('marketplace-reviews-read'), component: () => import('@/pages/marketplace/review/index.vue') },
   ],
 };

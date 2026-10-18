@@ -544,7 +544,7 @@ if(realpath($_SERVER['SCRIPT_FILENAME']??'')===__FILE__){
     ini_set('display_errors','0');ini_set('log_errors','0');ini_set('zend.exception_ignore_args','1');umask(0077);
     set_error_handler(static function(int $severity,string $message,string $file,int $line):bool{
         if((error_reporting()&$severity)===0)return false;
-        $GLOBALS['m4fn_failed_assertion']='TASK6_THREE_LEGACY_PHP_WARNING';throw new RuntimeException('TASK6_THREE_LEGACY_PHP_WARNING');});
+        $GLOBALS['m4fn_failed_assertion']='TASK6_THREE_LEGACY_PHP_WARNING';throw new ErrorException('TASK6_THREE_LEGACY_PHP_WARNING',0,$severity,$file,$line);});
     pcntl_async_signals(true);pcntl_signal(SIGTERM,static function():void{$GLOBALS['m4c_terminate_requested']=true;});
     try{exit(m4trp_run());}
     catch(Throwable $error){

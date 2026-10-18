@@ -7,6 +7,7 @@
         <el-menu-item v-if="can('order.read')" index="/orders"><i class="el-icon-document" />订单列表</el-menu-item>
         <el-menu-item v-if="can('order.read')" index="/aftersales"><i class="el-icon-refresh-left" />多商户售后</el-menu-item>
         <el-menu-item v-if="can('product.read')" index="/products"><i class="el-icon-goods" />商品列表</el-menu-item>
+        <el-menu-item v-if="can('product.read')" index="/reviews"><i class="el-icon-chat-line-square" />商品评价</el-menu-item>
         <el-menu-item v-if="can('attachment.manage')" index="/attachments"><i class="el-icon-picture-outline" />素材库</el-menu-item>
         <el-menu-item v-if="can('freight.manage')" index="/freight"><i class="el-icon-truck" />运费模板</el-menu-item>
         <el-menu-item v-if="can('merchant.employee.manage')" index="/employees"><i class="el-icon-user" />员工管理</el-menu-item>

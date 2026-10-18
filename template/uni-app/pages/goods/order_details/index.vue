@@ -9,6 +9,7 @@
 			:error="receiptError" :feedback="receiptFeedback" @submit="confirmReceipt" @retry="sendReceipt"></marketplace-receipt>
 		<view v-if="!isReturn && (fulfillmentKind === 'root' || fulfillmentKind === 'child') && fulfillmentView && fulfillmentView.order.paid === 1" class="marketplace-aftersale-navigation">
 			<button class="marketplace-aftersale-navigation-button" :disabled="fulfillmentLoading || !!fulfillmentError || receiptSending" @tap="openMarketplaceAftersale">售后服务（申请及记录）</button>
+			<button class="marketplace-aftersale-navigation-button marketplace-review-navigation-button" :disabled="!isLogin || fulfillmentLoading || !!fulfillmentError || receiptSending" @tap="openMarketplaceReview">{{ fulfillmentKind === 'root' ? '商品评价（资格及记录）' : '查看原订单商品评价' }}</button>
 		</view>
 		<view class="order-details" v-if="fulfillmentKind === 'legacy' || fulfillmentKind === 'root'">
 			<!-- 给header上与data上加on为退款订单-->
@@ -1235,6 +1236,18 @@ export default {
 			const id = this.fulfillmentKind === 'root' ? this.fulfillmentView.order.id : this.fulfillmentView.package.root_order_id;
 			if (!Number.isSafeInteger(id) || id < 1 || id > 2147483647) return;
 			uni.navigateTo({ url: '/pages/goods/marketplace_aftersale/index?root_id=' + id });
+		},
+		openMarketplaceReview() {
+			if (!this.isLogin || this.fulfillmentLoading || this.fulfillmentError || this.receiptSending || !this.fulfillmentView || !['root', 'child'].includes(this.fulfillmentKind)) return;
+			if (this.fulfillmentKind === 'child') {
+				const number = this.fulfillmentView.package.root_order_no;
+				if (typeof number !== 'string' || !number) return;
+				uni.navigateTo({ url: '/pages/goods/order_details/index?order_id=' + encodeURIComponent(number) });
+				return;
+			}
+			const id = this.fulfillmentView.order.id;
+			if (!Number.isSafeInteger(id) || id < 1 || id > 2147483647) return;
+			uni.navigateTo({ url: '/pages/goods/marketplace_review/index?root_id=' + id });
 		},
 		retryFulfillment() { this.getOrderInfo(this.fulfillmentPendingPage); },
 		viewFulfillmentPackage(child) {
@@ -2926,6 +2939,7 @@ export default {
 .marketplace-aftersale-navigation { box-sizing: border-box; width: 100%; min-width: 0; padding: 24rpx 30rpx; background: #fff; }
 .marketplace-aftersale-navigation-button { box-sizing: border-box; display: flex; align-items: center; justify-content: center; width: 100%; min-width: 0; max-width: 100%; min-height: 44px; height: auto; margin: 0; padding: 10px 16px; border: 1px solid #ddd; border-radius: 6px; color: var(--view-theme, #333); background: #fff; font-size: 28rpx; line-height: 1.4; text-align: center; white-space: normal; }
 .marketplace-aftersale-navigation-button::after { border: 0; }
+.marketplace-review-navigation-button { margin-top: 16rpx; }
 .order-details .footer button.marketplace-again-button {
 	display: flex;
 	align-items: center;

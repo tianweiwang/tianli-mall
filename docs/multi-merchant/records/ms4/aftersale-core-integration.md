@@ -45,3 +45,13 @@ Root 已对这 21 件中的 20 个 JS/Vue 文件完成 32 个平台目标模板�
 实际在本地 HEAD `2e39da51d3b2981bf7c271f6ce42a5358577de19` 后接入这 23 件；接入前仅本文的已说明实施记录有改动。原件、最终路径、来源和前后摘要位于仓库外 `ms4-aftersale-ui-main-integration-r1/SOURCE-MANIFEST.json`。接入后对 Main 的 22 个 JS/Vue 再次执行官方 uni 条件预处理、Vue 模板及脚本语法检查，34 个平台目标全部通过，pages.json 解析通过。商家原 source-check 实际通过，36 个脚本和 87 个本地 import 检查通过；源码前后字节保持，`git diff --check` 通过。
 
 本次是源码接入和语法检查，完整三端构建/CSS、正常业务、非空凭证、HTTP/Worker/DOM 均未据此签收。后续构建只使用已有离线依赖，正常业务须使用新的完整 Main 来源及专用结构/持久私有卷，不能使用正在运行的旧 ec814e74 履约快照结果代证。
+
+## 929a16a9 三端完整构建
+
+固定 clean 提交 `929a16a9f937d1a3c6c449cc5b7a4b37a493f14e` 的三端完整离线构建均已实际完成：商家 48 源、26540 依赖文件，产物 27 件/1576576 字节；顾客 H5 553 源、29930 依赖文件，真实两次编译无 errors，产物 335 件/11686555 字节；平台 1084 源及原 prebuild helper、68460 依赖文件，原 npm prebuild/build native0，产物 601 件/40893580 字节。各自实际源码及原/复制依赖前后保持，均未安装或使用网络回退。
+
+仓库外结果分别为 `ms4-merchant-console-build/929a16a9-p1/build-receipt.json`（10428 B，`8698573bf234a27765dd4fccccd4994ad52e7441baa1dfdad13c9b6dc43758f5`）、`ms4-h5/aftersale-ui-929a-r1/BUILD-REPORT.json`（3815 B，`2c791496fac761e74c819d86fa0f0da8a2496f9355d1ef34e46cb6c0fe0b49a0`）和 `a929a/BUILD-REPORT.json`（2915 B，`9b13bf9534473571c7a1d332f0778d4cf1ea81110c86ff8ccefa9391de17eeb9`）。这些结果只证明该提交的构建和入口静态资源，不证明后续评价增量、实际页面或业务。
+
+平台首次资源门因 Root 检查只接受 `/admin/` 绝对前缀，未接受原入口的 `./manifest.json` 而失败；原编译实际 native0，失败记录保留。R2 按原 HTML 的这条精确相对引用核其真实入口文件，并完成全套源码/依赖/clean 读回，未重编译或改产物。另核到平台使用 history 路由，此相对引用在深层地址会改变解析目录，因此下一片将源入口改用与 favicon 相同的 BASE_URL。该修订和评价页面均须新的完整构建；旧结果不改 head 代证。
+
+旧 ec814e74 履约 Run `202610180549014acc18` 已实际失败，不能再写“运行中”：付款生产及履约迁移真实0，正常入口在 `three_true_legacy_cli` 收到 legacy 子进程同句柄自然1，父容器自然1/PID0/restart0；尚未进入发货收货，business=null、三读 stage/call 为0。父只保留子输出353字节及摘要，子错误原因未知。该失败、原快照和资源保留，另作匹配失败域的正常退休/独立核零；后续诊断源只补安全定位信息，不把原失败计通过。Task7/8 的正常业务、非空图、HTTP/Worker/DOM 与真实金融和发布仍未验。

@@ -183,6 +183,46 @@ function m4tr_warm_legacy_configuration(\think\App $app,PDO $db):array
         'expected_physical_raw'=>$expected,'physical_tag_names'=>$physical];
 }
 
+/** Failure-only, bounded public child diagnostics. Never a private archive read or an exit proof. */
+function m4tr_legacy_public_failure_stderr(array $nativeChild,string $stdout):void
+{
+    try{
+        if(($nativeChild['native_completed_normally']??null)!==false||($nativeChild['native_exit']??null)!==1
+            ||($nativeChild['process_closed']??null)!==true||($nativeChild['registered_group_gone']??null)!==true
+            ||($nativeChild['remaining_members']??null)!==[]||($nativeChild['capture_complete']??null)!==true
+            ||($nativeChild['stderr_bytes']??null)!==0||strlen($stdout)<1||strlen($stdout)>16384
+            ||($nativeChild['stdout_bytes']??null)!==strlen($stdout)
+            ||($nativeChild['stdout_sha256']??null)!==hash('sha256',$stdout))return;
+        $terminal=$nativeChild['same_handle_first_terminal']??null;
+        if(!is_array($terminal)||($terminal['running']??null)!==false||($terminal['signaled']??null)!==false
+            ||($terminal['exitcode']??null)!==1)return;
+        $reply=json_decode($stdout,true,16,JSON_THROW_ON_ERROR);
+        if(!is_array($reply)||array_keys($reply)!==['schema','scope','status','phase','diagnostic','native_exit','native_exit_observation']
+            ||$reply['schema']!==1||$reply['scope']!=='MS4_THREE_LEGACY_NATIVE_PRODUCER'
+            ||$reply['status']!=='INCOMPLETE_TRUE_LEGACY_ONLY'||$reply['native_exit']!==null
+            ||$reply['native_exit_observation']!=='PARENT_SAME_HANDLE_REQUIRED'||m4cb_json($reply)!==$stdout)return;
+        $diagnostic=$reply['diagnostic'];
+        if(!is_string($reply['phase'])||strlen($reply['phase'])>80
+            ||preg_match('/\A[a-z][a-z0-9_]*\z/D',$reply['phase'])!==1
+            ||!is_array($diagnostic)||array_keys($diagnostic)!==['code','class','file','line']
+            ||!is_string($diagnostic['code'])||strlen($diagnostic['code'])>256
+            ||preg_match('/\A[A-Z0-9_]+\z/D',$diagnostic['code'])!==1
+            ||!is_string($diagnostic['class'])||strlen($diagnostic['class'])>256
+            ||!is_string($diagnostic['file'])||strlen($diagnostic['file'])>128
+            ||preg_match('/\A[A-Za-z0-9_.-]+\.php\z/D',$diagnostic['file'])!==1
+            ||basename($diagnostic['file'])!==$diagnostic['file']
+            ||!is_int($diagnostic['line'])||$diagnostic['line']<1||$diagnostic['line']>2147483647)return;
+        foreach(explode('\\',$diagnostic['class'])as$part)
+            if(preg_match('/\A[A-Za-z_][A-Za-z0-9_]*\z/D',$part)!==1)return;
+        $line=json_encode(['schema'=>1,'scope'=>$reply['scope'],'status'=>$reply['status'],'phase'=>$reply['phase'],
+            'diagnostic'=>['code'=>$diagnostic['code'],'class'=>$diagnostic['class'],
+                'file'=>$diagnostic['file'],'line'=>$diagnostic['line']]],
+            JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR)."\n";
+        if(strlen($line)<=2048)@fwrite(STDERR,$line);
+    }catch(Throwable $ignored){
+        // Diagnostics must never replace the original native-zero failure or expose an exception message.
+    }
+}
 /** Parent-side readback only, after the caller proves the SAME actual child handle ended naturally with group absent. */
 function m4tr_legacy_archive(\think\App $app,PDO $db,array $source,array $owner,array $before,array $nativeChild,string $stdout):array
 {
@@ -191,6 +231,7 @@ function m4tr_legacy_archive(\think\App $app,PDO $db,array $source,array $owner,
         &&\app\services\marketplace\order\MarketplaceTradePolicy::v1CreateEnabled()===true,
         'TASK6_THREE_PARENT_FACTORY_AND_REAL_POLICY_STAY_TRUE');
     foreach($source['environment']as$name=>$value)m4fn_expect(getenv($name)===$value,'TASK6_THREE_PARENT_SIX_REAL_ENV_VALUES_UNCHANGED');
+    m4tr_legacy_public_failure_stderr($nativeChild,$stdout);
     m4fn_expect(($nativeChild['native_completed_normally']??null)===true&&($nativeChild['native_exit']??null)===0
         &&($nativeChild['process_closed']??null)===true&&($nativeChild['registered_group_gone']??null)===true
         &&($nativeChild['remaining_members']??null)===[]&&($nativeChild['capture_complete']??null)===true
