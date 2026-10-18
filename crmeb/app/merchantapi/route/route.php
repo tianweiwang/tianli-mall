@@ -63,3 +63,8 @@ $registerOrders = require __DIR__ . "/order.php";
 if (!$registerOrders instanceof \Closure) { throw new \LogicException("Invalid order route module"); }
 $registerOrders();
 unset($registerOrders);
+
+$registerAftersales = require __DIR__ . "/aftersale.php";
+if (!$registerAftersales instanceof \Closure) { throw new \LogicException("Invalid aftersale route module"); }
+$registerAftersales();
+unset($registerAftersales);

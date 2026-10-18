@@ -37,36 +37,42 @@ class AuthTokenMiddleware implements MiddlewareInterface
      */
     public function handle(Request $request, \Closure $next, bool $force = true)
     {
-        $authInfo = null;
-        $token = trim(ltrim((string)$request->header('Authori-zation'), 'Bearer'));
-        if (!$token) $token = trim(ltrim((string)$request->header('Authorization'), 'Bearer'));//正式版，删除此行，某些服务器无法获取到token调整为 Authori-zation
+        $request->clearVerifiedTokenFingerprint();
         try {
-            /** @var UserAuthServices $service */
-            $service = app()->make(UserAuthServices::class);
-            $authInfo = $service->parseToken($token);
-        } catch (AuthException $e) {
-            if ($force)
-                return app('json')->make($e->getCode(), $e->getMessage());
-        }
+            $authInfo = null;
+            $token = trim(ltrim((string)$request->header('Authori-zation'), 'Bearer'));
+            if (!$token) $token = trim(ltrim((string)$request->header('Authorization'), 'Bearer'));//正式版，删除此行，某些服务器无法获取到token调整为 Authori-zation
+            try {
+                /** @var UserAuthServices $service */
+                $service = app()->make(UserAuthServices::class);
+                $authInfo = $service->parseToken($token);
+            } catch (AuthException $e) {
+                if ($force)
+                    return app('json')->make($e->getCode(), $e->getMessage());
+            }
 
-        if (!is_null($authInfo)) {
-            $request->macro('user', function (string $key = null) use (&$authInfo) {
-                if ($key) {
-                    return $authInfo['user'][$key] ?? '';
-                }
-                return $authInfo['user'];
+            if (!is_null($authInfo)) {
+                $request->setVerifiedTokenFingerprint(hash('sha256', $token));
+                $request->macro('user', function (string $key = null) use (&$authInfo) {
+                    if ($key) {
+                        return $authInfo['user'][$key] ?? '';
+                    }
+                    return $authInfo['user'];
+                });
+                $request->macro('tokenData', function () use (&$authInfo) {
+                    return $authInfo['tokenData'];
+                });
+            }
+            $request->macro('isLogin', function () use (&$authInfo) {
+                return !is_null($authInfo);
             });
-            $request->macro('tokenData', function () use (&$authInfo) {
-                return $authInfo['tokenData'];
+            $request->macro('uid', function () use (&$authInfo) {
+                return is_null($authInfo) ? 0 : (int)$authInfo['user']->uid;
             });
-        }
-        $request->macro('isLogin', function () use (&$authInfo) {
-            return !is_null($authInfo);
-        });
-        $request->macro('uid', function () use (&$authInfo) {
-            return is_null($authInfo) ? 0 : (int)$authInfo['user']->uid;
-        });
 
-        return $next($request);
+            return $next($request);
+        } finally {
+            $request->clearVerifiedTokenFingerprint();
+        }
     }
 }

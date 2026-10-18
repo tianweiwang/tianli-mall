@@ -10,6 +10,12 @@ return [
         'enabled'=>Env::get('marketplace.trade.enabled',false),
         'disabled_features'=>['coupon','integral','balance','brokerage','activity'],
     ],
+    'aftersale'=>[
+        // Only new applications use this switch; saved obligations and replay remain available.
+        'enabled'=>Env::get('marketplace.aftersale.enabled',false),
+        // Explicit persistent private storage; no public/runtime path fallback.
+        'private_root'=>Env::get('marketplace.aftersale.private_root',''),
+    ],
     'payment'=>[
         // Think Env reads PHP_MARKETPLACE_PAYMENT_TEST_ENABLED; APP_ENV is checked separately at resolution.
         'test_enabled'=>Env::get('marketplace.payment.test_enabled',false),

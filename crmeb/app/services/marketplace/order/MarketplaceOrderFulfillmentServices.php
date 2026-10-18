@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\services\marketplace\order;
 
 use app\dao\marketplace\order\MarketplaceOrderDao;
+use app\dao\marketplace\order\MarketplaceOrderRefundDao;
 use app\dao\marketplace\order\MarketplaceOrderFulfillmentDao as Facts;
 use app\dao\marketplace\payment\MarketplacePaymentDao;
 use app\dao\system\config\SystemConfigDao;
@@ -17,7 +18,7 @@ use think\db\ConnectionInterface;
 use think\facade\Db;
 use think\facade\Log;
 
-/** Durable normal Task6 only; no routes, Timer registration, legacy events, payment or stock writes. */
+/** Durable Task6/Task7 fulfillment; routes and Timer registration stay outside, with no payment or stock writes. */
 final class MarketplaceOrderFulfillmentServices
 {
     private const INT_MAX=2147483647;
@@ -33,7 +34,154 @@ final class MarketplaceOrderFulfillmentServices
         'back_integral','one_brokerage','two_brokerage','staff_brokerage','agent_brokerage','division_brokerage','gift_price'];
 
     public function __construct(private Facts $dao,private MarketplaceOrderDao $orders,private MarketplacePaymentDao $payments,
-        private EmployeeAuthServices $auth,private StoreOrderCreateServices $numbers,private SystemConfigDao $configuration){}
+        private EmployeeAuthServices $auth,private StoreOrderCreateServices $numbers,private SystemConfigDao $configuration,private MarketplaceOrderRefundDao $refunds){}
+
+    /**
+     * Pure native-family readback after the actual complete Context2 inspection.
+     * This is neither authentication nor a replacement for the caller's owned locks and final inspection.
+     */
+    public function validateAftersaleFamilyFromFacts(array $root,array $capture,array $family,array $inspection):void
+    {
+        if(PHP_INT_SIZE<8)self::unavailable();
+        Facts::keys($capture,['root','items','selection','reserves','credit_rows','child_orders']);
+        Facts::keys($family,['children','items','ranges','refunds']);
+        Facts::keys($inspection,['source','winner','actions','fulfillment','history','summary','aftersale','credit_facts','last_action_id','last_operation_id']);
+        if(!is_array($capture['root'])||$capture['root']!==$root)self::unavailable();
+        foreach(['items','selection','reserves','credit_rows','child_orders'] as$key)
+            if(!is_array($capture[$key])||!array_is_list($capture[$key]))self::unavailable();
+        foreach($family as$rows)if(!is_array($rows)||!array_is_list($rows))self::unavailable();
+        foreach(['source','fulfillment','history','summary','credit_facts'] as$key)if(!is_array($inspection[$key]))self::unavailable();
+        $source=$inspection['source'];$fulfillment=$inspection['fulfillment'];$history=$inspection['history'];
+        Facts::keys($source,['root','identity','items','lines','groups','reserves','child_orders','capture','plan','commercial']);
+        foreach($source as$value)if(!is_array($value))self::unavailable();
+        if($source['root']!==$root||$source['capture']!==$capture)self::unavailable();
+        Facts::stored($root,['id'=>Facts::integer($source['identity']['id']??null,1,self::INT_MAX),
+            'uid'=>Facts::integer($source['identity']['uid']??null,1,self::INT_MAX),
+            'mer_id'=>Facts::integer($source['identity']['mer_id']??null,1,self::UINT_MAX),
+            'order_id'=>Facts::text($source['identity']['order_no']??null,32,true),'marketplace_trade_version'=>1,'pid'=>0]);
+        $items=self::indexRows($capture['items'],'id');$children=self::indexRows($family['children'],'id');
+        $childItems=self::indexRows($family['items'],'id');$heads=self::indexRows($capture['child_orders'],'id');
+        if($source['items']!==$items||$source['child_orders']!==$heads||array_keys($children)!==array_keys($heads))self::unavailable();
+        foreach($family['children'] as$child)foreach($child as$key=>$value)
+            if(!is_string($key)||($value!==null&&!is_int($value)&&!is_string($value)))self::unavailable();
+        foreach($family['items'] as$item)foreach($item as$key=>$value)
+            if(!is_string($key)||($value!==null&&!is_int($value)&&!is_string($value)))self::unavailable();
+        foreach($heads as$id=>$head){Facts::keys($head,['id','uid','mer_id','pid','marketplace_trade_version','order_id','paid','status','refund_status','is_cancel']);
+            Facts::stored($children[$id],$head);}
+        // This leaf retains the single original 34-column mirror contract, including the complete empty set.
+        MarketplaceOrderRefundFacts::validateRefundMirrorsFromInspection($family['refunds'],$inspection);
+        Facts::keys($fulfillment,['operations','ranges','ships']);
+        if(!is_array($fulfillment['operations'])||!array_is_list($fulfillment['operations'])
+            ||!is_array($fulfillment['ranges'])||!is_array($fulfillment['ships']))self::unavailable();
+        Facts::keys($history,['refunds','movements','ships','received','cancel','returned','expected_logs','fulfillment_completed_at']);
+        foreach(['ships','received','cancel','returned','expected_logs'] as$key)
+            if(!is_array($history[$key])||!array_is_list($history[$key]))self::unavailable();
+        $commercial=MarketplaceOrderFulfillmentPlan::refundSavedSource($root,$capture['items'],$capture['reserves']);
+        if($commercial!==$source['commercial'])self::unavailable();
+        $ranges=[];$byOperation=[];$shipRanges=[];$last='0';$shipCount=0;$receiveCount=0;
+        foreach($family['ranges'] as$raw){
+            if(!is_array($raw))self::unavailable();$range=Facts::rangeRow($raw);$id=Facts::u64($range['id']);$key='r:'.$id;
+            if(bccomp($id,$last,0)<=0||isset($ranges[$key])||!isset($fulfillment['ranges'][$key])
+                ||!is_array($fulfillment['ranges'][$key])||!self::same($range,$fulfillment['ranges'][$key]))self::unavailable();
+            $last=$id;Facts::stored($range,['root_order_id'=>Facts::integer($root['id'],1,self::INT_MAX),
+                'uid'=>Facts::integer($root['uid'],1,self::INT_MAX),'mer_id'=>Facts::integer($root['mer_id'],1,self::UINT_MAX)]);
+            if(!isset($children[$range['child_order_id']])||!isset($childItems[$range['child_item_id']])
+                ||!isset($items[$range['source_item_id']]))self::unavailable();
+            Facts::stored($childItems[$range['child_item_id']],['oid'=>$range['child_order_id']]);
+            $ranges[$key]=$range;$byOperation['o:'.$range['operation_id']][]=$range;
+            if($range['operation_action']==='ship'){$shipRanges[$key]=$range;++$shipCount;}
+            elseif($range['operation_action']==='receive')++$receiveCount;else self::unavailable();
+        }
+        if(count($ranges)!==count($fulfillment['ranges']))self::unavailable();
+        foreach($fulfillment['ranges'] as$key=>$range)if(!isset($ranges[$key]))self::unavailable();
+        $operations=[];$ships=[];$last='0';
+        foreach($fulfillment['operations'] as$operation){
+            if(!is_array($operation)||!is_array($operation['validated_ranges']??null)||!array_is_list($operation['validated_ranges']))self::unavailable();
+            $id=Facts::u64($operation['id']??null);$key='o:'.$id;$childId=Facts::integer($operation['child_order_id']??null,1,self::INT_MAX);
+            if(bccomp($id,$last,0)<=0||isset($operations[$key])||!isset($children[$childId]))self::unavailable();$last=$id;
+            $actual=$byOperation[$key]??[];
+            if(count($actual)!==count($operation['validated_ranges']))self::unavailable();
+            foreach($actual as$index=>$range)if(!is_array($operation['validated_ranges'][$index])
+                ||!self::same($range,$operation['validated_ranges'][$index]))self::unavailable();
+            Facts::stored($operation,['root_order_id'=>Facts::integer($root['id'],1,self::INT_MAX),
+                'uid'=>Facts::integer($root['uid'],1,self::INT_MAX),'mer_id'=>Facts::integer($root['mer_id'],1,self::UINT_MAX),'state'=>1]);
+            if($operation['action']==='ship'){
+                $ship=$fulfillment['ships'][$childId]??null;$plain=$operation;unset($plain['validated_ranges']);
+                // Keep native BINARY digests native; a JSON comparison of the operation would corrupt this boundary.
+                if(!is_array($ship)||$ship!==$plain||isset($ships[$childId]))self::unavailable();$ships[$childId]=$ship;
+            }elseif($operation['action']!=='receive')self::unavailable();
+            $operations[$key]=$operation;
+        }
+        if(count($operations)!==count($byOperation)||count($ships)!==count($children)||count($ships)!==count($fulfillment['ships']))self::unavailable();
+        foreach($byOperation as$key=>$rows)if(!isset($operations[$key]))self::unavailable();
+        foreach($fulfillment['ships'] as$id=>$ship)if(!isset($ships[$id]))self::unavailable();
+        $seenShips=[];$seenReceives=[];$covered=[];
+        foreach(['ships'=>'ship','received'=>'receive'] as$historyKey=>$action){
+            foreach($history[$historyKey] as$raw){
+                if(!is_array($raw))self::unavailable();$part=Facts::rangeRow($raw);$key='r:'.$part['id'];
+                if(!isset($ranges[$key])||$part['operation_action']!==$action||!self::same($part,$ranges[$key]))self::unavailable();
+                if($action==='ship'){
+                    if(isset($seenShips[$key]))self::unavailable();$seenShips[$key]=true;
+                }else{
+                    if(isset($seenReceives[$key]))self::unavailable();$seenReceives[$key]=true;
+                    $parentKey='r:'.Facts::u64($part['source_ship_range_id']);$parent=$shipRanges[$parentKey]??null;
+                    if($parent===null||$parent['child_order_id']!==$part['child_order_id']||$parent['child_item_id']!==$part['child_item_id']
+                        ||$parent['source_item_id']!==$part['source_item_id']||$parent['reserve_id']!==$part['reserve_id']
+                        ||$part['unit_start']<$parent['unit_start']||$part['unit_end']>$parent['unit_end']||$part['unit_end']<=$part['unit_start'])self::unavailable();
+                    $covered[$parentKey][]=['start'=>$part['unit_start'],'end'=>$part['unit_end']];
+                }
+            }
+        }
+        if(count($seenShips)!==$shipCount||count($seenReceives)!==$receiveCount)self::unavailable();
+        foreach($history['returned'] as$part){
+            if(!is_array($part))self::unavailable();
+            Facts::keys($part,['source_item_id','reserve_id','source_ship_range_id','child_order_id','child_item_id','unit_start','unit_end']);
+            $parentKey='r:'.Facts::u64($part['source_ship_range_id']);$parent=$shipRanges[$parentKey]??null;
+            if($parent===null||$parent['child_order_id']!==$part['child_order_id']||$parent['child_item_id']!==$part['child_item_id']
+                ||$parent['source_item_id']!==$part['source_item_id']||$parent['reserve_id']!==$part['reserve_id']
+                ||!is_int($part['unit_start'])||!is_int($part['unit_end'])||$part['unit_start']<$parent['unit_start']
+                ||$part['unit_end']>$parent['unit_end']||$part['unit_end']<=$part['unit_start'])self::unavailable();
+            $covered[$parentKey][]=['start'=>$part['unit_start'],'end'=>$part['unit_end']];
+        }
+        $usedItems=[];
+        foreach($ships as$childId=>$ship){
+            $child=$children[$childId];$request=$ship['request_payload']??null;$saved=$ship['result_payload']??null;
+            if(!is_array($request)||!is_array($saved)||!is_array($saved['plan']??null))self::unavailable();$plan=$saved['plan'];
+            if(!is_array($plan['allocations']??null)||!array_is_list($plan['allocations'])||$plan['allocations']===[])self::unavailable();
+            $expectedPlan=MarketplaceOrderFulfillmentPlan::refundExactRangesPlan($root,$capture['items'],$capture['reserves'],self::coordinates($plan['allocations']));
+            if(!self::same($expectedPlan,$plan))self::unavailable();
+            $expectedChild=self::childData($root,$plan,$request,Facts::integer($ship['shipped_at']??null,1,self::UINT_MAX),
+                Facts::text($child['order_id']??null,32,true),Facts::text($child['unique']??null,32,true));
+            self::childStored($child,$expectedChild,false);$closed=true;$parents=0;
+            $mapping=$byOperation['o:'.$ship['id']]??[];
+            foreach($mapping as$parent){
+                if($parent['operation_action']!=='ship'||$parent['child_order_id']!==$childId)self::unavailable();++$parents;
+                $parts=$covered['r:'.$parent['id']]??[];
+                usort($parts,static fn(array $a,array $b):int=>($a['start']<=>$b['start'])?:($a['end']<=>$b['end']));
+                $cursor=$parent['unit_start'];
+                foreach($parts as$part){
+                    if($part['end']<=$cursor)continue;
+                    if($part['start']>$cursor)$closed=false;$cursor=max($cursor,$part['end']);
+                }
+                if($cursor<$parent['unit_end'])$closed=false;
+            }
+            if($parents<1||Facts::integer($child['status']??null,1,2)!==($closed?2:1))self::unavailable();
+            foreach(self::itemGroups($plan) as$sourceId=>$allocations){
+                if(!isset($items[$sourceId]))self::unavailable();$mapped=[];
+                foreach($mapping as$range)if($range['source_item_id']===$sourceId)$mapped[$range['child_item_id']]=true;
+                if(count($mapped)!==1)self::unavailable();$itemId=array_key_first($mapped);
+                if(isset($usedItems[$itemId])||!isset($childItems[$itemId]))self::unavailable();$usedItems[$itemId]=true;
+                $expectedItem=['id'=>$itemId,'old_cart_id'=>'']+self::childItemData($root,$childId,$ship['id'],$items[$sourceId],$allocations);
+                Facts::keys($childItems[$itemId],array_keys($expectedItem));self::itemStored($childItems[$itemId],$expectedItem);
+            }
+        }
+        if(count($usedItems)!==count($childItems))self::unavailable();
+        $summary=$inspection['summary'];Facts::keys($summary,['shipping_state','receipt_state','closed','original','shipped','received',
+            'cancelled_unshipped','returned_accepted','to_ship','to_receive','child_count']);
+        $status=Facts::integer($summary['to_ship'],0,self::UINT_MAX)>0?0:
+            (Facts::integer($summary['to_receive'],0,self::UINT_MAX)>0?1:(Facts::integer($summary['shipped'],0,self::UINT_MAX)>0?2:0));
+        if(Facts::integer($root['status']??null,0,2)!==$status)self::unavailable();
+    }
 
     /**
      * Pure internal consumer of complete, separately authorized same-snapshot facts.
@@ -198,7 +346,7 @@ final class MarketplaceOrderFulfillmentServices
     public function receivePackageForCustomer(int $actualUid,string $childNo,array $raw):array
     {
         Facts::integer($actualUid,1,self::INT_MAX);Facts::text($childNo,32,true);
-        [$connection,$pdo]=$this->defaultConnection();$this->dao->assertStructure($pdo);
+        [$connection,$pdo]=$this->defaultConnection();$this->dao->assertAftersaleStructure($pdo);
         $candidate=$this->dao->customerChildCandidate($pdo,$actualUid,$childNo);
         $public=MarketplaceOrderFulfillmentInput::receivePublic($raw);
         if($public['selection']['mode']==='all_eligible'){
@@ -223,7 +371,8 @@ final class MarketplaceOrderFulfillmentServices
             Facts::keys($merchantPackage,['kind','child_id','page','limit','options']);
             if(!in_array($merchantPackage['kind'],['page','detail'],true)||!is_array($merchantPackage['options']))self::unavailable();
         }
-        [$connection,$pdo,$prefix]=$this->readDefaultConnection();
+        $merchantOptions=$merchantPackage['options']??self::packageReadOptions();
+        [$connection,$pdo,$prefix]=$this->readDefaultConnection();$this->dao->assertAftersaleStructure($pdo);
         $setAttempted=false;$began=false;$commitAttempted=false;$diagnostics=[];
         try{
             $this->readConnectionGate($connection,$pdo,$prefix,false);$setAttempted=true;
@@ -231,6 +380,7 @@ final class MarketplaceOrderFulfillmentServices
             $this->readConnectionGate($connection,$pdo,$prefix,false);
             if($pdo->beginTransaction()!==true)self::unavailable();$began=true;
             $this->readConnectionGate($connection,$pdo,$prefix,true);
+            $initialReadiness=$this->dao->readAftersaleStructureReadiness($connection,$pdo);
             if($three===null){
                 $locatedPackage=null;$packagePaging=null;
                 if($merchantPackage!==null&&$merchantPackage['kind']==='detail'){
@@ -258,9 +408,9 @@ final class MarketplaceOrderFulfillmentServices
                 $this->readConnectionGate($connection,$pdo,$prefix,true);
                 $payments=$this->payments->readObservationsForRoots($pdo,$paidRoots);
                 $this->readConnectionGate($connection,$pdo,$prefix,true);
-                $originals=$this->orders->readPaymentApplicationFactsBatch($connection,$pdo,$paidRoots);
-                $this->readConnectionGate($connection,$pdo,$prefix,true);
-                $families=$this->dao->readFamiliesForRoots($connection,$pdo,$roots);
+                $snapshot=$this->readOwnedFulfillmentSnapshots($connection,$pdo,$roots,$paidRoots,$payments);
+                $originals=$snapshot['originals'];$histories=$snapshot['histories'];$inspections=$snapshot['inspections'];
+                $families=['readiness'=>$snapshot['readiness'],'roots'=>$snapshot['roots']];
                 Facts::keys($families,['readiness','roots']);
                 if(!is_array($families['roots']))self::unavailable();
                 $expected=[];foreach($roots as$root)$expected[]=Facts::integer($root['id']??null,1,self::INT_MAX);
@@ -282,47 +432,34 @@ final class MarketplaceOrderFulfillmentServices
                             ||($family['ranges']!==null&&$family['ranges']!==[]))self::unavailable();
                         $diagnostics[]=['root_order_id'=>$id,'reason'=>Facts::integer($root['is_cancel']??null,0,1)===1?'UNPAID_CANCELLED':'NOT_PAID'];
                     }else{
-                        $observation=$payments[$id];$original=$originals[$id];
-                        if(!is_array($observation)||!is_array($original))self::unavailable();
-                        if($merchantPackage!==null)self::readOriginalItemCorrespondence($items[$id],$original['items']??null);
-                        Facts::keys($observation,['locked','root_payment_consistent']);
-                        if($observation['root_payment_consistent']!==true||!is_array($observation['locked']))self::unavailable();
-                        $candidate=['root_order_id'=>$id,'root_order_no'=>Facts::text($root['order_id'],32,true),
-                            'uid'=>Facts::integer($root['uid'],1,self::INT_MAX),'mer_id'=>Facts::integer($root['mer_id'],1,self::UINT_MAX)];
-                        self::paid($candidate,$root,$observation['locked']);
-                        if(!is_array($families['readiness']))self::unavailable();
-                        $ready=$families['readiness'];Facts::keys($ready,['state','operation_present','range_present']);
-                        if($ready['state']==='SCHEMA_PENDING'){
-                            $this->readPendingRoot($root,$original,$family);
-                            $diagnostics[]=['root_order_id'=>$id,'reason'=>'SCHEMA_PENDING'];
-                        }elseif($ready['state']==='READY'){
-                            if($ready['operation_present']!==true||$ready['range_present']!==true
-                                ||!is_array($family['operations'])||!is_array($family['ranges']))self::unavailable();
-                            $history=$this->readHistoryFromFacts($root,$observation,$original,
-                                ['children'=>$family['children'],'items'=>$family['child_items'],'ranges'=>$family['ranges'],'refunds'=>$family['refunds']],
-                                $family['operations'],$family['logs']);
-                            $summary=$history['summary'];
-                            $registry=$observation['locked']['registry'];$merchant=$observation['locked']['merchant'];
-                            $ship=$freshShip&&$summary['to_ship']>0&&$registry['fulfillment_hold']===0
-                                &&$registry['hold_reason']===null&&$registry['hold_attempt_id']===null&&$registry['hold_at']===null
-                                &&$merchant['review_status']===1&&$merchant['security_locked']===0
-                                &&$merchant['closed_at']===null&&$merchant['fulfillment_enabled']===1;
-                        }else self::unavailable();
+                        $observation=$payments[$id];$original=$originals[$id];$history=$histories[$id]??self::unavailable();
+                        self::readOriginalItemCorrespondence($items[$id],$original['items']);$summary=$history['summary'];
+                        $inspection=$inspections[$id]??self::unavailable();
+                        $registry=$observation['locked']['registry'];$merchant=$observation['locked']['merchant'];
+                        $paused=$inspection['aftersale']['pending_cancel_quantity']??0;
+                        $ship=$freshShip&&$summary['to_ship']>$paused&&$registry['fulfillment_hold']===0
+                            &&$registry['hold_reason']===null&&$registry['hold_attempt_id']===null&&$registry['hold_at']===null
+                            &&$merchant['review_status']===1&&$merchant['security_locked']===0
+                            &&$merchant['closed_at']===null&&$merchant['fulfillment_enabled']===1;
                     }
-                    if($merchantPackage===null)$list[]=MarketplaceOrderSnapshotProjection::merchantOrderWithFulfillment($root,$items[$id],$summary,
-                        ['ship'=>$ship,'receive'=>false],$rootId!==null);
+                    $inspection=$inspections[$id]??null;$s2=$inspection!==null&&$inspection['last_action_id']!==null;
+                    $rootDto=$s2?MarketplaceOrderSnapshotProjection::aftersaleRootFromFacts($rootId===null?'merchant_list':'merchant_detail',
+                        $root,array_values($inspection['source']['items']),[],$merchantOptions,$inspection,null,['ship'=>$ship,'receive'=>false]):
+                        MarketplaceOrderSnapshotProjection::merchantOrderWithFulfillment($root,$items[$id],$summary,['ship'=>$ship,'receive'=>false],$rootId!==null);
+                    if($merchantPackage===null)$list[]=$rootDto;
                     elseif($merchantPackage['kind']==='page'){
                         if($packagePaging===null)self::unavailable();
-                        $packageResult=['root'=>MarketplaceOrderSnapshotProjection::merchantOrderWithFulfillment($root,$items[$id],$summary,
-                            ['ship'=>$ship,'receive'=>false],true),
-                            'packages'=>$history===null?null:$this->packagePage($connection,$pdo,$root,$items[$id],$history,$packagePaging,$merchantPackage['options']),
-                            'shipping_items'=>$history===null?null:self::shippingItems($items[$id],$history)];
+                        $packageResult=['root'=>$rootDto,
+                            'packages'=>$history===null?null:$this->packagePage($connection,$pdo,$root,$items[$id],$history,$packagePaging,$merchantPackage['options'],$s2?$inspection:null),
+                            'shipping_items'=>$history===null?null:($s2?self::shippingAftersaleItems($items[$id],$inspection):self::shippingItems($items[$id],$history))];
                     }else{
                         if($history===null||$locatedPackage===null)self::unavailable();$childId=Facts::integer($locatedPackage['id'],1,self::INT_MAX);
                         if(!isset($history['children'][$childId])||!isset($history['ships_by_child'][$childId]))self::unavailable();
                         Facts::stored($history['children'][$childId],$locatedPackage);
-                        $packageResult=['package'=>MarketplaceOrderSnapshotProjection::fulfillmentChildFromFacts($root,$items[$id],$history['children'][$childId],
-                            self::readChildItems($family['child_items'],$childId),$history,$merchantPackage['options'],true)];
+                        $childItems=self::readChildItems($family['child_items'],$childId);
+                        $packageResult=['package'=>$s2?MarketplaceOrderSnapshotProjection::fulfillmentChildAftersaleFromFacts($root,array_values($inspection['source']['items']),$history['children'][$childId],
+                            $childItems,$inspection,$merchantPackage['options'],true):MarketplaceOrderSnapshotProjection::fulfillmentChildFromFacts($root,$items[$id],$history['children'][$childId],
+                            $childItems,$history,$merchantPackage['options'],true)];
                     }
                 }
                 $observedReadiness=$families['readiness'];
@@ -331,10 +468,10 @@ final class MarketplaceOrderFulfillmentServices
                 $observedReadiness=$threeResult['readiness'];
             }
             $this->readConnectionGate($connection,$pdo,$prefix,true);
-            if($observedReadiness!==null
-                &&$this->dao->readStructureReadiness($connection,$pdo)!==$observedReadiness)self::unavailable();
+            if(($observedReadiness!==null&&$observedReadiness!==$initialReadiness)
+                ||$this->dao->readAftersaleStructureReadiness($connection,$pdo)!==$initialReadiness)self::unavailable();
             if($three!==null&&date_default_timezone_get()!==$three['request']['options']['timezone'])self::unavailable();
-            if($merchantPackage!==null&&date_default_timezone_get()!==$merchantPackage['options']['timezone'])self::unavailable();
+            if($three===null&&date_default_timezone_get()!==$merchantOptions['timezone'])self::unavailable();
             $this->readConnectionGate($connection,$pdo,$prefix,true);$commitAttempted=true;
             if($pdo->commit()!==true)self::unavailable();
             $this->readConnectionGate($connection,$pdo,$prefix,false);
@@ -470,7 +607,7 @@ final class MarketplaceOrderFulfillmentServices
     private static function mergeReadiness(?array &$observed,mixed $current):void
     {
         if($current===null)return;
-        if(!is_array($current))self::unavailable();Facts::keys($current,['state','operation_present','range_present']);
+        if(!is_array($current))self::unavailable();Facts::keys($current,['schema','state']);if($current!==['schema'=>2,'state'=>'READY'])self::unavailable();
         if($observed!==null&&$observed!==$current)self::unavailable();$observed=$current;
     }
 
@@ -479,7 +616,7 @@ final class MarketplaceOrderFulfillmentServices
         bool $detail,?array $selectedChild,?array $firstBuyer,?array $childrenPage,array &$diagnostics):array
     {
         $this->readConnectionGate($connection,$pdo,$prefix,true);
-        if($roots===[])return ['dtos'=>[],'readiness'=>null];
+        if($roots===[])return ['dtos'=>[],'readiness'=>$this->dao->readAftersaleStructureReadiness($connection,$pdo)];
         $ids=[];$paidRoots=[];
         foreach($roots as$root){
             $id=Facts::integer($root['id']??null,1,self::INT_MAX);if(isset($ids[$id]))self::unavailable();$ids[$id]=true;
@@ -492,12 +629,10 @@ final class MarketplaceOrderFulfillmentServices
         $this->readConnectionGate($connection,$pdo,$prefix,true);
         $payments=$this->payments->readObservationsForRoots($pdo,$paidRoots);
         $this->readConnectionGate($connection,$pdo,$prefix,true);
-        $originals=$this->orders->readPaymentApplicationFactsBatch($connection,$pdo,$paidRoots);
-        $this->readConnectionGate($connection,$pdo,$prefix,true);
-        $families=$this->dao->readFamiliesForRoots($connection,$pdo,$roots);Facts::keys($families,['readiness','roots']);
-        if(!is_array($families['roots'])||array_keys($families['roots'])!==array_keys($ids)||array_keys($items)!==array_keys($ids))self::unavailable();
-        $paidIds=[];foreach($paidRoots as$root)$paidIds[]=Facts::integer($root['id'],1,self::INT_MAX);
-        if(array_keys($payments)!==$paidIds||array_keys($originals)!==$paidIds)self::unavailable();
+        $snapshot=$this->readOwnedFulfillmentSnapshots($connection,$pdo,$roots,$paidRoots,$payments);
+        $originals=$snapshot['originals'];$histories=$snapshot['histories'];$inspections=$snapshot['inspections'];
+        $families=['readiness'=>$snapshot['readiness'],'roots'=>$snapshot['roots']];
+        if(array_keys($items)!==array_keys($ids))self::unavailable();
         $this->readConnectionGate($connection,$pdo,$prefix,true);
         $rawLogs=$this->dao->readRootDisplayStatusLogs($connection,$pdo,$roots);$logs=[];
         foreach($roots as$root)$logs[Facts::integer($root['id'],1,self::INT_MAX)]=[];
@@ -530,25 +665,10 @@ final class MarketplaceOrderFulfillmentServices
                     ||($family['operations']!==null&&$family['operations']!==[])||($family['ranges']!==null&&$family['ranges']!==[]))self::unavailable();
                 $diagnostics[]=['root_order_id'=>$id,'reason'=>Facts::integer($root['is_cancel']??null,0,1)===1?'UNPAID_CANCELLED':'NOT_PAID'];
             }else{
-                $observation=$payments[$id];$original=$originals[$id];
-                if(!is_array($observation)||!is_array($original))self::unavailable();
-                self::readOriginalItemCorrespondence($items[$id],$original['items']??null);
-                Facts::keys($observation,['locked','root_payment_consistent']);
-                if($observation['root_payment_consistent']!==true||!is_array($observation['locked']))self::unavailable();
-                self::paid(['root_order_id'=>$id,'root_order_no'=>Facts::text($root['order_id'],32,true),
-                    'uid'=>Facts::integer($root['uid'],1,self::INT_MAX),'mer_id'=>Facts::integer($root['mer_id'],1,self::UINT_MAX)],$root,$observation['locked']);
-                if(!is_array($families['readiness']))self::unavailable();$ready=$families['readiness'];
-                Facts::keys($ready,['state','operation_present','range_present']);
-                if($ready['state']==='SCHEMA_PENDING'){
-                    $this->readPendingRoot($root,$original,$family);$diagnostics[]=['root_order_id'=>$id,'reason'=>'SCHEMA_PENDING'];
-                }elseif($ready['state']==='READY'){
-                    if($ready['operation_present']!==true||$ready['range_present']!==true||!is_array($family['operations'])||!is_array($family['ranges']))self::unavailable();
-                    $history=$this->readHistoryFromFacts($root,$observation,$original,
-                        ['children'=>$family['children'],'items'=>$family['child_items'],'ranges'=>$family['ranges'],'refunds'=>$family['refunds']],
-                        $family['operations'],$family['logs']);
-                    $summary=$history['summary'];$historyTimes=self::readHistoryTimes($history);
-                }else self::unavailable();
+                $observation=$payments[$id];$original=$originals[$id];self::readOriginalItemCorrespondence($items[$id],$original['items']);
+                $history=$histories[$id]??self::unavailable();$summary=$history['summary'];$historyTimes=self::readHistoryTimes($history);
             }
+            $inspection=$inspections[$id]??null;$s2=$inspection!==null&&$inspection['last_action_id']!==null;
             $facts=$display[$id];
             foreach($family['refunds'] as$refund)if(Facts::integer($refund['is_cancel']??null,0,1)===0
                 &&Facts::integer($refund['refund_type']??null,0,6)!==3)$facts['refunds'][]=$refund;
@@ -569,8 +689,10 @@ final class MarketplaceOrderFulfillmentServices
                     if(!self::same($operation,$expected))self::unavailable();$childId=$operation['child_order_id'];
                     if(!isset($history['children'][$childId])||!isset($history['ships_by_child'][$childId])
                         ||!self::same($history['ships_by_child'][$childId],$operation))self::unavailable();
-                    $childDtos[]=MarketplaceOrderSnapshotProjection::fulfillmentChildFromFacts($root,$items[$id],$history['children'][$childId],
-                        self::readChildItems($family['child_items'],$childId),$history,$request['options'],false);
+                    $childItems=self::readChildItems($family['child_items'],$childId);
+                    $childDtos[]=$s2?MarketplaceOrderSnapshotProjection::fulfillmentChildAftersaleFromFacts($root,array_values($inspection['source']['items']),$history['children'][$childId],
+                        $childItems,$inspection,$request['options'],false):MarketplaceOrderSnapshotProjection::fulfillmentChildFromFacts($root,$items[$id],$history['children'][$childId],
+                        $childItems,$history,$request['options'],false);
                 }
                 $children=['page'=>$childrenPage['page'],'limit'=>$childrenPage['limit'],'count'=>$page['count'],'list'=>$childDtos];
             }
@@ -578,15 +700,18 @@ final class MarketplaceOrderFulfillmentServices
                 if(!$detail||count($roots)!==1||$history===null)self::unavailable();$childId=Facts::integer($selectedChild['id'],1,self::INT_MAX);
                 if(!isset($history['children'][$childId])||!isset($history['ships_by_child'][$childId]))self::unavailable();
                 Facts::stored($history['children'][$childId],$selectedChild);
-                $package=MarketplaceOrderSnapshotProjection::fulfillmentChildFromFacts($root,$items[$id],$history['children'][$childId],
-                    self::readChildItems($family['child_items'],$childId),$history,$request['options'],true);
+                $childItems=self::readChildItems($family['child_items'],$childId);
+                $package=$s2?MarketplaceOrderSnapshotProjection::fulfillmentChildAftersaleFromFacts($root,array_values($inspection['source']['items']),$history['children'][$childId],
+                    $childItems,$inspection,$request['options'],true):MarketplaceOrderSnapshotProjection::fulfillmentChildFromFacts($root,$items[$id],$history['children'][$childId],
+                    $childItems,$history,$request['options'],true);
                 if($request['kind']==='customer_package'){
                     $this->dao->readReceiptCustomerForChild($connection,$pdo,$request['actor'],$history['children'][$childId]);
-                    $dtos[$id]=self::receiptPackage($package,$history,$observation['locked']['registry']);
+                    $dtos[$id]=$s2?self::receiptAftersalePackage($package,$history,$inspection,$observation['locked']['registry']):self::receiptPackage($package,$history,$observation['locked']['registry']);
                 }else $dtos[$id]=$package;
             }else{
                 $extension=['summary'=>$summary,'actions'=>['ship'=>false,'receive'=>false],'history_times'=>$historyTimes,'children'=>$children];
-                switch($view){
+                if($s2)$dtos[$id]=MarketplaceOrderSnapshotProjection::aftersaleRootFromFacts($view,$root,array_values($inspection['source']['items']),$facts,$request['options'],$inspection,$children,['ship'=>false,'receive'=>false]);
+                else switch($view){
                     case 'customer_list':$dtos[$id]=MarketplaceOrderSnapshotProjection::customerListFromFacts($root,$items[$id],$facts,$request['options'],$extension);break;
                     case 'platform_list':$dtos[$id]=MarketplaceOrderSnapshotProjection::platformListFromFacts($root,$items[$id],$facts,$request['options'],$extension);break;
                     case 'mobile_list':$dtos[$id]=MarketplaceOrderSnapshotProjection::mobileListFromFacts($root,$items[$id],$facts,$request['options'],$extension);break;
@@ -599,6 +724,148 @@ final class MarketplaceOrderFulfillmentServices
         }
         $this->readConnectionGate($connection,$pdo,$prefix,true);
         return ['dtos'=>$dtos,'readiness'=>$families['readiness']];
+    }
+
+    /** One captured RR snapshot: raw producers first, then explicit business-stage interpretation. */
+    private function readOwnedFulfillmentSnapshots(ConnectionInterface $connection,PDO $pdo,array $roots,array $paidRoots,array $payments):array
+    {
+        $ready=$this->dao->readAftersaleStructureReadiness($connection,$pdo);
+        $facts=$this->orders->readPaymentApplicationCaptureFactsBatch($connection,$pdo,$paidRoots);
+        $core=$this->dao->readFulfillmentFamiliesForRoots($connection,$pdo,$roots);
+        $refunds=$this->dao->readRefundRowsForRoots($connection,$pdo,$roots);
+        $actions=$this->refunds->readActionsForRoots($connection,$pdo,$roots);
+        $logs=$this->refunds->readStatusLogsForRoots($connection,$pdo,$roots);
+        $ids=[];$paidIds=[];foreach($roots as$root)$ids[]=Facts::integer($root['id'],1,self::INT_MAX);
+        foreach($paidRoots as$root)$paidIds[]=Facts::integer($root['id'],1,self::INT_MAX);
+        foreach([$core,$refunds,$actions,$logs] as$map)if(array_keys($map)!==$ids)self::unavailable();
+        if(array_keys($facts)!==$paidIds||array_keys($payments)!==$paidIds)self::unavailable();
+        $families=[];$originals=[];$histories=[];$inspections=[];
+        foreach($roots as$root){
+            $id=Facts::integer($root['id'],1,self::INT_MAX);$native=$core[$id];
+            Facts::keys($native,['children','child_items','operations','ranges']);
+            foreach($native as$rows)if(!is_array($rows)||!array_is_list($rows))self::unavailable();
+            $fulfillmentLogs=[];
+            foreach($logs[$id] as$row)if(in_array($row['change_type'],['marketplace_fulfillment_ship','marketplace_fulfillment_receive'],true))$fulfillmentLogs[]=$row;
+            $families[$id]=['children'=>$native['children'],'child_items'=>$native['child_items'],'refunds'=>$refunds[$id],
+                'logs'=>$fulfillmentLogs,'operations'=>$native['operations'],'ranges'=>$native['ranges']];
+            if(Facts::integer($root['paid'],0,1)===0){
+                if($actions[$id]!==[]||$refunds[$id]!==[]||$native['children']!==[]||$native['child_items']!==[]
+                    ||$native['operations']!==[]||$native['ranges']!==[]||$fulfillmentLogs!==[])self::unavailable();
+                foreach($logs[$id] as$row)if($row['change_type']==='marketplace_aftersale')self::unavailable();
+                continue;
+            }
+            $observation=$payments[$id];Facts::keys($observation,['locked','root_payment_consistent']);
+            if($observation['root_payment_consistent']!==true||!is_array($observation['locked']))self::unavailable();
+            self::paid(['root_order_id'=>$id,'root_order_no'=>Facts::text($root['order_id'],32,true),
+                'uid'=>Facts::integer($root['uid'],1,self::INT_MAX),'mer_id'=>Facts::integer($root['mer_id'],1,self::UINT_MAX)],$root,$observation['locked']);
+            $capture=$this->orders->capturePaymentApplicationFactsFromFacts(Facts::integer($root['uid'],1,self::INT_MAX),$id,$facts[$id]);
+            if($capture['root']!==$root)self::unavailable();
+            $context=self::aftersaleContext($actions[$id],$refunds[$id],$native['operations'],$native['ranges'],$logs[$id]);
+            $inspection=MarketplaceOrderRefundFacts::inspectForAftersale($capture,$context,$observation['locked']);
+            $family=['children'=>$native['children'],'items'=>$native['child_items'],'ranges'=>$native['ranges'],'refunds'=>$refunds[$id]];
+            $this->validateAftersaleFamilyFromFacts($root,$capture,$family,$inspection);
+            $originals[$id]=$inspection['credit_facts'];$inspections[$id]=$inspection;
+            if($inspection['last_action_id']===null){
+                $typedOps=array_map([Facts::class,'operation'],$native['operations']);$typedRanges=array_map([Facts::class,'rangeRow'],$native['ranges']);
+                foreach($typedOps as$row)if($row['contract_version']!==1||$row['aftersale_cut_id']!==null)self::unavailable();
+                $histories[$id]=$this->readHistoryFromFacts($root,$observation,$originals[$id],
+                    ['children'=>$native['children'],'items'=>$native['child_items'],'ranges'=>$typedRanges,'refunds'=>$refunds[$id]],$typedOps,$fulfillmentLogs);
+            }else $histories[$id]=self::historyFromAftersaleInspection($family,$inspection);
+        }
+        if($this->dao->readAftersaleStructureReadiness($connection,$pdo)!==$ready)self::unavailable();
+        return ['readiness'=>$ready,'roots'=>$families,'originals'=>$originals,'histories'=>$histories,'inspections'=>$inspections];
+    }
+
+    /** Native complete sets only; the cut is derived from the actual last committed row, never a caller hint. */
+    private static function aftersaleContext(array $actions,array $refunds,array $operations,array $ranges,array $logs):array
+    {
+        foreach([$actions,$refunds,$operations,$ranges,$logs] as$rows)if(!array_is_list($rows))self::unavailable();
+        $last=null;foreach($actions as$row){$id=Facts::u64($row['id']??null);
+            if($last!==null&&bccomp($id,$last,0)<=0)self::unavailable();$last=$id;}
+        return ['schema'=>2,'cut_id'=>$last,'actions'=>$actions,'refunds'=>$refunds,'operations'=>$operations,'ranges'=>$ranges,'logs'=>$logs];
+    }
+
+    /** Explicit adapter from the complete proved S2 snapshot, not a fallback or an empty S1 history. */
+    private static function historyFromAftersaleInspection(array $family,array $inspection):array
+    {
+        Facts::keys($family,['children','items','ranges','refunds']);
+        if($inspection['last_action_id']===null)self::unavailable();$ops=[];$ships=[];
+        foreach($inspection['fulfillment']['operations'] as$operation){
+            if(!array_key_exists('validated_ranges',$operation))self::unavailable();unset($operation['validated_ranges']);
+            $id=Facts::u64($operation['id']);if(isset($ops[$id]))self::unavailable();$ops[$id]=$operation;
+            if($operation['action']==='ship'){
+                $child=Facts::integer($operation['child_order_id'],1,self::INT_MAX);if(isset($ships[$child]))self::unavailable();$ships[$child]=$operation;
+            }
+        }
+        return ['children'=>self::indexRows($family['children'],'id'),'child_items'=>self::indexRows($family['items'],'id'),
+            'ships_by_child'=>$ships,'operations'=>$ops,'ranges'=>array_values($inspection['fulfillment']['ranges']),
+            'ship_ranges'=>$inspection['history']['ships'],'summary'=>$inspection['summary'],
+            'source_snapshot_sha256'=>$inspection['source']['plan']['source_snapshot_sha256']];
+    }
+
+    /** C1 ordinal slots stay tied to immutable S ranges; actual R/T/P determine current eligibility. */
+    private static function receiptAftersalePackage(array $package,array $history,array $inspection,array $registry):array
+    {
+        $child=$package['id'];$blocks=self::packageBlocks($history,$child);
+        $availability=MarketplaceOrderRefundFacts::receiptAvailabilityFromInspection($inspection,$child);
+        $enabled=$registry['fulfillment_hold']===0&&$registry['hold_reason']===null&&$registry['hold_attempt_id']===null&&$registry['hold_at']===null;
+        $items=[];$totals=['quantity'=>0,'received'=>0,'returned'=>0,'intersection'=>0,'paused'=>0,'eligible'=>0];
+        foreach($blocks as$id=>$item){
+            $received=[];$returned=[];
+            foreach($inspection['history']['received'] as$range)if($range['child_order_id']===$child&&$range['child_item_id']===$id)$received[]=$range;
+            foreach($inspection['history']['returned'] as$range)if($range['child_order_id']===$child&&$range['child_item_id']===$id)$returned[]=$range;
+            $r=self::coordinateQuantity($received);$t=self::coordinateQuantity($returned);$intersection=self::coordinateIntersection($received,$returned);
+            $paused=0;$eligible=0;$segments=[];
+            foreach($availability['paused'] as$range)if($range['child_item_id']===$id)$paused+=$range['unit_end']-$range['unit_start'];
+            foreach($availability['eligible'] as$range)if($range['child_item_id']===$id){
+                $found=false;foreach($item['blocks'] as$block)if($range['source_ship_range_id']===$block['range_id']){
+                    if($found||$range['source_item_id']!==$block['source_item_id']||$range['unit_start']<$block['unit_start']||$range['unit_end']>$block['unit_end'])self::unavailable();$found=true;
+                    if($enabled){$segments[]=['first'=>$block['first']+$range['unit_start']-$block['unit_start'],
+                        'last'=>$block['first']+$range['unit_end']-$block['unit_start']-1];$eligible+=$range['unit_end']-$range['unit_start'];}
+                }if(!$found)self::unavailable();
+            }
+            usort($segments,static fn(array $a,array $b):int=>($a['first']<=>$b['first'])?:($a['last']<=>$b['last']));$merged=[];
+            foreach($segments as$segment){$last=count($merged)-1;if($last>=0&&$segment['first']<=$merged[$last]['last'])self::unavailable();
+                if($last>=0&&$segment['first']===$merged[$last]['last']+1)$merged[$last]['last']=$segment['last'];else $merged[]=$segment;}
+            $remaining=$item['quantity']-$r-$t+$intersection;
+            if($remaining<0||$paused>$remaining||($enabled&&$eligible!==$remaining-$paused)||(!$enabled&&$eligible!==0))self::unavailable();
+            $items[]=['item_id'=>$id,'quantity'=>$item['quantity'],'received_quantity'=>$r,'returned_quantity'=>$t,
+                'returned_after_receipt'=>$intersection,'paused_quantity'=>$paused,'eligible_quantity'=>$eligible,'eligible_segments'=>$merged];
+            foreach(['quantity'=>$item['quantity'],'received'=>$r,'returned'=>$t,'intersection'=>$intersection,'paused'=>$paused,'eligible'=>$eligible] as$key=>$q)$totals[$key]+=$q;
+        }
+        $published=[];foreach($package['items'] as$item)$published[$item['id']]=$item['quantity'];$expected=[];foreach($blocks as$id=>$item)$expected[$id]=$item['quantity'];
+        if($published!==$expected||$totals['quantity']!==$package['original']||$totals['received']!==$package['received']
+            ||$totals['returned']!==$package['returned_accepted']||$totals['intersection']!==$package['aftersale']['returned_after_receipt'])self::unavailable();
+        return ['package'=>$package,'allowed_actions'=>['receive'=>$enabled&&$totals['eligible']>0],
+            'receipt_selection'=>['schema'=>2,'coordinate'=>'child_item_ordinal','items'=>$items]];
+    }
+
+    private static function coordinateQuantity(array $rows):int
+    {
+        $q=0;foreach($rows as$row){$first=Facts::integer($row['unit_start'],0,self::INT_MAX);$last=Facts::integer($row['unit_end'],1,self::INT_MAX);
+            if($last<=$first)self::unavailable();$q+=$last-$first;Facts::integer($q,0,self::UINT_MAX);}return $q;
+    }
+
+    private static function coordinateIntersection(array $left,array $right):int
+    {
+        $q=0;foreach($left as$a)foreach($right as$b)if($a['source_item_id']===$b['source_item_id']
+            &&$a['source_ship_range_id']===$b['source_ship_range_id'])$q+=max(0,min($a['unit_end'],$b['unit_end'])-max($a['unit_start'],$b['unit_start']));
+        return Facts::integer($q,0,self::UINT_MAX);
+    }
+
+    /** M1 publishes genuinely available unshipped quantities while preserving its original four keys. */
+    private static function shippingAftersaleItems(array $items,array $inspection):array
+    {
+        $capacity=MarketplaceOrderRefundFacts::quoteSelectionFromInspection($inspection);$rows=[];$total=0;$shipped=0;$available=0;
+        foreach($items as$item){$id=Facts::integer($item['id'],1,self::INT_MAX);$q=Facts::integer($item['cart_num'],1,self::INT_MAX);$s=0;
+            foreach($inspection['history']['ships'] as$range)if($range['source_item_id']===$id)$s+=$range['quantity'];
+            $matches=[];foreach($capacity['root_items'] as$row)if($row['item']['id']===$id)$matches[]=$row;
+            if(count($matches)!==1)self::unavailable();$free=Facts::integer($matches[0]['available_cancel_quantity'],0,$q);
+            if($s>$q||$free>$q-$s)self::unavailable();$rows[]=['item_id'=>$id,'original_quantity'=>$q,'shipped_quantity'=>$s,'to_ship'=>$free];
+            $total+=$q;$shipped+=$s;$available+=$free;
+        }
+        if($total!==$inspection['summary']['original']||$shipped!==$inspection['summary']['shipped']
+            ||$available!==$inspection['summary']['to_ship']-$inspection['aftersale']['pending_cancel_quantity'])self::unavailable();return $rows;
     }
 
     private static function readOriginalItemCorrespondence(array $fullItems,mixed $originalItems):void
@@ -812,7 +1079,7 @@ final class MarketplaceOrderFulfillmentServices
             'receipt_selection'=>['schema'=>1,'coordinate'=>'child_item_ordinal','items'=>$items]];
     }
 
-    private function packagePage(ConnectionInterface $connection,PDO $pdo,array $root,array $items,array $history,array $page,array $options):array
+    private function packagePage(ConnectionInterface $connection,PDO $pdo,array $root,array $items,array $history,array $page,array $options,?array $inspection=null):array
     {
         $selected=$this->dao->readFulfillmentChildrenPage($connection,$pdo,$root,$page['page'],$page['limit']);Facts::keys($selected,['count','list']);
         $ships=array_values($history['ships_by_child']);usort($ships,static fn(array $a,array $b):int=>bccomp($b['id'],$a['id'],0));
@@ -821,8 +1088,10 @@ final class MarketplaceOrderFulfillmentServices
         foreach($selected['list'] as$index=>$raw){$operation=Facts::operation($raw);
             if(!self::same($operation,$ships[$index]))self::unavailable();$id=$operation['child_order_id'];
             if(!isset($history['children'][$id])||!self::same($history['ships_by_child'][$id],$operation))self::unavailable();
-            $list[]=MarketplaceOrderSnapshotProjection::fulfillmentChildFromFacts($root,$items,$history['children'][$id],
-                self::readChildItems(array_values($history['child_items']),$id),$history,$options,false);
+            $childItems=self::readChildItems(array_values($history['child_items']),$id);
+            $list[]=$inspection===null?MarketplaceOrderSnapshotProjection::fulfillmentChildFromFacts($root,$items,$history['children'][$id],
+                $childItems,$history,$options,false):MarketplaceOrderSnapshotProjection::fulfillmentChildAftersaleFromFacts($root,array_values($inspection['source']['items']),$history['children'][$id],
+                $childItems,$inspection,$options,false);
         }
         return ['page'=>$page['page'],'limit'=>$page['limit'],'count'=>$selected['count'],'list'=>$list];
     }
@@ -902,7 +1171,7 @@ final class MarketplaceOrderFulfillmentServices
     {
         $normalized=MarketplaceOrderFulfillmentInput::ship($rootId,$raw);
         $ctx->require('order.ship');$this->auth->authorizeAction($ctx,'order.ship',false);
-        [$connection,$pdo]=$this->defaultConnection();$this->dao->assertStructure($pdo);
+        [$connection,$pdo]=$this->defaultConnection();$this->dao->assertAftersaleStructure($pdo);
         $candidate=$this->dao->merchantCandidate($pdo,$normalized['request']['root_order_id'],Facts::integer($ctx->merId,1,self::UINT_MAX));
         return $this->run($connection,$pdo,$candidate,'ship',$ctx,null,$normalized,false);
     }
@@ -910,7 +1179,7 @@ final class MarketplaceOrderFulfillmentServices
     public function receiveForCustomer(int $actualUid,string $childNo,array $raw):array
     {
         Facts::integer($actualUid,1,self::INT_MAX);Facts::text($childNo,32,true);
-        [$connection,$pdo]=$this->defaultConnection();$this->dao->assertStructure($pdo);
+        [$connection,$pdo]=$this->defaultConnection();$this->dao->assertAftersaleStructure($pdo);
         $candidate=$this->dao->customerChildCandidate($pdo,$actualUid,$childNo);
         $normalized=MarketplaceOrderFulfillmentInput::receive($candidate['root_order_id'],$candidate['child_order_id'],$raw);
         return $this->run($connection,$pdo,$candidate,'receive',null,$actualUid,$normalized,false);
@@ -920,7 +1189,7 @@ final class MarketplaceOrderFulfillmentServices
     public function receiveDue(int $childId):array
     {
         Facts::integer($childId,1,self::INT_MAX);
-        [$connection,$pdo]=$this->defaultConnection();$this->dao->assertStructure($pdo);
+        [$connection,$pdo]=$this->defaultConnection();$this->dao->assertAftersaleStructure($pdo);
         $candidate=$this->dao->internalChildCandidate($pdo,$childId);
         return $this->run($connection,$pdo,$candidate,'receive',null,null,null,true);
     }
@@ -930,16 +1199,16 @@ final class MarketplaceOrderFulfillmentServices
     {
         Facts::integer($dueCursor,0,self::UINT_MAX);Facts::u64($shipCursor,true);
         if($batch<1||$batch>100)self::unavailable();
-        [$connection,$pdo]=$this->defaultConnection();$this->dao->assertStructure($pdo);
+        [$connection,$pdo]=$this->defaultConnection();$this->dao->assertAftersaleStructure($pdo);
         $rows=$this->dao->dueCandidates($pdo,$dueCursor,$shipCursor,self::now(),$batch);$this->outside($connection,$pdo);
         $out=['processed'=>0,'received'=>0,'already_received'=>0,'not_due'=>0,'pending'=>0,
-            'next_due_at'=>0,'next_ship_id'=>'0','wrapped'=>count($rows)<$batch];
+            'next_due_at'=>0,'next_ship_id'=>'0','wrapped'=>count($rows)<$batch,'aftersale_paused'=>0,'fulfillment_closed'=>0];
         foreach($rows as$row){
             ++$out['processed'];
             try{
                 $result=$this->receiveDue($row['child_order_id']);
                 if(($result['action']??null)==='receive')++$out['received'];
-                elseif(in_array($result['state']??null,['already_received','not_due'],true))++$out[$result['state']];
+                elseif(in_array($result['state']??null,['already_received','not_due','aftersale_paused','fulfillment_closed'],true))++$out[$result['state']];
                 else self::unavailable();
             }catch(Throwable $error){
                 ++$out['pending'];self::pending('scan_outcome_unproved',$row['root_order_id'],$row['child_order_id'],$row['ship_operation_id']);
@@ -970,26 +1239,24 @@ final class MarketplaceOrderFulfillmentServices
                 }elseif($customer!==null){
                     if($customer!==$candidate['uid'])self::unavailable();$this->dao->lockCustomer($pdo,$customer);
                 }elseif(!$due)self::unavailable();
-                $phase='locked_operations';
-                $operations=$this->dao->lockOperations($pdo,$candidate['root_order_id']);
-                $phase='locked_original_items_reserves';
-                $original=$this->orders->lockPaymentApplicationFacts($pdo,$candidate['uid'],$candidate['root_order_id']);
-                $phase='locked_complete_family';
-                $family=$this->dao->lockFamily($pdo,$root);
-                $logs=$this->dao->lockStatusLogs($pdo,$candidate['root_order_id']);
-                $history=$this->history($root,$original,$family,$operations,$logs);
+                $phase='locked_complete_native_snapshot';
+                $snapshot=$this->lockFulfillmentSnapshot($connection,$pdo,$root,$payment);
+                $capture=$snapshot['capture'];$context=$snapshot['context'];$family=$snapshot['family'];
+                $inspection=$snapshot['inspection'];$history=$snapshot['history'];$original=$inspection['credit_facts'];
+                $operations=array_values($history['operations']);$s2=$inspection['last_action_id']!==null;
                 $this->inside($actual,$connection,$pdo);
                 $target=null;$mapping=[];
                 if($action==='receive'){
                     $childId=$candidate['child_order_id'];
                     $target=$history['ships_by_child'][$childId]??null;
                     if($target===null||($history['children'][$childId]['order_id']??null)!==$candidate['child_order_no'])self::unavailable();
-                    $mapping=self::eligible($target,$history);
+                    $availability=$s2?MarketplaceOrderRefundFacts::receiptAvailabilityFromInspection($inspection,$childId):null;
+                    $mapping=$s2?$availability['eligible']:self::eligible($target,$history);
                     if($due){
                         $now=self::now();
                         if($target['receipt_due_at']===0||$target['receipt_due_at']>$now)
-                            return $this->noOperation($actual,$connection,$pdo,'not_due',$candidate,$phase);
-                        if($mapping===[])return $this->noOperation($actual,$connection,$pdo,'already_received',$candidate,$phase);
+                            return $s2?$this->noAftersaleOperation($actual,$connection,$pdo,'not_due',$candidate,$inspection,$phase):$this->noOperation($actual,$connection,$pdo,'not_due',$candidate,$phase);
+                        if($mapping===[])return $s2?$this->noAftersaleOperation($actual,$connection,$pdo,self::emptyAftersaleReceiptState($inspection,$childId,$availability),$candidate,$inspection,$phase):$this->noOperation($actual,$connection,$pdo,'already_received',$candidate,$phase);
                         $key='auto:'.$target['id'].':'.hash('sha256',Facts::json(self::coordinates($mapping,true),65536));
                         $normalized=MarketplaceOrderFulfillmentInput::receive($candidate['root_order_id'],$childId,
                             ['idem_key'=>$key,'selection'=>['mode'=>'all_eligible']]);
@@ -1009,13 +1276,16 @@ final class MarketplaceOrderFulfillmentServices
                     $this->inside($actual,$connection,$pdo);$phase='commit_outcome_unknown';return $saved['result_payload']['public_result'];
                 }
                 // These new-action gates never override a genuine committed replay.
-                $phase='new_action_admission';self::holdClear($payment['registry']);
+                $phase='new_action_admission';if($s2)self::normal($root);self::holdClear($payment['registry']);
+                $proposal=null;$childData=null;$insertedItems=[];$rangeWrites=[];$now=self::now();
                 if($action==='ship'){
                     self::shipAdmission($payment['merchant']);
-                    $plan=MarketplaceOrderFulfillmentPlan::plan($root,$original['items'],$original['reserves'],
+                    if($s2){$proposal=MarketplaceOrderRefundFacts::prepareFulfillment($capture,$context,$payment,$action,$normalized['request'],$now);
+                        $plan=$proposal['plan'];$mapping=$proposal['mapping'];}
+                    else{$plan=MarketplaceOrderFulfillmentPlan::plan($root,$original['items'],$original['reserves'],
                         self::coordinates($history['ship_ranges']),$normalized['request']['quantities']);
-                    MarketplaceOrderFulfillmentPlan::savedProjection($root,$original['items'],$plan);
-                    $now=self::now();$this->inside($actual,$connection,$pdo);
+                        MarketplaceOrderFulfillmentPlan::savedProjection($root,$original['items'],$plan);}
+                    $this->inside($actual,$connection,$pdo);
                     $deadline=$this->deadline($now);$this->inside($actual,$connection,$pdo);
                     $phase='new_child_number';
                     $number=Facts::text($this->numbers->getNewOrderId('cf'),32,true);
@@ -1023,29 +1293,32 @@ final class MarketplaceOrderFulfillmentServices
                     $childData=self::childData($root,$plan,$normalized['request'],$now,$number,bin2hex(random_bytes(16)));
                     $phase='insert_child';$childId=$this->dao->insertChild($pdo,$childData);
                     $child=$this->dao->child($pdo,$childId);self::childStored($child,$childData);
-                    $mapping=array_map(static fn(array $a):array=>$a+['source_ship_range_id'=>null,'child_item_id'=>null],$plan['allocations']);
+                    if(!$s2)$mapping=array_map(static fn(array $a):array=>$a+['source_ship_range_id'=>null,'child_item_id'=>null],$plan['allocations']);
                 }else{
-                    if($mapping===[])return $this->noOperation($actual,$connection,$pdo,'already_received',$candidate,$phase);
-                    $mapping=self::selectReceive($mapping,$normalized['request']['selection']);
-                    $plan=MarketplaceOrderFulfillmentPlan::exactRangesPlan($root,$original['items'],$original['reserves'],self::coordinates($mapping));
-                    MarketplaceOrderFulfillmentPlan::savedProjection($root,$original['items'],$plan);
-                    self::sameIntervals($plan['allocations'],$mapping);$now=self::now();$deadline=null;
+                    if($mapping===[])return $s2?$this->noAftersaleOperation($actual,$connection,$pdo,self::emptyAftersaleReceiptState($inspection,$childId,$availability),$candidate,$inspection,$phase):
+                        $this->noOperation($actual,$connection,$pdo,'already_received',$candidate,$phase);
+                    if($s2){$proposal=MarketplaceOrderRefundFacts::prepareFulfillment($capture,$context,$payment,$action,$normalized['request'],$now);
+                        $plan=$proposal['plan'];$mapping=$proposal['mapping'];}
+                    else{$mapping=self::selectReceive($mapping,$normalized['request']['selection']);
+                        $plan=MarketplaceOrderFulfillmentPlan::exactRangesPlan($root,$original['items'],$original['reserves'],self::coordinates($mapping));
+                        MarketplaceOrderFulfillmentPlan::savedProjection($root,$original['items'],$plan);}
+                    self::sameIntervals($plan['allocations'],$mapping);$deadline=null;
                 }
                 $phase='insert_operation';
-                $operation=self::operationData($root,$childId,$action,$normalized,$plan,$mapping,$target,$ctx,$customer,$now,$deadline);
+                $operation=self::operationData($root,$childId,$action,$normalized,$plan,$mapping,$target,$ctx,$customer,$now,$deadline,$proposal);
                 $operationId=$this->dao->insertOperation($pdo,$operation);
                 if($action==='ship'){
                     $sourceItems=self::indexRows($original['items'],'id');$itemMap=[];
                     foreach(self::itemGroups($plan) as$sourceId=>$allocations){
                         $data=self::childItemData($root,$childId,$operationId,$sourceItems[$sourceId],$allocations);
-                        $itemMap[$sourceId]=$this->dao->insertChildItem($pdo,$data);
+                        $itemMap[$sourceId]=$this->dao->insertChildItem($pdo,$data);$insertedItems[$itemMap[$sourceId]]=$data;
                     }
                     foreach($mapping as&$row)$row['child_item_id']=$itemMap[$row['source_item_id']];unset($row);
                 }
                 $rangeRefs=[];$phase='insert_ranges';
                 foreach($plan['allocations'] as$i=>$allocation){
                     $range=self::rangeData($operation+['id'=>$operationId],$allocation,$mapping[$i]);
-                    $rangeId=$this->dao->insertRange($pdo,$range);
+                    $rangeId=$this->dao->insertRange($pdo,$range);$rangeWrites['r:'.$rangeId]=Facts::rangeRow(['id'=>$rangeId]+$range);
                     $rangeRefs[]=['range_id'=>$rangeId,'source_item_id'=>$allocation['source_item_id'],
                         'child_item_id'=>$mapping[$i]['child_item_id'],'source_ship_range_id'=>$mapping[$i]['source_ship_range_id'],
                         'unit_start'=>$allocation['unit_start'],'unit_end'=>$allocation['unit_end']];
@@ -1054,47 +1327,54 @@ final class MarketplaceOrderFulfillmentServices
                 $phase='native_readback';
                 $allOperations=$this->dao->lockOperations($pdo,$candidate['root_order_id']);
                 $allFamily=$this->dao->lockFamily($pdo,$root);
-                $own=null;foreach($allOperations as$row)if($row['id']===$operationId)$own=$row;
-                $expectedOwn=Facts::operation(['id'=>$operationId]+$operation);
-                if($own!==$expectedOwn)self::unavailable();
-                $summary=self::summary($root,$original['items'],$allFamily['children'],$allFamily['ranges']);
+                self::pendingFulfillmentDelta($family,$allFamily,$operations,$allOperations,$operationId,$operation,$childData,$insertedItems,$rangeWrites);
+                $summary=$s2?$proposal['summary']:self::summary($root,$original['items'],$allFamily['children'],$allFamily['ranges']);
+                if($s2){
+                    $s=0;$r=0;foreach($allFamily['ranges'] as$row){if($row['operation_action']==='ship')$s+=$row['quantity'];else $r+=$row['quantity'];}
+                    $t=$inspection['history']['returned'];$received=[];foreach($allFamily['ranges'] as$row)if($row['operation_action']==='receive')$received[]=$row;
+                    $intersection=self::coordinateIntersection($received,$t);
+                    if($s!==$summary['shipped']||$r!==$summary['received']||$summary['cancelled_unshipped']!==$inspection['summary']['cancelled_unshipped']
+                        ||$summary['returned_accepted']!==self::coordinateQuantity($t)||$summary['to_ship']!==$summary['original']-$s-$summary['cancelled_unshipped']
+                        ||$summary['to_receive']!==$s-$r-self::coordinateQuantity($t)+$intersection
+                        ||$summary['child_count']!==count($allFamily['children'])||$proposal['aftersale']['returned_after_receipt']!==$intersection)self::unavailable();
+                }
                 foreach($allFamily['children'] as$row){
                     $id=Facts::integer($row['id'],1,self::INT_MAX);
-                    $next=self::childReceived($id,$allFamily['ranges'])?2:1;
-                    $this->dao->status($pdo,$row,$next);
+                    $closed=$s2?self::childAftersaleClosed($id,$allFamily['ranges'],$inspection['history']['returned']):self::childReceived($id,$allFamily['ranges']);
+                    $this->dao->status($pdo,$row,$closed?2:1);
                 }
-                $newStatus=self::rootStatus($summary);$oldStatus=Facts::integer($root['status'],0,2);
+                $newStatus=$s2?($summary['to_ship']>0?0:($summary['to_receive']>0?1:($summary['shipped']>0?2:0))):self::rootStatus($summary);$oldStatus=Facts::integer($root['status'],0,2);
                 $afterRoot=$this->dao->status($pdo,$root,$newStatus);
                 if($newStatus!==$oldStatus)$this->dao->statusLog($pdo,$candidate['root_order_id'],$action,$now);
                 $child=$this->dao->child($pdo,$childId);
                 $committedAt=self::now();if($committedAt<$now)self::unavailable();
-                $internal=self::result($operation+['id'=>$operationId],$afterRoot,$child,$plan,$rangeRefs,$summary,$committedAt);
+                $internal=self::result($operation+['id'=>$operationId],$afterRoot,$child,$plan,$rangeRefs,$summary,$committedAt,$proposal['aftersale']??null);
                 $phase='finish_operation';$this->dao->finishOperation($pdo,$operationId,$internal,$committedAt);
                 // Original source rows/ledger/payment must stay native-equal, except root.status and actual new child list.
                 $finalPayment=$this->payments->lockPayment($pdo,$candidate['uid'],$candidate['root_order_id'],$candidate['root_order_no']);
                 $expectedPayment=$payment;$expectedPayment['root']['status']=$newStatus;
                 if($finalPayment!==$expectedPayment)self::unavailable();
-                $finalOriginal=$this->orders->lockPaymentApplicationFacts($pdo,$candidate['uid'],$candidate['root_order_id']);
-                foreach(['root','items','selection','reserves','children'] as$key)if($finalOriginal[$key]!==$original[$key])self::unavailable();
-                $finalRoot=$this->dao->lockRoot($pdo,$candidate);
-                if($finalRoot!==$afterRoot)self::unavailable();
-                $finalFamily=$this->dao->lockFamily($pdo,$finalRoot);
-                $finalOperations=$this->dao->lockOperations($pdo,$candidate['root_order_id']);
-                $finalLogs=$this->dao->lockStatusLogs($pdo,$candidate['root_order_id']);
+                $finalRoot=$this->dao->lockRoot($pdo,$candidate);if($finalRoot!==$afterRoot)self::unavailable();
+                $finalSnapshot=$this->lockFulfillmentSnapshot($connection,$pdo,$finalRoot,$finalPayment);
+                $finalCapture=$finalSnapshot['capture'];$finalContext=$finalSnapshot['context'];$finalFamily=$finalSnapshot['family'];
+                $finalInspection=$finalSnapshot['inspection'];$finalHistory=$finalSnapshot['history'];$finalOperations=array_values($finalHistory['operations']);
+                foreach(['items','selection','reserves','credit_rows'] as$key)if($finalCapture[$key]!==$capture[$key])self::unavailable();
+                if($finalContext['actions']!==$context['actions']||$finalContext['refunds']!==$context['refunds']
+                    ||$finalContext['cut_id']!==$context['cut_id']||!self::same($finalInspection['summary'],$summary)
+                    ||($s2&&!self::same($finalInspection['aftersale'],$proposal['aftersale'])))self::unavailable();
                 $finalChildren=self::indexRows($finalFamily['children'],'id');
                 foreach($family['children'] as$prior){
                     $id=Facts::integer($prior['id'],1,self::INT_MAX);
-                    $status=self::childReceived($id,$finalFamily['ranges'])?2:1;
-                    $prior['status']=is_int($prior['status'])?$status:(string)$status;
+                    $closed=$s2?self::childAftersaleClosed($id,$finalFamily['ranges'],$finalInspection['history']['returned']):self::childReceived($id,$finalFamily['ranges']);
+                    $status=$closed?2:1;$prior['status']=is_int($prior['status'])?$status:(string)$status;
                     if(($finalChildren[$id]??null)!==$prior)self::unavailable();
                 }
-                $finalItems=self::indexRows($finalFamily['items'],'id');
-                foreach($family['items'] as$prior)if(($finalItems[Facts::integer($prior['id'],1,self::INT_MAX)]??null)!==$prior)self::unavailable();
+                $finalItems=self::indexRows($finalFamily['items'],'id');foreach($family['items'] as$prior)
+                    if(($finalItems[Facts::integer($prior['id'],1,self::INT_MAX)]??null)!==$prior)self::unavailable();
                 $finalOperationMap=[];foreach($finalOperations as$row)$finalOperationMap[$row['id']]=$row;
-                foreach($operations as$prior)if(($finalOperationMap[$prior['id']]??null)!==$prior)self::unavailable();
-                $finalRangeMap=[];foreach($finalFamily['ranges'] as$row)$finalRangeMap[$row['id']]=$row;
-                foreach($family['ranges'] as$prior)if(($finalRangeMap[$prior['id']]??null)!==$prior)self::unavailable();
-                $this->history($finalRoot,$finalOriginal,$finalFamily,$finalOperations,$finalLogs);
+                foreach($operations as$prior)if(!isset($finalOperationMap[$prior['id']])||!self::same($finalOperationMap[$prior['id']],$prior))self::unavailable();
+                $finalRangeMap=self::rangeRowsById($finalFamily['ranges']);foreach($family['ranges'] as$prior)
+                    if(($finalRangeMap['r:'.$prior['id']]??null)!==$prior)self::unavailable();
                 $stored=self::findOperation($finalOperations,$action,$normalized['idem_key']);
                 if($stored===null||$stored['id']!==$operationId||!self::same($stored['result_payload'],$internal))self::unavailable();
                 $this->inside($actual,$connection,$pdo);$phase='commit_outcome_unknown';return $internal['public_result'];
@@ -1104,6 +1384,84 @@ final class MarketplaceOrderFulfillmentServices
         }catch(Throwable $error){
             self::pending($phase,$candidate['root_order_id'],$childId,$operationId);self::unavailable();
         }
+    }
+
+    /** Fixed lock order after actual payment/root/actor admission, complete native inputs before interpretation. */
+    private function lockFulfillmentSnapshot(ConnectionInterface $connection,PDO $pdo,array $root,array $payment):array
+    {
+        $operations=$this->refunds->lockOperationsForRoot($connection,$pdo,$root);
+        $capture=$this->orders->capturePaymentApplicationFacts($pdo,Facts::integer($root['uid'],1,self::INT_MAX),Facts::integer($root['id'],1,self::INT_MAX));
+        if($capture['root']!==$root)self::unavailable();
+        $family=$this->dao->lockFamily($pdo,$root);
+        $logs=$this->refunds->lockStatusLogsForRoot($connection,$pdo,$root);
+        $actions=$this->refunds->lockActionsForRoot($connection,$pdo,$root);
+        $context=self::aftersaleContext($actions,$family['refunds'],$operations,$family['ranges'],$logs);
+        $inspection=MarketplaceOrderRefundFacts::inspectForAftersale($capture,$context,$payment);
+        $this->validateAftersaleFamilyFromFacts($root,$capture,$family,$inspection);
+        if($inspection['last_action_id']===null){
+            $typed=array_map([Facts::class,'operation'],$operations);foreach($typed as$op)
+                if($op['contract_version']!==1||$op['aftersale_cut_id']!==null)self::unavailable();
+            $fulfillmentLogs=[];foreach($logs as$row)if(in_array($row['change_type'],['marketplace_fulfillment_ship','marketplace_fulfillment_receive'],true))$fulfillmentLogs[]=$row;
+            $history=$this->history($root,$inspection['credit_facts'],$family,$typed,$fulfillmentLogs);
+        }else $history=self::historyFromAftersaleInspection($family,$inspection);
+        return ['capture'=>$capture,'context'=>$context,'family'=>$family,'inspection'=>$inspection,'history'=>$history];
+    }
+
+    /** One real private state0 and its exact native rows; no simulated state1 is sent to the business replay. */
+    private static function pendingFulfillmentDelta(array $beforeFamily,array $afterFamily,array $priorOperations,array $allOperations,string $operationId,array $operation,
+        ?array $childData,array $insertedItems,array $rangeWrites):void
+    {
+        $map=[];foreach($allOperations as$row){$id=$row['id'];if(isset($map[$id]))self::unavailable();$map[$id]=$row;}
+        if(count($map)!==count($priorOperations)+1||($map[$operationId]??null)!==Facts::operation(['id'=>$operationId]+$operation))self::unavailable();
+        foreach($priorOperations as$row)if(!isset($map[$row['id']])||!self::same($map[$row['id']],$row))self::unavailable();
+        foreach(['children','items','ranges'] as$key){
+            $before=$key==='ranges'?self::rangeRowsById($beforeFamily[$key]):self::indexRows($beforeFamily[$key],'id');$after=$key==='ranges'?self::rangeRowsById($afterFamily[$key]):self::indexRows($afterFamily[$key],'id');
+            foreach($before as$id=>$row)if(($after[$id]??null)!==$row)self::unavailable();
+            $extra=array_diff_key($after,$before);
+            if($key==='children'){
+                if(count($extra)!==($childData===null?0:1))self::unavailable();
+                if($childData!==null){if(!isset($extra[$operation['child_order_id']]))self::unavailable();self::childStored($extra[$operation['child_order_id']],$childData);}
+            }elseif($key==='items'){
+                if(count($extra)!==count($insertedItems)||array_keys($extra)!==array_keys($insertedItems))self::unavailable();
+                foreach($insertedItems as$id=>$expected){self::itemStored($extra[$id],$expected);if(($extra[$id]['old_cart_id']??null)!==null)self::unavailable();}
+            }else{
+                if(count($extra)!==count($rangeWrites)||array_keys($extra)!==array_keys($rangeWrites))self::unavailable();
+                foreach($rangeWrites as$id=>$expected)if($extra[$id]!==$expected)self::unavailable();
+            }
+        }
+        if($afterFamily['refunds']!==$beforeFamily['refunds'])self::unavailable();
+    }
+
+    private static function rangeRowsById(array $rows):array
+    {
+        if(!array_is_list($rows))self::unavailable();$out=[];$previous='0';
+        foreach($rows as$row){$id=Facts::u64($row['id']);if(bccomp($id,$previous,0)<=0)self::unavailable();$previous=$id;$out['r:'.$id]=$row;}return $out;
+    }
+    private static function childAftersaleClosed(int $childId,array $ranges,array $returned):bool
+    {
+        $ships=[];$received=[];$returns=[];
+        foreach($ranges as$row)if($row['child_order_id']===$childId){if($row['operation_action']==='ship')$ships[]=$row;elseif($row['operation_action']==='receive')$received[]=$row;else self::unavailable();}
+        foreach($returned as$row)if($row['child_order_id']===$childId)$returns[]=$row;
+        $q=self::coordinateQuantity($ships);if($q<1)self::unavailable();
+        $left=$q-self::coordinateQuantity($received)-self::coordinateQuantity($returns)+self::coordinateIntersection($received,$returns);
+        if($left<0)self::unavailable();return $left===0;
+    }
+
+    private function noAftersaleOperation(ConnectionInterface $actual,ConnectionInterface $connection,PDO $pdo,string $state,array $candidate,array $inspection,string &$phase):array
+    {
+        if(!in_array($state,['already_received','not_due','aftersale_paused','fulfillment_closed'],true)||$inspection['last_action_id']===null)self::unavailable();
+        $this->inside($actual,$connection,$pdo);$phase='commit_outcome_unknown';
+        return ['schema'=>2,'state'=>$state,'operation_created'=>false,'root_order_id'=>$candidate['root_order_id'],
+            'child_order_id'=>$candidate['child_order_id'],'aftersale'=>$inspection['aftersale']];
+    }
+
+    private static function emptyAftersaleReceiptState(array $inspection,int $childId,array $availability):string
+    {
+        if($availability['eligible']!==[])self::unavailable();
+        if($availability['remaining']!==[]){if($availability['paused']===[])self::unavailable();return 'aftersale_paused';}
+        $s=0;$r=0;foreach($inspection['history']['ships'] as$row)if($row['child_order_id']===$childId)$s+=$row['quantity'];
+        foreach($inspection['history']['received'] as$row)if($row['child_order_id']===$childId)$r+=$row['quantity'];
+        if($s<1||$r>$s)self::unavailable();return $r===$s?'already_received':'fulfillment_closed';
     }
 
     private function noOperation(ConnectionInterface $actual,ConnectionInterface $connection,PDO $pdo,string $state,array $candidate,string &$phase):array
@@ -1535,7 +1893,7 @@ final class MarketplaceOrderFulfillmentServices
         $raw=hex2bin($hex);if(!is_string($raw)||strlen($raw)!==32)self::unavailable();return $raw;
     }
 
-    private static function allocationDigest(array $operation,array $plan,array $mapping):string
+    private static function allocationDigest(array $operation,array $plan,array $mapping,?array $aftersale=null):string
     {
         self::sameIntervals($plan['allocations'],$mapping);$allocations=[];
         foreach($plan['allocations'] as$i=>$row){
@@ -1544,15 +1902,19 @@ final class MarketplaceOrderFulfillmentServices
             else{if(!is_string($parent))self::unavailable();Facts::u64($parent);}
             $allocations[]=$row+['source_ship_range_id'=>$parent];
         }
-        return hash('sha256',Facts::json(['schema'=>1,'action'=>$operation['action'],'root_order_id'=>$operation['root_order_id'],
+        $base=['schema'=>1,'action'=>$operation['action'],'root_order_id'=>$operation['root_order_id'],
             'child_order_id'=>$operation['child_order_id'],'source_snapshot_sha256'=>$plan['source_snapshot_sha256'],
-            'target_operation_id'=>$operation['target_operation_id'],'allocations'=>$allocations],1048576),true);
+            'target_operation_id'=>$operation['target_operation_id'],'allocations'=>$allocations];
+        if($operation['contract_version']===1){if($operation['aftersale_cut_id']!==null||$aftersale!==null)self::unavailable();$digest=$base;}
+        elseif($operation['contract_version']===2){if($aftersale===null||$aftersale['revision']!==$operation['aftersale_cut_id'])self::unavailable();
+            $digest=['schema'=>2,'base'=>$base,'aftersale_cut_id'=>$operation['aftersale_cut_id'],'aftersale'=>$aftersale];}
+        else self::unavailable();return hash('sha256',Facts::json($digest,1048576),true);
     }
 
     private static function operationData(array $root,int $childId,string $action,array $normalized,array $plan,array $mapping,
-        ?array $target,?MerchantContext $ctx,?int $customer,int $now,?int $deadline):array
+        ?array $target,?MerchantContext $ctx,?int $customer,int $now,?int $deadline,?array $proposal=null):array
     {
-        $data=['contract_version'=>1,'root_order_id'=>Facts::integer($root['id'],1,self::INT_MAX),'child_order_id'=>$childId,
+        $data=['contract_version'=>$proposal===null?1:2,'root_order_id'=>Facts::integer($root['id'],1,self::INT_MAX),'child_order_id'=>$childId,
             'uid'=>Facts::integer($root['uid'],1,self::INT_MAX),'mer_id'=>Facts::integer($root['mer_id'],1,self::UINT_MAX),
             'action'=>$action,'idem_key'=>$normalized['idem_key'],'request_digest'=>hash('sha256',Facts::json($normalized['request'],65536),true),
             'source_snapshot_digest'=>self::sourceDigest($plan),'allocation_digest'=>'',
@@ -1562,7 +1924,8 @@ final class MarketplaceOrderFulfillmentServices
             'actor_id'=>$action==='ship'?Facts::integer($ctx?->employeeId,1,self::UINT_MAX):$customer,
             'created_at'=>$now,'committed_at'=>null,'shipped_at'=>$action==='ship'?$now:null,
             'receipt_due_at'=>$action==='ship'?$deadline:null,'received_at'=>$action==='receive'?$now:null];
-        $data['allocation_digest']=self::allocationDigest($data,$plan,$mapping);return $data;
+        $data['aftersale_cut_id']=$proposal['aftersale_cut_id']??null;
+        $data['allocation_digest']=self::allocationDigest($data,$plan,$mapping,$proposal['aftersale']??null);return $data;
     }
 
     private static function rangeData(array $operation,array $allocation,array $mapping):array
@@ -1577,19 +1940,22 @@ final class MarketplaceOrderFulfillmentServices
         return $row;
     }
 
-    private static function result(array $operation,array $root,array $child,array $plan,array $ranges,array $summary,int $committedAt):array
+    private static function result(array $operation,array $root,array $child,array $plan,array $ranges,array $summary,int $committedAt,?array $aftersale=null):array
     {
-        $public=['schema'=>1,'operation_id'=>$operation['id'],'action'=>$operation['action'],'root_order_id'=>$operation['root_order_id'],
+        $public=['schema'=>$operation['contract_version'],'operation_id'=>$operation['id'],'action'=>$operation['action'],'root_order_id'=>$operation['root_order_id'],
             'root_order_no'=>Facts::text($root['order_id'],32,true),'child_order_id'=>$operation['child_order_id'],
             'child_order_no'=>Facts::text($child['order_id'],32,true),'quantity'=>$plan['totals']['quantity'],
             'created_at'=>$operation['created_at'],'committed_at'=>$committedAt,'shipped_at'=>$operation['shipped_at'],
             'receipt_due_at'=>$operation['receipt_due_at'],'received_at'=>$operation['received_at'],'fulfillment_summary'=>$summary];
-        $internal=['schema'=>1,'operation_id'=>$operation['id'],'action'=>$operation['action'],'root_order_id'=>$operation['root_order_id'],
+        $internal=['schema'=>$operation['contract_version'],'operation_id'=>$operation['id'],'action'=>$operation['action'],'root_order_id'=>$operation['root_order_id'],
             'root_order_no'=>$public['root_order_no'],'child_order_id'=>$operation['child_order_id'],'child_order_no'=>$public['child_order_no'],
             'target_operation_id'=>$operation['target_operation_id'],'actor_type'=>$operation['actor_type'],'actor_id'=>$operation['actor_id'],
             'created_at'=>$operation['created_at'],'committed_at'=>$committedAt,'shipped_at'=>$operation['shipped_at'],
             'receipt_due_at'=>$operation['receipt_due_at'],'received_at'=>$operation['received_at'],
             'plan'=>$plan,'ranges'=>$ranges,'summary'=>$summary,'public_result'=>$public];
+        if($operation['contract_version']===2){if($aftersale===null||$aftersale['revision']!==$operation['aftersale_cut_id'])self::unavailable();
+            $public['aftersale']=$aftersale;$internal['public_result']=$public;$internal['aftersale_cut_id']=$operation['aftersale_cut_id'];$internal['aftersale']=$aftersale;
+        }elseif($operation['contract_version']!==1||$aftersale!==null||$operation['aftersale_cut_id']!==null)self::unavailable();
         Facts::json($internal,1048576);return $internal;
     }
 
@@ -1613,7 +1979,7 @@ final class MarketplaceOrderFulfillmentServices
     {
         $connection=Db::connect();$pdo=$connection->getPdo();
         if(!$pdo instanceof PDO){$connection->query('SELECT 1',[],true);$pdo=$connection->getPdo();}
-        if(!$pdo instanceof PDO)self::unavailable();$this->outside($connection,$pdo);return [$connection,$pdo];
+        if(!$pdo instanceof PDO)self::unavailable();$this->outside($connection,$pdo);$this->dao->assertAftersaleStructure($pdo);return [$connection,$pdo];
     }
     private function outside(ConnectionInterface $connection,PDO $pdo):void
     {

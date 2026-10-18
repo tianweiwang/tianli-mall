@@ -36,6 +36,30 @@ class Request extends \think\Request
     private ?MerchantContext $merchantContextValue = null;
     private ?PlatformScope $platformScopeValue = null;
 
+    /** Fingerprint of the opaque token actually accepted for this request; never a credential. */
+    private ?string $verifiedTokenFingerprintValue = null;
+
+    public function setVerifiedTokenFingerprint(string $fingerprint): void
+    {
+        if (preg_match('/\A[a-f0-9]{64}\z/D', $fingerprint) !== 1) {
+            throw new \crmeb\exceptions\AuthUnavailableException();
+        }
+        $this->verifiedTokenFingerprintValue = $fingerprint;
+    }
+
+    public function verifiedTokenFingerprint(): string
+    {
+        if ($this->verifiedTokenFingerprintValue === null) {
+            throw new \crmeb\exceptions\AuthUnavailableException();
+        }
+        return $this->verifiedTokenFingerprintValue;
+    }
+
+    public function clearVerifiedTokenFingerprint(): void
+    {
+        $this->verifiedTokenFingerprintValue = null;
+    }
+
     public function setPlatformScope(PlatformScope $scope): void
     {
         $this->platformScopeValue = $scope;

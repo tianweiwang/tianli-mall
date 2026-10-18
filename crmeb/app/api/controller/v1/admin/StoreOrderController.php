@@ -639,7 +639,7 @@ class StoreOrderController
             ['keywords', '', '', 'real_name'],
         ]);
         $where['is_cancel'] = 0;
-        $data = $services->refundList($where,'mobile',(int)$request->uid())['list'];
+        $data = $services->refundList($where,'mobile',(int)$request->uid(),true)['list'];
         return app('json')->success($data);
     }
 
@@ -686,8 +686,7 @@ class StoreOrderController
         if (!$order = $services->get(['order_id' => $order_id])) {
             return app('json')->fail('订单不存在');
         }
-        $order->remark = $remark;
-        if ($order->save()) {
+        if ($services->updateRemark((int)$order->getData('id'),(string)$remark)) {
             return app('json')->success('备注成功');
         } else
             return app('json')->fail('备注失败');

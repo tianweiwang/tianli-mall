@@ -6,7 +6,7 @@
       <div v-for="item in snapshot.root.items" :key="item.id" class="shipment-item">
         <img :src="item.image" class="table-image" alt="商品保存图片">
         <div class="shipment-copy"><div>{{ item.product_name }}</div><p class="field-note">{{ item.sku_name }}</p>
-          <p class="field-note">保存单价 ￥{{ item.unit_price }} · 原数量 {{ item.quantity }} · 已发 {{ fact(item.id).shipped_quantity }} · 待发 {{ fact(item.id).to_ship }}</p>
+          <p class="field-note">保存单价 ￥{{ item.unit_price }} · 原数量 {{ item.quantity }} · 已发 {{ fact(item.id).shipped_quantity }} · 当前可发 {{ fact(item.id).to_ship }}</p>
           <el-form-item label="本次发货数量">
             <el-input-number v-model="quantities[item.id]" :min="0" :max="fact(item.id).to_ship" :step="1" :precision="0" :disabled="disabled || fact(item.id).to_ship === 0" :controls="false" />
           </el-form-item>

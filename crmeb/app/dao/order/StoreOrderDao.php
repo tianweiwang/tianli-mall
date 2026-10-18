@@ -317,7 +317,7 @@ class StoreOrderDao extends BaseDao
     /** Same pre-pagination commercial-root visibility for platform/customer/mobile counts. */
     public function countVisibleMarketplaceList(array $where,?int $uid=null):int
     {
-        return $this->commercialRoots($this->visibleMarketplaceList($this->search($where,false),$uid))->count();
+        return $this->visibleMarketplaceList($this->commercialSearch($where,false),$uid)->count();
     }
 
     /** Commercial reads only; never apply this predicate to an old writer's complete selection. */
@@ -341,9 +341,15 @@ class StoreOrderDao extends BaseDao
 
     public function commercialSearch(array $where = [], bool $search = false)
     {
-        return $this->commercialRoots($this->search($where, $search));
+        $raw=$where['status']??'';$code=null;
+        foreach([0,1,2,3,4,5,6,7,9,-1,-2,-3,-4] as$known)if($raw===$known||$raw===(string)$known){$code=$known;break;}
+        if($code===null)return $this->commercialRoots($this->search($where,$search));
+        // Only this explicit commercial read boundary replaces status; the old complete writer search is unchanged.
+        unset($where['status']);$query=$this->search($where,$search)->alias('o');
+        if($code===1&&isset($where['shipping_type']))$query->where('shipping_type',1);
+        $predicate=(new \app\dao\marketplace\order\MarketplaceOrderFulfillmentDao())->commercialStatusPredicate($code);
+        return $this->commercialRoots($query)->whereRaw($predicate);
     }
-
     public function commercialCount(array $where = [], bool $search = true)
     {
         return $this->commercialSearch($where, $search)->count();

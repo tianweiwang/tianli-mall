@@ -259,6 +259,12 @@ class StoreOrderServices extends BaseServices
     /** All storage/config/cache/thumbnail work happens after successful owned commit. */
     private function finishSavedOrderImages(array $dto,string $view):array
     {
+        $schema=$dto['schema']??null;$scope=$dto['scope']??null;
+        if($schema===2||in_array($scope,['marketplace_order_aftersale_v1','marketplace_fulfillment_child_aftersale_v1'],true)){
+            return $this->finishSavedAftersaleOrderImages($dto,$view);
+        }
+        if((array_key_exists('schema',$dto)||array_key_exists('scope',$dto))
+            &&($schema!==1||$scope!=='marketplace_fulfillment_child_v1'))throw new AuthUnavailableException();
         $images=[];
         foreach(['cartInfo','refund_cartInfo','cart_info'] as$key)if(array_key_exists($key,$dto)){
             foreach($dto[$key] as&$cart)$cart=$this->finishSavedOrderCartImage($cart,$images);
@@ -294,7 +300,63 @@ class StoreOrderServices extends BaseServices
 
     private function finishSavedFulfillmentChildImages(array $child):array
     {
+        if(($child['schema']??null)===2||($child['scope']??null)==='marketplace_fulfillment_child_aftersale_v1'){
+            return $this->finishSavedAftersaleFulfillmentChildImages($child);
+        }
+        if(($child['schema']??null)!==1)throw new AuthUnavailableException();
         if(($child['scope']??null)!=='marketplace_fulfillment_child_v1'||!isset($child['items'])||!is_array($child['items']))throw new AuthUnavailableException();
+        foreach($child['items'] as&$item){
+            if(!is_array($item)||!isset($item['image'])||!is_string($item['image']))throw new AuthUnavailableException();
+            $image=get_thumb_water(['image'=>$item['image']]);
+            if(!is_array($image)||!array_key_exists('image',$image)||!is_string($image['image']))throw new AuthUnavailableException();
+            $item['image']=$image['image'];
+        }unset($item);
+        return $child;
+    }
+
+    /** S2 display images only; aftersale values and private evidence references are never image inputs. */
+    private function finishSavedAftersaleOrderImages(array $dto,string $view):array
+    {
+        if(($dto['schema']??null)!==2)throw new AuthUnavailableException();
+        if(($dto['scope']??null)==='marketplace_fulfillment_child_aftersale_v1'){
+            return $this->finishSavedAftersaleFulfillmentChildImages($dto);
+        }
+        if(($dto['scope']??null)!=='marketplace_order_aftersale_v1'||($dto['marketplace_trade_version']??null)!==1
+            ||!in_array($view,['customer_list','customer_detail','platform_list','platform_detail','mobile_list','mobile_detail'],true)){
+            throw new AuthUnavailableException();
+        }
+        $images=[];
+        foreach(['cartInfo','refund_cartInfo','cart_info'] as$key)if(array_key_exists($key,$dto)){
+            if(!is_array($dto[$key]))throw new AuthUnavailableException();
+            foreach($dto[$key] as&$cart){
+                if(!is_array($cart))throw new AuthUnavailableException();
+                $cart=$this->finishSavedOrderCartImage($cart,$images);
+            }unset($cart);
+        }
+        if(array_key_exists('_info',$dto)){
+            if(!is_array($dto['_info']))throw new AuthUnavailableException();
+            foreach($dto['_info'] as&$wrapper){
+                if(!is_array($wrapper)||!isset($wrapper['cart_info'])||!is_array($wrapper['cart_info']))throw new AuthUnavailableException();
+                $wrapper['cart_info']=$this->finishSavedOrderCartImage($wrapper['cart_info'],$images);
+            }unset($wrapper);
+        }
+        if(in_array($view,['customer_detail','mobile_detail'],true)&&array_key_exists('avatar',$dto))$dto['avatar']=set_file_url($dto['avatar']);
+        if(array_key_exists('fulfillment_children',$dto)){
+            if(!is_array($dto['fulfillment_children'])||!isset($dto['fulfillment_children']['list'])
+                ||!is_array($dto['fulfillment_children']['list'])||!array_is_list($dto['fulfillment_children']['list']))throw new AuthUnavailableException();
+            foreach($dto['fulfillment_children']['list'] as&$child){
+                if(!is_array($child))throw new AuthUnavailableException();
+                $child=$this->finishSavedAftersaleFulfillmentChildImages($child);
+            }unset($child);
+        }
+        return $dto;
+    }
+
+    private function finishSavedAftersaleFulfillmentChildImages(array $child):array
+    {
+        if(($child['schema']??null)!==2||($child['scope']??null)!=='marketplace_fulfillment_child_aftersale_v1'
+            ||($child['marketplace_trade_version']??null)!==1||!isset($child['items'])||!is_array($child['items'])
+            ||!array_is_list($child['items']))throw new AuthUnavailableException();
         foreach($child['items'] as&$item){
             if(!is_array($item)||!isset($item['image'])||!is_string($item['image']))throw new AuthUnavailableException();
             $image=get_thumb_water(['image'=>$item['image']]);
@@ -611,6 +673,33 @@ class StoreOrderServices extends BaseServices
         return compact('orderInfo','userInfo');
     }
 
+    /** Aggregate counts retain their original autocommit boundary; this is not a selected-root proof. */
+    private function marketplaceCommercialCountConnection():array
+    {
+        $connection=\think\facade\Db::connect();
+        if(!$connection instanceof \crmeb\compat\think\orm\db\connector\Mysql||$connection->transactionDepth()!==0
+            ||$connection->getConfig('deploy')!==0||$connection->getConfig('rw_separate')!==false)throw new AuthUnavailableException();
+        $prefix=$connection->getConfig('prefix');
+        if(!is_string($prefix)||preg_match('/\A[A-Za-z0-9_]*\z/D',$prefix)!==1)throw new AuthUnavailableException();
+        $pdo=$connection->getPdo();
+        if(!$pdo instanceof \PDO){$connection->query('SELECT 1',[],true);$pdo=$connection->getPdo();}
+        if(!$pdo instanceof \PDO)throw new AuthUnavailableException();
+        $this->assertMarketplaceCommercialCountConnection($connection,$pdo,$prefix);
+        (new \app\dao\marketplace\order\MarketplaceOrderFulfillmentDao())->assertAftersaleStructure($pdo);
+        $this->assertMarketplaceCommercialCountConnection($connection,$pdo,$prefix);
+        return [$connection,$pdo,$prefix];
+    }
+
+    private function assertMarketplaceCommercialCountConnection(\think\db\ConnectionInterface $connection,\PDO $pdo,string $prefix):void
+    {
+        if(PHP_INT_SIZE<8||!$connection instanceof \crmeb\compat\think\orm\db\connector\Mysql
+            ||$connection!==\think\facade\Db::connect()||$connection->getPdo()!==$pdo||$connection->transactionDepth()!==0
+            ||$connection->getConfig('prefix')!==$prefix||$connection->getConfig('deploy')!==0
+            ||$connection->getConfig('rw_separate')!==false||$pdo->inTransaction()
+            ||$pdo->getAttribute(\PDO::ATTR_DRIVER_NAME)!=='mysql'||$pdo->getAttribute(\PDO::ATTR_ERRMODE)!==\PDO::ERRMODE_EXCEPTION
+            ||!in_array($pdo->getAttribute(\PDO::ATTR_EMULATE_PREPARES),[false,0],true))throw new AuthUnavailableException();
+    }
+
     /**
      * 获取订单数量
      * @param int $uid
@@ -619,6 +708,7 @@ class StoreOrderServices extends BaseServices
      */
     public function getOrderData(int $uid = 0)
     {
+        [$countConnection,$countPdo,$countPrefix]=$this->marketplaceCommercialCountConnection();
         $data['order_count'] = (string)$this->dao->commercialCount(['uid' => $uid, 'refund_status' => [0, 3], 'pid' => 0, 'is_del' => 0, 'is_system_del' => 0]);
         $data['sum_price'] = (string)$this->dao->commercialSum([
             ['uid', '=', $uid],
@@ -649,6 +739,7 @@ class StoreOrderServices extends BaseServices
         $data['pay_weixin_open'] = sys_config('pay_weixin_open', '0') != '0';//微信支付 1 开启 0 关闭
         $data['ali_pay_status'] = sys_config('ali_pay_status', '0') != '0';//支付包支付 1 开启 0 关闭
         $data['friend_pay_status'] = (int)sys_config('friend_pay_status') ?? 0;//好友代付 1 开启 0 关闭
+        $this->assertMarketplaceCommercialCountConnection($countConnection,$countPdo,$countPrefix);
         return $data;
     }
 
@@ -1247,10 +1338,12 @@ HTML;
      */
     public function orderCount(array $where)
     {
+        [$countConnection,$countPdo,$countPrefix]=$this->marketplaceCommercialCountConnection();
         $where['is_system_del'] = 0;
         $where['pid'] = 0;
         $data['un_paid'] = $this->dao->commercialCount($where + ['status' => 0], false);
         $data['un_send'] = $this->dao->commercialCount($where + ['status' => 1, 'shipping_type' => 1], false);
+        $this->assertMarketplaceCommercialCountConnection($countConnection,$countPdo,$countPrefix);
         return $data;
     }
 

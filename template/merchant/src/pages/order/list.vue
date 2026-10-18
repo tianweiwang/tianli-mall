@@ -36,6 +36,8 @@
         <template v-else>
           <p class="field-note">已发货 {{ scope.row.fulfillment_summary.shipped }} / {{ scope.row.fulfillment_summary.original }} 件</p>
           <p class="field-note">已收货 {{ scope.row.fulfillment_summary.received }} 件 · {{ scope.row.fulfillment_summary.child_count }} 个包裹</p>
+          <p v-if="scope.row.schema === 2" class="field-note">未发取消 {{ scope.row.fulfillment_summary.cancelled_unshipped }} 件 · 已退件 {{ scope.row.fulfillment_summary.returned_accepted }} 件</p>
+          <p v-if="scope.row.schema === 2" class="field-note">暂停发货 {{ scope.row.aftersale.pending_cancel_quantity }} 件 · 待处理退件 {{ scope.row.aftersale.pending_return_quantity }} 件</p>
         </template>
       </template></el-table-column>
       <el-table-column prop="total_num" label="数量" width="80" />

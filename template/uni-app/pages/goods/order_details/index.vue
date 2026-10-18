@@ -14,7 +14,8 @@
 					<image :src="orderInfo.status_pic"></image>
 				</view>
 				<view class="data" :class="isGoodsReturn ? 'on' : ''">
-					<view class="state">{{ orderInfo._status._msg }}</view>
+					<view v-if="fulfillmentKind === 'root' && orderInfo.schema === 2" class="state">{{ rootFulfillmentText(fulfillmentView.summary, fulfillmentView.aftersale) }}</view>
+					<view v-else class="state">{{ orderInfo._status._msg }}</view>
 					<view>
 						{{ orderInfo.add_time_y }}
 						<text class="time">{{ orderInfo.add_time_h }}</text>
@@ -24,7 +25,7 @@
 			<marketplace-fulfillment v-if="fulfillmentKind === 'root'" :view="fulfillmentView" :loading="fulfillmentLoading"
 				:error="fulfillmentError" :can-view-package="true" @page-change="changeFulfillmentPage"
 				@retry="retryFulfillment" @view-package="viewFulfillmentPackage"></marketplace-fulfillment>
-			<view class="refund-msg" v-if="[4, 5].includes(orderInfo.refund_type)">
+			<view class="refund-msg" v-if="orderInfo.schema !== 2 && [4, 5].includes(orderInfo.refund_type)">
 				<view v-if="orderInfo._status.refund_name != ''">
 					<view class="refund-msg-user">
 						<text class="name">{{ orderInfo._status.refund_name }}</text>
@@ -53,7 +54,7 @@
 					</view>
 				</view>
 			</view>
-			<view class="line" v-if="[4, 5].includes(orderInfo.refund_type)">
+			<view class="line" v-if="orderInfo.schema !== 2 && [4, 5].includes(orderInfo.refund_type)">
 				<image src="@/static/images/line.jpg"></image>
 			</view>
 			<view class="mb-16" v-if="isGoodsReturn == false">
@@ -611,7 +612,7 @@ import { parseAgainPurchase, againConfirmationUrl } from '@/utils/marketplace-ag
 import { storefrontMessage } from '@/utils/public-store.js';
 import orderGoods from '@/components/orderGoods';
 import marketplaceFulfillment from '@/components/marketplaceFulfillment/index.vue';
-import { readOrderFulfillment, readCustomerReceipt, readReceiptResult } from '@/utils/marketplace-fulfillment.js';
+import { readOrderFulfillment, readCustomerReceipt, readReceiptResult, receiptResultFeedback, rootFulfillmentText } from '@/utils/marketplace-fulfillment.js';
 import { prepareReceiptIntent } from '@/utils/marketplace-fulfillment-submit.js';
 import marketplaceReceipt from '@/components/marketplaceReceipt/index.vue';
 import ClipboardJS from '@/plugin/clipboard/clipboard.js';
@@ -937,6 +938,7 @@ export default {
 	},
 	// #endif
 	methods: {
+		rootFulfillmentText,
 		strictSavedMoney,
 		addSavedMoney,
 		// #ifdef H5
@@ -1158,7 +1160,7 @@ export default {
 				if (revision !== this.fulfillmentRevision || !this.receiptCurrent(identity)) return false;
 				const data = readCustomerReceipt(response.data, this.order_id); const child = data.package;
 				this.receipt = data; this.receiptReadIdentity = identity;
-				if (this.receiptNeedsRefresh && this.receiptFeedback) this.receiptFeedback = this.receiptFeedback.indexOf('该包裹') === 0 ? '该包裹已无待确认收货内容' : '收货结果已保存';
+				if (this.receiptNeedsRefresh && this.receiptFeedback) this.receiptFeedback = this.receiptFeedback.replace(/，最新资料尚未读回，请重新加载$/, '');
 				this.receiptNeedsRefresh = false;
 				this.fulfillmentView = { kind: 'child', order: child, package: child }; this.fulfillmentKind = 'child';
 				this.orderInfo = child; this.cartInfo = []; this.pid = child.root_order_id; this.status = {}; this.system_store = {};
@@ -1213,7 +1215,7 @@ export default {
 				if (generation !== this.receiptGeneration || !this.receiptCurrent(identity) || this.receiptPending !== intent) return;
 				const result = readReceiptResult(response.data, intent);
 				this.receiptPending = null; this.receiptNeedsRefresh = true;
-				this.receiptFeedback = result.kind === 'operation' ? '收货结果已保存' : '该包裹已无待确认收货内容';
+				this.receiptFeedback = receiptResultFeedback(result);
 				const refreshed = await this.getReceiptInfo();
 				if (!refreshed && this.receiptNeedsRefresh && generation === this.receiptGeneration && this.receiptCurrent(identity))
 					this.receiptFeedback += '，最新资料尚未读回，请重新加载';

@@ -9,6 +9,7 @@
       <section v-for="child in snapshot.packages.list" :key="child.id" class="package-record">
         <h3>包裹 {{ child.order_id }}</h3>
         <p>{{ state(child) }} · 已发 {{ child.shipped }} 件 / 已收 {{ child.received }} 件 / 待收 {{ child.to_receive }} 件</p>
+        <p v-if="child.schema === 2" class="field-note">已验收退件 {{ child.returned_accepted }} 件 · 待处理退件 {{ child.aftersale.pending_return_quantity }} 件</p>
         <p class="field-note">{{ child.merchant_name_snapshot }} · 承运：{{ child.carrier_name || '—' }} · 单号：{{ child.tracking_no || '—' }}</p>
         <div class="package-actions"><el-button class="package-control" :disabled="loading" @click="$emit('view', child.id)">查看包裹</el-button></div>
       </section>
@@ -35,6 +36,8 @@
         <div><dt>发货时间</dt><dd>{{ time(detail.shipped_at) }}</dd></div>
         <div><dt>预计自动收货时间</dt><dd>{{ time(detail.receipt_due_at) }}</dd></div>
         <div><dt>全部收货时间</dt><dd>{{ time(detail.received_at) }}</dd></div>
+        <div v-if="detail.schema === 2"><dt>已验收退件 / 待处理退件</dt><dd>{{ detail.returned_accepted }} / {{ detail.aftersale.pending_return_quantity }} 件</dd></div>
+        <div v-if="detail.schema === 2"><dt>履约结束时间（含退件）</dt><dd>{{ time(detail.aftersale.fulfillment_completed_at) }}</dd></div>
       </dl>
       <div v-for="item in detail.items" :key="item.id" class="package-item">
         <img :src="item.image" class="table-image" alt="商品保存图片">
@@ -57,12 +60,13 @@
 </template>
 <script>
 import { formatTime } from '../../../domain/people';
+import { packageStatus } from '../../../domain/order';
 export default {
   name: 'FulfillmentPackages',
   props: { snapshot: { type: Object, required: true }, loading: { type: Boolean, default: false },
     detail: { type: Object, default: null }, detailLoading: { type: Boolean, default: false }, detailError: { type: String, default: '' } },
   methods: {
-    state(child) { return child.receipt_state === 'received' ? '已收货' : child.receipt_state === 'partial' ? '部分收货' : '待收货'; },
+    state: packageStatus,
     time(value) { return value === null || value === 0 ? '—' : formatTime(value); }
   }
 };

@@ -32,6 +32,20 @@ Route::group('marketplace', function () {
         ->option(['marketplace_permission'=>'marketplace-products-stock-adjust']);
     Route::put('products/<id>/submit-review', 'v1.marketplace.ProductSubmission/submitReview')->name('marketplace-products-submit-review')
         ->option(['marketplace_permission'=>'marketplace-products-submit-review']);
+    Route::get('aftersales', 'v1.marketplace.Aftersale/index')->name('marketplace-aftersales-list')
+        ->option(['marketplace_permission'=>'marketplace-aftersales-list']);
+    Route::get('aftersales/<id>', 'v1.marketplace.Aftersale/read')->name('marketplace-aftersales-read')
+        ->option(['marketplace_permission'=>'marketplace-aftersales-read']);
+    Route::post('aftersales/<id>/approve', 'v1.marketplace.Aftersale/approve')->name('marketplace-aftersales-approve')
+        ->option(['marketplace_permission'=>'marketplace-aftersales-approve']);
+    Route::post('aftersales/<id>/reject', 'v1.marketplace.Aftersale/reject')->name('marketplace-aftersales-reject')
+        ->option(['marketplace_permission'=>'marketplace-aftersales-reject']);
+    Route::post('aftersales/<id>/return-accept', 'v1.marketplace.Aftersale/acceptReturn')->name('marketplace-aftersales-return-accept')
+        ->option(['marketplace_permission'=>'marketplace-aftersales-return-accept']);
+    Route::post('aftersale-files/<file_id>/read-ticket', 'v1.marketplace.AftersaleFile/ticket')->name('marketplace-aftersale-files-ticket')
+        ->option(['marketplace_permission'=>'marketplace-aftersale-files-ticket']);
+    Route::get('aftersale-files/<file_id>/content', 'v1.marketplace.AftersaleFile/content')->name('marketplace-aftersale-files-read')
+        ->option(['marketplace_permission'=>'marketplace-aftersale-files-read']);
 })->option(['marketplace_api'=>true, 'mark'=>'marketplace', 'mark_name'=>'经营商家'])
     ->middleware([AllowOriginMiddleware::class, MarketplaceBoundaryMiddleware::class,
         AdminAuthTokenMiddleware::class, MarketplaceScopeMiddleware::class]);

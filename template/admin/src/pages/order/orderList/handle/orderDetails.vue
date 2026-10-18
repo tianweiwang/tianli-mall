@@ -19,7 +19,8 @@
           <ul class="list">
             <li class="item">
               <div class="title">订单状态</div>
-              <div>
+              <div v-if="savedFulfillmentReadonly && orderDatalist.orderInfo.schema === 2">{{ savedFulfillmentStatus }}</div>
+              <div v-else>
                 {{ orderDatalist.orderInfo._status._title }}
                 {{
                   orderDatalist.orderInfo.refund &&
@@ -399,7 +400,7 @@
 </template>
 <script>
 import { getExpress } from '@/api/order';
-import fulfillmentPackages from '../components/fulfillmentPackages.vue';
+import fulfillmentPackages, { rootFulfillmentText } from '../components/fulfillmentPackages.vue';
 import { getOrderRecord } from '@/api/order';
 export default {
   name: 'orderDetails',
@@ -444,6 +445,7 @@ export default {
     },
   },
   computed: {
+    savedFulfillmentStatus() { return this.fulfillmentView && this.fulfillmentView.kind === 'root' ? rootFulfillmentText(this.fulfillmentView.summary, this.fulfillmentView.aftersale) : ''; },
     savedFulfillmentReadonly() { return !!this.fulfillmentView && this.fulfillmentView.kind !== 'legacy'; },
     savedMarketplaceV1() {
       const version=this.orderDatalist && this.orderDatalist.orderInfo && this.orderDatalist.orderInfo.marketplace_trade_version;

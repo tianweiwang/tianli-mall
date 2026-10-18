@@ -68,6 +68,27 @@ final class MarketplaceOrderFulfillmentPlan
     {
         $source=self::source($savedRoot,$savedItems);
         self::reserves($source,$savedReserves);
+        return self::exactFromSource($source,$exactRanges);
+    }
+
+    /** @internal Complete saved refund/payment source, without public admission or live permission. */
+    public static function refundSavedSource(array $savedRoot,array $savedItems,array $savedReserves):array
+    {
+        $public=MarketplaceOrderSnapshotProjection::refundCommercialOrder($savedRoot,$savedItems);
+        $source=self::sourceFromCommercial($savedRoot,$savedItems,$public);
+        self::reserves($source,$savedReserves);
+        return $source;
+    }
+
+    /** @internal Original exact-range arithmetic over the complete, validated saved refund source. */
+    public static function refundExactRangesPlan(array $savedRoot,array $savedItems,array $savedReserves,array $exactRanges):array
+    {
+        $source=self::refundSavedSource($savedRoot,$savedItems,$savedReserves);
+        return self::exactFromSource($source,$exactRanges);
+    }
+
+    private static function exactFromSource(array $source,array $exactRanges):array
+    {
         if(!$exactRanges)self::unavailable();
         $selected=self::ranges($source['lines'],$exactRanges);
         ksort($selected,SORT_NUMERIC);$allocations=[];
@@ -142,6 +163,11 @@ final class MarketplaceOrderFulfillmentPlan
     {
         // Never pass a requested subset to this full-order conservation check.
         $public=MarketplaceOrderSnapshotProjection::merchantOrder($root,$items);
+        return self::sourceFromCommercial($root,$items,$public);
+    }
+
+    private static function sourceFromCommercial(array $root,array $items,array $public):array
+    {
         $identity=['id'=>$public['id'],'order_id'=>$public['order_id'],
             'uid'=>self::integer($root['uid']??null,1,self::INT_MAX),'mer_id'=>self::integer($root['mer_id']??null,1,self::UINT_MAX),
             'total_num'=>$public['total_num'],'total_price'=>$public['total_price'],'pay_price'=>$public['pay_price'],

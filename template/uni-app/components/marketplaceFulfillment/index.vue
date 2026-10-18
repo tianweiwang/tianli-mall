@@ -7,11 +7,13 @@
     </view>
     <template v-if="view && view.kind === 'root'">
       <view class="heading">履约情况</view>
-      <view class="notice" role="status">{{ rootText(view.summary) }}</view>
+      <view class="notice" role="status">{{ rootText(view.summary, view.aftersale) }}</view>
       <view v-if="view.summary" class="quantities">
         <text>共 {{ view.summary.original }} 件</text><text>已发 {{ view.summary.shipped }} 件</text>
         <text>已收 {{ view.summary.received }} 件</text><text>包裹 {{ view.summary.child_count }} 个</text>
       </view>
+      <view v-if="view.aftersale" class="line secondary">未发取消 {{ view.summary.cancelled_unshipped }} 件 · 已验收退件 {{ view.summary.returned_accepted }} 件 · 暂停发货 {{ view.aftersale.pending_cancel_quantity }} 件 · 待处理退件 {{ view.aftersale.pending_return_quantity }} 件</view>
+      <view v-if="view.aftersale" class="line secondary">履约结束时间（含取消、退件）：{{ time(view.aftersale.fulfillment_completed_at) }}</view>
       <template v-if="view.children !== undefined">
         <view v-if="view.children === null" class="notice">包裹资料暂不可用</view>
         <template v-else>
@@ -22,6 +24,7 @@
             <view class="package-title">包裹 {{ child.order_id }}</view>
             <view class="line">{{ child.merchant_name_snapshot }}</view>
             <view class="line">{{ childText(child) }} · 已发 {{ child.shipped }} 件 / 已收 {{ child.received }} 件</view>
+            <view v-if="child.schema === 2" class="line secondary">已验收退件 {{ child.returned_accepted }} 件 · 待处理退件 {{ child.aftersale.pending_return_quantity }} 件</view>
             <view class="line">承运：{{ child.carrier_name || '—' }}</view>
             <view class="line">物流单号：{{ child.tracking_no || '—' }}</view>
             <view class="line secondary">对应付款订单：{{ child.root_order_no }}</view>
@@ -62,6 +65,8 @@
       <view class="line">预计自动收货时间：{{ time(view.package.receipt_due_at) }}</view>
       <view class="line">最近收货时间：{{ time(view.package.last_received_at) }}</view>
       <view class="line">全部收货时间：{{ time(view.package.received_at) }}</view>
+      <view v-if="view.package.schema === 2" class="line secondary">已验收退件 {{ view.package.returned_accepted }} 件 · 待处理退件 {{ view.package.aftersale.pending_return_quantity }} 件</view>
+      <view v-if="view.package.schema === 2" class="line secondary">履约结束时间（含退件）：{{ time(view.package.aftersale.fulfillment_completed_at) }}</view>
       <view v-for="item in view.package.items" :key="item.id" class="saved-item">
         <image v-if="item.image" class="item-image" :src="item.image" mode="aspectFill" />
         <view class="item-copy"><view>{{ item.product_name }}</view><view class="secondary">{{ item.sku_name }}</view>

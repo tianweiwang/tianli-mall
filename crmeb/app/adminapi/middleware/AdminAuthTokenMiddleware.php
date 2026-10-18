@@ -38,21 +38,27 @@ class AdminAuthTokenMiddleware implements MiddlewareInterface
      */
     public function handle(Request $request, \Closure $next)
     {
-        $token = trim(ltrim((string)$request->header(Config::get('cookie.token_name', 'Authori-zation')), 'Bearer'));
-        /** @var AdminAuthServices $service */
-        $service = app()->make(AdminAuthServices::class);
-        $adminInfo = $service->parseToken($token);
-        $request->macro('isAdminLogin', function () use (&$adminInfo) {
-            return !is_null($adminInfo);
-        });
-        $request->macro('adminId', function () use (&$adminInfo) {
-            return $adminInfo['id'];
-        });
+        $request->clearVerifiedTokenFingerprint();
+        try {
+            $token = trim(ltrim((string)$request->header(Config::get('cookie.token_name', 'Authori-zation')), 'Bearer'));
+            /** @var AdminAuthServices $service */
+            $service = app()->make(AdminAuthServices::class);
+            $adminInfo = $service->parseToken($token);
+            $request->setVerifiedTokenFingerprint(hash('sha256', $token));
+            $request->macro('isAdminLogin', function () use (&$adminInfo) {
+                return !is_null($adminInfo);
+            });
+            $request->macro('adminId', function () use (&$adminInfo) {
+                return $adminInfo['id'];
+            });
 
-        $request->macro('adminInfo', function () use (&$adminInfo) {
-            return $adminInfo;
-        });
+            $request->macro('adminInfo', function () use (&$adminInfo) {
+                return $adminInfo;
+            });
 
-        return $next($request);
+            return $next($request);
+        } finally {
+            $request->clearVerifiedTokenFingerprint();
+        }
     }
 }

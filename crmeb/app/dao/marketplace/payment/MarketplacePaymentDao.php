@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\dao\marketplace\payment;
 
 use app\services\marketplace\order\MarketplaceOrderInput;
+use app\services\marketplace\order\MarketplaceOrderRefundFacts;
 use app\services\marketplace\payment\MarketplacePaymentEvidence;
 use crmeb\exceptions\AuthUnavailableException;
 use PDO;
@@ -512,7 +513,7 @@ final class MarketplacePaymentDao
 
     /** Persist only the actual query/close return, with application facts read in this same locked transaction. */
     public function saveObservation(PDO $pdo,int $uid,int $orderId,string $orderNo,string $attemptId,array $original,
-        string $op,array $result,int $now,?array $applicationFacts): array
+        string $op,array $result,int $now,?array $applicationFacts,?array $aftersaleContext=null): array
     {
         if(!in_array($op,['queryPayment','closePayment'],true))self::unavailable();
         self::integer($now,1,self::UINT_MAX);$attemptId=self::positiveU64($attemptId);
@@ -536,7 +537,9 @@ final class MarketplacePaymentDao
             }
         }
         if($qualified&&$result['state']==='succeeded'){
-            if($applicationFacts===null)self::unavailable();$inventory=self::applicationState($applicationFacts,$locked);
+            if($applicationFacts===null)self::unavailable();
+            $inventory=$aftersaleContext===null?self::applicationState($applicationFacts,$locked)
+                :self::applicationStateV2($applicationFacts,$before,$aftersaleContext);
             $evidence=$locked['attempts'][$position]['evidence'];$closedKey=$evidence['first_closed'];
             if($closedKey!==null&&self::factPosition($locked['attempts'][$position],$closedKey)<self::factPosition($locked['attempts'][$position],$fact['key'])){
                 self::appendException($locked,$position,'CLOSED_THEN_SUCCESS',$fact['key'],$closedKey,$now);$reason??='CLOSED_THEN_SUCCESS';
@@ -613,7 +616,7 @@ final class MarketplacePaymentDao
 
     /** Only the service's classified, rolled-back first application enters here; it never retries application. */
     public function saveAppliedTradeConflict(PDO $pdo,int $uid,int $orderId,string $orderNo,string $attemptId,array $original,
-        array $result,int $now,?array $initialPayment,array $applicationFacts): array
+        array $result,int $now,?array $initialPayment,array $applicationFacts,?array $aftersaleContext=null): array
     {
         self::integer($now,1,self::UINT_MAX);$attemptId=self::positiveU64($attemptId);
         $observed=$this->lockObservation($pdo,$uid,$orderId,$orderNo);$locked=$observed['locked'];
@@ -624,7 +627,8 @@ final class MarketplacePaymentDao
         $evidence=MarketplacePaymentEvidence::observe(self::evidenceRegistry($locked['registry']),$locked['attempts'],
             $attemptId,'queryPayment',$result,$now);
         if($result['state']!=='succeeded'||!self::qualified($result,$row))self::unavailable();
-        $inventory=self::applicationState($applicationFacts,$locked);
+        $inventory=$aftersaleContext===null?self::applicationState($applicationFacts,$locked)
+            :self::applicationStateV2($applicationFacts,$locked,$aftersaleContext);
         $this->assertAppliedTradeConflict($pdo,$row,$result['provider_trade_no']);
         $locked['attempts'][$position]['evidence']=self::canonicalValue($evidence);
         $fact=self::observationFor($locked['attempts'][$position],'queryPayment',$result);
@@ -884,6 +888,92 @@ final class MarketplacePaymentDao
     }
 
     /** Full actual OrderDao facts are inspected; there is no caller-supplied can-apply flag. */
+    /** Fixed complete historical-credit consumer; its two flags never authorize a new payment. */
+    public static function applicationStateV2(array $capture,array $locked,array $context): array
+    {
+        $facts=MarketplaceOrderRefundFacts::validateCreditFacts($capture,$context,$locked);
+        if($context['actions']===[])return self::applicationState($facts,$locked);
+        self::objectKeys($facts,['root','items','selection','reserves','children','child_orders']);
+        if(!is_array($facts['root']))self::unavailable();self::objectKeys($facts['root'],['id','uid','mer_id','order_no']);
+        foreach(self::rootIdentity($locked['root']) as $field=>$value)if($facts['root'][$field]!==$value)self::unavailable();
+        foreach(['items','selection','reserves','children','child_orders'] as $field)
+            if(!is_array($facts[$field])||!array_is_list($facts[$field]))self::unavailable();
+        $root=$locked['root'];$items=[];$previous=0;$changed=false;$groups=[];
+        foreach($facts['items'] as $item){
+            if(!is_array($item))self::unavailable();self::objectKeys($item,self::ITEM_FIELDS);
+            $id=self::integer($item['id'],1,self::INT_MAX);
+            if($id<=$previous||self::integer($item['oid'],1,self::INT_MAX)!==$root['id']
+                ||self::integer($item['uid'],1,self::INT_MAX)!==$root['uid']||self::integer($item['mer_id'],1,self::UINT_MAX)!==$root['mer_id'])self::unavailable();
+            $previous=$id;$qty=self::integer($item['cart_num'],1,self::INT_MAX);
+            $refund=self::integer($item['refund_num'],0,self::INT_MAX);$surplus=self::integer($item['surplus_num'],0,self::INT_MAX);
+            if($refund>$qty||$surplus>$qty)self::unavailable();
+            if($refund!==0||$surplus!==$qty||self::integer($item['split_status'],0,2)!==0)$changed=true;
+            self::integer($item['product_id'],1,8388607);
+            foreach(['cart_id','cart_info','unique'] as $field)if(!is_string($item[$field]))self::unavailable();
+            $items['i:'.$id]=$item;
+        }
+        $refs=self::paymentJson($locked['ledger']['cart_refs']);
+        if(!$items||count($items)!==count($refs)||count($facts['selection'])!==count($refs))self::unavailable();$seen=[];
+        foreach($facts['selection'] as $position=>$line){
+            if(!is_array($line))self::unavailable();
+            self::objectKeys($line,['item_id','cart_ref','product_id','sku_id','sku_type','unique','qty','cart_info']);
+            $itemId=self::integer($line['item_id'],1,self::INT_MAX);$item=$items['i:'.$itemId]??null;
+            if($item===null||isset($seen[$itemId])||!is_array($line['cart_info'])||$line['cart_ref']!==$refs[$position]
+                ||$item['cart_id']!==$line['cart_ref']||self::integer($item['product_id'],1,8388607)!==$line['product_id']
+                ||self::integer($item['cart_num'],1,self::INT_MAX)!==$line['qty']||$line['sku_type']!==0)self::unavailable();
+            $seen[$itemId]=true;self::integer($line['product_id'],1,8388607);self::integer($line['sku_id'],1,self::INT_MAX);
+            self::integer($line['qty'],1,self::INT_MAX);
+            if(!is_string($line['unique'])||preg_match('/\A[A-Za-z0-9]{8}\z/D',$line['unique'])!==1)self::unavailable();
+            try{$cart=json_decode($item['cart_info'],true,32,JSON_THROW_ON_ERROR);}catch(\Throwable $error){self::unavailable();}
+            if(!is_array($cart)||MarketplaceOrderInput::canonical($cart)!==MarketplaceOrderInput::canonical($line['cart_info']))self::unavailable();
+            $lineage=$line['cart_info']['marketplace']??null;
+            if(!is_array($lineage)||($lineage['cart_ref']??null)!==$line['cart_ref']||($lineage['sku_id']??null)!==$line['sku_id']
+                ||($lineage['sku_type']??null)!==0||($lineage['sku_unique']??null)!==$line['unique'])self::unavailable();
+            $reserve=self::positiveU64($lineage['reserve_id']??null);$key='r:'.$reserve;
+            if(!isset($groups[$key]))$groups[$key]=['product_id'=>$line['product_id'],'sku_id'=>$line['sku_id'],'unique'=>$line['unique'],'qty'=>0,'cart_refs'=>[]];
+            $group=&$groups[$key];
+            if($group['product_id']!==$line['product_id']||$group['sku_id']!==$line['sku_id']||$group['unique']!==$line['unique'])self::unavailable();
+            $group['qty']+=$line['qty'];self::integer($group['qty'],1,self::UINT_MAX);$group['cart_refs'][]=$line['cart_ref'];unset($group);
+        }
+        if(count($facts['reserves'])!==count($groups))self::unavailable();$parents=[];$previous=null;
+        foreach($facts['reserves'] as $raw){
+            $movement=self::factMovement($raw,$root);$id=$movement['id'];$group=$groups['r:'.$id]??null;
+            if($group===null||($previous!==null&&bccomp($id,$previous,0)<=0)||$movement['kind']!=='reserve'
+                ||$movement['parent_reserve_id']!==null||$movement['order_item_id']!==null||$movement['refund_id']!==null
+                ||$movement['actor_type']!=='customer'||$movement['actor_id']!==$root['uid']
+                ||$movement['idem_key']!=='reserve:'.$root['id'].':'.$group['sku_id'])self::unavailable();
+            self::groupMovement($movement,$group);
+            $action=['contract_version'=>1,'uid'=>$root['uid'],'mer_id'=>$root['mer_id'],'order_id'=>$root['id'],
+                'product_id'=>$group['product_id'],'sku_id'=>$group['sku_id'],'sku_type'=>0,'sku_unique'=>$group['unique'],
+                'qty'=>$group['qty'],'kind'=>'reserve','cart_refs'=>$group['cart_refs']];
+            if(!hash_equals($movement['request_digest'],hash('sha256',MarketplaceOrderInput::canonical($action),true)))self::unavailable();
+            self::factArithmetic($movement,false);$parents['r:'.$id]=$movement;$previous=$id;
+        }
+        $credited=[];$previous=null;
+        foreach($facts['children'] as $raw){
+            $movement=self::factMovement($raw,$root);$id=$movement['id'];$parent=$movement['parent_reserve_id'];
+            if($parent===null||!isset($parents['r:'.$parent])||($previous!==null&&bccomp($id,$previous,0)<=0)
+                ||!in_array($movement['kind'],['release','return_in'],true))self::unavailable();
+            $group=$groups['r:'.$parent];self::groupMovement($movement,$group,false);
+            $credited[$parent]=($credited[$parent]??0)+$movement['qty'];if($credited[$parent]>$group['qty'])self::unavailable();
+            // The complete Context2 consumer has already proved every old/new key, actor, interval and digest.
+            self::factArithmetic($movement,true);
+            $previous=$id;
+        }
+        $previous=0;
+        foreach($facts['child_orders'] as $child){
+            if(!is_array($child))self::unavailable();self::objectKeys($child,self::CHILD_ORDER_FIELDS);
+            $id=self::integer($child['id'],1,self::INT_MAX);
+            if($id<=$previous||self::integer($child['pid'],1,self::INT_MAX)!==$root['id'])self::unavailable();$previous=$id;
+            self::integer($child['uid'],0,self::INT_MAX);
+            if($child['mer_id']!==null)self::integer($child['mer_id'],0,self::UINT_MAX);
+            if($child['marketplace_trade_version']!==null)self::integer($child['marketplace_trade_version'],0,255);
+            self::paymentText($child['order_id'],32,false);self::integer($child['paid'],0,1);
+            self::paymentStatus($child['status']);self::integer($child['refund_status'],0,255);self::integer($child['is_cancel'],0,1);
+        }
+        return ['released'=>$facts['children']!==[],'changed'=>$context['actions']!==[]||$changed||$facts['child_orders']!==[]];
+    }
+
     private static function applicationState(array $facts,array $locked): array
     {
         self::objectKeys($facts,['root','items','selection','reserves','children','child_orders']);

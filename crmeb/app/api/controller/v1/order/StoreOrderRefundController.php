@@ -40,13 +40,18 @@ class StoreOrderRefundController
      */
     public function refundList(Request $request)
     {
+        $query=$request->get(false);
+        if(is_array($query)&&array_key_exists('contract',$query)) {
+            return app('json')->success(app()->make(\app\services\marketplace\order\MarketplaceOrderRefundReadServices::class)
+                ->pageForCustomer($request,(int)$request->uid(),$query));
+        }
         $where = $request->getMore([
             ['refund_status', ''],
         ]);
         $where['uid'] = $request->uid();
         $where['is_cancel'] = 0;
         $where['is_del'] = 0;
-        $data = $this->services->refundList($where,'customer',(int)$request->uid());
+        $data = $this->services->refundList($where,'customer',(int)$request->uid(),true);
         return app('json')->success($data);
     }
 
@@ -73,6 +78,16 @@ class StoreOrderRefundController
      */
     public function cancelApply(Request $request, $uni)
     {
+        $saved=$this->services->get(['order_id'=>$uni,'uid'=>$request->uid()],['id','store_order_id']);
+        if($saved) {
+            $root=app()->make(StoreOrderServices::class)->get(['id'=>$saved['store_order_id'],'uid'=>$request->uid()],['*']);
+            if(!$root)throw new \crmeb\exceptions\ApiException('订单不存在');
+            if(!\app\services\marketplace\order\MarketplaceTradePolicy::savedOrderIsLegacy($root->getData())) {
+                $raw=\app\services\marketplace\order\MarketplaceOrderRefundInput::decode($request->getContent());
+                return app('json')->success(app()->make(\app\services\marketplace\order\MarketplaceOrderRefundWriter::class)
+                    ->forCustomer($request,(int)$request->uid(),'withdraw',$uni,$raw));
+            }
+        }
         if (!strlen(trim($uni))) return app('json')->fail('参数错误');
         $orderRefund = $this->services->get(['order_id' => $uni, 'is_cancel' => 0]);
         if (!$orderRefund || $orderRefund['uid'] != $request->uid()) {
@@ -117,6 +132,19 @@ class StoreOrderRefundController
      */
     public function applyExpress(Request $request)
     {
+        if(strtolower($request->contentType())==='application/json') {
+            $raw=\app\services\marketplace\order\MarketplaceOrderRefundInput::decode($request->getContent());
+            if(array_key_exists('refund_no',$raw)) {
+                if(!is_string($raw['refund_no']))throw new \crmeb\exceptions\ApiException('参数错误');
+                $saved=$this->services->get(['order_id'=>$raw['refund_no'],'uid'=>$request->uid()],['id','store_order_id']);
+                if(!$saved)throw new \crmeb\exceptions\ApiException('订单不存在');
+                $root=app()->make(StoreOrderServices::class)->get(['id'=>$saved['store_order_id'],'uid'=>$request->uid()],['*']);
+                if(!$root||\app\services\marketplace\order\MarketplaceTradePolicy::savedOrderIsLegacy($root->getData()))
+                    throw new \crmeb\exceptions\ApiException('订单不存在');
+                return app('json')->success(app()->make(\app\services\marketplace\order\MarketplaceOrderRefundWriter::class)
+                    ->forCustomer($request,(int)$request->uid(),'express',$raw['refund_no'],$raw));
+            }
+        }
         $data = $request->postMore([
             ['id', ''],
             ['refund_express', ''],

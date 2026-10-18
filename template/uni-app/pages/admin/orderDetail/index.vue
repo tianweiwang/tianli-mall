@@ -227,13 +227,13 @@
             <view class="acea-row row-right">
               <view
                 class="writeOff"
-                v-if="item.refund_num && orderInfo.refund_type != 6"
+                v-if="orderInfo.schema !== 2 && item.refund_num && orderInfo.refund_type != 6"
                 >{{ item.refund_num }}件退款中</view
               >
               <view
                 class="writeOff"
                 v-if="
-                  orderInfo._status._type == 2 &&
+                  orderInfo.schema !== 2 && orderInfo._status._type == 2 &&
                   orderInfo.delivery_type == 'send'
                 "
               >
@@ -369,14 +369,14 @@
 				</view> -->
         <view
           class="item acea-row row-between"
-          v-if="orderInfo.refund_goods_explain"
+          v-if="orderInfo.schema !== 2 && orderInfo.refund_goods_explain"
         >
           <view>退货留言</view>
           <view class="conter">{{ orderInfo.refund_goods_explain }}</view>
         </view>
         <view
           class="item acea-row row-between"
-          v-if="orderInfo.refund_img && orderInfo.refund_img.length"
+          v-if="orderInfo.schema !== 2 && orderInfo.refund_img && orderInfo.refund_img.length"
         >
           <view>退款凭证</view>
           <view class="conter">
@@ -395,7 +395,7 @@
         </view>
         <view
           class="item acea-row row-between"
-          v-if="orderInfo.refund_goods_img && orderInfo.refund_goods_img.length"
+          v-if="orderInfo.schema !== 2 && orderInfo.refund_goods_img && orderInfo.refund_goods_img.length"
         >
           <view>退货凭证</view>
           <view class="conter">
@@ -873,7 +873,7 @@ export default {
             if (view.order.order_id !== this.order_id) throw new Error('订单身份不一致，请重新加载');
             this.orderInfo = view.order;
             this.types = view.kind === 'root' ? view.order._status._type : '';
-            this.title = view.kind === 'root' ? (view.summary === null ? view.order._status._title : rootFulfillmentText(view.summary)) : '';
+            this.title = view.kind === 'root' ? (view.summary === null ? view.order._status._title : rootFulfillmentText(view.summary, view.aftersale)) : '';
             this.payType = view.kind === 'root' ? view.order._status._payType : view.package.pay_type_name;
             this.totalNmu = view.kind === 'root' ? view.order.total_num : view.package.original;
             this.applyOrderBenefits(view.order);

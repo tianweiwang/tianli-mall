@@ -13,6 +13,9 @@ function businessKey(childId) {
 export function prepareReceiptIntent(receipt, draft) {
   if (!receipt || !receipt.package || !receipt.allowed_actions || receipt.allowed_actions.receive !== true
     || !receipt.receipt_selection || !draft || !['all_eligible', 'items'].includes(draft.mode)) throw new Error('请重新读取当前可收货资料');
+  const childStage = receipt.package.schema;
+  if ((childStage !== 1 && childStage !== 2) || receipt.package.scope !== (childStage === 1 ? 'marketplace_fulfillment_child_v1' : 'marketplace_fulfillment_child_aftersale_v1')
+    || receipt.receipt_selection.schema !== childStage || receipt.receipt_selection.coordinate !== 'child_item_ordinal') throw new Error('请重新读取当前可收货资料');
   let selection = { mode: 'all_eligible' }; let quantity = 0;
   if (draft.mode === 'all_eligible') receipt.receipt_selection.items.forEach(item => { quantity += item.eligible_quantity; });
   else {

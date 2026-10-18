@@ -34,6 +34,13 @@ final class PlatformAccessServices
         'marketplace-products-off-shelf' => ['PUT', 'marketplace/products/<id>/off-shelf', false],
         'marketplace-products-stock-adjust' => ['POST', 'marketplace/products/<id>/stock', false],
         'marketplace-products-submit-review' => ['PUT', 'marketplace/products/<id>/submit-review', false],
+        'marketplace-aftersales-list' => ['GET', 'marketplace/aftersales', false],
+        'marketplace-aftersales-read' => ['GET', 'marketplace/aftersales/<id>', false],
+        'marketplace-aftersales-approve' => ['POST', 'marketplace/aftersales/<id>/approve', false],
+        'marketplace-aftersales-reject' => ['POST', 'marketplace/aftersales/<id>/reject', false],
+        'marketplace-aftersales-return-accept' => ['POST', 'marketplace/aftersales/<id>/return-accept', false],
+        'marketplace-aftersale-files-ticket' => ['POST', 'marketplace/aftersale-files/<file_id>/read-ticket', false],
+        'marketplace-aftersale-files-read' => ['GET', 'marketplace/aftersale-files/<file_id>/content', false],
     ];
 
     public static function isMarketplace(\think\Request $request): bool
@@ -94,6 +101,25 @@ final class PlatformAccessServices
                 || !in_array($scope->permission,['legacy-product-save','legacy-product-import'],true)) throw new HttpException(403, '没有权限访问');
             app()->make(LegacyProductAccessServices::class)->authorizeScope($scope);
             $this->authorizeCurrent($scope->adminId, 'marketplace-products-stock-adjust');
+        } catch (AuthException|HttpException $error) { throw $error; }
+        catch (\Throwable $error) { throw new AuthUnavailableException(); }
+    }
+
+    /** Recompute only these three action hints from this actual list/detail scope and current DB grants. */
+    public function aftersaleReadActions(PlatformScope $scope): array
+    {
+        try {
+            if ($scope->targetMerId !== null || !in_array($scope->permission,
+                ['marketplace-aftersales-list','marketplace-aftersales-read'],true)) throw new HttpException(403,'没有权限访问');
+            $this->authorizeScope($scope,$scope->permission);
+            $out=[];
+            foreach (['approve'=>'marketplace-aftersales-approve','reject'=>'marketplace-aftersales-reject',
+                'accept_return'=>'marketplace-aftersales-return-accept'] as $key=>$permission) {
+                try { $this->authorizeCurrent($scope->adminId,$permission); $out[$key]=true; }
+                catch (HttpException $error) { if ($error->getStatusCode() !== 403) throw $error; $out[$key]=false; }
+            }
+            $this->authorizeScope($scope,$scope->permission);
+            return $out;
         } catch (AuthException|HttpException $error) { throw $error; }
         catch (\Throwable $error) { throw new AuthUnavailableException(); }
     }

@@ -19,6 +19,7 @@
         <view v-for="row in rows" :key="row.item_id" class="receipt-item">
           <view class="receipt-heading">{{ row.product_name }}</view>
           <view class="receipt-note">{{ row.sku_name }} · 共 {{ row.quantity }} 件 / 已收 {{ row.received }} 件 / 可确认 {{ row.eligible }} 件</view>
+          <view v-if="receipt.package.schema === 2" class="receipt-note">已验收退件 {{ row.returned }} 件 · 收货与退件交集 {{ row.overlap }} 件 · 暂停确认 {{ row.paused }} 件</view>
           <view class="receipt-note">当前可选件号：{{ segmentText(row.available) }}</view>
           <view v-for="range in row.segments" :key="range.key" class="receipt-range">
             <view class="receipt-input-group"><text>起始件号</text><input v-model="range.first" type="number" maxlength="10" :disabled="sending || reading" placeholder="起始件号" /></view>
@@ -33,7 +34,7 @@
         <button class="receipt-button receipt-submit" :disabled="sending || reading" @click="submitPartial">确认所选范围</button>
       </view>
     </template>
-    <view v-else-if="receipt && !pending && receipt.allowed_actions.receive === false" class="receipt-notice">当前包裹暂无可执行的收货操作。</view>
+    <view v-else-if="receipt && !pending && receipt.allowed_actions.receive === false" class="receipt-notice">{{ unavailableText }}</view>
     <view v-else-if="receipt && disabled" class="receipt-notice" role="status">包裹操作资料尚未就绪，请完成当前确认或重新加载资料。</view>
   </view>
 </template>
@@ -46,12 +47,23 @@ export default {
     disabled: { type: Boolean, default: false }, error: { type: String, default: '' }, feedback: { type: String, default: '' }
   },
   data() { return { partial: false, rows: [], nextRange: 0 }; },
-  computed: { eligibleTotal() { return this.receipt ? this.receipt.receipt_selection.items.reduce((sum, item) => sum + item.eligible_quantity, 0) : 0; } },
+  computed: {
+    eligibleTotal() { return this.receipt ? this.receipt.receipt_selection.items.reduce((sum, item) => sum + item.eligible_quantity, 0) : 0; },
+    unavailableText() {
+      const child = this.receipt && this.receipt.package;
+      if (!child || child.schema !== 2) return '当前包裹暂无可执行的收货操作。';
+      if (child.received === child.shipped) return '本包裹已全部实际收货。';
+      if (child.closed) return '本包裹已由收货或退件结束履约，退件不计为收货。';
+      if (this.receipt.receipt_selection.items.some(item => item.paused_quantity > 0)) return '剩余待收货商品正在售后处理中，暂停确认收货。';
+      return '当前包裹暂无可执行的收货操作，请重新加载资料。';
+    }
+  },
   watch: { receipt: { immediate: true, handler(value) {
     this.partial = false;
     this.rows = value ? value.receipt_selection.items.map((item, index) => ({
       item_id: item.item_id, product_name: value.package.items[index].product_name, sku_name: value.package.items[index].sku_name,
       quantity: item.quantity, received: item.received_quantity, eligible: item.eligible_quantity,
+      returned: value.package.schema === 2 ? item.returned_quantity : 0, overlap: value.package.schema === 2 ? item.returned_after_receipt : 0, paused: value.package.schema === 2 ? item.paused_quantity : 0,
       available: item.eligible_segments, segments: []
     })) : [];
   } } },

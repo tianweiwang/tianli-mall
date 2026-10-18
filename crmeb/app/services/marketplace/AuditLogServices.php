@@ -115,10 +115,11 @@ final class AuditLogServices
     ): void {
         $request = app()->request;
         $productRead = $action === 'marketplace-products-list' && $resourceType === 'product' && $resourceId === 'global';
+        $aftersaleRead = $action === 'marketplace-aftersales-list' && $resourceType === 'aftersale' && $resourceId === 'global';
         $merchantRead = $resourceType === 'merchant'
             && in_array($action, ['marketplace-merchants-list', 'marketplace-merchants-read'], true);
         if (!$request instanceof Request || app('http')->getName() !== 'adminapi'
-            || $actorType !== 'admin' || (!$merchantRead && !$productRead)
+            || $actorType !== 'admin' || (!$merchantRead && !$productRead && !$aftersaleRead)
             || $result !== 'success' || $detail !== [] || $request->method() !== 'GET'
         ) {
             throw new AuthUnavailableException();
@@ -140,11 +141,11 @@ final class AuditLogServices
         if (($action === 'marketplace-merchants-list' && ($scope->targetMerId !== null || $resourceId !== 'global'))
             || ($action === 'marketplace-merchants-read'
                 && ($scope->targetMerId === null || $resourceId !== (string) $scope->targetMerId))
-            || ($productRead && $scope->targetMerId !== null)) {
+            || (($productRead || $aftersaleRead) && $scope->targetMerId !== null)) {
             throw new AuthUnavailableException();
         }
 
-        if ($productRead) app()->make(PlatformAccessServices::class)->authorizeScope($scope, $action);
+        if ($productRead || $aftersaleRead) app()->make(PlatformAccessServices::class)->authorizeScope($scope, $action);
 
         $admin = $request->adminInfo();
         if (!is_array($admin) || !isset($admin['id'], $admin['account'])
@@ -156,12 +157,12 @@ final class AuditLogServices
         }
 
         $pdo = Db::connect()->getPdo();
-        if ($productRead) {
+        if ($productRead || $aftersaleRead) {
             $logConnection = (new SystemLog())->db()->getConnection();
             if ($logConnection !== Db::connect() || $logConnection->getPdo() !== $pdo) throw new AuthUnavailableException();
         }
         if ($this->platformLog->recordAdminLog($actorId, $admin['account'], 'system') !== true
-            || ($productRead && Db::connect()->getPdo() !== $pdo)) {
+            || (($productRead || $aftersaleRead) && Db::connect()->getPdo() !== $pdo)) {
             throw new AuthUnavailableException();
         }
         self::assertTransaction();

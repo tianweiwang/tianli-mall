@@ -5,6 +5,9 @@ namespace app\services\marketplace\payment;
 
 use app\dao\marketplace\payment\MarketplacePaymentDao;
 use app\dao\marketplace\order\MarketplaceOrderDao;
+use app\dao\marketplace\order\MarketplaceOrderFulfillmentDao;
+use app\dao\marketplace\order\MarketplaceOrderRefundDao;
+use crmeb\compat\think\orm\db\connector\Mysql;
 use app\services\marketplace\order\MarketplaceOrderInput;
 use crmeb\exceptions\AuthUnavailableException;
 use crmeb\services\pay\marketplace\PaymentAccount;
@@ -22,7 +25,8 @@ final class MarketplacePaymentServices
     private readonly App $app;
     private ?array $createContext=null;
 
-    public function __construct(private MarketplacePaymentDao $dao,private PaymentAccountResolver $accounts,private MarketplaceOrderDao $orders)
+    public function __construct(private MarketplacePaymentDao $dao,private PaymentAccountResolver $accounts,private MarketplaceOrderDao $orders,
+        private MarketplaceOrderFulfillmentDao $fulfillments,private MarketplaceOrderRefundDao $refunds)
     {
         $this->app=app();
     }
@@ -175,11 +179,15 @@ final class MarketplacePaymentServices
         $result=$op==='queryPayment'?$driver->queryPayment($descriptor):$driver->closePayment($descriptor);
         $this->outside($connection,$pdo);if($this->app->make(PaymentAdapter::class)!==$driver)self::unavailable();
         try{
-            $saved=$this->transaction($connection,$pdo,function()use($pdo,$uid,$orderId,$orderNo,$attemptId,$row,$op,$result,$initialPayment):array{
+            $saved=$this->transaction($connection,$pdo,function()use($connection,$pdo,$uid,$orderId,$orderNo,$attemptId,$row,$op,$result,$initialPayment):array{
                 if($initialPayment!==null)$this->dao->closedCancellationProof($pdo,$uid,$orderId,$orderNo,$initialPayment);
-                $this->dao->lockObservation($pdo,$uid,$orderId,$orderNo);
-                $facts=($result['state']??null)==='succeeded'?$this->orders->lockPaymentApplicationFacts($pdo,$uid,$orderId):null;
-                return $this->dao->saveObservation($pdo,$uid,$orderId,$orderNo,$attemptId,$row,$op,$result,self::now(),$facts);
+                $initial=$this->dao->lockObservation($pdo,$uid,$orderId,$orderNo);
+                if(($result['state']??null)!=='succeeded')
+                    return $this->dao->saveObservation($pdo,$uid,$orderId,$orderNo,$attemptId,$row,$op,$result,self::now(),null,null);
+                $before=$this->captureApplicationContext($connection,$pdo,$uid,$orderId,$orderNo,$initial);
+                $saved=$this->dao->saveObservation($pdo,$uid,$orderId,$orderNo,$attemptId,$row,$op,$result,self::now(),
+                    $before['capture'],$before['context']);
+                return $this->finalApplicationReadback($connection,$pdo,$uid,$orderId,$orderNo,$before,$saved);
             });
         }catch(\Throwable $error){
             if($error instanceof \DomainException&&$error->getMessage()==='APPLIED_TRADE_CONFLICT'){
@@ -187,11 +195,13 @@ final class MarketplacePaymentServices
                 // The failed application transaction has actually rolled back before the same PDO is reused.
                 $this->outside($connection,$pdo);
                 try{
-                    $saved=$this->transaction($connection,$pdo,function()use($pdo,$uid,$orderId,$orderNo,$attemptId,$row,$result,$initialPayment):array{
+                    $saved=$this->transaction($connection,$pdo,function()use($connection,$pdo,$uid,$orderId,$orderNo,$attemptId,$row,$result,$initialPayment):array{
                         if($initialPayment!==null)$this->dao->closedCancellationProof($pdo,$uid,$orderId,$orderNo,$initialPayment);
-                        $this->dao->lockObservation($pdo,$uid,$orderId,$orderNo);
-                        $facts=$this->orders->lockPaymentApplicationFacts($pdo,$uid,$orderId);
-                        return $this->dao->saveAppliedTradeConflict($pdo,$uid,$orderId,$orderNo,$attemptId,$row,$result,self::now(),$initialPayment,$facts);
+                        $initial=$this->dao->lockObservation($pdo,$uid,$orderId,$orderNo);
+                        $before=$this->captureApplicationContext($connection,$pdo,$uid,$orderId,$orderNo,$initial);
+                        $saved=$this->dao->saveAppliedTradeConflict($pdo,$uid,$orderId,$orderNo,$attemptId,$row,$result,self::now(),
+                            $initialPayment,$before['capture'],$before['context']);
+                        return $this->finalApplicationReadback($connection,$pdo,$uid,$orderId,$orderNo,$before,$saved);
                     });
                 }catch(\Throwable $conflictError){
                     $this->holdUnsavedObservation($connection,$pdo,$uid,$orderId,$orderNo,$attemptId,$row,$initialPayment,$conflictError);
@@ -204,6 +214,91 @@ final class MarketplacePaymentServices
         }
         // Inconsistent root values were not repaired or disguised. The actual observation/hold may be saved, but no stable DTO is claimed.
         if(!$saved['root_payment_consistent'])self::unavailable();return $saved;
+    }
+
+    /** Actual fixed-PDO source capture after an actual payment lock; no current paid/status admission is added here. */
+    private function captureApplicationContext(ConnectionInterface $connection,PDO $pdo,int $uid,int $orderId,
+        string $orderNo,array $observation):array
+    {
+        $this->connection($connection,$pdo);
+        if($connection->transactionDepth()!==1||!$pdo->inTransaction()
+            ||array_keys($observation)!==['locked','root_payment_consistent']||!is_bool($observation['root_payment_consistent'])
+            ||!is_array($observation['locked']))self::unavailable();
+        $payment=$observation['locked'];
+        if(array_keys($payment)!==['ledger','root','merchant','registry','attempts'])self::unavailable();
+        foreach($payment as$value)if(!is_array($value))self::unavailable();
+        if(($payment['root']['id']??null)!==$orderId||($payment['root']['uid']??null)!==$uid
+            ||($payment['root']['order_id']??null)!==$orderNo)self::unavailable();
+        $candidate=['root_order_id'=>$orderId,'root_order_no'=>$orderNo,'uid'=>$uid,
+            'mer_id'=>MarketplaceOrderFulfillmentDao::integer($payment['root']['mer_id']??null,1,4294967295)];
+        $root=$this->fulfillments->lockRoot($pdo,$candidate);
+        $operations=$this->refunds->lockOperationsForRoot($connection,$pdo,$root);
+        $capture=$this->orders->capturePaymentApplicationFacts($pdo,$uid,$orderId);
+        if(($capture['root']??null)!==$root)self::unavailable();
+        // The Task7 S2 lockFamily producer includes both actual order ownership and stored root bindings,
+        // retaining complete legacy eight-NULL rows instead of invoking the new-refund-only parser.
+        $family=$this->fulfillments->lockFamily($pdo,$root);
+        if(array_keys($family)!==['children','items','ranges','refunds'])self::unavailable();
+        foreach($family as$rows)if(!is_array($rows)||!array_is_list($rows))self::unavailable();
+        $logs=$this->refunds->lockStatusLogsForRoot($connection,$pdo,$root);
+        $actions=$this->refunds->lockActionsForRoot($connection,$pdo,$root);
+        $cut=null;
+        if($actions!==[]){
+            $cut=$actions[count($actions)-1]['id'];
+            if(is_int($cut)&&$cut>0)$cut=(string)$cut;
+            if(!is_string($cut))self::unavailable();$cut=self::attemptId($cut);
+        }
+        $context=['schema'=>2,'cut_id'=>$cut,'actions'=>$actions,'refunds'=>$family['refunds'],
+            'operations'=>$operations,'ranges'=>$family['ranges'],'logs'=>$logs];
+        $this->connection($connection,$pdo);
+        if($connection->transactionDepth()!==1||!$pdo->inTransaction())self::unavailable();
+        return ['observation'=>$observation,'root'=>$root,'capture'=>$capture,'family'=>$family,'context'=>$context];
+    }
+
+    /** Both application consumers finish the complete final chain before their owned transaction may commit. */
+    private function finalApplicationReadback(ConnectionInterface $connection,PDO $pdo,int $uid,int $orderId,
+        string $orderNo,array $before,array $saved):array
+    {
+        // saved is the DAO's just-fetched native payment observation, not a service proposal.
+        // Immediately follow that finalPayment with entirely new Root/Operations/Capture/Family/Logs/Actions.
+        $final=$this->captureApplicationContext($connection,$pdo,$uid,$orderId,$orderNo,$saved);
+        if(array_keys($before)!==['observation','root','capture','family','context']
+            ||$before['context']!==$final['context']||$before['family']!==$final['family'])self::unavailable();
+        foreach(['items','selection','reserves','credit_rows','child_orders'] as$key)
+            if($before['capture'][$key]!==$final['capture'][$key])self::unavailable();
+        $priorRoot=$before['root'];$finalRoot=$final['root'];
+        if(array_keys($priorRoot)!==array_keys($finalRoot))self::unavailable();
+        $priorPayment=$before['observation']['locked'];$finalPayment=$saved['locked'];
+        foreach(['ledger','merchant'] as$key)if($priorPayment[$key]!==$finalPayment[$key])self::unavailable();
+        $previousWinner=$priorPayment['registry']['winner_attempt_id'];$winner=$finalPayment['registry']['winner_attempt_id'];
+        $firstApplication=$previousWinner===null&&$winner!==null;
+        if(!$firstApplication){
+            if($winner!==$previousWinner||$priorRoot!==$finalRoot)self::unavailable();
+        }else{
+            // Only the DAO's real first application can account for these four actual saved values.
+            $attempt=self::byId($finalPayment,$winner);$application=$attempt['evidence']['application']??null;
+            if(!is_array($application)||($application['attempt_id']??null)!==$winner
+                ||($application['order_pk']??null)!==$orderId||!is_array($application['root_payment']??null))self::unavailable();
+            $paymentValues=$application['root_payment'];
+            $keys=array_keys($paymentValues);sort($keys,SORT_STRING);
+            if($keys!==['paid','pay_time','pay_type','trade_no'])self::unavailable();
+            foreach($priorRoot as$key=>$value){
+                if(!in_array($key,['paid','pay_time','pay_type','trade_no'],true)&&$finalRoot[$key]!==$value)self::unavailable();
+            }
+            foreach($paymentValues as$key=>$value){
+                if($finalPayment['root'][$key]!==$value)self::unavailable();
+                $actual=$finalRoot[$key];
+                if($key==='paid'||$key==='pay_time'){
+                    if(MarketplaceOrderFulfillmentDao::integer($actual,0,$key==='paid'?1:4294967295)!==$value)self::unavailable();
+                }elseif($actual!==$value)self::unavailable();
+            }
+        }
+        $initialState=MarketplacePaymentDao::applicationStateV2($before['capture'],$priorPayment,$before['context']);
+        $finalState=MarketplacePaymentDao::applicationStateV2($final['capture'],$finalPayment,$final['context']);
+        if($finalState!==$initialState)self::unavailable();
+        $this->connection($connection,$pdo);
+        if($connection->transactionDepth()!==1||!$pdo->inTransaction())self::unavailable();
+        return $saved;
     }
 
     /** Unsavable evidence never becomes an ACK; retain only the bounded first hold in a fresh actual transaction. */
@@ -298,7 +393,9 @@ final class MarketplacePaymentServices
     {
         PaymentAccount::assertTesting();
         if(app()!==$this->app||$this->app->make(self::class)!==$this||$this->app->make(MarketplacePaymentDao::class)!==$this->dao
-            ||$this->app->make(PaymentAccountResolver::class)!==$this->accounts||$this->app->make(MarketplaceOrderDao::class)!==$this->orders)self::unavailable();
+            ||$this->app->make(PaymentAccountResolver::class)!==$this->accounts||$this->app->make(MarketplaceOrderDao::class)!==$this->orders
+            ||$this->app->make(MarketplaceOrderFulfillmentDao::class)!==$this->fulfillments
+            ||$this->app->make(MarketplaceOrderRefundDao::class)!==$this->refunds)self::unavailable();
     }
 
     /** Establish the real default primary PDO once; there is no second connection or native transaction fallback. */
@@ -306,18 +403,19 @@ final class MarketplacePaymentServices
     {
         $connection=Db::connect();$pdo=$connection->getPdo();
         if(!$pdo instanceof PDO){$connection->query('SELECT 1',[],true);$pdo=$connection->getPdo();}
-        if(!$pdo instanceof PDO)self::unavailable();$this->outside($connection,$pdo);return [$connection,$pdo];
+        if(!$pdo instanceof PDO)self::unavailable();$this->outside($connection,$pdo);
+        $this->fulfillments->assertAftersaleStructure($pdo);$this->outside($connection,$pdo);return [$connection,$pdo];
     }
 
     private function outside(ConnectionInterface $connection,PDO $pdo): void
     {
-        $this->connection($connection,$pdo);if($pdo->inTransaction())self::unavailable();
+        $this->connection($connection,$pdo);if($connection->transactionDepth()!==0||$pdo->inTransaction())self::unavailable();
     }
 
     private function connection(ConnectionInterface $connection,PDO $pdo): void
     {
         $this->scope();
-        if(PHP_INT_SIZE<8||$connection!==Db::connect()||$connection->getPdo()!==$pdo
+        if(PHP_INT_SIZE<8||!$connection instanceof Mysql||$connection!==Db::connect()||$connection->getPdo()!==$pdo
             ||$connection->getConfig('deploy')!==0||$connection->getConfig('rw_separate')!==false
             ||$pdo->getAttribute(PDO::ATTR_DRIVER_NAME)!=='mysql'||$pdo->getAttribute(PDO::ATTR_ERRMODE)!==PDO::ERRMODE_EXCEPTION
             ||!in_array($pdo->getAttribute(PDO::ATTR_EMULATE_PREPARES),[false,0],true))self::unavailable();
@@ -328,8 +426,8 @@ final class MarketplacePaymentServices
         $this->outside($connection,$pdo);
         $result=$connection->transaction(function(ConnectionInterface $actual)use($connection,$pdo,$action):mixed{
             if($actual!==$connection)self::unavailable();$this->connection($actual,$pdo);
-            if(!$pdo->inTransaction())self::unavailable();$result=$action();
-            $this->connection($actual,$pdo);if(!$pdo->inTransaction())self::unavailable();return $result;
+            if($actual->transactionDepth()!==1||!$pdo->inTransaction())self::unavailable();$result=$action();
+            $this->connection($actual,$pdo);if($actual->transactionDepth()!==1||!$pdo->inTransaction())self::unavailable();return $result;
         });
         $this->outside($connection,$pdo);return $result;
     }

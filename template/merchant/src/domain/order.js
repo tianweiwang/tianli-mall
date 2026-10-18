@@ -14,6 +14,56 @@ function exactKeys(value, names) {
   return data;
 }
 
+const AFTERSALE = ['schema', 'revision', 'confirmed_amount', 'held_amount', 'available_amount', 'pending_cancel_quantity', 'pending_return_quantity', 'returned_after_receipt', 'fulfillment_completed_at'];
+function aftersaleData(value, summary = null, paid = null) {
+  exactKeys(value, AFTERSALE);
+  if (value.schema !== 1 || typeof value.revision !== 'string' || !/^[1-9][0-9]{0,19}$/.test(value.revision)
+    || (value.revision.length === 20 && value.revision > '18446744073709551615')) unavailable();
+  ['confirmed_amount', 'held_amount', 'available_amount'].forEach(key => money(value[key]));
+  const cents = ['confirmed_amount', 'held_amount', 'available_amount'].reduce((sum, key) => sum + Number(value[key].replace('.', '')), 0);
+  if (!Number.isSafeInteger(cents) || cents > 999999999999) unavailable();
+  if (paid !== null) { money(paid); if (cents !== Number(paid.replace('.', ''))) unavailable(); }
+  ['pending_cancel_quantity', 'pending_return_quantity', 'returned_after_receipt'].forEach(key => integer(value[key], 0, 4294967295));
+  if (value.fulfillment_completed_at !== null) integer(value.fulfillment_completed_at, 1, 4294967295);
+  if (summary !== null && (value.pending_cancel_quantity > summary.to_ship
+    || value.pending_return_quantity > summary.shipped - summary.returned_accepted
+    || value.returned_after_receipt > Math.min(summary.received, summary.returned_accepted)
+    || (value.fulfillment_completed_at !== null) !== summary.closed)) unavailable();
+  return { ...value };
+}
+function summaryV2(value, original, aftersale) {
+  exactKeys(value, ['shipping_state', 'receipt_state', 'closed', 'original', 'shipped', 'received', 'cancelled_unshipped', 'returned_accepted', 'to_ship', 'to_receive', 'child_count']);
+  ['original', 'shipped', 'received', 'cancelled_unshipped', 'returned_accepted', 'to_ship', 'to_receive', 'child_count'].forEach(key => integer(value[key], key === 'original' ? 1 : 0, 4294967295));
+  const s = value; const a = aftersaleData(aftersale);
+  if (s.original !== original || s.shipped > s.original || s.received > s.shipped || s.returned_accepted > s.shipped
+    || s.cancelled_unshipped > s.original - s.shipped || a.returned_after_receipt > Math.min(s.received, s.returned_accepted)
+    || s.to_ship !== s.original - s.shipped - s.cancelled_unshipped
+    || s.to_receive !== s.shipped - s.received - s.returned_accepted + a.returned_after_receipt
+    || ((s.child_count === 0) !== (s.shipped === 0)) || s.child_count > s.shipped
+    || s.shipping_state !== (s.shipped === 0 ? 'unshipped' : s.to_ship > 0 ? 'partial' : 'shipped')
+    || s.receipt_state !== (s.shipped === 0 ? 'not_shipped' : s.received === s.shipped ? 'received' : s.received === 0 ? 'pending' : 'partial')
+    || s.closed !== (s.to_ship === 0 && s.to_receive === 0)) unavailable();
+  aftersaleData(a, s); return { ...s };
+}
+function childSummaryV2(child) {
+  const summary = {}; ['shipping_state', 'receipt_state', 'closed', 'original', 'shipped', 'received', 'cancelled_unshipped', 'returned_accepted', 'to_ship', 'to_receive', 'child_count'].forEach(key => { summary[key] = key === 'child_count' ? 1 : child[key]; });
+  if (child.cancelled_unshipped !== 0 || child.to_ship !== 0 || child.original !== child.shipped) unavailable();
+  summaryV2(summary, child.original, child.aftersale);
+  if ((child.received === 0) !== (child.last_received_at === null)
+    || child.received_at !== (child.received === child.shipped ? child.last_received_at : null)) unavailable();
+}
+function aftersaleState(summary, aftersale) {
+  if (!aftersale || !summary) return '';
+  if (summary.closed) {
+    if (summary.shipped > 0 && summary.received === summary.shipped && summary.cancelled_unshipped === 0) return '已收货';
+    return summary.shipped === 0 ? '已取消履约（未发货）' : '履约已结束（含退件或取消）';
+  }
+  if (aftersale.pending_cancel_quantity) return '售后处理中，部分发货暂停';
+  if (aftersale.pending_return_quantity) return '退件申请处理中';
+  if (summary.returned_accepted) return '含已退件，仍有待履约商品';
+  return '';
+}
+
 function fulfillmentSummary(value, totalNum) {
   if (value === null) return null;
   const summary = exactKeys(value, ['shipping_state', 'receipt_state', 'closed', 'original', 'shipped', 'received',
@@ -69,9 +119,13 @@ function savedItem(value) {
 export function orderRow(value) {
   const order = row(value);
   if (order.marketplace_trade_version !== 1 || !Array.isArray(order.items) || !order.items.length) unavailable();
-  const summary = fulfillmentSummary(order.fulfillment_summary, order.total_num);
+  const s2 = order.schema === 2 && order.scope === 'marketplace_order_aftersale_v1';
+  if (!s2 && (Object.prototype.hasOwnProperty.call(order, 'schema') || Object.prototype.hasOwnProperty.call(order, 'scope') || Object.prototype.hasOwnProperty.call(order, 'aftersale'))) unavailable();
+  if (s2 && order.fulfillment_summary === null) unavailable();
+  const summary = s2 ? summaryV2(order.fulfillment_summary, order.total_num, order.aftersale) : fulfillmentSummary(order.fulfillment_summary, order.total_num);
+  const extension = s2 ? { schema: 2, scope: order.scope, aftersale: aftersaleData(order.aftersale, summary, order.pay_price) } : {};
   const actions = fulfillmentActions(order.allowed_actions, summary);
-  return { id: integer(order.id, 1), order_id: text(order.order_id), marketplace_trade_version: 1,
+  return { ...extension, id: integer(order.id, 1), order_id: text(order.order_id), marketplace_trade_version: 1,
     pay_type: text(order.pay_type),
     add_time: integer(order.add_time, 0, UINT_MAX), paid: integer(order.paid, 0, 1), status: integer(order.status, -INT_MAX - 1),
     is_cancel: integer(order.is_cancel, 0, 1), refund_status: integer(order.refund_status), shipping_type: integer(order.shipping_type),
@@ -116,7 +170,8 @@ export function orderDetail(value) {
 export function orderStatus(order) {
   if (order.is_cancel === 1) return '已取消';
   if (order.paid === 0) return '待支付';
-  if (order.refund_status !== 0) return '退款状态：' + order.refund_status;
+  if (order.schema === 2) { const state = aftersaleState(order.fulfillment_summary, order.aftersale); if (state) return state; }
+  if (order.schema !== 2 && order.refund_status !== 0) return '退款状态：' + order.refund_status;
   const summary = order.fulfillment_summary;
   if (summary !== null) {
     if (summary.shipping_state === 'partial') return '部分发货';
@@ -141,8 +196,10 @@ const OPERATION_KEYS = ['schema', 'operation_id', 'action', 'root_order_id', 'ro
 
 function publicStamp(value, nullable = false) { return nullable && value === null ? null : integer(value, 1, UINT_MAX); }
 function packageRow(value, root, detail) {
-  const child = exactKeys(value, detail ? PACKAGE_KEYS.concat(['recipient', 'mark', 'custom_form']) : PACKAGE_KEYS);
-  if (child.schema !== 1 || child.scope !== 'marketplace_fulfillment_child_v1' || child.marketplace_trade_version !== 1
+  const s2 = row(value).schema === 2 && value.scope === 'marketplace_fulfillment_child_aftersale_v1';
+  const names = s2 ? PACKAGE_KEYS.concat(['aftersale']) : PACKAGE_KEYS;
+  const child = exactKeys(value, detail ? names.concat(['recipient', 'mark', 'custom_form']) : names);
+  if ((!s2 && (child.schema !== 1 || child.scope !== 'marketplace_fulfillment_child_v1')) || child.marketplace_trade_version !== 1
     || child.paid !== 1 || child.shipping_state !== 'shipped' || child.root_order_id !== root.id
     || child.root_order_no !== root.order_id || child.payment_owner_order_id !== root.id) unavailable();
   integer(child.id, 1); if (child.id === root.id) unavailable();
@@ -150,10 +207,11 @@ function packageRow(value, root, detail) {
   ['order_id', 'merchant_name_snapshot', 'carrier_code', 'carrier_name', 'tracking_no', 'pay_type', 'pay_type_name'].forEach((key) => text(child[key]));
   ['original', 'shipped'].forEach((key) => integer(child[key], 1, UINT_MAX));
   ['received', 'to_receive', 'receipt_due_at'].forEach((key) => integer(child[key], 0, UINT_MAX));
-  ['cancelled_unshipped', 'returned_accepted', 'to_ship'].forEach((key) => { if (child[key] !== 0) unavailable(); });
+  ['cancelled_unshipped', 'returned_accepted', 'to_ship'].forEach((key) => { integer(child[key], 0, UINT_MAX); if (!s2 && child[key] !== 0) unavailable(); });
   ['shipped_at', 'pay_time'].forEach((key) => publicStamp(child[key]));
   ['last_received_at', 'received_at'].forEach((key) => publicStamp(child[key], true));
-  if (child.original !== child.shipped || child.received > child.original || child.to_receive !== child.original - child.received
+  if (s2) childSummaryV2(child);
+  else if (child.original !== child.shipped || child.received > child.original || child.to_receive !== child.original - child.received
     || child.closed !== (child.received === child.original)
     || child.receipt_state !== (child.received === 0 ? 'pending' : child.closed ? 'received' : 'partial')
     || (child.received === 0) !== (child.last_received_at === null)
@@ -172,6 +230,11 @@ function packageRow(value, root, detail) {
   return result;
 }
 
+export function packageStatus(child) {
+  const state = child.schema === 2 ? aftersaleState(child, child.aftersale) : '';
+  return state || (child.receipt_state === 'received' ? '已收货' : child.receipt_state === 'partial' ? '部分收货' : '待收货');
+}
+
 export function orderPackages(value, expectedId, requestedPage, requestedLimit) {
   const data = exactKeys(value, ['root', 'packages', 'shipping_items']); const root = orderDetail(data.root);
   if (orderRecordId(root.id) !== orderRecordId(expectedId)) unavailable();
@@ -184,7 +247,9 @@ export function orderPackages(value, expectedId, requestedPage, requestedLimit) 
     || integer(page.count, 0, UINT_MAX) !== root.fulfillment_summary.child_count || !Array.isArray(page.list)) unavailable();
   if (page.list.length !== Math.max(0, Math.min(page.limit, page.count - (page.page - 1) * page.limit))) unavailable();
   const seen = new Set(); const children = page.list.map((value) => {
-    const child = packageRow(value, root, false); if (seen.has(child.id)) unavailable(); seen.add(child.id); return child;
+    const child = packageRow(value, root, false); if ((child.schema === 2) !== (root.schema === 2) || seen.has(child.id)) unavailable(); seen.add(child.id);
+    if (root.schema === 2 && ['revision', 'confirmed_amount', 'held_amount', 'available_amount'].some(key => child.aftersale[key] !== root.aftersale[key])) unavailable();
+    return child;
   });
   if (!Array.isArray(data.shipping_items) || data.shipping_items.length !== root.items.length) unavailable();
   const source = new Map(root.items.map((item) => [item.id, item])); const itemIds = new Set();
@@ -194,11 +259,12 @@ export function orderPackages(value, expectedId, requestedPage, requestedLimit) 
     const id = integer(item.item_id, 1); const saved = source.get(id);
     if (!saved || itemIds.has(id) || id <= previous || integer(item.original_quantity, 1) !== saved.quantity) unavailable();
     integer(item.shipped_quantity); integer(item.to_ship);
-    if (item.shipped_quantity + item.to_ship !== item.original_quantity) unavailable();
+    if (root.schema === 2 ? item.shipped_quantity + item.to_ship > item.original_quantity : item.shipped_quantity + item.to_ship !== item.original_quantity) unavailable();
     itemIds.add(id); previous = id; shipped += item.shipped_quantity; remaining += item.to_ship;
     return { ...item };
   });
-  if (shipped !== root.fulfillment_summary.shipped || remaining !== root.fulfillment_summary.to_ship) unavailable();
+  const eligible = root.fulfillment_summary.to_ship - (root.schema === 2 ? root.aftersale.pending_cancel_quantity : 0);
+  if (shipped !== root.fulfillment_summary.shipped || remaining !== eligible) unavailable();
   return { root, packages: { page: page.page, limit: page.limit, count: page.count, list: children }, shipping_items: shippingItems };
 }
 
@@ -242,8 +308,9 @@ export function shipmentIntent(snapshot, draft) {
 }
 
 export function shipmentResult(value, intent) {
-  const result = exactKeys(value, OPERATION_KEYS);
-  if (result.schema !== 1 || result.action !== 'ship' || result.root_order_id !== intent.rootId || result.root_order_no !== intent.rootNo
+  const s2 = row(value).schema === 2;
+  const result = exactKeys(value, s2 ? OPERATION_KEYS.concat(['aftersale']) : OPERATION_KEYS);
+  if ((!s2 && result.schema !== 1) || result.action !== 'ship' || result.root_order_id !== intent.rootId || result.root_order_no !== intent.rootNo
     || typeof result.operation_id !== 'string' || !/^[1-9][0-9]{0,19}$/.test(result.operation_id)
     || (result.operation_id.length === 20 && result.operation_id > '18446744073709551615')) unavailable();
   integer(result.child_order_id, 1); utf8Text(result.child_order_no, 32, '包裹单号');
@@ -252,6 +319,6 @@ export function shipmentResult(value, intent) {
   integer(result.receipt_due_at, 0, UINT_MAX);
   if (result.committed_at < result.created_at || result.shipped_at !== result.created_at || result.received_at !== null
     || (result.receipt_due_at !== 0 && result.receipt_due_at < result.shipped_at)) unavailable();
-  const summary = fulfillmentSummary(result.fulfillment_summary, intent.original);
+  const summary = s2 ? summaryV2(result.fulfillment_summary, intent.original, result.aftersale) : fulfillmentSummary(result.fulfillment_summary, intent.original);
   if (summary === null || result.quantity > summary.shipped) unavailable(); return { ...result, fulfillment_summary: summary };
 }

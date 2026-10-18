@@ -708,6 +708,137 @@ final class MarketplaceOrderDao
     }
 
     /**
+     * Capture only, after the caller's same-PDO payment/root/operation locks.
+     * Complete typed credits are returned for later Context2/RefundFacts proof.
+     */
+    public function capturePaymentApplicationFacts(PDO $pdo, int $uid, int $orderId): array
+    {
+        $this->transaction($pdo); self::integer($uid,1,self::INT_MAX); self::integer($orderId,1,self::INT_MAX);
+        $customer=$this->one($pdo,'user',['uid'],'`uid` = ?',[$uid]); self::customerFacts($customer,$uid);
+        $ledger=$this->one($pdo,'marketplace_order_idempotency',self::IDEM_FIELDS,
+            '`uid` = ? AND `order_id` = ?',[$uid,$orderId]);
+        $ledger=self::applicationLedger($uid,$orderId,$ledger); $merId=self::integer($ledger['mer_id'],1,self::UINT_MAX);
+        $statement=$this->execute($pdo,'SELECT * FROM '.$this->table('store_order').
+            ' WHERE `id` = ? AND `uid` = ? AND `mer_id` = ? LIMIT 2 FOR UPDATE',[$orderId,$uid,$merId]);
+        $roots=null; $failed=false; $closed=false;
+        try { $roots=$statement->fetchAll(PDO::FETCH_ASSOC); } catch(PDOException $error) { $failed=true; }
+        try { $closed=$statement->closeCursor(); } catch(PDOException $error) { $failed=true; }
+        unset($statement); $this->transaction($pdo);
+        if($failed||$closed!==true||!is_array($roots)||!array_is_list($roots)||count($roots)!==1||!is_array($roots[0]))self::unavailable();
+        $root=$roots[0];
+        $items=$this->rows($pdo,'store_order_cart_info',self::ITEM_FIELDS,'`oid` = ?',[$orderId],'`id` ASC');
+        $parents=$this->rows($pdo,'marketplace_stock_movement',self::MOVEMENT_FIELDS,
+            '`order_id` = ? AND `kind` = ?',[$orderId,'reserve'],'`id` ASC');
+        $reserveChildren=[]; $parentSet=[]; $seenChildren=[]; $previousParent=null;
+        foreach($parents as$rawParent){
+            $parent=self::paymentMovement($rawParent); $parentId=$parent['id'];
+            if(($previousParent!==null&&bccomp($parentId,$previousParent,0)<=0)||isset($parentSet['r:'.$parentId]))self::unavailable();
+            $parentSet['r:'.$parentId]=$parent; $previousParent=$parentId; $previousChild=null;
+            $children=$this->rows($pdo,'marketplace_stock_movement',self::MOVEMENT_FIELDS,
+                '`parent_reserve_id` = ?',[$parentId],'`id` ASC');
+            foreach($children as$rawChild){
+                $child=self::paymentMovement($rawChild); $childId=$child['id'];
+                if(($previousChild!==null&&bccomp($childId,$previousChild,0)<=0)||isset($seenChildren['c:'.$childId]))self::unavailable();
+                $seenChildren['c:'.$childId]=true; $previousChild=$childId; $reserveChildren[]=$child;
+            }
+        }
+        usort($reserveChildren,static fn(array $left,array $right):int=>bccomp($left['id'],$right['id'],0));
+        // Read every root movement before partitioning: a new/unknown kind must not disappear behind an IN predicate.
+        $all=$this->rows($pdo,'marketplace_stock_movement',self::MOVEMENT_FIELDS,'`order_id` = ?',[$orderId],'`id` ASC');
+        $credits=[]; $previous=null;
+        foreach($all as$raw){
+            $row=self::paymentMovement($raw); $id=$row['id'];
+            if($previous!==null&&bccomp($id,$previous,0)<=0)self::unavailable(); $previous=$id;
+            if($row['kind']==='reserve'){
+                $key='r:'.$id;
+                if(!isset($parentSet[$key])||$parentSet[$key]!==$row)self::unavailable(); unset($parentSet[$key]);
+            }else $credits[]=$row;
+        }
+        if($parentSet!==[])self::unavailable();
+        $childOrders=$this->rows($pdo,'store_order',['id','uid','mer_id','pid','marketplace_trade_version',
+            'order_id','paid','status','refund_status','is_cancel'],'`pid` = ?',[$orderId],'`id` ASC');
+        $this->transaction($pdo);
+        return $this->capturePaymentApplicationFactsFromFacts($uid,$orderId,[
+            'customer'=>$customer,'ledger'=>$ledger,'root'=>$root,'items'=>$items,'reserves'=>$parents,
+            'reserve_children'=>$reserveChildren,'credits'=>$credits,'child_orders'=>$childOrders]);
+    }
+
+    /**
+     * Pure capture from the owned reader's complete original source facts, including its actual full SELECT * root.
+     * Owner UID is data, not authorization; this method performs no SELECT, lock, current-catalog lookup or status grant.
+     */
+    public function capturePaymentApplicationFactsFromFacts(int $ownerUid, int $orderId, array $facts): array
+    {
+        if(PHP_INT_SIZE<8)self::unavailable(); self::integer($ownerUid,1,self::INT_MAX); self::integer($orderId,1,self::INT_MAX);
+        self::keys($facts,['customer','ledger','root','items','reserves','reserve_children','credits','child_orders']);
+        foreach(['customer'=>['uid'],'ledger'=>self::IDEM_FIELDS] as$name=>$fields){
+            if(!is_array($facts[$name]))self::unavailable(); self::keys($facts[$name],$fields);
+            foreach($facts[$name] as$value)if($value!==null&&!is_string($value)&&!is_int($value))self::unavailable();
+        }
+        if(!is_array($facts['root'])||array_is_list($facts['root']))self::unavailable();
+        foreach($facts['root'] as$field=>$value){
+            if(!is_string($field)||($value!==null&&!is_string($value)&&!is_int($value)))self::unavailable();
+        }
+        // Preserve the entire native row; never assemble one from ORDER_FIELDS, a DTO or guessed defaults.
+        foreach(array_merge(self::ORDER_FIELDS,['pid','status','refund_status','custom_form']) as$field)
+            if(!array_key_exists($field,$facts['root']))self::unavailable();
+        $childFields=['id','uid','mer_id','pid','marketplace_trade_version','order_id','paid','status','refund_status','is_cancel'];
+        foreach(['items'=>self::ITEM_FIELDS,'reserves'=>self::MOVEMENT_FIELDS,'reserve_children'=>self::MOVEMENT_FIELDS,
+            'credits'=>self::MOVEMENT_FIELDS,'child_orders'=>$childFields] as$name=>$fields){
+            $rows=$facts[$name]; if(!is_array($rows)||!array_is_list($rows))self::unavailable(); $previous=null;
+            foreach($rows as$row){
+                if(!is_array($row))self::unavailable(); self::keys($row,$fields);
+                foreach($row as$value)if($value!==null&&!is_string($value)&&!is_int($value))self::unavailable();
+                $id=self::bigint($row['id']);
+                if($previous!==null&&bccomp($id,$previous,0)<=0)self::unavailable(); $previous=$id;
+            }
+        }
+        self::customerFacts($facts['customer'],$ownerUid);
+        $ledger=self::applicationLedger($ownerUid,$orderId,$facts['ledger']); $refs=self::committedReferences($ledger);
+        $uid=self::integer($ledger['uid'],1,self::INT_MAX); $merId=self::integer($ledger['mer_id'],1,self::UINT_MAX);
+        $id=self::integer($ledger['order_id'],1,self::INT_MAX); $order=self::savedOrderFacts($facts['root'],false);
+        self::integer($order['id'],1,self::INT_MAX); self::integer($order['uid'],1,self::INT_MAX); self::integer($order['mer_id'],1,self::UINT_MAX);
+        self::stored($order,['id'=>$id,'uid'=>$uid,'mer_id'=>$merId]);
+        $order=self::committedOrderReferences($ledger,$order,$refs); self::text($order['order_id'],32,true);
+        $identity=self::postCommitIdentity($ledger,$order); $items=$facts['items'];
+        $selection=self::postCommitItemsFromRows($ledger,$order,$items,$identity);
+        $groups=self::applicationGroups($items,$selection); $parents=$facts['reserves'];
+        if(count($parents)!==count($groups))self::unavailable(); $reserves=[]; $byChild=[]; $seenParents=[]; $linked=[];
+        foreach($facts['reserve_children'] as$child){
+            $child=self::paymentMovement($child);
+            if($child['parent_reserve_id']===null)self::unavailable();
+            $parentId=$child['parent_reserve_id']; $linked[$parentId][]=$child;
+        }
+        foreach($parents as$parent){
+            [$parent,$parentId,$group,$seenParents]=self::applicationReserve($ownerUid,$merId,$orderId,$parent,$groups,$seenParents);
+            $reserves[]=$parent;
+            $byChild=self::captureApplicationCredits($merId,$orderId,$parentId,$group,$linked[$parentId]??[],$byChild);
+        }
+        if(array_diff_key($linked,$seenParents)!==[])self::unavailable();
+        $credits=self::applicationAllCredits($facts['credits'],$byChild);
+        $childOrders=self::applicationChildOrders($facts['child_orders'],$orderId);
+        return ['root'=>$order,'items'=>$items,'selection'=>$selection,'reserves'=>$reserves,
+            'credit_rows'=>$credits,'child_orders'=>$childOrders];
+    }
+
+    /** Typed linkage and total parent budget only; key/actor/digest/arithmetic meaning needs complete Context2. */
+    private static function captureApplicationCredits(int $merId,int $orderId,string $parentId,array $group,array $children,array $byChild):array
+    {
+        $credited=0; $previous=null;
+        foreach($children as$child){
+            $child=self::paymentMovement($child); $childId=$child['id'];
+            if(($previous!==null&&bccomp($childId,$previous,0)<=0)||isset($byChild[$childId]))self::unavailable();
+            self::stored($child,['mer_id'=>$merId,'order_id'=>$orderId,'product_id'=>$group['product_id'],
+                'sku_id'=>$group['sku_id'],'sku_type'=>0,'sku_unique'=>$group['unique'],'parent_reserve_id'=>$parentId]);
+            if(!in_array($child['kind'],['release','return_in'],true))self::unavailable();
+            $quantity=self::integer($child['qty'],1,self::UINT_MAX);
+            if($quantity>$group['qty']-$credited)self::unavailable(); $credited+=$quantity;
+            $byChild[$childId]=$child; $previous=$childId;
+        }
+        return $byChild;
+    }
+
+    /**
      * Called after PaymentDao's common locks on this same transaction. Historical
      * reserve facts are independent of today's catalog, stock, price and admission.
      * A completed post-commit flag never substitutes for the actual saved item set.
@@ -885,6 +1016,133 @@ final class MarketplaceOrderDao
             $result[$id]=$this->readPaymentApplicationFactsFromFacts($uid,$id,$facts);
         }
         $this->readSnapshotConnection($connection,$pdo);return $result;
+    }
+
+    /**
+     * Native eight-source facts for separately authorized complete roots in one caller-owned RR READ ONLY snapshot.
+     * This method neither owns authorization nor begins a transaction; its pure capture check is not Context2 proof.
+     * The returned root is the actual SELECT * row, never the old ORDER_FIELDS projection or the capture6 result.
+     */
+    public function readPaymentApplicationCaptureFactsBatch(ConnectionInterface $connection,PDO $pdo,array $fullAuthorizedRoots):array
+    {
+        $this->readSnapshotConnection($connection,$pdo);
+        if(!array_is_list($fullAuthorizedRoots)||count($fullAuthorizedRoots)>100)self::unavailable();
+        $expectedRoots=[];$rootOrder=[];$owners=[];
+        foreach($fullAuthorizedRoots as$root){
+            if(!is_array($root)||array_is_list($root))self::unavailable();
+            foreach($root as$key=>$value)
+                if(!is_string($key)||($value!==null&&!is_string($value)&&!is_int($value)))self::unavailable();
+            $id=self::integer($root['id']??null,1,self::INT_MAX);$uid=self::integer($root['uid']??null,1,self::INT_MAX);
+            self::integer($root['mer_id']??null,1,self::UINT_MAX);
+            self::integer($root['pid']??null,0,0);self::integer($root['marketplace_trade_version']??null,1,1);
+            if(isset($expectedRoots[$id]))self::unavailable();
+            $expectedRoots[$id]=$root;$rootOrder[]=$id;$owners[$uid]=true;
+        }
+        if($expectedRoots===[]){$this->readSnapshotConnection($connection,$pdo);return [];}
+        $rootIds=array_keys($expectedRoots);$ownerIds=array_keys($owners);
+        sort($rootIds,SORT_NUMERIC);sort($ownerIds,SORT_NUMERIC);
+        $rootMarks=implode(',',array_fill(0,count($rootIds),'?'));$ownerMarks=implode(',',array_fill(0,count($ownerIds),'?'));
+        $users=[];$previous=0;
+        $rows=$this->paymentApplicationSnapshotRows($connection,$pdo,'user',['uid'],'`uid` IN ('.$ownerMarks.')',$ownerIds,'`uid` ASC');
+        foreach($rows as$row){
+            $uid=self::integer($row['uid'],1,self::INT_MAX);
+            if($uid<=$previous||!isset($owners[$uid])||isset($users[$uid]))self::unavailable();
+            $users[$uid]=$row;$previous=$uid;
+        }
+        if(count($users)!==count($owners))self::unavailable();
+        $ledgers=[];$previous=0;
+        $rows=$this->paymentApplicationSnapshotRows($connection,$pdo,'marketplace_order_idempotency',self::IDEM_FIELDS,
+            '`order_id` IN ('.$rootMarks.')',$rootIds,'`order_id` ASC');
+        foreach($rows as$row){
+            $id=self::integer($row['order_id'],1,self::INT_MAX);
+            if($id<=$previous||!isset($expectedRoots[$id])||isset($ledgers[$id]))self::unavailable();
+            $ledgers[$id]=$row;$previous=$id;
+        }
+        if(count($ledgers)!==count($expectedRoots))self::unavailable();
+        $roots=[];$previous=0;
+        foreach($this->paymentApplicationCaptureRootRows($connection,$pdo,$rootIds) as$row){
+            $id=self::integer($row['id']??null,1,self::INT_MAX);
+            if($id<=$previous||!isset($expectedRoots[$id])||isset($roots[$id])||$row!==$expectedRoots[$id])self::unavailable();
+            $roots[$id]=$row;$previous=$id;
+        }
+        if(count($roots)!==count($expectedRoots))self::unavailable();
+        $items=[];$reserves=[];$reserveChildren=[];$credits=[];$childOrders=[];
+        foreach($rootIds as$id){$items[$id]=[];$reserves[$id]=[];$reserveChildren[$id]=[];$credits[$id]=[];$childOrders[$id]=[];}
+        $previous=0;
+        $rows=$this->paymentApplicationSnapshotRows($connection,$pdo,'store_order_cart_info',self::ITEM_FIELDS,
+            '`oid` IN ('.$rootMarks.')',$rootIds,'`id` ASC');
+        foreach($rows as$row){
+            $id=self::integer($row['id'],1,self::INT_MAX);$oid=self::integer($row['oid'],1,self::INT_MAX);
+            if($id<=$previous||!isset($roots[$oid]))self::unavailable();
+            $items[$oid][]=$row;$previous=$id;
+        }
+        // All root rows, plus every row referring to any actual root reserve, including foreign-order children.
+        // No credit-kind SQL filter is permitted; unknown kinds must fail rather than disappear.
+        $movementWhere='(`order_id` IN ('.$rootMarks.') OR `parent_reserve_id` IN (SELECT `id` FROM '
+            .$this->table('marketplace_stock_movement').' WHERE `order_id` IN ('.$rootMarks.') AND `kind` = ?))';
+        $movements=$this->paymentApplicationSnapshotRows($connection,$pdo,'marketplace_stock_movement',self::MOVEMENT_FIELDS,
+            $movementWhere,array_merge($rootIds,$rootIds,['reserve']),'`id` ASC');
+        $parentRoots=[];$previous=null;
+        foreach($movements as$row){
+            // Validation uses a copy. The complete original native row is retained in every returned source list.
+            self::paymentMovement($row);$id=self::bigint($row['id']);
+            if($previous!==null&&(strlen($id)<strlen($previous)||(strlen($id)===strlen($previous)&&strcmp($id,$previous)<=0)))self::unavailable();
+            $previous=$id;$oid=self::integer($row['order_id'],1,self::INT_MAX);
+            if(isset($roots[$oid])){
+                if($row['kind']==='reserve'){
+                    $key='r:'.$id;if(isset($parentRoots[$key]))self::unavailable();
+                    $reserves[$oid][]=$row;$parentRoots[$key]=$oid;
+                }else $credits[$oid][]=$row;
+            }
+        }
+        foreach($movements as$row){
+            $oid=self::integer($row['order_id'],1,self::INT_MAX);$linkedRoot=null;
+            if($row['parent_reserve_id']!==null){
+                $parentId=self::bigint($row['parent_reserve_id']);$linkedRoot=$parentRoots['r:'.$parentId]??null;
+                if($linkedRoot!==null)$reserveChildren[$linkedRoot][]=$row;
+            }
+            if(!isset($roots[$oid])&&$linkedRoot===null)self::unavailable();
+        }
+        $previous=0;
+        $rows=$this->paymentApplicationSnapshotRows($connection,$pdo,'store_order',
+            ['id','uid','mer_id','pid','marketplace_trade_version','order_id','paid','status','refund_status','is_cancel'],
+            '`pid` IN ('.$rootMarks.')',$rootIds,'`id` ASC');
+        foreach($rows as$row){
+            $id=self::integer($row['id'],1,self::INT_MAX);$pid=self::integer($row['pid'],1,self::INT_MAX);
+            if($id<=$previous||!isset($roots[$pid]))self::unavailable();
+            $childOrders[$pid][]=$row;$previous=$id;
+        }
+        $result=[];
+        foreach($rootOrder as$id){
+            $this->readSnapshotConnection($connection,$pdo);$root=$roots[$id];$uid=self::integer($root['uid'],1,self::INT_MAX);
+            $facts=['customer'=>$users[$uid],'ledger'=>$ledgers[$id],'root'=>$root,'items'=>$items[$id],
+                'reserves'=>$reserves[$id],'reserve_children'=>$reserveChildren[$id],'credits'=>$credits[$id],'child_orders'=>$childOrders[$id]];
+            // Source/typed linkage and budget closure only. The six-key output is deliberately not returned as facts8.
+            // Full Payment observation, Context2 and current action/read authorization remain the owned service's job.
+            $this->capturePaymentApplicationFactsFromFacts($uid,$id,$facts);
+            $this->readSnapshotConnection($connection,$pdo);$result[$id]=$facts;
+        }
+        $this->readSnapshotConnection($connection,$pdo);return $result;
+    }
+
+    /** Fixed full-root SELECT only, on the same owned native snapshot; no mutable-state or actor filter. */
+    private function paymentApplicationCaptureRootRows(ConnectionInterface $connection,PDO $pdo,array $rootIds):array
+    {
+        $this->readSnapshotConnection($connection,$pdo);
+        if(!array_is_list($rootIds)||$rootIds===[]||count($rootIds)>100)self::unavailable();$previous=0;
+        foreach($rootIds as$id){self::integer($id,1,self::INT_MAX);if($id<=$previous)self::unavailable();$previous=$id;}
+        $sql='SELECT * FROM '.$this->table('store_order').' WHERE `id` IN ('.implode(',',array_fill(0,count($rootIds),'?')).') ORDER BY `id` ASC';
+        $statement=$this->execute($pdo,$sql,$rootIds);$rows=null;$failed=false;$closed=false;
+        try{$rows=$statement->fetchAll(PDO::FETCH_ASSOC);}catch(PDOException $error){$failed=true;}
+        try{$closed=$statement->closeCursor();}catch(PDOException $error){$failed=true;}
+        unset($statement);$this->readSnapshotConnection($connection,$pdo);
+        if($failed||$closed!==true||!is_array($rows)||!array_is_list($rows))self::unavailable();
+        foreach($rows as$row){
+            if(!is_array($row)||array_is_list($row))self::unavailable();
+            foreach($row as$key=>$value)
+                if(!is_string($key)||($value!==null&&!is_string($value)&&!is_int($value)))self::unavailable();
+        }
+        return $rows;
     }
 
     private function readSnapshotConnection(ConnectionInterface $connection,PDO $pdo):void

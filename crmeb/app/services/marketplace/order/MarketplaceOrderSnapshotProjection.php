@@ -193,6 +193,17 @@ final class MarketplaceOrderSnapshotProjection
         return self::checkedCommercialRoot($saved,$items,$detail);
     }
 
+    /**
+     * @internal Complete saved commercial conservation, never public admission or current eligibility.
+     * The real caller retains current deletion/payment consistency and authorization checks.
+     */
+    public static function refundCommercialOrder(array $saved,array $items):array
+    {
+        if(self::merchantInteger($saved['marketplace_trade_version']??null,1,1)!==1
+            ||self::merchantInteger($saved['pid']??null,0,0)!==0)self::unavailable();
+        return self::checkedCommercialRoot($saved,$items,false);
+    }
+
     /** Shared complete saved-row conservation; caller-specific admission precedes this pure check. */
     private static function checkedCommercialRoot(array $saved,array $items,bool $detail=false,?array &$decoded=null):array
     {
@@ -382,7 +393,224 @@ final class MarketplaceOrderSnapshotProjection
         return $out;
     }
 
+    /** S2 saved-only root formatter. The owner supplies one complete inspected native snapshot. */
+    public static function aftersaleRootFromFacts(string $view,array $root,array $fullItems,array $facts,array $options,array $inspection,?array $children,array $actions):array
+    {
+        self::aftersaleInspection($root,$fullItems,$inspection);
+        if(!in_array($view,['merchant_list','merchant_detail','customer_list','customer_detail','platform_list','platform_detail','mobile_list','mobile_detail'],true))self::unavailable();
+        if(str_starts_with($view,'merchant_')){
+            self::displayOptions($options,null);
+            if($facts!==[]||$children!==null)self::unavailable();
+            $out=self::merchantOrder($root,$fullItems,$view==='merchant_detail');
+            return self::rootWithAftersale($out,$inspection['summary'],$actions,$inspection['aftersale']);
+        }
+        $ship=null;$receive=null;
+        foreach($inspection['fulfillment']['operations'] as$op){
+            if($op['action']==='ship')$ship=$ship===null?$op['shipped_at']:max($ship,$op['shipped_at']);
+            elseif($op['action']==='receive')$receive=$receive===null?$op['received_at']:max($receive,$op['received_at']);
+            else self::unavailable();
+        }
+        $extension=['summary'=>$inspection['summary'],'actions'=>$actions,
+            'history_times'=>['last_shipped_at'=>$ship,'last_received_at'=>$receive,
+                'received_completed_at'=>$inspection['summary']['received']===$inspection['summary']['original']?$receive:null],
+            'children'=>$children];
+        return self::savedRootFromFacts($root,$fullItems,$facts,$options,$extension,$view,$inspection);
+    }
+
+    /** S2 package uses actual child item IDs and its original saved commercial values. */
+    public static function fulfillmentChildAftersaleFromFacts(array $root,array $fullOriginalItems,array $child,array $fullChildItems,
+        array $inspection,array $options,bool $detail=false):array
+    {
+        self::displayOptions($options,null);self::aftersaleInspection($root,$fullOriginalItems,$inspection);
+        $parent=self::checkedCommercialRoot($root,$fullOriginalItems,false);$id=self::merchantInteger($child['id']??null,1,2147483647);
+        self::merchantInteger($root['paid']??null,1,1);$paidAt=self::merchantInteger($root['pay_time']??null,1,4294967295);
+        $head=self::row($inspection['source']['child_orders'][$id]??null);
+        foreach($head as$key=>$expected)if(!array_key_exists($key,$child)||(string)$child[$key]!==(string)$expected)self::unavailable();
+        if(self::merchantInteger($child['pid']??null,1,2147483647)!==$parent['id']
+            ||self::merchantInteger($child['uid']??null,1,2147483647)!==self::merchantInteger($root['uid'],1,2147483647)
+            ||self::merchantInteger($child['mer_id']??null,1,4294967295)!==self::merchantInteger($root['mer_id'],1,4294967295))self::unavailable();
+        $package=self::checkedCommercialRoot($child,$fullChildItems,$detail);
+        $ship=self::row($inspection['fulfillment']['ships'][$id]??null);
+        if($ship['action']!=='ship'||$ship['child_order_id']!==$id||$ship['root_order_id']!==$parent['id'])self::unavailable();
+        $parents=[];$expectedItems=[];$received=[];$returned=[];$lastReceived=null;
+        foreach($inspection['history']['ships'] as$range)if($range['child_order_id']===$id){
+            $parents[]=$range;$expectedItems[$range['child_item_id']]=($expectedItems[$range['child_item_id']]??0)+$range['quantity'];
+        }
+        $actualItems=[];foreach($fullChildItems as$item){
+            self::displayKeys($item,['id','oid','uid','mer_id','cart_id','product_id','cart_num','refund_num','surplus_num','split_status','cart_info','unique','old_cart_id']);
+            $itemId=self::merchantInteger($item['id'],1,2147483647);
+            if(isset($actualItems[$itemId])||!isset($expectedItems[$itemId])||self::merchantInteger($item['oid'],1,2147483647)!==$id
+                ||self::merchantInteger($item['cart_num'],1,2147483647)!==$expectedItems[$itemId])self::unavailable();$actualItems[$itemId]=true;
+        }
+        if(count($actualItems)!==count($expectedItems)||$parents===[])self::unavailable();
+        foreach($inspection['history']['received'] as$range)if($range['child_order_id']===$id)$received[]=$range;
+        foreach($inspection['history']['returned'] as$range)if($range['child_order_id']===$id)$returned[]=$range;
+        foreach($inspection['fulfillment']['operations'] as$op)if($op['child_order_id']===$id&&$op['action']==='receive')
+            $lastReceived=$lastReceived===null?$op['received_at']:max($lastReceived,$op['received_at']);
+        $q=self::coordinateQuantity($parents);$r=self::coordinateQuantity($received);$t=self::coordinateQuantity($returned);
+        $overlap=self::coordinateIntersection($received,$returned);$left=$q-$r-$t+$overlap;
+        if($q!==$package['total_num']||$left<0||($r===0)!==($lastReceived===null)
+            ||self::merchantInteger($child['status']??null,1,2)!==($left===0?2:1))self::unavailable();
+        $availability=MarketplaceOrderRefundFacts::receiptAvailabilityFromInspection($inspection,$id);
+        if(self::coordinateQuantity($availability['remaining'])!==$left)self::unavailable();
+        $as=$inspection['aftersale'];$as['pending_cancel_quantity']=0;$as['pending_return_quantity']=self::childPendingReturn($inspection,$parents);
+        $as['returned_after_receipt']=$overlap;$as['fulfillment_completed_at']=self::childCompletedAt($inspection,$id,$parents);
+        if(($left===0)!==($as['fulfillment_completed_at']!==null))self::unavailable();
+        $out=['schema'=>2,'scope'=>'marketplace_fulfillment_child_aftersale_v1','id'=>$id,'order_id'=>$package['order_id'],
+            'root_order_id'=>$parent['id'],'root_order_no'=>$parent['order_id'],'marketplace_trade_version'=>1,
+            'merchant_name_snapshot'=>self::text($child['merchant_name_snapshot']??null),'shipping_type'=>$package['shipping_type'],
+            'carrier_code'=>self::text($child['delivery_code']??null),'carrier_name'=>self::text($child['delivery_name']??null),
+            'tracking_no'=>self::text($child['delivery_id']??null),'shipped_at'=>$ship['shipped_at'],'receipt_due_at'=>$ship['receipt_due_at'],
+            'last_received_at'=>$lastReceived,'received_at'=>$r===$q?$lastReceived:null,
+            'shipping_state'=>'shipped','receipt_state'=>$r===0?'pending':($r===$q?'received':'partial'),
+            'closed'=>$left===0,'original'=>$q,'shipped'=>$q,'received'=>$r,'cancelled_unshipped'=>0,'returned_accepted'=>$t,
+            'to_ship'=>0,'to_receive'=>$left,'items'=>$package['items'],'payment_owner_order_id'=>$parent['id'],
+            'paid'=>1,'pay_type'=>$parent['pay_type'],'pay_time'=>$paidAt,'pay_type_name'=>self::listPayType($parent['pay_type'],true),'aftersale'=>$as];
+        if($detail){$out['recipient']=$package['recipient'];$out['mark']=$package['mark'];$out['custom_form']=$package['custom_form'];}
+        return $out;
+    }
+
+    private static function aftersaleInspection(array $root,array $fullItems,array $inspection):void
+    {
+        self::displayKeys($inspection,['source','winner','actions','fulfillment','history','summary','aftersale','credit_facts','last_action_id','last_operation_id']);
+        if($inspection['last_action_id']===null||!is_string($inspection['last_action_id'])
+            ||$inspection['source']['root']!==$root||array_values($inspection['source']['items'])!==$fullItems)self::unavailable();
+        self::checkedCommercialRoot($root,$fullItems,false);
+        if($inspection['aftersale']['revision']!==$inspection['last_action_id'])self::unavailable();
+        self::rootWithAftersale(['total_num'=>$root['total_num']],$inspection['summary'],['ship'=>false,'receive'=>false],$inspection['aftersale']);
+    }
+
+    private static function rootWithAftersale(array $out,array $summary,array $actions,array $as):array
+    {
+        self::displayKeys($actions,['ship','receive']);if(!is_bool($actions['ship'])||$actions['receive']!==false)self::unavailable();
+        self::displayKeys($summary,['shipping_state','receipt_state','closed','original','shipped','received','cancelled_unshipped','returned_accepted','to_ship','to_receive','child_count']);
+        self::displayKeys($as,['schema','revision','confirmed_amount','held_amount','available_amount','pending_cancel_quantity','pending_return_quantity','returned_after_receipt','fulfillment_completed_at']);
+        if($as['schema']!==1||!is_string($as['revision'])||preg_match('/\A[1-9][0-9]{0,19}\z/D',$as['revision'])!==1
+            ||bccomp($as['revision'],'18446744073709551615',0)>0||!is_bool($summary['closed']))self::unavailable();
+        foreach(['original','shipped','received','cancelled_unshipped','returned_accepted','to_ship','to_receive','child_count'] as$key)
+            if(!is_int($summary[$key])||$summary[$key]<0||$summary[$key]>4294967295)self::unavailable();
+        foreach(['pending_cancel_quantity','pending_return_quantity','returned_after_receipt'] as$key)
+            if(!is_int($as[$key])||$as[$key]<0||$as[$key]>4294967295)self::unavailable();
+        foreach(['confirmed_amount','held_amount','available_amount'] as$key)self::merchantMoney($as[$key]);
+        $q=$summary['original'];$s=$summary['shipped'];$r=$summary['received'];$c=$summary['cancelled_unshipped'];$t=$summary['returned_accepted'];$i=$as['returned_after_receipt'];
+        if($q!==self::merchantInteger($out['total_num']??null,1,4294967295)||$s+$c>$q||$r>$s||$t>$s||$i>min($r,$t)
+            ||$i<max(0,$r+$t-$s)||$summary['to_ship']!==$q-$s-$c||$summary['to_receive']!==$s-$r-$t+$i
+            ||$summary['closed']!==($summary['to_ship']===0&&$summary['to_receive']===0)
+            ||$summary['shipping_state']!==($s===0?'unshipped':($summary['to_ship']>0?'partial':'shipped'))
+            ||$summary['receipt_state']!==($s===0?'not_shipped':($r===$s?'received':($r===0?'pending':'partial')))
+            ||($s===0)!==($summary['child_count']===0)||$summary['child_count']>$s
+            ||$as['pending_cancel_quantity']>$summary['to_ship']||$as['pending_return_quantity']>$s-$t
+            ||($summary['closed']!==($as['fulfillment_completed_at']!==null))||($actions['ship']&&$summary['to_ship']<=$as['pending_cancel_quantity']))self::unavailable();
+        if($as['fulfillment_completed_at']!==null&&(!is_int($as['fulfillment_completed_at'])||$as['fulfillment_completed_at']<1||$as['fulfillment_completed_at']>4294967295))self::unavailable();
+        $out['schema']=2;$out['scope']='marketplace_order_aftersale_v1';$out['fulfillment_summary']=$summary;$out['allowed_actions']=$actions;$out['aftersale']=$as;return $out;
+    }
+
+    /** Bounded interval arithmetic only, preserving the actual source item and S-parent identity. */
+    private static function coordinateQuantity(array $rows):int
+    {
+        $q=0;foreach($rows as$row){$first=self::merchantInteger($row['unit_start']??null,0,2147483647);$last=self::merchantInteger($row['unit_end']??null,1,2147483647);
+            if($last<=$first)self::unavailable();$q+=$last-$first;if($q>4294967295)self::unavailable();}return $q;
+    }
+
+    private static function coordinateIntersection(array $left,array $right):int
+    {
+        $q=0;foreach($left as$a)foreach($right as$b){
+            if($a['source_item_id']!==$b['source_item_id'])continue;
+            if(isset($a['source_ship_range_id'],$b['source_ship_range_id'])&&$a['source_ship_range_id']!==$b['source_ship_range_id'])continue;
+            $q+=max(0,min($a['unit_end'],$b['unit_end'])-max($a['unit_start'],$b['unit_start']));
+        }if($q>4294967295)self::unavailable();return $q;
+    }
+
+    private static function childPendingReturn(array $inspection,array $parents):int
+    {
+        $quantity=0;foreach($inspection['history']['refunds'] as$refund)
+            if($refund['kind']==='return_goods'&&in_array($refund['after']['business_state'],['REQUESTED','APPROVED'],true))
+                $quantity+=self::coordinateIntersection($refund['allocations'],$parents)-self::coordinateIntersection($refund['accepted'],$parents);
+        if($quantity<0||$quantity>self::coordinateQuantity($parents))self::unavailable();return $quantity;
+    }
+    /** Only format the already validated committed cut merge; no business replay or future IDs. */
+    private static function childCompletedAt(array $inspection,int $childId,array $parents):?int
+    {
+        $actions=$inspection['actions'];$operations=$inspection['fulfillment']['operations'];$a=0;$o=0;$lastA=null;$lastO=null;$covered=[];$done=null;
+        while($a<count($actions)||$o<count($operations)){
+            $action=$actions[$a]??null;$operation=$operations[$o]??null;
+            $readyA=$action!==null&&$action['fulfillment_cut_id']===$lastO;$readyO=$operation!==null&&$operation['aftersale_cut_id']===$lastA;
+            if($readyA===$readyO)self::unavailable();
+            if($readyA){$row=$action;$lastA=$row['id'];++$a;
+                foreach($row['result_payload']['movements'] as$part)if($part['kind']==='return_in')foreach($parents as$parent)
+                    if($part['source_item_id']===$parent['source_item_id']){
+                        $first=max($part['unit_start'],$parent['unit_start']);$last=min($part['unit_end'],$parent['unit_end']);
+                        if($last>$first)$covered[]=['source_item_id'=>$parent['source_item_id'],'source_ship_range_id'=>$parent['id'],'unit_start'=>$first,'unit_end'=>$last];
+                    }
+            }else{$row=$operation;$lastO=$row['id'];++$o;
+                if($row['action']==='receive'&&$row['child_order_id']===$childId)foreach($row['validated_ranges'] as$range)$covered[]=$range;
+            }
+            if($done===null){$q=0;foreach($parents as$parent){$segments=[];foreach($covered as$part)
+                    if($part['source_item_id']===$parent['source_item_id']&&$part['source_ship_range_id']===$parent['id'])$segments[]=[$part['unit_start'],$part['unit_end']];
+                usort($segments,static fn(array $x,array $y):int=>($x[0]<=>$y[0])?:($x[1]<=>$y[1]));$cursor=$parent['unit_start'];
+                foreach($segments as$segment){if($segment[0]>$cursor)break;$cursor=max($cursor,$segment[1]);}$q+=min($cursor,$parent['unit_end'])-$parent['unit_start'];
+            }if($q===self::coordinateQuantity($parents))$done=self::merchantInteger($row['created_at'],1,4294967295);}
+        }return $done;
+    }
+    private static function detailAftersaleStatus(array $root,array $inspection,array $options):array
+    {
+        $summary=$inspection['summary'];$as=$inspection['aftersale'];
+        if($summary['closed']){
+            if($summary['shipped']===0)$out=['_type'=>4,'_title'=>'履约已取消','_msg'=>'未发货商品的履约已取消，退款处理请查看售后详情','_class'=>'state-ytk'];
+            elseif($summary['received']===$summary['shipped'])$out=['_type'=>3,'_title'=>'已收货','_msg'=>'已发货商品已收货，售后处理请查看售后详情','_class'=>'state-ypj'];
+            else $out=['_type'=>4,'_title'=>'履约已终结','_msg'=>'包裹已由真实收货或退货验收完成履约，退款状态请查看售后详情','_class'=>'state-ytk'];
+        }elseif($summary['to_ship']>0){
+            $paused=$summary['to_ship']===$as['pending_cancel_quantity'];
+            $out=['_type'=>1,'_title'=>$paused?'发货已暂停':($summary['shipped']>0?'部分发货':'未发货'),
+                '_msg'=>$paused?'待发商品有取消申请，等待售后处理':'请查看包裹及售后详情了解发货进度','_class'=>'state-nfh'];
+        }else{
+            $out=['_type'=>2,'_title'=>'待收货','_msg'=>'请查看各包裹可收货数量及售后处理进度','_class'=>'state-ysh'];
+        }
+        $out['_payType']=self::detailPayType(self::text($root['pay_type']));return $out;
+    }
+
+    private static function listAftersaleStatus(array $root,array $inspection):array
+    {
+        $summary=$inspection['summary'];$as=$inspection['aftersale'];
+        if($summary['closed'])return [5,['status_name'=>$summary['shipped']===0?'履约已取消':($summary['received']===$summary['shipped']?'已收货':'履约已终结'),'pics'=>[]]];
+        if($summary['to_ship']>0)return [$summary['shipped']>0?8:2,['status_name'=>$summary['to_ship']===$as['pending_cancel_quantity']?'发货已暂停':($summary['shipped']>0?'部分发货':'未发货'),'pics'=>[]]];
+        return [4,['status_name'=>'待收货','pics'=>[]]];
+    }
+
+    private static function displayChildAftersaleListShape(array $child):void
+    {
+        self::displayKeys($child,['schema','scope','id','order_id','root_order_id','root_order_no','marketplace_trade_version',
+            'merchant_name_snapshot','shipping_type','carrier_code','carrier_name','tracking_no','shipped_at','receipt_due_at',
+            'last_received_at','received_at','shipping_state','receipt_state','closed','original','shipped','received',
+            'cancelled_unshipped','returned_accepted','to_ship','to_receive','items','payment_owner_order_id','paid','pay_type','pay_time','pay_type_name','aftersale']);
+        if($child['schema']!==2||$child['scope']!=='marketplace_fulfillment_child_aftersale_v1'||$child['marketplace_trade_version']!==1
+            ||$child['shipping_state']!=='shipped'||!in_array($child['receipt_state'],['pending','partial','received'],true)
+            ||!is_bool($child['closed'])||$child['paid']!==1||$child['payment_owner_order_id']!==$child['root_order_id'])self::unavailable();
+        foreach(['id','root_order_id','shipping_type','original','shipped','pay_time','shipped_at'] as$key)
+            if(!is_int($child[$key])||$child[$key]<1)self::unavailable();
+        foreach(['receipt_due_at','received','cancelled_unshipped','returned_accepted','to_ship','to_receive'] as$key)
+            if(!is_int($child[$key])||$child[$key]<0)self::unavailable();
+        foreach(['last_received_at','received_at'] as$key)if($child[$key]!==null&&(!is_int($child[$key])||$child[$key]<1))self::unavailable();
+        foreach(['order_id','root_order_no','merchant_name_snapshot','carrier_code','carrier_name','tracking_no','pay_type','pay_type_name'] as$key)self::text($child[$key]);
+        $as=$child['aftersale'];self::displayKeys($as,['schema','revision','confirmed_amount','held_amount','available_amount','pending_cancel_quantity','pending_return_quantity','returned_after_receipt','fulfillment_completed_at']);
+        $summary=[];foreach(['shipping_state','receipt_state','closed','original','shipped','received','cancelled_unshipped','returned_accepted','to_ship','to_receive'] as$key)$summary[$key]=$child[$key];$summary['child_count']=1;
+        self::rootWithAftersale(['total_num'=>$child['original']],$summary,['ship'=>false,'receive'=>false],$as);
+        if($child['original']!==$child['shipped']||$child['to_ship']!==0||$child['cancelled_unshipped']!==0
+            ||($child['received']===0)!==($child['last_received_at']===null)
+            ||$child['received_at']!==($child['received']===$child['shipped']?$child['last_received_at']:null))self::unavailable();
+        foreach(self::list($child['items']) as$item){
+            $item=self::row($item);self::displayKeys($item,['id','product_id','product_name','sku_name','image','quantity','unit_price','line_price','postage_price']);
+            foreach(['id','product_id','quantity'] as$key)if(!is_int($item[$key])||$item[$key]<1)self::unavailable();
+            foreach(['product_name','sku_name','image'] as$key)self::text($item[$key]);
+            foreach(['unit_price','line_price','postage_price'] as$key)self::merchantMoney($item[$key]);
+        }
+    }
     private static function rootFromFacts(array $root,array $fullItems,array $facts,array $options,array $extension,string $view):array
+    {
+        return self::savedRootFromFacts($root,$fullItems,$facts,$options,$extension,$view,null);
+    }
+
+    private static function savedRootFromFacts(array $root,array $fullItems,array $facts,array $options,array $extension,string $view,?array $inspection):array
     {
         self::displayOptions($options,$view);
         self::displayKeys($facts,['buyer','payer','invoice','economize','reply_counts','store','refunds','status_logs','payment_deadline']);
@@ -398,7 +626,8 @@ final class MarketplaceOrderSnapshotProjection
         $customerDetail=in_array($view,['customer_detail','mobile_detail'],true);
         $decoded=[];$commercial=self::checkedCommercialRoot($root,$fullItems,$detail,$decoded);
         if($extension['summary']!==null&&!is_array($extension['summary']))self::unavailable();
-        self::rootWithFulfillment(['total_num'=>$root['total_num']],$extension['summary'],$extension['actions']);
+        if($inspection===null)self::rootWithFulfillment(['total_num'=>$root['total_num']],$extension['summary'],$extension['actions']);
+        else self::rootWithAftersale(['total_num'=>$root['total_num']],$extension['summary'],$extension['actions'],$inspection['aftersale']);
         foreach(['buyer','payer','invoice','economize','reply_counts','store'] as$key)if($facts[$key]!==null)self::row($facts[$key]);
         self::list($facts['refunds']);self::list($facts['status_logs']);
         if($facts['payment_deadline']!==null&&(!is_int($facts['payment_deadline'])||$facts['payment_deadline']<0
@@ -439,7 +668,7 @@ final class MarketplaceOrderSnapshotProjection
         $saved['is_all_refund']=$view==='customer_list'?($facts['refunds']!==[]&&$refundQuantity===$quantity):$refundQuantity===$quantity;
         if($customerStyle){
             $saved['cartInfo']=$carts;
-            $saved['_status']=self::detailStatus($root,$facts,$options,$extension,$customerDetail);
+            $saved['_status']=$inspection===null?self::detailStatus($root,$facts,$options,$extension,$customerDetail):self::detailAftersaleStatus($root,$inspection,$options);
             $saved['_pay_time']=self::displayTime($root['pay_time']??0,'Y-m-d H:i:s',$options);
             $saved['_add_time']=self::displayTime($root['add_time'],'Y-m-d H:i:s',$options);
             if($detail){
@@ -458,7 +687,7 @@ final class MarketplaceOrderSnapshotProjection
             $saved['_info']=$wrappers;$saved['add_time']=self::displayTime($root['add_time'],'Y-m-d H:i:s',$options);
             $saved['_pay_time']=self::displayTime($root['pay_time']??0,'Y-m-d H:i:s',$options);
             $saved['_refund_time']=self::displayTime($root['refund_reason_time']??0,'Y-m-d H:i:s',$options);
-            [$saved['_status'],$saved['status_name']]=self::listStatus($root,$extension['summary']);
+            [$saved['_status'],$saved['status_name']]=$inspection===null?self::listStatus($root,$extension['summary']):self::listAftersaleStatus($root,$inspection);
             $saved['pay_type_name']=self::listPayType(self::text($root['pay_type']),self::merchantInteger($root['paid'],0,1)===1);
             [$saved['pink_name'],$saved['color']]=self::activityLabel($root);
             if($view==='platform_list')$saved['nickname']=$facts['buyer']===null?null:self::text($facts['buyer']['nickname']??null);
@@ -492,10 +721,11 @@ final class MarketplaceOrderSnapshotProjection
         }
         $out=$detail?($view==='platform_detail'?self::platformOrder($saved):self::customerOrder($saved)):
             self::orderListRow($saved,$view==='customer_list'?'customer':($view==='platform_list'?'platform':'mobile'));
-        $out=self::rootWithFulfillment($out,$extension['summary'],$extension['actions']);
+        $out=$inspection===null?self::rootWithFulfillment($out,$extension['summary'],$extension['actions']):
+            self::rootWithAftersale($out,$extension['summary'],$extension['actions'],$inspection['aftersale']);
         if($detail){
             $out['order_log']=self::displayOrderLog($root,$facts['status_logs'],$extension['history_times'],$options);
-            $out['fulfillment_children']=self::displayChildren($root,$extension['children'],$extension['summary']);
+            $out['fulfillment_children']=self::displayChildren($root,$extension['children'],$extension['summary'],$inspection);
         }elseif($extension['children']!==null)self::unavailable();
         return $out;
     }
@@ -603,7 +833,7 @@ final class MarketplaceOrderSnapshotProjection
         return $invoice;
     }
 
-    private static function displayChildren(array $root,?array $children,?array $summary):?array
+    private static function displayChildren(array $root,?array $children,?array $summary,?array $inspection=null):?array
     {
         if($children===null)return null;
         if($summary===null)self::unavailable();self::displayKeys($children,['page','limit','count','list']);
@@ -613,7 +843,7 @@ final class MarketplaceOrderSnapshotProjection
         $list=self::list($children['list']);$offset=$children['page']-1>intdiv(PHP_INT_MAX,$children['limit'])?PHP_INT_MAX:($children['page']-1)*$children['limit'];
         if(count($list)!==max(0,min($children['limit'],$children['count']-$offset)))self::unavailable();
         $seen=[];foreach($list as$child){
-            $child=self::row($child);self::displayChildListShape($child);
+            $child=self::row($child);if($inspection===null)self::displayChildListShape($child);else{self::displayChildAftersaleListShape($child);if($child['aftersale']['revision']!==$inspection['last_action_id'])self::unavailable();}
             if(isset($seen[$child['id']]))self::unavailable();$seen[$child['id']]=true;
             if($child['root_order_id']!==self::merchantInteger($root['id'],1,2147483647)
                 ||$child['root_order_no']!==self::text($root['order_id']))self::unavailable();

@@ -339,6 +339,9 @@ Route::group(function () {
 
     Route::group(function () {
         /** 退款相关 */
+        Route::post('order/refund/files/:root_id','v1.order.AftersaleFileController/upload')->name('aftersaleFileUpload')->option(['real_name'=>'上传售后凭证']);
+        Route::post('order/refund/files/:file_id/read-ticket','v1.order.AftersaleFileController/ticket')->name('aftersaleFileTicket')->option(['real_name'=>'申请售后凭证读票']);
+        Route::get('order/refund/files/:file_id/content','v1.order.AftersaleFileController/content')->name('aftersaleFileContent')->option(['real_name'=>'读取售后凭证']);
         Route::get('order/refund/cart_info/:id', 'v1.order.StoreOrderController/refundCartInfo')->name('refundCartInfo')->option(['real_name' => '退款中间页面订单商品列表']);//退款中间页面订单商品列表
         Route::post('order/refund/cart_info', 'v1.order.StoreOrderController/refundCartInfoList')->name('StoreOrderRefundCartInfoList')->option(['real_name' => '获取退款商品列表']);//获取退款商品列表
         Route::post('order/refund/apply/:id', 'v1.order.StoreOrderController/applyRefund')->name('StoreOrderApplyRefund')->option(['real_name' => '订单申请退款']);//订单申请退款

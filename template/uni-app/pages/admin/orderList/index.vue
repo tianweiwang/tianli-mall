@@ -45,7 +45,8 @@
 						</countDown> -->
 						<view>订单号：{{ item.order_id }}</view>
 					</view>
-					<view class="state" :class="(item.refund_status==0 && where.status != 0 && item.refund.length)?'on':''">
+					<view v-if="item.schema === 2" class="state">{{ savedFulfillmentState(item) }}</view>
+					<view v-else class="state" :class="(item.refund_status==0 && where.status != 0 && item.refund.length)?'on':''">
 						{{item.refund_status==1?'退款中':item.refund_status==2?'已退款':item.refund_status==3?'拒绝退款':item.status_name.status_name}}
 						<text v-if="item.refund_status==0 && where.status != 0 && item.refund.length">{{item.is_all_refund?'，退款中':'，部分退款中'}}</text>
 					</view>
@@ -84,6 +85,7 @@
 				<view v-if="isSavedMarketplaceV1(item)" class="operation acea-row row-between-wrapper">
 					<text v-if="item.fulfillment_summary" class="saved-list-note">已发 {{ item.fulfillment_summary.shipped }} / 已收 {{ item.fulfillment_summary.received }} 件 · {{ item.fulfillment_summary.child_count }} 个包裹</text>
 					<text v-else class="saved-list-note">履约资料暂不可用</text>
+						<text v-if="item.schema === 2" class="saved-list-note">未发取消 {{ item.fulfillment_summary.cancelled_unshipped }} 件 · 已退件 {{ item.fulfillment_summary.returned_accepted }} 件 · 暂停发货 {{ item.aftersale.pending_cancel_quantity }} 件 · 待处理退件 {{ item.aftersale.pending_return_quantity }} 件</text>
 					<button class="bnt saved-list-details" @tap="toDetail(item)">查看详情</button>
 				</view>
 				<view v-else class="operation acea-row row-between-wrapper">
@@ -172,7 +174,7 @@
 	// import {
 	// 	erpConfig
 	// } from "@/api/esp.js";
-	import { readOrderFulfillment } from '@/utils/marketplace-fulfillment.js';
+	import { readOrderFulfillment, rootFulfillmentText } from '@/utils/marketplace-fulfillment.js';
 	import Loading from '@/components/Loading/index'
 	import PriceChange from '../components/PriceChange/index.vue'
 	import footerPage from '../components/footerPage/index.vue'
@@ -320,6 +322,7 @@
 			}).exec();
 		},
 		methods: {
+		savedFulfillmentState(item) { return rootFulfillmentText(item.fulfillment_summary, item.aftersale); },
 			clearSavedOrderList() {
 				this.listRevision++;
 				this.list = [];

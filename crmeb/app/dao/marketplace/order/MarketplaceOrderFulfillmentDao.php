@@ -13,16 +13,19 @@ use RuntimeException;
 use Throwable;
 use think\facade\Db;
 
-/** Inactive no-after-sale Task6. Transaction ownership remains with the service. */
+/** Native Task6/Task7 persistence and exact structure. Transaction ownership remains with the service. */
 final class MarketplaceOrderFulfillmentDao
 {
     private const INT_MAX=2147483647;
     private const UINT_MAX=4294967295;
     private const MARKER='marketplace-ms4-fulfillment-v1';
+    private const AFTERSALE_MARKER='marketplace-ms4-aftersale-v1';
+    private const AFTERSALE_FILE_MARKER='marketplace-ms4-aftersale-file-v1';
     private const TABLES=['user','store_order','store_order_cart_info','store_order_refund','store_order_status',
         'marketplace_fulfillment_operation','marketplace_fulfillment_range','marketplace_merchant','marketplace_stock_movement',
         'store_product','store_bargain','store_combination','store_seckill',
-        'store_order_invoice','store_order_economize','store_product_reply','system_store'];
+        'store_order_invoice','store_order_economize','store_product_reply','system_store',
+        'marketplace_aftersale_action','marketplace_aftersale_file'];
     private string $prefix;
     private string $database='';
     private ?PDO $schemaPdo=null;
@@ -81,6 +84,140 @@ final class MarketplaceOrderFulfillmentDao
         }finally{$this->schemaPdo=null;$this->database=$previousDatabase;}
     }
 
+    /** Final Task7 structure only, including empty tables; never DDL or application eligibility. */
+    public function assertAftersaleStructure(PDO $pdo):void
+    {
+        $this->native($pdo,false);if($this->schemaPdo!==null)self::unavailable();
+        $previous=$this->database;$this->schemaPdo=$pdo;
+        try{$this->structureEnvironment($pdo);$this->assertAftersaleMetadata();$this->native($pdo,false);}
+        finally{$this->schemaPdo=null;$this->database=$previous;}
+    }
+
+    /** The actual caller owns native RR READ ONLY; this checks the captured connection, not that ownership. */
+    public function readAftersaleStructureReadiness(ConnectionInterface $connection,PDO $pdo):array
+    {
+        $this->readStructureConnection($connection,$pdo);if($this->schemaPdo!==null)self::unavailable();
+        $previous=$this->database;$this->schemaPdo=$pdo;
+        try{
+            $this->structureEnvironment($pdo);$database=$this->database;$this->assertAftersaleMetadata();
+            $this->readStructureConnection($connection,$pdo);
+            if($this->query($pdo,'SELECT DATABASE()')->fetchColumn()!==$database)self::unavailable();
+            $this->readStructureConnection($connection,$pdo);return ['schema'=>2,'state'=>'READY'];
+        }finally{$this->schemaPdo=null;$this->database=$previous;}
+    }
+
+    private function assertAftersaleMetadata():void
+    {
+        $definitions=self::aftersaleTables();
+        if(array_keys($definitions)!==['marketplace_aftersale_action','store_order_refund',
+            'marketplace_fulfillment_operation','marketplace_fulfillment_range','marketplace_aftersale_file'])self::unavailable();
+        foreach($definitions as$name=>$definition){
+            $meta=$this->metadata($name);
+            if($meta===null||!$this->sameAftersaleTable($meta,$definition))self::unavailable();
+            $this->assertStructureConstraintNames($name,$definition,$meta);
+        }
+    }
+
+    /** Complete native family core; all business/permission and committed-prefix proofs remain with the owned caller. */
+    public function readFulfillmentFamiliesForRoots(ConnectionInterface $connection,PDO $pdo,array $fullAuthorizedRoots):array
+    {
+        $roots=$this->aftersaleSnapshotRoots($connection,$pdo,$fullAuthorizedRoots);$out=[];
+        foreach($roots as$id=>$root)$out[$id]=['children'=>[],'child_items'=>[],'operations'=>[],'ranges'=>[]];
+        if($roots===[]){$this->readStructureConnection($connection,$pdo);return [];}
+        $ids=array_keys($roots);sort($ids,SORT_NUMERIC);$marks=implode(',',array_fill(0,count($ids),'?'));
+        $children=[];$items=[];$operations=[];$seen=[];
+        $rows=$this->familySnapshotRows($connection,$pdo,'SELECT * FROM '.$this->table('store_order').
+            ' WHERE pid IN ('.$marks.') ORDER BY pid,id',$ids);
+        foreach($rows as$row){
+            $id=self::integer($row['id']??null,1,self::INT_MAX);$rid=self::integer($row['pid']??null,1,self::INT_MAX);
+            if(!isset($roots[$rid])||isset($children[$id])||isset($roots[$id]))self::unavailable();
+            self::stored($row,['uid'=>self::integer($roots[$rid]['uid'],1,self::INT_MAX),
+                'mer_id'=>self::integer($roots[$rid]['mer_id'],1,self::UINT_MAX),'marketplace_trade_version'=>1]);
+            if($out[$rid]['children']!==[]&&$id<=self::integer($out[$rid]['children'][array_key_last($out[$rid]['children'])]['id'],1,self::INT_MAX))self::unavailable();
+            $children[$id]=$rid;$out[$rid]['children'][]=$row;
+        }
+        $childQuery='SELECT id FROM '.$this->table('store_order').' WHERE pid IN ('.$marks.')';
+        $fields=['id','oid','uid','mer_id','cart_id','product_id','cart_num','refund_num','surplus_num','split_status','cart_info','unique','old_cart_id'];
+        $rows=$this->familySnapshotRows($connection,$pdo,'SELECT * FROM '.$this->table('store_order_cart_info').
+            ' WHERE oid IN ('.$childQuery.') ORDER BY oid,id',$ids);
+        $lastItems=[];
+        foreach($rows as$row){
+            self::keys($row,$fields);$id=self::integer($row['id'],1,self::INT_MAX);$oid=self::integer($row['oid'],1,self::INT_MAX);
+            if(!isset($children[$oid])||isset($items[$id])||$id<=($lastItems[$oid]??0))self::unavailable();$rid=$children[$oid];
+            self::stored($row,['uid'=>self::integer($roots[$rid]['uid'],1,self::INT_MAX),'mer_id'=>self::integer($roots[$rid]['mer_id'],1,self::UINT_MAX)]);
+            $items[$id]=['root'=>$rid,'child'=>$oid];$lastItems[$oid]=$id;$out[$rid]['child_items'][]=$row;
+        }
+        $tables=self::newTables();$lastOps=[];
+        $rows=$this->familySnapshotRows($connection,$pdo,'SELECT * FROM '.$this->table('marketplace_fulfillment_operation').
+            ' WHERE root_order_id IN ('.$marks.') ORDER BY root_order_id,id',$ids);
+        foreach($rows as$row){
+            self::keys($row,array_keys($tables['marketplace_fulfillment_operation']['columns']));
+            $id=self::u64($row['id']);$rid=self::integer($row['root_order_id'],1,self::INT_MAX);$child=self::integer($row['child_order_id'],1,self::INT_MAX);
+            if(!isset($roots[$rid])||!isset($children[$child])||$children[$child]!==$rid||isset($operations['o:'.$id])
+                ||bccomp($id,$lastOps[$rid]??'0',0)<=0)self::unavailable();
+            self::stored($row,['uid'=>self::integer($roots[$rid]['uid'],1,self::INT_MAX),'mer_id'=>self::integer($roots[$rid]['mer_id'],1,self::UINT_MAX)]);
+            $operations['o:'.$id]=['root'=>$rid,'child'=>$child,'action'=>$row['action']];$lastOps[$rid]=$id;$out[$rid]['operations'][]=$row;
+        }
+        $lastRanges=[];
+        $rows=$this->familySnapshotRows($connection,$pdo,'SELECT * FROM '.$this->table('marketplace_fulfillment_range').
+            ' WHERE root_order_id IN ('.$marks.') ORDER BY root_order_id,id',$ids);
+        foreach($rows as$row){
+            self::keys($row,array_keys($tables['marketplace_fulfillment_range']['columns']));
+            $id=self::u64($row['id']);$rid=self::integer($row['root_order_id'],1,self::INT_MAX);
+            $child=self::integer($row['child_order_id'],1,self::INT_MAX);$item=self::integer($row['child_item_id'],1,self::INT_MAX);
+            $op=$operations['o:'.self::u64($row['operation_id'])]??null;
+            if(!isset($roots[$rid])||isset($seen['r:'.$id])||bccomp($id,$lastRanges[$rid]??'0',0)<=0
+                ||!isset($items[$item])||$items[$item]!==['root'=>$rid,'child'=>$child]
+                ||$op!==['root'=>$rid,'child'=>$child,'action'=>$row['operation_action']])self::unavailable();
+            self::stored($row,['uid'=>self::integer($roots[$rid]['uid'],1,self::INT_MAX),'mer_id'=>self::integer($roots[$rid]['mer_id'],1,self::UINT_MAX)]);
+            $seen['r:'.$id]=true;$lastRanges[$rid]=$id;$out[$rid]['ranges'][]=$row;
+        }
+        $this->readStructureConnection($connection,$pdo);return $out;
+    }
+
+    /** Raw compatibility capture: no business refundRow/owner gate and no removal of eight-NULL legacy mirrors. */
+    public function readRefundRowsForRoots(ConnectionInterface $connection,PDO $pdo,array $fullAuthorizedRoots):array
+    {
+        $roots=$this->aftersaleSnapshotRoots($connection,$pdo,$fullAuthorizedRoots);$out=[];
+        foreach($roots as$id=>$root)$out[$id]=[];
+        if($roots===[]){$this->readStructureConnection($connection,$pdo);return [];}
+        $ids=array_keys($roots);sort($ids,SORT_NUMERIC);$marks=implode(',',array_fill(0,count($ids),'?'));$children=[];
+        foreach($this->familySnapshotRows($connection,$pdo,'SELECT id,pid FROM '.$this->table('store_order').
+            ' WHERE pid IN ('.$marks.') ORDER BY pid,id',$ids) as$row){
+            self::keys($row,['id','pid']);$id=self::integer($row['id'],1,self::INT_MAX);$pid=self::integer($row['pid'],1,self::INT_MAX);
+            if(!isset($roots[$pid])||isset($children[$id]))self::unavailable();$children[$id]=$pid;
+        }
+        $rows=$this->familySnapshotRows($connection,$pdo,'SELECT rf.* FROM '.$this->table('store_order_refund').
+            ' rf WHERE rf.marketplace_root_order_id IN ('.$marks.') OR rf.store_order_id IN ('.$marks.')'.
+            ' OR rf.store_order_id IN (SELECT id FROM '.$this->table('store_order').' WHERE pid IN ('.$marks.')) ORDER BY rf.id',
+            array_merge($ids,$ids,$ids));
+        $fields=array_keys(self::aftersaleTables()['store_order_refund']['columns']);$last=0;
+        foreach($rows as$row){
+            self::keys($row,$fields);$id=self::integer($row['id'],1,self::INT_MAX);if($id<=$last)self::unavailable();$last=$id;$matched=false;
+            foreach($roots as$rid=>$root){
+                $oid=$row['store_order_id'];$stored=$row['marketplace_root_order_id'];
+                $childRoot=(is_int($oid)||is_string($oid))?($children[(string)$oid]??null):null;
+                if(($stored!==null&&(string)$stored===(string)$rid)||(string)$oid===(string)$rid||$childRoot===$rid){
+                    $out[$rid][]=$row;$matched=true;
+                }
+            }
+            if(!$matched)self::unavailable();
+        }
+        $this->readStructureConnection($connection,$pdo);return $out;
+    }
+
+    private function aftersaleSnapshotRoots(ConnectionInterface $connection,PDO $pdo,array $rows):array
+    {
+        $this->readStructureConnection($connection,$pdo);
+        if(!array_is_list($rows)||count($rows)>100)self::unavailable();$roots=[];
+        foreach($rows as$row){
+            if(!is_array($row))self::unavailable();foreach($row as$value)if($value!==null&&!is_int($value)&&!is_string($value))self::unavailable();
+            $id=self::integer($row['id']??null,1,self::INT_MAX);self::integer($row['uid']??null,1,self::INT_MAX);self::integer($row['mer_id']??null,1,self::UINT_MAX);
+            self::stored($row,['marketplace_trade_version'=>1,'pid'=>0]);self::text($row['order_id']??null,32,true);
+            if(isset($roots[$id]))self::unavailable();$roots[$id]=$row;
+        }
+        return $roots;
+    }
     private function readStructureConnection(ConnectionInterface $connection,PDO $pdo):void
     {
         if(!$connection instanceof ReadMysql||$connection!==Db::connect()||$connection->getPdo()!==$pdo
@@ -233,7 +370,7 @@ final class MarketplaceOrderFulfillmentDao
     private function familySnapshotRows(ConnectionInterface $connection,PDO $pdo,string $sql,array $parameters):array
     {
         $this->readStructureConnection($connection,$pdo);
-        if(!array_is_list($parameters)||count($parameters)>202)self::unavailable();
+        if(!array_is_list($parameters)||count($parameters)>300)self::unavailable();
         $statement=$this->query($pdo,$sql,$parameters);$rows=null;$failure=null;$closed=false;
         try{$rows=$statement->fetchAll(PDO::FETCH_ASSOC);}catch(Throwable $error){$failure=$error;}
         try{$closed=$statement->closeCursor();}catch(Throwable $error){if($failure===null)$failure=$error;}
@@ -356,6 +493,52 @@ final class MarketplaceOrderFulfillmentDao
     }
 
     /** Only the eight closed value slots above reach these literal predicates; no identifier or operator input. */
+    /** Fixed read-only root predicate shared by native window/count and the existing commercial count boundary. */
+    public function commercialStatusPredicate(int $code):string
+    {
+        $legacy=[
+            0=>'o.paid=0 AND o.status=0 AND o.refund_status=0 AND o.is_del=0 AND o.is_cancel=0',
+            1=>'o.paid=1 AND o.status=0 AND o.refund_status IN (0,3) AND o.is_del=0',
+            7=>'o.paid=1 AND o.status=4 AND o.refund_status IN (0,3) AND o.is_del=0',
+            2=>'o.paid=1 AND o.status=1 AND o.refund_status IN (0,3) AND o.is_del=0',
+            3=>'o.paid=1 AND o.status=2 AND o.refund_status IN (0,3) AND o.is_del=0',
+            4=>'o.paid=1 AND o.status=3 AND o.refund_status IN (0,3) AND o.is_del=0',
+            5=>'o.paid=1 AND o.status=0 AND o.refund_status=0 AND o.shipping_type=2 AND o.is_del=0',
+            6=>'o.paid=1 AND o.status IN (2,3) AND o.refund_status=0 AND o.shipping_type=2 AND o.is_del=0',
+            -1=>'o.paid=1 AND o.refund_status IN (1,4) AND o.is_del=0',
+            -2=>'o.paid=1 AND o.refund_status=2 AND o.is_del=0',
+            -3=>'o.paid=1 AND o.refund_status IN (1,2,4) AND o.is_del=0',
+            -4=>'o.is_del=1',9=>'o.refund_status IN (0,3) AND o.is_del=0'];
+        if(!array_key_exists($code,$legacy))self::unavailable();
+        $items=$this->table('store_order_cart_info');$movements=$this->table('marketplace_stock_movement');
+        $ranges=$this->table('marketplace_fulfillment_range');$operations=$this->table('marketplace_fulfillment_operation');
+        $replies=$this->table('store_product_reply');
+        $q='(SELECT COALESCE(SUM(qi.cart_num),0) FROM '.$items.' qi WHERE qi.oid=o.id)';
+        $c="(SELECT COALESCE(SUM(cm.qty),0) FROM ".$movements." cm WHERE cm.order_id=o.id AND cm.kind='release' AND cm.order_item_id IS NOT NULL)";
+        $ship="(SELECT COALESCE(SUM(sr.quantity),0) FROM ".$ranges.' sr JOIN '.$operations.
+            " so ON so.id=sr.operation_id AND so.root_order_id=sr.root_order_id AND so.action='ship' AND so.state=1".
+            " WHERE sr.root_order_id=o.id AND sr.operation_action='ship')";
+        $remaining='('.$q.'-'.$ship.'-'.$c.')';
+        $itemCancel="(SELECT COALESCE(SUM(ic.qty),0) FROM ".$movements." ic WHERE ic.order_id=o.id AND ic.order_item_id=ci.id AND ic.kind='release')";
+        $itemReceived="(SELECT COALESCE(SUM(rr.quantity),0) FROM ".$ranges.' rr JOIN '.$operations.
+            " ro ON ro.id=rr.operation_id AND ro.root_order_id=rr.root_order_id AND ro.action='receive' AND ro.state=1".
+            " WHERE rr.root_order_id=o.id AND rr.source_item_id=ci.id AND rr.operation_action='receive')";
+        $n='(ci.cart_num-'.$itemCancel.')';
+        // Historical receipt remains R after a return. Review moderation/deletion never releases the one-item slot.
+        $eligible='EXISTS (SELECT 1 FROM '.$items.' ci WHERE ci.oid=o.id AND '.$n.'>0 AND '.$itemReceived.'='.$n.
+            ' AND NOT EXISTS (SELECT 1 FROM '.$replies.' rp WHERE rp.oid=o.id AND BINARY rp.`unique`=BINARY ci.`unique`'.
+            ' AND rp.uid=o.uid AND rp.mer_id=o.mer_id AND rp.product_id=ci.product_id))';
+        $paid='o.paid=1 AND o.is_cancel=0 AND o.is_del=0';
+        $v1=match($code){
+            0=>$legacy[0],1=>$paid.' AND '.$remaining.'>0',
+            2=>$paid.' AND '.$remaining.'=0 AND o.status=1',
+            3=>$paid.' AND '.$eligible,
+            4=>$paid.' AND '.$remaining.'=0 AND (('.$ship.'=0 AND o.status=0) OR ('.$ship.'>0 AND o.status=2)) AND NOT '.$eligible,
+            -4=>$legacy[-4],9=>$legacy[9],default=>'0=1',
+        };
+        return '(((o.marketplace_trade_version IS NULL OR o.marketplace_trade_version=0) AND ('.$legacy[$code].'))'.
+            ' OR (o.marketplace_trade_version=1 AND o.pid=0 AND ('.$v1.')))';
+    }
     private function rootReadPredicate(array $filter,?int $uid,bool $customer):array
     {
         MarketplaceOrderInput::assertReadFilter($filter);
@@ -370,20 +553,7 @@ final class MarketplaceOrderFulfillmentDao
         if($filter['legacy_pid']==='nonnegative')$where.=' AND o.pid>=0';
         elseif($filter['legacy_pid']==='not_minus_one')$where.=' AND o.pid<>-1';
         if($filter['deleted']['enabled']){$where.=' AND o.is_del=?';$parameters[]=(int)$filter['deleted']['value'];}
-        $states=[
-            0=>'o.paid=0 AND o.status=0 AND o.refund_status=0 AND o.is_del=0 AND o.is_cancel=0',
-            1=>'o.paid=1 AND o.status=0 AND o.refund_status IN (0,3) AND o.is_del=0',
-            7=>'o.paid=1 AND o.status=4 AND o.refund_status IN (0,3) AND o.is_del=0',
-            2=>'o.paid=1 AND o.status=1 AND o.refund_status IN (0,3) AND o.is_del=0',
-            3=>'o.paid=1 AND o.status=2 AND o.refund_status IN (0,3) AND o.is_del=0',
-            4=>'o.paid=1 AND o.status=3 AND o.refund_status IN (0,3) AND o.is_del=0',
-            5=>'o.paid=1 AND o.status=0 AND o.refund_status=0 AND o.shipping_type=2 AND o.is_del=0',
-            6=>'o.paid=1 AND o.status IN (2,3) AND o.refund_status=0 AND o.shipping_type=2 AND o.is_del=0',
-            -1=>'o.paid=1 AND o.refund_status IN (1,4) AND o.is_del=0',
-            -2=>'o.paid=1 AND o.refund_status=2 AND o.is_del=0',
-            -3=>'o.paid=1 AND o.refund_status IN (1,2,4) AND o.is_del=0',
-            -4=>'o.is_del=1',9=>'o.refund_status IN (0,3) AND o.is_del=0'];
-        $code=$filter['status_case']['code'];if($code!=='none')$where.=' AND ('.$states[$code].')';
+        $code=$filter['status_case']['code'];if($code!=='none')$where.=' AND '.$this->commercialStatusPredicate($code);
         if($filter['status_case']['shipping_only'])$where.=' AND o.shipping_type=1';
         $activity=[1=>'o.combination_id=0 AND o.seckill_id=0 AND o.bargain_id=0 AND o.advance_id=0',
             2=>'(o.pink_id>0 OR o.combination_id>0)',3=>'o.seckill_id>0',4=>'o.bargain_id>0',5=>'o.advance_id>0',
@@ -404,7 +574,7 @@ final class MarketplaceOrderFulfillmentDao
             foreach($values as$value)$parameters[]=$value;
         }
         $refund=[1=>'o.refund_type IN (1,2)',2=>'o.refund_type=4',3=>'o.refund_type=5',4=>'o.refund_type=6'];
-        if($filter['refund_types']!=='none')$where.=' AND ('.$refund[$filter['refund_types']].')';
+        if($filter['refund_types']!=='none')$where.=' AND ((o.marketplace_trade_version IS NULL OR o.marketplace_trade_version=0) AND ('.$refund[$filter['refund_types']].'))';
         [$keyword,$keywordParameters]=$this->rootReadKeyword($filter['keyword']);
         if($keyword!==''){$where.=' AND ('.$keyword.')';array_push($parameters,...$keywordParameters);}
         return [$where,$parameters];
@@ -630,15 +800,17 @@ final class MarketplaceOrderFulfillmentDao
     private function displayAuxReplyCounts(ConnectionInterface $connection,PDO $pdo,array $roots):array
     {
         if($roots===[])return [];$ids=array_keys($roots);
-        // Keep the original global unique-only database comparison, including its collation; no reply owner/deletion filter.
-        $rows=$this->rootSnapshotRows($connection,$pdo,'SELECT ci.id AS item_id,ci.oid AS root_order_id,ci.uid,ci.mer_id,ci.`unique`,COUNT(r.id) AS reply_count FROM '.
-            '(SELECT id,oid,uid,mer_id,`unique` FROM '.$this->table('store_order_cart_info').' WHERE oid IN ('.
-            implode(',',array_fill(0,count($ids),'?')).')) ci LEFT JOIN '.$this->table('store_product_reply').' r ON r.`unique`=ci.`unique`'.
-            ' GROUP BY ci.id,ci.oid,ci.uid,ci.mer_id,ci.`unique` ORDER BY ci.oid,ci.id',$ids);
+        // The saved source item owns one root/unique slot; moderation or deletion never releases it.
+        $rows=$this->rootSnapshotRows($connection,$pdo,'SELECT ci.id AS item_id,ci.oid AS root_order_id,ci.uid,ci.mer_id,ci.`unique`,COUNT(r.id) AS reply_count,'.
+            'SUM(CASE WHEN r.id IS NOT NULL AND (r.uid<>ci.uid OR r.mer_id IS NULL OR r.mer_id<>ci.mer_id OR r.product_id<>ci.product_id) THEN 1 ELSE 0 END) AS invalid_reply_count FROM '.
+            '(SELECT id,oid,uid,mer_id,product_id,`unique` FROM '.$this->table('store_order_cart_info').' WHERE oid IN ('.
+            implode(',',array_fill(0,count($ids),'?')).')) ci LEFT JOIN '.$this->table('store_product_reply').' r ON r.oid=ci.oid AND BINARY r.`unique`=BINARY ci.`unique`'.
+            ' GROUP BY ci.id,ci.oid,ci.uid,ci.mer_id,ci.product_id,ci.`unique` ORDER BY ci.oid,ci.id',$ids);
         $seen=[];$unique=[];$counts=[];$lastRoot=0;$lastItem=0;
         foreach($roots as$id=>$root){$counts[$id]=0;$unique[$id]=[];}
-        foreach($rows as$row){
-            self::keys($row,['item_id','root_order_id','uid','mer_id','unique','reply_count']);
+        foreach($rows as&$row){
+            self::keys($row,['item_id','root_order_id','uid','mer_id','unique','reply_count','invalid_reply_count']);
+            self::integer($row['invalid_reply_count'],0,0);unset($row['invalid_reply_count']);
             $id=self::integer($row['item_id'],1,self::INT_MAX);$oid=self::integer($row['root_order_id'],1,self::INT_MAX);
             if(!isset($roots[$oid])||isset($seen[$id])||$oid<$lastRoot||($oid===$lastRoot&&$id<=$lastItem))self::unavailable();
             self::stored($row,['uid'=>$roots[$oid]['uid'],'mer_id'=>$roots[$oid]['mer_id']]);
@@ -646,7 +818,7 @@ final class MarketplaceOrderFulfillmentDao
             if(isset($unique[$oid][$key])||++$counts[$oid]>500)self::unavailable();
             $unique[$oid][$key]=true;$seen[$id]=true;$lastRoot=$oid;$lastItem=$id;
         }
-        foreach($counts as$count)if($count===0)self::unavailable();
+        unset($row);foreach($counts as$count)if($count===0)self::unavailable();
         // No full saved item set is supplied here. The service must compare both complete sets before publication.
         return $rows;
     }
@@ -745,7 +917,10 @@ final class MarketplaceOrderFulfillmentDao
             if($last!==null&&bccomp($operationId,$last,0)>=0)self::unavailable();
             $child=self::integer($row['child_order_id'],1,self::INT_MAX);
             if($child===$id||isset($children[$child]))self::unavailable();
-            self::stored($row,['contract_version'=>1,'root_order_id'=>$id,'uid'=>$uid,'mer_id'=>$mer,'action'=>'ship','state'=>1]);
+            self::stored($row,['root_order_id'=>$id,'uid'=>$uid,'mer_id'=>$mer,'action'=>'ship','state'=>1]);
+            $version=self::integer($row['contract_version'],1,2);
+            if(($version===1&&$row['aftersale_cut_id']!==null)||($version===2&&$row['aftersale_cut_id']===null))self::unavailable();
+            if($row['aftersale_cut_id']!==null)self::u64($row['aftersale_cut_id']);
             $last=$operationId;$children[$child]=true;
         }
         // JSON/BINARY and native U64 values are not decoded or rewritten. Count/list correspondence to history is the service's job.
@@ -946,11 +1121,11 @@ final class MarketplaceOrderFulfillmentDao
             '`oid` IN ('.implode(',',array_fill(0,count($ids)-1,'?')).')',array_slice($ids,1),' ORDER BY `oid`,`id` FOR UPDATE');
         $ranges=array_map([self::class,'rangeRow'],$this->select($pdo,'marketplace_fulfillment_range','*',
             '`root_order_id`=?',[$id],' ORDER BY `id` FOR UPDATE'));
-        $refunds=$this->select($pdo,'store_order_refund','*','`store_order_id` IN ('.implode(',',array_fill(0,count($ids),'?')).')',
-            $ids,' ORDER BY `id` FOR UPDATE');
+        // Raw compatibility set: the pure Context decides legacy NULLs versus complete Task7 mirrors.
+        $refunds=$this->select($pdo,'store_order_refund','*','(`store_order_id` IN ('.implode(',',array_fill(0,count($ids),'?')).
+            ') OR `marketplace_root_order_id`=?)',array_merge($ids,[$id]),' ORDER BY `id` FOR UPDATE');
         return ['children'=>$children,'items'=>$childItems,'ranges'=>$ranges,'refunds'=>$refunds];
     }
-
     public function lockStatusLogs(PDO $pdo,int $rootId):array
     {
         $this->native($pdo,true);
@@ -1022,10 +1197,11 @@ final class MarketplaceOrderFulfillmentDao
     {
         $this->native($pdo,false);self::integer($dueCursor,0,self::UINT_MAX);self::u64($shipCursor,true);
         self::integer($now,1,self::UINT_MAX);if($batch<1||$batch>100)self::unavailable();
-        $rows=$this->query($pdo,'SELECT `id`,`root_order_id`,`child_order_id`,`uid`,`mer_id`,`receipt_due_at` FROM '.
-            $this->table('marketplace_fulfillment_operation').' FORCE INDEX (`idx_fop_due`)'.
-            " WHERE `action`='ship' AND `state`=1 AND `receipt_due_at`>0 AND `receipt_due_at`<=?".
-            ' AND (`receipt_due_at`>? OR (`receipt_due_at`=? AND `id`>?)) ORDER BY `receipt_due_at`,`id` LIMIT '.$batch,
+        $rows=$this->query($pdo,'SELECT fo.`id`,fo.`root_order_id`,fo.`child_order_id`,fo.`uid`,fo.`mer_id`,fo.`receipt_due_at` FROM '.
+            $this->table('marketplace_fulfillment_operation').' fo FORCE INDEX (`idx_fop_due`)'.
+            " WHERE fo.`action`='ship' AND fo.`state`=1 AND fo.`receipt_due_at`>0 AND fo.`receipt_due_at`<=?".
+            ' AND EXISTS (SELECT 1 FROM '.$this->table('store_order').' c WHERE c.id=fo.child_order_id AND c.status=1)'.
+            ' AND (fo.`receipt_due_at`>? OR (fo.`receipt_due_at`=? AND fo.`id`>?)) ORDER BY fo.`receipt_due_at`,fo.`id` LIMIT '.$batch,
             [$now,$dueCursor,$dueCursor,$shipCursor])->fetchAll(PDO::FETCH_ASSOC);
         $out=[];foreach($rows as$row){
             self::keys($row,['id','root_order_id','child_order_id','uid','mer_id','receipt_due_at']);
@@ -1038,10 +1214,13 @@ final class MarketplaceOrderFulfillmentDao
     public static function operation(array $row):array
     {
         self::keys($row,array_keys(self::newTables()['marketplace_fulfillment_operation']['columns']));
-        foreach(['id','target_operation_id'] as$key)$row[$key]=$row[$key]===null?null:self::u64($row[$key]);
+        foreach(['id','target_operation_id','aftersale_cut_id'] as$key)$row[$key]=$row[$key]===null?null:self::u64($row[$key]);
         foreach(['contract_version','root_order_id','child_order_id','uid','mer_id','state','ship_child_order_id','actor_id',
             'created_at','committed_at','shipped_at','receipt_due_at','received_at'] as$key)
             $row[$key]=$row[$key]===null?null:self::integer($row[$key],0,in_array($key,['root_order_id','child_order_id','uid','ship_child_order_id'],true)?self::INT_MAX:self::UINT_MAX);
+        if(!in_array($row['contract_version'],[1,2],true)
+            ||($row['contract_version']===1&&$row['aftersale_cut_id']!==null)
+            ||($row['contract_version']===2&&$row['aftersale_cut_id']===null))self::unavailable();
         foreach(['request_digest','source_snapshot_digest','allocation_digest'] as$key)
             if(!is_string($row[$key])||strlen($row[$key])!==32)self::unavailable();
         $row['request_payload']=self::decode($row['request_payload'],65536);
@@ -1158,7 +1337,7 @@ final class MarketplaceOrderFulfillmentDao
         return compact('type', 'comment', 'nullable', 'default', 'charset', 'auto');
     }
 
-    /** R3: exact 24/30 columns, 10/10 indexes, 5/5 foreign keys and 5/4 enforced checks. */
+    /** Final Task7 operation25/range30; all original constraints plus the one exact adopted cut upgrade. */
     public static function newTables(): array
     {
         $c = static fn(string $type, bool $null = false, ?string $default = null, ?string $charset = null, bool $auto = false): array => self::column($type, '', $null, $default, $charset, $auto);
@@ -1189,6 +1368,7 @@ final class MarketplaceOrderFulfillmentDao
                     'shipped_at' => $c('int unsigned', true),
                     'receipt_due_at' => $c('int unsigned', true),
                     'received_at' => $c('int unsigned', true),
+                    'aftersale_cut_id' => $c('bigint unsigned', true),
                 ],
                 'indexes' => [
                     'PRIMARY' => [true, ['id']],
@@ -1201,9 +1381,11 @@ final class MarketplaceOrderFulfillmentDao
                     'idx_fop_owner' => [false, ['uid', 'root_order_id', 'id']],
                     'idx_fop_merchant' => [false, ['mer_id', 'root_order_id', 'id']],
                     'idx_fop_due' => [false, ['action', 'state', 'receipt_due_at', 'id']],
+                    'idx_fop_aftersale_cut' => [false, ['aftersale_cut_id']],
                 ],
                 'checks' => [
-                    'mm4f_op_ids' => '`contract_version`=1 AND `root_order_id` BETWEEN 1 AND 2147483647 AND `child_order_id` BETWEEN 1 AND 2147483647 AND `uid` BETWEEN 1 AND 2147483647 AND `mer_id`>0 AND `root_order_id`<>`child_order_id`',
+                    'mm4f_op_ids' => self::truth('`contract_version` IN (1,2) AND `root_order_id` BETWEEN 1 AND 2147483647 AND `child_order_id` BETWEEN 1 AND 2147483647 AND `uid` BETWEEN 1 AND 2147483647 AND `mer_id`>0 AND `root_order_id`<>`child_order_id`'),
+                    'mm4a_op_cut' => self::truth('(`contract_version`=1 AND `aftersale_cut_id` IS NULL) OR (`contract_version`=2 AND `aftersale_cut_id` IS NOT NULL AND `aftersale_cut_id`>0)'),
                     'mm4f_op_state' => '(`state`=0 AND `result_payload` IS NULL AND `committed_at` IS NULL) OR (`state`=1 AND `result_payload` IS NOT NULL AND `committed_at` IS NOT NULL AND `committed_at`>=`created_at`)',
                     'mm4f_op_json' => "JSON_TYPE(`request_payload`)='OBJECT' AND (`result_payload` IS NULL OR JSON_TYPE(`result_payload`)='OBJECT')",
                     'mm4f_op_action' => "`created_at`>0 AND ((`action`='ship' AND `ship_child_order_id` IS NOT NULL AND `ship_child_order_id`=`child_order_id` AND `target_operation_id` IS NULL AND `target_action` IS NULL AND `shipped_at` IS NOT NULL AND `shipped_at`>0 AND `receipt_due_at` IS NOT NULL AND (`receipt_due_at`=0 OR `receipt_due_at`>=`shipped_at`) AND `received_at` IS NULL) OR (`action`='receive' AND `ship_child_order_id` IS NULL AND `target_operation_id` IS NOT NULL AND `target_operation_id`>0 AND `target_action` IS NOT NULL AND `target_action`='ship' AND `shipped_at` IS NULL AND `receipt_due_at` IS NULL AND `received_at` IS NOT NULL AND `received_at`>0))",
@@ -1214,6 +1396,7 @@ final class MarketplaceOrderFulfillmentDao
                     'mm4f_op_child_fk' => ['store_order', ['child_order_id'], ['id'], 'PRIMARY'],
                     'mm4f_op_user_fk' => ['user', ['uid'], ['uid'], 'PRIMARY'],
                     'mm4f_op_mer_fk' => ['marketplace_merchant', ['mer_id'], ['mer_id'], 'PRIMARY'],
+                    'mm4a_fop_cut_fk' => ['marketplace_aftersale_action', ['aftersale_cut_id'], ['id'], 'PRIMARY'],
                     'mm4f_op_target_fk' => ['marketplace_fulfillment_operation', ['target_operation_id', 'target_action', 'root_order_id', 'child_order_id', 'uid', 'mer_id'], ['id', 'action', 'root_order_id', 'child_order_id', 'uid', 'mer_id'], 'uq_fop_identity'],
                 ],
             ],
@@ -1277,6 +1460,188 @@ final class MarketplaceOrderFulfillmentDao
                 ],
             ],
         ];
+    }
+
+    /** Literal final stage20 of the adopted migration; no CLI load or DDL. */
+    public static function aftersaleTables():array
+    {
+        $new=self::aftersaleNewTables();$tables=self::newTables();
+        foreach($tables as&$table){$table['table_collation']='utf8mb4_bin';$table['table_comment']=self::MARKER;}unset($table);
+        $refund=self::aftersaleRefundBase();$add=self::aftersaleRefundAdditions();
+        foreach(['columns','indexes','foreign','checks'] as$kind)foreach($add[$kind] as$name=>$definition)$refund[$kind][$name]=$definition;
+        return ['marketplace_aftersale_action'=>$new['marketplace_aftersale_action'],'store_order_refund'=>$refund]
+            +$tables+['marketplace_aftersale_file'=>$new['marketplace_aftersale_file']];
+    }
+
+    private static function truth(string $predicate):string{return 'COALESCE(('.$predicate.'),0)=1';}
+    private static function aftersaleNewTables(): array
+    {
+        $c = static fn(string $type, bool $null = false, ?string $default = null, ?string $charset = null, bool $auto = false): array => self::column($type, '', $null, $default, $charset, $auto);
+        $actor = "(`actor_type`='customer' AND `actor_id` IS NOT NULL AND `actor_id`=`uid` AND `actor_ref`=CONCAT('customer:',`actor_id`) AND `action`<>'finance_observe')"
+            . " OR (`actor_type`='employee' AND `actor_id` IS NOT NULL AND `actor_id`>0 AND `actor_ref`=CONCAT('employee:',`actor_id`) AND `action`<>'finance_observe')"
+            . " OR (`actor_type`='admin' AND `actor_id` IS NOT NULL AND `actor_id`>0 AND `actor_ref`=CONCAT('admin:',`actor_id`) AND `action`<>'finance_observe')"
+            . " OR (`actor_type`='payment' AND `actor_id` IS NULL AND `actor_ref`=CONCAT('payment:',`payment_attempt_id`) AND `action`='finance_observe')";
+        $unbound = '`refund_id` IS NULL AND `image_position` IS NULL AND `claimed_at` IS NULL';
+        return [
+            'marketplace_aftersale_action' => [
+                'table_collation' => 'utf8mb4_unicode_ci', 'table_comment' => self::AFTERSALE_MARKER,
+                'columns' => [
+                    'id' => $c('bigint unsigned', false, null, null, true),
+                    'contract_version' => $c('tinyint unsigned', false, '1'),
+                    'root_order_id' => $c('int unsigned'), 'uid' => $c('int unsigned'), 'mer_id' => $c('int unsigned'),
+                    'refund_id' => $c('int'), 'payment_attempt_id' => $c('bigint unsigned'),
+                    'action' => $c('varchar(24)', false, null, 'ascii'), 'actor_type' => $c('varchar(16)', false, null, 'ascii'),
+                    'actor_id' => $c('int unsigned', true), 'actor_ref' => $c('varchar(64)', false, null, 'ascii'),
+                    'idem_key' => $c('varchar(128)', false, null, 'ascii'), 'request_digest' => $c('binary(32)'),
+                    'request_payload' => $c('json'), 'result_payload' => $c('json', true), 'state' => $c('tinyint unsigned', false, '0'),
+                    'previous_refund_action_id' => $c('bigint unsigned', true), 'fulfillment_cut_id' => $c('bigint unsigned', true),
+                    'apply_refund_id' => $c('int', true), 'created_at' => $c('int unsigned'), 'committed_at' => $c('int unsigned', true),
+                ],
+                'indexes' => [
+                    'PRIMARY' => [true, ['id']], 'uq_ms4a_actor_key' => [true, ['actor_ref', 'idem_key']],
+                    'uq_ms4a_apply_refund' => [true, ['apply_refund_id']], 'uq_ms4a_previous' => [true, ['previous_refund_action_id']],
+                    'idx_ms4a_root' => [false, ['root_order_id', 'id']], 'idx_ms4a_refund' => [false, ['refund_id', 'id']],
+                    'idx_ms4a_payment' => [false, ['payment_attempt_id']], 'idx_ms4a_fcut' => [false, ['fulfillment_cut_id']],
+                ],
+                'foreign' => [
+                    'mm4a_root_fk' => ['store_order', ['root_order_id'], ['id'], 'PRIMARY'],
+                    'mm4a_refund_fk' => ['store_order_refund', ['refund_id'], ['id'], 'PRIMARY'],
+                    'mm4a_payment_fk' => ['marketplace_payment_attempt', ['payment_attempt_id'], ['id'], 'PRIMARY'],
+                    'mm4a_previous_fk' => ['marketplace_aftersale_action', ['previous_refund_action_id'], ['id'], 'PRIMARY'],
+                    'mm4a_fcut_fk' => ['marketplace_fulfillment_operation', ['fulfillment_cut_id'], ['id'], 'PRIMARY'],
+                ],
+                'checks' => [
+                    'mm4a_ids' => self::truth('`contract_version`=1 AND `root_order_id` BETWEEN 1 AND 2147483647 AND `uid` BETWEEN 1 AND 2147483647 AND `mer_id`>0 AND `refund_id`>0 AND `payment_attempt_id`>0 AND `created_at`>0 AND (`previous_refund_action_id` IS NULL OR (`previous_refund_action_id` IS NOT NULL AND `previous_refund_action_id`>0)) AND (`fulfillment_cut_id` IS NULL OR (`fulfillment_cut_id` IS NOT NULL AND `fulfillment_cut_id`>0))'),
+                    'mm4a_actor' => self::truth($actor),
+                    'mm4a_action' => self::truth("`action` IN ('apply','withdraw','approve','reject','express','accept_return','finance_observe') AND ((`action`='apply' AND `apply_refund_id` IS NOT NULL AND `apply_refund_id`=`refund_id` AND `previous_refund_action_id` IS NULL) OR (`action`<>'apply' AND `apply_refund_id` IS NULL AND `previous_refund_action_id` IS NOT NULL))"),
+                    'mm4a_state' => self::truth('(`state`=0 AND `result_payload` IS NULL AND `committed_at` IS NULL) OR (`state`=1 AND `result_payload` IS NOT NULL AND `committed_at` IS NOT NULL AND `committed_at`>=`created_at`)'),
+                    'mm4a_json' => self::truth("JSON_TYPE(`request_payload`)='OBJECT' AND (`result_payload` IS NULL OR (JSON_TYPE(`result_payload`)='OBJECT'))"),
+                ],
+            ],
+            'marketplace_aftersale_file' => [
+                'table_collation' => 'utf8mb4_unicode_ci', 'table_comment' => self::AFTERSALE_FILE_MARKER,
+                'columns' => [
+                    'id' => $c('bigint unsigned', false, null, null, true),
+                    'uid' => $c('int unsigned'), 'root_order_id' => $c('int unsigned'), 'mer_id' => $c('int unsigned'),
+                    'refund_id' => $c('int', true), 'image_position' => $c('tinyint unsigned', true),
+                    'object_key' => $c('char(64)', false, null, 'ascii'), 'media_type' => $c('varchar(32)', false, null, 'ascii'),
+                    'byte_size' => $c('int unsigned'), 'width' => $c('smallint unsigned'), 'height' => $c('smallint unsigned'),
+                    'content_sha256' => $c('binary(32)'), 'upload_key' => $c('varchar(128)', false, null, 'ascii'),
+                    'state' => $c('varchar(16)', false, null, 'ascii'), 'created_at' => $c('int unsigned'),
+                    'claim_expires_at' => $c('int unsigned'), 'claimed_at' => $c('int unsigned', true), 'purged_at' => $c('int unsigned', true),
+                ],
+                'indexes' => [
+                    'PRIMARY' => [true, ['id']], 'uq_ms4af_object_key' => [true, ['object_key']],
+                    'uq_ms4af_upload' => [true, ['uid', 'upload_key']], 'uq_ms4af_refund_position' => [true, ['refund_id', 'image_position']],
+                    'idx_ms4af_root' => [false, ['root_order_id', 'id']], 'idx_ms4af_expiry' => [false, ['state', 'claim_expires_at', 'id']],
+                ],
+                'foreign' => [
+                    'mm4af_root_fk' => ['store_order', ['root_order_id'], ['id'], 'PRIMARY'],
+                    'mm4af_refund_fk' => ['store_order_refund', ['refund_id'], ['id'], 'PRIMARY'],
+                ],
+                'checks' => [
+                    'mm4af_values' => self::truth("`uid` BETWEEN 1 AND 2147483647 AND `root_order_id` BETWEEN 1 AND 2147483647 AND `mer_id`>0 AND `byte_size` BETWEEN 1 AND 5242880 AND `width` BETWEEN 1 AND 4096 AND `height` BETWEEN 1 AND 4096 AND `media_type` IN ('image/jpeg','image/png','image/webp') AND OCTET_LENGTH(`content_sha256`)=32 AND OCTET_LENGTH(`object_key`)=64 AND REGEXP_LIKE(`object_key`,'[^0-9a-f]','c')=0 AND OCTET_LENGTH(`upload_key`) BETWEEN 1 AND 128 AND REGEXP_LIKE(`upload_key`,'^[!-~]([ -~]{0,126}[!-~])?$','c')=1 AND REGEXP_LIKE(`upload_key`,'[^ -~]','c')=0 AND `created_at` BETWEEN 1 AND 4294880895 AND `claim_expires_at`=`created_at`+86400"),
+                    'mm4af_state' => self::truth("(`state`='STAGED' AND " . $unbound . " AND `purged_at` IS NULL) OR (`state`='CLAIMED' AND `refund_id` IS NOT NULL AND `refund_id`>0 AND `image_position` IS NOT NULL AND `image_position` BETWEEN 0 AND 8 AND `claimed_at` IS NOT NULL AND `claimed_at`>=`created_at` AND `claimed_at`<=`claim_expires_at` AND `purged_at` IS NULL) OR (`state`='DELETE_PENDING' AND " . $unbound . " AND `purged_at` IS NULL) OR (`state`='DELETED' AND " . $unbound . " AND `purged_at` IS NOT NULL AND `purged_at`>=`created_at`)"),
+                ],
+            ],
+        ];
+    }
+
+    private static function aftersaleRefundAdditions(): array
+    {
+        $c = static fn(string $type, ?string $charset = null): array => self::column($type, '', true, null, $charset);
+        $legacy = [];
+        foreach (['marketplace_root_order_id','marketplace_payment_attempt_id','marketplace_kind','marketplace_state',
+            'marketplace_physical_state','marketplace_finance_state','marketplace_apply_action_id','marketplace_last_action_id'] as $name) $legacy[] = self::quote($name) . ' IS NULL';
+        $nonnull = [];
+        foreach (['marketplace_root_order_id','marketplace_payment_attempt_id','marketplace_kind','marketplace_state',
+            'marketplace_physical_state','marketplace_finance_state','marketplace_apply_action_id','marketplace_last_action_id','mer_id','marketplace_refund_mode'] as $name) $nonnull[] = self::quote($name) . ' IS NOT NULL';
+        $valid = implode(' AND ', $nonnull) . ' AND `marketplace_root_order_id` BETWEEN 1 AND 2147483647 AND `uid` BETWEEN 1 AND 2147483647 AND `marketplace_payment_attempt_id`>0 AND `marketplace_apply_action_id`>0 AND `marketplace_last_action_id`>=`marketplace_apply_action_id` AND `mer_id`>0 AND `refund_price`>0 AND `refunded_price`>=0 AND `refunded_price`<=`refund_price`'
+            . " AND ((`marketplace_kind`='money_only' AND `marketplace_refund_mode`='money_only') OR (`marketplace_kind`='cancel_unshipped' AND `marketplace_refund_mode`='money_only') OR (`marketplace_kind`='return_goods' AND `marketplace_refund_mode`='return_goods'))"
+            . " AND `marketplace_finance_state` IN ('NOT_SUBMITTED','UNSUPPORTED','PROCESSING','UNKNOWN','PARTIAL','SUCCEEDED','FAILED')"
+            . " AND ((`marketplace_state`='REQUESTED' AND `refunded_price`=0 AND `marketplace_finance_state`='NOT_SUBMITTED' AND ((`marketplace_kind`='money_only' AND `marketplace_physical_state`='NONE') OR (`marketplace_kind`='cancel_unshipped' AND `marketplace_physical_state`='CANCEL_PENDING') OR (`marketplace_kind`='return_goods' AND `marketplace_physical_state`='RETURN_PENDING')))"
+            . " OR (`marketplace_state`='APPROVED' AND ((`marketplace_kind`='money_only' AND `marketplace_physical_state`='NONE') OR (`marketplace_kind`='cancel_unshipped' AND `marketplace_physical_state`='CANCELLED') OR (`marketplace_kind`='return_goods' AND `marketplace_physical_state` IN ('RETURN_PENDING','RETURN_PARTIAL','RETURN_ACCEPTED'))))"
+            . " OR (`marketplace_state` IN ('WITHDRAWN','REJECTED') AND `refunded_price`=0 AND `marketplace_physical_state`='NONE' AND `marketplace_finance_state` IN ('NOT_SUBMITTED','UNSUPPORTED'))"
+            . " OR (`marketplace_state`='COMPLETED' AND `refunded_price`=`refund_price` AND `marketplace_finance_state`='SUCCEEDED' AND ((`marketplace_kind`='money_only' AND `marketplace_physical_state`='NONE') OR (`marketplace_kind`='cancel_unshipped' AND `marketplace_physical_state`='CANCELLED') OR (`marketplace_kind`='return_goods' AND `marketplace_physical_state`='RETURN_ACCEPTED'))))";
+        return [
+            'columns' => [
+                'marketplace_root_order_id' => $c('int unsigned'), 'marketplace_payment_attempt_id' => $c('bigint unsigned'),
+                'marketplace_kind' => $c('varchar(24)', 'ascii'), 'marketplace_state' => $c('varchar(16)', 'ascii'),
+                'marketplace_physical_state' => $c('varchar(24)', 'ascii'), 'marketplace_finance_state' => $c('varchar(16)', 'ascii'),
+                'marketplace_apply_action_id' => $c('bigint unsigned'), 'marketplace_last_action_id' => $c('bigint unsigned'),
+            ],
+            'indexes' => ['idx_ms4a_refund_root' => [false, ['marketplace_root_order_id','id']],
+                'uq_ms4a_refund_apply' => [true, ['marketplace_apply_action_id']], 'idx_ms4a_refund_last' => [false, ['marketplace_last_action_id']]],
+            'foreign' => ['mm4a_refund_apply_fk' => ['marketplace_aftersale_action', ['marketplace_apply_action_id'], ['id'], 'PRIMARY'],
+                'mm4a_refund_last_fk' => ['marketplace_aftersale_action', ['marketplace_last_action_id'], ['id'], 'PRIMARY']],
+            'checks' => ['mm4a_refund_v1' => self::truth('(' . implode(' AND ', $legacy) . ') OR (' . $valid . ')')],
+        ];
+    }
+
+    private static function aftersaleRefundBase(): array
+    {
+        $c = static fn(string $type, string $comment, bool $null = false, ?string $default = null, ?string $charset = null, bool $auto = false): array => self::column($type, $comment, $null, $default, $charset, $auto);
+        $old = ['columns'=>[
+            'mer_id'=>self::column('int unsigned','随原订单的经营商家编号',true),
+            'marketplace_refund_mode'=>self::column('varchar(16)','申请时固定的money_only或return_goods模式',true,null,'ascii')],
+            'indexes'=>['idx_ms4_refund_owner'=>[false,['mer_id','store_order_id','id']]]];
+        return ['table_collation' => null, 'table_comment' => '退款订单表',
+            'columns' => [
+                'id' => $c('int', '自增ID', false, null, null, true), 'store_order_id' => $c('int', '订单表ID', false, '0'),
+                'store_id' => $c('int', '门店ID', false, '0'), 'order_id' => $c('varchar(50)', '订单号', false, '', 'utf8mb4'),
+                'uid' => $c('int', '用户UID', false, '0'), 'refund_type' => $c('tinyint', '退款申请类型', false, '0'),
+                'refund_num' => $c('int', '退款件数', false, '0'), 'refund_price' => $c('decimal(12,2)', '退款金额', false, '0.00'),
+                'refunded_price' => $c('decimal(12,2)', '已退款金额', false, '0.00'), 'refund_phone' => $c('varchar(32)', '退款电话', false, '', 'utf8mb4'),
+                'refund_express' => $c('varchar(100)', '退货快递单号', false, '', 'utf8mb4'), 'refund_express_name' => $c('varchar(255)', '退货快递名称', false, '', 'utf8mb4'),
+                'refund_explain' => $c('varchar(255)', '退款用户说明', false, '', 'utf8mb4'), 'refund_img' => $c('text', '退款图片', true, null, 'utf8mb4'),
+                'refund_reason' => $c('varchar(255)', '不退款的理由', false, '', 'utf8mb4'), 'refuse_reason' => $c('varchar(255)', '拒绝原因', false, '', 'utf8mb4'),
+                'remark' => $c('varchar(255)', '备注', false, '', 'utf8mb4'), 'refunded_time' => $c('int', '处理时间', false, '0'),
+                'cart_info' => $c('longtext', '退款商品信息', true, null, 'utf8mb4'), 'is_cancel' => $c('tinyint', '用户是否取消', false, '0'),
+                'is_pink_cancel' => $c('tinyint', '是否拼团自动取消', false, '0'), 'is_del' => $c('tinyint', '取消申请', true, '0'),
+                'add_time' => $c('int', '申请退款时间', false, '0'), 'is_system_del' => $c('tinyint', '系统删除', true, '0'),
+            ] + $old['columns'], 'indexes' => ['PRIMARY' => [true, ['id']]] + $old['indexes'], 'foreign' => [], 'checks' => []];
+    }
+
+    private function sameAftersaleTable(array $meta, array $contract): bool
+    {
+        if (!$this->baseTable($meta) || ($contract['table_collation'] !== null && $meta['table']['TABLE_COLLATION'] !== $contract['table_collation'])
+            || $meta['table']['TABLE_COMMENT'] !== $contract['table_comment']
+            || array_keys($meta['columns']) !== array_keys($contract['columns'])) return false;
+        foreach ($contract['columns'] as $name => $expected) {
+            $collation = $expected['charset'] === 'ascii' ? 'ascii_bin' : ($expected['charset'] === 'utf8mb4' ? $meta['table']['TABLE_COLLATION'] : null);
+            if (!$this->sameColumn($meta['columns'][$name], $expected, $collation, true)) return false;
+        }
+        $indexes = $contract['indexes'];
+        ksort($indexes, SORT_STRING);
+        if (array_keys($meta['indexes']) !== array_keys($indexes)) return false;
+        foreach ($indexes as $name => $expected) if (!$this->sameIndex($meta['indexes'][$name], $expected)) return false;
+        if (!$this->sameForeign($meta['foreign'], $contract['foreign'])) return false;
+        $checks = [];
+        foreach ($meta['checks'] as $row) {
+            $name = $row['CONSTRAINT_NAME'];
+            $tree = self::checkMetadataExpression($row['CHECK_CLAUSE']);
+            if (isset($checks[$name]) || $row['ENFORCED'] !== 'YES' || $tree === null) return false;
+            $checks[$name] = $tree;
+        }
+        $wanted = [];
+        foreach ($contract['checks'] as $name => $expression) {
+            $tree = self::checkExpression($expression);
+            if ($tree === null) throw new RuntimeException('Declared check unavailable');
+            $wanted[$this->prefix . $name] = $tree;
+        }
+        ksort($checks, SORT_STRING); ksort($wanted, SORT_STRING);
+        if ($checks !== $wanted) return false;
+        $wantedConstraints = [];
+        foreach ($contract['indexes'] as $name => [$unique]) if ($unique) $wantedConstraints[$name] = $name === 'PRIMARY' ? 'PRIMARY KEY' : 'UNIQUE';
+        foreach ($contract['foreign'] as $name => $_) $wantedConstraints[$this->prefix . $name] = 'FOREIGN KEY';
+        foreach ($contract['checks'] as $name => $_) $wantedConstraints[$this->prefix . $name] = 'CHECK';
+        $actualConstraints = [];
+        foreach ($meta['constraints'] as $row) {
+            if (isset($actualConstraints[$row['CONSTRAINT_NAME']])) return false;
+            $actualConstraints[$row['CONSTRAINT_NAME']] = $row['CONSTRAINT_TYPE'];
+        }
+        ksort($actualConstraints, SORT_STRING); ksort($wantedConstraints, SORT_STRING);
+        return $actualConstraints === $wantedConstraints;
     }
 
     private function baseTable(?array $meta): bool
@@ -1380,24 +1745,31 @@ final class MarketplaceOrderFulfillmentDao
             $columns[$column['COLUMN_NAME']] = $column;
         }
         $indexes = [];
-        foreach ($this->schemaRows('SELECT INDEX_NAME,NON_UNIQUE,SEQ_IN_INDEX,COLUMN_NAME,SUB_PART,INDEX_TYPE,IS_VISIBLE,EXPRESSION,COLLATION FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=? AND TABLE_NAME=? ORDER BY INDEX_NAME,SEQ_IN_INDEX', $args) as $index) $indexes[$index['INDEX_NAME']][] = $index;
+        foreach ($this->schemaRows('SELECT INDEX_NAME,NON_UNIQUE,SEQ_IN_INDEX,COLUMN_NAME,SUB_PART,INDEX_TYPE,IS_VISIBLE,EXPRESSION,COLLATION FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=? AND TABLE_NAME=? ORDER BY BINARY INDEX_NAME,SEQ_IN_INDEX', $args) as $index) $indexes[$index['INDEX_NAME']][] = $index;
         ksort($indexes, SORT_STRING);
         return ['table' => $tables[0], 'columns' => $columns, 'indexes' => $indexes,
-            'foreign' => $this->schemaRows('SELECT rc.CONSTRAINT_NAME,rc.UPDATE_RULE,rc.DELETE_RULE,rc.MATCH_OPTION,rc.UNIQUE_CONSTRAINT_SCHEMA,rc.UNIQUE_CONSTRAINT_NAME,kcu.ORDINAL_POSITION,kcu.POSITION_IN_UNIQUE_CONSTRAINT,kcu.COLUMN_NAME,kcu.REFERENCED_TABLE_SCHEMA,kcu.REFERENCED_TABLE_NAME,kcu.REFERENCED_COLUMN_NAME FROM information_schema.REFERENTIAL_CONSTRAINTS rc JOIN information_schema.KEY_COLUMN_USAGE kcu ON kcu.CONSTRAINT_SCHEMA=rc.CONSTRAINT_SCHEMA AND kcu.TABLE_NAME=rc.TABLE_NAME AND kcu.CONSTRAINT_NAME=rc.CONSTRAINT_NAME WHERE rc.CONSTRAINT_SCHEMA=? AND rc.TABLE_NAME=? ORDER BY rc.CONSTRAINT_NAME,kcu.ORDINAL_POSITION', $args),
-            'checks' => $this->schemaRows("SELECT tc.CONSTRAINT_NAME,tc.ENFORCED,cc.CHECK_CLAUSE FROM information_schema.TABLE_CONSTRAINTS tc JOIN information_schema.CHECK_CONSTRAINTS cc ON cc.CONSTRAINT_SCHEMA=tc.CONSTRAINT_SCHEMA AND cc.CONSTRAINT_NAME=tc.CONSTRAINT_NAME WHERE tc.TABLE_SCHEMA=? AND tc.TABLE_NAME=? AND tc.CONSTRAINT_TYPE='CHECK' ORDER BY tc.CONSTRAINT_NAME", $args),
-            'triggers' => $this->schemaRows('SELECT TRIGGER_NAME FROM information_schema.TRIGGERS WHERE EVENT_OBJECT_SCHEMA=? AND EVENT_OBJECT_TABLE=? ORDER BY TRIGGER_NAME', $args)];
+            'constraints' => $this->schemaRows('SELECT CONSTRAINT_NAME,CONSTRAINT_TYPE,ENFORCED FROM information_schema.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA=? AND TABLE_NAME=? ORDER BY BINARY CONSTRAINT_NAME', $args),
+            'foreign' => $this->schemaRows('SELECT rc.CONSTRAINT_NAME,rc.UPDATE_RULE,rc.DELETE_RULE,rc.MATCH_OPTION,rc.UNIQUE_CONSTRAINT_SCHEMA,rc.UNIQUE_CONSTRAINT_NAME,kcu.ORDINAL_POSITION,kcu.POSITION_IN_UNIQUE_CONSTRAINT,kcu.COLUMN_NAME,kcu.REFERENCED_TABLE_SCHEMA,kcu.REFERENCED_TABLE_NAME,kcu.REFERENCED_COLUMN_NAME FROM information_schema.REFERENTIAL_CONSTRAINTS rc JOIN information_schema.KEY_COLUMN_USAGE kcu ON kcu.CONSTRAINT_SCHEMA=rc.CONSTRAINT_SCHEMA AND kcu.TABLE_NAME=rc.TABLE_NAME AND kcu.CONSTRAINT_NAME=rc.CONSTRAINT_NAME WHERE rc.CONSTRAINT_SCHEMA=? AND rc.TABLE_NAME=? ORDER BY BINARY rc.CONSTRAINT_NAME,kcu.ORDINAL_POSITION', $args),
+            'checks' => $this->schemaRows("SELECT tc.CONSTRAINT_NAME,tc.ENFORCED,cc.CHECK_CLAUSE FROM information_schema.TABLE_CONSTRAINTS tc JOIN information_schema.CHECK_CONSTRAINTS cc ON cc.CONSTRAINT_SCHEMA=tc.CONSTRAINT_SCHEMA AND cc.CONSTRAINT_NAME=tc.CONSTRAINT_NAME WHERE tc.TABLE_SCHEMA=? AND tc.TABLE_NAME=? AND tc.CONSTRAINT_TYPE='CHECK' ORDER BY BINARY tc.CONSTRAINT_NAME", $args),
+            'triggers' => $this->schemaRows('SELECT TRIGGER_NAME FROM information_schema.TRIGGERS WHERE EVENT_OBJECT_SCHEMA=? AND EVENT_OBJECT_TABLE=? ORDER BY BINARY TRIGGER_NAME', $args)];
     }
 
-    /** Only MS1's observed escaped-delimiter presentation for these fixed ASCII literals is decoded. */
+    /** Exact literals used by the original checks and these finite Task7 checks. */
+    private const CHECK_LITERALS = ['OBJECT','ship','receive','employee','customer','system','level','member',
+        'admin','payment','customer:','employee:','admin:','payment:','finance_observe','apply','withdraw','approve','reject','express','accept_return',
+        'money_only','cancel_unshipped','return_goods','NOT_SUBMITTED','UNSUPPORTED','PROCESSING','UNKNOWN','PARTIAL','SUCCEEDED','FAILED',
+        'REQUESTED','APPROVED','WITHDRAWN','REJECTED','COMPLETED','NONE','CANCEL_PENDING','CANCELLED','RETURN_PENDING','RETURN_PARTIAL','RETURN_ACCEPTED',
+        'image/jpeg','image/png','image/webp','[^0-9a-f]','^[!-~]([ -~]{0,126}[!-~])?$','[^ -~]','c','STAGED','CLAIMED','DELETE_PENDING','DELETED'];
+
+    /** Only the original observed escaped-literal presentation is decoded, for the finite literals above. */
     private static function checkMetadataExpression(string $expression): ?array
     {
-        foreach (['OBJECT', 'ship', 'receive', 'employee', 'customer', 'system', 'level', 'member'] as $literal) {
-            $expression = str_replace("_utf8mb4\\'" . $literal . "\\'", "_utf8mb4'" . $literal . "'", $expression);
-        }
+        foreach (self::CHECK_LITERALS as $literal) foreach (['_utf8mb4','_ascii'] as $charset)
+            $expression = str_replace($charset . "\\'" . $literal . "\\'", $charset . "'" . $literal . "'", $expression);
         return self::checkExpression($expression);
     }
 
-    /** Finite MS1 grammar extended for the exact R3 checks, never evaluated as SQL/PHP. */
+    /** Original finite grammar with only the fixed Task7 functions/arity; never evaluated as SQL/PHP. */
     private static function checkExpression(string $expression): ?array
     {
         if (strlen($expression) > 16384) return null;
@@ -1433,24 +1805,29 @@ final class MarketplaceOrderFulfillmentDao
                 }
                 $token = $tokens[$position++] ?? null;
                 if ($token === null) throw new RuntimeException('Check grammar');
-                if ($token === ['word', '_utf8mb4']) {
+                if (in_array($token, [['word', '_utf8mb4'], ['word', '_ascii']], true)) {
                     $token = $tokens[$position++] ?? null;
                     if (($token[0] ?? '') !== 'string') throw new RuntimeException('Check grammar');
                 }
                 if ($token[0] === 'string') {
-                    if (!in_array($token[1], ['OBJECT', 'ship', 'receive', 'employee', 'customer', 'system', 'level', 'member'], true)) throw new RuntimeException('Check grammar');
+                    if (!in_array($token[1], self::CHECK_LITERALS, true)) throw new RuntimeException('Check grammar');
                     return $token;
                 }
                 if ($token[0] === 'number') {
                     if (preg_match('/\A(?:0|[1-9][0-9]*)\z/D', $token[1]) !== 1) throw new RuntimeException('Check grammar');
                     return $token;
                 }
+                if ($token === ['word','true'] || $token === ['word','false']) return ['number', $token[1] === 'true' ? '1' : '0'];
                 if ($token[0] !== 'id' && $token[0] !== 'word') throw new RuntimeException('Check grammar');
                 if ($take('(')) {
-                    if ($token[1] !== 'json_type') throw new RuntimeException('Check grammar');
-                    $argument = $or();
+                    $arity = ['json_type'=>1,'coalesce'=>2,'concat'=>2,'octet_length'=>1,'regexp_like'=>3][$token[1]] ?? null;
+                    if ($arity === null) throw new RuntimeException('Check grammar');
+                    $arguments = [$or()];
+                    while ($take(',')) $arguments[] = $or();
                     if (!$take(')')) throw new RuntimeException('Check grammar');
-                    return ['function', 'json_type', $argument];
+                    if (count($arguments) !== $arity) throw new RuntimeException('Check grammar');
+                    // Keep the original single-argument JSON tree byte contract.
+                    return $token[1] === 'json_type' ? ['function','json_type',$arguments[0]] : ['function',$token[1],$arguments];
                 }
                 return ['id', $token[1]];
             } finally { --$depth; }
@@ -1507,5 +1884,6 @@ final class MarketplaceOrderFulfillmentDao
             return $position === count($tokens) ? $tree : null;
         } catch (Throwable $error) { return null; }
     }
+
 
 }

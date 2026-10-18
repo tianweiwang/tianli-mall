@@ -749,6 +749,13 @@ class StoreOrderController
      */
     public function refundCartInfo(Request $request, StoreOrderCartInfoServices $services, $id)
     {
+        $query=$request->get(false);
+        if(is_array($query)&&array_key_exists('contract',$query)) {
+            $owned=$this->services->get(['id'=>$id,'uid'=>$request->uid()],['*']);
+            if(!$owned||MarketplaceTradePolicy::savedOrderIsLegacy($owned->getData()))throw new ApiException('订单不存在');
+            return app('json')->success(app()->make(\app\services\marketplace\order\MarketplaceOrderRefundReadServices::class)
+                ->quoteForCustomer($request,(int)$request->uid(),$id,$query));
+        }
         if (!$id) {
             return app('json')->fail('参数错误');
         }
@@ -804,6 +811,12 @@ class StoreOrderController
      */
     public function applyRefund(Request $request, StoreOrderRefundServices $services, StoreOrderServices $storeOrderServices, $id)
     {
+        $owned=$storeOrderServices->get(['id'=>$id,'uid'=>$request->uid()],['*']);
+        if($owned&&!MarketplaceTradePolicy::savedOrderIsLegacy($owned->getData())) {
+            $raw=\app\services\marketplace\order\MarketplaceOrderRefundInput::decode($request->getContent());
+            return app('json')->success(app()->make(\app\services\marketplace\order\MarketplaceOrderRefundWriter::class)
+                ->forCustomer($request,(int)$request->uid(),'apply',$id,$raw));
+        }
         if (!$id) {
             return app('json')->fail('参数错误');
         }

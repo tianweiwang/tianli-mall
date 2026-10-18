@@ -1302,13 +1302,14 @@ class StoreOrderRefundServices extends BaseServices
         if(!$owned)throw new ApiException('订单不存在');
         $parent=$this->storeOrderServices->get(['id'=>$owned['store_order_id'],'uid'=>$uid]);
         if(!$parent)throw new ApiException('订单不存在');
-        $parentData=$parent->toArray();
+        if(!MarketplaceTradePolicy::savedOrderIsLegacy($parent->getData())) {
+            return app()->make(\app\services\marketplace\order\MarketplaceOrderRefundReadServices::class)
+                ->detailForCustomer(app()->request,$uid,$uni);
+        }
         $data=$this->refundDetail($uni);
         if((string)($data['uid'] ?? '')!==(string)$uid
             || (string)($data['store_order_id'] ?? '')!==(string)$owned['store_order_id'])throw new ApiException('订单不存在');
-        if(\app\services\marketplace\order\MarketplaceTradePolicy::savedOrderIsLegacy($parentData))return $data;
-        $parentData['custom_form']=$parent->getData('custom_form');
-        return \app\services\marketplace\order\MarketplaceOrderSnapshotProjection::customerRefund($data,$parentData);
+        return $data;
     }
 
     /** Read-only platform endpoint adapter; existing administrator/role middleware remains authoritative. */
@@ -1318,13 +1319,11 @@ class StoreOrderRefundServices extends BaseServices
         if(!$refund)throw new ApiException('订单不存在');
         $parent=$this->storeOrderServices->get($refund['store_order_id']);
         if(!$parent)throw new ApiException('订单不存在');
+        MarketplaceTradePolicy::assertLegacyOrder($parent->getData());
         $data=$this->refundDetail($uni);
         if((string)($data['id'] ?? '')!==(string)$refund['id']
             ||(string)($data['store_order_id'] ?? '')!==(string)$refund['store_order_id'])throw new ApiException('订单不存在');
-        $parentData=$parent->toArray();
-        if(\app\services\marketplace\order\MarketplaceTradePolicy::savedOrderIsLegacy($parentData))return $data;
-        $parentData['custom_form']=$parent->getData('custom_form');
-        return \app\services\marketplace\order\MarketplaceOrderSnapshotProjection::platformRefund($data,$parentData);
+        return $data;
     }
 
     public function refundDetail($uni)
