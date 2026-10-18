@@ -350,9 +350,10 @@ function m4fm_snapshot(): array
     $snapshot = ['names' => $names, 'tables' => [], 'redis' => [],
         'modes' => m4fm_rows($db, 'SELECT @@SESSION.sql_mode AS session_mode,@@GLOBAL.sql_mode AS global_mode,@@SESSION.innodb_strict_mode AS session_innodb,@@GLOBAL.innodb_strict_mode AS global_innodb')];
     foreach ($names as $name) {
-        m4fm_quote($name); $metadata = m4fm_metadata($db, $name); $columns = array_keys($metadata['columns']);
+        m4fm_quote($name);
         $ddl = $db->query('SHOW CREATE TABLE ' . m4fm_quote($name))->fetch(PDO::FETCH_NUM);
         m4fm_expect(is_array($ddl) && is_string($ddl[1] ?? null), 'ACTUAL_SHOW_CREATE');
+        $metadata = m4fm_metadata($db, $name); $columns = array_keys($metadata['columns']);
         $snapshot['tables'][$name] = ['metadata' => $metadata, 'ddl_sha256' => hash('sha256', $ddl[1]),
             'projected_columns' => $columns, 'projection' => m4fm_projection($db, $name, $columns)];
     }

@@ -11,7 +11,7 @@
 | 范围 | 已有证据及当前缺口 |
 | --- | --- |
 | 交易与履约 | 新发货、全部/部分收货 API 和页面源码已接入；当前顾客 H5、商家后台构建通过。完整发货收货普通链、新 API/页面、Worker 尚未验收。 |
-| 售后退款 | 核心设计及私有凭证合同已采用；迁移和凭证底层仅为仓库外源码候选，核心金额/库存事务、三端接口和页面、非空凭证正常链尚未完成。 |
+| 售后退款 | 核心纯规则、数据层、写事务和凭证服务已有仓库外候选，部分独立源码审查完成；尚未整套接入或联调，三端接口/页面与非空凭证正常链未完成。 |
 | 评价 | 原 Task8 尚未完成。 |
 | 支付、退款与对账 | 既有内部测试驱动和有限验证不代表真实渠道；真实支付退款、对账及外部验收仍待原 MS5 范围完成。 |
 | 发布与运行 | 原 MS6 和正式交付尚未完成；当前仍为 L2 本地开发，不据此推送、部署或执行真实金融操作。 |
@@ -799,9 +799,17 @@ Run `20261018011915a075c5` 来自 clean `adc5ef6330461a81acca411f8287975379df1b0
 
 - [x] 独立 SOURCE 复核和 Root 完整字节正逆；固定 PHP8.2 对最终五 PHP 语法均实际0，前后专用语法容器为空；仅语法，收据 SHA256 `e81ea73682633543ae9ea3b62c6b1e1473fb8d208d68af69d9941ca8110d1563`。
 - [x] 将五 PHP 精确接入 Main；Root 再核46个完整供体，仅原入口与迁移观察源替换、三个新 helper 精确新增，其余45个供体全字节保持。此为源码接入，不是新业务运行。
-- [ ] 将新入口身份传入九件 profile 的有限后继版本；旧 P 与旧 Run 原件保持。
+- [x] 将新入口身份传入九件 profile 的有限后继版本；R3 已实际用于下述新 Run，旧 P 与旧 Run 原件保持。
 - [ ] 从新 clean 来源冻结新 Run，完成四真实迁移命令、原完整普通链及新增101根读取，分别记录实际终结、正常收尾和独立核零。
 - [ ] 完成原新 API、三端页面与适配尺寸、Worker 和所有后继验收；用户已停止样本保持 NOT RUN，不因本项补充勾选整个 Task6/MS4。
+
+#### 新空表首次元数据观察顺序修正（2026-10-18）
+
+clean `53b86ead9453c537e42e28069674f27449ca60ce`、Run `20261018030035b634f0`：原9次初始化、MS5四命令、files/C3和真实已付前置均实际正常；已付前置由真实登录/UID、购物车、确认、创建及同App测试付款工厂完成，仅记内部测试付款，不是实际渠道或三端付款验收。履约迁移的真实check/apply/check三子命令均native0；外层入口在check_repeat严格全量比较时正常返回1，第四次apply、发货收货及101根读取均NOT RUN。原失败记录保留。
+
+独立只读诊断完整读取170表：SHOW CREATE摘要和全部原生行投影均相同，fresh metadata只在两个刚创建的空履约表出现AUTO_INCREMENT原生null→整数1；没有删除字段或归一化差异。专用诊断容器实际正常0并精确退役。随后原四容器/一内部网/六专用新卷正常停止、逐项非force移除；关闭与独立核零均实际native0/空stderr，六条fresh project/run查询真正双流空，前后全局无原资源消费者。关闭结果SHA256 `a55ff8a501f539be25f0f142087e6e5d478c7c9dc2af9ef80cdf925be691c5bf`，独立核零结果SHA256 `9a430d67d8e5cb5e62b7389a4f8ef2dd544275a52761a5105070a5ece5b89533`；仅此之后解冻Main，旧Run不重开，资源收尾不计业务通过。
+
+当前有限修正只把每表完整metadata/columns采集移到原SHOW CREATE及ACTUAL_SHOW_CREATE断言之后。全部原字段、PHP类型、AUTO_INCREMENT、SESSION stats0/其余五模式、DDL/行/Redis和严格比较均保持；新迁移观察源65524B/`d2be418564206ce657b628a25c07464f1eec8b1813d319ebf3ea3f1ff382390b`。整件正逆及人员独立SOURCE复核完成，固定PHP8.2真实lint0/空stderr且语法容器核零；修正是否足以稳定首次观察仍须新clean来源/全新专用实例的四命令和原完整普通链验证。原九件R3 profile未含旧观察源硬编码摘要，保持全件原字节；新freeze须绑定实际新Main来源，不能复用旧freeze/Run身份。新业务、三端API/DOM、Worker、售后、真实金融、非空历史及发布责任仍全部保留。
 
 ### Task 7: 退款额度与库存行为
 
@@ -811,6 +819,14 @@ Run `20261018011915a075c5` 来自 clean `adc5ef6330461a81acca411f8287975379df1b0
 实施采用（2026-10-18，先于核心源码）：采用仓库外 `ms4-aftersale-task7-design-r1` 的原设计、CONTRACT-ADDENDUM-r1、CONTRACT-ERRATUM-r1、credits独审及ROOT-ADOPTION-r1，并以 ROOT-CAPTURE-CREDIT-CONTRACT-r1 有限闭合完整原生 capture.root 和两个新库存流水的精确18键摘要。额度以保存金额转整数分核 F+H+A≤实付；paid根is_cancel始终0，money_only无库存，批准未发取消才写partial release，真实分次退货验收才写return_in。旧 reserve/整单 release/原付款赢家和原摘要保持，新旧OrderDao/PaymentDao、履约历史及finalOriginal均须完整事实分派和最终fresh核，不以宽松布尔或旧校核失败重试替代。读取继续同owned RR READ ONLY非锁，写入沿同captured PDO完整锁序；aftersale.enabled仅限制新apply。
 
 非空凭证采用外部 `ms4-aftersale-evidence-contract-r1` 原12663B设计及Root采用：独立持久私有存储、18列真实绑定、原三端实际认证/角色归属、请求实例token指纹、300秒独立Redis票据及原生bytes no-store响应；旧公开图片URL不作为该链。当前统一迁移R2和七件凭证底层R2只是外部已写源码，尚未接入Main/未解析运行；R1的upload_key收窄和JSON对象/数组类型缺口均保留原件并另出有限R2修复。不得以images=[]、迁移或底层类存在签收Task7；核心纯校核/原子事务、真实FileService/票据/七路由、三端申请处理页面及非空凭证正常验证继续原任务。
+
+后继必要合同采用（2026-10-18，先于核心Main接入）：继续采用同外部设计目录中的ROOT-PAYMENT-OBSERVATION-BOUNDARY、ROOT-MONEY-ALLOCATION-CONTRACT、ROOT-ITEM-AND-RETURN-SELECTION、ROOT-COMMERCIAL-SOURCE-SEAM、ROOT-REFUND-SHADOW-MAPPING及ROOT-STATUS-LOG-STRUCTURE-ERRATUM各r1决定。纯credit校核不以当前paid四值/删除或资格门提前覆盖原ROOT_PAYMENT_MISMATCH风险收口；当前业务writer仍须真正已付、原赢家/application和原hold门。金额以整数分及原Q剩余预算分配，部分尚余预算的单位仍计1，不重写原确认金额、不按Q展开循环；相邻验收/申请/发货边界保持。R2.Item.id固定来源订单项，数量是原选择量；23键R2包含真实child ordinal的return_selection，非退货为null，已验收与剩余选择分别保存，不把T当作实际R。
+
+34列原退款镜像固定商业父根store_order_id，child引用在真实allocations；申请时保存原数量/金额/商品与图片顺序，后续不得按当前商品或改过的分配重建。退款号沿原number factory、退款/action/movement均用真实原生PK；八镜像NULL只允许同一未提交apply的引导阶段，实际state0动作和完整mirror写入后才claim文件，最终真实state1/完整fresh事实校核通过才提交。add_time/refunded_time按实际原signed INT边界。真实订单日志表仅oid/change_type/change_message/change_time四列、无PK；完整重复多重集固定四字段排序保留，售后根status变化时只新增marketplace_aftersale/多商户售后状态更新/真实时间，不取lastInsertId、不造日志ID或历史DDL。顾客审计沿真实不可变动作链，商家/平台沿实际actor与退款资源写原审计。
+
+必要接缝同步采用：完整capture使用实际SELECT * root和全部原生movement；owned RR的8事实生产者保同Connection/PDO、非锁/完整闭集，不截断旧24字段。独立商业纯叶复用原保存金额/快照数学，旧入口及旧gate保持。完整family纯叶validateAftersaleFamilyFromFacts必须把真实完整child headers/items/ranges/refunds与同一Facts inspection闭合，逐子项复用原保存合同并按R∪T核包裹结束；不能只信credit结果或旧history失败后换空family。其必要validateRefundMirrorsFromInspection只复用Facts原完整mirrors规则，不复制34列新规范、不当授权凭证。所有Payment/Order/履约新旧消费者和最终fresh读取须同批完成，不能单独启用新写。
+
+当前外部Input R2、Facts R5、Order完整capture、商业纯叶、统一迁移R2、七件文件底层R2、RefundDao、FileServices/Tickets及六命令Writer均已有源码候选；已完成的独审与仍在审的部分分别保留报告，未据此标运行或接入通过。完整family/owned RR接缝、S2/Payment观察、新schema完整结构门、read/quote、七路由及平台权限登记、明确private_root持久卷和三端页面仍待成套实现/验证。原四项Task7执行清单继续未完成，不以空images、候选数量或资源核零代替非空凭证和业务验收。
 
 - [ ] 集成统一迁移及固定四命令真实验证；原安装SQL和历史记录保持。
 - [ ] 完成金额/区间/credits与action镜像同事务、所有新旧消费者和最终读取核对。
