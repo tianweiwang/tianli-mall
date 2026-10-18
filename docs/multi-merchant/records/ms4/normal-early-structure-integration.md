@@ -83,3 +83,21 @@ Root在实施前决定仅在 refundBase 合并边界，为这两项实际继承�
 两列auto=false候选59197 B /cc339d35dd17ccaec2cdf7722798fa3c2680e11731c023e47a41b92154a029fd已非作者有限独审，唯一raw实际UTF8 offset15729/整件正逆通过。Root实际PHP8.2语法native0/stderr空；只读真实类的纯定义输出确认原26列中恰这两列缺auto，修后全部26列完整，两列原五键逐值及整个refundBase除auto外的实际输出hash相同。无App/PDO/SQL/伪元数据，不据此恢复226 stderr或签收普通迁移。临时容器前后为空，候选不变。原MS4及严格sameColumn/零stderr/20步DDL全部保持。
 
 本次只接上述迁移文件及原09/本记录，实际本地提交在仓库外root-main-integration-r1记录。原59e冻结源、P和失败Run保持；后继新clean Main包含先前私有Worker源码接线，须另冻结完整真实来源再运行原完整正常链，不把旧三端构建或本纯合同检查扩大为业务/Worker/API/DOM/金融/发布验收。
+
+## e063 实跑最终前缀读回与 LENGTH 同义函数
+
+新clean e063完整来源实际freeze为8762702 B /f4da0dd7629730e26d24bb1b95bf8b31a84dfe99b87f4c132f369c6a8cfe6b87；Run 20261018093801b67ac4的初始化9项、MS5四命令、early履约四命令均真实正常0，售后首check也真实0/stderr空，原auto缺键阻断已越过。首次apply实际执行并记录全部20步骤后，在最后一步读回失败：step_readback_failed、not_an_exact_fixed_structure_prefix，完整driver自然1。不能把applied20记为迁移通过、猜测DDL已回滚或重开原Run。两组菜单、App/付款及全部业务均未运行，paid仅创建登记从未启动。
+
+Root在现有隔离内用原audit_app DML账户、真实READ ONLY事务只读捕获新凭证表的实际metadata/SHOW CREATE及原类纯比较；没有DDL/DML/App/HTTP或业务演员。原只读helper首版因自身语法错误退出255，源和终态保留、原CID非force移除；修正helper先经实际PHP8.2语法0，另一个真实只读诊断正常0并精确退役，原业务driver不重试。两临时CID的真实created公件加入本Run历史，后续关闭/独立zero必须覆盖它们。
+
+实际只读结果21479 B /525ebbede7321bb61f36c3f6942065ce26dbd9b14f3111b1102c81e66bf8467e：18列、6索引、两FK及基础表比较全部true，state CHECK可解析，values CHECK解析为null。实际MySQL元数据把声明中的OCTET_LENGTH呈现为LENGTH；当前有限语法只允许octet_length。官方[MySQL8字符串函数说明](https://dev.mysql.com/doc/refman/8.0/en/string-functions.html#function_octet-length)明确两者同义，均按字节计数；不能与字符计数函数混同。
+
+Root在实施前决定仅在现有函数token位置将length规范到既有octet_length节点，仍沿原单参数arity、有限函数/字面量/字符集、完整树及全部严格结构比较。不得添加任意函数/字符串fallback、执行表达式、跳过CHECK或修改已声明DDL。先用实际已捕获metadata做无SQL的真实类正向解析和完整树对比，独审及PHP8.2语法后才接源码；原失败保留且正常退役/独立核零后，另新clean来源完整实跑。到期和其他停止样本均不新增或执行。
+
+## e063 失败收尾与同义函数修复接入
+
+原Run专用正常收尾实际native0：两原DB各同Popen正常stop0，paid仍created从未启动，early保留terminal1，精确非force移除原4CID/1空端点内网/7卷。close结果SHA256 981d5a3bac098b7247e33ff43f5926f1ba21a87b86c733cdd80d7b29817aad4b。后继独立zero不import Host/close，实际native0，完整e063 source与九件profile、1771原公件前后保持；六fresh原始project/run查询均0/双流空，完整global消费者及历史created CID（含两个已退役只读诊断CID）覆盖。zero结果SHA256 37194428af7085f9b5c6effe0cae33d20c581bf09beaa0b676e2ce5b2667cea7。原20步DDL后读回失败不改写为成功，业务/页面仍未运行。
+
+一行length到octet_length的原函数位置规范化已通过非作者有限源码审查及Root整件正逆；最终59273 B /18aae0d1dc9293f5e6a2032f56421bd452b96f0cbb0b8d6f25ec81426d53a23f。固定PHP8.2语法实际0/stderr空，另在无网络/只读临时容器中仅加载真实迁移类与21479字节原实际metadata捕获，两项CHECK均解析为非null完整树，并与声明树严格相等；完整声明合同保持。没有PDO实例、SQL/DDL/DML、App或业务，也不据纯捕获解析宣称实际完整迁移通过；两个临时容器前后为空。
+
+本次只接原迁移及原09/本记录，形成L2本地提交；此前Worker诊断源码单独本地提交6405617955ba9da6eea8e911fc8afb3212850e17，未混入本修复。下一轮须新clean来源、完整真实冻结及新Run，从初始化/四迁移和完整原正常链继续，不能重开旧Run或把旧构建/纯检查转记新业务。Worker实际生命周期、Task6/7/8、三端API/DOM、真实金融、非空历史和发布原未验责任全部保持；停止样本仍NOT RUN。
