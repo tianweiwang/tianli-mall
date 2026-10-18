@@ -55,3 +55,32 @@ Root用当前真实vendor只读autoload核实际Timer/Crontab类路径、原post
 另用当前真实App配置与file Channel::write做普通日志组件检查，采用独立MARKETPLACE_LOG_COMPONENT_PROBE前缀，实际完整文件138字节读回、buffer空、native0/stderr空且临时容器已删除。此组件没有启动Worker、PDO/SQL/HTTP或业务；不能冒称三个产品阶段记录、真实timer/tick/删除、正常Worker停止或Task6通过。实际完整正常生命周期仍按前段合同另行准备和验证。
 
 本次仅接Timer和本记录、形成L2本地提交，不推送或部署。e063验证快照与既有失败Run/P不改；本增量不计其验证通过，原售后、评价、API/DOM、金融、历史及发布缺口全部保持。
+
+## Worker 前驱真实公众文件保留决定（实施前）
+
+Root已完整读取NORMAL-LIFECYCLE-PROFILE-CONTRACT-r1及NORMAL-LEGACY-TASK-PREFLIGHT-CONTRACT-r1。当前cba6486新Run独立冻结并在运行，不改其validation/P/结果。原normal公众tmpfs退出后不可取回实际图片bytes，故先实现仅附加保留侧件，作为后继Worker复用真实正常数据的前驱，不生成图片、附件行或新身份。
+
+本次限定单个ms4-aftersale-review-normal.php测试入口：新增固定M4AR_PUBLIC_KEEP=/run/audit-fixtures/ms4-aftersale-review-public-file-keep.json；原private_input与private_seal只各扩此一个固定路径；复用原64MiB native/96MiB envelope、0700父目录/0600单link/真实owner、create-only/fsync/稳定stat/完整readback和严格serialize/base64合同，不另造archive框架。原业务final snapshot/final_baseline封存和全量zero成立后，保留当时完整/workspace/crmeb/public成员及每件实际原bytes、hash/mode/uid/nlink；读取前后完整stat稳定、路径无逃逸/链接、总长度受原边界限制。原public map、完整DB/Redis/私有证据及原输入必须保持。
+
+仅新增公开aftersale-review-public-file-keep.json固定descriptor，含schema/scope/run_id/source_sha/freeze_sha256/container_id/source_binding_sha256/final_baseline_sha256/archive/file_map_sha256；archive沿原六字段，私有payload保存原文件metadata与严格base64 bytes。descriptor绑定真实business final_baseline，原result29/business24/shutdown15及所有原assertions/HTTP/关闭顺序不改，不把keep生成当Worker或业务通过。原fixture volume新增固定文件仅由后继真实Host/Worker/close/zero显式消费，当前P和当前Run不支持该增量、不应用。
+
+先独立源码审查/完整正逆，实际语法检查须在当前完整Run正常收口和独立zero后，不在其全局观察期间启动临时Docker组件。Worker新角色、旧normal历史/精确退役、真实文件物化、任务/cache/真实未到期窗口预读及完整原think生命周期均仍待后继实施和新freeze/Run。原停止样本NOT RUN；不改期限/时钟/任务配置或cache，不执行真实金融、不推送部署。候选只在仓库外准备，产品入口此时不变。
+
+### 普通读取复用原九稳定字段（实施前修订）
+
+候选r1中的新增读取以完整lstat数组严格比较。Root与非作者源码审查确认它比原m4ar_private_input的九字段合同更严格，包含正常读取可更新的atime；这是确定的源兼容风险，尚未运行并观察真实触发，不能写成运行失败。
+
+只将该新读取接缝改为原dev/ino/mode/nlink/uid/gid/size/mtime/ctime九字段严格相同，同时核这九键完整存在；其余完整内容长度/hash、owner/单link/路径canonical、原meta、base64、前后全量snapshot和私有archive/readback保持。复用原稳定字段而非放宽内容/身份校验。不改旧private_input/private_seal实现或其原比较。
+
+原candidate-source-r1完整保留；create-only生成candidate-source-r2及独立raw正逆，后继独审后才由Root做实际语法。当前cba冻结Run及其验证源码/P完全不变；源修订不据此记新Run、文件保留或Worker通过。
+
+## 公众文件保留前驱候选：源码检查点
+
+仓库外public-file-keep-source-r1/candidate-source-r2完整单entry为196010 B /a69741e3ed413315d03a38209a39e1bed71a8c04d77b4e47658495fa5b20aa4b。原r1完整lstat中的atime源风险按上述实施前决定，仅以K06改为原九稳定字段两侧count9和严格相等，r1和原阻断报告保留；不是实际atime故障复现。r2非作者SOURCE审查5635 B /52dec1fd7140046c6a9bf673fa36407291950d1882470d5a9fad2a67bc5e2133通过，Root实际六组完整正逆和16文件目录pins检查0。
+
+此时产品entry仍为原186702字节，未接入候选；当前cba冻结Run不含keep，仍独立正常推进。实际PHP8.2语法须等本轮正常收尾/独立zero后，keep真实生成、其后Host/Worker/close/zero消费及完整Worker都仍未运行，不借当前early16成功签收。Root另已核原Service::commands经Console::starting注册；Console::addCommands先过滤非Command子类，queue的抽象FailedJob因此不被实例化，不据表面数组作vendor修复。
+
+
+### 公件KEEP候选r2实际PHP语法检查
+
+仅在Run20261018110755b1391e实际正常close0及独立zero0后，Root对已独审/六组完整正逆的196010 B /a69741e3ed413315d03a38209a39e1bed71a8c04d77b4e47658495fa5b20aa4b候选执行固定PHP8.2镜像单文件-l。真实native0/stderr空，语法容器无网络/只读挂载，前后精确查询均空；只含三条真实原生收据，结果SHA256 9714cca0c7cbd50c1893505c5b91a92b3414557f5f6df74786b575fd5e2fa001。候选及本轮zero原件前后保持。此为SOURCE/PARSE候选，不是Main接入、KEEP真实写读或Worker/API/DOM验收；后继消费者、Worker入口/profile及实际普通验证原任务继续未完成。

@@ -131,3 +131,29 @@ Run 202610181018382c587b原售后首次apply为completed/stage20、applied20/pen
 Root对两候选的完整正逆与实际PHP8.2语法均0；仅用真实原始捕获做DAO及独立Oracle的两完整CHECK树严格对比，并用原前后完整CHECK行做正向保持检查，均0。DAO纯检查结果5446 B / 758888afc63f74e7a50e6fe20bc72b12279125150788a37838e9ad50ad5723e4；入口纯检查结果5737 B / c55140b97798bf2ae17daf7e09402e5870c7dcc73d2dd1f86047e9d2e8828fed。没有DAO实例、App/PDO/SQL、HTTP或业务运行，源码相同不等于新业务验收。
 
 本地提交限上述两源码及本记录/原09，Timer、原迁移CLI、三端及其它产品不变。后继须为新clean来源、新profile及新Run，原完整16命令与Task6/7/8正常业务、Worker、三端API/DOM、非空历史、真实支付对账和发布责任保持。停止样本仍NOT RUN；仅L2，不推送或部署，不执行真实金融。
+
+## cba6486 新完整来源的统一早期结构实测
+
+旧33efdcc Run正常关闭及独立zero0后，Root将独立validation推进到clean cba6486464c5450a9016dcea0444d098380aac20。新九件profile仅source-derivation的early_driver三字段更新，其余八件完整字节保持；独审及Root完整正逆/JSON/原pin DAG检查通过。实际freeze为8762706 B /339c8ebc732a06e9c0381290e7b7f05186741296587d2de90946fd1f28c294ed，完整driver/customer/paid/fulfillment/aftersale来源数分别10/10837/10838/10852/10856，artifact9。
+
+新Run 20261018110755b1391e实际prepare和DB ready均0；初始化9子命令全部native0/stderr0、外层0，MS5四命令外层0。canonical paid真实create/register但尚未启动。early注册helper真实0并精确移除，early完整原4+12命令全部native0/stderr0、driver自然0，status=VERIFIED_MS4_EARLY_AFTERSALE_STRUCTURE_AND_MENUS_ONLY、phase=final_binding，原私有清理通过、diagnostic=null。原售后20步首次apply及重复check/apply、售后七叶和评价三叶两组菜单的首次/重复合同均由原完整入口通过；early容器已正常精确退役。
+
+完整早期结果6978446 B /254e6fdc37a690ebc896d8514fa1c463c2ef77f0b116b682ccd1904b2c7d0299。这是新来源的统一普通结构与菜单验证通过，原先CHECK显示差异卡点已越过；不据原空表证明非空历史或完整业务。当前files-bootstrap前驱正在同一原生handle继续；C3、真实paid启动/付款、原Task6、后继售后评价HTTP、正常close及独立zero尚未得出结果，不能勾选Task6/7/8或放开冻结源/P。Worker、DOM、真实金融、非空历史和发布继续未验，停止样本NOT RUN；未推送部署。
+
+
+### cba6486 本轮 C3 后付款准备失败与后继决定（实施前）
+
+Run 20261018110755b1391e 的原完整 early16、files-bootstrap、C3 prepare 均实际正常；付款准备 CLI 062 自然退出1/空stderr，原sanitized错误只给 RuntimeError，未恢复或臆造原生异常码。canonical paid 未启动，Task6、后继售后评价普通链及本轮正常close/独立zero尚未完成。原失败和全部原件保留，不重试或重开旧Run。
+
+Root普通只读保存数据/源码核对：C3正常移除后，实际collector记录恰两DB加原paid三角色，而manifest仍四角色，原PAID_FORMAL_EXACT_THREE_ROLES严格条件为false；collect仅写观察输入，不调用真实register。后继采用仓库外ms4-post-c3-formal-registration-fix-r1/IMPLEMENTATION-DECISION-r1.md：保留early register-paid-producer全部原件，在C3正常退役后、同paid绑定/启动前增加独立真实register-paid-after-c3登记及完整source/history/close/zero消费者，不放宽三角色条件、不手写formal或重建paid。
+
+先复核并正常精确退役本轮三CID/单内部网/七新卷，完整原公件保持及独立fresh全局/六查询/source核零后，才可更新冻结validation/P和做后继临时语法组件。资源收尾不是业务通过；原三端API/DOM、Worker、完整Task6/7/8、金融历史及发布仍待，用户停止样本NOT RUN。
+
+
+### cba6486 本轮实际正常收尾与独立核零
+
+本轮062 paid-create原生1/空stderr和原付款未启动状态保持。独立SOURCE复核后，Root一次执行专用post-C3收尾，实际native0：原paid完整26字段及两个零时间核对其从未start，early/files/C3原完整验证通过，所有历史CID缺席；两DB分别原正常stop无限等待并同CID自然exit0，原三CID/单内部网/七卷非force精确退役。3640份原公件完整bytes保持；close实际19收据全部native0/stderr空，末六查询原始双流空。close结果14279 B /6da7aaa23eb9c4e4e474894518305786e9fc71443e72e69936366c2fd69d9155。
+
+随后独立zero（不import Host/close）实际native0：fresh六查询真正stdout/stderr空，前后各53全局容器无原CID/卷/网络/container-mode消费者，完整冻结四组来源/driver/引用/九件P及3640原公件前后保持。结果85847 B /093280e451be716bb9693ca73e92e2e3f05e452ca87e2bdcd3cde942ec5c8fe2。仅此之后解除本轮validation/P的活动运行冻结；旧Run/P原件保留且不重开，资源核零不计业务通过。
+
+后继源码合同及PHP消费者附记均已全文核：真实distinct register-paid-after-c3由原bootstrap/register重建三角色formal，原early四收据保持；新四件受Host与独立zero mandatory验证，paid历史29扩33、Task6公件59扩63/历史61扩65、完整normal80扩84。原PHP业务wire15/25/34及全部paid/Task6/Task78结果、业务和shutdown键保持。Root已作实施前采用，九件后继profile源码候选正在仓库外编写，尚未接入运行或据此勾任务完成。
