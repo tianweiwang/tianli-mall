@@ -9,7 +9,7 @@
 // +----------------------------------------------------------------------
 
 import request from "@/utils/request.js";
-import { fulfillmentPageQuery } from "@/utils/marketplace-fulfillment.js";
+import { fulfillmentPageQuery, fulfillmentChildNumber } from "@/utils/marketplace-fulfillment.js";
 
 /**
  * 获取购物车列表
@@ -417,4 +417,12 @@ export function orderReceiveGift(orderId, data) {
 export async function getSavedOrderFulfillment(uni, page = 1, limit = 20) {
   if (typeof uni !== 'string' || !uni || uni.length > 128) throw new Error('订单号不可用');
   return request.get('order/detail/' + encodeURIComponent(uni), fulfillmentPageQuery(page, limit));
+}
+
+/** Dedicated, actually authenticated customer package endpoints; no actor fields. */
+export function getCustomerFulfillmentPackage(childNo) {
+  return Promise.resolve().then(() => request.get('order/fulfillment/packages/' + encodeURIComponent(fulfillmentChildNumber(childNo))));
+}
+export function receiveCustomerFulfillmentPackage(childNo, body) {
+  return Promise.resolve().then(() => request.post('order/fulfillment/packages/' + encodeURIComponent(fulfillmentChildNumber(childNo)) + '/receipt', body));
 }

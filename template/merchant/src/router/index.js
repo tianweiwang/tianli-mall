@@ -2,6 +2,7 @@ import marketplace from '../../marketplace.config';
 import Vue from 'vue';
 import Router from 'vue-router';
 import store from '../store';
+import { captureSession, isCurrentSession } from '../api/session';
 import Layout from '../layout/index.vue';
 
 Vue.use(Router);
@@ -29,16 +30,29 @@ const router = new Router({
   ],
 });
 router.beforeEach(async (to, from, next) => {
-  document.title = (to.meta.title || '商家后台') + ' · ' + marketplace.name;
   if (to.meta.public) { next(); return; }
   if (!store.state.token) { next({ name: 'login', query: { redirect: to.fullPath } }); return; }
-  try {
-    await store.dispatch('loadMe');
-    if (to.meta.permission && !store.getters.can(to.meta.permission)) next({ name: 'unavailable' });
-    else next();
-  } catch (error) {
+  let session;
+  try { session = captureSession(); }
+  catch (error) { next({ name: 'unavailable', query: { reason: 'profile' } }); return; }
+  const intent = store.state.authIntent;
+  let failed = false;
+  try { await store.dispatch('loadMe'); }
+  catch (error) { failed = true; }
+  // Settle a superseded transition through Router3's original pending checks.
+  if (router.history.pending !== to) { next(); return; }
+  if (store.state.authIntent !== intent || store.state.sessionRevision !== session.revision) { next(false); return; }
+  let current;
+  try { current = isCurrentSession(session); }
+  catch (error) { next({ name: 'unavailable', query: { reason: 'profile' } }); return; }
+  if (!current) { next(false); return; }
+  if (failed) {
     if (!store.state.token) next({ name: 'login', query: { redirect: to.fullPath } });
     else next({ name: 'unavailable', query: { reason: 'profile' } });
+    return;
   }
+  if (to.meta.permission && !store.getters.can(to.meta.permission)) next({ name: 'unavailable' });
+  else next();
 });
+router.afterEach((to) => { document.title = (to.meta.title || '商家后台') + ' · ' + marketplace.name; });
 export default router;

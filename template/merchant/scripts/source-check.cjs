@@ -23,7 +23,7 @@ const expected = { vue: '2.7.16', 'vue-router': '3.6.5', vuex: '3.6.2', axios: '
 for (const [key, version] of Object.entries(expected)) if (pkg.dependencies[key] !== version) errors.push('Unexpected selected dependency: ' + key);
 if (pkg.devDependencies['vue-template-compiler'] !== pkg.dependencies.vue) errors.push('Vue compiler mismatch');
 const request = fs.readFileSync(path.join(root, 'src/api/request.js'), 'utf8');
-if (!request.includes("apiBase !== '/merchantapi'") || !request.includes("headers.Authorization = 'Bearer ' + token")) errors.push('Merchant request boundary missing');
+if (!request.includes("apiBase !== '/merchantapi'") || !request.includes("headers.Authorization = 'Bearer ' + snapshot.token")) errors.push('Merchant request boundary missing');
 const session = fs.readFileSync(path.join(root, 'src/api/session.js'), 'utf8');
 if (!session.includes("TOKEN_KEY = 'marketplace_merchant_token'")) errors.push('Independent token key missing');
 const config = fs.readFileSync(path.join(root, 'vue.config.js'), 'utf8');

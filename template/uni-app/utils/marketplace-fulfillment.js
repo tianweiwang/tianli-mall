@@ -149,3 +149,79 @@ export function fulfillmentTime(value) {
   const date = new Date(value * 1000); const pad = number => String(number).padStart(2, '0');
   return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate()) + ' ' + pad(date.getHours()) + ':' + pad(date.getMinutes()) + ':' + pad(date.getSeconds());
 }
+
+
+/** Dedicated customer wrapper only; the flat child contract never gains actions. */
+export function fulfillmentChildNumber(value) {
+  text(value);
+  if (!value || value !== value.replace(/^[ \t\n\r\u0000\u000b]+|[ \t\n\r\u0000\u000b]+$/g, '')) unavailable();
+  let length;
+  try { length = encodeURIComponent(value).replace(/%[a-fA-F0-9]{2}|./g, 'x').length; } catch (error) { unavailable(); }
+  if (length > 32) unavailable(); return value;
+}
+
+export function readCustomerReceipt(value, childNo) {
+  keys(value, ['package', 'allowed_actions', 'receipt_selection']);
+  const child = readFulfillmentChild(value.package, true);
+  if (fulfillmentChildNumber(child.order_id) !== fulfillmentChildNumber(childNo)) unavailable();
+  keys(value.allowed_actions, ['receive']); if (typeof value.allowed_actions.receive !== 'boolean') unavailable();
+  const selection = value.receipt_selection; keys(selection, ['schema', 'coordinate', 'items']);
+  if (selection.schema !== 1 || selection.coordinate !== 'child_item_ordinal' || list(selection.items).length !== child.items.length) unavailable();
+  let received = 0; let eligible = 0; let original = 0; let previousId = 0;
+  const items = selection.items.map((item, index) => {
+    keys(item, ['item_id', 'quantity', 'received_quantity', 'eligible_quantity', 'eligible_segments']);
+    const saved = child.items[index]; integer(item.item_id, 1, INT_MAX); integer(item.quantity, 1, INT_MAX);
+    integer(item.received_quantity, 0, INT_MAX); integer(item.eligible_quantity, 0, INT_MAX);
+    if (item.item_id !== saved.id || item.quantity !== saved.quantity || item.item_id <= previousId
+      || item.received_quantity > item.quantity || item.eligible_quantity > item.quantity - item.received_quantity) unavailable();
+    previousId = item.item_id; let count = 0; let last = 0;
+    const segments = list(item.eligible_segments).map(segment => {
+      keys(segment, ['first', 'last']); integer(segment.first, 1, item.quantity); integer(segment.last, segment.first, item.quantity);
+      if (segment.first <= last || (last > 0 && segment.first === last + 1)) unavailable();
+      last = segment.last; count += segment.last - segment.first + 1; return { first: segment.first, last: segment.last };
+    });
+    if (count !== item.eligible_quantity) unavailable();
+    received += item.received_quantity; eligible += item.eligible_quantity; original += item.quantity;
+    return { item_id: item.item_id, quantity: item.quantity, received_quantity: item.received_quantity,
+      eligible_quantity: item.eligible_quantity, eligible_segments: segments };
+  });
+  if (original !== child.original || received !== child.received || eligible > child.to_receive || value.allowed_actions.receive !== (eligible > 0)) unavailable();
+  return { package: child, allowed_actions: { receive: value.allowed_actions.receive },
+    receipt_selection: { schema: 1, coordinate: 'child_item_ordinal', items } };
+}
+
+const RECEIPT_OPERATION = ['schema', 'operation_id', 'action', 'root_order_id', 'root_order_no', 'child_order_id',
+  'child_order_no', 'quantity', 'created_at', 'committed_at', 'shipped_at', 'receipt_due_at', 'received_at', 'fulfillment_summary'];
+export function readReceiptResult(value, intent) {
+  row(value);
+  if (Object.prototype.hasOwnProperty.call(value, 'operation_created')) {
+    keys(value, ['state', 'operation_created', 'root_order_id', 'child_order_id']);
+    if (value.state !== 'already_received' || value.operation_created !== false || value.root_order_id !== intent.rootId
+      || value.child_order_id !== intent.childId) unavailable();
+    return { kind: 'no_operation', result: { ...value } };
+  }
+  keys(value, RECEIPT_OPERATION);
+  if (value.schema !== 1 || value.action !== 'receive' || value.root_order_id !== intent.rootId
+    || value.root_order_no !== intent.rootNo || value.child_order_id !== intent.childId || value.child_order_no !== intent.childNo
+    || typeof value.operation_id !== 'string' || !/^[1-9][0-9]{0,19}$/.test(value.operation_id)
+    || (value.operation_id.length === 20 && value.operation_id > '18446744073709551615')) unavailable();
+  integer(value.quantity, 1); stamp(value.created_at); stamp(value.committed_at); stamp(value.received_at);
+  if (value.committed_at < value.created_at || value.received_at !== value.created_at || value.shipped_at !== null || value.receipt_due_at !== null) unavailable();
+  if (intent.body.selection.mode === 'items') {
+    let quantity = 0;
+    intent.body.selection.items.forEach(item => item.segments.forEach(segment => { quantity += segment.last - segment.first + 1; }));
+    if (quantity !== value.quantity) unavailable();
+  }
+  const summary = value.fulfillment_summary; keys(summary, SUMMARY);
+  if (!['unshipped', 'partial', 'shipped'].includes(summary.shipping_state)
+    || !['not_shipped', 'pending', 'partial', 'received'].includes(summary.receipt_state) || typeof summary.closed !== 'boolean') unavailable();
+  SUMMARY.slice(3).forEach(key => integer(summary[key]));
+  if (summary.original < 1 || summary.shipped > summary.original || summary.received > summary.shipped
+    || summary.cancelled_unshipped !== 0 || summary.returned_accepted !== 0
+    || summary.to_ship !== summary.original - summary.shipped || summary.to_receive !== summary.shipped - summary.received
+    || ((summary.child_count === 0) !== (summary.shipped === 0)) || summary.child_count > summary.shipped
+    || summary.shipping_state !== (summary.shipped === 0 ? 'unshipped' : summary.to_ship > 0 ? 'partial' : 'shipped')
+    || summary.receipt_state !== (summary.shipped === 0 ? 'not_shipped' : summary.received === summary.shipped ? 'received' : summary.received === 0 ? 'pending' : 'partial')
+    || summary.closed !== (summary.to_ship === 0 && summary.to_receive === 0) || value.quantity > summary.received) unavailable();
+  return { kind: 'operation', result: { ...value, fulfillment_summary: { ...summary } } };
+}

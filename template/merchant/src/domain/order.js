@@ -21,11 +21,19 @@ function fulfillmentSummary(value, totalNum) {
   if (!['unshipped', 'partial', 'shipped'].includes(summary.shipping_state)
     || !['not_shipped', 'pending', 'partial', 'received'].includes(summary.receipt_state)
     || typeof summary.closed !== 'boolean' || summary.original !== integer(totalNum, 1, UINT_MAX)) unavailable();
-  return { shipping_state: summary.shipping_state, receipt_state: summary.receipt_state, closed: summary.closed,
+  const result = { shipping_state: summary.shipping_state, receipt_state: summary.receipt_state, closed: summary.closed,
     original: integer(summary.original, 1, UINT_MAX), shipped: integer(summary.shipped, 0, UINT_MAX),
     received: integer(summary.received, 0, UINT_MAX), cancelled_unshipped: integer(summary.cancelled_unshipped, 0, UINT_MAX),
     returned_accepted: integer(summary.returned_accepted, 0, UINT_MAX), to_ship: integer(summary.to_ship, 0, UINT_MAX),
     to_receive: integer(summary.to_receive, 0, UINT_MAX), child_count: integer(summary.child_count, 0, UINT_MAX) };
+  if (result.received > result.shipped || result.shipped > result.original
+    || result.cancelled_unshipped !== 0 || result.returned_accepted !== 0
+    || result.to_ship !== result.original - result.shipped || result.to_receive !== result.shipped - result.received
+    || ((result.child_count === 0) !== (result.shipped === 0)) || result.child_count > result.shipped
+    || result.shipping_state !== (result.shipped === 0 ? 'unshipped' : result.to_ship > 0 ? 'partial' : 'shipped')
+    || result.receipt_state !== (result.shipped === 0 ? 'not_shipped' : result.received === result.shipped ? 'received' : result.received === 0 ? 'pending' : 'partial')
+    || result.closed !== (result.to_ship === 0 && result.to_receive === 0)) unavailable();
+  return result;
 }
 
 function fulfillmentActions(value, summary) {
@@ -118,6 +126,132 @@ export function orderStatus(order) {
     }
     return order.shipping_type === 2 ? '待提货' : '待发货';
   }
-  const names = { 0: order.shipping_type === 2 ? '待提货' : '待发货', 1: order.shipping_type === 2 ? '已提货' : '待收货', 2: '已收货', 3: '已完成' };
-  return names[order.status] || '订单状态：' + order.status;
+  return '履约资料暂不可用';
+}
+
+
+// Dedicated public fulfillment envelopes. Saved money/items reuse the existing validators.
+const PACKAGE_KEYS = ['schema', 'scope', 'id', 'order_id', 'root_order_id', 'root_order_no', 'marketplace_trade_version',
+  'merchant_name_snapshot', 'shipping_type', 'carrier_code', 'carrier_name', 'tracking_no', 'shipped_at', 'receipt_due_at',
+  'last_received_at', 'received_at', 'shipping_state', 'receipt_state', 'closed', 'original', 'shipped', 'received',
+  'cancelled_unshipped', 'returned_accepted', 'to_ship', 'to_receive', 'items', 'payment_owner_order_id', 'paid',
+  'pay_type', 'pay_time', 'pay_type_name'];
+const OPERATION_KEYS = ['schema', 'operation_id', 'action', 'root_order_id', 'root_order_no', 'child_order_id',
+  'child_order_no', 'quantity', 'created_at', 'committed_at', 'shipped_at', 'receipt_due_at', 'received_at', 'fulfillment_summary'];
+
+function publicStamp(value, nullable = false) { return nullable && value === null ? null : integer(value, 1, UINT_MAX); }
+function packageRow(value, root, detail) {
+  const child = exactKeys(value, detail ? PACKAGE_KEYS.concat(['recipient', 'mark', 'custom_form']) : PACKAGE_KEYS);
+  if (child.schema !== 1 || child.scope !== 'marketplace_fulfillment_child_v1' || child.marketplace_trade_version !== 1
+    || child.paid !== 1 || child.shipping_state !== 'shipped' || child.root_order_id !== root.id
+    || child.root_order_no !== root.order_id || child.payment_owner_order_id !== root.id) unavailable();
+  integer(child.id, 1); if (child.id === root.id) unavailable();
+  integer(child.shipping_type, 1, 2);
+  ['order_id', 'merchant_name_snapshot', 'carrier_code', 'carrier_name', 'tracking_no', 'pay_type', 'pay_type_name'].forEach((key) => text(child[key]));
+  ['original', 'shipped'].forEach((key) => integer(child[key], 1, UINT_MAX));
+  ['received', 'to_receive', 'receipt_due_at'].forEach((key) => integer(child[key], 0, UINT_MAX));
+  ['cancelled_unshipped', 'returned_accepted', 'to_ship'].forEach((key) => { if (child[key] !== 0) unavailable(); });
+  ['shipped_at', 'pay_time'].forEach((key) => publicStamp(child[key]));
+  ['last_received_at', 'received_at'].forEach((key) => publicStamp(child[key], true));
+  if (child.original !== child.shipped || child.received > child.original || child.to_receive !== child.original - child.received
+    || child.closed !== (child.received === child.original)
+    || child.receipt_state !== (child.received === 0 ? 'pending' : child.closed ? 'received' : 'partial')
+    || (child.received === 0) !== (child.last_received_at === null)
+    || child.received_at !== (child.closed ? child.last_received_at : null)) unavailable();
+  if (!Array.isArray(child.items) || !child.items.length || child.items.length > 500) unavailable();
+  const items = child.items.map(item => savedItem(exactKeys(item, ['id', 'product_id', 'product_name', 'sku_name', 'image', 'quantity', 'unit_price', 'line_price', 'postage_price'])));
+  const seen = new Set(); let quantity = 0;
+  items.forEach((item) => { if (seen.has(item.id)) unavailable(); seen.add(item.id); quantity += item.quantity; });
+  if (quantity !== child.original) unavailable();
+  const result = { ...child, items };
+  if (detail) {
+    const recipient = exactKeys(child.recipient, ['real_name', 'user_phone', 'user_address']);
+    result.recipient = { real_name: text(recipient.real_name), user_phone: text(recipient.user_phone), user_address: text(recipient.user_address) };
+    result.mark = text(child.mark); result.custom_form = savedForms(child.custom_form);
+  }
+  return result;
+}
+
+export function orderPackages(value, expectedId, requestedPage, requestedLimit) {
+  const data = exactKeys(value, ['root', 'packages', 'shipping_items']); const root = orderDetail(data.root);
+  if (orderRecordId(root.id) !== orderRecordId(expectedId)) unavailable();
+  if (root.fulfillment_summary === null) {
+    if (data.packages !== null || data.shipping_items !== null) unavailable();
+    return { root, packages: null, shipping_items: null };
+  }
+  const page = exactKeys(data.packages, ['page', 'limit', 'count', 'list']);
+  if (page.page !== integer(requestedPage, 1, UINT_MAX) || page.limit !== integer(requestedLimit, 1, 100)
+    || integer(page.count, 0, UINT_MAX) !== root.fulfillment_summary.child_count || !Array.isArray(page.list)) unavailable();
+  if (page.list.length !== Math.max(0, Math.min(page.limit, page.count - (page.page - 1) * page.limit))) unavailable();
+  const seen = new Set(); const children = page.list.map((value) => {
+    const child = packageRow(value, root, false); if (seen.has(child.id)) unavailable(); seen.add(child.id); return child;
+  });
+  if (!Array.isArray(data.shipping_items) || data.shipping_items.length !== root.items.length) unavailable();
+  const source = new Map(root.items.map((item) => [item.id, item])); const itemIds = new Set();
+  let shipped = 0; let remaining = 0; let previous = 0;
+  const shippingItems = data.shipping_items.map((value) => {
+    const item = exactKeys(value, ['item_id', 'original_quantity', 'shipped_quantity', 'to_ship']);
+    const id = integer(item.item_id, 1); const saved = source.get(id);
+    if (!saved || itemIds.has(id) || id <= previous || integer(item.original_quantity, 1) !== saved.quantity) unavailable();
+    integer(item.shipped_quantity); integer(item.to_ship);
+    if (item.shipped_quantity + item.to_ship !== item.original_quantity) unavailable();
+    itemIds.add(id); previous = id; shipped += item.shipped_quantity; remaining += item.to_ship;
+    return { ...item };
+  });
+  if (shipped !== root.fulfillment_summary.shipped || remaining !== root.fulfillment_summary.to_ship) unavailable();
+  return { root, packages: { page: page.page, limit: page.limit, count: page.count, list: children }, shipping_items: shippingItems };
+}
+
+export function orderPackageDetail(value, root, childId) {
+  const data = exactKeys(value, ['package']); const child = packageRow(data.package, root, true);
+  if (orderRecordId(child.id) !== orderRecordId(childId)) unavailable(); return child;
+}
+
+function utf8Text(value, maximum, label) {
+  if (typeof value !== 'string' || !value || value !== value.replace(/^[ \t\n\r\u0000\u000b]+|[ \t\n\r\u0000\u000b]+$/g, '') || value.includes('\u0000')) throw new Error(label + '格式不正确');
+  let length;
+  try { length = encodeURIComponent(value).replace(/%[A-Fa-f0-9]{2}|./g, 'x').length; }
+  catch (error) { throw new Error(label + '格式不正确'); }
+  if (length > maximum) throw new Error(label + '过长'); return value;
+}
+function frozen(value) { if (value && typeof value === 'object') { Object.values(value).forEach(frozen); Object.freeze(value); } return value; }
+let fulfillmentKeySequence = 0;
+function shipmentKey(rootId) {
+  fulfillmentKeySequence += 1;
+  return 'ship:' + rootId + ':' + Date.now().toString(36) + ':' + fulfillmentKeySequence.toString(36) + ':'
+    + Math.random().toString(36).slice(2, 13) + Math.random().toString(36).slice(2, 13);
+}
+
+export function shipmentIntent(snapshot, draft) {
+  if (!snapshot || !snapshot.root || !Array.isArray(snapshot.shipping_items)) unavailable();
+  const root = snapshot.root; exactKeys(draft, ['items', 'delivery']);
+  if (!Array.isArray(draft.items) || !draft.items.length) throw new Error('请选择本次发货商品和数量');
+  const remaining = new Map(snapshot.shipping_items.map((item) => [item.item_id, item.to_ship])); const seen = new Set();
+  const items = draft.items.map((value) => {
+    exactKeys(value, ['item_id', 'quantity']); const id = integer(value.item_id, 1); const quantity = integer(value.quantity, 1);
+    if (seen.has(id) || !remaining.has(id) || quantity > remaining.get(id)) throw new Error('本次数量超出当前待发货数量，请重新读取');
+    seen.add(id); return { item_id: id, quantity };
+  }).sort((left, right) => left.item_id - right.item_id);
+  exactKeys(draft.delivery, ['type', 'carrier_code', 'carrier_name', 'tracking_no']);
+  if (draft.delivery.type !== 'express') throw new Error('本次只支持快递发货');
+  const delivery = { type: 'express', carrier_code: utf8Text(draft.delivery.carrier_code, 50, '承运编码'),
+    carrier_name: utf8Text(draft.delivery.carrier_name, 64, '承运名称'), tracking_no: utf8Text(draft.delivery.tracking_no, 64, '物流单号') };
+  const body = { idem_key: shipmentKey(root.id), items, delivery };
+  if (encodeURIComponent(JSON.stringify(body)).replace(/%[A-Fa-f0-9]{2}|./g, 'x').length > 65536) throw new Error('本次发货内容超出限制');
+  return frozen({ rootId: root.id, rootNo: root.order_id, original: root.total_num, body, wire: JSON.stringify(body) });
+}
+
+export function shipmentResult(value, intent) {
+  const result = exactKeys(value, OPERATION_KEYS);
+  if (result.schema !== 1 || result.action !== 'ship' || result.root_order_id !== intent.rootId || result.root_order_no !== intent.rootNo
+    || typeof result.operation_id !== 'string' || !/^[1-9][0-9]{0,19}$/.test(result.operation_id)
+    || (result.operation_id.length === 20 && result.operation_id > '18446744073709551615')) unavailable();
+  integer(result.child_order_id, 1); utf8Text(result.child_order_no, 32, '包裹单号');
+  if (result.child_order_id === result.root_order_id || result.quantity !== intent.body.items.reduce((sum, item) => sum + item.quantity, 0)) unavailable();
+  publicStamp(result.created_at); publicStamp(result.committed_at); publicStamp(result.shipped_at);
+  integer(result.receipt_due_at, 0, UINT_MAX);
+  if (result.committed_at < result.created_at || result.shipped_at !== result.created_at || result.received_at !== null
+    || (result.receipt_due_at !== 0 && result.receipt_due_at < result.shipped_at)) unavailable();
+  const summary = fulfillmentSummary(result.fulfillment_summary, intent.original);
+  if (summary === null || result.quantity > summary.shipped) unavailable(); return { ...result, fulfillment_summary: summary };
 }

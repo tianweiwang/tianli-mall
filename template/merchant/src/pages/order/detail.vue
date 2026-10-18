@@ -3,6 +3,7 @@
     <h1 class="page-heading">订单详情</h1>
     <el-alert v-if="error" :title="error" type="error" :closable="false" show-icon class="feedback" />
     <p v-if="loading" class="field-note" role="status">正在读取保存的订单信息</p>
+    <div v-if="error" class="fulfillment-actions"><el-button class="fulfillment-control" :disabled="loading || shipmentSending" @click="load(pendingPage)">重新加载订单资料</el-button></div>
     <template v-if="order">
       <dl class="order-facts">
         <div><dt>订单号</dt><dd>{{ order.order_id }}</dd></div>
@@ -27,6 +28,29 @@
         <div><dt>待收货数量</dt><dd>{{ order.fulfillment_summary.to_receive }}</dd></div>
         <div><dt>包裹数量</dt><dd>{{ order.fulfillment_summary.child_count }}</dd></div>
       </dl>
+      <p v-if="shipmentFeedback" class="field-note fulfillment-result" role="status">{{ shipmentFeedback }}</p>
+      <p v-if="shipmentSending" class="field-note" role="status">正在提交本次发货，请稍候…</p>
+      <el-alert v-if="shipmentError" :title="shipmentError" type="error" :closable="false" show-icon class="feedback" />
+      <section v-if="shipmentPending" class="fulfillment-pending">
+        <p class="field-note">本次提交结果尚未确认。重试会保留相同商品、数量与物流信息。离开或重载页面可能丢失重试内容，先前结果也可能已经保存，请先重试确认。</p>
+        <div class="fulfillment-actions"><el-button class="fulfillment-control" :disabled="shipmentSending || loading" @click="sendShipment">重试本次请求</el-button></div>
+      </section>
+      <fulfillment-packages v-if="snapshot" :snapshot="snapshot" :loading="loading" :detail="packageDetail"
+        :detail-loading="packageLoading" :detail-error="packageError" @page="load" @view="openPackage"
+        @retry-detail="retryPackage" @close-detail="closePackage" />
+      <shipment-form v-if="shipAvailable && !shipmentPending && !savedNeedsRefresh" :snapshot="snapshot"
+        :disabled="shipDisabled" @submit="confirmShipment" />
+      <section v-if="shipmentPreview" class="fulfillment-preview">
+        <h3>核对本次分批发货</h3>
+        <p>付款订单：{{ shipmentPreview.rootNo }}</p>
+        <p v-for="item in shipmentPreview.body.items" :key="item.item_id">{{ previewItem(item.item_id).product_name }} · {{ previewItem(item.item_id).sku_name }} · 本次 {{ item.quantity }} 件</p>
+        <p>承运：{{ shipmentPreview.body.delivery.carrier_name }}（{{ shipmentPreview.body.delivery.carrier_code }}）</p>
+        <p>物流单号：{{ shipmentPreview.body.delivery.tracking_no }}</p>
+        <div class="fulfillment-actions">
+          <el-button class="fulfillment-control" :disabled="loading || shipmentSending" @click="cancelShipmentPreview">返回核对</el-button>
+          <el-button class="fulfillment-control" type="primary" :disabled="loading || !!error || !shipAvailable || shipmentSending" @click="commitShipmentPreview">确认提交发货</el-button>
+        </div>
+      </section>
       <h2 class="section-heading">收货信息</h2>
       <dl class="order-facts">
         <div><dt>收货人</dt><dd>{{ order.recipient.real_name }}</dd></div>
@@ -68,35 +92,135 @@
 <script>
 import { api } from '../../api';
 import { tableScroll } from '../../accessibility';
-import { orderDetail, orderRecordId, orderStatus } from '../../domain/order';
+import { orderRecordId, orderStatus, orderPackages, orderPackageDetail, shipmentIntent, shipmentResult } from '../../domain/order';
 import { formatTime } from '../../domain/people';
+import FulfillmentPackages from './components/fulfillmentPackages.vue';
+import ShipmentForm from './components/shipmentForm.vue';
 
 export default {
+  components: { FulfillmentPackages, ShipmentForm },
   directives: { 'table-scroll': tableScroll },
-  data: () => ({ order: null, loading: false, error: '', revision: 0 }),
-  created() { this.load(); },
-  watch: { '$route.params.id'() { this.load(); } },
-  beforeDestroy() { this.revision += 1; },
+  data: () => ({ order: null, snapshot: null, loading: false, error: '', revision: 0, pendingPage: 1, readIdentity: '',
+    packageDetail: null, packageLoading: false, packageError: '', packageId: null, packageRevision: 0,
+    shipmentPreview: null, shipmentPreviewIdentity: '', shipmentPending: null, shipmentPendingIdentity: '', shipmentSending: false, shipmentPreparing: false, shipmentError: '', shipmentFeedback: '',
+    shipmentGeneration: 0, savedNeedsRefresh: false }),
+  computed: {
+    merchantActor() {
+      const profile = this.$store.state.profile;
+      if (!profile || !profile.employee || !profile.merchant) return '';
+      const actualId = value => {
+        if (typeof value === 'number') return Number.isSafeInteger(value) && value > 0 && value <= 4294967295 ? String(value) : '';
+        return typeof value === 'string' && /^[1-9][0-9]{0,9}$/.test(value) && (value.length < 10 || value <= '4294967295') ? value : '';
+      };
+      const mer = actualId(profile.merchant.mer_id); const employee = actualId(profile.employee.id);
+      const employeeMer = actualId(profile.employee.mer_id);
+      return mer && employee && employeeMer === mer ? mer + ':' + employee : '';
+    },
+    merchantSession() {
+      const token = this.$store.state.token; const revision = this.$store.state.sessionRevision;
+      if (typeof token !== 'string' || !token || !Number.isSafeInteger(revision) || revision < 0) return '';
+      return String(revision) + ':' + token;
+    },
+    shipAvailable() { return this.readIdentity === this.identity() && !!this.snapshot && this.snapshot.root.allowed_actions.ship === true && this.snapshot.shipping_items !== null && this.$store.getters.can('order.ship'); },
+    shipDisabled() { return this.loading || !!this.error || this.shipmentSending || this.shipmentPreparing; }
+  },
+  created() { this.resetAndLoad(); },
+  watch: {
+    '$route.params.id'() { this.resetAndLoad(); },
+    merchantActor() { this.resetAndLoad(); },
+    merchantSession() { this.resetAndLoad(); }
+  },
+  beforeDestroy() { this.clearState(); },
   methods: {
     time: formatTime, status: orderStatus,
     testPayment(order) { return (order.marketplace_trade_version === 1 || order.marketplace_trade_version === '1') && order.pay_type === 'marketplace_test'; },
     paymentStatus(order) { if (order.paid !== 1) return '未支付'; return this.testPayment(order) ? '已支付（测试支付）' : '已支付'; },
     shipping(value) { return ({ 1: '快递配送', 2: '到店自提' })[value] || '配送方式：' + value; },
-    async load() {
-      const revision = ++this.revision; this.order = null; this.loading = true; this.error = '';
+    identity() { return this.merchantActor + ':' + String(this.$route.params.id) + ':' + this.merchantSession; },
+    current(identity) { return !!this.merchantActor && !!this.merchantSession && identity === this.identity(); },
+    clearState() {
+      this.revision += 1; this.packageRevision += 1; this.shipmentGeneration += 1;
+      this.order = null; this.snapshot = null; this.loading = false; this.error = ''; this.readIdentity = '';
+      this.packageDetail = null; this.packageId = null; this.packageLoading = false; this.packageError = '';
+      this.shipmentPreview = null; this.shipmentPreviewIdentity = ''; this.shipmentPending = null; this.shipmentPendingIdentity = ''; this.shipmentSending = false; this.shipmentPreparing = false;
+      this.shipmentError = ''; this.shipmentFeedback = ''; this.savedNeedsRefresh = false;
+    },
+    resetAndLoad() {
+      this.clearState();
+      if (this.merchantActor && this.merchantSession) this.load(1);
+      else if (this.merchantSession) this.error = '当前员工资料不完整，请重新登录';
+    },
+    async load(page = 1) {
+      const identity = this.identity(); const revision = ++this.revision;
+      this.cancelShipmentPreview(); this.loading = true; this.error = ''; this.pendingPage = page; this.readIdentity = identity; this.closePackage();
       try {
         const id = orderRecordId(this.$route.params.id);
-        const data = orderDetail(await api.order(id));
-        if (revision !== this.revision) return;
-        if (orderRecordId(data.id) !== id) throw new Error('订单详情与当前编号不一致，请返回列表重新查询');
-        this.order = data;
-      } catch (error) { if (revision === this.revision) this.error = error.message; }
-      finally { if (revision === this.revision) this.loading = false; }
+        const data = orderPackages(await api.orderPackages(id, page, 20), id, page, 20);
+        if (revision !== this.revision || !this.current(identity)) return false;
+        this.snapshot = data; this.order = data.root; if (this.savedNeedsRefresh && this.shipmentFeedback) this.shipmentFeedback = '发货结果已保存'; this.savedNeedsRefresh = false; return true;
+      } catch (error) {
+        if (revision === this.revision && this.current(identity)) this.error = error && error.message || '订单读取失败，请重试';
+        return false;
+      } finally { if (revision === this.revision && this.current(identity)) this.loading = false; }
     },
-  },
+    closePackage() { this.packageRevision += 1; this.packageDetail = null; this.packageId = null; this.packageLoading = false; this.packageError = ''; },
+    async openPackage(childId) {
+      if (this.loading || this.error || !this.snapshot || !this.snapshot.packages
+        || !this.snapshot.packages.list.some(child => child.id === childId)) return;
+      const identity = this.identity(); const revision = ++this.packageRevision; const root = this.snapshot.root;
+      this.packageDetail = null; this.packageId = childId; this.packageLoading = true; this.packageError = '';
+      try {
+        const child = orderPackageDetail(await api.fulfillmentPackage(childId), root, childId);
+        if (revision !== this.packageRevision || !this.current(identity)) return;
+        this.packageDetail = child;
+      } catch (error) {
+        if (revision === this.packageRevision && this.current(identity)) this.packageError = error && error.message || '包裹读取失败，请重试';
+      } finally { if (revision === this.packageRevision && this.current(identity)) this.packageLoading = false; }
+    },
+    retryPackage() { if (this.packageId !== null) this.openPackage(this.packageId); },
+    confirmShipment(draft) {
+      if (!this.shipAvailable || this.shipDisabled || this.shipmentPending || this.savedNeedsRefresh) return;
+      this.shipmentError = '';
+      try {
+        this.shipmentPreview = shipmentIntent(this.snapshot, draft);
+        this.shipmentPreviewIdentity = this.identity(); this.shipmentPreparing = true;
+      } catch (error) { this.shipmentError = error && error.message || '请核对发货内容'; }
+    },
+    cancelShipmentPreview() { this.shipmentPreview = null; this.shipmentPreviewIdentity = ''; this.shipmentPreparing = false; },
+    previewItem(id) { return this.snapshot.root.items.find(item => item.id === id); },
+    commitShipmentPreview() {
+      if (!this.shipmentPreview || this.shipmentPreviewIdentity !== this.identity() || !this.shipAvailable
+        || this.loading || this.error || this.shipmentPending || this.shipmentSending) return;
+      this.shipmentPending = this.shipmentPreview; this.shipmentPendingIdentity = this.shipmentPreviewIdentity;
+      this.cancelShipmentPreview(); this.shipmentFeedback = ''; this.sendShipment();
+    },
+    async sendShipment() {
+      const intent = this.shipmentPending;
+      if (!intent || this.shipmentPendingIdentity !== this.identity() || this.shipmentSending || this.loading || !this.merchantActor || !this.merchantSession) return;
+      const identity = this.identity(); const generation = ++this.shipmentGeneration;
+      this.shipmentSending = true; this.shipmentError = '';
+      try {
+        if (intent.wire !== JSON.stringify(intent.body) || orderRecordId(intent.rootId) !== orderRecordId(this.$route.params.id)) throw new Error('本次请求保存内容不一致');
+        const value = await api.shipOrder(intent.rootId, intent.body);
+        if (generation !== this.shipmentGeneration || !this.current(identity) || this.shipmentPending !== intent) return;
+        shipmentResult(value, intent);
+        this.shipmentPending = null; this.shipmentFeedback = '发货结果已保存'; this.savedNeedsRefresh = true;
+        const refreshed = await this.load(1);
+        if (!refreshed && this.savedNeedsRefresh && generation === this.shipmentGeneration && this.current(identity)) this.shipmentFeedback = '发货结果已保存，最新资料尚未读回，请重新加载';
+      } catch (error) {
+        if (generation === this.shipmentGeneration && this.current(identity) && this.shipmentPending === intent)
+          this.shipmentError = '本次提交结果尚未确认。' + (error && error.message || '请重试本次请求');
+      } finally { if (generation === this.shipmentGeneration && this.current(identity)) this.shipmentSending = false; }
+    }
+  }
 };
 </script>
 <style scoped>
+.fulfillment-actions { display: flex; justify-content: center; align-items: stretch; flex-wrap: wrap; gap: 12px; min-width: 0; margin: 16px 0; }
+.fulfillment-actions .fulfillment-control + .fulfillment-control { margin-left: 0; }
+.fulfillment-control { display: inline-flex; justify-content: center; align-items: center; box-sizing: border-box; max-width: 100%; min-width: 0; min-height: 44px; height: auto; margin: 0; white-space: normal; line-height: 1.4; text-align: center; }
+.fulfillment-preview { box-sizing: border-box; min-width: 0; padding: 16px; margin-top: 16px; border: 1px solid #ebeef5; overflow-wrap: anywhere; }
+.fulfillment-result, .fulfillment-pending { padding: 16px 0; overflow-wrap: anywhere; }
 .order-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 24px; margin: 0; }
 .order-facts > div, .saved-fields > div { min-width: 0; }
 dt { margin: 0 0 6px; color: #606266; }

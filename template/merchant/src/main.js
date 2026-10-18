@@ -7,13 +7,20 @@ import App from './App.vue';
 import router from './router';
 import store from './store';
 import { onUnauthenticated } from './api/request';
+import { isCurrentSession } from './api/session';
 import './styles.css';
 
 Vue.use(ElementUI);
 Vue.directive('control-label', controlLabel);
 Vue.config.productionTip = false;
-onUnauthenticated(() => {
-  store.commit('clear');
-  if (router.currentRoute.name !== 'login') router.replace({ name: 'login' }).catch((error) => { if (!Router.isNavigationFailure(error)) throw error; });
+onUnauthenticated((session) => {
+  if (!isCurrentSession(session) || store.state.sessionRevision !== session.revision) return;
+  const intent = store.state.authIntent;
+  store.commit('clear', { session, intent });
+  const revision = store.state.sessionRevision;
+  if (router.currentRoute.name !== 'login') router.replace({ name: 'login' }).catch((error) => {
+    if (store.state.authIntent !== intent || store.state.sessionRevision !== revision) return;
+    if (!Router.isNavigationFailure(error)) throw error;
+  });
 });
 new Vue({ router, store, render: (createElement) => createElement(App) }).$mount('#app');

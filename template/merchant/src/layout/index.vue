@@ -22,19 +22,39 @@
 <script>
 import marketplace from '../../marketplace.config';
 export default {
-  data: () => ({ marketplaceName: marketplace.name, leaving: false, error: '' }),
+  data: () => ({ marketplaceName: marketplace.name, leaving: false, error: '',
+    authJob: 0, activeAuthIntent: null, authAlive: true }),
   computed: {
     token() { return this.$store.state.token; },
     merchantName() { const p = this.$store.state.profile; return p ? p.merchant.name : '商家后台'; },
     employeeName() { const p = this.$store.state.profile; return p ? (p.employee.name || p.employee.account) : ''; },
+    latestAuthIntent() { return this.$store.state.authIntent; },
   },
+  watch: {
+    latestAuthIntent(intent) {
+      if (this.activeAuthIntent !== null && intent !== this.activeAuthIntent) {
+        this.authJob += 1; this.activeAuthIntent = null; this.leaving = false; this.error = '';
+      }
+    }
+  },
+  beforeDestroy() { this.authAlive = false; this.authJob += 1; },
   methods: {
     can(permission) { return this.$store.getters.can(permission); },
+    currentAuthJob(job, intent) {
+      return this.authAlive && job === this.authJob && intent === this.activeAuthIntent && intent === this.latestAuthIntent;
+    },
     async logout() {
-      this.leaving = true; this.error = '';
-      try { await this.$store.dispatch('logout'); await this.$router.replace('/login'); }
-      catch (error) { this.error = error.message; }
-      finally { this.leaving = false; }
+      if (this.leaving) return;
+      const job = ++this.authJob; this.leaving = true; this.error = '';
+      let intent = null;
+      try {
+        const pending = this.$store.dispatch('logout');
+        intent = this.$store.state.authIntent; this.activeAuthIntent = intent;
+        const receipt = await pending;
+        if (!this.currentAuthJob(job, intent) || !receipt || receipt.intent !== intent || receipt.sessionRevision !== this.$store.state.sessionRevision) return;
+        await this.$router.replace('/login');
+      } catch (error) { if (this.currentAuthJob(job, intent)) this.error = error.message; }
+      finally { if (this.currentAuthJob(job, intent)) this.leaving = false; }
     },
   },
 };

@@ -3,6 +3,10 @@
 		<marketplace-fulfillment v-if="!isReturn && fulfillmentKind !== 'root' && (fulfillmentKind !== 'legacy' || fulfillmentLoading || fulfillmentError)"
 			:view="fulfillmentView" :loading="fulfillmentLoading" :error="fulfillmentError" :can-view-package="true"
 			@page-change="changeFulfillmentPage" @retry="retryFulfillment" @view-package="viewFulfillmentPackage"></marketplace-fulfillment>
+		<marketplace-receipt v-if="!isReturn && fulfillmentKind === 'child' && receipt" :receipt="receipt"
+			:pending="!!receiptPending" :sending="receiptSending" :reading="fulfillmentLoading"
+			:disabled="!isLogin || !!fulfillmentError || receiptPreparing || receiptNeedsRefresh"
+			:error="receiptError" :feedback="receiptFeedback" @submit="confirmReceipt" @retry="sendReceipt"></marketplace-receipt>
 		<view class="order-details" v-if="fulfillmentKind === 'legacy' || fulfillmentKind === 'root'">
 			<!-- 给header上与data上加on为退款订单-->
 			<view class="header bg-color acea-row row-middle" :class="isGoodsReturn ? 'on' : ''">
@@ -596,7 +600,7 @@
 </template>
 
 <script>
-import { getSavedOrderFulfillment, refundOrderDetail, orderAgain, orderTake, orderDel, refundOrderDel, orderCancel, refundExpress, cancelRefundOrder } from '@/api/order.js';
+import { getCustomerFulfillmentPackage, receiveCustomerFulfillmentPackage, getSavedOrderFulfillment, refundOrderDetail, orderAgain, orderTake, orderDel, refundOrderDel, orderCancel, refundExpress, cancelRefundOrder } from '@/api/order.js';
 import { openOrderRefundSubscribe } from '@/utils/SubscribeMessage.js';
 import { getCustomerType } from '@/api/api.js';
 import { getCustomer } from '@/utils/index.js';
@@ -607,7 +611,9 @@ import { parseAgainPurchase, againConfirmationUrl } from '@/utils/marketplace-ag
 import { storefrontMessage } from '@/utils/public-store.js';
 import orderGoods from '@/components/orderGoods';
 import marketplaceFulfillment from '@/components/marketplaceFulfillment/index.vue';
-import { readOrderFulfillment } from '@/utils/marketplace-fulfillment.js';
+import { readOrderFulfillment, readCustomerReceipt, readReceiptResult } from '@/utils/marketplace-fulfillment.js';
+import { prepareReceiptIntent } from '@/utils/marketplace-fulfillment-submit.js';
+import marketplaceReceipt from '@/components/marketplaceReceipt/index.vue';
 import ClipboardJS from '@/plugin/clipboard/clipboard.js';
 import { toLogin } from '@/libs/login.js';
 import { mapGetters } from 'vuex';
@@ -653,6 +659,7 @@ export default {
 		invoiceModal,
 		orderGoods,
 		marketplaceFulfillment,
+		marketplaceReceipt,
 		giftModal,
 		zbCode,
 		// #ifdef MP
@@ -676,6 +683,18 @@ export default {
 			fulfillmentPendingPage: 1,
 			fulfillmentRevision: 0,
 			fulfillmentIdentity: '',
+			packageEntry: false,
+			receipt: null,
+			receiptActive: true,
+			receiptReadIdentity: '',
+			receiptPending: null,
+			receiptPendingIdentity: '',
+			receiptSending: false,
+			receiptPreparing: false,
+			receiptNeedsRefresh: false,
+			receiptError: '',
+			receiptFeedback: '',
+			receiptGeneration: 0,
 			//二维码参数
 			codeShow: false,
 			cid: '1',
@@ -783,6 +802,7 @@ export default {
 	computed: {
 		...mapGetters(['isLogin']),
 		fulfillmentActor() { return String(this.$store.state.app.uid); },
+		receiptSessionRevision() { return this.$store.state.app.authRevision; },
 		savedMarketplaceFormsV1() {
 			const version = this.orderInfo.marketplace_trade_version;
 			return version === 1 || version === '1';
@@ -796,9 +816,15 @@ export default {
 			this.clearSavedFulfillment();
 			if (this.isLogin && this.order_id) this.getOrderInfo(1);
 		},
+		receiptSessionRevision() {
+			if (!this.packageEntry && this.fulfillmentKind !== 'child' && !this.receiptPending) return;
+			this.clearSavedFulfillment();
+			if (this.isLogin && this.order_id) this.getOrderInfo(1);
+		},
 		isLogin(value) { if (!value) this.clearSavedFulfillment(); }
 	},
 	onLoad: function (options) {
+		this.packageEntry = options.fulfillment_package === '1';
 		if (options.order_id) {
 			this.$set(this, 'order_id', options.order_id);
 			this.isReturn = options.isReturn;
@@ -855,6 +881,7 @@ export default {
 		this.againGroups = [];
 	},
 	onUnload() {
+		this.receiptActive = false; this.receiptGeneration++; this.receiptPending = null;
 		uni.hideLoading();
 		this.fulfillmentRevision++;
 		this.fulfillmentLoading = false;
@@ -1086,6 +1113,9 @@ export default {
 		 *
 		 */
 		clearSavedFulfillment() {
+			this.receiptGeneration++; this.receipt = null; this.receiptReadIdentity = '';
+			this.receiptPending = null; this.receiptPendingIdentity = ''; this.receiptSending = false;
+			this.receiptPreparing = false; this.receiptNeedsRefresh = false; this.receiptError = ''; this.receiptFeedback = '';
 			uni.hideLoading();
 			this.fulfillmentRevision++;
 			this.fulfillmentIdentity = '';
@@ -1116,6 +1146,82 @@ export default {
 			this.is_gift = 0;
 			this.isGoodsReturn = false;
 		},
+		receiptIdentity() { return String(this.$store.state.app.uid) + ':' + String(this.$store.state.app.authRevision) + ':' + this.order_id; },
+		receiptCurrent(identity) { return this.receiptActive && this.isLogin && identity === this.receiptIdentity(); },
+		async getReceiptInfo() {
+			if (!this.receiptActive || this.isReturn || !this.isLogin) return false;
+			const identity = this.receiptIdentity(); const revision = ++this.fulfillmentRevision;
+			this.fulfillmentLoading = true; this.fulfillmentError = '';
+			uni.showLoading({ title: this.$t('正在加载中') });
+			try {
+				const response = await getCustomerFulfillmentPackage(this.order_id);
+				if (revision !== this.fulfillmentRevision || !this.receiptCurrent(identity)) return false;
+				const data = readCustomerReceipt(response.data, this.order_id); const child = data.package;
+				this.receipt = data; this.receiptReadIdentity = identity;
+				if (this.receiptNeedsRefresh && this.receiptFeedback) this.receiptFeedback = this.receiptFeedback.indexOf('该包裹') === 0 ? '该包裹已无待确认收货内容' : '收货结果已保存';
+				this.receiptNeedsRefresh = false;
+				this.fulfillmentView = { kind: 'child', order: child, package: child }; this.fulfillmentKind = 'child';
+				this.orderInfo = child; this.cartInfo = []; this.pid = child.root_order_id; this.status = {}; this.system_store = {};
+				this.invoiceData = null; this.savedMarketplaceFormGroups = []; this.customForm = []; this.isGoodsReturn = false;
+				return true;
+			} catch (error) {
+				if (revision === this.fulfillmentRevision && this.receiptCurrent(identity))
+					this.fulfillmentError = typeof error === 'string' ? error : (error && (error.message || error.msg) || '包裹读取失败，请重试');
+				return false;
+			} finally {
+				if (revision === this.fulfillmentRevision && this.receiptCurrent(identity)) { this.fulfillmentLoading = false; uni.hideLoading(); }
+			}
+		},
+		confirmReceipt(draft) {
+			if (this.receiptPending || this.receiptSending || this.receiptPreparing || this.fulfillmentLoading || this.fulfillmentError
+				|| this.receiptNeedsRefresh || this.receiptReadIdentity !== this.receiptIdentity() || !this.isLogin) return;
+			const identity = this.receiptIdentity(); const generation = this.receiptGeneration; const receipt = this.receipt;
+			let intent;
+			try { intent = prepareReceiptIntent(this.receipt, draft); }
+			catch (error) { this.receiptError = error && error.message || '请核对本次收货选择'; return; }
+			this.receiptPreparing = true; this.receiptError = '';
+			uni.showModal({
+				title: '确认本次收货',
+				content: '包裹 ' + intent.childNo + '，本次确认 ' + intent.quantity + ' 件。请确认这些商品已实际收到。',
+				confirmText: '确认提交', cancelText: '返回核对',
+				success: result => {
+					if (generation !== this.receiptGeneration || !this.receiptCurrent(identity)) return;
+					this.receiptPreparing = false;
+					if (!result.confirm) return;
+					if (this.receipt !== receipt || this.fulfillmentLoading || this.fulfillmentError || this.receiptReadIdentity !== identity) {
+						this.receiptError = '收货资料已刷新，请重新选择本次范围'; return;
+					}
+					this.receiptPending = intent; this.receiptPendingIdentity = identity; this.receiptFeedback = '';
+					this.sendReceipt();
+				},
+				fail: () => {
+					if (generation === this.receiptGeneration && this.receiptCurrent(identity)) {
+						this.receiptPreparing = false; this.receiptError = '确认窗口未完成，请重新核对';
+					}
+				}
+			});
+		},
+		async sendReceipt() {
+			const intent = this.receiptPending;
+			if (!intent || this.receiptPendingIdentity !== this.receiptIdentity() || !this.receiptActive || !this.isLogin
+				|| this.receiptSending || this.fulfillmentLoading) return;
+			const identity = this.receiptIdentity(); const generation = ++this.receiptGeneration;
+			this.receiptSending = true; this.receiptError = '';
+			try {
+				if (intent.childNo !== this.order_id || intent.wire !== JSON.stringify(intent.body)) throw new Error('本次请求保存内容不一致');
+				const response = await receiveCustomerFulfillmentPackage(intent.childNo, intent.body);
+				if (generation !== this.receiptGeneration || !this.receiptCurrent(identity) || this.receiptPending !== intent) return;
+				const result = readReceiptResult(response.data, intent);
+				this.receiptPending = null; this.receiptNeedsRefresh = true;
+				this.receiptFeedback = result.kind === 'operation' ? '收货结果已保存' : '该包裹已无待确认收货内容';
+				const refreshed = await this.getReceiptInfo();
+				if (!refreshed && this.receiptNeedsRefresh && generation === this.receiptGeneration && this.receiptCurrent(identity))
+					this.receiptFeedback += '，最新资料尚未读回，请重新加载';
+			} catch (error) {
+				if (generation === this.receiptGeneration && this.receiptCurrent(identity) && this.receiptPending === intent)
+					this.receiptError = '本次提交结果尚未确认。' + (typeof error === 'string' ? error : (error && (error.message || error.msg) || '请重试本次请求'));
+			} finally { if (generation === this.receiptGeneration && this.receiptCurrent(identity)) this.receiptSending = false; }
+		},
 		changeFulfillmentPage(page) {
 			if (this.fulfillmentKind === 'root' && !this.fulfillmentLoading) this.getOrderInfo(page);
 		},
@@ -1123,9 +1229,10 @@ export default {
 		viewFulfillmentPackage(child) {
 			if (this.fulfillmentLoading || this.fulfillmentError || this.fulfillmentKind !== 'root' || !this.fulfillmentView.children ||
 				!this.fulfillmentView.children.list.some(row => row.id === child.id && row.order_id === child.order_id)) return;
-			uni.navigateTo({ url: '/pages/goods/order_details/index?order_id=' + encodeURIComponent(child.order_id) });
+			uni.navigateTo({ url: '/pages/goods/order_details/index?fulfillment_package=1&order_id=' + encodeURIComponent(child.order_id) });
 		},
 		getOrderInfo: function (page) {
+			if (!this.isReturn && (this.packageEntry || this.fulfillmentKind === 'child')) return this.getReceiptInfo();
 			let that = this;
 			const identity = String(this.$store.state.app.uid) + ':' + this.order_id;
 			if (identity !== this.fulfillmentIdentity) {
@@ -1151,6 +1258,7 @@ export default {
 				.then((res) => {
 					if (revision !== this.fulfillmentRevision || identity !== String(this.$store.state.app.uid) + ':' + this.order_id || !this.isLogin) return;
 					const view = that.isReturn ? { kind: 'legacy', order: res.data } : readOrderFulfillment(res.data, true);
+					if (view.kind === 'child') { this.packageEntry = true; return this.getReceiptInfo(); }
 					if (view.kind !== 'legacy') {
 						if ((view.kind === 'root' && view.order.order_id !== this.order_id) || (view.kind === 'child' && view.package.order_id !== this.order_id)) throw new Error('订单身份不一致，请重新加载');
 						if (view.kind === 'root') this.applySavedCustomForm(view.order);

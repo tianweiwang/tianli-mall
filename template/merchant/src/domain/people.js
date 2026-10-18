@@ -10,7 +10,7 @@ export const permissions = [
   { value: 'attachment.manage', label: '素材管理', description: '维护本店素材与素材分类' },
   { value: 'freight.manage', label: '运费模板', description: '维护本店运费模板' },
   { value: 'order.read', label: '订单查看', description: '读取本店订单列表及保存的订单详情' },
-  { value: 'order.ship', label: '订单发货', description: '订单履约权限；发货功能尚未开放' },
+  { value: 'order.ship', label: '订单发货', description: '按保存商品数量分包发货，读取实际物流与履约结果' },
   { value: 'aftersale.handle', label: '售后处理', description: '订单售后权限；售后处理功能尚未开放' },
 ];
 const known = permissions.map((item) => item.value);

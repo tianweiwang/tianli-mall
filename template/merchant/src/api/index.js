@@ -9,6 +9,12 @@ export const api = {
   refresh: () => request('POST', 'refresh', {}),
   orders: (query) => request('GET', 'orders', query),
   order: (value) => request('GET', 'orders/' + orderRecordId(value)),
+  orderPackages: (value, page = 1, limit = 20) => Promise.resolve().then(() => {
+    if (!Number.isSafeInteger(page) || page < 1 || !Number.isSafeInteger(limit) || limit < 1 || limit > 100) throw new Error('包裹页码不正确');
+    return request('GET', 'orders/' + orderRecordId(value) + '/packages', { page, limit });
+  }),
+  fulfillmentPackage: (value) => Promise.resolve().then(() => request('GET', 'packages/' + orderRecordId(value))),
+  shipOrder: (value, body) => Promise.resolve().then(() => request('POST', 'orders/' + orderRecordId(value) + '/shipments', body)),
   products: (query) => request('GET', 'products', query),
   product: (value) => request('GET', 'products/' + id(value)),
   saveProduct: (value, body) => value ? request('PUT', 'products/' + id(value), body) : request('POST', 'products', body),

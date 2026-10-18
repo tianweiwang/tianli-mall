@@ -10,17 +10,37 @@ import marketplace from '../../../marketplace.config';
 import { fieldNames } from '../../accessibility';
 export default {
   mixins: [fieldNames],
-  data: () => ({ marketplaceName: marketplace.name, account: '', password: '', error: '', busy: false }),
-  methods: { async submit() {
-    if (this.busy) return;
-    this.error = ''; if (!this.account.trim() || !this.password) { this.error = '请填写员工账号和密码'; return; }
-    this.busy = true;
-    try {
-      await this.$store.dispatch('login', { account: this.account.trim(), password: this.password }); this.password = '';
-      const redirect = this.$route.query.redirect;
-      await this.$router.replace(typeof redirect === 'string' && redirect.startsWith('/') && !redirect.startsWith('//') && !redirect.startsWith('/login') ? redirect : '/');
-    } catch (error) { this.error = error.message; }
-    finally { this.busy = false; }
-  } },
+  data: () => ({ marketplaceName: marketplace.name, account: '', password: '', error: '', busy: false,
+    authJob: 0, activeAuthIntent: null, authAlive: true }),
+  computed: { latestAuthIntent() { return this.$store.state.authIntent; } },
+  watch: {
+    latestAuthIntent(intent) {
+      if (this.activeAuthIntent !== null && intent !== this.activeAuthIntent) {
+        this.authJob += 1; this.activeAuthIntent = null; this.busy = false; this.error = '';
+      }
+    }
+  },
+  beforeDestroy() { this.authAlive = false; this.authJob += 1; },
+  methods: {
+    currentAuthJob(job, intent) {
+      return this.authAlive && job === this.authJob && intent === this.activeAuthIntent && intent === this.latestAuthIntent;
+    },
+    async submit() {
+      if (this.busy) return;
+      this.error = ''; if (!this.account.trim() || !this.password) { this.error = '请填写员工账号和密码'; return; }
+      const job = ++this.authJob; this.busy = true;
+      let intent = null;
+      try {
+        const pending = this.$store.dispatch('login', { account: this.account.trim(), password: this.password });
+        intent = this.$store.state.authIntent; this.activeAuthIntent = intent;
+        const receipt = await pending;
+        if (!this.currentAuthJob(job, intent) || !receipt || receipt.intent !== intent || receipt.sessionRevision !== this.$store.state.sessionRevision) return;
+        this.password = '';
+        const redirect = this.$route.query.redirect;
+        await this.$router.replace(typeof redirect === 'string' && redirect.startsWith('/') && !redirect.startsWith('//') && !redirect.startsWith('/login') ? redirect : '/');
+      } catch (error) { if (this.currentAuthJob(job, intent)) this.error = error.message; }
+      finally { if (this.currentAuthJob(job, intent)) this.busy = false; }
+    },
+  },
 };
 </script>
