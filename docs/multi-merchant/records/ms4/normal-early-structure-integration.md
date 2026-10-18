@@ -33,3 +33,15 @@ UI构建固定在Main提交0d5499ecf95ec9c9c29d7f6e011cecb69a2b81c1，因此在�
 Root已全文复核35组有限替换的必要源码和实际producer，真实完整正逆、31组显式byte offset、9段原完整函数及11固定依赖均通过。Root检查器首次把Task6字符offset当字节的失败已保留，实际91343字符/91359字节已定位；候选不改。四件完整PHP候选（含外部initializer）在固定PHP8.2中逐件语法native0/stderr空、临时容器前后为空。此处仅采用源码及语法结果；同样字节接入后另核工作树，不把它写成业务运行。
 
 实际三件工作树文件均与已审、已解析候选完整字节相等，git diff --check通过；本次仅这三件与本记录。完整正常entry、Host/close/zero及实际新Run仍待，未据该接缝签收Task6/7/8。外部root-preparation-consumer-integration-r1保存实际本地提交与来源；Main、旧快照和原失败不改，未推送或部署。
+
+## 售后与评价正常入口接入
+
+采用完整新测试入口ms4-aftersale-review-normal.php，沿同一Task6/7/8计划接原Task6真实stage6及精确移除后的串行角色。真实顾客/商家/受限平台登录、新根同factory下单测试付款、13售后动作及2履约操作/15同体重放、非空私图三端票据消费、原已收项公开图评价/审核/回复/公众12字段均保留。business24/result29/shutdown15及成功child9保持；不替代原Task6、DOM、Worker、真实金融或完整验收。
+
+原R1独审发现登记前自然退出重登记、handle已消费后日志失败丢状态、首次cleanup_failure未挡成功和公众图片遗漏站点前缀四项源码缺陷。R1与报告保持，另用R2五组完整有限替换修正：唯一同handle状态读取先存first terminal，只信实际/proc注册组后发一次TERM；未登记自然终态保持group=null/no信号，真正close并fresh核仅supervisor及无listener才失败收口。真实closed状态先于日志观察保存，日志缺口和首次清理失败都阻止成功；原primary在清理前保存。公众pics取独立保存引用加真实site展示，原POST和匿名本地PNG路径不改；安装源实际缩略图开关为0，initializer未修改。
+
+最终R2为186702 B，SHA256 bf32dc19dcc137dfdee0fbada772f06b85a1ee1861a4547f79b014d24993553f；五组原文正逆和非作者增量复核通过。Root实际固定PHP8.2候选语法native0/stderr空、源保持、临时容器前后为空。这里仍是源码/解析证据，未运行任何故障样本或新App/HTTP/业务Run。
+
+增量独审报告摘要：d7fee0afec4ebd8c0a66217b559f5699ce86ddead3081e3d47332dfd9d57c3da；完整报告和原生结果保存在仓库外，不向仓库写原始日志、账号或归档。
+
+实际新工作树入口完整字节等于上述已审R2；固定PHP8.2在无网络只读容器对实际完整checkout执行--help，真实native0/stderr空，临时容器前后为空，目标前后保持。此help加载真实依赖但不启动App或访问DB。git diff --check通过，实际本地提交SHA在外部root-normal-entry-integration-r2检查点记录。完整profile及真实迁移/业务/非空图片/关闭核零仍待；未推送或部署。
