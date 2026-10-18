@@ -11,6 +11,9 @@ use app\services\marketplace\order\MerchantOrderServices;
 use think\facade\Db;
 
 require_once __DIR__.'/ms5-paid-consumer-normal.php';
+require_once __DIR__.'/lib/ms4-three-legacy-producer.php';
+require_once __DIR__.'/lib/ms4-three-legacy-reference.php';
+require_once __DIR__.'/lib/ms4-three-read-normal.php';
 
 const M4FN_ENTRY='help/audit-regressions/isolated/ms4-fulfillment-normal.php';
 const M4FN_RULE=['role'=>'audit-ms4-fulfillment-normal','proof'=>'fulfillment-normal',
@@ -40,8 +43,11 @@ function m4fn_extra():array
 {
     $paths=array_values(array_unique(array_merge(M4C_EXTRA,M4C_MIGRATION_SOURCES,
         [M5PC_ENTRY,M4FN_ENTRY,'help/audit-regressions/isolated/ms4-fulfillment-migration.php',
-         'help/migrations/marketplace-ms4-fulfillment.php']),SORT_STRING));
-    sort($paths,SORT_STRING);m4fn_expect(count($paths)===21,'TASK6_FINITE_TWENTY_ONE_EXTRAS');return $paths;
+         'help/migrations/marketplace-ms4-fulfillment.php',
+         'help/audit-regressions/isolated/lib/ms4-three-legacy-producer.php',
+         'help/audit-regressions/isolated/lib/ms4-three-legacy-reference.php',
+         'help/audit-regressions/isolated/lib/ms4-three-read-normal.php']),SORT_STRING));
+    sort($paths,SORT_STRING);m4fn_expect(count($paths)===24,'TASK6_FINITE_TWENTY_FOUR_EXTRAS');return $paths;
 }
 function m4fn_prerequisite_names():array
 {
@@ -511,7 +517,7 @@ function m4fn_full_metadata(PDO $db, string $table): array
     foreach (m5pcp_rows($db, 'SELECT INDEX_NAME,NON_UNIQUE,SEQ_IN_INDEX,COLUMN_NAME,SUB_PART,INDEX_TYPE,IS_VISIBLE,EXPRESSION,COLLATION,INDEX_COMMENT FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=? ORDER BY INDEX_NAME,SEQ_IN_INDEX', $args) as $row) $indexes[$row['INDEX_NAME']][] = $row;
     ksort($indexes, SORT_STRING);
     return ['table' => $tables[0], 'columns' => $columns, 'indexes' => $indexes,
-        'constraints' => m5pcp_rows($db, 'SELECT CONSTRAINT_NAME,CONSTRAINT_TYPE,ENFORCED FROM information_schema.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=? ORDER BY CONSTRAINT_NAME', $args),
+        'constraints' => m5pcp_rows($db, 'SELECT CONSTRAINT_NAME,CONSTRAINT_TYPE,ENFORCED FROM information_schema.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=? ORDER BY BINARY CONSTRAINT_NAME', $args),
         'checks' => m5pcp_rows($db, "SELECT tc.CONSTRAINT_NAME,tc.ENFORCED,cc.CHECK_CLAUSE FROM information_schema.TABLE_CONSTRAINTS tc JOIN information_schema.CHECK_CONSTRAINTS cc ON cc.CONSTRAINT_SCHEMA=tc.CONSTRAINT_SCHEMA AND cc.CONSTRAINT_NAME=tc.CONSTRAINT_NAME WHERE tc.TABLE_SCHEMA=DATABASE() AND tc.TABLE_NAME=? AND tc.CONSTRAINT_TYPE='CHECK' ORDER BY tc.CONSTRAINT_NAME", $args),
         'foreign' => m5pcp_rows($db, 'SELECT k.CONSTRAINT_NAME,k.ORDINAL_POSITION,k.POSITION_IN_UNIQUE_CONSTRAINT,k.COLUMN_NAME,k.REFERENCED_TABLE_SCHEMA,k.REFERENCED_TABLE_NAME,k.REFERENCED_COLUMN_NAME,r.UNIQUE_CONSTRAINT_SCHEMA,r.UNIQUE_CONSTRAINT_NAME,r.UPDATE_RULE,r.DELETE_RULE,r.MATCH_OPTION FROM information_schema.KEY_COLUMN_USAGE k JOIN information_schema.REFERENTIAL_CONSTRAINTS r ON r.CONSTRAINT_SCHEMA=k.CONSTRAINT_SCHEMA AND r.TABLE_NAME=k.TABLE_NAME AND r.CONSTRAINT_NAME=k.CONSTRAINT_NAME WHERE k.TABLE_SCHEMA=DATABASE() AND k.TABLE_NAME=? ORDER BY k.CONSTRAINT_NAME,k.ORDINAL_POSITION', $args),
         'triggers' => m5pcp_rows($db, 'SELECT TRIGGER_NAME,ACTION_TIMING,EVENT_MANIPULATION,ACTION_STATEMENT FROM information_schema.TRIGGERS WHERE EVENT_OBJECT_SCHEMA=DATABASE() AND EVENT_OBJECT_TABLE=? ORDER BY TRIGGER_NAME', $args)];
@@ -1120,6 +1126,7 @@ function m4fn_produce(\think\App $app,PDO $db,array $source,array $owner):array
     m4fn_phase('merchant_initial_saved_read');$reads=[m4fn_merchant_read($app,$db,$connection,$default,$actor['context'],$oracle,m4fn_summary(0,0,0))];
     m4fn_phase('normal_due_configuration');$configuration=m4fn_configure($db);m4fn_context($app,$connection,$default,$db);
     $history=['operations'=>[],'ships'=>[]];$sequence=[];$service=$app->make(MarketplaceOrderFulfillmentServices::class);
+    m4fn_phase('three_read_initial');$GLOBALS['m4tr_read_stages']=[m4tr_read_stage($app,$db,$owner,$GLOBALS['m4tr_prepared'],$oracle,$history,0)];
     $suffix=bin2hex(random_bytes(8));$delivery=['type'=>'express','carrier_code'=>'task6-normal','carrier_name'=>'普通履约验证','tracking_no'=>'task6-'.$suffix];
     $cases=[
         ['action'=>'ship','item_id'=>$oracle['q2'],'start'=>0,'end'=>2,'shipped'=>2,'received'=>0,'children'=>1,'root_status'=>0,
@@ -1149,6 +1156,8 @@ function m4fn_produce(\think\App $app,PDO $db,array $source,array $owner):array
         m5pcp_same($replayed,$record['public']);m4fn_context($app,$connection,$default,$db);m4fn_zero($replayBefore,m4fn_snapshot($db));
         m4fn_phase('merchant_saved_read_'.($index+1));$reads[]=m4fn_merchant_read($app,$db,$connection,$default,$actor['context'],
             $oracle,m4fn_summary($case['shipped'],$case['received'],$case['children']));m4fn_inputs_unchanged($owner['inputs']);
+        m4fn_phase('three_read_after_action_'.($index+1));$GLOBALS['m4tr_read_stages'][]=
+            m4tr_read_stage($app,$db,$owner,$GLOBALS['m4tr_prepared'],$oracle,$history,$index+1);
     }
     $final=m4fn_snapshot($db);m4fn_history($oracle,$final,$history,$cases[4]);m4cb_events($db);
     m4fn_expect(count($history['operations'])===5&&count($history['ships'])===2&&count($sequence)===2&&count($reads)===6,
@@ -1261,10 +1270,13 @@ function m4fn_run():int
     m4fn_expect(!$db->inTransaction(),'TASK6_ONE_INDEPENDENT_OBSERVER');$observer=m5pc_observer_configure($db);
     $GLOBALS['m4fn_observer']=$observer;m4fn_phase('original_paid_owner_and_native_archive');$owner=m4fn_owner($source,$db);
     m4fn_migration_database($db,$owner);m4cb_guard_readonly();
+    $GLOBALS['m4tr_read_stages']=[];$GLOBALS['m4tr_legacy_child']=[];
+    $GLOBALS['m4tr_prepared']=m4tr_prepare_native($app,$db,$source,$owner,$GLOBALS['m4tr_legacy_child']);
     $produced=m4fn_produce($app,$db,$source,$owner);$sealed=m4fn_seal($source,$owner,$produced,$db);
     m4fn_phase('final_source');m4fn_full_source($source);m4fn_prerequisites($source);m4fn_inputs_unchanged($owner['inputs']);
     m4fn_expect(m4fn_source()===$source,'TASK6_FULL_ACTUAL_SOURCE_ENV_ROLES_PREREQUISITES_UNCHANGED');m4cb_guard_readonly();
     m4fn_zero($produced['final'],m4fn_snapshot($db));$business=m4fn_business($owner,$produced,$sealed);
+    m4tr_publish_result($source,true,null);
     $result=m4fn_result($source,$business,$observer,null,true);m4c_entry_publish('/run/audit/evidence/'.M4FN_RULE['result'],$result);
     $GLOBALS['m4fn_result_published']=true;$GLOBALS['m4fn_completed']=true;
     unset($owner,$produced,$business,$result,$db,$app);
@@ -1279,6 +1291,7 @@ if(realpath($_SERVER['SCRIPT_FILENAME']??'')===__FILE__){
     pcntl_async_signals(true);pcntl_signal(SIGTERM,static function():void{$GLOBALS['m4c_terminate_requested']=true;});
     register_shutdown_function(static function():void{
         $source=$GLOBALS['m4fn_source']??null;if(!is_array($source))return;
+        m4tr_close_legacy_on_failure();
         $last=error_get_last();$fatal=is_array($last)&&in_array($last['type'],[E_ERROR,E_PARSE,E_CORE_ERROR,E_COMPILE_ERROR,E_USER_ERROR],true);
         $diagnostic=$GLOBALS['m4fn_primary_failure']??null;
         $shutdown=['schema'=>1,'scope'=>'MS4_FULFILLMENT_NORMAL_SHUTDOWN','run_id'=>$source['run_id'],
@@ -1286,12 +1299,16 @@ if(realpath($_SERVER['SCRIPT_FILENAME']??'')===__FILE__){
             'phase'=>$GLOBALS['m4c_phase']??'source','completed'=>($GLOBALS['m4fn_completed']??false)===true,
             'result_published'=>($GLOBALS['m4fn_result_published']??false)===true,'fatal'=>$fatal,
             'termination_requested'=>($GLOBALS['m4c_terminate_requested']??false)===true,'primary_failure'=>$diagnostic,
-            'cleanup_failure'=>null,'native_exit'=>null,'native_exit_observation'=>'HOST_NATIVE_REQUIRED'];
+            'cleanup_failure'=>$GLOBALS['m4tr_cleanup_failure']??null,'native_exit'=>null,'native_exit_observation'=>'HOST_NATIVE_REQUIRED'];
         try{m4c_entry_publish('/run/audit/evidence/fulfillment-normal-shutdown.json',$shutdown);}
         catch(Throwable $error){fwrite(STDERR,"TASK6 shutdown receipt unavailable; host native observation required\n");}
     });
     try{exit(m4fn_run());}
     catch(Throwable $error){$diagnostic=m4fn_diagnostic($error);$GLOBALS['m4fn_primary_failure']=$diagnostic;$source=$GLOBALS['m4fn_source']??null;
+        m4tr_close_legacy_on_failure();
+        if(is_array($source)&&empty($GLOBALS['m4tr_result_published'])){
+            try{m4tr_publish_result($source,false,$diagnostic);}catch(Throwable $supplementError){}
+        }
         if(is_array($source)&&empty($GLOBALS['m4fn_result_published'])){
             try{m4c_entry_publish('/run/audit/evidence/'.M4FN_RULE['result'],m4fn_result($source,null,$GLOBALS['m4fn_observer']??null,$diagnostic,false));
                 $GLOBALS['m4fn_result_published']=true;}catch(Throwable $publicationError){}

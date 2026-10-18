@@ -322,10 +322,29 @@ function m4fm_projection(PDO $db, string $table, array $columns): array
     sort($hashes, SORT_STRING);
     return ['encoding' => 'php-serialize-row-sha256-sorted-multiset-v1', 'rows' => count($hashes), 'sha256' => hash('sha256', implode("\n", $hashes))];
 }
+function m4fm_observer_modes(PDO $db): array
+{
+    $rows = m4fm_rows($db, 'SELECT @@SESSION.sql_mode AS session_mode,@@GLOBAL.sql_mode AS global_mode,@@SESSION.innodb_strict_mode AS session_innodb,@@GLOBAL.innodb_strict_mode AS global_innodb,@@SESSION.information_schema_stats_expiry AS session_stats_expiry,@@GLOBAL.information_schema_stats_expiry AS global_stats_expiry');
+    m4fm_expect(count($rows) === 1 && array_keys($rows[0]) === ['session_mode', 'global_mode', 'session_innodb', 'global_innodb', 'session_stats_expiry', 'global_stats_expiry'], 'COMPLETE_SIX_NATIVE_METADATA_OBSERVER_MODES');
+    foreach (['session_stats_expiry', 'global_stats_expiry'] as $key)
+        m4fm_expect(is_int($rows[0][$key]) && $rows[0][$key] >= 0 && $rows[0][$key] <= 4294967295, 'NATIVE_METADATA_EXPIRY_RANGE');
+    return $rows;
+}
+function m4fm_configure_observer(PDO $db): array
+{
+    m4fm_expect(!$db->inTransaction(), 'INDEPENDENT_METADATA_OBSERVER_AUTOCOMMIT');
+    $before = m4fm_observer_modes($db);
+    m4fm_expect($db->exec('SET SESSION information_schema_stats_expiry=0') === 0, 'ONLY_METADATA_OBSERVER_SESSION_EXPIRY_SET');
+    $configured = m4fm_observer_modes($db); $expected = $before;
+    $expected[0]['session_stats_expiry'] = 0;
+    m4fm_expect($configured === $expected, 'ONLY_SESSION_EXPIRY_CHANGED_FIVE_OTHER_NATIVE_MODES_IDENTICAL');
+    return $configured;
+}
 function m4fm_snapshot(): array
 {
     $db = audit_db();
     m4fm_expect($db->setAttribute(PDO::ATTR_EMULATE_PREPARES, false), 'SNAPSHOT_NATIVE_PREPARES');
+    $observer = m4fm_configure_observer($db);
     $names = $db->query('SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() ORDER BY TABLE_NAME')->fetchAll(PDO::FETCH_COLUMN);
     sort($names, SORT_STRING);
     $snapshot = ['names' => $names, 'tables' => [], 'redis' => [],
@@ -343,7 +362,9 @@ function m4fm_snapshot(): array
         m4fm_expect(is_int($expiry) && ($expiry === -1 || $expiry > 0) && !isset($snapshot['redis'][$keyHash]), 'REDIS_ABSOLUTE_EXPIRY');
         $snapshot['redis'][$keyHash] = ['sha256' => $hash, 'expires' => $expiry];
     }
-    ksort($snapshot['redis'], SORT_STRING); return $snapshot;
+    ksort($snapshot['redis'], SORT_STRING);
+    m4fm_expect(m4fm_observer_modes($db) === $observer, 'SIX_METADATA_OBSERVER_MODES_STILL_IDENTICAL');
+    return $snapshot;
 }
 /** Preserve all native metadata bytes and PHP types without placing binary values directly in JSON. */
 function m4fm_snapshot_evidence(array $snapshot): array
