@@ -470,7 +470,34 @@ function m4ar_session(array $reply,string $application,int $id,string $digest,ar
  return ['app'=>$application,'id'=>$id,'token'=>$token,'claims'=>$claims,'redis_changes'=>[
   $account=>$after['redis']['keys'][hash('sha256',$account)],$key=>$after['redis']['keys'][hash('sha256',$key)]]];
 }
-function m4ar_actors(\think\App $app,PDO $db,array $source,array $owner):array
+/** Optional UI fixture: exact native order-read leaves and their two navigation rows. */
+function m4ar_ui_order_read_grants(PDO $db,array $original):array
+{
+ $rows=[];foreach(['order/list','order/chart','order/info/<id>']as$path){
+  $r=m5pcp_rows($db,'SELECT * FROM eb_system_menus WHERE auth_type=2 AND is_del=0 AND LOWER(api_url)=? AND LOWER(methods)=?',[$path,'get']);
+  m4ar_expect(count($r)===1&&(string)$r[0]['auth_type']==='2'&&strtolower((string)$r[0]['api_url'])===$path
+   &&strtolower((string)$r[0]['methods'])==='get','TASK78_UI_ORDER_READ_EXACT_API');$rows[]=$r[0];
+ }
+ $r=m5pcp_rows($db,'SELECT * FROM eb_system_menus WHERE auth_type=1 AND is_del=0 AND unique_auth=?',['admin-order']);
+ m4ar_expect(count($r)===1&&(string)$r[0]['auth_type']==='1'&&(string)$r[0]['unique_auth']==='admin-order'
+  &&(string)$r[0]['menu_path']==='/order'&&(string)$r[0]['pid']==='0'&&(string)$r[0]['api_url']===''&&(string)$r[0]['methods']==='',
+  'TASK78_UI_ORDER_READ_EXACT_ROOT');$root=$r[0];
+ m4ar_expect(preg_match('/\A[1-9][0-9]{0,4}\z/D',(string)$root['id'])===1&&(int)$root['id']<=65535,'TASK78_UI_ORDER_READ_NATIVE_ROOT_ID');
+ $r=m5pcp_rows($db,'SELECT * FROM eb_system_menus WHERE auth_type=1 AND is_del=0 AND unique_auth=?',['admin-order-storeOrder-index']);
+ m4ar_expect(count($r)===1&&(string)$r[0]['auth_type']==='1'&&(string)$r[0]['unique_auth']==='admin-order-storeOrder-index'
+  &&(string)$r[0]['menu_path']==='/order/list'&&(string)$r[0]['pid']===(string)$root['id']&&(string)$r[0]['api_url']===''&&(string)$r[0]['methods']==='',
+  'TASK78_UI_ORDER_READ_EXACT_PAGE_PARENT');$rows[]=$root;$rows[]=$r[0];
+ $ids=[];foreach($rows as$row){
+  m4ar_expect(preg_match('/\A[1-9][0-9]{0,4}\z/D',(string)$row['id'])===1&&(int)$row['id']<=65535
+   &&(string)$row['is_del']==='0'&&(string)$row['access']==='1'&&(string)$row['is_show']==='1'&&(string)$row['is_show_path']==='1',
+   'TASK78_UI_ORDER_READ_ACTIVE_NATIVE_ID');$ids[]=(int)$row['id'];
+ }
+ m4ar_expect(count(array_unique($ids))===5&&array_intersect($ids,$original)===[]&&count(array_unique(array_merge($original,$ids)))===15,
+  'TASK78_UI_ORDER_READ_FIVE_DISTINCT_DISJOINT_FINAL_FIFTEEN');
+ return $ids;
+}
+
+function m4ar_actors(\think\App $app,PDO $db,array $source,array $owner,?callable $credentialSink=null,bool $uiOrderRead=false):array
 {
  $uid=$owner['uid'];$mer=(int)$owner['fixture']['merchant']['mer_id'];$suffix=bin2hex(random_bytes(7));$now=time();
  $permissions=['merchant.profile.read','order.read','order.ship','aftersale.handle','product.read','product.write'];
@@ -497,7 +524,7 @@ function m4ar_actors(\think\App $app,PDO $db,array $source,array $owner):array
   ['GET','marketplace/aftersale-files/<file_id>/content'],['GET','marketplace/reviews'],['GET','marketplace/reviews/<id>'],['PUT','marketplace/reviews/<id>/review']];
  $grants=[];foreach($grantSpec as[$method,$path]){$r=m5pcp_rows($db,'SELECT * FROM eb_system_menus WHERE auth_type=2 AND is_del=0 AND LOWER(api_url)=? AND LOWER(methods)=?',
  [strtolower($path),strtolower($method)]);m4ar_expect(count($r)===1&&(int)$r[0]['id']>0,'TASK78_EXACT_REAL_TEN_MENU_LEAVES');$grants[]=(int)$r[0]['id'];}
- m4ar_expect(count(array_unique($grants))===10,'TASK78_EXACT_TEN_DISTINCT_GRANTS');sort($grants,SORT_NUMERIC);
+ m4ar_expect(count(array_unique($grants))===10,'TASK78_EXACT_TEN_DISTINCT_GRANTS');if($uiOrderRead)$grants=array_merge($grants,m4ar_ui_order_read_grants($db,$grants));sort($grants,SORT_NUMERIC);
  $adminRole=m4ar_insert($db,'eb_system_role',['role_name'=>'N78 '.$suffix,'rules'=>implode(',',$grants),'level'=>1,'status'=>1]);
  $adminPassword='Normal78-'.bin2hex(random_bytes(11));$hash=password_hash($adminPassword,PASSWORD_BCRYPT);m4ar_expect(is_string($hash),'TASK78_REAL_ADMIN_PASSWORD_HASH');
  $admin=m4ar_insert($db,'eb_system_admin',['account'=>'a78_'.$suffix,'pwd'=>$hash,'real_name'=>'Normal78','roles'=>(string)$adminRole['id'],'add_time'=>time(),'level'=>1,'status'=>1,'is_del'=>0]);
@@ -510,7 +537,12 @@ function m4ar_actors(\think\App $app,PDO $db,array $source,array $owner):array
  $login=m4ar_json('POST','/api/login',[],['account'=>$owner['loaded']['private']['account'],'password'=>$owner['loaded']['private']['password'],'spread'=>0,'agent_id'=>0]);
  $after=m4ar_snapshot($db);$customer=['app'=>'api','id'=>$uid,'token'=>$login['json']['data']['token']??null];
  m4ar_expect(is_string($customer['token'])&&$customer['token']!==''&&is_int($login['json']['data']['expires_time']??null),'TASK78_REAL_CUSTOMER_CREDENTIAL_LOGIN');
- m4ar_customer_login_delta($before,$after,$customer,$login);unset($cap,$password,$adminPassword,$hash);
+ m4ar_customer_login_delta($before,$after,$customer,$login);
+ if($credentialSink!==null)$credentialSink([
+  'customer'=>['account'=>$owner['loaded']['private']['account'],'password'=>$owner['loaded']['private']['password'],'uid'=>$uid],
+  'merchant'=>['account'=>$employee['account'],'password'=>$password,'id'=>(int)$employee['id'],'mer_id'=>$mer],
+  'platform'=>['account'=>$admin['account'],'password'=>$adminPassword,'id'=>(int)$admin['id']]]);
+ unset($cap,$password,$adminPassword,$hash);
  return ['customer'=>$customer,'merchant'=>$merchant,'platform'=>$platform,'grants'=>$grants];
 }
 
@@ -797,7 +829,13 @@ function m4ar_warm(\think\App $app,PDO $db):void
  'offline_pay_status','balance_func_status','yue_pay_status','pay_weixin_open','friend_pay_status','store_self_mention','ali_pay_status',
  'invoice_func_status','special_invoice_status'];
  foreach($names as$name){$expected=$app->make(\app\services\system\config\SystemConfigServices::class)->getConfigValue($name);
-  $actual=\crmeb\services\SystemConfigService::get($name);m4ar_expect($actual===$expected,'TASK78_SOURCE_CONFIG_WARM_EQUALS_NATIVE_DB_PRODUCER');
+  $key='c:system_config_'.$name;$cacheType=m4tr_redis_type($redis,$key);
+  m4ar_expect(in_array($cacheType,['none','string'],true),'TASK78_SOURCE_CONFIG_NATIVE_CACHE_TYPE_BEFORE_GETTER');
+  $cacheRaw=$redis->get($key);
+  m4ar_expect(($cacheType==='none'&&$cacheRaw===false)||($cacheType==='string'&&is_string($cacheRaw)
+   &&$cacheRaw===m4tr_cache_wire($expected)),'TASK78_SOURCE_CONFIG_NATIVE_CACHE_BYTES_BEFORE_GETTER');
+  $expectedLogical=$cacheType==='string'&&is_numeric($expected)?(string)$expected:$expected;
+  $actual=\crmeb\services\SystemConfigService::get($name);m4ar_expect($actual===$expectedLogical,'TASK78_SOURCE_CONFIG_WARM_EQUALS_NATIVE_DB_PRODUCER');
   $known['system_config_'.$name]=['value'=>$expected,'ttl'=>0];}
  $code=$app->make(\app\services\system\lang\LangCodeServices::class);$type=$app->make(\app\services\system\lang\LangTypeServices::class);
  $country=$app->make(\app\services\system\lang\LangCountryServices::class);$range=$type->value(['is_default'=>1],'file_name');
@@ -806,12 +844,12 @@ function m4ar_warm(\think\App $app,PDO $db):void
  $lang=['range_name'=>$range,'sys_lang_source_map'=>$code->getColumn(['type_id'=>1],'code','remarks'),'type_id_zh-CN'=>$typeId,
  'lang_type_data'=>$types,'lang_zh_CN'=>$code->getColumn(['type_id'=>$typeId],'lang_explain','code')];getLang('操作成功');
  foreach($lang as$name=>$value)$known[$name]=['value'=>$value,'ttl'=>$name==='range_name'?0:3600];$after=m4ar_snapshot($db);$changes=[];$added=[];
- foreach($known as$name=>$item){$key='c:'.$name;$raw=$redis->get($key);if($item['value']===null&&$raw===false)continue;
-  m4ar_expect(is_string($raw)&&$raw===serialize($item['value']),'TASK78_WARM_EXACT_SERIALIZED_SOURCE_VALUE');
+ foreach($known as$name=>$item){$key='c:'.$name;$added[]=$key;$raw=$redis->get($key);if($item['value']===null&&$raw===false)continue;
+  m4ar_expect(is_string($raw)&&$raw===m4tr_cache_wire($item['value']),'TASK78_WARM_EXACT_SERIALIZED_SOURCE_VALUE');
   $entry=$after['redis']['keys'][hash('sha256',$key)]??null;m4ar_expect(is_array($entry)&&$entry['type']==='string','TASK78_WARM_NATIVE_STRING');
   if($item['ttl']===0)m4ar_expect($entry['expires']===-1,'TASK78_CONFIG_PERMANENT_DEADLINE');
   else m4ar_expect($entry['expires']>=$before['redis']['time_ms']+1&&$entry['expires']<=$after['redis']['time_ms']+3600001,'TASK78_REAL_LANGUAGE_SOURCE_DEADLINE');
-  if(($before['redis']['keys'][hash('sha256',$key)]??null)!==$entry){$changes[$key]=$entry;$added[]=$key;}}
+  if(($before['redis']['keys'][hash('sha256',$key)]??null)!==$entry)$changes[$key]=$entry;}
  $changes+=m4ar_tag_change($before,$after,$tag,$added);m4ar_database_delta($before,$after,[]);m4ar_redis_delta($before,$after,$changes);
  m4ar_expect($before['private']===$after['private']&&$before['public']===$after['public'],'TASK78_WARM_NO_BUSINESS_OR_FILE_MUTATION');
  $GLOBALS['m4ar_warmed_values']=$known;
@@ -1345,7 +1383,13 @@ function m4ar_public_upload(PDO $db,array $actor,string $bytes):array
 {
  m4ar_phase('real_public_nonempty_image_upload');m4ar_expect((int)sys_config('upload_type',1)===1,'TASK8_TRUE_LOCAL_PUBLIC_UPLOAD_PRODUCER');
  $before=m4ar_snapshot($db);$tag='c:CRMEB:'.md5('crmeb');$GLOBALS['m4ar_tag_members'][$tag]=audit_redis()->sMembers($tag);
- $counter='c:start_uploads_'.$actor['id'];$oldRaw=audit_redis()->get($counter);$old=$oldRaw===false?0:unserialize($oldRaw,['allowed_classes'=>false]);
+ $counter='c:start_uploads_'.$actor['id'];$counterType=m4tr_redis_type(audit_redis(),$counter);
+ m4ar_expect(in_array($counterType,['none','string'],true),'TASK8_NATIVE_PUBLIC_UPLOAD_COUNTER_TYPE_BEFORE');
+ $oldRaw=audit_redis()->get($counter);
+ m4ar_expect(($counterType==='none'&&$oldRaw===false)||($counterType==='string'&&is_string($oldRaw)
+  &&preg_match('/\A(?:0|[1-9][0-9]?)\z/D',$oldRaw)===1),'TASK8_CANONICAL_PUBLIC_UPLOAD_COUNTER_WIRE_BEFORE');
+ $old=$oldRaw===false?0:(int)$oldRaw;
+ m4ar_expect($oldRaw===false||$oldRaw===m4tr_cache_wire($old),'TASK8_PUBLIC_UPLOAD_COUNTER_EXACT_WIRE_BEFORE');
  m4ar_expect(is_int($old)&&$old>=0&&$old<100,'TASK8_TRUE_PUBLIC_UPLOAD_COUNTER_BEFORE');
  $reply=m4ar_multipart('/api/upload/image',$actor,['filename'=>'file'],$bytes);$after=m4ar_snapshot($db);$data=$reply['json']['data'];
  m4c_entry_keys($data,['name','url','attachment_ref']);$ref=$data['attachment_ref'];m4ar_expect(is_string($ref)&&strlen($ref)<=200
@@ -1358,7 +1402,7 @@ function m4ar_public_upload(PDO $db,array $actor,string $bytes):array
  m4fn_expected_row($before['database']['tables']['eb_system_attachment']['metadata'],$row,['att_id'=>$row['att_id'],'name'=>$name,'att_dir'=>$ref,'satt_dir'=>$ref,
  'att_size'=>(string)strlen($bytes),'att_type'=>'image/png','pid'=>1,'time'=>$at,'image_type'=>1,'module_type'=>3,'real_name'=>$name,'scan_token'=>'','type'=>0]);
  $expected=[];m4ar_auth_delta($before,$after,$actor,$reply['actual_interval'],$expected);$expected['eb_system_attachment']=array_merge($before['rows']['eb_system_attachment'],[$row]);
- m4ar_database_delta($before,$after,$expected,['eb_system_attachment'=>1]);m4ar_expect(audit_redis()->get($counter)===serialize($old+1),'TASK8_EXACT_REAL_PUBLIC_UPLOAD_COUNTER');
+ m4ar_database_delta($before,$after,$expected,['eb_system_attachment'=>1]);m4ar_expect(audit_redis()->get($counter)===m4tr_cache_wire($old+1),'TASK8_EXACT_REAL_PUBLIC_UPLOAD_COUNTER');
  $entry=$after['redis']['keys'][hash('sha256',$counter)];m4ar_expect($entry['type']==='string'&&$entry['expires']>=$reply['actual_interval'][0]*1000+86400000
   &&$entry['expires']<=($reply['actual_interval'][1]+1)*1000+86400000,'TASK8_REAL_PUBLIC_UPLOAD_COUNTER_DEADLINE');
  $changes=[$counter=>$entry]+m4ar_tag_change($before,$after,$tag,[$counter]);m4ar_redis_delta($before,$after,$changes);

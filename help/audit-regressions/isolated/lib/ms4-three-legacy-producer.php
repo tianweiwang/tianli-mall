@@ -260,7 +260,7 @@ function m4trp_event_preconditions(\think\App $app,PDO $db):array
     $printers=m5pcp_rows($db,'SELECT * FROM eb_system_ticket WHERE is_del = 0 AND status = 1 AND print_type = 2');
     $events=m5pcp_rows($db,'SELECT * FROM eb_system_event WHERE mark IN (?,?) AND is_del = 0 AND is_open = 1',['user_add_cart','order_create']);
     m4fn_expect($push===[]&&$printers===[]&&$events===[],'TASK6_THREE_ACTUAL_NO_PUSH_PRINTER_OR_CUSTOM_OUTBOUND_CANDIDATES');
-    m4fn_expect($app->make(\app\services\system\SystemTicketServices::class)->ticketList(['status'=>1,'print_type'=>2])===[],
+    m4fn_expect($app->make(\app\dao\system\SystemTicketDao::class)->ticketList(['status'=>1,'print_type'=>2])===[],
         'TASK6_THREE_ORIGINAL_PRINT_DAO_ACTUAL_EMPTY_SELECTION');
     $coupons=m5pcp_rows($db,'SELECT * FROM eb_store_coupon_issue');
     m4fn_expect($coupons===[],'TASK6_THREE_REAL_OLD_CONFIRMATION_HAS_NO_AUTORECEIVE_COUPON_SOURCE');
