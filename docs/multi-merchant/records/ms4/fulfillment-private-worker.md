@@ -35,3 +35,23 @@ Root当前决定保留原明确的私有Worker/no-public边界，撤回后来S2�
 Root用当前真实vendor只读autoload核实际Timer/Crontab类路径、原postcommit方法保持且新global receipt handler缺席、当前scanner真实参数/返回类型和Worker公开API，实际native0/stderr空。原静态getEventLoopName在本固定PHP8.2环境选择Workerman Events Select，类实现EventInterface；这不是实际Worker实例、loop、timer或tick证明。React四适配类只实现React接口，原候选在其分支不激活；没有放宽准入或强制loop。
 
 独审报告7942 B /f3c6253ba8ef16f447069758db2afd1d8ab3c073c6f26e11bade3e86174fa9d8。实际集成只包含上述三产品路径、本记录和原09；当前正常联调记录的未提交变化保持。固定59e测试快照和原Run不改，实际Worker正常生命周期及全部原未验责任继续保留。实际本地提交与原生检查点在仓库外root-main-integration-r1记录；没有推送或部署。
+
+## 正常生命周期直接观测设计
+
+当前源码已接入e063，本次完整普通Run 20261018093801b67ac4仍固定该来源。Root已读7204字节NORMAL-LIFECYCLE-OBSERVATION-OPTIONS-r1.md，实施前采用其中第二项最小原位日志方案，以补原验收要求的真实owned timer及同loop删除直接证据；第一项cache/status/proc只证明部分事实，第三项service替换或child自停不采用。当前final服务不改final，不包换原start/stop，不强制loop，不添加产品CLI/Job/Queue或可写授权标记。
+
+产品改动仅在原Timer私有闭包中增加诊断：真实正timerID注册并active后、原scan返回且原cursor实际set为true后、原stop在同loop对真实owned ID的del返回true后。记录固定前缀MARKETPLACE_FULFILLMENT_WORKER_EVENT和不超过8192字节的单行真实JSON，字段为schema/phase/当前pid/worker_id/loop_class/loop_object_id/timer_id/monotonic_ns/active/busy/closed/owned/worker_count/slot/count/socketless/details。details仅含该阶段真实有限事实：注册前即时hrtime、原60秒与batch100；真实scan完整有限返回及cursor保存事实；删除阶段不伪造业务结果。注册前单调时间只用于观察延时，不改时钟、deadline、排程或业务判断。
+
+调用现有file channel的write即时尝试，结构JSON放message，不依赖context保存数组。日志调用、Log::save返回或缓存出现都不作落盘ack；独立验证必须读取实际文件完整bytes并匹配字段。诊断异常或长度超限只缺失诊断，不改变原业务、原pending码、finally或停机行为；缺记录时对应验证未通过，不补造记录。原60秒/batch100、真实身份门、全部原任务及callback所有权/owned del均保持，Timer之外产品不改。
+
+正常验证随后另用独立真实运行角色和新完整冻结来源：原无-d前台命令、完整原任务/配置预读且不删除或伪cache列表，真实master/child的PID/starttime/父子关系、原status提供的真实loop/计数、自然首tick、三个实际文件记录及真实cursor/tag、全量SQL/Redis/files/source前后差分。真实无到期订单须来自原正常付款/发货链，不修改保存期限或等待一天制造到期。
+
+只向已核同native handle的真实master发送SIGTERM；原Workerman graceful路径转发给child且不装SIGKILL timer，再核主子进程正常终态及资源核零。普通timer stop可能走SIGINT并安排SIGKILL，child自己stopAll会被仍RUNNING的master补fork，均不用作本正常收尾。新增诊断源码须独审、实际语法及必要真实日志API普通组件检查；实际Worker和直接阶段证据仍须后继实跑。当前e063的完整普通链不包含这些后继字节，不改署结果。expiry及其余停止样本、真实金融/页面/发布等缺口保持。
+
+## 直接观测源码接入检查点
+
+在上述实施前决定之后，七组十四raw的完整原位观测候选已独立源码复核；Root完整正逆、21件目录pins与最终交付字段均实际核对。Timer最终10656 B /bf323c5881e127d0502dbed9a63ab763daf0ea3d4541aed2988b9e59a5c224d0，实际固定PHP8.2语法native0/stderr空、临时容器前后为空。原所有权门、60秒/batch100、原任务及业务/异常收口均保持。
+
+另用当前真实App配置与file Channel::write做普通日志组件检查，采用独立MARKETPLACE_LOG_COMPONENT_PROBE前缀，实际完整文件138字节读回、buffer空、native0/stderr空且临时容器已删除。此组件没有启动Worker、PDO/SQL/HTTP或业务；不能冒称三个产品阶段记录、真实timer/tick/删除、正常Worker停止或Task6通过。实际完整正常生命周期仍按前段合同另行准备和验证。
+
+本次仅接Timer和本记录、形成L2本地提交，不推送或部署。e063验证快照与既有失败Run/P不改；本增量不计其验证通过，原售后、评价、API/DOM、金融、历史及发布缺口全部保持。

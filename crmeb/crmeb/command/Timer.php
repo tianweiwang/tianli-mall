@@ -95,6 +95,28 @@ class Timer extends Command
                     && Worker::getStatus() === Worker::STATUS_RUNNING && $task->stopping === false
                     && $task->onWorkerStop === $stop;
             };
+            $trace = static function (string $phase, mixed $actualTimerId, array $details) use
+                ($task, $owned, $loop, &$active, &$busy, &$closed): void {
+                try {
+                    if (!in_array($phase, ['timer_started', 'scan_returned', 'timer_removed'], true)
+                        || !is_int($actualTimerId) || $actualTimerId < 1) return;
+                    if ($phase === 'timer_started' && (!is_int($details['add_started_ns'] ?? null)
+                        || $details['add_started_ns'] < 1)) return;
+                    $now = hrtime(true);
+                    if (!is_int($now) || $now < 1) return;
+                    $workers = Worker::getAllWorkers();
+                    $record = ['schema' => 1, 'phase' => $phase, 'pid' => getmypid(),
+                        'worker_id' => $task->workerId, 'loop_class' => get_class($loop),
+                        'loop_object_id' => spl_object_id($loop), 'timer_id' => $actualTimerId,
+                        'monotonic_ns' => $now, 'active' => $active, 'busy' => $busy,
+                        'closed' => $closed, 'owned' => $owned(), 'worker_count' => count($workers),
+                        'slot' => $task->id, 'count' => $task->count,
+                        'socketless' => $task->getMainSocket() === null, 'details' => (object)$details];
+                    $json = json_encode($record, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+                    if (strlen($json) > 8192 || str_contains($json, "\n") || str_contains($json, "\r")) return;
+                    Log::channel('file')->write('MARKETPLACE_FULFILLMENT_WORKER_EVENT ' . $json, 'info');
+                } catch (\Throwable $ignored) {}
+            };
             $cursor = static function (mixed $due, mixed $ship): array {
                 $due = MarketplaceOrderInput::unsigned($due, '到期游标');
                 if (!is_string($ship) || preg_match('/\A(?:0|[1-9][0-9]{0,19})\z/D', $ship) !== 1
@@ -104,7 +126,7 @@ class Timer extends Command
                 }
                 return [$due, $ship];
             };
-            $stop = static function (Worker $worker) use ($task, $owned, $loop, $log,
+            $stop = static function (Worker $worker) use ($task, $owned, $loop, $log, $trace,
                 &$active, &$closed, &$timerId, &$stop): void {
                 $active = false; $closed = true;
                 if ($worker !== $task || !$owned() || $task->onWorkerStop !== $stop) {
@@ -115,12 +137,14 @@ class Timer extends Command
                     try {
                         if ($loop->del($ownedId, EventInterface::EV_TIMER) !== true) {
                             $log('MARKETPLACE_FULFILLMENT_TIMER_STOP_PENDING');
+                        } else {
+                            $trace('timer_removed', $ownedId, []);
                         }
                     } catch (\Throwable $ignored) { $log('MARKETPLACE_FULFILLMENT_TIMER_STOP_PENDING'); }
                 }
             };
             $task->onWorkerStop = $stop;
-            $tick = static function () use ($live, $cursor, $log, &$busy): void {
+            $tick = static function () use ($live, $cursor, $log, $trace, &$busy, &$timerId): void {
                 if ($busy || !$live()) return;
                 $busy = true;
                 try {
@@ -140,10 +164,14 @@ class Timer extends Command
                     if (!$live()) return;
                     if (CacheService::set('marketplace_fulfillment_receive_cursor', ['due_at'=>$nextDue, 'ship_id'=>$nextShip]) !== true) {
                         $log('MARKETPLACE_FULFILLMENT_CURSOR_PENDING');
+                    } else {
+                        $trace('scan_returned', $timerId, ['scan' => $scan, 'cursor_saved' => true]);
                     }
                 } catch (\Throwable $ignored) { $log('MARKETPLACE_FULFILLMENT_SCAN_PENDING'); }
                 finally { $busy = false; }
             };
+            $addStartedNs = null;
+            try { $addStartedNs = hrtime(true); } catch (\Throwable $ignored) {}
             try {
                 $timerId = WorkerTimer::add(60, $tick, [], true);
                 if (!is_int($timerId) || $timerId < 1 || $closed || !$owned()
@@ -152,6 +180,8 @@ class Timer extends Command
                     throw new \RuntimeException('MARKETPLACE_FULFILLMENT_WORKER_UNAVAILABLE');
                 }
                 $active = true;
+                $trace('timer_started', $timerId,
+                    ['period_seconds' => 60, 'batch' => 100, 'add_started_ns' => $addStartedNs]);
             } catch (\Throwable $ignored) {
                 $active = false;
                 if (is_int($timerId) && $timerId > 0 && $owned()) {
