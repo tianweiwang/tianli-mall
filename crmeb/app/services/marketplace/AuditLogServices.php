@@ -116,10 +116,11 @@ final class AuditLogServices
         $request = app()->request;
         $productRead = $action === 'marketplace-products-list' && $resourceType === 'product' && $resourceId === 'global';
         $aftersaleRead = $action === 'marketplace-aftersales-list' && $resourceType === 'aftersale' && $resourceId === 'global';
+        $reviewRead = $action === 'marketplace-reviews-list' && $resourceType === 'review' && $resourceId === 'global';
         $merchantRead = $resourceType === 'merchant'
             && in_array($action, ['marketplace-merchants-list', 'marketplace-merchants-read'], true);
         if (!$request instanceof Request || app('http')->getName() !== 'adminapi'
-            || $actorType !== 'admin' || (!$merchantRead && !$productRead && !$aftersaleRead)
+            || $actorType !== 'admin' || (!$merchantRead && !$productRead && !$aftersaleRead && !$reviewRead)
             || $result !== 'success' || $detail !== [] || $request->method() !== 'GET'
         ) {
             throw new AuthUnavailableException();
@@ -141,11 +142,11 @@ final class AuditLogServices
         if (($action === 'marketplace-merchants-list' && ($scope->targetMerId !== null || $resourceId !== 'global'))
             || ($action === 'marketplace-merchants-read'
                 && ($scope->targetMerId === null || $resourceId !== (string) $scope->targetMerId))
-            || (($productRead || $aftersaleRead) && $scope->targetMerId !== null)) {
+            || (($productRead || $aftersaleRead || $reviewRead) && $scope->targetMerId !== null)) {
             throw new AuthUnavailableException();
         }
 
-        if ($productRead || $aftersaleRead) app()->make(PlatformAccessServices::class)->authorizeScope($scope, $action);
+        if ($productRead || $aftersaleRead || $reviewRead) app()->make(PlatformAccessServices::class)->authorizeScope($scope, $action);
 
         $admin = $request->adminInfo();
         if (!is_array($admin) || !isset($admin['id'], $admin['account'])
@@ -157,12 +158,12 @@ final class AuditLogServices
         }
 
         $pdo = Db::connect()->getPdo();
-        if ($productRead || $aftersaleRead) {
+        if ($productRead || $aftersaleRead || $reviewRead) {
             $logConnection = (new SystemLog())->db()->getConnection();
             if ($logConnection !== Db::connect() || $logConnection->getPdo() !== $pdo) throw new AuthUnavailableException();
         }
         if ($this->platformLog->recordAdminLog($actorId, $admin['account'], 'system') !== true
-            || (($productRead || $aftersaleRead) && Db::connect()->getPdo() !== $pdo)) {
+            || (($productRead || $aftersaleRead || $reviewRead) && Db::connect()->getPdo() !== $pdo)) {
             throw new AuthUnavailableException();
         }
         self::assertTransaction();

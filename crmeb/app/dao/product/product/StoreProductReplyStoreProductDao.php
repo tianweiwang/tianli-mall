@@ -102,6 +102,7 @@ class StoreProductReplyStoreProductDao extends BaseDao
     public function searchWhere(array $where = [])
     {
         $model = $this->getModel()->where('r.is_del', 0)->withSearch(['time'], ['time' => $where['data'], 'timeKey' => 'r.add_time'])->field('r.*,p.store_name,p.image,r.nickname as account,SUM(r.product_score+r.service_score) as score')->group('id');
+        $model = $model->whereRaw(self::legacySourcePredicate());
         if ($where['is_reply'] != '') $model = $model->where('r.is_reply', $where['is_reply']);
         if ($where['product_id']) $model = $model->where('r.product_id', $where['product_id']);
         if ($where['store_name']) $model = $model->where('p.store_name|r.product_id', 'Like', '%' . $where['store_name'] . '%');
@@ -113,6 +114,20 @@ class StoreProductReplyStoreProductDao extends BaseDao
             $model = $model->order('r.add_time desc,r.is_reply asc');
         }
         return $model;
+    }
+
+    /** Same fixed source predicate for the old list, count and pending badge. Alias r is internal only. */
+    public static function legacySourcePredicate():string
+    {
+        $prefix=\think\facade\Db::connect()->getConfig('prefix');
+        if(!is_string($prefix)||preg_match('/\A[A-Za-z0-9_]*\z/D',$prefix)!==1)throw new \crmeb\exceptions\AuthUnavailableException();
+        $orders='`'.$prefix.'store_order`';$items='`'.$prefix.'store_order_cart_info`';
+        return '( (r.oid=0 AND r.uid=0) OR (r.oid>0 AND EXISTS (SELECT 1 FROM '.$orders.' legacy_review_order'.
+            ' WHERE legacy_review_order.id=r.oid AND (legacy_review_order.marketplace_trade_version IS NULL OR legacy_review_order.marketplace_trade_version=0)'.
+            ' AND (legacy_review_order.pid=0 OR (legacy_review_order.pid>0 AND EXISTS (SELECT 1 FROM '.$orders.' legacy_review_parent'.
+            ' WHERE legacy_review_parent.id=legacy_review_order.pid AND (legacy_review_parent.marketplace_trade_version IS NULL OR legacy_review_parent.marketplace_trade_version=0))))'.
+            ' AND EXISTS (SELECT 1 FROM '.$items.' legacy_review_item WHERE legacy_review_item.oid=r.oid'.
+            ' AND legacy_review_item.`unique`=r.`unique`))) )';
     }
 
 }

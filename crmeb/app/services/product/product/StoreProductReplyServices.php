@@ -138,13 +138,13 @@ class StoreProductReplyServices extends BaseServices
             if ($res['suk'] == '') {
                 $res['suk'] = isset($res['cart_info']['productInfo']['attrInfo']) ? $res['cart_info']['productInfo']['attrInfo']['suk'] : '';
             }
-            $res['nickname'] = anonymity($res['nickname']);
+            $res['nickname'] = mb_strlen($res['nickname'], 'UTF-8') === 1 ? '*' : anonymity($res['nickname']);
             $res['merchant_reply_time'] = date('Y-m-d H:i', $res['merchant_reply_time']);
             $res['add_time'] = time_tran($res['add_time']);
             $res['star'] = bcadd($res['product_score'], $res['service_score'], 2);
             $res['star'] = bcdiv($res['star'], '2', 0);
             $res['comment'] = $res['comment'] ?: '此用户没有填写评价';
-            $res['pics'] = is_string($res['pics']) ? json_decode($res['pics'], true) : $res['pics'];
+            $res['pics'] = set_file_url(is_string($res['pics']) ? json_decode($res['pics'], true) : $res['pics']);
             unset($res['cartInfo']);
         }
         return $res;
@@ -177,7 +177,7 @@ class StoreProductReplyServices extends BaseServices
      */
     public function replyCount()
     {
-        return $this->dao->count(['is_reply' => 0, 'is_del' => 0]);
+        return $this->dao->legacyPendingCount();
     }
 
     /**
@@ -193,7 +193,7 @@ class StoreProductReplyServices extends BaseServices
         $data['poor_count'] = $this->dao->replyCount($id, 3);
         if ($data['sum_count'] != 0) {
             $data['reply_chance'] = bcdiv($data['good_count'], $data['sum_count'], 2);
-            $num = ($this->dao->sum(['product_id' => $id, 'is_del' => 0], 'service_score') + $this->dao->sum(['product_id' => $id, 'is_del' => 0], 'product_score')) / 2;
+            $num = ($this->dao->sum(['product_id' => $id, 'is_del' => 0, 'status' => 1], 'service_score') + $this->dao->sum(['product_id' => $id, 'is_del' => 0, 'status' => 1], 'product_score')) / 2;
             $data['reply_star'] = bcdiv($num, $data['sum_count'], 0);
         } else {
             $data['reply_chance'] = 100;
@@ -218,13 +218,13 @@ class StoreProductReplyServices extends BaseServices
         $list = $this->dao->replyList($id, $type, $page, $limit);
         foreach ($list as &$item) {
             $item['suk'] = $item['suk'] != '' ? $item['suk'] : (isset($item['cart_info']['productInfo']['attrInfo']) ? $item['cart_info']['productInfo']['attrInfo']['suk'] : '');
-            $item['nickname'] = anonymity($item['nickname']);
+            $item['nickname'] = mb_strlen($item['nickname'], 'UTF-8') === 1 ? '*' : anonymity($item['nickname']);
             $item['merchant_reply_time'] = date('Y-m-d H:i', $item['merchant_reply_time']);
             $item['add_time'] = time_tran($item['add_time']);
             $item['star'] = bcadd($item['product_score'], $item['service_score'], 2);
             $item['star'] = bcdiv($item['star'], 2, 0);
             $item['comment'] = $item['comment'] ?: '此用户没有填写评价';
-            $item['pics'] = is_string($item['pics']) ? json_decode($item['pics'], true) : $item['pics'];
+            $item['pics'] = set_file_url(is_string($item['pics']) ? json_decode($item['pics'], true) : $item['pics']);
             unset($item['cart_info']);
         }
         return $list;

@@ -241,16 +241,48 @@ final class LegacyProductWriteServices
     public static function replyParents(array $replyIds): array
     {
         $ids=[];foreach($replyIds as$replyId){$replyId=self::id($replyId,2147483647);
-            $row=Db::name('store_product_reply')->where('id',$replyId)->where('reply_type','product')->field(['id','product_id'])->find();
-            if(!is_array($row))throw new AdminException('评论不存在');$ids[]=self::id($row['product_id']);}
+            $row=Db::name('store_product_reply')->where('id',$replyId)->where('reply_type','product')->find();
+            if(!is_array($row))throw new AdminException('评论不存在');self::assertLegacyReply($row);$ids[]=self::id($row['product_id']);}
         return self::ids($ids);
     }
     public static function lockReplies(array $replyIds): array
     {
         self::transaction();$rows=[];foreach($replyIds as$replyId){$replyId=self::id($replyId,2147483647);
             $row=Db::name('store_product_reply')->where('id',$replyId)->where('reply_type','product')->lock(true)->find();
-            if(!is_array($row))throw new AdminException('评论不存在');self::assertParent(self::id($row['product_id']));$rows[$replyId]=$row;}
+            if(!is_array($row))throw new AdminException('评论不存在');self::assertLegacyReply($row);self::assertParent(self::id($row['product_id']));$rows[$replyId]=$row;}
         return $rows;
+    }
+
+    /** A real original order/item supplies legacy provenance; current product ownership is not that proof. */
+    private static function assertLegacyReply(array $reply):void
+    {
+        foreach(['oid','uid','unique']as$key)if(!array_key_exists($key,$reply))throw new AuthUnavailableException();
+        $oid=$reply['oid'];if(is_string($oid)&&preg_match('/\A(?:0|[1-9][0-9]{0,9})\z/D',$oid)===1&&(int)$oid<=2147483647)$oid=(int)$oid;
+        if(!is_int($oid)||$oid<0||$oid>2147483647)throw new AuthUnavailableException();
+        if($oid===0){
+            if(!in_array($reply['uid'],[0,'0'],true))throw new AuthUnavailableException();
+            return; // Explicit historical virtual row, never a V1 purchased-item review.
+        }
+        $connection=Db::connect();$pdo=$connection->getPdo();if(!$pdo instanceof PDO)throw new AuthUnavailableException();
+        $query=Db::name('store_order')->where('id',$oid);
+        if($query->getConnection()!==$connection||$query->getConnection()->getPdo()!==$pdo)throw new AuthUnavailableException();
+        $order=$query->find();if(!is_array($order))throw new AuthUnavailableException();
+        \app\services\marketplace\order\MarketplaceTradePolicy::assertLegacyOrder($order);
+        if(!array_key_exists('pid',$order))throw new AuthUnavailableException();
+        $pid=$order['pid'];if(is_string($pid)&&preg_match('/\A(?:0|[1-9][0-9]{0,9})\z/D',$pid)===1&&(int)$pid<=2147483647)$pid=(int)$pid;
+        if(!is_int($pid)||$pid<0||$pid>2147483647)throw new AuthUnavailableException();
+        if($pid>0){
+            $parentQuery=Db::name('store_order')->where('id',$pid);
+            if($parentQuery->getConnection()!==$connection||$parentQuery->getConnection()->getPdo()!==$pdo)throw new AuthUnavailableException();
+            $parent=$parentQuery->find();if(!is_array($parent))throw new AuthUnavailableException();
+            \app\services\marketplace\order\MarketplaceTradePolicy::assertLegacyOrder($parent);
+        }
+        if(!is_string($reply['unique']))throw new AuthUnavailableException();
+        $itemQuery=Db::name('store_order_cart_info')->where('oid',$oid)->where('unique',$reply['unique']);
+        if($itemQuery->getConnection()!==$connection||$itemQuery->getConnection()->getPdo()!==$pdo)throw new AuthUnavailableException();
+        $items=$itemQuery->limit(2)->select()->toArray();if(count($items)!==1)throw new AuthUnavailableException();
+        // Do not add root locks after a review lock: V1 writers use payment/root then review.
+        if(Db::connect()!==$connection||$connection->getPdo()!==$pdo)throw new AuthUnavailableException();
     }
 
     /** Called only by authenticated existing caller/controller; request identity is not fabricated. */

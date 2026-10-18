@@ -44,6 +44,13 @@ class StoreProductReplyDao extends BaseDao
         return $this->search($where)->page($page, $limit)->select()->toArray();
     }
 
+    /** Old platform pending badge uses the same saved legacy-source domain as its actual list/count. */
+    public function legacyPendingCount():int
+    {
+        return $this->getModel()->alias('r')->where('r.is_reply',0)->where('r.is_del',0)
+            ->whereRaw(StoreProductReplyStoreProductDao::legacySourcePredicate())->count();
+    }
+
     /**
      * 获取最近一条最好的评论
      * @param int $productId

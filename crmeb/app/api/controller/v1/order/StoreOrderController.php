@@ -902,6 +902,17 @@ class StoreOrderController
     {
         list($unique) = $request->postMore([['unique', '']], true);
         if (!$unique || !($cartInfo = $services->getOne(['unique' => $unique]))) return app('json')->fail('商品不存在');
+        $savedOrder = $this->services->get((int)$cartInfo['oid']);
+        if (!$savedOrder) return app('json')->fail('订单不存在');
+        $actualUid = (int)$request->uid();
+        if ($actualUid !== (int)$savedOrder['uid'] && $actualUid !== (int)$savedOrder['gift_uid'])
+            return app('json')->fail('不是您自己的订单，无法评价');
+        MarketplaceTradePolicy::assertLegacyOrder($savedOrder->getData());
+        if ((int)$savedOrder['pid'] > 0) {
+            $savedParent = $this->services->get((int)$savedOrder['pid'], ['id','marketplace_trade_version']);
+            if (!$savedParent) return app('json')->fail('订单不存在');
+            MarketplaceTradePolicy::assertLegacyOrder($savedParent->getData());
+        }
         $cartInfo = $cartInfo->toArray();
         $cartProduct = [];
         $cartProduct['cart_num'] = $cartInfo['cart_info']['cart_num'];

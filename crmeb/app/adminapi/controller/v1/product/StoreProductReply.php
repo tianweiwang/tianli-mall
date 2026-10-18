@@ -138,6 +138,7 @@ class StoreProductReply extends AuthController
         $productId = LegacyProductWriteServices::id($data['product_id']);
         app()->make(LegacyProductWriteServices::class)->run([$productId],function()use($productId,$data):void{
             LegacyProductWriteServices::assertParent($productId);
+            if (LegacyProductWriteServices::isEntrant($productId)) throw new AdminException('新商家商品不支持虚拟评价');
             $now = self::replyTime();
             $added = empty($data['add_time']) ? $now : (is_string($data['add_time']) ? strtotime($data['add_time']) : false);
             if (!is_int($added) || $added < -2147483648 || $added > $now) throw new AdminException('评论时间不正确');
@@ -202,7 +203,7 @@ class StoreProductReply extends AuthController
         return app('json')->success($status == 1 ? '审核通过' : '拒绝成功');
     }
 
-    /** The comment table has no mer_id: its locked real product supplies ownership. */
+    /** Legacy-only edits: saved order provenance is checked before and after the real review lock. */
     private function replyQuery(array $row): Query
     {
         $id = LegacyProductWriteServices::id($row['id'],2147483647);

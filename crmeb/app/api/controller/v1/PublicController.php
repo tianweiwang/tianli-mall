@@ -258,6 +258,7 @@ class PublicController
             return app('json')->fail($upload->getError());
         }
         $res = $upload->getUploadInfo();
+        $attachmentRef = $res['dir'];
         $services->attachmentAdd($res['name'], $res['size'], $res['type'], $res['dir'], $res['thumb_path'], 1, (int)sys_config('upload_type', 1), $res['time'], 3);
         if (CacheService::has('start_uploads_' . $request->uid()))
             $start_uploads = (int)CacheService::get('start_uploads_' . $request->uid());
@@ -267,7 +268,7 @@ class PublicController
         CacheService::set('start_uploads_' . $request->uid(), $start_uploads, 86400);
         $res['dir'] = path_to_url($res['dir']);
         if (strpos($res['dir'], 'http') === false) $res['dir'] = $request->domain() . $res['dir'];
-        return app('json')->success('图片上传成功', ['name' => $res['name'], 'url' => $res['dir']]);
+        return app('json')->success('图片上传成功', ['name' => $res['name'], 'url' => $res['dir'], 'attachment_ref' => $attachmentRef]);
     }
 
     /**

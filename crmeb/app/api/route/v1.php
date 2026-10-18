@@ -232,6 +232,8 @@ Route::group(function () {
         Route::post('order/again', 'v1.order.StoreOrderController/again')->name('orderAgain')->option(['real_name' => '再次下单']); //订单 再次下单
         Route::post('order/pay', 'v1.order.StoreOrderController/pay')->name('orderPay')->option(['real_name' => '订单支付']); //订单支付
         Route::post('order/product', 'v1.order.StoreOrderController/product')->name('orderProduct')->option(['real_name' => '订单商品信息']); //订单商品信息
+        Route::get('order/reviews/<root_id>/<item_id>', 'v1.order.OrderReviewController/quote')->name('orderReviewQuote')->option(['real_name'=>'订单商品评价准备']);
+        Route::post('order/reviews/<root_id>/<item_id>', 'v1.order.OrderReviewController/create')->name('orderReviewCreate')->option(['real_name'=>'提交订单商品评价']);
         Route::post('order/comment', 'v1.order.StoreOrderController/comment')->name('orderComment')->option(['real_name' => '订单评价']); //订单评价
         Route::get('order/cashier/:orderId/[:type]', 'v1.order.StoreOrderController/cashier')->name('orderCashier')->option(['real_name' => '订单收银台']); //订单收银台
         Route::get('order/friend_detail', 'v1.order.StoreOrderController/friendDetail')->name('friendDetail')->option(['real_name' => '代付详情']);//代付详情

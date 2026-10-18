@@ -32,6 +32,12 @@ Route::group('marketplace', function () {
         ->option(['marketplace_permission'=>'marketplace-products-stock-adjust']);
     Route::put('products/<id>/submit-review', 'v1.marketplace.ProductSubmission/submitReview')->name('marketplace-products-submit-review')
         ->option(['marketplace_permission'=>'marketplace-products-submit-review']);
+    Route::get('reviews', 'v1.marketplace.OrderReview/index')->name('marketplace-reviews-list')
+        ->option(['marketplace_permission'=>'marketplace-reviews-list']);
+    Route::get('reviews/<id>', 'v1.marketplace.OrderReview/read')->name('marketplace-reviews-read')
+        ->option(['marketplace_permission'=>'marketplace-reviews-read']);
+    Route::put('reviews/<id>/review', 'v1.marketplace.OrderReview/review')->name('marketplace-reviews-moderate')
+        ->option(['marketplace_permission'=>'marketplace-reviews-moderate']);
     Route::get('aftersales', 'v1.marketplace.Aftersale/index')->name('marketplace-aftersales-list')
         ->option(['marketplace_permission'=>'marketplace-aftersales-list']);
     Route::get('aftersales/<id>', 'v1.marketplace.Aftersale/read')->name('marketplace-aftersales-read')
