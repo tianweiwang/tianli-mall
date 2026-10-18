@@ -1688,7 +1688,9 @@ function m4tr_warm_read_materials(\think\App $app,PDO $db):array
 /** The one finite preparation after genuine paid/migration predecessors; never before the paid producer. */
 function m4tr_prepare_native(\think\App $app,PDO $db,array $source,array $owner,array &$child):array
 {
-    $connection=\think\facade\Db::connect();$default=$connection->getPdo();m4fn_context($app,$connection,$default,$db);
+    $connection=\think\facade\Db::connect();$default=$connection->getPdo();
+    if(!$default instanceof PDO){$connection->query('SELECT 1',[],true);$default=$connection->getPdo();}
+    m4fn_expect($default instanceof PDO,'TASK6_REAL_APP_DEFAULT_PDO');m4fn_context($app,$connection,$default,$db);
     m4fn_expect($child===[]&&$app->config->get('marketplace.enabled')===true&&$app->config->get('marketplace.trade.enabled')===true,
         'TASK6_THREE_FINITE_PREPARATION_PARENT_TRUE_BEFORE_LEGACY_CHILD');m4fn_inputs_unchanged($owner['inputs']);
     $before=m4trp_snapshot($db);m4fn_phase('three_true_legacy_cli');$native=m4tr_legacy_cli($child);

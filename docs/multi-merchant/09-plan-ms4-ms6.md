@@ -18,6 +18,12 @@
 
 ## Global Constraints
 
+2026-10-18 普通履约失败与入口修订：Run `20261018041316d17e65` 在真实测试付款及履约四命令迁移均 native0 后，normal 实际 native1，停在 `original_paid_owner_and_native_archive`，诊断为 `TypeError / ms4-fulfillment-normal.php:639`，business=null，three-read stage/call 均0。源码核实原框架 `getPdo()` 在首次连接前返回 false；新到达的父准备入口与 legacy 子入口先于原 producer 初始化调用了严格 PDO context。仅在这两处沿既有同 Connection 的 SELECT1→重取→显式 PDO 断言修订，不改强类型、事务/身份/业务断言，不重启原 Run。
+
+该 Run 已专用正常关闭原4CID/1内网/6新卷，close 与独立 zero 实际 native0、stderr空；独立六原始查询为空并核无原资源消费者。close 结果摘要 `53dd2aa70ed6add9c4add37fe3c6b9b0909947e7edf0ca8b92c08d9725a28c1c`，独立 zero 原始 stdout 摘要 `f319dd26b4785301b319eb6cfe8d5ddf9923686c541d2684d570aa52170cd3c4`，完整材料在仓库外 `ms4-fulfillment-writer-preparation/normal-context-failure-close-r1`。原失败、公档和 NOT RUN 保留。仅 zero0 后两修订才接 Main，实际 PHP8.2 两文件语法 native0、临时容器前后为空；修后正常业务尚待新 Run，不计 Task6/三端读取通过。
+
+下一轮固定实际修订提交的独立 detached 源码工作树，并沿 host 已有显式 `--repo` 核该完整源，更新两 helper 的真实 pins 及必要九件 profile 依赖；不改变 source guard、原业务或资源拓扑。被测工作树/profile 在实际正常收尾及独立 zero 前保持冻结，Main 可继续集成；后续 Main 增量不能冒称已通过旧快照验证。原 Task7 完整售后、Task8、真实金融、历史、页面及发布未验责任保持，停止样本不运行。
+
 - 目标为通用多商户商城，商品、规格、价格和公共计算沿用现有通用能力；不新增天俪专属预约、检测、区域代理、定制会员或补贴业务。旧仓库名称和平台品牌配置不作为交易需求。
 - 一笔订单只属于一个商家；订单及其子单、订单项、售后、发货记录的 `mer_id` 与订单一致，创建后不可修改。
 - 首版不启用：跨店支付、充值余额、积分抵扣、优惠券、分销与活动叠加。这些入口在服务端由配置 `marketplace.trade.disabled_features` 控制并拒绝；不删除历史数据，不改历史余额与积分。
