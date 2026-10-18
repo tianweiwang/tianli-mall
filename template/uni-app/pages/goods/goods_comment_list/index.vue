@@ -48,18 +48,11 @@
 	import {
 		HTTP_REQUEST_URL
 	} from '@/config/app';
-	import {
-		toLogin
-	} from '@/libs/login.js';
-	import {
-		mapGetters
-	} from "vuex";
 	export default {
 		components: {
 			userEvaluation
 		},
 		mixins: [colors],
-		computed: mapGetters(['isLogin']),
 		data() {
 			return {
 				imgHost: HTTP_REQUEST_URL,
@@ -88,12 +81,9 @@
 			that.product_id = options.product_id;
 		},
 		onShow() {
-			if (this.isLogin) {
-				this.getProductReplyCount();
-				this.getProductReplyList();
-			} else {
-				toLogin()
-			}
+			if (!this.product_id) return;
+			this.getProductReplyCount();
+			this.getProductReplyList();
 		},
 		methods: {
 			/**

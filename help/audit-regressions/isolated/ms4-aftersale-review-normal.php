@@ -499,7 +499,7 @@ function m4ar_actors(\think\App $app,PDO $db,array $source,array $owner):array
  [strtolower($path),strtolower($method)]);m4ar_expect(count($r)===1&&(int)$r[0]['id']>0,'TASK78_EXACT_REAL_TEN_MENU_LEAVES');$grants[]=(int)$r[0]['id'];}
  m4ar_expect(count(array_unique($grants))===10,'TASK78_EXACT_TEN_DISTINCT_GRANTS');sort($grants,SORT_NUMERIC);
  $adminRole=m4ar_insert($db,'eb_system_role',['role_name'=>'N78 '.$suffix,'rules'=>implode(',',$grants),'level'=>1,'status'=>1]);
- $adminPassword='Normal78-'.bin2hex(random_bytes(20));$hash=password_hash($adminPassword,PASSWORD_BCRYPT);m4ar_expect(is_string($hash),'TASK78_REAL_ADMIN_PASSWORD_HASH');
+ $adminPassword='Normal78-'.bin2hex(random_bytes(11));$hash=password_hash($adminPassword,PASSWORD_BCRYPT);m4ar_expect(is_string($hash),'TASK78_REAL_ADMIN_PASSWORD_HASH');
  $admin=m4ar_insert($db,'eb_system_admin',['account'=>'a78_'.$suffix,'pwd'=>$hash,'real_name'=>'Normal78','roles'=>(string)$adminRole['id'],'add_time'=>time(),'level'=>1,'status'=>1,'is_del'=>0]);
  $before=m4ar_snapshot($db);$login=m4ar_json('POST','/adminapi/login',[],['account'=>$admin['account'],'pwd'=>$adminPassword,'key'=>'']);$after=m4ar_snapshot($db);
  $platform=m4ar_session($login,'adminapi',(int)$admin['id'],$hash,$before,$after);$platform['role_id']=(int)$adminRole['id'];$platform['account']=$admin['account'];
@@ -1380,6 +1380,28 @@ function m4ar_review_reads(PDO $db,array $root,array $item,array $review,array $
    $expected=['page'=>$page,'limit'=>1,'count'=>1,'list'=>$page===1?[m4ar_review_view($review,(int)$item['id'],$site)]:[]];m4c_entry_same($reply['json']['data'],$expected);
    m4ar_read_finish($db,$before,$actor,$reply,$name==='platform'?['global'=>true,'rule'=>'marketplace/reviews']:null);}}
 }
+function m4ar_pending_public_review(PDO $db,array $item,array $review):array
+{
+ $native=m4ar_snapshot($db);$saved=m4ar_one($native['rows']['eb_store_product_reply'],'id',$review['id']);
+ m4ar_expect($saved===$review&&(int)$saved['status']===0&&(int)$saved['is_del']===0
+  &&(int)$saved['product_id']===(int)$item['product_id'],'TASK8_PENDING_EXACT_ORIGINAL_STATUS_ZERO_NATIVE_ROW');
+ $qualifying=[];
+ foreach($native['rows']['eb_store_product_reply']as$row)if((int)$row['product_id']===(int)$item['product_id']&&(int)$row['is_del']===0&&(int)$row['status']===1)$qualifying[]=$row;
+ m4ar_expect($qualifying===[],'TASK8_PENDING_INDEPENDENT_COMPLETE_NATIVE_PUBLIC_PREDICATE_EMPTY');
+ $before=$native;$response=m4ar_json('GET','/api/reply/list/'.$item['product_id'].'?type=0&page=1&limit=1',[]);
+ m4ar_expect($response['json']['data']===[],'TASK8_PENDING_REAL_ANONYMOUS_PUBLIC_LIST_EMPTY');
+ m4ar_zero($before,m4ar_snapshot($db));
+ unset($native,$before);
+ $before=m4ar_snapshot($db);$response=m4ar_json('GET','/api/reply/config/'.$item['product_id'],[]);
+ $expected=['sum_count'=>0,'good_count'=>0,'in_count'=>0,'poor_count'=>0,'reply_chance'=>100,'reply_star'=>5];
+ m4c_entry_keys($response['json']['data'],array_keys($expected));
+ foreach($expected as$key=>$value)m4ar_expect(is_int($response['json']['data'][$key])&&$response['json']['data'][$key]===$value,
+  'TASK8_PENDING_REAL_ANONYMOUS_ZERO_COUNTS_AND_DEFAULT_INTEGER_RATING');
+ m4ar_zero($before,m4ar_snapshot($db));
+ return ['review_id'=>(int)$saved['id'],'status'=>(int)$saved['status'],'native_predicate_count'=>count($qualifying),
+  'list_requests'=>1,'count_requests'=>1,'anonymous_requests'=>2,'full_native_zero_diff'=>true];
+}
+
 function m4ar_review(PDO $db,array $owner,array $actors,string $bytes):array
 {
  m4ar_phase('normal_received_original_item_review');$rootId=(int)$owner['root']['id'];$root=m4ar_one(m4ar_snapshot($db)['rows']['eb_store_order'],'id',$rootId);
@@ -1402,6 +1424,7 @@ function m4ar_review(PDO $db,array $owner,array $actors,string $bytes):array
  'TASK8_REVIEW_USES_EXISTING_PUBLIC_IMAGE_NO_FILE_WRITE');m4c_entry_same($reply['json']['data'],m4ar_review_view($review,(int)$item['id'],$site));
  $again=m4ar_json('POST',$path,$actors['customer'],$body);m4c_entry_same($again['json']['data'],m4ar_review_view($review,(int)$item['id'],$site));
  m4ar_read_finish($db,$after,$actors['customer'],$again);m4ar_review_reads($db,$root,$item,$review,$actors,$site);
+ $pendingPublic=m4ar_pending_public_review($db,$item,$review);
  foreach(['moderate','reply']as$operation){$actor=$operation==='moderate'?$actors['platform']:$actors['merchant'];$request=$operation==='moderate'?['schema'=>1,'status'=>1]:['schema'=>1,'content'=>'感谢您的正常购买评价'];
   $url=$operation==='moderate'?'/adminapi/marketplace/reviews/'.$review['id'].'/review':'/merchantapi/reviews/'.$review['id'].'/reply';
   $before=m4ar_snapshot($db);$reply=m4ar_json('PUT',$url,$actor,$request);$after=m4ar_snapshot($db);$now=m4ar_one($after['rows']['eb_store_product_reply'],'id',$review['id']);$want=$review;
@@ -1416,7 +1439,7 @@ function m4ar_review(PDO $db,array $owner,array $actors,string $bytes):array
   m4c_entry_same($reply['json']['data'],m4ar_review_view($want,(int)$item['id'],$site));$review=$want;m4ar_review_reads($db,$root,$item,$review,$actors,$site);}
  $public=m4ar_public_review($db,$item,$review,$owner['uid'],$upload,$bytes);
  return ['root_order_id'=>$rootId,'source_item_id'=>(int)$item['id'],'review_id'=>(int)$review['id'],'attachment_id'=>(int)$upload['row']['att_id'],
- 'image_bytes'=>strlen($bytes),'image_sha256'=>hash('sha256',$bytes),'create_same_body_replay'=>true,'status_sequence'=>[0,1],'merchant_reply_changed_columns'=>3,'public'=>$public];
+ 'image_bytes'=>strlen($bytes),'image_sha256'=>hash('sha256',$bytes),'create_same_body_replay'=>true,'status_sequence'=>[0,1],'merchant_reply_changed_columns'=>3,'public'=>$public,'pending_public'=>$pendingPublic];
 }
 
 function m4ar_relative_time(int $created,int $observed):?string

@@ -4,16 +4,16 @@
 
 **Spec:** [00-implementation-spec.md](00-implementation-spec.md) §1.2、§6.3、§7.2、§8、§9、§10、§11；用例 O、P、R 系列，D19，K02–K05。
 
-## 当前交付状态（2026-10-18）
+## 当前交付状态（2026-10-19）
 
 撤回此前反复沿用的“整体60%”粗估；尚未建立可核算的完整验收权重，源码、构建、隔离业务、HTTP/页面和正式交付分别记录，不再以局部通过推算整体百分比。本节是以下唯一执行清单的概览，不替代原任务及未验收责任。
 
 | 范围 | 已有证据及当前缺口 |
 | --- | --- |
-| 交易与履约 | 发货、全部/部分收货API及页面源码已接入，三端已有完整构建通过记录。705d04c冻结Run的初始化9项、MS5四命令、统一early16、files/C3、新post-C3登记与paid绑定均正常0，随后paid自然255，原因仍未知；原Run正常关闭并独立核零0、4691公件保持。最小付款诊断已本地提交3f6edaa，新九件profile完整冻结及只读核对通过；新Run 20261018141024b7bf0c的初始化9项、MS5四命令、early16、files/C3、post-C3登记及paid绑定均正常0；paid随后自然255。本次真实诊断确认为PHP128M内存上限，m4c_entry_read JSON解码第43行、phase=paid_native_private_seal；具体哪次调用尚未证明，不反推业务通过。原Run已正常关闭并独立核零0、4730原公件保持。精确freeze reader复用修复已完成独审并接Main；真实PHP8.2语法及128M原上限下14次普通freeze读取/COW与2次非freeze读取通过，峰值40222720字节；完整付款后继尚未实跑。Worker R3及KEEP donor已按独审/真实PHP8.2语法结果接Main；完整九件配套R2共75件/74pins、两级完整正逆、独审、Root实际DAG/AST/三help均通过，R3和新initializer六原生语法收据均0。新clean freeze、完整正常Worker与交易业务实跑仍待。完整Task6/售后评价业务、API/页面、Worker及非空历史仍待。 |
+| 交易与履约 | 发货、全部/部分收货API及页面源码已接入，三端已有完整构建记录。最新clean ceadbcff、Run 202610181718152c21cc的29次前置、files/C3、post-C3登记及真实登录/购物车/下单/内部测试付款均正常；同请求正常重放保持。原PHP128M限制下files峰值80379904字节、无fatal。本轮3CID/1内网/7卷已正常退役并独立核零0，4801原公件保持。完整Task6、售后评价业务、三端API/DOM、Worker与非空历史仍待；具体历史失败及修订留在下方记录。 |
 | 售后退款 | 核心、迁移、凭证、读取和S2消费者共61件源码已接入，44个PHP语法检查通过；另23件三端售后操作页和入口源码已接入，22个JS/Vue的34个目标语法检查通过。最新0d5499ec三端完整构建均通过；统一结构迁移与两组权限菜单的early16已在本轮空表隔离实例通过，非空历史、业务、非空凭证及HTTP/页面正常链尚未验证。 |
 | 评价 | 三核心、八条后端路由、权限审计和旧入口隔离共20个PHP文件已接入并通过语法检查；三端15件最终页面已接入，14个JS/Vue的22个目标与pages.json检查通过，商家39脚本/93导入检查通过。最新0d5499ec三端完整构建均通过，平台manifest已实际输出/admin/manifest.json并通过原资源门。真实正常业务、非空公众图片和三端页面尚未验证，Task8未完成。 |
-| 支付、退款与对账 | 既有内部测试驱动和有限验证不代表真实渠道；真实支付退款、对账及外部验收仍待原 MS5 范围完成。 |
+| 支付、退款与对账 | 本轮真实凭据登录、持久购物车确认/下单、同App测试工厂付款、正常重放及数据库/Redis保护已通过内部隔离验证；不代表真实渠道。真实支付退款、对账及外部验收仍待原MS5范围完成。 |
 | 发布与运行 | 原 MS6 和正式交付尚未完成；当前仍为 L2 本地开发，不据此推送、部署或执行真实金融操作。 |
 
 正常联调更新（2026-10-18）：七卷九件profile的完整独审、实际AST/JSON/help/Compose模型检查均通过，从clean d1b832冻结Run 20261018083550994f21。原初始化9项及MS5四命令均真实正常0；canonical paid真实create/register后未启动。Host在fulfillment-migration-create前置把七条完整挂载对象仅顺序变化误判为实例变化，实际native1；early、App和业务未运行。Root只读诊断与原失败raw精确同bytes/hash，原Run已正常关闭3CID/1内网/7卷并独立六raw核零0，1050原公件保持。现仅修Host两处与customer PHP一处窄26字段比较：完整mounts多重集、其余25字段及全部原断言保持；13组整文正逆、独审、实际PHP8.2语法/三Python解析help及真实已记录正常事实的纯比较通过。后继必须新clean来源/新Run实跑，不勾选Task6/7/8。详见[早期结构与正常入口接入记录](records/ms4/normal-early-structure-integration.md)。
@@ -836,6 +836,17 @@ R8 正常链的实际前缀：clean `57390fb29dc995434d319153dd69e0def398f3b0`�
 - [ ] 更新真实当前源码/pins并生成新的独立profile、clean来源和Run，继续原files/paid/Task6/售后评价/Worker正常链及收口；N1/N2、三端API/DOM、非空历史、真实金融和发布原责任保持，用户停止样本仍NOT RUN。
 
 有限实测（2026-10-19）：真实原loader先initializer后customer，两种首次调用顺序各独立PHP进程；每序9次initializer＋9次customer freeze读取、4次非freeze读取、2次合法更严格customer maximum和普通COW均通过。四件PHP语法与两正常用例的before/run/after共18条真实native全部0/空stderr，专用临时容器前后为空；两序峰值同为50802688B，PHP128M保持。结果28745B/`a2c4184da037b54284a8ef90227af9c051ad49d27ecfd45a86d5fc7498cd5bb6`，只证明真实loader的有限公共读取，不是files/App/SQL/HTTP/paid/Worker验收。Main接入harness48344B/`d1f6edf1e08d92f20e99954c41f4dafbb1bf164aeba249c1ef859710af73aa0d`及customer96225B/`8f243fdeadc42335827642eec060d506e137e0e1c5ff01fa4d5db8ea9e69543a`；initializer72261B/`88fad297febed2766a6590fea568527b87343a716e9004264581da4e2f11524a`尚待新profile，完整普通链结果不前填。
+
+#### 内部付款验证与 N2/R3 后继接入（2026-10-19）
+
+Run `202610181718152c21cc` 的原初始化9项、MS5四命令、早期16项、files/C3及post-C3登记均正常。原canonical paid自然exit0/PID0/restart0；实际4879B内部结果 `c73801e74f967fbab70d0d0bca31b35cb0dd71d8203e89f813a52e36f0968a6a` 保持。真实凭据登录/UID、persistent cart确认/创建、1订单/2项/2reserve/1invoice/1payment attempt、同App工厂/PDO、付款后正常重放不重复写入均通过；原native_exit:null及child proc_close:-1不改写，以另存原生容器终态证明0。不是实际渠道或已付三端API/DOM验收。
+
+源码先发现旧售后平台夹具生成49字节密码、真实平台策略为6..32；未发送这个已知无效请求。只取消原Windows编排器（Windows exit1223、原统一session终态1），未向App/容器发送信号；Task6/售后评价/Worker均未开始。专用partial close随后正常退役原3CID/单内部网/七专用卷，独立zero六次fresh双标签三类查询双流为空、无全局原资源消费者，4801份原公件及完整冻结源保持。close SHA `f612efcfa94e650cc6c3e8c4735a35ffabf995d8e1fd87012895c653794534e2`，zero SHA `57d465fe59623c43da85a727985c2306242372dd743c47a687d5e085bbadd8f9`。资源收尾不签收后续业务。
+
+后继实施采用：原N2正常入口增加待审status0时真实匿名列表/统计观察，以独立保存记录和完整DB/Redis/文件零差分作oracle；保留审核/回复/公开图片、原13动作/15重放/5退款与所有原断言。平台夹具只改为31字节随机密码、保真实登录和6..32政策；商家49字节及8..72政策保持。顾客只读评价列表移除登录前置、统计请求显式noAuth，评价写入的登录要求保持。上述三件源码现已按独审候选精确接Main；真实PHP8.2/原128M语法正常0，两份前端经官方H5/MP-Weixin/App-plus预处理的6个模板/脚本目标全部通过，原CRLF风格保持。成套后继九件profile独审、实际DAG/三Python AST和三CLI help均通过；compose/initializer/seed/interface四件保持已审原字节。完整新H5构建、新clean来源/Run及正常HTTP/三端DOM仍待，不借本轮内部付款结果签收新源。
+
+- [x] 本轮内部付款的真实普通验证、专用部分Run正常关闭和独立核零；原编排器非零/未开始后继如实保留。
+- [ ] 新来源完成原Task6/售后评价/Worker正常链及N2观察；N1、三端页面、非空历史、真实金融和发布责任保持。
 
 ### Task 7: 退款额度与库存行为
 

@@ -160,7 +160,7 @@ export function getReplyList(id, data) {
  * @param int id
  */
 export function getReplyConfig(id) {
-	return request.get('reply/config/' + id);
+	return request.get('reply/config/' + id, {}, {noAuth: true});
 }
 
 /**
