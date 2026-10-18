@@ -67,3 +67,19 @@ Root按独立复核后的专用失败收尾真实停止原MySQL/Redis（各同Po
 实际唯一仓库源码修订为ms4-customer-http-normal.php，95830 B / 7725fcf30368dac269b5e0666a982d783bc48e3efe6b87c57dc8a25b2c1158c0；其余变化在外部profile的真实Host→close→zero→八非self pins。interface、README、compose、initializer、seed原字节保持。完整十件/十三组二十六raw唯一正逆、实际UTF8 offsets、独审均通过；独审5708 B / f9ea89ae3ed82ed5e5a1f0b347094602beb57eda45abc47eebd34b10f6a7bece。Root对停止交付实际PHP8.2语法、三Python AST/compile/help和JSON/DAG均正常，临时语法容器前后为空，源不变。只用两份未改动的真实已记录26字段事实做纯比较返回true，不把旧事实当新Run gate或新付款收据。
 
 本次接入该唯一测试PHP和两份原记录；template、crmeb及help/migrations产品源码保持0d5499ec，旧三端构建不改署。之后须从实际新clean提交、新profile和全新专用Run重测原完整初始化/迁移、Task6及新售后评价正常链，直至正常收尾和独立核零。Worker、三端API/DOM、非空历史、真实金融、发布及所有停止样本原未验责任保持。仍仅L2本地，不推送或部署。
+
+## 新 Run 售后首检错误输出与合同补齐决定
+
+clean 59e6525dc9d757f362c6595396cab405c5a79abb 的全新 Run 20261018090411393e37 已真实越过原挂载顺序误拒；原初始化九命令、MS5四命令和 early 履约四命令均 native0。canonical paid 仅创建登记，从未启动。early 在售后首个 check 后自然退出1，phase=aftersale_check_first，原断言位于 ms4-fulfillment-migration.php:1754；该子命令 native0、applicable/stage0，但 stderr226字节，摘要689d449d1013062fa72a0f6f6996c299da5b9d0b6b5af9232c3ece952f0936e8。售后 apply、两组菜单、App及全部业务仍未运行。
+
+原入口仅保存子 stderr 的长度和摘要，未保留原文，不能宣称已还原这226字节的具体内容。有限独立源诊断找到确定缺陷：原 MS4 additions 的 mer_id 与 marketplace_refund_mode 两列合同只有 type/comment/nullable/default/charset；本售后 refundBase 直接合并后，严格 sameColumn 无保护读取 auto，正常 stage0 匹配会访问缺键。警告后空值仍按false比较，符合出现警告却输出native0的源路径；这不是原 stderr 文本的证明。
+
+Root在实施前决定仅在 refundBase 合并边界，为这两项实际继承列显式补齐 auto=false；不修改原 MS4迁移、不放宽 sameColumn 或零 stderr 断言、不屏蔽 warning、不改 DDL/金额/业务合同。先核原始字节正逆、独立源审、实际 PHP8.2 语法与无App/SQL的真实类纯合同输出；后续完整普通迁移须用新 clean 来源和新 Run，不能重开本失败实例。当前 Run 的原结果、冻结源及 profile 保持，先执行专用正常退役和独立核零；收尾实际结果随后补记。
+
+该Run专用收尾已实际正常0：原early保留terminal1、paid保持created从未启动，两原DB各同Popen正常stop0，再非force精确移除原4CID/1空端点内网/7卷。收尾结果SHA256 6b219a664a992c51c65329c68db7d0d65e21cedff34b5fbfacc56c59bb0774d0。首次独立zero实际退出1，原因是Root收尾import产生了profile/__pycache__/ms4-host.cpython-314.pyc，原九件仍逐字匹配freeze；不能将此失败删去或改为0。Root核唯一378804字节cache的原始header对应同Host时间/大小，完整保存在仓库外，仅将该自生成文件移出并移除空cache目录，恢复原九件目录。原close/首次zero和字节码均保留。
+
+后继独立zero只将自己的OUT路径由r1改r2，唯一整文正逆保持全部原断言；不import Host/close、不执行PHP或资源变更。实际外层native0，完整source与九件P、1753原公件前后复读保持，六fresh project/run×三类原始查询均0/双流空，并完整核前后全局消费者及历史CID/container模式。结果SHA256 cb605633987743b724cfca7a35ae1002d0d93c60af653beacefe8e11769122e4。这是失败生命周期结束，售后迁移及业务仍未通过。
+
+两列auto=false候选59197 B /cc339d35dd17ccaec2cdf7722798fa3c2680e11731c023e47a41b92154a029fd已非作者有限独审，唯一raw实际UTF8 offset15729/整件正逆通过。Root实际PHP8.2语法native0/stderr空；只读真实类的纯定义输出确认原26列中恰这两列缺auto，修后全部26列完整，两列原五键逐值及整个refundBase除auto外的实际输出hash相同。无App/PDO/SQL/伪元数据，不据此恢复226 stderr或签收普通迁移。临时容器前后为空，候选不变。原MS4及严格sameColumn/零stderr/20步DDL全部保持。
+
+本次只接上述迁移文件及原09/本记录，实际本地提交在仓库外root-main-integration-r1记录。原59e冻结源、P和失败Run保持；后继新clean Main包含先前私有Worker源码接线，须另冻结完整真实来源再运行原完整正常链，不把旧三端构建或本纯合同检查扩大为业务/Worker/API/DOM/金融/发布验收。

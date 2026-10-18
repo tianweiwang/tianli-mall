@@ -171,6 +171,8 @@ final class MarketplaceMs4AftersaleMigration
     {
         $c = static fn(string $type, string $comment, bool $null = false, ?string $default = null, ?string $charset = null, bool $auto = false): array => self::column($type, $comment, $null, $default, $charset, $auto);
         $old = MarketplaceMs4Migration::additions()['store_order_refund'];
+        $old['columns']['mer_id']['auto'] = false;
+        $old['columns']['marketplace_refund_mode']['auto'] = false;
         return ['table_collation' => null, 'table_comment' => '退款订单表',
             'columns' => [
                 'id' => $c('int', '自增ID', false, null, null, true), 'store_order_id' => $c('int', '订单表ID', false, '0'),
