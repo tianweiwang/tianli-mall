@@ -5,6 +5,7 @@ import store from '@/store';
 import { menusApi } from '@/api/account';
 import { platformCan } from '@/libs/marketplace-navigation';
 import { marketplaceError } from '@/api/marketplace';
+import { captureContext, currentContext, closeContext, currentPermissions } from '@/api/marketplace-aftersale';
 
 function currentPermission(permission) {
   return async (to, from, next) => {
@@ -17,11 +18,27 @@ function currentPermission(permission) {
     } catch (error) { Vue.prototype.$message.error(marketplaceError(error)); next(false); }
   };
 }
+function aftersalePermission(permission) {
+  return async (to, from, next) => {
+    let context;
+    try {
+      context = captureContext(store); const data = await currentPermissions(context);
+      if (!currentContext(context)) { next(false); return; }
+      store.commit('userInfo/uniqueAuth', data.unique); store.commit('userInfo/access', data.unique);
+      await store.dispatch('routesList/setRoutesList', data.menus);
+      if (!currentContext(context)) { next(false); return; }
+      if (platformCan(store, permission)) next(); else next({ name: '403' });
+    } catch (error) { if (!context || currentContext(context)) Vue.prototype.$message.error(error.message || '当前售后权限读取失败'); next(false); }
+    finally { closeContext(context); }
+  };
+}
 export default {
   path: setting.routePre + '/marketplace', name: 'marketplace', header: 'marketplace', component: LayoutMain,
-  meta: { title: '经营商家', auth: ['marketplace-merchants-list', 'marketplace-products-list'] },
+  meta: { title: '经营商家', auth: ['marketplace-merchants-list', 'marketplace-products-list', 'marketplace-aftersales-list', 'marketplace-aftersales-read', 'marketplace-aftersales-approve', 'marketplace-aftersales-reject', 'marketplace-aftersales-return-accept', 'marketplace-aftersale-files-ticket', 'marketplace-aftersale-files-read'] },
   children: [
     { path: 'merchants', name: 'marketplace_merchants', meta: { title: '入驻商家', auth: ['marketplace-merchants-list'] }, beforeEnter: currentPermission('marketplace-merchants-list'), component: () => import('@/pages/marketplace/merchant/index.vue') },
     { path: 'products', name: 'marketplace_products', meta: { title: '商品审核', auth: ['marketplace-products-list'] }, beforeEnter: currentPermission('marketplace-products-list'), component: () => import('@/pages/marketplace/productReview/index.vue') },
+    { path: 'aftersales', name: 'marketplace_aftersales', meta: { title: '多商户售后', auth: ['marketplace-aftersales-list'] }, beforeEnter: aftersalePermission('marketplace-aftersales-list'), component: () => import('@/pages/marketplace/aftersale/index.vue') },
+    { path: 'aftersales/:id', name: 'marketplace_aftersale_detail', meta: { title: '售后详情', auth: ['marketplace-aftersales-read'] }, beforeEnter: aftersalePermission('marketplace-aftersales-read'), component: () => import('@/pages/marketplace/aftersale/index.vue') },
   ],
 };

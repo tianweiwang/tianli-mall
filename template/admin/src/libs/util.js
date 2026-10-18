@@ -10,6 +10,7 @@ import { PlatformRaw } from '@/utils/storage';
 // +---------------------------------------------------------------------
 
 import Cookies from 'js-cookie';
+import { advancePlatformAuthEpoch } from '@/libs/platform-auth-epoch';
 // cookie保存的天数
 import config from '@/config';
 import { forEach, hasOneOf, objEqual } from '@/libs/tools';
@@ -19,6 +20,7 @@ import packageConfig from '../../package.json';
 // 设置setCookies；
 // setToken
 export const setCookies = (key, val, cookieExpires) => {
+  if (key === 'token') advancePlatformAuthEpoch();
   Cookies.set(`${packageConfig.name}:${key}`, val, { expires: cookieExpires || 1 });
 };
 // 获取getCookies；
@@ -28,6 +30,7 @@ export const getCookies = (key) => {
 };
 
 export const removeCookies = (key) => {
+  if (key === 'token') advancePlatformAuthEpoch();
   return Cookies.remove(`${packageConfig.name}:${key}`);
 };
 

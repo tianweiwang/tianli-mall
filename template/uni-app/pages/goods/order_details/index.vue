@@ -7,6 +7,9 @@
 			:pending="!!receiptPending" :sending="receiptSending" :reading="fulfillmentLoading"
 			:disabled="!isLogin || !!fulfillmentError || receiptPreparing || receiptNeedsRefresh"
 			:error="receiptError" :feedback="receiptFeedback" @submit="confirmReceipt" @retry="sendReceipt"></marketplace-receipt>
+		<view v-if="!isReturn && (fulfillmentKind === 'root' || fulfillmentKind === 'child') && fulfillmentView && fulfillmentView.order.paid === 1" class="marketplace-aftersale-navigation">
+			<button class="marketplace-aftersale-navigation-button" :disabled="fulfillmentLoading || !!fulfillmentError || receiptSending" @tap="openMarketplaceAftersale">售后服务（申请及记录）</button>
+		</view>
 		<view class="order-details" v-if="fulfillmentKind === 'legacy' || fulfillmentKind === 'root'">
 			<!-- 给header上与data上加on为退款订单-->
 			<view class="header bg-color acea-row row-middle" :class="isGoodsReturn ? 'on' : ''">
@@ -1226,6 +1229,12 @@ export default {
 		},
 		changeFulfillmentPage(page) {
 			if (this.fulfillmentKind === 'root' && !this.fulfillmentLoading) this.getOrderInfo(page);
+		},
+		openMarketplaceAftersale() {
+			if (this.fulfillmentLoading || this.fulfillmentError || this.receiptSending || !this.fulfillmentView || !['root', 'child'].includes(this.fulfillmentKind)) return;
+			const id = this.fulfillmentKind === 'root' ? this.fulfillmentView.order.id : this.fulfillmentView.package.root_order_id;
+			if (!Number.isSafeInteger(id) || id < 1 || id > 2147483647) return;
+			uni.navigateTo({ url: '/pages/goods/marketplace_aftersale/index?root_id=' + id });
 		},
 		retryFulfillment() { this.getOrderInfo(this.fulfillmentPendingPage); },
 		viewFulfillmentPackage(child) {
@@ -2914,6 +2923,9 @@ export default {
 }
 </style>
 <style scoped lang="scss">
+.marketplace-aftersale-navigation { box-sizing: border-box; width: 100%; min-width: 0; padding: 24rpx 30rpx; background: #fff; }
+.marketplace-aftersale-navigation-button { box-sizing: border-box; display: flex; align-items: center; justify-content: center; width: 100%; min-width: 0; max-width: 100%; min-height: 44px; height: auto; margin: 0; padding: 10px 16px; border: 1px solid #ddd; border-radius: 6px; color: var(--view-theme, #333); background: #fff; font-size: 28rpx; line-height: 1.4; text-align: center; white-space: normal; }
+.marketplace-aftersale-navigation-button::after { border: 0; }
 .order-details .footer button.marketplace-again-button {
 	display: flex;
 	align-items: center;

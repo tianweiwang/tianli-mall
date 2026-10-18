@@ -18,6 +18,11 @@
         <div><dt>{{ order.paid === 1 ? testPayment(order) ? '测试支付金额（元）' : '实付金额（元）' : '应付金额（元）' }}</dt><dd>{{ order.pay_price }}</dd></div>
         <div><dt>邮费（元）</dt><dd>{{ order.pay_postage }}</dd></div>
       </dl>
+      <section v-if="(order.marketplace_trade_version === 1 || order.marketplace_trade_version === '1') && $store.getters.can('order.read')">
+        <h2 class="section-heading">售后服务</h2>
+        <p class="field-note">可在本店售后列表按付款订单号 {{ order.order_id }} 核对申请；本入口保留此订单已保存商品与金额。</p>
+        <div class="fulfillment-actions"><el-button class="fulfillment-control" :disabled="loading || shipmentSending" @click="$router.push('/aftersales')">查看本店售后申请</el-button></div>
+      </section>
       <h2 class="section-heading">履约信息</h2>
       <p v-if="order.fulfillment_summary === null" class="field-note" role="status">履约资料暂不可用</p>
       <dl v-else class="order-facts">

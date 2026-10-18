@@ -1,4 +1,5 @@
-import { clearPlatformAuth } from '@/utils/storage';
+import { clearPlatformAuth, getPlatformToken } from '@/utils/storage';
+import { platformAuthEpoch } from '@/libs/platform-auth-epoch';
 // +---------------------------------------------------------------------
 // | CRMEB [ CRMEB赋能开发者，助力企业发展 ]
 // +---------------------------------------------------------------------
@@ -42,6 +43,8 @@ service.interceptors.request.use(
     } else if (token || kefuToken) {
       config.headers['Authori-zation'] = config.kefu ? 'Bearer ' + kefuToken : 'Bearer ' + token;
     }
+    // Bind the identity actually selected by this interceptor, never a later cookie.
+    config.platformSession = Object.freeze({ token, epoch: platformAuthEpoch.value, realm: config.kefu ? 'kefu' : 'platform' });
     return config;
   },
   (error) => {
@@ -67,10 +70,14 @@ service.interceptors.response.use(
     switch (code) {
       case 200:
         return obj;
-      case 401:
-        clearPlatformAuth();
-        router.replace({ name: 'login' }).catch(() => {});
+      case 401: {
+        const session = response.config && response.config.platformSession;
+        if (session && session.realm === 'platform' && session.epoch === platformAuthEpoch.value && (session.token === getCookies('token') || !getPlatformToken())) {
+          clearPlatformAuth();
+          if (platformAuthEpoch.value === session.epoch + 1 && !getPlatformToken()) router.replace({ name: 'login' }).catch(() => {});
+        }
         return Promise.reject({ msg: '未登录' });
+      }
       case 402:
         removeCookies('kefuInfo');
         removeCookies('kefu_token');

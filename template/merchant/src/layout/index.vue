@@ -5,6 +5,7 @@
       <el-menu router :default-active="$route.path" background-color="#fff" text-color="#303133" active-text-color="#2d8cf0">
         <el-menu-item index="/"><i class="el-icon-house" />本店信息</el-menu-item>
         <el-menu-item v-if="can('order.read')" index="/orders"><i class="el-icon-document" />订单列表</el-menu-item>
+        <el-menu-item v-if="can('order.read')" index="/aftersales"><i class="el-icon-refresh-left" />多商户售后</el-menu-item>
         <el-menu-item v-if="can('product.read')" index="/products"><i class="el-icon-goods" />商品列表</el-menu-item>
         <el-menu-item v-if="can('attachment.manage')" index="/attachments"><i class="el-icon-picture-outline" />素材库</el-menu-item>
         <el-menu-item v-if="can('freight.manage')" index="/freight"><i class="el-icon-truck" />运费模板</el-menu-item>

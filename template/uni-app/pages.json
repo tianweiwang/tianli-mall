@@ -315,7 +315,10 @@
 						}
 					}
 				}, {
-					"path": "order_details/index",
+					"path": "marketplace_aftersale/index",
+                    "style": { "navigationBarTitleText": "多商户售后" }
+                }, {
+                    "path": "order_details/index",
 					"style": {
 						"navigationBarTitleText": "订单详情",
 						"app-plus": {

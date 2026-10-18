@@ -1,4 +1,5 @@
 import { getPlatformToken } from '@/utils/storage';
+import { platformAuthEpoch } from '@/libs/platform-auth-epoch';
 import { formatFlatteningRoutes } from '@/libs/system';
 import { clearPlatformAuth } from '@/utils/storage';
 // +----------------------------------------------------------------------
@@ -59,21 +60,24 @@ export function setFilterMenuFun(routes, role) {
 // 递归处理多余的 layout : <router-view>，让需要访问的组件保持在第一层 layout 层。
 // 因为 `keep-alive` 只能缓存二级路由
 // 默认初始化时就执行
-export function keepAliveSplice(to) {
+export function keepAliveSplice(to, session = null) {
+  if (session && !currentPlatformNavigation(to, session)) return;
   if (to.matched && to.matched.length > 2) {
     to.matched.map((v, k) => {
       if (v.components.default instanceof Function) {
         v.components.default().then((components) => {
+          if (session && !currentPlatformNavigation(to, session)) return;
           if (components.default.name === 'parent') {
             to.matched.splice(k, 1);
+            if (session && !currentPlatformNavigation(to, session)) return;
             router.push({ path: to.path, query: to.query });
-            keepAliveSplice(to);
+            keepAliveSplice(to, session);
           }
         });
       } else {
         if (v.components.default.name === 'parent') {
           to.matched.splice(k, 1);
-          keepAliveSplice(to);
+          keepAliveSplice(to, session);
         }
       }
     });
@@ -121,21 +125,42 @@ export function delayNProgressDone(time = 300) {
  * 权限验证
  */
 
-let platformSessionToken = '';
+function capturePlatformSession() {
+  return Object.freeze({ token: getPlatformToken(), epoch: platformAuthEpoch.value });
+}
+function samePlatformSession(left, right) {
+  return !!left && !!right && left.token === right.token && left.epoch === right.epoch;
+}
+function currentPlatformSession(session) {
+  return samePlatformSession(session, capturePlatformSession());
+}
+function requirePlatformSession(session) {
+  if (!currentPlatformSession(session)) throw new Error('平台会话已改变，请重新进入');
+}
+function currentPlatformNavigation(to, session) {
+  return currentPlatformSession(session) && (router.history.pending ? router.history.pending === to : router.currentRoute === to);
+}
+let platformSessionReady = null;
 let platformSessionPending = null;
-async function refreshPlatformSession(token) {
-  if (platformSessionToken === token && store.state.userInfo.userInfo) return;
-  if (!platformSessionPending) {
-    platformSessionPending = (async () => {
+async function refreshPlatformSession(session) {
+  requirePlatformSession(session);
+  if (samePlatformSession(platformSessionReady, session) && store.state.userInfo.userInfo) return;
+  let record = platformSessionPending;
+  if (!record || !samePlatformSession(record.session, session)) {
+    record = { session, promise: null };
+    platformSessionPending = record;
+    record.promise = (async () => {
       const { AccountInfo, menusApi } = await import('@/api/account');
+      requirePlatformSession(session);
       const [info, menu] = await Promise.all([AccountInfo(), menusApi()]);
-      if (getPlatformToken() !== token) throw new Error('平台会话已改变，请重新进入');
+      requirePlatformSession(session);
       const current = info.data;
       const data = menu.data;
       if (!current || !current.id || !data || !Array.isArray(data.menus) || !Array.isArray(data.unique)) {
         throw new Error('平台会话数据不完整');
       }
       const actor = { id: current.id, account: current.account, head_pic: current.head_pic, level: current.level, real_name: current.real_name };
+      requirePlatformSession(session);
       store.commit('userInfo/userInfo', actor);
       store.commit('userInfo/uniqueAuth', data.unique);
       store.commit('userInfo/access', data.unique);
@@ -144,70 +169,72 @@ async function refreshPlatformSession(token) {
       store.commit('menus/setopenMenus', []);
       store.commit('menus/getmenusNav', data.menus);
       await store.dispatch('routesList/setRoutesList', data.menus);
+      requirePlatformSession(session);
       store.commit('menus/setOneLvMenus', formatFlatteningRoutes(router.options.routes));
       store.commit('menus/setOneLvRoute', formatFlatteningRoutes(data.menus));
-      platformSessionToken = token;
+      requirePlatformSession(session);
+      platformSessionReady = session;
     })();
   }
   try {
-    await platformSessionPending;
+    await record.promise;
+    requirePlatformSession(session);
   } finally {
-    platformSessionPending = null;
+    if (platformSessionPending === record) platformSessionPending = null;
   }
 }
 
 router.beforeEach(async (to, from, next) => {
   // PrevLoading.start();
-  keepAliveSplice(to);
+  const platformRoute = to.fullPath.indexOf('kefu') === -1 && to.name !== 'mobile_upload';
+  const session = platformRoute ? capturePlatformSession() : null;
+  keepAliveSplice(to, session);
   editRouterFun(to, from);
-  if (to.fullPath.indexOf('kefu') != -1 || to.name == 'mobile_upload') {
-    return next();
-  }
+  if (!platformRoute) return next();
+  const stopIfChanged = () => {
+    // Let Router3 settle a superseded hook through its own pending identity checks.
+    if (router.history.pending !== to) { next(); return true; }
+    if (!currentPlatformSession(session)) { next(false); return true; }
+    return false;
+  };
+  const login = () => {
+    if (router.history.pending !== to) return next();
+    const token = getPlatformToken();
+    if (platformAuthEpoch.value !== session.epoch || (token && token !== session.token)) return next(false);
+    clearPlatformAuth();
+    if (router.history.pending !== to) return next();
+    if (platformAuthEpoch.value !== session.epoch + 1 || getPlatformToken()) return next(false);
+    return next({ name: 'login', query: { redirect: to.fullPath } });
+  };
   // 判断是否需要登录才可以进入
   if (to.matched.some((_) => _.meta.auth)) {
-    // 这里依据 token 判断是否登录，可视情况修改
-    const token = getCookies('token');
-    if (token && token !== 'undefined') {
+    if (session.token) {
       try {
-        await refreshPlatformSession(token);
+        await refreshPlatformSession(session);
       } catch (error) {
-        if (!getPlatformToken()) return next({ name: 'login', query: { redirect: to.fullPath } });
+        if (router.history.pending === to && platformAuthEpoch.value === session.epoch && !getPlatformToken()) return login();
+        if (stopIfChanged()) return;
+        if (!getPlatformToken()) return login();
         return next(error);
       }
+      if (stopIfChanged()) return;
       const access = store.state.userInfo.uniqueAuth;
       const isPermission = includeArray(to.meta.auth, access); //  判断是否有权限  TODO
       if (access.length) {
-        next();
+        if (!stopIfChanged()) next();
       } else {
         if (access.length == 0) {
-          next({
-            name: 'login',
-            query: {
-              redirect: to.fullPath,
-            },
-          });
-          clearPlatformAuth();
+          return login();
         } else {
-          next({
-            name: '403',
-          });
+          if (!stopIfChanged()) next({ name: '403' });
         }
       }
-      // next();
     } else {
-      // 没有登录的时候跳转到登录界面
-      // 携带上登录成功之后需要跳转的页面完整路径
-      next({
-        name: 'login',
-        query: {
-          redirect: to.fullPath,
-        },
-      });
-      clearPlatformAuth();
+      return login();
     }
   } else {
     // 不需要身份校验 直接通过
-    next();
+    if (!stopIfChanged()) next();
   }
 });
 router.afterEach((to) => {

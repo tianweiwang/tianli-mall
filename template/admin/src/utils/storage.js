@@ -1,5 +1,6 @@
 import config from '../../package.json';
 import Cookies from 'js-cookie';
+import { advancePlatformAuthEpoch } from '@/libs/platform-auth-epoch';
 
 // 1、window.localStorage 浏览器永久缓存
 export const Local = {
@@ -73,6 +74,7 @@ export function clearPlatformStorage(storage) {
 }
 
 export function clearPlatformAuth() {
+  advancePlatformAuthEpoch();
   ['token', 'expires_time', 'uuid'].forEach((key) => Cookies.remove(`${config.name}:${key}`));
   if (platformStateReset) platformStateReset();
   Local.clear();

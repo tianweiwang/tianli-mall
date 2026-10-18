@@ -33,6 +33,10 @@
       @changeBarg="changeBarg"
       @goDetail="goDetail"
     ></PageDesign>
+    <view class="marketplace-aftersale-entry" :style="colorStyle">
+      <text class="marketplace-aftersale-entry-note">多商户订单的申请、处理记录与私有凭证</text>
+      <button class="marketplace-aftersale-entry-button" @tap="openMarketplaceAftersales">多商户售后</button>
+    </view>
     <image v-if="copyRightPic" :src="copyRightPic" alt="" class="support"></image>
     <editUserModal
       :isShow="editModal"
@@ -470,6 +474,7 @@ export default {
      *
      * 获取个人中心图标
      */
+    openMarketplaceAftersales() { uni.navigateTo({ url: '/pages/goods/marketplace_aftersale/index' }); },
     switchTab(order) {
       this.orderMenu.forEach((item, index) => {
         switch (item.title) {
@@ -615,4 +620,8 @@ export default {
     display: block;
   }
 }
+.marketplace-aftersale-entry { box-sizing: border-box; width: 100%; padding: 24rpx 30rpx; background: #fff; }
+.marketplace-aftersale-entry-note { display: block; color: #606266; font-size: 24rpx; line-height: 1.6; overflow-wrap: anywhere; }
+.marketplace-aftersale-entry-button { box-sizing: border-box; width: 100%; min-width: 0; max-width: 100%; display: flex; align-items: center; justify-content: center; min-height: 44px; height: auto; margin: 16rpx 0 0; padding: 10px 16px; color: var(--view-theme, #333); background: #fff; border: 1px solid #ddd; border-radius: 6px; font-size: 28rpx; line-height: 1.4; text-align: center; white-space: normal; }
+.marketplace-aftersale-entry-button::after { border: 0; }
 </style>
