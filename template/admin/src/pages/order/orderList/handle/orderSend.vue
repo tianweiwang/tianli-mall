@@ -314,12 +314,14 @@ export default {
     };
   },
   watch: {
+    modals(visible) {
+      if (visible) this.kuaidiComsList(1);
+    },
     virtual_type(val) {
       if (this.virtual_type == 3) this.formItem.type = '3';
     },
   },
   mounted() {
-    this.kuaidiComsList(1);
     let delData;
     if (PlatformRaw.get('DELIVERY_DATA')) delData = JSON.parse(PlatformRaw.get('DELIVERY_DATA'));
     if (delData) {
