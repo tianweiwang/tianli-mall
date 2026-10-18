@@ -58,6 +58,8 @@ Root用当前真实vendor只读autoload核实际Timer/Crontab类路径、原post
 
 ## Worker 前驱真实公众文件保留决定（实施前）
 
+2026-10-18 完整Worker入口r1的非作者SOURCE审查发现原验收漏项：虽捕获全部runtime，成功路径没有将其与runtime_initial逐件比较，未限制无关新文件、旧文件修改或删除。保留r1与审查证据；在后继r2补实际有限runtime差分oracle，先核旧成员保持，只有源码明确支持的.timer、timer.log、真实file-channel日期/轮换/apart日志可有对应变化；timer.pid沿真实同master出现后消失证明，所有其它变化失败。完整原bytes/metadata及全部日志仍封存，不整目录排除、不忽略无marker成员；正常tick与最终收口均核。目录亦核完整原成员及实际变化，只新增源码支持的log父目录，合法子文件写入造成的父目录时间变化须明确解释，其余新空目录也失败；目录及delta证据仅在新Worker自有私有after/process追加，保既有全部键值和公共25/14/12合同。范围为恢复已有实施决定的原要求，原result/schema及业务/Timer不改；新候选仍需独审、语法及完整后继运行，不记r1为通过。
+
 Root已完整读取NORMAL-LIFECYCLE-PROFILE-CONTRACT-r1及NORMAL-LEGACY-TASK-PREFLIGHT-CONTRACT-r1。当前cba6486新Run独立冻结并在运行，不改其validation/P/结果。原normal公众tmpfs退出后不可取回实际图片bytes，故先实现仅附加保留侧件，作为后继Worker复用真实正常数据的前驱，不生成图片、附件行或新身份。
 
 本次限定单个ms4-aftersale-review-normal.php测试入口：新增固定M4AR_PUBLIC_KEEP=/run/audit-fixtures/ms4-aftersale-review-public-file-keep.json；原private_input与private_seal只各扩此一个固定路径；复用原64MiB native/96MiB envelope、0700父目录/0600单link/真实owner、create-only/fsync/稳定stat/完整readback和严格serialize/base64合同，不另造archive框架。原业务final snapshot/final_baseline封存和全量zero成立后，保留当时完整/workspace/crmeb/public成员及每件实际原bytes、hash/mode/uid/nlink；读取前后完整stat稳定、路径无逃逸/链接、总长度受原边界限制。原public map、完整DB/Redis/私有证据及原输入必须保持。
@@ -90,3 +92,7 @@ Root已完整读取NORMAL-LIFECYCLE-PROFILE-CONTRACT-r1及NORMAL-LEGACY-TASK-PRE
 沿本记录与原09 Task6，采用仓库外WORKER-ENTRY-IMPLEMENTATION-DECISION-r1.md（SHA256 e27474def82a0e2f3fe350c3330cd21d32c2e831cf0c367e70be3cb28bfd5a2b）。先在外部实现完整独立ms4-worker-normal.php候选，并有限增加原native archive的before/after两条固定私有路径；原业务/Timer不改。公开来源包实际93件逐件等于705提交，另含修后九件post-C3登记profile和KEEP r2候选，共103件；源manifest19540 B /34fc98550b02b75be8259323aba3eec98dfbae2ba29e45e8d2673e8c0d6efb08。当前705来源Run/P与validation保持，候选不冒用其结果。
 
 采用现有任务/cache合同的自然空分支，但必须由实际全任务表及原生cache读回证明；非空或异常不启动、不修改数据，原完整预读责任保持。完整正常Worker直接证明实际proc/pcntl/posix、同resource主子身份、自然60秒tick、完整实际日志/缓存及同resource SIGTERM/proc_close；撤回额外薄API组件前置，不改变原验收。完整原SQL/Redis/files/source/公件和新旧formal/历史/精确正常退役、close/独立zero都继续要求；当前只做SOURCE，实际PHP语法须等本轮完整正常收尾及独立zero后。所有原业务、页面、金融、历史和发布缺口及停止样本责任保持。
+
+后继消费者合同已由Root全文采用：15229 B /30e8e354d46aad846c4d807b0b3c47c5c771702bfc12dfc4467eb26ca57d96a1，normal历史8键、removed10键/native4→5→3、Worker result25/shutdown15；原业务29/24/15及修正post-C3四公件完整保留。沿NORMAL-HISTORY-IMPLEMENTATION-ADOPTION-r1并行在公开profile副本实现normal的显式saved-formal历史验证、KEEP关联和同原生handle精确正常退役及独立zero消费者；默认原current-formal分支和全部原oracle保持，不提前运行部分候选。完整Worker入口、角色/profile其余接线及实际新Run仍待，不虚构原master未公开的raw child waitstatus或将其填0。
+
+Root另按公开Worker.php:549/577/1491/1556及Timer实际new Worker路径补充PROCESS-TITLE-SOURCE-ADDENDUM-r1：框架会正常改master/child原生标题，启动原argv完整留证，不能要求刚proc_open与ready后的cmdline完全相等。只接受完整原argv或来源可证的确切原框架标题及合法NUL结构；ready后稳定，PID/内核starttime/exe/cwd/父子/原resource仍严格，不用任意substring匹配或据标题替换进程。此为完整候选实施前来源修订，尚未运行或观察Worker。

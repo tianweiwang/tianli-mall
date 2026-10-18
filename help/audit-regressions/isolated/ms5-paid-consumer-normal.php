@@ -1205,6 +1205,38 @@ function m5pc_run(): int
 }
 if(realpath($_SERVER['SCRIPT_FILENAME']??'')===__FILE__){
     ini_set('display_errors','0');ini_set('log_errors','0');ini_set('zend.exception_ignore_args','1');umask(0077);
+    $m5pcFatalReserve=str_repeat(' ',65536);
+    register_shutdown_function(static function()use(&$m5pcFatalReserve):void{
+        $m5pcFatalReserve=null;
+        $last=error_get_last();
+        if(!is_array($last)||!is_int($last['type']??null)
+            ||!in_array($last['type'],[E_ERROR,E_PARSE,E_CORE_ERROR,E_COMPILE_ERROR,E_USER_ERROR,E_RECOVERABLE_ERROR],true))return;
+        set_error_handler(static function(int $severity,string $message,string $file,int $line):bool{return true;});
+        try{
+            $code='M5PC_NATIVE_FATAL_GENERAL';$message=$last['message']??null;
+            if($last['type']===E_ERROR&&is_string($message)&&str_starts_with($message,'Allowed memory size of '))
+                $code='M5PC_NATIVE_FATAL_MEMORY_LIMIT';
+            elseif(in_array($last['type'],[E_ERROR,E_COMPILE_ERROR],true)&&is_string($message)
+                &&(str_starts_with($message,'Cannot declare ')||str_starts_with($message,'Cannot redeclare ')
+                    ||str_starts_with($message,'Declaration of ')))$code='M5PC_NATIVE_FATAL_DECLARATION';
+            $file=$last['file']??null;
+            if(is_string($file))$file=basename(str_replace('\\','/',$file));
+            if(!is_string($file)||preg_match('/\A[A-Za-z0-9][A-Za-z0-9_.-]{0,95}\z/D',$file)!==1)$file=null;
+            $line=$last['line']??null;if(!is_int($line)||$line<0)$line=null;
+            $phase=$GLOBALS['m4c_phase']??null;
+            if(!is_string($phase)||preg_match('/\A[a-z][a-z0-9_]{0,95}\z/D',$phase)!==1)$phase=null;
+            $limit=ini_get('memory_limit');
+            if(!is_string($limit)||strlen($limit)>32||preg_match('/\A(?:-1|[0-9]+[KMG]?)\z/Di',$limit)!==1)$limit=null;
+            $json=json_encode(['scope'=>'MS5_PAID_PRODUCER_NATIVE_FATAL_DIAGNOSTIC','code'=>$code,'type'=>$last['type'],
+                'file'=>$file,'line'=>$line,'phase'=>$phase,'memory_limit'=>$limit,'peak_bytes'=>memory_get_peak_usage(true)],
+                JSON_UNESCAPED_SLASHES);
+            if(!is_string($json)||!defined('STDERR')||!is_resource(STDERR))return;
+            $raw=$json."\n";$offset=0;
+            while($offset<strlen($raw)){$written=fwrite(STDERR,substr($raw,$offset));
+                if(!is_int($written)||$written<=0)return;$offset+=$written;}
+        }catch(Throwable $diagnosticError){}
+        finally{restore_error_handler();}
+    });
     set_error_handler(static function(int $severity,string $message,string $file,int $line):bool{
         if((error_reporting()&$severity)===0)return false;
         $GLOBALS['m4c_warning']=['severity'=>$severity,'file'=>basename($file),'line'=>$line];
