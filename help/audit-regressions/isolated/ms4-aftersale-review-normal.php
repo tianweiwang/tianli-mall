@@ -25,6 +25,9 @@ const M4AR_RULE=['role'=>'audit-ms4-aftersale-review-normal','proof'=>'aftersale
 const M4AR_PRIVATE='/var/lib/crmeb-aftersale-evidence';
 const M4AR_SEAL='/run/audit-fixtures/ms4-aftersale-review-stage-final.json';
 const M4AR_PAID_SEAL='/run/audit-fixtures/ms4-aftersale-review-paid-baseline.json';
+const M4AR_PUBLIC_KEEP='/run/audit-fixtures/ms4-aftersale-review-public-file-keep.json';
+const M4W_BEFORE='/run/audit-fixtures/ms4-worker-normal-before.json';
+const M4W_AFTER='/run/audit-fixtures/ms4-worker-normal-after.json';
 const M4AR_EARLY=['ms4-fulfillment-migration-container-created.json','ms4-fulfillment-migration-source-binding.json',
  'ms4-aftersale-early-migration-normal.json','ms4-fulfillment-migration-terminal.json'];
 const M4AR_TASK6=['fulfillment-normal-created.json','ms4-fulfillment-normal-source-binding.json',
@@ -234,7 +237,7 @@ function m4ar_prerequisites(array $source):void
 }
 function m4ar_private_input(string $path,int $max):array
 {
- m4ar_expect(in_array($path,[M4CB_FIXTURE,M5PC_BASELINE,M4FN_BASELINE,M4AR_PAID_SEAL,M4AR_SEAL],true),'TASK78_FIXED_PRIVATE_PATHS');
+ m4ar_expect(in_array($path,[M4CB_FIXTURE,M5PC_BASELINE,M4FN_BASELINE,M4AR_PAID_SEAL,M4AR_SEAL,M4AR_PUBLIC_KEEP,M4W_BEFORE,M4W_AFTER],true),'TASK78_FIXED_PRIVATE_PATHS');
  $parent=dirname($path);$ps=lstat($parent);clearstatcache(true,$path);$a=lstat($path);
  m4ar_expect(is_array($ps)&&is_dir($parent)&&!is_link($parent)&&realpath($parent)===$parent&&($ps['mode']&0777)===0700
   &&$ps['uid']===posix_geteuid()&&is_array($a)&&is_file($path)&&!is_link($path)&&realpath($path)===$path
@@ -1590,7 +1593,7 @@ function m4ar_child_close():?array
 
 function m4ar_private_seal(string $path,string $scope,array $source,array $payload):array
 {
- m4ar_expect(in_array($path,[M4AR_SEAL,M4AR_PAID_SEAL],true)&&!file_exists($path)&&!is_link($path),'TASK78_NEW_INCREMENTAL_PRIVATE_SEAL_CREATE_ONLY');
+ m4ar_expect(in_array($path,[M4AR_SEAL,M4AR_PAID_SEAL,M4AR_PUBLIC_KEEP,M4W_BEFORE,M4W_AFTER],true)&&!file_exists($path)&&!is_link($path),'TASK78_NEW_INCREMENTAL_PRIVATE_SEAL_CREATE_ONLY');
  $payload=['schema'=>1,'scope'=>$scope,'run_id'=>$source['run_id'],'source_sha'=>$source['source_sha'],'freeze_sha256'=>$source['freeze_sha256'],
  'container_id'=>$source['container_id'],'source_binding_sha256'=>$source['source_binding_sha256']]+$payload;
  $bytes=serialize($payload);m4ar_expect(strlen($bytes)>0&&strlen($bytes)<=67108864,'TASK78_BOUND_COMPLETE_INCREMENTAL_NATIVE_ARCHIVE');
@@ -1604,6 +1607,96 @@ function m4ar_private_seal(string $path,string $scope,array $source,array $paylo
  $restored=unserialize(base64_decode($outer['payload'],true),['allowed_classes'=>false,'max_depth'=>128]);m4ar_expect(is_array($restored)&&$restored===$payload&&serialize($restored)===$bytes,
  'TASK78_INCREMENTAL_PRIVATE_FULL_NATIVE_RESTORE');
  return ['path_basename'=>basename($path),'scope'=>$scope,'bytes'=>strlen($raw),'sha256'=>hash('sha256',$raw),'native_archive_bytes'=>strlen($bytes),'native_archive_sha256'=>hash('sha256',$bytes)];
+}
+function m4ar_public_file_keep(PDO $db,array $source,array $final,array $finalSeal):void
+{
+ $root='/workspace/crmeb/public';$scope='MS4_AFTERSALE_REVIEW_PUBLIC_FILE_KEEP_NATIVE_FACTS';
+ m4ar_expect(is_dir($root)&&!is_link($root)&&realpath($root)===$root,'TASK78_KEEP_CANONICAL_PUBLIC_ROOT');
+ m4ar_zero($final,m4ar_snapshot($db));$inputs=[];
+ foreach([M4CB_FIXTURE=>1048576,M5PC_BASELINE=>2097152,M4FN_BASELINE=>67108864,M4AR_PAID_SEAL=>100663296,M4AR_SEAL=>100663296]as$path=>$maximum)
+  $inputs[$path]=['maximum'=>$maximum,'input'=>m4ar_private_input($path,$maximum)];
+ $saved=$inputs[M4AR_SEAL]['input'];$outer=$saved['value'];
+ m4c_entry_keys($outer,['schema','scope','run_id','source_sha','freeze_sha256','container_id','encoding','bytes','sha256','payload']);
+ m4ar_expect($outer['schema']===1&&$outer['scope']==='MS4_AFTERSALE_REVIEW_FINAL_NATIVE_FACTS_ARCHIVE'
+  &&$outer['run_id']===$source['run_id']&&$outer['source_sha']===$source['source_sha']&&$outer['freeze_sha256']===$source['freeze_sha256']
+  &&$outer['container_id']===$source['container_id']&&$outer['encoding']==='php-serialize-base64-v1'
+  &&is_int($outer['bytes'])&&$outer['bytes']>0&&$outer['bytes']<=67108864&&is_string($outer['payload']),'TASK78_KEEP_REAL_FINAL_ENVELOPE');
+ $native=base64_decode($outer['payload'],true);
+ m4ar_expect(is_string($native)&&base64_encode($native)===$outer['payload']&&strlen($native)===$outer['bytes']
+  &&hash('sha256',$native)===$outer['sha256'],'TASK78_KEEP_FINAL_STRICT_NATIVE_BYTES');
+ m4ar_expect($finalSeal===['path_basename'=>basename(M4AR_SEAL),'scope'=>'MS4_AFTERSALE_REVIEW_FINAL_NATIVE_FACTS','bytes'=>strlen($saved['raw']),
+  'sha256'=>$saved['sha256'],'native_archive_bytes'=>strlen($native),'native_archive_sha256'=>hash('sha256',$native)],
+  'TASK78_KEEP_EXACT_ORIGINAL_FINAL_SIX_FIELDS');
+ $restoredFinal=unserialize($native,['allowed_classes'=>false,'max_depth'=>128]);
+ m4ar_expect(is_array($restoredFinal)&&serialize($restoredFinal)===$native&&$restoredFinal['schema']===1
+  &&$restoredFinal['scope']==='MS4_AFTERSALE_REVIEW_FINAL_NATIVE_FACTS'&&$restoredFinal['run_id']===$source['run_id']
+  &&$restoredFinal['source_sha']===$source['source_sha']&&$restoredFinal['freeze_sha256']===$source['freeze_sha256']
+  &&$restoredFinal['container_id']===$source['container_id']&&$restoredFinal['source_binding_sha256']===$source['source_binding_sha256']
+  &&$restoredFinal['native']===$final,'TASK78_KEEP_TRUE_FINAL_SNAPSHOT_BINDING');
+ $files=[];$map=[];$total=0;
+ $iterator=new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root,FilesystemIterator::SKIP_DOTS),RecursiveIteratorIterator::SELF_FIRST);
+ foreach($iterator as$file){
+  $path=$file->getPathname();m4ar_expect(str_starts_with($path,$root.'/'),'TASK78_KEEP_ONLY_PUBLIC_MEMBERS');
+  $relative=substr($path,strlen($root)+1);$parts=explode('/',$relative);
+  m4ar_expect($relative!==''&&!str_starts_with($relative,'/')&&!str_contains($relative,"\0")&&!str_contains($relative,'\\'),
+   'TASK78_KEEP_STRICT_RELATIVE_PATH');
+  foreach($parts as$part)m4ar_expect($part!==''&&$part!=='.'&&$part!=='..','TASK78_KEEP_NO_EMPTY_OR_DOT_SEGMENTS');
+  $parent=$root;
+  foreach(array_slice($parts,0,-1)as$part){$parent.='/'.$part;
+   m4ar_expect(is_dir($parent)&&!is_link($parent)&&realpath($parent)===$parent,'TASK78_KEEP_CANONICAL_PARENT_CHAIN');}
+  clearstatcache(true,$path);$before=lstat($path);
+  m4ar_expect(is_array($before)&&!$file->isLink()&&!is_link($path)&&realpath($path)===$path
+   &&realpath(dirname($path))===dirname($path),'TASK78_KEEP_CANONICAL_NONLINK_MEMBER');
+  if(($before['mode']&0170000)===0040000){m4ar_expect(is_dir($path),'TASK78_KEEP_REAL_DIRECTORY');continue;}
+  m4ar_expect(($before['mode']&0170000)===0100000&&is_file($path)&&$before['uid']===posix_geteuid()&&$before['nlink']===1
+   &&is_int($before['size'])&&$before['size']>=0&&$before['size']<=67108864-$total,'TASK78_KEEP_OWNER_SINGLE_LINK_BOUNDED_REGULAR');
+  m4ar_expect(isset($final['public'][$relative])&&!isset($files[$relative]),'TASK78_KEEP_EXACT_UNIQUE_FINAL_MEMBER');
+  $raw=file_get_contents($path);clearstatcache(true,$path);$after=lstat($path);
+  $fields=['dev','ino','mode','nlink','uid','gid','size','mtime','ctime'];$fieldKeys=array_flip($fields);
+  $beforeStable=array_intersect_key($before,$fieldKeys);$afterStable=is_array($after)?array_intersect_key($after,$fieldKeys):[];
+  m4ar_expect(is_string($raw)&&strlen($raw)===$before['size']&&is_array($after)
+   &&count($beforeStable)===count($fields)&&count($afterStable)===count($fields)&&$afterStable===$beforeStable
+   &&!is_link($path)&&realpath($path)===$path&&realpath(dirname($path))===dirname($path),'TASK78_KEEP_COMPLETE_READ_ORIGINAL_STABLE_FIELDS');
+  $metadata=['bytes'=>strlen($raw),'sha256'=>hash('sha256',$raw),'mode'=>$before['mode']&0777,'uid'=>$before['uid'],'nlink'=>$before['nlink']];
+  m4ar_expect($metadata===$final['public'][$relative],'TASK78_KEEP_ORIGINAL_FILE_METADATA_EXACT');
+  $encoded=base64_encode($raw);$decoded=base64_decode($encoded,true);
+  m4ar_expect(is_string($decoded)&&$decoded===$raw&&base64_encode($decoded)===$encoded&&strlen($decoded)===$metadata['bytes']
+   &&hash('sha256',$decoded)===$metadata['sha256'],'TASK78_KEEP_PER_FILE_STRICT_BASE64_BYTES');
+  $files[$relative]=['metadata'=>$metadata,'base64'=>$encoded];$map[$relative]=$metadata;$total+=strlen($raw);
+ }
+ ksort($files,SORT_STRING);ksort($map,SORT_STRING);
+ m4ar_expect($map===$final['public']&&array_keys($files)===array_keys($map)&&$total<=67108864,'TASK78_KEEP_COMPLETE_FINAL_PUBLIC_MAP');
+ $archive=m4ar_private_seal(M4AR_PUBLIC_KEEP,$scope,$source,['final_baseline'=>$finalSeal,'file_map'=>$map,'files'=>$files]);
+ $kept=m4ar_private_input(M4AR_PUBLIC_KEEP,100663296);$envelope=$kept['value'];
+ m4c_entry_keys($envelope,['schema','scope','run_id','source_sha','freeze_sha256','container_id','encoding','bytes','sha256','payload']);
+ m4ar_expect($envelope['schema']===1&&$envelope['scope']===$scope.'_ARCHIVE'&&$envelope['run_id']===$source['run_id']
+  &&$envelope['source_sha']===$source['source_sha']&&$envelope['freeze_sha256']===$source['freeze_sha256']
+  &&$envelope['container_id']===$source['container_id']&&$envelope['encoding']==='php-serialize-base64-v1'
+  &&is_int($envelope['bytes'])&&$envelope['bytes']>0&&$envelope['bytes']<=67108864&&is_string($envelope['payload']),
+  'TASK78_KEEP_ACTUAL_PRIVATE_ENVELOPE');
+ $bytes=base64_decode($envelope['payload'],true);
+ m4ar_expect(is_string($bytes)&&base64_encode($bytes)===$envelope['payload']&&strlen($bytes)===$envelope['bytes']
+  &&hash('sha256',$bytes)===$envelope['sha256'],'TASK78_KEEP_ACTUAL_STRICT_NATIVE_BYTES');
+ m4ar_expect($archive===['path_basename'=>basename(M4AR_PUBLIC_KEEP),'scope'=>$scope,'bytes'=>strlen($kept['raw']),'sha256'=>$kept['sha256'],
+  'native_archive_bytes'=>strlen($bytes),'native_archive_sha256'=>hash('sha256',$bytes)],'TASK78_KEEP_ACTUAL_ARCHIVE_SIX_FIELDS');
+ $restored=unserialize($bytes,['allowed_classes'=>false,'max_depth'=>128]);
+ $payload=['schema'=>1,'scope'=>$scope,'run_id'=>$source['run_id'],'source_sha'=>$source['source_sha'],'freeze_sha256'=>$source['freeze_sha256'],
+  'container_id'=>$source['container_id'],'source_binding_sha256'=>$source['source_binding_sha256'],'final_baseline'=>$finalSeal,'file_map'=>$map,'files'=>$files];
+ m4ar_expect(is_array($restored)&&$restored===$payload&&serialize($restored)===$bytes&&$restored['file_map']===$final['public']
+  &&array_keys($restored['files'])===array_keys($final['public']),'TASK78_KEEP_COMPLETE_ACTUAL_PAYLOAD_READBACK');
+ foreach($restored['files']as$relative=>$file){m4c_entry_keys($file,['metadata','base64']);$decoded=base64_decode($file['base64'],true);
+  m4ar_expect(is_string($decoded)&&base64_encode($decoded)===$file['base64']&&$file['metadata']===$final['public'][$relative]
+   &&strlen($decoded)===$file['metadata']['bytes']&&hash('sha256',$decoded)===$file['metadata']['sha256'],'TASK78_KEEP_ACTUAL_EACH_FILE_READBACK');}
+ m4ar_zero($final,m4ar_snapshot($db));
+ foreach($inputs as$input)m4ar_expect(m4ar_private_input($input['input']['path'],$input['maximum'])===$input['input'],'TASK78_KEEP_ALL_ORIGINAL_PRIVATE_INPUTS_UNCHANGED');
+ $descriptor=['schema'=>1,'scope'=>'MS4_AFTERSALE_REVIEW_PUBLIC_FILE_KEEP','run_id'=>$source['run_id'],'source_sha'=>$source['source_sha'],
+  'freeze_sha256'=>$source['freeze_sha256'],'container_id'=>$source['container_id'],'source_binding_sha256'=>$source['source_binding_sha256'],
+  'final_baseline_sha256'=>$finalSeal['sha256'],'archive'=>$archive,'file_map_sha256'=>hash('sha256',serialize($final['public']))];
+ $descriptorPath='/run/audit/evidence/aftersale-review-public-file-keep.json';m4c_entry_publish($descriptorPath,$descriptor);
+ m4ar_expect(m4c_entry_read($descriptorPath)===$descriptor,'TASK78_KEEP_FIXED_PUBLIC_DESCRIPTOR_READBACK');
+ m4ar_zero($final,m4ar_snapshot($db));
+ foreach($inputs as$input)m4ar_expect(m4ar_private_input($input['input']['path'],$input['maximum'])===$input['input'],'TASK78_KEEP_ORIGINAL_INPUTS_RETAINED_AFTER_PUBLICATION');
+ m4ar_expect(m4ar_private_input(M4AR_PUBLIC_KEEP,100663296)===$kept,'TASK78_KEEP_PRIVATE_ARCHIVE_RETAINED_AFTER_PUBLICATION');
 }
 function m4ar_business(\think\App $app,PDO $db,array $source,array $owner,array $privatePreparation):array
 {
@@ -1655,6 +1748,7 @@ function m4ar_business(\think\App $app,PDO $db,array $source,array $owner,array 
  $finalSeal=m4ar_private_seal(M4AR_SEAL,'MS4_AFTERSALE_REVIEW_FINAL_NATIVE_FACTS',$source,['original_inputs'=>array_map(static fn(array $i):array=>
  ['path'=>$i['path'],'sha256'=>$i['sha256'],'stat'=>$i['stat']],$owner['inputs']),'paid_baseline'=>$paidSeal,'model'=>$model,'native'=>$final]);
  m4ar_zero($final,m4ar_snapshot($db));$GLOBALS['m4ar_model']=$model;
+ m4ar_public_file_keep($db,$source,$final,$finalSeal);
  return ['authenticated_owner_uid'=>$owner['uid'],'merchant_id'=>(int)$model['root']['mer_id'],'employee_id'=>$actors['merchant']['id'],
  'limited_admin_id'=>$actors['platform']['id'],'original_root_id'=>(int)$owner['root']['id'],'new_root_id'=>$root,'new_items'=>2,'new_quantity'=>3,
  'normal_action_counts'=>$model['command_counts'],'s2_operations'=>count($model['operations']),'same_body_replays'=>$model['replays'],'new_refunds'=>count($model['refunds']),
