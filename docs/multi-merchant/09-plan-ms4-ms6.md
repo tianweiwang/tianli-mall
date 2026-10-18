@@ -6,16 +6,24 @@
 
 ## 当前交付状态（2026-10-19）
 
-最新实测：R11实际Run20261018203647b5ad96的原29个初始化/结构命令、files-bootstrap及C3准备均正常0，Root已独立逐件核files/C3原始结果与同容器终态；文件校验1249行、audit_app仅DML、原128M内存峰值80379904，C3真实生成1顾客/1商家/2商品/3SKU且订单0、未运行HTTP。同Run内部测试付款已实际正常0：真实凭据登录/user-get两次HTTP、真实持久购物车确认/创建、同App测试工厂付款、1订单/2项/2reserve/1invoice/1attempt、后继正常重放和非目标完整保护均通过；Root六件公档读回核同CID0/PID0，保原public native_exit:null及child proc_close:-1，不代表真实渠道或三端付款。当前原coordinator进入履约登记准备，Task6、完整售后评价、Worker及三端DOM尚未取得通过。Main已精确接入缓存修订、UI准备入口/oracle及独立backend/metadata，仍为未PHP/运行验收的源码且未提交，不借冻结051的R11签收；backend已发现formal时间字符串读取接缝，有限修订中。三端资源布局与完整copier均已封存SOURCE及独审，真实gated caller/复制/页面仍待实施验证。
+当前源码已本地提交为 `4c0453a02fe073b8f25a75d4800d0e40dfd4e103`：缓存 wire、UI 准备入口/oracle、backend/metadata、formal 时间字符串读取及打印 DAO 接收者修订已接入；本轮相关 11 件 PHP 8.2.33 语法检查通过。真实 Cache Driver 的 8 类正向协议通过并正常核零，但不包含 App、订单或页面业务。
+
+最新完整正常回归为 R12，实际 Run `2026101822273969a249`，使用上述已提交源码及独立复制的九件配置。Root 物化/冻结实际0，完整实读10857份来源；freeze 摘要 `94c814406e5e78446c516675d587e970aed833b0875b17b47501507d455b2bc3`。旧 R11 的6384公件及缓存协议184公件保持。新 Run 的 prepare、数据库/缓存就绪、initializer九命令及MS5四结构命令均实际正常0；Root另完整读回两组结果、created/binding/terminal，核同CID自然0/PID0及13子命令同handle0/空stderr，保原proc_close:-1和MS5结果native_exit:null。当前内部付款容器仅真实创建、登记准备，尚未启动；不能签收后继early16、付款、Task6、AR13/15/5、N2 或 Worker。当前 validation/profile/Run 保持冻结，未完成正常 close 和独立 zero 前不启动额外临时 Docker/PHP 组件。
+
+旧 R11 的29个初始化/结构命令、files-bootstrap、C3 及内部测试付款已通过；Task6 随后在真实 legacy child 的打印空选择断言自然1，三读 stage/call 均0、business=null。原因是测试调用取得管理页 list/count 包装，真实打印使用 DAO 行列表；一处接收者修订保留原空选择、过滤、SQL 和业务断言。旧失败保留；该 Run 已正常精确退役四容器/一内网/七卷并独立核零。R12 后继须实际完成原完整业务套件，不能沿用此前运行或语法通过代签。
+
+UI 准备 Host/initializer/Compose 已在 R12 当前源码基线上完成三件重基、完整正逆、独审和 Root 读回/Python AST 检查。公开资源复制 PHP 入口与库已封存并有语法证据，Host 生命周期接线正在源码实施。完整17材料配置、实际资源复制、backend/gateway/私有凭据交接、三端表单和320/390/1440页面验收仍未完成；这些外部源码候选不属于本次九件正常回归。
+
+三端构建输入对照（2026-10-19）：Root 实核当前完整556份H5及51份商家源码与原已通过构建的完整输入相同，原336/30件dist也逐件回读一致；保留原468063d/0d5499ec构建来源，不改署为新构建。平台当前1088份来源（含一个prebuild helper）相对原0d5499ec仅 `template/admin/src/pages/order/orderList/handle/orderSend.vue` 一件不同，原603件dist保持但不能作为该修订的构建证据，下一步须使用原离线依赖在新目录真实重建平台。对照结果在仓库外 `current-three-end-build-source-readback-r1/RESULT.json`；不含任何HTTP/登录/页面验收。
 
 撤回此前反复沿用的“整体60%”粗估；尚未建立可核算的完整验收权重，源码、构建、隔离业务、HTTP/页面和正式交付分别记录，不再以局部通过推算整体百分比。本节是以下唯一执行清单的概览，不替代原任务及未验收责任。
 
 | 范围 | 已有证据及当前缺口 |
 | --- | --- |
-| 交易与履约 | 发货、全部/部分收货API及页面源码已接入，三端已有完整构建记录。最新clean468063d、Run20261018184338543405的29次前置、files/C3和canonical内部测试付款正常；Task6在真实legacy child的TYPE读取断言自然1，三读stage/call0、business=null，售后/评价/Worker未启动。原四CID/一内网/七卷正常close0及独立zero0，6379公件保持。已用同PHP82/PhpRedis6.2.0及Redis镜像证实直接TYPE返回bool true、只读bulk方式返回正确none/string/set且值/绝对期限保持；有限五调用修订已接Main，完整新回归仍待。非空历史、三端API/DOM及完整Task6未验收。 |
-| 售后退款 | 核心、迁移、凭证、读取和S2消费者共61件源码已接入，44个PHP语法检查通过；另23件三端售后操作页和入口源码已接入，22个JS/Vue的34个目标语法检查通过。最新0d5499ec三端完整构建均通过；统一结构迁移与两组权限菜单的early16已在本轮空表隔离实例通过，非空历史、业务、非空凭证及HTTP/页面正常链尚未验证。 |
-| 评价 | 三核心、八条后端路由、权限审计和旧入口隔离共20个PHP文件已接入并通过语法检查；三端15件最终页面已接入，14个JS/Vue的22个目标与pages.json检查通过，商家39脚本/93导入检查通过。最新0d5499ec三端完整构建均通过，平台manifest已实际输出/admin/manifest.json并通过原资源门。真实正常业务、非空公众图片和三端页面尚未验证，Task8未完成。 |
-| 支付、退款与对账 | 本轮真实凭据登录、持久购物车确认/下单、同App测试工厂付款、正常重放及数据库/Redis保护已通过内部隔离验证；不代表真实渠道。真实支付退款、对账及外部验收仍待原MS5范围完成。 |
+| 交易与履约 | 发货、全部/部分收货API及页面源码已接入，三端已有完整构建记录。原 R11 初始化/结构、files/C3及内部测试付款正常，Task6 在打印测试调用接缝自然1；保原失败并正常 close/zero0 后，一处 DAO 修订已提交。新 R12 已启动完整回归，尚未取得 Task6/102、售后/评价或 Worker 通过。非空历史、三端API/DOM及完整履约未验收。 |
+| 售后退款 | 核心、迁移、凭证、读取和S2消费者共61件源码已接入，44个PHP语法检查通过；另23件三端售后操作页和入口源码已接入，22个JS/Vue的34个目标语法检查通过。0d5499ec三端完整构建均通过；统一结构迁移与两组权限菜单的early16已有原 R11 空表隔离通过证据。新 R12 尚未到达该阶段；非空历史、完整售后业务、非空凭证及HTTP/页面正常链尚未验证。 |
+| 评价 | 三核心、八条后端路由、权限审计和旧入口隔离共20个PHP文件已接入并通过语法检查；三端15件最终页面已接入，14个JS/Vue的22个目标与pages.json检查通过，商家39脚本/93导入检查通过。原0d5499ec三端构建及当前H5468063d构建通过；当前H5/商家全部来源与其产物实核一致，平台orderSend后继尚待新构建。真实正常业务、非空公众图片和三端页面尚未验证，Task8未完成。 |
+| 支付、退款与对账 | 原 R11 的真实凭据登录、持久购物车确认/下单、同App测试工厂付款、正常重放及数据库/Redis保护已通过内部隔离验证；不代表真实渠道。新 R12 内部付款仍待；真实支付退款、对账及外部验收仍待原MS5范围完成。 |
 | 发布与运行 | 原 MS6 和正式交付尚未完成；当前仍为 L2 本地开发，不据此推送、部署或执行真实金融操作。 |
 
 正常联调更新（2026-10-18）：七卷九件profile的完整独审、实际AST/JSON/help/Compose模型检查均通过，从clean d1b832冻结Run 20261018083550994f21。原初始化9项及MS5四命令均真实正常0；canonical paid真实create/register后未启动。Host在fulfillment-migration-create前置把七条完整挂载对象仅顺序变化误判为实例变化，实际native1；early、App和业务未运行。Root只读诊断与原失败raw精确同bytes/hash，原Run已正常关闭3CID/1内网/7卷并独立六raw核零0，1050原公件保持。现仅修Host两处与customer PHP一处窄26字段比较：完整mounts多重集、其余25字段及全部原断言保持；13组整文正逆、独审、实际PHP8.2语法/三Python解析help及真实已记录正常事实的纯比较通过。后继必须新clean来源/新Run实跑，不勾选Task6/7/8。详见[早期结构与正常入口接入记录](records/ms4/normal-early-structure-integration.md)。
