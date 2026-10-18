@@ -212,6 +212,8 @@ Route::group(function () {
 
     Route::group(function () {
         //订单类
+        Route::get('order/fulfillment/packages/:childNo','v1.order.FulfillmentController/read')->name('fulfillmentPackage')->option(['real_name'=>'履约包裹详情']);
+        Route::post('order/fulfillment/packages/:childNo/receipt','v1.order.FulfillmentController/receipt')->name('fulfillmentReceipt')->option(['real_name'=>'履约包裹收货']);
         Route::post('order/check_shipping', 'v1.order.StoreOrderController/checkShipping')->name('checkShipping')->option(['real_name' => '检测是否显示快递和自提标签']); //检测是否显示快递和自提标签
         Route::post('order/confirm', 'v1.order.StoreOrderController/confirm')->name('orderConfirm')->option(['real_name' => '订单确认']); //订单确认
         Route::post('order/computed/:key', 'v1.order.StoreOrderController/computedOrder')->name('computedOrder')->option(['real_name' => '计算订单金额']); //计算订单金额

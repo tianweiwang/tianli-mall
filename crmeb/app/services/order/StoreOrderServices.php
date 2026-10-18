@@ -192,6 +192,16 @@ class StoreOrderServices extends BaseServices
         return $this->formatSelectedPlatformOrder($models[0]);
     }
 
+    /** The fixed package plan is complete before the existing image engine is allowed to run. */
+    public function readCustomerPackageForReceipt(int $actualUid,string $childNo):array
+    {
+        $plan=app()->make(\app\services\marketplace\order\MarketplaceOrderFulfillmentServices::class)->readCustomerPackage($actualUid,$childNo);
+        $slot=$this->selectedOrderDetailSlot($plan,'customer_package');
+        if($slot===null||$slot['legacy'])throw new AuthUnavailableException();$data=$slot['dto'];
+        \app\dao\marketplace\order\MarketplaceOrderFulfillmentDao::keys($data,['package','allowed_actions','receipt_selection']);
+        $data['package']=$this->finishSavedFulfillmentChildImages($data['package']);return $data;
+    }
+
     private function selectedOrderPlan(array $plan,string $kind):void
     {
         \app\dao\marketplace\order\MarketplaceOrderFulfillmentDao::keys($plan,['kind','slots','count','detail']);

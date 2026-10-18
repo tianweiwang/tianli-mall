@@ -483,6 +483,38 @@ final class MarketplaceOrderFulfillmentDao
         return $rows;
     }
 
+    /** Full saved child, in the caller's owned snapshot and actual merchant context. */
+    public function readMerchantFulfillmentChild(ConnectionInterface $connection,PDO $pdo,int $merId,int $childId):array
+    {
+        $this->readStructureConnection($connection,$pdo);self::integer($merId,1,self::UINT_MAX);self::integer($childId,1,self::INT_MAX);
+        $rows=$this->rootSnapshotRows($connection,$pdo,'SELECT * FROM '.$this->table('store_order').' WHERE id=? AND mer_id=? LIMIT 2',[$childId,$merId]);
+        if(count($rows)!==1)throw new \crmeb\exceptions\MerchantNotFoundException();$row=$rows[0];$this->rootReadHeader($row,false,null);
+        self::stored($row,['id'=>$childId,'mer_id'=>$merId,'marketplace_trade_version'=>1]);
+        if(self::integer($row['pid']??null,1,self::INT_MAX)===$childId)self::unavailable();
+        $this->readStructureConnection($connection,$pdo);return $row;
+    }
+
+    public function readCustomerFulfillmentChild(ConnectionInterface $connection,PDO $pdo,int $actualUid,string $childNo):array
+    {
+        $this->readStructureConnection($connection,$pdo);self::integer($actualUid,1,self::INT_MAX);self::text($childNo,32,true);
+        $rows=$this->rootSnapshotRows($connection,$pdo,'SELECT * FROM '.$this->table('store_order').
+            ' WHERE uid=? AND order_id=? AND marketplace_trade_version=1 AND pid>0 LIMIT 2',[$actualUid,$childNo]);
+        if(count($rows)!==1)self::unavailable();$row=$rows[0];$this->rootReadHeader($row,false,null);
+        self::stored($row,['uid'=>$actualUid,'marketplace_trade_version'=>1]);
+        if(self::integer($row['pid']??null,1,self::INT_MAX)===self::integer($row['id']??null,1,self::INT_MAX))self::unavailable();
+        $this->readStructureConnection($connection,$pdo);return $row;
+    }
+
+    /** The real current account admission used by lockCustomer, without locking or ORM. */
+    public function readReceiptCustomerForChild(ConnectionInterface $connection,PDO $pdo,int $actualUid,array $fullChild):array
+    {
+        $this->readStructureConnection($connection,$pdo);self::integer($actualUid,1,self::INT_MAX);$this->rootReadHeader($fullChild,false,null);
+        self::stored($fullChild,['uid'=>$actualUid,'marketplace_trade_version'=>1]);self::integer($fullChild['pid']??null,1,self::INT_MAX);
+        $rows=$this->rootSnapshotRows($connection,$pdo,'SELECT uid,status,is_del FROM '.$this->table('user').' WHERE uid=?',[$actualUid]);
+        if(count($rows)!==1)self::unavailable();$row=$rows[0];self::keys($row,['uid','status','is_del']);
+        self::stored($row,['uid'=>$actualUid,'status'=>1,'is_del'=>0]);$this->readStructureConnection($connection,$pdo);return $row;
+    }
+
     /** Fixed V1 display facts only. Authorization, complete item correspondence and lifecycle stay with the caller. */
     public function readDisplayAuxiliariesForRoots(ConnectionInterface $connection,PDO $pdo,array $fullAuthorizedRoots,string $view):array
     {

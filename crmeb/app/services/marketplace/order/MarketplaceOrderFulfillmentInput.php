@@ -42,6 +42,60 @@ final class MarketplaceOrderFulfillmentInput
         return self::result($idem, $request);
     }
 
+    /** Public merchant item IDs name the already published original root items, never a client plan. */
+    public static function shipPublic(mixed $rootId,array $raw):array
+    {
+        self::keys($raw,['idem_key','items','delivery']);
+        if(!is_array($raw['items'])||!array_is_list($raw['items'])||$raw['items']===[])throw new ApiException('items格式错误');
+        $quantities=[];
+        foreach($raw['items'] as$item){
+            if(!is_array($item))throw new ApiException('items格式错误');self::keys($item,['item_id','quantity']);
+            $quantities[]=['source_item_id'=>self::positive($item['item_id'],'item_id'),'quantity'=>self::positive($item['quantity'],'quantity')];
+        }
+        $normal=self::ship($rootId,['idem_key'=>$raw['idem_key'],'quantities'=>$quantities,'delivery'=>$raw['delivery']]);
+        return ['idem_key'=>$normal['idem_key'],'quantities'=>$normal['request']['quantities'],'delivery'=>$normal['request']['delivery']];
+    }
+
+    /** HTTP-only child-local syntax. No fabricated root/child IDs and no private source coordinates. */
+    public static function receivePublic(array $raw):array
+    {
+        $keys=['idem_key'];if(array_key_exists('selection',$raw))$keys[]='selection';self::keys($raw,$keys);
+        $key=self::idempotencyKey($raw['idem_key']);$selection=array_key_exists('selection',$raw)?$raw['selection']:['mode'=>'all_eligible'];
+        if(!is_array($selection))throw new ApiException('selection格式错误');
+        if(($selection['mode']??null)==='all_eligible')$selection=self::selection($selection);
+        else{
+            self::keys($selection,['mode','items']);
+            if($selection['mode']!=='items'||!is_array($selection['items'])||!array_is_list($selection['items'])||$selection['items']===[])
+                throw new ApiException('selection格式错误');
+            $items=[];$seen=[];
+            foreach($selection['items'] as$item){
+                if(!is_array($item))throw new ApiException('items格式错误');self::keys($item,['item_id','segments']);
+                $id=self::positive($item['item_id'],'item_id');
+                if(isset($seen[$id])||!is_array($item['segments'])||!array_is_list($item['segments'])||$item['segments']===[])
+                    throw new ApiException('包裹商品选择格式错误');
+                $seen[$id]=true;$segments=[];
+                foreach($item['segments'] as$segment){
+                    if(!is_array($segment))throw new ApiException('segments格式错误');self::keys($segment,['first','last']);
+                    $first=self::positive($segment['first'],'first');$last=self::positive($segment['last'],'last');
+                    if($last<$first)throw new ApiException('包裹单位范围格式错误');$segments[]=['first'=>$first,'last'=>$last];
+                }
+                usort($segments,static fn(array $a,array $b):int=>($a['first']<=>$b['first'])?:($a['last']<=>$b['last']));
+                $merged=[];
+                foreach($segments as$segment){
+                    $index=count($merged)-1;
+                    if($index>=0&&$segment['first']<=$merged[$index]['last'])throw new ApiException('包裹单位范围重复或交叠');
+                    if($index>=0&&$segment['first']===$merged[$index]['last']+1)$merged[$index]['last']=$segment['last'];
+                    else $merged[]=$segment;
+                }
+                $items[]=['item_id'=>$id,'segments'=>$merged];
+            }
+            usort($items,static fn(array $a,array $b):int=>$a['item_id']<=>$b['item_id']);$selection=['mode'=>'items','items'=>$items];
+        }
+        $out=['idem_key'=>$key,'selection'=>$selection];
+        if(strlen(MarketplaceOrderInput::canonical($out))>self::MAX_REQUEST_BYTES)throw new ApiException('履约请求内容超出限制');
+        return $out;
+    }
+
     private static function keys(array $value, array $expected): void
     {
         $actual = array_keys($value);
