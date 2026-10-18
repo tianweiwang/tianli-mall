@@ -24,7 +24,7 @@ UI构建固定在Main提交0d5499ecf95ec9c9c29d7f6e011cecb69a2b81c1，因此在�
 
 ## 本地接入结果
 
-本独立来源基于实际0d5499ec，在feature/ms4-aftersale-normal-source本地分支保留。当前Main的cd513a96只补三端构建与旧失败收尾记录；应用源码与0d5499ec相同，三端完整构建均通过，构建冻结已解除。R1原件、原65524 B供体及原失败均保持。实际接入仅本早期驱动和本记录两件，git diff --check通过；未推送、部署或启动新的业务Run。外部root-r2-application保存真实语法和来源收据，提交后的完整SHA另在仓库外检查点记录。
+本独立来源基于实际0d5499ec，在feature/ms4-aftersale-normal-source本地分支保留。准备期间Main的cd513a96只补三端构建与旧失败收尾记录；应用源码与0d5499ec相同，三端完整构建均通过，构建冻结已解除。R1原件、原65524 B供体及原失败均保持。实际接入仅本早期驱动和本记录两件，git diff --check通过；未推送、部署或启动新的业务Run。外部root-r2-application保存真实语法和来源收据，提交后的完整SHA另在仓库外检查点记录。
 
 ## 必要消费者接入
 
@@ -45,3 +45,9 @@ Root已全文复核35组有限替换的必要源码和实际producer，真实完
 增量独审报告摘要：d7fee0afec4ebd8c0a66217b559f5699ce86ddead3081e3d47332dfd9d57c3da；完整报告和原生结果保存在仓库外，不向仓库写原始日志、账号或归档。
 
 实际新工作树入口完整字节等于上述已审R2；固定PHP8.2在无网络只读容器对实际完整checkout执行--help，真实native0/stderr空，临时容器前后为空，目标前后保持。此help加载真实依赖但不启动App或访问DB。git diff --check通过，实际本地提交SHA在外部root-normal-entry-integration-r2检查点记录。完整profile及真实迁移/业务/非空图片/关闭核零仍待；未推送或部署。
+
+## 主开发分支成套接入
+
+独立分支实际提交依次为d598b76828d5225a511cb32b7898173cef104d6f、007798321361d1955ad8f18ce0c34932ae1e26b1、7c4d99233bede79d640a3c7d88862665ed139cd6，工作树干净。Main从cd513a96按这三个明确提交成套接入，实际来源提交为2b34fad6b9cf66024ad8c1ab0ccbb7c2dd4b3f86；对应五件测试PHP和本记录六件，逐字等于已检查的独立来源。Main和独立分支均干净，git diff --check通过；template、crmeb及help/migrations与0d5499ec的实际Git差异为空，原三端构建不改署成新的业务验证。外部root-main-preparation-integration-r1保存真实原生收据及检查点。
+
+此接入仅完成正常联调的源码及入口准备；最终七卷profile、来源冻结、原九初始化/MS5四命令/early十六命令、原Task6及新正常HTTP、非空图片和正常关闭/独立核零均待真实新Run。原失败、所有NOT RUN及未验责任保持，未推送、部署或执行真实金融操作。

@@ -16,6 +16,8 @@
 | 支付、退款与对账 | 既有内部测试驱动和有限验证不代表真实渠道；真实支付退款、对账及外部验收仍待原 MS5 范围完成。 |
 | 发布与运行 | 原 MS6 和正式交付尚未完成；当前仍为 L2 本地开发，不据此推送、部署或执行真实金融操作。 |
 
+正常联调准备更新（2026-10-18）：早期十六命令驱动、三个必要消费者及完整售后/评价正常入口已在独立本地分支逐步提交，并于 Main `2b34fad6b9cf66024ad8c1ab0ccbb7c2dd4b3f86` 成套接入。五件测试源码之外的产品、前端和迁移源码与已构建的0d5499ec保持相同。Root实际PHP8.2语法及完整checkout的入口help均正常；独审发现的三处子服务收尾和公开图片预期缺陷已由有限R2修订并复核。完整七卷profile仍须最后来源核对、解析及真实运行；未启动新业务Run，不勾选Task6/7/8。来源、原失败保留和精确未验范围见[早期结构与正常入口接入记录](records/ms4/normal-early-structure-integration.md)。
+
 ## Global Constraints
 
 2026-10-18 普通履约失败与入口修订：Run `20261018041316d17e65` 在真实测试付款及履约四命令迁移均 native0 后，normal 实际 native1，停在 `original_paid_owner_and_native_archive`，诊断为 `TypeError / ms4-fulfillment-normal.php:639`，business=null，three-read stage/call 均0。源码核实原框架 `getPdo()` 在首次连接前返回 false；新到达的父准备入口与 legacy 子入口先于原 producer 初始化调用了严格 PDO context。仅在这两处沿既有同 Connection 的 SELECT1→重取→显式 PDO 断言修订，不改强类型、事务/身份/业务断言，不重启原 Run。
