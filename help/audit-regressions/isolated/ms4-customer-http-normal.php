@@ -37,8 +37,52 @@ function m4c_entry_keys(array $value,array $keys): void
     $actual=array_keys($value);sort($actual,SORT_STRING);sort($keys,SORT_STRING);
     m4c_expect($actual===$keys,'M4C_EXACT_OBJECT_KEYS');
 }
+/** Reuse only the fixed source-freeze value after every complete current-file read. */
+function m4c_entry_read_freeze(int $maximum): array
+{
+    static $cached=null;
+    $path='/run/audit/preparation-source-binding.json';
+    $fields=['dev','ino','mode','nlink','uid','gid','size','mtime','ctime'];
+    clearstatcache(true,$path);$before=lstat($path);
+    m4c_expect(is_array($before)&&is_file($path)&&!is_link($path)
+        &&($before['mode']&0170000)===0100000&&is_int($before['size'])
+        &&$before['size']>0&&$before['size']<=$maximum,'M4C_REGULAR_BOUND_JSON');
+    $first=$cached===null;$raw=$first?'':null;$count=0;$hasher=hash_init('sha256');
+    $stream=fopen($path,'rb');m4c_expect(is_resource($stream),'M4C_FREEZE_READ_RESOURCE_OPEN');
+    try{
+        $opened=fstat($stream);m4c_expect(is_array($opened),'M4C_FREEZE_READ_HANDLE_STAT');
+        foreach($fields as$key)m4c_expect($opened[$key]===$before[$key],'M4C_FREEZE_CURRENT_PATH_HANDLE_IDENTITY');
+        while(!feof($stream)){
+            $chunk=fread($stream,65536);m4c_expect(is_string($chunk),'M4C_FREEZE_COMPLETE_READ_CHUNK');
+            if($chunk===''){m4c_expect(feof($stream),'M4C_FREEZE_NO_INCOMPLETE_EMPTY_READ');break;}
+            $count+=strlen($chunk);
+            m4c_expect($count<=$before['size']&&$count<=$maximum,'M4C_FREEZE_COMPLETE_READ_BOUND');
+            m4c_expect(hash_update($hasher,$chunk),'M4C_FREEZE_COMPLETE_STREAM_HASH');
+            if($first)$raw.=$chunk;
+        }
+        m4c_expect(feof($stream)&&$count===$before['size'],'M4C_FREEZE_COMPLETE_READ_EOF_AND_BYTES');
+        $handleAfter=fstat($stream);clearstatcache(true,$path);$after=lstat($path);
+        m4c_expect(is_array($handleAfter)&&is_array($after)&&is_file($path)&&!is_link($path)
+            &&($after['mode']&0170000)===0100000,'M4C_FREEZE_CURRENT_REGULAR_PATH_AFTER_READ');
+        foreach($fields as$key)m4c_expect($handleAfter[$key]===$before[$key]&&$after[$key]===$before[$key],
+            'M4C_FREEZE_CURRENT_PATH_HANDLE_UNCHANGED');
+    }finally{m4c_expect(fclose($stream),'M4C_FREEZE_READ_RESOURCE_CLOSED');}
+    $digest=hash_final($hasher);
+    if($first){
+        m4c_expect(is_string($raw)&&strlen($raw)===$count&&hash('sha256',$raw)===$digest,
+            'M4C_FREEZE_DECODER_EXACT_COMPLETE_STREAM_BYTES');
+        $value=json_decode($raw,true,128,JSON_THROW_ON_ERROR);
+        m4c_expect(is_array($value)&&!array_is_list($value),'M4C_BOUND_JSON_OBJECT');
+        $cached=['value'=>$value,'sha256'=>$digest,'bytes'=>$count];unset($raw,$value,$chunk);
+        return $cached['value'];
+    }
+    m4c_expect($count===$cached['bytes']&&hash_equals($cached['sha256'],$digest),'M4C_FREEZE_ACCEPTED_FULL_BYTES_UNCHANGED');
+    m4c_expect(is_array($cached['value'])&&!array_is_list($cached['value']),'M4C_BOUND_JSON_OBJECT');
+    unset($raw,$chunk);return $cached['value'];
+}
 function m4c_entry_read(string $path,int $maximum=16777216): array
 {
+    if($path==='/run/audit/preparation-source-binding.json')return m4c_entry_read_freeze($maximum);
     m4c_expect(is_file($path)&&!is_link($path)&&filesize($path)>0&&filesize($path)<=$maximum,'M4C_REGULAR_BOUND_JSON');
     $value=json_decode(file_get_contents($path),true,128,JSON_THROW_ON_ERROR);
     m4c_expect(is_array($value)&&!array_is_list($value),'M4C_BOUND_JSON_OBJECT');return $value;
