@@ -14,7 +14,6 @@ use app\services\activity\combination\StorePinkServices;
 use app\services\activity\live\LiveGoodsServices;
 use app\services\activity\live\LiveRoomServices;
 use app\services\agent\AgentManageServices;
-use app\services\marketplace\order\MarketplaceOrderFulfillmentServices;
 use app\services\marketplace\order\MarketplaceOrderPostCommitServices;
 use app\services\order\StoreOrderInvoiceServices;
 use app\services\order\StoreOrderServices;
@@ -40,7 +39,6 @@ class CrontabRunServices
     public $markList = [
         'orderCancel' => '未支付自动取消订单',
         'marketplaceOrderPostCommit' => '多商户订单提交后收尾',
-        'marketplaceFulfillmentReceipt' => '多商户物流自动收货',
         'pinkExpiration' => '拼团到期订单处理',
         'agentUnbind' => '到期自动解绑上级',
         'liveProductStatus' => '自动更新直播商品状态',
@@ -72,40 +70,6 @@ class CrontabRunServices
         catch (\Throwable $error) {}
         if (!$stored) {
             try { Log::error('MARKETPLACE_POST_COMMIT_CURSOR_WRITE_UNAVAILABLE'); } catch (\Throwable $ignored) {}
-        }
-        return $result;
-    }
-
-    /** Dedicated physical-receipt scan; cached cursors are hints, never completion evidence. */
-    public function marketplaceFulfillmentReceipt(): array
-    {
-        $validCursor = static function (mixed $cursor): bool {
-            if (!is_array($cursor) || array_keys($cursor) !== ['due_at', 'ship_id']
-                || !is_int($cursor['due_at']) || $cursor['due_at'] < 0 || $cursor['due_at'] > 4294967295
-                || !is_string($cursor['ship_id'])
-                || preg_match('/\A(?:0|[1-9][0-9]{0,19})\z/D', $cursor['ship_id']) !== 1
-                || (strlen($cursor['ship_id']) === 20 && strcmp($cursor['ship_id'], '18446744073709551615') > 0)) return false;
-            return ($cursor['due_at'] === 0) === ($cursor['ship_id'] === '0');
-        };
-        $cursor = ['due_at' => 0, 'ship_id' => '0'];
-        try {
-            $hint = Cache::get('marketplace_fulfillment_receipt_cursor');
-            if ($validCursor($hint)) $cursor = $hint;
-        } catch (\Throwable $error) {
-            try { Log::error('MARKETPLACE_FULFILLMENT_RECEIPT_CURSOR_READ_UNAVAILABLE'); } catch (\Throwable $ignored) {}
-        }
-        // Let actual scan failures propagate; do not advance a cursor for an unproved result.
-        $result = app()->make(MarketplaceOrderFulfillmentServices::class)->scanDue($cursor['due_at'], $cursor['ship_id'], 100);
-        $next = ['due_at' => $result['next_due_at'] ?? null, 'ship_id' => $result['next_ship_id'] ?? null];
-        if (!$validCursor($next) || !is_bool($result['wrapped'] ?? null)
-            || ($result['wrapped'] && $next !== ['due_at' => 0, 'ship_id' => '0'])) {
-            throw new \crmeb\exceptions\AuthUnavailableException();
-        }
-        $stored = false;
-        try { $stored = Cache::set('marketplace_fulfillment_receipt_cursor', $next) === true; }
-        catch (\Throwable $error) {}
-        if (!$stored) {
-            try { Log::error('MARKETPLACE_FULFILLMENT_RECEIPT_CURSOR_WRITE_UNAVAILABLE'); } catch (\Throwable $ignored) {}
         }
         return $result;
     }

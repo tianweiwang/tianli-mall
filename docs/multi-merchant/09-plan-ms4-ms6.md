@@ -819,6 +819,8 @@ clean `53b86ead9453c537e42e28069674f27449ca60ce`、Run `20261018030035b634f0`：
 
 当前有限修正只把每表完整metadata/columns采集移到原SHOW CREATE及ACTUAL_SHOW_CREATE断言之后。全部原字段、PHP类型、AUTO_INCREMENT、SESSION stats0/其余五模式、DDL/行/Redis和严格比较均保持；新迁移观察源65524B/`d2be418564206ce657b628a25c07464f1eec8b1813d319ebf3ea3f1ff382390b`。整件正逆及人员独立SOURCE复核完成，固定PHP8.2真实lint0/空stderr且语法容器核零；修正是否足以稳定首次观察仍须新clean来源/全新专用实例的四命令和原完整普通链验证。原九件R3 profile未含旧观察源硬编码摘要，保持全件原字节；新freeze须绑定实际新Main来源，不能复用旧freeze/Run身份。新业务、三端API/DOM、Worker、售后、真实金融、非空历史及发布责任仍全部保留。
 
+**Task6私有Worker合同收口（2026-10-18，实施前）：** 原R2明确no-public的私有60秒Worker与后来S2新增receipt mark存在未闭合冲突。Root现统一沿原真实Worker对象/PID/loop/owned timer方案，撤回新增global receipt注册接缝，保完整S2 scanner及所有原post-commit/legacy任务；不加CLI/Queue、不改保存数据。精确三源及正常验证边界见[履约私有Worker接线收口](records/ms4/fulfillment-private-worker.md)。当前59e6525固定Run独立保持，后继源码不冒用其结果；此时尚未应用或激活Worker，到期与已停止样本继续NOT RUN。
+
 ### Task 7: 退款额度与库存行为
 
 - 接口：申请退款时在事务中锁定订单行，校验"已退金额 + 处理中金额 + 本次金额 ≤ 实付"；三类库存行为分别写 `release`（未发货取消）、`return_in`（退货验收入库）、不写（仅退款）。
