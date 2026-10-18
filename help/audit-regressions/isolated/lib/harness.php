@@ -13,6 +13,49 @@ function audit_expect(bool $condition, string $message): void
 {
     if (!$condition) { throw new RuntimeException($message); }
 }
+/** One successful decoded public freeze; every call still reads all current bytes. */
+function audit_read_immutable_source_freeze(?int $maximum,callable $expect): array
+{
+    static $cached=null;
+    $path='/run/audit/preparation-source-binding.json';
+    $fields=['dev','ino','mode','nlink','uid','gid','size','mtime','ctime'];
+    clearstatcache(true,$path);$before=lstat($path);
+    $expect(is_array($before)&&is_file($path)&&!is_link($path)
+        &&($before['mode']&0170000)===0100000&&is_int($before['size'])
+        &&$before['size']>0&&($maximum===null||$before['size']<=$maximum),'REGULAR_BOUND_JSON');
+    $first=$cached===null;$raw=$first?'':null;$count=0;$hasher=hash_init('sha256');
+    $stream=fopen($path,'rb');$expect(is_resource($stream),'FREEZE_READ_RESOURCE_OPEN');
+    try{
+        $opened=fstat($stream);$expect(is_array($opened),'FREEZE_READ_HANDLE_STAT');
+        foreach($fields as$key)$expect($opened[$key]===$before[$key],'FREEZE_CURRENT_PATH_HANDLE_IDENTITY');
+        while(!feof($stream)){
+            $chunk=fread($stream,65536);$expect(is_string($chunk),'FREEZE_COMPLETE_READ_CHUNK');
+            if($chunk===''){$expect(feof($stream),'FREEZE_NO_INCOMPLETE_EMPTY_READ');break;}
+            $count+=strlen($chunk);
+            $expect($count<=$before['size']&&($maximum===null||$count<=$maximum),'FREEZE_COMPLETE_READ_BOUND');
+            $expect(hash_update($hasher,$chunk),'FREEZE_COMPLETE_STREAM_HASH');
+            if($first)$raw.=$chunk;
+        }
+        $expect(feof($stream)&&$count===$before['size'],'FREEZE_COMPLETE_READ_EOF_AND_BYTES');
+        $handleAfter=fstat($stream);clearstatcache(true,$path);$after=lstat($path);
+        $expect(is_array($handleAfter)&&is_array($after)&&is_file($path)&&!is_link($path)
+            &&($after['mode']&0170000)===0100000,'FREEZE_CURRENT_REGULAR_PATH_AFTER_READ');
+        foreach($fields as$key)$expect($handleAfter[$key]===$before[$key]&&$after[$key]===$before[$key],
+            'FREEZE_CURRENT_PATH_HANDLE_UNCHANGED');
+    }finally{$expect(fclose($stream),'FREEZE_READ_RESOURCE_CLOSED');}
+    $digest=hash_final($hasher);
+    if($first){
+        $expect(is_string($raw)&&strlen($raw)===$count&&hash('sha256',$raw)===$digest,
+            'FREEZE_DECODER_EXACT_COMPLETE_STREAM_BYTES');
+        $value=json_decode($raw,true,128,JSON_THROW_ON_ERROR);
+        $expect(is_array($value)&&!array_is_list($value),'BOUND_JSON_OBJECT');
+        $cached=['value'=>$value,'sha256'=>$digest,'bytes'=>$count];unset($raw,$value,$chunk);
+        return $cached['value'];
+    }
+    $expect($count===$cached['bytes']&&hash_equals($cached['sha256'],$digest),'FREEZE_ACCEPTED_FULL_BYTES_UNCHANGED');
+    $expect(is_array($cached['value'])&&!array_is_list($cached['value']),'BOUND_JSON_OBJECT');
+    unset($raw,$chunk);return $cached['value'];
+}
 function audit_pass(string $actual): array { return ['status' => 'PASS', 'actual' => $actual]; }
 function audit_case(string $caseId, string $subcase, string $layer, callable $fn): void
 {

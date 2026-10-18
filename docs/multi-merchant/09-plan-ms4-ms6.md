@@ -823,6 +823,20 @@ clean `53b86ead9453c537e42e28069674f27449ca60ce`、Run `20261018030035b634f0`：
 
 **Task6私有Worker合同收口（2026-10-18，实施前）：** 原R2明确no-public的私有60秒Worker与后来S2新增receipt mark存在未闭合冲突。Root现统一沿原真实Worker对象/PID/loop/owned timer方案，撤回新增global receipt注册接缝，保完整S2 scanner及所有原post-commit/legacy任务；不加CLI/Queue、不改保存数据。精确三源及正常验证边界见[履约私有Worker接线收口](records/ms4/fulfillment-private-worker.md)。当前59e6525固定Run独立保持，后继源码不冒用其结果；此时尚未应用或激活Worker，到期与已停止样本继续NOT RUN。
 
+#### 冻结来源读取与正常验证恢复（2026-10-19）
+
+R8 正常链的实际前缀：clean `57390fb29dc995434d319153dd69e0def398f3b0`、Run `20261018154811276400`，原9次初始化、MS5四命令、早期履约16子命令均真实native0/空stderr。随后 files-bootstrap 自然退出255，真实PHP128M内存不足发生在通用 `m4i_read` 第10行；具体哪次读取仍未证明，不推断安装前缀没有写入。C3、paid进程、Task6、售后评价及Worker均未启动，不补通过或重开旧Run。
+
+本轮已正常收口：只对原两数据库各一次正常stop并验证同CID退出0，保持files原255和paid完整created/从未start；四原CID、单内部网、七原卷精确非force移除。close的19条原生操作均0，独立zero另作六条fresh正确project/run查询，原始双流全空，前后各53个全局容器均无原资源消费者；2410份原公开证据字节保持。close结果14450B/`07f526347d3267c21f3d974a930f2ef27ce5b5c7cebf1596076e0dabb01e0fae`，独立zero结果86019B/`b6007aea2cc0515b5520a3246face19f23a24e70152c57fa8242d77a5a55b4b8`。只有二者实际0后才解除活动资源冻结；原P8、Run和失败原件继续不可变，资源收口不计业务验收。
+
+后继有限设计在实施前采用仓库外 `ROOT-SHARED-FREEZE-READER-ADOPTION-r1.md`：现有harness承载唯一纯freeze reader，customer原freeze函数改薄委托，initializer仅精确字面量来源路径委托同一函数；不新增文件或反向业务include。每次仍真实完整流读/hash/字节/九项stat及handle/path前后核对，首次成功解码一次，后续不再重复保留完整树，普通array返回保持COW。customer当次maximum/default16MiB保持，initializer沿原无上限用null，PHP128M不变；断言仍经各真实wrapper，其他manifest/context/结果/私有配置继续每次fresh读取。重复early结果和App分配仍可能占内存，不能保证此修复即完成全链；不得缓存可变历史或削断言来通过。
+
+- [x] 三个有限源码接缝已完成共享reader、完整正逆及独立SOURCE复核，其余函数/来源成员保持；H/C已精确接入Main，initializer保留已审候选，待下一新profile组装，历史P8不改。
+- [x] 固定PHP8.2/128M，用真实loader及本轮实际10955059B公开freeze完成跨wrapper交替读取、全量字节校核、普通COW及非freeze fresh读取；语法/有限reader通过不替代完整App。
+- [ ] 更新真实当前源码/pins并生成新的独立profile、clean来源和Run，继续原files/paid/Task6/售后评价/Worker正常链及收口；N1/N2、三端API/DOM、非空历史、真实金融和发布原责任保持，用户停止样本仍NOT RUN。
+
+有限实测（2026-10-19）：真实原loader先initializer后customer，两种首次调用顺序各独立PHP进程；每序9次initializer＋9次customer freeze读取、4次非freeze读取、2次合法更严格customer maximum和普通COW均通过。四件PHP语法与两正常用例的before/run/after共18条真实native全部0/空stderr，专用临时容器前后为空；两序峰值同为50802688B，PHP128M保持。结果28745B/`a2c4184da037b54284a8ef90227af9c051ad49d27ecfd45a86d5fc7498cd5bb6`，只证明真实loader的有限公共读取，不是files/App/SQL/HTTP/paid/Worker验收。Main接入harness48344B/`d1f6edf1e08d92f20e99954c41f4dafbb1bf164aeba249c1ef859710af73aa0d`及customer96225B/`8f243fdeadc42335827642eec060d506e137e0e1c5ff01fa4d5db8ea9e69543a`；initializer72261B/`88fad297febed2766a6590fea568527b87343a716e9004264581da4e2f11524a`尚待新profile，完整普通链结果不前填。
+
 ### Task 7: 退款额度与库存行为
 
 - 接口：申请退款时在事务中锁定订单行，校验"已退金额 + 处理中金额 + 本次金额 ≤ 实付"；三类库存行为分别写 `release`（未发货取消）、`return_in`（退货验收入库）、不写（仅退款）。
