@@ -627,6 +627,37 @@ function m4c_entry_early_history(array $source): array
     return ['hashes'=>$hashes,'result'=>$result,'binding'=>$binding,'created'=>$created,'terminal'=>$terminal];
 }
 
+/** Only complete never-started native facts permit mount-list permutation. */
+function m4c_entry_unstarted_paid_same(array $actual,array $expected): void
+{
+    $keys=['id','image','hostname','user','stop_signal','labels','mounts','tmpfs','read_only','privileged','network_mode','status','command','entrypoint',
+        'workdir','restart_count','pid','exit_code','networks','ports','port_bindings','cap_drop','security_options','started_at','finished_at','created_at'];
+    m4c_entry_keys($actual,$keys);m4c_entry_keys($expected,$keys);
+    foreach($keys as$key)if($key!=='mounts')m4c_entry_same($actual[$key],$expected[$key]);
+    m4c_expect(is_array($actual['mounts'])&&array_is_list($actual['mounts'])
+        &&is_array($expected['mounts'])&&array_is_list($expected['mounts'])
+        &&count($actual['mounts'])===count($expected['mounts']),'M4C_UNSTARTED_PAID_COMPLETE_MOUNT_LISTS');
+    // A side-effect-free match predicate mirrors same(); failed candidates are not assertions.
+    $equal=static function(mixed $left,mixed $right)use(&$equal):bool{
+        if(!is_array($right))return $left===$right;
+        if(!is_array($left)||array_is_list($left)!==array_is_list($right))return false;
+        $leftKeys=array_keys($left);$rightKeys=array_keys($right);sort($leftKeys,SORT_STRING);sort($rightKeys,SORT_STRING);
+        if($leftKeys!==$rightKeys)return false;
+        foreach($right as$key=>$value)if(!$equal($left[$key],$value))return false;
+        return true;
+    };
+    $remaining=$expected['mounts'];
+    foreach($remaining as$mount)m4c_expect(is_array($mount)&&!array_is_list($mount),'M4C_UNSTARTED_PAID_COMPLETE_EXPECTED_MOUNT_OBJECT');
+    foreach($actual['mounts']as$mount){
+        m4c_expect(is_array($mount)&&!array_is_list($mount),'M4C_UNSTARTED_PAID_COMPLETE_ACTUAL_MOUNT_OBJECT');$matched=false;
+        foreach($remaining as$index=>$wanted)if($equal($mount,$wanted)){
+            m4c_entry_same($mount,$wanted);unset($remaining[$index]);$matched=true;break;
+        }
+        m4c_expect($matched,'M4C_UNSTARTED_PAID_FULL_MOUNT_MULTISET_MEMBER');
+    }
+    m4c_expect($remaining===[],'M4C_UNSTARTED_PAID_FULL_MOUNT_MULTISET_CONSUMED');
+}
+
 function m4c_entry_early_paid_unstarted(array $source,string $stage): void
 {
     m4c_expect(in_array($stage,['files-bootstrap','customer-prepare'],true),'M4C_EARLY_FIXED_UNSTARTED_STAGE');
@@ -644,7 +675,7 @@ function m4c_entry_early_paid_unstarted(array $source,string $stage): void
         &&$canonical['read_only']===true&&$canonical['privileged']===false&&$canonical['entrypoint']===['php']
         &&$canonical['command']===['help/audit-regressions/isolated/ms5-paid-consumer-normal.php','produce']&&$canonical['workdir']==='/workspace',
         'M4C_EARLY_CANONICAL_PAID_NOT_STARTED');
-    $native=array_diff_key($canonical,array_flip(['run_id','source_sha','proof_name']));m4c_entry_same($fresh,$native);
+    $native=array_diff_key($canonical,array_flip(['run_id','source_sha','proof_name']));m4c_entry_unstarted_paid_same($fresh,$native);
     $manifest=audit_manifest();m4c_expect($manifest['services']['audit-ms5-paid-producer']['id']===$canonical['id']
         &&$manifest['services']['audit-ms5-paid-producer']['image_id']===M4C_IMAGE,'M4C_EARLY_SAME_CREATED_PAID_CURRENT_SLOT');
 }
