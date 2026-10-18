@@ -107,10 +107,10 @@ function m5pm_source(): array
             && preg_match('/\Asha256:[a-f0-9]{64}\z/D', (string) ($endpoint['image_id'] ?? '')) === 1, 'REGISTERED_ENDPOINT');
     }
     $volumes = [];
-    foreach (['mysql-data', 'redis-data', 'bootstrap-secrets', 'redis-secrets', 'app-secrets', 'fixture-secrets'] as $name) $volumes[] = $manifest['project'] . '_' . $name;
+    foreach (['mysql-data', 'redis-data', 'bootstrap-secrets', 'redis-secrets', 'app-secrets', 'fixture-secrets', 'aftersale-evidence'] as $name) $volumes[] = $manifest['project'] . '_' . $name;
     sort($volumes, SORT_STRING); $actual = $manifest['volumes'] ?? []; sort($actual, SORT_STRING);
     m5pm_expect($actual === $volumes && is_array($manifest['volume_identities'] ?? null)
-        && m5pm_keys($manifest['volume_identities'], $volumes), 'EXACT_SIX_OWN_VOLUMES');
+        && m5pm_keys($manifest['volume_identities'], $volumes), 'EXACT_SEVEN_OWN_VOLUMES');
     foreach ($volumes as $volume) m5pm_expect(is_string($manifest['volume_identities'][$volume]) && $manifest['volume_identities'][$volume] !== '', 'OWN_VOLUME_IDENTITY');
     $seen = [];
     foreach ($facts['mounts'] ?? [] as $mount) {

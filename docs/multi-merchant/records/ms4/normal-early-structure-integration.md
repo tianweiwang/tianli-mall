@@ -25,3 +25,11 @@ UI构建固定在Main提交0d5499ecf95ec9c9c29d7f6e011cecb69a2b81c1，因此在�
 ## 本地接入结果
 
 本独立来源基于实际0d5499ec，在feature/ms4-aftersale-normal-source本地分支保留。当前Main的cd513a96只补三端构建与旧失败收尾记录；应用源码与0d5499ec相同，三端完整构建均通过，构建冻结已解除。R1原件、原65524 B供体及原失败均保持。实际接入仅本早期驱动和本记录两件，git diff --check通过；未推送、部署或启动新的业务Run。外部root-r2-application保存真实语法和来源收据，提交后的完整SHA另在仓库外检查点记录。
+
+## 必要消费者接入
+
+沿前述早期迁移顺序，采用已停写的PHP共同准备组件及Task6有限接缝。仓库内仅改ms5-payment-migration.php、ms4-customer-http-normal.php、ms4-fulfillment-normal.php；外部initializer保持独立profile文件。新七卷、先创建但不启动的同一paid CID、原初始化/MS5历史和四份早期公件各自绑定，不复用旧六卷Run。files当前manifest与原MS5历史分开核；早期五快照、十六真实子输出和十二比较均按真实producer消费。原Task6四CLI仍核当时24列，当前结构为25列且S1 aftersale_cut_id=NULL，当前完整DB/Redis改与真实postpaid封存比，不减表、不把迁移前空库当当前基线。
+
+Root已全文复核35组有限替换的必要源码和实际producer，真实完整正逆、31组显式byte offset、9段原完整函数及11固定依赖均通过。Root检查器首次把Task6字符offset当字节的失败已保留，实际91343字符/91359字节已定位；候选不改。四件完整PHP候选（含外部initializer）在固定PHP8.2中逐件语法native0/stderr空、临时容器前后为空。此处仅采用源码及语法结果；同样字节接入后另核工作树，不把它写成业务运行。
+
+实际三件工作树文件均与已审、已解析候选完整字节相等，git diff --check通过；本次仅这三件与本记录。完整正常entry、Host/close/zero及实际新Run仍待，未据该接缝签收Task6/7/8。外部root-preparation-consumer-integration-r1保存实际本地提交与来源；Main、旧快照和原失败不改，未推送或部署。
