@@ -31,3 +31,11 @@
 Main 的14个JS/Vue文件实际完成22个平台目标模板/脚本语法检查，pages.json解析通过；商家原source-check实际通过39脚本及93个本地import。两个Main helper在既有PHP8.2镜像中真实语法native0/stderr空，临时无网络、只读语法容器前后无残留。Root最初路径匹配把Windows分隔符与JS固定正斜杠比较而停止，随后lint漏显式entrypoint进入镜像应用启动并因只读路径chown失败；两次均为Root检查脚本问题，原失败保留，修正检查调用后完成，产品源码没有因此改变。首次staged diff --check另发现新增商家页4处空白行尾空格，清除后对最终14件/22目标及pages再次检查通过，其余17件（含两PHP）保持；最终源码清单与检查为同目录SOURCE-MANIFEST-r2.json、FRONTEND-SYNTAX-r2.json和RESULT-r2.json。
 
 本次已接入和语法验证，不代表新三端完整构建、真实登录/业务/图片或DOM通过。929a16a9三端构建保持原来源，仅可证明前一售后提交；新输入须另做完整构建。旧履约失败原因仍未知，有限诊断修改尚未运行到该业务阶段，不将语法通过称根因修复。
+
+## 评价版本三端完整构建实际结果
+
+固定clean提交0d5499ecf95ec9c9c29d7f6e011cecb69a2b81c1，三个完整离线构建及各自最终静态资源门均已实际native0。商家51件源码、26540件既有依赖，prebuild真实39脚本/93导入通过，产物30件/1611600字节；顾客H5为556件完整输入、29930件工具，两次真实编译无errors，产物336件/11741253字节，入口3条本地资源、0远程引用；平台1087件源码及原prebuild helper、68460件依赖，原prebuild/build真实0，产物603件/40934129字节。原源码、复制源码及既有/复制依赖前后保持，三个最终HEAD/clean均通过；未安装或网络回退。
+
+实际报告在仓库外：ms4-merchant-console-build/0d5499ec-p1/build-receipt.json，10969 B，SHA256 3b5c96eb1db042f103809a70052796908617a10dca2f7b6ace53b72588f53e32；ms4-h5/review-ui-0d5499ec-r1/BUILD-REPORT.json，3815 B，dec3d6b334f0a8c825e0a908ba0bf002b6764263d03c88a83cc11c1f013c38b0；a0d54/BUILD-REPORT.json，861156607336b889ce754f8457bf7aea7826d207870ca21f3e0341aff26ad969。原构建脚本、有限派生/完整正逆和非作者报告在ms4-review-ui-main-integration-r1；该独审7364 B，667053ad548f377ce5999ffb1fce2a8c6086f93c861deaa8b82768d08efe205a。
+
+平台新入口实际引用/admin/manifest.json，全部资源直接通过原/admin/本地文件检查，没有相对路径fallback；这验证本次BASE_URL源修订的构建结果，实际深层地址HTTP/DOM仍未运行。H5的asset/entrypoint尺寸警告原样保留，不是编译错误。三个结果只覆盖本固定输入的构建与静态资源，不据此签收真实登录、售后、评价、图片、Worker或页面验收。构建全部终端后才解除Main冻结并更新本记录；不改报告的来源HEAD，不重写旧929a16a9证据。

@@ -55,3 +55,11 @@ Root 已对这 21 件中的 20 个 JS/Vue 文件完成 32 个平台目标模板�
 平台首次资源门因 Root 检查只接受 `/admin/` 绝对前缀，未接受原入口的 `./manifest.json` 而失败；原编译实际 native0，失败记录保留。R2 按原 HTML 的这条精确相对引用核其真实入口文件，并完成全套源码/依赖/clean 读回，未重编译或改产物。另核到平台使用 history 路由，此相对引用在深层地址会改变解析目录，因此下一片将源入口改用与 favicon 相同的 BASE_URL。该修订和评价页面均须新的完整构建；旧结果不改 head 代证。
 
 旧 ec814e74 履约 Run `202610180549014acc18` 已实际失败，不能再写“运行中”：付款生产及履约迁移真实0，正常入口在 `three_true_legacy_cli` 收到 legacy 子进程同句柄自然1，父容器自然1/PID0/restart0；尚未进入发货收货，business=null、三读 stage/call 为0。父只保留子输出353字节及摘要，子错误原因未知。该失败、原快照和资源保留，另作匹配失败域的正常退休/独立核零；后续诊断源只补安全定位信息，不把原失败计通过。Task7/8 的正常业务、非空图、HTTP/Worker/DOM 与真实金融和发布仍未验。
+
+## 该失败Run实际关闭与独立核零
+
+上述当时保留的原4CID/1专用内网/6新卷现已实际退休。专用normal-legacy-failure-close-r1两候选获非作者复核后，Root实际核46组92处完整正逆、AST/compile及两个help native0，再执行一次原生关闭。MySQL/Redis同一Popen的stop --time -1真实0后，逐件非force移除原身份；close实际0/stderr空，结果摘要2bf66db7c199d6df3bda47d452c939050e1eeb607365df646b5e515772dc02a0。
+
+独立zero不import host/close，实际再次核原source/profile、原公开件及终端/删除来源，并在两次全局消费者观察之间取得双标签三类六条fresh原始查询，各native0且stdout/stderr全空；实际zero native0/stderr空，原始stdout摘要19e2dc9846bbca9edb9bbf96d26d18ae63b89c39f8214410f4cba3fdbdf460b3。Root再读回实际同句柄终端、六查询、资源集合和原失败，记录在仓库外normal-legacy-failure-close-r1/ROOT-ACTUAL-CLOSE-READBACK-r1.json。
+
+原5531公开文件、ec814e74来源及失败保持；business=null、legacy1和三读stage/call0不改。关闭只证明该次隔离资源结束，不能证明原履约或新售后评价正常链通过。最新评价版本0d5499ec三端构建已另实际通过，见review-ui-integration.md；新七卷正常联调仍在独立验证工作树和仓库外准备，无推送、部署或真实金融。
