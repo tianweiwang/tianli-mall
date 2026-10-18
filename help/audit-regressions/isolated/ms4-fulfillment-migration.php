@@ -926,6 +926,32 @@ function m4ae_aftersale_steps():array
         'operation.column.aftersale_cut_id','operation.index.idx_fop_aftersale_cut','operation.foreign.mm4a_fop_cut_fk',
         'operation.checks.replace_known_ids_and_add_cut','create.marketplace_aftersale_file'];
 }
+/** Only the two observed operation CHECK rows admit the fixed escaped charset presentation. */
+function m4ae_preserved_check(string $table,array $row,array $actualChecks):bool
+{
+    if($table!=='eb_marketplace_fulfillment_operation'
+        ||!in_array($row['CONSTRAINT_NAME']??null,['eb_mm4f_op_action','eb_mm4f_op_actor'],true))
+        return in_array($row,$actualChecks,true);
+    $keys=['CONSTRAINT_NAME','ENFORCED','CHECK_CLAUSE'];
+    if(array_keys($row)!==$keys)return false;
+    foreach($keys as$key)if(!is_string($row[$key]))return false;
+    if($row['ENFORCED']!=='YES')return false;
+    $matches=[];
+    foreach($actualChecks as$actual)if(is_array($actual)
+        &&($actual['CONSTRAINT_NAME']??null)===$row['CONSTRAINT_NAME'])$matches[]=$actual;
+    if(count($matches)!==1)return false;
+    $actual=$matches[0];
+    if(array_keys($actual)!==$keys)return false;
+    foreach($keys as$key)if(!is_string($actual[$key]))return false;
+    if($actual['CONSTRAINT_NAME']!==$row['CONSTRAINT_NAME']||$actual['ENFORCED']!==$row['ENFORCED'])return false;
+    foreach(['ship','receive','employee','customer','system']as$literal){
+        $from="_utf8mb4\\'".$literal."\\'";$to="_ascii\\'".$literal."\\'";
+        $row['CHECK_CLAUSE']=str_replace($from,$to,$row['CHECK_CLAUSE']);
+        $actual['CHECK_CLAUSE']=str_replace($from,$to,$actual['CHECK_CLAUSE']);
+    }
+    return $row===$actual;
+}
+
 function m4ae_structure_delta(array $before,array $after):void
 {
     m4fm_expect($before['modes']===$after['modes']&&$before['metadata_observer_modes']===$after['metadata_observer_modes']
@@ -947,7 +973,7 @@ function m4ae_structure_delta(array $before,array $after):void
             'EARLY_ALL_ORIGINAL_INDEX_METADATA_PRESERVED');
         foreach($old['metadata']['foreign']as$row)m4fm_expect(in_array($row,$actual['metadata']['foreign'],true),'EARLY_ALL_ORIGINAL_FOREIGN_NATIVE_ROWS');
         foreach($old['metadata']['checks']as$row)if($name!=='eb_marketplace_fulfillment_operation'||$row['CONSTRAINT_NAME']!=='eb_mm4f_op_ids')
-            m4fm_expect(in_array($row,$actual['metadata']['checks'],true),'EARLY_ONLY_KNOWN_IDS_CHECK_REPLACED');
+            m4fm_expect(m4ae_preserved_check($name,$row,$actual['metadata']['checks']),'EARLY_ONLY_KNOWN_IDS_CHECK_REPLACED');
         foreach($old['metadata']['constraints']as$row)m4fm_expect(in_array($row,$actual['metadata']['constraints'],true),
             'EARLY_ALL_ORIGINAL_CONSTRAINT_IDENTITIES_PRESERVED');
         $added=array_values(array_diff($actual['projected_columns'],$oldColumns));
@@ -1448,6 +1474,7 @@ private static function fulfillmentTables(): array
                 if ($token === ['word','true'] || $token === ['word','false']) return ['number', $token[1] === 'true' ? '1' : '0'];
                 if ($token[0] !== 'id' && $token[0] !== 'word') throw new RuntimeException('Check grammar');
                 if ($take('(')) {
+                    if ($token[1] === 'length') $token[1] = 'octet_length';
                     $arity = ['json_type'=>1,'coalesce'=>2,'concat'=>2,'octet_length'=>1,'regexp_like'=>3][$token[1]] ?? null;
                     if ($arity === null) throw new RuntimeException('Check grammar');
                     $arguments = [$or()];

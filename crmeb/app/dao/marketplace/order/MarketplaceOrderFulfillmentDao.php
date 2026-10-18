@@ -1820,6 +1820,7 @@ final class MarketplaceOrderFulfillmentDao
                 if ($token === ['word','true'] || $token === ['word','false']) return ['number', $token[1] === 'true' ? '1' : '0'];
                 if ($token[0] !== 'id' && $token[0] !== 'word') throw new RuntimeException('Check grammar');
                 if ($take('(')) {
+                    if ($token[1] === 'length') $token[1] = 'octet_length';
                     $arity = ['json_type'=>1,'coalesce'=>2,'concat'=>2,'octet_length'=>1,'regexp_like'=>3][$token[1]] ?? null;
                     if ($arity === null) throw new RuntimeException('Check grammar');
                     $arguments = [$or()];
