@@ -1118,3 +1118,8 @@ R11原失败读回与正常退役采用（2026-10-19）：原Run20261018203647b5
 Task8 当前实施补记（2026-10-19）：在 R14 后端来源完整冻结后，按原通用商城范围清除 H5 main.js 无条件插入的硬编码外部统计脚本。仅删该 IIFE；原可配置行为及业务流程保持。原评论页版本完整 H5 构建已正常0；本次新启动来源需新干净提交、完整重建及新五材料。三端真实业务/响应式DOM和UI正常关闭、独立核零仍未完成。细节见 records/ms4/normal-early-structure-integration.md 的 H5 正常启动补记。
 
 Task8 首页商品读取补记（2026-10-19）：将getProduceOtherList的SKU存在性column从未分组count(*)改为同条件同索引的正product_id投影，匹配现有布尔is_att消费；完整正逆及独立Source审查通过，未改规格/价格/库存。当前H5清理版完整构建0及r6三端五材料生成/完整读回0；本次后端增量仍待PHP8.2语法和新UI普通首页/API/DOM验证，R14冻结旧来源不代签。详见records/ms4/normal-early-structure-integration.md。
+
+R14正常履约预热补记（2026-10-19，实施前）：真实内部付款自然0，Task6及真实旧订单子进程自然1，完整缓存标签成员断言失败，后续业务未启动。只读原Redis证明标签set/绝对期限-1；独立Source确认普通SKU扣库存必读store_stock而21单项预热漏此项。只沿原机制增加该精确配置的原JSON/getter/raw/type/期限及完整旧tag/全缓存证明，不改生产规格、价格或库存；无完整旧tag基线，不宣称唯一实际差异。R14普通close19 native0、独立zero15 native0，4原容器/1内网/7卷退役且13263原公件/全部冻结来源保持。下一步为窄修复核、接入及PHP8.2语法，新clean来源完整正常链；不重启旧Run、不把收尾或Source核对记作业务通过。详细责任与证据见现有normal-early-structure-integration记录。
+
+
+R14预热补全接入检查点（2026-10-19）：Root核9件/8pins闭集、唯一14字节增量及整文正逆后，在原PHP8.2镜像network-none/只读/128M中对154021字节候选和145261字节商品服务分别纯语法-l正常0、stderr空，原临时容器正常自动移除并前后无残留。仅将新增store_stock的精确候选接入Main，原129–156缓存断言及其余全部源码字节保持。Task8商品服务语法责任同时完成；新正常链、首页/API/DOM和三端验收仍待，本次没有启动App、SQL、Redis或HTTP。

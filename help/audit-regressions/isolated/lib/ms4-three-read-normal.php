@@ -160,7 +160,7 @@ function m4tr_warm_legacy_configuration(\think\App $app,PDO $db):array
     $names=['queue_open','brokerage_func_status','division_status','member_func_status','member_card_status','member_price_status',
         'image_thumb_status','store_free_postage','offline_postage','integral_ratio','offline_pay_status','balance_func_status',
         'yue_pay_status','pay_weixin_open','friend_pay_status','store_self_mention','ali_pay_status','invoice_func_status',
-        'special_invoice_status','is_self_brokerage','user_brokerage_type'];
+        'special_invoice_status','is_self_brokerage','user_brokerage_type','store_stock'];
     $before=m4trp_snapshot($db);$tagBefore=m4tr_crmeb_tag_members();$expected=[];$physical=[];
     foreach($names as$name){
         $rows=m5pcp_rows($db,'SELECT * FROM eb_system_config WHERE menu_name = ?',[$name]);
