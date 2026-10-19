@@ -72,6 +72,8 @@
 		 */
 		onLoad(options) {
 			let that = this;
+			that._replyReadRevision = 0;
+			that._replyCountRevision = 0;
 			if (!options.product_id) return that.$util.Tips({
 				title: that.$t(`缺少参数`)
 			}, {
@@ -82,17 +84,38 @@
 		},
 		onShow() {
 			if (!this.product_id) return;
+			this._replyCountRevision += 1;
+			this.resetReplyList();
 			this.getProductReplyCount();
 			this.getProductReplyList();
 		},
+		onHide() {
+			this._replyReadRevision += 1;
+			this._replyCountRevision += 1;
+			this.loading = false;
+		},
+		onUnload() {
+			this._replyReadRevision += 1;
+			this._replyCountRevision += 1;
+		},
 		methods: {
+			resetReplyList() {
+				this._replyReadRevision += 1;
+				this.page = 1;
+				this.loading = false;
+				this.loadend = false;
+				this.loadTitle = this.$t(`加载更多`);
+				this.$set(this, 'reply', []);
+			},
 			/**
 			 * 获取评论统计数据
 			 * 
 			 */
 			getProductReplyCount: function() {
 				let that = this;
+				const revision = that._replyCountRevision;
 				getReplyConfig(that.product_id).then(res => {
+					if (revision !== that._replyCountRevision) return;
 					that.$set(that, 'replyData', res.data);
 				});
 			},
@@ -103,6 +126,7 @@
 				let that = this;
 				if (that.loadend) return;
 				if (that.loading) return;
+				const revision = that._replyReadRevision;
 				that.loading = true;
 				that.loadTitle = '';
 				getReplyList(that.product_id, {
@@ -110,6 +134,7 @@
 					limit: that.limit,
 					type: that.type,
 				}).then(res => {
+					if (revision !== that._replyReadRevision) return;
 					let list = res.data,
 						loadend = list.length < that.limit;
 					that.reply = that.$util.SplitArray(list, that.reply);
@@ -119,6 +144,7 @@
 					that.loadTitle = loadend ? that.$t(`没有更多内容啦~`) : that.$t(`加载更多`);
 					that.page = that.page + 1;
 				}).catch(err => {
+					if (revision !== that._replyReadRevision) return;
 					that.loading = false,
 						that.loadTitle = that.$t(`加载更多`)
 				});
@@ -130,9 +156,7 @@
 				let type = parseInt(e);
 				if (type == this.type) return;
 				this.type = type;
-				this.page = 1;
-				this.loadend = false;
-				this.$set(this, 'reply', []);
+				this.resetReplyList();
 				this.getProductReplyList();
 			}
 		},

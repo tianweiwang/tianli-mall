@@ -249,3 +249,26 @@ C3自营资格/legacy商品归属四件有限修订已本地提交45931，原两
 三端五静态材料r5的实际原生进程42608自然0、wait0、stderr空，Main45931前后clean；完整256731份原输入观察、三dist及公开源/空目录/固定installer模板保持。Root逐件实核五材料与原生收据，报告ui-five-material-root-readback-r1/RESULT.json为3996字节/d894dc97a041af2c6abd4e5a3c6873fe91b30bef91d7101938d3af2702c9c8c5；产物在artifacts/ui-three-end-materials-current-r5。原失败不重写，不把五材料称完整17件DAG、复制或HTTP/DOM通过。
 
 正常UI观察采用同一原backend CID内单一docker exec -i PHP observe子进程，完整native DB/Redis/files和模型仅在RAM，以串行帧观察真实浏览器动作；原serve PID1/argv及prepare oracle独立保持。未来实际窗口必须含三角色真实登录、N1非空私图/仅退款申请/本人预览/商家批准、正常发货与部分/全部收货、N2非空公众图/评价/平台审核/商家回复/公开回读。N1为APPROVED/NONE/UNSUPPORTED、held0.01/confirmed0，不能把准备或初读算成已申请；Root实读RefundFacts.pending/fulfillmentProposal和真实Service，money_only金钱hold不列入physical pending cancel/return，但仍须实际正常shipping验证。原16步草稿保留，新完整需求顺序由后继合同实际清单派生；同源noAuth仍可能附现有Bearer，匿名证据须按真实请求确认。PHP业务oracle/浏览器动作producer、完整17接线与UI正常close/独立zero都仍待，Source合同不能代替它们。
+
+
+### 2026-10-19 普通返回评价列表的刷新修订（实施前）
+
+Source核对确认：公众评价列表首次读取不足20条后将loadend置true；普通离开再返回时onShow只重新读统计，列表请求因loadend直接返回，可能保留审核前的空列表。此为普通页面生命周期缺口，不是已执行的故障、刷新或并发样本。沿现有Task8实施：每次onShow及正常切换评价分类，重置当前分类的列表、页号和加载结束状态，再读取第一页；用本页面私有读取版本使已离开的旧回调不覆盖当前显示。维持原公众API、limit20、分类、权限和全部真实业务断言，不新增控件。
+
+验收：针对真实Vue组件脚本执行普通首次空列表→正常离开→正常返回有已审核评价，以及普通分类切换/后续分页的最小正向检查；完成H5完整构建，并在后续新UI Run以正常返回页面确认真实DOM与320/390/1440。不据Source或构建签页面验收。新H5来源将取代r5中旧H5来源，r5原五材料及本轮R13冻结来源保持；后续重建并重新生成当前五材料，不改写既有证据。
+
+- [x] 修订与Source全文复核（G01/PRL01两项Source关闭）。
+- [x] 真实Vue2.6.14组件五项普通状态检查。
+- [ ] 当前来源完整H5构建。
+- [ ] 新来源五材料与实际三端正常DOM（仍待）。
+
+独立Source复核补正（实施前）：分类切换只应使旧列表请求失效，不能使同次页面展示的总统计请求失效而又不补读。采用分别的页面统计版本和列表版本；统计版本仅在普通show/hide/unload变更，列表版本另在分类重置变更，不增加请求或新抽象。原检查点与复核发现保留。
+
+
+### 2026-10-19 R13真实旧订单JSON预期修订（实施前）
+
+原R13已实际通过29初始化/结构命令、files、C3及内部真实持久购物车/测试付款；Task6原容器和真实legacy child随后自然1，诊断JSON_EXACT_OBJECT_FIELDS，三读stage/call0、business=null。Root同原MySQL只读观察仅取JSON字段名与JSON类型，确认恰一份version0保存cart_info含顶层attrInfo；未读出个人或价格值，未写业务数据。独立Source追踪确认freshCart把原raw SKU赋给nested及顶层；旧确认缓存使用handleCartList的all（去顶层），真实create的computed使用valid（保留顶层）。现测试从all复制expected时漏掉该顶层字段。
+
+按同已核raw_values全字段/类型===的fixture原生SKU，单行补cartExpected顶层attrInfo；保持原JSON完整keys/types、所有金额、库存、原事件、全DB/Redis/私件及保护断言，生产商品/价格/下单逻辑不改。原R13失败保留，按原4CID/1内部网/7卷普通无限等待stop和非force精确退役后独立核零；新clean来源再新Run完整复跑，不能重试/改署R13。原生PHP8.2语法待R13正常close及独立zero结束后执行，Task6/AR/Worker/三端DOM仍未通过。
+
+R13收尾实际结果：普通close原19项native全部0，4原容器/1内部网/7原卷精确退役；新进程独立zero原15项native全部0，fresh六raw空、全局无原消费者、五组10857源码及6506原公件保持。close结果SHA256 0c94c93a70ce737e1626e9d1a6ebf9414c2e18315c7dbf474cddfb4148734d7e。原paid0、Task6/legacy1、proc_close:-1按原文保留，不将退役记为业务通过。随后才运行原PHP8.2镜像network-none纯语法：legacy53328、UI copy入口48182、initializer106933及observer的partial5三Source全部-l正常0、stderr空且正常自动移除；不含App/SQL/HTTP。Node observer bridge26800的实际Node22 --check亦0，但PHP和bridge仍属未安装partial Source，不代表完整20项UI运行。

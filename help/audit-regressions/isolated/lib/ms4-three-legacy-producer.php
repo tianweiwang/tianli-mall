@@ -417,6 +417,7 @@ function m4trp_produce(\think\App $app,PDO $db,array $owner,array $fixture):arra
         'division_id'=>$fixture['user']['division_id'],'agent_id'=>$fixture['user']['agent_id'],'staff_id'=>$fixture['user']['staff_id']]);
     $items=m5pcp_rows($db,'SELECT * FROM eb_store_order_cart_info WHERE oid = ?',[$orderId]);
     m4fn_expect(count($items)===1,'TASK6_THREE_REAL_OLD_FULL_SAVED_ITEM');$cartExpected=$input;
+    $cartExpected['attrInfo']=$sku;
     $cartExpected['use_integral']=0;$cartExpected['integral_price']=0.00;$cartExpected['coupon_price']=0.00;$cartExpected['sum_true_price']='20.15';
     foreach(['one_brokerage','two_brokerage']as$field)$cartExpected[$field]='0';
     foreach(['staff_brokerage','agent_brokerage','division_brokerage']as$field)$cartExpected[$field]='0.00';

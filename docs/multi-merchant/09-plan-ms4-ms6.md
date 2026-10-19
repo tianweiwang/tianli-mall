@@ -6,19 +6,19 @@
 
 ## 当前交付状态（2026-10-19）
 
-最新续作：采用已本地提交的 `45931ce09911da8fc3299f55e87c316ce6285222` 启动新 R13 正常回归，实际 Run `20261019015906fb9bc3`。initializer九命令、MS5四结构命令和履约/售后/两组菜单early16均真实正常0；Root已读回原件。files-bootstrap随后同原容器自然0，当前C3顾客准备仍由原coordinator观察，不能签收C3自营资格修订、付款、Task6/102、AR13/15/5、N2或Worker。旧R12的商品目录失败、正常close0及独立zero0完整保留，6645份原公件未改；不重开旧Run。
+最新续作：R13 Run `20261019015906fb9bc3` 已结束。29初始化/结构命令、files-bootstrap、C3准备及内部持久购物车/测试付款均实际正常0；Root已完整读回原件。Task6的真实legacy child随后自然1，诊断 `JSON_EXACT_OBJECT_FIELDS`，三读stage/call0、business=null，AR/Worker尚未启动。Root同原MySQL只读JSON字段名与独立Source追踪确认，测试从去顶层attrInfo的旧确认输入复制expected，而真实create保存含该原始SKU；已单行补独立fixture原生SKU预期，完整JSON键/类型/值及所有业务断言保持，生产逻辑不改。PHP8.2语法已0，但新Run完整业务尚未复跑。原R13已普通无限等待stop并非force精确退役4CID/1内部网/7卷，独立fresh六查询和全局/完整Source核零0，6506份公件保持；原失败不改署。
 
-本轮C3/legacy修订已以45931完成四件本地提交：在新隔离Run、顾客/付款baseline形成之前，核真实配置的self完整原行，以同默认PDO事务仅将review_status/accept_orders从0改为1；全namespace/metadata、所有其他完整表/行及Redis真实DUMP/绝对期限保持。旧订单合成商品随后归属该真实self，保持double-false、生产目录规则及全部业务断言，真实目录和SKU必须读回；不在paid seal后改资格或恢复。两件PHP8.2语法、独立Source及Root全文核对已通过；R13尚未取得该正常业务结果。
+本轮C3/legacy修订已以45931完成四件本地提交：在新隔离Run、顾客/付款baseline形成之前，核真实配置的self完整原行，以同默认PDO事务仅将review_status/accept_orders从0改为1；全namespace/metadata、所有其他完整表/行及Redis真实DUMP/绝对期限保持。旧订单合成商品随后归属该真实self，保持double-false、生产目录规则及全部业务断言，真实目录和SKU必须读回；不在paid seal后改资格或恢复。两件PHP8.2语法、独立Source及Root全文核对已通过；R13现已实际通过C3准备和内部付款，原C3资格修订有实际正常准备证据；后续Task6另因JSON预期缺项自然1，仍不能签完整履约。
 
-三端五材料r5实际生成成功：原native PID42608自然0、wait0、stderr空，Main45931前后clean；三份完整dist清单覆盖H5 336件/11741440字节、商家30件/1611600字节、平台603件/40934520字节，另有96×96合成PNG与精确10键复制配置。Root完整读回五材料、256731份输入观察记录及全部五次原生调用收据，核固定原install/.env模板保留，当前公开源2536件/279目录；不据此宣称HTTP或页面通过。实际产物为 `H:/天俪商城/artifacts/ui-three-end-materials-current-r5`，Root报告 `ui-five-material-root-readback-r1/RESULT.json`（3996字节，SHA256 `d894dc97a041af2c6abd4e5a3c6873fe91b30bef91d7101938d3af2702c9c8c5`）。原r1–r4自然失败均保留；只修Windows两API元数据表示、原安装模板精确例外及工具清单原排序合同，不放宽完整原件或业务检查。完整17件DAG、真实资源复制和三端验收仍待。
+三端五材料r5实际生成成功：原native PID42608自然0、wait0、stderr空，Main45931前后clean；三份完整dist清单覆盖H5 336件/11741440字节、商家30件/1611600字节、平台603件/40934520字节，另有96×96合成PNG与精确10键复制配置。Root完整读回五材料、256731份输入观察记录及全部五次原生调用收据，核固定原install/.env模板保留，当前公开源2536件/279目录；不据此宣称HTTP或页面通过。实际产物为 `H:/天俪商城/artifacts/ui-three-end-materials-current-r5`，Root报告 `ui-five-material-root-readback-r1/RESULT.json`（3996字节，SHA256 `d894dc97a041af2c6abd4e5a3c6873fe91b30bef91d7101938d3af2702c9c8c5`）。原r1–r4自然失败均保留；只修Windows两API元数据表示、原安装模板精确例外及工具清单原排序合同，不放宽完整原件或业务检查。完整17件DAG、真实资源复制和三端验收仍待。 本轮随后只修H5公众评论列表普通返回时保留旧空列表的问题，当前H5因此较r5来源新增一件变化；r5原证据保持，不能代签该新来源。当前修订的真实Vue2.6.14组件五项正常检查和独立Source复核已通过，完整H5重建、再生成当前五材料与三宽真实DOM仍待。
 
 R13使用的clean源码为45931；此前4c0453、7509ac等提交及原构建来源保持。缓存wire、UI准备入口/oracle、backend/metadata、formal时间字符串和打印DAO修订均已接入；真实Cache Driver八类正向协议已正常通过并核零。此次C3/legacy两件PHP语法真实0，仅是源码和语法证据。当前R13保持原validation/profile/Run冻结，正常close与独立zero0前不追加临时Docker/PHP组件；Main后续文档或源码不能借此Run代签。
 
-R13真实九件配置的物化/冻结已正常0，完整10857份来源读回，freeze为 `604944caa6b6fd819d47eeb2513594d70065a0b403ee5864cda601b808e702e2`。原R12的6645公件和缓存协议184公件保持。29个初始化/结构命令全部正常0，early16原容器已精确正常移除；Root完整读回其6978446字节原结果，SHA256 `413ac4fa78505b94d61ee1a5f938a81555f328819c653c9dfb4be8a7bd0bfdc1`。原proc_close:-1和同句柄exitcode0按原文保留；initializer父结果native_exit为真实0，MS5/early父结果为null并另核原容器自然0，不混写。当前只验证到files准备0/C3运行中。
+R13真实九件配置的物化/冻结已正常0，完整10857份来源读回，freeze为 `604944caa6b6fd819d47eeb2513594d70065a0b403ee5864cda601b808e702e2`。原R12的6645公件和缓存协议184公件保持。29个初始化/结构命令全部正常0，early16原容器已精确正常移除；Root完整读回其6978446字节原结果，SHA256 `413ac4fa78505b94d61ee1a5f938a81555f328819c653c9dfb4be8a7bd0bfdc1`。原proc_close:-1和同句柄exitcode0按原文保留；initializer父结果native_exit为真实0，MS5/early父结果为null并另核原容器自然0，不混写。本轮最终达到C3/内部付款正常0，Task6自然1；原来源、冻结、失败、普通退役及独立zero0分别保留。
 
 旧 R11 的29个初始化/结构命令、files-bootstrap、C3 及内部测试付款已通过；Task6 随后在真实 legacy child 的打印空选择断言自然1，三读 stage/call 均0、business=null。原因是测试调用取得管理页 list/count 包装，真实打印使用 DAO 行列表；一处接收者修订保留原空选择、过滤、SQL 和业务断言。旧失败保留；该 Run 已正常精确退役四容器/一内网/七卷并独立核零。R12 后继须实际完成原完整业务套件，不能沿用此前运行或语法通过代签。
 
-UI准备/copy/backend/gateway生命周期三件已有外部Source候选；新copier24364及gated入口48182真实新pin已在Host/initializer有限重接，七处完整正逆、独立Source及Root Host AST通过，相关新PHP原生语法等待当前R13正常收尾后进行。新UI close/独立zero显式分支及真正业务窗口/浏览器正常关闭Source仍在实施；未接完整业务校验前不得清理或签收。五材料已实际完成，但完整17件配置/实际复制/三凭据真实表单/320、390、1440页面、N1及两种非空图片正常业务仍未完成；这些不属于当前R13九件回归。
+UI准备/copy/backend/gateway生命周期三件已有外部Source候选；新copier24364及gated入口48182真实新pin已在Host/initializer有限重接，七处完整正逆、独立Source及Root Host AST通过，相关copy入口及initializer的新PHP8.2语法现已实际0。新UI close/独立zero显式分支及真正业务窗口/浏览器正常关闭Source仍在实施；未接完整业务校验前不得清理或签收。r5五材料已实际完成但新H5生命周期修订须重建重生；完整17件配置/实际复制/三凭据真实表单/320、390、1440页面、N1及两种非空图片正常业务仍未完成；这些不属于当前R13九件回归。
 
 三端当前构建证据（2026-10-19）：Root 实核当前完整556份H5及51份商家源码与原已通过构建的完整输入相同，原336/30件dist也逐件回读一致；保留原468063d/0d5499ec构建来源，不改署为新构建。平台的 `template/admin/src/pages/order/orderList/handle/orderSend.vue` 后继已在文档提交65808ae2的clean来源上，使用原68460件离线依赖、Node22.23.3/npm10.9.9在新目录真实完整重建；原编译进程自然0，prebuild及本地资源检查通过，603件dist共40934520字节。Root另完整读回当前及构建复制的1088份来源、全部603产物与八个原生步骤/原stdout/stderr摘要；源码和依赖前后保持，未安装或联网回退。原始报告 `H:/天俪商城/artifacts/current-platform-ui-build-r1/BUILD-REPORT.json`（2410字节，SHA256 `f08e8236f769957be8dac29882c4cb847db5fb9589b5533359ffdb4f81768550`）；Root结果为仓库外 `current-platform-build-root-readback-r1/RESULT.json`。当前三端均有匹配源码的完整构建证据，HTTP、真实登录、业务及页面验收仍未运行。
 
@@ -26,10 +26,10 @@ UI准备/copy/backend/gateway生命周期三件已有外部Source候选；新cop
 
 | 范围 | 已有证据及当前缺口 |
 | --- | --- |
-| 交易与履约 | 发货、全部/部分收货API及页面源码已接入，三端已有完整构建记录。原 R11 初始化/结构、files/C3及内部测试付款正常，Task6 在打印测试调用接缝自然1；保原失败并正常 close/zero0 后，一处 DAO 修订已提交。新R13已通过29结构及files准备，C3仍在运行，尚未取得Task6/102、售后/评价或Worker通过。非空历史、三端API/DOM及完整履约未验收。 |
+| 交易与履约 | 发货、全部/部分收货API及页面源码已接入。R13的29结构、files/C3及内部付款实际0；Task6真实legacy child因独立预期遗漏顶层SKU字段自然1，原三读和102尚未执行；原失败已正常退役并独立核零。单行独立预期修订PHP8.2语法0，须新Run完整复跑；非空历史、三端API/DOM和完整履约未验收。 |
 | 售后退款 | 核心、迁移、凭证、读取和S2消费者共61件源码已接入，44个PHP语法检查通过；另23件三端售后操作页和入口源码已接入，22个JS/Vue的34个目标语法检查通过。当前三端源码均有匹配的完整构建证据；统一结构迁移与两组权限菜单early16已有本轮R13正常0及Root原件读回证据。非空历史、完整售后业务、非空凭证及HTTP/页面正常链尚未验证。 |
 | 评价 | 三核心、八条后端路由、权限审计和旧入口隔离共20个PHP文件已接入并通过语法检查；三端15件最终页面已接入，14个JS/Vue的22个目标与pages.json检查通过，商家39脚本/93导入检查通过。当前H5/商家全部来源与原完整产物实核一致，平台orderSend后继完整重建及Root全量读回已通过。真实正常业务、非空公众图片和三端页面尚未验证，Task8未完成。 |
-| 支付、退款与对账 | 原 R11 的真实凭据登录、持久购物车确认/下单、同App测试工厂付款、正常重放及数据库/Redis保护已通过内部隔离验证；不代表真实渠道。旧R12内部付款亦已实际正常0，新R13付款仍待；真实支付退款、对账及外部验收仍待原MS5范围完成。 |
+| 支付、退款与对账 | 原 R11 的真实凭据登录、持久购物车确认/下单、同App测试工厂付款、正常重放及数据库/Redis保护已通过内部隔离验证；不代表真实渠道。旧R12内部付款亦已实际正常0，新R13内部测试付款亦已正常0并由Root核同原容器原生终态、真实登录/持久购物车/工厂连接及完整DB/Redis保护；真实支付退款、对账及外部验收仍待原MS5范围完成。 |
 | 发布与运行 | 原 MS6 和正式交付尚未完成；当前仍为 L2 本地开发，不据此推送、部署或执行真实金融操作。 |
 
 正常联调更新（2026-10-18）：七卷九件profile的完整独审、实际AST/JSON/help/Compose模型检查均通过，从clean d1b832冻结Run 20261018083550994f21。原初始化9项及MS5四命令均真实正常0；canonical paid真实create/register后未启动。Host在fulfillment-migration-create前置把七条完整挂载对象仅顺序变化误判为实例变化，实际native1；early、App和业务未运行。Root只读诊断与原失败raw精确同bytes/hash，原Run已正常关闭3CID/1内网/7卷并独立六raw核零0，1050原公件保持。现仅修Host两处与customer PHP一处窄26字段比较：完整mounts多重集、其余25字段及全部原断言保持；13组整文正逆、独审、实际PHP8.2语法/三Python解析help及真实已记录正常事实的纯比较通过。后继必须新clean来源/新Run实跑，不勾选Task6/7/8。详见[早期结构与正常入口接入记录](records/ms4/normal-early-structure-integration.md)。
