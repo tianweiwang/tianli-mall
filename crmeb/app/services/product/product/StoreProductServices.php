@@ -1340,7 +1340,7 @@ class StoreProductServices extends BaseServices
                 'product_id' => $productIds,
                 'type' => 0,
                 'is_show' => 1
-            ], 'count(*)', 'product_id');
+            ], 'product_id', 'product_id');
             if ($uid) {
                 /** @var StoreCartServices $cartServices */
                 $cartServices = app()->make(StoreCartServices::class);

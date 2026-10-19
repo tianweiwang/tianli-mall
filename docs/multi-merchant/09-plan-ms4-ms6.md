@@ -1116,3 +1116,5 @@ R11原失败读回与正常退役采用（2026-10-19）：原Run20261018203647b5
 后继R12仅九件完整normal Source已完成AR四current门201659、producer三current行50675与实际SHA依赖；Root/独立Source、原历史/全部BODY、PHP及help检查完成，尚未materialize/freeze或运行。三端准备Host三源及公开copy gate仅Source/对应语法已核，完整17材料/实际FS/表单/页面仍待。现准备把本轮已核十个owned源码/文档路径作L2本地提交，以实际新clean源码继续原完整正常链；不推送或部署，旧失败及全部原未验/停止样本责任保持。
 
 Task8 当前实施补记（2026-10-19）：在 R14 后端来源完整冻结后，按原通用商城范围清除 H5 main.js 无条件插入的硬编码外部统计脚本。仅删该 IIFE；原可配置行为及业务流程保持。原评论页版本完整 H5 构建已正常0；本次新启动来源需新干净提交、完整重建及新五材料。三端真实业务/响应式DOM和UI正常关闭、独立核零仍未完成。细节见 records/ms4/normal-early-structure-integration.md 的 H5 正常启动补记。
+
+Task8 首页商品读取补记（2026-10-19）：将getProduceOtherList的SKU存在性column从未分组count(*)改为同条件同索引的正product_id投影，匹配现有布尔is_att消费；完整正逆及独立Source审查通过，未改规格/价格/库存。当前H5清理版完整构建0及r6三端五材料生成/完整读回0；本次后端增量仍待PHP8.2语法和新UI普通首页/API/DOM验证，R14冻结旧来源不代签。详见records/ms4/normal-early-structure-integration.md。
