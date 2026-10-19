@@ -8,7 +8,7 @@ const M4UIB_META='help/audit-regressions/isolated/ms4-ui-credential-meta.php';
 const M4UIB_IMAGE='sha256:1099f749e2a38ec9453c6b820db8a78174514bc72d14edf5c203e13b82816e0a';
 const M4UIB_GATEWAY_IMAGE='sha256:a8b39bd9cf0f83869a2162827a0caf6137ddf759d50a171451b335cecc87d236';
 const M4UIB_ROOTS=['crmeb/app','crmeb/crmeb','crmeb/vendor','crmeb/config'];
-const M4UIB_BOOTSTRAP=['help/audit-regressions/isolated/ms4-customer-http-normal.php'=>['bytes'=>96225,'sha256'=>'8f243fdeadc42335827642eec060d506e137e0e1c5ff01fa4d5db8ea9e69543a'],'help/audit-regressions/isolated/lib/harness.php'=>['bytes'=>48344,'sha256'=>'d1f6edf1e08d92f20e99954c41f4dafbb1bf164aeba249c1ef859710af73aa0d'],'help/audit-regressions/isolated/lib/guard.php'=>['bytes'=>4694,'sha256'=>'a7a182c3a204dbb55f5669a61f44af099360223acd9835f82d9da3a8bf2f79a8'],'help/audit-regressions/isolated/lib/ms4-customer-http-normal.php'=>['bytes'=>59154,'sha256'=>'9d25dff9b0060866126b488b96f1f553370e36c03f456a16aa109a0f80418d06']];
+const M4UIB_BOOTSTRAP=['help/audit-regressions/isolated/ms4-customer-http-normal.php'=>['bytes'=>96225,'sha256'=>'8f243fdeadc42335827642eec060d506e137e0e1c5ff01fa4d5db8ea9e69543a'],'help/audit-regressions/isolated/lib/harness.php'=>['bytes'=>48344,'sha256'=>'d1f6edf1e08d92f20e99954c41f4dafbb1bf164aeba249c1ef859710af73aa0d'],'help/audit-regressions/isolated/lib/guard.php'=>['bytes'=>4694,'sha256'=>'a7a182c3a204dbb55f5669a61f44af099360223acd9835f82d9da3a8bf2f79a8'],'help/audit-regressions/isolated/lib/ms4-customer-http-normal.php'=>['bytes'=>63896,'sha256'=>'5ba793e50cf604342304ff2563141384c8a61ffd2dc796865207210d70a946f9']];
 const M4UIB_NATIVE_KEYS=['id','image','hostname','user','stop_signal','labels','mounts','tmpfs','read_only','privileged','network_mode','status','command','entrypoint','workdir','restart_count','pid','exit_code','networks','ports','port_bindings','cap_drop','security_options','started_at','finished_at','created_at'];
 const M4UIB_INSPECT_FORMAT='{"id":{{json .Id}},"image":{{json .Image}},"hostname":{{json .Config.Hostname}},"user":{{json .Config.User}},"stop_signal":{{json (index .Config "StopSignal")}},"labels":{{json .Config.Labels}},"mounts":{{json .Mounts}},"tmpfs":{{json (index .HostConfig "Tmpfs")}},"read_only":{{json .HostConfig.ReadonlyRootfs}},"privileged":{{json .HostConfig.Privileged}},"network_mode":{{json .HostConfig.NetworkMode}},"status":{{json .State.Status}},"command":{{json .Config.Cmd}},"entrypoint":{{json .Config.Entrypoint}},"workdir":{{json .Config.WorkingDir}},"restart_count":{{json .RestartCount}},"pid":{{json .State.Pid}},"exit_code":{{json .State.ExitCode}},"networks":{{json .NetworkSettings.Networks}},"ports":{{json .NetworkSettings.Ports}},"port_bindings":{{json .HostConfig.PortBindings}},"cap_drop":{{json .HostConfig.CapDrop}},"security_options":{{json .HostConfig.SecurityOpt}},"started_at":{{json .State.StartedAt}},"finished_at":{{json .State.FinishedAt}},"created_at":{{json .Created}}}';
 const M4UIB_IMMUTABLE=['id','image','hostname','labels','tmpfs','read_only','privileged','network_mode','command','entrypoint','workdir','port_bindings','cap_drop','security_options','created_at','user','stop_signal'];
@@ -878,4 +878,195 @@ function m4uib_serve():int
     echo json_encode(['scope'=>'NORMAL_MS4_UI_BACKEND_LIFECYCLE_ONLY','status'=>'VERIFIED_NORMAL_MS4_UI_BACKEND_CLOSED_ONLY',
         'entry_return_code'=>0,'native_exit'=>null,'native_exit_observation'=>'HOST_NATIVE_REQUIRED'],JSON_THROW_ON_ERROR)."\n";
     return 0;
+}
+
+/** Explicit independently gated same-CID observation. No App, HTTP or filesystem producer. */
+function m4uib_observe_source():array
+{
+    m4uib_assert(PHP_SAPI==='cli'&&PHP_VERSION_ID>=80200&&PHP_VERSION_ID<80300&&PHP_INT_SIZE>=8&&getmypid()>1
+        &&posix_geteuid()===0&&posix_getegid()===0&&getcwd()==='/workspace'
+        &&realpath($_SERVER['SCRIPT_FILENAME']??'')==='/workspace/'.M4UIB_ENTRY
+        &&($_SERVER['argv']??[])===[$_SERVER['SCRIPT_FILENAME'],'observe'],'OWN_EXEC_OBSERVER_NATIVE_ENTRY_AND_EXACT_ARGV');
+    m4uib_assert(getenv('AUDIT_ISOLATED')==='1'&&getenv('AUDIT_GUARD_MODE')==='read-only'
+        &&getenv('AUDIT_REPO_DIR')==='/workspace'&&getenv('AUDIT_RUN_DIR')==='/run/audit'
+        &&getenv('MS4_UI_BACKEND_PROOF_NAME')==='ui-backend','OWN_ACTUAL_ROLE_ENVIRONMENT');
+    m4uib_bootstrap();$base='/run/audit/evidence/';$context=m4uib_json('/run/audit/actual-run-context.json');
+    $freeze=audit_read_immutable_source_freeze(67108864,static function(bool $ok,string $code):void{m4uib_assert($ok,'FREEZE_'.$code);});
+    $freezeHash=m4uib_hash('/run/audit/preparation-source-binding.json');$run=getenv('AUDIT_RUN_ID');$sha=getenv('AUDIT_SOURCE_SHA');
+    m4uib_assert(is_string($run)&&preg_match('/\A\d{14}[a-f0-9]{6}\z/D',$run)===1&&m4uib_hex($sha,40)
+        &&$context['run_id']===$run&&$context['source_sha']===$sha&&$context['project']==='tianli-audit-'.$run
+        &&getenv('AUDIT_PROJECT')===$context['project']&&$context['freeze_sha256']===$freezeHash
+        &&$freeze['source_sha']===$sha&&$freeze['status']==='CLEAN_SOURCE_FROZEN_ONLY','REAL_SAME_RUN_SOURCE_AND_FREEZE');
+    $created=m4uib_json($base.'ui-backend-created.json');m4uib_keys($created,array_merge(M4UIB_NATIVE_KEYS,['run_id','source_sha','proof_name']));
+    $cid=$created['id'];m4uib_assert(m4uib_hex($cid)&&gethostname()===substr($cid,0,12),'REAL_OWN_CID_HOSTNAME');
+    $binding=m4uib_json($base.'ms4-ui-backend-source-binding.json');m4uib_keys($binding,M4UIB_BINDING_KEYS);
+    m4uib_assert($binding['schema']===1&&$binding['scope']==='MS4_UI_BACKEND_SOURCE'&&$binding['run_id']===$run
+        &&$binding['source_sha']===$sha&&$binding['container_id']===$cid&&$binding['freeze_sha256']===$freezeHash
+        &&$binding['native_created_sha256']===m4uib_hash($base.'ui-backend-created.json')
+        &&$binding['entry_sha256']===m4uib_hash('/workspace/'.M4UIB_ENTRY),'OWN_CREATED_COMPLETE_BINDING');
+    foreach(['requested_repo_source'=>'repo_dir','requested_run_source'=>'run_dir','requested_prep_source'=>'prep_dir']as$key=>$ctx)
+        m4uib_assert($binding[$key]===$context[$ctx],'OWN_REAL_SOURCE_PATHS');
+    m4uib_assert($created['run_id']===$run&&$created['source_sha']===$sha&&$created['proof_name']==='ui-backend'
+        &&$created['image']===M4UIB_IMAGE&&$created['hostname']===gethostname()&&$created['user']==='0:0'
+        &&$created['stop_signal']==='SIGTERM'&&$created['read_only']===true&&$created['privileged']===false
+        &&$created['status']==='created'&&$created['pid']===0&&$created['restart_count']===0
+        &&$created['entrypoint']===['php']&&$created['command']===[M4UIB_ENTRY,'serve']&&$created['workdir']==='/workspace'
+        &&$created['cap_drop']===['ALL']&&in_array($created['security_options'],[['no-new-privileges'],['no-new-privileges:true']],true)
+        &&in_array($created['port_bindings'],[null,[]],true),'OWN_UNPRIVILEGED_NATIVE_CREATED_ROLE');
+    foreach($created['ports']??[]as$mapping)m4uib_assert(in_array($mapping,[null,[]],true),'NO_BACKEND_HOST_PORT');
+    foreach(['tianli.audit'=>'1','tianli.audit.run'=>$run,'com.docker.compose.project'=>$context['project'],
+        'com.docker.compose.service'=>'audit-ms4-ui-backend']as$key=>$value)m4uib_assert($created['labels'][$key]===$value,'OWN_NATIVE_LABELS');
+    $formal=m4uib_descriptor($binding['manifest'],'/run/audit/manifest.json');
+    m4uib_assert($formal['run_id']===$run&&$formal['commit_sha']===$sha&&$formal['project']===$context['project']
+        &&$formal['isolation']==='ISO-FULL'&&$formal['guard_mode']==='read-only'&&$formal['network_internal']===true,'CURRENT_ACTUAL_FORMAL');
+    $roles=array_keys($formal['services']);sort($roles,SORT_STRING);
+    m4uib_assert($roles===['audit-ms4-ui-backend','audit-ms4-ui-gateway','audit-ms5-paid-producer','audit-mysql','audit-redis']
+        &&$formal['services']['audit-ms4-ui-backend']['id']===$cid&&$formal['services']['audit-ms4-ui-backend']['image_id']===M4UIB_IMAGE,'ACTUAL_ONLY_FINAL_FIVE_ROLES');
+    $source=array_replace($binding,['context'=>$context,'freeze'=>$freeze,'formal'=>$formal,'created'=>$created,
+        'source_binding_sha256'=>m4uib_hash($base.'ms4-ui-backend-source-binding.json'),
+        'environment_sha256'=>$binding['environment']['sha256'],'environment_native_sha256'=>$binding['environment_native']['sha256']]);
+    $wrapper=m4uib_descriptor($binding['environment'],$base.'ui-backend-environment.json');
+    $native=m4uib_descriptor($binding['environment_native'],$base.'ui-backend-environment-native.json');
+    $source['environment']=m4uib_environment($wrapper,$native,$cid,'MS4_UI_BACKEND_REAL_ENVIRONMENT','ui-backend-public-environment-inspect',$source);
+    $network=m4uib_json('/run/audit/network.json');
+    m4uib_assert(m4uib_same($network,$context['initial_network']),'ORIGINAL_NETWORK_PROJECTION_UNCHANGED');
+    $source['network_sha256']=m4uib_hash('/run/audit/network.json');
+    $source['gateway_created_sha256']=m4uib_hash($base.'ui-gateway-created.json');
+    m4uib_full_source($source);m4uib_check_mounts($source,$created);m4uib_volumes($source);m4uib_gateway($source);
+    $currentPath=$base.'ui-backend-current.json';$until=microtime(true)+10.0;
+    while(!file_exists($currentPath)){m4uib_assert(empty($GLOBALS['m4uib_terminate_requested']),'SOURCE_WAIT_NOT_INTERRUPTED');
+        m4uib_assert(microtime(true)<$until,'ACTUAL_CURRENT_NATIVE_PROOF_NOT_YET_PUBLISHED');usleep(10000);}
+    $current=m4uib_json($currentPath);m4uib_keys($current,M4UIB_CURRENT_KEYS);
+    m4uib_assert($current['schema']===1&&$current['scope']==='MS4_UI_BACKEND_CURRENT_NATIVE'
+        &&$current['run_id']===$run&&$current['source_sha']===$sha&&$current['freeze_sha256']===$freezeHash
+        &&$current['container_id']===$cid&&$current['native_created_sha256']===$source['native_created_sha256']
+        &&$current['source_binding_sha256']===$source['source_binding_sha256']
+        &&$current['projection']['path']===$base.'ui-backend-current.stdout','OWN_ACTUAL_POSTSTART_NATIVE_PROOF');
+    $raw=m4uib_native($current['native'],$current['projection'],['docker','inspect','--type','container','--format',M4UIB_INSPECT_FORMAT,$cid],'ui-backend-current');
+    $actual=json_decode($raw,true,64,JSON_THROW_ON_ERROR);unset($raw);m4uib_keys($actual,M4UIB_NATIVE_KEYS);
+    m4uib_same_created($created,$actual);
+    m4uib_assert($actual['status']==='running'&&is_int($actual['pid'])&&$actual['pid']>0&&$actual['restart_count']===0,'REAL_OWN_CONTAINER_RUNNING');
+    m4uib_check_mounts($source,$actual);$source['native_current_sha256']=m4uib_hash($currentPath);
+    $source['prepare_history']=m4uib_history($source);
+    m4uib_assert(!file_exists('/source/crmeb/.env')&&!file_exists('/workspace/crmeb/.env')
+        &&!file_exists('/source/crmeb/public/install.lock'),'NO_MUTABLE_HOST_RUNTIME_CONFIG');
+    return $source;
+}
+
+function m4uwo_gate():array
+{
+    $s=m4uib_observe_source();
+    m4uib_assert(explode("\0",rtrim(file_get_contents('/proc/self/cmdline'),"\0"))===['php','/workspace/'.M4UIB_ENTRY,'observe'],'OBSERVER_REAL_KERNEL_ARGV');
+    m4uib_assert(!isset($GLOBALS['m4c_application'])&&!isset($GLOBALS['m4c_app_started']),'OBSERVER_NO_APP');
+    $readyFile=m4uib_file(M4UIB_CONTROL.'/ui-backend-ready.json',65536,true);
+    $r=json_decode($readyFile['raw'],true,64,JSON_THROW_ON_ERROR);
+    m4uib_keys($r,['schema','scope','run_id','source_sha','freeze_sha256','container_id','native_created_sha256','source_binding_sha256','prepare_history_sha256','generation','supervisor','group','members','listener_open','actor_ids','writer','full_source_verified']);
+    m4uib_assert($r['schema']===1&&$r['scope']==='MS4_UI_BACKEND_READY'&&$r['run_id']===$s['run_id']&&$r['source_sha']===$s['source_sha']
+        &&$r['freeze_sha256']===$s['freeze_sha256']&&$r['container_id']===$s['container_id']
+        &&$r['source_binding_sha256']===$s['source_binding_sha256']&&$r['native_created_sha256']===$s['native_created_sha256']
+        &&$r['prepare_history_sha256']===$s['history']['sha256']&&$r['actor_ids']===$s['prepare_history']['actor_ids']
+        &&$r['writer']===$s['prepare_history']['writer']&&$r['full_source_verified']===true&&$r['listener_open']===true
+        &&is_string($r['generation'])&&preg_match('/\A[a-f0-9]{48}\z/D',$r['generation'])===1,'OBSERVER_ORIGINAL_READY17');
+    $parent=audit_app_proc_stat(1);$own=audit_app_proc_stat(getmypid());
+    m4uib_assert(is_array($parent)&&is_array($own)&&$own['pid']>1&&$own['state']!=='Z'
+        &&$parent['pid']===$r['supervisor']['pid']&&$parent['pid']===1&&$parent['starttime']===$r['supervisor']['starttime']
+        &&$parent['pgid']===$r['supervisor']['pgid']&&$parent['sid']===$r['supervisor']['sid'],'OBSERVER_SAME_LIVE_PID1_SUPERVISOR');
+    $live=audit_app_process_observation($r['group'],$r['supervisor']);
+    m4uib_assert($live['listener_open']===true&&$live['members']!==[]&&!file_exists(M4UIB_CONTROL.'/ui-backend-stop-request.json'),'OBSERVER_SAME_LIVE_CHILD_BEFORE_STOP');
+    foreach($live['members']as$m)m4uib_assert($m['pid']!==getmypid(),'OBSERVER_NOT_HTTP_GROUP_MEMBER');
+    $s['observer_ready']=$r;$s['observer_ready_sha256']=$readyFile['descriptor']['sha256'];
+    // Definitions-only import. It does not dispatch any prepare/AR/paid driver for this SCRIPT_FILENAME.
+    require_once '/workspace/help/audit-regressions/isolated/ms4-ui-prepare.php';
+    m4uib_full_source($s);m4uib_preserved($s,true);
+    return $s;
+}
+function m4uwo_bind(array $binding,array $s):void
+{
+    m4uib_keys($binding,['run_id','source_sha','freeze_sha256','context_sha256','backend_cid','gateway_cid','ready_sha256','origin','source_closure']);
+    $base='/run/audit/evidence/';$handoff=m4uib_json($base.'ui-private-caller-handoff.json');
+    $gateway=m4uib_json($base.'ui-gateway-created.json');$c=$binding['source_closure'];
+    m4uib_assert($binding['run_id']===$s['run_id']&&$binding['source_sha']===$s['source_sha']&&$binding['freeze_sha256']===$s['freeze_sha256']
+        &&$binding['context_sha256']===m4uib_hash('/run/audit/actual-run-context.json')&&$binding['backend_cid']===$s['container_id']
+        &&$binding['gateway_cid']===$gateway['id']&&$binding['gateway_cid']!==$s['container_id']
+        &&$binding['ready_sha256']===$s['observer_ready_sha256']&&$binding['origin']===$s['freeze']['ui_web_origin'],'OBSERVER_EXACT_CURRENT_BINDING9');
+    m4uib_keys($c,['context','freeze','artifacts','reader','caller','browser_close']);
+    $aux=$c;unset($aux['browser_close']);
+    m4uib_assert($handoff['schema']===1&&$handoff['scope']==='MS4_UI_PRIVATE_CALLER_HANDOFF_ONLY'
+        &&$handoff['run_id']===$s['run_id']&&$handoff['source_sha']===$s['source_sha']&&$handoff['freeze_sha256']===$s['freeze_sha256']
+        &&$handoff['container_id']===$s['container_id']&&$handoff['private_reader_returned_three_roles']===true
+        &&m4uib_same($aux,$handoff['source_closure']),'OBSERVER_ACTUAL_HANDOFF_CLOSURE5');
+    foreach(['reader','caller','browser_close']as$k){m4uib_keys($c[$k],['bytes','sha256']);m4uib_assert(is_int($c[$k]['bytes'])&&$c[$k]['bytes']>0&&m4uib_hex($c[$k]['sha256']),'OBSERVER_PUBLIC_AUX_SOURCE_DESCRIPTOR');}
+    // The container cannot inspect external JS Source: Root must independently pin its finished auxiliary closure.
+    m4uib_assert($c['context']===['bytes'=>m4uib_file('/run/audit/actual-run-context.json')['descriptor']['bytes'],'sha256'=>$binding['context_sha256']]
+        &&$c['freeze']===['bytes'=>m4uib_file('/run/audit/preparation-source-binding.json')['descriptor']['bytes'],'sha256'=>$binding['freeze_sha256']],'OBSERVER_CURRENT_CONTEXT_FREEZE_BYTES');
+    $actual=[];foreach($s['freeze']['artifact_files']as$r)$actual[$r['path']]=['bytes'=>$r['bytes'],'sha256'=>$r['sha256']];
+    m4uib_assert($c['artifacts']===$actual&&count($actual)===17,'OBSERVER_ACTUAL_ORDERED_SOURCE17');
+    m4uib_assert(!file_exists('/run/audit/evidence/ui-business-window.json'),'OBSERVER_NO_EXISTING_BUSINESS_SUCCESS');
+}
+function m4uwo_frame():array
+{
+    $raw=fgets(STDIN,1048578);m4uib_assert(is_string($raw)&&strlen($raw)<=1048576&&str_ends_with($raw,"\n")&&!str_contains($raw,"\0"),'OBSERVER_BOUNDED_COMPLETE_STDIN_FRAME');
+    $v=json_decode($raw,false,128,JSON_THROW_ON_ERROR);unset($raw);m4uib_assert($v instanceof stdClass,'OBSERVER_OBJECT_FRAME');
+    $a=get_object_vars($v);m4uib_keys($a,['schema','binding','sequence','command','step','wire_public','private']);
+    m4uib_assert($a['schema']===1&&is_int($a['sequence'])&&$a['sequence']>=0&&is_int($a['step'])&&$a['step']>=0
+        &&in_array($a['command'],['BEGIN','STEP_BEGIN','STEP_VERIFY','FINISH'],true),'OBSERVER_ONLY_SERIAL_ENVELOPE');
+    m4uib_assert($a['private']===null||$a['private'] instanceof stdClass,'OBSERVER_OPTIONAL_RAM_ONLY_LOGIN_OBSERVATION');
+    m4uib_assert($a['binding'] instanceof stdClass,'OBSERVER_BINDING_OBJECT');$a['binding']=m4uwo_plain($a['binding']);return $a;
+}
+function m4uwo_send(array $frame,array $receipt):void
+{
+    $out=['schema'=>1,'scope'=>'MS4_UI_OBSERVER_SAFE_FRAME','binding'=>$frame['binding'],'sequence'=>$frame['sequence'],
+        'command'=>$frame['command'],'step'=>$frame['step'],'receipt'=>$receipt];
+    $raw=m4uwo_json($out)."\n";m4uib_assert(strlen($raw)<=16777216,'OBSERVER_BOUNDED_SAFE_RESPONSE');
+    $GLOBALS['m4uwo_stdout_bytes']=($GLOBALS['m4uwo_stdout_bytes']??0)+strlen($raw);
+    m4uib_assert($GLOBALS['m4uwo_stdout_bytes']<=268435456,'OBSERVER_BOUNDED_COMPLETE_STDOUT_STREAM');
+    m4uib_assert(fwrite(STDOUT,$raw)===strlen($raw)&&fflush(STDOUT),'OBSERVER_FULL_PUBLIC_FRAME_WRITE');unset($raw);
+}
+function m4uib_observe():int
+{
+    $s=m4uwo_gate();$frame=m4uwo_frame();m4uib_assert($frame['command']==='BEGIN'&&$frame['sequence']===0&&$frame['step']===0
+        &&$frame['wire_public']===null,'OBSERVER_SINGLE_BEGIN');m4uwo_bind($frame['binding'],$s);$binding=$frame['binding'];
+    m4uib_assert($frame['private']===null,'OBSERVER_BEGIN_NO_SECRET_PAYLOAD');$s['observer_gateway_current_sha256']=m4uib_hash('/run/audit/evidence/ui-gateway-current.json');
+    m4uib_assert(date_default_timezone_set('Asia/Shanghai'),'OBSERVER_SAME_SOURCE_APP_DEFAULT_TIMEZONE_NO_APP_BOOT');
+    $db=audit_db();m4uib_assert(!$db->inTransaction(),'OBSERVER_NATIVE_PDO_NO_TRANSACTION');m5pc_observer_configure($db);
+    $baseline=m4uwo_snapshot($db);m4uwo_script_empty($baseline);$checked=m4uwo_snapshot($db);m4uwo_same($baseline,$checked);unset($checked);
+    $business=m4uib_json('/run/audit/evidence/ms4-ui-prepare.json')['business'];
+    m4uib_assert(m4upo_descriptor($baseline)['database_sha256']===$business['window_final']['database_sha256']
+        &&m4upo_descriptor($baseline)['redis_sha256']===$business['window_final']['redis_sha256'],'OBSERVER_GENUINE_PREPARED_FULL_DATABASE_REDIS_BASELINE');
+    $saved=m5pcp_saved($db,$business['paid_order_id']);$original=m4fn_source_oracle($saved);
+    m4uib_assert($original['fingerprint']===$business['source_fingerprint']&&$saved['order']['order_id']===$business['paid_order_no'],'OBSERVER_ACTUAL_SAVED_ORDER_MODEL');
+    $state=['source'=>$original,'saved'=>$saved,'prepare'=>$business,'binding'=>$binding,'index'=>0,'sessions'=>[],
+        'startup_original'=>m4uws_original($baseline),
+        'runtime_log_format'=>'PHP82_BUILTIN_UTC_ACCESS_V1'];
+    $first=m4uwo_ledger($baseline,$binding,0,'baseline');m4uwo_send($frame,['baseline'=>$first]);$last=$baseline;unset($baseline,$saved,$original,$first);
+    try{
+        foreach(m4uwo_steps()as$offset=>$name){$i=$offset+1;$frame=m4uwo_frame();
+            m4uib_assert($frame['command']==='STEP_BEGIN'&&$frame['sequence']===2*$i-1&&$frame['step']===$i
+                &&$frame['wire_public']===null&&$frame['private']===null&&m4uib_same($frame['binding'],$binding),'OBSERVER_EXACT_NEXT_BEGIN');
+            // An unimplemented independent oracle blocks BEFORE Root may perform this UI action.
+            m4uib_assert(m4uwo_case_supported($name),'OBSERVER_CASE_NOT_IMPLEMENTED_'.$i);
+            $phaseBegin=(int)floor(microtime(true)*1000);m4uib_preserved($s,true);
+            $now=m4uwo_snapshot($db);m4uwo_same($last,$now);unset($last);$before=$now;unset($now);
+            m4uwo_send($frame,['before'=>m4uwo_ledger($before,$binding,$i,'before')]);$frame=m4uwo_frame();
+            m4uib_assert($frame['command']==='STEP_VERIFY'&&$frame['sequence']===2*$i&&$frame['step']===$i
+                &&m4uib_same($frame['binding'],$binding),'OBSERVER_EXACT_MATCHING_VERIFY');
+            $phaseEnd=(int)ceil(microtime(true)*1000);$event=m4uwo_wire($name,$frame['wire_public'],$state);
+            m4uib_assert($event['event']['started_at_ms']>=$phaseBegin&&$event['event']['finished_at_ms']<=$phaseEnd,'OBSERVER_BROWSER_TIME_INSIDE_REAL_NATIVE_WINDOW');
+            $event['private']=$frame['private'];$frame['private']=null;$state['sequence_barrier']=m4uwo_sequence_barrier($name,$event);$after=m4uwo_snapshot($db);
+            $expected=m4uwo_verify_case($name,$before,$after,$event,$state,$s);unset($event['private']);m4uib_preserved($s,true);
+            $again=m4uwo_snapshot($db);m4uwo_same($after,$again);
+            $actual=m4uwo_ledger($after,$binding,$i,'after');$verified=m4uwo_ledger($again,$binding,$i,'verified');
+            m4uwo_send($frame,['after'=>$actual,'verified_after'=>$verified,'expected_delta'=>$expected,
+                'oracle'=>['source'=>m4uib_file('/workspace/help/audit-regressions/isolated/lib/ms4-ui-prepare-oracle.php')['descriptor'],
+                    'case_name'=>$name,'expected'=>$expected,'actual'=>$actual,'readback'=>$verified]]);
+            $last=$again;$state['index']=$i;unset($before,$after,$again,$actual,$verified,$expected,$event);
+        }
+        $frame=m4uwo_frame();$n=count(m4uwo_steps());m4uib_assert($frame['command']==='FINISH'&&$frame['sequence']===2*$n+1&&$frame['step']===$n+1
+            &&$frame['wire_public']===null&&$frame['private']===null&&m4uib_same($frame['binding'],$binding)&&$state['index']===$n,'OBSERVER_ONE_COMPLETE_FINISH');
+        $final=m4uwo_snapshot($db);m4uwo_same($last,$final);m4uwo_gateway_ip($s);m4uwo_finish_assert($state);m4uib_preserved($s,true);
+        $again=m4uwo_gate();m4uib_assert($again['observer_ready_sha256']===$s['observer_ready_sha256']&&$again['observer_ready']['generation']===$s['observer_ready']['generation'],'OBSERVER_SAME_FINAL_READY_SOURCE_SUPERVISOR');
+        m4uwo_send($frame,['final'=>m4uwo_ledger($final,$binding,$n+1,'final'),'preservation'=>m4uwo_preservation($s,$binding)]);
+        $tail=fread(STDIN,1);m4uib_assert($tail===''&&feof(STDIN),'OBSERVER_FINAL_EXACT_STDIN_EOF');
+        m4uib_assert(!isset($GLOBALS['m4c_application'])&&!isset($GLOBALS['m4c_app_started']),'OBSERVER_FINISH_NO_APP');return 0;
+    }finally{unset($last,$before,$after,$again,$final,$state,$frame,$event,$db,$s,$binding);}
 }

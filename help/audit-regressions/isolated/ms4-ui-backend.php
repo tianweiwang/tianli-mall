@@ -4,6 +4,21 @@ declare(strict_types=1);
 /** Independent ordinary UI backend. Importing does not read proofs or launch an application. */
 require_once __DIR__.'/lib/ms4-ui-backend-normal.php';
 
+// Explicit observation exec only. The original serve block below remains byte-for-byte unchanged.
+if(realpath($_SERVER['SCRIPT_FILENAME']??'')===__FILE__&&($_SERVER['argv']??[])===[$_SERVER['SCRIPT_FILENAME'],'observe']){
+    ini_set('display_errors','0');ini_set('log_errors','0');ini_set('zend.exception_ignore_args','1');umask(0077);
+    $GLOBALS['m4uib_assertions']=0;$GLOBALS['m4uib_terminate_requested']=false;
+    set_error_handler(static function(int $severity,string $message,string $file,int $line):bool{
+        if((error_reporting()&$severity)===0)return false;
+        $GLOBALS['m4uwo_code']='PHP_WARNING';throw new RuntimeException('UI_WINDOW_INCOMPLETE');
+    });
+    try{exit(m4uib_observe());}
+    catch(Throwable $ignored){
+        // No exception, stack, path, driver text, input or private snapshot may escape.
+        fwrite(STDERR,"UI_WINDOW_INCOMPLETE\n");exit(1);
+    }
+}
+
 if(realpath($_SERVER['SCRIPT_FILENAME']??'')===__FILE__){
     ini_set('display_errors','0');ini_set('log_errors','0');ini_set('zend.exception_ignore_args','1');umask(0077);
     $GLOBALS['m4uib_assertions']=0;$GLOBALS['m4uib_terminate_requested']=false;
