@@ -52,7 +52,7 @@
 								<view>{{ item._add_time }}</view>
 							</view>
 							<view v-if="item.is_cancel == 1" class="font-color">{{ $t(`已取消`) }}</view>
-							<view v-else-if="isSavedMarketplaceV1(item)" class="font-color">{{ rootFulfillmentText(item.fulfillment_summary, item.aftersale) }}</view>
+							<view v-else-if="isSavedMarketplaceV1(item)" class="font-color">{{ rootOrderStatusText(item) }}</view>
 							<view v-else-if="item._status._type == 9" class="font-color">{{ $t(`线下付款,未支付`) }}</view>
 							<view v-else-if="item._status._type == 0" class="font-color">{{ $t(`待付款`) }}</view>
 							<view v-else-if="item._status._type == 1 && item.shipping_type == 1" class="font-color">
@@ -161,7 +161,7 @@ import authorize from '@/components/Authorize';
 // #endif
 import emptyPage from '@/components/emptyPage.vue';
 import colors from '@/mixins/color.js';
-import { readOrderFulfillment, rootFulfillmentText } from '@/utils/marketplace-fulfillment.js';
+import { readOrderFulfillment, rootOrderStatusText } from '@/utils/marketplace-fulfillment.js';
 export default {
 	components: {
 		home,
@@ -242,7 +242,7 @@ export default {
 		}
 	},
 	methods: {
-		rootFulfillmentText,
+		rootOrderStatusText,
 		clearSavedOrderList() {
 			this.listRevision++;
 			this.orderList = [];

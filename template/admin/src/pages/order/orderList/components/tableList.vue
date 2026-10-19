@@ -377,7 +377,7 @@ import {
 import { mapState, mapMutations } from 'vuex';
 import editFrom from '../../../../components/from/from';
 import detailsFrom from '../handle/orderDetails';
-import { readPlatformFulfillment, rootFulfillmentText } from './fulfillmentPackages.vue';
+import { readPlatformFulfillment, rootOrderStatusText } from './fulfillmentPackages.vue';
 import orderRemark from '../handle/orderRemark';
 import orderSend from '../handle/orderSend';
 import orderRefund from '../handle/orderRefund';
@@ -502,7 +502,7 @@ export default {
     },
   },
   methods: {
-    savedFulfillmentState(item) { return rootFulfillmentText(item.fulfillment_summary, item.aftersale); },
+    savedFulfillmentState(item) { return rootOrderStatusText(item); },
     isSavedMarketplaceV1(row) {
       return !!row && (row.marketplace_trade_version === 1 || row.marketplace_trade_version === '1');
     },

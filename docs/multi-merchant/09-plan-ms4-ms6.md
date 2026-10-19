@@ -4,7 +4,15 @@
 
 **Spec:** [00-implementation-spec.md](00-implementation-spec.md) §1.2、§6.3、§7.2、§8、§9、§10、§11；用例 O、P、R 系列，D19，K02–K05。
 
-## 当前交付状态（2026-10-19）
+## 当前交付状态（2026-10-20）
+
+R20 最新实际结果：冻结 dd445aff0c5ecb6f2dea527e14208422ba2db93f 的初始化、结构迁移、files/C3 准备及内部测试付款正常完成；Task6 的原 legacy 子进程首次实际同句柄自然0、stderr空，原 proc_close=-1 保留。随后父进程在 three_read_initial 以 `TASK6_THREE_EACH_READ_RUNTIME_FILES_UNCHANGED` 自然1停止，三读 stage/call 均0、business=null，售后和 Worker 未启动。只证明运行目录文件集合或完整内容发生变化，未保存前后 map，具体文件和原因仍 UNKNOWN；不据原未完成结果的 full_source_unchanged=false 推断源码损坏。
+
+该原 Run 已正常无限等待停止两数据库，精确非 force 退役四容器、一内部网、七卷；独立15项原生命令含六次 fresh 空查询、全局消费者及完整10857源码/当前9件配置/INI资源7-3-8核对均实际0，62428份原公开证据保持。原失败仍失败，未重署业务成功。Root 读回和退役证据位于仓库外 `artifacts/ms4-worker-normal-source-preparation-r1/r20-fulfillment-failure-root-readback-r1/`、`r20-task6-failed-normal-close-r1/`、`r20-task6-failed-independent-zero-r1/`。
+
+本轮接入任务：将已独审和语法检查的八件顾客/平台主订单状态显示修订接入，取消优先、未支付显示待付款，已支付仍用原履约/售后文字，独立履约提示和商家原文保留；补四点仅RAM的运行文件安全差分诊断，原DB/Redis/runtime/DTO断言保持；接入Task2准备及Core顺序场景消费者。浏览器辅助八件位于配置目录旁，需为实际backend角色补独立只读挂载并完整校核，保持原17件配置和无Task2默认行为。H5/平台新构建、新五材料、完整17件实际冻结、三端真实场景及320/390/1440页面验收仍待，不能以Source或构建代签。通用多商户范围、商品规格价格复用、L2本地和停止样本NOT RUN保持。
+
+以下2026-10-19概要保留为历史证据，不覆盖上述R20最新结果与尚未完成的原任务。
 
 最新续作：R13 Run `20261019015906fb9bc3` 已结束。29初始化/结构命令、files-bootstrap、C3准备及内部持久购物车/测试付款均实际正常0；Root已完整读回原件。Task6的真实legacy child随后自然1，诊断 `JSON_EXACT_OBJECT_FIELDS`，三读stage/call0、business=null，AR/Worker尚未启动。Root同原MySQL只读JSON字段名与独立Source追踪确认，测试从去顶层attrInfo的旧确认输入复制expected，而真实create保存含该原始SKU；已单行补独立fixture原生SKU预期，完整JSON键/类型/值及所有业务断言保持，生产逻辑不改。PHP8.2语法已0，但新Run完整业务尚未复跑。原R13已普通无限等待stop并非force精确退役4CID/1内部网/7卷，独立fresh六查询和全局/完整Source核零0，6506份公件保持；原失败不改署。
 

@@ -1839,3 +1839,338 @@ function m4uws_personal_home(array &$plan,array $q,int $uid):void
  // UserBrokerageDao105-107 frozen sum and90-96 yesterday sum are read-only; DiyServices321-324 is direct native value.
  m4uwo_expect_read($q,['uid'=>$uid]);m4uws_config_calls($plan,$q);
 }
+
+
+/** Task2 ordinary-state target preparation only. No definitions below execute on import. */
+function m5pt_signed(mixed $value):int
+{
+ m4up_expect(is_int($value)||(is_string($value)&&preg_match('/\A(?:0|-?[1-9][0-9]*)\z/D',$value)===1),'TASK2_NATIVE_SIGNED_INTEGER');
+ $text=(string)$value;m4up_expect(bccomp($text,'-2147483648',0)>=0&&bccomp($text,'4294967295',0)<=0,'TASK2_NATIVE_SIGNED_DOMAIN');return (int)$text;
+}
+function m5pt_match(array $rows,string $column,int $id):array
+{
+ // Association filtering is signed/nullable; unrelated historical rows are not asserted positive.
+ $found=[];foreach($rows as$row)if($row[$column]!==null&&m5pt_signed($row[$column])===$id)$found[]=$row;
+ m4up_expect(count($found)===1,'TASK2_EXACT_ONE_MATCHED_NATIVE_ROW');return $found[0];
+}
+function m5pt_next(array $snapshot,string $table):string
+{return m5pcp_u64($snapshot['database']['tables'][$table]['metadata']['table']['AUTO_INCREMENT']);}
+function m5pt_same_window(array $a,array $b):void
+{
+ m4up_expect($a['database']===$b['database']&&$a['rows']===$b['rows']&&$a['redis']['keys']===$b['redis']['keys']
+  &&$a['tag_members']===$b['tag_members']&&$a['files']===$b['files'],'TASK2_SECOND_FULL_NATIVE_WINDOW_IDENTICAL');
+}
+function m5pt_component_join(array $left,array $right):void
+{
+ foreach(['database_sha256','redis_sha256','files_sha256','table_count']as$key)
+  m4up_expect($left[$key]===$right[$key],'TASK2_REAL_WINDOW_COMPONENT_CONTINUITY');
+}
+function m5pt_observer_source(array $source):?array
+{
+ static $originalTree=null;$tree=[];
+ if(!array_key_exists('task2_observer_source',$source['freeze']))return null;
+ $tools=$source['freeze']['task2_observer_source'];m4c_entry_keys($tools,['schema','scope','core_source_sha','host_source_root','container_root','members']);
+ m4up_expect($tools['schema']===1&&$tools['scope']==='MS5_TASK2_COMPOSITE_OBSERVER_SOURCE_ONLY'
+  &&$tools['core_source_sha']===$source['source_sha']&&is_string($tools['host_source_root'])&&$tools['host_source_root']!==''
+  &&!str_contains($tools['host_source_root'],"\0")&&$tools['container_root']==='/run/audit/task2-observer'
+  &&is_array($tools['members'])&&array_is_list($tools['members'])&&count($tools['members'])===3,'TASK2_EXACT_INITIAL_OBSERVER_SOURCE6');
+ $root=$tools['container_root'];m4up_expect(is_dir($root)&&!is_link($root)&&realpath($root)===$root,'TASK2_REAL_TOOL_ROOT');
+ $names=array_values(array_diff(scandir($root),['.','..']));sort($names,SORT_STRING);
+ m4up_expect($names===['entry.php','expected.php','gate.php'],'TASK2_EXACT_THREE_TOOL_NAMESPACE');
+ foreach($names as$i=>$name){$member=$tools['members'][$i];m4c_entry_keys($member,['path','bytes','sha256']);$path=$root.'/'.$name;
+  m4up_expect($member['path']===$name&&is_int($member['bytes'])&&$member['bytes']>0&&m5pc_hex($member['sha256'])
+   &&is_file($path)&&!is_link($path)&&realpath($path)===$path,'TASK2_EXACT_ORDINARY_TOOL_MEMBER');
+  $stat=lstat($path);m4up_expect(is_array($stat),'TASK2_TOOL_NATIVE_STAT');$fields=array_flip(['dev','ino','mode','nlink','uid','gid','size','mtime','ctime']);$stat=array_intersect_key($stat,$fields);m4up_expect(($stat['mode']&0170000)===0100000&&$stat['size']===$member['bytes']
+   &&hash_file('sha256',$path)===$member['sha256'],'TASK2_FROZEN_TOOL_BYTES');
+  clearstatcache(true,$path);m4up_expect(array_intersect_key(lstat($path),$fields)===$stat,'TASK2_FROZEN_TOOL_STAT_STABLE');$tree[$name]=$stat;
+ }
+ if($originalTree===null)$originalTree=$tree;else m4up_expect($tree===$originalTree,'TASK2_ORIGINAL_TOOL_NATIVE_IDENTITIES_UNCHANGED');
+ m5pt_copy_receipt($source,$tools);return $tools;
+}
+function m5pt_copy_receipt(array $source,array $tools):string
+{
+ $path='/run/audit/evidence/task2-observer-copy.json';$descriptor=$source['context']['task2_observer_copy']??null;
+ m4up_expect(is_array($descriptor),'TASK2_REAL_COPY_RECEIPT_CONTEXT_DESCRIPTOR');m4c_entry_keys($descriptor,['path','bytes','sha256']);
+ m4up_expect($descriptor['path']==='evidence/task2-observer-copy.json'&&is_int($descriptor['bytes'])&&$descriptor['bytes']>0
+  &&m5pc_hex($descriptor['sha256'])&&is_file($path)&&!is_link($path)&&realpath($path)===$path
+  &&filesize($path)===$descriptor['bytes']&&hash_file('sha256',$path)===$descriptor['sha256'],'TASK2_ORIGINAL_HOST_COPY_RECEIPT_BYTES');
+ $receipt=m4c_entry_read($path);m4c_entry_keys($receipt,['schema','scope','run_id','source_sha','freeze_sha256','observer_source_sha256','originals','copies']);
+ m4up_expect($receipt['schema']===1&&$receipt['scope']==='MS5_TASK2_OBSERVER_SOURCE_COPY'&&$receipt['run_id']===$source['run_id']
+  &&$receipt['source_sha']===$source['source_sha']&&$receipt['freeze_sha256']===$source['freeze_sha256']
+  &&$receipt['observer_source_sha256']===hash('sha256',\app\services\marketplace\order\MarketplaceOrderInput::canonical($tools))
+  &&is_array($receipt['originals'])&&array_is_list($receipt['originals'])&&count($receipt['originals'])===3
+  &&is_array($receipt['copies'])&&array_is_list($receipt['copies'])&&count($receipt['copies'])===3,'TASK2_EXACT_HOST_COPY_IDENTITY8');
+ foreach(['entry.php','expected.php','gate.php']as$i=>$name){$original=$receipt['originals'][$i];$copy=$receipt['copies'][$i];
+  m4c_entry_keys($original,['path','bytes','sha256']);m4c_entry_keys($copy,['path','bytes','sha256']);$member=$tools['members'][$i];
+  $host=rtrim(str_replace('\\','/',$tools['host_source_root']),'/').'/'.$name;
+  m4up_expect(is_string($original['path'])&&str_replace('\\','/',$original['path'])===$host
+   &&$copy['path']==='task2-observer/'.$name&&$original['bytes']===$member['bytes']&&$copy['bytes']===$member['bytes']
+   &&$original['sha256']===$member['sha256']&&$copy['sha256']===$member['sha256'],'TASK2_EXACT_THREE_ORIGINAL_AND_RUN_COPY_DESCRIPTORS');
+ }
+ m4up_expect(hash_file('sha256',$path)===$descriptor['sha256']&&filesize($path)===$descriptor['bytes'],'TASK2_COPY_RECEIPT_COMPLETE_READ_STABLE');
+ return $descriptor['sha256'];
+}
+function m5pt_actors(array $actors):array
+{
+ return ['customer'=>['id'=>m5pcp_int($actors['customer']['id'],1)],
+  'merchant'=>['id'=>m5pcp_int($actors['merchant']['id'],1),'role_id'=>m5pcp_int($actors['merchant']['role_id'],1),'mer_id'=>m5pcp_int($actors['merchant']['mer_id'],1,4294967295)],
+  'platform'=>['id'=>m5pcp_int($actors['platform']['id'],1),'role_id'=>m5pcp_int($actors['platform']['role_id'],1)]];
+}
+function m5pt_target(array $root):array
+{return ['id'=>m5pcp_int($root['id'],1),'order_no'=>$root['order_id'],'uid'=>m5pcp_int($root['uid'],1),'mer_id'=>m5pcp_int($root['mer_id'],1,4294967295)];}
+function m5pt_log(array $before,array $actual,int $uid,int $product,string $type,int $stamp):array
+{
+ $values=['id'=>m5pt_next($before,'eb_store_product_log'),'type'=>$type,'uid'=>$uid,'product_id'=>$product,
+  'visit_num'=>0,'cart_num'=>$type==='cart'?1:0,'order_num'=>$type==='order'?1:0,'pay_num'=>0,'pay_price'=>'0.00',
+  'cost_price'=>'0.00','pay_uid'=>0,'refund_num'=>0,'refund_price'=>'0.00','collect_num'=>0,'add_time'=>$stamp];
+ return m4upo_row($before,$actual,'eb_store_product_log',$values);
+}
+function m5pt_files_unchanged(array $before,array $after):void
+{m4up_expect($after['files']===$before['files'],'TASK2_EVERY_PRIVATE_PUBLIC_RUNTIME_FILE_STAT_AND_BYTES_UNCHANGED');}
+function m5pt_cart(PDO $db,\think\App $app,array $before,int $uid,array $product,array $sku):array
+{
+ $productId=m5pcp_int($product['id'],1,8388607);$started=time();
+ foreach($before['rows']['eb_store_cart']as$old){
+  if($old['uid']===null||m5pt_signed($old['uid'])!==$uid||$old['product_id']===null||m5pt_signed($old['product_id'])!==$productId
+   ||$old['product_attr_unique']!==$sku['unique'])continue;
+  $eligible=true;foreach(['type','is_pay','is_del','is_new','combination_id','seckill_id','bargain_id','advance_id']as$key)
+   if($old[$key]===null||m5pt_signed($old[$key])!==0)$eligible=false;
+  if($eligible&&($old['status']===null||m5pt_signed($old['status'])===1))m4up_expect(false,'TASK2_SELECTED_SKU_HAS_NO_MERGEABLE_CART');
+ }
+ $ref=\app\services\marketplace\order\MarketplaceOrderInput::reference($app->make(\app\services\order\StoreCartServices::class)
+  ->setCart($uid,$productId,1,$sku['unique'],0,false),'persistent');
+ $after=m4upo_snapshot($db);m4up_expect($ref===m5pt_next($before,'eb_store_cart'),'TASK2_REAL_NATURAL_DISTINCT_CART_REFERENCE');
+ $actual=m4upo_one($after['rows']['eb_store_cart'],'id',$ref);$stamp=m4upo_time($actual['add_time'],[$started,time()]);
+ $cart=m4upo_row($before,$actual,'eb_store_cart',['id'=>$ref,'uid'=>$uid,'product_id'=>$productId,'cart_num'=>1,
+  'product_attr_unique'=>$sku['unique'],'type'=>0,'add_time'=>$stamp,'seckill_id'=>0,'bargain_id'=>0,'combination_id'=>0,'advance_id'=>0]);
+ $logs=m4ar_new_rows($before['rows']['eb_store_product_log'],$after['rows']['eb_store_product_log']);m4up_expect(count($logs)===1,'TASK2_ONE_REAL_CART_LOG');
+ $log=m5pt_log($before,$logs[0],$uid,$productId,'cart',m4upo_time($logs[0]['add_time'],[$started,time()]));
+ m4ar_database_delta($before,$after,['eb_store_cart'=>[...$before['rows']['eb_store_cart'],$cart],
+  'eb_store_product_log'=>[...$before['rows']['eb_store_product_log'],$log]],['eb_store_cart'=>1,'eb_store_product_log'=>1]);
+ m4ar_redis_delta($before,$after);m4up_expect($after['tag_members']===$before['tag_members'],'TASK2_CART_ALL_TAG_MEMBERS_UNCHANGED');m5pt_files_unchanged($before,$after);
+ $again=m4upo_snapshot($db);m5pt_same_window($after,$again);return ['reference'=>$ref,'row'=>$cart,'snapshot'=>$after];
+}
+function m5pt_forms(array $product,string $ref):array
+{
+ $raw=json_decode($product['custom_form'],true,32,JSON_THROW_ON_ERROR);m4up_expect(is_array($raw)&&array_is_list($raw)&&count($raw)===2,'TASK2_CURRENT_C3_TWO_FORM_FIELDS');
+ $fields=$values=[];foreach($raw as$i=>$field){m4c_entry_keys($field,['title','label','value','status']);
+  m4up_expect(is_string($field['title'])&&is_bool($field['status'])&&is_string($field['value'])
+   &&in_array($field['label'],['text','number'],true),'TASK2_INDEPENDENT_ORDINARY_FORM_DOMAIN');
+  $fields[]=['field_index'=>$i]+$field;$values[]=['field_index'=>$i,'value'=>$field['label']==='number'?'0':'普通页面填写'.$product['store_name']];
+ }
+ $productId=m5pcp_int($product['id'],1,8388607);$hash=hash('sha256',\app\services\marketplace\order\MarketplaceOrderInput::canonical(['product_id'=>$productId,'fields'=>$fields]));
+ $definition=['product_id'=>$productId,'product_name'=>$product['store_name'],'cart_refs'=>[$ref],'definition_sha256'=>$hash,'fields'=>$fields];
+ $saved=$definition;foreach($saved['fields']as$i=>&$field)$field['value']=$values[$i]['value'];unset($field);
+ return ['answers'=>[['product_id'=>$productId,'definition_sha256'=>$hash,'values'=>$values]],'saved'=>[$saved]];
+}
+function m5pt_saved_cart(array $before,array $cart,array $product,array $sku,array $merchant,string $reserve):array
+{
+ // PublicCatalogQuery raw native root+merchant join, displayRoot getter, then ordinary private calculation.
+ $productId=m5pcp_int($product['id'],1,8388607);$product['_public_store_mer_id']=$merchant['mer_id'];$product['_public_store_name']=$merchant['name'];
+ $product['_public_store_logo']=$merchant['logo'];$product['_public_store_after_sale_contact']=$merchant['after_sale_contact'];$product['_public_store_shipping_note']=$merchant['shipping_note'];
+ $product['slider_image']=is_string($product['slider_image'])?json_decode($product['slider_image'],true,32,JSON_THROW_ON_ERROR):[];
+ $descriptions=[];foreach($before['rows']['eb_store_product_description']as$row)
+  if($row['product_id']!==null&&m5pt_signed($row['product_id'])===$productId&&$row['type']!==null&&m5pt_signed($row['type'])===0)$descriptions[]=$row;
+ m4up_expect(count($descriptions)<=1,'TASK2_ONE_NATIVE_PRODUCT_DESCRIPTION_OR_ABSENT');$product['description']=isset($descriptions[0])?htmlspecialchars_decode($descriptions[0]['description']):'';
+ $product['attrInfo']=$sku;$product['express_delivery']=in_array('1',explode(',',$product['logistics']),true);
+ $product['store_mention']=in_array('2',explode(',',$product['logistics']),true);$product['attrInfo']['image']=$sku['image']??$product['image']??'';
+ $product['attrInfo']['suk']=$sku['suk']??'已失效';
+ $cart['id']=m5pcp_u64($cart['id']);$cart['uid']=m5pcp_int($cart['uid'],1);$cart['product_id']=$productId;
+ $cart['productInfo']=$product;$cart['min_qty']=$product['min_qty'];$cart['attrStatus']=isset($sku['stock'])&&(bool)$sku['stock'];
+ $cart['vip_truePrice']='0.00';$cart['costPrice']=$sku['cost'];$cart['trueStock']=$sku['stock'];
+ $cart['truePrice']=$sku['price'];$cart['sum_price']=$sku['price'];$cart['price_type']='level';$cart['is_valid']=1;
+ $cart['postage_price']=$cart['origin_postage_price']=$product['postage'];$cart['coupon_id']=0;$cart['sum_true_price']=$sku['price'];
+ foreach(['coupon_price','integral_price','one_brokerage','two_brokerage','staff_brokerage','agent_brokerage','division_brokerage']as$key)$cart[$key]='0.00';
+ $cart['use_integral']=0;$cart['marketplace']=['cart_ref'=>$cart['id'],'sku_id'=>m5pcp_int($sku['id'],1),'sku_type'=>0,'sku_unique'=>$sku['unique'],'reserve_id'=>$reserve];return $cart;
+}
+function m5pt_g0(array $snapshot,array $root):array
+{
+ $id=m5pcp_int($root['id'],1);$actual=m5pt_match($snapshot['rows']['eb_marketplace_payment_registry'],'order_id',$id);
+ $values=['order_id'=>$id,'uid'=>m5pcp_int($root['uid'],1),'mer_id'=>m5pcp_int($root['mer_id'],1,4294967295),
+  'payment_contract_version'=>1,'born_at'=>m5pcp_int($root['add_time'],1,4294967295),'attempt_generation'=>0,
+  'winner_attempt_id'=>null,'fulfillment_hold'=>0,'hold_reason'=>null,'hold_attempt_id'=>null,'hold_at'=>null];
+ $registry=m4upo_row($snapshot,$actual,'eb_marketplace_payment_registry',$values);
+ foreach($snapshot['rows']['eb_marketplace_payment_attempt']as$row)
+  m4up_expect($row['order_id']===null||m5pt_signed($row['order_id'])!==$id,'TASK2_REAL_G0_NO_PAYMENT_ATTEMPT');
+ foreach(['paid','pay_time','status','refund_status']as$key)m4up_expect(m5pt_signed($root[$key])===0,'TASK2_REAL_G0_UNPAID_UNFULFILLED');
+ m4up_expect($root['pay_type']===''&&$root['trade_no']==='','TASK2_REAL_G0_NO_CHANNEL_OR_TRADE');return $registry;
+}
+function m5pt_sequence(PDO $db,string $number):array
+{
+ m4up_expect(PHP_INT_SIZE===8&&date_default_timezone_get()==='Asia/Shanghai'
+  &&str_starts_with($number,'cp')&&preg_match('/\A[1-9][0-9]{0,18}\z/D',substr($number,2))===1,'TASK2_REAL_ORDER_NUMBER_SNOWFLAKE');
+ $suffix=substr($number,2);m4up_expect(bccomp($suffix,'9223372036854775807',0)<=0,'TASK2_SNOWFLAKE_NATIVE_RANGE');
+ $offset=bcdiv($suffix,'4194304',0);$key=bcadd('1640966400000',$offset,0);
+ m4up_expect(bccomp($offset,'2199023255551',0)<=0&&preg_match('/\A[1-9][0-9]{12}\z/D',$key)===1,'TASK2_EXACT_SEQUENCE_KEY_FROM_REAL_ORDER');
+ return m5pcp_sequence_expiry_barrier($db,['epoch_ms'=>'1640966400000','source_id_count'=>1,
+  'keys'=>[hash('sha256',$key)=>['key'=>$key,'sources'=>[['source_kind'=>'persistent_order','identifier_sha256'=>hash('sha256',$number)]]]]]);
+}
+function m5pt_created_redis(array $before,array $after,int $uid,string $key):void
+{
+ $raw='c:user_order_'.$uid.$key;$tag='c:CRMEB:'.md5('crmeb');$members=$before['tag_members'];
+ m4up_expect(!isset($before['redis']['keys'][hash('sha256',$raw)])&&!in_array($raw,$members[$tag],true),'TASK2_NEW_GENUINE_CONFIRMATION_IDENTITY');
+ $members[$tag][]=$raw;sort($members[$tag],SORT_STRING);m4up_expect($members===$after['tag_members'],'TASK2_ONLY_OWN_CONFIRMATION_TAG_APPEND');
+ m4up_expect(!isset($after['redis']['keys'][hash('sha256',$raw)]),'TASK2_REAL_POST_COMMIT_CONFIRMATION_CONSUMED');
+ $expected=$before['redis']['keys'];$tagHash=hash('sha256',$tag);m4up_expect(isset($expected[$tagHash])&&$expected[$tagHash]['type']==='set'
+  &&$expected[$tagHash]['expires']===-1,'TASK2_ORIGINAL_PERMANENT_CRMEB_TAG');
+ $expected[$tagHash]=['type'=>'set','sha256'=>hash('sha256',"set\0".serialize($members[$tag])),'expires'=>-1];ksort($expected,SORT_STRING);
+ m4up_expect($after['redis']['keys']===$expected,'TASK2_ALL_OTHER_REDIS_VALUES_TYPES_AND_ABSOLUTE_EXPIRIES_UNCHANGED');
+}
+function m5pt_create(PDO $db,\think\App $app,array $before,array $fixture,int $uid,int $mer):array
+{
+ $selected=$fixture['selected'][0];$product=m5pt_match($before['rows']['eb_store_product'],'id',m5pcp_int($selected['product_id'],1,8388607));
+ $sku=m5pt_match($before['rows']['eb_store_product_attr_value'],'id',m5pcp_int($selected['sku_id'],1));
+ $buyer=m5pt_match($before['rows']['eb_user'],'uid',$uid);
+ $merchant=m5pt_match($before['rows']['eb_marketplace_merchant'],'mer_id',$mer);$address=m5pt_match($before['rows']['eb_user_address'],'id',m5pcp_int($fixture['address']['id'],1));
+ $invoice=m5pt_match($before['rows']['eb_user_invoice'],'id',m5pcp_int($fixture['invoice']['id'],1));
+ m4up_expect(m5pcp_int($product['mer_id'],1,4294967295)===$mer&&m5pcp_int($sku['product_id'],1)===(int)$product['id']
+  &&m5pcp_int($sku['type'],0,0)===0&&m5pcp_int($sku['is_show'],1,1)===1&&m5pcp_int($sku['stock'],1)>=1
+  &&m5pcp_int($product['stock'],1)>=1&&m5pcp_int($product['freight'],2,2)===2&&m5pcp_int($product['temp_id'],0,0)===0
+  &&m5pcp_int($product['is_virtual'],0,0)===0&&$product['logistics']==='1'&&m5pcp_int($product['min_qty'],1,1)===1
+  &&m5pcp_int($address['uid'],1)===$uid&&m5pcp_int($invoice['uid'],1)===$uid,'TASK2_CURRENT_C3_ORDINARY_OWNER_SKU_AND_ADDRESS');
+ foreach(['member_func_status','member_card_status','member_price_status','image_thumb_status']as$name){
+  $config=[];foreach($before['rows']['eb_system_config']as$row)if($row['menu_name']===$name)$config[]=$row;
+  m4up_expect(count($config)===1&&json_decode($config[0]['value'],true,32,JSON_THROW_ON_ERROR)===0,'TASK2_CURRENT_C3_DISABLED_MEMBERSHIP_AND_THUMB');
+ }
+ $cancelConfig=[];foreach($before['rows']['eb_system_config']as$row)if($row['menu_name']==='order_cancel_time')$cancelConfig[]=$row;
+ m4up_expect(count($cancelConfig)===1&&json_decode($cancelConfig[0]['value'],true,32,JSON_THROW_ON_ERROR)==='0','TASK2_C3_ORIGINAL_NO_AUTOMATIC_DEADLINE');
+ $freeConfig=[];foreach($before['rows']['eb_system_config']as$row)if($row['menu_name']==='store_free_postage')$freeConfig[]=$row;
+ m4up_expect(count($freeConfig)===1&&json_decode($freeConfig[0]['value'],true,32,JSON_THROW_ON_ERROR)==='10000.00'
+  &&bccomp($sku['price'],'10000.00',2)<0,'TASK2_ORIGINAL_C3_FREE_POSTAGE_THRESHOLD_NOT_REACHED');
+ $freeConfig=[];foreach($before['rows']['eb_system_config']as$row)if($row['menu_name']==='store_free_postage')$freeConfig[]=$row;
+ m4up_expect(count($freeConfig)===1&&json_decode($freeConfig[0]['value'],true,32,JSON_THROW_ON_ERROR)==='10000.00'
+  &&bccomp($sku['price'],'10000.00',2)<0,'TASK2_ORIGINAL_C3_FREE_POSTAGE_THRESHOLD_NOT_REACHED');
+ foreach(['price','cost']as$money)m4up_expect(is_string($sku[$money])&&preg_match('/\A(?:0|[1-9][0-9]*)\.[0-9]{2}\z/D',$sku[$money])===1,'TASK2_NATIVE_CANONICAL_SKU_MONEY');
+ m4up_expect(bccomp($sku['price'],'0.01',2)>=0&&is_string($product['postage'])&&preg_match('/\A(?:0|[1-9][0-9]*)\.[0-9]{2}\z/D',$product['postage'])===1,'TASK2_ORDINARY_POSITIVE_PRICE_AND_FIXED_POSTAGE');
+ $cartStage=m5pt_cart($db,$app,$before,$uid,$product,$sku);$cartBefore=$cartStage['snapshot'];$ref=$cartStage['reference'];$forms=m5pt_forms($product,$ref);$started=time();
+ $addressId=m5pcp_int($address['id'],1,16777215);$choice=\app\services\marketplace\order\MarketplaceOrderInput::confirm(['mer_id'=>$mer,'cartId'=>$ref,'addressId'=>$addressId,'new'=>false]);
+ $user=$app->make(\app\services\user\UserServices::class)->getUserInfo($uid);m4up_expect($user!==null&&m5pcp_int($user->getData('uid'),1)===$uid,'TASK2_SAME_REAL_AUTHENTICATED_BUYER');
+ $confirmation=$app->make(\app\services\order\StoreOrderServices::class)->getOrderConfirmData($user->toArray(),$ref,false,$addressId,1,0,$choice);
+ $key=\app\services\marketplace\order\MarketplaceOrderInput::confirmationKey($confirmation['orderKey']);unset($confirmation);
+ $raw=['cartId'=>$ref,'mer_id'=>$mer,'new'=>0,'idem_key'=>'confirm:'.$key,'addressId'=>$addressId,'invoice_id'=>m5pcp_int($invoice['id'],1),
+  'payType'=>'','mark'=>'普通页面下单','gift_mark'=>'普通页面文本','real_name'=>'','phone'=>'','shipping_type'=>1,'is_gift'=>0,'store_id'=>0,
+  'couponId'=>0,'useIntegral'=>false,'combinationId'=>0,'pinkId'=>0,'seckill_id'=>0,'bargainId'=>0,'advanceId'=>0,'custom_form'=>$forms['answers']];
+ $input=\app\services\marketplace\order\MarketplaceOrderInput::create($uid,$key,$raw);
+ $created=$app->make(\app\services\marketplace\order\MarketplaceOrderCreateServices::class)->create($uid,$key,$raw);
+ m4up_expect(is_string($created['order_id']??null)&&($created['key']??null)===$key,'TASK2_REAL_SERVICE_RETURNED_ORDER_IDENTITY');
+ $number=$created['order_id'];$ended=time();$sequence=m5pt_sequence($db,$number);$after=m4upo_snapshot($db);
+ $id=m5pcp_int(m5pt_next($cartBefore,'eb_store_order'),1);$actual=m5pt_match($after['rows']['eb_store_order'],'id',$id);$stamp=m4upo_time($actual['add_time'],[$started,$ended]);
+ $price=$sku['price'];$postage=$product['postage'];$orderValues=['id'=>$id,'uid'=>$uid,'mer_id'=>$mer,'order_id'=>$number,'unique'=>$key,
+  'cart_id'=>['json'=>[$ref]],'total_num'=>1,'total_price'=>$price,'total_postage'=>$postage,'pay_price'=>bcadd($price,$postage,2),'pay_postage'=>$postage,
+  'cost'=>$sku['cost'],'add_time'=>$stamp,'pay_uid'=>$uid,'marketplace_trade_version'=>1,'shipping_type'=>1,'is_gift'=>0,'paid'=>0,'is_cancel'=>0,
+  'real_name'=>$address['real_name'],'user_phone'=>$address['phone'],'user_address'=>$address['province'].' '.$address['city'].' '.$address['district'].' '.$address['detail'],
+  'mark'=>'普通页面下单','gift_mark'=>'普通页面文本','pay_type'=>'','channel_type'=>$buyer['user_type'],'province'=>'','custom_form'=>['json'=>$forms['saved']],
+  'merchant_name_snapshot'=>$merchant['name'],'merchant_after_sale_contact_snapshot'=>$merchant['after_sale_contact']];
+ $root=m4upo_row($cartBefore,$actual,'eb_store_order',$orderValues);m4up_expect($root['order_id']===$number,'TASK2_REAL_COMMITTED_RETURNED_ORDER_JOIN');
+ $registry=m5pt_g0($after,$root);$reserve=m5pt_next($cartBefore,'eb_marketplace_stock_movement');
+ $action=['contract_version'=>1,'uid'=>$uid,'mer_id'=>$mer,'order_id'=>$id,'product_id'=>(int)$product['id'],'sku_id'=>(int)$sku['id'],
+  'sku_type'=>0,'sku_unique'=>$sku['unique'],'qty'=>1,'kind'=>'reserve','cart_refs'=>[$ref]];
+ $moveValues=['id'=>$reserve,'mer_id'=>$mer,'order_id'=>$id,'product_id'=>(int)$product['id'],'sku_id'=>(int)$sku['id'],'sku_type'=>0,'sku_unique'=>$sku['unique'],
+  'qty'=>1,'kind'=>'reserve','idem_key'=>'reserve:'.$id.':'.$sku['id'],'parent_reserve_id'=>null,'order_item_id'=>null,'refund_id'=>null,'actor_type'=>'customer','actor_id'=>$uid,
+  'request_digest'=>hash('sha256',\app\services\marketplace\order\MarketplaceOrderInput::canonical($action),true),'sku_stock_before'=>$sku['stock'],'sku_stock_after'=>(int)$sku['stock']-1,
+  'sku_sales_before'=>$sku['sales'],'sku_sales_after'=>(int)$sku['sales']+1,'root_stock_before'=>$product['stock'],'root_stock_after'=>(int)$product['stock']-1,
+  'root_sales_before'=>$product['sales'],'root_sales_after'=>(int)$product['sales']+1,'add_time'=>$stamp];
+ $move=m4upo_row($cartBefore,m4upo_one($after['rows']['eb_marketplace_stock_movement'],'id',$reserve),'eb_marketplace_stock_movement',$moveValues);
+ $savedCart=m5pt_saved_cart($cartBefore,$cartStage['row'],$product,$sku,$merchant,$reserve);$itemId=m5pcp_int(m5pt_next($cartBefore,'eb_store_order_cart_info'),1);
+ $item=m4upo_row($cartBefore,m5pt_match($after['rows']['eb_store_order_cart_info'],'id',$itemId),'eb_store_order_cart_info',
+  ['id'=>$itemId,'oid'=>$id,'uid'=>$uid,'mer_id'=>$mer,'cart_id'=>$ref,'product_id'=>(int)$product['id'],'cart_num'=>1,'surplus_num'=>1,'refund_num'=>0,'split_status'=>0,
+   'unique'=>md5($ref.$id),'cart_info'=>['json'=>$savedCart]]);
+ $invoiceValues=['id'=>m5pt_next($cartBefore,'eb_store_order_invoice'),'uid'=>$uid,'category'=>'order','order_id'=>$id,'invoice_id'=>$invoice['id'],
+  'is_pay'=>0,'is_refund'=>0,'is_invoice'=>0,'add_time'=>$stamp];
+ foreach(['header_type','type','name','duty_number','drawer_phone','email','tell','address','bank','card_number']as$field)$invoiceValues[$field]=$invoice[$field];
+ $invoiceRow=m4upo_row($cartBefore,m4upo_one($after['rows']['eb_store_order_invoice'],'id',$invoiceValues['id']),'eb_store_order_invoice',$invoiceValues);
+ $ledgerRows=[];foreach($after['rows']['eb_marketplace_order_idempotency']as$row)
+  if($row['uid']!==null&&m5pt_signed($row['uid'])===$uid&&$row['idem_key']===$input['idem_key'])$ledgerRows[]=$row;
+ m4up_expect(count($ledgerRows)===1,'TASK2_EXACT_ONE_REAL_CREATED_LEDGER');
+ $ledger=m4upo_row($cartBefore,$ledgerRows[0],'eb_marketplace_order_idempotency',['uid'=>$uid,'mer_id'=>$mer,'idem_key'=>$input['idem_key'],
+  'request_digest'=>hash('sha256',\app\services\marketplace\order\MarketplaceOrderInput::canonical($input['request']),true),'confirmation_ref'=>hash('sha256',$key,true),
+  'source_kind'=>'persistent','cart_refs'=>['json'=>[$ref]],'state'=>1,'order_id'=>$id,'post_commit_done'=>1,'cancel_at'=>0,'add_time'=>$stamp]);
+ $statuses=m4ar_new_rows($cartBefore['rows']['eb_store_order_status'],$after['rows']['eb_store_order_status']);m4up_expect(count($statuses)===1,'TASK2_ONE_REAL_CREATE_STATUS');
+ $status=m4upo_row($cartBefore,$statuses[0],'eb_store_order_status',['oid'=>$id,'change_type'=>'cache_key_create_order','change_message'=>'订单生成','change_time'=>$stamp]);
+ $logs=m4ar_new_rows($cartBefore['rows']['eb_store_product_log'],$after['rows']['eb_store_product_log']);m4up_expect(count($logs)===1,'TASK2_ONE_REAL_CREATED_PRODUCT_LOG');
+ $log=m5pt_log($cartBefore,$logs[0],$uid,(int)$product['id'],'order',$stamp);
+ $productAfter=$product;$productAfter['stock']=(int)$product['stock']-1;$productAfter['sales']=(int)$product['sales']+1;
+ $skuAfter=$sku;$skuAfter['stock']=(int)$sku['stock']-1;$skuAfter['sales']=(int)$sku['sales']+1;
+ $expected=['eb_store_order'=>[...$cartBefore['rows']['eb_store_order'],$root],
+  'eb_marketplace_payment_registry'=>[...$cartBefore['rows']['eb_marketplace_payment_registry'],$registry],
+  'eb_marketplace_stock_movement'=>[...$cartBefore['rows']['eb_marketplace_stock_movement'],$move],
+  'eb_store_order_cart_info'=>[...$cartBefore['rows']['eb_store_order_cart_info'],$item],
+  'eb_store_order_invoice'=>[...$cartBefore['rows']['eb_store_order_invoice'],$invoiceRow],
+  'eb_marketplace_order_idempotency'=>[...$cartBefore['rows']['eb_marketplace_order_idempotency'],$ledger],
+  'eb_store_order_status'=>[...$cartBefore['rows']['eb_store_order_status'],$status],
+  'eb_store_product_log'=>[...$cartBefore['rows']['eb_store_product_log'],$log],
+  'eb_store_product'=>m4ar_replaced($cartBefore['rows']['eb_store_product'],'id',$product['id'],$productAfter),
+  'eb_store_product_attr_value'=>m4ar_replaced($cartBefore['rows']['eb_store_product_attr_value'],'id',$sku['id'],$skuAfter),
+  'eb_store_cart'=>$before['rows']['eb_store_cart']];
+ $counts=[];foreach(['eb_store_order','eb_marketplace_stock_movement','eb_store_order_cart_info','eb_store_order_invoice','eb_store_product_log']as$table)$counts[$table]=1;
+ m4ar_database_delta($cartBefore,$after,$expected,$counts);m5pt_created_redis($cartBefore,$after,$uid,$key);m5pt_files_unchanged($cartBefore,$after);
+ $again=m4upo_snapshot($db);m5pt_same_window($after,$again);
+ return ['root'=>$root,'item'=>$item,'reserve'=>$move,'snapshot'=>$after,
+  'proof'=>['target'=>m5pt_target($root),'source_fingerprint'=>hash('sha256',serialize([$root,$item,$ledger,$registry,$move,$invoiceRow])),
+   'cart_reference_sha256'=>hash('sha256',$ref),'request_sha256'=>hash('sha256',\app\services\marketplace\order\MarketplaceOrderInput::canonical($input['request'])),
+   'before'=>m4upo_descriptor($before),'cart'=>m4upo_descriptor($cartBefore),'after'=>m4upo_descriptor($after),'verified_after'=>m4upo_descriptor($again),
+   'payment_generation'=>0,'payment_attempt_count'=>0,'sequence'=>$sequence]];
+}
+function m5pt_cancel(PDO $db,\think\App $app,array $created):array
+{
+ $before=$created['snapshot'];$root=$created['root'];$item=$created['item'];$parent=$created['reserve'];$uid=m5pcp_int($root['uid'],1);$id=m5pcp_int($root['id'],1);$mer=m5pcp_int($root['mer_id'],1,4294967295);
+ m5pt_g0($before,$root);m4up_expect(m5pt_signed($root['is_cancel'])===0,'TASK2_NEW_TARGET_UNCANCELLED_BEFORE_ONE_NORMAL_CALL');$started=time();
+ $result=$app->make(\app\services\marketplace\order\MarketplaceOrderCancelServices::class)->cancelForCustomer($uid,$root['order_id']);$ended=time();
+ m4up_expect($result===['state'=>'cancelled','order_id'=>$root['order_id']],'TASK2_REAL_G0_CANCELLED_RESPONSE');$after=m4upo_snapshot($db);
+ $new=$root;$new['is_cancel']=1;$releaseId=m5pt_next($before,'eb_marketplace_stock_movement');$actual=m4upo_one($after['rows']['eb_marketplace_stock_movement'],'id',$releaseId);
+ $stamp=m4upo_time($actual['add_time'],[$started,$ended]);$product=m5pt_match($before['rows']['eb_store_product'],'id',(int)$parent['product_id']);
+ $sku=m5pt_match($before['rows']['eb_store_product_attr_value'],'id',(int)$parent['sku_id']);$parentId=m5pcp_u64($parent['id']);
+ $action=['contract_version'=>1,'uid'=>$uid,'mer_id'=>$mer,'order_id'=>$id,'product_id'=>(int)$parent['product_id'],'sku_id'=>(int)$parent['sku_id'],
+  'sku_type'=>0,'sku_unique'=>$parent['sku_unique'],'qty'=>1,'kind'=>'release','parent_reserve_id'=>$parentId];
+ $values=['id'=>$releaseId,'mer_id'=>$mer,'order_id'=>$id,'product_id'=>$parent['product_id'],'sku_id'=>$parent['sku_id'],'sku_type'=>0,'sku_unique'=>$parent['sku_unique'],
+  'qty'=>1,'kind'=>'release','idem_key'=>'release:'.$id.':'.$parentId,'parent_reserve_id'=>$parentId,'order_item_id'=>null,'refund_id'=>null,'actor_type'=>'customer','actor_id'=>$uid,
+  'request_digest'=>hash('sha256',\app\services\marketplace\order\MarketplaceOrderInput::canonical($action),true),
+  'sku_stock_before'=>$sku['stock'],'sku_stock_after'=>(int)$sku['stock']+1,'sku_sales_before'=>$sku['sales'],'sku_sales_after'=>(int)$sku['sales']-1,
+  'root_stock_before'=>$product['stock'],'root_stock_after'=>(int)$product['stock']+1,'root_sales_before'=>$product['sales'],'root_sales_after'=>(int)$product['sales']-1,'add_time'=>$stamp];
+ $release=m4upo_row($before,$actual,'eb_marketplace_stock_movement',$values);$product['stock']=(int)$product['stock']+1;$product['sales']=(int)$product['sales']-1;
+ $sku['stock']=(int)$sku['stock']+1;$sku['sales']=(int)$sku['sales']-1;$statuses=m4ar_new_rows($before['rows']['eb_store_order_status'],$after['rows']['eb_store_order_status']);
+ m4up_expect(count($statuses)===1,'TASK2_ONE_REAL_CUSTOMER_CANCEL_STATUS');$status=m4upo_row($before,$statuses[0],'eb_store_order_status',
+  ['oid'=>$id,'change_type'=>'cancel_order','change_message'=>'订单取消','change_time'=>$stamp]);
+ m4ar_database_delta($before,$after,['eb_store_order'=>m4ar_replaced($before['rows']['eb_store_order'],'id',$id,$new),
+  'eb_marketplace_stock_movement'=>[...$before['rows']['eb_marketplace_stock_movement'],$release],
+  'eb_store_order_status'=>[...$before['rows']['eb_store_order_status'],$status],
+  'eb_store_product'=>m4ar_replaced($before['rows']['eb_store_product'],'id',$product['id'],$product),
+  'eb_store_product_attr_value'=>m4ar_replaced($before['rows']['eb_store_product_attr_value'],'id',$sku['id'],$sku)],['eb_marketplace_stock_movement'=>1]);
+ m4ar_redis_delta($before,$after);m4up_expect($after['tag_members']===$before['tag_members'],'TASK2_CANCEL_ALL_REDIS_TAGS_UNCHANGED');m5pt_files_unchanged($before,$after);
+ $registry=m5pt_g0($after,$new);m4up_expect(m5pt_match($after['rows']['eb_store_order'],'id',$id)===$new
+  &&m5pt_match($after['rows']['eb_store_order_cart_info'],'id',(int)$item['id'])===$item,'TASK2_CANCEL_ONLY_HEADER_FLAG_AND_EXACT_STOCK_RELEASE');
+ $again=m4upo_snapshot($db);m5pt_same_window($after,$again);
+ return ['root'=>$new,'snapshot'=>$after,'proof'=>['before'=>m4upo_descriptor($before),'after'=>m4upo_descriptor($after),'verified_after'=>m4upo_descriptor($again),
+  'native_release_sha256'=>hash('sha256',serialize($release)),'native_cancel_status_sha256'=>hash('sha256',serialize($status)),
+  'unchanged_saved_item_sha256'=>hash('sha256',serialize($item)),'payment_generation'=>0,'payment_attempt_count'=>0,'cancel_call_count'=>1]];
+}
+function m5pt_prepare(PDO $db,\think\App $app,array $source,array $owner,array $actors,array $original):array
+{
+ $tools=m5pt_observer_source($source);m4up_expect($tools!==null,'TASK2_EXACT_FROZEN_SOURCE_PRESENT');$before=m4upo_snapshot($db);
+ m5pt_component_join($original['after'],m4upo_descriptor($before));$ids=m5pt_actors($actors);$uid=m5pcp_int($owner['uid'],1);$mer=m5pcp_int($owner['root']['mer_id'],1,4294967295);
+ m4up_expect($ids['customer']['id']===$uid&&$ids['merchant']['mer_id']===$mer&&($GLOBALS['m4ar_child_proof']['stopped']??false)===true
+  &&!is_resource($GLOBALS['m4ar_http_process']??null),'TASK2_ORIGINAL_ACTORS_SINGLE_HANDOFF_AND_CLOSED_CHILD');
+ m4up_phase('task2_normal_unpaid_target');$unpaid=m5pt_create($db,$app,$before,$owner['fixture'],$uid,$mer);
+ m4up_phase('task2_normal_cancellation_target');$toCancel=m5pt_create($db,$app,$unpaid['snapshot'],$owner['fixture'],$uid,$mer);
+ m4up_expect($unpaid['root']['id']!==$toCancel['root']['id']&&$unpaid['root']['order_id']!==$toCancel['root']['order_id']
+  &&$unpaid['item']['cart_id']!==$toCancel['item']['cart_id'],'TASK2_TWO_REAL_DISTINCT_TARGET_IDENTITIES');
+ $cancelled=m5pt_cancel($db,$app,$toCancel);$after=$cancelled['snapshot'];
+ m4up_expect(m5pt_match($after['rows']['eb_store_order'],'id',(int)$owner['root']['id'])===$owner['root']
+  &&m5pt_match($after['rows']['eb_store_order'],'id',(int)$unpaid['root']['id'])===$unpaid['root'],'TASK2_ORIGINAL_PAID_AND_NEW_UNPAID_HEADERS_UNCHANGED');
+ m5pt_g0($after,$unpaid['root']);m5pt_observer_source($source);m4fn_inputs_unchanged($owner['inputs']);
+ $again=m4upo_snapshot($db);m5pt_same_window($after,$again);$descriptor=m4upo_descriptor($after);
+ $binding=['run_id'=>$source['run_id'],'source_sha'=>$source['source_sha'],'freeze_sha256'=>$source['freeze_sha256'],
+  'prepare_container_id'=>$source['container_id'],'native_created_sha256'=>$source['native_created_sha256'],
+  'source_binding_sha256'=>$source['source_binding_sha256'],'context_sha256'=>hash_file('sha256','/run/audit/actual-run-context.json')];
+ $paid=['target'=>m5pt_target($owner['root']),'source_fingerprint'=>m4fn_source_oracle($owner['saved'])['fingerprint']];
+ $public=['schema'=>1,'scope'=>'MS5_TASK2_NORMAL_TARGET_PREPARATION_ONLY','status'=>'VERIFIED_MS5_TASK2_NORMAL_TARGET_PREPARATION_ONLY',
+  'binding'=>$binding,'observer_source'=>$tools,'actors'=>$ids,'paid'=>$paid,
+  'unpaid'=>['target'=>m5pt_target($unpaid['root']),'creation'=>$unpaid['proof']],
+  'cancelled'=>['target'=>m5pt_target($cancelled['root']),'creation'=>$toCancel['proof'],'cancellation'=>$cancelled['proof']],
+  'window'=>['original_before'=>$original['before'],'original_after'=>$original['after'],'increment_before'=>m4upo_descriptor($before),
+   'after'=>$descriptor,'verified_after'=>m4upo_descriptor($again)],
+  'preservation'=>['database_tables'=>count($after['database']['names']),'old_paid_source_fingerprint'=>$paid['source_fingerprint'],
+   'original_files_sha256'=>m4upo_descriptor($before)['files_sha256'],'final_files_sha256'=>$descriptor['files_sha256'],
+   'all_non_targets_verified'=>true,'source_unchanged'=>true,'single_private_handoff'=>true,'no_new_child_or_listener'=>true,'observer_copy_sha256'=>m5pt_copy_receipt($source,$tools)],'diagnostic'=>null];
+ return ['after'=>$descriptor,'public'=>$public];
+}

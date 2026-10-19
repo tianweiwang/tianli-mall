@@ -400,7 +400,7 @@
 </template>
 <script>
 import { getExpress } from '@/api/order';
-import fulfillmentPackages, { rootFulfillmentText } from '../components/fulfillmentPackages.vue';
+import fulfillmentPackages, { rootOrderStatusText } from '../components/fulfillmentPackages.vue';
 import { getOrderRecord } from '@/api/order';
 export default {
   name: 'orderDetails',
@@ -445,7 +445,7 @@ export default {
     },
   },
   computed: {
-    savedFulfillmentStatus() { return this.fulfillmentView && this.fulfillmentView.kind === 'root' ? rootFulfillmentText(this.fulfillmentView.summary, this.fulfillmentView.aftersale) : ''; },
+    savedFulfillmentStatus() { return this.fulfillmentView && this.fulfillmentView.kind === 'root' ? rootOrderStatusText(this.fulfillmentView.order) : ''; },
     savedFulfillmentReadonly() { return !!this.fulfillmentView && this.fulfillmentView.kind !== 'legacy'; },
     savedMarketplaceV1() {
       const version=this.orderDatalist && this.orderDatalist.orderInfo && this.orderDatalist.orderInfo.marketplace_trade_version;

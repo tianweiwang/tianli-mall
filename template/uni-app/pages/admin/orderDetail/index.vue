@@ -630,7 +630,7 @@ import PriceChange from "../components/PriceChange/index.vue";
 import customForm from "../components/customForm";
 import countDown from "@/components/countDown/index.vue";
 import marketplaceFulfillment from "@/components/marketplaceFulfillment/index.vue";
-import { readOrderFulfillment, rootFulfillmentText } from "@/utils/marketplace-fulfillment.js";
+import { readOrderFulfillment, rootOrderStatusText } from "@/utils/marketplace-fulfillment.js";
 // #ifdef MP || APP-PLUS
 import NavBar from "@/components/NavBar.vue";
 // #endif
@@ -873,7 +873,7 @@ export default {
             if (view.order.order_id !== this.order_id) throw new Error('订单身份不一致，请重新加载');
             this.orderInfo = view.order;
             this.types = view.kind === 'root' ? view.order._status._type : '';
-            this.title = view.kind === 'root' ? (view.summary === null ? view.order._status._title : rootFulfillmentText(view.summary, view.aftersale)) : '';
+            this.title = view.kind === 'root' ? (view.summary === null ? view.order._status._title : rootOrderStatusText(view.order)) : '';
             this.payType = view.kind === 'root' ? view.order._status._payType : view.package.pay_type_name;
             this.totalNmu = view.kind === 'root' ? view.order.total_num : view.package.original;
             this.applyOrderBenefits(view.order);

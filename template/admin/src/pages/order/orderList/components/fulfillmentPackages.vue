@@ -170,6 +170,13 @@ export function readPlatformFulfillment(order, detail = false) {
   return { kind: 'root', order, summary, aftersale: s2 ? { ...order.aftersale } : undefined, children };
 }
 export function rootFulfillmentText(summary, aftersale) { const state = aftersaleState(summary, aftersale); if (state) return state; return summary === null ? '履约资料暂不可用' : summary.shipping_state === 'unshipped' ? '待发货' : summary.shipping_state === 'partial' ? '部分发货' : summary.receipt_state === 'received' ? '已收货' : summary.receipt_state === 'partial' ? '部分收货' : '待收货'; }
+export function rootOrderStatusText(order) {
+  object(order); const paid = order.paid, cancelled = order.is_cancel;
+  if (![0, 1, '0', '1'].includes(paid) || ![0, 1, '0', '1'].includes(cancelled)) fail();
+  if (cancelled === 1 || cancelled === '1') return '已取消';
+  if (paid === 0 || paid === '0') return '待付款';
+  return rootFulfillmentText(order.fulfillment_summary, order.aftersale);
+}
 function childText(child) { const state = child.schema === 2 ? aftersaleState(child, child.aftersale) : ''; if (state) return state; return child.receipt_state === 'received' ? '已收货' : child.receipt_state === 'partial' ? '部分收货' : '待收货'; }
 function displayTime(value) { if (value === null || value === 0) return '—'; timeValue(value); const date = new Date(value * 1000); const pad = number => String(number).padStart(2, '0'); return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate()) + ' ' + pad(date.getHours()) + ':' + pad(date.getMinutes()) + ':' + pad(date.getSeconds()); }
 export default { name: 'FulfillmentPackages', props: { view: { type: Object, default: null }, loading: { type: Boolean, default: false }, error: { type: String, default: '' } }, methods: { rootText: rootFulfillmentText, childText, time: displayTime } };

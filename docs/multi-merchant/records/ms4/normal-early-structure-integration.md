@@ -348,3 +348,13 @@ Task6原shutdown补best-effort安全fatal观察：64KiB诊断保留区，第一�
 任务：[x]原失败证据/正常退役/独立清零；[x]有限设计、独审、Root全文正逆；[x]两候选真实语法；[x]仅两PHP与这两现有记录本地接入；[ ]原镜像有效配置；[ ]新clean来源完整普通履约/售后/Worker；[ ]当前UI17实际冻结、三端20步及320/390/1440 DOM；[ ]UI正常关闭/独立清零。原R18仍失败，Source/语法/收尾不记业务通过；通用多商户复用商品规格价格，真实支付/退款和MS5/MS6未决业务保留，停止样本NOT RUN，仅L2本地，不推送或部署。
 
 原镜像有效配置实测（2026-10-19）：r19-php-effective-config-public-readback-r2同一固定PHP镜像、无App/源挂载/网络，仅恢复16MiB临时目录以创建运行锁；五项原生命令均自然0，双selector前后空。实际PHP8.2.33/CLI、memory_limit=128M、max_execution_time=0。该结果仅代表原镜像默认CLI配置，不证明R18失败时的实际限制或内存不足原因；本次保持内存/时间设置不变，后继真实异常由安全观察器记录。原r1启动254与22份公件保留。任务中原镜像有效配置已完成，新完整业务正常链仍待。
+
+### R20正常链失败与后继接入（2026-10-20）
+
+原冻结dd445的内部付款正常0；legacy原生子进程这次自然0、完整stderr空，proc_close=-1仍为真实原值。Task6父进程自然1，phase=three_read_initial，固定异常TASK6_THREE_EACH_READ_RUNTIME_FILES_UNCHANGED，stage/call0、business=null；完整履约、售后、评价、Worker和HTTP/DOM均未验收。运行文件map仅比较路径、完整bytes/SHA，不比较目录或时间戳；原结果缺少差分文件，因此根因UNKNOWN，不直接修改生产读服务或放宽断言。
+
+原Run2026101916084162c4d6已用独审的正常退役Source实际完成19项原生关闭序列和15项独立核零序列，均自然0。四原CID、一原内部网、七原卷精确非force移除，六fresh空查询、全局/完整10857源及proof_ini原7输入/3指针/8收据通过；62428原公开文件完整保持。独立结果为r20-task6-failed-independent-zero-r1/RESULT.json，业务仍INCOMPLETE。原R19及此前所有失败和原正常证据保留。
+
+后继需求与设计：八件纯主订单文字修订保留原商品、SKU、金额、权限、路由及履约提示；运行差分只在RAM采样before/after_make/after_read/after_context_snapshot，实际变化才通过既有m4c_entry_publish create-only侧证输出点位/有限view与窗口、分类、路径SHA及完整文件bytes/SHA，不输出原路径或内容；诊断异常不得覆盖原失败。Task2最终入口/浏览器显示文字采用同一独立期望规范，完整原始DTO仍严格。实际辅助工具仍为profile.parent/browser-v1，最终backend条件只读挂载须真实校验；无组保原行为，派生Run公开compose overlay不增加第18artifact。凭据meta5514/d98实际未变，不因Core改变重写。
+
+任务：[x]R20原件读回、正常退役、独立核零；[x]八件状态Source/独审/原语法证据；[x]安全差分Source及Root全文复核；[x]最终七件候选PHP8.2语法（ms5-task2-final-php-syntax-r1，均原生0、临时容器无残留）；[ ]仅本轮Source与记录接入并本地提交；[ ]H5/平台完整离线重建与实际五材料；[ ]最终17 Source/模型/冻结及真实只读挂载读回；[ ]新clean完整正常业务链、三场景/原UI20与三宽DOM；[ ]正常关闭与独立核零。未推送、部署或执行真实金融操作，停止样本NOT RUN。

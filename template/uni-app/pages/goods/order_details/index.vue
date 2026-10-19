@@ -18,7 +18,7 @@
 					<image :src="orderInfo.status_pic"></image>
 				</view>
 				<view class="data" :class="isGoodsReturn ? 'on' : ''">
-					<view v-if="fulfillmentKind === 'root' && orderInfo.schema === 2" class="state">{{ rootFulfillmentText(fulfillmentView.summary, fulfillmentView.aftersale) }}</view>
+					<view v-if="fulfillmentKind === 'root' && orderInfo.schema === 2" class="state">{{ rootOrderStatusText(fulfillmentView.order) }}</view>
 					<view v-else class="state">{{ orderInfo._status._msg }}</view>
 					<view>
 						{{ orderInfo.add_time_y }}
@@ -616,7 +616,7 @@ import { parseAgainPurchase, againConfirmationUrl } from '@/utils/marketplace-ag
 import { storefrontMessage } from '@/utils/public-store.js';
 import orderGoods from '@/components/orderGoods';
 import marketplaceFulfillment from '@/components/marketplaceFulfillment/index.vue';
-import { readOrderFulfillment, readCustomerReceipt, readReceiptResult, receiptResultFeedback, rootFulfillmentText } from '@/utils/marketplace-fulfillment.js';
+import { readOrderFulfillment, readCustomerReceipt, readReceiptResult, receiptResultFeedback, rootOrderStatusText } from '@/utils/marketplace-fulfillment.js';
 import { prepareReceiptIntent } from '@/utils/marketplace-fulfillment-submit.js';
 import marketplaceReceipt from '@/components/marketplaceReceipt/index.vue';
 import ClipboardJS from '@/plugin/clipboard/clipboard.js';
@@ -942,7 +942,7 @@ export default {
 	},
 	// #endif
 	methods: {
-		rootFulfillmentText,
+		rootOrderStatusText,
 		strictSavedMoney,
 		addSavedMoney,
 		// #ifdef H5

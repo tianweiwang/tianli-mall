@@ -204,6 +204,13 @@ export function rootFulfillmentText(summary, aftersale) {
   if (summary.shipping_state === 'unshipped') return '待发货';
   return summary.receipt_state === 'received' ? '已收货' : summary.receipt_state === 'partial' ? '部分收货' : '待收货';
 }
+export function rootOrderStatusText(order) {
+  row(order);
+  const paid = nativeInteger(order.paid, 0, 1), cancelled = nativeInteger(order.is_cancel, 0, 1);
+  if (cancelled === 1) return '已取消';
+  if (paid === 0) return '待付款';
+  return rootFulfillmentText(order.fulfillment_summary, order.aftersale);
+}
 export function childFulfillmentText(child) { const state = child.schema === 2 ? aftersaleState(child, child.aftersale) : ''; if (state) return state; return child.receipt_state === 'received' ? '已收货' : child.receipt_state === 'partial' ? '部分收货' : '待收货'; }
 export function fulfillmentSummaryText(order) { const view = readOrderFulfillment(order); return view.kind === 'root' ? rootFulfillmentText(view.summary, view.aftersale) : view.kind === 'child' ? childFulfillmentText(view.package) : ''; }
 export function fulfillmentPageQuery(page = 1, limit = 20) { return { fulfillment_page: integer(page, 1), fulfillment_limit: integer(limit, 1, 100) }; }

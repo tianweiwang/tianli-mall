@@ -1501,6 +1501,50 @@ function m4tr_internal_platform_actor(\think\App $app,PDO $db,array $owner):arra
     return ['admin'=>$admin,'role'=>$role,'admin_id'=>m5pcp_int($admin['id'],1),'HTTP_AUTH'=>'NOT RUN','role_API_registration'=>'NOT CLAIMED'];
 }
 
+/** Diagnostic-only complete runtime maps stay in RAM; original assertions own every business failure. */
+function m4tr_runtime_diagnostic_capture(\think\App $app,array &$points,string $point):void
+{
+    $saved=[];foreach(['m4fn_assertions','m4fn_failed_assertion']as$key)
+        $saved[$key]=[array_key_exists($key,$GLOBALS),$GLOBALS[$key]??null];
+    try{$points[$point]=m4tr_parent_runtime_files($app);}
+    catch(\Throwable $ignored){$points[$point]=null;}
+    finally{foreach($saved as$key=>[$present,$value]){if($present)$GLOBALS[$key]=$value;else unset($GLOBALS[$key]);}}
+}
+
+/** Fixed create-only side evidence; no original path, content, identity, message or stack is published. */
+function m4tr_runtime_diagnostic_publish(array $case,array $points):void
+{
+    static $attempted=false;if($attempted)return;
+    $saved=[];foreach(['m4c_assertions','m4c_assertions_by_phase','m4c_failed_assertion']as$key)
+        $saved[$key]=[array_key_exists($key,$GLOBALS),$GLOBALS[$key]??null];
+    try{
+        $order=['before','after_make','after_read','after_context_snapshot'];
+        if(array_keys($points)!==$order)return;
+        foreach($points as$map)if(!is_array($map))return;
+        $changes=[];
+        for($i=1;$i<count($order);++$i){
+            $old=$points[$order[$i-1]];$new=$points[$order[$i]];
+            $names=array_values(array_unique(array_merge(array_keys($old),array_keys($new)),SORT_STRING));$rows=[];
+            foreach($names as$relative){
+                $left=$old[$relative]??null;$right=$new[$relative]??null;if($left===$right)continue;
+                $head=explode('/',$relative,2)[0];$category=str_contains($relative,'/')&&in_array($head,['log','cache','schema','temp'],true)?$head:'other';
+                $rows[]=['from_point'=>$order[$i-1],'to_point'=>$order[$i],'category'=>$category,
+                    'relative_path_sha256'=>hash('sha256',$relative),'change'=>$left===null?'ADDED':($right===null?'REMOVED':'CHANGED'),
+                    'before'=>$left,'after'=>$right];
+            }
+            usort($rows,static fn(array $a,array $b):int=>strcmp($a['relative_path_sha256'],$b['relative_path_sha256']));
+            foreach($rows as$row)$changes[]=$row;
+        }
+        if($changes===[]||!is_int($case['page'])||!is_int($case['limit']))return;
+        $attempted=true;
+        m4c_entry_publish('/run/audit/evidence/three-read-runtime-difference.json',[
+            'schema'=>1,'scope'=>'MS4_THREE_READ_RUNTIME_DIFFERENCE_DIAGNOSTIC_ONLY',
+            'view'=>$case['view'],'wrapper'=>$case['wrapper'],'page'=>$case['page'],'limit'=>$case['limit'],
+            'points'=>$order,'changes'=>$changes]);
+    }catch(\Throwable $ignored){}
+    finally{foreach($saved as$key=>[$present,$value]){if($present)$GLOBALS[$key]=$value;else unset($GLOBALS[$key]);}}
+}
+
 /** One actual public entry and one complete native before/after proof; never an HTTP authentication substitute. */
 function m4tr_read_call(\think\App $app,PDO $db,array $owner,array $platform,array $case):array
 {
@@ -1511,9 +1555,11 @@ function m4tr_read_call(\think\App $app,PDO $db,array $owner,array $platform,arr
         'TASK6_THREE_FIXED_REAL_PUBLIC_CALL_DESCRIPTOR');
     $connection=\think\facade\Db::connect();$default=$connection->getPdo();m4fn_context($app,$connection,$default,$db);
     $before=m4fn_snapshot($db);$runtime=m4tr_parent_runtime_files($app);$start=time();
+    $runtimePoints=['before'=>$runtime];
     $service=$app->make(\app\services\marketplace\order\MarketplaceOrderFulfillmentServices::class);
     $orders=$app->make(\app\services\order\StoreOrderServices::class);$uid=$owner['uid'];$admin=$platform['admin_id'];
     $economize=$app->make(\app\services\order\StoreOrderEconomizeServices::class);
+    m4tr_runtime_diagnostic_capture($app,$runtimePoints,'after_make');
     if(!$wrapper)$actual=match($view){
         'customer_list'=>$service->readCustomerPage($uid,$case['query'],$case['page'],$case['limit']),
         'platform_list'=>$service->readPlatformPage($admin,$case['query'],$case['page'],$case['limit']),
@@ -1528,7 +1574,10 @@ function m4tr_read_call(\think\App $app,PDO $db,array $owner,array $platform,arr
         'customer_detail'=>$orders->readCustomerOrderDetail($economize,$case['locator'],$uid,$case['page'],$case['limit']),
         'platform_detail'=>$orders->readPlatformOrderDetail($admin,$case['locator'],$case['page'],$case['limit']),
         'mobile_detail'=>$orders->readMobileOrderDetail($economize,$case['locator'],$uid,$case['page'],$case['limit'])};
-    $end=time();m4fn_context($app,$connection,$default,$db);$after=m4fn_snapshot($db);m4fn_zero($before,$after);
+    $end=time();m4tr_runtime_diagnostic_capture($app,$runtimePoints,'after_read');
+    m4fn_context($app,$connection,$default,$db);$after=m4fn_snapshot($db);
+    m4tr_runtime_diagnostic_capture($app,$runtimePoints,'after_context_snapshot');m4fn_zero($before,$after);
+    m4tr_runtime_diagnostic_publish($case,$runtimePoints);unset($runtimePoints);
     m4fn_expect(m4tr_parent_runtime_files($app)===$runtime,'TASK6_THREE_EACH_READ_RUNTIME_FILES_UNCHANGED');m4fn_inputs_unchanged($owner['inputs']);
     if($wrapper){m5pcp_same($actual,$case['wire']);$comparison=['kind'=>$view,'returned_count'=>$list?count($case['selected']):1,
         'native_count'=>$case['count'],'complete_original_wrapper_envelope_values_and_types_verified'=>true];}

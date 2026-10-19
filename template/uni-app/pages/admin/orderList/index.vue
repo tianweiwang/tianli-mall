@@ -174,7 +174,7 @@
 	// import {
 	// 	erpConfig
 	// } from "@/api/esp.js";
-	import { readOrderFulfillment, rootFulfillmentText } from '@/utils/marketplace-fulfillment.js';
+	import { readOrderFulfillment, rootOrderStatusText } from '@/utils/marketplace-fulfillment.js';
 	import Loading from '@/components/Loading/index'
 	import PriceChange from '../components/PriceChange/index.vue'
 	import footerPage from '../components/footerPage/index.vue'
@@ -322,7 +322,7 @@
 			}).exec();
 		},
 		methods: {
-		savedFulfillmentState(item) { return rootFulfillmentText(item.fulfillment_summary, item.aftersale); },
+		savedFulfillmentState(item) { return rootOrderStatusText(item); },
 			clearSavedOrderList() {
 				this.listRevision++;
 				this.list = [];

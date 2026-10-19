@@ -316,6 +316,9 @@ function m4up_run():int
   &&is_array($child['streams'])&&count($child['streams'])===2&&empty($GLOBALS['m4ar_cleanup_failure'])
   &&empty($GLOBALS['m4up_cleanup_failure']),'UI_ORIGINAL_SAME_CHILD_NORMAL_SHUTDOWN');
  $final=m4upo_verify($db,$app,$s,$owner,$before,$actors,$credentials,$writer,$menus,[$started,$ended]);
+ $task2=null;if(m5pt_observer_source($s)!==null){
+  $task2=m5pt_prepare($db,$app,$s,$owner,$actors,$final);$final['after']=$task2['after'];
+ }
  $sourceOracle=m4fn_source_oracle($owner['saved']);m4fn_inputs_unchanged($owner['inputs']);
  m4up_phase('final_source');m4up_full_source($s);m4up_expect(m4up_source(false)===$s,'UI_CURRENT_SAME_SOURCE_ENV_NATIVE_PREDECESSORS');
  m4cb_guard_readonly();
@@ -326,7 +329,8 @@ function m4up_run():int
    'merchant'=>$actors['merchant']['id'],'platform'=>$actors['platform']['id']],
   'writer'=>$writer,'menus'=>$menus,'window_before'=>$final['before'],'window_final'=>$final['after'],
   'independent_full_window_verified'=>true,'post_child_close_verified'=>true,'observer'=>$observer];
- unset($credentials,$actors,$owner,$before,$window,$final,$sink);
+ if($task2!==null)m4c_entry_publish('/run/audit/evidence/ms5-task2-target-preparation.json',$task2['public']);
+ unset($credentials,$actors,$owner,$before,$window,$final,$sink,$task2);
  m4c_entry_publish('/run/audit/evidence/'.M4UP_RULE['result'],m4up_result($s,$business,null,true));
  $GLOBALS['m4up_result_published']=true;$GLOBALS['m4up_completed']=true;
  echo json_encode(['scope'=>M4UP_RULE['scope'],'status'=>M4UP_RULE['status'],'phase'=>'final_source',

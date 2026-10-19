@@ -132,6 +132,21 @@ function m4uib_inventory(string $root,array $extra):array
         foreach($iterator as$file){m4uib_assert(!$file->isLink(),'SOURCE_NO_LINK');if($file->isFile())$paths[]=substr($file->getPathname(),strlen($root)+1);}}
     sort($paths,SORT_STRING);m4uib_assert(count($paths)===count(array_unique($paths,SORT_STRING)),'SOURCE_UNIQUE_MEMBERS');return $paths;
 }
+/** Actual initially frozen Task2 definitions; no App/process/writer action. */
+function m4uib_task2_tools(array $source):array
+{
+ $g=$source['freeze']['task2_observer_source']??null;m4uib_assert(is_array($g),'TASK2_INITIAL_SOURCE');m4uib_keys($g,['schema','scope','core_source_sha','host_source_root','container_root','members']);
+ m4uib_assert($g['schema']===1&&$g['scope']==='MS5_TASK2_COMPOSITE_OBSERVER_SOURCE_ONLY'&&$g['core_source_sha']===$source['source_sha']&&is_string($g['host_source_root'])&&$g['container_root']==='/run/audit/task2-observer'&&is_array($g['members'])&&array_is_list($g['members'])&&count($g['members'])===3,'TASK2_SOURCE6');
+ $root=$g['container_root'];clearstatcache(true,$root);$before=lstat($root);m4uib_assert(is_array($before)&&!is_link($root)&&realpath($root)===$root&&($before['mode']&0170000)===0040000,'TASK2_ROOT');$before=m4uib_stat($before);
+ $ordered=['entry.php','expected.php','gate.php'];$names=scandir($root);m4uib_assert(is_array($names),'TASK2_NAMESPACE');$names=array_values(array_diff($names,['.','..']));sort($names,SORT_STRING);m4uib_assert($names===$ordered,'TASK2_ONLY_THREE_FILES');$paths=[];
+ foreach($ordered as$i=>$name){$m=$g['members'][$i];m4uib_keys($m,['path','bytes','sha256']);m4uib_assert($m['path']===$name&&is_int($m['bytes'])&&$m['bytes']>0&&m4uib_hex($m['sha256']),'TASK2_ORDERED_MEMBER');$r=m4uib_file($root.'/'.$name);m4uib_assert($r['stat']['nlink']===1&&$r['descriptor']['bytes']===$m['bytes']&&$r['descriptor']['sha256']===$m['sha256'],'TASK2_FROZEN_FULL_BYTES_BEFORE_INCLUDE');$paths[]=$root.'/'.$name;}
+ $d=$source['context']['task2_observer_copy']??null;m4uib_assert(is_array($d),'TASK2_COPY_DESCRIPTOR');m4uib_keys($d,['path','bytes','sha256']);m4uib_assert($d['path']==='evidence/task2-observer-copy.json'&&is_int($d['bytes'])&&$d['bytes']>0&&m4uib_hex($d['sha256']),'TASK2_COPY_FIXED_RELATIVE');
+ $f=m4uib_file('/run/audit/'.$d['path'],16777216,true);m4uib_assert($f['stat']['nlink']===1&&$f['descriptor']['bytes']===$d['bytes']&&$f['descriptor']['sha256']===$d['sha256'],'TASK2_ORIGINAL_COPY_BYTES');try{$r=json_decode($f['raw'],true,64,JSON_THROW_ON_ERROR);}finally{unset($f['raw']);}
+ m4uib_assert(is_array($r),'TASK2_COPY_OBJECT');m4uib_keys($r,['schema','scope','run_id','source_sha','freeze_sha256','observer_source_sha256','originals','copies']);
+ m4uib_assert($r['schema']===1&&$r['scope']==='MS5_TASK2_OBSERVER_SOURCE_COPY'&&$r['run_id']===$source['run_id']&&$r['source_sha']===$source['source_sha']&&$r['freeze_sha256']===$source['freeze_sha256']&&$r['observer_source_sha256']===hash('sha256',json_encode(m4uib_canonical($g),JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR))&&is_array($r['originals'])&&array_is_list($r['originals'])&&count($r['originals'])===3&&is_array($r['copies'])&&array_is_list($r['copies'])&&count($r['copies'])===3,'TASK2_COPY_INITIAL_BINDING');
+ $host=rtrim(str_replace('\\','/',$g['host_source_root']),'/');foreach($ordered as$i=>$name){$o=$r['originals'][$i];$c=$r['copies'][$i];$m=$g['members'][$i];m4uib_keys($o,['path','bytes','sha256']);m4uib_keys($c,['path','bytes','sha256']);m4uib_assert(is_string($o['path'])&&str_replace('\\','/',$o['path'])===$host.'/'.$name&&$o['bytes']===$m['bytes']&&$o['sha256']===$m['sha256']&&m4uib_same($c,['path'=>'task2-observer/'.$name,'bytes'=>$m['bytes'],'sha256'=>$m['sha256']]),'TASK2_COPY_ORDERED_ROWS');}
+ clearstatcache(true,$root);$after=lstat($root);$names=scandir($root);m4uib_assert(is_array($after)&&m4uib_stat($after)===$before&&!is_link($root)&&is_array($names),'TASK2_ROOT_STABLE');$names=array_values(array_diff($names,['.','..']));sort($names,SORT_STRING);m4uib_assert($names===$ordered,'TASK2_NAMESPACE_STILL_EXACT');return $paths;
+}
 function m4uib_full_source(array $source):void
 {
     $freeze=$source['freeze'];$prepare=$freeze['ui_prepare_source_extra'];$ar=$freeze['aftersale_review_source_extra'];
@@ -152,6 +167,12 @@ function m4uib_full_source(array $source):void
         m4uib_assert(m4uib_inventory($root,$extra)===$paths,'ACTUAL_COMPLETE_SOURCE_MEMBERS');
         foreach($rows as$row){$actual=m4uib_file($root.'/'.$row['path'])['descriptor'];
             m4uib_assert($actual['bytes']===$row['bytes']&&$actual['sha256']===$row['sha256'],'ALL_SOURCE_ACTUAL_BYTES');$allowed[$root.'/'.$row['path']]=true;}}
+    if(array_key_exists('task2_observer_source',$freeze)){
+        $tools=['/run/audit/task2-observer/entry.php','/run/audit/task2-observer/expected.php','/run/audit/task2-observer/gate.php'];
+        $included=array_values(array_intersect($tools,array_map('realpath',get_included_files())));
+        if($included!==[]){m4uib_assert(count($included)===3,'TASK2_NO_PARTIAL_INCLUDED_UNION');foreach(m4uib_task2_tools($source)as$tool)$allowed[$tool]=true;
+            m4uib_assert(function_exists('m5pg_full_source')&&function_exists('m5pg_browser_source')&&function_exists('m5pe_admin_version_source'),'TASK2_REAL_DEFINITION_FUNCTIONS');
+            m5pg_full_source($source);m5pg_browser_source($source);m5pe_admin_version_source();}}
     foreach(get_included_files()as$path)m4uib_assert(isset($allowed[realpath($path)]),'ALL_INCLUDED_SOURCE_BOUND');
     foreach($freeze['artifact_files']as$row){m4uib_keys($row,['path','bytes','sha256']);m4uib_relative($row['path']);
         $actual=m4uib_file('/run/ms4-prep/'.$row['path'])['descriptor'];
@@ -266,14 +287,16 @@ function m4uib_history(array $source):array
         $name=$paidNames[$index];$path=$base.$name;
         m4uib_descriptor($descriptor,$path);$paths[]=$path;$all[$name]=$descriptor['sha256'];}
     m4uib_assert(count(array_unique($paths,SORT_STRING))===39,'PAID39_EXACT_ORDER_AND_UNIQUENESS');
+    $task2Present=array_key_exists('task2_observer_source',$source['freeze']);$prepareNames=M4UIB_PREPARE_NAMES;
+    if($task2Present)$prepareNames[]='ms5-task2-target-preparation.json';
     m4uib_assert(is_array($seal['prepare_public_files'])&&array_is_list($seal['prepare_public_files'])
-        &&count($seal['prepare_public_files'])===7,'REAL_SEVEN_PREPARE_DESCRIPTOR_LIST');
-    foreach(M4UIB_PREPARE_NAMES as$index=>$name){
+        &&count($seal['prepare_public_files'])===($task2Present?8:7),'REAL_EXACT_PREPARE_DESCRIPTOR_LIST');
+    foreach($prepareNames as$index=>$name){
         $descriptor=$seal['prepare_public_files'][$index];m4uib_descriptor($descriptor,$base.$name);$all[$name]=$descriptor['sha256'];}
     $all['ui-prepare-context.json']=$seal['prepare_context']['sha256'];
     $all['ui-prepare-formal-manifest.json']=$seal['original_formal_manifest']['sha256'];
     $all['ui-prepare-predecessor-history.json']=$source['history']['sha256'];
-    m4uib_assert(count($all)===49&&m4uib_same($all,$source['prerequisites_sha256']),'OWN_EXACT49_ACTUAL_FULL_PREREQUISITE_HASHES');
+    m4uib_assert(count($all)===($task2Present?50:49)&&m4uib_same($all,$source['prerequisites_sha256']),'OWN_EXACT_ACTUAL_FULL_PREREQUISITE_HASHES');
 
     $paidFormal=m4uib_json($base.'paid-producer-formal-manifest.json');
     $paidHistory=m4uib_json($base.'paid-producer-predecessor-history.json');
@@ -389,7 +412,9 @@ function m4uib_history(array $source):array
         &&$shutdown['native_exit']===null&&$shutdown['native_exit_observation']==='HOST_NATIVE_REQUIRED','ACTUAL_NONFATAL_PREPARE_SHUTDOWN_AND_NATIVE_ZERO');
     $ids=$business['actor_ids'];$actorMap=['customer'=>['uid'=>$ids['customer']],
         'merchant'=>['id'=>$ids['merchant'],'mer_id'=>$business['merchant_id']],'platform'=>['id'=>$ids['platform']]];
-    return ['seal'=>$seal,'prepare'=>$prepared,'business'=>$business,'writer'=>$writer,'actor_ids'=>$ids,'actor_map'=>$actorMap];
+    $out=['seal'=>$seal,'prepare'=>$prepared,'business'=>$business,'writer'=>$writer,'actor_ids'=>$ids,'actor_map'=>$actorMap];
+    if($task2Present)$out['task2']=m4uib_task2_prepare($source,$prepared,$business,$all);
+    return $out;
 }
 
 function m4uib_volumes(array $source):void
@@ -448,6 +473,23 @@ function m4uib_check_mounts(array $source,array $created):void
     $binds=['/workspace'=>[$context['repo_dir'],false],'/source'=>[$context['repo_dir'],false],
         '/run/ms4-prep'=>[$context['prep_dir'],false],'/run/audit'=>[$context['run_dir'],false],
         '/workspace/crmeb/public/install/crmeb.sql'=>[$context['repo_dir'].'/crmeb/public/install/crmeb.sql',false]];
+    if(array_key_exists('task2_observer_source',$source['freeze'])){
+        $group=$source['freeze']['task2_browser_source']??null;
+        m4uib_assert(is_array($source['freeze']['task2_observer_source'])&&is_array($group),'TASK2_INITIAL_PAIRED_BROWSER_SOURCE');
+        m4uib_keys($group,['schema','scope','members']);
+        $browserNames=['reader/ms4-ui-private-reader.mjs','ms4-ui-private-caller.mjs','ms4-ui-browser-close.mjs',
+            'ms4-ui-business-producer.mjs','ms4-ui-window-native-bridge.mjs','ms4-ui-network-capture.mjs',
+            'ms4-ui-dom-producer.mjs','ui-business-consumer-contract.json'];
+        m4uib_assert($group['schema']===1&&$group['scope']==='MS5_TASK2_BROWSER_SOURCE_ONLY'
+            &&is_array($group['members'])&&array_is_list($group['members'])&&count($group['members'])===8,'TASK2_BROWSER_INITIAL_EXACT3');
+        foreach($browserNames as$i=>$name){$member=$group['members'][$i];m4uib_assert(is_array($member),'TASK2_BROWSER_INITIAL_MEMBER');
+            m4uib_keys($member,['path','bytes','sha256']);m4uib_assert($member['path']===$name&&is_int($member['bytes'])
+                &&$member['bytes']>0&&m4uib_hex($member['sha256']),'TASK2_BROWSER_INITIAL_ORDERED_EIGHT');}
+        m4uib_assert(is_string($context['prep_dir'])&&$context['prep_dir']!==''&&!str_contains($context['prep_dir'],"\0")
+            &&$created['labels']['com.docker.compose.service']==='audit-ms4-ui-backend','TASK2_BROWSER_ONLY_ACTUAL_BACKEND_ROLE');
+        $browserRoot=dirname(rtrim(str_replace('\\','/',$context['prep_dir']),'/')).'/browser-v1';
+        $binds['/run/ms4-browser-source']=[$browserRoot,false];
+    }
     $mounts=[];$tmp=[];
     foreach($created['mounts']as$mount){
         if($mount['Type']==='tmpfs'){m4uib_assert(in_array($mount['Destination'],['/tmp','/workspace/crmeb/runtime'],true)
@@ -638,6 +680,7 @@ function m4uib_preserved(array $source,bool $after=false):void
         &&m4uib_hash('/run/audit/evidence/ui-gateway-created.json')===$source['gateway_created_sha256'],'OWN_SOURCE_AND_CURRENT_PROOFS_UNCHANGED');
     m4uib_assert(m4uib_same(m4ui_credential_meta(),$source['prepare_history']['writer']),'FIXED_CREDENTIAL_METADATA_STILL_ORIGINAL');
     m4uib_full_source($source);m4uib_public($source,$after);
+    if(isset($source['task2_ui20_admission']))m5pe_ui20_preserve($source,$source['task2_ui20_admission']);
 }
 
 function m4uib_private_log(string $path):array
@@ -1031,8 +1074,13 @@ function m4uib_observe():int
     $db=audit_db();m4uib_assert(!$db->inTransaction(),'OBSERVER_NATIVE_PDO_NO_TRANSACTION');m5pc_observer_configure($db);
     $baseline=m4uwo_snapshot($db);m4uwo_script_empty($baseline);$checked=m4uwo_snapshot($db);m4uwo_same($baseline,$checked);unset($checked);
     $business=m4uib_json('/run/audit/evidence/ms4-ui-prepare.json')['business'];
+    if(array_key_exists('task2_observer_source',$s['freeze'])){
+        $tools=m4uib_task2_tools($s);foreach($tools as$tool)require_once $tool;
+        m4uib_full_source($s);$s['task2_ui20_admission']=m5pe_ui20_admit($baseline,$s,$binding);
+    }else{
     m4uib_assert(m4upo_descriptor($baseline)['database_sha256']===$business['window_final']['database_sha256']
         &&m4upo_descriptor($baseline)['redis_sha256']===$business['window_final']['redis_sha256'],'OBSERVER_GENUINE_PREPARED_FULL_DATABASE_REDIS_BASELINE');
+    }
     $saved=m5pcp_saved($db,$business['paid_order_id']);$original=m4fn_source_oracle($saved);
     m4uib_assert($original['fingerprint']===$business['source_fingerprint']&&$saved['order']['order_id']===$business['paid_order_no'],'OBSERVER_ACTUAL_SAVED_ORDER_MODEL');
     $state=['source'=>$original,'saved'=>$saved,'prepare'=>$business,'binding'=>$binding,'index'=>0,'sessions'=>[],
@@ -1069,4 +1117,124 @@ function m4uib_observe():int
         $tail=fread(STDIN,1);m4uib_assert($tail===''&&feof(STDIN),'OBSERVER_FINAL_EXACT_STDIN_EOF');
         m4uib_assert(!isset($GLOBALS['m4c_application'])&&!isset($GLOBALS['m4c_app_started']),'OBSERVER_FINISH_NO_APP');return 0;
     }finally{unset($last,$before,$after,$again,$final,$state,$frame,$event,$db,$s,$binding);}
+}
+
+
+/** Finite Task2 eighth prepare proof join. The default original seven/49 history contract is unchanged. */
+function m4uib_task2_window(array $window):void
+{
+ m4uib_keys($window,['sha256','database_sha256','redis_sha256','files_sha256','table_count']);
+ foreach(['sha256','database_sha256','redis_sha256','files_sha256']as$key)m4uib_assert(m4uib_hex($window[$key]),'TASK2_COMPLETE_WINDOW_SHA');
+ m4uib_positive($window['table_count']);
+}
+function m4uib_task2_join(array $left,array $right):void
+{
+ m4uib_task2_window($left);m4uib_task2_window($right);
+ foreach(['database_sha256','redis_sha256','files_sha256','table_count']as$key)
+  m4uib_assert($left[$key]===$right[$key],'TASK2_ACTUAL_FULL_WINDOW_CONTINUITY');
+}
+function m4uib_task2_source(array $source):array
+{
+ $tools=$source['freeze']['task2_observer_source'];m4uib_keys($tools,['schema','scope','core_source_sha','host_source_root','container_root','members']);
+ m4uib_assert($tools['schema']===1&&$tools['scope']==='MS5_TASK2_COMPOSITE_OBSERVER_SOURCE_ONLY'&&$tools['core_source_sha']===$source['source_sha']
+  &&is_string($tools['host_source_root'])&&$tools['host_source_root']!==''&&!str_contains($tools['host_source_root'],"\0")
+  &&$tools['container_root']==='/run/audit/task2-observer'&&is_array($tools['members'])&&array_is_list($tools['members'])&&count($tools['members'])===3,'TASK2_EXACT_INITIAL_TOOL_SOURCE6');
+ $descriptor=$source['context']['task2_observer_copy']??null;m4uib_assert(is_array($descriptor),'TASK2_REAL_COPY_CONTEXT');m4uib_keys($descriptor,['path','bytes','sha256']);
+ m4uib_assert($descriptor['path']==='evidence/task2-observer-copy.json','TASK2_FIXED_ORIGINAL_COPY_RECEIPT_PATH');
+ $mapped=$descriptor;$mapped['path']='/run/audit/'.$descriptor['path'];$receipt=m4uib_descriptor($mapped,'/run/audit/evidence/task2-observer-copy.json');
+ m4uib_keys($receipt,['schema','scope','run_id','source_sha','freeze_sha256','observer_source_sha256','originals','copies']);
+ m4uib_assert($receipt['schema']===1&&$receipt['scope']==='MS5_TASK2_OBSERVER_SOURCE_COPY'&&$receipt['run_id']===$source['run_id']
+  &&$receipt['source_sha']===$source['source_sha']&&$receipt['freeze_sha256']===$source['freeze_sha256']
+  &&$receipt['observer_source_sha256']===hash('sha256',json_encode(m4uib_canonical($tools),JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR))
+  &&is_array($receipt['originals'])&&array_is_list($receipt['originals'])&&count($receipt['originals'])===3
+  &&is_array($receipt['copies'])&&array_is_list($receipt['copies'])&&count($receipt['copies'])===3,'TASK2_EXACT_COPY_SOURCE_IDENTITY8');
+ $root=$tools['container_root'];m4uib_assert(is_dir($root)&&!is_link($root)&&realpath($root)===$root,'TASK2_REAL_SOURCE_TOOL_ROOT');
+ $names=array_values(array_diff(scandir($root),['.','..']));sort($names,SORT_STRING);m4uib_assert($names===['entry.php','expected.php','gate.php'],'TASK2_EXACT_TOOL_NAMESPACE3');
+ foreach($names as$i=>$name){$member=$tools['members'][$i];$original=$receipt['originals'][$i];$copy=$receipt['copies'][$i];
+  foreach([$member,$original,$copy]as$row)m4uib_keys($row,['path','bytes','sha256']);
+  $host=rtrim(str_replace('\\','/',$tools['host_source_root']),'/').'/'.$name;
+  m4uib_assert($member['path']===$name&&is_string($original['path'])&&str_replace('\\','/',$original['path'])===$host
+   &&$copy['path']==='task2-observer/'.$name&&$copy['bytes']===$member['bytes']&&$original['bytes']===$member['bytes']
+   &&$copy['sha256']===$member['sha256']&&$original['sha256']===$member['sha256'],'TASK2_ALL_TOOL_ORIGINAL_AND_COPY_MEMBERS');
+  $file=m4uib_file('/run/audit/'.$copy['path']);m4uib_assert($file['descriptor']['bytes']===$member['bytes']
+   &&$file['descriptor']['sha256']===$member['sha256'],'TASK2_ACTUAL_NATIVE_TOOL_COPY_BYTES');
+ }
+ return $tools;
+}
+function m4uib_task2_target(array $target,int $uid,int $mer):void
+{
+ m4uib_keys($target,['id','order_no','uid','mer_id']);m4uib_positive($target['id']);
+ m4uib_assert($target['uid']===$uid&&$target['mer_id']===$mer&&is_string($target['order_no'])
+  &&preg_match('/\Acp[1-9][0-9]{0,18}\z/D',$target['order_no'])===1,'TASK2_REAL_SAME_OWNER_SAVED_TARGET4');
+}
+function m4uib_task2_creation(array $proof,array $target):void
+{
+ m4uib_keys($proof,['target','source_fingerprint','cart_reference_sha256','request_sha256','before','cart','after','verified_after','payment_generation','payment_attempt_count','sequence']);
+ m4uib_assert(m4uib_same($proof['target'],$target)&&$proof['payment_generation']===0&&$proof['payment_attempt_count']===0,'TASK2_BORN_G0_CREATION_IDENTITY');
+ foreach(['source_fingerprint','cart_reference_sha256','request_sha256']as$key)m4uib_assert(m4uib_hex($proof[$key]),'TASK2_COMPLETE_CREATION_DIGEST');
+ foreach(['before','cart','after','verified_after']as$key)m4uib_task2_window($proof[$key]);m4uib_task2_join($proof['after'],$proof['verified_after']);
+ $sequence=$proof['sequence'];m4uib_keys($sequence,['scope','status','epoch_ms','source_id_count','key_count','targets','server_samples','monotonic_elapsed_ns',
+  'complete_database_before_sha256','complete_database_after_sha256','non_target_redis_sha256','all_non_target_redis_values_and_absolute_expiries_unchanged','complete_database_strictly_unchanged','original_account_payment_assertions_retained']);
+ m4uib_assert($sequence['scope']==='READONLY_REAL_PRODUCER_SEQUENCE_EXPIRY_BARRIER_ONLY'&&$sequence['status']==='VERIFIED_SEQUENCE_KEYS_ABSENT_BEFORE_ACCOUNT'
+  &&$sequence['epoch_ms']==='1640966400000'&&$sequence['source_id_count']===1&&$sequence['key_count']===1
+  &&is_array($sequence['targets'])&&array_is_list($sequence['targets'])&&count($sequence['targets'])===1
+  &&is_array($sequence['server_samples'])&&array_is_list($sequence['server_samples'])&&count($sequence['server_samples'])>=3
+  &&is_int($sequence['monotonic_elapsed_ns'])&&$sequence['monotonic_elapsed_ns']>=0&&$sequence['monotonic_elapsed_ns']<=10000000000
+  &&m4uib_hex($sequence['complete_database_before_sha256'])&&$sequence['complete_database_before_sha256']===$sequence['complete_database_after_sha256']
+  &&m4uib_hex($sequence['non_target_redis_sha256'])&&$sequence['all_non_target_redis_values_and_absolute_expiries_unchanged']===true
+  &&$sequence['complete_database_strictly_unchanged']===true&&$sequence['original_account_payment_assertions_retained']===true,'TASK2_PASSIVE_NORMAL_COUNTER_NATIVE_BARRIER');
+ $row=$sequence['targets'][0];m4uib_keys($row,['key_sha256','sources','initial_observation','initial_expires_at_ms','initial_value_sha256','first_absence_time_ms','natural_expiry_observed','final_absent']);
+ $key=bcadd('1640966400000',bcdiv(substr($target['order_no'],2),'4194304',0),0);
+ m4uib_assert($row['key_sha256']===hash('sha256',$key)&&$row['sources']===[['source_kind'=>'persistent_order','identifier_sha256'=>hash('sha256',$target['order_no'])]]
+  &&in_array($row['initial_observation'],['ALREADY_ABSENT','PRESENT_WITH_OBSERVED_EXPIRY'],true)&&$row['final_absent']===true
+  &&is_string($row['first_absence_time_ms'])&&preg_match('/\A[1-9][0-9]{12}\z/D',$row['first_absence_time_ms'])===1,'TASK2_ONLY_REAL_CREATED_ORDER_SEQUENCE_TARGET');
+ m4uib_assert($row['natural_expiry_observed']===($row['initial_observation']==='PRESENT_WITH_OBSERVED_EXPIRY')
+  &&($row['natural_expiry_observed']?(is_int($row['initial_expires_at_ms'])&&$row['initial_expires_at_ms']>0&&m4uib_hex($row['initial_value_sha256']))
+   :($row['initial_expires_at_ms']===null&&$row['initial_value_sha256']===null)),'TASK2_REAL_COUNTER_OBSERVATION_KIND_AND_TYPES');
+ foreach($sequence['server_samples']as$sample){m4uib_keys($sample,['time','time_ms','key_count','complete_keys_sha256']);
+  m4uib_assert(is_array($sample['time'])&&array_is_list($sample['time'])&&count($sample['time'])===2&&is_string($sample['time_ms'])
+   &&is_int($sample['key_count'])&&$sample['key_count']>=0&&m4uib_hex($sample['complete_keys_sha256']),'TASK2_COMPLETE_PASSIVE_COUNTER_SERVER_SAMPLE');}
+}
+function m4uib_task2_prepare(array $source,array $prepared,array $business,array $all):array
+{
+ $path='/run/audit/evidence/ms5-task2-target-preparation.json';m4uib_assert(($all['ms5-task2-target-preparation.json']??null)===m4uib_hash($path),'TASK2_EIGHTH_REAL_PUBLISHED_PROOF');
+ $p=m4uib_json($path);m4uib_keys($p,['schema','scope','status','binding','observer_source','actors','paid','unpaid','cancelled','window','preservation','diagnostic']);
+ m4uib_assert($p['schema']===1&&$p['scope']==='MS5_TASK2_NORMAL_TARGET_PREPARATION_ONLY'&&$p['status']==='VERIFIED_MS5_TASK2_NORMAL_TARGET_PREPARATION_ONLY'
+  &&$p['diagnostic']===null&&m4uib_same($p['observer_source'],m4uib_task2_source($source)),'TASK2_COMPLETE_PREPARE_SOURCE_AND_SUCCESS');
+ $binding=['run_id'=>$source['run_id'],'source_sha'=>$source['source_sha'],'freeze_sha256'=>$source['freeze_sha256'],
+  'prepare_container_id'=>$prepared['container_id'],'native_created_sha256'=>$prepared['native_created_sha256'],
+  'source_binding_sha256'=>$prepared['source_binding_sha256'],'context_sha256'=>m4uib_hash('/run/audit/actual-run-context.json')];
+ m4uib_keys($p['binding'],array_keys($binding));m4uib_assert(m4uib_same($p['binding'],$binding),'TASK2_SAME_REAL_PREPARE_BINDING7');
+ m4uib_keys($p['actors'],['customer','merchant','platform']);m4uib_keys($p['actors']['customer'],['id']);m4uib_keys($p['actors']['merchant'],['id','role_id','mer_id']);
+ m4uib_keys($p['actors']['platform'],['id','role_id']);foreach(['customer','merchant','platform']as$role)
+  m4uib_assert($p['actors'][$role]['id']===$business['actor_ids'][$role],'TASK2_ORIGINAL_SINGLE_HANDOFF_ACTOR');
+ foreach(['merchant','platform']as$role)m4uib_positive($p['actors'][$role]['role_id']);
+ $uid=$business['customer_id'];$mer=$business['merchant_id'];m4uib_assert($p['actors']['merchant']['mer_id']===$mer,'TASK2_ORIGINAL_MERCHANT_CONTEXT');
+ m4uib_keys($p['paid'],['target','source_fingerprint']);m4uib_keys($p['unpaid'],['target','creation']);m4uib_keys($p['cancelled'],['target','creation','cancellation']);
+ foreach(['paid','unpaid','cancelled']as$state)m4uib_task2_target($p[$state]['target'],$uid,$mer);
+ m4uib_assert($p['paid']['target']['id']===$business['paid_order_id']&&$p['paid']['target']['order_no']===$business['paid_order_no']
+  &&$p['paid']['source_fingerprint']===$business['source_fingerprint'],'TASK2_UNCHANGED_ORIGINAL_PAID_ANCHOR');
+ $ids=$numbers=[];foreach(['paid','unpaid','cancelled']as$state){$ids[]=$p[$state]['target']['id'];$numbers[]=$p[$state]['target']['order_no'];}
+ m4uib_assert(count(array_unique($ids,SORT_NUMERIC))===3&&count(array_unique($numbers,SORT_STRING))===3,'TASK2_THREE_REAL_DISTINCT_SAVED_TARGETS');
+ foreach(['unpaid','cancelled']as$state)m4uib_task2_creation($p[$state]['creation'],$p[$state]['target']);
+ m4uib_assert($p['unpaid']['creation']['cart_reference_sha256']!==$p['cancelled']['creation']['cart_reference_sha256'],'TASK2_TWO_REAL_DISTINCT_CARTS');
+ $cancel=$p['cancelled']['cancellation'];m4uib_keys($cancel,['before','after','verified_after','native_release_sha256','native_cancel_status_sha256',
+  'unchanged_saved_item_sha256','payment_generation','payment_attempt_count','cancel_call_count']);
+ foreach(['native_release_sha256','native_cancel_status_sha256','unchanged_saved_item_sha256']as$key)m4uib_assert(m4uib_hex($cancel[$key]),'TASK2_COMPLETE_NATIVE_CANCEL_PROOF');
+ m4uib_assert($cancel['payment_generation']===0&&$cancel['payment_attempt_count']===0&&$cancel['cancel_call_count']===1,'TASK2_ONCE_NORMAL_G0_CANCEL');
+ m4uib_task2_join($cancel['after'],$cancel['verified_after']);$window=$p['window'];
+ m4uib_keys($window,['original_before','original_after','increment_before','after','verified_after']);foreach($window as$value)m4uib_task2_window($value);
+ m4uib_assert(m4uib_same($window['original_before'],$business['window_before'])&&m4uib_same($window['after'],$business['window_final'])
+  &&m4uib_same($window['increment_before'],$p['unpaid']['creation']['before'])
+  &&m4uib_same($p['unpaid']['creation']['after'],$p['cancelled']['creation']['before'])
+  &&m4uib_same($p['cancelled']['creation']['after'],$cancel['before'])&&m4uib_same($cancel['after'],$window['after']),'TASK2_W0_W1_TWO_CREATES_CANCEL_W2_EXACT_CHAIN');
+ m4uib_task2_join($window['original_after'],$window['increment_before']);m4uib_task2_join($window['after'],$window['verified_after']);
+ $preserve=$p['preservation'];m4uib_keys($preserve,['database_tables','old_paid_source_fingerprint','original_files_sha256','final_files_sha256',
+  'all_non_targets_verified','source_unchanged','single_private_handoff','no_new_child_or_listener','observer_copy_sha256']);
+ m4uib_assert($preserve['database_tables']===$window['after']['table_count']&&$preserve['old_paid_source_fingerprint']===$business['source_fingerprint']
+  &&$preserve['original_files_sha256']===$window['increment_before']['files_sha256']&&$preserve['final_files_sha256']===$window['after']['files_sha256']
+  &&$preserve['original_files_sha256']===$preserve['final_files_sha256']&&$preserve['all_non_targets_verified']===true
+  &&$preserve['source_unchanged']===true&&$preserve['single_private_handoff']===true&&$preserve['no_new_child_or_listener']===true
+  &&$preserve['observer_copy_sha256']===$source['context']['task2_observer_copy']['sha256'],'TASK2_COMPLETE_ORIGINAL_PRESERVATION_AND_COPY_RECEIPT');
+ return $p;
 }
