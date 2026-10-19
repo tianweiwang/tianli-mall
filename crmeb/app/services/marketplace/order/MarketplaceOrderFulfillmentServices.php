@@ -373,7 +373,7 @@ final class MarketplaceOrderFulfillmentServices
         }
         $merchantOptions=$merchantPackage['options']??self::packageReadOptions();
         [$connection,$pdo,$prefix]=$this->readDefaultConnection();$this->dao->assertAftersaleStructure($pdo);
-        $setAttempted=false;$began=false;$commitAttempted=false;$diagnostics=[];
+        $setAttempted=false;$began=false;$commitAttempted=false;
         try{
             $this->readConnectionGate($connection,$pdo,$prefix,false);$setAttempted=true;
             if($pdo->exec('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY')===false)self::unavailable();
@@ -430,7 +430,6 @@ final class MarketplaceOrderFulfillmentServices
                         if($family['children']!==[]||$family['child_items']!==[]||$family['refunds']!==[]||$family['logs']!==[]
                             ||($family['operations']!==null&&$family['operations']!==[])
                             ||($family['ranges']!==null&&$family['ranges']!==[]))self::unavailable();
-                        $diagnostics[]=['root_order_id'=>$id,'reason'=>Facts::integer($root['is_cancel']??null,0,1)===1?'UNPAID_CANCELLED':'NOT_PAID'];
                     }else{
                         $observation=$payments[$id];$original=$originals[$id];$history=$histories[$id]??self::unavailable();
                         self::readOriginalItemCorrespondence($items[$id],$original['items']);$summary=$history['summary'];
@@ -464,7 +463,7 @@ final class MarketplaceOrderFulfillmentServices
                 }
                 $observedReadiness=$families['readiness'];
             }else{
-                $threeResult=$this->readThreeSnapshot($connection,$pdo,$prefix,$filter,$three,$diagnostics);
+                $threeResult=$this->readThreeSnapshot($connection,$pdo,$prefix,$filter,$three);
                 $observedReadiness=$threeResult['readiness'];
             }
             $this->readConnectionGate($connection,$pdo,$prefix,true);
@@ -489,14 +488,11 @@ final class MarketplaceOrderFulfillmentServices
             throw $error;
         }
         if($three!==null)$result=$this->finishThreeManaged($result,$threeResult['managed_candidates'],$three['managed_enabled']);
-        foreach($diagnostics as$diagnostic){
-            try{Log::warning('MARKETPLACE_FULFILLMENT_READ_UNAVAILABLE',$diagnostic);}catch(Throwable $ignored){}
-        }
         return $result;
     }
 
     /** Execute one of six private fixed selections within the existing owned lifecycle. */
-    private function readThreeSnapshot(ConnectionInterface $connection,PDO $pdo,string $prefix,array $filter,array $three,array &$diagnostics):array
+    private function readThreeSnapshot(ConnectionInterface $connection,PDO $pdo,string $prefix,array $filter,array $three):array
     {
         Facts::keys($three,['request','page','managed_enabled']);$request=$three['request'];$page=$three['page'];
         if(!is_array($request)||!is_array($page)||!is_bool($three['managed_enabled']))self::unavailable();
@@ -525,7 +521,7 @@ final class MarketplaceOrderFulfillmentServices
                         $roots[]=$row;
                     }
                 }
-                $loaded=$this->readThreeWindow($connection,$pdo,$prefix,$roots,$request,$view,false,null,null,null,$diagnostics);
+                $loaded=$this->readThreeWindow($connection,$pdo,$prefix,$roots,$request,$view,false,null,null,null);
                 self::mergeReadiness($readiness,$loaded['readiness']);
                 foreach($rows as$row){
                     $id=Facts::integer($row['id'],1,self::UINT_MAX);$legacy=self::readLegacyHeader($row);
@@ -569,7 +565,7 @@ final class MarketplaceOrderFulfillmentServices
                         $pid=Facts::integer($selected['pid']??null,0,self::INT_MAX);$child=$pid>0?$selected:null;
                         if($kind==='customer_package'&&$child===null)self::unavailable();
                         $root=$child===null?$selected:$this->dao->readFulfillmentParentForChild($connection,$pdo,$child);
-                        $loaded=$this->readThreeWindow($connection,$pdo,$prefix,[$root],$request,$view,true,$child,$buyer,$childrenPage,$diagnostics);
+                        $loaded=$this->readThreeWindow($connection,$pdo,$prefix,[$root],$request,$view,true,$child,$buyer,$childrenPage);
                         $rootId=Facts::integer($root['id'],1,self::INT_MAX);self::mergeReadiness($readiness,$loaded['readiness']);
                         if($child===null&&in_array($kind,['customer_root','mobile_root'],true)){
                             if(!array_key_exists('is_channel',$root))self::unavailable();
@@ -613,7 +609,7 @@ final class MarketplaceOrderFulfillmentServices
 
     /** All V1 rows in a window share the captured native snapshot; legacy relations stay outside it. */
     private function readThreeWindow(ConnectionInterface $connection,PDO $pdo,string $prefix,array $roots,array $request,string $view,
-        bool $detail,?array $selectedChild,?array $firstBuyer,?array $childrenPage,array &$diagnostics):array
+        bool $detail,?array $selectedChild,?array $firstBuyer,?array $childrenPage):array
     {
         $this->readConnectionGate($connection,$pdo,$prefix,true);
         if($roots===[])return ['dtos'=>[],'readiness'=>$this->dao->readAftersaleStructureReadiness($connection,$pdo)];
@@ -663,7 +659,6 @@ final class MarketplaceOrderFulfillmentServices
                 $this->readUnpaidRoot($root,$items[$id]);
                 if($family['children']!==[]||$family['child_items']!==[]||$family['refunds']!==[]||$family['logs']!==[]
                     ||($family['operations']!==null&&$family['operations']!==[])||($family['ranges']!==null&&$family['ranges']!==[]))self::unavailable();
-                $diagnostics[]=['root_order_id'=>$id,'reason'=>Facts::integer($root['is_cancel']??null,0,1)===1?'UNPAID_CANCELLED':'NOT_PAID'];
             }else{
                 $observation=$payments[$id];$original=$originals[$id];self::readOriginalItemCorrespondence($items[$id],$original['items']);
                 $history=$histories[$id]??self::unavailable();$summary=$history['summary'];$historyTimes=self::readHistoryTimes($history);
