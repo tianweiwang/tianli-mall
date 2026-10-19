@@ -314,3 +314,20 @@ R16正常回归与序列到期边界修订（2026-10-19）：原Run2026101907123
 实施采用的最小修订：在ms5-paid-consumer-normal.php、ms4-fulfillment-normal.php、lib/ms4-three-read-normal.php共插入7个等号（2/3/2），让首次及后续仍present的时间断言包含相等毫秒，另覆盖Task6独立CF counter同类分支。依据匹配版本官方db.c的keyIsExpired仅在now>expiry时读时过期，普通非yield脚本TIME与命令快照固定；active过期可在等值删除，原absent>=保持。参考 https://github.com/redis/redis/blob/8.6.1/src/db.c#L2583-L2591 和 https://github.com/redis/redis/blob/8.6.1/src/server.c#L1234-L1247 。实际Source闭包及独审确认仅这7字节、全文正逆成立；没有期限容差或续期，原1000ms/10秒、完整type/value/hash/绝对期限/no-reappearance、全库、金额、父子、Lua、生产生成器与输出schema保持。
 
 当前验证与任务：[x]匹配版本与有限Source独审；[x]三个实际候选在原PHP8.2镜像network-none/只读/128M纯语法-l全部自然0、stderr空，临时容器正常自动移除且前后selector为空；[x]仅三PHP和本记录接入本地Main。仍待：[ ]新clean来源完整普通Task6/售后/Worker；[ ]当前UI17实际冻结、三端20步及320/390/1440 DOM；[ ]UI正常关闭/独立核零。R16仍失败，Source/语法/正常收尾不计业务通过。原用户停止的定向expiry/fault/denial等样本仍NOT RUN；通用商城继续复用商品规格/价格，真实支付和发布边界不变。本轮不推送或部署，validation旧4d4由后续新normal物化在真实核零之后单独前进。
+
+
+### R17 原失败退役与保存条目身份配对（2026-10-19，实施前）
+
+原Run20261019090746aa203e冻结b0来源，内部付款同CID自然0；Task6原同CID自然255/PID0/restart0。原shutdown phase=three_read_initial，primary为TASK6_THREE_EXPECTED_NATIVE_PRODUCT_QUANTITY_SAVED_UNIT_LINE_POSTAGE_PRICES，completed/result_published=false、fatal=true、termination_requested=false；两个业务结果均缺席，保留原样。原日志双空、OOMKilled=false，二次fatal具体原因仍UNKNOWN，不据255认定OOM，也没有本轮独立legacy自然0结果可签；售后/Worker未启动。
+
+Root同一原MySQL只做READ ONLY事务：100个V1根、101条商品的保存product/quantity类型与原生列相等、三个金额为两位字符串、unit×quantity=line全部一致。另对唯一付单两条原生无ORDER BY投影，只公开相对序号[2,1]及字符串cart reference等于原生cart_id/唯一的布尔；投影不同于ORM完整列，原PHP现场顺序未记录，不能据此认定唯一实际失败原因。认证文件仅由原MySQL容器内已有客户端使用，未导出到Host、报告或消息；公开内容不含条目ID、价格值或个人信息。
+
+Source确认独立原生items明确ORDER BY id，原formatter经DAO column未定义相同顺序，旧按位置配对没有身份依据。本次只将该独立oracle改为按原保存cart_info.id严格等于native cart_id的一一映射：shown reference须为非空唯一字符串，用固定ref:前缀防数值字符串键转换；逐条命中、消费、最终map严格为空。原shown/native数组与DTO均不重排，完整条目count、六项原值/RHS/===/bcmul尺度2及完整DTO递归严格比较保持；六项按原顺序独立报错，数量仅附两侧PHP类型，不输出值。生产formatter、查询、商品规格、价格及数量不改。
+
+同一helper的m4tr_result只在success&&is_array(prepared)时进入原fixture/baseline序列化正文；失败保留原schema、primary、legacy native、已完成stage/counts及默认null，减少失败报告额外负担。成功完整断言与摘要正文逐字不变；此改动不证明原fatal原因，也不保证消除所有未知失败。
+
+原实例正常close19命令均0，精确非force退役4原CID、1内部网络、7专用新卷；仅两原DB收到正常stop，原paid0/Task6失败255不重启或重试。close结果14349字节/662db48687071bb3290366ce1fe004e359bad4091513a79888b1fa5b72fb82bc；独立zero15命令均0，六fresh raw空、全局无原消费者、五组完整源码/九profile与35892原公件逐字保持，结果15496字节/267c94bfbcf551398a791fc32cdcf52f00d880acf247ffc04894b043fcb8a724。只在这之后执行新PHP语法。
+
+候选r18-three-read-diagnostic-source-r2完整155479字节/b09ff85b929ed2fccb02584d10aef096f0089b4d749813f1e40459014c97e304，经Root全文正逆与独立Source复核，仅两上下文变化。原PHP8.2镜像network-none/只读/128M的候选及当前UI initializer/public copier三件-l均0；第4项在容器创建前被Root抄录校验值不符拦下，原wrapper退出1保持。按正式17件manifest核真实gate pin后，仅新独立driver完成第4件-l0，不重跑前三件。Root完整12份before/lint/after原生回执均0、stderr空、临时容器正常自动移除，采用结果r18-current-php-syntax-root-adoption-r1/RESULT.json 12496字节/99d14b1ecfcf6fc0b9ab6298c11e9f9a6f471e0dde3db1cc7e2edd49688c5ca5。语法不含App/业务/HTTP/DOM。
+
+本次按原Task6窄修复接入helper与这两份现有记录。任务：[x]独立Source与Root全文正逆；[x]四件真实PHP语法；[x]本地接入；[ ]新clean来源完整正常履约/售后/Worker；[ ]当前完整UI17冻结与三端20步、320/390/1440真实DOM；[ ]UI正常关闭/独立清零。原R17仍失败，未完成原需求和MS5/MS6后续项继续保留；真实支付/退款、发布授权边界及停止样本NOT RUN不变，不推送或部署。

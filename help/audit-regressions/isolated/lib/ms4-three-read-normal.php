@@ -1399,14 +1399,34 @@ function m4tr_v1_expected(\think\App $app,PDO $db,array $owner,array $root,strin
     // Independently bind every exposed original item to the native full saved JSON, including member price != SKU base price.
     $shown=$expected['cartInfo']??array_column($expected['_info']??[],'cart_info');
     m4fn_expect(count($shown)===count($items),'TASK6_THREE_EXPECTED_DISPLAY_COMPLETE_ORIGINAL_ITEM_COUNT');
-    foreach($items as$index=>$item){$cart=json_decode($item['cart_info'],true,64,JSON_THROW_ON_ERROR|JSON_BIGINT_AS_STRING);
-        m4fn_expect($shown[$index]['product_id']===m5pcp_int($item['product_id'],1)
-            &&$shown[$index]['cart_num']===$item['cart_num']&&$shown[$index]['truePrice']===m4fn_money($cart['truePrice'])
-            &&$shown[$index]['sum_true_price']===m4fn_money($cart['sum_true_price'])
-            &&$shown[$index]['postage_price']===m4fn_money($cart['postage_price'])
-            &&bcmul($cart['truePrice'],(string)$item['cart_num'],2)===$cart['sum_true_price'],
-            'TASK6_THREE_EXPECTED_NATIVE_PRODUCT_QUANTITY_SAVED_UNIT_LINE_POSTAGE_PRICES');
+    $shownByReference=[];
+    foreach($shown as$shownCart){
+        m4fn_expect(is_array($shownCart)&&array_key_exists('id',$shownCart)&&is_string($shownCart['id'])&&$shownCart['id']!==''
+            &&!array_key_exists('ref:'.$shownCart['id'],$shownByReference),'TASK6_THREE_EXPECTED_DISPLAY_CART_REFERENCE_UNIQUE_STRING');
+        $shownByReference['ref:'.$shownCart['id']]=$shownCart;
     }
+    foreach($items as$index=>$item){$cart=json_decode($item['cart_info'],true,64,JSON_THROW_ON_ERROR|JSON_BIGINT_AS_STRING);
+        m4fn_expect(is_array($cart)&&array_key_exists('id',$cart)&&is_string($cart['id'])
+            &&array_key_exists('cart_id',$item)&&is_string($item['cart_id'])&&$item['cart_id']!==''&&$cart['id']===$item['cart_id'],
+            'TASK6_THREE_EXPECTED_NATIVE_CART_REFERENCE_IDENTITY');
+        $referenceKey='ref:'.$cart['id'];
+        m4fn_expect(array_key_exists($referenceKey,$shownByReference),'TASK6_THREE_EXPECTED_NATIVE_CART_REFERENCE_DISPLAY_MATCH_ONCE');
+        $shownCart=$shownByReference[$referenceKey];
+        m4fn_expect($shownCart['product_id']===m5pcp_int($item['product_id'],1),
+            'TASK6_THREE_EXPECTED_NATIVE_PRODUCT_ID');
+        m4fn_expect($shownCart['cart_num']===$item['cart_num'],
+            'TASK6_THREE_EXPECTED_NATIVE_QUANTITY_'.strtoupper(get_debug_type($shownCart['cart_num'])).'_'.strtoupper(get_debug_type($item['cart_num'])));
+        m4fn_expect($shownCart['truePrice']===m4fn_money($cart['truePrice']),
+            'TASK6_THREE_EXPECTED_SAVED_UNIT_PRICE');
+        m4fn_expect($shownCart['sum_true_price']===m4fn_money($cart['sum_true_price']),
+            'TASK6_THREE_EXPECTED_SAVED_LINE_PRICE');
+        m4fn_expect($shownCart['postage_price']===m4fn_money($cart['postage_price']),
+            'TASK6_THREE_EXPECTED_SAVED_POSTAGE_PRICE');
+        m4fn_expect(bcmul($cart['truePrice'],(string)$item['cart_num'],2)===$cart['sum_true_price'],
+            'TASK6_THREE_EXPECTED_NATIVE_UNIT_QUANTITY_LINE_PRICE');
+        unset($shownByReference[$referenceKey]);
+    }
+    m4fn_expect($shownByReference===[],'TASK6_THREE_EXPECTED_DISPLAY_CART_REFERENCES_ALL_CONSUMED');
     return ['dto'=>$expected,'user_info'=>$view==='platform_detail'?['real_name'=>$buyer[0]['real_name']]:null];
 }
 
@@ -1648,7 +1668,7 @@ function m4tr_result(array $source,bool $success,?array $diagnostic):array
             &&empty($GLOBALS['m4tr_cleanup_failure']),'TASK6_THREE_ACTUAL_COMPLETE_SIX_STATES_AND_NATIVE_CHILD_CLOSED');
     }
     $fixture=null;$baseline=null;
-    if(is_array($prepared)){
+    if($success&&is_array($prepared)){
         $records=$prepared['v1']['records'];
         $fixture=['original_paid_commercial_roots'=>1,'new_true_legacy_commercial_roots'=>1,'new_true_v1_unpaid_roots'=>count($records),
             'whole_commercial_roots'=>101,'new_ordinary_v1_roots'=>$prepared['v1']['ordinary_count'],

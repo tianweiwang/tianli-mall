@@ -1138,3 +1138,8 @@ R16正常回归与序列到期边界修订（2026-10-19）：原Run2026101907123
 实施采用的最小修订：在ms5-paid-consumer-normal.php、ms4-fulfillment-normal.php、lib/ms4-three-read-normal.php共插入7个等号（2/3/2），让首次及后续仍present的时间断言包含相等毫秒，另覆盖Task6独立CF counter同类分支。依据匹配版本官方db.c的keyIsExpired仅在now>expiry时读时过期，普通非yield脚本TIME与命令快照固定；active过期可在等值删除，原absent>=保持。参考 https://github.com/redis/redis/blob/8.6.1/src/db.c#L2583-L2591 和 https://github.com/redis/redis/blob/8.6.1/src/server.c#L1234-L1247 。实际Source闭包及独审确认仅这7字节、全文正逆成立；没有期限容差或续期，原1000ms/10秒、完整type/value/hash/绝对期限/no-reappearance、全库、金额、父子、Lua、生产生成器与输出schema保持。
 
 当前验证与任务：[x]匹配版本与有限Source独审；[x]三个实际候选在原PHP8.2镜像network-none/只读/128M纯语法-l全部自然0、stderr空，临时容器正常自动移除且前后selector为空；[x]仅三PHP和本记录接入本地Main。仍待：[ ]新clean来源完整普通Task6/售后/Worker；[ ]当前UI17实际冻结、三端20步及320/390/1440 DOM；[ ]UI正常关闭/独立核零。R16仍失败，Source/语法/正常收尾不计业务通过。原用户停止的定向expiry/fault/denial等样本仍NOT RUN；通用商城继续复用商品规格/价格，真实支付和发布边界不变。本轮不推送或部署，validation旧4d4由后续新normal物化在真实核零之后单独前进。
+
+
+R17 原失败与 R18 条目身份核对补记（2026-10-19，实施前采用）：原 b0 来源 Run20261019090746aa203e 的内部付款自然0；履约原同CID自然255，shutdown 停在 three_read_initial，六项合并断言失败且两业务结果未生成，二次fatal原因UNKNOWN。原MySQL仅只读投影确认100个V1根/101商品的原保存数量、金额规范及预算均一致；另无排序投影返回两付单条目相对序号[2,1]，不能还原原PHP ORM现场。Source证明原生列表ORDER BY id而原formatter的column无同序合同，因此沿原Task6只纠正独立oracle的位置配对：按保存cart reference严格唯一一一匹配，消费后空map，DTO顺序及六项原值/严格比较与全部完整DTO门保持；分项错误码仅补固定字段/PHP类型。失败报告不再序列化prepared摘要，成功正文保持，不把本改动称为原唯一主因已证实。
+
+原实例已close19/独立zero15全部实际0，4原CID/1内网/7原卷正常非force退役，35892原公件及全部冻结Source保持。候选155479/b09ff85b929e已完成独审、Root全文正逆和PHP8.2 network-none/只读/128M语法0，后三端初始化/复制三PHP也各自实际语法0；运行入口均无App/SQL/HTTP。只接入helper与两现有记录，商品规格/价格和生产formatter均不改。后继新clean来源完整履约、售后、Worker、UI20步与320/390/1440仍待实际验证，旧R17仍失败，停止样本NOT RUN。详见现有normal-early-structure-integration记录。
