@@ -1418,7 +1418,7 @@ final class MarketplaceOrderFulfillmentServices
                 if($childData!==null){if(!isset($extra[$operation['child_order_id']]))self::unavailable();self::childStored($extra[$operation['child_order_id']],$childData);}
             }elseif($key==='items'){
                 if(count($extra)!==count($insertedItems)||array_keys($extra)!==array_keys($insertedItems))self::unavailable();
-                foreach($insertedItems as$id=>$expected){self::itemStored($extra[$id],$expected);if(($extra[$id]['old_cart_id']??null)!==null)self::unavailable();}
+                foreach($insertedItems as$id=>$expected){self::itemStored($extra[$id],$expected);if(($extra[$id]['old_cart_id']??null)!=='')self::unavailable();}
             }else{
                 if(count($extra)!==count($rangeWrites)||array_keys($extra)!==array_keys($rangeWrites))self::unavailable();
                 foreach($rangeWrites as$id=>$expected)if($extra[$id]!==$expected)self::unavailable();

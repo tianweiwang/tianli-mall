@@ -18,19 +18,39 @@
 
 ## 2. 里程碑与当前状态
 
-只有验收人可以修改"状态"列（见 11 文档 §6）。执行方只能写"待验收"。
+正式验收仍由用户或其指定验收人按 [11 文档](11-acceptance-process.md)作出。以下人工验收列只登记已有决定；实施与普通验证另列，不能据此代签其余里程碑。原“未开始”是初始值，不能继续代表已开展的开发。
 
-| 里程碑 | 计划文件 | 内容 | 前置条件 | 状态 |
+| 里程碑 | 计划文件 | 内容 | 前置条件 | 人工验收记录 |
 |---|---|---|---|---|
-| BASE | [02-plan-base-rebuild.md](02-plan-base-rebuild.md) | 以 master 为基线重建，迁入备份快照中的必要修改和审计修复，得到 `AUDIT_BASE_SHA` | 无 | 未开始 |
-| MS0a | [04-plan-ms0a.md](04-plan-ms0a.md) | 最小安全修复：跨应用令牌混用、认证失败写入、账号状态、权限放行、认证配置 | BASE 通过 | 未开始 |
-| MS0b | [05-plan-ms0b.md](05-plan-ms0b.md) | 会话 v2：版本化会话、撤销、单次兑换刷新 | MS0a 通过 | 未开始 |
-| MS1 | [06-plan-ms1.md](06-plan-ms1.md) | 商家、员工、角色、merchantapi、MerchantContext | MS0b 通过（merchantapi 直接使用 v2 会话） | 未开始 |
-| MS2 | [07-plan-ms2.md](07-plan-ms2.md) | 商品、规格、素材、运费模板、分类绑定隔离与 mer_id 迁移 | MS1 通过 | 未开始 |
-| MS3 | [08-plan-ms3.md](08-plan-ms3.md) | 独立商家后台 `template/merchant`、平台审核页、顾客端店铺展示 | MS2 通过 | 未开始 |
-| MS4 | [09-plan-ms4-ms6.md](09-plan-ms4-ms6.md) §MS4 | 单店购物车、订单、库存、发货、售后、评价 | MS3 通过 | 未开始 |
-| MS5 | [09-plan-ms4-ms6.md](09-plan-ms4-ms6.md) §MS5 | 支付、退款、对账 | MS4 通过，且开放问题 Q4/Q5 已决定 | 未开始 |
-| MS6 | [09-plan-ms4-ms6.md](09-plan-ms4-ms6.md) §MS6 | 发布、恢复、限流、防回滚 | MS5 通过 | 未开始 |
+| BASE | [02-plan-base-rebuild.md](02-plan-base-rebuild.md) | 以 master 为基线重建，迁入备份快照中的必要修改和审计修复，得到 `AUDIT_BASE_SHA` | 无 | 用户已确认通过，见 [既有决定补记](records/base/acceptance.md) |
+| MS0a | [04-plan-ms0a.md](04-plan-ms0a.md) | 最小安全修复：跨应用令牌混用、认证失败写入、账号状态、权限放行、认证配置 | BASE 通过 | 未登记用户签收 |
+| MS0b | [05-plan-ms0b.md](05-plan-ms0b.md) | 会话 v2：版本化会话、撤销、单次兑换刷新 | MS0a 通过 | 未登记用户签收 |
+| MS1 | [06-plan-ms1.md](06-plan-ms1.md) | 商家、员工、角色、merchantapi、MerchantContext | MS0b 通过（merchantapi 直接使用 v2 会话） | 未登记用户签收 |
+| MS2 | [07-plan-ms2.md](07-plan-ms2.md) | 商品、规格、素材、运费模板、分类绑定隔离与 mer_id 迁移 | MS1 通过 | 未登记用户签收 |
+| MS3 | [08-plan-ms3.md](08-plan-ms3.md) | 独立商家后台 `template/merchant`、平台审核页、顾客端店铺展示 | MS2 通过 | 未登记用户签收 |
+| MS4 | [09-plan-ms4-ms6.md](09-plan-ms4-ms6.md) §MS4 | 单店购物车、订单、库存、发货、售后、评价 | MS3 通过 | 未登记用户签收 |
+| MS5 | [09-plan-ms4-ms6.md](09-plan-ms4-ms6.md) §MS5 | 支付、退款、对账 | MS4 通过，且开放问题 Q4/Q5 已决定 | 未登记用户签收 |
+| MS6 | [09-plan-ms4-ms6.md](09-plan-ms4-ms6.md) §MS6 | 发布、恢复、限流、防回滚 | MS5 通过 | 未登记用户签收 |
+
+### 实施与普通验证概览（不替代验收）
+
+目标是通用多商户商城，复用现有商品规格与价格体系。当前后续开发仍为 L2 本地实现和隔离验证，未推送、未部署；BASE 历史单独的 L3 授权保留在原报告，不扩展为后续授权。
+
+| 阶段 | 已有实施或证据 | 尚未闭合的边界 |
+|---|---|---|
+| BASE | 重建与交付报告已形成；用户原文确认“确认 BASE 通过，授权 MS0a 按 L2 开发” | 仅登记该既有决定，不追加测试或扩大授权；原 SHA、历史结果和证据不改 |
+| MS0a | 认证、账号状态与权限收紧已有实现；[报告](records/ms0a/report.md)记录主、独立 HTTP 各 106/106 | 普通/隔离结果不代表生产验证，V10 用户签收未登记 |
+| MS0b | 会话 v2 及账号变更、清理、登录下载已开发；[最终普通冻结记录](records/ms0b/report.md)为 30 PASS / 1 NOT RUN | 完整安全验收、真实集成与人工签收未取得；停止项不恢复 |
+| MS1 | 商家、员工/角色、上下文及管理接线已有实现；[普通报告](records/ms1/report.md)含 API、Worker 局部证据及聊天界面正常流程 | 原组合失败保留；整套回归、全部界面功能、真机与人工验收未完成 |
+| MS2 | 结构/归属命令及商品、库存等已有实现与[普通记录](records/ms2/four-command-normal-summary.json) | 各局部通过不能汇总为完整 MS2；历史归属映射和完整迁移/商品链验收未闭合 |
+| MS3 | 已有商家、平台页面源码及[构建检查记录](records/ms3/frontend-source-checkpoint.json) | 页面源码或构建不等于真实业务 UI；顾客店铺展示与完整阶段验收仍未闭合 |
+| MS4 | 交易、履约、售后、评价已有实现；R22前置29命令、files/C3/内部paid自然0，初始三读1stage/54calls（39owned＋15wrapper）、legacy0 | Task6在normal_action_1自然1，售后/Worker未启动；空字段修复已Source/独审及固定PHP8.2纯语法0，新fresh完整链、三端UI/DOM及人工签收仍待完成。详见[当前计划](09-plan-ms4-ms6.md)及[集成记录](records/ms4/normal-early-structure-integration.md) |
+| MS5 | 已有支付核心、测试支付消费者及三端订单查询验证相关实现/源码，见 [支付记录](records/ms5/payment-core-integration.md) | 真实账户、回调、退款、账单/费用及完整业务交付与验证尚未完成；测试驱动不代替真实渠道，外部条件与 L4 实测另列 |
+| MS6 | 原计划和发布要求保留 | 发布、恢复、限流、防回滚与全量回归尚未完成，未获真实发布验收 |
+
+最新进展（R22，2026-10-20）：正常close19项与独立zero15项原生命令均0，四原CID/一内网/七卷非force退役，六fresh原始查询双空、84283原公件保全；空字段候选固定PHP8.2纯语法及前后selector共3项原生0，无残留。原失败仍保留，新fresh完整正常链与三端验收尚待。**整体当前没有可信完成百分比**，按实施、实际验证、未完成和待签收分别报告。
+
+用户已停止的安全复现、负向、故障、并发/断连及恢复样本继续 **NOT RUN**，不得换名重跑或记为 PASS。本概览不改变原规格、覆盖要求或正式验收流程；后续只据实际证据更新，不以行数、构建成功或准备完成换算项目百分比。
 
 ## 3. 已定决策
 

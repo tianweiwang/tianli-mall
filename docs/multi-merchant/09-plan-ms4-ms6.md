@@ -1174,3 +1174,17 @@ Task6原shutdown补best-effort安全fatal观察：64KiB诊断保留区，第一�
 任务：[x]原失败证据/正常退役/独立清零；[x]有限设计、独审、Root全文正逆；[x]两候选真实语法；[x]仅两PHP与这两现有记录本地接入；[ ]原镜像有效配置；[ ]新clean来源完整普通履约/售后/Worker；[ ]当前UI17实际冻结、三端20步及320/390/1440 DOM；[ ]UI正常关闭/独立清零。原R18仍失败，Source/语法/收尾不记业务通过；通用多商户复用商品规格价格，真实支付/退款和MS5/MS6未决业务保留，停止样本NOT RUN，仅L2本地，不推送或部署。
 
 原镜像有效配置实测（2026-10-19）：r19-php-effective-config-public-readback-r2同一固定PHP镜像、无App/源挂载/网络，仅恢复16MiB临时目录以创建运行锁；五项原生命令均自然0，双selector前后空。实际PHP8.2.33/CLI、memory_limit=128M、max_execution_time=0。该结果仅代表原镜像默认CLI配置，不证明R18失败时的实际限制或内存不足原因；本次保持内存/时间设置不变，后继真实异常由安全观察器记录。原r1启动254与22份公件保留。任务中原镜像有效配置已完成，新完整业务正常链仍待。
+
+### R22实际进度与首个正常履约动作的有限修复（2026-10-20）
+
+本轮真实前置29项原生子命令正常0，files-bootstrap/C3顾客准备/内部测试付款均自然0；初始三端读取完成1个stage、54次calls（39 owned service＋15真实业务wrapper），legacy同句柄自然0、原proc_close=-1保留。Task6随后在normal_action_1自然退出1，售后/评价/Worker未启动；完整Task6、MS4及三端页面验收未通过，不改原失败或人工签收。当前整体没有可信百分比。
+
+需求：正常发货必须接受真实保存的子商品old_cart_id严格空串，并继续拒绝缺列/null/非空串。生产Source链明确：安装DDL crmeb.sql:28477为varchar(50) NOT NULL DEFAULT ''；childItemData:1854–1872未给该列，DAO insertChildItem:1141–1143/insertWithoutId:1314–1318只插所给列；同服务174及1598的完整消费者已严格期待''，但pendingFulfillmentDelta:1421仍期待null，存在确定合同矛盾。
+
+设计范围仅1421一处右值null→''，保原??null和严格比较、itemStored、完整新增item数量/键、原operation/range/refund及其余全部门。生产候选153919B/56d551a68e5847941da1f78a0923dba7c1aa6812c80a03adcb0136ee4199b3f8已完成Source及独立全文正逆/非缝复核；未改DDL/DAO、保存数据、商品规格价格、权限或测试断言。此Source缺陷不证明原R22的第一个失败谓词：原公开结果只存通用抛出位置，内因UNKNOWN，不据异常类补造栈或金融原因。
+
+实际收尾与语法：正常close14347B/167837ffb7946913395c40e73126f05e688add5c84ee3850f01059b4ece909b1，独立zero15497B/194eb47681a0f3804ade5dcc11122196612db68615ded9d5e07c0d64c41e743c，原件84283件保全；语法结果r22-first-ship-empty-field-php-syntax-r1/RESULT.json3217B/b9fd0172aef9b6ba9720e4ae2f5ff8626c7e37571ebc986cef332add1d367821，同固定PHP8.2镜像network-none/只读/128M，仅-l且stderr空、前后label空，无App/DB/Redis/HTTP。它们不证明首ship修复或完整业务通过。
+
+本节随唯一生产候选及五份记录作为同一有限本地变更采用，提交身份以所在Git记录核实。
+
+任务：[x]原失败/初始三读及Source合同核清；[x]唯一生产候选与独审；[x]本R22原实例正常close（19native0、四CID/一内网/七卷退役、84283原件保全）；[x]独立zero15项原生0/六fresh原始双空；[x]固定PHP8.2纯语法及双selector共3项原生0；[ ]新clean/fresh完整原正常链，真实首ship子item严格''与原后续完整读回/发收货；[ ]fresh B三场景、原UI20及原Task4/Task6其他正常浏览器责任和三宽DOM；[ ]对应正常关闭与独立核零；[ ]阶段人工验收。Source、语法和收尾不替代业务PASS。保持原全部任务和停止样本NOT RUN，详见现有normal-early-structure-integration的R22补记；不改11规格或验收流程。

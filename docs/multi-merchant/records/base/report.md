@@ -257,3 +257,14 @@ BASE 的执行要求均已验证；当前交付限于源码迁移、治理记录
 独立复核补充证据位于仓库外 `/tmp/base-independent-review-20261011-gfg1gx7c/`：`classification-recommendations.md`、`evidence/classification-recommendations.json`、`evidence/master-stub-source-manifest.json`、`evidence/master-stub-security.stdout`、`evidence/master-stub-security.stderr` 和 `evidence/security.stdout`。原五个提交范围核对见 `evidence/per-commit-scope-review.json`；77 项历史证据核对全部匹配，见 `evidence/historical-evidence-review.json`。这些补充对照不计入原 58 行结果，不提升测试层级，也不构成验收人签收。
 
 用户随后明确授权将这些提交推送到 GitHub，授权范围为 `codex/audit-base` 分支（L3）。推送前已核实仓库 `tianweiwang/tianli-mall` 为 PRIVATE，远程 master 仍为固定起点；实际推送结果及远程 SHA 核对在本轮回传中报告。该授权不包含合入 master、部署或代替验收人签收。隔离测试环境准备另获用户批准，但本次记录修正不表示环境已安装或 MS0a 已完成。
+
+
+## BASE 用户既有确认补记
+
+用户在本会话已明确回复：
+
+> 确认 BASE 通过，授权 MS0a 按 L2 开发
+
+这是用户本人已作出的 BASE 通过决定及后续 MS0a L2 开发授权，本补记仅补登该事实，不重新请求确认、不代用户作新判定。对应 `AUDIT_BASE_SHA` 仍为 `9685731dcd116784d38e6bbdb902cec3c0c84975`。按 11 文档 §3、V10，将这项既有决定归档在 [acceptance.md](acceptance.md)，README 同步登记。
+
+原确认日期和签名未在本次转录中提供，不补造。本补记没有新跑测试、独立复跑或重新完成 V1–V9；本报告前文的原 SP-BASE、58 行结果、证据引用及历史 L3 推送授权全部保留，前文“等待验收”表示当时状态，不再表示用户尚未确认 BASE。该决定不代签 MS0a–MS6，也不新增推送、合入或部署授权。

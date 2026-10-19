@@ -382,3 +382,23 @@ Task6原shutdown补best-effort安全fatal观察：64KiB诊断保留区，第一�
 实际语法：r21-normal-unpaid-warning-php-syntax-r1/RESULT.json为3199字节/4536ccba8b67277e17e5c569a7be25c4b0ced81ecbb1f32204282a8eb8f1c8ec，同固定PHP8.2镜像、network none、只读源和根目录仅执行-l；三项原生调用均自然0/stderr空，语法stdout精确通过，label前后空、--rm正常退役。无App、SQL、Redis、HTTP或页面执行。当前精确生产文件与这两份记录作为同一有限本地变更，提交身份以本条所在Git记录核实；前端来源和构建无需重署。
 
 任务：[x]本轮原失败及固定日志完整SHA归因；[x]最小Source设计、候选和独审；[x]原实例正常精确退役与独立核零；[x]候选PHP8.2语法；[x]仅一生产文件及这两份记录接入；[ ]新clean完整正常交易/履约/售后/Worker；[ ]fresh B三场景、原UI20及320/390/1440真实DOM；[ ]UI正常关闭与独立核零。最终17件Source/aux生命周期的实际组装、语法与独审已通过，仍不代签实际模型/冻结或页面。通用多商户、商品规格价格复用、L2本地和停止样本NOT RUN保持。
+
+### R22正常链：初始三读已过，normal_action_1失败与空字段修订（2026-10-20）
+
+本轮Run202610192049049fe737，冻结来源d6f2cc18c655b4777574730b4b7bd0ac7c6237b1，freeze0eb60c9fba4253b40dbbf079db5ab963c642d11053db06c40284da2131f863ca。29项前置原生子命令正常0，files-bootstrap、C3顾客准备和本Run内部测试付款均自然0；内部测试付款仍只属内部producer，不等于真实渠道验收。Task6初始三读完成stage0一个完整stage、54calls，39为OWNED_PUBLIC_SERVICE、15为REAL_BUSINESS_WRAPPER；legacy自然0、完整stderr空，真实proc_close=-1保留。不能把54次调用称为54条独立业务用例或完成全部三读阶段。
+
+随后Task6原同CID自然退出1，phase=normal_action_1，原结果INCOMPLETE、business=null；售后/评价/Worker未启动，HTTP/DOM未运行。Root只读公开读回r22-fulfillment-failure-root-readback-r1/RESULT.json3429B/9378b67133d28cffc082fa03b4cd58b900bbe34bfac272bc5883aee750ee1b4f记录AuthUnavailableException通用抛出位置MarketplaceOrderFulfillmentServices.php:2001。原内部phase/栈没有保存，首触发内因UNKNOWN；不认定下述Source缺陷必然就是本Run第一个失败门，不用R21固定warning或runtime差分借签本轮。
+
+本次需求与设计：安装DDL old_cart_id varchar(50) NOT NULL DEFAULT ''；真实childItemData不给该列，DAO的INSERT仅列给定keys，因此原生子商品按DDL保存空串。既有完整家族两处消费者也期待严格''。唯一矛盾是pendingFulfillmentDelta:1421在完整itemStored后仍要求null。本候选仅把该处!==null改成!==''，保??null：missing/null/nonempty仍拒绝；原完整item、数量/键、operation、range、refund、父子、金额/规格/库存、权限、只读与异常门全部字节不变，不改writer或保存数据，也不放宽独立expected去迁就actual。
+
+候选包artifacts/ms4-worker-normal-source-preparation-r1/r22-first-ship-empty-field-source-r1：candidate153919B/56d551a68e5847941da1f78a0923dba7c1aa6812c80a03adcb0136ee4199b3f8；唯一1421行、字节delta=-2，完整正逆和非缝保持。独审r22-first-ship-empty-field-peer-r1/RESULT.json3555B/f47347a4728df7719cfdb7ebeff644665174b848db3edd28d08e609cf6a73b46为SOURCE_REVIEW_PASS_RUNTIME_NOT_RUN，实际核7成员/8文件和DDL→writer→两消费者。两份Source结论不含PHP执行、SQL、Docker或业务/页面通过。
+
+实施/验证任务：[x]真实本轮前置与失败公开事实；[x]有限需求/设计、唯一候选及独立Source审查；[x]本R22正常close原件/终态；[x]独立zero15项原生0/六fresh原始双空；[x]固定PHP8.2纯语法及双selector共3项原生0；[ ]新clean来源/new freeze/fresh Run完整原正常链，首ship native item.old_cart_id严格空串、后续完整family/三端读取及原发收货责任；[ ]售后/评价/Worker完整正常验证；[ ]独立fresh B三场景/原UI20/原商家34步及Task4其余正常页面要求，320/390/1440真实DOM；[ ]对应正常关闭/独立核零及人工验收。本轮收尾与语法均按真实R22结果登记，不沿R21的0补填；新fresh正常业务与页面仍须另行实际验证。
+
+本轮实际正常close已完成：r22-task6-failed-normal-close-r1/RESULT.json14347B/167837ffb7946913395c40e73126f05e688add5c84ee3850f01059b4ece909b1，19项原生命令全部自然0，原四CID、一内部网络及七卷正常非force退役，84283原公共原件保持，Task6原失败及未启动售后/Worker不改署。该close中的六raw为空不替代另一个独立zero流程。随后独立zero原进程80837实际退出0：r22-task6-failed-independent-zero-r1/RESULT.json15497B/194eb47681a0f3804ade5dcc11122196612db68615ded9d5e07c0d64c41e743c，15项原生命令0，Root核全部created/terminal及完整stdout/stderr，六fresh原始查询双空、84283原公件保持；close_result_sha256严格指向本轮close，原Task6失败和未启动售后/Worker保持。
+
+固定PHP8.2候选语法实际0：r22-first-ship-empty-field-php-syntax-r1/RESULT.json3217B/b9fd0172aef9b6ba9720e4ae2f5ff8626c7e37571ebc986cef332add1d367821。单文件153919B/56d551a68e5847941da1f78a0923dba7c1aa6812c80a03adcb0136ee4199b3f8与双selector共3项原生调用0；network-none/只读/128M，仅-l，stderr空、前后label空且--rm无残留，无App/DB/Redis/HTTP/GUI。这是语法资格，未运行修复后的ship或新正常业务。
+
+本节随唯一生产候选及五份记录作为同一有限本地变更采用，提交身份以所在Git记录核实。
+
+通用多商户范围、商品规格价格复用、原静态构建来源、L2本地、未推送/未部署及停止样本NOT RUN均保持；未触碰11规格、未勾销原正常验收责任。当前整体没有可信百分比，README按已有实施、实际验证、未完成与待签收分列，不能再由Source或子步骤成功换算整体进度。
