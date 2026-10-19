@@ -331,3 +331,20 @@ Source确认独立原生items明确ORDER BY id，原formatter经DAO column未定
 候选r18-three-read-diagnostic-source-r2完整155479字节/b09ff85b929ed2fccb02584d10aef096f0089b4d749813f1e40459014c97e304，经Root全文正逆与独立Source复核，仅两上下文变化。原PHP8.2镜像network-none/只读/128M的候选及当前UI initializer/public copier三件-l均0；第4项在容器创建前被Root抄录校验值不符拦下，原wrapper退出1保持。按正式17件manifest核真实gate pin后，仅新独立driver完成第4件-l0，不重跑前三件。Root完整12份before/lint/after原生回执均0、stderr空、临时容器正常自动移除，采用结果r18-current-php-syntax-root-adoption-r1/RESULT.json 12496字节/99d14b1ecfcf6fc0b9ab6298c11e9f9a6f471e0dde3db1cc7e2edd49688c5ca5。语法不含App/业务/HTTP/DOM。
 
 本次按原Task6窄修复接入helper与这两份现有记录。任务：[x]独立Source与Root全文正逆；[x]四件真实PHP语法；[x]本地接入；[ ]新clean来源完整正常履约/售后/Worker；[ ]当前完整UI17冻结与三端20步、320/390/1440真实DOM；[ ]UI正常关闭/独立清零。原R17仍失败，未完成原需求和MS5/MS6后续项继续保留；真实支付/退款、发布授权边界及停止样本NOT RUN不变，不推送或部署。
+
+
+### R18实际失败与R19有限修订（2026-10-19，实施前设计及接入）
+
+原72eb来源Run2026101911001090b322/freeze dce10bf82618c095a51cd992fed983c7387c5c293c89a6b9a012162e1adcbd4f的内部付款自然0；Task6原同CID自然255/PID0/restart0，shutdown537/5c3d8de82e26停在three_read_initial，fatal=true而primary/cleanup=null，两份业务结果缺席、售后/Worker未启动。原inspect0/logs0/cp1分别保留，OOMKilled=false、引擎日志双空、运行日志存在性UNKNOWN；具体fatal原因仍UNKNOWN，不把下述Source顺序缺口或内存限制称为已证实主因。
+
+原close19项实际0，结果14349/3e1ef56a37aa295ba995ac6bc7a070da2c990e031a30a2a708dd84841eef6653；独立zero15项实际0，结果15497/864f0785a9c9d8f3e7af064f94c996c25eb5b837e7b2cd0144a755c6b6ab2063。仅两原DB正常stop，精确非force退役4原CID/1内部网络/7专用卷，六fresh raw空、43721原公件保持；不重启原失败容器，不制造缺席结果。
+
+本次显式修订前述“DTO顺序保持/原shown/native数组与DTO均不重排”承诺的范围：仅独立构造的V1 expected商品成员序列，采用独立SQL与快照中原保存item主键递增次序，按唯一保存cart reference提取完整冻结formatter成员并逐次消费至空，支持原关联数组；原值、类型、字段全部保留。原生输入和实际返回DTO不重排，预期不借实际DTO建立，原六项严格值谓词与完整递归DTO严格比较保持。旧根分页/位置和旧formatter路径不改；不宣称旧formatter原本具有该顺序合同。生产查询、商品规格、价格与数量不改。
+
+Task6原shutdown补best-effort安全fatal观察：64KiB诊断保留区，第一步捕获原error_get_last再释放保留区，在原cleanup/发布前仅fatal分支输出至多4096字节的固定类别/类型、脱敏基名/行/phase、原memory_limit与峰值。原始异常消息只在RAM匹配固定前缀，不输出栈/参数/业务ID；诊断失败继续原shutdown，finally恢复warning handler。原业务函数、catch/成功正文、shutdown schema及五类公共fatal谓词保持；不改内存/执行时间限制或权限，不保证所有native fatal均可发出诊断。
+
+采用r19-independent-item-order-source-r1 helper157629/96c36895ff921f0d14884353bbad7eccb637ef1d70085adbbfac8d1ac77758c0，以及r19-task6-safe-fatal-observer-source-r1 entry120307/8a126eed436141f722cb4a8351a5a6d592f143449beaa9aeeb1276bd36f08f32。两件各独立Source审查与Root整文正逆通过，r19-two-php-syntax-r1同原PHP8.2镜像network-none/只读纯语法-l均自然0，stderr空，临时容器正常移除，无App/SQL/Redis/HTTP。原镜像配置探针首次自然254因只读锁文件失败，五份原native收据保留且后双selector为空；待补同现有syntax临时目录后重查，不算配置成功或R18主因。
+
+任务：[x]原失败证据/正常退役/独立清零；[x]有限设计、独审、Root全文正逆；[x]两候选真实语法；[x]仅两PHP与这两现有记录本地接入；[ ]原镜像有效配置；[ ]新clean来源完整普通履约/售后/Worker；[ ]当前UI17实际冻结、三端20步及320/390/1440 DOM；[ ]UI正常关闭/独立清零。原R18仍失败，Source/语法/收尾不记业务通过；通用多商户复用商品规格价格，真实支付/退款和MS5/MS6未决业务保留，停止样本NOT RUN，仅L2本地，不推送或部署。
+
+原镜像有效配置实测（2026-10-19）：r19-php-effective-config-public-readback-r2同一固定PHP镜像、无App/源挂载/网络，仅恢复16MiB临时目录以创建运行锁；五项原生命令均自然0，双selector前后空。实际PHP8.2.33/CLI、memory_limit=128M、max_execution_time=0。该结果仅代表原镜像默认CLI配置，不证明R18失败时的实际限制或内存不足原因；本次保持内存/时间设置不变，后继真实异常由安全观察器记录。原r1启动254与22份公件保留。任务中原镜像有效配置已完成，新完整业务正常链仍待。

@@ -1315,6 +1315,31 @@ function m4tr_v1_expected(\think\App $app,PDO $db,array $owner,array $root,strin
     $items=m5pcp_rows($db,'SELECT * FROM eb_store_order_cart_info WHERE oid = ? ORDER BY id',[$id]);
     $allItems=[];foreach($snapshot['rows']['eb_store_order_cart_info']as$item)if(m5pcp_int($item['oid'],1)===$id)$allItems[]=$item;
     m4fn_expect($items!==[]&&$items===$allItems,'TASK6_THREE_EXPECTED_FULL_ORIGINAL_ITEM_SET_NOT_PAGE_OR_REMAINING_QUANTITY');
+    // Keep complete original formatter members; only this independent expectation follows saved item PK order.
+    $originalItemsInSavedIdOrder=static function(array $members,bool $wrapped)use($items):array{
+        m4fn_expect(count($members)===count($items),'TASK6_THREE_EXPECTED_FORMATTER_NATIVE_ITEM_COUNT');$byReference=[];
+        foreach($members as$member){
+            m4fn_expect(is_array($member),'TASK6_THREE_EXPECTED_COMPLETE_ORIGINAL_FORMATTER_MEMBER');
+            $memberCart=$wrapped?($member['cart_info']??null):$member;
+            m4fn_expect(is_array($memberCart)&&array_key_exists('id',$memberCart)&&is_string($memberCart['id'])&&$memberCart['id']!==''
+                &&!array_key_exists('ref:'.$memberCart['id'],$byReference),'TASK6_THREE_EXPECTED_FORMATTER_CART_REFERENCE_UNIQUE_STRING');
+            $byReference['ref:'.$memberCart['id']]=$member;
+        }
+        $ordered=[];$lastItemId=0;
+        foreach($items as$item){
+            $itemId=m5pcp_int($item['id'],1);
+            m4fn_expect($itemId>$lastItemId,'TASK6_THREE_EXPECTED_NATIVE_SAVED_ITEM_PK_ORDER');$lastItemId=$itemId;
+            $savedCart=json_decode($item['cart_info'],true,64,JSON_THROW_ON_ERROR|JSON_BIGINT_AS_STRING);
+            m4fn_expect(is_array($savedCart)&&array_key_exists('id',$savedCart)&&is_string($savedCart['id'])
+                &&array_key_exists('cart_id',$item)&&is_string($item['cart_id'])&&$item['cart_id']!==''&&$savedCart['id']===$item['cart_id'],
+                'TASK6_THREE_EXPECTED_FORMATTER_NATIVE_JSON_CART_REFERENCE');
+            $referenceKey='ref:'.$item['cart_id'];
+            m4fn_expect(array_key_exists($referenceKey,$byReference),'TASK6_THREE_EXPECTED_FORMATTER_NATIVE_REFERENCE_MATCH_ONCE');
+            $ordered[]=$byReference[$referenceKey];unset($byReference[$referenceKey]);
+        }
+        m4fn_expect(count($ordered)===count($items)&&$byReference===[],'TASK6_THREE_EXPECTED_FORMATTER_NATIVE_REFERENCES_ALL_CONSUMED');
+        return $ordered;
+    };
     $refunds=m5pcp_rows($db,'SELECT * FROM eb_store_order_refund WHERE store_order_id = ? AND refund_type <> 3 AND is_cancel = 0',[$id]);
     $invoice=m5pcp_rows($db,'SELECT * FROM eb_store_order_invoice WHERE order_id = ?',[$id]);
     $buyer=m5pcp_rows($db,'SELECT * FROM eb_user WHERE uid = ?',[$owner['uid']]);
@@ -1339,6 +1364,7 @@ function m4tr_v1_expected(\think\App $app,PDO $db,array $owner,array $root,strin
     }
     if(in_array($view,['platform_list','mobile_list'],true)){
         $list=$reference->tidyOrderList([$row]);m4fn_expect(count($list)===1,'TASK6_THREE_EXPECTED_ORIGINAL_LIST_FORMATTER_ONE_ROW');$row=$list[0];
+        $row['_info']=$originalItemsInSavedIdOrder($row['_info'],true);
         $row['is_all_refund']=false;
         if($summary!==null&&$summary['shipping_state']==='partial'){$row['_status']=8;$row['status_name']=['status_name'=>'部分发货','pics'=>[]];}
         elseif(m5pcp_int($root['status'],0)===2){$row['_status']=5;$row['status_name']=['status_name'=>'已收货','pics'=>[]];}
@@ -1355,6 +1381,7 @@ function m4tr_v1_expected(\think\App $app,PDO $db,array $owner,array $root,strin
             $row['friend_pay_status']=(int)sys_config('friend_pay_status');
         }
         $row=$reference->tidyOrder($row,true,$detail);
+        $row['cartInfo']=$originalItemsInSavedIdOrder($row['cartInfo'],false);
         if($summary!==null&&$summary['shipping_state']==='partial')$row['_status']=array_replace($row['_status'],[
             '_type'=>1,'_title'=>'部分发货','_msg'=>date('m月d日H时i分',$times['last_shipped_at']).'服务商已部分发货','_class'=>'state-ysh']);
         elseif(m5pcp_int($root['status'],0)===1)$row['_status']=array_replace($row['_status'],[
