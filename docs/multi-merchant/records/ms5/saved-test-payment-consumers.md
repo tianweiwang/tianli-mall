@@ -46,3 +46,11 @@ Root 的实际检查位于仓库外 `artifacts/ms5-saved-consumers-20261017-r1/`
 商家完整离线构建已实际通过，测试来源为 clean `7d28865cbf0398d3c7cefd3f4b606d401452897d`。原26540个依赖文件逐字节复制，包/锁及9项直接依赖版本保持，不安装/ci/网络回退。Node22.23.3/npm10.9.9的真实 prebuild/source-check/build及来源前后检查全部native0；43份商家源码、原依赖树与锁保持，产出25文件/1468437B，HTML引用均为实际本地merchant资源且通用标题通过。结果 `artifacts/ms4-merchant-console-build/7d28865c-p1/build-receipt.json` 摘要 `d9773dbe9ad1ac40d58d1355f5c54d3a4c7c98672c908957c9eb7d4333aea105`。首次长目录复制因265字符路径及本机LongPathsEnabled0失败，原收据保留；只改新输出短目录，最大路径252，所有依赖仍保留，未改系统设置或builder。平台完整构建、真实API/DOM和视觉验收仍待完成。
 
 顾客H5完整离线构建现已实际通过，测试来源为clean `af0bcd9c7e46d17609461fb0df2620c62d6b2a52`；相较旧38a14构建，545份完整源码仅订单详情页变化，无新增源。Root及独立有限SOURCE、18处创建器全文逆回与AST之后，真实source准备/545复制/五目录工具复制/三路径adapter准备/Node语法/完整compiler/final gate均native0。原29930工具文件/160957439B、8个编译guards、10个包及锁定来源保持，无安装或编译器源改写；实际Node22.22.2/Vue2.6.14/原冻结编译工具完成两次真实pass。产出334文件/10380318B，manifest `8f6549c01d97ebedcc7da4dbdf2603266d9e01a7cf27eab9a5d4b7b65febf383`；HTML的3项资源为实际本地文件、remote_refs=0，完整来源和依赖前后保持。结果 `artifacts/ms4-h5/pay-uni-af0-r1/BUILD-REPORT.json` 3815B/摘要 `fc358a6a9514b7ef2db2cf52d101b0b639a4c0386b306b68471eb60619411d51`，编译警告原样保留。该证据只覆盖完整H5编译与静态产物，不代替登录/付款API、DOM、视觉或整体验收。
+
+## 2026-10-19 通联支付标签键兼容修复
+
+独立六 DTO 期待复核 P1 已确认：`PayServices::ALLIN_PAY` 及冻结 formatter 使用保存键 `allinpay`，当前 V1 投影的 `listPayType`、`detailPayType` 两处却写为 `allin`，会落入默认文案。计划只把这两个映射键改为 `allinpay`，对齐现有通联支付标签；其他标签、`marketplace_test`、金额、支付准入、渠道行为、原 formatter 和独立 expected 均不改。
+
+本次仅做精确差分、完整逆回与静态来源核对，不执行 PHP 或 Docker，不提交。后继由 Root 完成真实 PHP 8.2 语法及有意义的既有 formatter 兼容检查后再作限定路径本地提交；真实付款 API、三端 DOM、三宽展示及整体消费者验收继续保留为待验证，不以本次两键修复替代。
+
+Root 后继实测：修订投影及独立六 DTO helper R2 在固定 PHP 8.2.33 镜像中语法均正常；直接加载真实投影并调用其原列表/详情标签方法，六种已付列表、六种未付列表、八种详情共 20 项既有显示语义全部通过。原 `allinpay` 恢复“通联支付”，其余原标签、未付列表空文案/线下例外及 `marketplace_test` 保持。三次调用均无网络、只读单文件挂载，无 App/数据库/HTTP/支付动作；九条原生操作实际退出 0、stderr 为空，三个专用临时容器正常自动移除且前后精确名称选择器为空，两件被测来源前后字节保持。结果 `artifacts/ms4-worker-normal-source-preparation-r1/pay-type-canonical-label-native-r1/RESULT.json` 为 8957B/`6274e19b0f3f44a0c73f41d7d5fe025ebbfe6bf8f70b6bcd95034dae93a17129`。仅本 PHP 与本记录进入本地提交，完整实际 API/DOM、履约/售后/评价和三宽验收仍待，不推送或部署。

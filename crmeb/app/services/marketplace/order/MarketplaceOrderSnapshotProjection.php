@@ -785,14 +785,14 @@ final class MarketplaceOrderSnapshotProjection
     private static function listPayType(string $type,bool $paid):string
     {
         if(!$paid)return $type==='offline'?'线下支付':'';
-        return ['weixin'=>'微信支付','yue'=>'余额支付','offline'=>'线下支付','alipay'=>'支付宝支付','allin'=>'通联支付',
+        return ['weixin'=>'微信支付','yue'=>'余额支付','offline'=>'线下支付','alipay'=>'支付宝支付','allinpay'=>'通联支付',
             'marketplace_test'=>'测试支付'][$type]??'其他支付';
     }
 
     private static function detailPayType(string $type):string
     {
         return ['weixin'=>'微信支付','yue'=>'余额支付','offline'=>'线下支付','alipay'=>'支付宝','friend'=>'好友代付',
-            'allin'=>'通联支付','bank'=>'银行转账','marketplace_test'=>'测试支付'][$type]??'其他方式';
+            'allinpay'=>'通联支付','bank'=>'银行转账','marketplace_test'=>'测试支付'][$type]??'其他方式';
     }
 
     private static function shippedMessage(?int $at,array $options,string $message):string
