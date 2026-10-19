@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types=0);
 
 /** Frozen original selected-row formatter reference for this normal legacy fixture only. No HTTP/auth adapter. */
 namespace app\services\order;

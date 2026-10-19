@@ -299,3 +299,6 @@ R14已正常收尾：原19项直接native均0，精确退役4原容器/1空内�
 
 
 R14预热补全接入检查点（2026-10-19）：Root核9件/8pins闭集、唯一14字节增量及整文正逆后，在原PHP8.2镜像network-none/只读/128M中对154021字节候选和145261字节商品服务分别纯语法-l正常0、stderr空，原临时容器正常自动移除并前后无残留。仅将新增store_stock的精确候选接入Main，原129–156缓存断言及其余全部源码字节保持。Task8商品服务语法责任同时完成；新正常链、首页/API/DOM和三端验收仍待，本次没有启动App、SQL、Redis或HTTP。
+
+
+R15真实回归与参考兼容修订（2026-10-19）：Run 202610190533327549b2原内部付款进程0，真实旧订单生成子进程0；履约父进程自然1，phase=three_original_formatter_material_warm，TypeError定位ms4-three-legacy-reference.php:153，stage/call仍0，售后/Worker未启动。原日志未公开完整异常消息，不能声称确切首个操作数为float或int。独立Source核定参考多加strict_types=1，而生产StoreOrderServices默认弱调用，完整tidyOrder正文一致，真实保存旧DTO保留数字金额和整数数量；仅将参考声明改0，恢复原生产调用语义，不修改格式化正文、金额/JSON类型/缓存/状态断言或生产价格。原四CID、一内部网络、七专属卷正常非force退役，19项原生命令0；另进程15项独立读回0、六项新查询原始空，20974原公共文件逐字保持，失败仍记失败。Root核21件/20pins闭包与唯一1字节全文正逆，PHP8.2 network-none/只读纯语法正常0、stderr空，临时容器自动移除；当前R6 oracle200509字节纯语法亦0。仅参考单字节与本记录接入Main；新干净来源完整正常回归待执行，三端UI、真实支付和发布验收仍未完成。
