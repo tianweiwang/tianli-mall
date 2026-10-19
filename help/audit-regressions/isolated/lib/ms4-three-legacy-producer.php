@@ -294,7 +294,15 @@ function m4trp_no_caught_error(\think\App $app,array $logBefore,array $filesBefo
 /** One real free-shipping product; original paid Q2/Q1 products and owner/address are retained. */
 function m4trp_fixture(\think\App $app,PDO $db,array $owner):array
 {
-    $uid=$owner['uid'];$merchant=m5pcp_int($owner['saved']['order']['mer_id'],1);$now=time();
+    $uid=$owner['uid'];$merchant=\app\services\marketplace\publiccatalog\PublicCatalogQuery::positive($app->config->get('marketplace.self_operated_mer_id'));$now=time();
+    $selfRows=m5pcp_rows($db,'SELECT * FROM eb_marketplace_merchant WHERE mer_id = ?',[$merchant]);
+    m4fn_expect(count($selfRows)===1&&m5pcp_int($selfRows[0]['mer_id'],1)===$merchant
+        &&m5pcp_int($selfRows[0]['review_status'],1,1)===1&&m5pcp_int($selfRows[0]['security_locked'],0,0)===0
+        &&$selfRows[0]['closed_at']===null&&m5pcp_int($selfRows[0]['accept_orders'],1,1)===1,
+        'TASK6_THREE_LEGACY_ACTUAL_CONFIGURED_SELF_QUALIFIED_BEFORE_NEW_CATALOG');
+    m4fn_expect($app->config->get('marketplace.enabled')===false&&$app->config->get('marketplace.trade.enabled')===false
+        &&MarketplaceTradePolicy::active()===false&&MarketplaceTradePolicy::v1CreateEnabled()===false,
+        'TASK6_THREE_LEGACY_CONFIGURED_SELF_DOES_NOT_ENABLE_MARKETPLACE');
     $users=m5pcp_rows($db,'SELECT * FROM eb_user WHERE uid = ?',[$uid]);
     m4fn_expect(count($users)===1&&$users[0]===$owner['baseline']['authenticated_owner']['actual_user'],
         'TASK6_THREE_LEGACY_REUSES_TRUE_PAID_HTTP_OWNER');
@@ -316,6 +324,21 @@ function m4trp_fixture(\think\App $app,PDO $db,array $owner):array
     $sku=m4trp_insert($db,'eb_store_product_attr_value',['product_id'=>$product['id'],'type'=>0,'unique'=>bin2hex(random_bytes(4)),
         'suk'=>'普通','stock'=>10,'sales'=>0,'price'=>'20.15','cost'=>'7.45','is_show'=>1,'is_virtual'=>0,
         'weight'=>'0.00','volume'=>'0.00','image'=>'/__ms4_fixture__/product.png']);
+    $definition=$app->make(\app\services\marketplace\publiccatalog\PublicCatalogSku::class)->read(m5pcp_int($product['id'],1));
+    m4fn_expect(is_array($definition)&&is_array($definition['root']??null)&&$definition['definition_complete']===true
+        &&$definition['stock']===10&&$definition['raw_values']===[$sku['suk']=>$sku],
+        'TASK6_THREE_LEGACY_REAL_PUBLIC_SELF_PRODUCT_COMPLETE_NATIVE_SKU');
+    $expectedRoot=$product;
+    foreach(['mer_id'=>'_public_store_mer_id','name'=>'_public_store_name','logo'=>'_public_store_logo',
+        'after_sale_contact'=>'_public_store_after_sale_contact','shipping_note'=>'_public_store_shipping_note']as$field=>$joined)
+        $expectedRoot[$joined]=$selfRows[0][$field];
+    $actualFields=array_keys($definition['root']);$expectedFields=array_keys($expectedRoot);
+    sort($actualFields,SORT_STRING);sort($expectedFields,SORT_STRING);
+    m4fn_expect($actualFields===$expectedFields,'TASK6_THREE_LEGACY_PUBLIC_ROOT_EXACT_NATIVE_FIELD_SET');
+    foreach($expectedRoot as$field=>$value)m4fn_expect($definition['root'][$field]===$value,
+        'TASK6_THREE_LEGACY_PUBLIC_ROOT_ALL_NATIVE_VALUES_AND_TYPES');
+    $purchase=$app->make(\app\services\marketplace\publiccatalog\PublicCatalogQuery::class)->purchasableRoot(m5pcp_int($product['id'],1));
+    m4fn_expect($purchase===$definition['root'],'TASK6_THREE_LEGACY_REAL_SELF_CURRENT_PURCHASE_ROOT_MATCHES_PUBLIC_READ');
     return ['user'=>$users[0],'address'=>$addresses[0],'product'=>$product,'attr'=>$attr,'sku'=>$sku];
 }
 /** All timestamps used as expected values must be actual native saved observations in the real call interval. */
@@ -369,6 +392,9 @@ function m4trp_produce(\think\App $app,PDO $db,array $owner,array $fixture):arra
         &&$input['truePrice']===20.15&&$input['vip_truePrice']===0.0&&$input['price_type']==='level'
         &&$input['costPrice']==='7.45'&&bccomp((string)$input['postage_price'],'0',2)===0,
         'TASK6_THREE_REAL_OLD_QUOTE_MATCHES_INDEPENDENT_SAVED_PRICE_INPUTS');
+    m4fn_expect(m5pcp_int($input['productInfo']['mer_id']??null,1)===m5pcp_int($product['mer_id'],1)
+        &&m5pcp_int($product['mer_id'],1)===\app\services\marketplace\publiccatalog\PublicCatalogQuery::positive($app->config->get('marketplace.self_operated_mer_id')),
+        'TASK6_THREE_REAL_OLD_QUOTE_PRODUCT_OWNER_MATCHES_CONFIGURED_SELF');
     foreach(['totalPrice'=>'20.15','sumPrice'=>'20.15','costPrice'=>'7.45','vipPrice'=>'0.00','levelPrice'=>'0.00','memberPrice'=>0]as$field=>$value)
         m4fn_expect($group['priceGroup'][$field]===$value,'TASK6_THREE_INDEPENDENT_OLD_QUOTE_ALL_AMOUNTS');
     m4fn_expect(bccomp((string)$group['priceGroup']['storePostage'],'0',2)===0,'TASK6_THREE_REAL_FREE_SHIPPING_QUOTE');

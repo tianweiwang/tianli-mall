@@ -229,3 +229,15 @@ Root按原精确八字段诊断schema核得M5PC_NATIVE_FATAL_MEMORY_LIMIT/type1�
 ### R8完整编排实施前采用
 
 采用仓库外ROOT-R8-ORCHESTRATION-ADOPTION-r1.md及已全文盘点14609 B /799916cf7164a3f78fe4a5cfd0d054a1bf8fb0db7df5709defbdf36513b2b119。保全部历史证明与源码保护，将历史paid guard3f6和705/cba旧记录与未来新HEAD分开，当前推进前另核真实R7 close0/zero0及4730原公件；严格当前clean验证prehead3f6与到届时实际HEAD的六授权路径。新当前完整九件来自最终Worker+reader来源，按原ARTIFACTS有序9个完整对象核对，不再把sortedmanifest顺序误当正式顺序；保原所有source组，新增Worker四roots/29extras/完整实际闭包与去entry后normal全描述符等价及实际总数，不造缩小源码树。Root完整Worker flow BODY保持，仅最后填实际新HEAD/P/SETUP/archive及三脚本pins；先全原件/正逆/AST/独审，才新materialize/freeze0并单次新Run。无未来SHA/count/CID/结果占位，当前新P和Run仍NOT RUN，原业务/128M/停止样本限制不改。
+
+
+### R12原失败正常退役及自营准备修订设计（2026-10-19）
+
+原Run2026101822273969a249的内部paid同CID自然0，Root原六公件全量读回通过；1订单/2项/2reserve/1发票/1付款尝试、真实顾客登录与持久购物车确认创建、同App测试工厂付款、正常重放及全DB/Redis保护已通过内部隔离验证。完整Task6随后在three_legacy_real_create_and_events自然1，公开脱敏诊断为ApiException/PublicCatalogServices.php125；三读stage/call0、business=null，AR/Worker未创建。原失败、native_exit:null及proc_close:-1分别保留，不用清理或SOURCE结论改签业务。
+
+Root正常关闭脚本实际0，仅正常停止原两DB，精确nonforce退役原4CID/1内网/7卷；结果r12-task6-failed-normal-close-r1/RESULT.json SHA256241633bdc967909fcc1b759a18053a0b2ca5ed04e27edbd1fec884bef3f33c2d。独立脚本不导入Host/close，fresh六raw为空、全局无原消费者、完整source/profile及6645公件保持，实际0，结果r12-task6-failed-independent-zero-r1/RESULT.json。原会话40293/53671已终态，不轮询/重跑；仅其后解除活动validation/profile冻结。
+
+SOURCE已确认旧producer关闭marketplace.enabled及trade.enabled；Query在disabled只允许配置self，且要求商家review1/security0/closednull，购买还要求accept1。旧新建测试商品取paid订单mer_id；真实MS2self种子初始review0/accept0。因此新C3准备在顾客和付单baseline之前先完成专用隔离self两字段0→1的完整原生事务/读回和其他数据守恒，legacy商品才使用配置self并验证真实公开目录/规格。C3新增商家仍1；既有self开通单列为准备前置，配置、生产查询、paid及V1和原全部业务断言不变。不在paid seal后改self或挪动原baseline，不省略商家表；最终正常退役整ISO。实现候选与独审/Root语法、new clean SHA/九件配置/fullRun均须实际完成后另记。
+
+
+上述两PHP最终候选已由Root核完整差异、真实依赖和字节后精确接入Main：customer library63896 B/5ba793e50cf604342304ff2563141384c8a61ffd2dc796865207210d70a946f9，legacy producer53292 B/18022cab114f326511853b34750736d84c45693686d9218f86ae299b7e5ae8da。C3以真实全namespace/完整metadata与SHOW CREATE、所有其他表的完整行摘要、merchant全原行以及EVAL_RO原子TYPE/DUMP/PEXPIRETIME做前后严格比较；仅self review/accept变化，不改public/private keys或新增商家1的计数。legacy保持原false模式及全部旧断言，新增真实catalog/SKU/current purchase与报价self归属检查。Root在旧Run独立zero0后，以原PHP8.2镜像、network none/readonly/原文件RO做两次真实php-l，六个before/run/after收据均native0/stderr空，临时容器前后均不存在；结果r13-c3-legacy-php-syntax-r1/RESULT.json。没有启动App或SQL/HTTP，不据此计完整业务通过。Root另形成新九件SOURCE配置，只刷新当前legacy pin和原interface→Host→close→zero→derivation链，C3仍在原完整extra，无新增来源；实际冻结及R13业务待新clean提交后进行。

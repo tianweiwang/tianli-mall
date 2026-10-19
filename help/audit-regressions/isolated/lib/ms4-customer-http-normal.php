@@ -223,6 +223,60 @@ function m4c_prepare_fixture(array $source): array
 {
     m4cb_phase('business_prepare_fixture');audit_guard_assert();$app=$GLOBALS['m4c_application']??null;
     m4c_expect($app instanceof \think\App&&app()===$app,'M4C_PREPARE_USES_ROOT_BOOTSTRAPPED_REAL_APP');
+    // Dedicated isolated self preparation precedes every customer/paid fixture baseline.
+    $observe=static function(PDO $db):array{
+        m4c_expect(!$db->inTransaction(),'M4C_SELF_NATIVE_OBSERVER_OUTSIDE_TRANSACTION');
+        $names=$db->query('SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() ORDER BY TABLE_NAME')->fetchAll(PDO::FETCH_COLUMN);
+        sort($names,SORT_STRING);m4c_expect($names!==[]&&count($names)===count(array_unique($names,SORT_STRING))
+            &&array_diff(M4CB_TABLES,$names)===[],'M4C_SELF_COMPLETE_REAL_NAMESPACE_INCLUDES_ALL_BUSINESS_TABLES');
+        $schema=[];$tables=[];
+        foreach($names as$name){$metadata=m4c_entry_early_metadata($db,$name);
+            $ddl=$db->query('SHOW CREATE TABLE '.m4c_entry_early_quote($name))->fetch(PDO::FETCH_NUM);
+            m4c_expect(is_array($ddl)&&is_string($ddl[1]??null),'M4C_SELF_ALL_REAL_DDL');
+            $schema[$name]=['metadata'=>$metadata,'ddl'=>$ddl[1]];
+            if($name!=='eb_marketplace_merchant')$tables[$name]=null;}
+        $rows=audit_snapshot(['tables'=>$tables,'redis'=>[]]);
+        $merchants=m4cb_rows($db,'SELECT * FROM eb_marketplace_merchant ORDER BY mer_id');
+        $lua=<<<'LUA'
+local names = redis.call('KEYS', '*')
+table.sort(names)
+local rows = {}
+for _, key in ipairs(names) do
+    rows[#rows + 1] = {key, redis.call('TYPE', key).ok, redis.call('DUMP', key), redis.call('PEXPIRETIME', key)}
+end
+return rows
+LUA;
+        $redis=audit_redis()->rawCommand('EVAL_RO',$lua,0);
+        m4c_expect(is_array($redis)&&array_is_list($redis),'M4C_SELF_ATOMIC_ALL_REDIS_ROWS');$previous=null;
+        foreach($redis as$row){m4c_expect(is_array($row)&&array_is_list($row)&&count($row)===4
+            &&is_string($row[0])&&($previous===null||strcmp($previous,$row[0])<0)
+            &&is_string($row[1])&&$row[1]!==''&&$row[1]!=='none'&&is_string($row[2])&&$row[2]!==''
+            &&is_int($row[3])&&($row[3]===-1||$row[3]>0),'M4C_SELF_EXACT_REDIS_TYPE_DUMP_ABSOLUTE_EXPIRY');$previous=$row[0];}
+        return ['names'=>$names,'schema'=>$schema,'other_rows'=>$rows['tables'],'merchant_rows'=>$merchants,'redis'=>$redis];
+    };
+    $self=\app\services\marketplace\publiccatalog\PublicCatalogQuery::positive($app->config->get('marketplace.self_operated_mer_id'));
+    m4c_expect($self===$source['self_operated_mer_id'],'M4C_SELF_ACTUAL_CONFIGURED_SOURCE_ID');
+    $observer=audit_db();$selfBefore=$observe($observer);$selected=[];
+    foreach($selfBefore['merchant_rows']as$i=>$row)if((string)$row['mer_id']===(string)$self)$selected[]=$i;
+    m4c_expect(count($selected)===1,'M4C_SELF_ONE_ACTUAL_ORIGINAL_ROW');$selfIndex=$selected[0];$oldSelf=$selfBefore['merchant_rows'][$selfIndex];
+    m4c_expect(in_array($oldSelf['review_status'],[0,'0'],true)&&in_array($oldSelf['accept_orders'],[0,'0'],true)
+        &&in_array($oldSelf['security_locked'],[0,'0'],true)&&$oldSelf['closed_at']===null,'M4C_SELF_ORIGINAL_CLOSED_UNLOCKED_UNDELETED_STATE');
+    $newSelf=$oldSelf;$newSelf['review_status']=is_int($oldSelf['review_status'])?1:'1';$newSelf['accept_orders']=is_int($oldSelf['accept_orders'])?1:'1';
+    Db::transaction(static function(ConnectionInterface $connection)use($self,$oldSelf,$newSelf):void{
+        $pdo=m4cb_transaction_pdo($connection);
+        $locked=m4cb_rows($pdo,'SELECT * FROM eb_marketplace_merchant WHERE mer_id = ? FOR UPDATE',[$self]);
+        m4c_expect($locked===[$oldSelf],'M4C_SELF_DEFAULT_TRANSACTION_LOCKS_COMPLETE_ORIGINAL_ROW');
+        $statement=$pdo->prepare('UPDATE eb_marketplace_merchant SET review_status = 1, accept_orders = 1 WHERE mer_id = ? AND review_status = 0 AND accept_orders = 0 AND security_locked = 0 AND closed_at IS NULL');
+        m4c_expect($statement instanceof PDOStatement&&$statement->execute([$self])&&$statement->rowCount()===1,'M4C_SELF_EXACT_TWO_FIELDS_ONE_ROW_UPDATE');
+        m4c_expect(m4cb_rows($pdo,'SELECT * FROM eb_marketplace_merchant WHERE mer_id = ?',[$self])===[$newSelf]
+            &&m4cb_transaction_pdo($connection)===$pdo,'M4C_SELF_COMPLETE_NATIVE_POST_ROW_SAME_DEFAULT_TRANSACTION');
+    });
+    $selfAfter=$observe($observer);$expectedMerchants=$selfBefore['merchant_rows'];$expectedMerchants[$selfIndex]=$newSelf;
+    m4c_expect($selfAfter['merchant_rows']===$expectedMerchants,'M4C_SELF_ONLY_TWO_NATIVE_FIELDS_ALL_MERCHANT_ROWS');
+    m4c_expect($selfAfter['names']===$selfBefore['names']&&$selfAfter['schema']===$selfBefore['schema']
+        &&$selfAfter['other_rows']===$selfBefore['other_rows']&&$selfAfter['redis']===$selfBefore['redis'],
+        'M4C_SELF_ALL_OTHER_ROWS_NAMESPACE_SCHEMA_COUNTERS_AND_ABSOLUTE_REDIS_UNCHANGED');
+    unset($selfBefore,$selfAfter,$expectedMerchants,$oldSelf,$newSelf,$observe);
     $fixture=Db::transaction(static function(ConnectionInterface $connection):array{
         $pdo=m4cb_transaction_pdo($connection);$now=time();
         foreach(['eb_user','eb_store_product','eb_store_cart','eb_user_address','eb_user_invoice','eb_system_config',
