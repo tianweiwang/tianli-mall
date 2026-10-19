@@ -357,4 +357,14 @@ Task6原shutdown补best-effort安全fatal观察：64KiB诊断保留区，第一�
 
 后继需求与设计：八件纯主订单文字修订保留原商品、SKU、金额、权限、路由及履约提示；运行差分只在RAM采样before/after_make/after_read/after_context_snapshot，实际变化才通过既有m4c_entry_publish create-only侧证输出点位/有限view与窗口、分类、路径SHA及完整文件bytes/SHA，不输出原路径或内容；诊断异常不得覆盖原失败。Task2最终入口/浏览器显示文字采用同一独立期望规范，完整原始DTO仍严格。实际辅助工具仍为profile.parent/browser-v1，最终backend条件只读挂载须真实校验；无组保原行为，派生Run公开compose overlay不增加第18artifact。凭据meta5514/d98实际未变，不因Core改变重写。
 
-任务：[x]R20原件读回、正常退役、独立核零；[x]八件状态Source/独审/原语法证据；[x]安全差分Source及Root全文复核；[x]最终七件候选PHP8.2语法（ms5-task2-final-php-syntax-r1，均原生0、临时容器无残留）；[ ]仅本轮Source与记录接入并本地提交；[ ]H5/平台完整离线重建与实际五材料；[ ]最终17 Source/模型/冻结及真实只读挂载读回；[ ]新clean完整正常业务链、三场景/原UI20与三宽DOM；[ ]正常关闭与独立核零。未推送、部署或执行真实金融操作，停止样本NOT RUN。
+任务：[x]R20原件读回、正常退役、独立核零；[x]八件状态Source/独审/原语法证据；[x]安全差分Source及Root全文复核；[x]最终七件候选PHP8.2语法（ms5-task2-final-php-syntax-r1，均原生0、临时容器无残留）；[x]仅本轮Source与记录接入并本地提交2830；[x]H5/平台完整离线重建与实际五材料；[ ]最终17 Source/模型/冻结及真实只读挂载读回；[ ]新clean完整正常业务链、三场景/原UI20与三宽DOM；[ ]正常关闭与独立核零。未推送、部署或执行真实金融操作，停止样本NOT RUN。
+
+### R21当前正常回归与静态材料检查点（2026-10-20）
+
+十四件有限修订已本地提交2830；本次两份记录更新不改变应用/前端来源，也不重署旧构建。H5实际成功目录为artifacts/u-status-h5-r2，完整556份来源与Main相同、双pass及原工具检查通过，dist336件/11741845字节；平台目录为artifacts/current-unpaid-root-status-platform-build-r1，1088份来源相同、原单次build及prebuild通过，dist603件/40934912字节。独立静态读回分别在h5-status-r4-build-static-independent-readback-r1及platform-status-r3-build-static-independent-readback-r1；原编译提示和stderr完整保留。商家51份当前来源及30件/1611600字节完整产物继续按原0d5499构建复用。
+
+新五材料实际输出artifacts/ui-three-end-materials-unpaid-status-r1：原producer PID18204同句柄自然0、wait0、stderr空，Main前后HEAD=2830且clean。Root完整读回全部五文件、RGB96×96 PNG、exact10 copy profile、三清单全部成员、完整241198886字节/256807项输入清单与五组原生created/terminal/双流；结果ui-five-material-unpaid-status-root-readback-r1/RESULT.json为8217字节/7fd67a92ef71602c75194e910137db39d0092647e036ee961357c158a3c2cac3。生成器原Inputs.finish的实际完整校验保持；Root此次不重复外部25万份输入树，也不把静态材料签成API、DOM或业务通过。
+
+独立A轨Run20261019184022098f25已使用clean2830、九件配置及完整10857源冻结，freeze f9c30c67ce50dda0b313c0b3fad723c3724a6c7b59b81bb0d1505a11f2d7dd72。Root逐件读回initializer-result 78792/3f6a8369598346b36ff40759d04148061fdd608373e39df0f486763f969e320a、MS5结构2569070/733fe474a3ecb890cc2c0a52e0ec4d4ddc298f1f036b86d21fc279dc6a8c893b及early16结果6978446/3af642f3b7637f14b6719e3d6d4209c3b817508c6854b17e5d237ba23b8d2861：29子命令均native0/stderr空、原proc_close=-1保持，完整早期结果full_source_unchanged=true；early原容器正常精确移除。files-bootstrap原结果1102/b58dc0655fdd052769331383bfaff21f86ed319808cda0c95972d200d599e2ba，原native0。当前顾客准备仍在登记，本轮付款、Task6、售后、评价、Worker未有完成结果；实例和九件配置继续冻结。
+
+页面工具有限后继在仓库外ms5-task2-login-scene-lifecycle-source-r1：保同caller/同三owned tabs，paid→unpaid→cancelled→原UI20各自真实登录及退出，按真实native完成ledger才允许下一段，不按任意场景字面量reset或重读凭据。独审已核行为接缝、当前Core同源descriptor和writer原0600/0700字符串契约；最终五材料字面量、aux8封存/语法及完整17组装尚待。B轨必须另建fresh Run并独立取得本轮paid0；不得在A完成Task6/售后/Worker后套fresh-paid UI前提，不借A/旧Run付款、凭据或业务结果。三端真实场景、原UI20、320/390/1440 DOM、正常收尾和独立核零仍待，所有原未验责任与停止样本NOT RUN保持。

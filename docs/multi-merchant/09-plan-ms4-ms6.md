@@ -6,13 +6,17 @@
 
 ## 当前交付状态（2026-10-20）
 
-R20 最新实际结果：冻结 dd445aff0c5ecb6f2dea527e14208422ba2db93f 的初始化、结构迁移、files/C3 准备及内部测试付款正常完成；Task6 的原 legacy 子进程首次实际同句柄自然0、stderr空，原 proc_close=-1 保留。随后父进程在 three_read_initial 以 `TASK6_THREE_EACH_READ_RUNTIME_FILES_UNCHANGED` 自然1停止，三读 stage/call 均0、business=null，售后和 Worker 未启动。只证明运行目录文件集合或完整内容发生变化，未保存前后 map，具体文件和原因仍 UNKNOWN；不据原未完成结果的 full_source_unchanged=false 推断源码损坏。
+R21 当前检查点：十四件有限修订已本地提交 `2830b3ce273f5cbc0a951e9bf29377d55864cf93`。新完整 normal Run `20261019184022098f25` 使用该 clean 来源及独立九件配置，freeze 为 `f9c30c67ce50dda0b313c0b3fad723c3724a6c7b59b81bb0d1505a11f2d7dd72`；完整10857份来源实际读回。初始化9、MS5结构4及early16共29条命令全部同句柄自然0、stderr空，原proc_close=-1保留；early原容器已正常精确移除，files-bootstrap亦自然0。当前处于顾客准备登记，尚未取得本轮付款、Task6、售后评价或Worker结果；原实例、配置和验证树继续冻结至正常关闭及独立核零。
+
+当前三端静态材料已完成：H5及平台端以真实2830来源完整离线重建并独立核对全部来源和产物；商家继续复用原0d5499构建及其全部相同来源。新五材料在 `artifacts/ui-three-end-materials-unpaid-status-r1` 实际生成，原producer PID18204自然0、wait0、stderr空，Main前后clean2830；三清单对应336/30/603个文件、11741845/1611600/40934912字节。Root另读回五文件、十键copy profile、五份原生收据和完整256807项输入清单；结果为 `ui-five-material-unpaid-status-root-readback-r1/RESULT.json`（8217字节，SHA256 `7fd67a92ef71602c75194e910137db39d0092647e036ee961357c158a3c2cac3`）。此为构建和静态材料通过，完整17件配置、实际复制/挂载、三场景及原UI20/三宽DOM仍未验收。
+
+上一轮R20实际结果：冻结 dd445aff0c5ecb6f2dea527e14208422ba2db93f 的初始化、结构迁移、files/C3 准备及内部测试付款正常完成；Task6 的原 legacy 子进程首次实际同句柄自然0、stderr空，原 proc_close=-1 保留。随后父进程在 three_read_initial 以 `TASK6_THREE_EACH_READ_RUNTIME_FILES_UNCHANGED` 自然1停止，三读 stage/call 均0、business=null，售后和 Worker 未启动。只证明运行目录文件集合或完整内容发生变化，未保存前后 map，具体文件和原因仍 UNKNOWN；不据原未完成结果的 full_source_unchanged=false 推断源码损坏。
 
 该原 Run 已正常无限等待停止两数据库，精确非 force 退役四容器、一内部网、七卷；独立15项原生命令含六次 fresh 空查询、全局消费者及完整10857源码/当前9件配置/INI资源7-3-8核对均实际0，62428份原公开证据保持。原失败仍失败，未重署业务成功。Root 读回和退役证据位于仓库外 `artifacts/ms4-worker-normal-source-preparation-r1/r20-fulfillment-failure-root-readback-r1/`、`r20-task6-failed-normal-close-r1/`、`r20-task6-failed-independent-zero-r1/`。
 
-本轮接入任务：将已独审和语法检查的八件顾客/平台主订单状态显示修订接入，取消优先、未支付显示待付款，已支付仍用原履约/售后文字，独立履约提示和商家原文保留；补四点仅RAM的运行文件安全差分诊断，原DB/Redis/runtime/DTO断言保持；接入Task2准备及Core顺序场景消费者。浏览器辅助八件位于配置目录旁，需为实际backend角色补独立只读挂载并完整校核，保持原17件配置和无Task2默认行为。H5/平台新构建、新五材料、完整17件实际冻结、三端真实场景及320/390/1440页面验收仍待，不能以Source或构建代签。通用多商户范围、商品规格价格复用、L2本地和停止样本NOT RUN保持。
+本轮已接入八件顾客/平台主订单状态显示修订，取消优先、未支付显示待付款，已支付仍用原履约/售后文字，独立履约提示和商家原文保留；四点仅RAM的运行文件安全差分诊断及Task2准备/Core顺序场景消费者亦已接入，原DB/Redis/runtime/DTO断言保持。浏览器辅助八件位于配置目录旁，需为实际backend角色补独立只读挂载并完整校核，保持原17件配置和无Task2默认行为。页面验证工具的一次填表限制与三场景退出后重新登录冲突，有限生命周期候选及同源/类型检查修订已完成源码复核；最终材料引用、语法、完整17件实际冻结、三端真实场景及320/390/1440页面验收仍待，不能以Source或构建代签。A轨完整normal与B轨fresh UI分别独立建Run；B须独立完成自身初始化、结构、files/C3和内部付款，不借A或旧Run业务证据。通用多商户范围、商品规格价格复用、L2本地和停止样本NOT RUN保持。
 
-以下2026-10-19概要保留为历史证据，不覆盖上述R20最新结果与尚未完成的原任务。
+以下2026-10-19概要保留为历史证据，不覆盖上述当前结果与尚未完成的原任务。
 
 最新续作：R13 Run `20261019015906fb9bc3` 已结束。29初始化/结构命令、files-bootstrap、C3准备及内部持久购物车/测试付款均实际正常0；Root已完整读回原件。Task6的真实legacy child随后自然1，诊断 `JSON_EXACT_OBJECT_FIELDS`，三读stage/call0、business=null，AR/Worker尚未启动。Root同原MySQL只读JSON字段名与独立Source追踪确认，测试从去顶层attrInfo的旧确认输入复制expected，而真实create保存含该原始SKU；已单行补独立fixture原生SKU预期，完整JSON键/类型/值及所有业务断言保持，生产逻辑不改。PHP8.2语法已0，但新Run完整业务尚未复跑。原R13已普通无限等待stop并非force精确退役4CID/1内部网/7卷，独立fresh六查询和全局/完整Source核零0，6506份公件保持；原失败不改署。
 
