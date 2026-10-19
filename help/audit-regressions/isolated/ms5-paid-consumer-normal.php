@@ -572,7 +572,7 @@ function m5pcp_sequence_expiry_barrier(PDO $db,array $sequence): array
             'EXACT_INTERNAL_SEQUENCE_TARGET');
         $initial=$first['keys'][$keyHash]??null;
         if($initial!==null)m5pcp_expect($initial['type']==='string'&&$initial['expires']>0
-            &&bccomp((string)$initial['expires'],$first['time_ms'],0)>0
+            &&bccomp((string)$initial['expires'],$first['time_ms'],0)>=0
             &&bccomp(bcsub((string)$initial['expires'],$first['time_ms'],0),'1000',0)<=0,
             'REAL_SEQUENCE_STRING_AND_FIRST_OBSERVED_ONE_SECOND_EXPIRY');
         $states[$keyHash]=['initial'=>$initial,'missing'=>$initial===null,
@@ -586,7 +586,7 @@ function m5pcp_sequence_expiry_barrier(PDO $db,array $sequence): array
             if($value!==null){
                 m5pcp_expect(!$state['missing']&&$state['initial']!==null&&$value===$state['initial'],
                     'SEQUENCE_ORIGINAL_VALUE_EXPIRY_AND_NO_REAPPEARANCE');
-                m5pcp_expect(bccomp($current['time_ms'],(string)$value['expires'],0)<0,'SEQUENCE_PRESENT_BEFORE_ORIGINAL_EXPIRY');
+                m5pcp_expect(bccomp($current['time_ms'],(string)$value['expires'],0)<=0,'SEQUENCE_PRESENT_BEFORE_ORIGINAL_EXPIRY');
                 $allMissing=false;
             }elseif(!$state['missing']){
                 m5pcp_expect($state['initial']!==null

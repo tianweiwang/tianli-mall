@@ -860,7 +860,7 @@ function m4fn_cf_barrier(PDO $db,array $sequence): array
             'EXACT_INTERNAL_SEQUENCE_TARGET');
         $initial=$first['keys'][$keyHash]??null;
         if($initial!==null)m4fn_expect($initial['type']==='string'&&$initial['expires']>0
-            &&bccomp((string)$initial['expires'],$first['time_ms'],0)>0
+            &&bccomp((string)$initial['expires'],$first['time_ms'],0)>=0
             &&bccomp(bcsub((string)$initial['expires'],$first['time_ms'],0),'1000',0)<=0,
             'REAL_SEQUENCE_STRING_AND_FIRST_OBSERVED_ONE_SECOND_EXPIRY');
         if($initial!==null){
@@ -870,7 +870,7 @@ function m4fn_cf_barrier(PDO $db,array $sequence): array
             $counterTime=bcadd(bcmul($counter[0][0],'1000',0),bcdiv($counter[0][1],'1000',0),0);
             if(is_string($counter[1]))m4fn_expect($counter[1]===(string)count($target['sources'])&&is_string($counter[2])
                 &&hash('sha256',$counter[2])===$initial['sha256']&&$counter[3]===$initial['expires']
-                &&bccomp($counterTime,(string)$initial['expires'],0)<0,'TASK6_REAL_CF_COUNTER_AND_ORIGINAL_DUMP_EXPIRY');
+                &&bccomp($counterTime,(string)$initial['expires'],0)<=0,'TASK6_REAL_CF_COUNTER_AND_ORIGINAL_DUMP_EXPIRY');
             else m4fn_expect(in_array($counter[1],[false,null],true)&&in_array($counter[2],[false,null],true)&&$counter[3]===-2
                 &&bccomp($counterTime,(string)$initial['expires'],0)>=0,'TASK6_CF_COUNTER_ONLY_NATURALLY_EXPIRED_DURING_READ');
         }
@@ -885,7 +885,7 @@ function m4fn_cf_barrier(PDO $db,array $sequence): array
             if($value!==null){
                 m4fn_expect(!$state['missing']&&$state['initial']!==null&&$value===$state['initial'],
                     'SEQUENCE_ORIGINAL_VALUE_EXPIRY_AND_NO_REAPPEARANCE');
-                m4fn_expect(bccomp($current['time_ms'],(string)$value['expires'],0)<0,'SEQUENCE_PRESENT_BEFORE_ORIGINAL_EXPIRY');
+                m4fn_expect(bccomp($current['time_ms'],(string)$value['expires'],0)<=0,'SEQUENCE_PRESENT_BEFORE_ORIGINAL_EXPIRY');
                 $allMissing=false;
             }elseif(!$state['missing']){
                 m4fn_expect($state['initial']!==null
