@@ -272,3 +272,9 @@ Source核对确认：公众评价列表首次读取不足20条后将loadend置tr
 按同已核raw_values全字段/类型===的fixture原生SKU，单行补cartExpected顶层attrInfo；保持原JSON完整keys/types、所有金额、库存、原事件、全DB/Redis/私件及保护断言，生产商品/价格/下单逻辑不改。原R13失败保留，按原4CID/1内部网/7卷普通无限等待stop和非force精确退役后独立核零；新clean来源再新Run完整复跑，不能重试/改署R13。原生PHP8.2语法待R13正常close及独立zero结束后执行，Task6/AR/Worker/三端DOM仍未通过。
 
 R13收尾实际结果：普通close原19项native全部0，4原容器/1内部网/7原卷精确退役；新进程独立zero原15项native全部0，fresh六raw空、全局无原消费者、五组10857源码及6506原公件保持。close结果SHA256 0c94c93a70ce737e1626e9d1a6ebf9414c2e18315c7dbf474cddfb4148734d7e。原paid0、Task6/legacy1、proc_close:-1按原文保留，不将退役记为业务通过。随后才运行原PHP8.2镜像network-none纯语法：legacy53328、UI copy入口48182、initializer106933及observer的partial5三Source全部-l正常0、stderr空且正常自动移除；不含App/SQL/HTTP。Node observer bridge26800的实际Node22 --check亦0，但PHP和bridge仍属未安装partial Source，不代表完整20项UI运行。
+
+### H5 正常启动外部统计脚本清理（2026-10-19，Task8）
+
+源码实核发现 H5 main.js 在启动时无条件插入硬编码远程统计脚本；通用多商户需求没有依赖该脚本。该脚本未在本轮浏览器中执行。沿原 Task8 仅删除这段注释及 IIFE，保留平台编译指令、Vue/store/i18n 启动、entryUrl 与应用原可配置行为；不用拦截请求或注入隐藏状态代替源码修复。
+
+R14 已从干净 dc651a7 提交完整物化并冻结，九件 profile、五组后端源码与本轮隔离 Run 独立保持；本次只推进 Main 前端。公众评价返回刷新那一版 H5 已完整构建成功（336件、11741978字节），是旧来源的构建证据；清理后必须从新干净提交完整重建并重新生成当前三端五材料，后续实际三端正常业务及 320/390/1440 DOM、正常 close 和独立 zero 仍待，不以构建替代页面验收。
