@@ -6,6 +6,16 @@
 
 ## 当前交付状态（2026-10-21）
 
+R30 Run `20261020192124768528` / clean Source `16e497a22f0b9683c26558f4c5b6b692d3a029c2` 已完成内部测试付款、Task6两次发货/三次收货、五次重放及六阶段288次内部读取，原Task6正常退役。AR越过确认配置类型检查，在新增订单保存金额校验以 `M4C_INDEPENDENT_SAVED_DECIMAL_TOTAL` 自然1；原S10919实际1，完整A失败，Worker及first B未启动。
+
+真实只读金额与源链共同确认：Task6给原买家保留会员express80权益，原商品70.55/成本24.25不变，运费6.40、应付76.95、Q2/Q1行邮费4.27/2.13；AR仍写死非会员运费8.01和应付78.56。当前原4CID/1内网/7卷已正常close84项及独立zero12项实际0，六fresh原始查询全空；14623份原公件和340份close公件保持。原失败不改署成功。
+
+实施前范围：只在AR保存金额oracle用既有beforeCreate快照核同买家有效会员、三配置1、唯一express80及原商品/运费/包邮阈值，独立固定会员总额与整数分余数分摊；不新增SQL/HTTP、不重置资格、不改生产/价格/shared非会员helper。严格native/完整DB/Redis及13动作/15重放/5退款/2S2不变。后继实施、语法、独审和fresh A/B继续同一下方清单；详见[联调记录](records/ms4/normal-early-structure-integration.md)。
+
+实际采用仅AR213847B/0001c1d299726d413bb6484cf4e353fa8eb761d28ab88420fec930c98b4b5c10，完整两组literal正逆及独立源审通过；固定PHP8.2离线语法实际0，RESULT2661B/ac45d9eb239a5363364f81b89dbeec857a5699a9c162c20932f5eb085b2a657b，三项原生samePID/wait0/完整双流、前后selector空与AR bytes/stat9保持。仅语法，不加载App/SQL/HTTP，不代签完整A；限定四文件L2本地采用与提交身份按Git核实。
+
+### R29 历史交付状态
+
 R29 Run `202610201658045585bc` / clean Source `2b396ed0499d1d32017347f1963d9297338c8be0` 已再次完成内部测试付款、Task6两次发货/三次收货、五次重放和六阶段288次内部读取，原Task6正常精确退役。AR越过原购物车type检查，在真实确认缓存检查以 `TASK78_REAL_CONFIRMATION_OWNER_AND_INDEPENDENT_INSTALLED_OPTIONS` 自然1；原S31458自然1，HTTP子进程正常TERM后组为空、监听关闭，proc_close=-1保留。AR业务结果为null，Worker和first B未启动，完整A仍失败。
 
 本轮原4CID/1内部网/7卷已正常非force退役：close原进程1842自然0、84项原生操作；独立zero原进程82176自然0、12项原生操作，六fresh原始查询全空。14605份明确原公件和340份close公件的完整字节、stat9和命名空间保持；原失败不改署为成功。
@@ -44,6 +54,9 @@ R28 Run `20261020141646456477` / clean Source `2522a46fb9c4e70667609c1974332c7eb
 - [x] R28失败正常收尾后，仅修AR和独立UI准备的购物车type原生字符串期望，保严格helper及业务；固定PHP8.2语法、原函数纯正向检查和精确采用。两Main文件完整字节与已通过候选相同，完整业务仍待新Run。
 - [x] R29内部付款/Task6实际结果和确认缓存类型失败分别保全；原实例正常close84项、独立zero12项及完整公件保持实际通过。
 - [x] R29后继只修AR一处offlinePostage原生字符串期望，核同类消费者和真实配置产消链；固定PHP8.2语法、精确单处正逆及有限L2本地采用。AR212166B/fab85d75f678，纯语法RESULT2681B/d6844525c28d；提交身份以所在Git记录核实，完整业务仍待下项。
+- [x] R30内部paid/Task6与288次三读实际通过、AR保存金额失败及只读诊断分别保全；原close84项、独立zero12项实际0，原4CID/1网/7卷正常退役。
+- [x] 实施前核清Task6保留会员express80与AR非会员金额期望的产消链；登记只修AR独立oracle及创建前会员/原价格证据设计。
+- [x] 按本设计实施AR窄修订，固定PHP8.2语法与独立源审、L2本地采用已完成；提交身份按Git记录核实，共享非会员helper、原生产/fixture及全部原业务责任保持。
 - [ ] 新clean来源的fresh A完整正常链、同HEAD的fresh first B及原三端/三宽页面验证、各自正常关闭和独立核零；N1及原未完MS4–MS6责任与人工验收仍待。
 
 仅L2本地，通用多商户复用商品规格/价格；无推送、部署、真实金融或新增停止样本。旧公件中的静态5032字节计划已作为历史封存，本节承接其后续设计，不修改旧pin或猜填新Run结果。

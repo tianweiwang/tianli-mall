@@ -2,6 +2,26 @@
 
 本记录对应09原Task6/7/8，沿已采用的售后/评价正常联调设计实施，不替代原执行清单。目标仍为通用多商户商城；商品、规格、价格沿原有通用能力。仅本地L2和专用隔离实例，无推送、部署或真实资金操作。
 
+## R30 会员运费衔接：真实诊断与最小修复设计（2026-10-21）
+
+Run20261020192124768528来源为clean16e497a22f0b9683c26558f4c5b6b692d3a029c2，freeze c159dea9cf00a345b114f5ae10cc3bcb8a71db589d7bd23bdfb29c55ac1e720d。内部paid实际0；Task6两次发货、三次收货、五次同key重放、六组商家保存读回及六阶段288次内部读取（168服务/120包装）通过，原Task6正常精确退役。Task6结果14810B/914ad4ca56d612154ce045475752a3b36e2f511a061413621ce9e88f703aec32、终态4621B/51d51f88002822eecad56dff23d0541328c422c2b4a8ba16291f82752be7ab09、三读307688B/c85038ecabf31de0712c42d88eebe82279359e910a215ae06fa25765532fd1aa已核；原native_exit:null与另份真实native0分别保留，不签三端HTTP/DOM。
+
+AR越过原确认配置类型检查，在new_root_real_cart_confirm_create以M4C_INDEPENDENT_SAVED_DECIMAL_TOTAL自然1；原S10919实际1，business:null、Worker/first B未启动。结果6090B/32c6ef6b851b21fea38f5ccb22fdf91ed53364fb36ce89c1a2a6fedaee0eb7ac、终态5108B/5934fca3d948476f9d760a34c1524b502b412f17074a26d1726de4be695b3d60、shutdown674B/a94151df1df95a6d80629c57a9c4bb9c3fdf4cd56c6e9193047c795484a59f98保持；原HTTP child正常TERM15、组空、监听关闭，proc_close=-1及非fatal/cleanup_failure:null不改写。full_source_unchanged:false仅表示成功路径的最终源码检查未完成，不能据此判漂移。
+
+失败后只在原owned MySQL内执行只读事务，读取新增未付根的金额、两行邮费和同uid会员标记；不新建资源、不改权限或业务数据，既有认证secret只在容器内使用且不输出。evidence/aftersale-saved-decimal-readonly-diagnostic.json为1849B/a7073ceb3926d7bc13cc641bcdf0a19f6773813fb756c2cf31d62a75353f7698，原生0/stderr空。真实新根PK104（不是V1根数量102）商品70.55、运费及实付运费6.40、应付76.95、成本24.25、paid/status均0；Q2/Q1保存行的postage_price及origin_postage_price分别4.27/2.13，用户is_money_level=1。该读取是失败后的现存状态证据，不冒充原失败瞬间PHP操作数。
+
+原实例正常close进程26182实际0：r30-ar-failed-normal-close-r1/close-output/RESULT.json93522B/98ab0841b7e15999beb3eea7bff1f29ede82a8531a53675408f1395d44e82246，84项同PID/wait0及完整双流，五项正常stop/nonforce删除，仅原4CID/1内网/7卷。独立zero进程51934实际0，RESULT17068B/5d005842628324932470757a4da235d03343c37010cac7d1535f6b66991fbd9c，12项原生0、六fresh两标签原始查询全空及全局无原消费者；14623份原公件（含上述只读诊断）和340份close公件的bytes/stat9/命名空间保持。原S和两阶段均已终态，不重启旧Run，也不调用成功post-A收集器。
+
+原因与实施前设计：Task6三读准备通过真实会员writer给同买家保留30天资格，三项会员配置为原始数值JSON 1、唯一有效express权益80；后继AR会fresh读当前用户。商品is_vip=0，商品/成本仍70.55/24.25；生产共享计算按80%保留六位行权重4.272000/2.136000，总运费8.01×0.8000按BC两位截为6.40。640分依2:1权重先分426/213分，剩余1分给余数较大的Q2，故427/213分。实际数据库与这一独立推导一致；不能重置会员、关闭权益、重定价或调用生产allocator作为独立oracle。
+
+最小代码范围仅AR的m4ar_created_saved：在既有beforeCreate完整快照中核同买家原生全行与fresh fixture一致、有效非永久会员、三配置原始'1'、唯一express80/status1、两原商品freight2/postage2.67/is_vip0及包邮阈值原始JSON字符串10000.00；不新增SQL/HTTP。沿用canonical int/u64检查，expiry以BC与实际时间比较，不引入float或2038上限。随后只将总运费/实付运费/应付的独立期望改6.40/6.40/76.95，Q2/Q1两行改4.27/2.13，仍严格字符串相等。共享非会员m4cb_saved的8.01/78.56、原商品/规格/价格、生产服务、fixture、UI oracle和13动作/15重放/5退款/2S2及全部完整DB/Redis/native断言保持。
+
+实际采用仅AR213847B/0001c1d299726d413bb6484cf4e353fa8eb761d28ab88420fec930c98b4b5c10。完整HEAD diff仅两组literal：创建前会员/原商品/包邮证据及三总额循环、两保存行邮费；独立整文正向与逆向均完全相等，无新SQL/HTTP/helper或签名，其他全部AR正文保持。Root已核真实会员产消链、canonical int/u64、原生JSON和DECIMAL形状；原商品总额/成本与严格native断言保留。
+
+固定PHP8.2离线纯语法原进程实际0：r30-member-postage-syntax-r1/output/RESULT.json2661B/ac45d9eb239a5363364f81b89dbeec857a5699a9c162c20932f5eb085b2a657b。复用原三操作驱动，每项samePID/实际wait0、完整双流、stderr空；network-none/只读/128M/tmpfs，仅-l。前后selector原始空、AR完整字节/stat9保持；未加载App/SQL/Redis/HTTP/GUI，不据语法或源审签完整AR通过。有限四文件L2本地采用，提交身份按Git记录核实。
+
+后续仍按09同一执行清单：原R30失败证据和完整失败历史收集责任保留，新clean full A、同HEAD first B、H5/merchant原正常业务、N1、MS5真实渠道、MS6及人工验收均未闭合。N1原设计中78.56是此前非会员假设，后继实施前须按已证明的当前真实会员报价刷新技术说明，不能改商品价格来迁就旧值；0.01仍是退款申请金额而非订单定价，102/103仍是根数量而非PK。仅L2，停止样本NOT RUN保持。
+
 ## R29 确认缓存配置类型、实际收尾与单处修正（2026-10-21）
 
 Run202610201658045585bc的clean来源为2b396ed0499d1d32017347f1963d9297338c8be0，freeze5e3822a0a4816df0b522f4209f6b8bb7b32f600bb8cc6187ed02758540abd327。内部paid实际0（结果4879B/1c4c1cc8a20a）；Task6两次发货、三次收货、五次同key重放、六组商家保存读回和六阶段288次内部读取（168服务/120包装）实际通过。Task6结果14811B/b51e776157c2、三读307688B/f1a902e03c8a、独立终态4642B/cfdc2eb9a917均已读回，随后原Task6正常精确移除。原业务结果native_exit:null与另份实际native0分别保留，不能签三端HTTP/DOM。
