@@ -6,6 +6,14 @@
 
 ## 当前交付状态（2026-10-21）
 
+R31 Run20261020214504de019a / Source ee662f3a14409009ba52ae9923af29f0c2d8e6d5的内部付款、两发货/三收货/五重放及288内部读取实际通过。AR在新增订单阶段因五个TASK78标识误传共享M4C校验函数自然1，原S24239实际1，完整A失败；Worker、firstB及售后业务未通过。原失败实例4CID/1内网/7卷正常close84项及独立zero12项均实际0，14863原公件与340 close公件保持。完整证据见[正常联调记录](records/ms4/normal-early-structure-integration.md)。
+
+最小修复只改五处caller为本地m4ar_expect，保留谓词、金额、原商品/规格/价格和全部原断言；新clean来源的静态契约/语法、完整A及同HEAD firstB分别取证，不能以修复或语法代签业务。N1、原H5/merchant、三端DOM、非空历史、MS5金融、MS6和人工验收仍按原清单未完成，停止样本NOT RUN。
+
+实际修复AR213852B/8ff830377e68412ab507bb139669b96b338fbd3e7a88db0306e773158c0554aa，仅五个callee整文正逆及410处literal契约扫描通过；固定PHP8.2离线语法三原生实际0，RESULT2669B/9ab50e6e9d8542474a82e66d26bb7026172144f75b3b66ac016b7bd4d9e17e41，源码与前后隔离selector保持。新完整A与同HEAD firstB仍未运行，不以本次语法或修复签收业务。
+
+以下R30记录保留历史原义：
+
 R30 Run `20261020192124768528` / clean Source `16e497a22f0b9683c26558f4c5b6b692d3a029c2` 已完成内部测试付款、Task6两次发货/三次收货、五次重放及六阶段288次内部读取，原Task6正常退役。AR越过确认配置类型检查，在新增订单保存金额校验以 `M4C_INDEPENDENT_SAVED_DECIMAL_TOTAL` 自然1；原S10919实际1，完整A失败，Worker及first B未启动。
 
 真实只读金额与源链共同确认：Task6给原买家保留会员express80权益，原商品70.55/成本24.25不变，运费6.40、应付76.95、Q2/Q1行邮费4.27/2.13；AR仍写死非会员运费8.01和应付78.56。当前原4CID/1内网/7卷已正常close84项及独立zero12项实际0，六fresh原始查询全空；14623份原公件和340份close公件保持。原失败不改署成功。

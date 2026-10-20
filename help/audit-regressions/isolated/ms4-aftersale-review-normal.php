@@ -577,23 +577,23 @@ function m4ar_created_saved(PDO $pdo,array $fixture,array $request,string $idem,
         'M4C_PAYMENT_BIRTH_REAL_EMPTY_ATTEMPT_SET');
     // Task6 retained this buyer's real membership; verify the quote inputs before comparing saved money.
     $memberBuyer=m4ar_one($before['eb_user'],'uid',$uid);
-    m4c_expect($memberBuyer===$fixture['user']&&m5pcp_int($memberBuyer['is_money_level'],1,1)===1
+    m4ar_expect($memberBuyer===$fixture['user']&&m5pcp_int($memberBuyer['is_money_level'],1,1)===1
         &&m5pcp_int($memberBuyer['is_ever_level'],0,0)===0&&bccomp(m5pcp_u64($memberBuyer['overdue_time']),(string)time(),0)>0,
         'TASK78_BEFORE_CREATE_CURRENT_MEMBER_POSTAGE_BUYER');
     foreach(['member_func_status','member_card_status','member_price_status']as$name){
         $memberConfig=m4ar_one($before['eb_system_config'],'menu_name',$name);
-        m4c_expect($memberConfig['value']==='1','TASK78_BEFORE_CREATE_MEMBER_SWITCH_RAW_ONE');
+        m4ar_expect($memberConfig['value']==='1','TASK78_BEFORE_CREATE_MEMBER_SWITCH_RAW_ONE');
     }
     $express=m4ar_one($before['eb_member_right'],'right_type','express');
-    m4c_expect(m5pcp_int($express['status'],1,1)===1&&m5pcp_int($express['number'],80,80)===80,
+    m4ar_expect(m5pcp_int($express['status'],1,1)===1&&m5pcp_int($express['number'],80,80)===80,
         'TASK78_BEFORE_CREATE_UNIQUE_EXPRESS_EIGHTY_PERCENT');
     foreach($fixture['selected']as$line){$shippingProduct=m4ar_one($before['eb_store_product'],'id',$line['product_id']);
-        m4c_expect($shippingProduct===$fixture['products'][$line['product_id']]&&m5pcp_int($shippingProduct['freight'],2,2)===2
+        m4ar_expect($shippingProduct===$fixture['products'][$line['product_id']]&&m5pcp_int($shippingProduct['freight'],2,2)===2
             &&$shippingProduct['postage']==='2.67'&&m5pcp_int($shippingProduct['is_vip'],0,0)===0,
             'TASK78_BEFORE_CREATE_ORIGINAL_NONVIP_FIXED_POSTAGE');
     }
     $freePostage=m4ar_one($before['eb_system_config'],'menu_name','store_free_postage');
-    m4c_expect($freePostage['value']==='"10000.00"','TASK78_BEFORE_CREATE_ORIGINAL_FREE_POSTAGE_THRESHOLD');
+    m4ar_expect($freePostage['value']==='"10000.00"','TASK78_BEFORE_CREATE_ORIGINAL_FREE_POSTAGE_THRESHOLD');
     // 8.01 x 80% truncates to 640 cents; weights 2:1 give 426/213, then the larger remainder gets one cent.
     foreach(['total_price'=>'70.55','total_postage'=>'6.40','pay_postage'=>'6.40','pay_price'=>'76.95','cost'=>'24.25']as$field=>$value)
         m4c_expect($order[$field]===$value,'M4C_INDEPENDENT_SAVED_DECIMAL_TOTAL');
