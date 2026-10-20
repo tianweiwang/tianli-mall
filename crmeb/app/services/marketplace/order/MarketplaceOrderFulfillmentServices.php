@@ -33,8 +33,17 @@ final class MarketplaceOrderFulfillmentServices
     private const CHILD_MONEY_ZERO=['freight_price','deduction_price','coupon_price','refund_price','gain_integral','use_integral',
         'back_integral','one_brokerage','two_brokerage','staff_brokerage','agent_brokerage','division_brokerage','gift_price'];
 
+    private const FAILURE_SOURCE_CALLER_LINES=[55,59,61,62,63,66,67,74,76,78,85,88,90,93,95,99,103,105,106,109,111,113,115,121,122,125,126,127,131,132,134,136,140,145,147,153,159,160,162,168,178,180,182,183,188,193,203,205,207,208,209,215,220,222,223,224,225,237,246,302,309,342,352,392,395,402,404,417,420,428,438,440,442,446,449,455,457,459,473,478,479,494,495,496,498,500,501,506,521,524,540,553,555,559,562,571,575,577,589,594,603,609,611,629,630,641,654,658,663,664,673,677,678,684,687,696,699,704,707,709,718,719,739,758,759,764,771,772,776,780,788,793,800,802,810,812,813,815,840,843,846,849,856,864,881,882,886,891,893,902,911,914,922,935,936,948,952,956,960,966,975,981,985,997,1000,1009,1014,1017,1023,1025,1032,1035,1044,1047,1049,1056,1077,1081,1085,1088,1095,1104,1105,1107,1108,1121,1123,1125,1126,1134,1136,1141,1142,1153,1155,1158,1159,1167,1169,1172,1179,1180,1223,1234,1247,1258,1262,1263,1274,1292,1297,1361,1372,1378,1379,1383,1386,1392,1395,1397,1399,1401,1409,1418,1427,1438,1439,1440,1443,1446,1447,1449,1450,1452,1453,1456,1461,1462,1467,1469,1471,1476,1484,1485,1488,1501,1502,1503,1506,1513,1516,1522,1527,1536,1542,1544,1553,1556,1560,1573,1576,1580,1583,1585,1589,1594,1597,1599,1601,1606,1616,1617,1624,1625,1637,1643,1647,1650,1654,1663,1664,1666,1667,1675,1683,1685,1690,1691,1692,1707,1714,1720,1722,1723,1751,1769,1789,1795,1800,1802,1813,1816,1820,1826,1829,1844,1849,1855,1887,1890,1908,1916,1917,1925,1926,1932,1933,1935,1980,1982,1990,1992,1995,1998,2006,2010,2017,2021];
+    private ?array $failureSourceDiagnostic=null;
+
     public function __construct(private Facts $dao,private MarketplaceOrderDao $orders,private MarketplacePaymentDao $payments,
         private EmployeeAuthServices $auth,private StoreOrderCreateServices $numbers,private SystemConfigDao $configuration,private MarketplaceOrderRefundDao $refunds){}
+
+    /** Safe scalars from this instance's most recent writer failure; never a Throwable or trace. */
+    public function lastFailureSourceDiagnostic():?array
+    {
+        return $this->failureSourceDiagnostic;
+    }
 
     /**
      * Pure native-family readback after the actual complete Context2 inspection.
@@ -42,6 +51,7 @@ final class MarketplaceOrderFulfillmentServices
      */
     public function validateAftersaleFamilyFromFacts(array $root,array $capture,array $family,array $inspection):void
     {
+        $this->failureSourceDiagnostic=null;
         if(PHP_INT_SIZE<8)self::unavailable();
         Facts::keys($capture,['root','items','selection','reserves','credit_rows','child_orders']);
         Facts::keys($family,['children','items','ranges','refunds']);
@@ -189,6 +199,7 @@ final class MarketplaceOrderFulfillmentServices
      */
     public function readHistoryFromFacts(array $root,array $paymentObservation,array $original,array $family,array $operations,array $logs):array
     {
+        $this->failureSourceDiagnostic=null;
         if(PHP_INT_SIZE<8)self::unavailable();
         Facts::keys($paymentObservation,['locked','root_payment_consistent']);
         if($paymentObservation['root_payment_consistent']!==true||!is_array($paymentObservation['locked']))self::unavailable();
@@ -219,6 +230,7 @@ final class MarketplaceOrderFulfillmentServices
     /** Actual merchant read authorization precedes input parsing and the owned native snapshot. */
     public function readMerchantPage(MerchantContext $ctx,array $query=[]):array
     {
+        $this->failureSourceDiagnostic=null;
         $ship=$this->merchantReadAuthorization($ctx);$input=MerchantOrderInput::listing($query);
         try{return $this->runRead($ctx,$ship,$input['filter'],$input['page'],$input['limit'],null);}
         catch(\crmeb\exceptions\MerchantNotFoundException|AuthUnavailableException $error){throw $error;}
@@ -227,6 +239,7 @@ final class MarketplaceOrderFulfillmentServices
 
     public function readMerchantRoot(MerchantContext $ctx,mixed $rootId):array
     {
+        $this->failureSourceDiagnostic=null;
         $ship=$this->merchantReadAuthorization($ctx);$id=MerchantOrderInput::id($rootId);
         try{return $this->runRead($ctx,$ship,[],1,1,$id);}
         catch(\crmeb\exceptions\MerchantNotFoundException|AuthUnavailableException $error){throw $error;}
@@ -236,6 +249,7 @@ final class MarketplaceOrderFulfillmentServices
     /** These six fixed entry points receive only identities from their existing authenticated callers. */
     public function readCustomerPage(int $actualUid,array $query,int $page=0,int $limit=0):array
     {
+        $this->failureSourceDiagnostic=null;
         Facts::integer($actualUid,1,self::INT_MAX);$filter=MarketplaceOrderInput::customerRead($query);$window=MarketplaceOrderInput::readPage($page,$limit);
         return $this->runThreeRead(['kind'=>'customer_page','actor'=>$actualUid,'locator'=>null,'children_page'=>null,'children_limit'=>null,
             'options'=>$this->captureReadDisplayOptions('customer_list')],$filter,$window);
@@ -243,6 +257,7 @@ final class MarketplaceOrderFulfillmentServices
 
     public function readPlatformPage(int $actualAdminId,array $query,int $page=0,int $limit=0):array
     {
+        $this->failureSourceDiagnostic=null;
         Facts::integer($actualAdminId,1,self::UINT_MAX);$filter=MarketplaceOrderInput::platformRead($query);$window=MarketplaceOrderInput::readPage($page,$limit);
         return $this->runThreeRead(['kind'=>'platform_page','actor'=>$actualAdminId,'locator'=>null,'children_page'=>null,'children_limit'=>null,
             'options'=>$this->captureReadDisplayOptions('platform_list')],$filter,$window);
@@ -250,6 +265,7 @@ final class MarketplaceOrderFulfillmentServices
 
     public function readMobilePage(int $actualUid,array $query,int $page=0,int $limit=0):array
     {
+        $this->failureSourceDiagnostic=null;
         Facts::integer($actualUid,1,self::INT_MAX);$filter=MarketplaceOrderInput::mobileRead($query);$window=MarketplaceOrderInput::readPage($page,$limit);
         return $this->runThreeRead(['kind'=>'mobile_page','actor'=>$actualUid,'locator'=>null,'children_page'=>null,'children_limit'=>null,
             'options'=>$this->captureReadDisplayOptions('mobile_list')],$filter,$window);
@@ -257,6 +273,7 @@ final class MarketplaceOrderFulfillmentServices
 
     public function readCustomerRoot(int $actualUid,string $originalLocator,mixed $childrenPage=1,mixed $childrenLimit=20):array
     {
+        $this->failureSourceDiagnostic=null;
         Facts::integer($actualUid,1,self::UINT_MAX);
         return $this->runThreeRead(['kind'=>'customer_root','actor'=>$actualUid,'locator'=>$originalLocator,'children_page'=>$childrenPage,'children_limit'=>$childrenLimit,
             'options'=>$this->captureReadDisplayOptions('customer_detail')],[],[],(bool)sys_config('order_shipping_open',0));
@@ -264,6 +281,7 @@ final class MarketplaceOrderFulfillmentServices
 
     public function readPlatformRoot(int $actualAdminId,int|string $actualPk,mixed $childrenPage=1,mixed $childrenLimit=20):array
     {
+        $this->failureSourceDiagnostic=null;
         Facts::integer($actualAdminId,1,self::UINT_MAX);
         return $this->runThreeRead(['kind'=>'platform_root','actor'=>$actualAdminId,'locator'=>$actualPk,'children_page'=>$childrenPage,'children_limit'=>$childrenLimit,
             'options'=>$this->captureReadDisplayOptions('platform_detail')],[],[]);
@@ -271,6 +289,7 @@ final class MarketplaceOrderFulfillmentServices
 
     public function readMobileRoot(int $actualUid,string $originalLocator,mixed $childrenPage=1,mixed $childrenLimit=20):array
     {
+        $this->failureSourceDiagnostic=null;
         Facts::integer($actualUid,1,self::UINT_MAX);
         return $this->runThreeRead(['kind'=>'mobile_root','actor'=>$actualUid,'locator'=>$originalLocator,'children_page'=>$childrenPage,'children_limit'=>$childrenLimit,
             'options'=>$this->captureReadDisplayOptions('mobile_detail')],[],[],(bool)sys_config('order_shipping_open',0));
@@ -315,6 +334,7 @@ final class MarketplaceOrderFulfillmentServices
 
     public function readMerchantPackages(MerchantContext $ctx,mixed $rootId,mixed $page=1,mixed $limit=20):array
     {
+        $this->failureSourceDiagnostic=null;
         $ship=$this->merchantReadAuthorization($ctx);$id=MerchantOrderInput::id($rootId);
         try{return $this->runRead($ctx,$ship,[],1,1,$id,null,
             ['kind'=>'page','child_id'=>null,'page'=>$page,'limit'=>$limit,'options'=>self::packageReadOptions()]);}
@@ -324,6 +344,7 @@ final class MarketplaceOrderFulfillmentServices
 
     public function readMerchantPackage(MerchantContext $ctx,mixed $childId):array
     {
+        $this->failureSourceDiagnostic=null;
         $ship=$this->merchantReadAuthorization($ctx);$id=MerchantOrderInput::id($childId);
         try{return $this->runRead($ctx,$ship,[],1,1,null,null,
             ['kind'=>'detail','child_id'=>$id,'page'=>null,'limit'=>null,'options'=>self::packageReadOptions()]);}
@@ -333,6 +354,7 @@ final class MarketplaceOrderFulfillmentServices
 
     public function readCustomerPackage(int $actualUid,string $childNo):array
     {
+        $this->failureSourceDiagnostic=null;
         Facts::integer($actualUid,1,self::INT_MAX);Facts::text($childNo,32,true);
         return $this->runThreeRead(['kind'=>'customer_package','actor'=>$actualUid,'locator'=>$childNo,'children_page'=>1,'children_limit'=>20,
             'options'=>self::packageReadOptions()],[],[]);
@@ -345,6 +367,7 @@ final class MarketplaceOrderFulfillmentServices
 
     public function receivePackageForCustomer(int $actualUid,string $childNo,array $raw):array
     {
+        $this->failureSourceDiagnostic=null;
         Facts::integer($actualUid,1,self::INT_MAX);Facts::text($childNo,32,true);
         [$connection,$pdo]=$this->defaultConnection();$this->dao->assertAftersaleStructure($pdo);
         $candidate=$this->dao->customerChildCandidate($pdo,$actualUid,$childNo);
@@ -1164,6 +1187,7 @@ final class MarketplaceOrderFulfillmentServices
 
     public function ship(MerchantContext $ctx,mixed $rootId,array $raw):array
     {
+        $this->failureSourceDiagnostic=null;
         $normalized=MarketplaceOrderFulfillmentInput::ship($rootId,$raw);
         $ctx->require('order.ship');$this->auth->authorizeAction($ctx,'order.ship',false);
         [$connection,$pdo]=$this->defaultConnection();$this->dao->assertAftersaleStructure($pdo);
@@ -1173,6 +1197,7 @@ final class MarketplaceOrderFulfillmentServices
 
     public function receiveForCustomer(int $actualUid,string $childNo,array $raw):array
     {
+        $this->failureSourceDiagnostic=null;
         Facts::integer($actualUid,1,self::INT_MAX);Facts::text($childNo,32,true);
         [$connection,$pdo]=$this->defaultConnection();$this->dao->assertAftersaleStructure($pdo);
         $candidate=$this->dao->customerChildCandidate($pdo,$actualUid,$childNo);
@@ -1183,6 +1208,7 @@ final class MarketplaceOrderFulfillmentServices
     /** @internal Dedicated actual Worker lifecycle is an activation dependency, never a public actor parameter. */
     public function receiveDue(int $childId):array
     {
+        $this->failureSourceDiagnostic=null;
         Facts::integer($childId,1,self::INT_MAX);
         [$connection,$pdo]=$this->defaultConnection();$this->dao->assertAftersaleStructure($pdo);
         $candidate=$this->dao->internalChildCandidate($pdo,$childId);
@@ -1192,6 +1218,7 @@ final class MarketplaceOrderFulfillmentServices
     /** @internal Cursor is only a hint; every child is resolved and locked afresh in receiveDue. */
     public function scanDue(int $dueCursor=0,string $shipCursor='0',int $batch=100):array
     {
+        $this->failureSourceDiagnostic=null;
         Facts::integer($dueCursor,0,self::UINT_MAX);Facts::u64($shipCursor,true);
         if($batch<1||$batch>100)self::unavailable();
         [$connection,$pdo]=$this->defaultConnection();$this->dao->assertAftersaleStructure($pdo);
@@ -1377,6 +1404,8 @@ final class MarketplaceOrderFulfillmentServices
             // This may throw after a genuine commit; catch does not claim rollback.
             $phase='post_commit_boundary';$this->outside($connection,$pdo);return $result;
         }catch(Throwable $error){
+            try{$this->failureSourceDiagnostic=self::failureSourceProjection($error,$phase);}
+            catch(Throwable $diagnosticUnavailable){$this->failureSourceDiagnostic=null;}
             self::pending($phase,$candidate['root_order_id'],$childId,$operationId);self::unavailable();
         }
     }
@@ -1998,5 +2027,37 @@ final class MarketplaceOrderFulfillmentServices
         try{Log::error('MARKETPLACE_FULFILLMENT_OUTCOME_UNPROVED',
             ['phase'=>$phase,'root_order_id'=>$rootId,'child_order_id'=>$childId,'operation_id'=>$operationId]);}catch(Throwable $ignored){}
     }
+    /** Only finite scalar Source coordinates leave this function; trace/args/messages are never retained. */
+    private static function failureSourceProjection(Throwable $error,string $phase):array
+    {
+        $phases=['locked_payment','locked_complete_native_snapshot','saved_replay','new_action_admission',
+            'new_child_number','insert_child','insert_operation','insert_ranges','native_readback',
+            'finish_operation','commit_outcome_unknown','post_commit_boundary'];
+        if(!in_array($phase,$phases,true))$phase='unknown';
+        $classes=[AuthUnavailableException::class,\crmeb\exceptions\AuthSessionException::class,
+            \crmeb\exceptions\MerchantForbiddenException::class,\crmeb\exceptions\ApiException::class,
+            \RuntimeException::class,\InvalidArgumentException::class,\UnexpectedValueException::class,
+            \LogicException::class,\DomainException::class,\PDOException::class,\TypeError::class,
+            \ValueError::class,\Error::class,\JsonException::class,\think\db\exception\PDOException::class,
+            \think\db\exception\DbException::class];
+        $class=get_class($error);if(!in_array($class,$classes,true))$class='OTHER';
+        $files=['MarketplaceOrderFulfillmentServices.php','MarketplaceOrderFulfillmentDao.php',
+            'MarketplacePaymentDao.php','MarketplaceOrderDao.php','MarketplaceOrderRefundDao.php',
+            'MarketplaceOrderRefundFacts.php','MarketplaceOrderFulfillmentPlan.php',
+            'MarketplaceOrderFulfillmentInput.php','MarketplaceOrderSnapshotProjection.php','EmployeeAuthServices.php'];
+        $file=basename(str_replace('\\','/',$error->getFile()));$line=$error->getLine();
+        if(!in_array($file,$files,true)||!is_int($line)||$line<1||$line>100000){$file=null;$line=null;}
+        $caller=null;$scanned=0;
+        foreach($error->getTrace()as$frame){
+            if(++$scanned>32)break;
+            if(!is_array($frame)||($frame['class']??null)!==self::class||($frame['function']??null)!=='unavailable'
+                ||($frame['type']??null)!=='::'||($frame['file']??null)!==__FILE__
+                ||!is_int($frame['line']??null)||!in_array($frame['line'],self::FAILURE_SOURCE_CALLER_LINES,true))continue;
+            $caller=['file'=>'MarketplaceOrderFulfillmentServices.php','line'=>$frame['line']];break;
+        }
+        return ['schema'=>1,'scope'=>'TASK6_FULFILLMENT_FAILURE_SOURCE_DIAGNOSTIC','phase'=>$phase,
+            'origin'=>['class'=>$class,'file'=>$file,'line'=>$line],'caller'=>$caller];
+    }
+
     private static function unavailable():never{throw new AuthUnavailableException();}
 }

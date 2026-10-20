@@ -1087,6 +1087,77 @@ function m4fn_early_cf(\think\App $app,PDO $db,array $before,array $source,array
     // First atomic Redis observation precedes the slower complete DB after-snapshot. Expiry is never inferred from the PHP key.
     return m4fn_cf_barrier($db,$sequence);
 }
+/** Best-effort failure side evidence only; original assertion bookkeeping and original error are preserved. */
+function m4fn_failure_source_side_evidence(MarketplaceOrderFulfillmentServices $service,array $source):void
+{
+    $saved=[];foreach(['m4fn_failed_assertion','m5pcp_failed_assertion','m4c_failed_assertion',
+        'm4fn_assertions','m5pcp_assertions','m4c_assertions','m4c_assertions_by_phase']as$name)
+        $saved[$name]=[array_key_exists($name,$GLOBALS),$GLOBALS[$name]??null];
+    try{
+        $require=static function(bool $ok):void{if(!$ok)throw new RuntimeException('TASK6_SAFE_SOURCE_DIAGNOSTIC_UNAVAILABLE');};
+        $keys=static function(array $value,array $wanted)use($require):void{$actual=array_keys($value);sort($actual,SORT_STRING);
+            sort($wanted,SORT_STRING);$require($actual===$wanted);};
+        $paths=[
+            'MarketplaceOrderFulfillmentServices.php'=>'crmeb/app/services/marketplace/order/MarketplaceOrderFulfillmentServices.php',
+            'MarketplaceOrderFulfillmentDao.php'=>'crmeb/app/dao/marketplace/order/MarketplaceOrderFulfillmentDao.php',
+            'MarketplacePaymentDao.php'=>'crmeb/app/dao/marketplace/payment/MarketplacePaymentDao.php',
+            'MarketplaceOrderDao.php'=>'crmeb/app/dao/marketplace/order/MarketplaceOrderDao.php',
+            'MarketplaceOrderRefundDao.php'=>'crmeb/app/dao/marketplace/order/MarketplaceOrderRefundDao.php',
+            'MarketplaceOrderRefundFacts.php'=>'crmeb/app/services/marketplace/order/MarketplaceOrderRefundFacts.php',
+            'MarketplaceOrderFulfillmentPlan.php'=>'crmeb/app/services/marketplace/order/MarketplaceOrderFulfillmentPlan.php',
+            'MarketplaceOrderFulfillmentInput.php'=>'crmeb/app/services/marketplace/order/MarketplaceOrderFulfillmentInput.php',
+            'MarketplaceOrderSnapshotProjection.php'=>'crmeb/app/services/marketplace/order/MarketplaceOrderSnapshotProjection.php',
+            'EmployeeAuthServices.php'=>'crmeb/app/services/marketplace/EmployeeAuthServices.php'];
+        $read=static function(string $relative)use($source,$require,$keys):string{
+            $rows=array_values(array_filter($source['source_files'],static fn(array $row):bool=>($row['path']??null)===$relative));
+            $require(count($rows)===1);$row=$rows[0];$keys($row,['path','bytes','sha256']);
+            $require(is_int($row['bytes'])&&$row['bytes']>0&&is_string($row['sha256'])&&preg_match('/\A[a-f0-9]{64}\z/D',$row['sha256'])===1);
+            $raw=null;foreach(['/source','/workspace']as$root){$path=$root.'/'.$relative;
+                $require(is_file($path)&&!is_link($path)&&realpath($path)===$path);$bytes=file_get_contents($path);
+                $require(is_string($bytes)&&strlen($bytes)===$row['bytes']&&hash('sha256',$bytes)===$row['sha256']);
+                if($raw!==null)$require($raw===$bytes);$raw=$bytes;}
+            return $raw;
+        };
+        $raw=$read($paths['MarketplaceOrderFulfillmentServices.php']);$serviceLines=explode("\n",$raw);
+        $require(preg_match('/private const FAILURE_SOURCE_CALLER_LINES=\[([0-9,]+)\];/',$raw,$match)===1);
+        $declared=[];foreach(explode(',',$match[1])as$value){$require(preg_match('/\A[1-9][0-9]{0,5}\z/D',$value)===1);$declared[]=(int)$value;}
+        $derived=[];foreach($serviceLines as$i=>$line)if(str_contains($line,'self::unavailable('))$derived[]=$i+1;
+        $require($declared!==[]&&$declared===$derived&&count($declared)===count(array_unique($declared,SORT_NUMERIC)));
+        $diagnostic=$service->lastFailureSourceDiagnostic();
+        if($diagnostic===null)$diagnostic=['schema'=>1,'scope'=>'TASK6_FULFILLMENT_FAILURE_SOURCE_DIAGNOSTIC',
+            'phase'=>'not_captured','origin'=>['class'=>'OTHER','file'=>null,'line'=>null],'caller'=>null];
+        $keys($diagnostic,['schema','scope','phase','origin','caller']);
+        $require($diagnostic['schema']===1&&$diagnostic['scope']==='TASK6_FULFILLMENT_FAILURE_SOURCE_DIAGNOSTIC'
+            &&in_array($diagnostic['phase'],['locked_payment','locked_complete_native_snapshot','saved_replay','new_action_admission',
+                'new_child_number','insert_child','insert_operation','insert_ranges','native_readback','finish_operation',
+                'commit_outcome_unknown','post_commit_boundary','unknown','not_captured'],true));
+        $origin=$diagnostic['origin'];$require(is_array($origin));$keys($origin,['class','file','line']);
+        $require(in_array($origin['class'],['crmeb\exceptions\AuthUnavailableException','crmeb\exceptions\AuthSessionException',
+            'crmeb\exceptions\MerchantForbiddenException','crmeb\exceptions\ApiException','RuntimeException','InvalidArgumentException',
+            'UnexpectedValueException','LogicException','DomainException','PDOException','TypeError','ValueError','Error','JsonException',
+            'think\db\exception\PDOException','think\db\exception\DbException','OTHER'],true));
+        if($origin['file']===null)$require($origin['line']===null);
+        else{$require(is_string($origin['file'])&&isset($paths[$origin['file']])&&is_int($origin['line'])&&$origin['line']>=1);
+            $originRaw=$origin['file']==='MarketplaceOrderFulfillmentServices.php'?$raw:$read($paths[$origin['file']]);
+            $require($origin['line']<=count(explode("\n",$originRaw)));}
+        $caller=$diagnostic['caller'];if($caller!==null){$require(is_array($caller));$keys($caller,['file','line']);
+            $require($caller['file']==='MarketplaceOrderFulfillmentServices.php'&&is_int($caller['line'])
+                &&in_array($caller['line'],$declared,true)&&str_contains($serviceLines[$caller['line']-1],'self::unavailable('));}
+        if($diagnostic['phase']==='not_captured')$require($origin===['class'=>'OTHER','file'=>null,'line'=>null]&&$caller===null);
+        foreach(['run_id'=>'/\A[0-9]{14}[a-f0-9]{6}\z/D','source_sha'=>'/\A[a-f0-9]{40}\z/D',
+            'container_id'=>'/\A[a-f0-9]{64}\z/D','freeze_sha256'=>'/\A[a-f0-9]{64}\z/D']as$name=>$pattern)
+            $require(is_string($source[$name]??null)&&preg_match($pattern,$source[$name])===1);
+        $record=['schema'=>1,'scope'=>'MS4_TASK6_SAFE_FAILURE_SOURCE_DIAGNOSTIC_ONLY',
+            'run_id'=>$source['run_id'],'source_sha'=>$source['source_sha'],'container_id'=>$source['container_id'],
+            'freeze_sha256'=>$source['freeze_sha256'],'diagnostic'=>$diagnostic];
+        m4c_entry_publish('/run/audit/evidence/ms4-fulfillment-failure-source-diagnostic.json',$record);
+    }catch(Throwable $diagnosticUnavailable){
+        // Never replace the original service error or emit a second failure message.
+    }finally{
+        foreach($saved as$name=>[$existed,$value]){if($existed)$GLOBALS[$name]=$value;else unset($GLOBALS[$name]);}
+    }
+}
+
 function m4fn_produce(\think\App $app,PDO $db,array $source,array $owner):array
 {
     $connection=Db::connect();$default=$connection->getPdo();
@@ -1114,8 +1185,10 @@ function m4fn_produce(\think\App $app,PDO $db,array $source,array $owner):array
     ];
     foreach($cases as$index=>$case){m4fn_phase('normal_action_'.($index+1));m4fn_context($app,$connection,$default,$db);
         $before=m4fn_snapshot($db);$started=time();
-        if($case['action']==='ship')$result=$service->ship($actor['context'],$oracle['identity']['id'],$case['raw']);
-        else $result=$service->receiveForCustomer($owner['uid'],$history['ships'][$case['ship_index']]['child']['order_id'],$case['raw']);
+        try{
+            if($case['action']==='ship')$result=$service->ship($actor['context'],$oracle['identity']['id'],$case['raw']);
+            else $result=$service->receiveForCustomer($owner['uid'],$history['ships'][$case['ship_index']]['child']['order_id'],$case['raw']);
+        }catch(Throwable $error){m4fn_failure_source_side_evidence($service,$source);throw $error;}
         $ended=time();m4fn_context($app,$connection,$default,$db);
         if($case['action']==='ship')$sequence[]=m4fn_early_cf($app,$db,$before,$oracle,$case,$result,$started,$ended,$history);
         $after=m4fn_snapshot($db);$record=m4fn_operation($oracle,$before,$after,$case,$result,$actor,$started,$ended,$history);
