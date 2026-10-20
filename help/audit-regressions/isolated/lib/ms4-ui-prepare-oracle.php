@@ -1942,7 +1942,7 @@ function m5pt_cart(PDO $db,\think\App $app,array $before,int $uid,array $product
  $after=m4upo_snapshot($db);m4up_expect($ref===m5pt_next($before,'eb_store_cart'),'TASK2_REAL_NATURAL_DISTINCT_CART_REFERENCE');
  $actual=m4upo_one($after['rows']['eb_store_cart'],'id',$ref);$stamp=m4upo_time($actual['add_time'],[$started,time()]);
  $cart=m4upo_row($before,$actual,'eb_store_cart',['id'=>$ref,'uid'=>$uid,'product_id'=>$productId,'cart_num'=>1,
-  'product_attr_unique'=>$sku['unique'],'type'=>0,'add_time'=>$stamp,'seckill_id'=>0,'bargain_id'=>0,'combination_id'=>0,'advance_id'=>0]);
+  'product_attr_unique'=>$sku['unique'],'type'=>'0','add_time'=>$stamp,'seckill_id'=>0,'bargain_id'=>0,'combination_id'=>0,'advance_id'=>0]);
  $logs=m4ar_new_rows($before['rows']['eb_store_product_log'],$after['rows']['eb_store_product_log']);m4up_expect(count($logs)===1,'TASK2_ONE_REAL_CART_LOG');
  $log=m5pt_log($before,$logs[0],$uid,$productId,'cart',m4upo_time($logs[0]['add_time'],[$started,time()]));
  m4ar_database_delta($before,$after,['eb_store_cart'=>[...$before['rows']['eb_store_cart'],$cart],

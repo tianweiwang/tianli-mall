@@ -750,7 +750,7 @@ function m4ar_produce_paid(\think\App $app,PDO $db,array $source,array $owner):a
  $rows=$before['rows'];$newCart=m4ar_new_rows($rows['eb_store_cart'],$cart['rows']['eb_store_cart']);
  m4ar_expect(count($newCart)===2,'TASK78_ONLY_TWO_NEW_SELECTED_CARTS');
  foreach($fixture['selected']as$i=>$line){$row=m4ar_one($newCart,'id',$refs[$i]);$values=['id'=>$refs[$i],'uid'=>$uid,'product_id'=>$line['product_id'],
-  'product_attr_unique'=>$fixture['skus'][$line['sku_id']]['unique'],'cart_num'=>$line['qty'],'is_new'=>0,'is_pay'=>0,'is_del'=>0,'status'=>1,'type'=>0,
+  'product_attr_unique'=>$fixture['skus'][$line['sku_id']]['unique'],'cart_num'=>$line['qty'],'is_new'=>0,'is_pay'=>0,'is_del'=>0,'status'=>1,'type'=>'0',
   'add_time'=>m4ar_time($start,$end,$row['add_time'])];m4fn_expected_row($before['database']['tables']['eb_store_cart']['metadata'],$row,$values);}
  $newLogs=m4ar_new_rows($rows['eb_store_product_log'],$cart['rows']['eb_store_product_log']);m4ar_expect(count($newLogs)===2,'TASK78_TWO_REAL_NEW_CART_STATS');
  $wanted=[];foreach($fixture['selected']as$line)$wanted[$line['product_id']]=$line['qty'];

@@ -2,6 +2,18 @@
 
 本记录对应09原Task6/7/8，沿已采用的售后/评价正常联调设计实施，不替代原执行清单。目标仍为通用多商户商城；商品、规格、价格沿原有通用能力。仅本地L2和专用隔离实例，无推送、部署或真实资金操作。
 
+## R28 新购物车期望类型、实际收尾与后继修正（2026-10-21）
+
+Run20261020141646456477的来源为clean2522a46fb9c4e70667609c1974332c7eb3902586，freeze fee9f7734b7891c8ebf8e22c3ad8ad43434f54478597355c7ede8c4c225c754b。内部paid实际0；Task6两次发货、三次收货、五次同key重放及六阶段288次内部读取通过，正常精确移除。Root已读回paid结果4880B/718de6ce3590、Task6结果14649B/a8703959960a、三读307688B/798410a9cedf及原容器自然0终态；这些仍为内部证据，不能签三端HTTP/DOM。
+
+AR实际越过安装语言和App/warm，HTTP child及演员准备后，在new_root_real_cart_confirm_create以TASK6_SAVED_NONINTEGER_NATIVE_STRING自然1。原结果6089B/ba29a5318476，原terminal5087B/8dcbd06c5d73，business:null；原S86892实际退出1并保留现场。child实际TERM15、成员为空、监听关闭，原proc_close=-1不改写；非fatal shutdown的cleanup_failure为null。未产生新增付款、13动作/15重放、评价或Worker完成结果，first B未启动。
+
+源码产消链明确：AR753及UI oracle1945将购物车type独立期望写为int0，安装SQL28011却为varchar(32)；原m4fn_native_value579对非整数列严格要求string。只把两处期望改为字符串'0'，保生产setCart308的int参数、原DDL及严格比较不变。没有读取失败瞬间的私有操作数，不以源码定位冒充售后业务通过。
+
+原失败正常收尾实际0：r28-ar-failed-normal-close-r1/close-output/RESULT.json为93519B/44c12b53deaa，84项原生同PID/wait0、完整双流；只正常停止原mysql/redis，再非force退役原4CID/1内部网/7卷。独立zero-output实际位于同根independent-zero-output/RESULT.json，为17068B/ad5aed42ecf4，12项原生0、六fresh原始查询全空、全局无原资源消费者。14600份原明确公件、340份完整close公件及Source/INI保持。新收尾未调用要求AR成功的旧close门，也未运行success-only post-A collector；不重署失败为成功。
+
+两候选的固定PHP8.2.33语法及八项纯正向检查实际0：r28-cart-type-pure-check-r1/RESULT.json12591B/9ce609a01dc9。探针仅从原Source抽取四个完整真实函数，取原DDL列型，核两个实际候选字符串0、普通整数和decimal零值/金额的严格类型和值；五原生步骤同PID/wait0、stderr空，九固定输入前后保持，临时容器正常移除。没有App/SQL/Redis/HTTP/GUI；后继实际采用和本地提交身份以Git记录为准。新clean完整A、同HEAD first B、N1及原MS4–MS6未完责任仍待09唯一执行清单完成。
+
 ## R27 语言前置缺失、实际收尾与后继设计（2026-10-20）
 
 实际Run20261020102102e6c427使用clean5767b860bbeb8dc6ed96258651fabdc035396959，freeze8966b902942298de064aa3302f5a9a29b430d6a9f21166f85811a985d44bdaed。Task6内部两次发货、三次收货、五次重放及六阶段288次读取通过，原容器正常移除；AR通过原owner/stage6门并已加载App，在real_source_cache_preparation以TASK78_REAL_INSTALLED_NORMAL_LANGUAGE自然1，原native_exit:null和非fatal shutdown保持。HTTP/演员/新增付款/售后13动作15重放/评价/Worker及first B未启动，不把business:null称为App未启动或缓存零写。
