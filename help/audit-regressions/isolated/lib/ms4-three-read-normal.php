@@ -1009,8 +1009,7 @@ function m4tr_children_expected(array $source,array $snapshot,array $history,boo
             'items'=>$items,'payment_owner_order_id'=>$rootId,'paid'=>1,'pay_type'=>$root['pay_type'],'pay_time'=>m5pcp_int($root['pay_time'],1),
             'pay_type_name'=>'测试支付'];
         if($detail){$forms=[];foreach($source['forms']as$form)if($form['product_id']===$allocation['product_id'])$forms[]=$form;
-            m4fn_expect(json_decode($child['custom_form'],true,32,JSON_THROW_ON_ERROR)===$forms,
-                'TASK6_THREE_EXPECTED_DETAIL_TRUE_CHILD_PRODUCT_FORMS_ONLY');
+            m5pcp_json_expected($child['custom_form'],$forms);
             $dto['recipient']=['real_name'=>$child['real_name'],'user_phone'=>$child['user_phone'],'user_address'=>$child['user_address']];
             $dto['mark']=$child['mark'];$dto['custom_form']=$forms;
         }

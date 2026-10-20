@@ -1207,3 +1207,18 @@ R23实际来源1ceaaf0已包含old_cart_id严格空串修订，仍在normal_acti
 已固定Source包r24-typed-operation-comparison-source-r1共14件/PINS1877B/3d006e0f13c4e94959ac80f0accd1728469b06b427ffe2c37179945d82255422；Service候选160261B/38a7e2f514ebafb4ba3f512e0b6f11ce50fd5df797657bfb2cf718ed2a93688d。Source全文正逆及独立复核无阻断，只是候选资格。原R24正常close实际0，Root已核19项原生操作与该close内六查询原始stdout/stderr双空；随后独立zero原进程52942实际自然0，RESULT15498B/ae4ac44a1254632e25b387d08c097577da02d2e23583b500c6dcd25295461556；Root另核15项原生操作的同PID终态/完整双流、六fresh原始查询双空，106906原公件保持。固定PHP纯验证也实际0：r24-typed-operation-pure-check-r1/RESULT.json6458B/2f80ab461b9be4ba35eea3d8ee22568b8254d6d39d447b7cab28dec215b7488c，五项原生操作0，原生产候选与probe各PHP-lint通过、37/37纯typed属性通过、两selector空，无App/PDO/Redis/HTTP。它们不证明首ship或A正常链已过，不提前登记采用commit。
 
 任务：[x]原失败/安全坐标与未知子谓词边界记录；[x]最小Source设计、唯一候选与独审；[x]本轮实际正常close；[x]独立zero真实原件/终态及保全；[x]候选与probe两文件PHP语法、37/37纯比较真实原生结果；[ ]本候选及三文档实际本地采用、所在Git身份核实；[ ]新clean/fresh完整normal首ship及全部发收货/售后/评价/Worker；[ ]后续同源fresh B、原H5/商家/三端与三宽DOM及各自正常关闭/独立核零、用户验收。BASE原签收、L2本地未推送未部署、商品规格价格和全部旧failed历史保持，停止样本NOT RUN；不改11规格或用Source/语法/资源核零换算百分比。
+
+
+### R25动作后子单表单比较：有限修订与实际验证（2026-10-20）
+
+目标：独立子单详情期待应遵守既有JSON合同：对象键插入顺序无关，完整键集、列表顺序、标量类型和值严格保持；继续按真实分配商品过滤表单，保留完整子单/子项、cart、数量和金额校核。复用现有商品规格与价格，不涉及天俪定制需求。
+
+原Run202610200329190c716a来源bd816dcde21041e95c1ce52e20c2b46fabc0d855，A原进程65181自然1。内部paid0、初始三读1stage/54calls（39 owned＋15 wrapper）、legacy0及原proc_close=-1分范围保留。原程序已在首ship、operation读回、同key零差分重放及商家保存读返回后进入three_read_after_action_1，失败码TASK6_THREE_EXPECTED_DETAIL_TRUE_CHILD_PRODUCT_FORMS_ONLY；后续完整stage未发布，售后/评价/Worker未启动。原实际表单操作数未读，下述Source矛盾不等于已证实现场唯一原因；原失败不回补。
+
+设计仅将lib/ms4-three-read-normal.php原1012–1013的json_decode后整数组===比较，替换为既有m5pcp_json_expected($child['custom_form'],$forms)。生产canonical递归排序对象键，独立表单构造保留插入顺序，原PHP比较额外要求了对象键序。既有checker保持对象/列表区别、完整键集、标量类型和值及列表顺序；忽略其返回值，避免再次整数组比较。前行商品过滤、独立$forms及DTO赋值、全部其他门不变。该位置原TASK6错误码退出执行，真实失败改用既有更具体JSON检查码或原解码异常；不声称旧码仍执行。
+
+唯一helper候选160668B/508c84e75b1b07bc6e574b461a069def27cedfb51378850923213391aa3bb01d，包r25-child-form-object-order-source-r1已完成全文正逆、非缝保持和独立Source复核。原R25正常close19项原生0、独立zero15项原生0，六fresh原始查询双空，4原CID/1内部网络/7专用卷正常非force退役，117889原公件保持。close/zero不重署原业务，也不声称重跑其未执行的协议退休检查。
+
+原实例正常收尾及独立核零后，r25-child-form-object-order-pure-check-r1实际自然0：RESULT.json7042B/327b639927cab4e548850fe25b6debac516584f7fbdf59aa1758f24fb9de870e。固定PHP8.2镜像、network-none、只读源/根目录执行候选与probe两文件语法及18项纯合同检查；共5项原生调用0、stderr空、前后selector空。Root完整核同PID终态、wait及双流、实际候选包和六真实依赖保持。probe使用真实canonical与既有checker；没有App/PDO/Redis/HTTP或完整子单业务路径，不代替fresh业务或页面通过。
+
+任务：[x]原失败边界和有限需求/设计；[x]唯一helper候选、全文正逆与独审；[x]原R25正常close及独立zero；[x]两文件实际PHP语法与18项纯合同检查；[x]仅helper及本三份记录本地采用，提交身份以所在Git核实；[ ]新clean来源/fresh完整履约、售后/评价/Worker正常链；[ ]成功来源同HEAD的fresh B及原H5/商家/三端普通页面、320/390/1440 DOM、各自正常关闭/独立核零；[ ]N1正常money_only批准与库存零差分、其余原未完成责任及阶段人工验收。BASE原签收独立保留，后续L2本地未推送未部署，停止样本NOT RUN，真实支付/退款及MS5/MS6未决业务不越界；不换算整体百分比。
