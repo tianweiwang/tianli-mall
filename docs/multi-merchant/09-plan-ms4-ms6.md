@@ -1196,3 +1196,14 @@ R23实际来源1ceaaf0已包含old_cart_id严格空串修订，仍在normal_acti
 决定采用仓库外r23-first-ship-safe-diagnostic-source-r1两件已固定候选，仅改MarketplaceOrderFulfillmentServices.php及原ms4-fulfillment-normal.php。原同实例公开操作入口清空诊断；原run catch最佳努力提取固定phase/class/允许源文件行号和一个严格Source白名单caller，随后仍走原pending和无参unavailable。原helper同一次真实操作失败时，用原create-only writer另写绑定真实run/source/CID/freeze的受限侧证，并重抛同一个原错误；失败侧证不覆盖原失败，不留message、SQL、参数、完整栈或previous。异常类、Handler、业务断言、事务/权限/金额和正常响应保持，R23旧结果不回补。源文件行号必须由当轮冻结Source双根全文校验，不能借旧坐标。
 
 任务：[x]有限需求/设计、两件候选及独立Source审查；[x]Root整文正逆/328实际caller/10原输入核对；[x]原R23正常close与独立zero；[x]固定PHP8.2两文件纯语法0；[x]两文件和本记录本地采用；[ ]新clean来源、真实完整冻结与fresh普通正常链；[ ]首ship及后续完整发收货/售后/评价/Worker；[ ]fresh B及原H5/商家/三端页面、三宽DOM；[ ]对应正常关闭、独立核零与阶段验收。原H5需求覆盖的Source缺口正在单独补齐，不据旧拓扑/语法检查代签分页、地址发票回传或规格价DOM。仅L2本地，原停止样本NOT RUN，金融渠道和MS5/MS6未决要求保持。
+
+
+### R24首ship安全定位与operation比较的有限修订（2026-10-20）
+
+实际A原进程10845已自然退出1，Run2026102001153702435d，来源cded4fd321b4f38c625a9bedae67d2bfdf370f76；Task6仍在normal_action_1失败。本Run内部paid自然0、初始三读完成1stage/54calls（39 owned＋15真实wrapper），legacy同原child自然0，原proc_close=-1分别保留。安全侧证仅将失败收窄到native_readback及冻结Service1439复合门；计数、保存ID存在、完整operation比较中的实际子谓词仍UNKNOWN，不能把Source合同缺陷认作本Run已证根因。售后/评价/Worker未启动，A整体与fresh B/三端未获通过资格。
+
+需求与设计：完整operation含25字段；DB规范行的JSON对象键插入顺序可不同于写入草稿，现有canonical合同不要求该顺序相同；其中三个原生binary32摘要也不适合送入通用UTF-8 JSON比较。唯一生产候选新增sameOperation并接七处整行比较：先严格核exact25字段，request_payload/result_payload沿既有JSON canonical（原大小界限、list顺序、类型和值及result null区分均保留），其余23字段严格原类型/原值，binary原字节不进入JSON。原计数/唯一ID/完整历史、权限、金额、读写事务与range门保持，328真实caller坐标表未变，不改保存数据或独立expected迁就actual。
+
+已固定Source包r24-typed-operation-comparison-source-r1共14件/PINS1877B/3d006e0f13c4e94959ac80f0accd1728469b06b427ffe2c37179945d82255422；Service候选160261B/38a7e2f514ebafb4ba3f512e0b6f11ce50fd5df797657bfb2cf718ed2a93688d。Source全文正逆及独立复核无阻断，只是候选资格。原R24正常close实际0，Root已核19项原生操作与该close内六查询原始stdout/stderr双空；随后独立zero原进程52942实际自然0，RESULT15498B/ae4ac44a1254632e25b387d08c097577da02d2e23583b500c6dcd25295461556；Root另核15项原生操作的同PID终态/完整双流、六fresh原始查询双空，106906原公件保持。固定PHP纯验证也实际0：r24-typed-operation-pure-check-r1/RESULT.json6458B/2f80ab461b9be4ba35eea3d8ee22568b8254d6d39d447b7cab28dec215b7488c，五项原生操作0，原生产候选与probe各PHP-lint通过、37/37纯typed属性通过、两selector空，无App/PDO/Redis/HTTP。它们不证明首ship或A正常链已过，不提前登记采用commit。
+
+任务：[x]原失败/安全坐标与未知子谓词边界记录；[x]最小Source设计、唯一候选与独审；[x]本轮实际正常close；[x]独立zero真实原件/终态及保全；[x]候选与probe两文件PHP语法、37/37纯比较真实原生结果；[ ]本候选及三文档实际本地采用、所在Git身份核实；[ ]新clean/fresh完整normal首ship及全部发收货/售后/评价/Worker；[ ]后续同源fresh B、原H5/商家/三端与三宽DOM及各自正常关闭/独立核零、用户验收。BASE原签收、L2本地未推送未部署、商品规格价格和全部旧failed历史保持，停止样本NOT RUN；不改11规格或用Source/语法/资源核零换算百分比。

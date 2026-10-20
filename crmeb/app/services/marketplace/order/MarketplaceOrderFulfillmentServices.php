@@ -704,9 +704,9 @@ final class MarketplaceOrderFulfillmentServices
                 if(count($page['list'])!==count($expectedShips))self::unavailable();$childDtos=[];
                 foreach($page['list'] as$index=>$rawOperation){
                     $operation=Facts::operation($rawOperation);$expected=$expectedShips[$index];
-                    if(!self::same($operation,$expected))self::unavailable();$childId=$operation['child_order_id'];
+                    if(!self::sameOperation($operation,$expected))self::unavailable();$childId=$operation['child_order_id'];
                     if(!isset($history['children'][$childId])||!isset($history['ships_by_child'][$childId])
-                        ||!self::same($history['ships_by_child'][$childId],$operation))self::unavailable();
+                        ||!self::sameOperation($history['ships_by_child'][$childId],$operation))self::unavailable();
                     $childItems=self::readChildItems($family['child_items'],$childId);
                     $childDtos[]=$s2?MarketplaceOrderSnapshotProjection::fulfillmentChildAftersaleFromFacts($root,array_values($inspection['source']['items']),$history['children'][$childId],
                         $childItems,$inspection,$request['options'],false):MarketplaceOrderSnapshotProjection::fulfillmentChildFromFacts($root,$items[$id],$history['children'][$childId],
@@ -1104,8 +1104,8 @@ final class MarketplaceOrderFulfillmentServices
         if(!is_int($selected['count'])||$selected['count']!==count($ships)||!is_array($selected['list'])||!array_is_list($selected['list']))self::unavailable();
         $ships=array_slice($ships,($page['page']-1)*$page['limit'],$page['limit']);if(count($ships)!==count($selected['list']))self::unavailable();$list=[];
         foreach($selected['list'] as$index=>$raw){$operation=Facts::operation($raw);
-            if(!self::same($operation,$ships[$index]))self::unavailable();$id=$operation['child_order_id'];
-            if(!isset($history['children'][$id])||!self::same($history['ships_by_child'][$id],$operation))self::unavailable();
+            if(!self::sameOperation($operation,$ships[$index]))self::unavailable();$id=$operation['child_order_id'];
+            if(!isset($history['children'][$id])||!self::sameOperation($history['ships_by_child'][$id],$operation))self::unavailable();
             $childItems=self::readChildItems(array_values($history['child_items']),$id);
             $list[]=$inspection===null?MarketplaceOrderSnapshotProjection::fulfillmentChildFromFacts($root,$items,$history['children'][$id],
                 $childItems,$history,$options,false):MarketplaceOrderSnapshotProjection::fulfillmentChildAftersaleFromFacts($root,array_values($inspection['source']['items']),$history['children'][$id],
@@ -1394,7 +1394,7 @@ final class MarketplaceOrderFulfillmentServices
                 $finalItems=self::indexRows($finalFamily['items'],'id');foreach($family['items'] as$prior)
                     if(($finalItems[Facts::integer($prior['id'],1,self::INT_MAX)]??null)!==$prior)self::unavailable();
                 $finalOperationMap=[];foreach($finalOperations as$row)$finalOperationMap[$row['id']]=$row;
-                foreach($operations as$prior)if(!isset($finalOperationMap[$prior['id']])||!self::same($finalOperationMap[$prior['id']],$prior))self::unavailable();
+                foreach($operations as$prior)if(!isset($finalOperationMap[$prior['id']])||!self::sameOperation($finalOperationMap[$prior['id']],$prior))self::unavailable();
                 $finalRangeMap=self::rangeRowsById($finalFamily['ranges']);foreach($family['ranges'] as$prior)
                     if(($finalRangeMap['r:'.$prior['id']]??null)!==$prior)self::unavailable();
                 $stored=self::findOperation($finalOperations,$action,$normalized['idem_key']);
@@ -1436,8 +1436,8 @@ final class MarketplaceOrderFulfillmentServices
         ?array $childData,array $insertedItems,array $rangeWrites):void
     {
         $map=[];foreach($allOperations as$row){$id=$row['id'];if(isset($map[$id]))self::unavailable();$map[$id]=$row;}
-        if(count($map)!==count($priorOperations)+1||($map[$operationId]??null)!==Facts::operation(['id'=>$operationId]+$operation))self::unavailable();
-        foreach($priorOperations as$row)if(!isset($map[$row['id']])||!self::same($map[$row['id']],$row))self::unavailable();
+        if(count($map)!==count($priorOperations)+1||!isset($map[$operationId])||!self::sameOperation($map[$operationId],Facts::operation(['id'=>$operationId]+$operation)))self::unavailable();
+        foreach($priorOperations as$row)if(!isset($map[$row['id']])||!self::sameOperation($map[$row['id']],$row))self::unavailable();
         foreach(['children','items','ranges'] as$key){
             $before=$key==='ranges'?self::rangeRowsById($beforeFamily[$key]):self::indexRows($beforeFamily[$key],'id');$after=$key==='ranges'?self::rangeRowsById($afterFamily[$key]):self::indexRows($afterFamily[$key],'id');
             foreach($before as$id=>$row)if(($after[$id]??null)!==$row)self::unavailable();
@@ -2020,6 +2020,25 @@ final class MarketplaceOrderFulfillmentServices
     {
         if($actual!==$connection)self::unavailable();$this->connection($connection,$pdo);if(!$pdo->inTransaction())self::unavailable();
     }
+    /** Complete typed operation equality: JSON objects ignore key order; binary and other values stay strict. */
+    private static function sameOperation(array $a,array $b):bool
+    {
+        $keys=array_keys(Facts::newTables()['marketplace_fulfillment_operation']['columns']);
+        Facts::keys($a,$keys);Facts::keys($b,$keys);
+        foreach($keys as$key){
+            if($key==='request_payload'||$key==='result_payload'){
+                $left=$a[$key];$right=$b[$key];
+                if($key==='result_payload'&&($left===null||$right===null)){
+                    if($left!==$right)return false;
+                }else{
+                    $limit=$key==='request_payload'?65536:1048576;
+                    if(!is_array($left)||!is_array($right)||Facts::json($left,$limit)!==Facts::json($right,$limit))return false;
+                }
+            }elseif($a[$key]!==$b[$key])return false;
+        }
+        return true;
+    }
+
     private static function same(array $a,array $b):bool{return Facts::json($a,1048576)===Facts::json($b,1048576);}
     private static function now():int{return Facts::integer(time(),1,self::UINT_MAX);}
     private static function pending(string $phase,int $rootId,?int $childId,?string $operationId):void
