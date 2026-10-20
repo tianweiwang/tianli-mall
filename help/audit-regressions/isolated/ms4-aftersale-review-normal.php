@@ -820,6 +820,154 @@ function m4ar_tag_change(array $before,array $after,string $tag,array $add=[]):a
  $entry=$after['redis']['keys'][hash('sha256',$tag)]??null;m4ar_expect($entry===['type'=>'set','sha256'=>hash('sha256',"set\0".serialize($wanted)),'expires'=>-1],
  'TASK78_TAG_RAW_ALL_MEMBERS_NO_EXPIRY');$GLOBALS['m4ar_tag_members'][$tag]=$actual;return [$tag=>$entry];
 }
+/** Decode only the frozen export's finite language INSERT literal grammar; never execute installation SQL. */
+function m4ar_language_decode(string $sql):array
+{
+ $columns=['eb_lang_type'=>['id','language_name','file_name','status','is_default','is_del'],
+  'eb_lang_country'=>['id','type_id','code','name'],'eb_lang_code'=>['id','type_id','code','remarks','lang_explain','is_admin']];
+ $pattern='~^INSERT INTO `(eb_lang_(?:code|country|type))` \(([^\r\n]+)\) VALUES\r?\n~m';
+ m4ar_expect(preg_match('//u',$sql)===1&&preg_match_all($pattern,$sql,$blocks,PREG_SET_ORDER|PREG_OFFSET_CAPTURE)===31,
+  'TASK78_LANGUAGE_EXACT_THIRTY_ONE_LITERAL_INSERTS');
+ $counts=array_fill_keys(array_keys($columns),0);$totals=$counts;$selected=array_fill_keys(array_keys($columns),[]);
+ $seen=array_fill_keys(array_keys($columns),[]);$length=strlen($sql);
+ foreach($blocks as$block){
+  $table=$block[1][0];$names=$columns[$table];++$counts[$table];
+  m4ar_expect($block[2][0]==='`'.implode('`, `',$names).'`','TASK78_LANGUAGE_SOURCE_COLUMN_ORDER');
+  $at=$block[0][1]+strlen($block[0][0]);
+  do{
+   $at+=strspn($sql," \t\r\n",$at);m4ar_expect($at<$length&&$sql[$at++]==='(','TASK78_LANGUAGE_LITERAL_TUPLE_OPEN');$values=[];
+   foreach($names as$i=>$name){
+    $at+=strspn($sql," \t\r\n",$at);m4ar_expect($at<$length,'TASK78_LANGUAGE_LITERAL_AVAILABLE');
+    if($sql[$at]==="'"){
+     ++$at;$value='';$closed=false;
+     while($at<$length){
+      $byte=$sql[$at++];
+      if($byte==="\\"){
+       m4ar_expect($at<$length&&in_array($sql[$at],["\\",'"'],true),'TASK78_LANGUAGE_ONLY_ACTUAL_EXPORT_ESCAPES');
+       $value.=$sql[$at++];
+      }elseif($byte==="'"){$closed=true;break;}else $value.=$byte;
+     }
+     m4ar_expect($closed&&preg_match('//u',$value)===1,'TASK78_LANGUAGE_COMPLETE_UTF8_STRING_LITERAL');
+    }else{
+     m4ar_expect(preg_match('/\G(?:0|[1-9][0-9]*)/',$sql,$number,0,$at)===1
+      &&(strlen($number[0])<10||(strlen($number[0])===10&&strcmp($number[0],'2147483647')<=0)),
+      'TASK78_LANGUAGE_ONLY_ACTUAL_BARE_INTEGER_LITERAL');
+     $value=(int)$number[0];$at+=strlen($number[0]);
+    }
+    $values[$name]=$value;$at+=strspn($sql," \t\r\n",$at);$separator=$i===count($names)-1?')':',';
+    m4ar_expect($at<$length&&$sql[$at++]===$separator,'TASK78_LANGUAGE_EXACT_LITERAL_ARITY');
+   }
+   m4ar_expect(is_int($values['id'])&&$values['id']>0&&!isset($seen[$table][$values['id']]),'TASK78_LANGUAGE_SOURCE_UNIQUE_EXPLICIT_PK');
+   $seen[$table][$values['id']]=true;++$totals[$table];
+   if(($table==='eb_lang_type'&&$values['id']===1)||($table==='eb_lang_country'&&$values['id']===347)
+    ||($table==='eb_lang_code'&&$values['type_id']===1))$selected[$table][]=$values;
+   $at+=strspn($sql," \t\r\n",$at);m4ar_expect($at<$length&&in_array($sql[$at],[',',';'],true),'TASK78_LANGUAGE_TUPLE_OR_STATEMENT_END');
+   $next=$sql[$at++];
+  }while($next===',');
+ }
+ m4ar_expect($counts===['eb_lang_type'=>1,'eb_lang_country'=>1,'eb_lang_code'=>29]
+  &&$totals===['eb_lang_type'=>10,'eb_lang_country'=>350,'eb_lang_code'=>25150],'TASK78_ALL_SOURCE_LANGUAGE_TUPLES_PARSED');
+ foreach($selected as&$rows)usort($rows,static fn(array $a,array $b):int=>$a['id']<=>$b['id']);unset($rows);
+ m4ar_expect($selected['eb_lang_type']===[['id'=>1,'language_name'=>'中文','file_name'=>'zh-CN','status'=>1,'is_default'=>1,'is_del'=>0]]
+  &&$selected['eb_lang_country']===[['id'=>347,'type_id'=>1,'code'=>'zh-CN','name'=>'中文(简体) ']]
+  &&count($selected['eb_lang_code'])===2515,'TASK78_CANONICAL_SOURCE_CHINESE_TYPE_COUNTRY_AND_ALL_CODES');
+ $flags=[0=>0,1=>0];$submit=false;
+ foreach($selected['eb_lang_code']as$row){
+  m4ar_expect(is_string($row['code'])&&$row['code']!==''&&is_string($row['remarks'])&&is_string($row['lang_explain'])
+   &&is_int($row['is_admin'])&&in_array($row['is_admin'],[0,1],true),'TASK78_LANGUAGE_SOURCE_TEXT_AND_ADMIN_TYPES');
+  ++$flags[$row['is_admin']];if($row['code']==='提交订单')$submit=true;
+ }
+ m4ar_expect($flags===[0=>1229,1=>1286]&&$submit,'TASK78_FULL_ADMIN_AND_USER_SOURCE_PACKAGES_NO_REMARKS_UNIQUENESS');
+ return $selected;
+}
+/** Explicit source-PK language changes have their own counter oracle, never old+n. */
+function m4ar_language_delta(array $before,array $after,array $rows,array $nativeBefore,array $nativeAfter):void
+{
+ $expected=$before['database'];$native=$nativeBefore;
+ foreach($rows as$table=>$wanted){
+  $old=$before['database']['tables'][$table];$tableExpected=$old;
+  m4ar_expect(m4fn_row_multiset($after['rows'][$table])===m4fn_row_multiset($wanted),'TASK78_LANGUAGE_ALL_SOURCE_FIELDS_NATIVE_EXACT');
+  $tableExpected['projection']=m4fn_projection($wanted);$oldAI=$old['metadata']['table']['AUTO_INCREMENT'];
+  $oldText=m5pcp_u64($oldAI);$max=0;foreach($wanted as$row)$max=max($max,$row['id']);
+  $next=bcadd((string)$max,'1',0);if(bccomp($next,$oldText,0)<0)$next=$oldText;
+  m4ar_expect(is_int($oldAI)||is_string($oldAI),'TASK78_LANGUAGE_ORIGINAL_NATIVE_COUNTER_TYPE');
+  $tableExpected['metadata']['table']['AUTO_INCREMENT']=is_int($oldAI)?(int)$next:$next;
+  if($next!==$oldText){
+   $from=' AUTO_INCREMENT='.$oldText.' ';$to=' AUTO_INCREMENT='.$next.' ';
+   m4ar_expect(substr_count($old['ddl'],$from)===1,'TASK78_LANGUAGE_ONE_SOURCE_COUNTER_DDL_OPTION');
+   $tableExpected['ddl']=str_replace($from,$to,$old['ddl']);
+  }
+  m4ar_expect($after['database']['tables'][$table]===$tableExpected,'TASK78_LANGUAGE_ONLY_DERIVED_COUNTER_METADATA_DDL_AND_ROW_PROJECTION');
+  $expected['tables'][$table]=$tableExpected;
+  if(array_key_exists($table,$expected['target_rows']))$expected['target_rows'][$table]=$wanted;
+  $native['auxiliary_rows'][$table]=$wanted;
+ }
+ m4ar_expect($after['database']===$expected,'TASK78_LANGUAGE_ALL_OTHER_169_TABLES_AND_MODES_INCREMENT_UNCHANGED');
+ m4ar_expect(array_keys($after['rows'])===array_keys($before['rows']),'TASK78_LANGUAGE_COMPLETE_ORIGINAL_ROW_TABLE_SET');
+ foreach($before['rows']as$table=>$oldRows)if(!isset($rows[$table]))
+  m4ar_expect($after['rows'][$table]===$oldRows,'TASK78_LANGUAGE_ALL_OTHER_FULL_NATIVE_ROWS_UNCHANGED');
+ m4ar_expect($nativeAfter===$native,'TASK78_LANGUAGE_NATIVE34_ONLY_THREE_SOURCE_PK_ORDERED_AUXILIARY_ROWS');
+ m4ar_redis_delta($before,$after);
+ m4ar_expect($after['private']===$before['private']&&$after['public']===$before['public'],'TASK78_LANGUAGE_NO_PRIVATE_OR_PUBLIC_FILE_CHANGE');
+}
+/** Called explicitly after the real owner gate and before this process creates its App. */
+function m4ar_language_prepare(PDO $db,array $source):void
+{
+ m4ar_phase('installed_language_preparation');
+ m4ar_expect(empty($GLOBALS['m4c_app_started'])&&!isset($GLOBALS['m4c_application'])&&!$db->inTransaction()
+  &&$db->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql'&&$db->query('SELECT CURRENT_USER()')->fetchColumn()==='audit_app@%',
+  'TASK78_LANGUAGE_REAL_APP_ACCOUNT_PDO_BEFORE_APP_OUTSIDE_TRANSACTION');
+ $path='crmeb/public/install/crmeb.sql';$matches=array_values(array_filter($source['source_files'],
+  static fn(array $row):bool=>$row['path']===$path));
+ m4ar_expect(count($matches)===1&&$matches[0]===['path'=>$path,'bytes'=>10237372,
+  'sha256'=>'7af188f42c622db523d8000c0cf50f95fa48df2fe41123969ca2dbb65ffb5eb2'],'TASK78_LANGUAGE_ORIGINAL_FROZEN_SQL_DESCRIPTOR');
+ $sql=null;
+ foreach(['/source','/workspace']as$root){
+  $file=$root.'/'.$path;m4ar_expect(is_file($file)&&!is_link($file)&&realpath($file)===$file,'TASK78_LANGUAGE_EXACT_SOURCE_SQL_FILE');
+  $raw=file_get_contents($file);m4ar_expect(is_string($raw)&&strlen($raw)===$matches[0]['bytes']
+   &&hash('sha256',$raw)===$matches[0]['sha256'],'TASK78_LANGUAGE_COMPLETE_FROZEN_SQL_BYTES');
+  if($sql===null)$sql=$raw;else m4ar_expect($sql===$raw,'TASK78_LANGUAGE_BOTH_SOURCE_ROOTS_SAME_COMPLETE_SQL');unset($raw);
+ }
+ $literal=m4ar_language_decode($sql);unset($sql);$before=m4ar_snapshot($db);$nativeBefore=m5pc_native_snapshot($db);
+ m4ar_expect(count($before['database']['names'])===172,'TASK78_LANGUAGE_COMPLETE_ORIGINAL_172_TABLE_DATABASE');
+ $initial=['eb_lang_type'=>'11','eb_lang_country'=>'351','eb_lang_code'=>'25001'];$rows=[];
+ foreach($literal as$table=>$values){
+  $old=$before['database']['tables'][$table];$metadata=$old['metadata'];$columns=array_keys($values[0]);
+  m4ar_expect($before['rows'][$table]===[]&&$nativeBefore['auxiliary_rows'][$table]===[]
+   &&$metadata['table']['ENGINE']==='InnoDB'&&$metadata['table']['TABLE_TYPE']==='BASE TABLE'
+   &&array_keys($metadata['columns'])===$columns&&$old['projected_columns']===$columns
+   &&($metadata['columns']['id']['EXTRA']??null)==='auto_increment'
+   &&m5pcp_u64($metadata['table']['AUTO_INCREMENT'])===$initial[$table],'TASK78_LANGUAGE_EMPTY_ORIGINAL_SCHEMA_COLUMNS_AND_SOURCE_COUNTERS');
+  $pk=$metadata['indexes']['PRIMARY']??null;
+  m4ar_expect(is_array($pk)&&count($pk)===1&&$pk[0]['COLUMN_NAME']==='id'
+   &&m5pcp_int($pk[0]['SEQ_IN_INDEX'],1,1)===1&&m5pcp_int($pk[0]['NON_UNIQUE'],0,0)===0,'TASK78_LANGUAGE_REAL_SINGLE_COLUMN_PRIMARY_KEY');
+  $rows[$table]=[];
+  foreach($values as$value){
+   m4ar_expect(array_keys($value)===$columns,'TASK78_LANGUAGE_SOURCE_EVERY_COLUMN_NO_DEFAULT_REFILL');$expected=[];
+   foreach($metadata['columns']as$name=>$column)$expected[$name]=m4fn_native_value($column,$value[$name]);
+   $rows[$table][]=$expected;
+  }
+ }
+ m4ar_expect($db->beginTransaction(),'TASK78_LANGUAGE_ONE_OWNED_DML_TRANSACTION');
+ try{
+  foreach($rows as$table=>$values){
+   $columns=array_keys($values[0]);$statement=$db->prepare('INSERT INTO '.m5pcp_quote($table).' ('
+    .implode(',',array_map('m5pcp_quote',$columns)).') VALUES ('.implode(',',array_fill(0,count($columns),'?')).')');
+   m4ar_expect($statement instanceof PDOStatement,'TASK78_LANGUAGE_PARAMETERIZED_NATIVE_INSERT');
+   foreach($values as$value){
+    foreach(array_values($value)as$i=>$field)m4ar_expect($statement->bindValue($i+1,$field,is_int($field)?PDO::PARAM_INT:PDO::PARAM_STR),
+     'TASK78_LANGUAGE_EXACT_NATIVE_PARAMETER_TYPE');
+    m4ar_expect($statement->execute()&&$statement->rowCount()===1,'TASK78_LANGUAGE_ONE_EXPLICIT_SOURCE_PK_INSERT');
+   }
+  }
+  m4ar_expect($db->commit()&&!$db->inTransaction(),'TASK78_LANGUAGE_REAL_COMMITTED_SINGLE_TRANSACTION');
+ }catch(Throwable $error){
+  if($db->inTransaction())try{$db->rollBack();}catch(Throwable $rollbackError){}
+  throw $error;
+ }
+ $after=m4ar_snapshot($db);$nativeAfter=m5pc_native_snapshot($db);
+ m4ar_language_delta($before,$after,$rows,$nativeBefore,$nativeAfter);
+}
 function m4ar_warm(\think\App $app,PDO $db):void
 {
  m4ar_phase('real_source_cache_preparation');$before=m4ar_snapshot($db);$redis=audit_redis();$tag='c:CRMEB:'.md5('crmeb');
@@ -1850,7 +1998,7 @@ function m4ar_run():int
 {
  m4ar_phase('normal_source');$source=m4ar_source();$GLOBALS['m4ar_source']=$source;$db=audit_db();m4ar_expect(!$db->inTransaction(),'TASK78_NATIVE_OBSERVER_OUTSIDE_TRANSACTION');
  $observer=m5pc_observer_configure($db);$GLOBALS['m4ar_observer']=$observer;$owner=m4ar_owner($source,$db);$private=m4ar_private_prepare();
- m4c_entry_public_materials($source);m4ar_full_source($source);$app=m4fn_app($source);
+ m4c_entry_public_materials($source);m4ar_full_source($source);m4ar_language_prepare($db,$source);$app=m4fn_app($source);
  m4ar_expect($app->config->get('marketplace.aftersale.enabled')===true&&$app->config->get('marketplace.aftersale.private_root')===M4AR_PRIVATE,
  'TASK78_REAL_APP_ONLY_NORMAL_ROLE_AFTERSALE_PRIVATE_CONFIG');
  $business=null;$failure=null;

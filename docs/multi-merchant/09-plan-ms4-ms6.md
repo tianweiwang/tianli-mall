@@ -6,6 +6,33 @@
 
 ## 当前交付状态（2026-10-20）
 
+当前 R27：Run `20261020102102e6c427` / clean Source `5767b860bbeb8dc6ed96258651fabdc035396959` 的 Task6 正常履约及六阶段288次内部读取通过，原Task6正常移除。AR已越过原stage6基线门并加载App，在语言缓存准备以 `TASK78_REAL_INSTALLED_NORMAL_LANGUAGE` 自然1；HTTP、售后动作、评价、Worker及first B未运行。后续专用只读诊断实际确认三张语言表均为原生整数0行，不能回填原失败瞬间的操作数。原四CID、一内部网、七卷已正常非force关闭并独立核零：close19项、zero15项原生操作均0，六fresh原始查询全空，148414份原公件保持。原失败与Task6成功分别保留，不签收完整MS4。
+
+### R27 后继：明确的安装语言准备（实施前设计）
+
+现有normal initializer仅导入157条CREATE、不写安装行；AR和独立UI准备却直接读取默认中文。first B的实际顺序是普通C3 prepare → paid → UI prepare，并不经过AR run。另一套H5 fresh Run自行写1179条前端语言，既不调用AR/UI准备，也不调用共享warm，必须保持其现有合同。
+
+本次只改两个测试入口：`ms4-aftersale-review-normal.php` 内新增有限纯解码与语言准备；AR在owner/private/public/fullsource门后、App前显式调用，`ms4-ui-prepare.php` 在自己的owner门后、原W0快照前显式调用。语言阶段独立证明全部变化，原UI八表W0→W1 oracle不扩；不把写入藏进要求DB零变化的warm。沿用已冻结的安装SQL（10237372字节，SHA256 `7af188f42c622db523d8000c0cf50f95fa48df2fe41123969ca2dbb65ffb5eb2`），不新增Source extras，不加载安装入口。
+
+具体合同：完整解析31段语言INSERT（29 code、1 type、1 country）的实际整数/单引号字面量，只选源type PK1、country PK347及type_id=1的全部2515条code（1286管理端、1229用户端）。保留源主键、列序、文本尾空格和全部字符串；code最后一项允许真实文本“提交订单”，remarks允许源内重复。实查无可复用纯tuple decoder，新增有限解码器，不require有副作用的installer。三个目标表必须为空；仅在同一audit_app PDO事务内参数化插入这些源行，无DDL、App/service、Redis写或按行全库快照。
+
+独立expected按真实列metadata和既有native-value转换构造；commit后逐行/完整projection核三表。全库172表仅这三表允许上述源行及计数变化，其余169表、模式及结构严格保持。native34的auxiliary_rows也含三语言表，须按源PK排序替入这三份独立expected；27份facts和另四份aux行不变，原1572864字节序列化上限不改。Redis仅自然期限兼容，private/public文件保持。显式PK的计数单独按 `max(before AUTO_INCREMENT, max(source PK)+1)` 推导并核完整metadata/DDL：当前code25001→25222，type11及country351保持。原业务`m4ar_database_delta`的自然计数规则不改，不能把221假作2515次插入。异常仅回滚当前事务并保留失败，不修复旧Run。原owner对准备前DB172/native34的严格比较、warm中文断言、AR公开结果29键/business24键及Worker承接AR final基线全部保持；无新公开结果字段。
+
+唯一执行清单（承接原MS4任务，旧记录不回写）：
+
+- [x] 原R27成功/失败分层保全，语言只读诊断及完整失败公件实际出版。
+- [x] 本轮正常关闭、独立核零及全部原生双流/公件读回。
+- [x] 核清AR、独立UI、独立H5和Worker的真实准备/基线调用合同。
+- [x] 实现两个入口的明确语言准备，有限Source独审及安装SQL纯正向解码核对。
+- [x] 固定PHP8.2检查两文件语法；窄diff、原断言及停止项核对并本地采用，提交身份按所在Git记录核实。
+- [ ] 新clean来源的fresh A完整正常链、同HEAD的fresh first B及原三端/三宽页面验证、各自正常关闭和独立核零；N1及原未完MS4–MS6责任与人工验收仍待。
+
+仅L2本地，通用多商户复用商品规格/价格；无推送、部署、真实金融或新增停止样本。旧公件中的静态5032字节计划已作为历史封存，本节承接其后续设计，不修改旧pin或猜填新Run结果。
+
+本地采用与纯验证：两个入口已精确采用同一候选字节，AR212162B/`4ed08c7968fc2cf76d12572aec2960d087aced0fe496d2c2278265884cf0f932`，UI31146B/`7affcce7d809a8f75222def64915c5746046c3cdab48dcf47f2c9b424b78405a`。固定PHP8.2.33两件语法和实际SQL纯解码均正常0；独立Python参考与PHP的2517行（type1、country1、code2515）逐列序、严格类型和值全等，重复remarks和文本code保留。五原生操作的同PID/wait0/双流、两个空selector及六输入前后保持已读回；RESULT6928B/`eee4db67f0fe02d9a5d39d6cff91f7a34f094bb818b001532782226850abb176`。此处没有执行App/DML/Redis/HTTP或fresh A/B，不勾选真实业务；本地提交身份按所在Git记录核实。
+
+### R26 历史摘要
+
 当前 R26：Run `20261020061834be00e0` / clean Source `2cfb8fb4907c` 已完成原初始化、early16、内部测试付款及 Task6 履约正常链。Task6 六阶段共288次内部读取（168服务、120包装）、五项发货/收货及其重放/商家保存读回实际通过，随后原 Task6 容器正常移除。AR 在进入 App/HTTP/业务之前的 stage6 基线门自然1；原失败保留，Worker和first B未运行。专用只读诊断后，正常close19项及独立zero15项均实际自然0，原4CID/1内网/7卷无残留，132788份公开原件保持；不据此签收完整 MS4、HTTP/页面或支付。详情与公开摘要见 [联调记录](records/ms4/normal-early-structure-integration.md)。以下 R21/R20/R13 等段落保留为历史记录。
 
 ### R26 后继：Redis 跨阶段时间语义修复（实施前设计）

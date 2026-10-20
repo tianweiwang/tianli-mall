@@ -280,6 +280,7 @@ function m4up_run():int
  m4up_phase('source');$s=m4up_source();$GLOBALS['m4up_source']=$s;
  $db=audit_db();m4up_expect(!$db->inTransaction(),'UI_INDEPENDENT_OBSERVER_NO_TRANSACTION');
  $observer=m5pc_observer_configure($db);$owner=m4up_owner($s,$db);
+ m4ar_language_prepare($db,$s);
  $before=m4upo_snapshot($db);$started=time();$credentials=null;$writer=null;$actors=null;$business=null;$failure=null;
  try{
   m4up_phase('owned_public_private_preparation');$private=m4ar_private_prepare();m4c_entry_public_materials($s);m4up_full_source($s);
