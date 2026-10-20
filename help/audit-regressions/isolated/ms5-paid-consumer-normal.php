@@ -551,6 +551,34 @@ LUA;
     }
     ksort($keys,SORT_STRING);return ['time'=>$raw[0],'time_ms'=>$nowMs,'keys'=>$keys];
 }
+/** Compare complete atomic observations while retaining each original absolute deadline. */
+function m5pcp_redis_deadline_compatible(array $expected,array $current):bool
+{
+    $times=[];
+    foreach([$expected,$current]as$snapshot){
+        if(!m5pcp_keys($snapshot,['time','time_ms','keys'])||!is_array($snapshot['time'])
+            ||!array_is_list($snapshot['time'])||count($snapshot['time'])!==2||!is_array($snapshot['keys']))return false;
+        [$seconds,$microseconds]=$snapshot['time'];
+        if(!is_string($seconds)||preg_match('/\A[1-9][0-9]{0,18}\z/D',$seconds)!==1
+            ||!is_string($microseconds)||preg_match('/\A[0-9]{1,6}\z/D',$microseconds)!==1
+            ||bccomp($microseconds,'999999',0)>0||!is_string($snapshot['time_ms'])
+            ||$snapshot['time_ms']!==bcadd(bcmul($seconds,'1000',0),bcdiv($microseconds,'1000',0),0))return false;
+        $times[]=bcadd(bcmul($seconds,'1000000',0),$microseconds,0);
+        $order=array_keys($snapshot['keys']);$sorted=$order;sort($sorted,SORT_STRING);if($order!==$sorted)return false;
+        foreach($snapshot['keys']as$key=>$row){
+            if(!m5pc_hex($key)||!is_array($row)||!m5pcp_keys($row,['type','sha256','expires'])
+                ||!is_string($row['type'])||$row['type']===''||$row['type']==='none'||!m5pc_hex($row['sha256'])
+                ||!is_int($row['expires'])||($row['expires']!==-1&&$row['expires']<=0))return false;
+        }
+    }
+    if(bccomp($times[1],$times[0],0)<0)return false;
+    foreach($expected['keys']as$key=>$row){
+        if(!array_key_exists($key,$current['keys'])&&$row['expires']>0
+            &&bccomp((string)$row['expires'],$current['time_ms'],0)<0)unset($expected['keys'][$key]);
+    }
+    return $expected['keys']===$current['keys'];
+}
+
 /** Only exact producer-derived keys may disappear, after their first observed real absolute expiry. */
 
 function m5pcp_sequence_expiry_barrier(PDO $db,array $sequence): array

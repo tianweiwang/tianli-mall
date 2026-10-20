@@ -2,6 +2,33 @@
 
 本记录对应09原Task6/7/8，沿已采用的售后/评价正常联调设计实施，不替代原执行清单。目标仍为通用多商户商城；商品、规格、价格沿原有通用能力。仅本地L2和专用隔离实例，无推送、部署或真实资金操作。
 
+## R26 实际结果与后继修复（2026-10-20）
+
+Run `20261020061834be00e0` 的 clean Source 为 `2cfb8fb4907c`，freeze 为 `d2af8a85045e`。原29条初始化/结构命令、files/C3准备及内部测试付款实际正常0。Task6随后实际自然0：五项发货/收货、五次同key重放及六组商家保存读回完成；三订单项均已发货/收货，待发与待收为0。六阶段内部三方读取共288次（168服务、120包装），原legacy子进程同句柄自然0、原proc_close=-1如实保留。此为INTERNAL_ONLY，未据此签HTTP、浏览器或人工验收。Task6原容器已按其真实正常结果精确移除。
+
+AR原容器随后在 `normal_source` 的 `TASK78_TRUE_STAGE6_IS_CURRENT_COMPLETE_BASELINE` 自然1，位于App/HTTP/业务之前，business与child均null；原13项动作/15次重放、评价及Worker未运行。原Source中该门按数据库、native34、Redis顺序短路比较，原失败瞬间首先失配的分项没有单独保存，不能凭通用异常行或后来观察补造。
+
+Root随后以原DML账号、只读挂载和独立只读PDO执行一次实际比较（诊断r2）：原完整数据库172表及native34严格相等；Redis54至51，只有3个原有限deadline早于当前实际Redis时间的键缺席。原截止时间均为08:02:46 UTC附近，当前Redis观察为08:50:33 UTC。该观察与原期限相容，不确定原失败瞬间的唯一原因。原归档/25项固定输入完整字节保持，诊断43项原生0、仅自身helper自然0后精确移除，原4CID/7卷/网络保持。诊断r1先前只创建而未启动，因自动版本标签拒绝；该失败和只读清理的mount数组重排拒绝均保留，后来仅移除该从未启动的自建helper，不重启原A。
+
+原失败实例现已正常close19项自然0：只正常stop原两DB，再非force移除原4CID、1内部网和7专用卷，六原始查询全空。独立zero后继15项自然0，六fresh查询及全局消费者、全Source/INI/原生收据核对通过，132788份原公开文件保持。close第一次资格检查因WindowsPath与字符串排序差异停在OUT/native之前；第一次zero因派生遗漏原7个ZI常量，在只读INI检查处停止且无native，原Source保留；最小修订分别统一完整相对字符串排序、逐字恢复原常量及新OUT，后继实际结果独立记录，没有重署原失败。
+
+原始公开证据在仓库外；以下字节/SHA前缀只索引实际原件：
+
+| 原件 | 字节 | SHA256前缀 |
+| --- | ---: | --- |
+| Run/evidence/ms4-fulfillment-normal.json | 14811 | ed9abc821555 |
+| Run/evidence/ms4-three-read-normal.json | 307688 | 79cc5f74331c |
+| Run/evidence/ms4-aftersale-review-normal.json | 5589 | 9e79bc91ca48 |
+| ms4-worker-normal-source-preparation-r1/r26-ar-stage6-readonly-diagnostic-run-r2/RESULT.json | 33860 | 79b3061881bd |
+| ms4-worker-normal-source-preparation-r1/r26-ar-failed-normal-close-r1/RESULT.json | 14442 | 36f7bb5792bc |
+| ms4-worker-normal-source-preparation-r1/r26-ar-failed-independent-zero-r2/RESULT.json | 15566 | eb2eb596696b |
+
+表中Run位于 `artifacts/ms4-aftersale-review-normal-runs/20261020061834be00e0`，其余路径位于 `artifacts/`。Root与独立reviewer已完整消费诊断180公件、固定输入及实际native收据；收尾/核零分别保留自己的Source和完整公件。专用私有卷已随本Run正常销毁，不导出身份、凭据或业务行。
+
+后继按09顶部唯一清单修正AR跨阶段Redis观察模型：完整数据库/native34不动，独立业务delta和显式必存行不动，仅以原真实TIME和原绝对期限判断实际缺席的旧缓存是否相容。共享函数与两个AR调用点实施后，仍须固定PHP8.2语法、新clean普通A全链和同HEAD first B；本段不把源码准备或较晚诊断算售后通过。Task6/three-read其余严格门及缺原完整Redis/TIME的paid整体hash门本次保持；停止样本仍NOT RUN。Core2/Core4/N1/MS6后继及原三端/真实渠道/正式验收责任不取消。
+
+源码检查点：上述两PHP已按1+2处有限接缝实现，Root及独立Source复核通过，原显式change断言和DB/native比较完整保留。paid105669字节/SHA前缀`b13458bfac7a`，AR201769字节/`b3ea72ae344a`；Root固定PHP8.2无网络只读纯语法两次实际0、stderr空，原文件前后字节保持。实际收据为 `artifacts/ms4-worker-normal-source-preparation-r1/ar-redis-deadline-source-check-r2/RESULT.json`（3089字节/`d0afee5a5dae`）。第一次r1在PHP启动前误走镜像默认chown入口而退出1，原件保留；后继明确php入口，没有启动应用或修改目标目录。新clean完整正常链和first B仍NOT RUN，交付身份以实际Git提交为准。
+
 ## 目的与必要顺序
 
 售后及评价产品已接入，但旧隔离驱动在首次App之后才做履约迁移，不能用于要求最终售后结构的新产品。后继保原九条初始化和MS5四命令，先原履约四命令、售后四命令及两套菜单各四命令，再files-bootstrap、顾客准备、测试付款、原Task6完整正常链和新的Task7/8正常业务。

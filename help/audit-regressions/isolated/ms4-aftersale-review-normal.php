@@ -271,7 +271,7 @@ function m4ar_owner(array $source,PDO $db):array
   &&$stage['prerequisites_sha256']===$public['prerequisites_sha256'],'TASK78_STAGE6_NATIVE_PAYLOAD_EXACT_SOURCE');
  m4ar_expect($stage['produced']['final']['database']===m5pcp_database_snapshot($db)
   &&m5pc_native_snapshot_restore($stage['final_native_34_table_archive'])===m5pc_native_snapshot($db)
-  &&$stage['produced']['final']['redis']['keys']===m5pcp_atomic_redis(audit_redis())['keys'],'TASK78_TRUE_STAGE6_IS_CURRENT_COMPLETE_BASELINE');
+  &&m5pcp_redis_deadline_compatible($stage['produced']['final']['redis'],m5pcp_atomic_redis(audit_redis())),'TASK78_TRUE_STAGE6_IS_CURRENT_COMPLETE_BASELINE');
  foreach(['original_fixture'=>0,'original_paid_baseline'=>1]as$k=>$i){$d=$stage[$k];
   m4ar_expect($d['path']===$inputs[$i]['path']&&$d['bytes']===$inputs[$i]['stat']['size']&&$d['sha256']===$inputs[$i]['sha256']
    &&$d['stat']===$inputs[$i]['stat'],'TASK78_STAGE6_ORIGINAL_PRIVATE_DESCRIPTOR');}
@@ -356,7 +356,8 @@ function m4ar_redis_delta(array $before,array $after,array $changes=[]):void
  $expected=$before['redis']['keys'];foreach($changes as$rawKey=>$value){$h=hash('sha256',$rawKey);
   if($value===null){m4ar_expect(!isset($after['redis']['keys'][$h]),'TASK78_EXACT_REDIS_CONSUMED');unset($expected[$h]);}
   else{m4ar_expect(isset($after['redis']['keys'][$h])&&$after['redis']['keys'][$h]===$value,'TASK78_EXACT_REDIS_NATIVE_VALUE_EXPIRY');$expected[$h]=$value;}}
- ksort($expected,SORT_STRING);m4ar_expect($expected===$after['redis']['keys'],'TASK78_ALL_OTHER_REDIS_TYPES_VALUES_EXPIRIES_UNCHANGED');
+ ksort($expected,SORT_STRING);$expectedRedis=$before['redis'];$expectedRedis['keys']=$expected;
+ m4ar_expect(m5pcp_redis_deadline_compatible($expectedRedis,$after['redis']),'TASK78_ALL_OTHER_REDIS_TYPES_VALUES_EXPIRIES_UNCHANGED');
 }
 function m4ar_zero(array $before,array $after,bool $redis=true):void
 {m4ar_database_delta($before,$after,[]);if($redis)m4ar_redis_delta($before,$after);m4ar_expect($before['private']===$after['private']&&$before['public']===$after['public'],'TASK78_FILES_ZERO_DELTA');}

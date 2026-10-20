@@ -6,6 +6,27 @@
 
 ## 当前交付状态（2026-10-20）
 
+当前 R26：Run `20261020061834be00e0` / clean Source `2cfb8fb4907c` 已完成原初始化、early16、内部测试付款及 Task6 履约正常链。Task6 六阶段共288次内部读取（168服务、120包装）、五项发货/收货及其重放/商家保存读回实际通过，随后原 Task6 容器正常移除。AR 在进入 App/HTTP/业务之前的 stage6 基线门自然1；原失败保留，Worker和first B未运行。专用只读诊断后，正常close19项及独立zero15项均实际自然0，原4CID/1内网/7卷无残留，132788份公开原件保持；不据此签收完整 MS4、HTTP/页面或支付。详情与公开摘要见 [联调记录](records/ms4/normal-early-structure-integration.md)。以下 R21/R20/R13 等段落保留为历史记录。
+
+### R26 后继：Redis 跨阶段时间语义修复（实施前设计）
+
+实际只读诊断完整比较了原归档与后来时点：数据库172表和native34的完整PHP值均严格相等，Redis54至51，仅3个原有限期限已过去的键缺席。该观察与自然到期相容，不能恢复原AR失败瞬间的操作数或证明唯一根因。源码已确认当前 AR 丢弃原快照的 TIME、仅比较 keys；因此它会把合法时间推移后的缺席当作业务写入。后继修正此观察模型，仍保留全部原始快照、业务oracle、数据库/文件/Source及原生结果责任，不删除用例、不拿实际after反填expected。
+
+范围与设计：仅改 `help/audit-regressions/isolated/ms5-paid-consumer-normal.php` 的共享纯比较函数，以及 `ms4-aftersale-review-normal.php` 的 owner Redis 子谓词和 `m4ar_redis_delta`。比较接收原完整atomic Redis的 `TIME/time_ms/keys`；校验精确形状、哈希、类型和整数期限，以bc运算重算真实时间并核微秒时间非递减。存活键完整行仍须严格相等；仅原正期限严格早于当前实际Redis毫秒时间、且当前确实缺席的键可从独立expected移除；永久/未到期缺席、新增、类型/值/期限改变均不能通过。到期但仍存在的行不预先过滤。不得写TTL、改时钟、延长缓存、补造键或使用宿主时间。这里的zero表示零业务写入及原期限相容的状态演进，不表示冻结Redis时间。
+
+AR入口的完整数据库和native34 `===` 不变。显式业务delta仍先独立构造并强制非空change在after存在且完整相等、显式消费确实缺席，再比较其他原键；因此必存业务写入不能被期限许可吞掉。`m4ar_zero`及Worker既有两处调用继承同一规则，不另设容差。Task6/three-read的其他严格比较本次保持；paid→Task6仅存整体hash、缺完整原Redis/TIME的旧门尤其不能转换或跳过。该静态同风险另记，不据此次后续观察代签。
+
+唯一执行清单：
+
+- [x] 保留原AR失败、Task6成功及专用只读实际观察；原Run正常close并独立核零。
+- [x] 实现上述两文件最小修复，独立Source复核时间/类型、完整键集及显式业务delta保护。
+- [x] 固定PHP8.2、无网络只读环境检查两文件语法；窄diff、LF及原停止项复核见下。
+- [ ] 以新clean提交重新冻结普通A，完成原正常链、正常close/独立zero；同HEAD的first B及三端页面验证仍须实际完成。语法或Source通过不能代签本项。
+
+本修复不改产品接口、商品规格/价格、资金、数据库结构或生产配置。若需撤销，只回退这两个测试驱动的比较接缝；原失败与新运行分别保留。仅本地L2，用户已停止的安全、负向、故障、并发、断连、恢复及专门过期样本不运行；不新增TTL/假时钟/过期负向纯样本。后续仍须完成原MS4–MS6和待签收责任。
+
+实施检查点：paid仅新增一个纯比较函数，AR仅两处调用接缝，原显式change分支逐字保持；Root与独立Source复核通过，Worker→AR→Task6→paid加载链已核。两文件为105669/b13458bfac7a、201769/b3ea72ae344a（摘要前缀），均LF。固定PHP8.2、network none、read-only及独立/tmp tmpfs的两次 `php -l` 实际native0、stderr空；结果位于仓库外 `ar-redis-deadline-source-check-r2/RESULT.json`，3089字节/SHA256前缀`d0afee5a5dae`。r1最初误用镜像默认入口，在PHP lint前因只读目录chown失败，原native1收据保留；改为明确php入口后仅作语法检查，未改文件、权限或断言。尚未加载App、数据库、Redis或运行新业务链，不能把该检查点签作售后通过。
+
 R21 实际结果：Run `20261019184022098f25` 使用 clean `2830b3ce273f5cbc0a951e9bf29377d55864cf93` 及独立九件配置，freeze 为 `f9c30c67ce50dda0b313c0b3fad723c3724a6c7b59b81bb0d1505a11f2d7dd72`，完整10857份来源已读回。初始化9、MS5结构4及early16共29条命令均同句柄自然0、stderr空；early正常移除，files-bootstrap、顾客准备及内部测试付款亦真实0。Task6原legacy子进程自然0、stderr空，原proc_close=-1保留；父进程在three_read_initial以 `TASK6_THREE_EACH_READ_RUNTIME_FILES_UNCHANGED` 自然1停止，原外层33608亦自然1。三读stage/call为0、business=null、shutdown非fatal；售后、评价和Worker未启动。原失败保留；原19项正常精确退役及另15项独立核零现已实际自然0，四原容器、一内部网、七专用卷无残留，73244份原公开证据保持。
 
 本次差分已定位真实原因：customer_list普通读取在after_make→after_read新增一份6831字节log。其完整SHA256 `6bb73113ad655adf9d6dd154b4b8ce0c6f188c29ffd49c2b574401cd6f5f08e2` 与现有日志格式构造的99条固定 `MARKETPLACE_FULFILLMENT_READ_UNAVAILABLE` warning完全相同；没有读取或公开私密日志。生产服务把正常未付/已取消未付订单加入异常诊断并逐条写日志；这与正常订单列表只读要求冲突。Root只读证据为 `r21-fulfillment-failure-root-readback-r1/RESULT.json`（6082字节，SHA256 `72e7d296b50ba3dd209c9e301bd10b3354641db273941dfc7bea2e5396f2044a`）。最小生产修订删除两处误告警及仅供该告警使用的私有参数传递，未付完整性、选择、DTO、事务和真实异常日志保持；Source独审、固定PHP8.2纯语法及Main精确接入已完成，新clean完整回归仍待。独立核零结果15497字节/SHA256 `9accdd72c203f709361e278132fe6f247633ba602ded1786cfe81624d316ceac`，语法结果3199字节/SHA256 `4536ccba8b67277e17e5c569a7be25c4b0ced81ecbb1f32204282a8eb8f1c8ec`；均在仓库外本轮证据目录。原runtime/DB/Redis/DTO断言继续保持。
