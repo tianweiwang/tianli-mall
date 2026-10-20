@@ -778,7 +778,7 @@ function m4ar_produce_paid(\think\App $app,PDO $db,array $source,array $owner):a
   &&$cacheEntry['expires']<=($confirmationEnd+1)*1000+600000,'TASK78_TRUE_NEW_CONFIRMATION_BYTES_AND_SIX_HUNDRED_SECOND_DEADLINE');
  m4c_entry_keys($cached,['cartInfo','priceGroup','other','marketplace_confirmation_version','marketplace_uid','mer_id','source_kind','cart_refs',
   'selection','store','custom_form','marketplace_postage_weights']);
- m4ar_expect($cached['marketplace_confirmation_version']===1&&$cached['marketplace_uid']===$uid&&$cached['other']===['offlinePostage'=>0,'integralRatio'=>'0.00'],
+ m4ar_expect($cached['marketplace_confirmation_version']===1&&$cached['marketplace_uid']===$uid&&$cached['other']===['offlinePostage'=>'0','integralRatio'=>'0.00'],
   'TASK78_REAL_CONFIRMATION_OWNER_AND_INDEPENDENT_INSTALLED_OPTIONS');
  foreach(['totalPrice'=>'70.55','costPrice'=>'24.25']as$field=>$expected)m4ar_expect($cached['priceGroup'][$field]===$expected,'TASK78_CONFIRMATION_INDEPENDENT_FIXED_COMMERCIAL_TOTALS');
  $tag='c:CRMEB:'.md5('crmeb');m4ar_redis_delta($cart,$confirmed,[$physical=>$cacheEntry]+m4ar_tag_change($cart,$confirmed,$tag,[$physical]));

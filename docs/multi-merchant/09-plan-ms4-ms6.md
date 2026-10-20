@@ -6,6 +6,14 @@
 
 ## 当前交付状态（2026-10-21）
 
+R29 Run `202610201658045585bc` / clean Source `2b396ed0499d1d32017347f1963d9297338c8be0` 已再次完成内部测试付款、Task6两次发货/三次收货、五次重放和六阶段288次内部读取，原Task6正常精确退役。AR越过原购物车type检查，在真实确认缓存检查以 `TASK78_REAL_CONFIRMATION_OWNER_AND_INDEPENDENT_INSTALLED_OPTIONS` 自然1；原S31458自然1，HTTP子进程正常TERM后组为空、监听关闭，proc_close=-1保留。AR业务结果为null，Worker和first B未启动，完整A仍失败。
+
+本轮原4CID/1内部网/7卷已正常非force退役：close原进程1842自然0、84项原生操作；独立zero原进程82176自然0、12项原生操作，六fresh原始查询全空。14605份明确原公件和340份close公件的完整字节、stat9和命名空间保持；原失败不改署为成功。
+
+根因与本次范围：生产 `sys_config()` 对标量返回字符串，当前C3 fixture写入offline_postage=0、integral_ratio='0.00'，确认服务将两项原样存入缓存；AR却严格期望offlinePostage为int0。仅将AR该处独立期望改为字符串'0'，保留整个数组===、owner、积分值、完整数据库/Redis及后续13动作/15重放/5退款/2S2责任；生产、fixture和UI oracle不改。语法检查、本地采用及fresh正常链按下方同一执行清单登记，源码定位不等于售后通过。
+
+### R28 历史交付状态
+
 R28 Run `20261020141646456477` / clean Source `2522a46fb9c4e70667609c1974332c7eb3902586` 的内部测试付款、Task6两次发货/三次收货、五次重放及六阶段288次读取均实际正常0，Task6容器已正常移除。AR越过安装语言、App及HTTP演员准备，在 `new_root_real_cart_confirm_create` 以 `TASK6_SAVED_NONINTEGER_NATIVE_STRING` 自然1；原HTTP子进程已正常TERM退出，组为空、监听关闭，原proc_close=-1保持。尚无售后/评价完成结果，Worker和first B未启动，原完整A仍失败。
 
 源码已定位首个确定错配：安装DDL把 `eb_store_cart.type` 定为varchar(32)，AR首个新增购物车行及独立UI准备的期望却给PHP整数0。后继仅将两处独立期望改为字符串`'0'`，生产setCart的int参数、数据库DDL、严格native helper及全部其他期望不变。固定PHP8.2.33的两候选语法和八项原函数/真实DDL纯正向检查均实际0；该检查未加载App、连接DB/Redis或运行HTTP，完整业务仍需fresh A及同HEAD first B证明。
@@ -34,6 +42,8 @@ R28 Run `20261020141646456477` / clean Source `2522a46fb9c4e70667609c1974332c7eb
 - [x] 实现两个入口的明确语言准备，有限Source独审及安装SQL纯正向解码核对。
 - [x] 固定PHP8.2检查两文件语法；窄diff、原断言及停止项核对并本地采用，提交身份按所在Git记录核实。
 - [x] R28失败正常收尾后，仅修AR和独立UI准备的购物车type原生字符串期望，保严格helper及业务；固定PHP8.2语法、原函数纯正向检查和精确采用。两Main文件完整字节与已通过候选相同，完整业务仍待新Run。
+- [x] R29内部付款/Task6实际结果和确认缓存类型失败分别保全；原实例正常close84项、独立zero12项及完整公件保持实际通过。
+- [x] R29后继只修AR一处offlinePostage原生字符串期望，核同类消费者和真实配置产消链；固定PHP8.2语法、精确单处正逆及有限L2本地采用。AR212166B/fab85d75f678，纯语法RESULT2681B/d6844525c28d；提交身份以所在Git记录核实，完整业务仍待下项。
 - [ ] 新clean来源的fresh A完整正常链、同HEAD的fresh first B及原三端/三宽页面验证、各自正常关闭和独立核零；N1及原未完MS4–MS6责任与人工验收仍待。
 
 仅L2本地，通用多商户复用商品规格/价格；无推送、部署、真实金融或新增停止样本。旧公件中的静态5032字节计划已作为历史封存，本节承接其后续设计，不修改旧pin或猜填新Run结果。

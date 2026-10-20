@@ -2,6 +2,22 @@
 
 本记录对应09原Task6/7/8，沿已采用的售后/评价正常联调设计实施，不替代原执行清单。目标仍为通用多商户商城；商品、规格、价格沿原有通用能力。仅本地L2和专用隔离实例，无推送、部署或真实资金操作。
 
+## R29 确认缓存配置类型、实际收尾与单处修正（2026-10-21）
+
+Run202610201658045585bc的clean来源为2b396ed0499d1d32017347f1963d9297338c8be0，freeze5e3822a0a4816df0b522f4209f6b8bb7b32f600bb8cc6187ed02758540abd327。内部paid实际0（结果4879B/1c4c1cc8a20a）；Task6两次发货、三次收货、五次同key重放、六组商家保存读回和六阶段288次内部读取（168服务/120包装）实际通过。Task6结果14811B/b51e776157c2、三读307688B/f1a902e03c8a、独立终态4642B/cfdc2eb9a917均已读回，随后原Task6正常精确移除。原业务结果native_exit:null与另份实际native0分别保留，不能签三端HTTP/DOM。
+
+AR越过旧购物车type期望，在new_root_real_cart_confirm_create以TASK78_REAL_CONFIRMATION_OWNER_AND_INDEPENDENT_INSTALLED_OPTIONS自然1；原S31458自然1，结果6122B/68e441c6ddf5、终态5044B/0ec6006addbe、shutdown706B/6a2b4ce23de1，business:null。原HTTP子进程正常TERM15后成员为空、监听关闭，proc_close=-1；shutdown非fatal且cleanup_failure:null。尚未完成新增订单/付款、13动作/15重放、评价或Worker；first B未启动。full_source_unchanged:false是失败结果按success标记最终核验未完成，不能单独解释为源码发生漂移。
+
+已按原R28收尾逻辑有限迁移当前真实身份和诊断，Root全文复核后执行一次：r29-ar-failed-normal-close-r1/close-output/RESULT.json为93523B/90f1a3c3310026176b4f84932490a364bd2b41bc6f3db9817f519a16daac344d，原进程1842实际0，84项原生操作均同PID/wait0、stderr空且完整双流保持。只正常停止原mysql/redis，非force退役原4CID、原空内部网及七卷；Task6已退役CID不是删除目标。
+
+独立zero原进程82176实际0，r29-ar-failed-normal-close-r1/independent-zero-output/RESULT.json为17069B/dfe2f44e7df5f8dc9b1fd2698e4053035682ea25ae51c336afa4d490626a2606。12项原生调用全0，六fresh两标签原始查询全空、全局无原消费者；14605份明确原公件及340份完整close公件的bytes/stat9/命名空间保持。Root分别读回所有created/terminal、原PID/wait及完整双流，不以close的六查询代签独立zero，原AR仍失败。
+
+源码产消链：当前fixture lib/ms4-customer-http-normal.php:287设置offline_postage整数0和integral_ratio字符串'0.00'；common.php的sys_config对标量执行trim((string)$sysConfig)，StoreOrderServices确认逻辑将返回值原样缓存。因此AR:781的offlinePostage独立期望必须为字符串'0'，不能把当前积分值改成安装导出的旧默认0.1。此前MarketplaceCartSelection::frame已严格核owner和确认版本。最小实施只改这一处0→'0'，保整个数组===、owner、积分值、生产服务、fixture及全部原业务断言。当前UI oracle和已有H5/merchant候选没有第二处相同错误期望。
+
+实际采用仅该处0→'0'：新AR212166B/fab85d75f678205fb74057059711dea7363a57451660c399b3481c8db38bae9f，Root核完整旧件正替换/新件逆替换均逐字相等，其余源码不变。固定PHP8.2离线纯语法实际0：r29-confirmation-config-syntax-r1/output/RESULT.json2681B/d6844525c28d4214ae53f2f247733f36df702c205e3707be6cdef3b385c862fc。三个原生步骤均同PID/wait0、完整双流，前后自身selector空；network-none/只读/128M/tmpfs，仅-l，AR原字节及stat9保持，未加载App/SQL/Redis/HTTP/GUI。此为语法资格，不能签实际确认、售后或新A通过。
+
+实施与验证沿09原唯一执行清单：仅AR和本三份记录有限L2本地采用，提交身份以Git记录核实；仍须新clean完整A、同HEAD first B、原三端/三宽业务及正常关闭/独立核零。N1、MS5真实渠道/对账、MS6发布及人工验收责任不取消；旧R29不重跑、不修复现场、不使用成功post-A收集器，L2及停止样本NOT RUN保持。
+
 ## R28 新购物车期望类型、实际收尾与后继修正（2026-10-21）
 
 Run20261020141646456477的来源为clean2522a46fb9c4e70667609c1974332c7eb3902586，freeze fee9f7734b7891c8ebf8e22c3ad8ad43434f54478597355c7ede8c4c225c754b。内部paid实际0；Task6两次发货、三次收货、五次同key重放及六阶段288次内部读取通过，正常精确移除。Root已读回paid结果4880B/718de6ce3590、Task6结果14649B/a8703959960a、三读307688B/798410a9cedf及原容器自然0终态；这些仍为内部证据，不能签三端HTTP/DOM。
