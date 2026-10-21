@@ -6,6 +6,23 @@
 
 ## 当前交付状态（2026-10-21）
 
+R33 Run `20261021030301cc3b74` / clean Source `803c1b420dca8894fa9409b38601a1c6dc3c8b30` 的内部付款、两次发货、三次收货及五次重复请求检查已实际通过，Task6原容器正常退役。AR在新增订单阶段以 `TypeError`（`ms4-aftersale-review-normal.php:356`）自然1，原外层S16051亦实际1；尚未进入售后退款动作，Worker和first B未启动，完整A失败。原4CID/1内部网/7专用卷已正常非force退役，close84项、独立zero12项均实际0；14362份原公件和340份close公件保持。原失败不改署成功，`full_source_unchanged=false`不代指已证明源码被修改。
+
+本次最小修复依据：`m4ar_sequence_delta`把规范十进制毫秒字符串作为PHP数组键时，PHP会转成整数；`m4ar_redis_delta`在strict_types下直接把该键传给`hash()`，导致类型错误。该问题还会影响原删除和后续apply/ship调用。仅在共同消费处断言键为string/int并转回原字符串后计算摘要；保持原键字节、值、绝对期限、全库/缓存比较、金额和全部原正常场景，不改生产业务或商品/SKU/规格/价格。
+
+本轮唯一修复清单：
+
+- [x] 保留原S/AR失败和Task6成功；正常关闭原实例并独立核零。
+- [x] 根因及共同消费处最小修法完成非作者独立Source复核。
+- [x] 实施最小修复，核完整有限正逆差分、原断言保持及固定PHP8.2纯语法。
+- [ ] 以新clean提交冻结并完成完整A、正常close和独立zero；同HEAD first B及三端页面仍须实际通过。
+
+旧数据升级、N1、三端DOM、原H5/merchant、MS5真实金融、MS6与人工验收仍按原清单未完成。仅L2本地；停止样本继续NOT RUN。源码、语法及退役通过不代签业务或整体验收。
+
+当前AR215985字节/`c2407e049f8536f6b666c3e4cfb24e37d9dd850a5c4a4b6a1800fac5a85e9d6f`仅一个有限hunk，Root e927db完整逆回原215874/62d782ef；原所有断言、数据与流程逐字保持，并新增键类型断言。固定PHP8.2纯`-l` 46b812实际0，前5be4e1/后abeae8选择实际0且空；未加载App或运行真实业务。后继完整A/同HEAD first B仍待实际验证。
+
+### R31 历史交付状态（原记录保留）
+
 R31 Run20261020214504de019a / Source ee662f3a14409009ba52ae9923af29f0c2d8e6d5的内部付款、两发货/三收货/五重放及288内部读取实际通过。AR在新增订单阶段因五个TASK78标识误传共享M4C校验函数自然1，原S24239实际1，完整A失败；Worker、firstB及售后业务未通过。原失败实例4CID/1内网/7卷正常close84项及独立zero12项均实际0，14863原公件与340 close公件保持。完整证据见[正常联调记录](records/ms4/normal-early-structure-integration.md)。
 
 最小修复只改五处caller为本地m4ar_expect，保留谓词、金额、原商品/规格/价格和全部原断言；新clean来源的静态契约/语法、完整A及同HEAD firstB分别取证，不能以修复或语法代签业务。N1、原H5/merchant、三端DOM、非空历史、MS5金融、MS6和人工验收仍按原清单未完成，停止样本NOT RUN。

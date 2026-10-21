@@ -353,7 +353,8 @@ function m4ar_database_delta(array $before,array $after,array $expectedRows,arra
 }
 function m4ar_redis_delta(array $before,array $after,array $changes=[]):void
 {
- $expected=$before['redis']['keys'];foreach($changes as$rawKey=>$value){$h=hash('sha256',$rawKey);
+ $expected=$before['redis']['keys'];foreach($changes as$rawKey=>$value){
+  m4ar_expect(is_string($rawKey)||is_int($rawKey),'TASK78_REDIS_CHANGE_KEY_NATIVE_STRING_OR_INTEGER');$h=hash('sha256',(string)$rawKey);
   if($value===null){m4ar_expect(!isset($after['redis']['keys'][$h]),'TASK78_EXACT_REDIS_CONSUMED');unset($expected[$h]);}
   else{m4ar_expect(isset($after['redis']['keys'][$h])&&$after['redis']['keys'][$h]===$value,'TASK78_EXACT_REDIS_NATIVE_VALUE_EXPIRY');$expected[$h]=$value;}}
  ksort($expected,SORT_STRING);$expectedRedis=$before['redis'];$expectedRedis['keys']=$expected;
