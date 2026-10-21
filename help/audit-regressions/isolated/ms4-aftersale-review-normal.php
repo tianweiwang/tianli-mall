@@ -372,9 +372,9 @@ function m4ar_slice(string $amount,int $q,int $first,int $through):string
 {m4ar_expect($q>0&&$first>=0&&$through>$first&&$through<=$q,'TASK78_INDEPENDENT_UNIT_BOUNDS');$n=m4ar_cents($amount);
  $base=intdiv($n,$q);$extra=$n%$q;return m4ar_decimal($base*($through-$first)+min($through,$extra)-min($first,$extra));}
 
-function m4ar_transport(string $method,string $path,?string $token=null,mixed $body=null,?string $multipart=null,?string $ticket=null):array
+function m4ar_transport(string $method,string $path,?string $token=null,mixed $body=null,?string $multipart=null,?string $ticket=null,string $operationId='non_action',string $attempt='single'):array
 {
- unset($GLOBALS['m4ar_http_failure']);
+ unset($GLOBALS['m4ar_http_failure'],$GLOBALS['m4ar_http_gate']);
  $fixed=['POST /api/login','POST /merchantapi/login','POST /adminapi/login','POST /merchantapi/password/setup',
   'POST /api/upload/image'];$leaf=$method.' '.explode('?',$path,2)[0];
  $patterns=['~\AGET /api/order/refund/cart_info/[1-9][0-9]*\z~','~\APOST /api/order/refund/apply/[1-9][0-9]*\z~',
@@ -398,23 +398,41 @@ function m4ar_transport(string $method,string $path,?string $token=null,mixed $b
  if($ticket!==null)$headers[]='X-Aftersale-Read-Ticket: '.$ticket;
  if($multipart!==null){m4ar_expect(is_string($body),'TASK78_REAL_MULTIPART_BYTES');$headers[]='Content-Type: multipart/form-data; boundary='.$multipart;}
  elseif($body!==null){m4ar_expect(is_array($body),'TASK78_EXACT_JSON_BODY_ARRAY');$body=m4cb_json($body);$headers[]='Content-Type: application/json';}
+ $requestSequence=($GLOBALS['m4ar_http_request_sequence']??0)+1;$GLOBALS['m4ar_http_request_sequence']=$requestSequence;
  $responseHeaders=[];$curl=curl_init('http://audit-app:8000'.$path);$started=time();
  curl_setopt_array($curl,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_CUSTOMREQUEST=>$method,CURLOPT_HTTPHEADER=>$headers,
  CURLOPT_CONNECTTIMEOUT=>3,CURLOPT_TIMEOUT=>12,CURLOPT_FOLLOWLOCATION=>false,CURLOPT_PROXY=>'',
  CURLOPT_HEADERFUNCTION=>static function($h,string $line)use(&$responseHeaders):int{$v=explode(':',$line,2);if(count($v)===2)$responseHeaders[strtolower(trim($v[0]))]=trim($v[1]);return strlen($line);}]);
  if($body!==null)curl_setopt($curl,CURLOPT_POSTFIELDS,$body);$raw=curl_exec($curl);$http=(int)curl_getinfo($curl,CURLINFO_RESPONSE_CODE);$errno=curl_errno($curl);curl_close($curl);$ended=time();
+ $json=null;$jsonError=null;if(is_string($raw)&&strlen($raw)<=6291456){$json=json_decode($raw,true);$jsonError=json_last_error();}
+ $hasStatus=is_array($json)&&array_key_exists('status',$json);$status=$hasStatus?$json['status']:null;
+ $GLOBALS['m4ar_http_gate']=[
+  'operation_id'=>in_array($operationId,['money-withdraw','withdraw','money-merchant','business-reject-merchant','money-platform','business-reject-platform','cancel-apply','cancel-approve','return-apply','return-approve','return-express','accept-merchant','accept-platform','ship-two','receive-one'],true)?$operationId:'non_action',
+  'attempt'=>in_array($attempt,['first','replay','single'],true)?$attempt:'single','request_sequence'=>$requestSequence,
+  'method'=>$method,'route_family'=>str_starts_with($path,'/merchantapi/')?'merchantapi':(str_starts_with($path,'/adminapi/')?'adminapi':'api'),
+  'http_status'=>$http,'curl_errno'=>$errno,'json_error'=>$jsonError,'status_type'=>$hasStatus?gettype($status):'missing',
+  'status_int'=>is_int($status)&&$status>=-2147483648&&$status<=2147483647?$status:null,
+  'msg_is_string'=>is_array($json)&&array_key_exists('msg',$json)&&is_string($json['msg']),
+  'data_is_array'=>is_array($json)&&array_key_exists('data',$json)&&is_array($json['data']),
+  'failure_class'=>$errno!==0?'CURL_ERROR':(!is_string($raw)?'RESPONSE_TYPE':(strlen($raw)>6291456?'RESPONSE_LIMIT':($http!==200?'HTTP_STATUS':'NONE')))];
  if(!($errno===0&&is_string($raw)&&strlen($raw)<=6291456&&$http===200))$GLOBALS['m4ar_http_failure']=[
   'method'=>$method,'route_family'=>str_starts_with($path,'/merchantapi/')?'merchantapi':(str_starts_with($path,'/adminapi/')?'adminapi':'api'),
   'http_status'=>$http,'curl_errno'=>$errno,'response_is_string'=>is_string($raw),'response_bytes'=>is_string($raw)?strlen($raw):null];
  m4ar_expect($errno===0&&is_string($raw)&&strlen($raw)<=6291456&&$http===200,'TASK78_REAL_NORMAL_HTTP_TRANSPORT_200');
- $json=json_decode($raw,true);$record=['method'=>$method,'path'=>$path,'http'=>$http,'bytes'=>strlen($raw),'sha256'=>hash('sha256',$raw),
+ $record=['method'=>$method,'path'=>$path,'http'=>$http,'bytes'=>strlen($raw),'sha256'=>hash('sha256',$raw),
   'request_bytes'=>$body===null?0:strlen($body),'request_sha256'=>$body===null?hash('sha256',''):hash('sha256',$body),'actual_interval'=>[$started,$ended]];
  $GLOBALS['m4ar_http_calls'][]=$record;return ['http'=>$http,'raw'=>$raw,'json'=>$json,'headers'=>$responseHeaders,'actual_interval'=>[$started,$ended]];
 }
-function m4ar_json(string $method,string $path,array $actor,?array $body=null):array
+function m4ar_json(string $method,string $path,array $actor,?array $body=null,string $operationId='non_action',string $attempt='single'):array
 {
- $r=m4ar_transport($method,$path,$actor['token']??null,$body);m4c_entry_keys($r['json'],['status','msg','data']);
- m4ar_expect($r['json']['status']===200&&is_string($r['json']['msg'])&&is_array($r['json']['data']),'TASK78_REAL_HTTP_BUSINESS_SUCCESS');return $r;
+ $r=m4ar_transport($method,$path,$actor['token']??null,$body,null,null,$operationId,$attempt);
+ $gate=$GLOBALS['m4ar_http_gate'];$keys=is_array($r['json'])?array_keys($r['json']):[];sort($keys,SORT_STRING);
+ $gate['failure_class']=$gate['json_error']!==JSON_ERROR_NONE?'JSON_PARSE':(!is_array($r['json'])?'JSON_NOT_ARRAY':
+  ($keys!==['data','msg','status']?'ENVELOPE_KEYS':($r['json']['status']!==200?'BUSINESS_STATUS':
+   (!is_string($r['json']['msg'])?'MSG_TYPE':(!is_array($r['json']['data'])?'DATA_TYPE':'NONE')))));
+ $GLOBALS['m4ar_http_gate']=$gate;m4c_entry_keys($r['json'],['status','msg','data']);
+ m4ar_expect($r['json']['status']===200&&is_string($r['json']['msg'])&&is_array($r['json']['data']),'TASK78_REAL_HTTP_BUSINESS_SUCCESS');
+ unset($GLOBALS['m4ar_http_gate']);return $r;
 }
 function m4ar_multipart(string $path,array $actor,array $fields,string $bytes):array
 {
@@ -1247,7 +1265,12 @@ function m4ar_credit_oracle(array $before,array $after,array $model,array $actor
 
 function m4ar_action(PDO $db,array &$model,array $actor,string $action,string $path,array $body,?int $refundId=null,array $accepted=[]):array
 {
- m4ar_phase('normal_aftersale_'.$action);$before=m4ar_snapshot($db);$reply=m4ar_json('POST',$path,$actor,$body);$after=m4ar_snapshot($db);$answer=$reply['json']['data'];
+ m4ar_phase('normal_aftersale_'.$action);$operationId='non_action';
+ foreach(['money-withdraw'=>'apply','withdraw'=>'withdraw','money-merchant'=>'apply','business-reject-merchant'=>'reject',
+  'money-platform'=>'apply','business-reject-platform'=>'reject','cancel-apply'=>'apply','cancel-approve'=>'approve',
+  'return-apply'=>'apply','return-approve'=>'approve','return-express'=>'express','accept-merchant'=>'accept_return','accept-platform'=>'accept_return']as$name=>$expectedAction)
+  if($action===$expectedAction&&is_string($body['idem_key']??null)&&str_starts_with($body['idem_key'],'normal78:'.$name.':')){$operationId=$name;break;}
+ $before=m4ar_snapshot($db);$reply=m4ar_json('POST',$path,$actor,$body,$operationId,'first');$after=m4ar_snapshot($db);$answer=$reply['json']['data'];
  m4c_entry_keys($answer,['schema','scope','action_id','action','refund','committed_at','acceptance_ids']);
  $new=m4ar_new_rows($before['rows']['eb_marketplace_aftersale_action'],$after['rows']['eb_marketplace_aftersale_action']);
  m4ar_expect(count($new)===1,'TASK78_ONE_REAL_NEW_COMMITTED_ACTION');$native=$new[0];$actionId=m5pcp_u64($native['id']);
@@ -1325,7 +1348,7 @@ function m4ar_action(PDO $db,array &$model,array $actor,string $action,string $p
  $model['last_action']=$actionId;$model['actions'][]=$native;$model['root']=$wanted;$model['command_counts'][$action]=($model['command_counts'][$action]??0)+1;
  // Immediately replay this same actual actor and exact original body; A2 is immutable, business/files stay exact.
  if($action==='apply'){$record['sequence_barrier']=m4ar_settle_sequence($db,$record['number']);$model['refunds'][$refundId]=$record;$after=m4ar_snapshot($db);}
- $replayBefore=$after;$replayed=m4ar_json('POST',$path,$actor,$body);m4c_entry_same($replayed['json']['data'],$public);$replayAfter=m4ar_snapshot($db);
+ $replayBefore=$after;$replayed=m4ar_json('POST',$path,$actor,$body,$operationId,'replay');m4c_entry_same($replayed['json']['data'],$public);$replayAfter=m4ar_snapshot($db);
  $replayRows=[];m4ar_auth_delta($replayBefore,$replayAfter,$actor,$replayed['actual_interval'],$replayRows);
  m4ar_database_delta($replayBefore,$replayAfter,$replayRows);m4ar_redis_delta($replayBefore,$replayAfter,m4ar_cache_deletes($replayBefore,$replayAfter,$actor));
  m4ar_expect($replayBefore['private']===$replayAfter['private']&&$replayBefore['public']===$replayAfter['public'],'TASK78_A2_REPLAY_NO_FILE_RECLAIM_OR_AUDIT');++$model['replays'];return $record;
@@ -1351,7 +1374,10 @@ function m4ar_plan(array $model,array $parts):array
 }
 function m4ar_operation(PDO $db,array &$model,array $actor,string $action,string $path,array $body,array $parts):array
 {
- m4ar_phase('normal_s2_'.$action);$before=m4ar_snapshot($db);$reply=m4ar_json('POST',$path,$actor,$body);$after=m4ar_snapshot($db);$ship=$action==='ship';
+ m4ar_phase('normal_s2_'.$action);$operationId='non_action';
+ foreach(['ship-two'=>'ship','receive-one'=>'receive']as$name=>$expectedAction)
+  if($action===$expectedAction&&is_string($body['idem_key']??null)&&str_starts_with($body['idem_key'],'normal78:'.$name.':')){$operationId=$name;break;}
+ $before=m4ar_snapshot($db);$reply=m4ar_json('POST',$path,$actor,$body,$operationId,'first');$after=m4ar_snapshot($db);$ship=$action==='ship';
  $ops='eb_marketplace_fulfillment_operation';$ranges='eb_marketplace_fulfillment_range';$orders='eb_store_order';$items='eb_store_order_cart_info';
  $added=m4ar_new_rows($before['rows'][$ops],$after['rows'][$ops]);m4ar_expect(count($added)===1,'TASK78_ONE_REAL_S2_OPERATION');$raw=$added[0];$id=m5pcp_u64($raw['id']);
  m4ar_expect($id===m5pcp_u64($before['database']['tables'][$ops]['metadata']['table']['AUTO_INCREMENT']),'TASK78_S2_NATURAL_OPERATION_PK');
@@ -1414,7 +1440,7 @@ function m4ar_operation(PDO $db,array &$model,array $actor,string $action,string
  m4ar_expect($before['private']===$after['private']&&$before['public']===$after['public'],'TASK78_S2_NO_INVENTORY_PAYMENT_OR_FILE_MUTATION');
  $model['root']=$want;$model['child']=$wantChild;$model['last_operation']=$id;$model['operations'][]=$raw;
  if($ship){$model['sequence_barriers'][]=m4ar_settle_sequence($db,$child['order_id']);$after=m4ar_snapshot($db);}
- $replayed=m4ar_json('POST',$path,$actor,$body);m4c_entry_same($replayed['json']['data'],$public);$last=m4ar_snapshot($db);$rr=[];m4ar_auth_delta($after,$last,$actor,$replayed['actual_interval'],$rr);
+ $replayed=m4ar_json('POST',$path,$actor,$body,$operationId,'replay');m4c_entry_same($replayed['json']['data'],$public);$last=m4ar_snapshot($db);$rr=[];m4ar_auth_delta($after,$last,$actor,$replayed['actual_interval'],$rr);
  m4ar_database_delta($after,$last,$rr);m4ar_redis_delta($after,$last);m4ar_expect($after['private']===$last['private']&&$after['public']===$last['public'],'TASK78_S2_SAME_BODY_REPLAY_FILES_STABLE');
  ++$model['replays'];return $public;
 }
@@ -2041,6 +2067,19 @@ function m4ar_diagnostic(Throwable $error):array
   &&is_int($transport['http_status'])&&$transport['http_status']>=0&&is_int($transport['curl_errno'])&&$transport['curl_errno']>=0
   &&is_bool($transport['response_is_string'])&&($transport['response_is_string']?(is_int($transport['response_bytes'])&&$transport['response_bytes']>=0):$transport['response_bytes']===null))
   $diagnostic['http_transport']=$transport;
+ $gate=$GLOBALS['m4ar_http_gate']??null;
+ if(is_array($gate)&&array_keys($gate)===['operation_id','attempt','request_sequence','method','route_family','http_status','curl_errno','json_error','status_type','status_int','msg_is_string','data_is_array','failure_class']
+  &&in_array($gate['operation_id'],['non_action','money-withdraw','withdraw','money-merchant','business-reject-merchant','money-platform','business-reject-platform','cancel-apply','cancel-approve','return-apply','return-approve','return-express','accept-merchant','accept-platform','ship-two','receive-one'],true)
+  &&in_array($gate['attempt'],['first','replay','single'],true)&&is_int($gate['request_sequence'])&&$gate['request_sequence']>=1&&$gate['request_sequence']<=2147483647
+  &&in_array($gate['method'],['GET','POST','PUT'],true)&&in_array($gate['route_family'],['api','merchantapi','adminapi'],true)
+  &&is_int($gate['http_status'])&&$gate['http_status']>=0&&$gate['http_status']<=999
+  &&is_int($gate['curl_errno'])&&$gate['curl_errno']>=0&&$gate['curl_errno']<=65535
+  &&($gate['json_error']===null||(is_int($gate['json_error'])&&$gate['json_error']>=0&&$gate['json_error']<=65535))
+  &&in_array($gate['status_type'],['missing','NULL','boolean','integer','double','string','array'],true)
+  &&($gate['status_int']===null||($gate['status_type']==='integer'&&is_int($gate['status_int'])&&$gate['status_int']>=-2147483648&&$gate['status_int']<=2147483647))
+  &&is_bool($gate['msg_is_string'])&&is_bool($gate['data_is_array'])
+  &&in_array($gate['failure_class'],['CURL_ERROR','RESPONSE_TYPE','RESPONSE_LIMIT','HTTP_STATUS','JSON_PARSE','JSON_NOT_ARRAY','ENVELOPE_KEYS','BUSINESS_STATUS','MSG_TYPE','DATA_TYPE'],true))
+  $diagnostic['http_gate']=$gate;
  return $diagnostic;
 }
 function m4ar_result(array $source,?array $business,?array $observer,?array $diagnostic,bool $success):array
