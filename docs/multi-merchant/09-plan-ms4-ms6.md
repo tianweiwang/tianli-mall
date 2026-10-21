@@ -1343,3 +1343,16 @@ Root对原专用MySQL执行只读事务，确认唯一`order_cancel_time`原始J
 两处有限修订已接入本地售后PHP，215874B/`62d782efbaff7520815c7f33604cc8ccb1d78cf4d41e400d3b007dea6159015b`。独立Source复核PASS，唯一caller已接新时间窗口，原配置/ledger完整门、原根完整行保持和全部原动作覆盖不变。Root `git diff --check`实际0。PHP8.2固定镜像`sha256:1099f749e2a38ec9453c6b820db8a78174514bc72d14edf5c203e13b82816e0a`仅做network-none、只读、非root的`php -l`：首轮因只读根缺少可写临时目录而退出254（工具观察e0d0f3），未进入语法结果；沿既有纯检查环境补专用16MiB tmpfs后，第二轮实际0并输出No syntax errors，前后对应临时容器selector为空（658ef8）。未启动App、PDO、Redis或业务；语法通过不代表售后通过。
 
 任务：[x]R32实际履约内部通过、售后失败边界与只读诊断；[x]原实例正常关闭及独立清零；[x]两处校验有限设计；[x]仅售后PHP修订、独立Source复核和真实PHP8.2语法；[ ]本地提交后新clean来源的完整正常A及其关闭/独立零；[ ]成功同源fresh B、N1、非空历史升级、三端20步及320/390/1440 DOM、真实MS5/MS6与人工验收。继续通用多商户商城，复用商品规格价格，L2本地不推送不部署，停止样本NOT RUN。
+
+
+### R34售后父进程测试支付工厂基线遗漏（2026-10-21，实施前）
+
+Run20261021052602790421，原clean来源0cb342f82e878756bd59e93bc6aac85a40b6c29b，freeze aa9c36ca9c375329726642d5b3f86f49b809ef74bdef331c47a43c29116d32cd。Root原S17551真实exit1（097400），售后/评价原结果6094B/fe256f6a232bff4925b284beb33aaa9843b704596bc7f5cf14eb4481c1da636f，phase new_root_real_cart_confirm_create，诊断ACTUAL_SAME_FOUR_APP_FACTORY_INSTANCES / RuntimeException / ms5-paid-consumer-normal.php375；外层AR终态1。子HTTP已正常TERM15一次、组空/监听false、原proc_close=-1保持。原paid内部测试正常0、Task6两次发货/三次收货/五次正常重放及退役0分别有效，AR、Worker、full A/fresh B、三端及整体未通过。
+
+Root4f7536/dbf09b实读AR766–843及原paid producer1065–1078，独立Source复核一致：AR自己的路径只加载付款helper，没有执行原m5pc_produce中唯一的GLOBALS m5pc_factories赋值；现AR839虽make真实三个对象，843直接调用payment_case，848的context先通过同App/connection/两PDO门，随后is_array(null)必false，在实际createForCustomer之前中断。此证据只证明入口基线缺失，不证明对象曾被替换；失败报告full_source_unchanged=false来自success标志，也不证明源字节被改。
+
+最小修复仅在AR m4ar_produce_paid的原默认/独立PDO资格之后、新cart/confirm/create之前，用同原App make并类型核三个真实driver/service/resolver，建立与原paid producer相同的私有GLOBALS基线，立即调用原m5pcp_context。原后继再次make、四项严格===及全部原付款/数据/金额/日志/资源断言保留，不改AppService绑定、生产交易、用户/订单、expected或实际测试请求。原正常全流程已提供red反馈，不运行额外小样/故障/安全样本；语法/Source仅证明修复接线，业务是否转绿必须以后继fresh clean完整normal A证明。
+
+失败环境先按独立r34-ar-failed-normal-close-r1合同正常退役与独立核零，不复用成功close门或旧R33身份；原Val和freeze保持0cb。本地仅本PHP及本记录改动并核diff、非作者Source、固定PHP8.2纯-l；本地commit不推送、不部署。任务：[x]原失败边界/确定缺失基线及独立Source；[x]有限修复和Source/语法；[ ]原R34正常close与独立zero；[ ]新clean完整A、成功同源fresh B、原三端DOM/N1/N2/非空升级及真实MS5/MS6与人工验收。通用多商户、复用商品规格价格、停止样本NOT RUN保持。
+
+修复验证：Root7e1240仅在原PHP offset77165加482B，现216467B/`dc8ca12da2173505671273ee6370c0a05528c9eea838956967131e89452c3321`，整文逆掉新增块精确恢复215985B/c2407e。非作者独立Source PASS，原后继make、四项===、账户注册时机及全部真实动作/expected正文保持。固定PHP8.2.33纯-l6c8fbc实际0，前后同名selector均0且空，network-none/只读/非root/128MiB与16MiB tmpfs，完整源SHA保持，没有App/DB/Redis或业务运行。Root422ae9 diff --check实际0。Val仍0cb原件，失败close/独立zero与修后fresh完整A尚未完成；不以源码或语法代替通过。

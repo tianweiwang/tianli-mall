@@ -773,6 +773,11 @@ function m4ar_produce_paid(\think\App $app,PDO $db,array $source,array $owner):a
   foreach(['id','product_id','type','unique','price','cost','vip_price']as$k)m4ar_expect($a[0][$k]===$old[$k],'TASK78_ACTUAL_SKU_COMMERCIAL_INPUT');$fixture['skus'][$id]=$a[0];}
  $connection=Db::connect();$default=$connection->getPdo();if(!$default instanceof PDO){$connection->query('SELECT 1',[],true);$default=$connection->getPdo();}
  m4ar_expect($default instanceof PDO&&$default!==$db,'TASK78_SEPARATE_NATIVE_OBSERVER_AND_REAL_DEFAULT');
+ $driver=$app->make(TestPaymentDriver::class);$service=$app->make(MarketplacePaymentServices::class);$resolver=$app->make(PaymentAccountResolver::class);
+ m4ar_expect($driver instanceof TestPaymentDriver&&$service instanceof MarketplacePaymentServices&&$resolver instanceof PaymentAccountResolver,
+ 'TASK78_REAL_PARENT_PAYMENT_FACTORY_TYPES');
+ $GLOBALS['m5pc_factories']=['driver'=>$driver,'service'=>$service,'resolver'=>$resolver];
+ m5pcp_context($app,$connection,$default,$db);
  $before=m4ar_snapshot($db);
  $originalRoots=array_values(array_filter($before['rows']['eb_store_order'],static fn(array $row):bool=>(int)$row['pid']===0));
  $originalV1=0;$originalLegacy=0;foreach($originalRoots as$row){
