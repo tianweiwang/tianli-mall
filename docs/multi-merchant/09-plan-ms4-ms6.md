@@ -1310,3 +1310,19 @@ R23实际来源1ceaaf0已包含old_cart_id严格空串修订，仍在normal_acti
 原实例正常收尾及独立核零后，r25-child-form-object-order-pure-check-r1实际自然0：RESULT.json7042B/327b639927cab4e548850fe25b6debac516584f7fbdf59aa1758f24fb9de870e。固定PHP8.2镜像、network-none、只读源/根目录执行候选与probe两文件语法及18项纯合同检查；共5项原生调用0、stderr空、前后selector空。Root完整核同PID终态、wait及双流、实际候选包和六真实依赖保持。probe使用真实canonical与既有checker；没有App/PDO/Redis/HTTP或完整子单业务路径，不代替fresh业务或页面通过。
 
 任务：[x]原失败边界和有限需求/设计；[x]唯一helper候选、全文正逆与独审；[x]原R25正常close及独立zero；[x]两文件实际PHP语法与18项纯合同检查；[x]仅helper及本三份记录本地采用，提交身份以所在Git核实；[ ]新clean来源/fresh完整履约、售后/评价/Worker正常链；[ ]成功来源同HEAD的fresh B及原H5/商家/三端普通页面、320/390/1440 DOM、各自正常关闭/独立核零；[ ]N1正常money_only批准与库存零差分、其余原未完成责任及阶段人工验收。BASE原签收独立保留，后续L2本地未推送未部署，停止样本NOT RUN，真实支付/退款及MS5/MS6未决业务不越界；不换算整体百分比。
+
+### R32 履约内部通过与售后校验修订（2026-10-21，实施前记录）
+
+Run `20261021001903a69676`，原 clean 来源 `db4a8bd6a9e4e538aee39df6b4077b93f1290141`：内部测试付款自然0；Task6完整普通履约自然0，含2次发货、3次收货、5次同key零差分重放及6组商家保存读取。履约结果14483B/`70ff719fe0f0928ef2c3997627e61a1f800e35e92bce3143d5cef39f41e77db6`只证明内部正常路径，三端API/DOM、Task7及整体验收仍未完成。其原容器正常退役后，售后原容器自然1，phase=`new_root_real_cart_confirm_create`，诊断`M4C_COMPLETE_LEDGER_FACT`；原结果6079B/`bbc4eb7654731b98f9967bbe5714c62484d2bee13cb5f1f06234df1d69e01be2`保持失败，Worker/fresh B未启动。
+
+Root对原专用MySQL执行只读事务，确认唯一`order_cancel_time`原始JSON字符串为`"1"`，实际新根/ledger创建时间1792548672、cancel_at1792552272，间隔3600秒。Source证实Task6已通过真实配置步骤将`"0"`改为`"1"`并保留；生产创建以同一次time写根与ledger、按真实配置计算截止时间。售后专用oracle仍要求cancel_at=0，合同不符；未独立重算现场request_digest，因此不冒称原复合门每个早先操作数都已现场证明。
+
+另经独立Source核对，Task6保存根为overall101＝legacy1＋V1 100；售后真实新增一个V1根后应为overall102、V1 101，现有过滤V1后要求102的计数门错误。`custom_form`严格比较经实际snapshot/DAO保存链核查未发现矛盾，不修改。
+
+有限修订设计：仅改售后独立oracle。创建前从既有完整原生快照核唯一text配置及精确JSON字符串`"1"`；以真实create前后时间窗口约束新根add_time，独立期待cancel_at=add_time+3600并核UINT上界。保留全部11个ledger值、12列完整集合、cart_refs及全库差分；不调用生产cancelAt作为期待，不改配置/缓存/生产逻辑或通用C3的零时限合同。人口门先核原根101及legacy1/V1 100，新增后核完整原根行多重集保持、唯一新增的真实已付根、overall102和V1 101。N1既有设计中的102/103明确指overall，对应V1 101/102；原N1准入和原13动作/15重放/5退款/2S2覆盖保持。
+
+原Run已正常关闭并独立核零：Root关闭进程36842自然0，精确非force退役原4容器/1内部网络/7专用卷，close RESULT93521B/`cce0f66abfdece34af65dc910b4e3d6d5e99bfde5ac16cb7e65dc844b2cddf13`；另进程82942自然0，independent-zero RESULT17068B/`0a7a8a8d721126a4dcffc78e75676c8a3a0060c56c6a30ac8bf78fcaae497991`，六条fresh双标签查询原始双流均空，14668份原公开文件和340份close文件的字节/stat/命名空间保持。关闭成功不回补售后失败，不重开原Run。
+
+两处有限修订已接入本地售后PHP，215874B/`62d782efbaff7520815c7f33604cc8ccb1d78cf4d41e400d3b007dea6159015b`。独立Source复核PASS，唯一caller已接新时间窗口，原配置/ledger完整门、原根完整行保持和全部原动作覆盖不变。Root `git diff --check`实际0。PHP8.2固定镜像`sha256:1099f749e2a38ec9453c6b820db8a78174514bc72d14edf5c203e13b82816e0a`仅做network-none、只读、非root的`php -l`：首轮因只读根缺少可写临时目录而退出254（工具观察e0d0f3），未进入语法结果；沿既有纯检查环境补专用16MiB tmpfs后，第二轮实际0并输出No syntax errors，前后对应临时容器selector为空（658ef8）。未启动App、PDO、Redis或业务；语法通过不代表售后通过。
+
+任务：[x]R32实际履约内部通过、售后失败边界与只读诊断；[x]原实例正常关闭及独立清零；[x]两处校验有限设计；[x]仅售后PHP修订、独立Source复核和真实PHP8.2语法；[ ]本地提交后新clean来源的完整正常A及其关闭/独立零；[ ]成功同源fresh B、N1、非空历史升级、三端20步及320/390/1440 DOM、真实MS5/MS6与人工验收。继续通用多商户商城，复用商品规格价格，L2本地不推送不部署，停止样本NOT RUN。

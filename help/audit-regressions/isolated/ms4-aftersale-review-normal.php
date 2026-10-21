@@ -547,7 +547,7 @@ function m4ar_actors(\think\App $app,PDO $db,array $source,array $owner,?callabl
  return ['customer'=>$customer,'merchant'=>$merchant,'platform'=>$platform,'grants'=>$grants];
 }
 
-function m4ar_created_saved(PDO $pdo,array $fixture,array $request,string $idem,array $frame,array $answers,string $number,array $before,?array $secondStoreLine=null): array
+function m4ar_created_saved(PDO $pdo,array $fixture,array $request,string $idem,array $frame,array $answers,string $number,array $before,array $createWindow,?array $secondStoreLine=null): array
 {
     $uid=(int)$fixture['user']['uid'];$mer=(int)$fixture['merchant']['mer_id'];
     $connection=Db::connect();$parentPdo=$connection->getPdo();
@@ -649,10 +649,19 @@ function m4ar_created_saved(PDO $pdo,array $fixture,array $request,string $idem,
             $expected['stock']=(int)$old['stock']-$line['qty'];$expected['sales']=(int)$old['sales']+$line['qty'];}
         $read=m4cb_rows($pdo,'SELECT * FROM `eb_store_product_attr_value` WHERE `id` = ?',[$old['id']]);m4c_expect(count($read)===1,'M4C_SKU_RETAINED');m4cb_equal_row($read[0],$expected);
     }
+    // Task6's genuine one-hour configuration remains the input to this later real creation.
+    $cancelConfig=array_values(array_filter($before['eb_system_config'],static fn(array $row):bool=>$row['menu_name']==='order_cancel_time'));
+    m4ar_expect(count($cancelConfig)===1&&$cancelConfig[0]['type']==='text'&&$cancelConfig[0]['value']===json_encode('1',JSON_THROW_ON_ERROR),
+        'TASK78_UNIQUE_REAL_BEFORE_CREATE_ONE_HOUR_CONFIG');
+    m4c_entry_keys($createWindow,['start','end']);$createdAt=m5pcp_int($order['add_time'],1,4294963695);
+    m4ar_expect(is_int($createWindow['start'])&&is_int($createWindow['end'])&&$createWindow['start']>0
+        &&$createWindow['end']>=$createWindow['start']&&$createdAt>=$createWindow['start']&&$createdAt<=$createWindow['end'],
+        'TASK78_REAL_CREATE_TIME_WINDOW_AND_UINT_DEADLINE');
+    $cancelAt=$createdAt+3600;
     $ledger=m4cb_rows($pdo,'SELECT * FROM `eb_marketplace_order_idempotency` WHERE `uid` = ? AND `idem_key` = ?',[$uid,$idem]);
     $expected=['uid'=>$uid,'mer_id'=>$mer,'idem_key'=>$idem,'request_digest'=>hash('sha256',MarketplaceOrderInput::canonical($request),true),
         'confirmation_ref'=>hash('sha256',$request['confirm_key'],true),'source_kind'=>'persistent','state'=>1,'order_id'=>$id,'post_commit_done'=>1,
-        'cancel_at'=>0,'add_time'=>$order['add_time']];
+        'cancel_at'=>$cancelAt,'add_time'=>$order['add_time']];
     m4c_expect(count($ledger)===1&&count($ledger[0])===12&&json_decode($ledger[0]['cart_refs'],true,32,JSON_THROW_ON_ERROR)===$request['cart_refs'],'M4C_REAL_COMMITTED_LEDGER_AND_REFERENCES');
     foreach($expected as$field=>$value)m4c_expect((string)$ledger[0][$field]===(string)$value,'M4C_COMPLETE_LEDGER_FACT');
     $invoices=m4cb_rows($pdo,'SELECT * FROM `eb_store_order_invoice` WHERE `order_id` = ?',[$id]);
@@ -763,7 +772,13 @@ function m4ar_produce_paid(\think\App $app,PDO $db,array $source,array $owner):a
   foreach(['id','product_id','type','unique','price','cost','vip_price']as$k)m4ar_expect($a[0][$k]===$old[$k],'TASK78_ACTUAL_SKU_COMMERCIAL_INPUT');$fixture['skus'][$id]=$a[0];}
  $connection=Db::connect();$default=$connection->getPdo();if(!$default instanceof PDO){$connection->query('SELECT 1',[],true);$default=$connection->getPdo();}
  m4ar_expect($default instanceof PDO&&$default!==$db,'TASK78_SEPARATE_NATIVE_OBSERVER_AND_REAL_DEFAULT');
- $before=m4ar_snapshot($db);$refs=[];$start=time();
+ $before=m4ar_snapshot($db);
+ $originalRoots=array_values(array_filter($before['rows']['eb_store_order'],static fn(array $row):bool=>(int)$row['pid']===0));
+ $originalV1=0;$originalLegacy=0;foreach($originalRoots as$row){
+  m4ar_expect(m5pcp_int($row['pid'],0,0)===0&&m5pcp_int($row['uid'],1)===$uid,'TASK78_ORIGINAL_ROOT_OWNER_AND_PARENT');
+  $version=m5pcp_int($row['marketplace_trade_version'],0,1);if($version===1)++$originalV1;else ++$originalLegacy;}
+ m4ar_expect(count($originalRoots)===101&&$originalV1===100&&$originalLegacy===1,'TASK78_ORIGINAL_OVERALL_101_V1_100_LEGACY_1');
+ $refs=[];$start=time();
  foreach($fixture['selected']as$line){$sku=$fixture['skus'][$line['sku_id']];$ref=$app->make(StoreCartServices::class)->setCart($uid,$line['product_id'],$line['qty'],$sku['unique'],0,false);
   $refs[]=MarketplaceOrderInput::reference($ref,'persistent');}
  m4ar_expect(count($refs)===2&&count(array_unique($refs))===2,'TASK78_TWO_REAL_CART_REFERENCES');$end=time();$cart=m4ar_snapshot($db);
@@ -805,9 +820,11 @@ function m4ar_produce_paid(\think\App $app,PDO $db,array $source,array $owner):a
  $beforeCreate=m4cb_snapshot($db);$raw=['cartId'=>$csv,'mer_id'=>$mer,'new'=>0,'idem_key'=>'confirm:'.$key,'addressId'=>$address,'invoice_id'=>(int)$fixture['invoice']['id'],
  'payType'=>'','mark'=>'普通HTTP下单','gift_mark'=>'普通HTTP文本','real_name'=>'','phone'=>'','shipping_type'=>1,'is_gift'=>0,'store_id'=>0,
  'couponId'=>0,'useIntegral'=>false,'combinationId'=>0,'pinkId'=>0,'seckill_id'=>0,'bargainId'=>0,'advanceId'=>0,'custom_form'=>$answers];
- $input=MarketplaceOrderInput::create($uid,$key,$raw);$created=$app->make(MarketplaceOrderCreateServices::class)->create($uid,$key,$raw);
+ $input=MarketplaceOrderInput::create($uid,$key,$raw);$createStart=time();
+ $created=$app->make(MarketplaceOrderCreateServices::class)->create($uid,$key,$raw);$createEnd=time();
  m4ar_expect(is_string($created['order_id']??null)&&$created['key']===$key,'TASK78_REAL_COMMITTED_NEW_ORDER_NUMBER');
- $createdFacts=m4ar_created_saved($db,$fixture,$input['request'],$input['idem_key'],$frame,$input['request']['options']['custom_form'],$created['order_id'],$beforeCreate);
+ $createdFacts=m4ar_created_saved($db,$fixture,$input['request'],$input['idem_key'],$frame,$input['request']['options']['custom_form'],$created['order_id'],$beforeCreate,
+  ['start'=>$createStart,'end'=>$createEnd]);
  $roots=m4cb_rows($db,'SELECT * FROM eb_store_order WHERE uid=? AND order_id=?',[$uid,$created['order_id']]);m4ar_expect(count($roots)===1,'TASK78_NEW_ROOT_NATURAL_PK');
  $saved=m5pcp_saved($db,(int)$roots[0]['id']);m5pcp_birth($db,$saved);
  $createdSnapshot=m4ar_snapshot($db);$expectedRows=[];$inserts=['eb_store_order'=>1,'eb_store_order_invoice'=>1,'eb_store_order_cart_info'=>2,
@@ -824,8 +841,14 @@ function m4ar_produce_paid(\think\App $app,PDO $db,array $source,array $owner):a
  m4ar_expect($resolver->forOrder($saved['order'])===$account&&m5pcp_snapshot($db)===$snapshot,'TASK78_ACCOUNT_REGISTRATION_NO_DATABASE_REDIS_MUTATION');
  $proof=m5pcp_payment_case($app,$connection,$default,$db,$service,$driver,['kind'=>'persistent','saved'=>$saved,'account'=>$account->snapshot()],$snapshot);
  $saved=m5pcp_saved($db,(int)$roots[0]['id']);$oracle=m4fn_source_oracle($saved);
- m4ar_expect((int)$saved['order']['paid']===1&&(int)$saved['order']['is_cancel']===0&&$saved['order']['pay_type']==='marketplace_test'
- &&(int)$db->query('SELECT COUNT(*) FROM eb_store_order WHERE pid=0 AND marketplace_trade_version=1')->fetchColumn()===102,'TASK78_ONE_TRUE_ADDITIONAL_PAID_ROOT_OVER_101');
+ $afterRoots=m5pcp_rows($db,'SELECT * FROM eb_store_order WHERE pid=0');$addedRoots=m4ar_new_rows($originalRoots,$afterRoots);
+ $afterV1=0;$afterLegacy=0;foreach($afterRoots as$row){$version=m5pcp_int($row['marketplace_trade_version'],0,1);
+  if($version===1)++$afterV1;else ++$afterLegacy;}
+ m4ar_expect(count($afterRoots)===count($originalRoots)+1&&count($afterRoots)===102&&$afterV1===$originalV1+1&&$afterV1===101
+  &&$afterLegacy===$originalLegacy&&$afterLegacy===1&&count($addedRoots)===1&&$addedRoots[0]===$saved['order'],
+  'TASK78_ORIGINAL_FULL_ROOT_ROWS_AND_ONLY_ONE_TRUE_ADDITIONAL_V1_ROOT');
+ m4ar_expect((int)$saved['order']['paid']===1&&(int)$saved['order']['is_cancel']===0&&$saved['order']['pay_type']==='marketplace_test',
+  'TASK78_ONE_TRUE_ADDITIONAL_PAID_ROOT_OVER_101');
  return ['saved'=>$saved,'oracle'=>$oracle,'payment'=>$proof,'sequence'=>$barrier,'created_facts'=>$createdFacts,
   'confirmation_producer'=>['cache_key_sha256'=>hash('sha256',$physical),'complete_serialized_bytes'=>strlen(serialize($cached)),
    'complete_serialized_sha256'=>hash('sha256',serialize($cached)),'absolute_expires_at_ms'=>$cacheEntry['expires'],'consumed_after_commit'=>true]];
