@@ -374,6 +374,7 @@ function m4ar_slice(string $amount,int $q,int $first,int $through):string
 
 function m4ar_transport(string $method,string $path,?string $token=null,mixed $body=null,?string $multipart=null,?string $ticket=null):array
 {
+ unset($GLOBALS['m4ar_http_failure']);
  $fixed=['POST /api/login','POST /merchantapi/login','POST /adminapi/login','POST /merchantapi/password/setup',
   'POST /api/upload/image'];$leaf=$method.' '.explode('?',$path,2)[0];
  $patterns=['~\AGET /api/order/refund/cart_info/[1-9][0-9]*\z~','~\APOST /api/order/refund/apply/[1-9][0-9]*\z~',
@@ -393,7 +394,7 @@ function m4ar_transport(string $method,string $path,?string $token=null,mixed $b
  m4ar_expect($ok&&!str_contains($path,'..')&&!str_contains($path,'\\')&&!str_contains($path,'#')&&strlen($path)<2048,'TASK78_FIXED_NORMAL_HTTP_ROUTE');
  if(str_contains($path,'?')){parse_str(explode('?',$path,2)[1],$q);foreach(array_keys($q)as$k)
   m4ar_expect(in_array($k,['contract','page','limit','fulfillment_page','fulfillment_limit','business_state','mer_id','status','is_reply','product_id','type'],true),'TASK78_FIXED_QUERY_KEYS');}
- $headers=['Cb-lang: zh-CN'];if($token!==null)$headers[]='Authori-zation: Bearer '.$token;
+ $headers=['Cb-lang: zh-CN'];if($token!==null)$headers[]=(str_starts_with($path,'/merchantapi/')?'Authorization':'Authori-zation').': Bearer '.$token;
  if($ticket!==null)$headers[]='X-Aftersale-Read-Ticket: '.$ticket;
  if($multipart!==null){m4ar_expect(is_string($body),'TASK78_REAL_MULTIPART_BYTES');$headers[]='Content-Type: multipart/form-data; boundary='.$multipart;}
  elseif($body!==null){m4ar_expect(is_array($body),'TASK78_EXACT_JSON_BODY_ARRAY');$body=m4cb_json($body);$headers[]='Content-Type: application/json';}
@@ -402,6 +403,9 @@ function m4ar_transport(string $method,string $path,?string $token=null,mixed $b
  CURLOPT_CONNECTTIMEOUT=>3,CURLOPT_TIMEOUT=>12,CURLOPT_FOLLOWLOCATION=>false,CURLOPT_PROXY=>'',
  CURLOPT_HEADERFUNCTION=>static function($h,string $line)use(&$responseHeaders):int{$v=explode(':',$line,2);if(count($v)===2)$responseHeaders[strtolower(trim($v[0]))]=trim($v[1]);return strlen($line);}]);
  if($body!==null)curl_setopt($curl,CURLOPT_POSTFIELDS,$body);$raw=curl_exec($curl);$http=(int)curl_getinfo($curl,CURLINFO_RESPONSE_CODE);$errno=curl_errno($curl);curl_close($curl);$ended=time();
+ if(!($errno===0&&is_string($raw)&&strlen($raw)<=6291456&&$http===200))$GLOBALS['m4ar_http_failure']=[
+  'method'=>$method,'route_family'=>str_starts_with($path,'/merchantapi/')?'merchantapi':(str_starts_with($path,'/adminapi/')?'adminapi':'api'),
+  'http_status'=>$http,'curl_errno'=>$errno,'response_is_string'=>is_string($raw),'response_bytes'=>is_string($raw)?strlen($raw):null];
  m4ar_expect($errno===0&&is_string($raw)&&strlen($raw)<=6291456&&$http===200,'TASK78_REAL_NORMAL_HTTP_TRANSPORT_200');
  $json=json_decode($raw,true);$record=['method'=>$method,'path'=>$path,'http'=>$http,'bytes'=>strlen($raw),'sha256'=>hash('sha256',$raw),
   'request_bytes'=>$body===null?0:strlen($body),'request_sha256'=>$body===null?hash('sha256',''):hash('sha256',$body),'actual_interval'=>[$started,$ended]];
@@ -2029,7 +2033,15 @@ function m4ar_diagnostic(Throwable $error):array
 {
  $code=$GLOBALS['m4ar_failed_assertion']??$GLOBALS['m4fn_failed_assertion']??$GLOBALS['m5pcp_failed_assertion']??$GLOBALS['m4c_failed_assertion']??'TASK78_UNCLASSIFIED';
  if(!is_string($code)||preg_match('/\A[A-Z0-9_]{1,160}\z/D',$code)!==1)$code='TASK78_FIXED_FAILURE';
- return ['code'=>$code,'class'=>get_class($error),'file'=>basename($error->getFile()),'line'=>$error->getLine()];
+ $diagnostic=['code'=>$code,'class'=>get_class($error),'file'=>basename($error->getFile()),'line'=>$error->getLine()];
+ $transport=$GLOBALS['m4ar_http_failure']??null;
+ if($code==='TASK78_REAL_NORMAL_HTTP_TRANSPORT_200'&&is_array($transport)
+  &&array_keys($transport)===['method','route_family','http_status','curl_errno','response_is_string','response_bytes']
+  &&in_array($transport['method'],['GET','POST','PUT'],true)&&in_array($transport['route_family'],['api','merchantapi','adminapi'],true)
+  &&is_int($transport['http_status'])&&$transport['http_status']>=0&&is_int($transport['curl_errno'])&&$transport['curl_errno']>=0
+  &&is_bool($transport['response_is_string'])&&($transport['response_is_string']?(is_int($transport['response_bytes'])&&$transport['response_bytes']>=0):$transport['response_bytes']===null))
+  $diagnostic['http_transport']=$transport;
+ return $diagnostic;
 }
 function m4ar_result(array $source,?array $business,?array $observer,?array $diagnostic,bool $success):array
 {
