@@ -96,7 +96,7 @@ LUA;
                 ||@$redis->setOption(Redis::OPT_SERIALIZER,Redis::SERIALIZER_NONE)!==true
                 ||@$redis->setOption(Redis::OPT_PREFIX,'')!==true
                 ||$redis->getOption(Redis::OPT_SERIALIZER)!==Redis::SERIALIZER_NONE
-                ||$redis->getOption(Redis::OPT_PREFIX)!==''||$redis->getLastError()!==null) self::unavailable();
+                ||$redis->getOption(Redis::OPT_PREFIX)!==null||$redis->getLastError()!==null) self::unavailable();
             return [$redis,$options['prefix']];
         }catch(Throwable $error){try{$redis->close();}catch(Throwable $ignored){} self::unavailable();}
     }

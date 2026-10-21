@@ -4,7 +4,32 @@
 
 **Spec:** [00-implementation-spec.md](00-implementation-spec.md) §1.2、§6.3、§7.2、§8、§9、§10、§11；用例 O、P、R 系列，D19，K02–K05。
 
-## 当前交付状态（2026-10-21）
+## 当前交付状态（2026-10-22）
+
+### R38售后读票失败与空Redis前缀合同修复（2026-10-22）
+
+Run20261021190454125189 / Source e669a023540a2f755283de46dd9c541fc136517c 的内部付款及Task6两发货/三收货、五次同key重放、六阶段288内部读取已通过。完整A原S18588自然1；AR request_sequence76为首次顾客POST附件read-ticket，HTTP200/curl0/JSON0但业务码503。此前return-apply first/replay74/75已通过原中间断言；遗留phase normal_aftersale_apply不表示申请或重放失败。HTTP子进程已按原正常流程TERM15并关闭组/监听，cleanup_failure为null。AR/Worker/完整A及三端仍未通过，不改署原失败。
+
+确定的Source缺陷：ReadTickets::connection先setOption(OPT_PREFIX,'')，随后要求getOption严格空字符串；仓库Dockerfile声明的phpredis6.2.0在官方redis_commands.c 5797–5808把空prefix设为NULL，5704–5708读取返回PHP null，6.1.0/6.0.2同义。因此旧条件会拒绝该正常无前缀连接。固定镜像实际扩展版本尚未独立证实，原R38更早是否先触发别的门未知，不能把Source缺陷称为本轮唯一现场原因。
+
+本次修复仅将空prefix读回条件改为严格null；保空prefix设置成功、serializer NONE、getLastError、应用prefix显式拼接、Lua、票据300秒、权限/会话/绑定/事务/文件及全部业务断言。AR只补三角色read-ticket的固定operation_id和两处既有enum，URL/header/body/次序/成功条件保持。833250B完整诊断候选保留未采用，本次无需新增生产日志框架。
+
+最小两PHP候选已非作者Source PASS；固定PHP8.2 network-none/read-only/nonroot仅两PHP -n -l自然0，原生selector/lint/selector共3项exit=wait0，完整双流核实，前后selector为空。LINT-RESULT.json4477B/2248f8b07630f8a79914a49a32d76dac29925f64e59225fea91409682a4b1963；只签语法，不签修复后的真实票据/售后业务。
+
+实际收尾：R38 close原78060自然0，RESULT93539B/7e5fb3371269efb17064dd77d67f6398b5380287cd6c4216ef160913e9ea8024；84原生命令、精确5普通变更关闭原4CID/1内部网/7卷，340新公件与14684原公件保持。独立zero原17746自然0，RESULT17085B/53d62eb0dbcf8a15cb78291ec95c0064cee8b887f9f2dc61e9609a0d3900bedb；12只读原生、六fresh原始双空、50新公件。Root与非作者完整实际资格闭合，保留原AR失败及Task6成功，未重试旧Run。
+
+当前同一执行清单：
+- [x] 定位R38首次顾客read-ticket503，保原失败/内部履约通过。
+- [x] 官方扩展空prefix合同、最小Source修复与独立复核；两PHP纯语法通过。
+- [x] 原失败实例正常close及独立zero，完整原公件保持。
+- [x] 采用两PHP最小修复及这两份记录；实际本地提交身份以Git核实。
+- [ ] 新clean同源完整A（支付/Task6/售后/评价/Worker）及正常close/独立zero。
+- [ ] 同源fresh B、三端真实API/DOM与N1/N2、非空历史完整链、最终归属启用验收。
+- [ ] MS5真实金融、MS6发布/恢复及人工验收；未运行或未授权项不代签。
+
+目标仍为通用多商户，商品/SKU/规格/价格复用，L2本地未推送未部署；停止样本保持NOT RUN。整体无可信百分比，源码及语法不换算整体验收。
+
+### R33 历史交付状态（原记录保留）
 
 R33 Run `20261021030301cc3b74` / clean Source `803c1b420dca8894fa9409b38601a1c6dc3c8b30` 的内部付款、两次发货、三次收货及五次重复请求检查已实际通过，Task6原容器正常退役。AR在新增订单阶段以 `TypeError`（`ms4-aftersale-review-normal.php:356`）自然1，原外层S16051亦实际1；尚未进入售后退款动作，Worker和first B未启动，完整A失败。原4CID/1内部网/7专用卷已正常非force退役，close84项、独立zero12项均实际0；14362份原公件和340份close公件保持。原失败不改署成功，`full_source_unchanged=false`不代指已证明源码被修改。
 

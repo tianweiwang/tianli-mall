@@ -407,7 +407,7 @@ function m4ar_transport(string $method,string $path,?string $token=null,mixed $b
  $json=null;$jsonError=null;if(is_string($raw)&&strlen($raw)<=6291456){$json=json_decode($raw,true);$jsonError=json_last_error();}
  $hasStatus=is_array($json)&&array_key_exists('status',$json);$status=$hasStatus?$json['status']:null;
  $GLOBALS['m4ar_http_gate']=[
-  'operation_id'=>in_array($operationId,['money-withdraw','withdraw','money-merchant','business-reject-merchant','money-platform','business-reject-platform','cancel-apply','cancel-approve','return-apply','return-approve','return-express','accept-merchant','accept-platform','ship-two','receive-one'],true)?$operationId:'non_action',
+  'operation_id'=>in_array($operationId,['money-withdraw','withdraw','money-merchant','business-reject-merchant','money-platform','business-reject-platform','cancel-apply','cancel-approve','return-apply','return-approve','return-express','accept-merchant','accept-platform','ship-two','receive-one','file-ticket-customer','file-ticket-merchant','file-ticket-platform'],true)?$operationId:'non_action',
   'attempt'=>in_array($attempt,['first','replay','single'],true)?$attempt:'single','request_sequence'=>$requestSequence,
   'method'=>$method,'route_family'=>str_starts_with($path,'/merchantapi/')?'merchantapi':(str_starts_with($path,'/adminapi/')?'adminapi':'api'),
   'http_status'=>$http,'curl_errno'=>$errno,'json_error'=>$jsonError,'status_type'=>$hasStatus?gettype($status):'missing',
@@ -1558,7 +1558,7 @@ function m4ar_private_upload(PDO $db,array $model,array $actor,string $bytes):ar
 function m4ar_tickets(PDO $db,array $model,array $actors,array $file,string $bytes,int $refundId):array
 {
  $result=[];foreach(['customer','merchant','platform']as$name){$actor=$actors[$name];$base=match($name){'customer'=>'/api/order/refund/files/','merchant'=>'/merchantapi/aftersale-files/','platform'=>'/adminapi/marketplace/aftersale-files/'};
-  $before=m4ar_snapshot($db);$reply=m4ar_json('POST',$base.$file['id'].'/read-ticket',$actor,['schema'=>1]);$after=m4ar_snapshot($db);$data=$reply['json']['data'];
+  $before=m4ar_snapshot($db);$reply=m4ar_json('POST',$base.$file['id'].'/read-ticket',$actor,['schema'=>1],match($name){'customer'=>'file-ticket-customer','merchant'=>'file-ticket-merchant','platform'=>'file-ticket-platform'});$after=m4ar_snapshot($db);$data=$reply['json']['data'];
   m4c_entry_keys($data,['schema','scope','file','refund_id','read_ticket','issued_at','expires_at']);$ticket=$data['read_ticket'];$issued=m4ar_time($reply['actual_interval'][0],$reply['actual_interval'][1],$data['issued_at']);
   m4ar_expect($data['schema']===1&&$data['scope']==='marketplace_aftersale_read_ticket_v1'&&$data['refund_id']===$refundId&&is_string($ticket)
    &&preg_match('/\A[A-Za-z0-9_-]{43}\z/D',$ticket)===1&&$data['expires_at']===$issued+300,'TASK78_REAL_NORMAL_TICKET_300_SECONDS');
@@ -2069,7 +2069,7 @@ function m4ar_diagnostic(Throwable $error):array
   $diagnostic['http_transport']=$transport;
  $gate=$GLOBALS['m4ar_http_gate']??null;
  if(is_array($gate)&&array_keys($gate)===['operation_id','attempt','request_sequence','method','route_family','http_status','curl_errno','json_error','status_type','status_int','msg_is_string','data_is_array','failure_class']
-  &&in_array($gate['operation_id'],['non_action','money-withdraw','withdraw','money-merchant','business-reject-merchant','money-platform','business-reject-platform','cancel-apply','cancel-approve','return-apply','return-approve','return-express','accept-merchant','accept-platform','ship-two','receive-one'],true)
+  &&in_array($gate['operation_id'],['non_action','money-withdraw','withdraw','money-merchant','business-reject-merchant','money-platform','business-reject-platform','cancel-apply','cancel-approve','return-apply','return-approve','return-express','accept-merchant','accept-platform','ship-two','receive-one','file-ticket-customer','file-ticket-merchant','file-ticket-platform'],true)
   &&in_array($gate['attempt'],['first','replay','single'],true)&&is_int($gate['request_sequence'])&&$gate['request_sequence']>=1&&$gate['request_sequence']<=2147483647
   &&in_array($gate['method'],['GET','POST','PUT'],true)&&in_array($gate['route_family'],['api','merchantapi','adminapi'],true)
   &&is_int($gate['http_status'])&&$gate['http_status']>=0&&$gate['http_status']<=999
