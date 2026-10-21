@@ -1358,7 +1358,7 @@ function m4ar_operation(PDO $db,array &$model,array $actor,string $action,string
  $at=m4ar_time($reply['actual_interval'][0],$reply['actual_interval'][1],$raw['created_at']);$commit=m4ar_time($reply['actual_interval'][0],$reply['actual_interval'][1],$raw['committed_at']);
  m4ar_expect($commit>=$at,'TASK78_S2_NATIVE_COMMIT_INTERVAL');$plan=m4ar_plan($model,$parts);$rows=[];$counts=[];
  $request=['schema'=>1,'action'=>$action,'root_order_id'=>(int)$model['root']['id']];$newChildren=[];$newItems=[];$target=null;
- if($ship){$newChildren=m4ar_new_rows($before['rows'][$orders],$after['rows'][$orders]);m4ar_expect(count($newChildren)===1,'TASK78_ONE_TRUE_TWO_ITEM_CHILD');$child=$newChildren[0];
+ if($ship){$child=m4fn_new_row($before['rows'][$orders],$after['rows'][$orders],$before['database']['tables'][$orders]['metadata']);$newChildren=[$child];m4ar_expect(count($newChildren)===1,'TASK78_ONE_TRUE_TWO_ITEM_CHILD');
   $request['quantities']=[];foreach($plan['allocations']as$a)$request['quantities'][]=['source_item_id'=>$a['source_item_id'],'quantity'=>$a['quantity']];$request['delivery']=$body['delivery'];
   $values=m4fn_child_values($model['source'],$plan,$request,$child,$at);$values['cart_id']=['json'=>array_column($plan['allocations'],'cart_ref')];
   $values['custom_form']=['json'=>$model['source']['forms']];m4fn_expected_row($before['database']['tables'][$orders]['metadata'],$child,$values);

@@ -1375,3 +1375,18 @@ Root与两名独立Source核实：原m4ar_transport对全部token只发送Author
 失败历史collector85607自然0（53fa6f），PID49980；INVENTORY66296029B/dea389c78a8d2524155a065615d730702f1eae535389b6300afcaaf3a0c227b4，RESULT2212B/7fe8be0634835adc6af1d6cd6853f13ff920af4e7318fc2092e8c80a163fb18f。Root60de13完整核21字段header、268427条原公件（原prior253354全保持、新15073）、2135435543总bytes、七公开树、原187/close84/zero12事实；没有读取私有材料。这是历史保全，不是成功A或firstB资格。
 
 任务：[x]原失败记录、确定夹具错配及独立Source；[x]最小候选、整文逆证和真实纯PHP语法；[x]原R35正常close/独立zero和完整历史保全；[x]本地采用候选及本记录；[ ]新clean提交/同HEAD验证分支、fresh完整付款/履约/售后评价/Worker正常链及收尾；[ ]成功同源fresh B、三端20步/42ACK及320/390/1440 DOM、N1/N2、非空旧历史37步及四CLI、真实MS5/MS6与人工验收。继续通用多商户，复用商品规格价格，L2本地不推送不部署；停止样本NOT RUN，不换算整体百分比。
+
+
+### R36售后S2新子单识别校验修订（2026-10-21）
+
+通用多商户商城继续复用原商品规格与价格，本轮仅修本地测试校验器。原Run20261021111233ef6f2a，Source8fe42c98d122df26499a4baec7e29585febada09，freeze609091dcd29aa7b9401dd59de24bd7e47c7a04d4bb29a7c402ed8f4abc066981。原S30573自然exit1，AR在normal_s2_ship报TASK78_NO_UNDECLARED_REMOVAL_OR_ROW_REWRITE，结果6083B/fcd016d65493f8cd36a28b0a0016bdffef2c518f7a034d9e0b75df6218955c05。paid内部测试付款0、Task6两次发货/三次收货/五次零差分重放及288次内部订单读取通过分范围保留；AR失败，Worker未启动，完整A/B、三端和整体验收未通过。公开通用错误码未保存具体call/table/row，不据此认定生产数据损坏或唯一实际触发点。
+
+Root与独立Source确认校验顺序矛盾：m4ar_operation在构造完整root expected之前，用要求所有旧完整行保持的m4ar_new_rows对整个orders表提取新child；真实履约在当前取消1件后发剩余2件时合法更新root.status0→1，原后段本就要求并检查这一变化。最小修复只将该ship分支新child提取改用已require的Task6 m4fn_new_row，按before/after唯一新增id、总数+1和BEFORE自然AUTO_INCREMENT识别，随后newChildren=[$child]。原child/item完整行、稍后的root/child/全orders expected、全部其他表/DDL/metadata/AI、库存、账、Redis/files、13动作/15重放/5退款/2S2及首错/收尾保持；生产交易与发货服务不变。
+
+候选217765B/9dc13fca0221c8d41fa0bdd008052670cd2c81271ef668e1677c0d5e5cf867b7，仅offset136873处181→224B，整文逆回217722/50c652fe。95函数同序，其他94定义、96非函数段和原347断言文字/顺序保持；非作者独立Source PASS，固定隔离PHP8.2纯-l实际0，报告36361B/d762f42cfab7a2229d5dfe488e29d8a439183098db68068d09bb75e92ff24af3。语法与Source不代替售后业务通过。
+
+原环境已正常关闭和独立核零：close28751自然0，RESULT93498B/94365e0f6c0e22cf6cedb8d4518786ed163e28e651f45c98112c1a911d0c0555；独立zero92168自然0，RESULT17047B/e6e8b8fff9bc3eb4d8381f433168330ecabc7ee654e22367716ae212f1f16cc7。仅两原DB正常stop及四原CID/空内部网络/七专用卷三项精确非force删除；六fresh空查询，zero零变更；14554原公件及340close件保持。两原会话与S均终态，不重跑。
+
+失败历史collector39921实际0/PID36204；INVENTORY70002537B/744f3e6a391ef3e966379892c883a7b68e8e056a4e79a5281525e041b6e4a5fe，RESULT2212B/23d9ee6c0774283d8860ea6101787b535e2eaf18d5b5a325d0bb6ce1bde6181f。Root完整读两发布/21字段header、268427旧描述符全部保持、14946新增公件完整bytes/SHA、七公开树和62固定路径、14554原stat9，最终283373件/2260156334bytes与原S186/close84/zero12事实吻合。这仅是失败历史保持，不能当成功A或UI资格。
+
+任务：[x]原失败边界、确定Source校验顺序缺陷及最小设计；[x]候选完整正逆/独审/固定纯语法；[x]原R36正常close、独立zero与完整历史保全；[x]本地采用候选及本记录（提交身份以实际Git核实）；[ ]新clean同HEAD验证分支、fresh完整paid/Task6/AR/Worker正常链及正常关闭/独立零；[ ]成功同源fresh B、三端20步/42ACK及320/390/1440 DOM、N1/N2、原非空历史37步与四CLI/真实旧权益、真实MS5/MS6与人工验收。L2本地不推送不部署、不碰真实资金；停止样本NOT RUN，Task9关闭不重开K02–K05，不换算整体百分比。
