@@ -6,8 +6,8 @@
 				<view class="saved-field" v-for="field in group.fields" :key="field.field_index">
 					<view class="saved-title">{{field.field_index+1}}. {{field.title}}：</view>
 					<view v-if="field.label==='img'" class="saved-images">
-						<image v-for="(image,index) in field.value" :key="index" :src="image" mode="aspectFill"
-							@click="previewSavedImages(field.value,index)"></image>
+						<image v-for="(image,index) in field.value" :key="index" :src="orderFormImageSource(group,field,index)" mode="aspectFill"
+							@click="previewOrderFormImages(group,field,index)"></image>
 					</view>
 					<view v-else class="saved-value">{{field.value}}</view>
 				</view>
@@ -33,9 +33,13 @@
 </template>
 
 <script>
+	import orderFormImages from '@/mixins/marketplace-order-form-images.js';
 	export default {
 		name: 'customForm',
+		mixins: [orderFormImages],
 		props: {
+			privateRootId: {type: [Number,String], default: null},
+			formImagesActive: {type: Boolean, default: true},
 			tradeVersion: {type: [Number,String], default: 0},
 			customForm:{
 				type: Array,
@@ -43,6 +47,9 @@
 			}
 		},
 		computed: {
+			orderFormImageContext() { return this.savedMarketplaceV1 && this.privateRootId !== null ? {kind: 'mobile_order', rootId: this.privateRootId} : null; },
+			orderFormImageGroups() { return this.savedGroups; },
+			orderFormImagesActive() { return this.formImagesActive; },
 			savedMarketplaceV1() { return this.tradeVersion===1 || this.tradeVersion==='1'; },
 			savedGroups() {
 				if(!this.savedMarketplaceV1)return [];
@@ -72,7 +79,6 @@
 		created() {},
 		mounted() {},
 		methods: {
-			previewSavedImages(images,index) { uni.previewImage({urls:images.slice(),current:images[index]}); },
 			getCustomForm: function(index,indexn) {
 				uni.previewImage({
 					urls: this.customForm[index].value,

@@ -81,7 +81,7 @@
         <view class="heading">{{ group.product_name }} · 保存表单</view>
         <view v-for="field in group.fields" :key="field.field_index" class="line">
           <view>{{ field.title }}</view>
-          <view v-if="field.label === 'img'" class="form-images"><image v-for="(src, index) in field.value" :key="index" :src="src" mode="aspectFit" /></view>
+          <view v-if="field.label === 'img'" class="form-images"><image v-for="(src, index) in field.value" :key="index" :src="orderFormImageSource(group,field,index)" mode="aspectFit" @click="previewOrderFormImages(group,field,index)" /></view>
           <text v-else>{{ field.value || '—' }}</text>
         </view>
       </view>
@@ -90,17 +90,26 @@
 </template>
 
 <script>
+import orderFormImages from '@/mixins/marketplace-order-form-images.js';
 import { rootFulfillmentText, childFulfillmentText, fulfillmentTime } from '@/utils/marketplace-fulfillment.js';
 
 export default {
   name: 'MarketplaceFulfillment',
+  mixins: [orderFormImages],
   props: {
     view: { type: Object, default: null },
     loading: { type: Boolean, default: false },
     error: { type: String, default: '' },
-    canViewPackage: { type: Boolean, default: false }
+    canViewPackage: { type: Boolean, default: false },
+    formImagesActive: { type: Boolean, default: true },
+    formReader: { type: String, default: 'customer_order', validator: value => ['customer_order', 'mobile_order'].includes(value) }
   },
   data() { return { expanded: {} }; },
+  computed: {
+    orderFormImageContext() { return this.view && this.view.kind === 'child' ? {kind: this.formReader, rootId: this.view.package.root_order_id, childId: this.view.package.id} : null; },
+    orderFormImageGroups() { return this.view && this.view.kind === 'child' ? this.view.package.custom_form : []; },
+    orderFormImagesActive() { return this.formImagesActive && !this.loading && !this.error; }
+  },
   watch: { view() { this.expanded = {}; } },
   methods: {
     rootText: rootFulfillmentText,

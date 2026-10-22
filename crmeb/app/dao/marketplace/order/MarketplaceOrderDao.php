@@ -202,6 +202,54 @@ final class MarketplaceOrderDao
     }
 
     /**
+     * Form upload only: the caller already used lookupConfirmation on this same
+     * transaction/PDO and accepted not_found, locking the real user before idem.
+     * The frame is the actual server confirmation, never client-supplied parents.
+     * Returns only uid/mer_id/source_kind/cart_refs/selection/merchant/products/
+     * skus/carts. The caller still rechecks current confirmation/definitions with
+     * StoreOrderServices and MarketplaceCartSelection before any file/asset I/O.
+     * No address/invoice/freight, order creation, reservation or transaction end.
+     */
+    public function lockFormUploadParents(PDO $pdo, int $uid, int $merId, array $frame): array
+    {
+        $this->transaction($pdo);
+        self::integer($uid, 1, self::INT_MAX); self::integer($merId, 1, self::UINT_MAX);
+        $frame = MarketplaceCartSelection::frame($frame, $uid);
+        if ($frame['mer_id'] !== $merId) self::conflict();
+        $selection = self::selection($frame['selection'], $frame['cart_refs'], $frame['source_kind']);
+        if ($frame['source_kind'] === 'temporary') $this->assertTemporaryUnconsumed($pdo, $uid, $frame['cart_refs']);
+        $merchant = $this->merchant($pdo, $merId);
+        $productIds = array_values(array_unique(array_column($selection, 'product_id')));
+        $skuIds = array_values(array_unique(array_column($selection, 'sku_id')));
+        sort($productIds, SORT_NUMERIC); sort($skuIds, SORT_NUMERIC);
+        $products = $skus = [];
+        foreach ($productIds as $id) $products[$id] = $this->product($pdo, $id, $merId);
+        foreach ($skuIds as $id) {
+            $sku = $this->one($pdo, 'store_product_attr_value', self::SKU_FIELDS, '`id` = ?', [$id]);
+            if ($sku === null) self::conflict();
+            $skus[$id] = $sku;
+        }
+        foreach ($selection as $line) self::sku($skus[$line['sku_id']], $line);
+        $carts = [];
+        if ($frame['source_kind'] === 'persistent') foreach ($selection as $line) {
+            $cart = $this->one($pdo, 'store_cart', self::CART_FIELDS, '`id` = ? AND `uid` = ?', [$line['cart_ref'], $uid]);
+            if ($cart === null || self::bigint($cart['id']) !== $line['cart_ref']
+                || self::integer($cart['product_id'], 1, self::ROOT_MAX) !== $line['product_id']
+                || $cart['product_attr_unique'] !== $line['unique']
+                || self::integer($cart['cart_num'], 1, 65535) !== $line['qty']
+                || (string)$cart['type'] !== '0') self::conflict();
+            foreach (['is_pay','is_del','is_new','combination_id','seckill_id','bargain_id','advance_id'] as $field) {
+                if (self::integer($cart[$field], 0, self::UINT_MAX) !== 0) self::conflict();
+            }
+            if ($cart['status'] !== null && self::integer($cart['status'], 0, 1) !== 1) self::conflict();
+            $cart['id'] = $line['cart_ref']; $carts[] = $cart;
+        }
+        return ['uid'=>$uid,'mer_id'=>$merId,'source_kind'=>$frame['source_kind'],'cart_refs'=>$frame['cart_refs'],
+            'selection'=>$selection,'merchant'=>$merchant,'products'=>$products,'skus'=>$skus,
+            'carts'=>$carts];
+    }
+
+    /**
      * $order contains ORDER_INPUT only; cart_id is the normalized string[] and
      * custom_form is the service's definition-validated form array. mark is raw text.
      * The service copies address/shop snapshots from lockInputs, not request text.

@@ -779,3 +779,16 @@ Root固定PHP8.2纯语法实际0，来源与完整native双流见仓库外 norma
 实际PHP8.2.33对客户entry/Service及两头像测试候选的4个-l均0；真实Driver serialize/unserialize与原counter合法正常值纯合同0，共22native/5纯检查CID正常nonforce rm。Core -l及exact nginx -t实际0，共10native/2纯检查CID正常rm；nginx仅network-none解析及固定loopback hostname，不签实际DNS/App/HTTP。完整raw/来源在仓库外asset-entry-quota-avatar-php-check-r1与n2-core-nginx-syntax-root-r1。三份独立Source审查及全部相关窗结束后才采用；无活动本地hooks、限定四路径本地提交，实际新SHA另由外部COMMIT.json记录，不预填自己的未来身份。
 
 只有三个PHP和本记录纳入本次Git提交；对应nginx新配置仍在已审外部候选，待新UI17完整装配，不修改原冻结profile。Host/compose/copy/public-copy/browser/close/zero/早期T3及元数据DAG仍待适配；头像kernel/HTTP测试候选本次只语法，不接入或运行。下一步按真实新HEAD重闭完整A来源，正常close/独立zero后再同源fresh B。完整A/B/三端三宽/N1N2、T4媒资/扫码/自然GC、T5其它私有用途/头像/default与历史兼容、旧权益归属与最终迁移启用、真实金融/MS6及人工验收仍未完成。通用多商户复用商品/SKU规格价格，Task9关闭、用户停止样本NOT RUN及T4已拒操作不重试保持；L2仅本地，无推送部署或真实资金操作。
+
+
+## 2026-10-23 私有订单表单图片与移动退款详情接线（本地Source，实际业务待验）
+
+已接入最终35件Source：后端19、顾客Uni8、商家/平台LF六件、移动退款详情一件，以及隔离正常评价图片上传的有限失败收据诊断一件。上传只保存本人确认上下文的STAGED私有资产与opaque引用，首次下单在原writer/PDO事务核真实父项并绑定；保存订单读取按当前顾客、商家、平台或移动资格核真实根与完整资产，票据通过header换原图。原商品、规格SKU、价格库存、保存字段和顺序复用；无私有引用的原下单分支保持。
+
+移动退款页按实际schema2展示原状态、金额、数量、退件区间及运单，依退款真实单号定位原受权根详情，严格核根PK/单号/本人后读取保存表单；凭证复用原私有售后读取，v1处理跳原顾客售后页重核动作，原legacy模板/动作/CSS前缀保留。商家/平台及顾客消费者使用临时图片映射，生命周期结束释放，不将临时URL写回保存字段。
+
+35件具名来源、实际093 before19/ABSENT16、完整补丁正逆和各组件/装配独审已核；最终20PHP均有真实语法通过收据，15前端/33平台目标语法通过。后台r1的CRLF在独立r2只归一为LF，其旧原件和收据保留。代码语法/源码审阅不是实际业务或视觉验收。
+
+采用前原Run20261022134605842b51的正常close84原生和独立zero12原生已实际0、Root完整读回96回执，精确退役其4容器/1内部网/7专用卷并保47295原公件；原093内部Task6成功及评价图片POST175 HTTP503失败原样保留。新增诊断仅保控制器原有六键处理收据，不记录令牌/URL/原图或其它响应，不放行503；当前生产根因细节仍未知。
+
+专用持久private_root仍默认空且需显式配置，未据Source签实际上传/首次下单绑定/多角色读取/原图、SQL/Redis或副作用通过。新Source三端正式构建、正常API与H5/MP/APP/三宽浏览器、完整A/B/N1N2、旧数据历史权益归属和最终启用、真实金融/MS6与人工签收均待；旧093结果不改署本次提交。用户停止样本NOT RUN，Task9新商家客服关闭，目标为通用多商户，L2本地不推送部署或操作真实资金。

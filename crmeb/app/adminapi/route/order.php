@@ -13,6 +13,17 @@ use think\facade\Route;
 /**
  * 订单路由
  */
+// Private order-form images retain the current original order-info grant.
+Route::group(function () {
+    Route::post('order/info/<root_id>/form-files/<asset_id>/read-ticket','v1.order.OrderFormFile/read')->option(['real_name'=>'订单表单原图票据']);
+    Route::get('order/info/<root_id>/form-files/<asset_id>/content','v1.order.OrderFormFile/read')->option(['real_name'=>'订单表单原图']);
+})->middleware([
+    \app\http\middleware\AllowOriginMiddleware::class,
+    \app\adminapi\middleware\AdminAuthTokenMiddleware::class,
+    \app\adminapi\middleware\OrderFormReadPermissionMiddleware::class,
+    \app\adminapi\middleware\AdminLogMiddleware::class
+])->option(['mark'=>'order','mark_name'=>'订单管理']);
+
 Route::group('order', function () {
     //获取快递信息
     Route::get('kuaidi_coms', 'v1.order.StoreOrder/getKuaidiComs')->option(['real_name' => '获取快递信息']);

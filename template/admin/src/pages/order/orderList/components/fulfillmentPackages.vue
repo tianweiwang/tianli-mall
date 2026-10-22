@@ -38,12 +38,13 @@
       <p v-if="view.order.schema === 2">履约结束时间（含退件）：{{ time(view.order.aftersale.fulfillment_completed_at) }}</p>
       <div v-for="item in view.order.items" :key="item.id" class="saved-item"><img v-if="item.image" :src="item.image" alt="" /><div class="item-copy"><p>{{ item.product_name }}</p><p>{{ item.sku_name }}</p><p>￥{{ item.unit_price }} × {{ item.quantity }}</p><p>商品金额 ￥{{ item.line_price }} · 运费 ￥{{ item.postage_price }}</p></div></div>
       <template v-if="view.order.recipient"><h3>收件资料</h3><p>{{ view.order.recipient.real_name }} {{ view.order.recipient.user_phone }}</p><p>{{ view.order.recipient.user_address }}</p><p v-if="view.order.mark">备注：{{ view.order.mark }}</p></template>
-      <section v-for="group in view.order.custom_form" :key="group.product_id"><h4>{{ group.product_name }} · 保存表单</h4><div v-for="field in group.fields" :key="field.field_index"><p>{{ field.title }}</p><div v-if="field.label === 'img'" class="form-images"><img v-for="(src, index) in field.value" :key="index" :src="src" alt="保存表单图片" /></div><p v-else>{{ field.value || '—' }}</p></div></section>
+      <section v-for="group in view.order.custom_form" :key="group.product_id"><h4>{{ group.product_name }} · 保存表单</h4><div v-for="field in group.fields" :key="field.field_index"><p>{{ field.title }}</p><div v-if="field.label === 'img'" class="form-images"><template v-for="image in formImagesFor(group, field)"><img v-if="image.url" :key="image.key + ':' + image.url" v-viewer :src="image.url" alt="保存表单图片" @load="$emit('form-image-load', image)" @error="$emit('form-image-error', image)" /><span v-else :key="image.key + ':status'" role="status">{{ image.error || '正在读取图片…' }}</span></template></div><p v-else>{{ field.value || '—' }}</p></div></section>
     </template>
   </section>
 </template>
 
 <script>
+import { imageRowsFor } from '@/api/marketplace-order-form';
 const SUMMARY = ['shipping_state', 'receipt_state', 'closed', 'original', 'shipped', 'received', 'cancelled_unshipped', 'returned_accepted', 'to_ship', 'to_receive', 'child_count'];
 const own = (value, key) => Object.prototype.hasOwnProperty.call(value, key);
 function fail() { throw new Error('订单保存信息不可用，请重新加载'); }
@@ -179,7 +180,7 @@ export function rootOrderStatusText(order) {
 }
 function childText(child) { const state = child.schema === 2 ? aftersaleState(child, child.aftersale) : ''; if (state) return state; return child.receipt_state === 'received' ? '已收货' : child.receipt_state === 'partial' ? '部分收货' : '待收货'; }
 function displayTime(value) { if (value === null || value === 0) return '—'; timeValue(value); const date = new Date(value * 1000); const pad = number => String(number).padStart(2, '0'); return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate()) + ' ' + pad(date.getHours()) + ':' + pad(date.getMinutes()) + ':' + pad(date.getSeconds()); }
-export default { name: 'FulfillmentPackages', props: { view: { type: Object, default: null }, loading: { type: Boolean, default: false }, error: { type: String, default: '' } }, methods: { rootText: rootFulfillmentText, childText, time: displayTime } };
+export default { name: 'FulfillmentPackages', props: { view: { type: Object, default: null }, loading: { type: Boolean, default: false }, error: { type: String, default: '' }, formImages: { type: Array, default: () => [] } }, methods: { formImagesFor(group, field) { return imageRowsFor(this.formImages, group, field); }, rootText: rootFulfillmentText, childText, time: displayTime } };
 </script>
 
 <style scoped>

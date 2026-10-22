@@ -2,7 +2,8 @@
   <div>
     <el-drawer class="fulfillment-drawer" title="订单详情" size="100%" :visible.sync="modals" wrapperClosable :before-close="handleClose">
       <fulfillment-packages v-if="fulfillmentView && fulfillmentView.kind !== 'legacy' || fulfillmentLoading || fulfillmentError"
-        :view="fulfillmentView" :loading="fulfillmentLoading" :error="fulfillmentError"
+        :view="fulfillmentView" :loading="fulfillmentLoading" :error="fulfillmentError" :form-images="visibleFormImages"
+        @form-image-load="formImageLoaded" @form-image-error="formImageFailed"
         @page-change="$emit('fulfillment-page', $event)" @retry="$emit('fulfillment-retry')" @view-package="$emit('fulfillment-package', $event)"></fulfillment-packages>
       <div v-if="fulfillmentView && fulfillmentView.kind === 'child'" class="fulfillment-parent"><el-button class="fulfillment-control" :disabled="fulfillmentLoading || !!fulfillmentError" @click="$emit('fulfillment-parent')">查看付款订单</el-button></div>
       <div v-if="orderDatalist && (!fulfillmentView || fulfillmentView.kind !== 'child')">
@@ -263,7 +264,10 @@
                 <div class="saved-field" v-for="field in group.fields" :key="field.field_index">
                   <div class="saved-title">{{field.field_index+1}}. {{field.title}}：</div>
                   <div v-if="field.label==='img'" class="saved-images">
-                    <img v-for="(image,index) in field.value" :key="index" v-viewer :src="image" alt="已保存图片" />
+                    <template v-for="image in formImagesFor(group, field)">
+                      <img v-if="image.url" :key="image.key + ':' + image.url" v-viewer :src="image.url" alt="已保存图片" @load="formImageLoaded(image)" @error="formImageFailed(image)" />
+                      <span v-else :key="image.key + ':status'" role="status">{{ image.error || '正在读取图片…' }}</span>
+                    </template>
                   </div>
                   <div v-else class="saved-value">{{field.value}}</div>
                 </div>
@@ -400,11 +404,13 @@
 </template>
 <script>
 import { getExpress } from '@/api/order';
-import fulfillmentPackages, { rootOrderStatusText } from '../components/fulfillmentPackages.vue';
+import fulfillmentPackages, { rootOrderStatusText, readPlatformFulfillment } from '../components/fulfillmentPackages.vue';
+import { orderFormImages, readSavedOrderFormRoot } from '@/api/marketplace-order-form';
 import { getOrderRecord } from '@/api/order';
 export default {
   name: 'orderDetails',
   components: { fulfillmentPackages },
+  mixins: [orderFormImages],
   data() {
     return {
       activeName: 'detail',
@@ -445,6 +451,9 @@ export default {
     },
   },
   computed: {
+    formImageSource() { return this.fulfillmentView && this.fulfillmentView.kind !== 'legacy' ? this.fulfillmentView : null; },
+    formImageGroups() { return this.formImageSource ? this.formImageSource.order.custom_form : null; },
+    formImageActive() { return this.modals && !!this.formImageSource && !this.fulfillmentLoading && !this.fulfillmentError; },
     savedFulfillmentStatus() { return this.fulfillmentView && this.fulfillmentView.kind === 'root' ? rootOrderStatusText(this.fulfillmentView.order) : ''; },
     savedFulfillmentReadonly() { return !!this.fulfillmentView && this.fulfillmentView.kind !== 'legacy'; },
     savedMarketplaceV1() {
@@ -485,6 +494,15 @@ export default {
     },
   },
   methods: {
+    async resolveFormImageRoot(context, source) {
+      if (source.kind === 'root') return source.order;
+      if (source.kind !== 'child') throw new Error('订单保存资料不可用');
+      const data = await readSavedOrderFormRoot(context, source.order.root_order_id);
+      if (!data || !data.orderInfo || !data.userInfo) throw new Error('订单保存资料不可用');
+      const root = readPlatformFulfillment(data.orderInfo, true);
+      if (root.kind !== 'root' || String(root.order.id) !== String(source.order.root_order_id) || root.order.order_id !== source.order.root_order_no) throw new Error('付款订单资料未确认');
+      return root.order;
+    },
     openLogistics() {
       if (this.savedFulfillmentReadonly) return;
       this.getOrderData();

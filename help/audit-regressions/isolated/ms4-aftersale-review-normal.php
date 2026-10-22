@@ -401,6 +401,7 @@ function m4ar_transport(string $method,string $path,?string $token=null,mixed $b
  if($multipart!==null){m4ar_expect(is_string($body),'TASK78_REAL_MULTIPART_BYTES');$headers[]='Content-Type: multipart/form-data; boundary='.$multipart;}
  elseif($body!==null){m4ar_expect(is_array($body),'TASK78_EXACT_JSON_BODY_ARRAY');$body=m4cb_json($body);$headers[]='Content-Type: application/json';}
  $requestSequence=($GLOBALS['m4ar_http_request_sequence']??0)+1;$GLOBALS['m4ar_http_request_sequence']=$requestSequence;
+ unset($GLOBALS['m4ar_review_upload_receipt']);
  $responseHeaders=[];$curl=curl_init('http://audit-app:8000'.$path);$started=time();
  curl_setopt_array($curl,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_CUSTOMREQUEST=>$method,CURLOPT_HTTPHEADER=>$headers,
  CURLOPT_CONNECTTIMEOUT=>3,CURLOPT_TIMEOUT=>12,CURLOPT_FOLLOWLOCATION=>false,CURLOPT_PROXY=>'',
@@ -420,6 +421,18 @@ function m4ar_transport(string $method,string $path,?string $token=null,mixed $b
  if(!($errno===0&&is_string($raw)&&strlen($raw)<=6291456&&$http===200))$GLOBALS['m4ar_http_failure']=[
   'method'=>$method,'route_family'=>str_starts_with($path,'/merchantapi/')?'merchantapi':(str_starts_with($path,'/adminapi/')?'adminapi':'api'),
   'http_status'=>$http,'curl_errno'=>$errno,'response_is_string'=>is_string($raw),'response_bytes'=>is_string($raw)?strlen($raw):null];
+ // Retain only the real named review-upload operation's already-public six-key failure receipt.
+ if($method==='POST'&&preg_match('/\A\/api\/order\/reviews\/[1-9][0-9]{0,9}\/[1-9][0-9]{0,9}\/files\z/D',$path)===1
+  &&$errno===0&&$http===503&&$jsonError===JSON_ERROR_NONE&&is_array($json)){
+  $envelopeKeys=array_keys($json);sort($envelopeKeys,SORT_STRING);$candidate=$json['data']??null;
+  $receiptKeys=is_array($candidate)?array_keys($candidate):[];sort($receiptKeys,SORT_STRING);
+  if($envelopeKeys===['data','msg','status']&&$json['status']===503&&is_string($json['msg'])
+   &&$receiptKeys===['cleanup_complete','complete','database_committed','phase','physical_changed','physical_complete']
+   &&$candidate['complete']===false&&in_array($candidate['phase'],['preflight','physical_upload','metadata_insert','commit_outcome_unknown','quota_update','complete'],true)
+   &&in_array($candidate['physical_changed'],[false,true,null],true)&&is_bool($candidate['physical_complete'])
+   &&in_array($candidate['database_committed'],[false,true,null],true)&&in_array($candidate['cleanup_complete'],[false,true,null],true))
+   $GLOBALS['m4ar_review_upload_receipt']=['request_sequence'=>$requestSequence,'receipt'=>$candidate];
+ }
  m4ar_expect($errno===0&&is_string($raw)&&strlen($raw)<=6291456&&$http===200,'TASK78_REAL_NORMAL_HTTP_TRANSPORT_200');
  $record=['method'=>$method,'path'=>$path,'http'=>$http,'bytes'=>strlen($raw),'sha256'=>hash('sha256',$raw),
   'request_bytes'=>$body===null?0:strlen($body),'request_sha256'=>$body===null?hash('sha256',''):hash('sha256',$body),'actual_interval'=>[$started,$ended]];
@@ -2154,6 +2167,12 @@ function m4ar_diagnostic(Throwable $error):array
   &&is_bool($gate['msg_is_string'])&&is_bool($gate['data_is_array'])
   &&in_array($gate['failure_class'],['CURL_ERROR','RESPONSE_TYPE','RESPONSE_LIMIT','HTTP_STATUS','JSON_PARSE','JSON_NOT_ARRAY','ENVELOPE_KEYS','BUSINESS_STATUS','MSG_TYPE','DATA_TYPE'],true))
   $diagnostic['http_gate']=$gate;
+ $uploadReceipt=$GLOBALS['m4ar_review_upload_receipt']??null;
+ if($code==='TASK78_REAL_NORMAL_HTTP_TRANSPORT_200'&&isset($diagnostic['http_gate'])
+  &&$gate['method']==='POST'&&$gate['route_family']==='api'&&$gate['http_status']===503&&$gate['status_int']===503
+  &&is_array($uploadReceipt)&&array_keys($uploadReceipt)===['request_sequence','receipt']
+  &&$uploadReceipt['request_sequence']===$gate['request_sequence']&&is_array($uploadReceipt['receipt']))
+  $diagnostic['review_upload_receipt']=$uploadReceipt['receipt'];
  return $diagnostic;
 }
 function m4ar_result(array $source,?array $business,?array $observer,?array $diagnostic,bool $success):array

@@ -1,7 +1,7 @@
 <template>
 	<view :style="colorStyle">
 		<marketplace-fulfillment v-if="!isReturn && fulfillmentKind !== 'root' && (fulfillmentKind !== 'legacy' || fulfillmentLoading || fulfillmentError)"
-			:view="fulfillmentView" :loading="fulfillmentLoading" :error="fulfillmentError" :can-view-package="true"
+			:view="fulfillmentView" :loading="fulfillmentLoading" :form-images-active="privateFormImagesVisible" :error="fulfillmentError" :can-view-package="true"
 			@page-change="changeFulfillmentPage" @retry="retryFulfillment" @view-package="viewFulfillmentPackage"></marketplace-fulfillment>
 		<marketplace-receipt v-if="!isReturn && fulfillmentKind === 'child' && receipt" :receipt="receipt"
 			:pending="!!receiptPending" :sending="receiptSending" :reading="fulfillmentLoading"
@@ -26,7 +26,7 @@
 					</view>
 				</view>
 			</view>
-			<marketplace-fulfillment v-if="fulfillmentKind === 'root'" :view="fulfillmentView" :loading="fulfillmentLoading"
+			<marketplace-fulfillment v-if="fulfillmentKind === 'root'" :view="fulfillmentView" :loading="fulfillmentLoading" :form-images-active="privateFormImagesVisible"
 				:error="fulfillmentError" :can-view-package="true" @page-change="changeFulfillmentPage"
 				@retry="retryFulfillment" @view-package="viewFulfillmentPackage"></marketplace-fulfillment>
 			<view class="refund-msg" v-if="orderInfo.schema !== 2 && [4, 5].includes(orderInfo.refund_type)">
@@ -361,7 +361,7 @@
 						<view>{{field.field_index + 1}}. {{field.title}}：</view>
 						<view v-if="field.label === 'img'" class="upload">
 							<view class="pictrue" v-for="(image,imageIndex) in field.value" :key="imageIndex">
-								<image :src="image" mode="aspectFit"></image>
+								<image :src="orderFormImageSource(group,field,imageIndex)" mode="aspectFit" @click="previewOrderFormImages(group,field,imageIndex)"></image>
 							</view>
 						</view>
 						<view v-else class="marketplace-saved-form-value">{{field.value}}</view>
@@ -625,6 +625,7 @@ import { mapGetters } from 'vuex';
 // #ifdef MP
 import authorize from '@/components/Authorize';
 // #endif
+import orderFormImages from '@/mixins/marketplace-order-form-images.js';
 import colors from '@/mixins/color';
 import invoicePicker from '../components/invoicePicker/index.vue';
 import invoiceModal from '../components/invoiceModal/index.vue';
@@ -671,11 +672,12 @@ export default {
 		authorize
 		// #endif
 	},
-	mixins: [colors],
+	mixins: [colors, orderFormImages],
 	data() {
 		return {
 			imgHost: HTTP_REQUEST_URL,
 			customForm: '', //自定义留言
+			privateFormImagesVisible: true,
 			savedMarketplaceFormGroups: [],
 			againPending: false,
 			againNavigating: false,
@@ -806,6 +808,9 @@ export default {
 	},
 	computed: {
 		...mapGetters(['isLogin']),
+		orderFormImageContext() { return this.fulfillmentKind === 'root' && this.fulfillmentView ? {kind: 'customer_order', rootId: this.fulfillmentView.order.id, route: this.order_id} : null; },
+		orderFormImageGroups() { return this.savedMarketplaceFormGroups; },
+		orderFormImagesActive() { return this.privateFormImagesVisible && !this.fulfillmentLoading && !this.fulfillmentError; },
 		fulfillmentActor() { return String(this.$store.state.app.uid); },
 		receiptSessionRevision() { return this.$store.state.app.authRevision; },
 		savedMarketplaceFormsV1() {
@@ -840,6 +845,7 @@ export default {
 	},
 
 	onShow() {
+		this.privateFormImagesVisible = true;
 		this.againNavigating = false;
 		if (this.isLogin) {
 			this.getOrderInfo();
@@ -876,6 +882,7 @@ export default {
 		}
 	},
 	onHide: function () {
+		this.privateFormImagesVisible = false; this.closeOrderFormImages();
 		uni.hideLoading();
 		this.fulfillmentRevision++;
 		this.fulfillmentLoading = false;
@@ -886,6 +893,7 @@ export default {
 		this.againGroups = [];
 	},
 	onUnload() {
+		this.privateFormImagesVisible = false; this.closeOrderFormImages();
 		this.receiptActive = false; this.receiptGeneration++; this.receiptPending = null;
 		uni.hideLoading();
 		this.fulfillmentRevision++;

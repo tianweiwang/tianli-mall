@@ -8,7 +8,76 @@
 			<view :style="{ height: `${getHeight.barHeight}px` }"></view>
 			<view class="inner"></view>
 		</view>
-		<view class="order-details pos-order-details">
+		<view v-if="refundLoading || refundError" class="order-details pos-order-details refund-v1">
+			<view class="wrapper">
+				<view v-if="refundLoading" class="item" role="status">正在读取退款与原订单资料…</view>
+				<view v-if="refundError" class="item" role="alert">{{refundError}}</view>
+				<button v-if="refundError && !refundLoading" class="refund-v1-action" @tap="getIndex">重新读取资料</button>
+			</view>
+		</view>
+		<view v-else-if="refundKind === 'marketplace' && marketplaceRefund && refundRoot" class="order-details pos-order-details refund-v1">
+			<view class="header">
+				<view class="state">{{refundBusinesses[marketplaceRefund.business_state]}}</view>
+				<view class="data">订单号：{{marketplaceRefund.root_order_no}}</view>
+			</view>
+			<view class="wrapper">
+				<view class="item">{{marketplaceRefund.merchant_name_snapshot}}</view>
+				<view class="item">售后单号：{{marketplaceRefund.refund_no}}</view>
+				<view class="item">售后类型：{{refundKinds[marketplaceRefund.operation_kind]}}</view>
+				<view class="item">业务状态：{{refundBusinesses[marketplaceRefund.business_state]}}</view>
+				<view class="item">实物状态：{{refundPhysicals[marketplaceRefund.physical_state]}}</view>
+				<view class="item">资金状态：{{refundFinances[marketplaceRefund.finance_state]}}</view>
+				<view class="item">业务或退件完成不代表资金退款已成功。</view>
+				<view class="item">申请金额：¥{{marketplaceRefund.requested_amount}}</view>
+				<view class="item">申请件数：{{refundSelectedCount}} 件</view>
+				<view class="item">已确认退款：¥{{marketplaceRefund.confirmed_amount}}</view>
+				<view class="item">处理中占用：¥{{marketplaceRefund.held_amount}}</view>
+				<view class="item">退款原因：{{marketplaceRefund.reason}}</view>
+				<view class="item">申请时间：{{refundTime(marketplaceRefund.created_at)}}</view>
+				<view class="item">最近更新：{{refundTime(marketplaceRefund.updated_at)}}</view>
+			</view>
+			<view class="wrapper" v-for="row in marketplaceRefund.items" :key="row.item.id">
+				<view class="pos-order-goods">
+					<view class="goods acea-row">
+						<view class="picTxt acea-row">
+							<view class="pictrue"><image :src="row.item.image" mode="aspectFit"></image></view>
+							<view class="text"><view class="info">{{row.item.product_name}}</view><view class="attr">{{row.item.sku_name}}</view></view>
+						</view>
+					</view>
+				</view>
+				<view class="item">保存单价：¥{{row.item.unit_price}} · 原数量 {{row.item.quantity}} 件</view>
+				<view class="item">申请数量：{{row.selected_quantity}} 件</view>
+				<view class="item">实际退件已验收：{{row.accepted_quantity}} 件</view>
+				<view class="item">此商品已确认退款：¥{{row.confirmed_amount}}</view>
+			</view>
+			<view v-if="marketplaceRefund.return_selection" class="wrapper">
+				<view class="item">退回包裹：{{marketplaceRefund.return_selection.child_order_no}}</view>
+				<view v-for="(row,index) in marketplaceRefund.return_selection.items" :key="row.item_id" class="item">
+					<view>退件商品 {{index+1}} · 选择 {{row.selected_quantity}} 件 · 实际验收 {{row.accepted_quantity}} 件</view>
+					<view>选择第 {{refundSegments(row.selected_segments)}} 件；已验收第 {{refundSegments(row.accepted_segments) || '暂无'}} 件</view>
+				</view>
+			</view>
+			<view v-if="marketplaceRefund.return_delivery" class="wrapper">
+				<view class="item">已保存退货运单</view>
+				<view class="item">承运商：{{marketplaceRefund.return_delivery.carrier_name}}</view>
+				<view class="item">物流单号：{{marketplaceRefund.return_delivery.tracking_no}}</view>
+			</view>
+			<view class="wrapper">
+				<view class="item">申请凭证</view>
+				<view v-if="refundEvidenceError" class="item" role="alert">{{refundEvidenceError}}</view>
+				<private-evidence v-if="refundEvidenceReady && refundPageVisible" :key="'refund-evidence-' + refundRevision" :files="marketplaceRefund.images" :reader="readRefundEvidence"></private-evidence>
+				<view v-else-if="!marketplaceRefund.images.length" class="item">此记录没有凭证图片。</view>
+			</view>
+			<customForm :customForm="refundRoot.custom_form" :tradeVersion="refundRoot.marketplace_trade_version" :private-root-id="refundRoot.id" :form-images-active="refundPageVisible && !refundLoading && !refundError"></customForm>
+			<view class="wrapper">
+				<view v-if="marketplaceRefund.allowed_actions.withdraw" class="item">当前申请仍可撤回。</view>
+				<view v-if="marketplaceRefund.allowed_actions.submit_return" class="item">当前可填写本次退货运单。</view>
+				<button class="refund-v1-action" :disabled="refundNavigating || !refundPageVisible" @tap="openMarketplaceRefund">{{marketplaceRefund.allowed_actions.withdraw || marketplaceRefund.allowed_actions.submit_return ? '进入售后处理' : '查看售后详情'}}</button>
+				<button class="refund-v1-action" :disabled="refundNavigating || !refundPageVisible" @tap="getIndex">重新读取资料</button>
+			</view>
+			<view class="height-add"></view>
+		</view>
+		<view v-else-if="refundKind === 'legacy'" class="order-details pos-order-details">
 			<view class="header">
 				<view class="state">{{ title }}</view>
 				<view class="data">
@@ -268,11 +337,17 @@
 <script>
 	import PriceChange from "../components/PriceChange/index.vue";
 	import customForm from "../components/customForm";
+	import PrivateEvidence from '@/components/marketplaceAftersaleEvidence/index.vue';
+	import {openCustomerAftersale} from '@/api/marketplace-aftersale.js';
+	import {createOrderFormPrivateScope} from '@/api/marketplace-order-form-private.js';
+	import {readOrderFulfillment} from '@/utils/marketplace-fulfillment.js';
+	import {refundView, errorText, timeText, segmentText, businessLabels, physicalLabels, financeLabels, kindLabels} from '@/utils/marketplace-aftersale.js';
 	// #ifdef MP || APP-PLUS
 	import NavBar from "@/components/NavBar.vue";
 	// #endif
 	import {
 		getAdminOrderDetail,
+		getAdminFulfillmentDetail,
 		getAdminRefundDetail,
 		setAdminOrderPrice,
 		setAdminRefundRemark,
@@ -291,6 +366,7 @@
 		components: {
 			PriceChange,
 			customForm,
+			PrivateEvidence,
 			// #ifdef MP || APP-PLUS
 			NavBar,
 			// #endif
@@ -298,6 +374,21 @@
 		props: {},
 		data: function() {
 			return {
+				refundKind: '',
+				refundSelectedCount: 0,
+				marketplaceRefund: null,
+				refundRoot: null,
+				refundRevision: 0,
+				refundPageVisible: true,
+				refundLoading: false,
+				refundError: '',
+				refundEvidenceReady: false,
+				refundEvidenceError: '',
+				refundNavigating: false,
+				refundKinds: kindLabels,
+				refundBusinesses: businessLabels,
+				refundPhysicals: physicalLabels,
+				refundFinances: financeLabels,
 				openErp: false,
 				giveData: {
 					give_integral: 0,
@@ -328,9 +419,12 @@
 			};
 		},
 		computed: {
-			savedMarketplaceV1() { return this.orderInfo.marketplace_trade_version===1 || this.orderInfo.marketplace_trade_version==='1'; }
+			refundSession() { const app = this.$store.state.app; return JSON.stringify([app.token, app.authRevision]); },
+			savedMarketplaceV1() { return this.refundKind === 'marketplace' || this.orderInfo.marketplace_trade_version===1 || this.orderInfo.marketplace_trade_version==='1'; }
 		},
 		watch: {
+			refundSession() { if (this._refundAlive) { this.closeRefundRead(); this.refundError = '登录身份已变化，请重新读取原退款'; } },
+			'$store.state.app.verifiedUid'() { if (this._refundPageScope && !this._refundPageScope.current()) { this.closeRefundRead(); this.refundError = '登录身份已变化，请重新读取原退款'; } },
 			"$route.params.oid": function(newVal) {
 				let that = this;
 				if (newVal != undefined) {
@@ -340,6 +434,7 @@
 			}
 		},
 		onLoad: function(option) {
+			this._refundAlive = true; this._refundShown = false; this._refundPageScope = null; this._refundEvidenceClient = null;
 			let self = this
 			this.order_id = option.id;
 			this.goname = option.goname
@@ -347,6 +442,14 @@
 			this.getIndex();
 			// this.getErpConfig();
 		},
+		onShow() {
+			if (!this._refundAlive) return;
+			this.refundPageVisible = true; this.refundNavigating = false;
+			if (this._refundShown) this.getIndex(); else this._refundShown = true;
+		},
+		onHide() { this.refundPageVisible = false; this.closeRefundRead(); },
+		onUnload() { this._refundAlive = false; this.refundPageVisible = false; this.closeRefundRead(); },
+		beforeDestroy() { this.closeRefundRead(); },
 		onPageScroll(e) {
 			// #ifdef MP || APP-PLUS
 			if (e.scrollTop > 50) {
@@ -402,40 +505,87 @@
 			changeclose(msg) {
 				this.change = msg;
 			},
-			getIndex() {
-				let that = this;
-				let obj = '';
-				if (that.statusType == -3) {
-					obj = getAdminRefundDetail(that.order_id)
-				} else {
-					obj = getAdminOrderDetail(that.order_id);
-				}
-				obj.then(res => {
-					let num = 0;
-					that.types = res.data._status._type;
-					that.title = res.data._status._title;
-					that.payType = res.data._status._payType;
-					that.applyOrderBenefits(res.data);
-					let cartObj = [],
-						giftObj = [];
-					res.data.cartInfo.forEach((item, index) => {
-						num += item.cart_num
-						if (item.is_gift == 1) {
-							giftObj.push(item)
-						} else {
-							cartObj.push(item)
+			refundTime: timeText,
+			refundSegments: segmentText,
+			closeRefundRead() {
+				this.refundRevision++;
+				if (this._refundEvidenceClient) this._refundEvidenceClient.dispose();
+				if (this._refundPageScope) this._refundPageScope.dispose();
+				this._refundEvidenceClient = null; this._refundPageScope = null; this._refundReadGuard = null;
+				this.marketplaceRefund = null; this.refundRoot = null; this.refundKind = ''; this.refundSelectedCount = 0;
+				this.refundLoading = false; this.refundEvidenceReady = false; this.refundEvidenceError = '';
+				this.change = false; this.orderInfo = {}; this.userInfo = {}; this.title = ''; this.giveCartInfo = [];
+			},
+			refundCurrent(guard) {
+				return !!guard && this._refundAlive && this.refundPageVisible && guard.revision === this.refundRevision && guard.locator === this.order_id && guard.statusType === this.statusType &&
+					this._refundReadGuard === guard && this._refundPageScope === guard.scope && guard.scope.current();
+			},
+			async getIndex() {
+				if (!this._refundAlive || !this.refundPageVisible || this.refundNavigating) return;
+				this.closeRefundRead(); this.refundError = ''; this.refundLoading = true;
+				const revision = this.refundRevision, locator = this.order_id, statusType = this.statusType;
+				const token = this.$store.state.app.token, authRevision = this.$store.state.app.authRevision;
+				const pendingCurrent = () => this._refundAlive && this.refundPageVisible && revision === this.refundRevision && locator === this.order_id && statusType === this.statusType &&
+					this.$store.state.app.token === token && this.$store.state.app.authRevision === authRevision;
+				let guard;
+				try {
+					if (typeof locator !== 'string' || !locator || locator.length > 128) throw new Error('退款单号不可用，请从原记录重新进入');
+					await this.$store.dispatch('USERINFO', true);
+					if (!pendingCurrent()) return;
+					const scope = createOrderFormPrivateScope(pendingCurrent);
+					guard = {revision, locator, statusType, scope}; this._refundPageScope = scope; this._refundReadGuard = guard;
+					const response = await (statusType == -3 ? getAdminRefundDetail(locator) : getAdminOrderDetail(locator));
+					if (!this.refundCurrent(guard)) return;
+					const data = response && response.data;
+					if (data && data.schema === 2 && data.scope === 'marketplace_aftersale_v1') {
+						const refund = refundView(data);
+						if (statusType != -3 || refund.refund_no !== locator) throw new Error('退款身份不一致，请重新进入原退款');
+						const rootResponse = await getAdminFulfillmentDetail(refund.root_order_no, 1, 20);
+						if (!this.refundCurrent(guard)) return;
+						const view = readOrderFulfillment(rootResponse && rootResponse.data, true);
+						if (view.kind !== 'root' || view.order.id !== refund.root_order_id || view.order.order_id !== refund.root_order_no ||
+							String(view.order.uid) !== this.$store.state.app.verifiedUid || !scope.current()) throw new Error('原退款与本人保存根订单未完整对应');
+						let selectedCount = 0;
+						refund.items.forEach(row => { selectedCount += row.selected_quantity; if (!Number.isSafeInteger(selectedCount)) throw new Error('退款申请数量未完整取得'); });
+						this.refundSelectedCount = selectedCount; this.marketplaceRefund = refund; this.refundRoot = view.order; this.refundKind = 'marketplace';
+						if (refund.images.length) {
+							try {
+								const client = await openCustomerAftersale();
+								if (!this.refundCurrent(guard) || this.marketplaceRefund !== refund || this.refundRoot !== view.order) { client.dispose(); return; }
+								this._refundEvidenceClient = client; this.refundEvidenceReady = true;
+							} catch (error) { if (this.refundCurrent(guard)) this.refundEvidenceError = errorText(error); }
 						}
-					});
-					this.totalNmu = num;
-					res.data.cartInfo = cartObj;
-					that.$set(that, 'giveCartInfo', giftObj);
-					that.orderInfo = res.data;
-					that.getUserInfo();
-				}).catch(err => {
-					return that.$util.Tips({
-						title: err.msg
-					});
-				})
+					} else {
+						if (!data || typeof data !== 'object' || Array.isArray(data) || Object.prototype.hasOwnProperty.call(data, 'schema') || Object.prototype.hasOwnProperty.call(data, 'scope') ||
+							(data.marketplace_trade_version !== undefined && data.marketplace_trade_version !== null && data.marketplace_trade_version !== 0 && data.marketplace_trade_version !== '0') ||
+							!data._status || !Array.isArray(data.cartInfo)) throw new Error('退款详情返回类型不完整，请从原退款记录重新进入');
+						this.refundKind = 'legacy'; this.applyLegacyRefund(data, guard);
+					}
+				} catch (error) {
+					if (pendingCurrent()) { this.marketplaceRefund = null; this.refundRoot = null; this.refundKind = ''; this.refundError = errorText(error); }
+				} finally { if (pendingCurrent()) this.refundLoading = false; }
+			},
+			applyLegacyRefund(data, guard) {
+				if (!this.refundCurrent(guard)) return;
+				let num = 0;
+				this.types = data._status._type; this.title = data._status._title; this.payType = data._status._payType;
+				this.applyOrderBenefits(data);
+				const cartObj = [], giftObj = [];
+				data.cartInfo.forEach(item => { num += item.cart_num; if (item.is_gift == 1) giftObj.push(item); else cartObj.push(item); });
+				this.totalNmu = num; data.cartInfo = cartObj; this.$set(this, 'giveCartInfo', giftObj); this.orderInfo = data; this.getUserInfo();
+			},
+			async readRefundEvidence(id) {
+				const guard = this._refundReadGuard, refund = this.marketplaceRefund, root = this.refundRoot, client = this._refundEvidenceClient;
+				if (!this.refundCurrent(guard) || !client || !client.current() || !refund || !root || root.id !== refund.root_order_id || !refund.images.includes(id)) throw new Error('当前退款凭证目标已变化');
+				const image = await client.image(root.id, id, refund.id);
+				if (!this.refundCurrent(guard) || this._refundEvidenceClient !== client || this.marketplaceRefund !== refund || this.refundRoot !== root || !client.current()) { image.release(); throw new Error('当前退款凭证目标已变化'); }
+				return image;
+			},
+			openMarketplaceRefund() {
+				const guard = this._refundReadGuard, refund = this.marketplaceRefund, root = this.refundRoot;
+				if (this.refundNavigating || !this.refundCurrent(guard) || !refund || !root || root.id !== refund.root_order_id) return;
+				this.refundNavigating = true;
+				uni.navigateTo({url: '/pages/goods/marketplace_aftersale/index?refund_no=' + encodeURIComponent(refund.refund_no), fail: () => { if (this.refundCurrent(guard)) this.refundNavigating = false; }});
 			},
 			applyOrderBenefits(data) {
 				if(data.marketplace_trade_version===1 || data.marketplace_trade_version==='1'){
@@ -603,8 +753,9 @@
 			// #endif
 			getUserInfo() {
 				if(this.savedMarketplaceV1){this.userInfo={};return;}
-				getUserInfo(this.orderInfo.uid).then(res => {
-					this.userInfo = res.data;
+				const guard = this._refundReadGuard, order = this.orderInfo;
+				getUserInfo(order.uid).then(res => {
+					if (this.refundCurrent(guard) && this.refundKind === 'legacy' && this.orderInfo === order) this.userInfo = res.data;
 				});
 			},
 		}
@@ -1238,4 +1389,10 @@
 			}
 		}
 	}
+	/* Scope these additions to the real schema2 view and its standalone read feedback. */
+	.refund-v1 { box-sizing: border-box; max-width: 100%; min-width: 0; overflow-wrap: anywhere; word-break: break-word; }
+	.refund-v1 .item { white-space: pre-wrap; }
+	.refund-v1-action { box-sizing: border-box; display: flex; align-items: center; justify-content: center; width: 100%; max-width: 100%; min-width: 0; min-height: 44px; height: auto; margin: 16rpx 0 0; padding: 10px 16px; border: 1px solid #ccc; border-radius: 28rpx; background: #fff; color: #333; font-size: 28rpx; line-height: 1.4; text-align: center; white-space: normal; }
+	.refund-v1-action::after { border: 0; }
+	.refund-v1-action[disabled] { color: #999; background: #f5f5f5; }
 </style>

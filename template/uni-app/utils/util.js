@@ -628,7 +628,8 @@ export default {
       is_load = opt.is_load || true,
       uploadUrl = opt.url || "",
       inputName = opt.name || "pics",
-      fileType = opt.fileType || "image";
+      fileType = opt.fileType || "image",
+      onUploadTask = opt.onUploadTask;
     try { uni.chooseImage({
       count: count, //最多可以选择的图片总数
       sizeType: sizeType, // 可以指定是原图还是压缩图，默认二者都有
@@ -699,7 +700,7 @@ export default {
 
     function uploadImg(filePath) {
       if (!active()) return;
-      try { uni.uploadFile({
+      try { const uploadTask = uni.uploadFile({
         url: HTTP_REQUEST_URL + "/api/" + uploadUrl,
         filePath,
         fileType: fileType,
@@ -738,7 +739,7 @@ export default {
           });
         }),
         complete: finish,
-      }); } catch (error) { if (!active()) return; finish(); throw error; }
+      }); if (typeof onUploadTask === "function") onUploadTask(uploadTask); } catch (error) { if (!active()) return; finish(); throw error; }
     }
   },
   /**

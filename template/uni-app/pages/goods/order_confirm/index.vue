@@ -233,7 +233,7 @@
 						<view v-if="item.label=='img'" class="confirmImg">
 							<view class='list acea-row row-middle'>
 								<view class='pictrue' v-for="(image,imageIndex) in item.value" :key="imageIndex">
-									<image :src='image' class="img"></image>
+									<image :src="orderFormImageSource(group,item,imageIndex)" class="img" @click="previewOrderFormImages(group,item,imageIndex)"></image>
 									<text v-if="marketplaceCanEdit" class='iconfont icon-guanbi1 font-num del'
 										@click="deleteMarketplaceFormImage(group.product_id,group.definition_sha256,item.field_index,imageIndex)"></text>
 								</view>
@@ -431,6 +431,8 @@
 	import authorize from '@/components/Authorize';
 	// #endif
 	import payment from '@/components/payment';
+	import orderFormImages from "@/mixins/marketplace-order-form-images.js";
+	import {createOrderFormPrivateScope, orderFormUploadReference} from "@/api/marketplace-order-form-private.js";
 	import colors from "@/mixins/color";
 	import Debounce from "@/mixins/debounce";
 	import {
@@ -454,7 +456,7 @@
 			authorize
 			// #endif
 		},
-		mixins: [colors, Debounce],
+		mixins: [colors, Debounce, orderFormImages],
 		data() {
 			const currentDate = this.getDate({
 				format: true
@@ -475,6 +477,7 @@
 				marketplaceResumeUnavailable: false,
 				marketplaceComputing: false,
 				marketplaceComputeRevision: 0,
+				privateFormImagesVisible: true,
 				marketplaceFormGroups: [],
 				marketplaceFormsReady: false,
 				marketplaceSubmitBinding: null,
@@ -623,6 +626,9 @@
 		},
 		computed: {
 			...mapGetters(['isLogin']),
+			orderFormImageContext() { return this.marketplaceV1 && this.orderKey ? {kind: 'confirmation', key: this.orderKey, generation: this.marketplaceEditGeneration, page: this.marketplacePageInstance} : null; },
+			orderFormImageGroups() { return this.marketplaceFormGroups; },
+			orderFormImagesActive() { return this.privateFormImagesVisible && this._marketplaceAlive === true && !!this.marketplaceOwner && this.marketplaceFormsReady && !this.marketplaceRestoring; },
 			marketplaceCleanupFailed() { return this.$store.state.app.confirmationCleanupFailed === true; },
 			marketplacePreparing() { return !!this.marketplaceMerIntent && (!this.marketplaceSubmitBinding || this.marketplaceHistoryPending); },
 			marketplaceV1() {
@@ -646,6 +652,7 @@
 		},
 		watch: {
 			'$store.state.app.authRevision'() {
+				this.closeOrderFormImages();
 				this._marketplaceLifecycle++;
 				this.marketplaceQuoteReady = false;
 				this.marketplaceOwner = null;
@@ -724,6 +731,7 @@
 		 * 生命周期函数--监听页面显示
 		 */
 		onShow() {
+			this.privateFormImagesVisible = true;
 			let _this = this
 			this.marketplaceNavigationPending = false;
 			if (this._marketplaceDidShow && this.orderKey && (this.marketplaceV1 || this.marketplaceRestoredUnknown) && !this.is_gift && !this.orderId && !this._marketplaceInitializing) {
@@ -758,6 +766,7 @@
 
 		},
 		onHide() {
+			this.privateFormImagesVisible = false; this.closeOrderFormImages();
 			if (this.marketplaceV1 && this.marketplaceCanEdit) this.persistMarketplaceContext();
 			this._marketplaceLifecycle++;
 			this.marketplaceQuoteReady = false;
@@ -765,6 +774,7 @@
 			if (this.orderKey) this._marketplaceInitializing = false;
 		},
 		onUnload() {
+			this.privateFormImagesVisible = false; this.closeOrderFormImages();
 			if (this.marketplaceV1 && this.marketplaceCanEdit) this.persistMarketplaceContext();
 			this._marketplaceAlive = false; this._marketplaceLifecycle++;
 			// #ifdef H5
@@ -1132,21 +1142,30 @@
 				if (!this.marketplaceCanEdit || this.marketplaceUploadPending) return;
 				const generation = this.marketplaceEditGeneration, key = this.orderKey;
 				const guard = this.marketplaceGuard('upload');
-				this.marketplaceUploadPending = true;
-				this.canvasStatus = true;
-				const finish = () => { if (this.marketplaceGuardCurrent(guard)) { this.canvasStatus = false; this.marketplaceUploadPending = false; } };
-				this.$util.uploadImageChange('upload/image', (res) => {
-					// Resolve again after upload: replacement definitions must not receive a stale callback.
+				const current = () => {
 					const field = findMarketplaceFormField(this.marketplaceFormGroups, productId, definitionHash, fieldIndex);
-					if (this.marketplaceGuardCurrent(guard) && this.marketplaceCanEdit && generation === this.marketplaceEditGeneration && key === this.orderKey && field && field.label === 'img' && field.value.length < 8 &&
-						res && res.data && typeof res.data.url === 'string') { field.value.push(res.data.url); this.persistMarketplaceContext(); }
-				}, () => {
-					finish();
-				}, (res) => {
-					if (!this.marketplaceGuardCurrent(guard)) return;
-					this.canvasWidth = res.w;
-					this.canvasHeight = res.h;
-				}, finish, () => this.marketplaceGuardCurrent(guard) && this.marketplaceCanEdit);
+					return this.privateFormImagesVisible && this.marketplaceGuardCurrent(guard) && this.marketplaceCanEdit && generation === this.marketplaceEditGeneration && key === this.orderKey && !!field && field.label === 'img';
+				};
+				let uploadScope, options;
+				try {
+					uploadScope = createOrderFormPrivateScope(current);
+					options = uploadScope.confirmationUploadOptions(key, productId, fieldIndex);
+				} catch (error) { return this.$util.Tips({title: error.message}); }
+				this._orderFormUploadScope = uploadScope;
+				this.marketplaceUploadPending = true; this.canvasStatus = true;
+				const finish = () => {
+					if (this._orderFormUploadScope === uploadScope) { this._orderFormUploadScope = null; this.canvasStatus = false; this.marketplaceUploadPending = false; }
+					uploadScope.dispose();
+				};
+				try { this.$util.uploadImageChange(options, res => {
+					const field = findMarketplaceFormField(this.marketplaceFormGroups, productId, definitionHash, fieldIndex);
+					if (!uploadScope.current() || !field || field.value.length >= 8) return;
+					try { const reference = orderFormUploadReference(res && res.data); field.value.push(reference); this.persistMarketplaceContext(); }
+					catch (error) { this.$util.Tips({title: error.message}); }
+				}, finish, res => {
+					if (!uploadScope.current()) return;
+					this.canvasWidth = res.w; this.canvasHeight = res.h;
+				}, finish, () => uploadScope.current()); } catch (error) { finish(); if (current()) this.$util.Tips({title: error.message}); }
 			},
 			applyMarketplaceMetadata(data) {
 				if (!data || data.marketplace_confirmation_version !== 1 || this.is_gift || this.orderId) {

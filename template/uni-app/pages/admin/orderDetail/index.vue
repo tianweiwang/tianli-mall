@@ -15,7 +15,7 @@
       <view class="inner"></view>
     </view>
     <marketplace-fulfillment class="standalone-fulfillment" v-if="statusType != -3 && fulfillmentKind !== 'root' && (fulfillmentKind !== 'legacy' || fulfillmentLoading || fulfillmentError)"
-      :view="fulfillmentView" :loading="fulfillmentLoading" :error="fulfillmentError" :can-view-package="true"
+      :view="fulfillmentView" :loading="fulfillmentLoading" form-reader="mobile_order" :form-images-active="privateFormImagesVisible" :error="fulfillmentError" :can-view-package="true"
       @page-change="changeFulfillmentPage" @retry="retryFulfillment" @view-package="viewFulfillmentPackage"></marketplace-fulfillment>
     <view class="order-details pos-order-details" v-if="fulfillmentKind === 'legacy' || fulfillmentKind === 'root'">
       <view class="header">
@@ -94,7 +94,7 @@
         <view>已保存订单，仅供本人只读查看</view>
         <view v-if="orderInfo.remark">备注：{{orderInfo.remark}}</view>
       </view>
-      <marketplace-fulfillment v-if="fulfillmentKind === 'root'" :view="fulfillmentView" :loading="fulfillmentLoading"
+      <marketplace-fulfillment v-if="fulfillmentKind === 'root'" :view="fulfillmentView" :loading="fulfillmentLoading" form-reader="mobile_order" :form-images-active="privateFormImagesVisible"
         :error="fulfillmentError" :can-view-package="true" @page-change="changeFulfillmentPage"
         @retry="retryFulfillment" @view-package="viewFulfillmentPackage"></marketplace-fulfillment>
       <view class="acea-row row-middle user-box" v-if="!savedMarketplaceV1">
@@ -337,7 +337,7 @@
           <view class="conter">{{ orderInfo.virtual_info }}</view>
         </view>
       </view>
-      <customForm :customForm="orderInfo.custom_form" :tradeVersion="orderInfo.marketplace_trade_version"></customForm>
+      <customForm :customForm="orderInfo.custom_form" :tradeVersion="orderInfo.marketplace_trade_version" :private-root-id="fulfillmentKind === 'root' && fulfillmentView ? fulfillmentView.order.id : null" :form-images-active="privateFormImagesVisible && !fulfillmentLoading && !fulfillmentError"></customForm>
       <view class="wrapper">
         <view class="item acea-row row-between">
           <view>订单编号</view>
@@ -689,6 +689,7 @@ export default {
       isScrolling: false,
       getHeight: this.$util.getWXStatusHeight(),
       confirmShow: false,
+      privateFormImagesVisible: true,
       fulfillmentView: null,
       fulfillmentKind: '',
       fulfillmentLoading: false,
@@ -728,11 +729,12 @@ export default {
     this.statusType = option.types;
   },
   onShow() {
+    this.privateFormImagesVisible = true;
     this.getIndex();
     // this.getErpConfig();
   },
-  onHide() { this.fulfillmentRevision++; this.fulfillmentLoading = false; },
-  onUnload() { this.fulfillmentRevision++; this.fulfillmentLoading = false; },
+  onHide() { this.privateFormImagesVisible = false; this.fulfillmentRevision++; this.fulfillmentLoading = false; },
+  onUnload() { this.privateFormImagesVisible = false; this.fulfillmentRevision++; this.fulfillmentLoading = false; },
   onPageScroll(e) {
     // #ifdef MP || APP-PLUS
     if (e.scrollTop > 50) {

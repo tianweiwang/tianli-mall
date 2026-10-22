@@ -44,7 +44,8 @@
         <div class="fulfillment-actions"><el-button class="fulfillment-control" :disabled="shipmentSending || loading" @click="sendShipment">重试本次请求</el-button></div>
       </section>
       <fulfillment-packages v-if="snapshot" :snapshot="snapshot" :loading="loading" :detail="packageDetail"
-        :detail-loading="packageLoading" :detail-error="packageError" @page="load" @view="openPackage"
+        :detail-loading="packageLoading" :detail-error="packageError" :form-images="visibleFormImages"
+        @form-image-load="formImageLoaded" @form-image-error="formImageFailed" @page="load" @view="openPackage"
         @retry-detail="retryPackage" @close-detail="closePackage" />
       <shipment-form v-if="shipAvailable && !shipmentPending && !savedNeedsRefresh" :snapshot="snapshot"
         :disabled="shipDisabled" @submit="confirmShipment" />
@@ -86,7 +87,10 @@
           <div v-for="field in group.fields" :key="field.field_index">
             <dt>{{ field.field_index + 1 }}. {{ field.title }}</dt>
             <dd v-if="field.label === 'img'">
-              <div v-if="field.value.length" class="saved-images"><img v-for="(image, index) in field.value" :key="index" :src="image" alt="已保存表单图片"></div>
+              <div v-if="field.value.length" class="saved-images"><template v-for="image in formImagesFor(group, field)">
+                <el-image v-if="image.url" :key="image.key + ':' + image.url" :src="image.url" fit="contain" :preview-src-list="image.loaded ? [image.url] : []" alt="已保存表单图片" @load="formImageLoaded(image)" @error="formImageFailed(image)" />
+                <span v-else :key="image.key + ':status'" class="field-note" role="status">{{ image.error || '正在读取图片…' }}</span>
+              </template></div>
               <span v-else class="field-note">未填写</span>
             </dd>
             <dd v-else class="saved-value">{{ field.value === '' ? '未填写' : field.value }}</dd>
@@ -104,15 +108,20 @@ import { orderRecordId, orderStatus, orderPackages, orderPackageDetail, shipment
 import { formatTime } from '../../domain/people';
 import FulfillmentPackages from './components/fulfillmentPackages.vue';
 import ShipmentForm from './components/shipmentForm.vue';
+import { orderFormImages } from '../../api/marketplace-order-form';
 
 export default {
   components: { FulfillmentPackages, ShipmentForm },
+  mixins: [orderFormImages],
   directives: { 'table-scroll': tableScroll },
   data: () => ({ order: null, snapshot: null, loading: false, error: '', revision: 0, pendingPage: 1, readIdentity: '',
     packageDetail: null, packageLoading: false, packageError: '', packageId: null, packageRevision: 0,
     shipmentPreview: null, shipmentPreviewIdentity: '', shipmentPending: null, shipmentPendingIdentity: '', shipmentSending: false, shipmentPreparing: false, shipmentError: '', shipmentFeedback: '',
     shipmentGeneration: 0, savedNeedsRefresh: false }),
   computed: {
+    formImageSource() { return this.snapshot; },
+    formImageGroups() { return this.snapshot ? this.snapshot.root.custom_form : null; },
+    formImageActive() { return !!this.snapshot && this.order === this.snapshot.root && !this.loading && !this.error && this.current(this.readIdentity); },
     merchantActor() {
       const profile = this.$store.state.profile;
       if (!profile || !profile.employee || !profile.merchant) return '';
@@ -140,6 +149,7 @@ export default {
   },
   beforeDestroy() { this.clearState(); },
   methods: {
+    resolveFormImageRoot(context, source) { return source.root; },
     time: formatTime, status: orderStatus,
     testPayment(order) { return (order.marketplace_trade_version === 1 || order.marketplace_trade_version === '1') && order.pay_type === 'marketplace_test'; },
     paymentStatus(order) { if (order.paid !== 1) return '未支付'; return this.testPayment(order) ? '已支付（测试支付）' : '已支付'; },
@@ -242,6 +252,6 @@ dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
 .saved-fields { display: grid; gap: 16px; margin: 0; }
 .saved-fields dt { white-space: pre-wrap; overflow-wrap: anywhere; }
 .saved-images { display: flex; flex-wrap: wrap; gap: 12px; }
-.saved-images img { width: 110px; height: 90px; max-width: 100%; object-fit: contain; border: 1px solid #ebeef5; }
+.saved-images .el-image { width: 110px; height: 90px; max-width: 100%; object-fit: contain; border: 1px solid #ebeef5; }
 @media (max-width: 760px) { .order-facts { grid-template-columns: minmax(0, 1fr); } }
 </style>

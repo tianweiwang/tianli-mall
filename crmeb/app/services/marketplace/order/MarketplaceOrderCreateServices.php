@@ -77,12 +77,16 @@ final class MarketplaceOrderCreateServices
                 'channel_type'=>$user['user_type'],'province'=>'','custom_form'=>$customForm,
                 'merchant_name_snapshot'=>$locked['merchant']['name'],
                 'merchant_after_sale_contact_snapshot'=>$locked['merchant']['after_sale_contact']];
-            $orderId=$this->dao->insertOrder($pdo,$order,$locked['invoice']);
-            $reserves=$this->dao->reserve($pdo,$uid,$request['mer_id'],$orderId,$locked,$now);
-            $this->dao->insertItems($pdo,$uid,$request['mer_id'],$orderId,$quote['cartInfo'],$reserves);
-            $this->dao->markCreated($pdo,$uid,$claim['idem_key'],$orderId,$locked,$cancelAt);
-            // The internal PK wakes the finisher only after this transaction actually ends.
-            return ['order_id'=>$orderNumber,'key'=>$routeKey,'order_pk'=>$orderId];
+            return app()->make(\app\services\marketplace\assets\CustomerOrderFormAssetServices::class)
+                ->withCreateAssets($connection,$pdo,$uid,$routeKey,$frame,$locked,$customForm,
+                    function()use($pdo,$order,$locked,$uid,$request,$now,$quote,$claim,$cancelAt,$orderNumber,$routeKey):array{
+                        $orderId=$this->dao->insertOrder($pdo,$order,$locked['invoice']);
+                        $reserves=$this->dao->reserve($pdo,$uid,$request['mer_id'],$orderId,$locked,$now);
+                        $this->dao->insertItems($pdo,$uid,$request['mer_id'],$orderId,$quote['cartInfo'],$reserves);
+                        $this->dao->markCreated($pdo,$uid,$claim['idem_key'],$orderId,$locked,$cancelAt);
+                        // The internal PK wakes the finisher only after this transaction actually ends.
+                        return ['order_id'=>$orderNumber,'key'=>$routeKey,'order_pk'=>$orderId];
+                    });
         });
         // Only completion is best effort. A post-commit/logging error must not turn an existing order into a create failure.
         try{

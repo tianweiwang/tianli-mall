@@ -50,7 +50,10 @@
       <section v-for="group in detail.custom_form" :key="group.product_id" class="package-saved">
         <h4>{{ group.product_name }} · 保存表单</h4>
         <div v-for="field in group.fields" :key="field.field_index"><p>{{ field.title }}</p>
-          <div v-if="field.label === 'img'" class="package-images"><img v-for="(src,index) in field.value" :key="index" :src="src" alt="已保存表单图片"></div>
+          <div v-if="field.label === 'img'" class="package-images"><template v-for="image in formImagesFor(group, field)">
+            <el-image v-if="image.url" :key="image.key + ':' + image.url" :src="image.url" fit="contain" :preview-src-list="image.loaded ? [image.url] : []" alt="已保存表单图片" @load="$emit('form-image-load', image)" @error="$emit('form-image-error', image)" />
+            <span v-else :key="image.key + ':status'" class="field-note" role="status">{{ image.error || '正在读取图片…' }}</span>
+          </template></div>
           <p v-else>{{ field.value || '未填写' }}</p>
         </div>
       </section>
@@ -61,11 +64,14 @@
 <script>
 import { formatTime } from '../../../domain/people';
 import { packageStatus } from '../../../domain/order';
+import { imageRowsFor } from '../../../api/marketplace-order-form';
 export default {
   name: 'FulfillmentPackages',
   props: { snapshot: { type: Object, required: true }, loading: { type: Boolean, default: false },
+    formImages: { type: Array, default: () => [] },
     detail: { type: Object, default: null }, detailLoading: { type: Boolean, default: false }, detailError: { type: String, default: '' } },
   methods: {
+    formImagesFor(group, field) { return imageRowsFor(this.formImages, group, field); },
     state: packageStatus,
     time(value) { return value === null || value === 0 ? '—' : formatTime(value); }
   }
@@ -87,7 +93,7 @@ export default {
 .package-detail dd { margin: 0; }
 .package-detail dl > div { min-width: 0; }
 .package-images { display: flex; flex-wrap: wrap; gap: 12px; }
-.package-images img { width: 110px; height: 90px; max-width: 100%; object-fit: contain; border: 1px solid #ebeef5; }
+.package-images .el-image { width: 110px; height: 90px; max-width: 100%; object-fit: contain; border: 1px solid #ebeef5; }
 .package-saved { border-top: 1px solid #ebeef5; margin-top: 16px; white-space: pre-wrap; }
 @media(max-width:760px){ .package-detail dl { grid-template-columns: minmax(0,1fr); } }
 </style>

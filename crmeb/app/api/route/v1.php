@@ -71,6 +71,8 @@ Route::group(function () {
     Route::get('admin/order/data', 'v1.admin.StoreOrderController/data')->name('adminOrderData')->option(['real_name' => '订单每月统计数据']);//订单每月统计数据
     Route::get('admin/order/list', 'v1.admin.StoreOrderController/lst')->name('adminOrderList')->option(['real_name' => '订单列表']);//订单列表
     Route::get('admin/refund_order/list', 'v1.admin.StoreOrderController/refundOrderList')->name('adminOrderRefundList')->option(['real_name' => '退款订单列表']);//退款订单列表
+    Route::post('admin/order/detail/<root_id>/form-files/<asset_id>/read-ticket','v1.order.OrderFormReadController/mobile')->name('mobileOrderFormTicket')->option(['real_name'=>'订单表单原图票据']);
+    Route::get('admin/order/detail/<root_id>/form-files/<asset_id>/content','v1.order.OrderFormReadController/mobile')->name('mobileOrderFormContent')->option(['real_name'=>'订单表单原图']);
     Route::get('admin/order/detail/:orderId', 'v1.admin.StoreOrderController/detail')->name('adminOrderDetail')->option(['real_name' => '订单详情']);//订单详情
     Route::get('admin/refund_order/detail/:uni', 'v1.admin.StoreOrderController/refundOrderDetail')->name('RefundOrderDetail')->option(['real_name' => '退款订单详情']);//退款订单详情
     Route::get('admin/order/delivery/gain/:orderId', 'v1.admin.StoreOrderController/delivery_gain')->name('adminOrderDeliveryGain')->option(['real_name' => '订单发货获取订单信息']);//订单发货获取订单信息
@@ -217,6 +219,11 @@ Route::group(function () {
         Route::post('order/fulfillment/packages/:childNo/receipt','v1.order.FulfillmentController/receipt')->name('fulfillmentReceipt')->option(['real_name'=>'履约包裹收货']);
         Route::post('order/check_shipping', 'v1.order.StoreOrderController/checkShipping')->name('checkShipping')->option(['real_name' => '检测是否显示快递和自提标签']); //检测是否显示快递和自提标签
         Route::post('order/confirm', 'v1.order.StoreOrderController/confirm')->name('orderConfirm')->option(['real_name' => '订单确认']); //订单确认
+        Route::post('order/confirm/<key>/forms/<product_id>/<field_index>/files', 'v1.order.OrderFormUploadController/upload')->name('orderFormFiles')->option(['real_name'=>'订单表单图片上传','customer_order_form_files'=>true]);
+        Route::post('order/confirm/<key>/form-files/<asset_id>/read-ticket','v1.order.OrderFormReadController/confirmation')->name('confirmationFormTicket')->option(['real_name'=>'确认表单原图票据']);
+        Route::get('order/confirm/<key>/form-files/<asset_id>/content','v1.order.OrderFormReadController/confirmation')->name('confirmationFormContent')->option(['real_name'=>'确认表单原图']);
+        Route::post('order/<root_id>/form-files/<asset_id>/read-ticket','v1.order.OrderFormReadController/customer')->name('customerOrderFormTicket')->option(['real_name'=>'订单表单原图票据']);
+        Route::get('order/<root_id>/form-files/<asset_id>/content','v1.order.OrderFormReadController/customer')->name('customerOrderFormContent')->option(['real_name'=>'订单表单原图']);
         Route::post('order/computed/:key', 'v1.order.StoreOrderController/computedOrder')->name('computedOrder')->option(['real_name' => '计算订单金额']); //计算订单金额
         Route::post('order/confirmation/:key/restore', 'v1.order.StoreOrderController/restoreConfirmation')->name('orderConfirmationRestore')->option(['real_name' => '恢复订单确认']);
         Route::post('order/confirmation/:key', 'v1.order.StoreOrderController/confirmation')->name('orderConfirmation')->option(['real_name' => '订单提交结果']);
