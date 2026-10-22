@@ -1443,3 +1443,22 @@ R39（Run2026102122111413026b，Source7ca901）保留内部测试付款和Task6�
 R39原实例已正常关闭并独立核零：close84原生自然0（db58b47b8ed5c03aa1232bcca8f4981c96f2f07abade319539551f5116b43042），zero12只读原生自然0（68dfbacc4c5f3765259840645e2ac87a3cee8d56bb0ceec0de8d8579a2eee3b4），只移除原4CID/1内网/7卷。Root与非作者完整核原公件/10861实际Source及原生双流；原AR失败不变。候选Source双审及固定PHP8.2 network-none/RO单文件纯语法实际0（725bb5608b4ba05825c6f56275bf77ab59789a05b05ea283e88222b8a3c9fc9b）。
 
 任务：[x]确定冲突与最小设计/双Source审；[x]原正常close/独立zero及完整保全；[x]固定候选纯PHP语法与本地采用；[ ]新clean提交/同HEAD验证来源及fresh完整付款→履约→售后评价→Worker正常A和收尾；[ ]成功同源fresh B、三端20步42ACK/三宽DOM、N1/N2、非空历史37步/四CLI/真实旧权益、最终归属启用、MS5真实金融、MS6发布恢复及人工验收。L2本地，不推送不部署、不碰真实资金，Task9关闭与用户停止样本NOT RUN保持，不换算整体百分比。
+
+
+---
+
+### 最终启用前上传域T2设计记录（2026-10-22，PROPOSED）
+
+外部候选[上传资产域设计记录](records/ms2/upload-asset-domains.md)服务既定唯一T1–T8清单的T2；三表、具名服务/路由/权限、private消费者、旧客户端发布与历史转存仍为提案，未被当前应用源码采用。本条只追加设计链接，不勾实现/运行/原Task1四框，不代签MS2真实归属/backfill/enforce、enabled=true、MS4–MS6整链、三端/UI/原图/历史权益或金融结算/发布。现私有售后与商家素材链保持；原普通收尾/独立zero、未完验收与关闭Task9/停止样本仍有效。
+
+
+### 2026-10-22 素材T3/T4本地Source实现与结构身份修正
+
+三素材表helper/CREATE-only迁移已写，锁申请未知结果P2经r2有限Source修复与非作者复核；Root e0232b另核16原来源944653B/native9、完整6阶段正逆与7非缝及原DDL/check/配置保持，原r2完整两PHP/NOTES另存pre-authority快照。未执行PHP语法/SQL/结构或业务，完整T3未验收。另确认完整metadata需要实际TRIGGER可见权限：当前App四DML不能用空集证明无trigger。已在现[素材记录](records/ms2/upload-asset-domains.md)先追加完整迁移身份与runtime分工、实际CURRENT_USER直接库级SELECT/TRIGGER正向资格、精确schema及失败闭合；后继helper r3不得扩App权限或削弱完整门。
+
+同记录承接T4有限存储接缝：Root已改LegacyWrite的mediaOwner和Storage两个商品入口，真实owner仅从当前已授权同PDO事务派生；原员工接口/物理算法保持。Root7bdd0a完整原Source重建/diffcheck0与t4_product_media_permission_contract独立Source通过。尚无新HTTP路由/DAO/前端或业务验收，不能标整T4完成；完整商品媒体、真实历史/五根归属/回填/enforce/最终enabled、三端/N1N2、MS5真实金融/MS6/人工签收继续未完。
+
+原R40 S65041在1851e8同句柄观察售后评价登记/bind/start真实0，现observe-aftersale-review-normal仍running；原付款及履约正常阶段结果保留，但本轮完整A/closezero和同源B仍未通过。Main/Val13479不动，无并行collector/额外Docker/PHP-l或停止样本，L2本地无推送/部署/真实资金。
+
+
+本轮R40真实终态补记：原S65041在Root7551bf自然exit1，AR容器exited1/restart0。公开结果6100/3a46d23a7af65f9fe106cc458a548f35b11508730aed2b73169d953a0d7404ac，phase real_public_nonempty_image_upload，固定失败码TASK78_EXACT_NATIVE_PRODUCER_TAG_MEMBERS；原内部付款/履约成功保留，Worker及整A/三端未通过。full_source_unchanged=false为失败未达final路径的默认值，不据此声称源已变；Root1867f0核Main/Val AR实际222875/eddc42ae94ddceb208a8d2535b153503cd137ddab9f24572cfd6fa3296593de9与HEAD13479完整blob相同。原失败/现场保留，无自动清理重跑。Source另确认图片正常producer会读缩略图和水印两个组合配置缓存，old+counter校验未覆盖它们；没有原before成员明细，不能补造本轮精确diff或唯一原因。后继只修完整缓存观察闭包，数据库/文件/标签永久期限与其余严格断言保持，先按精确Source正常关闭本轮并独立核零，再做Main采用/语法/新Run。素材新分支T3 r3仅有限新结构会话Source通过，尚无语法/SQL/运行验收。

@@ -208,3 +208,10 @@ public function adjust(MerchantContext $ctx, int $productId, string $unique, int
 - [ ] 在获准的数据副本上执行 Task 2 的四个子命令，记录前后摘要（G01–G07）；未获准时写 BLOCKED 及所缺授权。
 - [ ] 运行 MS0a、MS0b、MS1、MS2 全部用例，`exit=0`。
 - [ ] 写 `records/ms2/report.md`、`results.jsonl`；提交；停止，等待验收（11 文档 §5.5）。
+
+
+---
+
+### 上传素材域增量设计索引（T2，2026-10-22，PROPOSED）
+
+[上传资产域设计记录](records/ms2/upload-asset-domains.md)细化既定唯一T1–T8清单的T2：顾客34列/平台29列资产与平台10列分类拟议DDL、同writer PDO文件前授权、原DTO/旧14列兼容、混合type目录叶删和真实历史/发布门。尚未实现、迁移或运行，不新增第二执行清单，不勾原Task1四框、Task4及其他验收。原owner-only backfill不含另审的非商业元数据可恢复转存；真实清单/引用/备份恢复及新writer/旧consumer闭合后才可enforce/最终启用。原停止点、合法业务及三端/金融义务保持。
