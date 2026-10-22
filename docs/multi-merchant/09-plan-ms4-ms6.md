@@ -20,9 +20,9 @@ CU_FORM需求保持：真实HTTP multipart，同App官方kernel首次create，�
 
 AR仅在原business BEFORE之前用实际同App读取已封存filesystem配置，缺失命名空间才load原配置；严格核本地disk及其实际public/uploads父目录，只创建原本缺席的自有0700目录。既有目录不chmod或清空。原29键业务结果、六键失败receipt、34先决及65项Task6历史保持；新的非秘密准备证明须由Host、Worker和独立zero逐层验证。旧503具体gate未证，新完整Run才能验证后继能否越过旧边界。
 
-店铺覆盖保持原九场景×320/390/1440、JPEG、review、原20步42ACK及27业务+7辅助观察，补真实商品→店铺→同商品点击、店名、完整发布集合和公开DTO。完整native BEFORE和独立预期来自原商品/商家/配置，不调用生产projector作expected；相对详情图片按真实封存site_url合同推导。两PHP与external driver已有Source独审及必要语法记录，真实浏览器业务仍待新B。
+独立顾客H5店铺覆盖保持原九场景×320/390/1440、JPEG、review及27业务+7辅助观察，补真实商品→店铺→同商品点击、店名、完整发布集合和公开DTO。完整native BEFORE和独立预期来自原商品/商家/配置，不调用生产projector作expected；相对详情图片按真实封存site_url合同推导。两PHP与该独立H5 external driver已有Source独审及必要语法记录，真实H5正常运行仍待。三端UI20是另一条验证链，保持原20步骤、20个observer ACK、42个原生帧及三宽；其browser-v1八成员与17件DAG独立绑定，不能用这份九场景H5 driver替换。三端fresh B仍待完整A通过后按原链执行。
 
-任务：[x]当前eadf内部付款/履约实际证据及原AR失败保留；[x]原七卷实例正常close与独立zero；[ ]本次最终七PHP及九profile合并、独审和变化字节的必要语法；[ ]仅十一tracked路径本地采用、新cleanHEAD/同来源验证及完整M/S发布绑定；[ ]新八卷完整A付款/履约/售后评价/Worker/五reader原图/完整SQLRedis及正常收尾；[ ]同来源fresh B、三端20步42ACK/三宽DOM、H5/MP/APP及设备验收。已通过旧Source/语法记录保留，新改的AR/Worker/initializer不能冒用旧语法记录。
+任务：[x]当前eadf内部付款/履约实际证据及原AR失败保留；[x]原七卷实例正常close与独立zero；[ ]本次最终七PHP及九profile合并、独审和变化字节的必要语法；[ ]仅十一tracked路径本地采用、新cleanHEAD/同来源验证及完整M/S发布绑定；[ ]新八卷完整A付款/履约/售后评价/Worker/五reader原图/完整SQLRedis及正常收尾；[ ]同来源fresh B、三端20步/20个observer ACK/42个原生帧/三宽DOM、独立H5与MP/APP及设备验收。已通过旧Source/语法记录保留，新改的AR/Worker/initializer不能冒用旧语法记录。
 
 其它原责任全部保留：非空历史权益/数量/归属37步与四CLI、backfill/enforce及最终enabled=true、N1/N2、其它T4/T5/头像/defaultCompat/历史客户端、MS5真实付款退款回调对账费用结算、MS6发布恢复及人工验收。MP/APP正式构建缺显式正式HTTPS API origin，允许按11流程延后该外部条件，不能编造域名或改成开发构建；继续其它可完成工作。用户停止样本NOT RUN、T4已拒具体操作不重试重包换工具；Task9新商家客服默认关闭，原平台客服保留，只有BASE既有人工签收。
 
