@@ -724,3 +724,16 @@ ReviewDao新增publicPicturesForCreate(connection,pdo,fullRoot,fullItem,actualUi
 另核实际vendor PDOConnection.transaction1370–1384与commit1426–1434丢弃PDO commit布尔值。T5已在自己NOTES先落实：withCustomerUpload正常返回且outside后，完全同Connection/PDO/database/session、PDO无活动事务并只读@@session.autocommit=1，完整SELECT*新asset34严格等callback实际native row且再核parent/当前Request/actor/fingerprint，才以持久行观察标database_committed=true；不冒称取得PDO commit ACK。任一未知或不一致保null，不清对象、不重试，不改ORM/造observer/set autocommit。该必要接缝不改变原pre/final wrapper、实际review绑定、legacy14/原replay/五根门。
 
 T4专用初始化先从同一冻结安装SQL完整真实导入system_menus/system_role/system_config与三张system_lang原始非业务INSERT，空表及全行独立核对，原值顺序不变；不REPLACE/IGNORE、不造用户商品订单付款。再真实9CLI→166、T3四命令169、15leaf四命令及独立writeMd5；不借MS5收据。Source初始化状态只能INIT_ONLY_NOT_BUSINESS，完整普通业务尾及所有原未验责任继续保留。
+
+
+## 2026-10-22 扫码二维码完整网址修正与 T5 冻结 Source 进度
+
+实际源码调用链确认 ProductMediaScanServices.issue 返回逻辑相对地址 /app/upload，而前端 issueScan 虽构造 URL 校验却仍把原相对字符串交给 QRCode.text。手机二维码因此缺少 origin。真实 frameOut/history 路由是 /app/upload，不应附加平台 /admin 前缀。本次仅采用已冻结、非作者 Source 复核通过的 product-media.js 两处接缝：校验当前前端 origin，并返回 url.href；query、私有 fragment、lease/expiry、其余 DTO、后端和认证/状态流程保持。
+
+既有同一正常正向 DTO 的纯 Node 消费者检查保留 original exit1、candidate exit0及实际 PID/完整双流；非作者报告7664B/e47738edbb0e确认完整模块正逆和其余字节。此为 UNIT-STUB/Source 修正，不是浏览器、实际手机扫码或 HTTP/15接口/GC 通过。采用前 Dev clean bd702、Main/Val clean bd217，读取窗口已明确结束；仅本 JS 与本记录作窄 L2 本地提交，无推送部署或真实业务操作。
+
+T5 先行顾客已购评价图片11候选 exact14 已冻结，PINS25903B/8860c35a56dc；9PHP 在既有 PHP8.2.33 无网络只读非root环境纯语法均正常0，未加载 App/SQL/Redis。顾客完整34字段资产、原实际 UID/根/项、同 PDO 和完整原生行绑定仍须业务证明；候选尚未采用、前端解析及完整运行尚待，不回补 R41 原售后 GET503 或完整A失败。T4新正常环境 Source 仍在外部实现，不把初始化准备称业务通过。
+
+此前“三张system_lang”简称在此更正：真实安装表为 eb_lang_code、eb_lang_country、eb_lang_type，与 system_menus/system_role/system_config 共六个非业务表。后继隔离初始化须保完整原 INSERT/原值/顺序及独立全行核对，不据错误简称造表。
+
+整体剩余范围不变：T4 实际结构/菜单/素材与扫码接口/文件审计/phonePC/自然GC/三宽；T5完整私有用途/avatar/defaultCompat/历史发布门；完整A/B/三端/N1N2；原历史权益归属、37步/四CLI、backfill/enforce/final enabled=true、真实MS5金融/MS6和人工验收。通用多商户复用商品/SKU规格价格，Task9关闭，用户停止样本 NOT RUN；目标继续 active。

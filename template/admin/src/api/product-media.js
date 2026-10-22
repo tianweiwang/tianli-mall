@@ -131,8 +131,8 @@ export async function issueScan(context, pid) {
   const value = await transfer(context, 'POST', path(context) + '/scan', { pid: mediaId(pid, true) });
   if (!value || !Number.isSafeInteger(value.expires_at_ms) || typeof value.url !== 'string') throw failure('二维码发行结果未确认', 'unknown');
   scanId(value.lease_id); const url = new URL(value.url, window.location.origin); const cap = new URLSearchParams(url.hash.slice(1)).get('scan_cap');
-  if (!/^https?:$/.test(url.protocol) || url.username || url.password || url.pathname !== '/app/upload' || url.searchParams.get('scene') !== 'product_media' || url.searchParams.get('lease_id') !== value.lease_id || typeof cap !== 'string' || !/^[a-f0-9]{64}(?![\s\S])/.test(cap)) throw failure('二维码返回范围未确认', 'unknown');
-  return value;
+  if (!/^https?:$/.test(url.protocol) || url.origin !== window.location.origin || url.username || url.password || url.pathname !== '/app/upload' || url.searchParams.get('scene') !== 'product_media' || url.searchParams.get('lease_id') !== value.lease_id || typeof cap !== 'string' || !/^[a-f0-9]{64}(?![\s\S])/.test(cap)) throw failure('二维码返回范围未确认', 'unknown');
+  return { ...value, url: url.href };
 }
 export async function pollScan(context, lease) {
   const value = await transfer(context, 'GET', path(context) + '/scan/' + scanId(lease));
