@@ -38,6 +38,81 @@ const M4AR_TABLES=['eb_store_order','eb_store_order_cart_info','eb_store_order_s
  'eb_marketplace_fulfillment_range','eb_marketplace_stock_movement','eb_store_product','eb_store_product_attr_value',
  'eb_store_product_reply','eb_system_attachment','eb_marketplace_customer_asset','eb_marketplace_audit_log','eb_system_log','eb_user',
  'eb_marketplace_role','eb_marketplace_employee','eb_marketplace_password_setup','eb_system_role','eb_system_admin'];
+/** Prepare only this role's already-bound local public upload root before business snapshots. */
+function m4ar_public_upload_root_observe(string $root):array
+{
+ clearstatcache(true,$root);
+ return ['exists'=>file_exists($root),'is_directory'=>is_dir($root),'is_link'=>is_link($root),
+  'canonical_expected'=>realpath($root)===$root,'writable'=>is_writable($root)];
+}
+function m4ar_public_upload_root_prepare(\think\App $app,array $source):void
+{
+ m4ar_phase('normal_public_upload_root_preparation');
+ m4ar_expect(($source['rule']??null)===M4AR_RULE&&($GLOBALS['m4ar_source']??null)===$source
+  &&($GLOBALS['m4c_app_started']??false)===true&&($GLOBALS['m4c_application']??null)===$app&&app()===$app
+  &&getmypid()===1&&getenv('MS4_AFTERSALE_REVIEW_PROOF_NAME')===M4AR_RULE['proof'],
+  'TASK78_PUBLIC_ROOT_REAL_CURRENT_ROLE_APP_AND_BOUND_SOURCE');
+ $proofPath='/run/audit/evidence/ms4-aftersale-review-public-upload-root-prepared.json';
+ m4ar_expect(!file_exists($proofPath)&&!is_link($proofPath),'TASK78_PUBLIC_ROOT_ONE_NEW_PREPARATION_PROOF');
+ $public='/workspace/crmeb/public';$root=$public.'/uploads';$parentNative=[];
+ $parentDirectory=$parentNonlink=$parentCanonical=true;
+ foreach(['/workspace','/workspace/crmeb',$public]as$path){
+  clearstatcache(true,$path);$native=lstat($path);
+  $parentDirectory=$parentDirectory&&is_array($native)&&($native['mode']&0170000)===0040000&&is_dir($path);
+  $parentNonlink=$parentNonlink&&!is_link($path);$parentCanonical=$parentCanonical&&realpath($path)===$path;
+  m4ar_expect($parentDirectory&&$parentNonlink&&$parentCanonical,'TASK78_PUBLIC_ROOT_FIXED_CANONICAL_NONLINK_PARENT_CHAIN');
+  $parentNative[$path]=array_intersect_key($native,array_flip(['dev','ino','mode','uid','gid']));
+ }
+ $parentWritable=is_writable($public);
+ m4ar_expect($app->getRootPath()==='/workspace/crmeb/'&&$parentWritable
+  &&$parentNative[$public]['uid']===posix_geteuid(),'TASK78_PUBLIC_ROOT_OWN_TMPFS_PARENT_AND_ACTUAL_APP_ROOT');
+ // m4fn_app deliberately loads a finite configuration set. Use the original loader, never replacement disk settings.
+ $preloaded=$app->config->has('filesystem');
+ if(!$preloaded)$app->config->load('filesystem','filesystem');
+ $loaded=$app->config->has('filesystem.disks.public');$disk=$app->config->get('filesystem.disks.public');
+ $typeLocal=is_array($disk)&&($disk['type']??null)==='local';
+ $urlUploads=is_array($disk)&&($disk['url']??null)==='/uploads';
+ $rootExpected=is_array($disk)&&($disk['root']??null)===$root;
+ m4ar_expect($loaded&&$typeLocal&&$urlUploads&&$rootExpected,'TASK78_PUBLIC_ROOT_ACTUAL_CONFIGURED_LOCAL_UPLOADS_ONLY');
+ $publicBefore=m4ar_files($public);$before=m4ar_public_upload_root_observe($root);$beforeNative=null;$created=false;
+ if($before['exists']){
+  m4ar_expect($before===['exists'=>true,'is_directory'=>true,'is_link'=>false,'canonical_expected'=>true,'writable'=>true],
+   'TASK78_PUBLIC_ROOT_EXISTING_DIRECTORY_IS_VALID_WITHOUT_REPAIR');
+  $beforeNative=lstat($root);m4ar_expect(is_array($beforeNative),'TASK78_PUBLIC_ROOT_EXISTING_NATIVE_STAT');
+ }else{
+  m4ar_expect($before===['exists'=>false,'is_directory'=>false,'is_link'=>false,'canonical_expected'=>false,'writable'=>false],
+   'TASK78_PUBLIC_ROOT_ABSENT_WITH_NO_DANGLING_LINK_OR_ALIAS');
+  m4ar_expect(mkdir($root,0700,false),'TASK78_PUBLIC_ROOT_SINGLE_OWN_NONRECURSIVE_MKDIR');$created=true;
+ }
+ $after=m4ar_public_upload_root_observe($root);$afterNative=lstat($root);
+ m4ar_expect($after===['exists'=>true,'is_directory'=>true,'is_link'=>false,'canonical_expected'=>true,'writable'=>true]
+  &&is_array($afterNative)&&($afterNative['mode']&0170000)===0040000,'TASK78_PUBLIC_ROOT_ACTUAL_DIRECTORY_READBACK');
+ $after['mode_is_0700']=($afterNative['mode']&0777)===0700;$existingUnchanged=false;
+ if($created){
+  m4ar_expect($after['mode_is_0700']&&$afterNative['uid']===posix_geteuid(),'TASK78_PUBLIC_ROOT_NEW_PRIVATE_MODE_AND_ACTUAL_OWNER');
+ }else{
+  foreach(['dev','ino','mode','nlink','uid','gid','size','mtime','ctime']as$key)
+   m4ar_expect($afterNative[$key]===$beforeNative[$key],'TASK78_PUBLIC_ROOT_EXISTING_NATIVE_NINE_UNCHANGED');
+  $existingUnchanged=true;
+ }
+ foreach($parentNative as$path=>$old){
+  clearstatcache(true,$path);$native=lstat($path);
+  m4ar_expect(is_array($native)&&!is_link($path)&&is_dir($path)&&realpath($path)===$path
+   &&array_intersect_key($native,array_flip(['dev','ino','mode','uid','gid']))===$old,
+   'TASK78_PUBLIC_ROOT_PARENT_IDENTITY_MODE_OWNER_UNCHANGED');
+ }
+ m4ar_expect(m4ar_files($public)===$publicBefore,'TASK78_PUBLIC_ROOT_ALL_ORIGINAL_PUBLIC_FILE_BYTES_METADATA_UNCHANGED');
+ $proof=['schema'=>1,'scope'=>'MS4_AFTERSALE_REVIEW_LOCAL_PUBLIC_ROOT_PREPARATION',
+  'run_id'=>$source['run_id'],'source_sha'=>$source['source_sha'],'freeze_sha256'=>$source['freeze_sha256'],
+  'container_id'=>$source['container_id'],'source_binding_sha256'=>$source['source_binding_sha256'],
+  'configuration'=>['configuration_preloaded'=>$preloaded,'configuration_loaded'=>$loaded,'type_is_local'=>$typeLocal,
+   'url_is_uploads'=>$urlUploads,'root_is_expected'=>$rootExpected,'parent_is_directory'=>$parentDirectory,
+   'parent_is_nonlink'=>$parentNonlink,'parent_is_canonical'=>$parentCanonical,'parent_writable'=>$parentWritable],
+  'before'=>$before,'after'=>$after,'created'=>$created,'existing_root_native_unchanged'=>$existingUnchanged];
+ m4c_entry_publish($proofPath,$proof);
+ m4ar_expect(m4c_entry_read($proofPath)===$proof,'TASK78_PUBLIC_ROOT_ACTUAL_FIXED_PROOF_PUBLICATION_READBACK');
+}
+
 function m4ar_expect(bool $ok,string $code):void
 {++$GLOBALS['m4ar_assertions'];if(!$ok){$GLOBALS['m4ar_failed_assertion']=$code;throw new RuntimeException('M4AR_ASSERTION');}}
 function m4ar_phase(string $phase):void
@@ -47,7 +122,7 @@ function m4ar_extra():array
  $paths=array_values(array_unique(array_merge(m4fn_extra(),[M4AR_ENTRY,
  'help/migrations/marketplace-ms4-aftersale.php','help/migrations/marketplace-ms4-aftersale-menus.php',
  'help/migrations/marketplace-ms4-review-menus.php']),SORT_STRING));sort($paths,SORT_STRING);
- m4ar_expect(count($paths)===29,'TASK78_FINITE_TWENTY_NINE_EXTRAS');return $paths;
+ m4ar_expect(count($paths)===30,'TASK78_FINITE_THIRTY_EXTRAS');return $paths;
 }
 function m4ar_prerequisite_names():array
 {return array_merge(M4C_COMMON_PREREQUISITES,M4C_FILES_PREREQUISITES,M4C_PREPARE_PREREQUISITES,
@@ -140,7 +215,8 @@ function m4ar_source(): array
         '/run/ms4-prep'=>[$context['prep_dir'],false],'/run/audit'=>[$context['run_dir'],true],
         '/workspace/crmeb/public/install/crmeb.sql'=>[$context['repo_dir'].'/crmeb/public/install/crmeb.sql',false]];
     $volumes=['/run/audit-app'=>['app-secrets',false],'/run/audit-fixtures'=>['fixture-secrets',true],
-        M4AR_PRIVATE=>['aftersale-evidence',true]];
+        M4AR_PRIVATE=>['aftersale-evidence',true],
+        '/run/audit-customer-form'=>['customer-form-evidence',true]];
     $nativeMounts=[];$tmpMounts=[];
     foreach($created['mounts']as$mount){if($mount['Type']!=='tmpfs'){$nativeMounts[]=$mount;continue;}
         m4c_expect(in_array($mount['Destination'],['/tmp','/workspace/crmeb/public','/workspace/crmeb/runtime'],true)
@@ -179,8 +255,8 @@ function m4ar_environment(array $binding,array $context):array
   &&$e['freeze_sha256']===$context['freeze_sha256']&&getenv('MS4_AFTERSALE_REVIEW_PROOF_NAME')===M4AR_RULE['proof'],'TASK78_REAL_ENVIRONMENT_IDENTITY');
  $v=$e['environment'];m4c_entry_keys($v,['APP_ENV','PHP_MARKETPLACE_ENABLED','PHP_MARKETPLACE_TRADE_ENABLED',
  'PHP_MARKETPLACE_PAYMENT_TEST_ENABLED','PHP_MARKETPLACE_SELF_OPERATED_MER_ID','PHP_CACHE_DRIVER',
- 'PHP_MARKETPLACE_AFTERSALE_ENABLED','PHP_MARKETPLACE_AFTERSALE_PRIVATE_ROOT']);
- m4ar_expect($v['APP_ENV']==='testing'&&$v['PHP_CACHE_DRIVER']==='redis'&&$v['PHP_MARKETPLACE_AFTERSALE_PRIVATE_ROOT']===M4AR_PRIVATE,
+ 'PHP_MARKETPLACE_AFTERSALE_ENABLED','PHP_MARKETPLACE_AFTERSALE_PRIVATE_ROOT','PHP_MARKETPLACE_CUSTOMER_FORM_PRIVATE_ROOT']);
+ m4ar_expect($v['APP_ENV']==='testing'&&$v['PHP_CACHE_DRIVER']==='redis'&&$v['PHP_MARKETPLACE_AFTERSALE_PRIVATE_ROOT']===M4AR_PRIVATE&&$v['PHP_MARKETPLACE_CUSTOMER_FORM_PRIVATE_ROOT']==='/run/audit-customer-form',
  'TASK78_ONLY_ACTUAL_NORMAL_ROLE_PRIVATE_CONFIGURATION');
  foreach(['PHP_MARKETPLACE_ENABLED','PHP_MARKETPLACE_TRADE_ENABLED','PHP_MARKETPLACE_PAYMENT_TEST_ENABLED','PHP_MARKETPLACE_AFTERSALE_ENABLED']as$k)
   m4ar_expect($v[$k]==='true','TASK78_ENABLED_TRUE_STRINGS');
@@ -189,12 +265,12 @@ function m4ar_environment(array $binding,array $context):array
  m4c_entry_keys($n,['stage','native_exit','stdout_bytes','stdout_sha256','stderr_bytes','stderr_sha256','private_environment_logs_omitted']);
  m4ar_expect($n['stage']==='aftersale-review-normal-public-environment-inspect'&&$n['native_exit']===0&&$n['stderr_bytes']===0
   &&$n['stderr_sha256']===hash('sha256','')&&$n['private_environment_logs_omitted']===true
-  &&$e['native_projection_sha256']===$n['stdout_sha256'],'TASK78_REAL_EIGHT_VALUE_NATIVE_RECEIPT');
- // Host emits exactly these eight sorted JSON-string lines; no six-value permutation proof is reused.
+  &&$e['native_projection_sha256']===$n['stdout_sha256'],'TASK78_REAL_NINE_VALUE_NATIVE_RECEIPT');
+ // Host emits exactly these nine sorted JSON-string lines; no six-value permutation proof is reused.
  ksort($v,SORT_STRING);$lines=[];foreach($v as$k=>$value){m4ar_expect(is_string($value)&&getenv($k)===$value,'TASK78_EVERY_ACTUAL_ENVIRONMENT_VALUE');
   $lines[]=json_encode($k.'='.$value,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);}
  $raw=implode("\n",$lines)."\n";
- m4ar_expect(strlen($raw)===$n['stdout_bytes']&&hash('sha256',$raw)===$n['stdout_sha256'],'TASK78_EXACT_SORTED_EIGHT_LINE_NATIVE_PROJECTION');return $v;
+ m4ar_expect(strlen($raw)===$n['stdout_bytes']&&hash('sha256',$raw)===$n['stdout_sha256'],'TASK78_EXACT_SORTED_NINE_LINE_NATIVE_PROJECTION');return $v;
 }
 function m4ar_prerequisites(array $source):void
 {
@@ -230,10 +306,10 @@ function m4ar_prerequisites(array $source):void
  $three=m4c_entry_read($base.'ms4-three-read-normal.json');
  m4ar_expect($three['run_id']===$source['run_id']&&$three['source_sha']===$source['source_sha']
   &&$three['container_id']===$old['id']&&$three['diagnostic']===null,'TASK78_ORIGINAL_TASK6_THREE_READ_SOURCE');
- $wanted=[];foreach(['mysql-data','redis-data','bootstrap-secrets','redis-secrets','app-secrets','fixture-secrets','aftersale-evidence']as$suffix)
+ $wanted=[];foreach(['mysql-data','redis-data','bootstrap-secrets','redis-secrets','app-secrets','fixture-secrets','aftersale-evidence','customer-form-evidence']as$suffix)
   $wanted[]=$source['context']['project'].'_'.$suffix;
  $actual=audit_manifest()['volumes'];sort($wanted,SORT_STRING);sort($actual,SORT_STRING);
- m4ar_expect($actual===$wanted,'TASK78_EXACT_SEVEN_CURRENT_VOLUMES');
+ m4ar_expect($actual===$wanted,'TASK78_EXACT_EIGHT_CURRENT_VOLUMES');
 }
 function m4ar_private_input(string $path,int $max):array
 {
@@ -308,7 +384,7 @@ function m4ar_files(string $root):array
 }
 function m4ar_tables():array
 {
- $names=array_values(array_unique(array_merge(M4AR_TABLES,M4CB_TABLES,M5PC_AUX_TABLES),SORT_STRING));sort($names,SORT_STRING);return $names;
+ $names=array_values(array_unique(array_merge(M4AR_TABLES,M4CB_TABLES,M5PC_AUX_TABLES,['eb_store_service']),SORT_STRING));sort($names,SORT_STRING);return $names;
 }
 function m4ar_snapshot(PDO $db):array
 {
@@ -316,7 +392,7 @@ function m4ar_snapshot(PDO $db):array
  foreach(m4ar_tables()as$table){m4ar_expect(in_array($table,$database['names'],true),'TASK78_ACTUAL_ORACLE_TABLE_EXISTS');
   $rows[$table]=m5pcp_rows($db,'SELECT * FROM '.m5pcp_quote($table));}
  return ['database'=>$database,'rows'=>$rows,'redis'=>m5pcp_atomic_redis(audit_redis()),'private'=>m4ar_files(M4AR_PRIVATE),
-  'public'=>m4ar_files('/workspace/crmeb/public')];
+  'public'=>m4ar_files('/workspace/crmeb/public'),'customer_form_private'=>m4cf_native_files()];
 }
 function m4ar_native_rows(array $snapshot,string $table):array
 {return $snapshot['rows'][$table];}
@@ -361,7 +437,7 @@ function m4ar_redis_delta(array $before,array $after,array $changes=[]):void
  m4ar_expect(m5pcp_redis_deadline_compatible($expectedRedis,$after['redis']),'TASK78_ALL_OTHER_REDIS_TYPES_VALUES_EXPIRIES_UNCHANGED');
 }
 function m4ar_zero(array $before,array $after,bool $redis=true):void
-{m4ar_database_delta($before,$after,[]);if($redis)m4ar_redis_delta($before,$after);m4ar_expect($before['private']===$after['private']&&$before['public']===$after['public'],'TASK78_FILES_ZERO_DELTA');}
+{m4ar_expect($before['customer_form_private']===$after['customer_form_private'],'TASK78_CUSTOMER_FORM_PHYSICAL_ZERO');m4ar_database_delta($before,$after,[]);if($redis)m4ar_redis_delta($before,$after);m4ar_expect($before['private']===$after['private']&&$before['public']===$after['public'],'TASK78_FILES_ZERO_DELTA');}
 function m4ar_time(int $start,int $end,mixed $value):int
 {$n=m5pcp_int($value,1,4294967295);m4ar_expect($n>=$start&&$n<=$end,'TASK78_REAL_TIME_WITHIN_ACTUAL_COMMAND');return $n;}
 function m4ar_cents(string $amount):int
@@ -800,7 +876,7 @@ function m4ar_created_saved(PDO $pdo,array $fixture,array $request,string $idem,
     return $after;
 }
 
-function m4ar_produce_paid(\think\App $app,PDO $db,array $source,array $owner):array
+function m4ar_produce_paid(\think\App $app,PDO $db,array $source,array $owner,array $formActor):array
 {
  m4ar_phase('new_root_real_cart_confirm_create');$fixture=$owner['fixture'];$uid=$owner['uid'];$mer=(int)$fixture['merchant']['mer_id'];
  $user=m4cb_rows($db,'SELECT * FROM eb_user WHERE uid=?',[$uid]);m4ar_expect(count($user)===1,'TASK78_CURRENT_BUYER_BEFORE_NEW_ROOT');$fixture['user']=$user[0];
@@ -845,7 +921,7 @@ function m4ar_produce_paid(\think\App $app,PDO $db,array $source,array $owner):a
  m4ar_expect(is_array($cached),'TASK78_REAL_CONFIRMATION_FRAME');$frame=MarketplaceCartSelection::frame($cached,$uid);
  m4ar_expect($frame['mer_id']===$mer&&$frame['source_kind']==='persistent'&&$frame['cart_refs']===$refs&&count($frame['selection'])===2,'TASK78_REAL_Q2_Q1_CONFIRMATION_SOURCE');
  $answers=[];foreach($frame['custom_form']as$def){$product=$fixture['products'][$def['product_id']];$fields=json_decode($product['custom_form'],true,32,JSON_THROW_ON_ERROR);$definitions=$values=[];
-  foreach($fields as$i=>$field){$definitions[]=['field_index'=>$i]+$field;$values[]=['field_index'=>$i,'value'=>$field['label']==='number'?'0':'正常HTTP填写'.$def['product_name']];}
+  foreach($fields as$i=>$field){$definitions[]=['field_index'=>$i]+$field;$values[]=['field_index'=>$i,'value'=>$field['label']==='img'?[]:($field['label']==='number'?'0':'正常HTTP填写'.$def['product_name'])];}
   m4ar_expect($def['fields']===$definitions&&$def['definition_sha256']===hash('sha256',m5pcp_canonical(['product_id'=>$def['product_id'],'fields'=>$definitions])),
   'TASK78_INDEPENDENT_SAVED_NONEMPTY_FORM_DEFINITION');$answers[]=['product_id'=>$def['product_id'],'definition_sha256'=>$def['definition_sha256'],'values'=>$values];}
  $confirmed=m4ar_snapshot($db);m4ar_database_delta($cart,$confirmed,[]);
@@ -860,23 +936,33 @@ function m4ar_produce_paid(\think\App $app,PDO $db,array $source,array $owner):a
   'TASK78_REAL_CONFIRMATION_OWNER_AND_INDEPENDENT_INSTALLED_OPTIONS');
  foreach(['totalPrice'=>'70.55','costPrice'=>'24.25']as$field=>$expected)m4ar_expect($cached['priceGroup'][$field]===$expected,'TASK78_CONFIRMATION_INDEPENDENT_FIXED_COMMERCIAL_TOTALS');
  $tag='c:CRMEB:'.md5('crmeb');m4ar_redis_delta($cart,$confirmed,[$physical=>$cacheEntry]+m4ar_tag_change($cart,$confirmed,$tag,[$physical]));
+ $formStage=m4cf_stage($db,$source,$fixture,$frame,$uid,$key,$formActor);$answers=$formStage['answers'];
+ m4ar_expect($fixture['user']===m4ar_one($formStage['before']['rows']['eb_user'],'uid',$uid),'TASK78_INTERNAL_CONFIRMATION_BUYER_UNCHANGED');
+ $fixture['user']=m4ar_one($formStage['after']['rows']['eb_user'],'uid',$uid);
  $beforeCreate=m4cb_snapshot($db);$raw=['cartId'=>$csv,'mer_id'=>$mer,'new'=>0,'idem_key'=>'confirm:'.$key,'addressId'=>$address,'invoice_id'=>(int)$fixture['invoice']['id'],
  'payType'=>'','mark'=>'普通HTTP下单','gift_mark'=>'普通HTTP文本','real_name'=>'','phone'=>'','shipping_type'=>1,'is_gift'=>0,'store_id'=>0,
  'couponId'=>0,'useIntegral'=>false,'combinationId'=>0,'pinkId'=>0,'seckill_id'=>0,'bargainId'=>0,'advanceId'=>0,'custom_form'=>$answers];
  $input=MarketplaceOrderInput::create($uid,$key,$raw);$createStart=time();
- $created=$app->make(MarketplaceOrderCreateServices::class)->create($uid,$key,$raw);$createEnd=time();
+ $kernelObservation=null;$created=m4cf_kernel_create($app,$db,$source,$uid,$key,$raw,$formActor['token'],$kernelObservation);$createEnd=time();
  m4ar_expect(is_string($created['order_id']??null)&&$created['key']===$key,'TASK78_REAL_COMMITTED_NEW_ORDER_NUMBER');
  $createdFacts=m4ar_created_saved($db,$fixture,$input['request'],$input['idem_key'],$frame,$input['request']['options']['custom_form'],$created['order_id'],$beforeCreate,
   ['start'=>$createStart,'end'=>$createEnd]);
  $roots=m4cb_rows($db,'SELECT * FROM eb_store_order WHERE uid=? AND order_id=?',[$uid,$created['order_id']]);m4ar_expect(count($roots)===1,'TASK78_NEW_ROOT_NATURAL_PK');
  $saved=m5pcp_saved($db,(int)$roots[0]['id']);m5pcp_birth($db,$saved);
+  $formProof=m4cf_bound($db,$formStage,$roots[0],$kernelObservation,$formActor);
+  $repeatBefore=m5pcp_database_snapshot($db);$replayed=$app->make(MarketplaceOrderCreateServices::class)->create($uid,$key,$raw);
+  m4cf_expect($replayed===$created&&m5pcp_database_snapshot($db)===$repeatBefore,'AR_SAME_BODY_ORIGINAL_EARLY_RETURN');m4cf_replay($db,$formProof);
  $createdSnapshot=m4ar_snapshot($db);$expectedRows=[];$inserts=['eb_store_order'=>1,'eb_store_order_invoice'=>1,'eb_store_order_cart_info'=>2,
  'eb_marketplace_order_idempotency'=>1,'eb_marketplace_stock_movement'=>2,'eb_store_cart'=>2,'eb_store_product_log'=>4,'eb_store_order_status'=>1,
  'eb_marketplace_payment_registry'=>1,'eb_store_product'=>0,'eb_store_product_attr_value'=>0];
- foreach($inserts as$table=>$n)$expectedRows[$table]=$createdFacts[$table];m4ar_database_delta($before,$createdSnapshot,$expectedRows,$inserts);
+  foreach($inserts as$table=>$n)$expectedRows[$table]=$createdFacts[$table];
+  $expectedRows['eb_marketplace_customer_asset']=$formProof['rows'];$inserts['eb_marketplace_customer_asset']=$formProof['asset_inserts'];
+  $expectedRows['eb_user']=$createdSnapshot['rows']['eb_user'];m4cb_owner_auth_only($before['rows']['eb_user'],$expectedRows['eb_user'],$uid);
+  m4ar_database_delta($before,$createdSnapshot,$expectedRows,$inserts);
  m4ar_expect(audit_redis()->get($physical)===false&&$createdSnapshot['private']===$confirmed['private']&&$createdSnapshot['public']===$confirmed['public'],
  'TASK78_REAL_POSTCOMMIT_CONSUMED_ONLY_OWN_CONFIRMATION_AND_NO_FILES');
- m4ar_redis_delta($confirmed,$createdSnapshot,[$physical=>null]+m4ar_sequence_delta($confirmed,$createdSnapshot,$created['order_id']));
+  m4cf_expect($createdSnapshot['customer_form_private']===$formStage['after']['private'],'AR_CREATE_PRIVATE_ORIGINALS_UNCHANGED');
+  m4ar_redis_delta($formStage['after'],$createdSnapshot,[$physical=>null]+m4ar_sequence_delta($formStage['after'],$createdSnapshot,$created['order_id']));
  $sequence=m5pcp_sequence_keys($db,$app,$saved);$barrier=m5pcp_sequence_expiry_barrier($db,$sequence);$snapshot=m5pcp_snapshot($db);
  $resolver=$app->make(PaymentAccountResolver::class);$driver=$app->make(TestPaymentDriver::class);$service=$app->make(MarketplacePaymentServices::class);
  m4ar_expect($resolver instanceof PaymentAccountResolver&&$driver instanceof TestPaymentDriver&&$service instanceof MarketplacePaymentServices,
@@ -2082,8 +2168,9 @@ function m4ar_public_file_keep(PDO $db,array $source,array $final,array $finalSe
 }
 function m4ar_business(\think\App $app,PDO $db,array $source,array $owner,array $privatePreparation):array
 {
- m4ar_warm($app,$db);m4ar_child_start($source);$actors=m4ar_actors($app,$db,$source,$owner);
- $produced=m4ar_produce_paid($app,$db,$source,$owner);$model=m4ar_model($produced);$GLOBALS['m4ar_model']=$model;
+ m4ar_warm($app,$db);m4cf_mobile_fixture($app,$db,$owner);m4ar_child_start($source);$actors=m4ar_actors($app,$db,$source,$owner,null,true);
+ m4cf_saved_readers($db,$owner['root'],$actors);
+ $produced=m4ar_produce_paid($app,$db,$source,$owner,$actors['customer']);$model=m4ar_model($produced);$GLOBALS['m4ar_model']=$model;
  $paidSeal=m4ar_private_seal(M4AR_PAID_SEAL,'MS4_AFTERSALE_REVIEW_NEW_PAID_NATIVE_FACTS',$source,
  ['original_stage6'=>['sha256'=>$owner['inputs'][2]['sha256'],'stat'=>$owner['inputs'][2]['stat']],'produced'=>$produced,'native'=>m4ar_snapshot($db)]);
  $root=(int)$model['root']['id'];$q2=$model['source']['q2'];$q1=$model['source']['q1'];$key=static fn(string $name):string=>'normal78:'.$name.':'.bin2hex(random_bytes(12));
@@ -2126,16 +2213,21 @@ function m4ar_business(\think\App $app,PDO $db,array $source,array $owner,array 
  m4c_entry_same($model['command_counts'],['apply'=>5,'withdraw'=>1,'reject'=>2,'approve'=>2,'express'=>1,'accept_return'=>2]);
  m4ar_expect(count($model['actions'])===13&&count($model['operations'])===2&&$model['replays']===15&&count($model['refunds'])===5,
  'TASK78_COMPLETE_FIXED_NORMAL_COMMAND_AND_REPLAY_COUNTS');
- $review=m4ar_review($db,$owner,$actors,$png);m4ar_inputs_unchanged($owner['inputs']);$final=m4ar_snapshot($db);
+ $review=m4ar_review($db,$owner,$actors,$png);
+ $formRoot=m5pcp_rows($db,'SELECT * FROM eb_store_order WHERE id=?',[$model['root']['id']]);m4cf_expect(count($formRoot)===1,'AR_FINAL_REAL_ROOT');
+ m4cf_package_readers($db,$formRoot[0],$actors,$model['child']);
+ m4cf_historical_readers($db,$owner['root'],$actors);m4cf_historical_readers($db,$formRoot[0],$actors);
+ $formObservations=m4cf_saved_observations();$formReceipt=m4cf_saved_receipt();
+ m4cf_saved_observations_check($db,$formObservations,$formReceipt,[(int)$owner['root']['id'],(int)$formRoot[0]['id']]);m4ar_inputs_unchanged($owner['inputs']);$final=m4ar_snapshot($db);
  $finalSeal=m4ar_private_seal(M4AR_SEAL,'MS4_AFTERSALE_REVIEW_FINAL_NATIVE_FACTS',$source,['original_inputs'=>array_map(static fn(array $i):array=>
- ['path'=>$i['path'],'sha256'=>$i['sha256'],'stat'=>$i['stat']],$owner['inputs']),'paid_baseline'=>$paidSeal,'model'=>$model,'native'=>$final]);
+ ['path'=>$i['path'],'sha256'=>$i['sha256'],'stat'=>$i['stat']],$owner['inputs']),'paid_baseline'=>$paidSeal,'model'=>$model,'native'=>$final,'customer_form_observations'=>$formObservations]);
  m4ar_zero($final,m4ar_snapshot($db));$GLOBALS['m4ar_model']=$model;
  m4ar_public_file_keep($db,$source,$final,$finalSeal);
  return ['authenticated_owner_uid'=>$owner['uid'],'merchant_id'=>(int)$model['root']['mer_id'],'employee_id'=>$actors['merchant']['id'],
  'limited_admin_id'=>$actors['platform']['id'],'original_root_id'=>(int)$owner['root']['id'],'new_root_id'=>$root,'new_items'=>2,'new_quantity'=>3,
  'normal_action_counts'=>$model['command_counts'],'s2_operations'=>count($model['operations']),'same_body_replays'=>$model['replays'],'new_refunds'=>count($model['refunds']),
  'private_evidence'=>['files'=>1,'bytes'=>strlen($png),'sha256'=>hash('sha256',$png),'private_preparation'=>$privatePreparation,'tickets'=>$ticketProof],
- 'review'=>$review,'http'=>['calls'=>count($GLOBALS['m4ar_http_calls']),'requests'=>$GLOBALS['m4ar_http_calls']],
+ 'review'=>$review,'customer_form'=>$formReceipt,'http'=>['calls'=>count($GLOBALS['m4ar_http_calls']),'requests'=>$GLOBALS['m4ar_http_calls']],
  'paid_baseline'=>$paidSeal,'final_baseline'=>$finalSeal,'independent_database_oracle'=>true,'independent_redis_oracle'=>true,'independent_files_oracle'=>true,
  'prior_task6_preserved'=>true,'original_private_inputs_preserved'=>true,'normal_business_decisions'=>['merchant_reject'=>'HTTP200_SUCCESS','platform_reject'=>'HTTP200_SUCCESS'],
  'excluded_acceptance'=>['mobile_workbench'=>'NOT RUN','three_end_DOM'=>'NOT RUN','worker'=>'NOT RUN','finance_real_channel'=>'NOT RUN','nonempty_history'=>'NOT RUN',
@@ -2194,6 +2286,7 @@ function m4ar_run():int
  m4c_entry_public_materials($source);m4ar_full_source($source);m4ar_language_prepare($db,$source,$owner['stage6']['produced']['final']['database']['names']);$app=m4fn_app($source);
  m4ar_expect($app->config->get('marketplace.aftersale.enabled')===true&&$app->config->get('marketplace.aftersale.private_root')===M4AR_PRIVATE,
  'TASK78_REAL_APP_ONLY_NORMAL_ROLE_AFTERSALE_PRIVATE_CONFIG');
+ m4ar_public_upload_root_prepare($app,$source);
  $business=null;$failure=null;
  try{$business=m4ar_business($app,$db,$source,$owner,$private);}
  catch(Throwable $error){$failure=$error;$GLOBALS['m4ar_primary_failure']=m4ar_diagnostic($error);}

@@ -669,7 +669,7 @@ function m4ch_http_sealed_inputs(array $source): array
     $oracle=m4ch_http_private_read(M4CH_HTTP_CONTROL.'/customer-oracle.json');
     m4c_entry_keys($baseline,[...M4CH_HTTP_PREPARED_IDENTITIES,'scope','native_snapshot']);
     m4c_entry_keys($oracle,[...M4CH_HTTP_PREPARED_IDENTITIES,'scope','fixture','second_store','public_stores','configuration_rows',
-        'configuration_values','auxiliary_rows','ui_intent','actor_descriptor']);
+        'configuration_values','auxiliary_rows','storefront_native_before','ui_intent','actor_descriptor']);
     foreach(M4CH_HTTP_PREPARED_IDENTITIES as$key)m4c_expect($baseline[$key]===$oracle[$key],'M4C_H5_HTTP_PRIVATE_SAME_NATIVE_PRODUCER');
     $base=m4cb_fixture_load($source);$identity=$source['prepare_identity'];
     $snapshot=m4ch_native_snapshot_restore($baseline['native_snapshot']);
@@ -689,6 +689,7 @@ function m4ch_http_sealed_inputs(array $source): array
         &&array_keys($snapshot['facts'])===M4CB_TABLES&&array_keys($snapshot['auxiliary_rows'])===M4CH_AUX_TABLES
         &&$oracle['auxiliary_rows']===$snapshot['auxiliary_rows'],
         'M4C_H5_HTTP_FULL_NATIVE_BASELINE_ORACLE_BINDINGS');
+    m4ch_storefront_oracle($oracle,$snapshot['facts']);
     $result=m4ch_http_private_read(M4CH_HTTP_CONTROL.'/prepare-result.json');
     foreach(['sql-baseline','customer-oracle']as$name){$path=M4CH_HTTP_CONTROL.'/'.$name.'.json';$meta=m4ch_http_meta($path);
         $public=$result['business']['sealed_files'][$name];m4c_entry_keys($public,['sha256_prefix','bytes']);
@@ -943,6 +944,46 @@ function m4ch_http_ui_network(array $network): void
                 'M4C_H5_HTTP_UI_ACTUAL_NESTED_STATUS');}}
 }
 /** These checks constrain records from Root's actual DOM read; they never generate DOM or assert visual review. */
+/** Consume only the real DOM fields produced by the existing browser writer. */
+function m4ch_http_storefront_dom(array $dom,string $scene,array $intent): void
+{
+    $index=array_search($scene,['product-a','product-b','product-c'],true);
+    if($index!==false){$product=$intent['products'][$index];$store=array_values(array_filter($intent['stores'],
+        static fn(array$row):bool=>$row['mer_id']===$product['mer_id']));
+        m4c_expect(count($store)===1&&str_contains($dom['body_text'],$store[0]['name'])
+            &&str_contains($dom['body_text'],'商品所属店铺'),'M4C_H5_HTTP_DETAIL_SHOWS_ACTUAL_NATIVE_STORE_NAME');
+        $entries=array_values(array_filter($dom['controls'],static fn(array$row):bool=>$row['name']==='进入店铺 '.$store[0]['name']
+            &&str_contains($row['text'],'进入店铺')&&!$row['disabled']));
+        m4c_expect(count($entries)===1,'M4C_H5_HTTP_DETAIL_REAL_UNIQUE_STORE_ENTRY');
+    }elseif(in_array($scene,['store-a','store-b'],true)){$store=$intent['stores'][$scene==='store-a'?0:1];$expected=[];$actual=[];
+        foreach($intent['storefront_products']as$product)if($product['mer_id']===$store['mer_id'])$expected[]='查看商品 '.$product['store_name'];
+        foreach($dom['controls']as$control)if($control['role']==='link'){$actual[]=$control['name'];
+            m4c_expect(!$control['disabled'],'M4C_H5_HTTP_STORE_REAL_ENABLED_PRODUCT_ROWS');}
+        sort($expected,SORT_STRING);sort($actual,SORT_STRING);
+        m4c_expect($expected!==[]&&$actual===$expected&&str_contains($dom['body_text'],'本店商品')
+            &&str_contains($dom['body_text'],'本店商品已加载完'),'M4C_H5_HTTP_STORE_COMPLETE_NATIVE_PUBLISHED_PRODUCT_ROW_MULTISET');
+    }
+}
+/** Genuine click receipts retain the original three fields and actual screenshot creation order. */
+function m4ch_http_storefront_click_chain(array $rows,array $intent): void
+{
+    usort($rows,static fn(array$a,array$b):int=>$a['sequence']<=>$b['sequence']);$entered=[];$returned=[];
+    foreach($rows as$row){$capture=$row['capture'];$scene=$capture['scene'];
+        foreach($capture['actions']as$action){if($action['action']!=='click')continue;$target=$action['target'];
+            if(in_array($target,['store-entry-a','store-entry-b'],true)){$label=substr($target,-1);$store=$intent['stores'][$label==='a'?0:1];
+                m4c_expect($scene==='store-'.$label&&str_contains($capture['dom']['body_text'],$store['name']),
+                    'M4C_H5_HTTP_REAL_STORE_ENTRY_COMPLETES_AT_MATCHING_SHOP');$entered[$label]=$row['sequence'];
+            }elseif(in_array($target,['store-product-a','store-product-b','store-product-c'],true)){$i=array_search($target,
+                    ['store-product-a','store-product-b','store-product-c'],true);$product=$intent['products'][$i];
+                $label=$product['mer_id']===$intent['stores'][0]['mer_id']?'a':'b';
+                m4c_expect($scene===['product-a','product-b','product-c'][$i]&&isset($entered[$label])&&$entered[$label]<$row['sequence'],
+                    'M4C_H5_HTTP_REAL_SHOP_ROW_RETURNS_TO_ITS_PRODUCT_AFTER_ENTRY');$returned[$label]=true;}
+        }
+    }
+    m4c_expect(isset($entered['a'],$entered['b'],$returned['a'],$returned['b']),
+        'M4C_H5_HTTP_BOTH_REAL_PRODUCT_SHOP_PRODUCT_CLICK_CHAINS');
+}
+
 function m4ch_http_ui_capture(array $payload,array $source,array $runtime): void
 {
     m4c_entry_keys($payload,['schema','scope',...M4CH_HTTP_IDENTITIES,'stage','scene','viewport','actions','dom','network']);
@@ -997,6 +1038,7 @@ function m4ch_http_ui_capture(array $payload,array $source,array $runtime): void
         m4c_expect(is_string($image['src'])&&strlen($image['src'])<=8192&&is_string($image['current_src'])&&strlen($image['current_src'])<=8192
             &&is_bool($image['complete'])&&is_int($image['natural_width'])&&is_int($image['natural_height'])
             &&$image['natural_width']>=0&&$image['natural_height']>=0,'M4C_H5_HTTP_UI_ACTUAL_IMAGE_FACTS');m4ch_http_box($image['box']);}
+    m4ch_http_storefront_dom($dom,$scene,$intent);
     m4ch_http_ui_network($payload['network']);$raw=m4cb_json($payload);
     foreach(['password']as$key)m4c_expect(!str_contains($raw,$sealed['base']['private'][$key]),'M4C_H5_HTTP_UI_NO_PRIVATE_PASSWORD_IN_RECORD');
     unset($sealed,$intent);
@@ -1044,7 +1086,7 @@ function m4ch_http_ui_coverage(array $source,array $runtime): array
             m4c_expect($file->isFile()&&!$file->isLink()&&preg_match('/\A[a-f0-9]{48}\.json\z/D',$file->getFilename())===1,
                 'M4C_H5_HTTP_CLOSED_UI_METADATA_FILENAMES');$names[]=$file->getFilename();}sort($names,SORT_STRING);$directories[$directory]=$names;}
     m4c_expect($directories['ui-captures']===$directories['ui-screenshots']&&$directories['ui-captures']===$directories['ui-reviews'],
-        'M4C_H5_HTTP_EVERY_ACTUAL_CAPTURE_HAS_ORIGINAL_JPEG_AND_REVIEW');$coverage=[];$network=[];$stages=[];
+        'M4C_H5_HTTP_EVERY_ACTUAL_CAPTURE_HAS_ORIGINAL_JPEG_AND_REVIEW');$coverage=[];$network=[];$stages=[];$storefrontRows=[];
     foreach(['B0','B1','B2','B3','B4']as$stage){$record=m4ch_http_private_read(M4CH_HTTP_CONTROL.'/stage-'.$stage.'.json');
         m4ch_http_identity($record,$source,$runtime);m4c_expect(($record['stage']??null)===$stage,'M4C_H5_HTTP_COMPLETE_REAL_SQL_STAGES');
         $stages[]=$record;
@@ -1052,7 +1094,8 @@ function m4ch_http_ui_coverage(array $source,array $runtime): array
     $b3=$stages[3];$key=$b3['business']['confirmation_key']??null;$frame=$b3['business']['confirmation_frame']??null;
     m4c_expect(is_string($key)&&preg_match('/\A[\x21-\x7e]{1,32}\z/D',$key)===1&&is_array($frame)
         &&($b3['business']['frame_read_rows_unchanged']??null)===true,'M4C_H5_HTTP_ORIGINAL_B3_CONFIRMATION_PROOF');
-    $sealed=m4ch_http_sealed_inputs($source);m4ch_stage_restore_chain($stages,$sealed['oracle'],$frame,$key);unset($sealed);
+    $sealed=m4ch_http_sealed_inputs($source);m4ch_stage_restore_chain($stages,$sealed['oracle'],$frame,$key);
+    $storefrontIntent=m4ch_browser_intent($sealed['oracle'])['ui_intent'];unset($sealed);
     foreach($directories['ui-captures']as$name){$capture=m4ch_http_private_read(M4CH_HTTP_CONTROL.'/ui-captures/'.$name);
         m4ch_http_ui_capture($capture,$source,$runtime);
         if($capture['scene']==='confirm-filled')m4c_expect(m4ch_http_confirmation_url($capture['dom']['url'],$source)===$key,
@@ -1060,8 +1103,12 @@ function m4ch_http_ui_coverage(array $source,array $runtime): array
         $shot=m4ch_http_private_read(M4CH_HTTP_CONTROL.'/ui-screenshots/'.$name);
         m4ch_http_screenshot($shot,$source,$runtime);$review=m4ch_http_private_read(M4CH_HTTP_CONTROL.'/ui-reviews/'.$name);
         m4ch_http_review($review,$source,$runtime);$coverage[$capture['scene']][$capture['viewport']['width']]=true;
+        m4c_expect(preg_match('~\Aevidence/browser-screenshots/([0-9]{4})-~D',$shot['path'],$storefrontSequence)===1,
+            'M4C_H5_HTTP_STOREFRONT_ORIGINAL_SCREENSHOT_SEQUENCE');
+        $storefrontRows[]=['sequence'=>(int)$storefrontSequence[1],'capture'=>$capture];
         foreach($capture['network']as$row)m4c_expect(isset($network[$row['request_id']])&&m4ch_http_same($network[$row['request_id']],$row['projection']),
             'M4C_H5_HTTP_UI_NETWORK_BOUND_TO_ACTUAL_SQL_STAGE_CAPTURE');}
+    m4ch_http_storefront_click_chain($storefrontRows,$storefrontIntent);
     foreach(M4CH_HTTP_SCENES as$scene)foreach([320,390,1440]as$width)m4c_expect(isset($coverage[$scene][$width]),
         'M4C_H5_HTTP_ALL_REAL_SCENES_AT_THREE_WIDTHS_REVIEWED');return$directories;
 }

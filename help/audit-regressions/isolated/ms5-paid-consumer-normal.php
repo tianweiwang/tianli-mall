@@ -68,6 +68,7 @@ function m5pc_full_source(array $source,bool $beforePublicCopy=false): void
             $path=$root.'/'.$row['path'];m4c_expect(is_file($path)&&!is_link($path)&&realpath($path)===$path
                 &&filesize($path)===$row['bytes']&&hash_file('sha256',$path)===$row['sha256'],'M4C_FULL_SOURCE_ACTUAL_BYTES');
             $allowed[$path]=true;}}
+    $allowed+=m4cf_import_allowed();
     foreach(get_included_files()as$path){$real=realpath($path);m4c_expect(is_string($real)&&isset($allowed[$real]),'M4C_PAID_INCLUDED_COMPLETE_SOURCE_CLOSURE');}
 }
 function m5pc_source(): array
@@ -132,7 +133,8 @@ function m5pc_source(): array
     $binds=['/workspace'=>[$context['repo_dir'],false],'/source'=>[$context['repo_dir'],false],
         '/run/ms4-prep'=>[$context['prep_dir'],false],'/run/audit'=>[$context['run_dir'],true],
         '/workspace/crmeb/public/install/crmeb.sql'=>[$context['repo_dir'].'/crmeb/public/install/crmeb.sql',false]];
-    $volumes=['/run/audit-app'=>['app-secrets',false],'/run/audit-fixtures'=>['fixture-secrets',true]];
+    $volumes=['/run/audit-app'=>['app-secrets',false],'/run/audit-fixtures'=>['fixture-secrets',true],
+        '/run/audit-customer-form'=>['customer-form-evidence',true]];
     $nativeMounts=[];$tmpMounts=[];
     foreach($created['mounts']as$mount){if($mount['Type']!=='tmpfs'){$nativeMounts[]=$mount;continue;}
         m4c_expect(in_array($mount['Destination'],['/tmp','/workspace/crmeb/public','/workspace/crmeb/runtime'],true)
@@ -151,6 +153,7 @@ function m5pc_source(): array
     m4c_expect(!file_exists('/source/crmeb/.env')&&!file_exists('/workspace/crmeb/.env')
         &&!file_exists('/source/crmeb/public/install.lock'),'M4C_NO_HOST_RUNTIME_CONFIGURATION');
     $values=m5pc_environment($binding,$context);
+    m4c_expect(($values['PHP_MARKETPLACE_CUSTOMER_FORM_PRIVATE_ROOT']??null)==='/run/audit-customer-form','CU_FORM_FIXED_ROLE_ROOT');
     audit_guard_assert();
     $source=$binding+['rule'=>$rule,'environment'=>$values,
         'self_operated_mer_id'=>(int)$values['PHP_MARKETPLACE_SELF_OPERATED_MER_ID'],
@@ -184,14 +187,15 @@ function m5pc_app(array $source): \think\App
         'REDIS_PORT'=>'6379','REDIS_REDIS_PASSWORD'=>$config['redis_password'],'REDIS_SELECT'=>0,'CACHE_CACHE_PREFIX'=>'c:',
         'CACHE_CACHE_TAG_PREFIX'=>'CRMEB:','AUTH_SESSION_EPOCH'=>$config['auth']['session_epoch'],
         'AUTH_STAMP_KEY'=>$config['auth']['stamp_key'],'AUTH_ISSUER'=>$config['auth']['issuer']]);
-    $app->register(\app\AppService::class);$app->bootService($app->getService(\app\AppService::class));
-    $app->bind(require '/workspace/crmeb/app/provider.php');
-    foreach(['app','cache','log','marketplace','auth']as$name)$app->config->set(require '/workspace/crmeb/config/'.$name.'.php',$name);
+    m4cf_expect(!file_exists('/workspace/crmeb/.env')&&!is_link('/workspace/crmeb/.env'),'OFFICIAL_INITIALIZE_NO_UNBOUND_ENV');
+    $configured=$app->env->get();$app->initialize();
+    foreach($configured as$name=>$value)m4cf_expect($app->env->get($name)===$value,'OFFICIAL_INITIALIZE_PRESERVES_ACTUAL_ENV');
+    m4cf_expect($app->initialized(),'OFFICIAL_INITIALIZED_BEFORE_DATABASE_SETTINGS');
     $database=require '/workspace/crmeb/config/database.php';
     $database['connections']['mysql']['params']=[PDO::ATTR_EMULATE_PREPARES=>false,PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION];
     $database['connections']['mysql']['break_reconnect']=false;$app->config->set($database,'database');
-    require_once '/workspace/crmeb/app/common.php';$app->register(\think\service\ModelService::class);
-    $app->bootService($app->getService(\think\service\ModelService::class));date_default_timezone_set($app->config->get('app.default_timezone','Asia/Shanghai'));
+    date_default_timezone_set($app->config->get('app.default_timezone','Asia/Shanghai'));
+    m4cf_expect($app->config->get('marketplace.customer_form.private_root')===M4CF_ROOT&&m4cf_enabled(),'LOADED_PRIVATE_ROOT_FROM_REAL_ENV');
     $self=MarketplaceOrderInput::unsigned($app->config->get('marketplace.self_operated_mer_id'),'self_operated_mer_id');
     m4c_expect($app->db instanceof \crmeb\compat\think\Db&&$app->config->get('marketplace.enabled')===true
         &&$app->config->get('marketplace.trade.enabled')===true&&$app->config->get('marketplace.payment.test_enabled')===true
@@ -291,7 +295,7 @@ function m5pc_prerequisites(array $source): void
         'source_files'=>$source['freeze']['customer_source_files'],'prerequisites_sha256'=>array_intersect_key($hashes,
             array_flip(array_merge(M4C_COMMON_PREREQUISITES,M4C_FILES_PREREQUISITES)))];
     m4c_entry_same($prepareBinding,$wanted);
-    m4c_entry_same(m4c_entry_environment($prepareBinding,$source['context'],'customer-prepare'),$source['environment']);
+    m4c_entry_same(m4cf_base_environment(m4c_entry_environment($prepareBinding,$source['context'],'customer-prepare')),m4cf_base_environment($source['environment']));
     $result=m4c_entry_read($base.'ms4-customer-prepare.json');
     m4c_expect($result['schema']===1&&$result['scope']===M4C_MODE['prepare']['scope']&&$result['status']===M4C_MODE['prepare']['status']
         &&$result['run_id']===$source['run_id']&&$result['source_sha']===$source['source_sha']&&$result['container_id']===$prepare['id']
@@ -965,11 +969,13 @@ function m5pc_projection_rows(array $rows): array
         'sha256'=>hash('sha256',implode("\n",$hashes))];
 }
 /** Real producer inserts may advance only these observed AUTO_INCREMENT values by their exact counts. */
-function m5pc_created_database(array $before,array $after,array $facts): void
+function m5pc_created_database(array $before,array $after,array $facts,?array $formProof=null): void
 {
     $inserts=['eb_store_order'=>1,'eb_store_order_invoice'=>1,'eb_store_order_cart_info'=>2,'eb_marketplace_order_idempotency'=>1,
         'eb_marketplace_stock_movement'=>2,'eb_store_cart'=>3,'eb_store_product_log'=>5,'eb_store_order_status'=>1,
         'eb_marketplace_payment_registry'=>1,'eb_store_product'=>0,'eb_store_product_attr_value'=>0];
+    if($formProof!==null){$inserts['eb_marketplace_customer_asset']=$formProof['asset_inserts'];$inserts['eb_user']=0;
+        $facts['eb_marketplace_customer_asset']=$formProof['rows'];}
     m5pc_non_target_database($before,$after,array_keys($inserts));
     foreach($inserts as$name=>$count){$old=$before['tables'][$name];$current=$after['tables'][$name];
         m4c_expect($current['projection']===m5pc_projection_rows($facts[$name])
@@ -1066,7 +1072,11 @@ function m5pc_produce(\think\App $app,PDO $db,array $source,array $owner,array $
 {
     m4cb_phase('paid_real_parent_factory');m4c_expect(app()===$app&&($GLOBALS['m4c_application']??null)===$app
         &&$owner['uid']===m5pcp_int($fixture['user']['uid'],1),'M4C_PAID_REAL_PARENT_APP_AND_AUTHENTICATED_UID');
-    $uid=$owner['uid'];$fixture['user']=$owner['actual_user'];$mer=m5pcp_int($fixture['merchant']['mer_id'],1,4294967295);
+    $formChild=null;$formFailure=null;$formFailureMeta=null;
+    try{
+    $formChild=m4cf_child_start($source);$formLoaded=m4cb_fixture_load($source);
+    $formActor=m4cf_login($db,$source,$formLoaded['private']);unset($formLoaded);
+    $uid=$owner['uid'];$fixture['user']=m4cb_rows($db,'SELECT * FROM eb_user WHERE uid=?',[$uid])[0];$mer=m5pcp_int($fixture['merchant']['mer_id'],1,4294967295);
     m4c_expect(m5pcp_int($fixture['merchant']['fulfillment_enabled'],1,1)===1,'M4C_PAID_REAL_MERCHANT_FULFILLMENT_ENABLED');
     $connection=Db::connect();$default=$connection->getPdo();
     if(!$default instanceof PDO){$connection->query('SELECT 1',[],true);$default=$connection->getPdo();}
@@ -1106,25 +1116,31 @@ function m5pc_produce(\think\App $app,PDO $db,array $source,array $owner,array $
     $answers=[];foreach($frame['custom_form']as$definition){$product=$fixture['products'][$definition['product_id']]??null;
         m4c_expect(is_array($product)&&$definition['product_name']===$product['store_name'],'M4C_PAID_FORM_REAL_SAVED_PRODUCT');
         $rawFields=json_decode($product['custom_form'],true,32,JSON_THROW_ON_ERROR);$fields=$values=[];
-        foreach($rawFields as$i=>$field){$fields[]=['field_index'=>$i]+$field;$values[]=['field_index'=>$i,'value'=>$field['label']==='number'?'0':'正常HTTP填写'.$definition['product_name']];}
+        foreach($rawFields as$i=>$field){$fields[]=['field_index'=>$i]+$field;$values[]=['field_index'=>$i,'value'=>$field['label']==='img'?[]:($field['label']==='number'?'0':'正常HTTP填写'.$definition['product_name'])];}
         m4c_expect($definition['fields']===$fields&&$definition['definition_sha256']===hash('sha256',MarketplaceOrderInput::canonical([
             'product_id'=>$definition['product_id'],'fields'=>$fields])),'M4C_PAID_INDEPENDENT_PRODUCT_FORM_DEFINITION');
         $answers[]=['product_id'=>$definition['product_id'],'definition_sha256'=>$definition['definition_sha256'],'values'=>$values];
     }
+    $formStage=m4cf_stage($db,$source,$fixture,$frame,$uid,$key,$formActor);$answers=$formStage['answers'];
     $beforeCreate=m4cb_snapshot($db);m4cb_preserved($cart['facts'],$beforeCreate,$uid);
-    m4c_expect($beforeCreate['eb_user']===$before['facts']['eb_user'],'M4C_PAID_INTERNAL_CONFIRMATION_HAS_NO_FURTHER_AUTH_WRITE');
+    m4c_expect($cart['facts']['eb_user']===$formStage['before']['rows']['eb_user'],'M4C_PAID_INTERNAL_CONFIRMATION_HAS_NO_FURTHER_AUTH_WRITE');
+    m4cb_owner_auth_only($cart['facts']['eb_user'],$beforeCreate['eb_user'],$uid);
     $raw=['cartId'=>$csv,'mer_id'=>$mer,'new'=>0,'idem_key'=>'confirm:'.$key,'addressId'=>$address,'invoice_id'=>m5pcp_int($fixture['invoice']['id'],1),
         'payType'=>'','mark'=>'普通HTTP下单','gift_mark'=>'普通HTTP文本','real_name'=>'','phone'=>'','shipping_type'=>1,'is_gift'=>0,'store_id'=>0,
         'couponId'=>0,'useIntegral'=>false,'combinationId'=>0,'pinkId'=>0,'seckill_id'=>0,'bargainId'=>0,'advanceId'=>0,'custom_form'=>$answers];
     $input=MarketplaceOrderInput::create($uid,$key,$raw);m4cb_phase('paid_real_create_service');m5pcp_context($app,$connection,$default,$db);
-    $created=$app->make(MarketplaceOrderCreateServices::class)->create($uid,$key,$raw);
+    $kernelObservation=null;$created=m4cf_kernel_create($app,$db,$source,$uid,$key,$raw,$formActor['token'],$kernelObservation);
     m4c_expect(is_string($created['order_id']??null)&&($created['key']??null)===$key,'M4C_PAID_REAL_CREATED_ORDER_NUMBER');
     $createdFacts=m4cb_saved($db,$fixture,$input['request'],$input['idem_key'],$frame,$input['request']['options']['custom_form'],$created['order_id'],$beforeCreate);
     m4c_expect(m5pc_native_snapshot($db)['auxiliary_rows']===$before['auxiliary_rows'],'M4C_PAID_CREATE_ALL_SEVEN_AUXILIARY_TABLES_UNCHANGED');
-    m4c_expect($createdFacts['eb_user']===$before['facts']['eb_user'],'M4C_PAID_INTERNAL_CREATE_HAS_NO_FURTHER_AUTH_WRITE');
-    $broadCreated=m5pcp_database_snapshot($db);m5pc_created_database($broadBefore,$broadCreated,$createdFacts);
+    // The real kernel request has its own exact last_time delta; every other user column stays unchanged.
+    m4cb_owner_auth_only($beforeCreate['eb_user'],$createdFacts['eb_user'],$uid);
     $roots=m4cb_rows($db,'SELECT * FROM `eb_store_order` WHERE `uid` = ? AND `order_id` = ?',[$uid,$created['order_id']]);
     m4c_expect(count($roots)===1,'M4C_PAID_ACTUAL_ROOT_PK_FROM_COMMITTED_ORDER');$saved=m5pcp_saved($db,m5pcp_int($roots[0]['id'],1));
+    $formProof=m4cf_bound($db,$formStage,$roots[0],$kernelObservation,$formActor);
+    $broadCreated=m5pcp_database_snapshot($db);m5pc_created_database($broadBefore,$broadCreated,$createdFacts,$formProof);
+    $repeatBefore=m5pcp_database_snapshot($db);$replayed=$app->make(MarketplaceOrderCreateServices::class)->create($uid,$key,$raw);
+    m4cf_expect($replayed===$created&&m5pcp_database_snapshot($db)===$repeatBefore,'SAME_BODY_ORIGINAL_EARLY_RETURN');m4cf_replay($db,$formProof);
     m5pcp_birth($db,$saved);m5pcp_context($app,$connection,$default,$db);
     m4cb_phase('paid_producer_sequence_natural_expiry');$sequence=m5pcp_sequence_keys($db,$app,$saved);
     $barrier=m5pcp_sequence_expiry_barrier($db,$sequence);$snapshot=m5pcp_snapshot($db);
@@ -1141,7 +1157,11 @@ function m5pc_produce(\think\App $app,PDO $db,array $source,array $owner,array $
     m4c_expect($native['auxiliary_rows']===$before['auxiliary_rows'],'M4C_PAID_PAYMENT_ALL_SEVEN_AUXILIARY_TABLES_UNCHANGED');
     return ['proof'=>$proof,'snapshot'=>$native,'sequence_barrier'=>$barrier,
         'full_database_table_count'=>count($snapshot['names']),'full_database_redis_sha256'=>hash('sha256',serialize($snapshot)),
-        'fixture_runtime_uid'=>$uid,'actual_form_and_invoice_verified'=>true,'all_non_targets_preserved'=>true];
+        'fixture_runtime_uid'=>$uid,'actual_form_and_invoice_verified'=>true,'all_non_targets_preserved'=>true,'customer_form'=>$formProof];
+    }catch(Throwable $error){$formFailure=$error;$formFailureMeta=[$GLOBALS['m4c_phase']??null,$GLOBALS['m4c_failed_assertion']??null,$GLOBALS['m4c_warning']??null];throw $error;}
+    finally{if($formChild!==null){try{$GLOBALS['m4cf_paid_child_proof']=m4cf_child_close($formChild);}
+        catch(Throwable $closeError){if($formFailure===null)throw $closeError;}}
+        if($formFailureMeta!==null)[$GLOBALS['m4c_phase'],$GLOBALS['m4c_failed_assertion'],$GLOBALS['m4c_warning']]=$formFailureMeta;}
 }
 
 function m5pc_seal(array $source,array $loaded,array $owner,array $produced,PDO $db): array
@@ -1162,7 +1182,7 @@ function m5pc_seal(array $source,array $loaded,array $owner,array $produced,PDO 
         'prepare_identity'=>['container_id'=>$prepare['prepare_container_id'],'native_created_sha256'=>$prepare['prepare_native_created_sha256'],
             'source_binding_sha256'=>$prepare['prepare_source_binding_sha256'],'prepare_receipt_sha256'=>$loaded['prepare_receipt_sha256']],
         'fixture_descriptor'=>['path'=>M4CB_FIXTURE,'bytes'=>$loaded['stat']['size'],'sha256'=>$loaded['sha256'],'stat'=>$loaded['stat']],
-        'authenticated_owner'=>$owner,'order_id'=>$proof['order_id'],'order_no'=>$proof['order_no'],'attempt_id'=>$proof['attempt_id'],
+        'authenticated_owner'=>$owner,'customer_form'=>m4cf_archive($produced['customer_form']),'order_id'=>$proof['order_id'],'order_no'=>$proof['order_no'],'attempt_id'=>$proof['attempt_id'],
         'original_create_result'=>$proof['original_create_result'],'account_snapshot'=>$proof['account_snapshot'],
         'payment_application'=>$proof['application'],'root_payment'=>$proof['root_payment'],
         'full_database_table_count'=>$produced['full_database_table_count'],
@@ -1206,6 +1226,7 @@ function m5pc_run(): int
     $owner=m5pc_authenticated_owner($source,$loaded,$db);
     m4c_expect($GLOBALS['m5pc_child_proof']['stopped']===true&&!audit_app_listener_open(),'M4C_PAID_AUTH_CHILD_STOPPED_BEFORE_PRODUCTION');
     $produced=m5pc_produce($app,$db,$source,$owner,$loaded['private']['fixture']);
+    $produced['customer_form']['upload_child']=$GLOBALS['m4cf_paid_child_proof'];
     $sealed=m5pc_seal($source,$loaded,$owner,$produced,$db);
     m4c_expect(empty($GLOBALS['m4c_terminate_requested']),'M4C_PAID_PRODUCER_NOT_INTERRUPTED');
     m4cb_phase('final_source');m5pc_full_source($source);m5pc_prerequisites($source);
@@ -1216,7 +1237,7 @@ function m5pc_run(): int
         'source_binding_sha256'=>$source['source_binding_sha256'],'environment_sha256'=>$source['environment_sha256'],
         'environment_native_sha256'=>$source['environment_native_sha256'],'phase'=>'final_source',
         'entry_return_code'=>0,'termination'=>'NORMAL_RETURN','native_exit'=>null,'native_exit_observation'=>'HOST_NATIVE_REQUIRED',
-        'full_source_unchanged'=>true,'child'=>$owner['child'],'metadata_observer'=>$observer,
+        'full_source_unchanged'=>true,'child'=>$owner['child'],'metadata_observer'=>$observer,'customer_form'=>m4cf_paid_receipt($produced['customer_form']),
         'business'=>['orders'=>1,'items'=>2,'reserves'=>2,'invoices'=>1,'payment_attempts'=>1,'generation'=>'1',
             'real_credential_login_and_user_get'=>true,'http_identity_call_count'=>2,'real_persistent_cart_confirm_create'=>true,
             'actual_saved_g0_before_payment'=>true,'same_app_factory_driver_connection'=>true,
@@ -1282,7 +1303,7 @@ if(realpath($_SERVER['SCRIPT_FILENAME']??'')===__FILE__){
                 'freeze_sha256'=>$source['freeze_sha256'],'native_created_sha256'=>$source['native_created_sha256'],
                 'source_binding_sha256'=>$source['source_binding_sha256'],'phase'=>$GLOBALS['m4c_phase']??'source',
                 'entry_return_code'=>1,'termination'=>'EXCEPTION','native_exit'=>null,'native_exit_observation'=>'HOST_NATIVE_REQUIRED',
-                'failed_assertion'=>$code,'child'=>$GLOBALS['m5pc_child_proof']??null,
+                'failed_assertion'=>$code,'child'=>$GLOBALS['m5pc_child_proof']??null,'customer_form_upload_child'=>$GLOBALS['m4cf_child_proof']??null,
                 'customer_paid_API_DOM'=>'NOT RUN','merchant_paid_API_DOM'=>'NOT RUN','platform_paid_API_DOM'=>'NOT RUN',
                 'full_acceptance'=>'INCOMPLETE','stopped_samples'=>'NOT RUN']);}catch(Throwable $publishError){}
         }

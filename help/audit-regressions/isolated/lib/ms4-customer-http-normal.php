@@ -11,6 +11,8 @@ use app\services\user\LoginServices;
 use think\db\ConnectionInterface;
 use think\facade\Db;
 
+require_once __DIR__.'/ms4-customer-form-normal.php';
+
 const M4CB_FIXTURE = '/run/audit-fixtures/ms4-customer-fixture.json';
 const M4CB_TABLES = ['eb_store_order','eb_store_order_invoice','eb_store_order_cart_info',
     'eb_marketplace_order_idempotency','eb_marketplace_stock_movement','eb_store_product','eb_store_product_attr_value',
@@ -194,14 +196,15 @@ function m4c_app(string $mode,array $source): \think\App
         'REDIS_PORT'=>'6379','REDIS_REDIS_PASSWORD'=>$config['redis_password'],'REDIS_SELECT'=>0,'CACHE_CACHE_PREFIX'=>'c:',
         'CACHE_CACHE_TAG_PREFIX'=>'CRMEB:','AUTH_SESSION_EPOCH'=>$config['auth']['session_epoch'],
         'AUTH_STAMP_KEY'=>$config['auth']['stamp_key'],'AUTH_ISSUER'=>$config['auth']['issuer']]);
-    $app->register(\app\AppService::class);$app->bootService($app->getService(\app\AppService::class));
-    $app->bind(require '/workspace/crmeb/app/provider.php');
-    foreach(['app','cache','log','marketplace','auth']as$name)$app->config->set(require '/workspace/crmeb/config/'.$name.'.php',$name);
+    m4cf_expect(!file_exists('/workspace/crmeb/.env')&&!is_link('/workspace/crmeb/.env'),'OFFICIAL_INITIALIZE_NO_UNBOUND_ENV');
+    $configured=$app->env->get();$app->initialize();
+    foreach($configured as$name=>$value)m4cf_expect($app->env->get($name)===$value,'OFFICIAL_INITIALIZE_PRESERVES_ACTUAL_ENV');
+    m4cf_expect($app->initialized(),'OFFICIAL_INITIALIZED_BEFORE_DATABASE_SETTINGS');
     $database=require '/workspace/crmeb/config/database.php';
     $database['connections']['mysql']['params']=[PDO::ATTR_EMULATE_PREPARES=>false,PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION];
     $database['connections']['mysql']['break_reconnect']=false;$app->config->set($database,'database');
-    require_once '/workspace/crmeb/app/common.php';$app->register(\think\service\ModelService::class);
-    $app->bootService($app->getService(\think\service\ModelService::class));date_default_timezone_set($app->config->get('app.default_timezone','Asia/Shanghai'));
+    date_default_timezone_set($app->config->get('app.default_timezone','Asia/Shanghai'));
+    if($mode==='verify')m4cf_expect($app->config->get('marketplace.customer_form.private_root')===M4CF_ROOT&&m4cf_enabled(),'LOADED_PRIVATE_ROOT_FROM_REAL_ENV');
     $self=MarketplaceOrderInput::unsigned($app->config->get('marketplace.self_operated_mer_id'),'self_operated_mer_id');
     m4c_expect($app->db instanceof \crmeb\compat\think\Db&&$app->config->get('marketplace.enabled')===true
         &&$app->config->get('marketplace.trade.enabled')===true&&$app->config->get('marketplace.payment.test_enabled')===true
@@ -295,6 +298,9 @@ LUA;
         foreach([['name'=>'甲','price'=>'20.15','cost'=>'7.45'],['name'=>'乙','price'=>'30.25','cost'=>'9.35']]as$index=>$spec){
             $forms=[['title'=>'同名资料','label'=>'text','status'=>true,'value'=>'']];
             if($index===0)$forms[]=['title'=>'同名资料','label'=>'number','status'=>false,'value'=>''];
+            if($index===0){$forms[]=['title'=>'正常必填原图','label'=>'img','status'=>true,'value'=>[]];
+                $forms[]=['title'=>'正常选填空原图','label'=>'img','status'=>false,'value'=>[]];}
+            else $forms[]=['title'=>'另一商品原图','label'=>'img','status'=>false,'value'=>[]];
             $product=m4cb_insert($pdo,'eb_store_product',['mer_id'=>$merchant['mer_id'],'store_name'=>'通用HTTP商品'.$spec['name'],'unit_name'=>'件',
                 'spec_type'=>1,'stock'=>20,'sales'=>0,'price'=>$spec['price'],'cost'=>$spec['cost'],'postage'=>'2.67','freight'=>2,'temp_id'=>0,
                 'is_show'=>1,'review_status'=>2,'is_vip'=>0,'logistics'=>'1','min_qty'=>1,'is_limit'=>0,
@@ -341,7 +347,7 @@ function m4cb_fixture_load(array $source): array
     $value=json_decode($raw,true,64,JSON_THROW_ON_ERROR);$path='/run/audit/evidence/ms4-customer-prepare.json';
     m4c_expect(is_file($path)&&!is_link($path)&&filesize($path)<=1048576,'M4C_ACTUAL_PUBLIC_PREPARE_RECEIPT');
     $publicRaw=file_get_contents($path);$prepare=json_decode($publicRaw,true,64,JSON_THROW_ON_ERROR);
-    $privateEnvironment=$value['environment'];$actualEnvironment=$source['environment'];
+    $privateEnvironment=m4cf_base_environment($value['environment']);$actualEnvironment=m4cf_base_environment($source['environment']);
     ksort($privateEnvironment,SORT_STRING);ksort($actualEnvironment,SORT_STRING);
     m4c_expect(is_array($value)&&$value['schema']===1&&$value['scope']==='MS4_CUSTOMER_PRIVATE_FIXTURE'
         &&$value['run_id']===$source['run_id']&&$value['source_sha']===$source['source_sha']&&$value['freeze_sha256']===$source['freeze_sha256']
@@ -629,11 +635,13 @@ function m4c_verify_http(array $source): array
     $answers=[];foreach($frame['custom_form']as$definition){$product=$fixture['products'][$definition['product_id']]??null;
         m4c_expect(is_array($product)&&$definition['product_name']===$product['store_name'],'M4C_REAL_FORM_BELONGS_TO_PREPARED_PRODUCT');
         $raw=json_decode($product['custom_form'],true,32,JSON_THROW_ON_ERROR);$fields=[];$values=[];
-        foreach($raw as$i=>$field){$fields[]=['field_index'=>$i]+$field;$values[]=['field_index'=>$i,'value'=>$field['label']==='number'?'0':'正常HTTP填写'.$definition['product_name']];}
+        foreach($raw as$i=>$field){$fields[]=['field_index'=>$i]+$field;$values[]=['field_index'=>$i,'value'=>$field['label']==='img'?[]:($field['label']==='number'?'0':'正常HTTP填写'.$definition['product_name'])];}
         m4c_expect($definition['fields']===$fields&&$definition['definition_sha256']===hash('sha256',MarketplaceOrderInput::canonical([
             'product_id'=>$definition['product_id'],'fields'=>$fields])),'M4C_INDEPENDENT_NATIVE_PRODUCT_FORM_DEFINITION');
         $answers[]=['product_id'=>$definition['product_id'],'definition_sha256'=>$definition['definition_sha256'],'values'=>$values];
     }
+    $formActor=['app'=>'api','id'=>$uid,'token'=>substr($headers['Authori-zation'],7)];
+    $formStage=m4cf_stage($pdo,$source,$fixture,$frame,$uid,$key,$formActor);$answers=$formStage['answers'];
     $lookupHeaders=$headers+['Content-Type'=>'application/json'];m4cb_phase('business_http_lookup_before');
     m4cb_lookup_result(m4cb_http('POST','/api/order/confirmation/'.rawurlencode($key),$lookupHeaders,'{}'),$key,null);
     $beforeCreate=m4cb_snapshot($pdo);m4cb_preserved($cartFacts,$beforeCreate,$uid);
@@ -641,12 +649,15 @@ function m4c_verify_http(array $source): array
         'payType'=>'','mark'=>'普通HTTP下单','gift_mark'=>'普通HTTP文本','real_name'=>'','phone'=>'','shipping_type'=>1,'is_gift'=>0,'store_id'=>0,
         'couponId'=>0,'useIntegral'=>false,'combinationId'=>0,'pinkId'=>0,'seckill_id'=>0,'bargainId'=>0,'advanceId'=>0,'custom_form'=>$answers];
     $wire=m4cb_json($raw);$input=MarketplaceOrderInput::create($uid,$key,$raw);m4cb_phase('business_http_production_create');
-    $number=m4cb_wire_created(m4cb_http('POST','/api/order/create/'.rawurlencode($key),$headers,$raw),$key);
+    $createStarted=time();$number=m4cb_wire_created(m4cb_http('POST','/api/order/create/'.rawurlencode($key),$headers,$raw),$key);$createEnded=time();
     m4cb_phase('business_independent_created_readback');m4cb_guard_readonly();
     $createdFacts=m4cb_saved($pdo,$fixture,$input['request'],$input['idem_key'],$frame,$input['request']['options']['custom_form'],$number,$beforeCreate);
+    $formRoot=m4cb_rows($pdo,'SELECT * FROM eb_store_order WHERE uid=? AND order_id=?',[$uid,$number]);
+    m4cf_expect(count($formRoot)===1,'HTTP_REAL_ROOT_PK');
+    $formProof=m4cf_bound($pdo,$formStage,$formRoot[0],['actual_interval'=>[$createStarted,$createEnded]],$formActor);
     m4cb_phase('business_http_normal_same_request_replay');m4c_expect(m4cb_json($raw)===$wire,'M4C_COMPLETE_ORIGINAL_REQUEST_BYTES_REUSED');
     m4cb_wire_created(m4cb_http('POST','/api/order/create/'.rawurlencode($key),$headers,$raw),$key,$number);
-    $replayFacts=m4cb_snapshot($pdo);m4cb_preserved($createdFacts,$replayFacts,$uid);
+    $replayFacts=m4cb_snapshot($pdo);m4cb_preserved($createdFacts,$replayFacts,$uid);m4cf_replay($pdo,$formProof);
     m4cb_phase('business_http_lookup_created');m4cb_lookup_result(m4cb_http('POST','/api/order/confirmation/'.rawurlencode($key),$lookupHeaders,'{}'),$key,$number);
     $lookupFacts=m4cb_snapshot($pdo);m4cb_preserved($replayFacts,$lookupFacts,$uid);
     m4cb_phase('business_http_saved_computed');$saved=m4cb_http('POST','/api/order/computed/'.rawurlencode($key),$headers,$computedBody);
@@ -664,5 +675,5 @@ function m4c_verify_http(array $source): array
         'saved_computed_unchanged'=>true,'nonempty_forms_and_invoice_verified'=>true,'whole_line_postage_verified'=>true,
         'only_owner_auth_fields_changed'=>true,'order_still_unpaid'=>true,'event_preconditions'=>$events,
         'private_facts_sha256_prefix'=>substr(hash('sha256',serialize($final)),0,12),
-        'payment_or_shipping_executed'=>false,'customer_DOM_acceptance'=>'NOT RUN','full_acceptance'=>'INCOMPLETE'];
+        'customer_form'=>m4cf_matrix_receipt('CU_FORM_NORMAL_CUSTOMER_HTTP'),'payment_or_shipping_executed'=>false,'customer_DOM_acceptance'=>'NOT RUN','full_acceptance'=>'INCOMPLETE'];
 }

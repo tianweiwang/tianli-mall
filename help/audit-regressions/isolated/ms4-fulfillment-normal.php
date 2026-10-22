@@ -47,7 +47,7 @@ function m4fn_extra():array
          'help/audit-regressions/isolated/lib/ms4-three-legacy-producer.php',
          'help/audit-regressions/isolated/lib/ms4-three-legacy-reference.php',
          'help/audit-regressions/isolated/lib/ms4-three-read-normal.php']),SORT_STRING));
-    sort($paths,SORT_STRING);m4fn_expect(count($paths)===25,'TASK6_FINITE_TWENTY_FIVE_EXTRAS');return $paths;
+    sort($paths,SORT_STRING);m4fn_expect(count($paths)===26,'TASK6_FINITE_TWENTY_SIX_EXTRAS');return $paths;
 }
 function m4fn_prerequisite_names():array
 {
@@ -80,6 +80,7 @@ function m4fn_full_source(array $source,bool $beforePublicCopy=false):void
             if($beforePublicCopy&&$root==='/workspace'&&in_array($row['path'],['crmeb/public/index.php','crmeb/public/router.php'],true))continue;
             $path=$root.'/'.$row['path'];m4fn_expect(is_file($path)&&!is_link($path)&&realpath($path)===$path
                 &&filesize($path)===$row['bytes']&&hash_file('sha256',$path)===$row['sha256'],'TASK6_SOURCE_ALL_BYTES');$allowed[$path]=true;}}
+    $allowed+=m4cf_import_allowed();
     foreach(get_included_files()as$path)m4fn_expect(isset($allowed[realpath($path)]),'TASK6_INCLUDED_COMPLETE_SOURCE');
 }
 function m4fn_environment(array $binding,array $context):array
@@ -154,7 +155,8 @@ function m4fn_source(): array
     $binds=['/workspace'=>[$context['repo_dir'],false],'/source'=>[$context['repo_dir'],false],
         '/run/ms4-prep'=>[$context['prep_dir'],false],'/run/audit'=>[$context['run_dir'],true],
         '/workspace/crmeb/public/install/crmeb.sql'=>[$context['repo_dir'].'/crmeb/public/install/crmeb.sql',false]];
-    $volumes=['/run/audit-app'=>['app-secrets',false],'/run/audit-fixtures'=>['fixture-secrets',true]];
+    $volumes=['/run/audit-app'=>['app-secrets',false],'/run/audit-fixtures'=>['fixture-secrets',true],
+        '/run/audit-customer-form'=>['customer-form-evidence',false]];
     $nativeMounts=[];$tmpMounts=[];
     foreach($created['mounts']as$mount){if($mount['Type']!=='tmpfs'){$nativeMounts[]=$mount;continue;}
         m4c_expect(in_array($mount['Destination'],['/tmp','/workspace/crmeb/public','/workspace/crmeb/runtime'],true)
@@ -173,6 +175,7 @@ function m4fn_source(): array
     m4c_expect(!file_exists('/source/crmeb/.env')&&!file_exists('/workspace/crmeb/.env')
         &&!file_exists('/source/crmeb/public/install.lock'),'M4C_NO_HOST_RUNTIME_CONFIGURATION');
     $values=m4fn_environment($binding,$context);
+    m4c_expect(($values['PHP_MARKETPLACE_CUSTOMER_FORM_PRIVATE_ROOT']??null)==='/run/audit-customer-form','CU_FORM_FIXED_ROLE_ROOT');
     audit_guard_assert();
     $source=$binding+['rule'=>$rule,'environment'=>$values,
         'self_operated_mer_id'=>(int)$values['PHP_MARKETPLACE_SELF_OPERATED_MER_ID'],
@@ -206,14 +209,15 @@ function m4fn_app(array $source): \think\App
         'REDIS_PORT'=>'6379','REDIS_REDIS_PASSWORD'=>$config['redis_password'],'REDIS_SELECT'=>0,'CACHE_CACHE_PREFIX'=>'c:',
         'CACHE_CACHE_TAG_PREFIX'=>'CRMEB:','AUTH_SESSION_EPOCH'=>$config['auth']['session_epoch'],
         'AUTH_STAMP_KEY'=>$config['auth']['stamp_key'],'AUTH_ISSUER'=>$config['auth']['issuer']]);
-    $app->register(\app\AppService::class);$app->bootService($app->getService(\app\AppService::class));
-    $app->bind(require '/workspace/crmeb/app/provider.php');
-    foreach(['app','cache','log','marketplace','auth']as$name)$app->config->set(require '/workspace/crmeb/config/'.$name.'.php',$name);
+    m4cf_expect(!file_exists('/workspace/crmeb/.env')&&!is_link('/workspace/crmeb/.env'),'OFFICIAL_INITIALIZE_NO_UNBOUND_ENV');
+    $configured=$app->env->get();$app->initialize();
+    foreach($configured as$name=>$value)m4cf_expect($app->env->get($name)===$value,'OFFICIAL_INITIALIZE_PRESERVES_ACTUAL_ENV');
+    m4cf_expect($app->initialized(),'OFFICIAL_INITIALIZED_BEFORE_DATABASE_SETTINGS');
     $database=require '/workspace/crmeb/config/database.php';
     $database['connections']['mysql']['params']=[PDO::ATTR_EMULATE_PREPARES=>false,PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION];
     $database['connections']['mysql']['break_reconnect']=false;$app->config->set($database,'database');
-    require_once '/workspace/crmeb/app/common.php';$app->register(\think\service\ModelService::class);
-    $app->bootService($app->getService(\think\service\ModelService::class));date_default_timezone_set($app->config->get('app.default_timezone','Asia/Shanghai'));
+    date_default_timezone_set($app->config->get('app.default_timezone','Asia/Shanghai'));
+    m4cf_expect($app->config->get('marketplace.customer_form.private_root')===M4CF_ROOT&&m4cf_enabled(),'LOADED_PRIVATE_ROOT_FROM_REAL_ENV');
     $self=MarketplaceOrderInput::unsigned($app->config->get('marketplace.self_operated_mer_id'),'self_operated_mer_id');
     m4c_expect($app->db instanceof \crmeb\compat\think\Db&&$app->config->get('marketplace.enabled')===true
         &&$app->config->get('marketplace.trade.enabled')===true&&$app->config->get('marketplace.payment.test_enabled')===true
@@ -254,7 +258,7 @@ function m4fn_prerequisites(array $source):void
         'requested_prep_source'=>$source['requested_prep_source'],'entry_sha256'=>m4c_entry_hash('/workspace/'.M4C_ENTRY),
         'source_files'=>$source['freeze']['customer_source_files'],'prerequisites_sha256'=>array_intersect_key($hashes,
             array_flip(array_merge(M4C_COMMON_PREREQUISITES,M4C_FILES_PREREQUISITES)))];
-    m4c_entry_same($c3,$expected);m4c_entry_same(m4c_entry_environment($c3,$source['context'],'customer-prepare'),$source['environment']);
+    m4c_entry_same($c3,$expected);m4c_entry_same(m4cf_base_environment(m4c_entry_environment($c3,$source['context'],'customer-prepare')),m4cf_base_environment($source['environment']));
     $prepared=m4c_entry_read($base.'ms4-customer-prepare.json');
     m4fn_expect($prepared['schema']===1&&$prepared['scope']===M4C_MODE['prepare']['scope']&&$prepared['status']===M4C_MODE['prepare']['status']
         &&$prepared['run_id']===$source['run_id']&&$prepared['source_sha']===$source['source_sha']&&$prepared['container_id']===$prepare['id']
@@ -291,7 +295,9 @@ function m4fn_prerequisites(array $source):void
     m4c_entry_keys($paid,['schema','scope','status','run_id','source_sha','container_id','freeze_sha256','native_created_sha256',
         'source_binding_sha256','environment_sha256','environment_native_sha256','phase','entry_return_code','termination','native_exit',
         'native_exit_observation','full_source_unchanged','child','metadata_observer','business','customer_paid_API_DOM','merchant_paid_API_DOM',
-        'platform_paid_API_DOM','full_acceptance','stopped_samples','assertions']);
+        'platform_paid_API_DOM','full_acceptance','stopped_samples','assertions','customer_form']);
+    m4cf_paid_receipt_check($paid['customer_form']);
+    m4fn_expect($paid['customer_form']['upload_child']['group']['leader_pid']!==$paid['child']['group']['leader_pid'],'TASK6_DISTINCT_NORMAL_UPLOAD_CHILD');
     m4fn_expect($paid['schema']===1&&$paid['scope']===M5PC_RULE['scope']&&$paid['status']===M5PC_RULE['status']
         &&$paid['run_id']===$source['run_id']&&$paid['source_sha']===$source['source_sha']&&$paid['container_id']===$paidCreated['id']
         &&$paid['freeze_sha256']===$source['freeze_sha256']&&$paid['native_created_sha256']===$hashes['paid-producer-created.json']
@@ -396,7 +402,7 @@ function m4fn_owner(array $source,PDO $db):array
     $input=m4fn_private_read(M5PC_BASELINE,2097152);$value=$input['value'];$base='/run/audit/evidence/';
     m4c_entry_keys($value,['schema','scope','run_id','source_sha','freeze_sha256','container_id','native_created_sha256',
         'source_binding_sha256','environment_sha256','environment_native_sha256','environment','self_operated_mer_id',
-        'prepare_identity','fixture_descriptor','authenticated_owner','order_id','order_no','attempt_id','original_create_result',
+        'prepare_identity','fixture_descriptor','authenticated_owner','customer_form','order_id','order_no','attempt_id','original_create_result',
         'account_snapshot','payment_application','root_payment','full_database_table_count','full_database_redis_sha256','native_snapshot']);
     $paid=m4c_entry_read($base.'paid-producer-result.json');$producer=$paid['container_id'];$hashes=$source['prerequisites_sha256'];
     m4fn_expect($value['schema']===1&&$value['scope']==='MS5_PAID_CONSUMER_NATIVE_BASELINE'
@@ -437,7 +443,9 @@ function m4fn_owner(array $source,PDO $db):array
         &&$owner['account']===$loaded['private']['account']&&$owner['account']===$loaded['private']['fixture']['user']['account'],
         'TASK6_ORIGINAL_HTTP_UID_AND_REAL_FIXTURE_ACCOUNT');
     $users=m5pcp_rows($db,'SELECT * FROM `eb_user` WHERE `uid` = ?',[$uid]);
-    m4fn_expect(count($users)===1&&$users[0]===$owner['actual_user']&&$users[0]['account']===$owner['account']
+    $formOwner=m4cf_owner_after($value['customer_form'],$owner['actual_user'],$uid);
+    m4c_entry_same(m4cf_paid_receipt(m4cf_restore($value['customer_form'])),$paid['customer_form']);
+    m4fn_expect(count($users)===1&&$users[0]===$formOwner&&$users[0]['account']===$owner['account']
         &&m5pcp_int($users[0]['status'],1,1)===1&&m5pcp_int($users[0]['is_del'],0,0)===0,'TASK6_ACTUAL_SAVED_BUYER_STILL_VALID');
     $archive=m5pc_native_snapshot_restore($value['native_snapshot']);
     m4fn_expect(m5pc_native_snapshot($db)===$archive&&m5pcp_int($value['order_id'],1)>0
@@ -535,7 +543,7 @@ function m4fn_snapshot(PDO $db):array
     $database=m5pcp_database_snapshot($db);$rows=[];
     foreach(M4FN_TABLES as$name){$order=$name==='eb_store_order_status'?'': ' ORDER BY `id`';
         $rows[$name]=m5pcp_rows($db,'SELECT * FROM '.m5pcp_quote($name).$order);}
-    return ['database'=>$database,'rows'=>$rows,'redis'=>m5pcp_atomic_redis(audit_redis())];
+    return ['database'=>$database,'rows'=>$rows,'redis'=>m5pcp_atomic_redis(audit_redis()),'customer_form_private'=>m4cf_files()];
 }
 function m4fn_row_multiset(array $rows):array
 {
@@ -548,11 +556,13 @@ function m4fn_projection(array $rows):array
 }
 function m4fn_zero(array $before,array $after):void
 {
+    m4fn_expect($before['customer_form_private']===$after['customer_form_private'],'TASK6_PRIVATE_ORIGINAL_IMAGES_UNCHANGED');
     m4fn_expect($before['database']===$after['database']&&$before['rows']===$after['rows']
         &&$before['redis']['keys']===$after['redis']['keys'],'TASK6_READ_OR_REPLAY_EXACT_ZERO_DATABASE_REDIS_DELTA');
 }
 function m4fn_delta(array $before,array $after,array $expectedRows,array $inserted=[],array $redisChanges=[]):void
 {
+    m4fn_expect($before['customer_form_private']===$after['customer_form_private'],'TASK6_PRIVATE_ORIGINAL_IMAGES_UNCHANGED');
     m4c_entry_keys($expectedRows,M4FN_TABLES);$expected=$before['database'];
     foreach(M4FN_TABLES as$name){$old=$before['database']['tables'][$name];$new=$after['database']['tables'][$name];
         if(isset($inserted[$name]))m5pcp_attempt_metadata_advance($old,$new,$inserted[$name]);

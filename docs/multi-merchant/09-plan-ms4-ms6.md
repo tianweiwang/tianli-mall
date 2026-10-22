@@ -6,6 +6,27 @@
 
 ## 当前交付状态（2026-10-22）
 
+### 当前eadf实际收尾与CU_FORM／店铺覆盖后继（2026-10-23）
+
+本段承接原MS4任务和唯一外部DESIGN-TASKS，不覆盖下面任何历史失败或通过。目标为通用多商户商城，商品列表、SKU、规格价格库存继续复用原系统；仅L2本地开发，不推送、部署或执行真实资金。
+
+实际基线：Run20261022170115298d9f/Source eadf74f8924a5ed5b801043030b579dffe5d1702/freeze49ec9edf17ce7757e1465e235d57469805a708f7bd7cc48ce7e87bdabdfc4f91。内部测试付款、Task6两发货/三收货/两子单/五重放及288内部读取已通过；AR的第175个HTTP请求（评价图片POST）返回HTTP503，自然exit1，完整A失败。六键收据complete=false/phase=preflight/physical_changed=false/physical_complete=false/database_committed=false/cleanup_complete=null；不能据此推断此前没有业务，亦不能把full_source_unchanged=false当作已证明源码漂移。Worker和fresh B未启动。
+
+正常收尾和另一次只读核零已经真实完成：原四容器、一内部网、七专用卷精确非force关闭，close84及zero12条原生命令的同PID/native/wait均0，六fresh查询为空。close RESULT SHA036cd131127768076ccfd23e8c45adcaef3ea6febd50f052b88e159f4c7b601e；zero RESULT SHA1b0943a80a8b025038b40c77021fd6d758ac0b1a7f0f92116d4aba65417d6a8d。原失败和全部原公件保持；清理完成不签售后通过。
+
+后继设计与采用范围：七件CU_FORM正常PHP辅助差量、两件店铺验收PHP及本次两份记录，共十一tracked路径；原external/browser-v1/ms4-customer-browser.mjs在仓库外单独绑定，不混算tracked。七PHP最终authority由customer-order-form-normal-business-source-r2提供；它沿用原r1五件完整字节，合入已冻结AR的真实filesystem配置与自有uploads前置，以及Worker对新12/9/5/6公件的严格消费。旧root-preparation和旧profile保持冻结；最终九profile使用新真实PHP字节和整个接口重新绑定，不能沿用旧SHA。采用提交身份以真实Git核实，未造未来HEAD或业务PASS。
+
+CU_FORM需求保持：真实HTTP multipart，同App官方kernel首次create，原service同体重放；完整34列独立BEFORE，绑定只允许state/root_order_id/bound_at三列变化；四上传/三选中/八必填图片项/选填空/多商品，五种真实原图读取及保存后读取。新Run仅新增其专用customer-form-evidence卷：initializer真实空根0700，prepare原六环境且不挂图卷；verify/paid/AR为RW，Task6/Worker为RO；七/九环境保持各自原生序列化。完整close/zero精确覆盖八卷及原CID/网络，不修改旧七卷历史。
+
+AR仅在原business BEFORE之前用实际同App读取已封存filesystem配置，缺失命名空间才load原配置；严格核本地disk及其实际public/uploads父目录，只创建原本缺席的自有0700目录。既有目录不chmod或清空。原29键业务结果、六键失败receipt、34先决及65项Task6历史保持；新的非秘密准备证明须由Host、Worker和独立zero逐层验证。旧503具体gate未证，新完整Run才能验证后继能否越过旧边界。
+
+店铺覆盖保持原九场景×320/390/1440、JPEG、review、原20步42ACK及27业务+7辅助观察，补真实商品→店铺→同商品点击、店名、完整发布集合和公开DTO。完整native BEFORE和独立预期来自原商品/商家/配置，不调用生产projector作expected；相对详情图片按真实封存site_url合同推导。两PHP与external driver已有Source独审及必要语法记录，真实浏览器业务仍待新B。
+
+任务：[x]当前eadf内部付款/履约实际证据及原AR失败保留；[x]原七卷实例正常close与独立zero；[ ]本次最终七PHP及九profile合并、独审和变化字节的必要语法；[ ]仅十一tracked路径本地采用、新cleanHEAD/同来源验证及完整M/S发布绑定；[ ]新八卷完整A付款/履约/售后评价/Worker/五reader原图/完整SQLRedis及正常收尾；[ ]同来源fresh B、三端20步42ACK/三宽DOM、H5/MP/APP及设备验收。已通过旧Source/语法记录保留，新改的AR/Worker/initializer不能冒用旧语法记录。
+
+其它原责任全部保留：非空历史权益/数量/归属37步与四CLI、backfill/enforce及最终enabled=true、N1/N2、其它T4/T5/头像/defaultCompat/历史客户端、MS5真实付款退款回调对账费用结算、MS6发布恢复及人工验收。MP/APP正式构建缺显式正式HTTPS API origin，允许按11流程延后该外部条件，不能编造域名或改成开发构建；继续其它可完成工作。用户停止样本NOT RUN、T4已拒具体操作不重试重包换工具；Task9新商家客服默认关闭，原平台客服保留，只有BASE既有人工签收。
+
+
 ### R38售后读票失败与空Redis前缀合同修复（2026-10-22）
 
 Run20261021190454125189 / Source e669a023540a2f755283de46dd9c541fc136517c 的内部付款及Task6两发货/三收货、五次同key重放、六阶段288内部读取已通过。完整A原S18588自然1；AR request_sequence76为首次顾客POST附件read-ticket，HTTP200/curl0/JSON0但业务码503。此前return-apply first/replay74/75已通过原中间断言；遗留phase normal_aftersale_apply不表示申请或重放失败。HTTP子进程已按原正常流程TERM15并关闭组/监听，cleanup_failure为null。AR/Worker/完整A及三端仍未通过，不改署原失败。

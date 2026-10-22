@@ -10,7 +10,8 @@ const M4C_IMAGE='sha256:1099f749e2a38ec9453c6b820db8a78174514bc72d14edf5c203e13b
 const M4C_ROOTS=['crmeb/app','crmeb/crmeb','crmeb/vendor','crmeb/config'];
 const M4C_EXTRA=['crmeb/composer.json','crmeb/composer.lock','crmeb/public/index.php','crmeb/public/router.php','crmeb/think',
     'help/audit-regressions/isolated/lib/harness.php','help/audit-regressions/isolated/lib/guard.php',
-    M4C_ENTRY,'help/audit-regressions/isolated/lib/ms4-customer-http-normal.php'];
+    M4C_ENTRY,'help/audit-regressions/isolated/lib/ms4-customer-http-normal.php',
+    'help/audit-regressions/isolated/lib/ms4-customer-form-normal.php'];
 const M4C_MODE=[
     'prepare'=>['role'=>'audit-ms4-customer-prepare','proof'=>'customer-prepare','binding'=>'ms4-customer-prepare-source-binding.json',
         'binding_scope'=>'MS4_CUSTOMER_PREPARE_MS5_SOURCE','environment'=>'customer-prepare-environment.json',
@@ -148,6 +149,7 @@ function m4c_entry_environment(array $binding,array $context,string $proof,strin
 /** Shared native six-value proof only; callers own their real receipt/binding/descriptor identities. */
 function m4c_entry_native_environment(array $values,array $native): array
 {
+    if(array_key_exists('PHP_MARKETPLACE_CUSTOMER_FORM_PRIVATE_ROOT',$values))return m4cf_environment($values,$native);
     m4c_entry_keys($values,['APP_ENV','PHP_MARKETPLACE_ENABLED','PHP_MARKETPLACE_TRADE_ENABLED',
         'PHP_MARKETPLACE_PAYMENT_TEST_ENABLED','PHP_MARKETPLACE_SELF_OPERATED_MER_ID','PHP_CACHE_DRIVER']);
     m4c_expect($values['APP_ENV']==='testing'&&$values['PHP_MARKETPLACE_ENABLED']==='true'
@@ -421,7 +423,7 @@ function m4c_entry_ms5_prerequisites(array $source): void
         $wanted['scope']=M4C_MODE['prepare']['binding_scope'];$wanted['container_id']=$prepare['id'];
         $wanted['native_created_sha256']=$hashes['customer-prepare-created.json'];$wanted['prerequisites_sha256']=array_intersect_key($hashes,
             array_flip(m4c_entry_prerequisite_names('prepare')));m4c_entry_same($prepareBinding,$wanted);
-        m4c_entry_same(m4c_entry_environment($prepareBinding,$source['context'],'customer-prepare'),$source['environment']);
+        m4c_entry_same(m4cf_base_environment(m4c_entry_environment($prepareBinding,$source['context'],'customer-prepare')),m4cf_base_environment($source['environment']));
         $result=m4c_entry_read($base.'ms4-customer-prepare.json');
         m4c_expect($result['schema']===1&&$result['scope']===M4C_MODE['prepare']['scope']&&$result['status']===M4C_MODE['prepare']['status']
             &&$result['run_id']===$source['run_id']&&$result['source_sha']===$source['source_sha']&&$result['container_id']===$prepare['id']
@@ -971,6 +973,7 @@ function m4c_entry_source(string $mode): array
         '/run/ms4-prep'=>[$context['prep_dir'],false],'/run/audit'=>[$context['run_dir'],true],
         '/workspace/crmeb/public/install/crmeb.sql'=>[$context['repo_dir'].'/crmeb/public/install/crmeb.sql',false]];
     $volumes=['/run/audit-app'=>['app-secrets',false],'/run/audit-fixtures'=>['fixture-secrets',$mode==='prepare']];
+    if($mode==='verify')$volumes['/run/audit-customer-form']=['customer-form-evidence',true];
     $nativeMounts=[];$tmpMounts=[];
     foreach($created['mounts']as$mount){if($mount['Type']!=='tmpfs'){$nativeMounts[]=$mount;continue;}
         m4c_expect(in_array($mount['Destination'],['/tmp','/workspace/crmeb/public','/workspace/crmeb/runtime'],true)
@@ -989,6 +992,7 @@ function m4c_entry_source(string $mode): array
     m4c_expect(!file_exists('/source/crmeb/.env')&&!file_exists('/workspace/crmeb/.env')
         &&!file_exists('/source/crmeb/public/install.lock'),'M4C_NO_HOST_RUNTIME_CONFIGURATION');
     $values=m4c_entry_environment($binding,$context,$rule['proof']);
+    if($mode==='verify')m4c_expect(($values['PHP_MARKETPLACE_CUSTOMER_FORM_PRIVATE_ROOT']??null)==='/run/audit-customer-form','M4C_CU_FORM_FIXED_REAL_ROOT');
     audit_guard_assert();
     $source=$binding+['mode'=>$mode,'rule'=>$rule,'environment'=>$values,
         'self_operated_mer_id'=>(int)$values['PHP_MARKETPLACE_SELF_OPERATED_MER_ID'],

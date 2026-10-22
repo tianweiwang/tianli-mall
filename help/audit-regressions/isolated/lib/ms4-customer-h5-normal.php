@@ -703,7 +703,7 @@ function m4ch_prepare(array $source): array
     if(!$parentPdo instanceof PDO){$connection->query('SELECT 1',[],true);$parentPdo=$connection->getPdo();}
     m4c_expect($parentPdo instanceof PDO&&$pdo!==$parentPdo&&!$pdo->inTransaction()&&!$parentPdo->inTransaction()
         &&$connection===Db::connect()&&$parentPdo===Db::connect()->getPdo(),'M4C_H5_REAL_INDEPENDENT_NATIVE_BASELINE_READER');
-    $before=m4cb_snapshot($pdo);$auxiliaryBefore=[];
+    $before=m4cb_snapshot($pdo);$storefrontAdvanceBefore=m4ch_storefront_advance($pdo);$auxiliaryBefore=[];
     foreach(M4CH_AUX_TABLES as$table)$auxiliaryBefore[$table]=m4cb_rows($pdo,'SELECT * FROM `'.$table.'` ORDER BY `id`');
     foreach(['eb_store_cart','eb_store_order','eb_store_order_invoice','eb_store_order_cart_info',
         'eb_marketplace_order_idempotency','eb_marketplace_stock_movement']as$table)
@@ -792,10 +792,14 @@ function m4ch_prepare(array $source): array
     $oracle=$identity+['scope'=>'NORMAL_CUSTOMER_H5_PRIVATE_ORACLE','fixture'=>$fixture,'second_store'=>$second,
         'public_stores'=>$stores,'configuration_rows'=>$configuration['configuration_rows'],'configuration_values'=>$configuration['fixed_values'],
         'auxiliary_rows'=>$configuration['auxiliary_after'],
+        'storefront_native_before'=>['schema'=>1,'advance_rows'=>$storefrontAdvanceBefore,'published'=>[]],
         'ui_intent'=>['cart_lines'=>[...$base['selected'],$secondLine],'checkout_mer_id'=>(int)$base['merchant']['mer_id'],
             'selected_lines'=>$base['selected'],'unselected_cart_line'=>$secondLine,'preserved_same_store_unselected_sku'=>$base['unselected'],
             'address_id'=>(int)$base['address']['id'],'invoice_id'=>(int)$base['invoice']['id'],
             'custom_form_inputs'=>$formInputs,'mark'=>'普通顾客页面下单','target_order_state'=>'unpaid']];
+    m4c_expect(m4ch_storefront_advance($pdo)===$storefrontAdvanceBefore,'M4C_H5_STOREFRONT_PREPARE_NATIVE_ADVANCE_UNCHANGED');
+    $oracle['storefront_native_before']['published']=m4ch_storefront_expected($after,$storefrontAdvanceBefore,$oracle);
+    m4ch_storefront_oracle($oracle,$after);
     $actors=$identity+['scope'=>'NORMAL_CUSTOMER_H5_PRIVATE_ACTORS','actors'=>['customer'=>
         ['uid'=>$uid,'account'=>$private['account'],'password'=>$private['password']]]];
     $actorPath='/run/audit-http-browser/customer-actors.json';$actorProof=m4ch_private_new($actorPath,$actors);
@@ -923,6 +927,168 @@ function m4ch_native_snapshot_restore(array $archive): array
     m4c_expect(is_string($raw)&&strlen($raw)===$archive['bytes'],'M4C_H5_BASELINE_ACTUAL_NATIVE_ARCHIVE_LENGTH');
     return $snapshot;
 }
+/** Extra native observation only: the original 27+7 snapshot and comparisons remain intact. */
+function m4ch_storefront_advance(PDO $pdo): array
+{
+    $rows=m4cb_rows($pdo,'SELECT * FROM `eb_store_advance` ORDER BY `id`');
+    m4c_expect(array_is_list($rows)&&count($rows)<=100000,'M4C_H5_STOREFRONT_FULL_NATIVE_ADVANCE_ROWS');$cells=0;
+    foreach($rows as$row){m4c_expect(is_array($row)&&!array_is_list($row)&&count($row)<=512,'M4C_H5_STOREFRONT_NATIVE_ADVANCE_COLUMNS');
+        foreach($row as$key=>$value)m4c_expect(is_string($key)&&preg_match('/\A[a-z_][a-z0-9_]*\z/D',$key)===1
+            &&($value===null||is_string($value)||is_int($value)||is_bool($value)||(is_float($value)&&is_finite($value)))
+            &&++$cells<=1000000,'M4C_H5_STOREFRONT_NATIVE_ADVANCE_SCALARS');}
+    return $rows;
+}
+/** Independent BEFORE publication rules; no production catalog query/projector is called here. */
+function m4ch_storefront_expected(array $facts,array $advance,array $oracle): array
+{
+    $enabled=$oracle['environment']['PHP_MARKETPLACE_ENABLED']??null;
+    m4c_expect($enabled==='true'||$enabled==='false','M4C_H5_STOREFRONT_BOUND_PUBLICATION_CONFIGURATION');
+    $a=m4ch_stage_positive($oracle['fixture']['merchant']['mer_id']);
+    $b=m4ch_stage_positive($oracle['second_store']['merchant']['mer_id']);$owners=[$a,$b];$merchants=[];$reserved=[];
+    foreach($facts['eb_marketplace_merchant']as$row){$id=m4ch_stage_positive($row['mer_id']);
+        if(in_array($id,$owners,true))$merchants[$id]=$row;}
+    m4c_expect(count($merchants)===2&&$a!==$b,'M4C_H5_STOREFRONT_BOTH_ORIGINAL_NATIVE_MERCHANTS');
+    foreach($owners as$id)m4cb_equal_row($merchants[$id],$oracle['fixture']['merchants'][$id]);
+    foreach($advance as$row)if(in_array($row['is_del']??null,[0,'0'],true)){
+        $pid=$row['product_id']??null;if((is_int($pid)&&$pid>0)||(is_string($pid)&&preg_match('/\A[1-9][0-9]*\z/D',$pid)===1))
+            $reserved[m4ch_stage_positive($pid)]=true;}
+    $published=[];
+    foreach($facts['eb_store_product']as$row){$owner=$row['mer_id']??null;
+        if(!in_array($owner,[$a,(string)$a,$b,(string)$b],true))continue;$owner=(int)$owner;$merchant=$merchants[$owner];
+        if(!in_array($row['review_status']??null,[2,'2'],true)||!in_array($row['is_show']??null,[1,'1'],true)
+            ||!in_array($row['is_del']??null,[0,'0'],true)||!in_array($merchant['review_status']??null,[1,'1'],true)
+            ||!in_array($merchant['security_locked']??null,[0,'0'],true)||!array_key_exists('closed_at',$merchant)||$merchant['closed_at']!==null
+            ||($enabled==='false'&&$owner!==m4ch_stage_positive($oracle['self_operated_mer_id'])))continue;
+        $pid=m4ch_stage_positive($row['id'],8388607);if(isset($reserved[$pid]))continue;
+        foreach(['store_name','image','price']as$key)m4c_expect(is_string($row[$key])&&preg_match('//u',$row[$key])===1,
+            'M4C_H5_STOREFRONT_NATIVE_PUBLIC_REFERENCE_VALUES');
+        m4c_expect(is_int($row['sort'])||(is_string($row['sort'])&&preg_match('/\A-?(?:0|[1-9][0-9]*)\z/D',$row['sort'])===1),
+            'M4C_H5_STOREFRONT_NATIVE_SORT');
+        $published[]=['product_id'=>$pid,'mer_id'=>$owner,'store_name'=>$row['store_name'],'image'=>$row['image'],
+            'price'=>$row['price'],'sort'=>(int)$row['sort']];
+    }
+    usort($published,static fn(array$x,array$y):int=>$x['mer_id']<=>$y['mer_id']?:$y['sort']<=>$x['sort']?:$y['product_id']<=>$x['product_id']);
+    foreach($owners as$id)m4c_expect(array_filter($published,static fn(array$row):bool=>$row['mer_id']===$id)!==[],
+        'M4C_H5_STOREFRONT_ORIGINAL_NORMAL_SHOPS_HAVE_PUBLISHED_PRODUCTS');
+    return $published;
+}
+function m4ch_storefront_oracle(array $oracle,array $facts): void
+{
+    $proof=$oracle['storefront_native_before'];m4ch_stage_keys($proof,['schema','advance_rows','published']);
+    m4c_expect($proof['schema']===1&&is_array($proof['advance_rows'])&&array_is_list($proof['advance_rows'])
+        &&is_array($proof['published'])&&array_is_list($proof['published'])
+        &&$proof['published']===m4ch_storefront_expected($facts,$proof['advance_rows'],$oracle),
+        'M4C_H5_STOREFRONT_RECOMPUTED_COMPLETE_NATIVE_BEFORE_PUBLICATION');
+}
+function m4ch_storefront_advance_equal(PDO $pdo,array $oracle): void
+{
+    m4c_expect(m4ch_storefront_advance($pdo)===$oracle['storefront_native_before']['advance_rows'],
+        'M4C_H5_STOREFRONT_FULL_NATIVE_ADVANCE_BEFORE_REMAINS_UNCHANGED');
+}
+/** Fixed public wire fields from the agreed DTO contract, independent of the producer's projector. */
+function m4ch_storefront_fields(mixed $value,array $allowed): void
+{
+    m4c_expect(is_array($value)&&($value===[]||!array_is_list($value))&&array_diff(array_keys($value),$allowed)===[],
+        'M4C_H5_STOREFRONT_FIXED_PUBLIC_DTO_FIELDS');
+}
+function m4ch_storefront_no_cost(mixed $value): void
+{
+    if(!is_array($value))return;
+    foreach($value as$key=>$item){m4c_expect(!is_string($key)||!in_array($key,['cost','cost_price','costPrice','original_cost','purchase_price'],true),
+        'M4C_H5_STOREFRONT_NO_BACKEND_COST_IN_PUBLIC_DTO');m4ch_storefront_no_cost($item);}
+}
+/** Independent detail-only display expectation from the sealed actual native site_url. */
+function m4ch_storefront_detail_image(string $image,array $oracle): string
+{
+    $siteUrl=$oracle['configuration_values']['site_url']??null;
+    $rows=array_values(array_filter($oracle['configuration_rows'],static fn(array$row):bool=>($row['menu_name']??null)==='site_url'));
+    m4c_expect(is_string($siteUrl)&&$siteUrl!==''&&trim($siteUrl)===$siteUrl&&$siteUrl===$oracle['runtime_origin']
+        &&count($rows)===1&&is_string($rows[0]['value']??null)
+        &&json_decode($rows[0]['value'],true,32,JSON_THROW_ON_ERROR)===$siteUrl,
+        'M4C_H5_STOREFRONT_DETAIL_SEALED_NATIVE_SITE_URL_AND_REAL_ORIGIN');
+    if(!$image||substr($image,0,4)==='http'||substr($image,0,2)==='//')return $image;
+    return $siteUrl.str_replace('\\','/',$image);
+}
+
+function m4ch_storefront_public_product(array $value,?array $native,bool $detail=false): void
+{
+    $fields=['id','mer_id','store_name','store_info','image','slider_image','small_image','image_base','price','ot_price','vip_price','unit_name',
+        'sales','fsales','stock','spec_type','is_postage','postage','is_vip','video_link','min_qty','limit_num','is_virtual','virtual_type',
+        'presale','presale_start_time','presale_end_time','presale_day','presale_pay_status','cart_button','cart_num','is_att','labels','label_list',
+        'activity','star','checkCoupon','cate_name'];
+    if($detail)$fields=[...array_diff($fields,['activity','star']),'description','default_sku','unique','params_list','protection_list','userCollect',
+        'userLike','command_word','wechat_code','attrPics','svip_economize_price','is_gift'];
+    m4ch_storefront_fields($value,$fields);m4ch_storefront_no_cost($value);
+    if($native!==null){m4c_expect(($value['id']??null)===$native['product_id']&&($value['mer_id']??null)===$native['mer_id']
+            &&($value['store_name']??null)===$native['store_name']&&($value['image']??null)===$native['image'],
+            'M4C_H5_STOREFRONT_PUBLIC_PRODUCT_EXACT_NATIVE_ID_OWNER_TITLE_IMAGE');
+        if(!$detail)m4cb_public_money($value,'price',$native['price']);}
+    foreach(['labels','label_list']as$key)if(isset($value[$key])){m4c_expect(is_array($value[$key])&&array_is_list($value[$key]),
+        'M4C_H5_STOREFRONT_PUBLIC_LABEL_LIST');foreach($value[$key]as$row)m4ch_storefront_fields($row,['name','font_color','bg_color','border_color','image']);}
+    foreach(['params_list'=>['name','value'],'protection_list'=>['id','title','content','image']]as$key=>$allowed)if(isset($value[$key])){
+        m4c_expect(is_array($value[$key])&&array_is_list($value[$key]),'M4C_H5_STOREFRONT_PUBLIC_DETAIL_RESOURCE_LIST');
+        foreach($value[$key]as$row)m4ch_storefront_fields($row,$allowed);}
+    if(isset($value['activity'])){m4c_expect(is_array($value['activity']),'M4C_H5_STOREFRONT_PUBLIC_ACTIVITY_LINKS');
+        $links=array_is_list($value['activity'])?$value['activity']:[$value['activity']];
+        foreach($links as$row)m4ch_storefront_fields($row,['type','id','time_id']);}
+}
+function m4ch_storefront_public_store(mixed $value,int $id,array $oracle): void
+{
+    m4ch_storefront_fields($value,['mer_id','name','logo','after_sale_contact','shipping_note']);
+    m4c_expect(count($value)===5&&($value['mer_id']??null)===$id,'M4C_H5_STOREFRONT_PUBLIC_STORE_EXACT_OWNER');
+    foreach(['name','logo','after_sale_contact','shipping_note']as$key)m4c_expect(($value[$key]??null)===$oracle['fixture']['merchants'][$id][$key],
+        'M4C_H5_STOREFRONT_PUBLIC_STORE_EXACT_NATIVE_VALUES');
+}
+/** Every real products page is checked, including repeats; coverage is the complete independently derived set. */
+function m4ch_storefront_captures(array $stages,array $oracle): void
+{
+    $expected=$oracle['storefront_native_before']['published'];$byId=[];$byStore=[];$seen=[];$requests=[];
+    foreach($expected as$row){$byId[$row['product_id']]=$row;$byStore[$row['mer_id']][]=$row;}
+    foreach(m4ch_stage_captures($stages,'/api/products')as$capture){$query=[];parse_str(parse_url($capture['request']['url'],PHP_URL_QUERY)??'',$query);
+        m4c_expect(array_diff(array_keys($query),['mer_id','page','limit'])===[]&&isset($query['mer_id'],$query['page'],$query['limit']),
+            'M4C_H5_STOREFRONT_ACTUAL_EXPLICIT_PAGING_QUERY');$owner=m4ch_stage_positive($query['mer_id']);
+        $page=m4ch_stage_positive($query['page'],100000);$limit=m4ch_stage_positive($query['limit'],1000);
+        m4c_expect(isset($byStore[$owner]),'M4C_H5_STOREFRONT_ACTUAL_EXPECTED_SHOP');$data=m4ch_stage_data($capture);
+        $slice=array_slice($byStore[$owner],($page-1)*$limit,$limit);
+        m4c_expect(is_array($data)&&array_is_list($data)&&count($data)===count($slice),
+            'M4C_H5_STOREFRONT_EXACT_COMPLETE_NATIVE_PAGE_LENGTH');
+        foreach($data as$i=>$row){m4c_expect(is_array($row),'M4C_H5_STOREFRONT_PUBLIC_LIST_ROW');
+            m4ch_storefront_public_product($row,$slice[$i]);$seen[$owner][$slice[$i]['product_id']]=true;}$requests[$owner]=true;
+    }
+    foreach($byStore as$owner=>$rows){$ids=array_column($rows,'product_id');$actual=array_keys($seen[$owner]??[]);sort($ids,SORT_NUMERIC);sort($actual,SORT_NUMERIC);
+        m4c_expect(isset($requests[$owner])&&$actual===$ids,'M4C_H5_STOREFRONT_BOTH_SHOPS_COMPLETE_PUBLISHED_SET_CAPTURED');}
+    foreach(m4ch_stage_captures($stages,'/api/marketplace/stores/:merchant')as$capture){$id=m4ch_stage_positive(basename(parse_url($capture['request']['url'],PHP_URL_PATH)));
+        m4c_expect(isset($byStore[$id]),'M4C_H5_STOREFRONT_ACTUAL_STORE_ROUTE_OWNER');m4ch_storefront_public_store(m4ch_stage_data($capture),$id,$oracle);}
+    foreach(m4ch_stage_captures($stages,'/api/product/detail/:product')as$capture){$data=m4ch_stage_data($capture);
+        m4ch_storefront_fields($data,['storeInfo','mer_id','store','productAttr','productValue','spec_unique','svip_open','svip_price_open','priceName','reply',
+            'replyCount','replyChance','good_list','mapKey','store_self_mention','activity','coupons','routine_contact_type']);m4ch_storefront_no_cost($data);
+        $id=m4ch_stage_positive(basename(parse_url($capture['request']['url'],PHP_URL_PATH)),8388607);
+        m4c_expect(isset($byId[$id])&&($data['mer_id']??null)===$byId[$id]['mer_id']&&is_array($data['storeInfo']??null),
+            'M4C_H5_STOREFRONT_REAL_DETAIL_PUBLISHED_NATIVE_OWNER');
+        $detailExpected=$byId[$id];$detailExpected['image']=m4ch_storefront_detail_image($detailExpected['image'],$oracle);
+        m4ch_storefront_public_product($data['storeInfo'],$detailExpected,true);
+        m4ch_storefront_public_store($data['store']??null,$byId[$id]['mer_id'],$oracle);
+        m4c_expect(is_array($data['good_list']??null)&&array_is_list($data['good_list']),'M4C_H5_STOREFRONT_PUBLIC_DETAIL_RECOMMENDATIONS');
+        foreach($data['good_list']as$row){m4c_expect(is_array($row),'M4C_H5_STOREFRONT_PUBLIC_RECOMMENDED_PRODUCT');
+            m4ch_storefront_public_product($row,null);}
+        if(is_array($data['reply']??null))m4ch_storefront_fields($data['reply'],['id','product_id','nickname','avatar','is_money_level','star',
+            'add_time','suk','comment','pics','merchant_reply_content','merchant_reply_time']);
+        m4c_expect(is_array($data['activity']??null)&&array_is_list($data['activity']),'M4C_H5_STOREFRONT_PUBLIC_DETAIL_ACTIVITY_LINKS');
+        foreach($data['activity']as$row)m4ch_storefront_fields($row,['type','id','time_id']);
+        m4c_expect(is_array($data['coupons']??null)&&array_is_list($data['coupons']),'M4C_H5_STOREFRONT_PUBLIC_DETAIL_COUPON_LIST');
+        foreach($data['coupons']as$row)m4ch_storefront_fields($row,['id','title','type','receive_type','receive_limit','coupon_price','use_min_price',
+            'coupon_time','start_use_time','end_use_time','start_time','end_time','is_use']);
+        m4c_expect(is_array($data['productValue']??null),'M4C_H5_STOREFRONT_REAL_DETAIL_SKU_DICTIONARY');
+        foreach($data['productValue']as$key=>$row){m4ch_storefront_fields($row,['id','product_id','type','unique','suk','image','price','ot_price','vip_price','stock','cart_num']);
+            m4c_expect(m4ch_stage_positive($row['product_id']??null,8388607)===$id&&($row['suk']??null)===(string)$key,
+                'M4C_H5_STOREFRONT_PUBLIC_SKU_REAL_PRODUCT_AND_KEY');}
+        m4c_expect(is_array($data['productAttr']??null)&&array_is_list($data['productAttr']),'M4C_H5_STOREFRONT_REAL_DETAIL_ATTRIBUTES');
+        foreach($data['productAttr']as$row){m4ch_storefront_fields($row,['attr_name','attr_values','attr_value']);
+            m4c_expect(is_array($row['attr_value']??null)&&array_is_list($row['attr_value']),'M4C_H5_STOREFRONT_REAL_DETAIL_ATTRIBUTE_OPTIONS');
+            foreach($row['attr_value']as$option)m4ch_storefront_fields($option,['attr','check','pic']);}
+    }
+}
+
 function m4ch_stage_sealed(array $source): array
 {
     $baselinePath=M4CH_STAGE_CONTROL.'/sql-baseline.json';$oraclePath=M4CH_STAGE_CONTROL.'/customer-oracle.json';
@@ -930,7 +1096,7 @@ function m4ch_stage_sealed(array $source): array
     $baseline=m4ch_http_private_read($baselinePath);$oracle=m4ch_http_private_read($oraclePath);
     m4ch_stage_keys($baseline,[...M4CH_STAGE_IDENTITY_KEYS,'scope','native_snapshot']);
     m4ch_stage_keys($oracle,[...M4CH_STAGE_IDENTITY_KEYS,'scope','fixture','second_store','public_stores',
-        'configuration_rows','configuration_values','auxiliary_rows','ui_intent','actor_descriptor']);
+        'configuration_rows','configuration_values','auxiliary_rows','storefront_native_before','ui_intent','actor_descriptor']);
     m4c_expect($baseline['schema']===1&&$baseline['scope']==='NORMAL_CUSTOMER_H5_SQL_BASELINE'
         &&$oracle['scope']==='NORMAL_CUSTOMER_H5_PRIVATE_ORACLE','M4C_H5_STAGE_ORIGINAL_SEALED_PRODUCER_SCOPES');
     $prepare=$source['prepare_identity'];m4ch_stage_keys($prepare,['container_id','native_created_sha256','source_binding_sha256','prepare_result_sha256']);
@@ -957,6 +1123,7 @@ function m4ch_stage_sealed(array $source): array
         &&$oracle['fixture']['invoice']===$private['fixture']['invoice'],'M4C_H5_STAGE_ORIGINAL_BASE_FIXTURE_RELATIONSHIPS');
     $snapshot=m4ch_native_snapshot_restore($baseline['native_snapshot']);
     m4c_expect($oracle['auxiliary_rows']===$snapshot['auxiliary_rows'],'M4C_H5_STAGE_FULL_PREPARED_NATIVE_BASELINE');
+    m4ch_storefront_oracle($oracle,$snapshot['facts']);
     m4c_expect($before===['baseline'=>m4ch_http_meta($baselinePath),'oracle'=>m4ch_http_meta($oraclePath)],
         'M4C_H5_STAGE_SEALED_FILES_REMAIN_ORIGINAL');unset($private,$loaded);
     return ['baseline'=>$snapshot,'oracle'=>$oracle,'metadata'=>$before];
@@ -1006,7 +1173,10 @@ function m4ch_browser_intent(array $oracle): array
         'invoiceIds'=>[$invoice['id']],'skuPairs'=>$skuPairs],
         'ui_intent'=>['customer_uid'=>m4ch_stage_positive($fixture['user']['uid']),'checkout_mer_id'=>$a,
             'stores'=>[['mer_id'=>$a,'name'=>$fixture['merchant']['name']],['mer_id'=>$b,'name'=>$oracle['second_store']['merchant']['name']]],
-            'products'=>$products,'address'=>$address,'invoice'=>$invoice,'custom_form_inputs'=>$forms,
+            'products'=>$products,'storefront_products'=>array_map(static fn(array$row):array=>[
+                'product_id'=>$row['product_id'],'mer_id'=>$row['mer_id'],'store_name'=>$row['store_name']],
+                $oracle['storefront_native_before']['published']),
+            'address'=>$address,'invoice'=>$invoice,'custom_form_inputs'=>$forms,
             'mark'=>$intent['mark'],'target_order_state'=>'unpaid']];
 }
 function m4ch_stage_target(string $url,string $method,mixed $body,array $source,array $oracle,?string $postData=null): string
@@ -1559,7 +1729,7 @@ function m4ch_stage(array $source,array $runtime,array $request): array
     $all=[...$prior,$request];$uid=(int)$oracle['fixture']['user']['uid'];$reader=audit_db();
     m4c_expect(!$reader->inTransaction()&&empty($GLOBALS['m4c_app_started']),'M4C_H5_STAGE_NO_APP_BEFORE_NATIVE_SNAPSHOT');
     $pre=m4ch_stage_snapshot($reader);$previous=$prior===[]?$baseline:m4ch_stage_unserialize($prior[count($prior)-1]);
-    m4ch_stage_auxiliary_equal($baseline,$pre);$business=[];$snapshot=$pre;
+    m4ch_stage_auxiliary_equal($baseline,$pre);m4ch_storefront_advance_equal($reader,$oracle);$business=[];$snapshot=$pre;
     if($stage==='B0'){
         m4c_expect($pre===$baseline,'M4C_H5_STAGE_B0_ALL_PREPARED_NATIVE_ROWS_EQUAL');
         $users=array_values(array_filter($pre['facts']['eb_user'],static fn(array$row):bool=>(int)$row['uid']===$uid));
@@ -1580,6 +1750,7 @@ function m4ch_stage(array $source,array $runtime,array $request): array
                 'M4C_H5_STAGE_TWO_ACTUAL_STORE_RESPONSES');$stores[$mer]=true;}
         foreach(m4ch_stage_captures($all,'/api/product/detail/:product')as$capture){$data=m4ch_stage_data($capture);$products[(int)$data['storeInfo']['id']]=true;}
         m4c_expect(count($stores)===2&&count($products)===3,'M4C_H5_STAGE_BOTH_SHOPS_THREE_PRODUCTS_ACTUALLY_VISITED');
+        m4ch_storefront_captures($all,$oracle);
         $business=['cart_rows_verified'=>true,'visit_logs_verified'=>true,'auxiliary_producers_verified'=>true];
     }elseif($stage==='B3'){
         m4cb_preserved($previous['facts'],$pre['facts'],$uid);m4ch_stage_auth_captures($all,$uid);
@@ -1624,6 +1795,7 @@ function m4ch_stage(array $source,array $runtime,array $request): array
     m4cb_guard_readonly();m4c_expect(m4cb_events($reader)['custom_event_count']===0&&m4cb_rows($reader,
         'SELECT * FROM `eb_system_event` WHERE `mark` = ? AND `is_del` = 0 AND `is_open` = 1',['user_product_visit'])===[],
         'M4C_H5_STAGE_REAL_EVENT_PRODUCER_PRECONDITIONS');
+    m4ch_storefront_advance_equal($reader,$oracle);
     m4c_expect(m4ch_stage_snapshot($reader)===$snapshot,'M4C_H5_STAGE_FINAL_NATIVE_READBACK_UNCHANGED');
     m4c_expect($loaded['metadata']===['baseline'=>m4ch_http_meta(M4CH_STAGE_CONTROL.'/sql-baseline.json'),
         'oracle'=>m4ch_http_meta(M4CH_STAGE_CONTROL.'/customer-oracle.json')],'M4C_H5_STAGE_ORIGINAL_SEALED_PRODUCERS_UNCHANGED');
@@ -1651,7 +1823,7 @@ function m4ch_stage_final(array $source,array $runtime): array
         'M4C_H5_STAGE_FINAL_ACTUAL_BROWSER_CLOSED');
     $reader=audit_db();m4c_expect(!$reader->inTransaction(),'M4C_H5_STAGE_FINAL_INDEPENDENT_NATIVE_READER');
     $actual=m4ch_stage_snapshot($reader);m4c_expect($actual===$before,'M4C_H5_STAGE_FINAL_ALL_THIRTY_FOUR_TABLES_EQUAL_B4');
-    m4ch_stage_auxiliary_equal($loaded['baseline'],$actual);m4cb_guard_readonly();
+    m4ch_stage_auxiliary_equal($loaded['baseline'],$actual);m4ch_storefront_advance_equal($reader,$loaded['oracle']);m4cb_guard_readonly();
     m4c_expect(m4ch_stage_snapshot($reader)===$actual&&$loaded['metadata']===['baseline'=>m4ch_http_meta(M4CH_STAGE_CONTROL.'/sql-baseline.json'),
         'oracle'=>m4ch_http_meta(M4CH_STAGE_CONTROL.'/customer-oracle.json')],'M4C_H5_STAGE_FINAL_NATIVE_AND_SEALED_METADATA_UNCHANGED');
     return m4ch_http_header($closed,'MS4_CUSTOMER_H5_SQL_AUDIT')+['verified'=>true,'business_table_count'=>27,'auxiliary_table_count'=>7,

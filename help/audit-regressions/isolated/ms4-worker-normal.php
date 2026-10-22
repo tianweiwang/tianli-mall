@@ -14,7 +14,7 @@ function m4w_phase(string $phase):void
 {m4w_expect(empty($GLOBALS['m4w_termination_requested']),'M4W_NOT_INTERRUPTED');$GLOBALS['m4w_phase']=$phase;}
 function m4w_extra():array
 {$paths=array_merge(m4ar_extra(),[M4W_ENTRY]);sort($paths,SORT_STRING);
- m4w_expect(count($paths)===30&&count($paths)===count(array_unique($paths,SORT_STRING)),'M4W_ORIGINAL_TWENTY_NINE_PLUS_ONE');return $paths;}
+ m4w_expect(count($paths)===31&&count($paths)===count(array_unique($paths,SORT_STRING)),'M4W_CU_FORM_THIRTY_PLUS_ONE');return $paths;}
 function m4w_predecessor_names(bool $withRetirement=true):array
 {
  $names=array_merge(M4C_COMMON_PREREQUISITES,M4C_FILES_PREREQUISITES,M4C_PREPARE_PREREQUISITES,
@@ -30,7 +30,7 @@ function m4w_predecessor_names(bool $withRetirement=true):array
  $names=array_merge($names,['files-bootstrap-paid-unstarted.json','customer-prepare-paid-unstarted.json','fulfillment-normal-predecessor-history.json',
  'fulfillment-normal-remove-native.json','fulfillment-normal-removed.json','aftersale-review-normal-formal-manifest.json','aftersale-review-normal-created.json',
  'aftersale-review-normal-terminal.json','ms4-aftersale-review-normal-source-binding.json','aftersale-review-normal-environment.json',
- 'aftersale-review-normal-environment-native.json','ms4-aftersale-review-normal.json','aftersale-review-normal-shutdown.json']);
+ 'aftersale-review-normal-environment-native.json','ms4-aftersale-review-normal.json','aftersale-review-normal-shutdown.json','ms4-aftersale-review-public-upload-root-prepared.json']);
  foreach(['register-aftersale-review-normal','authorize-aftersale-review-cleanup']as$proof)
   foreach(['-created.json','-terminal.json','-result.json','-shutdown.json']as$suffix)$names[]=$proof.$suffix;
  $names[]='aftersale-review-public-file-keep.json';
@@ -57,8 +57,8 @@ function m4w_environment(array $binding,array $context):array
   &&$e['source_sha']===$binding['source_sha']&&$e['container_id']===$binding['container_id']&&$e['freeze_sha256']===$context['freeze_sha256']
   &&getenv('MS4_WORKER_NORMAL_PROOF_NAME')===M4W_RULE['proof'],'M4W_ACTUAL_WORKER_ENVIRONMENT_IDENTITY');
  $v=$e['environment'];m4c_entry_keys($v,['APP_ENV','PHP_MARKETPLACE_ENABLED','PHP_MARKETPLACE_TRADE_ENABLED','PHP_MARKETPLACE_PAYMENT_TEST_ENABLED',
- 'PHP_MARKETPLACE_SELF_OPERATED_MER_ID','PHP_CACHE_DRIVER','PHP_MARKETPLACE_AFTERSALE_ENABLED','PHP_MARKETPLACE_AFTERSALE_PRIVATE_ROOT']);
- m4w_expect($v['APP_ENV']==='testing'&&$v['PHP_CACHE_DRIVER']==='redis'&&$v['PHP_MARKETPLACE_AFTERSALE_PRIVATE_ROOT']===M4AR_PRIVATE,'M4W_ORIGINAL_PRIVATE_CONFIG');
+ 'PHP_MARKETPLACE_SELF_OPERATED_MER_ID','PHP_CACHE_DRIVER','PHP_MARKETPLACE_AFTERSALE_ENABLED','PHP_MARKETPLACE_AFTERSALE_PRIVATE_ROOT','PHP_MARKETPLACE_CUSTOMER_FORM_PRIVATE_ROOT']);
+ m4w_expect($v['APP_ENV']==='testing'&&$v['PHP_CACHE_DRIVER']==='redis'&&$v['PHP_MARKETPLACE_AFTERSALE_PRIVATE_ROOT']===M4AR_PRIVATE&&$v['PHP_MARKETPLACE_CUSTOMER_FORM_PRIVATE_ROOT']==='/run/audit-customer-form','M4W_ORIGINAL_PRIVATE_CONFIG');
  foreach(['PHP_MARKETPLACE_ENABLED','PHP_MARKETPLACE_TRADE_ENABLED','PHP_MARKETPLACE_PAYMENT_TEST_ENABLED','PHP_MARKETPLACE_AFTERSALE_ENABLED']as$key)
   m4w_expect($v[$key]==='true','M4W_ORIGINAL_EIGHT_ENVIRONMENT_VALUES');
  m5pcp_int($v['PHP_MARKETPLACE_SELF_OPERATED_MER_ID'],1,4294967295);
@@ -67,7 +67,7 @@ function m4w_environment(array $binding,array $context):array
   &&$n['stderr_sha256']===hash('sha256','')&&$n['private_environment_logs_omitted']===true&&$e['native_projection_sha256']===$n['stdout_sha256'],'M4W_NATIVE_ENVIRONMENT_RECEIPT');
  ksort($v,SORT_STRING);$lines=[];foreach($v as$key=>$value){m4w_expect(is_string($value)&&getenv($key)===$value,'M4W_NATIVE_ENVIRONMENT_VALUE');
   $lines[]=json_encode($key.'='.$value,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);}
- $raw=implode("\n",$lines)."\n";m4w_expect(strlen($raw)===$n['stdout_bytes']&&hash('sha256',$raw)===$n['stdout_sha256'],'M4W_NATIVE_SORTED_EIGHT_LINE_BYTES');return $v;
+ $raw=implode("\n",$lines)."\n";m4w_expect(strlen($raw)===$n['stdout_bytes']&&hash('sha256',$raw)===$n['stdout_sha256'],'M4W_NATIVE_SORTED_NINE_LINE_BYTES');return $v;
 }
 function m4w_inventory(string $root):array
 {
@@ -156,7 +156,8 @@ function m4w_source(): array
         '/run/ms4-prep'=>[$context['prep_dir'],false],'/run/audit'=>[$context['run_dir'],true],
         '/workspace/crmeb/public/install/crmeb.sql'=>[$context['repo_dir'].'/crmeb/public/install/crmeb.sql',false]];
     $volumes=['/run/audit-app'=>['app-secrets',false],'/run/audit-fixtures'=>['fixture-secrets',true],
-        M4AR_PRIVATE=>['aftersale-evidence',false]];
+        M4AR_PRIVATE=>['aftersale-evidence',false],
+        '/run/audit-customer-form'=>['customer-form-evidence',false]];
     $nativeMounts=[];$tmpMounts=[];
     foreach($created['mounts']as$mount){if($mount['Type']!=='tmpfs'){$nativeMounts[]=$mount;continue;}
         m4c_expect(in_array($mount['Destination'],['/tmp','/workspace/crmeb/public','/workspace/crmeb/runtime'],true)
@@ -184,6 +185,50 @@ function m4w_source(): array
     m4w_full_source($source,true);
     m4w_prerequisites($source);
     return $source;
+}
+
+/** Recheck the actual retired AR preparation proof before this successor consumes it. */
+function m4w_public_upload_root_preparation(array $source,string $containerId,array $binding,array $hashes):void
+{
+ $name='ms4-aftersale-review-public-upload-root-prepared.json';$path='/run/audit/evidence/'.$name;
+ m4w_expect(isset($hashes[$name])&&m4c_entry_hash($path)===$hashes[$name],
+  'M4W_PUBLIC_ROOT_ACTUAL_PREDECESSOR_COMPLETE_HASH');
+ $value=m4c_entry_read($path,16384);
+ m4c_entry_keys($value,['schema','scope','run_id','source_sha','freeze_sha256','container_id','source_binding_sha256',
+  'configuration','before','after','created','existing_root_native_unchanged']);
+ m4w_expect($value['schema']===1&&$value['scope']==='MS4_AFTERSALE_REVIEW_LOCAL_PUBLIC_ROOT_PREPARATION'
+  &&$value['container_id']===$containerId&&$containerId===$binding['container_id']
+  &&$value['source_binding_sha256']===$hashes[M4AR_RULE['binding']],
+  'M4W_PUBLIC_ROOT_EXACT_SCHEMA_ORIGINAL_AR_CONTAINER_AND_SOURCE_BINDING');
+ foreach(['run_id','source_sha','freeze_sha256']as$key)
+  m4w_expect($value[$key]===$source[$key]&&$value[$key]===$binding[$key],
+   'M4W_PUBLIC_ROOT_SAME_REAL_RUN_SOURCE_FREEZE');
+ $configuration=$value['configuration'];
+ m4w_expect(is_array($configuration),'M4W_PUBLIC_ROOT_CONFIGURATION_OBJECT');
+ m4c_entry_keys($configuration,['configuration_preloaded','configuration_loaded','type_is_local','url_is_uploads',
+  'root_is_expected','parent_is_directory','parent_is_nonlink','parent_is_canonical','parent_writable']);
+ foreach($configuration as$key=>$item)
+  m4w_expect(is_bool($item)&&($key==='configuration_preloaded'||$item===true),
+   'M4W_PUBLIC_ROOT_ACTUAL_LOADED_LOCAL_CONFIG_AND_OWN_READY_PARENT');
+ $before=$value['before'];$after=$value['after'];
+ m4w_expect(is_array($before)&&is_array($after),'M4W_PUBLIC_ROOT_NATIVE_OBSERVATION_OBJECTS');
+ $beforeKeys=['exists','is_directory','is_link','canonical_expected','writable'];
+ m4c_entry_keys($before,$beforeKeys);m4c_entry_keys($after,array_merge($beforeKeys,['mode_is_0700']));
+ foreach(array_merge(array_values($before),array_values($after),[$value['created'],$value['existing_root_native_unchanged']])as$item)
+  m4w_expect(is_bool($item),'M4W_PUBLIC_ROOT_ACTUAL_OBSERVATIONS_AND_BRANCH_FLAGS_STRICT_BOOLEANS');
+ $ready=['exists'=>true,'is_directory'=>true,'is_link'=>false,'canonical_expected'=>true,'writable'=>true];
+ m4c_entry_same(array_intersect_key($after,array_flip($beforeKeys)),$ready);
+ if($value['created']){
+  m4c_entry_same($before,array_fill_keys($beforeKeys,false));
+  m4w_expect($after['mode_is_0700']===true&&$value['existing_root_native_unchanged']===false,
+   'M4W_PUBLIC_ROOT_ACTUAL_ABSENT_OWN_ROOT_CREATED_ONCE_MODE0700');
+ }else{
+  m4c_entry_same($before,$ready);
+  m4w_expect($value['existing_root_native_unchanged']===true,
+   'M4W_PUBLIC_ROOT_EXISTING_VALID_DIRECTORY_NATIVE_UNCHANGED_MODE_ONLY_OBSERVED');
+ }
+ m4w_expect(m4c_entry_hash($path)===$hashes[$name],
+  'M4W_PUBLIC_ROOT_PROOF_COMPLETE_BYTES_STILL_ORIGINAL');
 }
 
 function m4w_prerequisites(array $source):void
@@ -217,7 +262,8 @@ function m4w_prerequisites(array $source):void
  m4c_entry_keys($result['business'],['authenticated_owner_uid','merchant_id','employee_id','limited_admin_id','original_root_id','new_root_id','new_items','new_quantity',
  'normal_action_counts','s2_operations','same_body_replays','new_refunds','private_evidence','review','http','paid_baseline','final_baseline',
  'independent_database_oracle','independent_redis_oracle','independent_files_oracle','prior_task6_preserved','original_private_inputs_preserved',
- 'normal_business_decisions','excluded_acceptance']);
+ 'normal_business_decisions','excluded_acceptance','customer_form']);
+ m4c_entry_same($result['business']['customer_form'],m4cf_saved_receipt());
  foreach(['independent_database_oracle','independent_redis_oracle','independent_files_oracle','prior_task6_preserved','original_private_inputs_preserved']as$key)
   m4w_expect($result['business'][$key]===true,'M4W_ORIGINAL_NORMAL_ORACLE_OBLIGATIONS_RETAINED');
  $shutdown=m4c_entry_read($base.'aftersale-review-normal-shutdown.json');
@@ -237,6 +283,7 @@ function m4w_prerequisites(array $source):void
   &&$binding['requested_prep_source']===$source['requested_prep_source']&&$binding['source_files']===$source['freeze']['aftersale_review_source_files']
   &&$binding['entry_sha256']===m4c_entry_hash('/source/'.M4AR_ENTRY),'M4W_ORIGINAL_NORMAL_BINDING');
  m4c_entry_same($binding['prerequisites_sha256'],$result['prerequisites_sha256']);
+ m4w_public_upload_root_preparation($source,$normal['id'],$binding,$hashes);
  $old=$binding+['context'=>$source['context'],'freeze'=>$source['freeze'],'environment'=>$source['environment'],
  'self_operated_mer_id'=>$source['self_operated_mer_id']];m4ar_prerequisites($old);
  $removed=m4c_entry_read($base.'aftersale-review-normal-removed.json');
@@ -340,7 +387,10 @@ function m4w_public_restore(array $source,array $inputs):array
 {
  $old=$GLOBALS['m4w_normal_result'];$finalSeal=$old['business']['final_baseline'];
  $final=m4w_archive_load(M4AR_SEAL,'MS4_AFTERSALE_REVIEW_FINAL_NATIVE_FACTS',$old,$finalSeal);
- m4c_entry_keys($final,['schema','scope','run_id','source_sha','freeze_sha256','container_id','source_binding_sha256','original_inputs','paid_baseline','model','native']);
+ m4c_entry_keys($final,['schema','scope','run_id','source_sha','freeze_sha256','container_id','source_binding_sha256','original_inputs','paid_baseline','model','native','customer_form_observations']);
+ m4cf_saved_observations_check(audit_db(),$final['customer_form_observations'],$old['business']['customer_form'],
+  [$old['business']['original_root_id'],$old['business']['new_root_id']]);
+ m4w_expect(m4cf_native_files()===$final['native']['customer_form_private'],'M4W_ORIGINAL_CUSTOMER_FORM_FULL_PHYSICAL_BASELINE');
  $descriptor=m4c_entry_read('/run/audit/evidence/aftersale-review-public-file-keep.json');
  m4c_entry_keys($descriptor,['schema','scope','run_id','source_sha','freeze_sha256','container_id','source_binding_sha256','final_baseline_sha256','archive','file_map_sha256']);
  m4w_expect($descriptor['schema']===1&&$descriptor['scope']==='MS4_AFTERSALE_REVIEW_PUBLIC_FILE_KEEP'
@@ -1619,6 +1669,7 @@ function m4w_run():int
  $restored=m4w_public_restore($source,$inputs);$before=m4ar_snapshot($db);$GLOBALS['m4w_before_snapshot']=$before;
  m4ar_zero($restored['final']['native'],$before);
  m4w_expect(m4w_files_capture(M4AR_PRIVATE)['file_map']===$before['private'],'M4W_COMPLETE_READONLY_OLD_PRIVATE_FILES');
+ m4w_expect(m4cf_native_files()===$before['customer_form_private'],'M4W_CUSTOMER_FORM_BEFORE_ORIGINALS');
  $cache=m4w_cache_native();$GLOBALS['m4w_before_cache']=$cache;$window=m4w_preflight($db,$before,$cache);$GLOBALS['m4w_preflight']=$window;
  $beforePayload=['snapshot'=>$before,'cache'=>$cache,'preflight'=>$window,'predecessor_hashes'=>$GLOBALS['m4w_predecessor_hashes'],
   'original_inputs'=>m4w_input_public($inputs),'fixtures'=>$fixtures,'config'=>['path_basename'=>basename($config['path']),
@@ -1634,6 +1685,7 @@ function m4w_run():int
  m4w_phase('after_snapshot');$after=m4ar_snapshot($db);$cacheAfter=m4w_cache_native();
  $GLOBALS['m4w_after_snapshot']=$after;$GLOBALS['m4w_after_cache']=$cacheAfter;
  m4w_expect(time()<=$window['wall_through']&&(int)$cacheAfter['time_ms']<=(int)$window['redis_through_ms'],'M4W_REAL_FINITE_WINDOW_NOT_EXPIRED');
+ m4w_expect(m4cf_native_files()===$before['customer_form_private']&&$after['customer_form_private']===$before['customer_form_private'],'M4W_CUSTOMER_FORM_COMPLETE_ORIGINALS_RETAINED');
  $changes=m4w_timer_changes($before,$after,$cache,$cacheAfter);
  foreach($before['rows']as$table=>$rows)m4w_expect(m4fn_row_multiset($rows)===m4fn_row_multiset($after['rows'][$table]),'M4W_ORIGINAL_NATIVE_ROW_MULTISETS_UNCHANGED');
  m4w_expect(m4w_files_capture(M4AR_PRIVATE)['file_map']===$after['private']
