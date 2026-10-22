@@ -945,7 +945,13 @@ function m4uwo_review_model(array $before,array $after,array $m,array $body,arra
   'reply_type'=>'product','product_score'=>5,'service_score'=>5,'comment'=>$body['comment'],'pics'=>json_encode($body['pics'],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR),
   'add_time'=>$at,'merchant_reply_content'=>'','merchant_reply_time'=>0,'is_del'=>0,'is_reply'=>0,'nickname'=>$user['nickname'],'avatar'=>$user['avatar'],'suk'=>$sku['suk'],'status'=>0,'mer_id'=>(int)$root['mer_id']]);
  m4uib_assert(m4uib_same($answer,m4ar_review_view($row,$itemId,m4uwo_site($before))),'OBS_EXACT_INDEPENDENT_NORMAL_REVIEW_VIEW');
- return ['rows'=>[$table=>array_merge($before['rows'][$table],[$row])],'counts'=>[$table=>1],'redis'=>[],'review'=>$row,'item'=>$item];
+ $assetTable='eb_marketplace_customer_asset';m4uib_assert(($upload['domain']??null)==='customer_review','OBS_REVIEW_CREATE_USES_ACTUAL_NAMED_CUSTOMER_ASSET_DOMAIN');$assetId=m5pcp_u64($upload['row']['id']);
+ $staged=m4ar_one($before['rows'][$assetTable],'id',$assetId);m4uib_assert($staged===$upload['row']&&$staged['state']==='STAGED'&&$staged['review_id']===null&&$staged['bound_at']===null,
+  'OBS_REVIEW_CREATE_ACTUAL_COMPLETE34_STAGED_ROW_BEFORE');$actualBound=m4ar_one($after['rows'][$assetTable],'id',$assetId);$boundAt=m4upo_time($actualBound['bound_at'],$interval);
+ $boundValues=$staged;$boundValues['state']='BOUND';$boundValues['review_id']=m5pcp_u64($row['id']);$boundValues['bound_at']=$boundAt;$bound=m4upo_row($before,$actualBound,$assetTable,$boundValues);
+ $nextUpload=$upload;$nextUpload['row']=$bound;
+ return ['rows'=>[$table=>array_merge($before['rows'][$table],[$row]),$assetTable=>m4ar_replaced($before['rows'][$assetTable],'id',$assetId,$bound)],
+  'counts'=>[$table=>1],'redis'=>[],'review'=>$row,'item'=>$item,'upload'=>$nextUpload];
 }
 function m4uwo_review_change(array $before,array $after,array $m,array $review,array $body,array $answer,array $interval,bool $moderate):array
 {
@@ -1042,6 +1048,45 @@ function m4uwo_public_upload_model(array $before,array $after,array $state,array
  // Source upload tag plan is merged with the complete normal startup plan below.
  return ['rows'=>[$table=>array_merge($before['rows'][$table],[$row])],'counts'=>[$table=>1],'redis'=>[$key=>$entry],'tags'=>[$tag=>$members],
   'upload'=>['row'=>$row,'reference'=>$ref,'display_url'=>$answer['url'],'file'=>$png]];
+}
+/** Named review files have no form fields and insert the complete real customer34 domain. */
+function m4uwo_customer_review_upload_model(array $before,array $after,array $state,array $body,array $answer,array $interval):array
+{
+ m4uib_keys($body,['file']);m4uib_keys($body['file'],['bytes','sha256','mime_type','original_name']);$png=m4uwo_frozen_png();$original=$body['file']['original_name'];
+ m4uib_assert(m4uib_same(['bytes'=>$body['file']['bytes'],'sha256'=>$body['file']['sha256'],'mime_type'=>$body['file']['mime_type']],$png+['mime_type'=>'image/png'])
+  &&is_string($original)&&preg_match('//u',$original)===1&&$original!==''&&mb_strlen($original,'UTF-8')<=255
+  &&!str_contains($original,"\0")&&!str_contains($original,'/')&&!str_contains($original,'\\')&&strtolower(pathinfo($original,PATHINFO_EXTENSION))==='png',
+  'OBS_REAL_NAMED_REVIEW_MULTIPART_FILE_BYTES_AND_ORIGINAL_NAME_NO_FORM_FIELDS');
+ $uid=m5pcp_int($state['prepare']['actor_ids']['customer'],1);$rootId=m5pcp_int($state['prepare']['paid_order_id'],1,4294967295);$itemId=m5pcp_int($state['source']['q2'],1);
+ $root=m4ar_one($before['rows']['eb_store_order'],'id',$rootId);$item=m4ar_one($before['rows']['eb_store_order_cart_info'],'id',$itemId);$user=m4ar_one($before['rows']['eb_user'],'uid',$uid);
+ m4c_entry_keys($item,['id','oid','uid','mer_id','cart_id','old_cart_id','product_id','cart_num','refund_num','surplus_num','split_status','cart_info','unique']);
+ m4uib_assert($root===$state['model']['root']&&m5pcp_int($root['uid'],1)===$uid&&m5pcp_int($item['uid'],1)===$uid
+  &&m5pcp_int($item['oid'],1,4294967295)===$rootId&&m5pcp_int($root['mer_id'],1,4294967295)===m5pcp_int($item['mer_id'],1,4294967295)
+  &&m5pcp_int($root['pid'],0)===0&&m5pcp_int($root['marketplace_trade_version'],1,1)===1&&m5pcp_int($root['paid'],1,1)===1
+  &&m5pcp_int($root['status'],2,2)===2&&m5pcp_int($user['status'],1,1)===1&&m5pcp_int($user['is_del'],0,0)===0
+  &&m4uwo_summary($state['model'])['received']===3,'OBS_NAMED_REVIEW_ACTUAL_ORIGINAL_RECEIVED_ROOT_ITEM_AND_CURRENT_CUSTOMER');
+ foreach($before['rows']['eb_store_product_reply']as$review)m4uib_assert((int)$review['oid']!==$rootId||$review['unique']!==$item['unique'],
+  'OBS_NAMED_REVIEW_UPLOAD_PRECEDES_ORIGINAL_ITEM_REVIEW');
+ m4uib_keys($answer,['name','url','attachment_ref']);$ref=$answer['attachment_ref'];
+ m4uib_assert(is_string($ref)&&strlen($ref)<=200&&preg_match('~\A/uploads/customer/'.$uid.'/[a-f0-9]{32}/[a-f0-9]{32}\.png\z~D',$ref)===1
+  &&$answer['name']===basename($ref)&&$answer['url']===$state['binding']['origin'].$ref,'OBS_NAMED_REVIEW_CUSTOMER_NAMESPACE_AND_REAL_REQUEST_ORIGIN');
+ $table='eb_marketplace_customer_asset';$metadata=$before['database']['tables'][$table]['metadata'];$id=m5pcp_u64($metadata['table']['AUTO_INCREMENT']);
+ $new=m4uwo_added_ids($before['rows'][$table],$after['rows'][$table],'id');m4uib_assert(count($new)===1,'OBS_ONE_NAMED_REVIEW_CUSTOMER_ASSET34_INSERT');$raw=$new[0];$at=m4upo_time($raw['created_at'],$interval);
+ $values=['id'=>$id,'uid'=>$uid,'purpose'=>'review_public_image','state'=>'STAGED','storage_type'=>1,'object_key'=>$ref,'thumbnail_key'=>$ref,
+  'name'=>basename($ref),'real_name'=>$original,'media_type'=>'image/png','byte_size'=>(string)$png['bytes'],'width'=>m4uwo_png_source()['width'],
+  'height'=>m4uwo_png_source()['height'],'content_sha256'=>hex2bin($png['sha256']),'created_at'=>$at,'expires_at'=>null,'bound_at'=>null,'retired_at'=>null,
+  'root_order_id'=>$rootId,'order_item_id'=>$itemId,'refund_id'=>null,'review_id'=>null,'confirmation_ref'=>null,'form_product_id'=>null,
+  'form_definition_sha256'=>null,'form_field_index'=>null,'extract_id'=>null,'agent_apply_id'=>null,'source_product_id'=>null,'source_qrcode_id'=>null,
+  'created_by_uid'=>$uid,'created_by_admin_id'=>null,'created_by_job'=>null,'legacy_att_id'=>null];
+ m4uib_assert(count($values)===34&&array_keys($metadata['columns'])===array_keys($values),'OBS_NAMED_REVIEW_ALL34_COLUMNS_INDEPENDENT');$row=m4upo_row($before,$raw,$table,$values);
+ $key='c:start_uploads_'.$uid;$old=$before['native_redis'][$key]??null;$oldCount=0;
+ if($old!==null){m4uib_assert($old['type']==='string'&&preg_match('/\A(?:0|[1-9][0-9]?)\z/D',$old['value'])===1,'OBS_NAMED_REVIEW_UPLOAD_COUNTER_CANONICAL_BEFORE');$oldCount=(int)$old['value'];
+  m4uib_assert($old['value']===m4tr_cache_wire($oldCount),'OBS_NAMED_REVIEW_UPLOAD_COUNTER_EXACT_BEFORE_WIRE');}
+ $entry=$after['native_redis'][$key]??null;m4uib_assert(is_array($entry)&&$entry['type']==='string'&&$entry['value']===m4tr_cache_wire($oldCount+1)
+  &&$entry['expires']>=$interval[0]*1000+86400000&&$entry['expires']<=($interval[1]+1)*1000+86400000,'OBS_NAMED_REVIEW_EXACT_QUOTA_INCREMENT_AND_NATIVE_DEADLINE');
+ $tag='c:CRMEB:'.md5('crmeb');$members=$before['tag_members'][$tag];$members[]=$key;$members=array_values(array_unique($members,SORT_STRING));sort($members,SORT_STRING);
+ return ['rows'=>[$table=>array_merge($before['rows'][$table],[$row])],'counts'=>[$table=>1],'redis'=>[$key=>$entry],'tags'=>[$tag=>$members],
+  'upload'=>['domain'=>'customer_review','row'=>$row,'reference'=>$ref,'display_url'=>$answer['url'],'file'=>$png]];
 }
 function m4uwo_audit_batch(array $before,array $after,array $specs,array $source,array &$rows,array &$counts):void
 {
@@ -1163,12 +1208,12 @@ function m4uwo_verify_twenty(string $name,array $before,array $after,array $inpu
   $v=m4uwo_operation_model($before,$after,$m,$actor,$selection['action'],$body,$selection['parts'],$answer,$interval,$selection['target']);$rows=$v['rows'];$counts=$v['counts'];$redis=$v['redis'];$used[$seq]=true;
   $facts['fulfillment']=['summary'=>m4uwo_summary($m),'aftersale'=>m4ar_aftersale($m),'child_count'=>count($m['children'])];unset($m);
  }elseif($name==='n2-public-image-upload'){
-  m4uib_assert($wire['method']==='POST'&&$wire['path']==='/api/upload/image','OBS_REAL_NORMAL_PUBLIC_UPLOAD_ENDPOINT');$v=m4uwo_public_upload_model($before,$after,$state,$body,$answer,$interval);
+  m4uib_assert($wire['method']==='POST'&&$wire['path']==='/api/order/reviews/'.$root.'/'.$state['source']['q2'].'/files','OBS_REAL_NORMAL_NAMED_REVIEW_UPLOAD_ENDPOINT');$v=m4uwo_customer_review_upload_model($before,$after,$state,$body,$answer,$interval);
   $rows=$v['rows'];$counts=$v['counts'];$redis=$v['redis'];$tags=$v['tags'];$state['upload']=$v['upload'];m4uwo_one_file_delta($before,$after,'/workspace/crmeb/public',ltrim($v['upload']['reference'],'/'),$v['upload']['file'],$interval,0644,0755);
   $changedRoots=['/workspace/crmeb/public'];$used[$seq]=true;$facts['public_image']=$v['upload']['file'];
  }elseif($name==='n2-review-submit'){
   m4uib_assert($wire['method']==='POST'&&$wire['path']==='/api/order/reviews/'.$root.'/'.$state['source']['q2'],'OBS_REAL_NORMAL_REVIEW_CREATE_ENDPOINT');$v=m4uwo_review_model($before,$after,$state['model'],$body,$answer,$interval,$state['upload']);
-  $rows=$v['rows'];$counts=$v['counts'];$state['review']=$v['review'];$state['review_item']=$v['item'];$used[$seq]=true;$facts['review_id']=(int)$v['review']['id'];
+  $rows=$v['rows'];$counts=$v['counts'];$state['review']=$v['review'];$state['review_item']=$v['item'];$state['upload']=$v['upload'];$used[$seq]=true;$facts['review_id']=(int)$v['review']['id'];
  }elseif(in_array($name,['n2-platform-moderate','n2-merchant-reply'],true)){
   $moderate=$name==='n2-platform-moderate';$review=$state['review'];m4uib_assert($wire['method']==='PUT'&&$wire['path']===($moderate?'/adminapi/marketplace/reviews/':'/merchantapi/reviews/').$review['id'].($moderate?'/review':'/reply'),'OBS_REAL_NORMAL_REVIEW_COMMAND_PATH');
   $v=m4uwo_review_change($before,$after,$state['model'],$review,$body,$answer,$interval,$moderate);$rows=$v['rows'];$counts=$v['counts'];$state['review']=$v['review'];$used[$seq]=true;
@@ -1177,7 +1222,7 @@ function m4uwo_verify_twenty(string $name,array $before,array $after,array $inpu
  }elseif(in_array($name,['n2-pending-public-read','n2-public-review-read','n2-public-image-read'],true)){
   m4uib_assert($wire['method']==='GET'&&$wire['body_is_empty_object'],'OBS_REAL_NORMAL_PUBLIC_READ');
  }else m4uib_assert(false,'OBS_UNKNOWN_TWENTY_CASE_NAME');
- if($name==='n2-public-image-upload')m4uws_upload_configs($startup,$primary);
+ if($name==='n2-public-image-upload')m4uws_review_upload_configs($startup,$primary);
  if(($state['sequence_barrier']??null)!==null)$facts['sequence_barrier']=$state['sequence_barrier'];
  $newModel=$state['model'];$privateUsed=[];if(!str_starts_with($name,'login-'))m4uib_assert($private['login_token']===null,'OBS_NO_UNRELATED_LOGIN_TOKEN');
  $contentSequences=[];foreach($private['ticket_pairs']as$p)$contentSequences[]=$p['read_sequence'];if(isset($state['upload']))foreach($event['requests']as$q)if($q['path']===$state['upload']['reference'])$contentSequences[]=$q['sequence'];
@@ -1520,7 +1565,8 @@ function m4uws_image_dom(mixed $dom,array $state,array $before):void
 function m4uws_rows(array $plan,string $table):array
 {m4uib_assert(array_key_exists($table,$plan['original']['rows']),'OBS_COMPLETE_BEGIN_TABLE_FOR_NORMAL_READ');$rows=$plan['original']['rows'][$table];
  if($table==='eb_store_product_reply'&&($plan['current_review']??null)!==null){$r=$plan['current_review'];$seen=false;foreach($rows as&$old)if((string)$old['id']===(string)$r['id']){$old=$r;$seen=true;}unset($old);if(!$seen)$rows[]=$r;}
- if($table==='eb_system_attachment'&&($plan['current_upload']??null)!==null){$r=$plan['current_upload']['row'];$seen=false;foreach($rows as&$old)if((string)$old['att_id']===(string)$r['att_id']){$old=$r;$seen=true;}unset($old);if(!$seen)$rows[]=$r;}return $rows;}
+ if($table==='eb_system_attachment'&&($plan['current_upload']??null)!==null&&($plan['current_upload']['domain']??'legacy_public')==='legacy_public'){$r=$plan['current_upload']['row'];$seen=false;foreach($rows as&$old)if((string)$old['att_id']===(string)$r['att_id']){$old=$r;$seen=true;}unset($old);if(!$seen)$rows[]=$r;}
+ if($table==='eb_marketplace_customer_asset'&&($plan['current_upload']['domain']??null)==='customer_review'){$r=$plan['current_upload']['row'];$seen=false;foreach($rows as&$old)if((string)$old['id']===(string)$r['id']){$old=$r;$seen=true;}unset($old);if(!$seen)$rows[]=$r;}return $rows;}
 function m4uws_vip(array &$plan,bool $productVip):bool
 {
  $open=m4uws_config($plan,'member_card_status',1);$rights=[];foreach(m4uws_rows($plan,'eb_member_right')as$r)if($r['right_type']==='vip_price')$rights[]=$r;
@@ -1808,6 +1854,11 @@ function m4uws_upload_configs(array &$plan,array $request):void
  m4uib_assert(array_key_exists('image_thumb_status',$thumb)&&!$thumb['image_thumb_status'],'OBS_NORMAL_UNTRANSFORMED_PNG_LOCAL_BRANCH_NO_THUMB_OR_WATER');
  // PublicController also asks upload_type for attachmentAdd image_type after move. Same raw source cache value.
  m4uws_config($plan,'upload_type',1);m4uws_config_calls($plan,$request);
+}
+/** Named CustomerAssetStorage reads only this config; it never enters legacy thumbnail/watermark upload. */
+function m4uws_review_upload_configs(array &$plan,array $request):void
+{
+ m4uib_assert((int)m4uws_config($plan,'upload_type',1)===1,'OBS_NAMED_REVIEW_UPLOAD_ACTUAL_LOCAL_DRIVER_ONLY');m4uws_config_calls($plan,$request);
 }
 /** PersonalHome is safely projected to uid, but every mandatory sys_config read remains in the full native plan. */
 function m4uws_personal_home(array &$plan,array $q,int $uid):void

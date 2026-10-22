@@ -39,3 +39,12 @@ Main 的14个JS/Vue文件实际完成22个平台目标模板/脚本语法检查�
 实际报告在仓库外：ms4-merchant-console-build/0d5499ec-p1/build-receipt.json，10969 B，SHA256 3b5c96eb1db042f103809a70052796908617a10dca2f7b6ace53b72588f53e32；ms4-h5/review-ui-0d5499ec-r1/BUILD-REPORT.json，3815 B，dec3d6b334f0a8c825e0a908ba0bf002b6764263d03c88a83cc11c1f013c38b0；a0d54/BUILD-REPORT.json，861156607336b889ce754f8457bf7aea7826d207870ca21f3e0341aff26ad969。原构建脚本、有限派生/完整正逆和非作者报告在ms4-review-ui-main-integration-r1；该独审7364 B，667053ad548f377ce5999ffb1fce2a8c6086f93c861deaa8b82768d08efe205a。
 
 平台新入口实际引用/admin/manifest.json，全部资源直接通过原/admin/本地文件检查，没有相对路径fallback；这验证本次BASE_URL源修订的构建结果，实际深层地址HTTP/DOM仍未运行。H5的asset/entrypoint尺寸警告原样保留，不是编译错误。三个结果只覆盖本固定输入的构建与静态资源，不据此签收真实登录、售后、评价、图片、Worker或页面验收。构建全部终端后才解除Main冻结并更新本记录；不改报告的来源HEAD，不重写旧929a16a9证据。
+
+
+## 2026-10-22 具名评价图片的 N2 验证接线（独立后续分支）
+
+从 d396dca 的独立本地资产消费者分支接入一件 ms4-ui-prepare-oracle.php，补齐真实评价图片接口的测试消费者。第14步使用本人原订单项的 /api/order/reviews/<root>/<item>/files 与空 formData，依真实 multipart 原文件名/bytes、BEFORE完整根/项/用户及原生schema独立校核 customer34 STAGED 新增、额度与文件差分；第15步评价创建后仅 state/review_id/bound_at 绑定，其余31列保持。后续startup按明确customer_review域读取完整行，避免将其当legacy att_id；新存储的配置观察只读实际 upload_type。
+
+原20步骤、旧公开上传模型、legacy14及有序重复历史、其它完整146函数和正常收尾/独立核零合同保持。三处原函数有限改动、两个新helper，七接缝完整正逆和独立Source复核通过（23完整输入、findings为空）；固定PHP8.2纯语法实际0，六原生命令/双流和前后专用selector为空，候选字节保持。实际接入的242783字节文件逐字等于该已审已解析候选；本地Git检查和提交身份另记录。
+
+该片只证明源码接入与解析，不是三端API/DOM或完整业务通过。真实浏览器必须从选中文件或实际Content-Disposition采集 original_name，不能从AFTER metadata反选；未添加原本没有的UI重放阶段，AR普通重放与未来具体UI观察分别记录。新UI profile/完整Source绑定、三端20步/42帧、320/390/1440真实页面、正常close/独立zero及原历史/最终归属/金融/发布/人工验收仍待。正在运行的 d396dca 独立实例及其Dev/Val/Main未因本后续分支改写，无推送或部署，停止项和Task9关闭保持。
