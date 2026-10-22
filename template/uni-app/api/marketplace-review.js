@@ -22,11 +22,12 @@ export async function openCustomerReviews() {
       catch (error) { finish(reject, error); }
     });
   }
-  async function upload(path) {
-    requireCurrent(); if (typeof path !== 'string' || !path) throw new Error('所选图片不可用');
+  async function upload(path, rootId, itemId) {
+    requireCurrent(); rootId = routeId(rootId); itemId = routeId(itemId);
+    if (typeof path !== 'string' || !path) throw new Error('所选图片不可用');
     const data = await new Promise((resolve, reject) => {
       let task; const finish = (callback, value) => { if (task) tasks.delete(task); if (!current()) reject(stale()); else callback(value); };
-      try { task = uni.uploadFile({ url: HTTP_REQUEST_URL + '/api/upload/image', filePath: path, fileType: 'image', name: 'file', formData: { filename: 'file' }, header: headers(false), timeout: TIMEOUT,
+      try { task = uni.uploadFile({ url: HTTP_REQUEST_URL + '/api/order/reviews/' + rootId + '/' + itemId + '/files', filePath: path, fileType: 'image', name: 'file', formData: {}, header: headers(false), timeout: TIMEOUT,
         success(response) { finish(() => { let body; try { body = JSON.parse(response.data); } catch (error) { reject(new Error('图片上传结果未确认')); return; } if (response.statusCode !== 200 || !body || body.status !== 200) reject(new Error(errorText(body))); else resolve(body.data); }); },
         fail() { finish(reject, new Error('图片上传结果未确认')); }, complete() { if (task) tasks.delete(task); } }); if (task) tasks.add(task); }
       catch (error) { finish(reject, error); }

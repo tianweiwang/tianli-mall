@@ -83,6 +83,7 @@ class SystemCrudServices extends BaseServices
         'user_recharge', 'user_search', 'user_sign', 'user_spread', 'user_visit', 'wechat_key',
         'wechat_media', 'wechat_message', 'wechat_news_category', 'wechat_qrcode', 'wechat_qrcode_cate',
         'wechat_qrcode_record', 'wechat_reply', 'wechat_user', 'system_crud_data', 'admins',
+        'marketplace_customer_asset', 'marketplace_platform_asset_category', 'marketplace_platform_asset',
     ];
 
     //表字符集

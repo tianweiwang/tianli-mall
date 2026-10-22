@@ -737,3 +737,14 @@ T5 先行顾客已购评价图片11候选 exact14 已冻结，PINS25903B/8860c35
 此前“三张system_lang”简称在此更正：真实安装表为 eb_lang_code、eb_lang_country、eb_lang_type，与 system_menus/system_role/system_config 共六个非业务表。后继隔离初始化须保完整原 INSERT/原值/顺序及独立全行核对，不据错误简称造表。
 
 整体剩余范围不变：T4 实际结构/菜单/素材与扫码接口/文件审计/phonePC/自然GC/三宽；T5完整私有用途/avatar/defaultCompat/历史发布门；完整A/B/三端/N1N2；原历史权益归属、37步/四CLI、backfill/enforce/final enabled=true、真实MS5金融/MS6和人工验收。通用多商户复用商品/SKU规格价格，Task9关闭，用户停止样本 NOT RUN；目标继续 active。
+
+
+## 2026-10-22 T5 已购评价图片先行代码接入本地开发分支
+
+冻结 exact14/11候选已由 Root 复核实际调用链和完整候选，并经非作者有限 Source 复核 PASS（报告104091B/dcb5fccfb4bc）。新具名 POST order/reviews/<root_id>/<item_id>/files 使用真实 api 顾客 Request/UID/已付款收货资格和原实际根项，同原 Mysql/PDO 事务写 customer34，不再把这一评价上传写入商业 system_attachment。保实际 full13 商品项 old_cart_id、full20 评价、原 legacy14/重复顺序和完整 wrapper 两读，再绑定唯一资产 state/review_id/bound_at 三字段。原同体 replay 早返保持；不扩 App 权限、不借 MerchantContext 或 AccountChangeGuard。
+
+9PHP 纯语法实际正常0，原完整 native stdout/stderr 已核；2前端脚本、Vue模板和8个直接本地 import 的最小解析通过，实际 Node PID51876/exit0，RESULT10263B/c57ef46867bb。首轮解析本身0但依赖指纹观察缺私有 he1.2.0 而失败的 ATTEMPT1 保留，补先验依赖 pin 后同输入通过；未改候选来适应检查。此处没有 Uni 编译器/条件预处理或完整构建，不签 UI、HTTP、实际存储/SQL/业务验收。
+
+Root 在当前无新 T4 目标实例、环境 Source 尚未冻结时先接入此11完整候选及本记录；采用前 clean42dd569。原约定保持的是实际目标运行窗口，不能让尚未开始的运行永久冻结完成的代码；后继环境必须显式绑定本次真实新 clean SHA，并在实际运行至普通关闭/独立核零期间保持该来源。冻结包、其余原 Source 和 Main/Val 保持，L2 仅本地窄提交，不推送部署。
+
+本次只接 V1 已购评价图。avatar/defaultCompat、私有用途/其它上传消费者和历史发布门未取消；旧全局 upload/image 仍在，R41 售后 GET503 和完整A失败不回补成功。正常已购上传→新评价绑定→公开读取、原零图/legacy 图与同体重复、全原生 DB/Redis/files 保持、实际云存储和三端页面均须后续实际验证；完整 T5/T6/T8、T4正常接口/扫码/GC、历史最终归属启用、MS5真实金融/MS6和人工验收继续未完成。Task9关闭，停止样本 NOT RUN，通用多商户复用商品/SKU规格价格与 active 目标保持。

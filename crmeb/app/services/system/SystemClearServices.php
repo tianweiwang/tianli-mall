@@ -41,7 +41,7 @@ class SystemClearServices extends BaseServices
             'store_product_description','store_product_cate','store_product_coupon','store_product_reply','store_product_virtual',
             'system_attachment','system_attachment_category','shipping_templates','shipping_templates_region','shipping_templates_free','shipping_templates_no_delivery',
             'store_product_rule','marketplace_merchant','marketplace_employee','marketplace_role','marketplace_employee_role',
-            'marketplace_audit_log','marketplace_stock_log'];
+            'marketplace_audit_log','marketplace_stock_log','marketplace_customer_asset','marketplace_platform_asset_category','marketplace_platform_asset'];
         // Stop before any statement in this batch; these global operations have no owned migration contract.
         if(array_intersect($clearData,$protected)!==[])throw new \crmeb\exceptions\AuthUnavailableException();
         foreach ($clearData as $name) {

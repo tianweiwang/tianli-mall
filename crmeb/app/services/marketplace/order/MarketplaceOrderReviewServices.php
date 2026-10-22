@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\services\marketplace\order;
 
 use app\Request;
+use app\dao\marketplace\assets\CustomerAssetDao;
 use app\dao\marketplace\order\MarketplaceOrderDao;
 use app\dao\marketplace\order\MarketplaceOrderFulfillmentDao;
 use app\dao\marketplace\order\MarketplaceOrderRefundDao;
@@ -27,11 +28,14 @@ final class MarketplaceOrderReviewServices
 {
     private const INT_MAX=2147483647;
     private const UINT_MAX=4294967295;
+    /** Only this real upload admission can publish the transient customer writer frame. */
+    private static ?array $customerUploadFrame=null;
+    private static ?array $customerUploadDatabaseSession=null;
 
     public function __construct(private MarketplaceOrderReviewDao $reviews,private MarketplaceOrderDao $orders,
         private MarketplacePaymentDao $payments,private MarketplaceOrderFulfillmentDao $families,private MarketplaceOrderRefundDao $refunds,
         private MarketplaceOrderFulfillmentServices $fulfillment,private MarketplaceAftersaleFileServices $files,
-        private EmployeeAuthServices $employees,private PlatformAccessServices $platform,private AuditLogServices $audit){}
+        private EmployeeAuthServices $employees,private PlatformAccessServices $platform,private AuditLogServices $audit,private CustomerAssetDao $customerAssets){}
 
     public function quoteForCustomer(Request $request,int $actualUid,mixed $rootId,mixed $itemId):array
     {
@@ -45,6 +49,126 @@ final class MarketplaceOrderReviewServices
         [$connection,$pdo]=$this->defaultConnection();$root=$this->reviews->locateCustomerRoot($connection,$pdo,$actualUid,$id);
         if($root===null)self::fail();return $this->write($connection,$pdo,$request,$identity,'create',$root,$item,null,$body,null,null);
     }
+    /** Actual multipart admission, deliberately separate from GET quote and JSON review creation. */
+    public function withCustomerUpload(Request $request,int $rootId,int $itemId,callable $publish):array
+    {
+        if(self::$customerUploadFrame!==null)self::fail();
+        $uid=self::id($request->uid());$identity=$this->customer($request,$uid);
+        $rootId=MarketplaceOrderReviewInput::id($rootId);$itemId=MarketplaceOrderReviewInput::id($itemId);
+        if($request->method(true)!=='POST'||strtolower($request->contentType())!=='multipart/form-data'
+            ||$request->get(false)!==[]||$request->server('QUERY_STRING','')!==''||$request->post(false)!==[]
+            ||$request->rule()->getOption('customer_review_files')!==true
+            ||MarketplaceOrderReviewInput::id($request->route('root_id',null,null))!==$rootId
+            ||MarketplaceOrderReviewInput::id($request->route('item_id',null,null))!==$itemId)self::fail();
+        $uploads=$request->file();if(!is_array($uploads))self::fail();self::keys($uploads,['file']);
+        if(!$uploads['file'] instanceof \think\file\UploadedFile||!$uploads['file']->isValid())self::fail();
+        [$connection,$pdo]=$this->defaultConnection();$located=$this->reviews->locateCustomerRoot($connection,$pdo,$uid,$rootId);
+        if($located===null)self::fail();$candidate=self::candidate($located);$published=false;$committedParents=null;
+        $databaseSession=self::customerUploadSession($connection,$pdo);
+        try{
+            $this->outside($connection,$pdo);$this->sameIdentity($request,$identity,'create',null,null);
+            $result=$connection->transaction(function(ConnectionInterface $actual)use($connection,$pdo,$request,$identity,$candidate,$itemId,$publish,$databaseSession,&$published,&$committedParents):array{
+                // An ORM retry may never replay a callback containing physical I/O.
+                if($actual!==$connection||$published||self::$customerUploadFrame!==null)self::fail();$this->writer($connection,$pdo);
+                $payment=$this->payments->lockPayment($pdo,$candidate['uid'],$candidate['root_order_id'],$candidate['root_order_no']);$this->writer($connection,$pdo);
+                $root=$this->families->lockRoot($pdo,$candidate);$this->writer($connection,$pdo);
+                $this->writeAuthorization($connection,$pdo,$request,$identity,'create',$root,null,null);
+                $before=$this->writeSnapshot($connection,$pdo,$candidate,$root,$payment,false);self::paid($root,$payment);
+                $bound=self::bindReviews($before);$item=$before['inspection']['source']['items'][$itemId]??null;
+                if(!is_array($item)||isset($bound['items'][$itemId])||!self::eligible($before,$itemId))self::fail();
+                $item=$this->currentFullReviewItem($connection,$pdo,$root,$item);
+                $user=$this->customerAssets->lockUser($connection,$pdo,$identity['actor_id']);
+                $this->customerAssets->assertStructure($connection,$pdo);$this->writer($connection,$pdo);
+                $context=['request'=>$request,'actual_uid'=>$identity['actor_id'],'root'=>$root,'item'=>$item,'user'=>$user,
+                    'connection'=>$connection,'pdo'=>$pdo,'session_sha256'=>$identity['session_sha256']];
+                if(self::customerUploadSession($connection,$pdo)!==$databaseSession)self::fail();
+                self::$customerUploadFrame=$context;self::$customerUploadDatabaseSession=$databaseSession;$published=true;
+                try{
+                    self::assertCustomerUploadContext($context);$out=$publish($context);
+                    if(!is_array($out))self::fail();self::keys($out,['asset','dto']);
+                    if(!is_array($out['asset'])||!is_array($out['dto']))self::fail();
+                    $finalPayment=$this->payments->lockPayment($pdo,$candidate['uid'],$candidate['root_order_id'],$candidate['root_order_no']);$this->writer($connection,$pdo);
+                    $finalRoot=$this->families->lockRoot($pdo,$candidate);$this->writer($connection,$pdo);
+                    $final=$this->writeSnapshot($connection,$pdo,$candidate,$finalRoot,$finalPayment,true);
+                    if($final!==$before||$this->customerAssets->lockUser($connection,$pdo,$identity['actor_id'])!==$user)self::fail();
+                    if($this->currentFullReviewItem($connection,$pdo,$finalRoot,$final['inspection']['source']['items'][$itemId])!==$item)self::fail();
+                    $this->customerAssets->assertUploaded($context,$out['asset']);
+                    $this->writeAuthorization($connection,$pdo,$request,$identity,'create',$finalRoot,null,null);
+                    self::assertCustomerUploadContext($context);$committedParents=['root'=>$root,'item'=>$item];return $out;
+                }finally{self::$customerUploadFrame=null;self::$customerUploadDatabaseSession=null;}
+            });
+            $this->outside($connection,$pdo);$this->sameIdentity($request,$identity,'create',null,null);
+            if(self::customerUploadSession($connection,$pdo)!==$databaseSession)self::fail();
+            $this->customerAssets->assertCommitted($connection,$pdo,$result['asset']);
+            // Real original parent rows are observed again outside any transaction; there is no guessed commit ACK.
+            $observedRoot=$this->customerUploadRows($connection,$pdo,'store_order','id',self::id($result['asset']['root_order_id']));
+            $observedItem=$this->customerUploadRows($connection,$pdo,'store_order_cart_info','id',self::id($result['asset']['order_item_id']));
+            if($committedParents===null||$observedRoot!==$committedParents['root']||$observedItem!==$committedParents['item'])self::fail();
+            $user=$this->customerUploadRows($connection,$pdo,'user','uid',$identity['actor_id']);
+            self::stored($user,['uid'=>$identity['actor_id'],'status'=>1,'is_del'=>0]);
+            if(self::customerUploadSession($connection,$pdo)!==$databaseSession)self::fail();
+            $this->outside($connection,$pdo);$this->sameIdentity($request,$identity,'create',null,null);return $result;
+        }catch(Throwable $error){self::$customerUploadFrame=null;self::$customerUploadDatabaseSession=null;throw $error;}
+    }
+
+    /** Finite server-produced frame, never a client owner/context argument. */
+    public static function assertCustomerUploadContext(array $context):void
+    {
+        if(self::$customerUploadFrame===null||$context!==self::$customerUploadFrame)self::fail();
+        $request=$context['request'];$connection=$context['connection'];$pdo=$context['pdo'];
+        if(!$request instanceof Request||app()->request!==$request||app()->http->getName()!=='api'||$request->isLogin()!==true
+            ||self::id($request->uid())!==$context['actual_uid']||$request->verifiedTokenFingerprint()!==$context['session_sha256']
+            ||preg_match('/\A[a-f0-9]{64}\z/D',$context['session_sha256'])!==1
+            ||!$connection instanceof Mysql||!$pdo instanceof PDO||Db::connect()!==$connection||$connection->getPdo()!==$pdo
+            ||$connection->getConfig('deploy')!==0||$connection->getConfig('rw_separate')!==false
+            ||$connection->transactionDepth()!==1||!$pdo->inTransaction()||$pdo->getAttribute(PDO::ATTR_DRIVER_NAME)!=='mysql'
+            ||$pdo->getAttribute(PDO::ATTR_ERRMODE)!==PDO::ERRMODE_EXCEPTION
+            ||!in_array($pdo->getAttribute(PDO::ATTR_EMULATE_PREPARES),[false,0],true))self::fail();
+        if(self::$customerUploadDatabaseSession===null||self::customerUploadSession($connection,$pdo)!==self::$customerUploadDatabaseSession)self::fail();
+        if(self::id($context['root']['uid'])!==$context['actual_uid']||self::id($context['user']['uid'])!==$context['actual_uid']
+            ||self::id($context['item']['oid'])!==self::id($context['root']['id']))self::fail();
+    }
+
+    /** Actual native13 parent, strictly corresponding to the original12 captured source projection. */
+    private function currentFullReviewItem(ConnectionInterface $connection,PDO $pdo,array $root,array $sourceItem):array
+    {
+        $this->writer($connection,$pdo);$fields=['id','oid','uid','mer_id','cart_id','product_id','cart_num','refund_num','surplus_num','split_status','cart_info','unique'];
+        self::keys($sourceItem,$fields);$id=self::id($sourceItem['id']);$rootId=self::id($root['id']);
+        if(self::id($sourceItem['oid'])!==$rootId||self::id($sourceItem['uid'])!==self::id($root['uid'])
+            ||self::integer($sourceItem['mer_id'],1,self::UINT_MAX)!==self::integer($root['mer_id'],1,self::UINT_MAX))self::fail();
+        $prefix=$connection->getConfig('prefix');if(!is_string($prefix)||preg_match('/\A[A-Za-z0-9_]*\z/D',$prefix)!==1)self::fail();
+        $statement=$pdo->prepare('SELECT * FROM `'.$prefix.'store_order_cart_info` WHERE id=? AND oid=? LIMIT 2 FOR UPDATE');
+        if(!$statement||$statement->execute([$id,$rootId])!==true)self::fail();$rows=$statement->fetchAll(PDO::FETCH_ASSOC);
+        if(!is_array($rows)||count($rows)!==1||$statement->closeCursor()!==true)self::fail();$row=$rows[0];
+        self::keys($row,array_merge($fields,['old_cart_id']));foreach($sourceItem as$key=>$value)if($row[$key]!==$value)self::fail();
+        if(!is_string($row['old_cart_id'])||str_contains($row['old_cart_id'],"\0")||preg_match('//u',$row['old_cart_id'])!==1
+            ||mb_strlen($row['old_cart_id'],'UTF-8')>50)self::fail();$this->writer($connection,$pdo);return $row;
+    }
+
+    private static function customerUploadSession(ConnectionInterface $connection,PDO $pdo):array
+    {
+        if(!$connection instanceof Mysql||Db::connect()!==$connection||$connection->getPdo()!==$pdo
+            ||$connection->getConfig('deploy')!==0||$connection->getConfig('rw_separate')!==false
+            ||$pdo->getAttribute(PDO::ATTR_DRIVER_NAME)!=='mysql'||$pdo->getAttribute(PDO::ATTR_ERRMODE)!==PDO::ERRMODE_EXCEPTION
+            ||!in_array($pdo->getAttribute(PDO::ATTR_EMULATE_PREPARES),[false,0],true))self::fail();
+        $statement=$pdo->prepare('SELECT DATABASE() AS database_name,CURRENT_USER() AS authenticated_user,CONNECTION_ID() AS connection_id,@@session.autocommit AS autocommit');
+        if(!$statement||$statement->execute([])!==true)self::fail();$rows=$statement->fetchAll(PDO::FETCH_ASSOC);
+        if(!is_array($rows)||count($rows)!==1||$statement->closeCursor()!==true)self::fail();$row=$rows[0];
+        self::keys($row,['database_name','authenticated_user','connection_id','autocommit']);
+        foreach(['database_name','authenticated_user']as$key)if(!is_string($row[$key])||$row[$key]===''||str_contains($row[$key],"\0"))self::fail();
+        self::integer($row['connection_id'],1,PHP_INT_MAX);self::integer($row['autocommit'],1,1);
+        if(Db::connect()!==$connection||$connection->getPdo()!==$pdo)self::fail();return $row;
+    }
+    private function customerUploadRows(ConnectionInterface $connection,PDO $pdo,string $table,string $key,int $id):array
+    {
+        $this->outside($connection,$pdo);$prefix=$connection->getConfig('prefix');
+        if(!is_string($prefix)||preg_match('/\A[A-Za-z0-9_]*\z/D',$prefix)!==1
+            ||!in_array([$table,$key],[['store_order','id'],['store_order_cart_info','id'],['user','uid']],true))self::fail();
+        $statement=$pdo->prepare('SELECT * FROM `'.$prefix.$table.'` WHERE `'.$key.'`=? LIMIT 2');
+        if(!$statement||$statement->execute([$id])!==true)self::fail();$rows=$statement->fetchAll(PDO::FETCH_ASSOC);
+        if(!is_array($rows)||count($rows)!==1||$statement->closeCursor()!==true)self::fail();$this->outside($connection,$pdo);return $rows[0];
+    }
+
     public function pageForMerchant(Request $request,MerchantContext $context,array $query):array
     {
         $identity=$this->merchant($request,$context,'product.read');$this->employees->authorizeAction($context,'product.read',false);
@@ -193,8 +317,9 @@ final class MarketplaceOrderReviewServices
                 }
                 self::paid($root,$payment);$phase='new_write';$attachments=[];
                 if($kind==='create'){
-                    if(!self::eligible($before,$itemId))self::fail();$attachments=$this->reviews->publicPictures($connection,$pdo,$body['pics']);
-                    $profile=$this->reviews->customerProfile($connection,$pdo,$identity['actor_id']);$item=$before['inspection']['source']['items'][$itemId];
+                    if(!self::eligible($before,$itemId))self::fail();$item=$this->currentFullReviewItem($connection,$pdo,$root,$before['inspection']['source']['items'][$itemId]);
+                    $attachments=$this->reviews->publicPicturesForCreate($connection,$pdo,$root,$item,$identity['actor_id'],$body['pics']);
+                    $profile=$this->reviews->customerProfile($connection,$pdo,$identity['actor_id']);
                     $public=self::publicItem($before,$itemId);$now=self::integer(time(),1,self::INT_MAX);
                     $insert=['uid'=>$identity['actor_id'],'oid'=>$candidate['root_order_id'],'unique'=>$item['unique'],
                         'product_id'=>self::id($item['product_id']),'reply_type'=>'product','product_score'=>$body['product_score'],
@@ -225,9 +350,18 @@ final class MarketplaceOrderReviewServices
                 if($kind==='create'){if($found)self::fail();$expected[]=$after;}elseif(!$found)self::fail();
                 if($final['reviews']!==$expected)self::fail();$finalBindings=self::bindReviews($final);$actualRow=$finalBindings['ids'][$reviewId]??null;
                 if(!is_array($actualRow)||$actualRow['row']!==$after||$actualRow['item_id']!==$itemId)self::fail();
-                if($kind==='create'&&$this->reviews->publicPictures($connection,$pdo,$body['pics'])!==$attachments)self::fail();
+                if($kind==='create'){
+                    $finalFullItem=$this->currentFullReviewItem($connection,$pdo,$finalRoot,$final['inspection']['source']['items'][$itemId]);
+                    if($finalFullItem!==$item||$this->reviews->publicPicturesForCreate($connection,$pdo,$finalRoot,$finalFullItem,$identity['actor_id'],$body['pics'])!==$attachments)self::fail();
+                }
                 if($kind==='create'&&!self::sameBody($actualRow['row'],$body))self::fail();
                 $this->writeAuthorization($connection,$pdo,$request,$identity,$kind,$finalRoot,$merchant,$scope);$this->writer($connection,$pdo);
+                if($kind==='create'){
+                    $actualItem=$finalFullItem;
+                    $boundAssets=$this->reviews->bindActualReview($connection,$pdo,$finalRoot,$actualItem,$identity['actor_id'],$actualRow['row'],$attachments);
+                    $this->reviews->assertBoundActualReview($connection,$pdo,$finalRoot,$actualItem,$identity['actor_id'],$actualRow['row'],$boundAssets);
+                    $this->writeAuthorization($connection,$pdo,$request,$identity,$kind,$finalRoot,$merchant,$scope);$this->writer($connection,$pdo);
+                }
                 $phase='commit_outcome_unknown';return self::view($actualRow['row'],$itemId);
             });
             $phase='post_commit_boundary';$this->outside($connection,$pdo);$this->sameIdentity($request,$identity,$kind,$merchant,$scope);

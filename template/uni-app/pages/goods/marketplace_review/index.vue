@@ -100,10 +100,10 @@ export default {
         }, fail: () => { if (this.scope(client, revision)) this.choosing = false; }, complete: () => { if (this.scope(client, revision)) this.choosing = false; } });
     },
     async uploadOne(row) {
-      if (this.formLocked || row.loading || row.reference || !this.uploads.includes(row)) return; const client = this._client, revision = this._revision; row.loading = true; row.error = '';
-      try { const result = await client.upload(row.path); if (!this.scope(client, revision) || !this.uploads.includes(row) || this.pending) return; row.reference = result.reference; row.preview = result.preview; }
-      catch (error) { if (this.scope(client, revision) && this.uploads.includes(row)) row.error = errorText(error); }
-      finally { if (this.scope(client, revision) && this.uploads.includes(row)) row.loading = false; }
+      if (this.formLocked || row.loading || row.reference || !this.uploads.includes(row)) return; const client = this._client, revision = this._revision, rootId = this.rootId, itemId = this.itemId; row.loading = true; row.error = '';
+      try { const result = await client.upload(row.path, rootId, itemId); if (!this.scope(client, revision) || this.rootId !== rootId || this.itemId !== itemId || !this.uploads.includes(row) || this.pending) return; row.reference = result.reference; row.preview = result.preview; }
+      catch (error) { if (this.scope(client, revision) && this.rootId === rootId && this.itemId === itemId && this.uploads.includes(row)) row.error = errorText(error); }
+      finally { if (this.scope(client, revision) && this.rootId === rootId && this.itemId === itemId && this.uploads.includes(row)) row.loading = false; }
     },
     removeUpload(key) { if (!this.formLocked && !this.uploadBusy && this.scope(this._client, this._revision)) this.uploads = this.uploads.filter(row => row.key !== key); },
     previewDraft(index) { const urls = this.uploads.map(row => row.preview || row.path); if (this.connected && this.scope(this._client, this._revision) && urls[index]) uni.previewImage({ urls, current: urls[index] }); },

@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace app\dao\marketplace\order;
 
 use app\services\marketplace\order\MarketplaceOrderReviewInput;
+use app\dao\marketplace\assets\CustomerAssetDao;
 use crmeb\compat\think\orm\db\connector\Mysql;
 use crmeb\exceptions\AuthUnavailableException;
 use PDO;
@@ -17,6 +18,8 @@ final class MarketplaceOrderReviewDao
         'merchant_reply_content','merchant_reply_time','is_del','is_reply','nickname','avatar','suk','status','mer_id'];
     private const ATTACHMENT=['att_id','name','att_dir','satt_dir','att_size','att_type','pid','time','image_type','module_type','real_name','scan_token','type','mer_id'];
     private const MIMES=['image/jpg','image/jpeg','image/gif','image/png','image/x-icon','image/vnd.microsoft.icon','image/webp'];
+
+    public function __construct(private CustomerAssetDao $customerAssets){}
 
     public function assertStructure(ConnectionInterface $connection,PDO $pdo):void
     {
@@ -105,6 +108,41 @@ final class MarketplaceOrderReviewDao
         }
         $this->writer($connection,$pdo);return $out;
     }
+    /** Two real source observations; neither URL shape nor a failed query chooses an owner domain. */
+    public function publicPicturesForCreate(ConnectionInterface $connection,PDO $pdo,array $fullRoot,array $fullItem,int $actualUid,array $references):array
+    {
+        $this->writer($connection,$pdo);$this->root($fullRoot);self::id($actualUid);
+        if(self::id($fullRoot['uid'])!==$actualUid||self::id($fullItem['oid']??null)!==self::id($fullRoot['id'])
+            ||MarketplaceOrderReviewInput::pictures($references)!==$references)self::fail();$out=[];
+        $this->customerAssets->assertStructure($connection,$pdo);
+        foreach($references as$reference){
+            $rows=$this->rows($connection,$pdo,'SELECT * FROM '.$this->table($connection,'system_attachment').
+                ' WHERE BINARY att_dir=BINARY ? AND module_type=3 ORDER BY att_id',[$reference]);$legacy=[];
+            foreach($rows as$row){self::keys($row,self::ATTACHMENT);self::id($row['att_id']);
+                if($row['att_dir']!==$reference||self::integer($row['module_type'],3,3)!==3)self::fail();
+                if(self::integer($row['type'],0,1)===0&&self::integer($row['image_type'],1,7)>0&&in_array($row['att_type'],self::MIMES,true))$legacy[]=$row;
+            }
+            $customer=$this->customerAssets->findForReview($connection,$pdo,$fullRoot,$fullItem,$actualUid,$reference);
+            if($customer!==[]){if($rows!==[]||count($customer)!==1)self::fail();$out[]=['domain'=>'customer_review','rows'=>$customer];}
+            else{if($legacy===[])self::fail();$out[]=['domain'=>'legacy_public','rows'=>$legacy];}
+        }
+        $this->writer($connection,$pdo);return $out;
+    }
+
+    public function bindActualReview(ConnectionInterface $connection,PDO $pdo,array $fullRoot,array $fullItem,int $actualUid,array $fullReview,array $validatedWrappers):array
+    {
+        $this->writer($connection,$pdo);self::review($fullReview);
+        if($this->lockedReview($connection,$pdo,self::id($fullReview['id']))!==$fullReview)self::fail();
+        $out=$this->customerAssets->bindActualReview($connection,$pdo,$fullRoot,$fullItem,$actualUid,$fullReview,$validatedWrappers);
+        $this->writer($connection,$pdo);return $out;
+    }
+    public function assertBoundActualReview(ConnectionInterface $connection,PDO $pdo,array $fullRoot,array $fullItem,int $actualUid,array $fullReview,array $expected):void
+    {
+        $this->writer($connection,$pdo);
+        if($this->lockedReview($connection,$pdo,self::id($fullReview['id']))!==$fullReview)self::fail();
+        $this->customerAssets->assertBound($connection,$pdo,$fullRoot,$fullItem,$actualUid,$fullReview,$expected);$this->writer($connection,$pdo);
+    }
+
     public function insert(ConnectionInterface $connection,PDO $pdo,array $data):array
     {
         $this->writer($connection,$pdo);$fields=self::FIELDS;array_shift($fields);self::keys($data,$fields);
