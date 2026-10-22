@@ -1432,3 +1432,14 @@ Root与独立Source确认校验顺序矛盾：m4ar_operation在构造完整root 
 失败公开历史唯一S72513/b3baa9真实0/PID18336，INVENTORY73761026B/d3fde283a75a5ff1268670c1f2e6cf68fdda56dfa6afc7ec2710f71a760a1923，RESULT2213B/11dcb7f5e8bd40345bfb84c42b41b5129f47317b15a1ca2ca773aac0799d0a3a。Rootc944b3和非作者最终实际资格核完整21字段header、283373旧描述符与15147新公件、298520总件/2485817536bytes、14公开树/fixed64/full union、14755原公件和22目录原生保持、188原回执+84close+12zero完整关联，所有Source/copy依赖闭合。它只证明失败历史保全，不能作为成功A/firstB资格。
 
 任务：[x]原R37失败边界与有限真实取证；[x]原普通close/独立zero和完整公开历史保全；[x]最小观测Source正逆/独审/固定纯语法与本地采用（交付提交以实际Git核实）；[ ]新clean同HEAD验证来源、fresh完整paid→Task6→AR→Worker及普通close/独立zero；[ ]成功同源fresh B、三端20步/42ACK与320/390/1440 DOM、N1/N2、原非空历史完整37步和四CLI/真实旧权益、真实MS5/MS6与人工验收。L2本地，不推送不部署，不碰真实资金；停止样本NOT RUN、Task9关闭不重开K02–K05，不换算整体百分比。
+
+
+### 2026-10-22 R39：评价附件完整字段合同修复
+
+R39（Run2026102122111413026b，Source7ca901）保留内部测试付款和Task6发货/收货通过；售后评价阶段在第174次GET /api/order/reviews/<原根>/<原项>返回业务503，完整A/Worker和三端仍未通过。独立核清一个确定Source冲突：该Run真实MS2 apply-structure已给system_attachment追加mer_id，而MarketplaceOrderReviewDao仍按安装13列作完整结构校验；后继公开图片SELECT*也使用13字段集合。公开失败门不含应用内部firstthrow，不宣称这是现场唯一最早抛点。
+
+本地仅同步DAO两个字段合同：ATTACHMENT尾加mer_id，attachment schema尾加['int unsigned','YES',null,'']；保留完整列匹配、全部SQL/权限/图片资格/事务及完整附件fresh比较，不猜测上传者归属，不改fixture或业务断言。结构期真实上传继续使用现有NULL默认；最终归属backfill/enforce和enabled=true仍按原责任验证。
+
+R39原实例已正常关闭并独立核零：close84原生自然0（db58b47b8ed5c03aa1232bcca8f4981c96f2f07abade319539551f5116b43042），zero12只读原生自然0（68dfbacc4c5f3765259840645e2ac87a3cee8d56bb0ceec0de8d8579a2eee3b4），只移除原4CID/1内网/7卷。Root与非作者完整核原公件/10861实际Source及原生双流；原AR失败不变。候选Source双审及固定PHP8.2 network-none/RO单文件纯语法实际0（725bb5608b4ba05825c6f56275bf77ab59789a05b05ea283e88222b8a3c9fc9b）。
+
+任务：[x]确定冲突与最小设计/双Source审；[x]原正常close/独立zero及完整保全；[x]固定候选纯PHP语法与本地采用；[ ]新clean提交/同HEAD验证来源及fresh完整付款→履约→售后评价→Worker正常A和收尾；[ ]成功同源fresh B、三端20步42ACK/三宽DOM、N1/N2、非空历史37步/四CLI/真实旧权益、最终归属启用、MS5真实金融、MS6发布恢复及人工验收。L2本地，不推送不部署、不碰真实资金，Task9关闭与用户停止样本NOT RUN保持，不换算整体百分比。

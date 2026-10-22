@@ -15,7 +15,7 @@ final class MarketplaceOrderReviewDao
 {
     private const FIELDS=['id','uid','oid','unique','product_id','reply_type','product_score','service_score','comment','pics','add_time',
         'merchant_reply_content','merchant_reply_time','is_del','is_reply','nickname','avatar','suk','status','mer_id'];
-    private const ATTACHMENT=['att_id','name','att_dir','satt_dir','att_size','att_type','pid','time','image_type','module_type','real_name','scan_token','type'];
+    private const ATTACHMENT=['att_id','name','att_dir','satt_dir','att_size','att_type','pid','time','image_type','module_type','real_name','scan_token','type','mer_id'];
     private const MIMES=['image/jpg','image/jpeg','image/gif','image/png','image/x-icon','image/vnd.microsoft.icon','image/webp'];
 
     public function assertStructure(ConnectionInterface $connection,PDO $pdo):void
@@ -149,7 +149,7 @@ final class MarketplaceOrderReviewDao
         $attachment=['att_id'=>['int','NO',null,'auto_increment'],'name'=>['varchar(100)','NO','',''],'att_dir'=>['varchar(200)','NO','',''],
             'satt_dir'=>['varchar(200)','NO','',''],'att_size'=>['char(30)','NO','',''],'att_type'=>['char(30)','NO','',''],
             'pid'=>['int','NO','0',''],'time'=>['int','NO','0',''],'image_type'=>['tinyint unsigned','NO','1',''],
-            'module_type'=>['tinyint unsigned','NO','1',''],'real_name'=>['varchar(255)','NO','',''],'scan_token'=>['varchar(32)','NO','',''],'type'=>['tinyint','NO','0','']];
+            'module_type'=>['tinyint unsigned','NO','1',''],'real_name'=>['varchar(255)','NO','',''],'scan_token'=>['varchar(32)','NO','',''],'type'=>['tinyint','NO','0',''],'mer_id'=>['int unsigned','YES',null,'']];
         $this->columns($connection,$pdo,'store_product_reply',$review);$this->columns($connection,$pdo,'system_attachment',$attachment);
         $this->index($connection,$pdo,'store_product_reply',['id'],true,true);
         $this->index($connection,$pdo,'store_product_reply',['oid','unique'],true,false);

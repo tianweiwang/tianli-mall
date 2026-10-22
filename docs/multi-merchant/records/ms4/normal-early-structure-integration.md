@@ -567,3 +567,14 @@ Run20261021190454125189 / Source e669a023540a2f755283de46dd9c541fc136517c 的内
 - [ ] MS5真实金融、MS6发布/恢复及人工验收；未运行或未授权项不代签。
 
 目标仍为通用多商户，商品/SKU/规格/价格复用，L2本地未推送未部署；停止样本保持NOT RUN。整体无可信百分比，源码及语法不换算整体验收。
+
+
+## R39评价报价失败：附件14列合同的最小本地修复（2026-10-22）
+
+原Run2026102122111413026b/Source7ca901原生终止1。内部测试付款与Task6成功保留；AR在normal_received_original_item_review、第174次GET（原Task6已收货A根的原第一项）HTTP200/curl0/JSON0、业务503，未到该评价公开图片上传及POST。原HTTP正常TERM15后组空/端口关闭，cleanup_failure=null；Worker、三端和完整A均未通过。
+
+真实初始化已完成MS2 system_attachment.mer_id追加，而ReviewDao.structure只期待13列、columns要求完整列名精确相等，故正常前置与评价入口存在确定不兼容；ATTACHMENT常量的13字段亦阻断后继SELECT*完整公开附件行。应用内部首抛点未保留，不称已证明唯一现场原因。仅将两清单尾追加同一mer_id及其真实nullable类型；原35方法只有structure文字变，其余34区间、全部SQL/权限/图片规则、同PDO完整附件fresh比较/测试断言保持。原上传未赋owner，真实默认NULL不变，不用订单商家或用户ID伪填附件归属。
+
+原专用实例正常close原句柄40110自然0，RESULT93544/db58b47b8ed5c03aa1232bcca8f4981c96f2f07abade319539551f5116b43042；84原生命令中仅5普通变更，正常停原mysql/redis后精确移除4CID/1内部网络/7卷。独立zero原85334自然0，RESULT17096/68dfbacc4c5f3765259840645e2ac87a3cee8d56bb0ceec0de8d8579a2eee3b4，12只读原生含六fresh双标签三类查询原raw双空。Root及非作者完整核15151原公件、实际Source10861（worker10857+4原prepare refs）、原生全部created/terminal/双流和namespace/native9保持。
+
+修复候选19716/b72cfc4023fe2f4e74e8b7344c8a40b5164c582dc3ef206a46a156d8634b4cee已完整双Source正逆审及固定PHP8.2镜像单文件纯语法实际0；唯一lint RESULT3745/725bb5608b4ba05825c6f56275bf77ab59789a05b05ea283e88222b8a3c9fc9b。采用范围仅DAO与两份现有记录，提交身份另由实际Git核实。尚未新clean完整复验，不以Source/语法/收尾签售后或MS4完成。最终归属enforce/启用、多端/N1/N2、非空历史、真实金融/发布与人工验收继续原清单；停止样本保持NOT RUN，L2不推送不部署。
