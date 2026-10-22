@@ -591,3 +591,12 @@ Run20261021190454125189 / Source e669a023540a2f755283de46dd9c541fc136517c 的内
 另保留T4隔离初始化Run202610220928551abc3c的真实失败2/EXACT_STRICT_PROFILE_MODES：专用镜像默认只有NO_ENGINE_SUBSTITUTION，DDL前即停止。后继r5仅补历史同款六项严格启动模式和实际Cmd资格，原断言不变；其独立Source及实际Compose config通过，尚待新实例初始化。原Run普通close50076/0、独立zero45656/0，资源已精确退役，完整原失败及公开证据保持，不重开旧Run。
 
 本轮仅L2本地采用与提交，未推送部署、未触及真实资金。资产真实安装、完整付款→履约→售后评价→Worker、同源B/三端320/390/1440页面、N1/N2、原非空历史及旧权益、最终归属启用、真实金融/MS6/人工验收继续未完成；原用户停止样本NOT RUN，商家客服Task9保持关闭。
+
+
+## 2026-10-22 早期迁移结果的实际来源数量修正
+
+新完整 A 的原 d396dca 实例完成基础初始化、MS5 结构驱动和早期20个CLI后，early容器实际正常0；Host在fulfillment-migration-retire自然1，整轮未通过，App/paid/Task6/售后评价/Worker未启动。原结果与失败保留。只读调用原Host纯结果合同定位EARLY_COMPLETE_THIRTEEN_KEY_RESULT_BINDING：输入完整17件Source且逐件验证通过，返回的13键binding中仅source_files还写死15，其他字段均与真实创建、源及前置摘要相符。
+
+在独立后续工作树只将m4fm_binding返回的该字段改为count($binding['source_files'])，真实列表已经在同函数严格要求17并核每件完整路径/bytes/hash。保持原严格17断言、其余完整函数、27键父结果、20真实CLI、六快照、十五比较及全部业务/数据合同；不放宽Host，也不回填旧结果。实际完整新旧字节正逆只有这一字段表达式变化。独立Source复核、固定PHP8.2纯语法及本地提交身份在仓库外记录；新完整链仍须不同clean来源和新隔离实例验证，不能把Source修订称业务通过。
+
+本片不修改正在关闭的原Run及其Dev/Val/Profile。原失败按真实身份正常关闭并独立核零，后继Source/profile须重绑新实际提交。商品规格价格复用、通用多商户目标、原历史与权益/三端/N1N2/真实金融/MS6/人工验收、Task9关闭与用户停止样本继续保持，未推送或部署。

@@ -172,7 +172,7 @@ function m4fm_source(): array
     foreach (m4ae_scripts() as $script) m4fm_expect($binding['successor_cli_sha256'][$script] === $fileHashes[$script], 'EARLY_ACTUAL_SUCCESSOR_SOURCE_HASH');
     $freezeHash = null; m4fm_read('/run/audit/preparation-source-binding.json', $freezeHash, 16777216);
     return ['run_id' => $run, 'container_id' => $service['id'], 'entry_namespace_pid' => getmypid(), 'source_sha' => $sha,
-        'entry_sha256' => $binding['entry_sha256'], 'cli_sha256' => $binding['cli_sha256'], 'source_files' => 15,
+        'entry_sha256' => $binding['entry_sha256'], 'cli_sha256' => $binding['cli_sha256'], 'source_files' => count($binding['source_files']),
         'binding_sha256' => $bindingHash, 'native_created_sha256' => $createdHash,
         'freeze_sha256' => $freezeHash, 'initialization_predecessor_sha256' => $predecessor,
         'prerequisite_source_sha256' => $prerequisites, 'successor_cli_sha256' => $binding['successor_cli_sha256']];
