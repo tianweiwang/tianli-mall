@@ -748,3 +748,12 @@ T5 先行顾客已购评价图片11候选 exact14 已冻结，PINS25903B/8860c35
 Root 在当前无新 T4 目标实例、环境 Source 尚未冻结时先接入此11完整候选及本记录；采用前 clean42dd569。原约定保持的是实际目标运行窗口，不能让尚未开始的运行永久冻结完成的代码；后继环境必须显式绑定本次真实新 clean SHA，并在实际运行至普通关闭/独立核零期间保持该来源。冻结包、其余原 Source 和 Main/Val 保持，L2 仅本地窄提交，不推送部署。
 
 本次只接 V1 已购评价图。avatar/defaultCompat、私有用途/其它上传消费者和历史发布门未取消；旧全局 upload/image 仍在，R41 售后 GET503 和完整A失败不回补成功。正常已购上传→新评价绑定→公开读取、原零图/legacy 图与同体重复、全原生 DB/Redis/files 保持、实际云存储和三端页面均须后续实际验证；完整 T5/T6/T8、T4正常接口/扫码/GC、历史最终归属启用、MS5真实金融/MS6和人工验收继续未完成。Task9关闭，停止样本 NOT RUN，通用多商户复用商品/SKU规格价格与 active 目标保持。
+
+
+## 2026-10-22 已购评价图片的正常消费者接线（源码与纯语法）
+
+沿原T5及唯一实施清单，只采用 help/audit-regressions/isolated/ms4-aftersale-review-normal.php 一件。冻结候选230150B/e5f9fc2cded46cad6e9e11bf9b24bf543c5cbcf9c2edb1486932f24aae4a796c，非作者REVIEW81957B/a001fcd3d423c5b22e9dc0711f6d357f4373970a7ca87f0e30daa2fadb934952为PASS_SOURCE_ONLY，全部窗口结束；Root已读完整有限差分和必要生产消费源。
+
+正常评价图改走真实本人已收货root/item的具名multipart上传，不再把顾客资产编号当旧att_id。独立构造全34原生字段及真实PNG物理文件、原100/86400配额和完整DB/Redis/文件差分；创建评价时只允许同资产state/review_id/bound_at三字段变化，其他31字段和计数器保持，同体重放不重绑。原93未改函数、旧generic完整体、顶层result/business、售后13动作/15重放/5退款/2S2、公开12字段/原图/keep责任保持。
+
+Root固定PHP8.2纯语法实际0，来源与完整native双流见仓库外 normal-upload-consumer-focused-check-r1/RESULT.json22639B/0d79d07258078680612e556ee66c4ebfa9f1f46fba04239abb44999855025cfc。仅源码和语法；尚未运行新正常业务。三asset表必须在paid/Task6基线前真实初始化，不能在AR中DDL或扩App四DML。N2 UI旧generic/legacy14、defaultCompat/private/avatar/历史、R41原失败、完整A/B/三端与真实金融/MS6/人工验收仍未闭合；本地L2，无推送或部署，停止样本NOT RUN。

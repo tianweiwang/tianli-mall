@@ -36,7 +36,7 @@ const M4AR_TASK6=['fulfillment-normal-created.json','ms4-fulfillment-normal-sour
 const M4AR_TABLES=['eb_store_order','eb_store_order_cart_info','eb_store_order_status','eb_store_order_refund',
  'eb_marketplace_aftersale_action','eb_marketplace_aftersale_file','eb_marketplace_fulfillment_operation',
  'eb_marketplace_fulfillment_range','eb_marketplace_stock_movement','eb_store_product','eb_store_product_attr_value',
- 'eb_store_product_reply','eb_system_attachment','eb_marketplace_audit_log','eb_system_log','eb_user',
+ 'eb_store_product_reply','eb_system_attachment','eb_marketplace_customer_asset','eb_marketplace_audit_log','eb_system_log','eb_user',
  'eb_marketplace_role','eb_marketplace_employee','eb_marketplace_password_setup','eb_system_role','eb_system_admin'];
 function m4ar_expect(bool $ok,string $code):void
 {++$GLOBALS['m4ar_assertions'];if(!$ok){$GLOBALS['m4ar_failed_assertion']=$code;throw new RuntimeException('M4AR_ASSERTION');}}
@@ -382,6 +382,7 @@ function m4ar_transport(string $method,string $path,?string $token=null,mixed $b
   '~\APOST /api/order/refund/cancel/[A-Za-z0-9]+\z~','~\APOST /api/order/refund/express\z~',
   '~\APOST /api/order/refund/files/[1-9][0-9]*\z~','~\APOST /api/order/refund/files/[1-9][0-9]*/read-ticket\z~',
   '~\AGET /api/order/refund/files/[1-9][0-9]*/content\z~','~\A(?:GET|POST) /api/order/reviews/[1-9][0-9]*/[1-9][0-9]*\z~',
+  '~\APOST /api/order/reviews/[1-9][0-9]*/[1-9][0-9]*/files\z~',
   '~\A(?:GET|POST) /(?:merchantapi|adminapi/marketplace)/aftersales(?:/[1-9][0-9]*(?:/(?:approve|reject|return-accept))?)?\z~',
   '~\A(?:GET|POST) /(?:merchantapi|adminapi/marketplace)/aftersale-files/[1-9][0-9]*/(?:read-ticket|content)\z~',
   '~\AGET /(?:merchantapi|adminapi/marketplace)/reviews(?:/[1-9][0-9]*)?\z~',
@@ -389,7 +390,8 @@ function m4ar_transport(string $method,string $path,?string $token=null,mixed $b
   '~\APOST /merchantapi/orders/[1-9][0-9]*/shipments\z~','~\AGET /merchantapi/orders/[1-9][0-9]*/packages\z~',
   '~\AGET /merchantapi/packages/[1-9][0-9]*\z~','~\AGET /api/order/fulfillment/packages/[A-Za-z0-9]+\z~',
   '~\APOST /api/order/fulfillment/packages/[A-Za-z0-9]+/receipt\z~','~\AGET /api/reply/(?:list|config)/[1-9][0-9]*\z~',
-  '~\AGET /uploads/store/comment/[A-Za-z0-9/._-]+\z~'];
+  '~\AGET /uploads/store/comment/[A-Za-z0-9/._-]+\z~',
+  '~\AGET /uploads/customer/[1-9][0-9]*/[a-f0-9]{32}/[a-f0-9]{32}\.png\z~'];
  $ok=in_array($leaf,$fixed,true);foreach($patterns as$p)if(preg_match($p,$leaf)===1)$ok=true;
  m4ar_expect($ok&&!str_contains($path,'..')&&!str_contains($path,'\\')&&!str_contains($path,'#')&&strlen($path)<2048,'TASK78_FIXED_NORMAL_HTTP_ROUTE');
  if(str_contains($path,'?')){parse_str(explode('?',$path,2)[1],$q);foreach(array_keys($q)as$k)
@@ -1674,6 +1676,70 @@ function m4ar_pending_public_review(PDO $db,array $item,array $review):array
   'list_requests'=>1,'count_requests'=>1,'anonymous_requests'=>2,'full_native_zero_diff'=>true];
 }
 
+/** Real named review upload, independently observed as a complete customer34 row. */
+function m4ar_customer_review_upload(PDO $db,array $root,array $item,array $actor,string $bytes):array
+{
+ m4ar_phase('real_customer_review_nonempty_image_upload');
+ m4ar_expect((int)sys_config('upload_type',1)===1,'TASK8_TRUE_LOCAL_CUSTOMER_REVIEW_UPLOAD_PRODUCER');
+ $uid=m5pcp_int($actor['id'],1);$rootId=m5pcp_int($root['id'],1,4294967295);$itemId=m5pcp_int($item['id'],1);
+ m4c_entry_keys($item,['id','oid','uid','mer_id','cart_id','old_cart_id','product_id','cart_num','refund_num','surplus_num','split_status','cart_info','unique']);
+ m4ar_expect(($actor['app']??null)==='api'&&m5pcp_int($root['uid'],1)===$uid&&m5pcp_int($item['uid'],1)===$uid
+  &&m5pcp_int($item['oid'],1,4294967295)===$rootId
+  &&m5pcp_int($root['mer_id'],1,4294967295)===m5pcp_int($item['mer_id'],1,4294967295)
+  &&m5pcp_int($root['pid'],0)===0&&m5pcp_int($root['marketplace_trade_version'],1,1)===1
+  &&m5pcp_int($root['paid'],1,1)===1&&m5pcp_int($root['status'],2,2)===2,
+  'TASK8_REAL_CUSTOMER_ORIGINAL_ROOT_FULL_ITEM_CORRESPONDENCE');
+ $before=m4ar_snapshot($db);$table='eb_marketplace_customer_asset';
+ m4ar_expect(m4ar_one($before['rows']['eb_store_order'],'id',$rootId)===$root
+  &&m4ar_one($before['rows']['eb_store_order_cart_info'],'id',$itemId)===$item,
+  'TASK8_COMPLETE_ORIGINAL_ROOT_AND_NATIVE13_ITEM_BEFORE_UPLOAD');
+ $metadata=$before['database']['tables'][$table]['metadata'];$id=m5pcp_u64($metadata['table']['AUTO_INCREMENT']);
+ $tag='c:CRMEB:'.md5('crmeb');$GLOBALS['m4ar_tag_members'][$tag]=audit_redis()->sMembers($tag);
+ $counter='c:start_uploads_'.$actor['id'];$counterType=m4tr_redis_type(audit_redis(),$counter);
+ m4ar_expect(in_array($counterType,['none','string'],true),'TASK8_NATIVE_PUBLIC_UPLOAD_COUNTER_TYPE_BEFORE');
+ $oldRaw=audit_redis()->get($counter);
+ m4ar_expect(($counterType==='none'&&$oldRaw===false)||($counterType==='string'&&is_string($oldRaw)
+  &&preg_match('/\A(?:0|[1-9][0-9]?)\z/D',$oldRaw)===1),'TASK8_CANONICAL_PUBLIC_UPLOAD_COUNTER_WIRE_BEFORE');
+ $old=$oldRaw===false?0:(int)$oldRaw;
+ m4ar_expect($oldRaw===false||$oldRaw===m4tr_cache_wire($old),'TASK8_PUBLIC_UPLOAD_COUNTER_EXACT_WIRE_BEFORE');
+ m4ar_expect(is_int($old)&&$old>=0&&$old<100,'TASK8_TRUE_PUBLIC_UPLOAD_COUNTER_BEFORE');
+ $path='/api/order/reviews/'.$rootId.'/'.$itemId.'/files';$reply=m4ar_multipart($path,$actor,[],$bytes);
+ $after=m4ar_snapshot($db);$data=$reply['json']['data'];m4c_entry_keys($data,['name','url','attachment_ref']);$ref=$data['attachment_ref'];
+ m4ar_expect(is_string($ref)&&strlen($ref)<=200
+  &&preg_match('~\A/uploads/customer/'.$uid.'/[a-f0-9]{32}/[a-f0-9]{32}\.png\z~D',$ref)===1,
+  'TASK8_ACTUAL_CUSTOMER_UID_AND_GENERATED_PNG_REFERENCE');
+ $name=basename($ref);m4ar_expect($data['name']===$name&&$data['url']==='http://audit-app:8000'.$ref,
+  'TASK8_CUSTOMER_IMAGE_URL_FROM_REAL_REQUEST_ORIGIN');
+ $new=m4ar_new_rows($before['rows'][$table],$after['rows'][$table]);m4ar_expect(count($new)===1,'TASK8_ONE_TRUE_CUSTOMER_REVIEW_ASSET34');
+ $row=$new[0];$at=m4ar_time($reply['actual_interval'][0],$reply['actual_interval'][1],$row['created_at']);
+ $values=['id'=>$id,'uid'=>$uid,'purpose'=>'review_public_image','state'=>'STAGED','storage_type'=>1,
+  'object_key'=>$ref,'thumbnail_key'=>$ref,'name'=>$name,'real_name'=>'normal-evidence.png','media_type'=>'image/png',
+  'byte_size'=>(string)strlen($bytes),'width'=>1,'height'=>1,'content_sha256'=>hash('sha256',$bytes,true),'created_at'=>$at,
+  'expires_at'=>null,'bound_at'=>null,'retired_at'=>null,'root_order_id'=>$rootId,'order_item_id'=>$itemId,
+  'refund_id'=>null,'review_id'=>null,'confirmation_ref'=>null,'form_product_id'=>null,'form_definition_sha256'=>null,
+  'form_field_index'=>null,'extract_id'=>null,'agent_apply_id'=>null,'source_product_id'=>null,'source_qrcode_id'=>null,
+  'created_by_uid'=>$uid,'created_by_admin_id'=>null,'created_by_job'=>null,'legacy_att_id'=>null];
+ m4ar_expect(count($values)===34&&array_keys($metadata['columns'])===array_keys($values),'TASK8_EXACT_CUSTOMER_ASSET_NATIVE34_COLUMNS');
+ $row=m4fn_expected_row($metadata,$row,$values);
+ $observed=m5pcp_rows($db,'SELECT * FROM eb_marketplace_customer_asset WHERE id=? AND BINARY object_key=BINARY ?',[$id,$ref]);
+ m4ar_expect($observed===[$row],'TASK8_CUSTOMER_FULL34_NATURAL_ID_BINARY_REFERENCE_READBACK');
+ $expected=[$table=>array_merge($before['rows'][$table],[$row])];m4ar_auth_delta($before,$after,$actor,$reply['actual_interval'],$expected);
+ m4ar_database_delta($before,$after,$expected,[$table=>1]);
+ m4ar_expect(audit_redis()->get($counter)===m4tr_cache_wire($old+1),'TASK8_EXACT_REAL_PUBLIC_UPLOAD_COUNTER');
+ $entry=$after['redis']['keys'][hash('sha256',$counter)];m4ar_expect($entry['type']==='string'&&$entry['expires']>=$reply['actual_interval'][0]*1000+86400000
+  &&$entry['expires']<=($reply['actual_interval'][1]+1)*1000+86400000,'TASK8_REAL_PUBLIC_UPLOAD_COUNTER_DEADLINE');
+ $changes=[$counter=>$entry]+m4ar_tag_change($before,$after,$tag,[$counter]);m4ar_redis_delta($before,$after,$changes);
+ $file='/workspace/crmeb/public'.$ref;clearstatcache(true,$file);$stat=lstat($file);
+ m4ar_expect(is_array($stat)&&is_file($file)&&!is_link($file)&&realpath($file)===$file&&$stat['size']===strlen($bytes)
+  &&$stat['nlink']===1&&$stat['uid']===posix_geteuid()&&file_get_contents($file)===$bytes,'TASK8_REAL_PUBLIC_LOCAL_FILE_FULL_BYTES');
+ m4ar_expect(hash_file('sha256',$file)===hash('sha256',$bytes),'TASK8_CUSTOMER_PUBLIC_IMAGE_ACTUAL_FULL_SHA256');
+ $decoded=imagecreatefromstring($bytes);m4ar_expect($decoded instanceof GdImage&&imagesx($decoded)===1&&imagesy($decoded)===1,
+  'TASK8_CUSTOMER_UPLOADED_BYTES_ACTUAL_GD_ONE_PIXEL');imagedestroy($decoded);
+ $newFiles=$after['public'];$relative=ltrim($ref,'/');m4ar_expect(isset($newFiles[$relative])&&!isset($before['public'][$relative]),'TASK8_TRUE_NEW_PUBLIC_PATH');
+ unset($newFiles[$relative]);m4ar_expect($newFiles===$before['public']&&$after['private']===$before['private'],'TASK8_EXACT_PUBLIC_FILE_DELTA_ONLY');
+ return ['row'=>$row,'reference'=>$ref,'display_url'=>$data['url']];
+}
+
 function m4ar_review(PDO $db,array $owner,array $actors,string $bytes):array
 {
  m4ar_phase('normal_received_original_item_review');$rootId=(int)$owner['root']['id'];$root=m4ar_one(m4ar_snapshot($db)['rows']['eb_store_order'],'id',$rootId);
@@ -1684,14 +1750,22 @@ function m4ar_review(PDO $db,array $owner,array $actors,string $bytes):array
  m4ar_expect(count($received)===(int)$item['cart_num']&&(int)$root['paid']===1&&(int)$root['status']===2,'TASK8_REVIEW_ELIGIBILITY_INDEPENDENT_ORIGINAL_Q_ALL_RECEIVED');
  $site=(string)sys_config('site_url');$path='/api/order/reviews/'.$rootId.'/'.$item['id'];$before=m4ar_snapshot($db);$quote=m4ar_json('GET',$path,$actors['customer']);
  m4c_entry_same($quote['json']['data'],m4ar_review_quote($root,$item,null,$site,true));m4ar_read_finish($db,$before,$actors['customer'],$quote);
- $upload=m4ar_public_upload($db,$actors['customer'],$bytes);$body=['schema'=>1,'product_score'=>5,'service_score'=>5,'comment'=>'通用商城正常购买评价','pics'=>[$upload['reference']]];
+ $upload=m4ar_customer_review_upload($db,$root,$item,$actors['customer'],$bytes);$body=['schema'=>1,'product_score'=>5,'service_score'=>5,'comment'=>'通用商城正常购买评价','pics'=>[$upload['reference']]];
  $before=m4ar_snapshot($db);$reply=m4ar_json('POST',$path,$actors['customer'],$body);$after=m4ar_snapshot($db);$new=m4ar_new_rows($before['rows']['eb_store_product_reply'],$after['rows']['eb_store_product_reply']);
  m4ar_expect(count($new)===1,'TASK8_ONE_REAL_REVIEW_INSERT');$review=$new[0];$at=m4ar_time($reply['actual_interval'][0],$reply['actual_interval'][1],$review['add_time']);
+ $reviewId=m5pcp_u64($before['database']['tables']['eb_store_product_reply']['metadata']['table']['AUTO_INCREMENT']);
+ m4ar_expect((string)$review['id']===$reviewId,'TASK8_REAL_REVIEW_NATURAL_ID_FOR_CUSTOMER_BINDING');
+ $assetTable='eb_marketplace_customer_asset';$assetId=m5pcp_u64($upload['row']['id']);
+ $staged=m4ar_one($before['rows'][$assetTable],'id',$assetId);m4ar_expect($staged===$upload['row'],'TASK8_FULL34_STAGED_BEFORE_ACTUAL_REVIEW');
+ $bound=m4ar_one($after['rows'][$assetTable],'id',$assetId);$boundAt=m4ar_time($reply['actual_interval'][0],$reply['actual_interval'][1],$bound['bound_at']);
+ $boundExpected=$staged;$boundExpected['state']='BOUND';$boundExpected['review_id']=$reviewId;$boundExpected['bound_at']=$boundAt;
+ $boundExpected=m4fn_expected_row($before['database']['tables'][$assetTable]['metadata'],$bound,$boundExpected);
  $user=m4ar_one($before['rows']['eb_user'],'uid',$owner['uid']);$cart=json_decode($item['cart_info'],true,64,JSON_THROW_ON_ERROR);$sku=$cart['productInfo']['attrInfo'];
  m4fn_expected_row($before['database']['tables']['eb_store_product_reply']['metadata'],$review,['id'=>$review['id'],'uid'=>$owner['uid'],'oid'=>$rootId,'unique'=>$item['unique'],
  'product_id'=>(int)$item['product_id'],'reply_type'=>'product','product_score'=>5,'service_score'=>5,'comment'=>$body['comment'],'pics'=>json_encode($body['pics'],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR),
  'add_time'=>$at,'merchant_reply_content'=>'','merchant_reply_time'=>0,'is_del'=>0,'is_reply'=>0,'nickname'=>$user['nickname'],'avatar'=>$user['avatar'],'suk'=>$sku['suk'],'status'=>0,'mer_id'=>(int)$root['mer_id']]);
- $expected=['eb_store_product_reply'=>array_merge($before['rows']['eb_store_product_reply'],[$review])];m4ar_auth_delta($before,$after,$actors['customer'],$reply['actual_interval'],$expected);
+ $expected=['eb_store_product_reply'=>array_merge($before['rows']['eb_store_product_reply'],[$review]),
+  $assetTable=>m4ar_replaced($before['rows'][$assetTable],'id',$assetId,$boundExpected)];m4ar_auth_delta($before,$after,$actors['customer'],$reply['actual_interval'],$expected);
  m4ar_database_delta($before,$after,$expected,['eb_store_product_reply'=>1]);m4ar_redis_delta($before,$after);m4ar_expect($before['private']===$after['private']&&$before['public']===$after['public'],
  'TASK8_REVIEW_USES_EXISTING_PUBLIC_IMAGE_NO_FILE_WRITE');m4c_entry_same($reply['json']['data'],m4ar_review_view($review,(int)$item['id'],$site));
  $again=m4ar_json('POST',$path,$actors['customer'],$body);m4c_entry_same($again['json']['data'],m4ar_review_view($review,(int)$item['id'],$site));
@@ -1710,7 +1784,7 @@ function m4ar_review(PDO $db,array $owner,array $actors,string $bytes):array
   m4ar_expect($before['private']===$after['private']&&$before['public']===$after['public'],'TASK8_MODERATION_REPLY_NO_FILE_OR_COMMERCE_MUTATION');
   m4c_entry_same($reply['json']['data'],m4ar_review_view($want,(int)$item['id'],$site));$review=$want;m4ar_review_reads($db,$root,$item,$review,$actors,$site);}
  $public=m4ar_public_review($db,$item,$review,$owner['uid'],$upload,$bytes);
- return ['root_order_id'=>$rootId,'source_item_id'=>(int)$item['id'],'review_id'=>(int)$review['id'],'attachment_id'=>(int)$upload['row']['att_id'],
+ return ['root_order_id'=>$rootId,'source_item_id'=>(int)$item['id'],'review_id'=>(int)$review['id'],'image_source'=>'customer_review','customer_asset_id'=>m5pcp_u64($upload['row']['id']),
  'image_bytes'=>strlen($bytes),'image_sha256'=>hash('sha256',$bytes),'create_same_body_replay'=>true,'status_sequence'=>[0,1],'merchant_reply_changed_columns'=>3,'public'=>$public,'pending_public'=>$pendingPublic];
 }
 
