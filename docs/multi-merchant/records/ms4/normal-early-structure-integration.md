@@ -578,3 +578,16 @@ Run20261021190454125189 / Source e669a023540a2f755283de46dd9c541fc136517c 的内
 原专用实例正常close原句柄40110自然0，RESULT93544/db58b47b8ed5c03aa1232bcca8f4981c96f2f07abade319539551f5116b43042；84原生命令中仅5普通变更，正常停原mysql/redis后精确移除4CID/1内部网络/7卷。独立zero原85334自然0，RESULT17096/68dfbacc4c5f3765259840645e2ac87a3cee8d56bb0ceec0de8d8579a2eee3b4，12只读原生含六fresh双标签三类查询原raw双空。Root及非作者完整核15151原公件、实际Source10861（worker10857+4原prepare refs）、原生全部created/terminal/双流和namespace/native9保持。
 
 修复候选19716/b72cfc4023fe2f4e74e8b7344c8a40b5164c582dc3ef206a46a156d8634b4cee已完整双Source正逆审及固定PHP8.2镜像单文件纯语法实际0；唯一lint RESULT3745/725bb5608b4ba05825c6f56275bf77ab59789a05b05ea283e88222b8a3c9fc9b。采用范围仅DAO与两份现有记录，提交身份另由实际Git核实。尚未新clean完整复验，不以Source/语法/收尾签售后或MS4完成。最终归属enforce/启用、多端/N1/N2、非空历史、真实金融/发布与人工验收继续原清单；停止样本保持NOT RUN，L2不推送不部署。
+
+
+## 2026-10-22 完整交易验证的资产表前置接线
+
+通用多商户商城继续复用原商品、规格、价格和库存。本轮仅把三个新资产表的安装与完整交易正常验证衔接：既有early迁移在review_menus之后、最终绑定之前，以原专用migrator实际调用marketplace-ms4-assets.php的check、apply-structure、check、apply-structure；App仍四项DML权限，不在售后/评价阶段临时建表。原四次履约和十二次后继调用保持，追加四次资产调用；原五个快照和十二项完整比较保留，追加资产快照及三项比较。
+
+五件正常验证PHP已接入独立三表完整结构、原生DDL/计数器/空行、所有旧表/模式/Redis保持，以及CLI二十五字段和完整正常锁生命周期检查。early显式来源15→17；完整履约/售后评价/Worker extras分别25/29/30。Task6读取实际资产初始化后的完整基线；售后语言准备严格比较已经验证的Task6完整表名，不硬编码猜新表数量。原T5已购评价图片真实生产、绑定、保存正文重放以及私图和文件保留责任保持。
+
+独立源码复核PASS_SOURCE_ONLY（18887B/41646f288838），五PHP在固定PHP8.2镜像中纯语法全部正常0（16354B/c38c1ad57ed5，22项原生命令，临时检查容器前后为空），源码完整字节保持。这些是源码与语法结果，尚未执行本次完整交易正常链，不代签A/B、三端页面或业务验收。
+
+另保留T4隔离初始化Run202610220928551abc3c的真实失败2/EXACT_STRICT_PROFILE_MODES：专用镜像默认只有NO_ENGINE_SUBSTITUTION，DDL前即停止。后继r5仅补历史同款六项严格启动模式和实际Cmd资格，原断言不变；其独立Source及实际Compose config通过，尚待新实例初始化。原Run普通close50076/0、独立zero45656/0，资源已精确退役，完整原失败及公开证据保持，不重开旧Run。
+
+本轮仅L2本地采用与提交，未推送部署、未触及真实资金。资产真实安装、完整付款→履约→售后评价→Worker、同源B/三端320/390/1440页面、N1/N2、原非空历史及旧权益、最终归属启用、真实金融/MS6/人工验收继续未完成；原用户停止样本NOT RUN，商家客服Task9保持关闭。

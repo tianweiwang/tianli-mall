@@ -47,7 +47,7 @@ function m4ar_extra():array
  $paths=array_values(array_unique(array_merge(m4fn_extra(),[M4AR_ENTRY,
  'help/migrations/marketplace-ms4-aftersale.php','help/migrations/marketplace-ms4-aftersale-menus.php',
  'help/migrations/marketplace-ms4-review-menus.php']),SORT_STRING));sort($paths,SORT_STRING);
- m4ar_expect(count($paths)===28,'TASK78_FINITE_TWENTY_EIGHT_EXTRAS');return $paths;
+ m4ar_expect(count($paths)===29,'TASK78_FINITE_TWENTY_NINE_EXTRAS');return $paths;
 }
 function m4ar_prerequisite_names():array
 {return array_merge(M4C_COMMON_PREREQUISITES,M4C_FILES_PREREQUISITES,M4C_PREPARE_PREREQUISITES,
@@ -975,7 +975,7 @@ function m4ar_language_delta(array $before,array $after,array $rows,array $nativ
   if(array_key_exists($table,$expected['target_rows']))$expected['target_rows'][$table]=$wanted;
   $native['auxiliary_rows'][$table]=$wanted;
  }
- m4ar_expect($after['database']===$expected,'TASK78_LANGUAGE_ALL_OTHER_169_TABLES_AND_MODES_INCREMENT_UNCHANGED');
+ m4ar_expect($after['database']===$expected,'TASK78_LANGUAGE_ALL_OTHER_TABLES_AND_MODES_INCREMENT_UNCHANGED');
  m4ar_expect(array_keys($after['rows'])===array_keys($before['rows']),'TASK78_LANGUAGE_COMPLETE_ORIGINAL_ROW_TABLE_SET');
  foreach($before['rows']as$table=>$oldRows)if(!isset($rows[$table]))
   m4ar_expect($after['rows'][$table]===$oldRows,'TASK78_LANGUAGE_ALL_OTHER_FULL_NATIVE_ROWS_UNCHANGED');
@@ -984,7 +984,7 @@ function m4ar_language_delta(array $before,array $after,array $rows,array $nativ
  m4ar_expect($after['private']===$before['private']&&$after['public']===$before['public'],'TASK78_LANGUAGE_NO_PRIVATE_OR_PUBLIC_FILE_CHANGE');
 }
 /** Called explicitly after the real owner gate and before this process creates its App. */
-function m4ar_language_prepare(PDO $db,array $source):void
+function m4ar_language_prepare(PDO $db,array $source,array $task6Names):void
 {
  m4ar_phase('installed_language_preparation');
  m4ar_expect(empty($GLOBALS['m4c_app_started'])&&!isset($GLOBALS['m4c_application'])&&!$db->inTransaction()
@@ -1002,7 +1002,7 @@ function m4ar_language_prepare(PDO $db,array $source):void
   if($sql===null)$sql=$raw;else m4ar_expect($sql===$raw,'TASK78_LANGUAGE_BOTH_SOURCE_ROOTS_SAME_COMPLETE_SQL');unset($raw);
  }
  $literal=m4ar_language_decode($sql);unset($sql);$before=m4ar_snapshot($db);$nativeBefore=m5pc_native_snapshot($db);
- m4ar_expect(count($before['database']['names'])===172,'TASK78_LANGUAGE_COMPLETE_ORIGINAL_172_TABLE_DATABASE');
+ m4ar_expect($before['database']['names']===$task6Names,'TASK78_LANGUAGE_EXACT_VERIFIED_TASK6_COMPLETE_TABLE_NAMES');
  $initial=['eb_lang_type'=>'11','eb_lang_country'=>'351','eb_lang_code'=>'25001'];$rows=[];
  foreach($literal as$table=>$values){
   $old=$before['database']['tables'][$table];$metadata=$old['metadata'];$columns=array_keys($values[0]);
@@ -2172,7 +2172,7 @@ function m4ar_run():int
 {
  m4ar_phase('normal_source');$source=m4ar_source();$GLOBALS['m4ar_source']=$source;$db=audit_db();m4ar_expect(!$db->inTransaction(),'TASK78_NATIVE_OBSERVER_OUTSIDE_TRANSACTION');
  $observer=m5pc_observer_configure($db);$GLOBALS['m4ar_observer']=$observer;$owner=m4ar_owner($source,$db);$private=m4ar_private_prepare();
- m4c_entry_public_materials($source);m4ar_full_source($source);m4ar_language_prepare($db,$source);$app=m4fn_app($source);
+ m4c_entry_public_materials($source);m4ar_full_source($source);m4ar_language_prepare($db,$source,$owner['stage6']['produced']['final']['database']['names']);$app=m4fn_app($source);
  m4ar_expect($app->config->get('marketplace.aftersale.enabled')===true&&$app->config->get('marketplace.aftersale.private_root')===M4AR_PRIVATE,
  'TASK78_REAL_APP_ONLY_NORMAL_ROLE_AFTERSALE_PRIVATE_CONFIG');
  $business=null;$failure=null;

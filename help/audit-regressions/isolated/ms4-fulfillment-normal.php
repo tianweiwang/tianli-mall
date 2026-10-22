@@ -43,11 +43,11 @@ function m4fn_extra():array
 {
     $paths=array_values(array_unique(array_merge(M4C_EXTRA,M4C_MIGRATION_SOURCES,
         [M5PC_ENTRY,M4FN_ENTRY,'help/audit-regressions/isolated/ms4-fulfillment-migration.php',
-         'help/migrations/marketplace-ms4-fulfillment.php',
+         'help/migrations/marketplace-ms4-fulfillment.php','help/migrations/marketplace-ms4-assets.php',
          'help/audit-regressions/isolated/lib/ms4-three-legacy-producer.php',
          'help/audit-regressions/isolated/lib/ms4-three-legacy-reference.php',
          'help/audit-regressions/isolated/lib/ms4-three-read-normal.php']),SORT_STRING));
-    sort($paths,SORT_STRING);m4fn_expect(count($paths)===24,'TASK6_FINITE_TWENTY_FOUR_EXTRAS');return $paths;
+    sort($paths,SORT_STRING);m4fn_expect(count($paths)===25,'TASK6_FINITE_TWENTY_FIVE_EXTRAS');return $paths;
 }
 function m4fn_prerequisite_names():array
 {
@@ -499,9 +499,9 @@ function m4fn_restore_metadata(array $table):array
 function m4fn_migration_database(PDO $db,array $owner):void
 {
     $result=m4c_entry_read('/run/audit/evidence/ms4-aftersale-early-migration-normal.json');
-    $after=$result['snapshots']['review_menus'];
+    $after=$result['snapshots']['assets'];
     m4c_entry_keys($after,['names','tables','redis','modes','metadata_observer_modes','native_snapshot_sha256']);$restored=[];
-    $full=m5pcp_snapshot($db);m4fn_expect($full['names']===$after['names'],'TASK6_ACTUAL_POST_EARLY_STAGE20_TABLE_NAMESPACE');
+    $full=m5pcp_snapshot($db);m4fn_expect($full['names']===$after['names'],'TASK6_ACTUAL_POST_EARLY_ASSETS_TABLE_NAMESPACE');
     $targets=['eb_marketplace_aftersale_action','eb_marketplace_aftersale_file','eb_store_order_refund',
         'eb_marketplace_fulfillment_operation','eb_marketplace_fulfillment_range'];
     foreach($after['tables']as$name=>$table){

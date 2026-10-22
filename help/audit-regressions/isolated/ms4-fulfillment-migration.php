@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-// Only the isolation helpers are loaded. Sixteen fixed native children run before files-bootstrap or App.
+// Only the isolation helpers are loaded. Twenty fixed native children run before files-bootstrap or App.
 require __DIR__ . '/lib/harness.php';
 
 const M4FM_IMAGE = 'sha256:1099f749e2a38ec9453c6b820db8a78174514bc72d14edf5c203e13b82816e0a';
@@ -58,7 +58,8 @@ function m4fm_source_paths(): array
         'help/migrations/marketplace-ms4.md', 'help/migrations/marketplace-ms5-payment.php',
         'help/migrations/marketplace-ms5-payment.md', M4FM_CLI, 'crmeb/public/install/crmeb.sql',
         'help/audit-regressions/isolated/ms5-payment-migration.php', 'help/migrations/marketplace-ms4-aftersale.php',
-        'help/migrations/marketplace-ms4-aftersale-menus.php', 'help/migrations/marketplace-ms4-review-menus.php'];
+        'help/migrations/marketplace-ms4-aftersale-menus.php', 'help/migrations/marketplace-ms4-review-menus.php',
+        'help/migrations/marketplace-ms4-assets.php', 'crmeb/app/services/marketplace/assets/AssetSchema.php'];
     sort($paths, SORT_STRING); return $paths;
 }
 
@@ -150,7 +151,7 @@ function m4fm_source(): array
         && !file_exists('/workspace/crmeb/public/install.lock') && !is_link('/workspace/crmeb/public/install.lock'), 'NO_HOST_CONFIG_PRIVATE_TMPFS');
     m4fm_expect($binding['entry_sha256'] === hash_file('sha256', __FILE__)
         && $binding['cli_sha256'] === hash_file('sha256', '/workspace/' . M4FM_CLI)
-        && is_array($binding['source_files']) && array_is_list($binding['source_files']) && count($binding['source_files']) === 15, 'CURRENT_ENTRY_CLI_BINDING');
+        && is_array($binding['source_files']) && array_is_list($binding['source_files']) && count($binding['source_files']) === 17, 'CURRENT_ENTRY_CLI_BINDING');
     $paths = [];
     foreach ($binding['source_files'] as $item) {
         m4fm_expect(is_array($item) && m4fm_keys($item, ['path', 'bytes', 'sha256']), 'EXACT_SOURCE_ITEM');
@@ -891,7 +892,8 @@ function m4ae_scripts():array
 {
     return ['aftersale'=>'help/migrations/marketplace-ms4-aftersale.php',
         'aftersale_menus'=>'help/migrations/marketplace-ms4-aftersale-menus.php',
-        'review_menus'=>'help/migrations/marketplace-ms4-review-menus.php'];
+        'review_menus'=>'help/migrations/marketplace-ms4-review-menus.php',
+        'assets'=>'help/migrations/marketplace-ms4-assets.php'];
 }
 function m4ae_initial_database(array $before,array $binding):void
 {
@@ -989,6 +991,7 @@ function m4ae_structure_delta(array $before,array $after):void
 function m4ae_result(string $kind,string $mode,string $sha,array $result,array $binding):void
 {
     $sources=[];foreach(m4fm_source_paths()as$path)$sources[$path]=hash_file('sha256','/workspace/'.$path);
+    if($kind==='assets'){m4as_result($mode,$result,$sources);return;}
     if($kind==='aftersale'){
         $prerequisites=[];foreach(['help/migrations/marketplace-ms1.php','help/migrations/marketplace-ms4.php',
             'help/migrations/marketplace-ms5-payment.php','help/migrations/marketplace-ms4-fulfillment.php','crmeb/public/install/crmeb.sql']as$path)
@@ -1731,6 +1734,236 @@ private static function fulfillmentTables(): array
     }
 }
 
+function m4as_definitions(): array
+    {
+        return [
+            'marketplace_customer_asset' => [
+                'columns' => [
+                    'id' => ['BIGINT UNSIGNED NOT NULL AUTO_INCREMENT', 'bigint unsigned', 'NO', null, null, null, 'auto_increment'],
+                    'uid' => ['INT UNSIGNED NOT NULL', 'int unsigned', 'NO', null, null, null, ''],
+                    'purpose' => ['ENUM(\'avatar_public\',\'public_upload_compat\',\'review_public_image\',\'user_promotion_image\',\'user_promotion_qr\',\'legacy_refund_evidence\',\'refund_shipping_proof\',\'order_form_image\',\'withdrawal_qr\',\'agent_licence\',\'order_verify_code\',\'gift_receive_code\') CHARACTER SET ascii COLLATE ascii_bin NOT NULL', 'enum(\'avatar_public\',\'public_upload_compat\',\'review_public_image\',\'user_promotion_image\',\'user_promotion_qr\',\'legacy_refund_evidence\',\'refund_shipping_proof\',\'order_form_image\',\'withdrawal_qr\',\'agent_licence\',\'order_verify_code\',\'gift_receive_code\')', 'NO', null, 'ascii', 'ascii_bin', ''],
+                    'state' => ['ENUM(\'STAGED\',\'BOUND\',\'RETIRED\') CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT \'STAGED\'', 'enum(\'STAGED\',\'BOUND\',\'RETIRED\')', 'NO', 'STAGED', 'ascii', 'ascii_bin', ''],
+                    'storage_type' => ['TINYINT UNSIGNED NOT NULL', 'tinyint unsigned', 'NO', null, null, null, ''],
+                    'object_key' => ['VARCHAR(512) NOT NULL', 'varchar(512)', 'NO', null, 'utf8mb4', 'utf8mb4_bin', ''],
+                    'thumbnail_key' => ['VARCHAR(512) NOT NULL DEFAULT \'\'', 'varchar(512)', 'NO', '', 'utf8mb4', 'utf8mb4_bin', ''],
+                    'name' => ['VARCHAR(100) NOT NULL', 'varchar(100)', 'NO', null, 'utf8mb4', 'utf8mb4_bin', ''],
+                    'real_name' => ['VARCHAR(255) NOT NULL', 'varchar(255)', 'NO', null, 'utf8mb4', 'utf8mb4_bin', ''],
+                    'media_type' => ['VARCHAR(127) CHARACTER SET ascii COLLATE ascii_bin NOT NULL', 'varchar(127)', 'NO', null, 'ascii', 'ascii_bin', ''],
+                    'byte_size' => ['BIGINT UNSIGNED NOT NULL', 'bigint unsigned', 'NO', null, null, null, ''],
+                    'width' => ['INT UNSIGNED NOT NULL DEFAULT 0', 'int unsigned', 'NO', '0', null, null, ''],
+                    'height' => ['INT UNSIGNED NOT NULL DEFAULT 0', 'int unsigned', 'NO', '0', null, null, ''],
+                    'content_sha256' => ['BINARY(32) NOT NULL', 'binary(32)', 'NO', null, null, null, ''],
+                    'created_at' => ['INT UNSIGNED NOT NULL', 'int unsigned', 'NO', null, null, null, ''],
+                    'expires_at' => ['INT UNSIGNED NULL DEFAULT NULL', 'int unsigned', 'YES', null, null, null, ''],
+                    'bound_at' => ['INT UNSIGNED NULL DEFAULT NULL', 'int unsigned', 'YES', null, null, null, ''],
+                    'retired_at' => ['INT UNSIGNED NULL DEFAULT NULL', 'int unsigned', 'YES', null, null, null, ''],
+                    'root_order_id' => ['INT UNSIGNED NULL DEFAULT NULL', 'int unsigned', 'YES', null, null, null, ''],
+                    'order_item_id' => ['INT NULL DEFAULT NULL', 'int', 'YES', null, null, null, ''],
+                    'refund_id' => ['INT NULL DEFAULT NULL', 'int', 'YES', null, null, null, ''],
+                    'review_id' => ['INT NULL DEFAULT NULL', 'int', 'YES', null, null, null, ''],
+                    'confirmation_ref' => ['BINARY(32) NULL DEFAULT NULL', 'binary(32)', 'YES', null, null, null, ''],
+                    'form_product_id' => ['MEDIUMINT NULL DEFAULT NULL', 'mediumint', 'YES', null, null, null, ''],
+                    'form_definition_sha256' => ['BINARY(32) NULL DEFAULT NULL', 'binary(32)', 'YES', null, null, null, ''],
+                    'form_field_index' => ['SMALLINT UNSIGNED NULL DEFAULT NULL', 'smallint unsigned', 'YES', null, null, null, ''],
+                    'extract_id' => ['INT UNSIGNED NULL DEFAULT NULL', 'int unsigned', 'YES', null, null, null, ''],
+                    'agent_apply_id' => ['INT UNSIGNED NULL DEFAULT NULL', 'int unsigned', 'YES', null, null, null, ''],
+                    'source_product_id' => ['MEDIUMINT NULL DEFAULT NULL', 'mediumint', 'YES', null, null, null, ''],
+                    'source_qrcode_id' => ['INT UNSIGNED NULL DEFAULT NULL', 'int unsigned', 'YES', null, null, null, ''],
+                    'created_by_uid' => ['INT UNSIGNED NULL DEFAULT NULL', 'int unsigned', 'YES', null, null, null, ''],
+                    'created_by_admin_id' => ['SMALLINT UNSIGNED NULL DEFAULT NULL', 'smallint unsigned', 'YES', null, null, null, ''],
+                    'created_by_job' => ['VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NULL DEFAULT NULL', 'varchar(32)', 'YES', null, 'ascii', 'ascii_bin', ''],
+                    'legacy_att_id' => ['INT NULL DEFAULT NULL', 'int', 'YES', null, null, null, ''],
+                ],
+                'indexes' => [
+                    'PRIMARY' => [true, ['id']],
+                    'uq_storage_object' => [true, ['storage_type', 'object_key']],
+                    'uq_legacy_att' => [true, ['legacy_att_id']],
+                    'ix_user_purpose' => [false, ['uid', 'purpose', 'state', 'id']],
+                    'ix_order_item' => [false, ['root_order_id', 'order_item_id', 'id']],
+                    'ix_form' => [false, ['confirmation_ref', 'form_product_id', 'form_field_index', 'id']],
+                ],
+            ],
+            'marketplace_platform_asset_category' => [
+                'columns' => [
+                    'id' => ['INT NOT NULL AUTO_INCREMENT', 'int', 'NO', null, null, null, 'auto_increment'],
+                    'pid' => ['INT NOT NULL DEFAULT 0', 'int', 'NO', '0', null, null, ''],
+                    'name' => ['VARCHAR(50) NOT NULL DEFAULT \'\'', 'varchar(50)', 'NO', '', 'utf8mb4', 'utf8mb4_bin', ''],
+                    'enname' => ['VARCHAR(50) NOT NULL DEFAULT \'\'', 'varchar(50)', 'NO', '', 'utf8mb4', 'utf8mb4_bin', ''],
+                    'type' => ['TINYINT NOT NULL DEFAULT 0', 'tinyint', 'NO', '0', null, null, ''],
+                    'created_by_admin_id' => ['SMALLINT UNSIGNED NOT NULL', 'smallint unsigned', 'NO', null, null, null, ''],
+                    'updated_by_admin_id' => ['SMALLINT UNSIGNED NOT NULL', 'smallint unsigned', 'NO', null, null, null, ''],
+                    'created_at' => ['INT UNSIGNED NOT NULL', 'int unsigned', 'NO', null, null, null, ''],
+                    'updated_at' => ['INT UNSIGNED NOT NULL', 'int unsigned', 'NO', null, null, null, ''],
+                    'legacy_category_id' => ['INT NULL DEFAULT NULL', 'int', 'YES', null, null, null, ''],
+                ],
+                'indexes' => [
+                    'PRIMARY' => [true, ['id']],
+                    'uq_name' => [true, ['name']],
+                    'uq_legacy_category' => [true, ['legacy_category_id']],
+                    'ix_parent' => [false, ['pid', 'id']],
+                ],
+            ],
+            'marketplace_platform_asset' => [
+                'columns' => [
+                    'id' => ['BIGINT UNSIGNED NOT NULL AUTO_INCREMENT', 'bigint unsigned', 'NO', null, null, null, 'auto_increment'],
+                    'purpose' => ['ENUM(\'site_image\',\'site_file\',\'channel_qr\',\'routine_download_qr\',\'platform_chat_image\') CHARACTER SET ascii COLLATE ascii_bin NOT NULL', 'enum(\'site_image\',\'site_file\',\'channel_qr\',\'routine_download_qr\',\'platform_chat_image\')', 'NO', null, 'ascii', 'ascii_bin', ''],
+                    'category_id' => ['INT NOT NULL DEFAULT 0', 'int', 'NO', '0', null, null, ''],
+                    'state' => ['ENUM(\'STAGED\',\'BOUND\',\'RETIRED\') CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT \'STAGED\'', 'enum(\'STAGED\',\'BOUND\',\'RETIRED\')', 'NO', 'STAGED', 'ascii', 'ascii_bin', ''],
+                    'storage_type' => ['TINYINT UNSIGNED NOT NULL', 'tinyint unsigned', 'NO', null, null, null, ''],
+                    'object_key' => ['VARCHAR(512) NOT NULL', 'varchar(512)', 'NO', null, 'utf8mb4', 'utf8mb4_bin', ''],
+                    'thumbnail_key' => ['VARCHAR(512) NOT NULL DEFAULT \'\'', 'varchar(512)', 'NO', '', 'utf8mb4', 'utf8mb4_bin', ''],
+                    'name' => ['VARCHAR(100) NOT NULL', 'varchar(100)', 'NO', null, 'utf8mb4', 'utf8mb4_bin', ''],
+                    'real_name' => ['VARCHAR(255) NOT NULL', 'varchar(255)', 'NO', null, 'utf8mb4', 'utf8mb4_bin', ''],
+                    'media_type' => ['VARCHAR(127) CHARACTER SET ascii COLLATE ascii_bin NOT NULL', 'varchar(127)', 'NO', null, 'ascii', 'ascii_bin', ''],
+                    'byte_size' => ['BIGINT UNSIGNED NOT NULL', 'bigint unsigned', 'NO', null, null, null, ''],
+                    'width' => ['INT UNSIGNED NOT NULL DEFAULT 0', 'int unsigned', 'NO', '0', null, null, ''],
+                    'height' => ['INT UNSIGNED NOT NULL DEFAULT 0', 'int unsigned', 'NO', '0', null, null, ''],
+                    'content_sha256' => ['BINARY(32) NOT NULL', 'binary(32)', 'NO', null, null, null, ''],
+                    'created_at' => ['INT UNSIGNED NOT NULL', 'int unsigned', 'NO', null, null, null, ''],
+                    'expires_at' => ['INT UNSIGNED NULL DEFAULT NULL', 'int unsigned', 'YES', null, null, null, ''],
+                    'bound_at' => ['INT UNSIGNED NULL DEFAULT NULL', 'int unsigned', 'YES', null, null, null, ''],
+                    'retired_at' => ['INT UNSIGNED NULL DEFAULT NULL', 'int unsigned', 'YES', null, null, null, ''],
+                    'created_by_admin_id' => ['SMALLINT UNSIGNED NULL DEFAULT NULL', 'smallint unsigned', 'YES', null, null, null, ''],
+                    'created_by_service_id' => ['INT UNSIGNED NULL DEFAULT NULL', 'int unsigned', 'YES', null, null, null, ''],
+                    'created_by_uid' => ['INT UNSIGNED NULL DEFAULT NULL', 'int unsigned', 'YES', null, null, null, ''],
+                    'created_by_job' => ['VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NULL DEFAULT NULL', 'varchar(32)', 'YES', null, 'ascii', 'ascii_bin', ''],
+                    'chat_customer_uid' => ['BIGINT NULL DEFAULT NULL', 'bigint', 'YES', null, null, null, ''],
+                    'chat_is_tourist' => ['TINYINT UNSIGNED NULL DEFAULT NULL', 'tinyint unsigned', 'YES', null, null, null, ''],
+                    'chat_service_id' => ['INT UNSIGNED NULL DEFAULT NULL', 'int unsigned', 'YES', null, null, null, ''],
+                    'chat_service_uid' => ['INT UNSIGNED NULL DEFAULT NULL', 'int unsigned', 'YES', null, null, null, ''],
+                    'channel_qrcode_id' => ['INT UNSIGNED NULL DEFAULT NULL', 'int unsigned', 'YES', null, null, null, ''],
+                    'routine_version' => ['VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL DEFAULT NULL', 'varchar(64)', 'YES', null, 'ascii', 'ascii_bin', ''],
+                    'legacy_att_id' => ['INT NULL DEFAULT NULL', 'int', 'YES', null, null, null, ''],
+                ],
+                'indexes' => [
+                    'PRIMARY' => [true, ['id']],
+                    'uq_storage_object' => [true, ['storage_type', 'object_key']],
+                    'uq_legacy_att' => [true, ['legacy_att_id']],
+                    'ix_category' => [false, ['category_id', 'id']],
+                    'ix_purpose' => [false, ['purpose', 'state', 'id']],
+                    'ix_chat' => [false, ['chat_customer_uid', 'chat_service_uid', 'chat_is_tourist', 'id']],
+                ],
+            ],
+        ];
+    }
+
+
+
+function m4as_contract(array $table,array $definition):void
+{
+ $m=$table['metadata'];$native=$m['table'];if($native['AUTO_INCREMENT']!==null)$native['AUTO_INCREMENT']=(string)$native['AUTO_INCREMENT'];
+ m4fm_expect($native===['TABLE_TYPE'=>'BASE TABLE','ENGINE'=>'InnoDB','ROW_FORMAT'=>'Dynamic','TABLE_COLLATION'=>'utf8mb4_bin','TABLE_COMMENT'=>'','CREATE_OPTIONS'=>'','AUTO_INCREMENT'=>'1']
+  &&$m['checks']===[]&&$m['foreign']===[]&&$m['triggers']===[],'ASSET_COMPLETE_NATIVE_TABLE_EMPTY_HIDDEN_OBJECTS');
+ m4fm_expect(array_keys($m['columns'])===array_keys($definition['columns'])&&$table['projected_columns']===array_keys($definition['columns']),'ASSET_ALL_NATIVE_COLUMNS_IN_ORDER');
+ foreach($definition['columns']as$name=>$expected){$actual=$m['columns'][$name];
+  if(!str_starts_with($actual['COLUMN_TYPE'],'enum('))$actual['COLUMN_TYPE']=preg_replace('/\b(tinyint|smallint|mediumint|int|bigint)\([0-9]+\)/','$1',strtolower($actual['COLUMN_TYPE']));
+  if($actual['COLUMN_DEFAULT']!==null)$actual['COLUMN_DEFAULT']=(string)$actual['COLUMN_DEFAULT'];
+  m4fm_expect($actual===['COLUMN_NAME'=>$name,'COLUMN_TYPE'=>$expected[1],'IS_NULLABLE'=>$expected[2],'COLUMN_DEFAULT'=>$expected[3],
+   'CHARACTER_SET_NAME'=>$expected[4],'COLLATION_NAME'=>$expected[5],'EXTRA'=>$expected[6],'GENERATION_EXPRESSION'=>'','COLUMN_COMMENT'=>''],'ASSET_EVERY_NATIVE_COLUMN_VALUE');}
+ $indexes=$definition['indexes'];ksort($indexes,SORT_STRING);m4fm_expect(array_keys($m['indexes'])===array_keys($indexes),'ASSET_ALL_NATIVE_INDEX_NAMES');$constraints=[];
+ foreach($indexes as$name=>[$unique,$columns]){$wanted=[];foreach($columns as$i=>$column)$wanted[]=['INDEX_NAME'=>$name,'NON_UNIQUE'=>$unique?'0':'1','SEQ_IN_INDEX'=>(string)($i+1),
+  'COLUMN_NAME'=>$column,'SUB_PART'=>null,'INDEX_TYPE'=>'BTREE','IS_VISIBLE'=>'YES','EXPRESSION'=>null,'COLLATION'=>'A','INDEX_COMMENT'=>''];
+  $actual=$m['indexes'][$name];foreach($actual as&$row){$row['NON_UNIQUE']=(string)$row['NON_UNIQUE'];$row['SEQ_IN_INDEX']=(string)$row['SEQ_IN_INDEX'];}unset($row);
+  m4fm_expect($actual===$wanted,'ASSET_COMPLETE_NATIVE_INDEX_VALUES');if($unique)$constraints[]=['CONSTRAINT_NAME'=>$name,'CONSTRAINT_TYPE'=>$name==='PRIMARY'?'PRIMARY KEY':'UNIQUE','ENFORCED'=>'YES'];}
+ m4fm_expect($m['constraints']===$constraints,'ASSET_ONLY_EXACT_PRIMARY_AND_UNIQUE_CONSTRAINTS');
+ m4fm_expect($table['projection']===['encoding'=>'php-serialize-row-sha256-sorted-multiset-v1','rows'=>0,'sha256'=>hash('sha256','')],'ASSET_NEW_NATIVE_TABLE_EMPTY_FULL_PROJECTION');
+}
+function m4as_result(string $mode,array $answer,array $sources):void
+{
+ $keys=['mode','state','native_exit','changed','change_observation','attempted_steps','applied_steps','ddl_outcome_uncertain','pending_steps','pending_steps_known','observed_tables',
+  'structure_step_count','issues','failure_phase','lock_release_failed','lock_scope','source_sha256','schema_source_sha256','sources_held','schema_contract','scope','history_mapping','writer','activation','acceptance'];
+ m4fm_expect(m4fm_keys($answer,$keys),'ASSET_EXACT_TWENTY_FIVE_CLI_KEYS');
+ $steps=array_map(static fn(string $name):string=>'create.'.$name,array_keys(m4as_definitions()));$complete=$answer['state']==='completed';$written=$answer['changed'];
+ m4fm_expect(in_array($mode,['check','apply-structure'],true)&&$answer['mode']===$mode&&in_array($answer['state'],['applicable','completed'],true)&&$answer['native_exit']===0
+  &&is_bool($written)&&(!$written||($mode==='apply-structure'&&$complete))&&$answer['change_observation']===($written?'DDL_MAY_HAVE_COMMITTED':'DDL_NOT_ATTEMPTED')
+  &&$answer['attempted_steps']===($written?$steps:[])&&$answer['applied_steps']===($written?$steps:[])&&$answer['ddl_outcome_uncertain']===false
+  &&$answer['pending_steps']===($complete?[]:$steps)&&$answer['pending_steps_known']===true&&$answer['observed_tables']===array_fill_keys(array_keys(m4as_definitions()),$complete?'compatible':'absent')
+  &&$answer['structure_step_count']===3&&$answer['issues']===[]&&$answer['failure_phase']===null&&$answer['lock_release_failed']===false
+  &&$answer['source_sha256']===$sources['help/migrations/marketplace-ms4-assets.php']
+  &&$answer['schema_source_sha256']===$sources['crmeb/app/services/marketplace/assets/AssetSchema.php']&&$answer['sources_held']===true
+  &&$answer['schema_contract']==='marketplace-asset-domains-v1'&&$answer['scope']==='MS4_ASSET_DOMAINS_STRUCTURE_ONLY'
+  &&$answer['history_mapping']==='NOT RUN'&&$answer['writer']==='NOT RUN'&&$answer['activation']==='NOT RUN'&&$answer['acceptance']==='NOT RUN','ASSET_EXACT_TWENTY_FIVE_CLI_VALUES');
+ $lock=['request_attempted'=>false,'execute_attempted'=>false,'preexisting_same_session'=>null,'acquisition'=>'NOT_ATTEMPTED','request_cursor_closed'=>null,
+  'confirmation_failed'=>false,'release_attempted'=>false,'release_execute_attempted'=>false,'release_result'=>'NOT_ATTEMPTED','release_cursor_closed'=>null,'ownership'=>'NOT_CHECKED','resolved'=>null];
+ if($mode==='apply-structure')$lock=['request_attempted'=>true,'execute_attempted'=>true,'preexisting_same_session'=>false,'acquisition'=>'ONE','request_cursor_closed'=>true,
+  'confirmation_failed'=>false,'release_attempted'=>true,'release_execute_attempted'=>true,'release_result'=>'ONE','release_cursor_closed'=>true,'ownership'=>'NOT_OWNED','resolved'=>true];
+ m4fm_expect($answer['lock_scope']===$lock,'ASSET_EXACT_NORMAL_LOCK_ACQUIRE_RELEASE_SCOPE');
+}
+
+/** Full SQL token comparison against the independent literal, preserving quoted values and identifiers. */
+function m4as_ddl_tokens(string $sql):array
+{
+ $tokens=[];$length=strlen($sql);
+ for($i=0;$i<$length;){
+  $c=$sql[$i];if(ctype_space($c)){++$i;continue;}
+  if($c==="'"||$c===chr(96)){$quote=$c;$start=$i++;$closed=false;
+   while($i<$length){if($sql[$i]==='\\'){m4fm_expect($i+1<$length,'ASSET_DDL_COMPLETE_ESCAPE');$i+=2;continue;}
+    if($sql[$i]===$quote){if($i+1<$length&&$sql[$i+1]===$quote){$i+=2;continue;}$i++;$closed=true;break;}++$i;}
+   m4fm_expect($closed,'ASSET_DDL_COMPLETE_QUOTED_TOKEN');$tokens[]=substr($sql,$start,$i-$start);continue;}
+  if(preg_match('/\G[A-Za-z_][A-Za-z0-9_]*/A',$sql,$match,0,$i)===1){$tokens[]=strtoupper($match[0]);$i+=strlen($match[0]);continue;}
+  if(preg_match('/\G[0-9]+/A',$sql,$match,0,$i)===1){$tokens[]=$match[0];$i+=strlen($match[0]);continue;}
+  m4fm_expect(str_contains('(),=;',$c),'ASSET_DDL_NO_UNRECOGNIZED_TOKEN');$tokens[]=$c;++$i;
+ }
+ if(end($tokens)===';')array_pop($tokens);
+ $normal=[];
+ for($i=0;$i<count($tokens);++$i){$token=$tokens[$i];
+  if(in_array($token,['TINYINT','SMALLINT','MEDIUMINT','INT','BIGINT'],true)&&($tokens[$i+1]??null)==='('
+   &&ctype_digit($tokens[$i+2]??'')&&($tokens[$i+3]??null)===')'){$normal[]=$token;$i+=3;continue;}
+  if($token==='CHARACTER'&&($tokens[$i+1]??null)==='SET'&&($tokens[$i+2]??null)==='UTF8MB4'){$i+=2;continue;}
+  if($token==='COLLATE'&&($tokens[$i+1]??null)==='UTF8MB4_BIN'){++$i;continue;}
+  if($token==='AUTO_INCREMENT'&&($tokens[$i+1]??null)==='='&&($tokens[$i+2]??null)==='1'){$i+=2;continue;}
+  if($token==='NULL'&&!in_array(end($normal),['NOT','DEFAULT'],true))continue;
+  if(end($normal)==='DEFAULT'&&preg_match("/^'[0-9]+'$/D",$token)===1)$token=substr($token,1,-1);
+  $normal[]=$token;
+ }
+ return $normal;
+}
+function m4as_expected_ddl(string $name,array $definition):string
+{
+ $parts=[];foreach($definition['columns']as$column=>$expected)$parts[]=m4fm_quote($column).' '.$expected[0];
+ foreach($definition['indexes']as$index=>[$unique,$columns])$parts[]=($index==='PRIMARY'?'PRIMARY KEY':($unique?'UNIQUE KEY ':'KEY ').m4fm_quote($index))
+  .' ('.implode(',',array_map('m4fm_quote',$columns)).')';
+ return 'CREATE TABLE '.m4fm_quote($name).' ('.implode(',',$parts).') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin';
+}
+/** The real private migrator observes exact new structures; every preexisting full table stays identical. */
+function m4as_delta(array $before,array $after,array $private):void
+{
+ m4fm_preserved($before,$after);
+ m4fm_expect($before['metadata_observer_modes']===$after['metadata_observer_modes'],'ASSET_SIX_OBSERVER_MODES_UNCHANGED');
+ $definitions=m4as_definitions();$expectedNames=array_merge($before['names'],array_map(static fn(string $name):string=>'eb_'.$name,array_keys($definitions)));
+ sort($expectedNames,SORT_STRING);
+ m4fm_expect(count($expectedNames)===count(array_unique($expectedNames,SORT_STRING))&&$after['names']===$expectedNames
+  &&array_keys($after['tables'])===$expectedNames,'ASSET_EXACT_OLD_NAMESPACE_PLUS_THREE');
+ m4fm_private_assert($private);$configuration=m4fm_read($private['path']);
+ m4fm_expect($configuration['username']==='audit_migrator'&&$configuration['database']==='audit_auth'&&$configuration['prefix']==='eb_','ASSET_SAME_PRIVATE_MIGRATOR_CONFIGURATION');
+ $db=audit_pdo($configuration);unset($configuration);m4fm_expect($db->setAttribute(PDO::ATTR_EMULATE_PREPARES,false),'ASSET_NATIVE_PREPARES');
+ $grants=$db->query('SHOW GRANTS')->fetchAll(PDO::FETCH_COLUMN);
+ m4fm_expect(count($grants)===2&&count(array_filter($grants,static fn(string $grant):bool=>str_starts_with($grant,'GRANT USAGE ON *.* TO ')))===1
+  &&count(array_filter($grants,static fn(string $grant):bool=>str_starts_with($grant,'GRANT ALL PRIVILEGES ON '.chr(96).'audit_auth'.chr(96).'.* TO ')&&!str_contains($grant,'GRANT OPTION')))===1
+  &&$db->query('SELECT DATABASE()')->fetchColumn()==='audit_auth'
+  &&$db->query('SELECT run_id FROM audit_sentinel')->fetchAll(PDO::FETCH_COLUMN)===[getenv('AUDIT_RUN_ID')],'ASSET_DIRECT_SCHEMA_METADATA_AUTHORITY');
+ $observer=m4fm_configure_observer($db);
+ foreach($definitions as$suffix=>$definition){$name='eb_'.$suffix;$table=$after['tables'][$name];
+  m4as_contract($table,$definition);$native=m4fm_metadata($db,$name);
+  m4fm_expect($native===$table['metadata'],'ASSET_FULL_PRIVILEGED_NATIVE_METADATA_EQUALS_SNAPSHOT');
+  $ordinals=m4fm_rows($db,'SELECT COLUMN_NAME,ORDINAL_POSITION FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=? ORDER BY ORDINAL_POSITION',[$name]);
+  $wanted=[];foreach(array_keys($definition['columns'])as$i=>$column)$wanted[]=['COLUMN_NAME'=>$column,'ORDINAL_POSITION'=>(string)($i+1)];
+  foreach($ordinals as&$row)$row['ORDINAL_POSITION']=(string)$row['ORDINAL_POSITION'];unset($row);
+  m4fm_expect($ordinals===$wanted,'ASSET_ALL_EXACT_NATIVE_COLUMN_ORDINALS');
+  $extended=m4fm_rows($db,'SELECT INDEX_NAME,SEQ_IN_INDEX,COLUMN_NAME,PACKED,NULLABLE FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=? ORDER BY BINARY INDEX_NAME,SEQ_IN_INDEX',[$name]);
+  $indexes=$definition['indexes'];ksort($indexes,SORT_STRING);$wanted=[];
+  foreach($indexes as$index=>[$unique,$columns])foreach($columns as$i=>$column)$wanted[]=['INDEX_NAME'=>$index,'SEQ_IN_INDEX'=>(string)($i+1),'COLUMN_NAME'=>$column,'PACKED'=>null,'NULLABLE'=>$definition['columns'][$column][2]==='YES'?'YES':''];
+  foreach($extended as&$row)$row['SEQ_IN_INDEX']=(string)$row['SEQ_IN_INDEX'];unset($row);
+  m4fm_expect($extended===$wanted,'ASSET_ALL_EXACT_NATIVE_PACKED_AND_NULLABLE_INDEX_FIELDS');
+  m4fm_expect(m4fm_rows($db,'SELECT * FROM '.m4fm_quote($name))===[],'ASSET_DIRECT_COMPLETE_ROWS_EMPTY');
+  $ddl=$db->query('SHOW CREATE TABLE '.m4fm_quote($name))->fetch(PDO::FETCH_NUM);
+  m4fm_expect(is_array($ddl)&&is_string($ddl[1]??null)&&hash('sha256',$ddl[1])===$table['ddl_sha256']
+   &&m4as_ddl_tokens($ddl[1])===m4as_ddl_tokens(m4as_expected_ddl($name,$definition)),'ASSET_FULL_NATIVE_DDL_INDEPENDENT_LITERAL_AND_RAW_HASH');
+ }
+ m4fm_expect(m4fm_observer_modes($db)===$observer,'ASSET_PRIVILEGED_OBSERVER_SIX_MODES_REMAIN_IDENTICAL');
+ m4fm_private_assert($private);unset($grants,$db);
+}
+
 function m4ae_assert_stage20(array $snapshot): void
 {
     M4aeStage20Oracle::assertStage20($snapshot);
@@ -1738,7 +1971,7 @@ function m4ae_assert_stage20(array $snapshot): void
 
 function m4ae_cli(string $kind,string $mode,array $private,array &$evidence):array
 {
-    $scripts=m4ae_scripts();m4fm_expect(isset($scripts[$kind])&&in_array($mode,$kind==='aftersale'?['check','apply-structure']:['check','apply'],true),
+    $scripts=m4ae_scripts();m4fm_expect(isset($scripts[$kind])&&in_array($mode,in_array($kind,['aftersale','assets'],true)?['check','apply-structure']:['check','apply'],true),
         'EARLY_FIXED_SUCCESSOR_COMMAND');$script=$scripts[$kind];$scriptSha=$evidence['binding']['successor_cli_sha256'][$script];
     m4fm_expect(m4fm_source() === $evidence['binding'], 'CHILD_SOURCE_SAME'); audit_guard_assert(); m4fm_private_assert($private);
     $process = proc_open([PHP_BINARY, '/workspace/' . $script, $mode, '--config-file=' . $private['path']],
@@ -1997,11 +2230,26 @@ function m4fm_main(): int
             }
             $current = $next;
         }
+
+        $assetBefore=$current;$assetNames=array_map(static fn(string $name):string=>'eb_'.$name,array_keys(m4as_definitions()));
+        m4fm_expect(array_intersect($assetBefore['names'],$assetNames)===[],'ASSET_EXACT_THREE_FRESH_NAMES_ABSENT');
+        $phase='assets_check_first';$check=m4ae_cli('assets','check',$private,$evidence);
+        m4fm_expect($check['state']==='applicable'&&$check['changed']===false,'ASSET_FIRST_CHECK_REAL_APPLICABLE');
+        $checked=m4fm_snapshot();m4fm_expect($checked===$assetBefore,'ASSET_FIRST_CHECK_COMPLETE_STATE_UNCHANGED');
+        $evidence['comparisons'][]=['phase'=>$phase,'equals'=>'review_menus','snapshot_sha256'=>hash('sha256',serialize($checked))];
+        $phase='assets_apply_first';$apply=m4ae_cli('assets','apply-structure',$private,$evidence);
+        m4fm_expect($apply['state']==='completed'&&$apply['changed']===true,'ASSET_FIRST_APPLY_REAL_THREE_TABLES');
+        $assets=m4fm_snapshot();m4as_delta($assetBefore,$assets,$private);$evidence['snapshots']['assets']=m4fm_snapshot_evidence($assets);
+        foreach(['check','apply-structure']as$mode){$phase='assets_'.$mode.'_repeat';$answer=m4ae_cli('assets',$mode,$private,$evidence);
+            m4fm_expect($answer['state']==='completed'&&$answer['changed']===false,'ASSET_REPEAT_READONLY_AND_NO_DDL');
+            $again=m4fm_snapshot();m4fm_expect($again===$assets,'ASSET_REPEAT_COMPLETE_STATE_UNCHANGED');
+            $evidence['comparisons'][]=['phase'=>$phase,'equals'=>'assets','snapshot_sha256'=>hash('sha256',serialize($again))];}
         $phase = 'final_binding'; m4fm_expect(m4fm_source() === $evidence['binding'], 'FINAL_SOURCE_SAME'); audit_guard_assert(); m4fm_private_assert($private);
         $counts = m4ae_counts($evidence);
-        m4fm_expect(count($evidence['children']) === 4 && count($evidence['successor_children']) === 12
+        m4fm_expect(count($evidence['children']) === 4 && count($evidence['successor_children']) === 16
             && $counts === ['fulfillment' => ['check' => 2, 'apply-structure' => 2], 'aftersale' => ['check' => 2, 'apply-structure' => 2],
-                'aftersale_menus' => ['check' => 2, 'apply' => 2], 'review_menus' => ['check' => 2, 'apply' => 2]], 'EARLY_ACTUAL_SIXTEEN_SAME_HANDLE_NATIVE_COMMANDS');
+                'aftersale_menus' => ['check' => 2, 'apply' => 2], 'review_menus' => ['check' => 2, 'apply' => 2],
+                'assets' => ['check' => 2, 'apply-structure' => 2]], 'EARLY_ACTUAL_TWENTY_SAME_HANDLE_NATIVE_COMMANDS');
         $evidence['independent_new_metadata_verified'] = true; $evidence['full_source_unchanged'] = true; $evidence['status'] = M4FM_VERIFIED;
     } catch (Throwable $error) {
         $evidence['status'] = 'FAIL'; $evidence['diagnostic'] = m4ae_diagnostic($error, $phase);

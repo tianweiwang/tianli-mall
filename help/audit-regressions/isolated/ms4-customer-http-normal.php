@@ -434,11 +434,167 @@ function m4c_entry_ms5_prerequisites(array $source): void
             'M4C_REAL_SOURCE_BOUND_PREPARE_RESULT_BEFORE_HTTP');
     }
 }
-/** Recover the five original native snapshots from their bounded public encoding. */
+function m4ca_definitions(): array
+    {
+        return [
+            'marketplace_customer_asset' => [
+                'columns' => [
+                    'id' => ['BIGINT UNSIGNED NOT NULL AUTO_INCREMENT', 'bigint unsigned', 'NO', null, null, null, 'auto_increment'],
+                    'uid' => ['INT UNSIGNED NOT NULL', 'int unsigned', 'NO', null, null, null, ''],
+                    'purpose' => ['ENUM(\'avatar_public\',\'public_upload_compat\',\'review_public_image\',\'user_promotion_image\',\'user_promotion_qr\',\'legacy_refund_evidence\',\'refund_shipping_proof\',\'order_form_image\',\'withdrawal_qr\',\'agent_licence\',\'order_verify_code\',\'gift_receive_code\') CHARACTER SET ascii COLLATE ascii_bin NOT NULL', 'enum(\'avatar_public\',\'public_upload_compat\',\'review_public_image\',\'user_promotion_image\',\'user_promotion_qr\',\'legacy_refund_evidence\',\'refund_shipping_proof\',\'order_form_image\',\'withdrawal_qr\',\'agent_licence\',\'order_verify_code\',\'gift_receive_code\')', 'NO', null, 'ascii', 'ascii_bin', ''],
+                    'state' => ['ENUM(\'STAGED\',\'BOUND\',\'RETIRED\') CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT \'STAGED\'', 'enum(\'STAGED\',\'BOUND\',\'RETIRED\')', 'NO', 'STAGED', 'ascii', 'ascii_bin', ''],
+                    'storage_type' => ['TINYINT UNSIGNED NOT NULL', 'tinyint unsigned', 'NO', null, null, null, ''],
+                    'object_key' => ['VARCHAR(512) NOT NULL', 'varchar(512)', 'NO', null, 'utf8mb4', 'utf8mb4_bin', ''],
+                    'thumbnail_key' => ['VARCHAR(512) NOT NULL DEFAULT \'\'', 'varchar(512)', 'NO', '', 'utf8mb4', 'utf8mb4_bin', ''],
+                    'name' => ['VARCHAR(100) NOT NULL', 'varchar(100)', 'NO', null, 'utf8mb4', 'utf8mb4_bin', ''],
+                    'real_name' => ['VARCHAR(255) NOT NULL', 'varchar(255)', 'NO', null, 'utf8mb4', 'utf8mb4_bin', ''],
+                    'media_type' => ['VARCHAR(127) CHARACTER SET ascii COLLATE ascii_bin NOT NULL', 'varchar(127)', 'NO', null, 'ascii', 'ascii_bin', ''],
+                    'byte_size' => ['BIGINT UNSIGNED NOT NULL', 'bigint unsigned', 'NO', null, null, null, ''],
+                    'width' => ['INT UNSIGNED NOT NULL DEFAULT 0', 'int unsigned', 'NO', '0', null, null, ''],
+                    'height' => ['INT UNSIGNED NOT NULL DEFAULT 0', 'int unsigned', 'NO', '0', null, null, ''],
+                    'content_sha256' => ['BINARY(32) NOT NULL', 'binary(32)', 'NO', null, null, null, ''],
+                    'created_at' => ['INT UNSIGNED NOT NULL', 'int unsigned', 'NO', null, null, null, ''],
+                    'expires_at' => ['INT UNSIGNED NULL DEFAULT NULL', 'int unsigned', 'YES', null, null, null, ''],
+                    'bound_at' => ['INT UNSIGNED NULL DEFAULT NULL', 'int unsigned', 'YES', null, null, null, ''],
+                    'retired_at' => ['INT UNSIGNED NULL DEFAULT NULL', 'int unsigned', 'YES', null, null, null, ''],
+                    'root_order_id' => ['INT UNSIGNED NULL DEFAULT NULL', 'int unsigned', 'YES', null, null, null, ''],
+                    'order_item_id' => ['INT NULL DEFAULT NULL', 'int', 'YES', null, null, null, ''],
+                    'refund_id' => ['INT NULL DEFAULT NULL', 'int', 'YES', null, null, null, ''],
+                    'review_id' => ['INT NULL DEFAULT NULL', 'int', 'YES', null, null, null, ''],
+                    'confirmation_ref' => ['BINARY(32) NULL DEFAULT NULL', 'binary(32)', 'YES', null, null, null, ''],
+                    'form_product_id' => ['MEDIUMINT NULL DEFAULT NULL', 'mediumint', 'YES', null, null, null, ''],
+                    'form_definition_sha256' => ['BINARY(32) NULL DEFAULT NULL', 'binary(32)', 'YES', null, null, null, ''],
+                    'form_field_index' => ['SMALLINT UNSIGNED NULL DEFAULT NULL', 'smallint unsigned', 'YES', null, null, null, ''],
+                    'extract_id' => ['INT UNSIGNED NULL DEFAULT NULL', 'int unsigned', 'YES', null, null, null, ''],
+                    'agent_apply_id' => ['INT UNSIGNED NULL DEFAULT NULL', 'int unsigned', 'YES', null, null, null, ''],
+                    'source_product_id' => ['MEDIUMINT NULL DEFAULT NULL', 'mediumint', 'YES', null, null, null, ''],
+                    'source_qrcode_id' => ['INT UNSIGNED NULL DEFAULT NULL', 'int unsigned', 'YES', null, null, null, ''],
+                    'created_by_uid' => ['INT UNSIGNED NULL DEFAULT NULL', 'int unsigned', 'YES', null, null, null, ''],
+                    'created_by_admin_id' => ['SMALLINT UNSIGNED NULL DEFAULT NULL', 'smallint unsigned', 'YES', null, null, null, ''],
+                    'created_by_job' => ['VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NULL DEFAULT NULL', 'varchar(32)', 'YES', null, 'ascii', 'ascii_bin', ''],
+                    'legacy_att_id' => ['INT NULL DEFAULT NULL', 'int', 'YES', null, null, null, ''],
+                ],
+                'indexes' => [
+                    'PRIMARY' => [true, ['id']],
+                    'uq_storage_object' => [true, ['storage_type', 'object_key']],
+                    'uq_legacy_att' => [true, ['legacy_att_id']],
+                    'ix_user_purpose' => [false, ['uid', 'purpose', 'state', 'id']],
+                    'ix_order_item' => [false, ['root_order_id', 'order_item_id', 'id']],
+                    'ix_form' => [false, ['confirmation_ref', 'form_product_id', 'form_field_index', 'id']],
+                ],
+            ],
+            'marketplace_platform_asset_category' => [
+                'columns' => [
+                    'id' => ['INT NOT NULL AUTO_INCREMENT', 'int', 'NO', null, null, null, 'auto_increment'],
+                    'pid' => ['INT NOT NULL DEFAULT 0', 'int', 'NO', '0', null, null, ''],
+                    'name' => ['VARCHAR(50) NOT NULL DEFAULT \'\'', 'varchar(50)', 'NO', '', 'utf8mb4', 'utf8mb4_bin', ''],
+                    'enname' => ['VARCHAR(50) NOT NULL DEFAULT \'\'', 'varchar(50)', 'NO', '', 'utf8mb4', 'utf8mb4_bin', ''],
+                    'type' => ['TINYINT NOT NULL DEFAULT 0', 'tinyint', 'NO', '0', null, null, ''],
+                    'created_by_admin_id' => ['SMALLINT UNSIGNED NOT NULL', 'smallint unsigned', 'NO', null, null, null, ''],
+                    'updated_by_admin_id' => ['SMALLINT UNSIGNED NOT NULL', 'smallint unsigned', 'NO', null, null, null, ''],
+                    'created_at' => ['INT UNSIGNED NOT NULL', 'int unsigned', 'NO', null, null, null, ''],
+                    'updated_at' => ['INT UNSIGNED NOT NULL', 'int unsigned', 'NO', null, null, null, ''],
+                    'legacy_category_id' => ['INT NULL DEFAULT NULL', 'int', 'YES', null, null, null, ''],
+                ],
+                'indexes' => [
+                    'PRIMARY' => [true, ['id']],
+                    'uq_name' => [true, ['name']],
+                    'uq_legacy_category' => [true, ['legacy_category_id']],
+                    'ix_parent' => [false, ['pid', 'id']],
+                ],
+            ],
+            'marketplace_platform_asset' => [
+                'columns' => [
+                    'id' => ['BIGINT UNSIGNED NOT NULL AUTO_INCREMENT', 'bigint unsigned', 'NO', null, null, null, 'auto_increment'],
+                    'purpose' => ['ENUM(\'site_image\',\'site_file\',\'channel_qr\',\'routine_download_qr\',\'platform_chat_image\') CHARACTER SET ascii COLLATE ascii_bin NOT NULL', 'enum(\'site_image\',\'site_file\',\'channel_qr\',\'routine_download_qr\',\'platform_chat_image\')', 'NO', null, 'ascii', 'ascii_bin', ''],
+                    'category_id' => ['INT NOT NULL DEFAULT 0', 'int', 'NO', '0', null, null, ''],
+                    'state' => ['ENUM(\'STAGED\',\'BOUND\',\'RETIRED\') CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT \'STAGED\'', 'enum(\'STAGED\',\'BOUND\',\'RETIRED\')', 'NO', 'STAGED', 'ascii', 'ascii_bin', ''],
+                    'storage_type' => ['TINYINT UNSIGNED NOT NULL', 'tinyint unsigned', 'NO', null, null, null, ''],
+                    'object_key' => ['VARCHAR(512) NOT NULL', 'varchar(512)', 'NO', null, 'utf8mb4', 'utf8mb4_bin', ''],
+                    'thumbnail_key' => ['VARCHAR(512) NOT NULL DEFAULT \'\'', 'varchar(512)', 'NO', '', 'utf8mb4', 'utf8mb4_bin', ''],
+                    'name' => ['VARCHAR(100) NOT NULL', 'varchar(100)', 'NO', null, 'utf8mb4', 'utf8mb4_bin', ''],
+                    'real_name' => ['VARCHAR(255) NOT NULL', 'varchar(255)', 'NO', null, 'utf8mb4', 'utf8mb4_bin', ''],
+                    'media_type' => ['VARCHAR(127) CHARACTER SET ascii COLLATE ascii_bin NOT NULL', 'varchar(127)', 'NO', null, 'ascii', 'ascii_bin', ''],
+                    'byte_size' => ['BIGINT UNSIGNED NOT NULL', 'bigint unsigned', 'NO', null, null, null, ''],
+                    'width' => ['INT UNSIGNED NOT NULL DEFAULT 0', 'int unsigned', 'NO', '0', null, null, ''],
+                    'height' => ['INT UNSIGNED NOT NULL DEFAULT 0', 'int unsigned', 'NO', '0', null, null, ''],
+                    'content_sha256' => ['BINARY(32) NOT NULL', 'binary(32)', 'NO', null, null, null, ''],
+                    'created_at' => ['INT UNSIGNED NOT NULL', 'int unsigned', 'NO', null, null, null, ''],
+                    'expires_at' => ['INT UNSIGNED NULL DEFAULT NULL', 'int unsigned', 'YES', null, null, null, ''],
+                    'bound_at' => ['INT UNSIGNED NULL DEFAULT NULL', 'int unsigned', 'YES', null, null, null, ''],
+                    'retired_at' => ['INT UNSIGNED NULL DEFAULT NULL', 'int unsigned', 'YES', null, null, null, ''],
+                    'created_by_admin_id' => ['SMALLINT UNSIGNED NULL DEFAULT NULL', 'smallint unsigned', 'YES', null, null, null, ''],
+                    'created_by_service_id' => ['INT UNSIGNED NULL DEFAULT NULL', 'int unsigned', 'YES', null, null, null, ''],
+                    'created_by_uid' => ['INT UNSIGNED NULL DEFAULT NULL', 'int unsigned', 'YES', null, null, null, ''],
+                    'created_by_job' => ['VARCHAR(32) CHARACTER SET ascii COLLATE ascii_bin NULL DEFAULT NULL', 'varchar(32)', 'YES', null, 'ascii', 'ascii_bin', ''],
+                    'chat_customer_uid' => ['BIGINT NULL DEFAULT NULL', 'bigint', 'YES', null, null, null, ''],
+                    'chat_is_tourist' => ['TINYINT UNSIGNED NULL DEFAULT NULL', 'tinyint unsigned', 'YES', null, null, null, ''],
+                    'chat_service_id' => ['INT UNSIGNED NULL DEFAULT NULL', 'int unsigned', 'YES', null, null, null, ''],
+                    'chat_service_uid' => ['INT UNSIGNED NULL DEFAULT NULL', 'int unsigned', 'YES', null, null, null, ''],
+                    'channel_qrcode_id' => ['INT UNSIGNED NULL DEFAULT NULL', 'int unsigned', 'YES', null, null, null, ''],
+                    'routine_version' => ['VARCHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL DEFAULT NULL', 'varchar(64)', 'YES', null, 'ascii', 'ascii_bin', ''],
+                    'legacy_att_id' => ['INT NULL DEFAULT NULL', 'int', 'YES', null, null, null, ''],
+                ],
+                'indexes' => [
+                    'PRIMARY' => [true, ['id']],
+                    'uq_storage_object' => [true, ['storage_type', 'object_key']],
+                    'uq_legacy_att' => [true, ['legacy_att_id']],
+                    'ix_category' => [false, ['category_id', 'id']],
+                    'ix_purpose' => [false, ['purpose', 'state', 'id']],
+                    'ix_chat' => [false, ['chat_customer_uid', 'chat_service_uid', 'chat_is_tourist', 'id']],
+                ],
+            ],
+        ];
+    }
+
+
+
+function m4ca_contract(array $table,array $definition):void
+{
+ $m=$table['metadata'];$native=$m['table'];if($native['AUTO_INCREMENT']!==null)$native['AUTO_INCREMENT']=(string)$native['AUTO_INCREMENT'];
+ m4c_expect($native===['TABLE_TYPE'=>'BASE TABLE','ENGINE'=>'InnoDB','ROW_FORMAT'=>'Dynamic','TABLE_COLLATION'=>'utf8mb4_bin','TABLE_COMMENT'=>'','CREATE_OPTIONS'=>'','AUTO_INCREMENT'=>'1']
+  &&$m['checks']===[]&&$m['foreign']===[]&&$m['triggers']===[],'ASSET_COMPLETE_NATIVE_TABLE_EMPTY_HIDDEN_OBJECTS');
+ m4c_expect(array_keys($m['columns'])===array_keys($definition['columns'])&&$table['projected_columns']===array_keys($definition['columns']),'ASSET_ALL_NATIVE_COLUMNS_IN_ORDER');
+ foreach($definition['columns']as$name=>$expected){$actual=$m['columns'][$name];
+  if(!str_starts_with($actual['COLUMN_TYPE'],'enum('))$actual['COLUMN_TYPE']=preg_replace('/\b(tinyint|smallint|mediumint|int|bigint)\([0-9]+\)/','$1',strtolower($actual['COLUMN_TYPE']));
+  if($actual['COLUMN_DEFAULT']!==null)$actual['COLUMN_DEFAULT']=(string)$actual['COLUMN_DEFAULT'];
+  m4c_expect($actual===['COLUMN_NAME'=>$name,'COLUMN_TYPE'=>$expected[1],'IS_NULLABLE'=>$expected[2],'COLUMN_DEFAULT'=>$expected[3],
+   'CHARACTER_SET_NAME'=>$expected[4],'COLLATION_NAME'=>$expected[5],'EXTRA'=>$expected[6],'GENERATION_EXPRESSION'=>'','COLUMN_COMMENT'=>''],'ASSET_EVERY_NATIVE_COLUMN_VALUE');}
+ $indexes=$definition['indexes'];ksort($indexes,SORT_STRING);m4c_expect(array_keys($m['indexes'])===array_keys($indexes),'ASSET_ALL_NATIVE_INDEX_NAMES');$constraints=[];
+ foreach($indexes as$name=>[$unique,$columns]){$wanted=[];foreach($columns as$i=>$column)$wanted[]=['INDEX_NAME'=>$name,'NON_UNIQUE'=>$unique?'0':'1','SEQ_IN_INDEX'=>(string)($i+1),
+  'COLUMN_NAME'=>$column,'SUB_PART'=>null,'INDEX_TYPE'=>'BTREE','IS_VISIBLE'=>'YES','EXPRESSION'=>null,'COLLATION'=>'A','INDEX_COMMENT'=>''];
+  $actual=$m['indexes'][$name];foreach($actual as&$row){$row['NON_UNIQUE']=(string)$row['NON_UNIQUE'];$row['SEQ_IN_INDEX']=(string)$row['SEQ_IN_INDEX'];}unset($row);
+  m4c_expect($actual===$wanted,'ASSET_COMPLETE_NATIVE_INDEX_VALUES');if($unique)$constraints[]=['CONSTRAINT_NAME'=>$name,'CONSTRAINT_TYPE'=>$name==='PRIMARY'?'PRIMARY KEY':'UNIQUE','ENFORCED'=>'YES'];}
+ m4c_expect($m['constraints']===$constraints,'ASSET_ONLY_EXACT_PRIMARY_AND_UNIQUE_CONSTRAINTS');
+ m4c_expect($table['projection']===['encoding'=>'php-serialize-row-sha256-sorted-multiset-v1','rows'=>0,'sha256'=>hash('sha256','')],'ASSET_NEW_NATIVE_TABLE_EMPTY_FULL_PROJECTION');
+}
+function m4ca_result(string $mode,array $answer,array $sources):void
+{
+ $keys=['mode','state','native_exit','changed','change_observation','attempted_steps','applied_steps','ddl_outcome_uncertain','pending_steps','pending_steps_known','observed_tables',
+  'structure_step_count','issues','failure_phase','lock_release_failed','lock_scope','source_sha256','schema_source_sha256','sources_held','schema_contract','scope','history_mapping','writer','activation','acceptance'];
+ m4c_entry_keys($answer,$keys);
+ $steps=array_map(static fn(string $name):string=>'create.'.$name,array_keys(m4ca_definitions()));$complete=$answer['state']==='completed';$written=$answer['changed'];
+ m4c_expect(in_array($mode,['check','apply-structure'],true)&&$answer['mode']===$mode&&in_array($answer['state'],['applicable','completed'],true)&&$answer['native_exit']===0
+  &&is_bool($written)&&(!$written||($mode==='apply-structure'&&$complete))&&$answer['change_observation']===($written?'DDL_MAY_HAVE_COMMITTED':'DDL_NOT_ATTEMPTED')
+  &&$answer['attempted_steps']===($written?$steps:[])&&$answer['applied_steps']===($written?$steps:[])&&$answer['ddl_outcome_uncertain']===false
+  &&$answer['pending_steps']===($complete?[]:$steps)&&$answer['pending_steps_known']===true&&$answer['observed_tables']===array_fill_keys(array_keys(m4ca_definitions()),$complete?'compatible':'absent')
+  &&$answer['structure_step_count']===3&&$answer['issues']===[]&&$answer['failure_phase']===null&&$answer['lock_release_failed']===false
+  &&$answer['source_sha256']===$sources['help/migrations/marketplace-ms4-assets.php']
+  &&$answer['schema_source_sha256']===$sources['crmeb/app/services/marketplace/assets/AssetSchema.php']&&$answer['sources_held']===true
+  &&$answer['schema_contract']==='marketplace-asset-domains-v1'&&$answer['scope']==='MS4_ASSET_DOMAINS_STRUCTURE_ONLY'
+  &&$answer['history_mapping']==='NOT RUN'&&$answer['writer']==='NOT RUN'&&$answer['activation']==='NOT RUN'&&$answer['acceptance']==='NOT RUN','ASSET_EXACT_TWENTY_FIVE_CLI_VALUES');
+ $lock=['request_attempted'=>false,'execute_attempted'=>false,'preexisting_same_session'=>null,'acquisition'=>'NOT_ATTEMPTED','request_cursor_closed'=>null,
+  'confirmation_failed'=>false,'release_attempted'=>false,'release_execute_attempted'=>false,'release_result'=>'NOT_ATTEMPTED','release_cursor_closed'=>null,'ownership'=>'NOT_CHECKED','resolved'=>null];
+ if($mode==='apply-structure')$lock=['request_attempted'=>true,'execute_attempted'=>true,'preexisting_same_session'=>false,'acquisition'=>'ONE','request_cursor_closed'=>true,
+  'confirmation_failed'=>false,'release_attempted'=>true,'release_execute_attempted'=>true,'release_result'=>'ONE','release_cursor_closed'=>true,'ownership'=>'NOT_OWNED','resolved'=>true];
+ m4c_expect($answer['lock_scope']===$lock,'ASSET_EXACT_NORMAL_LOCK_ACQUIRE_RELEASE_SCOPE');
+}
+
+/** Recover all six snapshots, retaining the five original timepoints and one exact assets stage. */
 function m4c_entry_early_snapshots(array $result): void
 {
-    $stages=['before','fulfillment','aftersale','aftersale_menus','review_menus'];$snapshots=$result['snapshots'];
-    m4c_expect(array_keys($snapshots)===$stages,'M4C_EARLY_FIVE_ACTUAL_SNAPSHOT_STAGES');
+    $stages=['before','fulfillment','aftersale','aftersale_menus','review_menus','assets'];$snapshots=$result['snapshots'];
+    m4c_expect(array_keys($snapshots)===$stages,'M4C_EARLY_SIX_ACTUAL_SNAPSHOT_STAGES');
     foreach($snapshots as$stage=>$snapshot){
         m4c_entry_keys($snapshot,['names','tables','redis','modes','metadata_observer_modes','native_snapshot_sha256']);
         $names=$snapshot['names'];m4c_expect(is_array($names)&&array_is_list($names)&&$names!==[],'M4C_EARLY_COMPLETE_NATIVE_TABLE_NAME_LIST');
@@ -483,7 +639,7 @@ function m4c_entry_early_snapshots(array $result): void
         m4c_expect(is_string($snapshot['native_snapshot_sha256'])&&hash('sha256',serialize($native))===$snapshot['native_snapshot_sha256'],
             'M4C_EARLY_REBUILT_COMPLETE_FIVE_KEY_NATIVE_SNAPSHOT_SHA');
         $baseline=$snapshots['before'];m4c_expect($modes===$baseline['modes']&&$observer===$baseline['metadata_observer_modes']&&$redis===$baseline['redis'],
-            'M4C_EARLY_ALL_FIVE_STAGES_SIX_MODES_AND_REDIS_UNCHANGED');
+            'M4C_EARLY_ALL_SIX_STAGES_SIX_MODES_AND_REDIS_UNCHANGED');
     }
     $before=$snapshots['before'];$fulfillment=$snapshots['fulfillment'];$aftersale=$snapshots['aftersale'];
     m4c_expect(is_int($result['original_table_count'])&&$result['original_table_count']===count($before['names'])
@@ -504,11 +660,20 @@ function m4c_entry_early_snapshots(array $result): void
             &&$next['tables']['eb_system_menus']['projection']['rows']===$old['tables']['eb_system_menus']['projection']['rows']+$added,
             'M4C_EARLY_ACTUAL_SEVEN_THEN_THREE_NATIVE_MENU_ROWS');
     }
+
+    $old=$snapshots['review_menus'];$assets=$snapshots['assets'];$definitions=m4ca_definitions();
+    $added=array_map(static fn(string $name):string=>'eb_'.$name,array_keys($definitions));$wanted=[...$old['names'],...$added];sort($wanted,SORT_STRING);
+    m4c_expect(array_intersect($old['names'],$added)===[]&&$assets['names']===$wanted,'M4C_EARLY_ASSETS_ONLY_EXACT_THREE_NEW_NAMES');
+    foreach($old['tables']as$name=>$table)m4c_expect($assets['tables'][$name]===$table,'M4C_EARLY_ASSETS_EVERY_OLD_SCHEMA_DDL_FULL_ROWS_COUNTER_PRESERVED');
+    foreach($definitions as$suffix=>$definition){$table=$assets['tables']['eb_'.$suffix];
+        $metadata=unserialize(base64_decode($table['metadata_serialized_base64'],true),['allowed_classes'=>false,'max_depth'=>64]);
+        m4ca_contract(['metadata'=>$metadata,'ddl_sha256'=>$table['ddl_sha256'],'projected_columns'=>$table['projected_columns'],'projection'=>$table['projection']],$definition);}
     $pairs=[['check_first','before'],['check_repeat','fulfillment'],['apply-structure_repeat','fulfillment'],
         ['aftersale_check_first','fulfillment'],['aftersale_check_repeat','aftersale'],['aftersale_apply-structure_repeat','aftersale'],
         ['aftersale_menus_check_first','aftersale'],['aftersale_menus_check_repeat','aftersale_menus'],['aftersale_menus_apply_repeat','aftersale_menus'],
-        ['review_menus_check_first','aftersale_menus'],['review_menus_check_repeat','review_menus'],['review_menus_apply_repeat','review_menus']];
-    m4c_expect(is_array($result['comparisons'])&&array_is_list($result['comparisons'])&&count($result['comparisons'])===12,'M4C_EARLY_TWELVE_ACTUAL_COMPARISON_RECEIPTS');
+        ['review_menus_check_first','aftersale_menus'],['review_menus_check_repeat','review_menus'],['review_menus_apply_repeat','review_menus'],
+        ['assets_check_first','review_menus'],['assets_check_repeat','assets'],['assets_apply-structure_repeat','assets']];
+    m4c_expect(is_array($result['comparisons'])&&array_is_list($result['comparisons'])&&count($result['comparisons'])===15,'M4C_EARLY_FIFTEEN_ACTUAL_COMPARISON_RECEIPTS');
     foreach($pairs as$index=>[$phase,$stage])m4c_entry_same($result['comparisons'][$index],
         ['phase'=>$phase,'equals'=>$stage,'snapshot_sha256'=>$snapshots[$stage]['native_snapshot_sha256']]);
 }
@@ -540,8 +705,9 @@ function m4c_entry_early_history(array $source): array
         'help/migrations/marketplace-ms1.php','help/migrations/marketplace-ms2.php','help/migrations/marketplace-ms4.php',
         'help/migrations/marketplace-ms4.md','help/migrations/marketplace-ms5-payment.php','help/migrations/marketplace-ms5-payment.md',
         'help/migrations/marketplace-ms4-fulfillment.php','help/migrations/marketplace-ms4-aftersale.php',
-        'help/migrations/marketplace-ms4-aftersale-menus.php','help/migrations/marketplace-ms4-review-menus.php'];sort($paths,SORT_STRING);
-    m4c_expect(is_array($binding['source_files'])&&array_is_list($binding['source_files'])&&count($binding['source_files'])===15,'M4C_EARLY_FIFTEEN_ACTUAL_SOURCES');$sourceHashes=[];
+        'help/migrations/marketplace-ms4-aftersale-menus.php','help/migrations/marketplace-ms4-review-menus.php',
+        'help/migrations/marketplace-ms4-assets.php','crmeb/app/services/marketplace/assets/AssetSchema.php'];sort($paths,SORT_STRING);
+    m4c_expect(is_array($binding['source_files'])&&array_is_list($binding['source_files'])&&count($binding['source_files'])===17,'M4C_EARLY_SEVENTEEN_ACTUAL_SOURCES');$sourceHashes=[];
     foreach($binding['source_files']as$row){m4c_entry_keys($row,['path','bytes','sha256']);
         m4c_expect(is_string($row['path'])&&in_array($row['path'],$paths,true)&&!isset($sourceHashes[$row['path']])
             &&is_int($row['bytes'])&&$row['bytes']>=0&&is_string($row['sha256'])&&preg_match('/\A[a-f0-9]{64}\z/D',$row['sha256'])===1,
@@ -553,9 +719,9 @@ function m4c_entry_early_history(array $source): array
     m4c_entry_keys($binding['initialization_predecessor_sha256'],M4C_COMMON_PREREQUISITES);
     foreach(M4C_COMMON_PREREQUISITES as$name)m4c_expect($binding['initialization_predecessor_sha256'][$name]===m4c_entry_hash($base.$name),'M4C_EARLY_ORIGINAL_EIGHT_PREDECESSOR_HASHES');
     $scripts=['aftersale'=>'help/migrations/marketplace-ms4-aftersale.php','aftersale_menus'=>'help/migrations/marketplace-ms4-aftersale-menus.php',
-        'review_menus'=>'help/migrations/marketplace-ms4-review-menus.php'];
+        'review_menus'=>'help/migrations/marketplace-ms4-review-menus.php','assets'=>'help/migrations/marketplace-ms4-assets.php'];
     m4c_entry_keys($binding['successor_cli_sha256'],array_values($scripts));
-    foreach($scripts as$script)m4c_expect($binding['successor_cli_sha256'][$script]===$sourceHashes[$script],'M4C_EARLY_THREE_REAL_SUCCESSOR_SOURCES');
+    foreach($scripts as$script)m4c_expect($binding['successor_cli_sha256'][$script]===$sourceHashes[$script],'M4C_EARLY_FOUR_REAL_SUCCESSOR_SOURCES');
     $result=m4c_entry_read($base.$names[2],67108864);
     m4c_entry_keys($result,['schema','scope','status','binding','children','successor_children','snapshots','comparisons','phase','termination',
         'entry_return_code','native_exit','native_exit_observation','private_cleanup_verified','private_cleanup_state','actual_command_counts',
@@ -573,18 +739,18 @@ function m4c_entry_early_history(array $source): array
         'binding_sha256','native_created_sha256','freeze_sha256','initialization_predecessor_sha256','prerequisite_source_sha256','successor_cli_sha256']);
     m4c_expect($actual['run_id']===$source['run_id']&&$actual['source_sha']===$source['source_sha']&&$actual['container_id']===$created['id']
         &&is_int($actual['entry_namespace_pid'])&&$actual['entry_namespace_pid']>0&&$actual['entry_sha256']===$binding['entry_sha256']
-        &&$actual['cli_sha256']===$binding['cli_sha256']&&$actual['source_files']===15&&$actual['binding_sha256']===$hashes[$names[1]]
+        &&$actual['cli_sha256']===$binding['cli_sha256']&&$actual['source_files']===17&&$actual['binding_sha256']===$hashes[$names[1]]
         &&$actual['native_created_sha256']===$hashes[$names[0]]&&$actual['freeze_sha256']===$source['freeze_sha256']
         &&$actual['initialization_predecessor_sha256']===$binding['initialization_predecessor_sha256']
         &&$actual['successor_cli_sha256']===$binding['successor_cli_sha256'],'M4C_EARLY_REAL_THIRTEEN_KEY_PARENT_BINDING');
     $prerequisites=[];foreach(['help/migrations/marketplace-ms1.php','help/migrations/marketplace-ms4.php','help/migrations/marketplace-ms5-payment.php']as$path)$prerequisites[$path]=$sourceHashes[$path];
     m4c_expect($actual['prerequisite_source_sha256']===$prerequisites,'M4C_EARLY_ORIGINAL_PREREQUISITE_SOURCES');
     m4c_expect(is_array($result['children'])&&array_is_list($result['children'])&&count($result['children'])===4
-        &&is_array($result['successor_children'])&&array_is_list($result['successor_children'])&&count($result['successor_children'])===12,
-        'M4C_EARLY_FOUR_AND_TWELVE_NATIVE_CHILDREN');
+        &&is_array($result['successor_children'])&&array_is_list($result['successor_children'])&&count($result['successor_children'])===16,
+        'M4C_EARLY_FOUR_AND_SIXTEEN_NATIVE_CHILDREN');
     $pids=[];$counts=[];
-    foreach(['fulfillment','aftersale','aftersale_menus','review_menus']as$kind){$modes=in_array($kind,['fulfillment','aftersale'],true)?['check','apply-structure','check','apply-structure']:['check','apply','check','apply'];$counts[$kind]=[];
-        foreach($modes as$index=>$mode){$offset=array_search($kind,['aftersale','aftersale_menus','review_menus'],true);
+    foreach(['fulfillment','aftersale','aftersale_menus','review_menus','assets']as$kind){$modes=in_array($kind,['fulfillment','aftersale','assets'],true)?['check','apply-structure','check','apply-structure']:['check','apply','check','apply'];$counts[$kind]=[];
+        foreach($modes as$index=>$mode){$offset=array_search($kind,['aftersale','aftersale_menus','review_menus','assets'],true);
             $child=$kind==='fulfillment'?$result['children'][$index]:$result['successor_children'][$offset*4+$index];
             $keys=['mode','pid','native_exit','proc_close_exit','same_handle_terminal','stdout_bytes','stdout_sha256','stderr_bytes','stderr_sha256','capture_error_class','result'];
             if($kind!=='fulfillment')array_push($keys,'script','script_sha256');m4c_entry_keys($child,$keys);m4c_entry_native_child($child);
@@ -596,7 +762,8 @@ function m4c_entry_early_history(array $source): array
             $stdout=json_encode($answer,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR)."\n";
             m4c_expect(strlen($stdout)===$child['stdout_bytes']&&hash('sha256',$stdout)===$child['stdout_sha256'],
                 'M4C_EARLY_REAL_CLI_SUCCESS_EMIT_FULL_STDOUT_BYTES_AND_SHA');
-            if(in_array($kind,['fulfillment','aftersale'],true)){
+            if($kind==='assets'){m4ca_result($mode,$answer,$sourceHashes);}
+            elseif(in_array($kind,['fulfillment','aftersale'],true)){
                 $keys=['mode','state','native_exit','changed','applied_steps','pending_steps','pending_steps_known','issues','failure_phase','marker','source_sha256','scope','prerequisite_source_sha256','writer','acceptance'];
                 if($kind==='aftersale')array_push($keys,'structure_stage','structure_step_count');m4c_entry_keys($answer,$keys);
                 m4c_expect($answer['native_exit']===0&&$answer['pending_steps_known']===true&&$answer['failure_phase']===null&&$answer['source_sha256']===$sourceHashes[$script]
@@ -623,7 +790,7 @@ function m4c_entry_early_history(array $source): array
                     &&$answer['source_binding']===['entry_sha256'=>$sourceHashes[$script],'ms1_sha256'=>$sourceHashes['help/migrations/marketplace-ms1.php']],
                     'M4C_EARLY_EXACT_MENU_NATIVE_MAP_NO_GRANT');}
         }}
-    m4c_expect($result['actual_command_counts']===$counts,'M4C_EARLY_ACTUAL_SIXTEEN_COMMAND_COUNTS');
+    m4c_expect($result['actual_command_counts']===$counts,'M4C_EARLY_ACTUAL_TWENTY_COMMAND_COUNTS');
     m4c_entry_keys($result['menu_leaves'],['aftersale_menus','review_menus']);$ids=[];
     $permissions=['aftersale_menus'=>['marketplace-aftersales-list','marketplace-aftersales-read','marketplace-aftersales-approve','marketplace-aftersales-reject',
         'marketplace-aftersales-return-accept','marketplace-aftersale-files-ticket','marketplace-aftersale-files-read'],

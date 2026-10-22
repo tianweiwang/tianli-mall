@@ -14,7 +14,7 @@ function m4w_phase(string $phase):void
 {m4w_expect(empty($GLOBALS['m4w_termination_requested']),'M4W_NOT_INTERRUPTED');$GLOBALS['m4w_phase']=$phase;}
 function m4w_extra():array
 {$paths=array_merge(m4ar_extra(),[M4W_ENTRY]);sort($paths,SORT_STRING);
- m4w_expect(count($paths)===29&&count($paths)===count(array_unique($paths,SORT_STRING)),'M4W_ORIGINAL_TWENTY_EIGHT_PLUS_ONE');return $paths;}
+ m4w_expect(count($paths)===30&&count($paths)===count(array_unique($paths,SORT_STRING)),'M4W_ORIGINAL_TWENTY_NINE_PLUS_ONE');return $paths;}
 function m4w_predecessor_names(bool $withRetirement=true):array
 {
  $names=array_merge(M4C_COMMON_PREREQUISITES,M4C_FILES_PREREQUISITES,M4C_PREPARE_PREREQUISITES,
