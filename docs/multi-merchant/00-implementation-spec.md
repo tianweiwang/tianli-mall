@@ -275,3 +275,10 @@ verifyAndParseNotification(rawRequest)
 - OWASP Session Management Cheat Sheet：https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html
 - Redis Transactions（原子执行但不回滚）：https://redis.io/docs/latest/develop/using-commands/transactions/
 - Redis Lua scripting：https://redis.io/docs/latest/develop/programmability/eval-intro/
+
+
+---
+
+### 上传资产域增量记录（T2，2026-10-22，PROPOSED）
+
+拟议顾客资产、平台资产及独立平台分类的完整合同见[上传资产域设计](records/ms2/upload-asset-domains.md)。它细化既定唯一T1–T8清单的T2，不是已采用源码/数据库状态。商业system_attachment/category的真实正商家归属、完整五根门、旧14列资格及原Task1/历史确认/三端与金融义务保持。新表/用途/private读取/旧客户端适配与可恢复域转存须另行实现并取得真实证据，不以补self、排除旧行或Source/语法结果代签backfill、enforce或marketplace.enabled=true。原文与既有验收状态不变。
