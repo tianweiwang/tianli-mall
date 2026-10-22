@@ -22,10 +22,43 @@ function m4up_phase(string $phase):void
 {m4up_expect(empty($GLOBALS['m4c_terminate_requested']),'UI_PREPARE_NOT_INTERRUPTED');$GLOBALS['m4c_phase']=$phase;}
 function m4up_extra():array
 {
- $v=array_values(array_unique(array_merge(m4ar_extra(),[M4UP_ENTRY,M4UP_HELPER,
+ $ar=m4ar_extra();$expectedAR=[
+  'crmeb/composer.json',
+  'crmeb/composer.lock',
+  'crmeb/public/index.php',
+  'crmeb/public/install/crmeb.sql',
+  'crmeb/public/router.php',
+  'crmeb/think',
+  'help/audit-regressions/isolated/lib/guard.php',
+  'help/audit-regressions/isolated/lib/harness.php',
+  'help/audit-regressions/isolated/lib/ms4-customer-form-normal.php',
+  'help/audit-regressions/isolated/lib/ms4-customer-http-normal.php',
+  'help/audit-regressions/isolated/lib/ms4-three-legacy-producer.php',
+  'help/audit-regressions/isolated/lib/ms4-three-legacy-reference.php',
+  'help/audit-regressions/isolated/lib/ms4-three-read-normal.php',
+  'help/audit-regressions/isolated/ms4-aftersale-review-normal.php',
+  'help/audit-regressions/isolated/ms4-customer-http-normal.php',
+  'help/audit-regressions/isolated/ms4-fulfillment-migration.php',
+  'help/audit-regressions/isolated/ms4-fulfillment-normal.php',
+  'help/audit-regressions/isolated/ms5-paid-consumer-normal.php',
+  'help/audit-regressions/isolated/ms5-payment-migration.php',
+  'help/migrations/marketplace-ms1.php',
+  'help/migrations/marketplace-ms2.php',
+  'help/migrations/marketplace-ms4-aftersale-menus.php',
+  'help/migrations/marketplace-ms4-aftersale.php',
+  'help/migrations/marketplace-ms4-assets.php',
+  'help/migrations/marketplace-ms4-fulfillment.php',
+  'help/migrations/marketplace-ms4-review-menus.php',
+  'help/migrations/marketplace-ms4.md',
+  'help/migrations/marketplace-ms4.php',
+  'help/migrations/marketplace-ms5-payment.md',
+  'help/migrations/marketplace-ms5-payment.php',
+ ];
+ m4up_expect($ar===$expectedAR,'UI_PREPARE_EXACT_CURRENT_AR_THIRTY_SOURCE_MEMBERS');
+ $v=array_values(array_unique(array_merge($ar,[M4UP_ENTRY,M4UP_HELPER,
  'help/audit-regressions/isolated/lib/ms4-ui-credentials.php',
  'help/migrations/marketplace-ms4-order-read-menus.php']),SORT_STRING));
- sort($v,SORT_STRING);m4up_expect(count($v)===32,'UI_PREPARE_EXACT_SOURCE_EXTRA_MEMBERS');return $v;
+ sort($v,SORT_STRING);m4up_expect(count($v)===34,'UI_PREPARE_EXACT_SOURCE_EXTRA_MEMBERS');return $v;
 }
 function m4up_inventory(string $root):array
 {
@@ -115,7 +148,7 @@ function m4up_source(bool $beforePublicCopy=true): array
         '/run/ms4-prep'=>[$context['prep_dir'],false],'/run/audit'=>[$context['run_dir'],true],
         '/workspace/crmeb/public/install/crmeb.sql'=>[$context['repo_dir'].'/crmeb/public/install/crmeb.sql',false]];
     $volumes=['/run/audit-app'=>['app-secrets',false],'/run/audit-fixtures'=>['fixture-secrets',true],
-        M4AR_PRIVATE=>['aftersale-evidence',true]];
+        M4AR_PRIVATE=>['aftersale-evidence',true],M4CF_ROOT=>['customer-form-evidence',false]];
     $nativeMounts=[];$tmpMounts=[];
     foreach($created['mounts']as$mount){if($mount['Type']!=='tmpfs'){$nativeMounts[]=$mount;continue;}
         m4c_expect(in_array($mount['Destination'],['/tmp','/workspace/crmeb/public','/workspace/crmeb/runtime'],true)
@@ -128,6 +161,12 @@ function m4up_source(bool $beforePublicCopy=true): array
         if(isset($binds[$target]))m4c_expect($mount['Type']==='bind'&&audit_canonical_host_bind_source($mount['Source'])
             ===audit_canonical_host_bind_source($expected[0]),'M4C_ORIGINAL_HOST_SOURCE_BIND');
         else m4c_expect($mount['Type']==='volume'&&$mount['Name']===$context['project'].'_'.$expected[0],'M4C_ORIGINAL_PRIVATE_VOLUME');}
+    $cuKernel=file('/proc/self/mountinfo',FILE_IGNORE_NEW_LINES);
+    m4up_expect(is_array($cuKernel)&&$cuKernel!==[],'UI_CU_ACTUAL_KERNEL_MOUNTINFO');$cuMounts=[];
+    foreach($cuKernel as$line){$halves=explode(' - ',$line,2);$left=explode(' ',$halves[0]);
+        if(($left[4]??'')===M4CF_ROOT)$cuMounts[]=explode(',',$left[5]??'');}
+    m4up_expect(count($cuMounts)===1&&in_array('ro',$cuMounts[0],true)&&!in_array('rw',$cuMounts[0],true),
+        'UI_CU_SINGLE_ACTUAL_PRIVATE_ROOT_READONLY_MOUNT');
     $tmpfs=$created['tmpfs'];$tmpKeys=array_keys($tmpfs);sort($tmpKeys,SORT_STRING);
     m4c_expect($tmpKeys===['/tmp','/workspace/crmeb/public','/workspace/crmeb/runtime'],'M4C_EXACT_THREE_PRIVATE_TMPFS');
     foreach($tmpfs as $options)m4c_expect(is_string($options)&&in_array('rw',explode(',',$options),true),'M4C_WRITABLE_PRIVATE_TMPFS');
@@ -154,8 +193,9 @@ function m4up_environment(array $binding,array $context):array
   &&$e['freeze_sha256']===$context['freeze_sha256']&&getenv('MS4_UI_PREPARE_PROOF_NAME')===M4UP_RULE['proof'],'TASK78_REAL_ENVIRONMENT_IDENTITY');
  $v=$e['environment'];m4c_entry_keys($v,['APP_ENV','PHP_MARKETPLACE_ENABLED','PHP_MARKETPLACE_TRADE_ENABLED',
  'PHP_MARKETPLACE_PAYMENT_TEST_ENABLED','PHP_MARKETPLACE_SELF_OPERATED_MER_ID','PHP_CACHE_DRIVER',
- 'PHP_MARKETPLACE_AFTERSALE_ENABLED','PHP_MARKETPLACE_AFTERSALE_PRIVATE_ROOT']);
- m4up_expect($v['APP_ENV']==='testing'&&$v['PHP_CACHE_DRIVER']==='redis'&&$v['PHP_MARKETPLACE_AFTERSALE_PRIVATE_ROOT']===M4AR_PRIVATE,
+ 'PHP_MARKETPLACE_AFTERSALE_ENABLED','PHP_MARKETPLACE_AFTERSALE_PRIVATE_ROOT','PHP_MARKETPLACE_CUSTOMER_FORM_PRIVATE_ROOT']);
+ m4up_expect($v['APP_ENV']==='testing'&&$v['PHP_CACHE_DRIVER']==='redis'&&$v['PHP_MARKETPLACE_AFTERSALE_PRIVATE_ROOT']===M4AR_PRIVATE
+  &&$v['PHP_MARKETPLACE_CUSTOMER_FORM_PRIVATE_ROOT']===M4CF_ROOT,
  'TASK78_ONLY_ACTUAL_NORMAL_ROLE_PRIVATE_CONFIGURATION');
  foreach(['PHP_MARKETPLACE_ENABLED','PHP_MARKETPLACE_TRADE_ENABLED','PHP_MARKETPLACE_PAYMENT_TEST_ENABLED','PHP_MARKETPLACE_AFTERSALE_ENABLED']as$k)
   m4up_expect($v[$k]==='true','TASK78_ENABLED_TRUE_STRINGS');
@@ -164,12 +204,12 @@ function m4up_environment(array $binding,array $context):array
  m4c_entry_keys($n,['stage','native_exit','stdout_bytes','stdout_sha256','stderr_bytes','stderr_sha256','private_environment_logs_omitted']);
  m4up_expect($n['stage']==='ui-prepare-public-environment-inspect'&&$n['native_exit']===0&&$n['stderr_bytes']===0
   &&$n['stderr_sha256']===hash('sha256','')&&$n['private_environment_logs_omitted']===true
-  &&$e['native_projection_sha256']===$n['stdout_sha256'],'TASK78_REAL_EIGHT_VALUE_NATIVE_RECEIPT');
- // Host emits exactly these eight sorted JSON-string lines; no six-value permutation proof is reused.
+  &&$e['native_projection_sha256']===$n['stdout_sha256'],'TASK78_REAL_NINE_VALUE_NATIVE_RECEIPT');
+ // Host emits exactly these nine sorted JSON-string lines; no six-value permutation proof is reused.
  ksort($v,SORT_STRING);$lines=[];foreach($v as$k=>$value){m4up_expect(is_string($value)&&getenv($k)===$value,'TASK78_EVERY_ACTUAL_ENVIRONMENT_VALUE');
   $lines[]=json_encode($k.'='.$value,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);}
  $raw=implode("\n",$lines)."\n";
- m4up_expect(strlen($raw)===$n['stdout_bytes']&&hash('sha256',$raw)===$n['stdout_sha256'],'TASK78_EXACT_SORTED_EIGHT_LINE_NATIVE_PROJECTION');return $v;
+ m4up_expect(strlen($raw)===$n['stdout_bytes']&&hash('sha256',$raw)===$n['stdout_sha256'],'TASK78_EXACT_SORTED_NINE_LINE_NATIVE_PROJECTION');return $v;
 }
 
 function m4up_paid_history_names():array
@@ -213,13 +253,98 @@ function m4up_prerequisites(array $source):void
  $oldRoles=array_keys($old['services']);sort($oldRoles,SORT_STRING);
  m4up_expect($oldRoles===['audit-ms5-paid-producer','audit-mysql','audit-redis'],'UI_SAVED_ORIGINAL_THREE_ROLE_PAID_FORMAL');
  foreach($old['services']as$role=>$service)m4c_entry_same($actual['services'][$role],$service);
- $wanted=[];foreach(['mysql-data','redis-data','bootstrap-secrets','redis-secrets','app-secrets','fixture-secrets','aftersale-evidence']as$s)$wanted[]=$source['context']['project'].'_'.$s;
- $vols=$actual['volumes'];sort($vols,SORT_STRING);sort($wanted,SORT_STRING);m4up_expect($vols===$wanted,'UI_ONLY_ORIGINAL_SEVEN_VOLUMES');
+ $wanted=[];foreach(['mysql-data','redis-data','bootstrap-secrets','redis-secrets','app-secrets','fixture-secrets','aftersale-evidence','customer-form-evidence']as$s)$wanted[]=$source['context']['project'].'_'.$s;
+ $vols=$actual['volumes'];sort($vols,SORT_STRING);sort($wanted,SORT_STRING);m4up_expect($vols===$wanted,'UI_ONLY_CURRENT_EIGHT_VOLUMES');
  m4fn_prerequisites(m4up_old_view($source));
+}
+function m4up_paid_owner_before_app(array $source,PDO $db):array
+{
+    m4up_expect(empty($GLOBALS['m4c_app_started'])&&!isset($GLOBALS['m4c_application'])&&m4cf_enabled(),
+        'UI_NATIVE_PAID_OWNER_BEFORE_REAL_APP_WITH_ENABLED_CU_ROOT');
+    $loaded=m4cb_fixture_load($source);$fixtureInput=m4fn_private_read(M4CB_FIXTURE,1048576);
+    $input=m4fn_private_read(M5PC_BASELINE,2097152);$value=$input['value'];$base='/run/audit/evidence/';
+    m4c_entry_keys($value,['schema','scope','run_id','source_sha','freeze_sha256','container_id','native_created_sha256',
+        'source_binding_sha256','environment_sha256','environment_native_sha256','environment','self_operated_mer_id',
+        'prepare_identity','fixture_descriptor','authenticated_owner','customer_form','order_id','order_no','attempt_id','original_create_result',
+        'account_snapshot','payment_application','root_payment','full_database_table_count','full_database_redis_sha256','native_snapshot']);
+    $paid=m4c_entry_read($base.'paid-producer-result.json');$producer=$paid['container_id'];$hashes=$source['prerequisites_sha256'];
+    m4fn_expect($value['schema']===1&&$value['scope']==='MS5_PAID_CONSUMER_NATIVE_BASELINE'
+        &&$value['run_id']===$source['run_id']&&$value['source_sha']===$source['source_sha']&&$value['freeze_sha256']===$source['freeze_sha256']
+        &&$value['container_id']===$producer&&$value['native_created_sha256']===$hashes['paid-producer-created.json']
+        &&$value['source_binding_sha256']===$hashes['paid-producer-source-binding.json']
+        &&$value['environment_sha256']===$hashes['paid-producer-environment.json']
+        &&$value['environment_native_sha256']===$hashes['paid-producer-environment-native.json']
+        &&$value['self_operated_mer_id']===$source['self_operated_mer_id'],'TASK6_ORIGINAL_PAID_PRIVATE_IDENTITY');
+    m4c_entry_same($value['environment'],$source['environment']);
+    m4c_entry_same($value['prepare_identity'],['container_id'=>$loaded['private']['prepare_container_id'],
+        'native_created_sha256'=>$loaded['private']['prepare_native_created_sha256'],
+        'source_binding_sha256'=>$loaded['private']['prepare_source_binding_sha256'],'prepare_receipt_sha256'=>$loaded['prepare_receipt_sha256']]);
+    $descriptor=$value['fixture_descriptor'];m4c_entry_keys($descriptor,['path','bytes','sha256','stat']);
+    m4fn_expect($descriptor['path']===M4CB_FIXTURE&&$descriptor['bytes']===$fixtureInput['stat']['size']
+        &&$descriptor['sha256']===$fixtureInput['sha256']&&$descriptor['stat']===$loaded['stat']
+        &&$descriptor['sha256']===$loaded['sha256'],'TASK6_ACTUAL_ORIGINAL_FIXTURE_DESCRIPTOR');
+    $owner=$value['authenticated_owner'];
+    m4c_entry_keys($owner,['schema','run_id','source_sha','container_id','freeze_sha256','uid','account','actual_user',
+        'fixture_sha256','prepare_receipt_sha256','http_user_response','http_call_count','only_original_owner_auth_delta','child']);
+    $response=$owner['http_user_response'];m4c_entry_keys($response,['method','path','http','bytes','sha256','raw','actual_interval']);
+    m4fn_expect($owner['schema']===1&&$owner['run_id']===$source['run_id']&&$owner['source_sha']===$source['source_sha']
+        &&$owner['container_id']===$producer&&$owner['freeze_sha256']===$source['freeze_sha256']
+        &&$owner['fixture_sha256']===$fixtureInput['sha256']&&$owner['prepare_receipt_sha256']===$loaded['prepare_receipt_sha256']
+        &&$owner['http_call_count']===2&&$owner['only_original_owner_auth_delta']===true&&$owner['child']===$paid['child']
+        &&$response['method']==='GET'&&$response['path']==='/api/user'&&$response['http']===200
+        &&is_string($response['raw'])&&strlen($response['raw'])>0&&strlen($response['raw'])<=1048576
+        &&$response['bytes']===strlen($response['raw'])&&$response['sha256']===hash('sha256',$response['raw']),
+        'TASK6_TRUE_SAME_RUN_GET_OWNER_SOURCE');
+    $interval=$response['actual_interval'];m4fn_expect(is_array($interval)&&array_is_list($interval)&&count($interval)===2
+        &&is_int($interval[0])&&is_int($interval[1])&&$interval[0]>0&&$interval[1]>=$interval[0]
+        &&$interval[1]<=$input['stat']['mtime']&&$input['stat']['mtime']<=time(),'TASK6_ACTUAL_ORIGINAL_GET_INTERVAL');
+    $reply=json_decode($response['raw'],true,64,JSON_THROW_ON_ERROR);
+    m4fn_expect(is_array($reply)&&($reply['status']??null)===200&&is_array($reply['data']??null)
+        &&!array_key_exists('account',$reply['data'])&&!array_key_exists('pwd',$reply['data']),'TASK6_ORIGINAL_GET_PUBLIC_CREDENTIALS_HIDDEN');
+    $uid=m5pcp_int($reply['data']['uid']??null,1);
+    m4fn_expect($uid===$owner['uid']&&$uid===m5pcp_int($loaded['private']['fixture']['user']['uid'],1)
+        &&$owner['account']===$loaded['private']['account']&&$owner['account']===$loaded['private']['fixture']['user']['account'],
+        'TASK6_ORIGINAL_HTTP_UID_AND_REAL_FIXTURE_ACCOUNT');
+    $users=m5pcp_rows($db,'SELECT * FROM `eb_user` WHERE `uid` = ?',[$uid]);
+    $nativeForm=m4cf_restore($value['customer_form']);
+    m4cf_expect($nativeForm['uid']===$uid&&$nativeForm['complete34_verified']===true&&$nativeForm['only_three_bound_columns']===true
+        &&$nativeForm['original_bytes_retained']===true,'PRIVATE_FORM_PROOF_COMPLETE');
+    m4cb_owner_auth_only([$owner['actual_user']],[$nativeForm['owner_after']],$uid,true);
+    m4cf_expect(m4cf_native_files()===$nativeForm['private'],'SEALED_PAID_PRIVATE_ORIGINALS_STILL_IDENTICAL');
+    $formOwner=$nativeForm['owner_after'];
+    m4c_entry_same(m4cf_paid_receipt(m4cf_restore($value['customer_form'])),$paid['customer_form']);
+    m4fn_expect(count($users)===1&&$users[0]===$formOwner&&$users[0]['account']===$owner['account']
+        &&m5pcp_int($users[0]['status'],1,1)===1&&m5pcp_int($users[0]['is_del'],0,0)===0,'TASK6_ACTUAL_SAVED_BUYER_STILL_VALID');
+    $archive=m5pc_native_snapshot_restore($value['native_snapshot']);
+    m4fn_expect(m5pc_native_snapshot($db)===$archive&&m5pcp_int($value['order_id'],1)>0
+        &&is_string($value['attempt_id'])&&m5pcp_u64($value['attempt_id'])===$value['attempt_id'],
+        'TASK6_ORIGINAL_THIRTY_FOUR_TABLE_NATIVE_ARCHIVE_EQUALS_PDO');
+    $seal=$paid['business']['baseline'];m4fn_expect($seal['bytes']===$input['stat']['size']&&$seal['sha256']===$input['sha256']
+        &&$seal['native_archive_bytes']===$value['native_snapshot']['bytes']&&$seal['native_archive_sha256']===$value['native_snapshot']['sha256']
+        &&$seal['fact_table_count']===27&&$seal['auxiliary_table_count']===7,'TASK6_PUBLIC_PAID_SEAL_FULL_BYTES_AND_ARCHIVE');
+    m4fn_expect($paid['business']['orders']===1&&$paid['business']['items']===2&&$paid['business']['reserves']===2
+        &&$paid['business']['real_credential_login_and_user_get']===true&&$paid['business']['http_identity_call_count']===2
+        &&$paid['business']['winner_application_root_four_hold_zero_verified']===true,'TASK6_ORIGINAL_PAID_BUSINESS_PROOF');
+    $saved=m5pcp_saved($db,m5pcp_int($value['order_id'],1));$root=$saved['order'];
+    m4fn_expect(m5pcp_int($root['uid'],1)===$uid&&$root['order_id']===$value['order_no']&&m5pcp_int($root['paid'],1,1)===1
+        &&$root['pay_type']==='marketplace_test'&&m5pcp_int($root['status'],0,0)===0,'TASK6_REAL_EXISTING_PAID_ROOT_NOT_RECREATED');
+    foreach(['paid','pay_time']as$key)m4fn_expect(m5pcp_int($root[$key],0,4294967295)===$value['root_payment'][$key],
+        'TASK6_ORIGINAL_ROOT_NUMERIC_PAYMENT_VALUES');
+    foreach(['pay_type','trade_no']as$key)m4fn_expect($root[$key]===$value['root_payment'][$key],
+        'TASK6_ORIGINAL_ROOT_TEXT_PAYMENT_VALUES');
+    $registry=m5pcp_rows($db,'SELECT * FROM `eb_marketplace_payment_registry` WHERE `order_id` = ?',[$value['order_id']]);
+    $attempt=m5pcp_rows($db,'SELECT * FROM `eb_marketplace_payment_attempt` WHERE `order_id` = ? ORDER BY `id`',[$value['order_id']]);
+    m4fn_expect(count($registry)===1&&count($attempt)===1&&m5pcp_u64($registry[0]['winner_attempt_id'])===$value['attempt_id']
+        &&m5pcp_int($registry[0]['fulfillment_hold'],0,0)===0&&m5pcp_u64($attempt[0]['id'])===$value['attempt_id'],
+        'TASK6_ACTUAL_EXISTING_WINNER_HOLD_ZERO');
+    $evidence=json_decode($attempt[0]['evidence'],true,64,JSON_THROW_ON_ERROR);
+    m4c_entry_same($evidence['application'],$value['payment_application']);
+    $inputs=[$fixtureInput,$input];m4fn_inputs_unchanged($inputs);
+    return ['uid'=>$uid,'saved'=>$saved,'baseline'=>$value,'loaded'=>$loaded,'inputs'=>$inputs];
 }
 function m4up_owner(array $source,PDO $db):array
 {
- $view=m4up_old_view($source);$owner=m4fn_owner($view,$db);
+ $view=m4up_old_view($source);$owner=m4up_paid_owner_before_app($view,$db);
  m4fn_migration_database($db,$owner); // Includes complete original post-paid DB/absolute Redis equality.
  $root=$owner['saved']['order'];$registry=m5pcp_rows($db,'SELECT * FROM eb_marketplace_payment_registry WHERE order_id=?',[$root['id']]);
  m4up_expect(count($registry)===1&&m5pcp_int($registry[0]['attempt_generation'],1,1)===1
@@ -279,13 +404,19 @@ function m4up_run():int
 {
  m4up_phase('source');$s=m4up_source();$GLOBALS['m4up_source']=$s;
  $db=audit_db();m4up_expect(!$db->inTransaction(),'UI_INDEPENDENT_OBSERVER_NO_TRANSACTION');
- $observer=m5pc_observer_configure($db);$owner=m4up_owner($s,$db);
- m4ar_language_prepare($db,$s);
+ $observer=m5pc_observer_configure($db);$cuPrivateBefore=m4cf_native_files();$cuTreeBefore=m4upo_tree(M4CF_ROOT);
+ m4up_expect(is_array($cuTreeBefore),'UI_CU_ORIGINAL_PRIVATE_ROOT_DIRECTORY_FILE_WINDOW_PRESENT');$owner=m4up_owner($s,$db);
+ $languagePaidSnapshot=m5pcp_snapshot($db);
+ m4up_expect(hash('sha256',serialize($languagePaidSnapshot))===$owner['baseline']['full_database_redis_sha256']
+  &&count($languagePaidSnapshot['names'])===$owner['baseline']['full_database_table_count'],
+  'UI_LANGUAGE_REAL_FULL_POSTPAID_SNAPSHOT_HASH_AND_COMPLETE_NAMES');
+ m4ar_language_prepare($db,$s,$languagePaidSnapshot['names']);unset($languagePaidSnapshot);
  $before=m4upo_snapshot($db);$started=time();$credentials=null;$writer=null;$actors=null;$business=null;$failure=null;
  try{
   m4up_phase('owned_public_private_preparation');$private=m4ar_private_prepare();m4c_entry_public_materials($s);m4up_full_source($s);
   $app=m4fn_app($s);m4up_expect($app->config->get('marketplace.aftersale.enabled')===true
    &&$app->config->get('marketplace.aftersale.private_root')===M4AR_PRIVATE,'UI_REAL_AFTERSALE_CONFIGURATION');
+  m4cf_owner_after($owner['baseline']['customer_form'],$owner['baseline']['authenticated_owner']['actual_user'],$owner['uid']);
   $menus=m4up_menus($app,$db);m4up_cold($app);m4ar_warm($app,$db);m4up_cold($app);
   m4ar_child_start($s);
   $sink=static function(#[\SensitiveParameter] array $real)use(&$credentials,&$writer):void{
@@ -321,6 +452,8 @@ function m4up_run():int
   $task2=m5pt_prepare($db,$app,$s,$owner,$actors,$final);$final['after']=$task2['after'];
  }
  $sourceOracle=m4fn_source_oracle($owner['saved']);m4fn_inputs_unchanged($owner['inputs']);
+ m4up_expect(m4cf_files()===$cuPrivateBefore,'UI_CU_COMPLETE_ORIGINAL_PRIVATE_TREE_NATIVE_BEFORE_FINAL_UNCHANGED');
+ m4up_expect(m4upo_tree(M4CF_ROOT)===$cuTreeBefore,'UI_CU_ORIGINAL_PRIVATE_ROOT_DIRECTORIES_FILES_NATIVE_BEFORE_FINAL_UNCHANGED');
  m4up_phase('final_source');m4up_full_source($s);m4up_expect(m4up_source(false)===$s,'UI_CURRENT_SAME_SOURCE_ENV_NATIVE_PREDECESSORS');
  m4cb_guard_readonly();
  $business=['prepared_only'=>true,'paid_order_id'=>(int)$owner['root']['id'],'paid_order_no'=>$owner['root']['order_id'],

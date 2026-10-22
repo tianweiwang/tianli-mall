@@ -277,17 +277,17 @@ function m4c_entry_ms5_history(array $source): array
                 &&$mount['Name']===$context['project'].'_'.$mounts[$destination][0]&&$mount['RW']===$mounts[$destination][1],
                 'M4C_HISTORY_ORIGINAL_DB_NATIVE_VOLUME_MOUNT');$seen[$destination]=true;}}
     $volumeNames=[];$volumeIdentities=[];
-    m4c_expect(is_array($context['initial_volumes'])&&array_is_list($context['initial_volumes'])&&count($context['initial_volumes'])===7,
-        'M4C_HISTORY_ORIGINAL_SEVEN_NATIVE_VOLUME_ROWS');
+    m4c_expect(is_array($context['initial_volumes'])&&array_is_list($context['initial_volumes'])&&count($context['initial_volumes'])===8,
+        'M4C_HISTORY_CURRENT_EIGHT_NATIVE_VOLUME_ROWS');
     foreach($context['initial_volumes']as$row){m4c_entry_keys($row,['name','created_at','labels']);
         m4c_expect(is_string($row['name'])&&!isset($volumeIdentities[$row['name']])&&is_string($row['created_at'])&&$row['created_at']!==''
             &&$row['labels']['tianli.audit']==='1'&&$row['labels']['tianli.audit.run']===$source['run_id']
             &&$row['labels']['com.docker.compose.project']===$context['project'],'M4C_HISTORY_COMPLETE_ORIGINAL_VOLUME_IDENTITY');
         $volumeNames[]=$row['name'];$volumeIdentities[$row['name']]=$row['created_at'];}
-    $wantedVolumes=[];foreach(['app-secrets','bootstrap-secrets','fixture-secrets','mysql-data','redis-data','redis-secrets','aftersale-evidence']as$name)
+    $wantedVolumes=[];foreach(['app-secrets','bootstrap-secrets','fixture-secrets','mysql-data','redis-data','redis-secrets','aftersale-evidence','customer-form-evidence']as$name)
         $wantedVolumes[]=$context['project'].'_'.$name;
     $sortedVolumes=$volumeNames;sort($sortedVolumes,SORT_STRING);sort($wantedVolumes,SORT_STRING);
-    m4c_expect($sortedVolumes===$wantedVolumes,'M4C_HISTORY_EXACT_ORIGINAL_SEVEN_VOLUME_NAMES');
+    m4c_expect($sortedVolumes===$wantedVolumes,'M4C_HISTORY_EXACT_CURRENT_EIGHT_VOLUME_NAMES');
     $created=m4c_entry_predecessor($source,'initializer','audit-ms4-initialize',['/run/ms4-prep/ms4-initialize.php'],
         'initializer-created.json','initializer-completed-terminal.json');$init=m4c_entry_read($base.'initializer-result.json');
     m4c_expect(($init['schema']??null)===1&&($init['scope']??null)==='MS5_PAYMENT_PREREQUISITES_ONLY'
@@ -330,7 +330,7 @@ function m4c_entry_ms5_history(array $source): array
         &&$formal['network_internal']===true,'M4C_HISTORY_ORIGINAL_FORMAL_ISOLATION');
     m4c_entry_same($formal['network'],['id'=>$network['Id'],'name'=>$network['Name']]);
     $formalVolumes=$formal['volumes'];sort($formalVolumes,SORT_STRING);
-    m4c_expect($formalVolumes===$sortedVolumes,'M4C_HISTORY_FORMAL_EXACT_ORIGINAL_SEVEN_VOLUMES');
+    m4c_expect($formalVolumes===$sortedVolumes,'M4C_HISTORY_FORMAL_EXACT_CURRENT_EIGHT_VOLUMES');
     m4c_entry_same($formal['volume_identities'],$volumeIdentities);
     m4c_entry_keys($formal['services'],['audit-ms5-payment-migration','audit-mysql','audit-redis']);
     m4c_expect($formal['services']['audit-ms5-payment-migration']['id']===$migrationCreated['id']

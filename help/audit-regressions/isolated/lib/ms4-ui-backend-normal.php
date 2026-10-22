@@ -8,19 +8,19 @@ const M4UIB_META='help/audit-regressions/isolated/ms4-ui-credential-meta.php';
 const M4UIB_IMAGE='sha256:1099f749e2a38ec9453c6b820db8a78174514bc72d14edf5c203e13b82816e0a';
 const M4UIB_GATEWAY_IMAGE='sha256:a8b39bd9cf0f83869a2162827a0caf6137ddf759d50a171451b335cecc87d236';
 const M4UIB_ROOTS=['crmeb/app','crmeb/crmeb','crmeb/vendor','crmeb/config'];
-const M4UIB_BOOTSTRAP=['help/audit-regressions/isolated/ms4-customer-http-normal.php'=>['bytes'=>114528,'sha256'=>'d2b909054ac3b11d88ee1d7ac41b35db95222c74d0ff44daecea3be54b59cc73'],'help/audit-regressions/isolated/lib/harness.php'=>['bytes'=>48344,'sha256'=>'d1f6edf1e08d92f20e99954c41f4dafbb1bf164aeba249c1ef859710af73aa0d'],'help/audit-regressions/isolated/lib/guard.php'=>['bytes'=>4694,'sha256'=>'a7a182c3a204dbb55f5669a61f44af099360223acd9835f82d9da3a8bf2f79a8'],'help/audit-regressions/isolated/lib/ms4-customer-http-normal.php'=>['bytes'=>63896,'sha256'=>'5ba793e50cf604342304ff2563141384c8a61ffd2dc796865207210d70a946f9']];
+const M4UIB_BOOTSTRAP=['help/audit-regressions/isolated/ms4-customer-http-normal.php'=>['bytes'=>115040,'sha256'=>'ebabf552c2c79e12c7cc307804d6f9610495ce67c557b21dcf28f9c28c7dd14c'],'help/audit-regressions/isolated/lib/harness.php'=>['bytes'=>48344,'sha256'=>'d1f6edf1e08d92f20e99954c41f4dafbb1bf164aeba249c1ef859710af73aa0d'],'help/audit-regressions/isolated/lib/guard.php'=>['bytes'=>4694,'sha256'=>'a7a182c3a204dbb55f5669a61f44af099360223acd9835f82d9da3a8bf2f79a8'],'help/audit-regressions/isolated/lib/ms4-customer-http-normal.php'=>['bytes'=>65044,'sha256'=>'90317d0dd07d075251e6e306cd0adae524fe5455a89b0eb147880a232fda8d8e'],'help/audit-regressions/isolated/lib/ms4-customer-form-normal.php'=>['bytes'=>66236,'sha256'=>'1d06fe3ed2cbe4bdc020e03849f128c3b447b7ea5365c54e59edee96762b5043']];
 const M4UIB_NATIVE_KEYS=['id','image','hostname','user','stop_signal','labels','mounts','tmpfs','read_only','privileged','network_mode','status','command','entrypoint','workdir','restart_count','pid','exit_code','networks','ports','port_bindings','cap_drop','security_options','started_at','finished_at','created_at'];
 const M4UIB_INSPECT_FORMAT='{"id":{{json .Id}},"image":{{json .Image}},"hostname":{{json .Config.Hostname}},"user":{{json .Config.User}},"stop_signal":{{json (index .Config "StopSignal")}},"labels":{{json .Config.Labels}},"mounts":{{json .Mounts}},"tmpfs":{{json (index .HostConfig "Tmpfs")}},"read_only":{{json .HostConfig.ReadonlyRootfs}},"privileged":{{json .HostConfig.Privileged}},"network_mode":{{json .HostConfig.NetworkMode}},"status":{{json .State.Status}},"command":{{json .Config.Cmd}},"entrypoint":{{json .Config.Entrypoint}},"workdir":{{json .Config.WorkingDir}},"restart_count":{{json .RestartCount}},"pid":{{json .State.Pid}},"exit_code":{{json .State.ExitCode}},"networks":{{json .NetworkSettings.Networks}},"ports":{{json .NetworkSettings.Ports}},"port_bindings":{{json .HostConfig.PortBindings}},"cap_drop":{{json .HostConfig.CapDrop}},"security_options":{{json .HostConfig.SecurityOpt}},"started_at":{{json .State.StartedAt}},"finished_at":{{json .State.FinishedAt}},"created_at":{{json .Created}}}';
 const M4UIB_IMMUTABLE=['id','image','hostname','labels','tmpfs','read_only','privileged','network_mode','command','entrypoint','workdir','port_bindings','cap_drop','security_options','created_at','user','stop_signal'];
-const M4UIB_ENV_KEYS=['APP_ENV','PHP_CACHE_DRIVER','PHP_MARKETPLACE_AFTERSALE_ENABLED','PHP_MARKETPLACE_AFTERSALE_PRIVATE_ROOT','PHP_MARKETPLACE_ENABLED','PHP_MARKETPLACE_PAYMENT_TEST_ENABLED','PHP_MARKETPLACE_SELF_OPERATED_MER_ID','PHP_MARKETPLACE_TRADE_ENABLED'];
+const M4UIB_ENV_KEYS=['APP_ENV','PHP_CACHE_DRIVER','PHP_MARKETPLACE_AFTERSALE_ENABLED','PHP_MARKETPLACE_AFTERSALE_PRIVATE_ROOT','PHP_MARKETPLACE_CUSTOMER_FORM_PRIVATE_ROOT','PHP_MARKETPLACE_ENABLED','PHP_MARKETPLACE_PAYMENT_TEST_ENABLED','PHP_MARKETPLACE_SELF_OPERATED_MER_ID','PHP_MARKETPLACE_TRADE_ENABLED'];
 const M4UIB_BINDING_KEYS=['schema','scope','run_id','source_sha','container_id','native_created_sha256','freeze_sha256','requested_repo_source','requested_run_source','requested_prep_source','entry_sha256','source_files','prerequisites_sha256','manifest','environment','environment_native','history','public_materials','volumes_native'];
 const M4UIB_SEAL_KEYS=['schema','scope','run_id','source_sha','freeze_sha256','prepare_container_id','prepare_context','fixture_volume','original_formal_manifest','prepare_public_files','paid_predecessor_files'];
 const M4UIB_PREPARE_KEYS=['schema','scope','status','run_id','source_sha','container_id','freeze_sha256','native_created_sha256','source_binding_sha256','environment_sha256','environment_native_sha256','phase','entry_return_code','termination','native_exit','native_exit_observation','full_source_unchanged','business','child','diagnostic','three_end_login_DOM','N1_fulfillment_review_business','full_acceptance','stopped_samples','assertions'];
 const M4UIB_BUSINESS_KEYS=['prepared_only','paid_order_id','paid_order_no','merchant_id','customer_id','item_quantities','source_fingerprint','actor_ids','writer','menus','window_before','window_final','independent_full_window_verified','post_child_close_verified','observer'];
 const M4UIB_WRITER_KEYS=['path','bytes','sha256','mode','uid','gid','dev','ino','nlink','directory_mode'];
 const M4UIB_PREPARE_NAMES=['ui-prepare-created.json','ms4-ui-prepare-source-binding.json','ui-prepare-environment.json','ui-prepare-environment-native.json','ms4-ui-prepare.json','ui-prepare-shutdown.json','ui-prepare-terminal.json'];
-const M4UIB_VOLUME_MOUNTS=['/run/audit-app'=>['app-secrets',false],'/run/audit-fixtures'=>['fixture-secrets',false],'/var/lib/crmeb-aftersale-evidence'=>['aftersale-evidence',true],'/workspace/crmeb/public'=>['ui-public',false],'/workspace/crmeb/public/uploads/store/comment'=>['ui-comments',true],'/workspace/crmeb/public/uploads/customer'=>['ui-customer-assets',true],'/run/audit-ui-control'=>['ui-control',true]];
-const M4UIB_ORIGINAL_VOLUMES=['aftersale-evidence','app-secrets','bootstrap-secrets','fixture-secrets','mysql-data','redis-data','redis-secrets'];
+const M4UIB_VOLUME_MOUNTS=['/run/audit-app'=>['app-secrets',false],'/run/audit-fixtures'=>['fixture-secrets',false],'/run/audit-customer-form'=>['customer-form-evidence',true],'/var/lib/crmeb-aftersale-evidence'=>['aftersale-evidence',true],'/workspace/crmeb/public'=>['ui-public',false],'/workspace/crmeb/public/uploads/store/comment'=>['ui-comments',true],'/workspace/crmeb/public/uploads/customer'=>['ui-customer-assets',true],'/run/audit-ui-control'=>['ui-control',true]];
+const M4UIB_ORIGINAL_VOLUMES=['aftersale-evidence','app-secrets','bootstrap-secrets','customer-form-evidence','fixture-secrets','mysql-data','redis-data','redis-secrets'];
 const M4UIB_CONTROL='/run/audit-ui-control';
 const M4UIB_LOGS=['/workspace/crmeb/runtime/ms4-ui-backend.stdout.log','/workspace/crmeb/runtime/ms4-ui-backend.stderr.log'];
 const M4UIB_CURRENT_KEYS=['schema','scope','run_id','source_sha','freeze_sha256','container_id','native_created_sha256','source_binding_sha256','projection','native'];
@@ -150,15 +150,48 @@ function m4uib_task2_tools(array $source):array
 function m4uib_full_source(array $source):void
 {
     $freeze=$source['freeze'];$prepare=$freeze['ui_prepare_source_extra'];$ar=$freeze['aftersale_review_source_extra'];
+    $expectedAR=[
+        'crmeb/composer.json',
+        'crmeb/composer.lock',
+        'crmeb/public/index.php',
+        'crmeb/public/install/crmeb.sql',
+        'crmeb/public/router.php',
+        'crmeb/think',
+        'help/audit-regressions/isolated/lib/guard.php',
+        'help/audit-regressions/isolated/lib/harness.php',
+        'help/audit-regressions/isolated/lib/ms4-customer-form-normal.php',
+        'help/audit-regressions/isolated/lib/ms4-customer-http-normal.php',
+        'help/audit-regressions/isolated/lib/ms4-three-legacy-producer.php',
+        'help/audit-regressions/isolated/lib/ms4-three-legacy-reference.php',
+        'help/audit-regressions/isolated/lib/ms4-three-read-normal.php',
+        'help/audit-regressions/isolated/ms4-aftersale-review-normal.php',
+        'help/audit-regressions/isolated/ms4-customer-http-normal.php',
+        'help/audit-regressions/isolated/ms4-fulfillment-migration.php',
+        'help/audit-regressions/isolated/ms4-fulfillment-normal.php',
+        'help/audit-regressions/isolated/ms5-paid-consumer-normal.php',
+        'help/audit-regressions/isolated/ms5-payment-migration.php',
+        'help/migrations/marketplace-ms1.php',
+        'help/migrations/marketplace-ms2.php',
+        'help/migrations/marketplace-ms4-aftersale-menus.php',
+        'help/migrations/marketplace-ms4-aftersale.php',
+        'help/migrations/marketplace-ms4-assets.php',
+        'help/migrations/marketplace-ms4-fulfillment.php',
+        'help/migrations/marketplace-ms4-review-menus.php',
+        'help/migrations/marketplace-ms4.md',
+        'help/migrations/marketplace-ms4.php',
+        'help/migrations/marketplace-ms5-payment.md',
+        'help/migrations/marketplace-ms5-payment.php',
+       ];
+    m4uib_assert($ar===$expectedAR,'EXACT_CURRENT_AR_THIRTY_SOURCE_MEMBERS');
     $wanted=array_values(array_unique(array_merge($ar,[
         'help/audit-regressions/isolated/ms4-ui-prepare.php','help/audit-regressions/isolated/lib/ms4-ui-prepare-oracle.php',
         'help/audit-regressions/isolated/lib/ms4-ui-credentials.php','help/migrations/marketplace-ms4-order-read-menus.php']),SORT_STRING));
     sort($wanted,SORT_STRING);
-    m4uib_assert(count($ar)===28&&count($wanted)===32&&$prepare===$wanted
-        &&$freeze['ui_prepare_source_roots']===M4UIB_ROOTS,'EXACT_REAL_PREPARE32_MEMBERS');
+    m4uib_assert(count($ar)===30&&count($wanted)===34&&$prepare===$wanted
+        &&$freeze['ui_prepare_source_roots']===M4UIB_ROOTS,'EXACT_REAL_PREPARE34_MEMBERS');
     $extra=array_values(array_unique(array_merge($prepare,[M4UIB_ENTRY,M4UIB_HELPER,M4UIB_META]),SORT_STRING));sort($extra,SORT_STRING);
-    m4uib_assert(count($extra)===35&&$freeze['ui_backend_source_roots']===M4UIB_ROOTS
-        &&$freeze['ui_backend_source_extra']===$extra&&$source['source_files']===$freeze['ui_backend_source_files'],'OWN_BACKEND35_MEMBERS');
+    m4uib_assert(count($extra)===37&&$freeze['ui_backend_source_roots']===M4UIB_ROOTS
+        &&$freeze['ui_backend_source_extra']===$extra&&$source['source_files']===$freeze['ui_backend_source_files'],'OWN_BACKEND37_MEMBERS');
     $rows=$source['source_files'];m4uib_assert(is_array($rows)&&array_is_list($rows),'FULL_SOURCE_ROWS');$paths=[];$allowed=[];
     foreach($rows as$row){m4uib_keys($row,['path','bytes','sha256']);m4uib_relative($row['path']);
         m4uib_assert(is_int($row['bytes'])&&$row['bytes']>=0&&m4uib_hex($row['sha256']),'SOURCE_ROW');$paths[]=$row['path'];}
@@ -185,20 +218,24 @@ function m4uib_environment(array $wrapper,array $native,string $cid,string $scop
     m4uib_keys($wrapper,['schema','scope','run_id','source_sha','container_id','freeze_sha256','environment','native_projection_sha256']);
     m4uib_assert($wrapper['schema']===1&&$wrapper['scope']===$scope&&$wrapper['run_id']===$source['run_id']
         &&$wrapper['source_sha']===$source['source_sha']&&$wrapper['container_id']===$cid&&$wrapper['freeze_sha256']===$source['freeze_sha256'],'OWN_ENV_IDENTITY');
+    m4uib_assert(($scope==='MS4_UI_BACKEND_REAL_ENVIRONMENT'&&$stage==='ui-backend-public-environment-inspect')
+        ||($scope==='MS4_UI_PREPARE_REAL_ENVIRONMENT'&&$stage==='ui-prepare-public-environment-inspect'),
+        'ONLY_TWO_EXACT_UI_ROLE_SCOPE_STAGE_PAIRS');
     $values=$wrapper['environment'];m4uib_keys($values,M4UIB_ENV_KEYS);
     foreach(['APP_ENV'=>'testing','PHP_CACHE_DRIVER'=>'redis','PHP_MARKETPLACE_AFTERSALE_ENABLED'=>'true',
-        'PHP_MARKETPLACE_AFTERSALE_PRIVATE_ROOT'=>'/var/lib/crmeb-aftersale-evidence','PHP_MARKETPLACE_ENABLED'=>'true',
+        'PHP_MARKETPLACE_AFTERSALE_PRIVATE_ROOT'=>'/var/lib/crmeb-aftersale-evidence',
+        'PHP_MARKETPLACE_CUSTOMER_FORM_PRIVATE_ROOT'=>'/run/audit-customer-form','PHP_MARKETPLACE_ENABLED'=>'true',
         'PHP_MARKETPLACE_PAYMENT_TEST_ENABLED'=>'true','PHP_MARKETPLACE_TRADE_ENABLED'=>'true']as$key=>$value)
-        m4uib_assert($values[$key]===$value,'EXACT_EIGHT_ENV_VALUES');
+        m4uib_assert($values[$key]===$value,'EXACT_NINE_ENV_VALUES');
     $self=$values['PHP_MARKETPLACE_SELF_OPERATED_MER_ID'];
     m4uib_assert(is_string($self)&&preg_match('/\A[1-9][0-9]{0,9}\z/D',$self)===1&&(int)$self<=4294967295,'ACTUAL_SELF_MERCHANT');
-    $lines=[];foreach(M4UIB_ENV_KEYS as$key){m4uib_assert(is_string($values[$key])&&getenv($key)===$values[$key],'ACTUAL_EIGHT_PROCESS_ENV');
+    $lines=[];foreach(M4UIB_ENV_KEYS as$key){m4uib_assert(is_string($values[$key])&&getenv($key)===$values[$key],'ACTUAL_NINE_PROCESS_ENV');
         $lines[]=json_encode($key.'='.$values[$key],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);}
     $raw=implode("\n",$lines)."\n";
     m4uib_keys($native,['stage','native_exit','stdout_bytes','stdout_sha256','stderr_bytes','stderr_sha256','private_environment_logs_omitted']);
     m4uib_assert($native['stage']===$stage&&$native['native_exit']===0&&$native['stdout_bytes']===strlen($raw)
         &&$native['stdout_sha256']===hash('sha256',$raw)&&$native['stderr_bytes']===0&&$native['stderr_sha256']===hash('sha256','')
-        &&$native['private_environment_logs_omitted']===true&&$wrapper['native_projection_sha256']===$native['stdout_sha256'],'ACTUAL_SORTED_EIGHT_NATIVE_ENV_BYTES');
+        &&$native['private_environment_logs_omitted']===true&&$wrapper['native_projection_sha256']===$native['stdout_sha256'],'ACTUAL_SORTED_NINE_NATIVE_ENV_BYTES');
     ksort($values,SORT_STRING);return $values;
 }
 function m4uib_terminal(array $source,string $proof,string $role,array $command):array
@@ -258,9 +295,9 @@ function m4uib_history(array $source):array
     $originalNames=[];foreach(M4UIB_ORIGINAL_VOLUMES as$suffix)$originalNames[]=$context['project'].'_'.$suffix;sort($originalNames,SORT_STRING);
     $volumes=$formal['volumes'];sort($volumes,SORT_STRING);
     $identityNames=array_keys($formal['volume_identities']);sort($identityNames,SORT_STRING);
-    m4uib_assert($volumes===$originalNames&&$identityNames===$originalNames,'ORIGINAL_SEVEN_PREPARE_VOLUMES');
+    m4uib_assert($volumes===$originalNames&&$identityNames===$originalNames,'ORIGINAL_EIGHT_PREPARE_VOLUMES');
     m4uib_assert(is_array($context['initial_volumes'])&&array_is_list($context['initial_volumes'])
-        &&count($context['initial_volumes'])===7,'ORIGINAL_CONTEXT_SEVEN_COMPLETE_IDENTITIES');
+        &&count($context['initial_volumes'])===8,'ORIGINAL_CONTEXT_EIGHT_COMPLETE_IDENTITIES');
     $original=[];
     foreach($context['initial_volumes']as$row){
         m4uib_assert(is_array($row),'ORIGINAL_CONTEXT_VOLUME_OBJECT');m4uib_keys($row,['name','created_at','labels']);
@@ -350,7 +387,7 @@ function m4uib_history(array $source):array
     m4uib_assert(m4uib_same($binding['prerequisites_sha256'],$expected),'ORIGINAL_PREPARE_EXACT39_INPUTS');
     $env=m4uib_environment(m4uib_json($base.'ui-prepare-environment.json'),m4uib_json($base.'ui-prepare-environment-native.json'),
         $created['id'],'MS4_UI_PREPARE_REAL_ENVIRONMENT','ui-prepare-public-environment-inspect',$source);
-    m4uib_assert(m4uib_same($env,$source['environment']),'SAME_REAL_PREPARE_BACKEND_EIGHT_ENVIRONMENT');
+    m4uib_assert(m4uib_same($env,$source['environment']),'SAME_REAL_PREPARE_BACKEND_NINE_ENVIRONMENT');
 
     $prepared=m4uib_json($base.'ms4-ui-prepare.json');m4uib_keys($prepared,M4UIB_PREPARE_KEYS);
     m4uib_assert($prepared['schema']===1&&$prepared['scope']==='NORMAL_MS4_UI_PREPARATION_ONLY'
@@ -429,10 +466,10 @@ function m4uib_volumes(array $source):void
     $actual=$source['formal']['volumes'];sort($actual,SORT_STRING);
     $ids=array_keys($source['formal']['volume_identities']);sort($ids,SORT_STRING);
     m4uib_assert($actual===$names&&$ids===$names&&is_array($proof['volumes'])&&array_is_list($proof['volumes'])
-        &&count($proof['volumes'])===11,'EXACT_ORIGINAL7_PLUS_REAL_UI4_VOLUMES');
+        &&count($proof['volumes'])===12,'EXACT_CURRENT8_PLUS_REAL_UI4_VOLUMES');
     $originalNames=[];foreach(M4UIB_ORIGINAL_VOLUMES as$suffix)$originalNames[]=$source['context']['project'].'_'.$suffix;sort($originalNames,SORT_STRING);
     m4uib_assert(is_array($source['context']['initial_volumes'])&&array_is_list($source['context']['initial_volumes'])
-        &&count($source['context']['initial_volumes'])===7,'CURRENT_CONTEXT_SEVEN_COMPLETE_IDENTITIES');
+        &&count($source['context']['initial_volumes'])===8,'CURRENT_CONTEXT_EIGHT_COMPLETE_IDENTITIES');
     $original=[];
     foreach($source['context']['initial_volumes']as$row){
         m4uib_assert(is_array($row),'CURRENT_CONTEXT_VOLUME_OBJECT');m4uib_keys($row,['name','created_at','labels']);
@@ -458,9 +495,9 @@ function m4uib_volumes(array $source):void
         m4uib_assert(!isset($nativeByName[$name]),'UNIQUE_ACTUAL_NATIVE_VOLUME');$nativeByName[$name]=$value;
     }
     $nativeNames=array_keys($nativeByName);sort($nativeNames,SORT_STRING);
-    m4uib_assert($nativeNames===$names,'COMPLETE_ELEVEN_ACTUAL_NATIVE_VOLUME_MAP');
+    m4uib_assert($nativeNames===$names,'COMPLETE_TWELVE_ACTUAL_NATIVE_VOLUME_MAP');
     foreach($original as$name=>$row)
-        m4uib_assert(m4uib_same($nativeByName[$name],$row)&&$row['created_at']===$source['formal']['volume_identities'][$name],'ORIGINAL_SEVEN_IDENTITIES_UNCHANGED');
+        m4uib_assert(m4uib_same($nativeByName[$name],$row)&&$row['created_at']===$source['formal']['volume_identities'][$name],'ORIGINAL_EIGHT_IDENTITIES_UNCHANGED');
 }
 function m4uib_check_mounts(array $source,array $created):void
 {

@@ -115,10 +115,10 @@ function m4fm_source(): array
             && preg_match('/\Asha256:[a-f0-9]{64}\z/D', (string) ($endpoint['image_id'] ?? '')) === 1, 'REGISTERED_ENDPOINT');
     }
     $volumes = [];
-    foreach (['mysql-data', 'redis-data', 'bootstrap-secrets', 'redis-secrets', 'app-secrets', 'fixture-secrets', 'aftersale-evidence'] as $name) $volumes[] = $manifest['project'] . '_' . $name;
+    foreach (['mysql-data', 'redis-data', 'bootstrap-secrets', 'redis-secrets', 'app-secrets', 'fixture-secrets', 'aftersale-evidence', 'customer-form-evidence'] as $name) $volumes[] = $manifest['project'] . '_' . $name;
     sort($volumes, SORT_STRING); $actual = $manifest['volumes'] ?? []; sort($actual, SORT_STRING);
     m4fm_expect($actual === $volumes && is_array($manifest['volume_identities'] ?? null)
-        && m4fm_keys($manifest['volume_identities'], $volumes), 'EXACT_SEVEN_OWN_VOLUMES');
+        && m4fm_keys($manifest['volume_identities'], $volumes), 'EXACT_EIGHT_OWN_VOLUMES');
     foreach ($volumes as $volume) m4fm_expect(is_string($manifest['volume_identities'][$volume]) && $manifest['volume_identities'][$volume] !== '', 'OWN_VOLUME_IDENTITY');
     $seen = [];
     foreach ($facts['mounts'] ?? [] as $mount) {
@@ -231,7 +231,11 @@ function m4ae_ms5_manifest(array $context, array $manifest, string $role): void
     $names = []; $identities = [];
     foreach ($context['initial_volumes'] as $row) { $names[] = $row['name']; $identities[$row['name']] = $row['created_at']; }
     sort($names, SORT_STRING); $actual = $manifest['volumes']; sort($actual, SORT_STRING);
-    m4fm_expect(count($names) === 7 && count(array_unique($names,SORT_STRING)) === 7 && $actual === $names, 'EARLY_ORIGINAL_SEVEN_VOLUMES');
+    $wanted = [];
+    foreach (['mysql-data', 'redis-data', 'bootstrap-secrets', 'redis-secrets', 'app-secrets', 'fixture-secrets', 'aftersale-evidence', 'customer-form-evidence'] as $suffix) $wanted[] = $context['project'] . '_' . $suffix;
+    sort($wanted, SORT_STRING);
+    m4fm_expect(count($names) === 8 && count(array_unique($names,SORT_STRING)) === 8
+        && $names === $wanted && $actual === $names, 'EARLY_CURRENT_EXACT_EIGHT_VOLUMES');
     m4ae_ms5_same($manifest['volume_identities'], $identities);
     foreach (['audit-mysql', 'audit-redis'] as $host) m4fm_expect(
         $manifest['services'][$host]['id'] === $context['initial_service_ids'][$host]
