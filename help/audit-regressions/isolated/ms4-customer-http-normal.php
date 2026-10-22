@@ -553,20 +553,20 @@ function m4ca_contract(array $table,array $definition):void
 {
  $m=$table['metadata'];$native=$m['table'];if($native['AUTO_INCREMENT']!==null)$native['AUTO_INCREMENT']=(string)$native['AUTO_INCREMENT'];
  m4c_expect($native===['TABLE_TYPE'=>'BASE TABLE','ENGINE'=>'InnoDB','ROW_FORMAT'=>'Dynamic','TABLE_COLLATION'=>'utf8mb4_bin','TABLE_COMMENT'=>'','CREATE_OPTIONS'=>'','AUTO_INCREMENT'=>'1']
-  &&$m['checks']===[]&&$m['foreign']===[]&&$m['triggers']===[],'ASSET_COMPLETE_NATIVE_TABLE_EMPTY_HIDDEN_OBJECTS');
- m4c_expect(array_keys($m['columns'])===array_keys($definition['columns'])&&$table['projected_columns']===array_keys($definition['columns']),'ASSET_ALL_NATIVE_COLUMNS_IN_ORDER');
+  &&$m['checks']===[]&&$m['foreign']===[]&&$m['triggers']===[],'M4C_ASSET_COMPLETE_NATIVE_TABLE_EMPTY_HIDDEN_OBJECTS');
+ m4c_expect(array_keys($m['columns'])===array_keys($definition['columns'])&&$table['projected_columns']===array_keys($definition['columns']),'M4C_ASSET_ALL_NATIVE_COLUMNS_IN_ORDER');
  foreach($definition['columns']as$name=>$expected){$actual=$m['columns'][$name];
   if(!str_starts_with($actual['COLUMN_TYPE'],'enum('))$actual['COLUMN_TYPE']=preg_replace('/\b(tinyint|smallint|mediumint|int|bigint)\([0-9]+\)/','$1',strtolower($actual['COLUMN_TYPE']));
   if($actual['COLUMN_DEFAULT']!==null)$actual['COLUMN_DEFAULT']=(string)$actual['COLUMN_DEFAULT'];
   m4c_expect($actual===['COLUMN_NAME'=>$name,'COLUMN_TYPE'=>$expected[1],'IS_NULLABLE'=>$expected[2],'COLUMN_DEFAULT'=>$expected[3],
-   'CHARACTER_SET_NAME'=>$expected[4],'COLLATION_NAME'=>$expected[5],'EXTRA'=>$expected[6],'GENERATION_EXPRESSION'=>'','COLUMN_COMMENT'=>''],'ASSET_EVERY_NATIVE_COLUMN_VALUE');}
- $indexes=$definition['indexes'];ksort($indexes,SORT_STRING);m4c_expect(array_keys($m['indexes'])===array_keys($indexes),'ASSET_ALL_NATIVE_INDEX_NAMES');$constraints=[];
+   'CHARACTER_SET_NAME'=>$expected[4],'COLLATION_NAME'=>$expected[5],'EXTRA'=>$expected[6],'GENERATION_EXPRESSION'=>'','COLUMN_COMMENT'=>''],'M4C_ASSET_EVERY_NATIVE_COLUMN_VALUE');}
+ $indexes=$definition['indexes'];ksort($indexes,SORT_STRING);m4c_expect(array_keys($m['indexes'])===array_keys($indexes),'M4C_ASSET_ALL_NATIVE_INDEX_NAMES');$constraints=[];
  foreach($indexes as$name=>[$unique,$columns]){$wanted=[];foreach($columns as$i=>$column)$wanted[]=['INDEX_NAME'=>$name,'NON_UNIQUE'=>$unique?'0':'1','SEQ_IN_INDEX'=>(string)($i+1),
   'COLUMN_NAME'=>$column,'SUB_PART'=>null,'INDEX_TYPE'=>'BTREE','IS_VISIBLE'=>'YES','EXPRESSION'=>null,'COLLATION'=>'A','INDEX_COMMENT'=>''];
   $actual=$m['indexes'][$name];foreach($actual as&$row){$row['NON_UNIQUE']=(string)$row['NON_UNIQUE'];$row['SEQ_IN_INDEX']=(string)$row['SEQ_IN_INDEX'];}unset($row);
-  m4c_expect($actual===$wanted,'ASSET_COMPLETE_NATIVE_INDEX_VALUES');if($unique)$constraints[]=['CONSTRAINT_NAME'=>$name,'CONSTRAINT_TYPE'=>$name==='PRIMARY'?'PRIMARY KEY':'UNIQUE','ENFORCED'=>'YES'];}
- m4c_expect($m['constraints']===$constraints,'ASSET_ONLY_EXACT_PRIMARY_AND_UNIQUE_CONSTRAINTS');
- m4c_expect($table['projection']===['encoding'=>'php-serialize-row-sha256-sorted-multiset-v1','rows'=>0,'sha256'=>hash('sha256','')],'ASSET_NEW_NATIVE_TABLE_EMPTY_FULL_PROJECTION');
+  m4c_expect($actual===$wanted,'M4C_ASSET_COMPLETE_NATIVE_INDEX_VALUES');if($unique)$constraints[]=['CONSTRAINT_NAME'=>$name,'CONSTRAINT_TYPE'=>$name==='PRIMARY'?'PRIMARY KEY':'UNIQUE','ENFORCED'=>'YES'];}
+ m4c_expect($m['constraints']===$constraints,'M4C_ASSET_ONLY_EXACT_PRIMARY_AND_UNIQUE_CONSTRAINTS');
+ m4c_expect($table['projection']===['encoding'=>'php-serialize-row-sha256-sorted-multiset-v1','rows'=>0,'sha256'=>hash('sha256','')],'M4C_ASSET_NEW_NATIVE_TABLE_EMPTY_FULL_PROJECTION');
 }
 function m4ca_result(string $mode,array $answer,array $sources):void
 {
@@ -582,12 +582,12 @@ function m4ca_result(string $mode,array $answer,array $sources):void
   &&$answer['source_sha256']===$sources['help/migrations/marketplace-ms4-assets.php']
   &&$answer['schema_source_sha256']===$sources['crmeb/app/services/marketplace/assets/AssetSchema.php']&&$answer['sources_held']===true
   &&$answer['schema_contract']==='marketplace-asset-domains-v1'&&$answer['scope']==='MS4_ASSET_DOMAINS_STRUCTURE_ONLY'
-  &&$answer['history_mapping']==='NOT RUN'&&$answer['writer']==='NOT RUN'&&$answer['activation']==='NOT RUN'&&$answer['acceptance']==='NOT RUN','ASSET_EXACT_TWENTY_FIVE_CLI_VALUES');
+  &&$answer['history_mapping']==='NOT RUN'&&$answer['writer']==='NOT RUN'&&$answer['activation']==='NOT RUN'&&$answer['acceptance']==='NOT RUN','M4C_ASSET_EXACT_TWENTY_FIVE_CLI_VALUES');
  $lock=['request_attempted'=>false,'execute_attempted'=>false,'preexisting_same_session'=>null,'acquisition'=>'NOT_ATTEMPTED','request_cursor_closed'=>null,
   'confirmation_failed'=>false,'release_attempted'=>false,'release_execute_attempted'=>false,'release_result'=>'NOT_ATTEMPTED','release_cursor_closed'=>null,'ownership'=>'NOT_CHECKED','resolved'=>null];
  if($mode==='apply-structure')$lock=['request_attempted'=>true,'execute_attempted'=>true,'preexisting_same_session'=>false,'acquisition'=>'ONE','request_cursor_closed'=>true,
   'confirmation_failed'=>false,'release_attempted'=>true,'release_execute_attempted'=>true,'release_result'=>'ONE','release_cursor_closed'=>true,'ownership'=>'NOT_OWNED','resolved'=>true];
- m4c_expect($answer['lock_scope']===$lock,'ASSET_EXACT_NORMAL_LOCK_ACQUIRE_RELEASE_SCOPE');
+ m4c_expect($answer['lock_scope']===$lock,'M4C_ASSET_EXACT_NORMAL_LOCK_ACQUIRE_RELEASE_SCOPE');
 }
 
 /** Recover all six snapshots, retaining the five original timepoints and one exact assets stage. */
@@ -891,7 +891,7 @@ function m4c_entry_early_table(PDO $db,string $name,array $sealed): array
 function m4c_entry_early_preserved(array $history,string $stage): array
 {
     m4c_expect(in_array($stage,['files-bootstrap','files-bootstrap-completed','customer-prepare'],true),'M4C_EARLY_FIXED_PRESERVATION_STAGE');audit_guard_assert();
-    $sealed=$history['result']['snapshots']['review_menus'];
+    $sealed=$history['result']['snapshots']['assets'];
     m4c_entry_keys($sealed,['names','tables','redis','modes','metadata_observer_modes','native_snapshot_sha256']);
     $db=audit_db();m4c_expect(!$db->inTransaction()&&$db->setAttribute(PDO::ATTR_EMULATE_PREPARES,false)
         &&$db->query('SELECT CURRENT_USER()')->fetchColumn()==='audit_app@%'
@@ -903,7 +903,8 @@ function m4c_entry_early_preserved(array $history,string $stage): array
     $names=$db->query('SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() ORDER BY TABLE_NAME')->fetchAll(PDO::FETCH_COLUMN);sort($names,SORT_STRING);
     m4c_expect($names===$sealed['names']&&array_keys($sealed['tables'])===$names,'M4C_EARLY_ACTUAL_COMPLETE_TABLE_NAMES');
     $targets=$stage==='files-bootstrap'?$names:['eb_marketplace_fulfillment_operation','eb_marketplace_fulfillment_range',
-        'eb_marketplace_aftersale_action','eb_marketplace_aftersale_file','eb_store_order_refund','eb_system_menus'];$observed=[];
+        'eb_marketplace_aftersale_action','eb_marketplace_aftersale_file','eb_store_order_refund','eb_system_menus',
+        'eb_marketplace_customer_asset','eb_marketplace_platform_asset_category','eb_marketplace_platform_asset'];$observed=[];
     foreach($targets as$name){m4c_expect(isset($sealed['tables'][$name]),'M4C_EARLY_ACTUAL_PROTECTED_TABLE');$observed[$name]=m4c_entry_early_table($db,$name,$sealed['tables'][$name]);}
     if($stage==='files-bootstrap'){$snapshot=audit_snapshot(['tables'=>[],'redis'=>['*']]);$redis=audit_redis();$actual=[];
         foreach($snapshot['redis']['*']as$key=>$hash){$expires=$redis->rawCommand('PEXPIRETIME',$key);$keyHash=hash('sha256',(string)$key);

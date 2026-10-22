@@ -8,7 +8,7 @@ const M4UIB_META='help/audit-regressions/isolated/ms4-ui-credential-meta.php';
 const M4UIB_IMAGE='sha256:1099f749e2a38ec9453c6b820db8a78174514bc72d14edf5c203e13b82816e0a';
 const M4UIB_GATEWAY_IMAGE='sha256:a8b39bd9cf0f83869a2162827a0caf6137ddf759d50a171451b335cecc87d236';
 const M4UIB_ROOTS=['crmeb/app','crmeb/crmeb','crmeb/vendor','crmeb/config'];
-const M4UIB_BOOTSTRAP=['help/audit-regressions/isolated/ms4-customer-http-normal.php'=>['bytes'=>96225,'sha256'=>'8f243fdeadc42335827642eec060d506e137e0e1c5ff01fa4d5db8ea9e69543a'],'help/audit-regressions/isolated/lib/harness.php'=>['bytes'=>48344,'sha256'=>'d1f6edf1e08d92f20e99954c41f4dafbb1bf164aeba249c1ef859710af73aa0d'],'help/audit-regressions/isolated/lib/guard.php'=>['bytes'=>4694,'sha256'=>'a7a182c3a204dbb55f5669a61f44af099360223acd9835f82d9da3a8bf2f79a8'],'help/audit-regressions/isolated/lib/ms4-customer-http-normal.php'=>['bytes'=>63896,'sha256'=>'5ba793e50cf604342304ff2563141384c8a61ffd2dc796865207210d70a946f9']];
+const M4UIB_BOOTSTRAP=['help/audit-regressions/isolated/ms4-customer-http-normal.php'=>['bytes'=>114528,'sha256'=>'d2b909054ac3b11d88ee1d7ac41b35db95222c74d0ff44daecea3be54b59cc73'],'help/audit-regressions/isolated/lib/harness.php'=>['bytes'=>48344,'sha256'=>'d1f6edf1e08d92f20e99954c41f4dafbb1bf164aeba249c1ef859710af73aa0d'],'help/audit-regressions/isolated/lib/guard.php'=>['bytes'=>4694,'sha256'=>'a7a182c3a204dbb55f5669a61f44af099360223acd9835f82d9da3a8bf2f79a8'],'help/audit-regressions/isolated/lib/ms4-customer-http-normal.php'=>['bytes'=>63896,'sha256'=>'5ba793e50cf604342304ff2563141384c8a61ffd2dc796865207210d70a946f9']];
 const M4UIB_NATIVE_KEYS=['id','image','hostname','user','stop_signal','labels','mounts','tmpfs','read_only','privileged','network_mode','status','command','entrypoint','workdir','restart_count','pid','exit_code','networks','ports','port_bindings','cap_drop','security_options','started_at','finished_at','created_at'];
 const M4UIB_INSPECT_FORMAT='{"id":{{json .Id}},"image":{{json .Image}},"hostname":{{json .Config.Hostname}},"user":{{json .Config.User}},"stop_signal":{{json (index .Config "StopSignal")}},"labels":{{json .Config.Labels}},"mounts":{{json .Mounts}},"tmpfs":{{json (index .HostConfig "Tmpfs")}},"read_only":{{json .HostConfig.ReadonlyRootfs}},"privileged":{{json .HostConfig.Privileged}},"network_mode":{{json .HostConfig.NetworkMode}},"status":{{json .State.Status}},"command":{{json .Config.Cmd}},"entrypoint":{{json .Config.Entrypoint}},"workdir":{{json .Config.WorkingDir}},"restart_count":{{json .RestartCount}},"pid":{{json .State.Pid}},"exit_code":{{json .State.ExitCode}},"networks":{{json .NetworkSettings.Networks}},"ports":{{json .NetworkSettings.Ports}},"port_bindings":{{json .HostConfig.PortBindings}},"cap_drop":{{json .HostConfig.CapDrop}},"security_options":{{json .HostConfig.SecurityOpt}},"started_at":{{json .State.StartedAt}},"finished_at":{{json .State.FinishedAt}},"created_at":{{json .Created}}}';
 const M4UIB_IMMUTABLE=['id','image','hostname','labels','tmpfs','read_only','privileged','network_mode','command','entrypoint','workdir','port_bindings','cap_drop','security_options','created_at','user','stop_signal'];
@@ -19,7 +19,7 @@ const M4UIB_PREPARE_KEYS=['schema','scope','status','run_id','source_sha','conta
 const M4UIB_BUSINESS_KEYS=['prepared_only','paid_order_id','paid_order_no','merchant_id','customer_id','item_quantities','source_fingerprint','actor_ids','writer','menus','window_before','window_final','independent_full_window_verified','post_child_close_verified','observer'];
 const M4UIB_WRITER_KEYS=['path','bytes','sha256','mode','uid','gid','dev','ino','nlink','directory_mode'];
 const M4UIB_PREPARE_NAMES=['ui-prepare-created.json','ms4-ui-prepare-source-binding.json','ui-prepare-environment.json','ui-prepare-environment-native.json','ms4-ui-prepare.json','ui-prepare-shutdown.json','ui-prepare-terminal.json'];
-const M4UIB_VOLUME_MOUNTS=['/run/audit-app'=>['app-secrets',false],'/run/audit-fixtures'=>['fixture-secrets',false],'/var/lib/crmeb-aftersale-evidence'=>['aftersale-evidence',true],'/workspace/crmeb/public'=>['ui-public',false],'/workspace/crmeb/public/uploads/store/comment'=>['ui-comments',true],'/run/audit-ui-control'=>['ui-control',true]];
+const M4UIB_VOLUME_MOUNTS=['/run/audit-app'=>['app-secrets',false],'/run/audit-fixtures'=>['fixture-secrets',false],'/var/lib/crmeb-aftersale-evidence'=>['aftersale-evidence',true],'/workspace/crmeb/public'=>['ui-public',false],'/workspace/crmeb/public/uploads/store/comment'=>['ui-comments',true],'/workspace/crmeb/public/uploads/customer'=>['ui-customer-assets',true],'/run/audit-ui-control'=>['ui-control',true]];
 const M4UIB_ORIGINAL_VOLUMES=['aftersale-evidence','app-secrets','bootstrap-secrets','fixture-secrets','mysql-data','redis-data','redis-secrets'];
 const M4UIB_CONTROL='/run/audit-ui-control';
 const M4UIB_LOGS=['/workspace/crmeb/runtime/ms4-ui-backend.stdout.log','/workspace/crmeb/runtime/ms4-ui-backend.stderr.log'];
@@ -424,12 +424,12 @@ function m4uib_volumes(array $source):void
     m4uib_assert($proof['schema']===1&&$proof['scope']==='MS4_UI_WEB_VOLUME_IDENTITIES_NATIVE'
         &&$proof['run_id']===$source['run_id']&&$proof['source_sha']===$source['source_sha']
         &&$proof['freeze_sha256']===$source['freeze_sha256'],'REAL_WEB_VOLUME_NATIVE_PROOF');
-    $suffixes=array_merge(M4UIB_ORIGINAL_VOLUMES,['ui-public','ui-comments','ui-control']);sort($suffixes,SORT_STRING);
+    $suffixes=array_merge(M4UIB_ORIGINAL_VOLUMES,['ui-public','ui-comments','ui-customer-assets','ui-control']);sort($suffixes,SORT_STRING);
     $names=[];foreach($suffixes as$suffix)$names[]=$source['context']['project'].'_'.$suffix;
     $actual=$source['formal']['volumes'];sort($actual,SORT_STRING);
     $ids=array_keys($source['formal']['volume_identities']);sort($ids,SORT_STRING);
     m4uib_assert($actual===$names&&$ids===$names&&is_array($proof['volumes'])&&array_is_list($proof['volumes'])
-        &&count($proof['volumes'])===10,'EXACT_ORIGINAL7_PLUS_REAL_UI3_VOLUMES');
+        &&count($proof['volumes'])===11,'EXACT_ORIGINAL7_PLUS_REAL_UI4_VOLUMES');
     $originalNames=[];foreach(M4UIB_ORIGINAL_VOLUMES as$suffix)$originalNames[]=$source['context']['project'].'_'.$suffix;sort($originalNames,SORT_STRING);
     m4uib_assert(is_array($source['context']['initial_volumes'])&&array_is_list($source['context']['initial_volumes'])
         &&count($source['context']['initial_volumes'])===7,'CURRENT_CONTEXT_SEVEN_COMPLETE_IDENTITIES');
@@ -458,7 +458,7 @@ function m4uib_volumes(array $source):void
         m4uib_assert(!isset($nativeByName[$name]),'UNIQUE_ACTUAL_NATIVE_VOLUME');$nativeByName[$name]=$value;
     }
     $nativeNames=array_keys($nativeByName);sort($nativeNames,SORT_STRING);
-    m4uib_assert($nativeNames===$names,'COMPLETE_TEN_ACTUAL_NATIVE_VOLUME_MAP');
+    m4uib_assert($nativeNames===$names,'COMPLETE_ELEVEN_ACTUAL_NATIVE_VOLUME_MAP');
     foreach($original as$name=>$row)
         m4uib_assert(m4uib_same($nativeByName[$name],$row)&&$row['created_at']===$source['formal']['volume_identities'][$name],'ORIGINAL_SEVEN_IDENTITIES_UNCHANGED');
 }
@@ -536,7 +536,7 @@ function m4uib_gateway(array $source):void
     $networks=array_keys($gateway['networks']);sort($networks,SORT_STRING);$expected=[$internal['Name'],$frontend];sort($expected,SORT_STRING);
     m4uib_assert($networks===$expected&&$gateway['network_mode']===$internal['Name']
         &&in_array($gateway['networks'][$internal['Name']]['NetworkID'],['',$internal['Id']],true),'GATEWAY_ONLY_TWO_NETWORKS');
-    $public=0;$comments=0;$config=0;$nativeCount=0;
+    $public=0;$comments=0;$customer=0;$config=0;$nativeCount=0;
     foreach($gateway['mounts']as$mount){
         if($mount['Type']==='tmpfs'){m4uib_assert($mount['Destination']==='/tmp'&&$mount['RW']===true,'GATEWAY_ONLY_TMPFS');continue;}
         ++$nativeCount;m4uib_assert($mount['RW']===false,'GATEWAY_ALL_NATIVE_MOUNTS_READONLY');
@@ -544,13 +544,95 @@ function m4uib_gateway(array $source):void
             &&$mount['Name']===$context['project'].'_ui-public')++$public;
         elseif($mount['Destination']==='/srv/public/uploads/store/comment'&&$mount['Type']==='volume'
             &&$mount['Name']===$context['project'].'_ui-comments')++$comments;
+        elseif($mount['Destination']==='/srv/public/uploads/customer'&&$mount['Type']==='volume'
+            &&$mount['Name']===$context['project'].'_ui-customer-assets')++$customer;
         elseif($mount['Destination']==='/etc/nginx/nginx.conf'&&$mount['Type']==='bind'
             &&audit_canonical_host_bind_source($mount['Source'])===audit_canonical_host_bind_source($context['prep_dir'].'/ms4-ui-nginx.conf'))++$config;
         else m4uib_assert(false,'GATEWAY_HAS_UNDECLARED_OR_PRIVATE_MOUNT');
     }
-    m4uib_assert($nativeCount===3&&$public===$comments&&$comments===$config&&$config===1,'GATEWAY_ONLY_PUBLIC_AND_COMMENT_AND_CONFIG');
+    m4uib_assert($nativeCount===4&&$public===$comments&&$comments===$customer&&$customer===$config&&$config===1,'GATEWAY_ONLY_PUBLIC_COMMENT_CUSTOMER_AND_CONFIG');
     $nginx=m4uib_file('/run/ms4-prep/ms4-ui-nginx.conf')['descriptor'];
-    m4uib_assert($nginx['bytes']===3854&&$nginx['sha256']==='c91161450ca87958138fff8a30e64564abee2d626d0b09e65678e4f3ff90a2fd','AUDITED_NGINX_SOURCE_BYTES');
+    m4uib_assert($nginx['bytes']===4105&&$nginx['sha256']==='033ae09499501ec9ef9a2ab87d5da53687491be06f20615781f2d5b01c4cbca5','AUDITED_NGINX_SOURCE_BYTES');
+}
+/** Narrow tree admission only. Original observer phase14/15 remains the complete native business oracle. */
+function m4uib_customer_review_public(array $source):array
+{
+    $business=$source['prepare_history']['business']??null;
+    m4uib_assert(is_array($business),'N2_REAL_PREPARE_BUSINESS_REQUIRED');
+    $uid=m4uib_positive($business['actor_ids']['customer']??null);
+    $rootId=m4uib_positive($business['paid_order_id']??null,4294967295);
+    $merchantId=m4uib_positive($business['merchant_id']??null,4294967295);
+    $items=$business['item_quantities']??null;
+    m4uib_assert(is_array($items)&&array_is_list($items)&&count($items)===2&&$items[0]['quantity']===2&&$items[1]['quantity']===1,
+        'N2_ORIGINAL_PREPARED_Q2_Q1_EXPECTATIONS');
+    $itemId=m4uib_positive($items[0]['item_id']);
+    $db=audit_db();m4uib_assert(!$db->inTransaction(),'N2_READONLY_TREE_OBSERVER_OUTSIDE_TRANSACTION');
+    m4uib_assert($db->query('SELECT DATABASE()')->fetchColumn()==='audit_auth'
+        &&$db->query('SELECT run_id FROM audit_sentinel')->fetchAll(PDO::FETCH_COLUMN)===[$source['run_id']],
+        'N2_TREE_OBSERVER_ACTUAL_RUN_DATABASE');
+    $rows=m4cb_rows($db,'SELECT * FROM eb_marketplace_customer_asset WHERE uid=? AND root_order_id=? AND order_item_id=? AND purpose=? LIMIT 2',
+        [$uid,$rootId,$itemId,'review_public_image']);
+    m4uib_assert(count($rows)<=1,'N2_ZERO_OR_ONE_ACTUAL_NAMED_REVIEW_ASSET');
+    if($rows===[])return ['files'=>[],'directories'=>[]];
+    $row=$rows[0];$fields=['id','uid','purpose','state','storage_type','object_key','thumbnail_key','name','real_name',
+        'media_type','byte_size','width','height','content_sha256','created_at','expires_at','bound_at','retired_at',
+        'root_order_id','order_item_id','refund_id','review_id','confirmation_ref','form_product_id','form_definition_sha256',
+        'form_field_index','extract_id','agent_apply_id','source_product_id','source_qrcode_id','created_by_uid',
+        'created_by_admin_id','created_by_job','legacy_att_id'];
+    m4uib_assert(array_keys($row)===$fields,'N2_COMPLETE_ORDERED_NATIVE_CUSTOMER34_SCHEMA');
+    $decimal=static function(mixed $value,string $maximum='18446744073709551615'):string{
+        m4uib_assert((is_int($value)||is_string($value))&&preg_match('/\A[1-9][0-9]{0,19}\z/D',(string)$value)===1,
+            'N2_CANONICAL_NATIVE_POSITIVE_DECIMAL');$text=(string)$value;
+        m4uib_assert(strlen($text)<strlen($maximum)||(strlen($text)===strlen($maximum)&&strcmp($text,$maximum)<=0),
+            'N2_NATIVE_DECIMAL_IN_DECLARED_RANGE');return $text;
+    };
+    $decimal($row['id']);
+    foreach(['uid'=>$uid,'root_order_id'=>$rootId,'order_item_id'=>$itemId,'created_by_uid'=>$uid,'storage_type'=>1]as$key=>$value)
+        m4uib_assert($decimal($row[$key],'4294967295')===(string)$value,'N2_ASSET_EXPECTATIONS_FROM_REAL_PREPARE_NOT_AFTER_ROW');
+    foreach(['expires_at','retired_at','refund_id','confirmation_ref','form_product_id','form_definition_sha256','form_field_index',
+        'extract_id','agent_apply_id','source_product_id','source_qrcode_id','created_by_admin_id','created_by_job','legacy_att_id']as$key)
+        m4uib_assert($row[$key]===null,'N2_NAMED_REVIEW_OTHER_PARENT_DOMAINS_NULL');
+    $ref=$row['object_key'];m4uib_assert($row['purpose']==='review_public_image'&&is_string($ref)&&strlen($ref)<=200
+        &&preg_match('~\A/uploads/customer/'.$uid.'/[a-f0-9]{32}/[a-f0-9]{32}\.png\z~D',$ref)===1
+        &&$row['thumbnail_key']===$ref&&$row['name']===basename($ref),'N2_ONLY_ACTUAL_CUSTOMER_UID_NONCE_PNG_REFERENCE');
+    m4uib_assert(is_string($row['real_name'])&&preg_match('//u',$row['real_name'])===1&&$row['real_name']!==''
+        &&mb_strlen($row['real_name'],'UTF-8')<=255&&!str_contains($row['real_name'],"\0")&&!str_contains($row['real_name'],'/')
+        &&!str_contains($row['real_name'],'\\')&&strtolower(pathinfo($row['real_name'],PATHINFO_EXTENSION))==='png',
+        'N2_REAL_LEGAL_ORIGINAL_PNG_NAME_ORACLE_STILL_VERIFIES_ACTUAL_WIRE');
+    $created=$decimal($row['created_at'],'4294967295');m4uib_assert((int)$created<=time(),'N2_REAL_PERSISTED_ASSET_CREATED_TIME');
+    $roots=m4cb_rows($db,'SELECT * FROM eb_store_order WHERE id=? AND uid=? AND mer_id=? LIMIT 2',[$rootId,$uid,$merchantId]);
+    $originalItems=m4cb_rows($db,'SELECT * FROM eb_store_order_cart_info WHERE id=? AND oid=? AND uid=? AND mer_id=? LIMIT 2',[$itemId,$rootId,$uid,$merchantId]);
+    m4uib_assert(count($roots)===1&&count($originalItems)===1&&(string)$roots[0]['pid']==='0'
+        &&(string)$roots[0]['marketplace_trade_version']==='1'&&(string)$roots[0]['paid']==='1'&&(string)$roots[0]['status']==='2'
+        &&(string)$originalItems[0]['cart_num']==='2'&&is_string($originalItems[0]['unique'])
+        &&preg_match('/\A[a-f0-9]{32}\z/D',$originalItems[0]['unique'])===1,'N2_REAL_ORIGINAL_RECEIVED_ROOT_AND_PREPARED_Q2_JOIN');
+    $reviews=m4cb_rows($db,'SELECT * FROM eb_store_product_reply WHERE uid=? AND oid=? AND BINARY `unique`=BINARY ? AND reply_type=? LIMIT 2',
+        [$uid,$rootId,$originalItems[0]['unique'],'product']);
+    if($row['state']==='STAGED')m4uib_assert($row['bound_at']===null&&$row['review_id']===null&&$reviews===[],
+        'N2_ACTUAL_STAGED_REVIEW_IMAGE_BEFORE_REVIEW');
+    else{
+        m4uib_assert($row['state']==='BOUND'&&count($reviews)===1,'N2_ONLY_REAL_BOUND_REVIEW_IMAGE');$review=$reviews[0];
+        $bound=$decimal($row['bound_at'],'4294967295');
+        m4uib_assert($decimal($row['review_id'],'2147483647')===$decimal($review['id'],'2147483647')
+            &&(int)$bound>=(int)$created&&(int)$bound<=time()&&$review['reply_type']==='product'
+            &&(string)$review['product_id']===(string)$originalItems[0]['product_id']&&(string)$review['mer_id']===(string)$merchantId
+            &&(string)$review['is_del']==='0'&&is_string($review['pics'])
+            &&json_decode($review['pics'],true,16,JSON_THROW_ON_ERROR)===[$ref],'N2_BOUND_ASSET_REAL_REVIEW_ID_AND_EXACT_SAVED_PICTURE');
+    }
+    // Same frozen original PNG as prepare-oracle.php:1328-1329; never derive expected bytes/hash from an AFTER row.
+    $png=['bytes'=>234,'sha256'=>'1cb2b0cfb8e075b494268977c5f6360309edbc4e0800cd5c58399d291c5185b8'];
+    $frozen=m4uib_file('/workspace/crmeb/public/__ms4_fixture__/product.png',1048576,true);$size=getimagesizefromstring($frozen['raw']);
+    m4uib_assert($frozen['descriptor']['bytes']===$png['bytes']&&$frozen['descriptor']['sha256']===$png['sha256']&&is_array($size)
+        &&$size[0]===96&&$size[1]===96&&$size[2]===IMAGETYPE_PNG,'N2_ACTUAL_FROZEN_PRESELECTED_PNG_BYTES_AND_DIMENSIONS');
+    m4uib_assert($row['media_type']==='image/png'&&$decimal($row['byte_size'])===(string)$png['bytes']
+        &&$decimal($row['width'],'4294967295')==='96'&&$decimal($row['height'],'4294967295')==='96'
+        &&is_string($row['content_sha256'])&&$row['content_sha256']===hex2bin($png['sha256']),'N2_NATIVE_ASSET_EQUALS_INDEPENDENT_FROZEN_PNG');
+    $actual=m4uib_file('/workspace/crmeb/public'.$ref,1048576,true);
+    m4uib_assert($actual['descriptor']['bytes']===$png['bytes']&&$actual['descriptor']['sha256']===$png['sha256']
+        &&$actual['raw']===$frozen['raw'],'N2_EXACT_SELECTED_REVIEW_IMAGE_COMPLETE_REAL_BYTES');
+    unset($actual,$frozen);$relative=ltrim($ref,'/');$directories=[];$parent=dirname($relative);
+    while($parent!=='.'){$directories[$parent]=true;$parent=dirname($parent);}
+    return ['files'=>[$relative=>$png],'directories'=>$directories];
 }
 function m4uib_public(array $source,bool $allowNewComments=false):void
 {
@@ -571,6 +653,7 @@ function m4uib_public(array $source,bool $allowNewComments=false):void
     foreach($materials['directories']as$path){m4uib_relative($path);m4uib_assert(!isset($directories[$path]),'PUBLIC_UNIQUE_DIRECTORY');$directories[$path]=true;}
     foreach(['index.php','router.php','install.lock','__ms4_fixture__/product.png','__ms4_assets/h5/index.html','__ms4_assets/merchant/index.html','__ms4_assets/admin/index.html']as$path)
         m4uib_assert(isset($files[$path]),'REAL_PUBLIC_AND_THREE_DISTS_PRESENT');
+    $customer=$allowNewComments?m4uib_customer_review_public($source):['files'=>[],'directories'=>[]];
     $root='/workspace/crmeb/public';m4uib_dir($root,0755);$actualFiles=[];$actualDirs=[];
     $iterator=new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root,FilesystemIterator::SKIP_DOTS),RecursiveIteratorIterator::SELF_FIRST);
     foreach($iterator as$file){
@@ -578,7 +661,7 @@ function m4uib_public(array $source,bool $allowNewComments=false):void
         $comment=$relative==='uploads/store/comment'||str_starts_with($relative,'uploads/store/comment/');
         if($file->isDir()){
             m4uib_dir($file->getPathname(),0755);$actualDirs[$relative]=true;
-            m4uib_assert(isset($directories[$relative])||($allowNewComments&&$comment),'PUBLIC_ONLY_DECLARED_OR_NEW_COMMENT_DIRECTORY');
+            m4uib_assert(isset($directories[$relative])||($allowNewComments&&$comment)||isset($customer['directories'][$relative]),'PUBLIC_ONLY_DECLARED_COMMENT_OR_EXACT_REVIEW_PARENT_DIRECTORY');
         }else{
             m4uib_assert($file->isFile(),'PUBLIC_ONLY_ORDINARY_FILES');$meta=m4uib_file($file->getPathname());
             if($relative==='install/crmeb.sql'){
@@ -592,11 +675,15 @@ function m4uib_public(array $source,bool $allowNewComments=false):void
             $actualFiles[$relative]=true;
             if(isset($files[$relative]))m4uib_assert($meta['descriptor']['bytes']===$files[$relative]['bytes']
                 &&$meta['descriptor']['sha256']===$files[$relative]['sha256'],'ALL_ORIGINAL_PUBLIC_COMMENT_AND_STATIC_BYTES');
-            else m4uib_assert($allowNewComments&&$comment,'ONLY_NEW_PUBLIC_COMMENT_FILES');
+            elseif(isset($customer['files'][$relative]))m4uib_assert($meta['descriptor']['bytes']===$customer['files'][$relative]['bytes']
+                &&$meta['descriptor']['sha256']===$customer['files'][$relative]['sha256'],'ONLY_EXACT_REAL_REVIEW_CUSTOMER_PNG_BYTES');
+            else m4uib_assert($allowNewComments&&$comment,'ONLY_NEW_PUBLIC_COMMENT_FILES_OR_EXACT_DECLARED_REVIEW_PNG');
         }
     }
     foreach($files as$path=>$_)m4uib_assert(isset($actualFiles[$path]),'ALL_ORIGINAL_PUBLIC_FILES_STILL_PRESENT');
     foreach($directories as$path=>$_)m4uib_assert(isset($actualDirs[$path]),'ALL_ORIGINAL_PUBLIC_DIRECTORIES_STILL_PRESENT');
+    foreach($customer['files']as$path=>$_)m4uib_assert(isset($actualFiles[$path]),'ACTUAL_NAMED_REVIEW_PUBLIC_IMAGE_STILL_PRESENT');
+    foreach($customer['directories']as$path=>$_)m4uib_assert(isset($actualDirs[$path]),'ACTUAL_NAMED_REVIEW_IMAGE_PARENT_CHAIN_STILL_PRESENT');
 }
 function m4uib_source():array
 {

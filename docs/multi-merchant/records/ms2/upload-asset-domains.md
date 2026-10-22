@@ -768,3 +768,14 @@ Root固定PHP8.2纯语法实际0，来源与完整native双流见仓库外 norma
 外部Source包customer-avatar-public-source-r1共十候选；Root全文审查唯一DIFF/NOTES，独立完整Source复核无确定阻断发现。r1独审报告中native9经JS Number舍入，原报告保留，r2改用Python原生int完整首末校核后才采用，不将舍入值当原生身份。实际固定PHP8.2七文件纯语法均0；原Babel有限H5/MP-WEIXIN/APP-PLUS投影通过，不代表正式Uni构建。Root再次核全部13包文件、29输入、30原生检查PID/完整双流/终态及Next每件before完整字节。证据保留于仓库外customer-avatar-root-adoption-r1。
 
 真实HTTP上传/预览/保存/同体再保存、完整SQL与文件差分、原事件及两头像UI尚待正常验证；本记录不签其通过。完整A/B、三端/三宽、历史归属与旧权益、真实金融、MS6及人工验收仍待，停止样本NOT RUN、Task9关闭保持。无推送、部署或真实资金操作。
+
+
+## 2026-10-22 资产检查、上传配额读回与三端目录联合修复（源码/语法，业务待验）
+
+原Run2026102212053520120d的early20个CLI及容器、source17/六快照/assets175实际通过，files-bootstrap随后因固定错误码格式自然失败1；原结果/private_cleanup=false保持，未进入后继业务。该Run已按真实身份正常stop两DB并非force退役原4CID/1网/7卷，close与独立zero均native/wait0；Root及非作者实际全量读回保原35174公件/Source30974等，未重启旧Run或回补业务通过。
+
+本次同一次联合采用三个已独审的现有PHP源：客户entry只修9个M4C_错误码前缀、最终assets快照及原6后追加3表保全；CustomerAssetServices评价上传与头像上传两处post-set读回复用原counter规范化真实Redis数字字符串，再严格比目标整数，保set true/100上限/86400/tag、同IO次数、同事务与未知结果receipt；Core后台只修customer专用RW叶、原7+UI4共11卷、gateway4RO、实际精确review34行/原PNG/ref/父链准入与当前entry真实pin，所有原文件/目录和legacy14/phase14-15 oracle保留。Core客户entry原pin已证过时，本次明确同步采用实际114528B/d2b909...候选，并非把未改187声明通过。
+
+实际PHP8.2.33对客户entry/Service及两头像测试候选的4个-l均0；真实Driver serialize/unserialize与原counter合法正常值纯合同0，共22native/5纯检查CID正常nonforce rm。Core -l及exact nginx -t实际0，共10native/2纯检查CID正常rm；nginx仅network-none解析及固定loopback hostname，不签实际DNS/App/HTTP。完整raw/来源在仓库外asset-entry-quota-avatar-php-check-r1与n2-core-nginx-syntax-root-r1。三份独立Source审查及全部相关窗结束后才采用；无活动本地hooks、限定四路径本地提交，实际新SHA另由外部COMMIT.json记录，不预填自己的未来身份。
+
+只有三个PHP和本记录纳入本次Git提交；对应nginx新配置仍在已审外部候选，待新UI17完整装配，不修改原冻结profile。Host/compose/copy/public-copy/browser/close/zero/早期T3及元数据DAG仍待适配；头像kernel/HTTP测试候选本次只语法，不接入或运行。下一步按真实新HEAD重闭完整A来源，正常close/独立zero后再同源fresh B。完整A/B/三端三宽/N1N2、T4媒资/扫码/自然GC、T5其它私有用途/头像/default与历史兼容、旧权益归属与最终迁移启用、真实金融/MS6及人工验收仍未完成。通用多商户复用商品/SKU规格价格，Task9关闭、用户停止样本NOT RUN及T4已拒操作不重试保持；L2仅本地，无推送部署或真实资金操作。

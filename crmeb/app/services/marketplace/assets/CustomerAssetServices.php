@@ -58,7 +58,7 @@ final class CustomerAssetServices
             if(app()->request!==$request||app()->http->getName()!=='api'||$request->isLogin()!==true
                 ||!in_array($request->uid(),[$actualUid,(string)$actualUid],true))self::fail();
             $key='start_uploads_'.$actualUid;$count=self::counter(CacheService::get($key,0));if($count>=100)self::fail();$count++;
-            if(CacheService::set($key,$count,86400)!==true||CacheService::get($key,null)!==$count)self::fail();
+            if(CacheService::set($key,$count,86400)!==true||self::counter(CacheService::get($key,null))!==$count)self::fail();
             if(app()->request!==$request||app()->http->getName()!=='api'||$request->isLogin()!==true
                 ||!in_array($request->uid(),[$actualUid,(string)$actualUid],true)||$request->verifiedTokenFingerprint()!==$fingerprint)self::fail();
             $receipt['complete']=true;$receipt['phase']='complete';return $out['dto'];
@@ -118,7 +118,7 @@ final class CustomerAssetServices
             $this->assets->assertAvatarCommitted($connection,$pdo,$out['asset'],$out['user']);
             $receipt['phase']='quota_update';$key='start_uploads_'.$actualUid;$count=self::counter(CacheService::get($key,0));
             if($count>=100)self::fail();$count++;
-            if(CacheService::set($key,$count,86400)!==true||CacheService::get($key,null)!==$count)self::fail();
+            if(CacheService::set($key,$count,86400)!==true||self::counter(CacheService::get($key,null))!==$count)self::fail();
             if(self::avatarIdentity($request,$actualUid)!==$fingerprint)self::fail();
             $receipt['complete']=true;$receipt['phase']='complete';return $out['dto'];
         }catch(Throwable $error){self::$avatarFrame=null;self::$avatarDatabaseSession=null;throw new MerchantAttachmentOperationException($receipt);}
