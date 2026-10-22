@@ -757,3 +757,14 @@ Root 在当前无新 T4 目标实例、环境 Source 尚未冻结时先接入此
 正常评价图改走真实本人已收货root/item的具名multipart上传，不再把顾客资产编号当旧att_id。独立构造全34原生字段及真实PNG物理文件、原100/86400配额和完整DB/Redis/文件差分；创建评价时只允许同资产state/review_id/bound_at三字段变化，其他31字段和计数器保持，同体重放不重绑。原93未改函数、旧generic完整体、顶层result/business、售后13动作/15重放/5退款/2S2、公开12字段/原图/keep责任保持。
 
 Root固定PHP8.2纯语法实际0，来源与完整native双流见仓库外 normal-upload-consumer-focused-check-r1/RESULT.json22639B/0d79d07258078680612e556ee66c4ebfa9f1f46fba04239abb44999855025cfc。仅源码和语法；尚未运行新正常业务。三asset表必须在paid/Task6基线前真实初始化，不能在AR中DDL或扩App四DML。N2 UI旧generic/legacy14、defaultCompat/private/avatar/历史、R41原失败、完整A/B/三端与真实金融/MS6/人工验收仍未闭合；本地L2，无推送或部署，停止样本NOT RUN。
+
+
+## 2026-10-22 本人头像具名上传与资料选择接线（源码完成，正常业务待验）
+
+已采用CU_PUBLIC的avatar_public两阶段流程：本人认证上传先保存STAGED资产，返回原name/url/attachment_ref和规范十进制字符串avatar_asset_id；原两个头像入口保存资料时带回该id。后端在同一实际writer/PDO事务先锁本人user、再核本人完整34列资产与原图/canonical URL，经原UserDao保存资料，仅把所选STAGED资产state/bound_at改为BOUND。普通同体再次保存保原资产和绑定时间。原合法外部/历史URL不带id时沿原流程，不猜造资产；昵称更新不误绑定，不自动删除旧图或预览图，不增加TTL/GC。原review、默认及private上传职责保持。
+
+原UserDao/UserServices资料写入及原事件payload沿用，事件仍在实际提交和完整读回之后发出；两Vue只改脚本接线，模板/样式保持。商品、SKU、规格、价格及库存复用原通用体系。本次仅独立Next分支L2源码接入，未修改当前失败Run的Dev/Val/Profile。
+
+外部Source包customer-avatar-public-source-r1共十候选；Root全文审查唯一DIFF/NOTES，独立完整Source复核无确定阻断发现。r1独审报告中native9经JS Number舍入，原报告保留，r2改用Python原生int完整首末校核后才采用，不将舍入值当原生身份。实际固定PHP8.2七文件纯语法均0；原Babel有限H5/MP-WEIXIN/APP-PLUS投影通过，不代表正式Uni构建。Root再次核全部13包文件、29输入、30原生检查PID/完整双流/终态及Next每件before完整字节。证据保留于仓库外customer-avatar-root-adoption-r1。
+
+真实HTTP上传/预览/保存/同体再保存、完整SQL与文件差分、原事件及两头像UI尚待正常验证；本记录不签其通过。完整A/B、三端/三宽、历史归属与旧权益、真实金融、MS6及人工验收仍待，停止样本NOT RUN、Task9关闭保持。无推送、部署或真实资金操作。

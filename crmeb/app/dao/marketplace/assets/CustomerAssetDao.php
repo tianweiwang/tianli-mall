@@ -12,7 +12,7 @@ use PDOStatement;
 use think\db\ConnectionInterface;
 use think\facade\Db;
 
-/** The fixed customer-review asset domain on the caller's original primary writer. */
+/** Explicit customer-review and avatar leaves on the caller's original primary writer. */
 final class CustomerAssetDao
 {
     private const UINT64 = '18446744073709551615';
@@ -187,6 +187,114 @@ final class CustomerAssetDao
         }
         if(count($observed)!==count($expected))self::fail();
         $this->review($connection,$pdo,$root,$item,$uid,$review);$this->target($connection,$pdo,$root,$item,$uid);
+    }
+
+
+    /** Initialize and qualify the real primary through a meaningful current-user query. */
+    public function avatarConnection(int $uid):array
+    {
+        self::integer($uid,1,4294967295);$connection=Db::connect();
+        if(!$connection instanceof Mysql||$connection->transactionDepth()!==0)self::fail();
+        $rows=$connection->query('SELECT * FROM '.$this->table($connection,'user').' WHERE uid=? LIMIT 2',[$uid],true);
+        $pdo=$connection->getPdo();if(!$pdo instanceof PDO)self::fail();$this->outside($connection,$pdo);
+        if(!is_array($rows)||count($rows)!==1||self::integer($rows[0]['uid']??null,1,4294967295)!==$uid
+            ||self::integer($rows[0]['status']??null,0,1)!==1||self::integer($rows[0]['is_del']??null,0,1)!==0)self::fail();
+        $this->assertStructure($connection,$pdo);$this->outside($connection,$pdo);return [$connection,$pdo];
+    }
+
+    public function insertAvatar(array $context,array $physicalRow,array $qualified):array
+    {
+        [$connection,$pdo,$uid]=$this->avatarContext($context,'upload');$this->assertStructure($connection,$pdo);
+        self::keys($physicalRow,['name','real_name','att_dir','satt_dir','att_size','att_type','image_type']);
+        self::keys($qualified,['extension','mime','size','width','height','sha256']);
+        if(!in_array($qualified['extension'],['jpg','jpeg','png','gif','webp'],true)||!in_array($qualified['mime'],self::IMAGE_MIMES,true)
+            ||$physicalRow['att_type']!==$qualified['mime']||!is_string($qualified['sha256'])||preg_match('/\A[a-f0-9]{64}\z/D',$qualified['sha256'])!==1)self::fail();
+        $size=self::integer($qualified['size'],1,52428800);$width=self::integer($qualified['width'],1,4294967295);$height=self::integer($qualified['height'],1,4294967295);
+        if(self::decimal($physicalRow['att_size'])!==(string)$size||$physicalRow['satt_dir']!==$physicalRow['att_dir'])self::fail();
+        $reference=self::reference($physicalRow['att_dir']);self::text($physicalRow['name'],1,100);self::text($physicalRow['real_name'],1,255);
+        if(strtolower(pathinfo($physicalRow['name'],PATHINFO_EXTENSION))!==$qualified['extension'])self::fail();
+        $storage=self::integer($physicalRow['image_type'],1,7);$now=self::integer(time(),1,4294967295);
+        $data=array_fill_keys(array_slice(self::FIELDS,1),null);
+        $data=array_replace($data,['uid'=>$uid,'purpose'=>'avatar_public','state'=>'STAGED','storage_type'=>$storage,'object_key'=>$reference,
+            'thumbnail_key'=>$reference,'name'=>$physicalRow['name'],'real_name'=>$physicalRow['real_name'],'media_type'=>$qualified['mime'],
+            'byte_size'=>(string)$size,'width'=>$width,'height'=>$height,'content_sha256'=>hex2bin($qualified['sha256']),'created_at'=>$now,'created_by_uid'=>$uid]);
+        foreach(['uid','storage_type','byte_size','width','height','created_at','created_by_uid']as$field)$data[$field]=$this->nativeNumber($pdo,$data[$field]);
+        $this->avatarContext($context,'upload');$columns=array_keys($data);$statement=$pdo->prepare('INSERT INTO '.$this->table($connection,'marketplace_customer_asset')
+            .' ('.implode(',',array_map(static fn(string $name):string=>chr(96).$name.chr(96),$columns)).') VALUES ('.implode(',',array_fill(0,count($columns),'?')).')');
+        if(!$statement instanceof PDOStatement)self::fail();
+        try{if($statement->execute(array_values($data))!==true||$statement->rowCount()!==1)self::fail();}
+        finally{if($statement->closeCursor()!==true)self::fail();}
+        $id=self::decimal($pdo->lastInsertId());$expected=['id'=>$this->nativeNumber($pdo,$id)]+$data;
+        $this->avatarRow($uid,$expected);$this->assertAvatarCurrent($context,$expected);return $expected;
+    }
+
+    public function lockAvatar(array $context,string $id):array
+    {
+        [$connection,$pdo,$uid]=$this->avatarContext($context,'profile');
+        if(self::decimal($id)!==$context['asset_id'])self::fail();$this->assertStructure($connection,$pdo);
+        $rows=$this->byId($connection,$pdo,$id);if(count($rows)!==1)self::fail();$this->avatarRow($uid,$rows[0]);
+        $this->avatarContext($context,'profile');return $rows[0];
+    }
+
+    public function assertAvatarCurrent(array $context,array $row):void
+    {
+        [$connection,$pdo,$uid]=$this->avatarContext($context,$context['mode']);$this->avatarRow($uid,$row);
+        if($context['mode']==='profile'&&self::decimal($row['id'])!==$context['asset_id'])self::fail();
+        if($this->byId($connection,$pdo,self::decimal($row['id']))!==[$row])self::fail();$this->avatarContext($context,$context['mode']);
+    }
+
+    /** Only actual profile selection turns STAGED into BOUND. Existing current BOUND rows do not move again. */
+    public function bindAvatar(array $context,array $before):array
+    {
+        [$connection,$pdo,$uid]=$this->avatarContext($context,'profile');$this->assertAvatarCurrent($context,$before);
+        if($before['state']==='BOUND')return $before;
+        $now=self::integer(time(),1,4294967295);if($now<self::integer($before['created_at'],1,4294967295))self::fail();
+        $expected=$before;$expected['state']='BOUND';$expected['bound_at']=$this->nativeNumber($pdo,$now);$this->avatarRow($uid,$expected);
+        $statement=$pdo->prepare('UPDATE '.$this->table($connection,'marketplace_customer_asset')
+            .' SET state=?,bound_at=? WHERE id=? AND uid=? AND purpose=? AND state=? AND bound_at IS NULL');
+        if(!$statement instanceof PDOStatement)self::fail();
+        try{if($statement->execute(['BOUND',$now,self::decimal($before['id']),$uid,'avatar_public','STAGED'])!==true||$statement->rowCount()!==1)self::fail();}
+        finally{if($statement->closeCursor()!==true)self::fail();}
+        $this->assertAvatarCurrent($context,$expected);return $expected;
+    }
+
+    /** Positive readback on the same actual primary after the owning transaction returned. */
+    public function assertAvatarCommitted(ConnectionInterface $connection,PDO $pdo,array $asset,array $user):void
+    {
+        $this->outside($connection,$pdo);$uid=self::integer($user['uid']??null,1,4294967295);$this->avatarRow($uid,$asset);
+        $autocommit=$this->rows($connection,$pdo,'SELECT @@session.autocommit AS autocommit',[]);
+        if(count($autocommit)!==1||!in_array($autocommit[0]['autocommit']??null,[1,'1'],true))self::fail();
+        if($this->rows($connection,$pdo,'SELECT * FROM '.$this->table($connection,'marketplace_customer_asset').' WHERE id=? LIMIT 2',[self::decimal($asset['id'])])!==[$asset]
+            ||$this->rows($connection,$pdo,'SELECT * FROM '.$this->table($connection,'user').' WHERE uid=? LIMIT 2',[$uid])!==[$user])self::fail();
+        $this->outside($connection,$pdo);
+    }
+
+    private function avatarContext(array $context,string $mode):array
+    {
+        self::keys($context,['request','actual_uid','user','connection','pdo','session_sha256','mode','asset_id']);
+        \app\services\marketplace\assets\CustomerAssetServices::assertAvatarContext($context,$mode);
+        $connection=$context['connection'];$pdo=$context['pdo'];$uid=self::integer($context['actual_uid'],1,4294967295);
+        if(!$connection instanceof ConnectionInterface||!$pdo instanceof PDO||!is_array($context['user']))self::fail();
+        $user=$this->lockUser($connection,$pdo,$uid);
+        if($mode==='upload'&&$user!==$context['user'])self::fail();
+        $this->writer($connection,$pdo);\app\services\marketplace\assets\CustomerAssetServices::assertAvatarContext($context,$mode);
+        return [$connection,$pdo,$uid];
+    }
+
+    private function avatarRow(int $uid,array $row):void
+    {
+        if(array_keys($row)!==self::FIELDS||$row['purpose']!=='avatar_public'||!in_array($row['state'],['STAGED','BOUND'],true)
+            ||self::integer($row['uid'],1,4294967295)!==$uid||self::integer($row['created_by_uid'],1,4294967295)!==$uid)self::fail();
+        self::decimal($row['id']);self::integer($row['storage_type'],1,7);self::integer($row['byte_size'],1,52428800);
+        self::integer($row['width'],1,4294967295);self::integer($row['height'],1,4294967295);$created=self::integer($row['created_at'],1,4294967295);
+        self::text($row['name'],1,100);self::text($row['real_name'],1,255);self::reference($row['object_key']);
+        if($row['thumbnail_key']!==$row['object_key']||!in_array($row['media_type'],self::IMAGE_MIMES,true)
+            ||!is_string($row['content_sha256'])||strlen($row['content_sha256'])!==32)self::fail();
+        foreach(['expires_at','retired_at','root_order_id','order_item_id','refund_id','review_id','confirmation_ref','form_product_id',
+            'form_definition_sha256','form_field_index','extract_id','agent_apply_id','source_product_id','source_qrcode_id',
+            'created_by_admin_id','created_by_job','legacy_att_id']as$field)if($row[$field]!==null)self::fail();
+        if($row['state']==='STAGED'){if($row['bound_at']!==null)self::fail();}
+        elseif(self::integer($row['bound_at'],1,4294967295)<$created)self::fail();
     }
 
     private function uploadContext(array $context): array

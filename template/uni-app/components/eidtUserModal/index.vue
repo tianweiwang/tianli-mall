@@ -60,6 +60,7 @@
 <script>
 	import colors from "@/mixins/color";
 	import Cache from '@/utils/cache';
+	import { CUSTOMER_AVATAR_UPLOAD, avatarUploadSelection } from '@/api/customerAvatar.js';
 	import {
 		userEdit,
 	} from '@/api/user.js';
@@ -74,6 +75,7 @@
 		data() {
 			return {
 				defHead: require('@/static/images/def_avatar.png'),
+				avatarAssetId: '',
 				mp_is_new: this.$Cache.get('MP_VERSION_ISNEW') || false,
 				userInfo: {
 					avatar: '',
@@ -83,40 +85,66 @@
 				canvasStatus: false,
 			};
 		},
+		watch: {
+			'$store.state.app.authRevision'() {
+				this.avatarAssetId = '';
+				this.userInfo = { avatar: '', nickname: '' };
+				this.canvasStatus = false;
+			}
+		},
 		mounted() {
 
 		},
 		methods: {
+			avatarIdentityScope() {
+				return { revision: this.$store.state.app.authRevision, token: this.$store.state.app.token,
+					uid: this.$store.state.app.verifiedUid };
+			},
+			isAvatarIdentityScope(scope) {
+				return !!scope.uid && this.$store.state.app.authRevision === scope.revision &&
+					this.$store.state.app.token === scope.token && this.$store.state.app.verifiedUid === scope.uid;
+			},
+
 			/**
 			 * 上传文件
 			 * 
 			 */
 			uploadpic: function() {
 				let that = this;
-				this.canvasStatus = true
-				that.$util.uploadImageChange('upload/image', (res) => {
-					let userInfo = that.userInfo;
-					if (userInfo !== undefined) {
-						that.userInfo.avatar = res.data.url;
-					}
-					this.canvasStatus = false
+				const scope = that.avatarIdentityScope();
+				if (!scope.uid) return;
+				this.canvasStatus = true;
+				that.$util.uploadImageChange(CUSTOMER_AVATAR_UPLOAD, (res) => {
+					if (!that.isAvatarIdentityScope(scope)) return;
+					const selected = avatarUploadSelection(res);
+					that.canvasStatus = false;
+					if (!selected) return that.$util.Tips({ title: that.$t('头像上传结果不完整，请重新选择') });
+					that.userInfo.avatar = selected.url;
+					that.avatarAssetId = selected.avatar_asset_id;
+				}, () => {
+					if (that.isAvatarIdentityScope(scope)) that.canvasStatus = false;
 				}, (res) => {
-					this.canvasStatus = false
-				}, (res) => {
-					this.canvasWidth = res.w
-					this.canvasHeight = res.h
-				});
+					if (!that.isAvatarIdentityScope(scope)) return;
+					that.canvasWidth = res.w;
+					that.canvasHeight = res.h;
+				}, () => {
+					if (that.isAvatarIdentityScope(scope)) that.canvasStatus = false;
+				}, () => that.isAvatarIdentityScope(scope));
 			},
 			// 微信头像获取
 			onChooseAvatar(e) {
-				const {
-					avatarUrl
-				} = e.detail
-				this.$util.uploadImgs('upload/image', avatarUrl, (res) => {
-					this.userInfo.avatar = res.data.url
+				const scope = this.avatarIdentityScope();
+				if (!scope.uid) return;
+				const { avatarUrl } = e.detail;
+				this.$util.uploadImgs(CUSTOMER_AVATAR_UPLOAD, avatarUrl, (res) => {
+					if (!this.isAvatarIdentityScope(scope)) return;
+					const selected = avatarUploadSelection(res);
+					if (!selected) return this.$util.Tips({ title: this.$t('头像上传结果不完整，请重新选择') });
+					this.userInfo.avatar = selected.url;
+					this.avatarAssetId = selected.avatar_asset_id;
 				}, (err) => {
-					console.log(err)
-				})
+					if (this.isAvatarIdentityScope(scope)) console.log(err);
+				});
 			},
 			closeAttr: function() {
 				this.$emit('closeEdit');
@@ -126,6 +154,8 @@
 			 */
 			formSubmit(e) {
 				let that = this
+				const scope = that.avatarIdentityScope();
+				if (!scope.uid) return;
 				if (!this.userInfo.avatar) return that.$util.Tips({
 					title: that.$t(`请上传头像`)
 				});
@@ -133,7 +163,10 @@
 					title: that.$t(`请输入昵称`)
 				});
 				this.userInfo.nickname = e.detail.value.nickname
-				userEdit(this.userInfo).then(res => {
+				const data = Object.assign({}, this.userInfo);
+				if (this.avatarAssetId) data.avatar_asset_id = this.avatarAssetId;
+				userEdit(data).then(res => {
+					if (!that.isAvatarIdentityScope(scope)) return;
 					this.$emit('editSuccess')
 					return that.$util.Tips({
 						title: res.msg,
@@ -142,6 +175,7 @@
 						tab: 3
 					});
 				}).catch(msg => {
+					if (!that.isAvatarIdentityScope(scope) || (msg && msg.staleIdentity)) return;
 					return that.$util.Tips({
 						title: msg || that.$t(`保存失败`)
 					}, {

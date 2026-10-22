@@ -92,6 +92,18 @@ class UserController
             return app('json')->fail('请输入昵称或者选择头像');
         }
         $uid = (int)$request->uid();
+        $body=$request->post(false);
+        if(is_array($body)&&array_key_exists('avatar_asset_id',$body)){
+            try{
+                $assets=app()->make(\app\services\marketplace\assets\CustomerAssetServices::class);
+                if($this->services->eidtNicknameWithAvatar($request,$uid,['avatar'=>$avatar,'nickname'=>$nickname],$body['avatar_asset_id'],$assets)){
+                    return app('json')->success('设置成功');
+                }
+                return app('json')->fail('设置失败');
+            }catch(\app\services\marketplace\attachment\MerchantAttachmentOperationException $error){
+                return \think\Response::create(['status'=>503,'msg'=>'图片操作未完成，请保留本次结果','data'=>$error->receipt],'json',503);
+            }
+        }
         if ($this->services->eidtNickname($uid, ['avatar' => $avatar, 'nickname' => $nickname])) {
             return app('json')->success('设置成功');
         }
@@ -256,4 +268,15 @@ class UserController
         }
         return app('json')->success('删除成功');
     }
+    /** A named current-user avatar upload; the old generic uploader remains a separate route. */
+    public function uploadAvatar(Request $request,\app\services\marketplace\assets\CustomerAssetServices $assets)
+    {
+        try{
+            return app('json')->success('图片上传成功',$assets->uploadAvatar($request,(int)$request->uid()));
+        }catch(\app\services\marketplace\attachment\MerchantAttachmentOperationException $error){
+            return \think\Response::create(['status'=>503,'msg'=>'图片操作未完成，请保留本次结果','data'=>$error->receipt],'json',503);
+        }
+    }
+
+
 }

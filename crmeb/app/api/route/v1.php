@@ -153,7 +153,8 @@ Route::group(function () {
         //用户类  用户coupons/order
         Route::get('user', 'v1.user.UserController/user')->name('user')->option(['real_name' => '个人中心']);//个人中心
         Route::post('user/spread', 'v1.user.UserController/spread')->name('userSpread')->option(['real_name' => '静默绑定授权']);//静默绑定授权
-        Route::post('user/edit', 'v1.user.UserController/edit')->name('userEdit')->option(['real_name' => '用户修改信息']);//用户修改信息
+        Route::post('user/avatar/files', 'v1.user.UserController/uploadAvatar')->name('userAvatarFiles')->option(['real_name'=>'本人头像上传','customer_avatar_files'=>true]);
+        Route::post('user/edit', 'v1.user.UserController/edit')->name('userEdit')->option(['real_name' => '用户修改信息','customer_avatar_profile'=>true]);//用户修改信息
         Route::get('user/balance', 'v1.user.UserController/balance')->name('userBalance')->option(['real_name' => '用户资金统计']);//用户资金统计
         Route::get('userinfo', 'v1.user.UserController/userinfo')->name('userinfo')->option(['real_name' => '用户信息']);// 用户信息
     })->option(['parent' => 'user', 'cate_name' => '用户中心']);

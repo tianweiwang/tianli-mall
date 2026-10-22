@@ -179,6 +179,7 @@
 	// #endif
 	import Cache from '@/utils/cache';
 	import colors from '@/mixins/color.js';
+	import { CUSTOMER_AVATAR_UPLOAD, avatarUploadSelection } from '@/api/customerAvatar.js';
 	import appUpdate from "@/components/update/app-update.vue";
 	export default {
 		components: {
@@ -193,6 +194,7 @@
 		data() {
 			return {
 				userInfo: {},
+				avatarAssetId: '',
 				identityPageActive: true,
 				userInfoRequestRevision: 0,
 				loginType: 'h5', //app.globalData.loginType
@@ -214,6 +216,7 @@
 		watch: {
 			'$store.state.app.authRevision'() {
 				this.userInfo = {};
+				this.avatarAssetId = '';
 				this.switchUserInfo = [];
 				this.canvasStatus = false;
 			},
@@ -489,6 +492,7 @@
 						that.$store.state.app.verifiedUid !== String(user.uid)) return null;
 					const display = JSON.parse(JSON.stringify(user));
 					that.$set(that, 'userInfo', display);
+					that.avatarAssetId = '';
 					let switchUserInfo = Array.isArray(display.switchUserInfo) ? display.switchUserInfo.slice() : [];
 					for (let i = 0; i < switchUserInfo.length; i++) {
 						if (switchUserInfo[i].uid == that.userInfo.uid) that.userIndex = i;
@@ -521,11 +525,17 @@
 				const scope = that.identityScope();
 				if (!scope.uid) return;
 				this.canvasStatus = true
-				that.$util.uploadImageChange('upload/image', (res) => {
+				that.$util.uploadImageChange(CUSTOMER_AVATAR_UPLOAD, (res) => {
 					if (!that.isIdentityScope(scope)) return;
+					const selected = avatarUploadSelection(res);
+					if (!selected) {
+						that.canvasStatus = false;
+						return that.$util.Tips({ title: that.$t('头像上传结果不完整，请重新选择') });
+					}
 					let userInfo = that.switchUserInfo[that.userIndex];
 					if (userInfo !== undefined) {
-						that.userInfo.avatar = res.data.url;
+						that.userInfo.avatar = selected.url;
+						that.avatarAssetId = selected.avatar_asset_id;
 					}
 					that.switchUserInfo[that.userIndex] = userInfo;
 					that.$set(that, 'switchUserInfo', that.switchUserInfo);
@@ -548,9 +558,12 @@
 				const {
 					avatarUrl
 				} = e.detail
-				this.$util.uploadImgs('upload/image', avatarUrl, (res) => {
+				this.$util.uploadImgs(CUSTOMER_AVATAR_UPLOAD, avatarUrl, (res) => {
 					if (!this.isIdentityScope(scope)) return;
-					this.userInfo.avatar = res.data.url
+					const selected = avatarUploadSelection(res);
+					if (!selected) return this.$util.Tips({ title: this.$t('头像上传结果不完整，请重新选择') });
+					this.userInfo.avatar = selected.url;
+					this.avatarAssetId = selected.avatar_asset_id;
 				}, (err) => {
 					if (!this.isIdentityScope(scope)) return;
 					console.log(err)
@@ -569,6 +582,7 @@
 					title: that.$t(`请输入姓名`)
 				});
 				value.avatar = this.userInfo.avatar;
+				if (this.avatarAssetId) value.avatar_asset_id = this.avatarAssetId;
 				userEdit(value).then(res => {
 					if (!that.isIdentityScope(scope)) return;
 					return that.$util.Tips({

@@ -1643,6 +1643,35 @@ class UserServices extends BaseServices
         return $user;
     }
 
+    /** Preserve the existing ORM writer and emit its original event only after the asset transaction commits. */
+    public function eidtNicknameWithAvatar(\app\Request $request,int $uid,array $data,mixed $assetId,
+        \app\services\marketplace\assets\CustomerAssetServices $assets):bool
+    {
+        $eventInfo=null;
+        $saved=$assets->saveAvatarProfile($request,$uid,$assetId,$data,
+            function(\think\db\ConnectionInterface $connection,\PDO $pdo,int $actualUid,array $actualData)use($uid,$data,&$eventInfo):bool{
+                \app\services\marketplace\assets\CustomerAssetServices::assertAvatarProfileWriter($connection,$pdo,$uid);
+                if($actualUid!==$uid||$actualData!==$data)throw new \crmeb\exceptions\AuthUnavailableException();
+                $this->dao->assertAvatarProfileWriter($connection,$pdo);
+                $info=$this->dao->get(['uid'=>$uid]);
+                if(!$info)throw new ApiException('用户不存在');
+                if(!$this->dao->update($uid,$data,'uid'))throw new ApiException('修改失败');
+                $this->dao->assertAvatarProfileWriter($connection,$pdo);
+                \app\services\marketplace\assets\CustomerAssetServices::assertAvatarProfileWriter($connection,$pdo,$uid);
+                $eventInfo=$info;return true;
+            });
+        if($saved!==true||$eventInfo===null)throw new \crmeb\exceptions\AuthUnavailableException();
+        event('CustomEventListener', ['user_change_info', [
+            'uid' => $uid,
+            'nickname' => $eventInfo['nickname'],
+            'phone' => $eventInfo['phone'],
+            'avatar' => $eventInfo['avatar'],
+            'add_time' => date('Y-m-d H:i:s', $eventInfo['add_time']),
+            'user_type' => $eventInfo['user_type'],
+        ]]);
+        return true;
+    }
+
     /**
      * 用户修改信息
      * @param Request $request

@@ -22,6 +22,16 @@ use app\model\user\User;
  */
 class UserDao extends BaseDao
 {
+    /** The avatar caller already owns the actual primary transaction and user row lock. */
+    public function assertAvatarProfileWriter(\think\db\ConnectionInterface $connection,\PDO $pdo):void
+    {
+        $query=$this->getModel()->db();
+        if(!$connection instanceof \crmeb\compat\think\orm\db\connector\Mysql
+            ||\think\facade\Db::connect()!==$connection||$query->getConnection()!==$connection
+            ||$connection->getPdo()!==$pdo||$connection->getConfig('deploy')!==0
+            ||$connection->getConfig('rw_separate')!==false||$connection->transactionDepth()!==1
+            ||!$pdo->inTransaction())throw new \crmeb\exceptions\AuthUnavailableException();
+    }
 
     protected function setModel(): string
     {

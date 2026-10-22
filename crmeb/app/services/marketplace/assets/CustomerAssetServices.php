@@ -12,7 +12,7 @@ use think\facade\Config;
 use think\file\UploadedFile;
 use Throwable;
 
-/** The V1 review producer only. Avatar, default compatibility and private uses are not published here. */
+/** Named customer-review and avatar producers. Default compatibility and private uses remain unpublished here. */
 final class CustomerAssetServices
 {
     public function __construct(private MarketplaceOrderReviewServices $reviews,private CustomerAssetDao $assets,private CustomerAssetStorage $storage){}
@@ -63,6 +63,167 @@ final class CustomerAssetServices
                 ||!in_array($request->uid(),[$actualUid,(string)$actualUid],true)||$request->verifiedTokenFingerprint()!==$fingerprint)self::fail();
             $receipt['complete']=true;$receipt['phase']='complete';return $out['dto'];
         }catch(Throwable $error){throw new MerchantAttachmentOperationException($receipt);}
+    }
+
+
+    /** A real avatar frame is separate from the order-review upload frame. */
+    private static ?array $avatarFrame=null;
+    private static ?array $avatarDatabaseSession=null;
+
+    public function uploadAvatar(Request $request,int $actualUid):array
+    {
+        $receipt=['complete'=>false,'phase'=>'preflight','physical_changed'=>false,'physical_complete'=>false,
+            'database_committed'=>false,'cleanup_complete'=>null];$object=[];
+        try{
+            $fingerprint=self::avatarIdentity($request,$actualUid);
+            if($request->method(true)!=='POST'||strtolower($request->contentType())!=='multipart/form-data'
+                ||$request->rule()->getOption('customer_avatar_files')!==true||$request->get(false)!==[]
+                ||$request->server('QUERY_STRING','')!==''||$request->post(false)!==['filename'=>'pics'])self::fail();
+            $files=$request->file();if(!is_array($files)||array_keys($files)!==['pics']||!$files['pics'] instanceof UploadedFile)self::fail();
+            [$connection,$pdo]=$this->assets->avatarConnection($actualUid);$databaseSession=self::avatarSession($connection,$pdo);$published=false;
+            $out=$connection->transaction(function(\think\db\ConnectionInterface $actual)use($connection,$pdo,$request,$actualUid,$fingerprint,$databaseSession,&$published,&$receipt,&$object):array{
+                if($actual!==$connection||$published||self::$avatarFrame!==null)self::fail();$published=true;
+                self::avatarConnection($connection,$pdo,1);
+                $user=$this->assets->lockUser($connection,$pdo,$actualUid);$this->assets->assertStructure($connection,$pdo);
+                $context=['request'=>$request,'actual_uid'=>$actualUid,'user'=>$user,'connection'=>$connection,'pdo'=>$pdo,
+                    'session_sha256'=>$fingerprint,'mode'=>'upload','asset_id'=>null];
+                self::$avatarFrame=$context;self::$avatarDatabaseSession=$databaseSession;
+                try{
+                    self::assertAvatarContext($context,'upload');
+                    $count=self::counter(CacheService::get('start_uploads_'.$actualUid,0));if($count>=100)self::fail();
+                    [$bytes,$name]=$this->uploadedBytes($request->file('pics'));$qualified=$this->storage->qualify($bytes,$name);
+                    $physical=$this->storage->uploadForAvatar($context,$bytes,$name,$object,$receipt);
+                    if($receipt['physical_complete']!==true||!in_array($receipt['physical_changed'],[true,null],true))self::fail();
+                    $this->storage->assertAvatarUploaded($context,$physical,$qualified,$bytes,$object);
+                    $receipt['phase']='metadata_insert';$receipt['database_committed']=null;
+                    $asset=$this->assets->insertAvatar($context,$physical,$qualified);
+                    $this->storage->assertAvatarUploaded($context,$physical,$qualified,$bytes,$object);
+                    $this->assets->assertAvatarCurrent($context,$asset);
+                    if($this->assets->lockUser($connection,$pdo,$actualUid)!==$user)self::fail();
+                    $url=path_to_url($asset['object_key']);if(!is_string($url)||$url==='')self::fail();
+                    if(strpos($url,'http')===false)$url=$request->domain().$url;
+                    $dto=['name'=>$asset['name'],'url'=>$url,'attachment_ref'=>$asset['object_key'],
+                        'avatar_asset_id'=>self::avatarId((string)$asset['id'])];
+                    self::assertAvatarContext($context,'upload');$receipt['phase']='commit_outcome_unknown';
+                    return ['asset'=>$asset,'user'=>$user,'dto'=>$dto];
+                }catch(Throwable $error){
+                    if($receipt['database_committed']===false&&$object!==[]){
+                        try{$this->storage->cleanupAvatar($context,$object,$receipt);}catch(Throwable $ignored){$receipt['cleanup_complete']=false;}
+                    }
+                    throw $error;
+                }finally{self::$avatarFrame=null;self::$avatarDatabaseSession=null;}
+            });
+            $receipt['database_committed']=true;self::avatarConnection($connection,$pdo,0);
+            if(self::avatarSession($connection,$pdo)!==$databaseSession||self::avatarIdentity($request,$actualUid)!==$fingerprint)self::fail();
+            $this->assets->assertAvatarCommitted($connection,$pdo,$out['asset'],$out['user']);
+            $receipt['phase']='quota_update';$key='start_uploads_'.$actualUid;$count=self::counter(CacheService::get($key,0));
+            if($count>=100)self::fail();$count++;
+            if(CacheService::set($key,$count,86400)!==true||CacheService::get($key,null)!==$count)self::fail();
+            if(self::avatarIdentity($request,$actualUid)!==$fingerprint)self::fail();
+            $receipt['complete']=true;$receipt['phase']='complete';return $out['dto'];
+        }catch(Throwable $error){self::$avatarFrame=null;self::$avatarDatabaseSession=null;throw new MerchantAttachmentOperationException($receipt);}
+    }
+
+    /** The callback is only the original user-profile ORM writer, not another transaction owner. */
+    public function saveAvatarProfile(Request $request,int $actualUid,mixed $assetId,array $data,callable $profileWriter):bool
+    {
+        $receipt=['complete'=>false,'phase'=>'preflight','physical_changed'=>false,'physical_complete'=>false,
+            'database_committed'=>false,'cleanup_complete'=>null];
+        try{
+            $fingerprint=self::avatarIdentity($request,$actualUid);$assetId=self::avatarId($assetId);
+            if($request->method(true)!=='POST'||$request->rule()->getOption('customer_avatar_profile')!==true
+                ||array_keys($data)!==['avatar','nickname']||!is_string($data['avatar'])||$data['avatar']===''
+                ||!is_string($data['nickname'])||str_contains($data['avatar'],"\0")||str_contains($data['nickname'],"\0")
+                ||preg_match('//u',$data['avatar'])!==1||preg_match('//u',$data['nickname'])!==1
+                ||mb_strlen($data['avatar'],'UTF-8')>255||mb_strlen($data['nickname'],'UTF-8')>64)self::fail();
+            [$connection,$pdo]=$this->assets->avatarConnection($actualUid);$databaseSession=self::avatarSession($connection,$pdo);$published=false;
+            $out=$connection->transaction(function(\think\db\ConnectionInterface $actual)use($connection,$pdo,$request,$actualUid,$fingerprint,$assetId,$data,$profileWriter,$databaseSession,&$published,&$receipt):array{
+                if($actual!==$connection||$published||self::$avatarFrame!==null)self::fail();$published=true;
+                self::avatarConnection($connection,$pdo,1);$user=$this->assets->lockUser($connection,$pdo,$actualUid);
+                $this->assets->assertStructure($connection,$pdo);
+                $context=['request'=>$request,'actual_uid'=>$actualUid,'user'=>$user,'connection'=>$connection,'pdo'=>$pdo,
+                    'session_sha256'=>$fingerprint,'mode'=>'profile','asset_id'=>$assetId];
+                self::$avatarFrame=$context;self::$avatarDatabaseSession=$databaseSession;
+                try{
+                    self::assertAvatarContext($context,'profile');$asset=$this->assets->lockAvatar($context,$assetId);
+                    $physical=$this->storage->verifyAvatarSelection($context,$asset);
+                    if($physical['url']!==$data['avatar']||($asset['state']==='BOUND'&&$user['avatar']!==$data['avatar']))self::fail();
+                    $expectedUser=$user;$expectedUser['avatar']=$data['avatar'];$expectedUser['nickname']=$data['nickname'];
+                    $receipt['phase']='profile_write';$receipt['database_committed']=null;
+                    if($profileWriter($connection,$pdo,$actualUid,$data)!==true)self::fail();
+                    self::assertAvatarContext($context,'profile');
+                    if($this->assets->lockUser($connection,$pdo,$actualUid)!==$expectedUser)self::fail();
+                    $bound=$this->assets->bindAvatar($context,$asset);
+                    if($this->storage->verifyAvatarSelection($context,$bound)!==$physical)self::fail();
+                    $this->assets->assertAvatarCurrent($context,$bound);self::assertAvatarContext($context,'profile');
+                    $receipt['phase']='commit_outcome_unknown';return ['asset'=>$bound,'user'=>$expectedUser];
+                }finally{self::$avatarFrame=null;self::$avatarDatabaseSession=null;}
+            });
+            $receipt['database_committed']=true;self::avatarConnection($connection,$pdo,0);
+            if(self::avatarSession($connection,$pdo)!==$databaseSession||self::avatarIdentity($request,$actualUid)!==$fingerprint)self::fail();
+            $this->assets->assertAvatarCommitted($connection,$pdo,$out['asset'],$out['user']);
+            $receipt['complete']=true;$receipt['phase']='complete';return true;
+        }catch(Throwable $error){self::$avatarFrame=null;self::$avatarDatabaseSession=null;throw new MerchantAttachmentOperationException($receipt);}
+    }
+
+    /** Only the private current frame created by these named operations can authorize an avatar leaf. */
+    public static function assertAvatarContext(array $context,string $mode):void
+    {
+        if(self::$avatarFrame===null||$context!==self::$avatarFrame||!in_array($mode,['upload','profile'],true)
+            ||$context['mode']!==$mode||self::$avatarDatabaseSession===null)self::fail();
+        $request=$context['request'];$connection=$context['connection'];$pdo=$context['pdo'];
+        if(!$request instanceof Request||!$connection instanceof \think\db\ConnectionInterface||!$pdo instanceof \PDO
+            ||self::avatarIdentity($request,$context['actual_uid'])!==$context['session_sha256']
+            ||!is_array($context['user'])||!in_array($context['user']['uid']??null,[$context['actual_uid'],(string)$context['actual_uid']],true)
+            ||$request->rule()->getOption($mode==='upload'?'customer_avatar_files':'customer_avatar_profile')!==true
+            ||$request->method(true)!=='POST')self::fail();
+        if(($mode==='upload'&&$context['asset_id']!==null)||($mode==='profile'&&self::avatarId($context['asset_id'])!==$context['asset_id']))self::fail();
+        self::avatarConnection($connection,$pdo,1);
+        if(self::avatarSession($connection,$pdo)!==self::$avatarDatabaseSession)self::fail();
+    }
+
+    /** Finite seam for the actual original UserDao writer, never a caller-supplied generic owner. */
+    public static function assertAvatarProfileWriter(\think\db\ConnectionInterface $connection,\PDO $pdo,int $actualUid):void
+    {
+        if(self::$avatarFrame===null)self::fail();self::assertAvatarContext(self::$avatarFrame,'profile');
+        if(self::$avatarFrame['connection']!==$connection||self::$avatarFrame['pdo']!==$pdo
+            ||self::$avatarFrame['actual_uid']!==$actualUid)self::fail();
+    }
+
+    private static function avatarIdentity(Request $request,int $actualUid):string
+    {
+        if(PHP_INT_SIZE<8||$actualUid<1||$actualUid>4294967295||app()->request!==$request||app()->http->getName()!=='api'
+            ||$request->isLogin()!==true||!in_array($request->uid(),[$actualUid,(string)$actualUid],true))self::fail();
+        $fingerprint=$request->verifiedTokenFingerprint();if(preg_match('/\A[a-f0-9]{64}\z/D',$fingerprint)!==1)self::fail();return $fingerprint;
+    }
+
+    private static function avatarId(mixed $id):string
+    {
+        if(!is_string($id)||preg_match('/\A[1-9][0-9]{0,19}\z/D',$id)!==1
+            ||(strlen($id)===20&&strcmp($id,'18446744073709551615')>0))self::fail();return $id;
+    }
+
+    private static function avatarConnection(\think\db\ConnectionInterface $connection,\PDO $pdo,int $depth):void
+    {
+        if(!$connection instanceof \crmeb\compat\think\orm\db\connector\Mysql
+            ||\think\facade\Db::connect()!==$connection||$connection->getPdo()!==$pdo
+            ||$connection->getConfig('deploy')!==0||$connection->getConfig('rw_separate')!==false
+            ||$connection->transactionDepth()!==$depth||$pdo->inTransaction()!==($depth===1)
+            ||$pdo->getAttribute(\PDO::ATTR_DRIVER_NAME)!=='mysql'||$pdo->getAttribute(\PDO::ATTR_ERRMODE)!==\PDO::ERRMODE_EXCEPTION
+            ||!in_array($pdo->getAttribute(\PDO::ATTR_EMULATE_PREPARES),[false,0],true))self::fail();
+    }
+
+    private static function avatarSession(\think\db\ConnectionInterface $connection,\PDO $pdo):array
+    {
+        if(!$connection instanceof \crmeb\compat\think\orm\db\connector\Mysql||\think\facade\Db::connect()!==$connection
+            ||$connection->getPdo()!==$pdo)self::fail();
+        $s=$pdo->prepare('SELECT DATABASE() AS database_name,CURRENT_USER() AS authenticated_user,CONNECTION_ID() AS connection_id,@@session.autocommit AS autocommit');
+        if(!$s instanceof \PDOStatement||$s->execute([])!==true)self::fail();$rows=$s->fetchAll(\PDO::FETCH_ASSOC);
+        if($s->closeCursor()!==true||!is_array($rows)||count($rows)!==1
+            ||array_keys($rows[0])!==['database_name','authenticated_user','connection_id','autocommit'])self::fail();$row=$rows[0];
+        foreach(['database_name','authenticated_user']as$key)if(!is_string($row[$key])||$row[$key]===''||str_contains($row[$key],"\0"))self::fail();
+        if(!in_array($row['autocommit'],[1,'1'],true)||(!is_int($row['connection_id'])&&!is_string($row['connection_id']))
+            ||preg_match('/\A[1-9][0-9]*\z/D',(string)$row['connection_id'])!==1)self::fail();return $row;
     }
 
     private function uploadedBytes(UploadedFile $file):array
