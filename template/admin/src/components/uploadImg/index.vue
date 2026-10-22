@@ -7,11 +7,15 @@
       :width="isIframe ? '100%' : '1024px'"
       :fullscreen="isIframe"
       @close="closed"
+      :close-on-click-modal="productId === null"
+      :close-on-press-escape="productId === null || !loading"
+      :show-close="productId === null || !loading"
     >
       <div class="main" v-loading="loading">
+        <el-alert v-if="productMessage" :title="productMessage" :description="productReceiptDescription" type="warning" :closable="false" show-icon />
         <el-form :model="ruleForm" :rules="rules" ref="ruleForm" label-width="100px" class="demo-ruleForm">
           <el-form-item label="上传方式：" prop="type">
-            <el-radio-group v-model="ruleForm.type" @input="radioChange(ruleForm.type)">
+            <el-radio-group :disabled="productId !== null && loading" v-model="ruleForm.type" @input="radioChange(ruleForm.type)">
               <el-radio :label="0">本地上传</el-radio>
               <el-radio :label="1">网络上传</el-radio>
               <el-radio :label="2">扫码上传</el-radio>
@@ -60,7 +64,7 @@
                   </div>
                 </el-upload>
                 <div class="tips">
-                  建议上传图片最大宽度750px，不超过3MB；仅支持jpeg、jpg、png格式，可拖拽调整上传顺序
+                  {{ productId !== null ? "支持JPEG、PNG、GIF、WebP；每张最大50MiB且以服务器配置为准，可拖动调整顺序" : "建议上传图片最大宽度750px，不超过3MB；仅支持jpeg、jpg、png格式，可拖拽调整上传顺序" }}
                 </div>
               </div>
             </div>
@@ -97,6 +101,7 @@
                 <div class="code" ref="qrCodeUrl"></div>
                 <div class="trip">扫描二维码，快速上传手机图片</div>
                 <div class="trip-small">建议使用手机浏览器</div>
+                <div class="trip-small" v-if="productId !== null && productExpires">二维码有效10分钟，有效至 {{ new Date(productExpires).toLocaleTimeString() }}</div>
               </el-form-item>
             </div>
             <div class="right">
@@ -113,7 +118,7 @@
                   @dragenter="handleDragEnter($event, item)"
                   @dragend="handleDragEnd($event, item)"
                 >
-                  <img :src="item.att_dir" />
+                  <img :src="productId !== null ? item.previewUrl : item.att_dir" />
                   <i class="el-icon-error btndel" v-db-click @click="handleWebRemove(item)" />
                 </div>
               </div>
@@ -123,8 +128,8 @@
       </div>
 
       <span slot="footer" class="dialog-footer">
-        <el-button v-db-click @click="clear">取 消</el-button>
-        <el-button type="primary" :disabled="!ruleForm.imgList.length" v-db-click @click="submitUpload"
+        <el-button :disabled="productId !== null && loading" v-db-click @click="clear">取 消</el-button>
+        <el-button type="primary" :disabled="!ruleForm.imgList.length || (productId !== null && (loading || productHold || productInvalidFiles || productClaimState === 'processing'))" v-db-click @click="submitUpload"
           >确 定</el-button
         >
       </span>
@@ -136,6 +141,8 @@
 import { getCategoryListApi, moveApi, onlineUpload, scanUploadCode } from '@/api/uploadPictures';
 import Setting from '@/setting';
 import { getCookies } from '@/libs/util';
+import { captureProductContext, currentProductContext, requireProductContext, closeProductContext, receiptText, cancelProductRequests, releaseProductPreview, mediaId, mediaUpload, mediaOnline, mediaCategories, issueScan, pollScan, scanPreview, claimScan, closeScan } from '@/api/product-media';
+import { subscribePlatformAuthEpoch } from '@/libs/platform-auth-epoch';
 import { fileUpload, scanUploadQrcode, scanUploadGet } from '@/api/setting';
 import QRCode from 'qrcodejs2';
 import compressImg from '@/utils/compressImg.js';
@@ -143,6 +150,8 @@ import { isPicUpload } from '@/utils/index';
 export default {
   name: '',
   props: {
+    productId: { default: null },
+    productScope: { default: null },
     categoryList: {
       default: () => {
         return [];
@@ -159,15 +168,37 @@ export default {
     },
   },
   watch: {
+    productId() {
+      this.stopProductScan(); closeProductContext(this.productSession); this.productSession = null;
+      this.uploadModal = false; this.ruleForm.imgList = [];
+      this.productMessage = "商品范围已变化，请重新打开上传";
+    },
     uploadModal: {
       handler(newVal) {
-        if (newVal) this.ruleForm.region = this.categoryId;
+        if (newVal) {
+          this.ruleForm.region = this.productId !== null && this.categoryId === '' ? 0 : this.categoryId;
+          if (this.productId !== null) this.openProductUpload();
+        }
       },
       immediate: true,
     },
   },
   data() {
     return {
+      productSession: null,
+      productWasOpened: false,
+      productMessage: '',
+      productReceipt: null,
+      productReceiptDescription: '',
+      productHold: false,
+      productInvalidFiles: false,
+      productLease: '',
+      productExpires: 0,
+      productGeneration: 0,
+      productPolling: false,
+      productClaimState: '',
+      productDismissed: new Set(),
+      productLocalUrls: new Set(),
       webImgUrl: '',
       uploadModal: false,
       fileUrl: Setting.apiBaseURL + '/file/upload',
@@ -190,14 +221,150 @@ export default {
       time: undefined,
     };
   },
-  created() {},
+  created() {
+    this.productUnsubscribe = subscribePlatformAuthEpoch(() => {
+      if (this.productId !== null) {
+        this.stopProductScan(); closeProductContext(this.productSession); this.productSession = null;
+        this.ruleForm.imgList = []; this.productMessage = '登录身份已变化，进行中的提交结果请先核对，再重新打开上传';
+      }
+    });
+  },
   mounted() {},
   beforeDestroy() {
+    if (this.productId !== null || this.productWasOpened) { this.uploadModal = false; this.disposeProductScan(true); }
+    if (this.productUnsubscribe) this.productUnsubscribe();
     clearInterval(this.time);
     this.time = undefined;
   },
   methods: {
+    openProductUpload() {
+      this.productWasOpened = true;
+      this.stopProductScan(); closeProductContext(this.productSession); this.productSession = null;
+      this.loading = false;
+      this.productMessage = ''; this.productReceipt = null; this.productReceiptDescription = ''; this.productHold = false; this.productInvalidFiles = false; this.productClaimState = ''; this.productLease = ''; this.productExpires = 0;
+      this.productDismissed = new Set();
+      try { this.productSession = captureProductContext(this.productId); } catch (error) { this.productReceipt = error.receipt || null; this.productReceiptDescription = receiptText(this.productReceipt); this.productMessage = error.message; }
+    },
+    stopProductScan() {
+      this.productGeneration += 1; window.clearTimeout(this.time); this.time = undefined; this.productPolling = false;
+      if (this.productSession) {
+        cancelProductRequests(this.productSession);
+        Array.from(this.productSession.life.urls).forEach(url => releaseProductPreview(this.productSession, url));
+      }
+      this.productLocalUrls.forEach(url => window.URL.revokeObjectURL(url)); this.productLocalUrls.clear();
+      if (this.$refs.qrCodeUrl) this.$refs.qrCodeUrl.innerHTML = '';
+    },
+    async disposeProductScan(remote) {
+      const context = this.productSession; const scope = this.productScope; const lease = this.productLease;
+      this.stopProductScan(); const generation = this.productGeneration;
+      this.productLease = ''; this.productExpires = 0; this.productDismissed = new Set();
+      this.ruleForm.imgList = [];
+      const sameClose = () => !this._isDestroyed && !this._isBeingDestroyed && this.productSession === context && this.productScope === scope && this.productGeneration === generation && currentProductContext(context) && currentProductContext(scope);
+      if (remote && lease && currentProductContext(context)) {
+        try {
+          const value = await closeScan(context, lease);
+          if (sameClose()) this.$emit('mediaCloseResult', { scope, context, generation, lease_id: lease, state: value.state, cleanup_complete: value.cleanup_complete === true, message: value.state === 'closed' ? '' : value.state === 'pending' ? '扫码关闭仍待处理，请保留本次结果' : '扫码关闭结果未确认，请核对图片库', receipt: null });
+        } catch (error) {
+          if (sameClose()) this.$emit('mediaCloseResult', { scope, context, generation, lease_id: lease, state: 'unknown', cleanup_complete: false, message: error.message || '扫码关闭结果未确认', receipt: error.receipt || null });
+        }
+      }
+      if (!this.uploadModal || this.productSession !== context) closeProductContext(context);
+    },
+    async productRadioChange(type) {
+      if (this.loading) return;
+      await this.disposeProductScan(true);
+      if (!this.uploadModal || this.ruleForm.type !== type) return;
+      this.productClaimState = ''; this.productInvalidFiles = false; this.productDismissed = new Set();
+      if (type === 2) await this.issueProductScan();
+    },
+    async issueProductScan() {
+      const context = this.productSession; const generation = this.productGeneration;
+      if (this.productLease || this.loading || this.productHold) return;
+      try {
+        requireProductContext(context); this.loading = true;
+        const value = await issueScan(context, mediaId(this.ruleForm.region, true));
+        if (this.productSession !== context || this.productGeneration !== generation || !this.uploadModal) return;
+        requireProductContext(context);
+        this.productLease = value.lease_id; this.productExpires = value.expires_at_ms;
+        this.$nextTick(() => { if (this.productSession === context && this.productGeneration === generation && this.uploadModal) this.creatQrCode(value.url); });
+        this.productMessage = '手机图片发送后在此预览，点击确定才保存到商品图片库';
+      } catch (error) {
+        if (this.productSession === context && this.productGeneration === generation) { if (error.state === 'unknown') this.productHold = true; this.productReceipt = error.receipt || null; this.productReceiptDescription = receiptText(this.productReceipt); this.productMessage = error.message; }
+      } finally {
+        if (this.productSession === context && this.productGeneration === generation) { this.loading = false; if (this.productLease) this.pollProductScan(); }
+      }
+    },
+    async pollProductScan() {
+      const context = this.productSession; const lease = this.productLease; const generation = this.productGeneration;
+      if (!lease || this.productPolling || !this.uploadModal || this.ruleForm.type !== 2 || !currentProductContext(context)) return;
+      window.clearTimeout(this.time); this.productPolling = true;
+      try {
+        const value = await pollScan(context, lease);
+        if (this.productSession !== context || this.productGeneration !== generation || this.productLease !== lease) return;
+        requireProductContext(context); this.productExpires = value.expires_at_ms;
+        const state = value.state.toLowerCase();
+        if (['closing', 'closed', 'gone', 'expired'].includes(state)) { this.productMessage = '二维码已失效，请重新打开扫码上传'; this.productHold = true; return; }
+        if (state === 'unknown') { this.productHold = true; this.productMessage = '本次扫码结果未确认，请保留记录并核对图库'; return; }
+        if (state === 'claiming') { this.productClaimState = 'processing'; this.productMessage = '图片正在认领处理中，请保留本次结果'; }
+        if (state === 'claimed') { this.productHold = true; this.productMessage = '本次图片已认领，请返回商品图片库核对'; return; }
+        if (state !== 'open' && state !== 'claiming') throw new Error('扫码状态未确认，请刷新图库');
+        for (const item of value.list) {
+          if (this.productDismissed.has(item.stage_id) || this.ruleForm.imgList.some(existing => existing.stage_id === item.stage_id)) continue;
+          const url = await scanPreview(context, lease, item);
+          if (this.productSession !== context || this.productGeneration !== generation || this.productLease !== lease || !this.uploadModal) { releaseProductPreview(context, url); return; }
+          this.ruleForm.imgList.push({ ...item, previewUrl: url });
+        }
+      } catch (error) {
+        if (this.productSession === context && this.productGeneration === generation) { this.productReceipt = error.receipt || null; this.productReceiptDescription = receiptText(this.productReceipt); this.productMessage = error.message || '扫码图库读取未完成'; }
+      } finally {
+        if (this.productSession === context && this.productGeneration === generation) {
+          this.productPolling = false;
+          if (currentProductContext(context) && this.uploadModal && this.ruleForm.type === 2 && this.productLease === lease && !this.productHold && this.productClaimState !== 'processing') this.time = window.setTimeout(() => this.pollProductScan(), 2000);
+        }
+      }
+    },
+    dismissProductStage(item) {
+      if (this.loading || this.productHold || this.productClaimState === 'processing') return;
+      this.productDismissed.add(item.stage_id);
+      releaseProductPreview(this.productSession, item.previewUrl);
+      this.ruleForm.imgList = this.ruleForm.imgList.filter(row => row.stage_id !== item.stage_id);
+    },
+    async loadProductCategories(item, callback) {
+      const context = this.productSession;
+      try { const value = await mediaCategories(context, { pid: mediaId(item.value, true), all: 0, type: 0 }); if (this.productSession === context && currentProductContext(context)) callback(value.list); }
+      catch (error) { if (this.productSession === context) { this.productReceipt = error.receipt || null; this.productReceiptDescription = receiptText(this.productReceipt); this.productMessage = error.message; } }
+    },
+    async submitProductUpload() {
+      if (this.loading || this.productHold || this.productInvalidFiles || this.productClaimState === 'processing' || !this.ruleForm.imgList.length) return;
+      const context = this.productSession;
+      this.productGeneration += 1; cancelProductRequests(context); this.productPolling = false;
+      const generation = this.productGeneration; const type = this.ruleForm.type;
+      const selected = this.ruleForm.imgList.slice(); const destination = this.ruleForm.region;
+      try {
+        requireProductContext(context); this.loading = true; window.clearTimeout(this.time);
+        if (type === 0) {
+          for (const item of selected) {
+            await mediaUpload(context, item.raw, mediaId(destination, true));
+            if (this.productSession !== context || this.productGeneration !== generation || !this.uploadModal) return;
+            requireProductContext(context);
+            this.ruleForm.imgList = this.ruleForm.imgList.filter(remaining => remaining !== item);
+            if (item.url && item.url.startsWith('blob:')) { window.URL.revokeObjectURL(item.url); this.productLocalUrls.delete(item.url); }
+          }
+        } else if (type === 1) {
+          await mediaOnline(context, selected.map(item => item.url), mediaId(destination, true));
+        } else if (type === 2) {
+          const result = await claimScan(context, this.productLease, selected.map(item => item.stage_id), mediaId(destination, true));
+          if (this.productSession !== context || this.productGeneration !== generation) return;
+          if (result.state === 'processing') { this.productClaimState = 'processing'; this.productMessage = '图片正在认领处理中，请保留本次结果并核对图片库'; return; }
+        }
+        if (this.productSession !== context || this.productGeneration !== generation || !this.uploadModal) return;
+        requireProductContext(context); this.$message.success('上传成功'); this.$emit('uploadSuccess'); this.uploadModal = false;
+      } catch (error) {
+        if (this.productSession === context && this.productGeneration === generation) { if (error.state === 'unknown') this.productHold = true; this.productReceipt = error.receipt || null; this.productReceiptDescription = receiptText(this.productReceipt); this.productMessage = error.message || '上传未完成，请核对图片库'; }
+      } finally { if (this.productSession === context && this.productGeneration === generation) this.loading = false; }
+    },
     radioChange(type) {
+      if (this.productId !== null) return this.productRadioChange(type);
       this.ruleForm.type = type;
       this.ruleForm.imgList = [];
       clearInterval(this.time);
@@ -210,12 +377,14 @@ export default {
       }
     },
     scanUploadQrcode() {
+      if (this.productId !== null) return this.issueProductScan();
       scanUploadQrcode(this.ruleForm.region).then((res) => {
         this.creatQrCode(res.data.url);
         this.scanToken = res.data.url;
       });
     },
     scanUploadGet() {
+      if (this.productId !== null) return this.pollProductScan();
       let token = this.scanToken.split('token=')[1];
       scanUploadGet(token).then((res) => {
         this.ruleForm.imgList = res.data;
@@ -223,6 +392,16 @@ export default {
     },
 
     getImg() {
+      if (this.productId !== null) {
+        try {
+          requireProductContext(this.productSession);
+          if (this.ruleForm.imgList.length >= 50 || typeof this.webImgUrl !== 'string' || this.webImgUrl.length > 2048 || !/^https?:\/\//i.test(this.webImgUrl)) throw new Error('请填写有效图片地址，一次最多50张');
+          const url = new URL(this.webImgUrl);
+          if (url.username || url.password || url.hash) throw new Error('图片地址不能包含身份信息或锚点');
+          this.ruleForm.imgList.push({ url: this.webImgUrl });
+        } catch (error) { this.productReceipt = error.receipt || null; this.productReceiptDescription = receiptText(this.productReceipt); this.productMessage = error.message; }
+        return;
+      }
       if (!this.webImgUrl) {
         this.$message.error('请先输入图片地址');
         return;
@@ -236,6 +415,7 @@ export default {
       });
     },
     async submitUpload() {
+      if (this.productId !== null) return this.submitProductUpload();
       if (!this.ruleForm.imgList.length) return this.$message.warning('请先选择图片');
       if (this.ruleForm.type == 0) {
         this.uploadData = {
@@ -289,6 +469,7 @@ export default {
       }
     },
     uploadItem(file) {
+      if (this.productId !== null) return mediaUpload(this.productSession, file, this.ruleForm.region);
       return new Promise((resolve, reject) => {
         const formData = new FormData();
         formData.append('file', file);
@@ -328,10 +509,13 @@ export default {
       });
     },
     handleWebRemove(file) {
+      if (this.productId !== null && this.ruleForm.type === 2) return this.dismissProductStage(file);
+      if (this.productId !== null && file.url && file.url.startsWith('blob:')) { window.URL.revokeObjectURL(file.url); this.productLocalUrls.delete(file.url); }
       let index = this.ruleForm.imgList.findIndex((e) => {
         return e.url == file.url;
       });
       this.ruleForm.imgList.splice(index, 1);
+      if (this.productId !== null) this.productInvalidFiles = !this.ruleForm.imgList.every(item => item.raw instanceof Blob && item.raw.size > 0 && item.raw.size <= 52428800);
     },
     handleRemove(index) {
       this.ruleForm.imgList.splice(index, 1);
@@ -344,6 +528,14 @@ export default {
       console.log(file);
     },
     async fileChange(file, fileList) {
+      if (this.productId !== null) {
+        if (this.loading || this.productHold) return;
+        fileList.forEach(item => { if (item.url && item.url.startsWith('blob:')) this.productLocalUrls.add(item.url); });
+        this.ruleForm.imgList = fileList;
+        this.productInvalidFiles = !fileList.every(item => item.raw instanceof Blob && item.raw.size > 0 && item.raw.size <= 52428800);
+        if (this.productInvalidFiles) this.productMessage = '存在超过50MiB或不可读取的图片，请移除后再发送；实际限制以服务器配置为准';
+        return;
+      }
       if (isPicUpload(file)) {
         if (file.size >= 2097152) {
           await this.comImg(file.raw).then((res) => {
@@ -370,6 +562,7 @@ export default {
       });
     },
     loadData(item, callback) {
+      if (this.productId !== null) return this.loadProductCategories(item, callback);
       getCategoryListApi({
         pid: item.value,
       })
@@ -380,6 +573,7 @@ export default {
         .catch((res) => {});
     },
     handleChange(e) {
+      if (this.productId !== null) return;
       if (this.ruleForm.type == 2) this.scanUploadQrcode();
     },
     // 移动
@@ -393,6 +587,7 @@ export default {
       e.dataTransfer.dropEffect = 'move';
     },
     handleDragEnter(e, item) {
+      if (this.productId !== null && (this.loading || this.productHold || this.productClaimState === "processing")) return;
       e.dataTransfer.effectAllowed = 'move';
       if (item === this.dragging) {
         return;
@@ -404,10 +599,12 @@ export default {
       this.ruleForm.imgList = newItems;
     },
     closed() {
+      if (this.productId !== null || this.productWasOpened) { this.productWasOpened = false; this.disposeProductScan(true); this.initData(); return; }
       this.initData();
       scanUploadCode().then((res) => {});
     },
     clear() {
+      if (this.productId !== null) { if (!this.loading) this.uploadModal = false; return; }
       this.uploadModal = false;
       this.initData();
     },

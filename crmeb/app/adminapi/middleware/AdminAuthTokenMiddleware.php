@@ -39,12 +39,16 @@ class AdminAuthTokenMiddleware implements MiddlewareInterface
     public function handle(Request $request, \Closure $next)
     {
         $request->clearVerifiedTokenFingerprint();
+        $request->clearVerifiedAdminSession();
         try {
             $token = trim(ltrim((string)$request->header(Config::get('cookie.token_name', 'Authori-zation')), 'Bearer'));
             /** @var AdminAuthServices $service */
             $service = app()->make(AdminAuthServices::class);
-            $adminInfo = $service->parseToken($token);
+            $verifiedSession = null;
+            $adminInfo = $service->parseToken($token, '登录已过期,请重新登录', $verifiedSession);
             $request->setVerifiedTokenFingerprint(hash('sha256', $token));
+            if (!is_array($verifiedSession)) throw new \crmeb\exceptions\AuthUnavailableException();
+            $request->setVerifiedAdminSession($verifiedSession + ['fingerprint' => $request->verifiedTokenFingerprint()]);
             $request->macro('isAdminLogin', function () use (&$adminInfo) {
                 return !is_null($adminInfo);
             });
@@ -59,6 +63,7 @@ class AdminAuthTokenMiddleware implements MiddlewareInterface
             return $next($request);
         } finally {
             $request->clearVerifiedTokenFingerprint();
+            $request->clearVerifiedAdminSession();
         }
     }
 }

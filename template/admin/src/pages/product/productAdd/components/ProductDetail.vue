@@ -3,7 +3,7 @@
   <el-row>
     <el-col :span="16">
       <el-form-item label="商品详情：">
-        <WangEditor style="width: 100%" :content="contents" @editorContent="getEditorContent"></WangEditor>
+        <WangEditor :productId="productId" style="width: 100%" :content="contents" @editorContent="getEditorContent"></WangEditor>
       </el-form-item>
     </el-col>
     <el-col :span="6" style="width: 33%">
@@ -23,6 +23,7 @@ export default {
     WangEditor,
   },
   props: {
+    productId: { default: null },
     contents: {
       type: String,
       required: true,

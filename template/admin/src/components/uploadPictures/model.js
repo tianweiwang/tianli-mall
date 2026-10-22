@@ -7,12 +7,20 @@ imgModal.install = function (Vue) {
   const instance = new ModalConstructor();
   instance.$mount(document.createElement('div'));
   document.body.appendChild(instance.$el);
-  Vue.prototype.$imgModal = function (callback, isMore, modelName, boolean) {
-    instance.visible = true;
-    instance.callback = callback;
-    instance.more = isMore;
-    instance.modelName = modelName;
-    instance.booleanVal = boolean;
+  let invocation = 0;
+  Vue.prototype.$imgModal = function (callback, isMore, modelName, boolean, productId = null) {
+    const current = ++invocation;
+    instance.visible = false;
+    instance.resetScope();
+    instance.$nextTick(() => {
+      if (current !== invocation) return;
+      instance.productId = productId;
+      instance.callback = value => { if (current === invocation) callback(value); };
+      instance.more = isMore;
+      instance.modelName = modelName;
+      instance.booleanVal = boolean;
+      instance.visible = true;
+    });
   };
 };
 

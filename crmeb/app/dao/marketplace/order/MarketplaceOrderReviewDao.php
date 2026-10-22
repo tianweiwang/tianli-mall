@@ -167,7 +167,8 @@ final class MarketplaceOrderReviewDao
             ' WHERE TABLE_SCHEMA=DATABASE() AND BINARY TABLE_NAME=BINARY ? ORDER BY ORDINAL_POSITION',[$table]);
         if(array_column($rows,'COLUMN_NAME')!==array_keys($expected))self::fail();
         foreach($rows as$row){$type=strtolower($row['COLUMN_TYPE']);$type=preg_replace('/\b(tinyint|int)\([0-9]+\)/','$1',$type);
-            $actual=[$type,$row['IS_NULLABLE'],$row['COLUMN_DEFAULT'],$row['EXTRA']];if($actual!==$expected[$row['COLUMN_NAME']])self::fail();
+            $actual=[$type,$row['IS_NULLABLE'],$row['COLUMN_DEFAULT'],$row['EXTRA']];if($actual!==$expected[$row['COLUMN_NAME']]
+                &&!($suffix==='system_attachment'&&$row['COLUMN_NAME']==='mer_id'&&$actual===['int unsigned','NO',null,'']))self::fail();
             if(preg_match('/\A(?:char|varchar|text)/',$type)===1&&$row['CHARACTER_SET_NAME']!=='utf8mb4')self::fail();
         }
     }

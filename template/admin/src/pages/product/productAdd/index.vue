@@ -84,6 +84,7 @@
 
         <!-- 商品详情-->
         <product-detail
+          :productId="productMediaId"
           v-show="currentTab === '3'"
           :contents="contents"
           :content="content"
@@ -181,6 +182,7 @@
       </el-form>
       <el-dialog :visible.sync="modalPic" width="950px" scrollable title="上传商品图" :close-on-click-modal="false">
         <uploadPictures
+          :productId="productMediaId"
           :isChoice="isChoice"
           @getPic="getPic"
           @getPicD="getPicD"
@@ -654,6 +656,9 @@ export default {
     };
   },
   computed: {
+    productMediaId() {
+      return this.$route.params.id === undefined ? 0 : this.$route.params.id;
+    },
     ...mapState('media', ['isMobile']),
     labelWidth() {
       return this.isMobile ? undefined : '120px';
@@ -1594,10 +1599,12 @@ export default {
       this.changeAttrValue = '';
     },
     handleSelImg(item) {
+      const scope = this.productMediaId;
       this.$imgModal((e) => {
+        if (this.productMediaId !== scope || !e) return;
         item.pic = e.att_dir;
         this.changeSpecImg([item.value], e.att_dir);
-      });
+      }, false, undefined, undefined, scope);
     },
     handleRemoveImg(item) {
       item.pic = '';
@@ -1907,6 +1914,7 @@ export default {
     },
     // 获取单张图片信息
     getPic(pc) {
+      if (!pc || Array.isArray(pc)) return;
       switch (this.picTit) {
         case 'danFrom':
           this.formValidate.image = pc.att_dir;

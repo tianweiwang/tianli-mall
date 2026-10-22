@@ -112,6 +112,14 @@ final class LegacyProductWriteServices
         $data['review_admin_id']=null;$data['review_time']=null;return $data;
     }
     public static function owner(int $id): int { self::assertParent($id);return self::$operation['owners'][$id]; }
+    /** Derive media ownership only inside the already authorized product operation. */
+    public static function mediaOwner(int $productIdOrZero): int
+    {
+        self::transaction();
+        if($productIdOrZero>0)return self::owner($productIdOrZero);
+        if($productIdOrZero!==0||self::$operation['allow_create']!==true)throw new AuthUnavailableException();
+        return self::$operation['self'];
+    }
     public static function targetIds(): array { self::transaction();return array_keys(self::$operation['owners']); }
     public static function skip(int $id): void { self::assertParent($id);self::$operation['skipped'][$id]=true; }
     public static function afterCommit(callable $operation): void { self::transaction();self::$operation['after_commit'][]=$operation; }

@@ -39,6 +39,9 @@ class Request extends \think\Request
     /** Fingerprint of the opaque token actually accepted for this request; never a credential. */
     private ?string $verifiedTokenFingerprintValue = null;
 
+    /** Exact facts returned by this request's successful administrator verification. */
+    private ?array $verifiedAdminSessionValue = null;
+
     public function setVerifiedTokenFingerprint(string $fingerprint): void
     {
         if (preg_match('/\A[a-f0-9]{64}\z/D', $fingerprint) !== 1) {
@@ -58,6 +61,37 @@ class Request extends \think\Request
     public function clearVerifiedTokenFingerprint(): void
     {
         $this->verifiedTokenFingerprintValue = null;
+    }
+
+    public function setVerifiedAdminSession(array $verified): void
+    {
+        $keys = array_keys($verified);
+        sort($keys, SORT_STRING);
+        if ($keys !== ['fingerprint', 'id', 'sid', 'version']) throw new \crmeb\exceptions\AuthUnavailableException();
+        foreach (['id', 'sid', 'version', 'fingerprint'] as $field) {
+            if (!is_string($verified[$field])) throw new \crmeb\exceptions\AuthUnavailableException();
+        }
+        if (preg_match('/\A[1-9][0-9]{0,9}\z/D', $verified['id']) !== 1
+            || (strlen($verified['id']) === 10 && strcmp($verified['id'], '4294967295') > 0)
+            || preg_match('/\A[a-f0-9]{32}\z/D', $verified['sid']) !== 1
+            || preg_match('/\A[a-f0-9]{32}\z/D', $verified['version']) !== 1
+            || preg_match('/\A[a-f0-9]{64}\z/D', $verified['fingerprint']) !== 1
+            || !hash_equals($this->verifiedTokenFingerprint(), $verified['fingerprint'])) throw new \crmeb\exceptions\AuthUnavailableException();
+        $this->verifiedAdminSessionValue = [
+            'id' => $verified['id'], 'sid' => $verified['sid'],
+            'version' => $verified['version'], 'fingerprint' => $verified['fingerprint'],
+        ];
+    }
+
+    public function verifiedAdminSession(): array
+    {
+        if ($this->verifiedAdminSessionValue === null) throw new \crmeb\exceptions\AuthUnavailableException();
+        return $this->verifiedAdminSessionValue;
+    }
+
+    public function clearVerifiedAdminSession(): void
+    {
+        $this->verifiedAdminSessionValue = null;
     }
 
     public function setPlatformScope(PlatformScope $scope): void

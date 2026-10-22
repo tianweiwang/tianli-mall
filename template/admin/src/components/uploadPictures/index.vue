@@ -54,6 +54,7 @@
         </div>
       </div>
       <div class="conter">
+        <el-alert v-if="productMessage" :title="productMessage" :description="productReceiptDescription" type="warning" :closable="false" show-icon />
         <div class="bnt acea-row row-middle df-jcsb">
           <div class="">
             <el-button
@@ -219,11 +220,23 @@
     <uploadImg
       ref="upload"
       :isPage="isPage"
+      :productId="productId"
+      :productScope="productSession"
       :isIframe="isIframe"
       :categoryId="treeId"
-      :categoryList="treeData"
+      :categoryList="productId !== null ? treeData2 : treeData"
       @uploadSuccess="uploadSuccess"
+      @mediaCloseResult="acceptProductClose"
     ></uploadImg>
+    <el-dialog :visible.sync="productCategoryVisible" :append-to-body="true" title="图片分类" :width="isIframe ? '95%' : '480px'" :close-on-click-modal="false">
+      <el-form label-width="80px">
+        <el-form-item label="分类名称"><el-input v-model="productCategory.name" maxlength="50" /></el-form-item>
+        <el-form-item label="上级分类">
+          <el-cascader v-model="productCategory.pid" :options="treeData2" :props="{ checkStrictly: true, emitPath: false, label: 'title', value: 'id' }" />
+        </el-form-item>
+      </el-form>
+      <span slot="footer"><el-button @click="productCategoryVisible = false">取消</el-button><el-button type="primary" :loading="productSaving" :disabled="productWriteUnknown" @click="saveProductCategory">保存</el-button></span>
+    </el-dialog>
     <div class="images" v-show="false" v-viewer="{ movable: false }">
       <img v-for="src in pictrueList" :src="src.att_dir" :key="src.att_id" />
     </div>
@@ -240,6 +253,8 @@ import {
   fileUpdateApi,
 } from '@/api/uploadPictures';
 import Setting from '@/setting';
+import { captureProductContext, currentProductContext, closeProductContext, receiptText, requireProductContext, mediaId, mediaList, mediaCategories, mediaCreateCategory, mediaUpdateCategory, mediaDeleteCategory, mediaMove, mediaDelete, mediaRename } from '@/api/product-media';
+import { subscribePlatformAuthEpoch } from '@/libs/platform-auth-epoch';
 import { getCookies } from '@/libs/util';
 import uploadImg from '@/components/uploadImg';
 import { VueTreeList, Tree, TreeNode } from 'vue-tree-list';
@@ -247,6 +262,7 @@ export default {
   name: 'uploadPictures',
   components: { uploadImg, VueTreeList },
   props: {
+    productId: { default: null },
     isChoice: {
       type: String,
       default: '',
@@ -278,6 +294,18 @@ export default {
   },
   data() {
     return {
+      productSession: null,
+      productScopeInitialized: false,
+      productListSequence: 0,
+      productTreeSequence: 0,
+      productMessage: '',
+      productReceipt: null,
+      productCloseResult: null,
+      productReceiptDescription: '',
+      productWriteUnknown: false,
+      productSaving: false,
+      productCategoryVisible: false,
+      productCategory: { id: 0, pid: 0, name: '' },
       spinShow: false,
       fileUrl: Setting.apiBaseURL + '/file/upload',
       modalPic: false,
@@ -318,6 +346,24 @@ export default {
       picmargin: '5px', //默认距离右边距离
     };
   },
+  created() {
+    this.resetProductScope();
+    this.productUnsubscribe = subscribePlatformAuthEpoch(() => {
+      if (this.productId !== null) this.invalidateProductScope();
+    });
+  },
+  watch: {
+    productId(value, previous) {
+      this.resetProductScope();
+      if (value === null && previous !== null) return;
+      this.getList();
+      this.getFileList();
+    },
+  },
+  beforeDestroy() {
+    closeProductContext(this.productSession);
+    if (this.productUnsubscribe) this.productUnsubscribe();
+  },
   mounted() {
     if (this.isPage) {
       let hang = parseInt((document.body.clientHeight - this.$refs.imgListBox.clientHeight - 325) / 180); //计算行数
@@ -330,6 +376,133 @@ export default {
     this.getFileList();
   },
   methods: {
+    receiptTextValue(value) { return receiptText(value); },
+    acceptProductClose(event) {
+      const child = this.$refs.upload;
+      if (!event || this.productId === null || event.scope !== this.productSession || !currentProductContext(this.productSession) || !child || event.context !== child.productSession || event.generation !== child.productGeneration) return;
+      this.productCloseResult = { lease_id: event.lease_id, state: event.state, cleanup_complete: event.cleanup_complete === true };
+      if (event.message) this.productMessage = event.message;
+      if (event.receipt) { this.productReceipt = event.receipt; this.productReceiptDescription = receiptText(event.receipt); }
+    },
+    resetProductScope() {
+      const hadProduct = this.productScopeInitialized === true;
+      this.productScopeInitialized = this.productId !== null;
+      closeProductContext(this.productSession);
+      this.productSession = null;
+      this.productMessage = ''; this.productReceipt = null; this.productReceiptDescription = '';
+      this.productWriteUnknown = false;
+      this.productCategoryVisible = false;
+      if (this.productId === null && !hadProduct) return;
+      this.treeId = this.productId === null ? '' : 0;
+      this.treeData = [];
+      this.treeData2 = [];
+      this.pictrueList = [];
+      this.total = 0;
+      this.initData();
+      if (this.productId !== null) {
+        try { this.productSession = captureProductContext(this.productId); } catch (error) { this.productReceipt = error.receipt || null; this.productReceiptDescription = receiptText(this.productReceipt); this.productMessage = error.message; }
+      }
+    },
+    invalidateProductScope() {
+      closeProductContext(this.productSession);
+      this.productSession = null;
+      this.productMessage = '登录身份已变化，进行中的提交结果请先核对，再重新打开商品图片';
+      this.productCategoryVisible = false;
+      this.pictrueList = [];
+      this.treeData = [];
+      this.treeData2 = [];
+      this.total = 0;
+      this.initData();
+    },
+    async productWork(operation, apply, write = false) {
+      const context = this.productSession;
+      try {
+        requireProductContext(context);
+        if (write && this.productWriteUnknown) throw new Error('上一项提交结果未确认，请先核对图库');
+        const value = await operation(context);
+        if (this.productSession !== context) return;
+        requireProductContext(context);
+        if (apply) apply(value);
+        return value;
+      } catch (error) {
+        if (this.productSession === context) {
+          if (error.state === 'unknown') this.productWriteUnknown = true;
+          this.productReceipt = error.receipt || null; this.productReceiptDescription = receiptText(this.productReceipt); this.productMessage = error.message || '商品图片操作未完成';
+        }
+      }
+    },
+    getProductCategories(type) {
+      const sequence = ++this.productTreeSequence;
+      return this.productWork(ctx => mediaCategories(ctx, { ...this.uploadName, type: 0 }), value => {
+        if (sequence !== this.productTreeSequence) return;
+        if (type !== 'search') this.treeData2 = [{ id: 0, title: '未分组', pid: 0 }, ...JSON.parse(JSON.stringify(value.list))];
+        this.treeData = [{ id: 0, title: '全部图片', pid: 0 }, ...value.list];
+      });
+    },
+    getProductImages() {
+      const sequence = ++this.productListSequence;
+      this.fileData.limit = Math.max(1, Math.min(100, Number(this.fileData.limit) || 18));
+      const query = { ...this.fileData, pid: this.treeId === '' ? 0 : this.treeId };
+      return this.productWork(ctx => mediaList(ctx, query), value => {
+        if (sequence !== this.productListSequence) return;
+        value.list.forEach(item => {
+          item.isSelect = false; item.isEdit = false; item.isShowEdit = false; item.realName = false; item.num = 0;
+          this.editName(item);
+        });
+        this.pictrueList = value.list; this.total = value.count; this.isShowPic = value.list.length === 0;
+      });
+    },
+    openProductCategory(id, pid, name = '') {
+      try {
+        requireProductContext(this.productSession);
+        if (this.productWriteUnknown) throw new Error('上一项结果未确认，请先核对图库');
+        this.productCategory = { id: mediaId(id, true), pid: mediaId(pid, true), name };
+        this.productCategoryVisible = true;
+      } catch (error) { this.productReceipt = error.receipt || null; this.productReceiptDescription = receiptText(this.productReceipt); this.productMessage = error.message; }
+    },
+    async saveProductCategory() {
+      if (this.productSaving) return;
+      const category = { ...this.productCategory };
+      if (!category.name.trim()) { this.productMessage = '请填写分类名称'; return; }
+      this.productSaving = true;
+      try {
+        await this.productWork(ctx => category.id ? mediaUpdateCategory(ctx, category.id, { name: category.name, pid: mediaId(category.pid, true), type: 0 }) : mediaCreateCategory(ctx, { name: category.name, pid: mediaId(category.pid, true), type: 0 }), () => {
+          this.productCategoryVisible = false;
+          this.$message.success('分类已保存'); this.getProductCategories();
+        }, true);
+      } finally { this.productSaving = false; }
+    },
+    async removeProductCategory(category) {
+      const context = this.productSession;
+      try {
+        requireProductContext(context);
+        await this.$confirm('删除分类“' + category.title + '”？所属图片将移到父分类或未分组。', '删除分类', { type: 'warning' });
+        if (this.productSession !== context) return;
+        await this.productWork(ctx => mediaDeleteCategory(ctx, category.id), () => {
+          this.treeId = 0; this.initData(); this.getProductCategories(); this.getProductImages(); this.$message.success('分类已删除');
+        }, true);
+      } catch (error) { if (error !== 'cancel' && error !== 'close' && this.productSession === context) { this.productReceipt = error.receipt || null; this.productReceiptDescription = receiptText(this.productReceipt); this.productMessage = error.message || '分类未删除'; } }
+    },
+    moveProductImages() {
+      const ids = this.ids.slice(); if (!ids.length) return;
+      return this.productWork(ctx => mediaMove(ctx, ids, this.pids === '' || this.pids === null ? 0 : this.pids), () => {
+        this.initData(); this.pids = 0; this.getProductImages(); this.$message.success('图片已移动');
+      }, true);
+    },
+    async deleteProductImages(ids) {
+      if (!ids.length) return;
+      const context = this.productSession;
+      try {
+        requireProductContext(context);
+        await this.$confirm('删除选中的图片？', '删除图片', { type: 'warning' });
+        if (this.productSession !== context) return;
+        await this.productWork(ctx => mediaDelete(ctx, ids), () => { this.initData(); this.getProductImages(); this.$message.success('图片已删除'); }, true);
+      } catch (error) { if (error !== 'cancel' && error !== 'close' && this.productSession === context) { this.productReceipt = error.receipt || null; this.productReceiptDescription = receiptText(this.productReceipt); this.productMessage = error.message || '图片未删除'; } }
+    },
+    renameProductImage(item) {
+      if (!item.real_name.trim()) { this.productMessage = '请填写图片名称'; return; }
+      return this.productWork(ctx => mediaRename(ctx, item.att_id, item.real_name), () => { this.editName(item); item.isEdit = false; this.$message.success('图片名称已保存'); }, true);
+    },
     radioChange() {
       this.initData();
     },
@@ -401,6 +574,9 @@ export default {
       this.getFileList();
     },
     uploadModal() {
+      if (this.productId !== null) {
+        try { requireProductContext(this.productSession); if (this.productWriteUnknown) throw new Error("上一项结果未确认，请先核对图库"); } catch (error) { this.productReceipt = error.receipt || null; this.productReceiptDescription = receiptText(this.productReceipt); this.productMessage = error.message; return; }
+      }
       this.$refs.upload.uploadModal = true;
     },
     enterMouse(item) {
@@ -426,6 +602,7 @@ export default {
     searchImg() {},
     // 移动分类
     getMove() {
+      if (this.productId !== null) return this.moveProductImages();
       let data = {
         pid: this.pids,
         images: this.ids.toString(),
@@ -444,6 +621,7 @@ export default {
         });
     },
     delImg(id) {
+      if (this.productId !== null) return this.deleteProductImages([id]);
       let ids = {
         ids: id,
       };
@@ -465,6 +643,7 @@ export default {
     },
     // 删除图片
     editPicList(id) {
+      if (this.productId !== null) return this.deleteProductImages(id ? [id] : this.ids.slice());
       let ids = {
         ids: id || this.ids.toString(),
       };
@@ -510,6 +689,7 @@ export default {
     },
     // 删除分类
     remove(data, tit) {
+      if (this.productId !== null) return this.removeProductCategory(data);
       this.tits = tit;
       let delfromData = {
         title: '删除 [ ' + data.title + ' ] ' + '分类',
@@ -529,6 +709,7 @@ export default {
     },
     // 编辑树表单
     editPic(data) {
+      if (this.productId !== null) return this.openProductCategory(data.id, data.pid, data.name || data.title);
       this.$modalForm(categoryEditApi(data.id)).then(() => this.getList());
     },
     // 搜索分类
@@ -537,6 +718,7 @@ export default {
     },
     // 分类列表树
     getList(type) {
+      if (this.productId !== null) return this.getProductCategories(type);
       let data = {
         title: '全部图片',
         id: '',
@@ -555,6 +737,7 @@ export default {
         });
     },
     loadData(item, callback) {
+      if (this.productId !== null) return this.productWork(ctx => mediaCategories(ctx, { pid: item.id, all: 0, type: 0 }), value => callback(value.list));
       getCategoryListApi({
         pid: item.id,
       })
@@ -582,6 +765,7 @@ export default {
     },
     // 文件列表
     getFileList() {
+      if (this.productId !== null) return this.getProductImages();
       this.fileData.pid = this.treeId;
       fileListApi(this.fileData)
         .then(async (res) => {
@@ -661,6 +845,7 @@ export default {
     },
     // 新建分类表单
     getFrom() {
+      if (this.productId !== null) return this.openProductCategory(0, this.treeId === "" ? 0 : this.treeId, "");
       this.$modalForm(createApi({ id: this.treeId })).then((res) => {
         this.getList();
       });
@@ -732,6 +917,7 @@ export default {
     },
     // 点击使用选中图片
     checkPics() {
+      if (this.productId !== null) { try { requireProductContext(this.productSession); } catch (error) { this.productReceipt = error.receipt || null; this.productReceiptDescription = receiptText(this.productReceipt); this.productMessage = error.message; return; } }
       if (this.isChoice === '单选') {
         if (this.checkPicList.length > 1) return this.$message.warning('最多只能选一张图片');
         this.$emit('getPic', this.checkPicList[0]);
@@ -751,6 +937,7 @@ export default {
     },
     // 修改图片文字上传
     bindTxt(item) {
+      if (this.productId !== null) return this.renameProductImage(item);
       if (item.real_name == '') {
         this.$message.error('请填写内容');
       }

@@ -15,6 +15,7 @@ use app\services\activity\live\LiveGoodsServices;
 use app\services\activity\live\LiveRoomServices;
 use app\services\agent\AgentManageServices;
 use app\services\marketplace\order\MarketplaceOrderPostCommitServices;
+use app\services\marketplace\product\MarketplaceProductScanGcTimer;
 use app\services\order\StoreOrderInvoiceServices;
 use app\services\order\StoreOrderServices;
 use app\services\order\StoreOrderTakeServices;
@@ -39,6 +40,7 @@ class CrontabRunServices
     public $markList = [
         'orderCancel' => '未支付自动取消订单',
         'marketplaceOrderPostCommit' => '多商户订单提交后收尾',
+        'marketplaceProductScanGc' => '商品扫码临时图片清理',
         'pinkExpiration' => '拼团到期订单处理',
         'agentUnbind' => '到期自动解绑上级',
         'liveProductStatus' => '自动更新直播商品状态',
@@ -51,6 +53,17 @@ class CrontabRunServices
         'signRemind' => '未签到提醒',
         'customTimer' => '自定义定时任务',
     ];
+
+    /** One-second scheduler wake-up; the timer applies the configured Redis-time GC cadence. */
+    public function marketplaceProductScanGc(): array
+    {
+        try {
+            return app()->make(MarketplaceProductScanGcTimer::class)->tick();
+        } catch (\Throwable $error) {
+            try { Log::error('MARKETPLACE_PRODUCT_SCAN_GC_UNAVAILABLE'); } catch (\Throwable $ignored) {}
+            return ['state' => 'unavailable'];
+        }
+    }
 
     /** Scan only durable V1 post-commit responsibilities; this does not dispatch other timers. */
     public function marketplaceOrderPostCommit(): array

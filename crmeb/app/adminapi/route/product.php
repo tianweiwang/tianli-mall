@@ -75,6 +75,25 @@ Route::group('product', function () {
         Route::get('product/check_activity/:id', 'v1.product.StoreProduct/check_activity')->option(['real_name' => '检测是商品否有活动开启']);
         //导入虚拟商品卡密
         Route::get('product/import_card', 'v1.product.StoreProduct/import_card')->option(['real_name' => '导入虚拟商品卡密']);
+        // Finite category and organization operations share the same actual product scope.
+        Route::get('product/:product_id/media/categories', 'v1.product.PlatformProductMedia/categories')->option(['legacy_product_write'=>'legacy-product-media-categories-list', 'real_name'=>'商品图片分类']);
+        Route::post('product/:product_id/media/categories', 'v1.product.PlatformProductMedia/createCategory')->option(['legacy_product_write'=>'legacy-product-media-categories-create', 'real_name'=>'商品图片分类新增']);
+        Route::put('product/:product_id/media/categories/:category_id', 'v1.product.PlatformProductMedia/updateCategory')->option(['legacy_product_write'=>'legacy-product-media-categories-update', 'real_name'=>'商品图片分类修改']);
+        Route::delete('product/:product_id/media/categories/:category_id', 'v1.product.PlatformProductMedia/deleteCategory')->option(['legacy_product_write'=>'legacy-product-media-categories-delete', 'real_name'=>'商品图片分类删除']);
+        Route::put('product/:product_id/media/move', 'v1.product.PlatformProductMedia/move')->option(['legacy_product_write'=>'legacy-product-media-move', 'real_name'=>'商品图片移动']);
+        Route::post('product/:product_id/media/delete', 'v1.product.PlatformProductMedia/delete')->option(['legacy_product_write'=>'legacy-product-media-delete', 'real_name'=>'商品图片删除']);
+        Route::put('product/:product_id/media/:att_id/name', 'v1.product.PlatformProductMedia/rename')->option(['legacy_product_write'=>'legacy-product-media-rename', 'real_name'=>'商品图片改名']);
+        // Anonymous phones stage privately; only the actual PC issuer may claim commercial rows.
+        Route::post('product/:product_id/media/scan', 'v1.product.PlatformProductMediaScan/issue')->option(['legacy_product_write'=>'legacy-product-media-scan-issue', 'real_name'=>'商品扫码发行']);
+        Route::get('product/:product_id/media/scan/:lease_id/items/:stage_id/content', 'v1.product.PlatformProductMediaScan/preview')->option(['legacy_product_write'=>'legacy-product-media-scan-preview', 'real_name'=>'商品扫码预览']);
+        Route::get('product/:product_id/media/scan/:lease_id', 'v1.product.PlatformProductMediaScan/poll')->option(['legacy_product_write'=>'legacy-product-media-scan-poll', 'real_name'=>'商品扫码列表']);
+        Route::post('product/:product_id/media/scan/:lease_id/claim', 'v1.product.PlatformProductMediaScan/claim')->option(['legacy_product_write'=>'legacy-product-media-scan-claim', 'real_name'=>'商品扫码认领']);
+        Route::delete('product/:product_id/media/scan/:lease_id', 'v1.product.PlatformProductMediaScan/close')->option(['legacy_product_write'=>'legacy-product-media-scan-close', 'real_name'=>'商品扫码关闭']);
+        // Online bytes are fully prefetched before this actual product writer begins.
+        Route::post('product/:product_id/media/online_upload', 'v1.product.PlatformProductMedia/onlineUpload')->option(['legacy_product_write'=>'legacy-product-media-online-upload', 'real_name'=>'商品在线图片上传']);
+        // Product media derives its owner inside the real authorized product operation.
+        Route::get('product/:product_id/media', 'v1.product.PlatformProductMedia/index')->option(['legacy_product_write'=>'legacy-product-media-list', 'real_name'=>'商品图片列表']);
+        Route::post('product/:product_id/media', 'v1.product.PlatformProductMedia/upload')->option(['legacy_product_write'=>'legacy-product-media-upload', 'real_name'=>'商品图片上传']);
         //商品详情
         Route::get('product/:id', 'v1.product.StoreProduct/get_product_info')->option(['real_name' => '商品详情']);
         //加入回收站

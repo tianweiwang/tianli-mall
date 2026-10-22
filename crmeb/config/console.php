@@ -32,6 +32,7 @@ return [
         'npm' => \crmeb\command\Npm::class,
         'license:cleanup' => \crmeb\command\LicenseAlignmentCleanup::class,
         'auth:epoch-rotate' => \app\command\AuthEpochRotate::class,
-        'marketplace:post-commit-install' => \app\command\MarketplaceOrderPostCommitInstall::class
+        'marketplace:post-commit-install' => \app\command\MarketplaceOrderPostCommitInstall::class,
+        'marketplace:product-scan-gc-install' => \app\command\MarketplaceProductScanGcInstall::class
     ],
 ];

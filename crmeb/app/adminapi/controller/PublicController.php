@@ -79,6 +79,17 @@ class PublicController
         return app('json')->success('上传成功');
     }
 
+    /** Capability-only private staging; never creates an admin identity or commercial attachment. */
+    public function productScanUpload(Request $request)
+    {
+        try {
+            $data = app()->make(\app\services\marketplace\product\ProductMediaScanServices::class)->stage($request, $request->post(false));
+            return app('json')->success('已暂存，请在电脑端认领', $data);
+        } catch (\app\services\marketplace\attachment\MerchantAttachmentOperationException $error) {
+            return Response::create(['status'=>503,'msg'=>'暂存尚未确认，请保留本次结果','data'=>['state'=>'unknown','receipt'=>$error->receipt]], 'json', 503);
+        }
+    }
+
     public function import(Request $request)
     {
         $filePath = $request->param('file_path', '');

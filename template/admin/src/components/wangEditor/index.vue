@@ -1,5 +1,6 @@
 <template>
   <div>
+    <el-alert v-if="productMessage" :title="productMessage" :description="productReceiptDescription" type="warning" :closable="false" show-icon />
     <div v-show="!monacoBox">
       <div ref="wang-editor" class="wang-editor" />
     </div>
@@ -9,7 +10,7 @@
     </div>
 
     <el-dialog :visible.sync="modalPic" width="1024px" title="上传图片" :close-on-click-modal="false">
-      <uploadPictures v-if="modalPic" :isChoice="isChoice" @getPic="getPic"></uploadPictures>
+      <uploadPictures v-if="modalPic" :productId="productId" :isChoice="isChoice" @getPic="getPic"></uploadPictures>
     </el-dialog>
     <el-dialog :visible.sync="modalVideo" width="1024px" title="上传视频" :close-on-click-modal="false">
       <uploadVideo v-if="modalVideo" @getVideo="getvideo"></uploadVideo>
@@ -24,6 +25,8 @@ import HtmlMenu from './html';
 import uploadPictures from '@/components/uploadPictures';
 import uploadVideo from '@/components/uploadVideo2';
 import { getCookies } from '@/libs/util';
+import { captureProductContext, currentProductContext, closeProductContext, receiptText, requireProductContext, mediaUpload } from '@/api/product-media';
+import { subscribePlatformAuthEpoch } from '@/libs/platform-auth-epoch';
 
 import util from '../../utils/bus';
 export default {
@@ -34,6 +37,7 @@ export default {
     monaco,
   },
   props: {
+    productId: { default: null },
     content: {
       type: String,
       default: '',
@@ -42,6 +46,12 @@ export default {
 
   data() {
     return {
+      productSession: null,
+      productMessage: '',
+      productReceipt: null,
+      productReceiptDescription: '',
+      productUploadUnknown: false,
+      productUploading: false,
       monacoBox: false,
       value: '',
       modalPic: false,
@@ -59,6 +69,7 @@ export default {
     };
   },
   watch: {
+    productId() { this.resetProductMedia(); this.configureProductUploads(); },
     initEditor(val) {
       if (val) {
         this.editor.txt.html(this.content);
@@ -73,8 +84,16 @@ export default {
     },
   },
   created() {
+    this.resetProductMedia();
+    this.productUnsubscribe = subscribePlatformAuthEpoch(() => {
+      if (this.productId !== null) { closeProductContext(this.productSession); this.modalPic = false; this.productMessage = "登录身份已变化，请重新打开商品详情"; }
+    });
     // window.getvideoint = this.getvideoint;
     // window.getHtmlint = this.getHtmlint;
+  },
+  beforeDestroy() {
+    closeProductContext(this.productSession);
+    if (this.productUnsubscribe) this.productUnsubscribe();
   },
   mounted() {
     this.createEditor();
@@ -87,6 +106,36 @@ export default {
   },
 
   methods: {
+    resetProductMedia() {
+      closeProductContext(this.productSession); this.productSession = null; this.modalPic = false;
+      this.productMessage = ''; this.productReceipt = null; this.productReceiptDescription = ''; this.productUploadUnknown = false; this.productUploading = false;
+      if (this.productId !== null) { try { this.productSession = captureProductContext(this.productId); } catch (error) { this.productReceipt = error.receipt || null; this.productReceiptDescription = receiptText(this.productReceipt); this.productMessage = error.message; } }
+    },
+    configureProductUploads() {
+      if (!this.editor) return;
+      this.editor.config.uploadImgShowBase64 = this.productId === null;
+      if (this.productId === null) this.editor.config.customUploadImg = null;
+      else this.editor.config.customUploadImg = (files, insertImgFn) => { this.uploadProductFiles(files, insertImgFn); };
+    },
+    async uploadProductFiles(files, insertImgFn) {
+      const context = this.productSession;
+      try {
+        requireProductContext(context);
+        if (this.productUploading) { this.productMessage = '图片正在上传，请稍后选择'; return; }
+        if (this.productUploadUnknown) throw new Error('上一项上传结果未确认，请先核对图片库');
+        const ordered = Array.from(files);
+        if (!ordered.length || ordered.length > 50) throw new Error('一次请选择1至50张图片');
+        this.productUploading = true; this.productMessage = '图片正在上传，请稍候';
+        for (const file of ordered) {
+          const saved = await mediaUpload(context, file, 0);
+          if (this.productSession !== context || !currentProductContext(context)) return;
+          insertImgFn(saved.src);
+        }
+        this.productMessage = '';
+      } catch (error) {
+        if (this.productSession === context) { if (error.state === 'unknown') this.productUploadUnknown = true; this.productReceipt = error.receipt || null; this.productReceiptDescription = receiptText(this.productReceipt); this.productMessage = error.message || '图片上传未完成'; }
+      } finally { if (this.productSession === context) this.productUploading = false; }
+    },
     changeValue(value) {
       this.newHtml = value;
       this.$emit('editorContent', value);
@@ -95,6 +144,7 @@ export default {
     },
     // 获取多张图信息
     getPic(pc) {
+      if (this.productId !== null) { try { requireProductContext(this.productSession); } catch (error) { this.productReceipt = error.receipt || null; this.productReceiptDescription = receiptText(this.productReceipt); this.productMessage = error.message; return; } }
       let _this = this;
       _this.img = pc;
       _this.modalPic = false;
@@ -103,6 +153,7 @@ export default {
       });
     },
     getimg() {
+      if (this.productId !== null) { try { requireProductContext(this.productSession); } catch (error) { this.productReceipt = error.receipt || null; this.productReceiptDescription = receiptText(this.productReceipt); this.productMessage = error.message; return; } }
       this.modalPic = true;
       this.isChoice = '多选';
     },
@@ -177,6 +228,7 @@ export default {
       // 配置全屏功能按钮是否展示
       //   this.editor.config.showFullScreen = false
       this.editor.config.uploadImgShowBase64 = true;
+      this.configureProductUploads();
       //   this.editor.config.uploadImgAccept = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp']
       this.editor.config.zIndex = 0;
       //   this.editor.config.uploadImgMaxSize = this.uploadSize * 1024 * 1024

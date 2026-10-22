@@ -16,6 +16,14 @@ return [
         // Explicit persistent private storage; no public/runtime path fallback.
         'private_root'=>Env::get('marketplace.aftersale.private_root',''),
     ],
+    'product_media_scan'=>[
+        'private_root'=>Env::get('marketplace.product_media_scan.private_root',''),
+        'max_open_leases'=>Env::get('marketplace.product_media_scan.max_open_leases',16),
+        'per_issuer'=>Env::get('marketplace.product_media_scan.per_issuer',4),
+        'max_terminal_leases'=>Env::get('marketplace.product_media_scan.max_terminal_leases',64),
+        'gc_batch'=>Env::get('marketplace.product_media_scan.gc_batch',16),
+        'gc_period_seconds'=>Env::get('marketplace.product_media_scan.gc_period_seconds',60),
+    ],
     'payment'=>[
         // Think Env reads PHP_MARKETPLACE_PAYMENT_TEST_ENABLED; APP_ENV is checked separately at resolution.
         'test_enabled'=>Env::get('marketplace.payment.test_enabled',false),
