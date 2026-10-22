@@ -209,6 +209,8 @@ function m4c_entry_predecessor(array $source,string $proof,string $role,array $c
         &&in_array($created['port_bindings'],[null,[]],true),'M4C_ORIGINAL_PREDECESSOR_ISOLATED_ROLE');
     m4c_expect($created['ports']===null||is_array($created['ports']),'M4C_PREDECESSOR_PORT_MAP');
     foreach($created['ports']??[]as$value)m4c_expect(in_array($value,[null,[]],true),'M4C_PREDECESSOR_NO_PUBLISHED_PORTS');
+    $initializer=$proof==='initializer'&&$role==='audit-ms4-initialize';
+    m4c_expect(($proof==='initializer')===($role==='audit-ms4-initialize'),'M4C_EXACT_INITIALIZER_PROOF_ROLE_PAIR');
     $binds=['/workspace'=>[$source['context']['repo_dir'],false],'/source'=>[$source['context']['repo_dir'],false],
         '/run/audit'=>[$source['context']['run_dir'],true]];
     if($proof==='initializer')$binds['/run/ms4-prep']=[$source['context']['prep_dir'],false];
@@ -217,10 +219,13 @@ function m4c_entry_predecessor(array $source,string $proof,string $role,array $c
         m4c_expect(!isset($seen[$destination])&&!str_contains((string)($mount['Source']??''),'docker.sock'),'M4C_PREDECESSOR_UNIQUE_MOUNTS');$seen[$destination]=true;
         if(isset($binds[$destination]))m4c_expect($mount['Type']==='bind'&&$mount['RW']===$binds[$destination][1]
             &&audit_canonical_host_bind_source($mount['Source'])===audit_canonical_host_bind_source($binds[$destination][0]),'M4C_PREDECESSOR_ORIGINAL_HOST_BIND');
+        elseif($initializer&&$destination==='/run/audit-customer-form')m4c_expect($mount['Type']==='volume'&&$mount['RW']===true
+            &&$mount['Name']===$source['context']['project'].'_customer-form-evidence','M4C_INITIALIZER_OWN_CUSTOMER_FORM_RW_VOLUME');
         elseif(isset($volumes[$destination]))m4c_expect($mount['Type']==='volume'&&$mount['RW']===false
             &&$mount['Name']===$source['context']['project'].'_'.$volumes[$destination],'M4C_PREDECESSOR_PRIVATE_RO_VOLUME');
         else m4c_expect($destination==='/tmp'&&$mount['Type']==='tmpfs'&&$mount['RW']===true,'M4C_PREDECESSOR_ONLY_PRIVATE_TMPFS');}
     foreach(array_merge(array_keys($binds),array_keys($volumes))as$destination)m4c_expect(isset($seen[$destination]),'M4C_PREDECESSOR_ALL_REQUIRED_MOUNTS');
+    if($initializer)m4c_expect(isset($seen['/run/audit-customer-form']),'M4C_INITIALIZER_CUSTOMER_FORM_VOLUME_REQUIRED');
     m4c_expect(array_keys($created['tmpfs'])===['/tmp'],'M4C_PREDECESSOR_ONE_TMPFS');
     foreach(['started_at','finished_at']as$key)m4c_expect(is_string($terminal[$key])&&strtotime($terminal[$key])!==false
         &&strtotime($terminal[$key])>0,'M4C_PREDECESSOR_REAL_START_FINISH');

@@ -44,7 +44,7 @@
 | MS1 | 商家、员工/角色、上下文及管理接线已有实现；[普通报告](records/ms1/report.md)含 API、Worker 局部证据及聊天界面正常流程 | 原组合失败保留；整套回归、全部界面功能、真机与人工验收未完成 |
 | MS2 | 结构/归属命令及商品、库存等已有实现与[普通记录](records/ms2/four-command-normal-summary.json) | 各局部通过不能汇总为完整 MS2；历史归属映射和完整迁移/商品链验收未闭合 |
 | MS3 | 已有商家、平台页面源码及[构建检查记录](records/ms3/frontend-source-checkpoint.json) | 页面源码或构建不等于真实业务 UI；顾客店铺展示与完整阶段验收仍未闭合 |
-| MS4 | 交易、履约、售后、评价已有实现；当前eadf内部测试付款及发收货、五次重放和288次内部读取已通过。订单表单私有图片、店铺验收覆盖及上传目录准备差量正在接续 | 当前完整A因评价图片上传HTTP503失败，正常close及独立zero已完成；新来源完整A、同来源fresh B、售后评价/Worker、五种原图读取者及三端页面/三宽验收仍未闭合，按[当前计划](09-plan-ms4-ms6.md)继续 |
+| MS4 | 交易、履约、售后、评价已有实现；历史内部付款、发收货局部通过。当前 1b 完整链 source 阶段失败，正常收尾和独立核零完成，三 PHP 必要语法及四次原函数校验通过 | 修复已本地采用；新来源完整业务、同来源 fresh B、售后评价/Worker、原图及三端页面/设备验收仍待，按[当前计划](09-plan-ms4-ms6.md)继续 |
 | MS5 | 已有支付核心、测试支付消费者及三端订单查询验证相关实现/源码，见 [支付记录](records/ms5/payment-core-integration.md) | 真实账户、回调、退款、账单/费用及完整业务交付与验证尚未完成；测试驱动不代替真实渠道，外部条件与 L4 实测另列 |
 | MS6 | 原计划和发布要求保留 | 发布、恢复、限流、防回滚与全量回归尚未完成，未获真实发布验收 |
 
@@ -53,6 +53,18 @@
 当前开发记录（2026-10-23）：通用多商户商城继续复用原商品列表、SKU、规格、价格和库存体系。Run20261022170115298d9f/eadf的内部测试付款、两次发货、三次收货、五次同key重放及288次内部读取通过；售后评价阶段第175个HTTP请求（评价图片POST）返回HTTP503，六键收据停在preflight，完整A仍失败，Worker和fresh B未开始。该实例已正常关闭原四容器、一内部网、七卷，84项close及12项独立zero原生命令均实际0。后继只在新的正常链初始化缺席的自有uploads目录，并接续订单表单私有图片和店铺完整验收覆盖；旧503的具体前置失败原因尚未证明。本次本地采用范围为九PHP和这两份记录，外部浏览器driver及八卷配置另按真实最终文件绑定；采用状态以实际Git提交为准。源码、语法和构建不替代新完整业务、真实页面或设备验收。真实金融、历史迁移、发布和后续人工签收仍未完成，整体不计算完成百分比。
 
 当前后继记录（2026-10-23，4e八卷；此前各段按其历史时点原样保留）：Source `4e2723c2b96f4e0265b9fc75483e307820f3fe79` 的 Run `20261022200902eba4fa` 已完成原初始化，但支付迁移 driver 实际 exited1、phase=source、receipt=false、private=NOT_CREATED，具体最先触发断言仍 UNKNOWN；本轮内部测试付款、Task6、AR、Worker均未启动，完整A失败。原M239成功只证明完整Source冻结，不能签业务。原三CID、一内部网、完整八卷已精确普通非force收口，close93及独立zero20原生均实际0；Root与非作者联合实际读回报告 `full-a-eight-volume-driver-failed-close-zero-actual-independent-r1/REPORT.json` 为8162B / `52b519f34cdb01b778ac584fc73247563e16b3d15a3112a962e7454566469c75`，529读取窗口全闭、findings为空，原失败保持。后继仅拟本地采用五件既有测试PHP（normal A的支付迁移、early迁移、顾客入口三件，以及UI prepare/backend两件）与本两份docs：全manifest严格使用mysql-data、redis-data、bootstrap-secrets、redis-secrets、app-secrets、fixture-secrets、aftersale-evidence、customer-form-evidence八个当前project专用名称及完整身份，不能按本角色挂载子集放行；UI Source集合为34/37，Web卷为8+4=12，prepare/backend各为ENV9，customer-form卷在prepare为RO（native RW=false及kernel ro），在backend为RW（native RW=true及kernel rw），无ENV8退回。UI候选要求真实preApp owner校验、显式语言准备及其完整独立变化证明，并保独立CU目录/原图完整窗口；r3仍有该窗口finding，r4修正及独审以实际最终报告为准，不能记为已通过或已采用。正常九件profile另只重绑顾客入口115040B / `ebabf552c2c79e12c7cc307804d6f9610495ce67c557b21dcf28f9c28c7dd14c`、七CU表及完整九件DAG，支付迁移和early另两件只进入新M的真实Source groups。A三件已有纯PHP语法0；UI两件和新initializer的必要语法、最终采用身份以实际Git和原回执为准，未取得证据的项不先填全PASS或未来HEAD。新完整A、同HEAD fresh B、三端UI20（20steps/20observer ACK/42nativeframes）与三宽DOM、独立H5九场景、非空历史37步与四CLI、原图/媒体及MP/APP/真机设备、真实支付退款回调对账费用结算、发布恢复和人工验收仍待，完整责任不取消；UI20与独立H5的driver/DAG不得互换。继续仅L2本地，无推送、部署或真实资金；已停止样本仍NOT RUN，Task9新商家客服默认关闭、原平台客服保留，只有BASE既有人工签收，整体无可信完成百分比。
+
+### 当前1b失败实例收口与挂载合同修复（2026-10-23）
+
+原 Run `202610222149258b3850`、Source `1b819d0f7b9e7c6e58c9847a2868b696d9070151` 的完整正常链已失败：初始化与支付结构验证通过，履约迁移入口在 source 阶段退出 1；实际首个抛错仍未知。本轮尚未执行内部测试付款、发货收货、售后评价或 Worker，不以历史通过结果代证本轮。
+
+原 4 容器、1 内部网络、8 专用卷已正常非 force 收尾，95 项原生命令通过；另一次独立核零的 20 项原生命令及六项空查询通过，原源码和公开证据保持。真实结果见仓库外 `full-a-eight-volume-early-failed-normal-close-r2/RESULT.json`（e249c4e68f748a5f83eb974523b41126856b58f9b9be1d03142ff154d9b0ac78）、`full-a-eight-volume-early-failed-independent-zero-r2/RESULT.json`（ce617f6ac8d0b986675c8d6de00e7f8d29376553badbc5faa44267c54679e991）。
+
+本次仅修两处测试前代读取函数：`m4ae_ms5_terminal`、`m4c_entry_predecessor` 对 initializer 的完整挂载清单补入当前 project 的 `customer-form-evidence` 专用卷，严格核名称、唯一目的地和 RW；原配置卷仍为 RO，其他角色和完整八卷身份要求保持。另将 UI backend 对顾客测试入口的文件长度与摘要重绑到新原件，共三份 PHP；商品、SKU、规格、价格、库存及业务断言保持。
+
+固定 PHP 8.2 对三份待采用原件和正向入口的语法检查通过；直接加载完整原 PHP，使用本 Run 原公开 metadata，对初始化和原支付迁移两种前代分别调用两原函数，共四次正向调用通过。原临时容器正常移除、前后专用查询为空。结果 `full-a-initializer-mount-php-positive-actual-r1/RESULT.json` 为 9386 B / `570c95998dfe249a34ddb8b60f338b99d14704ef624319115bf0d919eef0bed1`。这只证明必要语法与这四次实际校验，不代表新的完整业务通过；B 草稿 initializer 集合优化仍只有 Source 及模型证据，未据此签 PHP 或性能通过。依赖函数准确名称为 `m4c_entry_ms5_prerequisites`。
+
+后续仍需新 clean 来源完整正常链及收尾、同来源独立 fresh B、三端页面和设备验收、原图与非空历史升级、真实支付退款对账结算、发布恢复和人工验收。通用多商户目标及复用原商品体系保持；仅 L2 本地，不推送、不部署、不处理真实资金。用户已停止的样本继续 NOT RUN，Task9 新商家客服关闭、原平台客服保留，只有 BASE 已登记人工签收，整体不计算完成百分比。
 
 用户已停止的安全复现、负向、故障、并发/断连及恢复样本继续 **NOT RUN**，不得换名重跑或记为 PASS。本概览不改变原规格、覆盖要求或正式验收流程；后续只据实际证据更新，不以行数、构建成功或准备完成换算项目百分比。
 

@@ -279,8 +279,10 @@ function m4ae_ms5_terminal(array $context, array $created, array $terminal, stri
         && strtotime($terminal['started_at']) !== false && strtotime($terminal['finished_at']) !== false
         && strtotime($terminal['started_at']) > 0 && strtotime($terminal['finished_at']) >= strtotime($terminal['started_at']),
         'CUSTOMER_REAL_PREDECESSOR_START_FINISH');
+    $initializer = $proof === 'initializer' && $role === 'audit-ms4-initialize';
+    m4fm_expect(($proof === 'initializer') === ($role === 'audit-ms4-initialize'), 'CUSTOMER_EXACT_INITIALIZER_PROOF_ROLE_PAIR');
     $expectedDestinations = ['/workspace', '/source', '/run/audit', '/run/audit-bootstrap', '/run/audit-app'];
-    if ($role === 'audit-ms4-initialize') $expectedDestinations[] = '/run/ms4-prep';
+    if ($initializer) $expectedDestinations = [...$expectedDestinations, '/run/ms4-prep', '/run/audit-customer-form'];
     $destinations = [];
     foreach ($created['mounts'] as $mount) {
         $destination = $mount['Destination'];
@@ -300,6 +302,11 @@ function m4ae_ms5_terminal(array $context, array $created, array $terminal, stri
         $mount = m4fm_mount($created, $destination);
         m4fm_expect($mount['Type'] === 'volume' && $mount['Name'] === $context['project'] . '_' . $suffix && $mount['RW'] === false,
             'CUSTOMER_READ_ONLY_PREDECESSOR_CONFIG_VOLUMES');
+    }
+    if ($initializer) {
+        $mount = m4fm_mount($created, '/run/audit-customer-form');
+        m4fm_expect($mount['Type'] === 'volume' && $mount['Name'] === $context['project'] . '_customer-form-evidence'
+            && $mount['RW'] === true, 'CUSTOMER_INITIALIZER_OWN_CUSTOMER_FORM_RW_VOLUME');
     }
     m4fm_expect(array_key_exists('/tmp', $created['tmpfs']), 'CUSTOMER_ACTUAL_PREDECESSOR_TMPFS');
 }
