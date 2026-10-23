@@ -298,12 +298,24 @@ function m4upo_files(array $before,array $after,array $source,array $writer,#[\S
  m4up_expect(is_array($x)&&is_array($y)&&array_keys($x)===['']&&array_keys($y)===[''],'UI_WINDOW_PRIVATE_EVIDENCE_REMAINS_EMPTY');
  m4upo_root($x[''],$y[''],['mode'=>0700]);
  $p='/workspace/crmeb/public';$x=$before['files'][$p];$y=$after['files'][$p];$names=array_keys($x);
+ foreach(array_keys($x)as$oldPublicName)m4up_expect($oldPublicName!=='uploads'&&!str_starts_with($oldPublicName,'uploads/'),
+  'UI_WINDOW_FRESH_OWN_PUBLIC_UPLOADS_DIRECTORY');
+ $names[]='uploads';
  foreach(['index.php','router.php','install.lock']as$n){m4up_expect(!isset($x[$n]),'UI_WINDOW_FRESH_OWN_PUBLIC_MATERIAL');$names[]=$n;}
- sort($names,SORT_STRING);m4up_expect(array_keys($y)===$names,'UI_WINDOW_ONLY_THREE_PUBLIC_PREPARATION_FILES');
+ sort($names,SORT_STRING);m4up_expect(array_keys($y)===$names,'UI_WINDOW_ONLY_THREE_PUBLIC_FILES_AND_ONE_EMPTY_UPLOADS_DIRECTORY');
  foreach($x as$n=>$entry)if($n!=='')m4up_expect($y[$n]===$entry,'UI_WINDOW_ALL_ORIGINAL_PUBLIC_FILES_UNCHANGED');
- m4upo_root($x[''],$y[''],['mode'=>0700]);
+ m4upo_root($x[''],$y[''],['mode'=>0700,'nlink'=>$x['']['nlink']+1]);
  foreach(['index.php','router.php']as$n)m4upo_file($y[$n],file_get_contents('/source/crmeb/public/'.$n));
  m4upo_file($y['install.lock'],'MS4_CUSTOMER_HTTP_INSTALLED '.$source['run_id']."\n");
+ $uploadsDirectory=$y['uploads'];m4c_entry_keys($uploadsDirectory,['kind','dev','ino','mode','uid','gid','nlink']);
+ m4up_expect($uploadsDirectory['kind']==='directory'&&$uploadsDirectory['mode']===0700
+  &&$uploadsDirectory['uid']===posix_geteuid()&&$uploadsDirectory['gid']===posix_getegid()
+  &&$uploadsDirectory['dev']===$x['']['dev']&&is_int($uploadsDirectory['ino'])&&$uploadsDirectory['ino']>0
+  &&$uploadsDirectory['nlink']===2,'UI_WINDOW_NEW_EMPTY_OWNED_PUBLIC_UPLOADS_DIRECTORY');
+ foreach($x as$oldPublicNode)m4up_expect($uploadsDirectory['dev']!==$oldPublicNode['dev']
+  ||$uploadsDirectory['ino']!==$oldPublicNode['ino'],'UI_WINDOW_UPLOADS_DISTINCT_FROM_EVERY_ORIGINAL_PUBLIC_NODE');
+ foreach(['index.php','router.php','install.lock']as$n)m4up_expect($uploadsDirectory['dev']!==$y[$n]['dev']
+  ||$uploadsDirectory['ino']!==$y[$n]['ino'],'UI_WINDOW_UPLOADS_DISTINCT_FROM_NEW_PUBLIC_FILES');
  $p='/workspace/crmeb/runtime';$x=$before['files'][$p];$y=$after['files'][$p];
  m4up_expect(is_array($x)&&array_keys($x)===['']&&array_keys($y)===['','ms4-aftersale-review-http.stderr','ms4-aftersale-review-http.stdout'],
   'UI_WINDOW_ONLY_TWO_OWN_CHILD_LOG_FILES');m4upo_root($x[''],$y[''],['mode'=>0700]);

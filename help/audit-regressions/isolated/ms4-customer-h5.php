@@ -552,13 +552,13 @@ function m4ch_http_source(bool $full): array
     $roles=array_keys($manifest['services']);sort($roles,SORT_STRING);
     m4c_expect($roles===['audit-ms4-customer-h5','audit-mysql','audit-redis','audit-ui']
         &&$manifest['services'][M4CH_HTTP_ROLE]['id']===$cid&&$manifest['services'][M4CH_HTTP_ROLE]['image_id']===M4C_IMAGE
-        &&count($manifest['volumes'])===10&&count(array_unique($manifest['volumes'],SORT_STRING))===10,
-        'M4C_H5_HTTP_ONLY_FOUR_FINAL_ROLES_TEN_VOLUMES');
-    $suffixes=['app-secrets','bootstrap-secrets','fixture-secrets','mysql-data','redis-data','redis-secrets',
+        &&count($manifest['volumes'])===12&&count(array_unique($manifest['volumes'],SORT_STRING))===12,
+        'M4C_H5_HTTP_ONLY_FOUR_FINAL_ROLES_TWELVE_VOLUMES');
+    $suffixes=['aftersale-evidence','app-secrets','bootstrap-secrets','customer-form-evidence','fixture-secrets','mysql-data','redis-data','redis-secrets',
         'http-runtime','http-control','http-browser-secrets','http-public'];$wanted=[];
     foreach($suffixes as$suffix)$wanted[]=$context['project'].'_'.$suffix;sort($wanted,SORT_STRING);$actual=$manifest['volumes'];sort($actual,SORT_STRING);
     $identityNames=array_keys($manifest['volume_identities']);sort($identityNames,SORT_STRING);
-    m4c_expect($actual===$wanted&&$identityNames===$wanted,'M4C_H5_HTTP_EXACT_TEN_REGISTERED_VOLUME_IDENTITIES');
+    m4c_expect($actual===$wanted&&$identityNames===$wanted,'M4C_H5_HTTP_EXACT_TWELVE_REGISTERED_VOLUME_IDENTITIES');
     $environment=m4ch_entry_json($binding['environment'],$evidence.'customer-h5-serve-environment.json');
     $source['environment']=m4c_entry_environment($binding,$context,M4CH_HTTP_PROOF,'MS4_CUSTOMER_H5_MS5_REAL_ENVIRONMENT');
     m4ch_http_environment($source['environment']);

@@ -1031,6 +1031,24 @@ function m4c_entry_public_materials(array $source): void
     $lock='/workspace/crmeb/public/install.lock';$value='MS4_CUSTOMER_HTTP_INSTALLED '.getenv('AUDIT_RUN_ID')."\n";
     m4c_expect(file_put_contents($lock,$value,LOCK_EX)===strlen($value)&&chmod($lock,0600)
         &&file_get_contents($lock)===$value,'M4C_OWN_PUBLIC_INSTALL_LOCK');
+    // This role's own public tmpfs must expose the real configured public upload root before the App starts.
+    $publicNative=lstat($public);$uploads=$public.'/uploads';clearstatcache(true,$uploads);
+    m4c_expect(is_array($publicNative)&&($publicNative['mode']&07777)===0700
+        &&$publicNative['uid']===posix_geteuid()&&is_writable($public),'M4C_OWN_PUBLIC_PARENT_MODE_OWNER');
+    m4c_expect(@lstat($uploads)===false&&!file_exists($uploads)&&!is_link($uploads),'M4C_OWN_PUBLIC_UPLOADS_ABSENT');
+    m4c_expect(mkdir($uploads,0700,false),'M4C_OWN_PUBLIC_UPLOADS_CREATE_ONCE');
+    clearstatcache(true,$uploads);$uploadsNative=lstat($uploads);
+    m4c_expect(is_array($uploadsNative)&&($uploadsNative['mode']&0170000)===0040000
+        &&is_dir($uploads)&&!is_link($uploads)&&realpath($uploads)===$uploads
+        &&($uploadsNative['mode']&07777)===0700&&$uploadsNative['uid']===posix_geteuid()
+        &&$uploadsNative['gid']===posix_getegid()&&is_writable($uploads)&&scandir($uploads)===['.','..'],
+        'M4C_OWN_PUBLIC_UPLOADS_CANONICAL_EMPTY_0700_OWNER');
+    clearstatcache(true,$public);$publicAfter=lstat($public);
+    foreach(['dev','ino','mode','uid','gid']as$member)m4c_expect(is_array($publicAfter)
+        &&$publicAfter[$member]===$publicNative[$member],'M4C_OWN_PUBLIC_PARENT_IDENTITY_UNCHANGED');
+    m4c_expect($publicAfter['nlink']===$publicNative['nlink']+1
+        &&scandir($public)===['.','..','index.php','install','install.lock','router.php','uploads'],
+        'M4C_OWN_PUBLIC_EXACT_ORIGINAL_ENTRIES_AND_EMPTY_UPLOADS');
 }
 function m4c_entry_child_environment(array $source): array
 {

@@ -222,16 +222,16 @@ function m4ch_ms5_prerequisites(array $source,string $actualPhase): void
     m4c_entry_keys($context['initial_service_created'],['audit-mysql','audit-redis']);
     m4c_expect(count(array_unique(array_values($context['initial_service_ids']),SORT_STRING))===2,
         'M4C_H5_MS5_DISTINCT_ORIGINAL_DB_CIDS');
-    $volumes=[];$wanted=[];foreach(['app-secrets','bootstrap-secrets','fixture-secrets','mysql-data','redis-data','redis-secrets']as$name)
+    $volumes=[];$wanted=[];foreach(['aftersale-evidence','app-secrets','bootstrap-secrets','customer-form-evidence','fixture-secrets','mysql-data','redis-data','redis-secrets']as$name)
         $wanted[]=$context['project'].'_'.$name;sort($wanted,SORT_STRING);
-    m4c_expect(is_array($context['initial_volumes'])&&array_is_list($context['initial_volumes'])&&count($context['initial_volumes'])===6,
-        'M4C_H5_MS5_ORIGINAL_SIX_COMPLETE_ROWS');
+    m4c_expect(is_array($context['initial_volumes'])&&array_is_list($context['initial_volumes'])&&count($context['initial_volumes'])===8,
+        'M4C_H5_MS5_ORIGINAL_EIGHT_COMPLETE_ROWS');
     foreach($context['initial_volumes']as$row){m4c_entry_keys($row,['name','created_at','labels']);
         m4c_expect(is_string($row['name'])&&!isset($volumes[$row['name']])&&is_string($row['created_at'])&&$row['created_at']!==''
             &&$row['labels']['tianli.audit']==='1'&&$row['labels']['tianli.audit.run']===$source['run_id']
             &&$row['labels']['com.docker.compose.project']===$context['project'],'M4C_H5_MS5_ORIGINAL_FULL_VOLUME_IDENTITY');
         $volumes[$row['name']]=$row['created_at'];}
-    ksort($volumes,SORT_STRING);m4c_expect(array_keys($volumes)===$wanted,'M4C_H5_MS5_ORIGINAL_EXACT_SIX_VOLUME_NAMES');
+    ksort($volumes,SORT_STRING);m4c_expect(array_keys($volumes)===$wanted,'M4C_H5_MS5_ORIGINAL_EXACT_EIGHT_VOLUME_NAMES');
     $added=m4c_entry_read($e.'customer-h5-additional-volume-identities.json');
     m4c_entry_keys($added,['schema','scope','run_id','source_sha','freeze_sha256','original_context_sha256','network_id','additional_volumes','all_volume_names']);
     m4c_expect($added['schema']===1&&$added['scope']==='MS4_CUSTOMER_H5_ADDITIONAL_NATIVE_VOLUMES_ONLY'
@@ -248,7 +248,7 @@ function m4ch_ms5_prerequisites(array $source,string $actualPhase): void
         $wantedAdditional[]=$context['project'].'_'.$name;
     m4c_expect(array_keys($additional)===$wantedAdditional,'M4C_H5_MS5_A1_EXACT_ADDITIONAL_NAMES');
     $allVolumes=$volumes+$additional;ksort($allVolumes,SORT_STRING);
-    m4c_expect($added['all_volume_names']===array_keys($allVolumes),'M4C_H5_MS5_A1_EXACT_TEN_NAMES');
+    m4c_expect($added['all_volume_names']===array_keys($allVolumes),'M4C_H5_MS5_A1_EXACT_TWELVE_NAMES');
     $historyNames=array_merge(M4C_COMMON_PREREQUISITES,M4C_FILES_PREREQUISITES);
     $historyHashes=array_intersect_key($hashes,array_flip($historyNames));$ids=[$source['container_id']];
     if($actualPhase==='copy'){
@@ -327,7 +327,7 @@ function m4ch_ms5_prerequisites(array $source,string $actualPhase): void
         &&$formal['network_internal']===true,'M4C_H5_MS5_ORIGINAL_FORMAL_ISOLATION');
     m4c_entry_same($formal['network'],['id'=>$network['Id'],'name'=>$network['Name']]);
     $formalVolumes=$formal['volumes'];sort($formalVolumes,SORT_STRING);
-    m4c_expect($formalVolumes===array_keys($volumes),'M4C_H5_MS5_ORIGINAL_FORMAL_SIX_VOLUMES');m4c_entry_same($formal['volume_identities'],$volumes);
+    m4c_expect($formalVolumes===array_keys($volumes),'M4C_H5_MS5_ORIGINAL_FORMAL_EIGHT_VOLUMES');m4c_entry_same($formal['volume_identities'],$volumes);
     $manifest=audit_manifest();
     m4c_expect($manifest['run_id']===$source['run_id']&&$manifest['commit_sha']===$source['source_sha']
         &&$manifest['project']===$context['project']&&$manifest['isolation']==='ISO-FULL'
@@ -352,7 +352,7 @@ function m4ch_ms5_prerequisites(array $source,string $actualPhase): void
     $currentNames=$manifest['volumes'];sort($currentNames,SORT_STRING);$currentIdentities=$manifest['volume_identities'];
     if(in_array($actualPhase,['copy','register-prepare'],true)&&$currentNames===array_keys($volumes))
         m4c_entry_same($currentIdentities,$volumes);
-    else{m4c_expect($currentNames===array_keys($allVolumes),'M4C_H5_MS5_CURRENT_EXACT_TEN_VOLUME_NAMES');
+    else{m4c_expect($currentNames===array_keys($allVolumes),'M4C_H5_MS5_CURRENT_EXACT_TWELVE_VOLUME_NAMES');
         m4c_entry_same($currentIdentities,$allVolumes);}
     $prepared=m4c_entry_terminal($source,'customer-prepare',M4C_MODE['prepare']['role'],[M4C_ENTRY,'prepare']);$ids[]=$prepared['id'];
     foreach($context['initial_service_ids']as$dbId)m4c_expect(!in_array($dbId,$ids,true),'M4C_H5_MS5_DB_AND_CALLER_PREDECESSORS_DISTINCT');
