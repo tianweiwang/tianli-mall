@@ -6,7 +6,20 @@
 
 当前实际来源、失败收口及待采用候选状态见[当前状态](CURRENT-STATUS.md)。本文件保留原任务与验收清单；以下运行和修订段落按各自原执行时点保留，不代表最新运行状态。
 
-### 当前28dc后继：上传计数raw编码修正（2026-10-24）
+### 当前175f后继：上传preflight有界定位（2026-10-24）
+
+Run `20261023182634096f57` / 来源 `175f3cd6183894185656a2974579e1be39eed7a7` 的完整M1,088项通过，付款确认上传POST返回HTTP503、JSON解析成功、216字节；原S/paid均1，完整A失败，无成功A0，Task6/售后评价/Worker/fresh B未开始。内部首个Throwable和唯一现场根因未证；不重复旧Run或collector。
+
+本次采用范围：`crmeb/app/services/marketplace/assets/CustomerOrderFormAssetServices.php`、`help/audit-regressions/isolated/lib/ms4-customer-form-normal.php`、`help/audit-regressions/isolated/ms5-paid-consumer-normal.php`、`help/audit-regressions/orchestration/collect_paid_failure.py`，以及当前状态、诊断记录和本计划，共七路径。仅增加受限内部preflight定位、同一原确认deadline的有限观察和兼容的可选失败投影；产品API信封、原异常优先级、HTTP200、原四次正常上传、精确quota/100次/24小时tag、600秒确认TTL、完整Redis/DB/原图、商品SKU规格价格库存均保持。回退只撤销本次四文件差量及新增记录，不改旧冻结材料或历史结果。
+
+- [x] 原失败实例正常close93及独立zero20，Root与peer完整实际读回均0；45,131份public全件、6,860目录和其他资源连续保持，另两份ENV仅元数据，禁止正文读取0。
+- [x] 四文件完整Source复核通过；三份完整PHP在固定PHP8.2、network none、只读nonroot环境通过php-l，外层和8项原生命令均0、同CID普通移除、前后selector为空。实际结果19,384字节 / `2e4af333b28440464142555c61b17cb9d47119981c6764cf23a377a89d0477ce`；collector整文件Python AST通过。按审查原字节采用，提交身份以Git为准。
+- [ ] 基于真实新clean Head、完整原九份历史对象和第十份实际回收authority，重绑完整Source/九件profile及新initializer，并完成新initializer必要固定PHP8.2语法；随后执行原完整M/S及正常A，实际验证新增诊断分支。
+- [ ] 正常A成功后继续原同源fresh B、三端UI20/20ACK/42帧及三宽、独立H5九场景、真实表单原图、非空历史迁移、其它原图/媒体/设备及原MS5–MS6验收。原清单、断言和未完成责任不缩减。
+
+诊断及语法通过不代签503已修复或新业务通过。用户停止样本保持NOT RUN；真实金融与部署边界不变。最新进度见[当前状态](CURRENT-STATUS.md)，以下保留各历史时点。
+
+### 历史28dc后继：上传计数raw编码修正（2026-10-24）
 
 Run `202610231609185fbd23` / 来源 `28dcab632da3e62f7c8b8d926b6ab9406534d0d3` 的完整M1,078项及顾客准备通过；付款producer与原S实际退出1，失败为 `paid_real_confirmation` 的 `M4C_FORM_EXACT_QUOTA_INCREMENT`。本次HTTP诊断存在但为null，原0c13的503不套用于本次。完整A仍失败，Task6/AR/Worker/fresh B未开始，无成功A0；原Run与冻结材料保持。
 

@@ -15,6 +15,8 @@ HTTP_FIELDS = {'kind', 'method', 'http', 'json_error', 'response_bytes', 'respon
 LOCATION_FIELDS = {'scope', 'class', 'file', 'line', 'phase'}
 HTTP_KINDS = {'login', 'user', 'computed', 'upload', 'ticket', 'content', 'view'}
 HTTP_FIELD = 'normal_http_response_diagnostic'
+PREFLIGHT_FIELD = 'normal_form_preflight_diagnostic'
+PREFLIGHT_STAGES = {'request_identity','request_envelope','request_file','primary_pdo','transaction_start','transaction_entry','owner_before_lock','lock_user','lookup_confirmation','read_confirmation','lock_parents','cached_frame','locked_frame','field_authorization','owner_confirmation_before_quota','quota_read','uploaded_tempfile','storage_construct','image_qualify','owner_confirmation_before_write','private_write_preflight'}
 
 
 class CollectionFailure(Exception):
@@ -86,8 +88,31 @@ def http_diagnostic(value):
     return {name: value[name] for name in ['kind', 'method', 'http', 'json_error', 'response_bytes', 'response_sha256']}
 
 
+
+def preflight_diagnostic(value):
+    if value is None:
+        return None
+    require(type(value) is dict and set(value) == {'schema', 'scope', 'upload_ordinal', 'deadline_at_last_read', 'deadline_before_http', 'location'}, 'PREFLIGHT_FIELDS')
+    require(type(value['schema']) is int and value['schema'] == 1 and value['scope'] == 'NORMAL_FORM_UPLOAD_PREFLIGHT'
+            and type(value['upload_ordinal']) is int and 1 <= value['upload_ordinal'] <= 4
+            and value['deadline_at_last_read'] == 'BEFORE'
+            and type(value['deadline_before_http']) is str and value['deadline_before_http'] in {'BEFORE', 'AT_OR_AFTER', 'UNAVAILABLE'}, 'PREFLIGHT_VALUES')
+    location = value['location']
+    if location is not None:
+        require(type(location) is dict and set(location) == {'schema', 'scope', 'substage', 'class', 'file', 'line'}, 'PREFLIGHT_LOCATION_FIELDS')
+        require(type(location['schema']) is int and location['schema'] == 1 and location['scope'] == 'MALL_ORDER_FORM_PREFLIGHT'
+                and type(location['substage']) is str and location['substage'] in PREFLIGHT_STAGES
+                and (location['class'] is None or (type(location['class']) is str and len(location['class']) <= 192
+                     and re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]{0,191}', location['class'].replace('\\', '_')) is not None))
+                and (location['file'] is None or (type(location['file']) is str and len(location['file']) <= 96
+                     and re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,95}', location['file']) is not None))
+                and (location['line'] is None or (type(location['line']) is int and 1 <= location['line'] <= 10000000)),
+                'PREFLIGHT_LOCATION_VALUES')
+    return {key: value[key] for key in ['schema', 'scope', 'upload_ordinal', 'deadline_at_last_read', 'deadline_before_http', 'location']}
+
+
 def throwable_location(value):
-    require(type(value) is dict and set(value) in [LOCATION_FIELDS, LOCATION_FIELDS | {HTTP_FIELD}],
+    require(type(value) is dict and set(value) in [LOCATION_FIELDS, LOCATION_FIELDS | {HTTP_FIELD}, LOCATION_FIELDS | {HTTP_FIELD, PREFLIGHT_FIELD}],
             'THROWABLE_PROJECTION_FIELDS')
     require(value['scope'] == 'MS5_PAID_PRODUCER_THROWABLE_DIAGNOSTIC'
             and (value['class'] is None or (type(value['class']) is str
@@ -114,7 +139,15 @@ def validate_projections(stdout, stderr, paid_result):
     diagnostic = http_diagnostic(stderr[HTTP_FIELD]) if present else None
     if present:
         require(diagnostic == http_diagnostic(paid_result[HTTP_FIELD]), 'HTTP_DIAGNOSTIC_PAID_RESULT_MISMATCH')
-    return {'first_throwable_location': location, 'normal_http_response_diagnostic_present': present,
+    preflight_present = PREFLIGHT_FIELD in stderr
+    require(preflight_present == (PREFLIGHT_FIELD in paid_result), 'PREFLIGHT_PRESENCE_MISMATCH')
+    preflight = preflight_diagnostic(stderr[PREFLIGHT_FIELD]) if preflight_present else None
+    if preflight_present:
+        require(preflight == preflight_diagnostic(paid_result[PREFLIGHT_FIELD]), 'PREFLIGHT_PAID_RESULT_MISMATCH')
+        require(preflight is None or (diagnostic is not None and diagnostic['kind'] == 'upload' and diagnostic['method'] == 'POST'
+                and diagnostic['http'] != 200), 'PREFLIGHT_SAME_FAILED_UPLOAD')
+    return {'normal_form_preflight_diagnostic_present': preflight_present, 'normal_form_preflight_diagnostic': preflight,
+            'first_throwable_location': location, 'normal_http_response_diagnostic_present': present,
             'normal_http_response_diagnostic': diagnostic,
             'safe_records': [{'stream': 'stdout', 'projection': {name: stdout[name] for name in
                 ['status', 'failed_assertion', 'native_exit_observation']}}, {'stream': 'stderr', 'projection': location}]}

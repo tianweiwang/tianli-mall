@@ -32,37 +32,39 @@ final class CustomerOrderFormAssetServices
     public function uploadForConfirmation(Request $request,int $actualUid,string $key,int $productId,int $fieldIndex):array
     {
         $receipt=['complete'=>false,'phase'=>'preflight','physical_changed'=>false,'physical_complete'=>false,
-            'database_committed'=>false,'cleanup_complete'=>null];$object=[];$storage=null;
+            'database_committed'=>false,'cleanup_complete'=>null];$object=[];$storage=null;$diagnosticStage='request_identity';
         try{
             $fingerprint=self::identity($request,$actualUid);$key=MarketplaceOrderInput::confirmationKey($key);
+            $diagnosticStage='request_envelope';
             if($productId<1||$productId>8388607||$fieldIndex<0||$fieldIndex>9
                 ||$request->rule()->getOption('customer_order_form_files')!==true
                 ||strtolower($request->contentType())!=='multipart/form-data'||$request->get(false)!==[]
                 ||$request->server('QUERY_STRING','')!==''||$request->post(false)!==['filename'=>'pics'])self::fail();
-            $files=$request->file();if(!is_array($files)||array_keys($files)!==['pics']||!$files['pics'] instanceof UploadedFile)self::fail();
-            [$connection,$pdo]=$this->primary($actualUid);$session=self::session($connection,$pdo);$entered=false;
-            $out=$connection->transaction(function(ConnectionInterface $actual)use($connection,$pdo,$request,$actualUid,$key,
-                $productId,$fieldIndex,$fingerprint,$session,$files,&$entered,&$receipt,&$object,&$storage):array{
-                if($actual!==$connection||$entered)self::fail();$entered=true;
-                self::connection($connection,$pdo,1);self::sameIdentity($request,$actualUid,$fingerprint);
+            $diagnosticStage='request_file';$files=$request->file();if(!is_array($files)||array_keys($files)!==['pics']||!$files['pics'] instanceof UploadedFile)self::fail();
+            $diagnosticStage='primary_pdo';[$connection,$pdo]=$this->primary($actualUid);$session=self::session($connection,$pdo);$entered=false;
+            $diagnosticStage='transaction_start';$out=$connection->transaction(function(ConnectionInterface $actual)use($connection,$pdo,$request,$actualUid,$key,
+                $productId,$fieldIndex,$fingerprint,$session,$files,&$entered,&$receipt,&$object,&$storage,&$diagnosticStage):array{
+                $diagnosticStage='transaction_entry';if($actual!==$connection||$entered)self::fail();$entered=true;
+                $diagnosticStage='owner_before_lock';self::connection($connection,$pdo,1);self::sameIdentity($request,$actualUid,$fingerprint);
                 if(self::session($connection,$pdo)!==$session)self::fail();
-                $user=$this->customers()->lockUser($connection,$pdo,$actualUid);
-                if($this->orderDao()->lookupConfirmation($pdo,$actualUid,$key)!==['state'=>'not_found','key'=>$key])self::fail();
-                $observed=$this->confirmations->readCurrent($actualUid,$key);$frame=$observed['frame'];
-                $locked=$this->orderDao()->lockFormUploadParents($pdo,$actualUid,$frame['mer_id'],$frame);
-                $group=$this->orders()->getCacheOrderInfo($actualUid,$key);
+                $diagnosticStage='lock_user';$user=$this->customers()->lockUser($connection,$pdo,$actualUid);
+                $diagnosticStage='lookup_confirmation';if($this->orderDao()->lookupConfirmation($pdo,$actualUid,$key)!==['state'=>'not_found','key'=>$key])self::fail();
+                $diagnosticStage='read_confirmation';$observed=$this->confirmations->readCurrent($actualUid,$key);$frame=$observed['frame'];
+                $diagnosticStage='lock_parents';$locked=$this->orderDao()->lockFormUploadParents($pdo,$actualUid,$frame['mer_id'],$frame);
+                $diagnosticStage='cached_frame';$group=$this->orders()->getCacheOrderInfo($actualUid,$key);
                 if(!is_array($group)||MarketplaceCartSelection::frame($group,$actualUid)!==$frame)self::fail();
-                self::lockedFrame($actualUid,$frame,$locked);
-                $definition=self::uploadField($frame['custom_form'],$productId,$fieldIndex);
-                $this->sameOwner($connection,$pdo,$request,$actualUid,$fingerprint,$session,$user,1);
+                $diagnosticStage='locked_frame';self::lockedFrame($actualUid,$frame,$locked);
+                $diagnosticStage='field_authorization';$definition=self::uploadField($frame['custom_form'],$productId,$fieldIndex);
+                $diagnosticStage='owner_confirmation_before_quota';$this->sameOwner($connection,$pdo,$request,$actualUid,$fingerprint,$session,$user,1);
                 $this->confirmations->assertSame($actualUid,$key,$observed);
-                $count=self::counter(CacheService::get('start_uploads_'.$actualUid,0));if($count>=100)self::fail();
-                [$bytes,$name]=$this->uploadedBytes($files['pics']);
+                $diagnosticStage='quota_read';$count=self::counter(CacheService::get('start_uploads_'.$actualUid,0));if($count>=100)self::fail();
+                $diagnosticStage='uploaded_tempfile';[$bytes,$name]=$this->uploadedBytes($files['pics']);
                 // Construction of private storage is intentionally after real confirmation/parents/field authorization.
-                $storage=$this->storage();$qualified=$storage->inspectUpload($bytes,$name);
-                $this->sameOwner($connection,$pdo,$request,$actualUid,$fingerprint,$session,$user,1);
+                $diagnosticStage='storage_construct';$storage=$this->storage();
+                $diagnosticStage='image_qualify';$qualified=$storage->inspectUpload($bytes,$name);
+                $diagnosticStage='owner_confirmation_before_write';$this->sameOwner($connection,$pdo,$request,$actualUid,$fingerprint,$session,$user,1);
                 $this->confirmations->assertSame($actualUid,$key,$observed);
-                $physical=$storage->writeNew($actualUid,$observed['identity']['confirmation_ref'],$observed['deadline_ms'],
+                $diagnosticStage='private_write_preflight';$physical=$storage->writeNew($actualUid,$observed['identity']['confirmation_ref'],$observed['deadline_ms'],
                     $bytes,$name,$object,$receipt);
                 if($receipt['physical_complete']!==true||$receipt['physical_changed']!==true
                     ||$storage->readObject($physical)!==$bytes||$physical['content_sha256']!==$qualified['content_sha256'])self::fail();
@@ -95,6 +97,7 @@ final class CustomerOrderFormAssetServices
                 'attachment_ref'=>'mp-form:v1:'.$id];
             $receipt['complete']=true;$receipt['phase']='complete';return $dto;
         }catch(Throwable $error){
+            if($receipt['phase']==='preflight')self::logPreflightFailure($error,$diagnosticStage);
             // Do not remove partial physical outcomes, old files, or anything after a possibly attempted INSERT/commit.
             if($receipt['database_committed']===false&&$object!==[]&&$storage instanceof CustomerOrderFormPrivateStorage){
                 try{$storage->cleanupNew($object,$receipt);}catch(Throwable $ignored){$receipt['cleanup_complete']=false;}
@@ -356,5 +359,21 @@ final class CustomerOrderFormAssetServices
         if(is_string($value)&&preg_match('/\A(?:0|[1-9][0-9]*)\z/D',$value)===1&&strlen($value)<=3)$value=(int)$value;
         if(!is_int($value)||$value<0||$value>100)self::fail();return $value;
     }
+
+    /** Internal finite metadata only; never changes the API receipt or the original failure. */
+    private static function logPreflightFailure(Throwable $error,string $substage):void
+    {
+        try{
+            if(!in_array($substage,['request_identity','request_envelope','request_file','primary_pdo','transaction_start','transaction_entry','owner_before_lock','lock_user','lookup_confirmation','read_confirmation','lock_parents','cached_frame','locked_frame','field_authorization','owner_confirmation_before_quota','quota_read','uploaded_tempfile','storage_construct','image_qualify','owner_confirmation_before_write','private_write_preflight'],true))return;
+            $class=get_class($error);if(strlen($class)>192||preg_match('/\A[A-Za-z_][A-Za-z0-9_]{0,191}\z/D',str_replace('\\','_',$class))!==1)$class=null;
+            $file=basename(str_replace('\\','/',$error->getFile()));
+            if(strlen($file)>96||preg_match('/\A[A-Za-z0-9][A-Za-z0-9_.-]{0,95}\z/D',$file)!==1)$file=null;
+            $line=$error->getLine();if($line<1||$line>10000000)$line=null;
+            $record=['schema'=>1,'scope'=>'MALL_ORDER_FORM_PREFLIGHT','substage'=>$substage,'class'=>$class,'file'=>$file,'line'=>$line];
+            $json=json_encode($record,JSON_UNESCAPED_SLASHES);
+            if(is_string($json)&&strlen($json)<=1024)@error_log('MALL_ORDER_FORM_PREFLIGHT '.$json."\n",3,'php://stderr');
+        }catch(Throwable $diagnosticError){}
+    }
+
     private static function fail():never {throw new AuthUnavailableException();}
 }

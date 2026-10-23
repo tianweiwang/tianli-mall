@@ -1298,10 +1298,11 @@ if(realpath($_SERVER['SCRIPT_FILENAME']??'')===__FILE__){
         $caughtLine=$error->getLine();$caughtPhase=$GLOBALS['m4c_phase']??null;
         $code=$GLOBALS['m5pcp_failed_assertion']??$GLOBALS['m4c_failed_assertion']??'M4C_PAID_UNCLASSIFIED_SOURCE_FAILURE';
         if(!is_string($code)||preg_match('/\A[A-Z0-9_]+\z/D',$code)!==1)$code='M4C_PAID_FIXED_FAILURE';
-        $diagnosticHandler=false;$normalHttpResponseDiagnostic=null;
+        $diagnosticHandler=false;$normalHttpResponseDiagnostic=null;$normalFormPreflightDiagnostic=null;
         try{
             set_error_handler(static function(int $severity,string $message,string $file,int $line):bool{return true;});$diagnosticHandler=true;
             $normalHttpResponseDiagnostic=function_exists('m4cf_public_http_failure')?m4cf_public_http_failure():null;
+            $normalFormPreflightDiagnostic=function_exists('m4cf_public_preflight_failure')?m4cf_public_preflight_failure():null;
             $class=$caughtClass;
             if(preg_match('/\A[A-Za-z_][A-Za-z0-9_]{0,191}\z/D',str_replace('\\','_',$class))!==1)$class=null;
             $file=$caughtFile;
@@ -1311,7 +1312,8 @@ if(realpath($_SERVER['SCRIPT_FILENAME']??'')===__FILE__){
             if(!is_string($phase)||preg_match('/\A[a-z][a-z0-9_]{0,95}\z/D',$phase)!==1)$phase=null;
             $diagnostic=json_encode(['scope'=>'MS5_PAID_PRODUCER_THROWABLE_DIAGNOSTIC',
                 'class'=>$class,'file'=>$file,'line'=>$line,'phase'=>$phase,
-                'normal_http_response_diagnostic'=>$normalHttpResponseDiagnostic],JSON_UNESCAPED_SLASHES);
+                'normal_http_response_diagnostic'=>$normalHttpResponseDiagnostic,
+                'normal_form_preflight_diagnostic'=>$normalFormPreflightDiagnostic],JSON_UNESCAPED_SLASHES);
             if(is_string($diagnostic)&&defined('STDERR')&&is_resource(STDERR)){
                 $raw=$diagnostic."\n";$offset=0;
                 while($offset<strlen($raw)){$written=fwrite(STDERR,substr($raw,$offset));
@@ -1329,6 +1331,7 @@ if(realpath($_SERVER['SCRIPT_FILENAME']??'')===__FILE__){
                 'entry_return_code'=>1,'termination'=>'EXCEPTION','native_exit'=>null,'native_exit_observation'=>'HOST_NATIVE_REQUIRED',
                 'failed_assertion'=>$code,'child'=>$GLOBALS['m5pc_child_proof']??null,'customer_form_upload_child'=>$GLOBALS['m4cf_child_proof']??null,
                 'normal_http_response_diagnostic'=>$normalHttpResponseDiagnostic,
+                'normal_form_preflight_diagnostic'=>$normalFormPreflightDiagnostic,
                 'customer_paid_API_DOM'=>'NOT RUN','merchant_paid_API_DOM'=>'NOT RUN','platform_paid_API_DOM'=>'NOT RUN',
                 'full_acceptance'=>'INCOMPLETE','stopped_samples'=>'NOT RUN']);}catch(Throwable $publishError){}
         }

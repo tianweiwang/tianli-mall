@@ -1,6 +1,18 @@
 # 普通下单 HTTP 失败诊断与读取入口
 
-## 当前28dc上传计数失败与最小修正（2026-10-24）
+## 当前175f上传preflight有限诊断（2026-10-24）
+
+Run `20261023182634096f57` / Source `175f3cd6183894185656a2974579e1be39eed7a7` 的完整来源物化1,088项通过；付款确认的 `M4C_FORM_NORMAL_HTTP_JSON_200` 失败，原S和paid均实际退出1。原受限collector只采集一次：报告14,579字节 / `be584652313960f4c45c303d55c9c4ae824220fe133ffbc0dbfa4373f7a8fac5`，同次响应为POST/HTTP503、`json_error=0`、216字节、SHA-256 `318ae4db8bedc98bc218ade87cd653fd885bb3f91b4e23968c88c62dbbed4670`。Source重建的初始preflight收据可匹配该长度和摘要，尚不能恢复已丢弃的内部首个Throwable；不重复旧采集或旧业务。
+
+四文件修订只增加定位信息。`CustomerOrderFormAssetServices` 沿既有preflight catch记录固定substage及受限class、basename、line，通过内部stderr输出单个有界标记；不返回message、trace、参数、完整路径、UID、key或原始内容。诊断I/O失败不得遮蔽原业务异常和清理。normal helper只在既有、已停止子进程stderr的读取窗口中提取该标记，增加原四次正常上传的 `upload_ordinal`、`deadline_at_last_read` 和 `deadline_before_http`；后两者均比较同一原确认deadline，值仅BEFORE、AT_OR_AFTER或UNAVAILABLE，不是新asset TTL。成功路径最多增加四次只读Redis TIME，不续期、不改key或配额。paid result/stderr与collector仅传递一致的可选 `normal_form_preflight_diagnostic`，collector原五公件、单一logs调用、六项HTTP元数据及旧记录兼容保持；Root不读取应用子进程原流。
+
+HTTP200及原断言、四次上传、精确配额增量、100次限额、24小时绝对期限、600秒确认TTL、tag、完整Redis/DB/原图和商品规格价格库存规则均不变。47次dual-root完整Source读取可能消耗确认期，这是源码路径关系，尚非现场根因。后续若自然运行证实期限问题，再减少重复I/O并保留完整验证语义；不延TTL或移除guard。
+
+实际收尾已完成close93/zero20和Root/peer完整读回：45,131份公开文件全件与6,860目录保持，另两份ENV仅元数据，总计45,133；禁止正文读取为0。三份完整诊断PHP已实际通过固定PHP8.2的php-l，外层native/wait0、8项原生命令0、同CID普通移除、前后专用查询为空。语法结果19,384字节 / `2e4af333b28440464142555c61b17cb9d47119981c6764cf23a377a89d0477ce`；Root完整回读1,185字节 / `1796d1df54c547c03816b006c4ba7c1054e3da1e1484daff2c3ef7b69d9a4a40`。Python collector整文件AST通过，采用身份以真实Git为准。
+
+新诊断实际分支、新来源完整Source/M/S、重新绑定initializer语法、成功A0、fresh B和原后续验收仍待。语法及收尾通过不证明根因已修复或业务已通过；停止样本继续NOT RUN。原28dc及0c13记录保留如下。
+
+## 历史28dc上传计数失败与最小修正（2026-10-24）
 
 Run `202610231609185fbd23` / 来源 `28dcab632da3e62f7c8b8d926b6ab9406534d0d3` 的完整来源物化1,078项通过，顾客准备正常完成。原S与付款producer实际退出1；首个受限Throwable投影定位为 `ms4-customer-http-normal.php:33` 的 `M4C_FORM_EXACT_QUOTA_INCREMENT`，阶段 `paid_real_confirmation`。collector只实际执行一次，报告14,380字节 / `6d92e2997841e7506fcaed6299f2663f5191304bcd73016c2accb5599ccdbdb1`。本次HTTP诊断字段存在、值为null，不能改写成旧Run的HTTP503。完整A失败，Task6、售后评价、Worker与fresh B均未开始。
 

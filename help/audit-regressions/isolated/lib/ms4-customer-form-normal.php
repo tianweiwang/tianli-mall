@@ -175,6 +175,7 @@ function m4cf_login(PDO $db,array $source,array $private):array
 }
 function m4cf_upload(PDO $db,array $frame,int $uid,string $key,int $product,int $field,array $image,array $actor):array
 {
+    $ordinal=($GLOBALS['m4cf_upload_ordinal']??0)+1;$GLOBALS['m4cf_upload_ordinal']=$ordinal;
     $before=m4cf_snapshot($db);$confirm=m4cf_confirmation($uid,$key,$frame);$table='eb_marketplace_customer_asset';
     $meta=$before['database']['tables'][$table]['metadata'];
     m4cf_expect(array_keys($meta['columns'])===array_keys(m4ca_definitions()['marketplace_customer_asset']['columns']),'ORIGINAL_NATIVE34_SCHEMA');
@@ -184,6 +185,7 @@ function m4cf_upload(PDO $db,array $frame,int $uid,string $key,int $product,int 
     $counter='c:start_uploads_'.$uid;$old=audit_redis()->get($counter);$oldCount=$old===false?0:(is_string($old)&&preg_match('/\A(?:0|[1-9][0-9]?)\z/D',$old)===1?(int)$old:null);
     m4cf_expect(is_int($oldCount)&&$oldCount>=0&&$oldCount<100&&($old===false||$old===(string)$oldCount),'EXACT_BEFORE_QUOTA');
     $tag='c:CRMEB:'.md5('crmeb');$GLOBALS['m4ar_tag_members'][$tag]=audit_redis()->sMembers($tag);
+    $GLOBALS['m4cf_upload_diagnostic_context']=['upload_ordinal'=>$ordinal,'deadline_ms'=>$confirm['deadline_ms']];
     $reply=m4cf_multipart('/api/order/confirm/'.$key.'/forms/'.$product.'/'.$field.'/files',$actor['token'],$image['bytes'],$image['name'],$image['mime']);
     $data=m4cf_json($reply);m4c_entry_keys($data,['name','url','attachment_ref']);$after=m4cf_snapshot($db);
     $new=m4ar_new_rows($before['rows'][$table],$after['rows'][$table]);m4cf_expect(count($new)===1,'ONE_NEW_STAGED_NATIVE34');$row=$new[0];
@@ -630,6 +632,14 @@ function m4cf_transport(string $method,string $path,?string $token=null,mixed $b
     }else m4c_expect($kind!=='upload','M4C_FORM_UPLOAD_REQUIRES_REAL_MULTIPART');
     $requestBytes=$body===null?0:strlen($body);$requestHash=hash('sha256',$body??'');
     $limit=$kind==='content'?52428800:1048576;$raw='';$headerBytes=0;$headerLines=[];$responseHeaders=[];$overflow=false;
+    $uploadDiagnostic=null;
+    if($kind==='upload'){
+        $context=$GLOBALS['m4cf_upload_diagnostic_context']??null;
+        if(is_array($context)&&is_int($context['upload_ordinal']??null)&&$context['upload_ordinal']>=1&&$context['upload_ordinal']<=4
+            &&is_int($context['deadline_ms']??null)&&$context['deadline_ms']>0)
+            $uploadDiagnostic=['schema'=>1,'scope'=>'NORMAL_FORM_UPLOAD_PREFLIGHT','upload_ordinal'=>$context['upload_ordinal'],
+                'deadline_at_last_read'=>'BEFORE','deadline_before_http'=>m4cf_upload_deadline_relation($context['deadline_ms'])];
+    }
     $curl=curl_init('http://audit-app:8000'.$path);m4c_expect($curl!==false,'M4C_FORM_REAL_CURL_HANDLE');$started=time();
     try{
         m4c_expect(curl_setopt_array($curl,[CURLOPT_CUSTOMREQUEST=>$method,CURLOPT_HTTPHEADER=>$headers,
@@ -651,6 +661,7 @@ function m4cf_transport(string $method,string $path,?string $token=null,mixed $b
         'request_bytes'=>$requestBytes,'request_sha256'=>$requestHash];
     $reply['normal_http_diagnostic']=['kind'=>$kind,'method'=>$method,'http'=>$http,'json_error'=>$jsonError,
         'response_bytes'=>strlen($raw),'response_sha256'=>hash('sha256',$raw)];
+    if($kind==='upload'&&$http!==200&&!isset($GLOBALS['m4cf_failed_upload_context']))$GLOBALS['m4cf_failed_upload_context']=$uploadDiagnostic;
     $complete=$done!==false&&$errno===0&&!$overflow&&$http>=100&&$http<=599;
     if(!$complete&&!isset($GLOBALS['m4cf_normal_http_first_failure']))
         $GLOBALS['m4cf_normal_http_first_failure']=$reply['normal_http_diagnostic'];
@@ -659,6 +670,50 @@ function m4cf_transport(string $method,string $path,?string $token=null,mixed $b
         'response_bytes'=>strlen($raw),'response_sha256'=>hash('sha256',$raw),'actual_interval'=>[$started,$ended]];
     m4c_expect(m4cfk_guard($source)===$binding,'M4C_FORM_TRANSPORT_ORIGINAL_SOURCE_BINDINGS_UNCHANGED');
     m4c_expect($complete,'M4C_FORM_COMPLETE_NATIVE_HTTP_RESPONSE_NO_RETRY');return $reply;
+}
+
+
+/** One diagnostic TIME only; errors cannot alter a business assertion, key or deadline. */
+function m4cf_upload_deadline_relation(int $deadline):string
+{
+    $installed=false;$redis=null;
+    try{
+        set_error_handler(static function(int $severity,string $message,string $file,int $line):bool{return true;});$installed=true;
+        $redis=audit_redis();$time=$redis->rawCommand('TIME');
+        if(!is_array($time)||array_keys($time)!==[0,1]||!is_string($time[0])||!is_string($time[1])
+            ||preg_match('/\A[1-9][0-9]{0,18}\z/D',$time[0])!==1||preg_match('/\A[0-9]{1,6}\z/D',$time[1])!==1
+            ||bccomp($time[1],'999999',0)>0)return 'UNAVAILABLE';
+        $now=bcadd(bcmul($time[0],'1000',0),bcdiv($time[1],'1000',0),0);
+        return bccomp((string)$deadline,$now,0)>0?'BEFORE':'AT_OR_AFTER';
+    }catch(Throwable $diagnosticError){return 'UNAVAILABLE';}
+    finally{if($redis instanceof Redis){try{$redis->close();}catch(Throwable $ignored){}}if($installed)restore_error_handler();}
+}
+/** Called only inside the existing full closed stderr read; raw bytes never leave that path. */
+function m4cf_observe_preflight_record(string $bytes):void
+{
+    $GLOBALS['m4cf_preflight_location']=null;
+    try{
+        $prefix='MALL_ORDER_FORM_PREFLIGHT ';$records=[];
+        foreach(explode("\n",$bytes)as$line)if(str_starts_with($line,$prefix))$records[]=substr($line,strlen($prefix));
+        if(count($records)!==1||strlen($records[0])>1024)return;
+        $value=json_decode($records[0],true,8,JSON_THROW_ON_ERROR);
+        if(!is_array($value)||array_keys($value)!==['schema','scope','substage','class','file','line']
+            ||$value['schema']!==1||$value['scope']!=='MALL_ORDER_FORM_PREFLIGHT'
+            ||!is_string($value['substage'])||!in_array($value['substage'],['request_identity','request_envelope','request_file','primary_pdo','transaction_start','transaction_entry','owner_before_lock','lock_user','lookup_confirmation','read_confirmation','lock_parents','cached_frame','locked_frame','field_authorization','owner_confirmation_before_quota','quota_read','uploaded_tempfile','storage_construct','image_qualify','owner_confirmation_before_write','private_write_preflight'],true)
+            ||json_encode($value,JSON_UNESCAPED_SLASHES)!==$records[0])return;
+        if($value['class']!==null&&(!is_string($value['class'])||strlen($value['class'])>192
+            ||preg_match('/\A[A-Za-z_][A-Za-z0-9_]{0,191}\z/D',str_replace('\\','_',$value['class']))!==1))return;
+        if($value['file']!==null&&(!is_string($value['file'])||strlen($value['file'])>96
+            ||preg_match('/\A[A-Za-z0-9][A-Za-z0-9_.-]{0,95}\z/D',$value['file'])!==1))return;
+        if($value['line']!==null&&(!is_int($value['line'])||$value['line']<1||$value['line']>10000000))return;
+        $GLOBALS['m4cf_preflight_location']=$value;
+    }catch(Throwable $diagnosticError){}
+}
+function m4cf_public_preflight_failure():?array
+{
+    $context=$GLOBALS['m4cf_failed_upload_context']??null;
+    if(!is_array($context)||array_keys($context)!==['schema','scope','upload_ordinal','deadline_at_last_read','deadline_before_http'])return null;
+    return $context+['location'=>$GLOBALS['m4cf_preflight_location']??null];
 }
 
 function m4cf_multipart(string $path,string $token,string $bytes,string $name='normal-form.png',string $mime='image/png'):array
@@ -728,6 +783,7 @@ function m4cfk_stream(string $path):array
     foreach(['dev','ino','mode','nlink','uid','gid','size','mtime','ctime']as$key)
         m4c_expect(is_array($final)&&is_array($atPath)&&$named[$key]===$opened[$key]&&$named[$key]===$final[$key]
             &&$named[$key]===$atPath[$key],'M4C_FORM_STABLE_CLOSED_NATIVE_STREAM');
+    if(str_ends_with($path,'.stderr'))m4cf_observe_preflight_record($bytes);
     return ['path'=>$path,'bytes'=>strlen($bytes),'sha256'=>hash('sha256',$bytes),'stat'=>$atPath];
 }
 
