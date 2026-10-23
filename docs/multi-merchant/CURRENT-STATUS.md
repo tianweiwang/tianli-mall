@@ -48,7 +48,16 @@
 
 ## 4. 最近一次完整链及修复
 
-最近已结束的完整正常链为 Run `20261023003421d1fc4b`，来源提交 `53e6d521b387b19a4cf370e0e381670b762d325e`。
+最近已结束的完整正常链为 Run `20261023082740ae535d`，来源提交 `2e4af47c7595947e16bef0abfa9785823b1369d5`，结果为失败。
+
+1. 完整来源物化 M 的 1,037 项操作实际通过；初始化、支付结构、early 20 条迁移、文件初始化和顾客准备实际通过。
+2. 付款测试进程实际退出 1；有限诊断定位到表单辅助脚本的断言名称格式冲突。60 个直接调用使用 `M4CF_`，共用断言器只接受 `M4C_` 家族。修复仅统一为 `M4C_FORM_`，保留全部判断条件和严格检查。
+3. 该完整候选的正逆差量、独立源码审查和整份 PHP 8.2 语法检查通过。新完整业务链尚未运行；HTTP 完成次数仍为 UNKNOWN，后续履约、售后评价和 Worker 未在本链启动。
+4. 原 3 个容器、1 个内部网络和 8 个专用卷已正常收尾；93 项收尾命令及 20 项独立核零命令全部通过，六项 fresh 查询为空。
+
+详见[修复与验证边界](records/ms4/form-assertion-prefix-repair.md)。以下保留上一失败来源的历史说明，不能用新定位改写其未知事实。
+
+上一已结束完整链为 Run `20261023003421d1fc4b`，来源提交 `53e6d521b387b19a4cf370e0e381670b762d325e`。
 
 1. 初始化、支付结构检查、early 20 条迁移命令、文件初始化和顾客准备实际通过。
 2. 付款测试进程实际退出 1，完整链失败。原公开日志不足以确定首次异常位置、阶段或 HTTP 完成数；这些信息保持未知。
@@ -56,7 +65,7 @@
 4. 原 3 个容器、1 个内部网络和 8 个专用卷已正常收尾；93 项收尾命令、20 项独立核零命令通过，六项 fresh 查询为空。
 5. 提交 `76efa7807` 修正两份测试入口的断言名称前缀和初始化前后环境比较，并补充付款失败的有限诊断。两份最终 PHP 的固定 PHP 8.2 语法检查实际通过。
 
-修订后的新业务链尚未运行。绑定 `584532ba2` 的完整新编排已经生成；其第一次 materialize 在第 673 条源码冻结操作失败，前 672 条为 0，没有创建业务 Run、App 或业务资源。只读诊断确认编排的独立 caller 合同仍引用旧测试入口，首个固定错误为 `EXACT_REVIEWED_REAL_PAID_ENTRY`。修正后的完整后继源码和必要 initializer 语法结果已保存；新 materialize、业务链和后续页面均未运行。
+中间来源 `584532ba2` 的第一次 materialize 曾在第 673 条源码冻结操作失败，前 672 条为 0，没有创建业务 Run、App 或业务资源。只读诊断确认独立 caller 合同仍引用旧测试入口，首个固定错误为 `EXACT_REVIEWED_REAL_PAID_ENTRY`。其后修正并重新绑定到 `2e4af47c7` 的完整 M 实际通过，随后发生上面记录的正常链失败。各次来源和失败事实分别保留；页面验证仍未完成。
 
 上述语法、来源核对及资源收尾不能作为交易业务通过证据。历史内部付款、两次发货、三次收货、五次重放和 288 次内部读取结果仍按原来源单独保留，不能汇总为最新版本整体通过。
 
@@ -78,7 +87,7 @@
 
 当前开发以 `feature/ms4-asset-consumers` 为整合入口；同来源的 `ms4-aftersale-normal-check` 工作区用于隔离核对。其他分阶段工作树和备份保留其历史来源，不能仅凭分支名称或提交先后批量合并。
 
-原始运行证据和私有准备数据保留在仓库外，不随源码推送。此前遗漏的主编排、后续完整 M/S/launcher 及候选程序已补入 [编排源码归档](../../help/audit-regressions/orchestration/README.md)，可从 Git 完整读取和离线校验；这不是可直接运行的环境包。[交接记录](records/ms4/orchestration-source-handoff.md) 区分源码存在、原实际失败和未运行项。交付位于 `feature/ms4-asset-consumers` 分支；原 `codex/audit-base` 链接不包含本次整理。源码中的 `records/` 仍只保留摘要。此前冻结的失败来源和结果不改写。
+原始运行证据和私有准备数据保留在仓库外，不随源码推送。此前遗漏的主编排、后续完整 M/S/launcher 及候选程序已补入 [编排源码归档](../../help/audit-regressions/orchestration/README.md)，可从 Git 完整读取和离线校验；这不是可直接运行的环境包。[交接记录](records/ms4/orchestration-source-handoff.md) 区分源码存在、原实际失败和未运行项。整合代码交付位于 `feature/ms4-asset-consumers` 分支；最新 2e4 完整编排另已推送到 `codex/orchestration-handoff-20261023`，提交 `e979616bf154b022eab04826aee117f5dca9e59a`：255 个原件、25 个包、43,909,804 字节，干净 Git 导出校验通过。原 `codex/audit-base` 链接不包含这些交付。源码中的 `records/` 仍只保留摘要。此前冻结的失败来源和结果不改写。
 
 仓库外原交接根名为 `ms4-worker-normal-source-preparation-r1`，本机位于工作空间的 `artifacts/` 下。归档清单按该根的相对路径保存选定源码；不依赖接收者能访问原机目录。以下仍是待续工作，不属于已通过的业务交付：
 
@@ -87,11 +96,15 @@
 | `full-a-paid-fulfillment-contract-normal-next-source-r1` | 原 profile 中间包保留；完整后继见下面两项 |
 | `full-a-published-current-normal-next-source-r1` | 完整编排已生成，实际源码冻结失败；无业务 Run |
 | `full-a-published-current-normal-next-source-r2` | 修正活跃 caller 版本合同的完整后继；新 initializer 纯语法通过，未 materialize 或运行业务 |
+| `full-a-2e4-current-normal-next-source-r2` | 完整 M 的 1,037 项操作实际通过；正常 A 在付款准备失败，已正常收尾并独立核零；来源不可覆盖或重启 |
 | `fresh-b-customer-form-external-source-r3` | 页面验证草稿，仍需绑定最新来源；未执行 |
 | `nonempty-history-normal-close-components-source-r1` | 已有独立源码核对；未证明目标业务运行 |
 | `nonempty-history-normal-parent-components-source-r1` | 原缺三个组件固定装载的失败来源保留 |
 | `nonempty-history-normal-parent-components-source-r2` | 完整装载修复，独立源码核对和纯语法通过；未签业务 |
-| `nonempty-history-normal-startup-components-source-r1` | 完整启动预期、就绪和副作用检查源码已实现并独审；新候选语法、最终准入和完整业务待验 |
+| `nonempty-history-normal-startup-components-source-r1` | 完整启动预期、就绪和副作用检查源码已实现、独审及整份纯语法通过；最终准入和完整业务待验 |
 | `nonempty-history-host-handoff-components-source-r1` | 来源组件已冻结，最终绑定未完成，入口保持拒绝；未运行 |
+| `nonempty-history-host-handoff-components-source-r3` | 正常关闭和十进制订单编号合同修正已静态审查；未采用，最终准入和原完整业务未运行 |
+| `nonempty-history-current-reader-sealed-baseline-components-source-r2` | 密封基线消费者合同已静态审查，整份新 PHP 语法通过；未签最终准入或业务 |
+| `nonempty-history-current-reader-private-context-components-source-r2` | 私有 RAM 上下文消费者合同候选及独审完成；Root 核对、新语法及最终组合仍待，不是已通过业务 |
 
 这些候选不能直接作为可运行发布包。published-current 两包冻结来源为归档前的 `584532ba2`；本次归档会前移 Git HEAD，不能把历史来源材料签成归档后提交已经运行。恢复时先核实际文件、原独立报告和未满足的绑定，避免把源码核对或脚本存在当作业务验收。

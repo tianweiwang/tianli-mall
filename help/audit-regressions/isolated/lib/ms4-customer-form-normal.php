@@ -515,10 +515,10 @@ function m4cfk_guard(array $source):array
     if($proof==='paid-producer')m5pc_full_source($source);
     elseif($proof==='aftersale-review-normal')m4ar_full_source($source);
     elseif($proof==='customer')m4c_entry_full_source($source);
-    else m4c_expect(false,'M4CF_KNOWN_ORIGINAL_CALLER_SOURCE');
+    else m4c_expect(false,'M4C_FORM_KNOWN_ORIGINAL_CALLER_SOURCE');
     $out=[];
     foreach(['run_id','source_sha','container_id','freeze_sha256','source_binding_sha256','environment_sha256','native_created_sha256']as$key){
-        m4c_expect(is_string($source[$key]??null)&&$source[$key]!=='','M4CF_REAL_SOURCE_BINDING_VALUE');$out[$key]=$source[$key];
+        m4c_expect(is_string($source[$key]??null)&&$source[$key]!=='','M4C_FORM_REAL_SOURCE_BINDING_VALUE');$out[$key]=$source[$key];
     }
     $out['proof']=$proof;return $out;
 }
@@ -529,20 +529,20 @@ function m4cfk_source():array
         $source=$GLOBALS[$name]??null;
         if(is_array($source)&&($source['rule']['proof']??null)===$proof){m4cfk_guard($source);return $source;}
     }
-    m4c_expect(false,'M4CF_ACTUAL_CALLER_SOURCE_NOT_AVAILABLE');return [];
+    m4c_expect(false,'M4C_FORM_ACTUAL_CALLER_SOURCE_NOT_AVAILABLE');return [];
 }
 
 function m4cfk_token(string $token):void
 {
     m4c_expect(strlen($token)>=16&&strlen($token)<=8192
         &&preg_match('/\A[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\z/D',$token)===1,
-        'M4CF_REAL_LOGIN_TOKEN_WIRE_ONLY');
+        'M4C_FORM_REAL_LOGIN_TOKEN_WIRE_ONLY');
 }
 
 function m4cfk_decimal(string $id,string $maximum):void
 {
     m4c_expect(preg_match('/\A[1-9][0-9]*\z/D',$id)===1&&strlen($id)<=strlen($maximum)
-        &&(strlen($id)<strlen($maximum)||strcmp($id,$maximum)<=0),'M4CF_CANONICAL_ROUTE_DECIMAL');
+        &&(strlen($id)<strlen($maximum)||strcmp($id,$maximum)<=0),'M4C_FORM_CANONICAL_ROUTE_DECIMAL');
 }
 
 function m4cfk_key(string $segment):string
@@ -550,7 +550,7 @@ function m4cfk_key(string $segment):string
     $key=rawurldecode($segment);
     m4c_expect(rawurlencode($key)===$segment
         &&\app\services\marketplace\order\MarketplaceOrderInput::confirmationKey($key)===$key,
-        'M4CF_ACTUAL_CANONICAL_CONFIRMATION_LOCATOR');return $key;
+        'M4C_FORM_ACTUAL_CANONICAL_CONFIRMATION_LOCATOR');return $key;
 }
 
 /** Only existing login/user, CU_FORM leaves, and their original read-only root/package locators. */
@@ -558,26 +558,26 @@ function m4cfk_route(string $method,string $path):string
 {
     m4c_expect(in_array($method,['GET','POST'],true)&&strlen($path)<=1024&&str_starts_with($path,'/')
         &&!str_contains($path,'?')&&!str_contains($path,'#')&&!str_contains($path,'\\')
-        &&!str_contains($path,'..')&&!preg_match('/[\x00-\x20\x7f]/',$path),'M4CF_FINITE_NORMAL_ROUTE_WIRE');
+        &&!str_contains($path,'..')&&!preg_match('/[\x00-\x20\x7f]/',$path),'M4C_FORM_FINITE_NORMAL_ROUTE_WIRE');
     if($method==='POST'&&preg_match('~\A/api/order/computed/([^/]+)\z~D',$path,$m)===1){m4cfk_key($m[1]);return 'computed';}
     if($method==='POST'&&$path==='/api/login')return 'login';
     if($method==='GET'&&$path==='/api/user')return 'user';
     if(preg_match('~\A/api/order/confirm/([^/]+)/forms/([1-9][0-9]{0,6})/([0-9])/files\z~D',$path,$m)===1){
-        m4cfk_key($m[1]);m4cfk_decimal($m[2],'8388607');m4c_expect($method==='POST','M4CF_UPLOAD_POST');return 'upload';
+        m4cfk_key($m[1]);m4cfk_decimal($m[2],'8388607');m4c_expect($method==='POST','M4C_FORM_UPLOAD_POST');return 'upload';
     }
     if(preg_match('~\A/api/order/confirm/([^/]+)/form-files/([1-9][0-9]{0,19})/(read-ticket|content)\z~D',$path,$m)===1){
         m4cfk_key($m[1]);m4cfk_decimal($m[2],'18446744073709551615');
-        m4c_expect($method===($m[3]==='content'?'GET':'POST'),'M4CF_CONFIRMATION_READ_METHOD');return $m[3]==='content'?'content':'ticket';
+        m4c_expect($method===($m[3]==='content'?'GET':'POST'),'M4C_FORM_CONFIRMATION_READ_METHOD');return $m[3]==='content'?'content':'ticket';
     }
     if(preg_match('~\A/(api/order|merchantapi/orders|adminapi/order/info|api/admin/order/detail)/([1-9][0-9]{0,9})/form-files/([1-9][0-9]{0,19})/(read-ticket|content)\z~D',$path,$m)===1){
         m4cfk_decimal($m[2],'2147483647');m4cfk_decimal($m[3],'18446744073709551615');
-        m4c_expect($method===($m[4]==='content'?'GET':'POST'),'M4CF_SAVED_READ_METHOD');return $m[4]==='content'?'content':'ticket';
+        m4c_expect($method===($m[4]==='content'?'GET':'POST'),'M4C_FORM_SAVED_READ_METHOD');return $m[4]==='content'?'content':'ticket';
     }
     if($method==='GET'&&preg_match('~\A/api/(?:order/detail|admin/order/detail|order/fulfillment/packages)/[A-Za-z0-9]{1,64}\z~D',$path)===1)return 'view';
     if($method==='GET'&&preg_match('~\A/(?:merchantapi/(?:orders|packages)|adminapi/order/info)/([1-9][0-9]{0,9})\z~D',$path,$m)===1){
         m4cfk_decimal($m[1],'2147483647');return 'view';
     }
-    m4c_expect(false,'M4CF_UNREGISTERED_NORMAL_ROUTE');return '';
+    m4c_expect(false,'M4C_FORM_UNREGISTERED_NORMAL_ROUTE');return '';
 }
 
 /** A response is preserved even at 503; the independent caller retains the original exact-200 gate. */
@@ -586,32 +586,32 @@ function m4cf_transport(string $method,string $path,?string $token=null,mixed $b
 {
     $source=m4cfk_source();$binding=m4cfk_guard($source);$kind=m4cfk_route($method,$path);
     if($kind==='login'){
-        m4c_expect($token===null&&$ticket===null&&$multipart===null&&is_array($body),'M4CF_REAL_LOGIN_ENVELOPE');
+        m4c_expect($token===null&&$ticket===null&&$multipart===null&&is_array($body),'M4C_FORM_REAL_LOGIN_ENVELOPE');
         $keys=array_keys($body);sort($keys,SORT_STRING);
         m4c_expect($keys===['account','agent_id','password','spread']&&is_string($body['account'])&&$body['account']!==''
-            &&is_string($body['password'])&&$body['password']!==''&&$body['agent_id']===0&&$body['spread']===0,'M4CF_ORIGINAL_FIXTURE_LOGIN_BODY');
-    }else{m4c_expect(is_string($token),'M4CF_ACTUAL_AUTHENTICATED_CALL');m4cfk_token($token);}
+            &&is_string($body['password'])&&$body['password']!==''&&$body['agent_id']===0&&$body['spread']===0,'M4C_FORM_ORIGINAL_FIXTURE_LOGIN_BODY');
+    }else{m4c_expect(is_string($token),'M4C_FORM_ACTUAL_AUTHENTICATED_CALL');m4cfk_token($token);}
     if($kind==='computed')m4c_expect(is_array($body)&&array_keys($body)===['addressId','shipping_type','payType','mer_id','couponId','useIntegral']
         &&is_int($body['addressId'])&&$body['addressId']>0&&is_int($body['mer_id'])&&$body['mer_id']>0
-        &&$body['shipping_type']===1&&$body['payType']===''&&$body['couponId']===0&&$body['useIntegral']===0&&$multipart===null,'M4CF_ORIGINAL_NORMAL_REPRICE_BODY');
-    if($kind==='content')m4c_expect(is_string($ticket)&&preg_match('/\A[A-Za-z0-9_-]{43}\z/D',$ticket)===1,'M4CF_NATIVE_ISSUED_TICKET_HEADER');
-    else m4c_expect($ticket===null,'M4CF_NO_TICKET_ON_OTHER_ROUTE');
-    if($method==='GET')m4c_expect($body===null&&$multipart===null,'M4CF_GET_EMPTY_BODY');
-    if($kind==='ticket')m4c_expect($body===['schema'=>1]&&$multipart===null,'M4CF_THREE_KEY_TICKET_REQUEST_SCHEMA');
+        &&$body['shipping_type']===1&&$body['payType']===''&&$body['couponId']===0&&$body['useIntegral']===0&&$multipart===null,'M4C_FORM_ORIGINAL_NORMAL_REPRICE_BODY');
+    if($kind==='content')m4c_expect(is_string($ticket)&&preg_match('/\A[A-Za-z0-9_-]{43}\z/D',$ticket)===1,'M4C_FORM_NATIVE_ISSUED_TICKET_HEADER');
+    else m4c_expect($ticket===null,'M4C_FORM_NO_TICKET_ON_OTHER_ROUTE');
+    if($method==='GET')m4c_expect($body===null&&$multipart===null,'M4C_FORM_GET_EMPTY_BODY');
+    if($kind==='ticket')m4c_expect($body===['schema'=>1]&&$multipart===null,'M4C_FORM_THREE_KEY_TICKET_REQUEST_SCHEMA');
     $headers=['Cb-lang: zh-CN','Accept: '.($kind==='content'?'*/*':'application/json')];
     if($token!==null)$headers[]=(str_starts_with($path,'/merchantapi/')?'Authorization':'Authori-zation').': Bearer '.$token;
     if($ticket!==null)$headers[]='X-Order-Form-Read-Ticket: '.$ticket;
     if($multipart!==null){
         m4c_expect($kind==='upload'&&is_string($body)&&strlen($body)<=52432896
-            &&preg_match('/\AAuditCustomerForm[a-f0-9]{32}\z/D',$multipart)===1,'M4CF_FINITE_REAL_MULTIPART_BODY');
+            &&preg_match('/\AAuditCustomerForm[a-f0-9]{32}\z/D',$multipart)===1,'M4C_FORM_FINITE_REAL_MULTIPART_BODY');
         $headers[]='Content-Type: multipart/form-data; boundary='.$multipart;
     }elseif($body!==null){
-        m4c_expect(is_array($body)&&$kind!=='upload','M4CF_FIXED_JSON_BODY');$body=m4cb_json($body);
-        m4c_expect(strlen($body)<=1048576,'M4CF_JSON_REQUEST_LIMIT');$headers[]='Content-Type: application/json';
-    }else m4c_expect($kind!=='upload','M4CF_UPLOAD_REQUIRES_REAL_MULTIPART');
+        m4c_expect(is_array($body)&&$kind!=='upload','M4C_FORM_FIXED_JSON_BODY');$body=m4cb_json($body);
+        m4c_expect(strlen($body)<=1048576,'M4C_FORM_JSON_REQUEST_LIMIT');$headers[]='Content-Type: application/json';
+    }else m4c_expect($kind!=='upload','M4C_FORM_UPLOAD_REQUIRES_REAL_MULTIPART');
     $requestBytes=$body===null?0:strlen($body);$requestHash=hash('sha256',$body??'');
     $limit=$kind==='content'?52428800:1048576;$raw='';$headerBytes=0;$headerLines=[];$responseHeaders=[];$overflow=false;
-    $curl=curl_init('http://audit-app:8000'.$path);m4c_expect($curl!==false,'M4CF_REAL_CURL_HANDLE');$started=time();
+    $curl=curl_init('http://audit-app:8000'.$path);m4c_expect($curl!==false,'M4C_FORM_REAL_CURL_HANDLE');$started=time();
     try{
         m4c_expect(curl_setopt_array($curl,[CURLOPT_CUSTOMREQUEST=>$method,CURLOPT_HTTPHEADER=>$headers,
             CURLOPT_CONNECTTIMEOUT=>3,CURLOPT_TIMEOUT=>12,CURLOPT_FOLLOWLOCATION=>false,CURLOPT_PROXY=>'',
@@ -621,8 +621,8 @@ function m4cf_transport(string $method,string $path,?string $token=null,mixed $b
                 $headerBytes+=strlen($line);if($headerBytes>65536||count($headerLines)>=512){$overflow=true;return 0;}
                 $headerLines[]=$line;$pair=explode(':',$line,2);
                 if(count($pair)===2)$responseHeaders[strtolower(trim($pair[0]))]=trim($pair[1]);return strlen($line);
-            }]),'M4CF_REAL_CURL_OPTIONS');
-        if($body!==null)m4c_expect(curl_setopt($curl,CURLOPT_POSTFIELDS,$body),'M4CF_REAL_REQUEST_BODY');
+            }]),'M4C_FORM_REAL_CURL_OPTIONS');
+        if($body!==null)m4c_expect(curl_setopt($curl,CURLOPT_POSTFIELDS,$body),'M4C_FORM_REAL_REQUEST_BODY');
         $done=curl_exec($curl);$http=(int)curl_getinfo($curl,CURLINFO_RESPONSE_CODE);$errno=curl_errno($curl);
     }finally{curl_close($curl);$ended=time();unset($headers,$token,$ticket,$body);}
     $json=null;$jsonError=null;
@@ -634,8 +634,8 @@ function m4cf_transport(string $method,string $path,?string $token=null,mixed $b
     if(!$complete&&!isset($GLOBALS['m4cf_transport_first_failure']))$GLOBALS['m4cf_transport_first_failure']=[
         'kind'=>$kind,'method'=>$method,'http'=>$http,'curl_errno'=>$errno,'overflow'=>$overflow,
         'response_bytes'=>strlen($raw),'response_sha256'=>hash('sha256',$raw),'actual_interval'=>[$started,$ended]];
-    m4c_expect(m4cfk_guard($source)===$binding,'M4CF_TRANSPORT_ORIGINAL_SOURCE_BINDINGS_UNCHANGED');
-    m4c_expect($complete,'M4CF_COMPLETE_NATIVE_HTTP_RESPONSE_NO_RETRY');return $reply;
+    m4c_expect(m4cfk_guard($source)===$binding,'M4C_FORM_TRANSPORT_ORIGINAL_SOURCE_BINDINGS_UNCHANGED');
+    m4c_expect($complete,'M4C_FORM_COMPLETE_NATIVE_HTTP_RESPONSE_NO_RETRY');return $reply;
 }
 
 function m4cf_multipart(string $path,string $token,string $bytes,string $name='normal-form.png',string $mime='image/png'):array
@@ -643,8 +643,8 @@ function m4cf_multipart(string $path,string $token,string $bytes,string $name='n
     m4c_expect(m4cfk_route('POST',$path)==='upload'&&strlen($bytes)>0&&strlen($bytes)<=52428800
         &&strlen($name)>0&&strlen($name)<=255&&!preg_match('/[\x00-\x1f\x7f"]/',$name)
         &&!str_contains($name,'\\')&&!str_contains($name,'/')
-        &&preg_match('~\Aimage/[a-z0-9.+-]{1,64}\z~D',$mime)===1,'M4CF_REAL_NORMAL_IMAGE_MULTIPART');
-    m4c_expect((new \finfo(FILEINFO_MIME_TYPE))->buffer($bytes)===$mime,'M4CF_ACTUAL_IMAGE_MIME_BEFORE_TRANSPORT');
+        &&preg_match('~\Aimage/[a-z0-9.+-]{1,64}\z~D',$mime)===1,'M4C_FORM_REAL_NORMAL_IMAGE_MULTIPART');
+    m4c_expect((new \finfo(FILEINFO_MIME_TYPE))->buffer($bytes)===$mime,'M4C_FORM_ACTUAL_IMAGE_MIME_BEFORE_TRANSPORT');
     $boundary='AuditCustomerForm'.bin2hex(random_bytes(16));
     $raw='--'.$boundary."\r\nContent-Disposition: form-data; name=\"filename\"\r\n\r\npics\r\n";
     $raw.='--'.$boundary."\r\nContent-Disposition: form-data; name=\"pics\"; filename=\"".$name."\"\r\nContent-Type: ".$mime."\r\n\r\n".$bytes."\r\n--".$boundary."--\r\n";
@@ -656,9 +656,9 @@ function m4cf_child_start(array $source):array
 {
     $binding=m4cfk_guard($source);
     m4c_expect(($source['rule']['proof']??null)==='paid-producer'&&!isset($GLOBALS['m4cf_child_started'])
-        &&!audit_app_listener_open(),'M4CF_ONE_NEW_PAID_CHILD_AFTER_ORIGINAL_OWNER_CHILD_CLOSED');
+        &&!audit_app_listener_open(),'M4C_FORM_ONE_NEW_PAID_CHILD_AFTER_ORIGINAL_OWNER_CHILD_CLOSED');
     $GLOBALS['m4cf_child_started']=true;$supervisor=audit_app_proc_stat(getmypid());
-    m4c_expect($supervisor!==null,'M4CF_ACTUAL_UPLOAD_SUPERVISOR');
+    m4c_expect($supervisor!==null,'M4C_FORM_ACTUAL_UPLOAD_SUPERVISOR');
     $stem='/workspace/crmeb/runtime/customer-form-upload-'.bin2hex(random_bytes(16));
     $handle=['schema'=>1,'source'=>$source,'binding'=>$binding,'supervisor'=>$supervisor,'process'=>null,'group'=>null,
         'term_sent'=>false,'term_attempted'=>false,'stdout'=>$stem.'.stdout','stderr'=>$stem.'.stderr','proof'=>null];
@@ -673,14 +673,14 @@ function m4cf_child_start(array $source):array
         try{$handle['process']=proc_open(['setsid','php','think','run','-H','0.0.0.0','-p','8000'],
             [['file','/dev/null','r'],['file',$handle['stdout'],'x'],['file',$handle['stderr'],'x']],$pipes,
             '/workspace/crmeb',m4c_entry_child_environment($source));}finally{umask($mask);}
-        $GLOBALS['m4cf_child_handle']=$handle;m4c_expect(is_resource($handle['process']),'M4CF_ACTUAL_PRIVATE_UPLOAD_HTTP_CHILD');
+        $GLOBALS['m4cf_child_handle']=$handle;m4c_expect(is_resource($handle['process']),'M4C_FORM_ACTUAL_PRIVATE_UPLOAD_HTTP_CHILD');
         $handle['group']=audit_app_register_group($handle['process'],$supervisor);$GLOBALS['m4cf_child_handle']=$handle;
         $until=microtime(true)+5.0;
         do{$observation=audit_app_process_observation($handle['group'],$supervisor);
             if($observation['members']!==[]&&$observation['listener_open'])break;usleep(10000);
         }while(microtime(true)<$until);
-        m4c_expect($observation['members']!==[]&&$observation['listener_open'],'M4CF_REGISTERED_REAL_UPLOAD_LISTENER');
-        m4c_expect(m4cfk_guard($source)===$binding,'M4CF_UPLOAD_CHILD_SOURCE_BINDINGS_UNCHANGED');return $handle;
+        m4c_expect($observation['members']!==[]&&$observation['listener_open'],'M4C_FORM_REGISTERED_REAL_UPLOAD_LISTENER');
+        m4c_expect(m4cfk_guard($source)===$binding,'M4C_FORM_UPLOAD_CHILD_SOURCE_BINDINGS_UNCHANGED');return $handle;
     }catch(\Throwable $error){
         $GLOBALS['m4cf_child_handle']=$handle;
         $GLOBALS['m4cf_child_first_failure']=['class'=>get_class($error),'phase'=>'start'];
@@ -695,16 +695,16 @@ function m4cfk_stream(string $path):array
     clearstatcache(true,$path);$named=lstat($path);
     m4c_expect(is_array($named)&&!is_link($path)&&is_file($path)&&realpath($path)===$path
         &&($named['mode']&0170000)===0100000&&($named['mode']&0777)===0600&&$named['uid']===posix_geteuid()
-        &&$named['nlink']===1&&$named['size']>=0&&$named['size']<=16777216,'M4CF_OWN_CLOSED_NATIVE_STREAM');
-    $stream=fopen($path,'rb');m4c_expect(is_resource($stream),'M4CF_COMPLETE_NATIVE_STREAM_OPEN');
+        &&$named['nlink']===1&&$named['size']>=0&&$named['size']<=16777216,'M4C_FORM_OWN_CLOSED_NATIVE_STREAM');
+    $stream=fopen($path,'rb');m4c_expect(is_resource($stream),'M4C_FORM_COMPLETE_NATIVE_STREAM_OPEN');
     try{$opened=fstat($stream);$bytes=stream_get_contents($stream);
         m4c_expect(is_array($opened)&&is_string($bytes)&&fread($stream,1)===''&&feof($stream)
-            &&strlen($bytes)===$named['size'],'M4CF_COMPLETE_NATIVE_STREAM_EOF');$final=fstat($stream);
+            &&strlen($bytes)===$named['size'],'M4C_FORM_COMPLETE_NATIVE_STREAM_EOF');$final=fstat($stream);
     }finally{fclose($stream);}
     clearstatcache(true,$path);$atPath=lstat($path);
     foreach(['dev','ino','mode','nlink','uid','gid','size','mtime','ctime']as$key)
         m4c_expect(is_array($final)&&is_array($atPath)&&$named[$key]===$opened[$key]&&$named[$key]===$final[$key]
-            &&$named[$key]===$atPath[$key],'M4CF_STABLE_CLOSED_NATIVE_STREAM');
+            &&$named[$key]===$atPath[$key],'M4C_FORM_STABLE_CLOSED_NATIVE_STREAM');
     return ['path'=>$path,'bytes'=>strlen($bytes),'sha256'=>hash('sha256',$bytes),'stat'=>$atPath];
 }
 
@@ -712,7 +712,7 @@ function m4cfk_stream(string $path):array
 function m4cf_child_close(array &$handle):array
 {
     m4c_expect(($handle['schema']??null)===1&&is_array($handle['source']??null)
-        &&is_array($handle['supervisor']??null),'M4CF_REAL_OWN_CHILD_HANDLE');
+        &&is_array($handle['supervisor']??null),'M4C_FORM_REAL_OWN_CHILD_HANDLE');
     if(is_array($handle['proof']??null)&&$handle['proof']['stopped']===true)return $handle['proof'];
     $failure=null;$proof=null;
     do{
@@ -724,9 +724,9 @@ function m4cf_child_close(array &$handle):array
     m4c_expect($proof['stopped']===true&&$proof['remaining_members']===[]&&$proof['listener_open']===false
         &&$proof['stop_signal']===SIGTERM&&$proof['term_attempted']===true&&$proof['normal_only']===true
         &&is_array($proof['native_child'])&&$proof['native_child']['running']===false&&$proof['native_child']['termsig']!==9
-        &&is_int($proof['native_proc_close']),'M4CF_SAME_UPLOAD_CHILD_NORMALLY_CLOSED');
+        &&is_int($proof['native_proc_close']),'M4C_FORM_SAME_UPLOAD_CHILD_NORMALLY_CLOSED');
     $handle['proof']=$proof;$GLOBALS['m4cf_child_handle']=$handle;$GLOBALS['m4cf_child_proof']=$proof;
-    m4c_expect(m4cfk_guard($handle['source'])===$handle['binding'],'M4CF_CLOSED_CHILD_ORIGINAL_BINDINGS_UNCHANGED');
+    m4c_expect(m4cfk_guard($handle['source'])===$handle['binding'],'M4C_FORM_CLOSED_CHILD_ORIGINAL_BINDINGS_UNCHANGED');
     if($failure!==null)throw $failure;return $proof;
 }
 
@@ -735,10 +735,10 @@ function m4cfk_session(\PDO $pdo):array
     $statement=$pdo->query('SELECT CONNECTION_ID() AS connection_id, @@SESSION.autocommit AS autocommit,'
         .' @@SESSION.transaction_isolation AS transaction_isolation, @@SESSION.sql_mode AS sql_mode,'
         .' @@SESSION.time_zone AS time_zone, @@SESSION.innodb_strict_mode AS innodb_strict_mode');
-    m4c_expect($statement instanceof \PDOStatement,'M4CF_ACTUAL_DEFAULT_SESSION_QUERY');
+    m4c_expect($statement instanceof \PDOStatement,'M4C_FORM_ACTUAL_DEFAULT_SESSION_QUERY');
     try{$rows=$statement->fetchAll(\PDO::FETCH_ASSOC);}finally{$statement->closeCursor();}
     m4c_expect(count($rows)===1&&array_keys($rows[0])===['connection_id','autocommit','transaction_isolation','sql_mode','time_zone','innodb_strict_mode']
-        &&in_array($rows[0]['autocommit'],[1,'1'],true),'M4CF_COMPLETE_OUTSIDE_DEFAULT_SESSION');return $rows[0];
+        &&in_array($rows[0]['autocommit'],[1,'1'],true),'M4C_FORM_COMPLETE_OUTSIDE_DEFAULT_SESSION');return $rows[0];
 }
 
 /** Exactly one first-create kernel dispatch per original producer App; never a retained authenticated Request. */
@@ -748,15 +748,15 @@ function m4cf_kernel_create(\think\App $app,\PDO $db,array $source,int $uid,stri
     $binding=m4cfk_guard($source);m4cfk_token($token);
     m4c_expect(app()===$app&&($GLOBALS['m4c_application']??null)===$app&&$app->initialized()
         &&in_array($source['rule']['proof']??null,['paid-producer','aftersale-review-normal'],true)
-        &&$uid>0&&$uid<=2147483647,'M4CF_ORIGINAL_INITIALIZED_PRODUCER_APP');
-    m4c_expect(\app\services\marketplace\order\MarketplaceOrderInput::confirmationKey($key)===$key,'M4CF_ORIGINAL_CREATE_KEY');
-    $object=spl_object_id($app);m4c_expect(!isset($GLOBALS['m4cf_kernel_dispatched'][$object]),'M4CF_ONE_FIRST_CREATE_DISPATCH_PER_APP');
-    $wire=m4cb_json($raw);m4c_expect(strlen($wire)>0&&strlen($wire)<=1048576,'M4CF_REAL_CREATE_JSON_LIMIT');
-    $connection=\think\facade\Db::connect();$pdo=$connection->getPdo();m4c_expect($pdo instanceof \PDO,'M4CF_REAL_DEFAULT_PDO');
+        &&$uid>0&&$uid<=2147483647,'M4C_FORM_ORIGINAL_INITIALIZED_PRODUCER_APP');
+    m4c_expect(\app\services\marketplace\order\MarketplaceOrderInput::confirmationKey($key)===$key,'M4C_FORM_ORIGINAL_CREATE_KEY');
+    $object=spl_object_id($app);m4c_expect(!isset($GLOBALS['m4cf_kernel_dispatched'][$object]),'M4C_FORM_ONE_FIRST_CREATE_DISPATCH_PER_APP');
+    $wire=m4cb_json($raw);m4c_expect(strlen($wire)>0&&strlen($wire)<=1048576,'M4C_FORM_REAL_CREATE_JSON_LIMIT');
+    $connection=\think\facade\Db::connect();$pdo=$connection->getPdo();m4c_expect($pdo instanceof \PDO,'M4C_FORM_REAL_DEFAULT_PDO');
     m5pcp_context($app,$connection,$pdo,$db);$session=m4cfk_session($pdo);$configuration=[];
     foreach(['database','cache','marketplace','auth','upload','filesystem']as$name)$configuration[$name]=$app->config->get($name);
     $http=$app->http;m4c_expect($http->getName()===''&&$http->getPath()===''&&!$http->isBind()
-        &&!$app->exists(\think\app\MultiApp::class),'M4CF_FIRST_OFFICIAL_MULTIPLE_APP_DISPATCH');
+        &&!$app->exists(\think\app\MultiApp::class),'M4C_FORM_FIRST_OFFICIAL_MULTIPLE_APP_DISPATCH');
     $previous=$app->request;$serverBefore=$_SERVER;$path='/api/order/create/'.rawurlencode($key);
     $server=['REQUEST_METHOD'=>'POST','REQUEST_URI'=>$path,'PATH_INFO'=>$path,'QUERY_STRING'=>'',
         'SCRIPT_FILENAME'=>'/workspace/crmeb/public/index.php','SCRIPT_NAME'=>'/index.php','PHP_SELF'=>'/index.php',
@@ -764,18 +764,18 @@ function m4cf_kernel_create(\think\App $app,\PDO $db,array $source,int $uid,stri
         'SERVER_PROTOCOL'=>'HTTP/1.1','CONTENT_TYPE'=>'application/json','CONTENT_LENGTH'=>(string)strlen($wire),
         'REMOTE_ADDR'=>gethostbyname(gethostname())];
     m4c_expect(is_file($server['SCRIPT_FILENAME'])&&!is_link($server['SCRIPT_FILENAME'])
-        &&filter_var($server['REMOTE_ADDR'],FILTER_VALIDATE_IP)!==false,'M4CF_ACTUAL_PUBLIC_ENTRY_AND_CONTAINER_ADDRESS');
+        &&filter_var($server['REMOTE_ADDR'],FILTER_VALIDATE_IP)!==false,'M4C_FORM_ACTUAL_PUBLIC_ENTRY_AND_CONTAINER_ADDRESS');
     // MultiApp reads global SCRIPT_FILENAME; the fixed real public entry selects URL parsing, never an identity stamp.
     $request=null;$started=time();$response=null;$failure=null;$data=null;
     try{
         $_SERVER=array_replace($_SERVER,$server);$request=$app->make('request',[],true);
         m4c_expect($request instanceof \app\Request&&$request!==$previous&&in_array($request->filter(),[null,'',[]],true),
-            'M4CF_FRESH_OFFICIAL_REQUEST_WITH_ORIGINAL_FILTER');
+            'M4C_FORM_FRESH_OFFICIAL_REQUEST_WITH_ORIGINAL_FILTER');
         $request->withServer($server)->withEnv($app->env)->withHeader(['host'=>'audit-app:8000','content-type'=>'application/json',
             'content-length'=>(string)strlen($wire),'accept'=>'application/json','cb-lang'=>'zh-CN','authori-zation'=>'Bearer '.$token])
             ->withGet([])->withCookie([])->withFiles([])->withInput($wire);
         m4c_expect($request->method(true)==='POST'&&$request->getContent()===$wire&&$request->post(false)===$raw
-            &&$request->get(false)===[],'M4CF_ACTUAL_POST_SERVER_AND_COMPLETE_RAW_BODY');
+            &&$request->get(false)===[],'M4C_FORM_ACTUAL_POST_SERVER_AND_COMPLETE_RAW_BODY');
         $GLOBALS['m4cf_kernel_dispatched'][$object]=true;$started=time();
         $response=$http->run($request);$content=$response->getContent();$ended=time();
         $json=json_decode($content,true,64,JSON_BIGINT_AS_STRING);$error=json_last_error();
@@ -783,11 +783,11 @@ function m4cf_kernel_create(\think\App $app,\PDO $db,array $source,int $uid,stri
             'actual_interval'=>[$started,$ended],'start'=>$started,'end'=>$ended,'json_error'=>$error];
         m4c_expect($app->request===$request&&$http->getName()==='api'&&$request->method(true)==='POST'
             &&$request->action(true)==='create'&&$request->route('key',null,null)===$key
-            &&in_array($request->uid(),[$uid,(string)$uid],true),'M4CF_REAL_ROUTER_AND_AUTHENTICATED_CONTROLLER');
+            &&in_array($request->uid(),[$uid,(string)$uid],true),'M4C_FORM_REAL_ROUTER_AND_AUTHENTICATED_CONTROLLER');
         m4c_expect(strlen($content)<=1048576&&$response->getCode()===200&&$error===JSON_ERROR_NONE&&is_array($json),
-            'M4CF_REAL_CREATE_RESPONSE_200');
+            'M4C_FORM_REAL_CREATE_RESPONSE_200');
         m4c_entry_keys($json,['status','msg','data']);m4c_expect($json['status']===200&&is_string($json['msg'])&&is_array($json['data']),
-            'M4CF_REAL_CREATE_JSON_ENVELOPE');
+            'M4C_FORM_REAL_CREATE_JSON_ENVELOPE');
         $number=m4cb_wire_created($json['data'],$key);$data=['order_id'=>$number,'key'=>$json['data']['result']['key']];
     }catch(\Throwable $error){$failure=$error;}
     finally{
@@ -795,11 +795,11 @@ function m4cf_kernel_create(\think\App $app,\PDO $db,array $source,int $uid,stri
         $_SERVER=$serverBefore;$app->instance('request',$previous);
         if($request instanceof \app\Request)$request->withHeader([]);unset($token);
         try{
-            m5pcp_context($app,$connection,$pdo,$db);m4c_expect(m4cfk_session($pdo)===$session,'M4CF_SAME_COMPLETE_DEFAULT_SESSION');
-            foreach($configuration as$name=>$expected)m4c_expect($app->config->get($name)===$expected,'M4CF_ORIGINAL_CONFIGURATION_UNCHANGED');
-            m4c_expect(m4cfk_guard($source)===$binding,'M4CF_KERNEL_ORIGINAL_SOURCE_BINDINGS_UNCHANGED');
+            m5pcp_context($app,$connection,$pdo,$db);m4c_expect(m4cfk_session($pdo)===$session,'M4C_FORM_SAME_COMPLETE_DEFAULT_SESSION');
+            foreach($configuration as$name=>$expected)m4c_expect($app->config->get($name)===$expected,'M4C_FORM_ORIGINAL_CONFIGURATION_UNCHANGED');
+            m4c_expect(m4cfk_guard($source)===$binding,'M4C_FORM_KERNEL_ORIGINAL_SOURCE_BINDINGS_UNCHANGED');
         }catch(\Throwable $error){if($failure===null)$failure=$error;}
     }
     if($failure!==null)throw $failure;
-    m4c_expect(is_array($data),'M4CF_COMPLETE_REAL_CREATE_RESULT');return $data;
+    m4c_expect(is_array($data),'M4C_FORM_COMPLETE_REAL_CREATE_RESULT');return $data;
 }
