@@ -1509,3 +1509,16 @@ R39原实例已正常关闭并独立核零：close84原生自然0（db58b47b8ed5
 
 
 本轮R40真实终态补记：原S65041在Root7551bf自然exit1，AR容器exited1/restart0。公开结果6100/3a46d23a7af65f9fe106cc458a548f35b11508730aed2b73169d953a0d7404ac，phase real_public_nonempty_image_upload，固定失败码TASK78_EXACT_NATIVE_PRODUCER_TAG_MEMBERS；原内部付款/履约成功保留，Worker及整A/三端未通过。full_source_unchanged=false为失败未达final路径的默认值，不据此声称源已变；Root1867f0核Main/Val AR实际222875/eddc42ae94ddceb208a8d2535b153503cd137ddab9f24572cfd6fa3296593de9与HEAD13479完整blob相同。原失败/现场保留，无自动清理重跑。Source另确认图片正常producer会读缩略图和水印两个组合配置缓存，old+counter校验未覆盖它们；没有原before成员明细，不能补造本轮精确diff或唯一原因。后继只修完整缓存观察闭包，数据库/文件/标签永久期限与其余严格断言保持，先按精确Source正常关闭本轮并独立核零，再做Main采用/语法/新Run。素材新分支T3 r3仅有限新结构会话Source通过，尚无语法/SQL/运行验收。
+
+
+### 53e付款测试失败收口与两入口合同修订（2026-10-23）
+
+通用多商户目标及原商品列表、SKU、规格、价格、库存复用保持。Run `20261023003421d1fc4b` / Source `53e6d521b387b19a4cf370e0e381670b762d325e` 的初始化、MS5结构、early 20条迁移命令、文件初始化和顾客准备实际通过；付款producer实际退出1，原S49572实际native/wait1且原terminal存在。公开日志只有 `M4C_PAID_UNCLASSIFIED_SOURCE_FAILURE`，付款结果公件缺席；catch可能在发布时再失败，因此实际首Throwable位置、phase与HTTP完成数仍UNKNOWN，不从缺公件推定HTTP0或唯一实因。Task6、售后评价、Worker和fresh B尚未启动，本完整A失败。
+
+该Run实际只剩DB2+paid三CID，顾客准备0已由原paid-create正常退役，不再操作。原3容器、1内部网络、8专用卷已普通非force收尾，93项原生命令实际0；独立zero20项只读命令实际0、六fresh查询为空、0资源变更，38245份原公件及31008条两源码树记录保持。close结果104458B / `f8caa4f49f5d008c802a9820f663ee218f920d0c3e57db34fc1afe53d15a6e7e`，zero24927B / `b76c7f627eea39ea50d6aedf88652f631e1bbd3966c48daa151fd01b5ccbb343`。Root实际逐项读回两者113条native创建/终态/完整双流，未用收尾结果回补业务通过。
+
+确定的Source缺陷是付款与履约入口把 `CU_FORM_FIXED_ROLE_ROOT` 交给仅接受 `M4C_` 前缀的共享断言函数，前置code检查会无条件抛错；两工厂还残留raw环境快照与命名getter混比。修订只将两名称改为合法 `M4C_CU_FORM_FIXED_ROLE_ROOT`，两次官方initialize后用同域raw快照逐原键存在及严格值===比较；付款catch入口另捕原异常类型、代码basename/line及phase，仅以固定安全字段写STDERR，不取message/args/trace/环境，保原code、stdout和result合同及原失败优先级。诊断自身I/O失败不会覆盖原失败。源码缺陷与现象相符，仍不宣称已证明本轮唯一现场first cause。
+
+两个候选PHP在固定PHP8.2、nonroot、network none、RO容器内实际各一次 `php -l` 通过；8项原生命令和外层40000 native/wait0，原同CID普通移除、前后自有label查询为空。必要语法结果9021B / `960e77e3193b9aef06492dc282400d403a31a815c74e2a64d07d7e6b5825443c`；Root合并实际读回2514B / `87c2de85205ebd5ddcb0d9faa47f769ac6a4f78291c674f707bb5b37e0ff8cd5`。这只证明修订的Source与必要语法，尚无修后完整业务通过。此次本地采用范围仅两份测试PHP及本README/09计划，实际提交以Git为准；原冻结Source/Run/失败结果不改。
+
+后续仍需新clean同源完整A及close/zero、同HEAD fresh B、三端UI20/20 ACK/42原生frames与三宽DOM、独立H5九场景、顾客真实multipart/原图、非空旧历史37与四CLI/完整权益归属/current reader/最终enabled=true；真实支付退款回调对账费用结算、发布恢复及人工验收未完成。MP/APP正式构建仍缺明确正式HTTPS API origin。继续仅L2本地，无推送部署或真实资金；已停止样本保持NOT RUN，Task9新商家客服关闭、原平台客服保留，只有BASE既有人工签收，不换算整体百分比。

@@ -175,7 +175,7 @@ function m4fn_source(): array
     m4c_expect(!file_exists('/source/crmeb/.env')&&!file_exists('/workspace/crmeb/.env')
         &&!file_exists('/source/crmeb/public/install.lock'),'M4C_NO_HOST_RUNTIME_CONFIGURATION');
     $values=m4fn_environment($binding,$context);
-    m4c_expect(($values['PHP_MARKETPLACE_CUSTOMER_FORM_PRIVATE_ROOT']??null)==='/run/audit-customer-form','CU_FORM_FIXED_ROLE_ROOT');
+    m4c_expect(($values['PHP_MARKETPLACE_CUSTOMER_FORM_PRIVATE_ROOT']??null)==='/run/audit-customer-form','M4C_CU_FORM_FIXED_ROLE_ROOT');
     audit_guard_assert();
     $source=$binding+['rule'=>$rule,'environment'=>$values,
         'self_operated_mer_id'=>(int)$values['PHP_MARKETPLACE_SELF_OPERATED_MER_ID'],
@@ -210,8 +210,8 @@ function m4fn_app(array $source): \think\App
         'CACHE_CACHE_TAG_PREFIX'=>'CRMEB:','AUTH_SESSION_EPOCH'=>$config['auth']['session_epoch'],
         'AUTH_STAMP_KEY'=>$config['auth']['stamp_key'],'AUTH_ISSUER'=>$config['auth']['issuer']]);
     m4cf_expect(!file_exists('/workspace/crmeb/.env')&&!is_link('/workspace/crmeb/.env'),'OFFICIAL_INITIALIZE_NO_UNBOUND_ENV');
-    $configured=$app->env->get();$app->initialize();
-    foreach($configured as$name=>$value)m4cf_expect($app->env->get($name)===$value,'OFFICIAL_INITIALIZE_PRESERVES_ACTUAL_ENV');
+    $configured=$app->env->get();$app->initialize();$initializedEnv=$app->env->get();
+    foreach($configured as$name=>$value)m4cf_expect(array_key_exists($name,$initializedEnv)&&$initializedEnv[$name]===$value,'OFFICIAL_INITIALIZE_PRESERVES_ACTUAL_ENV');
     m4cf_expect($app->initialized(),'OFFICIAL_INITIALIZED_BEFORE_DATABASE_SETTINGS');
     $database=require '/workspace/crmeb/config/database.php';
     $database['connections']['mysql']['params']=[PDO::ATTR_EMULATE_PREPARES=>false,PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION];
