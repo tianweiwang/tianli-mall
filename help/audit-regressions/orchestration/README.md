@@ -4,11 +4,11 @@
 
 这是**源码归档和恢复资料**。包含旧完整编排、后续失败版本和修正后的完整编排源码。本目录不宣称可直接跨机器运行或业务验证通过。最新源码交接分支为 `codex/orchestration-handoff-20261023`，业务修复分支为 `feature/ms4-asset-consumers`；最早的 `codex/audit-base` 链接不包含本次交接。
 
-最新补充为 `full-a-881-form-prefix-normal-next-source-r3`：绑定业务提交 `8819524a60028090c55bdcd3a9da05e50eaf19d0` 的完整编排 18 件，以及 8 件作者源码和设计。归档共 281 文件、26 个包、51,036,201 字节，原 255 件保持原字节。作者模块 `source_reader`、`author_support` 一并提供。
+最新补充为 `full-a-normal-http-diagnostic-next-source-r1`：绑定业务提交 `0c13c57ba1ec4bf15ea9240601a5d6361e986ce8` 的完整18件编排及8件作者源码/设计。归档共307文件、27包、60,659,194字节，原281件保持原字节。完整作者代码包含 `source_reader` 与 `author_support` 本地模块；不等于完整作者重放输入已交付。
 
-交接分支的业务代码树仍基于 `2e4`；业务提交 `8819524` 位于 `feature/ms4-asset-consumers`。不要把交接提交当成已验证的业务来源。本次归档不推进实际验证工作区的 HEAD，也不重启或重绑现有正常验证实例。
+交接分支的业务代码树仍基于 `2e4`；最新业务提交 `0c13c57` 位于 `feature/ms4-asset-consumers`。不要把交接提交当成已验证的业务来源。本次归档不推进实际验证工作区的 HEAD，也不重启或重绑现有正常验证实例。
 
-最新实际结果补充：881来源的完整正常链已在订单准备阶段失败，后续履约、售后评价和Worker未启动。本次原S已结束，资源已正常回收并独立核零；不能继续按“运行中”理解历史冻结摘要。源码完整性不代表业务通过，详见[当前复核记录](../../../docs/multi-merchant/records/ms4/orchestration-delivery-readback-20261023.json)。
+当前0c13来源的M已实际完成1,060项native/wait 0，严格33字段结果已由Root和独立回读核对；完整S已通过准入并启动，本快照状态为 `NOT_TERMINAL_AT_SNAPSHOT`，没有A成功或完整业务验收。此前881来源S/订单准备退出1，93项正常回收及20项独立核零已完成，后续履约、售后评价和Worker未启动。见[当前摘要](../../../docs/multi-merchant/records/ms4/current-source-handoff-r5.json)及[881复核记录](../../../docs/multi-merchant/records/ms4/orchestration-delivery-readback-20261023.json)。
 
 ## 从 Git 离线核对
 
@@ -28,7 +28,8 @@ python -I -B help/audit-regressions/orchestration/verify_sources.py
 
 | 来源包 | 已收程序与配置 | 状态 |
 |---|---|---|
-| `full-a-881-form-prefix-normal-next-source-r3` | 完整 18 件 M/S/launcher/profile，另含完整 8 件作者源码和设计 | 绑定业务提交 `8819524`；实际 M 1,046 项通过并有两轮完整回读；完整业务未验收 |
+| `full-a-normal-http-diagnostic-next-source-r1` | 完整18件M/S/launcher/profile及8件作者源码/设计；严格M33/17步/7份历史回收 | 业务 `0c13c57`；实际M1,060项通过；S `NOT_TERMINAL_AT_SNAPSHOT`；完整业务未验收 |
+| `full-a-881-form-prefix-normal-next-source-r3` | 完整18件编排及8件作者源码/设计，原字节保留 | 历史业务 `8819524`；M1,046项通过，S与订单准备退出1，已正常回收并独立核零 |
 | `full-a-2e4-current-normal-next-source-r2` | 完整 18 件 M/S/launcher/profile 与 `assemble.py`、`source_reader.py`、设计、module 检查结论 | 历史来源 `2e4`；实际 M 1,037 项通过；原交接时 S 尚无终态，保留该时点摘要 |
 | `full-a-raw-env-normal-next-source-r1` | materializer/prepare.py、launcher/launch.py、validation/run.py、实际九件 profile、作者源码和接缝 | 历史完整主编排，绑定旧提交 `53e6d521b`；原付款进程失败 |
 | `full-a-paid-fulfillment-contract-normal-next-source-r1` | 两个作者 Python、候选九件 profile 和设计说明 | 绑定修复 `76efa7807` 的中间版本；该包只生成 profile，完整后继在下面两包 |
@@ -47,7 +48,7 @@ python -I -B help/audit-regressions/orchestration/verify_sources.py
 
 所有实际文件以清单为准，不按目录名递归导入其他原机材料。没有把整份原材料目录、原 Run 或所有历史作者输入公开。两份 published-current 完整编排保留各自来源 `584532ba2`；归档提交本身会前移 Git HEAD，不能据此宣称已在归档后的 HEAD 运行通过。
 
-各补充保留其原始来源和冻结时的设计文字；部分原件写“未运行”反映其冻结时点。最新实际 M 的摘要见[881 交接摘要](../../../docs/multi-merchant/records/ms4/current-source-handoff-r4.json)，旧 `2e4` 时点见[历史摘要](../../../docs/multi-merchant/records/ms4/current-source-handoff-r3.json)。实际 M 的 1,046 项通过只证明源码物化和冻结完成，不代表交易、页面或 Worker 验收。
+各补充保留其原始来源和冻结时的设计文字；部分原件写“未运行”反映其冻结时点。最新实际M的摘要见[0c13交接摘要](../../../docs/multi-merchant/records/ms4/current-source-handoff-r5.json)，[881](../../../docs/multi-merchant/records/ms4/current-source-handoff-r4.json)和[2e4](../../../docs/multi-merchant/records/ms4/current-source-handoff-r3.json)保留历史时点。M1,060项通过只证明源码物化和冻结，不代表交易、页面或Worker验收。
 
 这里没有原 M/S 的 created/terminal、双流、完整作者输入或历史回执。8 件作者代码补齐了本地代码模块，仍依赖未随包交付的历史输入；这不等于作者重放数据完整。最新完整程序可以离线读取和核字节，仍不能仅凭 Git 跨机完整复跑；`runtime_ready=false` 保持。
 

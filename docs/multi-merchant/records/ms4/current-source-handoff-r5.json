@@ -1,0 +1,73 @@
+{
+  "schema": 1,
+  "scope": "LATEST_NORMAL_HTTP_DIAGNOSTIC_ORCHESTRATION_SOURCE_HANDOFF_ONLY",
+  "source_commit": "0c13c57ba1ec4bf15ea9240601a5d6361e986ce8",
+  "parent": "8819524a60028090c55bdcd3a9da05e50eaf19d0",
+  "delivery_branch": "codex/orchestration-handoff-20261023",
+  "business_source_branch": "feature/ms4-asset-consumers",
+  "archive_business_tree_base_commit": "2e4af47c7595947e16bef0abfa9785823b1369d5",
+  "source_package": "full-a-normal-http-diagnostic-next-source-r1",
+  "source_package_original_PINS": {
+    "bytes": 138143,
+    "sha256": "2b7702c1d6aa6459c4044f17fa7af213fe92d958d5a855ffd1a98b1ce76ae4fa"
+  },
+  "new_files": 26,
+  "new_source_bytes": 9622993,
+  "required_program_members": 18,
+  "additional_author_code_members": 8,
+  "archive_files": 307,
+  "archive_bytes": 60659194,
+  "archive_packages": 27,
+  "original_281_files_unchanged": true,
+  "materialization": {
+    "status": "PASS_MATERIALIZATION_ONLY",
+    "native_operations": 1060,
+    "all_native_and_wait_zero": true,
+    "M_RESULT_fields": 33,
+    "actual_result": {
+      "bytes": 4416059,
+      "sha256": "983167c0d0929abac4855cb987cbf0872f3245c8fb351a76e90790b2ebfb13c7"
+    },
+    "freeze": {
+      "bytes": 10985209,
+      "sha256": "ed107cddd68676c945983a5a33cc3faf88dc7a92475ed2112f293cdfb82f1e47"
+    },
+    "root_readback_report": {
+      "bytes": 1497,
+      "sha256": "f0b90db01ae637cc3c30b5945e1cfe2152445b5b2228e28fee0f6666c9537ad2"
+    },
+    "independent_readback_report": {
+      "bytes": 3232,
+      "sha256": "f992c8741c1bffb2b875b80836597b12fc4c2f44dadc33085d80a73544cf3c43"
+    }
+  },
+  "S_status": "NOT_TERMINAL_AT_SNAPSHOT",
+  "S_result_authority": "NO_A0_OR_FULL_BUSINESS_ACCEPTANCE_AT_THIS_SNAPSHOT",
+  "source_copy_observed_at_utc": "2026-10-23T12:53:41.757644+00:00",
+  "previous_881_execution": {
+    "S_exit": 1,
+    "paid_producer_exit": 1,
+    "normal_close_native_zero": 93,
+    "independent_zero_native_zero": 20,
+    "retired_containers_network_volumes": [
+      3,
+      1,
+      8
+    ],
+    "later_Task6_AR_Worker": "NOT_STARTED",
+    "business_acceptance": "INCOMPLETE"
+  },
+  "full_business_acceptance": "INCOMPLETE",
+  "runtime_ready": false,
+  "original_receipts_and_private_runtime_included": false,
+  "archived_programs_executed_by_handoff": false,
+  "business_code_modified": false,
+  "active_source_worktrees_advanced": false,
+  "deployed": false,
+  "remaining_reproduction_dependencies": [
+    "original machine paths and pinned runtime images",
+    "complete historical author inputs and authorities",
+    "original created/terminal and stdout/stderr evidence",
+    "fresh private initialization and complete runtime qualification"
+  ]
+}

@@ -3,12 +3,12 @@
   "status": "SOURCE_ARCHIVE_RUNTIME_NOT_READY",
   "source_archive_name": "ms4-worker-normal-source-preparation-r1",
   "handoff_code_commit": "2e4af47c7595947e16bef0abfa9785823b1369d5",
-  "last_executed_source_commit": "8819524a60028090c55bdcd3a9da05e50eaf19d0",
-  "current_repaired_source_commit": "8819524a60028090c55bdcd3a9da05e50eaf19d0",
+  "last_executed_source_commit": "0c13c57ba1ec4bf15ea9240601a5d6361e986ce8",
+  "current_repaired_source_commit": "0c13c57ba1ec4bf15ea9240601a5d6361e986ce8",
   "originals_preserved_byte_for_byte": true,
   "runtime_executed_by_archive_verifier": false,
-  "file_count": 281,
-  "total_bytes": 51036201,
+  "file_count": 307,
+  "total_bytes": 60659194,
   "files": [
     {
       "path": "sources/customer-form-official-initialize-env-raw-source-r1/candidate/help/audit-regressions/isolated/lib/ms4-customer-http-normal.php",
@@ -2257,6 +2257,214 @@
       "role": "static-source-contract",
       "bytes": 18,
       "sha256": "986c7e4b2587348a8d5ba59312a2106d38bbefec35acda4e7e5c14761cfe9ff1"
+    },
+    {
+      "path": "sources/full-a-normal-http-diagnostic-next-source-r1/DESIGN.md",
+      "origin_relative_path": "full-a-normal-http-diagnostic-next-source-r1/DESIGN.md",
+      "package": "full-a-normal-http-diagnostic-next-source-r1",
+      "role": "source-design",
+      "bytes": 2482,
+      "sha256": "df71cbd307bde745b6dcbf1e48c0a11109800f9c640cb4d4c7582da9717e55f2"
+    },
+    {
+      "path": "sources/full-a-normal-http-diagnostic-next-source-r1/assemble.py",
+      "origin_relative_path": "full-a-normal-http-diagnostic-next-source-r1/assemble.py",
+      "package": "full-a-normal-http-diagnostic-next-source-r1",
+      "role": "python-source",
+      "bytes": 20991,
+      "sha256": "cfdee2b406dd3c26e010417fba0f40dbf68e8b96bc5ab64045520facf74e573d"
+    },
+    {
+      "path": "sources/full-a-normal-http-diagnostic-next-source-r1/author_support.py",
+      "origin_relative_path": "full-a-normal-http-diagnostic-next-source-r1/author_support.py",
+      "package": "full-a-normal-http-diagnostic-next-source-r1",
+      "role": "python-source",
+      "bytes": 4968,
+      "sha256": "8a8d574ce925b0f5bf7d98489602fa589cf007a166974eecf2dcb085b5735351"
+    },
+    {
+      "path": "sources/full-a-normal-http-diagnostic-next-source-r1/authority-current.py.fragment",
+      "origin_relative_path": "full-a-normal-http-diagnostic-next-source-r1/authority-current.py.fragment",
+      "package": "full-a-normal-http-diagnostic-next-source-r1",
+      "role": "python-source-fragment",
+      "bytes": 31579,
+      "sha256": "a54abc1fb1532d1fe573d1e1bc3966775e9d303a1dcd337dbe75b749e49c96ca"
+    },
+    {
+      "path": "sources/full-a-normal-http-diagnostic-next-source-r1/launcher/launch.py",
+      "origin_relative_path": "full-a-normal-http-diagnostic-next-source-r1/launcher/launch.py",
+      "package": "full-a-normal-http-diagnostic-next-source-r1",
+      "role": "python-source",
+      "bytes": 12584,
+      "sha256": "f97886a5a5520761f09b99238656dfa59e78849a9b555676f6d372b3bd567db9"
+    },
+    {
+      "path": "sources/full-a-normal-http-diagnostic-next-source-r1/materializer/INVERSE.json",
+      "origin_relative_path": "full-a-normal-http-diagnostic-next-source-r1/materializer/INVERSE.json",
+      "package": "full-a-normal-http-diagnostic-next-source-r1",
+      "role": "source-contract",
+      "bytes": 1136588,
+      "sha256": "e195802de1b03969516523b9df855298a35ff5ebbbd60f8637d076b93a801737"
+    },
+    {
+      "path": "sources/full-a-normal-http-diagnostic-next-source-r1/materializer/PLAN.md",
+      "origin_relative_path": "full-a-normal-http-diagnostic-next-source-r1/materializer/PLAN.md",
+      "package": "full-a-normal-http-diagnostic-next-source-r1",
+      "role": "source-design",
+      "bytes": 14808,
+      "sha256": "83e4b0341554a61c00fb11cab83bf2553a337ab20ba99c1b29b794ffd9f0deb8"
+    },
+    {
+      "path": "sources/full-a-normal-http-diagnostic-next-source-r1/materializer/prepare.py",
+      "origin_relative_path": "full-a-normal-http-diagnostic-next-source-r1/materializer/prepare.py",
+      "package": "full-a-normal-http-diagnostic-next-source-r1",
+      "role": "python-source",
+      "bytes": 2689537,
+      "sha256": "7d8742ec6f8f0454455ab987e5d72e7fd6ac382505f59fe311917997aefbeb82"
+    },
+    {
+      "path": "sources/full-a-normal-http-diagnostic-next-source-r1/prepare-inputs.py",
+      "origin_relative_path": "full-a-normal-http-diagnostic-next-source-r1/prepare-inputs.py",
+      "package": "full-a-normal-http-diagnostic-next-source-r1",
+      "role": "python-source",
+      "bytes": 3626,
+      "sha256": "5cc2f4064028adde6a80ddd1ec532fdceb532c68801a436bb34a00d360bb1fbc"
+    },
+    {
+      "path": "sources/full-a-normal-http-diagnostic-next-source-r1/profile-author.py",
+      "origin_relative_path": "full-a-normal-http-diagnostic-next-source-r1/profile-author.py",
+      "package": "full-a-normal-http-diagnostic-next-source-r1",
+      "role": "python-source",
+      "bytes": 9395,
+      "sha256": "be5cea42ce3a3ba5d24595ed758863ac12f1ee264fffca1ad625499d8db3de7e"
+    },
+    {
+      "path": "sources/full-a-normal-http-diagnostic-next-source-r1/retirement-author.py",
+      "origin_relative_path": "full-a-normal-http-diagnostic-next-source-r1/retirement-author.py",
+      "package": "full-a-normal-http-diagnostic-next-source-r1",
+      "role": "python-source",
+      "bytes": 3152,
+      "sha256": "9942847d0299027b599c8abfadfe0b1f956cf313a3a7ca4eb05116455a6305a2"
+    },
+    {
+      "path": "sources/full-a-normal-http-diagnostic-next-source-r1/source_reader.py",
+      "origin_relative_path": "full-a-normal-http-diagnostic-next-source-r1/source_reader.py",
+      "package": "full-a-normal-http-diagnostic-next-source-r1",
+      "role": "python-source",
+      "bytes": 4089,
+      "sha256": "49c681d7c27d3a23d79297a32bc09ac3ac684b4664c6a422377ec6a1f93aea7d"
+    },
+    {
+      "path": "sources/full-a-normal-http-diagnostic-next-source-r1/validation/DESIGN-TASKS.md",
+      "origin_relative_path": "full-a-normal-http-diagnostic-next-source-r1/validation/DESIGN-TASKS.md",
+      "package": "full-a-normal-http-diagnostic-next-source-r1",
+      "role": "source-design",
+      "bytes": 16407,
+      "sha256": "b5b74e8a94ff409358f31ceb16f5f61d7cb7a6c0e1c128cbf75fc5b9c8006fa6"
+    },
+    {
+      "path": "sources/full-a-normal-http-diagnostic-next-source-r1/validation/PINS.json",
+      "origin_relative_path": "full-a-normal-http-diagnostic-next-source-r1/validation/PINS.json",
+      "package": "full-a-normal-http-diagnostic-next-source-r1",
+      "role": "source-contract",
+      "bytes": 357,
+      "sha256": "9aa1fdff0bd824ee4e93f9963fae72ff832db97a32e161883c4e5f4cc4408fb9"
+    },
+    {
+      "path": "sources/full-a-normal-http-diagnostic-next-source-r1/validation/PROFILE-PINS.json",
+      "origin_relative_path": "full-a-normal-http-diagnostic-next-source-r1/validation/PROFILE-PINS.json",
+      "package": "full-a-normal-http-diagnostic-next-source-r1",
+      "role": "source-contract",
+      "bytes": 1518,
+      "sha256": "d0ce524b4067cf1e0731be5f5c8b29cee2dc7e9f5bc412a65890020a7ca7f0f4"
+    },
+    {
+      "path": "sources/full-a-normal-http-diagnostic-next-source-r1/validation/PROFILE-PUBLICATION.json",
+      "origin_relative_path": "full-a-normal-http-diagnostic-next-source-r1/validation/PROFILE-PUBLICATION.json",
+      "package": "full-a-normal-http-diagnostic-next-source-r1",
+      "role": "source-contract",
+      "bytes": 1398158,
+      "sha256": "963304f5e601d4317103584feb95e5689156f6c010bddf80edb6bdda7a9c6403"
+    },
+    {
+      "path": "sources/full-a-normal-http-diagnostic-next-source-r1/validation/actual-profile/README.md",
+      "origin_relative_path": "full-a-normal-http-diagnostic-next-source-r1/validation/actual-profile/README.md",
+      "package": "full-a-normal-http-diagnostic-next-source-r1",
+      "role": "source-design",
+      "bytes": 89381,
+      "sha256": "b886791202529032c9f85a88f80af456f1e916ad2ad1031eb417685edcae6493"
+    },
+    {
+      "path": "sources/full-a-normal-http-diagnostic-next-source-r1/validation/actual-profile/compose.yml",
+      "origin_relative_path": "full-a-normal-http-diagnostic-next-source-r1/validation/actual-profile/compose.yml",
+      "package": "full-a-normal-http-diagnostic-next-source-r1",
+      "role": "compose-source",
+      "bytes": 11860,
+      "sha256": "f6c4b4f50fbd34fda66afcf2d0819d38992a2fe467172fe587cefbeb2d39a198"
+    },
+    {
+      "path": "sources/full-a-normal-http-diagnostic-next-source-r1/validation/actual-profile/interface-v1.json",
+      "origin_relative_path": "full-a-normal-http-diagnostic-next-source-r1/validation/actual-profile/interface-v1.json",
+      "package": "full-a-normal-http-diagnostic-next-source-r1",
+      "role": "source-contract",
+      "bytes": 100254,
+      "sha256": "ba201f87aa8a4cafc0983dfcc432309bed9ebe0bc061841c007fb72d53674a36"
+    },
+    {
+      "path": "sources/full-a-normal-http-diagnostic-next-source-r1/validation/actual-profile/ms4-host.py",
+      "origin_relative_path": "full-a-normal-http-diagnostic-next-source-r1/validation/actual-profile/ms4-host.py",
+      "package": "full-a-normal-http-diagnostic-next-source-r1",
+      "role": "python-source",
+      "bytes": 345436,
+      "sha256": "a12b200ddae0347b9cecce0ba4d697fbd468f8ba5874b56017d462c79007a2fc"
+    },
+    {
+      "path": "sources/full-a-normal-http-diagnostic-next-source-r1/validation/actual-profile/ms4-initialize.php",
+      "origin_relative_path": "full-a-normal-http-diagnostic-next-source-r1/validation/actual-profile/ms4-initialize.php",
+      "package": "full-a-normal-http-diagnostic-next-source-r1",
+      "role": "php-source",
+      "bytes": 78955,
+      "sha256": "a1b212c512ab97b612b21826082b373f300d245f641b0e57f50797f9cc16084d"
+    },
+    {
+      "path": "sources/full-a-normal-http-diagnostic-next-source-r1/validation/actual-profile/normal-close-ms4-fulfillment.py",
+      "origin_relative_path": "full-a-normal-http-diagnostic-next-source-r1/validation/actual-profile/normal-close-ms4-fulfillment.py",
+      "package": "full-a-normal-http-diagnostic-next-source-r1",
+      "role": "python-source",
+      "bytes": 47220,
+      "sha256": "42c6c2e78bfea26ee076ce8dd15bf91d695dfe33443bd4f0f70ed03acabe95c9"
+    },
+    {
+      "path": "sources/full-a-normal-http-diagnostic-next-source-r1/validation/actual-profile/seed-source-inverse.json",
+      "origin_relative_path": "full-a-normal-http-diagnostic-next-source-r1/validation/actual-profile/seed-source-inverse.json",
+      "package": "full-a-normal-http-diagnostic-next-source-r1",
+      "role": "source-contract",
+      "bytes": 639,
+      "sha256": "c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a"
+    },
+    {
+      "path": "sources/full-a-normal-http-diagnostic-next-source-r1/validation/actual-profile/source-derivation.json",
+      "origin_relative_path": "full-a-normal-http-diagnostic-next-source-r1/validation/actual-profile/source-derivation.json",
+      "package": "full-a-normal-http-diagnostic-next-source-r1",
+      "role": "source-contract",
+      "bytes": 598109,
+      "sha256": "49c671cb5e6fc053cb1a3981fdb4c575e8d877e606a018f3d7b1866744240a56"
+    },
+    {
+      "path": "sources/full-a-normal-http-diagnostic-next-source-r1/validation/actual-profile/verify-zero-ms4-fulfillment.py",
+      "origin_relative_path": "full-a-normal-http-diagnostic-next-source-r1/validation/actual-profile/verify-zero-ms4-fulfillment.py",
+      "package": "full-a-normal-http-diagnostic-next-source-r1",
+      "role": "python-source",
+      "bytes": 296098,
+      "sha256": "a29006cc44de9738690bbfb92a2a6849df22a4dd46c3f0eeb529d96d64cfd141"
+    },
+    {
+      "path": "sources/full-a-normal-http-diagnostic-next-source-r1/validation/run.py",
+      "origin_relative_path": "full-a-normal-http-diagnostic-next-source-r1/validation/run.py",
+      "package": "full-a-normal-http-diagnostic-next-source-r1",
+      "role": "python-source",
+      "bytes": 2704802,
+      "sha256": "ca1e29721748a2a6b40bceab500b5e6fdba8ea1fdf9c6778630157b827b8b302"
     }
   ],
   "historical_full_a_required": [
@@ -2288,31 +2496,31 @@
     "uploads and private data volumes",
     "build outputs and caches"
   ],
-  "last_materialization_source_commit": "8819524a60028090c55bdcd3a9da05e50eaf19d0",
+  "last_materialization_source_commit": "0c13c57ba1ec4bf15ea9240601a5d6361e986ce8",
   "superseded_profile_only_missing_programs": [
     "full-a-paid-fulfillment-contract-normal-next-source-r1/materializer/prepare.py",
     "full-a-paid-fulfillment-contract-normal-next-source-r1/validation/run.py",
     "full-a-paid-fulfillment-contract-normal-next-source-r1/launcher/launch.py"
   ],
   "current_full_a_required": [
-    "full-a-881-form-prefix-normal-next-source-r3/launcher/launch.py",
-    "full-a-881-form-prefix-normal-next-source-r3/materializer/INVERSE.json",
-    "full-a-881-form-prefix-normal-next-source-r3/materializer/PLAN.md",
-    "full-a-881-form-prefix-normal-next-source-r3/materializer/prepare.py",
-    "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/compose.yml",
-    "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/interface-v1.json",
-    "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/ms4-host.py",
-    "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/ms4-initialize.php",
-    "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/normal-close-ms4-fulfillment.py",
-    "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/README.md",
-    "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/seed-source-inverse.json",
-    "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/source-derivation.json",
-    "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/verify-zero-ms4-fulfillment.py",
-    "full-a-881-form-prefix-normal-next-source-r3/validation/DESIGN-TASKS.md",
-    "full-a-881-form-prefix-normal-next-source-r3/validation/PINS.json",
-    "full-a-881-form-prefix-normal-next-source-r3/validation/PROFILE-PINS.json",
-    "full-a-881-form-prefix-normal-next-source-r3/validation/PROFILE-PUBLICATION.json",
-    "full-a-881-form-prefix-normal-next-source-r3/validation/run.py"
+    "full-a-normal-http-diagnostic-next-source-r1/launcher/launch.py",
+    "full-a-normal-http-diagnostic-next-source-r1/materializer/INVERSE.json",
+    "full-a-normal-http-diagnostic-next-source-r1/materializer/PLAN.md",
+    "full-a-normal-http-diagnostic-next-source-r1/materializer/prepare.py",
+    "full-a-normal-http-diagnostic-next-source-r1/validation/actual-profile/compose.yml",
+    "full-a-normal-http-diagnostic-next-source-r1/validation/actual-profile/interface-v1.json",
+    "full-a-normal-http-diagnostic-next-source-r1/validation/actual-profile/ms4-host.py",
+    "full-a-normal-http-diagnostic-next-source-r1/validation/actual-profile/ms4-initialize.php",
+    "full-a-normal-http-diagnostic-next-source-r1/validation/actual-profile/normal-close-ms4-fulfillment.py",
+    "full-a-normal-http-diagnostic-next-source-r1/validation/actual-profile/README.md",
+    "full-a-normal-http-diagnostic-next-source-r1/validation/actual-profile/seed-source-inverse.json",
+    "full-a-normal-http-diagnostic-next-source-r1/validation/actual-profile/source-derivation.json",
+    "full-a-normal-http-diagnostic-next-source-r1/validation/actual-profile/verify-zero-ms4-fulfillment.py",
+    "full-a-normal-http-diagnostic-next-source-r1/validation/DESIGN-TASKS.md",
+    "full-a-normal-http-diagnostic-next-source-r1/validation/PINS.json",
+    "full-a-normal-http-diagnostic-next-source-r1/validation/PROFILE-PINS.json",
+    "full-a-normal-http-diagnostic-next-source-r1/validation/PROFILE-PUBLICATION.json",
+    "full-a-normal-http-diagnostic-next-source-r1/validation/run.py"
   ],
   "pipeline_snapshots": [
     {
@@ -2338,16 +2546,68 @@
       "source_commit": "8819524a60028090c55bdcd3a9da05e50eaf19d0",
       "program_members": 18,
       "author_code_members": 8,
-      "status": "ACTUAL_M_1046_ZERO_FULL_BUSINESS_NOT_ACCEPTED"
+      "status": "ACTUAL_M_1046_ZERO_FULL_BUSINESS_NOT_ACCEPTED",
+      "later_execution": {
+        "S": "FAILED_EXIT_ONE",
+        "paid_producer": "FAILED_EXIT_ONE",
+        "normal_close_native_zero": 93,
+        "independent_zero_native_zero": 20,
+        "retired_containers_network_volumes": [
+          3,
+          1,
+          8
+        ],
+        "business_acceptance": "INCOMPLETE"
+      }
+    },
+    {
+      "package": "full-a-normal-http-diagnostic-next-source-r1",
+      "source_commit": "0c13c57ba1ec4bf15ea9240601a5d6361e986ce8",
+      "program_members": 18,
+      "author_code_members": 8,
+      "M_result_fields": 33,
+      "status": "ACTUAL_M_1060_ZERO_S_NOT_TERMINAL_AT_SNAPSHOT_FULL_BUSINESS_NOT_ACCEPTED"
     }
   ],
   "required_design_clarifications": [
     "published-current-normal-next-source-r2-design-clarification-r1/CLARIFICATION.md",
     "published-current-normal-next-source-r2-design-clarification-r1/PINS.json"
   ],
-  "latest_materialized_source_commit": "8819524a60028090c55bdcd3a9da05e50eaf19d0",
+  "latest_materialized_source_commit": "0c13c57ba1ec4bf15ea9240601a5d6361e986ce8",
   "handoff_branch": "codex/orchestration-handoff-20261023",
   "current_author_code_required": [
+    "full-a-normal-http-diagnostic-next-source-r1/assemble.py",
+    "full-a-normal-http-diagnostic-next-source-r1/source_reader.py",
+    "full-a-normal-http-diagnostic-next-source-r1/author_support.py",
+    "full-a-normal-http-diagnostic-next-source-r1/authority-current.py.fragment",
+    "full-a-normal-http-diagnostic-next-source-r1/prepare-inputs.py",
+    "full-a-normal-http-diagnostic-next-source-r1/profile-author.py",
+    "full-a-normal-http-diagnostic-next-source-r1/retirement-author.py",
+    "full-a-normal-http-diagnostic-next-source-r1/DESIGN.md"
+  ],
+  "current_orchestration_source_commit": "0c13c57ba1ec4bf15ea9240601a5d6361e986ce8",
+  "archive_business_tree_base_commit": "2e4af47c7595947e16bef0abfa9785823b1369d5",
+  "previous_current_full_a_required": [
+    "full-a-881-form-prefix-normal-next-source-r3/launcher/launch.py",
+    "full-a-881-form-prefix-normal-next-source-r3/materializer/INVERSE.json",
+    "full-a-881-form-prefix-normal-next-source-r3/materializer/PLAN.md",
+    "full-a-881-form-prefix-normal-next-source-r3/materializer/prepare.py",
+    "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/compose.yml",
+    "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/interface-v1.json",
+    "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/ms4-host.py",
+    "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/ms4-initialize.php",
+    "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/normal-close-ms4-fulfillment.py",
+    "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/README.md",
+    "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/seed-source-inverse.json",
+    "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/source-derivation.json",
+    "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/verify-zero-ms4-fulfillment.py",
+    "full-a-881-form-prefix-normal-next-source-r3/validation/DESIGN-TASKS.md",
+    "full-a-881-form-prefix-normal-next-source-r3/validation/PINS.json",
+    "full-a-881-form-prefix-normal-next-source-r3/validation/PROFILE-PINS.json",
+    "full-a-881-form-prefix-normal-next-source-r3/validation/PROFILE-PUBLICATION.json",
+    "full-a-881-form-prefix-normal-next-source-r3/validation/run.py"
+  ],
+  "previous_current_author_code_required": [
     "full-a-881-form-prefix-normal-next-source-r3/assemble.py",
     "full-a-881-form-prefix-normal-next-source-r3/source_reader.py",
     "full-a-881-form-prefix-normal-next-source-r3/author_support.py",
@@ -2357,6 +2617,106 @@
     "full-a-881-form-prefix-normal-next-source-r3/retirement-author.py",
     "full-a-881-form-prefix-normal-next-source-r3/DESIGN.md"
   ],
-  "current_orchestration_source_commit": "8819524a60028090c55bdcd3a9da05e50eaf19d0",
-  "archive_business_tree_base_commit": "2e4af47c7595947e16bef0abfa9785823b1369d5"
+  "required_pipeline_members": {
+    "full-a-published-current-normal-next-source-r1": [
+      "full-a-published-current-normal-next-source-r1/launcher/launch.py",
+      "full-a-published-current-normal-next-source-r1/materializer/INVERSE.json",
+      "full-a-published-current-normal-next-source-r1/materializer/PLAN.md",
+      "full-a-published-current-normal-next-source-r1/materializer/prepare.py",
+      "full-a-published-current-normal-next-source-r1/validation/actual-profile/compose.yml",
+      "full-a-published-current-normal-next-source-r1/validation/actual-profile/interface-v1.json",
+      "full-a-published-current-normal-next-source-r1/validation/actual-profile/ms4-host.py",
+      "full-a-published-current-normal-next-source-r1/validation/actual-profile/ms4-initialize.php",
+      "full-a-published-current-normal-next-source-r1/validation/actual-profile/normal-close-ms4-fulfillment.py",
+      "full-a-published-current-normal-next-source-r1/validation/actual-profile/README.md",
+      "full-a-published-current-normal-next-source-r1/validation/actual-profile/seed-source-inverse.json",
+      "full-a-published-current-normal-next-source-r1/validation/actual-profile/source-derivation.json",
+      "full-a-published-current-normal-next-source-r1/validation/actual-profile/verify-zero-ms4-fulfillment.py",
+      "full-a-published-current-normal-next-source-r1/validation/DESIGN-TASKS.md",
+      "full-a-published-current-normal-next-source-r1/validation/PINS.json",
+      "full-a-published-current-normal-next-source-r1/validation/PROFILE-PINS.json",
+      "full-a-published-current-normal-next-source-r1/validation/PROFILE-PUBLICATION.json",
+      "full-a-published-current-normal-next-source-r1/validation/run.py"
+    ],
+    "full-a-published-current-normal-next-source-r2": [
+      "full-a-published-current-normal-next-source-r2/launcher/launch.py",
+      "full-a-published-current-normal-next-source-r2/materializer/INVERSE.json",
+      "full-a-published-current-normal-next-source-r2/materializer/PLAN.md",
+      "full-a-published-current-normal-next-source-r2/materializer/prepare.py",
+      "full-a-published-current-normal-next-source-r2/validation/actual-profile/compose.yml",
+      "full-a-published-current-normal-next-source-r2/validation/actual-profile/interface-v1.json",
+      "full-a-published-current-normal-next-source-r2/validation/actual-profile/ms4-host.py",
+      "full-a-published-current-normal-next-source-r2/validation/actual-profile/ms4-initialize.php",
+      "full-a-published-current-normal-next-source-r2/validation/actual-profile/normal-close-ms4-fulfillment.py",
+      "full-a-published-current-normal-next-source-r2/validation/actual-profile/README.md",
+      "full-a-published-current-normal-next-source-r2/validation/actual-profile/seed-source-inverse.json",
+      "full-a-published-current-normal-next-source-r2/validation/actual-profile/source-derivation.json",
+      "full-a-published-current-normal-next-source-r2/validation/actual-profile/verify-zero-ms4-fulfillment.py",
+      "full-a-published-current-normal-next-source-r2/validation/DESIGN-TASKS.md",
+      "full-a-published-current-normal-next-source-r2/validation/PINS.json",
+      "full-a-published-current-normal-next-source-r2/validation/PROFILE-PINS.json",
+      "full-a-published-current-normal-next-source-r2/validation/PROFILE-PUBLICATION.json",
+      "full-a-published-current-normal-next-source-r2/validation/run.py"
+    ],
+    "full-a-2e4-current-normal-next-source-r2": [
+      "full-a-2e4-current-normal-next-source-r2/launcher/launch.py",
+      "full-a-2e4-current-normal-next-source-r2/materializer/INVERSE.json",
+      "full-a-2e4-current-normal-next-source-r2/materializer/PLAN.md",
+      "full-a-2e4-current-normal-next-source-r2/materializer/prepare.py",
+      "full-a-2e4-current-normal-next-source-r2/validation/actual-profile/compose.yml",
+      "full-a-2e4-current-normal-next-source-r2/validation/actual-profile/interface-v1.json",
+      "full-a-2e4-current-normal-next-source-r2/validation/actual-profile/ms4-host.py",
+      "full-a-2e4-current-normal-next-source-r2/validation/actual-profile/ms4-initialize.php",
+      "full-a-2e4-current-normal-next-source-r2/validation/actual-profile/normal-close-ms4-fulfillment.py",
+      "full-a-2e4-current-normal-next-source-r2/validation/actual-profile/README.md",
+      "full-a-2e4-current-normal-next-source-r2/validation/actual-profile/seed-source-inverse.json",
+      "full-a-2e4-current-normal-next-source-r2/validation/actual-profile/source-derivation.json",
+      "full-a-2e4-current-normal-next-source-r2/validation/actual-profile/verify-zero-ms4-fulfillment.py",
+      "full-a-2e4-current-normal-next-source-r2/validation/DESIGN-TASKS.md",
+      "full-a-2e4-current-normal-next-source-r2/validation/PINS.json",
+      "full-a-2e4-current-normal-next-source-r2/validation/PROFILE-PINS.json",
+      "full-a-2e4-current-normal-next-source-r2/validation/PROFILE-PUBLICATION.json",
+      "full-a-2e4-current-normal-next-source-r2/validation/run.py"
+    ],
+    "full-a-881-form-prefix-normal-next-source-r3": [
+      "full-a-881-form-prefix-normal-next-source-r3/launcher/launch.py",
+      "full-a-881-form-prefix-normal-next-source-r3/materializer/INVERSE.json",
+      "full-a-881-form-prefix-normal-next-source-r3/materializer/PLAN.md",
+      "full-a-881-form-prefix-normal-next-source-r3/materializer/prepare.py",
+      "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/compose.yml",
+      "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/interface-v1.json",
+      "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/ms4-host.py",
+      "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/ms4-initialize.php",
+      "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/normal-close-ms4-fulfillment.py",
+      "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/README.md",
+      "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/seed-source-inverse.json",
+      "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/source-derivation.json",
+      "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/verify-zero-ms4-fulfillment.py",
+      "full-a-881-form-prefix-normal-next-source-r3/validation/DESIGN-TASKS.md",
+      "full-a-881-form-prefix-normal-next-source-r3/validation/PINS.json",
+      "full-a-881-form-prefix-normal-next-source-r3/validation/PROFILE-PINS.json",
+      "full-a-881-form-prefix-normal-next-source-r3/validation/PROFILE-PUBLICATION.json",
+      "full-a-881-form-prefix-normal-next-source-r3/validation/run.py"
+    ],
+    "full-a-normal-http-diagnostic-next-source-r1": [
+      "full-a-normal-http-diagnostic-next-source-r1/launcher/launch.py",
+      "full-a-normal-http-diagnostic-next-source-r1/materializer/INVERSE.json",
+      "full-a-normal-http-diagnostic-next-source-r1/materializer/PLAN.md",
+      "full-a-normal-http-diagnostic-next-source-r1/materializer/prepare.py",
+      "full-a-normal-http-diagnostic-next-source-r1/validation/actual-profile/compose.yml",
+      "full-a-normal-http-diagnostic-next-source-r1/validation/actual-profile/interface-v1.json",
+      "full-a-normal-http-diagnostic-next-source-r1/validation/actual-profile/ms4-host.py",
+      "full-a-normal-http-diagnostic-next-source-r1/validation/actual-profile/ms4-initialize.php",
+      "full-a-normal-http-diagnostic-next-source-r1/validation/actual-profile/normal-close-ms4-fulfillment.py",
+      "full-a-normal-http-diagnostic-next-source-r1/validation/actual-profile/README.md",
+      "full-a-normal-http-diagnostic-next-source-r1/validation/actual-profile/seed-source-inverse.json",
+      "full-a-normal-http-diagnostic-next-source-r1/validation/actual-profile/source-derivation.json",
+      "full-a-normal-http-diagnostic-next-source-r1/validation/actual-profile/verify-zero-ms4-fulfillment.py",
+      "full-a-normal-http-diagnostic-next-source-r1/validation/DESIGN-TASKS.md",
+      "full-a-normal-http-diagnostic-next-source-r1/validation/PINS.json",
+      "full-a-normal-http-diagnostic-next-source-r1/validation/PROFILE-PINS.json",
+      "full-a-normal-http-diagnostic-next-source-r1/validation/PROFILE-PUBLICATION.json",
+      "full-a-normal-http-diagnostic-next-source-r1/validation/run.py"
+    ]
+  }
 }

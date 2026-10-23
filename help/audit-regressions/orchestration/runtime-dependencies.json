@@ -3,28 +3,23 @@
   "runtime_ready": false,
   "scope": "source recovery, not a portable business-validation runtime",
   "last_executed_pipeline": {
-    "package": "full-a-881-form-prefix-normal-next-source-r3",
-    "source_commit": "8819524a60028090c55bdcd3a9da05e50eaf19d0",
-    "outcome": "ACTUAL_NORMAL_RUN_FAILED_PAID_REAL_CONFIRMATION",
-    "original_resources_closed_and_independently_verified": true,
-    "failed_assertion": "M4C_FORM_NORMAL_HTTP_JSON_200",
-    "S_native_exit": 1,
-    "paid_container_exit": 1,
-    "later_fulfillment_aftersale_worker": "NOT_STARTED",
-    "normal_retirement": "VERIFIED_THIS_EXACT_FAILED_RUN_NORMAL_CLOSE_AND_INDEPENDENT_ZERO",
-    "root_cause": "NOT_YET_DETERMINED"
+    "package": "full-a-normal-http-diagnostic-next-source-r1",
+    "source_commit": "0c13c57ba1ec4bf15ea9240601a5d6361e986ce8",
+    "outcome": "S_NOT_TERMINAL_AT_SNAPSHOT_FULL_BUSINESS_NOT_ACCEPTED",
+    "original_resources_closed_and_independently_verified": false
   },
   "last_materialization_attempt": {
-    "package": "full-a-881-form-prefix-normal-next-source-r3",
-    "source_commit": "8819524a60028090c55bdcd3a9da05e50eaf19d0",
+    "package": "full-a-normal-http-diagnostic-next-source-r1",
+    "source_commit": "0c13c57ba1ec4bf15ea9240601a5d6361e986ce8",
     "outcome": "ACTUAL_MATERIALIZATION_PASS_ONLY",
-    "native_operations": 1046,
-    "native_zero": 1046,
+    "native_operations": 1060,
+    "native_zero": 1060,
+    "M_RESULT_fields": 33,
     "business_acceptance": "INCOMPLETE"
   },
   "current_source": {
-    "package": "full-a-881-form-prefix-normal-next-source-r3",
-    "source_commit": "8819524a60028090c55bdcd3a9da05e50eaf19d0",
+    "package": "full-a-normal-http-diagnostic-next-source-r1",
+    "source_commit": "0c13c57ba1ec4bf15ea9240601a5d6361e986ce8",
     "profile_sources_present": true,
     "materializer_present": true,
     "validation_driver_present": true,
@@ -32,14 +27,15 @@
     "required_program_members": 18,
     "additional_author_code_members": 8,
     "local_author_module_dependencies_present": true,
-    "materialization": "PASS_1046_NATIVE_ZERO",
-    "full_business_run": "FAILED_NOT_ACCEPTED",
+    "materialization": "PASS_1060_NATIVE_ZERO",
+    "M_RESULT_fields": 33,
+    "full_business_run": "NOT_TERMINAL_AT_SNAPSHOT_NOT_ACCEPTED",
     "original_current_M_and_S_receipts_included": false
   },
   "requirements_not_satisfied_by_copying_source": [
     {
       "kind": "original machine layout",
-      "detail": "Archived programs retain original absolute machine paths, historical evidence and source-commit bindings. The latest complete snapshot binds business source 8819524, not the separate archival commit. The archival branch business tree is based on 2e4. Copying this directory does not satisfy original receipts or establish a new runtime."
+      "detail": "Archived programs retain original absolute paths, historical authorities and source-commit bindings. The latest complete snapshot binds business0c13, not the separate archival commit. The archival branch business tree is based on2e4. Copying source neither supplies original receipts nor qualifies a new runtime."
     },
     {
       "kind": "historical public evidence",
@@ -99,7 +95,7 @@
     "business_acceptance": "INCOMPLETE"
   },
   "handoff_branch": "codex/orchestration-handoff-20261023",
-  "current_source_execution_note": "The latest archived orchestration binds business source 8819524. The archival branch business tree remains based on 2e4; source 881 is delivered separately on feature/ms4-asset-consumers. This archival update neither advances the active source worktrees nor restarts or rebinds the original normal run. No successful A/B or full business acceptance is supplied here.",
+  "current_source_execution_note": "The current complete source binds business 0c13c57. M1060 is actual materialization only; S has no terminal/A0 at this snapshot. The archival branch business tree is based on2e4. Business0c13 is on feature/ms4-asset-consumers. No active worktree or run is advanced, restarted or rebound by archiving.",
   "historical_source_snapshots": [
     {
       "package": "full-a-published-current-normal-next-source-r2",
@@ -133,6 +129,33 @@
       "source_commit": "53e6d521b387b19a4cf370e0e381670b762d325e",
       "outcome": "FAILED_AT_PAID_PRODUCER",
       "original_resources_closed_and_independently_verified": true
+    },
+    {
+      "package": "full-a-881-form-prefix-normal-next-source-r3",
+      "source_commit": "8819524a60028090c55bdcd3a9da05e50eaf19d0",
+      "outcome": "FAILED_AT_PAID_REAL_CONFIRMATION",
+      "original_resources_closed_and_independently_verified": true,
+      "normal_close_native_zero": 93,
+      "independent_zero_native_zero": 20,
+      "retired_containers_network_volumes": [
+        3,
+        1,
+        8
+      ]
     }
-  ]
+  ],
+  "previous_current_source_snapshot": {
+    "package": "full-a-881-form-prefix-normal-next-source-r3",
+    "source_commit": "8819524a60028090c55bdcd3a9da05e50eaf19d0",
+    "profile_sources_present": true,
+    "materializer_present": true,
+    "validation_driver_present": true,
+    "launcher_present": true,
+    "required_program_members": 18,
+    "additional_author_code_members": 8,
+    "local_author_module_dependencies_present": true,
+    "materialization": "PASS_1046_NATIVE_ZERO",
+    "full_business_run": "FAILED_NOT_ACCEPTED",
+    "original_current_M_and_S_receipts_included": false
+  }
 }

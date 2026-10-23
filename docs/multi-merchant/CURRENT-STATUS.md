@@ -1,14 +1,12 @@
 # 当前开发状态与交接
 
-整理日期：2026-10-23。本文件是开发检查点和导航，不替代实施规格、原执行清单、测试报告或人工验收。
+当前源码交接位于 `codex/orchestration-handoff-20261023`，业务代码位于 `feature/ms4-asset-consumers`。最新完整编排绑定业务 `0c13c57ba1ec4bf15ea9240601a5d6361e986ce8`：18件主编排及8件作者源码/设计；累计307文件、27包，原281件保持原字节。原 `codex/audit-base` 链接不含补交。见[编排入口](../../help/audit-regressions/orchestration/README.md)及[当前摘要](records/ms4/current-source-handoff-r5.json)。
 
-最新源码交接位于 `codex/orchestration-handoff-20261023`，业务代码位于 `feature/ms4-asset-consumers`。完整编排源码已入 Git：281 文件、26 包，包含绑定业务提交 `8819524` 的18件完整主编排和8件作者源码/设计。原 `codex/audit-base` 链接不含这次补交。见[编排入口](../../help/audit-regressions/orchestration/README.md)和[本次复核摘要](records/ms4/orchestration-delivery-readback-20261023.json)。
+该来源M已实际完成1,060项native/wait 0，完整33字段物化结果已有Root及独立回读。新完整S已通过准入并启动，本次快照为 `NOT_TERMINAL_AT_SNAPSHOT`；尚无A成功或完整业务验收，不能把M通过、已启动或观察命令退出0当业务完成。
 
-本次881来源的完整正常链已经结束，结果为失败：源码物化1,046项通过，初始化、结构迁移、文件初始化和顾客准备通过；订单准备阶段 `paid_real_confirmation` 的 `M4C_FORM_NORMAL_HTTP_JSON_200` 断言失败，原S和订单准备容器均退出1。后续履约、售后评价、Worker和新页面验证没有执行。首次异常位置是测试辅助函数 `ms4-customer-http-normal.php:33`，这只是断言位置，HTTP未返回预期结果的根因尚未确定。原实例未重启；本次已正常回收3个容器、1个内部网络和8个专用卷，93项回收与20项独立核零操作均退出0，原有53个其他容器保持不变。回收通过不改变本次业务失败结论。
+此前881来源完整链在 `paid_real_confirmation` 的 `M4C_FORM_NORMAL_HTTP_JSON_200` 失败，原S及订单准备均退出1；后续履约、售后评价、Worker未启动。原3容器/1内部网络/8卷已正常回收，93项close和20项独立核零通过。测试辅助函数位置不能证明HTTP根因。见[881真实终态](records/ms4/orchestration-delivery-readback-20261023.json)。
 
-交接分支业务代码树仍基于2e4；881业务提交在上述业务分支。Git交付包含编排源码和摘要，原Run、双流、完整作者历史输入和私有运行准备未交付；`runtime_ready=false`，换机完整复跑仍未完成。
-
-以下功能表和历史链保留各自原执行时点；本页最新结果以上述段落和复核摘要为准。只有BASE取得用户验收，源码、构建或局部测试不计作整体验收。
+交接分支业务代码树仍基于2e4；业务0c13仅在上述feature分支。Git提供源码及摘要，原Run、双流、完整作者历史输入和私有运行准备未交付；`runtime_ready=false`，换机完整复跑仍未完成。下面保留各历史阶段和未完成业务项，源码交接不补签验收。
 
 ## 1. 项目定位与交付范围
 

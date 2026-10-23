@@ -1,0 +1,2403 @@
+{
+  "schema": 1,
+  "status": "SOURCE_CONTRACT_ONLY_NOT_EXECUTED",
+  "scope": "MS4_AFTERSALE_REVIEW_NORMAL_SEVEN_VOLUME_PROFILE_SOURCE",
+  "entry": "help/audit-regressions/isolated/ms4-customer-http-normal.php",
+  "helper": "help/audit-regressions/isolated/lib/ms4-customer-http-normal.php",
+  "source_roots": [
+    "crmeb/app",
+    "crmeb/crmeb",
+    "crmeb/vendor",
+    "crmeb/config"
+  ],
+  "source_extra": [
+    "crmeb/composer.json",
+    "crmeb/composer.lock",
+    "crmeb/public/index.php",
+    "crmeb/public/router.php",
+    "crmeb/think",
+    "help/audit-regressions/isolated/lib/harness.php",
+    "help/audit-regressions/isolated/lib/guard.php",
+    "help/audit-regressions/isolated/ms4-customer-http-normal.php",
+    "help/audit-regressions/isolated/lib/ms4-customer-http-normal.php",
+    "help/audit-regressions/isolated/lib/ms4-customer-form-normal.php"
+  ],
+  "source_binding_keys": [
+    "schema",
+    "scope",
+    "run_id",
+    "source_sha",
+    "container_id",
+    "native_created_sha256",
+    "freeze_sha256",
+    "requested_repo_source",
+    "requested_run_source",
+    "requested_prep_source",
+    "entry_sha256",
+    "source_files",
+    "prerequisites_sha256"
+  ],
+  "environment_keys": [
+    "schema",
+    "scope",
+    "run_id",
+    "source_sha",
+    "container_id",
+    "freeze_sha256",
+    "environment",
+    "native_projection_sha256"
+  ],
+  "environment_scope": "MS4_CUSTOMER_REAL_ENVIRONMENT",
+  "public_environment_names": [
+    "APP_ENV",
+    "PHP_MARKETPLACE_ENABLED",
+    "PHP_MARKETPLACE_TRADE_ENABLED",
+    "PHP_MARKETPLACE_PAYMENT_TEST_ENABLED",
+    "PHP_MARKETPLACE_SELF_OPERATED_MER_ID",
+    "PHP_CACHE_DRIVER"
+  ],
+  "public_environment_fixed": {
+    "APP_ENV": "testing",
+    "PHP_MARKETPLACE_ENABLED": "true",
+    "PHP_MARKETPLACE_TRADE_ENABLED": "true",
+    "PHP_CACHE_DRIVER": "redis",
+    "PHP_MARKETPLACE_PAYMENT_TEST_ENABLED": "true"
+  },
+  "self_operated_id": "Actual MS2 receipt and matching persisted merchant; never a literal default or fixture merchant.",
+  "modes": {
+    "prepare": {
+      "role": "audit-ms4-customer-prepare",
+      "proof_name": "customer-prepare",
+      "created": "evidence/customer-prepare-created.json",
+      "binding": "evidence/ms4-customer-prepare-source-binding.json",
+      "binding_scope": "MS4_CUSTOMER_PREPARE_MS5_SOURCE",
+      "environment": "evidence/customer-prepare-environment.json",
+      "result": "evidence/ms4-customer-prepare.json",
+      "result_scope": "CUSTOMER_HTTP_FIXTURE_WITH_MS5_PREREQUISITES_PREPARATION_ONLY",
+      "result_status": "VERIFIED_CUSTOMER_HTTP_FIXTURE_WITH_MS5_PREREQUISITES_PREPARED_ONLY",
+      "fixture_mount_rw": true,
+      "customer_form_volume": "ABSENT",
+      "public_environment_values": 6
+    },
+    "verify": {
+      "role": "audit-ms4-customer-http",
+      "proof_name": "customer",
+      "created": "evidence/customer-created.json",
+      "binding": "evidence/ms4-customer-http-source-binding.json",
+      "binding_scope": "MS4_CUSTOMER_HTTP_MS5_SOURCE",
+      "environment": "evidence/customer-environment.json",
+      "result": "evidence/ms4-customer-http.json",
+      "result_scope": "NORMAL_CUSTOMER_HTTP_PERSISTENT_WITH_MS5_PREREQUISITES_ONLY",
+      "result_status": "VERIFIED_NORMAL_CUSTOMER_HTTP_PERSISTENT_WITH_MS5_PREREQUISITES_ONLY",
+      "fixture_mount_rw": false,
+      "customer_form_volume": "RW",
+      "public_environment_values": 7,
+      "public_environment_names": [
+        "APP_ENV",
+        "PHP_CACHE_DRIVER",
+        "PHP_MARKETPLACE_CUSTOMER_FORM_PRIVATE_ROOT",
+        "PHP_MARKETPLACE_ENABLED",
+        "PHP_MARKETPLACE_PAYMENT_TEST_ENABLED",
+        "PHP_MARKETPLACE_SELF_OPERATED_MER_ID",
+        "PHP_MARKETPLACE_TRADE_ENABLED"
+      ],
+      "public_environment_fixed": {
+        "APP_ENV": "testing",
+        "PHP_MARKETPLACE_ENABLED": "true",
+        "PHP_MARKETPLACE_TRADE_ENABLED": "true",
+        "PHP_CACHE_DRIVER": "redis",
+        "PHP_MARKETPLACE_PAYMENT_TEST_ENABLED": "true",
+        "PHP_MARKETPLACE_CUSTOMER_FORM_PRIVATE_ROOT": "/run/audit-customer-form"
+      },
+      "public_environment_rule": "Exactly seven sorted complete JSON strings; one LF per string plus the final inspect LF (two trailing LF)."
+    }
+  },
+  "private_fixture": "/run/audit-fixtures/ms4-customer-fixture.json",
+  "private_fixture_rules": "Create-only bounded regular file, mode0600/euid/readback; private credentials/rows never copied to host or public proof. Bind actual prepare result/source/CID. Only hash prefix12 may be public.",
+  "topology": {
+    "ordinary_customer_sql_source_bind": {
+      "roles": [
+        "audit-ms4-customer-prepare",
+        "audit-ms4-customer-http"
+      ],
+      "source": "actual repo_dir/crmeb/public/install/crmeb.sql",
+      "source_relative": "crmeb/public/install/crmeb.sql",
+      "target": "/workspace/crmeb/public/install/crmeb.sql",
+      "kind": "bind",
+      "read_only": true,
+      "non_tmpfs_native_mounts_per_customer_role": {
+        "prepare": 7,
+        "verify": 8
+      },
+      "rule": "One exact original SQL file bind only; no directory bind, copy, source omission or writable mount. Other roles retain their original mounts."
+    },
+    "ordinary_customer_public_initial_state": {
+      "public_path": "/workspace/crmeb/public",
+      "public_entries_exact": [
+        "install"
+      ],
+      "install_path": "/workspace/crmeb/public/install",
+      "install_entries_exact": [
+        "crmeb.sql"
+      ],
+      "sql_descriptor": "Unique crmeb/public/install/crmeb.sql descriptor from the original ten freeze.driver_source_files; full bytes and SHA256 equal to /source original",
+      "sql_writable": false,
+      "no_links_and_exact_realpaths": true,
+      "runtime_path": "/workspace/crmeb/runtime",
+      "runtime_entries_exact": [],
+      "rule": "Keep original public/runtime tmpfs. Accept only this exact public install/SQL initial state; subsequent original index/router/install.lock publication and all business assertions remain. This is not an H5 public-copy mount."
+    },
+    "formal_roles": [
+      "audit-ms4-customer-http",
+      "audit-mysql",
+      "audit-redis"
+    ],
+    "networks": 1,
+    "internal_only": true,
+    "verify_network_alias": "audit-app",
+    "volumes": [
+      "app-secrets",
+      "bootstrap-secrets",
+      "fixture-secrets",
+      "mysql-data",
+      "redis-data",
+      "redis-secrets",
+      "aftersale-evidence",
+      "customer-form-evidence"
+    ],
+    "tmpfs": [
+      "/tmp",
+      "/workspace/crmeb/runtime",
+      "/workspace/crmeb/public"
+    ],
+    "http_origin": "http://audit-app:8000",
+    "published_ports": [],
+    "php_image": "sha256:1099f749e2a38ec9453c6b820db8a78174514bc72d14edf5c203e13b82816e0a"
+  },
+  "child": {
+    "command": [
+      "setsid",
+      "php",
+      "think",
+      "run",
+      "-H",
+      "0.0.0.0",
+      "-p",
+      "8000"
+    ],
+    "cwd": "/workspace/crmeb",
+    "normal_stop": "Reuse exact registered-group observations and one TERM/sent flag from m4h_stop; no audit_serve/audit_app_stop_group, no escalation or process restart. Pending keeps same process/group/sent alive until members empty and listener closed; preserve actual child/proc_close values.",
+    "configuration": "Real same private DML/auth/Redis/cache prefix and source-bound marketplace env before configuration loads; no Config::set(true), fake Request/UID/JWT/Facade/PDO."
+  },
+  "fixture_case": {
+    "customers": 1,
+    "merchants": 1,
+    "products": 2,
+    "skus": 3,
+    "selected_quantities": [
+      2,
+      1
+    ],
+    "unselected_distinct_skus": 1,
+    "selected_unit_prices": [
+      "20.15",
+      "30.25"
+    ],
+    "fixed_postage_per_unit": "2.67",
+    "expected_goods": "70.55",
+    "expected_postage": "8.01",
+    "expected_due": "78.56",
+    "forms": "Two real product groups with required text; optional numeric text zero retained.",
+    "prepare_does_not_insert": [
+      "cart",
+      "order",
+      "order_items",
+      "ledger",
+      "stock_movement",
+      "paid",
+      "payment_attempt"
+    ],
+    "authentication": "Production LoginServices::reset on actual generated UID/account, then actual POST /api/login; no SMS or external notice."
+  },
+  "http_chain": [
+    "login",
+    "cart/add x3",
+    "cart/list",
+    "order/confirm",
+    "order/computed",
+    "order/confirmation:not_found",
+    "order/create",
+    "independent_SQL",
+    "same_create_replay",
+    "order/confirmation:created",
+    "saved_order_computed",
+    "independent_SQL_unchanged"
+  ],
+  "fact_table_count": 27,
+  "fact_tables": [
+    "eb_store_order",
+    "eb_store_order_invoice",
+    "eb_store_order_cart_info",
+    "eb_marketplace_order_idempotency",
+    "eb_marketplace_stock_movement",
+    "eb_store_product",
+    "eb_store_product_attr_value",
+    "eb_store_cart",
+    "eb_user",
+    "eb_marketplace_merchant",
+    "eb_store_product_attr",
+    "eb_user_address",
+    "eb_user_invoice",
+    "eb_system_config",
+    "eb_system_user_level",
+    "eb_user_level",
+    "eb_member_right",
+    "eb_store_order_status",
+    "eb_store_product_log",
+    "eb_system_timer",
+    "eb_marketplace_role",
+    "eb_marketplace_employee",
+    "eb_marketplace_password_setup",
+    "eb_system_event",
+    "eb_system_notification",
+    "eb_marketplace_payment_registry",
+    "eb_marketplace_payment_attempt"
+  ],
+  "event_preconditions": "Before login/cart HTTP, actual login_success external notification channels disabled and enabled user_login/user_add_cart custom-event sets empty; queue_open=0. Verify real cart statistics before create baseline. Never skip production events.",
+  "user_facts": "Login permits only actual owner last_time/last_ip changes; normal later auth permits only owner last_time. Phone and spread/agent/division/staff and all other columns/users remain equal.",
+  "result_rules": "Only after real HTTP and independent saved-row assertions, full frozen sources rechecked and actual child stopped may success be emitted; native exit0/terminal proof and scoped normal close plus independent six-query zero remain separate requirements.",
+  "remaining": "No customer DOM acceptance or merchant34/25/9/23/empty-scroll acceptance is implied. No stopped refusal/conflict/concurrency/fault/recovery samples, TTL mutation, payments, refunds, external messages, push or deployment.",
+  "prerequisites": {
+    "sequence": "nine real initializer children -> four real MS5 CLI -> one real files bootstrap -> prepare -> original12HTTP",
+    "common": [
+      "driver-terminal.json",
+      "initializer-completed-terminal.json",
+      "initializer-created.json",
+      "initializer-result.json",
+      "ms5-payment-migration-container-created.json",
+      "ms5-payment-migration-normal.json",
+      "ms5-payment-migration-formal-manifest.json",
+      "ms5-payment-migration-source-binding.json"
+    ],
+    "prepare_additional": [
+      "files-bootstrap-created.json",
+      "files-bootstrap-terminal.json",
+      "files-bootstrap-result.json",
+      "files-bootstrap-shutdown.json"
+    ],
+    "verify_additional": [
+      "customer-prepare-created.json",
+      "customer-prepare-terminal.json",
+      "ms4-customer-prepare.json"
+    ],
+    "initializer_scope": "MS5_PAYMENT_PREREQUISITES_ONLY",
+    "initializer_status": "VERIFIED_MS5_PAYMENT_PREREQUISITES_ONLY",
+    "migration_role": "audit-ms5-payment-migration",
+    "driver_sources": 10,
+    "files_status": "VERIFIED_CUSTOMER_FILES_BOOTSTRAP_ONLY",
+    "initializer_no_App_writeMd5_version_marker": true
+  },
+  "paid_producer_successor": {
+    "scope": "MS5_PAID_PRODUCER_PROFILE_SOURCE_CONTRACT_ONLY",
+    "runtime": "NOT RUN",
+    "entry": "help/audit-regressions/isolated/ms5-paid-consumer-normal.php",
+    "entry_bytes": 109531,
+    "entry_sha256": "67450a4ab293d4b59f9ee90b02d35e2532c09b420c378ae5c643f6f39070f2f6",
+    "source_roots": [
+      "crmeb/app",
+      "crmeb/crmeb",
+      "crmeb/vendor",
+      "crmeb/config"
+    ],
+    "source_extra_rule": "Original customer nine plus sole new CU_FORM helper = ten; paid adds only its explicit entry = eleven. Actual six observer imports must match immutable Worker descriptor rows and finite imported-only allowed paths; no Worker whole-set allowance.",
+    "freeze_groups_added": [
+      "paid_source_roots",
+      "paid_source_extra",
+      "paid_source_files"
+    ],
+    "artifact_files_exact": [
+      "README.md",
+      "compose.yml",
+      "ms4-host.py",
+      "ms4-initialize.php",
+      "seed-source-inverse.json",
+      "interface-v1.json",
+      "source-derivation.json",
+      "normal-close-ms4-fulfillment.py",
+      "verify-zero-ms4-fulfillment.py"
+    ],
+    "role": "audit-ms5-paid-producer",
+    "proof": "paid-producer",
+    "argv": [
+      "help/audit-regressions/isolated/ms5-paid-consumer-normal.php",
+      "produce"
+    ],
+    "user": "0:0",
+    "stop_signal": "SIGTERM",
+    "fixed_proof_environment": {
+      "MS5_PROOF_NAME": "paid-producer"
+    },
+    "source_binding_scope": "MS5_PAID_PRODUCER_SOURCE",
+    "source_binding_keys": 13,
+    "environment_scope": "MS5_PAID_PRODUCER_REAL_ENVIRONMENT",
+    "environment_receipt_keys": 8,
+    "native_environment_receipt_keys": 7,
+    "public_environment_values": 7,
+    "native_environment_stage": "customer-public-environment-inspect",
+    "prerequisites": "Actual G8 + F4 + C3 fifteen original full hashes and complete semantics; original nine initializer children, four migration children and real files installation retained.",
+    "files": [
+      "paid-producer-created.json",
+      "paid-producer-terminal.json",
+      "paid-producer-source-binding.json",
+      "paid-producer-environment.json",
+      "paid-producer-environment-native.json",
+      "paid-producer-result.json"
+    ],
+    "result_scope": "MS5_PAID_PRODUCER_INTERNAL_ONLY",
+    "result_status": "VERIFIED_MS5_PAID_PRODUCER_INTERNAL_ONLY",
+    "result_keys": 26,
+    "business_keys": 17,
+    "entry_native": {
+      "native_exit": null,
+      "native_exit_observation": "HOST_NATIVE_REQUIRED",
+      "entry_return_code": 0,
+      "termination": "NORMAL_RETURN"
+    },
+    "actual_terminal": "Separate same original paid CID actual exited/native exit0/PID0/restart0; do not coerce PHP NULL or HTTP-child proc_close to zero.",
+    "register_proof": "register-paid-producer",
+    "post_c3_registration": {
+      "proof": "register-paid-after-c3",
+      "role": "audit-bootstrap",
+      "phase": "register",
+      "status": "REGISTERED_NATIVE_RESOURCES_ONLY",
+      "files": [
+        "register-paid-after-c3-created.json",
+        "register-paid-after-c3-terminal.json",
+        "register-paid-after-c3-result.json",
+        "register-paid-after-c3-shutdown.json"
+      ],
+      "rule": "After complete C3 native0 and exact normal retirement, fresh actual paid/mysql/redis collection is registered by the original initializer. Retain early register-paid-producer; both helpers are mandatory before same paid bind/start/result/history. New helper is distinct from early helper, paid and C3; final formal remains exactly three roles. A live helper is observed/finished by its own proof before paid-bind, never rerun paid-create."
+    },
+    "authorize_proof": "authorize-paid-cleanup",
+    "helpers": "Real original early register, distinct post-C3 register and authorize-cleanup phases/statuses; both register receipts retained and no helper in final formal services.",
+    "formal_roles": [
+      "audit-ms5-paid-producer",
+      "audit-mysql",
+      "audit-redis"
+    ],
+    "networks": 1,
+    "new_volumes": 8,
+    "non_tmpfs_mounts": 8,
+    "fixture_mount_rw": true,
+    "mount_rule": "Original paid mounts plus exact customer-form-evidence RW at /run/audit-customer-form; no aftersale evidence mount. All original identities/tmpfs/alias/early unstarted gates remain.",
+    "public_before_app": "Real install-only / SQL-only public tmpfs and empty runtime; actual original SQL dual-RO full bytes/hash; original index/router/install.lock publication before parent App or child.",
+    "observer": "Same independent PDO only: actual six native modes before/after, only SESSION stats_expiry -> canonical0; other five incl GLOBAL unchanged; dynamic full SQL metadata/DDL/row multiset and all Redis absolute expiry retained.",
+    "baseline": {
+      "scope": "MS5_PAID_CONSUMER_NATIVE_BASELINE",
+      "private_path": "/run/audit-fixtures/ms5-paid-baseline.json",
+      "public_descriptor_keys": 10,
+      "fact_tables": 27,
+      "auxiliary_tables": 7,
+      "raw_max_bytes": 1572864,
+      "json_max_bytes": 2097152,
+      "rule": "Producer seals actual native types, strict base64/hash/reserialize/no objects, independent PDO full readback, parent0700/file0600/owner/no links/create-only. Host/close/zero do not open private body."
+    },
+    "paid_stages": [
+      "paid-create",
+      "paid-bind",
+      "paid-start",
+      "authorize-paid-close"
+    ],
+    "normal_close": {
+      "file": "normal-close-paid-producer.py",
+      "prefix": "paid-normal-close",
+      "scope": "PAID_PRODUCER_WITH_MS5_NORMAL_CLOSE_ONLY",
+      "status": "VERIFIED_PAID_PRODUCER_WITH_MS5_NORMAL_CLOSE_ZERO_RESIDUAL"
+    },
+    "independent_zero": {
+      "file": "verify-zero-paid-producer.py",
+      "receipt": "paid-producer-independent-zero.json",
+      "scope": "PAID_PRODUCER_WITH_MS5_NORMAL_CLOSE_INDEPENDENT_ZERO_ONLY",
+      "status": "VERIFIED_PAID_PRODUCER_WITH_MS5_INDEPENDENT_SIX_QUERY_ZERO"
+    },
+    "customer_paid_API_DOM": "NOT RUN",
+    "merchant_paid_API_DOM": "NOT RUN",
+    "platform_paid_API_DOM": "NOT RUN",
+    "full_acceptance": "INCOMPLETE",
+    "stopped_samples": "NOT RUN",
+    "donor_entry_before_current_binding": {
+      "entry": "help/audit-regressions/isolated/ms5-paid-consumer-normal.php",
+      "entry_bytes": 105669,
+      "entry_sha256": "b13458bfac7aa09303d48b42e8c92db31feeb97e2d401bba18a93d252630cbb4"
+    }
+  },
+  "fulfillment_normal_successor": {
+    "scope": "MS4_FULFILLMENT_NORMAL_PROFILE_SOURCE_CONTRACT_ONLY",
+    "runtime": "NOT RUN",
+    "donor": "Original candidate-paid-producer-r2 nine files and unchanged original customer/paid contracts above are historical prerequisites; this successor owns the following actual nine artifacts and four-role lifecycle.",
+    "artifact_files_exact": [
+      "README.md",
+      "compose.yml",
+      "ms4-host.py",
+      "ms4-initialize.php",
+      "seed-source-inverse.json",
+      "interface-v1.json",
+      "source-derivation.json",
+      "normal-close-ms4-fulfillment.py",
+      "verify-zero-ms4-fulfillment.py"
+    ],
+    "entry": "help/audit-regressions/isolated/ms4-fulfillment-normal.php",
+    "entry_bytes": 128359,
+    "entry_sha256": "4d38c7ac0d8afbc72a0000319765e155fbd8a116656c43652e54cd824dc992b7",
+    "source_roots": [
+      "crmeb/app",
+      "crmeb/crmeb",
+      "crmeb/vendor",
+      "crmeb/config"
+    ],
+    "source_extra_rule": "Original twenty-five extras plus sole new CU_FORM helper = twenty-six; original complete four roots and exact finite imports retained.",
+    "freeze_groups_added": [
+      "fulfillment_source_roots",
+      "fulfillment_source_extra",
+      "fulfillment_source_files"
+    ],
+    "role": "audit-ms4-fulfillment-normal",
+    "proof": "fulfillment-normal",
+    "argv": [
+      "help/audit-regressions/isolated/ms4-fulfillment-normal.php",
+      "normal"
+    ],
+    "user": "0:0",
+    "stop_signal": "SIGTERM",
+    "created_keys": 29,
+    "native_keys": 26,
+    "fixed_proof_environment": {
+      "MS4_FULFILLMENT_PROOF_NAME": "fulfillment-normal"
+    },
+    "environment_scope": "MS4_FULFILLMENT_NORMAL_REAL_ENVIRONMENT",
+    "environment_receipt_keys": 8,
+    "native_environment_receipt_keys": 7,
+    "environment_rule": "Exactly seven sorted complete JSON strings with two final LF; original prepare six proof retains original semantics.",
+    "binding": "ms4-fulfillment-normal-source-binding.json",
+    "binding_scope": "MS4_FULFILLMENT_NORMAL_SOURCE",
+    "binding_keys": [
+      "schema",
+      "scope",
+      "run_id",
+      "source_sha",
+      "container_id",
+      "native_created_sha256",
+      "freeze_sha256",
+      "requested_repo_source",
+      "requested_run_source",
+      "requested_prep_source",
+      "entry_sha256",
+      "source_files",
+      "prerequisites_sha256"
+    ],
+    "prerequisite_count": 25,
+    "prerequisites": "Original common8 + files4 + customer-prepare3 + paid6 + fulfillment migration4. Extra historical/formal/registration proofs are fully verified separately, never inserted into this25-key wire.",
+    "paid_seal": {
+      "manifest": "paid-producer-formal-manifest.json",
+      "history": "paid-producer-predecessor-history.json",
+      "history_keys": [
+        "schema",
+        "run_id",
+        "source_sha",
+        "freeze_sha256",
+        "context_sha256",
+        "manifest_sha256",
+        "public_sha256"
+      ],
+      "public_originals": 33,
+      "rule": "Complete original paid result/helpers/9+4/files/C3/native semantics while actual three roles still exist; create-only exact manifest and33 whole public hashes: all original29 plus four distinct register-paid-after-c3 receipts. Historical verification takes this explicit real saved formal, never replaces load/current manifest or invents native0. Binding wire15 remains unchanged."
+    },
+    "migration": {
+      "rule": "After original initializer9/MS5CLI4, before files-bootstrap/App: canonical paid remains real unstarted; original fulfillment4 at operation24, aftersale20/menu7/menu3 each four calls, then assets check/apply-structure/check/apply-structure. Six complete snapshots retain all five historical stages and add only three native-qualified empty asset tables. Fifteen full read-only/repeat comparisons; normal0/exact retirement precede files/C3/paid.",
+      "successor_children": 16,
+      "entry": "help/audit-regressions/isolated/ms4-fulfillment-migration.php",
+      "original_fulfillment_children": 4,
+      "argv": [
+        "help/audit-regressions/isolated/ms4-fulfillment-migration.php"
+      ],
+      "role": "audit-ms4-fulfillment-migration",
+      "source_files": 17,
+      "cli_children": 20,
+      "result": "ms4-aftersale-early-migration-normal.json",
+      "phase": "fulfillment-migration",
+      "binding_keys": 10,
+      "milestone": "MS4",
+      "result_binding_keys": 13,
+      "proof": "fulfillment-migration",
+      "modes": [
+        "check",
+        "apply-structure",
+        "check",
+        "apply-structure"
+      ],
+      "asset_schema_dependency": "crmeb/app/services/marketplace/assets/AssetSchema.php",
+      "asset_tables": [
+        "eb_marketplace_customer_asset",
+        "eb_marketplace_platform_asset_category",
+        "eb_marketplace_platform_asset"
+      ],
+      "snapshot_stages": [
+        "before",
+        "fulfillment",
+        "aftersale",
+        "aftersale_menus",
+        "review_menus",
+        "assets"
+      ],
+      "comparison_count": 15
+    },
+    "formal_roles": [
+      "audit-ms4-fulfillment-normal",
+      "audit-ms5-paid-producer",
+      "audit-mysql",
+      "audit-redis"
+    ],
+    "mount_rule": "Eight exact Run volumes globally; Task6 adds only customer-form-evidence RO to original mounts; no alias/ports. AR has customer-form-evidence RW and original aftersale RW. Early retains original five non-tmpfs mounts.",
+    "register_proofs": [
+      "register-fulfillment-migration",
+      "register-fulfillment-normal"
+    ],
+    "authorize_proof": "authorize-fulfillment-cleanup",
+    "helper_scope": "MS4_FULFILLMENT_LIFECYCLE_ONLY",
+    "result": "ms4-fulfillment-normal.json",
+    "result_scope": "NORMAL_MS4_FULFILLMENT_INTERNAL_ONLY",
+    "result_status": "VERIFIED_NORMAL_MS4_FULFILLMENT_INTERNAL_ONLY",
+    "result_keys": [
+      "schema",
+      "scope",
+      "status",
+      "run_id",
+      "source_sha",
+      "container_id",
+      "freeze_sha256",
+      "native_created_sha256",
+      "source_binding_sha256",
+      "environment_sha256",
+      "environment_native_sha256",
+      "prerequisites_sha256",
+      "phase",
+      "entry_return_code",
+      "termination",
+      "native_exit",
+      "native_exit_observation",
+      "full_source_unchanged",
+      "metadata_observer",
+      "business",
+      "diagnostic",
+      "customer_fulfillment_API_DOM",
+      "merchant_fulfillment_API_DOM",
+      "platform_fulfillment_API_DOM",
+      "worker",
+      "task7",
+      "full_acceptance",
+      "stopped_samples",
+      "assertions"
+    ],
+    "business_keys": [
+      "original_root_id",
+      "authenticated_owner_uid",
+      "authenticated_owner_producer_container_id",
+      "original_items",
+      "original_quantity",
+      "new_roles",
+      "new_employees",
+      "new_password_setups",
+      "new_configuration_rows",
+      "ships",
+      "receives",
+      "committed_operations",
+      "persisted_ranges",
+      "children",
+      "child_items",
+      "same_key_zero_delta_replays",
+      "merchant_saved_read_pairs",
+      "root_status_sequence",
+      "shipped_received_sequence",
+      "final_summary",
+      "same_run_original_authenticated_owner_verified",
+      "original_paid_result_native_null_terminal_zero_verified",
+      "real_employee_setup_login_authenticate",
+      "same_default_connection_pdo_depth_zero",
+      "all_saved_history_three_digests_native_types_verified",
+      "original_Q_integer_cent_allocations_verified",
+      "all_previous_and_non_target_rows_metadata_redis_preserved",
+      "original_payment_stock_rewards_unchanged",
+      "independent_merchant_saved_DTO_verified",
+      "source_snapshot_sha256",
+      "operations",
+      "sequence_expiry",
+      "baseline"
+    ],
+    "shutdown": "fulfillment-normal-shutdown.json",
+    "shutdown_keys": [
+      "schema",
+      "scope",
+      "run_id",
+      "source_sha",
+      "container_id",
+      "freeze_sha256",
+      "phase",
+      "completed",
+      "result_published",
+      "fatal",
+      "termination_requested",
+      "primary_failure",
+      "cleanup_failure",
+      "native_exit",
+      "native_exit_observation"
+    ],
+    "native_exit_rule": "Entry result/shutdown retain NULL/HOST_NATIVE_REQUIRED; only actual same CID terminal gives native0. No coerced PHPNULL or child exit.",
+    "business_counts": {
+      "original_items": 2,
+      "original_quantity": 3,
+      "new_roles": 1,
+      "new_employees": 1,
+      "new_password_setups": 1,
+      "new_configuration_rows": 1,
+      "ships": 2,
+      "receives": 3,
+      "committed_operations": 5,
+      "persisted_ranges": 5,
+      "children": 2,
+      "child_items": 2,
+      "same_key_zero_delta_replays": 5,
+      "merchant_saved_read_pairs": 6
+    },
+    "private_baseline": "/run/audit-fixtures/ms4-fulfillment-stage6.json",
+    "normal_close": {
+      "file": "normal-close-ms4-fulfillment.py",
+      "prefix": "ms4-aftersale-review-normal-close",
+      "scope": "MS4_AFTERSALE_REVIEW_NORMAL_CLOSE_ONLY",
+      "status": "VERIFIED_MS4_AFTERSALE_REVIEW_NORMAL_CLOSE_ZERO_RESIDUAL",
+      "containers": 4,
+      "networks": 1,
+      "volumes": 8
+    },
+    "independent_zero": {
+      "file": "verify-zero-ms4-fulfillment.py",
+      "receipt": "ms4-aftersale-review-independent-zero.json",
+      "scope": "MS4_AFTERSALE_REVIEW_NORMAL_CLOSE_INDEPENDENT_ZERO_ONLY",
+      "status": "VERIFIED_MS4_AFTERSALE_REVIEW_INDEPENDENT_SIX_QUERY_ZERO"
+    },
+    "three_read_internal": {
+      "scope": "MS4_THREE_READ_NORMAL_INTERNAL_ONLY",
+      "runtime": "NOT RUN",
+      "result": "ms4-three-read-normal.json",
+      "status": "VERIFIED_THREE_READ_NORMAL_INTERNAL_ONLY",
+      "source_helper_files": [
+        {
+          "path": "help/audit-regressions/isolated/lib/ms4-three-legacy-producer.php",
+          "bytes": 53328,
+          "sha256": "9da29b5edf6bc50c8bb483eaf4a67adaaacc6cddc4660e6cac0d2dabcb81a584"
+        },
+        {
+          "path": "help/audit-regressions/isolated/lib/ms4-three-legacy-reference.php",
+          "bytes": 51479,
+          "sha256": "7ad23450261f2771a46e8c04e7c2f8da0941d476d887f30064150188886ea941"
+        },
+        {
+          "path": "help/audit-regressions/isolated/lib/ms4-three-read-normal.php",
+          "bytes": 160668,
+          "sha256": "508c84e75b1b07bc6e574b461a069def27cedfb51378850923213391aa3bb01d"
+        }
+      ],
+      "result_keys": [
+        "schema",
+        "scope",
+        "status",
+        "run_id",
+        "source_sha",
+        "freeze_sha256",
+        "container_id",
+        "source_binding_sha256",
+        "phase",
+        "entry_return_code",
+        "native_exit",
+        "native_exit_observation",
+        "legacy_native",
+        "fixture",
+        "baseline",
+        "stage_count",
+        "owned_call_count",
+        "wrapper_call_count",
+        "total_call_count",
+        "stages",
+        "final_source_and_original_inputs_verified",
+        "diagnostic",
+        "cleanup_failure",
+        "HTTP_API_DOM",
+        "worker",
+        "task7",
+        "full_acceptance",
+        "stopped_samples"
+      ],
+      "fixture_keys": [
+        "original_paid_commercial_roots",
+        "new_true_legacy_commercial_roots",
+        "new_true_v1_unpaid_roots",
+        "whole_commercial_roots",
+        "new_ordinary_v1_roots",
+        "new_member_v1_roots",
+        "member_saved_unit_price",
+        "member_saved_base_price",
+        "independent_new_v1_goods_total",
+        "saved_deadline_zero_roots",
+        "current_cancel_hours",
+        "platform_ordinary_role_rows",
+        "platform_ordinary_admin_rows",
+        "internal_identity_is_not_HTTP_authentication",
+        "full_native_preparation_delta_verified",
+        "legacy_native_archive_sha256",
+        "private_preparation_facts_sha256"
+      ],
+      "baseline_keys": [
+        "database_sha256",
+        "redis_keys_values_absolute_expiries_sha256",
+        "complete_native_baseline_sha256"
+      ],
+      "stage_keys": [
+        "stage",
+        "whole_population",
+        "paid_roots",
+        "unpaid_v1_roots",
+        "legacy_roots",
+        "member_saved_price_differs_from_base",
+        "actual_wrapper_windows",
+        "calls",
+        "call_count",
+        "complete_stage_zero"
+      ],
+      "wrapper_window_keys": [
+        "customer_platform",
+        "mobile"
+      ],
+      "call_keys": [
+        "view",
+        "surface",
+        "authentication",
+        "page",
+        "limit",
+        "expected_native_count",
+        "returned_count",
+        "selected_native_ids_sha256",
+        "comparison",
+        "actual_interval",
+        "database_before_sha256",
+        "database_after_sha256",
+        "redis_before_sha256",
+        "redis_after_sha256",
+        "complete_database_rows_metadata_counters_and_redis_values_absolute_expiries_zero",
+        "same_default_connection_pdo_depth_zero",
+        "runtime_files_and_original_paid_inputs_unchanged"
+      ],
+      "comparison_keys": {
+        "wrapper": [
+          "kind",
+          "returned_count",
+          "native_count",
+          "complete_original_wrapper_envelope_values_and_types_verified"
+        ],
+        "owned_page": [
+          "kind",
+          "native_count",
+          "returned_count",
+          "legacy_slots",
+          "v1_slots",
+          "selected_native_ids_sha256",
+          "complete_expected_values_and_types_verified"
+        ],
+        "owned_root": [
+          "kind",
+          "locator_class",
+          "selected_native_id_sha256",
+          "complete_expected_values_and_types_verified"
+        ]
+      },
+      "legacy_native_keys": [
+        "mode",
+        "argv",
+        "cwd",
+        "environment_inherited",
+        "pid",
+        "supervisor",
+        "registered_group",
+        "first_native_status",
+        "last_native_status",
+        "same_handle_first_terminal",
+        "proc_close_exit",
+        "native_exit",
+        "process_closed",
+        "remaining_members",
+        "registered_group_gone",
+        "listener_open",
+        "term_attempted",
+        "term_sent",
+        "normal_only",
+        "capture_complete",
+        "stdout_bytes",
+        "stdout_sha256",
+        "stderr_bytes",
+        "stderr_sha256",
+        "failure_close_budget_ns",
+        "failure_close_started_ns",
+        "failure_close_deadline_ns",
+        "failure_close_budget_exhausted",
+        "observed_elapsed_ns",
+        "failure_code",
+        "native_completed_normally"
+      ],
+      "legacy_supervisor_keys": [
+        "pid",
+        "pgid",
+        "sid",
+        "starttime"
+      ],
+      "legacy_group_keys": [
+        "leader_pid",
+        "pgid",
+        "sid",
+        "leader_starttime"
+      ],
+      "legacy_status_keys": [
+        "pid",
+        "running",
+        "signaled",
+        "stopped",
+        "exitcode",
+        "termsig",
+        "stopsig"
+      ],
+      "diagnostic_keys": [
+        "code",
+        "class",
+        "file",
+        "line"
+      ],
+      "cleanup_failure_keys": [
+        "code",
+        "class"
+      ],
+      "matrix_rule": "Stages0..5 retain exact frozen per-scope call order and multiplicity; paid six owned/six wrappers every state, full101 nine windows and actual original wrapper windows plus member/legacy details at stages0/5, real child direct/page/count+1 including duplicate empty pages. Native selected paid/child IDs derive only from original public business; unknown full/member/legacy hashes are consistency evidence, never reconstructed identities.",
+      "fixture_rule": "Original genuine paid1 + genuine legacy1 + unpaidV1 99 =101; ordinary98/member1; saved16.00 versus base20.15 and independent total1990.70; original saved deadline0 versus current1. Internal ordinary platform role/admin is not HTTP authentication.",
+      "private_archive": "/run/audit-fixtures/ms4-three-legacy-native.json",
+      "private_rule": "Only frozen parent PHP reads native archive after actual same-handle child normal0 and full private descriptor/readback. Host/close/zero consume public archive hash and31-key receipt; no private body, extra permission or sidecar.",
+      "native_rule": "Supplement retains native_exit NULL/HOST_NATIVE_REQUIRED; actual original outer CID normal0 is separate and freshly checked before success-close. Legacy31 is actual same-handle inner process evidence, not a fifth Docker role or independent later PID observation.",
+      "public_originals": 63,
+      "original_contracts_retained": "result29/business33/shutdown15/binding13/prerequisites25 and all original Task6 oracle; real early27 parent replaces obsolete paid-after parent only, original four CLI/24 oracle stays at its actual stage. source helper diagnostics retained.",
+      "HTTP_API_DOM": "NOT RUN",
+      "worker": "NOT RUN",
+      "task7": "NOT RUN",
+      "full_acceptance": "INCOMPLETE",
+      "stopped_samples": "NOT RUN"
+    },
+    "full_acceptance": "INCOMPLETE",
+    "stopped_samples": "NOT RUN",
+    "donor_entry_before_current_binding": {
+      "entry": "help/audit-regressions/isolated/ms4-fulfillment-normal.php",
+      "entry_bytes": 127224,
+      "entry_sha256": "6acd2b736b29e9672dc21a2659dd3919a2e88559050f78221d72b3c2387ab5c5"
+    }
+  },
+  "aftersale_review_normal_successor": {
+    "scope": "SOURCE_CONTRACT_ONLY_NOT_EXECUTED",
+    "binding": "ms4-aftersale-review-normal-source-binding.json",
+    "binding_keys": [
+      "schema",
+      "scope",
+      "run_id",
+      "source_sha",
+      "container_id",
+      "native_created_sha256",
+      "freeze_sha256",
+      "requested_repo_source",
+      "requested_run_source",
+      "requested_prep_source",
+      "entry_sha256",
+      "source_files",
+      "prerequisites_sha256"
+    ],
+    "native_environment_stage": "aftersale-review-normal-public-environment-inspect",
+    "source_binding": "Actual completed source bytes only; no future commit or source hash",
+    "private_rule": "Host/close/zero only public descriptors and complete public hash closure; no account/config/archive/body bytes.",
+    "freeze_groups_added": [
+      "aftersale_review_source_roots",
+      "aftersale_review_source_extra",
+      "aftersale_review_source_files"
+    ],
+    "result_scope": "NORMAL_MS4_AFTERSALE_REVIEW_HTTP_ONLY",
+    "public_originals": 85,
+    "stopped_samples": "NOT RUN",
+    "public_environment_rule": "Exactly nine sorted JSON strings, one final LF; original prepare six remains exact.",
+    "binding_scope": "MS4_AFTERSALE_REVIEW_NORMAL_SOURCE",
+    "prerequisites": 34,
+    "source_extra_rule": "Original twenty-nine extras plus sole new CU_FORM helper = thirty; prior groups exact subsets.",
+    "register_proof": "register-aftersale-review-normal",
+    "original_task6": {
+      "business_keys": 33,
+      "real_early_timing_originals": 2,
+      "history_hashes": 65,
+      "native_rm": "fulfillment-normal-remove-native.json",
+      "rule": "Full original same-handle Task6 native0 and all original oracle, exact nonforce rm, normal fresh listing plus global consumer absence before new fourth role. No inspect of deleted CID and no existing result extension.",
+      "native_remove_keys": 5,
+      "removed_keys": 10,
+      "history": "fulfillment-normal-predecessor-history.json",
+      "shutdown_keys": 15,
+      "result_keys": 29,
+      "public_originals": 63,
+      "removed": "fulfillment-normal-removed.json",
+      "same_handle_terminal_keys": [
+        "pid",
+        "returncode",
+        "wait_returncode"
+      ]
+    },
+    "shutdown_keys": [
+      "schema",
+      "scope",
+      "run_id",
+      "source_sha",
+      "container_id",
+      "freeze_sha256",
+      "phase",
+      "completed",
+      "result_published",
+      "fatal",
+      "termination_requested",
+      "primary_failure",
+      "cleanup_failure",
+      "native_exit",
+      "native_exit_observation"
+    ],
+    "authorize_proof": "authorize-aftersale-review-cleanup",
+    "environment_keys": [
+      "schema",
+      "scope",
+      "run_id",
+      "source_sha",
+      "container_id",
+      "freeze_sha256",
+      "environment",
+      "native_projection_sha256"
+    ],
+    "formal_roles": [
+      "audit-ms4-aftersale-review-normal",
+      "audit-ms5-paid-producer",
+      "audit-mysql",
+      "audit-redis"
+    ],
+    "argv": [
+      "help/audit-regressions/isolated/ms4-aftersale-review-normal.php",
+      "normal"
+    ],
+    "public_environment_additions": {
+      "PHP_MARKETPLACE_AFTERSALE_ENABLED": "true",
+      "PHP_MARKETPLACE_AFTERSALE_PRIVATE_ROOT": "/var/lib/crmeb-aftersale-evidence",
+      "PHP_MARKETPLACE_CUSTOMER_FORM_PRIVATE_ROOT": "/run/audit-customer-form"
+    },
+    "private_evidence": {
+      "kind": "volume",
+      "name_suffix": "aftersale-evidence",
+      "root_mode": "0700",
+      "pre_app": "Actual entry verifies unique native mount, no links/objects, real owner/parents, chmod only new root and fresh stat before any App/upload.",
+      "only_new_role": true,
+      "file_mode": "0600",
+      "target": "/var/lib/crmeb-aftersale-evidence",
+      "rw": true
+    },
+    "helper_scope": "MS4_AFTERSALE_REVIEW_LIFECYCLE_ONLY",
+    "stages": [
+      "early-paid-create",
+      "fulfillment-migration-create",
+      "fulfillment-migration-bind",
+      "fulfillment-migration-start",
+      "fulfillment-migration-retire",
+      "files-bootstrap-create",
+      "files-bootstrap-start",
+      "customer-prepare-create",
+      "customer-prepare-bind",
+      "customer-prepare-start",
+      "paid-create",
+      "paid-bind",
+      "paid-start",
+      "fulfillment-normal-create",
+      "fulfillment-normal-bind",
+      "fulfillment-normal-start",
+      "authorize-fulfillment-close",
+      "fulfillment-normal-retire",
+      "aftersale-review-create",
+      "aftersale-review-bind",
+      "aftersale-review-start",
+      "authorize-aftersale-review-close"
+    ],
+    "full_acceptance": "INCOMPLETE",
+    "entry": "help/audit-regressions/isolated/ms4-aftersale-review-normal.php",
+    "environment_scope": "MS4_AFTERSALE_REVIEW_NORMAL_REAL_ENVIRONMENT",
+    "result_status": "VERIFIED_NORMAL_MS4_AFTERSALE_REVIEW_HTTP_ONLY",
+    "proof": "aftersale-review-normal",
+    "source_roots": [
+      "crmeb/app",
+      "crmeb/crmeb",
+      "crmeb/vendor",
+      "crmeb/config"
+    ],
+    "role": "audit-ms4-aftersale-review-normal",
+    "shutdown": "aftersale-review-normal-shutdown.json",
+    "result": "ms4-aftersale-review-normal.json",
+    "result_keys": [
+      "schema",
+      "scope",
+      "status",
+      "run_id",
+      "source_sha",
+      "container_id",
+      "freeze_sha256",
+      "native_created_sha256",
+      "source_binding_sha256",
+      "environment_sha256",
+      "environment_native_sha256",
+      "prerequisites_sha256",
+      "phase",
+      "entry_return_code",
+      "termination",
+      "native_exit",
+      "native_exit_observation",
+      "full_source_unchanged",
+      "metadata_observer",
+      "business",
+      "child",
+      "diagnostic",
+      "mobile_workbench_HTTP_DOM",
+      "three_end_DOM",
+      "worker",
+      "finance",
+      "full_acceptance",
+      "stopped_samples",
+      "assertions"
+    ],
+    "entry_bytes": 239863,
+    "entry_sha256": "48734a574986d3c6eab37cbc0f1deeab2d03b2b94b931bcaed4719c72e62f723",
+    "business_keys": [
+      "authenticated_owner_uid",
+      "merchant_id",
+      "employee_id",
+      "limited_admin_id",
+      "original_root_id",
+      "new_root_id",
+      "new_items",
+      "new_quantity",
+      "normal_action_counts",
+      "s2_operations",
+      "same_body_replays",
+      "new_refunds",
+      "private_evidence",
+      "review",
+      "http",
+      "paid_baseline",
+      "final_baseline",
+      "independent_database_oracle",
+      "independent_redis_oracle",
+      "independent_files_oracle",
+      "prior_task6_preserved",
+      "original_private_inputs_preserved",
+      "normal_business_decisions",
+      "excluded_acceptance"
+    ],
+    "normal_action_counts": {
+      "apply": 5,
+      "withdraw": 1,
+      "reject": 2,
+      "approve": 2,
+      "express": 1,
+      "accept_return": 2
+    },
+    "s2_operations": 2,
+    "same_body_replays": 15,
+    "new_refunds": 5,
+    "private_files": 1,
+    "private_ticket_content_pairs": 3,
+    "public_review_projection_fields": 12,
+    "public_environment_names": [
+      "APP_ENV",
+      "PHP_CACHE_DRIVER",
+      "PHP_MARKETPLACE_AFTERSALE_ENABLED",
+      "PHP_MARKETPLACE_AFTERSALE_PRIVATE_ROOT",
+      "PHP_MARKETPLACE_CUSTOMER_FORM_PRIVATE_ROOT",
+      "PHP_MARKETPLACE_ENABLED",
+      "PHP_MARKETPLACE_PAYMENT_TEST_ENABLED",
+      "PHP_MARKETPLACE_SELF_OPERATED_MER_ID",
+      "PHP_MARKETPLACE_TRADE_ENABLED"
+    ],
+    "review_image_reference": {
+      "image_source": "customer_review",
+      "customer_asset_id": "canonical positive U64 decimal string",
+      "legacy_attachment_id": "not emitted by the purchased-item customer-asset producer",
+      "other_business_fields": "unchanged"
+    },
+    "donor_entry_before_current_binding": {
+      "entry": "help/audit-regressions/isolated/ms4-aftersale-review-normal.php",
+      "entry_bytes": 232022,
+      "entry_sha256": "be0cb1832fa1afcd3ad9091adc27dac9ed0c2bc9418d25575ce1b2f3df70fadd"
+    },
+    "public_upload_root_preparation": {
+      "new_public_file": "ms4-aftersale-review-public-upload-root-prepared.json",
+      "scope": "MS4_AFTERSALE_REVIEW_LOCAL_PUBLIC_ROOT_PREPARATION",
+      "top_keys": [
+        "schema",
+        "scope",
+        "run_id",
+        "source_sha",
+        "freeze_sha256",
+        "container_id",
+        "source_binding_sha256",
+        "configuration",
+        "before",
+        "after",
+        "created",
+        "existing_root_native_unchanged"
+      ],
+      "configuration_boolean_keys": [
+        "configuration_preloaded",
+        "configuration_loaded",
+        "type_is_local",
+        "url_is_uploads",
+        "root_is_expected",
+        "parent_is_directory",
+        "parent_is_nonlink",
+        "parent_is_canonical",
+        "parent_writable"
+      ],
+      "before_boolean_keys": [
+        "exists",
+        "is_directory",
+        "is_link",
+        "canonical_expected",
+        "writable"
+      ],
+      "after_boolean_keys": [
+        "exists",
+        "is_directory",
+        "is_link",
+        "canonical_expected",
+        "writable",
+        "mode_is_0700"
+      ],
+      "branch_contract": "Created: before allfalse/createdtrue/after alltrue except is_linkfalse/existing_native_unchangedfalse. Existing: before and after exists,dir,canonical,writabletrue/linkfalse,createdfalse/existing_native_unchangedtrue; after.mode_is_0700 observed bool only.",
+      "identity": "Exact actual run_id/source_sha/freeze_sha256/container_id and SHA256 of original AR source binding.",
+      "required_for_normal_success": true,
+      "optional_absence_only_for_future_failed_close": true,
+      "present_proof_always_strict": true,
+      "original_AR_result_keys": 29,
+      "original_operation_receipt_keys": 6,
+      "original_AR_prerequisites": 34,
+      "original_Task6_history": 65,
+      "production_guards_and_business_assertions_unchanged": true,
+      "old_503_specific_gate": "UNPROVED",
+      "Config_loading": "Original Config.load(filesystem,filesystem) only if namespace not already present; never replace existing namespace or override disk fields.",
+      "AR_call": "after actual m4fn_app and original role config assertion; before m4ar_business and its first original business BEFORE",
+      "Worker_call": "One strict read-only proof verifier after actual original AR source-binding validation; same actual source/run/freeze, original AR CID, binding SHA and complete proof hash"
+    }
+  },
+  "aftersale_review_predecessor_history": {
+    "status": "SOURCE_COMPLETE_NOT_RUN_NOT_FROZEN",
+    "stage": "aftersale-review-retire",
+    "target_role": "audit-ms4-aftersale-review-normal",
+    "original_verifier_default": "Original strict current four-role formal and all original result29/business24/HTTP/shutdown15 semantics retained",
+    "saved_formal": "Explicit native_required=False path using the actual archived aftersale-review-normal-formal-manifest.json only",
+    "history": {
+      "filename": "aftersale-review-normal-predecessor-history.json",
+      "scope": "MS4_AFTERSALE_REVIEW_NORMAL_REAL_PREDECESSOR_HISTORY",
+      "keys": [
+        "schema",
+        "scope",
+        "run_id",
+        "source_sha",
+        "freeze_sha256",
+        "context_sha256",
+        "manifest_sha256",
+        "public_sha256"
+      ],
+      "public_members": "Complete aftersale_review_public_names()85 including the owned public upload-root preparation proof, plus aftersale-review-public-file-keep.json, sorted unique86",
+      "manifest": "aftersale-review-normal-formal-manifest.json"
+    },
+    "keep": {
+      "filename": "aftersale-review-public-file-keep.json",
+      "scope": "MS4_AFTERSALE_REVIEW_PUBLIC_FILE_KEEP",
+      "keys": [
+        "schema",
+        "scope",
+        "run_id",
+        "source_sha",
+        "freeze_sha256",
+        "container_id",
+        "source_binding_sha256",
+        "final_baseline_sha256",
+        "archive",
+        "file_map_sha256"
+      ],
+      "archive_basename": "ms4-aftersale-review-public-file-keep.json",
+      "archive_scope": "MS4_AFTERSALE_REVIEW_PUBLIC_FILE_KEEP_NATIVE_FACTS",
+      "final_baseline_sha256": "Original result.business.final_baseline.sha256, outer file hash",
+      "file_map_sha256": "Original producer SHA256(serialize(final.public)); consumer validates hash format and seals full public descriptor, without reading private body"
+    },
+    "removed": {
+      "filename": "aftersale-review-normal-removed.json",
+      "scope": "MS4_AFTERSALE_REVIEW_NORMAL_EXACT_REMOVAL",
+      "keys": [
+        "schema",
+        "scope",
+        "run_id",
+        "source_sha",
+        "container_id",
+        "created_sha256",
+        "terminal_sha256",
+        "native_remove",
+        "absent_after",
+        "target_role"
+      ],
+      "native_filename": "aftersale-review-normal-remove-native.json",
+      "native_wrapper_keys": [
+        "schema",
+        "native",
+        "stdout_bytes",
+        "stderr_bytes"
+      ],
+      "native_keys": [
+        "argv",
+        "native_exit",
+        "stdout_sha256",
+        "stderr_sha256",
+        "same_handle_terminal"
+      ],
+      "same_handle_terminal_keys": [
+        "pid",
+        "returncode",
+        "wait_returncode"
+      ],
+      "argv": [
+        "docker",
+        "rm",
+        "originalNormalCID"
+      ],
+      "required_native_codes": 0,
+      "stdout": "Original normal CID plus LF",
+      "stderr": "Empty complete stream",
+      "publication": "Only after actual original outer native0, original authorize helper, complete history/KEEP seal, same Popen nonforce exact rm and fresh listing/global absence"
+    },
+    "independent_zero": "Own complete history86/KEEP/removed10/native4->5->3 consumers and original business oracles; no Host/close import; default current-formal zero/close mode unchanged",
+    "worker_create_bind_start_close_zero": "Explicit worker-create/bind/start/observe/authorize followed by --worker-normal close and independent zero; complete matching profile and Root native evidence required",
+    "normal_entry_pin": "196190/79b89263359aa1780469ba37c0009392a4cf87d2aa9cf1e591431a595c2d0d2c KEEP-producing donor; original result29/business24/shutdown15 remain"
+  },
+  "worker_normal_successor": {
+    "status": "SOURCE_COMPLETE_NOT_RUN_NOT_FROZEN",
+    "scope": "NORMAL_WORKER_NON_DUE_LIFECYCLE_ONLY",
+    "entry": "help/audit-regressions/isolated/ms4-worker-normal.php",
+    "entry_bytes": 127354,
+    "entry_sha256": "2f52b676dfa5b3d715adaae0318802f941388ffc103b7f8c02cf2e9d5f09f4f8",
+    "role": "audit-ms4-worker-normal",
+    "proof": "worker-normal",
+    "argv": [
+      "help/audit-regressions/isolated/ms4-worker-normal.php",
+      "normal"
+    ],
+    "user": "0:0",
+    "stop_signal": "SIGTERM",
+    "source_roots": [
+      "crmeb/app",
+      "crmeb/crmeb",
+      "crmeb/vendor",
+      "crmeb/config"
+    ],
+    "source_extra": [
+      "crmeb/composer.json",
+      "crmeb/composer.lock",
+      "crmeb/public/index.php",
+      "crmeb/public/install/crmeb.sql",
+      "crmeb/public/router.php",
+      "crmeb/think",
+      "help/audit-regressions/isolated/lib/guard.php",
+      "help/audit-regressions/isolated/lib/harness.php",
+      "help/audit-regressions/isolated/lib/ms4-customer-form-normal.php",
+      "help/audit-regressions/isolated/lib/ms4-customer-http-normal.php",
+      "help/audit-regressions/isolated/lib/ms4-three-legacy-producer.php",
+      "help/audit-regressions/isolated/lib/ms4-three-legacy-reference.php",
+      "help/audit-regressions/isolated/lib/ms4-three-read-normal.php",
+      "help/audit-regressions/isolated/ms4-aftersale-review-normal.php",
+      "help/audit-regressions/isolated/ms4-customer-http-normal.php",
+      "help/audit-regressions/isolated/ms4-fulfillment-migration.php",
+      "help/audit-regressions/isolated/ms4-fulfillment-normal.php",
+      "help/audit-regressions/isolated/ms4-worker-normal.php",
+      "help/audit-regressions/isolated/ms5-paid-consumer-normal.php",
+      "help/audit-regressions/isolated/ms5-payment-migration.php",
+      "help/migrations/marketplace-ms1.php",
+      "help/migrations/marketplace-ms2.php",
+      "help/migrations/marketplace-ms4-aftersale-menus.php",
+      "help/migrations/marketplace-ms4-aftersale.php",
+      "help/migrations/marketplace-ms4-assets.php",
+      "help/migrations/marketplace-ms4-fulfillment.php",
+      "help/migrations/marketplace-ms4-review-menus.php",
+      "help/migrations/marketplace-ms4.md",
+      "help/migrations/marketplace-ms4.php",
+      "help/migrations/marketplace-ms5-payment.md",
+      "help/migrations/marketplace-ms5-payment.php"
+    ],
+    "freeze_groups_added": [
+      "worker_source_roots",
+      "worker_source_extra",
+      "worker_source_files"
+    ],
+    "source_counts": "Actual complete future frozen source only; no prefilled count",
+    "binding": "ms4-worker-normal-source-binding.json",
+    "binding_scope": "MS4_WORKER_NORMAL_SOURCE",
+    "binding_keys": [
+      "schema",
+      "scope",
+      "run_id",
+      "source_sha",
+      "container_id",
+      "native_created_sha256",
+      "freeze_sha256",
+      "requested_repo_source",
+      "requested_run_source",
+      "requested_prep_source",
+      "entry_sha256",
+      "source_files",
+      "prerequisites_sha256"
+    ],
+    "environment": "worker-normal-environment.json",
+    "environment_scope": "MS4_WORKER_NORMAL_REAL_ENVIRONMENT",
+    "environment_keys": [
+      "schema",
+      "scope",
+      "run_id",
+      "source_sha",
+      "container_id",
+      "freeze_sha256",
+      "environment",
+      "native_projection_sha256"
+    ],
+    "environment_native": "worker-normal-environment-native.json",
+    "native_environment_stage": "worker-normal-public-environment-inspect",
+    "native_environment_keys": [
+      "stage",
+      "native_exit",
+      "stdout_bytes",
+      "stdout_sha256",
+      "stderr_bytes",
+      "stderr_sha256",
+      "private_environment_logs_omitted"
+    ],
+    "public_environment_names": [
+      "APP_ENV",
+      "PHP_CACHE_DRIVER",
+      "PHP_MARKETPLACE_AFTERSALE_ENABLED",
+      "PHP_MARKETPLACE_AFTERSALE_PRIVATE_ROOT",
+      "PHP_MARKETPLACE_CUSTOMER_FORM_PRIVATE_ROOT",
+      "PHP_MARKETPLACE_ENABLED",
+      "PHP_MARKETPLACE_PAYMENT_TEST_ENABLED",
+      "PHP_MARKETPLACE_SELF_OPERATED_MER_ID",
+      "PHP_MARKETPLACE_TRADE_ENABLED"
+    ],
+    "public_environment_rule": "Exactly nine sorted JSON strings, one final LF; original eight values plus fixed customer form private root.",
+    "fixed_proof_environment": {
+      "MS4_WORKER_NORMAL_PROOF_NAME": "worker-normal"
+    },
+    "formal_manifest": "worker-normal-formal-manifest.json",
+    "formal_roles": [
+      "audit-ms4-worker-normal",
+      "audit-ms5-paid-producer",
+      "audit-mysql",
+      "audit-redis"
+    ],
+    "register_proof": "register-worker-normal",
+    "authorize_proof": "authorize-worker-cleanup",
+    "helper_scope": "MS4_WORKER_LIFECYCLE_ONLY",
+    "stages": [
+      "worker-create",
+      "worker-bind",
+      "worker-start",
+      "observe --proof worker-normal",
+      "authorize-worker-close"
+    ],
+    "created_bound_status": "WORKER_UNSTARTED_SOURCE_ENVIRONMENT_BOUND_ONLY",
+    "registration_live_status": "LIVE_WORKER_REGISTRATION_SAME_HANDLE_PRESERVED",
+    "started_status": "WORKER_NORMAL_STARTED_ONLY",
+    "prerequisites": 89,
+    "prerequisite_members": [
+      "aftersale-review-normal-created.json",
+      "aftersale-review-normal-environment-native.json",
+      "aftersale-review-normal-environment.json",
+      "aftersale-review-normal-formal-manifest.json",
+      "aftersale-review-normal-predecessor-history.json",
+      "aftersale-review-normal-remove-native.json",
+      "aftersale-review-normal-removed.json",
+      "aftersale-review-normal-shutdown.json",
+      "aftersale-review-normal-terminal.json",
+      "aftersale-review-public-file-keep.json",
+      "authorize-aftersale-review-cleanup-created.json",
+      "authorize-aftersale-review-cleanup-result.json",
+      "authorize-aftersale-review-cleanup-shutdown.json",
+      "authorize-aftersale-review-cleanup-terminal.json",
+      "authorize-fulfillment-cleanup-created.json",
+      "authorize-fulfillment-cleanup-result.json",
+      "authorize-fulfillment-cleanup-shutdown.json",
+      "authorize-fulfillment-cleanup-terminal.json",
+      "customer-prepare-created.json",
+      "customer-prepare-environment-native.json",
+      "customer-prepare-environment.json",
+      "customer-prepare-paid-unstarted.json",
+      "customer-prepare-terminal.json",
+      "driver-created.json",
+      "driver-terminal.json",
+      "files-bootstrap-created.json",
+      "files-bootstrap-paid-unstarted.json",
+      "files-bootstrap-result.json",
+      "files-bootstrap-shutdown.json",
+      "files-bootstrap-terminal.json",
+      "fulfillment-migration-created.json",
+      "fulfillment-migration-terminal.json",
+      "fulfillment-normal-created.json",
+      "fulfillment-normal-environment-native.json",
+      "fulfillment-normal-environment.json",
+      "fulfillment-normal-formal-manifest.json",
+      "fulfillment-normal-predecessor-history.json",
+      "fulfillment-normal-remove-native.json",
+      "fulfillment-normal-removed.json",
+      "fulfillment-normal-shutdown.json",
+      "fulfillment-normal-terminal.json",
+      "initializer-completed-terminal.json",
+      "initializer-created.json",
+      "initializer-result.json",
+      "ms4-aftersale-early-migration-normal.json",
+      "ms4-aftersale-review-normal-source-binding.json",
+      "ms4-aftersale-review-normal.json",
+      "ms4-customer-prepare-source-binding.json",
+      "ms4-customer-prepare.json",
+      "ms4-fulfillment-migration-container-created.json",
+      "ms4-fulfillment-migration-formal-manifest.json",
+      "ms4-fulfillment-migration-source-binding.json",
+      "ms4-fulfillment-migration-terminal.json",
+      "ms4-fulfillment-normal-source-binding.json",
+      "ms4-fulfillment-normal.json",
+      "ms4-three-read-normal.json",
+      "ms5-payment-migration-container-created.json",
+      "ms5-payment-migration-formal-manifest.json",
+      "ms5-payment-migration-normal.json",
+      "ms5-payment-migration-source-binding.json",
+      "paid-producer-created.json",
+      "paid-producer-environment-native.json",
+      "paid-producer-environment.json",
+      "paid-producer-formal-manifest.json",
+      "paid-producer-predecessor-history.json",
+      "paid-producer-result.json",
+      "paid-producer-source-binding.json",
+      "paid-producer-terminal.json",
+      "register-aftersale-review-normal-created.json",
+      "register-aftersale-review-normal-result.json",
+      "register-aftersale-review-normal-shutdown.json",
+      "register-aftersale-review-normal-terminal.json",
+      "register-fulfillment-migration-created.json",
+      "register-fulfillment-migration-result.json",
+      "register-fulfillment-migration-shutdown.json",
+      "register-fulfillment-migration-terminal.json",
+      "register-fulfillment-normal-created.json",
+      "register-fulfillment-normal-result.json",
+      "register-fulfillment-normal-shutdown.json",
+      "register-fulfillment-normal-terminal.json",
+      "register-paid-after-c3-created.json",
+      "register-paid-after-c3-result.json",
+      "register-paid-after-c3-shutdown.json",
+      "register-paid-after-c3-terminal.json",
+      "register-paid-producer-created.json",
+      "register-paid-producer-result.json",
+      "register-paid-producer-shutdown.json",
+      "register-paid-producer-terminal.json"
+    ],
+    "public_originals": 105,
+    "public_members": [
+      "aftersale-review-normal-created.json",
+      "aftersale-review-normal-environment-native.json",
+      "aftersale-review-normal-environment.json",
+      "aftersale-review-normal-formal-manifest.json",
+      "aftersale-review-normal-predecessor-history.json",
+      "aftersale-review-normal-remove-native.json",
+      "aftersale-review-normal-removed.json",
+      "aftersale-review-normal-shutdown.json",
+      "aftersale-review-normal-terminal.json",
+      "aftersale-review-public-file-keep.json",
+      "authorize-aftersale-review-cleanup-created.json",
+      "authorize-aftersale-review-cleanup-result.json",
+      "authorize-aftersale-review-cleanup-shutdown.json",
+      "authorize-aftersale-review-cleanup-terminal.json",
+      "authorize-fulfillment-cleanup-created.json",
+      "authorize-fulfillment-cleanup-result.json",
+      "authorize-fulfillment-cleanup-shutdown.json",
+      "authorize-fulfillment-cleanup-terminal.json",
+      "authorize-worker-cleanup-created.json",
+      "authorize-worker-cleanup-result.json",
+      "authorize-worker-cleanup-shutdown.json",
+      "authorize-worker-cleanup-terminal.json",
+      "customer-prepare-created.json",
+      "customer-prepare-environment-native.json",
+      "customer-prepare-environment.json",
+      "customer-prepare-paid-unstarted.json",
+      "customer-prepare-terminal.json",
+      "driver-created.json",
+      "driver-terminal.json",
+      "files-bootstrap-created.json",
+      "files-bootstrap-paid-unstarted.json",
+      "files-bootstrap-result.json",
+      "files-bootstrap-shutdown.json",
+      "files-bootstrap-terminal.json",
+      "fulfillment-migration-created.json",
+      "fulfillment-migration-terminal.json",
+      "fulfillment-normal-created.json",
+      "fulfillment-normal-environment-native.json",
+      "fulfillment-normal-environment.json",
+      "fulfillment-normal-formal-manifest.json",
+      "fulfillment-normal-predecessor-history.json",
+      "fulfillment-normal-remove-native.json",
+      "fulfillment-normal-removed.json",
+      "fulfillment-normal-shutdown.json",
+      "fulfillment-normal-terminal.json",
+      "initializer-completed-terminal.json",
+      "initializer-created.json",
+      "initializer-result.json",
+      "ms4-aftersale-early-migration-normal.json",
+      "ms4-aftersale-review-normal-source-binding.json",
+      "ms4-aftersale-review-normal.json",
+      "ms4-customer-prepare-source-binding.json",
+      "ms4-customer-prepare.json",
+      "ms4-fulfillment-migration-container-created.json",
+      "ms4-fulfillment-migration-formal-manifest.json",
+      "ms4-fulfillment-migration-source-binding.json",
+      "ms4-fulfillment-migration-terminal.json",
+      "ms4-fulfillment-normal-source-binding.json",
+      "ms4-fulfillment-normal.json",
+      "ms4-three-read-normal.json",
+      "ms4-worker-normal-source-binding.json",
+      "ms4-worker-normal.json",
+      "ms5-payment-migration-container-created.json",
+      "ms5-payment-migration-formal-manifest.json",
+      "ms5-payment-migration-normal.json",
+      "ms5-payment-migration-source-binding.json",
+      "paid-producer-created.json",
+      "paid-producer-environment-native.json",
+      "paid-producer-environment.json",
+      "paid-producer-formal-manifest.json",
+      "paid-producer-predecessor-history.json",
+      "paid-producer-result.json",
+      "paid-producer-source-binding.json",
+      "paid-producer-terminal.json",
+      "register-aftersale-review-normal-created.json",
+      "register-aftersale-review-normal-result.json",
+      "register-aftersale-review-normal-shutdown.json",
+      "register-aftersale-review-normal-terminal.json",
+      "register-fulfillment-migration-created.json",
+      "register-fulfillment-migration-result.json",
+      "register-fulfillment-migration-shutdown.json",
+      "register-fulfillment-migration-terminal.json",
+      "register-fulfillment-normal-created.json",
+      "register-fulfillment-normal-result.json",
+      "register-fulfillment-normal-shutdown.json",
+      "register-fulfillment-normal-terminal.json",
+      "register-paid-after-c3-created.json",
+      "register-paid-after-c3-result.json",
+      "register-paid-after-c3-shutdown.json",
+      "register-paid-after-c3-terminal.json",
+      "register-paid-producer-created.json",
+      "register-paid-producer-result.json",
+      "register-paid-producer-shutdown.json",
+      "register-paid-producer-terminal.json",
+      "register-worker-normal-created.json",
+      "register-worker-normal-result.json",
+      "register-worker-normal-shutdown.json",
+      "register-worker-normal-terminal.json",
+      "worker-normal-created.json",
+      "worker-normal-environment-native.json",
+      "worker-normal-environment.json",
+      "worker-normal-formal-manifest.json",
+      "worker-normal-shutdown.json",
+      "worker-normal-terminal.json"
+    ],
+    "topology": {
+      "network": "Same original internal network, no ports or audit-app alias",
+      "volumes": "Same original seven named volumes plus sole customer-form-evidence, exactly eight",
+      "binds": "Original workspace/source/prep/Run/install-SQL exact five binds and original access",
+      "private_mounts": {
+        "app-secrets": "RO",
+        "fixture-secrets": "RW",
+        "aftersale-evidence": "RO",
+        "customer-form-evidence": "RO"
+      },
+      "tmpfs": [
+        "/tmp",
+        "/workspace/crmeb/public",
+        "/workspace/crmeb/runtime"
+      ],
+      "read_only": true,
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": "no-new-privileges"
+    },
+    "result": "ms4-worker-normal.json",
+    "result_scope": "NORMAL_WORKER_NON_DUE_LIFECYCLE_ONLY",
+    "result_status": "VERIFIED_NORMAL_WORKER_NON_DUE_LIFECYCLE_ONLY",
+    "result_keys": [
+      "schema",
+      "scope",
+      "status",
+      "run_id",
+      "source_sha",
+      "container_id",
+      "freeze_sha256",
+      "native_created_sha256",
+      "source_binding_sha256",
+      "environment_sha256",
+      "environment_native_sha256",
+      "prerequisites_sha256",
+      "phase",
+      "entry_return_code",
+      "termination",
+      "native_exit",
+      "native_exit_observation",
+      "full_source_unchanged",
+      "metadata_observer",
+      "lifecycle",
+      "preservation",
+      "diagnostic",
+      "full_acceptance",
+      "stopped_samples",
+      "assertions"
+    ],
+    "lifecycle_keys": [
+      "command",
+      "cwd",
+      "supervisor",
+      "master_initial",
+      "child_initial",
+      "master_before_signal",
+      "child_before_signal",
+      "pid_file",
+      "signal",
+      "proc_close_exit",
+      "streams",
+      "event_records",
+      "runtime",
+      "child_exit_observation"
+    ],
+    "preservation_keys": [
+      "before",
+      "after",
+      "predecessor_hashes",
+      "original_inputs",
+      "all_database_unchanged",
+      "non_target_redis_unchanged",
+      "timer_redis_changes",
+      "private_files_unchanged",
+      "public_files_unchanged",
+      "runtime",
+      "full_source_unchanged",
+      "window"
+    ],
+    "shutdown": "worker-normal-shutdown.json",
+    "shutdown_scope": "MS4_WORKER_NORMAL_SHUTDOWN",
+    "shutdown_keys": [
+      "schema",
+      "scope",
+      "run_id",
+      "source_sha",
+      "container_id",
+      "freeze_sha256",
+      "phase",
+      "completed",
+      "result_published",
+      "fatal",
+      "termination_requested",
+      "primary_failure",
+      "cleanup_failure",
+      "native_exit",
+      "native_exit_observation"
+    ],
+    "event_locator_keys": [
+      "file",
+      "file_sha256",
+      "offset",
+      "bytes",
+      "sha256",
+      "event_json"
+    ],
+    "event_keys": [
+      "schema",
+      "phase",
+      "pid",
+      "worker_id",
+      "loop_class",
+      "loop_object_id",
+      "timer_id",
+      "monotonic_ns",
+      "active",
+      "busy",
+      "closed",
+      "owned",
+      "worker_count",
+      "slot",
+      "count",
+      "socketless",
+      "details"
+    ],
+    "event_rules": "Original canonical JSON substring and exact 17 keys; original phase flags/same real child/loop/timer, period60/batch100 and first scan >=60 actual monotonic seconds; retain every additional tick/rotation",
+    "native_rules": "Actual inner original-resource TERM once, EOF/fclose/proc_close integer0 AND later independent Host same outer CID native/container0; never map -1 or invent raw child waitstatus",
+    "child_observation": "MASTER_NORMAL_EXIT_OWNED_STOP_TRACE_NO_RAW_CHILD_WAIT_STATUS",
+    "natural_preconditions": "Actual complete tasks table empty, native crontab absent or strict serialized []; all saved ship and Redis expiry facts outlast actual 180-second window; no mutation of tasks/cache/time/deadlines",
+    "allowed_timer_redis_keys": [
+      "c:crontabCache",
+      "c:marketplace_fulfillment_receive_cursor",
+      "c:CRMEB:827bf7a6b0b8d160bd116898762da4c5"
+    ],
+    "public_evidence_boundary": "Host and independent zero verify all public nested semantics and source/native/descriptor/range/hash associations. Full original log line bytes and old tag set members are private; no claim to reconstruct them from SHA. Original entry full raw/snapshot/readback and private after seal remain strict.",
+    "close": {
+      "flag": "--worker-normal",
+      "prefix": "ms4-worker-normal-close-",
+      "scope": "MS4_WORKER_NORMAL_CLOSE_ONLY",
+      "result": "ms4-worker-normal-close-result.json",
+      "status": "VERIFIED_MS4_WORKER_NORMAL_CLOSE_ZERO_RESIDUAL",
+      "default_mode": "Original normal scope/output/oracles unchanged",
+      "operations": "Original two DB normal stop, exact four CID/nonforce network/eight exact volumes; historical normally removed CIDs remain absent."
+    },
+    "independent_zero": {
+      "flag": "--worker-normal",
+      "status": "VERIFIED_MS4_WORKER_NORMAL_INDEPENDENT_SIX_QUERY_ZERO",
+      "imports": "No Host or close import",
+      "rules": "Complete original normal/KEEP/history/removed and Worker public/native/source/P/global before/after, resource archives and six fresh empty raw queries; actual close full bytes hash",
+      "result": "ms4-worker-normal-independent-zero.json",
+      "scope": "MS4_WORKER_NORMAL_CLOSE_INDEPENDENT_ZERO_ONLY"
+    },
+    "full_acceptance": "INCOMPLETE",
+    "stopped_samples": "NOT RUN",
+    "remaining": [
+      "13 legacy task business",
+      "due/expiry behavior",
+      "all original Task6/7/8 acceptance",
+      "API/DOM and responsive acceptance",
+      "nonempty historical migration",
+      "real finance and release"
+    ],
+    "donor_entry_before_current_binding": {
+      "entry": "help/audit-regressions/isolated/ms4-worker-normal.php",
+      "entry_bytes": 123287,
+      "entry_sha256": "51d35d70ef7c5fe722cbb0331e233c1e9de3a3b8f570220ca80a407c94b06feb"
+    }
+  },
+  "customer_form_current_profile": {
+    "status": "BOUND_FROZEN_PHP_SOURCE",
+    "product_head_before_adoption": "eadf74f8924a5ed5b801043030b579dffe5d1702",
+    "runtime_execution": "NOT RUN",
+    "unique_new_source": "help/audit-regressions/isolated/lib/ms4-customer-form-normal.php",
+    "finite_existing_imports": [
+      "help/audit-regressions/isolated/ms4-aftersale-review-normal.php",
+      "help/audit-regressions/isolated/ms4-fulfillment-normal.php",
+      "help/audit-regressions/isolated/ms5-paid-consumer-normal.php",
+      "help/audit-regressions/isolated/lib/ms4-three-legacy-producer.php",
+      "help/audit-regressions/isolated/lib/ms4-three-legacy-reference.php",
+      "help/audit-regressions/isolated/lib/ms4-three-read-normal.php"
+    ],
+    "fixed_private_root": "/run/audit-customer-form",
+    "public_root_env": "PHP_MARKETPLACE_CUSTOMER_FORM_PRIVATE_ROOT",
+    "named_volume": "customer-form-evidence",
+    "named_volume_count": 8,
+    "initializer": "actual 0:0 created mount/empty new volume/real process euid+egid/realpath/no-link/owner/0700 before first App; chmod only fixed dedicated volume",
+    "source_extra_counts": {
+      "customer": 10,
+      "paid": 11,
+      "fulfillment": 26,
+      "aftersale_review": 30,
+      "worker": 31
+    },
+    "original_non_targets": "All original four CID/one network/native/permissions/SQL/Redis/normal stop/HTTP200 requirements retained",
+    "new_receipts": "Source-exact finite CU_FORM public schemas bound to actual frozen PHP; original public/business keys retained.",
+    "private_archives": "No backup claimed; only actual evidence may be recorded, original normal exact volume retirement responsibility retained",
+    "php_sources": [
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-customer-form-normal.php",
+        "bytes": 68191,
+        "sha256": "d47bafd900c50d1e99e8359b46f0c6d6f67e1033d02050bba1890611ea1fc988"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-customer-http-normal.php",
+        "bytes": 65119,
+        "sha256": "925314fc7050d8e1e0928aa056f680fed88662cf8f4b2ae2f87d070b9ae6de2d"
+      },
+      {
+        "path": "help/audit-regressions/isolated/ms4-aftersale-review-normal.php",
+        "bytes": 239863,
+        "sha256": "48734a574986d3c6eab37cbc0f1deeab2d03b2b94b931bcaed4719c72e62f723"
+      },
+      {
+        "path": "help/audit-regressions/isolated/ms4-customer-http-normal.php",
+        "bytes": 115616,
+        "sha256": "84186f10092685ae1428f1c70533023109c2160bc672a311d89e5e97c26c8494"
+      },
+      {
+        "path": "help/audit-regressions/isolated/ms4-fulfillment-normal.php",
+        "bytes": 128359,
+        "sha256": "4d38c7ac0d8afbc72a0000319765e155fbd8a116656c43652e54cd824dc992b7"
+      },
+      {
+        "path": "help/audit-regressions/isolated/ms4-worker-normal.php",
+        "bytes": 127354,
+        "sha256": "2f52b676dfa5b3d715adaae0318802f941388ffc103b7f8c02cf2e9d5f09f4f8"
+      },
+      {
+        "path": "help/audit-regressions/isolated/ms5-paid-consumer-normal.php",
+        "bytes": 109849,
+        "sha256": "956f4dbcf96afa7155a478cdb7e74b960891d120148e74ff8735b6da53d37e5d"
+      }
+    ],
+    "frozen_php_authorities": [
+      {
+        "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/customer-order-form-normal-business-source-r2/PINS.json",
+        "bytes": 30300,
+        "sha256": "4d69fc34c13bc2404bee42a70f9fb8f02440a4e789159ddf2f7e539265605792"
+      },
+      {
+        "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/customer-order-form-normal-business-source-r2/MANIFEST.json",
+        "bytes": 6985,
+        "sha256": "f2a7004bc47015a3a21e8b986fbf859d0c45901839fe35084ba7644f1575777b"
+      },
+      {
+        "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/customer-order-form-normal-business-source-r2/INTERFACE.json",
+        "bytes": 8564,
+        "sha256": "9b75a999003485c5a050149f43cb27103858e6403693e86d64a70d48bbc67565"
+      }
+    ],
+    "public_receipt_schema": {
+      "schema": 1,
+      "status": "SOURCE_INTERFACE_ONLY_NOT_RUNTIME_RECEIPT",
+      "new_runtime_path": "help/audit-regressions/isolated/lib/ms4-customer-form-normal.php",
+      "finite_transitive_imports": [
+        "help/audit-regressions/isolated/ms4-aftersale-review-normal.php",
+        "help/audit-regressions/isolated/ms4-fulfillment-normal.php",
+        "help/audit-regressions/isolated/ms5-paid-consumer-normal.php",
+        "help/audit-regressions/isolated/lib/ms4-three-legacy-producer.php",
+        "help/audit-regressions/isolated/lib/ms4-three-legacy-reference.php",
+        "help/audit-regressions/isolated/lib/ms4-three-read-normal.php"
+      ],
+      "import_timing": "Before require: unique immutable worker_source_files row and both source/workspace full bytes/hash; unimported allowed empty; imported finite6 only; original inventory remains unchanged plus helper",
+      "root": "/run/audit-customer-form",
+      "environment_name": "PHP_MARKETPLACE_CUSTOMER_FORM_PRIVATE_ROOT",
+      "environment": {
+        "prepare": 6,
+        "customer_verify_paid_Task6": 7,
+        "AR_Worker": 9,
+        "seven_native_lines": "sorted JSON string lines with unescaped Unicode and slashes; exactly two trailing LF",
+        "nine_native_lines": "original sorted JSON lines; exactly one trailing LF"
+      },
+      "mount": {
+        "initializer": "RW initialization",
+        "prepare": "ABSENT",
+        "customer_verify": "RW",
+        "paid": "RW",
+        "Task6": "RO",
+        "AR": "RW",
+        "Worker": "RO"
+      },
+      "paid_success_top_level_addition": {
+        "customer_form": {
+          "schema": 1,
+          "scope": "CU_FORM_NORMAL_PAID",
+          "uploads": 4,
+          "selected_distinct": 3,
+          "required_image_entries": 8,
+          "optional_empty": true,
+          "multi_product": true,
+          "complete34_independent_before": true,
+          "three_bind_columns_only": true,
+          "original_full_bytes": true,
+          "upload_child": "actual complete normal child proof with exact keys defined below",
+          "first_create_official_kernel": true,
+          "same_body_original_early_return": true
+        }
+      },
+      "paid_failure_top_level_addition": {
+        "customer_form_upload_child": "actual observed proof or null; no success assertion"
+      },
+      "paid_original_child": "unchanged old owner identity child and exact original keys",
+      "upload_child_exact_keys": [
+        "stopped",
+        "group",
+        "remaining_members",
+        "listener_open",
+        "stop_signal",
+        "term_attempted",
+        "native_child",
+        "native_proc_close",
+        "normal_only",
+        "streams"
+      ],
+      "upload_child_group_exact_keys": [
+        "leader_pid",
+        "pgid",
+        "sid",
+        "leader_starttime"
+      ],
+      "upload_child_native_exact_keys": [
+        "pid",
+        "running",
+        "signaled",
+        "stopped",
+        "exitcode",
+        "termsig",
+        "stopsig"
+      ],
+      "upload_child_streams_exact_keys": [
+        "stdout",
+        "stderr"
+      ],
+      "upload_child_each_stream_exact_keys": [
+        "path",
+        "bytes",
+        "sha256",
+        "stat"
+      ],
+      "upload_child_normal_proof": "stopped true, remaining empty, listener false, stop_signal SIGTERM, term_attempted true, normal_only true; same registered leader=pgid=sid=native pid; native running/stopped false, stopsig 0, exitcode and proc_close in [-1,0], termsig in [0,SIGTERM]; both complete owned create-only closed streams read to EOF and independent first/final native9 held",
+      "upload_child_stream_stat": "actual native PHP Linux lstat array, kept intact; stream checks dev/ino/mode/nlink/uid/gid/size/mtime/ctime; no invented native exit",
+      "customer_verify_business_addition": {
+        "customer_form": {
+          "schema": 1,
+          "scope": "CU_FORM_NORMAL_CUSTOMER_HTTP",
+          "uploads": 4,
+          "selected_distinct": 3,
+          "required_image_entries": 8,
+          "optional_empty": true,
+          "multi_product": true,
+          "complete34_independent_before": true,
+          "three_bind_columns_only": true,
+          "original_full_bytes": true
+        }
+      },
+      "AR_business_addition": {
+        "customer_form": {
+          "schema": 1,
+          "scope": "CU_FORM_NORMAL_SAVED_READERS",
+          "roots_read": 2,
+          "staged_reader": true,
+          "saved_reader_kinds": [
+            "customer_order",
+            "merchant_order",
+            "platform_order",
+            "mobile_order"
+          ],
+          "package_root_locators": true,
+          "historical_bound_after_actual_confirmation_deadline": true,
+          "original_full_bytes": true
+        }
+      },
+      "Task6_Worker_public_new_fields": [],
+      "paid_private_baseline_addition": {
+        "customer_form": "bounded native PHP serialize/base64 private proof; exact encoding/bytes/sha256/base64; original authenticated_owner and native_snapshot untouched"
+      },
+      "AR_final_private_payload_addition": {
+        "customer_form_observations": {
+          "reads": "actual non-secret consumed-ticket/full-binary observations",
+          "packages": "actual original customer/merchant package saved-root relations",
+          "historical": "actual Redis milliseconds strictly after original saved confirmation deadline"
+        }
+      },
+      "PHP_consumers_updated": [
+        "Task6 paid result exact top keys and actual child proof",
+        "Task6 paid private envelope restore/real user/physical proof",
+        "Worker AR business exact keys",
+        "Worker final private payload exact keys and real native SQL/physical observation checks"
+      ],
+      "Worker_parent": "native observer only; fixed root/env/owner/mode physical primitive, no business App initialization",
+      "original_HTTP_subsets": {
+        "independent_customer_verify": 12,
+        "paid_identity": 2,
+        "new_CU_calls": "separate helper observers"
+      },
+      "stopped_samples": "NOT RUN; no artificial expiry/TTL/time change or negative read request",
+      "actual_runtime_or_adoption": "NOT RUN",
+      "AR_public_root_preparation_auxiliary_contract": {
+        "file": "ms4-aftersale-review-public-upload-root-prepared.json",
+        "scope": "MS4_AFTERSALE_REVIEW_LOCAL_PUBLIC_ROOT_PREPARATION",
+        "top_keys": [
+          "schema",
+          "scope",
+          "run_id",
+          "source_sha",
+          "freeze_sha256",
+          "container_id",
+          "source_binding_sha256",
+          "configuration",
+          "before",
+          "after",
+          "created",
+          "existing_root_native_unchanged"
+        ],
+        "configuration_boolean_keys": [
+          "configuration_preloaded",
+          "configuration_loaded",
+          "type_is_local",
+          "url_is_uploads",
+          "root_is_expected",
+          "parent_is_directory",
+          "parent_is_nonlink",
+          "parent_is_canonical",
+          "parent_writable"
+        ],
+        "before_boolean_keys": [
+          "exists",
+          "is_directory",
+          "is_link",
+          "canonical_expected",
+          "writable"
+        ],
+        "after_boolean_keys": [
+          "exists",
+          "is_directory",
+          "is_link",
+          "canonical_expected",
+          "writable",
+          "mode_is_0700"
+        ],
+        "branch_contract": "Created: before allfalse/createdtrue/after alltrue except is_linkfalse/existing_native_unchangedfalse. Existing: before and after exists,dir,canonical,writabletrue/linkfalse,createdfalse/existing_native_unchangedtrue; after.mode_is_0700 observed bool only.",
+        "Config_loading": "Original Config.load(filesystem,filesystem) only if namespace not already present; never replace existing namespace or override disk fields.",
+        "AR_call": "after actual m4fn_app and original role config assertion; before m4ar_business and its first original business BEFORE",
+        "Worker_call": "One strict read-only proof verifier after actual original AR source-binding validation; same actual source/run/freeze, original AR CID, binding SHA and complete proof hash",
+        "actual_Static_Host_before_counts": {
+          "aftersale_review_public_names": 84,
+          "aftersale_review_history_names": 85,
+          "worker_prerequisite_names": 88,
+          "worker_public_names": 104
+        },
+        "actual_Static_Host_after_counts": {
+          "aftersale_review_public_names": 85,
+          "aftersale_review_history_names": 86,
+          "worker_prerequisite_names": 89,
+          "worker_public_names": 105
+        },
+        "actual_Worker_no_retirement_before_after": [
+          85,
+          86
+        ],
+        "actual_Worker_prerequisites_before_after": [
+          88,
+          89
+        ],
+        "unchanged_original_AR_prerequisites": 34,
+        "unchanged_original_Task6_history": 65,
+        "unchanged_original_AR29key_result_and_operation_receipt6": true,
+        "source_extra_counts_unchanged": {
+          "customer": 10,
+          "paid": 11,
+          "fulfillment": 26,
+          "aftersale_review": 30,
+          "worker": 31
+        },
+        "required_Host_Zero_fragments": "aftersale-review-public-root-preparation-source-r1/host-component; Root final nine-profile integration/binding required",
+        "historical_Run_or_old_profile_backfill": false,
+        "runtime_proof_or_business_execution": "NOT RUN"
+      }
+    },
+    "current_composite_php_source_authority": {
+      "scope": "FROZEN_PREDECESSOR_SEVEN_PLUS_TWO_CALLER_CONTRACT_DELTAS_ONLY",
+      "status": "SOURCE_BOUND_TWO_CALLER_CONTRACT_DELTAS_WITH_SEPARATE_ACTUAL_ADOPTION",
+      "predecessor_profile_PINS": {
+        "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-raw-env-normal-next-source-r1/profile-source/PINS.json",
+        "bytes": 2265,
+        "sha256": "3a621c5c8274b1ca8a09914a305858187dc7567c4534c9b671176749c2425e26"
+      },
+      "predecessor_profile_interface": {
+        "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-raw-env-normal-next-source-r1/profile-source/candidate/interface-v1.json",
+        "bytes": 93019,
+        "sha256": "79be2093db0cbcd57b9d3a8ea9d5054d47cd31f96aa6f024399dc86aa2a612fc"
+      },
+      "predecessor_composite": {
+        "scope": "FROZEN_PREDECESSOR_SEVEN_PLUS_SINGLE_RAW_ENV_LIBRARY_DELTA_ONLY",
+        "status": "SOURCE_BOUND_CURRENT_LIBRARY_DELTA_WITH_SEPARATE_ACTUAL_ADOPTION",
+        "predecessor_profile_PINS": {
+          "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-initializer-customer-form-mount-next-source-r1/profile-source/PINS.json",
+          "bytes": 1981,
+          "sha256": "bea5be0deb2013ad377f1afbd782891db91fff0624a7895fdb115a06e88cc944"
+        },
+        "predecessor_profile_interface": {
+          "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-initializer-customer-form-mount-next-source-r1/validation/actual-profile/interface-v1.json",
+          "bytes": 88050,
+          "sha256": "e50fba9b765537d0d6768a7400a4ac214fe19792789ff9ad8672cb474d159a44"
+        },
+        "predecessor_composite": {
+          "scope": "FROZEN_BASE_SIX_PLUS_TWO_EXACT_CUSTOMER_ENTRY_DELTAS_ONLY",
+          "status": "SOURCE_BOUND_CURRENT_DELTA_WITH_SEPARATE_ACTUAL_ADOPTION",
+          "predecessor_profile_PINS": {
+            "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/eight-volume-consumer-normal-profile-source-r3/PINS.json",
+            "bytes": 5179,
+            "sha256": "344e41222dd50ddca532b9cb11c541480ccabf2b9f51b3d123cc32761cef8d33"
+          },
+          "predecessor_profile_interface": {
+            "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/eight-volume-consumer-normal-profile-source-r3/candidate/interface-v1.json",
+            "bytes": 84678,
+            "sha256": "5d3298f6fb4994f8ad16c9bab1b76a7aaabd11f3c33479984a71b8dd2254f221"
+          },
+          "predecessor_composite": {
+            "scope": "FROZEN_BASE_PLUS_SINGLE_CUSTOMER_ENTRY_SOURCE_DELTA_ONLY",
+            "status": "SOURCE_BOUND_CROSS_PACKAGE_CANDIDATE_NOT_ADOPTED",
+            "base_authorities_scope": "Original business-r2 seven-file freeze retained as predecessor; six unchanged CU members are selected from it.",
+            "delta_authorities": [
+              {
+                "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-eight-volume-consumer-source-closure-design-r1/PINS.json",
+                "bytes": 1366,
+                "sha256": "31e6956dcd185b4e1fb8ecb94f8c0a750feda323bbee03b82219c0efab8ad87d"
+              },
+              {
+                "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-eight-volume-consumer-source-closure-design-r1/MANIFEST.json",
+                "bytes": 7405,
+                "sha256": "be6ba4d9829bc4e7d6a7fe19b1ee6844793a0c69db38782f09fbd3d34599cfb1"
+              }
+            ],
+            "delta_repository_path": "help/audit-regressions/isolated/ms4-customer-http-normal.php",
+            "delta_candidate": {
+              "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-eight-volume-consumer-source-closure-design-r1/candidate/help/audit-regressions/isolated/ms4-customer-http-normal.php",
+              "bytes": 115040,
+              "sha256": "ebabf552c2c79e12c7cc307804d6f9610495ce67c557b21dcf28f9c28c7dd14c"
+            },
+            "previous_descriptor": {
+              "path": "help/audit-regressions/isolated/ms4-customer-http-normal.php",
+              "bytes": 115018,
+              "sha256": "f26ddf629f8e1ac1601c73c97f13ae7665a20467e65590d944ed9771a3386a92"
+            },
+            "current_descriptor": {
+              "path": "help/audit-regressions/isolated/ms4-customer-http-normal.php",
+              "bytes": 115040,
+              "sha256": "ebabf552c2c79e12c7cc307804d6f9610495ce67c557b21dcf28f9c28c7dd14c"
+            },
+            "current_seven_member_rule": "Exactly the original seven paths: six original business-r2 members and this one full-byte-pinned customer candidate. The other two A migration sources remain future M source-group inputs, not CU table members.",
+            "future_product_head": "PENDING_REAL_ROOT_ADOPTION_AND_CLEAN_HEAD",
+            "runtime_or_adoption": "NOT RUN"
+          },
+          "delta_authorities": [
+            {
+              "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-initializer-customer-form-mount-consumer-source-r1/PINS.json",
+              "bytes": 3175,
+              "sha256": "ea0c50f5f66e5ed87ccd424999eea9baf5c541452288d1a45ac5611d06f4b390"
+            },
+            {
+              "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-initializer-customer-form-mount-consumer-source-r1/SOURCE-TRANSFORMS.json",
+              "bytes": 1287,
+              "sha256": "63afeb8c5e17d2ee38d883b314aadf033d0011fa9d9c678ad2ee9e0d5cff5e5c"
+            }
+          ],
+          "delta_repository_path": "help/audit-regressions/isolated/ms4-customer-http-normal.php",
+          "delta_candidate": {
+            "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-initializer-customer-form-mount-consumer-source-r1/candidate/help/audit-regressions/isolated/ms4-customer-http-normal.php",
+            "bytes": 115616,
+            "sha256": "84186f10092685ae1428f1c70533023109c2160bc672a311d89e5e97c26c8494"
+          },
+          "previous_descriptor": {
+            "path": "help/audit-regressions/isolated/ms4-customer-http-normal.php",
+            "bytes": 115040,
+            "sha256": "ebabf552c2c79e12c7cc307804d6f9610495ce67c557b21dcf28f9c28c7dd14c"
+          },
+          "current_descriptor": {
+            "path": "help/audit-regressions/isolated/ms4-customer-http-normal.php",
+            "bytes": 115616,
+            "sha256": "84186f10092685ae1428f1c70533023109c2160bc672a311d89e5e97c26c8494"
+          },
+          "actual_adoption": {
+            "commit": {
+              "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-initializer-mount-main-adoption-r1/COMMIT.json",
+              "bytes": 1143,
+              "sha256": "8e86727bf60e6842fd7c6b668e731ec95ec023c931d0988e1e5443fbbdb6795b"
+            },
+            "source_manifest": {
+              "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-initializer-mount-main-adoption-r1/SOURCE-MANIFEST.json",
+              "bytes": 2182,
+              "sha256": "b63489ad34f99182b8d944790f90a9126ddf0949c40ffc32d450ba1702f140aa"
+            }
+          },
+          "actual_source_sha": "2fa872e6fda7a8bf46c55f88dd946b972ec79102",
+          "runtime": "NOT RUN",
+          "base_authorities_semantics": "Original business-r2 three authorities and first115018-to115040 delta remain unchanged predecessors; only the exact second115040-to115616 customer entry is selected with original other six members."
+        },
+        "delta_authorities": {
+          "raw_source_PINS": {
+            "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/customer-form-official-initialize-env-raw-source-r1/PINS.json",
+            "bytes": 959,
+            "sha256": "c5e52f0fb23de9f1fa6d9124d9514af7c86343e2a6d9e26318c6078a69c540d6"
+          },
+          "raw_source_peer": {
+            "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/customer-form-official-initialize-env-raw-independent-r1/REPORT.json",
+            "bytes": 1478,
+            "sha256": "f52736856c2bcf3f3dd2cf79aa3e7f5f984f70d55883ac1fd1406f233e2d1b44"
+          },
+          "raw_syntax_RESULT": {
+            "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/customer-form-official-initialize-env-raw-php-syntax-actual-r1/RESULT.json",
+            "bytes": 7989,
+            "sha256": "70acadd6d0e4ef9116bf4f52fa9215637c76e486630011a72a2db71dc9d0f34c"
+          },
+          "membership_source_PINS": {
+            "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-normal-initializer-membership-source-r1/PINS.json",
+            "bytes": 837,
+            "sha256": "33686a758060024e6ac3c0ff39bf493bd91ab1d5e5f6fc82e5e95ccf169bb070"
+          },
+          "membership_source_peer": {
+            "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-normal-initializer-membership-independent-r1/REPORT.json",
+            "bytes": 2246,
+            "sha256": "655704b9654ef5e1db0f7c4c73b8a75c90e7735645095589b79794d53972d16d"
+          },
+          "membership_syntax_RESULT": {
+            "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-normal-initializer-membership-php-syntax-actual-r1/RESULT.json",
+            "bytes": 7837,
+            "sha256": "dbfad08d6237f13df59366b962a2c5490dcb0bf65bf07a8823aea759b42a6259"
+          }
+        },
+        "delta_repository_path": "help/audit-regressions/isolated/lib/ms4-customer-http-normal.php",
+        "delta_candidate": {
+          "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/customer-form-official-initialize-env-raw-source-r1/candidate/help/audit-regressions/isolated/lib/ms4-customer-http-normal.php",
+          "bytes": 65119,
+          "sha256": "925314fc7050d8e1e0928aa056f680fed88662cf8f4b2ae2f87d070b9ae6de2d"
+        },
+        "previous_descriptor": {
+          "path": "help/audit-regressions/isolated/lib/ms4-customer-http-normal.php",
+          "bytes": 65044,
+          "sha256": "90317d0dd07d075251e6e306cd0adae524fe5455a89b0eb147880a232fda8d8e"
+        },
+        "current_descriptor": {
+          "path": "help/audit-regressions/isolated/lib/ms4-customer-http-normal.php",
+          "bytes": 65119,
+          "sha256": "925314fc7050d8e1e0928aa056f680fed88662cf8f4b2ae2f87d070b9ae6de2d"
+        },
+        "actual_adoption": {
+          "commit": {
+            "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/customer-form-official-initialize-env-main-adoption-r1/COMMIT.json",
+            "bytes": 1980,
+            "sha256": "e4d9bda57446c4502f1165b89aed6336f63b9b0ed9cdb6e5cc13bd0d50d467fd"
+          },
+          "source_manifest": {
+            "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/customer-form-official-initialize-env-main-adoption-r1/SOURCE-MANIFEST.json",
+            "bytes": 1396,
+            "sha256": "539116667f2271a3faaffbb806b10ae0ac13ee0eefe3d8aac4ec85ced2e82e88"
+          }
+        },
+        "actual_source_sha": "53e6d521b387b19a4cf370e0e381670b762d325e",
+        "runtime": "NOT RUN",
+        "base_authorities_semantics": "The entire original seven-source/tenth composite is unchanged history; only the exact current raw Env library replaces its previous descriptor. Six other selected members remain byte-identical. The historical pre-adoption Source manifest is not re-signed as actual adoption; the real clean COMMIT supplies current identity."
+      },
+      "delta_authorities": {
+        "caller_source_PINS": {
+          "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/paid-fulfillment-current-source-contract-repair-source-r2/PINS.json",
+          "bytes": 4254,
+          "sha256": "4a3233283f4ea5cc4da3ee696b337be49725aa63b5553e4edbbd68fe283b7618"
+        },
+        "caller_source_manifest": {
+          "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/paid-fulfillment-current-source-contract-repair-source-r2/SOURCE-MANIFEST.json",
+          "bytes": 9007,
+          "sha256": "88349749d11713929a26e96700a83c5bbcf33a941729077a941817d707aad0e0"
+        },
+        "caller_syntax_RESULT": {
+          "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/paid-fulfillment-current-contract-php-syntax-actual-r1/RESULT.json",
+          "bytes": 9021,
+          "sha256": "960e77e3193b9aef06492dc282400d403a31a815c74e2a64d07d7e6b5825443c"
+        },
+        "caller_syntax_job_PINS": {
+          "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/paid-fulfillment-current-contract-php-syntax-source-r2/PINS.json",
+          "bytes": 4172,
+          "sha256": "bf4d57ac2e7b3672ace77ee7119a76f06824edab46feab8ab2f76bfc8648129e"
+        },
+        "root_actual_readback": {
+          "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-paid-producer-failed-close-zero-and-syntax-root-readback-r1/REPORT.json",
+          "bytes": 2514,
+          "sha256": "87c2de85205ebd5ddcb0d9faa47f769ac6a4f78291c674f707bb5b37e0ff8cd5"
+        }
+      },
+      "delta_repository_paths": [
+        "help/audit-regressions/isolated/ms5-paid-consumer-normal.php",
+        "help/audit-regressions/isolated/ms4-fulfillment-normal.php"
+      ],
+      "delta_candidates": [
+        {
+          "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/paid-fulfillment-current-source-contract-repair-source-r2/candidate/help/audit-regressions/isolated/ms5-paid-consumer-normal.php",
+          "bytes": 109531,
+          "sha256": "67450a4ab293d4b59f9ee90b02d35e2532c09b420c378ae5c643f6f39070f2f6"
+        },
+        {
+          "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/paid-fulfillment-current-source-contract-repair-source-r2/candidate/help/audit-regressions/isolated/ms4-fulfillment-normal.php",
+          "bytes": 128359,
+          "sha256": "4d38c7ac0d8afbc72a0000319765e155fbd8a116656c43652e54cd824dc992b7"
+        }
+      ],
+      "previous_descriptors": [
+        {
+          "path": "help/audit-regressions/isolated/ms5-paid-consumer-normal.php",
+          "bytes": 108005,
+          "sha256": "ee59d99ea8db768b0a45727d9cdffe276b7f0c11f7e07cea5cc10d10a449f4b7"
+        },
+        {
+          "path": "help/audit-regressions/isolated/ms4-fulfillment-normal.php",
+          "bytes": 128280,
+          "sha256": "b877330ac652d1d0bc63fd72d84fb34174cac83144637f58c090c0f7c13034ce"
+        }
+      ],
+      "current_descriptors": [
+        {
+          "path": "help/audit-regressions/isolated/ms5-paid-consumer-normal.php",
+          "bytes": 109531,
+          "sha256": "67450a4ab293d4b59f9ee90b02d35e2532c09b420c378ae5c643f6f39070f2f6"
+        },
+        {
+          "path": "help/audit-regressions/isolated/ms4-fulfillment-normal.php",
+          "bytes": 128359,
+          "sha256": "4d38c7ac0d8afbc72a0000319765e155fbd8a116656c43652e54cd824dc992b7"
+        }
+      ],
+      "actual_adoption": {
+        "commit": {
+          "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/paid-fulfillment-current-contract-main-adoption-r1/COMMIT.json",
+          "bytes": 11101,
+          "sha256": "dc326a946862bcc77c5f5cc66f5934a08eda8766520584fc67fb5be517eed80c"
+        },
+        "source_manifest": {
+          "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/paid-fulfillment-current-contract-main-adoption-r1/SOURCE-MANIFEST.json",
+          "bytes": 2107,
+          "sha256": "90702f4ef4818b2c8d11705828e956f7ae56c411c7aa28774c3b341ee8b54207"
+        }
+      },
+      "actual_source_sha": "76efa7807c6137bc430e314e2faa78691cf60431",
+      "runtime": "NOT RUN",
+      "base_authorities_semantics": "The complete predecessor seven-source raw-Env composite stays historical. Only the two exact paid/fulfillment caller descriptors change after the actual four-path local commit; the five other selected sources, existing initializer membership semantics and all normal business functions remain unchanged. Previous results are not current business success."
+    },
+    "assertion_prefix_successor": {
+      "scope": "CURRENT_881_FORM_LABEL_ONLY_SOURCE_NOT_BUSINESS_ACCEPTANCE",
+      "source_sha": "8819524a60028090c55bdcd3a9da05e50eaf19d0",
+      "predecessor_source_sha": "2e4af47c7595947e16bef0abfa9785823b1369d5",
+      "source_delta": {
+        "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-881-form-prefix-normal-next-source-r2/FORM-DELTA.json",
+        "bytes": 2166,
+        "sha256": "8a2b6471a2318c97a1af49d6dfc15818455653f2ac4d15af7493390c326f6fb4"
+      },
+      "unchanged_other_six_php_members": 6
+    },
+    "normal_http_diagnostic_successor": {
+      "scope": "ACTUAL_NORMAL_HTTP_DIAGNOSTIC_SOURCE_NOT_BUSINESS_ACCEPTANCE",
+      "source_sha": "0c13c57ba1ec4bf15ea9240601a5d6361e986ce8",
+      "predecessor_source_sha": "8819524a60028090c55bdcd3a9da05e50eaf19d0",
+      "source_delta": {
+        "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-normal-http-diagnostic-next-source-r1/DIAGNOSTIC-DELTA.json",
+        "bytes": 4145,
+        "sha256": "81b2d409e64a9e276cb06a18751d68fb69143194c8346f287b904d7234c24342"
+      },
+      "unchanged_other_PHP_members": 5,
+      "collector": {
+        "path": "help/audit-regressions/orchestration/collect_paid_failure.py",
+        "bytes": 15238,
+        "sha256": "d351d753d1cfd9527c2daddc6c7f5506c889571971cb407965aba695eb14babb"
+      },
+      "new_diagnostic_runtime": "NOT RUN"
+    }
+  }
+}
