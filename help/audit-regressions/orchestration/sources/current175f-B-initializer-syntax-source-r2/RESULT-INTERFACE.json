@@ -1,0 +1,110 @@
+{
+  "schema": 1,
+  "scope": "SOURCE_ONLY_FUTURE_ACTUAL_RESULT_INTERFACE_NO_RECEIPTS_CREATED",
+  "launch_argv": [
+    "C:/Users/Vwang/AppData/Local/Programs/Python/Python314/python.exe",
+    "-B",
+    "-X",
+    "utf8",
+    "H:\\天俪商城\\artifacts\\project-organization-20261023\\current175f-B-initializer-syntax-source-r2\\launch.py",
+    "--authorize-ended-S17155-root-admitted"
+  ],
+  "run_argv": [
+    "C:/Users/Vwang/AppData/Local/Programs/Python/Python314/python.exe",
+    "-B",
+    "-X",
+    "utf8",
+    "H:\\天俪商城\\artifacts\\project-organization-20261023\\current175f-B-initializer-syntax-source-r2\\run.py",
+    "--authorize-ended-S17155-root-admitted"
+  ],
+  "actual_directory": "H:/天俪商城/artifacts/project-organization-20261023/current175f-B-initializer-syntax-actual-r2",
+  "result_exact_keys": [
+    "status",
+    "started_ns",
+    "ended_ns",
+    "source_sha",
+    "candidate",
+    "copy",
+    "leaf_preparation_PINS",
+    "author_preparation_PINS",
+    "candidate_source",
+    "job_code_PINS",
+    "pre_execution_authority",
+    "php_l_count_required",
+    "container_id",
+    "container_native_exit",
+    "operations",
+    "own_label_before_after_empty",
+    "ordinary_own_container_removed",
+    "all_input_windows_ended",
+    "initializer_or_M_S_App_business_execution",
+    "W_Val_Run_mutations"
+  ],
+  "result_exact_key_count": 20,
+  "pass_status": "PASS_CURRENT175F_COMPLETE_B_UI_INITIALIZER_PHP82_SYNTAX_ONLY",
+  "fail_status": "FAIL_CANDIDATE_SYNTAX",
+  "candidate": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/fresh-b-current175f-source-preparation-r1/leaf/ms4-initialize.php",
+    "bytes": 118698,
+    "sha256": "29376b4266010285ec4cebd92f0197d849142988442ead06cbcc7d26ff840db8"
+  },
+  "copy": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/current175f-B-initializer-syntax-source-r2/candidates/ms4-initialize.php",
+    "bytes": 118698,
+    "sha256": "29376b4266010285ec4cebd92f0197d849142988442ead06cbcc7d26ff840db8"
+  },
+  "php_l_count_required": 1,
+  "native_operations_required": 8,
+  "pre_execution_authority_exact_keys": [
+    "authorization",
+    "required_flag",
+    "original_tool_session",
+    "original_S_pid",
+    "source_launcher",
+    "created",
+    "terminal",
+    "original_S_native_exit",
+    "original_S_wait_returncode",
+    "raw_child_streams_read"
+  ],
+  "outer_created_exact_keys": [
+    "pid",
+    "argv",
+    "started_ns"
+  ],
+  "outer_terminal_exact_keys": [
+    "pid",
+    "argv",
+    "started_ns",
+    "native_exit",
+    "wait_returncode",
+    "finished_ns",
+    "stdout_bytes",
+    "stdout_sha256",
+    "stderr_bytes",
+    "stderr_sha256"
+  ],
+  "native_created_exact_keys": [
+    "pid",
+    "argv",
+    "started_ns"
+  ],
+  "native_terminal_exact_keys": [
+    "pid",
+    "argv",
+    "started_ns",
+    "native_exit",
+    "wait_returncode",
+    "finished_ns",
+    "stdout",
+    "stderr",
+    "stem"
+  ],
+  "INPUTS_exact_keys": [
+    "files",
+    "all_windows_ended",
+    "ended_ns"
+  ],
+  "actual_outputs_created": false,
+  "A0_postA_B_H5_business": "UNBOUND_NOT_EXECUTED"
+}

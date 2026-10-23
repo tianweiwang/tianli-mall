@@ -1,0 +1,11 @@
+--- a/initializer
++++ b/initializer
+@@ -28,7 +28,7 @@
+ function m4i_cu_form_source_files(): array
+ {
+     return [
+-        ['path' => 'help/audit-regressions/isolated/lib/ms4-customer-form-normal.php', 'bytes' => 68191, 'sha256' => 'd47bafd900c50d1e99e8359b46f0c6d6f67e1033d02050bba1890611ea1fc988'],
++        ['path' => 'help/audit-regressions/isolated/lib/ms4-customer-form-normal.php', 'bytes' => 68224, 'sha256' => 'fb729bd1a554441186938c22a4323a78537b3614c9561f7e9acf4dd00de2406d'],
+         ['path' => 'help/audit-regressions/isolated/lib/ms4-customer-http-normal.php', 'bytes' => 65119, 'sha256' => '925314fc7050d8e1e0928aa056f680fed88662cf8f4b2ae2f87d070b9ae6de2d'],
+         ['path' => 'help/audit-regressions/isolated/ms4-aftersale-review-normal.php', 'bytes' => 239863, 'sha256' => '48734a574986d3c6eab37cbc0f1deeab2d03b2b94b931bcaed4719c72e62f723'],
+         ['path' => 'help/audit-regressions/isolated/ms4-customer-http-normal.php', 'bytes' => 117172, 'sha256' => '80a394ec165679e5404efef0751676f902674ea36caddc07d4249cf87e0f438c'],

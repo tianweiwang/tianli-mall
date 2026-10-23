@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "files": {
+    "run.py": {
+      "bytes": 11324,
+      "sha256": "3dddc248c1c637fce1dc100bdf11e03f90246a255153f828a6c42f2f156e3604"
+    },
+    "launch.py": {
+      "bytes": 4264,
+      "sha256": "dfd52dada5b1c7e86f2c5800cc0bdc5896ca0ee25eca7d6583890a1ebb510b0e"
+    },
+    "DESIGN.md": {
+      "bytes": 2416,
+      "sha256": "e4236355fb8e87153bc18f34bc09faf1a454344524aa03fe94bdb27c2a0bb83b"
+    },
+    "CANDIDATE-SOURCE.json": {
+      "bytes": 5921,
+      "sha256": "4d598c8bdf93c36e20d6892def693b0d9e24e66dc0f9b7c253cbf70951a20518"
+    }
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "seam": {
+    "before": "REAL_SAME28DC_A_SUCCESS_INPUTS_BOUND_SOURCE_ONLY_B_NOT_SEALED",
+    "candidate": "REAL_SAME175F_A_SUCCESS_INPUTS_BOUND_SOURCE_ONLY_B_NOT_SEALED",
+    "occurrences": 1
+  },
+  "ordinary_whole_forward_reverse": true,
+  "entire_author_only_one_literal_diff": true,
+  "all_other_methods_whole": [
+    "need",
+    "enc",
+    "pin",
+    "fixed",
+    "deref",
+    "ptr",
+    "constants",
+    "replace_assign",
+    "one",
+    "definitions",
+    "append_before_entry",
+    "receipt_outcome",
+    "validate_success",
+    "new_adapter",
+    "php_leaf",
+    "proof_successor",
+    "refresh_browser",
+    "refresh_ui_record"
+  ],
+  "build_whole_inverse_exact": true,
+  "leaf_whole_reused": true,
+  "ROOT_INITIALIZER_LEAF_intentionally_original_r1_real_pointer": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/fresh-b-current175f-source-preparation-r1/leaf/ms4-initialize.php",
+    "bytes": 118698,
+    "sha256": "29376b4266010285ec4cebd92f0197d849142988442ead06cbcc7d26ff840db8"
+  }
+}

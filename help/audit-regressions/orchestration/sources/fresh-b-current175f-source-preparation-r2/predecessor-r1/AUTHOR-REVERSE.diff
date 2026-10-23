@@ -1,0 +1,275 @@
+--- a/author
++++ b/author
+@@ -1,6 +1,6 @@
+ """UNEXECUTED author draft, never a target launcher.
+ 
+-Only stdlib data/AST/byte operations. It refuses absent same175f A success inputs,
++Only stdlib data/AST/byte operations. It refuses absent same28dc A success inputs,
+ creates a NEW unsealed Source directory, never imports reviewed programs and
+ does not create final outer Source PINS/REPORT or make an admission decision.
+ Root must review this author and provide actual public input before invoking it.
+@@ -15,17 +15,17 @@
+ 
+ BASE = Path('H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1')
+ OLD = BASE / 'fresh-b-customer-form-external-source-r3'
+-A = BASE / 'full-a-quota-wire-current175f-normal-next-source-r1'
+-HEAD = '175f3cd6183894185656a2974579e1be39eed7a7'
+-PARENT = '28dcab632da3e62f7c8b8d926b6ab9406534d0d3'
++A = BASE / 'full-a-upload-root-current28dc-normal-next-source-r1'
++HEAD = '28dcab632da3e62f7c8b8d926b6ab9406534d0d3'
++PARENT = '0c13c57ba1ec4bf15ea9240601a5d6361e986ce8'
+ EMPTY = hashlib.sha256(b'').hexdigest()
+ UNSEALED = 'UNSEALED_PENDING_JOINT_FULL17_SOURCE_QUALIFICATION'
+ CLI = ['ms4-host.py', 'normal-close-ms4-fulfillment.py', 'verify-zero-ms4-fulfillment.py']
+-CURRENT_A_SOURCE_PINS = {'bytes': 147196, 'sha256': '2653282ad09cdf30e030c6c1cf5976b73a1a06bd0be52070085e3a3f33bb270b'}
+-CURRENT_M_RESULT = {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-quota-wire-current175f-normal-next-source-r1/validation/materialize-freeze-assets-r1/RESULT.json', 'bytes': 46750425, 'sha256': '6449487f1da61266fbdfe76260fced9196b398f1cbb92cc59074924d8e76c8aa'}
+-CURRENT_M_FREEZE = {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-quota-wire-current175f-normal-next-source-r1/validation/materialize-freeze-assets-r1/freeze-binding.json', 'bytes': 10985209, 'sha256': '4ac3a0b7b35db7a911e9abb61dfaa4a25b0ffaf3bdc79a7c100b48f0836ce6ed'}
++CURRENT_A_SOURCE_PINS = {'bytes': 189060, 'sha256': '0c2d0c6e68199e0c2b291fdaa764babb986b8d5ebe512903fbf06b6f7fea3650'}
++CURRENT_M_RESULT = {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-upload-root-current28dc-normal-next-source-r1/validation/materialize-freeze-assets-r1/RESULT.json', 'bytes': 12504207, 'sha256': '7ea9b84dbd9304e7f6a87d8bc06cece649363894c317d416b8ee77d07500f12e'}
++CURRENT_M_FREEZE = {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-upload-root-current28dc-normal-next-source-r1/validation/materialize-freeze-assets-r1/freeze-binding.json', 'bytes': 10985209, 'sha256': 'fea1ea38344095ce5dfe84ad85ad3041fb3b10271fd2c99b396212886e927a1a'}
+ ORACLE_PATH = 'help/audit-regressions/isolated/lib/ms4-ui-prepare-oracle.php'
+-ROOT_INITIALIZER_LEAF = {'path': 'H:/天俪商城/artifacts/project-organization-20261023/fresh-b-current175f-source-preparation-r1/leaf/ms4-initialize.php', 'bytes': 118698, 'sha256': '29376b4266010285ec4cebd92f0197d849142988442ead06cbcc7d26ff840db8'}
++ROOT_INITIALIZER_LEAF = {'path': 'H:/天俪商城/artifacts/project-organization-20261023/fresh-b-current28dc-source-preparation-r1/leaf/ms4-initialize.php', 'bytes': 118698, 'sha256': 'dc3bc4e0ae6763bd4515b37e376db33e901e1bb1d6cc013da2864e71e46752df'}
+ 
+ 
+ def need(value, code):
+@@ -125,18 +125,18 @@
+ def validate_success(inputs, mvars, apins):
+     required = {'schema', 'source_sha', 'M_result', 'M_outcome', 'M_root_readback', 'A_outcome', 'A_outer_session',
+                 'A_qualification', 'A_context', 'post_A_history_contract', 'Source_review_authority', 'initializer_leaf'}
+-    need(type(inputs) is dict and set(inputs) == required and inputs['schema'] == 1 and inputs['source_sha'] == HEAD, 'EXACT_CURRENT175F_AUTHOR_INPUT_SCHEMA')
++    need(type(inputs) is dict and set(inputs) == required and inputs['schema'] == 1 and inputs['source_sha'] == HEAD, 'EXACT_CURRENT28DC_AUTHOR_INPUT_SCHEMA')
+     need(all(inputs[k] is not None for k in required), 'WAIT_REAL_SAME_SOURCE_A_INPUTS_NO_PLACEHOLDERS')
+     need(inputs['initializer_leaf'] == ROOT_INITIALIZER_LEAF, 'EXACT_ROOT_ALREADY_QUALIFIED_INITIALIZER_LEAF')
+-    need(inputs['M_result'] == CURRENT_M_RESULT, 'EXACT_COMPLETED_CURRENT175F_M_PUBLIC_POINTER')
++    need(inputs['M_result'] == CURRENT_M_RESULT, 'EXACT_COMPLETED_CURRENT28DC_M_PUBLIC_POINTER')
+     m = json.loads(deref(inputs['M_result']))
+-    need({'path': m['freeze'], 'bytes': m['freeze_bytes'], 'sha256': m['freeze_sha256']} == CURRENT_M_FREEZE, 'EXACT_COMPLETED_CURRENT175F_FREEZE')
+-    need(set(m) == set(mvars['CURRENT_M_RESULT_KEYS35']) and len(m) == 35, 'EXACT_CURRENT_M35')
++    need({'path': m['freeze'], 'bytes': m['freeze_bytes'], 'sha256': m['freeze_sha256']} == CURRENT_M_FREEZE, 'EXACT_COMPLETED_CURRENT28DC_FREEZE')
++    need(set(m) == set(mvars['CURRENT_M_RESULT_KEYS34']) and len(m) == 34, 'EXACT_CURRENT_M34')
+     need(m['source_sha'] == HEAD and m['parent'] == PARENT and m['Run_created'] is False and m['App_DB_HTTP_business'] == 'NOT RUN', 'SAME_HEAD_M_ONLY')
+-    need(m['commit_chain'] == mvars['COMMIT_CHAIN'] and len(m['commit_chain']) == 19, 'FULL_NINETEEN_SOURCE_CHAIN')
++    need(m['commit_chain'] == mvars['COMMIT_CHAIN'] and len(m['commit_chain']) == 18, 'FULL_EIGHTEEN_SOURCE_CHAIN')
+     need([r['path'] for r in m['committed_files']] == mvars['COMMITTED_PATHS'], 'ALL307_COMMITTED_SOURCE_ROWS')
+     derived = 6 + sum(2 + 2 * len(s['files']) for s in mvars['COMMIT_CHAIN']) + 1 + len(mvars['COMMITTED_PATHS']) + 2 + 3 + 1 + 4
+-    need(derived == len(m['native_operations']) == 1088, 'DERIVED_FULL_A_M_LEDGER_NOT_B_BUDGET')
++    need(derived == len(m['native_operations']) == 1078, 'DERIVED_FULL_A_M_LEDGER_NOT_B_BUDGET')
+     receipt_outcome(inputs['M_outcome'])
+     receipt_outcome(inputs['A_outcome'])
+     deref(inputs['M_root_readback'])
+@@ -181,29 +181,29 @@
+     # Change only explicitly active field names/counts/source dispatch, not old
+     # history bodies or historical contracts embedded in the original Root.
+     for before, after in [
+-        ('CURRENT_M_SOURCE_CONTRACT', 'CURRENT_175F_M_SOURCE_CONTRACT'),
+-        ("'result_fields_exact30'", "'result_fields_exact35'"), ('len(setup) == 30', 'len(setup) == 35'),
+-        ("len(setup['commit_chain']) == 11", "len(setup['commit_chain']) == 19"),
++        ('CURRENT_M_SOURCE_CONTRACT', 'CURRENT_28DC_M_SOURCE_CONTRACT'),
++        ("'result_fields_exact30'", "'result_fields_exact34'"), ('len(setup) == 30', 'len(setup) == 34'),
++        ("len(setup['commit_chain']) == 11", "len(setup['commit_chain']) == 18"),
+         ("'committed_paths62'", "'committed_paths307'"), ("len(setup['committed_files']) == 62", "len(setup['committed_files']) == 307"),
+         ("'source_requirements68'", "'source_requirements313'"),
+         ("len(contract['source_requirements313'])==68", "len(contract['source_requirements313'])==313"),
+         ("len({r['path'] for r in contract['source_requirements313']})==68", "len({r['path'] for r in contract['source_requirements313']})==313"),
+         ("len(normal_pub['repository_Source_requirements'])==68", "len(normal_pub['repository_Source_requirements'])==313"),
+         ("'complete_tracked_paths15504'", "'complete_tracked_paths15748'"), ('15504', '15748'), ('31008', '31496'),
+-        ("contract['derived_native_count'] == 277", "contract['derived_native_count'] == 1088"),
++        ("contract['derived_native_count'] == 277", "contract['derived_native_count'] == 1078"),
+         ('len(joined)==69', 'len(joined)==314'), ("finite['SourceRows69']", "finite['SourceRows314']"),
+-        ("'SOURCE_CONTRACT_ACTUAL_CURRENT_M0_BOUND_A_POSTA_PENDING'", "'SOURCE_CONTRACT_CURRENT175F_M0_AND_REAL_A_SUCCESS_SOURCE_ONLY'"),
++        ("'SOURCE_CONTRACT_ACTUAL_CURRENT_M0_BOUND_A_POSTA_PENDING'", "'SOURCE_CONTRACT_CURRENT28DC_M0_AND_REAL_A_SUCCESS_SOURCE_ONLY'"),
+     ]:
+         need(before in text, 'EXPECTED_ACTIVE_ADAPTER_SEAM')
+         text = text.replace(before, after)
+     text = one(text, "assert finite['repository_committed_files']==COMMITTED_FILES and len(COMMITTED_FILES)==3",
+-        "assert finite['repository_committed_files']==COMMITTED_FILES and len(COMMITTED_FILES)==4")
++        "assert finite['repository_committed_files']==COMMITTED_FILES and len(COMMITTED_FILES)==8")
+     marker = "    assert json.loads(file_pin(Path(contract['customer_prepare_failure_retirement_source']['path']),contract['customer_prepare_failure_retirement_source'])) == contract['customer_prepare_failure_retirement_expected']"
+-    extra = "\n    assert setup['current_paid_producer_failure_retirement'] == contract['paid_failure_retirement_expected']\n    assert json.loads(file_pin(Path(contract['paid_failure_retirement_source']['path']),contract['paid_failure_retirement_source'])) == contract['paid_failure_retirement_expected']\n    assert setup['current_2e4_paid_producer_failure_retirement'] == contract['paid_2e4_failure_retirement_expected']\n    assert json.loads(file_pin(Path(contract['paid_2e4_failure_retirement_source']['path']),contract['paid_2e4_failure_retirement_source'])) == contract['paid_2e4_failure_retirement_expected']\n    assert setup['current_881_paid_producer_failure_retirement'] == contract['paid_881_failure_retirement_expected']\n    assert json.loads(file_pin(Path(contract['paid_881_failure_retirement_source']['path']),contract['paid_881_failure_retirement_source'])) == contract['paid_881_failure_retirement_expected']\n    assert setup['current_0c13_paid_producer_failure_retirement'] == contract['paid_0c13_failure_retirement_expected']\n    assert json.loads(file_pin(Path(contract['paid_0c13_failure_retirement_source']['path']),contract['paid_0c13_failure_retirement_source'])) == contract['paid_0c13_failure_retirement_expected']\n    assert setup['current_28dc_paid_producer_failure_retirement'] == contract['paid_28dc_failure_retirement_expected']\n    assert json.loads(file_pin(Path(contract['paid_28dc_failure_retirement_source']['path']),contract['paid_28dc_failure_retirement_source'])) == contract['paid_28dc_failure_retirement_expected']"
++    extra = "\n    assert setup['current_paid_producer_failure_retirement'] == contract['paid_failure_retirement_expected']\n    assert json.loads(file_pin(Path(contract['paid_failure_retirement_source']['path']),contract['paid_failure_retirement_source'])) == contract['paid_failure_retirement_expected']\n    assert setup['current_2e4_paid_producer_failure_retirement'] == contract['paid_2e4_failure_retirement_expected']\n    assert json.loads(file_pin(Path(contract['paid_2e4_failure_retirement_source']['path']),contract['paid_2e4_failure_retirement_source'])) == contract['paid_2e4_failure_retirement_expected']\n    assert setup['current_881_paid_producer_failure_retirement'] == contract['paid_881_failure_retirement_expected']\n    assert json.loads(file_pin(Path(contract['paid_881_failure_retirement_source']['path']),contract['paid_881_failure_retirement_source'])) == contract['paid_881_failure_retirement_expected']\n    assert setup['current_0c13_paid_producer_failure_retirement'] == contract['paid_0c13_failure_retirement_expected']\n    assert json.loads(file_pin(Path(contract['paid_0c13_failure_retirement_source']['path']),contract['paid_0c13_failure_retirement_source'])) == contract['paid_0c13_failure_retirement_expected']"
+     text = one(text, marker, marker + extra)
+     for name in sorted(names, key=len, reverse=True):
+-        text = text.replace(name, name.replace('current_', 'current175f_', 1))
+-    return ("CURRENT_175F_M_SOURCE_CONTRACT = " + repr(contract) + '\n\n' + text).encode('utf-8')
++        text = text.replace(name, name.replace('current_', 'current28dc_', 1))
++    return ("CURRENT_28DC_M_SOURCE_CONTRACT = " + repr(contract) + '\n\n' + text).encode('utf-8')
+ 
+ 
+ def php_leaf(raw, oldcu, newcu, oldoracle, neworacle):
+@@ -347,9 +347,9 @@
+         for path, row in vector.items():
+             actual = snapshot[(root / path).as_posix()]
+             need(actual['path'] == (root / path).as_posix() and {k: actual[k] for k in ['bytes', 'sha256']} == {k: row[k] for k in ['bytes', 'sha256']}, 'ALL_EIGHT_CURRENT_UI_SOURCE_ROWS_JOIN_ACTUAL_DUAL_METADATA')
+-    contract.update(status='SOURCE_CONTRACT_CURRENT175F_M0_AND_REAL_A_SUCCESS_SOURCE_ONLY', source_sha=HEAD, parent=PARENT,
++    contract.update(status='SOURCE_CONTRACT_CURRENT28DC_M0_AND_REAL_A_SUCCESS_SOURCE_ONLY', source_sha=HEAD, parent=PARENT,
+         commit_chain=m['commit_chain'], committed_paths307=mv['COMMITTED_PATHS'], source_requirements313=normalpub['repository_Source_requirements'],
+-        complete_tracked_paths15748=tracked, result_fields_exact35=mv['CURRENT_M_RESULT_KEYS35'], source_patch_base=m['source_patch_base'],
++        complete_tracked_paths15748=tracked, result_fields_exact34=mv['CURRENT_M_RESULT_KEYS34'], source_patch_base=m['source_patch_base'],
+         native_commands=[{'label': row['label'], 'argv': row['argv']} for row in m['native_operations']], derived_native_count=len(m['native_operations']),
+         selected9=m['selected9'], source_counts=m['source_counts'], tracked_files=15748, dual_tracked_snapshot=31496,
+         A_source_PINS=ptr(A / 'PINS.json', apinsraw), final_eligible_A_Source=ptr(A / 'PINS.json', apinsraw),
+@@ -362,7 +362,7 @@
+         A_outcome=inputs['A_outcome'], A_run_context=inputs['A_context'], A_outer_session=inputs['A_outer_session'],
+         A_worker_close=inputs['A_qualification']['worker_close'], A_independent_zero=inputs['A_qualification']['independent_zero'],
+         post_A_history=inputs['A_qualification']['post_a_history'],
+-        pinned_candidate_A_Source_status='CURRENT175F_REAL_A_SUCCESS_INPUTS_BOUND_B_JOINT_SOURCE_REVIEW_PENDING',
++        pinned_candidate_A_Source_status='CURRENT28DC_REAL_A_SUCCESS_INPUTS_BOUND_B_JOINT_SOURCE_REVIEW_PENDING',
+         A_source_review_authority=inputs['Source_review_authority'],
+         historical53e_contract=ptr(OLD / 'CURRENT-M-SOURCE-CONTRACT.json', (OLD / 'CURRENT-M-SOURCE-CONTRACT.json').read_bytes()))
+     for field, expected, sourcekey, sourceconstant in [
+@@ -373,13 +373,12 @@
+         ('current_paid_producer_failure_retirement', 'paid_failure_retirement_expected', 'paid_failure_retirement_source', 'CURRENT_PAID_PRODUCER_FAILURE_RETIREMENT'),
+         ('current_2e4_paid_producer_failure_retirement', 'paid_2e4_failure_retirement_expected', 'paid_2e4_failure_retirement_source', 'CURRENT_2E4_PAID_PRODUCER_FAILURE_RETIREMENT'),
+         ('current_881_paid_producer_failure_retirement', 'paid_881_failure_retirement_expected', 'paid_881_failure_retirement_source', 'CURRENT_881_PAID_PRODUCER_FAILURE_RETIREMENT'),
+-        ('current_0c13_paid_producer_failure_retirement', 'paid_0c13_failure_retirement_expected', 'paid_0c13_failure_retirement_source', 'CURRENT_0C13_PAID_PRODUCER_FAILURE_RETIREMENT'),
+-        ('current_28dc_paid_producer_failure_retirement', 'paid_28dc_failure_retirement_expected', 'paid_28dc_failure_retirement_source', 'CURRENT_28DC_PAID_PRODUCER_FAILURE_RETIREMENT')]:
++        ('current_0c13_paid_producer_failure_retirement', 'paid_0c13_failure_retirement_expected', 'paid_0c13_failure_retirement_source', 'CURRENT_0C13_PAID_PRODUCER_FAILURE_RETIREMENT')]:
+         contract[expected] = m[field]
+         if sourcekey:
+             contract[sourcekey] = mv[sourceconstant]
+-    contract['historical_retirement_names_remain_distinct'] = ['prior_retirement', 'current_driver_failure_retirement', 'current_early_failure_retirement', 'current_customer_prepare_failure_retirement', 'current_paid_producer_failure_retirement', 'current_2e4_paid_producer_failure_retirement', 'current_881_paid_producer_failure_retirement', 'current_0c13_paid_producer_failure_retirement', 'current_28dc_paid_producer_failure_retirement']
+-    need(len(contract['historical_retirement_names_remain_distinct']) == 9 and json.loads(deref(contract['paid_28dc_failure_retirement_source'])) == contract['paid_28dc_failure_retirement_expected'], 'NINE_DISTINCT_COMPLETE_RETIREMENT_AUTHORITIES')
++    contract['historical_retirement_names_remain_distinct'] = ['prior_retirement', 'current_driver_failure_retirement', 'current_early_failure_retirement', 'current_customer_prepare_failure_retirement', 'current_paid_producer_failure_retirement', 'current_2e4_paid_producer_failure_retirement', 'current_881_paid_producer_failure_retirement', 'current_0c13_paid_producer_failure_retirement']
++    need(len(contract['historical_retirement_names_remain_distinct']) == 8 and json.loads(deref(contract['paid_0c13_failure_retirement_source'])) == contract['paid_0c13_failure_retirement_expected'], 'EIGHT_DISTINCT_COMPLETE_RETIREMENT_AUTHORITIES')
+     contractraw = enc(contract)
+     contractptr = ptr(output / 'CURRENT-M-SOURCE-CONTRACT.json', contractraw)
+     interface = json.loads(original['interface-v1.json'])
+@@ -387,10 +386,10 @@
+         interface[name]['entry_bytes'], interface[name]['entry_sha256'] = row['bytes'], row['sha256']
+     interface['customer_form_current_profile']['php_sources'] = newcu
+     interface['customer_form_current_profile']['current_composite_php_source_authority'] = copy.deepcopy(ainterface['customer_form_current_profile']['current_composite_php_source_authority'])
+-    for key in ['assertion_prefix_successor', 'normal_http_diagnostic_successor', 'owned_upload_root_current_source_successor', 'quota_wire_current_source_successor']:
++    for key in ['assertion_prefix_successor', 'normal_http_diagnostic_successor', 'owned_upload_root_current_source_successor']:
+         interface['customer_form_current_profile'][key] = copy.deepcopy(ainterface['customer_form_current_profile'][key])
+     record = interface['fresh_B_current_UI_profile_source']
+-    refresh_ui_record(record, vector, oldoracle, neworacle, newcu, coreptr, core['browser_manifest'], mv['CURRENT_QUOTA_WIRE_SOURCE_HISTORY'])
++    refresh_ui_record(record, vector, oldoracle, neworacle, newcu, coreptr, core['browser_manifest'], mv['CURRENT_UPLOAD_ROOT_SOURCE_HISTORY'])
+     record['historical_previous53e_UI_projection'] = ptr(OLD / 'candidate/interface-v1.json', original['interface-v1.json'])
+     # Only an invocation after actual A0 can reach this point. This author is
+     # currently unexecuted; the template remains null. Real A0 still does not
+@@ -423,21 +422,21 @@
+     for name in CLI:
+         need(constants(out[name])['UI17_SOURCE_SEAL'] == UNSEALED, 'KEEP_UNSEALED_SOURCE_ENTRY')
+         need(definitions(out[name]) == definitions(original[name]), 'ALL_ORIGINAL_PROFILE_FUNCTIONS_EXACT')
+-    out['README.md'] += b'\n\nCurrent175f Source successor draft. Real successful A inputs supplied to author do not seal B entries. Independent H5 nine-scenes remains separate; all original UI20/CU/DOM/media scope retained. NOT EXECUTED.\n'
++    out['README.md'] += b'\n\nCurrent28dc Source successor draft. Real successful A inputs supplied to author do not seal B entries. Independent H5 nine-scenes remains separate; all original UI20/CU/DOM/media scope retained. NOT EXECUTED.\n'
+     derivation = json.loads(out['source-derivation.json'])
+     projection = derivation['fresh_B_customer_form_external_current_source']
+-    refresh_ui_record(projection, vector, oldoracle, neworacle, newcu, coreptr, core['browser_manifest'], mv['CURRENT_QUOTA_WIRE_SOURCE_HISTORY'])
++    refresh_ui_record(projection, vector, oldoracle, neworacle, newcu, coreptr, core['browser_manifest'], mv['CURRENT_UPLOAD_ROOT_SOURCE_HISTORY'])
+     projection['normal_source_profile'] = {'root': (A / 'validation/actual-profile').as_posix(), 'PROFILE_PUBLICATION': ptr(A / 'validation/PROFILE-PUBLICATION.json', normalpubraw)}
+     projection.update(A_outer_exit=0, A_worker_close=inputs['A_qualification']['worker_close'], A_independent_zero=inputs['A_qualification']['independent_zero'], A_post_history=inputs['A_qualification']['post_a_history'])
+     derivation['current_nonself_artifacts'] = [{'path': name, **pin(out[name])} for name in selected if name != 'source-derivation.json']
+-    derivation['fresh_B_current175f_source_successor'] = {'source_sha': HEAD, 'parent': PARENT, 'current_A_Source': ptr(A / 'PINS.json', apinsraw), 'current_M_contract': contractptr,
++    derivation['fresh_B_current28dc_source_successor'] = {'source_sha': HEAD, 'parent': PARENT, 'current_A_Source': ptr(A / 'PINS.json', apinsraw), 'current_M_contract': contractptr,
+         'predecessor': ptr(OLD / 'candidate/source-derivation.json', original['source-derivation.json']), 'all_original_history_unchanged': True, 'admission': 'UNSEALED_NOT_EXECUTED'}
+     out['source-derivation.json'] = enc(derivation)
+     publication = copy.deepcopy(oldpub)
+     publication.update(source_sha=HEAD, parent=PARENT, selected17=[{'path': n, **pin(out[n])} for n in selected], repository_Source_requirements=normalpub['repository_Source_requirements'])
+     finite = publication['finite_contexts']
+     latest = [{'path': r['path'], **r['after']} for r in mv['COMMIT_CHAIN'][-1]['files']]
+-    need(len(latest) == 4, 'ACTUAL_LAST_COMMIT_FOUR_NOT_CUMULATIVE307')
++    need(len(latest) == 8, 'ACTUAL_LAST_COMMIT_EIGHT_NOT_CUMULATIVE307')
+     finite.update(repository_committed_files=latest, current_core_aux_authority=coreptr, current_Core3=core['core_sources'], browser_manifest=core['browser_manifest'], SourceRows314=list(joined.values()),
+         normal9_authority={'root': (A / 'validation').as_posix(), 'profile_root': (A / 'validation/actual-profile').as_posix(), 'PROFILE_PINS': ptr(A / 'validation/PROFILE-PINS.json', normalpins), 'PROFILE_PUBLICATION': ptr(A / 'validation/PROFILE-PUBLICATION.json', normalpubraw)}, current_M_source_contract=contractptr)
+     finite['ordered_auxiliary_members'] = [{'path': name, **pin(raw)} for name, raw in browser.items()]
+@@ -487,15 +486,15 @@
+     fragment = new_adapter((OLD / 'root-current-adapter.fragment.py').read_bytes(), contract)
+     rm = append_before_entry(rm, fragment)
+     old_m_main = definitions(rmold)['main']
+-    current_m_main = one(old_m_main, 'def main(', 'def current175f_main(')
++    current_m_main = one(old_m_main, 'def main(', 'def current28dc_main(')
+     current_m_main = one(current_m_main,
+         'len(committed) == len(COMMITTED_PATHS) == 3',
+-        'len(committed) == len(COMMITTED_PATHS) == 4')
+-    need(current_m_main.replace('def current175f_main(', 'def main(', 1).replace(
+-        'len(committed) == len(COMMITTED_PATHS) == 4',
++        'len(committed) == len(COMMITTED_PATHS) == 8')
++    need(current_m_main.replace('def current28dc_main(', 'def main(', 1).replace(
++        'len(committed) == len(COMMITTED_PATHS) == 8',
+         'len(committed) == len(COMMITTED_PATHS) == 3', 1) == old_m_main,
+-        'ONLY_CURRENT_M_MAIN_COMMITTED_FOUR_GUARD_CHANGED')
+-    rm = append_before_entry(rm, (current_m_main + '\n\nmain=current175f_main\n').encode('utf-8'))
++        'ONLY_CURRENT_M_MAIN_COMMITTED_EIGHT_GUARD_CHANGED')
++    rm = append_before_entry(rm, (current_m_main + '\n\nmain=current28dc_main\n').encode('utf-8'))
+     for key, value in [('SOURCE', HEAD), ('ROOT_INPUTS_PIN', pin(riraw)), ('CURRENT_CORE_AUX_AUTHORITY_PIN', coreptr),
+         ('PROFILE_ARTIFACTS', [{'artifact': n, **pin(out[n])} for n in selected]), ('PINS', {n: pin(out[n])['sha256'] for n in CLI}), ('SOURCE_BYTES', {n: len(out[n]) for n in CLI}),
+         ('A_QUALIFICATION', inputs['A_qualification']), ('A_OUTER_SESSION', inputs['A_outer_session']), ('POST_A_HISTORY_CONTRACT', inputs['post_A_history_contract'])]:
+@@ -505,11 +504,11 @@
+     newmethods = []
+     for name in ['current_core_aux_authority', 'main']:
+         body = olddefs[name]
+-        body = one(body, 'def ' + name + '(', 'def current175f_' + name + '(')
++        body = one(body, 'def ' + name + '(', 'def current28dc_' + name + '(')
+         body = body.replace("'2fa872e6fda7a8bf46c55f88dd946b972ec79102'", repr(PARENT))
+         body = body.replace((BASE / 'full-a-raw-env-normal-next-source-r1/validation').as_posix(), (A / 'validation').as_posix())
+         if name == 'current_core_aux_authority':
+-            body = one(body, "len(inputs['committed_files']) == 3", "len(inputs['committed_files']) == 4")
++            body = one(body, "len(inputs['committed_files']) == 3", "len(inputs['committed_files']) == 8")
+             body = one(body,
+                 "ROOT_SOURCE.parent / 'r29-ui-current-core-aux-source-r1/browser-v1/PINS.json'",
+                 "ROOT_SOURCE.parent / 'browser-v1/PINS.json'")
+@@ -520,14 +519,14 @@
+             body = one(body, "len(joined) == 69 and list(joined.values()) == finite['SourceRows69']",
+                 "len(joined) == 314 and list(joined.values()) == finite['SourceRows314']")
+         newmethods.append(body)
+-    s_extra = '\n\n'.join(newmethods) + '\n\ncurrent_core_aux_authority=current175f_current_core_aux_authority\nmain=current175f_main\n'
++    s_extra = '\n\n'.join(newmethods) + '\n\ncurrent_core_aux_authority=current28dc_current_core_aux_authority\nmain=current28dc_main\n'
+     rs = append_before_entry(rs, s_extra.encode('utf-8'))
+     need(all(definitions(rm).get(n) == s for n, s in definitions(rmold).items()), 'EVERY_ORIGINAL_M_DEFINITION_EXACT')
+     need(all(definitions(rs).get(n) == s for n, s in definitions(rsold).items()), 'EVERY_ORIGINAL_S_DEFINITION_EXACT')
+     marker = "    require(stage('db-up')"
+     need(marker in olddefs['main'] and newmethods[1][newmethods[1].index(marker):] == olddefs['main'][olddefs['main'].index(marker):], 'FULL_ORIGINAL_DBUP_TO_READY_SUFFIX')
+     ast.parse(rm.decode('utf-8')); ast.parse(rs.decode('utf-8'))
+-    root = {'DESIGN-TASKS.md': (OLD / 'root-source/DESIGN-TASKS.md').read_bytes() + b'\n\nCurrent175f strict Source-only wrapper, M35/UI314; all admission guards remain unsealed. Full original functions/suffix retained.\n', 'INPUTS.json': riraw, 'root-ui-materialize-freeze.py': rm, 'root-ui-start-to-ready.py': rs}
++    root = {'DESIGN-TASKS.md': (OLD / 'root-source/DESIGN-TASKS.md').read_bytes() + b'\n\nCurrent28dc strict Source-only wrapper, M34/UI314; all admission guards remain unsealed. Full original functions/suffix retained.\n', 'INPUTS.json': riraw, 'root-ui-materialize-freeze.py': rm, 'root-ui-start-to-ready.py': rs}
+     rootpins = enc({'schema': 1, 'scope': 'R40_FIRST_B_ROOT_SOURCE_PINS', 'members': {n: pin(r) for n, r in root.items()}})
+     payload = {'candidate/' + n: raw for n, raw in out.items()}
+     payload.update({'candidate/DESIGN.md': design, 'candidate/PINS.json': profilepinsraw, 'candidate/PUBLICATION.json': pubraw,
+@@ -545,7 +544,7 @@
+         rollback = one(rollback, seam['replacement'], seam['original'])
+     need(rollback.encode('utf-8') == before_leaf, 'EXACT_BOTH_MEMBERSHIP_SEAMS_ONLY')
+     membership.update(before=pin(before_leaf), candidate=pin(out['ms4-initialize.php']),
+-        checkpoint=(output / 'optimization-before-current175f/ms4-initialize.php').as_posix(),
++        checkpoint=(output / 'optimization-before-current28dc/ms4-initialize.php').as_posix(),
+         historical_previous53e_proof=ptr(OLD / 'INITIALIZER-MEMBERSHIP-SOURCE-PROOF.json', (OLD / 'INITIALIZER-MEMBERSHIP-SOURCE-PROOF.json').read_bytes()),
+         initializer_exact_Root_source_leaf=ROOT_INITIALIZER_LEAF,
+         exact_new_leaf_syntax_requires_prior_Root_qualification=True,
+@@ -562,7 +561,7 @@
+             'left_count': len(left), 'right_count': len(right), 'original_result': pin(enc(left)),
+             'lookup_model_result': pin(enc(filtered)), 'complete_order_and_all_descriptors_equal': True,
+             'proof_kind': 'PURE_PUBLIC_M_METADATA_ONLY_NOT_PHP_MANIFEST_OR_PERFORMANCE'})
+-    payload.update({'optimization-before-current175f/ms4-initialize.php': before_leaf,
++    payload.update({'optimization-before-current28dc/ms4-initialize.php': before_leaf,
+         'INITIALIZER-MEMBERSHIP-SOURCE-PROOF.json': enc(membership),
+         'INITIALIZER-MEMBERSHIP-DIFF.patch': ''.join(difflib.unified_diff(before_leaf.decode('utf-8').splitlines(keepends=True), out['ms4-initialize.php'].decode('utf-8').splitlines(keepends=True), fromfile='a/ms4-initialize.php', tofile='b/ms4-initialize.php')).encode('utf-8'),
+         'INITIALIZER-MEMBERSHIP-REVERSE.patch': ''.join(difflib.unified_diff(out['ms4-initialize.php'].decode('utf-8').splitlines(keepends=True), before_leaf.decode('utf-8').splitlines(keepends=True), fromfile='b/ms4-initialize.php', tofile='a/ms4-initialize.php')).encode('utf-8')})
+@@ -578,8 +577,8 @@
+     payload['FUNCTION-PRESERVATION.json'] = enc({'previous53e': ptr(OLD / 'FUNCTION-PRESERVATION.json', (OLD / 'FUNCTION-PRESERVATION.json').read_bytes()),
+         'profile_all_original_definitions_exact': {name: True for name in CLI},
+         'M_all_original_definitions_exact': True, 'S_all_original_definitions_exact': True,
+-        'new_wrappers_only': ['current175f_known_normal_root', 'current175f_tracked_source_trees', 'current175f_consume_materialization', 'current175f_verify_sources', 'current175f_current_core_aux_authority', 'current175f_main'],
+-        'new_M_main_wrapper_only': 'current175f_main_with_exact_last_commit4_guard',
++        'new_wrappers_only': ['current28dc_known_normal_root', 'current28dc_tracked_source_trees', 'current28dc_consume_materialization', 'current28dc_verify_sources', 'current28dc_current_core_aux_authority', 'current28dc_main'],
++        'new_M_main_wrapper_only': 'current28dc_main_with_exact_last_commit8_guard',
+         'S_original_dbup_to_READY_suffix_exact': True})
+     transforms, forward, reverse = [], [], []
+     oldtransforms = json.loads((OLD / 'SOURCE-TRANSFORMS.json').read_bytes())
+@@ -597,7 +596,7 @@
+     payload.update({'SOURCE-TRANSFORMS.json': enc(transforms), 'DIFF.patch': ''.join(forward).encode('utf-8'), 'REVERSE.patch': ''.join(reverse).encode('utf-8'),
+         'SOURCE-QUALIFICATION.json': enc({'schema': 1, 'status': 'UNSEALED_AUTHOR_DRAFT_PENDING_INDEPENDENT_PATCH_NAMESPACE_DAG_QUALIFICATION',
+             'source_sha': HEAD, 'final_outer_PINS_REPORT': 'NOT CREATED', 'all_original_scope_preserved_required': True,
+-            'actual_M35_Aledger1088_UI314_Source_generated': True, 'no_source_function_body_or_target_imported': True,
++            'actual_M34_Aledger1078_UI314_Source_generated': True, 'no_source_function_body_or_target_imported': True,
+             'recursive_declared_import_namespace_and_complete_patch_replay': 'PENDING_INDEPENDENT_REVIEW', 'runtime_eligible': False,
+             'B_H5_GUI_DOM_finance_device_manual_acceptance': 'NOT RUN'})})
+     need(len(set(payload)) == len(payload), 'UNIQUE_OUTPUT_NAMES')
+@@ -615,6 +614,6 @@
+ 
+ if __name__ == '__main__':
+     parser = argparse.ArgumentParser(description=__doc__)
+-    parser.add_argument('--actual-public-inputs', required=True, help='Root reviewed real same175f A success and exact public artifact pointers; null is rejected')
++    parser.add_argument('--actual-public-inputs', required=True, help='Root reviewed real same28dc A success and exact public artifact pointers; null is rejected')
+     parser.add_argument('--output', required=True, help='new direct external Source package under BASE; existing paths rejected')
+     build(parser.parse_args())

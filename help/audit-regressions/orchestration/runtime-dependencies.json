@@ -18,27 +18,27 @@
     "business_acceptance": "INCOMPLETE"
   },
   "current_source": {
-    "package": "full-a-upload-root-current28dc-normal-next-source-r1",
-    "source_commit": "28dcab632da3e62f7c8b8d926b6ab9406534d0d3",
+    "package": "full-a-quota-wire-current175f-normal-next-source-r1",
+    "source_commit": "175f3cd6183894185656a2974579e1be39eed7a7",
     "profile_sources_present": true,
     "materializer_present": true,
     "validation_driver_present": true,
     "launcher_present": true,
     "required_program_members": 18,
     "additional_author_code_members": 11,
-    "additional_Source_design_clarifications": 4,
+    "additional_Source_design_clarifications": 2,
     "local_author_module_dependencies_present": true,
+    "M_RESULT_fields": 35,
+    "source_commit_steps": 19,
+    "native_budget_derived_not_actual": 1088,
     "materialization": "NO_NEW_RUNTIME_RECEIPT_DELIVERED_BY_SOURCE_ARCHIVE",
-    "M_RESULT_fields": 34,
-    "source_commit_steps": 18,
-    "native_budget_derived_not_actual": 1078,
-    "full_business_run": "NO_NEW_RUNTIME_ACCEPTANCE_CLAIM",
+    "full_business_run": "NO_RUNTIME_ACCEPTANCE_CLAIM",
     "original_current_M_and_S_receipts_included": false
   },
   "requirements_not_satisfied_by_copying_source": [
     {
       "kind": "original machine layout",
-      "detail": "Archived programs retain original absolute paths, historical authorities and source-commit bindings. The latest complete Source snapshot binds business28dc, not the separate archival commit. The archival branch business tree is based on2e4. Copying source neither supplies original receipts nor qualifies a new runtime."
+      "detail": "Archived programs retain original absolute paths, historical authorities and source-commit bindings. The latest complete Source snapshot binds business175f, not the separate archival commit. The archival branch business tree is based on2e4. Copying source neither supplies original receipts nor qualifies a new runtime."
     },
     {
       "kind": "historical public evidence",
@@ -63,7 +63,7 @@
     },
     {
       "kind": "fresh B readiness",
-      "detail": "fresh-b-customer-form-external-source-r3 is an unsealed draft tied to the older source. It still needs a successful matching A and complete current-source bindings; source presence is not UI acceptance."
+      "detail": "Current175f B author/initializer, success readers, UI syntax job, postA producer and complete H5 programs are included as selected Source. Actual successful matching A, two full actual readers,118698 UI syntax, complete retained history/postA and all B/UI20/Task2/H5 runtime acceptance remain pending. Full original authoring inputs are not included."
     },
     {
       "kind": "nonempty history readiness",
@@ -98,7 +98,7 @@
     "business_acceptance": "INCOMPLETE"
   },
   "handoff_branch": "codex/orchestration-handoff-20261023",
-  "current_source_execution_note": "The current complete Source binds business28dc. This archive supplies no new M/S runtime receipt or business acceptance; 34 fields/18 source steps and1078 native budget are Source declarations. Historical0c13 M1060 is actual materialization only; later S1/paid1 and completed close93/zero20 are known. The historical NOT_TERMINAL_AT_SNAPSHOT object remains unchanged. Archive business tree remains2e4; no runtime is advanced, restarted or rebound by archiving.",
+  "current_source_execution_note": "The current complete Source binds business175f. The selected archive contains35 result fields,19 source steps and a source-derived1088 native budget. Original175f M actually passed1088 native/wait operations and complete external Root/peer readbacks, but its actual receipts are not delivered by this archive. Original S remains unaccepted; no A0 or complete business/UI acceptance is claimed. Historical28dc/0c13 snapshots and their dated NOT_TERMINAL_AT_SNAPSHOT objects remain preserved. Archive business tree remains2e4; archiving does not advance, restart or rebind the normal runtime.",
   "historical_source_snapshots": [
     {
       "package": "full-a-published-current-normal-next-source-r2",
@@ -208,5 +208,37 @@
     "A0": false,
     "business_acceptance": "INCOMPLETE",
     "actual_receipt_bodies_included": false
-  }
+  },
+  "preserved_28dc_source_snapshot": {
+    "package": "full-a-upload-root-current28dc-normal-next-source-r1",
+    "source_commit": "28dcab632da3e62f7c8b8d926b6ab9406534d0d3",
+    "profile_sources_present": true,
+    "materializer_present": true,
+    "validation_driver_present": true,
+    "launcher_present": true,
+    "required_program_members": 18,
+    "additional_author_code_members": 11,
+    "additional_Source_design_clarifications": 4,
+    "local_author_module_dependencies_present": true,
+    "materialization": "NO_NEW_RUNTIME_RECEIPT_DELIVERED_BY_SOURCE_ARCHIVE",
+    "M_RESULT_fields": 34,
+    "source_commit_steps": 18,
+    "native_budget_derived_not_actual": 1078,
+    "full_business_run": "NO_NEW_RUNTIME_ACCEPTANCE_CLAIM",
+    "original_current_M_and_S_receipts_included": false
+  },
+  "current_prepared_sources": {
+    "packages": [
+      "current175f-B-initializer-syntax-source-r2",
+      "current175f-complete-normal-S-readbacks-source-r1",
+      "current175f-complete-normal-S-reader-outers-source-r1",
+      "current175f-postA-public-producer-source-preparation-r2",
+      "fresh-b-current175f-source-preparation-r2",
+      "h5-current175f-complete-source-r1"
+    ],
+    "scope": "Complete selected program bytes and static source contracts; actual results and full original qualification/authoring inputs remain external",
+    "prepared_programs_executed_by_handoff": false,
+    "A0_postA_B_UI20_Task2_H5_acceptance": "INCOMPLETE"
+  },
+  "preserved_28dc_source_execution_note": "The current complete Source binds business28dc. This archive supplies no new M/S runtime receipt or business acceptance; 34 fields/18 source steps and1078 native budget are Source declarations. Historical0c13 M1060 is actual materialization only; later S1/paid1 and completed close93/zero20 are known. The historical NOT_TERMINAL_AT_SNAPSHOT object remains unchanged. Archive business tree remains2e4; no runtime is advanced, restarted or rebound by archiving."
 }

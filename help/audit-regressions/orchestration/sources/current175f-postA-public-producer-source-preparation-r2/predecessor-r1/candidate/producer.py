@@ -1,0 +1,582 @@
+"""UNEXECUTED late-bound public history producer; no targets or author calls.
+
+The completed source module additionally contains the exact old pure history
+helpers and both complete pre_a_history/post_a_history definitions. New actual
+receipt interfaces are supplied only after their reviewed Source is fixed.
+"""
+import argparse
+import hashlib
+import json
+import os
+import re
+import stat
+from pathlib import Path
+
+
+ORG = Path('H:/天俪商城/artifacts/project-organization-20261023')
+PREPARED = Path('H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1')
+RUNTIME = Path('H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/fresh-b-customer-form-external-source-r3/runtime')
+NORMAL_SOURCE = Path('H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-quota-wire-current175f-normal-next-source-r1/validation')
+OLD_ROOT = Path('H:/天俪商城/artifacts/ms4-aftersale-review-normal-runs/20261023182634096f57')
+RUN_ID = '20261023182634096f57'
+OUTER_SESSION = 17155
+OUTER_PID = 35944
+PREPARE_PID = 49064
+HEAD = '175f3cd6183894185656a2974579e1be39eed7a7'
+PARENT = '28dcab632da3e62f7c8b8d926b6ab9406534d0d3'
+PYTHON = 'C:/Users/Vwang/AppData/Local/Programs/Python/Python314/python.exe'
+PUBLIC_ROOT_FILES = ['actual-run-context.json', 'preparation-source-binding.json', 'manifest.json', 'network.json', 'containers.jsonl', 'volumes.txt', 'volumes.jsonl']
+ORIGINAL_INPUTS = {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/fresh-b-customer-form-external-source-r3/root-source/INPUTS.json', 'bytes': 59221, 'sha256': 'a317e210c9d82d454dc9e68f3568c4f2258885494ac55430b2e03f8d0243342f'}
+HISTORY_AUTHORITY = {'root': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r33-failed-ar-history-source-r1', 'files': {'inventory.py': {'bytes': 54417, 'sha256': '56f87717d662111a0f029f8ac87c9cc715a4b7cd80d7ee8723a19852328c11c0'}, 'DESIGN-TASKS.md': {'bytes': 96863, 'sha256': '1e670186da56c5a1f0eaefae5da9844ccebd55b4c5512cf6da7d76771b15c517'}, 'INVENTORY.json': {'bytes': 58974795, 'sha256': 'd4175f08ddc07cd4a3e36bc0aa94aa7139850d14daa9c22ac4a2f44de48f3946'}, 'RESULT.json': {'bytes': 2213, 'sha256': '90e6d55eff9b113c38d8cfacc471fb9ee385e32024789d66ba5646b896c6149a'}}, 'legacy_protocol': [{'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r24-root-orchestration-source-r1/PINS.json', 'bytes': 2319, 'sha256': '26124eb6533225321d605a375fd0b25c33d1e815dcbe76704e77548b25f039c2'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r24-root-orchestration-source-r1/before/root-materialize-freeze-r23.py', 'bytes': 54212, 'sha256': '7a704aa1ecd5cc47158103f448a8be762c64c6a3f48c131fe5685b190bcc595b'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r24-root-orchestration-source-r1/before/root-normal-run-r23.py', 'bytes': 17490, 'sha256': 'fe7ce606450264866b546518bd6817461a67d438b341d63dce7818bb056258cb'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r24-root-orchestration-source-r1/candidate/root-materialize-freeze-r24.py', 'bytes': 57643, 'sha256': 'eaf53df3591244ef2bc0af9fc8fa821d84c666d2f67ee09caea19ff845d819c0'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r24-root-orchestration-source-r1/candidate/root-normal-run-r24.py', 'bytes': 17767, 'sha256': '7ac858f8bac489f9af43b47cc1c51fad5e346d411c55ba156f8a29026e23dc22'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r24-root-orchestration-source-r1/DESIGN-TASKS.md', 'bytes': 13996, 'sha256': '35aae0c6f9663a15cd6b7f1dd423010c6cdfd91951499c7d2a85e0e754116e4d'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r24-root-orchestration-source-r1/FINAL-CANDIDATES.json', 'bytes': 5865, 'sha256': '0d3d543648cbfbaf8c7e65bb5ce97b93dd68f601b0111df918cb82c3ba7e78f4'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r24-root-orchestration-source-r1/root-materialize-freeze-r24.py', 'bytes': 57643, 'sha256': 'eaf53df3591244ef2bc0af9fc8fa821d84c666d2f67ee09caea19ff845d819c0'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r24-root-orchestration-source-r1/root-normal-run-r24.py', 'bytes': 17767, 'sha256': '7ac858f8bac489f9af43b47cc1c51fad5e346d411c55ba156f8a29026e23dc22'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r24-root-orchestration-source-r1/SOURCE-INPUTS.json', 'bytes': 24303, 'sha256': 'a53ed80de4ccdc99f4ec36bfd1fbf6804fe5ad49222b6de953f6b87e94568855'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r24-root-orchestration-source-r1/working-before-final-source-union/root-materialize-freeze-r24.py', 'bytes': 57255, 'sha256': '517129a7a283ed337590b82f6e6614c0045bc59b9fbafedfb8df7b9f06db5c97'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r24-root-orchestration-source-r1/working-before-profile-reader/root-materialize-freeze-r24.py', 'bytes': 53806, 'sha256': '2d7b9aa2c3505c44960c30de8e78226341efaf1f69c4f6929e2d8ba826510552'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r24-root-orchestration-source-r1/working-before-profile-reader/root-normal-run-r24.py', 'bytes': 17305, 'sha256': '93b19d45281287085e0082005b47372fc36d3241d9f9a76c2ae88bf3afb388da'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r24-root-orchestration-source-r1/WORKING-CHECKS.json', 'bytes': 2591, 'sha256': 'b36e2df6ad121f94b816b41799ad6aecbf84d9048b417fc55d79642783b03388'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r24-root-orchestration-source-r1/WORKING-SEAMS.json', 'bytes': 53775, 'sha256': 'd6e717f118988f6e0b5aee781d6583030b702b15aa7c69e88a766b272df115e7'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r24-root-orchestration-source-r1/WORKING.diff', 'bytes': 54306, 'sha256': '4974f685414f5eeb1b0120ee476ddcf72409e7fbcb5a450b92ac71af99680948'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r24-root-orchestration-source-r1/materialize-freeze-r24/root-driver-source.py', 'bytes': 57643, 'sha256': 'eaf53df3591244ef2bc0af9fc8fa821d84c666d2f67ee09caea19ff845d819c0'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r24-preparation-failure-public-readback-r1/main-clean.created.json', 'bytes': 140, 'sha256': '1932a548f39483a5553ba7ecd19094747d646bc2ab4189b5bf8444cf20ddeb6e'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r24-preparation-failure-public-readback-r1/main-clean.stderr', 'bytes': 0, 'sha256': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r24-preparation-failure-public-readback-r1/main-clean.stdout', 'bytes': 0, 'sha256': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r24-preparation-failure-public-readback-r1/main-clean.terminal.json', 'bytes': 388, 'sha256': '157aa633180db43867dc1d57c1921d5da2be200bd5f16c20f54235218c6925f7'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r24-preparation-failure-public-readback-r1/main-head.created.json', 'bytes': 133, 'sha256': 'aa1e125c25b68e130101fae92902c5da3dada9ad7af79ba8edccac73109856e0'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r24-preparation-failure-public-readback-r1/main-head.stderr', 'bytes': 0, 'sha256': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r24-preparation-failure-public-readback-r1/main-head.stdout', 'bytes': 41, 'sha256': '7dbda3bc2bcbcdd93c3068dc4466d5e11515c51550848be712d0ed27ded5a58f'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r24-preparation-failure-public-readback-r1/main-head.terminal.json', 'bytes': 382, 'sha256': 'a67ebf07bf41b3ca6d730c3263bfc9d02a2d12cbccfbf6cf48217ff2674e2362'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r24-preparation-failure-public-readback-r1/RESULT.json', 'bytes': 2002, 'sha256': 'ace16199d7c32b9cb64ce3517e39cd0e37ee3cdd06a51aa8ca9d2b7d59a51f8c'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r24-preparation-failure-public-readback-r1/root-driver-source.py', 'bytes': 4266, 'sha256': '89de100aec902fca79ad389b828e25a74bd8302619e305d63e652778ab57cddb'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r24-preparation-failure-public-readback-r1/validation-clean.created.json', 'bytes': 149, 'sha256': 'ea43ff27fa8fb803d2396167e0121997602d6008412c78a7f47094646723783e'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r24-preparation-failure-public-readback-r1/validation-clean.stderr', 'bytes': 0, 'sha256': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r24-preparation-failure-public-readback-r1/validation-clean.stdout', 'bytes': 0, 'sha256': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r24-preparation-failure-public-readback-r1/validation-clean.terminal.json', 'bytes': 397, 'sha256': '1eae16d46a2ab559a7fbd540f016215d9f1be313774e6d8d895a8f4af3cc9742'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r24-preparation-failure-public-readback-r1/validation-head.created.json', 'bytes': 142, 'sha256': '7de9052bed9d036fa0f89f8c21375c923fa108067f50099c6ab3b281eeda145f'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r24-preparation-failure-public-readback-r1/validation-head.stderr', 'bytes': 0, 'sha256': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r24-preparation-failure-public-readback-r1/validation-head.stdout', 'bytes': 41, 'sha256': '98f010c9e8ef124646299cf14887a4f8881985e2d591a2b14e7e41e907ff06cc'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r24-preparation-failure-public-readback-r1/validation-head.terminal.json', 'bytes': 391, 'sha256': 'b5beb2887c9bced3b16c2708270d4f50116eac635170ed98b1c231c4499fb02c'}], 'preparation_failure': {'root': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1', 'files': [{'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/DESIGN-TASKS.md', 'bytes': 8831, 'sha256': 'ac5322fb4e1cca1d1989e54f2a3a76232f62b256c5c2fe5d205ffa2859a77317'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/INPUTS.json', 'bytes': 3726, 'sha256': 'ae298612b6f7a61569dc51f9a40f0f19cac3425345c59d1aa3c107160a5dad6a'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/PINS.json', 'bytes': 614, 'sha256': '26bb60adbbf09372487a106ca475c9ba062cdcb1652b3e8b7e9976b0b586d665'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/001-protocol-zero-container-0.created.json', 'bytes': 136, 'sha256': '9a3aa881d52506a04248b14c9857285e33ec305f29fee45067efbb01555930c8'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/001-protocol-zero-container-0.stderr', 'bytes': 0, 'sha256': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/001-protocol-zero-container-0.stdout', 'bytes': 0, 'sha256': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/001-protocol-zero-container-0.terminal.json', 'bytes': 422, 'sha256': '3e774a6e5c846c968b588ec9a9da456b623cbb19f7a032c6675a0f3d03d57058'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/002-protocol-zero-container-1.created.json', 'bytes': 117, 'sha256': 'de1ee18e2ababce31254e74723a27f1e53ff0c933e440e777359a21545d2ab96'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/002-protocol-zero-container-1.stderr', 'bytes': 0, 'sha256': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/002-protocol-zero-container-1.stdout', 'bytes': 0, 'sha256': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/002-protocol-zero-container-1.terminal.json', 'bytes': 403, 'sha256': '55fc645ee73e8d9f1e0792c146da2d01ed05ec3d5569f5e3565aa1ee081b687b'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/003-protocol-zero-network-0.created.json', 'bytes': 132, 'sha256': '924538cc612b6accd10c856a2d1bc664f72d9d78a9049b85217a11cb9b0239de'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/003-protocol-zero-network-0.stderr', 'bytes': 0, 'sha256': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/003-protocol-zero-network-0.stdout', 'bytes': 0, 'sha256': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/003-protocol-zero-network-0.terminal.json', 'bytes': 416, 'sha256': 'a17aeee829edbf70f1bd41a936565d956f99a90dd7ad6388efc29448491d574a'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/004-protocol-zero-network-1.created.json', 'bytes': 113, 'sha256': '25c4ca47839f88218065ba294f93d8b0be8c16b8b28f6cd56ac266b1522747db'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/004-protocol-zero-network-1.stderr', 'bytes': 0, 'sha256': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/004-protocol-zero-network-1.stdout', 'bytes': 0, 'sha256': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/004-protocol-zero-network-1.terminal.json', 'bytes': 397, 'sha256': '7b4875f7d974655d9d86abc4452640dc652e90c772e710d0aaa0b05f14ebf2b0'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/005-protocol-zero-volume-0.created.json', 'bytes': 131, 'sha256': '65c445198264b3ed6212be26152d49d8c9ed400460f2e8552672f1e60540dc74'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/005-protocol-zero-volume-0.stderr', 'bytes': 0, 'sha256': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/005-protocol-zero-volume-0.stdout', 'bytes': 0, 'sha256': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/005-protocol-zero-volume-0.terminal.json', 'bytes': 414, 'sha256': '0c311c8b6a275bca1e386a3f5944077f110336bd8930753dcdedbd67e25f561d'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/006-protocol-zero-volume-1.created.json', 'bytes': 111, 'sha256': '7ccc5713ac0c9000eae623e76d41b660515b09118d299a4287cfcdf22accf678'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/006-protocol-zero-volume-1.stderr', 'bytes': 0, 'sha256': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/006-protocol-zero-volume-1.stdout', 'bytes': 0, 'sha256': 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/006-protocol-zero-volume-1.terminal.json', 'bytes': 394, 'sha256': '6164e473711b56bc3fd8dc95338a71060bca6d2e78cad0c2e587bbaa851b9158'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/root-driver-source.py', 'bytes': 37611, 'sha256': 'f73ef4b98289d907f0f040f160805a9f86591e3d9c9c52e49805f483dab659d1'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/prepare.py', 'bytes': 37611, 'sha256': 'f73ef4b98289d907f0f040f160805a9f86591e3d9c9c52e49805f483dab659d1'}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/run.py', 'bytes': 19986, 'sha256': '9ba187bedecb74ff4b5b46deb4a688a4c1bed5c0aa81978fcb219f932cd9e241'}]}, 'header': {'schema': 1, 'scope': 'R33_FAILED_AR_AFTER_ACTUAL_NORMAL_CLOSE_AND_INDEPENDENT_ZERO_PUBLIC_HISTORY', 'run_id': '20261021030301cc3b74', 'source_sha': '803c1b420dca8894fa9409b38601a1c6dc3c8b30', 'freeze_sha256': 'a748d661b4087d0a5c5b96677b0f2f57fa9771b65d89b676d554d7ba7ec55b5a', 'prior_public_inventory': {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r32-failed-ar-history-source-r1/INVENTORY.json', 'bytes': 55314650, 'sha256': 'f120feccd52e1c65154a039c4d086ea6ab12aed7437a8a77263be6c7e5a34cc9'}, 'prior_public_count': 224135, 'all_prior_full_bytes_unchanged': True, 'full_current_public_file_count': 238900, 'fixed_public_files': ['H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r32-failed-ar-history-source-r1/inventory.py', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r32-failed-ar-history-source-r1/DESIGN-TASKS.md', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r32-failed-ar-history-source-r1/INVENTORY.json', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r32-failed-ar-history-source-r1/RESULT.json', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/DESIGN-TASKS.md', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/INPUTS.json', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/PINS.json', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/001-protocol-zero-container-0.created.json', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/001-protocol-zero-container-0.stderr', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/001-protocol-zero-container-0.stdout', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/001-protocol-zero-container-0.terminal.json', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/002-protocol-zero-container-1.created.json', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/002-protocol-zero-container-1.stderr', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/002-protocol-zero-container-1.stdout', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/002-protocol-zero-container-1.terminal.json', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/003-protocol-zero-network-0.created.json', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/003-protocol-zero-network-0.stderr', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/003-protocol-zero-network-0.stdout', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/003-protocol-zero-network-0.terminal.json', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/004-protocol-zero-network-1.created.json', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/004-protocol-zero-network-1.stderr', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/004-protocol-zero-network-1.stdout', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/004-protocol-zero-network-1.terminal.json', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/005-protocol-zero-volume-0.created.json', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/005-protocol-zero-volume-0.stderr', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/005-protocol-zero-volume-0.stdout', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/005-protocol-zero-volume-0.terminal.json', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/006-protocol-zero-volume-1.created.json', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/006-protocol-zero-volume-1.stderr', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/006-protocol-zero-volume-1.stdout', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/006-protocol-zero-volume-1.terminal.json', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/materialize-freeze-r27/root-driver-source.py', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/prepare.py', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-normal-preparation-source-r1/run.py', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r33-normal-preparation-source-r1/DESIGN-TASKS.md', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r33-normal-preparation-source-r1/INPUTS.json', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r33-normal-preparation-source-r1/prepare.py', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r33-normal-preparation-source-r1/run.py', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r33-normal-preparation-source-r1/PINS.json', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r33-ar-failed-normal-close-r1/DESIGN-TASKS.md', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r33-ar-failed-normal-close-r1/normal-close.py', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r33-ar-failed-normal-close-r1/verify-zero.py', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r33-normal-nine-source-r1/README.md', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r33-normal-nine-source-r1/compose.yml', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r33-normal-nine-source-r1/ms4-host.py', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r33-normal-nine-source-r1/ms4-initialize.php', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r33-normal-nine-source-r1/seed-source-inverse.json', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r33-normal-nine-source-r1/interface-v1.json', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r33-normal-nine-source-r1/source-derivation.json', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r33-normal-nine-source-r1/normal-close-ms4-fulfillment.py', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r33-normal-nine-source-r1/verify-zero-ms4-fulfillment.py', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r33-normal-nine-source-r1/PUBLICATION.json', 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r33-normal-nine-source-r1/PINS.json', 'H:/天俪商城/artifacts/ms4-aftersale-review-normal-runs/20261021030301cc3b74/actual-run-context.json', 'H:/天俪商城/artifacts/ms4-aftersale-review-normal-runs/20261021030301cc3b74/preparation-source-binding.json', 'H:/天俪商城/artifacts/ms4-aftersale-review-normal-runs/20261021030301cc3b74/manifest.json', 'H:/天俪商城/artifacts/ms4-aftersale-review-normal-runs/20261021030301cc3b74/network.json', 'H:/天俪商城/artifacts/ms4-aftersale-review-normal-runs/20261021030301cc3b74/containers.jsonl', 'H:/天俪商城/artifacts/ms4-aftersale-review-normal-runs/20261021030301cc3b74/volumes.txt', 'H:/天俪商城/artifacts/ms4-aftersale-review-normal-runs/20261021030301cc3b74/volumes.jsonl', 'H:/天俪商城/artifacts/ms4-aftersale-review-normal-runs/20261021030301cc3b74/proof-php-ini/99-ms4-proof-memory.ini'], 'explicit_public_trees': [{'path': 'H:/天俪商城/artifacts/ms4-aftersale-review-normal-runs/20261021030301cc3b74/evidence', 'files': 13425, 'bytes': 24917982}, {'path': 'H:/天俪商城/artifacts/ms4-aftersale-review-normal-runs/20261021030301cc3b74/root-orchestration', 'files': 733, 'bytes': 238707}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r33-normal-preparation-source-r1/actual-profile', 'files': 9, 'bytes': 1131727}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r33-normal-preparation-source-r1/materialize-freeze-r33', 'files': 171, 'bytes': 11812390}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r33-normal-preparation-source-r1/native-normal-start-r33', 'files': 6, 'bytes': 21372}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r33-ar-failed-normal-close-r1/close-output', 'files': 340, 'bytes': 7126054}, {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r33-ar-failed-normal-close-r1/independent-zero-output', 'files': 50, 'bytes': 154795}], 'failed_AR_result': {'path': 'H:/天俪商城/artifacts/ms4-aftersale-review-normal-runs/20261021030301cc3b74/evidence/ms4-aftersale-review-normal.json', 'bytes': 6071, 'sha256': 'd4a780341abfa560e543061cfe635789e7d573ce583f23c9861d15d1fd97f50f'}, 'failure_close_result': {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r33-ar-failed-normal-close-r1/close-output/RESULT.json', 'bytes': 93522, 'sha256': '9572fba7b33a6853bff3e30c117173d3a232fbf687e9a2730e910b473fd6a89a'}, 'independent_zero_result': {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r33-ar-failed-normal-close-r1/independent-zero-output/RESULT.json', 'bytes': 17068, 'sha256': 'c4bedfc64bce7f72e2cf3011cba374a92f15db7c0bc3e19cd0ca5c86432275a9'}, 'outer_coordinator_observation': {'original_session': 16051, 'native_exit': 1, 'failure_close_native_exit': 0, 'independent_zero_native_exit': 0, 'authority': 'ROOT_OBSERVED_ORIGINAL_FAILED_OUTER_AND_ACTUAL_FAILURE_CLOSE_ZERO'}, 'native_history': {'archives': ['H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r33-normal-preparation-source-r1/native-normal-start-r33', 'H:/天俪商城/artifacts/ms4-aftersale-review-normal-runs/20261021030301cc3b74/root-orchestration'], 'native_commands': 184, 'same_PID_native_wait_full_streams': True, 'successful_native_commands': 184, 'last_label': 'observe-aftersale-review-normal', 'last_native_exit': 0, 'last_container_exit': 1, 'failure_close_native_commands': 84, 'independent_zero_native_commands': 12}, 'Task6': 'NORMAL_SUCCESS_AND_ACTUAL_NORMAL_RETIRE', 'AR': 'FAILED_NEW_ROOT_REAL_CART_CONFIRM_CREATE', 'Worker_firstB': 'NOT RUN', 'private_inputs': 'NOT READ OR ENUMERATED', 'full_acceptance': 'INCOMPLETE'}}
+A_SOURCE_PINS = {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-quota-wire-current175f-normal-next-source-r1/PINS.json', 'bytes': 147196, 'sha256': '2653282ad09cdf30e030c6c1cf5976b73a1a06bd0be52070085e3a3f33bb270b'}
+ROOT_SOURCE_PINS = {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-quota-wire-current175f-normal-next-source-r1/validation/PINS.json', 'bytes': 357, 'sha256': '0516d5f9eff69c4a36ab8b2a012333fbbcd9c2751614330ee9459cb391fe32a4'}
+M_RESULT = {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-quota-wire-current175f-normal-next-source-r1/validation/materialize-freeze-assets-r1/RESULT.json', 'bytes': 46750425, 'sha256': '6449487f1da61266fbdfe76260fced9196b398f1cbb92cc59074924d8e76c8aa'}
+FREEZE = {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-quota-wire-current175f-normal-next-source-r1/validation/materialize-freeze-assets-r1/freeze-binding.json', 'bytes': 10985209, 'sha256': '4ac3a0b7b35db7a911e9abb61dfaa4a25b0ffaf3bdc79a7c100b48f0836ce6ed'}
+M_ROOT_READBACK = {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/current175f-complete-materialization-root-readback-r1/REPORT.json', 'bytes': 1814, 'sha256': '6901f56b93e54ae6493a02e3851084e56be995d316294314e0bf03a0b710af05'}
+CONTEXT = {'path': 'H:/天俪商城/artifacts/ms4-aftersale-review-normal-runs/20261023182634096f57/actual-run-context.json', 'bytes': 12301, 'sha256': 'c56e609828ba3e51e63f69b83e4af49279bdaebee487116728c383e02dae7959'}
+ROOT_READER = {'path': 'H:/天俪商城/artifacts/project-organization-20261023/current175f-complete-normal-S-readbacks-source-r1/candidate/readback-current175f-complete-normal-S-root.py', 'bytes': 14136, 'sha256': '9e0475c305cc61c9524291da9f1e27ac160de1f3bd66021c677d8e5556677784'}
+PEER_READER = {'path': 'H:/天俪商城/artifacts/project-organization-20261023/current175f-complete-normal-S-readbacks-source-r1/candidate/readback-current175f-complete-normal-S-independent.py', 'bytes': 19527, 'sha256': 'a6e36c47f7ec02d80ae6af3206ff13ba1524626ba927f4a9cc389516ce4bc2d5'}
+READER_FINITE_HELPER = {'path': 'H:/天俪商城/artifacts/project-organization-20261023/current175f-complete-normal-S-readbacks-source-r1/candidate/finite-helper.py', 'bytes': 33935, 'sha256': 'a84cb0edd5beaa998a26f8b96819b765e8cfe83e52a62619846b431c417855c0'}
+AUTHOR_REVIEW_REPORTS = {'root': {'path': 'H:/天俪商城/artifacts/project-organization-20261023/fresh-b-current175f-root-source-review-r2/REPORT.json', 'bytes': 1776, 'sha256': 'a11de82b2b12dbff076e18bf44ebba90847296afcdd833b1d95ada8f0668b3fd'}, 'peer': {'path': 'H:/天俪商城/artifacts/project-organization-20261023/fresh-b-current175f-independent-source-review-r2/REPORT.json', 'bytes': 2246, 'sha256': '9fbd386f52e3e2f14673001ecc39dbf058e1bc364413fa3910f76c3ce1a44651'}}
+AUTHOR_REVIEW_EXPECTED = {'root': {'schema': 1, 'status': 'PASS_ROOT_CURRENT175F_FRESHB_R2_SCOPE_FIX_SOURCE_ONLY_NOT_EXECUTED', 'source_PINS': {'path': 'H:/天俪商城/artifacts/project-organization-20261023/fresh-b-current175f-source-preparation-r2/PINS.json', 'bytes': 5846, 'sha256': '0894afc646de39ff557884843471aacdf102875fa59239214f656df6c66b8a0d'}, 'author': {'path': 'H:/天俪商城/artifacts/project-organization-20261023/fresh-b-current175f-source-preparation-r2/impl/author_draft.py', 'bytes': 52868, 'sha256': 'e2b4692cadc73de1fcffb66759fe4599d92273d2a8ff010309c12729804de42a'}, 'initializer_leaf': {'path': 'H:/天俪商城/artifacts/project-organization-20261023/fresh-b-current175f-source-preparation-r1/leaf/ms4-initialize.php', 'bytes': 118698, 'sha256': '29376b4266010285ec4cebd92f0197d849142988442ead06cbcc7d26ff840db8'}, 'whole_R1_source_review': {'path': 'H:/天俪商城/artifacts/project-organization-20261023/fresh-b-current175f-root-source-review-r1/REPORT.json', 'bytes': 1308, 'sha256': 'e62b408bfbf9784a576737a86c52bac7b499030df94ad9dd8395bc4d7c74704b'}, 'r1_unique_scope_finding_closed': True, 'all_other_whole_author_bytes_and_module_complement_identical': True, 'unchanged_definitions': 18, 'build_only_one_literal_inverse': True, 'full_leaf_bytes_and_pointer_unchanged': True, 'source_members': 38, 'namespace': 40, 'whole_ancestor_namespace_retained': 24, 'ordinary_forward_reverse_replayed': True, 'finite_input_windows': 67, 'all_windows_closed': True, 'ended_ns': 1792781342545001200, 'actual_author_leaf_B_execution': 'NOT RUN', 'full_initializer_PHP82_syntax': 'NOT RUN_WAIT_ORIGINAL_S_CLOSE_AND_ROOT_ADMISSION', 'A0_postA': 'UNBOUND', 'runtime_ready': False}, 'peer': {'schema': 1, 'status': 'PASS_INDEPENDENT_MINIMAL_R2_ACTIVE_SCOPE_SOURCE_CORRECTION_ONLY', 'findings': [], 'r1_complete_independent_review_basis': {'path': 'H:/天俪商城/artifacts/project-organization-20261023/fresh-b-current175f-independent-source-review-r1/REPORT.json', 'bytes': 6585, 'sha256': 'c609c510bdfbae23ed1983108935ba2f6539c17ba3f2bf926e73032e6c830273'}, 'r2_PIN': {'bytes': 5846, 'sha256': '0894afc646de39ff557884843471aacdf102875fa59239214f656df6c66b8a0d'}, 'r2_FINAL': {'bytes': 1428, 'sha256': 'd4f5940b57c0eb7cfb7af67f4c90c6ef658a9863292baa3c8dbca9bf32b902b7'}, 'r2_pinned_members': 38, 'r2_namespace_total': 40, 'r1_archived_whole_members': 24, 'exact_only_change': {'before': 'REAL_SAME28DC_A_SUCCESS_INPUTS_BOUND_SOURCE_ONLY_B_NOT_SEALED', 'after': 'REAL_SAME175F_A_SUCCESS_INPUTS_BOUND_SOURCE_ONLY_B_NOT_SEALED', 'whole_author_forward_inverse': True, 'ordinary_full_both_directions': True}, 'functions': {'original': 19, 'unchanged_nonbuild': 18, 'build_all_other_bytes_identical': True, 'all_module_complement_AST_imports_globals_M_counts_business_unchanged': True, 'recursive_globals_undeclared': []}, 'closed_R1_finding': {'priority': 3, 'original_line': 573, 'status': 'CLOSED_BY_EXACT_ACTIVE_LABEL_CHANGE', 'new_findings': []}, 'leaf': {'bytes_sha': {'bytes': 118698, 'sha256': '29376b4266010285ec4cebd92f0197d849142988442ead06cbcc7d26ff840db8'}, 'full_copy_and_before_and_r1_identical': True, 'actual_Root_initializer_pointer_retains_r1': True}, 'boundaries': {'author_leaf_B_Host_Docker_Node_browser_executed': False, 'current_S_Run_private_or_raw_read': False, 'A0_postA': 'UNBOUND', 'runtime_ready': False, 'B_or_UI_runtime_acceptance': 'NOT PROVIDED', 'remaining_original_scope': 'All original B/UI20/Task2/H5/Kernel/readers/CS and other requirements retained by unchanged whole Source and prior complete review.', 'new_leaf_actual_PHP82_syntax': 'NOT RUN; after live S ends and Root admission'}, 'finite_inputs': 67, 'finite_bytes': 1564897, 'all_windows_closed': True, 'ended_ns': 1792781322596146900}}
+INITIALIZER_LEAF = {'path': 'H:/天俪商城/artifacts/project-organization-20261023/fresh-b-current175f-source-preparation-r1/leaf/ms4-initialize.php', 'bytes': 118698, 'sha256': '29376b4266010285ec4cebd92f0197d849142988442ead06cbcc7d26ff840db8'}
+INITIALIZER_SYNTAX_INTERFACE = None
+WINDOWS = None
+A_QUALIFICATION = None
+POST_A_HISTORY_CONTRACT = None
+OLD_ARCHIVE = OLD_ROOT / 'root-orchestration'
+OLD_RESULT = OLD_ARCHIVE / 'RESULT.json'
+
+
+def sha(raw):
+    return hashlib.sha256(raw).hexdigest()
+
+def ordinary(path, directory=False):
+    path = Path(path)
+    for current in [path, *path.parents]:
+        info = current.stat(follow_symlinks=False)
+        assert not current.is_symlink() and not getattr(info, 'st_file_attributes', 0) & 1024, str(current)
+    info = path.stat(follow_symlinks=False)
+    assert stat.S_ISDIR(info.st_mode) if directory else stat.S_ISREG(info.st_mode), str(path)
+    return path
+
+def file_pin(path, row):
+    path = ordinary(path)
+    raw = path.read_bytes()
+    assert type(row['bytes']) is int and row['bytes'] >= 0
+    assert re.fullmatch('[a-f0-9]{64}', row['sha256'])
+    assert len(raw) == row['bytes'] and sha(raw) == row['sha256'], str(path)
+    return raw
+
+def tree(root):
+    root = ordinary(root, True); files = {}; directories = []
+    def walk(folder):
+        for path in sorted(folder.iterdir(), key=lambda p:p.name):
+            info = path.stat(follow_symlinks=False)
+            assert not path.is_symlink() and not getattr(info, 'st_file_attributes', 0) & 1024
+            name = path.relative_to(root).as_posix()
+            assert not re.search(r'(^/|\\|[\x00-\x1f\x7f]|(^|/)\.\.?(/|$)|//|:|/$)', name)
+            if stat.S_ISDIR(info.st_mode):
+                directories.append(name); walk(path)
+            else:
+                assert stat.S_ISREG(info.st_mode)
+                raw = path.read_bytes(); files[name] = {'bytes':len(raw),'sha256':sha(raw)}
+    walk(root)
+    return {'files':dict(sorted(files.items())), 'directories':sorted(directories)}
+
+ORIGINAL_TREE = tree
+
+
+def need(value, code):
+    if not value:
+        raise RuntimeError(code)
+
+
+def enc(value):
+    return (json.dumps(value, ensure_ascii=False, indent=2) + '\n').encode('utf-8')
+
+
+def pin(raw):
+    return {'bytes': len(raw), 'sha256': hashlib.sha256(raw).hexdigest()}
+
+
+def pointer(path, raw):
+    return {'path': Path(path).as_posix(), **pin(raw)}
+
+
+def native9(path):
+    st = Path(path).stat(follow_symlinks=False)
+    return [st.st_dev, st.st_ino, st.st_mode, st.st_nlink, st.st_uid, st.st_gid, st.st_size, st.st_mtime_ns, st.st_ctime_ns]
+
+
+class PublicWindows:
+    """Full opaque byte hashes and native9, with complete explicit namespaces."""
+    def __init__(self):
+        self.files = {}
+        self.namespaces = {}
+        self.fd_windows = {}
+
+    def file(self, path, row=None):
+        path = ordinary(path)
+        need(path.is_absolute(), 'ABSOLUTE_PUBLIC_INPUT')
+        first = path.stat(follow_symlinks=False)
+        before = native9(path)
+        with path.open('rb') as stream:
+            opened = os.fstat(stream.fileno())
+            fd_before = [opened.st_dev, opened.st_ino, opened.st_mode, opened.st_nlink, opened.st_uid, opened.st_gid, opened.st_size, opened.st_mtime_ns, opened.st_ctime_ns]
+            need(all(getattr(first, key) == getattr(opened, key) for key in ['st_dev', 'st_ino', 'st_size', 'st_mtime_ns']), 'NAMED_FD_DEV_INO_SIZE_MTIME')
+            need(first.st_birthtime_ns == opened.st_birthtime_ns, 'NAMED_FD_BIRTHTIME')
+            raw = stream.read()
+            need(len(raw) == first.st_size and stream.read(1) == b'', 'COMPLETE_PUBLIC_FILE_EOF')
+            ended = os.fstat(stream.fileno())
+            fd_after = [ended.st_dev, ended.st_ino, ended.st_mode, ended.st_nlink, ended.st_uid, ended.st_gid, ended.st_size, ended.st_mtime_ns, ended.st_ctime_ns]
+            need(fd_after == fd_before and ended.st_birthtime_ns == opened.st_birthtime_ns, 'OWN_FD_NINE_AND_BIRTHTIME_UNCHANGED')
+        final = path.stat(follow_symlinks=False)
+        need(native9(path) == before and final.st_birthtime_ns == first.st_birthtime_ns, 'OWN_NAMED_NINE_AND_BIRTHTIME_UNCHANGED')
+        observed = {'path': path.as_posix(), **pin(raw), 'native9': before}
+        if row is not None:
+            need(type(row) is dict and type(row.get('bytes')) is int and row['bytes'] >= 0
+                and re.fullmatch('[a-f0-9]{64}', row.get('sha256', '')) is not None, 'TYPED_PUBLIC_POINTER')
+            need(pin(raw) == {k: row[k] for k in ['bytes', 'sha256']}, 'EXACT_FULL_PUBLIC_BYTES')
+            if 'path' in row:
+                need(row['path'] == path.as_posix(), 'EXACT_PUBLIC_POINTER_PATH')
+        if path.as_posix() in self.files:
+            need(self.files[path.as_posix()] == observed, 'REPEATED_PUBLIC_READ_SAME_FULL_BYTES_AND_NATIVE9')
+        self.files[path.as_posix()] = observed
+        self.fd_windows[path.as_posix()] = {'named_before': before, 'named_after': native9(path), 'fd_open': fd_before, 'fd_after': fd_after,
+            'named_birthtime_ns': first.st_birthtime_ns, 'fd_birthtime_ns': opened.st_birthtime_ns, 'full_EOF': True}
+        return raw
+
+    def tree(self, root, state):
+        root = ordinary(root, True)
+        observed = {'files': sorted(state['files']), 'directories': state['directories'],
+            'directory_native9': {name: native9(root / name) for name in [''] + state['directories']}}
+        if root.as_posix() in self.namespaces:
+            need(self.namespaces[root.as_posix()] == observed, 'REPEATED_COMPLETE_NAMESPACE_SAME')
+        self.namespaces[root.as_posix()] = observed
+        for name, row in state['files'].items():
+            self.file(root / name, row)
+
+    def end(self):
+        # Re-read whole opaque bytes without parsing any private/ENV/body content.
+        for path, row in list(self.files.items()):
+            self.file(Path(path), row)
+        for path, expected in self.namespaces.items():
+            root = ordinary(Path(path), True)
+            state = ORIGINAL_TREE(root)
+            need(sorted(state['files']) == expected['files'] and state['directories'] == expected['directories'], 'END_COMPLETE_PUBLIC_NAMESPACE_IDENTICAL')
+            need({name: native9(root / name) for name in [''] + state['directories']} == expected['directory_native9'], 'END_ORIGINAL_DIRECTORY_IDENTITIES')
+            for name, row in state['files'].items():
+                need(self.files[(root / name).as_posix()]['bytes'] == row['bytes']
+                    and self.files[(root / name).as_posix()]['sha256'] == row['sha256'], 'END_NAMESPACE_FULL_FILE_BYTES')
+        return {'files': [self.files[p] for p in sorted(self.files)], 'fd_windows': self.fd_windows, 'namespaces': self.namespaces,
+            'all_whole_bytes_native9_namespaces_ended': True, 'opaque_content': 'HASHED_IN_RAM_NEVER_PARSED_OR_PRINTED'}
+
+
+def exact_pointer(row):
+    need(type(row) is dict and set(row) == {'path', 'bytes', 'sha256'} and Path(row['path']).is_absolute(), 'EXACT_PUBLIC_THREE_FIELD_POINTER')
+    return WINDOWS.file(Path(row['path']), row)
+
+
+def outcome(value, expected_argv=None, expected_pid=None):
+    need(type(value) is dict and set(value) == {'created', 'terminal', 'stdout', 'stderr', 'created_object', 'terminal_object'}, 'ACTUAL_SIX_POINTERS_AND_OBJECTS')
+    created = json.loads(exact_pointer(value['created']))
+    terminal = json.loads(exact_pointer(value['terminal']))
+    need(created == value['created_object'] and terminal == value['terminal_object'], 'ACTUAL_ORIGINAL_RECEIPT_OBJECTS')
+    need(set(created) == {'pid', 'argv', 'started_ns'} and set(terminal) == {'pid', 'native_exit', 'wait_returncode', 'finished_ns', 'stdout', 'stderr'}, 'EXACT_REAL_LAUNCHER_NATIVE_SCHEMAS')
+    need(type(created['pid']) is int and created['pid'] > 0 and created['pid'] == terminal['pid'], 'ACTUAL_SAME_POSITIVE_PID')
+    need(type(terminal['native_exit']) is int and type(terminal['wait_returncode']) is int and terminal['native_exit'] == terminal['wait_returncode'] == 0, 'ACTUAL_NATIVE_EXIT_AND_WAIT_ZERO')
+    need(type(created['started_ns']) is int and type(terminal['finished_ns']) is int and 0 < created['started_ns'] < terminal['finished_ns'], 'ACTUAL_MONOTONIC_NATIVE_WINDOW')
+    if expected_pid is not None:
+        need(created['pid'] == expected_pid, 'EXACT_FIXED_ORIGINAL_NATIVE_PID')
+    if expected_argv is not None:
+        need(created['argv'] == expected_argv, 'EXACT_REVIEWED_ORIGINAL_NATIVE_ARGV')
+    for stream in ['stdout', 'stderr']:
+        need(terminal[stream] == value[stream], 'EXACT_ORIGINAL_TYPED_STREAM_POINTER')
+        raw = exact_pointer(value[stream])
+        if stream == 'stderr':
+            need(raw == b'', 'ACTUAL_FULL_EMPTY_STDERR')
+    return created, terminal
+
+
+def original_outcome(stem):
+    """Build real typed six-field outcome from existing original launcher files."""
+    created_path, terminal_path = stem.with_suffix('.created.json'), stem.with_suffix('.terminal.json')
+    created_raw, terminal_raw = WINDOWS.file(created_path), WINDOWS.file(terminal_path)
+    created, terminal = json.loads(created_raw), json.loads(terminal_raw)
+    need(set(terminal) == {'pid', 'native_exit', 'wait_returncode', 'finished_ns', 'stdout', 'stderr'}, 'ORIGINAL_LAUNCHER_TERMINAL_SIX')
+    return {'created': pointer(created_path, created_raw), 'terminal': pointer(terminal_path, terminal_raw),
+        'stdout': terminal['stdout'], 'stderr': terminal['stderr'], 'created_object': created, 'terminal_object': terminal}
+
+
+def source_inputs():
+    # Exact old Source metadata, not current Run/private content or a new schema.
+    value = json.loads(WINDOWS.file(Path(ORIGINAL_INPUTS['path']), ORIGINAL_INPUTS))
+    need(value['history'] == HISTORY_AUTHORITY, 'EXACT_ORIGINAL_COMPLETE_PRE_A_AUTHORITY')
+    return value
+
+
+def union_row(rows, origins, row, origin):
+    need(type(row) is dict and set(row) == {'path', 'bytes', 'sha256'} and Path(row['path']).is_absolute(), 'FULL_PUBLIC_DESCRIPTOR_THREE')
+    need(type(row['bytes']) is int and row['bytes'] >= 0 and re.fullmatch('[a-f0-9]{64}', row['sha256']) is not None, 'FULL_PUBLIC_DESCRIPTOR_TYPES')
+    if row['path'] in rows:
+        need(rows[row['path']] == row, 'STRICT_SAME_PATH_SAME_COMPLETE_DESCRIPTOR')
+    rows[row['path']] = row
+    origins.setdefault(row['path'], [])
+    if origin not in origins[row['path']]:
+        origins[row['path']].append(origin)
+
+
+def complete_history_rows(retained):
+    """Exact producer of the unchanged original post_a_history expected map."""
+    prior, extras = pre_a_history()
+    rows, origins = {}, {}
+    for row in prior.values():
+        union_row(rows, origins, row, 'original_fixed_R33_inventory238900')
+    for row in extras:
+        union_row(rows, origins, row, 'original_R33_authority_four_or_preparation_failure_extras')
+    for name in ['DESIGN-TASKS.md', 'run.py', 'PINS.json', 'PROFILE-PINS.json', 'PROFILE-PUBLICATION.json']:
+        path = NORMAL_SOURCE / name
+        union_row(rows, origins, pointer(path, WINDOWS.file(path)), 'current_normal_five')
+    roots = [OLD_ROOT/'evidence', OLD_ARCHIVE, NORMAL_SOURCE/'actual-profile',
+        NORMAL_SOURCE/'materialize-freeze-assets-r1', NORMAL_SOURCE/'native-normal-start-assets-r1']
+    roots += [NORMAL_SOURCE.parent/'materializer', PREPARED/'r40-normal-materialize-source-r1',
+        PREPARED/'r39-ar-failed-normal-close-r1/close-output', PREPARED/'r39-ar-failed-normal-close-r1/independent-zero-output']
+    for root in roots:
+        state = tree(root)
+        for name, row in state['files'].items():
+            union_row(rows, origins, {'path': (root/name).as_posix(), **row}, 'complete_explicit_public_tree:' + root.as_posix())
+    for name in PUBLIC_ROOT_FILES + ['proof-php-ini/99-ms4-proof-memory.ini']:
+        path = OLD_ROOT / name
+        union_row(rows, origins, pointer(path, WINDOWS.file(path)), 'original_PUBLIC_ROOT_FILES_and_proofINI')
+    need(type(retained) is list and retained and [r['path'] for r in retained] == sorted({r['path'] for r in retained}), 'COMPLETE_EXPLICIT_SORTED_RETAINED_PUBLIC_LIST')
+    for row in retained:
+        exact_pointer(row)
+        union_row(rows, origins, row, 'explicit_original_Root_retained_public_input')
+    return sorted(rows.values(), key=lambda r: r['path']), origins
+
+
+def require_reader_report(report, peer):
+    status = 'PASS_INDEPENDENT_ACTUAL_CURRENT175F_COMPLETE_NORMAL_S_PUBLIC_RECEIPTS_ONLY' if peer else 'PASS_ORIGINAL_CURRENT175F_COMPLETE_NORMAL_A_RECEIPT_READBACK_ONLY'
+    need(report['status'] == status and report['run_id'] == RUN_ID and report['source_sha'] == HEAD and report['freeze_sha256'] == FREEZE['sha256'], 'GENUINE_COMPLETE_READER_IDENTITY')
+    need(report['original_outer_pid'] == OUTER_PID and report['original_prepare_pid'] == PREPARE_PID and report['original_outer_native_exit_wait'] == 0, 'GENUINE_ORIGINAL_READER_NATIVE_IDENTITIES')
+    need(report['initial_prepare_native_zero'] is True and report['all_original_stream_pins_match'] is True
+        and report['all_windows_closed'] is True and report['independent_zero_from_original_S'] is True
+        and report['extra_close_or_restart_performed'] is False, 'GENUINE_COMPLETE_READER_WINDOWS_NO_RERUN')
+    proofs = report['all9_original_container_proofs']
+    need(set(proofs) == {'initializer', 'driver', 'fulfillment-migration', 'files-bootstrap', 'customer-prepare', 'paid-producer', 'fulfillment-normal', 'aftersale-review-normal', 'worker-normal'}, 'ALL_NINE_ORIGINAL_PROOFS')
+    need(all(r == {'native_exit': 0, 'same_original_id': True, 'no_restart': True} for r in proofs.values()), 'ALL_NINE_ORIGINAL_PROOFS_ZERO_NO_RESTART')
+    if peer:
+        need(report['reader_source'] == PEER_READER and report['independently_reads_originals'] is True
+            and report['target_or_source_module_imported'] is False and report['actual_Run_freeze_equals_complete_frozen_Source'] is True, 'GENUINE_INDEPENDENT_FULL_ORIGINAL_READER')
+
+
+def write_new(path, raw):
+    need(not path.exists(), 'NEW_CAPTURE_FILE_ONLY')
+    with path.open('xb') as stream:
+        need(stream.write(raw) == len(raw), 'COMPLETE_NEW_CAPTURE_FILE')
+    need(path.read_bytes() == raw, 'NEW_CAPTURE_EXACT_WHOLE_BYTES')
+
+
+def produce(args):
+    global WINDOWS, A_QUALIFICATION, POST_A_HISTORY_CONTRACT
+    WINDOWS = PublicWindows()
+    need(args.authorize_completed_s0, 'ROOT_MUST_AUTHORIZE_REAL_COMPLETED_ORIGINAL_S0')
+    need(type(INITIALIZER_SYNTAX_INTERFACE) is dict, 'WAIT_REVIEWED_EXACT_118698_UI_INITIALIZER_SYNTAX_SOURCE_INTERFACE')
+    output = Path(args.output)
+    need(output.is_absolute() and output.parent.resolve() == ORG.resolve() and not output.exists(), 'NEW_DIRECT_OWN_ORG_CAPTURE_OUTSIDE_BASE_AND_ALL_B_RUNTIME')
+    need(not output.is_relative_to(PREPARED) and not output.is_relative_to(OLD_ROOT), 'CAPTURE_NOT_IN_ANY_OLD_RUN_OR_B_SOURCE_RUNTIME')
+    admission_raw = WINDOWS.file(Path(args.actual_admission))
+    admission = json.loads(admission_raw)
+    need(type(admission) is dict and set(admission) == {'schema', 'run_id', 'source_sha', 'outer_session', 'readers', 'author_Source_review', 'initializer_syntax', 'retained_public_files'}, 'EXPLICIT_NEW_PRODUCER_ACTUAL_ADMISSION_SCHEMA_NOT_EXISTING_RECEIPT')
+    need(admission['schema'] == 1 and admission['run_id'] == RUN_ID and admission['source_sha'] == HEAD and admission['outer_session'] == OUTER_SESSION, 'FIXED_ORIGINAL_CURRENT175F_SCOPE')
+    # Refuse prior to any Run read if the original S has no terminal or failed.
+    s_outcome = original_outcome(NORMAL_SOURCE.parent/'launcher/normal-start')
+    outcome(s_outcome, expected_pid=OUTER_PID)
+    need(s_outcome['created_object']['argv'] == [PYTHON, '-B', '-X', 'utf8', (NORMAL_SOURCE/'run.py').as_posix(), '--root-source-pins-sha256', ROOT_SOURCE_PINS['sha256'], '--setup-sha256', M_RESULT['sha256']], 'EXACT_CURRENT_S_ORIGINAL_ARGV')
+    # The exact launcher/qualification adapters are appended only from the
+    # actual reviewed Source interface supplied by Root, never guessed here.
+    validate_reader_native_admission(admission['readers'])
+    syntax = validate_initializer_syntax_admission(admission['initializer_syntax'])
+    review = validate_author_Source_review(admission['author_Source_review'])
+    exact_pointer(A_SOURCE_PINS)
+    m_raw = exact_pointer(M_RESULT)
+    m = json.loads(m_raw)
+    need(m['source_sha'] == HEAD and m['parent'] == PARENT and len(m) == 35 and len(m['commit_chain']) == 19 and len(m['native_operations']) == 1088, 'ACTUAL_COMPLETED_SAME_SOURCE_M35_CHAIN19_LEDGER1088')
+    need({'path': m['freeze'], 'bytes': m['freeze_bytes'], 'sha256': m['freeze_sha256']} == FREEZE, 'ACTUAL_COMPLETED_SAME_SOURCE_FREEZE')
+    exact_pointer(FREEZE)
+    m_outcome = original_outcome(NORMAL_SOURCE.parent/'launcher/materialize')
+    outcome(m_outcome)
+    exact_pointer(M_ROOT_READBACK)
+    context_path = OLD_ROOT/'actual-run-context.json'
+    context_raw = WINDOWS.file(context_path, CONTEXT)
+    context = json.loads(context_raw)
+    need(context['run_id'] == RUN_ID and context['source_sha'] == HEAD and context['freeze_sha256'] == FREEZE['sha256'], 'ORIGINAL_CURRENT_CONTEXT_IDENTITY')
+    final_raw = WINDOWS.file(OLD_RESULT)
+    need(json.loads(final_raw) == {'status': 'ROOT_NORMAL_MIGRATIONS_BUSINESS_WORKER_CLOSE_AND_INDEPENDENT_ZERO_NATIVE_ZERO', 'run_id': RUN_ID, 'source_sha': HEAD, 'context': context_path.as_posix(), 'worker_scope': 'VERIFIED_NORMAL_WORKER_NON_DUE_LIFECYCLE_ONLY', 'full_acceptance': 'INCOMPLETE', 'DOM_nonempty_history_due_finance_release': 'NOT RUN'}, 'ORIGINAL_COMPLETE_NORMAL_A_RESULT')
+    close_path = OLD_ROOT/'evidence/ms4-worker-normal-close-result.json'
+    zero_path = OLD_ROOT/'evidence/ms4-worker-normal-independent-zero.json'
+    close_raw, zero_raw = WINDOWS.file(close_path), WINDOWS.file(zero_path)
+    closed, zero = json.loads(close_raw), json.loads(zero_raw)
+    need(closed['status'] == 'VERIFIED_MS4_WORKER_NORMAL_CLOSE_ZERO_RESIDUAL' and zero['status'] == 'VERIFIED_MS4_WORKER_NORMAL_INDEPENDENT_SIX_QUERY_ZERO', 'ORIGINAL_SUCCESS_CLOSE_ZERO_ONLY')
+    for obj in [closed, zero]:
+        need(obj['run_id'] == RUN_ID and obj['source_sha'] == HEAD and obj['freeze_sha256'] == FREEZE['sha256'] and obj['native_exit'] == 0, 'ORIGINAL_CLOSE_ZERO_SAME_IDENTITY')
+    need(zero['close_result_sha256'] == pin(close_raw)['sha256'], 'ORIGINAL_CLOSE_ZERO_FULL_PIN_JOIN')
+    need([(q['kind'], q['label']) for q in zero['queries']] == [(k, l) for k in ['container', 'network', 'volume'] for l in ['project', 'run']], 'ORIGINAL_SIX_FRESH_ZERO_QUERIES')
+    empty = pin(b'')
+    need(all(q['native_exit'] == 0 and q['stdout_bytes'] == q['stderr_bytes'] == 0 and q['stdout_sha256'] == q['stderr_sha256'] == empty['sha256'] for q in zero['queries']), 'ORIGINAL_SIX_FULL_EMPTY_STREAMS')
+    rows, origins = complete_history_rows(admission['retained_public_files'])
+    need(all(not Path(r['path']).is_relative_to(output) for r in rows), 'HISTORY_CANNOT_INCLUDE_OUTPUT_OR_ITS_FUTURE_FILES')
+    before_output_windows = WINDOWS.end()
+    header = {'schema': 1, 'scope': 'CURRENT175F_REAL_COMPLETE_NORMAL_A_POST_SUCCESS_PUBLIC_HISTORY', 'run_id': RUN_ID, 'source_sha': HEAD, 'freeze_sha256': FREEZE['sha256'], 'outer_session': OUTER_SESSION, 'outer_pid': OUTER_PID, 'prepare_pid': PREPARE_PID, 'pre_A_public_inventory_count': 238900, 'full_public_file_count': len(rows), 'all_full_public_bytes_native9_namespaces_unchanged': True, 'private_ENV_child_body_content': 'OPAQUE_RAM_HASH_ONLY_NOT_PARSED_OR_PRINTED', 'full_acceptance': 'INCOMPLETE'}
+    history_raw = enc({**header, 'files': rows})
+    output.mkdir()
+    history_path = output/'POST-A-PUBLIC-HISTORY.json'
+    write_new(history_path, history_raw)
+    POST_A_HISTORY_CONTRACT = {'header': header, 'files_key': 'files', 'retained_public_files': admission['retained_public_files']}
+    A_QUALIFICATION = {'outer_native_exit': 0, 'normal_root_result': pointer(OLD_RESULT, final_raw), 'worker_close': pointer(close_path, close_raw), 'independent_zero': pointer(zero_path, zero_raw), 'post_a_history': pointer(history_path, history_raw)}
+    # Consume the new history with both exact original full bodies, without
+    # importing or calling any Root/Host/target/author or performing cleanup.
+    reader_args = argparse.Namespace(public_history_inventory=history_path.as_posix(), public_history_inventory_sha256=pin(history_raw)['sha256'])
+    consumed, _ = post_a_history(reader_args, context, final_raw, close_raw, zero_raw)
+    need(consumed == rows + [pointer(history_path, history_raw)], 'ORIGINAL_WHOLE_POST_A_CONSUMER_ACCEPTS_COMPLETE_NEW_PRODUCER')
+    ended = WINDOWS.end()
+    actual_inputs = {'schema': 1, 'source_sha': HEAD, 'M_result': M_RESULT, 'M_outcome': m_outcome, 'M_root_readback': M_ROOT_READBACK, 'A_outcome': s_outcome, 'A_outer_session': OUTER_SESSION, 'A_qualification': A_QUALIFICATION, 'A_context': pointer(context_path, context_raw), 'post_A_history_contract': POST_A_HISTORY_CONTRACT, 'Source_review_authority': review, 'initializer_leaf': INITIALIZER_LEAF}
+    need(set(actual_inputs) == {'schema', 'source_sha', 'M_result', 'M_outcome', 'M_root_readback', 'A_outcome', 'A_outer_session', 'A_qualification', 'A_context', 'post_A_history_contract', 'Source_review_authority', 'initializer_leaf'}, 'ORIGINAL_EXACT_TWELVE_AUTHOR_KEYS')
+    write_new(output/'POST-A-CONTRACT.json', enc(POST_A_HISTORY_CONTRACT))
+    write_new(output/'PUBLIC-HISTORY-PROVENANCE.json', enc({'files': origins, 'source': 'Exact complete original pre/post_A contract union; duplicates keep complete descriptors'}))
+    write_new(output/'PUBLIC-INPUT-WINDOWS.json', enc(ended))
+    write_new(output/'ACTUAL-AUTHOR-INPUTS.json', enc(actual_inputs))
+    result = {'status': 'ACTUAL_CURRENT175F_A0_POSTA_AND_TWELVE_AUTHOR_INPUTS_CAPTURED_ONLY', 'run_id': RUN_ID, 'source_sha': HEAD, 'public_files': len(rows), 'original_full_consumer_accepted': True, 'all_windows_ended': True, 'original_close_zero_consumed_without_rerun': True, 'initializer_syntax_qualification': syntax, 'author_invoked': False, 'B_generated': False, 'full_acceptance': 'INCOMPLETE', 'history': pointer(history_path, history_raw), 'actual_inputs': pointer(output/'ACTUAL-AUTHOR-INPUTS.json', enc(actual_inputs))}
+    write_new(output/'RESULT.json', enc(result))
+    print(json.dumps({'status': result['status'], 'public_files': len(rows), 'result': pointer(output/'RESULT.json', enc(result))}))
+
+
+"""Appended Source definitions only; this fragment is never invoked here."""
+
+
+def history_file_pin(path, row):
+    return WINDOWS.file(path, row)
+
+
+def history_tree(root):
+    state = ORIGINAL_TREE(root)
+    WINDOWS.tree(root, state)
+    return state
+
+
+file_pin = history_file_pin
+tree = history_tree
+
+
+def reader_native_outcome(row, source):
+    """Read the existing full-M outer protocol reused for the actual S reader."""
+    value = json.loads(exact_pointer(row))
+    need(type(value) is dict and set(value) == {'created', 'terminal', 'stdout', 'stderr', 'native_exit', 'wait_returncode'}, 'REAL_READER_OUTCOME_SIX_EXISTING_SCHEMA')
+    made = json.loads(exact_pointer(value['created']))
+    ended = json.loads(exact_pointer(value['terminal']))
+    need(type(made) is dict and set(made) == {'pid', 'argv', 'started_ns'}, 'REAL_READER_CREATED_THREE')
+    need(type(ended) is dict and set(ended) == {'pid', 'argv', 'started_ns', 'native_exit', 'wait_returncode', 'finished_ns', 'stdout', 'stderr'}, 'REAL_READER_TERMINAL_EIGHT_NOT_S_LAUNCHER_SIX')
+    need(all(ended[key] == made[key] for key in ['pid', 'argv', 'started_ns']), 'READER_ORIGINAL_CREATED_TERMINAL_IDENTITY')
+    need(type(made['pid']) is int and made['pid'] > 0 and type(made['started_ns']) is int
+        and type(ended['finished_ns']) is int and 0 < made['started_ns'] < ended['finished_ns'], 'REAL_READER_PID_AND_FINISHED_NATIVE_WINDOW')
+    need(all(type(value[key]) is int and type(ended[key]) is int and value[key] == ended[key] == 0
+        for key in ['native_exit', 'wait_returncode']), 'REAL_READER_NATIVE_EXIT_AND_WAIT_ZERO')
+    need(made['argv'] == [PYTHON, '-B', '-X', 'utf8', source['path'], '--run-id', RUN_ID,
+        '--outer-pid', str(OUTER_PID), '--prepare-pid', str(PREPARE_PID), '--authorize-completed-s0'], 'REAL_EXACT_SAME175F_FULL_READER_ARGV')
+    for key in ['stdout', 'stderr']:
+        need(ended[key] == value[key], 'READER_COMPLETE_STREAM_POINTER_JOIN')
+        raw = exact_pointer(value[key])
+        if key == 'stderr':
+            need(raw == b'', 'READER_COMPLETE_EMPTY_STDERR')
+    return value
+
+
+def validate_reader_native_admission(value):
+    need(type(value) is dict and set(value) == {'root', 'peer'}, 'TWO_REAL_COMPLETE_ORIGINAL_SUCCESS_READER_ADMISSIONS')
+    exact_pointer(READER_FINITE_HELPER)
+    reports = {}
+    for which, source, report_dir, peer in [
+        ('root', ROOT_READER, 'actual-root-readback-r1', False),
+        ('peer', PEER_READER, 'actual-peer-readback-r1', True)]:
+        row = value[which]
+        need(type(row) is dict and set(row) == {'source', 'outcome', 'report', 'inputs'}, 'COMPLETE_READER_SOURCE_OUTCOME_REPORT_INPUTS_INTERFACE')
+        need(row['source'] == source, 'EXACT_IMMUTABLE_FULL_READER_SOURCE')
+        exact_pointer(source)
+        reader_native_outcome(row['outcome'], source)
+        output = Path(source['path']).parents[1] / report_dir
+        need(row['report']['path'] == (output / 'REPORT.json').as_posix()
+            and row['inputs']['path'] == (output / 'INPUTS.json').as_posix(), 'EXACT_SOURCE_DECLARED_REAL_READER_OUTPUT_PATHS')
+        report = json.loads(exact_pointer(row['report']))
+        require_reader_report(report, peer)
+        need(type(report['Root_native_wrappers']) is int and report['Root_native_wrappers'] > 0,
+            'ACTUAL_COMPLETE_ORIGINAL_NATIVE_COMMAND_LEDGER_NONEMPTY')
+        inputs = json.loads(exact_pointer(row['inputs']))
+        need(type(inputs) is dict and set(inputs) == {'files', 'all_windows_closed'} and inputs['all_windows_closed'] is True
+            and type(inputs['files']) is list and len(inputs['files']) == report['finite_input_count'], 'COMPLETE_ORIGINAL_READER_INPUT_WINDOWS')
+        names = []
+        for observed in inputs['files']:
+            need(type(observed) is dict and set(observed) == {'path', 'pin', 'named_before', 'named_after', 'fd_open', 'fd_after', 'named_birthtime_ns', 'fd_birthtime_ns'}, 'ORIGINAL_READER_FINITE_NINE_FIELD_ROW_SCHEMA')
+            for key in ['named_before', 'named_after', 'fd_open', 'fd_after']:
+                need(type(observed[key]) is list and len(observed[key]) == 9 and all(type(v) is int for v in observed[key]), 'ORIGINAL_READER_OWN_TYPED_NINE_FIELDS')
+            need(observed['named_before'] == observed['named_after'] and observed['fd_open'] == observed['fd_after'], 'ORIGINAL_READER_OWN_WINDOWS_CLOSED')
+            need(all(observed['named_before'][i] == observed['fd_open'][i] for i in [0, 1, 6, 7]), 'ORIGINAL_READER_CROSS_DEV_INO_SIZE_MTIME')
+            need(type(observed['named_birthtime_ns']) is int and observed['named_birthtime_ns'] == observed['fd_birthtime_ns'], 'ORIGINAL_READER_NAMED_FD_BIRTHTIME')
+            raw = WINDOWS.file(Path(observed['path']), observed['pin'])
+            need(native9(Path(observed['path'])) == observed['named_before'], 'ORIGINAL_READER_PUBLIC_INPUT_STILL_SAME_NAMED_NINE')
+            need(Path(observed['path']).stat(follow_symlinks=False).st_birthtime_ns == observed['named_birthtime_ns'], 'ORIGINAL_READER_PUBLIC_INPUT_SAME_BIRTHTIME')
+            need(pin(raw) == observed['pin'], 'ORIGINAL_READER_PUBLIC_INPUT_FULL_PIN')
+            names.append(observed['path'])
+        need(len(names) == len(set(names)), 'ORIGINAL_COMPLETE_READER_INPUT_NAMESPACE_UNIQUE')
+        reports[which] = report
+    common = set(reports['root'])
+    need(set(reports['peer']) == common | {'reader_source', 'independently_reads_originals', 'target_or_source_module_imported', 'actual_Run_freeze_equals_complete_frozen_Source'}, 'FULL_ROOT_PEER_REPORT_SOURCE_SCHEMA_JOIN')
+    differences = {'status', 'finite_input_count', 'ended_ns'}
+    need(all(reports['root'][key] == reports['peer'][key] for key in common - differences), 'BOTH_FULL_ORIGINAL_READERS_AGREE_BUSINESS_NATIVE_PROOFS_CLOSE_ZERO')
+    return reports
+
+
+def validate_author_Source_review(value):
+    need(value == AUTHOR_REVIEW_REPORTS, 'EXACT_EXISTING_ROOT_AND_INDEPENDENT_CURRENT175F_R2_SOURCE_QUALIFICATIONS')
+    reports = {which: json.loads(exact_pointer(row)) for which, row in value.items()}
+    need(reports == AUTHOR_REVIEW_EXPECTED, 'WHOLE_TRUE_SOURCE_REPORTS_NOT_NEW_ADMISSION_OBJECTS')
+    root, peer = reports['root'], reports['peer']
+    need(root['status'] == 'PASS_ROOT_CURRENT175F_FRESHB_R2_SCOPE_FIX_SOURCE_ONLY_NOT_EXECUTED'
+        and peer['status'] == 'PASS_INDEPENDENT_MINIMAL_R2_ACTIVE_SCOPE_SOURCE_CORRECTION_ONLY'
+        and peer['findings'] == [], 'REAL_R2_SOURCE_REVIEW_STATUSES')
+    need(root['r1_unique_scope_finding_closed'] is True and root['all_windows_closed'] is True
+        and peer['all_windows_closed'] is True and root['runtime_ready'] is False
+        and root['A0_postA'] == 'UNBOUND' and peer['boundaries']['A0_postA'] == 'UNBOUND', 'SOURCE_ONLY_QUALIFICATION_BOUNDARIES_RETAINED')
+    for row in [root['whole_R1_source_review'], peer['r1_complete_independent_review_basis'],
+            root['source_PINS'], root['author'], root['initializer_leaf']]:
+        exact_pointer(row)
+    need(root['initializer_leaf'] == INITIALIZER_LEAF and peer['leaf']['bytes_sha'] == {k: INITIALIZER_LEAF[k] for k in ['bytes', 'sha256']}, 'EXACT_ALREADY_REVIEWED_WHOLE_UI_LEAF_AND_TRUE_R1_POINTER')
+    return value['root']
+
+
+def validate_initializer_syntax_admission(value):
+    """Fail closed until the real eight-native whole-UI-leaf Source is fixed."""
+    interface = INITIALIZER_SYNTAX_INTERFACE
+    need(type(interface) is dict, 'WAIT_REVIEWED_EXACT_118698_UI_INITIALIZER_SYNTAX_SOURCE_INTERFACE')
+    # This is deliberately unreachable while no real Source interface exists.
+    # Root must supply that fixed original schema in an immutable successor;
+    # a generic RESULT status, author claim or ordinary A-leaf syntax cannot pass.
+    need(False, 'WAIT_SOURCE_DEFINED_WHOLE_UI_INITIALIZER_SYNTAX_RESULT_ADAPTER')
+
+
+def pre_a_history():
+    authority = source_inputs()['history']; root = ordinary(Path(authority['root']),True)
+    assert set(authority) == {'root','files','header','legacy_protocol','preparation_failure'}
+    assert root == PREPARED / 'r33-failed-ar-history-source-r1'
+    assert set(authority['files']) == {'DESIGN-TASKS.md','inventory.py','INVENTORY.json','RESULT.json'}
+    assert tree(root)['directories'] == [] and {p.name for p in root.iterdir()} == set(authority['files'])
+    for name,row in authority['files'].items(): file_pin(root / name,row)
+    raw = file_pin(root / 'INVENTORY.json',authority['files']['INVENTORY.json']); value = json.loads(raw)
+    assert set(value) == {'schema','scope','run_id','source_sha','freeze_sha256','prior_public_inventory','prior_public_count',
+        'all_prior_full_bytes_unchanged','full_current_public_file_count','fixed_public_files','explicit_public_trees',
+        'failed_AR_result','failure_close_result','independent_zero_result','outer_coordinator_observation','native_history',
+        'Task6','AR','Worker_firstB','private_inputs','full_acceptance','files'}
+    assert authority['header'] == {key:row for key,row in value.items() if key != 'files'}
+    assert type(value['schema']) is int and value['schema'] == 1
+    assert value['scope'] == 'R33_FAILED_AR_AFTER_ACTUAL_NORMAL_CLOSE_AND_INDEPENDENT_ZERO_PUBLIC_HISTORY'
+    assert value['run_id'] == '20261021030301cc3b74' and value['source_sha'] == '803c1b420dca8894fa9409b38601a1c6dc3c8b30'
+    assert value['freeze_sha256'] == 'a748d661b4087d0a5c5b96677b0f2f57fa9771b65d89b676d554d7ba7ec55b5a'
+    assert value['prior_public_count'] == 224135 and value['all_prior_full_bytes_unchanged'] is True
+    assert value['full_current_public_file_count'] == len(value['files']) == 238900
+    assert value['Task6'] == 'NORMAL_SUCCESS_AND_ACTUAL_NORMAL_RETIRE' and value['AR'] == 'FAILED_NEW_ROOT_REAL_CART_CONFIRM_CREATE'
+    assert value['Worker_firstB'] == 'NOT RUN' and value['private_inputs'] == 'NOT READ OR ENUMERATED' and value['full_acceptance'] == 'INCOMPLETE'
+    names = [r['path'] for r in value['files']]; assert names == sorted(set(names))
+    result = {r['path']:r for r in value['files']}
+    for row in value['files']:
+        assert set(row) == {'path','bytes','sha256'} and Path(row['path']).is_absolute()
+        file_pin(Path(row['path']),row)
+    legacy = authority['legacy_protocol']
+    assert len(legacy) == 35 and len({row['path'] for row in legacy}) == 35
+    for row in legacy: assert result[row['path']] == row
+    native_history = value['native_history']
+    assert native_history['native_commands'] == native_history['successful_native_commands'] == 184
+    assert native_history['last_native_exit'] == 0 and native_history['last_container_exit'] == 1
+    assert native_history['same_PID_native_wait_full_streams'] is True
+    assert native_history['failure_close_native_commands'] == 84 and native_history['independent_zero_native_commands'] == 12
+    assert value['outer_coordinator_observation'] == {'original_session':16051,'native_exit':1,
+        'failure_close_native_exit':0,'independent_zero_native_exit':0,
+        'authority':'ROOT_OBSERVED_ORIGINAL_FAILED_OUTER_AND_ACTUAL_FAILURE_CLOSE_ZERO'}
+    closed = json.loads(file_pin(Path(value['failure_close_result']['path']),value['failure_close_result']))
+    zero = json.loads(file_pin(Path(value['independent_zero_result']['path']),value['independent_zero_result']))
+    assert closed['scope'] == 'R33_FAILED_AR_EXACT_NORMAL_RETIREMENT_ONLY' and closed['status'] == 'VERIFIED_R33_AR_FAILURE_NORMAL_CLOSE_ZERO_RESIDUAL'
+    assert zero['scope'] == 'R33_FAILED_AR_INDEPENDENT_ZERO_ONLY' and zero['status'] == 'VERIFIED_R33_AR_FAILURE_INDEPENDENT_SIX_QUERY_ZERO'
+    assert len(closed['operations']) == 84 and len(zero['operations']) == 12
+    assert zero['close_result'] == value['failure_close_result'] and zero['close_source'] == closed['source']
+    for receipt in [closed,zero]:
+        assert all(receipt[key] == value[key] for key in ['run_id','source_sha','freeze_sha256'])
+        assert receipt['Task6'] == 'NORMAL_SUCCESS_ALREADY_RETIRED' and receipt['AR'] == 'FAILED_NEW_ROOT_REAL_CART_CONFIRM_CREATE'
+        assert receipt['Worker_firstB'] == 'NOT STARTED' and receipt['full_acceptance'] == 'INCOMPLETE'
+        assert receipt['stopped_samples'] == 'NOT RUN'
+    assert closed['ordinary_stop_and_exact_nonforce_remove'] is True and zero['mutations'] == 'NONE'
+    assert closed['all_original_public_bytes_stat9_namespaces_unchanged'] is True
+    assert zero['all_original_public_and_close_bytes_stat9_namespaces_unchanged'] is True
+    assert closed['removed_containers'] == 4 and closed['removed_internal_networks'] == 1 and closed['removed_original_volumes'] == 7
+    assert [row['operation_index'] for row in closed['fresh_queries']] == list(range(76,82))
+    assert [row['operation_index'] for row in zero['queries']] == list(range(4,10))
+    # Retain the publication four and original failed M1 explicitly; duplicates must keep their original complete descriptors.
+    extras = [{'path':(root / name).as_posix(),**row} for name,row in authority['files'].items()]
+    extras += authority['preparation_failure']['files']
+    return result,extras
+
+def post_a_history(args,context,final_raw,close_raw,zero_raw):
+    # This contract is deliberately None until Root publishes and reviews the actual successful-A schema.
+    contract = POST_A_HISTORY_CONTRACT
+    assert type(contract) is dict and set(contract) == {'header','files_key','retained_public_files'}, 'WAIT_ACTUAL_POST_A_FULL_HEADER_AND_FILES_KEY_SOURCE_REVIEW'
+    assert type(contract['header']) is dict and type(contract['files_key']) is str and contract['files_key'] not in contract['header']
+    qualified = A_QUALIFICATION['post_a_history']; path = ordinary(Path(args.public_history_inventory))
+    assert path.as_posix() == qualified['path'] and args.public_history_inventory_sha256 == qualified['sha256']
+    raw = file_pin(path,qualified); value = json.loads(raw); key = contract['files_key']
+    assert set(value) == set(contract['header']) | {key}
+    assert {name:value[name] for name in contract['header']} == contract['header']
+    rows = value[key]; assert type(rows) is list and [r['path'] for r in rows] == sorted({r['path'] for r in rows})
+    assert not path.is_relative_to(OLD_ROOT) and not path.is_relative_to(RUNTIME)
+    prior,extras = pre_a_history(); expected = dict(prior)
+    for row in extras:
+        assert row['path'] not in expected or expected[row['path']] == row; expected[row['path']] = row
+    for name in ['DESIGN-TASKS.md','run.py','PINS.json','PROFILE-PINS.json','PROFILE-PUBLICATION.json']:
+        p = NORMAL_SOURCE / name; data = ordinary(p).read_bytes(); expected[p.as_posix()] = {'path':p.as_posix(),'bytes':len(data),'sha256':sha(data)}
+    for root in [OLD_ROOT / 'evidence',OLD_ARCHIVE,NORMAL_SOURCE / 'actual-profile',
+            NORMAL_SOURCE / 'materialize-freeze-assets-r1',NORMAL_SOURCE / 'native-normal-start-assets-r1']:
+        for name,row in tree(root)['files'].items():
+            p = root / name; descriptor = {'path':p.as_posix(),**row}
+            assert p.as_posix() not in expected or expected[p.as_posix()] == descriptor; expected[p.as_posix()] = descriptor
+    for name in PUBLIC_ROOT_FILES + ['proof-php-ini/99-ms4-proof-memory.ini']:
+        p = OLD_ROOT / name; data = ordinary(p).read_bytes(); expected[p.as_posix()] = {'path':p.as_posix(),'bytes':len(data),'sha256':sha(data)}
+    # R40 did not consume the historical R33 inventory. Require its retained baseline independently.
+    # The separately pinned R39 ordinary retirement and pre-frozen R40 materializer remain public history.
+    for root in [NORMAL_SOURCE.parent / 'materializer',PREPARED / 'r40-normal-materialize-source-r1',
+            PREPARED / 'r39-ar-failed-normal-close-r1/close-output',
+            PREPARED / 'r39-ar-failed-normal-close-r1/independent-zero-output']:
+        for name,row in tree(root)['files'].items():
+            p = root / name; descriptor = {'path':p.as_posix(),**row}
+            assert p.as_posix() not in expected or expected[p.as_posix()] == descriptor; expected[p.as_posix()] = descriptor
+    retained = contract['retained_public_files']
+    assert type(retained) is list and retained and [r['path'] for r in retained] == sorted({r['path'] for r in retained})
+    for descriptor in retained:
+        assert set(descriptor) == {'path','bytes','sha256'} and Path(descriptor['path']).is_absolute()
+        file_pin(Path(descriptor['path']),descriptor)
+        assert descriptor['path'] not in expected or expected[descriptor['path']] == descriptor
+        expected[descriptor['path']] = descriptor
+    assert rows == sorted(expected.values(),key=lambda r:r['path'])
+    for row in rows:
+        assert set(row) == {'path','bytes','sha256'} and Path(row['path']).is_absolute()
+        file_pin(Path(row['path']),row)
+    for p,data in [(OLD_RESULT,final_raw),(OLD_ROOT / 'evidence/ms4-worker-normal-close-result.json',close_raw),
+            (OLD_ROOT / 'evidence/ms4-worker-normal-independent-zero.json',zero_raw)]:
+        assert expected[p.as_posix()] == {'path':p.as_posix(),'bytes':len(data),'sha256':sha(data)}
+    return rows + [{'path':path.as_posix(),'bytes':len(raw),'sha256':sha(raw)}],{
+        'normal_root_result':A_QUALIFICATION['normal_root_result'],
+        'history_inventory':{'path':path.as_posix(),'bytes':len(raw),'sha256':sha(raw)}}
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--authorize-completed-s0', action='store_true', help='Root has admitted actual original S0 and both full actual reader outcomes0')
+    parser.add_argument('--actual-admission', required=True, help='real reviewed native reader/Source-review/initializer-syntax authorities and full retained public inputs; placeholders are rejected')
+    parser.add_argument('--output', required=True, help='new direct ORG actual capture, outside BASE/all B runtimes/current Run; no output is included in history')
+    produce(parser.parse_args())

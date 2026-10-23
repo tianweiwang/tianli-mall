@@ -1,0 +1,314 @@
+{
+  "schema": 1,
+  "files": {
+    "H:/天俪商城/artifacts/project-organization-20261023/current28dc-complete-normal-S-readback-source-r1/candidate/readback-current28dc-complete-normal-S.py": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/current28dc-complete-normal-S-readback-source-r1/candidate/readback-current28dc-complete-normal-S.py",
+      "bytes": 12417,
+      "sha256": "f76984c14e1bf004edf73d885093b6bfbecd2ff302316facfbed416f1e76a02e",
+      "named_before": [
+        1618373208947831848,
+        281474987106864,
+        33206,
+        1,
+        0,
+        0,
+        12417,
+        1792771967383118900,
+        1792771967381522600
+      ],
+      "named_after": [
+        1618373208947831848,
+        281474987106864,
+        33206,
+        1,
+        0,
+        0,
+        12417,
+        1792771967383118900,
+        1792771967381522600
+      ],
+      "fd_open": [
+        1618373208947831848,
+        281474987106864,
+        33206,
+        1,
+        0,
+        0,
+        12417,
+        1792771967383118900,
+        1792771967383118900
+      ],
+      "fd_after": [
+        1618373208947831848,
+        281474987106864,
+        33206,
+        1,
+        0,
+        0,
+        12417,
+        1792771967383118900,
+        1792771967383118900
+      ],
+      "EOF": true,
+      "closed": true
+    },
+    "H:/天俪商城/artifacts/project-organization-20261023/current28dc-complete-normal-S-actual-independent-reader-source-r2/readback-actual-current28dc-complete-normal-S-independent.py": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/current28dc-complete-normal-S-actual-independent-reader-source-r2/readback-actual-current28dc-complete-normal-S-independent.py",
+      "bytes": 17937,
+      "sha256": "6ee762117eed3b9c7096ebdd68519f6c3a373f1fbbb527618d2d2d44046209fe",
+      "named_before": [
+        1618373208947831848,
+        281474987114994,
+        33206,
+        1,
+        0,
+        0,
+        17937,
+        1792774715645789900,
+        1792774715645789900
+      ],
+      "named_after": [
+        1618373208947831848,
+        281474987114994,
+        33206,
+        1,
+        0,
+        0,
+        17937,
+        1792774715645789900,
+        1792774715645789900
+      ],
+      "fd_open": [
+        1618373208947831848,
+        281474987114994,
+        33206,
+        1,
+        0,
+        0,
+        17937,
+        1792774715645789900,
+        1792774715645789900
+      ],
+      "fd_after": [
+        1618373208947831848,
+        281474987114994,
+        33206,
+        1,
+        0,
+        0,
+        17937,
+        1792774715645789900,
+        1792774715645789900
+      ],
+      "EOF": true,
+      "closed": true
+    },
+    "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/customer-form-current-three-front-material-producer-independent-r1/review.py": {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/customer-form-current-three-front-material-producer-independent-r1/review.py",
+      "bytes": 33902,
+      "sha256": "4673d95c60c22f4653b6f22f833e24fb6accc3b286c555ca0462b0fb501252e0",
+      "named_before": [
+        1618373208947831848,
+        281474987007136,
+        33206,
+        1,
+        0,
+        0,
+        33902,
+        1792700060774862500,
+        1792699960816585500
+      ],
+      "named_after": [
+        1618373208947831848,
+        281474987007136,
+        33206,
+        1,
+        0,
+        0,
+        33902,
+        1792700060774862500,
+        1792699960816585500
+      ],
+      "fd_open": [
+        1618373208947831848,
+        281474987007136,
+        33206,
+        1,
+        0,
+        0,
+        33902,
+        1792700060774862500,
+        1792700060774862500
+      ],
+      "fd_after": [
+        1618373208947831848,
+        281474987007136,
+        33206,
+        1,
+        0,
+        0,
+        33902,
+        1792700060774862500,
+        1792700060774862500
+      ],
+      "EOF": true,
+      "closed": true
+    },
+    "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-quota-wire-current175f-normal-next-source-r1/PINS.json": {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-quota-wire-current175f-normal-next-source-r1/PINS.json",
+      "bytes": 147196,
+      "sha256": "2653282ad09cdf30e030c6c1cf5976b73a1a06bd0be52070085e3a3f33bb270b",
+      "named_before": [
+        1618373208947831848,
+        281474987117784,
+        33206,
+        1,
+        0,
+        0,
+        147196,
+        1792779088869673100,
+        1792779088869673100
+      ],
+      "named_after": [
+        1618373208947831848,
+        281474987117784,
+        33206,
+        1,
+        0,
+        0,
+        147196,
+        1792779088869673100,
+        1792779088869673100
+      ],
+      "fd_open": [
+        1618373208947831848,
+        281474987117784,
+        33206,
+        1,
+        0,
+        0,
+        147196,
+        1792779088869673100,
+        1792779088869673100
+      ],
+      "fd_after": [
+        1618373208947831848,
+        281474987117784,
+        33206,
+        1,
+        0,
+        0,
+        147196,
+        1792779088869673100,
+        1792779088869673100
+      ],
+      "EOF": true,
+      "closed": true
+    },
+    "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-quota-wire-current175f-normal-next-source-r1/materializer/prepare.py": {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-quota-wire-current175f-normal-next-source-r1/materializer/prepare.py",
+      "bytes": 6485441,
+      "sha256": "ebb93409a49602c0138cbefef447c8db6d1e6bce8a6bbe70fbb13b5ffdb6fb96",
+      "named_before": [
+        1618373208947831848,
+        281474987117700,
+        33206,
+        1,
+        0,
+        0,
+        6485441,
+        1792779030523338200,
+        1792778867936308800
+      ],
+      "named_after": [
+        1618373208947831848,
+        281474987117700,
+        33206,
+        1,
+        0,
+        0,
+        6485441,
+        1792779030523338200,
+        1792778867936308800
+      ],
+      "fd_open": [
+        1618373208947831848,
+        281474987117700,
+        33206,
+        1,
+        0,
+        0,
+        6485441,
+        1792779030523338200,
+        1792779030523338200
+      ],
+      "fd_after": [
+        1618373208947831848,
+        281474987117700,
+        33206,
+        1,
+        0,
+        0,
+        6485441,
+        1792779030523338200,
+        1792779030523338200
+      ],
+      "EOF": true,
+      "closed": true
+    },
+    "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/current175f-complete-materialization-root-readback-r1/REPORT.json": {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/current175f-complete-materialization-root-readback-r1/REPORT.json",
+      "bytes": 1814,
+      "sha256": "6901f56b93e54ae6493a02e3851084e56be995d316294314e0bf03a0b710af05",
+      "named_before": [
+        1618373208947831848,
+        281474987122186,
+        33206,
+        1,
+        0,
+        0,
+        1814,
+        1792779723722128200,
+        1792779723722128200
+      ],
+      "named_after": [
+        1618373208947831848,
+        281474987122186,
+        33206,
+        1,
+        0,
+        0,
+        1814,
+        1792779723722128200,
+        1792779723722128200
+      ],
+      "fd_open": [
+        1618373208947831848,
+        281474987122186,
+        33206,
+        1,
+        0,
+        0,
+        1814,
+        1792779723722128200,
+        1792779723722128200
+      ],
+      "fd_after": [
+        1618373208947831848,
+        281474987122186,
+        33206,
+        1,
+        0,
+        0,
+        1814,
+        1792779723722128200,
+        1792779723722128200
+      ],
+      "EOF": true,
+      "closed": true
+    }
+  },
+  "all_windows_closed": true,
+  "ended_ns": 1792780288678384900,
+  "incomplete_S_or_Run_outputs_read": false
+}

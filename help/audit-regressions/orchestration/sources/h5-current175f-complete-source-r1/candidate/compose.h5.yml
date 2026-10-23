@@ -1,0 +1,189 @@
+# H5 preparation only. Never loaded by the unchanged original customer CLI stages.
+x-h5-php: &h5-php
+  image: sha256:1099f749e2a38ec9453c6b820db8a78174514bc72d14edf5c203e13b82816e0a
+  pull_policy: never
+  entrypoint: [php]
+  working_dir: /workspace
+  read_only: true
+  tmpfs: [/tmp:rw]
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  networks: [isolation]
+  environment: &h5-env
+    AUDIT_ISOLATED: "1"
+    AUDIT_RUN_ID: ${AUDIT_RUN_ID:?required}
+    AUDIT_RUN_DIR: /run/audit
+    AUDIT_REPO_DIR: /workspace
+    AUDIT_PROJECT: ${AUDIT_PROJECT:?required}
+    AUDIT_SOURCE_SHA: ${AUDIT_SOURCE_SHA:?required}
+    AUDIT_GUARD_MODE: read-only
+    MS4_PROOF_NAME: ${MS4_PROOF_NAME:?required}
+    APP_ENV: testing
+    PHP_MARKETPLACE_ENABLED: "true"
+    PHP_MARKETPLACE_TRADE_ENABLED: "true"
+    PHP_MARKETPLACE_PAYMENT_TEST_ENABLED: "true"
+    PHP_MARKETPLACE_SELF_OPERATED_MER_ID: ${MS4_CUSTOMER_SELF_MER_ID:?required}
+    PHP_CACHE_DRIVER: redis
+  labels: &h5-labels
+    tianli.audit: "1"
+    tianli.audit.run: ${AUDIT_RUN_ID}
+
+services:
+  audit-ms4-customer-h5-register:
+    <<: *h5-php
+    command: [/run/ms4-prep/ms4-h5-bootstrap.php, "${MS4_H5_REGISTER_MODE:-register}"]
+    volumes:
+      - ${AUDIT_REPO_DIR:?required}:/workspace:ro
+      - ${AUDIT_REPO_DIR:?required}:/source:ro
+      - ${MS4_PREP_DIR:?required}:/run/ms4-prep:ro
+      - ${AUDIT_RUN_DIR:?required}:/run/audit
+      - app-secrets:/run/audit-app:ro
+
+  audit-ms4-customer-h5-public-copy:
+    <<: *h5-php
+    command: [/run/ms4-prep/ms4-h5-public-copy.php, copy]
+    volumes:
+      - ${AUDIT_REPO_DIR:?required}:/workspace:ro
+      - ${AUDIT_REPO_DIR:?required}:/source:ro
+      - ${MS4_PREP_DIR:?required}:/run/ms4-prep:ro
+      - ${AUDIT_RUN_DIR:?required}:/run/audit
+      - ${MS4_H5_DIST:?required}:/run/ms4-h5-dist:ro
+      - app-secrets:/run/audit-app:ro
+      - fixture-secrets:/run/audit-fixtures:ro
+      - type: volume
+        source: http-public
+        target: /workspace/crmeb/public
+        volume: {nocopy: true}
+      - type: volume
+        source: http-runtime
+        target: /workspace/crmeb/runtime
+        volume: {nocopy: true}
+      - type: volume
+        source: http-control
+        target: /run/audit-http-control
+        volume: {nocopy: true}
+      - type: volume
+        source: http-browser-secrets
+        target: /run/audit-http-browser
+        volume: {nocopy: true}
+
+  audit-ms4-customer-h5-prepare:
+    <<: *h5-php
+    command: [help/audit-regressions/isolated/ms4-customer-h5.php, prepare]
+    volumes:
+      - ${AUDIT_REPO_DIR:?required}:/workspace:ro
+      - ${AUDIT_REPO_DIR:?required}:/source:ro
+      - ${MS4_PREP_DIR:?required}:/run/ms4-prep:ro
+      - ${AUDIT_RUN_DIR:?required}:/run/audit:ro
+      - app-secrets:/run/audit-app:ro
+      - fixture-secrets:/run/audit-fixtures:ro
+      - type: volume
+        source: http-public
+        target: /workspace/crmeb/public
+        read_only: true
+        volume: {nocopy: true}
+      - type: volume
+        source: http-runtime
+        target: /workspace/crmeb/runtime
+        volume: {nocopy: true}
+      - type: volume
+        source: http-control
+        target: /run/audit-http-control
+        volume: {nocopy: true}
+      - type: volume
+        source: http-browser-secrets
+        target: /run/audit-http-browser
+        volume: {nocopy: true}
+
+  audit-ms4-customer-h5-files:
+    <<: *h5-php
+    command: [/run/ms4-prep/ms4-h5-bootstrap.php, files-bootstrap]
+    volumes:
+      - ${AUDIT_REPO_DIR:?required}:/workspace:ro
+      - ${AUDIT_REPO_DIR:?required}:/source:ro
+      - ${MS4_PREP_DIR:?required}:/run/ms4-prep:ro
+      - ${AUDIT_RUN_DIR:?required}:/run/audit:ro
+      - app-secrets:/run/audit-app:ro
+      - bootstrap-secrets:/run/audit-bootstrap:ro
+      - fixture-secrets:/run/audit-fixtures:ro
+      - type: volume
+        source: http-public
+        target: /workspace/crmeb/public
+        read_only: true
+        volume: {nocopy: true}
+      - type: volume
+        source: http-runtime
+        target: /workspace/crmeb/runtime
+        volume: {nocopy: true}
+      - type: volume
+        source: http-control
+        target: /run/audit-http-control
+        volume: {nocopy: true}
+
+  audit-ms4-customer-h5:
+    <<: *h5-php
+    command: [help/audit-regressions/isolated/ms4-customer-h5.php, serve]
+    stop_signal: SIGTERM
+    environment:
+      <<: *h5-env
+      MS4_PROOF_NAME: customer-h5-serve
+    volumes:
+      - ${AUDIT_REPO_DIR:?required}:/workspace:ro
+      - ${AUDIT_REPO_DIR:?required}:/source:ro
+      - ${MS4_PREP_DIR:?required}:/run/ms4-prep:ro
+      - ${AUDIT_RUN_DIR:?required}:/run/audit:ro
+      - app-secrets:/run/audit-app:ro
+      - fixture-secrets:/run/audit-fixtures:ro
+      - type: volume
+        source: http-public
+        target: /workspace/crmeb/public
+        read_only: true
+        volume: {nocopy: true}
+      - type: volume
+        source: http-runtime
+        target: /workspace/crmeb/runtime
+        volume: {nocopy: true}
+      - type: volume
+        source: http-control
+        target: /run/audit-http-control
+        volume: {nocopy: true}
+      - type: volume
+        source: http-browser-secrets
+        target: /run/audit-http-browser
+        read_only: true
+        volume: {nocopy: true}
+
+  audit-ui:
+    image: sha256:a8b39bd9cf0f83869a2162827a0caf6137ddf759d50a171451b335cecc87d236
+    pull_policy: never
+    user: "101:101"
+    entrypoint: [nginx]
+    command: [-g, "daemon off;", -c, /etc/nginx/nginx.conf]
+    working_dir: /
+    read_only: true
+    tmpfs: [/tmp:rw]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    networks:
+      isolation: {priority: 1000}
+      frontend: {priority: 0}
+    labels: *h5-labels
+    ports: ["127.0.0.1:${MS4_H5_PORT:?required}:8080"]
+    volumes:
+      - http-public:/srv/public:ro
+      - ${MS4_PREP_DIR:?required}/ms4-h5-nginx.conf:/etc/nginx/nginx.conf:ro
+
+networks:
+  frontend:
+    external: true
+    name: ${AUDIT_PROJECT:?required}_frontend
+
+volumes:
+  http-runtime:
+    labels: *h5-labels
+  http-control:
+    labels: *h5-labels
+  http-browser-secrets:
+    labels: *h5-labels
+  http-public:
+    labels: *h5-labels

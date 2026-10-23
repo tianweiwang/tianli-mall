@@ -1,0 +1,132 @@
+--- a/peer.py
++++ b/peer.py
+@@ -1,4 +1,4 @@
+-"""Standalone independent reader for the actual completed original current28dc S.
++"""Standalone independent reader for the actual completed original current175f S.
+ 
+ SOURCE ONLY until Root authorizes completed native0/wait0. Imports stdlib only.
+ Retains the reviewed full normal-chain receipt contract; no target execution.
+@@ -106,25 +106,25 @@
+     return parsed
+ 
+ 
+-parser = argparse.ArgumentParser(description='Read only the completed successful current28dc normal S receipts')
++parser = argparse.ArgumentParser(description='Read only the completed successful current175f normal S receipts')
+ parser.add_argument('--run-id', required=True)
+ parser.add_argument('--outer-pid', required=True, type=positive_pid)
+ parser.add_argument('--prepare-pid', required=True, type=positive_pid)
+ parser.add_argument('--authorize-completed-s0', action='store_true', help='Root has authorized readback after original S native0/wait0')
+ args = parser.parse_args()
+-if re.fullmatch(r'[0-9]{14}[a-f0-9]{6}', args.run_id) is None or args.run_id == '20261023124755f45a9e':
+-    parser.error('Supply the actual new completed successful Run id; the retired failed0c13 Run is forbidden')
++if re.fullmatch(r'[0-9]{14}[a-f0-9]{6}', args.run_id) is None or args.run_id in ('20261023124755f45a9e', '202610231609185fbd23'):
++    parser.error('Supply the actual new completed successful Run id; both retired failed0c13 and failed28dc Runs are forbidden')
+ if args.outer_pid == args.prepare_pid:
+     parser.error('Supply the distinct original outer and initial-prepare PIDs')
+ if not args.authorize_completed_s0:
+     parser.error('Root must authorize completed original S native0/wait0 before this reader runs')
+-if (args.run_id, args.outer_pid, args.prepare_pid) != ('202610231609185fbd23', 50220, 9100):
+-    parser.error('This independent reader is bound to the genuine current28dc Run and original PIDs')
++if (args.run_id, args.outer_pid, args.prepare_pid) != ('20261023182634096f57', 35944, 49064):
++    parser.error('This independent reader is bound to the genuine current175f Run and original PIDs')
+ 
+ org = Path('H:/天俪商城/artifacts/project-organization-20261023')
+ workspace = org.parents[1]
+ base = workspace / 'artifacts/ms4-worker-normal-source-preparation-r1'
+-source = base / 'full-a-upload-root-current28dc-normal-next-source-r1'
++source = base / 'full-a-quota-wire-current175f-normal-next-source-r1'
+ run = workspace / 'artifacts/ms4-aftersale-review-normal-runs' / args.run_id
+ archive = run / 'root-orchestration'
+ assert (source / 'launcher/normal-start.terminal.json').is_file(), 'Original S is not terminal; do not restart or run this reader yet'
+@@ -135,27 +135,34 @@
+ reviewed_static = r.json(org / 'current28dc-normal-S-reader-source-independent-r1/REPORT.json',
+     {'bytes': 2868, 'sha256': '577dd6c704da17e9b2af45d075c3edb7f6a436f2acd2af983b34ca27442a57cc'})
+ assert reviewed_static['status'] == 'PASS_INDEPENDENT_STATIC_CURRENT28DC_COMPLETE_NORMAL_S_READER_SOURCE_ONLY'
+-
+-SOURCE_PINS = {'bytes': 189060, 'sha256': '0c2d0c6e68199e0c2b291fdaa764babb986b8d5ebe512903fbf06b6f7fea3650'}
+-ROOT_SOURCE_PINS = {'bytes': 357, 'sha256': '23a4c019bff4a20a13dd612d542596f5f7f77f1c7d8dc87ff07b3febe540f921'}
+-M_RESULT = {'bytes': 12504207, 'sha256': '7ea9b84dbd9304e7f6a87d8bc06cece649363894c317d416b8ee77d07500f12e'}
+-FREEZE = {'bytes': 10985209, 'sha256': 'fea1ea38344095ce5dfe84ad85ad3041fb3b10271fd2c99b396212886e927a1a'}
+-M_ROOT_READBACK = {'bytes': 1735, 'sha256': '39f5190ae8863990bcf7a6dbddb25dd55aa5d935fdfb11fd4cc97f6506e66554'}
+-PROFILE_SOURCE_PINS9 = {'README.md': {'bytes': 89381, 'sha256': 'b886791202529032c9f85a88f80af456f1e916ad2ad1031eb417685edcae6493'}, 'compose.yml': {'bytes': 11860, 'sha256': 'f6c4b4f50fbd34fda66afcf2d0819d38992a2fe467172fe587cefbeb2d39a198'}, 'ms4-host.py': {'bytes': 345436, 'sha256': '9843cc96ab5b88d998c104493c6f786a687c903e6e9604ffac925cb39edbbb6d'}, 'ms4-initialize.php': {'bytes': 78955, 'sha256': '9784c617424a430db06bde00c6f4b78530a30218c8c77e0e125b3421d31e9f31'}, 'seed-source-inverse.json': {'bytes': 639, 'sha256': 'c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a'}, 'interface-v1.json': {'bytes': 101852, 'sha256': '46b388a5b0e454207246f0b5571e7a2a135f08206e42c59bcb09c3164ec265d6'}, 'source-derivation.json': {'bytes': 601053, 'sha256': '346b833a3a29d265caeee9d8e672b3dd0e512bf9b501f4777336ff2218a64451'}, 'normal-close-ms4-fulfillment.py': {'bytes': 47220, 'sha256': 'b8e235225d0d4c09e7c9e06b96fee8104a99bc3937f2a5898861c53707653e02'}, 'verify-zero-ms4-fulfillment.py': {'bytes': 296098, 'sha256': 'bdd183fc90da85519821c43999dd71d43fe3cf63487315afb71ee8482d3e4c6f'}}
++# Preserve fixed ancestor qualification; bind the full current Root Source separately.
++r.read(Path(__file__).resolve().parent / 'readback-current175f-complete-normal-S-root.py', {'bytes': 14136, 'sha256': '9e0475c305cc61c9524291da9f1e27ac160de1f3bd66021c677d8e5556677784'})
++
++SOURCE_PINS = {'bytes': 147196, 'sha256': '2653282ad09cdf30e030c6c1cf5976b73a1a06bd0be52070085e3a3f33bb270b'}
++ROOT_SOURCE_PINS = {'bytes': 357, 'sha256': '0516d5f9eff69c4a36ab8b2a012333fbbcd9c2751614330ee9459cb391fe32a4'}
++M_RESULT = {'bytes': 46750425, 'sha256': '6449487f1da61266fbdfe76260fced9196b398f1cbb92cc59074924d8e76c8aa'}
++FREEZE = {'bytes': 10985209, 'sha256': '4ac3a0b7b35db7a911e9abb61dfaa4a25b0ffaf3bdc79a7c100b48f0836ce6ed'}
++M_ROOT_READBACK = {'bytes': 1814, 'sha256': '6901f56b93e54ae6493a02e3851084e56be995d316294314e0bf03a0b710af05'}
++PROFILE_SOURCE_PINS9 = {'README.md': {'bytes': 89381, 'sha256': 'b886791202529032c9f85a88f80af456f1e916ad2ad1031eb417685edcae6493'}, 'compose.yml': {'bytes': 11860, 'sha256': 'f6c4b4f50fbd34fda66afcf2d0819d38992a2fe467172fe587cefbeb2d39a198'}, 'ms4-host.py': {'bytes': 345436, 'sha256': '0d379c9a33dccfc0ece92fe8129842ac27105d66a50320b37e893bfd23dc295e'}, 'ms4-initialize.php': {'bytes': 78955, 'sha256': 'a5add955d43e4fd8cfdc50dd0ad06d5f6408e5cf743a5c2564b6e51af7db067b'}, 'seed-source-inverse.json': {'bytes': 639, 'sha256': 'c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a'}, 'interface-v1.json': {'bytes': 102529, 'sha256': '5f0bdb9bd952419f879d86bb8941b06147a9bea3b4f4eeb2c814dcafef392495'}, 'source-derivation.json': {'bytes': 604017, 'sha256': 'e0bda907571363b1e1c7f58920af91b6a75a66072db0fc081ff7041e05b6db46'}, 'normal-close-ms4-fulfillment.py': {'bytes': 47220, 'sha256': 'cba367e05932836c7667e5fd10faa6f5c7c06a85dceceb27eb7b228b754bd361'}, 'verify-zero-ms4-fulfillment.py': {'bytes': 296098, 'sha256': 'ee5a9f65d87d063100f834c8456364cb8024fb3414467827e6c1ec92aa03b54f'}}
+ actual_source_pins = r.json(source / 'PINS.json', SOURCE_PINS)
+-assert actual_source_pins['source_sha'] == '28dcab632da3e62f7c8b8d926b6ab9406534d0d3'
++assert actual_source_pins['source_sha'] == '175f3cd6183894185656a2974579e1be39eed7a7'
+ actual_root_pins = r.json(source / 'validation/PINS.json', ROOT_SOURCE_PINS)
+ actual_M = r.json(source / 'validation/materialize-freeze-assets-r1/RESULT.json', M_RESULT)
+ assert actual_M['status'] == 'ACTUAL_CLEAN_SOURCE_AND_NINE_FILE_PROFILE_FROZEN_ONLY'
+-assert actual_M['source_sha'] == '28dcab632da3e62f7c8b8d926b6ab9406534d0d3'
++assert actual_M['source_sha'] == '175f3cd6183894185656a2974579e1be39eed7a7'
+ assert actual_M['repo'] == (workspace / 'worktrees/ms4-aftersale-normal-check').as_posix()
+ assert actual_M['profile'] == (source / 'validation/actual-profile').as_posix()
+ assert actual_M['freeze'] == (source / 'validation/materialize-freeze-assets-r1/freeze-binding.json').as_posix()
+ assert actual_M['freeze_sha256'] == FREEZE['sha256']
+-m_readback = r.json(base / 'current28dc-complete-materialization-root-readback-r2/REPORT.json', M_ROOT_READBACK)
+-assert m_readback['status'] == 'PASS_ACTUAL_FULL_CURRENT28DC_MATERIALIZATION_ONLY' and m_readback['source_sha'] == '28dcab632da3e62f7c8b8d926b6ab9406534d0d3'
++m_readback = r.json(base / 'current175f-complete-materialization-root-readback-r1/REPORT.json', M_ROOT_READBACK)
++assert m_readback['status'] == 'PASS_ACTUAL_FULL_CURRENT175F_MATERIALIZATION_ONLY' and m_readback['source_sha'] == '175f3cd6183894185656a2974579e1be39eed7a7'
+ assert m_readback['actual_RESULT'] == {'path': (source / 'validation/materialize-freeze-assets-r1/RESULT.json').as_posix(), **M_RESULT}
+ assert m_readback['actual_freeze'] == {'path': (source / 'validation/materialize-freeze-assets-r1/freeze-binding.json').as_posix(), **FREEZE}
++CURRENT_M_RESULT_KEYS35 = ['schema', 'status', 'source_sha', 'parent', 'source_patch_base', 'commit_chain', 'repo', 'profile', 'freeze', 'freeze_bytes', 'freeze_sha256', 'root_source_pins', 'profile_publication', 'selected9', 'committed_files', 'source_counts', 'unique_source_files_actual_read', 'proof_resource_required', 'proof_php_ini', 'prior_retirement', 'current_driver_failure_retirement', 'current_early_failure_retirement', 'current_customer_prepare_failure_retirement', 'current_paid_producer_failure_retirement', 'current_2e4_paid_producer_failure_retirement', 'current_881_paid_producer_failure_retirement', 'current_0c13_paid_producer_failure_retirement', 'current_28dc_paid_producer_failure_retirement', 'native_operations', 'Run_created', 'App_DB_HTTP_business', 'root_source_snapshot', 'complete_source_snapshot', 'materialize_source', 'materialize_source_inputs']
++assert set(actual_M) == set(CURRENT_M_RESULT_KEYS35) and len(actual_M) == 35
++assert len(actual_M['commit_chain']) == 19 and len(actual_M['native_operations']) == 1088
++assert m_readback['M_RESULT_fields'] == 35 and m_readback['steps'] == 19 and m_readback['native_operations'] == 1088
++
+ for name, expected in PROFILE_SOURCE_PINS9.items():
+     r.read(source / 'validation/actual-profile' / name, expected)
+ 
+@@ -188,15 +195,15 @@
+     payload = r.read(outer.with_suffix('.' + stream), terminal[stream])
+     if stream == 'stderr':
+         assert payload == b''
+-driver_pin = {'bytes': 4388758, 'sha256': '4c6f0c00644b02334d39ecde20dc0d605af38eca211e3f36d03a81991d76a760'}
++driver_pin = {'bytes': 6500754, 'sha256': 'e8ef902c0e33066259cf178d04ef782089e99b918e83f3284c60c879d25c7c5b'}
+ r.read(source / 'validation/run.py', driver_pin)
+ r.read(archive / 'root-driver-source.py', driver_pin)
+ assert actual_root_pins['members']['run.py'] == driver_pin
+ assert {key: actual_source_pins['files']['validation/run.py'][key] for key in ('bytes', 'sha256')} == driver_pin
+-context = r.json(run / 'actual-run-context.json')
++context = r.json(run / 'actual-run-context.json', {'bytes': 12301, 'sha256': 'c56e609828ba3e51e63f69b83e4af49279bdaebee487116728c383e02dae7959'})
+ manifest = r.json(run / 'manifest.json')
+ assert context['run_id'] == manifest['run_id'] == args.run_id
+-assert context['source_sha'] == manifest['commit_sha'] == '28dcab632da3e62f7c8b8d926b6ab9406534d0d3'
++assert context['source_sha'] == manifest['commit_sha'] == '175f3cd6183894185656a2974579e1be39eed7a7'
+ assert context['freeze_sha256'] == FREEZE['sha256']
+ assert Path(context['run_dir']).resolve() == run.resolve()
+ assert Path(context['repo_dir']).resolve() == Path(actual_M['repo']).resolve()
+@@ -209,7 +216,7 @@
+     'worker_scope': 'VERIFIED_NORMAL_WORKER_NON_DUE_LIFECYCLE_ONLY', 'full_acceptance': 'INCOMPLETE',
+     'DOM_nonempty_history_due_finance_release': 'NOT RUN'}
+ original(source / 'validation/native-normal-start-assets-r1/001-prepare', args.prepare_pid)
+-scripts = {'ms4-host.py': {'bytes': 345436, 'sha256': '9843cc96ab5b88d998c104493c6f786a687c903e6e9604ffac925cb39edbbb6d'}, 'normal-close-ms4-fulfillment.py': {'bytes': 47220, 'sha256': 'b8e235225d0d4c09e7c9e06b96fee8104a99bc3937f2a5898861c53707653e02'}, 'verify-zero-ms4-fulfillment.py': {'bytes': 296098, 'sha256': 'bdd183fc90da85519821c43999dd71d43fe3cf63487315afb71ee8482d3e4c6f'}}
++scripts = {'ms4-host.py': {'bytes': 345436, 'sha256': '0d379c9a33dccfc0ece92fe8129842ac27105d66a50320b37e893bfd23dc295e'}, 'normal-close-ms4-fulfillment.py': {'bytes': 47220, 'sha256': 'cba367e05932836c7667e5fd10faa6f5c7c06a85dceceb27eb7b228b754bd361'}, 'verify-zero-ms4-fulfillment.py': {'bytes': 296098, 'sha256': 'ee5a9f65d87d063100f834c8456364cb8024fb3414467827e6c1ec92aa03b54f'}}
+ commands = []
+ labels = []
+ for path in sorted(archive.glob('*.created.json'), key=lambda item: int(item.name.split('-', 1)[0])):
+@@ -264,7 +271,7 @@
+ assert [(q['kind'], q['label']) for q in zero['queries']] == [(k, label) for k in ('container','network','volume') for label in ('project','run')]
+ assert all(q['native_exit'] == 0 and q['stdout_bytes'] == q['stderr_bytes'] == 0 and q['stdout_sha256'] == q['stderr_sha256'] == hashlib.sha256(b'').hexdigest() for q in zero['queries'])
+ ended_ns = r.end()
+-report = {'status': 'PASS_INDEPENDENT_ACTUAL_CURRENT28DC_COMPLETE_NORMAL_S_PUBLIC_RECEIPTS_ONLY',
++report = {'status': 'PASS_INDEPENDENT_ACTUAL_CURRENT175F_COMPLETE_NORMAL_S_PUBLIC_RECEIPTS_ONLY',
+     'reader_source': {'path': Path(__file__).as_posix(), **reader_source_pin},
+     'independently_reads_originals': True, 'target_or_source_module_imported': False,
+     'actual_Run_freeze_equals_complete_frozen_Source': True,
+@@ -277,7 +284,7 @@
+     'worker_scope': result['worker_scope'], 'full_business_acceptance': 'INCOMPLETE',
+     'DOM_nonempty_history_due_finance_release': 'NOT RUN', 'finite_input_count': len(r.rows),
+     'all_windows_closed': True, 'ended_ns': ended_ns}
+-out = Path(__file__).resolve().parent / 'actual-readback-r1'
++out = Path(__file__).resolve().parents[1] / 'actual-peer-readback-r1'
+ out.mkdir(exist_ok=False)
+ (out / 'REPORT.json').write_bytes(enc(report))
+ (out / 'INPUTS.json').write_bytes(enc({'files': list(r.rows.values()), 'all_windows_closed': True}))

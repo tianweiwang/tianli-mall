@@ -116,6 +116,13 @@ def check_pipeline_schema(root, package, source_commit, size, steps):
                 == [name for name in keys if name != 'current_0c13_paid_producer_failure_retirement'],
                 'Current34 must preserve the complete historical33 schema')
 
+    if size == 35:
+        require('current_28dc_paid_producer_failure_retirement' in keys
+                and values[0]['CURRENT_M_RESULT_KEYS34'] == values[1]['CURRENT_M_RESULT_KEYS34']
+                == values[2]['CURRENT_M_RESULT_KEYS34']
+                == [name for name in keys if name != 'current_28dc_paid_producer_failure_retirement'],
+                'Current35 must preserve the complete historical34 schema')
+
 
 def main():
     root = Path(__file__).resolve().parent
@@ -194,8 +201,12 @@ def main():
     for entry in ['materializer/prepare.py', 'validation/run.py']:
         check_declared_authority_globals(root / 'sources' / historical_package / entry)
     check_pipeline_schema(root, historical_package, '8819524a60028090c55bdcd3a9da05e50eaf19d0', 32, 16)
-    check_pipeline_schema(root, previous_package, '0c13c57ba1ec4bf15ea9240601a5d6361e986ce8', 33, 17)
-    check_pipeline_schema(root, current_package, manifest['current_orchestration_source_commit'], 34, 18)
+    earlier_package = 'full-a-normal-http-diagnostic-next-source-r1'
+    for entry in ['materializer/prepare.py', 'validation/run.py']:
+        check_declared_authority_globals(root / 'sources' / earlier_package / entry)
+    check_pipeline_schema(root, earlier_package, '0c13c57ba1ec4bf15ea9240601a5d6361e986ce8', 33, 17)
+    check_pipeline_schema(root, previous_package, '28dcab632da3e62f7c8b8d926b6ab9406534d0d3', 34, 18)
+    check_pipeline_schema(root, current_package, manifest['current_orchestration_source_commit'], 35, 19)
     authors = manifest['current_author_code_required']
     author_names = {
         'assemble.py', 'source_reader.py', 'author_support.py', 'authority-current.py.fragment',
@@ -212,10 +223,13 @@ def main():
         require('sources/' + rel in expected, 'Current author source missing: ' + rel)
     local_modules = {'source_reader', 'author_support'}
     previous_authors = manifest['previous_current_author_code_required']
-    require(len(previous_authors) == len(set(previous_authors)) == 8
-            and set(previous_authors) == {previous_package + '/' + name for name in author_names}
+    require(len(previous_authors) == len(set(previous_authors)) == 11
+            and set(previous_authors) == {previous_package + '/' + name for name in current_author_names}
             and all('sources/' + rel in expected for rel in previous_authors), 'Previous author package must remain complete')
-    for package, names in [(current_package, current_author_names), (previous_package, author_names), (historical_package, author_names)]:
+    require(all('sources/' + earlier_package + '/' + name in expected for name in author_names),
+            'Earlier complete eight-member author package must remain present')
+    for package, names in [(current_package, current_author_names), (previous_package, current_author_names),
+                           (earlier_package, author_names), (historical_package, author_names)]:
         for name in names:
             if not name.endswith('.py'):
                 continue
@@ -233,6 +247,29 @@ def main():
         require('sources/' + rel not in expected, 'Draft status must be updated before adding: ' + rel)
     for rel in manifest['required_design_clarifications']:
         require('sources/' + rel in expected, 'Design clarification missing: ' + rel)
+    for package, members in manifest['supplemental_source_packages'].items():
+        require(members and len(members) == len(set(members))
+                and all(rel in expected and PurePosixPath(rel).parts[1] == package for rel in members),
+                'Supplemental source package member set mismatch')
+    for package, pin_name, required_count in [
+        ('current175f-complete-normal-S-readbacks-source-r1', 'PINS.json', 19),
+        ('current175f-complete-normal-S-reader-outers-source-r1', 'PINS.json', 13),
+        ('h5-current175f-complete-source-r1', 'SOURCE-PINS.json', 31),
+    ]:
+        pin_map = load_json((root / 'sources' / package / pin_name).read_bytes())['files']
+        require(len(pin_map) == required_count, 'Complete prepared source contract count mismatch')
+        for rel, pin in pin_map.items():
+            target = 'sources/' + package + '/' + rel
+            require(target in expected, 'Complete prepared source contract member missing: ' + target)
+            raw = (root / target).read_bytes()
+            require({'bytes': len(raw), 'sha256': hashlib.sha256(raw).hexdigest()} == pin,
+                    'Prepared source contract member changed: ' + target)
+    boundaries = manifest['source_only_supplement']
+    require(boundaries['runtime_ready'] is False
+            and boundaries['prepared_programs_executed'] is False
+            and boundaries['actual_M_S_or_context_or_private_data_delivered'] is False
+            and boundaries['complete_original_qualification_packets_delivered'] is False,
+            'Source selection cannot be promoted to runtime qualification')
     dependencies = load_json((root / 'runtime-dependencies.json').read_bytes())
     require(dependencies['runtime_ready'] is False, 'Runtime readiness cannot be inferred from source verification')
     require(dependencies['current_source']['package'] == current_package, 'Current package metadata mismatch')
@@ -247,9 +284,12 @@ def main():
         'json_parsed': json_count,
         'current_source_authority_global_checks': 2,
         'preserved_previous_authority_global_checks': 2,
-        'strict_current_M_result_fields': 34,
-        'strict_previous_M_result_fields': 33,
-        'strict_preserved_historical_M_result_fields': 32,
+        'strict_current_M_result_fields': 35,
+        'strict_previous_M_result_fields': 34,
+        'strict_preserved_historical_M_result_fields': 33,
+        'strict_preserved_older_M_result_fields': 32,
+        'preserved_earlier_authority_global_checks': 2,
+        'supplemental_source_packages': len(manifest['supplemental_source_packages']),
         'preserved_historical_authority_global_checks': 2,
         'previous_author_code_members': len(previous_authors),
         'current_author_code_members': len(authors),

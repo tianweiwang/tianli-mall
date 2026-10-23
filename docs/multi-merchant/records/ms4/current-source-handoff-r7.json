@@ -1,0 +1,47 @@
+{
+  "schema": 1,
+  "scope": "CURRENT175F_SOURCE_DELIVERY_ONLY_NOT_BUSINESS_ACCEPTANCE",
+  "business_source_commit": "175f3cd6183894185656a2974579e1be39eed7a7",
+  "handoff_branch": "codex/orchestration-handoff-20261023",
+  "handoff_business_tree_base": "2e4af47c7595947e16bef0abfa9785823b1369d5",
+  "source_files": 486,
+  "source_packages": 35,
+  "source_bytes": 96266712,
+  "new_source_files": 146,
+  "new_source_bytes": 22524012,
+  "old340_rows_and_bytes_preserved": true,
+  "current_main_pipeline_members": 18,
+  "current_author_members": 11,
+  "current_M_schema_fields": 35,
+  "current_source_steps": 19,
+  "current_native_budget": 1088,
+  "runtime_ready": false,
+  "full_original_authoring_and_qualification_inputs_delivered": false,
+  "actual_current_M_S_receipts_or_private_data_included": false,
+  "latest_external_actual_observation": {
+    "M": "ACTUAL_1088_NATIVE_WAIT0_WITH_COMPLETE_ROOT_AND_PEER_READBACK",
+    "S": "ORIGINAL_NATIVE_AND_WAIT_EXIT_ONE",
+    "paid_business_terminal_exit": 1,
+    "phase": "paid_real_confirmation",
+    "first_failed_assertion": "M4C_FORM_NORMAL_HTTP_JSON_200",
+    "normal_http_response_diagnostic": {
+      "kind": "upload",
+      "method": "POST",
+      "http": 503,
+      "json_error": 0,
+      "response_bytes": 216,
+      "response_sha256": "318ae4db8bedc98bc218ade87cd653fd885bb3f91b4e23968c88c62dbbed4670"
+    },
+    "A0": null,
+    "normal_failed_Run_retirement": "PENDING_MATCHED_NORMAL_CLOSE_AND_INDEPENDENT_ZERO",
+    "business_acceptance": "INCOMPLETE"
+  },
+  "archived_programs_executed_by_handoff": false,
+  "deployment_or_real_payment": "NOT RUN",
+  "source_handoff_preparation_observation": {
+    "M": "ACTUAL_1088_NATIVE_WAIT0_WITH_COMPLETE_ROOT_AND_PEER_READBACK",
+    "S": "SAME_ORIGINAL17155_LIVE_AT_SOURCE_HANDOFF_PREPARATION",
+    "A0": null,
+    "business_acceptance": "INCOMPLETE"
+  }
+}

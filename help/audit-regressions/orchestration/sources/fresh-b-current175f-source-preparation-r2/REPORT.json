@@ -1,0 +1,39 @@
+{
+  "schema": 1,
+  "status": "MINIMAL_CURRENT175F_ACTIVE_SCOPE_SOURCE_CORRECTION_UNEXECUTED_UNSEALED",
+  "author": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/fresh-b-current175f-source-preparation-r2/impl/author_draft.py",
+    "bytes": 52868,
+    "sha256": "e2b4692cadc73de1fcffb66759fe4599d92273d2a8ff010309c12729804de42a"
+  },
+  "initializer_leaf_copy": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/fresh-b-current175f-source-preparation-r2/leaf/ms4-initialize.php",
+    "bytes": 118698,
+    "sha256": "29376b4266010285ec4cebd92f0197d849142988442ead06cbcc7d26ff840db8"
+  },
+  "actual_initializer_leaf_pointer_preserved": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/fresh-b-current175f-source-preparation-r1/leaf/ms4-initialize.php",
+    "bytes": 118698,
+    "sha256": "29376b4266010285ec4cebd92f0197d849142988442ead06cbcc7d26ff840db8"
+  },
+  "independent_R1_finding": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/fresh-b-current175f-independent-source-review-r1/REPORT.json",
+    "bytes": 6585,
+    "sha256": "c609c510bdfbae23ed1983108935ba2f6539c17ba3f2bf926e73032e6c830273"
+  },
+  "predecessor_r1": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/fresh-b-current175f-source-preparation-r1/PINS.json",
+    "bytes": 3920,
+    "sha256": "0a0bd107121995480b3220e173387252f5e7c199aa8d142c0422158e24bd465f"
+  },
+  "one_active_CURRENT_A_SOURCE_BINDING_scope": "REAL_SAME175F_A_SUCCESS_INPUTS_BOUND_SOURCE_ONLY_B_NOT_SEALED",
+  "all_other_author_bytes_functions_counts_scope_business_unchanged": true,
+  "ordinary_full_diff_both_directions": true,
+  "full_r1_packet_preserved": true,
+  "full_leaf_bytes_unchanged": true,
+  "actual_Source_M_freeze_whole_pins_joined": true,
+  "A0_postA_successclose_zero": "UNBOUND",
+  "author_leaf_B_Host_Docker_Node_browser_executed": false,
+  "runtime_ready": false,
+  "still_pending": "New author independent minimal correction review; changed full118698-byte B leaf actual PHP syntax after live S ends; real same-source successful A0/postA before invocation; all original complete B/UI20/Task2/H5 and remaining acceptance requirements."
+}

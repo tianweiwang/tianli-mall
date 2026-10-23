@@ -1,0 +1,87 @@
+{
+  "schema": 1,
+  "scope": "FIXED_NATIVE_OUTER_SOURCE_ONLY_RUNTIME_OUTPUTS_EXCLUDED",
+  "files": {
+    "DESIGN.md": {
+      "bytes": 2129,
+      "sha256": "bc14ad0eed8102c5fe325bf3727cddd0b15b1614ac3fb912a0cf90087d920691"
+    },
+    "OUTCOME-SCHEMA.json": {
+      "bytes": 1365,
+      "sha256": "0b612d7985916840b440910faa215f2ce3a9359b2a0874b55daf220344ca0b01"
+    },
+    "REPORT.json": {
+      "bytes": 2638,
+      "sha256": "6ca0dd98b6913bae14e7fc95f041a295ba26ab624646259722a8350c520f4dc0"
+    },
+    "SOURCE-INPUTS.json": {
+      "bytes": 10331,
+      "sha256": "4848d60e2b44e6665d2690e5cd85734f7dc8a9644efe9999a7d942d7e149b388"
+    },
+    "TRANSFORM.json": {
+      "bytes": 9302,
+      "sha256": "1756c1560667312e8a1a89b9f7a7780c0176146e79cee9350b490da84a637d1d"
+    },
+    "before/launch.py": {
+      "bytes": 1776,
+      "sha256": "329825b94aa6fd552d9b9a4332f53880a103d129ce64e8fc2da053e93deac0f0"
+    },
+    "peer.FORWARD.diff": {
+      "bytes": 4107,
+      "sha256": "70b15f9565d624f7348e974d21fbb4b68d825cd8519b97420e542fac1c511558"
+    },
+    "peer.REVERSE.diff": {
+      "bytes": 4107,
+      "sha256": "7a2d03a94a8274351344cd0a041b17a805318fb8b9e4a0f63327277d926cfdbc"
+    },
+    "peer/launch.py": {
+      "bytes": 4281,
+      "sha256": "f7eeb4f42f3542736049cf58dcc67b1fccabdcc9f3659d9296edb028edf2d0e2"
+    },
+    "prepare.py": {
+      "bytes": 15089,
+      "sha256": "a00c3d5a05dc9f067c6a6105e6fbd5ae5a7989c3d6ed3d956fa0e9c9c07ecfab"
+    },
+    "root.FORWARD.diff": {
+      "bytes": 4100,
+      "sha256": "dc329474a0d6c908ef02a2a29ce19edfc888eca2872bdae6a94489523c1f187a"
+    },
+    "root.REVERSE.diff": {
+      "bytes": 4100,
+      "sha256": "f0b2c22d52d2bcb6e71bb0822674dfe0059aafde0b1070592f17df65dc1f2991"
+    },
+    "root/launch.py": {
+      "bytes": 4274,
+      "sha256": "6bfc711e6295fc138c17136dcf8722f6e4926ab1acfebde4e1f40a4184f1ddd4"
+    }
+  },
+  "expected_Source_namespace": [
+    "DESIGN.md",
+    "OUTCOME-SCHEMA.json",
+    "REPORT.json",
+    "SOURCE-INPUTS.json",
+    "TRANSFORM.json",
+    "before/launch.py",
+    "peer.FORWARD.diff",
+    "peer.REVERSE.diff",
+    "peer/launch.py",
+    "prepare.py",
+    "root.FORWARD.diff",
+    "root.REVERSE.diff",
+    "root/launch.py"
+  ],
+  "runtime_output_names_excluded": [
+    "reader.created.json",
+    "reader.terminal.json",
+    "reader.stdout",
+    "reader.stderr",
+    "OUTCOME.json"
+  ],
+  "runtime_output_directories": {
+    "root": "H:/天俪商城/artifacts/project-organization-20261023/current175f-complete-normal-S-reader-outers-source-r1/root",
+    "peer": "H:/天俪商城/artifacts/project-organization-20261023/current175f-complete-normal-S-reader-outers-source-r1/peer"
+  },
+  "prepared_programs_imported_or_executed": false,
+  "A0": "UNBOUND",
+  "Root_admission": "REQUIRED_BEFORE_FUTURE_ACTUAL_S0_INVOCATION"
+}

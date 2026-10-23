@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "source_sha": "175f3cd6183894185656a2974579e1be39eed7a7",
+  "M_result": {
+    "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-quota-wire-current175f-normal-next-source-r1/validation/materialize-freeze-assets-r1/RESULT.json",
+    "bytes": 46750425,
+    "sha256": "6449487f1da61266fbdfe76260fced9196b398f1cbb92cc59074924d8e76c8aa"
+  },
+  "M_outcome": null,
+  "M_root_readback": {
+    "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/current175f-complete-materialization-root-readback-r1/REPORT.json",
+    "bytes": 1814,
+    "sha256": "6901f56b93e54ae6493a02e3851084e56be995d316294314e0bf03a0b710af05"
+  },
+  "A_outcome": null,
+  "A_outer_session": null,
+  "A_qualification": null,
+  "A_context": null,
+  "post_A_history_contract": null,
+  "Source_review_authority": null,
+  "initializer_leaf": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/h5-current175f-complete-source-r1/candidate/ms4-initialize.php",
+    "bytes": 78955,
+    "sha256": "a5add955d43e4fd8cfdc50dd0ad06d5f6408e5cf743a5c2564b6e51af7db067b"
+  }
+}

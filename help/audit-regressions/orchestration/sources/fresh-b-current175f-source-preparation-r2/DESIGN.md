@@ -1,0 +1,7 @@
+# Minimal current175f fresh B active scope correction
+
+Root’s completed independent review of immutable r1 has one finding: build() still emits CURRENT-A-SOURCE-BINDING.json scope REAL_SAME28DC_A_SUCCESS_INPUTS_BOUND_SOURCE_ONLY_B_NOT_SEALED despite the real current175f bindings. Correct that one active output literal to REAL_SAME175F_A_SUCCESS_INPUTS_BOUND_SOURCE_ONLY_B_NOT_SEALED. This is the sole candidate-author byte change; preserve all other code, functions, source pins, counts and business assertions.
+
+Retain all r1 files under predecessor-r1/ and keep r1 untouched. Copy its exact full initializer leaf without modification; ROOT_INITIALIZER_LEAF intentionally retains the real immutable r1 leaf pointer, as Root instructed. Preserve all31/26/17,8,4, UI20/Task2/full H5 and remaining original acceptance scope. This adds no execution checklist or admission framework.
+
+Acceptance: verify the full r1 packet and completed independent finding receipt, exact one-literal forward/reverse author equality, ordinary full-file patch replay both ways, all methods except build whole equal, build inverse whole equal, every module byte except that literal equal, and unchanged leaf/actual real source pins. A0/postA and necessary exact-byte118698 PHP syntax remain pending; no author/leaf/B/Host/Docker/Node/browser invocation, Git/W/Val/N175f/Run/canonical/CP mutation or future success receipt/hash/PID.

@@ -1,0 +1,8 @@
+{
+  "status": "OWN_SOURCE_CONSTRUCTOR_ERROR_PRESERVED_NOT_READER_EXECUTION",
+  "tool_chunk": "55789d",
+  "native_exit": 1,
+  "cause": "The complete current Source SHA literal occurs on two different original predicate lines; checker incorrectly required one global occurrence",
+  "readers_or_target_executed": false,
+  "incomplete_S_outputs_read": false
+}

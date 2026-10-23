@@ -1,0 +1,121 @@
+{
+  "schema": 1,
+  "status": "PASS_COMPLETE_CURRENT175F_ROOT_AND_PEER_SUCCESS_READBACK_SOURCE_ONLY_NOT_EXECUTED",
+  "source_sha": "175f3cd6183894185656a2974579e1be39eed7a7",
+  "run_id": "20261023182634096f57",
+  "original_S_pid": 35944,
+  "original_prepare_pid": 49064,
+  "context_pin": {
+    "bytes": 12301,
+    "sha256": "c56e609828ba3e51e63f69b83e4af49279bdaebee487116728c383e02dae7959"
+  },
+  "actual_M": {
+    "bytes": 46750425,
+    "sha256": "6449487f1da61266fbdfe76260fced9196b398f1cbb92cc59074924d8e76c8aa"
+  },
+  "actual_freeze": {
+    "bytes": 10985209,
+    "sha256": "4ac3a0b7b35db7a911e9abb61dfaa4a25b0ffaf3bdc79a7c100b48f0836ce6ed"
+  },
+  "M_schema_fields": 35,
+  "commit_steps": 19,
+  "native_budget": 1088,
+  "parent_readers": {
+    "root": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/current28dc-complete-normal-S-readback-source-r1/candidate/readback-current28dc-complete-normal-S.py",
+      "bytes": 12417,
+      "sha256": "f76984c14e1bf004edf73d885093b6bfbecd2ff302316facfbed416f1e76a02e"
+    },
+    "peer": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/current28dc-complete-normal-S-actual-independent-reader-source-r2/readback-actual-current28dc-complete-normal-S-independent.py",
+      "bytes": 17937,
+      "sha256": "6ee762117eed3b9c7096ebdd68519f6c3a373f1fbbb527618d2d2d44046209fe"
+    }
+  },
+  "whole_original_reader_functions_classes_preserved": true,
+  "whole_finite_helper_inverse_except_exact_Windows_cross4": true,
+  "all_original_nine_proofs_native_streams_close_six_query_zero_Source_M_freeze_profile_predicates": "PRESERVED",
+  "ordinary_diffs_all_six_directions_replayed": true,
+  "AST_only": true,
+  "readers_or_helpers_imported_or_executed": false,
+  "incomplete_S_outputs_or_private_payload_read": false,
+  "S_actual_acceptance": "NOT OBSERVED; Root S0 admission required, S1 forbids these success readers",
+  "full_acceptance": "INCOMPLETE",
+  "outputs": {
+    "root.py": {
+      "before": {
+        "bytes": 12417,
+        "sha256": "f76984c14e1bf004edf73d885093b6bfbecd2ff302316facfbed416f1e76a02e"
+      },
+      "candidate": {
+        "bytes": 14136,
+        "sha256": "9e0475c305cc61c9524291da9f1e27ac160de1f3bd66021c677d8e5556677784"
+      },
+      "seams": 25,
+      "whole_ordered_inverse": true,
+      "ordinary_forward_reverse": true,
+      "functions_classes_whole_identical": true,
+      "original_definition_names": [
+        "positive_pid",
+        "original"
+      ]
+    },
+    "peer.py": {
+      "before": {
+        "bytes": 17937,
+        "sha256": "6ee762117eed3b9c7096ebdd68519f6c3a373f1fbbb527618d2d2d44046209fe"
+      },
+      "candidate": {
+        "bytes": 19527,
+        "sha256": "a6e36c47f7ec02d80ae6af3206ff13ba1524626ba927f4a9cc389516ce4bc2d5"
+      },
+      "seams": 26,
+      "whole_ordered_inverse": true,
+      "ordinary_forward_reverse": true,
+      "functions_classes_whole_identical": true,
+      "original_definition_names": [
+        "need",
+        "fp",
+        "pairs",
+        "loads",
+        "enc",
+        "pinpart",
+        "n9",
+        "Finite",
+        "positive_pid",
+        "original"
+      ]
+    },
+    "finite-helper.py": {
+      "before": {
+        "bytes": 33902,
+        "sha256": "4673d95c60c22f4653b6f22f833e24fb6accc3b286c555ca0462b0fb501252e0"
+      },
+      "candidate": {
+        "bytes": 33935,
+        "sha256": "a84cb0edd5beaa998a26f8b96819b765e8cfe83e52a62619846b431c417855c0"
+      },
+      "seams": 1,
+      "whole_ordered_inverse": true,
+      "ordinary_forward_reverse": true,
+      "functions_classes_whole_identical": false,
+      "original_definition_names": [
+        "need",
+        "fp",
+        "pairs",
+        "loads",
+        "enc",
+        "pinpart",
+        "n9",
+        "Finite",
+        "apply_unified",
+        "parts",
+        "once",
+        "catalog",
+        "tool_mounts",
+        "pinmap",
+        "main"
+      ]
+    }
+  }
+}

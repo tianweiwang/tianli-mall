@@ -1,0 +1,172 @@
+{
+  "schema": 1,
+  "status": "COMPLETE_CURRENT175F_INDEPENDENT_NINE_H5_SOURCE_ONLY_NOT_RUNTIME_ADMISSION",
+  "source_sha": "175f3cd6183894185656a2974579e1be39eed7a7",
+  "parent": "28dcab632da3e62f7c8b8d926b6ab9406534d0d3",
+  "original_complete_source_members27": [
+    "candidate/Core/lib/ms4-customer-h5-normal.php",
+    "candidate/Core/ms4-customer-h5.php",
+    "candidate/H5-README.md",
+    "candidate/README.md",
+    "candidate/browser-v1/customer-network-observer.mjs",
+    "candidate/browser-v1/ms4-customer-browser.mjs",
+    "candidate/browser-v1/ms4-customer-private-bridge.mjs",
+    "candidate/compose.h5.yml",
+    "candidate/compose.yml",
+    "candidate/h5-derivation.json",
+    "candidate/inputs/language.json",
+    "candidate/inputs/theme.json",
+    "candidate/interface-v1.json",
+    "candidate/ms4-h5-bootstrap.php",
+    "candidate/ms4-h5-host.py",
+    "candidate/ms4-h5-materials.py",
+    "candidate/ms4-h5-nginx.conf",
+    "candidate/ms4-h5-public-copy.php",
+    "candidate/ms4-host.py",
+    "candidate/ms4-initialize.php",
+    "candidate/ms4-order.png",
+    "candidate/normal-close-customer-h5.py",
+    "candidate/normal-close-ms4-fulfillment.py",
+    "candidate/seed-source-inverse.json",
+    "candidate/source-derivation.json",
+    "candidate/verify-zero-customer-h5.py",
+    "candidate/verify-zero-ms4-fulfillment.py"
+  ],
+  "coordinator_support_members4": [
+    "coordinator/CURRENT-A-SOURCE.json",
+    "coordinator/INPUTS-UNBOUND.json",
+    "coordinator/run.py",
+    "coordinator/success-contract.fragment.py"
+  ],
+  "files": {
+    "candidate/Core/lib/ms4-customer-h5-normal.php": {
+      "bytes": 165967,
+      "sha256": "9f47fff3886192aaed5347eb747978e1c54c152e8bc2f77563b406644f4f75bd"
+    },
+    "candidate/Core/ms4-customer-h5.php": {
+      "bytes": 112678,
+      "sha256": "c78fbf4b4c05b0db98ad51779db314264f2c4ff96c34db9552258a8b07191533"
+    },
+    "candidate/H5-README.md": {
+      "bytes": 16927,
+      "sha256": "8da1a8f784ce82e195f30a553995ba60ef125e7e68842d59e4ffd54bc1b2dc58"
+    },
+    "candidate/README.md": {
+      "bytes": 89381,
+      "sha256": "b886791202529032c9f85a88f80af456f1e916ad2ad1031eb417685edcae6493"
+    },
+    "candidate/browser-v1/customer-network-observer.mjs": {
+      "bytes": 20415,
+      "sha256": "fbfe205ce71cb0e4253067e5a1769fadf2d4fb28086909b7871a1cb53d7ccb9e"
+    },
+    "candidate/browser-v1/ms4-customer-browser.mjs": {
+      "bytes": 26262,
+      "sha256": "f0a584263a9c997cce080b8aa0d45a8876842d458c0b1b64d9c24b975d17be7a"
+    },
+    "candidate/browser-v1/ms4-customer-private-bridge.mjs": {
+      "bytes": 46630,
+      "sha256": "a6255a960f88f2a61defbfe04ac86dd132e70b849b57bec3c2daf05cd4999efa"
+    },
+    "candidate/compose.h5.yml": {
+      "bytes": 6101,
+      "sha256": "4eb75604c6f8214acce7cc991d55166292574de8b99e4a56107b511f444ad8af"
+    },
+    "candidate/compose.yml": {
+      "bytes": 11860,
+      "sha256": "f6c4b4f50fbd34fda66afcf2d0819d38992a2fe467172fe587cefbeb2d39a198"
+    },
+    "candidate/h5-derivation.json": {
+      "bytes": 50091,
+      "sha256": "0a55e5eaa677f974bd5e079de50f47a4b8a8bdc7a544f867db137131ff9e3e2f"
+    },
+    "candidate/inputs/language.json": {
+      "bytes": 318204,
+      "sha256": "9e6aab1cf67ea492d137b12052220b0e710fb7fe16f3b5f93135a6693945c716"
+    },
+    "candidate/inputs/theme.json": {
+      "bytes": 102429,
+      "sha256": "8f879a5f7775d39cf190023aca1ea49e7cacf7a680277e10a0712d0796ba1bc1"
+    },
+    "candidate/interface-v1.json": {
+      "bytes": 102529,
+      "sha256": "5f0bdb9bd952419f879d86bb8941b06147a9bea3b4f4eeb2c814dcafef392495"
+    },
+    "candidate/ms4-h5-bootstrap.php": {
+      "bytes": 72657,
+      "sha256": "9ce34b5c1d3d690dc8048ee0650418541b75d60fbb0b39378c1348f6d381dbb0"
+    },
+    "candidate/ms4-h5-host.py": {
+      "bytes": 117177,
+      "sha256": "4c48cb13b0a5ba506a8dfcbe5b1289c83de9ec693727405265bdba0077efe38a"
+    },
+    "candidate/ms4-h5-materials.py": {
+      "bytes": 18826,
+      "sha256": "7a00057fb8a88103cfddc6a992aa669412289ab7d6f8e8b9acc20da568c52aa8"
+    },
+    "candidate/ms4-h5-nginx.conf": {
+      "bytes": 2149,
+      "sha256": "669bbddfbcb57c75e1d1b27410a6f9ec1c8638122f06e2ffba32d370d93cdfd8"
+    },
+    "candidate/ms4-h5-public-copy.php": {
+      "bytes": 14815,
+      "sha256": "e01c65ce4bb3c810b5704a3bbd67549882b3861ebffda053706f8cd9aa4ade6b"
+    },
+    "candidate/ms4-host.py": {
+      "bytes": 345436,
+      "sha256": "0d379c9a33dccfc0ece92fe8129842ac27105d66a50320b37e893bfd23dc295e"
+    },
+    "candidate/ms4-initialize.php": {
+      "bytes": 78955,
+      "sha256": "a5add955d43e4fd8cfdc50dd0ad06d5f6408e5cf743a5c2564b6e51af7db067b"
+    },
+    "candidate/ms4-order.png": {
+      "bytes": 117,
+      "sha256": "1f43eae0908dc055ac0e0e0aaa8e648e301ae4b46834eb058eca0a4fb7c766b6"
+    },
+    "candidate/normal-close-customer-h5.py": {
+      "bytes": 49891,
+      "sha256": "f20a8d8db2a80af703e6ff43872f7a0605134778793b4e1f050338d56c0dc1b1"
+    },
+    "candidate/normal-close-ms4-fulfillment.py": {
+      "bytes": 47220,
+      "sha256": "cba367e05932836c7667e5fd10faa6f5c7c06a85dceceb27eb7b228b754bd361"
+    },
+    "candidate/seed-source-inverse.json": {
+      "bytes": 639,
+      "sha256": "c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a"
+    },
+    "candidate/source-derivation.json": {
+      "bytes": 604017,
+      "sha256": "e0bda907571363b1e1c7f58920af91b6a75a66072db0fc081ff7041e05b6db46"
+    },
+    "candidate/verify-zero-customer-h5.py": {
+      "bytes": 133057,
+      "sha256": "0848bc1b87543d9f82206fc0fcda8c2e2bde5734e3ba5c16e4108f00498d244e"
+    },
+    "candidate/verify-zero-ms4-fulfillment.py": {
+      "bytes": 296098,
+      "sha256": "ee5a9f65d87d063100f834c8456364cb8024fb3414467827e6c1ec92aa03b54f"
+    },
+    "coordinator/CURRENT-A-SOURCE.json": {
+      "bytes": 523200,
+      "sha256": "de497a3dd42c4790cf9cdfcb2a8f4951b9c45d790e19f4a332468d037ea5c842"
+    },
+    "coordinator/INPUTS-UNBOUND.json": {
+      "bytes": 1114,
+      "sha256": "9235b8bc4c1678b5417daed51d7b13a96ef0ccac25688b76cba2c19b82bf6391"
+    },
+    "coordinator/run.py": {
+      "bytes": 21134,
+      "sha256": "32f30abe74e957f46c7eab76c6ffc37178d1ce6d114a9c9246909dbbd7433719"
+    },
+    "coordinator/success-contract.fragment.py": {
+      "bytes": 6430,
+      "sha256": "3ca9dba1f41547ed3dd7c447b9b5f1af3f1a22967d143babc7ebc4295fa978f4"
+    }
+  },
+  "runtime_ready": false,
+  "A0": null,
+  "post_A": null,
+  "generated_material_outputs4": null,
+  "target_execution": "NOT RUN"
+}

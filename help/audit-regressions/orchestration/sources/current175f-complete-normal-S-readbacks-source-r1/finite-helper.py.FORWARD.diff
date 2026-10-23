@@ -1,0 +1,11 @@
+--- a/finite-helper.py
++++ b/finite-helper.py
+@@ -65,7 +65,7 @@
+             x = os.fstat(f.fileno())
+             fn = n9(x)
+             # Windows path ctime and descriptor ctime have different API meanings.
+-            need(all(pn[i] == fn[i] for i,k in enumerate(KEYS) if k != 'st_ctime_ns'),'NAMED_FD_COMMON_IDENTITY:'+str(path))
++            need(all(pn[i] == fn[i] for i,k in enumerate(KEYS) if k in {'st_dev', 'st_ino', 'st_size', 'st_mtime_ns'}),'NAMED_FD_COMMON_IDENTITY:'+str(path))
+             need(a.st_birthtime_ns == x.st_birthtime_ns,'NAMED_FD_BIRTHTIME:'+str(path))
+             while True:
+                 raw = f.read(262144)

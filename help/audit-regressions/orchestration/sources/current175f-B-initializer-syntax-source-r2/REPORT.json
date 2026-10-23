@@ -1,0 +1,74 @@
+{
+  "schema": 1,
+  "status": "PASS_R2_COMPLETE_SOURCE_STATIC_REVIEW_ONLY_NOT_ACTUAL_SYNTAX",
+  "started_ns": 1792782627764715900,
+  "ended_ns": 1792782627998664700,
+  "formal_r1_P2": "RUNTIME_CROSS8_REPLACED_WITH_EXACT_REVIEWED_COMPLETE_CROSS4_HELPER",
+  "r1_all_23_files_and_formal_finding_preserved": true,
+  "helper_original": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/current175f-complete-normal-S-readbacks-source-r1/candidate/finite-helper.py",
+    "bytes": 33935,
+    "sha256": "a84cb0edd5beaa998a26f8b96819b765e8cfe83e52a62619846b431c417855c0"
+  },
+  "helper_local": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/current175f-B-initializer-syntax-source-r2/finite-helper.py",
+    "bytes": 33935,
+    "sha256": "a84cb0edd5beaa998a26f8b96819b765e8cfe83e52a62619846b431c417855c0"
+  },
+  "helper_complete_AST_single_cross_comparison_delta_verified": true,
+  "named_fd_cross_fields": [
+    "st_dev",
+    "st_ino",
+    "st_size",
+    "st_mtime_ns"
+  ],
+  "own9_birthtime_fullEOF_fd_named_final_and_input_end_preserved": true,
+  "run_reversible_seams": 6,
+  "launch_reversible_seams": 1,
+  "whole_run_launch_inverse": true,
+  "all_original_non_main_run_and_all_launcher_functions_whole": true,
+  "all_8_native_calls_full_AST_and_argument_order_preserved": true,
+  "operation_names": [
+    "own-label-before",
+    "existing-fixed-image",
+    "create-one-owned-lint-container",
+    "attach-original-php-l",
+    "same-cid-native-wait",
+    "same-cid-native-terminal",
+    "ordinary-exact-owned-cid-rm",
+    "own-label-after"
+  ],
+  "full_create_argv_only_own_r2_name_changed": true,
+  "fixed_image_one_php_l_one_RO_bind_networknone_readonly_nonroot_128M_ordinary_rm_and_empty_selector_preserved": true,
+  "guard_whole_and_before_any_actual_output_native": true,
+  "exact_20_key_RESULT_and_original_schemas_unchanged": true,
+  "actual_8_times_4_native_files_plus_4_outer_plus_INPUTS_RESULT_equals_38": true,
+  "run_argv_exact_Windows_str_Path_not_posix_literal": true,
+  "complete_ordinary_forward_reverse_with_true_helper_addition": true,
+  "helper_addition_replay": "ONLY_NULL_HEADERS_NORMALIZED_TO_VIRTUAL_EMPTY_RAM_ENTRY_NO_FALSE_BEFORE_FILE",
+  "Source_DAG_whole_pins_joined": true,
+  "candidate": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/fresh-b-current175f-source-preparation-r1/leaf/ms4-initialize.php",
+    "bytes": 118698,
+    "sha256": "29376b4266010285ec4cebd92f0197d849142988442ead06cbcc7d26ff840db8"
+  },
+  "copy": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/current175f-B-initializer-syntax-source-r2/candidates/ms4-initialize.php",
+    "bytes": 118698,
+    "sha256": "29376b4266010285ec4cebd92f0197d849142988442ead06cbcc7d26ff840db8"
+  },
+  "result_interface": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/current175f-B-initializer-syntax-source-r2/RESULT-INTERFACE.json",
+    "bytes": 3095,
+    "sha256": "2d6b81e106406bc4729c47483b217af565e4535ce0895fae301154fcccf71149"
+  },
+  "source_windows": 136,
+  "all_source_windows_ended": true,
+  "current_S_and_Run_outputs_read": false,
+  "prepared_run_launcher_PHP_or_helper_module_import_execution": false,
+  "actual_job_Docker_Host_PHP_B_M_S_operations": 0,
+  "actual_output_directory_created": false,
+  "W_Val_Run_Git_canonical_mutations": 0,
+  "runtime_ready": false,
+  "A0_postA_B_H5_business": "UNBOUND_NOT_EXECUTED"
+}

@@ -1,0 +1,254 @@
+--- a/producer.py
++++ b/producer.py
+@@ -40,7 +40,7 @@
+ AUTHOR_REVIEW_REPORTS = {'root': {'path': 'H:/天俪商城/artifacts/project-organization-20261023/fresh-b-current175f-root-source-review-r2/REPORT.json', 'bytes': 1776, 'sha256': 'a11de82b2b12dbff076e18bf44ebba90847296afcdd833b1d95ada8f0668b3fd'}, 'peer': {'path': 'H:/天俪商城/artifacts/project-organization-20261023/fresh-b-current175f-independent-source-review-r2/REPORT.json', 'bytes': 2246, 'sha256': '9fbd386f52e3e2f14673001ecc39dbf058e1bc364413fa3910f76c3ce1a44651'}}
+ AUTHOR_REVIEW_EXPECTED = {'root': {'schema': 1, 'status': 'PASS_ROOT_CURRENT175F_FRESHB_R2_SCOPE_FIX_SOURCE_ONLY_NOT_EXECUTED', 'source_PINS': {'path': 'H:/天俪商城/artifacts/project-organization-20261023/fresh-b-current175f-source-preparation-r2/PINS.json', 'bytes': 5846, 'sha256': '0894afc646de39ff557884843471aacdf102875fa59239214f656df6c66b8a0d'}, 'author': {'path': 'H:/天俪商城/artifacts/project-organization-20261023/fresh-b-current175f-source-preparation-r2/impl/author_draft.py', 'bytes': 52868, 'sha256': 'e2b4692cadc73de1fcffb66759fe4599d92273d2a8ff010309c12729804de42a'}, 'initializer_leaf': {'path': 'H:/天俪商城/artifacts/project-organization-20261023/fresh-b-current175f-source-preparation-r1/leaf/ms4-initialize.php', 'bytes': 118698, 'sha256': '29376b4266010285ec4cebd92f0197d849142988442ead06cbcc7d26ff840db8'}, 'whole_R1_source_review': {'path': 'H:/天俪商城/artifacts/project-organization-20261023/fresh-b-current175f-root-source-review-r1/REPORT.json', 'bytes': 1308, 'sha256': 'e62b408bfbf9784a576737a86c52bac7b499030df94ad9dd8395bc4d7c74704b'}, 'r1_unique_scope_finding_closed': True, 'all_other_whole_author_bytes_and_module_complement_identical': True, 'unchanged_definitions': 18, 'build_only_one_literal_inverse': True, 'full_leaf_bytes_and_pointer_unchanged': True, 'source_members': 38, 'namespace': 40, 'whole_ancestor_namespace_retained': 24, 'ordinary_forward_reverse_replayed': True, 'finite_input_windows': 67, 'all_windows_closed': True, 'ended_ns': 1792781342545001200, 'actual_author_leaf_B_execution': 'NOT RUN', 'full_initializer_PHP82_syntax': 'NOT RUN_WAIT_ORIGINAL_S_CLOSE_AND_ROOT_ADMISSION', 'A0_postA': 'UNBOUND', 'runtime_ready': False}, 'peer': {'schema': 1, 'status': 'PASS_INDEPENDENT_MINIMAL_R2_ACTIVE_SCOPE_SOURCE_CORRECTION_ONLY', 'findings': [], 'r1_complete_independent_review_basis': {'path': 'H:/天俪商城/artifacts/project-organization-20261023/fresh-b-current175f-independent-source-review-r1/REPORT.json', 'bytes': 6585, 'sha256': 'c609c510bdfbae23ed1983108935ba2f6539c17ba3f2bf926e73032e6c830273'}, 'r2_PIN': {'bytes': 5846, 'sha256': '0894afc646de39ff557884843471aacdf102875fa59239214f656df6c66b8a0d'}, 'r2_FINAL': {'bytes': 1428, 'sha256': 'd4f5940b57c0eb7cfb7af67f4c90c6ef658a9863292baa3c8dbca9bf32b902b7'}, 'r2_pinned_members': 38, 'r2_namespace_total': 40, 'r1_archived_whole_members': 24, 'exact_only_change': {'before': 'REAL_SAME28DC_A_SUCCESS_INPUTS_BOUND_SOURCE_ONLY_B_NOT_SEALED', 'after': 'REAL_SAME175F_A_SUCCESS_INPUTS_BOUND_SOURCE_ONLY_B_NOT_SEALED', 'whole_author_forward_inverse': True, 'ordinary_full_both_directions': True}, 'functions': {'original': 19, 'unchanged_nonbuild': 18, 'build_all_other_bytes_identical': True, 'all_module_complement_AST_imports_globals_M_counts_business_unchanged': True, 'recursive_globals_undeclared': []}, 'closed_R1_finding': {'priority': 3, 'original_line': 573, 'status': 'CLOSED_BY_EXACT_ACTIVE_LABEL_CHANGE', 'new_findings': []}, 'leaf': {'bytes_sha': {'bytes': 118698, 'sha256': '29376b4266010285ec4cebd92f0197d849142988442ead06cbcc7d26ff840db8'}, 'full_copy_and_before_and_r1_identical': True, 'actual_Root_initializer_pointer_retains_r1': True}, 'boundaries': {'author_leaf_B_Host_Docker_Node_browser_executed': False, 'current_S_Run_private_or_raw_read': False, 'A0_postA': 'UNBOUND', 'runtime_ready': False, 'B_or_UI_runtime_acceptance': 'NOT PROVIDED', 'remaining_original_scope': 'All original B/UI20/Task2/H5/Kernel/readers/CS and other requirements retained by unchanged whole Source and prior complete review.', 'new_leaf_actual_PHP82_syntax': 'NOT RUN; after live S ends and Root admission'}, 'finite_inputs': 67, 'finite_bytes': 1564897, 'all_windows_closed': True, 'ended_ns': 1792781322596146900}}
+ INITIALIZER_LEAF = {'path': 'H:/天俪商城/artifacts/project-organization-20261023/fresh-b-current175f-source-preparation-r1/leaf/ms4-initialize.php', 'bytes': 118698, 'sha256': '29376b4266010285ec4cebd92f0197d849142988442ead06cbcc7d26ff840db8'}
+-INITIALIZER_SYNTAX_INTERFACE = None
++INITIALIZER_SYNTAX_INTERFACE = {'source_root': 'H:/天俪商城/artifacts/project-organization-20261023/current175f-B-initializer-syntax-source-r2', 'source_member_count': 40, 'final_PINS': {'path': 'H:/天俪商城/artifacts/project-organization-20261023/current175f-B-initializer-syntax-source-r2/FINAL-PINS.json', 'bytes': 5997, 'sha256': '7d001b989f7110750706a05ba08f7681ef8d2c60f603b682890e81590f0cb4f4'}, 'RESULT_INTERFACE': {'path': 'H:/天俪商城/artifacts/project-organization-20261023/current175f-B-initializer-syntax-source-r2/RESULT-INTERFACE.json', 'bytes': 3095, 'sha256': '2d6b81e106406bc4729c47483b217af565e4535ce0895fae301154fcccf71149'}, 'declared': {'schema': 1, 'scope': 'SOURCE_ONLY_FUTURE_ACTUAL_RESULT_INTERFACE_NO_RECEIPTS_CREATED', 'launch_argv': ['C:/Users/Vwang/AppData/Local/Programs/Python/Python314/python.exe', '-B', '-X', 'utf8', 'H:\\天俪商城\\artifacts\\project-organization-20261023\\current175f-B-initializer-syntax-source-r2\\launch.py', '--authorize-ended-S17155-root-admitted'], 'run_argv': ['C:/Users/Vwang/AppData/Local/Programs/Python/Python314/python.exe', '-B', '-X', 'utf8', 'H:\\天俪商城\\artifacts\\project-organization-20261023\\current175f-B-initializer-syntax-source-r2\\run.py', '--authorize-ended-S17155-root-admitted'], 'actual_directory': 'H:/天俪商城/artifacts/project-organization-20261023/current175f-B-initializer-syntax-actual-r2', 'result_exact_keys': ['status', 'started_ns', 'ended_ns', 'source_sha', 'candidate', 'copy', 'leaf_preparation_PINS', 'author_preparation_PINS', 'candidate_source', 'job_code_PINS', 'pre_execution_authority', 'php_l_count_required', 'container_id', 'container_native_exit', 'operations', 'own_label_before_after_empty', 'ordinary_own_container_removed', 'all_input_windows_ended', 'initializer_or_M_S_App_business_execution', 'W_Val_Run_mutations'], 'result_exact_key_count': 20, 'pass_status': 'PASS_CURRENT175F_COMPLETE_B_UI_INITIALIZER_PHP82_SYNTAX_ONLY', 'fail_status': 'FAIL_CANDIDATE_SYNTAX', 'candidate': {'path': 'H:/天俪商城/artifacts/project-organization-20261023/fresh-b-current175f-source-preparation-r1/leaf/ms4-initialize.php', 'bytes': 118698, 'sha256': '29376b4266010285ec4cebd92f0197d849142988442ead06cbcc7d26ff840db8'}, 'copy': {'path': 'H:/天俪商城/artifacts/project-organization-20261023/current175f-B-initializer-syntax-source-r2/candidates/ms4-initialize.php', 'bytes': 118698, 'sha256': '29376b4266010285ec4cebd92f0197d849142988442ead06cbcc7d26ff840db8'}, 'php_l_count_required': 1, 'native_operations_required': 8, 'pre_execution_authority_exact_keys': ['authorization', 'required_flag', 'original_tool_session', 'original_S_pid', 'source_launcher', 'created', 'terminal', 'original_S_native_exit', 'original_S_wait_returncode', 'raw_child_streams_read'], 'outer_created_exact_keys': ['pid', 'argv', 'started_ns'], 'outer_terminal_exact_keys': ['pid', 'argv', 'started_ns', 'native_exit', 'wait_returncode', 'finished_ns', 'stdout_bytes', 'stdout_sha256', 'stderr_bytes', 'stderr_sha256'], 'native_created_exact_keys': ['pid', 'argv', 'started_ns'], 'native_terminal_exact_keys': ['pid', 'argv', 'started_ns', 'native_exit', 'wait_returncode', 'finished_ns', 'stdout', 'stderr', 'stem'], 'INPUTS_exact_keys': ['files', 'all_windows_ended', 'ended_ns'], 'actual_outputs_created': False, 'A0_postA_B_H5_business': 'UNBOUND_NOT_EXECUTED'}, 'manifest': {'path': 'H:/天俪商城/artifacts/project-organization-20261023/current175f-B-initializer-syntax-source-r2/CANDIDATE-SOURCE.json', 'bytes': 5921, 'sha256': '4d598c8bdf93c36e20d6892def693b0d9e24e66dc0f9b7c253cbf70951a20518'}, 'manifest_expected': {'schema': 1, 'scope': 'ONE_CURRENT175F_COMPLETE_B_UI_INITIALIZER_PHP82_SYNTAX_SOURCE_ONLY', 'source_sha': '175f3cd6183894185656a2974579e1be39eed7a7', 'candidate': {'path': 'H:/天俪商城/artifacts/project-organization-20261023/fresh-b-current175f-source-preparation-r1/leaf/ms4-initialize.php', 'bytes': 118698, 'sha256': '29376b4266010285ec4cebd92f0197d849142988442ead06cbcc7d26ff840db8'}, 'copy': {'path': 'H:/天俪商城/artifacts/project-organization-20261023/current175f-B-initializer-syntax-source-r2/candidates/ms4-initialize.php', 'bytes': 118698, 'sha256': '29376b4266010285ec4cebd92f0197d849142988442ead06cbcc7d26ff840db8'}, 'evidence': [{'path': 'H:/天俪商城/artifacts/project-organization-20261023/current0c13-reviewed-eight-path-adoption-actual-r1/PUSH-AND-VAL.json', 'bytes': 839, 'sha256': 'e8606e88cc174c260288e25639f595145e4afe9c651fb8682848dcd3d2dd4bb3'}, {'path': 'H:/天俪商城/artifacts/project-organization-20261023/current0c13-retirement-final-root-admission-r1/REPORT.json', 'bytes': 1948, 'sha256': 'd874511b24e94b73180b70401e96eba9ca03df2665b9a8ad8ade4655655e5c6c'}, {'path': 'H:/天俪商城/artifacts/project-organization-20261023/current28dc-form-quota-wire-fix-adoption-r1/RETIREMENT-ADMISSION.json', 'bytes': 1608, 'sha256': 'f0908b202e72422601abd064aee6df8c897921f62a59cfb6f546f482d8e604b6'}, {'path': 'H:/天俪商城/artifacts/project-organization-20261023/current28dc-form-quota-wire-fix-adoption-r1/PUSH-VERIFIED.json', 'bytes': 387, 'sha256': 'bf69463f74fa8b9f4d1c088cee882241ad70ffbdc8b3f092a1688b6edceafb59'}, {'path': 'H:/天俪商城/artifacts/project-organization-20261023/current28dc-form-quota-wire-fix-adoption-r1/VAL-VERIFIED.json', 'bytes': 968, 'sha256': '9a0032be00ac61271662d7ef5c032238abb2b8c14fe0949532475bcdcbda2714'}, {'path': 'H:/天俪商城/artifacts/project-organization-20261023/current175f-initializer-syntax-source-r1/FINAL-PINS.json', 'bytes': 1097, 'sha256': '11ad7b39aa5ecb301db19af7098e66f31b69fe82330d020e46b3b47c70292588'}, {'path': 'H:/天俪商城/artifacts/project-organization-20261023/current175f-initializer-syntax-actual-r1/RESULT.json', 'bytes': 8961, 'sha256': '86ea61ccfad911775291575344a2eda16025effba9ee5fe760e098285a55a5f5'}], 'leaf_preparation_PINS': {'path': 'H:/天俪商城/artifacts/project-organization-20261023/fresh-b-current175f-source-preparation-r1/PINS.json', 'bytes': 3920, 'sha256': '0a0bd107121995480b3220e173387252f5e7c199aa8d142c0422158e24bd465f'}, 'author_preparation_PINS': {'path': 'H:/天俪商城/artifacts/project-organization-20261023/fresh-b-current175f-source-preparation-r2/PINS.json', 'bytes': 5846, 'sha256': '0894afc646de39ff557884843471aacdf102875fa59239214f656df6c66b8a0d'}, 'protocol_provenance_not_B_qualification': {'source_FINAL_PINS': {'path': 'H:/天俪商城/artifacts/project-organization-20261023/current175f-initializer-syntax-source-r1/FINAL-PINS.json', 'bytes': 1097, 'sha256': '11ad7b39aa5ecb301db19af7098e66f31b69fe82330d020e46b3b47c70292588'}, 'actual_old_78955_RESULT': {'path': 'H:/天俪商城/artifacts/project-organization-20261023/current175f-initializer-syntax-actual-r1/RESULT.json', 'bytes': 8961, 'sha256': '86ea61ccfad911775291575344a2eda16025effba9ee5fe760e098285a55a5f5'}}, 'pre_execution_requirement': {'flag': '--authorize-ended-S17155-root-admitted', 'original_S_tool_session': 17155, 'original_S_pid': 35944, 'source_launcher': {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-quota-wire-current175f-normal-next-source-r1/launcher/launch.py', 'bytes': 15839, 'sha256': '2e3bf0739a978420241f7c75128abfb4528c2d911d9e73230f4c0ef3dd3aad25'}, 'terminal_read_at_actual_execution_only': True, 'Root_operator_must_admit_after_S_ended': True, 'S_native_success_not_assumed': True}, 'runtime_finite_helper': {'original_reviewed_whole': {'path': 'H:/天俪商城/artifacts/project-organization-20261023/current175f-complete-normal-S-readbacks-source-r1/candidate/finite-helper.py', 'bytes': 33935, 'sha256': 'a84cb0edd5beaa998a26f8b96819b765e8cfe83e52a62619846b431c417855c0'}, 'local_complete_copy': {'path': 'H:/天俪商城/artifacts/project-organization-20261023/current175f-B-initializer-syntax-source-r2/finite-helper.py', 'bytes': 33935, 'sha256': 'a84cb0edd5beaa998a26f8b96819b765e8cfe83e52a62619846b431c417855c0'}, 'named_fd_cross_fields': ['st_dev', 'st_ino', 'st_size', 'st_mtime_ns'], 'own_native9_birthtime_fullEOF_final_unchanged': True}, 'source_repair_authority': {'original_r1_FINAL_PINS': {'path': 'H:/天俪商城/artifacts/project-organization-20261023/current175f-B-initializer-syntax-source-r1/FINAL-PINS.json', 'bytes': 3266, 'sha256': '7ab6668c494b177b5befd3bf44711e6bb286d2f43b9710fcef10823141cc0455'}, 'independent_r1_REPORT': {'path': 'H:/天俪商城/artifacts/project-organization-20261023/current175f-B-initializer-syntax-independent-source-r1/REPORT.json', 'bytes': 4576, 'sha256': 'bd886f9fa1e3ba13a32c1d1d51d14a57df7e0157d68d970f62063f0904f2ba6f'}, 'independent_r1_PINS': {'path': 'H:/天俪商城/artifacts/project-organization-20261023/current175f-B-initializer-syntax-independent-source-r1/PINS.json', 'bytes': 558, 'sha256': '12c2b16be510a04a82078d1406b62614dc20f219cd007ab98cf280472456cc2d'}, 'formal_P2': 'R1_RUNTIME_HELPER_CROSS8_REPLACED_BY_REVIEWED_COMPLETE_CROSS4', 'r1_immutable_not_admitted': True}}, 'run': {'path': 'H:/天俪商城/artifacts/project-organization-20261023/current175f-B-initializer-syntax-source-r2/run.py', 'bytes': 11324, 'sha256': '3dddc248c1c637fce1dc100bdf11e03f90246a255153f828a6c42f2f156e3604'}, 'launch': {'path': 'H:/天俪商城/artifacts/project-organization-20261023/current175f-B-initializer-syntax-source-r2/launch.py', 'bytes': 4264, 'sha256': 'dfd52dada5b1c7e86f2c5800cc0bdc5896ca0ee25eca7d6583890a1ebb510b0e'}, 'CODE_PINS': {'path': 'H:/天俪商城/artifacts/project-organization-20261023/current175f-B-initializer-syntax-source-r2/CODE-PINS.json', 'bytes': 565, 'sha256': '10e1c52f9f5ff1bfa7c6663ae9350c1ec1b29441beb99e1e5633365c8f89abcf'}, 'true_run_argv': ['C:/Users/Vwang/AppData/Local/Programs/Python/Python314/python.exe', '-B', '-X', 'utf8', 'H:\\天俪商城\\artifacts\\project-organization-20261023\\current175f-B-initializer-syntax-source-r2\\run.py', '--authorize-ended-S17155-root-admitted'], 'DOCKER': 'C:/Users/Vwang/AppData/Local/Programs/DockerDesktop/resources/bin/docker.exe', 'IMAGE': 'sha256:1099f749e2a38ec9453c6b820db8a78174514bc72d14edf5c203e13b82816e0a', 'LABEL': 'codex.ms4.syntax=current175f-b-ui-initializer-r2', 'CONTAINER_NAME': 'ms4-current175f-b-ui-initializer-php-l-r2'}
+ WINDOWS = None
+ A_QUALIFICATION = None
+ POST_A_HISTORY_CONTRACT = None
+@@ -87,6 +87,11 @@
+ ORIGINAL_TREE = tree
+ 
+ 
++ORIGINAL_LAUNCHER = {'path': 'H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-quota-wire-current175f-normal-next-source-r1/launcher/launch.py', 'bytes': 15839, 'sha256': '2e3bf0739a978420241f7c75128abfb4528c2d911d9e73230f4c0ef3dd3aad25'}
++READER_WRAPPER_SOURCE_PINS = {'path': 'H:/天俪商城/artifacts/project-organization-20261023/current175f-complete-normal-S-reader-outers-source-r1/PINS.json', 'bytes': 2800, 'sha256': 'b85f4a44d90b8abee38e1b557a21abb9e75327829fe58c688a263cef3e3dc48b'}
++READER_WRAPPER_SOURCE_REVIEW = {'path': 'H:/天俪商城/artifacts/project-organization-20261023/current175f-complete-normal-S-reader-outers-root-review-r1/REPORT.json', 'bytes': 1756, 'sha256': '27d01b8461670d305d41b336dd2030a82e80172051cca3643c4705a200b53e06'}
++READER_OUTCOME_PATHS = {'root': 'H:/天俪商城/artifacts/project-organization-20261023/current175f-complete-normal-S-reader-outers-source-r1/root/OUTCOME.json', 'peer': 'H:/天俪商城/artifacts/project-organization-20261023/current175f-complete-normal-S-reader-outers-source-r1/peer/OUTCOME.json'}
++
+ def need(value, code):
+     if not value:
+         raise RuntimeError(code)
+@@ -120,7 +125,7 @@
+         path = ordinary(path)
+         need(path.is_absolute(), 'ABSOLUTE_PUBLIC_INPUT')
+         first = path.stat(follow_symlinks=False)
+-        before = native9(path)
++        before = [first.st_dev, first.st_ino, first.st_mode, first.st_nlink, first.st_uid, first.st_gid, first.st_size, first.st_mtime_ns, first.st_ctime_ns]
+         with path.open('rb') as stream:
+             opened = os.fstat(stream.fileno())
+             fd_before = [opened.st_dev, opened.st_ino, opened.st_mode, opened.st_nlink, opened.st_uid, opened.st_gid, opened.st_size, opened.st_mtime_ns, opened.st_ctime_ns]
+@@ -132,7 +137,8 @@
+             fd_after = [ended.st_dev, ended.st_ino, ended.st_mode, ended.st_nlink, ended.st_uid, ended.st_gid, ended.st_size, ended.st_mtime_ns, ended.st_ctime_ns]
+             need(fd_after == fd_before and ended.st_birthtime_ns == opened.st_birthtime_ns, 'OWN_FD_NINE_AND_BIRTHTIME_UNCHANGED')
+         final = path.stat(follow_symlinks=False)
+-        need(native9(path) == before and final.st_birthtime_ns == first.st_birthtime_ns, 'OWN_NAMED_NINE_AND_BIRTHTIME_UNCHANGED')
++        after = [final.st_dev, final.st_ino, final.st_mode, final.st_nlink, final.st_uid, final.st_gid, final.st_size, final.st_mtime_ns, final.st_ctime_ns]
++        need(after == before and final.st_birthtime_ns == first.st_birthtime_ns, 'OWN_NAMED_NINE_AND_BIRTHTIME_UNCHANGED')
+         observed = {'path': path.as_posix(), **pin(raw), 'native9': before}
+         if row is not None:
+             need(type(row) is dict and type(row.get('bytes')) is int and row['bytes'] >= 0
+@@ -143,8 +149,12 @@
+         if path.as_posix() in self.files:
+             need(self.files[path.as_posix()] == observed, 'REPEATED_PUBLIC_READ_SAME_FULL_BYTES_AND_NATIVE9')
+         self.files[path.as_posix()] = observed
+-        self.fd_windows[path.as_posix()] = {'named_before': before, 'named_after': native9(path), 'fd_open': fd_before, 'fd_after': fd_after,
++        window = {'named_before': before, 'named_after': after, 'fd_open': fd_before, 'fd_after': fd_after,
+             'named_birthtime_ns': first.st_birthtime_ns, 'fd_birthtime_ns': opened.st_birthtime_ns, 'full_EOF': True}
++        if path.as_posix() in self.fd_windows:
++            need(self.fd_windows[path.as_posix()] == window, 'WHOLE_FIRST_FINAL_NAMED_FD_NINE_BIRTHTIME_EOF_IDENTICAL')
++        else:
++            self.fd_windows[path.as_posix()] = window
+         return raw
+ 
+     def tree(self, root, state):
+@@ -293,7 +303,7 @@
+     # Refuse prior to any Run read if the original S has no terminal or failed.
+     s_outcome = original_outcome(NORMAL_SOURCE.parent/'launcher/normal-start')
+     outcome(s_outcome, expected_pid=OUTER_PID)
+-    need(s_outcome['created_object']['argv'] == [PYTHON, '-B', '-X', 'utf8', (NORMAL_SOURCE/'run.py').as_posix(), '--root-source-pins-sha256', ROOT_SOURCE_PINS['sha256'], '--setup-sha256', M_RESULT['sha256']], 'EXACT_CURRENT_S_ORIGINAL_ARGV')
++    need(s_outcome['created_object']['argv'] == [PYTHON, '-B', '-X', 'utf8', str(NORMAL_SOURCE/'run.py'), '--root-source-pins-sha256', ROOT_SOURCE_PINS['sha256'], '--setup-sha256', M_RESULT['sha256']], 'EXACT_CURRENT_S_ORIGINAL_ARGV')
+     # The exact launcher/qualification adapters are appended only from the
+     # actual reviewed Source interface supplied by Root, never guessed here.
+     validate_reader_native_admission(admission['readers'])
+@@ -306,8 +316,14 @@
+     need({'path': m['freeze'], 'bytes': m['freeze_bytes'], 'sha256': m['freeze_sha256']} == FREEZE, 'ACTUAL_COMPLETED_SAME_SOURCE_FREEZE')
+     exact_pointer(FREEZE)
+     m_outcome = original_outcome(NORMAL_SOURCE.parent/'launcher/materialize')
+-    outcome(m_outcome)
+-    exact_pointer(M_ROOT_READBACK)
++    m_root = json.loads(exact_pointer(M_ROOT_READBACK))
++    need(m_root['status'] == 'PASS_ACTUAL_FULL_CURRENT175F_MATERIALIZATION_ONLY' and m_root['source_sha'] == HEAD
++        and m_root['actual_RESULT'] == M_RESULT and m_root['actual_freeze'] == FREEZE
++        and m_root['M_RESULT_fields'] == 35 and m_root['steps'] == 19 and m_root['native_operations'] == 1088
++        and m_root['all_original_native_created_terminal_and_streams_join'] is True
++        and m_root['all_input_windows_ended'] is True and type(m_root['outer_pid']) is int and m_root['outer_pid'] == 11268
++        and m_root['outer_native_exit_wait'] == 0, 'ACTUAL_FIXED_COMPLETE_M_ROOT_READBACK_AND_OUTER_IDENTITY')
++    outcome(m_outcome, expected_pid=m_root['outer_pid'], expected_argv=[PYTHON, '-B', '-X', 'utf8', str(NORMAL_SOURCE.parent/'materializer/prepare.py')])
+     context_path = OLD_ROOT/'actual-run-context.json'
+     context_raw = WINDOWS.file(context_path, CONTEXT)
+     context = json.loads(context_raw)
+@@ -373,6 +389,9 @@
+     """Read the existing full-M outer protocol reused for the actual S reader."""
+     value = json.loads(exact_pointer(row))
+     need(type(value) is dict and set(value) == {'created', 'terminal', 'stdout', 'stderr', 'native_exit', 'wait_returncode'}, 'REAL_READER_OUTCOME_SIX_EXISTING_SCHEMA')
++    output = Path(row['path']).parent
++    for key, name in [('created', 'reader.created.json'), ('terminal', 'reader.terminal.json'), ('stdout', 'reader.stdout'), ('stderr', 'reader.stderr')]:
++        need(value[key]['path'] == (output / name).as_posix(), 'ORIGINAL_READER_ALL_FOUR_REAL_TYPED_OUTPUT_PATHS')
+     made = json.loads(exact_pointer(value['created']))
+     ended = json.loads(exact_pointer(value['terminal']))
+     need(type(made) is dict and set(made) == {'pid', 'argv', 'started_ns'}, 'REAL_READER_CREATED_THREE')
+@@ -394,6 +413,11 @@
+ 
+ def validate_reader_native_admission(value):
+     need(type(value) is dict and set(value) == {'root', 'peer'}, 'TWO_REAL_COMPLETE_ORIGINAL_SUCCESS_READER_ADMISSIONS')
++    wrapper_source = json.loads(exact_pointer(READER_WRAPPER_SOURCE_PINS))
++    wrapper_review = json.loads(exact_pointer(READER_WRAPPER_SOURCE_REVIEW))
++    need(wrapper_review['Source_PINS'] == READER_WRAPPER_SOURCE_PINS and wrapper_review['status'] == 'PASS_ROOT_COMPLETE_NORMAL_S_READER_NATIVE_OUTERS_SOURCE_ONLY_NOT_EXECUTED', 'EXISTING_COMPLETE_NATIVE_WRAPPER_SOURCE_REVIEW_ONLY')
++    for name, row in wrapper_source['files'].items():
++        WINDOWS.file(Path(READER_WRAPPER_SOURCE_PINS['path']).parent / name, row)
+     exact_pointer(READER_FINITE_HELPER)
+     reports = {}
+     for which, source, report_dir, peer in [
+@@ -403,6 +427,7 @@
+         need(type(row) is dict and set(row) == {'source', 'outcome', 'report', 'inputs'}, 'COMPLETE_READER_SOURCE_OUTCOME_REPORT_INPUTS_INTERFACE')
+         need(row['source'] == source, 'EXACT_IMMUTABLE_FULL_READER_SOURCE')
+         exact_pointer(source)
++        need(row['outcome']['path'] == READER_OUTCOME_PATHS[which], 'EXACT_REAL_SOURCE_DECLARED_READER_OUTCOME_PATH')
+         reader_native_outcome(row['outcome'], source)
+         output = Path(source['path']).parents[1] / report_dir
+         need(row['report']['path'] == (output / 'REPORT.json').as_posix()
+@@ -455,13 +480,135 @@
+ 
+ 
+ def validate_initializer_syntax_admission(value):
+-    """Fail closed until the real eight-native whole-UI-leaf Source is fixed."""
++    """Read the genuine full118698-byte syntax job; never invoke PHP or Docker."""
+     interface = INITIALIZER_SYNTAX_INTERFACE
+-    need(type(interface) is dict, 'WAIT_REVIEWED_EXACT_118698_UI_INITIALIZER_SYNTAX_SOURCE_INTERFACE')
+-    # This is deliberately unreachable while no real Source interface exists.
+-    # Root must supply that fixed original schema in an immutable successor;
+-    # a generic RESULT status, author claim or ordinary A-leaf syntax cannot pass.
+-    need(False, 'WAIT_SOURCE_DEFINED_WHOLE_UI_INITIALIZER_SYNTAX_RESULT_ADAPTER')
++    need(type(interface) is dict, 'FIXED_REAL_WHOLE_UI_SYNTAX_SOURCE_INTERFACE_REQUIRED')
++    source_root = Path(interface['source_root'])
++    final = json.loads(exact_pointer(interface['final_PINS']))
++    need(type(final['files']) is dict and len(final['files']) == interface['source_member_count'], 'WHOLE_FIXED_SYNTAX_SOURCE_NAMESPACE')
++    for name, row in final['files'].items():
++        WINDOWS.file(source_root / name, row)
++    need(set(tree(source_root)['files']) == set(final['files']) | {'FINAL-PINS.json'}, 'EXACT_WHOLE_SYNTAX_SOURCE_NAMES')
++    declared = json.loads(exact_pointer(interface['RESULT_INTERFACE']))
++    need(declared == interface['declared'], 'REAL_FIXED_SOURCE_DEFINED_RESULT_INTERFACE')
++    manifest = json.loads(exact_pointer(interface['manifest']))
++    need(manifest == interface['manifest_expected'], 'REAL_FIXED_SOURCE_DEFINED_WHOLE_LEAF_MANIFEST')
++    exact_pointer(interface['run'])
++    exact_pointer(interface['launch'])
++    exact_pointer(interface['CODE_PINS'])
++    output = Path(declared['actual_directory'])
++    need(type(value) is dict and set(value) == {'path', 'bytes', 'sha256'}
++        and value['path'] == (output / 'RESULT.json').as_posix(), 'REAL_FIXED_SYNTAX_RESULT_POINTER_ONLY')
++    result = json.loads(exact_pointer(value))
++    need(set(result) == set(declared['result_exact_keys']) and len(result) == 20
++        and result['status'] == declared['pass_status'] and result['source_sha'] == HEAD, 'REAL_FULL_UI_SYNTAX_PASS_TWENTY_KEYS')
++    need(result['candidate'] == INITIALIZER_LEAF == manifest['candidate'] == declared['candidate']
++        and result['copy'] == manifest['copy'] == declared['copy'], 'REAL_ORIGINAL_R1_POINTER_FULL118698_SOURCE_COPY')
++    need(result['leaf_preparation_PINS'] == manifest['leaf_preparation_PINS']
++        and result['author_preparation_PINS'] == manifest['author_preparation_PINS']
++        and result['candidate_source'] == interface['manifest']
++        and result['job_code_PINS'] == interface['CODE_PINS'], 'REAL_SYNTAX_LEAF_AUTHOR_JOB_SOURCE_PINS')
++    for row in [result['candidate'], result['copy'], result['leaf_preparation_PINS'], result['author_preparation_PINS']]:
++        exact_pointer(row)
++    need(type(result['php_l_count_required']) is int and result['php_l_count_required'] == 1
++        and type(result['container_native_exit']) is int and result['container_native_exit'] == 0,
++        'ONE_WHOLE_UI_LEAF_PHP_L_REAL_CONTAINER_ZERO')
++    need(result['own_label_before_after_empty'] is True and result['ordinary_own_container_removed'] is True
++        and result['all_input_windows_ended'] is True and result['initializer_or_M_S_App_business_execution'] == 'NOT RUN'
++        and type(result['W_Val_Run_mutations']) is int and result['W_Val_Run_mutations'] == 0, 'SYNTAX_ONLY_ORIGINAL_CLOSE_WINDOW_BOUNDARIES')
++    need(type(result['started_ns']) is int and type(result['ended_ns']) is int
++        and 0 < result['started_ns'] < result['ended_ns'], 'REAL_SYNTAX_NATIVE_WINDOW')
++    made = json.loads(WINDOWS.file(output / 'outer.created.json'))
++    ended = json.loads(WINDOWS.file(output / 'outer.terminal.json'))
++    need(set(made) == set(declared['outer_created_exact_keys'])
++        and set(ended) == set(declared['outer_terminal_exact_keys']), 'ORIGINAL_SYNTAX_OUTER_CREATED3_TERMINAL10')
++    need(all(made[key] == ended[key] for key in ['pid', 'argv', 'started_ns'])
++        and type(made['pid']) is int and made['pid'] > 0 and made['argv'] == interface['true_run_argv'], 'ORIGINAL_REAL_SYNTAX_SAME_PID_ARGV')
++    need(type(ended['native_exit']) is int and type(ended['wait_returncode']) is int
++        and ended['native_exit'] == ended['wait_returncode'] == 0
++        and type(ended['finished_ns']) is int and 0 < made['started_ns'] < ended['finished_ns'], 'ORIGINAL_SYNTAX_OUTER_NATIVE_WAIT_ZERO')
++    for key in ['stdout', 'stderr']:
++        raw = WINDOWS.file(output / ('outer.' + key), {'bytes': ended[key + '_bytes'], 'sha256': ended[key + '_sha256']})
++        if key == 'stderr':
++            need(raw == b'', 'ORIGINAL_SYNTAX_OUTER_COMPLETE_EMPTY_STDERR')
++    authority = result['pre_execution_authority']
++    need(type(authority) is dict and set(authority) == set(declared['pre_execution_authority_exact_keys']), 'REAL_SYNTAX_PRE_EXECUTION_AUTHORITY_TEN')
++    s = original_outcome(NORMAL_SOURCE.parent / 'launcher/normal-start')
++    outcome(s, expected_pid=OUTER_PID)
++    launcher = NORMAL_SOURCE.parent / 'launcher/launch.py'
++    expected_authority = {'authorization': 'EXPLICIT_ROOT_OPERATOR_CLI_AFTER_ENDED_S',
++        'required_flag': '--authorize-ended-S17155-root-admitted', 'original_tool_session': OUTER_SESSION,
++        'original_S_pid': OUTER_PID, 'source_launcher': pointer(launcher, WINDOWS.file(launcher, ORIGINAL_LAUNCHER)),
++        'created': s['created'], 'terminal': s['terminal'], 'original_S_native_exit': 0,
++        'original_S_wait_returncode': 0, 'raw_child_streams_read': False}
++    need(authority == expected_authority, 'GENUINE_ALREADY_ENDED_ORIGINAL_S0_NOT_SOURCE_CLAIM_OR_OLD_A_SYNTAX')
++    cid = result['container_id']
++    need(type(cid) is str and re.fullmatch('[a-f0-9]{64}', cid) is not None, 'REAL_SYNTAX_OWN_CONTAINER_ID')
++    docker, image, label = interface['DOCKER'], interface['IMAGE'], interface['LABEL']
++    candidate_parent = source_root / 'candidates'
++    expected_args = [
++        ['ps', '-a', '-q', '--no-trunc', '--filter', 'label=' + label],
++        ['image', 'inspect', '--format', '{{.Id}}', image],
++        ['create', '--pull', 'never', '--name', interface['CONTAINER_NAME'], '--label', label,
++            '--network', 'none', '--read-only', '--user', '65534:65534', '--cap-drop', 'ALL', '--security-opt',
++            'no-new-privileges:true', '--memory', '128m', '--pids-limit', '32', '--tmpfs',
++            '/tmp:rw,nosuid,nodev,size=16m,mode=1777', '--mount', 'type=bind,source=' + candidate_parent.as_posix() + ',target=/candidate,readonly',
++            '--entrypoint', '/bin/sh', image, '-c', 'php -l /candidate/ms4-initialize.php'],
++        ['start', '-a', cid], ['wait', cid],
++        ['inspect', '--format', '{"id":{{json .Id}},"image":{{json .Image}},"state":{{json .State}},"restart":{{json .RestartCount}},"labels":{{json .Config.Labels}},"network":{{json .HostConfig.NetworkMode}},"readonly":{{json .HostConfig.ReadonlyRootfs}},"user":{{json .Config.User}},"mounts":{{json .Mounts}}}', cid],
++        ['rm', cid], ['ps', '-a', '-q', '--no-trunc', '--filter', 'label=' + label]]
++    stems = ['01-own-label-before', '02-existing-fixed-image', '03-create-one-owned-lint-container',
++        '04-attach-original-php-l', '05-same-cid-native-wait', '06-same-cid-native-terminal',
++        '07-ordinary-exact-owned-cid-rm', '08-own-label-after']
++    operations = result['operations']
++    need(type(operations) is list and len(operations) == declared['native_operations_required'] == 8, 'ALL_ORIGINAL_EIGHT_NATIVE_SYNTAX_COMMANDS')
++    stdout = []
++    names = {'outer.created.json', 'outer.terminal.json', 'outer.stdout', 'outer.stderr', 'RESULT.json', 'INPUTS.json'}
++    for operation, args, stem in zip(operations, expected_args, stems):
++        need(type(operation) is dict and set(operation) == set(declared['native_terminal_exact_keys'])
++            and operation['stem'] == stem and operation['argv'] == [docker, *args], 'FULL_ORIGINAL_SYNTAX_OPERATION_SCHEMA_ARGV_ORDER')
++        created = json.loads(WINDOWS.file(output / (stem + '.created.json')))
++        terminal = json.loads(WINDOWS.file(output / (stem + '.terminal.json')))
++        need(set(created) == set(declared['native_created_exact_keys']) and terminal == operation
++            and created == {key: operation[key] for key in ['pid', 'argv', 'started_ns']}, 'ORIGINAL_SYNTAX_NATIVE_CREATED_TERMINAL_FULL_JOIN')
++        need(type(operation['pid']) is int and operation['pid'] > 0 and type(operation['native_exit']) is int
++            and type(operation['wait_returncode']) is int and operation['native_exit'] == operation['wait_returncode'] == 0
++            and type(operation['started_ns']) is int and type(operation['finished_ns']) is int
++            and 0 < operation['started_ns'] < operation['finished_ns'], 'ALL_EIGHT_REAL_NATIVE_PIDS_WAIT_EXIT_ZERO')
++        stdout.append(WINDOWS.file(output / (stem + '.stdout'), operation['stdout']))
++        need(WINDOWS.file(output / (stem + '.stderr'), operation['stderr']) == b'', 'ALL_EIGHT_COMPLETE_EMPTY_STDERR')
++        names |= {stem + suffix for suffix in ['.created.json', '.terminal.json', '.stdout', '.stderr']}
++    need(stdout[0] == stdout[7] == b'' and stdout[1] == (image + '\n').encode()
++        and stdout[2] == stdout[6] == (cid + '\n').encode()
++        and stdout[3] == b'No syntax errors detected in /candidate/ms4-initialize.php\n'
++        and stdout[4] == b'0\n', 'GENUINE_EIGHT_NATIVE_SYNTAX_FULL_STREAM_CONTENT')
++    inspected = json.loads(stdout[5])
++    need(inspected['id'] == cid and inspected['image'] == image and inspected['state']['Status'] == 'exited'
++        and inspected['state']['ExitCode'] == 0 and inspected['state']['Pid'] == 0 and inspected['restart'] == 0
++        and inspected['network'] == 'none' and inspected['readonly'] is True and inspected['user'] == '65534:65534'
++        and inspected['labels']['codex.ms4.syntax'] == label.split('=', 1)[1], 'REAL_FIXED_PHP82_OWN_CONTAINER_READONLY_NONROOT_NETWORK_NONE')
++    mounts = inspected['mounts']
++    need(type(mounts) is list and len(mounts) == 1 and mounts[0]['Destination'] == '/candidate'
++        and mounts[0]['Type'] == 'bind' and mounts[0]['RW'] is False
++        and mounts[0]['Source'].replace('\\', '/') == candidate_parent.as_posix(), 'REAL_ONE_WHOLE_UI_LEAF_READONLY_BIND')
++    inputs = json.loads(WINDOWS.file(output / 'INPUTS.json'))
++    need(set(inputs) == set(declared['INPUTS_exact_keys']) and inputs['all_windows_ended'] is True
++        and inputs['ended_ns'] == result['ended_ns'] and type(inputs['files']) is list, 'REAL_SYNTAX_ALL_SOURCE_INPUT_WINDOWS_ENDED')
++    seen = set()
++    for observed in inputs['files']:
++        need(set(observed) == {'path', 'pin', 'named_before', 'named_after', 'fd_open', 'fd_after', 'named_birthtime_ns', 'fd_birthtime_ns'}, 'EXACT_ORIGINAL_SYNTAX_FINITE_ROW')
++        need(all(type(observed[key]) is list and len(observed[key]) == 9 and all(type(v) is int for v in observed[key])
++            for key in ['named_before', 'named_after', 'fd_open', 'fd_after']), 'ALL_SYNTAX_SOURCE_TYPED_NINE_FIELDS')
++        need(observed['path'] not in seen and observed['named_before'] == observed['named_after']
++            and observed['fd_open'] == observed['fd_after'] and all(observed['named_before'][i] == observed['fd_open'][i] for i in [0, 1, 6, 7])
++            and observed['named_birthtime_ns'] == observed['fd_birthtime_ns'], 'ALL_SYNTAX_SOURCE_OWN_NINE_CROSS_FOUR_BIRTHTIME_WINDOWS')
++        WINDOWS.file(Path(observed['path']), observed['pin'])
++        need(native9(Path(observed['path'])) == observed['named_before']
++            and Path(observed['path']).stat(follow_symlinks=False).st_birthtime_ns == observed['named_birthtime_ns'], 'ORIGINAL_SYNTAX_FULL_SOURCE_INPUT_STILL_IDENTICAL')
++        seen.add(observed['path'])
++    state = tree(output)
++    need(set(state['files']) == names and state['directories'] == [] and len(names) == 38, 'EXACT_ORIGINAL_ALL38_SYNTAX_PUBLIC_OUTPUT_FILES')
++    return value
+ 
+ 
+ def pre_a_history():

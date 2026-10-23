@@ -1,0 +1,125 @@
+{
+  "schema": 1,
+  "scope": "ONE_CURRENT175F_COMPLETE_B_UI_INITIALIZER_PHP82_SYNTAX_SOURCE_ONLY",
+  "source_sha": "175f3cd6183894185656a2974579e1be39eed7a7",
+  "candidate": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/fresh-b-current175f-source-preparation-r1/leaf/ms4-initialize.php",
+    "bytes": 118698,
+    "sha256": "29376b4266010285ec4cebd92f0197d849142988442ead06cbcc7d26ff840db8"
+  },
+  "copy": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/current175f-B-initializer-syntax-source-r2/candidates/ms4-initialize.php",
+    "bytes": 118698,
+    "sha256": "29376b4266010285ec4cebd92f0197d849142988442ead06cbcc7d26ff840db8"
+  },
+  "evidence": [
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/current0c13-reviewed-eight-path-adoption-actual-r1/PUSH-AND-VAL.json",
+      "bytes": 839,
+      "sha256": "e8606e88cc174c260288e25639f595145e4afe9c651fb8682848dcd3d2dd4bb3"
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/current0c13-retirement-final-root-admission-r1/REPORT.json",
+      "bytes": 1948,
+      "sha256": "d874511b24e94b73180b70401e96eba9ca03df2665b9a8ad8ade4655655e5c6c"
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/current28dc-form-quota-wire-fix-adoption-r1/RETIREMENT-ADMISSION.json",
+      "bytes": 1608,
+      "sha256": "f0908b202e72422601abd064aee6df8c897921f62a59cfb6f546f482d8e604b6"
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/current28dc-form-quota-wire-fix-adoption-r1/PUSH-VERIFIED.json",
+      "bytes": 387,
+      "sha256": "bf69463f74fa8b9f4d1c088cee882241ad70ffbdc8b3f092a1688b6edceafb59"
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/current28dc-form-quota-wire-fix-adoption-r1/VAL-VERIFIED.json",
+      "bytes": 968,
+      "sha256": "9a0032be00ac61271662d7ef5c032238abb2b8c14fe0949532475bcdcbda2714"
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/current175f-initializer-syntax-source-r1/FINAL-PINS.json",
+      "bytes": 1097,
+      "sha256": "11ad7b39aa5ecb301db19af7098e66f31b69fe82330d020e46b3b47c70292588"
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/current175f-initializer-syntax-actual-r1/RESULT.json",
+      "bytes": 8961,
+      "sha256": "86ea61ccfad911775291575344a2eda16025effba9ee5fe760e098285a55a5f5"
+    }
+  ],
+  "leaf_preparation_PINS": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/fresh-b-current175f-source-preparation-r1/PINS.json",
+    "bytes": 3920,
+    "sha256": "0a0bd107121995480b3220e173387252f5e7c199aa8d142c0422158e24bd465f"
+  },
+  "author_preparation_PINS": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/fresh-b-current175f-source-preparation-r2/PINS.json",
+    "bytes": 5846,
+    "sha256": "0894afc646de39ff557884843471aacdf102875fa59239214f656df6c66b8a0d"
+  },
+  "protocol_provenance_not_B_qualification": {
+    "source_FINAL_PINS": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/current175f-initializer-syntax-source-r1/FINAL-PINS.json",
+      "bytes": 1097,
+      "sha256": "11ad7b39aa5ecb301db19af7098e66f31b69fe82330d020e46b3b47c70292588"
+    },
+    "actual_old_78955_RESULT": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/current175f-initializer-syntax-actual-r1/RESULT.json",
+      "bytes": 8961,
+      "sha256": "86ea61ccfad911775291575344a2eda16025effba9ee5fe760e098285a55a5f5"
+    }
+  },
+  "pre_execution_requirement": {
+    "flag": "--authorize-ended-S17155-root-admitted",
+    "original_S_tool_session": 17155,
+    "original_S_pid": 35944,
+    "source_launcher": {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-quota-wire-current175f-normal-next-source-r1/launcher/launch.py",
+      "bytes": 15839,
+      "sha256": "2e3bf0739a978420241f7c75128abfb4528c2d911d9e73230f4c0ef3dd3aad25"
+    },
+    "terminal_read_at_actual_execution_only": true,
+    "Root_operator_must_admit_after_S_ended": true,
+    "S_native_success_not_assumed": true
+  },
+  "runtime_finite_helper": {
+    "original_reviewed_whole": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/current175f-complete-normal-S-readbacks-source-r1/candidate/finite-helper.py",
+      "bytes": 33935,
+      "sha256": "a84cb0edd5beaa998a26f8b96819b765e8cfe83e52a62619846b431c417855c0"
+    },
+    "local_complete_copy": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/current175f-B-initializer-syntax-source-r2/finite-helper.py",
+      "bytes": 33935,
+      "sha256": "a84cb0edd5beaa998a26f8b96819b765e8cfe83e52a62619846b431c417855c0"
+    },
+    "named_fd_cross_fields": [
+      "st_dev",
+      "st_ino",
+      "st_size",
+      "st_mtime_ns"
+    ],
+    "own_native9_birthtime_fullEOF_final_unchanged": true
+  },
+  "source_repair_authority": {
+    "original_r1_FINAL_PINS": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/current175f-B-initializer-syntax-source-r1/FINAL-PINS.json",
+      "bytes": 3266,
+      "sha256": "7ab6668c494b177b5befd3bf44711e6bb286d2f43b9710fcef10823141cc0455"
+    },
+    "independent_r1_REPORT": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/current175f-B-initializer-syntax-independent-source-r1/REPORT.json",
+      "bytes": 4576,
+      "sha256": "bd886f9fa1e3ba13a32c1d1d51d14a57df7e0157d68d970f62063f0904f2ba6f"
+    },
+    "independent_r1_PINS": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/current175f-B-initializer-syntax-independent-source-r1/PINS.json",
+      "bytes": 558,
+      "sha256": "12c2b16be510a04a82078d1406b62614dc20f219cd007ab98cf280472456cc2d"
+    },
+    "formal_P2": "R1_RUNTIME_HELPER_CROSS8_REPLACED_BY_REVIEWED_COMPLETE_CROSS4",
+    "r1_immutable_not_admitted": true
+  }
+}

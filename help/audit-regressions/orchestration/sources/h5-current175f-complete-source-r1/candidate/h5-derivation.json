@@ -1,0 +1,1263 @@
+{
+  "schema": 1,
+  "scope": "H5_R7_NORMAL_CONFIRMATION_RESTORE_SOURCE_AND_NEW_BUILD_MATERIALS",
+  "parent": "H:/天俪商城/artifacts/ms4-customer-http-preparation/candidate-r2",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 920,
+      "sha256": "d68ee072309b391f8666c4a67f8f02b2922af98333591ae991e4e07cdd37e0a7"
+    },
+    {
+      "path": "compose.yml",
+      "bytes": 5135,
+      "sha256": "74ef1454b9cca8031417998b9d14ed72d54bda2bd199a70e6d0fa0c25d11ecd1"
+    },
+    {
+      "path": "ms4-host.py",
+      "bytes": 62504,
+      "sha256": "e4f958e16bb6644ac78288a809f77b831d445f9df2e3d29552b0ed0577c1c9de"
+    },
+    {
+      "path": "ms4-initialize.php",
+      "bytes": 32716,
+      "sha256": "9c49869862ccc6797fea217068ef4473d1eb74ed148103a377911f99f9b8ed32"
+    },
+    {
+      "path": "seed-source-inverse.json",
+      "bytes": 639,
+      "sha256": "c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a"
+    },
+    {
+      "path": "interface-v1.json",
+      "bytes": 6765,
+      "sha256": "1669b8b816e5bc045cdc7badc7cedae239e172045bdc85bd6cd59ca9ac9f30ad"
+    },
+    {
+      "path": "source-derivation.json",
+      "bytes": 4919,
+      "sha256": "86066fc7d62e6d22b48ca9d4afa59b7ae65b688a9db5e607c5aed9203b96fa26"
+    }
+  ],
+  "H5_runtime_ready": false,
+  "Run_SQL_App_HTTP_DOM": "NOT RUN",
+  "runtime_adapter_source": {
+    "path": "H:/天俪商城/artifacts/ms4-customer-http-preparation/customer-h5-host-runtime-draft-r1/ms4-h5-host.py",
+    "bytes": 63898,
+    "sha256": "f4e356980bc53d974d16a9a9ae30e62ba52d34fcc7ffbde0e8756e68b5913651"
+  },
+  "root_change": "Adopt the approved finite normal lookup/restore observer and the actual completed 545-source H5 build while retaining its original 38a14 build identity. Regenerate complete public/dist/approved-input manifests for current clean Main. Preserve all original seven prerequisite files and all host/native/source/32-table/DOM/JPEG and normal close/zero gates. No screenshot timeout fix or runtime acceptance.",
+  "parent_h5_packet": {
+    "path": "H:/天俪商城/artifacts/ms4-customer-http-preparation/candidate-h5-r1",
+    "freeze_sha256": "b0daffb76d15e1bf68377183fb26dae011f0e42d944e50cf1df558b5b16538ba"
+  },
+  "parent_h5_packet_r2": "H:/天俪商城/artifacts/ms4-customer-http-preparation/candidate-h5-r2",
+  "final_source_candidate": {
+    "path": "H:/天俪商城/artifacts/ms4-customer-http-preparation/customer-h5-final-host-implementation-draft-r1/candidate-h5-r3",
+    "files": [
+      "ms4-h5-host.py",
+      "ms4-h5-bootstrap.php",
+      "compose.h5.yml"
+    ]
+  },
+  "browser_source_manifest": {
+    "path": "H:/天俪商城/artifacts/ms4-customer-http-preparation/customer-h5-bridge-implementation-draft-r1/MANIFEST-final-source.json",
+    "bytes": 728,
+    "sha256": "a0fd5614123766d23f403d7e679ab75e998fff0218a329fc935886c35b9978d4"
+  },
+  "runtime_source_status": "SOURCE_IMPLEMENTED_NOT_RUNTIME_VERIFIED",
+  "complete_h5_artifact_count": 20,
+  "pending_actual_files": [],
+  "parent_h5_packet_r3": "H:/天俪商城/artifacts/ms4-customer-http-preparation/candidate-h5-r3",
+  "masked_source_patch": {
+    "original": {
+      "bytes": 73448,
+      "sha256": "921242c4f55935454155fdb5511c80247eebfc4e12dcb77349554839b884748b"
+    },
+    "current": {
+      "bytes": 73753,
+      "sha256": "0f5f7935d46a09bd2b902221b06b8633dab93e64f0cc0173cb1133e857fb8ef5"
+    },
+    "complete_inverse_verified": true,
+    "copy_workspace_path": "crmeb/public/install/crmeb.sql",
+    "source_root": "/source",
+    "target_public_manifest_unchanged": true
+  },
+  "parent_h5_packet_r4": "H:/天俪商城/artifacts/ms4-customer-http-preparation/candidate-h5-r4",
+  "environment_key_order_patch": {
+    "original_bootstrap": {
+      "bytes": 73753,
+      "sha256": "0f5f7935d46a09bd2b902221b06b8633dab93e64f0cc0173cb1133e857fb8ef5"
+    },
+    "current_bootstrap": {
+      "bytes": 73805,
+      "sha256": "81376b4122eedcfa40de298f6035192c5bc4c8634ce92a3c0974e1ccb3a79485"
+    },
+    "bootstrap_complete_inverse_verified": true,
+    "main_file": "help/audit-regressions/isolated/lib/ms4-customer-h5-normal.php",
+    "original_main": {
+      "bytes": 91294,
+      "sha256": "2c9d71cec23283df54bc72960f2fb7394ea96e2ad63e7504cdbeb04b5af4df8b"
+    },
+    "current_main": {
+      "bytes": 91453,
+      "sha256": "bb38cc6b9808ddcc1ec95aab79928e09272c81b90f9d4455ba88e645fea22b9d"
+    },
+    "main_complete_inverse_verified": true,
+    "same_producer_comparisons_unchanged": true
+  },
+  "parent_h5_packet_r5": "H:/天俪商城/artifacts/ms4-customer-http-preparation/candidate-h5-r5",
+  "capture_realm_patch": {
+    "scope": "R6_SOURCE_ONLY_UI_REALM_AND_PHOTO_READ_ORDER_PATCH",
+    "predecessor": "H:/天俪商城/artifacts/ms4-customer-http-preparation/candidate-h5-r5",
+    "candidate": "H:/天俪商城/artifacts/ms4-customer-http-preparation/candidate-h5-r6",
+    "original_derivation_values": {
+      "scope": "H5_R5_CROSS_PRODUCER_ENVIRONMENT_KEY_ORDER_FIX_ONLY",
+      "root_change": "Only cross-producer environment key order is normalized by the existing strict helper. Full keys, values, types, source hashes and normal acceptance scope remain. No runtime acceptance."
+    },
+    "original_bridge": {
+      "bytes": 41724,
+      "sha256": "b782da5c8ec3e9d038cf028440a95fc3f9ed23207c57b737cd5cedff5acab795"
+    },
+    "current_bridge": {
+      "bytes": 41741,
+      "sha256": "f86753d6dca1a99d960e0f47d1c9dde3fe8f15f95f0d97aaae447604119c7c60"
+    },
+    "bridge_old_literal": "equal(this.#captures.get(capture.step_nonce), capture)",
+    "bridge_new_literal": "equal(this.#captures.get(capture.step_nonce), structuredClone(capture))",
+    "original_driver": {
+      "bytes": 15080,
+      "sha256": "f5617e036327a6aadd2e636ebd98f3024f7359035008b2d322c6aaaa43ac8a5e"
+    },
+    "current_driver": {
+      "bytes": 15080,
+      "sha256": "cdcdef248c6b69e23bb659996f0379d3fc7f1df660fb810d7c4f2c5ca6a89328"
+    },
+    "driver_old_literal": "  await s.bridge.recordUiCapture(capture);\n  const screenshot = await s.tab.screenshot({ fullPage: true });\n  const result = await s.bridge.saveScreenshot(capture, Uint8Array.from(screenshot));\n",
+    "driver_new_literal": "  const screenshot = await s.tab.screenshot({ fullPage: true });\n  await s.bridge.recordUiCapture(capture);\n  const result = await s.bridge.saveScreenshot(capture, Uint8Array.from(screenshot));\n",
+    "original_h5_readme": {
+      "bytes": 9435,
+      "sha256": "6fcaa31ea8c20d1a029cf1222ba470328a815a3e8df9121c46cada6fbb1b3aca"
+    },
+    "current_h5_readme": {
+      "bytes": 10482,
+      "sha256": "4ce69fc0b00755f213d6cdab72eba13465c1d0deb0f5aea9b0e23f1fa59de120"
+    },
+    "readme_prefix": "# Customer H5 R6 source successor\n\nSOURCE CANDIDATE / NOT FROZEN / NOT RUN。仅在UI capture比较处对真实原frame使用与既有快照相同的structuredClone，再沿原Node严格比较；完整JSON键、类型、数值、数组顺序、nonce、DOM、网络、原JPEG及终态门禁保留。不新增递归比较器，不改其他来源、mount、runtime、stop、finish或SQL比较。\n\n真实DOM/frame仍在native JPEG读取前生成；仅把既有recordUiCapture移到真实截图读取成功后、原saveScreenshot之前。无重试、放宽、伪造图片或新增恢复状态；actions仍仅在完整保存成功后清空。这里只修正常传输接缝，不代表失败样本已运行。\n\n原R5源profile及真实失败记录保留；Root须先完成其实际partial normal close与独立zero后才执行本组装器。真实前端build取原材料收据的build_reuse.original_build_head；不重编译、不改批准输入及UI资产。本R6尚无freeze、Run、页面、订单或验收结果。下文保留前序来源合同。\n\n",
+    "original_h5_derivation": {
+      "bytes": 4231,
+      "sha256": "7d22a087fa7c07411700d00cac585317b94331f018e5b57597be9a8af3f4cab0"
+    },
+    "complete_four_file_and_full_27_file_inverse_to_r5_bytes_verified": true,
+    "changed_paths": [
+      "H5-README.md",
+      "browser-v1/ms4-customer-browser.mjs",
+      "browser-v1/ms4-customer-private-bridge.mjs",
+      "h5-derivation.json"
+    ],
+    "unchanged_paths": [
+      "README.md",
+      "browser-v1/customer-network-observer.mjs",
+      "compose.h5.yml",
+      "compose.yml",
+      "h5-materials-result.json",
+      "inputs/language.json",
+      "inputs/theme.json",
+      "interface-v1.json",
+      "manifests/h5-dist.json",
+      "manifests/inputs.json",
+      "manifests/public-source.json",
+      "ms4-h5-bootstrap.php",
+      "ms4-h5-host.py",
+      "ms4-h5-materials.py",
+      "ms4-h5-nginx.conf",
+      "ms4-h5-public-copy.php",
+      "ms4-host.py",
+      "ms4-initialize.php",
+      "ms4-order.png",
+      "normal-close-customer-h5.py",
+      "seed-source-inverse.json",
+      "source-derivation.json",
+      "verify-zero-customer-h5.py"
+    ],
+    "predecessor_files": [
+      {
+        "path": "H5-README.md",
+        "bytes": 9435,
+        "sha256": "6fcaa31ea8c20d1a029cf1222ba470328a815a3e8df9121c46cada6fbb1b3aca"
+      },
+      {
+        "path": "README.md",
+        "bytes": 920,
+        "sha256": "d68ee072309b391f8666c4a67f8f02b2922af98333591ae991e4e07cdd37e0a7"
+      },
+      {
+        "path": "browser-v1/customer-network-observer.mjs",
+        "bytes": 17874,
+        "sha256": "daf5492c722960f96653557c90d0d6cf5908b044cd4096fadd9d0dbebb985228"
+      },
+      {
+        "path": "browser-v1/ms4-customer-browser.mjs",
+        "bytes": 15080,
+        "sha256": "f5617e036327a6aadd2e636ebd98f3024f7359035008b2d322c6aaaa43ac8a5e"
+      },
+      {
+        "path": "browser-v1/ms4-customer-private-bridge.mjs",
+        "bytes": 41724,
+        "sha256": "b782da5c8ec3e9d038cf028440a95fc3f9ed23207c57b737cd5cedff5acab795"
+      },
+      {
+        "path": "compose.h5.yml",
+        "bytes": 6052,
+        "sha256": "aae289145cedbd1b92317fc148a5d6521b6e9985bf6aad5de78feca765b5da69"
+      },
+      {
+        "path": "compose.yml",
+        "bytes": 5135,
+        "sha256": "74ef1454b9cca8031417998b9d14ed72d54bda2bd199a70e6d0fa0c25d11ecd1"
+      },
+      {
+        "path": "h5-derivation.json",
+        "bytes": 4231,
+        "sha256": "7d22a087fa7c07411700d00cac585317b94331f018e5b57597be9a8af3f4cab0"
+      },
+      {
+        "path": "h5-materials-result.json",
+        "bytes": 1748,
+        "sha256": "aac390f893a6a90f4297c40c450026b547750c2e8d1174e54a418289de8b1314"
+      },
+      {
+        "path": "inputs/language.json",
+        "bytes": 318204,
+        "sha256": "9e6aab1cf67ea492d137b12052220b0e710fb7fe16f3b5f93135a6693945c716"
+      },
+      {
+        "path": "inputs/theme.json",
+        "bytes": 102429,
+        "sha256": "8f879a5f7775d39cf190023aca1ea49e7cacf7a680277e10a0712d0796ba1bc1"
+      },
+      {
+        "path": "interface-v1.json",
+        "bytes": 6765,
+        "sha256": "1669b8b816e5bc045cdc7badc7cedae239e172045bdc85bd6cd59ca9ac9f30ad"
+      },
+      {
+        "path": "manifests/h5-dist.json",
+        "bytes": 60378,
+        "sha256": "e02e262c356df03c4aefacec13fa03622030fbc1d031561ebc1f830076a1467f"
+      },
+      {
+        "path": "manifests/inputs.json",
+        "bytes": 358,
+        "sha256": "7a8e80b979f8be2e9e378eb84e97ac3c1d35cf5105e98723f4c43cb91154d811"
+      },
+      {
+        "path": "manifests/public-source.json",
+        "bytes": 480907,
+        "sha256": "17c5ffad2064bf892b0d617e6face3979c6a888b1a56aa9ec534c0b9f0a42999"
+      },
+      {
+        "path": "ms4-h5-bootstrap.php",
+        "bytes": 73805,
+        "sha256": "81376b4122eedcfa40de298f6035192c5bc4c8634ce92a3c0974e1ccb3a79485"
+      },
+      {
+        "path": "ms4-h5-host.py",
+        "bytes": 106590,
+        "sha256": "a5ac7a63322d50d7eae2ce3a09f0bc726b01a938568a90803983c046376714f9"
+      },
+      {
+        "path": "ms4-h5-materials.py",
+        "bytes": 9906,
+        "sha256": "52f9d16bedd75d22b7b03eded68b620202cbf4cbb3f388112396a654ec5f908f"
+      },
+      {
+        "path": "ms4-h5-nginx.conf",
+        "bytes": 2149,
+        "sha256": "669bbddfbcb57c75e1d1b27410a6f9ec1c8638122f06e2ffba32d370d93cdfd8"
+      },
+      {
+        "path": "ms4-h5-public-copy.php",
+        "bytes": 14733,
+        "sha256": "5db1b8c1ef586ba2c380d66db9520f7a4778c450359d064e7c923a98a3473997"
+      },
+      {
+        "path": "ms4-host.py",
+        "bytes": 62504,
+        "sha256": "e4f958e16bb6644ac78288a809f77b831d445f9df2e3d29552b0ed0577c1c9de"
+      },
+      {
+        "path": "ms4-initialize.php",
+        "bytes": 32716,
+        "sha256": "9c49869862ccc6797fea217068ef4473d1eb74ed148103a377911f99f9b8ed32"
+      },
+      {
+        "path": "ms4-order.png",
+        "bytes": 117,
+        "sha256": "1f43eae0908dc055ac0e0e0aaa8e648e301ae4b46834eb058eca0a4fb7c766b6"
+      },
+      {
+        "path": "normal-close-customer-h5.py",
+        "bytes": 45731,
+        "sha256": "9f9165662838e40e08bf9672918c0da9adc4e5149eed8701873124d5154e62d8"
+      },
+      {
+        "path": "seed-source-inverse.json",
+        "bytes": 639,
+        "sha256": "c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a"
+      },
+      {
+        "path": "source-derivation.json",
+        "bytes": 4919,
+        "sha256": "86066fc7d62e6d22b48ca9d4afa59b7ae65b688a9db5e607c5aed9203b96fa26"
+      },
+      {
+        "path": "verify-zero-customer-h5.py",
+        "bytes": 30358,
+        "sha256": "6037354aa90ab188cd83d39626fb261a8b537ac3272219a662c843fde2069d25"
+      }
+    ],
+    "material_build_origin": {
+      "receipt_path": "h5-materials-result.json",
+      "receipt": {
+        "bytes": 1748,
+        "sha256": "aac390f893a6a90f4297c40c450026b547750c2e8d1174e54a418289de8b1314"
+      },
+      "identity_field": "build_reuse.original_build_head",
+      "original_build_head": "b803687d089baecd8b37cee716bbd54d857dd42e",
+      "historical_material_source_sha": "b40d22872f6e2999f9b37c95d5ff4db2fef32b0a",
+      "historical_material_current_head": "b40d22872f6e2999f9b37c95d5ff4db2fef32b0a",
+      "compiler_rerun": false,
+      "profile_manifests_and_approved_inputs_and_png_match_original_receipt": true,
+      "current_Main_frontend_or_tool_recomparison": "NOT PERFORMED BY THIS SOURCE BUILDER"
+    },
+    "format_preservation": {
+      "new_and_other_source_metadata_text": "STRICT_UTF8_LF",
+      "approved_inputs_with_existing_CR_preserved_byte_exact": [
+        "inputs/language.json",
+        "inputs/theme.json"
+      ],
+      "original_png_binary_preserved_byte_exact": "ms4-order.png"
+    },
+    "other_equal_comparisons": "UNCHANGED",
+    "main_product_sources": "NOT READ OR MODIFIED",
+    "host_bootstrap_observer_normal_close_zero": "UNCHANGED",
+    "freeze_Run_App_SQL_HTTP_DOM_acceptance": "NOT RUN",
+    "stopped_refusal_conflict_fault_concurrency_recovery_samples": "NOT RUN",
+    "root_precondition_not_certified_by_builder": "R5 actual partial normal close and independent zero completed before execution"
+  },
+  "parent_h5_packet_r6": "H:/天俪商城/artifacts/ms4-customer-http-preparation/candidate-h5-r6",
+  "confirmation_restore_r7": {
+    "schema": 1,
+    "scope": "SOURCE_AND_MATERIALS_ONLY_NOT_FROZEN_NOT_RUNTIME",
+    "predecessor": "H:/天俪商城/artifacts/ms4-customer-http-preparation/candidate-h5-r6",
+    "candidate": "H:/天俪商城/artifacts/ms4-customer-http-preparation/candidate-h5-r7",
+    "original_derivation_values": {
+      "scope": "H5_R6_UI_CAPTURE_REALM_AND_PHOTO_READ_ORDER_FIX_ONLY",
+      "root_change": "Only normalize the genuine UI-capture comparison input with the same existing structuredClone as its immutable snapshot, and move the existing capture write after the real native screenshot read before the unchanged save. Preserve all JSON values, keys, types, array positions, source/nonce/DOM/network/JPEG/terminal gates and all other equal comparisons. No retry, recovery state or runtime acceptance."
+    },
+    "original_h5_derivation": {
+      "bytes": 14793,
+      "sha256": "372788320b104e7550fabedacee13cd9c0ecae75e302a28a6daccd92f6d85742"
+    },
+    "original_h5_readme": {
+      "bytes": 10482,
+      "sha256": "4ce69fc0b00755f213d6cdab72eba13465c1d0deb0f5aea9b0e23f1fa59de120"
+    },
+    "readme_prefix": "# Customer H5 R7 normal confirmation source/material successor\n\nSOURCE PROFILE / NOT FROZEN / H5 NOT RUN。当前Main两PHP采用已审R2正常确认链：真实fresh一次后同orderKey redirect、本人lookup/restore、完整DTO/selection/frame/报价与capture→B3→Final关联。observer只新增这两个有限POST，正文与响应仅在原私有capture；不扩任意URL或公开body。\n\n本profile材料重新采集完整public、dist文件和目录及两批准输入。实际新build位于restore-context-20261017-r1，原报告保留历史HEAD38a14b889bf2a726ccd86f4f0ea1f1192370fa87；当前源182186945d6afa9dddb9b1b804183b6bdbc15911由完整545路径/blob/原字节相同另行复核。不重编译或改署build报告，不借同为334个文件替代完整库存签名。\n\n原七文件、R4安装SQL遮罩修复、环境排序、R6capture structuredClone和原生JPEG成功后才record的顺序全部保留；host、bootstrap、driver、bridge、copy、正常close/独立zero保持原字节。仍须真实25+7/B0–B4/Final32、单次创建、原78.56/8.01/24.25、表单字符串0、地址发票与库存守恒及27张原业务JPEG人工review。\n\n原390截图超时未由此修复，也不隐藏R6未完成事实；校准图不能替代业务27图。本组装器只作公开来源/材料准备，无freeze、Run、App/SQL/HTTP/浏览器或验收，不重开用户停止样本，不据此勾RC8/Task4或MS4。下文完整保留前序历史。\n\n",
+    "material_producer_literal_changes": [
+      {
+        "before": "BUILD = Path('H:/天俪商城/artifacts/ms4-h5/b803687d0-r1')",
+        "after": "BUILD = Path('H:/天俪商城/artifacts/ms4-h5/restore-context-20261017-r1')"
+      },
+      {
+        "before": "BUILD_REPORT_SHA = '637a25c7838318bbc5bef78e3aa06c43f9cd92dba33c0f9b189816419f735ed0'",
+        "after": "BUILD_REPORT_SHA = '3271b9ff34ba3da0a08654a1742fe5aa6438403b3117944374219f707eff2687'"
+      },
+      {
+        "before": "OLD_HEAD = 'b803687d089baecd8b37cee716bbd54d857dd42e'",
+        "after": "OLD_HEAD = '38a14b889bf2a726ccd86f4f0ea1f1192370fa87'"
+      },
+      {
+        "before": "report['source_input_count'] == 544",
+        "after": "report['source_input_count'] == 545"
+      }
+    ],
+    "material_producer_before": {
+      "bytes": 9906,
+      "sha256": "52f9d16bedd75d22b7b03eded68b620202cbf4cbb3f388112396a654ec5f908f"
+    },
+    "material_producer_after": {
+      "bytes": 9921,
+      "sha256": "332c0d29f6c648c456ee592c42d9d8bbd4a59e66413013e66d05962fdbd93997"
+    },
+    "observer_source": {
+      "path": "H:/天俪商城/artifacts/ms4-customer-http-preparation/prep/customer-h5-restore-successor-r2/browser-v1/customer-network-observer.mjs",
+      "bytes": 20415,
+      "sha256": "fbfe205ce71cb0e4253067e5a1769fadf2d4fb28086909b7871a1cb53d7ccb9e"
+    },
+    "observer_before": {
+      "bytes": 17874,
+      "sha256": "daf5492c722960f96653557c90d0d6cf5908b044cd4096fadd9d0dbebb985228"
+    },
+    "observer_after": {
+      "bytes": 20415,
+      "sha256": "fbfe205ce71cb0e4253067e5a1769fadf2d4fb28086909b7871a1cb53d7ccb9e"
+    },
+    "observer_complete_two_hunk_inverse_to_r6": true,
+    "main_head": "182186945d6afa9dddb9b1b804183b6bdbc15911",
+    "main_h5_sources": [
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-customer-h5-normal.php",
+        "bytes": 106271,
+        "sha256": "308425b472e021fc8a1f836bbe643856aed8cd3b4858a54a0a19f93c5cf2f2a2"
+      },
+      {
+        "path": "help/audit-regressions/isolated/ms4-customer-h5.php",
+        "bytes": 115909,
+        "sha256": "a0ae902ef91cf560c7743520e7d9358f082a553f31d636625eda641d7f3697fb"
+      }
+    ],
+    "build_directory": "H:/天俪商城/artifacts/ms4-h5/restore-context-20261017-r1",
+    "original_build_head": "38a14b889bf2a726ccd86f4f0ea1f1192370fa87",
+    "original_build_report": {
+      "bytes": 3815,
+      "sha256": "3271b9ff34ba3da0a08654a1742fe5aa6438403b3117944374219f707eff2687"
+    },
+    "build_reuse": {
+      "original_build_head": "38a14b889bf2a726ccd86f4f0ea1f1192370fa87",
+      "current_head": "182186945d6afa9dddb9b1b804183b6bdbc15911",
+      "frontend_files": 545,
+      "immutable_tool_files": 29930,
+      "all_frontend_paths_blobs_and_bytes_equal": true,
+      "both_full_tool_trees_equal": true,
+      "original_report": {
+        "bytes": 3815,
+        "sha256": "3271b9ff34ba3da0a08654a1742fe5aa6438403b3117944374219f707eff2687"
+      },
+      "compiler_rerun": false,
+      "dist": {
+        "file_count": 334,
+        "bytes": 10378944,
+        "manifest_sha256": "3dbc1438339156e1bedf582c28cd6c7708b6cac63ea68561a07a96032400d8e6"
+      }
+    },
+    "build_references": [
+      {
+        "path": "BUILD-REPORT.json",
+        "bytes": 3815,
+        "sha256": "3271b9ff34ba3da0a08654a1742fe5aa6438403b3117944374219f707eff2687"
+      },
+      {
+        "path": "MAIN-H5-INPUTS.json",
+        "bytes": 134946,
+        "sha256": "04a8f36ced2fd32b4aee46c46dd67efec7bf324422b7287b40d807262b3831b4"
+      },
+      {
+        "path": "TOOL-INPUTS.json",
+        "bytes": 6119646,
+        "sha256": "e89b24e803cec932b34115e1c10881865fed53d7fd33eca5dc0dae4795b36dfd"
+      },
+      {
+        "path": "SOURCE-CANDIDATE.json",
+        "bytes": 268595,
+        "sha256": "f1e47313298c970b087845cca563cd262ca825596c0d222c2ea042983f19d961"
+      },
+      {
+        "path": "COMPILER-NATIVE.json",
+        "bytes": 1869,
+        "sha256": "6c89bdfffc210ad806c90a74f2b94d1ffa1ca6215b5239ea56951308aaba8890"
+      },
+      {
+        "path": "NATIVE-TOOL-CONTRACT.json",
+        "bytes": 5116,
+        "sha256": "f8c4a19a74302ee9c7336959a407e869ef8cfa58d1520957ae85fff829499c28"
+      },
+      {
+        "path": "DIST-MANIFEST.json",
+        "bytes": 61675,
+        "sha256": "52b7f96541c179de76e46ec553d1f9ae06f59d8663f8e8699e70612d47899872"
+      },
+      {
+        "path": "input-checks.py",
+        "bytes": 6552,
+        "sha256": "87a2958ade9105ca93b96cf9733262ee187ac3f502fd9928140cb96d5c70b026"
+      },
+      {
+        "path": "verify-build.py",
+        "bytes": 7507,
+        "sha256": "f755fe18dcd224f075d244d8f6da1be1080dbe33c9398913a888250a57e22429"
+      },
+      {
+        "path": "build-native.py",
+        "bytes": 3462,
+        "sha256": "28b90235bc6c5883d8532f308472d7142ec2fc4ce0b6535b7dd6ccef1e1530f6"
+      },
+      {
+        "path": "native-explicit-pass.cjs",
+        "bytes": 12346,
+        "sha256": "58bba00c597643ffc0748fe99cc52e0b1b2dcff172bb9d2331faf3a05e83de0e"
+      },
+      {
+        "path": "logs/adapter-receipt.json",
+        "bytes": 3206,
+        "sha256": "2490d52b1a9b69447818c6e6cae0573e8391cb16bef3ae1ef7e177b57b2f9061"
+      },
+      {
+        "path": "logs/compiler.log",
+        "bytes": 1315,
+        "sha256": "bbd388f9496a1f9395be587dd73fd8c2f9a91b3fae6abc6db69f8a925735ee1f"
+      }
+    ],
+    "regenerated_materials": {
+      "manifests/public-source.json": {
+        "before": {
+          "bytes": 480907,
+          "sha256": "17c5ffad2064bf892b0d617e6face3979c6a888b1a56aa9ec534c0b9f0a42999"
+        },
+        "after": {
+          "bytes": 480907,
+          "sha256": "17c5ffad2064bf892b0d617e6face3979c6a888b1a56aa9ec534c0b9f0a42999"
+        }
+      },
+      "manifests/h5-dist.json": {
+        "before": {
+          "bytes": 60378,
+          "sha256": "e02e262c356df03c4aefacec13fa03622030fbc1d031561ebc1f830076a1467f"
+        },
+        "after": {
+          "bytes": 60379,
+          "sha256": "277276ce89af410afc9b5236ac1308e54b29290375c2ba335805a192dd0351db"
+        }
+      },
+      "manifests/inputs.json": {
+        "before": {
+          "bytes": 358,
+          "sha256": "7a8e80b979f8be2e9e378eb84e97ac3c1d35cf5105e98723f4c43cb91154d811"
+        },
+        "after": {
+          "bytes": 358,
+          "sha256": "7a8e80b979f8be2e9e378eb84e97ac3c1d35cf5105e98723f4c43cb91154d811"
+        }
+      },
+      "h5-materials-result.json": {
+        "before": {
+          "bytes": 1748,
+          "sha256": "aac390f893a6a90f4297c40c450026b547750c2e8d1174e54a418289de8b1314"
+        },
+        "after": {
+          "bytes": 1748,
+          "sha256": "f4a1c91e63745edc79609501e90cddf1c8b8d114592db40620c3ea71612fc262"
+        }
+      }
+    },
+    "metadata_inverse_preimages": "Original immutable pinned R6 files, read and verified before and after; no old receipt is a new result.",
+    "predecessor_files": [
+      {
+        "path": "H5-README.md",
+        "bytes": 10482,
+        "sha256": "4ce69fc0b00755f213d6cdab72eba13465c1d0deb0f5aea9b0e23f1fa59de120"
+      },
+      {
+        "path": "README.md",
+        "bytes": 920,
+        "sha256": "d68ee072309b391f8666c4a67f8f02b2922af98333591ae991e4e07cdd37e0a7"
+      },
+      {
+        "path": "browser-v1/customer-network-observer.mjs",
+        "bytes": 17874,
+        "sha256": "daf5492c722960f96653557c90d0d6cf5908b044cd4096fadd9d0dbebb985228"
+      },
+      {
+        "path": "browser-v1/ms4-customer-browser.mjs",
+        "bytes": 15080,
+        "sha256": "cdcdef248c6b69e23bb659996f0379d3fc7f1df660fb810d7c4f2c5ca6a89328"
+      },
+      {
+        "path": "browser-v1/ms4-customer-private-bridge.mjs",
+        "bytes": 41741,
+        "sha256": "f86753d6dca1a99d960e0f47d1c9dde3fe8f15f95f0d97aaae447604119c7c60"
+      },
+      {
+        "path": "compose.h5.yml",
+        "bytes": 6052,
+        "sha256": "aae289145cedbd1b92317fc148a5d6521b6e9985bf6aad5de78feca765b5da69"
+      },
+      {
+        "path": "compose.yml",
+        "bytes": 5135,
+        "sha256": "74ef1454b9cca8031417998b9d14ed72d54bda2bd199a70e6d0fa0c25d11ecd1"
+      },
+      {
+        "path": "h5-derivation.json",
+        "bytes": 14793,
+        "sha256": "372788320b104e7550fabedacee13cd9c0ecae75e302a28a6daccd92f6d85742"
+      },
+      {
+        "path": "h5-materials-result.json",
+        "bytes": 1748,
+        "sha256": "aac390f893a6a90f4297c40c450026b547750c2e8d1174e54a418289de8b1314"
+      },
+      {
+        "path": "inputs/language.json",
+        "bytes": 318204,
+        "sha256": "9e6aab1cf67ea492d137b12052220b0e710fb7fe16f3b5f93135a6693945c716"
+      },
+      {
+        "path": "inputs/theme.json",
+        "bytes": 102429,
+        "sha256": "8f879a5f7775d39cf190023aca1ea49e7cacf7a680277e10a0712d0796ba1bc1"
+      },
+      {
+        "path": "interface-v1.json",
+        "bytes": 6765,
+        "sha256": "1669b8b816e5bc045cdc7badc7cedae239e172045bdc85bd6cd59ca9ac9f30ad"
+      },
+      {
+        "path": "manifests/h5-dist.json",
+        "bytes": 60378,
+        "sha256": "e02e262c356df03c4aefacec13fa03622030fbc1d031561ebc1f830076a1467f"
+      },
+      {
+        "path": "manifests/inputs.json",
+        "bytes": 358,
+        "sha256": "7a8e80b979f8be2e9e378eb84e97ac3c1d35cf5105e98723f4c43cb91154d811"
+      },
+      {
+        "path": "manifests/public-source.json",
+        "bytes": 480907,
+        "sha256": "17c5ffad2064bf892b0d617e6face3979c6a888b1a56aa9ec534c0b9f0a42999"
+      },
+      {
+        "path": "ms4-h5-bootstrap.php",
+        "bytes": 73805,
+        "sha256": "81376b4122eedcfa40de298f6035192c5bc4c8634ce92a3c0974e1ccb3a79485"
+      },
+      {
+        "path": "ms4-h5-host.py",
+        "bytes": 106590,
+        "sha256": "a5ac7a63322d50d7eae2ce3a09f0bc726b01a938568a90803983c046376714f9"
+      },
+      {
+        "path": "ms4-h5-materials.py",
+        "bytes": 9906,
+        "sha256": "52f9d16bedd75d22b7b03eded68b620202cbf4cbb3f388112396a654ec5f908f"
+      },
+      {
+        "path": "ms4-h5-nginx.conf",
+        "bytes": 2149,
+        "sha256": "669bbddfbcb57c75e1d1b27410a6f9ec1c8638122f06e2ffba32d370d93cdfd8"
+      },
+      {
+        "path": "ms4-h5-public-copy.php",
+        "bytes": 14733,
+        "sha256": "5db1b8c1ef586ba2c380d66db9520f7a4778c450359d064e7c923a98a3473997"
+      },
+      {
+        "path": "ms4-host.py",
+        "bytes": 62504,
+        "sha256": "e4f958e16bb6644ac78288a809f77b831d445f9df2e3d29552b0ed0577c1c9de"
+      },
+      {
+        "path": "ms4-initialize.php",
+        "bytes": 32716,
+        "sha256": "9c49869862ccc6797fea217068ef4473d1eb74ed148103a377911f99f9b8ed32"
+      },
+      {
+        "path": "ms4-order.png",
+        "bytes": 117,
+        "sha256": "1f43eae0908dc055ac0e0e0aaa8e648e301ae4b46834eb058eca0a4fb7c766b6"
+      },
+      {
+        "path": "normal-close-customer-h5.py",
+        "bytes": 45731,
+        "sha256": "9f9165662838e40e08bf9672918c0da9adc4e5149eed8701873124d5154e62d8"
+      },
+      {
+        "path": "seed-source-inverse.json",
+        "bytes": 639,
+        "sha256": "c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a"
+      },
+      {
+        "path": "source-derivation.json",
+        "bytes": 4919,
+        "sha256": "86066fc7d62e6d22b48ca9d4afa59b7ae65b688a9db5e607c5aed9203b96fa26"
+      },
+      {
+        "path": "verify-zero-customer-h5.py",
+        "bytes": 30358,
+        "sha256": "6037354aa90ab188cd83d39626fb261a8b537ac3272219a662c843fde2069d25"
+      }
+    ],
+    "source_changed_paths": [
+      "H5-README.md",
+      "h5-derivation.json",
+      "ms4-h5-materials.py",
+      "browser-v1/customer-network-observer.mjs"
+    ],
+    "material_producer_name": "ms4-h5-materials.py",
+    "original_seven_byte_exact": true,
+    "host_bootstrap_copy_nginx_bridge_driver_close_zero": "BYTE_EXACT_R6",
+    "capture_clone_and_native_JPEG_before_record": "UNCHANGED_R6",
+    "screenshot_390_timeout": "NOT FIXED; NO CALIBRATION_SUBSTITUTION",
+    "source_syntax_checks": "NOT PERFORMED BY THIS BUILDER",
+    "freeze_Run_App_SQL_HTTP_DOM_acceptance": "NOT RUN",
+    "stopped_refusal_conflict_fault_concurrency_recovery_samples": "NOT RUN"
+  },
+  "current_normal_ms5_source_candidate": {
+    "schema": 1,
+    "scope": "CURRENT_H5_NORMAL_MS5_SOURCE_CANDIDATE_RUNTIME_NOT_RUN",
+    "known_Main_before_adoption": "1ceaaf0cdcd2dc9d62d1357f08511925a59da64c",
+    "future_adoption_commit": null,
+    "prior_r7_all_top_values_preserved": true,
+    "normal9_foundation": [
+      {
+        "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r21-root-normal-profile-source-r1/candidate-profile/README.md",
+        "copy_as": "README.md",
+        "bytes": 43478,
+        "sha256": "2d395d289996bdf85784a1fc6e2772e8eafb67eaa5778552ec254f2bd84df822"
+      },
+      {
+        "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r21-root-normal-profile-source-r1/candidate-profile/compose.yml",
+        "copy_as": "compose.yml",
+        "bytes": 11069,
+        "sha256": "78aed9625ad70ed7f85a8348550653d74a59508055126aacded793b86de36367"
+      },
+      {
+        "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r21-root-normal-profile-source-r1/candidate-profile/ms4-host.py",
+        "copy_as": "ms4-host.py",
+        "bytes": 321607,
+        "sha256": "a9d9c1d421844697cf0a15179b9fb89ad63075859c02a51e3f8d965e193b5959"
+      },
+      {
+        "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r21-root-normal-profile-source-r1/candidate-profile/ms4-initialize.php",
+        "copy_as": "ms4-initialize.php",
+        "bytes": 72261,
+        "sha256": "c73f59e7e69733cdd6644bb1ca92aae1745a4b9c07cd0175f4eb4cc3a3bf7dae"
+      },
+      {
+        "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r21-root-normal-profile-source-r1/candidate-profile/seed-source-inverse.json",
+        "copy_as": "seed-source-inverse.json",
+        "bytes": 639,
+        "sha256": "c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a"
+      },
+      {
+        "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r21-root-normal-profile-source-r1/candidate-profile/interface-v1.json",
+        "copy_as": "interface-v1.json",
+        "bytes": 63571,
+        "sha256": "19cc6091e00d6ed3fdf28659829ccfdf4c679f37837be0120dff4738897f84a8"
+      },
+      {
+        "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r21-root-normal-profile-source-r1/candidate-profile/source-derivation.json",
+        "copy_as": "source-derivation.json",
+        "bytes": 68890,
+        "sha256": "32252690df772f39e4be2b2e6bfea1e511eecf0d1bbd2ab28ca5c0e9a33561b0"
+      },
+      {
+        "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r21-root-normal-profile-source-r1/candidate-profile/normal-close-ms4-fulfillment.py",
+        "copy_as": "normal-close-ms4-fulfillment.py",
+        "bytes": 47168,
+        "sha256": "b73b9d72db0afa1d18484859a954194a4b416b8599066a98ac8103d90b701905"
+      },
+      {
+        "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r21-root-normal-profile-source-r1/candidate-profile/verify-zero-ms4-fulfillment.py",
+        "copy_as": "verify-zero-ms4-fulfillment.py",
+        "bytes": 275149,
+        "sha256": "fbb53fc458ce68a49c056ab4ce328b180644c265a75659dc4c3cbd2bf20b2c20"
+      }
+    ],
+    "current_code": [
+      {
+        "path": "Core/lib/ms4-customer-h5-normal.php",
+        "bytes": 156462,
+        "sha256": "b0fe3c957f46a00bfa10609f51561cae423754da74e2f2aabf26d37ec0545e96"
+      },
+      {
+        "path": "Core/ms4-customer-h5.php",
+        "bytes": 108913,
+        "sha256": "221acd75a352aabbbde60eb5652e0e20277798b27d65b1bb5474b72bf52408a7"
+      },
+      {
+        "path": "browser-v1/ms4-customer-private-bridge.mjs",
+        "bytes": 46604,
+        "sha256": "cd1f9b6cb5416716856f2ef27ae8ab0aa7ded581aeb772b88820016cb3f1cb36"
+      },
+      {
+        "path": "compose.h5.yml",
+        "bytes": 6101,
+        "sha256": "4eb75604c6f8214acce7cc991d55166292574de8b99e4a56107b511f444ad8af"
+      },
+      {
+        "path": "ms4-h5-bootstrap.php",
+        "bytes": 72657,
+        "sha256": "9ce34b5c1d3d690dc8048ee0650418541b75d60fbb0b39378c1348f6d381dbb0"
+      },
+      {
+        "path": "ms4-h5-host.py",
+        "bytes": 114712,
+        "sha256": "e7c2210709b90a5f34f27a04c75038f60769bb536204e05a28eec7ee179922ca"
+      },
+      {
+        "path": "ms4-h5-materials.py",
+        "bytes": 18826,
+        "sha256": "7a00057fb8a88103cfddc6a992aa669412289ab7d6f8e8b9acc20da568c52aa8"
+      },
+      {
+        "path": "ms4-h5-public-copy.php",
+        "bytes": 14815,
+        "sha256": "e01c65ce4bb3c810b5704a3bbd67549882b3861ebffda053706f8cd9aa4ade6b"
+      },
+      {
+        "path": "normal-close-customer-h5.py",
+        "bytes": 49876,
+        "sha256": "2ffc8a78b29ef32fa0fb23e1a6f5237b2295b54e1fe0520174ac206e1226e998"
+      },
+      {
+        "path": "verify-zero-customer-h5.py",
+        "bytes": 126024,
+        "sha256": "2cc15e9c18846eb12a0a5abbc977a2ab234973dcb5089c6d2eca66b19e1f08cf"
+      }
+    ],
+    "required_business_tables": 27,
+    "required_auxiliary_tables": 7,
+    "required_JPEGs": 27,
+    "required_scene_reviews": 9,
+    "runtime_window_seconds": 3600,
+    "canonical_paid": "SAME_CREATED_PID0_RESTART0_NEVER_STARTED_UNTIL_EXACT_NORMAL_CLOSE",
+    "current_initial_volume_names": [
+      "aftersale-evidence",
+      "app-secrets",
+      "bootstrap-secrets",
+      "fixture-secrets",
+      "mysql-data",
+      "redis-data",
+      "redis-secrets"
+    ],
+    "additional_volume_names": [
+      "http-runtime",
+      "http-control",
+      "http-browser-secrets",
+      "http-public"
+    ],
+    "original_build_origin": "2830b3ce273f5cbc0a951e9bf29377d55864cf93",
+    "original_build_root": "H:/天俪商城/artifacts/u-status-h5-r2",
+    "future_material_generation": [
+      "manifests/public-source.json",
+      "manifests/h5-dist.json",
+      "manifests/inputs.json",
+      "h5-materials-result.json"
+    ],
+    "freeze_Run_API_DOM_close_zero": "NOT RUN",
+    "old_results_reassigned": false,
+    "stopped_samples": "NOT RUN"
+  },
+  "current28dc_independent_nine_source_successor": {
+    "source_sha": "28dcab632da3e62f7c8b8d926b6ab9406534d0d3",
+    "parent": "0c13c57ba1ec4bf15ea9240601a5d6361e986ce8",
+    "normal_A_Source_PINS": {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-upload-root-current28dc-normal-next-source-r1/PINS.json",
+      "bytes": 189060,
+      "sha256": "0c2d0c6e68199e0c2b291fdaa764babb986b8d5ebe512903fbf06b6f7fea3650"
+    },
+    "historical_derivation_retained": true,
+    "nonself_source_members26": [
+      {
+        "path": "browser-v1/customer-network-observer.mjs",
+        "bytes": 20415,
+        "sha256": "fbfe205ce71cb0e4253067e5a1769fadf2d4fb28086909b7871a1cb53d7ccb9e"
+      },
+      {
+        "path": "browser-v1/ms4-customer-browser.mjs",
+        "bytes": 26262,
+        "sha256": "f0a584263a9c997cce080b8aa0d45a8876842d458c0b1b64d9c24b975d17be7a"
+      },
+      {
+        "path": "browser-v1/ms4-customer-private-bridge.mjs",
+        "bytes": 46630,
+        "sha256": "a6255a960f88f2a61defbfe04ac86dd132e70b849b57bec3c2daf05cd4999efa"
+      },
+      {
+        "path": "compose.h5.yml",
+        "bytes": 6101,
+        "sha256": "4eb75604c6f8214acce7cc991d55166292574de8b99e4a56107b511f444ad8af"
+      },
+      {
+        "path": "compose.yml",
+        "bytes": 11860,
+        "sha256": "f6c4b4f50fbd34fda66afcf2d0819d38992a2fe467172fe587cefbeb2d39a198"
+      },
+      {
+        "path": "Core/lib/ms4-customer-h5-normal.php",
+        "bytes": 165967,
+        "sha256": "9f47fff3886192aaed5347eb747978e1c54c152e8bc2f77563b406644f4f75bd"
+      },
+      {
+        "path": "Core/ms4-customer-h5.php",
+        "bytes": 112678,
+        "sha256": "c78fbf4b4c05b0db98ad51779db314264f2c4ff96c34db9552258a8b07191533"
+      },
+      {
+        "path": "H5-README.md",
+        "bytes": 15996,
+        "sha256": "96eec0a7130e07c3b84a3d86a98d242bc236c89202c6697916c304ebb9929daa"
+      },
+      {
+        "path": "inputs/language.json",
+        "bytes": 318204,
+        "sha256": "9e6aab1cf67ea492d137b12052220b0e710fb7fe16f3b5f93135a6693945c716"
+      },
+      {
+        "path": "inputs/theme.json",
+        "bytes": 102429,
+        "sha256": "8f879a5f7775d39cf190023aca1ea49e7cacf7a680277e10a0712d0796ba1bc1"
+      },
+      {
+        "path": "interface-v1.json",
+        "bytes": 101852,
+        "sha256": "46b388a5b0e454207246f0b5571e7a2a135f08206e42c59bcb09c3164ec265d6"
+      },
+      {
+        "path": "ms4-h5-bootstrap.php",
+        "bytes": 72657,
+        "sha256": "9ce34b5c1d3d690dc8048ee0650418541b75d60fbb0b39378c1348f6d381dbb0"
+      },
+      {
+        "path": "ms4-h5-host.py",
+        "bytes": 117177,
+        "sha256": "afcdcea8373f798d9f9da7cf5e744a6dffaceb2f0dc8c53fab2329fd9b76c06e"
+      },
+      {
+        "path": "ms4-h5-materials.py",
+        "bytes": 18826,
+        "sha256": "7a00057fb8a88103cfddc6a992aa669412289ab7d6f8e8b9acc20da568c52aa8"
+      },
+      {
+        "path": "ms4-h5-nginx.conf",
+        "bytes": 2149,
+        "sha256": "669bbddfbcb57c75e1d1b27410a6f9ec1c8638122f06e2ffba32d370d93cdfd8"
+      },
+      {
+        "path": "ms4-h5-public-copy.php",
+        "bytes": 14815,
+        "sha256": "e01c65ce4bb3c810b5704a3bbd67549882b3861ebffda053706f8cd9aa4ade6b"
+      },
+      {
+        "path": "ms4-host.py",
+        "bytes": 345436,
+        "sha256": "9843cc96ab5b88d998c104493c6f786a687c903e6e9604ffac925cb39edbbb6d"
+      },
+      {
+        "path": "ms4-initialize.php",
+        "bytes": 78955,
+        "sha256": "9784c617424a430db06bde00c6f4b78530a30218c8c77e0e125b3421d31e9f31"
+      },
+      {
+        "path": "ms4-order.png",
+        "bytes": 117,
+        "sha256": "1f43eae0908dc055ac0e0e0aaa8e648e301ae4b46834eb058eca0a4fb7c766b6"
+      },
+      {
+        "path": "normal-close-customer-h5.py",
+        "bytes": 49891,
+        "sha256": "f20a8d8db2a80af703e6ff43872f7a0605134778793b4e1f050338d56c0dc1b1"
+      },
+      {
+        "path": "normal-close-ms4-fulfillment.py",
+        "bytes": 47220,
+        "sha256": "b8e235225d0d4c09e7c9e06b96fee8104a99bc3937f2a5898861c53707653e02"
+      },
+      {
+        "path": "README.md",
+        "bytes": 89381,
+        "sha256": "b886791202529032c9f85a88f80af456f1e916ad2ad1031eb417685edcae6493"
+      },
+      {
+        "path": "seed-source-inverse.json",
+        "bytes": 639,
+        "sha256": "c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a"
+      },
+      {
+        "path": "source-derivation.json",
+        "bytes": 601053,
+        "sha256": "346b833a3a29d265caeee9d8e672b3dd0e512bf9b501f4777336ff2218a64451"
+      },
+      {
+        "path": "verify-zero-customer-h5.py",
+        "bytes": 133057,
+        "sha256": "13927f6abe49880c92d8db6100ffc9912eb1c652a501a63380c92e39febbd1ab"
+      },
+      {
+        "path": "verify-zero-ms4-fulfillment.py",
+        "bytes": 296098,
+        "sha256": "bdd183fc90da85519821c43999dd71d43fe3cf63487315afb71ee8482d3e4c6f"
+      }
+    ],
+    "resource_base8": [
+      "aftersale-evidence",
+      "app-secrets",
+      "bootstrap-secrets",
+      "customer-form-evidence",
+      "fixture-secrets",
+      "mysql-data",
+      "redis-data",
+      "redis-secrets"
+    ],
+    "resource_H5_four": [
+      "http-runtime",
+      "http-control",
+      "http-browser-secrets",
+      "http-public"
+    ],
+    "complete_total12": true,
+    "original_nine_scenes_and_three_widths": true,
+    "runtime_ready": false,
+    "A0": null,
+    "postA": null,
+    "generated_material_outputs4": "UNBOUND_NOT_CREATED",
+    "normal_current_independent_prefix_reader": "Complete pinned normal9 zero Source; only Source/offline prefix calls, H5-specific zero retained.",
+    "normal_close_public_filename": "Historical eleven label retained on both producer and consumer; actual named count12."
+  },
+  "current175f_independent_nine_source_successor": {
+    "source_sha": "175f3cd6183894185656a2974579e1be39eed7a7",
+    "parent": "28dcab632da3e62f7c8b8d926b6ab9406534d0d3",
+    "predecessor_Source_PINS": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/h5-current28dc-complete-source-r1/SOURCE-PINS.json",
+      "bytes": 6622,
+      "sha256": "df6f30ac8e5f68a4687d48a87eb95c791fde1313e9c9830ba7aee4201fe7cce2"
+    },
+    "normal_A_Source_PINS": {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-quota-wire-current175f-normal-next-source-r1/PINS.json",
+      "bytes": 147196,
+      "sha256": "2653282ad09cdf30e030c6c1cf5976b73a1a06bd0be52070085e3a3f33bb270b"
+    },
+    "historical_derivation_retained": true,
+    "nonself_source_members26": [
+      {
+        "path": "Core/lib/ms4-customer-h5-normal.php",
+        "bytes": 165967,
+        "sha256": "9f47fff3886192aaed5347eb747978e1c54c152e8bc2f77563b406644f4f75bd"
+      },
+      {
+        "path": "Core/ms4-customer-h5.php",
+        "bytes": 112678,
+        "sha256": "c78fbf4b4c05b0db98ad51779db314264f2c4ff96c34db9552258a8b07191533"
+      },
+      {
+        "path": "H5-README.md",
+        "bytes": 16927,
+        "sha256": "8da1a8f784ce82e195f30a553995ba60ef125e7e68842d59e4ffd54bc1b2dc58"
+      },
+      {
+        "path": "README.md",
+        "bytes": 89381,
+        "sha256": "b886791202529032c9f85a88f80af456f1e916ad2ad1031eb417685edcae6493"
+      },
+      {
+        "path": "browser-v1/customer-network-observer.mjs",
+        "bytes": 20415,
+        "sha256": "fbfe205ce71cb0e4253067e5a1769fadf2d4fb28086909b7871a1cb53d7ccb9e"
+      },
+      {
+        "path": "browser-v1/ms4-customer-browser.mjs",
+        "bytes": 26262,
+        "sha256": "f0a584263a9c997cce080b8aa0d45a8876842d458c0b1b64d9c24b975d17be7a"
+      },
+      {
+        "path": "browser-v1/ms4-customer-private-bridge.mjs",
+        "bytes": 46630,
+        "sha256": "a6255a960f88f2a61defbfe04ac86dd132e70b849b57bec3c2daf05cd4999efa"
+      },
+      {
+        "path": "compose.h5.yml",
+        "bytes": 6101,
+        "sha256": "4eb75604c6f8214acce7cc991d55166292574de8b99e4a56107b511f444ad8af"
+      },
+      {
+        "path": "compose.yml",
+        "bytes": 11860,
+        "sha256": "f6c4b4f50fbd34fda66afcf2d0819d38992a2fe467172fe587cefbeb2d39a198"
+      },
+      {
+        "path": "inputs/language.json",
+        "bytes": 318204,
+        "sha256": "9e6aab1cf67ea492d137b12052220b0e710fb7fe16f3b5f93135a6693945c716"
+      },
+      {
+        "path": "inputs/theme.json",
+        "bytes": 102429,
+        "sha256": "8f879a5f7775d39cf190023aca1ea49e7cacf7a680277e10a0712d0796ba1bc1"
+      },
+      {
+        "path": "interface-v1.json",
+        "bytes": 102529,
+        "sha256": "5f0bdb9bd952419f879d86bb8941b06147a9bea3b4f4eeb2c814dcafef392495"
+      },
+      {
+        "path": "ms4-h5-bootstrap.php",
+        "bytes": 72657,
+        "sha256": "9ce34b5c1d3d690dc8048ee0650418541b75d60fbb0b39378c1348f6d381dbb0"
+      },
+      {
+        "path": "ms4-h5-host.py",
+        "bytes": 117177,
+        "sha256": "4c48cb13b0a5ba506a8dfcbe5b1289c83de9ec693727405265bdba0077efe38a"
+      },
+      {
+        "path": "ms4-h5-materials.py",
+        "bytes": 18826,
+        "sha256": "7a00057fb8a88103cfddc6a992aa669412289ab7d6f8e8b9acc20da568c52aa8"
+      },
+      {
+        "path": "ms4-h5-nginx.conf",
+        "bytes": 2149,
+        "sha256": "669bbddfbcb57c75e1d1b27410a6f9ec1c8638122f06e2ffba32d370d93cdfd8"
+      },
+      {
+        "path": "ms4-h5-public-copy.php",
+        "bytes": 14815,
+        "sha256": "e01c65ce4bb3c810b5704a3bbd67549882b3861ebffda053706f8cd9aa4ade6b"
+      },
+      {
+        "path": "ms4-host.py",
+        "bytes": 345436,
+        "sha256": "0d379c9a33dccfc0ece92fe8129842ac27105d66a50320b37e893bfd23dc295e"
+      },
+      {
+        "path": "ms4-initialize.php",
+        "bytes": 78955,
+        "sha256": "a5add955d43e4fd8cfdc50dd0ad06d5f6408e5cf743a5c2564b6e51af7db067b"
+      },
+      {
+        "path": "ms4-order.png",
+        "bytes": 117,
+        "sha256": "1f43eae0908dc055ac0e0e0aaa8e648e301ae4b46834eb058eca0a4fb7c766b6"
+      },
+      {
+        "path": "normal-close-customer-h5.py",
+        "bytes": 49891,
+        "sha256": "f20a8d8db2a80af703e6ff43872f7a0605134778793b4e1f050338d56c0dc1b1"
+      },
+      {
+        "path": "normal-close-ms4-fulfillment.py",
+        "bytes": 47220,
+        "sha256": "cba367e05932836c7667e5fd10faa6f5c7c06a85dceceb27eb7b228b754bd361"
+      },
+      {
+        "path": "seed-source-inverse.json",
+        "bytes": 639,
+        "sha256": "c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a"
+      },
+      {
+        "path": "source-derivation.json",
+        "bytes": 604017,
+        "sha256": "e0bda907571363b1e1c7f58920af91b6a75a66072db0fc081ff7041e05b6db46"
+      },
+      {
+        "path": "verify-zero-customer-h5.py",
+        "bytes": 133057,
+        "sha256": "0848bc1b87543d9f82206fc0fcda8c2e2bde5734e3ba5c16e4108f00498d244e"
+      },
+      {
+        "path": "verify-zero-ms4-fulfillment.py",
+        "bytes": 296098,
+        "sha256": "ee5a9f65d87d063100f834c8456364cb8024fb3414467827e6c1ec92aa03b54f"
+      }
+    ],
+    "normal9": [
+      {
+        "path": "README.md",
+        "bytes": 89381,
+        "sha256": "b886791202529032c9f85a88f80af456f1e916ad2ad1031eb417685edcae6493"
+      },
+      {
+        "path": "compose.yml",
+        "bytes": 11860,
+        "sha256": "f6c4b4f50fbd34fda66afcf2d0819d38992a2fe467172fe587cefbeb2d39a198"
+      },
+      {
+        "path": "ms4-host.py",
+        "bytes": 345436,
+        "sha256": "0d379c9a33dccfc0ece92fe8129842ac27105d66a50320b37e893bfd23dc295e"
+      },
+      {
+        "path": "ms4-initialize.php",
+        "bytes": 78955,
+        "sha256": "a5add955d43e4fd8cfdc50dd0ad06d5f6408e5cf743a5c2564b6e51af7db067b"
+      },
+      {
+        "path": "seed-source-inverse.json",
+        "bytes": 639,
+        "sha256": "c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a"
+      },
+      {
+        "path": "interface-v1.json",
+        "bytes": 102529,
+        "sha256": "5f0bdb9bd952419f879d86bb8941b06147a9bea3b4f4eeb2c814dcafef392495"
+      },
+      {
+        "path": "source-derivation.json",
+        "bytes": 604017,
+        "sha256": "e0bda907571363b1e1c7f58920af91b6a75a66072db0fc081ff7041e05b6db46"
+      },
+      {
+        "path": "normal-close-ms4-fulfillment.py",
+        "bytes": 47220,
+        "sha256": "cba367e05932836c7667e5fd10faa6f5c7c06a85dceceb27eb7b228b754bd361"
+      },
+      {
+        "path": "verify-zero-ms4-fulfillment.py",
+        "bytes": 296098,
+        "sha256": "ee5a9f65d87d063100f834c8456364cb8024fb3414467827e6c1ec92aa03b54f"
+      }
+    ],
+    "M_result": {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-quota-wire-current175f-normal-next-source-r1/validation/materialize-freeze-assets-r1/RESULT.json",
+      "bytes": 46750425,
+      "sha256": "6449487f1da61266fbdfe76260fced9196b398f1cbb92cc59074924d8e76c8aa"
+    },
+    "M_freeze": {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-quota-wire-current175f-normal-next-source-r1/validation/materialize-freeze-assets-r1/freeze-binding.json",
+      "bytes": 10985209,
+      "sha256": "4ac3a0b7b35db7a911e9abb61dfaa4a25b0ffaf3bdc79a7c100b48f0836ce6ed"
+    },
+    "M_root_readback": {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/current175f-complete-materialization-root-readback-r1/REPORT.json",
+      "bytes": 1814,
+      "sha256": "6901f56b93e54ae6493a02e3851084e56be995d316294314e0bf03a0b710af05"
+    },
+    "current_ninth_retirement": {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-quota-wire-current175f-normal-next-source-r1/CURRENT-28DC-RETIREMENT-COMPLETE.json",
+      "bytes": 33024728,
+      "sha256": "65cdd89dcd9d02247b99705af76322ecffedb5cd18b47c85776ac4b7fb7c01c8"
+    },
+    "resource_base8": [
+      "aftersale-evidence",
+      "app-secrets",
+      "bootstrap-secrets",
+      "customer-form-evidence",
+      "fixture-secrets",
+      "mysql-data",
+      "redis-data",
+      "redis-secrets"
+    ],
+    "resource_H5_four": [
+      "http-runtime",
+      "http-control",
+      "http-browser-secrets",
+      "http-public"
+    ],
+    "complete_total12": true,
+    "original_nine_scenes_and_three_widths": true,
+    "runtime_ready": false,
+    "A0": null,
+    "postA": null,
+    "generated_material_outputs4": null,
+    "normal_current_independent_prefix_reader": {
+      "path": "verify-zero-ms4-fulfillment.py",
+      "bytes": 296098,
+      "sha256": "ee5a9f65d87d063100f834c8456364cb8024fb3414467827e6c1ec92aa03b54f"
+    },
+    "target_execution": "NOT RUN",
+    "H5_is_not_UI20": true
+  }
+}

@@ -4,13 +4,28 @@
 
 这是**源码归档和恢复资料**。包含旧完整编排、后续失败版本和修正后的完整编排源码。本目录不宣称可直接跨机器运行或业务验证通过。最新源码交接分支为 `codex/orchestration-handoff-20261023`，业务修复分支为 `feature/ms4-asset-consumers`；最早的 `codex/audit-base` 链接不包含本次交接。
 
-最新补充为 `full-a-upload-root-current28dc-normal-next-source-r1`：绑定业务提交 `28dcab632da3e62f7c8b8d926b6ab9406534d0d3` 的完整18件编排、11件作者代码/设计及4件Source澄清，精确33原件、13,083,506字节。归档共340文件、28包、73,742,700字节，原307件及其原清单行保持不变。作者本地模块与完整新增接缝已包含；完整作者重放输入未交付。
+## 当前175f源码交接补充
+
+最新Source为 `full-a-quota-wire-current175f-normal-next-source-r1`，绑定业务提交 `175f3cd6183894185656a2974579e1be39eed7a7`。本轮精确新增146件、22,524,012字节，合计486件、35包、96,266,712字节；原340件及清单行逐字节保留。下面旧28dc/0c13段落记录其交付时点，不能用作本轮运行结果。
+
+当前主编排包含完整18件M/S/launcher/九件profile、11件必要作者程序/本地模块/完整接缝及2份设计修正；严格M35/19步保留历史34/18、33/17、32/16合同。另补齐当前成功读器与原生包装程序、B作者及118698字节初始化源码、独立H5完整31件程序与协调器，以及postA完整生产程序和静态合同。各包的精确选择以清单为准，不代表整份原Source资格或作者重放输入已交付。
+
+离线检查仍只读源码；会核完整当前18件、原340件清单内字节、四代M合同、作者本地模块，以及两类读器和H5完整固定成员。它不执行存档程序。当前实际M的1,088项原生命令已通过外部完整回读；原S随后真实退出1，首个失败是订单确认阶段的表单上传POST返回503，断言仍要求HTTP200；尚无成功A0或完整业务验收。本轮正常回收及独立核零正在准备，不能由Source归档补签。这里不包含它的实际M/S/Run回执。
+
+交接分支业务树仍基于2e4；业务175f位于 `feature/ms4-asset-consumers`。归档提交不是经过本轮业务验证的应用源码提交。当前准备程序保留原机路径和真实历史资格门禁；完整运行输入、回执和新环境资格尚未随Git交付，`runtime_ready=false`。
+
+清单新增 `origin_root` 区分两处原材料根：`ms4-worker-normal-source-preparation-r1` 与 `project-organization-20261023`。`origin_relative_path` 保留各根下原始相对路径；旧行缺省来自前者。这是恢复源码的导航，不是跨机自动部署或复跑入口。所有实际Run、双流、私有环境、账号、Cookie、上传和卷均不在本轮新增集合中。
+
+## 历史28dc交接快照
+
+当时最新补充为 `full-a-upload-root-current28dc-normal-next-source-r1`：绑定业务提交 `28dcab632da3e62f7c8b8d926b6ab9406534d0d3` 的完整18件编排、11件作者代码/设计及4件Source澄清，精确33原件、13,083,506字节。归档共340文件、28包、73,742,700字节，原307件及其原清单行保持不变。作者本地模块与完整新增接缝已包含；完整作者重放输入未交付。
 
 交接分支的业务代码树仍基于 `2e4`；本包业务来源 `28dcab6` 位于 `feature/ms4-asset-consumers`。不要把交接提交当成已验证的业务来源。本次归档不推进实际验证工作区的 HEAD，也不重启或重绑现有正常验证实例。
 
 新包是Source冻结快照：声明M34字段、18步来源，保留历史M33/17步及M32/16步；1,078项native预算是源码派生值，本次归档不提供新M/S运行结论。历史0c13的M实际1,060项通过，S与订单准备后来均退出1，后续履约、售后评价、Worker未启动；原3容器/1网络/8卷已正常回收并经93项close、20项独立核零完整回读。原[0c13摘要](../../../docs/multi-merchant/records/ms4/current-source-handoff-r5.json)保留 `NOT_TERMINAL_AT_SNAPSHOT` 的冻结时点，不能作为后来的运行状态。没有A0或完整业务验收。
 
 当前开发观察（2026-10-24 00:21:30 UTC+08:00）：同一业务来源28dcab632da3e62f7c8b8d926b6ab9406534d0d3的新M已实际完成，1,078项原生命令全部退出0，Root及独立完整回读均通过；这已经是实际结果，不能再把它仅当作预算。新S已在Run202610231609185fbd23启动，本观察时仍在运行，尚无成功A0或完整业务验收。本段只补充开发状态，原last_*、NOT_TERMINAL_AT_SNAPSHOT及上面0c13摘要保留其历史时点；本归档仍不包含实际M/S回执、私有准备数据或作者完整重放输入，runtime_ready=false不变。
+
 
 ## 从 Git 离线核对
 
@@ -30,6 +45,8 @@ python -I -B help/audit-regressions/orchestration/verify_sources.py
 
 | 来源包 | 已收程序与配置 | 状态 |
 |---|---|---|
+| `full-a-quota-wire-current175f-normal-next-source-r1` | 当前完整18件M/S/launcher/profile、11件作者源码与2份设计修正 | 业务175f；Source交付；原实际运行回执未随包提供 |
+| 当前175f的6个准备程序包 | 完整成功读器与原生包装、B作者/初始化、H5程序、UI语法作业和postA生产程序；另115件Source | 尚需真实A0/postA及对应页面、业务验收；逐件入口见清单 |
 | `full-a-upload-root-current28dc-normal-next-source-r1` | 完整18件M/S/launcher/profile、11件作者代码/设计和4件Source澄清；严格M34/18步/8份回收authority | 来源 `28dcab6`；仅交付Source，不随包交付实际运行结果；业务未验收 |
 | `full-a-normal-http-diagnostic-next-source-r1` | 完整18件M/S/launcher/profile及8件作者源码/设计；严格M33/17步/7份历史回收 | 业务 `0c13c57`；实际M1,060项通过；S `NOT_TERMINAL_AT_SNAPSHOT`；完整业务未验收 |
 | `full-a-881-form-prefix-normal-next-source-r3` | 完整18件编排及8件作者源码/设计，原字节保留 | 历史业务 `8819524`；M1,046项通过，S与订单准备退出1，已正常回收并独立核零 |

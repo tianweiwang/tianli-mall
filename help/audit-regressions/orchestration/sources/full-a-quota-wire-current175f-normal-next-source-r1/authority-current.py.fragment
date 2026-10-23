@@ -1,0 +1,172 @@
+def source_authority(pub, checked, check):
+    """Preserve the complete seventeen-step authority; qualify the real28dc successor."""
+    def compact(row):return {key:row[key] for key in ['bytes','sha256']}
+    def pairs(items):
+        result={}
+        for key,value in items:check(key not in result,'UPROOT_NO_DUPLICATE_JSON_KEYS');result[key]=value
+        return result
+    def decode(raw):return json.loads(raw,object_pairs_hook=pairs)
+    def read(pointer):
+        check(type(pointer) is dict and set(pointer) in [{'path','bytes','sha256'},{'path','bytes','sha256','native9'}]
+            and type(pointer['path']) is str and Path(pointer['path']).is_absolute() and '..' not in Path(pointer['path']).parts
+            and type(pointer['bytes']) is int and pointer['bytes']>=0 and type(pointer['sha256']) is str
+            and re.fullmatch('[a-f0-9]{64}',pointer['sha256']) is not None,'UPROOT_FIXED_COMPLETE_PUBLIC_DESCRIPTOR')
+        raw=checked(pointer)
+        check({'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest()}==compact(pointer),'UPROOT_COMPLETE_PINNED_BYTES')
+        return raw
+    def definitions(raw):
+        text=raw.decode('utf8');return {node.name:ast.get_source_segment(text,node) for node in ast.parse(text).body if isinstance(node,(ast.FunctionDef,ast.ClassDef))}
+    def constants(raw):
+        result={}
+        for node in ast.parse(raw.decode('utf8')).body:
+            if isinstance(node,ast.Assign) and len(node.targets)==1 and isinstance(node.targets[0],ast.Name):
+                try:result[node.targets[0].id]=ast.literal_eval(node.value)
+                except (TypeError,ValueError):pass
+        return result
+    def patch_apply(before,raw,oldlabel='a',newlabel='b'):
+        lines=raw.decode('utf8').splitlines(keepends=True);index=0;result=dict(before)
+        while index<len(lines):
+            check(lines[index].startswith('--- '+oldlabel+'/'),'UPROOT_PATCH_HEADER');name=lines[index][6:].rstrip('\r\n');index+=1
+            check(name in before and lines[index].rstrip('\r\n')=='+++ '+newlabel+'/'+name,'UPROOT_PATCH_SAME_MEMBER');index+=1
+            original=before[name].decode('utf8').splitlines(keepends=True);cursor=0;out=[]
+            while index<len(lines) and lines[index].startswith('@@ '):
+                match=re.fullmatch(r'@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@[^\n]*\n?',lines[index]);check(match is not None,'UPROOT_PATCH_HUNK')
+                oldn=int(match[2] or 1);newn=int(match[4] or 1);start=int(match[1])-1 if oldn else int(match[1]);check(start>=cursor,'UPROOT_PATCH_ORDER')
+                out.extend(original[cursor:start]);cursor=start;index+=1;used=0;made=0
+                while index<len(lines) and not lines[index].startswith(('@@ ','--- '+oldlabel+'/')):
+                    line=lines[index];check(line[:1] in [' ','+','-'],'UPROOT_PATCH_LINE')
+                    if line[0] in [' ','-']:check(original[cursor]==line[1:],'UPROOT_PATCH_OLD_BYTES');cursor+=1;used+=1
+                    if line[0] in [' ','+']:out.append(line[1:]);made+=1
+                    index+=1
+                check((used,made)==(oldn,newn),'UPROOT_PATCH_COUNTS')
+            out.extend(original[cursor:]);result[name]=''.join(out).encode('utf8')
+        return result
+    prior_source=read(HISTORICAL_EIGHTEEN_M_SOURCE);prior_defs=definitions(prior_source);prior_literals=constants(prior_source)
+    check({'bytes':len(prior_defs['source_authority'].encode()),'sha256':hashlib.sha256(prior_defs['source_authority'].encode()).hexdigest()}==HISTORICAL_EIGHTEEN_AUTHORITY_SOURCE
+        and {key:prior_literals[key]for key in HISTORICAL_EIGHTEEN_CONSTANTS}==HISTORICAL_EIGHTEEN_CONSTANTS,'QUOTA_FULL_EIGHTEEN_BODY_ALL_USED_LITERALS')
+    oldpub=decode(read(HISTORICAL_EIGHTEEN_PUBLICATION));prior_context=oldpub['finite_contexts']
+__HISTORICAL_VALIDATOR__
+    historical=historical_eighteen(oldpub,checked,check)
+    context=pub['finite_contexts']
+    overlay={'commit_chain','committed_changes','committed_files','new_tracked_paths','actual_complete_expected_tracked_count','source_counts','current_composite_customer_form_source','source_authoring_qualification_scope','current_published_source_scope'}
+    extra={'historical_eighteenth_publication','current_quota_wire_source_history','current_quota_wire_delta','current_quota_wire_profile_source','current_quota_wire_initializer_syntax','current_28dc_paid_producer_failure_retirement'}
+    check(set(context)==set(prior_context)|extra and all(context[k]==v for k,v in prior_context.items()if k not in overlay),'QUOTA_ALL_PRIOR_CONTEXT_AND_EIGHT_RETIREMENTS_PRESERVED')
+    check(context['historical_eighteenth_publication']==HISTORICAL_EIGHTEEN_PUBLICATION and context['current_quota_wire_source_history']==CURRENT_QUOTA_WIRE_SOURCE_HISTORY
+        and context['current_quota_wire_delta']==CURRENT_QUOTA_WIRE_DELTA and context['current_quota_wire_profile_source']==CURRENT_QUOTA_WIRE_PROFILE_SOURCE
+        and context['current_quota_wire_initializer_syntax']==CURRENT_QUOTA_WIRE_INITIALIZER_SYNTAX and context['current_28dc_paid_producer_failure_retirement']==CURRENT_28DC_PAID_PRODUCER_FAILURE_RETIREMENT,'QUOTA_EXACT_CURRENT_AUTHORITY_JOINS')
+    chain=context['commit_chain'];check(chain==COMMIT_CHAIN and chain[:-1]==historical['commit_chain'] and len(chain)==len(historical['commit_chain'])+1,'QUOTA_FULL_REAL_CHAIN_PLUS_ONE')
+    stage=decode(read(CURRENT_QUOTA_WIRE_SOURCE_HISTORY));step=chain[-1]
+    check(step=={k:stage[k]for k in ['kind','source_sha','parent','files']}|{'commit':CURRENT_QUOTA_WIRE_SOURCE_HISTORY}
+        and step['source_sha']==pub['source_sha'] and step['parent']==pub['parent']==oldpub['source_sha'],'QUOTA_REAL_CURRENT_COMMIT_PARENT')
+    adoption=decode(read(stage['actual_adoption']));push=decode(read(stage['actual_push']));val=decode(read(stage['actual_Val']))
+    expected_paths=sorted(adoption['paths'])
+    check(len(expected_paths)==4 and expected_paths==['docs/multi-merchant/09-plan-ms4-ms6.md','docs/multi-merchant/CURRENT-STATUS.md','docs/multi-merchant/records/ms4/normal-http-response-diagnostic.md','help/audit-regressions/isolated/lib/ms4-customer-form-normal.php'],'QUOTA_EXACT_ACTUAL_FOUR_MODIFIED_PATHS')
+    check(adoption['head']==push['commit']==push['remote_SHA']==val['commit']==pub['source_sha'] and adoption['parent']==push['parent']==pub['parent']
+        and adoption['git_native_exit']==push['native_exit']==val['Val_native_exit']==0 and push['forced']is push['deployed']is False
+        and val['same_complete_index']is True and val['each_tracked']==len(historical['all']) and val['exact_changed_blobs']==adoption['paths'],'QUOTA_REAL_CLEAN_ADOPTION_ORDINARY_PUSH_MATCHING_VAL')
+    git_raw={}
+    for label,receipt in stage['git_operations'].items():
+        made=decode(read(receipt['created']));ended=decode(read(receipt['terminal']));out=read(receipt['stdout']);err=read(receipt['stderr'])
+        check(made['pid']==ended['pid'] and made['argv']==ended['argv'] and made['started_ns']==ended['started_ns'] and ended['finished_ns']>=made['started_ns']
+            and ended['native_exit']==ended['wait_returncode']==0 and err==b'' and compact(ended['stdout'])==compact(receipt['stdout']) and compact(ended['stderr'])==compact(receipt['stderr']),'QUOTA_ALL_ORIGINAL_GIT_RECEIPTS_COMPLETE')
+        check(made['argv'][:5]==['git','-c','safe.directory='+MAIN_SOURCE,'-C',MAIN_SOURCE],'QUOTA_ACTUAL_READONLY_GIT_REPO')
+        git_raw[label]=(made['argv'][5:],out)
+    expected_git={'head-before':['rev-parse','HEAD'],'clean-before':['status','--porcelain=v1','--untracked-files=all'],'parent':['rev-list','--parents','-n','1',pub['source_sha']],
+        'commit-object':['cat-file','-p',pub['source_sha']],'changed-paths':['diff-tree','--no-commit-id','--name-only','-r',pub['source_sha']],
+        'name-status':['diff-tree','--no-commit-id','--name-status','-r',pub['source_sha']],'head-after':['rev-parse','HEAD'],'clean-after':['status','--porcelain=v1','--untracked-files=all']}
+    check(git_raw['head-before'][1]==git_raw['head-after'][1]==(pub['source_sha']+'\n').encode() and git_raw['clean-before'][1]==git_raw['clean-after'][1]==b''
+        and git_raw['parent'][1]==(pub['source_sha']+' '+pub['parent']+'\n').encode() and git_raw['commit-object'][1].splitlines()[1]==('parent '+pub['parent']).encode()
+        and git_raw['changed-paths'][1].decode().splitlines()==expected_paths and git_raw['name-status'][1].decode().splitlines()==['M\t'+p for p in expected_paths],'QUOTA_REAL_FULL_COMMIT_METADATA')
+    expected=dict(historical['all']);blobs={};old_blobs={}
+    check([row['path']for row in step['files']]==expected_paths,'QUOTA_ORDERED_REAL_CHANGED_NAMESPACE')
+    for index,row in enumerate(step['files'],1):
+        name=row['path'];stem='member-'+str(index);expected_git[stem+'-after']=['show',pub['source_sha']+':'+name];expected_git[stem+'-before']=['show',pub['parent']+':'+name]
+        raw=git_raw[stem+'-after'][1];old=git_raw[stem+'-before'][1]
+        check(name in expected and row['before']==compact(expected[name]) and compact(row['after'])==compact(adoption['paths'][name])
+            and {'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest()}==row['after'] and {'bytes':len(old),'sha256':hashlib.sha256(old).hexdigest()}==row['before'],'QUOTA_WHOLE_REAL_BEFORE_AFTER_BLOBS')
+        expected[name]={'path':name,**row['after']};blobs[name]=raw;old_blobs[name]=old
+    check(set(git_raw)==set(expected_git) and all(git_raw[k][0]==v for k,v in expected_git.items()) and stage['native_count']==len(expected_git),'QUOTA_COMPLETE_CLOSED_GIT_NAMESPACE')
+    expected=dict(sorted(expected.items()));changes={row['path']:dict(row)for row in prior_context['committed_changes']}
+    for row in step['files']:
+        name=row['path']
+        if name in changes:changes[name]['after']=row['after']
+        else:changes[name]=row
+    changes=[changes[n]for n in sorted(changes)];committed=[expected[row['path']]for row in changes]
+    requirements=sorted(set(HISTORICAL_EIGHTEEN_CONSTANTS['SOURCE_REQUIREMENT_PATHS'])|set(expected_paths));additions=HISTORICAL_EIGHTEEN_CONSTANTS['NEW_TRACKED_PATHS']
+    check(context['committed_changes']==changes and context['committed_files']==committed and COMMITTED_PATHS==[r['path']for r in changes]
+        and NEW_TRACKED_PATHS==context['new_tracked_paths']==additions and SOURCE_REQUIREMENT_PATHS==requirements
+        and pub['repository_Source_requirements']==[expected[n]for n in requirements] and context['actual_complete_expected_tracked_count']==len(expected),'QUOTA_FULL_DERIVED_CUMULATIVE_NAMESPACE_NO_FALSE_ADDITION')
+    delta=decode(read(CURRENT_QUOTA_WIRE_DELTA));helper=expected_paths[-1]
+    check(delta['scope']=='ACTUAL175F_SINGLE_FORM_HELPER_CANONICAL_QUOTA_DECIMAL_WIRE_NOT_BUSINESS_ACCEPTANCE' and delta['source_sha']==pub['source_sha'] and delta['parent']==pub['parent']
+        and delta['actual_source_step']==CURRENT_QUOTA_WIRE_SOURCE_HISTORY and delta['changed_CU7_path']==helper and delta['only_original_two_quota_wire_seams']is True
+        and delta['unchanged_other_PHP_members']==6 and delta['new_M_S_A0_business']=='NOT RUN','QUOTA_BOUNDED_EXACT_TWO_WIRE_SEAMS')
+    packet=decode(read(delta['candidate_bundle']));packet_root=Path(delta['candidate_bundle']['path']).parent
+    for name,pin in packet['files'].items():read({'path':(packet_root/name).as_posix(),**pin})
+    check(read(delta['candidate_file'])==blobs[helper] and read(delta['before_file'])==old_blobs[helper],'QUOTA_ADOPTED_CANDIDATE_FULL_GIT_BYTES')
+    before_helper={helper:old_blobs[helper]};after_helper={helper:blobs[helper]}
+    check(patch_apply(before_helper,read({'path':(packet_root/'FORWARD.diff').as_posix(),**packet['files']['FORWARD.diff']}))==after_helper
+        and patch_apply(after_helper,read({'path':(packet_root/'REVERSE.diff').as_posix(),**packet['files']['REVERSE.diff']}),'b','a')==before_helper,'QUOTA_FULL_HELPER_ORDINARY_DIFF_BOTH_DIRECTIONS')
+    peer=decode(read(delta['independent_review']))
+    for pin in peer['files'].values():read(pin)
+    reviewed=decode(read(peer['files']['REPORT.json']));check(reviewed['findings']==[] and reviewed['candidate']==delta['candidate_file'],'QUOTA_ORIGINAL_FULL_INDEPENDENT_HELPER_REVIEW')
+    helper_syntax=decode(read(delta['helper_actual_syntax']))
+    check(helper_syntax['status']=='PASS_EXACT_CANDIDATE_PHP82_SYNTAX_ONLY' and helper_syntax['source']==delta['candidate_file'] and len(helper_syntax['operations'])==3
+        and helper_syntax['container_before_after_empty']is helper_syntax['Source_unchanged']is True and helper_syntax['App_DB_Redis_business_executed']is False,'QUOTA_ACTUAL_HELPER_SYNTAX_NO_BUSINESS')
+    for op in helper_syntax['operations']:
+        check(op['native_exit']==op['wait_returncode']==0,'QUOTA_ALL_ACTUAL_HELPER_SYNTAX_NATIVE_ZERO')
+        read(op['stdout']);check(read(op['stderr'])==b'','QUOTA_HELPER_SYNTAX_COMPLETE_STREAMS')
+    profilepins=decode(read(CURRENT_QUOTA_WIRE_PROFILE_SOURCE));profile_root=Path(CURRENT_QUOTA_WIRE_PROFILE_SOURCE['path']).parent
+    for name,pin in profilepins['members'].items():read({'path':(profile_root/name).as_posix(),**pin})
+    manifest=decode(read({'path':(profile_root/'MANIFEST.json').as_posix(),**profilepins['members']['MANIFEST.json']}))
+    names=[row['path']for row in oldpub['selected9']];check(len(names)==9 and manifest['predecessor']==HISTORICAL_EIGHTEEN_PACKAGE and manifest['source_delta']==CURRENT_QUOTA_WIRE_DELTA,'QUOTA_FULL_NINE_PREDECESSOR_DELTA')
+    before9={};after9={};oldrows={row['path']:row for row in oldpub['selected9']};rows={row['path']:row for row in pub['selected9']}
+    for name in names:
+        before9[name]=read({'path':(profile_root/'before'/name).as_posix(),**manifest['before'][name]});after9[name]=read({'path':(profile_root/'candidate'/name).as_posix(),**manifest['candidate'][name]})
+        check(compact(oldrows[name])==manifest['before'][name] and rows[name]=={'path':name,**manifest['candidate'][name]},'QUOTA_FULL_NINE_PUBLISHED_BYTES')
+    check(pub['selected9']==manifest['selected9'] and profilepins['candidate']==manifest['candidate'],'QUOTA_ORDERED_FULL_NINE_CANDIDATES')
+    check(patch_apply(before9,read({'path':(profile_root/'DIFF.patch').as_posix(),**profilepins['members']['DIFF.patch']}))==after9
+        and patch_apply(after9,read({'path':(profile_root/'REVERSE.patch').as_posix(),**profilepins['members']['REVERSE.patch']}))==before9,'QUOTA_COMPLETE_NINE_DIFF_BOTH_DIRECTIONS')
+    old_interface=decode(before9['interface-v1.json']);interface=decode(after9['interface-v1.json']);old_seven=old_interface['customer_form_current_profile']['php_sources']
+    seven=[{'path':row['path'],**compact(expected[helper])}if row['path']==helper else row for row in old_seven]
+    check(old_seven==manifest['old_seven_php'] and seven==manifest['current_seven_php'] and len(seven)==7 and sum(a!=b for a,b in zip(old_seven,seven))==1
+        and all(row==expected[row['path']]for row in seven),'QUOTA_ONE_ACTUAL_FORM_HELPER_TUPLE_OTHER_SIX_EXACT')
+    current_interface=interface['customer_form_current_profile'];new_node=current_interface.pop('quota_wire_current_source_successor')
+    check(new_node=={'schema':1,'scope':'ACTUAL175F_FORM_HELPER_DESCRIPTOR_ONLY_OVER_COMPLETE_CURRENT28DC_PROFILE','source_sha':pub['source_sha'],'predecessor_source_sha':pub['parent'],'source_delta':CURRENT_QUOTA_WIRE_DELTA,'unchanged_other_PHP_members':6,'normal_business':'NOT RUN'},'QUOTA_EXACT_NEW_INTERFACE_NODE')
+    current_interface['php_sources']=old_seven;check(interface==old_interface,'QUOTA_ALL_OTHER_COMPLETE_INTERFACE_BYTES_SEMANTICS')
+    tuples=manifest['initializer_tuples'];check(len(tuples)==1 and tuples[0]['kind']=='SINGLE_CU7_FORM_HELPER_ONLY','QUOTA_ONE_INITIALIZER_TUPLE')
+    a=next(row for row in old_seven if row['path']==helper);z=next(row for row in seven if row['path']==helper)
+    expected_old="['path' => '"+helper+"', 'bytes' => "+str(a['bytes'])+", 'sha256' => '"+a['sha256']+"']"
+    expected_new="['path' => '"+helper+"', 'bytes' => "+str(z['bytes'])+", 'sha256' => '"+z['sha256']+"']"
+    check(tuples[0]['before']==expected_old and tuples[0]['candidate']==expected_new and after9['ms4-initialize.php'].count(expected_new.encode())==1
+        and after9['ms4-initialize.php'].replace(expected_new.encode(),expected_old.encode(),1)==before9['ms4-initialize.php'],'QUOTA_WHOLE_INITIALIZER_SINGLE_TUPLE_INVERSE')
+    counts={}
+    for name in ['ms4-host.py','normal-close-ms4-fulfillment.py','verify-zero-ms4-fulfillment.py']:
+        check(definitions(before9[name])==definitions(after9[name]),'QUOTA_ALL_COMPLETE_PROFILE_PYTHON_DEFINITIONS');counts[name]=len(definitions(before9[name]))
+    check(counts==manifest['all_Python_definitions_whole_identical'],'QUOTA_REAL_COMPLETE_FUNCTION_COUNTS')
+    for name in ['README.md','compose.yml','seed-source-inverse.json']:check(before9[name]==after9[name],'QUOTA_THREE_OTHER_FILES_WHOLE_IDENTICAL')
+    for name in ['ms4-host.py','verify-zero-ms4-fulfillment.py']:
+        a=constants(before9[name]);z=constants(after9[name]);check(list(a['CUSTOMER_FORM_SOURCE_FILES'])==old_seven and list(z['CUSTOMER_FORM_SOURCE_FILES'])==seven
+            and z['PAID_ENTRY_BYTES']==a['PAID_ENTRY_BYTES'] and z['PAID_ENTRY_SHA256']==a['PAID_ENTRY_SHA256'],'QUOTA_ALL_SIX_OTHER_CU7_AND_PAID_CONSTANTS')
+    for name,key,target in [('ms4-host.py','INTERFACE_SHA256','interface-v1.json'),('normal-close-ms4-fulfillment.py','HOST_SHA256','ms4-host.py'),('verify-zero-ms4-fulfillment.py','INTERFACE_SHA256','interface-v1.json'),('verify-zero-ms4-fulfillment.py','HOST_SHA256','ms4-host.py'),('verify-zero-ms4-fulfillment.py','CLOSE_SHA256','normal-close-ms4-fulfillment.py')]:
+        check(constants(after9[name])[key]==rows[target]['sha256'],'QUOTA_ALL_FIVE_HASH_EDGES')
+    check(constants(after9['verify-zero-ms4-fulfillment.py'])['INTERFACE_BYTES']==rows['interface-v1.json']['bytes'],'QUOTA_REAL_INTERFACE_BYTES_EDGE')
+    old_derived=decode(before9['source-derivation.json']);derived=decode(after9['source-derivation.json']);node=derived.pop('actual175f_form_quota_wire_profile_refresh')
+    check(node['predecessor_publication']==HISTORICAL_EIGHTEEN_PUBLICATION and node['source_delta']==CURRENT_QUOTA_WIRE_DELTA and node['current_seven_PHP']==seven
+        and node['initializer_tuple_changes']==tuples and derived['current_nonself_artifacts']==[row for row in pub['selected9']if row['path']!='source-derivation.json'],'QUOTA_NEW_COMPLETE_DERIVATION_EIGHT_NONSELF')
+    derived['current_nonself_artifacts']=old_derived['current_nonself_artifacts'];check(derived==old_derived,'QUOTA_ALL_HISTORICAL_DERIVATION_NODES_EXACT')
+    composite=context['current_composite_customer_form_source']
+    check(composite==CURRENT_COMPOSITE_CUSTOMER_FORM_SOURCE and composite['source_sha']==pub['source_sha'] and composite['profile_PINS']==CURRENT_QUOTA_WIRE_PROFILE_SOURCE
+        and composite['predecessor_publication']==HISTORICAL_EIGHTEEN_PUBLICATION and composite['predecessor_composite']==prior_context['current_composite_customer_form_source']
+        and composite['source_delta']==CURRENT_QUOTA_WIRE_DELTA and composite['php_sources']==seven,'QUOTA_COMPLETE_COMPOSITE_HISTORY_CURRENT_SOURCE')
+    groups={prefix:[expected[row['path']]for row in original_rows]for prefix,original_rows in historical['groups'].items()};combined={}
+    for prefix,group in groups.items():
+        for row in group:check(row['path']not in combined or combined[row['path']]==row,'QUOTA_FULL_SOURCE_GROUP_OVERLAPS');combined[row['path']]=row
+    check(context['source_counts']=={prefix:len(rows)for prefix,rows in groups.items()} and len(combined)==len(historical['groups']['worker']),'QUOTA_UNREDUCED_ALL_SIX_FULL_SOURCE_GROUPS')
+    syntax=decode(read(CURRENT_QUOTA_WIRE_INITIALIZER_SYNTAX));check(syntax['source_profile_PINS']==CURRENT_QUOTA_WIRE_PROFILE_SOURCE and compact(syntax['initializer'])==compact(rows['ms4-initialize.php'])
+        and read(syntax['initializer'])==after9['ms4-initialize.php'],'QUOTA_NEW_INITIALIZER_SYNTAX_EXACT_BYTES')
+__INITIALIZER_SYNTAX_CHECKS__
+__CURRENT_RETIREMENT_CHECKS__
+    protected={}
+    for namespace in historical['protected_namespaces']:
+        paths=[name for name in expected if name.startswith(namespace+'/')];protected[namespace]={'count':len(paths),'paths_sha256':hashlib.sha256(('\n'.join(paths)+'\n').encode()).hexdigest()}
+    return {**historical,'all':expected,'groups':groups,'committed':committed,'commit_chain':chain,'protected_namespaces':protected,'current_28dc_paid_producer_failure_retirement':ninth}

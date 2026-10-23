@@ -1,0 +1,66 @@
+{
+  "schema": 1,
+  "status": "COMPLETE_ROOT_PEER_SUCCESS_S_READER_NATIVE_OUTER_SOURCE_ONLY_NOT_EXECUTED",
+  "original_native_wrapper": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/current175f-actual-materialization-peer-outer-r1/launch.py",
+    "bytes": 1776,
+    "sha256": "329825b94aa6fd552d9b9a4332f53880a103d129ce64e8fc2da053e93deac0f0"
+  },
+  "candidates": {
+    "root": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/current175f-complete-normal-S-reader-outers-source-r1/root/launch.py",
+      "bytes": 4274,
+      "sha256": "6bfc711e6295fc138c17136dcf8722f6e4926ab1acfebde4e1f40a4184f1ddd4"
+    },
+    "peer": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/current175f-complete-normal-S-reader-outers-source-r1/peer/launch.py",
+      "bytes": 4281,
+      "sha256": "f7eeb4f42f3542736049cf58dcc67b1fccabdcc9f3659d9296edb028edf2d0e2"
+    }
+  },
+  "ordinary_full_four_directions_replayed": true,
+  "both_original_functions_whole": [
+    "put",
+    "pointer"
+  ],
+  "only_three_module_seams_each": [
+    "READER literal",
+    "real readback argv",
+    "pre-output actual-S0/context/reader/optimization guard"
+  ],
+  "runtime_guard_reads_only_at_future_invocation": {
+    "original_S_pid": 35944,
+    "native_exit_wait_required": [
+      0,
+      0
+    ],
+    "Run": "20261023182634096f57",
+    "context": {
+      "path": "H:/天俪商城/artifacts/ms4-aftersale-review-normal-runs/20261023182634096f57/actual-run-context.json",
+      "bytes": 12301,
+      "sha256": "c56e609828ba3e51e63f69b83e4af49279bdaebee487116728c383e02dae7959"
+    },
+    "S1_or_live_ineligible": true,
+    "before_any_output_creation_or_Popen": true
+  },
+  "root_peer_reader_full_Source_qualifications": {
+    "Root": {
+      "bytes": 2546,
+      "sha256": "5fce0d3970e7a983c39c3f84e51e927c895b7a257e4792fd49a715b6788cd1fd"
+    },
+    "peer": {
+      "bytes": 7971,
+      "sha256": "6030c928a2961cee468b15824948c8f8e04342e62c5865e804b4b9e9e8656224"
+    }
+  },
+  "runtime_output_protocol": "Exact existing 6-key OUTCOME, 3-key created, 8-key terminal and full stdout/stderr; see OUTCOME-SCHEMA.json.",
+  "runtime_output_files_excluded_from_Sourcepins": true,
+  "Root_whole_Source_review_and_admission_required_before_actual_invocation": true,
+  "prepared_wrappers_or_readers_executed": false,
+  "S_Run_private_ENV_actors_cookies_raw_streams_read": false,
+  "A0_or_success_receipt_or_future_hash_PID_created": false,
+  "original_wrapper_readers_N175_Run_W_Val_canonical_CP_modified": false,
+  "all_source_windows_closed": true,
+  "finite_inputs": 8,
+  "ended_ns": 1792781544539486400
+}

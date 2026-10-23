@@ -1,0 +1,11 @@
+--- a/author_draft.py
++++ b/author_draft.py
+@@ -570,7 +570,7 @@
+     sets.update(source_sha=HEAD, CU7=newcu, source_vector8=copy.deepcopy(vector))
+     need(sets['browser8'] == list(browser), 'KEEP_ALL_ORIGINAL_EIGHT_BROWSER_NAMES')
+     payload['CURRENT-SETS.json'] = enc(sets)
+-    payload['CURRENT-A-SOURCE-BINDING.json'] = enc({'schema': 1, 'scope': 'REAL_SAME28DC_A_SUCCESS_INPUTS_BOUND_SOURCE_ONLY_B_NOT_SEALED',
++    payload['CURRENT-A-SOURCE-BINDING.json'] = enc({'schema': 1, 'scope': 'REAL_SAME175F_A_SUCCESS_INPUTS_BOUND_SOURCE_ONLY_B_NOT_SEALED',
+         'root': A.as_posix(), 'normal_profile_candidate': (A / 'validation/actual-profile').as_posix(),
+         'Source_PINS': pin(apinsraw), 'publication': pin(normalpubraw), 'M_Source': pin(mraw),
+         'S_Source': {k: apins['files']['validation/run.py'][k] for k in ['bytes', 'sha256']}, 'Root_PINS': pin(normalsourcepins),

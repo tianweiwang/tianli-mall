@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "scope": "EXISTING_NATIVE_WRAPPER_PROTOCOL_DESCRIPTION_ONLY_NOT_A_RUNTIME_RECEIPT",
+  "runtime_files_each_role": [
+    "reader.created.json",
+    "reader.terminal.json",
+    "reader.stdout",
+    "reader.stderr",
+    "OUTCOME.json"
+  ],
+  "OUTCOME_exact_keys": {
+    "created": "artifact pointer",
+    "terminal": "artifact pointer",
+    "stdout": "artifact pointer",
+    "stderr": "artifact pointer",
+    "native_exit": "native integer return code",
+    "wait_returncode": "native integer wait return code"
+  },
+  "artifact_pointer_exact_keys": {
+    "path": "absolute original file path",
+    "bytes": "complete stream/file integer bytes",
+    "sha256": "full bytes SHA256"
+  },
+  "created_exact_keys": {
+    "pid": "actual child integer PID",
+    "argv": "exact actual child argv array",
+    "started_ns": "actual time_ns"
+  },
+  "terminal_exact_keys": {
+    "pid": "same original child PID",
+    "argv": "same original argv",
+    "started_ns": "same original start",
+    "native_exit": "first wait actual return code",
+    "wait_returncode": "second wait same original process return code",
+    "finished_ns": "actual time_ns",
+    "stdout": "complete original stream pointer",
+    "stderr": "complete original stream pointer"
+  },
+  "runtime_outputs_are_Source_PIN_members": false,
+  "future_actual_value_or_success_fixture_created": false
+}

@@ -1,0 +1,9 @@
+# Actual175f complete successful S readback Source only
+
+Reuse the two fixed reviewed complete readers exactly as parents; no new review chain. Only this new directory is writable. Do not execute readers, Target/Host/Docker/App/Git or inspect incomplete S outputs. Root alone owns live S17155/PID35944, canonical and checkpoint. S1 forbids these success readers; Root must authorize only after genuine original S native0/wait0. Source PASS is not actual S or A0.
+
+Bind actual clean175f source, full M35/19/1088 result46750425/6449487f1da61266fbdfe76260fced9196b398f1cbb92cc59074924d8e76c8aa, freeze10985209/4ac3a0b7b35db7a911e9abb61dfaa4a25b0ffaf3bdc79a7c100b48f0836ce6ed, current full9 profile and actual completed full M Root report. Keep every original full native/stream, nine proof, normal close, independent six-query zero, Source/M/freeze/profile/context/native9 predicate. All reader functions/classes remain whole bytes; necessary module binding/guard seams only.
+
+Root has now published real Run20261023182634096f57, original preparePID49064/native0 and outerS PID35944. Bind this real triplet, plus context12301/c56e609828ba3e51e63f69b83e4af49279bdaebee487116728c383e02dae7959, without reading Run contents in preparation. Keep original CLI arguments, require actual exact triplet and explicit completed-S0 authorization. Reject both old failed Runs. Runtime outputs are separate root/peer actual-readback folders and do not overwrite Source.
+
+Produce whole original before sources, exact ordered necessary seams, complete ordinary forward/reverse diffs with replay, AST and all original function/class/module-complement evidence. The independent reader retains the whole Windows finite observer: own named9 and fd9, cross only dev/ino/size/mtime plus birthtime. Root reader keeps the exact fixed original finite-helper Source and pin. No fabricated success fixtures or expected future results.
