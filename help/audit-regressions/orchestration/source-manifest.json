@@ -3,12 +3,12 @@
   "status": "SOURCE_ARCHIVE_RUNTIME_NOT_READY",
   "source_archive_name": "ms4-worker-normal-source-preparation-r1",
   "handoff_code_commit": "2e4af47c7595947e16bef0abfa9785823b1369d5",
-  "last_executed_source_commit": "53e6d521b387b19a4cf370e0e381670b762d325e",
-  "current_repaired_source_commit": "76efa7807c6137bc430e314e2faa78691cf60431",
+  "last_executed_source_commit": "8819524a60028090c55bdcd3a9da05e50eaf19d0",
+  "current_repaired_source_commit": "8819524a60028090c55bdcd3a9da05e50eaf19d0",
   "originals_preserved_byte_for_byte": true,
   "runtime_executed_by_archive_verifier": false,
-  "file_count": 255,
-  "total_bytes": 43909804,
+  "file_count": 281,
+  "total_bytes": 51036201,
   "files": [
     {
       "path": "sources/customer-form-official-initialize-env-raw-source-r1/candidate/help/audit-regressions/isolated/lib/ms4-customer-http-normal.php",
@@ -425,6 +425,214 @@
       "role": "complete_runtime_source18",
       "bytes": 1006669,
       "sha256": "083f95c705387af4b2ed84dcdbcc9c920ee6ed704b6b4a5695e02d3f67d65f6d"
+    },
+    {
+      "path": "sources/full-a-881-form-prefix-normal-next-source-r3/DESIGN.md",
+      "origin_relative_path": "full-a-881-form-prefix-normal-next-source-r3/DESIGN.md",
+      "package": "full-a-881-form-prefix-normal-next-source-r3",
+      "role": "source-design",
+      "bytes": 8574,
+      "sha256": "1505ea87137c0a5777d1b51fce0cde183121823c577c867c30555cc66b530563"
+    },
+    {
+      "path": "sources/full-a-881-form-prefix-normal-next-source-r3/assemble.py",
+      "origin_relative_path": "full-a-881-form-prefix-normal-next-source-r3/assemble.py",
+      "package": "full-a-881-form-prefix-normal-next-source-r3",
+      "role": "python-source",
+      "bytes": 20851,
+      "sha256": "ac9dd9e6561858a6b77fe1ce0eaaa42cbfbb1b160af88fac3762c7816d646fc2"
+    },
+    {
+      "path": "sources/full-a-881-form-prefix-normal-next-source-r3/author_support.py",
+      "origin_relative_path": "full-a-881-form-prefix-normal-next-source-r3/author_support.py",
+      "package": "full-a-881-form-prefix-normal-next-source-r3",
+      "role": "python-source",
+      "bytes": 4957,
+      "sha256": "be328b4ac085aa7786204fc4bf6ad72b08fcc53fce858daf4393dbe74774e975"
+    },
+    {
+      "path": "sources/full-a-881-form-prefix-normal-next-source-r3/authority-current.py.fragment",
+      "origin_relative_path": "full-a-881-form-prefix-normal-next-source-r3/authority-current.py.fragment",
+      "package": "full-a-881-form-prefix-normal-next-source-r3",
+      "role": "python-source-fragment",
+      "bytes": 33463,
+      "sha256": "bbd4de2ac6e983d91d65741bba9c263db14cf90731390d07660d58e4388c3806"
+    },
+    {
+      "path": "sources/full-a-881-form-prefix-normal-next-source-r3/launcher/launch.py",
+      "origin_relative_path": "full-a-881-form-prefix-normal-next-source-r3/launcher/launch.py",
+      "package": "full-a-881-form-prefix-normal-next-source-r3",
+      "role": "python-source",
+      "bytes": 11059,
+      "sha256": "165b2f95ae4f32fe24c36556f428cc62d39d7a5e48beed1308a65f78fb36b2cf"
+    },
+    {
+      "path": "sources/full-a-881-form-prefix-normal-next-source-r3/materializer/INVERSE.json",
+      "origin_relative_path": "full-a-881-form-prefix-normal-next-source-r3/materializer/INVERSE.json",
+      "package": "full-a-881-form-prefix-normal-next-source-r3",
+      "role": "source-contract",
+      "bytes": 1131270,
+      "sha256": "b2c71bc85eabf9a74bd0955b6e402ec2b4c87acddfbb72d1481da7fa40ca3658"
+    },
+    {
+      "path": "sources/full-a-881-form-prefix-normal-next-source-r3/materializer/PLAN.md",
+      "origin_relative_path": "full-a-881-form-prefix-normal-next-source-r3/materializer/PLAN.md",
+      "package": "full-a-881-form-prefix-normal-next-source-r3",
+      "role": "source-design",
+      "bytes": 14133,
+      "sha256": "2dd0279f2e28255f957b8e20ce2c3e8bc68e275d94877489337172abba7a5a7a"
+    },
+    {
+      "path": "sources/full-a-881-form-prefix-normal-next-source-r3/materializer/prepare.py",
+      "origin_relative_path": "full-a-881-form-prefix-normal-next-source-r3/materializer/prepare.py",
+      "package": "full-a-881-form-prefix-normal-next-source-r3",
+      "role": "python-source",
+      "bytes": 1449198,
+      "sha256": "6b45bb6b8731e6de3c2fa40b14d557fc0923d3521a49b90146b4c4b457437271"
+    },
+    {
+      "path": "sources/full-a-881-form-prefix-normal-next-source-r3/prepare-inputs.py",
+      "origin_relative_path": "full-a-881-form-prefix-normal-next-source-r3/prepare-inputs.py",
+      "package": "full-a-881-form-prefix-normal-next-source-r3",
+      "role": "python-source",
+      "bytes": 5004,
+      "sha256": "66f361b5f8cae6da9a0d2fcfcaf11352d27b04cec87ed8b430503b9ddb7ab3e0"
+    },
+    {
+      "path": "sources/full-a-881-form-prefix-normal-next-source-r3/profile-author.py",
+      "origin_relative_path": "full-a-881-form-prefix-normal-next-source-r3/profile-author.py",
+      "package": "full-a-881-form-prefix-normal-next-source-r3",
+      "role": "python-source",
+      "bytes": 7781,
+      "sha256": "6eb50279866a6c38c4fd3200d1730d24af3b176b13970f1f062ab07dcc98f97e"
+    },
+    {
+      "path": "sources/full-a-881-form-prefix-normal-next-source-r3/retirement-author.py",
+      "origin_relative_path": "full-a-881-form-prefix-normal-next-source-r3/retirement-author.py",
+      "package": "full-a-881-form-prefix-normal-next-source-r3",
+      "role": "python-source",
+      "bytes": 2074,
+      "sha256": "c75c78db102a9a1b722630f85134cb88c47cee401f939fa87b7828924f227f38"
+    },
+    {
+      "path": "sources/full-a-881-form-prefix-normal-next-source-r3/source_reader.py",
+      "origin_relative_path": "full-a-881-form-prefix-normal-next-source-r3/source_reader.py",
+      "package": "full-a-881-form-prefix-normal-next-source-r3",
+      "role": "python-source",
+      "bytes": 4085,
+      "sha256": "2e769696eaa979f2a10318c75c21f266bcafcb944c600b1ff7e6f0d2442daffb"
+    },
+    {
+      "path": "sources/full-a-881-form-prefix-normal-next-source-r3/validation/DESIGN-TASKS.md",
+      "origin_relative_path": "full-a-881-form-prefix-normal-next-source-r3/validation/DESIGN-TASKS.md",
+      "package": "full-a-881-form-prefix-normal-next-source-r3",
+      "role": "source-design",
+      "bytes": 15732,
+      "sha256": "66725a4ba2986f2bd4984f382f96e3248a0cb9cf64014d027ab512bbb80b6f06"
+    },
+    {
+      "path": "sources/full-a-881-form-prefix-normal-next-source-r3/validation/PINS.json",
+      "origin_relative_path": "full-a-881-form-prefix-normal-next-source-r3/validation/PINS.json",
+      "package": "full-a-881-form-prefix-normal-next-source-r3",
+      "role": "source-contract",
+      "bytes": 357,
+      "sha256": "853c9f437980af3cd4c6854e47fa71754aa35f2a855f15bb6653f7f14b654569"
+    },
+    {
+      "path": "sources/full-a-881-form-prefix-normal-next-source-r3/validation/PROFILE-PINS.json",
+      "origin_relative_path": "full-a-881-form-prefix-normal-next-source-r3/validation/PROFILE-PINS.json",
+      "package": "full-a-881-form-prefix-normal-next-source-r3",
+      "role": "source-contract",
+      "bytes": 1517,
+      "sha256": "1fca84da286ffbf251a7a305c2f64353f1e1be36ddc818c439177207ea159f3a"
+    },
+    {
+      "path": "sources/full-a-881-form-prefix-normal-next-source-r3/validation/PROFILE-PUBLICATION.json",
+      "origin_relative_path": "full-a-881-form-prefix-normal-next-source-r3/validation/PROFILE-PUBLICATION.json",
+      "package": "full-a-881-form-prefix-normal-next-source-r3",
+      "role": "source-contract",
+      "bytes": 1388363,
+      "sha256": "5c249259c802f1cf9b44490b1f784f4d4ce9c0bdd4bdb95f1a60cd722c42ad9a"
+    },
+    {
+      "path": "sources/full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/README.md",
+      "origin_relative_path": "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/README.md",
+      "package": "full-a-881-form-prefix-normal-next-source-r3",
+      "role": "source-design",
+      "bytes": 89381,
+      "sha256": "b886791202529032c9f85a88f80af456f1e916ad2ad1031eb417685edcae6493"
+    },
+    {
+      "path": "sources/full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/compose.yml",
+      "origin_relative_path": "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/compose.yml",
+      "package": "full-a-881-form-prefix-normal-next-source-r3",
+      "role": "compose-source",
+      "bytes": 11860,
+      "sha256": "f6c4b4f50fbd34fda66afcf2d0819d38992a2fe467172fe587cefbeb2d39a198"
+    },
+    {
+      "path": "sources/full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/interface-v1.json",
+      "origin_relative_path": "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/interface-v1.json",
+      "package": "full-a-881-form-prefix-normal-next-source-r3",
+      "role": "source-contract",
+      "bytes": 99392,
+      "sha256": "e7f44c8b6cb88091be29932115599daebfdacdbad80fd76ea83542e47da0396a"
+    },
+    {
+      "path": "sources/full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/ms4-host.py",
+      "origin_relative_path": "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/ms4-host.py",
+      "package": "full-a-881-form-prefix-normal-next-source-r3",
+      "role": "python-source",
+      "bytes": 345436,
+      "sha256": "e65e3b1421bba2de7da9c54ef8b9cda81c899a5ce07f98f536928b0b9dd6e9b5"
+    },
+    {
+      "path": "sources/full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/ms4-initialize.php",
+      "origin_relative_path": "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/ms4-initialize.php",
+      "package": "full-a-881-form-prefix-normal-next-source-r3",
+      "role": "php-source",
+      "bytes": 78955,
+      "sha256": "3f385bfdb697f5d452e686478f6d16210e019549f6c3d19a1b65f86af36154ac"
+    },
+    {
+      "path": "sources/full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/normal-close-ms4-fulfillment.py",
+      "origin_relative_path": "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/normal-close-ms4-fulfillment.py",
+      "package": "full-a-881-form-prefix-normal-next-source-r3",
+      "role": "python-source",
+      "bytes": 47220,
+      "sha256": "9aea4dfa8648bcfd4421d148dbb31afe0cb03001c748ed09c96429fc75ce846c"
+    },
+    {
+      "path": "sources/full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/seed-source-inverse.json",
+      "origin_relative_path": "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/seed-source-inverse.json",
+      "package": "full-a-881-form-prefix-normal-next-source-r3",
+      "role": "source-contract",
+      "bytes": 639,
+      "sha256": "c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a"
+    },
+    {
+      "path": "sources/full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/source-derivation.json",
+      "origin_relative_path": "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/source-derivation.json",
+      "package": "full-a-881-form-prefix-normal-next-source-r3",
+      "role": "source-contract",
+      "bytes": 594567,
+      "sha256": "aab79b28ffbe3b380a21a9109a1efd258eb23ac2fffb8f350687d62ba0b00469"
+    },
+    {
+      "path": "sources/full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/verify-zero-ms4-fulfillment.py",
+      "origin_relative_path": "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/verify-zero-ms4-fulfillment.py",
+      "package": "full-a-881-form-prefix-normal-next-source-r3",
+      "role": "python-source",
+      "bytes": 296097,
+      "sha256": "8a45290ff348f2c150f5207ec5044c806f6d1997bce507a073dc9b659e71e662"
+    },
+    {
+      "path": "sources/full-a-881-form-prefix-normal-next-source-r3/validation/run.py",
+      "origin_relative_path": "full-a-881-form-prefix-normal-next-source-r3/validation/run.py",
+      "package": "full-a-881-form-prefix-normal-next-source-r3",
+      "role": "python-source",
+      "bytes": 1464432,
+      "sha256": "d7c0c6e665c8e79eed7f9cd51bb1949aaa2d4f6f2cb0f7f247da371ccbf0e2ec"
     },
     {
       "path": "sources/full-a-eight-volume-consumer-source-closure-design-r1/candidate/help/audit-regressions/isolated/ms4-customer-http-normal.php",
@@ -2080,31 +2288,31 @@
     "uploads and private data volumes",
     "build outputs and caches"
   ],
-  "last_materialization_source_commit": "584532ba22b1824164aa11c06b163715be8c224c",
+  "last_materialization_source_commit": "8819524a60028090c55bdcd3a9da05e50eaf19d0",
   "superseded_profile_only_missing_programs": [
     "full-a-paid-fulfillment-contract-normal-next-source-r1/materializer/prepare.py",
     "full-a-paid-fulfillment-contract-normal-next-source-r1/validation/run.py",
     "full-a-paid-fulfillment-contract-normal-next-source-r1/launcher/launch.py"
   ],
   "current_full_a_required": [
-    "full-a-2e4-current-normal-next-source-r2/launcher/launch.py",
-    "full-a-2e4-current-normal-next-source-r2/materializer/INVERSE.json",
-    "full-a-2e4-current-normal-next-source-r2/materializer/PLAN.md",
-    "full-a-2e4-current-normal-next-source-r2/materializer/prepare.py",
-    "full-a-2e4-current-normal-next-source-r2/validation/actual-profile/compose.yml",
-    "full-a-2e4-current-normal-next-source-r2/validation/actual-profile/interface-v1.json",
-    "full-a-2e4-current-normal-next-source-r2/validation/actual-profile/ms4-host.py",
-    "full-a-2e4-current-normal-next-source-r2/validation/actual-profile/ms4-initialize.php",
-    "full-a-2e4-current-normal-next-source-r2/validation/actual-profile/normal-close-ms4-fulfillment.py",
-    "full-a-2e4-current-normal-next-source-r2/validation/actual-profile/README.md",
-    "full-a-2e4-current-normal-next-source-r2/validation/actual-profile/seed-source-inverse.json",
-    "full-a-2e4-current-normal-next-source-r2/validation/actual-profile/source-derivation.json",
-    "full-a-2e4-current-normal-next-source-r2/validation/actual-profile/verify-zero-ms4-fulfillment.py",
-    "full-a-2e4-current-normal-next-source-r2/validation/DESIGN-TASKS.md",
-    "full-a-2e4-current-normal-next-source-r2/validation/PINS.json",
-    "full-a-2e4-current-normal-next-source-r2/validation/PROFILE-PINS.json",
-    "full-a-2e4-current-normal-next-source-r2/validation/PROFILE-PUBLICATION.json",
-    "full-a-2e4-current-normal-next-source-r2/validation/run.py"
+    "full-a-881-form-prefix-normal-next-source-r3/launcher/launch.py",
+    "full-a-881-form-prefix-normal-next-source-r3/materializer/INVERSE.json",
+    "full-a-881-form-prefix-normal-next-source-r3/materializer/PLAN.md",
+    "full-a-881-form-prefix-normal-next-source-r3/materializer/prepare.py",
+    "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/compose.yml",
+    "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/interface-v1.json",
+    "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/ms4-host.py",
+    "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/ms4-initialize.php",
+    "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/normal-close-ms4-fulfillment.py",
+    "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/README.md",
+    "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/seed-source-inverse.json",
+    "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/source-derivation.json",
+    "full-a-881-form-prefix-normal-next-source-r3/validation/actual-profile/verify-zero-ms4-fulfillment.py",
+    "full-a-881-form-prefix-normal-next-source-r3/validation/DESIGN-TASKS.md",
+    "full-a-881-form-prefix-normal-next-source-r3/validation/PINS.json",
+    "full-a-881-form-prefix-normal-next-source-r3/validation/PROFILE-PINS.json",
+    "full-a-881-form-prefix-normal-next-source-r3/validation/PROFILE-PUBLICATION.json",
+    "full-a-881-form-prefix-normal-next-source-r3/validation/run.py"
   ],
   "pipeline_snapshots": [
     {
@@ -2124,12 +2332,31 @@
       "source_commit": "2e4af47c7595947e16bef0abfa9785823b1369d5",
       "program_members": 18,
       "status": "ACTUAL_M_1037_ZERO_S_NOT_SIGNED_AT_HANDOFF_PREPARATION"
+    },
+    {
+      "package": "full-a-881-form-prefix-normal-next-source-r3",
+      "source_commit": "8819524a60028090c55bdcd3a9da05e50eaf19d0",
+      "program_members": 18,
+      "author_code_members": 8,
+      "status": "ACTUAL_M_1046_ZERO_FULL_BUSINESS_NOT_ACCEPTED"
     }
   ],
   "required_design_clarifications": [
     "published-current-normal-next-source-r2-design-clarification-r1/CLARIFICATION.md",
     "published-current-normal-next-source-r2-design-clarification-r1/PINS.json"
   ],
-  "latest_materialized_source_commit": "2e4af47c7595947e16bef0abfa9785823b1369d5",
-  "handoff_branch": "codex/orchestration-handoff-20261023"
+  "latest_materialized_source_commit": "8819524a60028090c55bdcd3a9da05e50eaf19d0",
+  "handoff_branch": "codex/orchestration-handoff-20261023",
+  "current_author_code_required": [
+    "full-a-881-form-prefix-normal-next-source-r3/assemble.py",
+    "full-a-881-form-prefix-normal-next-source-r3/source_reader.py",
+    "full-a-881-form-prefix-normal-next-source-r3/author_support.py",
+    "full-a-881-form-prefix-normal-next-source-r3/authority-current.py.fragment",
+    "full-a-881-form-prefix-normal-next-source-r3/prepare-inputs.py",
+    "full-a-881-form-prefix-normal-next-source-r3/profile-author.py",
+    "full-a-881-form-prefix-normal-next-source-r3/retirement-author.py",
+    "full-a-881-form-prefix-normal-next-source-r3/DESIGN.md"
+  ],
+  "current_orchestration_source_commit": "8819524a60028090c55bdcd3a9da05e50eaf19d0",
+  "archive_business_tree_base_commit": "2e4af47c7595947e16bef0abfa9785823b1369d5"
 }

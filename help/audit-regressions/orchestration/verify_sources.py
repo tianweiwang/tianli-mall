@@ -114,12 +114,40 @@ def main():
         require(current_package + '/' + entry in current, 'Current orchestration entry missing: ' + entry)
     for entry in ['materializer/prepare.py', 'validation/run.py']:
         check_declared_authority_globals(root / 'sources' / current_package / entry)
+    authors = manifest['current_author_code_required']
+    author_names = {
+        'assemble.py', 'source_reader.py', 'author_support.py', 'authority-current.py.fragment',
+        'prepare-inputs.py', 'profile-author.py', 'retirement-author.py', 'DESIGN.md',
+    }
+    require(len(authors) == len(set(authors)) == 8, 'Current author source must contain all 8 members')
+    require(set(authors) == {current_package + '/' + name for name in author_names},
+            'Current author source paths do not match the complete author package')
+    require(not set(authors).intersection(current), 'Author code cannot replace pipeline members')
+    for rel in authors:
+        require('sources/' + rel in expected, 'Current author source missing: ' + rel)
+    local_modules = {'source_reader', 'author_support'}
+    for name in author_names:
+        if not name.endswith('.py'):
+            continue
+        tree = ast.parse((root / 'sources' / current_package / name).read_bytes(), filename=name)
+        for node in ast.walk(tree):
+            modules = []
+            if isinstance(node, ast.Import):
+                modules = [alias.name.split('.')[0] for alias in node.names]
+            elif isinstance(node, ast.ImportFrom):
+                require(node.level == 0 and node.module is not None, 'Unexpected relative author import')
+                modules = [node.module.split('.')[0]]
+            require(all(module in sys.stdlib_module_names or module in local_modules for module in modules),
+                    'Unarchived author module dependency: ' + name)
     for rel in manifest['superseded_profile_only_missing_programs']:
         require('sources/' + rel not in expected, 'Draft status must be updated before adding: ' + rel)
     for rel in manifest['required_design_clarifications']:
         require('sources/' + rel in expected, 'Design clarification missing: ' + rel)
     dependencies = load_json((root / 'runtime-dependencies.json').read_bytes())
     require(dependencies['runtime_ready'] is False, 'Runtime readiness cannot be inferred from source verification')
+    require(dependencies['current_source']['package'] == current_package, 'Current package metadata mismatch')
+    require(dependencies['current_source']['source_commit'] == manifest['current_orchestration_source_commit'],
+            'Current business source metadata mismatch')
     print(json.dumps({
         'status': 'PASS_SOURCE_ARCHIVE_ONLY',
         'files': len(rows),
@@ -128,6 +156,7 @@ def main():
         'python_ast_parsed': python_count,
         'json_parsed': json_count,
         'current_source_authority_global_checks': 2,
+        'current_author_code_members': len(authors),
         'archived_programs_executed': False,
         'runtime_ready': False,
         'runtime_dependencies': 'runtime-dependencies.json',

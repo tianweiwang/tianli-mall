@@ -1,0 +1,45 @@
+{
+  "schema": 1,
+  "scope": "LATEST_ORCHESTRATION_SOURCE_HANDOFF_ONLY",
+  "source_commit": "8819524a60028090c55bdcd3a9da05e50eaf19d0",
+  "delivery_branch": "codex/orchestration-handoff-20261023",
+  "business_source_branch": "feature/ms4-asset-consumers",
+  "archive_business_tree_base_commit": "2e4af47c7595947e16bef0abfa9785823b1369d5",
+  "source_package": "full-a-881-form-prefix-normal-next-source-r3",
+  "new_files": 26,
+  "new_source_bytes": 7126397,
+  "required_program_members": 18,
+  "additional_author_code_members": 8,
+  "archive_files": 281,
+  "archive_bytes": 51036201,
+  "archive_packages": 26,
+  "original_255_files_unchanged": true,
+  "materialization": {
+    "status": "PASS_MATERIALIZATION_ONLY",
+    "native_operations": 1046,
+    "all_native_and_wait_zero": true,
+    "root_readback_report": {
+      "bytes": 1476,
+      "sha256": "b39c1c8980b6aae99999e1250d60f8b05197bb2569da3b0150f6e5932c34ac1a"
+    },
+    "independent_readback_report": {
+      "bytes": 2278,
+      "sha256": "6a47afbdb425754da0d392937e51efe4bafa234a25da2c435f184426407c52ff"
+    }
+  },
+  "S_outer_terminal_present_at_source_copy": false,
+  "source_copy_observed_at_utc": "2026-10-23T10:53:02Z",
+  "full_business_acceptance": "INCOMPLETE",
+  "original_receipts_and_private_runtime_included": false,
+  "runtime_ready": false,
+  "archived_programs_executed_by_handoff": false,
+  "business_code_modified": false,
+  "active_source_worktrees_advanced": false,
+  "deployed": false,
+  "remaining_reproduction_dependencies": [
+    "machine paths and fixed runtime images",
+    "historical authoring inputs and authorities",
+    "original created/terminal and stdout/stderr evidence",
+    "fresh private initialization and complete runtime qualification"
+  ]
+}

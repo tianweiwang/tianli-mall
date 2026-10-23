@@ -1,5 +1,7 @@
 # 编排源码交接补齐
 
+本文件保留早期交付时点。最新完整编排与作者源码已在独立交接分支补充，当前入口见[源码交接补充](orchestration-source-handoff.md)及 [R4 摘要](current-source-handoff-r4.json)；下文的旧数量与旧运行状态用于追溯。
+
 ## 问题与目标
 
 2026-10-23 用户指出：仓库外 `ms4-worker-normal-source-preparation-r1` 材料未找到，Git 不包含完整编排脚本。本机原目录实际存在，但前次 Git 交付只有产品源码、部分测试入口和状态摘要，没有携带仓库外的主编排源码。这是交付遗漏。

@@ -1,0 +1,325 @@
+def source_authority(pub, checked, check):
+    """Qualify the immutable complete fifteen-step stage, then the exact current881 layer."""
+    def pairs(items):
+        value = {}
+        for key,item in items:
+            check(key not in value, 'CURRENT881_NO_DUPLICATE_JSON_KEYS'); value[key] = item
+        return value
+    def decode(raw):
+        return json.loads(raw, object_pairs_hook=pairs)
+    def compact(row):
+        return {key:row[key] for key in ['bytes','sha256']}
+    def read(pointer):
+        check(type(pointer) is dict and set(pointer) in [{'path','bytes','sha256'},{'path','bytes','sha256','native9'}]
+            and type(pointer['path']) is str and Path(pointer['path']).is_absolute() and '..' not in Path(pointer['path']).parts
+            and type(pointer['bytes']) is int and pointer['bytes'] >= 0 and type(pointer['sha256']) is str
+            and re.fullmatch('[a-f0-9]{64}',pointer['sha256']) is not None, 'CURRENT881_FIXED_PUBLIC_SOURCE_DESCRIPTOR')
+        if 'native9' in pointer:
+            check(type(pointer['native9']) is list and len(pointer['native9']) == 9
+                and all(type(x) is int for x in pointer['native9']), 'CURRENT881_ACTUAL_NATIVE_NINE_DESCRIPTOR')
+        raw = checked(pointer)
+        check({'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest()} == compact(pointer), 'CURRENT881_COMPLETE_PINNED_BYTES')
+        return raw
+    def constants(raw):
+        result = {}
+        for node in ast.parse(raw.decode('utf-8')).body:
+            if isinstance(node,ast.Assign) and len(node.targets) == 1 and isinstance(node.targets[0],ast.Name):
+                try: result[node.targets[0].id] = ast.literal_eval(node.value)
+                except (ValueError,TypeError): pass
+        return result
+    def definitions(raw):
+        text = raw.decode('utf-8')
+        return {node.name:ast.get_source_segment(text,node) for node in ast.parse(text).body
+            if isinstance(node,(ast.FunctionDef,ast.ClassDef))}
+    def patch_apply(before, raw):
+        lines = raw.decode('utf-8').splitlines(keepends=True); index = 0; result = dict(before)
+        while index < len(lines):
+            check(lines[index].startswith('--- a/'), 'CURRENT881_PATCH_OLD_HEADER')
+            name = lines[index][6:].rstrip('\r\n'); index += 1
+            check(name in before and lines[index].rstrip('\r\n') == '+++ b/'+name, 'CURRENT881_PATCH_SAME_MEMBER'); index += 1
+            old = before[name].decode('utf-8').splitlines(keepends=True); out = []; cursor = 0
+            while index < len(lines) and lines[index].startswith('@@ '):
+                match = re.fullmatch(r'@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@[^\n]*\n?',lines[index]); check(match is not None,'CURRENT881_STANDARD_PATCH_HUNK')
+                oldn = int(match[2] or 1); newn = int(match[4] or 1); start = int(match[1])-1 if oldn else int(match[1])
+                check(start >= cursor,'CURRENT881_ORDERED_PATCH_HUNKS');out.extend(old[cursor:start]);cursor = start;index += 1;used = 0;made = 0
+                while index < len(lines) and not lines[index].startswith(('@@ ','--- a/')):
+                    line = lines[index]; check(line[:1] in [' ','+','-'],'CURRENT881_PATCH_LINE')
+                    if line[0] in [' ','-']:
+                        check(old[cursor] == line[1:],'CURRENT881_PATCH_FULL_OLD_CONTEXT');cursor += 1;used += 1
+                    if line[0] in [' ','+']:out.append(line[1:]);made += 1
+                    index += 1
+                check((used,made) == (oldn,newn),'CURRENT881_PATCH_COUNTS')
+            out.extend(old[cursor:]);result[name] = ''.join(out).encode('utf-8')
+        return result
+    old_source = read(HISTORICAL_FIFTEEN_M_SOURCE)
+    old_defs = definitions(old_source)
+    check({'bytes':len(old_defs['source_authority'].encode()),'sha256':hashlib.sha256(old_defs['source_authority'].encode()).hexdigest()}
+        == HISTORICAL_FIFTEEN_AUTHORITY_SOURCE, 'CURRENT881_FULL_HISTORICAL_AUTHORITY_BODY_IDENTITY')
+    old_constants = constants(old_source)
+    check({key:old_constants[key] for key in HISTORICAL_FIFTEEN_CONSTANTS} == HISTORICAL_FIFTEEN_CONSTANTS,
+        'CURRENT881_EXACT_OLD_LITERAL_CONSTANTS_NOT_CURRENT_TREE')
+    historical_pub = decode(read(HISTORICAL_FIFTEEN_PUBLICATION))
+__HISTORICAL_VALIDATOR__
+    historical = historical_fifteen(historical_pub, checked, check)
+    check(set(pub) == set(historical_pub) and pub['schema'] == 1 and type(pub['schema']) is int
+        and pub['source_sha'] == COMMIT_CHAIN[-1]['source_sha'] and pub['parent'] == COMMIT_CHAIN[-1]['parent']
+        and pub['source_sha'] == '8819524a60028090c55bdcd3a9da05e50eaf19d0'
+        and pub['parent'] == historical_pub['source_sha'] == '2e4af47c7595947e16bef0abfa9785823b1369d5'
+        and pub['scope'] == historical_pub['scope'] and pub['base_profile'] == historical_pub['base_profile']
+        and pub['target_execution'] == 'NOT RUN', 'CURRENT881_EXACT_CURRENT_PUBLICATION_SCHEMA_AND_HEAD')
+    context = pub['finite_contexts']; prior_context = historical_pub['finite_contexts']
+    overlay_keys = {'commit_chain','committed_changes','committed_files','new_tracked_paths','actual_complete_expected_tracked_count',
+        'source_counts','current_composite_customer_form_source','source_authoring_qualification_scope','current_published_source_scope'}
+    extra_keys = {'historical_fifteenth_publication','current_sixteenth_source_history','current881_validation_alignment',
+        'current_form_assertion_prefix_source','current_form_profile_source','current_initializer_form_syntax','current_2e4_paid_producer_failure_retirement'}
+    check(set(context) == set(prior_context)|extra_keys and all(context[key] == value for key,value in prior_context.items() if key not in overlay_keys),
+        'CURRENT881_ALL_ORIGINAL_CONTEXT_FACTS_RETAINED')
+    check(context['historical_fifteenth_publication'] == HISTORICAL_FIFTEEN_PUBLICATION
+        and context['current_sixteenth_source_history'] == SIXTEENTH_SOURCE_HISTORY
+        and context['current881_validation_alignment'] == CURRENT_881_VALIDATION_ALIGNMENT
+        and context['current_form_assertion_prefix_source'] == CURRENT_FORM_DELTA
+        and context['current_form_profile_source'] == CURRENT_FORM_PROFILE_SOURCE
+        and context['current_initializer_form_syntax'] == CURRENT_INITIALIZER_FORM_SYNTAX
+        and context['current_2e4_paid_producer_failure_retirement'] == CURRENT_2E4_PAID_PRODUCER_FAILURE_RETIREMENT,
+        'CURRENT881_ALL_NEW_NAMED_FIXED_AUTHORITIES')
+    chain = context['commit_chain']
+    check(chain == COMMIT_CHAIN and len(chain) == 16 and chain[:15] == historical['commit_chain'],
+        'CURRENT881_EXACT_SIXTEEN_WITH_ALL_OLD_FIFTEEN')
+    stage = decode(read(SIXTEENTH_SOURCE_HISTORY)); step = chain[15]
+    check(set(stage) == {'schema','scope','source_sha','parent','kind','files','git_operations','native_count','business','worktree_mutations'}
+        and stage['schema'] == 1 and type(stage['schema']) is int and stage['scope'] == 'ACTUAL_READ_ONLY_GIT_881_FORM_ASSERTION_PREFIX_THREE_FILE_STEP'
+        and {key:stage[key] for key in ['kind','source_sha','parent','files']} == {key:step[key] for key in ['kind','source_sha','parent','files']}
+        and step['commit'] == SIXTEENTH_SOURCE_HISTORY and step['kind'] == 'form_assertion_prefix_repair'
+        and stage['native_count'] == 14 and stage['business'] == 'NOT RUN' and stage['worktree_mutations'] == 0,
+        'CURRENT881_REAL_SIXTEENTH_THREE_FILE_SOURCE_STAGE')
+    git_raw = {}
+    for label,receipt in stage['git_operations'].items():
+        check(set(receipt) == {'created','terminal','stdout','stderr'}, 'CURRENT881_GIT_RECEIPT_FOUR')
+        made = decode(read(receipt['created'])); ended = decode(read(receipt['terminal'])); out = read(receipt['stdout']); err = read(receipt['stderr'])
+        check(made['pid'] == ended['pid'] and made['argv'] == ended['argv'] and made['started_ns'] == ended['started_ns']
+            and type(made['pid']) is int and made['pid'] > 0 and ended['native_exit'] == ended['wait_returncode'] == 0
+            and compact(ended['stdout']) == compact(receipt['stdout']) and compact(ended['stderr']) == compact(receipt['stderr'])
+            and err == b'' and ended['finished_ns'] >= ended['started_ns'], 'CURRENT881_REAL_GIT_SAME_PID_WAIT_AND_BOTH_COMPLETE_STREAMS')
+        argv = ended['argv']; check(argv[:5] == ['git','-c','safe.directory='+MAIN_SOURCE,'-C',MAIN_SOURCE], 'CURRENT881_GIT_EXACT_CURRENT_SOURCE_ROOT')
+        git_raw[label] = (argv[5:],out)
+    expected_git = {'head-before':['rev-parse','HEAD'],'clean-before':['status','--porcelain=v1','--untracked-files=all'],
+        'parent':['rev-list','--parents','-n','1',pub['source_sha']],'commit-object':['cat-file','-p',pub['source_sha']],
+        'changed-paths':['diff-tree','--no-commit-id','--name-only','-r',pub['source_sha']],
+        'name-status':['diff-tree','--no-commit-id','--name-status','-r',pub['source_sha']],
+        'head-after':['rev-parse','HEAD'],'clean-after':['status','--porcelain=v1','--untracked-files=all']}
+    expected_paths = ['docs/multi-merchant/CURRENT-STATUS.md','docs/multi-merchant/records/ms4/form-assertion-prefix-repair.md',
+        'help/audit-regressions/isolated/lib/ms4-customer-form-normal.php']
+    check([row['path'] for row in step['files']] == expected_paths and git_raw['changed-paths'][1].decode().splitlines() == expected_paths
+        and git_raw['name-status'][1].decode().splitlines() == ['M\t'+expected_paths[0],'A\t'+expected_paths[1],'M\t'+expected_paths[2]],
+        'CURRENT881_ACTUAL_EXACT_THREE_PATH_STATUS_DELTA')
+    for label in ['head-before','head-after']:check(git_raw[label][1] == (pub['source_sha']+'\n').encode(),'CURRENT881_ACTUAL_HEAD_BEFORE_AFTER')
+    for label in ['clean-before','clean-after']:check(git_raw[label][1] == b'','CURRENT881_ACTUAL_CLEAN_BEFORE_AFTER')
+    check(git_raw['parent'][1] == (pub['source_sha']+' '+pub['parent']+'\n').encode()
+        and git_raw['commit-object'][1].splitlines()[1] == ('parent '+pub['parent']).encode(), 'CURRENT881_ACTUAL_ONE_PARENT_COMMIT_OBJECT')
+    expected = dict(historical['all']); new_blobs = {}
+    for index,row in enumerate(step['files'],1):
+        name = row['path']; mark = 'member-'+str(index); expected_git[mark+'-after'] = ['show',pub['source_sha']+':'+name]
+        raw = git_raw[mark+'-after'][1];new_blobs[name] = raw
+        check({'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest()} == row['after'], 'CURRENT881_FULL_ACTUAL_AFTER_BLOB')
+        check(row['before'] == (compact(expected[name]) if name in expected else None), 'CURRENT881_FROM_COMPLETE_QUALIFIED_FIFTEENTH_EXPECTATION')
+        if row['before'] is None:
+            expected_git[mark+'-absent'] = ['ls-tree','--name-only',pub['parent'],'--',name]
+            check(git_raw[mark+'-absent'][1] == b'' and name == expected_paths[1], 'CURRENT881_ONE_REAL_NEW_DOCUMENT')
+        else:
+            expected_git[mark+'-before'] = ['show',pub['parent']+':'+name]; oldraw = git_raw[mark+'-before'][1]
+            check({'bytes':len(oldraw),'sha256':hashlib.sha256(oldraw).hexdigest()} == row['before'], 'CURRENT881_FULL_ACTUAL_BEFORE_BLOB')
+        expected[name] = {'path':name,**row['after']}
+    check(set(expected_git) == set(git_raw) and all(git_raw[key][0] == value for key,value in expected_git.items()), 'CURRENT881_CLOSED_FOURTEEN_READ_ONLY_GIT_COMMANDS')
+    expected = dict(sorted(expected.items())); changes = {row['path']:dict(row) for row in prior_context['committed_changes']}
+    for row in step['files']:
+        if row['path'] in changes:changes[row['path']]['after'] = row['after']
+        else:changes[row['path']] = row
+    changes = [changes[name] for name in sorted(changes)]; committed = [expected[row['path']] for row in changes]
+    requirements = sorted(set(HISTORICAL_FIFTEEN_CONSTANTS['SOURCE_REQUIREMENT_PATHS'])|set(expected_paths))
+    additions = sorted(set(HISTORICAL_FIFTEEN_CONSTANTS['NEW_TRACKED_PATHS'])|{expected_paths[1]})
+    check(context['committed_changes'] == changes and context['committed_files'] == committed and COMMITTED_PATHS == [row['path'] for row in changes]
+        and context['new_tracked_paths'] == NEW_TRACKED_PATHS == additions and SOURCE_REQUIREMENT_PATHS == requirements
+        and pub['repository_Source_requirements'] == [expected[name] for name in requirements]
+        and context['actual_complete_expected_tracked_count'] == len(expected), 'CURRENT881_COMPLETE_INDEPENDENT_CUMULATIVE_NAMESPACE_REQUIREMENTS')
+    proof = decode(read(CURRENT_FORM_DELTA)); form = expected_paths[2]; old_form = read(proof['before']); new_form = read(proof['candidate'])
+    transform = decode(read(proof['transform'])); prefixpins = decode(read(proof['source_PINS']))
+    check(proof['schema'] == 1 and proof['scope'] == 'FORM_ASSERTION_LABEL_ONLY_SIXTEENTH_CURRENT_881_SOURCE_LAYER'
+        and proof['repository_path'] == transform['repository_path'] == form and proof['actual_adoption'] == SIXTEENTH_SOURCE_HISTORY
+        and compact(proof['before']) == step['files'][2]['before'] and compact(proof['candidate']) == step['files'][2]['after']
+        and new_form == new_blobs[form] and compact(proof['before']) == prefixpins['members']['before/ms4-customer-form-normal.php']
+        and compact(proof['candidate']) == prefixpins['members']['candidate/ms4-customer-form-normal.php']
+        and len(transform['changes']) == proof['changes'] == 60 and transform['assertion_conditions_or_guard_changed'] is False,
+        'CURRENT881_ACTUAL_ADOPTED_FULL_FORM_DELTA_SOURCE')
+    pieces = []; offset = 0; reverse_pieces = []; new_offset = 0
+    for change in transform['changes']:
+        start = change['offset']; old = change['old'].encode(); new = change['new'].encode()
+        check(type(start) is int and start >= offset and old_form[start:start+len(old)] == old and old.startswith(b"'M4CF_")
+            and new == b"'M4C_FORM_"+old[len(b"'M4CF_"):], 'CURRENT881_EXACT_FIXED_ASSERTION_SECOND_LABEL')
+        pieces.extend([old_form[offset:start],new]); offset = start+len(old)
+    pieces.append(old_form[offset:]); check(b''.join(pieces) == new_form and len(new_form)-len(old_form) == 240,
+        'CURRENT881_COMPLETE_SIXTY_LITERAL_FORWARD_AND_ALL_OTHER_BYTES_PRESERVED')
+    peer = decode(read(proof['Source_peer'])); syntax = decode(read(proof['actual_helper_syntax']))
+    check(peer['status'] == 'SOURCE_ONLY_EXACT_SIXTY_DIRECT_ASSERTION_LABEL_REPAIR_PASS' and syntax['status'] == 'PASS_CANDIDATE_PHP82_SYNTAX_ONLY'
+        and syntax['candidate_Source_PINS'] == proof['source_PINS'] and syntax['candidate_Source_transform'] == proof['transform']
+        and syntax['container_native_exit'] == 0 and syntax['ordinary_own_container_removed'] is True
+        and syntax['candidate_entry_or_transform_execution'] == 'NOT RUN' and syntax['App_or_business'] == 'NOT RUN',
+        'CURRENT881_FORM_SOURCE_PEER_AND_ACTUAL_SYNTAX_NOT_BUSINESS_SUCCESS')
+    profilepins = decode(read(CURRENT_FORM_PROFILE_SOURCE)); profile_root = Path(CURRENT_FORM_PROFILE_SOURCE['path']).parent
+    manifest = decode(read({'path':(profile_root/'MANIFEST.json').as_posix(),**profilepins['members']['MANIFEST.json']}))
+    artifact_names = [row['path'] for row in historical_pub['selected9']]
+    check(len(artifact_names) == 9 and manifest['selected9'] == pub['selected9'] and manifest['predecessor'] == HISTORICAL_FIFTEEN_PACKAGE
+        and manifest['form_delta'] == CURRENT_FORM_DELTA and set(manifest['before']) == set(manifest['candidate']) == set(artifact_names)
+        and manifest['candidate'] == profilepins['candidate'], 'CURRENT881_FULL_PROFILE_NINE_SOURCE_LAYER')
+    before9 = {}; after9 = {}
+    for name in artifact_names:
+        check(manifest['before'][name] == compact(next(row for row in historical_pub['selected9'] if row['path']==name)), 'CURRENT881_PROFILE_FROM_EXACT_OLD_SELECTED_NINE')
+        for kind,table in [('before',before9),('candidate',after9)]:
+            key = kind+'/'+name;check(profilepins['members'][key] == manifest[kind][name], 'CURRENT881_PROFILE_PIN_JOIN')
+            table[name] = read({'path':(profile_root/key).as_posix(),**profilepins['members'][key]})
+    check(patch_apply(before9,read({'path':(profile_root/'DIFF.patch').as_posix(),**profilepins['members']['DIFF.patch']})) == after9
+        and patch_apply(after9,read({'path':(profile_root/'REVERSE.patch').as_posix(),**profilepins['members']['REVERSE.patch']})) == before9,
+        'CURRENT881_COMPLETE_NINE_STANDARD_FORWARD_AND_REVERSE')
+    changed = sorted(name for name in artifact_names if before9[name] != after9[name])
+    check(changed == manifest['changed'] == sorted(['interface-v1.json','ms4-host.py','ms4-initialize.php','normal-close-ms4-fulfillment.py','source-derivation.json','verify-zero-ms4-fulfillment.py']), 'CURRENT881_SIX_CHANGES_THREE_FULL_PRESERVATIONS')
+    old_interface = decode(before9['interface-v1.json']); interface = decode(after9['interface-v1.json'])
+    old_seven = old_interface['customer_form_current_profile']['php_sources']; seven = interface['customer_form_current_profile']['php_sources']
+    check(old_seven == manifest['old_seven_php'] and seven == manifest['current_seven_php'] and len(seven) == 7
+        and seven[0] == {'path':form,**compact(proof['candidate'])} and seven[1:] == old_seven[1:]
+        and all(row == expected[row['path']] for row in seven), 'CURRENT881_CURRENT_SEVEN_WITH_EXACT_ONE_FORM_HELPER_CHANGE')
+    successor = interface['customer_form_current_profile'].pop('assertion_prefix_successor')
+    check(successor == {'scope':'CURRENT_881_FORM_LABEL_ONLY_SOURCE_NOT_BUSINESS_ACCEPTANCE','source_sha':pub['source_sha'],
+        'predecessor_source_sha':pub['parent'],'source_delta':CURRENT_FORM_DELTA,'unchanged_other_six_php_members':6}, 'CURRENT881_EXPLICIT_NEW_FORM_INTERFACE_SCOPE')
+    interface['customer_form_current_profile']['php_sources'] = old_seven
+    check(interface == old_interface, 'CURRENT881_ALL_OTHER_INTERFACE_FIELDS_AND_HISTORICAL_NODES_UNCHANGED')
+    tuple_before = manifest['initializer_tuple']['before'].encode(); tuple_after = manifest['initializer_tuple']['candidate'].encode()
+    check(before9['ms4-initialize.php'].count(tuple_before) == after9['ms4-initialize.php'].count(tuple_after) == 1
+        and after9['ms4-initialize.php'].replace(tuple_after,tuple_before,1) == before9['ms4-initialize.php'], 'CURRENT881_ONLY_INITIALIZER_FORM_TUPLE_AFTER_OLD_PAID_DONOR_STAGE')
+    current_rows = {row['path']:row for row in pub['selected9']}
+    permitted = {'ms4-host.py':{'CUSTOMER_FORM_SOURCE_FILES','INTERFACE_SHA256'},'normal-close-ms4-fulfillment.py':{'HOST_SHA256'},
+        'verify-zero-ms4-fulfillment.py':{'CUSTOMER_FORM_SOURCE_FILES','INTERFACE_SHA256','INTERFACE_BYTES','HOST_SHA256','CLOSE_SHA256'}}
+    for name,names in permitted.items():
+        check(definitions(before9[name]) == definitions(after9[name]), 'CURRENT881_ALL_ORIGINAL_PROFILE_PYTHON_FUNCTION_BYTES')
+        a = constants(before9[name]); b = constants(after9[name]); check(set(a) == set(b) and {key for key in a if a[key]!=b[key]} == names,
+            'CURRENT881_EXACT_PROFILE_CONSTANTS_CLOSED_SET')
+        if 'CUSTOMER_FORM_SOURCE_FILES' in names:check(list(a['CUSTOMER_FORM_SOURCE_FILES']) == old_seven and list(b['CUSTOMER_FORM_SOURCE_FILES']) == seven, 'CURRENT881_HOST_AND_ZERO_STRICT_CURRENT_SEVEN')
+    for name,symbol,target in [('ms4-host.py','INTERFACE_SHA256','interface-v1.json'),('normal-close-ms4-fulfillment.py','HOST_SHA256','ms4-host.py'),
+        ('verify-zero-ms4-fulfillment.py','INTERFACE_SHA256','interface-v1.json'),('verify-zero-ms4-fulfillment.py','HOST_SHA256','ms4-host.py'),('verify-zero-ms4-fulfillment.py','CLOSE_SHA256','normal-close-ms4-fulfillment.py')]:
+        check(constants(after9[name])[symbol] == current_rows[target]['sha256'], 'CURRENT881_ALL_FIVE_PROFILE_HASH_EDGES')
+    check(constants(after9['verify-zero-ms4-fulfillment.py'])['INTERFACE_BYTES'] == current_rows['interface-v1.json']['bytes'], 'CURRENT881_INTERFACE_LENGTH_EDGE')
+    old_derived = decode(before9['source-derivation.json']); derived = decode(after9['source-derivation.json'])
+    fresh = derived.pop('form_assertion_prefix_current_profile_refresh')
+    check(fresh['schema'] == 1 and fresh['scope'] == 'CURRENT_881_SINGLE_HELPER_LAYER_AFTER_COMPLETE_HISTORICAL_PROFILE9'
+        and fresh['predecessor_publication'] == HISTORICAL_FIFTEEN_PUBLICATION and fresh['form_delta'] == CURRENT_FORM_DELTA
+        and fresh['current_seven_php_sources'] == seven and fresh['initializer_tuple_changes'] == 1
+        and derived['current_nonself_artifacts'] == [row for row in pub['selected9'] if row['path']!='source-derivation.json'], 'CURRENT881_NEW_SOURCE_NODE_AND_COMPLETE_EIGHT_NONSELF')
+    derived['current_nonself_artifacts'] = old_derived['current_nonself_artifacts'];check(derived == old_derived,'CURRENT881_ALL_OLD_DERIVATION_HISTORY_UNCHANGED')
+    composite = context['current_composite_customer_form_source']
+    check(composite == CURRENT_COMPOSITE_CUSTOMER_FORM_SOURCE and set(composite) == {'scope','source_sha','profile_PINS','profile_interface','predecessor_publication','predecessor_composite','form_delta','php_sources'}
+        and composite['scope'] == 'CURRENT881_EXACT_FORM_LABEL_LAYER_OVER_FULL_HISTORICAL_FIFTEENTH_COMPOSITE'
+        and composite['source_sha'] == pub['source_sha'] and composite['profile_PINS'] == CURRENT_FORM_PROFILE_SOURCE,
+        'CURRENT881_CURRENT_COMPOSITE_FIXED_OBJECT')
+    check(composite['predecessor_publication'] == HISTORICAL_FIFTEEN_PUBLICATION
+        and composite['predecessor_composite'] == prior_context['current_composite_customer_form_source']
+        and composite['form_delta'] == CURRENT_FORM_DELTA and composite['php_sources'] == seven
+        and compact(composite['profile_interface']) == compact(current_rows['interface-v1.json'])
+        and read(composite['profile_interface']) == after9['interface-v1.json'], 'CURRENT881_EXACT_NEW_COMPOSITE_AND_OLD_FULL_SUBTREE')
+    initializer_syntax = decode(read(CURRENT_INITIALIZER_FORM_SYNTAX))
+    check(initializer_syntax['status'] == 'PASS_COMPLETE_CURRENT881_INITIALIZER_PHP82_SYNTAX_ONLY'
+        and initializer_syntax['source_profile_PINS'] == CURRENT_FORM_PROFILE_SOURCE
+        and compact(initializer_syntax['initializer']) == manifest['candidate']['ms4-initialize.php']
+        and initializer_syntax['actual_result']['status'] == 'PASS_CANDIDATE_PHP82_SYNTAX_ONLY'
+        and initializer_syntax['actual_result']['container_native_exit'] == 0
+        and initializer_syntax['actual_result']['ordinary_own_container_removed'] is True
+        and initializer_syntax['App_business'] == 'NOT RUN', 'CURRENT881_NEW_COMPLETE_INITIALIZER_BYTES_ACTUAL_SYNTAX_NOT_OLD_7046')
+    check(decode(read(initializer_syntax['actual_RESULT_pointer'])) == initializer_syntax['actual_result'], 'CURRENT881_ACTUAL_INITIALIZER_SYNTAX_FULL_RESULT_IDENTITY')
+    alignment = decode(read(CURRENT_881_VALIDATION_ALIGNMENT))
+    check(alignment['status'] == 'PASS_DEDICATED_VALIDATION_ALIGNMENT_TO_REPAIRED881_ONLY'
+        and alignment['main_head_before_after'] == alignment['validation_after'] == pub['source_sha']
+        and alignment['validation_before'] == pub['parent'] and alignment['main_and_validation_clean'] is True
+        and len(alignment['operations']) == 9 and all(op['native_exit'] == op['wait_returncode'] == 0 for op in alignment['operations'])
+        and alignment['business_or_Docker'] == 'NOT RUN', 'CURRENT881_SEPARATE_REAL_NINE_GIT_VALIDATION_ALIGNMENT')
+    groups = {}; combined = {}
+    for prefix,rows in historical['groups'].items():
+        groups[prefix] = [expected[row['path']] for row in rows]
+        for row in groups[prefix]:
+            check(row['path'] not in combined or combined[row['path']] == row,'CURRENT881_SOURCE_GROUP_COMPLETE_OVERLAPS');combined[row['path']] = row
+    check(context['source_counts'] == {key:len(rows) for key,rows in groups.items()}, 'CURRENT881_INDEPENDENT_COMPLETE_SOURCE_GROUPS_NO_SCOPE_REDUCTION')
+    sixth = decode(read(CURRENT_2E4_PAID_PRODUCER_FAILURE_RETIREMENT)); inputs = sixth['inputs']
+    values = {key:decode(read(pointer)) for key,pointer in inputs.items()}
+    index = values['index']; final = values['final_peer']; failure = values['failure_authority']; oldM = values['M_result']; mroot = values['M_root_readback']
+    check(sixth['schema'] == 1 and sixth['scope'] == 'SIXTH_CURRENT2E4_ACTUAL_FAILED_FULL_A_COMPLETE_PUBLIC_RETIREMENT_AUTHORITY'
+        and index['status'] == 'COMPLETE_ACTUAL_FAILED_A_RETIREMENT_AUTHORITY_NOT_BUSINESS_ACCEPTANCE'
+        and index['run_id'] == failure['run_id'] == '20261023082740ae535d' and index['source_sha'] == failure['source_sha'] == pub['parent']
+        and index['freeze_sha256'] == failure['freeze_sha256'] == oldM['freeze_sha256']
+        and index['actual_close'] == compact(inputs['close']) and index['actual_zero'] == compact(inputs['zero'])
+        and index['independent_final'] == compact(inputs['final_peer']) and index['independent_global'] == compact(inputs['global_peer'])
+        and index['close_zero_native_operations'] == [93,20] and index['original_S_native_exit'] == index['paid_producer_native_exit'] == 1
+        and index['http_calls_completed'] == 'UNKNOWN' and index['full_business_acceptance'] == sixth['business_acceptance'] == 'INCOMPLETE'
+        and index['current_run_resources_retired'] is True and index['original_failed_run_or_source_replayed'] is False,
+        'CURRENT881_SIXTH_ORIGINAL_ACTUAL_FAILURE_AND_RETIREMENT_NOT_REWRITTEN')
+    check(final['status'] == 'PASS_COMPLETE_ACTUAL_CURRENT_RETIREMENT_AND_INDEPENDENT_ZERO_READBACK_ONLY'
+        and final['foreign_complete_projection_preserved'] is True and final['mounts_compared_as_full_entry_multisets_preserving_duplicates'] is True
+        and final['foreign_original_resource_consumers'] == final['original_current_or_history_cids_remaining'] == 0
+        and final['original_S_native_exit'] == final['paid_producer_native_exit'] == 1 and final['business_acceptance'] == 'INCOMPLETE'
+        and final['all_join_windows_closed'] is True and values['global_peer']['status'] == 'PASS', 'CURRENT881_COMPLETE_PEER_AND_GLOBAL_RETIREMENT_SCOPE')
+    check(set(oldM) == set(CURRENT_M_RESULT_KEYS32)-{'current_2e4_paid_producer_failure_retirement'}
+        and len(oldM) == 31 and oldM['source_sha'] == pub['parent'] and oldM['commit_chain'] == historical['commit_chain']
+        and len(oldM['native_operations']) == 1037 and all(op['native_exit'] == op['wait_returncode'] == 0 for op in oldM['native_operations'])
+        and mroot['actual_RESULT'] == {key:inputs['M_result'][key] for key in ['path','bytes','sha256']}
+        and mroot['native_operations'] == 1037 and mroot['M_RESULT_fields'] == 31 and mroot['complete_source_snapshot_rows'] == 31490
+        and mroot['all_original_native_created_terminal_and_streams_join'] is True and mroot['outer_native_exit_wait'] == 0,
+        'CURRENT881_PRESERVED_ACTUAL_OLD_M1037_AND_STRICT_HISTORICAL31')
+    all_streams = {}; mutations = []
+    for label,count,status in [('close',93,'VERIFIED_PAID_PRODUCER_FAILURE_NORMAL_CLOSE_ZERO_RESIDUAL'),('zero',20,'VERIFIED_PAID_PRODUCER_FAILURE_INDEPENDENT_ZERO')]:
+        value = values[label];receipts = sixth['native_receipts'][label]
+        check(value['status'] == status and value['run_id'] == index['run_id'] and value['source_sha'] == pub['parent']
+            and value['freeze_sha256'] == index['freeze_sha256'] and value['failed_outer_pid'] == 22136
+            and value['failed_outer_native_exit'] == value['paid_producer_native_exit'] == 1 and value['full_acceptance'] == 'INCOMPLETE'
+            and value['original_completed_native_zero'] == 81 and value['original_total_native_zero'] == 82
+            and value['original_source_mapping_records'] == 31490 and len(value['operations']) == len(receipts) == count,
+            'CURRENT881_ACTUAL_CLOSE_ZERO_SAME_ORIGINAL_FAILURE_AND_ALL_OPERATIONS')
+        for position,(op,receipt) in enumerate(zip(value['operations'],receipts),1):
+            made = decode(read(receipt['created'])); ended = decode(read(receipt['terminal'])); out = read(receipt['stdout']); err = read(receipt['stderr'])
+            check(receipt['index'] == op['index'] == position and receipt['stem'] == op['stem'] and ended == op
+                and made['pid'] == op['pid'] and made['argv'] == op['argv'] and op['native_exit'] == op['wait_returncode'] == 0
+                and type(op['pid']) is int and op['pid'] > 0 and len(out) == op['stdout_bytes'] and hashlib.sha256(out).hexdigest() == op['stdout_sha256']
+                and len(err) == op['stderr_bytes'] and hashlib.sha256(err).hexdigest() == op['stderr_sha256'], 'CURRENT881_ALL113_TRUE_NATIVE_CREATED_TERMINAL_AND_FULL_STREAMS')
+            all_streams[(label,position)] = out;args = op['argv'][1:]
+            if args and (args[0] in ['stop','rm'] or len(args)>1 and args[0] in ['network','volume'] and args[1]=='rm'):
+                check(label == 'close' and '-f' not in args and '--force' not in args,'CURRENT881_ZERO_NO_MUTATION_AND_NONFORCE_CLOSE');mutations.append(args)
+        queries = value['fresh_queries'];check([(q['kind'],q['label']) for q in queries] == [(k,t) for k in ['container','network','volume'] for t in ['project','run']]
+            and len({q['operation_index'] for q in queries}) == 6 and all(all_streams[(label,q['operation_index'])] == b'' for q in queries), 'CURRENT881_SIX_FRESH_DOUBLE_LABEL_QUERIES_PER_CLOSE_AND_ZERO')
+    check(len(mutations) == 5 and values['close']['removed_containers'] == 3 and values['close']['removed_internal_networks'] == 1 and values['close']['removed_original_volumes'] == 8
+        and values['zero']['resource_mutations'] == 0 and values['zero']['Host_imported'] is False and values['zero']['close_imported_or_invoked'] is False
+        and values['zero']['close_native_operations_verified'] == 93 and values['zero']['close_exact_mutating_operations_verified'] == 5
+        and values['zero']['close_result'] == {key:inputs['close'][key] for key in ['path','bytes','sha256']}, 'CURRENT881_ORDINARY_COMPLETE_RESOURCE_RETIREMENT_AND_INDEPENDENT_ZERO')
+    check(len(sixth['original_root_native_receipts']) == len(failure['root_native_commands']) == 81
+        and failure['paid_container_exit'] == failure['outer_S']['native_exit'] == failure['outer_S']['wait_returncode'] == 1
+        and failure['customer_prepare_native_exit'] == 0 and failure['no_restart_retry_or_scenario_change'] is True
+        and failure['business_acceptance'] == 'INCOMPLETE', 'CURRENT881_PRESERVED_ORIGINAL81_AND_PAID_ACTUAL_FAILURE')
+    for receipt,held in zip(sixth['original_root_native_receipts'],failure['root_native_commands']):
+        made = decode(read(receipt['created'])); ended = decode(read(receipt['terminal']))
+        check(set(held['created']) == set(held['terminal']) == {'path','bytes','sha256'}
+            and {key:receipt['created'][key] for key in ['path','bytes','sha256']} == held['created']
+            and {key:receipt['terminal'][key] for key in ['path','bytes','sha256']} == held['terminal'] and made['pid'] == ended['pid'] == held['pid']
+            and ended['native_exit'] == ended['wait_returncode'] == held['native_exit'] == 0, 'CURRENT881_ALL81_ORIGINAL_CREATED_TERMINAL_REAL_WAIT')
+        for stream in ['stdout','stderr']:
+            raw = read(receipt[stream]);check(len(raw) == ended[stream+'_bytes'] and hashlib.sha256(raw).hexdigest() == ended[stream+'_sha256'], 'CURRENT881_ALL81_ORIGINAL_COMPLETE_DOUBLE_STREAMS')
+    outer_values = {}
+    for label,receipt in sixth['outer_native_receipts'].items():
+        made = decode(read(receipt['created'])); ended = decode(read(receipt['terminal'])); outer_values[label] = ended
+        check(made['pid'] == ended['pid'] and ended['native_exit'] == ended['wait_returncode'] == (1 if label=='S' else 0), 'CURRENT881_ALL_REAL_OUTER_NATIVE_WAIT_M0_S1_CLOSE0_ZERO0')
+        for stream in ['stdout','stderr']:
+            raw = read(receipt[stream]);check(compact(ended[stream]) == compact(receipt[stream]) and len(raw) == ended[stream]['bytes']
+                and hashlib.sha256(raw).hexdigest() == ended[stream]['sha256'], 'CURRENT881_ALL_FOUR_OUTERS_FULL_DOUBLE_STREAMS')
+    check(outer_values['M']['pid'] == 34804 and outer_values['S']['pid'] == 22136
+        and outer_values['close']['finished_ns'] < outer_values['zero']['started_ns'], 'CURRENT881_SAME_ORIGINAL_M_S_IDENTITIES_AND_CLOSE_THEN_ZERO')
+    protected = {}
+    for namespace in historical['protected_namespaces']:
+        names = [name for name in expected if name.startswith(namespace+'/')]
+        protected[namespace] = {'count':len(names),'paths_sha256':hashlib.sha256(('\n'.join(names)+'\n').encode()).hexdigest()}
+    return {'all':expected,'groups':groups,'roots':historical['roots'],'extras':historical['extras'],'references':historical['references'],
+        'proof_php_ini':historical['proof_php_ini'],'committed':committed,'retirement':historical['retirement'],'commit_chain':chain,'protected_namespaces':protected,
+        'driver_failure_retirement':historical['driver_failure_retirement'],'early_failure_retirement':historical['early_failure_retirement'],
+        'customer_prepare_failure_retirement':historical['customer_prepare_failure_retirement'],'paid_producer_failure_retirement':historical['paid_producer_failure_retirement'],
+        'current_2e4_paid_producer_failure_retirement':sixth}
