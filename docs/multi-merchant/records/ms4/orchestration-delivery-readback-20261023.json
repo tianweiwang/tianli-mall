@@ -40,7 +40,29 @@
     "native_root_wrappers": 108,
     "native_root_wrapper_exit_zero_is_not_business_acceptance": true,
     "later_Task6_AR_Worker": "NOT_STARTED",
-    "normal_retirement_and_independent_zero": "PENDING_THIS_EXACT_RUN",
+    "normal_retirement_and_independent_zero": {
+      "status": "VERIFIED_THIS_EXACT_FAILED_RUN_NORMAL_CLOSE_AND_INDEPENDENT_ZERO",
+      "close_native_operations": 93,
+      "zero_native_operations": 20,
+      "all_native_and_wait_zero": true,
+      "removed_containers": 3,
+      "removed_internal_networks": 1,
+      "removed_original_volumes": 8,
+      "fresh_zero_queries_in_each": 6,
+      "foreign_containers_preserved": 53,
+      "close_result": {
+        "bytes": 106551,
+        "sha256": "2dff53c0c5f85533ae29adb4b64aea73d3900dba1dbf12759307a075d9f55c07"
+      },
+      "zero_result": {
+        "bytes": 27025,
+        "sha256": "b3e366483e42c0cd6f5b95746861bd6ecea98c6910a00dd153e6a559d4dbcb01"
+      },
+      "root_readback": {
+        "bytes": 1256,
+        "sha256": "901e8c2d3df8edcce5dfc7447e4b0ab5ddfa78cfa25c1cebea4c85ff10d16232"
+      }
+    },
     "original_S_terminal": {
       "bytes": 647,
       "sha256": "4559db9dddf56ecf321a73df1f0f8a4cd71a9a5608a358220f6e4bc78b3e958a"

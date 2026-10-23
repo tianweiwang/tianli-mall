@@ -6,12 +6,12 @@
     "package": "full-a-881-form-prefix-normal-next-source-r3",
     "source_commit": "8819524a60028090c55bdcd3a9da05e50eaf19d0",
     "outcome": "ACTUAL_NORMAL_RUN_FAILED_PAID_REAL_CONFIRMATION",
-    "original_resources_closed_and_independently_verified": false,
+    "original_resources_closed_and_independently_verified": true,
     "failed_assertion": "M4C_FORM_NORMAL_HTTP_JSON_200",
     "S_native_exit": 1,
     "paid_container_exit": 1,
     "later_fulfillment_aftersale_worker": "NOT_STARTED",
-    "normal_retirement": "PENDING_THIS_EXACT_RUN",
+    "normal_retirement": "VERIFIED_THIS_EXACT_FAILED_RUN_NORMAL_CLOSE_AND_INDEPENDENT_ZERO",
     "root_cause": "NOT_YET_DETERMINED"
   },
   "last_materialization_attempt": {
