@@ -10,6 +10,7 @@
 | [多商户开发文档](docs/multi-merchant/README.md) | 规格、各阶段计划、既有决定和验收记录 |
 | [实施规格](docs/multi-merchant/00-implementation-spec.md) | 通用商城范围、商家归属、交易与迁移要求 |
 | [隔离验证说明](help/audit-regressions/isolated/README.md) | 本地隔离环境及已有验证入口；执行范围仍以用户授权为准 |
+| [验证编排源码与离线核对](help/audit-regressions/orchestration/README.md) | 原仓库外编排程序、候选源码、完整性清单及明确的运行依赖 |
 | [运行与部署说明](help/docker/README.md) | 运行环境、容器说明和已有发布限制 |
 
 > **这是 CRMEB v6.0.0 的私有化部署仓库，不是上游发行版。** 基线为上游 `cb355bab`（CRMEB-KY v6.0.0）。

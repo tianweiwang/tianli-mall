@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "scope": "FULL_A_ASSET_NORMAL_DRIVER_SOURCE_PINS",
+  "members": {
+    "DESIGN-TASKS.md": {
+      "bytes": 12537,
+      "sha256": "99f98c3a05242783b045d35d325aa58cf0ef1bdaf3edac3dbd0188b6faa789af"
+    },
+    "run.py": {
+      "bytes": 787290,
+      "sha256": "fecb7ae730de7dc203bbeec4d9009791bceaf546d3be0301d38bd516cdd034f2"
+    }
+  }
+}

@@ -1,0 +1,13 @@
+# N9 current two-caller Source binding after actual local adoption
+
+Before is the complete frozen nine-file profile in `full-a-raw-env-normal-next-source-r1/profile-source`, also byte-equal to that packet's actual-profile. Actual current HEAD is `76efa7807c6137bc430e314e2faa78691cf60431`, parent `53e6d521b387b19a4cf370e0e381670b762d325e`, established by the real four-path adoption COMMIT. No new business outcome is implied.
+
+Change only the two selected CU PHP descriptor rows: paid 108005/ee59d99e… to actual109531/67450a4a…, fulfillment128280/b877330a… to actual128359/4d38c7ac…. Bind exact frozen candidate R2 PINS/manifest, complete two-way diffs, actual adoption before/candidate descriptors and actual two-file PHP syntax result. Do not re-sign old source/candidate/build/result identities as the current HEAD.
+
+Use the previous refresh main interface, returning `(candidate9, profilePointer, composite)` with Root's new source_reader helper. The new composite keeps the entire previous raw-Env composite as `predecessor_composite`, plus predecessor profile PINS/interface, named real delta authorities, the ordered two paths/candidates/before/current descriptors, actual adoption COMMIT+SOURCE-MANIFEST, actual Source SHA and runtime NOT RUN. Five other selected CU rows, including shared65119/925314fc…, remain exactly unchanged. The old raw-Env and earlier derivation subtrees remain complete historical objects.
+
+Initializer changes only its two exact descriptor literals, with complete before/final stages and inverse; preserve both existing membership lookup seams, their original order/strict equality and all source hash calls. Host/zero selected seven tables and current interface/derivation seven tables bind the same exact new rows. Rebuild only current interface→Host→close→zero SHA/size edges and derivation current_nonself8; all three Python functions/nonconstant bytes and README/compose/seed whole bytes remain identical. Nine full standard forward/reverse patches must reconstruct every byte in both directions.
+
+Source only: no PHP/Host/M/S/Git/Docker/App/Run/resource/negative-sample operation, no W/Val/canonical/old packet mutation. No future successful A/B or future HEAD. The exact successor initializer byte has not been linted yet; the caller syntax evidence covers the two caller bytes only. Root later assembles M/S and separately validates this new initializer if required.
+
+Tasks: [x] record exact scope/fields before coding; [ ] derive two-current-row composite and N9; [ ] complete inverse/function/history/DAG qualification; [ ] supply final profile PINS/initializer/edges to Root. This is the current plan continuation, not a new task queue.

@@ -1,0 +1,88 @@
+    # New immutable reviewed evidence uses its actual schema, including absent original S terminal.
+    check(context['current_customer_prepare_failure_retirement'] == CURRENT_CUSTOMER_PREPARE_FAILURE_RETIREMENT,
+        'CURRENT_CUSTOMER_PREPARE_FAILURE_FIXED_AUTHORITY')
+    customer_prepare_retirement = decode(read(CURRENT_CUSTOMER_PREPARE_FAILURE_RETIREMENT))
+    cp = customer_prepare_retirement; truth = cp['original_failure_truth']
+    check(cp['status'] == 'ACTUAL_CUSTOMER_PREPARE_FAILED_FULL_A_NORMAL_CLOSE_AND_INDEPENDENT_ZERO'
+        and cp['run_id'] == '202610222308394826f8' and cp['source_sha'] == '2fa872e6fda7a8bf46c55f88dd946b972ec79102'
+        and cp['freeze_sha256'] == 'b141e6e2b57285964e50ac6c1a3ed073273a416158f762ea6762aa095e9c8046'
+        and cp['full_acceptance'] == 'INCOMPLETE' and cp['all_input_windows_ended'] is True
+        and truth['failed_outer_native_exit'] == 'UNKNOWN' and truth['original_S_terminal'] == 'ABSENT'
+        and truth['resume_native_exit'] == truth['customer_prepare_native_exit'] == 1
+        and truth['http_calls_completed'] == 0 and truth['HTTP_child'] is None
+        and truth['first_environment_difference_key'] == 'UNKNOWN' and truth['paid_Task6_AR_Worker'] == 'NOT STARTED',
+        'CURRENT_CUSTOMER_PREPARE_FAILURE_TRUTH_NOT_REWRITTEN_AS_ACCEPTANCE')
+    cp_values = {}; cp_streams = {}
+    for label,count,status in [('close',95,'VERIFIED_CUSTOMER_PREPARE_FAILURE_NORMAL_CLOSE_ZERO_RESIDUAL'),('zero',20,'VERIFIED_CUSTOMER_PREPARE_FAILURE_INDEPENDENT_ZERO')]:
+        value = decode(native_raw(cp['results'][label])); cp_values[label] = value
+        receipts = cp['native_receipts'][label]
+        check(value['status'] == status and value['run_id'] == cp['run_id'] and value['source_sha'] == cp['source_sha']
+            and value['freeze_sha256'] == cp['freeze_sha256'] and value['full_acceptance'] == 'INCOMPLETE'
+            and len(value['operations']) == len(receipts) == count
+            and all(value[key] == held for key,held in truth.items()), 'CURRENT_CLOSE_ZERO_EXACT_SAME_FAILURE_AND_ALL_NATIVE_ROWS')
+        for index,(receipt,op) in enumerate(zip(receipts,value['operations']),1):
+            made = decode(native_raw(receipt['created'])); ended = decode(native_raw(receipt['terminal']))
+            out = native_raw(receipt['stdout']); err = native_raw(receipt['stderr']); cp_streams[(label,index)] = out
+            check(receipt['index'] == op['index'] == index and receipt['stem'] == op['stem'] and ended == op
+                and made['pid'] == op['pid'] and made['argv'] == op['argv'] and type(op['pid']) is int and op['pid'] > 0
+                and op['native_exit'] == op['wait_returncode'] == 0
+                and len(out) == op['stdout_bytes'] and hashlib.sha256(out).hexdigest() == op['stdout_sha256']
+                and len(err) == op['stderr_bytes'] and hashlib.sha256(err).hexdigest() == op['stderr_sha256'], 'CURRENT_115_RAW_CREATED_TERMINAL_BOTH_STREAMS_PID_ARGV_DOUBLE_WAIT')
+        queries = value['fresh_queries']
+        check([(q['kind'],q['label']) for q in queries] == [(kind,tag) for kind in ['container','network','volume'] for tag in ['project','run']]
+            and len({q['operation_index'] for q in queries}) == 6
+            and all(cp_streams[(label,q['operation_index'])].strip() == b'' for q in queries), 'CURRENT_SIX_FRESH_DOUBLE_LABEL_EMPTY_QUERIES')
+        outer = cp['outer_native_receipts'][label]
+        made = decode(native_raw(outer['created'])); ended = decode(native_raw(outer['terminal']))
+        out = native_raw(outer['stdout']); err = native_raw(outer['stderr'])
+        check(made == outer['created_object'] and ended == outer['terminal_object']
+            and made['pid'] == ended['pid'] and ended['native_exit'] == ended['wait_returncode'] == 0
+            and len(out) == ended['stdout_bytes'] and hashlib.sha256(out).hexdigest() == ended['stdout_sha256']
+            and len(err) == ended['stderr_bytes'] and hashlib.sha256(err).hexdigest() == ended['stderr_sha256'], 'CURRENT_TRUE_PHYSICAL_OUTER_RECEIPTS')
+    check(cp['outer_native_receipts']['close']['terminal_object']['finished_ns'] < cp['outer_native_receipts']['zero']['created_object']['started_ns']
+        and cp_values['zero']['close_result'] == {key:cp['results']['close'][key] for key in ['path','bytes','sha256']}
+        and cp_values['zero']['resource_mutations'] == 0 and cp_values['zero']['close_native_operations_verified'] == 95
+        and cp_values['zero']['close_exact_mutating_operations_verified'] == 5
+        and cp_values['close']['removed_containers'] == 4 and cp_values['close']['removed_internal_networks'] == 1
+        and cp_values['close']['removed_original_volumes'] == 8, 'CURRENT_CLOSE_PRECEDES_INDEPENDENT_ZERO_AND_BINDS_EXACT_COUNTS')
+    mutations = []
+    for label,value in cp_values.items():
+        for op in value['operations']:
+            args = op['argv'][1:]
+            if args and (args[0] in ['stop','rm'] or (len(args)>1 and args[0] in ['network','volume'] and args[1]=='rm')):
+                check(label == 'close', 'CURRENT_ZERO_NO_MUTATION'); mutations.append(args)
+    check(mutations == cp['protection_metadata']['five_exact_mutations'], 'CURRENT_EXACT_DB_TWO_STOP_AND_FOUR_CID_NETWORK_EIGHT_VOLUME_NONFORCE_REMOVAL')
+    wrapper = cp['original_failed_S_wrapper']
+    check(wrapper['native_exit'] == 'UNKNOWN' and wrapper['terminal']['exists'] is False and wrapper['terminal']['status'] == 'ABSENT', 'CURRENT_OLD_S_TERMINAL_EXPLICITLY_ABSENT')
+    for key in ['created','stdout','stderr']:native_raw(wrapper[key])
+    check(cp['original_orchestration_history']['original_created'] == 53
+        and cp['original_orchestration_history']['original_native_zero'] == 52
+        and cp['original_orchestration_history']['orphan']['created_object']['pid'] == 44896
+        and cp['original_orchestration_history']['orphan']['terminal'] == 'ABSENT'
+        and cp['continuation_failure_history']['native_exit'] == 1
+        and cp['continuation_failure_history']['original_S_native_exit'] == 'UNKNOWN'
+        and cp['continuation_failure_history']['readonly_operations'] == 2, 'CURRENT_ORIGINAL_OBSERVER_ORPHAN_AND_READ_ONLY_CONTINUATION_FAILURE_RETAINED')
+    # Hashes bind the complete reviewed metadata and histories; never reread private files or 31k old source bodies.
+    cp_seen = set()
+    def cp_descriptors(value):
+        if type(value) is dict:
+            if {'path','bytes','sha256'} <= set(value) and set(value) <= {'path','bytes','sha256','native9'}:
+                # selected9 relative names are inventory records, not host file pointers.
+                if not Path(value['path']).is_absolute():return
+                key = (value['path'],value['bytes'],value['sha256'])
+                if key not in cp_seen:
+                    cp_seen.add(key); native_raw(value) if 'native9' in value else read(value)
+                return
+            for child in value.values():cp_descriptors(child)
+        elif type(value) is list:
+            for child in value:cp_descriptors(child)
+    for key in ['source_receipts','close_zero_source_PINS','root_readbacks','original_protected_metadata','global_inventories',
+        'outer_native_receipts','original_orchestration_history','continuation_failure_history','current_M_history']:
+        cp_descriptors(cp[key])
+    metadata = cp['protection_metadata']; oldM = cp['current_M_history']
+    check(metadata['public_files'] == 36962 and metadata['complete_tracked_mapping'] == oldM['complete_tracked_source_rows'] == 31008
+        and metadata['each_tree'] == oldM['each_tree'] == 15504 and metadata['Root14'] == oldM['root14'] == 14
+        and metadata['M3'] == 3 and metadata['normal_union'] == oldM['normal_union'] == 10886 and metadata['profile9'] == 9
+        and oldM['native_operations_metadata'] == 269 and metadata['metadata_all_rows_complete'] is True
+        and metadata['global_foreign_records_unchanged'] is True and metadata['physical_outer_receipts_used'] is True,
+        'CURRENT_FULL_PROTECTED_MAPPING_AND_ALL_OLD_M_METADATA_PRESERVED')

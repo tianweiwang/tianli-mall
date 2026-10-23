@@ -1,0 +1,36 @@
+{
+  "members": {
+    "reader/ms4-ui-private-reader.mjs": {
+      "bytes": 14107,
+      "sha256": "940d2a03103b26eab8766a1c50b38928f02d2eece2be1bd19fd1a6fac449fd3f"
+    },
+    "ms4-ui-private-caller.mjs": {
+      "bytes": 21351,
+      "sha256": "0fc9c608b667292fa43a161b5af81f0d09d0361ac855777ef175f19700a41288"
+    },
+    "ms4-ui-browser-close.mjs": {
+      "bytes": 23762,
+      "sha256": "f4a4378b920ff5069680d0ddbe738957cd653f85848fd835b87c1ba403828f00"
+    },
+    "ms4-ui-business-producer.mjs": {
+      "bytes": 85112,
+      "sha256": "9cdf6859139c723d22b33b8d7ed055b6b429b4dd9cbd504efbb099723f67adea"
+    },
+    "ms4-ui-window-native-bridge.mjs": {
+      "bytes": 93094,
+      "sha256": "177827b95a7aa7218cfbfc037e8fc029fe0acb8c1322e1e0100522c0691dcd62"
+    },
+    "ms4-ui-network-capture.mjs": {
+      "bytes": 22253,
+      "sha256": "915a0d55c3f29d3ac415c1e07010e6772d7eb77cd50da7a70884d25879c1c174"
+    },
+    "ms4-ui-dom-producer.mjs": {
+      "bytes": 58407,
+      "sha256": "3660aef5db8dfd2a3a1a246d6b0a1d7cba1005d2e96b667e43cd07a05dc8c08b"
+    },
+    "ui-business-consumer-contract.json": {
+      "bytes": 379822,
+      "sha256": "f1e779f084c695b077a47de5705bd7413a597614984f9c6f9ca0fab9df0c3f33"
+    }
+  }
+}

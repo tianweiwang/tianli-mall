@@ -1,0 +1,61 @@
+{
+  "schema": 1,
+  "runtime_ready": false,
+  "scope": "source recovery, not a portable business-validation runtime",
+  "last_executed_pipeline": {
+    "package": "full-a-raw-env-normal-next-source-r1",
+    "source_commit": "53e6d521b387b19a4cf370e0e381670b762d325e",
+    "outcome": "FAILED_AT_PAID_PRODUCER",
+    "original_resources_closed_and_independently_verified": true
+  },
+  "current_draft": {
+    "package": "full-a-paid-fulfillment-contract-normal-next-source-r1",
+    "source_commit": "76efa7807c6137bc430e314e2faa78691cf60431",
+    "profile_sources_present": true,
+    "materializer_present": false,
+    "validation_driver_present": false,
+    "launcher_present": false,
+    "full_business_run": "NOT_RUN"
+  },
+  "requirements_not_satisfied_by_copying_source": [
+    {
+      "kind": "original machine layout",
+      "detail": "Archived programs retain original Windows B/worktree/run paths, interpreter path and source-commit bindings. No path substitution or weakened qualification has been applied."
+    },
+    {
+      "kind": "historical public evidence",
+      "detail": "The original M/S/Host require historical source inventories, commit/adoption records, retirement authorities and full native receipts. Actual Run directories, created/terminal files and stdout/stderr are not included."
+    },
+    {
+      "kind": "proof resource result",
+      "source_reference": "r20-proof-memory-budget-public-readback-r1/RESULT.json",
+      "detail": "The 18-byte proof INI source is included; its original runtime readback result is not. Source bytes do not replace that result."
+    },
+    {
+      "kind": "authoring inputs",
+      "detail": "assemble/refresh programs still reference predecessor source packages, before-images, original PINS/authority metadata and syntax/readback results. Complete authoring replay inputs are not claimed by this archive."
+    },
+    {
+      "kind": "fresh execution environment",
+      "detail": "Docker, pinned images, actual source qualification, a new dedicated internal network/volumes, and fresh private preparation are runtime prerequisites. No existing production/shared database may be substituted."
+    },
+    {
+      "kind": "private runtime data",
+      "detail": "Private environment files, actors, credentials, cookies, uploaded files and data volumes are intentionally absent. Any future authorized normal run must create its own private data; do not reuse or reconstruct old private state."
+    },
+    {
+      "kind": "fresh B readiness",
+      "detail": "fresh-b-customer-form-external-source-r3 is an unsealed draft tied to the older source. It still needs a successful matching A and complete current-source bindings; source presence is not UI acceptance."
+    },
+    {
+      "kind": "nonempty history readiness",
+      "detail": "Parent R1 has the confirmed LOAD-01 component-loading omission. Startup plan/accept and final bindings are unfinished. Original refused/UNBOUND entries remain unchanged; the archived components do not constitute an adopted runtime set."
+    }
+  ],
+  "existing_git_controls_for_history": [
+    "help/audit-regressions/isolated/lib/guard.php",
+    "help/audit-regressions/isolated/lib/harness.php",
+    "help/audit-regressions/isolated/ms4-migration.php"
+  ],
+  "resumption_rule": "Review archived sources and existing 09 plan, finish the current source bindings and missing components, then create a newly qualified normal run. Do not forge historical paths/receipts, bypass guards, restart retired instances or restore stopped scenarios."
+}

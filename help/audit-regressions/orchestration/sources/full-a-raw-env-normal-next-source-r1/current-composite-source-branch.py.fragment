@@ -1,0 +1,31 @@
+    # The original seven-member authority is historical; exactly one shared lib now changes.
+    composite = context['current_composite_customer_form_source']
+    check(composite == CURRENT_COMPOSITE_CUSTOMER_FORM_SOURCE and composite['source_sha'] == pub['source_sha'], 'CURRENT_ELEVENTH_CU_SOURCE_AUTHORITY')
+    cu = decode(read(composite['profile_interface']))['customer_form_current_profile']
+    delta = composite['profile_composite']; name = delta['delta_repository_path']
+    predecessor = context['historical_tenth_composite_customer_form_source']
+    previous_profile = decode(read(delta['predecessor_profile_interface']))['customer_form_current_profile']
+    previous_pins = decode(read(delta['predecessor_profile_PINS']))
+    check(name == 'help/audit-regressions/isolated/lib/ms4-customer-http-normal.php'
+        and delta['predecessor_composite'] == predecessor['profile_composite']
+        and previous_profile['php_sources'] == predecessor['php_sources']
+        and previous_profile['current_composite_php_source_authority'] == predecessor['profile_composite']
+        and cu['current_composite_php_source_authority'] == delta
+        and cu['frozen_php_authorities'] == composite['base_authorities'] == predecessor['base_authorities']
+        and cu['php_sources'] == composite['php_sources'], 'CURRENT_SHARED_LIB_DELTA_PRESERVES_EXACT_TENTH_PREDECESSOR')
+    check(delta['previous_descriptor'] == next(row for row in predecessor['php_sources'] if row['path'] == name)
+        and delta['current_descriptor'] == expected[name]
+        and delta['actual_source_sha'] == chain[10]['source_sha']
+        and delta['actual_adoption']['commit'] == eleventh['commit_record']
+        and delta['actual_adoption']['source_manifest'] == eleventh['source_manifest']
+        and compact(delta['delta_candidate']) == compact(expected[name])
+        and read(delta['delta_candidate']) == read(eleventh['code_source']['candidate']), 'CURRENT_SHARED_LIB_EXACT_ADOPTED_FULL_BYTES')
+    rows = [delta['current_descriptor'] if row['path'] == name else row for row in predecessor['php_sources']]
+    check(rows == composite['php_sources'] and len(rows) == len({row['path'] for row in rows}) == 7
+        and all(expected[row['path']] == row for row in rows), 'CURRENT_SHARED_LIB_ONE_DELTA_OTHER_SIX_EXACT')
+    for pointer in delta['delta_authorities'].values():
+        read(pointer)
+    profile_pins = decode(read(composite['profile_PINS']))
+    check(profile_pins['candidate'] == {row['path']:compact(row) for row in pub['selected9']}
+        and previous_pins['candidate']['ms4-initialize.php'] == {'bytes':78547,'sha256':'1d8143de58920e5b48dcd2a713bef0895142f8f8012bc527425d4e6f256467e1'},
+        'CURRENT_NINE_COMPLETE_PROFILE_BINDINGS_AND_EXACT_PREDECESSOR_INITIALIZER')

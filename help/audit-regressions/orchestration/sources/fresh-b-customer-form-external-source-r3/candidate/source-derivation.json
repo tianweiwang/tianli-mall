@@ -1,0 +1,4449 @@
+{
+  "freeze": "NOT RUN",
+  "artifact_files_exact": [
+    "compose.yml",
+    "interface-v1.json",
+    "ms4-host.py",
+    "ms4-initialize.php",
+    "normal-close-ms4-fulfillment.py",
+    "README.md",
+    "seed-source-inverse.json",
+    "source-derivation.json",
+    "verify-zero-ms4-fulfillment.py",
+    "ms4-ui-nginx.conf",
+    "ms4-ui-public-copy.php",
+    "ms4-ui-copy.php",
+    "ms4-order.png",
+    "manifests/ui-h5-dist.json",
+    "manifests/ui-merchant-dist.json",
+    "manifests/ui-admin-dist.json",
+    "manifests/ui-public-copy-profile.json"
+  ],
+  "new_business_entry": {
+    "result_keys": 29,
+    "source": "R40 current committed Source 13479ad620e30948db33caab31c573a1945a5fe4 parent 7ca901fdadbc971288234448f57a0ffaff673fb1; inherited AR222875/eddc42ae94ddceb208a8d2535b153503cd137ddab9f24572cfd6fa3296593de9. Seven AR and nine existing dependency metadata literals only. Core3/aux8/UIprepare/observer3 and all original normal/UI20/42/Task2/full7/source/INI/copy/closezero contracts unchanged. R34 and prior source/parent records remain historical; complete Normal10+Core3 union13 belongs active publication and future Root adaptation. A/B success remains unqualified; Source only.",
+    "shutdown_keys": 15,
+    "bytes": 222875,
+    "business_keys": 24,
+    "path": "help/audit-regressions/isolated/ms4-aftersale-review-normal.php",
+    "sha256": "eddc42ae94ddceb208a8d2535b153503cd137ddab9f24572cfd6fa3296593de9"
+  },
+  "full_acceptance": "INCOMPLETE",
+  "three_read_helpers": [
+    {
+      "path": "help/audit-regressions/isolated/lib/ms4-three-legacy-producer.php",
+      "bytes": 53328,
+      "sha256": "9da29b5edf6bc50c8bb483eaf4a67adaaacc6cddc4660e6cac0d2dabcb81a584"
+    },
+    {
+      "path": "help/audit-regressions/isolated/lib/ms4-three-legacy-reference.php",
+      "bytes": 51479,
+      "sha256": "7ad23450261f2771a46e8c04e7c2f8da0941d476d887f30064150188886ea941"
+    },
+    {
+      "path": "help/audit-regressions/isolated/lib/ms4-three-read-normal.php",
+      "bytes": 160668,
+      "sha256": "508c84e75b1b07bc6e574b461a069def27cedfb51378850923213391aa3bb01d"
+    }
+  ],
+  "runtime_started": false,
+  "topology": {
+    "volumes": 7,
+    "only_new_role_mounts_private": false,
+    "network": 1,
+    "new_private_volume": "aftersale-evidence",
+    "current_containers": 4,
+    "final_role": "audit-ms4-worker-normal",
+    "normal_predecessor": "Normally retired exact CID; original HTTP alias and RW evidence preserved",
+    "worker_alias_count": 0,
+    "worker_aftersale_evidence": "RO",
+    "helper_peak_containers": 5
+  },
+  "worker": "NOT RUN",
+  "early_driver": {
+    "path": "help/audit-regressions/isolated/ms4-fulfillment-migration.php",
+    "sha256": "24e9f235c953bfbd9c8410bb48610c134b186bc535917ee2840e6eef01fef861",
+    "source": "Root adopted cba6486464c5450a9016dcea0444d098380aac20; finite preserved-CHECK and Stage20 alias successor of stopped R2 component",
+    "bytes": 162282
+  },
+  "base_artifacts": [
+    {
+      "path": "README.md",
+      "sha256": "f115da190349f80f8713c3c0f6757051f6a445de8ba207ddbd48dfb1f3b91f48",
+      "bytes": 8287
+    },
+    {
+      "path": "compose.yml",
+      "sha256": "45d05ace7785fa5375ef6a88d8930fcbddb62a566ccab264f89bd8c151c9d8e7",
+      "bytes": 8140
+    },
+    {
+      "path": "ms4-host.py",
+      "sha256": "f4848c7f8c6a4ab3d7ca930d13279abc7652cc5073f14f0a86f000c5c3074a4c",
+      "bytes": 187020
+    },
+    {
+      "path": "ms4-initialize.php",
+      "sha256": "108559fe0ab7f2415f0d4e662f9caebb65a0c5be80988870e194f68667ed23c8",
+      "bytes": 63791
+    },
+    {
+      "path": "seed-source-inverse.json",
+      "sha256": "c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a",
+      "bytes": 639
+    },
+    {
+      "path": "interface-v1.json",
+      "sha256": "4cecc50459d9a9af12d2bd803b8da3bb8b5d92283fc6cd932c2584e4f11baa5c",
+      "bytes": 29845
+    },
+    {
+      "path": "source-derivation.json",
+      "sha256": "39f91c34c64993648e830b92a5195e2ce244687a93de0ac5a97b8b0dff6b274d",
+      "bytes": 7878
+    },
+    {
+      "path": "normal-close-ms4-fulfillment.py",
+      "sha256": "ddf4c8b8ad13c583c1771589804cc8d02311fb825831a00cd69185199e77406b",
+      "bytes": 22295
+    },
+    {
+      "path": "verify-zero-ms4-fulfillment.py",
+      "sha256": "b14bfbcd6dc017290a6290f01bb14006034760b2bce9b8358357d1ce714a7292",
+      "bytes": 150638
+    }
+  ],
+  "timing": "Original initializer9/MS5-four/canonical paid create-only/early16/retire/files/C3/retire/distinct post-C3 register/same paid bind-start/Task6-retire/aftersale-review normal0 and authorize -> KEEP/history85 -> exact nonforce normal retirement -> Worker create-register-bind-start-observe -> genuine Worker authorize -> explicit Worker close -> explicit independent six-query zero",
+  "source_revision": 7,
+  "original_task6": "29 result/33 business/15 shutdown, 101 roots, six state read matrix/288 multiplicities, native31 legacy, 2ship/3receive/5same-body/6merchant retained; original task7 NOT RUN remains historical",
+  "finance": "NOT RUN",
+  "assembled_formal_P": "NOT MATERIALIZED",
+  "normal_close": "normal-close-ms4-fulfillment.py",
+  "stopped_samples": "NOT RUN",
+  "additional_repository_consumers": [
+    {
+      "path": "help/audit-regressions/isolated/ms5-payment-migration.php",
+      "sha256": "f68d6fb64e86477ce13f6b1de4182a6c537d212c9c675d6544a42fc4bdd414d2",
+      "bytes": 42107
+    },
+    {
+      "path": "help/audit-regressions/isolated/ms4-customer-http-normal.php",
+      "sha256": "8f243fdeadc42335827642eec060d506e137e0e1c5ff01fa4d5db8ea9e69543a",
+      "bytes": 96225
+    },
+    {
+      "path": "help/audit-regressions/isolated/ms4-fulfillment-normal.php",
+      "sha256": "65f4f69a88d798cb9b2b6fd36c0b5d19a4d51189ce81c75525b5a9820c2b2253",
+      "bytes": 117845
+    }
+  ],
+  "source_dependencies": "../SOURCE-PINS.json",
+  "Source_author_Main_P_Run_private": "Component authors did not access actual Main/validation/P/Run/private. Root only assembles public source copies here; no actual P or Run is modified by this package.",
+  "target_parse_import_help": "NOT RUN for this new complete nine-artifact source candidate. This author performed only closed-copy text/bytes/hash/JSON checks, complete file inverses, full diff and actual pin-DAG checks. Root historical shared-reader syntax/ordinary results remain unchanged in the historical shared_freeze_reader_source_refresh record; they are not reattributed to this candidate. Later actual parsing/help/Compose/PHP checks, integration and normal execution remain Root work after original normal close and independentzero0.",
+  "SQL_App_HTTP_images_business": "NOT RUN",
+  "sources": "Current complete source extras: customer10, paid11, fulfillment26, AR30, worker31, UIprepare34 and UIbackend37; actual full root/member counts are runtime-derived, never guessed.",
+  "pin_order": "actual adopted PHP + original immutable static5 -> browser8/manifest + CoreAux -> complete interface -> Host -> close -> zero -> README -> complete current_nonself16 -> derivation -> selected17/PINS/publication; no self hash or future A/B result.",
+  "base_candidate": "H:/天俪商城/artifacts/ms4-fulfillment-writer-preparation/candidate-ms4-fulfillment-normal-r4",
+  "post_c3_registration": {
+    "proof": "register-paid-after-c3",
+    "role": "audit-bootstrap",
+    "phase": "register",
+    "status": "REGISTERED_NATIVE_RESOURCES_ONLY",
+    "files": [
+      "register-paid-after-c3-created.json",
+      "register-paid-after-c3-terminal.json",
+      "register-paid-after-c3-result.json",
+      "register-paid-after-c3-shutdown.json"
+    ],
+    "paid_same_CID": true,
+    "old_early_register_preserved": true,
+    "paid_history": 33,
+    "task6_public": 63,
+    "task6_history": 65,
+    "aftersale_public": 84,
+    "business_wires": [
+      15,
+      25,
+      34
+    ],
+    "profile_artifacts": 9,
+    "Main_Worker_KEEP": "NOT MODIFIED",
+    "runtime": "NOT RUN",
+    "predecessor_profile": [
+      {
+        "path": "compose.yml",
+        "bytes": 9527,
+        "sha256": "b5c8fbfa2a3ac2ed505d29c6d2cebb71d0b7679a430567539e798b2176dded51"
+      },
+      {
+        "path": "interface-v1.json",
+        "bytes": 39308,
+        "sha256": "81014e0dc0d91f350ab45996b5b72a823bcd720854794ccda5b50bd9139e90f8"
+      },
+      {
+        "path": "ms4-host.py",
+        "bytes": 248391,
+        "sha256": "bf5f0859b5d73f5a906f17b160d7164c6751a863a15e7f2010168f0c735770ec"
+      },
+      {
+        "path": "ms4-initialize.php",
+        "bytes": 66416,
+        "sha256": "2e7117b68effa65e8426781d880b3d1895977e9afafb56ddb50a6bd9e1a182da"
+      },
+      {
+        "path": "normal-close-ms4-fulfillment.py",
+        "bytes": 24657,
+        "sha256": "48261d786cd2111110c2e67e0ee33aaa9e76e0cbb3050ef807cb0de67c74fb87"
+      },
+      {
+        "path": "README.md",
+        "bytes": 6535,
+        "sha256": "a3ba574bde71ac64508a5026e1da5f8d615cb9e7d64031afd20d4ed2ac3b74f8"
+      },
+      {
+        "path": "seed-source-inverse.json",
+        "bytes": 639,
+        "sha256": "c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a"
+      },
+      {
+        "path": "source-derivation.json",
+        "bytes": 7203,
+        "sha256": "c571c778265beb35aa2979d111abfe1eece24d511240f6bd6624621a2cc005b8"
+      },
+      {
+        "path": "verify-zero-ms4-fulfillment.py",
+        "bytes": 199306,
+        "sha256": "eb0fc972ab3011352567dc453e82eb30fd95814dc670c945323ecdd5db3a29cf"
+      }
+    ]
+  },
+  "schema": 1,
+  "current_nonself_artifacts": [
+    {
+      "path": "compose.yml",
+      "bytes": 19121,
+      "sha256": "2ce6b212e2a09f947ff3ac0e5f78f3420dbfeaab8d8af56e7ffca128e9057cc5"
+    },
+    {
+      "path": "interface-v1.json",
+      "bytes": 118487,
+      "sha256": "d0780d80bcd1f317d7ef13706fa90c0dccbeafa75cfb5e19163e68d48728e9d3"
+    },
+    {
+      "path": "ms4-host.py",
+      "bytes": 551411,
+      "sha256": "9c2090c7313076418ef348829de4b91ac1a2f42c9e377b2625429e119b31b266"
+    },
+    {
+      "path": "ms4-initialize.php",
+      "bytes": 118698,
+      "sha256": "0d11d3764bbadb0e1fb603e1fd3e06518b3f5c6510ad3204379c8c0b5c0cb45e"
+    },
+    {
+      "path": "normal-close-ms4-fulfillment.py",
+      "bytes": 262645,
+      "sha256": "0a35ff07b38afc010e230e009a148fd65f7931daff0ec7e8ff09f6596cbb75e4"
+    },
+    {
+      "path": "README.md",
+      "bytes": 60188,
+      "sha256": "cfca3784a7c0aed7191943863717c21acefebd1333f5508b9fbca5e26e9e81b8"
+    },
+    {
+      "path": "seed-source-inverse.json",
+      "bytes": 639,
+      "sha256": "c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a"
+    },
+    {
+      "path": "verify-zero-ms4-fulfillment.py",
+      "bytes": 649577,
+      "sha256": "67ecfb0244300d52b665651155734234b9f9cbe9f583c5b01dd86968c96a2580"
+    },
+    {
+      "path": "ms4-ui-nginx.conf",
+      "bytes": 4105,
+      "sha256": "033ae09499501ec9ef9a2ab87d5da53687491be06f20615781f2d5b01c4cbca5"
+    },
+    {
+      "path": "ms4-ui-public-copy.php",
+      "bytes": 25847,
+      "sha256": "0f2a7944b25db42cbf935816b4b9366a599049a28ac77e32bab167b08fec47d0"
+    },
+    {
+      "path": "ms4-ui-copy.php",
+      "bytes": 49037,
+      "sha256": "110e2b7e89aff72513238f4615fd220b2e0b3c6b4931ed37ebb58004ff959f54"
+    },
+    {
+      "path": "ms4-order.png",
+      "bytes": 234,
+      "sha256": "1cb2b0cfb8e075b494268977c5f6360309edbc4e0800cd5c58399d291c5185b8"
+    },
+    {
+      "path": "manifests/ui-h5-dist.json",
+      "bytes": 49501,
+      "sha256": "df48f2e9160e8fd3d9f0bde5b9cdf633f268cf8f43d24da8fd9701b933a0e876"
+    },
+    {
+      "path": "manifests/ui-merchant-dist.json",
+      "bytes": 4174,
+      "sha256": "0f916caf675fde4ef5460030f21769b1a2357e98b8acbee625b56e2b444be8f3"
+    },
+    {
+      "path": "manifests/ui-admin-dist.json",
+      "bytes": 87054,
+      "sha256": "0fa82aebab70161d16d48e9a7f6bed45d7e45232ef19dd153c46ecc0ced810e7"
+    },
+    {
+      "path": "manifests/ui-public-copy-profile.json",
+      "bytes": 534684,
+      "sha256": "bdade907675b73a5be1fccceb4449306f33f2acbc3242bf449ce4dddd87970a2"
+    }
+  ],
+  "source_inverse": "../DIFF.patch and ../REVERSE.patch: complete effective-before and candidate17/browser8 plus exact current metadata; older relative records remain historical at their original packet roots.",
+  "source_contract": "../DESIGN-TASKS.md and ../SOURCE-QUALIFICATION.json; unsealed candidate, final A/post-A gate pending.",
+  "scope": "MS4_NORMAL_WORKER_COMPLETE_PROFILE_READONLY_REDIS_TYPE_R11_SOURCE_ONLY",
+  "public_closure": "Original paid33/Task6-public63/history65/normal84 retained. Normal KEEP gives85; history/removal3 gives88 Worker prerequisites; eight own and eight actual helper files give104. Host pre-authorize100 excludes only the not-yet-created authorize4; close/zero require104. Original binding wires15/25/34 and all original oracles remain.",
+  "DOM": "NOT RUN",
+  "independent_zero": "verify-zero-ms4-fulfillment.py",
+  "paid_fatal_diagnostic_source_refresh": {
+    "status": "SOURCE_ONLY_NOT_RUN_NOT_FROZEN",
+    "root_reported_local_source_revision": "3f6edaa4f683d7d5ec7bc5588d4de5c977c47382",
+    "entry": {
+      "path": "help/audit-regressions/isolated/ms5-paid-consumer-normal.php",
+      "bytes": 103907,
+      "sha256": "a98c51f1ef44670bbffdd6ac7404bc663f850bb5c706fc21d087b653202454fe"
+    },
+    "change": "One direct-guard fatal-only STDERR diagnostic; original business/catch/assertions/result wires and memory_limit unchanged",
+    "profile_change": "Actual paid entry byte/hash in interface, Host and independent zero; actual interface->Host->close->zero->eight nonself DAG; short README/source record only",
+    "historical_source_fields": "Preserved as historical; no new freeze or business result is asserted",
+    "unchanged": "Compose, initializer, seed, normal186702/bf32 entry,15/25/34 business wires, all old functions/oracles/members/source counts",
+    "Worker_history": "Not read, changed or coupled into this profile",
+    "author_validation": "Source bytes/hash/JSON and complete unique raw forward/inverse only; no target parse/AST/import/execution",
+    "business_acceptance": "NOT VERIFIED BY THIS SOURCE REFRESH"
+  },
+  "historical_fields": "base_artifacts/base_candidate/post_c3_registration/paid_fatal_diagnostic_source_refresh are unchanged historical predecessor records, including their former old normal pin/source-only states; current_nonself_artifacts and worker_successor describe this source successor. The entire paid_memory_reader_source_refresh is also unchanged historical4ce/old ordinary evidence. The new shared_freeze_reader_source_refresh and current_nonself_artifacts describe this shared H/C/I source successor; no old result is reattributed to it. The entire shared_freeze_reader_source_refresh is also an unchanged historical predecessor record. worker_successor, including its original196190/79b normal_donor, is preserved as reviewed predecessor metadata; current new_business_entry and n2_r3_normal_source_refresh describe actual197976/50c4. Relative paths in these unchanged records resolve against the original external shared-freeze-worker-profile-source-r1/candidate-profile, not files embedded here. The entire n2_r3_normal_source_refresh is also retained as historical predecessor metadata. Current three_read_helpers/current_nonself_artifacts and r11_type_normal_source_refresh bind the committed read-only TYPE helper; no older proof or source state is reattributed to R11. The entire r11_type_normal_source_refresh is also preserved as historical predecessor metadata. The current new_business_entry/three_read_helpers/current_nonself_artifacts and r12_normal_current_source_refresh bind only this fresh Source successor; old proofs/commit051 and R11 results are never reattributed. All prior refresh subtrees, including r13_self_operated_legacy_preparation_source_refresh, remain complete historical records. Current top-level three_read_helpers/current_nonself_artifacts and r14_original_sku_expected_source_refresh select only the R14 Source successor; no former result is reattributed.",
+  "worker_successor": {
+    "status": "SOURCE_COMPLETE_NOT_RUN_NOT_FROZEN",
+    "entry": {
+      "path": "help/audit-regressions/isolated/ms4-worker-normal.php",
+      "bytes": 123288,
+      "sha256": "024d0b6817015a69386daeecc58950363726eaf44e6109c718b1151fe2d52885"
+    },
+    "normal_donor": {
+      "path": "help/audit-regressions/isolated/ms4-aftersale-review-normal.php",
+      "bytes": 196190,
+      "sha256": "79b89263359aa1780469ba37c0009392a4cf87d2aa9cf1e591431a595c2d0d2c"
+    },
+    "role": "audit-ms4-worker-normal",
+    "proof": "worker-normal",
+    "helper_scope": "MS4_WORKER_LIFECYCLE_ONLY",
+    "helpers": [
+      "register-worker-normal",
+      "authorize-worker-cleanup"
+    ],
+    "formal": "worker-normal-formal-manifest.json",
+    "prerequisites": 88,
+    "public": 104,
+    "close_flag": "--worker-normal",
+    "zero_flag": "--worker-normal",
+    "close_result": "ms4-worker-normal-close-result.json",
+    "zero_result": "ms4-worker-normal-independent-zero.json",
+    "components": [
+      "worker-entry-candidate-r3",
+      "worker-full-profile-host-component-r1",
+      "worker-full-profile-close-zero-component-r2",
+      "root-worker-interface-component-r1",
+      "root-normal-worker-flow-component-r1"
+    ],
+    "runtime": "NOT RUN",
+    "Main_entry_apply": "ROOT_REPORTED_LOCAL_SOURCE_APPLIED_AT_96da1465562ab1c02559823358e0add99c5b9fee; preserved by subsequent reader repair. Historical local integration milestone, not future Run source.",
+    "PHP_syntax": "ROOT_REPORTED_ACTUAL_PHP82: WorkerR3 and initializer six native0; donor previous actual syntax0. No source-author execution or Worker runtime acceptance.",
+    "acceptance": "INCOMPLETE",
+    "stopped_samples": "NOT RUN"
+  },
+  "paid_memory_reader_source_refresh": {
+    "status": "SOURCE_REFRESH_ONLY_NOT_FROZEN_NOT_RUN",
+    "reader_before": {
+      "path": "help/audit-regressions/isolated/ms4-customer-http-normal.php",
+      "sha256": "7725fcf30368dac269b5e0666a982d783bc48e3efe6b87c57dc8a25b2c1158c0",
+      "bytes": 95830
+    },
+    "reader": {
+      "path": "help/audit-regressions/isolated/ms4-customer-http-normal.php",
+      "bytes": 98783,
+      "sha256": "4ce69e5a153b98436fa456b37ba27ec78a26db3e1cb5244db133703e4fa16b27"
+    },
+    "root_reported_repair_source_revision": "86a42f399418ea939ee667aa25705b02bf8aec0b",
+    "root_reported_repair_parent": "96da1465562ab1c02559823358e0add99c5b9fee",
+    "repair_revision_role": "Historical local source repair milestone only; not a future Run source identity or file count",
+    "root_reported_ordinary_actual": {
+      "status": "VERIFIED_ACTUAL_PHP82_SYNTAX_AND_ORDINARY_PUBLIC_READER_ONLY",
+      "memory_limit": "128M",
+      "peak_bytes": 40222720,
+      "freeze_reads": 14,
+      "sequence_reads": 13,
+      "nonfreeze_reads": 2,
+      "COW": true,
+      "original_inputs_and_source_unchanged": true,
+      "native_receipts": 9,
+      "all_native_wait_zero_stderr_empty": true,
+      "result_bytes": 11857,
+      "result_sha256": "905037e51a01af5c61d869024508b129131e48fb4ee2abfb283a88c49050567c"
+    },
+    "root_reported_fact_file": {
+      "path": "../root-reported-facts/ROOT-VERIFIED-FACTS.json",
+      "bytes": 1849,
+      "sha256": "356fc2cf73a9b377e72ce9d42d1270c35f0ec9768969819b54010059d937142c"
+    },
+    "root_reported_worker_donor_integration": {
+      "local_source_revision": "96da1465562ab1c02559823358e0add99c5b9fee",
+      "Worker_bytes": 123288,
+      "Worker_sha256": "024d0b6817015a69386daeecc58950363726eaf44e6109c718b1151fe2d52885",
+      "donor_bytes": 196190,
+      "donor_sha256": "79b89263359aa1780469ba37c0009392a4cf87d2aa9cf1e591431a595c2d0d2c",
+      "actual_PHP82_syntax": "WorkerR3 andinitializer sixnative0; donorpreviousactualsyntax0",
+      "coupled_profile_AST_DAG_help": "Root actual threeAST/threehelp0; unchanged75fullbytes"
+    },
+    "source_author_validation": "Complete bytes/hash/JSON/text, closed source copies and finite unique raw full forward/inverse only; no target parse/import/execute or actual Main/P/Run/private access",
+    "change": "Only exact public source-freeze path reuses an accepted process-local decoded array after every full current-stream hash/bytecount and stable-stat check; first decode same raw, COW return, all other reader paths/original source===/native/business oracles and128M unchanged",
+    "profile_delta": [
+      "README.md",
+      "source-derivation.json"
+    ],
+    "unchanged_profile_artifacts": [
+      "compose.yml",
+      "ms4-host.py",
+      "ms4-initialize.php",
+      "seed-source-inverse.json",
+      "interface-v1.json",
+      "normal-close-ms4-fulfillment.py",
+      "verify-zero-ms4-fulfillment.py"
+    ],
+    "limited_evidence_boundary": "Root reported syntax/public-reader ordinary results only. No claim that full paid fits128M, no DB/App/HTTP/Task6/aftersale/review/Worker/full business acceptance",
+    "new_P_materialized": false,
+    "freeze": "NOT RUN",
+    "paid_full": "NOT RUN",
+    "Worker": "NOT RUN",
+    "stopped_samples": "NOT RUN",
+    "full_acceptance": "INCOMPLETE"
+  },
+  "shared_freeze_reader_source_refresh": {
+    "status": "SOURCE_ONLY_NEW_PROFILE_NOT_MATERIALIZED_NOT_FROZEN_NOT_RUN",
+    "harness": {
+      "path": "help/audit-regressions/isolated/lib/harness.php",
+      "bytes": 48344,
+      "sha256": "d1f6edf1e08d92f20e99954c41f4dafbb1bf164aeba249c1ef859710af73aa0d"
+    },
+    "customer": {
+      "path": "help/audit-regressions/isolated/ms4-customer-http-normal.php",
+      "bytes": 96225,
+      "sha256": "8f243fdeadc42335827642eec060d506e137e0e1c5ff01fa4d5db8ea9e69543a"
+    },
+    "initializer": {
+      "path": "ms4-initialize.php",
+      "bytes": 72261,
+      "sha256": "88fad297febed2766a6590fea568527b87343a716e9004264581da4e2f11524a"
+    },
+    "change": "Existing harness owns one successful exact-freeze decoded value; real customer and initializer wrappers delegate with per-call int/null maximum and original real assertion responsibility. All current-stream EOF/hash/count/stat9/close checks and nonfreeze/private/mutable/results/source/native/business gates remain. No source member/count or PHP128M change.",
+    "root_reported_local_source": {
+      "facts": {
+        "path": "../original-inputs/ROOT-FACTS.json",
+        "bytes": 1179,
+        "sha256": "edcf29740e7d351f265628ea8523c2fa4974cbe88cae0dff79e2ece3ec26d8d7"
+      },
+      "Main": "ceadbcff37ac4d82d8c884b7cdd6bcf1fb3ab55d",
+      "Main_clean": true,
+      "validation": "57390fb29dc995434d319153dd69e0def398f3b0",
+      "validation_clean": true,
+      "revision_role": "Supplied historical/current local-source fact only; not a selected future Run source or independently observed by this author"
+    },
+    "root_reported_limited_ordinary_actual": {
+      "result": {
+        "path": "../original-inputs/ROOT-ORDINARY-RESULT.json",
+        "bytes": 28745,
+        "sha256": "a2c4184da037b54284a8ef90227af9c051ad49d27ecfd45a86d5fc7498cd5bb6"
+      },
+      "scope": "ACTUAL_PHP82_REAL_SHARED_READER_SYNTAX_AND_ORDINARY_PUBLIC_ONLY",
+      "status": "VERIFIED_REAL_LOADERS_SHARED_READER_AT_ORIGINAL_128M_ONLY",
+      "original_public_freeze_bytes": 10955059,
+      "original_public_freeze_sha256": "ab765382a27495c4e6126fa751c36a27fe93e7f475fd88cfac5cd7cc82852962",
+      "all_source_and_original_public_inputs_unchanged": true,
+      "native_receipts": 18,
+      "all_native_wait_zero_stderr_empty": true,
+      "cases": [
+        {
+          "scope": "ORDINARY_REAL_SHARED_READER_PUBLIC_INPUT_ONLY",
+          "status": "VERIFIED_REAL_SHARED_READER_ALTERNATING_AND_COW_ONLY",
+          "first_reader": "initializer-first",
+          "memory_limit": "128M",
+          "freeze_reads": 18,
+          "initializer_freeze_reads": 9,
+          "customer_freeze_reads": 9,
+          "bounded_customer_reads": 2,
+          "sequence_reads": 16,
+          "full_values_equal": true,
+          "caller_COW_isolated": true,
+          "nonfreeze_reads": 4,
+          "original_public_hashes_unchanged": true,
+          "peak_bytes": 50802688,
+          "assertions": 4800,
+          "App_SQL_Redis_HTTP_paid_Worker": "NOT RUN",
+          "full_acceptance": "INCOMPLETE",
+          "stopped_samples": "NOT RUN"
+        },
+        {
+          "scope": "ORDINARY_REAL_SHARED_READER_PUBLIC_INPUT_ONLY",
+          "status": "VERIFIED_REAL_SHARED_READER_ALTERNATING_AND_COW_ONLY",
+          "first_reader": "customer-first",
+          "memory_limit": "128M",
+          "freeze_reads": 18,
+          "initializer_freeze_reads": 9,
+          "customer_freeze_reads": 9,
+          "bounded_customer_reads": 2,
+          "sequence_reads": 16,
+          "full_values_equal": true,
+          "caller_COW_isolated": true,
+          "nonfreeze_reads": 4,
+          "original_public_hashes_unchanged": true,
+          "peak_bytes": 50802688,
+          "assertions": 4800,
+          "App_SQL_Redis_HTTP_paid_Worker": "NOT RUN",
+          "full_acceptance": "INCOMPLETE",
+          "stopped_samples": "NOT RUN"
+        }
+      ],
+      "App_SQL_Redis_HTTP_paid_Worker": "NOT RUN",
+      "full_acceptance": "INCOMPLETE",
+      "stopped_samples": "NOT RUN"
+    },
+    "root_reported_original_R8_retirement": {
+      "facts": {
+        "path": "../original-inputs/ROOT-FACTS.json",
+        "bytes": 1179,
+        "sha256": "edcf29740e7d351f265628ea8523c2fa4974cbe88cae0dff79e2ece3ec26d8d7"
+      },
+      "original_flow": "ACTUAL TERMINAL1 files255; DO NOT POLL OR RESTART",
+      "actual_close_exit": 0,
+      "actual_zero_exit": 0,
+      "original_public_unchanged": 2410,
+      "reported_close_result_pin_only": {
+        "bytes": 14450,
+        "sha256": "07f526347d3267c21f3d974a930f2ef27ce5b5c7cebf1596076e0dabb01e0fae"
+      },
+      "reported_zero_result_pin_only": {
+        "bytes": 86019,
+        "sha256": "b6007aea2cc0515b5520a3246face19f23a24e70152c57fa8242d77a5a55b4b8"
+      },
+      "boundary": "Root-reported actual historical R8 facts only; original evidence is not read or rewritten by this package, old Run is not restarted, no new profile close/zero receipt is created"
+    },
+    "adoption": {
+      "path": "../original-inputs/ROOT-SHARED-FREEZE-READER-ADOPTION-r1.md",
+      "bytes": 5785,
+      "sha256": "b9a6cbcf984e6a6fa42d11e572f2939c5a0b7bb7887c1a865b5c13f044369d35"
+    },
+    "prior_independent_source_review": {
+      "path": "../original-inputs/ROOT-LIMITED-SOURCE-REVIEW.md",
+      "bytes": 14860,
+      "sha256": "7dbd5c9f6ed8ac337426c31809d84440d719b37f2a62bdc37a60ebba533ddf19"
+    },
+    "profile_delta": [
+      "README.md",
+      "ms4-initialize.php",
+      "source-derivation.json"
+    ],
+    "unchanged_profile_artifacts": [
+      "compose.yml",
+      "ms4-host.py",
+      "seed-source-inverse.json",
+      "interface-v1.json",
+      "normal-close-ms4-fulfillment.py",
+      "verify-zero-ms4-fulfillment.py"
+    ],
+    "source_author_validation": "Only closed-copy text/bytes/hash/JSON, full original inputs/current11 repository files, exact accepted initializer copy, three whole-file raw unique inverses, full diff and allowed JSON path/unchanged subtree checks; no target parse/AST/import/execute or actual Main/validation/P/Run/private access",
+    "limited_evidence_boundary": "Actual ordinary syntax/public-reader evidence belongs to Root and the supplied real H/C/I only. This package does not establish full128M files-bootstrap, paid, App/SQL/Redis/HTTP, Task6/7/8, Worker, DOM, nonempty history, finance or release success.",
+    "new_P_materialized": false,
+    "freeze": "NOT RUN",
+    "new_Run": "NOT RUN",
+    "full_acceptance": "INCOMPLETE",
+    "stopped_samples": "NOT RUN",
+    "push_deploy_finance": "NOT RUN"
+  },
+  "n2_r3_normal_source_refresh": {
+    "status": "SOURCE_ONLY_COMPLETE_NINE_ARTIFACT_CANDIDATE_NOT_INTEGRATED_NOT_MATERIALIZED_NOT_FROZEN_NOT_RUN",
+    "current_normal_entry": {
+      "path": "help/audit-regressions/isolated/ms4-aftersale-review-normal.php",
+      "external_closed_source": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/aftersale-normal-password-source-r3/candidate/main/help/audit-regressions/isolated/ms4-aftersale-review-normal.php",
+      "bytes": 197976,
+      "sha256": "50c4b42b5b840d21764318f9496a239a9ec539c96a7cf616f609a0c43988396b"
+    },
+    "adopted_N2_source": "Original normal pending status0 anonymous list/config observation added before moderation; complete normal-chain six list/two config calls and R2 heavy-variable unset retained exactly from reviewed R3 source. Original cases, business oracles, source/native schemas and Worker contracts are not narrowed.",
+    "R3_source_change": "Only platform fixture password suffix random_bytes20->11; same9-byte ASCII prefix plus22 hex bytes=31 ASCII,88 random bits, unchanged platform6..32 policy. Original merchant49-byte generation and8..72 policy remain. No credential generated by this package.",
+    "source_binding_order": [
+      "current_normal_entry",
+      "ms4-host.py",
+      "normal-close-ms4-fulfillment.py",
+      "verify-zero-ms4-fulfillment.py",
+      "current_nonself_artifacts"
+    ],
+    "current_code_artifacts": [
+      {
+        "path": "ms4-host.py",
+        "bytes": 306600,
+        "sha256": "70e0209b616157c9d0c370191ce378a19ebb1771f22a3713068eee9888fdf849"
+      },
+      {
+        "path": "normal-close-ms4-fulfillment.py",
+        "bytes": 47066,
+        "sha256": "1a51c52f688b267c10874cb932d4fd3e4a9e501bbde51d3e627ddc6fab0e1a20"
+      },
+      {
+        "path": "verify-zero-ms4-fulfillment.py",
+        "bytes": 265770,
+        "sha256": "09904c41568ead83b126dee8060b2780b7d8f2886abc8cdc5bcfb268bd7ddd8c"
+      }
+    ],
+    "profile_delta": [
+      "README.md",
+      "ms4-host.py",
+      "source-derivation.json",
+      "normal-close-ms4-fulfillment.py",
+      "verify-zero-ms4-fulfillment.py"
+    ],
+    "unchanged_profile_artifacts": [
+      "compose.yml",
+      "ms4-initialize.php",
+      "seed-source-inverse.json",
+      "interface-v1.json"
+    ],
+    "original_inputs_external": [
+      {
+        "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/shared-freeze-worker-profile-source-r1",
+        "files": 49,
+        "pins": 48,
+        "manifest_bytes": 8978,
+        "manifest_sha256": "4b460209d16945701e7908ae13eef15b8d3f623766a049183975f5e04eb5cada",
+        "all_pins_exact_set_no_links": true
+      },
+      {
+        "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/aftersale-normal-password-source-r3",
+        "files": 12,
+        "pins": 11,
+        "manifest_bytes": 2017,
+        "manifest_sha256": "afc90e9df2cc1577490152002b2de537538f126d0ffc27b35bf24715556ba78d",
+        "all_pins_exact_set_no_links": true
+      }
+    ],
+    "Root_adoption": {
+      "path": "../ROOT-N2-R3-NORMAL-PROFILE-ADOPTION-r1.md",
+      "bytes": 1914,
+      "sha256": "ca81bbf25e54fff077ae1edf4a8a8e7ec9b9ef9e356ddce527ccbd1fd68a97fd"
+    },
+    "history_resolution": {
+      "original_profile": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/shared-freeze-worker-profile-source-r1/candidate-profile",
+      "policy": "All unchanged historical ../references resolve in their original external profile context; no original-inputs or unrelated historical packages are embedded here. Current source_contract/source_dependencies/source_inverse refer to local source records."
+    },
+    "root_reported_original_R9_boundary": "Adoption reports paid naturally ended and coordinator cancelled before known-invalid platform login. Normal close and independentzero still required before integration/new source execution; no original R9 completion/close/zero receipt supplied or fabricated here.",
+    "validation": "This source author uses bytes/hash/JSON/text only. No target parse/AST/import/compile/execute, Git/PHP/Docker/SQL/HTTP/CUA or actual Main/validation/P9/Run/private access. Root performs later appropriate checks and real normal verification.",
+    "frontend_two_file_N2": "Separate candidate/integration; not part of or accepted by this source package",
+    "source_revision_role": "Existing source_revision5 preserved; no future commit/source count/Run/native identity or receipt is prefilled",
+    "new_P_materialized": false,
+    "freeze": "NOT RUN",
+    "runtime": "NOT RUN",
+    "N1_N2_HTTP_DOM": "NOT VERIFIED",
+    "Worker": "NOT RUN",
+    "full_acceptance": "INCOMPLETE",
+    "stopped_samples": "NOT RUN",
+    "push_deploy_real_finance": "NOT RUN"
+  },
+  "r11_type_normal_source_refresh": {
+    "status": "SOURCE_ONLY_COMPLETE_NINE_ARTIFACT_CANDIDATE_NOT_MATERIALIZED_NOT_FROZEN_NOT_RUN",
+    "root_reported_current_committed_source": {
+      "commit": "051adb0e35aa42cdb025cb302b31ee784b5caf85",
+      "committed_paths": [
+        "docs/multi-merchant/09-plan-ms4-ms6.md",
+        "help/audit-regressions/isolated/lib/ms4-three-read-normal.php"
+      ],
+      "proof": {
+        "path": "../original-inputs/public/scoped-local-commit-result.json",
+        "bytes": 8442,
+        "sha256": "52f4f72ad189ede892f005a64b53de7c998dbb891facbbb69ab5bcd02630aee1"
+      }
+    },
+    "current_three_read_helper": {
+      "path": "help/audit-regressions/isolated/lib/ms4-three-read-normal.php",
+      "bytes": 154007,
+      "sha256": "524607c254c13336ae08522df0c1fcfaaaaf7b23e95c1f04b4e8f7f2e7542c01"
+    },
+    "predecessor_three_read_helper": {
+      "path": "help/audit-regressions/isolated/lib/ms4-three-read-normal.php",
+      "bytes": 153686,
+      "sha256": "3d1f8bc53d1f14543b6d07b1ef2ac89983d874eb4c60bb6ea7ebc13e75252cd6"
+    },
+    "source_change": "Read-only TYPE bulk-string helper and its five actual callers, as supplied by the committed source and Root protocol result; no other current repository source member changes.",
+    "current_normal_entry": {
+      "path": "help/audit-regressions/isolated/ms4-aftersale-review-normal.php",
+      "bytes": 197976,
+      "sha256": "50c4b42b5b840d21764318f9496a239a9ec539c96a7cf616f609a0c43988396b",
+      "origin": "../original-inputs/committed/help/audit-regressions/isolated/ms4-aftersale-review-normal.php"
+    },
+    "unchanged_normal_actor": "Original default four-argument actor path with six merchant and ten platform grants; dirty optional UI AR200672/writer/menus are not consumed.",
+    "root_reported_limited_type_protocol": {
+      "proof": {
+        "path": "../original-inputs/public/type-protocol-result.json",
+        "bytes": 28111,
+        "sha256": "f9ddc09f9a7bbb432c37a501d26a17d05f93fb1b5af0108bdf00cdbd026e3bce"
+      },
+      "scope": "NATIVE_REDIS_CLIENT_PROTOCOL_ONLY",
+      "php": "8.2.33",
+      "phpredis": "6.2.0",
+      "original_raw_TYPE": "bool true",
+      "readonly_bulk_TYPES": [
+        "none",
+        "string",
+        "set"
+      ],
+      "complete_fixture_values_and_absolute_expiries_unchanged": true,
+      "full_App_auth_Task6_business": "NOT_RUN_BY_THIS_PROTOCOL"
+    },
+    "root_reported_original_R10_retirement": {
+      "normal_close": {
+        "path": "../original-inputs/public/normal-close-r10.json",
+        "bytes": 14343,
+        "sha256": "ddf17fa4a041cbdb4f2dcc9436a29447973c77054606eb53cd9b05e90175129e"
+      },
+      "independent_zero": {
+        "path": "../original-inputs/public/independent-zero-r10.json",
+        "bytes": 15489,
+        "sha256": "5dd8a210dcb18197118de50204f4575318ddd04ae6ee1dcbc7ce7fffb4ab09bf"
+      },
+      "Root_reported_actual_close_exit": 0,
+      "Root_reported_actual_zero_exit": 0,
+      "original_public_proofs_preserved": 6379,
+      "original_Task6_native_failure": 1,
+      "not_R11_runtime_evidence": true
+    },
+    "source_binding_order": [
+      "committed helper",
+      "interface-v1.json",
+      "ms4-host.py",
+      "normal-close-ms4-fulfillment.py",
+      "verify-zero-ms4-fulfillment.py",
+      "README.md",
+      "current_nonself_artifacts"
+    ],
+    "profile_delta": [
+      "README.md",
+      "ms4-host.py",
+      "interface-v1.json",
+      "source-derivation.json",
+      "normal-close-ms4-fulfillment.py",
+      "verify-zero-ms4-fulfillment.py"
+    ],
+    "unchanged_profile_artifacts": [
+      "compose.yml",
+      "ms4-initialize.php",
+      "seed-source-inverse.json"
+    ],
+    "Root_adoption": {
+      "path": "../original-inputs/ROOT-ADOPTION.md",
+      "bytes": 3141,
+      "sha256": "3aa005465549fd1289f8e20379dfbab701e8ffbc0bcf945d4d1ca3d283fb86a4"
+    },
+    "history": "All eight named predecessor fields remain byte-for-byte and semantically unchanged; older relative references resolve in their original external source context. Full predecessor README retained verbatim.",
+    "source_author_validation": "Only Python -B -X utf8 text/bytes/hash/JSON/create-only against the fixed19/18 input. No target parse/AST/import/compile/execute or actual Main/validation/P/Run/private/native access.",
+    "source_revision_role": "Original source_revision5 preserved; actual committed051 is Root-reported provenance, not a prefilled future Run identity.",
+    "new_P_materialized": false,
+    "freeze": "NOT RUN",
+    "runtime": "NOT RUN",
+    "full_normal_Task6_AR_Worker": "NOT RUN",
+    "normal_close_independent_zero": "NOT RUN FOR R11",
+    "three_end_API_DOM": "NOT VERIFIED",
+    "full_acceptance": "INCOMPLETE",
+    "stopped_samples": "NOT RUN",
+    "push_deploy_real_finance": "NOT RUN"
+  },
+  "r12_normal_current_source_refresh": {
+    "status": "SOURCE_ONLY_COMPLETE_NINE_ARTIFACT_CANDIDATE_NOT_MATERIALIZED_NOT_FROZEN_NOT_RUN",
+    "current_normal_entry": {
+      "path": "help/audit-regressions/isolated/ms4-aftersale-review-normal.php",
+      "bytes": 201659,
+      "sha256": "61697db47382a3e7253e44f17f18a746c4a663c6c5d577d61ee74888805e6a8a",
+      "Source_package": "cache-wire-normal-source-r1",
+      "Source_member": "candidate/main-ui/help/audit-regressions/isolated/ms4-aftersale-review-normal.php"
+    },
+    "current_legacy_producer": {
+      "path": "help/audit-regressions/isolated/lib/ms4-three-legacy-producer.php",
+      "bytes": 50675,
+      "sha256": "0ad0914cb415af3395ea6ce29b753858dfd1c58c6acd41d65b6dddaed1bf3e9a",
+      "Source_package": "print-dao-normal-source-fix-r1",
+      "Source_member": "candidate/ms4-three-legacy-producer.php",
+      "Root_report": "Root adopted one actual DAO receiver expression and reports pinned syntax and narrow Main Source application; not a new business result."
+    },
+    "current_three_read_helper": {
+      "path": "help/audit-regressions/isolated/lib/ms4-three-read-normal.php",
+      "bytes": 154007,
+      "sha256": "524607c254c13336ae08522df0c1fcfaaaaf7b23e95c1f04b4e8f7f2e7542c01"
+    },
+    "current_source_reference_changes": [
+      "initializer Worker AR gate",
+      "interface current AR entry and producer row",
+      "Host current AR entry, producer row and interface hash",
+      "normal close actual Host hash",
+      "independent zero current AR/producer and actual Host/close/interface pins"
+    ],
+    "business_and_cli": "All original default semantics, functions, command sequence, Task6 102, AR13 actions/15 replays/5 refunds/N2 and non-due Worker gates retained; only listed current source scalar contexts change.",
+    "source_membership": "Unchanged original four roots and exact9/10/24/28/29 extras. Full source bytes and totals must be collected by Root from the actual future clean source; no future total is supplied.",
+    "source_binding_order": [
+      "actual adopted repository Source pins",
+      "ms4-initialize.php current Worker source gate",
+      "interface-v1.json",
+      "ms4-host.py",
+      "normal-close-ms4-fulfillment.py",
+      "verify-zero-ms4-fulfillment.py",
+      "README.md",
+      "current_nonself_artifacts"
+    ],
+    "current_code_artifacts": [
+      {
+        "path": "ms4-host.py",
+        "bytes": 306600,
+        "sha256": "faca9b653395e664f454ef1290a4bc31b90e290faea332ecc60db7430655fe3e"
+      },
+      {
+        "path": "ms4-initialize.php",
+        "bytes": 72261,
+        "sha256": "25a4e41965cb93598452498c131897aa09d443ed91eea659ec8e7f03f76d3e7a"
+      },
+      {
+        "path": "interface-v1.json",
+        "bytes": 63571,
+        "sha256": "aec20452430970c502577c11ef415d07a416891330436916fd6ca00a81884765"
+      },
+      {
+        "path": "normal-close-ms4-fulfillment.py",
+        "bytes": 47066,
+        "sha256": "403faadd0863b458a6d480f904103980ffa5375b20c0acb48423a157066b17de"
+      },
+      {
+        "path": "verify-zero-ms4-fulfillment.py",
+        "bytes": 265770,
+        "sha256": "96d409b4774942c7085b8ad0bbf803d11382596f0c341ebb3dd61e24294593b0"
+      }
+    ],
+    "unchanged_profile_artifacts": [
+      "compose.yml",
+      "seed-source-inverse.json"
+    ],
+    "historical_preservation": [
+      "base_artifacts",
+      "base_candidate",
+      "post_c3_registration",
+      "paid_fatal_diagnostic_source_refresh",
+      "worker_successor",
+      "paid_memory_reader_source_refresh",
+      "shared_freeze_reader_source_refresh",
+      "n2_r3_normal_source_refresh",
+      "r11_type_normal_source_refresh"
+    ],
+    "history_resolution": "Unchanged old relative references retain their original external source context; no linked source is followed or old evidence reattributed. New current source facts refer only to expressly granted fixed copies.",
+    "Root_adoption": {
+      "path": "../ROOT-ADOPTION.md",
+      "bytes": 3258,
+      "sha256": "6497e74830e01feaa2541f0557ae20b170cb5d969da11b4102adc1379fe1c84c"
+    },
+    "Root_addendum": {
+      "path": "../ROOT-ADOPTION-ADDENDUM-r2.md",
+      "bytes": 1009,
+      "sha256": "a4db0b4854e3f56e09d953501aa70a818893988a67b95df481ccc3dde71f5270"
+    },
+    "source_author_validation": "Python -B -X utf8 text/bytes/hash/JSON/create-only. Full finite source inverses, immutable business/CLI bytes, JSON history and actual Source DAG only. No target parse/AST/import/compile/execute or actual environment access.",
+    "UI_Host3_UI17_gatedcopy": "SEPARATE_NOT_INTEGRATED",
+    "new_clean_commit": "UNKNOWN_ROOT_TO_SUPPLY_FROM_ACTUAL_SOURCE",
+    "new_P_materialized": false,
+    "freeze": "NOT RUN",
+    "runtime": "NOT RUN",
+    "full_normal_Task6_AR_Worker": "NOT RUN",
+    "three_end_API_DOM": "NOT VERIFIED",
+    "full_acceptance": "INCOMPLETE",
+    "stopped_samples": "NOT RUN",
+    "push_deploy_real_finance": "NOT RUN"
+  },
+  "r13_self_operated_legacy_preparation_source_refresh": {
+    "status": "SOURCE_ONLY_NOT_MATERIALIZED_OR_RUN",
+    "current_customer_library": {
+      "path": "help/audit-regressions/isolated/lib/ms4-customer-http-normal.php",
+      "bytes": 63896,
+      "sha256": "5ba793e50cf604342304ff2563141384c8a61ffd2dc796865207210d70a946f9"
+    },
+    "current_legacy_producer": {
+      "path": "help/audit-regressions/isolated/lib/ms4-three-legacy-producer.php",
+      "bytes": 53292,
+      "sha256": "18022cab114f326511853b34750736d84c45693686d9218f86ae299b7e5ae8da"
+    },
+    "former_customer_library": {
+      "path": "help/audit-regressions/isolated/lib/ms4-customer-http-normal.php",
+      "bytes": 59154,
+      "sha256": "9d25dff9b0060866126b488b96f1f553370e36c03f456a16aa109a0f80418d06"
+    },
+    "former_legacy_producer": {
+      "path": "help/audit-regressions/isolated/lib/ms4-three-legacy-producer.php",
+      "bytes": 50675,
+      "sha256": "0ad0914cb415af3395ea6ce29b753858dfd1c58c6acd41d65b6dddaed1bf3e9a"
+    },
+    "current_runtime_code_files": [
+      "interface-v1.json",
+      "ms4-host.py",
+      "normal-close-ms4-fulfillment.py",
+      "verify-zero-ms4-fulfillment.py"
+    ],
+    "history": "All earlier refresh fields and base_artifacts are preserved predecessor provenance.",
+    "business": "Original full Task6/AR/Worker/CLI/close/zero contracts unchanged; new normal run required."
+  },
+  "r14_original_sku_expected_source_refresh": {
+    "status": "SOURCE_ONLY_NOT_MATERIALIZED_FROZEN_OR_RUN",
+    "current_legacy_producer": {
+      "path": "help/audit-regressions/isolated/lib/ms4-three-legacy-producer.php",
+      "bytes": 53328,
+      "sha256": "9da29b5edf6bc50c8bb483eaf4a67adaaacc6cddc4660e6cac0d2dabcb81a584"
+    },
+    "current_customer_library": {
+      "path": "help/audit-regressions/isolated/lib/ms4-customer-http-normal.php",
+      "bytes": 63896,
+      "sha256": "5ba793e50cf604342304ff2563141384c8a61ffd2dc796865207210d70a946f9"
+    },
+    "root_reported_current_clean_Main": "dc651a7fadfaa55694d271d99fc578e4ec4c8baa",
+    "Main_fact_boundary": "Root supplied current clean milestone only; no actual Main/validation/Git read by Source author, not a manufactured future Run identity.",
+    "producer_change": "Root reports one independent expected cart attrInfo=original saved SKU row; current closed Source line420 contains that exact expected-model assignment.",
+    "current_DAG": [
+      "current repository Source requirements",
+      "interface current helper row",
+      "Host current helper row/interface SHA",
+      "close actual Host SHA",
+      "independent zero current helper/interface/Host/close SHA",
+      "README",
+      "current_nonself_artifacts8"
+    ],
+    "code_contract_contexts": 8,
+    "business_and_cli": "All original normal/Worker functions/BODY/assertions/commands and source memberships preserved.",
+    "source_membership": "Original four roots and exact9/10/24/28/29 extras unchanged; actual new total and public range are Root future readbacks, not prefilled.",
+    "root_reported_R13_retirement": {
+      "public_copies": [
+        {
+          "Source_input_member": "Root-history/r13-task6-failed-normal-close-r1.json",
+          "bytes": 14345,
+          "sha256": "0c94c93a70ce737e1626e9d1a6ebf9414c2e18315c7dbf474cddfb4148734d7e"
+        },
+        {
+          "Source_input_member": "Root-history/r13-task6-failed-independent-zero-r1.json",
+          "bytes": 15495,
+          "sha256": "26b4263b46221d234442f590c33fbeb8248bdedcf6fceb965dd44c8e4ffcdcea"
+        }
+      ],
+      "original_Task6": "NATURAL_FAILURE1_PRESERVED",
+      "diagnostic_literal": "JSON_EXACT_OBJECT_FIELDS",
+      "normal_close_native_exit": 0,
+      "independent_zero_native_exit": 0,
+      "fixed_historical_original_preservation_count": 6506,
+      "new_materialization_public_inventory": "REQUIRES_FRESH_COMPLETE_ROOT_CAPTURE_NOT_THIS_HISTORICAL_COUNT"
+    },
+    "adoption": {
+      "Source_input_member": "ROOT-ADOPTION.md",
+      "bytes": 1521,
+      "sha256": "e924f7ad78b2da4b70a34a606741f1cc44f0fc1dfc8f0408aeb0632f0134531c",
+      "literal_correction": "Root message corrects EXPECT typo to actual JSON_EXACT_OBJECT_FIELDS; original adoption input is preserved."
+    },
+    "historical_subtrees": "All original refresh/base/donor/worker/reader/C3/N2/R11/R12/R13 objects unchanged; only current top-level helper/current8 and explicit historical note update.",
+    "normal_Task6_AR_Worker": "NOT RUN FOR R14",
+    "new_P_materialized": false,
+    "new_Run_created": false,
+    "freeze": "NOT RUN",
+    "full_acceptance": "INCOMPLETE",
+    "stopped_samples": "NOT RUN",
+    "UI17_observer_DOM": "SEPARATE_NOT_INTEGRATED"
+  },
+  "r15_finite_store_stock_warm_source_refresh": {
+    "status": "SOURCE_ONLY_NOT_ADOPTED_MATERIALIZED_FROZEN_OR_RUN",
+    "parent": {
+      "package": "r14-root-normal-profile-source-r1",
+      "pins": {
+        "bytes": 4753,
+        "sha256": "ffa3dc349e0a32c293cc243f1d016c0617f3a6b624265048d6e9311b9f777764"
+      },
+      "selection": "FINAL-CANDIDATES.json files; complete candidate-profile nine are the sole parent"
+    },
+    "current_three_read_helper": {
+      "path": "help/audit-regressions/isolated/lib/ms4-three-read-normal.php",
+      "bytes": 154021,
+      "sha256": "6efab0a05983fb579ae0ee1c79a75870a9d03f0f57218678607f89c4f64b2b6d"
+    },
+    "helper_Source": {
+      "package": "r14-task6-store-stock-warm-source-fix-r1",
+      "pins": {
+        "bytes": 1141,
+        "sha256": "d4f2c73d0add6c7bd169d8bfd352ae162a127457cf69b46f3334dbd8becd9368"
+      },
+      "change": "Append only store_stock in the finite single configuration list; all other helper bytes and strict native/cache/business assertions preserved"
+    },
+    "repository_Source_requirements": [
+      {
+        "path": "help/audit-regressions/isolated/ms4-aftersale-review-normal.php",
+        "bytes": 201659,
+        "sha256": "61697db47382a3e7253e44f17f18a746c4a663c6c5d577d61ee74888805e6a8a"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-customer-http-normal.php",
+        "bytes": 63896,
+        "sha256": "5ba793e50cf604342304ff2563141384c8a61ffd2dc796865207210d70a946f9"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-three-legacy-producer.php",
+        "bytes": 53328,
+        "sha256": "9da29b5edf6bc50c8bb483eaf4a67adaaacc6cddc4660e6cac0d2dabcb81a584"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-three-read-normal.php",
+        "bytes": 154021,
+        "sha256": "6efab0a05983fb579ae0ee1c79a75870a9d03f0f57218678607f89c4f64b2b6d"
+      },
+      {
+        "path": "crmeb/app/services/product/product/StoreProductServices.php",
+        "bytes": 145261,
+        "sha256": "cc4fbb0e962bb30c005bfc2ce2b9ab3caa6234b99c88634715aebe1e8af5e6e5"
+      }
+    ],
+    "current_DAG": [
+      {
+        "path": "interface-v1.json",
+        "bytes": 63571,
+        "sha256": "bd92983f32fa46f201070d8087e85f922faab7ff4dce5e87ea645d097d52fe66"
+      },
+      {
+        "path": "ms4-host.py",
+        "bytes": 306600,
+        "sha256": "0abc9a442655b969e094623fe8abdc3a007daee7eb8c63e31201710814ad300a"
+      },
+      {
+        "path": "normal-close-ms4-fulfillment.py",
+        "bytes": 47066,
+        "sha256": "502342001a4d608ec567a6fdb821ec624009c3e676bb54d286ab347b84cbcf5d"
+      },
+      {
+        "path": "verify-zero-ms4-fulfillment.py",
+        "bytes": 265770,
+        "sha256": "677423dba866689193eb954f6894f67363c23145121ac8902bde182301ba85d5"
+      }
+    ],
+    "current_nonself_inventory": "Top-level current_nonself_artifacts is the complete actual eight nonself files in original artifact order; no derivation self hash",
+    "current_code_contract_contexts": 8,
+    "history": "All pre-existing derivation keys and nested history, including historical_fields text and R14 source record, remain byte-for-byte historical except current top-level three_read_helpers[2] and current_nonself_artifacts. Their old current, source HEAD, Run and result labels are scoped to their original records. This R15 object and current top-level rows select the new Source candidate. Old external references are provenance only, never opened.",
+    "preserved": "All original9 order, functions/BODY/assertions/CLI/normal/Worker/source resource groups and member lists; compose/initializer/seed exact unchanged",
+    "Source_author_actions": "Closed bytes/text/hash/JSON; no target parse/AST/lint/import/execute and no actual environment/Main/Run/private",
+    "new_HEAD_Run_CID_source_total_public_count": "NOT_SUPPLIED_OR_INVENTED",
+    "original_R14_Task6": "FAILURE_PRESERVED_NOT_UPGRADED",
+    "full_acceptance": "INCOMPLETE",
+    "normal_Task6_AR_Worker": "NOT RUN FOR R15",
+    "new_P_materialized": false,
+    "new_Run_created": false,
+    "freeze": "NOT RUN",
+    "stopped_samples": "NOT RUN",
+    "UI17_observer_DOM": "SEPARATE_NOT_INTEGRATED"
+  },
+  "r16_original_formatter_call_context_source_refresh": {
+    "scope": "R16_ONE_BYTE_ORIGINAL_FORMATTER_CALL_CONTEXT_SOURCE_ONLY",
+    "reference_path": "help/audit-regressions/isolated/lib/ms4-three-legacy-reference.php",
+    "reference_before": {
+      "bytes": 51479,
+      "sha256": "f4076a7cc3e2656de976d1d736d7fa8ab39e5db9fdb2f34724e772bd313573b4"
+    },
+    "reference_after": {
+      "bytes": 51479,
+      "sha256": "7ad23450261f2771a46e8c04e7c2f8da0941d476d887f30064150188886ea941"
+    },
+    "profile_change": "Three current reference SHA literals; actual interface -> Host -> close -> independent zero DAG; append-only README; top current helper1 and nonself8; this new record only",
+    "normal_functions_BODY_commands_assertions_resources": "UNCHANGED",
+    "history": "Every old nested object and all top-level values except current three_read_helpers[1] and current_nonself_artifacts are preserved. The former current labels remain scoped to their original historical records. No prior result is reassigned.",
+    "Main_implementation": "One byte strict_types=1 to0; full formatter BODY and all amount/type assertions preserved",
+    "runtime": "NOT_RUN",
+    "full_acceptance": "INCOMPLETE"
+  },
+  "ui_full17_r16_current_source_refresh": {
+    "scope": "CURRENT_UI17_R16_FINITE_METADATA_SOURCE_ASSEMBLY_ONLY",
+    "normal_interface": {
+      "path": "interface-v1.json",
+      "bytes": 63571,
+      "sha256": "50c1f49eb8d89e814ba247e6c8d13fc622b660cb863d2743e7dab9925fe1bb89"
+    },
+    "normal_repository_current_requirements": [
+      {
+        "path": "help/audit-regressions/isolated/ms4-aftersale-review-normal.php",
+        "bytes": 201659,
+        "sha256": "61697db47382a3e7253e44f17f18a746c4a663c6c5d577d61ee74888805e6a8a"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-customer-http-normal.php",
+        "bytes": 63896,
+        "sha256": "5ba793e50cf604342304ff2563141384c8a61ffd2dc796865207210d70a946f9"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-three-legacy-producer.php",
+        "bytes": 53328,
+        "sha256": "9da29b5edf6bc50c8bb483eaf4a67adaaacc6cddc4660e6cac0d2dabcb81a584"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-three-read-normal.php",
+        "bytes": 154021,
+        "sha256": "6efab0a05983fb579ae0ee1c79a75870a9d03f0f57218678607f89c4f64b2b6d"
+      },
+      {
+        "path": "crmeb/app/services/product/product/StoreProductServices.php",
+        "bytes": 145261,
+        "sha256": "cc4fbb0e962bb30c005bfc2ce2b9ab3caa6234b99c88634715aebe1e8af5e6e5"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-three-legacy-reference.php",
+        "bytes": 51479,
+        "sha256": "7ad23450261f2771a46e8c04e7c2f8da0941d476d887f30064150188886ea941"
+      }
+    ],
+    "php_sources": [
+      {
+        "path": "help/audit-regressions/isolated/ms4-ui-backend.php",
+        "source": "ui-normal-public-review-query-order-source-fix-r1/candidate/ms4-ui-backend.php",
+        "bytes": 3034,
+        "sha256": "ae4ebd8dcd8db0369276bf219250ca2f018147c3424bbbc9e21534b536c8bec1"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-ui-backend-normal.php",
+        "source": "ui-normal-public-review-query-order-source-fix-r1/candidate/ms4-ui-backend-normal.php",
+        "bytes": 96597,
+        "sha256": "0735f945ed82aebef91ee87452a6f358588e2d7daea099a155811ad80767f864"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-ui-prepare-oracle.php",
+        "source": "ui-normal-public-review-query-order-source-fix-r1/candidate/ms4-ui-prepare-oracle.php",
+        "bytes": 200509,
+        "sha256": "f6cbf45134ced0aeda77ae560157714a3ffc2ef40babf23ce21f185330a8a3e8"
+      }
+    ],
+    "container_artifact_order": [
+      "compose.yml",
+      "interface-v1.json",
+      "ms4-host.py",
+      "ms4-initialize.php",
+      "normal-close-ms4-fulfillment.py",
+      "README.md",
+      "seed-source-inverse.json",
+      "source-derivation.json",
+      "verify-zero-ms4-fulfillment.py",
+      "ms4-ui-nginx.conf",
+      "ms4-ui-public-copy.php",
+      "ms4-ui-copy.php",
+      "ms4-order.png",
+      "manifests/ui-h5-dist.json",
+      "manifests/ui-merchant-dist.json",
+      "manifests/ui-admin-dist.json",
+      "manifests/ui-public-copy-profile.json"
+    ],
+    "nonself_artifacts": 16,
+    "auxiliary_sibling": {
+      "path": "browser-v1/PINS.json",
+      "members": 8,
+      "bytes": 1222,
+      "sha256": "4fc1f96c3f9341a39a02a3b79713fcaa55becc95482130ee83d52fcf8da03a8a"
+    },
+    "material5": {
+      "ms4-order.png": {
+        "bytes": 234,
+        "sha256": "1cb2b0cfb8e075b494268977c5f6360309edbc4e0800cd5c58399d291c5185b8"
+      },
+      "manifests/ui-h5-dist.json": {
+        "bytes": 49241,
+        "sha256": "bea562d5fee713c5cfcb09410b2e0f85195fc9579165b8300d80cc84e9a4f251"
+      },
+      "manifests/ui-merchant-dist.json": {
+        "bytes": 4174,
+        "sha256": "64bea688fe88ac20b07743fc1f656f2d30ce18618f34d0f2b6e533a010a8f89e"
+      },
+      "manifests/ui-admin-dist.json": {
+        "bytes": 87053,
+        "sha256": "9072a053b360c6b5d98dfb98bb1e143f79f4a879eae1bbe2e42a2b6b715df647"
+      },
+      "manifests/ui-public-copy-profile.json": {
+        "bytes": 534423,
+        "sha256": "ff1df71593a0020f2212213718496e1820202459c56e76dec457aaaca84842d7"
+      }
+    },
+    "finite_source_changes": "Only existing complete Source descriptors in gate/initializer/Host/close/zero, append-only README, current17/nonself16 and this record. All functional algorithms and normal/Worker/business/amount/schema/57-relation/native/GUI/zero conditions retained. Current code is full-byte pinned, never old-prefix accepted.",
+    "history": "All pre-existing top-level values other than current artifact_files_exact/current_nonself_artifacts remain raw and semantic identical, including source_revision5 and every nested historical object. Original normal9 topology is retained as normal predecessor provenance; no earlier result is reassigned to UI17.",
+    "ui_topology_contract_only": {
+      "surviving_roles": [
+        "audit-ms5-paid-producer",
+        "audit-ms4-ui-backend",
+        "audit-ms4-ui-gateway",
+        "audit-mysql",
+        "audit-redis"
+      ],
+      "containers": 5,
+      "networks": 2,
+      "volumes": 10
+    },
+    "pin_order": "R6 helper->actual full gate; exact R16 interface->full Host; full Host->full close; Host/close/interface/gate/current Source->full zero; README->current16 nonself derivation; separate aux8 unchanged. No self hash.",
+    "Source_author_target_parse_AST_import_compile_lint_execute": "NOT RUN",
+    "actual_profile_Main_Run_private_DB_Docker_CUA": "NOT ACCESSED",
+    "actual_GUI_native_business_acceptance": "NOT ESTABLISHED",
+    "full_acceptance": "INCOMPLETE"
+  },
+  "ui_full17_r17_current_source_refresh": {
+    "scope": "CURRENT_UI17_R17_FINITE_METADATA_SOURCE_SUCCESSOR_ONLY",
+    "normal9_source_authority": {
+      "name": "r17-root-normal-profile-source-r1",
+      "PINS": {
+        "bytes": 4347,
+        "sha256": "d65e8b4d55fd0f17b4de9989fba5d6274000c625f9473ecf8e19dfd058c33f30"
+      }
+    },
+    "normal_interface": {
+      "path": "interface-v1.json",
+      "bytes": 63571,
+      "sha256": "c0068d1719c86327d3a90a36f25834745b730fba54aadf0cd6b9e8522fd99d02"
+    },
+    "normal_repository_current_requirements": [
+      {
+        "path": "help/audit-regressions/isolated/ms4-aftersale-review-normal.php",
+        "bytes": 201659,
+        "sha256": "61697db47382a3e7253e44f17f18a746c4a663c6c5d577d61ee74888805e6a8a"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-customer-http-normal.php",
+        "bytes": 63896,
+        "sha256": "5ba793e50cf604342304ff2563141384c8a61ffd2dc796865207210d70a946f9"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-three-legacy-producer.php",
+        "bytes": 53328,
+        "sha256": "9da29b5edf6bc50c8bb483eaf4a67adaaacc6cddc4660e6cac0d2dabcb81a584"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-three-read-normal.php",
+        "bytes": 154023,
+        "sha256": "843198bd074b21e1108bfb206e6f953882dd872644d724d4daa9282b623aca31"
+      },
+      {
+        "path": "crmeb/app/services/product/product/StoreProductServices.php",
+        "bytes": 145261,
+        "sha256": "cc4fbb0e962bb30c005bfc2ce2b9ab3caa6234b99c88634715aebe1e8af5e6e5"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-three-legacy-reference.php",
+        "bytes": 51479,
+        "sha256": "7ad23450261f2771a46e8c04e7c2f8da0941d476d887f30064150188886ea941"
+      },
+      {
+        "path": "help/audit-regressions/isolated/ms5-paid-consumer-normal.php",
+        "bytes": 103909,
+        "sha256": "1fce0111252e3719109cc9bc29759d9433fc7b5fc193a010976a0a3cfd24e223"
+      },
+      {
+        "path": "help/audit-regressions/isolated/ms4-fulfillment-normal.php",
+        "bytes": 117848,
+        "sha256": "4b3946d238a0582feb2ed0ae7dff7cc8cef6049c0ada9812aff6dfb36f961b99"
+      }
+    ],
+    "R6_PHP3_unchanged": [
+      {
+        "path": "help/audit-regressions/isolated/ms4-ui-backend.php",
+        "source": "ui-normal-public-review-query-order-source-fix-r1/candidate/ms4-ui-backend.php",
+        "bytes": 3034,
+        "sha256": "ae4ebd8dcd8db0369276bf219250ca2f018147c3424bbbc9e21534b536c8bec1"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-ui-backend-normal.php",
+        "source": "ui-normal-public-review-query-order-source-fix-r1/candidate/ms4-ui-backend-normal.php",
+        "bytes": 96597,
+        "sha256": "0735f945ed82aebef91ee87452a6f358588e2d7daea099a155811ad80767f864"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-ui-prepare-oracle.php",
+        "source": "ui-normal-public-review-query-order-source-fix-r1/candidate/ms4-ui-prepare-oracle.php",
+        "bytes": 200509,
+        "sha256": "f6cbf45134ced0aeda77ae560157714a3ffc2ef40babf23ce21f185330a8a3e8"
+      }
+    ],
+    "normal_and_UI_functional_BODY_guards_oracles_native_GUI_zero": "UNCHANGED_OUTSIDE_EXACT_CURRENT_DESCRIPTOR_LITERALS",
+    "profile_change": "Only current paid/Task6/helper bytes/SHA, initializer paid vector, full actual UI interface/Host/close/zero dependency guards, current top helper[2], actual nonself16, appended README and this record. Gate/copier/nginx/compose/seed/material5/normal data/aux8 unchanged.",
+    "historical_fields": "All prior top values preserve exact raw and semantic encodings except current three_read_helpers[2] and current_nonself_artifacts. Full earlier ui_full17_r16_current_source_refresh remains intact and scoped historical. No past result is reassigned.",
+    "container_artifact_order": [
+      "compose.yml",
+      "interface-v1.json",
+      "ms4-host.py",
+      "ms4-initialize.php",
+      "normal-close-ms4-fulfillment.py",
+      "README.md",
+      "seed-source-inverse.json",
+      "source-derivation.json",
+      "verify-zero-ms4-fulfillment.py",
+      "ms4-ui-nginx.conf",
+      "ms4-ui-public-copy.php",
+      "ms4-ui-copy.php",
+      "ms4-order.png",
+      "manifests/ui-h5-dist.json",
+      "manifests/ui-merchant-dist.json",
+      "manifests/ui-admin-dist.json",
+      "manifests/ui-public-copy-profile.json"
+    ],
+    "current_nonself_artifacts": 16,
+    "auxiliary_sibling": {
+      "path": "browser-v1/PINS.json",
+      "bytes": 1222,
+      "sha256": "4fc1f96c3f9341a39a02a3b79713fcaa55becc95482130ee83d52fcf8da03a8a",
+      "members": 8,
+      "outer_artifact_count": 17
+    },
+    "changed_repository_guard_mode": "FULL_FILE_BYTES_AND_SHA_ONLY_NO_NEW_COMMIT_HARDPIN",
+    "Root_UI_scripts": "Prior success-dependent R16 scripts are not made eligible by this profile; actual new normal terminal/inheritance required separately.",
+    "target_parse_AST_import_compile_execute": "NOT RUN",
+    "actual_Main_validation_Run_private_DB_Docker_CUA": "NOT ACCESSED",
+    "actual_freeze_GUI_native_business_acceptance": "NOT ESTABLISHED",
+    "full_acceptance": "INCOMPLETE"
+  },
+  "ui_full17_r18_current_source_refresh": {
+    "scope": "CURRENT_UI17_R18_SAVED_REFERENCE_HELPER_METADATA_SOURCE_SUCCESSOR_ONLY",
+    "normal9_source_authority": {
+      "name": "r18-root-normal-profile-source-r1",
+      "PINS": {
+        "bytes": 4193,
+        "sha256": "a1b161b95fbc2aa4fe96a0494b8f86669966124517020aa9fccbe78b68abbaa9"
+      }
+    },
+    "normal_interface": {
+      "path": "interface-v1.json",
+      "bytes": 63571,
+      "sha256": "a7b531563e58d1f793d57f9b23c7e413b67cc4a010f57601e18633c3f5b6a696"
+    },
+    "normal_repository_current_requirements": [
+      {
+        "path": "help/audit-regressions/isolated/ms4-aftersale-review-normal.php",
+        "bytes": 201659,
+        "sha256": "61697db47382a3e7253e44f17f18a746c4a663c6c5d577d61ee74888805e6a8a"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-customer-http-normal.php",
+        "bytes": 63896,
+        "sha256": "5ba793e50cf604342304ff2563141384c8a61ffd2dc796865207210d70a946f9"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-three-legacy-producer.php",
+        "bytes": 53328,
+        "sha256": "9da29b5edf6bc50c8bb483eaf4a67adaaacc6cddc4660e6cac0d2dabcb81a584"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-three-read-normal.php",
+        "bytes": 155479,
+        "sha256": "b09ff85b929ed2fccb02584d10aef096f0089b4d749813f1e40459014c97e304"
+      },
+      {
+        "path": "crmeb/app/services/product/product/StoreProductServices.php",
+        "bytes": 145261,
+        "sha256": "cc4fbb0e962bb30c005bfc2ce2b9ab3caa6234b99c88634715aebe1e8af5e6e5"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-three-legacy-reference.php",
+        "bytes": 51479,
+        "sha256": "7ad23450261f2771a46e8c04e7c2f8da0941d476d887f30064150188886ea941"
+      },
+      {
+        "path": "help/audit-regressions/isolated/ms5-paid-consumer-normal.php",
+        "bytes": 103909,
+        "sha256": "1fce0111252e3719109cc9bc29759d9433fc7b5fc193a010976a0a3cfd24e223"
+      },
+      {
+        "path": "help/audit-regressions/isolated/ms4-fulfillment-normal.php",
+        "bytes": 117848,
+        "sha256": "4b3946d238a0582feb2ed0ae7dff7cc8cef6049c0ada9812aff6dfb36f961b99"
+      }
+    ],
+    "Root_reported_actual_Main_source_commit": "72eb4a827c78a655ee0eecb40faa20e41908b6c9",
+    "Source_commit_note": "Provenance supplied by Root; no hardcoded current commit guard or normal runtime result is inferred",
+    "normal_and_UI_functional_BODY_guards_oracles_native_GUI_zero": "UNCHANGED_OUTSIDE_CURRENT_METADATA_LITERALS",
+    "current_source_changes": "Only helper[2] descriptor in interface/Host/zero; actual complete UI interface/Host/close/zero dependency SHA; R18 README prefix; current top helper[2], actual nonself16 and this record",
+    "initializer_compose_seed_gate_copier_nginx_and_material5": "FULL_BYTES_IDENTICAL",
+    "historical_fields": "All other46 old top values and nested history preserve exact raw and semantic encodings, including source_revision and entire R16/R17 refresh records; no past result is reassigned",
+    "container_artifact_order": [
+      "compose.yml",
+      "interface-v1.json",
+      "ms4-host.py",
+      "ms4-initialize.php",
+      "normal-close-ms4-fulfillment.py",
+      "README.md",
+      "seed-source-inverse.json",
+      "source-derivation.json",
+      "verify-zero-ms4-fulfillment.py",
+      "ms4-ui-nginx.conf",
+      "ms4-ui-public-copy.php",
+      "ms4-ui-copy.php",
+      "ms4-order.png",
+      "manifests/ui-h5-dist.json",
+      "manifests/ui-merchant-dist.json",
+      "manifests/ui-admin-dist.json",
+      "manifests/ui-public-copy-profile.json"
+    ],
+    "current_nonself_artifacts": 16,
+    "auxiliary_sibling": {
+      "path": "browser-v1/PINS.json",
+      "bytes": 1222,
+      "sha256": "4fc1f96c3f9341a39a02a3b79713fcaa55becc95482130ee83d52fcf8da03a8a",
+      "members": 8,
+      "outer_artifact_count": 17
+    },
+    "R6_PHP3_unchanged": [
+      {
+        "path": "help/audit-regressions/isolated/ms4-ui-backend.php",
+        "source": "ui-normal-public-review-query-order-source-fix-r1/candidate/ms4-ui-backend.php",
+        "bytes": 3034,
+        "sha256": "ae4ebd8dcd8db0369276bf219250ca2f018147c3424bbbc9e21534b536c8bec1"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-ui-backend-normal.php",
+        "source": "ui-normal-public-review-query-order-source-fix-r1/candidate/ms4-ui-backend-normal.php",
+        "bytes": 96597,
+        "sha256": "0735f945ed82aebef91ee87452a6f358588e2d7daea099a155811ad80767f864"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-ui-prepare-oracle.php",
+        "source": "ui-normal-public-review-query-order-source-fix-r1/candidate/ms4-ui-prepare-oracle.php",
+        "bytes": 200509,
+        "sha256": "f6cbf45134ced0aeda77ae560157714a3ffc2ef40babf23ce21f185330a8a3e8"
+      }
+    ],
+    "original_R17_primary_cause": "UNKNOWN",
+    "original_R17_failure": "PRESERVED_NOT_RECLASSIFIED",
+    "Root_UI_scripts": "SEPARATE_NOT_GENERATED_OR_MADE_ELIGIBLE; real normal success and Root inheritance are required separately",
+    "new_Run_CID_freeze_native_normal_GUI_result": "NOT_SUPPLIED",
+    "target_parse_AST_import_compile_execute": "NOT_RUN",
+    "actual_Main_validation_Run_private_DB_Docker_CUA": "NOT_ACCESSED",
+    "native_GUI_business_acceptance": "NOT_ESTABLISHED",
+    "full_acceptance": "INCOMPLETE",
+    "stopped_samples": "NOT_RUN"
+  },
+  "ui_full17_r19_future_source_refresh": {
+    "scope": "FUTURE_UI17_R19_CURRENT_HELPER_METADATA_SOURCE_SUCCESSOR_ONLY",
+    "parent_UI17_source": {
+      "name": "ui-full17-r18-current-source-assembly-r1",
+      "PINS": {
+        "bytes": 8649,
+        "sha256": "a0986d702bfa81e8384d47080a671743c285cb020622b33c29006282e3f9a9c6"
+      }
+    },
+    "selected_future_helper_source": {
+      "name": "r19-independent-item-order-source-r1",
+      "PINS": {
+        "bytes": 1842,
+        "sha256": "c85184cb33de79755d4d8a9bf1158a56cc7b7a9a610a8dc26abf43761bdee145"
+      },
+      "selected": {
+        "path": "help/audit-regressions/isolated/lib/ms4-three-read-normal.php",
+        "bytes": 157629,
+        "sha256": "96c36895ff921f0d14884353bbad7eccb637ef1d70085adbbfac8d1ac77758c0"
+      }
+    },
+    "interface_derivation": "SINGLE_CURRENT_HELPER_DESCRIPTOR_FROM_EXACT_R18_INTERFACE_NOT_A_CLAIM_OF_R19_NORMAL9_PACKAGE_OR_RUNTIME_INHERITANCE",
+    "derived_interface": {
+      "path": "interface-v1.json",
+      "bytes": 63571,
+      "sha256": "4f3d31464348387d9f0419c9ada1496e348bec4896fa030bb53386f1c3d4bb34"
+    },
+    "current_metadata_contexts": {
+      "interface-v1.json": 1,
+      "ms4-host.py": 2,
+      "ms4-initialize.php": 0,
+      "normal-close-ms4-fulfillment.py": 2,
+      "verify-zero-ms4-fulfillment.py": 7
+    },
+    "current_ordered_artifact_count": 17,
+    "current_nonself_artifact_count": 16,
+    "unchanged_complete_artifacts": [
+      "compose.yml",
+      "ms4-initialize.php",
+      "seed-source-inverse.json",
+      "ms4-ui-nginx.conf",
+      "ms4-ui-public-copy.php",
+      "ms4-ui-copy.php",
+      "ms4-order.png",
+      "manifests/ui-h5-dist.json",
+      "manifests/ui-merchant-dist.json",
+      "manifests/ui-admin-dist.json",
+      "manifests/ui-public-copy-profile.json"
+    ],
+    "independent_aux8_and_inner_PINS": {
+      "members": 8,
+      "PINS": {
+        "bytes": 1222,
+        "sha256": "4fc1f96c3f9341a39a02a3b79713fcaa55becc95482130ee83d52fcf8da03a8a"
+      },
+      "bytes": "IDENTICAL"
+    },
+    "historical_values": "ALL_OTHER_OLD_TOP_VALUES_RAW_AND_SEMANTIC_IDENTICAL_WITH_ALL_NESTED_HISTORY_AND_SOURCE_REVISION5",
+    "adoption_boundary": "FUTURE_SOURCE_CANDIDATE_ONLY_MAIN_ADOPTION_AND_NORMAL_UI_RUNTIME_ELIGIBILITY_NOT_ESTABLISHED_BY_THIS_PACKAGE",
+    "new_runtime_facts": "NONE_ASSERTED_OR_FABRICATED",
+    "target_parse_AST_compile_import_lint_execute": "NOT_RUN",
+    "Main_validation_actual_profile_Run_private_DB_Docker_CUA": "NOT_ACCESSED_OR_CHANGED",
+    "native_GUI_business_acceptance": "NOT_ESTABLISHED",
+    "full_acceptance": "INCOMPLETE",
+    "stopped_samples": "NOT_RUN"
+  },
+  "ui_full17_r19_safe_fatal_observer_source_refresh": {
+    "scope": "FUTURE_SOURCE_ENTRY_METADATA_ONLY_NOT_ADOPTED_NOT_RUNTIME",
+    "parent_ui_source": {
+      "package": "ui-full17-r19-current-source-assembly-r1",
+      "PINS": {
+        "bytes": 8649,
+        "sha256": "44e1f2baf2a13cc34bebc72955f0ebb893afa75b80552f626da5a5c62013114b"
+      },
+      "interface": {
+        "bytes": 63571,
+        "sha256": "4f3d31464348387d9f0419c9ada1496e348bec4896fa030bb53386f1c3d4bb34"
+      }
+    },
+    "selected_future_Task6_entry": {
+      "path": "help/audit-regressions/isolated/ms4-fulfillment-normal.php",
+      "bytes": 120307,
+      "sha256": "8a126eed436141f722cb4a8351a5a6d592f143449beaa9aeeb1276bd36f08f32",
+      "source": "r19-task6-safe-fatal-observer-source-r1/candidate/ms4-fulfillment-normal.php",
+      "package_PINS": {
+        "bytes": 1618,
+        "sha256": "ea6cf71a68a107c3c052dace3804470dbbcd1725136d3cbf71dcad37c9cd8a20"
+      }
+    },
+    "current_UI_interface": {
+      "bytes": 63571,
+      "sha256": "db610d8966c726bce58e18d5953334ebb1ae13f7ce2756577c6d4329fa7f75ef"
+    },
+    "current_entry_change": "Only existing current entry bytes/SHA in interface/Host/zero and complete interface->UI Host->UI close->UI zero DAG",
+    "all_profile_functions_guards_native_business_oracles_UI_zero": "BYTE_IDENTICAL",
+    "three_read_helper_and_initializer_compose_seed_gate_copier_nginx_materials_aux8": "UNCHANGED",
+    "old_top_values": "All49 old values except current_nonself_artifacts remain exact raw and semantic history; source_revision5 unchanged",
+    "container_artifact_order": [
+      "compose.yml",
+      "interface-v1.json",
+      "ms4-host.py",
+      "ms4-initialize.php",
+      "normal-close-ms4-fulfillment.py",
+      "README.md",
+      "seed-source-inverse.json",
+      "source-derivation.json",
+      "verify-zero-ms4-fulfillment.py",
+      "ms4-ui-nginx.conf",
+      "ms4-ui-public-copy.php",
+      "ms4-ui-copy.php",
+      "ms4-order.png",
+      "manifests/ui-h5-dist.json",
+      "manifests/ui-merchant-dist.json",
+      "manifests/ui-admin-dist.json",
+      "manifests/ui-public-copy-profile.json"
+    ],
+    "auxiliary_sibling": {
+      "path": "browser-v1/PINS.json",
+      "bytes": 1222,
+      "sha256": "4fc1f96c3f9341a39a02a3b79713fcaa55becc95482130ee83d52fcf8da03a8a",
+      "members": 8,
+      "outer_artifact_count": 17
+    },
+    "Main_adoption_normal9r2_actual_Run_or_success": "NOT_ESTABLISHED_OR_CLAIMED",
+    "R18_fatal_cause": "UNKNOWN",
+    "target_parse_compile_import_lint_execute": "NOT_RUN"
+  },
+  "r20_proof_ini_UI17_source_refresh": {
+    "scope": "R20_UI17_PROFILE_ONLY_PROOF_INI_RESOURCE_WIRING",
+    "status": "SOURCE_ONLY_NOT_ADOPTED_NOT_RUN",
+    "Core": "ROOT_REPORTED_CLEAN_DD445AFF_CORE_MEMORY_BEHAVIOR_UNCHANGED",
+    "parent_UI17_source": {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/ui-full17-r19-current-source-assembly-r2",
+      "PINS": {
+        "bytes": 8866,
+        "sha256": "e1785daa458cd07026822c0743b149c44b1db519850572ef590c2a28f22a13be"
+      }
+    },
+    "normal_Source_delta": {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r20-proof-memory-normal-profile-source-r1",
+      "PINS": {
+        "bytes": 5020,
+        "sha256": "56f3fed3364083366e20d159fe4a592806bfa1ee3a707f1fc40a77743b1c6433"
+      }
+    },
+    "resource": {
+      "source_root": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r20-proof-memory-budget-source-r1/candidate/proof-php-ini",
+      "files": [
+        {
+          "path": "99-ms4-proof-memory.ini",
+          "bytes": 18,
+          "sha256": "986c7e4b2587348a8d5ba59312a2106d38bbefec35acda4e7e5c14761cfe9ff1"
+        }
+      ],
+      "config_reference": {
+        "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r20-proof-memory-budget-public-readback-r1/RESULT.json",
+        "bytes": 60911,
+        "sha256": "e4ff0cd932806efb206b46dfdc5f5ef0230e0f2ad84679dbcb843adbdbec67f5"
+      }
+    },
+    "scan_roles": [
+      "audit-ms5-paid-producer",
+      "audit-ms4-fulfillment-normal",
+      "audit-ms4-aftersale-review-normal",
+      "audit-ms4-worker-normal",
+      "audit-ms4-ui-prepare",
+      "audit-ms4-ui-backend"
+    ],
+    "default_environment6_environment8_and_all_mount_multisets": "UNCHANGED",
+    "business_source_groups32_35_extra_members_and_all17_artifact_roles": "UNCHANGED",
+    "old_UI20_42_ACK_PHP_oracle_typed_business_DOM_and_browser_native_contract": "UNCHANGED",
+    "browser_auxiliary": {
+      "path": "browser-v1/PINS.json",
+      "bytes": 1222,
+      "sha256": "4fc1f96c3f9341a39a02a3b79713fcaa55becc95482130ee83d52fcf8da03a8a",
+      "members": 8,
+      "outer_artifact_count": 17
+    },
+    "running_process_ini_get": "NOT_DIRECTLY_OBSERVED",
+    "configuration_evidence": "actual fixed-image prototype plus future sameCID safe Env/Cmd/image/INI/source inputs; no live exec or extra role",
+    "current_nonself_artifacts": [
+      {
+        "path": "compose.yml",
+        "bytes": 17471,
+        "sha256": "803c20a2de33a0e20062cb109456b101945aea7145ecc9a4b2a4f0186eac488d"
+      },
+      {
+        "path": "interface-v1.json",
+        "bytes": 63571,
+        "sha256": "db610d8966c726bce58e18d5953334ebb1ae13f7ce2756577c6d4329fa7f75ef"
+      },
+      {
+        "path": "ms4-host.py",
+        "bytes": 499006,
+        "sha256": "2b4ecb818296b20709c0940dab7a0fd250105b27d05df023e69ae11deafd3c15"
+      },
+      {
+        "path": "ms4-initialize.php",
+        "bytes": 106934,
+        "sha256": "de81923f98a36628192ecee3ec30019a5a117305b868c58fa87ffbeafa151088"
+      },
+      {
+        "path": "normal-close-ms4-fulfillment.py",
+        "bytes": 214758,
+        "sha256": "60bf225417cc0f8db8a8088852f420925506e3ba447b1cdaeff00dff514a4762"
+      },
+      {
+        "path": "README.md",
+        "bytes": 46372,
+        "sha256": "a726a37b4bb3bcac4e06591df95b4244f9a2a00d8cee7ac0436725356fee0f05"
+      },
+      {
+        "path": "seed-source-inverse.json",
+        "bytes": 639,
+        "sha256": "c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a"
+      },
+      {
+        "path": "verify-zero-ms4-fulfillment.py",
+        "bytes": 559318,
+        "sha256": "90e7c752183925c907b1514f966779be268c1f7adc4bd53e93948372ed514ad2"
+      },
+      {
+        "path": "ms4-ui-nginx.conf",
+        "bytes": 3854,
+        "sha256": "c91161450ca87958138fff8a30e64564abee2d626d0b09e65678e4f3ff90a2fd"
+      },
+      {
+        "path": "ms4-ui-public-copy.php",
+        "bytes": 24364,
+        "sha256": "07f5409f146efc95cc3a51253ed5e962c10a49215e8ebb1d9913461cad14a9de"
+      },
+      {
+        "path": "ms4-ui-copy.php",
+        "bytes": 48182,
+        "sha256": "fd8d4366849dd33d9163412802fdaf9371dba77ff34a8030f8f69d1d81406a71"
+      },
+      {
+        "path": "ms4-order.png",
+        "bytes": 234,
+        "sha256": "1cb2b0cfb8e075b494268977c5f6360309edbc4e0800cd5c58399d291c5185b8"
+      },
+      {
+        "path": "manifests/ui-h5-dist.json",
+        "bytes": 49241,
+        "sha256": "bea562d5fee713c5cfcb09410b2e0f85195fc9579165b8300d80cc84e9a4f251"
+      },
+      {
+        "path": "manifests/ui-merchant-dist.json",
+        "bytes": 4174,
+        "sha256": "64bea688fe88ac20b07743fc1f656f2d30ce18618f34d0f2b6e533a010a8f89e"
+      },
+      {
+        "path": "manifests/ui-admin-dist.json",
+        "bytes": 87053,
+        "sha256": "9072a053b360c6b5d98dfb98bb1e143f79f4a879eae1bbe2e42a2b6b715df647"
+      },
+      {
+        "path": "manifests/ui-public-copy-profile.json",
+        "bytes": 534423,
+        "sha256": "ff1df71593a0020f2212213718496e1820202459c56e76dec457aaaca84842d7"
+      }
+    ],
+    "previous_current_nonself_artifacts": [
+      {
+        "path": "compose.yml",
+        "bytes": 17021,
+        "sha256": "e06abeac8cfe349da6f0aede55d734fee6418c30ea11a1f89d67a5062080d92d"
+      },
+      {
+        "path": "interface-v1.json",
+        "bytes": 63571,
+        "sha256": "db610d8966c726bce58e18d5953334ebb1ae13f7ce2756577c6d4329fa7f75ef"
+      },
+      {
+        "path": "ms4-host.py",
+        "bytes": 483882,
+        "sha256": "4e2ca28c4b6506c194c177484d379859876eb0ab41aaabebf31f027f7791f522"
+      },
+      {
+        "path": "ms4-initialize.php",
+        "bytes": 106934,
+        "sha256": "de81923f98a36628192ecee3ec30019a5a117305b868c58fa87ffbeafa151088"
+      },
+      {
+        "path": "normal-close-ms4-fulfillment.py",
+        "bytes": 214605,
+        "sha256": "2f15f8cf3ee663d95a0a1f816f7d4ba1df6ea3eec740d395e64de1c65d816435"
+      },
+      {
+        "path": "README.md",
+        "bytes": 45591,
+        "sha256": "d06e28fab767e80659037740d4ff1b5e759833260f97e837b6f4d0e677dedf87"
+      },
+      {
+        "path": "seed-source-inverse.json",
+        "bytes": 639,
+        "sha256": "c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a"
+      },
+      {
+        "path": "verify-zero-ms4-fulfillment.py",
+        "bytes": 549911,
+        "sha256": "4d25a719deec970345beec8970160deb84ee42d24b1c2e17752915b094e0b239"
+      },
+      {
+        "path": "ms4-ui-nginx.conf",
+        "bytes": 3854,
+        "sha256": "c91161450ca87958138fff8a30e64564abee2d626d0b09e65678e4f3ff90a2fd"
+      },
+      {
+        "path": "ms4-ui-public-copy.php",
+        "bytes": 24364,
+        "sha256": "07f5409f146efc95cc3a51253ed5e962c10a49215e8ebb1d9913461cad14a9de"
+      },
+      {
+        "path": "ms4-ui-copy.php",
+        "bytes": 48182,
+        "sha256": "fd8d4366849dd33d9163412802fdaf9371dba77ff34a8030f8f69d1d81406a71"
+      },
+      {
+        "path": "ms4-order.png",
+        "bytes": 234,
+        "sha256": "1cb2b0cfb8e075b494268977c5f6360309edbc4e0800cd5c58399d291c5185b8"
+      },
+      {
+        "path": "manifests/ui-h5-dist.json",
+        "bytes": 49241,
+        "sha256": "bea562d5fee713c5cfcb09410b2e0f85195fc9579165b8300d80cc84e9a4f251"
+      },
+      {
+        "path": "manifests/ui-merchant-dist.json",
+        "bytes": 4174,
+        "sha256": "64bea688fe88ac20b07743fc1f656f2d30ce18618f34d0f2b6e533a010a8f89e"
+      },
+      {
+        "path": "manifests/ui-admin-dist.json",
+        "bytes": 87053,
+        "sha256": "9072a053b360c6b5d98dfb98bb1e143f79f4a879eae1bbe2e42a2b6b715df647"
+      },
+      {
+        "path": "manifests/ui-public-copy-profile.json",
+        "bytes": 534423,
+        "sha256": "ff1df71593a0020f2212213718496e1820202459c56e76dec457aaaca84842d7"
+      }
+    ],
+    "all_previous_noncurrent_top_fields": "EXACT_RAW_AND_SEMANTIC_PRESERVED",
+    "future_commit_Run_CID_result_history_values": "NONE_SUPPLIED_OR_CLAIMED",
+    "target_parse_AST_import_compile_lint_native": "NOT_RUN",
+    "full_acceptance": "INCOMPLETE"
+  },
+  "ui_task2_current_full17_source_assembly": {
+    "scope": "CURRENT_UI17_TASK2_SOURCE_ASSEMBLY_ONLY",
+    "status": "SOURCE_ONLY_RUNTIME_NOT_RUN",
+    "frontend_build_source_head": "2830b3ce273f5cbc0a951e9bf29377d55864cf93",
+    "base_PINS": {
+      "bytes": 9036,
+      "sha256": "af154637835df5218e1bbe0904dd0949c211dfd2021d2cd5e2bf9ea66394f271"
+    },
+    "logic_r2_PINS": {
+      "bytes": 5995,
+      "sha256": "9040ee50c8f0a4a9b1434f7318c45fee93e85873cc1d9567620e586aa208479c"
+    },
+    "material_evidence": {
+      "wrapper_result": {
+        "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/ui-five-material-unpaid-status-root-invocation-r1/RESULT.json",
+        "bytes": 1112,
+        "sha256": "a23c07f9f25b8b148b11a4eac2bde5af8358740654bc2acdad57e4759d9ab4a4"
+      },
+      "producer_result": {
+        "bytes": 1662,
+        "sha256": "9d91ecd9d8facdcef85ecc7f6f8142792a105dbbeacd69e003050b8aac3aac3b"
+      },
+      "outer_wrapper_terminal": "ROOT_MUST_OBSERVE_SEPARATELY_NOT_INFERRED_FROM_FILES"
+    },
+    "auxiliary_manifest": {
+      "bytes": 1258,
+      "sha256": "01ac5ebe6b9c9d8025892c41aefdcdfabd34be1392801016539cdb0fd45ab639"
+    },
+    "helper": {
+      "path": "help/audit-regressions/isolated/lib/ms4-three-read-normal.php",
+      "bytes": 160780,
+      "sha256": "3d02bd062dcb75c27ace071723a0f3d482a12b362e0b618c008fb81bd23fac9d"
+    },
+    "current_nonself_artifacts": [
+      {
+        "path": "compose.yml",
+        "bytes": 17471,
+        "sha256": "803c20a2de33a0e20062cb109456b101945aea7145ecc9a4b2a4f0186eac488d"
+      },
+      {
+        "path": "interface-v1.json",
+        "bytes": 63571,
+        "sha256": "19cc6091e00d6ed3fdf28659829ccfdf4c679f37837be0120dff4738897f84a8"
+      },
+      {
+        "path": "ms4-host.py",
+        "bytes": 526807,
+        "sha256": "1bda9245d986fc9dc05e9575e39fc606ee350841f8556667f56ba51629e863b6"
+      },
+      {
+        "path": "ms4-initialize.php",
+        "bytes": 111060,
+        "sha256": "bcc3bf94371c415206f86d46f8d4a6e0bfdb4477a616161393c5ba8ffba56b51"
+      },
+      {
+        "path": "normal-close-ms4-fulfillment.py",
+        "bytes": 257512,
+        "sha256": "69e6ec8f3ade7c59daad29ff7b1e344eb01cb4c27c41a8d4f3f8681e60669568"
+      },
+      {
+        "path": "README.md",
+        "bytes": 47331,
+        "sha256": "4edd8746d88f709ef579315a0585e2e4891b3627207936a948c03d843752e4a1"
+      },
+      {
+        "path": "seed-source-inverse.json",
+        "bytes": 639,
+        "sha256": "c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a"
+      },
+      {
+        "path": "verify-zero-ms4-fulfillment.py",
+        "bytes": 624572,
+        "sha256": "b78be7f1f13ef2e98f92fe81b972dcf3f29eaed8ddffe788c91ca085f3e8fa64"
+      },
+      {
+        "path": "ms4-ui-nginx.conf",
+        "bytes": 3854,
+        "sha256": "c91161450ca87958138fff8a30e64564abee2d626d0b09e65678e4f3ff90a2fd"
+      },
+      {
+        "path": "ms4-ui-public-copy.php",
+        "bytes": 24364,
+        "sha256": "07f5409f146efc95cc3a51253ed5e962c10a49215e8ebb1d9913461cad14a9de"
+      },
+      {
+        "path": "ms4-ui-copy.php",
+        "bytes": 48872,
+        "sha256": "70cfc21c56177363b8582bfdcde6c4e4b4e51c6e080e9a6d11c9a6eb13dbc44c"
+      },
+      {
+        "path": "ms4-order.png",
+        "bytes": 234,
+        "sha256": "1cb2b0cfb8e075b494268977c5f6360309edbc4e0800cd5c58399d291c5185b8"
+      },
+      {
+        "path": "manifests/ui-h5-dist.json",
+        "bytes": 49241,
+        "sha256": "6f28d395a6936208642663cb0aa470384e784b42cc2e7b766eaa1188cc03b524"
+      },
+      {
+        "path": "manifests/ui-merchant-dist.json",
+        "bytes": 4174,
+        "sha256": "64bea688fe88ac20b07743fc1f656f2d30ce18618f34d0f2b6e533a010a8f89e"
+      },
+      {
+        "path": "manifests/ui-admin-dist.json",
+        "bytes": 87053,
+        "sha256": "1ca86d47550c99f513b2aa30195f58ad887b80fa3b89b6baed70b0af2cb23261"
+      },
+      {
+        "path": "manifests/ui-public-copy-profile.json",
+        "bytes": 534423,
+        "sha256": "90193e62b594aead32283eb5b9c061152a4b742ea4153bdd393ea7ec25aafc70"
+      }
+    ],
+    "previous_current_nonself_artifacts": [
+      {
+        "path": "compose.yml",
+        "bytes": 17471,
+        "sha256": "803c20a2de33a0e20062cb109456b101945aea7145ecc9a4b2a4f0186eac488d"
+      },
+      {
+        "path": "interface-v1.json",
+        "bytes": 63571,
+        "sha256": "db610d8966c726bce58e18d5953334ebb1ae13f7ce2756577c6d4329fa7f75ef"
+      },
+      {
+        "path": "ms4-host.py",
+        "bytes": 499006,
+        "sha256": "2b4ecb818296b20709c0940dab7a0fd250105b27d05df023e69ae11deafd3c15"
+      },
+      {
+        "path": "ms4-initialize.php",
+        "bytes": 106934,
+        "sha256": "de81923f98a36628192ecee3ec30019a5a117305b868c58fa87ffbeafa151088"
+      },
+      {
+        "path": "normal-close-ms4-fulfillment.py",
+        "bytes": 214758,
+        "sha256": "60bf225417cc0f8db8a8088852f420925506e3ba447b1cdaeff00dff514a4762"
+      },
+      {
+        "path": "README.md",
+        "bytes": 46372,
+        "sha256": "a726a37b4bb3bcac4e06591df95b4244f9a2a00d8cee7ac0436725356fee0f05"
+      },
+      {
+        "path": "seed-source-inverse.json",
+        "bytes": 639,
+        "sha256": "c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a"
+      },
+      {
+        "path": "verify-zero-ms4-fulfillment.py",
+        "bytes": 559318,
+        "sha256": "90e7c752183925c907b1514f966779be268c1f7adc4bd53e93948372ed514ad2"
+      },
+      {
+        "path": "ms4-ui-nginx.conf",
+        "bytes": 3854,
+        "sha256": "c91161450ca87958138fff8a30e64564abee2d626d0b09e65678e4f3ff90a2fd"
+      },
+      {
+        "path": "ms4-ui-public-copy.php",
+        "bytes": 24364,
+        "sha256": "07f5409f146efc95cc3a51253ed5e962c10a49215e8ebb1d9913461cad14a9de"
+      },
+      {
+        "path": "ms4-ui-copy.php",
+        "bytes": 48182,
+        "sha256": "fd8d4366849dd33d9163412802fdaf9371dba77ff34a8030f8f69d1d81406a71"
+      },
+      {
+        "path": "ms4-order.png",
+        "bytes": 234,
+        "sha256": "1cb2b0cfb8e075b494268977c5f6360309edbc4e0800cd5c58399d291c5185b8"
+      },
+      {
+        "path": "manifests/ui-h5-dist.json",
+        "bytes": 49241,
+        "sha256": "bea562d5fee713c5cfcb09410b2e0f85195fc9579165b8300d80cc84e9a4f251"
+      },
+      {
+        "path": "manifests/ui-merchant-dist.json",
+        "bytes": 4174,
+        "sha256": "64bea688fe88ac20b07743fc1f656f2d30ce18618f34d0f2b6e533a010a8f89e"
+      },
+      {
+        "path": "manifests/ui-admin-dist.json",
+        "bytes": 87053,
+        "sha256": "9072a053b360c6b5d98dfb98bb1e143f79f4a879eae1bbe2e42a2b6b715df647"
+      },
+      {
+        "path": "manifests/ui-public-copy-profile.json",
+        "bytes": 534423,
+        "sha256": "ff1df71593a0020f2212213718496e1820202459c56e76dec457aaaca84842d7"
+      }
+    ],
+    "previous_three_read_helpers": [
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-three-legacy-producer.php",
+        "bytes": 53328,
+        "sha256": "9da29b5edf6bc50c8bb483eaf4a67adaaacc6cddc4660e6cac0d2dabcb81a584"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-three-legacy-reference.php",
+        "bytes": 51479,
+        "sha256": "7ad23450261f2771a46e8c04e7c2f8da0941d476d887f30064150188886ea941"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-three-read-normal.php",
+        "bytes": 157629,
+        "sha256": "96c36895ff921f0d14884353bbad7eccb637ef1d70085adbbfac8d1ac77758c0"
+      }
+    ],
+    "old_noncurrent_fields": "RAW_AND_SEMANTIC_UNCHANGED",
+    "future_Run_CID_results": "NONE_SUPPLIED",
+    "full_acceptance": "INCOMPLETE"
+  },
+  "ui_task2_r24_entry_metadata_source_refresh": {
+    "scope": "CURRENT_UI17_R24_TASK6_ENTRY_METADATA_SOURCE_SUCCESSOR_ONLY",
+    "status": "SOURCE_ONLY_RUNTIME_NOT_RUN",
+    "parent_source": {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/ui-task2-current-full17-source-r1",
+      "PINS": {
+        "bytes": 8914,
+        "sha256": "f3c20f62f324604ed1edae195b8903186ad9ce7ab51583216bb78036bb093fd4"
+      },
+      "FINAL": {
+        "bytes": 11169,
+        "sha256": "a3d0a7a94f1015c752d21a16fd4309c8fdf536bbdd3c58990cb44d0c06d05201"
+      }
+    },
+    "selected_Task6_entry": {
+      "path": "help/audit-regressions/isolated/ms4-fulfillment-normal.php",
+      "bytes": 127186,
+      "sha256": "0a15206d7f1ba40134511ef7551413c98224e23cbd34ef303e25c73a771341d5"
+    },
+    "previous_Task6_entry": {
+      "path": "help/audit-regressions/isolated/ms4-fulfillment-normal.php",
+      "bytes": 120307,
+      "sha256": "8a126eed436141f722cb4a8351a5a6d592f143449beaa9aeeb1276bd36f08f32"
+    },
+    "r24_normal9_metadata_authority": {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r24-root-normal-profile-source-r1",
+      "PINS": {
+        "bytes": 3972,
+        "sha256": "5d815b9e77c98ea25dffa2ed0b4a5d88b9f477c5740ea79150e40b7078cd2765"
+      },
+      "FINAL": {
+        "bytes": 5970,
+        "sha256": "8a42975ab42912155adc7314b227128c182ea44a067ad790829382b51a900f9b"
+      }
+    },
+    "current_nonself_artifacts": [
+      {
+        "path": "compose.yml",
+        "bytes": 17471,
+        "sha256": "803c20a2de33a0e20062cb109456b101945aea7145ecc9a4b2a4f0186eac488d"
+      },
+      {
+        "path": "interface-v1.json",
+        "bytes": 63571,
+        "sha256": "37cb39f8deba7f4fd72fe16b609f31c689196998ac9f8580c7b7b8e17a61ebb8"
+      },
+      {
+        "path": "ms4-host.py",
+        "bytes": 526807,
+        "sha256": "d0f1cdb3b3bc1c1324c31037bf051bf038f7a7ed2febece9173793b36bbcf45a"
+      },
+      {
+        "path": "ms4-initialize.php",
+        "bytes": 111060,
+        "sha256": "bcc3bf94371c415206f86d46f8d4a6e0bfdb4477a616161393c5ba8ffba56b51"
+      },
+      {
+        "path": "normal-close-ms4-fulfillment.py",
+        "bytes": 257512,
+        "sha256": "c2db31687418207ab5f0148d49f7f61576b9bc670a0989dfb571a837444646bc"
+      },
+      {
+        "path": "README.md",
+        "bytes": 48263,
+        "sha256": "09f2eaaf960fa961c15a1d9444691d09d18c68b4351a952a3dd3ae6a184ae20f"
+      },
+      {
+        "path": "seed-source-inverse.json",
+        "bytes": 639,
+        "sha256": "c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a"
+      },
+      {
+        "path": "verify-zero-ms4-fulfillment.py",
+        "bytes": 624572,
+        "sha256": "4a5f363fecc78f4916f48510eb8354ec3829904a9b8ece14da435bfaa7b95081"
+      },
+      {
+        "path": "ms4-ui-nginx.conf",
+        "bytes": 3854,
+        "sha256": "c91161450ca87958138fff8a30e64564abee2d626d0b09e65678e4f3ff90a2fd"
+      },
+      {
+        "path": "ms4-ui-public-copy.php",
+        "bytes": 24364,
+        "sha256": "07f5409f146efc95cc3a51253ed5e962c10a49215e8ebb1d9913461cad14a9de"
+      },
+      {
+        "path": "ms4-ui-copy.php",
+        "bytes": 48872,
+        "sha256": "70cfc21c56177363b8582bfdcde6c4e4b4e51c6e080e9a6d11c9a6eb13dbc44c"
+      },
+      {
+        "path": "ms4-order.png",
+        "bytes": 234,
+        "sha256": "1cb2b0cfb8e075b494268977c5f6360309edbc4e0800cd5c58399d291c5185b8"
+      },
+      {
+        "path": "manifests/ui-h5-dist.json",
+        "bytes": 49241,
+        "sha256": "6f28d395a6936208642663cb0aa470384e784b42cc2e7b766eaa1188cc03b524"
+      },
+      {
+        "path": "manifests/ui-merchant-dist.json",
+        "bytes": 4174,
+        "sha256": "64bea688fe88ac20b07743fc1f656f2d30ce18618f34d0f2b6e533a010a8f89e"
+      },
+      {
+        "path": "manifests/ui-admin-dist.json",
+        "bytes": 87053,
+        "sha256": "1ca86d47550c99f513b2aa30195f58ad887b80fa3b89b6baed70b0af2cb23261"
+      },
+      {
+        "path": "manifests/ui-public-copy-profile.json",
+        "bytes": 534423,
+        "sha256": "90193e62b594aead32283eb5b9c061152a4b742ea4153bdd393ea7ec25aafc70"
+      }
+    ],
+    "previous_current_nonself_artifacts": [
+      {
+        "path": "compose.yml",
+        "bytes": 17471,
+        "sha256": "803c20a2de33a0e20062cb109456b101945aea7145ecc9a4b2a4f0186eac488d"
+      },
+      {
+        "path": "interface-v1.json",
+        "bytes": 63571,
+        "sha256": "19cc6091e00d6ed3fdf28659829ccfdf4c679f37837be0120dff4738897f84a8"
+      },
+      {
+        "path": "ms4-host.py",
+        "bytes": 526807,
+        "sha256": "1bda9245d986fc9dc05e9575e39fc606ee350841f8556667f56ba51629e863b6"
+      },
+      {
+        "path": "ms4-initialize.php",
+        "bytes": 111060,
+        "sha256": "bcc3bf94371c415206f86d46f8d4a6e0bfdb4477a616161393c5ba8ffba56b51"
+      },
+      {
+        "path": "normal-close-ms4-fulfillment.py",
+        "bytes": 257512,
+        "sha256": "69e6ec8f3ade7c59daad29ff7b1e344eb01cb4c27c41a8d4f3f8681e60669568"
+      },
+      {
+        "path": "README.md",
+        "bytes": 47331,
+        "sha256": "4edd8746d88f709ef579315a0585e2e4891b3627207936a948c03d843752e4a1"
+      },
+      {
+        "path": "seed-source-inverse.json",
+        "bytes": 639,
+        "sha256": "c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a"
+      },
+      {
+        "path": "verify-zero-ms4-fulfillment.py",
+        "bytes": 624572,
+        "sha256": "b78be7f1f13ef2e98f92fe81b972dcf3f29eaed8ddffe788c91ca085f3e8fa64"
+      },
+      {
+        "path": "ms4-ui-nginx.conf",
+        "bytes": 3854,
+        "sha256": "c91161450ca87958138fff8a30e64564abee2d626d0b09e65678e4f3ff90a2fd"
+      },
+      {
+        "path": "ms4-ui-public-copy.php",
+        "bytes": 24364,
+        "sha256": "07f5409f146efc95cc3a51253ed5e962c10a49215e8ebb1d9913461cad14a9de"
+      },
+      {
+        "path": "ms4-ui-copy.php",
+        "bytes": 48872,
+        "sha256": "70cfc21c56177363b8582bfdcde6c4e4b4e51c6e080e9a6d11c9a6eb13dbc44c"
+      },
+      {
+        "path": "ms4-order.png",
+        "bytes": 234,
+        "sha256": "1cb2b0cfb8e075b494268977c5f6360309edbc4e0800cd5c58399d291c5185b8"
+      },
+      {
+        "path": "manifests/ui-h5-dist.json",
+        "bytes": 49241,
+        "sha256": "6f28d395a6936208642663cb0aa470384e784b42cc2e7b766eaa1188cc03b524"
+      },
+      {
+        "path": "manifests/ui-merchant-dist.json",
+        "bytes": 4174,
+        "sha256": "64bea688fe88ac20b07743fc1f656f2d30ce18618f34d0f2b6e533a010a8f89e"
+      },
+      {
+        "path": "manifests/ui-admin-dist.json",
+        "bytes": 87053,
+        "sha256": "1ca86d47550c99f513b2aa30195f58ad887b80fa3b89b6baed70b0af2cb23261"
+      },
+      {
+        "path": "manifests/ui-public-copy-profile.json",
+        "bytes": 534423,
+        "sha256": "90193e62b594aead32283eb5b9c061152a4b742ea4153bdd393ea7ec25aafc70"
+      }
+    ],
+    "ordered_artifacts": [
+      "compose.yml",
+      "interface-v1.json",
+      "ms4-host.py",
+      "ms4-initialize.php",
+      "normal-close-ms4-fulfillment.py",
+      "README.md",
+      "seed-source-inverse.json",
+      "source-derivation.json",
+      "verify-zero-ms4-fulfillment.py",
+      "ms4-ui-nginx.conf",
+      "ms4-ui-public-copy.php",
+      "ms4-ui-copy.php",
+      "ms4-order.png",
+      "manifests/ui-h5-dist.json",
+      "manifests/ui-merchant-dist.json",
+      "manifests/ui-admin-dist.json",
+      "manifests/ui-public-copy-profile.json"
+    ],
+    "unchanged_auxiliary_sibling": {
+      "path": "browser-v1/PINS.json",
+      "bytes": 1258,
+      "sha256": "01ac5ebe6b9c9d8025892c41aefdcdfabd34be1392801016539cdb0fd45ab639",
+      "members": 8,
+      "outer_artifact_count": 17
+    },
+    "observer_tools3_full_bytes": "UNCHANGED",
+    "preservation": "All other52 parent top-level values remain exact raw and semantic; every historical entry/commit/result retains its original meaning. All prior current16 values are saved above; no self hash.",
+    "functional_body_business_DTO_money_permissions_native_GUI_and_lifecycle": "UNCHANGED",
+    "new_Main_Run_A_QUALIFICATION_or_success_result": "NONE_SUPPLIED",
+    "target_parse_AST_import_compile_lint_execute": "NOT_RUN",
+    "actual_profile_Main_Validation_Run_private_App_Docker_browser": "NOT_ACCESSED_OR_CHANGED",
+    "full_acceptance": "INCOMPLETE"
+  },
+  "ui_task2_r26_helper_metadata_source_refresh": {
+    "schema": 1,
+    "scope": "UI17_R26_ADOPTED_THREE_READ_HELPER_METADATA_SOURCE_ONLY",
+    "parent_source": {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/ui-task2-r24-entry-metadata-source-r1",
+      "PINS": {
+        "bytes": 9195,
+        "sha256": "5b1425ea519417cdbfe320553e63f0419847522214660d6337011bfd170b8a63"
+      },
+      "FINAL": {
+        "bytes": 11790,
+        "sha256": "79460ba1742393cbd7552bf76f64cf28e54ce1c3effedc175db21ceeebff0627"
+      }
+    },
+    "old_current_three_read_helpers": [
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-three-legacy-producer.php",
+        "bytes": 53328,
+        "sha256": "9da29b5edf6bc50c8bb483eaf4a67adaaacc6cddc4660e6cac0d2dabcb81a584"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-three-legacy-reference.php",
+        "bytes": 51479,
+        "sha256": "7ad23450261f2771a46e8c04e7c2f8da0941d476d887f30064150188886ea941"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-three-read-normal.php",
+        "bytes": 160780,
+        "sha256": "3d02bd062dcb75c27ace071723a0f3d482a12b362e0b618c008fb81bd23fac9d"
+      }
+    ],
+    "previous_current_nonself_artifacts": [
+      {
+        "path": "compose.yml",
+        "bytes": 17471,
+        "sha256": "803c20a2de33a0e20062cb109456b101945aea7145ecc9a4b2a4f0186eac488d"
+      },
+      {
+        "path": "interface-v1.json",
+        "bytes": 63571,
+        "sha256": "37cb39f8deba7f4fd72fe16b609f31c689196998ac9f8580c7b7b8e17a61ebb8"
+      },
+      {
+        "path": "ms4-host.py",
+        "bytes": 526807,
+        "sha256": "d0f1cdb3b3bc1c1324c31037bf051bf038f7a7ed2febece9173793b36bbcf45a"
+      },
+      {
+        "path": "ms4-initialize.php",
+        "bytes": 111060,
+        "sha256": "bcc3bf94371c415206f86d46f8d4a6e0bfdb4477a616161393c5ba8ffba56b51"
+      },
+      {
+        "path": "normal-close-ms4-fulfillment.py",
+        "bytes": 257512,
+        "sha256": "c2db31687418207ab5f0148d49f7f61576b9bc670a0989dfb571a837444646bc"
+      },
+      {
+        "path": "README.md",
+        "bytes": 48263,
+        "sha256": "09f2eaaf960fa961c15a1d9444691d09d18c68b4351a952a3dd3ae6a184ae20f"
+      },
+      {
+        "path": "seed-source-inverse.json",
+        "bytes": 639,
+        "sha256": "c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a"
+      },
+      {
+        "path": "verify-zero-ms4-fulfillment.py",
+        "bytes": 624572,
+        "sha256": "4a5f363fecc78f4916f48510eb8354ec3829904a9b8ece14da435bfaa7b95081"
+      },
+      {
+        "path": "ms4-ui-nginx.conf",
+        "bytes": 3854,
+        "sha256": "c91161450ca87958138fff8a30e64564abee2d626d0b09e65678e4f3ff90a2fd"
+      },
+      {
+        "path": "ms4-ui-public-copy.php",
+        "bytes": 24364,
+        "sha256": "07f5409f146efc95cc3a51253ed5e962c10a49215e8ebb1d9913461cad14a9de"
+      },
+      {
+        "path": "ms4-ui-copy.php",
+        "bytes": 48872,
+        "sha256": "70cfc21c56177363b8582bfdcde6c4e4b4e51c6e080e9a6d11c9a6eb13dbc44c"
+      },
+      {
+        "path": "ms4-order.png",
+        "bytes": 234,
+        "sha256": "1cb2b0cfb8e075b494268977c5f6360309edbc4e0800cd5c58399d291c5185b8"
+      },
+      {
+        "path": "manifests/ui-h5-dist.json",
+        "bytes": 49241,
+        "sha256": "6f28d395a6936208642663cb0aa470384e784b42cc2e7b766eaa1188cc03b524"
+      },
+      {
+        "path": "manifests/ui-merchant-dist.json",
+        "bytes": 4174,
+        "sha256": "64bea688fe88ac20b07743fc1f656f2d30ce18618f34d0f2b6e533a010a8f89e"
+      },
+      {
+        "path": "manifests/ui-admin-dist.json",
+        "bytes": 87053,
+        "sha256": "1ca86d47550c99f513b2aa30195f58ad887b80fa3b89b6baed70b0af2cb23261"
+      },
+      {
+        "path": "manifests/ui-public-copy-profile.json",
+        "bytes": 534423,
+        "sha256": "90193e62b594aead32283eb5b9c061152a4b742ea4153bdd393ea7ec25aafc70"
+      }
+    ],
+    "current_helper": {
+      "path": "help/audit-regressions/isolated/lib/ms4-three-read-normal.php",
+      "bytes": 160668,
+      "sha256": "508c84e75b1b07bc6e574b461a069def27cedfb51378850923213391aa3bb01d"
+    },
+    "Task6_entry_unchanged": {
+      "path": "help/audit-regressions/isolated/ms4-fulfillment-normal.php",
+      "bytes": 127186,
+      "sha256": "0a15206d7f1ba40134511ef7551413c98224e23cbd34ef303e25c73a771341d5"
+    },
+    "current_profile_nonself_count": 16,
+    "current_dependency_files": [
+      {
+        "path": "interface-v1.json",
+        "bytes": 63571,
+        "sha256": "e64b2d7e06977fb1d1e92603c47d0a2fd3c1183e1a17448b9824f118bc9501f8"
+      },
+      {
+        "path": "ms4-host.py",
+        "bytes": 526807,
+        "sha256": "7c027f8fc6982ed4c5dfffea8b52b3ab305cc91aa6542bcd744d84a43fd85f20"
+      },
+      {
+        "path": "normal-close-ms4-fulfillment.py",
+        "bytes": 257512,
+        "sha256": "c3b442fbc042f36357f7938e84ec78f0397d523a93da4024ecc4967e22870a49"
+      },
+      {
+        "path": "verify-zero-ms4-fulfillment.py",
+        "bytes": 624572,
+        "sha256": "3ec46102290afbcfe75b48841727d8288eff9ffff1371c4b8559ab54a7ebf564"
+      }
+    ],
+    "auxiliary_sibling_unchanged": {
+      "path": "browser-v1/PINS.json",
+      "bytes": 1258,
+      "sha256": "01ac5ebe6b9c9d8025892c41aefdcdfabd34be1392801016539cdb0fd45ab639",
+      "members": 8,
+      "outer_artifact_count": 17
+    },
+    "observer_tools3_full_bytes": "UNCHANGED",
+    "README_parent_complete_suffix": {
+      "bytes": 48263,
+      "sha256": "09f2eaaf960fa961c15a1d9444691d09d18c68b4351a952a3dd3ae6a184ae20f"
+    },
+    "preservation": "All other52 old top-level values remain exact raw and semantic; the two replaced current groups retain their complete original values above and in original-profile. No historical result or source identity is reclassified. No self hash.",
+    "functional_body_business_DTO_money_permissions_native_GUI_lifecycle": "UNCHANGED",
+    "Root_reported_adopted_Main_source": "2cfb8fb4907c792d6272552c72a325589a9a0cd1",
+    "A_QUALIFICATION": null,
+    "future_runtime_facts": "NONE_SUPPLIED",
+    "target_parse_AST_import_compile_lint_execute": "NOT_RUN",
+    "actual_profile_Main_Validation_Run_private_App_Docker_browser": "NOT_ACCESSED_OR_CHANGED",
+    "full_acceptance": "INCOMPLETE"
+  },
+  "ui_task2_r27_paid_ar_entry_metadata_source_refresh": {
+    "schema": 1,
+    "scope": "UI17_R27_PAID_AR_ENTRY_METADATA_SOURCE_ONLY",
+    "source_sha": "5767b860bbeb8dc6ed96258651fabdc035396959",
+    "parent": "2cfb8fb4907c792d6272552c72a325589a9a0cd1",
+    "base_source": {
+      "root": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/ui-task2-r26-helper-metadata-source-r1",
+      "PINS": {
+        "bytes": 9196,
+        "sha256": "24ae8579e74699145490fb4c3ab71134c3410bd27855281926ed2d73840045e6"
+      },
+      "FINAL": {
+        "bytes": 11797,
+        "sha256": "4338d16b65b5ad64be7ec0d1866fa6838dbd8c4098e04aded04628aa3d3e3fb3"
+      }
+    },
+    "previous_new_business_entry": {
+      "result_keys": 29,
+      "source": "Current adopted numeric-wire AR201659 successor from the fixed cache-wire main-ui Source candidate; original reviewed KEEP donor and all prior refresh records remain historical provenance.",
+      "shutdown_keys": 15,
+      "bytes": 201659,
+      "business_keys": 24,
+      "path": "help/audit-regressions/isolated/ms4-aftersale-review-normal.php",
+      "sha256": "61697db47382a3e7253e44f17f18a746c4a663c6c5d577d61ee74888805e6a8a"
+    },
+    "previous_current_nonself_artifacts": [
+      {
+        "path": "compose.yml",
+        "bytes": 17471,
+        "sha256": "803c20a2de33a0e20062cb109456b101945aea7145ecc9a4b2a4f0186eac488d"
+      },
+      {
+        "path": "interface-v1.json",
+        "bytes": 63571,
+        "sha256": "e64b2d7e06977fb1d1e92603c47d0a2fd3c1183e1a17448b9824f118bc9501f8"
+      },
+      {
+        "path": "ms4-host.py",
+        "bytes": 526807,
+        "sha256": "7c027f8fc6982ed4c5dfffea8b52b3ab305cc91aa6542bcd744d84a43fd85f20"
+      },
+      {
+        "path": "ms4-initialize.php",
+        "bytes": 111060,
+        "sha256": "bcc3bf94371c415206f86d46f8d4a6e0bfdb4477a616161393c5ba8ffba56b51"
+      },
+      {
+        "path": "normal-close-ms4-fulfillment.py",
+        "bytes": 257512,
+        "sha256": "c3b442fbc042f36357f7938e84ec78f0397d523a93da4024ecc4967e22870a49"
+      },
+      {
+        "path": "README.md",
+        "bytes": 49348,
+        "sha256": "473c53d576140694ad63dcff850b42a4c618a6a1a0d4d27c21fa10c04ff01d18"
+      },
+      {
+        "path": "seed-source-inverse.json",
+        "bytes": 639,
+        "sha256": "c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a"
+      },
+      {
+        "path": "verify-zero-ms4-fulfillment.py",
+        "bytes": 624572,
+        "sha256": "3ec46102290afbcfe75b48841727d8288eff9ffff1371c4b8559ab54a7ebf564"
+      },
+      {
+        "path": "ms4-ui-nginx.conf",
+        "bytes": 3854,
+        "sha256": "c91161450ca87958138fff8a30e64564abee2d626d0b09e65678e4f3ff90a2fd"
+      },
+      {
+        "path": "ms4-ui-public-copy.php",
+        "bytes": 24364,
+        "sha256": "07f5409f146efc95cc3a51253ed5e962c10a49215e8ebb1d9913461cad14a9de"
+      },
+      {
+        "path": "ms4-ui-copy.php",
+        "bytes": 48872,
+        "sha256": "70cfc21c56177363b8582bfdcde6c4e4b4e51c6e080e9a6d11c9a6eb13dbc44c"
+      },
+      {
+        "path": "ms4-order.png",
+        "bytes": 234,
+        "sha256": "1cb2b0cfb8e075b494268977c5f6360309edbc4e0800cd5c58399d291c5185b8"
+      },
+      {
+        "path": "manifests/ui-h5-dist.json",
+        "bytes": 49241,
+        "sha256": "6f28d395a6936208642663cb0aa470384e784b42cc2e7b766eaa1188cc03b524"
+      },
+      {
+        "path": "manifests/ui-merchant-dist.json",
+        "bytes": 4174,
+        "sha256": "64bea688fe88ac20b07743fc1f656f2d30ce18618f34d0f2b6e533a010a8f89e"
+      },
+      {
+        "path": "manifests/ui-admin-dist.json",
+        "bytes": 87053,
+        "sha256": "1ca86d47550c99f513b2aa30195f58ad887b80fa3b89b6baed70b0af2cb23261"
+      },
+      {
+        "path": "manifests/ui-public-copy-profile.json",
+        "bytes": 534423,
+        "sha256": "90193e62b594aead32283eb5b9c061152a4b742ea4153bdd393ea7ec25aafc70"
+      }
+    ],
+    "current_repository_Source_requirements": [
+      {
+        "path": "help/audit-regressions/isolated/ms4-aftersale-review-normal.php",
+        "bytes": 201769,
+        "sha256": "b3ea72ae344aa7ec6c8c267d9bdae22bf93b767e66a110f2e7f2807ca1bbf44a"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-customer-http-normal.php",
+        "bytes": 63896,
+        "sha256": "5ba793e50cf604342304ff2563141384c8a61ffd2dc796865207210d70a946f9"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-three-legacy-producer.php",
+        "bytes": 53328,
+        "sha256": "9da29b5edf6bc50c8bb483eaf4a67adaaacc6cddc4660e6cac0d2dabcb81a584"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-three-read-normal.php",
+        "bytes": 160668,
+        "sha256": "508c84e75b1b07bc6e574b461a069def27cedfb51378850923213391aa3bb01d"
+      },
+      {
+        "path": "crmeb/app/services/product/product/StoreProductServices.php",
+        "bytes": 145261,
+        "sha256": "cc4fbb0e962bb30c005bfc2ce2b9ab3caa6234b99c88634715aebe1e8af5e6e5"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-three-legacy-reference.php",
+        "bytes": 51479,
+        "sha256": "7ad23450261f2771a46e8c04e7c2f8da0941d476d887f30064150188886ea941"
+      },
+      {
+        "path": "help/audit-regressions/isolated/ms5-paid-consumer-normal.php",
+        "bytes": 105669,
+        "sha256": "b13458bfac7aa09303d48b42e8c92db31feeb97e2d401bba18a93d252630cbb4"
+      },
+      {
+        "path": "help/audit-regressions/isolated/ms4-fulfillment-normal.php",
+        "bytes": 127186,
+        "sha256": "0a15206d7f1ba40134511ef7551413c98224e23cbd34ef303e25c73a771341d5"
+      }
+    ],
+    "current_dependency_files": [
+      {
+        "path": "interface-v1.json",
+        "bytes": 63571,
+        "sha256": "55aa09278a508851d001f87c39470dc0846787e880cfee9b2368a6023cab4926"
+      },
+      {
+        "path": "ms4-initialize.php",
+        "bytes": 111060,
+        "sha256": "dbb72d4b271b97546400ab26468e935d8c421e50066b8f34b20a76c539c73529"
+      },
+      {
+        "path": "ms4-host.py",
+        "bytes": 526807,
+        "sha256": "a6d1048e21a3c74dcf58dbd917909acb379a6b901031efa167974d5605b9b2b1"
+      },
+      {
+        "path": "normal-close-ms4-fulfillment.py",
+        "bytes": 257512,
+        "sha256": "d3a9470d6aa9695d3983c991cf046bc83667775d2d80bc73a77f29c3483e8dd0"
+      },
+      {
+        "path": "verify-zero-ms4-fulfillment.py",
+        "bytes": 624572,
+        "sha256": "e1c56de3901fc5f3f3fb39c193e71077578c07c13b8643b8b66ccbe5080adea6"
+      }
+    ],
+    "current_profile_nonself_count": 16,
+    "README_parent_complete_suffix": {
+      "bytes": 49348,
+      "sha256": "473c53d576140694ad63dcff850b42a4c618a6a1a0d4d27c21fa10c04ff01d18"
+    },
+    "original_top_fields": 55,
+    "selected_top_fields": 56,
+    "other_historical_top_fields_raw_and_semantic_preserved": 53,
+    "auxiliary_sibling_unchanged": {
+      "path": "browser-v1/PINS.json",
+      "bytes": 1258,
+      "sha256": "01ac5ebe6b9c9d8025892c41aefdcdfabd34be1392801016539cdb0fd45ab639",
+      "members": 8,
+      "outer_artifact_count": 17
+    },
+    "observer_tools3_and_Core3": "UNCHANGED",
+    "original128_three104_UI20_42ACK_close_and_zero": "UNCHANGED_REQUIRED",
+    "A_QUALIFICATION": null,
+    "target_execution": "NOT RUN",
+    "full_acceptance": "INCOMPLETE"
+  },
+  "ui_task2_r28_installed_language_entry_metadata_source_refresh": {
+    "schema": 1,
+    "scope": "UI17_R28_INSTALLED_LANGUAGE_ENTRY_METADATA_SOURCE_ONLY",
+    "source_sha": "2522a46fb9c4e70667609c1974332c7eb3902586",
+    "parent": "5767b860bbeb8dc6ed96258651fabdc035396959",
+    "predecessor_Source": {
+      "root": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r27-ui17-source-r1",
+      "PINS": {
+        "bytes": 2784,
+        "sha256": "1ff091ca75158dc064805b395a04db7c49f7a074e1ebc4d8d1cf0589f442abd5"
+      },
+      "PUBLICATION": {
+        "bytes": 62529,
+        "sha256": "0273e5ecb44bfaae55150417b2e4b146b97907b083c970c242a06c704e748c3c"
+      }
+    },
+    "base_auxiliary_tools_Source": {
+      "root": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/ui-task2-r26-helper-metadata-source-r1",
+      "PINS": {
+        "bytes": 9196,
+        "sha256": "24ae8579e74699145490fb4c3ab71134c3410bd27855281926ed2d73840045e6"
+      },
+      "FINAL": {
+        "bytes": 11797,
+        "sha256": "4338d16b65b5ad64be7ec0d1866fa6838dbd8c4098e04aded04628aa3d3e3fb3"
+      }
+    },
+    "previous_new_business_entry": {
+      "result_keys": 29,
+      "source": "Current committed AR201769 deadline-aware normal-source entry on 5767b860bbeb8dc6ed96258651fabdc035396959; only active Source metadata is refreshed. Original prior Source records remain historical; A/B runtime acceptance is NOT RUN.",
+      "shutdown_keys": 15,
+      "bytes": 201769,
+      "business_keys": 24,
+      "path": "help/audit-regressions/isolated/ms4-aftersale-review-normal.php",
+      "sha256": "b3ea72ae344aa7ec6c8c267d9bdae22bf93b767e66a110f2e7f2807ca1bbf44a"
+    },
+    "previous_current_nonself_artifacts": [
+      {
+        "path": "compose.yml",
+        "bytes": 17471,
+        "sha256": "803c20a2de33a0e20062cb109456b101945aea7145ecc9a4b2a4f0186eac488d"
+      },
+      {
+        "path": "interface-v1.json",
+        "bytes": 63571,
+        "sha256": "55aa09278a508851d001f87c39470dc0846787e880cfee9b2368a6023cab4926"
+      },
+      {
+        "path": "ms4-host.py",
+        "bytes": 526807,
+        "sha256": "a6d1048e21a3c74dcf58dbd917909acb379a6b901031efa167974d5605b9b2b1"
+      },
+      {
+        "path": "ms4-initialize.php",
+        "bytes": 111060,
+        "sha256": "dbb72d4b271b97546400ab26468e935d8c421e50066b8f34b20a76c539c73529"
+      },
+      {
+        "path": "normal-close-ms4-fulfillment.py",
+        "bytes": 257512,
+        "sha256": "d3a9470d6aa9695d3983c991cf046bc83667775d2d80bc73a77f29c3483e8dd0"
+      },
+      {
+        "path": "README.md",
+        "bytes": 50642,
+        "sha256": "177c7815dfaa3ddb34acdc5a143be5c4c23602be7bc8d50087cfc4c7d787180d"
+      },
+      {
+        "path": "seed-source-inverse.json",
+        "bytes": 639,
+        "sha256": "c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a"
+      },
+      {
+        "path": "verify-zero-ms4-fulfillment.py",
+        "bytes": 624572,
+        "sha256": "e1c56de3901fc5f3f3fb39c193e71077578c07c13b8643b8b66ccbe5080adea6"
+      },
+      {
+        "path": "ms4-ui-nginx.conf",
+        "bytes": 3854,
+        "sha256": "c91161450ca87958138fff8a30e64564abee2d626d0b09e65678e4f3ff90a2fd"
+      },
+      {
+        "path": "ms4-ui-public-copy.php",
+        "bytes": 24364,
+        "sha256": "07f5409f146efc95cc3a51253ed5e962c10a49215e8ebb1d9913461cad14a9de"
+      },
+      {
+        "path": "ms4-ui-copy.php",
+        "bytes": 48872,
+        "sha256": "70cfc21c56177363b8582bfdcde6c4e4b4e51c6e080e9a6d11c9a6eb13dbc44c"
+      },
+      {
+        "path": "ms4-order.png",
+        "bytes": 234,
+        "sha256": "1cb2b0cfb8e075b494268977c5f6360309edbc4e0800cd5c58399d291c5185b8"
+      },
+      {
+        "path": "manifests/ui-h5-dist.json",
+        "bytes": 49241,
+        "sha256": "6f28d395a6936208642663cb0aa470384e784b42cc2e7b766eaa1188cc03b524"
+      },
+      {
+        "path": "manifests/ui-merchant-dist.json",
+        "bytes": 4174,
+        "sha256": "64bea688fe88ac20b07743fc1f656f2d30ce18618f34d0f2b6e533a010a8f89e"
+      },
+      {
+        "path": "manifests/ui-admin-dist.json",
+        "bytes": 87053,
+        "sha256": "1ca86d47550c99f513b2aa30195f58ad887b80fa3b89b6baed70b0af2cb23261"
+      },
+      {
+        "path": "manifests/ui-public-copy-profile.json",
+        "bytes": 534423,
+        "sha256": "90193e62b594aead32283eb5b9c061152a4b742ea4153bdd393ea7ec25aafc70"
+      }
+    ],
+    "active_AR": {
+      "path": "help/audit-regressions/isolated/ms4-aftersale-review-normal.php",
+      "bytes": 212162,
+      "sha256": "4ed08c7968fc2cf76d12572aec2960d087aced0fe496d2c2278265884cf0f932"
+    },
+    "active_UI_prepare": {
+      "path": "help/audit-regressions/isolated/ms4-ui-prepare.php",
+      "bytes": 31146,
+      "sha256": "7affcce7d809a8f75222def64915c5746046c3cdab48dcf47f2c9b424b78405a"
+    },
+    "repository_committed_five": [
+      {
+        "path": "help/audit-regressions/isolated/ms4-aftersale-review-normal.php",
+        "bytes": 212162,
+        "sha256": "4ed08c7968fc2cf76d12572aec2960d087aced0fe496d2c2278265884cf0f932"
+      },
+      {
+        "path": "help/audit-regressions/isolated/ms4-ui-prepare.php",
+        "bytes": 31146,
+        "sha256": "7affcce7d809a8f75222def64915c5746046c3cdab48dcf47f2c9b424b78405a"
+      },
+      {
+        "path": "docs/multi-merchant/README.md",
+        "bytes": 11048,
+        "sha256": "f18d1cbb822f27f20c01fa851b2eb6e3cfbf81b2716fa14c610c60714534d069"
+      },
+      {
+        "path": "docs/multi-merchant/09-plan-ms4-ms6.md",
+        "bytes": 437110,
+        "sha256": "1673976e9e217d10a8a62e27b90db2a2bf84ee3eefffe78b0922535860a193b7"
+      },
+      {
+        "path": "docs/multi-merchant/records/ms4/normal-early-structure-integration.md",
+        "bytes": 108991,
+        "sha256": "cbd2a2a010e0f0bd2f676acc668a197dcd20c1ea3fb11d2fa4611081636d1cc6"
+      }
+    ],
+    "repository_Source_requirement_count": 8,
+    "activity_contexts": 10,
+    "dependency_contexts": 9,
+    "dependency_edges": [
+      {
+        "consumer": "ms4-host.py",
+        "field": "INTERFACE_SHA256",
+        "dependency": "interface-v1.json",
+        "complete_file": {
+          "bytes": 63571,
+          "sha256": "50e772276a90cb8637f6df37bdc3af9465028da3daf779eb1469353673c6f03a"
+        },
+        "actual_literal": "50e772276a90cb8637f6df37bdc3af9465028da3daf779eb1469353673c6f03a"
+      },
+      {
+        "consumer": "normal-close-ms4-fulfillment.py",
+        "field": "HOST_SHA256",
+        "dependency": "ms4-host.py",
+        "complete_file": {
+          "bytes": 526807,
+          "sha256": "0568a4b01b57d17bf814d611345292104131dcdb84055a49c1ce8e0b2a759e9c"
+        },
+        "actual_literal": "0568a4b01b57d17bf814d611345292104131dcdb84055a49c1ce8e0b2a759e9c"
+      },
+      {
+        "consumer": "normal-close-ms4-fulfillment.py",
+        "field": "UI_HOST_SHA256",
+        "dependency": "ms4-host.py",
+        "complete_file": {
+          "bytes": 526807,
+          "sha256": "0568a4b01b57d17bf814d611345292104131dcdb84055a49c1ce8e0b2a759e9c"
+        },
+        "actual_literal": "0568a4b01b57d17bf814d611345292104131dcdb84055a49c1ce8e0b2a759e9c"
+      },
+      {
+        "consumer": "verify-zero-ms4-fulfillment.py",
+        "field": "HOST_SHA256",
+        "dependency": "ms4-host.py",
+        "complete_file": {
+          "bytes": 526807,
+          "sha256": "0568a4b01b57d17bf814d611345292104131dcdb84055a49c1ce8e0b2a759e9c"
+        },
+        "actual_literal": "0568a4b01b57d17bf814d611345292104131dcdb84055a49c1ce8e0b2a759e9c"
+      },
+      {
+        "consumer": "verify-zero-ms4-fulfillment.py",
+        "field": "CLOSE_SHA256",
+        "dependency": "normal-close-ms4-fulfillment.py",
+        "complete_file": {
+          "bytes": 257512,
+          "sha256": "8a0ee0ffed9276183f072bba90b0791ddd2febab3095b216e331ffe4c6d29f1c"
+        },
+        "actual_literal": "8a0ee0ffed9276183f072bba90b0791ddd2febab3095b216e331ffe4c6d29f1c"
+      },
+      {
+        "consumer": "verify-zero-ms4-fulfillment.py",
+        "field": "INTERFACE_SHA256",
+        "dependency": "interface-v1.json",
+        "complete_file": {
+          "bytes": 63571,
+          "sha256": "50e772276a90cb8637f6df37bdc3af9465028da3daf779eb1469353673c6f03a"
+        },
+        "actual_literal": "50e772276a90cb8637f6df37bdc3af9465028da3daf779eb1469353673c6f03a"
+      },
+      {
+        "consumer": "verify-zero-ms4-fulfillment.py",
+        "field": "UI_HOST_SHA256",
+        "dependency": "ms4-host.py",
+        "complete_file": {
+          "bytes": 526807,
+          "sha256": "0568a4b01b57d17bf814d611345292104131dcdb84055a49c1ce8e0b2a759e9c"
+        },
+        "actual_literal": "0568a4b01b57d17bf814d611345292104131dcdb84055a49c1ce8e0b2a759e9c"
+      },
+      {
+        "consumer": "verify-zero-ms4-fulfillment.py",
+        "field": "UI_CLOSE_SHA256",
+        "dependency": "normal-close-ms4-fulfillment.py",
+        "complete_file": {
+          "bytes": 257512,
+          "sha256": "8a0ee0ffed9276183f072bba90b0791ddd2febab3095b216e331ffe4c6d29f1c"
+        },
+        "actual_literal": "8a0ee0ffed9276183f072bba90b0791ddd2febab3095b216e331ffe4c6d29f1c"
+      },
+      {
+        "consumer": "verify-zero-ms4-fulfillment.py",
+        "field": "UI_INTERFACE_SHA256",
+        "dependency": "interface-v1.json",
+        "complete_file": {
+          "bytes": 63571,
+          "sha256": "50e772276a90cb8637f6df37bdc3af9465028da3daf779eb1469353673c6f03a"
+        },
+        "actual_literal": "50e772276a90cb8637f6df37bdc3af9465028da3daf779eb1469353673c6f03a"
+      }
+    ],
+    "metadata_change": "Only ten current AR/UI entry descriptors, nine existing DAG aliases, README prefix, two active derivation fields and this appended record.",
+    "full_function_class_dispatch_and_other_initializer_bytes": "UNCHANGED",
+    "Core3_aux8_tools3_material5_original_UI_and_ACK_contracts": "UNCHANGED",
+    "runtime_A_qualification": null,
+    "first_B_qualification": null,
+    "runtime_result_qualification": null,
+    "target_execution": "NOT RUN",
+    "stopped_samples": "NOT RUN",
+    "full_acceptance": "INCOMPLETE"
+  },
+  "ui_task2_r29_cart_native_type_core_aux_metadata_source_refresh": {
+    "schema": 1,
+    "scope": "UI17_R29_CART_NATIVE_TYPE_CURRENT_CORE_AUX_SOURCE_ONLY",
+    "source_sha": "2b396ed0499d1d32017347f1963d9297338c8be0",
+    "parent": "2522a46fb9c4e70667609c1974332c7eb3902586",
+    "predecessor_Source": {
+      "root": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r28-ui17-source-r1",
+      "PINS": {
+        "bytes": 2785,
+        "sha256": "85134e561027d199e873e4f40daecca1cc8a1ac854aead2ed91e2d3aeaaca314"
+      },
+      "PUBLICATION": {
+        "bytes": 100160,
+        "sha256": "065f93717b6458cf8e42fc639a2e6b1a1b58483c27400c9374633cd940a8b7da"
+      }
+    },
+    "base_auxiliary_tools_Source": {
+      "root": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/ui-task2-r26-helper-metadata-source-r1",
+      "PINS": {
+        "bytes": 9196,
+        "sha256": "24ae8579e74699145490fb4c3ab71134c3410bd27855281926ed2d73840045e6"
+      },
+      "FINAL": {
+        "bytes": 11797,
+        "sha256": "4338d16b65b5ad64be7ec0d1866fa6838dbd8c4098e04aded04628aa3d3e3fb3"
+      }
+    },
+    "previous_new_business_entry": {
+      "result_keys": 29,
+      "source": "Current committed AR212162 explicit installed-language preparation entry on 2522a46fb9c4e70667609c1974332c7eb3902586; only active UI17 metadata is refreshed here. Original Source/run history stays immutable; fresh same-HEAD A/B runtime acceptance is NOT RUN.",
+      "shutdown_keys": 15,
+      "bytes": 212162,
+      "business_keys": 24,
+      "path": "help/audit-regressions/isolated/ms4-aftersale-review-normal.php",
+      "sha256": "4ed08c7968fc2cf76d12572aec2960d087aced0fe496d2c2278265884cf0f932"
+    },
+    "previous_current_nonself_artifacts": [
+      {
+        "path": "compose.yml",
+        "bytes": 17471,
+        "sha256": "803c20a2de33a0e20062cb109456b101945aea7145ecc9a4b2a4f0186eac488d"
+      },
+      {
+        "path": "interface-v1.json",
+        "bytes": 63571,
+        "sha256": "50e772276a90cb8637f6df37bdc3af9465028da3daf779eb1469353673c6f03a"
+      },
+      {
+        "path": "ms4-host.py",
+        "bytes": 526807,
+        "sha256": "0568a4b01b57d17bf814d611345292104131dcdb84055a49c1ce8e0b2a759e9c"
+      },
+      {
+        "path": "ms4-initialize.php",
+        "bytes": 111060,
+        "sha256": "558575087eae1fd6d890665501cb9ff00a63769a84acd093017cb723762f789b"
+      },
+      {
+        "path": "normal-close-ms4-fulfillment.py",
+        "bytes": 257512,
+        "sha256": "8a0ee0ffed9276183f072bba90b0791ddd2febab3095b216e331ffe4c6d29f1c"
+      },
+      {
+        "path": "README.md",
+        "bytes": 51671,
+        "sha256": "062450245b54287e142f2196e525411de44d0e0cd76a595d11fa64ab0056deb6"
+      },
+      {
+        "path": "seed-source-inverse.json",
+        "bytes": 639,
+        "sha256": "c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a"
+      },
+      {
+        "path": "verify-zero-ms4-fulfillment.py",
+        "bytes": 624572,
+        "sha256": "a4bcb5866a32ba4e349f6ac89b87e1a728d52982fa61045cfb14adff435749ab"
+      },
+      {
+        "path": "ms4-ui-nginx.conf",
+        "bytes": 3854,
+        "sha256": "c91161450ca87958138fff8a30e64564abee2d626d0b09e65678e4f3ff90a2fd"
+      },
+      {
+        "path": "ms4-ui-public-copy.php",
+        "bytes": 24364,
+        "sha256": "07f5409f146efc95cc3a51253ed5e962c10a49215e8ebb1d9913461cad14a9de"
+      },
+      {
+        "path": "ms4-ui-copy.php",
+        "bytes": 48872,
+        "sha256": "70cfc21c56177363b8582bfdcde6c4e4b4e51c6e080e9a6d11c9a6eb13dbc44c"
+      },
+      {
+        "path": "ms4-order.png",
+        "bytes": 234,
+        "sha256": "1cb2b0cfb8e075b494268977c5f6360309edbc4e0800cd5c58399d291c5185b8"
+      },
+      {
+        "path": "manifests/ui-h5-dist.json",
+        "bytes": 49241,
+        "sha256": "6f28d395a6936208642663cb0aa470384e784b42cc2e7b766eaa1188cc03b524"
+      },
+      {
+        "path": "manifests/ui-merchant-dist.json",
+        "bytes": 4174,
+        "sha256": "64bea688fe88ac20b07743fc1f656f2d30ce18618f34d0f2b6e533a010a8f89e"
+      },
+      {
+        "path": "manifests/ui-admin-dist.json",
+        "bytes": 87053,
+        "sha256": "1ca86d47550c99f513b2aa30195f58ad887b80fa3b89b6baed70b0af2cb23261"
+      },
+      {
+        "path": "manifests/ui-public-copy-profile.json",
+        "bytes": 534423,
+        "sha256": "90193e62b594aead32283eb5b9c061152a4b742ea4153bdd393ea7ec25aafc70"
+      }
+    ],
+    "active_AR": {
+      "path": "help/audit-regressions/isolated/ms4-aftersale-review-normal.php",
+      "bytes": 212164,
+      "sha256": "bb1e52ca070b941c75cddbebd546b467dbd1ee26fa2f5464a34c3152268f0ef4"
+    },
+    "active_UI_prepare": {
+      "path": "help/audit-regressions/isolated/ms4-ui-prepare.php",
+      "bytes": 31146,
+      "sha256": "7affcce7d809a8f75222def64915c5746046c3cdab48dcf47f2c9b424b78405a"
+    },
+    "active_UI_oracle": {
+      "path": "help/audit-regressions/isolated/lib/ms4-ui-prepare-oracle.php",
+      "bytes": 235944,
+      "sha256": "96d546bb18da56e214c0cfaf6cecb9f5b916732412eb1e6de856bb3fc2ac6c56"
+    },
+    "current_core_aux_authority": {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r29-ui-current-core-aux-source-r1/CORE-AUX-AUTHORITY.json",
+      "bytes": 1393,
+      "sha256": "6bf310abf0cced1022e8b5721d530d6057ae28529cf0bec01ce3f33cf6115658"
+    },
+    "current_core_sources": [
+      {
+        "path": "help/audit-regressions/isolated/ms4-ui-backend.php",
+        "bytes": 3034,
+        "sha256": "ae4ebd8dcd8db0369276bf219250ca2f018147c3424bbbc9e21534b536c8bec1"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-ui-backend-normal.php",
+        "bytes": 116629,
+        "sha256": "7b4cf2ddf1921b5101aa280b1fe3186a3222ab0900fceeb33663b16fa6454f53"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-ui-prepare-oracle.php",
+        "bytes": 235944,
+        "sha256": "96d546bb18da56e214c0cfaf6cecb9f5b916732412eb1e6de856bb3fc2ac6c56"
+      }
+    ],
+    "browser_manifest": {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r29-ui-current-core-aux-source-r1/browser-v1/PINS.json",
+      "bytes": 1258,
+      "sha256": "0b69df3a61dc36002462c0abcf87197e4c7de11f1635af4065c560f1837db8ad"
+    },
+    "browser_members": [
+      {
+        "path": "reader/ms4-ui-private-reader.mjs",
+        "bytes": 14107,
+        "sha256": "940d2a03103b26eab8766a1c50b38928f02d2eece2be1bd19fd1a6fac449fd3f"
+      },
+      {
+        "path": "ms4-ui-private-caller.mjs",
+        "bytes": 21351,
+        "sha256": "0fc9c608b667292fa43a161b5af81f0d09d0361ac855777ef175f19700a41288"
+      },
+      {
+        "path": "ms4-ui-browser-close.mjs",
+        "bytes": 23762,
+        "sha256": "f4a4378b920ff5069680d0ddbe738957cd653f85848fd835b87c1ba403828f00"
+      },
+      {
+        "path": "ms4-ui-business-producer.mjs",
+        "bytes": 83773,
+        "sha256": "3160a9d19fa4706620e4b5639c375eb08855661d93b9285cbbae8b1b6de426d3"
+      },
+      {
+        "path": "ms4-ui-window-native-bridge.mjs",
+        "bytes": 92650,
+        "sha256": "ecf3e4968bc087145c2cc46e622119d2aa076b10f4423ad5b6dae63cd71f0a34"
+      },
+      {
+        "path": "ms4-ui-network-capture.mjs",
+        "bytes": 22253,
+        "sha256": "915a0d55c3f29d3ac415c1e07010e6772d7eb77cd50da7a70884d25879c1c174"
+      },
+      {
+        "path": "ms4-ui-dom-producer.mjs",
+        "bytes": 58407,
+        "sha256": "3660aef5db8dfd2a3a1a246d6b0a1d7cba1005d2e96b667e43cd07a05dc8c08b"
+      },
+      {
+        "path": "ui-business-consumer-contract.json",
+        "bytes": 377647,
+        "sha256": "5dc8b0c75dad35280ce044be1a09c3091c0438e5e08b4792b5de5016b815b2e5"
+      }
+    ],
+    "auxiliary_change": "Only three oracle metadata descriptors; five other auxiliary Sources byte-identical; inner PINS original ordered8 shape and CRLF layout retained.",
+    "repository_Source_requirement_count": 8,
+    "profile_activity_contexts": 10,
+    "profile_dependency_contexts": 14,
+    "profile_code_contexts": 24,
+    "auxiliary_code_contexts": 3,
+    "total_code_contexts": 27,
+    "dependency_edges": [
+      {
+        "consumer": "ms4-host.py",
+        "field": "INTERFACE_SHA256",
+        "dependency": "interface-v1.json",
+        "complete_file": {
+          "bytes": 63571,
+          "sha256": "1cac33c2a068d173ee49d454209171696ce84eda123c537f55fff9909cb0e5df"
+        },
+        "actual_literal": "1cac33c2a068d173ee49d454209171696ce84eda123c537f55fff9909cb0e5df"
+      },
+      {
+        "consumer": "normal-close-ms4-fulfillment.py",
+        "field": "HOST_SHA256",
+        "dependency": "ms4-host.py",
+        "complete_file": {
+          "bytes": 526807,
+          "sha256": "98a468d9d1160444209e7811fdcaa5f82713e5c91490239a4ce38fc06ba254c3"
+        },
+        "actual_literal": "98a468d9d1160444209e7811fdcaa5f82713e5c91490239a4ce38fc06ba254c3"
+      },
+      {
+        "consumer": "normal-close-ms4-fulfillment.py",
+        "field": "UI_HOST_SHA256",
+        "dependency": "ms4-host.py",
+        "complete_file": {
+          "bytes": 526807,
+          "sha256": "98a468d9d1160444209e7811fdcaa5f82713e5c91490239a4ce38fc06ba254c3"
+        },
+        "actual_literal": "98a468d9d1160444209e7811fdcaa5f82713e5c91490239a4ce38fc06ba254c3"
+      },
+      {
+        "consumer": "verify-zero-ms4-fulfillment.py",
+        "field": "HOST_SHA256",
+        "dependency": "ms4-host.py",
+        "complete_file": {
+          "bytes": 526807,
+          "sha256": "98a468d9d1160444209e7811fdcaa5f82713e5c91490239a4ce38fc06ba254c3"
+        },
+        "actual_literal": "98a468d9d1160444209e7811fdcaa5f82713e5c91490239a4ce38fc06ba254c3"
+      },
+      {
+        "consumer": "verify-zero-ms4-fulfillment.py",
+        "field": "CLOSE_SHA256",
+        "dependency": "normal-close-ms4-fulfillment.py",
+        "complete_file": {
+          "bytes": 257512,
+          "sha256": "68235a0f223913d3054e641495554761f8ba04a6c74925e7b94e38e429a30a5f"
+        },
+        "actual_literal": "68235a0f223913d3054e641495554761f8ba04a6c74925e7b94e38e429a30a5f"
+      },
+      {
+        "consumer": "verify-zero-ms4-fulfillment.py",
+        "field": "INTERFACE_SHA256",
+        "dependency": "interface-v1.json",
+        "complete_file": {
+          "bytes": 63571,
+          "sha256": "1cac33c2a068d173ee49d454209171696ce84eda123c537f55fff9909cb0e5df"
+        },
+        "actual_literal": "1cac33c2a068d173ee49d454209171696ce84eda123c537f55fff9909cb0e5df"
+      },
+      {
+        "consumer": "verify-zero-ms4-fulfillment.py",
+        "field": "UI_HOST_SHA256",
+        "dependency": "ms4-host.py",
+        "complete_file": {
+          "bytes": 526807,
+          "sha256": "98a468d9d1160444209e7811fdcaa5f82713e5c91490239a4ce38fc06ba254c3"
+        },
+        "actual_literal": "98a468d9d1160444209e7811fdcaa5f82713e5c91490239a4ce38fc06ba254c3"
+      },
+      {
+        "consumer": "verify-zero-ms4-fulfillment.py",
+        "field": "UI_CLOSE_SHA256",
+        "dependency": "normal-close-ms4-fulfillment.py",
+        "complete_file": {
+          "bytes": 257512,
+          "sha256": "68235a0f223913d3054e641495554761f8ba04a6c74925e7b94e38e429a30a5f"
+        },
+        "actual_literal": "68235a0f223913d3054e641495554761f8ba04a6c74925e7b94e38e429a30a5f"
+      },
+      {
+        "consumer": "verify-zero-ms4-fulfillment.py",
+        "field": "UI_INTERFACE_SHA256",
+        "dependency": "interface-v1.json",
+        "complete_file": {
+          "bytes": 63571,
+          "sha256": "1cac33c2a068d173ee49d454209171696ce84eda123c537f55fff9909cb0e5df"
+        },
+        "actual_literal": "1cac33c2a068d173ee49d454209171696ce84eda123c537f55fff9909cb0e5df"
+      }
+    ],
+    "full_function_class_dispatch_and_other_initializer_bytes": "UNCHANGED",
+    "business_UI_ACK_DOM_lifecycle_and_material_build_provenance": "UNCHANGED",
+    "runtime_A_qualification": null,
+    "first_B_qualification": null,
+    "runtime_result_qualification": null,
+    "target_execution": "NOT RUN",
+    "stopped_samples": "NOT RUN",
+    "active_UI_prepare_provenance": {
+      "current_source_sha": "2b396ed0499d1d32017347f1963d9297338c8be0",
+      "parent_source_sha": "2522a46fb9c4e70667609c1974332c7eb3902586",
+      "current_Main_file": {
+        "path": "H:/天俪商城/worktrees/ms4-generic-trade/help/audit-regressions/isolated/ms4-ui-prepare.php",
+        "bytes": 31146,
+        "sha256": "7affcce7d809a8f75222def64915c5746046c3cdab48dcf47f2c9b424b78405a"
+      },
+      "parent_descriptor": {
+        "path": "help/audit-regressions/isolated/ms4-ui-prepare.php",
+        "bytes": 31146,
+        "sha256": "7affcce7d809a8f75222def64915c5746046c3cdab48dcf47f2c9b424b78405a"
+      },
+      "parent_publication": {
+        "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r28-ui17-source-r1/PUBLICATION.json",
+        "bytes": 100160,
+        "sha256": "065f93717b6458cf8e42fc639a2e6b1a1b58483c27400c9374633cd940a8b7da"
+      },
+      "current_Main_bytes_equal_pinned_parent_descriptor": true,
+      "current_commit_member": false,
+      "source_requirement_group": "EXISTING_UI_PREPARE_PIN_VECTOR_NOT_ADDED_TO_NORMAL_SOURCE8"
+    },
+    "repository_committed_five": [
+      {
+        "path": "docs/multi-merchant/09-plan-ms4-ms6.md",
+        "bytes": 438945,
+        "sha256": "3d17ebaa6b7ee5a2ae4e4a345033c9aee8b460402113daf523690059b57627ea"
+      },
+      {
+        "path": "docs/multi-merchant/README.md",
+        "bytes": 11005,
+        "sha256": "fa38f976c510ed2ee7a06c83b0c5c2a9de836b11a246fec1dfc7db3321294690"
+      },
+      {
+        "path": "docs/multi-merchant/records/ms4/normal-early-structure-integration.md",
+        "bytes": 111588,
+        "sha256": "2412e44a15c62f6beeb25068c1c404b170fc745d61b24dddccd51b3da54017e3"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-ui-prepare-oracle.php",
+        "bytes": 235944,
+        "sha256": "96d546bb18da56e214c0cfaf6cecb9f5b916732412eb1e6de856bb3fc2ac6c56"
+      },
+      {
+        "path": "help/audit-regressions/isolated/ms4-aftersale-review-normal.php",
+        "bytes": 212164,
+        "sha256": "bb1e52ca070b941c75cddbebd546b467dbd1ee26fa2f5464a34c3152268f0ef4"
+      }
+    ]
+  },
+  "ui_task2_r33_create_window_AR_core_authority_metadata_source_refresh": {
+    "scope": "R33_UI17_FINITE_AR_AND_AUTHORITY_METADATA_SOURCE_ONLY",
+    "source_sha": "803c1b420dca8894fa9409b38601a1c6dc3c8b30",
+    "commit_parent": "db4a8bd6a9e4e538aee39df6b4077b93f1290141",
+    "active_AR": {
+      "path": "help/audit-regressions/isolated/ms4-aftersale-review-normal.php",
+      "bytes": 215874,
+      "sha256": "62d782efbaff7520815c7f33604cc8ccb1d78cf4d41e400d3b007dea6159015b"
+    },
+    "active_UI_oracle": {
+      "path": "help/audit-regressions/isolated/lib/ms4-ui-prepare-oracle.php",
+      "bytes": 235944,
+      "sha256": "96d546bb18da56e214c0cfaf6cecb9f5b916732412eb1e6de856bb3fc2ac6c56"
+    },
+    "current_Core3": [
+      {
+        "path": "help/audit-regressions/isolated/ms4-ui-backend.php",
+        "bytes": 3034,
+        "sha256": "ae4ebd8dcd8db0369276bf219250ca2f018147c3424bbbc9e21534b536c8bec1"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-ui-backend-normal.php",
+        "bytes": 116629,
+        "sha256": "7b4cf2ddf1921b5101aa280b1fe3186a3222ab0900fceeb33663b16fa6454f53"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-ui-prepare-oracle.php",
+        "bytes": 235944,
+        "sha256": "96d546bb18da56e214c0cfaf6cecb9f5b916732412eb1e6de856bb3fc2ac6c56"
+      }
+    ],
+    "current_core_aux_authority": {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r33-ui-current-core-aux-source-r1/CORE-AUX-AUTHORITY.json",
+      "bytes": 1393,
+      "sha256": "0e26bc3a06bd2162dbbe5b884f483a9efbc3eb6c69e79f5d779730e04b139035"
+    },
+    "browser_manifest_original": {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r29-ui-current-core-aux-source-r1/browser-v1/PINS.json",
+      "bytes": 1258,
+      "sha256": "0b69df3a61dc36002462c0abcf87197e4c7de11f1635af4065c560f1837db8ad"
+    },
+    "normal9_authority": {
+      "root": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r33-normal-nine-source-r1",
+      "PINS": {
+        "bytes": 1498,
+        "sha256": "b166616dc7c60b1fcfe01845c8f5d43a67e8496c55bc52e08e1dcce633f31e0a"
+      },
+      "PUBLICATION": {
+        "bytes": 11918,
+        "sha256": "b8bfe05eed235076a27d15c41a225403d4877c85425f1394ab70abde2d7b2374"
+      }
+    },
+    "previous_profile": {
+      "root": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r29-ui17-source-r1",
+      "PINS": {
+        "bytes": 2785,
+        "sha256": "c9f8f8da41c8a98e045d43fdf4a298bf1dac0bd822d8565b872a55a29785b2c1"
+      },
+      "PUBLICATION": {
+        "bytes": 207149,
+        "sha256": "eded1c1377743792989068f8487b13de8d1736211d46caed2e066e75b7ec4a42"
+      }
+    },
+    "active_contexts": 7,
+    "original_dependency_contexts": 9,
+    "current_nonself_artifacts": [
+      {
+        "path": "compose.yml",
+        "bytes": 17471,
+        "sha256": "803c20a2de33a0e20062cb109456b101945aea7145ecc9a4b2a4f0186eac488d"
+      },
+      {
+        "path": "interface-v1.json",
+        "bytes": 63571,
+        "sha256": "b7ad143330420128c46b2ad0c8fef6e9d605795dafbe3f7982ae3f3d67cca2cb"
+      },
+      {
+        "path": "ms4-host.py",
+        "bytes": 526807,
+        "sha256": "eb11b11967d5fe0357dabb6486e880100c0c0d0d649a4b5465882ec6c751255c"
+      },
+      {
+        "path": "ms4-initialize.php",
+        "bytes": 111060,
+        "sha256": "b6ad3c04d1263cb67ad4a3a805d2e3264c68237c587c9b6cd26ae6abe065a3d9"
+      },
+      {
+        "path": "normal-close-ms4-fulfillment.py",
+        "bytes": 257512,
+        "sha256": "0953d1ea2970b5ab7139ffc176250e29a5c19cc1753e909ac8c99034da83338a"
+      },
+      {
+        "path": "README.md",
+        "bytes": 54561,
+        "sha256": "ca0e27113199b6360374c7f6e06b1b72004cb4f860da58b1b4c37fa3282c0edb"
+      },
+      {
+        "path": "seed-source-inverse.json",
+        "bytes": 639,
+        "sha256": "c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a"
+      },
+      {
+        "path": "verify-zero-ms4-fulfillment.py",
+        "bytes": 624572,
+        "sha256": "2bdad87b222103604c9e5c3e73e5ee890348cb66186d4d95d4b4e77cd11ff0f3"
+      },
+      {
+        "path": "ms4-ui-nginx.conf",
+        "bytes": 3854,
+        "sha256": "c91161450ca87958138fff8a30e64564abee2d626d0b09e65678e4f3ff90a2fd"
+      },
+      {
+        "path": "ms4-ui-public-copy.php",
+        "bytes": 24364,
+        "sha256": "07f5409f146efc95cc3a51253ed5e962c10a49215e8ebb1d9913461cad14a9de"
+      },
+      {
+        "path": "ms4-ui-copy.php",
+        "bytes": 48872,
+        "sha256": "70cfc21c56177363b8582bfdcde6c4e4b4e51c6e080e9a6d11c9a6eb13dbc44c"
+      },
+      {
+        "path": "ms4-order.png",
+        "bytes": 234,
+        "sha256": "1cb2b0cfb8e075b494268977c5f6360309edbc4e0800cd5c58399d291c5185b8"
+      },
+      {
+        "path": "manifests/ui-h5-dist.json",
+        "bytes": 49241,
+        "sha256": "6f28d395a6936208642663cb0aa470384e784b42cc2e7b766eaa1188cc03b524"
+      },
+      {
+        "path": "manifests/ui-merchant-dist.json",
+        "bytes": 4174,
+        "sha256": "64bea688fe88ac20b07743fc1f656f2d30ce18618f34d0f2b6e533a010a8f89e"
+      },
+      {
+        "path": "manifests/ui-admin-dist.json",
+        "bytes": 87053,
+        "sha256": "1ca86d47550c99f513b2aa30195f58ad887b80fa3b89b6baed70b0af2cb23261"
+      },
+      {
+        "path": "manifests/ui-public-copy-profile.json",
+        "bytes": 534423,
+        "sha256": "90193e62b594aead32283eb5b9c061152a4b742ea4153bdd393ea7ec25aafc70"
+      }
+    ],
+    "old_four_manifests_unchanged": {
+      "manifests/ui-h5-dist.json": {
+        "bytes": 49241,
+        "sha256": "6f28d395a6936208642663cb0aa470384e784b42cc2e7b766eaa1188cc03b524"
+      },
+      "manifests/ui-merchant-dist.json": {
+        "bytes": 4174,
+        "sha256": "64bea688fe88ac20b07743fc1f656f2d30ce18618f34d0f2b6e533a010a8f89e"
+      },
+      "manifests/ui-admin-dist.json": {
+        "bytes": 87053,
+        "sha256": "1ca86d47550c99f513b2aa30195f58ad887b80fa3b89b6baed70b0af2cb23261"
+      },
+      "manifests/ui-public-copy-profile.json": {
+        "bytes": 534423,
+        "sha256": "90193e62b594aead32283eb5b9c061152a4b742ea4153bdd393ea7ec25aafc70"
+      }
+    },
+    "static_build_reuse_compatibility": {
+      "scope": "STATIC_ORIGINAL_BUILD_REUSE_COMPATIBILITY_ONLY",
+      "Host_build_commit_SHA_gate": false,
+      "Host_full_actual_byte_namespace_gate": true,
+      "actual_checks": [
+        {
+          "name": "Main-public",
+          "root": "H:/天俪商城/worktrees/ms4-generic-trade/crmeb/public",
+          "files": 2536,
+          "directories": 279,
+          "bytes": 112574717,
+          "whole_frozen_descriptors_and_namespaces_equal": true
+        },
+        {
+          "name": "Validation-public",
+          "root": "H:/天俪商城/worktrees/ms4-aftersale-normal-check/crmeb/public",
+          "files": 2536,
+          "directories": 279,
+          "bytes": 112574717,
+          "whole_frozen_descriptors_and_namespaces_equal": true
+        },
+        {
+          "name": "h5",
+          "root": "H:/天俪商城/artifacts/u-status-h5-r2/dist",
+          "files": 336,
+          "directories": 23,
+          "bytes": 11741845,
+          "whole_frozen_descriptors_and_namespaces_equal": true
+        },
+        {
+          "name": "merchant",
+          "root": "H:/天俪商城/artifacts/ms4-merchant-console-build/0d5499ec-p1/work/dist",
+          "files": 30,
+          "directories": 4,
+          "bytes": 1611600,
+          "whole_frozen_descriptors_and_namespaces_equal": true
+        },
+        {
+          "name": "admin",
+          "root": "H:/天俪商城/artifacts/current-unpaid-root-status-platform-build-r1/template/admin/dist",
+          "files": 603,
+          "directories": 7,
+          "bytes": 40934912,
+          "whole_frozen_descriptors_and_namespaces_equal": true
+        }
+      ],
+      "mismatches": [],
+      "builder_execution": "NOT RUN",
+      "new803_build_claim": false
+    },
+    "current_commit_files": [
+      {
+        "path": "docs/multi-merchant/09-plan-ms4-ms6.md",
+        "bytes": 448514,
+        "sha256": "7d5976c24f9fdcf5a93988134f3ae6c178f1dbde4c5a3f1398ecfbf912b300c4"
+      },
+      {
+        "path": "help/audit-regressions/isolated/ms4-aftersale-review-normal.php",
+        "bytes": 215874,
+        "sha256": "62d782efbaff7520815c7f33604cc8ccb1d78cf4d41e400d3b007dea6159015b"
+      }
+    ],
+    "unchanged_business_contract": "UI_NONMEMBER_78.56_POSTAGE8.01_CANCEL0_NORMAL13_15_5_2S2_UI20_42ACK_320_390_1440",
+    "Root_adopted_or_executed": false,
+    "A_QUALIFICATION": null,
+    "runtime_A_B_business_API_DOM_acceptance": "NOT RUN",
+    "full_acceptance": "INCOMPLETE",
+    "stopped_samples": "NOT RUN"
+  },
+  "ui_task2_r34_numeric_redis_key_AR_core_authority_metadata_source_refresh": {
+    "scope": "R34_UI17_FINITE_AR_AND_AUTHORITY_METADATA_SOURCE_ONLY",
+    "source_sha": "0cb342f82e878756bd59e93bc6aac85a40b6c29b",
+    "commit_parent": "803c1b420dca8894fa9409b38601a1c6dc3c8b30",
+    "active_AR": {
+      "path": "help/audit-regressions/isolated/ms4-aftersale-review-normal.php",
+      "bytes": 215985,
+      "sha256": "c2407e049f8536f6b666c3e4cfb24e37d9dd850a5c4a4b6a1800fac5a85e9d6f"
+    },
+    "active_UI_oracle": {
+      "path": "help/audit-regressions/isolated/lib/ms4-ui-prepare-oracle.php",
+      "bytes": 235944,
+      "sha256": "96d546bb18da56e214c0cfaf6cecb9f5b916732412eb1e6de856bb3fc2ac6c56"
+    },
+    "current_Core3": [
+      {
+        "path": "help/audit-regressions/isolated/ms4-ui-backend.php",
+        "bytes": 3034,
+        "sha256": "ae4ebd8dcd8db0369276bf219250ca2f018147c3424bbbc9e21534b536c8bec1"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-ui-backend-normal.php",
+        "bytes": 116629,
+        "sha256": "7b4cf2ddf1921b5101aa280b1fe3186a3222ab0900fceeb33663b16fa6454f53"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-ui-prepare-oracle.php",
+        "bytes": 235944,
+        "sha256": "96d546bb18da56e214c0cfaf6cecb9f5b916732412eb1e6de856bb3fc2ac6c56"
+      }
+    ],
+    "current_core_aux_authority": {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r34-ui-current-core-aux-source-r1/CORE-AUX-AUTHORITY.json",
+      "bytes": 1393,
+      "sha256": "5e711303f8cc47db5d2788ad20bbc4ccea5cc04bc05895069fa77a8a00eea39b"
+    },
+    "browser_manifest_original": {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r29-ui-current-core-aux-source-r1/browser-v1/PINS.json",
+      "bytes": 1258,
+      "sha256": "0b69df3a61dc36002462c0abcf87197e4c7de11f1635af4065c560f1837db8ad"
+    },
+    "normal9_authority": {
+      "root": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r34-normal-nine-source-r1",
+      "PINS": {
+        "bytes": 1498,
+        "sha256": "ed76221813f71d5df80eef7832ebbf4dffbf24bf4e7a0dbaaa8387ef0faac682"
+      },
+      "PUBLICATION": {
+        "bytes": 12699,
+        "sha256": "7153d794671e10d40717d10af6ebe97a4fe77323a7a1e875325ec1ae3f56f92a"
+      }
+    },
+    "previous_profile": {
+      "root": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r33-ui17-source-r1",
+      "PINS": {
+        "bytes": 2786,
+        "sha256": "53987f6ccaf794ca82f01844cb21627c7141e052e7b3ef6bd3bec359fab39cb8"
+      },
+      "PUBLICATION": {
+        "bytes": 105746,
+        "sha256": "839a8bda7633385e5a77a6ebf060cacf633ed5a7a738afaec2da3bc630762ee8"
+      }
+    },
+    "active_contexts": 7,
+    "original_dependency_contexts": 9,
+    "current_nonself_artifacts": [
+      {
+        "path": "compose.yml",
+        "bytes": 17471,
+        "sha256": "803c20a2de33a0e20062cb109456b101945aea7145ecc9a4b2a4f0186eac488d"
+      },
+      {
+        "path": "interface-v1.json",
+        "bytes": 63571,
+        "sha256": "a6e8b562e9cf9e26935fdff13a390f182f3af717d330f1f83c3def05aec7e1e0"
+      },
+      {
+        "path": "ms4-host.py",
+        "bytes": 526807,
+        "sha256": "0f8806d6f2f4198b7b3783d437e23ace31642169113e5135699857b1c4bdbdb6"
+      },
+      {
+        "path": "ms4-initialize.php",
+        "bytes": 111060,
+        "sha256": "987008f3767376e9a798154d0da0756790d843066850cd95bf7eb6dc1b001418"
+      },
+      {
+        "path": "normal-close-ms4-fulfillment.py",
+        "bytes": 257512,
+        "sha256": "398c269284d5a8a6dd458be9b69c349defb4485a8d7bb9a925dc709d9c6b2057"
+      },
+      {
+        "path": "README.md",
+        "bytes": 56354,
+        "sha256": "d0dbcd79107e0c9be0fd2f0230c1a4bb8ecf41ed96f765062ff3496313644d57"
+      },
+      {
+        "path": "seed-source-inverse.json",
+        "bytes": 639,
+        "sha256": "c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a"
+      },
+      {
+        "path": "verify-zero-ms4-fulfillment.py",
+        "bytes": 624572,
+        "sha256": "ec346a4e208c6ff07d01d7cabfa449117b7eedc87ca592d73c249bfc5aa791fe"
+      },
+      {
+        "path": "ms4-ui-nginx.conf",
+        "bytes": 3854,
+        "sha256": "c91161450ca87958138fff8a30e64564abee2d626d0b09e65678e4f3ff90a2fd"
+      },
+      {
+        "path": "ms4-ui-public-copy.php",
+        "bytes": 24364,
+        "sha256": "07f5409f146efc95cc3a51253ed5e962c10a49215e8ebb1d9913461cad14a9de"
+      },
+      {
+        "path": "ms4-ui-copy.php",
+        "bytes": 48872,
+        "sha256": "70cfc21c56177363b8582bfdcde6c4e4b4e51c6e080e9a6d11c9a6eb13dbc44c"
+      },
+      {
+        "path": "ms4-order.png",
+        "bytes": 234,
+        "sha256": "1cb2b0cfb8e075b494268977c5f6360309edbc4e0800cd5c58399d291c5185b8"
+      },
+      {
+        "path": "manifests/ui-h5-dist.json",
+        "bytes": 49241,
+        "sha256": "6f28d395a6936208642663cb0aa470384e784b42cc2e7b766eaa1188cc03b524"
+      },
+      {
+        "path": "manifests/ui-merchant-dist.json",
+        "bytes": 4174,
+        "sha256": "64bea688fe88ac20b07743fc1f656f2d30ce18618f34d0f2b6e533a010a8f89e"
+      },
+      {
+        "path": "manifests/ui-admin-dist.json",
+        "bytes": 87053,
+        "sha256": "1ca86d47550c99f513b2aa30195f58ad887b80fa3b89b6baed70b0af2cb23261"
+      },
+      {
+        "path": "manifests/ui-public-copy-profile.json",
+        "bytes": 534423,
+        "sha256": "90193e62b594aead32283eb5b9c061152a4b742ea4153bdd393ea7ec25aafc70"
+      }
+    ],
+    "old_four_manifests_unchanged": {
+      "manifests/ui-h5-dist.json": {
+        "bytes": 49241,
+        "sha256": "6f28d395a6936208642663cb0aa470384e784b42cc2e7b766eaa1188cc03b524"
+      },
+      "manifests/ui-merchant-dist.json": {
+        "bytes": 4174,
+        "sha256": "64bea688fe88ac20b07743fc1f656f2d30ce18618f34d0f2b6e533a010a8f89e"
+      },
+      "manifests/ui-admin-dist.json": {
+        "bytes": 87053,
+        "sha256": "1ca86d47550c99f513b2aa30195f58ad887b80fa3b89b6baed70b0af2cb23261"
+      },
+      "manifests/ui-public-copy-profile.json": {
+        "bytes": 534423,
+        "sha256": "90193e62b594aead32283eb5b9c061152a4b742ea4153bdd393ea7ec25aafc70"
+      }
+    },
+    "static_build_reuse_compatibility": {
+      "scope": "STATIC_THREE_DIST_REUSE_REVIEW_REPORTED_BY_NATIVE_REVIEWER",
+      "reviewer": "/root/nonempty_native_source_review",
+      "Host_build_commit_SHA_gate": false,
+      "Host_full_actual_byte_namespace_gate": true,
+      "actual_checks": [
+        {
+          "name": "h5",
+          "root": "H:/天俪商城/artifacts/u-status-h5-r2/dist",
+          "files": 336,
+          "directories": 23,
+          "bytes": 11741845,
+          "whole_frozen_descriptors_and_namespaces_equal": true
+        },
+        {
+          "name": "merchant",
+          "root": "H:/天俪商城/artifacts/ms4-merchant-console-build/0d5499ec-p1/work/dist",
+          "files": 30,
+          "directories": 4,
+          "bytes": 1611600,
+          "whole_frozen_descriptors_and_namespaces_equal": true
+        },
+        {
+          "name": "admin",
+          "root": "H:/天俪商城/artifacts/current-unpaid-root-status-platform-build-r1/template/admin/dist",
+          "files": 603,
+          "directories": 7,
+          "bytes": 40934912,
+          "whole_frozen_descriptors_and_namespaces_equal": true
+        }
+      ],
+      "total_dist_files": 969,
+      "total_finite_review_deduplicated_files": 1030,
+      "separate_public_receipt_or_tool_ID": null,
+      "current_Main_public_whole_tree_reread": false,
+      "mismatches": [],
+      "builder_execution": "NOT RUN",
+      "new_current_HEAD_build_claim": false
+    },
+    "current_commit_files": [
+      {
+        "path": "docs/multi-merchant/09-plan-ms4-ms6.md",
+        "bytes": 450738,
+        "sha256": "e251db36736119538ef26a3974d6220369f0ae521dd6de801b4c31a0cec6c598"
+      },
+      {
+        "path": "help/audit-regressions/isolated/ms4-aftersale-review-normal.php",
+        "bytes": 215985,
+        "sha256": "c2407e049f8536f6b666c3e4cfb24e37d9dd850a5c4a4b6a1800fac5a85e9d6f"
+      }
+    ],
+    "unchanged_business_contract": "UI_NONMEMBER_78.56_POSTAGE8.01_CANCEL0_NORMAL13_15_5_2S2_UI20_42ACK_320_390_1440_TASK9_K02_K05_CLOSED",
+    "Root_adopted_or_executed": false,
+    "A_QUALIFICATION": null,
+    "runtime_A_B_business_API_DOM_acceptance": "NOT RUN",
+    "full_acceptance": "INCOMPLETE",
+    "stopped_samples": "NOT RUN"
+  },
+  "ui_task2_r40_real_source_Root5_AR_core_authority_metadata_source_refresh": {
+    "scope": "R40_UI17_KNOWN_SOURCE_METADATA_ONLY_NOT_ROOT_EXECUTION",
+    "source_sha": "13479ad620e30948db33caab31c573a1945a5fe4",
+    "commit_parent": "7ca901fdadbc971288234448f57a0ffaff673fb1",
+    "active_AR": {
+      "path": "help/audit-regressions/isolated/ms4-aftersale-review-normal.php",
+      "bytes": 222875,
+      "sha256": "eddc42ae94ddceb208a8d2535b153503cd137ddab9f24572cfd6fa3296593de9"
+    },
+    "current_Core3": [
+      {
+        "path": "help/audit-regressions/isolated/ms4-ui-backend.php",
+        "bytes": 3034,
+        "sha256": "ae4ebd8dcd8db0369276bf219250ca2f018147c3424bbbc9e21534b536c8bec1"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-ui-backend-normal.php",
+        "bytes": 116629,
+        "sha256": "7b4cf2ddf1921b5101aa280b1fe3186a3222ab0900fceeb33663b16fa6454f53"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-ui-prepare-oracle.php",
+        "bytes": 235944,
+        "sha256": "96d546bb18da56e214c0cfaf6cecb9f5b916732412eb1e6de856bb3fc2ac6c56"
+      }
+    ],
+    "current_core_aux_authority": {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r40-ui-current-core-aux-source-r1/CORE-AUX-AUTHORITY.json",
+      "bytes": 1393,
+      "sha256": "a9950e0357e89a7fa0c442f67385f6610c0af5dea7c3248a17b3a21ea2e06b35"
+    },
+    "browser_manifest_original": {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r29-ui-current-core-aux-source-r1/browser-v1/PINS.json",
+      "bytes": 1258,
+      "sha256": "0b69df3a61dc36002462c0abcf87197e4c7de11f1635af4065c560f1837db8ad"
+    },
+    "normal9_authority": {
+      "root": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r40-normal-validation-r1",
+      "profile_root": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r40-normal-validation-r1/actual-profile",
+      "PROFILE_PINS": {
+        "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r40-normal-validation-r1/PROFILE-PINS.json",
+        "bytes": 1505,
+        "sha256": "e8520915d14b9c914a9c9508c29fa2bac8251e9ca66e8cee2cb43a115d9475e6"
+      },
+      "PROFILE_PUBLICATION": {
+        "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r40-normal-validation-r1/PROFILE-PUBLICATION.json",
+        "bytes": 8136,
+        "sha256": "63262cfc302d010537839171e6df519ccc7daa9931f9d8d04674bfa0a94900d6"
+      }
+    },
+    "previous_profile": {
+      "root": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r34-ui17-source-r1",
+      "PINS": {
+        "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r34-ui17-source-r1/PINS.json",
+        "bytes": 2786,
+        "sha256": "fb03b5ee06f47dd009c445d329738f082f64b0c97d79c3fd8d387a9d111f3928"
+      },
+      "PUBLICATION": {
+        "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r34-ui17-source-r1/PUBLICATION.json",
+        "bytes": 108837,
+        "sha256": "331aa43db03280b65700872e788d7f25d9356c67ae72b68d9eebeabdc42c4943"
+      }
+    },
+    "active_contexts": 7,
+    "original_dependency_contexts": 9,
+    "Normal10_plus_Core3_complete_union": [
+      {
+        "path": "help/audit-regressions/isolated/ms4-aftersale-review-normal.php",
+        "bytes": 222875,
+        "sha256": "eddc42ae94ddceb208a8d2535b153503cd137ddab9f24572cfd6fa3296593de9"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-customer-http-normal.php",
+        "bytes": 63896,
+        "sha256": "5ba793e50cf604342304ff2563141384c8a61ffd2dc796865207210d70a946f9"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-three-legacy-producer.php",
+        "bytes": 53328,
+        "sha256": "9da29b5edf6bc50c8bb483eaf4a67adaaacc6cddc4660e6cac0d2dabcb81a584"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-three-read-normal.php",
+        "bytes": 160668,
+        "sha256": "508c84e75b1b07bc6e574b461a069def27cedfb51378850923213391aa3bb01d"
+      },
+      {
+        "path": "crmeb/app/services/product/product/StoreProductServices.php",
+        "bytes": 145261,
+        "sha256": "cc4fbb0e962bb30c005bfc2ce2b9ab3caa6234b99c88634715aebe1e8af5e6e5"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-three-legacy-reference.php",
+        "bytes": 51479,
+        "sha256": "7ad23450261f2771a46e8c04e7c2f8da0941d476d887f30064150188886ea941"
+      },
+      {
+        "path": "help/audit-regressions/isolated/ms5-paid-consumer-normal.php",
+        "bytes": 105669,
+        "sha256": "b13458bfac7aa09303d48b42e8c92db31feeb97e2d401bba18a93d252630cbb4"
+      },
+      {
+        "path": "help/audit-regressions/isolated/ms4-fulfillment-normal.php",
+        "bytes": 127186,
+        "sha256": "0a15206d7f1ba40134511ef7551413c98224e23cbd34ef303e25c73a771341d5"
+      },
+      {
+        "path": "crmeb/app/services/marketplace/attachment/MarketplaceAftersaleReadTickets.php",
+        "bytes": 8818,
+        "sha256": "dcaf5b783931e589011fcb389f6c4a91afcdb518afde8ca618404955dd98082e"
+      },
+      {
+        "path": "crmeb/app/dao/marketplace/order/MarketplaceOrderReviewDao.php",
+        "bytes": 19716,
+        "sha256": "b72cfc4023fe2f4e74e8b7344c8a40b5164c582dc3ef206a46a156d8634b4cee"
+      },
+      {
+        "path": "help/audit-regressions/isolated/ms4-ui-backend.php",
+        "bytes": 3034,
+        "sha256": "ae4ebd8dcd8db0369276bf219250ca2f018147c3424bbbc9e21534b536c8bec1"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-ui-backend-normal.php",
+        "bytes": 116629,
+        "sha256": "7b4cf2ddf1921b5101aa280b1fe3186a3222ab0900fceeb33663b16fa6454f53"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-ui-prepare-oracle.php",
+        "bytes": 235944,
+        "sha256": "96d546bb18da56e214c0cfaf6cecb9f5b916732412eb1e6de856bb3fc2ac6c56"
+      }
+    ],
+    "unchanged_business_contract": "ORIGINAL_NORMAL13_15_5_2S2_UI20_20ACK_42FRAMES_320_390_1440_TASK2_FULL7_SOURCE_INI_COPY_NORMAL_CLOSE_ZERO",
+    "Root_adopted_or_executed": false,
+    "A_QUALIFICATION": null,
+    "A_OUTER_SESSION": null,
+    "source_review_authority": null,
+    "post_a_history_contract": null,
+    "runtime_A_B_business_API_DOM_acceptance": "NOT RUN",
+    "full_acceptance": "INCOMPLETE",
+    "stopped_samples": "NOT RUN",
+    "actual_commit_files": [
+      {
+        "path": "crmeb/app/dao/marketplace/order/MarketplaceOrderReviewDao.php",
+        "bytes": 19716,
+        "sha256": "b72cfc4023fe2f4e74e8b7344c8a40b5164c582dc3ef206a46a156d8634b4cee"
+      },
+      {
+        "path": "docs/multi-merchant/09-plan-ms4-ms6.md",
+        "bytes": 472193,
+        "sha256": "b193e8b18f13173c0326a14aa89153af8488e7018a19e983c77be52563a99f37"
+      },
+      {
+        "path": "docs/multi-merchant/records/ms4/normal-early-structure-integration.md",
+        "bytes": 129298,
+        "sha256": "04c63e0158656ebc4d642a0e24c4da0ec0ab6f272b1380061983e126c1c30666"
+      }
+    ],
+    "normal_Root_schema_adapter": "PENDING_REAL_ROOT5_PROFILE_METADATA_AT_ROOT_NO_INPUTS_NO_PREPARE; M26KEYS18NATIVE_STEM;13UNION_REQUIRED_ONLY_IN_FUTURE_ROOT",
+    "core3_aux8_and_observer3_payloads": "UNCHANGED",
+    "enforced_schema_candidate": "NOT ADOPTED",
+    "current_nonself_artifacts": [
+      {
+        "path": "compose.yml",
+        "bytes": 17471,
+        "sha256": "803c20a2de33a0e20062cb109456b101945aea7145ecc9a4b2a4f0186eac488d"
+      },
+      {
+        "path": "interface-v1.json",
+        "bytes": 63571,
+        "sha256": "876699b9b7d2bed982cb95b6b1285adf4bd4c08ae78af5250fb8b546f7156426"
+      },
+      {
+        "path": "ms4-host.py",
+        "bytes": 526807,
+        "sha256": "5053107e42fe13ca7098ca0c8b65894ae17ade478578cd506742c14f6ebe5e7c"
+      },
+      {
+        "path": "ms4-initialize.php",
+        "bytes": 111060,
+        "sha256": "984286112a7029317b7ee8ef4255b13963c91f5fa9f53918f5d143458af7c7b1"
+      },
+      {
+        "path": "normal-close-ms4-fulfillment.py",
+        "bytes": 257512,
+        "sha256": "16738dcf3104831122a81eceaf2ed0d273ca21517dc9ce77edb91191f7924f02"
+      },
+      {
+        "path": "README.md",
+        "bytes": 58641,
+        "sha256": "5552081ebf9ec720e36c91448d386a37a938c98c3d282af98f9eccfc6ca976ab"
+      },
+      {
+        "path": "seed-source-inverse.json",
+        "bytes": 639,
+        "sha256": "c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a"
+      },
+      {
+        "path": "verify-zero-ms4-fulfillment.py",
+        "bytes": 624572,
+        "sha256": "82cccabf6f9d470870f8246b0dbf2368c2b9ade6a10d07ebeaa408bf15872320"
+      },
+      {
+        "path": "ms4-ui-nginx.conf",
+        "bytes": 3854,
+        "sha256": "c91161450ca87958138fff8a30e64564abee2d626d0b09e65678e4f3ff90a2fd"
+      },
+      {
+        "path": "ms4-ui-public-copy.php",
+        "bytes": 24364,
+        "sha256": "07f5409f146efc95cc3a51253ed5e962c10a49215e8ebb1d9913461cad14a9de"
+      },
+      {
+        "path": "ms4-ui-copy.php",
+        "bytes": 48872,
+        "sha256": "70cfc21c56177363b8582bfdcde6c4e4b4e51c6e080e9a6d11c9a6eb13dbc44c"
+      },
+      {
+        "path": "ms4-order.png",
+        "bytes": 234,
+        "sha256": "1cb2b0cfb8e075b494268977c5f6360309edbc4e0800cd5c58399d291c5185b8"
+      },
+      {
+        "path": "manifests/ui-h5-dist.json",
+        "bytes": 49241,
+        "sha256": "6f28d395a6936208642663cb0aa470384e784b42cc2e7b766eaa1188cc03b524"
+      },
+      {
+        "path": "manifests/ui-merchant-dist.json",
+        "bytes": 4174,
+        "sha256": "64bea688fe88ac20b07743fc1f656f2d30ce18618f34d0f2b6e533a010a8f89e"
+      },
+      {
+        "path": "manifests/ui-admin-dist.json",
+        "bytes": 87053,
+        "sha256": "1ca86d47550c99f513b2aa30195f58ad887b80fa3b89b6baed70b0af2cb23261"
+      },
+      {
+        "path": "manifests/ui-public-copy-profile.json",
+        "bytes": 534423,
+        "sha256": "90193e62b594aead32283eb5b9c061152a4b742ea4153bdd393ea7ec25aafc70"
+      }
+    ]
+  },
+  "fresh_B_customer_form_external_current_source": {
+    "schema": 1,
+    "status": "SOURCE_CANDIDATE_UNSEALED_NOT_RUNTIME",
+    "source_sha": "53e6d521b387b19a4cf370e0e381670b762d325e",
+    "parent": "2fa872e6fda7a8bf46c55f88dd946b972ec79102",
+    "actual_adoption_authority": {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/customer-form-official-initialize-env-main-adoption-r1/SOURCE-MANIFEST.json",
+      "bytes": 1396,
+      "sha256": "539116667f2271a3faaffbb806b10ae0ac13ee0eefe3d8aac4ec85ced2e82e88",
+      "commit": {
+        "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/customer-form-official-initialize-env-main-adoption-r1/COMMIT.json",
+        "bytes": 1980,
+        "sha256": "e4d9bda57446c4502f1165b89aed6336f63b9b0ed9cdb6e5cc13bd0d50d467fd"
+      }
+    },
+    "source_extras": {
+      "customer": [
+        "crmeb/composer.json",
+        "crmeb/composer.lock",
+        "crmeb/public/index.php",
+        "crmeb/public/router.php",
+        "crmeb/think",
+        "help/audit-regressions/isolated/lib/guard.php",
+        "help/audit-regressions/isolated/lib/harness.php",
+        "help/audit-regressions/isolated/lib/ms4-customer-form-normal.php",
+        "help/audit-regressions/isolated/lib/ms4-customer-http-normal.php",
+        "help/audit-regressions/isolated/ms4-customer-http-normal.php"
+      ],
+      "fulfillment": [
+        "crmeb/composer.json",
+        "crmeb/composer.lock",
+        "crmeb/public/index.php",
+        "crmeb/public/install/crmeb.sql",
+        "crmeb/public/router.php",
+        "crmeb/think",
+        "help/audit-regressions/isolated/lib/guard.php",
+        "help/audit-regressions/isolated/lib/harness.php",
+        "help/audit-regressions/isolated/lib/ms4-customer-form-normal.php",
+        "help/audit-regressions/isolated/lib/ms4-customer-http-normal.php",
+        "help/audit-regressions/isolated/lib/ms4-three-legacy-producer.php",
+        "help/audit-regressions/isolated/lib/ms4-three-legacy-reference.php",
+        "help/audit-regressions/isolated/lib/ms4-three-read-normal.php",
+        "help/audit-regressions/isolated/ms4-customer-http-normal.php",
+        "help/audit-regressions/isolated/ms4-fulfillment-migration.php",
+        "help/audit-regressions/isolated/ms4-fulfillment-normal.php",
+        "help/audit-regressions/isolated/ms5-paid-consumer-normal.php",
+        "help/audit-regressions/isolated/ms5-payment-migration.php",
+        "help/migrations/marketplace-ms1.php",
+        "help/migrations/marketplace-ms2.php",
+        "help/migrations/marketplace-ms4-assets.php",
+        "help/migrations/marketplace-ms4-fulfillment.php",
+        "help/migrations/marketplace-ms4.md",
+        "help/migrations/marketplace-ms4.php",
+        "help/migrations/marketplace-ms5-payment.md",
+        "help/migrations/marketplace-ms5-payment.php"
+      ],
+      "aftersale_review": [
+        "crmeb/composer.json",
+        "crmeb/composer.lock",
+        "crmeb/public/index.php",
+        "crmeb/public/install/crmeb.sql",
+        "crmeb/public/router.php",
+        "crmeb/think",
+        "help/audit-regressions/isolated/lib/guard.php",
+        "help/audit-regressions/isolated/lib/harness.php",
+        "help/audit-regressions/isolated/lib/ms4-customer-form-normal.php",
+        "help/audit-regressions/isolated/lib/ms4-customer-http-normal.php",
+        "help/audit-regressions/isolated/lib/ms4-three-legacy-producer.php",
+        "help/audit-regressions/isolated/lib/ms4-three-legacy-reference.php",
+        "help/audit-regressions/isolated/lib/ms4-three-read-normal.php",
+        "help/audit-regressions/isolated/ms4-aftersale-review-normal.php",
+        "help/audit-regressions/isolated/ms4-customer-http-normal.php",
+        "help/audit-regressions/isolated/ms4-fulfillment-migration.php",
+        "help/audit-regressions/isolated/ms4-fulfillment-normal.php",
+        "help/audit-regressions/isolated/ms5-paid-consumer-normal.php",
+        "help/audit-regressions/isolated/ms5-payment-migration.php",
+        "help/migrations/marketplace-ms1.php",
+        "help/migrations/marketplace-ms2.php",
+        "help/migrations/marketplace-ms4-aftersale-menus.php",
+        "help/migrations/marketplace-ms4-aftersale.php",
+        "help/migrations/marketplace-ms4-assets.php",
+        "help/migrations/marketplace-ms4-fulfillment.php",
+        "help/migrations/marketplace-ms4-review-menus.php",
+        "help/migrations/marketplace-ms4.md",
+        "help/migrations/marketplace-ms4.php",
+        "help/migrations/marketplace-ms5-payment.md",
+        "help/migrations/marketplace-ms5-payment.php"
+      ],
+      "ui_prepare": [
+        "crmeb/composer.json",
+        "crmeb/composer.lock",
+        "crmeb/public/index.php",
+        "crmeb/public/install/crmeb.sql",
+        "crmeb/public/router.php",
+        "crmeb/think",
+        "help/audit-regressions/isolated/lib/guard.php",
+        "help/audit-regressions/isolated/lib/harness.php",
+        "help/audit-regressions/isolated/lib/ms4-customer-form-normal.php",
+        "help/audit-regressions/isolated/lib/ms4-customer-http-normal.php",
+        "help/audit-regressions/isolated/lib/ms4-three-legacy-producer.php",
+        "help/audit-regressions/isolated/lib/ms4-three-legacy-reference.php",
+        "help/audit-regressions/isolated/lib/ms4-three-read-normal.php",
+        "help/audit-regressions/isolated/lib/ms4-ui-credentials.php",
+        "help/audit-regressions/isolated/lib/ms4-ui-prepare-oracle.php",
+        "help/audit-regressions/isolated/ms4-aftersale-review-normal.php",
+        "help/audit-regressions/isolated/ms4-customer-http-normal.php",
+        "help/audit-regressions/isolated/ms4-fulfillment-migration.php",
+        "help/audit-regressions/isolated/ms4-fulfillment-normal.php",
+        "help/audit-regressions/isolated/ms4-ui-prepare.php",
+        "help/audit-regressions/isolated/ms5-paid-consumer-normal.php",
+        "help/audit-regressions/isolated/ms5-payment-migration.php",
+        "help/migrations/marketplace-ms1.php",
+        "help/migrations/marketplace-ms2.php",
+        "help/migrations/marketplace-ms4-aftersale-menus.php",
+        "help/migrations/marketplace-ms4-aftersale.php",
+        "help/migrations/marketplace-ms4-assets.php",
+        "help/migrations/marketplace-ms4-fulfillment.php",
+        "help/migrations/marketplace-ms4-order-read-menus.php",
+        "help/migrations/marketplace-ms4-review-menus.php",
+        "help/migrations/marketplace-ms4.md",
+        "help/migrations/marketplace-ms4.php",
+        "help/migrations/marketplace-ms5-payment.md",
+        "help/migrations/marketplace-ms5-payment.php"
+      ],
+      "ui_backend": [
+        "crmeb/composer.json",
+        "crmeb/composer.lock",
+        "crmeb/public/index.php",
+        "crmeb/public/install/crmeb.sql",
+        "crmeb/public/router.php",
+        "crmeb/think",
+        "help/audit-regressions/isolated/lib/guard.php",
+        "help/audit-regressions/isolated/lib/harness.php",
+        "help/audit-regressions/isolated/lib/ms4-customer-form-normal.php",
+        "help/audit-regressions/isolated/lib/ms4-customer-http-normal.php",
+        "help/audit-regressions/isolated/lib/ms4-three-legacy-producer.php",
+        "help/audit-regressions/isolated/lib/ms4-three-legacy-reference.php",
+        "help/audit-regressions/isolated/lib/ms4-three-read-normal.php",
+        "help/audit-regressions/isolated/lib/ms4-ui-backend-normal.php",
+        "help/audit-regressions/isolated/lib/ms4-ui-credentials.php",
+        "help/audit-regressions/isolated/lib/ms4-ui-prepare-oracle.php",
+        "help/audit-regressions/isolated/ms4-aftersale-review-normal.php",
+        "help/audit-regressions/isolated/ms4-customer-http-normal.php",
+        "help/audit-regressions/isolated/ms4-fulfillment-migration.php",
+        "help/audit-regressions/isolated/ms4-fulfillment-normal.php",
+        "help/audit-regressions/isolated/ms4-ui-backend.php",
+        "help/audit-regressions/isolated/ms4-ui-credential-meta.php",
+        "help/audit-regressions/isolated/ms4-ui-prepare.php",
+        "help/audit-regressions/isolated/ms5-paid-consumer-normal.php",
+        "help/audit-regressions/isolated/ms5-payment-migration.php",
+        "help/migrations/marketplace-ms1.php",
+        "help/migrations/marketplace-ms2.php",
+        "help/migrations/marketplace-ms4-aftersale-menus.php",
+        "help/migrations/marketplace-ms4-aftersale.php",
+        "help/migrations/marketplace-ms4-assets.php",
+        "help/migrations/marketplace-ms4-fulfillment.php",
+        "help/migrations/marketplace-ms4-order-read-menus.php",
+        "help/migrations/marketplace-ms4-review-menus.php",
+        "help/migrations/marketplace-ms4.md",
+        "help/migrations/marketplace-ms4.php",
+        "help/migrations/marketplace-ms5-payment.md",
+        "help/migrations/marketplace-ms5-payment.php"
+      ]
+    },
+    "source_counts": {
+      "customer": 10,
+      "fulfillment": 26,
+      "aftersale_review": 30,
+      "ui_prepare": 34,
+      "ui_backend": 37,
+      "worker": 31
+    },
+    "base_volumes8": [
+      "aftersale-evidence",
+      "app-secrets",
+      "bootstrap-secrets",
+      "customer-form-evidence",
+      "fixture-secrets",
+      "mysql-data",
+      "redis-data",
+      "redis-secrets"
+    ],
+    "UI_volumes4": [
+      "ui-public",
+      "ui-comments",
+      "ui-control",
+      "ui-customer-assets"
+    ],
+    "complete_UI_volumes12": [
+      "aftersale-evidence",
+      "app-secrets",
+      "bootstrap-secrets",
+      "customer-form-evidence",
+      "fixture-secrets",
+      "mysql-data",
+      "redis-data",
+      "redis-secrets",
+      "ui-comments",
+      "ui-control",
+      "ui-customer-assets",
+      "ui-public"
+    ],
+    "ui_source_vector8": {
+      "help/audit-regressions/isolated/ms4-aftersale-review-normal.php": {
+        "path": "help/audit-regressions/isolated/ms4-aftersale-review-normal.php",
+        "bytes": 239863,
+        "sha256": "48734a574986d3c6eab37cbc0f1deeab2d03b2b94b931bcaed4719c72e62f723"
+      },
+      "help/audit-regressions/isolated/ms4-ui-prepare.php": {
+        "path": "help/audit-regressions/isolated/ms4-ui-prepare.php",
+        "bytes": 42883,
+        "sha256": "5ef93cfc14531d5fd5f84406eec6ca23fed525187b3e526997331316e0ee3f74"
+      },
+      "help/audit-regressions/isolated/lib/ms4-ui-prepare-oracle.php": {
+        "path": "help/audit-regressions/isolated/lib/ms4-ui-prepare-oracle.php",
+        "bytes": 242783,
+        "sha256": "b1495850acd84f3c05b1486b364a0ecc2bd5aa35419bde7a5ebeace472a3ce45"
+      },
+      "help/audit-regressions/isolated/lib/ms4-ui-credentials.php": {
+        "path": "help/audit-regressions/isolated/lib/ms4-ui-credentials.php",
+        "bytes": 8554,
+        "sha256": "5a7064e8b3d56b72d96fe46df6afa545f21a20b1e2d8838c38377dcb1221a5f6"
+      },
+      "help/migrations/marketplace-ms4-order-read-menus.php": {
+        "path": "help/migrations/marketplace-ms4-order-read-menus.php",
+        "bytes": 23217,
+        "sha256": "ba3cac05d865312221e4d1cc957e4ebdc7e50e57b2e367135beda10114a4ce36"
+      },
+      "help/audit-regressions/isolated/ms4-ui-backend.php": {
+        "path": "help/audit-regressions/isolated/ms4-ui-backend.php",
+        "bytes": 3034,
+        "sha256": "ae4ebd8dcd8db0369276bf219250ca2f018147c3424bbbc9e21534b536c8bec1"
+      },
+      "help/audit-regressions/isolated/lib/ms4-ui-backend-normal.php": {
+        "path": "help/audit-regressions/isolated/lib/ms4-ui-backend-normal.php",
+        "bytes": 127620,
+        "sha256": "5d6f3496def5a4e7ee4e6f719335256edf712d286fddf739e0df23176df3f6bd"
+      },
+      "help/audit-regressions/isolated/ms4-ui-credential-meta.php": {
+        "path": "help/audit-regressions/isolated/ms4-ui-credential-meta.php",
+        "bytes": 5514,
+        "sha256": "d98f1886b599064337cb3aed7abde2b2df885e0d986ce9006d5fe8cff24fc59f"
+      }
+    },
+    "customer_form_sources7": [
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-customer-form-normal.php",
+        "bytes": 66236,
+        "sha256": "1d06fe3ed2cbe4bdc020e03849f128c3b447b7ea5365c54e59edee96762b5043"
+      },
+      {
+        "path": "help/audit-regressions/isolated/lib/ms4-customer-http-normal.php",
+        "bytes": 65119,
+        "sha256": "925314fc7050d8e1e0928aa056f680fed88662cf8f4b2ae2f87d070b9ae6de2d"
+      },
+      {
+        "path": "help/audit-regressions/isolated/ms4-aftersale-review-normal.php",
+        "bytes": 239863,
+        "sha256": "48734a574986d3c6eab37cbc0f1deeab2d03b2b94b931bcaed4719c72e62f723"
+      },
+      {
+        "path": "help/audit-regressions/isolated/ms4-customer-http-normal.php",
+        "bytes": 115616,
+        "sha256": "84186f10092685ae1428f1c70533023109c2160bc672a311d89e5e97c26c8494"
+      },
+      {
+        "path": "help/audit-regressions/isolated/ms4-fulfillment-normal.php",
+        "bytes": 128280,
+        "sha256": "b877330ac652d1d0bc63fd72d84fb34174cac83144637f58c090c0f7c13034ce"
+      },
+      {
+        "path": "help/audit-regressions/isolated/ms4-worker-normal.php",
+        "bytes": 127354,
+        "sha256": "2f52b676dfa5b3d715adaae0318802f941388ffc103b7f8c02cf2e9d5f09f4f8"
+      },
+      {
+        "path": "help/audit-regressions/isolated/ms5-paid-consumer-normal.php",
+        "bytes": 108005,
+        "sha256": "ee59d99ea8db768b0a45727d9cdffe276b7f0c11f7e07cea5cc10d10a449f4b7"
+      }
+    ],
+    "UI_r4_contract": {
+      "schema": 1,
+      "status": "SOURCE_ONLY_CANDIDATE_INTERFACE_NOT_RUNTIME",
+      "roles": {
+        "prepare": {
+          "scope": "MS4_UI_PREPARE_REAL_ENVIRONMENT",
+          "stage": "ui-prepare-public-environment-inspect",
+          "environment_exact9": [
+            "APP_ENV",
+            "PHP_CACHE_DRIVER",
+            "PHP_MARKETPLACE_AFTERSALE_ENABLED",
+            "PHP_MARKETPLACE_AFTERSALE_PRIVATE_ROOT",
+            "PHP_MARKETPLACE_CUSTOMER_FORM_PRIVATE_ROOT",
+            "PHP_MARKETPLACE_ENABLED",
+            "PHP_MARKETPLACE_PAYMENT_TEST_ENABLED",
+            "PHP_MARKETPLACE_SELF_OPERATED_MER_ID",
+            "PHP_MARKETPLACE_TRADE_ENABLED"
+          ],
+          "root_value": "/run/audit-customer-form",
+          "volume_suffix": "customer-form-evidence",
+          "mount_RW": false,
+          "real_kernel_ro_required": true
+        },
+        "backend": {
+          "scope": "MS4_UI_BACKEND_REAL_ENVIRONMENT",
+          "stage": "ui-backend-public-environment-inspect",
+          "environment_exact9": [
+            "APP_ENV",
+            "PHP_CACHE_DRIVER",
+            "PHP_MARKETPLACE_AFTERSALE_ENABLED",
+            "PHP_MARKETPLACE_AFTERSALE_PRIVATE_ROOT",
+            "PHP_MARKETPLACE_CUSTOMER_FORM_PRIVATE_ROOT",
+            "PHP_MARKETPLACE_ENABLED",
+            "PHP_MARKETPLACE_PAYMENT_TEST_ENABLED",
+            "PHP_MARKETPLACE_SELF_OPERATED_MER_ID",
+            "PHP_MARKETPLACE_TRADE_ENABLED"
+          ],
+          "root_value": "/run/audit-customer-form",
+          "volume_suffix": "customer-form-evidence",
+          "mount_RW": true,
+          "real_kernel_rw_required": true
+        }
+      },
+      "native_environment_bytes": "All9 exact actual process strings, sorted JSON-string lines, unescaped Unicode/slashes, exactly1 final LF; original complete stdout bytes/SHA256, native0/stderr0/wrapper digest fields retained",
+      "historical_paid_environment": "Original7 actual values and original2LF receipt validated by unchanged m4cf_environment; no legacy6 substitution",
+      "prepare_owner_phases": [
+        "source/prerequisites ENV9/actual paid7 proof",
+        "Original CU native-file helper plus separate actual complete m4upo_tree root/directory/file before window",
+        "all original paid-owner checks with native pre-App private proof",
+        "complete actual postpaid SQL/Redis snapshot SHA256 and complete names",
+        "original3arg language preparation",
+        "original complete oracle BEFORE after language/before App",
+        "unchanged official m4fn_app",
+        "unconditional original m4cf_owner_after initialized-App gate",
+        "original menus/actors/full oracle/Task2",
+        "actual configured complete CU native final equals first tree",
+        "Original configured CU file helper equals first file map; separate actual complete m4upo_tree root/directory/file final strictly equals first full tree"
+      ],
+      "language_names_semantics": "Actual complete postpaid snapshot.names independently bound to original baseline full_database_redis_sha256/full_database_table_count; not Task6 execution or a Task6 receipt",
+      "old_oracle_result_binding_schemas": "UNCHANGED",
+      "new_public_business_samples": "NONE",
+      "base_original_volumes": 8,
+      "existing_UI_volumes": 4,
+      "total_UI_volumes": 12,
+      "external_Host_Zero_compose_CoreAux_Root_full_Source_and_DAG_bindings": "Required matching role ENV9 plus RootRO/RootRW and actual candidate complete bytes before any fresh B; not implemented here",
+      "new_HEAD_adoption_actual_A_postA_B_GUI_H5_upload_five_reader_results": "NOT PROVIDED",
+      "candidate_A_entry_dependency": {
+        "schema": 1,
+        "scope": "NOT_ADOPTED_CROSS_PACKAGE_CANDIDATE_DEPENDENCY_ONLY",
+        "source_root": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-eight-volume-consumer-source-closure-design-r1",
+        "PINS": {
+          "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-eight-volume-consumer-source-closure-design-r1/PINS.json",
+          "bytes": 1366,
+          "sha256": "31e6956dcd185b4e1fb8ecb94f8c0a750feda323bbee03b82219c0efab8ad87d"
+        },
+        "MANIFEST": {
+          "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-eight-volume-consumer-source-closure-design-r1/MANIFEST.json",
+          "bytes": 7405,
+          "sha256": "be6ba4d9829bc4e7d6a7fe19b1ee6844793a0c69db38782f09fbd3d34599cfb1"
+        },
+        "REPORT": {
+          "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-eight-volume-consumer-source-closure-design-r1/REPORT.json",
+          "bytes": 7939,
+          "sha256": "da1eddf396ca0a4f3aff7d4336d0bc073b76cd6fb34b01ac644a335f2a28f3ac"
+        },
+        "entry": {
+          "repository_path": "help/audit-regressions/isolated/ms4-customer-http-normal.php",
+          "candidate_path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-eight-volume-consumer-source-closure-design-r1/candidate/help/audit-regressions/isolated/ms4-customer-http-normal.php",
+          "bytes": 115040,
+          "sha256": "ebabf552c2c79e12c7cc307804d6f9610495ce67c557b21dcf28f9c28c7dd14c",
+          "changed_function": "m4c_entry_ms5_history"
+        },
+        "before_entry_descriptor_in_actual4e": {
+          "bytes": 115018,
+          "sha256": "f26ddf629f8e1ac1601c73c97f13ae7665a20467e65590d944ed9771a3386a92"
+        },
+        "future_HEAD": null,
+        "adopted": false,
+        "W_Val_current_body_claim": false,
+        "required_successor_binding": "Root must adopt all3 A and2 UI PHP plus current records at one actual reviewed successor HEAD; rebind initializer, full normal/source/profile/Root metadata to the actually adopted body. This packet performs none of that adoption or external rebinding."
+      },
+      "CU_independent_private_window": {
+        "before": "Immediately after existing m4cf_native_files and before original owner/language/App; require actual m4upo_tree(M4CF_ROOT) array",
+        "final": "After original source/private-input check and existing m4cf_files configured-App gate, before original final_source; strict fresh m4upo_tree(M4CF_ROOT)===cuTreeBefore",
+        "observer": {
+          "path": "H:/天俪商城/worktrees/ms4-asset-consumers/help/audit-regressions/isolated/lib/ms4-ui-prepare-oracle.php",
+          "bytes": 242783,
+          "sha256": "b1495850acd84f3c05b1486b364a0ecc2bd5aa35419bde7a5ebeace472a3ce45",
+          "function": "m4upo_tree",
+          "function_line": 5,
+          "fragment": {
+            "bytes": 1402,
+            "sha256": "7f9a8a6886aace49bd56664ec90a588a6a2782f4c1e83ad191559d568524719e"
+          },
+          "namespace": "Sorted complete relative path set including root empty key, every directory and every regular file; no symlinks/nonregular objects",
+          "every_row_keys": [
+            "kind",
+            "dev",
+            "ino",
+            "mode",
+            "uid",
+            "gid",
+            "nlink"
+          ],
+          "additional_file_keys": [
+            "bytes",
+            "sha256",
+            "mtime",
+            "ctime"
+          ],
+          "file_post_hash_lstat_comparison": [
+            "dev",
+            "ino",
+            "mode",
+            "uid",
+            "gid",
+            "nlink",
+            "size",
+            "mtime",
+            "ctime"
+          ],
+          "directory_mtime_ctime_or_size_claimed": false,
+          "algorithm_changed": false,
+          "execution": "NOT RUN"
+        },
+        "original_file_helper_permissions": "Unchanged canonical root0700 and each directory0700 with actual owner; original files0600/nlink1 and original hash map checks retained",
+        "original_oracle_snapshot_digest_or_result_schema_changed": false,
+        "r3_finding": "Confirmed P1 file-only equality omitted root/directory identities; preserved frozen historical failure"
+      },
+      "r4_delta": "Only m4up_run adds the independent complete root/directory/file window; backend exact r3; all other prepare functions exact r3"
+    },
+    "role_environment": {
+      "prepare": {
+        "public_environment_count": 9,
+        "customer_form_root": "/run/audit-customer-form",
+        "native_RW": false,
+        "kernel": "ro"
+      },
+      "backend": {
+        "public_environment_count": 9,
+        "customer_form_root": "/run/audit-customer-form",
+        "native_RW": true,
+        "kernel": "rw"
+      }
+    },
+    "environment_byte_contract": "sorted exact9 JSON string lines, one LF each, final LF; full native stdout/stderr bytes+hash and exact names/values. Historical paid seven variables/twoLF remain unchanged.",
+    "browser8_manifest": {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/fresh-b-customer-form-external-source-r3/browser-v1/PINS.json",
+      "bytes": 1222,
+      "sha256": "83b9267b2759b9bf8b120e734f2c4f595ce01f08743c96ed93ada98e403bda7d"
+    },
+    "CoreAux_authority": {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/fresh-b-customer-form-external-source-r3/current-core-aux/CORE-AUX-AUTHORITY.json",
+      "bytes": 1400,
+      "sha256": "1485088a780027013d8cb72e4d41f20bf59d6a01769840cfdc9e5cb242772f0a"
+    },
+    "materials_equivalence_authority": {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/eight-volume-current-three-front-material-equivalence-r1/REPORT.json",
+      "bytes": 5340,
+      "sha256": "789f1b29efb8a91cbdd1f65b744363c0c31fa6442a1679238a3a1225e0823376"
+    },
+    "material_identity_layers": {
+      "build_source_sha": "eadf74f8924a5ed5b801043030b579dffe5d1702",
+      "producer_source_sha": "4e2723c2b96f4e0265b9fc75483e307820f3fe79",
+      "current_source_sha": "53e6d521b387b19a4cf370e0e381670b762d325e",
+      "previous_source_equivalence_sha": "1b819d0f7b9e7c6e58c9847a2868b696d9070151",
+      "actual_current5path_adoption": {
+        "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-initializer-mount-main-adoption-r1/SOURCE-MANIFEST.json",
+        "bytes": 2182,
+        "sha256": "b63489ad34f99182b8d944790f90a9126ddf0949c40ffc32d450ba1702f140aa",
+        "commit": {
+          "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-initializer-mount-main-adoption-r1/COMMIT.json",
+          "bytes": 1143,
+          "sha256": "8e86727bf60e6842fd7c6b668e731ec95ec023c931d0988e1e5443fbbdb6795b"
+        }
+      },
+      "no_frontend_or_public_path_modified_in_current_commit": true,
+      "new_build": false,
+      "actual_B_consumer_copy": "NOT RUN",
+      "current_exact3path_adoption": {
+        "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/customer-form-official-initialize-env-main-adoption-r1/SOURCE-MANIFEST.json",
+        "bytes": 1396,
+        "sha256": "539116667f2271a3faaffbb806b10ae0ac13ee0eefe3d8aac4ec85ced2e82e88",
+        "commit": {
+          "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/customer-form-official-initialize-env-main-adoption-r1/COMMIT.json",
+          "bytes": 1980,
+          "sha256": "e4d9bda57446c4502f1165b89aed6336f63b9b0ed9cdb6e5cc13bd0d50d467fd"
+        }
+      }
+    },
+    "UI_contract": {
+      "steps": 20,
+      "observer_ACK": 20,
+      "native_frames": 42,
+      "widths": [
+        320,
+        390,
+        1440
+      ],
+      "independent_H5_nine_scene_driver": "SEPARATE_CHAIN_NOT_IN_BROWSER8"
+    },
+    "A_outer_exit": null,
+    "A_worker_close": null,
+    "A_independent_zero": null,
+    "A_post_history": null,
+    "B_runtime": "NOT RUN",
+    "READY_NOT_GUI": "NOT RUN",
+    "GUI_DOM_devices_release_finance_manual_acceptance": "NOT RUN",
+    "stopped_samples": "NOT RUN",
+    "historical_previous_top_level_values": {
+      "sources": "Complete original four roots/customer9/paid10/fulfillment24 retained; normal four roots/extras28 retained; Worker same complete normal files plus exactly Worker entry, extras29. Actual future source file counts are not prefilled.",
+      "pin_order": "Actual committed three-read helper -> current interface bytes/hash -> Host -> close Host SHA -> independent zero helper/interface/Host/close pins -> README -> eight real nonself artifacts in original ARTIFACTS order. No self hash, future source-file count, freeze/Run/CID/native result or runtime success is supplied.",
+      "source_inverse": "../SOURCE-TRANSFORMS.json and ../SOURCE-ORIGINALS.json: complete original/candidate file references and unique finite raw contexts with actual byte/UTF8 offsets; whole-file forward/inverse restores all nine predecessor bytes, including three unchanged artifacts. Six changed files contain only current pin/documentation metadata; original business functions and all historical subtrees remain. Full diff is ../SOURCE-CHANGES.diff; JSON allowed paths and history are checked in ../ALLOWED-JSON-PATHS.json and ../SOURCE-CHECKS.json.",
+      "source_contract": "../DELIVERY.md",
+      "source_revision": 5
+    },
+    "normal_source_profile": {
+      "root": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-raw-env-normal-next-source-r1/validation/actual-profile",
+      "PROFILE_PUBLICATION": {
+        "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-raw-env-normal-next-source-r1/validation/PROFILE-PUBLICATION.json",
+        "bytes": 1026947,
+        "sha256": "36be4b1f49dfa067a2938b3c2b666e599c179d8ee4a867acab52f7e0d7bf586a"
+      }
+    },
+    "whole_source_merge": "MERGE-DECISIONS.json; complete before/candidate and forward/reverse diffs; original UI business consumer classes retained unchanged",
+    "historical_previous2fa_UI_projection": {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/fresh-b-customer-form-external-source-r3/rebind-before-53e/candidate/interface-v1.json",
+      "bytes": 112549,
+      "sha256": "a57c23f9a5f11b14b444758eb850f47cf8d500d6a8b28d3aa59c26853f06d42a"
+    }
+  },
+  "historical_previous2fa_UI_projection": {
+    "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/fresh-b-customer-form-external-source-r3/rebind-before-53e/candidate/source-derivation.json",
+    "bytes": 189310,
+    "sha256": "7a258eb4c5245bb788f51d3977a3b447e2902391bde2ffd2269a1749a2a15fab"
+  }
+}

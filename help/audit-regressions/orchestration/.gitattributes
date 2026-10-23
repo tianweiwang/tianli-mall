@@ -1,0 +1,2 @@
+# Frozen source snapshots must retain their original hash, including line endings.
+sources/** -text

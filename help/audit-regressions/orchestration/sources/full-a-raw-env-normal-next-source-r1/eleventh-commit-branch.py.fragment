@@ -1,0 +1,47 @@
+    # Preserve the exact tenth inventory before applying the actual raw-env repair.
+    historical_tenth_expected = dict(expected)
+    step = chain[10]
+    check(step == context['current_raw_environment_step']
+        and step['kind'] == 'raw_environment_preservation_l2'
+        and step['parent'] == previous_head == '2fa872e6fda7a8bf46c55f88dd946b972ec79102'
+        and step['source_sha'] == '53e6d521b387b19a4cf370e0e381670b762d325e', 'EXACT_ACTUAL_ELEVENTH_RAW_ENVIRONMENT_STEP')
+    eleventh = decode(read(step['commit']))
+    actual = decode(read(eleventh['commit_record'])); manifest = decode(read(eleventh['source_manifest']))
+    check(eleventh['source_sha'] == actual['head'] == step['source_sha']
+        and eleventh['parent'] == actual['parent'] == manifest['before_source'] == step['parent']
+        and actual['scope'] == 'EXACT_THREE_EXISTING_TRACKED_FILES_LOCAL_COMMIT_AND_CLEAN_VALIDATION_CHECKOUT'
+        and actual['Main_Val_clean_and_same_head'] is True and actual['push_deploy_real_funds'] == 'NOT RUN'
+        and actual['full_business_A_B_UI_history_finance_release_acceptance'] == 'INCOMPLETE', 'ELEVENTH_REAL_LOCAL_COMMIT_NO_BUSINESS_OR_RELEASE_CLAIM')
+    observed = step['files']
+    check(observed == eleventh['files']
+        == normalized({name:{'before':held['before'],'after':held['candidate']} for name,held in manifest['members'].items()})
+        == normalized({name:{'before':held['before'],'after':held['candidate']} for name,held in actual['files'].items()})
+        and [row['path'] for row in observed] == sorted({'docs/multi-merchant/09-plan-ms4-ms6.md',
+            'docs/multi-merchant/README.md','help/audit-regressions/isolated/lib/ms4-customer-http-normal.php'}),
+        'ELEVENTH_EXACT_THREE_EXISTING_TRACKED_PATHS')
+    for row in observed:
+        name = row['path']; before = read(eleventh['snapshots'][name]['before']); after = read(eleventh['snapshots'][name]['after'])
+        check(name in expected and compact(expected[name]) == row['before']
+            and compact(eleventh['snapshots'][name]['before']) == row['before']
+            and compact(eleventh['snapshots'][name]['after']) == row['after']
+            and {'bytes':len(before),'sha256':hashlib.sha256(before).hexdigest()} == row['before']
+            and {'bytes':len(after),'sha256':hashlib.sha256(after).hexdigest()} == row['after'], 'ELEVENTH_ALL_FULL_BEFORE_AFTER_JOIN')
+        first.setdefault(name,None if name not in original else compact(original[name])); expected[name] = {'path':name,**row['after']}
+    source = decode(read(eleventh['code_source']['authority'])); peer = decode(read(eleventh['code_source']['independent']))
+    candidate = read(eleventh['code_source']['candidate'])
+    check(candidate == read(eleventh['snapshots'][eleventh['code_source']['repository_path']]['after'])
+        and peer['findings'] == [] and peer['all_windows_closed'] is True, 'ELEVENTH_EXACT_SOURCE_CANDIDATE_AND_INDEPENDENT_REVIEW')
+    syntax = decode(read(eleventh['actual_php_validation']))
+    check(syntax['status'] == 'PASS_CANDIDATE_PHP82_SYNTAX_ONLY' and syntax['php_l_count'] == 1
+        and syntax['all_input_windows_ended'] is True and syntax['own_label_before_after_empty'] is True
+        and syntax['ordinary_own_container_removed'] is True and len(syntax['operations']) == len(eleventh['syntax_receipts']) == 8,
+        'ELEVENTH_EXACT_CHANGED_PHP_NECESSARY_SYNTAX_ONLY')
+    for receipt, operation in zip(eleventh['syntax_receipts'],syntax['operations']):
+        created = decode(native_raw(receipt['created'])); terminal = decode(native_raw(receipt['terminal']))
+        out = native_raw(receipt['stdout']); err = native_raw(receipt['stderr'])
+        check(terminal == operation and created['pid'] == operation['pid'] and created['argv'] == operation['argv']
+            and type(operation['pid']) is int and operation['pid'] > 0
+            and operation['native_exit'] == operation['wait_returncode'] == 0
+            and {'bytes':len(out),'sha256':hashlib.sha256(out).hexdigest()} == compact(operation['stdout'])
+            and {'bytes':len(err),'sha256':hashlib.sha256(err).hexdigest()} == compact(operation['stderr']), 'ELEVENTH_ALL_EIGHT_REAL_RAW_SYNTAX_RECEIPTS')
+    previous_head = step['source_sha']
