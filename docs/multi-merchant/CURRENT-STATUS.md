@@ -2,9 +2,13 @@
 
 整理日期：2026-10-23。本文件是开发检查点和导航，不替代实施规格、原执行清单、测试报告或人工验收。
 
-补充交接分支：`codex/orchestration-handoff-20261023`。该分支保存当前业务来源 `2e4af47c7595947e16bef0abfa9785823b1369d5` 的完整编排 18 件和 4 件作者控制；累计 255 个源码文件。实际完整 M 1,037 项通过；准备本补充时原 S 运行中，尚无本次业务终态签收。见[补充摘要](records/ms4/current-source-handoff-r3.json)与[编排归档](../../help/audit-regressions/orchestration/README.md)。开发 Main/Val 均保持 `2e4`，交接提交不重启或重绑定原运行。
+最新源码交接位于 `codex/orchestration-handoff-20261023`，业务代码位于 `feature/ms4-asset-consumers`。完整编排源码已入 Git：281 文件、26 包，包含绑定业务提交 `8819524` 的18件完整主编排和8件作者源码/设计。原 `codex/audit-base` 链接不含这次补交。见[编排入口](../../help/audit-regressions/orchestration/README.md)和[本次复核摘要](records/ms4/orchestration-delivery-readback-20261023.json)。
 
-以下业务状态和候选列表保留原整理时点，后续补充不把历史未运行项改写为通过。Git 仍未包含原 Run、私有配置和完整运行回执；源码完整性不代表可直接跨机复跑。
+本次881来源的完整正常链已经结束，结果为失败：源码物化1,046项通过，初始化、结构迁移、文件初始化和顾客准备通过；订单准备阶段 `paid_real_confirmation` 的 `M4C_FORM_NORMAL_HTTP_JSON_200` 断言失败，原S和订单准备容器均退出1。后续履约、售后评价、Worker和新页面验证没有执行。首次异常位置是测试辅助函数 `ms4-customer-http-normal.php:33`，这只是断言位置，HTTP未返回预期结果的根因尚未确定。原实例未重启；本次资源正常回收和独立核零待完成，不能套用旧实例的回收结论。
+
+交接分支业务代码树仍基于2e4；881业务提交在上述业务分支。Git交付包含编排源码和摘要，原Run、双流、完整作者历史输入和私有运行准备未交付；`runtime_ready=false`，换机完整复跑仍未完成。
+
+以下功能表和历史链保留各自原执行时点；本页最新结果以上述段落和复核摘要为准。只有BASE取得用户验收，源码、构建或局部测试不计作整体验收。
 
 ## 1. 项目定位与交付范围
 
@@ -50,9 +54,9 @@
 
 实际记录入口：[MS0a](records/ms0a/report.md)、[MS0b](records/ms0b/report.md)、[MS1](records/ms1/report.md)、[MS2](07-plan-ms2.md)、[MS3](records/ms3/frontend-source-checkpoint.json)、[MS4–MS6](09-plan-ms4-ms6.md)、[支付核心](records/ms5/payment-core-integration.md)。
 
-## 4. 最近一次完整链及修复
+## 4. 历史完整链及修复（保留原时点）
 
-最近已结束的完整正常链为 Run `20261023003421d1fc4b`，来源提交 `53e6d521b387b19a4cf370e0e381670b762d325e`。
+本节历史记录的完整正常链为 Run `20261023003421d1fc4b`，来源提交 `53e6d521b387b19a4cf370e0e381670b762d325e`。
 
 1. 初始化、支付结构检查、early 20 条迁移命令、文件初始化和顾客准备实际通过。
 2. 付款测试进程实际退出 1，完整链失败。原公开日志不足以确定首次异常位置、阶段或 HTTP 完成数；这些信息保持未知。
@@ -82,7 +86,7 @@
 
 当前开发以 `feature/ms4-asset-consumers` 为整合入口；同来源的 `ms4-aftersale-normal-check` 工作区用于隔离核对。其他分阶段工作树和备份保留其历史来源，不能仅凭分支名称或提交先后批量合并。
 
-原始运行证据和私有准备数据保留在仓库外，不随源码推送。此前遗漏的主编排、后续完整 M/S/launcher 及候选程序已补入 [编排源码归档](../../help/audit-regressions/orchestration/README.md)，可从 Git 完整读取和离线校验；这不是可直接运行的环境包。[交接记录](records/ms4/orchestration-source-handoff.md) 区分源码存在、原实际失败和未运行项。交付位于 `feature/ms4-asset-consumers` 分支；原 `codex/audit-base` 链接不包含本次整理。源码中的 `records/` 仍只保留摘要。此前冻结的失败来源和结果不改写。
+原始运行证据和私有准备数据保留在仓库外，不随源码推送。此前遗漏的主编排、后续完整 M/S/launcher 及候选程序已补入 [编排源码归档](../../help/audit-regressions/orchestration/README.md)，可从 Git 完整读取和离线校验；这不是可直接运行的环境包。[交接记录](records/ms4/orchestration-source-handoff.md) 区分源码存在、原实际失败和未运行项。业务修复位于 `feature/ms4-asset-consumers`，编排源码交接位于 `codex/orchestration-handoff-20261023`；原 `codex/audit-base` 链接不包含本次整理。源码中的 `records/` 仍只保留摘要。此前冻结的失败来源和结果不改写。
 
 仓库外原交接根名为 `ms4-worker-normal-source-preparation-r1`，本机位于工作空间的 `artifacts/` 下。归档清单按该根的相对路径保存选定源码；不依赖接收者能访问原机目录。以下仍是待续工作，不属于已通过的业务交付：
 

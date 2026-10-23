@@ -1,0 +1,58 @@
+{
+  "schema": 1,
+  "scope": "SOURCE_DELIVERY_READBACK_AND_ACTUAL_FAILURE_SUMMARY_ONLY",
+  "source_delivery_commit_verified": "6b96e2de5c7a9df7e03f90a2f57dbcf315aed2f4",
+  "delivery_branch": "codex/orchestration-handoff-20261023",
+  "business_source_commit": "8819524a60028090c55bdcd3a9da05e50eaf19d0",
+  "business_branch": "feature/ms4-asset-consumers",
+  "archive_business_tree_base": "2e4af47c7595947e16bef0abfa9785823b1369d5",
+  "source_files": 281,
+  "packages": 26,
+  "source_bytes": 51036201,
+  "required_program_members": 18,
+  "additional_author_code_members": 8,
+  "offline_source_verification": {
+    "command": "python -I -B help/audit-regressions/orchestration/verify_sources.py",
+    "native_exit": 0,
+    "status": "PASS_SOURCE_ARCHIVE_ONLY",
+    "archived_programs_executed": false
+  },
+  "source_manifest": {
+    "bytes": 126831,
+    "sha256": "e980c634be7864d5208155bd4a917c29815159a1e42963058795af0c84f4fefb"
+  },
+  "actual_run": {
+    "run_id": "20261023104127eb8739",
+    "source_sha": "8819524a60028090c55bdcd3a9da05e50eaf19d0",
+    "freeze_sha256": "f4dd90bb1dc74bf615eb1a68e86de58aed943043e2abc7fc964f96b6b4625d18",
+    "S_native_exit": 1,
+    "paid_container_exit": 1,
+    "failure_phase": "paid_real_confirmation",
+    "failed_assertion": "M4C_FORM_NORMAL_HTTP_JSON_200",
+    "first_throwable_location": {
+      "scope": "MS5_PAID_PRODUCER_THROWABLE_DIAGNOSTIC",
+      "class": "RuntimeException",
+      "file": "ms4-customer-http-normal.php",
+      "line": 33,
+      "phase": "paid_real_confirmation"
+    },
+    "root_cause": "NOT_YET_DETERMINED",
+    "native_root_wrappers": 108,
+    "native_root_wrapper_exit_zero_is_not_business_acceptance": true,
+    "later_Task6_AR_Worker": "NOT_STARTED",
+    "normal_retirement_and_independent_zero": "PENDING_THIS_EXACT_RUN",
+    "original_S_terminal": {
+      "bytes": 647,
+      "sha256": "4559db9dddf56ecf321a73df1f0f8a4cd71a9a5608a358220f6e4bc78b3e958a"
+    },
+    "root_failure_public_inputs": {
+      "bytes": 93653,
+      "sha256": "4865d6376a68f8ad4a161a291eedafe9d2c7d22ff2000ca1d220d0c8068bc878"
+    }
+  },
+  "runtime_ready": false,
+  "complete_cross_machine_replay": "INCOMPLETE",
+  "original_receipts_and_private_runtime_included": false,
+  "full_business_acceptance": "INCOMPLETE",
+  "deployed": false
+}
