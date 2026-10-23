@@ -44,7 +44,7 @@
 | MS1 | 商家、员工/角色、上下文及管理接线已有实现；[普通报告](records/ms1/report.md)含 API、Worker 局部证据及聊天界面正常流程 | 原组合失败保留；整套回归、全部界面功能、真机与人工验收未完成 |
 | MS2 | 结构/归属命令及商品、库存等已有实现与[普通记录](records/ms2/four-command-normal-summary.json) | 各局部通过不能汇总为完整 MS2；历史归属映射和完整迁移/商品链验收未闭合 |
 | MS3 | 已有商家、平台页面源码及[构建检查记录](records/ms3/frontend-source-checkpoint.json) | 页面源码或构建不等于真实业务 UI；顾客店铺展示与完整阶段验收仍未闭合 |
-| MS4 | 交易、履约、售后、评价已有实现；历史内部付款、发收货局部通过。当前 1b 完整链 source 阶段失败，正常收尾和独立核零完成，三 PHP 必要语法及四次原函数校验通过 | 修复已本地采用；新来源完整业务、同来源 fresh B、售后评价/Worker、原图及三端页面/设备验收仍待，按[当前计划](09-plan-ms4-ms6.md)继续 |
+| MS4 | 交易、履约、售后、评价已有实现；历史内部付款/发收货局部通过。当前2fa链在顾客准备环境守恒校验失败、HTTP0，原实例正常收尾/独立核零，单lib同raw域修订已Source/必要语法通过 | 新clean完整业务及同源fresh B、售后评价/Worker、原图与三端页面/设备验收仍待，按[当前计划](09-plan-ms4-ms6.md)继续 |
 | MS5 | 已有支付核心、测试支付消费者及三端订单查询验证相关实现/源码，见 [支付记录](records/ms5/payment-core-integration.md) | 真实账户、回调、退款、账单/费用及完整业务交付与验证尚未完成；测试驱动不代替真实渠道，外部条件与 L4 实测另列 |
 | MS6 | 原计划和发布要求保留 | 发布、恢复、限流、防回滚与全量回归尚未完成，未获真实发布验收 |
 
@@ -67,6 +67,18 @@
 后续仍需新 clean 来源完整正常链及收尾、同来源独立 fresh B、三端页面和设备验收、原图与非空历史升级、真实支付退款对账结算、发布恢复和人工验收。通用多商户目标及复用原商品体系保持；仅 L2 本地，不推送、不部署、不处理真实资金。用户已停止的样本继续 NOT RUN，Task9 新商家客服关闭、原平台客服保留，只有 BASE 已登记人工签收，整体不计算完成百分比。
 
 用户已停止的安全复现、负向、故障、并发/断连及恢复样本继续 **NOT RUN**，不得换名重跑或记为 PASS。本概览不改变原规格、覆盖要求或正式验收流程；后续只据实际证据更新，不以行数、构建成功或准备完成换算项目百分比。
+
+### 2fa顾客准备失败收口与raw环境守恒修订（2026-10-23）
+
+通用多商户商城继续复用原商品列表、SKU、规格、价格和库存。Run `202610222308394826f8` / Source `2fa872e6fda7a8bf46c55f88dd946b972ec79102` / freeze `b141e6e2b57285964e50ac6c1a3ed073273a416158f762ea6762aa095e9c8046` 的初始化、MS5结构、early五组迁移及文件初始化通过；顾客准备在 `business_app` 的 `M4C_FORM_OFFICIAL_INITIALIZE_PRESERVES_ACTUAL_ENV` 校验自然退出1，HTTP调用0、HTTP child为空。内部付款、Task6、售后评价及Worker未开始，完整A未通过。工具连接中断使原S的实际退出值未知、terminal缺席；只读续接观察确认同原CID终态1并正确停止，不补写原S成功，不替换或重启原业务。
+
+原4容器、1内部网和8专用卷已正常非force收尾，95项原生命令实际通过；另一次独立核零20项只读命令及六fresh空查询通过、0资源变更。close结果 `2c3e338f6bd73d23827d227836e6dc537f27c3b1cba857f5261fd264993f222a`，zero结果 `68563e388b8b7b5dbfea3d9427fac6375cde4df3a58954a021601b83c7d5a5a5`；原36962份公件、Source和真实失败记录保持。独立zero同时完整核过95项close原始回执；收口不回补业务通过。
+
+确定的Source错配位于共享 `lib/ms4-customer-http-normal.php::m4c_app`：无参 `Env::get()` 返回raw data，命名getter会规范名称并将部分字符串转换bool，旧校验混用两种语义。公开失败未记录实际首个差异键和值，不宣称唯一现场firstdiff。本次单lib有限修订只在官方 `initialize()` 后取同域raw快照，对全部原键要求存在且原值严格 `===`；原assertcode、初始化调用及后续typed配置/PDO/订单/表单/源门保持，不新增全named预读。候选65119B / `925314fc7050d8e1e0928aa056f680fed88662cf8f4b2ae2f87d070b9ae6de2d` 已独立Source及固定PHP8.2纯语法通过，语法结果 `70acadd6d0e4ef9116bf4f52fa9215637c76e486630011a72a2db71dc9d0f34c`；这不代表修后实际业务已通过。
+
+仓库外新normal initializer另复用既有B已审的两处集合查询，完整Source读取、hash、顺序和descriptor严格相等均保持；候选78955B / `7e2db8b37a680ad558f40fd648cf7e868aadaf60fa4d42961c83f37f71d0600b` 的Source及必要纯语法通过（结果 `dbfad08d6237f13df59366b962a2c5490dcb0bf65bf07a8823aea759b42a6259`）。实际PHP manifest、耗时及新N9来源/DAG采用仍待；不修改旧冻结profile或宣称已测性能。本次本地采用范围仅上述共享lib及本两份记录，实际提交身份以Git为准，正常profile在新完整来源中另行绑定。
+
+仍需新clean同源完整A及正常close/zero、成功同源fresh B、三端UI20/20observer ACK/42native frames与320/390/1440 DOM、独立H5九场景、顾客真实multipart/原图、非空旧历史37步与四CLI/完整旧权益归属和最终enabled=true；真实支付退款回调对账费用结算、发布恢复及人工验收未完成。MP/APP正式构建仍缺明确正式HTTPS API origin。继续L2本地，无推送部署或真实资金；停止样本保持NOT RUN，Task9新商家客服关闭、原平台客服保留，只有BASE既有人工签收，不计算整体百分比。
 
 ## 3. 已定决策
 

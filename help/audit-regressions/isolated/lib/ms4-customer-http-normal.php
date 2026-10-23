@@ -197,8 +197,8 @@ function m4c_app(string $mode,array $source): \think\App
         'CACHE_CACHE_TAG_PREFIX'=>'CRMEB:','AUTH_SESSION_EPOCH'=>$config['auth']['session_epoch'],
         'AUTH_STAMP_KEY'=>$config['auth']['stamp_key'],'AUTH_ISSUER'=>$config['auth']['issuer']]);
     m4cf_expect(!file_exists('/workspace/crmeb/.env')&&!is_link('/workspace/crmeb/.env'),'OFFICIAL_INITIALIZE_NO_UNBOUND_ENV');
-    $configured=$app->env->get();$app->initialize();
-    foreach($configured as$name=>$value)m4cf_expect($app->env->get($name)===$value,'OFFICIAL_INITIALIZE_PRESERVES_ACTUAL_ENV');
+    $configured=$app->env->get();$app->initialize();$initializedEnv=$app->env->get();
+    foreach($configured as$name=>$value)m4cf_expect(array_key_exists($name,$initializedEnv)&&$initializedEnv[$name]===$value,'OFFICIAL_INITIALIZE_PRESERVES_ACTUAL_ENV');
     m4cf_expect($app->initialized(),'OFFICIAL_INITIALIZED_BEFORE_DATABASE_SETTINGS');
     $database=require '/workspace/crmeb/config/database.php';
     $database['connections']['mysql']['params']=[PDO::ATTR_EMULATE_PREPARES=>false,PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION];
