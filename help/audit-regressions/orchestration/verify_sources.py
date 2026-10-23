@@ -109,6 +109,12 @@ def check_pipeline_schema(root, package, source_commit, size, steps):
                 and values[0]['CURRENT_M_RESULT_KEYS32'] == values[1]['CURRENT_M_RESULT_KEYS32']
                 == [name for name in keys if name != 'current_881_paid_producer_failure_retirement'],
                 'Current33 must preserve the complete historical32 schema')
+    if size == 34:
+        require('current_0c13_paid_producer_failure_retirement' in keys
+                and values[0]['CURRENT_M_RESULT_KEYS33'] == values[1]['CURRENT_M_RESULT_KEYS33']
+                == values[2]['CURRENT_M_RESULT_KEYS33']
+                == [name for name in keys if name != 'current_0c13_paid_producer_failure_retirement'],
+                'Current34 must preserve the complete historical33 schema')
 
 
 def main():
@@ -184,15 +190,22 @@ def main():
     previous_package = next(iter(previous_packages))
     for entry in ['materializer/prepare.py', 'validation/run.py']:
         check_declared_authority_globals(root / 'sources' / previous_package / entry)
-    check_pipeline_schema(root, previous_package, '8819524a60028090c55bdcd3a9da05e50eaf19d0', 32, 16)
-    check_pipeline_schema(root, current_package, manifest['current_orchestration_source_commit'], 33, 17)
+    historical_package = 'full-a-881-form-prefix-normal-next-source-r3'
+    for entry in ['materializer/prepare.py', 'validation/run.py']:
+        check_declared_authority_globals(root / 'sources' / historical_package / entry)
+    check_pipeline_schema(root, historical_package, '8819524a60028090c55bdcd3a9da05e50eaf19d0', 32, 16)
+    check_pipeline_schema(root, previous_package, '0c13c57ba1ec4bf15ea9240601a5d6361e986ce8', 33, 17)
+    check_pipeline_schema(root, current_package, manifest['current_orchestration_source_commit'], 34, 18)
     authors = manifest['current_author_code_required']
     author_names = {
         'assemble.py', 'source_reader.py', 'author_support.py', 'authority-current.py.fragment',
         'prepare-inputs.py', 'profile-author.py', 'retirement-author.py', 'DESIGN.md',
     }
-    require(len(authors) == len(set(authors)) == 8, 'Current author source must contain all 8 members')
-    require(set(authors) == {current_package + '/' + name for name in author_names},
+    current_author_names = author_names | {
+        'bind-initializer-syntax.py', 'initializer-syntax-checks.py.fragment', 'retirement-checks.py.fragment',
+    }
+    require(len(authors) == len(set(authors)) == 11, 'Current author source must contain all 11 members')
+    require(set(authors) == {current_package + '/' + name for name in current_author_names},
             'Current author source paths do not match the complete author package')
     require(not set(authors).intersection(current), 'Author code cannot replace pipeline members')
     for rel in authors:
@@ -202,8 +215,8 @@ def main():
     require(len(previous_authors) == len(set(previous_authors)) == 8
             and set(previous_authors) == {previous_package + '/' + name for name in author_names}
             and all('sources/' + rel in expected for rel in previous_authors), 'Previous author package must remain complete')
-    for package in [current_package, previous_package]:
-        for name in author_names:
+    for package, names in [(current_package, current_author_names), (previous_package, author_names), (historical_package, author_names)]:
+        for name in names:
             if not name.endswith('.py'):
                 continue
             tree = ast.parse((root / 'sources' / package / name).read_bytes(), filename=name)
@@ -234,8 +247,11 @@ def main():
         'json_parsed': json_count,
         'current_source_authority_global_checks': 2,
         'preserved_previous_authority_global_checks': 2,
-        'strict_current_M_result_fields': 33,
-        'strict_previous_M_result_fields': 32,
+        'strict_current_M_result_fields': 34,
+        'strict_previous_M_result_fields': 33,
+        'strict_preserved_historical_M_result_fields': 32,
+        'preserved_historical_authority_global_checks': 2,
+        'previous_author_code_members': len(previous_authors),
         'current_author_code_members': len(authors),
         'archived_programs_executed': False,
         'runtime_ready': False,

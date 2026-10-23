@@ -1,0 +1,3 @@
+# Source author correction R3
+
+The second Source-only constructor refusal is preserved under author-attempts/r2 with the complete eighteen candidates and original KeyError native9. The fixed eighth authority intentionally declares opaque stdout descriptors as path/bytes/sha256 only. R3 retains that descriptor unchanged and joins its path and complete fingerprint to the fixed Root INPUTS stat9 and R5 opaque named_before metadata. This is a complete historical metadata join, with no opaque payload read or current W/Val old-byte comparison. No actual authority or runtime source is rewritten. No M/S/Host/PHP/Docker/App/business runs.

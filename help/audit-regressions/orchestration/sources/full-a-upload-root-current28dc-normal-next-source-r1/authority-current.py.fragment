@@ -1,0 +1,215 @@
+def source_authority(pub, checked, check):
+    """Preserve the complete seventeen-step authority; qualify the real28dc successor."""
+    def compact(row):return {key:row[key] for key in ['bytes','sha256']}
+    def pairs(items):
+        result={}
+        for key,value in items:check(key not in result,'UPROOT_NO_DUPLICATE_JSON_KEYS');result[key]=value
+        return result
+    def decode(raw):return json.loads(raw,object_pairs_hook=pairs)
+    def read(pointer):
+        check(type(pointer) is dict and set(pointer) in [{'path','bytes','sha256'},{'path','bytes','sha256','native9'}]
+            and type(pointer['path']) is str and Path(pointer['path']).is_absolute() and '..' not in Path(pointer['path']).parts
+            and type(pointer['bytes']) is int and pointer['bytes']>=0 and type(pointer['sha256']) is str
+            and re.fullmatch('[a-f0-9]{64}',pointer['sha256']) is not None,'UPROOT_FIXED_COMPLETE_PUBLIC_DESCRIPTOR')
+        raw=checked(pointer)
+        check({'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest()}==compact(pointer),'UPROOT_COMPLETE_PINNED_BYTES')
+        return raw
+    def definitions(raw):
+        text=raw.decode('utf8');return {node.name:ast.get_source_segment(text,node) for node in ast.parse(text).body if isinstance(node,(ast.FunctionDef,ast.ClassDef))}
+    def constants(raw):
+        result={}
+        for node in ast.parse(raw.decode('utf8')).body:
+            if isinstance(node,ast.Assign) and len(node.targets)==1 and isinstance(node.targets[0],ast.Name):
+                try:result[node.targets[0].id]=ast.literal_eval(node.value)
+                except (TypeError,ValueError):pass
+        return result
+    def patch_apply(before,raw):
+        lines=raw.decode('utf8').splitlines(keepends=True);index=0;result=dict(before)
+        while index<len(lines):
+            check(lines[index].startswith('--- a/'),'UPROOT_PATCH_HEADER');name=lines[index][6:].rstrip('\r\n');index+=1
+            check(name in before and lines[index].rstrip('\r\n')=='+++ b/'+name,'UPROOT_PATCH_SAME_MEMBER');index+=1
+            original=before[name].decode('utf8').splitlines(keepends=True);cursor=0;out=[]
+            while index<len(lines) and lines[index].startswith('@@ '):
+                match=re.fullmatch(r'@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@[^\n]*\n?',lines[index]);check(match is not None,'UPROOT_PATCH_HUNK')
+                oldn=int(match[2] or 1);newn=int(match[4] or 1);start=int(match[1])-1 if oldn else int(match[1]);check(start>=cursor,'UPROOT_PATCH_ORDER')
+                out.extend(original[cursor:start]);cursor=start;index+=1;used=0;made=0
+                while index<len(lines) and not lines[index].startswith(('@@ ','--- a/')):
+                    line=lines[index];check(line[:1] in [' ','+','-'],'UPROOT_PATCH_LINE')
+                    if line[0] in [' ','-']:check(original[cursor]==line[1:],'UPROOT_PATCH_OLD_BYTES');cursor+=1;used+=1
+                    if line[0] in [' ','+']:out.append(line[1:]);made+=1
+                    index+=1
+                check((used,made)==(oldn,newn),'UPROOT_PATCH_COUNTS')
+            out.extend(original[cursor:]);result[name]=''.join(out).encode('utf8')
+        return result
+    prior_source=read(HISTORICAL_SEVENTEEN_M_SOURCE);prior_defs=definitions(prior_source);prior_literals=constants(prior_source)
+    check({'bytes':len(prior_defs['source_authority'].encode()),'sha256':hashlib.sha256(prior_defs['source_authority'].encode()).hexdigest()}==HISTORICAL_SEVENTEEN_AUTHORITY_SOURCE
+        and {key:prior_literals[key] for key in HISTORICAL_SEVENTEEN_CONSTANTS}==HISTORICAL_SEVENTEEN_CONSTANTS,'UPROOT_FULL_SEVENTEEN_BODY_AND_ALL_USED_LITERALS')
+    oldpub=decode(read(HISTORICAL_SEVENTEEN_PUBLICATION))
+__HISTORICAL_VALIDATOR__
+    historical=historical_seventeen(oldpub,checked,check)
+    check(set(pub)==set(oldpub) and pub['schema']==1 and type(pub['schema']) is int
+        and pub['source_sha']=='28dcab632da3e62f7c8b8d926b6ab9406534d0d3'
+        and pub['parent']==oldpub['source_sha']=='0c13c57ba1ec4bf15ea9240601a5d6361e986ce8'
+        and pub['scope']==oldpub['scope'] and pub['base_profile']==oldpub['base_profile'] and pub['target_execution']=='NOT RUN','UPROOT_EXACT_PUBLICATION_HEAD_PARENT')
+    context=pub['finite_contexts'];prior_context=oldpub['finite_contexts']
+    overlay={'commit_chain','committed_changes','committed_files','new_tracked_paths','actual_complete_expected_tracked_count','source_counts',
+        'current_composite_customer_form_source','source_authoring_qualification_scope','current_published_source_scope'}
+    extra={'historical_seventeenth_publication','current_upload_root_source_history','current_owned_upload_root_source','current_upload_root_profile_source',
+        'current_upload_root_initializer_syntax','current_0c13_paid_producer_failure_retirement','current0c13_failed_run_context'}
+    check(set(context)==set(prior_context)|extra and all(context[key]==value for key,value in prior_context.items() if key not in overlay),'UPROOT_PRESERVE_ALL_SEVENTEEN_CONTEXT_AND_SEVEN_RETIREMENT_FACTS')
+    check(context['historical_seventeenth_publication']==HISTORICAL_SEVENTEEN_PUBLICATION and context['current_upload_root_source_history']==CURRENT_UPLOAD_ROOT_SOURCE_HISTORY
+        and context['current_owned_upload_root_source']==CURRENT_UPLOAD_ROOT_DELTA and context['current_upload_root_profile_source']==CURRENT_UPLOAD_ROOT_PROFILE_SOURCE
+        and context['current_upload_root_initializer_syntax']==CURRENT_UPLOAD_ROOT_INITIALIZER_SYNTAX
+        and context['current_0c13_paid_producer_failure_retirement']==CURRENT_0C13_PAID_PRODUCER_FAILURE_RETIREMENT
+        and context['current0c13_failed_run_context']==CURRENT_0C13_FAILURE_CONTEXT,'UPROOT_ALL_NEW_AUTHORITIES_EXACT')
+    chain=context['commit_chain'];check(chain==COMMIT_CHAIN and chain[:-1]==historical['commit_chain'] and len(chain)==len(historical['commit_chain'])+1,'UPROOT_REAL_COMPLETE_GIT_CHAIN_PLUS_ONE')
+    stage=decode(read(CURRENT_UPLOAD_ROOT_SOURCE_HISTORY));step=chain[-1]
+    check(stage['schema']==1 and stage['scope']=='ACTUAL_READ_ONLY_GIT_EIGHT_FILE_UPLOAD_ROOT_AND_H5_RESOURCE_CONSUMER_STEP'
+        and stage['kind']==step['kind']=='owned_upload_root_and_h5_resource_consumers' and step['commit']==CURRENT_UPLOAD_ROOT_SOURCE_HISTORY
+        and {key:stage[key] for key in ['kind','source_sha','parent','files']}=={key:step[key] for key in ['kind','source_sha','parent','files']}
+        and stage['business']=='NOT RUN' and stage['worktree_mutations']==0,'UPROOT_REAL_EIGHT_FILE_GIT_STAGE')
+    git_raw={}
+    for label,receipt in stage['git_operations'].items():
+        made=decode(read(receipt['created']));ended=decode(read(receipt['terminal']));out=read(receipt['stdout']);err=read(receipt['stderr'])
+        check(set(receipt)=={'created','terminal','stdout','stderr'} and made['pid']==ended['pid'] and type(made['pid']) is int and made['pid']>0
+            and made['argv']==ended['argv'] and made['started_ns']==ended['started_ns'] and ended['finished_ns']>=ended['started_ns']
+            and ended['native_exit']==ended['wait_returncode']==0 and err==b''
+            and compact(ended['stdout'])==compact(receipt['stdout']) and compact(ended['stderr'])==compact(receipt['stderr']),'UPROOT_ALL_REAL_READONLY_GIT_NATIVE_AND_FULL_STREAMS')
+        check(ended['argv'][:5]==['git','-c','safe.directory='+MAIN_SOURCE,'-C',MAIN_SOURCE],'UPROOT_GIT_EXACT_CURRENT_ROOT')
+        git_raw[label]=(ended['argv'][5:],out)
+    expected_paths=['docs/multi-merchant/09-plan-ms4-ms6.md','docs/multi-merchant/CURRENT-STATUS.md','docs/multi-merchant/README.md',
+        'docs/multi-merchant/records/ms4/normal-http-response-diagnostic.md','help/audit-regressions/isolated/lib/ms4-customer-h5-normal.php',
+        'help/audit-regressions/isolated/lib/ms4-ui-prepare-oracle.php','help/audit-regressions/isolated/ms4-customer-h5.php','help/audit-regressions/isolated/ms4-customer-http-normal.php']
+    expected_git={'head-before':['rev-parse','HEAD'],'clean-before':['status','--porcelain=v1','--untracked-files=all'],
+        'parent':['rev-list','--parents','-n','1',pub['source_sha']],'commit-object':['cat-file','-p',pub['source_sha']],
+        'changed-paths':['diff-tree','--no-commit-id','--name-only','-r',pub['source_sha']],
+        'name-status':['diff-tree','--no-commit-id','--name-status','-r',pub['source_sha']],
+        'head-after':['rev-parse','HEAD'],'clean-after':['status','--porcelain=v1','--untracked-files=all']}
+    check([row['path'] for row in step['files']]==expected_paths and git_raw['changed-paths'][1].decode().splitlines()==expected_paths
+        and git_raw['name-status'][1].decode().splitlines()==['M\t'+path for path in expected_paths],'UPROOT_EXACT_EIGHT_REAL_MODIFIED_PATHS')
+    for label in ['head-before','head-after']:check(git_raw[label][1]==(pub['source_sha']+'\n').encode(),'UPROOT_ACTUAL_HEAD_BEFORE_AFTER')
+    for label in ['clean-before','clean-after']:check(git_raw[label][1]==b'','UPROOT_ACTUAL_CLEAN_BEFORE_AFTER')
+    check(git_raw['parent'][1]==(pub['source_sha']+' '+pub['parent']+'\n').encode()
+        and git_raw['commit-object'][1].splitlines()[1]==('parent '+pub['parent']).encode(),'UPROOT_ACTUAL_ONE_PARENT')
+    expected=dict(historical['all']);blobs={};old_blobs={}
+    for index,row in enumerate(step['files'],1):
+        name=row['path'];stem='member-'+str(index);expected_git[stem+'-after']=['show',pub['source_sha']+':'+name];expected_git[stem+'-before']=['show',pub['parent']+':'+name]
+        raw=git_raw[stem+'-after'][1];old=git_raw[stem+'-before'][1];blobs[name]=raw;old_blobs[name]=old
+        check(name in expected and row['before']==compact(expected[name]) and {'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest()}==row['after']
+            and {'bytes':len(old),'sha256':hashlib.sha256(old).hexdigest()}==row['before'],'UPROOT_FULL_GIT_OLD_AND_NEW_BLOBS_NOT_ADVANCED_WORKTREE_BASELINES')
+        expected[name]={'path':name,**row['after']}
+    check(set(git_raw)==set(expected_git) and all(git_raw[key][0]==value for key,value in expected_git.items())
+        and stage['native_count']==len(expected_git),'UPROOT_CLOSED_FULL_READONLY_GIT_NAMESPACE')
+    adoption=decode(read(stage['actual_adoption']));pushed=decode(read(stage['actual_push_and_Val']));adoption_peer=decode(read(stage['independent_adoption_review']))
+    check(adoption['sha']==pushed['main_source']==pushed['remote_sha']==pub['source_sha'] and adoption['parent']==pushed['parent']==pub['parent']
+        and adoption['count']==pushed['changed_paths']==len(expected_paths) and set(adoption['files'])==set(expected_paths)
+        and adoption['all_committed_blobs_equal_reviewed_and_syntax_checked_bytes'] is True and pushed['W_clean'] is pushed['Val_clean'] is pushed['Val_detached_same_SHA'] is True
+        and pushed['tracked_counts']==[len(expected),len(expected)] and pushed['all_eight_committed_candidate_bytes_match_W_Val'] is True
+        and adoption['A0'] is pushed['new_A0'] is False and pushed['new_complete_M_S']=='NOT RUN','UPROOT_ACTUAL_COMMIT_PUSH_VAL_AND_NO_A0_FACTS')
+    check(adoption['independent_adoption_review']==stage['independent_adoption_review'] and adoption_peer['findings']==[],'UPROOT_REAL_INDEPENDENT_ADOPTION_SOURCE_REVIEW')
+    expected=dict(sorted(expected.items()));changes={row['path']:dict(row) for row in prior_context['committed_changes']}
+    for row in step['files']:
+        if row['path'] in changes:changes[row['path']]['after']=row['after']
+        else:changes[row['path']]=row
+    changes=[changes[name] for name in sorted(changes)];committed=[expected[row['path']] for row in changes]
+    requirements=sorted(set(HISTORICAL_SEVENTEEN_CONSTANTS['SOURCE_REQUIREMENT_PATHS'])|set(expected_paths))
+    additions=sorted(set(HISTORICAL_SEVENTEEN_CONSTANTS['NEW_TRACKED_PATHS'])|{row['path'] for row in step['files'] if row['before'] is None})
+    check(context['committed_changes']==changes and context['committed_files']==committed and COMMITTED_PATHS==[row['path'] for row in changes]
+        and NEW_TRACKED_PATHS==context['new_tracked_paths']==additions and SOURCE_REQUIREMENT_PATHS==requirements
+        and pub['repository_Source_requirements']==[expected[name] for name in requirements]
+        and context['actual_complete_expected_tracked_count']==len(expected),'UPROOT_FULL_DERIVED_CUMULATIVE_NAMESPACE_REQUIREMENTS_NO_FALSE_NEW_TRACKED')
+    proof=decode(read(CURRENT_UPLOAD_ROOT_DELTA))
+    check(proof['schema']==1 and proof['scope']=='ACTUAL28DC_FOUR_TRACKED_PHP_UPLOAD_ROOT_AND_RESOURCE_SOURCE_REVISIONS_NOT_FIRST_THROWABLE_OR_BUSINESS_ACCEPTANCE'
+        and proof['source_sha']==pub['source_sha'] and proof['parent']==pub['parent'] and proof['actual_source_step']==CURRENT_UPLOAD_ROOT_SOURCE_HISTORY
+        and proof['normal_CU7_only_changed_path']==expected_paths[-1] and proof['paid_donor_unchanged'] is True
+        and proof['missing_public_uploads']=='VERIFIED_SOURCE_PREREQUISITE_CONFLICT_NOT_ACTUAL_FIRST_THROWABLE' and proof['new_M_S_A0_business']=='NOT RUN','UPROOT_EXACT_BOUNDED_REPAIR_SCOPE')
+    normal_packet=decode(read(proof['normal_bundle']));h5_packet=decode(read(proof['H5_bundle']))
+    check(type(normal_packet['members']) is dict and type(h5_packet['members']) is dict and len(normal_packet['members'])==18 and len(h5_packet['members'])==15,'UPROOT_FULL_ORIGINAL_SOURCE_PACKET_SHAPES')
+    for pointer,packet in [(proof['normal_bundle'],normal_packet),(proof['H5_bundle'],h5_packet)]:
+        root=Path(pointer['path']).parent
+        for name,pin in packet['members'].items():read({'path':(root/name).as_posix(),**pin})
+    code_paths=expected_paths[4:]
+    check(set(proof['candidate_files'])==set(proof['before_files'])==set(code_paths),'UPROOT_EXACT_FOUR_REVIEWED_CODE_SOURCE_SET')
+    for name in code_paths:check(read(proof['candidate_files'][name])==blobs[name] and read(proof['before_files'][name])==old_blobs[name],'UPROOT_FOUR_WHOLE_BEFORE_AFTER_SOURCE_JOINS')
+    normal_peer=decode(read(proof['normal_independent_review']));h5_peer=decode(read(proof['H5_independent_review']))
+    check(normal_peer['actionable_findings']==0 and normal_peer['target_execution']=='NOT RUN' and h5_peer['findings']==0 and h5_peer['target_execution']=='NOT RUN','UPROOT_BOTH_INDEPENDENT_SOURCE_REVIEW_BOUNDARIES')
+    for key in ['report','inputs','reader','rg_evidence']:read(normal_peer[key])
+    for name,pin in h5_peer['members'].items():read({'path':(Path(proof['H5_independent_review']['path']).parent/name).as_posix(),**pin})
+    normal_report=decode(read(normal_peer['report']));h5_report=decode(read({'path':(Path(proof['H5_independent_review']['path']).parent/'REPORT.json').as_posix(),**h5_peer['members']['REPORT.json']}))
+    check(normal_report['findings']==[] and h5_report['findings']==[],'UPROOT_REAL_WHOLE_INDEPENDENT_REPORTS')
+    php_syntax=decode(read(proof['four_PHP_actual_syntax']));php_root=decode(read(proof['Root_actual_syntax_readback']))
+    check(php_syntax['status']=='PASS_FOUR_REVIEWED_CANDIDATE_PHP82_SYNTAX_ONLY' and php_syntax['container_native_exit']==0 and php_syntax['php_l_count_required']==4
+        and len(php_syntax['operations'])==8 and all(op['native_exit']==op['wait_returncode']==0 for op in php_syntax['operations'])
+        and php_syntax['own_label_before_after_empty'] is True and php_syntax['ordinary_own_container_removed'] is True
+        and php_syntax['candidate_entry_or_manifest_execution']=='NOT RUN' and php_syntax['App_or_business']=='NOT RUN'
+        and php_root['status']=='PASS_ROOT_ACTUAL_FOUR_PHP82_SYNTAX_RECEIPT_COMPLETE' and php_root['RESULT']==proof['four_PHP_actual_syntax']
+        and php_root['native_operations']==8 and php_root['PHP_l_count']==4 and php_root['outer_native_wait']==0,'UPROOT_REAL_FOUR_COMPLETE_PHP_SYNTAX_NOT_BUSINESS')
+    check(len(php_syntax['sources'])==4 and {row['repository_relative'] for row in php_syntax['sources']}==set(code_paths),'UPROOT_FOUR_ACTUAL_LINT_SOURCE_PATHS')
+    for row in php_syntax['sources']:check(row['original_candidate']==proof['candidate_files'][row['repository_relative']] and read(row['copy'])==blobs[row['repository_relative']],'UPROOT_ACTUAL_LINT_WHOLE_COPY_EQUALITY')
+    profile_pins=decode(read(CURRENT_UPLOAD_ROOT_PROFILE_SOURCE));profile_root=Path(CURRENT_UPLOAD_ROOT_PROFILE_SOURCE['path']).parent
+    manifest=decode(read({'path':(profile_root/'MANIFEST.json').as_posix(),**profile_pins['members']['MANIFEST.json']}))
+    names=[row['path'] for row in oldpub['selected9']];before9={};after9={}
+    check(len(names)==9 and manifest['predecessor']==HISTORICAL_SEVENTEEN_PACKAGE and manifest['source_delta']==CURRENT_UPLOAD_ROOT_DELTA
+        and manifest['selected9']==pub['selected9'] and manifest['candidate']==profile_pins['candidate'],'UPROOT_COMPLETE_NINE_PROFILE_LAYER')
+    for name in names:
+        check(manifest['before'][name]==compact(next(row for row in oldpub['selected9'] if row['path']==name)),'UPROOT_EXACT_OLD_PROFILE_NINE')
+        for kind,table in [('before',before9),('candidate',after9)]:
+            key=kind+'/'+name;check(profile_pins['members'][key]==manifest[kind][name],'UPROOT_PROFILE_PIN_JOIN')
+            table[name]=read({'path':(profile_root/key).as_posix(),**profile_pins['members'][key]})
+    check(patch_apply(before9,read({'path':(profile_root/'DIFF.patch').as_posix(),**profile_pins['members']['DIFF.patch']}))==after9
+        and patch_apply(after9,read({'path':(profile_root/'REVERSE.patch').as_posix(),**profile_pins['members']['REVERSE.patch']}))==before9,'UPROOT_COMPLETE_NINE_PROFILE_DIFF_FORWARD_REVERSE')
+    check(sorted(name for name in names if before9[name]!=after9[name])==manifest['changed']==sorted(['interface-v1.json','ms4-host.py','ms4-initialize.php',
+        'normal-close-ms4-fulfillment.py','source-derivation.json','verify-zero-ms4-fulfillment.py']),'UPROOT_SIX_HASH_DAG_EDITS_AND_THREE_WHOLE_FILES_REUSED')
+    old_interface=decode(before9['interface-v1.json']);interface=decode(after9['interface-v1.json']);old_seven=old_interface['customer_form_current_profile']['php_sources'];seven=interface['customer_form_current_profile']['php_sources']
+    check(old_seven==manifest['old_seven_php'] and seven==manifest['current_seven_php'] and len(seven)==7
+        and sum(a!=b for a,b in zip(old_seven,seven))==1 and all(row==expected[row['path']] for row in seven),'UPROOT_CU7_ONLY_ACTUAL_NORMAL_ENTRY_TUPLE_CHANGED')
+    successor=interface['customer_form_current_profile'].pop('owned_upload_root_current_source_successor')
+    check(successor=={'schema':1,'scope':'ACTUAL28DC_NORMAL_ENTRY_DESCRIPTOR_ONLY_OVER_FULL_DIAGNOSTIC_PROFILE','source_sha':pub['source_sha'],
+        'predecessor_source_sha':pub['parent'],'source_delta':CURRENT_UPLOAD_ROOT_DELTA,'unchanged_other_PHP_members':6,
+        'complete_four_PHP_source_revisions':[expected[name] for name in [expected_paths[-1],expected_paths[5],expected_paths[4],expected_paths[6]]],'normal_business':'NOT RUN'},'UPROOT_EXACT_NEW_INTERFACE_NODE')
+    interface['customer_form_current_profile']['php_sources']=old_seven;check(interface==old_interface,'UPROOT_ALL_OLD_INTERFACE_FIELDS_WHOLE_PRESERVED')
+    restored=after9['ms4-initialize.php'];check(len(manifest['initializer_tuples'])==1,'UPROOT_EXACTLY_ONE_INITIALIZER_CU7_TUPLE')
+    for row in reversed(manifest['initializer_tuples']):
+        a=row['before'].encode();z=row['candidate'].encode();check(restored.count(z)==1,'UPROOT_EXACT_SINGLE_TUPLE_INSTANCE');restored=restored.replace(z,a,1)
+    check(restored==before9['ms4-initialize.php'],'UPROOT_ALL_OTHER_INITIALIZER_AND_PAID_DONOR_BYTES_PRESERVED')
+    permitted={'ms4-host.py':{'CUSTOMER_FORM_SOURCE_FILES','INTERFACE_SHA256'},'normal-close-ms4-fulfillment.py':{'HOST_SHA256'},
+        'verify-zero-ms4-fulfillment.py':{'CUSTOMER_FORM_SOURCE_FILES','INTERFACE_SHA256','INTERFACE_BYTES','HOST_SHA256','CLOSE_SHA256'}}
+    current_rows={row['path']:row for row in pub['selected9']}
+    for name,keys in permitted.items():
+        a=constants(before9[name]);z=constants(after9[name]);check(definitions(before9[name])==definitions(after9[name]) and set(a)==set(z)
+            and {key for key in a if a[key]!=z[key]}==keys,'UPROOT_WHOLE_FUNCTIONS_AND_ONLY_EXACT_CONSTANT_CHANGES')
+        if 'CUSTOMER_FORM_SOURCE_FILES' in keys:check(list(a['CUSTOMER_FORM_SOURCE_FILES'])==old_seven and list(z['CUSTOMER_FORM_SOURCE_FILES'])==seven
+            and z['PAID_ENTRY_BYTES']==a['PAID_ENTRY_BYTES'] and z['PAID_ENTRY_SHA256']==a['PAID_ENTRY_SHA256'],'UPROOT_SIX_UNCHANGED_CU7_AND_PAID_DONOR_CONSTANTS')
+    for name,key,target in [('ms4-host.py','INTERFACE_SHA256','interface-v1.json'),('normal-close-ms4-fulfillment.py','HOST_SHA256','ms4-host.py'),
+        ('verify-zero-ms4-fulfillment.py','INTERFACE_SHA256','interface-v1.json'),('verify-zero-ms4-fulfillment.py','HOST_SHA256','ms4-host.py'),('verify-zero-ms4-fulfillment.py','CLOSE_SHA256','normal-close-ms4-fulfillment.py')]:
+        check(constants(after9[name])[key]==current_rows[target]['sha256'],'UPROOT_ALL_FIVE_PROFILE_HASH_EDGES')
+    check(constants(after9['verify-zero-ms4-fulfillment.py'])['INTERFACE_BYTES']==current_rows['interface-v1.json']['bytes'],'UPROOT_REAL_INTERFACE_LENGTH_EDGE')
+    old_derived=decode(before9['source-derivation.json']);derived=decode(after9['source-derivation.json']);node=derived.pop('actual28dc_owned_upload_root_profile_refresh')
+    check(node['schema']==1 and node['predecessor_publication']==HISTORICAL_SEVENTEEN_PUBLICATION and node['source_delta']==CURRENT_UPLOAD_ROOT_DELTA
+        and node['current_seven_PHP']==seven and node['initializer_tuple_changes']==manifest['initializer_tuples']
+        and derived['current_nonself_artifacts']==[row for row in pub['selected9'] if row['path']!='source-derivation.json'],'UPROOT_NEW_DERIVATION_EIGHT_NONSELF_EXACT_ORDER')
+    derived['current_nonself_artifacts']=old_derived['current_nonself_artifacts'];check(derived==old_derived,'UPROOT_ALL_HISTORICAL_DERIVATION_NODES_PRESERVED')
+    composite=context['current_composite_customer_form_source']
+    check(composite==CURRENT_COMPOSITE_CUSTOMER_FORM_SOURCE and composite['source_sha']==pub['source_sha']
+        and composite['profile_PINS']==CURRENT_UPLOAD_ROOT_PROFILE_SOURCE and composite['predecessor_publication']==HISTORICAL_SEVENTEEN_PUBLICATION
+        and composite['predecessor_composite']==prior_context['current_composite_customer_form_source'] and composite['source_delta']==CURRENT_UPLOAD_ROOT_DELTA
+        and composite['php_sources']==seven,'UPROOT_FULL_COMPOSITE_PRESERVES_PREDECESSOR_AND_CURRENT_SOURCE')
+    groups={};combined={};previous=decode(read(context['baseline']['previous_full_freeze']))
+    for prefix in ['driver','customer','paid','fulfillment','aftersale_review','worker']:
+        if prefix=='driver':group_names=[row['path'] for row in previous[prefix+'_source_files']]
+        else:
+            roots=previous[prefix+'_source_roots'];extras=sorted(set(previous[prefix+'_source_extra'])|({ASSET_CLI} if prefix in ['fulfillment','aftersale_review','worker'] else set())|{'help/audit-regressions/isolated/lib/ms4-customer-form-normal.php'})
+            group_names=sorted({name for name in expected if any(name.startswith(root+'/') for root in roots)}|set(extras))
+        groups[prefix]=[expected[name] for name in group_names]
+        for row in groups[prefix]:check(row['path'] not in combined or combined[row['path']]==row,'UPROOT_ALL_SIX_SOURCE_GROUP_UNION_IDENTITIES');combined[row['path']]=row
+    check(context['source_counts']=={prefix:len(rows) for prefix,rows in groups.items()} and len(combined)==len(historical['groups']['worker']),'UPROOT_COMPLETE_UNREDUCED_SIX_SOURCE_GROUPS')
+    syntax=decode(read(CURRENT_UPLOAD_ROOT_INITIALIZER_SYNTAX))
+    check(syntax['source_profile_PINS']==CURRENT_UPLOAD_ROOT_PROFILE_SOURCE and compact(syntax['initializer'])==compact(current_rows['ms4-initialize.php'])
+        and read(syntax['initializer'])==after9['ms4-initialize.php'],'UPROOT_REAL_NEW_INITIALIZER_SYNTAX_EXACT_WHOLE_BYTES')
+__INITIALIZER_SYNTAX_CHECKS__
+__CURRENT_RETIREMENT_CHECKS__
+    protected={}
+    for namespace in historical['protected_namespaces']:
+        paths=[name for name in expected if name.startswith(namespace+'/')];protected[namespace]={'count':len(paths),'paths_sha256':hashlib.sha256(('\n'.join(paths)+'\n').encode()).hexdigest()}
+    return {**historical,'all':expected,'groups':groups,'committed':committed,'commit_chain':chain,'protected_namespaces':protected,
+        'current_0c13_paid_producer_failure_retirement':eighth}

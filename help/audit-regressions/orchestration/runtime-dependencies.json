@@ -18,24 +18,27 @@
     "business_acceptance": "INCOMPLETE"
   },
   "current_source": {
-    "package": "full-a-normal-http-diagnostic-next-source-r1",
-    "source_commit": "0c13c57ba1ec4bf15ea9240601a5d6361e986ce8",
+    "package": "full-a-upload-root-current28dc-normal-next-source-r1",
+    "source_commit": "28dcab632da3e62f7c8b8d926b6ab9406534d0d3",
     "profile_sources_present": true,
     "materializer_present": true,
     "validation_driver_present": true,
     "launcher_present": true,
     "required_program_members": 18,
-    "additional_author_code_members": 8,
+    "additional_author_code_members": 11,
+    "additional_Source_design_clarifications": 4,
     "local_author_module_dependencies_present": true,
-    "materialization": "PASS_1060_NATIVE_ZERO",
-    "M_RESULT_fields": 33,
-    "full_business_run": "NOT_TERMINAL_AT_SNAPSHOT_NOT_ACCEPTED",
+    "materialization": "NO_NEW_RUNTIME_RECEIPT_DELIVERED_BY_SOURCE_ARCHIVE",
+    "M_RESULT_fields": 34,
+    "source_commit_steps": 18,
+    "native_budget_derived_not_actual": 1078,
+    "full_business_run": "NO_NEW_RUNTIME_ACCEPTANCE_CLAIM",
     "original_current_M_and_S_receipts_included": false
   },
   "requirements_not_satisfied_by_copying_source": [
     {
       "kind": "original machine layout",
-      "detail": "Archived programs retain original absolute paths, historical authorities and source-commit bindings. The latest complete snapshot binds business0c13, not the separate archival commit. The archival branch business tree is based on2e4. Copying source neither supplies original receipts nor qualifies a new runtime."
+      "detail": "Archived programs retain original absolute paths, historical authorities and source-commit bindings. The latest complete Source snapshot binds business28dc, not the separate archival commit. The archival branch business tree is based on2e4. Copying source neither supplies original receipts nor qualifies a new runtime."
     },
     {
       "kind": "historical public evidence",
@@ -95,7 +98,7 @@
     "business_acceptance": "INCOMPLETE"
   },
   "handoff_branch": "codex/orchestration-handoff-20261023",
-  "current_source_execution_note": "The current complete source binds business 0c13c57. M1060 is actual materialization only; S has no terminal/A0 at this snapshot. The archival branch business tree is based on2e4. Business0c13 is on feature/ms4-asset-consumers. No active worktree or run is advanced, restarted or rebound by archiving.",
+  "current_source_execution_note": "The current complete Source binds business28dc. This archive supplies no new M/S runtime receipt or business acceptance; 34 fields/18 source steps and1078 native budget are Source declarations. Historical0c13 M1060 is actual materialization only; later S1/paid1 and completed close93/zero20 are known. The historical NOT_TERMINAL_AT_SNAPSHOT object remains unchanged. Archive business tree remains2e4; no runtime is advanced, restarted or rebound by archiving.",
   "historical_source_snapshots": [
     {
       "package": "full-a-published-current-normal-next-source-r2",
@@ -108,6 +111,35 @@
       "materialization": "NOT_RUN",
       "initializer_php82_syntax": "PASS_SYNTAX_ONLY",
       "full_business_run": "NOT_RUN"
+    },
+    {
+      "package": "full-a-881-form-prefix-normal-next-source-r3",
+      "source_commit": "8819524a60028090c55bdcd3a9da05e50eaf19d0",
+      "profile_sources_present": true,
+      "materializer_present": true,
+      "validation_driver_present": true,
+      "launcher_present": true,
+      "required_program_members": 18,
+      "additional_author_code_members": 8,
+      "local_author_module_dependencies_present": true,
+      "materialization": "PASS_1046_NATIVE_ZERO",
+      "full_business_run": "FAILED_NOT_ACCEPTED",
+      "original_current_M_and_S_receipts_included": false
+    },
+    {
+      "package": "full-a-normal-http-diagnostic-next-source-r1",
+      "source_commit": "0c13c57ba1ec4bf15ea9240601a5d6361e986ce8",
+      "profile_sources_present": true,
+      "materializer_present": true,
+      "validation_driver_present": true,
+      "launcher_present": true,
+      "required_program_members": 18,
+      "additional_author_code_members": 8,
+      "local_author_module_dependencies_present": true,
+      "materialization": "PASS_1060_NATIVE_ZERO",
+      "M_RESULT_fields": 33,
+      "full_business_run": "NOT_TERMINAL_AT_SNAPSHOT_NOT_ACCEPTED",
+      "original_current_M_and_S_receipts_included": false
     }
   ],
   "historical_materialization_attempts": [
@@ -145,8 +177,8 @@
     }
   ],
   "previous_current_source_snapshot": {
-    "package": "full-a-881-form-prefix-normal-next-source-r3",
-    "source_commit": "8819524a60028090c55bdcd3a9da05e50eaf19d0",
+    "package": "full-a-normal-http-diagnostic-next-source-r1",
+    "source_commit": "0c13c57ba1ec4bf15ea9240601a5d6361e986ce8",
     "profile_sources_present": true,
     "materializer_present": true,
     "validation_driver_present": true,
@@ -154,8 +186,27 @@
     "required_program_members": 18,
     "additional_author_code_members": 8,
     "local_author_module_dependencies_present": true,
-    "materialization": "PASS_1046_NATIVE_ZERO",
-    "full_business_run": "FAILED_NOT_ACCEPTED",
+    "materialization": "PASS_1060_NATIVE_ZERO",
+    "M_RESULT_fields": 33,
+    "full_business_run": "NOT_TERMINAL_AT_SNAPSHOT_NOT_ACCEPTED",
     "original_current_M_and_S_receipts_included": false
+  },
+  "previous_current_source_execution_note": "The current complete source binds business 0c13c57. M1060 is actual materialization only; S has no terminal/A0 at this snapshot. The archival branch business tree is based on2e4. Business0c13 is on feature/ms4-asset-consumers. No active worktree or run is advanced, restarted or rebound by archiving.",
+  "last_executed_pipeline_later_readback": {
+    "package": "full-a-normal-http-diagnostic-next-source-r1",
+    "source_commit": "0c13c57ba1ec4bf15ea9240601a5d6361e986ce8",
+    "S_native_exit": 1,
+    "paid_producer_native_exit": 1,
+    "later_Task6_AR_Worker": "NOT_STARTED",
+    "normal_close_native_zero": 93,
+    "independent_zero_native_zero": 20,
+    "retired_containers_network_volumes": [
+      3,
+      1,
+      8
+    ],
+    "A0": false,
+    "business_acceptance": "INCOMPLETE",
+    "actual_receipt_bodies_included": false
   }
 }

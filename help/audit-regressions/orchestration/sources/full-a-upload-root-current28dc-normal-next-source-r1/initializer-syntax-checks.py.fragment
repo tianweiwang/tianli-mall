@@ -1,0 +1,49 @@
+    check(set(syntax)=={'schema','status','source_profile_PINS','initializer','actual_RESULT_pointer','actual_result','Root_readback','independent_profile_source_review',
+        'job_source_members','native_receipts','actual_public_job_files','App_business'} and syntax['schema']==1
+        and syntax['status']=='PASS_COMPLETE_CURRENT28DC_INITIALIZER_PHP82_SYNTAX_ONLY' and syntax['App_business']=='NOT RUN','UPROOT_EXACT_NEW_INITIALIZER_SYNTAX_AUTHORITY_SCHEMA')
+    init_actual=decode(read(syntax['actual_RESULT_pointer']));init_root=decode(read(syntax['Root_readback']))
+    check(init_actual==syntax['actual_result'] and init_actual['status']=='PASS_ACTUAL28DC_COMPLETE_INITIALIZER_PHP82_SYNTAX_ONLY'
+        and init_actual['source_sha']==pub['source_sha'] and init_actual['profile_PINS']==CURRENT_UPLOAD_ROOT_PROFILE_SOURCE
+        and compact(init_actual['candidate'])==compact(init_actual['copy'])==compact(current_rows['ms4-initialize.php'])
+        and read(init_actual['candidate'])==read(init_actual['copy'])==after9['ms4-initialize.php']
+        and init_actual['php_l_count_required']==1 and init_actual['container_native_exit']==0
+        and init_actual['ordinary_own_container_removed'] is init_actual['own_label_before_after_empty'] is init_actual['all_input_windows_ended'] is True
+        and init_actual['initializer_or_M_S_App_business_execution']=='NOT RUN' and init_actual['W_Val_Run_mutations']==0,'UPROOT_ACTUAL_NEW_WHOLE_INITIALIZER_ONE_LINT_NOT_EXECUTION')
+    check(init_root['status']=='PASS_ROOT_COMPLETE_ACTUAL28DC_INITIALIZER_PHP82_SYNTAX_RECEIPTS' and init_root['RESULT']==syntax['actual_RESULT_pointer']
+        and init_root['source_sha']==pub['source_sha'] and init_root['candidate']==init_actual['candidate'] and init_root['whole_candidate_bytes']==78955
+        and init_root['outer_pid']==5548 and init_root['outer_native_wait']==0 and init_root['native_operations']==8 and init_root['php_l_count']==1
+        and init_root['complete_created_terminal_streams_PID_argv_exit_wait0'] is init_root['fixed_image_network_none_RO_nonroot_one_bind'] is True
+        and init_root['ordinary_container_removed_before_after_label_empty'] is True and init_root['input_windows_closed_verified']==37
+        and init_root['initializer_M_S_App_business_execution']=='NOT RUN','UPROOT_ROOT_COMPLETE_REAL_INITIALIZER_RECEIPT_READBACK')
+    init_peer=decode(read(syntax['independent_profile_source_review']))
+    check(init_peer['schema']==1 and type(init_peer['files']) is dict and set(init_peer['files'])=={'audit.py','EVIDENCE.json','PINS.json','REPORT.json','SYNTAX-SOURCE-SUPPLEMENT.json'},'UPROOT_REAL_INDEPENDENT_INITIALIZER_PROFILE_AND_JOB_SOURCE_REVIEW_NAMESPACE')
+    for name,pin in init_peer['files'].items():read({'path':(Path(syntax['independent_profile_source_review']['path']).parent/name).as_posix(),**pin})
+    for pointer in syntax['job_source_members']:read(pointer)
+    check(len(init_actual['operations'])==len(syntax['native_receipts'])==8 and len(syntax['actual_public_job_files'])==38,'UPROOT_FULL_SYNTAX_EIGHT_NATIVE_AND_38_PUBLIC_FILE_SET')
+    init_files={name:read(pointer) for name,pointer in syntax['actual_public_job_files'].items()}
+    names=['own-label-before','existing-fixed-image','create-one-owned-lint-container','attach-original-php-l','same-cid-native-wait','same-cid-native-terminal','ordinary-exact-owned-cid-rm','own-label-after']
+    init_streams=[]
+    for index,(op,receipt,name) in enumerate(zip(init_actual['operations'],syntax['native_receipts'],names),1):
+        stem=str(index).zfill(2)+'-'+name
+        check(op['stem']==stem and set(receipt)=={'created','terminal','stdout','stderr'},'UPROOT_SYNTAX_EXACT_OPERATION_ORDER_AND_FOUR_FILES')
+        made=decode(read(receipt['created']));ended=decode(read(receipt['terminal']));out=read(receipt['stdout']);err=read(receipt['stderr'])
+        check(made=={'pid':op['pid'],'argv':op['argv'],'started_ns':op['started_ns']} and ended==op and type(op['pid']) is int and op['pid']>0
+            and op['finished_ns']>=op['started_ns'] and op['native_exit']==op['wait_returncode']==0
+            and compact(receipt['stdout'])==op['stdout'] and compact(receipt['stderr'])==op['stderr'] and err==b'','UPROOT_SYNTAX_ORIGINAL_SAME_PID_ARGV_TIMES_EXIT_WAIT_AND_FULL_STREAMS')
+        for label,suffix in [('created','created.json'),('terminal','terminal.json'),('stdout','stdout'),('stderr','stderr')]:
+            check(receipt[label]==syntax['actual_public_job_files'][stem+'.'+suffix],'UPROOT_SYNTAX_FULL_PUBLIC_NAMESPACE_RECEIPT_JOIN')
+        init_streams.append(out)
+    init_cid=init_actual['container_id'];image='sha256:1099f749e2a38ec9453c6b820db8a78174514bc72d14edf5c203e13b82816e0a'
+    check(re.fullmatch('[a-f0-9]{64}',init_cid) is not None and init_streams[0]==init_streams[7]==b'' and init_streams[1]==(image+'\n').encode()
+        and init_streams[2]==init_streams[6]==(init_cid+'\n').encode() and init_streams[3]==b'No syntax errors detected in /candidate/ms4-initialize.php\n'
+        and init_streams[4]==b'0\n','UPROOT_SYNTAX_EXACT_IMAGE_ONE_WHOLE_PHP_STDOUT_WAIT_RM_AND_EMPTY_LABELS')
+    init_terminal=decode(init_streams[5])
+    check(init_terminal['id']==init_cid and init_terminal['image']==image and init_terminal['state']['Status']=='exited' and init_terminal['state']['Pid']==0
+        and init_terminal['state']['ExitCode']==0 and init_terminal['restart']==0 and init_terminal['network']=='none' and init_terminal['readonly'] is True
+        and init_terminal['user']=='65534:65534' and init_terminal['labels']['codex.ms4.syntax']=='current28dc-initializer-r1'
+        and len(init_terminal['mounts'])==1 and init_terminal['mounts'][0]['Type']=='bind' and init_terminal['mounts'][0]['RW'] is False
+        and init_terminal['mounts'][0]['Destination']=='/candidate','UPROOT_SYNTAX_SAME_CID_NO_RESTART_EXACT_ISOLATION_ONE_RO_BIND')
+    outer_made=decode(init_files['outer.created.json']);outer_end=decode(init_files['outer.terminal.json'])
+    check(outer_made['pid']==outer_end['pid']==init_root['outer_pid'] and outer_end['native_exit']==outer_end['wait_returncode']==0,'UPROOT_SYNTAX_ORIGINAL_OUTER_HANDLE_ZERO')
+    for stream in ['stdout','stderr']:
+        raw=init_files['outer.'+stream];check(len(raw)==outer_end[stream+'_bytes'] and hashlib.sha256(raw).hexdigest()==outer_end[stream+'_sha256'],'UPROOT_SYNTAX_OUTER_FULL_DOUBLE_STREAMS')

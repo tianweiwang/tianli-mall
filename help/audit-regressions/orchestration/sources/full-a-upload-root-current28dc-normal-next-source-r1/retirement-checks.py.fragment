@@ -1,0 +1,190 @@
+    eighth=decode(read(CURRENT_0C13_PAID_PRODUCER_FAILURE_RETIREMENT))
+    eighth_keys={'schema','scope','inputs','native_receipts','original_root_native_receipts','outer_native_receipts','Root_actual_complete_public_inputs',
+        'peer_original_safe_public_inputs','original_root_native_documents','original_root_stdout_schemas_by_command','cleanup_native_documents','outer_native_documents',
+        'M_complete_native_receipts','M_result_schema','M_complete_source_snapshots','foreign_inventory_full_safe_facts','ordinary_close_mutations','fresh_queries',
+        'opaque_historical_observations','safe_read_policy','historical_seven_retirements','M33_preserved','M_native_count','M_complete_source_metadata_rows',
+        'M_commit_count','M_source_files_committed','original_S_native_exit','paid_producer_native_exit','original_paid_restart_count','A0','later_Task6_AR_Worker',
+        'business_acceptance','HTTP_root_cause','collector_original_once_only','private_or_old_source_bodies_read','new_source_M_S_business','checks'}
+    check(set(eighth)==eighth_keys and eighth['schema']==1 and eighth['scope']=='EIGHTH_CURRENT0C13_ACTUAL_FAILED_FULL_A_COMPLETE_PUBLIC_RETIREMENT_AUTHORITY'
+        and eighth['historical_seven_retirements']=='UNCHANGED_COMPLETE_PREDECESSOR_SEVENTEEN_AUTHORITY' and eighth['M33_preserved'] is True
+        and eighth['original_S_native_exit']==eighth['paid_producer_native_exit']==1 and eighth['original_paid_restart_count']==0
+        and eighth['A0'] is False and eighth['later_Task6_AR_Worker']=='NOT STARTED' and eighth['business_acceptance']=='INCOMPLETE'
+        and eighth['HTTP_root_cause']=='UNKNOWN_FIRST_THROWABLE_NOT_PROVED_BY_216_HASH' and eighth['collector_original_once_only'] is True
+        and eighth['private_or_old_source_bodies_read'] is False and eighth['new_source_M_S_business']=='NOT RUN','UPROOT_COMPLETE_EIGHTH_SCHEMA_ACTUAL_FAILURE_NOT_SUCCESS')
+    input_names={'Root_final_admission','Root_full','peer_full','peer_PINS','close','zero','Root_full_inputs','peer_execution','peer_reader_inputs',
+        'retirement_Source_PINS','actual_failure','actual_failure_public_facts','M_result','collector','collector_created','collector_terminal',
+        'source_R2_review','peer_observations','collector_original_frozen_Source'}
+    check(set(eighth['inputs'])==input_names,'UPROOT_EXACT_NINETEEN_REAL_CURRENT_RETIREMENT_INPUTS')
+    values={name:decode(read(pointer)) for name,pointer in eighth['inputs'].items() if name not in ['collector_original_frozen_Source','peer_observations','Root_full_inputs']}
+    read(eighth['inputs']['collector_original_frozen_Source'])
+    check(len(eighth['Root_actual_complete_public_inputs'])==eighth['safe_read_policy']['full_safe_reads']==4496
+        and len(eighth['peer_original_safe_public_inputs'])==eighth['safe_read_policy']['peer_finite_safe_inputs']==751
+        and eighth['safe_read_policy']['M_git_show_stdout_body_reads']==eighth['safe_read_policy']['environment_private_application_child_body_reads']==eighth['safe_read_policy']['old_W_Val_body_reads']==0,'UPROOT_COMPLETE_SAFE_INPUT_SET_AND_NO_OPAQUE_BODY_READ_POLICY')
+    safe_raw={}
+    for pointer in eighth['Root_actual_complete_public_inputs']:
+        check(pointer['path'] not in safe_raw and not pointer['path'].startswith(MAIN_SOURCE+'/') and not pointer['path'].startswith(VALIDATION_SOURCE+'/'),'UPROOT_NO_DUPLICATE_OR_ADVANCED_WORKTREE_RETIREMENT_BYTE_READ')
+        safe_raw[pointer['path']]=read(pointer)
+    check(all(pointer['path'] in safe_raw and read(pointer)==safe_raw[pointer['path']] for pointer in eighth['peer_original_safe_public_inputs']),'UPROOT_ALL_ORIGINAL_751_SAFE_PUBLIC_FILES_WHOLE_JOIN')
+    failed_context=decode(read(CURRENT_0C13_FAILURE_CONTEXT));failure=values['actual_failure'];facts=values['actual_failure_public_facts'];close=values['close'];zero=values['zero']
+    check(failed_context['run_id']==failure['run_id']==facts['run_id']==close['run_id']==zero['run_id']=='20261023124755f45a9e'
+        and failed_context['source_sha']==failure['source_sha']==facts['source_sha']==close['source_sha']==zero['source_sha']==pub['parent']
+        and failed_context['freeze_sha256']==failure['freeze_sha256']==facts['freeze_sha256']==close['freeze_sha256']==zero['freeze_sha256']=='ed107cddd68676c945983a5a33cc3faf88dc7a92475ed2112f293cdfb82f1e47'
+        and CURRENT_0C13_FAILURE_CONTEXT in eighth['peer_original_safe_public_inputs'],'UPROOT_EXACT_ORIGINAL_CONTEXT_RUN_SOURCE_FREEZE_NOT_CURRENT_BASELINE')
+    expected_diagnostic={'kind':'upload','method':'POST','http':503,'json_error':0,'response_bytes':216,'response_sha256':'318ae4db8bedc98bc218ade87cd653fd885bb3f91b4e23968c88c62dbbed4670'}
+    check(facts['normal_http_response_diagnostic']==failure['normal_http_response_diagnostic']==values['collector']['normal_http_response_diagnostic']==expected_diagnostic
+        and facts['A0'] is False and failure['paid_container_exit']==1 and failure['paid_failure_code']=='M4C_FORM_NORMAL_HTTP_JSON_200'
+        and failure['paid_failure_phase']=='paid_real_confirmation' and failure['root_native_command_count']==111
+        and failure['initial_prepare_original_four_files_verified'] is True,'UPROOT_ORIGINAL_ACTUAL_503_METADATA_NOT_FIRST_THROWABLE_PROOF')
+    admission=values['Root_final_admission'];root=values['Root_full'];peer=values['peer_full']
+    check(admission['status']=='ROOT_AND_INDEPENDENT_PEER_FULL_ACTUAL_RETIREMENT_PASS_ADMITS_EXACT_FOUR_PHP_SYNTAX_ONCE'
+        and admission['Root_report']=={key:eighth['inputs']['Root_full'][key] for key in ['path','bytes','sha256']}
+        and admission['peer_report']=={key:eighth['inputs']['peer_full'][key] for key in ['path','bytes','sha256']}
+        and admission['peer_FINAL_PINS']=={key:eighth['inputs']['peer_PINS'][key] for key in ['path','bytes','sha256']}
+        and admission['close_native']==admission['zero_native']==0 and admission['all_required_retirement_gate_satisfied'] is True
+        and admission['retired_Run']==failed_context['run_id'] and admission['original_business_result']=='FAILED_S1_PAID1_A0_ABSENT','UPROOT_REAL_ROOT_FINAL_RETIREMENT_ADMISSION')
+    check(root['status']=='PASS_ROOT_COMPLETE_ACTUAL_FULL_READBACK' and root['close_operations']==peer['close_operations_verified']==93
+        and root['zero_operations']==peer['zero_operations_verified']==20 and root['original_S_native_exit']==root['paid_native_exit']==1
+        and root['all_actual_native_created_terminal_streams_PID_argv_wait0'] is root['complete_foreign_safe_facts_continuous'] is True
+        and root['preservation']=={'files':44567,'directories':6860,'all_bytes_stat9_namespaces_unchanged':True,'opaque_payload_retained_parsed_or_printed':False}
+        and root['new_native_calls']==0 and root['target_import_or_execution'] is False and root['full_acceptance']=='INCOMPLETE','UPROOT_ROOT_FULL_REAL_PUBLIC_READBACK_NOT_SOURCE_ONLY_PASS')
+    check(peer['status']=='VERIFIED_FAILED_RUN_CLOSE_AND_INDEPENDENT_ZERO' and peer['mode']=='full' and peer['findings']==[]
+        and peer['close_result']=={key:eighth['inputs']['close'][key] for key in ['path','bytes','sha256']}
+        and peer['zero_result']=={key:eighth['inputs']['zero'][key] for key in ['path','bytes','sha256']}
+        and peer['exact_ordinary_mutations_verified']==5 and peer['foreign_inventories_verified']==9
+        and peer['all_foreign_safe_fields_continuous'] is peer['all_original_public_whole_bytes_stat9_namespaces_preserved'] is True
+        and peer['original_S_native_wait']==[1,1] and peer['original_paid_native_restart']==[1,0]
+        and peer['full_business_acceptance']=='INCOMPLETE' and peer['Docker_Git_Host_cleanup_invoked_by_reader'] is False
+        and peer['opaque_payload_retained_or_decoded'] is False and peer['observations']=={key:eighth['inputs']['peer_observations'][key] for key in ['path','bytes','sha256']},'UPROOT_INDEPENDENT_FULL_PEER_REAL_RECEIPTS_AND_ZERO')
+    originalM=values['M_result'];old_M_keys=HISTORICAL_SEVENTEEN_CONSTANTS['CURRENT_M_RESULT_KEYS33']
+    check(list(originalM)==eighth['M_result_schema']==old_M_keys and len(originalM)==33 and originalM['source_sha']==pub['parent']
+        and originalM['commit_chain']==historical['commit_chain'] and len(originalM['commit_chain'])==eighth['M_commit_count']==17
+        and len(originalM['committed_files'])==eighth['M_source_files_committed']==307 and len(originalM['native_operations'])==eighth['M_native_count']==1060
+        and all(op['native_exit']==op['wait_returncode']==0 for op in originalM['native_operations']),'UPROOT_OLD_ACTUAL_M33_17_COMMITS_307_PATHS_1060_ZERO_NOT_NEW_M')
+    observation=decode(read(eighth['inputs']['peer_observations']));root_observations=decode(read(eighth['inputs']['Root_full_inputs']))
+    check(set(observation)=={'safe_files','opaque_files','directories','inventories','native_operations'} and len(observation['safe_files'])==751
+        and len(observation['opaque_files'])==44568 and len(observation['directories'])==6860 and len(observation['inventories'])==9
+        and len(observation['native_operations'])==113 and type(root_observations) is dict,'UPROOT_WHOLE_HISTORICAL_OBSERVATION_METADATA_NAMESPACES_ONLY')
+    peer_safe={row['path']:row for row in observation['safe_files']};opaque={row['path']:row for row in observation['opaque_files']}
+    check(len(peer_safe)==751 and len(opaque)==44568 and {row['path'] for row in eighth['peer_original_safe_public_inputs']}==set(peer_safe),'UPROOT_EXACT_SAFE_AND_OPAQUE_HISTORICAL_PATH_MAPS')
+    source_dir=Path(CURRENT_0C13_PAID_PRODUCER_FAILURE_RETIREMENT['path']).parent
+    predecessor_dir=Path(HISTORICAL_SEVENTEEN_PUBLICATION['path']).parents[1]
+    construction_paths={(predecessor_dir/'retirement-author.py').as_posix()}|{(source_dir/name).as_posix() for name in ['DESIGN.md','retirement-author.py','source_reader.py']}
+    completion_names=['Root_final_admission','Root_full','peer_full','peer_PINS','Root_full_inputs','peer_execution','peer_observations','source_R2_review','collector_original_frozen_Source']
+    completion_paths={eighth['inputs'][name]['path'] for name in completion_names}
+    runtime_paths={path for path in safe_raw if path in root_observations or path in peer_safe}
+    check(len(runtime_paths)==4483 and len(construction_paths)==4 and len(completion_paths)==9
+        and not(runtime_paths&construction_paths or runtime_paths&completion_paths or construction_paths&completion_paths)
+        and set(safe_raw)==runtime_paths|construction_paths|completion_paths,'UPROOT_SAFE4496_EXACT4483_HISTORICAL_RUNTIME_PLUS4_SOURCE_CONSTRUCTION_PLUS9_COMPLETION_ADDENDA')
+    for pointer in eighth['Root_actual_complete_public_inputs']:
+        if pointer['path'] in root_observations:
+            row=root_observations[pointer['path']]
+            check(compact(pointer)==compact(row) and pointer['native9']==row['stat9'],'UPROOT_ORIGINAL_RUNTIME_POINTER_WHOLE_PIN_NATIVE_JOIN_NOT_SOURCE_CONSTRUCTION_WINDOW')
+    for row in observation['safe_files']+observation['opaque_files']:
+        check(row['named_before']==row['named_after'] and row['fd_open']==row['fd_after'] and row['named_before'][6]==row['pin']['bytes']
+            and row['fd_open'][6]==row['pin']['bytes'] and len(row['named_before'])==len(row['fd_open'])==9,'UPROOT_ALL_HISTORICAL_COMPLETE_WINDOWS_METADATA_NO_PATH_DEREFERENCE')
+    for pointer in eighth['peer_original_safe_public_inputs']:
+        row=peer_safe[pointer['path']];check(compact(pointer)==row['pin'] and pointer['native9']==row['named_before'],'UPROOT_ALL751_ORIGINAL_FULL_SAFE_POINTER_AND_NATIVE_METADATA_JOINS')
+    opaque_policy=eighth['opaque_historical_observations'];check(opaque_policy['policy']=='FINGERPRINT_AND_NATIVE_METADATA_ONLY_NEVER_DEREFERENCE_HISTORICAL_PATHS'
+        and opaque_policy['body_reads']==0 and opaque_policy['original_files']==44567 and opaque_policy['directories']==6860 and opaque_policy['mapping_rows']==31496,'UPROOT_EXPLICIT_OPAQUE_NO_READ_BOUNDARY')
+    baseline=decode(read(opaque_policy['original_baseline']));check(set(baseline)=={'files','directories'} and len(baseline['files'])==44567 and len(baseline['directories'])==6860,'UPROOT_COMPLETE_ORIGINAL_PUBLIC_METADATA_BASELINE')
+    directories={row['path']:row['stat9'] for row in observation['directories']};check(len(directories)==6860,'UPROOT_UNIQUE_FULL_ORIGINAL_DIRECTORY_METADATA')
+    for row in baseline['files']:
+        check(row['path'] in root_observations and compact(row)==compact(root_observations[row['path']]) and row['stat9']==root_observations[row['path']]['stat9'],'UPROOT_FULL44567_OLD_ROOT_METADATA_BASELINE_CONTINUITY_NO_BODY_READ')
+        if row['path'] in opaque:check(compact(row)==opaque[row['path']]['pin'] and row['stat9']==opaque[row['path']]['named_before'],'UPROOT_OLD_OPAQUE_FINGERPRINT_CONTINUITY_ONLY')
+    check({row['path']:row['stat9'] for row in baseline['directories']}==directories,'UPROOT_ALL6860_DIRECTORY_METADATA_EXACT_NO_LIVE_DIRECTORY_WALK')
+    m_safe=0;m_opaque=0
+    check(len(eighth['M_complete_native_receipts'])==1060,'UPROOT_ALL_OLD_M_NATIVE_RECEIPTS')
+    for position,(op,receipt) in enumerate(zip(originalM['native_operations'],eighth['M_complete_native_receipts']),1):
+        made=decode(read(receipt['created']));ended=decode(read(receipt['terminal']));err=read(receipt['stderr'])
+        check(receipt['index']==position and receipt['operation']==op and ended==op and made=={'pid':op['pid'],'argv':op['argv']}
+            and op['native_exit']==op['wait_returncode']==0 and err==b'' and compact(receipt['stderr'])=={'bytes':op['stderr_bytes'],'sha256':op['stderr_sha256']},'UPROOT_ALL1060_ORIGINAL_M_SAME_PID_ARGV_TERMINAL_AND_EMPTY_STDERR')
+        pointer=receipt['stdout'];check(compact(pointer)=={'bytes':op['stdout_bytes'],'sha256':op['stdout_sha256']},'UPROOT_M_STDOUT_COMPLETE_DESCRIPTOR')
+        if receipt['stdout_policy']=='PUBLIC_FULL_BYTES':
+            check(pointer['path'] in safe_raw,'UPROOT_M_PUBLIC_STDOUT_IN_SAFE_NAMESPACE');read(pointer);m_safe+=1
+        else:
+            check(receipt['stdout_policy']=='OPAQUE_HISTORICAL_METADATA_NO_BODY_READ' and op['argv'][0]=='git' and op['argv'][5:6]==['show']
+                and pointer['path'] in opaque and compact(pointer)==opaque[pointer['path']]['pin'] and pointer['path'] in root_observations
+                and root_observations[pointer['path']]['stat9']==opaque[pointer['path']]['named_before'],
+                'UPROOT_M_GIT_SHOW_STDOUT_ONLY_ORIGINAL_FINGERPRINT_NEVER_READ_BODY');m_opaque+=1
+    check(m_safe==313 and m_opaque==747,'UPROOT_EXACT_313_SAFE_AND747_OPAQUE_OLD_M_STREAMS')
+    for name,row in eighth['M_complete_source_snapshots'].items():
+        metadata=decode(read(row['pointer']));check(type(metadata) is dict and len(metadata)==row['records']==(14 if name=='root_source_snapshot' else 31496),'UPROOT_OLD_M_COMPLETE_ROOT_AND_DUAL_METADATA_COUNTS')
+        check(all(path==item['path'] and list(item)==row['schema']==['path','bytes','sha256','stat9'] for path,item in metadata.items()),'UPROOT_ORIGINAL_M_METADATA_FULL_KEY_PATH_AND_RECORD_SCHEMA_NO_REFERENCED_BODY_READ')
+    root_rows=[failure['initial_prepare'],*failure['root_native_commands']]
+    check(len(root_rows)==len(eighth['original_root_native_receipts'])==len(eighth['original_root_native_documents'])==112,'UPROOT_INITIAL_PREPARE_PLUS111_ROOT_COMMANDS_FULL')
+    seen_schemas={}
+    for index,(held,receipt,document) in enumerate(zip(root_rows,eighth['original_root_native_receipts'],eighth['original_root_native_documents']),1):
+        made=decode(read(receipt['created']));ended=decode(read(receipt['terminal']));raw=read(receipt['stdout']);err=read(receipt['stderr']);payload=decode(raw)
+        check(made['pid']==ended['pid']==held['pid']==document['pid'] and made['argv']==document['argv'] and ended['native_exit']==ended['wait_returncode']==0
+            and len(raw)==ended['stdout_bytes'] and hashlib.sha256(raw).hexdigest()==ended['stdout_sha256'] and err==b''
+            and ended['stderr_bytes']==0 and hashlib.sha256(err).hexdigest()==ended['stderr_sha256'],'UPROOT_ALL112_ROOT_ORIGINAL_PID_ARGV_NATIVE_WAIT_AND_FULL_RAW_SAFE_HOST_JSON')
+        for label in ['created','terminal','stdout','stderr']:check(compact(receipt[label])==compact(held[label]),'UPROOT_ALL112_ORIGINAL_FOURFILE_RECEIPT_JOIN')
+        check(document['index']==index and document['created_schema']==list(made) and document['terminal_schema']==list(ended)
+            and document['stdout_schema']==list(payload) and document['stdout_json']==payload,'UPROOT_ROOT_COMPLETE_JSON_SCHEMAS_AND_ALL_FIELDS')
+        argv=made['argv'];command=argv[5]
+        check(Path(argv[0])==Path('C:/Users/Vwang/AppData/Local/Programs/Python/Python314/python.exe') and argv[1:4]==['-B','-X','utf8']
+            and Path(argv[4])==Path(HISTORICAL_SEVENTEEN_PUBLICATION['path']).parent/'actual-profile/ms4-host.py'
+            and command==document['command'] and command not in ['fulfillment-normal-start','aftersale-review-start','worker-start'],'UPROOT_ORIGINAL_FIXED_HOST_SOURCE_ARGV_NO_LATER_BUSINESS')
+        if index==1:
+            check(command=='prepare' and argv[6::2]==['--binding','--run-root'] and '--context' not in argv
+                and Path(argv[7])==Path(eighth['inputs']['M_result']['path']).parent/'freeze-binding.json' and Path(argv[9])==Path(CURRENT_0C13_FAILURE_CONTEXT['path']).parents[1],'UPROOT_ORIGINAL_PREPARE_BINDING_AND_RUNROOT_NOT_CONTEXT')
+        else:check(argv.count('--context')==1 and Path(argv[argv.index('--context')+1])==Path(CURRENT_0C13_FAILURE_CONTEXT['path']),'UPROOT_ALL111_FIXED_ORIGINAL_CONTEXT_ARGUMENTS')
+        if command not in seen_schemas:seen_schemas[command]=[]
+        if list(payload) not in seen_schemas[command]:seen_schemas[command].append(list(payload))
+    check(seen_schemas==eighth['original_root_stdout_schemas_by_command'],'UPROOT_COMPLETE_HOST_COMMAND_SCHEMA_NAMESPACE')
+    role_ids=close['expected_containers'];roles={role:cid for cid,role in role_ids.items()};check(set(roles)=={'audit-mysql','audit-redis','audit-ms5-paid-producer'},'UPROOT_EXACT_THREE_ORIGINAL_REMAINING_ROLE_IDS')
+    streams={};mutations=[];inventories=[];foreign_before=None
+    for label,value,count in [('close',close,93),('zero',zero,20)]:
+        check(value['failed_outer_pid']==2676 and value['failed_outer_native_exit']==value['paid_producer_native_exit']==1 and value['original_completed_native_zero']==111
+            and value['original_initial_prepare_native_zero']==1 and value['original_total_native_zero']==112 and value['original_source_mapping_records']==31496
+            and value['paid_failure_code']=='M4C_FORM_NORMAL_HTTP_JSON_200' and value['paid_failure_phase']=='paid_real_confirmation'
+            and value['later_Task6_AR_Worker']=='NOT STARTED' and value['full_acceptance']=='INCOMPLETE'
+            and len(value['operations'])==len(eighth['native_receipts'][label])==count,'UPROOT_EXACT_CLOSE_ZERO_CURRENT_FAILURE_AND_COMPLETE_COUNTS')
+        pending=None
+        for index,(op,receipt,document) in enumerate(zip(value['operations'],eighth['native_receipts'][label],eighth['cleanup_native_documents'][label]),1):
+            made=decode(read(receipt['created']));ended=decode(read(receipt['terminal']));out=read(receipt['stdout']);err=read(receipt['stderr'])
+            check(receipt['index']==op['index']==index and receipt['stem']==op['stem'] and ended==op and made=={'pid':op['pid'],'argv':op['argv']}
+                and op['native_exit']==op['wait_returncode']==0 and len(out)==op['stdout_bytes'] and hashlib.sha256(out).hexdigest()==op['stdout_sha256']
+                and err==b'' and op['stderr_bytes']==0 and hashlib.sha256(err).hexdigest()==op['stderr_sha256']
+                and document=={'operation':op,'created_schema':list(made),'terminal_schema':list(ended)},'UPROOT_ALL113_COMPLETE_ORDERED_NATIVE_SCHEMAS_PID_ARGV_AND_RAW_STREAMS')
+            streams[(label,index)]=out;args=op['argv'][1:]
+            if args and (args[0] in ['stop','rm'] or len(args)>1 and args[:2] in [['network','rm'],['volume','rm']]):
+                check(label=='close' and '-f' not in args and '--force' not in args,'UPROOT_ONLY_ORDINARY_CLOSE_MUTATIONS_ZERO_READONLY');mutations.append(args)
+            if op['label']=='global-cids-before':pending=out.decode().splitlines();check(len(set(pending))==len(pending),'UPROOT_GLOBAL_BEFORE_NO_DUPLICATE')
+            elif op['label']=='global-safe-consumer-facts':
+                actual=[decode(line) for line in out.splitlines()]
+                check(pending is not None and len(actual)==len(pending) and {row['id'] for row in actual}==set(pending)
+                    and all(set(row)=={'id','mounts','network_mode','networks'} for row in actual),'UPROOT_GLOBAL_FULL_RAW_SAFE_FACTS_AND_CID_NAMESPACE')
+                normalized={row['id']:{**row,'mounts':sorted(json.dumps(mount,sort_keys=True,separators=(',',':')) for mount in row['mounts'])} for row in actual if row['id'] not in role_ids}
+                check(len(normalized)==53,'UPROOT_ALL53_FOREIGN_CONSUMERS')
+                if foreign_before is None:foreign_before=normalized
+                check(normalized==foreign_before,'UPROOT_ALL_FOREIGN_FIELDS_AND_NATIVE_MOUNT_MULTISETS_CONTINUOUS')
+                inventories.append({'scope':label,'operation_index':index,'facts':actual})
+            elif op['label']=='global-cids-after':check(pending is not None and set(out.decode().splitlines())==set(pending),'UPROOT_GLOBAL_AFTER_SAME_CID_NAMESPACE');pending=None
+        check(pending is None,'UPROOT_ALL_GLOBAL_WINDOWS_CLOSED')
+        check([(row['kind'],row['label']) for row in value['fresh_queries']]==[(kind,tag) for kind in ['container','network','volume'] for tag in ['project','run']]
+            and len({row['operation_index'] for row in value['fresh_queries']})==6 and all(streams[(label,row['operation_index'])]==b'' for row in value['fresh_queries'])
+            and eighth['fresh_queries'][label]==value['fresh_queries'],'UPROOT_SIX_COMPLETE_ACTUAL_EMPTY_QUERIES_EACH')
+    exact=[['stop','--timeout','-1',roles['audit-mysql']],['stop','--timeout','-1',roles['audit-redis']],['rm',*sorted(role_ids)],
+        ['network','rm',failed_context['network_id']],['volume','rm',*sorted(row['name'] for row in failed_context['initial_volumes'])]]
+    check(mutations==eighth['ordinary_close_mutations']==exact and zero['resource_mutations']==0 and zero['Host_imported'] is zero['close_imported_or_invoked'] is False
+        and zero['close_native_operations_verified']==93 and zero['close_exact_mutating_operations_verified']==5 and len(inventories)==9
+        and inventories==eighth['foreign_inventory_full_safe_facts'],'UPROOT_EXACT_FIVE_ORDINARY_ACTIONS_AND_NINE_GLOBAL_SAFE_INVENTORIES')
+    check([document['operation'] for label in ['close','zero'] for document in eighth['cleanup_native_documents'][label]]==[
+        {key:value for key,value in row.items() if key!='scope'} for row in observation['native_operations']],'UPROOT_ALL113_INDEPENDENT_OBSERVATION_NATIVE_ROW_JOIN')
+    outer={}
+    for label,pid,code in [('M',18580,0),('S',2676,1),('close',41152,0),('zero',22076,0)]:
+        receipt=eighth['outer_native_receipts'][label];made=decode(read(receipt['created']));ended=decode(read(receipt['terminal']));outer[label]=ended
+        check(made['pid']==ended['pid']==pid and ended['native_exit']==ended['wait_returncode']==code
+            and eighth['outer_native_documents'][label]['created']==made and eighth['outer_native_documents'][label]['terminal']==ended,'UPROOT_ORIGINAL_FOUR_OUTER_HANDLES_M0_S1_CLOSE0_ZERO0')
+        decoded=[]
+        for stream in ['stdout','stderr']:
+            raw=read(receipt[stream]);check(len(raw)==receipt[stream]['bytes'] and hashlib.sha256(raw).hexdigest()==receipt[stream]['sha256'],'UPROOT_OUTER_COMPLETE_RAW_PUBLIC_DOUBLE_STREAMS')
+            if stream=='stdout':decoded=[decode(line) for line in raw.splitlines()]
+        check(decoded==eighth['outer_native_documents'][label]['stdout_json_lines'],'UPROOT_OUTER_ORIGINAL_PUBLIC_STDOUT_SCHEMAS_AND_ALL_FIELDS')
+    check(outer['close']['finished_ns']<eighth['outer_native_documents']['zero']['created']['started_ns'],'UPROOT_TRUE_CLOSE_BEFORE_INDEPENDENT_ZERO')
+    collector=values['collector'];made=values['collector_created'];ended=values['collector_terminal']
+    check(made['pid']==ended['pid'] and made['argv']==['C:/Users/Vwang/AppData/Local/Programs/DockerDesktop/resources/bin/docker.exe','logs',roles['audit-ms5-paid-producer']]
+        and ended['native_exit']==ended['wait_returncode']==0 and collector['container_id']==roles['audit-ms5-paid-producer']
+        and collector['raw_streams_retained'] is False and collector['unprojected_line_count']==0 and collector['business_acceptance']=='INCOMPLETE'
+        and collector['normal_http_response_diagnostic']==expected_diagnostic and collector['all_public_input_windows_ended'] is True,'UPROOT_ONCE_ONLY_ORIGINAL_SAFE_COLLECTOR_NOT_REEXECUTED_OR_BUSINESS_PASS')
