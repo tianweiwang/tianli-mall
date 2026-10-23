@@ -2,6 +2,10 @@
 
 整理日期：2026-10-23。本文件是开发检查点和导航，不替代实施规格、原执行清单、测试报告或人工验收。
 
+当前检查点：通用多商户商城的普通下单确认链仍未通过。最后实际来源8819524的源码物化1,046项通过，随后订单准备在HTTP/JSON200断言失败；后续履约、售后评价、Worker和新页面未执行。原3容器、1内部网络和8卷已正常回收，93项回收及20项独立核零操作均0，原53个其他容器保持不变；业务原因尚未确定。
+
+本次[诊断补充](records/ms4/normal-http-response-diagnostic.md)增加同一响应的受限元数据和配套读取入口。两份PHP完整语法检查通过；新来源完整运行和新增诊断实际采集尚未进行，不能当成业务修复或验收。源码交接另在codex/orchestration-handoff-20261023，最新已核实提交634dd72，281原件/26包；原始验证材料和跨机完整复跑仍未交付。以下历史段落保留其执行时点。
+
 ## 1. 项目定位与交付范围
 
 - 产品：基于 CRMEB v6.0.0 改造的通用多商户商城 v0.1。
@@ -46,9 +50,9 @@
 
 实际记录入口：[MS0a](records/ms0a/report.md)、[MS0b](records/ms0b/report.md)、[MS1](records/ms1/report.md)、[MS2](07-plan-ms2.md)、[MS3](records/ms3/frontend-source-checkpoint.json)、[MS4–MS6](09-plan-ms4-ms6.md)、[支付核心](records/ms5/payment-core-integration.md)。
 
-## 4. 最近一次完整链及修复
+## 4. 历史完整链及修复（保留原时点）
 
-最近已结束的完整正常链为 Run `20261023082740ae535d`，来源提交 `2e4af47c7595947e16bef0abfa9785823b1369d5`，结果为失败。
+本节历史记录的完整正常链为 Run `20261023082740ae535d`，来源提交 `2e4af47c7595947e16bef0abfa9785823b1369d5`，结果为失败。
 
 1. 完整来源物化 M 的 1,037 项操作实际通过；初始化、支付结构、early 20 条迁移、文件初始化和顾客准备实际通过。
 2. 付款测试进程实际退出 1；有限诊断定位到表单辅助脚本的断言名称格式冲突。60 个直接调用使用 `M4CF_`，共用断言器只接受 `M4C_` 家族。修复仅统一为 `M4C_FORM_`，保留全部判断条件和严格检查。
@@ -87,7 +91,7 @@
 
 当前开发以 `feature/ms4-asset-consumers` 为整合入口；同来源的 `ms4-aftersale-normal-check` 工作区用于隔离核对。其他分阶段工作树和备份保留其历史来源，不能仅凭分支名称或提交先后批量合并。
 
-原始运行证据和私有准备数据保留在仓库外，不随源码推送。此前遗漏的主编排、后续完整 M/S/launcher 及候选程序已补入 [编排源码归档](../../help/audit-regressions/orchestration/README.md)，可从 Git 完整读取和离线校验；这不是可直接运行的环境包。[交接记录](records/ms4/orchestration-source-handoff.md) 区分源码存在、原实际失败和未运行项。整合代码交付位于 `feature/ms4-asset-consumers` 分支；最新 2e4 完整编排另已推送到 `codex/orchestration-handoff-20261023`，提交 `e979616bf154b022eab04826aee117f5dca9e59a`：255 个原件、25 个包、43,909,804 字节，干净 Git 导出校验通过。原 `codex/audit-base` 链接不包含这些交付。源码中的 `records/` 仍只保留摘要。此前冻结的失败来源和结果不改写。
+原始运行证据和私有准备数据保留在仓库外，不随源码推送。此前遗漏的主编排、后续完整 M/S/launcher 及候选程序已补入 [编排源码归档](../../help/audit-regressions/orchestration/README.md)，可从 Git 完整读取和离线校验；这不是可直接运行的环境包。[交接记录](records/ms4/orchestration-source-handoff.md) 区分源码存在、原实际失败和未运行项。整合代码交付位于 `feature/ms4-asset-consumers` 分支；历史 2e4 完整编排曾推送到 `codex/orchestration-handoff-20261023`，提交 `e979616bf154b022eab04826aee117f5dca9e59a`：255 个原件、25 个包、43,909,804 字节，干净 Git 导出校验通过。原 `codex/audit-base` 链接不包含这些交付。源码中的 `records/` 仍只保留摘要。此前冻结的失败来源和结果不改写。
 
 仓库外原交接根名为 `ms4-worker-normal-source-preparation-r1`，本机位于工作空间的 `artifacts/` 下。归档清单按该根的相对路径保存选定源码；不依赖接收者能访问原机目录。以下仍是待续工作，不属于已通过的业务交付：
 

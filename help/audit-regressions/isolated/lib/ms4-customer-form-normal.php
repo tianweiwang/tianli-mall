@@ -103,10 +103,29 @@ function m4cf_replay(PDO $db,array $proof):void
 }
 function m4cf_json(array $reply):array
 {
+    try{
     m4cf_expect($reply['http']===200&&is_array($reply['json']),'NORMAL_HTTP_JSON_200');
     m4c_entry_keys($reply['json'],['status','msg','data']);
     m4cf_expect($reply['json']['status']===200&&is_string($reply['json']['msg'])&&is_array($reply['json']['data']),'NORMAL_HTTP_BUSINESS_200');
     return $reply['json']['data'];
+    }catch(Throwable $error){
+        if(!isset($GLOBALS['m4cf_normal_http_first_failure'])&&is_array($reply['normal_http_diagnostic']??null))
+            $GLOBALS['m4cf_normal_http_first_failure']=$reply['normal_http_diagnostic'];
+        throw $error;
+    }
+}
+/** Optional fixed scalar projection only; malformed diagnostic data never changes business assertions. */
+function m4cf_public_http_failure():?array
+{
+    $row=$GLOBALS['m4cf_normal_http_first_failure']??null;
+    if(!is_array($row)||array_keys($row)!==['kind','method','http','json_error','response_bytes','response_sha256'])return null;
+    if(!in_array($row['kind'],['login','user','computed','upload','ticket','content','view'],true)
+        ||!in_array($row['method'],['GET','POST'],true)||!is_int($row['http'])||$row['http']<0||$row['http']>599
+        ||!($row['json_error']===null||(is_int($row['json_error'])&&$row['json_error']>=0&&$row['json_error']<=11))
+        ||!is_int($row['response_bytes'])||$row['response_bytes']<0||$row['response_bytes']>52428800
+        ||!is_string($row['response_sha256'])||preg_match('/\A[a-f0-9]{64}\z/D',$row['response_sha256'])!==1)return null;
+    return ['kind'=>$row['kind'],'method'=>$row['method'],'http'=>$row['http'],'json_error'=>$row['json_error'],
+        'response_bytes'=>$row['response_bytes'],'response_sha256'=>$row['response_sha256']];
 }
 function m4cf_confirmation(int $uid,string $key,array $frame):array
 {
@@ -630,7 +649,11 @@ function m4cf_transport(string $method,string $path,?string $token=null,mixed $b
     $reply=['http'=>$http,'raw'=>$raw,'json'=>$json,'headers'=>$responseHeaders,'header_lines'=>$headerLines,
         'actual_interval'=>[$started,$ended],'curl_errno'=>$errno,'json_error'=>$jsonError,
         'request_bytes'=>$requestBytes,'request_sha256'=>$requestHash];
+    $reply['normal_http_diagnostic']=['kind'=>$kind,'method'=>$method,'http'=>$http,'json_error'=>$jsonError,
+        'response_bytes'=>strlen($raw),'response_sha256'=>hash('sha256',$raw)];
     $complete=$done!==false&&$errno===0&&!$overflow&&$http>=100&&$http<=599;
+    if(!$complete&&!isset($GLOBALS['m4cf_normal_http_first_failure']))
+        $GLOBALS['m4cf_normal_http_first_failure']=$reply['normal_http_diagnostic'];
     if(!$complete&&!isset($GLOBALS['m4cf_transport_first_failure']))$GLOBALS['m4cf_transport_first_failure']=[
         'kind'=>$kind,'method'=>$method,'http'=>$http,'curl_errno'=>$errno,'overflow'=>$overflow,
         'response_bytes'=>strlen($raw),'response_sha256'=>hash('sha256',$raw),'actual_interval'=>[$started,$ended]];
