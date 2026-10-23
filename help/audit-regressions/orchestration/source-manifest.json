@@ -2,13 +2,13 @@
   "schema": 2,
   "status": "SOURCE_ARCHIVE_RUNTIME_NOT_READY",
   "source_archive_name": "ms4-worker-normal-source-preparation-r1",
-  "handoff_code_commit": "584532ba22b1824164aa11c06b163715be8c224c",
+  "handoff_code_commit": "2e4af47c7595947e16bef0abfa9785823b1369d5",
   "last_executed_source_commit": "53e6d521b387b19a4cf370e0e381670b762d325e",
   "current_repaired_source_commit": "76efa7807c6137bc430e314e2faa78691cf60431",
   "originals_preserved_byte_for_byte": true,
   "runtime_executed_by_archive_verifier": false,
-  "file_count": 233,
-  "total_bytes": 37777631,
+  "file_count": 255,
+  "total_bytes": 43909804,
   "files": [
     {
       "path": "sources/customer-form-official-initialize-env-raw-source-r1/candidate/help/audit-regressions/isolated/lib/ms4-customer-http-normal.php",
@@ -249,6 +249,182 @@
       "role": "orchestration",
       "bytes": 53483,
       "sha256": "a2f567c203c655dfed4a7dee1d8897b478fc0820c7bcd879a08a9fd289a813bc"
+    },
+    {
+      "path": "sources/full-a-2e4-current-normal-next-source-r2/ACTUAL-MODULE-NAMESPACE-CHECKS.json",
+      "origin_relative_path": "full-a-2e4-current-normal-next-source-r2/ACTUAL-MODULE-NAMESPACE-CHECKS.json",
+      "package": "full-a-2e4-current-normal-next-source-r2",
+      "role": "historical_source_only_static_dependency_conclusion",
+      "bytes": 3353,
+      "sha256": "2e1958c9856e6f96e03dd47adc1a1dedc574f9f044ed9f435a4e18bb9113ad9d"
+    },
+    {
+      "path": "sources/full-a-2e4-current-normal-next-source-r2/DESIGN.md",
+      "origin_relative_path": "full-a-2e4-current-normal-next-source-r2/DESIGN.md",
+      "package": "full-a-2e4-current-normal-next-source-r2",
+      "role": "source_design",
+      "bytes": 3322,
+      "sha256": "c2d266bb314ccc3b33989006a1817b0e473bbc4f2f55f5ea99b1d92ca3e322b7"
+    },
+    {
+      "path": "sources/full-a-2e4-current-normal-next-source-r2/assemble.py",
+      "origin_relative_path": "full-a-2e4-current-normal-next-source-r2/assemble.py",
+      "package": "full-a-2e4-current-normal-next-source-r2",
+      "role": "source_author_program",
+      "bytes": 16070,
+      "sha256": "22447ce58027e5c2ba1125042a5dcad95236d344241088d4bd87fe8da7a0ad0e"
+    },
+    {
+      "path": "sources/full-a-2e4-current-normal-next-source-r2/launcher/launch.py",
+      "origin_relative_path": "full-a-2e4-current-normal-next-source-r2/launcher/launch.py",
+      "package": "full-a-2e4-current-normal-next-source-r2",
+      "role": "complete_runtime_source18",
+      "bytes": 9506,
+      "sha256": "cb1478297182d0bb82b43c322a15193684e86b85e879fdaf7a9d5fea81a7c698"
+    },
+    {
+      "path": "sources/full-a-2e4-current-normal-next-source-r2/materializer/INVERSE.json",
+      "origin_relative_path": "full-a-2e4-current-normal-next-source-r2/materializer/INVERSE.json",
+      "package": "full-a-2e4-current-normal-next-source-r2",
+      "role": "complete_runtime_source18",
+      "bytes": 1126970,
+      "sha256": "23ccf495a426be0b650e7bdeef6b601673848a1d0d1e28aa1311edba0bf7ba2e"
+    },
+    {
+      "path": "sources/full-a-2e4-current-normal-next-source-r2/materializer/PLAN.md",
+      "origin_relative_path": "full-a-2e4-current-normal-next-source-r2/materializer/PLAN.md",
+      "package": "full-a-2e4-current-normal-next-source-r2",
+      "role": "complete_runtime_source18",
+      "bytes": 13221,
+      "sha256": "82ed5940fc466533cf28f000838995a511596faf4ac61133c10c617d8e0a325b"
+    },
+    {
+      "path": "sources/full-a-2e4-current-normal-next-source-r2/materializer/prepare.py",
+      "origin_relative_path": "full-a-2e4-current-normal-next-source-r2/materializer/prepare.py",
+      "package": "full-a-2e4-current-normal-next-source-r2",
+      "role": "complete_runtime_source18",
+      "bytes": 991599,
+      "sha256": "b45a6974f6c566521c24cd5fa78a7c9b5a60fff9baefd9e517863369b8a1fd9a"
+    },
+    {
+      "path": "sources/full-a-2e4-current-normal-next-source-r2/source_reader.py",
+      "origin_relative_path": "full-a-2e4-current-normal-next-source-r2/source_reader.py",
+      "package": "full-a-2e4-current-normal-next-source-r2",
+      "role": "source_author_program",
+      "bytes": 4085,
+      "sha256": "74f79b059b5b10aa59cd7937caa2f5b179a736e4f01ae1d11e2bd278c96de72e"
+    },
+    {
+      "path": "sources/full-a-2e4-current-normal-next-source-r2/validation/DESIGN-TASKS.md",
+      "origin_relative_path": "full-a-2e4-current-normal-next-source-r2/validation/DESIGN-TASKS.md",
+      "package": "full-a-2e4-current-normal-next-source-r2",
+      "role": "complete_runtime_source18",
+      "bytes": 14820,
+      "sha256": "c067efe440758319765d38ad51a57c678796a6d032b7343ee3c94398c4c62938"
+    },
+    {
+      "path": "sources/full-a-2e4-current-normal-next-source-r2/validation/PINS.json",
+      "origin_relative_path": "full-a-2e4-current-normal-next-source-r2/validation/PINS.json",
+      "package": "full-a-2e4-current-normal-next-source-r2",
+      "role": "complete_runtime_source18",
+      "bytes": 357,
+      "sha256": "61126d75eea300c017693d72924b87928b0c09b07583e0d120851e3516f3ca0a"
+    },
+    {
+      "path": "sources/full-a-2e4-current-normal-next-source-r2/validation/PROFILE-PINS.json",
+      "origin_relative_path": "full-a-2e4-current-normal-next-source-r2/validation/PROFILE-PINS.json",
+      "package": "full-a-2e4-current-normal-next-source-r2",
+      "role": "complete_runtime_source18",
+      "bytes": 1517,
+      "sha256": "2fdda0b3502bc2e93e5382a8da6279df6801d6031a869178c2acd7f924ac5c9e"
+    },
+    {
+      "path": "sources/full-a-2e4-current-normal-next-source-r2/validation/PROFILE-PUBLICATION.json",
+      "origin_relative_path": "full-a-2e4-current-normal-next-source-r2/validation/PROFILE-PUBLICATION.json",
+      "package": "full-a-2e4-current-normal-next-source-r2",
+      "role": "complete_runtime_source18",
+      "bytes": 1380106,
+      "sha256": "efaac06945e34f3fb43f2a2dbb0da24180d9f0341a90da463fd767e0a91f15d3"
+    },
+    {
+      "path": "sources/full-a-2e4-current-normal-next-source-r2/validation/actual-profile/README.md",
+      "origin_relative_path": "full-a-2e4-current-normal-next-source-r2/validation/actual-profile/README.md",
+      "package": "full-a-2e4-current-normal-next-source-r2",
+      "role": "complete_runtime_source18",
+      "bytes": 89381,
+      "sha256": "b886791202529032c9f85a88f80af456f1e916ad2ad1031eb417685edcae6493"
+    },
+    {
+      "path": "sources/full-a-2e4-current-normal-next-source-r2/validation/actual-profile/compose.yml",
+      "origin_relative_path": "full-a-2e4-current-normal-next-source-r2/validation/actual-profile/compose.yml",
+      "package": "full-a-2e4-current-normal-next-source-r2",
+      "role": "complete_runtime_source18",
+      "bytes": 11860,
+      "sha256": "f6c4b4f50fbd34fda66afcf2d0819d38992a2fe467172fe587cefbeb2d39a198"
+    },
+    {
+      "path": "sources/full-a-2e4-current-normal-next-source-r2/validation/actual-profile/interface-v1.json",
+      "origin_relative_path": "full-a-2e4-current-normal-next-source-r2/validation/actual-profile/interface-v1.json",
+      "package": "full-a-2e4-current-normal-next-source-r2",
+      "role": "complete_runtime_source18",
+      "bytes": 98802,
+      "sha256": "0748d251665d27f9dae25c3786e9015af70571e6624c3b535d3afa8b24eb1ed0"
+    },
+    {
+      "path": "sources/full-a-2e4-current-normal-next-source-r2/validation/actual-profile/ms4-host.py",
+      "origin_relative_path": "full-a-2e4-current-normal-next-source-r2/validation/actual-profile/ms4-host.py",
+      "package": "full-a-2e4-current-normal-next-source-r2",
+      "role": "complete_runtime_source18",
+      "bytes": 345436,
+      "sha256": "376a996274890190212e67e14279fed2367502a34d6b9f74fa913317cff95dea"
+    },
+    {
+      "path": "sources/full-a-2e4-current-normal-next-source-r2/validation/actual-profile/ms4-initialize.php",
+      "origin_relative_path": "full-a-2e4-current-normal-next-source-r2/validation/actual-profile/ms4-initialize.php",
+      "package": "full-a-2e4-current-normal-next-source-r2",
+      "role": "complete_runtime_source18",
+      "bytes": 78955,
+      "sha256": "7046b79ca32b4faec307efa40547f8435a93b7fc8a0f3fac5214e44303d4a610"
+    },
+    {
+      "path": "sources/full-a-2e4-current-normal-next-source-r2/validation/actual-profile/normal-close-ms4-fulfillment.py",
+      "origin_relative_path": "full-a-2e4-current-normal-next-source-r2/validation/actual-profile/normal-close-ms4-fulfillment.py",
+      "package": "full-a-2e4-current-normal-next-source-r2",
+      "role": "complete_runtime_source18",
+      "bytes": 47220,
+      "sha256": "bb15816116233a7971350127ba04162424bda2b9265490cf2458e8a50c242710"
+    },
+    {
+      "path": "sources/full-a-2e4-current-normal-next-source-r2/validation/actual-profile/seed-source-inverse.json",
+      "origin_relative_path": "full-a-2e4-current-normal-next-source-r2/validation/actual-profile/seed-source-inverse.json",
+      "package": "full-a-2e4-current-normal-next-source-r2",
+      "role": "complete_runtime_source18",
+      "bytes": 639,
+      "sha256": "c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a"
+    },
+    {
+      "path": "sources/full-a-2e4-current-normal-next-source-r2/validation/actual-profile/source-derivation.json",
+      "origin_relative_path": "full-a-2e4-current-normal-next-source-r2/validation/actual-profile/source-derivation.json",
+      "package": "full-a-2e4-current-normal-next-source-r2",
+      "role": "complete_runtime_source18",
+      "bytes": 592188,
+      "sha256": "19a8e9ef817011f4e0de63f571c9e09dcf44168b8e1df1b0edb8ad6025ae008d"
+    },
+    {
+      "path": "sources/full-a-2e4-current-normal-next-source-r2/validation/actual-profile/verify-zero-ms4-fulfillment.py",
+      "origin_relative_path": "full-a-2e4-current-normal-next-source-r2/validation/actual-profile/verify-zero-ms4-fulfillment.py",
+      "package": "full-a-2e4-current-normal-next-source-r2",
+      "role": "complete_runtime_source18",
+      "bytes": 296097,
+      "sha256": "0ef8b770f2b9289aa841ed500d5fd452277ca0315f958a776356f51fe1552e12"
+    },
+    {
+      "path": "sources/full-a-2e4-current-normal-next-source-r2/validation/run.py",
+      "origin_relative_path": "full-a-2e4-current-normal-next-source-r2/validation/run.py",
+      "package": "full-a-2e4-current-normal-next-source-r2",
+      "role": "complete_runtime_source18",
+      "bytes": 1006669,
+      "sha256": "083f95c705387af4b2ed84dcdbcc9c920ee6ed704b6b4a5695e02d3f67d65f6d"
     },
     {
       "path": "sources/full-a-eight-volume-consumer-source-closure-design-r1/candidate/help/audit-regressions/isolated/ms4-customer-http-normal.php",
@@ -1911,24 +2087,24 @@
     "full-a-paid-fulfillment-contract-normal-next-source-r1/launcher/launch.py"
   ],
   "current_full_a_required": [
-    "full-a-published-current-normal-next-source-r2/launcher/launch.py",
-    "full-a-published-current-normal-next-source-r2/materializer/INVERSE.json",
-    "full-a-published-current-normal-next-source-r2/materializer/PLAN.md",
-    "full-a-published-current-normal-next-source-r2/materializer/prepare.py",
-    "full-a-published-current-normal-next-source-r2/validation/actual-profile/compose.yml",
-    "full-a-published-current-normal-next-source-r2/validation/actual-profile/interface-v1.json",
-    "full-a-published-current-normal-next-source-r2/validation/actual-profile/ms4-host.py",
-    "full-a-published-current-normal-next-source-r2/validation/actual-profile/ms4-initialize.php",
-    "full-a-published-current-normal-next-source-r2/validation/actual-profile/normal-close-ms4-fulfillment.py",
-    "full-a-published-current-normal-next-source-r2/validation/actual-profile/README.md",
-    "full-a-published-current-normal-next-source-r2/validation/actual-profile/seed-source-inverse.json",
-    "full-a-published-current-normal-next-source-r2/validation/actual-profile/source-derivation.json",
-    "full-a-published-current-normal-next-source-r2/validation/actual-profile/verify-zero-ms4-fulfillment.py",
-    "full-a-published-current-normal-next-source-r2/validation/DESIGN-TASKS.md",
-    "full-a-published-current-normal-next-source-r2/validation/PINS.json",
-    "full-a-published-current-normal-next-source-r2/validation/PROFILE-PINS.json",
-    "full-a-published-current-normal-next-source-r2/validation/PROFILE-PUBLICATION.json",
-    "full-a-published-current-normal-next-source-r2/validation/run.py"
+    "full-a-2e4-current-normal-next-source-r2/launcher/launch.py",
+    "full-a-2e4-current-normal-next-source-r2/materializer/INVERSE.json",
+    "full-a-2e4-current-normal-next-source-r2/materializer/PLAN.md",
+    "full-a-2e4-current-normal-next-source-r2/materializer/prepare.py",
+    "full-a-2e4-current-normal-next-source-r2/validation/actual-profile/compose.yml",
+    "full-a-2e4-current-normal-next-source-r2/validation/actual-profile/interface-v1.json",
+    "full-a-2e4-current-normal-next-source-r2/validation/actual-profile/ms4-host.py",
+    "full-a-2e4-current-normal-next-source-r2/validation/actual-profile/ms4-initialize.php",
+    "full-a-2e4-current-normal-next-source-r2/validation/actual-profile/normal-close-ms4-fulfillment.py",
+    "full-a-2e4-current-normal-next-source-r2/validation/actual-profile/README.md",
+    "full-a-2e4-current-normal-next-source-r2/validation/actual-profile/seed-source-inverse.json",
+    "full-a-2e4-current-normal-next-source-r2/validation/actual-profile/source-derivation.json",
+    "full-a-2e4-current-normal-next-source-r2/validation/actual-profile/verify-zero-ms4-fulfillment.py",
+    "full-a-2e4-current-normal-next-source-r2/validation/DESIGN-TASKS.md",
+    "full-a-2e4-current-normal-next-source-r2/validation/PINS.json",
+    "full-a-2e4-current-normal-next-source-r2/validation/PROFILE-PINS.json",
+    "full-a-2e4-current-normal-next-source-r2/validation/PROFILE-PUBLICATION.json",
+    "full-a-2e4-current-normal-next-source-r2/validation/run.py"
   ],
   "pipeline_snapshots": [
     {
@@ -1942,10 +2118,18 @@
       "source_commit": "584532ba22b1824164aa11c06b163715be8c224c",
       "program_members": 18,
       "status": "SOURCE_ONLY_NOT_MATERIALIZED_NOT_BUSINESS_RUN"
+    },
+    {
+      "package": "full-a-2e4-current-normal-next-source-r2",
+      "source_commit": "2e4af47c7595947e16bef0abfa9785823b1369d5",
+      "program_members": 18,
+      "status": "ACTUAL_M_1037_ZERO_S_NOT_SIGNED_AT_HANDOFF_PREPARATION"
     }
   ],
   "required_design_clarifications": [
     "published-current-normal-next-source-r2-design-clarification-r1/CLARIFICATION.md",
     "published-current-normal-next-source-r2-design-clarification-r1/PINS.json"
-  ]
+  ],
+  "latest_materialized_source_commit": "2e4af47c7595947e16bef0abfa9785823b1369d5",
+  "handoff_branch": "codex/orchestration-handoff-20261023"
 }

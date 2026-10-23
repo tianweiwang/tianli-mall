@@ -2,11 +2,13 @@
 """Read-only source archive verification; never execute archived programs."""
 
 import ast
+import builtins
 import hashlib
 import json
 from pathlib import Path, PurePosixPath
 import re
 import sys
+import symtable
 
 
 class ArchiveError(Exception):
@@ -28,6 +30,28 @@ def unique_object(pairs):
 
 def load_json(raw):
     return json.loads(raw.decode('utf-8'), object_pairs_hook=unique_object)
+
+
+def check_declared_authority_globals(path):
+    raw = path.read_bytes()
+    tree = ast.parse(raw, filename=str(path))
+    require(any(isinstance(node, ast.Import) and any(alias.name == 'ast' for alias in node.names)
+                for node in tree.body), 'Current authority must explicitly import ast')
+    table = symtable.symtable(raw.decode('utf-8'), str(path), 'exec')
+    scopes = [child for child in table.get_children() if child.get_name() == 'source_authority']
+    require(len(scopes) == 1, 'Current authority definition missing or duplicated')
+    bound = {symbol.get_name() for symbol in table.get_symbols()
+             if symbol.is_assigned() or symbol.is_imported() or symbol.is_namespace()}
+
+    def references(scope):
+        names = {symbol.get_name() for symbol in scope.get_symbols()
+                 if symbol.is_global() and symbol.is_referenced()}
+        for child in scope.get_children():
+            names.update(references(child))
+        return names
+
+    missing = references(scopes[0]) - bound - set(dir(builtins))
+    require(not missing, 'Undeclared current authority globals: ' + ','.join(sorted(missing)))
 
 
 def main():
@@ -88,6 +112,8 @@ def main():
     current_package = next(iter(current_packages))
     for entry in ['materializer/prepare.py', 'validation/run.py', 'launcher/launch.py']:
         require(current_package + '/' + entry in current, 'Current orchestration entry missing: ' + entry)
+    for entry in ['materializer/prepare.py', 'validation/run.py']:
+        check_declared_authority_globals(root / 'sources' / current_package / entry)
     for rel in manifest['superseded_profile_only_missing_programs']:
         require('sources/' + rel not in expected, 'Draft status must be updated before adding: ' + rel)
     for rel in manifest['required_design_clarifications']:
@@ -101,6 +127,7 @@ def main():
         'packages': len(packages),
         'python_ast_parsed': python_count,
         'json_parsed': json_count,
+        'current_source_authority_global_checks': 2,
         'archived_programs_executed': False,
         'runtime_ready': False,
         'runtime_dependencies': 'runtime-dependencies.json',

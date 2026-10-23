@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "scope": "CURRENT_ORCHESTRATION_SOURCE_HANDOFF_ONLY",
+  "source_commit": "2e4af47c7595947e16bef0abfa9785823b1369d5",
+  "delivery_branch": "codex/orchestration-handoff-20261023",
+  "source_package": "full-a-2e4-current-normal-next-source-r2",
+  "new_files": 22,
+  "new_source_bytes": 6132173,
+  "archive_files": 255,
+  "archive_bytes": 43909804,
+  "original_233_files_unchanged": true,
+  "materialization": {
+    "status": "PASS_MATERIALIZATION_ONLY",
+    "native_operations": 1037,
+    "all_native_and_wait_zero": true,
+    "root_readback_report_bytes": 1193,
+    "root_readback_report_sha256": "5072a13a13a3b64c85a7c14593c9ed06de54e7e80dbe3594aff08c0fd46695d1"
+  },
+  "full_business_acceptance": "INCOMPLETE",
+  "S_terminal_at_handoff_preparation": "NOT_SUPPLIED",
+  "original_receipts_and_private_runtime_included": false,
+  "runtime_ready": false,
+  "archived_programs_executed_by_handoff": false,
+  "business_code_modified": false,
+  "active_source_worktrees_advanced": false,
+  "deployed": false,
+  "remaining_reproduction_dependencies": [
+    "machine paths and fixed runtime images",
+    "historical authoring inputs and authorities",
+    "original created/terminal and stdout/stderr evidence",
+    "fresh private initialization and complete runtime qualification"
+  ]
+}

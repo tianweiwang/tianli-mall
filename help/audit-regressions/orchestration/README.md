@@ -4,6 +4,8 @@
 
 这是**源码归档和恢复资料**。包含旧完整编排、后续失败版本和修正后的完整编排源码。本目录不宣称可直接跨机器运行或业务验证通过。交付分支为 `feature/ms4-asset-consumers`；最早的 `codex/audit-base` 链接不包含本次交接。
 
+最新补充位于独立交接分支 `codex/orchestration-handoff-20261023`：新增绑定业务提交 `2e4af47c7595947e16bef0abfa9785823b1369d5` 的完整编排 18 件及 4 件作者控制。归档共 255 文件、25 个包。原开发工作区继续固定在 `2e4` 运行验证，本交接分支的提交不改变该运行来源。
+
 ## 从 Git 离线核对
 
 在仓库根目录执行，使用 Python 3.14（与原检查环境一致），无需第三方库：
@@ -14,13 +16,16 @@ python -I -B help/audit-regressions/orchestration/verify_sources.py
 
 成功输出 `PASS_SOURCE_ARCHIVE_ONLY`。检查会完整读取清单内文件，校验长度、摘要、成员集合及 Python AST/JSON，并检查旧主编排与当前后继各自的完整 18 件源码。它不 import 或执行存档脚本，不连接 Docker、数据库、网络，也不读取原机目录。
 
+当前 M/S 另外通过 AST 和递归符号表检查 `source_authority` 声明的全局依赖，并要求真实 `import ast` 存在；检查仍不执行函数或模块。
+
 该命令在只有本目录的干净 Git 导出中也应通过。Python 接缝片段不是独立程序，与 PHP、JavaScript、YAML 等原件一样在该命令中只作字节校验；完整 Python 脚本才作 AST 解析。它不代替其他语言检查、真实环境或业务验收。
 
 ## 归档入口
 
 | 来源包 | 已收程序与配置 | 状态 |
 |---|---|---|
-| `full-a-raw-env-normal-next-source-r1` | materializer/prepare.py、launcher/launch.py、validation/run.py、实际九件 profile、作者源码和接缝 | 最后实际使用的完整主编排，绑定旧提交 `53e6d521b`；原付款进程失败 |
+| `full-a-2e4-current-normal-next-source-r2` | 完整 18 件 M/S/launcher/profile 与 `assemble.py`、`source_reader.py`、设计、module 检查结论 | 绑定业务提交 `2e4`；实际 M 1,037 项通过；准备交接时原 S 运行中，本包不签业务终态 |
+| `full-a-raw-env-normal-next-source-r1` | materializer/prepare.py、launcher/launch.py、validation/run.py、实际九件 profile、作者源码和接缝 | 历史完整主编排，绑定旧提交 `53e6d521b`；原付款进程失败 |
 | `full-a-paid-fulfillment-contract-normal-next-source-r1` | 两个作者 Python、候选九件 profile 和设计说明 | 绑定修复 `76efa7807` 的中间版本；该包只生成 profile，完整后继在下面两包 |
 | `full-a-published-current-normal-next-source-r1` | 完整 materializer、driver、launcher、实际九件 profile、来源控制及作者源码 | 绑定 `584532ba2`；实际 materialize 在源码冻结时失败，业务未启动 |
 | `full-a-published-current-normal-next-source-r2` | 修正后的完整 18 件、profile 原件与变更、完整作者程序 | 同样绑定 `584532ba2`；修正活跃 caller 版本引用，新 initializer 纯语法检查通过，未执行新 materialize 或业务链 |
@@ -36,6 +41,8 @@ python -I -B help/audit-regressions/orchestration/verify_sources.py
 | 三个 customer-form 来源与 proof INI | 原精确 PHP 快照及内存配置源码 | 只保存源码，不替代原运行回执 |
 
 所有实际文件以清单为准，不按目录名递归导入其他原机材料。没有把整份原材料目录、原 Run 或所有历史作者输入公开。两份 published-current 完整编排保留各自来源 `584532ba2`；归档提交本身会前移 Git HEAD，不能据此宣称已在归档后的 HEAD 运行通过。
+
+当前 `2e4` 补充同样保留其原始来源和冻结时的设计文字；部分原件写“未运行”反映其冻结时点。其后实际 M 结果只记入[补充摘要](../../../docs/multi-merchant/records/ms4/current-source-handoff-r3.json)。这里没有原 M/S 的 created/terminal、双流、完整作者输入或历史回执。最新完整程序可以离线读取和核字节，仍不能仅凭 Git 跨机完整复跑；`runtime_ready=false` 保持。
 
 r2 原冻结设计有两句关于当前工作树的旧措辞，原件保留；必须结合[设计澄清](sources/published-current-normal-next-source-r2-design-clarification-r1/CLARIFICATION.md)读取。实际作者核对复用旧 Main 已闭合证据，并读取历史 Git 对象和 Val 的 194 项；没有签当前 Main 或归档后的提交可以运行。校验器也要求该澄清随包存在。
 

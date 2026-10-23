@@ -31,3 +31,13 @@ python -I -B help/audit-regressions/orchestration/verify_sources.py
 r2 原冻结设计保留了两句旧措辞；随包的[设计澄清](../../../../help/audit-regressions/orchestration/sources/published-current-normal-next-source-r2-design-clarification-r1/CLARIFICATION.md)纠正其当前工作树含义。其最终作者结果只核历史 `584532ba2`：复用原 Main 已闭合窗口，另读历史 Git 对象和 Val 194 项；未断言当前 Main。完整运行的实时检查保持。
 
 LOAD-01 R2 已有独立源码核对与 PHP 纯语法结果。startup R1 已有独立源码核对，新候选语法、最终来源与 Host/current-reader/启用准入、完整 37 步业务、四条 CLI、正常收尾和独立核零仍待。完整交易、Worker、页面及后续各里程碑均按原计划验收；用户停止的样本继续 NOT RUN。
+
+## 当前 2e4 编排补充
+
+上述内容记录原 `2e4` 归档提交之前的交付。本次在独立 `codex/orchestration-handoff-20261023` 分支补入 `full-a-2e4-current-normal-next-source-r2`：完整 18 件和 4 件作者控制，共新增 22 文件、6,132,173 字节。原 233 条归档原件和清单条目保留；总计 255 文件、43,909,804 字节、25 包。
+
+新增原件包括显式 `import ast` 修复后的 M/S、launcher、九件实际 profile、其余来源控制与作者源码。离线验证器同时对当前 M/S 做递归符号表检查，不 import 或执行归档程序。两份历史 `584` 完整编排继续保留，当前 required 18 件改为绑定业务提交 `2e4af47c7595947e16bef0abfa9785823b1369d5` 的版本。
+
+该来源的实际完整 M 已有 1,037 条原生命令 native/wait 0；[仓库内摘要](current-source-handoff-r3.json)记录结果边界与外部 Root 回读报告摘要。准备交接时原 S 运行中，没有将其业务结果、付款、履约、售后评价、Worker 或资源收尾签为通过。原 S 自带正常关闭与独立核零；若原 S 成功，不能重复关闭。
+
+补充分支从业务来源 `2e4` 派生，原 Main/Val 保持 `2e4`；保存源码的后续提交不是运行中的业务来源。原实际收据与双流、完整作者重放输入、历史依据和私有配置仍不入库。换机复跑尚缺这些前提及新的隔离环境资格，本次只补齐最新完整编排的源码交接，不宣称可移植运行或完整商城验收。
