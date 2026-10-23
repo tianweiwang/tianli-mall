@@ -1,6 +1,16 @@
 # 普通下单 HTTP 失败诊断与读取入口
 
-## 当前0c13实际失败与后继修订（2026-10-23）
+## 当前28dc上传计数失败与最小修正（2026-10-24）
+
+Run `202610231609185fbd23` / 来源 `28dcab632da3e62f7c8b8d926b6ab9406534d0d3` 的完整来源物化1,078项通过，顾客准备正常完成。原S与付款producer实际退出1；首个受限Throwable投影定位为 `ms4-customer-http-normal.php:33` 的 `M4C_FORM_EXACT_QUOTA_INCREMENT`，阶段 `paid_real_confirmation`。collector只实际执行一次，报告14,380字节 / `6d92e2997841e7506fcaed6299f2663f5191304bcd73016c2accb5599ccdbdb1`。本次HTTP诊断字段存在、值为null，不能改写成旧Run的HTTP503。完整A失败，Task6、售后评价、Worker与fresh B均未开始。
+
+源码链已确认 `audit_redis()` 直接使用原生Redis，框架缓存驱动对数值先采用十进制字符串写入；测试helper原先却用 `serialize(int)` 核对raw Redis。最小修订仅改 `m4cf_upload` 两个接缝：原值须为不存在或规范十进制0至99，之后须严格等于加一后的十进制字符串。另46个函数及原24小时绝对期限、100次限额、tag、完整Redis差量、HTTP200、native34/数据库/原图与确认状态断言保持。未改变生产逻辑、业务数据或限额来放行测试。
+
+候选独立源码复核无finding，整文件68,224字节 / `fb729bd1a554441186938c22a4323a78537b3614c9561f7e9acf4dd00de2406d`。固定PHP8.2、network none、read-only的必要纯语法实际通过；3项原生操作均0，临时容器前后为空，结果4,155字节 / `16dc72db1628732abb7827e430f16ab538b2a725097d9b7431419e1c73ca775d`。采用身份以真实Git为准，未据此签新完整业务通过。
+
+当前失败实例已普通收尾并独立核零：93/20项原生操作均0；Root与peer完整读回保留44,471文件、6,859目录、全部原生命令及其他资源连续性。Root报告1,272字节 / `e72fdc670bda960f75ed400bda581bc21f6b2840216616dfd4e495e46f5db1d1`，peer报告5,453字节 / `63001ae7ca961cbde6499b4393703404de14336975f6b5e5b47a9c7e495937dc`。本 Run 不重启、不补写成功A0；下一实际提交须重新生成完整Source/M/S。原停止样本继续NOT RUN；其他未完成项见[当前状态](../../CURRENT-STATUS.md)。
+
+## 历史0c13实际失败与后继修订（2026-10-23）
 
 Run `20261023124755f45a9e` 的实际来源为 `0c13c57ba1ec4bf15ea9240601a5d6361e986ce8`。完整来源物化1,060项原生操作通过，九文件 profile 已冻结；原 S 与付款 producer 实际退出1，付款准备在 `paid_real_confirmation` 的 `M4C_FORM_NORMAL_HTTP_JSON_200` 断言失败。Task6、售后评价、Worker 和 fresh B 未开始，没有成功 A0。
 

@@ -6,6 +6,19 @@
 
 当前实际来源、失败收口及待采用候选状态见[当前状态](CURRENT-STATUS.md)。本文件保留原任务与验收清单；以下运行和修订段落按各自原执行时点保留，不代表最新运行状态。
 
+### 当前28dc后继：上传计数raw编码修正（2026-10-24）
+
+Run `202610231609185fbd23` / 来源 `28dcab632da3e62f7c8b8d926b6ab9406534d0d3` 的完整M1,078项及顾客准备通过；付款producer与原S实际退出1，失败为 `paid_real_confirmation` 的 `M4C_FORM_EXACT_QUOTA_INCREMENT`。本次HTTP诊断存在但为null，原0c13的503不套用于本次。完整A仍失败，Task6/AR/Worker/fresh B未开始，无成功A0；原Run与冻结材料保持。
+
+实施范围：仅 `help/audit-regressions/isolated/lib/ms4-customer-form-normal.php` 和本计划、当前状态、HTTP诊断记录。框架原数值缓存使用十进制raw字符串，helper须按原生wire读取，不能按PHP序列化整数核对。前值只允许不存在或规范0至99，后值严格等于加一；原限额、24小时绝对期限、tag、完整Redis差量、HTTP200/native34/数据库/原图及其余函数全部保留。不改产品行为、商品规格价格库存或生产数据；回退只撤销helper两处比较接缝。
+
+- [x] 保留实际失败与一次受限诊断；本Run普通close93及独立zero20均0，Root与peer完整回读通过，44,471文件/6,859目录和其他资源连续保持。
+- [x] 最小两缝候选完成独立源码复核；68,224字节 / `fb729bd1a554441186938c22a4323a78537b3614c9561f7e9acf4dd00de2406d`，其余46函数整段保持。
+- [x] 固定PHP8.2、无网络只读环境整文件语法通过；3项原生命令均0、专用容器前后为空，结果4,155字节 / `16dc72db1628732abb7827e430f16ab538b2a725097d9b7431419e1c73ca775d`；按原字节接入，提交身份以Git为准。
+- [ ] 在新clean提交重新生成完整Source、九件profile和M/S，完成原正常A及收尾核零，再进行同源fresh B、三端页面/设备和其他原验收责任。
+
+本次Source、纯语法及收尾结果不代签新订单/售后业务。原停止的安全、负向、故障、并发、断连、恢复及专门过期样本继续NOT RUN；真实金融与部署仍须外部条件和相应授权，只有BASE已有人工签收。
+
 ### 2fa顾客准备失败收口与raw环境守恒修订（2026-10-23）
 
 通用多商户商城继续复用原商品列表、SKU、规格、价格和库存。Run `202610222308394826f8` / Source `2fa872e6fda7a8bf46c55f88dd946b972ec79102` / freeze `b141e6e2b57285964e50ac6c1a3ed073273a416158f762ea6762aa095e9c8046` 的初始化、MS5结构、early五组迁移及文件初始化通过；顾客准备在 `business_app` 的 `M4C_FORM_OFFICIAL_INITIALIZE_PRESERVES_ACTUAL_ENV` 校验自然退出1，HTTP调用0、HTTP child为空。内部付款、Task6、售后评价及Worker未开始，完整A未通过。工具连接中断使原S的实际退出值未知、terminal缺席；只读续接观察确认同原CID终态1并正确停止，不补写原S成功，不替换或重启原业务。

@@ -181,8 +181,8 @@ function m4cf_upload(PDO $db,array $frame,int $uid,string $key,int $product,int 
     $id=m5pcp_u64($meta['table']['AUTO_INCREMENT']);$definition=null;
     foreach($frame['custom_form']as$group)if($group['product_id']===$product)$definition=$group;
     m4cf_expect(is_array($definition)&&$definition['fields'][$field]['label']==='img','REAL_FROZEN_IMAGE_FIELD');
-    $counter='c:start_uploads_'.$uid;$old=audit_redis()->get($counter);$oldCount=$old===false?0:unserialize($old,['allowed_classes'=>false]);
-    m4cf_expect(is_int($oldCount)&&$oldCount>=0&&$oldCount<100&&($old===false||$old===serialize($oldCount)),'EXACT_BEFORE_QUOTA');
+    $counter='c:start_uploads_'.$uid;$old=audit_redis()->get($counter);$oldCount=$old===false?0:(is_string($old)&&preg_match('/\A(?:0|[1-9][0-9]?)\z/D',$old)===1?(int)$old:null);
+    m4cf_expect(is_int($oldCount)&&$oldCount>=0&&$oldCount<100&&($old===false||$old===(string)$oldCount),'EXACT_BEFORE_QUOTA');
     $tag='c:CRMEB:'.md5('crmeb');$GLOBALS['m4ar_tag_members'][$tag]=audit_redis()->sMembers($tag);
     $reply=m4cf_multipart('/api/order/confirm/'.$key.'/forms/'.$product.'/'.$field.'/files',$actor['token'],$image['bytes'],$image['name'],$image['mime']);
     $data=m4cf_json($reply);m4c_entry_keys($data,['name','url','attachment_ref']);$after=m4cf_snapshot($db);
@@ -203,7 +203,7 @@ function m4cf_upload(PDO $db,array $frame,int $uid,string $key,int $product,int 
     m4cf_expect(m5pcp_rows($db,'SELECT * FROM eb_marketplace_customer_asset WHERE id=?',[$id])===[$expected],'INDEPENDENT_NATIVE34_COMMITTED');
     $rows=[$table=>array_merge($before['rows'][$table],[$expected])];m4ar_auth_delta($before,$after,$actor,$reply['actual_interval'],$rows);
     m4ar_database_delta($before,$after,$rows,[$table=>1]);
-    m4cf_expect(audit_redis()->get($counter)===serialize($oldCount+1),'EXACT_QUOTA_INCREMENT');$entry=$after['redis']['keys'][hash('sha256',$counter)];
+    m4cf_expect(audit_redis()->get($counter)===(string)($oldCount+1),'EXACT_QUOTA_INCREMENT');$entry=$after['redis']['keys'][hash('sha256',$counter)];
     m4cf_expect($entry['type']==='string'&&$entry['expires']>=$reply['actual_interval'][0]*1000+86400000
         &&$entry['expires']<=($reply['actual_interval'][1]+1)*1000+86400000,'QUOTA_REAL_ABSOLUTE_DEADLINE');
     m4ar_redis_delta($before,$after,[$counter=>$entry]+m4ar_tag_change($before,$after,$tag,[$counter]));
