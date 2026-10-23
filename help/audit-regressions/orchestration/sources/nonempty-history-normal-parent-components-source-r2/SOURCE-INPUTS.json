@@ -1,0 +1,674 @@
+{
+  "schema": 1,
+  "windows": [
+    {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-pre37-fixed-preparation-components-source-r1/author.py",
+      "bytes": 17815,
+      "sha256": "51a45b155656c3eb843be2c8dee52b063622df0e50e387c9e962c9bcc8a29732",
+      "named_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474987028819,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 17815,
+        "st_mtime_ns": 1792718353688620300,
+        "st_ctime_ns": 1792718353688620300
+      },
+      "fd_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474987028819,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 17815,
+        "st_mtime_ns": 1792718353688620300,
+        "st_ctime_ns": 1792718353688620300
+      },
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-normal-parent-components-source-r1/PINS.json",
+      "bytes": 1827,
+      "sha256": "c2f94c0d86d398384e5a6467bfa7ce522859e7f2897685c2ad11d0cdbcce37ae",
+      "named_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474987029639,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 1827,
+        "st_mtime_ns": 1792720957530842800,
+        "st_ctime_ns": 1792720957530842800
+      },
+      "fd_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474987029639,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 1827,
+        "st_mtime_ns": 1792720957530842800,
+        "st_ctime_ns": 1792720957530842800
+      },
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-normal-parent-independent-r1/REPORT.json",
+      "bytes": 3790,
+      "sha256": "8aa71682cddac403a822cc97d4b7a80a9eaf9cc87116c81945c34e0bbfda67f3",
+      "named_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 562949963740303,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 3790,
+        "st_mtime_ns": 1792721311250097300,
+        "st_ctime_ns": 1792721311249595400
+      },
+      "fd_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 562949963740303,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 3790,
+        "st_mtime_ns": 1792721311250097300,
+        "st_ctime_ns": 1792721311250097300
+      },
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-normal-parent-components-source-r1/candidate/legacy-history-producer.php",
+      "bytes": 1051627,
+      "sha256": "606a49d80ccf211a14d4731c9cbd24077bea5a2a9a6b961c09cd1e86db30f9ab",
+      "named_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474987029629,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 1051627,
+        "st_mtime_ns": 1792720957262714700,
+        "st_ctime_ns": 1792720957259811500
+      },
+      "fd_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474987029629,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 1051627,
+        "st_mtime_ns": 1792720957262714700,
+        "st_ctime_ns": 1792720957262714700
+      },
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-normal-parent-components-source-r2/DESIGN-TASKS.md",
+      "bytes": 2955,
+      "sha256": "ff8a8f20bdb6d3377ec2a78f03c203c9bd2b8e350bfccf4fabf3fa2819cd3f97",
+      "named_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 562949963429142,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 2955,
+        "st_mtime_ns": 1792739034872438800,
+        "st_ctime_ns": 1792739034872438800
+      },
+      "fd_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 562949963429142,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 2955,
+        "st_mtime_ns": 1792739034872438800,
+        "st_ctime_ns": 1792739034872438800
+      },
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-normal-parent-components-source-r1/SOURCE-OVERLAY.json",
+      "bytes": 7144,
+      "sha256": "d7d5770dc5fa000dda78c252f2f2a4baa21864bc5660ebc92cc8359d6a433e3f",
+      "named_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474987029634,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 7144,
+        "st_mtime_ns": 1792720957482287800,
+        "st_ctime_ns": 1792720957481785200
+      },
+      "fd_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474987029634,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 7144,
+        "st_mtime_ns": 1792720957482287800,
+        "st_ctime_ns": 1792720957482287800
+      },
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-pre37-app-init-components-source-r1/candidate/legacy-app.php",
+      "bytes": 52325,
+      "sha256": "36ee80b6e425aa5623f814bfb9efd8b8d0b2aede94a2762c03d4d696aab734c5",
+      "named_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474987026654,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 52325,
+        "st_mtime_ns": 1792717140477652300,
+        "st_ctime_ns": 1792717140477652300
+      },
+      "fd_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474987026654,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 52325,
+        "st_mtime_ns": 1792717140477652300,
+        "st_ctime_ns": 1792717140477652300
+      },
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-pre37-fixed-preparation-components-source-r1/candidate/legacy-normal-config.php",
+      "bytes": 26655,
+      "sha256": "46529a71de605c3ddb475c5fcaac487cf96cd68745996752401e24aac997d04f",
+      "named_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474987028823,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 26655,
+        "st_mtime_ns": 1792718361900227700,
+        "st_ctime_ns": 1792718361900227700
+      },
+      "fd_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474987028823,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 26655,
+        "st_mtime_ns": 1792718361900227700,
+        "st_ctime_ns": 1792718361900227700
+      },
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-pre37-actors-components-source-r1/candidate/legacy-actors.php",
+      "bytes": 25618,
+      "sha256": "44235713b307c9913ea9fbf92a0c26908e145a90f6d5636f61ec156f1588fb40",
+      "named_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474987028529,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 25618,
+        "st_mtime_ns": 1792717944928127200,
+        "st_ctime_ns": 1792717944928127200
+      },
+      "fd_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474987028529,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 25618,
+        "st_mtime_ns": 1792717944928127200,
+        "st_ctime_ns": 1792717944928127200
+      },
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-upgrade-source-r2/legacy-history-http.php",
+      "bytes": 36764,
+      "sha256": "2747c8227349c62e4c5f928561ffbb307a6b9c34cf0d24420a0bf15f5aa0a3f2",
+      "named_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474986558770,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 36764,
+        "st_mtime_ns": 1792557246218043900,
+        "st_ctime_ns": 1792546800121855000
+      },
+      "fd_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474986558770,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 36764,
+        "st_mtime_ns": 1792557246218043900,
+        "st_ctime_ns": 1792557246218043900
+      },
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-upgrade-source-r2/README.md",
+      "bytes": 5547,
+      "sha256": "295f78e8bef5a0af84a14324a6dab3afce3abaf9a53e5d3c47365f0d57ea9943",
+      "named_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474986557621,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 5547,
+        "st_mtime_ns": 1792550568191725200,
+        "st_ctime_ns": 1792546177679299000
+      },
+      "fd_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474986557621,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 5547,
+        "st_mtime_ns": 1792550568191725200,
+        "st_ctime_ns": 1792550568191725200
+      },
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-private-prepare-components-source-r2/candidate/compose.yml",
+      "bytes": 4884,
+      "sha256": "63ecc33ea0b821cccc149dceff5de26ef54ad1fdcf2922b43fc55ad21f4e0ea9",
+      "named_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474987021272,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 4884,
+        "st_mtime_ns": 1792715549736243600,
+        "st_ctime_ns": 1792715549736243600
+      },
+      "fd_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474987021272,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 4884,
+        "st_mtime_ns": 1792715549736243600,
+        "st_ctime_ns": 1792715549736243600
+      },
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-private-prepare-components-source-r2/candidate/ms4-host.py",
+      "bytes": 74958,
+      "sha256": "ba005f51fea2ab4ffdb7a8c88bdfd48ad4a23e39f446bbb440501d646a119e6a",
+      "named_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474987021276,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 74958,
+        "st_mtime_ns": 1792715549755708100,
+        "st_ctime_ns": 1792715549755183100
+      },
+      "fd_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474987021276,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 74958,
+        "st_mtime_ns": 1792715549755708100,
+        "st_ctime_ns": 1792715549755708100
+      },
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-private-prepare-components-source-r2/candidate/ms4-initialize.php",
+      "bytes": 63165,
+      "sha256": "95c0e205d3596e3701aeceb5dcce3cd046682a4843c924df2c12128bf17379a8",
+      "named_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474987021267,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 63165,
+        "st_mtime_ns": 1792715549697701200,
+        "st_ctime_ns": 1792715549697701200
+      },
+      "fd_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474987021267,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 63165,
+        "st_mtime_ns": 1792715549697701200,
+        "st_ctime_ns": 1792715549697701200
+      },
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-upgrade-source-r2/seed-source-inverse.json",
+      "bytes": 639,
+      "sha256": "c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a",
+      "named_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474986557625,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 639,
+        "st_mtime_ns": 1792546177718002700,
+        "st_ctime_ns": 1792546177718002700
+      },
+      "fd_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474986557625,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 639,
+        "st_mtime_ns": 1792546177718002700,
+        "st_ctime_ns": 1792546177718002700
+      },
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-pre37-app-init-components-source-r1/candidate/legacy-app.php",
+      "bytes": 52325,
+      "sha256": "36ee80b6e425aa5623f814bfb9efd8b8d0b2aede94a2762c03d4d696aab734c5",
+      "named_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474987026654,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 52325,
+        "st_mtime_ns": 1792717140477652300,
+        "st_ctime_ns": 1792717140477652300
+      },
+      "fd_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474987026654,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 52325,
+        "st_mtime_ns": 1792717140477652300,
+        "st_ctime_ns": 1792717140477652300
+      },
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-upgrade-source-r2/legacy-files-bootstrap.php",
+      "bytes": 14449,
+      "sha256": "dbe38371567d495d5567189599a025903b91a22ffa6c8b001aab2509baf1375b",
+      "named_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474986557627,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 14449,
+        "st_mtime_ns": 1792547616244212000,
+        "st_ctime_ns": 1792546177734620900
+      },
+      "fd_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474986557627,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 14449,
+        "st_mtime_ns": 1792547616244212000,
+        "st_ctime_ns": 1792547616244212000
+      },
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-pre37-fixed-preparation-components-source-r1/candidate/legacy-normal-config.php",
+      "bytes": 26655,
+      "sha256": "46529a71de605c3ddb475c5fcaac487cf96cd68745996752401e24aac997d04f",
+      "named_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474987028823,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 26655,
+        "st_mtime_ns": 1792718361900227700,
+        "st_ctime_ns": 1792718361900227700
+      },
+      "fd_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474987028823,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 26655,
+        "st_mtime_ns": 1792718361900227700,
+        "st_ctime_ns": 1792718361900227700
+      },
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-pre37-actors-components-source-r1/candidate/legacy-actors.php",
+      "bytes": 25618,
+      "sha256": "44235713b307c9913ea9fbf92a0c26908e145a90f6d5636f61ec156f1588fb40",
+      "named_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474987028529,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 25618,
+        "st_mtime_ns": 1792717944928127200,
+        "st_ctime_ns": 1792717944928127200
+      },
+      "fd_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474987028529,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 25618,
+        "st_mtime_ns": 1792717944928127200,
+        "st_ctime_ns": 1792717944928127200
+      },
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-upgrade-source-r2/legacy-history-http.php",
+      "bytes": 36764,
+      "sha256": "2747c8227349c62e4c5f928561ffbb307a6b9c34cf0d24420a0bf15f5aa0a3f2",
+      "named_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474986558770,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 36764,
+        "st_mtime_ns": 1792557246218043900,
+        "st_ctime_ns": 1792546800121855000
+      },
+      "fd_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474986558770,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 36764,
+        "st_mtime_ns": 1792557246218043900,
+        "st_ctime_ns": 1792557246218043900
+      },
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-normal-close-components-source-r1/candidate/legacy-history-channel.php",
+      "bytes": 11296,
+      "sha256": "98f1b863f3a5538e1c9ba867e58206adafdceb57d40faad39ca92e4018957ffc",
+      "named_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474987029577,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 11296,
+        "st_mtime_ns": 1792720476419173800,
+        "st_ctime_ns": 1792720476419173800
+      },
+      "fd_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474987029577,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 11296,
+        "st_mtime_ns": 1792720476419173800,
+        "st_ctime_ns": 1792720476419173800
+      },
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-normal-parent-components-source-r2/candidate/legacy-history-producer.php",
+      "bytes": 1052008,
+      "sha256": "6a01674bdabfdfb2ff40a7df915642889373f05ee948aeae204429f5e84be48a",
+      "named_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 562949963429147,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 1052008,
+        "st_mtime_ns": 1792739036117330100,
+        "st_ctime_ns": 1792739036115326100
+      },
+      "fd_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 562949963429147,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 1052008,
+        "st_mtime_ns": 1792739036117330100,
+        "st_ctime_ns": 1792739036117330100
+      },
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-upgrade-source-r2/legacy-history-router.php",
+      "bytes": 5551,
+      "sha256": "e6dea42b0f0ec0f93f7d718426f7be5f5c6963c832409f8f676632a956d2c554",
+      "named_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474986563155,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 5551,
+        "st_mtime_ns": 1792561046264042900,
+        "st_ctime_ns": 1792551736280409500
+      },
+      "fd_before_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474986563155,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 5551,
+        "st_mtime_ns": 1792561046264042900,
+        "st_ctime_ns": 1792561046264042900
+      },
+      "EOF": true,
+      "closed": true
+    }
+  ],
+  "all_read_windows_closed": true,
+  "ended_ns": 1792739036442617900
+}

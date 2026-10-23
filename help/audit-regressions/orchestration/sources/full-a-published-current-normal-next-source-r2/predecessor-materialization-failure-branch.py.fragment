@@ -1,0 +1,32 @@
+    check(context['predecessor_source_freeze_failure'] == PREDECESSOR_SOURCE_FREEZE_FAILURE, 'FIXED_ACTUAL_PREDECESSOR_M673_FAILURE')
+    failed_m = decode(read(PREDECESSOR_SOURCE_FREEZE_FAILURE)); failure = decode(read(failed_m['failure']))
+    check(failed_m['schema']==1 and failed_m['scope']=='ACTUAL_PREDECESSOR_SOURCE_FREEZE_FAILED_ONLY'
+        and failed_m['source_sha']==pub['source_sha'] and failure['status']=='MATERIALIZATION_INCOMPLETE_STATE_PRESERVED'
+        and failure['phase']=='actual_freeze' and failure['class']=='RuntimeError' and failure['code']=='ACTUAL_NATIVE_ZERO_EMPTY_STDERR'
+        and failure['retry']=='NOT_ATTEMPTED' and len(failure['native_operations'])==len(failed_m['receipts'])==673,
+        'TRUE_M673_FAILED_COMPLETE_FREEZE_WITHOUT_ACCEPTANCE')
+    for index,(operation,receipt) in enumerate(zip(failure['native_operations'],failed_m['receipts']),1):
+        made=decode(native_raw(receipt['created'])); ended=decode(native_raw(receipt['terminal']))
+        out=native_raw(receipt['stdout']); err=native_raw(receipt['stderr'])
+        check(ended==operation and made['pid']==operation['pid'] and made['argv']==operation['argv']
+            and operation['native_exit']==operation['wait_returncode']==(1 if index==673 else 0)
+            and len(out)==operation['stdout_bytes'] and hashlib.sha256(out).hexdigest()==operation['stdout_sha256']
+            and len(err)==operation['stderr_bytes']==0 and hashlib.sha256(err).hexdigest()==operation['stderr_sha256'], 'PREDECESSOR_ALL673_ACTUAL_PID_WAIT_AND_COMPLETE_STREAMS')
+        args=operation['argv']
+        check(Path(args[0]).name.lower() in ['git','git.exe','python.exe']
+            and not any(str(arg).lower() in ['docker','docker.exe'] for arg in args), 'PREDECESSOR_SOURCE_GIT_HELP_FREEZE_ONLY_NO_DOCKER')
+        if index==673:
+            summary=decode(out)
+            check(operation['stem']=='673-freeze' and operation['label']=='freeze' and summary['class']=='RuntimeError'
+                and summary['attempt_context'] is None and summary['full_acceptance']=='INCOMPLETE', 'PREDECESSOR_FREEZE_FAILED_BEFORE_RUN_CONTEXT')
+    outer=failed_m['outer']; made=decode(native_raw(outer['created'])); ended=decode(native_raw(outer['terminal']))
+    check(made['pid']==ended['pid']==45364 and ended['native_exit']==ended['wait_returncode']==1, 'PREDECESSOR_ACTUAL_OUTER45364_WAIT_ONE')
+    for stream in ['stdout','stderr']:
+        raw=native_raw(outer[stream]);check(compact(ended[stream])==compact(outer[stream])
+            and {'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest()}==compact(ended[stream]), 'PREDECESSOR_OUTER_TRUE_NESTED_STREAM_SCHEMA')
+    root=decode(read(failed_m['root_source_PINS'])); read(failed_m['materializer_source'])
+    diagnostic=decode(read(failed_m['readonly_diagnostic']))
+    check(root['source_sha']==failed_m['source_sha'] and diagnostic['status']=='ORIGINAL_FULL_FREEZE_FIXED_FAILURE_OBSERVED'
+        and diagnostic['first_RuntimeError']['fixed_code']=='EXACT_REVIEWED_REAL_PAID_ENTRY'
+        and diagnostic['Docker_or_business_calls']==0 and diagnostic['new_diagnostic_output_file_exists'] is False,
+        'PREDECESSOR_FIXED_DIAGNOSTIC_TRUTH_AND_NO_SUCCESSOR_ACCEPTANCE')

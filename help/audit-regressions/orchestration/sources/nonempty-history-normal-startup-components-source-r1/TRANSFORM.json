@@ -1,0 +1,47 @@
+{
+  "schema": 1,
+  "scope": "FIVE_EXACT_MAIN_SEAMS_AND_FOUR_COMPLETE_STARTUP_DEFINITIONS",
+  "before": {
+    "bytes": 1052008,
+    "sha256": "6a01674bdabfdfb2ff40a7df915642889373f05ee948aeae204429f5e84be48a"
+  },
+  "candidate": {
+    "bytes": 1081876,
+    "sha256": "8e3156f29e1aedb87fbbce359da41025992f3ebe88a67299fba6487e540f20b1"
+  },
+  "finite_main_seams": [
+    {
+      "name": "same_source_dependencies",
+      "old": "        // Named real Source gaps, before loading App, writing parent or connecting\r\n        // resources. They are intentionally absent in this not-yet-admitted Source.\r\n        foreach (['nhep_normal_startup_plan', 'nhep_normal_startup_accept'] as $dependency) {",
+      "replacement": "        // Complete fixed startup definitions must come from this same Source.\r\n        // Original direct/Host admission remains refused until its full binding.\r\n        foreach (['nhep_normal_startup_plan', 'nhep_normal_startup_ready', 'nhep_normal_startup_accept'] as $dependency) {"
+    },
+    {
+      "name": "independent_before_observer_inputs",
+      "old": "        $startupPlan = nhep_normal_startup_plan($qualified, $prepared);",
+      "replacement": "        $startupPlan = nhep_normal_startup_plan($qualified, $observer, $redis, $prepared);"
+    },
+    {
+      "name": "complete_first_line_before_whole_observation",
+      "old": "        nhep_child_start($qualified, $children, 'http');\r\n        $startupPrivate = [];",
+      "replacement": "        nhep_child_start($qualified, $children, 'http');\r\n        $startupReady = nhep_normal_startup_ready($qualified, $children, $startupPlan);\r\n        $startupPrivate = [];"
+    },
+    {
+      "name": "original_full_observation_to_independent_accept",
+      "old": "            $startupPlan, $startupActual, $startupPrivate);",
+      "replacement": "            $startupPlan, $startupReady, $startupActual, $startupPrivate);"
+    },
+    {
+      "name": "private_receipt_lifetime",
+      "old": "        unset($prepared, $startupPlan, $startupPrivate, $startupActual, $startupExpected, $oracles, $channel);",
+      "replacement": "        unset($prepared, $startupPlan, $startupReady, $startupPrivate, $startupActual, $startupExpected, $oracles, $channel);"
+    }
+  ],
+  "addition_before_original169tail": {
+    "source": "startup.fragment.php",
+    "LF_bytes": 29339,
+    "LF_sha256": "5df76b21226d6dda4ab6ad9566da069fe25c55a2cfdbbf96b75fe727b6bc41bc",
+    "CRLF_bytes": 29709,
+    "CRLF_sha256": "fe785c37278f9392fecb530e5ec5a5a38c682b31df60782e381e1de356fb9727"
+  },
+  "standard_forward_reverse_exact": true
+}

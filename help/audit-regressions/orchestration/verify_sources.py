@@ -33,7 +33,7 @@ def load_json(raw):
 def main():
     root = Path(__file__).resolve().parent
     manifest = load_json((root / 'source-manifest.json').read_bytes())
-    require(manifest['schema'] == 1, 'Unsupported manifest schema')
+    require(manifest['schema'] == 2, 'Unsupported manifest schema')
     require(manifest['status'] == 'SOURCE_ARCHIVE_RUNTIME_NOT_READY', 'Unexpected archive status')
     rows = manifest['files']
     require(type(rows) is list and len(rows) == manifest['file_count'], 'File count mismatch')
@@ -79,8 +79,19 @@ def main():
     require(total_bytes == manifest['total_bytes'], 'Total byte count mismatch')
     for rel in manifest['historical_full_a_required']:
         require('sources/' + rel in expected, 'Historical pipeline source missing: ' + rel)
-    for rel in manifest['current_draft_unimplemented']:
+    current = manifest['current_full_a_required']
+    require(len(current) == len(set(current)) == 18, 'Current pipeline must contain all 18 members')
+    for rel in current:
+        require('sources/' + rel in expected, 'Current pipeline source missing: ' + rel)
+    current_packages = {PurePosixPath(rel).parts[0] for rel in current}
+    require(len(current_packages) == 1, 'Current pipeline spans multiple packages')
+    current_package = next(iter(current_packages))
+    for entry in ['materializer/prepare.py', 'validation/run.py', 'launcher/launch.py']:
+        require(current_package + '/' + entry in current, 'Current orchestration entry missing: ' + entry)
+    for rel in manifest['superseded_profile_only_missing_programs']:
         require('sources/' + rel not in expected, 'Draft status must be updated before adding: ' + rel)
+    for rel in manifest['required_design_clarifications']:
+        require('sources/' + rel in expected, 'Design clarification missing: ' + rel)
     dependencies = load_json((root / 'runtime-dependencies.json').read_bytes())
     require(dependencies['runtime_ready'] is False, 'Runtime readiness cannot be inferred from source verification')
     print(json.dumps({

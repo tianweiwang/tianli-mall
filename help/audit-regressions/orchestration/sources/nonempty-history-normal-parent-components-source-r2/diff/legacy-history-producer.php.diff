@@ -1,0 +1,15 @@
+--- before/legacy-history-producer.php
++++ candidate/legacy-history-producer.php
+@@ -13134,6 +13134,12 @@
+         require_once __DIR__ . '/legacy-app.php';
+         $freeze = ['path' => '/run/audit/preparation-source-binding.json', 'bytes' => (int)$bytes[1], 'sha256' => $sha[1]];
+         $qualified = nhe_qualify($freeze, 'audit-legacy-history-producer');
++        // The shared qualifier pins all controls; load these three definitions
++        // before any parent write, observer connection or original pre37 call.
++        require_once '/run/nonempty/legacy-normal-config.php';
++        require_once '/run/nonempty/legacy-actors.php';
++        require_once '/run/nonempty/legacy-history-http.php';
++        nhe_includes($qualified);
+         nhep_parent_qualified($qualified); nhep_parent_write($qualified);
+         $observer = audit_db(); $redis = audit_redis();
+         $prepared = nhep_pre37_fixed_preparation($qualified, $observer, $redis);

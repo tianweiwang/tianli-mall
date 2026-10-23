@@ -1,0 +1,118 @@
+    # Fifth named retirement: consume the actual paid-failure schema without old customer coercions.
+    check(context['current_paid_producer_failure_retirement'] == CURRENT_PAID_PRODUCER_FAILURE_RETIREMENT,
+        'CURRENT_PAID_FAILURE_FIXED_ACTUAL_AUTHORITY')
+    paid_producer_retirement = decode(read(CURRENT_PAID_PRODUCER_FAILURE_RETIREMENT))
+    pf = paid_producer_retirement; truth = pf['original_failure_truth']
+    check(set(pf) == {'schema','status','run_id','source_sha','freeze_sha256','original_failure_truth','results',
+        'source_receipts','close_zero_source_PINS','native_receipts','original_failed_S_wrapper','root_readbacks',
+        'original_protected_metadata','global_inventories','outer_native_receipts','original_orchestration_history',
+        'continuation_failure_history','current_M_history','protection_metadata','full_acceptance','all_input_windows_ended','ended_ns'}
+        and pf['schema'] == 1 and pf['status'] == 'ACTUAL_PAID_PRODUCER_FAILED_FULL_A_NORMAL_CLOSE_AND_INDEPENDENT_ZERO'
+        and pf['run_id'] == '20261023003421d1fc4b' and pf['source_sha'] == chain[10]['source_sha'] == '53e6d521b387b19a4cf370e0e381670b762d325e'
+        and pf['freeze_sha256'] == '5961d32e44fa12424c6503b0510221b28b84f43e6074416f11de69df714bf626'
+        and pf['full_acceptance'] == 'INCOMPLETE' and pf['all_input_windows_ended'] is True
+        and truth['failed_outer_pid'] == 49572 and truth['failed_outer_native_exit'] == 1 and truth['original_S_terminal'] == 'PRESENT'
+        and truth['original_completed_native_zero'] == 71 and truth['initializer_native_exit'] == 0
+        and truth['MS5_driver_native_exit'] == truth['early_container_native_exit'] == truth['files_bootstrap_native_exit'] == truth['customer_prepare_native_exit'] == 0
+        and truth['early_receipt_published'] is True and truth['paid_producer_native_exit'] == 1
+        and truth['paid_failure_code'] == 'M4C_PAID_UNCLASSIFIED_SOURCE_FAILURE'
+        and truth['paid_failure_phase'] == truth['first_throwable_location'] == truth['http_calls_completed'] == truth['HTTP_child'] == 'UNKNOWN'
+        and truth['paid_result_public_file'] == 'ABSENT_NOT_A_PHASE_PROOF' and truth['later_Task6_AR_Worker'] == 'NOT STARTED',
+        'CURRENT_PAID_FAILURE_ACTUAL_ONE_AND_UNKNOWN_PHASE_NOT_REWRITTEN')
+    check(truth['early_command_counts'] == {'fulfillment':{'check':2,'apply-structure':2},'aftersale':{'check':2,'apply-structure':2},
+        'aftersale_menus':{'check':2,'apply':2},'review_menus':{'check':2,'apply':2},'assets':{'check':2,'apply-structure':2}},
+        'CURRENT_PAID_FAILURE_ACTUAL_EARLY_TWENTY_COMMANDS')
+    pf_values = {}; pf_streams = {}
+    for label,count,status in [('close',93,'VERIFIED_PAID_PRODUCER_FAILURE_NORMAL_CLOSE_ZERO_RESIDUAL'),('zero',20,'VERIFIED_PAID_PRODUCER_FAILURE_INDEPENDENT_ZERO')]:
+        value = decode(native_raw(pf['results'][label])); pf_values[label] = value
+        receipts = pf['native_receipts'][label]
+        check(value['status'] == status and value['run_id'] == pf['run_id'] and value['source_sha'] == pf['source_sha']
+            and value['freeze_sha256'] == pf['freeze_sha256'] and value['full_acceptance'] == 'INCOMPLETE'
+            and len(value['operations']) == len(receipts) == count
+            and all(value[key] == held for key,held in truth.items()), 'CURRENT_PAID_FAILURE_CLOSE_ZERO_SAME_TRUTH_AND_ALL_NATIVE_ROWS')
+        for index,(receipt,op) in enumerate(zip(receipts,value['operations']),1):
+            made = decode(native_raw(receipt['created'])); ended = decode(native_raw(receipt['terminal']))
+            out = native_raw(receipt['stdout']); err = native_raw(receipt['stderr']); pf_streams[(label,index)] = out
+            check(receipt['index'] == op['index'] == index and receipt['stem'] == op['stem'] and ended == op
+                and made['pid'] == op['pid'] and made['argv'] == op['argv'] and type(op['pid']) is int and op['pid'] > 0
+                and op['native_exit'] == op['wait_returncode'] == 0
+                and len(out) == op['stdout_bytes'] and hashlib.sha256(out).hexdigest() == op['stdout_sha256']
+                and len(err) == op['stderr_bytes'] and hashlib.sha256(err).hexdigest() == op['stderr_sha256'], 'CURRENT_PAID_FAILURE_ALL113_TRUE_CREATED_TERMINAL_AND_DOUBLE_STREAMS')
+        queries = value['fresh_queries']
+        check([(q['kind'],q['label']) for q in queries] == [(kind,tag) for kind in ['container','network','volume'] for tag in ['project','run']]
+            and len({q['operation_index'] for q in queries}) == 6
+            and all(pf_streams[(label,q['operation_index'])].strip() == b'' for q in queries), 'CURRENT_PAID_FAILURE_SIX_FRESH_DOUBLE_LABEL_QUERIES_EMPTY')
+        outer = pf['outer_native_receipts'][label]
+        check(set(outer) == {'created','terminal','stdout','stderr','created_object','terminal_object'}, 'CURRENT_PAID_FAILURE_ACTUAL_SIX_FIELD_OUTER_SCHEMA')
+        made = decode(native_raw(outer['created'])); ended = decode(native_raw(outer['terminal']))
+        out = native_raw(outer['stdout']); err = native_raw(outer['stderr'])
+        check(made == outer['created_object'] and ended == outer['terminal_object']
+            and made['pid'] == ended['pid'] and ended['native_exit'] == ended['wait_returncode'] == 0
+            and compact(ended['stdout']) == compact(outer['stdout']) and compact(ended['stderr']) == compact(outer['stderr'])
+            and {'bytes':len(out),'sha256':hashlib.sha256(out).hexdigest()} == compact(ended['stdout'])
+            and {'bytes':len(err),'sha256':hashlib.sha256(err).hexdigest()} == compact(ended['stderr']), 'CURRENT_PAID_FAILURE_PHYSICAL_OUTER_CREATED_WAIT_AND_STREAMS')
+    check(pf['outer_native_receipts']['close']['terminal_object']['finished_ns'] < pf['outer_native_receipts']['zero']['created_object']['started_ns']
+        and pf_values['zero']['close_result'] == {key:pf['results']['close'][key] for key in ['path','bytes','sha256']}
+        and pf_values['zero']['resource_mutations'] == 0 and pf_values['zero']['Host_imported'] is False and pf_values['zero']['close_imported_or_invoked'] is False
+        and pf_values['zero']['close_native_operations_verified'] == 93 and pf_values['zero']['close_exact_mutating_operations_verified'] == 5
+        and pf_values['close']['removed_containers'] == 3 and pf_values['close']['removed_internal_networks'] == 1
+        and pf_values['close']['removed_original_volumes'] == 8, 'CURRENT_PAID_FAILURE_THREE_FINAL_CIDS_NORMAL_CLOSE_AND_INDEPENDENT_ZERO')
+    mutations = []
+    for label,value in pf_values.items():
+        for op in value['operations']:
+            args = op['argv'][1:]
+            if args and (args[0] in ['stop','rm'] or (len(args)>1 and args[0] in ['network','volume'] and args[1]=='rm')):
+                check(label == 'close', 'CURRENT_PAID_FAILURE_ZERO_HAS_NO_MUTATION'); mutations.append(args)
+    check(mutations == pf['protection_metadata']['five_exact_mutations'], 'CURRENT_PAID_FAILURE_EXACT_FIVE_NONFORCE_NORMAL_MUTATIONS')
+    wrapper = pf['original_failed_S_wrapper']
+    check(set(wrapper) == {'created','stdout','stderr','native_exit','terminal'} and wrapper['native_exit'] == 1,
+        'CURRENT_PAID_FAILURE_ORIGINAL_S_TERMINAL_IS_PRESENT_ONE')
+    made = decode(native_raw(wrapper['created'])); ended = decode(native_raw(wrapper['terminal']))
+    check(made['pid'] == ended['pid'] == truth['failed_outer_pid'] and ended['native_exit'] == ended['wait_returncode'] == 1,
+        'CURRENT_PAID_FAILURE_ORIGINAL_S_SAME_PID_AND_ACTUAL_WAIT_ONE')
+    for stream in ['stdout','stderr']:
+        raw = native_raw(wrapper[stream]); check(compact(ended[stream]) == compact(wrapper[stream])
+            and {'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest()} == compact(ended[stream]), 'CURRENT_PAID_FAILURE_ORIGINAL_S_COMPLETE_DOUBLE_STREAMS')
+    history = pf['original_orchestration_history']
+    check(history['original_created'] == history['original_native_zero'] == len(history['native_receipts']) == 71
+        and history['orphan'] is None and len(history['archive_names']) == 285 and pf['continuation_failure_history'] is None,
+        'CURRENT_PAID_FAILURE_ORIGINAL71_COMPLETE_NO_ORPHAN_OR_RESUME')
+    for index,receipt in enumerate(history['native_receipts'],1):
+        made = decode(native_raw(receipt['created'])); ended = decode(native_raw(receipt['terminal']))
+        check(receipt['index'] == index and made['pid'] == ended['pid'] and type(made['pid']) is int and made['pid'] > 0
+            and ended['native_exit'] == ended['wait_returncode'] == 0, 'CURRENT_PAID_FAILURE_ALL71_ORIGINAL_CREATED_NATIVE_WAIT_ZERO')
+        for stream in ['stdout','stderr']:
+            raw = native_raw(receipt[stream]); check(len(raw) == ended[stream+'_bytes']
+                and hashlib.sha256(raw).hexdigest() == ended[stream+'_sha256'], 'CURRENT_PAID_FAILURE_ALL71_FULL_ORIGINAL_DOUBLE_STREAMS')
+    pf_seen = set()
+    def pf_descriptors(value):
+        if type(value) is dict:
+            if {'path','bytes','sha256'} <= set(value) and set(value) <= {'path','bytes','sha256','native9'}:
+                if not Path(value['path']).is_absolute():return
+                key = (value['path'],value['bytes'],value['sha256'])
+                if key not in pf_seen:
+                    pf_seen.add(key); native_raw(value) if 'native9' in value else read(value)
+                return
+            for child in value.values():pf_descriptors(child)
+        elif type(value) is list:
+            for child in value:pf_descriptors(child)
+    for key in ['source_receipts','close_zero_source_PINS','root_readbacks','original_protected_metadata','global_inventories',
+        'outer_native_receipts','original_orchestration_history','current_M_history']:
+        pf_descriptors(pf[key])
+    metadata = pf['protection_metadata']; oldM = pf['current_M_history']
+    check(metadata['public_files'] == 38245 and metadata['public_directories'] == 6857
+        and metadata['complete_tracked_mapping'] == oldM['complete_tracked_source_rows'] == 31008
+        and metadata['each_tree'] == oldM['each_tree'] == 15504 and metadata['Root14'] == oldM['root14'] == 14
+        and metadata['M3'] == 3 and metadata['normal_union'] == oldM['normal_union'] == 10886 and metadata['profile9'] == 9
+        and oldM['native_operations_metadata'] == 277 and metadata['metadata_all_rows_complete'] is True
+        and metadata['old_full_source_or_public_bodies_reread'] is False and metadata['global_foreign_records_unchanged'] is True
+        and metadata['physical_outer_receipts_used'] is True and metadata['source_profile_bytes_not_renamed_to_new_HEAD'] is True,
+        'CURRENT_PAID_FAILURE_COMPLETE_HISTORICAL_METADATA_WITHOUT_RESCANNING_OLD_SOURCE_BODIES')
+    outer = oldM['outer_native_receipts']
+    check(set(outer) == {'created','terminal','stdout','stderr','created_object','terminal_object'}, 'CURRENT_PAID_FAILURE_ACTUAL_M_OUTER_SIX_FIELD_SCHEMA')
+    made = decode(native_raw(outer['created'])); ended = decode(native_raw(outer['terminal']))
+    check(made == outer['created_object'] and ended == outer['terminal_object'] and made['pid'] == ended['pid']
+        and ended['native_exit'] == ended['wait_returncode'] == 0, 'CURRENT_PAID_FAILURE_ACTUAL_M_OUTER_NOT_COERCED_TO_OLDER_SCHEMA')
+    for stream in ['stdout','stderr']:
+        raw = native_raw(outer[stream]); check(compact(ended[stream]) == compact(outer[stream])
+            and {'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest()} == compact(ended[stream]), 'CURRENT_PAID_FAILURE_ACTUAL_M_OUTER_COMPLETE_DOUBLE_STREAMS')

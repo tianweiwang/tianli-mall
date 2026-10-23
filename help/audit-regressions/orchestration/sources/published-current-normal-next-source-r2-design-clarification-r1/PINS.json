@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "scope": "DOCUMENT_FACT_CLARIFICATION_ONLY_NO_RUNTIME_AUTHORIZATION",
+  "original_r2_PINS": {
+    "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-published-current-normal-next-source-r2/PINS.json",
+    "bytes": 460606,
+    "sha256": "18dc8e7366783771daedca66389f9746f041582bee92783c8d9a3b9d6dca484f"
+  },
+  "original_unchanged_DESIGN": {
+    "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-published-current-normal-next-source-r2/DESIGN.md",
+    "bytes": 2144,
+    "sha256": "ac00fb0df17ae550e27204736800dfd0a0ed641e2daedf690b18a2ac7e5c027f"
+  },
+  "files": {
+    "CLARIFICATION.md": {
+      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/published-current-normal-next-source-r2-design-clarification-r1/CLARIFICATION.md",
+      "bytes": 2339,
+      "sha256": "3fd00f2acb1bbc3b0a57f8c845614d6765ebf8d8c782f3c9d8a30f8427300e23"
+    }
+  },
+  "current_Main_asserted": false,
+  "M_S_runtime_guards_unchanged": true,
+  "new_M_S_business_or_Docker_execution": "NOT RUN"
+}

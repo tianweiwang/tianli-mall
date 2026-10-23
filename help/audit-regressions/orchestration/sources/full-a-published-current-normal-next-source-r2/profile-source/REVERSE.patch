@@ -1,0 +1,188 @@
+--- a/ms4-host.py
++++ b/ms4-host.py
+@@ -29,10 +29,10 @@
+ CUSTOMER_ENTRY = 'help/audit-regressions/isolated/ms4-customer-http-normal.php'
+ CUSTOMER_ROOTS = ['crmeb/app', 'crmeb/crmeb', 'crmeb/vendor', 'crmeb/config']
+ CUSTOMER_EXTRA = ['crmeb/composer.json', 'crmeb/composer.lock', 'crmeb/public/index.php', 'crmeb/public/router.php', 'crmeb/think', 'help/audit-regressions/isolated/lib/harness.php', 'help/audit-regressions/isolated/lib/guard.php', 'help/audit-regressions/isolated/ms4-customer-http-normal.php', 'help/audit-regressions/isolated/lib/ms4-customer-http-normal.php', 'help/audit-regressions/isolated/lib/ms4-customer-form-normal.php']
+-INTERFACE_SHA256 = '0748d251665d27f9dae25c3786e9015af70571e6624c3b535d3afa8b24eb1ed0'
++INTERFACE_SHA256 = 'e61968d321200534a4342717a3b71e6994ead8b6bd46372ba8b3c64061c8a6c8'
+ PAID_ENTRY = 'help/audit-regressions/isolated/ms5-paid-consumer-normal.php'
+-PAID_ENTRY_BYTES = 109531
+-PAID_ENTRY_SHA256 = '67450a4ab293d4b59f9ee90b02d35e2532c09b420c378ae5c643f6f39070f2f6'
++PAID_ENTRY_BYTES = 108005
++PAID_ENTRY_SHA256 = 'ee59d99ea8db768b0a45727d9cdffe276b7f0c11f7e07cea5cc10d10a449f4b7'
+ PAID = {'proof': 'paid-producer', 'role': 'audit-ms5-paid-producer',
+     'binding': 'paid-producer-source-binding.json', 'scope': 'MS5_PAID_PRODUCER_SOURCE',
+     'result': 'paid-producer-result.json', 'result_scope': 'MS5_PAID_PRODUCER_INTERNAL_ONLY',
+@@ -1656,8 +1656,8 @@
+ 
+ # Finite successor constants. Original customer9/paid10/driver10 closures remain intact.
+ FULFILLMENT_ENTRY = 'help/audit-regressions/isolated/ms4-fulfillment-normal.php'
+-FULFILLMENT_ENTRY_BYTES = 128359
+-FULFILLMENT_ENTRY_SHA256 = '4d38c7ac0d8afbc72a0000319765e155fbd8a116656c43652e54cd824dc992b7'
++FULFILLMENT_ENTRY_BYTES = 128280
++FULFILLMENT_ENTRY_SHA256 = 'b877330ac652d1d0bc63fd72d84fb34174cac83144637f58c090c0f7c13034ce'
+ THREE_READ_RESULT = 'ms4-three-read-normal.json'
+ THREE_READ_SOURCE_FILES = [
+     {'path': 'help/audit-regressions/isolated/lib/ms4-three-legacy-producer.php', 'bytes': 53328, 'sha256': '9da29b5edf6bc50c8bb483eaf4a67adaaacc6cddc4660e6cac0d2dabcb81a584'},
+--- a/ms4-initialize.php
++++ b/ms4-initialize.php
+@@ -240,7 +240,7 @@
+     }
+     foreach ([
+         'help/audit-regressions/isolated/ms5-paid-consumer-normal.php' =>
+-            [109531, '67450a4ab293d4b59f9ee90b02d35e2532c09b420c378ae5c643f6f39070f2f6'],
++            [108005, 'ee59d99ea8db768b0a45727d9cdffe276b7f0c11f7e07cea5cc10d10a449f4b7'],
+         'help/audit-regressions/isolated/ms4-aftersale-review-normal.php' =>
+             [239863, '48734a574986d3c6eab37cbc0f1deeab2d03b2b94b931bcaed4719c72e62f723'],
+         $entry => [127354, '2f52b676dfa5b3d715adaae0318802f941388ffc103b7f8c02cf2e9d5f09f4f8']
+--- a/interface-v1.json
++++ b/interface-v1.json
+@@ -301,8 +301,8 @@
+     "scope": "MS5_PAID_PRODUCER_PROFILE_SOURCE_CONTRACT_ONLY",
+     "runtime": "NOT RUN",
+     "entry": "help/audit-regressions/isolated/ms5-paid-consumer-normal.php",
+-    "entry_bytes": 109531,
+-    "entry_sha256": "67450a4ab293d4b59f9ee90b02d35e2532c09b420c378ae5c643f6f39070f2f6",
++    "entry_bytes": 108005,
++    "entry_sha256": "ee59d99ea8db768b0a45727d9cdffe276b7f0c11f7e07cea5cc10d10a449f4b7",
+     "source_roots": [
+       "crmeb/app",
+       "crmeb/crmeb",
+@@ -447,8 +447,8 @@
+       "verify-zero-ms4-fulfillment.py"
+     ],
+     "entry": "help/audit-regressions/isolated/ms4-fulfillment-normal.php",
+-    "entry_bytes": 128359,
+-    "entry_sha256": "4d38c7ac0d8afbc72a0000319765e155fbd8a116656c43652e54cd824dc992b7",
++    "entry_bytes": 128280,
++    "entry_sha256": "b877330ac652d1d0bc63fd72d84fb34174cac83144637f58c090c0f7c13034ce",
+     "source_roots": [
+       "crmeb/app",
+       "crmeb/crmeb",
+--- a/source-derivation.json
++++ b/source-derivation.json
+@@ -245,12 +245,12 @@
+     {
+       "path": "ms4-host.py",
+       "bytes": 345436,
+-      "sha256": "376a996274890190212e67e14279fed2367502a34d6b9f74fa913317cff95dea"
++      "sha256": "599144d79f56465fa816dc819776e951e9cfa2f37636b557029daf3a68e2f78c"
+     },
+     {
+       "path": "ms4-initialize.php",
+       "bytes": 78955,
+-      "sha256": "7046b79ca32b4faec307efa40547f8435a93b7fc8a0f3fac5214e44303d4a610"
++      "sha256": "44ccb57b43caaa0fe0a080334a2375eeddf5d91f08f15befb25d3e34ed46f8d3"
+     },
+     {
+       "path": "seed-source-inverse.json",
+@@ -260,17 +260,17 @@
+     {
+       "path": "interface-v1.json",
+       "bytes": 98802,
+-      "sha256": "0748d251665d27f9dae25c3786e9015af70571e6624c3b535d3afa8b24eb1ed0"
++      "sha256": "e61968d321200534a4342717a3b71e6994ead8b6bd46372ba8b3c64061c8a6c8"
+     },
+     {
+       "path": "normal-close-ms4-fulfillment.py",
+       "bytes": 47220,
+-      "sha256": "bb15816116233a7971350127ba04162424bda2b9265490cf2458e8a50c242710"
++      "sha256": "b2a82d1f3cecfcce0c843d55d102dd4344811eb7eeaab974affce9596da0f491"
+     },
+     {
+       "path": "verify-zero-ms4-fulfillment.py",
+       "bytes": 296097,
+-      "sha256": "0ef8b770f2b9289aa841ed500d5fd452277ca0315f958a776356f51fe1552e12"
++      "sha256": "caac7d1bba8a8700684431a560a4395609cbce7dc1a7d51a84429c91604d0ad9"
+     }
+   ],
+   "source_inverse": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-assets-final-closure-source-r1/SOURCE-CHANGES.diff and preimages/: full pre-binding originals remain unchanged; actual closed payload descriptors in final-authority-manifest.json. No runtime acceptance.",
+@@ -13263,36 +13263,5 @@
+     "all_original_Python_function_bytes": "UNCHANGED",
+     "initializer_change": "ONLY_TWO_CURRENT_CALLER_DESCRIPTORS",
+     "business_and_acceptance": "NOT RUN"
+-  },
+-  "published_current_active_contract_source_repair": {
+-    "scope": "ACTIVE_INDEPENDENT_CALLER_PINS_ONLY_NO_BUSINESS_CHANGE",
+-    "previous_root_source_PINS": {
+-      "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-published-current-normal-next-source-r1/PINS.json",
+-      "bytes": 45764,
+-      "sha256": "ffb555dbb93c82731c8fe75bb7b5f3fd70ff44a93c67fe3d134110321959abb9"
+-    },
+-    "actual_repository_source": "584532ba22b1824164aa11c06b163715be8c224c",
+-    "unchanged_actual_caller_adoption": "76efa7807c6137bc430e314e2faa78691cf60431",
+-    "current_callers": [
+-      {
+-        "path": "help/audit-regressions/isolated/ms5-paid-consumer-normal.php",
+-        "bytes": 109531,
+-        "sha256": "67450a4ab293d4b59f9ee90b02d35e2532c09b420c378ae5c643f6f39070f2f6"
+-      },
+-      {
+-        "path": "help/audit-regressions/isolated/ms4-fulfillment-normal.php",
+-        "bytes": 128359,
+-        "sha256": "4d38c7ac0d8afbc72a0000319765e155fbd8a116656c43652e54cd824dc992b7"
+-      }
+-    ],
+-    "exact_source_edits": {
+-      "Host_constants": 4,
+-      "zero_constants": 4,
+-      "interface_active_fields": 4,
+-      "initializer_worker_paid_tuple": 1,
+-      "existing_hash_edges": 5
+-    },
+-    "all_original_functions_and_historical_nodes_retained": true,
+-    "runtime_and_current_initializer_syntax": "NOT RUN"
+   }
+ }
+--- a/normal-close-ms4-fulfillment.py
++++ b/normal-close-ms4-fulfillment.py
+@@ -14,7 +14,7 @@
+ 
+ ROOT = Path(__file__).resolve().parent
+ HOST = ROOT / 'ms4-host.py'
+-HOST_SHA256 = '376a996274890190212e67e14279fed2367502a34d6b9f74fa913317cff95dea'
++HOST_SHA256 = '599144d79f56465fa816dc819776e951e9cfa2f37636b557029daf3a68e2f78c'
+ STATE = {'module': None, 'context': None, 'phase': 'source_preflight', 'waiting_native': None}
+ 
+ def sha(raw):
+--- a/verify-zero-ms4-fulfillment.py
++++ b/verify-zero-ms4-fulfillment.py
+@@ -15,12 +15,12 @@
+ 
+ ARTIFACTS = Path(__file__).resolve().parent
+ HOST = ARTIFACTS / 'ms4-host.py'
+-HOST_SHA256 = '376a996274890190212e67e14279fed2367502a34d6b9f74fa913317cff95dea'
++HOST_SHA256 = '599144d79f56465fa816dc819776e951e9cfa2f37636b557029daf3a68e2f78c'
+ CLOSE = ARTIFACTS / 'normal-close-ms4-fulfillment.py'
+-CLOSE_SHA256 = 'bb15816116233a7971350127ba04162424bda2b9265490cf2458e8a50c242710'
++CLOSE_SHA256 = 'b2a82d1f3cecfcce0c843d55d102dd4344811eb7eeaab974affce9596da0f491'
+ INTERFACE = ARTIFACTS / 'interface-v1.json'
+ INTERFACE_BYTES = 98802
+-INTERFACE_SHA256 = '0748d251665d27f9dae25c3786e9015af70571e6624c3b535d3afa8b24eb1ed0'
++INTERFACE_SHA256 = 'e61968d321200534a4342717a3b71e6994ead8b6bd46372ba8b3c64061c8a6c8'
+ 
+ 
+ def sha(raw):
+@@ -163,8 +163,8 @@
+ REDIS = 'sha256:6c8f6edc1aa871a76a257ef86a2089d108e64b78d16f45b89f09c6a4ab30d07e'
+ CUSTOMER_ENTRY = 'help/audit-regressions/isolated/ms4-customer-http-normal.php'
+ PAID_ENTRY = 'help/audit-regressions/isolated/ms5-paid-consumer-normal.php'
+-PAID_ENTRY_BYTES = 109531
+-PAID_ENTRY_SHA256 = '67450a4ab293d4b59f9ee90b02d35e2532c09b420c378ae5c643f6f39070f2f6'
++PAID_ENTRY_BYTES = 108005
++PAID_ENTRY_SHA256 = 'ee59d99ea8db768b0a45727d9cdffe276b7f0c11f7e07cea5cc10d10a449f4b7'
+ PAID = {'proof': 'paid-producer', 'role': 'audit-ms5-paid-producer',
+     'binding': 'paid-producer-source-binding.json', 'scope': 'MS5_PAID_PRODUCER_SOURCE',
+     'result': 'paid-producer-result.json', 'result_scope': 'MS5_PAID_PRODUCER_INTERNAL_ONLY',
+@@ -1001,8 +1001,8 @@
+ 
+ # Finite successor constants. Original customer9/paid10/driver10 closures remain intact.
+ FULFILLMENT_ENTRY = 'help/audit-regressions/isolated/ms4-fulfillment-normal.php'
+-FULFILLMENT_ENTRY_BYTES = 128359
+-FULFILLMENT_ENTRY_SHA256 = '4d38c7ac0d8afbc72a0000319765e155fbd8a116656c43652e54cd824dc992b7'
++FULFILLMENT_ENTRY_BYTES = 128280
++FULFILLMENT_ENTRY_SHA256 = 'b877330ac652d1d0bc63fd72d84fb34174cac83144637f58c090c0f7c13034ce'
+ THREE_READ_RESULT = 'ms4-three-read-normal.json'
+ THREE_READ_SOURCE_FILES = [
+     {'path': 'help/audit-regressions/isolated/lib/ms4-three-legacy-producer.php', 'bytes': 53328, 'sha256': '9da29b5edf6bc50c8bb483eaf4a67adaaacc6cddc4660e6cac0d2dabcb81a584'},

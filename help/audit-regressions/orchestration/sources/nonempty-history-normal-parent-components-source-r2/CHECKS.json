@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "status": "PASS_SOURCE_LOAD01_FIXED_REQUIRE_AND_REAL_CALL_CLOSURE_ONLY",
+  "unique_R1_before": true,
+  "one_finite_seam_standard_forward_reverse": true,
+  "all_other164_defs_original169_and_original_missing_startup_guard_preserved": true,
+  "three_definition_only_controls_already_in_original11_loaded_after_full_qualifier_before_writers_or_observer": true,
+  "same_original_includes_Source_closed_set": true,
+  "actual13_artifacts9PHP11controls_no_future_pins": true,
+  "PHP82_compiler": "NOT RUN: no PHP command in PATH; no resource started",
+  "runtime_or_business": "NOT RUN",
+  "remaining": [
+    "independent review",
+    "complete startup effects",
+    "final Source binding and Host admission",
+    "current-reader/true-enabled",
+    "actual original full37/fourCLI/full normal close-zero/business acceptance"
+  ]
+}

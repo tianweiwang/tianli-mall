@@ -1,0 +1,370 @@
+
+/** Pure full original Linux start body/UI; no vendor loading, clock, file or process call. */
+function nhep_normal_startup_ui(string $user, string $phpVersion): string
+{
+    nhep_expect($user !== '' && $phpVersion === '8.2.33', 'NHE_STARTUP_UI_QUALIFIED_BEFORE_USER_AND_COMPILE_VERSION');
+    $values = ['proto' => 'tcp', 'user' => $user, 'worker' => 'ChannelServer',
+        'socket' => 'frame://127.0.0.1:40003', 'processes' => '1', 'status' => '<g> [OK] </g>'];
+    $widths = ['proto' => 4, 'user' => 12, 'worker' => 12, 'socket' => 12, 'processes' => 9, 'status' => 1];
+    foreach ($values as $column => $value) $widths[$column] = max($widths[$column], strlen($value));
+    $version = 'Workerman version:3.5.19' . str_pad('PHP version:', 22, ' ', STR_PAD_LEFT) . $phpVersion . "\n";
+    $total = max(array_sum($widths) + 6 * 4, strlen($version));
+    $ui = '<n>' . str_pad('<w> WORKERMAN </w>', $total + strlen('<w></w>'), '-', STR_PAD_BOTH) . "</n>\n"
+        . $version . str_pad('<w> WORKERS </w>', $total + strlen('<w></w>'), '-', STR_PAD_BOTH) . "\n";
+    $title = ''; $content = '';
+    foreach ($values as $column => $value) {
+        $name = $column === 'socket' ? 'listen' : $column;
+        $title .= '<w>' . $name . '</w>' . str_pad('', $widths[$column] + 4 - strlen($name));
+        preg_match_all('~(<n>|</n>|<w>|</w>|<g>|</g>)~is', $value, $matches);
+        $placeholder = strlen(implode('', $matches[0]));
+        $content .= str_pad($value, $widths[$column] + 4 + $placeholder);
+    }
+    $ui .= $title . "\n" . $content . "\n" . str_pad('', $total, '-') . "\n"
+        . "Press Ctrl+C to stop. Start success.\n";
+    $ui = str_replace(['<n>', '<w>', '<g>', '</n>', '</w>', '</g>'], '', $ui);
+    return "Workerman[/run/nonempty/legacy-history-channel.php] start in DEBUG mode\n" . $ui;
+}
+
+/** Independent complete BEFORE and fixed Source expectations, before either original child starts. */
+function nhep_normal_startup_plan(#[SensitiveParameter] array $qualified, PDO $observer, Redis $redis,
+    #[SensitiveParameter] array $prepared): array
+{
+    $oldIgnoreArgs = ini_set('zend.exception_ignore_args', '1');
+    nhep_expect($oldIgnoreArgs !== false && ini_get('zend.exception_ignore_args') === '1',
+        'NHE_STARTUP_PLAN_REAL_PRIVATE_ARGUMENT_BOUNDARY');
+    nhep_observation_parent($qualified);
+    nhe_keys($prepared, ['scope', 'origin', 'configuration_receipt', 'getter_receipt', 'fixture_receipt', 'reset_receipt',
+        'actors', 'old_app', 'writer', 'database', 'redis', 'files'], 'NHE_STARTUP_PLAN_ORIGINAL_FIXED_PRE37_RESULT');
+    nhep_expect($prepared['scope'] === 'pre37_fixed_original_preparation_only'
+        && $prepared['origin'] === 'http://127.0.0.1:8000' && $prepared['writer'] instanceof PDO
+        && $prepared['writer'] !== $observer && $prepared['fixture_receipt']['run_id'] === $qualified['context']['run_id'],
+        'NHE_STARTUP_PLAN_SAME_ORIGINAL_PREPARATION_AND_SEPARATE_OBSERVER');
+    $runId = $qualified['context']['run_id']; $started = time();
+    $database = nhep_database_capture($observer, $runId); $cache = nhep_redis_capture($redis, $runId);
+    $files = ['private' => ['app' => nhep_file_tree('/run/audit-app'), 'fixtures' => nhep_file_tree('/run/audit-fixtures')],
+        'public' => ['legacy_public' => nhep_file_tree('/legacy-workspace/crmeb/public')],
+        'logs' => ['runtime' => nhep_file_tree('/legacy-runtime'),
+            'legacy_root_runtime' => nhep_file_tree('/legacy-workspace/crmeb/runtime')]];
+    $expectedRedis = nhep_redis_expected($prepared['redis'], [], $cache['snapshot']['time']);
+    nhep_expect($database === $prepared['database'] && $files === $prepared['files'] && $cache['snapshot'] === $expectedRedis,
+        'NHE_STARTUP_PLAN_COMPLETE_PRE37_TO_BEFORE_164_DATABASE_REDIS_AND_FIVE_TREES_JOIN');
+    $runtime = $files['logs']['runtime']; nhep_auth_files_tree($runtime);
+    nhep_expect($runtime['']['stat']['mode'] === (0040000 | 0700)
+        && $runtime['']['stat']['uid'] === posix_geteuid(), 'NHE_STARTUP_PLAN_ORIGINAL_PRIVATE_RUNTIME_OWNER_AND_MODE');
+    foreach (['channel', 'legacy-http.stdout', 'legacy-http.stderr', 'legacy-channel.stdout', 'legacy-channel.stderr'] as $leaf)
+        nhep_expect(!array_key_exists($leaf, $runtime), 'NHE_STARTUP_PLAN_ORIGINAL_STARTUP_LEAVES_ABSENT_BEFORE');
+    foreach (array_keys($runtime) as $leaf)
+        nhep_expect(!str_starts_with($leaf, 'channel/'), 'NHE_STARTUP_PLAN_NO_OLD_CHANNEL_CHILD_NAMESPACE');
+    $statistics = '/tmp/_run_nonempty_legacy-history-channel.php.status'; clearstatcache(true, $statistics);
+    nhep_expect(!file_exists($statistics) && !is_link($statistics), 'NHE_STARTUP_PLAN_ORIGINAL_STATISTICS_LEAF_ABSENT');
+    nhep_expect(!nhep_child_listener('http')['open'] && !nhep_child_listener('channel')['open'],
+        'NHE_STARTUP_PLAN_BOTH_ORIGINAL_LISTENERS_ABSENT');
+    $native = []; $paths = glob('/proc/[0-9]*/stat');
+    nhep_expect(is_array($paths) && $paths !== [], 'NHE_STARTUP_PLAN_REAL_NATIVE_NAMESPACE');
+    foreach ($paths as $path) {
+        $row = audit_app_proc_stat((int)basename(dirname($path))); if ($row === null) continue;
+        nhep_expect($row['pid'] === getmypid(), 'NHE_STARTUP_PLAN_ONLY_ORIGINAL_PARENT_BEFORE_CHILDREN');
+        $native[] = $row['pid'];
+    }
+    nhep_expect($native === [getmypid()] && PHP_VERSION_ID === 80233 && PHP_VERSION === '8.2.33'
+        && PHP_OS_FAMILY === 'Linux' && PHP_EOL === "\n" && getenv('PHP_CLI_SERVER_WORKERS') === false
+        && getenv('TZ') === false && getenv('TZDIR') === false,
+        'NHE_STARTUP_PLAN_REAL_FIXED_PHP_LINUX_COMPILE_VERSION_AND_ORIGINAL_FRESH_EXEC_ENVIRONMENT');
+    $uid = posix_getuid(); $gid = posix_getgid(); $user = posix_getpwuid($uid);
+    $binary = stat(PHP_BINARY);
+    nhep_expect($uid === posix_geteuid() && $gid === posix_getegid() && is_array($user)
+        && ($user['uid'] ?? null) === $uid && is_string($user['name'] ?? null) && $user['name'] !== ''
+        && is_array($binary) && ($binary['mode'] & 06000) === 0,
+        'NHE_STARTUP_PLAN_BEFORE_NATIVE_UID_GID_PASSWD_AND_NONSETUID_PHP');
+    $timeReference = nhep_http_time_reference();
+    $stdout = nhep_normal_startup_ui($user['name'], PHP_VERSION);
+    nhep_expect(substr_count($stdout, "\n") === 8 && !str_contains($stdout, "\033"),
+        'NHE_STARTUP_PLAN_COMPLETE_SOURCE_EIGHT_LINES_AND_UNDECORATED_ORIGINAL_STREAM');
+    $ended = time(); nhep_expect($ended >= $started, 'NHE_STARTUP_PLAN_REAL_BEFORE_EFFECT_WALL_INTERVAL');
+    return ['scope' => 'original_normal_children_startup_before_effects_only', 'run_id' => $runId,
+        'source_sha' => $qualified['context']['source_sha'], 'database' => $database, 'redis' => $expectedRedis,
+        'files' => $files, 'before_interval' => [$started, $ended], 'uid' => $uid, 'gid' => $gid,
+        'user' => $user['name'], 'php_version' => PHP_VERSION, 'channel_stdout' => $stdout,
+        'http_message' => 'PHP ' . PHP_VERSION . ' Development Server (http://127.0.0.1:8000) started',
+        'http_time_reference' => $timeReference, 'native_parent' => $qualified['process']];
+}
+
+/** Source C logs only after LISTEN: wait passively for the complete same original stderr first line. */
+function nhep_normal_startup_ready(#[SensitiveParameter] array $qualified, array &$children,
+    #[SensitiveParameter] array $plan): array
+{
+    $oldIgnoreArgs = ini_set('zend.exception_ignore_args', '1');
+    nhep_expect($oldIgnoreArgs !== false && ini_get('zend.exception_ignore_args') === '1',
+        'NHE_STARTUP_READY_REAL_PRIVATE_ARGUMENT_BOUNDARY');
+    nhep_observation_parent($qualified);
+    nhep_expect($plan['scope'] === 'original_normal_children_startup_before_effects_only'
+        && $plan['run_id'] === $qualified['context']['run_id'] && $plan['source_sha'] === $qualified['context']['source_sha'],
+        'NHE_STARTUP_READY_SAME_REAL_BEFORE_PLAN');
+    nhep_http_time_reference($plan['http_time_reference']);
+    $http = nhep_child_observation($children, 'http'); $channel = nhep_child_observation($children, 'channel');
+    $stream = $children['http']['streams']['stderr']; $path = $stream['path'];
+    nhep_expect($path === '/legacy-runtime/legacy-http.stderr' && is_resource($stream['handle']),
+        'NHE_STARTUP_READY_ORIGINAL_OWNED_HTTP_STDERR_HANDLE');
+    $expectedBytes = 1 + 24 + 2 + strlen($plan['http_message']) + 1;
+    $started = time(); $deadline = hrtime(true) + 5000000000;
+    do {
+        $nowHttp = nhep_child_observation($children, 'http'); $nowChannel = nhep_child_observation($children, 'channel');
+        nhep_expect($nowHttp['native'] === $http['native'] && $nowHttp['group'] === $http['group']
+            && $nowChannel['native'] === $channel['native'] && $nowChannel['group'] === $channel['group'],
+            'NHE_STARTUP_READY_SAME_TWO_ORIGINAL_LIVE_HANDLES_AND_GROUPS');
+        clearstatcache(true, $path); $before = lstat($path); $held = fstat($stream['handle']);
+        nhep_expect(is_array($before) && is_array($held) && !is_link($path) && realpath($path) === $path,
+            'NHE_STARTUP_READY_SAME_ORIGINAL_REGULAR_NAMED_PRIVATE_STREAM');
+        foreach (['dev', 'ino', 'mode', 'nlink', 'uid', 'gid'] as $field)
+            nhep_expect($before[$field] === $stream['created'][$field] && $held[$field] === $stream['created'][$field],
+                'NHE_STARTUP_READY_ORIGINAL_STREAM_CREATED_IDENTITY_AND_HELD_FD');
+        nhep_expect($before['size'] <= $expectedBytes, 'NHE_STARTUP_READY_NO_EXTRA_NATIVE_STDERR_BYTES');
+        // Read the name through a separate descriptor; never seek the writer fd.
+        $raw = file_get_contents($path); clearstatcache(true, $path); $after = lstat($path);
+        nhep_expect(is_string($raw) && is_array($after), 'NHE_STARTUP_READY_COMPLETE_NAMED_NATIVE_READ');
+        foreach (['dev', 'ino', 'mode', 'nlink', 'uid', 'gid'] as $field)
+            nhep_expect($after[$field] === $stream['created'][$field], 'NHE_STARTUP_READY_NO_REPLACED_STREAM_DURING_READ');
+        if (nhep_file_stat($before) === nhep_file_stat($after) && strlen($raw) === $expectedBytes) {
+            nhep_expect(strlen($raw) === $after['size'] && substr($raw, 0, 1) === '['
+                && substr($raw, 25) === '] ' . $plan['http_message'] . "\n",
+                'NHE_STARTUP_READY_EXACT_ORIGINAL_C_SINGLE_FIRST_LINE');
+            $ended = time(); nhep_expect($ended >= $started && $started >= $plan['before_interval'][1],
+                'NHE_STARTUP_READY_REAL_EFFECT_AND_READ_WALL_ORDER');
+            $epoch = nhep_http_asctime(substr($raw, 1, 24), [$plan['before_interval'][1], $ended]);
+            $date = new DateTimeImmutable('@' . $epoch);
+            $stamp = $date->format('D M ') . str_pad($date->format('j'), 2, ' ', STR_PAD_LEFT) . $date->format(' H:i:s Y');
+            $expectedRaw = '[' . $stamp . '] ' . $plan['http_message'] . "\n";
+            nhep_expect($raw === $expectedRaw, 'NHE_STARTUP_READY_COMPLETE_INDEPENDENT_FIRST_LINE_RECONSTRUCTION');
+            nhep_http_time_reference($plan['http_time_reference']);
+            return ['scope' => 'original_http_native_startup_first_line_only', 'actual_interval' => [$started, $ended],
+                'epoch' => $epoch, 'expected_raw' => $expectedRaw, 'stat' => nhep_file_stat($after),
+                'http' => $http, 'channel' => $channel];
+        }
+        nhep_expect(strlen($raw) <= $expectedBytes, 'NHE_STARTUP_READY_NO_ADDITIONAL_OR_REWRITTEN_NATIVE_OUTPUT');
+        if (hrtime(true) >= $deadline) break;
+        usleep(10000);
+    } while (hrtime(true) < $deadline);
+    throw new RuntimeException('NHE_STARTUP_READY_COMPLETE_ORIGINAL_FIRST_LINE_NOT_OBSERVED');
+}
+
+/** Complete BEFORE plus fixed startup Source and qualified native variants; never AFTER as the model. */
+function nhep_normal_startup_accept(#[SensitiveParameter] array $qualified, PDO $observer, Redis $redis,
+    array &$children, #[SensitiveParameter] array $prepared, #[SensitiveParameter] array $plan,
+    #[SensitiveParameter] array $ready, #[SensitiveParameter] array $actual7, #[SensitiveParameter] array $private): array
+{
+    $oldIgnoreArgs = ini_set('zend.exception_ignore_args', '1');
+    nhep_expect($oldIgnoreArgs !== false && ini_get('zend.exception_ignore_args') === '1',
+        'NHE_STARTUP_ACCEPT_REAL_PRIVATE_ARGUMENT_BOUNDARY');
+    nhep_observation_parent($qualified); nheh_snapshot($actual7);
+    nhe_keys($plan, ['scope', 'run_id', 'source_sha', 'database', 'redis', 'files', 'before_interval', 'uid', 'gid',
+        'user', 'php_version', 'channel_stdout', 'http_message', 'http_time_reference', 'native_parent'],
+        'NHE_STARTUP_ACCEPT_COMPLETE_ORIGINAL_PRIVATE_BEFORE_PLAN');
+    nhe_keys($ready, ['scope', 'actual_interval', 'epoch', 'expected_raw', 'stat', 'http', 'channel'],
+        'NHE_STARTUP_ACCEPT_REAL_SAME_NATIVE_FIRST_LINE_RECEIPT');
+    nhe_keys($private, ['actual_interval', 'native_before', 'redis_native', 'native_streams', 'native_after', 'http_time_reference'],
+        'NHE_STARTUP_ACCEPT_COMPLETE_ORIGINAL_PRIVATE_OBSERVATION');
+    nhep_expect($plan['scope'] === 'original_normal_children_startup_before_effects_only'
+        && $plan['run_id'] === $qualified['context']['run_id'] && $plan['source_sha'] === $qualified['context']['source_sha']
+        && $plan['native_parent'] === $qualified['process'] && $plan['database'] === $prepared['database']
+        && $plan['files'] === $prepared['files']
+        && $plan['redis'] === nhep_redis_expected($prepared['redis'], [], $plan['redis']['time'])
+        && $plan['php_version'] === '8.2.33' && $plan['uid'] === posix_geteuid() && $plan['gid'] === posix_getegid()
+        && $plan['channel_stdout'] === nhep_normal_startup_ui($plan['user'], $plan['php_version'])
+        && $plan['http_message'] === 'PHP 8.2.33 Development Server (http://127.0.0.1:8000) started'
+        && $ready['scope'] === 'original_http_native_startup_first_line_only',
+        'NHE_STARTUP_ACCEPT_SAME_INDEPENDENT_PREPARATION_PLAN_FIXED_MESSAGES_AND_NATIVE_PARENT');
+    foreach ([$plan['before_interval'], $ready['actual_interval'], $private['actual_interval']] as $interval)
+        nhep_expect(is_array($interval) && array_is_list($interval) && count($interval) === 2
+            && is_int($interval[0]) && is_int($interval[1]) && $interval[0] > 0 && $interval[0] <= $interval[1]
+            && $interval[1] <= 4294967295, 'NHE_STARTUP_ACCEPT_REAL_NATIVE_WALL_INTERVAL');
+    nhep_expect($plan['before_interval'][1] <= $ready['actual_interval'][0]
+        && $ready['actual_interval'][1] <= $private['actual_interval'][0],
+        'NHE_STARTUP_ACCEPT_PLAN_BEFORE_FIRST_LINE_BEFORE_COMPLETE_OBSERVATION');
+    $window = [$plan['before_interval'][1], $private['actual_interval'][1]];
+    nhep_http_time_reference($plan['http_time_reference']);
+    nhep_expect($children['http']['http_time_reference'] === $plan['http_time_reference']
+        && $private['http_time_reference'] === $plan['http_time_reference'], 'NHE_STARTUP_ACCEPT_SAME_REAL_FRESH_EXEC_UTC_REFERENCE');
+    $statistics = '/tmp/_run_nonempty_legacy-history-channel.php.status'; clearstatcache(true, $statistics);
+    nhep_expect(!file_exists($statistics) && !is_link($statistics), 'NHE_STARTUP_ACCEPT_ORIGINAL_STATISTICS_LEAF_STILL_ABSENT');
+    nhep_expect(['database' => $actual7['database'], 'rows' => $actual7['rows']] === $plan['database'],
+        'NHE_STARTUP_ACCEPT_COMPLETE_ORIGINAL_164_DATABASE_NO_STARTUP_WRITES');
+    $expectedRedis = nhep_redis_expected($plan['redis'], [], $actual7['redis']['time']);
+    nhep_expect($actual7['redis'] === $expectedRedis, 'NHE_STARTUP_ACCEPT_COMPLETE_REDIS_ONLY_ORIGINAL_NATURAL_EXPIRY');
+
+    $expectedNative = []; $processIds = [getmypid()];
+    foreach (['http', 'channel'] as $kind) {
+        $child = $children[$kind]; $pid = $child['native_pid'];
+        $expectedNative[$kind] = ['pid' => $pid, 'running' => true, 'signaled' => false, 'stopped' => false,
+            'exitcode' => -1, 'termsig' => 0, 'stopsig' => 0];
+        nhep_expect(is_int($pid) && $pid > 1 && is_resource($child['process']) && $child['closed'] === null
+            && $child['group']['leader_pid'] === $pid && $child['group']['pgid'] === $pid && $child['group']['sid'] === $pid,
+            'NHE_STARTUP_ACCEPT_ORIGINAL_OWNED_LIVE_HANDLE_AND_SETSID_GROUP');
+        $beforeProof = $ready[$kind]; $originalIdentities = [];
+        foreach ($beforeProof['members'] as $member) {
+            $identity = [];
+            foreach (['pid', 'ppid', 'pgid', 'sid', 'starttime'] as $key) $identity[$key] = $member[$key];
+            $originalIdentities[] = $identity;
+        }
+        usort($originalIdentities, static fn(array $a, array $b): int => $a['pid'] <=> $b['pid']);
+        nhep_expect(count($originalIdentities) === ($kind === 'http' ? 1 : 2)
+            && $beforeProof['native'] === $expectedNative[$kind] && $beforeProof['group'] === $child['group'],
+            'NHE_STARTUP_ACCEPT_BEFORE_FIRST_LINE_SAME_REGISTERED_NATIVE_MEMBERS');
+        foreach (['native_before', 'native_after'] as $side) {
+            $proof = $private[$side][$kind];
+            nhe_keys($proof, ['native', 'group', 'members', 'listener'], 'NHE_STARTUP_ACCEPT_ORIGINAL_COMPLETE_NATIVE_PROOF');
+            $identities = [];
+            foreach ($proof['members'] as $member) {
+                $identity = [];
+                foreach (['pid', 'ppid', 'pgid', 'sid', 'starttime'] as $key) $identity[$key] = $member[$key];
+                $identities[] = $identity;
+            }
+            usort($identities, static fn(array $a, array $b): int => $a['pid'] <=> $b['pid']);
+            nhep_expect($proof['native'] === $expectedNative[$kind] && $proof['group'] === $child['group']
+                && $identities === $originalIdentities && $proof['listener']['address'] === '127.0.0.1'
+                && $proof['listener']['port'] === ($kind === 'http' ? 8000 : 40003)
+                && $proof['listener']['inode'] === $beforeProof['listener']['inode'],
+                'NHE_STARTUP_ACCEPT_ALL_FIVE_NATIVE_IDENTITIES_LISTENERS_AND_HANDLES_PRESERVED');
+        }
+        foreach ($originalIdentities as $identity) {
+            nhep_expect($identity['pgid'] === $pid && $identity['sid'] === $pid
+                && $identity['ppid'] === ($identity['pid'] === $pid ? getmypid() : $pid),
+                'NHE_STARTUP_ACCEPT_EXACT_PARENT_MASTER_WORKER_RELATION');
+            $processIds[] = $identity['pid'];
+        }
+        $fresh = nhep_child_observation($children, $kind);
+        nhep_expect($fresh['native'] === $expectedNative[$kind] && $fresh['group'] === $child['group'],
+            'NHE_STARTUP_ACCEPT_SAME_ORIGINAL_NATIVE_PROOF_AFTER_COMPLETE_CAPTURE');
+    }
+    sort($processIds, SORT_NUMERIC);
+    nhep_expect(count($processIds) === 4 && count(array_unique($processIds, SORT_NUMERIC)) === 4,
+        'NHE_STARTUP_ACCEPT_ONLY_FOUR_DISTINCT_ORIGINAL_NATIVE_PROCESSES');
+    $actualPids = []; $paths = glob('/proc/[0-9]*/stat');
+    nhep_expect(is_array($paths) && $paths !== [], 'NHE_STARTUP_ACCEPT_COMPLETE_NATIVE_NAMESPACE');
+    foreach ($paths as $path) {
+        $row = audit_app_proc_stat((int)basename(dirname($path))); if ($row === null) continue;
+        nhep_expect(!in_array($row['state'], ['Z', 'X', 'x'], true), 'NHE_STARTUP_ACCEPT_NO_FOREIGN_OR_TERMINAL_PROCESS');
+        $actualPids[] = $row['pid'];
+    }
+    sort($actualPids, SORT_NUMERIC);
+    nhep_expect($actualPids === $processIds && $actual7['native'] === $expectedNative,
+        'NHE_STARTUP_ACCEPT_COMPLETE_FOUR_PID_NAMESPACE_AND_INDEPENDENT_NATIVE_SEVEN');
+    $state = $children['channel']['subscriber']['state'];
+    nhep_expect($state['closed'] === false && is_resource($state['socket'])
+        && $state['socket'] === $children['channel']['subscriber']['socket']
+        && get_resource_id($state['socket']) === $state['socket_id']
+        && $state['socket_id'] === $children['channel']['subscriber']['socket_id']
+        && $state['observe'] === $children['channel']['observe'] && $state['run_id'] === $plan['run_id']
+        && $state['self_operated_mer_id'] === $prepared['fixture_receipt']['self_operated_mer_id']
+        && stream_socket_get_name($state['socket'], false) === $state['local_endpoint']
+        && stream_socket_get_name($state['socket'], true) === '127.0.0.1:40003',
+        'NHE_STARTUP_ACCEPT_SAME_ORIGINAL_NONBUSINESS_READY_SUBSCRIBER');
+    $packet = $state['readiness_packet']; $nonce = $packet['data']['nonce'] ?? null;
+    nhep_expect(is_string($nonce) && preg_match('/\A[a-f0-9]{32}\z/D', $nonce) === 1
+        && $packet === ['channel' => 'nhe-readiness:' . $plan['run_id'] . ':' . $nonce,
+            'data' => ['scope' => 'nonempty_history_channel_readiness', 'run_id' => $plan['run_id'], 'nonce' => $nonce]],
+        'NHE_STARTUP_ACCEPT_ORIGINAL_COMPLETE_SAME_SOCKET_PRIVATE_READY_ECHO');
+
+    $before = $plan['files']['logs']['runtime']; $actual = $actual7['logs']['runtime'];
+    nhep_auth_files_tree($actual); nhep_auth_files_streams($private, $actual);
+    $expectedFiles = $plan['files'];
+    nhep_expect($actual7['private'] === $expectedFiles['private'] && $actual7['public'] === $expectedFiles['public']
+        && $actual7['logs']['legacy_root_runtime'] === $expectedFiles['logs']['legacy_root_runtime'],
+        'NHE_STARTUP_ACCEPT_COMPLETE_PRIVATE_PUBLIC_AND_OLD_ROOT_RUNTIME_PRESERVATION');
+    $added = ['channel', 'channel/workerman.log', 'channel/workerman.pid', 'legacy-channel.stderr',
+        'legacy-channel.stdout', 'legacy-http.stderr', 'legacy-http.stdout'];
+    $names = array_merge(array_keys($before), $added); sort($names, SORT_STRING);
+    nhep_expect(array_keys($actual) === $names, 'NHE_STARTUP_ACCEPT_FULL_NAMESPACE_ONLY_SEVEN_SOURCE_REQUIRED_ENTRIES');
+    $changedTime = static function (int $value) use ($window): void {
+        nhep_expect($value >= $window[0] && $value <= $window[1], 'NHE_STARTUP_ACCEPT_NATIVE_TIME_IN_REAL_CREATION_WINDOW');
+    };
+    $root = $before['']['stat']; $rootAfter = $actual['']['stat'];
+    foreach (['dev', 'ino', 'mode', 'uid', 'gid'] as $key)
+        nhep_expect($rootAfter[$key] === $root[$key], 'NHE_STARTUP_ACCEPT_ORIGINAL_RUNTIME_ROOT_IDENTITY_AND_MODE');
+    nhep_expect($rootAfter['nlink'] === $root['nlink'] + 1 && $rootAfter['size'] >= $root['size'],
+        'NHE_STARTUP_ACCEPT_ROOT_ONLY_ONE_SOURCE_CHILD_DIRECTORY');
+    foreach (['mtime', 'ctime'] as $key) {
+        nhep_expect($rootAfter[$key] >= $root[$key], 'NHE_STARTUP_ACCEPT_ROOT_NATIVE_TIME_CANNOT_GO_BACKWARDS');
+        $changedTime($rootAfter[$key]);
+    }
+    $expectedFiles['logs']['runtime']['']['stat']['nlink'] = $root['nlink'] + 1;
+    foreach (['size', 'mtime', 'ctime'] as $key) $expectedFiles['logs']['runtime']['']['stat'][$key] = $rootAfter[$key];
+    $directory = $actual['channel']; $directoryStat = $directory['stat'];
+    nhep_expect($directory['kind'] === 'directory' && $directoryStat['dev'] === $root['dev']
+        && $directoryStat['mode'] === (0040000 | 0700) && $directoryStat['nlink'] === 2
+        && $directoryStat['uid'] === $plan['uid'] && $directoryStat['gid'] === $plan['gid']
+        && $directoryStat['ino'] > 0 && $directoryStat['ino'] !== $root['ino'] && $directoryStat['size'] > 0,
+        'NHE_STARTUP_ACCEPT_SINGLE_ORIGINAL_PRIVATE_CHANNEL_DIRECTORY');
+    $changedTime($directoryStat['mtime']); $changedTime($directoryStat['ctime']);
+    $expectedFiles['logs']['runtime']['channel'] = ['kind' => 'directory', 'stat' => [
+        'dev' => $root['dev'], 'ino' => $directoryStat['ino'], 'mode' => 0040000 | 0700, 'nlink' => 2,
+        'uid' => $plan['uid'], 'gid' => $plan['gid'], 'size' => $directoryStat['size'],
+        'mtime' => $directoryStat['mtime'], 'ctime' => $directoryStat['ctime']]];
+    $newFile = static function (string $leaf, #[SensitiveParameter] string $body, int $mode) use ($actual, $root, $plan, $changedTime): array {
+        $row = $actual[$leaf]; $stat = $row['stat'];
+        nhep_expect($row['kind'] === 'file' && $stat['dev'] === $root['dev'] && $stat['ino'] > 0
+            && $stat['mode'] === (0100000 | $mode) && $stat['nlink'] === 1
+            && $stat['uid'] === $plan['uid'] && $stat['gid'] === $plan['gid'] && $stat['size'] === strlen($body)
+            && $row['bytes'] === strlen($body) && $row['sha256'] === hash('sha256', $body),
+            'NHE_STARTUP_ACCEPT_NEW_FILE_ONLY_EXACT_INDEPENDENT_BODY_MODE_OWNER_AND_NATIVE_SIZE');
+        $changedTime($stat['mtime']); $changedTime($stat['ctime']);
+        return ['kind' => 'file', 'stat' => ['dev' => $root['dev'], 'ino' => $stat['ino'], 'mode' => 0100000 | $mode,
+            'nlink' => 1, 'uid' => $plan['uid'], 'gid' => $plan['gid'], 'size' => strlen($body),
+            'mtime' => $stat['mtime'], 'ctime' => $stat['ctime']], 'bytes' => strlen($body), 'sha256' => hash('sha256', $body)];
+    };
+    $epoch = nhep_http_asctime(substr($ready['expected_raw'], 1, 24), [$plan['before_interval'][1], $ready['actual_interval'][1]]);
+    nhep_expect($epoch === $ready['epoch'], 'NHE_STARTUP_ACCEPT_ORIGINAL_FIRST_LINE_TIME_REVERIFIED');
+    $date = new DateTimeImmutable('@' . $epoch);
+    $stamp = $date->format('D M ') . str_pad($date->format('j'), 2, ' ', STR_PAD_LEFT) . $date->format(' H:i:s Y');
+    $httpBody = '[' . $stamp . '] ' . $plan['http_message'] . "\n";
+    nhep_expect($ready['expected_raw'] === $httpBody
+        && $private['native_streams']['http']['stderr']['raw'] === $httpBody
+        && $private['native_streams']['http']['stderr']['stat'] === $ready['stat'],
+        'NHE_STARTUP_ACCEPT_FULL_SAME_FIRST_LINE_AND_STAT9_AFTER_READY_BEFORE_REQUESTS');
+    $bodies = ['http' => ['stdout' => '', 'stderr' => $httpBody],
+        'channel' => ['stdout' => $plan['channel_stdout'], 'stderr' => '']];
+    foreach ($bodies as $kind => $streams) foreach ($streams as $name => $body) {
+        $stream = $children[$kind]['streams'][$name]; $captured = $private['native_streams'][$kind][$name];
+        nhep_expect(is_resource($stream['handle']) && $captured['path'] === $stream['path'] && $captured['raw'] === $body,
+            'NHE_STARTUP_ACCEPT_COMPLETE_INDEPENDENT_NATIVE_STREAM_BODY_AND_ORIGINAL_HANDLE');
+        $held = fstat($stream['handle']);
+        nhep_expect(is_array($held), 'NHE_STARTUP_ACCEPT_ORIGINAL_HELD_STREAM_STAT_AVAILABLE');
+        foreach (['dev', 'ino', 'mode', 'nlink', 'uid', 'gid'] as $key)
+            nhep_expect($captured['stat'][$key] === $stream['created'][$key] && $held[$key] === $stream['created'][$key],
+                'NHE_STARTUP_ACCEPT_ALL_ORIGINAL_CREATED_STREAM_IDENTITIES');
+        $leaf = 'legacy-' . $kind . '.' . $name;
+        $expectedFiles['logs']['runtime'][$leaf] = $newFile($leaf, $body, 0600);
+    }
+    $master = $children['channel']['native_pid'];
+    $pidBody = (string)$master;
+    $expectedFiles['logs']['runtime']['channel/workerman.pid'] = $newFile('channel/workerman.pid', $pidBody, 0600);
+    nhep_expect(nhe_file('/legacy-runtime/channel/workerman.pid', ['path' => '/legacy-runtime/channel/workerman.pid',
+        'bytes' => strlen($pidBody), 'sha256' => hash('sha256', $pidBody)]) === $pidBody,
+        'NHE_STARTUP_ACCEPT_ORIGINAL_MASTER_PID_FULL_NATIVE_NO_NEWLINE_BODY');
+    $log = nhep_close_private_file($actual, 'channel/workerman.log');
+    $message = 'Workerman[/run/nonempty/legacy-history-channel.php] start in DEBUG mode';
+    nhep_expect(preg_match('~\A([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}) pid:' . $master
+        . ' ' . preg_quote($message, '~') . "\n\\z~D", $log['raw'], $matches) === 1,
+        'NHE_STARTUP_ACCEPT_ONLY_ORIGINAL_SINGLE_MASTER_START_LOG');
+    $logDate = DateTimeImmutable::createFromFormat('!Y-m-d H:i:s', $matches[1], new DateTimeZone('UTC'));
+    nhep_expect($logDate instanceof DateTimeImmutable && DateTimeImmutable::getLastErrors() === false,
+        'NHE_STARTUP_ACCEPT_ORIGINAL_LOG_COMPLETE_UTC_DATE');
+    $logEpoch = $logDate->getTimestamp();
+    nhep_expect($logEpoch >= $window[0] && $logEpoch <= $window[1]
+        && gmdate('Y-m-d H:i:s', $logEpoch) === $matches[1], 'NHE_STARTUP_ACCEPT_ORIGINAL_LOG_IN_TRUE_STARTUP_WINDOW');
+    $logBody = gmdate('Y-m-d H:i:s', $logEpoch) . ' pid:' . $master . ' ' . $message . "\n";
+    nhep_expect($log['raw'] === $logBody, 'NHE_STARTUP_ACCEPT_FULL_LOG_BYTES_REBUILT_FROM_SOURCE_AND_NATIVE_TIME');
+    $expectedFiles['logs']['runtime']['channel/workerman.log'] = $newFile('channel/workerman.log', $logBody, 0622);
+    $inodes = [];
+    foreach ($added as $leaf) $inodes[] = $actual[$leaf]['stat']['ino'];
+    nhep_expect(count(array_unique($inodes, SORT_NUMERIC)) === 7, 'NHE_STARTUP_ACCEPT_DISTINCT_ORIGINAL_CREATED_NODE_IDENTITIES');
+    ksort($expectedFiles['logs']['runtime'], SORT_STRING);
+    nhep_expect($expectedFiles === ['private' => $actual7['private'], 'public' => $actual7['public'], 'logs' => $actual7['logs']],
+        'NHE_STARTUP_ACCEPT_COMPLETE_FIVE_TREES_EQUAL_INDEPENDENT_SOURCE_MODEL');
+    $expected7 = ['database' => $plan['database']['database'], 'rows' => $plan['database']['rows'], 'redis' => $expectedRedis,
+        'private' => $expectedFiles['private'], 'public' => $expectedFiles['public'], 'logs' => $expectedFiles['logs'],
+        'native' => $expectedNative];
+    nheh_snapshot($expected7);
+    nhep_expect($actual7 === $expected7, 'NHE_STARTUP_ACCEPT_FULL_SEVEN_PARTS_FROM_BEFORE_AND_FIXED_SOURCE_ONLY');
+    nhep_observation_parent($qualified);
+    return $expected7;
+}

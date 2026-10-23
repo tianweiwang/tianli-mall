@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "scope": "SINGLE_EXACT_LOAD01_SEAM",
+  "before": {
+    "bytes": 1051627,
+    "sha256": "606a49d80ccf211a14d4731c9cbd24077bea5a2a9a6b961c09cd1e86db30f9ab"
+  },
+  "candidate": {
+    "bytes": 1052008,
+    "sha256": "6a01674bdabfdfb2ff40a7df915642889373f05ee948aeae204429f5e84be48a"
+  },
+  "offset": 1047890,
+  "old": "        $qualified = nhe_qualify($freeze, 'audit-legacy-history-producer');\r\n        nhep_parent_qualified($qualified); nhep_parent_write($qualified);",
+  "replacement": "        $qualified = nhe_qualify($freeze, 'audit-legacy-history-producer');\r\n        // The shared qualifier pins all controls; load these three definitions\r\n        // before any parent write, observer connection or original pre37 call.\r\n        require_once '/run/nonempty/legacy-normal-config.php';\r\n        require_once '/run/nonempty/legacy-actors.php';\r\n        require_once '/run/nonempty/legacy-history-http.php';\r\n        nhe_includes($qualified);\r\n        nhep_parent_qualified($qualified); nhep_parent_write($qualified);",
+  "standard_forward_reverse_exact": true
+}

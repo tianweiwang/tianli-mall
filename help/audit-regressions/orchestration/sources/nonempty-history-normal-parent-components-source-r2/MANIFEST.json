@@ -1,0 +1,68 @@
+{
+  "schema": 1,
+  "scope": "LOAD01_FIXED_THREE_FROZEN_DEFINITION_COMPONENTS_ONLY",
+  "lineage": {
+    "R1_PINS": {
+      "bytes": 1827,
+      "sha256": "c2f94c0d86d398384e5a6467bfa7ce522859e7f2897685c2ad11d0cdbcce37ae"
+    },
+    "R1_finding": {
+      "bytes": 3790,
+      "sha256": "8aa71682cddac403a822cc97d4b7a80a9eaf9cc87116c81945c34e0bbfda67f3"
+    }
+  },
+  "candidate": {
+    "bytes": 1052008,
+    "sha256": "6a01674bdabfdfb2ff40a7df915642889373f05ee948aeae204429f5e84be48a"
+  },
+  "only_changed_definition": "nhep_normal_history_main",
+  "original_unchanged_definitions": 164,
+  "original_prior162_preserved": true,
+  "original169_tail_preserved": true,
+  "real_load_sources_and_named_definitions": {
+    "legacy-normal-config.php": {
+      "source": {
+        "source": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-pre37-fixed-preparation-components-source-r1/candidate/legacy-normal-config.php",
+        "bytes": 26655,
+        "sha256": "46529a71de605c3ddb475c5fcaac487cf96cd68745996752401e24aac997d04f"
+      },
+      "required_definitions": [
+        "m4lh_config_prepare",
+        "m4lh_config_verify_getters"
+      ],
+      "original_definitions_count": 14,
+      "definition_only_top_level": true
+    },
+    "legacy-actors.php": {
+      "source": {
+        "source": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-pre37-actors-components-source-r1/candidate/legacy-actors.php",
+        "bytes": 25618,
+        "sha256": "44235713b307c9913ea9fbf92a0c26908e145a90f6d5636f61ec156f1588fb40"
+      },
+      "required_definitions": [
+        "m4lh_actor_identity",
+        "m4lh_actors_prepare",
+        "m4lh_actors_reset_password"
+      ],
+      "original_definitions_count": 16,
+      "definition_only_top_level": true
+    },
+    "legacy-history-http.php": {
+      "source": {
+        "source": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-upgrade-source-r2/legacy-history-http.php",
+        "bytes": 36764,
+        "sha256": "2747c8227349c62e4c5f928561ffbb307a6b9c34cf0d24420a0bf15f5aa0a3f2"
+      },
+      "required_definitions": [
+        "nhe_history_http_run",
+        "nheh_snapshot",
+        "nheh_observers"
+      ],
+      "original_definitions_count": 12,
+      "definition_only_top_level": true
+    }
+  },
+  "no_new_business_or_resource_operation": true,
+  "original_full_scope_preserved": true,
+  "target_execution": "NOT RUN"
+}

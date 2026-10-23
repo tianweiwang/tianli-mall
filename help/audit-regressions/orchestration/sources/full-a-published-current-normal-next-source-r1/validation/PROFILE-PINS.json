@@ -1,0 +1,46 @@
+{
+  "schema": 1,
+  "scope": "FULL_A_ASSET_NORMAL_NINE_METADATA_SOURCE_PINS",
+  "members": {
+    "README.md": {
+      "bytes": 89381,
+      "sha256": "b886791202529032c9f85a88f80af456f1e916ad2ad1031eb417685edcae6493"
+    },
+    "compose.yml": {
+      "bytes": 11860,
+      "sha256": "f6c4b4f50fbd34fda66afcf2d0819d38992a2fe467172fe587cefbeb2d39a198"
+    },
+    "ms4-host.py": {
+      "bytes": 345436,
+      "sha256": "599144d79f56465fa816dc819776e951e9cfa2f37636b557029daf3a68e2f78c"
+    },
+    "ms4-initialize.php": {
+      "bytes": 78955,
+      "sha256": "44ccb57b43caaa0fe0a080334a2375eeddf5d91f08f15befb25d3e34ed46f8d3"
+    },
+    "seed-source-inverse.json": {
+      "bytes": 639,
+      "sha256": "c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a"
+    },
+    "interface-v1.json": {
+      "bytes": 98802,
+      "sha256": "e61968d321200534a4342717a3b71e6994ead8b6bd46372ba8b3c64061c8a6c8"
+    },
+    "source-derivation.json": {
+      "bytes": 590847,
+      "sha256": "1adbd3da12a7de11664f60c88c375cbaa27adea2b3359bb5664822eb60db8892"
+    },
+    "normal-close-ms4-fulfillment.py": {
+      "bytes": 47220,
+      "sha256": "b2a82d1f3cecfcce0c843d55d102dd4344811eb7eeaab974affce9596da0f491"
+    },
+    "verify-zero-ms4-fulfillment.py": {
+      "bytes": 296097,
+      "sha256": "caac7d1bba8a8700684431a560a4395609cbce7dc1a7d51a84429c91604d0ad9"
+    },
+    "PROFILE-PUBLICATION.json": {
+      "bytes": 1220857,
+      "sha256": "9d2aa3ed13df870bd7d0020a261d6216dd91c14cfc94caf6b9eaa80649ee568a"
+    }
+  }
+}

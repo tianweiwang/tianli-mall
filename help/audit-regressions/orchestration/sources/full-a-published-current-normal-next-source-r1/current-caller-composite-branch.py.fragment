@@ -1,0 +1,56 @@
+    # The exact frozen caller delta adopted at76e is used by the final584 source wrapper.
+    composite = context['current_composite_customer_form_source']
+    check(composite == CURRENT_COMPOSITE_CUSTOMER_FORM_SOURCE and composite['source_sha'] == pub['source_sha'] == chain[13]['source_sha'],
+        'CURRENT_PUBLISHED_WRAPPER_AND_FINAL_COMPLETE_SOURCE')
+    cu = decode(read(composite['profile_interface']))['customer_form_current_profile']; delta = composite['profile_composite']
+    predecessor = context['historical_eleventh_composite_customer_form_source']
+    previous_profile = decode(read(delta['predecessor_profile_interface']))['customer_form_current_profile']
+    previous_pins = decode(read(delta['predecessor_profile_PINS'])); profile_pins = decode(read(composite['profile_PINS']))
+    check(delta['scope'] == 'FROZEN_PREDECESSOR_SEVEN_PLUS_TWO_CALLER_CONTRACT_DELTAS_ONLY'
+        and delta['status'] == 'SOURCE_BOUND_TWO_CALLER_CONTRACT_DELTAS_WITH_SEPARATE_ACTUAL_ADOPTION'
+        and delta['predecessor_composite'] == predecessor['profile_composite']
+        and previous_profile['php_sources'] == predecessor['php_sources']
+        and previous_profile['current_composite_php_source_authority'] == predecessor['profile_composite']
+        and cu['current_composite_php_source_authority'] == delta and cu['frozen_php_authorities'] == composite['base_authorities'] == predecessor['base_authorities']
+        and cu['php_sources'] == composite['php_sources'], 'CURRENT_TWO_CALLER_DELTA_PRESERVES_EXACT_ELEVENTH_AND_ORIGINAL_BASES')
+    names = ['help/audit-regressions/isolated/ms5-paid-consumer-normal.php','help/audit-regressions/isolated/ms4-fulfillment-normal.php']
+    check(delta['delta_repository_paths'] == names and len(delta['delta_candidates']) == len(delta['previous_descriptors']) == len(delta['current_descriptors']) == 2
+        and delta['actual_source_sha'] == chain[11]['source_sha'] == twelfth['source_sha']
+        and delta['actual_adoption']['commit'] == twelfth['commit_record'] and delta['actual_adoption']['source_manifest'] == twelfth['source_manifest'],
+        'CURRENT_CALLER_DELTA_ACTUAL_TWELFTH_NOT_RENAMED_TO_LATER_DOCUMENT_COMMITS')
+    replacements = {}
+    for name,previous,current,candidate in zip(names,delta['previous_descriptors'],delta['current_descriptors'],delta['delta_candidates']):
+        check(previous == next(row for row in predecessor['php_sources'] if row['path'] == name)
+            and current == expected[name] and previous == historical_eleventh_expected[name]
+            and compact(candidate) == compact(current) and read(candidate) == read(twelfth['snapshots'][name]['after'])
+            and current == {'path':name,**next(row['after'] for row in chain[11]['files'] if row['path'] == name)}, 'CURRENT_EACH_CALLER_FULL_PREDECESSOR_AND_COMMITTED_CANDIDATE')
+        replacements[name] = current
+    rows = [replacements.get(row['path'],row) for row in predecessor['php_sources']]
+    check(rows == composite['php_sources'] and len(rows) == len({row['path'] for row in rows}) == 7
+        and all(expected[row['path']] == row for row in rows)
+        and all(row['path'] not in names or row['path'] in replacements for row in rows), 'CURRENT_EXACT_SEVEN_WITH_ONLY_TWO_CALLER_REPLACEMENTS')
+    check(type(delta['delta_authorities']) is dict and set(delta['delta_authorities']) == {'caller_source_PINS','caller_source_manifest',
+        'caller_syntax_RESULT','caller_syntax_job_PINS','root_actual_readback'}, 'CURRENT_NAMED_CALLER_AUTHORITIES_SCHEMA')
+    for pointer in delta['delta_authorities'].values():read(pointer)
+    check(profile_pins['candidate'] == {row['path']:compact(row) for row in pub['selected9']}
+        and previous_pins['candidate']['ms4-initialize.php'] == {'bytes':78955,'sha256':'ed8f94164f4e91e8007348711326073d501a9e6582693b8515061e470097d473'},
+        'CURRENT_NINE_COMPLETE_PROFILE_AND_TRUE_OLD_INITIALIZER')
+    for stage in chain[12:14]:
+        check(all(not any(row['path'] == name for name in names) and not row['path'].startswith(('crmeb/','template/'))
+            for row in stage['files']), 'PUBLISHED_DOCUMENT_AND_SOURCE_ARCHIVE_STEPS_DO_NOT_CHANGE_BUSINESS_CALLERS')
+    check(context['current_initializer_syntax_authority'] == CURRENT_INITIALIZER_SYNTAX_AUTHORITY, 'CURRENT_INITIALIZER_ACTUAL_SYNTAX_FIXED_AUTHORITY')
+    init_authority = decode(read(CURRENT_INITIALIZER_SYNTAX_AUTHORITY)); init_syntax = decode(read(init_authority['result']))
+    check(init_syntax['status'] == 'PASS_CANDIDATE_PHP82_SYNTAX_ONLY' and init_syntax['php_l_count_required'] == 1
+        and init_syntax['container_native_exit'] == 0 and init_syntax['ordinary_own_container_removed'] is True
+        and init_syntax['own_label_before_after_empty'] is True and init_syntax['all_input_windows_ended'] is True
+        and len(init_syntax['sources']) == 1 and compact(init_syntax['sources'][0]) == compact(next(row for row in pub['selected9'] if row['path'] == 'ms4-initialize.php'))
+        and len(init_syntax['operations']) == len(init_authority['receipts']) == 8, 'CURRENT_TRUE_INITIALIZER_LINT_WITHOUT_APP_EXECUTION')
+    read(init_syntax['sources'][0]); read(init_syntax['job_code_PINS'])
+    for receipt,operation in zip(init_authority['receipts'],init_syntax['operations']):
+        made = decode(native_raw(receipt['created'])); ended = decode(native_raw(receipt['terminal']))
+        out = native_raw(receipt['stdout']); err = native_raw(receipt['stderr'])
+        check(ended == operation and made['pid'] == operation['pid'] and made['argv'] == operation['argv']
+            and operation['native_exit'] == operation['wait_returncode'] == 0
+            and compact(operation['stdout']) == compact(receipt['stdout']) and compact(operation['stderr']) == compact(receipt['stderr'])
+            and {'bytes':len(out),'sha256':hashlib.sha256(out).hexdigest()} == compact(operation['stdout'])
+            and {'bytes':len(err),'sha256':hashlib.sha256(err).hexdigest()} == compact(operation['stderr']), 'CURRENT_INITIALIZER_ALL_EIGHT_ORIGINAL_CREATED_TERMINAL_DOUBLE_STREAMS')

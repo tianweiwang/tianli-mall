@@ -8,19 +8,32 @@
     "outcome": "FAILED_AT_PAID_PRODUCER",
     "original_resources_closed_and_independently_verified": true
   },
-  "current_draft": {
-    "package": "full-a-paid-fulfillment-contract-normal-next-source-r1",
-    "source_commit": "76efa7807c6137bc430e314e2faa78691cf60431",
+  "last_materialization_attempt": {
+    "package": "full-a-published-current-normal-next-source-r1",
+    "source_commit": "584532ba22b1824164aa11c06b163715be8c224c",
+    "outcome": "FAILED_SOURCE_FREEZE",
+    "first_fixed_error_code": "EXACT_REVIEWED_REAL_PAID_ENTRY",
+    "native_operations": 673,
+    "native_zero_before_failure": 672,
+    "business_run_created": false,
+    "business_resources_created": false
+  },
+  "current_source": {
+    "package": "full-a-published-current-normal-next-source-r2",
+    "source_commit": "584532ba22b1824164aa11c06b163715be8c224c",
     "profile_sources_present": true,
-    "materializer_present": false,
-    "validation_driver_present": false,
-    "launcher_present": false,
+    "materializer_present": true,
+    "validation_driver_present": true,
+    "launcher_present": true,
+    "required_program_members": 18,
+    "materialization": "NOT_RUN",
+    "initializer_php82_syntax": "PASS_SYNTAX_ONLY",
     "full_business_run": "NOT_RUN"
   },
   "requirements_not_satisfied_by_copying_source": [
     {
       "kind": "original machine layout",
-      "detail": "Archived programs retain original Windows B/worktree/run paths, interpreter path and source-commit bindings. No path substitution or weakened qualification has been applied."
+      "detail": "Archived programs retain original Windows B/worktree/run paths, interpreter path and source-commit bindings. No path substitution or weakened qualification has been applied. The new complete snapshots bind source 584532b, not the later commit that archives them; current-HEAD qualification must be completed before execution."
     },
     {
       "kind": "historical public evidence",
@@ -49,7 +62,7 @@
     },
     {
       "kind": "nonempty history readiness",
-      "detail": "Parent R1 has the confirmed LOAD-01 component-loading omission. Startup plan/accept and final bindings are unfinished. Original refused/UNBOUND entries remain unchanged; the archived components do not constitute an adopted runtime set."
+      "detail": "Parent R1 retains LOAD-01. Parent R2 repairs fixed component loading and passed syntax-only verification. Startup R1 contains the complete startup plan/accept implementation and passed independent source review; its new full PHP bytes have not passed syntax or business execution. Final source bindings, Host admission, current reader, final enabled gate and the complete 37-step/four-CLI/close-zero run remain incomplete. Original refused/UNBOUND entries remain unchanged."
     }
   ],
   "existing_git_controls_for_history": [

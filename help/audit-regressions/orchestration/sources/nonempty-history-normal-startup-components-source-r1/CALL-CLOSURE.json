@@ -1,0 +1,59 @@
+{
+  "schema": 1,
+  "scope": "FIXED_COMPLETE_ORIGINAL_MAIN_AND_STARTUP_SOURCE_CALL_SEAMS",
+  "main_order": [
+    "$qualified = nhe_qualify(",
+    "require_once '/run/nonempty/legacy-normal-config.php'",
+    "require_once '/run/nonempty/legacy-actors.php'",
+    "require_once '/run/nonempty/legacy-history-http.php'",
+    "nhe_includes($qualified)",
+    "nhep_parent_write($qualified)",
+    "$observer = audit_db()",
+    "$prepared = nhep_pre37_fixed_preparation(",
+    "$startupPlan = nhep_normal_startup_plan(",
+    "nhep_child_start($qualified, $children, 'channel')",
+    "$channel = nhep_channel_open(",
+    "nhep_child_subscriber(",
+    "nhep_child_start($qualified, $children, 'http')",
+    "$startupReady = nhep_normal_startup_ready(",
+    "$startupPrivate = []; $startupActual = nhep_observation(",
+    "$startupExpected = nhep_normal_startup_accept(",
+    "$startupActual === $startupExpected",
+    "$oracles = nhep_auth_observers(",
+    "$http = nhe_history_http_run(",
+    "$seal = nhep_normal_history_seal(",
+    "nhep_normal_history_publish("
+  ],
+  "new_definitions": [
+    "nhep_normal_startup_accept",
+    "nhep_normal_startup_plan",
+    "nhep_normal_startup_ready",
+    "nhep_normal_startup_ui"
+  ],
+  "reused_original_helpers": [
+    "nhep_observation_parent",
+    "nhep_database_capture",
+    "nhep_redis_capture",
+    "nhep_redis_expected",
+    "nhep_file_tree",
+    "nhep_auth_files_tree",
+    "nhep_auth_files_streams",
+    "nhep_file_stat",
+    "nhep_child_listener",
+    "nhep_child_observation",
+    "nhep_http_time_reference",
+    "nhep_http_asctime",
+    "nhep_close_private_file",
+    "nheh_snapshot",
+    "nhe_file",
+    "nhe_keys",
+    "audit_app_proc_stat"
+  ],
+  "fixed_ready_echo_exact_original_two_keys": [
+    "channel",
+    "data"
+  ],
+  "original_all_three_loaded_controls": true,
+  "original_same_writer_handles_never_seek": true,
+  "expected_from": "Original prepared plus complete independently recaptured BEFORE; fixed Source bodies; original owned native identities; strictly constrained native inode/directory/time variants; complete actual7 equality. No wholesale AFTER-as-model."
+}

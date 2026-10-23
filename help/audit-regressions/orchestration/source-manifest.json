@@ -1,14 +1,14 @@
 {
-  "schema": 1,
+  "schema": 2,
   "status": "SOURCE_ARCHIVE_RUNTIME_NOT_READY",
   "source_archive_name": "ms4-worker-normal-source-preparation-r1",
-  "handoff_code_commit": "dc72de6cc1c91d378c7f884421685be726c81550",
+  "handoff_code_commit": "584532ba22b1824164aa11c06b163715be8c224c",
   "last_executed_source_commit": "53e6d521b387b19a4cf370e0e381670b762d325e",
   "current_repaired_source_commit": "76efa7807c6137bc430e314e2faa78691cf60431",
   "originals_preserved_byte_for_byte": true,
   "runtime_executed_by_archive_verifier": false,
-  "file_count": 118,
-  "total_bytes": 18062409,
+  "file_count": 233,
+  "total_bytes": 37777631,
   "files": [
     {
       "path": "sources/customer-form-official-initialize-env-raw-source-r1/candidate/help/audit-regressions/isolated/lib/ms4-customer-http-normal.php",
@@ -385,6 +385,590 @@
       "role": "python-source",
       "bytes": 151065,
       "sha256": "80ca1d41d56fb909cc295923d3665749fb222933b977ea8bb2ac8f0b4cfabdae"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r1/DESIGN.md",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r1/DESIGN.md",
+      "package": "full-a-published-current-normal-next-source-r1",
+      "role": "source-documentation",
+      "bytes": 2176,
+      "sha256": "980d1df8cacf45660bc7357747670f6f9ce5c5ded59a0a334222e6ea5d882e4b"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r1/PINS.json",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r1/PINS.json",
+      "package": "full-a-published-current-normal-next-source-r1",
+      "role": "static-source-contract",
+      "bytes": 45764,
+      "sha256": "ffb555dbb93c82731c8fe75bb7b5f3fd70ff44a93c67fe3d134110321959abb9"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r1/assemble.py",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r1/assemble.py",
+      "package": "full-a-published-current-normal-next-source-r1",
+      "role": "python-source",
+      "bytes": 21512,
+      "sha256": "1a879a9e5efac05135c803e973b4c4504b55b1ab39eb7e11205397cc6c701d44"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r1/build_helper.py",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r1/build_helper.py",
+      "package": "full-a-published-current-normal-next-source-r1",
+      "role": "python-source",
+      "bytes": 695,
+      "sha256": "56c5a652c6bff10c437c4a2ae2d06ed47d482e4f3bfb7b0b3983d7219244df5f"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r1/current-caller-composite-branch.py.fragment",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r1/current-caller-composite-branch.py.fragment",
+      "package": "full-a-published-current-normal-next-source-r1",
+      "role": "python-source",
+      "bytes": 6075,
+      "sha256": "9c0a684ff70b13fc16042c7803a38b3615386da669743305c82960e10c5fea48"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r1/launcher/launch.py",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r1/launcher/launch.py",
+      "package": "full-a-published-current-normal-next-source-r1",
+      "role": "orchestration",
+      "bytes": 9518,
+      "sha256": "2da7591c3b83b6b35bd02e9713ad3950a2550dc39b27a150ed3ea0afebab7818"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r1/materializer/INVERSE.json",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r1/materializer/INVERSE.json",
+      "package": "full-a-published-current-normal-next-source-r1",
+      "role": "static-source-contract",
+      "bytes": 1046192,
+      "sha256": "c874bb6b09d3cde3d5f55ef9bfc73990b9c5f8c8261232f6d6cb7920519f02df"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r1/materializer/PLAN.md",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r1/materializer/PLAN.md",
+      "package": "full-a-published-current-normal-next-source-r1",
+      "role": "source-documentation",
+      "bytes": 11432,
+      "sha256": "76e331f2ff55059ef453ccaaab58bf4741f72e886d95b1fa0e12e64baa45270b"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r1/materializer/prepare.py",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r1/materializer/prepare.py",
+      "package": "full-a-published-current-normal-next-source-r1",
+      "role": "materializer",
+      "bytes": 898155,
+      "sha256": "2a84956e22cd5b5ec9d67143d8f23cbd4348c197d33ad770dc64a83357ca311b"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r1/paid-producer-retirement-branch.py.fragment",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r1/paid-producer-retirement-branch.py.fragment",
+      "package": "full-a-published-current-normal-next-source-r1",
+      "role": "python-source",
+      "bytes": 11561,
+      "sha256": "ca017909ee401fdb0cc562bb206a09ecff9ec1f08fee0aad668d05820f393398"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r1/source_reader.py",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r1/source_reader.py",
+      "package": "full-a-published-current-normal-next-source-r1",
+      "role": "python-source",
+      "bytes": 4081,
+      "sha256": "91278688bb7068d876715084cf3914ba1b15c6c34cb8bddba2389c12cc4d5c37"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r1/three-current-commit-branches.py.fragment",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r1/three-current-commit-branches.py.fragment",
+      "package": "full-a-published-current-normal-next-source-r1",
+      "role": "python-source",
+      "bytes": 11376,
+      "sha256": "e506c52f77d86dc6d2e16714b811622cb138cf7e5ef57d6bc03cc619321153a8"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r1/validation/DESIGN-TASKS.md",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r1/validation/DESIGN-TASKS.md",
+      "package": "full-a-published-current-normal-next-source-r1",
+      "role": "source-documentation",
+      "bytes": 13031,
+      "sha256": "45d511fc7bca6a000985cfe5e4db2270cab2122d0b1a50c53a4dce126496fe77"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r1/validation/PINS.json",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r1/validation/PINS.json",
+      "package": "full-a-published-current-normal-next-source-r1",
+      "role": "static-source-contract",
+      "bytes": 356,
+      "sha256": "695f7db32d855303feee1609ddcaefb730d6e85e1263d553ccc27ff8febf82ad"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r1/validation/PROFILE-PINS.json",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r1/validation/PROFILE-PINS.json",
+      "package": "full-a-published-current-normal-next-source-r1",
+      "role": "static-source-contract",
+      "bytes": 1517,
+      "sha256": "8f0461c1934dcf6cfddfa07eb1952a261f216f549fb16a254a29670db66532bd"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r1/validation/PROFILE-PUBLICATION.json",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r1/validation/PROFILE-PUBLICATION.json",
+      "package": "full-a-published-current-normal-next-source-r1",
+      "role": "static-source-contract",
+      "bytes": 1220857,
+      "sha256": "9d2aa3ed13df870bd7d0020a261d6216dd91c14cfc94caf6b9eaa80649ee568a"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r1/validation/actual-profile/README.md",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r1/validation/actual-profile/README.md",
+      "package": "full-a-published-current-normal-next-source-r1",
+      "role": "source-documentation",
+      "bytes": 89381,
+      "sha256": "b886791202529032c9f85a88f80af456f1e916ad2ad1031eb417685edcae6493"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r1/validation/actual-profile/compose.yml",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r1/validation/actual-profile/compose.yml",
+      "package": "full-a-published-current-normal-next-source-r1",
+      "role": "static-source-contract",
+      "bytes": 11860,
+      "sha256": "f6c4b4f50fbd34fda66afcf2d0819d38992a2fe467172fe587cefbeb2d39a198"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r1/validation/actual-profile/interface-v1.json",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r1/validation/actual-profile/interface-v1.json",
+      "package": "full-a-published-current-normal-next-source-r1",
+      "role": "static-source-contract",
+      "bytes": 98802,
+      "sha256": "e61968d321200534a4342717a3b71e6994ead8b6bd46372ba8b3c64061c8a6c8"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r1/validation/actual-profile/ms4-host.py",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r1/validation/actual-profile/ms4-host.py",
+      "package": "full-a-published-current-normal-next-source-r1",
+      "role": "python-source",
+      "bytes": 345436,
+      "sha256": "599144d79f56465fa816dc819776e951e9cfa2f37636b557029daf3a68e2f78c"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r1/validation/actual-profile/ms4-initialize.php",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r1/validation/actual-profile/ms4-initialize.php",
+      "package": "full-a-published-current-normal-next-source-r1",
+      "role": "php-source",
+      "bytes": 78955,
+      "sha256": "44ccb57b43caaa0fe0a080334a2375eeddf5d91f08f15befb25d3e34ed46f8d3"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r1/validation/actual-profile/normal-close-ms4-fulfillment.py",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r1/validation/actual-profile/normal-close-ms4-fulfillment.py",
+      "package": "full-a-published-current-normal-next-source-r1",
+      "role": "python-source",
+      "bytes": 47220,
+      "sha256": "b2a82d1f3cecfcce0c843d55d102dd4344811eb7eeaab974affce9596da0f491"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r1/validation/actual-profile/seed-source-inverse.json",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r1/validation/actual-profile/seed-source-inverse.json",
+      "package": "full-a-published-current-normal-next-source-r1",
+      "role": "static-source-contract",
+      "bytes": 639,
+      "sha256": "c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r1/validation/actual-profile/source-derivation.json",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r1/validation/actual-profile/source-derivation.json",
+      "package": "full-a-published-current-normal-next-source-r1",
+      "role": "static-source-contract",
+      "bytes": 590847,
+      "sha256": "1adbd3da12a7de11664f60c88c375cbaa27adea2b3359bb5664822eb60db8892"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r1/validation/actual-profile/verify-zero-ms4-fulfillment.py",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r1/validation/actual-profile/verify-zero-ms4-fulfillment.py",
+      "package": "full-a-published-current-normal-next-source-r1",
+      "role": "python-source",
+      "bytes": 296097,
+      "sha256": "caac7d1bba8a8700684431a560a4395609cbce7dc1a7d51a84429c91604d0ad9"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r1/validation/run.py",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r1/validation/run.py",
+      "package": "full-a-published-current-normal-next-source-r1",
+      "role": "orchestration",
+      "bytes": 913213,
+      "sha256": "14ca362ab288fdc1a7b76b44c6cf38de321de1ee0bffa5af9fae8e21410d3204"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/DESIGN.md",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/DESIGN.md",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "source-documentation",
+      "bytes": 2144,
+      "sha256": "ac00fb0df17ae550e27204736800dfd0a0ed641e2daedf690b18a2ac7e5c027f"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/PINS.json",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/PINS.json",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "static-source-contract",
+      "bytes": 460606,
+      "sha256": "18dc8e7366783771daedca66389f9746f041582bee92783c8d9a3b9d6dca484f"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/active-contract-repair-branch.py.fragment",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/active-contract-repair-branch.py.fragment",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "python-source",
+      "bytes": 5880,
+      "sha256": "e0ac6f11f94d9566808b8397b930b748df5ed4b8179e23723804cbb318b09de0"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/assemble.py",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/assemble.py",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "python-source",
+      "bytes": 15185,
+      "sha256": "888e19ac3021f84693739da1e9bd15742a930faf4d9ec7f64b949dd884bb8854"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/build_profile.py",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/build_profile.py",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "python-source",
+      "bytes": 7663,
+      "sha256": "739bc83e5f953dd78d5ca7a52554457a4f255533d4155c2ed00e23cc9421f4d0"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/launcher/launch.py",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/launcher/launch.py",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "orchestration",
+      "bytes": 9518,
+      "sha256": "b633edbfe5e2b874aa5e1eab2732b4944de77a5849fb5efd8e5edceb298f84a1"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/materializer/INVERSE.json",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/materializer/INVERSE.json",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "static-source-contract",
+      "bytes": 1047655,
+      "sha256": "fa80d8bbb2acd817331b16a462669fa85b0cf00b02536eac970fa9618c476b55"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/materializer/PLAN.md",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/materializer/PLAN.md",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "source-documentation",
+      "bytes": 11987,
+      "sha256": "d12465c4300d8779e842d1b425c2230353e4e3b5a34cb60ac9b1561f036ebae7"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/materializer/prepare.py",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/materializer/prepare.py",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "materializer",
+      "bytes": 907831,
+      "sha256": "4e3f65586caf711cab31145f2d8d4e79a30315abeac3ed5e322678f54b3b6c2c"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/predecessor-materialization-failure-branch.py.fragment",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/predecessor-materialization-failure-branch.py.fragment",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "python-source",
+      "bytes": 3222,
+      "sha256": "d770314790f294054353ab30502950a1463a4890d239847dba662da6762f74c1"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/profile-source/FORWARD.patch",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/profile-source/FORWARD.patch",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "source-transformation",
+      "bytes": 9672,
+      "sha256": "194746b819b9b186567da5565f560e5cf2758749ef960bc19e0a5e516bface61"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/profile-source/MANIFEST.json",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/profile-source/MANIFEST.json",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "static-source-contract",
+      "bytes": 3150,
+      "sha256": "2880544ee5790df6877ab45ca0fc0aafab06e3254d5a7f4f24f8d95dd49b23c0"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/profile-source/PINS.json",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/profile-source/PINS.json",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "static-source-contract",
+      "bytes": 1954,
+      "sha256": "4e34ce9f62401664a82d1d8543c080043fe3b57cf3337f13cd87fa9fcf7725fe"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/profile-source/REVERSE.patch",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/profile-source/REVERSE.patch",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "source-transformation",
+      "bytes": 9672,
+      "sha256": "9471acc769ac919450c99938ffe4e4dc57ec63865450741de85c58149670f366"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/profile-source/before/README.md",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/profile-source/before/README.md",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "source-documentation",
+      "bytes": 89381,
+      "sha256": "b886791202529032c9f85a88f80af456f1e916ad2ad1031eb417685edcae6493"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/profile-source/before/compose.yml",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/profile-source/before/compose.yml",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "static-source-contract",
+      "bytes": 11860,
+      "sha256": "f6c4b4f50fbd34fda66afcf2d0819d38992a2fe467172fe587cefbeb2d39a198"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/profile-source/before/interface-v1.json",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/profile-source/before/interface-v1.json",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "static-source-contract",
+      "bytes": 98802,
+      "sha256": "e61968d321200534a4342717a3b71e6994ead8b6bd46372ba8b3c64061c8a6c8"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/profile-source/before/ms4-host.py",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/profile-source/before/ms4-host.py",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "python-source",
+      "bytes": 345436,
+      "sha256": "599144d79f56465fa816dc819776e951e9cfa2f37636b557029daf3a68e2f78c"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/profile-source/before/ms4-initialize.php",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/profile-source/before/ms4-initialize.php",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "php-source",
+      "bytes": 78955,
+      "sha256": "44ccb57b43caaa0fe0a080334a2375eeddf5d91f08f15befb25d3e34ed46f8d3"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/profile-source/before/normal-close-ms4-fulfillment.py",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/profile-source/before/normal-close-ms4-fulfillment.py",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "python-source",
+      "bytes": 47220,
+      "sha256": "b2a82d1f3cecfcce0c843d55d102dd4344811eb7eeaab974affce9596da0f491"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/profile-source/before/seed-source-inverse.json",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/profile-source/before/seed-source-inverse.json",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "static-source-contract",
+      "bytes": 639,
+      "sha256": "c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/profile-source/before/source-derivation.json",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/profile-source/before/source-derivation.json",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "static-source-contract",
+      "bytes": 590847,
+      "sha256": "1adbd3da12a7de11664f60c88c375cbaa27adea2b3359bb5664822eb60db8892"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/profile-source/before/verify-zero-ms4-fulfillment.py",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/profile-source/before/verify-zero-ms4-fulfillment.py",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "python-source",
+      "bytes": 296097,
+      "sha256": "caac7d1bba8a8700684431a560a4395609cbce7dc1a7d51a84429c91604d0ad9"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/profile-source/candidate/README.md",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/profile-source/candidate/README.md",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "source-documentation",
+      "bytes": 89381,
+      "sha256": "b886791202529032c9f85a88f80af456f1e916ad2ad1031eb417685edcae6493"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/profile-source/candidate/compose.yml",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/profile-source/candidate/compose.yml",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "static-source-contract",
+      "bytes": 11860,
+      "sha256": "f6c4b4f50fbd34fda66afcf2d0819d38992a2fe467172fe587cefbeb2d39a198"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/profile-source/candidate/interface-v1.json",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/profile-source/candidate/interface-v1.json",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "static-source-contract",
+      "bytes": 98802,
+      "sha256": "0748d251665d27f9dae25c3786e9015af70571e6624c3b535d3afa8b24eb1ed0"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/profile-source/candidate/ms4-host.py",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/profile-source/candidate/ms4-host.py",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "python-source",
+      "bytes": 345436,
+      "sha256": "376a996274890190212e67e14279fed2367502a34d6b9f74fa913317cff95dea"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/profile-source/candidate/ms4-initialize.php",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/profile-source/candidate/ms4-initialize.php",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "php-source",
+      "bytes": 78955,
+      "sha256": "7046b79ca32b4faec307efa40547f8435a93b7fc8a0f3fac5214e44303d4a610"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/profile-source/candidate/normal-close-ms4-fulfillment.py",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/profile-source/candidate/normal-close-ms4-fulfillment.py",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "python-source",
+      "bytes": 47220,
+      "sha256": "bb15816116233a7971350127ba04162424bda2b9265490cf2458e8a50c242710"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/profile-source/candidate/seed-source-inverse.json",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/profile-source/candidate/seed-source-inverse.json",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "static-source-contract",
+      "bytes": 639,
+      "sha256": "c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/profile-source/candidate/source-derivation.json",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/profile-source/candidate/source-derivation.json",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "static-source-contract",
+      "bytes": 592188,
+      "sha256": "19a8e9ef817011f4e0de63f571c9e09dcf44168b8e1df1b0edb8ad6025ae008d"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/profile-source/candidate/verify-zero-ms4-fulfillment.py",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/profile-source/candidate/verify-zero-ms4-fulfillment.py",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "python-source",
+      "bytes": 296097,
+      "sha256": "0ef8b770f2b9289aa841ed500d5fd452277ca0315f958a776356f51fe1552e12"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/source_reader.py",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/source_reader.py",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "python-source",
+      "bytes": 4091,
+      "sha256": "2aa435bd6dab02d152478a386cc4381b63e243d4ea1d387bcc48d909e46d1cef"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/validation/DESIGN-TASKS.md",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/validation/DESIGN-TASKS.md",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "source-documentation",
+      "bytes": 13586,
+      "sha256": "16ec6f620f900abb1fe3fb930281a0d97f3dc04a89ad3cbdad66adb29d1ed158"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/validation/PINS.json",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/validation/PINS.json",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "static-source-contract",
+      "bytes": 356,
+      "sha256": "e8ab92e364a11b9cc1273dc6636e8150502da16dbab6ca557eb12580732c511f"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/validation/PROFILE-PINS.json",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/validation/PROFILE-PINS.json",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "static-source-contract",
+      "bytes": 1517,
+      "sha256": "5fe91fb1a652b02cdfa098b9adb78974068cce4782569a159605fab2f96dffe4"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/validation/PROFILE-PUBLICATION.json",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/validation/PROFILE-PUBLICATION.json",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "static-source-contract",
+      "bytes": 1221584,
+      "sha256": "ecf5f89bb4ae6bc6c34b5a3b2c6368447983c52ec16edfb544c58704efa02a20"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/validation/actual-profile/README.md",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/validation/actual-profile/README.md",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "source-documentation",
+      "bytes": 89381,
+      "sha256": "b886791202529032c9f85a88f80af456f1e916ad2ad1031eb417685edcae6493"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/validation/actual-profile/compose.yml",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/validation/actual-profile/compose.yml",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "static-source-contract",
+      "bytes": 11860,
+      "sha256": "f6c4b4f50fbd34fda66afcf2d0819d38992a2fe467172fe587cefbeb2d39a198"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/validation/actual-profile/interface-v1.json",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/validation/actual-profile/interface-v1.json",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "static-source-contract",
+      "bytes": 98802,
+      "sha256": "0748d251665d27f9dae25c3786e9015af70571e6624c3b535d3afa8b24eb1ed0"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/validation/actual-profile/ms4-host.py",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/validation/actual-profile/ms4-host.py",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "python-source",
+      "bytes": 345436,
+      "sha256": "376a996274890190212e67e14279fed2367502a34d6b9f74fa913317cff95dea"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/validation/actual-profile/ms4-initialize.php",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/validation/actual-profile/ms4-initialize.php",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "php-source",
+      "bytes": 78955,
+      "sha256": "7046b79ca32b4faec307efa40547f8435a93b7fc8a0f3fac5214e44303d4a610"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/validation/actual-profile/normal-close-ms4-fulfillment.py",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/validation/actual-profile/normal-close-ms4-fulfillment.py",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "python-source",
+      "bytes": 47220,
+      "sha256": "bb15816116233a7971350127ba04162424bda2b9265490cf2458e8a50c242710"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/validation/actual-profile/seed-source-inverse.json",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/validation/actual-profile/seed-source-inverse.json",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "static-source-contract",
+      "bytes": 639,
+      "sha256": "c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/validation/actual-profile/source-derivation.json",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/validation/actual-profile/source-derivation.json",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "static-source-contract",
+      "bytes": 592188,
+      "sha256": "19a8e9ef817011f4e0de63f571c9e09dcf44168b8e1df1b0edb8ad6025ae008d"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/validation/actual-profile/verify-zero-ms4-fulfillment.py",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/validation/actual-profile/verify-zero-ms4-fulfillment.py",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "python-source",
+      "bytes": 296097,
+      "sha256": "0ef8b770f2b9289aa841ed500d5fd452277ca0315f958a776356f51fe1552e12"
+    },
+    {
+      "path": "sources/full-a-published-current-normal-next-source-r2/validation/run.py",
+      "origin_relative_path": "full-a-published-current-normal-next-source-r2/validation/run.py",
+      "package": "full-a-published-current-normal-next-source-r2",
+      "role": "orchestration",
+      "bytes": 922889,
+      "sha256": "c563de0b8e4a46c21c7f312a19f852a2df9297471b084c50752189f73ca7676b"
     },
     {
       "path": "sources/full-a-raw-env-normal-next-source-r1/DESIGN.md",
@@ -803,6 +1387,294 @@
       "sha256": "86b528a4000a0124f0609cefc4b2f3440d42ce46eb56c237d09c6733d9e4dd1f"
     },
     {
+      "path": "sources/nonempty-history-normal-parent-components-source-r2/CHECKS.json",
+      "origin_relative_path": "nonempty-history-normal-parent-components-source-r2/CHECKS.json",
+      "package": "nonempty-history-normal-parent-components-source-r2",
+      "role": "static-source-contract",
+      "bytes": 843,
+      "sha256": "613f9ed18b21b53ac04bb7e633288f44f53953938ddebed9d3dae44aaacdd31f"
+    },
+    {
+      "path": "sources/nonempty-history-normal-parent-components-source-r2/DESIGN-TASKS.md",
+      "origin_relative_path": "nonempty-history-normal-parent-components-source-r2/DESIGN-TASKS.md",
+      "package": "nonempty-history-normal-parent-components-source-r2",
+      "role": "source-documentation",
+      "bytes": 2955,
+      "sha256": "ff8a8f20bdb6d3377ec2a78f03c203c9bd2b8e350bfccf4fabf3fa2819cd3f97"
+    },
+    {
+      "path": "sources/nonempty-history-normal-parent-components-source-r2/MANIFEST.json",
+      "origin_relative_path": "nonempty-history-normal-parent-components-source-r2/MANIFEST.json",
+      "package": "nonempty-history-normal-parent-components-source-r2",
+      "role": "static-source-contract",
+      "bytes": 2468,
+      "sha256": "d7935d945b03fb71191e1bf24f06dbd336fbdeee66a13aed202132ca410fde61"
+    },
+    {
+      "path": "sources/nonempty-history-normal-parent-components-source-r2/PINS.json",
+      "origin_relative_path": "nonempty-history-normal-parent-components-source-r2/PINS.json",
+      "package": "nonempty-history-normal-parent-components-source-r2",
+      "role": "static-source-contract",
+      "bytes": 1681,
+      "sha256": "c822fb9206724d38455534bce4363f5be82e11274959d2d4282cee1dcbf3ff7d"
+    },
+    {
+      "path": "sources/nonempty-history-normal-parent-components-source-r2/SOURCE-INPUTS.json",
+      "origin_relative_path": "nonempty-history-normal-parent-components-source-r2/SOURCE-INPUTS.json",
+      "package": "nonempty-history-normal-parent-components-source-r2",
+      "role": "static-source-contract",
+      "bytes": 21860,
+      "sha256": "9f336dc33610274193723bef441d45c6aae079c7b5463e0f1b3da887a9ee80d4"
+    },
+    {
+      "path": "sources/nonempty-history-normal-parent-components-source-r2/SOURCE-OVERLAY.json",
+      "origin_relative_path": "nonempty-history-normal-parent-components-source-r2/SOURCE-OVERLAY.json",
+      "package": "nonempty-history-normal-parent-components-source-r2",
+      "role": "static-source-contract",
+      "bytes": 7108,
+      "sha256": "8857ffc46fbc6208b43a070aebad273aeabc0a837745014ce44fc93bc28f7e56"
+    },
+    {
+      "path": "sources/nonempty-history-normal-parent-components-source-r2/TRANSFORM.json",
+      "origin_relative_path": "nonempty-history-normal-parent-components-source-r2/TRANSFORM.json",
+      "package": "nonempty-history-normal-parent-components-source-r2",
+      "role": "static-source-contract",
+      "bytes": 1098,
+      "sha256": "4bc3f2251bc125c299ec69dbd2d7227631962c93968569a205a7a55ba7cd84e6"
+    },
+    {
+      "path": "sources/nonempty-history-normal-parent-components-source-r2/author.py",
+      "origin_relative_path": "nonempty-history-normal-parent-components-source-r2/author.py",
+      "package": "nonempty-history-normal-parent-components-source-r2",
+      "role": "python-source",
+      "bytes": 9508,
+      "sha256": "f935c4c89831df69a932870cfe8be9ee4bc150b800ad069259b871104a5134ec"
+    },
+    {
+      "path": "sources/nonempty-history-normal-parent-components-source-r2/before/legacy-history-producer.php",
+      "origin_relative_path": "nonempty-history-normal-parent-components-source-r2/before/legacy-history-producer.php",
+      "package": "nonempty-history-normal-parent-components-source-r2",
+      "role": "php-source",
+      "bytes": 1051627,
+      "sha256": "606a49d80ccf211a14d4731c9cbd24077bea5a2a9a6b961c09cd1e86db30f9ab"
+    },
+    {
+      "path": "sources/nonempty-history-normal-parent-components-source-r2/candidate/legacy-history-producer.php",
+      "origin_relative_path": "nonempty-history-normal-parent-components-source-r2/candidate/legacy-history-producer.php",
+      "package": "nonempty-history-normal-parent-components-source-r2",
+      "role": "php-source",
+      "bytes": 1052008,
+      "sha256": "6a01674bdabfdfb2ff40a7df915642889373f05ee948aeae204429f5e84be48a"
+    },
+    {
+      "path": "sources/nonempty-history-normal-parent-components-source-r2/diff/legacy-history-producer.php.diff",
+      "origin_relative_path": "nonempty-history-normal-parent-components-source-r2/diff/legacy-history-producer.php.diff",
+      "package": "nonempty-history-normal-parent-components-source-r2",
+      "role": "source-transformation",
+      "bytes": 966,
+      "sha256": "f82c2eabac4e837e7a096435e76ecd9afaa854635241b0cfddd1c387b8583ec3"
+    },
+    {
+      "path": "sources/nonempty-history-normal-parent-components-source-r2/reverse/legacy-history-producer.php.diff",
+      "origin_relative_path": "nonempty-history-normal-parent-components-source-r2/reverse/legacy-history-producer.php.diff",
+      "package": "nonempty-history-normal-parent-components-source-r2",
+      "role": "source-transformation",
+      "bytes": 966,
+      "sha256": "528601d6a5858ec93936395c96ea45f77f332636dd8a897fa68ac34ce50e7a8b"
+    },
+    {
+      "path": "sources/nonempty-history-normal-startup-components-source-r1/CALL-CLOSURE.json",
+      "origin_relative_path": "nonempty-history-normal-startup-components-source-r1/CALL-CLOSURE.json",
+      "package": "nonempty-history-normal-startup-components-source-r1",
+      "role": "static-source-contract",
+      "bytes": 2126,
+      "sha256": "08da2bdf532d36e8a3b163b05df09d09f77540b3a39b5e5de0f97881d5aea170"
+    },
+    {
+      "path": "sources/nonempty-history-normal-startup-components-source-r1/CHECKS.json",
+      "origin_relative_path": "nonempty-history-normal-startup-components-source-r1/CHECKS.json",
+      "package": "nonempty-history-normal-startup-components-source-r1",
+      "role": "static-source-contract",
+      "bytes": 965,
+      "sha256": "52bdc5857ade91551d9ca4cb4dc6d168678ea5e16819f9a4ac0776b5e18e67d5"
+    },
+    {
+      "path": "sources/nonempty-history-normal-startup-components-source-r1/DESIGN-TASKS.md",
+      "origin_relative_path": "nonempty-history-normal-startup-components-source-r1/DESIGN-TASKS.md",
+      "package": "nonempty-history-normal-startup-components-source-r1",
+      "role": "source-documentation",
+      "bytes": 7468,
+      "sha256": "06055b4dbe252159c5fbfe07d93cb1d3220ffb33f979c9ceeef22a3586c9f0fa"
+    },
+    {
+      "path": "sources/nonempty-history-normal-startup-components-source-r1/MANIFEST.json",
+      "origin_relative_path": "nonempty-history-normal-startup-components-source-r1/MANIFEST.json",
+      "package": "nonempty-history-normal-startup-components-source-r1",
+      "role": "static-source-contract",
+      "bytes": 1914,
+      "sha256": "f165eaff0321b17824ab453602646703e1a6eb007e350f2b121d51a24e619fa9"
+    },
+    {
+      "path": "sources/nonempty-history-normal-startup-components-source-r1/PINS.json",
+      "origin_relative_path": "nonempty-history-normal-startup-components-source-r1/PINS.json",
+      "package": "nonempty-history-normal-startup-components-source-r1",
+      "role": "static-source-contract",
+      "bytes": 1982,
+      "sha256": "4f11d4e5710c54ec8efe6eb1bb5f8a373c24b301979bc3c8d371ea887fc740cc"
+    },
+    {
+      "path": "sources/nonempty-history-normal-startup-components-source-r1/SOURCE-INPUTS.json",
+      "origin_relative_path": "nonempty-history-normal-startup-components-source-r1/SOURCE-INPUTS.json",
+      "package": "nonempty-history-normal-startup-components-source-r1",
+      "role": "static-source-contract",
+      "bytes": 21822,
+      "sha256": "efe48f5f8228c2ad8acf261973f19b61d44ee67c93cbef23f24e3cc5d2967c9e"
+    },
+    {
+      "path": "sources/nonempty-history-normal-startup-components-source-r1/SOURCE-OVERLAY.json",
+      "origin_relative_path": "nonempty-history-normal-startup-components-source-r1/SOURCE-OVERLAY.json",
+      "package": "nonempty-history-normal-startup-components-source-r1",
+      "role": "static-source-contract",
+      "bytes": 7130,
+      "sha256": "aa1c5d30b9da296bf7440f874f0c50b08f337c6cc69f734bb8072c55e7b60efa"
+    },
+    {
+      "path": "sources/nonempty-history-normal-startup-components-source-r1/TRANSFORM.json",
+      "origin_relative_path": "nonempty-history-normal-startup-components-source-r1/TRANSFORM.json",
+      "package": "nonempty-history-normal-startup-components-source-r1",
+      "role": "static-source-contract",
+      "bytes": 2599,
+      "sha256": "02ba7f4e3dc9d427a37f8073e2014cb6fd828bf4c4741c56c2d6da2dca072f1a"
+    },
+    {
+      "path": "sources/nonempty-history-normal-startup-components-source-r1/author.py",
+      "origin_relative_path": "nonempty-history-normal-startup-components-source-r1/author.py",
+      "package": "nonempty-history-normal-startup-components-source-r1",
+      "role": "python-source",
+      "bytes": 13118,
+      "sha256": "9692632461174a2729de34f31ceebc97ab0c43ce180723df2409b03d7bc6abb9"
+    },
+    {
+      "path": "sources/nonempty-history-normal-startup-components-source-r1/before/legacy-history-producer.php",
+      "origin_relative_path": "nonempty-history-normal-startup-components-source-r1/before/legacy-history-producer.php",
+      "package": "nonempty-history-normal-startup-components-source-r1",
+      "role": "php-source",
+      "bytes": 1052008,
+      "sha256": "6a01674bdabfdfb2ff40a7df915642889373f05ee948aeae204429f5e84be48a"
+    },
+    {
+      "path": "sources/nonempty-history-normal-startup-components-source-r1/candidate/legacy-history-producer.php",
+      "origin_relative_path": "nonempty-history-normal-startup-components-source-r1/candidate/legacy-history-producer.php",
+      "package": "nonempty-history-normal-startup-components-source-r1",
+      "role": "php-source",
+      "bytes": 1081876,
+      "sha256": "8e3156f29e1aedb87fbbce359da41025992f3ebe88a67299fba6487e540f20b1"
+    },
+    {
+      "path": "sources/nonempty-history-normal-startup-components-source-r1/diff/legacy-history-producer.php.diff",
+      "origin_relative_path": "nonempty-history-normal-startup-components-source-r1/diff/legacy-history-producer.php.diff",
+      "package": "nonempty-history-normal-startup-components-source-r1",
+      "role": "source-transformation",
+      "bytes": 33518,
+      "sha256": "295982169d36edb0f49c4c7e64336c085a3d04857c741688988cbee408a890a9"
+    },
+    {
+      "path": "sources/nonempty-history-normal-startup-components-source-r1/reverse/legacy-history-producer.php.diff",
+      "origin_relative_path": "nonempty-history-normal-startup-components-source-r1/reverse/legacy-history-producer.php.diff",
+      "package": "nonempty-history-normal-startup-components-source-r1",
+      "role": "source-transformation",
+      "bytes": 33518,
+      "sha256": "3bb6a57feac4a95f5bdc808d9b6dd7d7462d71347ffa2d61c3b0ba2ed20ea7a1"
+    },
+    {
+      "path": "sources/nonempty-history-normal-startup-components-source-r1/startup.fragment.php",
+      "origin_relative_path": "nonempty-history-normal-startup-components-source-r1/startup.fragment.php",
+      "package": "nonempty-history-normal-startup-components-source-r1",
+      "role": "php-source",
+      "bytes": 29339,
+      "sha256": "5df76b21226d6dda4ab6ad9566da069fe25c55a2cfdbbf96b75fe727b6bc41bc"
+    },
+    {
+      "path": "sources/nonempty-history-normal-startup-public-source-r1/PINS.json",
+      "origin_relative_path": "nonempty-history-normal-startup-public-source-r1/PINS.json",
+      "package": "nonempty-history-normal-startup-public-source-r1",
+      "role": "static-source-contract",
+      "bytes": 926,
+      "sha256": "3b703f70daf26a2dda3c064bb3ecc25f0df935b6cc45c6ab04b16b88f15be2ed"
+    },
+    {
+      "path": "sources/nonempty-history-normal-startup-public-source-r1/SOURCE.json",
+      "origin_relative_path": "nonempty-history-normal-startup-public-source-r1/SOURCE.json",
+      "package": "nonempty-history-normal-startup-public-source-r1",
+      "role": "static-source-contract",
+      "bytes": 1431,
+      "sha256": "c0f52b42cf4915528307b736598eaa89db8513c8e0b4e1912a0b86fe574cf74b"
+    },
+    {
+      "path": "sources/nonempty-history-normal-startup-public-source-r1/fetch_source.py",
+      "origin_relative_path": "nonempty-history-normal-startup-public-source-r1/fetch_source.py",
+      "package": "nonempty-history-normal-startup-public-source-r1",
+      "role": "python-source",
+      "bytes": 2754,
+      "sha256": "0e882365936964300ade2c92d2fc7dc7e2e66e37895048220e4308b962abe789"
+    },
+    {
+      "path": "sources/nonempty-history-normal-startup-public-source-r1/upstream/LICENSE",
+      "origin_relative_path": "nonempty-history-normal-startup-public-source-r1/upstream/LICENSE",
+      "package": "nonempty-history-normal-startup-public-source-r1",
+      "role": "upstream-source-reference",
+      "bytes": 3204,
+      "sha256": "b42e4df5e50e6ecda1047d503d6d91d71032d09ed1027ba1ef29eed26f890c5a"
+    },
+    {
+      "path": "sources/nonempty-history-normal-startup-public-source-r1/upstream/sapi/cli/php_cli_server.c",
+      "origin_relative_path": "nonempty-history-normal-startup-public-source-r1/upstream/sapi/cli/php_cli_server.c",
+      "package": "nonempty-history-normal-startup-public-source-r1",
+      "role": "upstream-source-reference",
+      "bytes": 85378,
+      "sha256": "6843266e3a7458e89c74c6d133ec21ae715da8c0708e718965db65fa560d4e63"
+    },
+    {
+      "path": "sources/nonempty-history-normal-startup-public-source-r1/upstream/tag-object.json",
+      "origin_relative_path": "nonempty-history-normal-startup-public-source-r1/upstream/tag-object.json",
+      "package": "nonempty-history-normal-startup-public-source-r1",
+      "role": "static-source-contract",
+      "bytes": 2526,
+      "sha256": "d62e99fa960df81ea7dc4abc5e0ebb8ec61da20c2483d9059f950de20c8395a2"
+    },
+    {
+      "path": "sources/nonempty-history-normal-startup-public-source-r1/upstream/tag-ref.json",
+      "origin_relative_path": "nonempty-history-normal-startup-public-source-r1/upstream/tag-ref.json",
+      "package": "nonempty-history-normal-startup-public-source-r1",
+      "role": "static-source-contract",
+      "bytes": 337,
+      "sha256": "72892992d131b5bf6ded4d4952bd095b6ffc06fb0cee2f738110098add8f0593"
+    },
+    {
+      "path": "sources/nonempty-history-normal-startup-source-map-r1/DESIGN-MAP.md",
+      "origin_relative_path": "nonempty-history-normal-startup-source-map-r1/DESIGN-MAP.md",
+      "package": "nonempty-history-normal-startup-source-map-r1",
+      "role": "source-documentation",
+      "bytes": 11779,
+      "sha256": "e5b3004c12d5a8a8d8ad2bfcc2906d9ce83ff096554971c7559349d6c31085d1"
+    },
+    {
+      "path": "sources/nonempty-history-normal-startup-source-map-r1/SOURCE-MAP.json",
+      "origin_relative_path": "nonempty-history-normal-startup-source-map-r1/SOURCE-MAP.json",
+      "package": "nonempty-history-normal-startup-source-map-r1",
+      "role": "static-source-contract",
+      "bytes": 25565,
+      "sha256": "fe067631668ec6cefe76b2467b910d128f1f30fef60ab7487b490cb6cb4bf695"
+    },
+    {
+      "path": "sources/nonempty-history-normal-startup-source-map-r1/capture.py",
+      "origin_relative_path": "nonempty-history-normal-startup-source-map-r1/capture.py",
+      "package": "nonempty-history-normal-startup-source-map-r1",
+      "role": "python-source",
+      "bytes": 8641,
+      "sha256": "4200bc4016853908391695eb5bb72e14e8116d4bcf361dc51489b0ffb58eef0a"
+    },
+    {
       "path": "sources/nonempty-history-pre37-actors-components-source-r1/candidate/legacy-actors.php",
       "origin_relative_path": "nonempty-history-pre37-actors-components-source-r1/candidate/legacy-actors.php",
       "package": "nonempty-history-pre37-actors-components-source-r1",
@@ -947,6 +1819,54 @@
       "sha256": "c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a"
     },
     {
+      "path": "sources/published-active-contract-initializer-php-syntax-source-r1/CODE-PINS.json",
+      "origin_relative_path": "published-active-contract-initializer-php-syntax-source-r1/CODE-PINS.json",
+      "package": "published-active-contract-initializer-php-syntax-source-r1",
+      "role": "static-source-contract",
+      "bytes": 421,
+      "sha256": "6944506be3e23c1ee2db1f1f8204b7134058d7d1f80c52a6e11f202503d9908c"
+    },
+    {
+      "path": "sources/published-active-contract-initializer-php-syntax-source-r1/DESIGN.md",
+      "origin_relative_path": "published-active-contract-initializer-php-syntax-source-r1/DESIGN.md",
+      "package": "published-active-contract-initializer-php-syntax-source-r1",
+      "role": "source-documentation",
+      "bytes": 879,
+      "sha256": "b0ff2dfd5530e9384122a93a8fe13595c70f4ecd79183e0905622a6292d77cfd"
+    },
+    {
+      "path": "sources/published-active-contract-initializer-php-syntax-source-r1/launch.py",
+      "origin_relative_path": "published-active-contract-initializer-php-syntax-source-r1/launch.py",
+      "package": "published-active-contract-initializer-php-syntax-source-r1",
+      "role": "orchestration",
+      "bytes": 1079,
+      "sha256": "c3a259bbe623325e68bc738fa38354cb6d3d8ac2504280aaf4687eead748226f"
+    },
+    {
+      "path": "sources/published-active-contract-initializer-php-syntax-source-r1/run.py",
+      "origin_relative_path": "published-active-contract-initializer-php-syntax-source-r1/run.py",
+      "package": "published-active-contract-initializer-php-syntax-source-r1",
+      "role": "orchestration",
+      "bytes": 7085,
+      "sha256": "032b491a448958dbc6b379a9a9fb4e2df77edaaed5090888807011b60ee84a16"
+    },
+    {
+      "path": "sources/published-current-normal-next-source-r2-design-clarification-r1/CLARIFICATION.md",
+      "origin_relative_path": "published-current-normal-next-source-r2-design-clarification-r1/CLARIFICATION.md",
+      "package": "published-current-normal-next-source-r2-design-clarification-r1",
+      "role": "source-documentation",
+      "bytes": 2339,
+      "sha256": "3fd00f2acb1bbc3b0a57f8c845614d6765ebf8d8c782f3c9d8a30f8427300e23"
+    },
+    {
+      "path": "sources/published-current-normal-next-source-r2-design-clarification-r1/PINS.json",
+      "origin_relative_path": "published-current-normal-next-source-r2-design-clarification-r1/PINS.json",
+      "package": "published-current-normal-next-source-r2-design-clarification-r1",
+      "role": "static-source-contract",
+      "bytes": 1104,
+      "sha256": "5e6120d47ef69d5b6bda66ca176944cc13b35aaa0e585b1247ec4d8350df0072"
+    },
+    {
       "path": "sources/r20-proof-memory-budget-source-r1/candidate/proof-php-ini/99-ms4-proof-memory.ini",
       "origin_relative_path": "r20-proof-memory-budget-source-r1/candidate/proof-php-ini/99-ms4-proof-memory.ini",
       "package": "r20-proof-memory-budget-source-r1",
@@ -975,11 +1895,6 @@
     "full-a-raw-env-normal-next-source-r1/validation/PROFILE-PUBLICATION.json",
     "full-a-raw-env-normal-next-source-r1/validation/run.py"
   ],
-  "current_draft_unimplemented": [
-    "full-a-paid-fulfillment-contract-normal-next-source-r1/materializer/prepare.py",
-    "full-a-paid-fulfillment-contract-normal-next-source-r1/validation/run.py",
-    "full-a-paid-fulfillment-contract-normal-next-source-r1/launcher/launch.py"
-  ],
   "not_archived": [
     "actual Run directories",
     "created/terminal receipts",
@@ -988,5 +1903,49 @@
     "cookies and HAR",
     "uploads and private data volumes",
     "build outputs and caches"
+  ],
+  "last_materialization_source_commit": "584532ba22b1824164aa11c06b163715be8c224c",
+  "superseded_profile_only_missing_programs": [
+    "full-a-paid-fulfillment-contract-normal-next-source-r1/materializer/prepare.py",
+    "full-a-paid-fulfillment-contract-normal-next-source-r1/validation/run.py",
+    "full-a-paid-fulfillment-contract-normal-next-source-r1/launcher/launch.py"
+  ],
+  "current_full_a_required": [
+    "full-a-published-current-normal-next-source-r2/launcher/launch.py",
+    "full-a-published-current-normal-next-source-r2/materializer/INVERSE.json",
+    "full-a-published-current-normal-next-source-r2/materializer/PLAN.md",
+    "full-a-published-current-normal-next-source-r2/materializer/prepare.py",
+    "full-a-published-current-normal-next-source-r2/validation/actual-profile/compose.yml",
+    "full-a-published-current-normal-next-source-r2/validation/actual-profile/interface-v1.json",
+    "full-a-published-current-normal-next-source-r2/validation/actual-profile/ms4-host.py",
+    "full-a-published-current-normal-next-source-r2/validation/actual-profile/ms4-initialize.php",
+    "full-a-published-current-normal-next-source-r2/validation/actual-profile/normal-close-ms4-fulfillment.py",
+    "full-a-published-current-normal-next-source-r2/validation/actual-profile/README.md",
+    "full-a-published-current-normal-next-source-r2/validation/actual-profile/seed-source-inverse.json",
+    "full-a-published-current-normal-next-source-r2/validation/actual-profile/source-derivation.json",
+    "full-a-published-current-normal-next-source-r2/validation/actual-profile/verify-zero-ms4-fulfillment.py",
+    "full-a-published-current-normal-next-source-r2/validation/DESIGN-TASKS.md",
+    "full-a-published-current-normal-next-source-r2/validation/PINS.json",
+    "full-a-published-current-normal-next-source-r2/validation/PROFILE-PINS.json",
+    "full-a-published-current-normal-next-source-r2/validation/PROFILE-PUBLICATION.json",
+    "full-a-published-current-normal-next-source-r2/validation/run.py"
+  ],
+  "pipeline_snapshots": [
+    {
+      "package": "full-a-published-current-normal-next-source-r1",
+      "source_commit": "584532ba22b1824164aa11c06b163715be8c224c",
+      "program_members": 18,
+      "status": "FAILED_SOURCE_FREEZE_NO_BUSINESS_RUN"
+    },
+    {
+      "package": "full-a-published-current-normal-next-source-r2",
+      "source_commit": "584532ba22b1824164aa11c06b163715be8c224c",
+      "program_members": 18,
+      "status": "SOURCE_ONLY_NOT_MATERIALIZED_NOT_BUSINESS_RUN"
+    }
+  ],
+  "required_design_clarifications": [
+    "published-current-normal-next-source-r2-design-clarification-r1/CLARIFICATION.md",
+    "published-current-normal-next-source-r2-design-clarification-r1/PINS.json"
   ]
 }

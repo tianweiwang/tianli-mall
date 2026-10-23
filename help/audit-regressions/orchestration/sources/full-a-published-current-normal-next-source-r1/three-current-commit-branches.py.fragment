@@ -1,0 +1,113 @@
+    # Preserve the eleventh complete inventory before two caller and two non-business commits.
+    historical_eleventh_expected = dict(expected)
+    step = chain[11]
+    check(step == context['current_paid_fulfillment_contract_step'] and step['kind'] == 'paid_fulfillment_contract_l2'
+        and step['parent'] == previous_head == chain[10]['source_sha']
+        and step['source_sha'] == '76efa7807c6137bc430e314e2faa78691cf60431', 'ACTUAL_TWELFTH_CALLER_CONTRACT_STEP')
+    twelfth = decode(read(step['commit'])); actual = decode(read(twelfth['commit_record'])); manifest = decode(read(twelfth['source_manifest']))
+    check(twelfth['schema'] == 1 and twelfth['source_sha'] == actual['commit_sha'] == step['source_sha']
+        and twelfth['parent'] == actual['parent_sha'] == manifest['parent_sha'] == step['parent']
+        and actual['status'] == 'LOCAL_NARROW_FOUR_TRACKED_FILES_COMMITTED_AND_VAL_ALIGNED'
+        and actual['working_repos_clean'] is True and actual['Val_detached_same_source'] is True
+        and actual['new_tracked_files'] == [] and actual['only_L2_local'] is True and len(actual['native_operations']) == 18,
+        'TWELFTH_REAL_COMMIT_SHA_PARENT_SHA_AND_ORIGINAL18_SCHEMA_NOT_FABRICATED')
+    observed = step['files']
+    check(observed == twelfth['files'] == normalized({name:{'before':row['before'],'after':row['candidate']} for name,row in manifest['files'].items()})
+        and sorted(actual['scope']) == [row['path'] for row in observed]
+        and [row['path'] for row in observed] == sorted({'docs/multi-merchant/09-plan-ms4-ms6.md','docs/multi-merchant/README.md',
+            'help/audit-regressions/isolated/ms4-fulfillment-normal.php','help/audit-regressions/isolated/ms5-paid-consumer-normal.php'}), 'TWELFTH_EXACT_FOUR_EXISTING_FULL_BLOBS')
+    for op in actual['native_operations']:
+        check(set(op) == {'argv','native_exit','stdout_bytes','stdout_sha256','stderr_bytes','stderr_sha256'}
+            and type(op['native_exit']) is int and op['native_exit'] == 0 and type(op['argv']) is list
+            and type(op['stdout_bytes']) is int and op['stdout_bytes'] >= 0 and re.fullmatch('[a-f0-9]{64}',op['stdout_sha256']) is not None
+            and type(op['stderr_bytes']) is int and op['stderr_bytes'] >= 0 and re.fullmatch('[a-f0-9]{64}',op['stderr_sha256']) is not None,
+            'TWELFTH_HISTORICAL18_ACTUAL_NO_PID_OR_WAIT_INVENTED')
+    for row in observed:
+        name = row['path']; before = read(twelfth['snapshots'][name]['before']); after = read(twelfth['snapshots'][name]['after'])
+        check(name in expected and compact(expected[name]) == row['before']
+            and {'bytes':len(before),'sha256':hashlib.sha256(before).hexdigest()} == row['before']
+            and {'bytes':len(after),'sha256':hashlib.sha256(after).hexdigest()} == row['after'], 'TWELFTH_ALL_FOUR_FULL_BEFORE_AFTER_MATCH')
+        first.setdefault(name,None if name not in original else compact(original[name])); expected[name] = {'path':name,**row['after']}
+    for row in twelfth['code_sources']:
+        check(compact(row['candidate']) == compact(expected[row['repository_path']])
+            and read(row['candidate']) == read(twelfth['snapshots'][row['repository_path']]['after']), 'TWELFTH_TWO_CODE_CANDIDATES_EQUAL_COMMITTED_SOURCE')
+        read(row['authority'])
+    peer = decode(read(twelfth['independent_source_review']))
+    check(peer['status'] == 'ROOT_INDEPENDENT_TWO_PHP_SOURCE_REPAIR_QUALIFIED_ONLY'
+        and peer['closed_source_reads'] == 23 and type(peer['checks']) is list and len(peer['checks']) == 8
+        and all(type(value) is str and value for value in peer['checks']), 'TWELFTH_ORIGINAL_INDEPENDENT_SOURCE_REVIEW')
+    syntax = decode(read(twelfth['actual_php_validation']))
+    check(syntax['status'] == 'PASS_CANDIDATE_PHP82_SYNTAX_ONLY' and syntax['php_l_count_required'] == 2
+        and syntax['container_native_exit'] == 0 and syntax['own_label_before_after_empty'] is True
+        and syntax['ordinary_own_container_removed'] is True and syntax['all_input_windows_ended'] is True
+        and len(syntax['operations']) == len(twelfth['syntax_receipts']) == 8, 'TWELFTH_EXACT_TWO_CHANGED_PHP_NECESSARY_SYNTAX')
+    for receipt,operation in zip(twelfth['syntax_receipts'],syntax['operations']):
+        made = decode(native_raw(receipt['created'])); ended = decode(native_raw(receipt['terminal']))
+        out = native_raw(receipt['stdout']); err = native_raw(receipt['stderr'])
+        check(ended == operation and made['pid'] == operation['pid'] and made['argv'] == operation['argv']
+            and operation['native_exit'] == operation['wait_returncode'] == 0
+            and compact(operation['stdout']) == compact(receipt['stdout']) and compact(operation['stderr']) == compact(receipt['stderr'])
+            and {'bytes':len(out),'sha256':hashlib.sha256(out).hexdigest()} == compact(operation['stdout'])
+            and {'bytes':len(err),'sha256':hashlib.sha256(err).hexdigest()} == compact(operation['stderr']), 'TWELFTH_EIGHT_ACTUAL_CREATED_TERMINAL_DOUBLE_STREAMS')
+    previous_head = step['source_sha']
+    check(context['published_commit_history'] == CURRENT_PUBLISHED_COMMIT_HISTORY, 'CURRENT_PUBLISHED_TWO_COMMIT_FIXED_AUTHORITY')
+    published = decode(read(CURRENT_PUBLISHED_COMMIT_HISTORY))
+    check(set(published) == {'schema','status','repository','main_head','steps','initial_native_receipts','native_count','all_native_exit_zero',
+        'all_operations_read_only','no_push_or_deployment_performed_by_readback','ended_ns'}
+        and published['schema'] == 1 and published['status'] == 'ACTUAL_READ_ONLY_PUBLISHED_COMMIT_HISTORY'
+        and published['repository'] == MAIN_SOURCE and published['main_head'] == chain[13]['source_sha']
+        and published['native_count'] == 145 and published['all_native_exit_zero'] is True and published['all_operations_read_only'] is True
+        and published['no_push_or_deployment_performed_by_readback'] is True and len(published['steps']) == 2,
+        'PUBLISHED_SOURCE_HISTORY_REAL145_READONLY_NOT_NEW_PUSH')
+    def published_native(receipt):
+        check(set(receipt) == {'created','terminal','stdout','stderr'}, 'PUBLISHED_NATIVE_COMPLETE_FOUR_RECEIPTS')
+        made = decode(read(receipt['created'])); ended = decode(read(receipt['terminal']))
+        out = read(receipt['stdout']); err = read(receipt['stderr'])
+        check(set(made) == {'pid','argv','started_ns'} and set(ended) == {'pid','argv','started_ns','native_exit','wait_returncode','finished_ns','stdout','stderr'}
+            and made == {key:ended[key] for key in ['pid','argv','started_ns']} and type(made['pid']) is int and made['pid'] > 0
+            and ended['native_exit'] == ended['wait_returncode'] == 0 and ended['finished_ns'] >= made['started_ns']
+            and made['argv'][:5] == ['git','-c','safe.directory='+MAIN_SOURCE,'-C',MAIN_SOURCE]
+            and compact(ended['stdout']) == compact(receipt['stdout']) and compact(ended['stderr']) == compact(receipt['stderr'])
+            and {'bytes':len(out),'sha256':hashlib.sha256(out).hexdigest()} == compact(ended['stdout']) and err == b''
+            and compact(ended['stderr']) == {'bytes':0,'sha256':hashlib.sha256(b'').hexdigest()}, 'PUBLISHED_NATIVE_ACTUAL_PID_ARGV_WAIT_AND_FULL_NESTED_STREAMS')
+        return made['argv'][5:],out
+    initial = [published_native(row) for row in published['initial_native_receipts']]
+    check(initial == [(['rev-parse','HEAD'],(published['main_head']+'\n').encode()),(['status','--porcelain=v1'],b'')], 'PUBLISHED_ACTUAL_CLEAN_HEAD_BEFORE_READBACK')
+    for offset,(held,count,kind) in enumerate(zip(published['steps'],[3,127],['published_project_organization','published_orchestration_source_handoff']),12):
+        step = chain[offset]
+        check(step['kind'] == held['kind'] == kind and step['source_sha'] == held['source_sha'] and step['parent'] == held['parent'] == previous_head
+            and step['commit'] == CURRENT_PUBLISHED_COMMIT_HISTORY and len(step['files']) == len(held['files']) == count
+            and step['files'] == held['files'] and [row['path'] for row in step['files']] == sorted(held['snapshots'])
+            and held['runtime_source_semantics'] == 'documentation and source archive; no application business sources changed', 'PUBLISHED_EXACT_THIRTEENTH_FOURTEENTH_PATHS_AND_PARENT')
+        names = [row['path'] for row in step['files']]
+        operations = [published_native(row) for row in held['native_receipts']]
+        check(len(operations) == (9 if offset == 12 else 134), 'PUBLISHED_EXACT_NINE_OR134_READONLY_OPERATIONS')
+        check(operations[0] == (['show','-s','--format=%H%n%P%n%T',step['source_sha']],(step['source_sha']+'\n'+step['parent']+'\n'+held['git_tree_sha']+'\n').encode()), 'PUBLISHED_ACTUAL_COMMIT_PARENT_TREE_HEADER')
+        expected_status = b''.join(((b'A' if row['before'] is None else b'M')+b'\0'+row['path'].encode()+b'\0') for row in step['files'])
+        check(operations[1] == (['diff-tree','--no-commit-id','--name-status','--no-renames','-r','-z',step['parent'],step['source_sha']],expected_status), 'PUBLISHED_ACTUAL_EXACT_NO_RENAME_STATUS_AND_NAMES')
+        for position,stage,sha in [(2,'before',step['parent']),(3,'after',step['source_sha'])]:
+            args,raw = operations[position]
+            check(args == ['ls-tree','-rz',sha,'--',*names], 'PUBLISHED_ACTUAL_TREE_COMMAND_AND_ALL_CHANGED_NAMES')
+            entries = {}
+            for entry in raw.split(b'\0'):
+                if not entry:continue
+                meta,name = entry.split(b'\t',1); mode,typ,oid = meta.decode().split()
+                entries[name.decode()] = {'mode':mode,'type':typ,'git_object_sha':oid}
+            check(entries == held['git_tree_entries'][stage], 'PUBLISHED_FULL_RAW_TREE_METADATA_JOIN')
+        cursor = 4
+        for row in step['files']:
+            name = row['path']; snapshots = held['snapshots'][name]
+            check((compact(expected[name]) if name in expected else None) == row['before'], 'PUBLISHED_BEFORE_EQUALS_COMPLETE_RECONSTRUCTED_TREE')
+            for stage,sha in [('before',step['parent']),('after',step['source_sha'])]:
+                if row[stage] is None:
+                    check(stage == 'before' and snapshots[stage] is None and name not in held['git_tree_entries'][stage] and name in NEW_TRACKED_PATHS,
+                        'PUBLISHED_REAL_NEW_MEMBER_ABSENT_FROM_PARENT_TREE'); continue
+                raw = read(snapshots[stage]); args,out = operations[cursor]; cursor += 1
+                check(args == ['show',sha+':'+name] and out == raw and compact(snapshots[stage]) == row[stage]
+                    and {'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest()} == row[stage], 'PUBLISHED_EVERY_FULL_SNAPSHOT_EQUALS_ACTUAL_GIT_SHOW_OUTPUT')
+                entry = held['git_tree_entries'][stage][name]
+                check(entry['mode'] == '100644' and entry['type'] == 'blob'
+                    and hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest() == entry['git_object_sha'], 'PUBLISHED_ACTUAL_GIT_OBJECT_ID_EQUALS_COMPLETE_BLOB')
+            first.setdefault(name,None if name not in original else compact(original[name])); expected[name] = {'path':name,**row['after']}
+        check(cursor == len(operations), 'PUBLISHED_NO_UNCONSUMED_NATIVE_OR_SUBSTITUTE_SNAPSHOT')
+        previous_head = step['source_sha']

@@ -1,0 +1,54 @@
+    # Source-only successor closes every active independent contract while retaining predecessor facts.
+    check(context['active_caller_contract_source_repair'] == ACTIVE_CALLER_CONTRACT_SOURCE_REPAIR,
+        'CURRENT_ACTIVE_CALLER_CONTRACT_FIXED_REPAIR_AUTHORITY')
+    repair_pins = decode(read(ACTIVE_CALLER_CONTRACT_SOURCE_REPAIR)); repair = decode(read(repair_pins['manifest']))
+    previous_root = decode(read(repair_pins['predecessor_root_PINS']))
+    check(repair_pins['scope'] == 'SOURCE_ONLY_ACTIVE_INDEPENDENT_CALLER_CONTRACT_REPAIR'
+        and repair['scope'] == 'SOURCE_ONLY_ACTIVE_INDEPENDENT_CONTRACT_REPAIR'
+        and repair['candidate'] == repair_pins['candidate'] == {row['path']:compact(row) for row in pub['selected9']}
+        and repair['changed'] == ['ms4-host.py','ms4-initialize.php','interface-v1.json','source-derivation.json','normal-close-ms4-fulfillment.py','verify-zero-ms4-fulfillment.py']
+        and repair['whole_Python_function_bodies_exact'] is True and repair['PHP_single_literal_inverse_exact'] is True
+        and repair['interface_only_four_active_leaves'] is True and repair['all_derivation_history_except_nonself_and_new_named_entry_exact'] is True
+        and repair['standard_forward_reverse_complete'] is True, 'CURRENT_FINITE_ACTIVE_CONTRACT_REPAIR_EXACT_SCOPE')
+    active_root = Path(composite['profile_interface']['path']).parent; old_artifacts = {}; new_artifacts = {}
+    for row in pub['selected9']:
+        name = row['path']; old = previous_root['files']['validation/actual-profile/'+name]
+        old_artifacts[name] = native_raw({key:old[key] for key in ['path','bytes','sha256','native9']})
+        new_artifacts[name] = read({'path':(active_root/name).as_posix(),**compact(row)})
+        check({'bytes':len(old_artifacts[name]),'sha256':hashlib.sha256(old_artifacts[name]).hexdigest()} == repair['before'][name], 'ACTIVE_REPAIR_TRUE_COMPLETE_PREDECESSOR_PROFILE')
+    def active_constant(raw,name):
+        nodes = [node for node in ast.parse(raw).body if isinstance(node,ast.Assign) and len(node.targets)==1
+            and isinstance(node.targets[0],ast.Name) and node.targets[0].id==name]
+        check(len(nodes)==1,'ACTIVE_REPAIR_UNIQUE_CONSTANT'); return ast.literal_eval(nodes[0].value)
+    def active_functions(raw):
+        text = raw.decode('utf-8'); return {node.name:ast.get_source_segment(text,node) for node in ast.parse(text).body
+            if isinstance(node,(ast.FunctionDef,ast.ClassDef))}
+    current_callers = {row['path']:row for row in composite['php_sources']}
+    paid = current_callers['help/audit-regressions/isolated/ms5-paid-consumer-normal.php']
+    fulfillment = current_callers['help/audit-regressions/isolated/ms4-fulfillment-normal.php']
+    for name in ['ms4-host.py','verify-zero-ms4-fulfillment.py']:
+        for prefix,row in [('PAID_ENTRY',paid),('FULFILLMENT_ENTRY',fulfillment)]:
+            check(active_constant(new_artifacts[name],prefix+'_BYTES') == row['bytes']
+                and active_constant(new_artifacts[name],prefix+'_SHA256') == row['sha256'], 'ACTIVE_INDEPENDENT_HOST_AND_ZERO_CALLER_PINS_EQUAL_CURRENT_SEVEN')
+    for name in ['ms4-host.py','normal-close-ms4-fulfillment.py','verify-zero-ms4-fulfillment.py']:
+        check(active_functions(new_artifacts[name]) == active_functions(old_artifacts[name]), 'ACTIVE_REPAIR_ALL_ORIGINAL_PYTHON_FUNCTION_BODIES_EXACT')
+    old_interface = decode(old_artifacts['interface-v1.json']); fixed_interface = decode(new_artifacts['interface-v1.json'])
+    restored_interface = decode(new_artifacts['interface-v1.json'])
+    for field,row in [('paid_producer_successor',paid),('fulfillment_normal_successor',fulfillment)]:
+        check(fixed_interface[field]['entry'] == row['path'] and fixed_interface[field]['entry_bytes'] == row['bytes']
+            and fixed_interface[field]['entry_sha256'] == row['sha256'], 'ACTIVE_INTERFACE_CALLERS_EQUAL_HOST_ZERO_AND_CURRENT_SEVEN')
+        for key in ['entry_bytes','entry_sha256']:restored_interface[field][key] = old_interface[field][key]
+    check(restored_interface == old_interface, 'ACTIVE_INTERFACE_EXACTLY_FOUR_SCALAR_CHANGES_ALL_HISTORY_RETAINED')
+    before_tuple = b"[108005, 'ee59d99ea8db768b0a45727d9cdffe276b7f0c11f7e07cea5cc10d10a449f4b7']"
+    after_tuple = ("["+str(paid['bytes'])+", '"+paid['sha256']+"']").encode()
+    check(old_artifacts['ms4-initialize.php'].count(before_tuple)==1 and new_artifacts['ms4-initialize.php'].count(after_tuple)==1
+        and new_artifacts['ms4-initialize.php'].replace(after_tuple,before_tuple,1)==old_artifacts['ms4-initialize.php'], 'ACTIVE_INITIALIZER_WORKER_PAID_DONOR_SINGLE_LITERAL_WHOLE_FILE_INVERSE')
+    for name,symbol,target in [('ms4-host.py','INTERFACE_SHA256','interface-v1.json'),('normal-close-ms4-fulfillment.py','HOST_SHA256','ms4-host.py'),
+        ('verify-zero-ms4-fulfillment.py','INTERFACE_SHA256','interface-v1.json'),('verify-zero-ms4-fulfillment.py','HOST_SHA256','ms4-host.py'),
+        ('verify-zero-ms4-fulfillment.py','CLOSE_SHA256','normal-close-ms4-fulfillment.py')]:
+        check(active_constant(new_artifacts[name],symbol)==hashlib.sha256(new_artifacts[target]).hexdigest(), 'ACTIVE_REPAIR_ALL_ORIGINAL_FIVE_HASH_EDGES_CLOSED')
+    old_derivation = decode(old_artifacts['source-derivation.json']); new_derivation = decode(new_artifacts['source-derivation.json'])
+    check(new_derivation['current_nonself_artifacts']==[row for row in pub['selected9'] if row['path']!='source-derivation.json'], 'ACTIVE_REPAIR_COMPLETE_EIGHT_NONSELF_ARTIFACTS')
+    check(new_derivation.pop('published_current_active_contract_source_repair')['current_callers']==[paid,fulfillment], 'ACTIVE_REPAIR_NEW_NAMED_DERIVATION_ONLY')
+    new_derivation['current_nonself_artifacts'] = old_derivation['current_nonself_artifacts']
+    check(new_derivation==old_derivation,'ACTIVE_REPAIR_ALL_OLD_DERIVATION_STAGES_EXACT')

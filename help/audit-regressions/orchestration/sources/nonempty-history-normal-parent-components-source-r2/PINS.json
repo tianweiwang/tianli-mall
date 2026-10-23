@@ -1,0 +1,50 @@
+{
+  "schema": 1,
+  "scope": "LOAD01_FIXED_THREE_DEFINITION_LOADS_SOURCE_ONLY",
+  "members": {
+    "author.py": {
+      "bytes": 9508,
+      "sha256": "f935c4c89831df69a932870cfe8be9ee4bc150b800ad069259b871104a5134ec"
+    },
+    "before/legacy-history-producer.php": {
+      "bytes": 1051627,
+      "sha256": "606a49d80ccf211a14d4731c9cbd24077bea5a2a9a6b961c09cd1e86db30f9ab"
+    },
+    "candidate/legacy-history-producer.php": {
+      "bytes": 1052008,
+      "sha256": "6a01674bdabfdfb2ff40a7df915642889373f05ee948aeae204429f5e84be48a"
+    },
+    "CHECKS.json": {
+      "bytes": 843,
+      "sha256": "613f9ed18b21b53ac04bb7e633288f44f53953938ddebed9d3dae44aaacdd31f"
+    },
+    "DESIGN-TASKS.md": {
+      "bytes": 2955,
+      "sha256": "ff8a8f20bdb6d3377ec2a78f03c203c9bd2b8e350bfccf4fabf3fa2819cd3f97"
+    },
+    "diff/legacy-history-producer.php.diff": {
+      "bytes": 966,
+      "sha256": "f82c2eabac4e837e7a096435e76ecd9afaa854635241b0cfddd1c387b8583ec3"
+    },
+    "MANIFEST.json": {
+      "bytes": 2468,
+      "sha256": "d7935d945b03fb71191e1bf24f06dbd336fbdeee66a13aed202132ca410fde61"
+    },
+    "reverse/legacy-history-producer.php.diff": {
+      "bytes": 966,
+      "sha256": "528601d6a5858ec93936395c96ea45f77f332636dd8a897fa68ac34ce50e7a8b"
+    },
+    "SOURCE-INPUTS.json": {
+      "bytes": 21860,
+      "sha256": "9f336dc33610274193723bef441d45c6aae079c7b5463e0f1b3da887a9ee80d4"
+    },
+    "SOURCE-OVERLAY.json": {
+      "bytes": 7108,
+      "sha256": "8857ffc46fbc6208b43a070aebad273aeabc0a837745014ce44fc93bc28f7e56"
+    },
+    "TRANSFORM.json": {
+      "bytes": 1098,
+      "sha256": "4bc3f2251bc125c299ec69dbd2d7227631962c93968569a205a7a55ba7cd84e6"
+    }
+  }
+}

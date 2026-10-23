@@ -1,0 +1,54 @@
+{
+  "schema": 1,
+  "scope": "ORIGINAL_NORMAL37_COMPLETE_STARTUP_EFFECTS_SOURCE_ONLY",
+  "lineage": {
+    "LOAD01_R2_PINS": {
+      "bytes": 1681,
+      "sha256": "c822fb9206724d38455534bce4363f5be82e11274959d2d4282cee1dcbf3ff7d"
+    },
+    "LOAD01_R2_independent_review": {
+      "bytes": 1347,
+      "sha256": "c56dccef0d05d261b00c6c342d3b2b1e41058275bed6d18a07b25281ebdde802"
+    },
+    "startup_source_map": {
+      "bytes": 25565,
+      "sha256": "fe067631668ec6cefe76b2467b910d128f1f30fef60ab7487b490cb6cb4bf695"
+    },
+    "official_PHP82_Source_PINS": {
+      "bytes": 926,
+      "sha256": "3b703f70daf26a2dda3c064bb3ecc25f0df935b6cc45c6ab04b16b88f15be2ed"
+    },
+    "official_PHP82_C": {
+      "bytes": 85378,
+      "sha256": "6843266e3a7458e89c74c6d133ec21ae715da8c0708e718965db65fa560d4e63"
+    }
+  },
+  "candidate": {
+    "bytes": 1081876,
+    "sha256": "8e3156f29e1aedb87fbbce359da41025992f3ebe88a67299fba6487e540f20b1"
+  },
+  "old_definitions": 165,
+  "old_unchanged_definitions": 164,
+  "only_changed_old_definition": "nhep_normal_history_main",
+  "new_complete_definitions": [
+    "nhep_normal_startup_accept",
+    "nhep_normal_startup_plan",
+    "nhep_normal_startup_ready",
+    "nhep_normal_startup_ui"
+  ],
+  "original169tail_preserved": true,
+  "full_original_scope_preserved": [
+    "37 ordered real HTTP steps",
+    "four original business frames",
+    "four original migration CLIs",
+    "complete164 tables",
+    "whole Redis namespace and natural expiry",
+    "all five trees",
+    "normal same-handle close and no-extra",
+    "Root-adopted exact13 safe seal",
+    "current reader/true-enabled/final Source and actual outer-zero admission"
+  ],
+  "new_runtime_or_target_execution": "NOT RUN",
+  "new_PHP82_syntax": "NOT RUN; Root owns necessary formal pure-l verification",
+  "private_data": "None read or produced. Runtime comparison bytes/body hashes/plans remain solely private RAM."
+}

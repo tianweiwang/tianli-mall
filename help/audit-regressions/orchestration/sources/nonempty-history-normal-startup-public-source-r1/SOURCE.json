@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "scope": "PUBLIC_PHP_8_2_33_SOURCE_ONLY",
+  "tag": "php-8.2.33",
+  "actual_commit": "651db3ebfa622cae0c4e6b39766812efbd274ced",
+  "http_startup_message_and_UTC_native_log_Source": true,
+  "single_process_when_original_workers_env_absent": true,
+  "no_target_or_private_or_resources_executed_or_read": true,
+  "responses": [
+    {
+      "url": "https://api.github.com/repos/php/php-src/git/ref/tags/php-8.2.33",
+      "bytes": 337,
+      "sha256": "72892992d131b5bf6ded4d4952bd095b6ffc06fb0cee2f738110098add8f0593",
+      "complete_response_read": true
+    },
+    {
+      "url": "https://api.github.com/repos/php/php-src/git/tags/fa98f62b39a612ae88b7be5d5ea9ff9b794b454b",
+      "bytes": 2526,
+      "sha256": "d62e99fa960df81ea7dc4abc5e0ebb8ec61da20c2483d9059f950de20c8395a2",
+      "complete_response_read": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/php/php-src/651db3ebfa622cae0c4e6b39766812efbd274ced/sapi/cli/php_cli_server.c",
+      "bytes": 85378,
+      "sha256": "6843266e3a7458e89c74c6d133ec21ae715da8c0708e718965db65fa560d4e63",
+      "complete_response_read": true
+    },
+    {
+      "url": "https://raw.githubusercontent.com/php/php-src/651db3ebfa622cae0c4e6b39766812efbd274ced/LICENSE",
+      "bytes": 3204,
+      "sha256": "b42e4df5e50e6ecda1047d503d6d91d71032d09ed1027ba1ef29eed26f890c5a",
+      "complete_response_read": true
+    }
+  ],
+  "ended_ns": 1792739291211148500
+}

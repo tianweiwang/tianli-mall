@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "scope": "PUBLIC_SOURCE_DOWNLOAD_ONLY",
+  "members": {
+    "fetch_source.py": {
+      "bytes": 2754,
+      "sha256": "0e882365936964300ade2c92d2fc7dc7e2e66e37895048220e4308b962abe789"
+    },
+    "SOURCE.json": {
+      "bytes": 1431,
+      "sha256": "c0f52b42cf4915528307b736598eaa89db8513c8e0b4e1912a0b86fe574cf74b"
+    },
+    "upstream/LICENSE": {
+      "bytes": 3204,
+      "sha256": "b42e4df5e50e6ecda1047d503d6d91d71032d09ed1027ba1ef29eed26f890c5a"
+    },
+    "upstream/sapi/cli/php_cli_server.c": {
+      "bytes": 85378,
+      "sha256": "6843266e3a7458e89c74c6d133ec21ae715da8c0708e718965db65fa560d4e63"
+    },
+    "upstream/tag-object.json": {
+      "bytes": 2526,
+      "sha256": "d62e99fa960df81ea7dc4abc5e0ebb8ec61da20c2483d9059f950de20c8395a2"
+    },
+    "upstream/tag-ref.json": {
+      "bytes": 337,
+      "sha256": "72892992d131b5bf6ded4d4952bd095b6ffc06fb0cee2f738110098add8f0593"
+    }
+  }
+}
