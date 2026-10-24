@@ -1,6 +1,15 @@
 <template>
-  <div class="Modal">
-    <div class="colLeft">
+  <div class="Modal" :class="{ 'product-media-picker': productId !== null }">
+    <div v-if="productId !== null" class="product-source-switch">
+      <el-radio-group v-model="productSource" :disabled="platformWriting || !productSession" size="small" @change="changeProductSource">
+        <el-radio-button label="commercial">商品图库</el-radio-button>
+        <el-radio-button label="platform">平台图片</el-radio-button>
+      </el-radio-group>
+      <span class="product-source-hint">平台图片需先导入商品图库，再用于商品</span>
+    </div>
+    <el-alert v-if="productMessage" :title="productMessage" :description="productReceiptDescription" type="warning" :closable="false" show-icon />
+    <el-alert v-if="platformNotice" :title="platformNotice" type="info" :closable="false" show-icon />
+    <div v-show="productSource !== 'platform'" class="colLeft">
       <div class="Nav">
         <div class="trees-coadd">
           <div v-if="isPage" class="tree_tit" v-db-click @click="addSort">
@@ -54,7 +63,6 @@
         </div>
       </div>
       <div class="conter">
-        <el-alert v-if="productMessage" :title="productMessage" :description="productReceiptDescription" type="warning" :closable="false" show-icon />
         <div class="bnt acea-row row-middle df-jcsb">
           <div class="">
             <el-button
@@ -217,6 +225,44 @@
         </div>
       </div>
     </div>
+    <section v-if="productId !== null" v-show="productSource === 'platform'" class="platform-source" aria-label="平台图片来源">
+      <div class="platform-source-nav" v-loading="platformTreeLoading">
+        <h3 class="platform-source-title">平台分类</h3>
+        <el-tree ref="platformTree" :data="platformCategories" node-key="id" highlight-current :current-node-key="platformQuery.category_id" @node-click="choosePlatformCategory">
+          <span slot-scope="{ data }" class="platform-category-name">{{ data.title }}<small v-if="data.type === 1">（目录）</small></span>
+        </el-tree>
+      </div>
+      <div class="platform-source-content">
+        <div class="platform-source-tools">
+          <el-input v-model="platformQuery.real_name" class="platform-source-search" size="small" placeholder="搜索平台图片名" maxlength="100" clearable :disabled="platformWriting" @keyup.enter.native="searchPlatformAssets">
+            <el-button slot="append" icon="el-icon-search" aria-label="搜索平台图片" :disabled="platformWriting || platformLoading" @click="searchPlatformAssets" />
+          </el-input>
+          <el-button class="platform-action" size="small" :loading="platformWriting" :disabled="platformWriting || productWriteUnknown || platformTreeLoading" @click="choosePlatformFile">上传到平台库</el-button>
+          <input ref="platformFile" type="file" accept=".jpg,.jpeg,.png,.gif,.webp,.ico,image/jpeg,image/png,image/gif,image/webp,image/x-icon,image/vnd.microsoft.icon" class="platform-file-input" tabindex="-1" @change="uploadPlatformFile" />
+        </div>
+        <p class="platform-source-description">当前分类：{{ platformCategoryName }}。上传将保存到{{ platformQuery.category_id === 0 ? '平台未分组' : '此平台分类' }}；商品导入分类在下方单独选择。</p>
+        <div v-loading="platformLoading" class="platform-source-gallery" aria-live="polite">
+          <p v-if="!platformLoading && platformReadReady && !platformAssets.length" class="platform-source-empty">当前分类暂无平台图片，可上传到平台库后再导入。</p>
+          <p v-if="!platformLoading && !platformReadReady" class="platform-source-empty">平台图片尚未读取完成，请点击搜索重新读取。</p>
+          <div v-if="platformAssets.length" class="platform-source-grid">
+            <button v-for="item in platformAssets" :key="item.platform_asset_id" type="button" class="platform-image-choice" :class="{ 'is-selected': platformSelectedId === item.platform_asset_id }" :aria-pressed="platformSelectedId === item.platform_asset_id" :disabled="platformWriting || platformLoading || productWriteUnknown" @click="choosePlatformAsset(item)">
+              <img :src="item.satt_dir || item.src" alt="" />
+              <span class="platform-image-name">{{ item.real_name || item.name }}</span>
+              <span v-if="platformSelectedId === item.platform_asset_id" class="platform-image-selection">待导入</span>
+            </button>
+          </div>
+        </div>
+        <div class="platform-source-pagination">
+          <el-pagination v-if="platformTotal" small background layout="total, prev, pager, next" :total="platformTotal" :page-size="platformQuery.limit" :current-page="platformQuery.page" :pager-count="5" :disabled="platformWriting || platformLoading" @current-change="changePlatformPage" />
+        </div>
+        <div class="platform-import-actions">
+          <label class="platform-import-label">导入至商品分类
+            <el-cascader v-model="platformDestinationPid" :options="treeData2" :props="{ checkStrictly: true, emitPath: false, label: 'title', value: 'id' }" :disabled="platformWriting || productWriteUnknown" size="small" placeholder="未分组" />
+          </label>
+          <el-button class="platform-action" type="primary" size="small" :loading="platformWriting" :disabled="!platformSelectedId || platformLoading || platformWriting || productWriteUnknown" @click="importSelectedPlatformImage">导入到商品图库</el-button>
+        </div>
+      </div>
+    </section>
     <uploadImg
       ref="upload"
       :isPage="isPage"
@@ -253,7 +299,7 @@ import {
   fileUpdateApi,
 } from '@/api/uploadPictures';
 import Setting from '@/setting';
-import { captureProductContext, currentProductContext, closeProductContext, receiptText, requireProductContext, mediaId, mediaList, mediaCategories, mediaCreateCategory, mediaUpdateCategory, mediaDeleteCategory, mediaMove, mediaDelete, mediaRename } from '@/api/product-media';
+import { captureProductContext, currentProductContext, closeProductContext, receiptText, requireProductContext, mediaId, mediaList, mediaCategories, mediaCreateCategory, mediaUpdateCategory, mediaDeleteCategory, mediaMove, mediaDelete, mediaRename, platformMediaList, platformMediaCategories, platformMediaUpload, importPlatformImage } from '@/api/product-media';
 import { subscribePlatformAuthEpoch } from '@/libs/platform-auth-epoch';
 import { getCookies } from '@/libs/util';
 import uploadImg from '@/components/uploadImg';
@@ -295,6 +341,23 @@ export default {
   data() {
     return {
       productSession: null,
+      productSource: 'commercial',
+      platformGeneration: 0,
+      platformListSequence: 0,
+      platformTreeSequence: 0,
+      platformAssets: [],
+      platformCategories: [],
+      platformTotal: 0,
+      platformSelectedId: '',
+      platformCategoryName: '全部图片',
+      platformDestinationPid: 0,
+      platformQuery: { page: 1, limit: 18, category_id: 0, real_name: '' },
+      platformLoading: false,
+      platformReadReady: false,
+      platformTreeLoading: false,
+      platformWriting: false,
+      platformFileContext: null,
+      platformNotice: '',
       productScopeInitialized: false,
       productListSequence: 0,
       productTreeSequence: 0,
@@ -361,7 +424,9 @@ export default {
     },
   },
   beforeDestroy() {
+    this.resetPlatformSource();
     closeProductContext(this.productSession);
+    this.productSession = null;
     if (this.productUnsubscribe) this.productUnsubscribe();
   },
   mounted() {
@@ -385,6 +450,7 @@ export default {
       if (event.receipt) { this.productReceipt = event.receipt; this.productReceiptDescription = receiptText(event.receipt); }
     },
     resetProductScope() {
+      this.resetPlatformSource();
       const hadProduct = this.productScopeInitialized === true;
       this.productScopeInitialized = this.productId !== null;
       closeProductContext(this.productSession);
@@ -404,6 +470,7 @@ export default {
       }
     },
     invalidateProductScope() {
+      this.resetPlatformSource();
       closeProductContext(this.productSession);
       this.productSession = null;
       this.productMessage = '登录身份已变化，进行中的提交结果请先核对，再重新打开商品图片';
@@ -414,22 +481,140 @@ export default {
       this.total = 0;
       this.initData();
     },
-    async productWork(operation, apply, write = false) {
+    async productWork(operation, apply, write = false, active = null) {
       const context = this.productSession;
       try {
         requireProductContext(context);
         if (write && this.productWriteUnknown) throw new Error('上一项提交结果未确认，请先核对图库');
         const value = await operation(context);
-        if (this.productSession !== context) return;
+        if (this.productSession !== context || (active && !active())) return;
         requireProductContext(context);
         if (apply) apply(value);
         return value;
       } catch (error) {
-        if (this.productSession === context) {
+        if (this.productSession === context && (!active || active())) {
           if (error.state === 'unknown') this.productWriteUnknown = true;
           this.productReceipt = error.receipt || null; this.productReceiptDescription = receiptText(this.productReceipt); this.productMessage = error.message || '商品图片操作未完成';
         }
       }
+    },
+    resetPlatformSource() {
+      this.platformGeneration += 1;
+      this.platformListSequence += 1; this.platformTreeSequence += 1;
+      this.productSource = 'commercial';
+      this.platformAssets = []; this.platformCategories = []; this.platformTotal = 0;
+      this.platformSelectedId = ''; this.platformDestinationPid = 0;
+      this.platformQuery = { page: 1, limit: 18, category_id: 0, real_name: '' };
+      this.platformCategoryName = '全部图片';
+      this.platformLoading = false; this.platformReadReady = false; this.platformTreeLoading = false; this.platformWriting = false;
+      this.platformFileContext = null; this.platformNotice = '';
+    },
+    platformScopeCurrent(context, generation) {
+      return this.productSession === context && this.platformGeneration === generation && currentProductContext(context);
+    },
+    changeProductSource(value) {
+      if (value !== 'platform') return;
+      if (!currentProductContext(this.productSession)) { this.productSource = 'commercial'; return; }
+      this.getPlatformCategories(); this.getPlatformAssets();
+    },
+    async getPlatformCategories() {
+      const context = this.productSession; const generation = this.platformGeneration;
+      if (!this.platformScopeCurrent(context, generation)) return;
+      const sequence = ++this.platformTreeSequence;
+      const active = () => this.platformScopeCurrent(context, generation) && sequence === this.platformTreeSequence;
+      this.platformTreeLoading = true;
+      try {
+        await this.productWork(ctx => platformMediaCategories(ctx), value => {
+          this.platformCategories = [{ id: 0, pid: 0, type: 0, title: '全部图片' }, ...value.list];
+        }, false, active);
+      } finally { if (active()) this.platformTreeLoading = false; }
+    },
+    async getPlatformAssets(selectedId = '') {
+      const context = this.productSession; const generation = this.platformGeneration;
+      if (!this.platformScopeCurrent(context, generation)) return;
+      const sequence = ++this.platformListSequence;
+      const active = () => this.platformScopeCurrent(context, generation) && sequence === this.platformListSequence;
+      const query = { ...this.platformQuery };
+      this.platformLoading = true; this.platformReadReady = false; this.platformSelectedId = '';
+      this.platformAssets = []; this.platformTotal = 0;
+      try {
+        await this.productWork(ctx => platformMediaList(ctx, query), value => {
+          this.platformAssets = value.list; this.platformTotal = value.count; this.platformReadReady = true;
+          this.platformSelectedId = selectedId && value.list.some(item => item.platform_asset_id === selectedId) ? selectedId : '';
+        }, false, active);
+      } finally { if (active()) this.platformLoading = false; }
+    },
+    choosePlatformCategory(category) {
+      if (this.platformWriting || !currentProductContext(this.productSession)) return;
+      if (category.type !== 0) {
+        this.platformNotice = '此目录仅用于导航，请选择其下的图片分类。';
+        if (this.$refs.platformTree) this.$refs.platformTree.setCurrentKey(this.platformQuery.category_id);
+        return;
+      }
+      this.platformQuery.category_id = category.id; this.platformQuery.page = 1;
+      this.platformCategoryName = category.title;
+      this.getPlatformAssets();
+    },
+    searchPlatformAssets() {
+      if (this.platformWriting || !currentProductContext(this.productSession)) return;
+      this.platformQuery.page = 1; this.getPlatformAssets();
+    },
+    changePlatformPage(page) {
+      if (this.platformWriting || page === this.platformQuery.page || !currentProductContext(this.productSession)) return;
+      this.platformQuery.page = page; this.getPlatformAssets();
+    },
+    choosePlatformAsset(item) {
+      if (this.platformWriting || this.platformLoading || this.productWriteUnknown || !currentProductContext(this.productSession)) return;
+      if (!this.platformAssets.includes(item)) return;
+      this.platformSelectedId = item.platform_asset_id;
+    },
+    choosePlatformFile() {
+      if (this.platformWriting || this.productWriteUnknown || !currentProductContext(this.productSession)) return;
+      this.platformFileContext = { context: this.productSession, generation: this.platformGeneration, categoryId: this.platformQuery.category_id };
+      this.$refs.platformFile.value = ''; this.$refs.platformFile.click();
+    },
+    async uploadPlatformFile(event) {
+      const file = event.target.files && event.target.files[0];
+      event.target.value = '';
+      const entry = this.platformFileContext; this.platformFileContext = null;
+      if (!file || !entry || this.platformWriting || !this.platformScopeCurrent(entry.context, entry.generation)) return;
+      const active = () => this.platformScopeCurrent(entry.context, entry.generation);
+      this.platformWriting = true; this.platformNotice = '';
+      let uploaded = null;
+      try {
+        await this.productWork(ctx => platformMediaUpload(ctx, file, entry.categoryId), value => { uploaded = value; }, true, active);
+        if (!active() || !uploaded) return;
+        this.platformQuery.page = 1; this.platformQuery.real_name = '';
+        this.platformNotice = '图片已保存到平台库；点击导入后才能用于当前商品。';
+        await this.getPlatformAssets(uploaded.platform_asset_id);
+      } finally { if (active()) this.platformWriting = false; }
+    },
+    async importSelectedPlatformImage() {
+      if (this.platformWriting || this.platformLoading || this.productWriteUnknown || !this.platformSelectedId) return;
+      if (!this.platformAssets.some(item => item.platform_asset_id === this.platformSelectedId)) return;
+      const context = this.productSession; const generation = this.platformGeneration;
+      const active = () => this.platformScopeCurrent(context, generation);
+      if (!active()) return;
+      const sourceId = this.platformSelectedId;
+      const destinationPid = this.platformDestinationPid === null || this.platformDestinationPid === '' ? 0 : this.platformDestinationPid;
+      this.platformWriting = true; this.platformNotice = '';
+      let imported = null;
+      try {
+        await this.productWork(ctx => importPlatformImage(ctx, sourceId, destinationPid), value => { imported = value.list[0]; }, true, active);
+        if (!active() || !imported) return;
+        this.platformSelectedId = ''; this.productSource = 'commercial';
+        this.treeId = destinationPid; this.fileData.page = 1; this.fileData.real_name = '';
+        this.initData(); this.pictrueList = []; this.total = 0; this.isShowPic = false;
+        const sequence = this.productListSequence + 1;
+        const refreshed = await this.getProductImages();
+        if (!active() || sequence !== this.productListSequence) return;
+        if (!refreshed) { this.platformNotice = '平台图片已导入；商品图库刷新未完成，请刷新后核对，请勿重复导入。'; return; }
+        const index = this.pictrueList.findIndex(item => item.att_id === imported.att_id && item.att_dir === imported.src);
+        if (index >= 0) {
+          this.changImage(this.pictrueList[index], index, this.pictrueList);
+          this.platformNotice = '平台图片已导入并选中，点击“使用选中图片”应用到商品。';
+        } else this.platformNotice = '平台图片已导入，当前页未显示新图片；请在商品图库核对，请勿重复导入。';
+      } finally { if (active()) this.platformWriting = false; }
     },
     getProductCategories(type) {
       const sequence = ++this.productTreeSequence;
@@ -1254,5 +1439,100 @@ export default {
   color: var(--prev-color-primary);
   font-size: 12px;
   white-space: nowrap;
+}
+
+/* Product source panel only; the legacy global picker keeps its original layout. */
+.product-source-switch {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.product-source-hint, .platform-source-description {
+  color: #909399;
+  font-size: 12px;
+  line-height: 20px;
+}
+.product-media-picker > .el-alert { margin-bottom: 12px; }
+.platform-source {
+  display: flex;
+  gap: 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.platform-source-nav {
+  flex: 0 0 180px;
+  min-width: 0;
+  max-width: 180px;
+  border-right: 1px solid #ebeef5;
+  padding-right: 12px;
+  box-sizing: border-box;
+}
+.platform-source-title { margin: 0 0 12px; color: #515a6d; font-size: 14px; }
+.platform-category-name {
+  flex: 1;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+.platform-category-name small { color: #909399; }
+.platform-source-nav ::v-deep .el-tree-node__content { height: auto; min-height: 32px; align-items: center; }
+.platform-source-content { flex: 1; min-width: 0; }
+.platform-source-tools, .platform-import-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.platform-source-search { flex: 1 1 200px; width: auto; min-width: 0; }
+.platform-file-input { display: none; }
+.platform-source-description { margin: 12px 0; }
+.platform-source-gallery { min-height: 220px; }
+.platform-source-empty { margin: 48px 0; color: #909399; text-align: center; }
+.platform-source-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+  gap: 12px;
+}
+.platform-image-choice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  min-height: 168px;
+  padding: 10px;
+  border: 2px solid #ebeef5;
+  border-radius: 4px;
+  box-sizing: border-box;
+  color: #515a6d;
+  background: #fff;
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+}
+.platform-image-choice img { width: 100%; height: 104px; object-fit: contain; }
+.platform-image-name { width: 100%; font-size: 12px; line-height: 18px; overflow-wrap: break-word; }
+.platform-image-choice.is-selected { border-color: var(--prev-color-primary); }
+.platform-image-choice:focus-visible { outline: 2px solid var(--prev-color-primary); outline-offset: 2px; }
+.platform-image-choice:disabled { cursor: default; opacity: .65; }
+.platform-image-selection { color: var(--prev-color-primary); font-size: 12px; }
+.platform-source-pagination { display: flex; justify-content: flex-end; margin: 16px 0; }
+.platform-import-actions { padding-top: 12px; border-top: 1px solid #ebeef5; }
+.platform-import-label { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; min-width: 0; }
+.platform-import-label .el-cascader { width: 180px; max-width: 100%; }
+.platform-action.el-button { display: inline-flex; align-items: center; justify-content: center; gap: 4px; margin: 0; text-align: center; }
+.product-source-switch ::v-deep .el-radio-button__inner { display: inline-flex; align-items: center; justify-content: center; }
+.platform-action ::v-deep span { display: inline-flex; align-items: center; justify-content: center; text-align: center; }
+@media (max-width: 700px) {
+  .platform-source { flex-direction: column; gap: 12px; }
+  .platform-source-nav { flex-basis: auto; width: 100%; max-width: none; max-height: 180px; overflow: auto; border-right: 0; border-bottom: 1px solid #ebeef5; padding: 0 0 12px; }
+  .platform-source-pagination { justify-content: center; }
+  .platform-import-label, .platform-import-label .el-cascader { width: 100%; }
+  .platform-source-tools > .platform-action, .platform-import-actions > .platform-action { width: 100%; box-sizing: border-box; }
+  .platform-source-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 </style>

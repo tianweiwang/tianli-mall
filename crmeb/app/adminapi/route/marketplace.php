@@ -8,6 +8,11 @@ use app\adminapi\middleware\MarketplaceScopeMiddleware;
 use app\http\middleware\AllowOriginMiddleware;
 
 Route::group('marketplace', function () {
+    Route::get('platform-assets', 'v1.marketplace.PlatformAsset/index')->name('platform-assets-list')->option(['marketplace_permission'=>'platform-assets-list']);
+    Route::post('platform-assets', 'v1.marketplace.PlatformAsset/upload')->name('platform-assets-upload')->option(['marketplace_permission'=>'platform-assets-upload']);
+    Route::get('platform-asset-categories', 'v1.marketplace.PlatformAsset/categories')->name('platform-asset-categories-list')->option(['marketplace_permission'=>'platform-asset-categories-list']);
+    Route::post('products/<id>/import-platform-image', 'v1.marketplace.PlatformAsset/importProduct')->name('marketplace-products-import-platform-image')
+        ->option(['marketplace_permission'=>'marketplace-products-import-platform-image','legacy_product_write'=>'marketplace-products-import-platform-image']);
     Route::get('merchants', 'v1.marketplace.Merchant/index')->name('marketplace-merchants-list')
         ->option(['marketplace_permission'=>'marketplace-merchants-list']);
     Route::post('merchants', 'v1.marketplace.Merchant/create')->name('marketplace-merchants-create')

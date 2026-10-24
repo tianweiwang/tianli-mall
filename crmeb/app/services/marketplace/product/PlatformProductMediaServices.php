@@ -63,13 +63,13 @@ final class PlatformProductMediaServices
     public function listing(Request $request,int $productIdOrZero,array $query): array
     {
         $this->request($request,self::LIST_ACTION);
-        $query=Input::body($query,['pid','real_name','page','limit']);
+        $query=Input::body($query,['pid','real_name','page','limit','type']);$type=Input::integer($query['type']??0,0,1,true);
         $pid=MerchantAttachmentInput::id($query['pid']??0,true);
         $name=Input::text($query['real_name']??'',255);
         $page=Input::integer($query['page']??1,1,2147483647,true);
         $limit=Input::integer($query['limit']??18,1,100,true);
-        return $this->within($request,$productIdOrZero,function()use($productIdOrZero,$pid,$name,$page,$limit):array{
-            $result=$this->attachments->listing($productIdOrZero,$pid,$name,$page,$limit);
+        return $this->within($request,$productIdOrZero,function()use($productIdOrZero,$pid,$name,$page,$limit,$type):array{
+            $result=$this->attachments->listing($productIdOrZero,$pid,$name,$page,$limit,$type);
             $siteUrl=sys_config('site_url');
             $result['list']=array_map(static function(array $row)use($siteUrl):array{
                 $item=[];
@@ -129,8 +129,117 @@ final class PlatformProductMediaServices
         }
     }
 
+    /** Fixed real mobile API product image producer; no platform scope is fabricated. */
+    public function uploadMobileImage(Request $request,int $productIdOrZero,array $body): array
+    {
+        Input::integer($productIdOrZero,0,8388607);
+        $uid=$this->mobileRequest($request,$productIdOrZero);$body=Input::body($body,['filename']);
+        if(($body['filename']??'file')!=='file')MerchantAttachmentInput::invalid();
+        $receipt=self::receipt();$objects=[];$observations=[self::receipt()];$snapshot=null;$audit=null;
+        try {
+            $receipt['phase']='quota_preflight';$this->mobileQuotaAllowed($uid);
+            $operation=function()use($request,$productIdOrZero,$uid,&$receipt,&$objects,&$observations,&$snapshot,&$audit):array{
+                [$pdo,$owner]=$this->publishContext($productIdOrZero,'mobile-image',$request);
+                if($this->mobileRequest($request,$productIdOrZero)!==$uid)throw new AuthUnavailableException();
+                $uploaded=$this->storage->readTypedUploadedFile($request);
+                $images=[['bytes'=>$uploaded['bytes'],'display_name'=>$uploaded['display_name'],'resolved_kind'=>'image']];unset($uploaded);
+                try{$rows=$this->publishQualifiedBytesInCurrentWriter($productIdOrZero,$images,0,$receipt,$objects,$observations,'mobile-image',$request);}
+                finally{unset($images);}
+                self::onlinePhysical($receipt,$observations,1);
+                if(count($rows)!==1)throw new AuthUnavailableException();$row=$rows[0];
+                $site=sys_config('site_url');if(!is_string($site))throw new AuthUnavailableException();
+                $url=set_file_url($row['att_dir'],$site);
+                if(!is_string($url)||preg_match('~\Ahttps?://~i',$url)!==1)throw new AuthUnavailableException();
+                app()->make(ProductMediaReferenceServices::class)->assertForProduct($productIdOrZero,[['kind'=>'image','path'=>$url]]);
+                $receipt['phase']='audit';$audit=$this->audit->recordMobileProductImage($request,$productIdOrZero,$row);
+                if(LegacyProductWriteServices::transaction()!==$pdo||LegacyProductWriteServices::mediaOwner($productIdOrZero)!==$owner
+                    ||$this->mobileRequest($request,$productIdOrZero)!==$uid)throw new AuthUnavailableException();
+                $snapshot=$this->copyCommitSnapshot($rows);$receipt['phase']='commit_observation';
+                return ['name'=>$row['name'],'url'=>$url,'attachment_ref'=>$row['att_dir']];
+            };
+            $result=$this->writer->run($productIdOrZero===0?[]:[$productIdOrZero],$operation,$productIdOrZero===0,false);
+            if(!is_array($snapshot)||!is_array($audit))throw new AuthUnavailableException();
+            $this->observeCopyCommit($snapshot);$this->observeMobileAudit($snapshot,$audit);
+            $receipt['database_committed']=true;
+            if($this->mobileRequest($request,$productIdOrZero)!==$uid)throw new AuthUnavailableException();
+            $receipt['phase']='quota_write';$this->advanceMobileQuota($uid,$receipt);
+            if($this->mobileRequest($request,$productIdOrZero)!==$uid)throw new AuthUnavailableException();
+            $receipt['complete']=true;$receipt['phase']='complete';return $result;
+        }catch(\Throwable $error){
+            self::onlinePhysical($receipt,$observations,1);
+            if($receipt['physical_changed']===false&&$receipt['database_committed']===false
+                &&$error instanceof HttpException&&in_array($error->getStatusCode(),[401,403,404,422],true))throw $error;
+            $this->copyFailure($receipt,$objects,$observations,1);
+            throw new MerchantAttachmentOperationException($receipt);
+        }
+    }
+
+    private function mobileRequest(Request $request,int $productIdOrZero): int
+    {
+        if(LegacyProductWriteServices::routeId($request->route('product_id',null,null),true)!==$productIdOrZero)throw new AuthUnavailableException();
+        return app()->make(\app\api\middleware\CustomerMiddleware::class)->assertMobileProductImage($request);
+    }
+
+    /** Read the exact original numeric cache wire without changing shared client options. */
+    private function mobileQuota(int $uid): array
+    {
+        $store=\think\facade\Config::get('cache.default');
+        $options=is_string($store)?\think\facade\Config::get('cache.stores.'.$store):null;
+        if(!is_array($options)||!is_string($options['prefix']??null)||!is_string($options['type']??null)
+            ||strcasecmp($options['type'],'redis')!==0)throw new AuthUnavailableException();
+        $key=$options['prefix'].'start_uploads_'.$uid;$redis=\crmeb\services\BoundedRedisConnection::fromDefaultCacheConfig();
+        try{
+            if(@$redis->setOption(\Redis::OPT_SERIALIZER,\Redis::SERIALIZER_NONE)!==true||@$redis->setOption(\Redis::OPT_PREFIX,'')!==true
+                ||@$redis->clearLastError()!==true)throw new AuthUnavailableException();
+            $start=time();$raw=@$redis->rawCommand('GET',$key);$ttl=@$redis->rawCommand('TTL',$key);$end=time();
+            if(@$redis->getLastError()!==null||!is_int($ttl)||$end<$start)throw new AuthUnavailableException();
+            if($raw===false||$raw===null){if($ttl!==-2)throw new AuthUnavailableException();$count=0;}
+            else{
+                if(!is_string($raw)||preg_match('/\A(?:0|[1-9][0-9]{0,9})\z/D',$raw)!==1
+                    ||strlen($raw)>10||($ttl!==-1&&$ttl<0))throw new AuthUnavailableException();
+                $count=(int)$raw;if($count>4294967295)throw new AuthUnavailableException();
+            }
+            return ['count'=>$count,'ttl'=>$ttl,'start'=>$start,'end'=>$end,'store'=>$store,'prefix'=>$options['prefix']];
+        }finally{if(@$redis->close()!==true)throw new AuthUnavailableException();}
+    }
+
+    private function mobileQuotaAllowed(int $uid): void
+    { if($this->mobileQuota($uid)['count']>=100)throw new HttpException(422,'非法操作'); }
+
+    private function advanceMobileQuota(int $uid,array &$receipt): void
+    {
+        $before=$this->mobileQuota($uid);
+        if($before['count']>=100)throw new AuthUnavailableException();$next=$before['count']+1;
+        $start=time();$receipt['phase']='quota_write_unknown';
+        if(\crmeb\services\CacheService::set('start_uploads_'.$uid,$next,86400)!==true)throw new AuthUnavailableException();
+        $end=time();$receipt['phase']='quota_observation';$after=$this->mobileQuota($uid);
+        if($after['count']!==$next||$after['store']!==$before['store']||$after['prefix']!==$before['prefix']
+            ||$after['ttl']<1||$after['ttl']>86400||$after['ttl']+$after['end']<$start+86400-1
+            ||$after['ttl']+$after['start']>$end+86400)throw new AuthUnavailableException();
+    }
+
+    /** Attachment and this exact native audit row must both survive the real outer commit. */
+    private function observeMobileAudit(array $snapshot,array $audit): void
+    {
+        $connection=$snapshot['connection'];$pdo=$snapshot['pdo'];$prefix=$snapshot['prefix'];
+        if(\think\facade\Db::connect()!==$connection||$connection->getPdo()!==$pdo||$pdo->inTransaction()
+            ||array_keys($audit)!==['id','mer_id','actor_type','actor_id','action','resource_type','resource_id','result','detail','add_time']
+            ||$audit['actor_type']!=='api_user'||$audit['action']!=='mobile-product-media-image-upload'
+            ||$audit['resource_type']!=='attachment'||$audit['result']!=='success'
+            ||$audit['mer_id']!==$snapshot['rows'][0]['mer_id']||$audit['resource_id']!== (string)$snapshot['rows'][0]['att_id']
+            ||strlen($prefix.'marketplace_audit_log')>64)throw new AuthUnavailableException();
+        $read=$pdo->prepare('SELECT * FROM `'.$prefix.'marketplace_audit_log` WHERE id=? AND mer_id=? LIMIT 2');
+        if($read===false)throw new AuthUnavailableException();
+        try{if($read->execute([$audit['id'],$audit['mer_id']])!==true||$read->fetchAll(\PDO::FETCH_ASSOC)!==[$audit])throw new AuthUnavailableException();}
+        finally{if($read->closeCursor()!==true)throw new AuthUnavailableException();}
+        if(\think\facade\Db::connect()!==$connection||$connection->getPdo()!==$pdo||$pdo->inTransaction())throw new AuthUnavailableException();
+    }
+
     public function uploadVideo(Request $request,int $productIdOrZero,array $body): string
-    { return $this->uploadTyped($request,$productIdOrZero,$body,'video'); }
+    {
+        if(array_key_exists('url',$body))return $this->importRemoteVideo($request,$productIdOrZero,$body);
+        return $this->uploadTyped($request,$productIdOrZero,$body,'video');
+    }
 
     public function uploadAudio(Request $request,int $productIdOrZero,array $body): string
     { return $this->uploadTyped($request,$productIdOrZero,$body,'audio'); }
@@ -325,6 +434,74 @@ final class PlatformProductMediaServices
         if($priorCleanup===false)$receipt['cleanup_complete']=false;
     }
 
+    /** Copy an authorized native platform image into a distinct current product-owned object. */
+    public function importPlatformImage(Request $request,int $productIdOrZero,array $body): array
+    {
+        $action=\app\services\marketplace\assets\PlatformAssetServices::IMPORT;
+        $this->request($request,$action);Input::integer($productIdOrZero,0,8388607);
+        if(LegacyProductWriteServices::routeId($request->route('id',null,null),true)!==$productIdOrZero)throw new AuthUnavailableException();
+        $body=Input::body($body,['platform_asset_id','pid'],['platform_asset_id']);
+        if(!is_string($body['platform_asset_id'])||preg_match('/\A[1-9][0-9]{0,19}\z/D',$body['platform_asset_id'])!==1
+            ||strlen($body['platform_asset_id'])===20&&strcmp($body['platform_asset_id'],'18446744073709551615')>0)throw new HttpException(422,'平台素材编号不正确');
+        $sourceId=\app\dao\marketplace\assets\PlatformAssetDao::id($body['platform_asset_id']);$pid=MerchantAttachmentInput::id($body['pid']??0,true);
+        $platform=app()->make(\app\dao\marketplace\assets\PlatformAssetDao::class);$sourceStorage=app()->make(\app\services\marketplace\assets\PlatformAssetStorage::class);
+        $receipt=self::receipt();$objects=[];$observations=[self::receipt()];$snapshot=null;$sourceSnapshot=null;
+        try{
+            $list=$this->within($request,$productIdOrZero,function()use($request,$productIdOrZero,$sourceId,$pid,$platform,$sourceStorage,&$receipt,&$objects,&$observations,&$snapshot,&$sourceSnapshot):array{
+                [$pdo,$owner]=$this->publishContext($productIdOrZero,'platform-image',$request);$scope=LegacyProductWriteServices::rawScope();
+                $source=$platform->find($request,$scope,$pdo,$sourceId);$sourceRead=$sourceStorage->read($request,$scope,$pdo,$source);
+                try{
+                    $images=[['bytes'=>$sourceRead['bytes'],'display_name'=>$sourceRead['display_name'],'resolved_kind'=>'image']];
+                    $importAudit=null;
+                    try{$rows=$this->publishQualifiedBytesInCurrentWriter($productIdOrZero,$images,$pid,$receipt,$objects,$observations,'platform-image',$request);$importAudit=$images[0]['platform_import_audit']??null;}
+                    finally{unset($images);}
+                    if(!is_array($importAudit))throw new AuthUnavailableException();
+                    self::onlinePhysical($receipt,$observations,1);if(count($rows)!==1)throw new AuthUnavailableException();
+                    $after=$platform->find($request,$scope,$pdo,$sourceId);if($after!==$source)throw new AuthUnavailableException();
+                    $afterRead=$sourceStorage->read($request,$scope,$pdo,$after);
+                    try{
+                        if($afterRead['bytes']!==$sourceRead['bytes']||\app\services\marketplace\assets\PlatformAssetStorage::proof($afterRead['object'])
+                            !==\app\services\marketplace\assets\PlatformAssetStorage::proof($sourceRead['object']))throw new AuthUnavailableException();
+                        $target=$this->storage->locateForProduct($rows[0],$productIdOrZero);
+                        if($this->storage->identity($target)===$sourceStorage->identity($sourceRead['object']))throw new AuthUnavailableException();
+                    }finally{unset($afterRead['bytes']);}
+                    [$samePdo,$sameOwner]=$this->publishContext($productIdOrZero,'platform-image',$request);
+                    if($samePdo!==$pdo||$sameOwner!==$owner)throw new AuthUnavailableException();
+                    $snapshot=$this->copyCommitSnapshot($rows);$sourceSnapshot=['row'=>$source,'proof'=>\app\services\marketplace\assets\PlatformAssetStorage::proof($sourceRead['object']),
+                        'sha256'=>$sourceRead['qualified']['sha256'],'scope'=>$scope,'audit'=>$importAudit];
+                    $siteUrl=sys_config('site_url');$src=$rows[0]['att_dir'];
+                    if($siteUrl)$src=(strpos($src,$siteUrl)!==false||strstr($src,'http')!==false)?$rows[0]['satt_dir']:$siteUrl.$src;
+                    return [['att_id'=>(int)$rows[0]['att_id'],'src'=>$src]];
+                }finally{unset($sourceRead['bytes']);}
+            });
+            // The original writer returned after its actual commit. Later readback cannot erase that fact.
+            $receipt['database_committed']=true;
+            if(!is_array($snapshot)||!is_array($sourceSnapshot))throw new AuthUnavailableException();$this->observeCopyCommit($snapshot);
+            $this->audit->observePlatformProductImageImport($request,$productIdOrZero,$snapshot['rows'][0],$sourceSnapshot['audit']);
+            $pdo=$snapshot['pdo'];$scope=$sourceSnapshot['scope'];
+            \app\services\marketplace\assets\PlatformAssetServices::assertContext($request,$scope,$pdo,false);
+            $source=$platform->find($request,$scope,$pdo,$sourceId,false);if($source!==$sourceSnapshot['row'])throw new AuthUnavailableException();
+            $read=$sourceStorage->read($request,$scope,$pdo,$source,false);
+            try{if($read['qualified']['sha256']!==$sourceSnapshot['sha256']||\app\services\marketplace\assets\PlatformAssetStorage::proof($read['object'])!==$sourceSnapshot['proof'])throw new AuthUnavailableException();}
+            finally{unset($read['bytes']);}
+            \app\services\marketplace\assets\PlatformAssetServices::assertContext($request,$scope,$pdo,false);
+            $receipt['complete']=true;$receipt['phase']='complete';return $list;
+        }catch(\Throwable $error){
+            self::onlinePhysical($receipt,$observations,1);
+            if($receipt['physical_changed']===false&&$receipt['database_committed']===false&&(($error instanceof HttpException&&in_array($error->getStatusCode(),[401,403,404,410,422],true))
+                ||($error instanceof AuthException&&!$error instanceof AuthUnavailableException)))throw $error;
+            $this->copyFailure($receipt,$objects,$observations,1);
+            // Only this new import: a cloud DELETE acknowledgement does not prove object absence.
+            if($receipt['database_committed']===false&&$receipt['cleanup_complete']===true){
+                foreach($objects as$object){
+                    $type=$object['type']??null;
+                    if(is_int($type)&&$type>=2&&$type<=7){$receipt['cleanup_complete']=null;break;}
+                }
+            }
+            throw new MerchantAttachmentOperationException($receipt);
+        }
+    }
+
     /** Two finite callers share the original bytes -> native14 body, not authorization. */
     private function publishQualifiedBytesInCurrentWriter(int $productIdOrZero,array &$images,int $pid,array &$receipt,array &$objects,array &$observations,string $mode,?Request $request): array
     {
@@ -336,7 +513,8 @@ final class PlatformProductMediaServices
                 $kind=$image['resolved_kind']??null;
                 if(!in_array($kind,['image','video','audio'],true)
                     ||(LegacyProductWriteServices::isSelfWorker()&&$kind!=='image')
-                    ||(isset(self::MULTIPART_MODES[$mode])&&$kind!==self::MULTIPART_MODES[$mode]['kind']))throw new AuthUnavailableException();
+                    ||(isset(self::MULTIPART_MODES[$mode])&&$kind!==self::MULTIPART_MODES[$mode]['kind'])
+                    ||($mode==='remote-video'&&$kind!=='video')||($mode==='mobile-image'&&$kind!=='image')||($mode==='platform-image'&&$kind!=='image'))throw new AuthUnavailableException();
                 $resolvedKinds[$index]=$kind;
                 if($pid)$this->attachments->categoryForMedia($productIdOrZero,$pid,$kind==='video'?1:0);
             }
@@ -375,6 +553,7 @@ final class PlatformProductMediaServices
             if($this->storage->identity($located)!==$this->storage->identity($objects[$index]))throw new AuthUnavailableException();
             $receipt['phase']='audit';
             if($mode==='online')$this->record($request,$productIdOrZero,'attachment',(int)$row['att_id'],['name','att_dir','satt_dir','pid']);
+            elseif($mode==='platform-image')$images[$index]['platform_import_audit']=$this->audit->recordPlatformProductImageImport($request,$productIdOrZero,$row);
             elseif($request!==null&&LegacyProductWriteServices::hasPlatformScope()){
                 $scope=LegacyProductWriteServices::rawScope();$this->access->authorizeScope($scope);
                 $this->audit->record('admin',$scope->adminId,$owner,$scope->permission,'attachment',(string)$row['att_id'],'success',['changed_fields'=>['name','att_dir','satt_dir','pid']]);
@@ -396,6 +575,22 @@ final class PlatformProductMediaServices
             if($request===null||app()->request!==$request||LegacyProductWriteServices::isSelfWorker())throw new AuthUnavailableException();
             $this->request($request,self::MULTIPART_MODES[$mode]['action']);
             if(LegacyProductWriteServices::rawScope()!==$request->platformScope())throw new AuthUnavailableException();
+        }elseif($mode==='remote-video'){
+            if($request===null||app()->request!==$request||LegacyProductWriteServices::isSelfWorker())throw new AuthUnavailableException();
+            $this->request($request,'legacy-product-media-video-upload');
+            if(LegacyProductWriteServices::rawScope()!==$request->platformScope())throw new AuthUnavailableException();
+        }elseif($mode==='mobile-image'){
+            if($request===null||LegacyProductWriteServices::hasPlatformScope()||LegacyProductWriteServices::isSelfWorker()
+                ||$owner!==LegacyProductWriteServices::selfId())throw new AuthUnavailableException();
+            $uid=$this->mobileRequest($request,$productIdOrZero);$this->mobileQuotaAllowed($uid);
+            if($productIdOrZero>0){$root=LegacyProductWriteServices::assertParent($productIdOrZero);
+                if((string)$root['is_del']!=='0'||(string)$root['virtual_type']!=='0')throw new AuthUnavailableException();}
+        }elseif($mode==='platform-image'){
+            if($request===null||app()->request!==$request||LegacyProductWriteServices::isSelfWorker())throw new AuthUnavailableException();
+            $this->request($request,\app\services\marketplace\assets\PlatformAssetServices::IMPORT);
+            if(LegacyProductWriteServices::routeId($request->route('id',null,null),true)!==$productIdOrZero
+                ||LegacyProductWriteServices::rawScope()!==$request->platformScope())throw new AuthUnavailableException();
+            \app\services\marketplace\assets\PlatformAssetServices::assertContext($request,$request->platformScope(),$pdo);
         }elseif($mode==='copy'){
             if(!LegacyProductWriteServices::enabled())throw new AuthUnavailableException();
             if(LegacyProductWriteServices::isSelfWorker()){
@@ -456,9 +651,9 @@ final class PlatformProductMediaServices
     {
         $this->request($request,'legacy-product-media-categories-list');$query=Input::body($query,['name','pid','all','type']);
         $name=Input::text($query['name']??'',50);$pid=self::categoryPid($query['pid']??0);
-        $all=Input::integer($query['all']??0,0,1,true)===1;Input::integer($query['type']??0,0,0,true);
-        return $this->within($request,$productIdOrZero,function()use($productIdOrZero,$name,$pid,$all):array{
-            $observed=$this->attachments->categoryListing($productIdOrZero,$pid,$name,$all);$rows=$observed['rows'];$children=[];
+        $all=Input::integer($query['all']??0,0,1,true)===1;$type=Input::integer($query['type']??0,0,1,true);
+        return $this->within($request,$productIdOrZero,function()use($productIdOrZero,$name,$pid,$all,$type):array{
+            $observed=$this->attachments->categoryListing($productIdOrZero,$pid,$name,$all,$type);$rows=$observed['rows'];$children=[];
             foreach($observed['complete']as$row)$children[(int)$row['pid']][]=(int)$row['id'];
             if($all){
                 $selected=[];foreach($rows as$row)$selected[(int)$row['pid']][]=$row;
@@ -478,24 +673,26 @@ final class PlatformProductMediaServices
     {
         $this->request($request,$id===0?'legacy-product-media-categories-create':'legacy-product-media-categories-update');
         MerchantAttachmentInput::id($id,true);$body=Input::body($body,['name','pid','type'],['name']);
-        $name=Input::text($body['name'],50,true);$pid=self::categoryPid($body['pid']??0);Input::integer($body['type']??0,0,0,true);
-        $this->within($request,$productIdOrZero,function()use($request,$productIdOrZero,$id,$name,$pid):void{
-            $result=$this->attachments->saveCategory($productIdOrZero,$id,$name,$pid);
+        $name=Input::text($body['name'],50,true);$pid=self::categoryPid($body['pid']??0);$type=array_key_exists('type',$body)?Input::integer($body['type'],0,1,true):null;
+        $this->within($request,$productIdOrZero,function()use($request,$productIdOrZero,$id,$name,$pid,$type):void{
+            $result=$this->attachments->saveCategory($productIdOrZero,$id,$name,$pid,$type);
             if($result['changed'])$this->record($request,$productIdOrZero,'attachment-category',(int)$result['row']['id'],['name','pid']);
         });
     }
-    public function deleteCategory(Request $request,int $productIdOrZero,int $id): void
+    public function deleteCategory(Request $request,int $productIdOrZero,int $id,array $selector=[]): void
     {
-        $this->request($request,'legacy-product-media-categories-delete');MerchantAttachmentInput::id($id);
-        $this->within($request,$productIdOrZero,function()use($request,$productIdOrZero,$id):void{
-            $result=$this->attachments->deleteCategory($productIdOrZero,$id);
+        $this->request($request,'legacy-product-media-categories-delete');MerchantAttachmentInput::id($id);$selector=Input::body($selector,['type']);$type=array_key_exists('type',$selector)?Input::integer($selector['type'],0,1,true):null;
+        $this->within($request,$productIdOrZero,function()use($request,$productIdOrZero,$id,$type):void{
+            $result=$this->attachments->deleteCategory($productIdOrZero,$id,$type);
             foreach($result['moved_ids']as$moved)$this->record($request,$productIdOrZero,'attachment',$moved,['pid']);
             $this->record($request,$productIdOrZero,'attachment-category',$id,['name','pid']);
         });
     }
     public function rename(Request $request,int $productIdOrZero,int $id,array $body): void
     {
-        $this->request($request,'legacy-product-media-rename');MerchantAttachmentInput::id($id);
+        $this->request($request,'legacy-product-media-rename');
+        if(self::videoMutation($body)){$this->renameVideo($request,$productIdOrZero,$id,$body);return;}
+        MerchantAttachmentInput::id($id);
         $body=Input::body($body,['real_name'],['real_name']);$name=Input::text($body['real_name'],255,true);
         $this->within($request,$productIdOrZero,function()use($request,$productIdOrZero,$id,$name):void{
             $result=$this->attachments->rename($productIdOrZero,$id,$name);
@@ -504,7 +701,9 @@ final class PlatformProductMediaServices
     }
     public function move(Request $request,int $productIdOrZero,array $body): void
     {
-        $this->request($request,'legacy-product-media-move');$body=Input::body($body,['images','pid'],['images','pid']);
+        $this->request($request,'legacy-product-media-move');
+        if(self::videoMutation($body)){$this->moveVideos($request,$productIdOrZero,$body);return;}
+        $body=Input::body($body,['images','pid'],['images','pid']);
         $ids=self::selectedIds($body['images'],false);$pid=self::categoryPid($body['pid']);
         $this->within($request,$productIdOrZero,function()use($request,$productIdOrZero,$ids,$pid):void{
             $changed=$this->attachments->move($productIdOrZero,$ids,$pid);
@@ -513,7 +712,9 @@ final class PlatformProductMediaServices
     }
     public function delete(Request $request,int $productIdOrZero,array $body): void
     {
-        $this->request($request,'legacy-product-media-delete');$body=Input::body($body,['ids'],['ids']);
+        $this->request($request,'legacy-product-media-delete');
+        if(self::videoMutation($body)){$this->deleteVideos($request,$productIdOrZero,$body);return;}
+        $body=Input::body($body,['ids'],['ids']);
         $ids=self::selectedIds($body['ids'],true);$receipt=self::receipt();
         try{
             $this->within($request,$productIdOrZero,function()use($request,$productIdOrZero,$ids,&$receipt):void{
@@ -544,5 +745,104 @@ final class PlatformProductMediaServices
             // Partial removal is not reversible by a database rollback. Never cleanupNew or recreate old objects.
             throw new MerchantAttachmentOperationException($receipt);
         }
+    }
+
+    /** Selector is operation intent only; native type is locked and remains unchanged. */
+    private static function videoMutation(array &$body): bool
+    {
+        if(!array_key_exists('type',$body))return false;
+        $type=Input::integer($body['type'],0,1,true);unset($body['type']);return $type===1;
+    }
+
+    private function renameVideo(Request $request,int $productIdOrZero,int $id,array $body): void
+    {
+        MerchantAttachmentInput::id($id);
+        $body=Input::body($body,['real_name'],['real_name']);$name=Input::text($body['real_name'],255,true);
+        $this->within($request,$productIdOrZero,function()use($request,$productIdOrZero,$id,$name):void{
+            $result=$this->attachments->renameVideo($productIdOrZero,$id,$name);
+            if($result['changed'])$this->record($request,$productIdOrZero,'attachment',$id,['real_name']);
+        });
+    }
+
+    private function deleteVideos(Request $request,int $productIdOrZero,array $body): void
+    {
+        $body=Input::body($body,['ids'],['ids']);
+        $ids=self::selectedIds($body['ids'],true);$receipt=self::receipt();
+        try{
+            $this->within($request,$productIdOrZero,function()use($request,$productIdOrZero,$ids,&$receipt):void{
+                $pdo=LegacyProductWriteServices::transaction();$owner=LegacyProductWriteServices::mediaOwner($productIdOrZero);
+                $rows=$this->attachments->ownedVideos($productIdOrZero,$ids);
+                // All three known tables/columns and actual legacy-ID matches must be observed before locator I/O.
+                $this->attachments->assertAttachmentMappingsAbsent($productIdOrZero,$ids);$objects=[];
+                foreach($rows as$row){$object=$this->storage->locateForProduct($row,$productIdOrZero);$objects[$this->storage->identity($object)]=$object;}
+                if(LegacyProductWriteServices::transaction()!==$pdo||LegacyProductWriteServices::mediaOwner($productIdOrZero)!==$owner)throw new AuthUnavailableException();
+                // Check every complete per-object alias family before removing any object; keep the full selected-ID exclusion.
+                foreach($objects as$object){
+                    if(LegacyProductWriteServices::transaction()!==$pdo||LegacyProductWriteServices::mediaOwner($productIdOrZero)!==$owner)throw new AuthUnavailableException();
+                    $this->references->assertUnreferenced($ids,$this->storage->aliases([$object]));
+                    if(LegacyProductWriteServices::transaction()!==$pdo||LegacyProductWriteServices::mediaOwner($productIdOrZero)!==$owner)throw new AuthUnavailableException();
+                }
+                foreach($objects as$object)$this->storage->remove($object,$receipt);
+                $receipt['physical_complete']=true;$receipt['phase']='database_delete';$receipt['database_committed']=null;
+                $this->attachments->removeVideos($productIdOrZero,$ids);$receipt['phase']='audit';
+                foreach($ids as$id)$this->record($request,$productIdOrZero,'attachment',$id,['att_dir','satt_dir']);
+                $receipt['phase']='commit_observation';
+            });
+            $receipt['database_committed']=true;$receipt['complete']=true;$receipt['phase']='complete';
+        }catch(\Throwable $error){
+            if($receipt['physical_changed']===false&&$receipt['database_committed']===false
+                &&(($error instanceof HttpException&&in_array($error->getStatusCode(),[401,403,404,422],true))
+                    ||($error instanceof AuthException&&!$error instanceof AuthUnavailableException)))throw $error;
+            if($receipt['phase']==='preflight')$receipt['phase']='preflight_unknown';
+            // Partial removal is not reversible by a database rollback. Never cleanupNew or recreate old objects.
+            throw new MerchantAttachmentOperationException($receipt);
+        }
+    }
+
+    private function moveVideos(Request $request,int $productIdOrZero,array $body): void
+    {
+        $body=Input::body($body,['images','pid'],['images','pid']);
+        $ids=self::selectedIds($body['images'],false);$pid=self::categoryPid($body['pid']);
+        $this->within($request,$productIdOrZero,function()use($request,$productIdOrZero,$ids,$pid):void{
+            $changed=$this->attachments->moveVideos($productIdOrZero,$ids,$pid);
+            foreach($changed as$id)$this->record($request,$productIdOrZero,'attachment',$id,['pid']);
+        });
+    }
+
+    /** One real JSON URL source; downloaded and qualified before acquiring the actual product writer. */
+    private function importRemoteVideo(Request $request,int $productIdOrZero,array $body): string
+    {
+        $this->request($request,'legacy-product-media-video-upload');Input::integer($productIdOrZero,0,8388607);
+        $body=Input::body($body,['url','pid'],['url']);$url=Input::text($body['url'],2048,true);$pid=MerchantAttachmentInput::id($body['pid']??0,true);
+        $files=$request->file();
+        if(strtolower($request->contentType())!=='application/json'||($files!==null&&$files!==[]))MerchantAttachmentInput::invalid();
+        $mode='remote-video';$receipt=self::receipt();$objects=[];$observations=[self::receipt()];$snapshot=null;
+        try{
+            $download=(new ProductMediaRemoteImages())->fetchOneForTypedProductCopy($url);
+            if(array_keys($download)!==['bytes','url_sha256']||!is_string($download['bytes'])||!is_string($download['url_sha256'])
+                ||$download['url_sha256']!==hash('sha256',$url))throw new AuthUnavailableException();
+            $displayName=$download['url_sha256'].'.mp4';
+            $qualified=$this->storage->qualifyTypedUploadBytes($download['bytes'],$displayName,'video');
+            if($qualified['resolved_kind']!=='video'||$qualified['extension']!=='mp4'||$qualified['type']!==1
+                ||$qualified['size']!==strlen($download['bytes'])||$qualified['sha256']!==hash('sha256',$download['bytes']))throw new AuthUnavailableException();
+            $images=[['bytes'=>$download['bytes'],'display_name'=>$displayName,'resolved_kind'=>'video']];unset($download,$qualified);
+            $src=$this->within($request,$productIdOrZero,function()use($request,$productIdOrZero,$pid,$images,$mode,&$receipt,&$objects,&$observations,&$snapshot):string{
+                [$pdo,$owner]=$this->publishContext($productIdOrZero,$mode,$request);
+                if($pid)$this->attachments->categoryForMedia($productIdOrZero,$pid,1);
+                try{$rows=$this->publishQualifiedBytesInCurrentWriter($productIdOrZero,$images,$pid,$receipt,$objects,$observations,$mode,$request);}
+                finally{unset($images);}
+                self::onlinePhysical($receipt,$observations,1);
+                if(count($rows)!==1||LegacyProductWriteServices::transaction()!==$pdo||LegacyProductWriteServices::mediaOwner($productIdOrZero)!==$owner)throw new AuthUnavailableException();
+                $snapshot=$this->copyCommitSnapshot($rows);return $rows[0]['att_dir'];
+            });
+            if(!is_array($snapshot))throw new AuthUnavailableException();$this->observeCopyCommit($snapshot);
+            $receipt['database_committed']=true;$receipt['complete']=true;$receipt['phase']='complete';return $src;
+        }catch(\Throwable $error){
+            self::onlinePhysical($receipt,$observations,1);
+            if($receipt['physical_changed']===false&&$receipt['database_committed']===false
+                &&(($error instanceof HttpException&&in_array($error->getStatusCode(),[401,403,404,422],true))
+                    ||($error instanceof AuthException&&!$error instanceof AuthUnavailableException)))throw $error;
+            $this->copyFailure($receipt,$objects,$observations,1);throw new MerchantAttachmentOperationException($receipt);
+        }finally{unset($images,$download,$qualified);}
     }
 }

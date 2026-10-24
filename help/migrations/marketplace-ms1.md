@@ -153,3 +153,10 @@ check只读取完整元数据/菜单。apply在当前数据库取得本迁移命
 - 前后所有旧表的列、索引、外键及旧行保持。除 `system_menus` 外，旧表 `SHOW CREATE TABLE`/可用 `CHECKSUM TABLE` 保持；菜单只允许上述七个实际新 ID/精确内容和自然 AUTO_INCREMENT 前进，其余 DDL 与按原 ID 逐行内容保持。不能要求菜单新增后整体 checksum 不变，不能回拨计数器。
 - 用真实元数据确认五表无同义商家键、`mer_id` 无默认值、索引/FK/CHECK 与本设计一致。记录原生退出码及证据摘要；新表/登记留在本 RUN 供后续正常功能使用，最终随已确认的整个专用实例销毁。
 - 按用户持续指示，异构预置、越权/无效能力、错误输入、重复消费、故障、并发/断连及恢复场景不运行，保留原用例 NOT RUN；普通两次迁移通过不能代替这些验收，也不能宣称完整 G/M 系列通过。
+
+
+## T4 R93: finite real mobile product-image audit extension
+
+The original MS1 administrator/merchant contracts and their historical acceptance remain unchanged. T4 adds only `AuditLogServices::recordMobileProductImage` for the authenticated mobile management image-upload action. It derives `api_user` and the actual API UID from the current verified Request, preserves the original customer-service/staff/delivery qualification, and derives the positive self merchant exclusively from the existing product writer. A UID is never a merchant or employee identity.
+
+The fixed action is `mobile-product-media-image-upload`, the resource is the actual newly inserted attachment ID, and detail contains only the server-generated changed field names. The generic `record()` actor whitelist remains administrator/merchant. The complete native attachment14 and audit10 are reselected in the same writer PDO and observed after its real commit. Existing VARCHAR(16)/UINT columns, constraints, indexes and foreign keys require no DDL change. No token, session, URL, filename or business body is recorded in audit detail. This Source extension does not retroactively establish MS1 API-audit implementation or runtime acceptance.

@@ -21,6 +21,7 @@ final class LegacyProductAccessServices
     public const ACTIONS = [
         'legacy-product-save'=>['POST','product/product/<id>'],
         'legacy-product-copy-save'=>['POST','product/crawl/save'],
+        'marketplace-products-import-platform-image'=>['POST','marketplace/products/<id>/import-platform-image'],
         'legacy-product-media-list'=>['GET','product/product/<product_id>/media'],
         'legacy-product-media-upload'=>['POST','product/product/<product_id>/media'],
         'legacy-product-media-video-upload'=>['POST','product/product/<product_id>/media/videos/upload'],
@@ -58,6 +59,7 @@ final class LegacyProductAccessServices
 
     /** Finite media-only compatibility grants; each is ANDed with its own leaf and product save. */
     public const MEDIA_GRANTS = [
+        'marketplace-products-import-platform-image'=>['GET','file/file'],
         'legacy-product-media-list'=>['GET','file/file'],
         'legacy-product-media-upload'=>['POST','file/upload/<upload_type?>'],
         'legacy-product-media-video-upload'=>['POST','file/upload/<upload_type?>'],

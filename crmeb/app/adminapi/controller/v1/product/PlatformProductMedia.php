@@ -82,7 +82,7 @@ final class PlatformProductMedia
     public function deleteCategory(Request $request): Response
     {
         $id=\app\services\marketplace\attachment\MerchantAttachmentInput::id($request->route('category_id',null,null));
-        $this->services->deleteCategory($request,self::productId($request),$id);
+        $this->services->deleteCategory($request,self::productId($request),$id,self::categoryDeleteSelector($request));
         return app('json')->success('删除成功');
     }
     public function rename(Request $request): Response
@@ -104,5 +104,16 @@ final class PlatformProductMedia
         }catch(MerchantAttachmentOperationException $error){
             return Response::create(['status'=>503,'msg'=>'素材操作未完成，请保留本次结果','data'=>$error->receipt],'json',503);
         }
+    }
+
+    private static function categoryDeleteSelector(Request $request): array
+    {
+        // Existing DELETE callers had no body contract; inspect only the optional type, leaving other old fields ignored.
+        $query=$request->get(false);$body=$request->delete(false);$selected=null;$present=false;
+        foreach([$query,$body]as$values)if(array_key_exists('type',$values)){
+            $type=\app\services\marketplace\MerchantManagementInput::integer($values['type'],0,1,true);
+            if($present&&$type!==$selected)\app\services\marketplace\attachment\MerchantAttachmentInput::invalid();$selected=$type;$present=true;
+        }
+        return $present?['type'=>$selected]:[];
     }
 }

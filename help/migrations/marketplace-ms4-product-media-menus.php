@@ -84,7 +84,7 @@ final class MarketplaceMs4ProductMediaMenus
             if($withMenus['menus']!==$expectedMenus||$withMenus['roles']!==$expectedRoles)throw new RuntimeException('Unexpected table change');
             $phase='copy_role_grants';
             foreach($expectedRoles as$key=>$row){
-                $wanted=$this->copiedRules($row['rules'],$withMenus['old_file_ids'],$withMenus['menu_ids']);
+                $wanted=$this->copiedRules($row['rules'],$withMenus['old_file_ids'],$withMenus['menu_ids'],(string)$row['status']==='1');
                 if($wanted===$row['rules'])continue;
                 $statement=$this->pdo->prepare('UPDATE '.self::quote($this->roles).' SET rules=? WHERE id=? AND BINARY rules <=> BINARY ?');
                 if(!$statement)throw new RuntimeException('Role update unavailable');
@@ -154,20 +154,22 @@ final class MarketplaceMs4ProductMediaMenus
         }
         foreach($old as$values)if($values===[])$issues[]='old_file_grant_missing';
         $pending=count($ids)!==count(self::menuRows());
-        if(!$pending)foreach($roles as$row)if($this->copiedRules($row['rules'],$old,$ids)!==$row['rules'])$pending=true;
+        if(!$pending)foreach($roles as$row)if($this->copiedRules($row['rules'],$old,$ids,(string)$row['status']==='1')!==$row['rules'])$pending=true;
         if($this->metadataAuthority()!==$authority)throw new RuntimeException('Metadata authority changed');
         return ['state'=>$issues!==[]?'incompatible':($pending?'applicable':'completed'),'issues'=>array_values(array_unique($issues)),
             'menu_ids'=>$ids,'menus'=>$menus,'roles'=>$roles,'old_file_ids'=>$old];
     }
 
-    private function copiedRules(mixed $raw,array $old,array $ids): mixed
+    private function copiedRules(mixed $raw,array $old,array $ids,bool $enabled): mixed
     {
         $grants=self::ruleIds($raw);$out=$raw;
-        foreach(array_keys(self::oldFileGrants())as$action)
+        foreach(array_keys(self::oldFileGrants())as$action){
+            if($action==='marketplace-products-import-platform-image'&&!$enabled)continue;
             if(array_intersect($grants,$old[$action])!==[]&&!in_array($ids[$action],$grants,true)){
                 if(!is_string($out)||$out==='')throw new RuntimeException('Role rules unavailable');
                 $out.=','.($ids[$action]);$grants[]=$ids[$action];
             }
+        }
         return $out;
     }
     private static function ruleIds(mixed $raw): array
@@ -201,6 +203,7 @@ final class MarketplaceMs4ProductMediaMenus
             'legacy-product-media-scan-close'=>['DELETE','file/scan_upload/qrcode'],
             'legacy-product-media-video-upload'=>['POST','file/upload/<upload_type?>'],
             'legacy-product-media-audio-upload'=>['POST','file/upload/<upload_type?>'],
+            'marketplace-products-import-platform-image'=>['GET','file/file'],
         ];
     }
 
@@ -228,6 +231,7 @@ final class MarketplaceMs4ProductMediaMenus
             ['商品扫码关闭','DELETE','product/product/<product_id>/media/scan/<lease_id>','legacy-product-media-scan-close'],
             ['商品视频上传','POST','product/product/<product_id>/media/videos/upload','legacy-product-media-video-upload'],
             ['商品音频上传','POST','product/product/<product_id>/media/audio/upload','legacy-product-media-audio-upload'],
+            ['平台图片导入商品','POST','marketplace/products/<id>/import-platform-image','marketplace-products-import-platform-image'],
         ]);
     }
     private function sameMenu(array $actual,array $expected): bool

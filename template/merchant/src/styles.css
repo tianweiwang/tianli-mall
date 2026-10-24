@@ -60,6 +60,19 @@ a { color: #2d8cf0; }
 .axis-row { display: grid; grid-template-columns: minmax(120px, 1fr) minmax(180px, 3fr) auto; gap: 12px; align-items: center; }
 .rule-block { border: 1px solid #dcdfe6; padding: 16px; margin-bottom: 16px; }
 .region-fields { display: grid; grid-template-columns: repeat(4, minmax(100px, 1fr)); gap: 16px; }
+.merchant-media-picker .el-dialog__body, .merchant-media-category .el-dialog__body { padding: 16px; }
+.merchant-media-library { min-width: 0; max-width: 100%; }
+.merchant-media-library .toolbar > input[type="file"] { flex: 1 1 220px; min-width: 0; max-width: 100%; }
+.merchant-media-library .gallery-item video, .merchant-media-library .gallery-item audio { display: block; width: 100%; max-width: 100%; min-width: 0; }
+.merchant-media-library .gallery-item video { height: 120px; object-fit: contain; }
+.merchant-media-library .gallery-item audio { margin: 8px 0; }
+.merchant-media-library .actions .el-button { min-width: 0; }
+.merchant-media-category .el-select { width: 100%; max-width: 100%; }
+@media (max-width: 480px) {
+  .merchant-media-library .gallery { grid-template-columns: minmax(0, 1fr); }
+  .merchant-media-library .toolbar > .el-select { width: 100%; }
+  .merchant-media-picker .el-dialog__header, .merchant-media-category .el-dialog__header { padding: 16px 16px 10px; }
+}
 @media (max-width: 760px) {
   .merchant-shell { display: block; }
   .merchant-sidebar { width: 100%; }

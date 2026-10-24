@@ -110,10 +110,27 @@ export const mediaList = (context, query) => transfer(context, 'GET', path(conte
 export const mediaCategories = (context, query = {}) => transfer(context, 'GET', path(context) + '/categories', undefined, query).then(rows);
 export const mediaCreateCategory = (context, body) => transfer(context, 'POST', path(context) + '/categories', body);
 export const mediaUpdateCategory = (context, id, body) => transfer(context, 'PUT', path(context) + '/categories/' + mediaId(id), body);
-export const mediaDeleteCategory = (context, id) => transfer(context, 'DELETE', path(context) + '/categories/' + mediaId(id));
-export const mediaRename = (context, id, name) => transfer(context, 'PUT', path(context) + '/' + mediaId(id) + '/name', { real_name: name });
-export const mediaMove = (context, ids, pid) => transfer(context, 'PUT', path(context) + '/move', { images: selectedIds(ids).join(','), pid: mediaId(pid, true) });
-export const mediaDelete = (context, ids) => transfer(context, 'POST', path(context) + '/delete', { ids: selectedIds(ids).join(',') });
+export const mediaDeleteCategory = (context, id, type = null) => transfer(context, 'DELETE', path(context) + '/categories/' + mediaId(id), type === null ? undefined : mediaTypeBody({}, type));
+export const mediaRename = (context, id, name, type = null) => transfer(context, 'PUT', path(context) + '/' + mediaId(id) + '/name', mediaTypeBody({ real_name: name }, type));
+export const mediaMove = (context, ids, pid, type = null) => transfer(context, 'PUT', path(context) + '/move', mediaTypeBody({ images: selectedIds(ids).join(','), pid: mediaId(pid, true) }, type));
+export const mediaDelete = (context, ids, type = null) => transfer(context, 'POST', path(context) + '/delete', mediaTypeBody({ ids: selectedIds(ids).join(',') }, type));
+function mediaTypeBody(body, type) {
+  if (type === null) return body;
+  if (type !== 0 && type !== 1) throw new Error('素材类型不正确');
+  return { ...body, type };
+}
+function savedVideo(value) {
+  if (!value || typeof value.src !== 'string' || !value.src || /^(blob:|data:)/i.test(value.src)) throw failure('视频保存结果未确认', 'unknown');
+  return value;
+}
+export function mediaVideoUpload(context, file, pid = 0) {
+  const body = new FormData(); body.append('file', file); body.append('pid', String(mediaId(pid, true)));
+  return transfer(context, 'POST', path(context) + '/videos/upload', body).then(savedVideo);
+}
+export function mediaVideoImport(context, url, pid = 0) {
+  if (typeof url !== 'string' || !url) throw new Error('请输入视频链接');
+  return transfer(context, 'POST', path(context) + '/videos/upload', { url, pid: mediaId(pid, true) }).then(savedVideo);
+}
 export function mediaUpload(context, file, pid = 0) {
   const body = new FormData(); body.append('file', file); body.append('pid', String(mediaId(pid, true)));
   return transfer(context, 'POST', path(context), body).then(value => {
@@ -165,6 +182,45 @@ export async function claimScan(context, lease, ids, destinationPid) {
 export async function closeScan(context, lease) {
   const value = await transfer(context, 'DELETE', path(context) + '/scan/' + scanId(lease));
   if (!value || !['closed', 'pending', 'unknown'].includes(value.state) || (value.state === 'closed' && value.cleanup_complete !== true)) throw failure('扫码关闭结果未确认', 'unknown');
+  return value;
+}
+// Platform sources stay separate from commercial attachment IDs and selection DTOs.
+export function platformAssetId(value) {
+  if (typeof value !== 'string' || !/^[1-9][0-9]{0,19}(?![\s\S])/.test(value) || (value.length === 20 && value > '18446744073709551615')) throw new Error('平台图片编号不正确');
+  return value;
+}
+function platformSource(value, state = 'read') {
+  if (!value || typeof value.src !== 'string' || !value.src || /^(blob:|data:)/i.test(value.src)) throw failure('平台图片响应不完整', state);
+  try { platformAssetId(value.platform_asset_id); } catch (error) { throw failure('平台图片编号未确认', state); }
+  return value;
+}
+export async function platformMediaList(context, query) {
+  const value = rows(await transfer(context, 'GET', 'marketplace/platform-assets', undefined, query));
+  if (!Number.isSafeInteger(value.count) || value.count < 0 || value.list.length > 100) throw new Error('平台图片列表响应不完整');
+  value.list.forEach(item => platformSource(item));
+  return value;
+}
+export async function platformMediaCategories(context) {
+  const value = rows(await transfer(context, 'GET', 'marketplace/platform-asset-categories', undefined, { pid: 0, all: 1 }));
+  const inspect = list => list.forEach(item => {
+    if (!item || !Number.isSafeInteger(item.id) || !Number.isSafeInteger(item.pid) || ![0, 1].includes(item.type) || typeof item.title !== 'string') throw new Error('平台分类响应不完整');
+    mediaId(item.id); mediaId(item.pid, true);
+    if (item.children !== undefined) { if (!Array.isArray(item.children)) throw new Error('平台分类响应不完整'); inspect(item.children); }
+  });
+  inspect(value.list);
+  return value;
+}
+export async function platformMediaUpload(context, file, categoryId = 0) {
+  const body = new FormData(); body.append('file', file); body.append('category_id', String(mediaId(categoryId, true)));
+  return platformSource(await transfer(context, 'POST', 'marketplace/platform-assets', body), 'unknown');
+}
+export async function importPlatformImage(context, sourceId, destinationPid = 0) {
+  requireProductContext(context);
+  const value = await transfer(context, 'POST', 'marketplace/products/' + productId(context.productId) + '/import-platform-image', { platform_asset_id: platformAssetId(sourceId), pid: mediaId(destinationPid, true) });
+  if (!value || !Array.isArray(value.list) || value.list.length !== 1) throw failure('平台图片导入结果未确认，请先核对商品图库', 'unknown');
+  const item = value.list[0];
+  try { mediaId(item.att_id); } catch (error) { throw failure('商品图片编号未确认，请先核对图库', 'unknown'); }
+  if (typeof item.src !== 'string' || !item.src || /^(blob:|data:)/i.test(item.src)) throw failure('商品图片保存结果未确认，请先核对图库', 'unknown');
   return value;
 }
 export function takePhoneScanFragment(route) {

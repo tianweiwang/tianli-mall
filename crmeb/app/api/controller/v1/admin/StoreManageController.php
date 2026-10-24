@@ -181,6 +181,19 @@ class StoreManageController
         return app('json')->success($data);
     }
 
+    /** One real mobile management product-image upload; the save DTO is unchanged. */
+    public function uploadProductImage(Request $request)
+    {
+        $id=\app\services\marketplace\product\LegacyProductWriteServices::routeId($request->route('product_id',null,null),true);
+        try {
+            $data=app()->make(\app\services\marketplace\product\PlatformProductMediaServices::class)
+                ->uploadMobileImage($request,$id,$request->post(false));
+            return app('json')->success('图片上传成功',$data);
+        } catch(\app\services\marketplace\attachment\MerchantAttachmentOperationException $error) {
+            return \think\Response::create(['status'=>503,'msg'=>'素材操作未完成，请保留本次结果','data'=>$error->receipt],'json',503);
+        }
+    }
+
     /**
      * 创建商品
      * @param Request $request

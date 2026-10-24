@@ -1,7 +1,13 @@
 <template>
 	<view>
 		<!-- <NavBar titleText="添加商品" textSize="34rpx" iconColor="#333333" textColor="#333333" isScrolling showBack></NavBar> -->
-		<view class="p-20">
+		<view v-if="!canEdit" class="p-20 fs-28 text--w111-666">{{ identityMessage }}</view>
+		<view v-if="canEdit" class="p-20">
+			<view v-if="uploadReceipt || uploadUnconfirmed || submitUnconfirmed" class="fs-24 lh-42rpx text--w111-666 pb-32">
+				<view v-if="uploadReceipt">上传收据：{{ uploadReceiptText }}</view>
+				<view v-if="uploadUnconfirmed">上传结果未确认，请保留本次结果，核实后再操作；本页不会重复上传。</view>
+				<view v-if="submitUnconfirmed">提交结果未确认，请先核对商品列表；本页不会重复提交。</view>
+			</view>
 			<view class="w-full bg--w111-fff rd-16rpx pt-32 pr-30 pb-32 pl-30">
 				<view class="fs-30 fw-500 lh-42rpx">商品信息</view>
 				<view class="mt-30 flex-between-center">
@@ -164,7 +170,7 @@
 						<text class="fs-30 lh-42rpx">运费模板</text>
 						<view class="flex-y-center">
 							<picker @change="bindPickerChange" :value="tempIndex" :range="templateList" range-key="name">
-								<view class="fs-30">{{templateList[tempIndex].name || '请选择'}}
+								<view class="fs-30">{{(templateList[tempIndex] && templateList[tempIndex].name) || '请选择'}}
 								<text class="iconfont icon-ic_rightarrow"></text>
 								</view>
 							</picker>
@@ -177,18 +183,20 @@
 			</view>
 			<view class="fixed-lb w-full pb-safe bg--w111-fff z-10">
 			    <view class="footer-box flex-center">
-			        <view class="w-690 h-88 flex-center bg-mer text--w111-fff fs-28 rd-44rpx" @tap="confirmSave">提交</view>
+			        <view class="w-690 h-88 flex-center bg-mer text--w111-fff fs-28 rd-44rpx" @tap="confirmSave">{{ submitPending ? '提交中' : '提交' }}</view>
 			    </view>
 			</view>
 		</view>
 		<classify
+		  v-if="canEdit"
+		  :key="categoryInvocation"
 		  ref="classify"
 		  :type="1"
 		  :visible="visibleClass"
-		  @closeDrawer="()=>{visibleClass = false}"
+		  @closeDrawer="closeCategory"
 		  @successChange="successChange"
 		></classify>
-		<canvas canvas-id="canvas" v-if="canvasStatus"
+		<canvas canvas-id="canvas" v-if="canEdit && canvasStatus"
 			:style="{width: canvasWidth + 'px', height: canvasHeight + 'px',position: 'absolute',left:'-100000px',top:'-100000px'}"></canvas>
 	</view>
 </template>
@@ -205,6 +213,19 @@ export default {
 			canvasWidth: "",
 			canvasHeight: "",
 			canvasStatus: false,
+			productPageActive: false,
+			productPageGeneration: 0,
+			productIdentity: null,
+			identityMessage: '正在核对登录信息…',
+			uploadInvocation: 0,
+			uploadBusy: false,
+			uploadReceipt: null,
+			uploadUnconfirmed: false,
+			submitInvocation: 0,
+			submitPending: false,
+			submitUnconfirmed: false,
+			templateInvocation: 0,
+			categoryInvocation: 0,
 			setFormData: {
 				image: '', //主图
 				attr: {
@@ -243,36 +264,142 @@ export default {
 			tempIndex: 0
 		}
 	},
+	computed: {
+		canEdit() { return this.isProductContext(this.productIdentity); },
+		uploadReceiptText() {
+			if (!this.uploadReceipt) return '';
+			return ['complete', 'phase', 'physical_changed', 'physical_complete', 'database_committed', 'cleanup_complete']
+				.map(key => key + '=' + String(this.uploadReceipt[key])).join('；');
+		}
+	},
+	watch: {
+		'$store.state.app.authRevision'() { this.invalidateProductPage(); },
+		'$store.state.app.token'() { this.invalidateProductPage(); },
+		'$store.state.app.verifiedUid'(uid) {
+			if (this.productIdentity && uid !== this.productIdentity.uid) this.invalidateProductPage();
+		}
+	},
 	onLoad(){
-		this.getTemlate();
+		this.productPageActive = true;
+		const generation = ++this.productPageGeneration;
+		const app = this.$store.state.app;
+		const starting = { generation, token: app.token, revision: app.authRevision };
+		if (typeof starting.token !== 'string' || !starting.token || !Number.isSafeInteger(starting.revision) ||
+			starting.revision < 0 || starting.revision >= Number.MAX_SAFE_INTEGER) {
+			this.identityMessage = '请登录后重新进入新增商品页';
+			return;
+		}
+		this.$store.dispatch('USERINFO', true).then(user => {
+			if (!this.isStartingIdentity(starting)) return;
+			const uid = user && String(user.uid);
+			if (!uid || !/^[1-9][0-9]*$/.test(uid) || this.$store.state.app.verifiedUid !== uid) {
+				this.identityMessage = '登录信息未完整取得，请重新进入新增商品页';
+				return;
+			}
+			// This page is the loaded new-product form; it never converts an unknown route ID to zero.
+			this.productIdentity = { ...starting, uid, productId: 0 };
+			this.identityMessage = '';
+			this.getTemlate();
+		}).catch(() => {
+			if (!this.isStartingIdentity(starting)) return;
+			this.identityMessage = '登录信息未完整取得，请重新进入新增商品页';
+		});
+	},
+	onUnload() {
+		this.productPageActive = false;
+		this.invalidateProductPage();
 	},
 	methods: {
-		uploadPicture(){
-			let that = this;
-			this.canvasStatus = true
-			that.$util.uploadImageChange({ count: 9, url: 'upload/image' }, function(res) {
-				that.setFormData.slider_image.push(res.data.url);
-				if(that.setFormData.slider_image.length >= 9) that.setFormData.slider_image.length = 9;
-				that.setFormData.image = that.setFormData.slider_image[0];
-				that.setFormData.attr.pic = that.setFormData.slider_image[0];
-			}, (res) => {
-				this.canvasStatus = false
-			}, (res) => {
-				this.canvasWidth = res.w
-				this.canvasHeight = res.h
-			});
+		isStartingIdentity(scope) {
+			const app = this.$store.state.app;
+			return !!scope && this.productPageActive && this.productPageGeneration === scope.generation &&
+				app.token === scope.token && app.authRevision === scope.revision;
 		},
-		uploadContentPicture(){
-			let that = this;
-			this.canvasStatus = true
-			that.$util.uploadImageChange({ count: 9, url: 'upload/image' }, function(res) {
-				that.contentPicture.push(res.data.url);
-			}, (res) => {
-				this.canvasStatus = false
-			}, (res) => {
-				this.canvasWidth = res.w
-				this.canvasHeight = res.h
-			});
+		isProductContext(scope) {
+			return this.isStartingIdentity(scope) && scope === this.productIdentity && scope.productId === 0 &&
+				typeof scope.uid === 'string' && /^[1-9][0-9]*$/.test(scope.uid) && this.$store.state.app.verifiedUid === scope.uid;
+		},
+		invalidateProductPage() {
+			this.productPageGeneration++;
+			this.productIdentity = null;
+			this.identityMessage = '登录状态已变化，请重新进入新增商品页';
+			const task = this._productUploadTask;
+			this._productUploadTask = null;
+			if (task && typeof task.abort === 'function') task.abort();
+		},
+		readUploadReceipt(response) {
+			const data = response && response.data;
+			const keys = ['cleanup_complete', 'complete', 'database_committed', 'phase', 'physical_changed', 'physical_complete'];
+			if (!data || typeof data !== 'object' || Array.isArray(data) || Object.keys(data).sort().join('|') !== keys.join('|') ||
+				typeof data.complete !== 'boolean' || typeof data.physical_complete !== 'boolean' ||
+				typeof data.phase !== 'string' || !/^[a-z][a-z0-9_:-]{0,63}$/.test(data.phase) ||
+				![true, false, null].includes(data.physical_changed) || ![true, false, null].includes(data.database_committed) ||
+				![true, false, null].includes(data.cleanup_complete)) return null;
+			return keys.reduce((receipt, key) => { receipt[key] = data[key]; return receipt; }, {});
+		},
+		uploadPicture(){ this.uploadProductImage(false); },
+		uploadContentPicture(){ this.uploadProductImage(true); },
+		uploadProductImage(content) {
+			const scope = this.productIdentity;
+			if (!this.isProductContext(scope)) return;
+			if (this.uploadBusy || this.submitPending) return this.$util.Tips({ title: '请等待本次操作完成' });
+			if (this.uploadUnconfirmed || this.submitUnconfirmed) return this.$util.Tips({ title: '请先核实本次未确认结果，勿重复提交' });
+			const invocation = ++this.uploadInvocation;
+			const current = () => this.isProductContext(scope) && this.uploadInvocation === invocation;
+			let issued = false, outcome = false;
+			this.uploadBusy = true;
+			this.uploadReceipt = null;
+			this.canvasStatus = true;
+			const finish = () => {
+				if (!current()) return;
+				if (issued && !outcome) this.uploadUnconfirmed = true;
+				this._productUploadTask = null;
+				this.uploadBusy = false;
+				this.canvasStatus = false;
+			};
+			try {
+				this.$util.uploadImageChange({ count: 9, name: 'file', url: 'admin/manage/product/0/media/images/upload',
+					onUploadTask: task => {
+						issued = true;
+						if (current()) this._productUploadTask = task;
+						else if (task && typeof task.abort === 'function') task.abort();
+					}
+				}, response => {
+					if (!current()) return;
+					outcome = true;
+					const data = response && response.data;
+					if (!data || typeof data !== 'object' || Array.isArray(data) ||
+						Object.keys(data).sort().join('|') !== 'attachment_ref|name|url' ||
+						!['name', 'url', 'attachment_ref'].every(key => typeof data[key] === 'string' && data[key] && !data[key].includes('\0')) ||
+						!/^https?:\/\/.+/i.test(data.url)) {
+						this.uploadUnconfirmed = true;
+						return;
+					}
+					if (content) this.contentPicture.push(data.url);
+					else {
+						this.setFormData.slider_image.push(data.url);
+						if (this.setFormData.slider_image.length >= 9) this.setFormData.slider_image.length = 9;
+						this.setFormData.image = this.setFormData.slider_image[0];
+						this.setFormData.attr.pic = this.setFormData.slider_image[0];
+					}
+				}, response => {
+					if (!current()) return;
+					outcome = true;
+					const receipt = this.readUploadReceipt(response);
+					this.uploadReceipt = receipt;
+					this.uploadUnconfirmed = !receipt || receipt.database_committed !== false || receipt.physical_changed === null ||
+						receipt.cleanup_complete === false || (receipt.physical_changed === true && receipt.cleanup_complete !== true);
+				}, size => {
+					if (!current()) return;
+					this.canvasWidth = size.w;
+					this.canvasHeight = size.h;
+				}, finish, current);
+			} catch (error) {
+				if (!current()) return;
+				if (issued) this.uploadUnconfirmed = true;
+				finish();
+				this.$util.Tips({ title: '本次图片上传未完整完成，请保留结果' });
+			}
 		},
 		/**
 		 * 将图片链接数组转换为富文本 HTML
@@ -303,6 +430,7 @@ export default {
 		    .join('');
 		},
 		DelPic(index, type) {
+			if (!this.isProductContext(this.productIdentity) || this.uploadBusy || this.submitPending) return;
 			if(type){
 				this.contentPicture.splice(index,1);
 			}else{
@@ -310,35 +438,61 @@ export default {
 			}
 		},
 		selectCate(){
-			this.$refs.classify.category('', this.setFormData.cate_id.toString());
-			setTimeout(()=> {
-			  this.visibleClass = true;
-			}, 200);
+			const scope = this.productIdentity;
+			if (!this.isProductContext(scope) || this.submitPending) return;
+			const invocation = ++this.categoryInvocation;
+			this.$nextTick(() => {
+				if (!this.isProductContext(scope) || invocation !== this.categoryInvocation) return;
+				this.$refs.classify.category('', this.setFormData.cate_id.toString());
+				setTimeout(() => {
+					if (!this.isProductContext(scope) || invocation !== this.categoryInvocation) return;
+					this.visibleClass = true;
+				}, 200);
+			});
+		},
+		closeCategory() {
+			if (this.isProductContext(this.productIdentity)) this.visibleClass = false;
 		},
 		successChange(val) {
+			if (!this.isProductContext(this.productIdentity) || this.submitPending) return;
 			this.setFormData.cate_id = val;
 			this.visibleClass = false;
 		},
 		toggleMore(){
+			if (!this.isProductContext(this.productIdentity) || this.submitPending) return;
 			this.isMore = !this.isMore;
 		},
 		// 送货方式选择
 		deliveryWayChange(obj) {
+			if (!this.isProductContext(this.productIdentity) || this.submitPending) return;
 			this.setFormData.logistics = obj.detail.value;
 		},
 		feightChange(val){
+			if (!this.isProductContext(this.productIdentity) || this.submitPending) return;
 			this.setFormData.freight = val.detail.value;
 		},
 		getTemlate(){
-			getTemplateOption().then(res=>{
-				this.templateList = res.data;
-			})
+			const scope = this.productIdentity, invocation = ++this.templateInvocation;
+			if (!this.isProductContext(scope)) return;
+			getTemplateOption().then(res => {
+				if (!this.isProductContext(scope) || invocation !== this.templateInvocation) return;
+				if (res && Array.isArray(res.data)) this.templateList = res.data;
+			}).catch(() => {
+				if (!this.isProductContext(scope) || invocation !== this.templateInvocation) return;
+				this.$util.Tips({ title: '运费模板未完整取得，请重新进入本页' });
+			});
 		},
 		bindPickerChange(e){
+			if (!this.isProductContext(this.productIdentity) || this.submitPending) return;
+			if (!this.templateList[e.detail.value]) return;
 			this.tempIndex = e.detail.value;
 			this.setFormData.temp_id = this.templateList[this.tempIndex].id;
 		},
 		confirmSave(){
+			const scope = this.productIdentity;
+			if (!this.isProductContext(scope)) return;
+			if (this.uploadBusy || this.submitPending) return this.$util.Tips({ title: '请等待本次操作完成' });
+			if (this.uploadUnconfirmed || this.submitUnconfirmed) return this.$util.Tips({ title: '请先核实本次未确认结果，勿重复提交' });
 			if(!this.setFormData.store_name) return this.$util.Tips({title: '请输入商品名称'});
 			if(!this.setFormData.image) return this.$util.Tips({title: '请上传商品图片'});
 			if(!this.setFormData.cate_id) return this.$util.Tips({title: '请选择商品分类'});
@@ -351,7 +505,11 @@ export default {
 			if(this.setFormData.freight == 3 && this.setFormData.temp_id == 0) return this.$util.Tips({title: '请选择运费模版'});
 			const html = this.buildEditorImageHtml(this.contentPicture);
 			this.$set(this.setFormData,'content',html);
+			const invocation = ++this.submitInvocation;
+			this.submitPending = true;
 			productCreate(this.setFormData).then(res=>{
+				if (!this.isProductContext(scope) || invocation !== this.submitInvocation) return;
+				this.submitPending = false;
 				uni.showToast({
 					title: "提交成功",
 					icon: 'none'
@@ -360,8 +518,11 @@ export default {
 					url:'/pages/admin/goods/index'
 				})
 			}).catch(err=>{
+				if (!this.isProductContext(scope) || invocation !== this.submitInvocation) return;
+				this.submitPending = false;
+				this.submitUnconfirmed = true;
 				uni.showToast({
-					title: err,
+					title: '提交结果未确认，请先核对商品列表',
 					icon: 'none'
 				})
 			})

@@ -40,17 +40,18 @@ final class PlatformProductMediaDao
         }finally{if($statement->closeCursor()!==true)self::fail();}
         if($this->context($productIdOrZero)!==[$pdo,$owner])self::fail();return $rows;
     }
-    public function category(int $productIdOrZero,int $categoryId): array
+    public function category(int $productIdOrZero,int $categoryId,int $type=0): array
     {
-        [$pdo,$owner]=$this->context($productIdOrZero);self::integer($categoryId,1,2147483647);
-        $rows=$this->rows($productIdOrZero,$pdo,$owner,'SELECT * FROM '.$this->table('system_attachment_category').' WHERE id=? AND mer_id=? AND type=0 LIMIT 2 FOR UPDATE',[$categoryId,$owner]);
+        [$pdo,$owner]=$this->context($productIdOrZero);self::integer($categoryId,1,2147483647);self::integer($type,0,1);
+        $rows=$this->rows($productIdOrZero,$pdo,$owner,'SELECT * FROM '.$this->table('system_attachment_category').' WHERE id=? AND mer_id=? AND type=? LIMIT 2 FOR UPDATE',[$categoryId,$owner,$type]);
         if($rows===[])throw new HttpException(404,'资源不存在');if(count($rows)!==1)self::fail();$row=$rows[0];
         if(array_keys($row)!==self::CATEGORY_FIELDS||self::integer($row['id'],1,2147483647)!==$categoryId
-            ||self::integer($row['mer_id'],1,4294967295)!==$owner||self::integer($row['type'],0,1)!==0)self::fail();
+            ||self::integer($row['mer_id'],1,4294967295)!==$owner||self::integer($row['type'],0,1)!==$type)self::fail();
         self::integer($row['pid'],0,2147483647);self::text($row['name'],50);self::text($row['enname'],50);return $row;
     }
-    public function listing(int $productIdOrZero,int $categoryId,string $name,int $page,int $limit): array
+    public function listing(int $productIdOrZero,int $categoryId,string $name,int $page,int $limit,int $type=0): array
     {
+        self::integer($type,0,1);if($type===1)return $this->videoListing($productIdOrZero,$categoryId,$name,$page,$limit);
         [$pdo,$owner]=$this->context($productIdOrZero);self::integer($categoryId,0,2147483647);
         self::integer($page,1,2147483647);self::integer($limit,1,100);self::text($name,255);
         if($categoryId)$this->category($productIdOrZero,$categoryId);
@@ -195,33 +196,33 @@ final class PlatformProductMediaDao
     private static function fail(): never { throw new AuthUnavailableException(); }
 
     /** Full image-category tree, captured on the actual writer; no model field projection. */
-    public function categories(int $productIdOrZero): array
+    public function categories(int $productIdOrZero,int $type=0): array
     {
-        [$pdo,$owner]=$this->context($productIdOrZero);
+        [$pdo,$owner]=$this->context($productIdOrZero);self::integer($type,0,1);
         $rows=$this->rows($productIdOrZero,$pdo,$owner,'SELECT * FROM '.$this->table('system_attachment_category')
-            .' WHERE mer_id=? AND type=0 ORDER BY id LIMIT 10001 FOR UPDATE',[$owner]);
-        if(count($rows)>10000)self::fail();foreach($rows as$row)$this->categoryNative($row,$owner);
+            .' WHERE mer_id=? AND type=? ORDER BY id LIMIT 10001 FOR UPDATE',[$owner,$type]);
+        if(count($rows)>10000)self::fail();foreach($rows as$row)$this->categoryNative($row,$owner,$type);
         \app\dao\marketplace\MerchantAttachmentDao::assertCategoryTree($rows);
         return $rows;
     }
-    private function categoryNative(array $row,int $owner): void
+    private function categoryNative(array $row,int $owner,int $type=0): void
     {
         if(array_keys($row)!==self::CATEGORY_FIELDS||self::integer($row['mer_id'],1,4294967295)!==$owner
-            ||self::integer($row['type'],0,1)!==0)self::fail();
+            ||self::integer($row['type'],0,1)!==self::integer($type,0,1))self::fail();
         self::integer($row['id'],1,2147483647);self::integer($row['pid'],0,2147483647);
         self::text($row['name'],50);self::text($row['enname'],50);
     }
-    public function categoryListing(int $productIdOrZero,int $pid,string $name,bool $all): array
+    public function categoryListing(int $productIdOrZero,int $pid,string $name,bool $all,int $type=0): array
     {
-        [$pdo,$owner]=$this->context($productIdOrZero);$complete=$this->categories($productIdOrZero);
+        [$pdo,$owner]=$this->context($productIdOrZero);$complete=$this->categories($productIdOrZero,$type);
         self::integer($pid,0,2147483647);self::text($name,50);
-        if($pid&&$name===''&&!$all)$this->category($productIdOrZero,$pid);
-        $where=' WHERE mer_id=? AND type=0';$parameters=[$owner];
+        if($pid&&$name===''&&!$all)$this->category($productIdOrZero,$pid,$type);
+        $where=' WHERE mer_id=? AND type=?';$parameters=[$owner,$type];
         if($name!==''){$where.=' AND name LIKE ?';$parameters[]='%'.$name.'%';}
         elseif(!$all){$where.=' AND pid=?';$parameters[]=$pid;}
         $selected=$this->rows($productIdOrZero,$pdo,$owner,'SELECT * FROM '.$this->table('system_attachment_category').$where.' ORDER BY id FOR UPDATE',$parameters);
         $map=[];foreach($complete as$row)$map[(string)$row['id']]=$row;
-        foreach($selected as$row){$this->categoryNative($row,$owner);if(($map[(string)$row['id']]??null)!==$row)self::fail();}
+        foreach($selected as$row){$this->categoryNative($row,$owner,$type);if(($map[(string)$row['id']]??null)!==$row)self::fail();}
         return ['rows'=>$selected,'complete'=>$complete];
     }
     /** Do not hide incompatible children by applying an owner/type predicate. */
@@ -246,35 +247,35 @@ final class PlatformProductMediaDao
         }
         return $before;
     }
-    public function saveCategory(int $productIdOrZero,int $id,string $name,int $pid): array
+    public function saveCategory(int $productIdOrZero,int $id,string $name,int $pid,?int $type=null): array
     {
         [$pdo,$owner]=$this->context($productIdOrZero);self::integer($id,0,2147483647);self::integer($pid,0,2147483647);self::text($name,50);
-        if($name==='')self::fail();$before=$this->categories($productIdOrZero);$map=[];
+        if($name==='')self::fail();$actual=$id?$this->categoryForMutation($productIdOrZero,$id,$type):null;$type=$actual===null?($type??0):self::integer($actual['type'],0,1);self::integer($type,0,1);$before=$this->categories($productIdOrZero,$type);$map=[];
         foreach($before as$position=>$row)$map[(string)$row['id']]=['position'=>$position,'row'=>$row];
         if($id&&!isset($map[(string)$id]))throw new HttpException(404,'资源不存在');
-        if($pid)$this->category($productIdOrZero,$pid);
+        if($pid)$this->category($productIdOrZero,$pid,$type);
         if($id&&self::integer($map[(string)$id]['row']['pid'],0,2147483647)!==$pid&&$this->anyChild($productIdOrZero,$pdo,$owner,$id))
             throw new HttpException(422,'该分类有下级分类，无法修改上级');
         \app\dao\marketplace\MerchantAttachmentDao::assertCategoryTree($before,['id'=>$id,'pid'=>$pid]);
         $duplicates=$this->rows($productIdOrZero,$pdo,$owner,'SELECT * FROM '.$this->table('system_attachment_category')
-            .' WHERE mer_id=? AND type=0 AND name=? AND id<>? ORDER BY id LIMIT 1 FOR UPDATE',[$owner,$name,$id]);
+            .' WHERE mer_id=? AND type=? AND name=? AND id<>? ORDER BY id LIMIT 1 FOR UPDATE',[$owner,$type,$name,$id]);
         if($duplicates!==[])throw new HttpException(422,'该分类已存在');
         $changed=$id===0||$map[(string)$id]['row']['name']!==$name||self::integer($map[(string)$id]['row']['pid'],0,2147483647)!==$pid;
         if(!$changed)return ['row'=>$map[(string)$id]['row'],'changed'=>false];
         if($id===0){
-            $statement=$pdo->prepare('INSERT INTO '.$this->table('system_attachment_category').' (pid,name,enname,type,mer_id) VALUES (?,?,?,0,?)');if(!$statement)self::fail();
-            try{if($statement->execute([$pid,$name,'',$owner])!==true||$statement->rowCount()!==1)self::fail();$id=self::integer($pdo->lastInsertId(),1,2147483647);}
+            $statement=$pdo->prepare('INSERT INTO '.$this->table('system_attachment_category').' (pid,name,enname,type,mer_id) VALUES (?,?,?,?,?)');if(!$statement)self::fail();
+            try{if($statement->execute([$pid,$name,'',$type,$owner])!==true||$statement->rowCount()!==1)self::fail();$id=self::integer($pdo->lastInsertId(),1,2147483647);}
             finally{if($statement->closeCursor()!==true)self::fail();}
-            $row=$this->category($productIdOrZero,$id);
+            $row=$this->category($productIdOrZero,$id,$type);
             if((string)$row['pid']!==(string)$pid||$row['name']!==$name||$row['enname']!=='')self::fail();
             $expected=$before;$expected[]=$row;
             usort($expected,static fn(array $a,array $b):int=>(int)$a['id']<=>(int)$b['id']);
         }else{
             $old=$map[(string)$id]['row'];$row=self::changedRow($old,['name'=>$name,'pid'=>$pid]);
-            $this->mutate($productIdOrZero,$pdo,$owner,'UPDATE '.$this->table('system_attachment_category').' SET name=?,pid=? WHERE id=? AND mer_id=? AND type=0',[$name,$pid,$id,$owner],1);
-            if($this->category($productIdOrZero,$id)!==$row)self::fail();$expected=$before;$expected[$map[(string)$id]['position']]=$row;
+            $this->mutate($productIdOrZero,$pdo,$owner,'UPDATE '.$this->table('system_attachment_category').' SET name=?,pid=? WHERE id=? AND mer_id=? AND type=?',[$name,$pid,$id,$owner,$type],1);
+            if($this->category($productIdOrZero,$id,$type)!==$row)self::fail();$expected=$before;$expected[$map[(string)$id]['position']]=$row;
         }
-        if($this->categories($productIdOrZero)!==$expected)self::fail();return ['row'=>$row,'changed'=>true];
+        if($this->categories($productIdOrZero,$type)!==$expected)self::fail();return ['row'=>$row,'changed'=>true];
     }
     private function imageAttachment(array $row,int $owner): void
     {
@@ -337,21 +338,21 @@ final class PlatformProductMediaDao
         $rows=$this->rows($productIdOrZero,$pdo,$owner,'SELECT legacy_category_id FROM '.$this->table('marketplace_platform_asset_category').' WHERE legacy_category_id=? LIMIT 1 FOR UPDATE',[$id]);
         if($rows!==[])throw new HttpException(422,'分类仍被引用，未删除');
     }
-    public function deleteCategory(int $productIdOrZero,int $id): array
+    public function deleteCategory(int $productIdOrZero,int $id,?int $type=null): array
     {
-        [$pdo,$owner]=$this->context($productIdOrZero);$before=$this->categories($productIdOrZero);$row=$this->category($productIdOrZero,$id);
+        [$pdo,$owner]=$this->context($productIdOrZero);$row=$this->categoryForMutation($productIdOrZero,$id,$type);$type=self::integer($row['type'],0,1);$before=$this->categories($productIdOrZero,$type);
         if($this->anyChild($productIdOrZero,$pdo,$owner,$id))throw new HttpException(422,'请先删除子分类');
-        $pid=self::integer($row['pid'],0,2147483647);if($pid)$this->category($productIdOrZero,$pid);
+        $pid=self::integer($row['pid'],0,2147483647);if($pid)$this->category($productIdOrZero,$pid,$type);
         $references=$this->rows($productIdOrZero,$pdo,$owner,'SELECT * FROM '.$this->table('system_attachment').' WHERE pid=? ORDER BY att_id FOR UPDATE',[$id]);
-        foreach($references as$attachment)$this->imageAttachment($attachment,$owner);
+        foreach($references as$attachment){if($type===0)$this->imageAttachment($attachment,$owner);else $this->typedAttachment($attachment,$owner,'video');}
         $this->assertCategoryMappingAbsent($productIdOrZero,$pdo,$owner,$id);$moved=[];
-        foreach($references as$attachment){$result=$this->patchImage($productIdOrZero,$attachment,['pid'=>$pid]);
+        foreach($references as$attachment){$result=$type===0?$this->patchImage($productIdOrZero,$attachment,['pid'=>$pid]):$this->patchVideoCategory($productIdOrZero,$attachment,$pid);
             if(!$result['changed'])self::fail();$moved[]=(int)$attachment['att_id'];}
         if($this->rows($productIdOrZero,$pdo,$owner,'SELECT * FROM '.$this->table('system_attachment').' WHERE pid=? LIMIT 1 FOR UPDATE',[$id])!==[])self::fail();
-        $this->mutate($productIdOrZero,$pdo,$owner,'DELETE FROM '.$this->table('system_attachment_category').' WHERE id=? AND mer_id=? AND type=0',[$id,$owner],1);
+        $this->mutate($productIdOrZero,$pdo,$owner,'DELETE FROM '.$this->table('system_attachment_category').' WHERE id=? AND mer_id=? AND type=?',[$id,$owner,$type],1);
         if($this->rows($productIdOrZero,$pdo,$owner,'SELECT * FROM '.$this->table('system_attachment_category').' WHERE id=? LIMIT 1',[$id])!==[])self::fail();
         $expected=array_values(array_filter($before,static fn(array $item):bool=>(int)$item['id']!==$id));
-        if($this->categories($productIdOrZero)!==$expected)self::fail();return ['category'=>$row,'moved_ids'=>$moved];
+        if($this->categories($productIdOrZero,$type)!==$expected)self::fail();return ['category'=>$row,'moved_ids'=>$moved];
     }
     public function removeImages(int $productIdOrZero,array $ids): void
     {
@@ -412,5 +413,107 @@ final class PlatformProductMediaDao
         foreach(['name'=>100,'att_dir'=>200,'satt_dir'=>200,'att_size'=>30,'att_type'=>30,'real_name'=>255,'scan_token'=>32]as$field=>$max)self::text($row[$field],$max);
         self::integer($row['att_size'],1,PHP_INT_MAX);
         if($row['name']===''||$row['real_name']===''||$row['att_dir']===''||$row['satt_dir']===''||$row['scan_token']!==''||!in_array($row['att_type'],$mimes,true))self::fail();
+    }
+
+    /** Lock the real row before interpreting an optional immutable category type selector. */
+    public function categoryForMutation(int $productIdOrZero,int $id,?int $selectedType=null): array
+    {
+        [$pdo,$owner]=$this->context($productIdOrZero);self::integer($id,1,2147483647);
+        $rows=$this->rows($productIdOrZero,$pdo,$owner,'SELECT * FROM '.$this->table('system_attachment_category').' WHERE id=? AND mer_id=? LIMIT 2 FOR UPDATE',[$id,$owner]);
+        if($rows===[])throw new HttpException(404,'资源不存在');if(count($rows)!==1)self::fail();$row=$rows[0];
+        $type=self::integer($row['type']??null,0,1);$this->categoryNative($row,$owner,$type);
+        if(self::integer($row['id'],1,2147483647)!==$id)self::fail();
+        if($selectedType!==null&&self::integer($selectedType,0,1)!==$type)throw new HttpException(422,'分类类型不能修改');return $row;
+    }
+
+    /** Category deletion preserves video objects and every native column except the real pid. */
+    private function patchVideoCategory(int $productIdOrZero,array $before,int $pid): array
+    {
+        [$pdo,$owner]=$this->context($productIdOrZero);$this->typedAttachment($before,$owner,'video');self::integer($pid,0,2147483647);
+        $expected=self::changedRow($before,['pid'=>$pid]);if($expected===$before)return ['row'=>$before,'changed'=>false];$id=self::integer($before['att_id'],1,2147483647);
+        $this->mutate($productIdOrZero,$pdo,$owner,'UPDATE '.$this->table('system_attachment').' SET pid=? WHERE att_id=? AND mer_id=? AND module_type=1 AND type=1',[$pid,$id,$owner],1);
+        $rows=$this->rows($productIdOrZero,$pdo,$owner,'SELECT * FROM '.$this->table('system_attachment').' WHERE att_id=? AND mer_id=? AND module_type=1 AND type=1 LIMIT 2 FOR UPDATE',[$id,$owner]);
+        if(count($rows)!==1)self::fail();$this->typedAttachment($rows[0],$owner,'video');if($rows[0]!==$expected)self::fail();return ['row'=>$rows[0],'changed'=>true];
+    }
+
+    /** The finite video selector keeps the original image path, DTO and mutation algorithms separate. */
+    private function videoListing(int $productIdOrZero,int $categoryId,string $name,int $page,int $limit): array
+    {
+        [$pdo,$owner]=$this->context($productIdOrZero);self::integer($categoryId,0,2147483647);
+        self::integer($page,1,2147483647);self::integer($limit,1,100);self::text($name,255);
+        // New nonzero video folder requests are type1; old local rows retain their own actual type0 folders below.
+        if($categoryId)$this->category($productIdOrZero,$categoryId,1);
+        $where=' WHERE mer_id=? AND module_type=1 AND ((type=? AND BINARY att_type IN (?,?)) OR (type=? AND image_type=? AND BINARY att_type=?))';
+        $parameters=[$owner,1,'video/mp4','application/mp4',0,1,'video/mp4'];
+        if($categoryId){$where.=' AND pid=? AND type=1';$parameters[]=$categoryId;}
+        if($name!==''){$where.=' AND real_name LIKE ?';$parameters[]='%'.$name.'%';}
+        $counts=$this->rows($productIdOrZero,$pdo,$owner,'SELECT COUNT(*) AS total FROM '.$this->table('system_attachment').$where,$parameters);
+        if(count($counts)!==1||array_keys($counts[0])!==['total'])self::fail();$count=self::integer($counts[0]['total'],0,PHP_INT_MAX);
+        $offset=($page-1)*$limit;$rows=$this->rows($productIdOrZero,$pdo,$owner,'SELECT * FROM '.$this->table('system_attachment').$where.' ORDER BY att_id DESC LIMIT '.$limit.' OFFSET '.$offset,$parameters);
+        foreach($rows as$row){
+            $legacy=self::integer($row['type']??null,0,1)===0&&self::integer($row['image_type']??null,1,7)===1&&($row['att_type']??null)==='video/mp4';
+            if($legacy){
+                $this->attachment($row,$owner);self::integer($row['att_size'],1,PHP_INT_MAX);self::integer($row['time'],1,2147483647);
+                if($row['name']===''||$row['real_name']===''||$row['att_dir']===''||$row['satt_dir']===''||$row['scan_token']!=='')self::fail();
+            }else $this->typedAttachment($row,$owner,'video');
+            $pid=self::integer($row['pid'],0,2147483647);if($pid)$this->category($productIdOrZero,$pid,$legacy?0:1);
+        }
+        return ['list'=>$rows,'count'=>$count];
+    }
+
+    /** Video intent never changes a native row's original type/category domain. */
+    private function videoAttachment(array $row,int $owner): void
+    {
+        $type=self::integer($row['type']??null,0,1);
+        if($type===1){$this->typedAttachment($row,$owner,'video');return;}
+        $this->attachment($row,$owner);
+        if(self::integer($row['image_type'],1,7)!==1||$row['att_type']!=='video/mp4')throw new HttpException(422,'素材类型不支持本视频操作');
+        self::integer($row['att_size'],1,PHP_INT_MAX);self::integer($row['time'],1,2147483647);
+        if($row['name']===''||$row['real_name']===''||$row['att_dir']===''||$row['satt_dir']===''||$row['scan_token']!=='')self::fail();
+    }
+
+    /** Lock every selected native14 first; unsupported requested IDs are never silently filtered. */
+    public function ownedVideos(int $productIdOrZero,array $ids): array
+    {
+        [$pdo,$owner]=$this->context($productIdOrZero);self::selection($ids);
+        $rows=$this->rows($productIdOrZero,$pdo,$owner,'SELECT * FROM '.$this->table('system_attachment')
+            .' WHERE att_id IN ('.implode(',',array_fill(0,count($ids),'?')).') AND mer_id=? AND module_type=1 ORDER BY att_id FOR UPDATE',array_merge($ids,[$owner]));
+        if(count($rows)!==count($ids))throw new HttpException(404,'资源不存在');$actual=[];
+        foreach($rows as$row){$this->videoAttachment($row,$owner);$actual[]=self::integer($row['att_id'],1,2147483647);
+            $pid=self::integer($row['pid'],0,2147483647);if($pid)$this->category($productIdOrZero,$pid,self::integer($row['type'],0,1));}
+        if($actual!==$ids)self::fail();return $rows;
+    }
+
+    private function patchVideo(int $productIdOrZero,array $before,array $patch): array
+    {
+        [$pdo,$owner]=$this->context($productIdOrZero);$this->videoAttachment($before,$owner);
+        if(!in_array(array_keys($patch),[['pid'],['real_name']],true))self::fail();$expected=self::changedRow($before,$patch);
+        if($expected===$before)return ['row'=>$before,'changed'=>false];$id=self::integer($before['att_id'],1,2147483647);$field=array_key_first($patch);
+        if($field==='pid'){
+            self::integer($patch[$field],0,2147483647);if($patch[$field])$this->category($productIdOrZero,$patch[$field],self::integer($before['type'],0,1));
+        }else{self::text($patch[$field],255);if($patch[$field]==='')self::fail();}
+        $this->mutate($productIdOrZero,$pdo,$owner,'UPDATE '.$this->table('system_attachment').' SET `'.$field.'`=? WHERE att_id=? AND mer_id=? AND module_type=1 AND type=?',[$patch[$field],$id,$owner,self::integer($before['type'],0,1)],1);
+        if($this->ownedVideos($productIdOrZero,[$id])[0]!==$expected)self::fail();return ['row'=>$expected,'changed'=>true];
+    }
+
+    public function renameVideo(int $productIdOrZero,int $id,string $name): array
+    { return $this->patchVideo($productIdOrZero,$this->ownedVideos($productIdOrZero,[$id])[0],['real_name'=>$name]); }
+
+    public function removeVideos(int $productIdOrZero,array $ids): void
+    {
+        [$pdo,$owner]=$this->context($productIdOrZero);$rows=$this->ownedVideos($productIdOrZero,$ids);
+        foreach($rows as$row)$this->mutate($productIdOrZero,$pdo,$owner,'DELETE FROM '.$this->table('system_attachment')
+            .' WHERE att_id=? AND mer_id=? AND module_type=1 AND type=?',[(int)$row['att_id'],$owner,self::integer($row['type'],0,1)],1);
+        if($this->rows($productIdOrZero,$pdo,$owner,'SELECT * FROM '.$this->table('system_attachment')
+            .' WHERE att_id IN ('.implode(',',array_fill(0,count($ids),'?')).') LIMIT 1',$ids)!==[])self::fail();
+    }
+
+    /** Validate every actual native type and target before the first DML; mixed types can share only root0. */
+    public function moveVideos(int $productIdOrZero,array $ids,int $pid): array
+    {
+        self::integer($pid,0,2147483647);$rows=$this->ownedVideos($productIdOrZero,$ids);$changed=[];$expected=[];
+        if($pid)foreach($rows as$row)$this->category($productIdOrZero,$pid,self::integer($row['type'],0,1));
+        foreach($rows as$row){$result=$this->patchVideo($productIdOrZero,$row,['pid'=>$pid]);$expected[]=$result['row'];if($result['changed'])$changed[]=(int)$row['att_id'];}
+        if($this->ownedVideos($productIdOrZero,$ids)!==$expected)self::fail();return $changed;
     }
 }

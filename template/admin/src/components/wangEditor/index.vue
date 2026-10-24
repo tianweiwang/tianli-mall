@@ -13,7 +13,7 @@
       <uploadPictures v-if="modalPic" :productId="productId" :isChoice="isChoice" @getPic="getPic"></uploadPictures>
     </el-dialog>
     <el-dialog :visible.sync="modalVideo" width="1024px" title="上传视频" :close-on-click-modal="false">
-      <uploadVideo v-if="modalVideo" @getVideo="getvideo"></uploadVideo>
+      <uploadVideo v-if="modalVideo" :productId="productId" @getVideo="getvideo"></uploadVideo>
     </el-dialog>
   </div>
 </template>
@@ -59,7 +59,11 @@ export default {
       picTit: 'danFrom',
       img: '',
       modalVideo: false,
+      productVideoClose: null,
       editor: null,
+      editorActive: true,
+      videoEventHandler: null,
+      htmlEventHandler: null,
       uploadSize: 2,
       video: '',
 
@@ -86,30 +90,75 @@ export default {
   created() {
     this.resetProductMedia();
     this.productUnsubscribe = subscribePlatformAuthEpoch(() => {
-      if (this.productId !== null) { closeProductContext(this.productSession); this.modalPic = false; this.productMessage = "登录身份已变化，请重新打开商品详情"; }
+      if (this.productId !== null) { closeProductContext(this.productSession); this.modalPic = false; this.closeProductVideo(); this.productMessage = "登录身份已变化，请重新打开商品详情"; }
     });
     // window.getvideoint = this.getvideoint;
     // window.getHtmlint = this.getHtmlint;
   },
-  beforeDestroy() {
+  activated() {
+    this.editorActive = true;
+    this.resetProductMedia();
+    this.configureProductUploads();
+  },
+  deactivated() {
+    this.editorActive = false;
+    this.closeProductVideo();
     closeProductContext(this.productSession);
+    this.productSession = null;
+    this.modalPic = false;
+  },
+  beforeDestroy() {
+    this.editorActive = false;
+    if (this.videoEventHandler) util.$off('Video', this.videoEventHandler);
+    if (this.htmlEventHandler) util.$off('Html', this.htmlEventHandler);
+    this.videoEventHandler = null;
+    this.htmlEventHandler = null;
+    this.closeProductVideo();
+    closeProductContext(this.productSession);
+    this.productSession = null;
+    this.modalPic = false;
     if (this.productUnsubscribe) this.productUnsubscribe();
+    const editor = this.editor;
+    this.editor = null;
+    if (editor) editor.destroy();
   },
   mounted() {
     this.createEditor();
-    util.$on('Video', (Video) => {
-      this.getvideoint();
-    });
-    util.$on('Html', (Html) => {
-      this.getHtmlint();
-    });
+    this.videoEventHandler = target => {
+      if (this.canUseEditor(target)) this.getvideoint();
+    };
+    this.htmlEventHandler = target => {
+      if (this.canUseEditor(target)) this.getHtmlint();
+    };
+    util.$on('Video', this.videoEventHandler);
+    util.$on('Html', this.htmlEventHandler);
   },
 
   methods: {
+    canUseEditor(target) {
+      return this.editorActive && !!this.editor && target === this.editor &&
+        (this.productId === null || currentProductContext(this.productSession));
+    },
+    closeProductVideo() {
+      if (this.productVideoClose) this.productVideoClose();
+      this.productVideoClose = null; this.modalVideo = false;
+    },
+    chooseProductVideo() {
+      if (!this.canUseEditor(this.editor)) return;
+      const context = this.productSession; const product = this.productId;
+      try { requireProductContext(context); }
+      catch (error) { this.productMessage = error.message; return; }
+      this.closeProductVideo();
+      this.productVideoClose = this.$videoModal(value => {
+        if (this.productSession !== context || this.productId !== product || !currentProductContext(context) || typeof value !== 'string' || !value) return;
+        this.getvideo(value);
+      }, false, undefined, undefined, product);
+    },
     resetProductMedia() {
+      this.closeProductVideo();
       closeProductContext(this.productSession); this.productSession = null; this.modalPic = false;
       this.productMessage = ''; this.productReceipt = null; this.productReceiptDescription = ''; this.productUploadUnknown = false; this.productUploading = false;
-      if (this.productId !== null) { try { this.productSession = captureProductContext(this.productId); } catch (error) { this.productReceipt = error.receipt || null; this.productReceiptDescription = receiptText(this.productReceipt); this.productMessage = error.message; } }
+      if (this.editorActive && this.productId !== null) { try { this.productSession = captureProductContext(this.productId); } catch (error) { this.productReceipt = error.receipt || null; this.productReceiptDescription = receiptText(this.productReceipt); this.productMessage = error.message; } }
     },
     configureProductUploads() {
       if (!this.editor) return;
@@ -118,6 +167,7 @@ export default {
       else this.editor.config.customUploadImg = (files, insertImgFn) => { this.uploadProductFiles(files, insertImgFn); };
     },
     async uploadProductFiles(files, insertImgFn) {
+      if (!this.canUseEditor(this.editor)) return;
       const context = this.productSession;
       try {
         requireProductContext(context);
@@ -137,6 +187,7 @@ export default {
       } finally { if (this.productSession === context) this.productUploading = false; }
     },
     changeValue(value) {
+      if (!this.canUseEditor(this.editor)) return;
       this.newHtml = value;
       this.$emit('editorContent', value);
 
@@ -144,6 +195,7 @@ export default {
     },
     // 获取多张图信息
     getPic(pc) {
+      if (!this.canUseEditor(this.editor)) return;
       if (this.productId !== null) { try { requireProductContext(this.productSession); } catch (error) { this.productReceipt = error.receipt || null; this.productReceiptDescription = receiptText(this.productReceipt); this.productMessage = error.message; return; } }
       let _this = this;
       _this.img = pc;
@@ -153,13 +205,19 @@ export default {
       });
     },
     getimg() {
+      if (!this.canUseEditor(this.editor)) return;
       if (this.productId !== null) { try { requireProductContext(this.productSession); } catch (error) { this.productReceipt = error.receipt || null; this.productReceiptDescription = receiptText(this.productReceipt); this.productMessage = error.message; return; } }
       this.modalPic = true;
       this.isChoice = '多选';
     },
     getvideoint() {
+      if (!this.canUseEditor(this.editor)) return;
+      if (this.productId !== null) return this.chooseProductVideo();
       // this.modalVideo = true;
-      this.$videoModal((e) => {
+      const editor = this.editor;
+      this.closeProductVideo();
+      this.productVideoClose = this.$videoModal((e) => {
+        if (!this.canUseEditor(editor) || this.productId !== null) return;
         let _this = this;
         _this.modalVideo = false;
         this.video = e;
@@ -169,6 +227,7 @@ export default {
       });
     },
     getHtmlint() {
+      if (!this.canUseEditor(this.editor)) return;
       this.monacoBox = !this.monacoBox;
       this.value = this.newHtml;
       if (!this.monacoBox) {
@@ -176,6 +235,8 @@ export default {
       }
     },
     getvideo(data) {
+      if (!this.canUseEditor(this.editor)) return;
+      if (this.productId !== null) { try { requireProductContext(this.productSession); } catch (error) { this.productMessage = error.message; return; } }
       let _this = this;
       _this.modalVideo = false;
       this.video = data;
@@ -189,6 +250,7 @@ export default {
       const menuKey = 'alertMenuKey';
       const html = 'alertHtml';
       this.editor = new E(this.$refs['wang-editor']);
+      const editor = this.editor;
 
       this.editor.menus.extend(menuKey, AlertMenu);
       this.editor.menus.extend(html, HtmlMenu);
@@ -237,6 +299,7 @@ export default {
         return true;
       };
       this.editor.config.onchange = (newHtml) => {
+        if (!this.canUseEditor(editor)) return;
         this.newHtml = newHtml;
         this.$emit('editorContent', newHtml);
       };

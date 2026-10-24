@@ -1,5 +1,6 @@
 <template>
-  <div class="Modal">
+  <div class="Modal" :class="{ 'product-video-owned': productId !== null }">
+    <el-alert v-if="productId !== null && productMessage" :title="productMessage" :description="productReceiptDescription" type="warning" :closable="false" show-icon />
     <div class="colLeft">
       <div class="Nav">
         <div class="trees-coadd">
@@ -59,7 +60,7 @@
             <el-button
               class="mr8"
               type="primary"
-              :disabled="checkPicList.length === 0"
+              :disabled="productId !== null ? ids.length === 0 : checkPicList.length === 0"
               v-db-click
               @click="checkPics"
               size="small"
@@ -69,7 +70,7 @@
             <!-- <el-button size="small" type="primary" v-db-click @click="uploadModal">上传视频</el-button> -->
             <el-button
               class="mr8"
-              v-if="upload_type !== '1'"
+              v-if="productId !== null || upload_type !== '1'"
               type="primary"
               size="small"
               v-db-click
@@ -77,7 +78,7 @@
               >上传视频</el-button
             >
             <el-upload
-              v-if="upload_type === '1'"
+              v-if="productId === null && upload_type === '1'"
               :show-file-list="false"
               :action="fileUrl"
               :before-upload="videoSaveToUrl"
@@ -104,11 +105,12 @@
               placeholder="视频移动至"
               style="width: 150px"
               class="treeSel"
-              :options="treeData2"
+              :options="productId !== null ? productMoveTree : treeData2"
               :props="{ checkStrictly: true, emitPath: false, label: 'title', value: 'id' }"
               clearable
               size="small"
               @visible-change="moveImg"
+              @change="selectMoveTarget"
             ></el-cascader>
           </div>
           <div>
@@ -242,6 +244,7 @@
       </div>
     </div>
     <uploadImg
+      v-if="productId === null"
       ref="upload"
       :isPage="isPage"
       :isIframe="isIframe"
@@ -249,15 +252,22 @@
       :categoryList="treeData"
       @uploadSuccess="uploadSuccess"
     ></uploadImg>
-    <el-dialog title="查看视频" append-to-body :visible.sync="videoModal" width="1024px">
-      <video :src="imageUrl" controls />
+    <el-dialog title="查看视频" append-to-body :visible.sync="videoModal" :width="productId !== null ? 'min(1024px, calc(100vw - 32px))' : '1024px'">
+      <video :src="imageUrl" :style="productId !== null ? { maxWidth: '100%' } : null" controls />
     </el-dialog>
     <input type="file" ref="refid" style="display: none" @change="zh_uploadFile_change" />
+    <el-dialog v-if="productId !== null" :visible.sync="productCategoryVisible" append-to-body title="视频分类" width="min(480px, calc(100vw - 32px))" :close-on-click-modal="false">
+      <el-form label-width="80px">
+        <el-form-item label="分类名称"><el-input v-model="productCategory.name" maxlength="50" /></el-form-item>
+        <el-form-item label="上级分类"><el-cascader v-model="productCategory.pid" style="width: 100%" :options="treeData2" :props="{ checkStrictly: true, emitPath: false, label: 'title', value: 'id' }" /></el-form-item>
+      </el-form>
+      <span slot="footer"><el-button @click="productCategoryVisible = false">取消</el-button><el-button type="primary" :loading="productCategorySaving" :disabled="productWriteUnknown" @click="saveProductCategory">保存</el-button></span>
+    </el-dialog>
     <!-- 输入链接弹窗 -->
-    <el-dialog title="输入视频链接" append-to-body :visible.sync="inputModal" width="400px">
+    <el-dialog title="输入视频链接" append-to-body :visible.sync="inputModal" :width="productId !== null ? 'min(400px, calc(100vw - 32px))' : '400px'">
       <div class="flex">
         <el-input class="mr-20" v-model="inputUrl" placeholder="请输入视频链接" />
-        <el-button type="primary" @click="uploadByUrl">使用</el-button>
+        <el-button type="primary" :loading="productId !== null && productBusy" :disabled="productId !== null && productWriteUnknown" @click="uploadByUrl">{{ productId !== null ? '导入并使用' : '使用' }}</el-button>
       </div>
     </el-dialog>
   </div>
@@ -276,6 +286,8 @@ import {
 import { productGetTempKeysApi, uploadType } from '@/api/product';
 import { uploadByPieces } from '@/utils/upload'; //引入uploadByPieces方法
 
+import { captureProductContext, currentProductContext, closeProductContext, requireProductContext, receiptText, mediaId, mediaList, mediaCategories, mediaCreateCategory, mediaUpdateCategory, mediaDeleteCategory, mediaRename, mediaMove, mediaDelete, mediaVideoUpload, mediaVideoImport } from '@/api/product-media';
+import { subscribePlatformAuthEpoch } from '@/libs/platform-auth-epoch';
 import Setting from '@/setting';
 import { getCookies } from '@/libs/util';
 import uploadImg from '@/components/uploadImg';
@@ -285,6 +297,7 @@ export default {
   name: 'uploadPictures',
   components: { uploadImg, VueTreeList },
   props: {
+    productId: { default: null },
     isChoice: {
       type: String,
       default: 'one',
@@ -316,6 +329,17 @@ export default {
   },
   data() {
     return {
+      productSession: null,
+      productScopeInitialized: false,
+      productTreeSequence: 0,
+      productListSequence: 0,
+      productMoveSequence: 0,
+      productMessage: '', productReceipt: null, productReceiptDescription: '',
+      productBusy: false, productWriteUnknown: false,
+      productCategoryVisible: false, productCategory: { id: 0, pid: 0, name: '' },
+      productCategorySaving: false,
+      productMoveTree: [{ id: 0, title: '未分组', pid: 0 }],
+      productMoveChosen: false,
       spinShow: false,
       fileUrl: Setting.apiBaseURL + '/file/upload',
       modalPic: false,
@@ -365,6 +389,23 @@ export default {
       inputUrl: '', // 输入的视频链接
     };
   },
+  created() {
+    this.resetProductScope();
+    this.productUnsubscribe = subscribePlatformAuthEpoch(() => {
+      if (this.productId !== null) this.invalidateProductScope();
+    });
+  },
+  watch: {
+    productId(value, previous) {
+      this.resetProductScope();
+      if (value === null && previous !== null) return;
+      this.getList(); this.getFileList();
+    },
+  },
+  beforeDestroy() {
+    closeProductContext(this.productSession);
+    if (this.productUnsubscribe) this.productUnsubscribe();
+  },
   mounted() {
     if (this.isPage) {
       let hang = parseInt((document.body.clientHeight - this.$refs.imgListBox.clientHeight - 325) / 180); //计算行数
@@ -372,14 +413,173 @@ export default {
       this.fileData.limit = col * hang; //计算分页数量
       this.picmargin = parseInt(this.$refs.imgListBox.clientWidth - col * 146) / (2 * col) + 'px'; //平均分布计算margin距离
     }
-    this.getToken();
-    this.uploadType();
+    if (this.productId === null) { this.getToken(); this.uploadType(); }
     this.getList();
     this.getFileList();
   },
   methods: {
+    resetProductScope() {
+      const hadProduct = this.productScopeInitialized;
+      this.productScopeInitialized = this.productId !== null;
+      closeProductContext(this.productSession); this.productSession = null;
+      this.productTreeSequence += 1; this.productListSequence += 1; this.productMoveSequence += 1;
+      this.productMessage = ''; this.productReceipt = null; this.productReceiptDescription = '';
+      this.productBusy = false; this.productWriteUnknown = false;
+      this.productCategoryVisible = false; this.inputModal = false; this.videoModal = false; this.inputUrl = ''; this.imageUrl = '';
+      if (this.productId === null && !hadProduct) return;
+      this.treeId = this.productId === null ? '' : 0; this.treeData = []; this.treeData2 = [];
+      this.pictrueList = []; this.total = 0; this.initData(); this.pids = null; this.productMoveChosen = false;
+      this.productMoveTree = [{ id: 0, title: '未分组', pid: 0 }];
+      if (this.productId !== null) {
+        try { this.productSession = captureProductContext(this.productId); }
+        catch (error) { this.productMessage = error.message; }
+      }
+    },
+    invalidateProductScope() {
+      closeProductContext(this.productSession); this.productSession = null;
+      this.productTreeSequence += 1; this.productListSequence += 1; this.productMoveSequence += 1;
+      this.productCategoryVisible = false; this.inputModal = false; this.videoModal = false;
+      this.inputUrl = ''; this.imageUrl = ''; this.pictrueList = []; this.treeData = []; this.treeData2 = [];
+      this.total = 0; this.initData(); this.productMoveTree = [{ id: 0, title: '未分组', pid: 0 }];
+      this.productMessage = '登录身份已变化，进行中的提交结果请先核对，再重新打开商品视频';
+    },
+    async productWork(operation, apply, write = false) {
+      const context = this.productSession;
+      let ownsBusy = false;
+      try {
+        requireProductContext(context);
+        if (write && this.productWriteUnknown) throw new Error('上一项提交结果未确认，请先核对视频库');
+        if (write && this.productBusy) { this.productMessage = '视频正在处理，请稍候'; return; }
+        if (write) { this.productBusy = true; ownsBusy = true; }
+        const value = await operation(context);
+        if (this.productSession !== context || !currentProductContext(context)) return;
+        if (write) { this.productMessage = ''; this.productReceipt = null; this.productReceiptDescription = ''; }
+        if (apply) apply(value, context);
+        return value;
+      } catch (error) {
+        if (this.productSession === context && currentProductContext(context)) {
+          if (write && error.state === 'unknown') this.productWriteUnknown = true;
+          this.productReceipt = error.receipt || null; this.productReceiptDescription = receiptText(this.productReceipt);
+          this.productMessage = error.message || '商品视频操作未完成';
+        }
+      } finally { if (ownsBusy && this.productSession === context) this.productBusy = false; }
+    },
+    getProductCategories(search) {
+      const sequence = ++this.productTreeSequence;
+      return this.productWork(ctx => mediaCategories(ctx, { ...this.uploadName, pid: 0, type: 1 }), value => {
+        if (sequence !== this.productTreeSequence) return;
+        if (search !== 'search') this.treeData2 = [{ id: 0, title: '未分组', pid: 0 }, ...JSON.parse(JSON.stringify(value.list))];
+        this.treeData = [{ id: 0, title: '全部视频', pid: 0 }, ...value.list];
+      });
+    },
+    getProductVideos() {
+      const sequence = ++this.productListSequence;
+      this.fileData.limit = Math.max(1, Math.min(100, Number(this.fileData.limit) || 18));
+      return this.productWork(ctx => mediaList(ctx, { ...this.fileData, pid: this.treeId === '' ? 0 : this.treeId, type: 1 }), value => {
+        if (sequence !== this.productListSequence) return;
+        this.initData();
+        value.list.forEach(item => { item.isSelect = false; item.isEdit = false; item.isShowEdit = false; item.realName = false; item.num = 0; this.editName(item); });
+        this.pictrueList = value.list; this.total = value.count; this.isShowPic = value.list.length === 0;
+      });
+    },
+    openProductCategory(id, pid, name = '') {
+      try {
+        requireProductContext(this.productSession);
+        if (this.productWriteUnknown || this.productBusy) throw new Error('请先核对当前视频操作结果');
+        this.productCategory = { id: mediaId(id, true), pid: mediaId(pid, true), name };
+        this.productCategoryVisible = true;
+      } catch (error) { this.productMessage = error.message; }
+    },
+    async saveProductCategory() {
+      if (this.productCategorySaving) return;
+      const value = { ...this.productCategory };
+      if (!value.name.trim()) { this.productMessage = '请填写分类名称'; return; }
+      this.productCategorySaving = true;
+      try {
+        await this.productWork(ctx => value.id ? mediaUpdateCategory(ctx, value.id, { name: value.name, pid: mediaId(value.pid, true), type: 1 }) : mediaCreateCategory(ctx, { name: value.name, pid: mediaId(value.pid, true), type: 1 }), () => {
+          this.productCategoryVisible = false; this.getProductCategories(); this.$message.success('视频分类已保存');
+        }, true);
+      } finally { this.productCategorySaving = false; }
+    },
+    async removeProductCategory(category) {
+      const context = this.productSession;
+      try {
+        requireProductContext(context);
+        await this.$confirm('删除分类“' + category.title + '”？所属视频将按原规则移到父分类或未分组。', '删除视频分类', { type: 'warning' });
+        if (this.productSession !== context || !currentProductContext(context)) return;
+        await this.productWork(ctx => mediaDeleteCategory(ctx, category.id, 1), () => {
+          this.treeId = 0; this.initData(); this.getProductCategories(); this.getProductVideos(); this.$message.success('视频分类已删除');
+        }, true);
+      } catch (error) { if (error !== 'cancel' && error !== 'close' && this.productSession === context) this.productMessage = error.message || '分类未删除'; }
+    },
+    selectedProductRows() {
+      const selected = [...this.checkPicList, ...this.multipleSelection];
+      return this.ids.map(id => {
+        const row = selected.find(item => String(item.att_id) === String(id));
+        if (!row || ![0, 1, '0', '1'].includes(row.type)) throw new Error('视频原始类型未确认，请刷新当前列表');
+        return row;
+      });
+    },
+    getProductMoveTargets() {
+      const sequence = ++this.productMoveSequence;
+      this.pids = null; this.productMoveChosen = false;
+      this.productMoveTree = [{ id: 0, title: '未分组', pid: 0 }];
+      let types;
+      try { requireProductContext(this.productSession); types = new Set(this.selectedProductRows().map(row => Number(row.type))); }
+      catch (error) { this.productMessage = error.message; return; }
+      if (types.size !== 1) return;
+      const type = [...types][0];
+      return this.productWork(ctx => mediaCategories(ctx, { pid: 0, all: 1, type }), value => {
+        if (sequence === this.productMoveSequence) this.productMoveTree = [{ id: 0, title: '未分组', pid: 0 }, ...value.list];
+      });
+    },
+    selectMoveTarget(value) {
+      if (this.productId !== null) {
+        this.productMoveChosen = value !== '' && value !== null && value !== undefined;
+        if (this.productMoveChosen) return this.moveProductVideos();
+      }
+    },
+    moveProductVideos() {
+      const ids = this.ids.slice(); if (!ids.length || !this.productMoveChosen) return;
+      return this.productWork(ctx => mediaMove(ctx, ids, mediaId(this.pids, true), 1), () => {
+        this.initData(); this.pids = null; this.productMoveChosen = false; this.getProductVideos(); this.$message.success('视频已移动');
+      }, true);
+    },
+    async deleteProductVideos(ids) {
+      if (!ids.length) return;
+      const context = this.productSession;
+      try {
+        requireProductContext(context);
+        await this.$confirm('删除选中的视频？', '删除视频', { type: 'warning' });
+        if (this.productSession !== context || !currentProductContext(context)) return;
+        await this.productWork(ctx => mediaDelete(ctx, ids, 1), () => { this.initData(); this.getProductVideos(); this.$message.success('视频已删除'); }, true);
+      } catch (error) { if (error !== 'cancel' && error !== 'close' && this.productSession === context) this.productMessage = error.message || '视频未删除'; }
+    },
+    renameProductVideo(item) {
+      const name = item.real_name;
+      if (!name.trim()) { this.productMessage = '请填写视频名称'; return; }
+      return this.productWork(ctx => mediaRename(ctx, item.att_id, name, 1), () => { item.real_name = name; this.editName(item); item.isEdit = false; this.getProductVideos(); this.$message.success('视频名称已保存'); }, true);
+    },
+    uploadProductVideo(event) {
+      const input = event.target; const selected = Array.from(input.files || []); input.value = '';
+      if (selected.length !== 1) { this.productMessage = '请选择一个视频文件'; return; }
+      const pid = this.treeId === '' ? 0 : this.treeId;
+      return this.productWork(ctx => mediaVideoUpload(ctx, selected[0], pid), () => {
+        this.fileData.page = 1; this.initData(); this.getProductVideos(); this.$message.success('视频已上传');
+      }, true);
+    },
+    importProductVideo() {
+      const url = this.inputUrl; const pid = this.treeId === '' ? 0 : this.treeId;
+      return this.productWork(ctx => mediaVideoImport(ctx, url, pid), value => {
+        this.inputModal = false; this.inputUrl = ''; this.fileData.page = 1; this.initData(); this.getProductVideos();
+        if (this.isChoice === 'one') this.$emit('getVideo', value.src);
+        else this.$message.success('视频已导入，请在视频库中选择');
+      }, true);
+    },
+
     // 打开输入链接弹窗
     openInputModal() {
+      if (this.productId !== null) { try { requireProductContext(this.productSession); if (this.productBusy || this.productWriteUnknown) throw new Error('请先核对当前视频操作结果'); } catch (error) { this.productMessage = error.message; return; } }
       this.inputModal = true;
     },
     //获取视频上传类型
@@ -398,9 +598,11 @@ export default {
       return promise;
     },
     zh_uploadFile() {
+      if (this.productId !== null) { try { requireProductContext(this.productSession); if (this.productBusy || this.productWriteUnknown) throw new Error('请先核对当前视频操作结果'); } catch (error) { this.productMessage = error.message; return; } }
       this.$refs.refid.click();
     },
     zh_uploadFile_change(evfile) {
+      if (this.productId !== null) return this.uploadProductVideo(evfile);
       let that = this;
       if (evfile.target.files[0].type !== 'video/mp4') {
         return that.$message.error('只能上传mp4文件');
@@ -435,6 +637,7 @@ export default {
       });
     },
     videoSaveToUrl(file) {
+      if (this.productId !== null) return false;
       if (isVideoUpload(file))
         uploadByPieces({
           file: file, // 视频实体
@@ -465,10 +668,12 @@ export default {
       this.initData();
     },
     lookImg(item) {
+      if (this.productId !== null) { try { requireProductContext(this.productSession); } catch (error) { this.productMessage = error.message; return; } }
       this.imageUrl = item.att_dir;
       this.videoModal = true;
     },
     onDel(node) {
+      if (this.productId !== null) return this.removeProductCategory(node);
       let method = node.cate_id ? routeDel : routeCateDel;
       this.$msgbox({
         title: '提示',
@@ -540,6 +745,10 @@ export default {
       this.header['Authori-zation'] = 'Bearer ' + getCookies('token');
     },
     moveImg(status) {
+      if (this.productId !== null) {
+        if (status) { if (!this.ids.length) { this.productMessage = '请先选择视频'; return; } this.getProductMoveTargets(); }
+        return;
+      }
       if (!status) {
         this.getMove();
       } else {
@@ -552,6 +761,7 @@ export default {
     searchImg() {},
     // 移动分类
     getMove() {
+      if (this.productId !== null) return this.moveProductVideos();
       let data = {
         pid: this.pids,
         images: this.ids.toString(),
@@ -570,6 +780,7 @@ export default {
         });
     },
     delImg(id) {
+      if (this.productId !== null) return this.deleteProductVideos([typeof id === 'object' ? id.att_id : id]);
       let ids = {
         ids: id,
       };
@@ -591,6 +802,7 @@ export default {
     },
     // 删除视频
     editPicList(id) {
+      if (this.productId !== null) return this.deleteProductVideos(id ? [typeof id === 'object' ? id.att_id : id] : this.ids.slice());
       let ids = {
         ids: id || this.ids.toString(),
       };
@@ -611,6 +823,7 @@ export default {
         });
     },
     initData() {
+      if (this.productId !== null) { this.productMoveSequence += 1; this.productMoveChosen = false; if (this.$refs.table) this.$refs.table.clearSelection(); }
       this.checkPicList = [];
       this.ids = [];
       this.multipleSelection = [];
@@ -636,6 +849,7 @@ export default {
     },
     // 删除分类
     remove(data, tit) {
+      if (this.productId !== null) return this.removeProductCategory(data);
       this.tits = tit;
       let delfromData = {
         title: '删除 [ ' + data.title + ' ] ' + '分类',
@@ -655,6 +869,7 @@ export default {
     },
     // 编辑树表单
     editPic(data) {
+      if (this.productId !== null) return this.openProductCategory(data.id, data.pid, data.name || data.title);
       this.$modalForm(categoryEditApi(data.id)).then(() => this.getList());
     },
     // 搜索分类
@@ -663,6 +878,7 @@ export default {
     },
     // 分类列表树
     getList(type) {
+      if (this.productId !== null) return this.getProductCategories(type);
       let data = {
         title: '全部视频',
         id: '',
@@ -681,6 +897,7 @@ export default {
         });
     },
     loadData(item, callback) {
+      if (this.productId !== null) { const sequence = this.productTreeSequence; return this.productWork(ctx => mediaCategories(ctx, { pid: item.id, all: 0, type: 1 }), value => { if (sequence === this.productTreeSequence) callback(value.list); }); }
       getCategoryListApi({
         pid: item.id,
       })
@@ -708,6 +925,7 @@ export default {
     },
     // 文件列表
     getFileList() {
+      if (this.productId !== null) return this.getProductVideos();
       this.fileData.pid = this.treeId;
       fileListApi(this.fileData)
         .then(async (res) => {
@@ -767,6 +985,7 @@ export default {
     },
     //  选中某一行
     handleSelectRow(selection) {
+      if (this.productId !== null) { if (selection.length) { try { requireProductContext(this.productSession); } catch (error) { this.productMessage = error.message; return; } } this.productMoveSequence += 1; this.productMoveChosen = false; }
       let arr = this.unique(selection);
       const uniqueArr = [];
       const ids = [];
@@ -781,12 +1000,14 @@ export default {
       this.multipleSelection = uniqueArr;
     },
     pageChange(index) {
+      if (this.productId !== null) this.initData();
       this.fileData.page = index;
       this.getFileList();
       this.checkPicList = [];
     },
     // 新建分类表单
     getFrom() {
+      if (this.productId !== null) return this.openProductCategory(0, this.treeId === '' ? 0 : this.treeId);
       this.$modalForm(createApi({ id: this.treeId, type: 1 })).then((res) => {
         this.getList();
       });
@@ -826,6 +1047,7 @@ export default {
     },
     // 选中视频
     changImage(item, index, row) {
+      if (this.productId !== null) { try { requireProductContext(this.productSession); } catch (error) { this.productMessage = error.message; return; } this.productMoveSequence += 1; this.productMoveChosen = false; }
       let activeIndex = 0;
       if (!item.isSelect) {
         item.isSelect = true;
@@ -858,6 +1080,22 @@ export default {
     },
     // 点击使用选中视频
     checkPics() {
+      if (this.productId !== null) {
+        try {
+          requireProductContext(this.productSession);
+          const selected = this.selectedProductRows();
+          if (!selected.length) throw new Error('请先选择视频');
+          if (this.isChoice === 'one') {
+            if (selected.length !== 1) throw new Error('最多只能选择一个视频');
+            this.$emit('getVideo', selected[0].att_dir);
+          } else {
+            const maximum = this.$route.query.maxLength;
+            if (maximum !== undefined && selected.length > Number(maximum)) throw new Error('最多只能选' + maximum + '个视频');
+            this.$emit('getPicD', selected); this.$emit('getVideo', selected);
+          }
+        } catch (error) { this.productMessage = error.message; }
+        return;
+      }
       if (this.isChoice === 'one') {
         if (this.checkPicList.length > 1) return this.$message.warning('最多只能选一张视频');
         this.$emit('getVideo', this.checkPicList[0].att_dir);
@@ -871,6 +1109,7 @@ export default {
     },
     // 上传视频链接
     uploadByUrl() {
+      if (this.productId !== null) return this.importProductVideo();
       if (!this.inputUrl) {
         this.$message.error('请输入视频链接');
         return;
@@ -887,6 +1126,7 @@ export default {
     },
     // 修改视频文字上传
     bindTxt(item) {
+      if (this.productId !== null) return this.renameProductVideo(item);
       if (item.real_name == '') {
         this.$message.error('请填写内容');
       }
@@ -1207,5 +1447,37 @@ export default {
   color: var(--prev-color-primary);
   font-size: 12px;
   white-space: nowrap;
+}
+
+/* R90 owned-only control bounds. Original global rules above remain unchanged. */
+.Modal.product-video-owned {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  .colLeft { min-width: 0; width: 100%; }
+  .Nav { flex: 0 0 220px; width: 220px; min-width: 0; max-width: 220px; }
+  .conter { flex: 1; width: auto; min-width: 0; }
+  .is-modal .pictrueList_pic .img { box-sizing: border-box; max-width: 100%; }
+  ::v-deep .custom-tree-node { box-sizing: border-box; min-width: 0; max-width: 100%; }
+  ::v-deep .file-name { flex: 1; min-width: 0; }
+  ::v-deep .file-name .text { min-width: 0; max-width: 100%; }
+  .conter .bnt {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    > div { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; max-width: 100%; }
+    .el-button { display: inline-flex; align-items: center; justify-content: center; }
+  }
+  .conter .footer { padding-left: 0; padding-right: 0; min-width: 0; max-width: 100%; }
+  ::v-deep .pagination-container { width: 100%; max-width: 100%; min-width: 0; }
+  @media (max-width: 767px) {
+    .colLeft { flex-direction: column; height: auto; }
+    .Nav { flex: 0 0 auto; width: 100%; max-width: 100%; border-right: 0; }
+    .trees-coadd .scollhide .isTree { min-height: 0; max-height: 200px; }
+    .conter { margin-left: 0 !important; width: 100%; max-width: 100%; height: auto; }
+    .conter .pictrueList { min-height: 0; }
+    .conter .bnt > div { width: 100%; }
+    .conter .bnt .el-input, .conter .bnt .el-cascader { width: 100% !important; max-width: 100%; }
+    .conter .footer ::v-deep .el-pagination { display: flex; flex-wrap: wrap; gap: 4px; white-space: normal; padding-left: 0; padding-right: 0; }
+    .conter .footer ::v-deep .el-pager { display: flex; flex-wrap: wrap; max-width: 100%; }
+  }
 }
 </style>

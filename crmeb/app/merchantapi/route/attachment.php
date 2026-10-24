@@ -17,4 +17,5 @@ return static function(): void {
     Route::get('attachment-categories','Attachment/categories')->option($options)->middleware($middleware)->name('merchant.attachment.category.list');
     Route::post('attachment-categories','Attachment/createCategory')->option($options)->middleware($middleware)->name('merchant.attachment.category.create');
     Route::put('attachment-categories/<id>','Attachment/updateCategory')->option($options)->middleware($middleware)->name('merchant.attachment.category.update');
+    Route::delete('attachment-categories/<id>','Attachment/deleteCategory')->option($options)->middleware($middleware)->name('merchant.attachment.category.delete');
 };

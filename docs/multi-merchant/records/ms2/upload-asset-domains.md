@@ -792,3 +792,14 @@ Root固定PHP8.2纯语法实际0，来源与完整native双流见仓库外 norma
 采用前原Run20261022134605842b51的正常close84原生和独立zero12原生已实际0、Root完整读回96回执，精确退役其4容器/1内部网/7专用卷并保47295原公件；原093内部Task6成功及评价图片POST175 HTTP503失败原样保留。新增诊断仅保控制器原有六键处理收据，不记录令牌/URL/原图或其它响应，不放行503；当前生产根因细节仍未知。
 
 专用持久private_root仍默认空且需显式配置，未据Source签实际上传/首次下单绑定/多角色读取/原图、SQL/Redis或副作用通过。新Source三端正式构建、正常API与H5/MP/APP/三宽浏览器、完整A/B/N1N2、旧数据历史权益归属和最终启用、真实金融/MS6与人工签收均待；旧093结果不改署本次提交。用户停止样本NOT RUN，Task9新商家客服关闭，目标为通用多商户，L2本地不推送部署或操作真实资金。
+
+
+## R97 平台site_image第一片真实生产与显式导入
+
+固定GET/POST marketplace/platform-assets、GET marketplace/platform-asset-categories；POST marketplace/products/<id>/import-platform-image。scope/current admin/权限及完整native29、类别10按Root原单一T4记录；purpose只服务端site_image。新公开库件STAGED，expires_at/bound_at/retired_at均NULL，created_at实际time，无自动过期/清理；复制生成目标实际商家的另一物理对象/native14，平台原29/state/完整bytes保持。source BIGINT id全链decimal string，不伪装商业att_id/mer。
+
+GET平台category_id=0列全部合格图片；POST=0写真实未分组。分页page1/limit18最多100/real_name，list返回独立platform_asset_id/src/satt_dir/name/real_name/category_id/state/byte_size/width/height/media_type，count实际同谓词；分类按原混合type树/lazy，id/pid是真实INT。import body仅platform_asset_id和目标商业pid，返回list[{att_id:真实新INT,src:真实新商业路径}]，不能直接把平台src选入商品。原商品transport身份/epoch/generation和最终image/SKU/HTML等保存门保持。
+
+import实际route同时标记同一marketplace_permission与legacy_product_write，当前scope仍同一真实对象；newleaf/旧GET file/file/实际productsave AND额外platform-assets-list。平台三leaf具名注册，仅按对应原grant向启用角色追加；原17商品菜单完整保持，第18 import仅同样向启用角色复制。无生产/角色默认全权、伪scope、假self或自动enabled。
+
+平台上传审计具名recordPlatformAssetUpload同PDO完整重选真实29，SystemLogServices新增有限row-return方法，原recordAdminLog八payload/bool行为完整保持。实际安装system_log为10列（id,admin_id,admin_name,path,page,method,ip,type,add_time,merchant_id），最后原default0不得丢弃；新方法仍只插原八payload，真实PK SELECT*核全10及原merchant_id0，未把该0当商业owner。全局generic record(null)写闭集保持。当前候选未做真实PHP语法、正常HTTP/数据库/存储/菜单/浏览器验证，provider1..7完整合同保留。其它平台purpose/绑定/退役/CRUD/商家平台导入、旧61分类、私有迁移和完整T4各原责任未被本片替代。

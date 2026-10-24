@@ -80,3 +80,8 @@ claim 支持明确 destination_pid，有序 stage_ids 原顺序与目标一起�
 
 
 Root后继检查点：17叶CLI整份PHP语法已在固定隔离PHP8.2中通过；check/apply/check/repeat、角色实际生效和接口业务仍未运行。本地联调状态见[商品媒体记录](../../docs/multi-merchant/records/ms4/product-typed-media-integration.md)。
+
+
+## R97 平台图片显式导入（第18项）
+
+保原17完整菜单/native IDs/marker/算法，仅追加POST marketplace/products/<id>/import-platform-image，unique_auth=marketplace-products-import-platform-image，旧兼容grant固定GET file/file。仅向status=1角色追加此新leaf；原17复制停用角色等历史行为不变，原rules前缀及其它列保持。运行时仍import leaf+旧file GET+真实product save三AND，另核platform-assets-list当前真实grant。scope来自实际双route标记而非构造，target0仍真实创建资格，正ID原writer实际owner。此Source未运行迁移，正常check/apply/check/repeat和权限实际生效单独待验。
