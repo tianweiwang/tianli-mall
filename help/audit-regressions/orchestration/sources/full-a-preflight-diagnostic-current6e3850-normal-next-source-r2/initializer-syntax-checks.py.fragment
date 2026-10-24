@@ -1,0 +1,80 @@
+    check(set(syntax)=={'schema','status','source_profile_PINS','initializer','actual_RESULT_pointer','actual_result','Root_readback','Root_profile_source_review',
+        'job_source_members','native_receipts','actual_public_job_files','App_business'} and syntax['schema']==1
+        and syntax['status']=='PASS_COMPLETE_CURRENT6E3850_INITIALIZER_PHP82_SYNTAX_ONLY' and syntax['App_business']=='NOT RUN','QUOTA_EXACT_NEW_INITIALIZER_SYNTAX_AUTHORITY_SCHEMA')
+    init_actual=decode(read(syntax['actual_RESULT_pointer']));init_root=decode(read(syntax['Root_readback']))
+    check(init_actual==syntax['actual_result'] and init_actual['status']=='PASS_CURRENT6E3850_COMPLETE_NORMAL_INITIALIZER_PHP82_SYNTAX_ONLY'
+        and init_actual['source_sha']==pub['source_sha'] and syntax['source_profile_PINS']==CURRENT_PREFLIGHT_DIAGNOSTIC_PROFILE_SOURCE
+        and compact(init_actual['candidate'])==compact(init_actual['copy'])==compact(rows['ms4-initialize.php'])
+        and read(init_actual['candidate'])==read(init_actual['copy'])==after9['ms4-initialize.php']
+        and init_actual['php_l_count_required']==1 and init_actual['container_native_exit']==0
+        and init_actual['ordinary_own_container_removed'] is init_actual['own_label_before_after_empty'] is init_actual['all_input_windows_ended'] is True
+        and init_actual['initializer_or_M_S_App_business_execution']=='NOT RUN' and init_actual['W_Val_Run_mutations']==0,'QUOTA_ACTUAL_NEW_WHOLE_INITIALIZER_ONE_LINT_NOT_EXECUTION')
+    check(syntax==decode(read(CURRENT_PREFLIGHT_DIAGNOSTIC_INITIALIZER_SYNTAX)) and syntax['source_profile_PINS']==CURRENT_PREFLIGHT_DIAGNOSTIC_PROFILE_SOURCE,'PREFLIGHT_EXACT_REAL_SYNTAX_AND_PROFILE_POINTERS')
+    init_result_keys={'status','started_ns','ended_ns','source_sha','candidate','copy','leaf_PINS','leaf_REPORT','candidate_source','job_code_PINS','pre_execution_authority','php_l_count_required','container_id','container_native_exit','operations','own_label_before_after_empty','ordinary_own_container_removed','all_input_windows_ended','initializer_or_M_S_App_business_execution','W_Val_Run_mutations'}
+    check(set(init_actual)==init_result_keys and init_actual['source_sha']=='6e3850fe210b2b1e99b2a33baa68123e34aefab6' and compact(init_actual['candidate'])=={'bytes':78955,'sha256':'136e5ddf48989c6bbf2746579fabed1b61b32f371026005a48ef98c585e56373'},'PREFLIGHT_REAL_RESULT20_THREE_SEAM_LEAF')
+    check(set(init_root)=={'schema','status','actual_RESULT','outer_terminal','native_exit','wait_returncode','namespace','native_operations','whole_php_l_count','all_complete_streams_PID_argv_time_hashes_verified','one_ordinary_own_CID_removed','before_after_selector_empty','fixed_image_none_network_readonly_nonroot_one_RO_candidate_bind','all_first_final_closed','read_windows','new_target_or_Docker_or_PHP_executed_by_reader','business_or_new_diagnostic_branch_pass','upload503_root_cause','W_Val_Run_mutations'},'PREFLIGHT_REAL_ROOT_ACTUAL_SCHEMA')
+    check(init_root['status']=='PASS_ROOT_COMPLETE_ACTUAL_NORMAL_INITIALIZER_PHP82_SYNTAX_ONLY' and init_root['actual_RESULT']==syntax['actual_RESULT_pointer']
+        and init_root['outer_terminal']==syntax['actual_public_job_files']['outer.terminal.json'] and init_root['native_exit']==init_root['wait_returncode']==0
+        and init_root['namespace']==38 and init_root['native_operations']==8 and init_root['whole_php_l_count']==1 and init_root['read_windows']==39
+        and init_root['all_complete_streams_PID_argv_time_hashes_verified'] is init_root['one_ordinary_own_CID_removed'] is init_root['before_after_selector_empty'] is init_root['fixed_image_none_network_readonly_nonroot_one_RO_candidate_bind'] is init_root['all_first_final_closed'] is True
+        and init_root['new_target_or_Docker_or_PHP_executed_by_reader'] is init_root['business_or_new_diagnostic_branch_pass'] is False and init_root['upload503_root_cause']=='UNPROVEN' and init_root['W_Val_Run_mutations']==0,'PREFLIGHT_ROOT_COMPLETE_REAL_INITIALIZER_RECEIPTS_NOT_BUSINESS')
+    init_profile_root=decode(read(syntax['Root_profile_source_review']));init_profile=decode(read(CURRENT_PREFLIGHT_DIAGNOSTIC_PROFILE_SOURCE))
+    check(compact(CURRENT_PREFLIGHT_DIAGNOSTIC_PROFILE_SOURCE)=={'bytes':7614,'sha256':'acb041715667c30572a19642e4e35758da27fb706c7e72588200edfa83b32054'} and len(init_profile['members'])==30 and len(init_profile['candidate'])==9,'PREFLIGHT_FIXED_COMPLETE_EXTERNAL_NINE_PROFILE_SOURCE')
+    for name,pin in init_profile['members'].items():read({'path':(Path(CURRENT_PREFLIGHT_DIAGNOSTIC_PROFILE_SOURCE['path']).parent/name).as_posix(),**pin})
+    check(init_profile_root['status']=='PASS_ROOT_COMPLETE_NINE_PROFILE_SOURCE_ONLY_NEW_INITIALIZER_SYNTAX_PENDING' and init_profile_root['finding_count']==0 and init_profile_root['findings']==[] and init_profile_root['Source_PINS']==CURRENT_PREFLIGHT_DIAGNOSTIC_PROFILE_SOURCE and init_profile_root['total_original_functions']==336
+        and init_profile_root['complete_nine_file_hash_DAG'] is init_profile_root['initializer_three_live_seams_and_independent_leaf_whole_join'] is init_profile_root['all_first_final_closed'] is True,'PREFLIGHT_TRUE_ROOT_COMPLETE_PROFILE_SOURCE_QUALIFICATION')
+    init_leaf=decode(read(init_actual['leaf_PINS']));init_leaf_report=decode(read(init_actual['leaf_REPORT']))
+    check(compact(init_actual['leaf_PINS'])=={'bytes':1271,'sha256':'ced2e6e383298a0a9c44509acee7cd5b0e5c844e1393f36a053fefe32595b88c'} and len(init_leaf['members'])==8 and init_leaf_report['candidate']==init_actual['candidate'] and init_leaf_report['actual_literal_seams']==3 and init_leaf_report['whole_normalized_body_identical'] is init_leaf_report['ordinary_forward_reverse_whole_bytes'] is True,'PREFLIGHT_ACTUAL_LEAF_SOURCE_NOT_OLD_PROFILE_SCHEMA')
+    for name,pin in init_leaf['members'].items():read({'path':(Path(init_actual['leaf_PINS']['path']).parent/name).as_posix(),**pin})
+    init_job=Path(init_actual['job_code_PINS']['path']).parent;init_code=decode(read(init_actual['job_code_PINS']));init_declared=decode(read(init_actual['candidate_source']))
+    init_final_pointer={'path':(init_job/'FINAL-PINS.json').as_posix(),'bytes':8375,'sha256':'ac1e239591ae98946ceec86fbc17a3201a1619bebc0dc06301a5b94e3103a82a'};init_final=decode(read(init_final_pointer))
+    check(len(init_final['files'])==55 and set(init_code['files'])=={'run.py','launch.py','DESIGN.md','CANDIDATE-SOURCE.json'} and all(init_declared[key]==init_actual[key] for key in ['candidate','copy','leaf_PINS','leaf_REPORT']),'PREFLIGHT_COMPLETE_JOB_SOURCE55_CODE_AND_LEAF_JOIN')
+    for name,pin in init_final['files'].items():read({'path':(init_job/name).as_posix(),**pin})
+    for name,pin in init_code['files'].items():read({'path':(init_job/name).as_posix(),**pin})
+    init_source_root_pointer={'path':(Path(syntax['Root_readback']['path']).parent/'SOURCE-REPORT.json').as_posix(),'bytes':1212,'sha256':'040ec8155825d3d12d45ff5bf74efaf0fa324b96574787334d8bde9b90a2bb3d'};init_source_root=decode(read(init_source_root_pointer))
+    init_source_peer=decode(read(init_source_root['peer_Source_report']))
+    check(init_source_root['status']=='PASS_ROOT_COMPLETE_NORMAL_INITIALIZER_SYNTAX_SOURCE_R2' and init_source_root['finding_count']==0 and init_source_root['findings']==[] and init_source_root['Source_FINAL_PINS']==init_final_pointer
+        and compact(init_source_root['peer_Source_report'])=={'bytes':6046,'sha256':'dce9fb90c56aa3f4d1d19623a7ca14e9f8841a7d0c4f09346a9e676937da9a5e'} and init_source_peer['findings']==[] and init_source_peer['Source_FINAL_PINS']==init_final_pointer,'PREFLIGHT_ROOT_AND_PEER_COMPLETE_SYNTAX_SOURCE_QUALIFICATION')
+    init_leaf_root=decode(read(init_declared['Root_Source_review']));check(init_leaf_root['finding_count']==0 and init_leaf_root['candidate']==init_actual['candidate'] and init_leaf_root['Source_PINS']==init_actual['leaf_PINS'],'PREFLIGHT_GENUINE_LEAF_ROOT_SOURCE_QUALIFICATION')
+    init_authority=init_actual['pre_execution_authority']
+    check(set(init_authority)=={'authorization','required_flag','original_tool_session','original_S_pid','original_S_created','original_S_terminal','context','reader_Source_PINS','reader_FINAL_PINS','reader_RESULT_INTERFACE','retirement','reader_native_wrappers','Root_full_report','peer_full_report','source_only_is_not_actual_admission','raw_child_streams_read'} and init_authority['authorization']=='EXPLICIT_ROOT_AFTER_REAL_S1_RETIREMENT_AND_FULL_ROOT_PEER'
+        and init_authority['original_tool_session']==17155 and init_authority['original_S_pid']==35944 and init_authority['source_only_is_not_actual_admission'] is True and init_authority['raw_child_streams_read'] is False
+        and compact(init_authority['context'])=={'bytes':12301,'sha256':'c56e609828ba3e51e63f69b83e4af49279bdaebee487116728c383e02dae7959'},'PREFLIGHT_COMPLETE_REAL_PRE_EXECUTION_AUTHORITY16')
+    for scope,field in [('retirement','terminal'),('reader_native_wrappers','terminal')]:
+        for role,row in init_authority[scope].items():
+            ended=decode(read(row[field]));check(ended['pid']==row['pid'] and ended['native_exit']==ended['wait_returncode']==0,'PREFLIGHT_REAL_CLOSE_ZERO_AND_FULL_READERS_NATIVE0')
+    for pointer in syntax['job_source_members']:read(pointer)
+    check(len(init_actual['operations'])==len(syntax['native_receipts'])==8 and len(syntax['actual_public_job_files'])==38,'QUOTA_FULL_SYNTAX_EIGHT_NATIVE_AND_38_PUBLIC_FILE_SET')
+    init_files={name:read(pointer) for name,pointer in syntax['actual_public_job_files'].items()}
+    names=['own-label-before','existing-fixed-image','create-one-owned-lint-container','attach-original-php-l','same-cid-native-wait','same-cid-native-terminal','ordinary-exact-owned-cid-rm','own-label-after']
+    init_streams=[]
+    for index,(op,receipt,name) in enumerate(zip(init_actual['operations'],syntax['native_receipts'],names),1):
+        stem=str(index).zfill(2)+'-'+name
+        check(op['stem']==stem and set(receipt)=={'created','terminal','stdout','stderr'},'QUOTA_SYNTAX_EXACT_OPERATION_ORDER_AND_FOUR_FILES')
+        made=decode(read(receipt['created']));ended=decode(read(receipt['terminal']));out=read(receipt['stdout']);err=read(receipt['stderr'])
+        check(made=={'pid':op['pid'],'argv':op['argv'],'started_ns':op['started_ns']} and ended==op and type(op['pid']) is int and op['pid']>0
+            and op['finished_ns']>=op['started_ns'] and op['native_exit']==op['wait_returncode']==0
+            and compact(receipt['stdout'])==op['stdout'] and compact(receipt['stderr'])==op['stderr'] and err==b'','QUOTA_SYNTAX_ORIGINAL_SAME_PID_ARGV_TIMES_EXIT_WAIT_AND_FULL_STREAMS')
+        for label,suffix in [('created','created.json'),('terminal','terminal.json'),('stdout','stdout'),('stderr','stderr')]:
+            check(receipt[label]==syntax['actual_public_job_files'][stem+'.'+suffix],'QUOTA_SYNTAX_FULL_PUBLIC_NAMESPACE_RECEIPT_JOIN')
+        init_streams.append(out)
+    init_cid=init_actual['container_id'];image='sha256:1099f749e2a38ec9453c6b820db8a78174514bc72d14edf5c203e13b82816e0a'
+    check(re.fullmatch('[a-f0-9]{64}',init_cid) is not None and init_streams[0]==init_streams[7]==b'' and init_streams[1]==(image+'\n').encode()
+        and init_streams[2]==init_streams[6]==(init_cid+'\n').encode() and init_streams[3]==b'No syntax errors detected in /candidate/ms4-initialize.php\n'
+        and init_streams[4]==b'0\n','QUOTA_SYNTAX_EXACT_IMAGE_ONE_WHOLE_PHP_STDOUT_WAIT_RM_AND_EMPTY_LABELS')
+    init_terminal=decode(init_streams[5])
+    check(init_terminal['id']==init_cid and init_terminal['image']==image and init_terminal['state']['Status']=='exited' and init_terminal['state']['Pid']==0
+        and init_terminal['state']['ExitCode']==0 and init_terminal['restart']==0 and init_terminal['network']=='none' and init_terminal['readonly'] is True
+        and init_terminal['user']=='65534:65534' and init_terminal['labels']['codex.ms4.syntax']=='current6e3850-normal-initializer-r1'
+        and len(init_terminal['mounts'])==1 and init_terminal['mounts'][0]['Type']=='bind' and init_terminal['mounts'][0]['RW'] is False
+        and init_terminal['mounts'][0]['Destination']=='/candidate','QUOTA_SYNTAX_SAME_CID_NO_RESTART_EXACT_ISOLATION_ONE_RO_BIND')
+    outer_made=decode(init_files['outer.created.json']);outer_end=decode(init_files['outer.terminal.json'])
+    check(set(outer_made)=={'pid','argv','started_ns'} and set(outer_end)=={'pid','argv','started_ns','native_exit','wait_returncode','finished_ns','stdout_bytes','stdout_sha256','stderr_bytes','stderr_sha256'} and all(outer_end[key]==value for key,value in outer_made.items())
+        and outer_made['pid']==outer_end['pid'] and outer_end['native_exit']==outer_end['wait_returncode']==0 and outer_made['started_ns']<outer_end['finished_ns']
+        and outer_made['argv']==['C:/Users/Vwang/AppData/Local/Programs/Python/Python314/python.exe','-B','-X','utf8',str(init_job/'run.py'),init_authority['required_flag']],'PREFLIGHT_REAL_OUTER_CREATED3_TERMINAL10_ARGV_TIMES_NATIVE0')
+    for stream in ['stdout','stderr']:
+        raw=init_files['outer.'+stream];check(len(raw)==outer_end[stream+'_bytes'] and hashlib.sha256(raw).hexdigest()==outer_end[stream+'_sha256'],'QUOTA_SYNTAX_OUTER_FULL_DOUBLE_STREAMS')
+    init_windows=decode(init_files['INPUTS.json'])
+    check(set(init_windows)=={'files','all_windows_ended','ended_ns'} and init_windows['all_windows_ended'] is True and len(init_windows['files'])==84,'PREFLIGHT_COMPLETE_ACTUAL84_INPUT_WINDOWS_NOT_ROOT39_READ_WINDOWS')
+    for window in init_windows['files']:
+        check(window['named_before']==window['named_after'] and window['fd_open']==window['fd_after'] and [window['named_before'][i] for i in [0,1,6,7]]==[window['fd_open'][i] for i in [0,1,6,7]] and window['named_birthtime_ns']==window['fd_birthtime_ns'],'PREFLIGHT_ACTUAL_ALL_ORIGINAL_NATIVE9_BIRTH_AND_EOF_SOURCE_WINDOWS')

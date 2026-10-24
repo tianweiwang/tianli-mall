@@ -1,5 +1,19 @@
 # 编排源码交接补充
 
+### 当前源码fa与最新实际业务边界（2026-10-24）
+
+当前产品源码为fa2088f9571bdc215be1ec05a59b840ed8b3943c，parent6e3850fe210b2b1e99b2a33baa68123e34aefab6。七份已审PHP精确采用、八完整PHP必要语法和本地提交已完成，feature/ms4-asset-consumers的明确远端ref已核同SHA；未部署。只改变Source-I/O和已审child INI合同，所有原full_source读取、TTL及业务断言保持。fa完整后继Source准入、物化与正常业务验证仍待完成；37/21至多是未来推导，不能拿本归档6e的36/20或语法通过代签。
+
+6e实际Run2026102321491304a643的M1,104项与双完整M读回通过；S2388和paid均退出1。唯一collector证明第二上传前同一600秒绝对deadline由BEFORE跨至AT_OR_AFTER，随后read_confirmation抛AuthUnavailableException并返回HTTP503/216字节。不能将共享158行、INI或介质写成唯一失败类型，也未测每个函数的独立耗时。原八卷实例close93、独立zero20及Root/peer完整实际读回均0，第十一份whole退役authority已封；收尾不回补交易成功，仍无A0。
+
+本次归档保留旧486份原件和原清单行，只新增6e的39份完整Source，合计525份、41包、118,925,175字节；没有以272份导出子集覆盖旧253份独有来源。当前归档绑定6e的完整18件、11件必要作者/模块、2份设计及8份选定同流程脚本，严格36字段/20步；原115成员namespace未全部交付，原32/16、33/17、34/18、35/19及旧准备包仍保留。离线verifier仅源码校验，本轮525份归档已实际通过离线源码校验：178份Python AST、134份JSON及五代完整模式。该结果仅为源码交接，不代表业务通过。
+
+源码交接分支codex/orchestration-handoff-20261023的业务树仍基于2e4；本轮补交范围为上述525份来源及相关文档；离线校验摘要见 `docs/multi-merchant/records/ms4/current-source-handoff-r6.json`。不要将fa功能分支已推送等同本归档已交付，也不要把6e归档视为fa运行准备完成。142MB whole11、117MB实际M、原Run/原生双流、ENV/private/actors/Cookies/上传/卷不进Git，runtime_ready=false。
+
+通用多商户商城继续复用原商品列表、SKU、规格、价格和库存。完整正常A、同源fresh B、三端UI20/20ACK/42帧及320/390/1440、原Task2三场景、独立H5九场景/27宽格/JPEG、四次真实表单上传与五原图reader/保存后读取、非空历史37步/四CLI、媒体/设备、真实支付退款回调对账结算、发布恢复与人工验收均保留未完成责任；停止样本NOT RUN，新商家客服默认关闭、原平台客服保留，只有BASE人工签收。
+
+## 历史正文（原时点完整保留，当前状态以上文为准）
+
 日期：2026-10-23。范围：补齐源码交接、离线完整性校验和真实状态记录，不构成业务或发布验收。
 
 本文保留各次交付时点记录。最新补充见文末“0c13 完整诊断后继源码”和 [R5 摘要](current-source-handoff-r5.json)；旧摘要保留各自冻结时点，不代表最新S终态。

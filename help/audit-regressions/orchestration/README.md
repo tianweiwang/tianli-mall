@@ -1,5 +1,17 @@
 # 多商户正常验证编排源码
 
+## 当前6e归档与fa源码交付（2026-10-24）
+
+本次归档保留旧486份原件和原清单行，只新增6e的39份完整Source，合计525份、41包、118,925,175字节；没有以272份导出子集覆盖旧253份独有来源。当前归档绑定6e的完整18件、11件必要作者/模块、2份设计及8份选定同流程脚本，严格36字段/20步；原115成员namespace未全部交付，原32/16、33/17、34/18、35/19及旧准备包仍保留。离线verifier仅源码校验，本轮525份归档已实际通过离线源码校验：178份Python AST、134份JSON及五代完整模式。该结果仅为源码交接，不代表业务通过。
+
+6e实际Run2026102321491304a643的M1,104项与双完整M读回通过；S2388和paid均退出1。唯一collector证明第二上传前同一600秒绝对deadline由BEFORE跨至AT_OR_AFTER，随后read_confirmation抛AuthUnavailableException并返回HTTP503/216字节。不能将共享158行、INI或介质写成唯一失败类型，也未测每个函数的独立耗时。原八卷实例close93、独立zero20及Root/peer完整实际读回均0，第十一份whole退役authority已封；收尾不回补交易成功，仍无A0。
+
+当前产品源码为fa2088f9571bdc215be1ec05a59b840ed8b3943c，parent6e3850fe210b2b1e99b2a33baa68123e34aefab6。七份已审PHP精确采用、八完整PHP必要语法和本地提交已完成，feature/ms4-asset-consumers的明确远端ref已核同SHA；未部署。只改变Source-I/O和已审child INI合同，所有原full_source读取、TTL及业务断言保持。fa完整后继Source准入、物化与正常业务验证仍待完成；37/21至多是未来推导，不能拿本归档6e的36/20或语法通过代签。
+
+源码交接分支codex/orchestration-handoff-20261023的业务树仍基于2e4；本轮补交范围为上述525份来源及相关文档；离线校验摘要见 `docs/multi-merchant/records/ms4/current-source-handoff-r6.json`。不要将fa功能分支已推送等同本归档已交付，也不要把6e归档视为fa运行准备完成。142MB whole11、117MB实际M、原Run/原生双流、ENV/private/actors/Cookies/上传/卷不进Git，runtime_ready=false。
+
+## 历史交接正文（以下保留原时点）
+
 本目录补齐此前只保存在原机仓库外 `ms4-worker-normal-source-preparation-r1` 中的编排程序。`sources/` 按精确允许清单保存原文件的完整字节；[source-manifest.json](source-manifest.json) 记录逐文件来源相对路径、长度、SHA-256 和角色。
 
 这是**源码归档和恢复资料**。包含旧完整编排、后续失败版本和修正后的完整编排源码。本目录不宣称可直接跨机器运行或业务验证通过。最新源码交接分支为 `codex/orchestration-handoff-20261023`，业务修复分支为 `feature/ms4-asset-consumers`；最早的 `codex/audit-base` 链接不包含本次交接。

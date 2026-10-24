@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "r1_Source_PINS": {
+    "path": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/full-a-preflight-diagnostic-current6e3850-normal-next-source-r1/PINS.json",
+    "bytes": 133944,
+    "sha256": "78f5fe3a4d87887aed9ed94fe68d0d4eefd5e1740f0a73006e4f91f6099940be"
+  },
+  "outer_name_slice": {
+    "before": "name=lines[index][6:].rstrip('\\r\\n')",
+    "after": "name=lines[index][len('--- '+oldlabel+'/'):].rstrip('\\r\\n')"
+  },
+  "three_call_changes": [
+    {
+      "before": "**compact(packet_members['REVERSE.diff'])}))==before4",
+      "after": "**compact(packet_members['REVERSE.diff'])}),'b','a')==before4"
+    },
+    {
+      "before": "**profilepins['members']['FORWARD.diff']}))==after9",
+      "after": "**profilepins['members']['FORWARD.diff']}),'before','candidate')==after9"
+    },
+    {
+      "before": "**profilepins['members']['REVERSE.diff']}))==before9",
+      "after": "**profilepins['members']['REVERSE.diff']}),'before','candidate')==before9"
+    }
+  ],
+  "callback_M_S_business_execution": false,
+  "new_Git_or_PHP_or_metadata_task_execution": false
+}

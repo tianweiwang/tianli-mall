@@ -1,0 +1,148 @@
+    prior_source=read(HISTORICAL_NINETEEN_M_SOURCE);prior_defs=definitions(prior_source);prior_literals=constants(prior_source)
+    check({'bytes':len(prior_defs['source_authority'].encode()),'sha256':hashlib.sha256(prior_defs['source_authority'].encode()).hexdigest()}==HISTORICAL_NINETEEN_AUTHORITY_SOURCE
+        and {key:prior_literals[key] for key in HISTORICAL_NINETEEN_CONSTANTS}==HISTORICAL_NINETEEN_CONSTANTS,'PREFLIGHT_COMPLETE_NINETEEN_BODY_AND_ALL_USED_LITERALS')
+    oldpub=decode(read(HISTORICAL_NINETEEN_PUBLICATION));prior_context=oldpub['finite_contexts']
+__HISTORICAL_VALIDATOR__
+    historical=historical_nineteen(oldpub,checked,check)
+    context=pub['finite_contexts']
+    overlay={'commit_chain','committed_changes','committed_files','new_tracked_paths','actual_complete_expected_tracked_count','source_counts','current_composite_customer_form_source','source_authoring_qualification_scope','current_published_source_scope'}
+    extra={'historical_nineteenth_publication','current_preflight_diagnostic_source_history','current_preflight_diagnostic_delta','current_preflight_diagnostic_profile_source','current_preflight_diagnostic_initializer_syntax','current_175f_paid_producer_failure_retirement'}
+    check(set(context)==set(prior_context)|extra and all(context[key]==value for key,value in prior_context.items() if key not in overlay),'PREFLIGHT_COMPLETE_OLD_CONTEXT_ALL_NINE_RETIREMENTS_PRESERVED')
+    check(context['historical_nineteenth_publication']==HISTORICAL_NINETEEN_PUBLICATION and context['current_preflight_diagnostic_source_history']==CURRENT_PREFLIGHT_DIAGNOSTIC_SOURCE_HISTORY
+        and context['current_preflight_diagnostic_delta']==CURRENT_PREFLIGHT_DIAGNOSTIC_DELTA and context['current_preflight_diagnostic_profile_source']==CURRENT_PREFLIGHT_DIAGNOSTIC_PROFILE_SOURCE
+        and context['current_preflight_diagnostic_initializer_syntax']==CURRENT_PREFLIGHT_DIAGNOSTIC_INITIALIZER_SYNTAX and context['current_175f_paid_producer_failure_retirement']==CURRENT_175F_PAID_PRODUCER_FAILURE_RETIREMENT,'PREFLIGHT_CURRENT_EXACT_AUTHORITY_POINTERS')
+    chain=context['commit_chain'];check(chain==COMMIT_CHAIN and chain[:-1]==historical['commit_chain'] and len(chain)==20 and len(chain)==len(historical['commit_chain'])+1,'PREFLIGHT_COMPLETE_NINETEEN_PLUS_REAL_TWENTIETH_STAGE')
+    stage=decode(read(CURRENT_PREFLIGHT_DIAGNOSTIC_SOURCE_HISTORY));step=chain[-1]
+    check(step=={key:stage[key] for key in ['kind','source_sha','parent','files']}|{'commit':CURRENT_PREFLIGHT_DIAGNOSTIC_SOURCE_HISTORY}
+        and step['source_sha']==pub['source_sha']=='6e3850fe210b2b1e99b2a33baa68123e34aefab6' and step['parent']==pub['parent']==oldpub['source_sha']=='175f3cd6183894185656a2974579e1be39eed7a7','PREFLIGHT_ACTUAL_COMMIT_PARENT')
+    adoption=decode(read(stage['actual_adoption']));commit=decode(read(stage['actual_commit']));push=decode(read(stage['actual_push']))
+    expected_paths=sorted(adoption['files'])
+    check(expected_paths==['crmeb/app/services/marketplace/assets/CustomerOrderFormAssetServices.php','docs/multi-merchant/09-plan-ms4-ms6.md','docs/multi-merchant/CURRENT-STATUS.md','docs/multi-merchant/records/ms4/normal-http-response-diagnostic.md','help/audit-regressions/isolated/lib/ms4-customer-form-normal.php','help/audit-regressions/isolated/ms5-paid-consumer-normal.php','help/audit-regressions/orchestration/collect_paid_failure.py'],'PREFLIGHT_EXACT_SEVEN_EXISTING_MODIFIED_PATHS')
+    check(commit['head']==push['head']==pub['source_sha'] and adoption['before_Head']==commit['parent']==push['parent']==pub['parent'] and commit['paths']==expected_paths
+        and commit['all_committed_blob_pins_equal_adopted'] is True and push['W']['clean'] is push['Val']['clean'] is True
+        and push['runtime_or_business_acceptance'] is push['deployment_or_real_funds'] is False,'PREFLIGHT_ACTUAL_SCOPED_COMMIT_ORDINARY_PUSH_BOTH_CLEAN')
+    git_raw={}
+    for label,receipt in stage['git_operations'].items():
+        made=decode(read(receipt['created']));ended=decode(read(receipt['terminal']));out=read(receipt['stdout']);err=read(receipt['stderr'])
+        check(made['pid']==ended['pid'] and made['argv']==ended['argv'] and made['started_ns']==ended['started_ns'] and ended['finished_ns']>=made['started_ns']
+            and ended['native_exit']==ended['wait_returncode']==0 and err==b'' and compact(ended['stdout'])==compact(receipt['stdout']) and compact(ended['stderr'])==compact(receipt['stderr']),'PREFLIGHT_COMPLETE_REAL_READONLY_GIT_NATIVE_RECEIPTS')
+        check(made['argv'][:5]==['git','-c','safe.directory='+MAIN_SOURCE,'-C',MAIN_SOURCE],'PREFLIGHT_ACTUAL_READONLY_GIT_REPO')
+        git_raw[label]=(made['argv'][5:],out)
+    expected_git={'head-before':['rev-parse','HEAD'],'clean-before':['status','--porcelain=v1','--untracked-files=all'],'parent':['rev-list','--parents','-n','1',pub['source_sha']],
+        'commit-object':['cat-file','-p',pub['source_sha']],'changed-paths':['diff-tree','--no-commit-id','--name-only','-r',pub['source_sha']],
+        'name-status':['diff-tree','--no-commit-id','--name-status','-r',pub['source_sha']],'head-after':['rev-parse','HEAD'],'clean-after':['status','--porcelain=v1','--untracked-files=all']}
+    check(git_raw['head-before'][1]==git_raw['head-after'][1]==(pub['source_sha']+'\n').encode() and git_raw['clean-before'][1]==git_raw['clean-after'][1]==b''
+        and git_raw['parent'][1]==(pub['source_sha']+' '+pub['parent']+'\n').encode() and git_raw['commit-object'][1].splitlines()[1]==('parent '+pub['parent']).encode()
+        and git_raw['changed-paths'][1].decode().splitlines()==expected_paths and git_raw['name-status'][1].decode().splitlines()==['M\t'+name for name in expected_paths],'PREFLIGHT_REAL_FULL_COMMIT_METADATA')
+    expected=dict(historical['all']);blobs={};old_blobs={}
+    check([row['path'] for row in step['files']]==expected_paths,'PREFLIGHT_REAL_CHANGED_NAMESPACE')
+    for index,row in enumerate(step['files'],1):
+        name=row['path'];stem='member-'+str(index);expected_git[stem+'-after']=['show',pub['source_sha']+':'+name];expected_git[stem+'-before']=['show',pub['parent']+':'+name]
+        after=git_raw[stem+'-after'][1];before=git_raw[stem+'-before'][1]
+        check(name in expected and row['before']==compact(expected[name]) and adoption['files'][name]=={'before':row['before'],'after':row['after']}
+            and {'bytes':len(after),'sha256':hashlib.sha256(after).hexdigest()}==row['after'] and {'bytes':len(before),'sha256':hashlib.sha256(before).hexdigest()}==row['before'],'PREFLIGHT_REAL_SEVEN_WHOLE_BEFORE_AFTER_BLOBS')
+        expected[name]={'path':name,**row['after']};blobs[name]=after;old_blobs[name]=before
+    check(set(git_raw)==set(expected_git) and all(git_raw[key][0]==value for key,value in expected_git.items()) and stage['native_count']==len(expected_git)==22,'PREFLIGHT_SOURCE_EXPORT22_NOT_M_BUDGET')
+    expected=dict(sorted(expected.items()));changes={row['path']:dict(row) for row in prior_context['committed_changes']}
+    for row in step['files']:
+        name=row['path']
+        if name in changes:changes[name]['after']=row['after']
+        else:changes[name]=row
+    changes=[changes[name] for name in sorted(changes)];committed=[expected[row['path']] for row in changes]
+    requirements=sorted(set(HISTORICAL_NINETEEN_CONSTANTS['SOURCE_REQUIREMENT_PATHS'])|set(expected_paths));additions=HISTORICAL_NINETEEN_CONSTANTS['NEW_TRACKED_PATHS']
+    check(context['committed_changes']==changes and context['committed_files']==committed and COMMITTED_PATHS==[row['path'] for row in changes]
+        and NEW_TRACKED_PATHS==context['new_tracked_paths']==additions and SOURCE_REQUIREMENT_PATHS==requirements
+        and pub['repository_Source_requirements']==[expected[name] for name in requirements] and context['actual_complete_expected_tracked_count']==len(expected)==15748
+        and len(changes)==307 and len(requirements)==313 and len(additions)==262,'PREFLIGHT_DERIVED_CUMULATIVE_FULL_NAMESPACE_NO_FALSE_ADDITIONS')
+    delta=decode(read(CURRENT_PREFLIGHT_DIAGNOSTIC_DELTA))
+    check(delta['scope']=='ACTUAL6E3850_FOUR_BOUNDED_PREFLIGHT_DIAGNOSTIC_FILES_OVER_GIT175F_NOT_BUSINESS_ACCEPTANCE' and delta['source_sha']==pub['source_sha'] and delta['parent']==pub['parent']
+        and delta['actual_adoption']==stage['actual_adoption'] and delta['actual_commit']==stage['actual_commit'] and delta['actual_push_W_Val']==stage['actual_push']
+        and delta['seven_git_paths']=={row['path']:{'before':row['before'],'after':row['after']} for row in step['files']}
+        and delta['unchanged_other_CU7_members']==5 and delta['new_CU7_members']==0 and delta['initializer_three_active_identity_seams']==3
+        and delta['all_original_assertions_and_business']=='PRESERVED' and delta['new_normal_M_S_A0']=='NOT RUN','PREFLIGHT_COMPLETE_ADOPTED_SOURCE_DELTA')
+    packet=decode(read(delta['diagnostic_Source_PINS']));packet_root=Path(delta['diagnostic_Source_PINS']['path']).parent
+    check(packet['status']=='SOURCE_ONLY_NOT_EXECUTED_NOT_ADOPTED' and len(packet['members'])==17,'PREFLIGHT_ORIGINAL_DIAGNOSTIC_SOURCE_PACKET')
+    packet_members={row['path']:row for row in packet['members']}
+    for row in packet['members']:read({'path':(packet_root/row['path']).as_posix(),**compact(row)})
+    changed_php=['crmeb/app/services/marketplace/assets/CustomerOrderFormAssetServices.php','help/audit-regressions/isolated/lib/ms4-customer-form-normal.php','help/audit-regressions/isolated/ms5-paid-consumer-normal.php']
+    candidate_paths=changed_php+['help/audit-regressions/orchestration/collect_paid_failure.py']
+    before4={name:old_blobs[name] for name in candidate_paths};after4={name:blobs[name] for name in candidate_paths}
+    for name in candidate_paths:
+        check(read({'path':(packet_root/'candidate'/name).as_posix(),**compact(packet_members['candidate/'+name])})==blobs[name]
+            and read({'path':(packet_root/'before'/name).as_posix(),**compact(packet_members['before/'+name])})==old_blobs[name],'PREFLIGHT_ADOPTED_FOUR_DIAGNOSTIC_FULL_BYTES')
+    check(patch_apply(before4,read({'path':(packet_root/'FORWARD.diff').as_posix(),**compact(packet_members['FORWARD.diff'])}))==after4
+        and patch_apply(after4,read({'path':(packet_root/'REVERSE.diff').as_posix(),**compact(packet_members['REVERSE.diff'])}),'b','a')==before4,'PREFLIGHT_COMPLETE_FOUR_ORDINARY_DIFF_BOTH_DIRECTIONS')
+    diagnostic_root=decode(read(delta['diagnostic_Root_Source_review']))
+    check(diagnostic_root['status']=='PASS_ROOT_COMPLETE_SOURCE_ONLY_NOT_RUNTIME_ADMITTED' and diagnostic_root['finding_count']==0 and diagnostic_root['PINS']==delta['diagnostic_Source_PINS'],'PREFLIGHT_ACTUAL_ROOT_DIAGNOSTIC_SOURCE_REVIEW')
+    php_syntax=decode(read(delta['three_complete_diagnostic_PHP_actual_syntax']))
+    check(php_syntax['status']=='PASS_CURRENT175F_THREE_PREFLIGHT_DIAGNOSTIC_PHP82_SYNTAX_ONLY' and len(php_syntax)==20 and len(php_syntax['sources'])==3
+        and {row['repository_relative']:compact(row['original_candidate']) for row in php_syntax['sources']}=={name:compact(expected[name]) for name in changed_php}
+        and php_syntax['php_l_count_required']==3 and php_syntax['container_native_exit']==0 and len(php_syntax['operations'])==8
+        and php_syntax['own_label_before_after_empty'] is php_syntax['ordinary_own_container_removed'] is php_syntax['all_input_windows_ended'] is True
+        and php_syntax['candidate_entry_or_manifest_execution']==php_syntax['App_or_business']==php_syntax['M_A_B_postA_or_business_acceptance']=='NOT RUN' and php_syntax['W_Val_Run_mutations']==0,'PREFLIGHT_REAL_THREE_PHP_SYNTAX_NO_BUSINESS')
+    for op in php_syntax['operations']:check(op['native_exit']==op['wait_returncode']==0,'PREFLIGHT_ACTUAL_DIAGNOSTIC_SYNTAX_ALL_NATIVE_ZERO')
+    profilepins=decode(read(CURRENT_PREFLIGHT_DIAGNOSTIC_PROFILE_SOURCE));profile_root=Path(CURRENT_PREFLIGHT_DIAGNOSTIC_PROFILE_SOURCE['path']).parent
+    for name,pin in profilepins['members'].items():read({'path':(profile_root/name).as_posix(),**pin})
+    manifest=decode(read({'path':(profile_root/'MANIFEST.json').as_posix(),**profilepins['members']['MANIFEST.json']}))
+    profile_review=decode(read(CURRENT_PREFLIGHT_DIAGNOSTIC_PROFILE_ROOT_REVIEW))
+    check(profile_review['status']=='PASS_ROOT_COMPLETE_NINE_PROFILE_SOURCE_ONLY_NEW_INITIALIZER_SYNTAX_PENDING' and profile_review['finding_count']==0 and profile_review['Source_PINS']==CURRENT_PREFLIGHT_DIAGNOSTIC_PROFILE_SOURCE,'PREFLIGHT_TRUE_COMPLETE_PROFILE_ROOT_SOURCE_REVIEW')
+    names=[row['path'] for row in oldpub['selected9']];check(len(names)==9 and manifest['predecessor_PROFILE_PINS']==HISTORICAL_NINETEEN_PROFILE_PINS and manifest['source_delta']==CURRENT_PREFLIGHT_DIAGNOSTIC_DELTA,'PREFLIGHT_COMPLETE_NINE_PREDECESSOR_DELTA')
+    before9={};after9={};oldrows={row['path']:row for row in oldpub['selected9']};rows={row['path']:row for row in pub['selected9']}
+    for name in names:
+        before9[name]=read({'path':(profile_root/'before'/name).as_posix(),**manifest['before'][name]});after9[name]=read({'path':(profile_root/'candidate'/name).as_posix(),**manifest['candidate'][name]})
+        check(compact(oldrows[name])==manifest['before'][name] and rows[name]=={'path':name,**manifest['candidate'][name]},'PREFLIGHT_FULL_NINE_PUBLISHED_BYTES')
+    check(pub['selected9']==manifest['selected9'] and profilepins['candidate']==manifest['candidate'],'PREFLIGHT_FULL_NINE_SOURCE_CANDIDATES')
+    check(patch_apply(before9,read({'path':(profile_root/'FORWARD.diff').as_posix(),**profilepins['members']['FORWARD.diff']}),'before','candidate')==after9
+        and patch_apply(after9,read({'path':(profile_root/'REVERSE.diff').as_posix(),**profilepins['members']['REVERSE.diff']}),'before','candidate')==before9,'PREFLIGHT_FULL_NINE_ORDINARY_DIFF_BOTH_DIRECTIONS')
+    old_interface=decode(before9['interface-v1.json']);interface=decode(after9['interface-v1.json']);old_seven=old_interface['customer_form_current_profile']['php_sources']
+    cu_changed=['help/audit-regressions/isolated/lib/ms4-customer-form-normal.php','help/audit-regressions/isolated/ms5-paid-consumer-normal.php']
+    seven=[expected[row['path']] if row['path'] in cu_changed else row for row in old_seven]
+    check(old_seven==manifest['old_seven_php'] and seven==manifest['current_seven_php'] and len(seven)==7 and sum(a!=b for a,b in zip(old_seven,seven))==2 and all(row==expected[row['path']] for row in seven),'PREFLIGHT_TWO_CURRENT_CU7_FIVE_UNCHANGED_NO_NEW_MEMBER')
+    current_interface=interface['customer_form_current_profile'];new_node=current_interface.pop('preflight_diagnostic_current_source_successor')
+    check(new_node=={'schema':1,'scope':'ACTUAL6E3850_TWO_CURRENT_CU7_AND_THREE_INITIALIZER_IDENTITY_SEAMS_OVER_COMPLETE175F_PROFILE','source_sha':pub['source_sha'],'predecessor_source_sha':pub['parent'],'source_delta':CURRENT_PREFLIGHT_DIAGNOSTIC_DELTA,'unchanged_other_PHP_members':5,'normal_business':'NOT RUN'},'PREFLIGHT_EXACT_NEW_INTERFACE_NODE')
+    current_interface['php_sources']=old_seven;check(interface==old_interface,'PREFLIGHT_COMPLETE_OTHER_INTERFACE_AND_DONOR_NODES_UNCHANGED')
+    tuples=manifest['initializer_tuples'];check(len(tuples)==3,'PREFLIGHT_THREE_ACTIVE_INITIALIZER_IDENTITY_SEAMS')
+    restored=after9['ms4-initialize.php']
+    for row in reversed(tuples):
+        check(set(row)=={'before','after'} and restored.count(row['after'].encode())==1,'PREFLIGHT_EXACT_INITIALIZER_TUPLE_ONCE')
+        restored=restored.replace(row['after'].encode(),row['before'].encode(),1)
+    check(restored==before9['ms4-initialize.php'] and compact(manifest['initializer_independent_leaf'])==compact(rows['ms4-initialize.php'])
+        and read(manifest['initializer_independent_leaf'])==after9['ms4-initialize.php'] and manifest['initializer_independent_PINS']==delta['independent_initializer_Source_PINS'],'PREFLIGHT_WHOLE_INITIALIZER_THREE_SEAMS_FULL_INVERSE')
+    counts={}
+    for name in ['ms4-host.py','normal-close-ms4-fulfillment.py','verify-zero-ms4-fulfillment.py']:
+        check(definitions(before9[name])==definitions(after9[name]),'PREFLIGHT_WHOLE_ALL_PROFILE_FUNCTION_BODIES');counts[name]=len(definitions(before9[name]))
+    check(counts==manifest['all_original_Python_definitions_whole_identical'] and sum(counts.values())==336 and manifest['module_complements_and_all_other_constants_equal'] is True,'PREFLIGHT_REAL_COMPLETE_FUNCTION_COUNTS_AND_DECLARED_COMPLEMENTS')
+    for name in ['README.md','compose.yml','seed-source-inverse.json']:check(before9[name]==after9[name],'PREFLIGHT_THREE_OTHER_WHOLE_PROFILE_FILES_UNCHANGED')
+    for name in ['ms4-host.py','verify-zero-ms4-fulfillment.py']:
+        a=constants(before9[name]);z=constants(after9[name]);paid=next(row for row in seven if row['path']==cu_changed[1])
+        check(list(a['CUSTOMER_FORM_SOURCE_FILES'])==old_seven and list(z['CUSTOMER_FORM_SOURCE_FILES'])==seven and z['PAID_ENTRY_BYTES']==paid['bytes'] and z['PAID_ENTRY_SHA256']==paid['sha256'],'PREFLIGHT_TWO_CU7_AND_INDEPENDENT_ACTIVE_PAID_CONSTANTS')
+    for name,key,target in [('ms4-host.py','INTERFACE_SHA256','interface-v1.json'),('normal-close-ms4-fulfillment.py','HOST_SHA256','ms4-host.py'),('verify-zero-ms4-fulfillment.py','INTERFACE_SHA256','interface-v1.json'),('verify-zero-ms4-fulfillment.py','HOST_SHA256','ms4-host.py'),('verify-zero-ms4-fulfillment.py','CLOSE_SHA256','normal-close-ms4-fulfillment.py')]:
+        check(constants(after9[name])[key]==rows[target]['sha256'],'PREFLIGHT_ALL_FIVE_REAL_HASH_EDGES')
+    check(constants(after9['verify-zero-ms4-fulfillment.py'])['INTERFACE_BYTES']==rows['interface-v1.json']['bytes'],'PREFLIGHT_REAL_INTERFACE_BYTES')
+    old_derived=decode(before9['source-derivation.json']);derived=decode(after9['source-derivation.json']);node=derived.pop('actual6e3850_preflight_diagnostic_profile_refresh')
+    check(node['predecessor_publication']==HISTORICAL_NINETEEN_PUBLICATION and node['source_delta']==CURRENT_PREFLIGHT_DIAGNOSTIC_DELTA and node['current_seven_PHP']==seven
+        and node['initializer_tuple_changes']==tuples and derived['current_nonself_artifacts']==[row for row in pub['selected9'] if row['path']!='source-derivation.json'],'PREFLIGHT_CURRENT_DERIVATION_ALL_EIGHT_NONSELF')
+    derived['current_nonself_artifacts']=old_derived['current_nonself_artifacts'];check(derived==old_derived,'PREFLIGHT_ALL_HISTORICAL_DERIVATION_NODES_RETAINED')
+    composite=context['current_composite_customer_form_source']
+    check(composite==CURRENT_COMPOSITE_CUSTOMER_FORM_SOURCE and composite['source_sha']==pub['source_sha'] and composite['profile_PINS']==CURRENT_PREFLIGHT_DIAGNOSTIC_PROFILE_SOURCE
+        and composite['predecessor_publication']==HISTORICAL_NINETEEN_PUBLICATION and composite['predecessor_composite']==prior_context['current_composite_customer_form_source']
+        and composite['source_delta']==CURRENT_PREFLIGHT_DIAGNOSTIC_DELTA and composite['php_sources']==seven,'PREFLIGHT_WHOLE_COMPOSITE_HISTORY_AND_CURRENT_SOURCE')
+    groups={prefix:[expected[row['path']] for row in original_rows] for prefix,original_rows in historical['groups'].items()};combined={}
+    for prefix,group in groups.items():
+        for row in group:check(row['path'] not in combined or combined[row['path']]==row,'PREFLIGHT_SOURCE_GROUP_OVERLAPS_IDENTICAL');combined[row['path']]=row
+    check(context['source_counts']=={prefix:len(group) for prefix,group in groups.items()} and len(combined)==len(historical['groups']['worker'])==10886,'PREFLIGHT_ALL_SIX_GROUPS_UNREDUCED')
+    syntax=decode(read(CURRENT_PREFLIGHT_DIAGNOSTIC_INITIALIZER_SYNTAX));check(syntax['source_profile_PINS']==CURRENT_PREFLIGHT_DIAGNOSTIC_PROFILE_SOURCE and compact(syntax['initializer'])==compact(rows['ms4-initialize.php']) and read(syntax['initializer'])==after9['ms4-initialize.php'],'PREFLIGHT_NEW_INITIALIZER_ACTUAL_SYNTAX_SAME_WHOLE_BYTES')
+__INITIALIZER_SYNTAX_CHECKS__
+    tenth_root_source=decode(read(CURRENT_TENTH_ROOT_SOURCE_QUALIFICATION));tenth_peer_source=decode(read(CURRENT_TENTH_PEER_SOURCE_QUALIFICATION))
+    check(tenth_root_source['status']=='PASS_ROOT_TENTH_AUTHORITY_R2_AND_CONSUMER_R3_SOURCE_ONLY' and tenth_root_source['finding_count']==0 and tenth_root_source['authority']==CURRENT_175F_PAID_PRODUCER_FAILURE_RETIREMENT
+        and tenth_peer_source['status']=='PASS_INDEPENDENT_TENTH_AUTHORITY_R2_CONSUMER_R3_SOURCE_ONLY_NOT_RUNTIME_ADMITTED' and tenth_peer_source['findings']==[] and tenth_peer_source['authority']==CURRENT_175F_PAID_PRODUCER_FAILURE_RETIREMENT,'PREFLIGHT_REAL_TENTH_AUTHORITY_ROOT_AND_PEER_SOURCE_QUALIFICATION')
+    tenth_metadata_actual=decode(read(CURRENT_TENTH_METADATA_ACTUAL_ROOT))
+    check(tenth_metadata_actual['status']=='PASS_ROOT_COMPLETE_ACTUAL_TENTH_PUBLIC_METADATA_READBACK' and tenth_metadata_actual['actual_native_exit']==0
+        and tenth_metadata_actual['complete_public_files']==4386 and tenth_metadata_actual['complete_public_bytes']==282154286 and tenth_metadata_actual['successful_original_checks']==2210320
+        and tenth_metadata_actual['finite_windows']==4391 and tenth_metadata_actual['complete_first_final_windows_and_all_actual_inputs_pins'] is tenth_metadata_actual['original_nine_whole_objects_and_encoded_pins_checked'] is True
+        and tenth_metadata_actual['ENV2_raw_M_S_show771_unknown_body_reads']==0 and tenth_metadata_actual['native_or_M_S_or_App_business_invoked'] is tenth_metadata_actual['A0'] is False,'PREFLIGHT_TRUE_ACTUAL_TENTH_METADATA_QUALIFICATION_NOT_BUSINESS')
+__CURRENT_RETIREMENT_CHECKS__
+    protected={}
+    for namespace in historical['protected_namespaces']:
+        paths=[name for name in expected if name.startswith(namespace+'/')];protected[namespace]={'count':len(paths),'paths_sha256':hashlib.sha256(('\n'.join(paths)+'\n').encode()).hexdigest()}
+    return {**historical,'all':expected,'groups':groups,'committed':committed,'commit_chain':chain,'protected_namespaces':protected,'current_175f_paid_producer_failure_retirement':tenth}

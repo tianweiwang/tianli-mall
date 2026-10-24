@@ -3,42 +3,55 @@
   "runtime_ready": false,
   "scope": "source recovery, not a portable business-validation runtime",
   "last_executed_pipeline": {
-    "package": "full-a-normal-http-diagnostic-next-source-r1",
-    "source_commit": "0c13c57ba1ec4bf15ea9240601a5d6361e986ce8",
-    "outcome": "S_NOT_TERMINAL_AT_SNAPSHOT_FULL_BUSINESS_NOT_ACCEPTED",
-    "original_resources_closed_and_independently_verified": false
+    "package": "full-a-preflight-diagnostic-current6e3850-normal-next-source-r2",
+    "source_commit": "6e3850fe210b2b1e99b2a33baa68123e34aefab6",
+    "outcome": "FAILED_AT_PAID_PRODUCER",
+    "original_S_session": 23097,
+    "original_S_pid": 2388,
+    "state_observed_ns": 1792800012677784900,
+    "original_resources_closed_and_independently_verified": true,
+    "S_native_exit": 1,
+    "paid_native_exit": 1,
+    "normal_close_native_zero": 93,
+    "independent_zero_native_zero": 20,
+    "Root_and_peer_complete_actual_readbacks": "NATIVE_WAIT_ZERO",
+    "eleventh_whole_authority_sealed": true,
+    "business_acceptance": "INCOMPLETE",
+    "A0": false
   },
   "last_materialization_attempt": {
-    "package": "full-a-normal-http-diagnostic-next-source-r1",
-    "source_commit": "0c13c57ba1ec4bf15ea9240601a5d6361e986ce8",
-    "outcome": "ACTUAL_MATERIALIZATION_PASS_ONLY",
-    "native_operations": 1060,
-    "native_zero": 1060,
-    "M_RESULT_fields": 33,
-    "business_acceptance": "INCOMPLETE"
+    "package": "full-a-preflight-diagnostic-current6e3850-normal-next-source-r2",
+    "source_commit": "6e3850fe210b2b1e99b2a33baa68123e34aefab6",
+    "outcome": "COMPLETED_CURRENT_NORMAL_MATERIALIZATION",
+    "native_operations": 1104,
+    "Root_materialization_readback_not_archived": {
+      "bytes": 3565,
+      "sha256": "93ae4947412f5972906f70d27f0d3affedceeb49716e6cc8274c13b2c4bddbae"
+    }
   },
   "current_source": {
-    "package": "full-a-quota-wire-current175f-normal-next-source-r1",
-    "source_commit": "175f3cd6183894185656a2974579e1be39eed7a7",
+    "package": "full-a-preflight-diagnostic-current6e3850-normal-next-source-r2",
+    "source_commit": "6e3850fe210b2b1e99b2a33baa68123e34aefab6",
     "profile_sources_present": true,
     "materializer_present": true,
     "validation_driver_present": true,
     "launcher_present": true,
     "required_program_members": 18,
+    "materialization": "COMPLETED_LOCALLY",
+    "initializer_php82_syntax": "PASS_SYNTAX_ONLY",
+    "full_business_run": "FAILED_AT_PAID_PRODUCER_NOT_ACCEPTED",
+    "original_115_member_namespace_satisfied_by_archive": false,
+    "runtime_ready": false,
     "additional_author_code_members": 11,
-    "additional_Source_design_clarifications": 2,
-    "local_author_module_dependencies_present": true,
-    "M_RESULT_fields": 35,
-    "source_commit_steps": 19,
-    "native_budget_derived_not_actual": 1088,
-    "materialization": "NO_NEW_RUNTIME_RECEIPT_DELIVERED_BY_SOURCE_ARCHIVE",
-    "full_business_run": "NO_RUNTIME_ACCEPTANCE_CLAIM",
-    "original_current_M_and_S_receipts_included": false
+    "M_RESULT_fields": 36,
+    "source_commit_steps": 20,
+    "native_budget_derived_not_actual": 1104,
+    "original_runtime_receipts_delivered": false
   },
   "requirements_not_satisfied_by_copying_source": [
     {
       "kind": "original machine layout",
-      "detail": "Archived programs retain original absolute paths, historical authorities and source-commit bindings. The latest complete Source snapshot binds business175f, not the separate archival commit. The archival branch business tree is based on2e4. Copying source neither supplies original receipts nor qualifies a new runtime."
+      "detail": "Current complete snapshot binds source 6e3850fe210b2b1e99b2a33baa68123e34aefab6. It retains original Windows paths, interpreter, historical source and actual qualification requirements. The later archive commit is not the source run by these programs. No path substitution has been applied."
     },
     {
       "kind": "historical public evidence",
@@ -63,11 +76,15 @@
     },
     {
       "kind": "fresh B readiness",
-      "detail": "Current175f B author/initializer, success readers, UI syntax job, postA producer and complete H5 programs are included as selected Source. Actual successful matching A, two full actual readers,118698 UI syntax, complete retained history/postA and all B/UI20/Task2/H5 runtime acceptance remain pending. Full original authoring inputs are not included."
+      "detail": "fresh-b-customer-form-external-source-r3 is an unsealed draft tied to the older source. It still needs a successful matching A and complete current-source bindings; source presence is not UI acceptance."
     },
     {
       "kind": "nonempty history readiness",
-      "detail": "Nonempty history remains incomplete. Later external component revisions are not adopted by this source supplement. Final source bindings, Host admission, the complete current reader, final enabled gate and the original 37-step/four-CLI/normal-close/independent-zero business run remain pending."
+      "detail": "Parent R1 retains LOAD-01. Parent R2 repairs fixed component loading and passed syntax-only verification. Startup R1 contains the complete startup plan/accept implementation and passed independent source review; its new full PHP bytes have not passed syntax or business execution. Final source bindings, Host admission, current reader, final enabled gate and the complete 37-step/four-CLI/close-zero run remain incomplete. Original refused/UNBOUND entries remain unchanged."
+    },
+    {
+      "kind": "current original source package and reader inputs",
+      "detail": "The final 18 programs, 11 recipes, two small design records and eight same-flow programs are archived. This subset does not satisfy the original 115-member namespace, author replay inputs or callback authority graph. Actual M/S results, 25933 authority inputs, ten retirement objects, runtime streams and private data are absent. Do not execute archived programs by fabricating these inputs or removing checks."
     }
   ],
   "existing_git_controls_for_history": [
@@ -98,7 +115,7 @@
     "business_acceptance": "INCOMPLETE"
   },
   "handoff_branch": "codex/orchestration-handoff-20261023",
-  "current_source_execution_note": "The current complete Source binds business175f. The selected archive contains35 result fields,19 source steps and a source-derived1088 native budget. Original175f M actually passed1088 native/wait operations and complete external Root/peer readbacks, but its actual receipts are not delivered by this archive. Original S remains unaccepted; no A0 or complete business/UI acceptance is claimed. Historical28dc/0c13 snapshots and their dated NOT_TERMINAL_AT_SNAPSHOT objects remain preserved. Archive business tree remains2e4; archiving does not advance, restart or rebind the normal runtime.",
+  "current_source_execution_note": "The archived complete normal Source binds business6e3850 with actual36 result fields/20 source steps and1104 materialization operations. Its S/paid failed1: upload2 crossed the original600s absolute deadline before HTTP and read_confirmation returned503. Original close93/zero20 and both complete actual readers passed0; eleventh whole retirement was sealed. No actual Run, M/S/native receipts,142MB authority or117MB M is included. ProductSourcefa2088 exact7 adoption/eight complete PHP syntax and explicit feature remote ref are verified; its new full Source/M/S/business has not been generated or run. Archive business tree remains2e4; runtime_ready stays false.",
   "historical_source_snapshots": [
     {
       "package": "full-a-published-current-normal-next-source-r2",
@@ -240,5 +257,146 @@
     "prepared_programs_executed_by_handoff": false,
     "A0_postA_B_UI20_Task2_H5_acceptance": "INCOMPLETE"
   },
-  "preserved_28dc_source_execution_note": "The current complete Source binds business28dc. This archive supplies no new M/S runtime receipt or business acceptance; 34 fields/18 source steps and1078 native budget are Source declarations. Historical0c13 M1060 is actual materialization only; later S1/paid1 and completed close93/zero20 are known. The historical NOT_TERMINAL_AT_SNAPSHOT object remains unchanged. Archive business tree remains2e4; no runtime is advanced, restarted or rebound by archiving."
+  "preserved_28dc_source_execution_note": "The current complete Source binds business28dc. This archive supplies no new M/S runtime receipt or business acceptance; 34 fields/18 source steps and1078 native budget are Source declarations. Historical0c13 M1060 is actual materialization only; later S1/paid1 and completed close93/zero20 are known. The historical NOT_TERMINAL_AT_SNAPSHOT object remains unchanged. Archive business tree remains2e4; no runtime is advanced, restarted or rebound by archiving.",
+  "preserved_175f_archive_current": {
+    "last_executed_pipeline": {
+      "package": "full-a-normal-http-diagnostic-next-source-r1",
+      "source_commit": "0c13c57ba1ec4bf15ea9240601a5d6361e986ce8",
+      "outcome": "S_NOT_TERMINAL_AT_SNAPSHOT_FULL_BUSINESS_NOT_ACCEPTED",
+      "original_resources_closed_and_independently_verified": false
+    },
+    "last_materialization_attempt": {
+      "package": "full-a-normal-http-diagnostic-next-source-r1",
+      "source_commit": "0c13c57ba1ec4bf15ea9240601a5d6361e986ce8",
+      "outcome": "ACTUAL_MATERIALIZATION_PASS_ONLY",
+      "native_operations": 1060,
+      "native_zero": 1060,
+      "M_RESULT_fields": 33,
+      "business_acceptance": "INCOMPLETE"
+    },
+    "current_source": {
+      "package": "full-a-quota-wire-current175f-normal-next-source-r1",
+      "source_commit": "175f3cd6183894185656a2974579e1be39eed7a7",
+      "profile_sources_present": true,
+      "materializer_present": true,
+      "validation_driver_present": true,
+      "launcher_present": true,
+      "required_program_members": 18,
+      "additional_author_code_members": 11,
+      "additional_Source_design_clarifications": 2,
+      "local_author_module_dependencies_present": true,
+      "M_RESULT_fields": 35,
+      "source_commit_steps": 19,
+      "native_budget_derived_not_actual": 1088,
+      "materialization": "NO_NEW_RUNTIME_RECEIPT_DELIVERED_BY_SOURCE_ARCHIVE",
+      "full_business_run": "NO_RUNTIME_ACCEPTANCE_CLAIM",
+      "original_current_M_and_S_receipts_included": false
+    },
+    "current_source_execution_note": "The current complete Source binds business175f. The selected archive contains35 result fields,19 source steps and a source-derived1088 native budget. Original175f M actually passed1088 native/wait operations and complete external Root/peer readbacks, but its actual receipts are not delivered by this archive. Original S remains unaccepted; no A0 or complete business/UI acceptance is claimed. Historical28dc/0c13 snapshots and their dated NOT_TERMINAL_AT_SNAPSHOT objects remain preserved. Archive business tree remains2e4; archiving does not advance, restart or rebind the normal runtime."
+  },
+  "current_failure_diagnostic_summary": {
+    "scope": "BOUND_SAFE_PROJECTION_SUMMARY_ONLY",
+    "http": {
+      "kind": "upload",
+      "method": "POST",
+      "http": 503,
+      "json_error": 0,
+      "response_bytes": 216,
+      "response_sha256": "318ae4db8bedc98bc218ade87cd653fd885bb3f91b4e23968c88c62dbbed4670"
+    },
+    "preflight": {
+      "schema": 1,
+      "scope": "NORMAL_FORM_UPLOAD_PREFLIGHT",
+      "upload_ordinal": 2,
+      "deadline_at_last_read": "BEFORE",
+      "deadline_before_http": "AT_OR_AFTER",
+      "location": {
+        "schema": 1,
+        "scope": "MALL_ORDER_FORM_PREFLIGHT",
+        "substage": "read_confirmation",
+        "class": "crmeb\\exceptions\\AuthUnavailableException",
+        "file": "CustomerOrderFormConfirmationReader.php",
+        "line": 158
+      }
+    },
+    "business_acceptance": "INCOMPLETE",
+    "ordinary_retirement_and_independent_zero": "ACTUAL_CLOSE93_ZERO20_ROOT_AND_PEER_COMPLETE_READBACKS_ZERO",
+    "raw_streams_retained": false,
+    "eleventh_whole_sealed": true
+  },
+  "current_product_source": {
+    "source_commit": "fa2088f9571bdc215be1ec05a59b840ed8b3943c",
+    "parent": "6e3850fe210b2b1e99b2a33baa68123e34aefab6",
+    "branch": "feature/ms4-asset-consumers",
+    "remote_ref": "refs/heads/feature/ms4-asset-consumers",
+    "remote_sha_verified": "fa2088f9571bdc215be1ec05a59b840ed8b3943c",
+    "tracked_PHP_adopted": 7,
+    "complete_PHP_syntax_passed": 8,
+    "new_full_normal_Source_M_S_business": "FULL_SOURCE_ADMISSION_AND_M_S_BUSINESS_PENDING",
+    "deployed": false
+  },
+  "current6e_selected_source_scope": {
+    "archive_union_sources": 525,
+    "preserved_sources": 486,
+    "new_sources": 39,
+    "packages": 41,
+    "selected6e_programs": 18,
+    "selected6e_recipes": 11,
+    "selected6e_designs": 2,
+    "selected_same_flow_scripts": 8,
+    "original115_namespace_fully_archived": false,
+    "runtime_ready": false
+  },
+  "preserved_requirements_not_satisfied_before_6e": [
+    {
+      "kind": "original machine layout",
+      "detail": "Archived programs retain original absolute paths, historical authorities and source-commit bindings. The latest complete Source snapshot binds business175f, not the separate archival commit. The archival branch business tree is based on2e4. Copying source neither supplies original receipts nor qualifies a new runtime."
+    },
+    {
+      "kind": "historical public evidence",
+      "detail": "The original M/S/Host require historical source inventories, commit/adoption records, retirement authorities and full native receipts. Actual Run directories, created/terminal files and stdout/stderr are not included."
+    },
+    {
+      "kind": "proof resource result",
+      "source_reference": "r20-proof-memory-budget-public-readback-r1/RESULT.json",
+      "detail": "The 18-byte proof INI source is included; its original runtime readback result is not. Source bytes do not replace that result."
+    },
+    {
+      "kind": "authoring inputs",
+      "detail": "assemble/refresh programs still reference predecessor source packages, before-images, original PINS/authority metadata and syntax/readback results. Complete authoring replay inputs are not claimed by this archive."
+    },
+    {
+      "kind": "fresh execution environment",
+      "detail": "Docker, pinned images, actual source qualification, a new dedicated internal network/volumes, and fresh private preparation are runtime prerequisites. No existing production/shared database may be substituted."
+    },
+    {
+      "kind": "private runtime data",
+      "detail": "Private environment files, actors, credentials, cookies, uploaded files and data volumes are intentionally absent. Any future authorized normal run must create its own private data; do not reuse or reconstruct old private state."
+    },
+    {
+      "kind": "fresh B readiness",
+      "detail": "Current175f B author/initializer, success readers, UI syntax job, postA producer and complete H5 programs are included as selected Source. Actual successful matching A, two full actual readers,118698 UI syntax, complete retained history/postA and all B/UI20/Task2/H5 runtime acceptance remain pending. Full original authoring inputs are not included."
+    },
+    {
+      "kind": "nonempty history readiness",
+      "detail": "Nonempty history remains incomplete. Later external component revisions are not adopted by this source supplement. Final source bindings, Host admission, the complete current reader, final enabled gate and the original 37-step/four-CLI/normal-close/independent-zero business run remain pending."
+    }
+  ],
+  "offline_source_archive_verification": {
+    "status": "PASS_SOURCE_ARCHIVE_ONLY",
+    "files": 525,
+    "packages": 41,
+    "bytes": 118925175,
+    "python_ast_parsed": 178,
+    "json_parsed": 134,
+    "strict_M_schemas": [
+      32,
+      33,
+      34,
+      35,
+      36
+    ],
+    "archived_programs_executed": false,
+    "runtime_ready": false
+  }
 }

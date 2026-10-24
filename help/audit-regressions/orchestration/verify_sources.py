@@ -124,6 +124,14 @@ def check_pipeline_schema(root, package, source_commit, size, steps):
                 'Current35 must preserve the complete historical34 schema')
 
 
+    if size == 36:
+        require('current_175f_paid_producer_failure_retirement' in keys
+                and values[0]['CURRENT_M_RESULT_KEYS35'] == values[1]['CURRENT_M_RESULT_KEYS35']
+                == values[2]['CURRENT_M_RESULT_KEYS35']
+                == [name for name in keys if name != 'current_175f_paid_producer_failure_retirement'],
+                'Current36 must preserve the complete historical35 schema')
+
+
 def main():
     root = Path(__file__).resolve().parent
     manifest = load_json((root / 'source-manifest.json').read_bytes())
@@ -205,16 +213,21 @@ def main():
     for entry in ['materializer/prepare.py', 'validation/run.py']:
         check_declared_authority_globals(root / 'sources' / earlier_package / entry)
     check_pipeline_schema(root, earlier_package, '0c13c57ba1ec4bf15ea9240601a5d6361e986ce8', 33, 17)
-    check_pipeline_schema(root, previous_package, '28dcab632da3e62f7c8b8d926b6ab9406534d0d3', 34, 18)
-    check_pipeline_schema(root, current_package, manifest['current_orchestration_source_commit'], 35, 19)
+    preserved_28dc_package = 'full-a-upload-root-current28dc-normal-next-source-r1'
+    for entry in ['materializer/prepare.py', 'validation/run.py']:
+        check_declared_authority_globals(root / 'sources' / preserved_28dc_package / entry)
+    check_pipeline_schema(root, preserved_28dc_package, '28dcab632da3e62f7c8b8d926b6ab9406534d0d3', 34, 18)
+    check_pipeline_schema(root, previous_package, '175f3cd6183894185656a2974579e1be39eed7a7', 35, 19)
+    check_pipeline_schema(root, current_package, manifest['current_orchestration_source_commit'], 36, 20)
     authors = manifest['current_author_code_required']
     author_names = {
         'assemble.py', 'source_reader.py', 'author_support.py', 'authority-current.py.fragment',
         'prepare-inputs.py', 'profile-author.py', 'retirement-author.py', 'DESIGN.md',
     }
-    current_author_names = author_names | {
+    previous_author_names = author_names | {
         'bind-initializer-syntax.py', 'initializer-syntax-checks.py.fragment', 'retirement-checks.py.fragment',
     }
+    current_author_names = {'prepare-inputs.py', 'author_support.py', 'namespace_static.py', 'bind-initializer-syntax.py', 'source_reader.py', 'repair-author/build.py', 'authority-current.py.fragment', 'initializer-syntax-checks.py.fragment', 'assemble.py', 'retirement-checks.py.fragment', 'authority-current.tail.fragment'}
     require(len(authors) == len(set(authors)) == 11, 'Current author source must contain all 11 members')
     require(set(authors) == {current_package + '/' + name for name in current_author_names},
             'Current author source paths do not match the complete author package')
@@ -224,12 +237,19 @@ def main():
     local_modules = {'source_reader', 'author_support'}
     previous_authors = manifest['previous_current_author_code_required']
     require(len(previous_authors) == len(set(previous_authors)) == 11
-            and set(previous_authors) == {previous_package + '/' + name for name in current_author_names}
+            and set(previous_authors) == {previous_package + '/' + name for name in previous_author_names}
             and all('sources/' + rel in expected for rel in previous_authors), 'Previous author package must remain complete')
+    preserved_28dc_authors = manifest['preserved_28dc_author_code_required']
+    require(len(preserved_28dc_authors) == len(set(preserved_28dc_authors)) == 11
+            and set(preserved_28dc_authors) == {preserved_28dc_package + '/' + name for name in previous_author_names}
+            and all('sources/' + rel in expected for rel in preserved_28dc_authors),
+            'Preserved28dc author package must remain complete')
     require(all('sources/' + earlier_package + '/' + name in expected for name in author_names),
             'Earlier complete eight-member author package must remain present')
-    for package, names in [(current_package, current_author_names), (previous_package, current_author_names),
+    for package, names in [(current_package, current_author_names), (previous_package, previous_author_names),
+                           (preserved_28dc_package, previous_author_names),
                            (earlier_package, author_names), (historical_package, author_names)]:
+        local_modules = {'source_reader', 'author_support'} | ({'namespace_static'} if package == current_package else set())
         for name in names:
             if not name.endswith('.py'):
                 continue
@@ -284,8 +304,9 @@ def main():
         'json_parsed': json_count,
         'current_source_authority_global_checks': 2,
         'preserved_previous_authority_global_checks': 2,
-        'strict_current_M_result_fields': 35,
-        'strict_previous_M_result_fields': 34,
+        'strict_current_M_result_fields': 36,
+        'strict_previous_M_result_fields': 35,
+        'strict_preserved_28dc_M_result_fields': 34,
         'strict_preserved_historical_M_result_fields': 33,
         'strict_preserved_older_M_result_fields': 32,
         'preserved_earlier_authority_global_checks': 2,
