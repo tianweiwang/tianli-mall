@@ -115,10 +115,10 @@ function m4fm_source(): array
             && preg_match('/\Asha256:[a-f0-9]{64}\z/D', (string) ($endpoint['image_id'] ?? '')) === 1, 'REGISTERED_ENDPOINT');
     }
     $volumes = [];
-    foreach (['mysql-data', 'redis-data', 'bootstrap-secrets', 'redis-secrets', 'app-secrets', 'fixture-secrets', 'aftersale-evidence', 'customer-form-evidence'] as $name) $volumes[] = $manifest['project'] . '_' . $name;
+    foreach (['mysql-data', 'redis-data', 'bootstrap-secrets', 'redis-secrets', 'app-secrets', 'fixture-secrets', 'aftersale-evidence', 'customer-form-evidence', 'source-tree'] as $name) $volumes[] = $manifest['project'] . '_' . $name;
     sort($volumes, SORT_STRING); $actual = $manifest['volumes'] ?? []; sort($actual, SORT_STRING);
     m4fm_expect($actual === $volumes && is_array($manifest['volume_identities'] ?? null)
-        && m4fm_keys($manifest['volume_identities'], $volumes), 'EXACT_EIGHT_OWN_VOLUMES');
+        && m4fm_keys($manifest['volume_identities'], $volumes), 'EXACT_NINE_OWN_VOLUMES');
     foreach ($volumes as $volume) m4fm_expect(is_string($manifest['volume_identities'][$volume]) && $manifest['volume_identities'][$volume] !== '', 'OWN_VOLUME_IDENTITY');
     $seen = [];
     foreach ($facts['mounts'] ?? [] as $mount) {
@@ -232,10 +232,10 @@ function m4ae_ms5_manifest(array $context, array $manifest, string $role): void
     foreach ($context['initial_volumes'] as $row) { $names[] = $row['name']; $identities[$row['name']] = $row['created_at']; }
     sort($names, SORT_STRING); $actual = $manifest['volumes']; sort($actual, SORT_STRING);
     $wanted = [];
-    foreach (['mysql-data', 'redis-data', 'bootstrap-secrets', 'redis-secrets', 'app-secrets', 'fixture-secrets', 'aftersale-evidence', 'customer-form-evidence'] as $suffix) $wanted[] = $context['project'] . '_' . $suffix;
+    foreach (['mysql-data', 'redis-data', 'bootstrap-secrets', 'redis-secrets', 'app-secrets', 'fixture-secrets', 'aftersale-evidence', 'customer-form-evidence', 'source-tree'] as $suffix) $wanted[] = $context['project'] . '_' . $suffix;
     sort($wanted, SORT_STRING);
-    m4fm_expect(count($names) === 8 && count(array_unique($names,SORT_STRING)) === 8
-        && $names === $wanted && $actual === $names, 'EARLY_CURRENT_EXACT_EIGHT_VOLUMES');
+    m4fm_expect(count($names) === 9 && count(array_unique($names,SORT_STRING)) === 9
+        && $names === $wanted && $actual === $names, 'EARLY_CURRENT_EXACT_NINE_VOLUMES');
     m4ae_ms5_same($manifest['volume_identities'], $identities);
     foreach (['audit-mysql', 'audit-redis'] as $host) m4fm_expect(
         $manifest['services'][$host]['id'] === $context['initial_service_ids'][$host]
@@ -282,7 +282,7 @@ function m4ae_ms5_terminal(array $context, array $created, array $terminal, stri
     $initializer = $proof === 'initializer' && $role === 'audit-ms4-initialize';
     m4fm_expect(($proof === 'initializer') === ($role === 'audit-ms4-initialize'), 'CUSTOMER_EXACT_INITIALIZER_PROOF_ROLE_PAIR');
     $expectedDestinations = ['/workspace', '/source', '/run/audit', '/run/audit-bootstrap', '/run/audit-app'];
-    if ($initializer) $expectedDestinations = [...$expectedDestinations, '/run/ms4-prep', '/run/audit-customer-form'];
+    if ($initializer) $expectedDestinations = [...$expectedDestinations, '/run/ms4-prep', '/run/audit-customer-form', '/run/audit-source-tree'];
     $destinations = [];
     foreach ($created['mounts'] as $mount) {
         $destination = $mount['Destination'];
@@ -304,6 +304,9 @@ function m4ae_ms5_terminal(array $context, array $created, array $terminal, stri
             'CUSTOMER_READ_ONLY_PREDECESSOR_CONFIG_VOLUMES');
     }
     if ($initializer) {
+        $sourceTreeMount = m4fm_mount($created, '/run/audit-source-tree');
+        m4fm_expect($sourceTreeMount['Type'] === 'volume' && $sourceTreeMount['Name'] === $context['project'] . '_source-tree'
+            && $sourceTreeMount['RW'] === true, 'CUSTOMER_INITIALIZER_ONLY_SOURCE_TREE_RW_VOLUME');
         $mount = m4fm_mount($created, '/run/audit-customer-form');
         m4fm_expect($mount['Type'] === 'volume' && $mount['Name'] === $context['project'] . '_customer-form-evidence'
             && $mount['RW'] === true, 'CUSTOMER_INITIALIZER_OWN_CUSTOMER_FORM_RW_VOLUME');
@@ -349,6 +352,34 @@ function m4fm_initialization_predecessor(array $manifest,array $binding,string $
         && $initializerBinding['container_id'] === $created['id'] && is_int($initializerBinding['entry_namespace_pid']) && $initializerBinding['entry_namespace_pid'] > 0
         && $initializerBinding['source_sha'] === $context['source_sha'] && $initializerBinding['freeze_sha256'] === $context['freeze_sha256']
         && $initializerBinding['created_sha256'] === $before['initializer-created.json'], 'CUSTOMER_REAL_NEW_NINE_INITIALIZER_SOURCE');
+    $treeSource=$freeze['source_tree']??null;$treeContext=$context['source_tree']??null;$treeCopy=$initializer['source_tree']??null;
+    m4fm_expect(is_array($treeSource)&&is_array($treeContext)&&is_array($treeCopy),'CUSTOMER_SOURCE_TREE_OBJECTS');
+    m4fm_expect(m4fm_keys($treeSource,['schema','scope','source_sha','requested_repo_source','volume_suffix','writer_destination','files','directories','file_count','directory_count','manifest_sha256']),'CUSTOMER_SOURCE_TREE_SOURCE_KEYS');
+    m4fm_expect(m4fm_keys($treeContext,['volume_name','manifest_sha256','file_count','directory_count']),'CUSTOMER_SOURCE_TREE_CONTEXT_KEYS');
+    m4fm_expect(m4fm_keys($treeCopy,['schema','status','source_sha','freeze_sha256','manifest_sha256','volume_name','writer_destination','file_count','directory_count','root_identity','empty_before','complete_namespace','all_regular_no_links','source_bytes_readback_matches','writer_role']),'CUSTOMER_SOURCE_TREE_COPY_KEYS');
+    m4fm_expect(is_array($treeCopy['root_identity']),'CUSTOMER_SOURCE_TREE_ROOT_OBJECT');$treeRoot=$treeCopy['root_identity'];
+    m4fm_expect(m4fm_keys($treeRoot,['dev','ino','mode','uid','gid']),'CUSTOMER_SOURCE_TREE_ROOT_KEYS');
+    m4fm_expect($treeSource['schema']===1&&$treeSource['scope']==='COMPLETE_TRACKED_SOURCE_TREE'
+        &&$treeSource['source_sha']===$context['source_sha']&&$treeSource['requested_repo_source']===$context['repo_dir']
+        &&$treeSource['volume_suffix']==='source-tree'&&$treeSource['writer_destination']==='/run/audit-source-tree'
+        &&is_array($treeSource['files'])&&array_is_list($treeSource['files'])&&is_int($treeSource['file_count'])
+        &&$treeSource['file_count']>0&&$treeSource['file_count']===count($treeSource['files'])
+        &&is_array($treeSource['directories'])&&array_is_list($treeSource['directories'])&&is_int($treeSource['directory_count'])
+        &&$treeSource['directory_count']>=0&&$treeSource['directory_count']===count($treeSource['directories'])
+        &&is_string($treeSource['manifest_sha256'])&&preg_match('/\A[a-f0-9]{64}\z/D',$treeSource['manifest_sha256'])===1
+        &&hash('sha256',json_encode(['files'=>$treeSource['files'],'directories'=>$treeSource['directories']],
+            JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_LINE_TERMINATORS|JSON_THROW_ON_ERROR))===$treeSource['manifest_sha256']
+        &&$treeContext===['volume_name'=>$context['project'].'_source-tree','manifest_sha256'=>$treeSource['manifest_sha256'],
+            'file_count'=>$treeSource['file_count'],'directory_count'=>$treeSource['directory_count']]
+        &&$treeCopy['schema']===1&&$treeCopy['status']==='COPIED_AND_VERIFIED_COMPLETE_TRACKED_SOURCE_TREE'
+        &&$treeCopy['source_sha']===$context['source_sha']&&$treeCopy['freeze_sha256']===$context['freeze_sha256']
+        &&$treeCopy['manifest_sha256']===$treeContext['manifest_sha256']&&$treeCopy['volume_name']===$treeContext['volume_name']
+        &&$treeCopy['writer_destination']===$treeSource['writer_destination']&&$treeCopy['file_count']===$treeContext['file_count']
+        &&$treeCopy['directory_count']===$treeContext['directory_count']&&$treeCopy['writer_role']==='audit-ms4-initialize'
+        &&$treeCopy['empty_before']===true&&$treeCopy['complete_namespace']===true&&$treeCopy['all_regular_no_links']===true
+        &&$treeCopy['source_bytes_readback_matches']===true&&is_int($treeRoot['dev'])&&$treeRoot['dev']>=0
+        &&is_int($treeRoot['ino'])&&$treeRoot['ino']>0&&$treeRoot['mode']===16832&&$treeRoot['uid']===0&&$treeRoot['gid']===0,
+        'CUSTOMER_COMPLETE_INITIALIZER_SOURCE_TREE_COPY_BOUND');
     $sequence = [['marketplace-ms1.php', 'check'], ['marketplace-ms1.php', 'apply'], ['marketplace-ms1.php', 'check'],
         ['marketplace-ms2.php', 'check'], ['marketplace-ms2.php', 'apply-structure'], ['marketplace-ms2.php', 'check'],
         ['marketplace-ms4.php', 'check'], ['marketplace-ms4.php', 'apply-structure'], ['marketplace-ms4.php', 'check']];

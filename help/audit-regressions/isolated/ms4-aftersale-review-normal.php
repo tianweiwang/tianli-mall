@@ -211,10 +211,10 @@ function m4ar_source(): array
     m4ar_expect($created['stop_signal']==='SIGTERM'&&getmypid()===1
         &&in_array('audit-app',$created['networks'][$network['Name']]['Aliases']??[],true)
         &&gethostbyname('audit-app')===gethostbyname(gethostname()),'TASK78_REAL_PID_ONE_AND_SELF_HTTP_ALIAS');
-    $binds=['/workspace'=>[$context['repo_dir'],false],'/source'=>[$context['repo_dir'],false],
-        '/run/ms4-prep'=>[$context['prep_dir'],false],'/run/audit'=>[$context['run_dir'],true],
+    $binds=['/run/ms4-prep'=>[$context['prep_dir'],false],'/run/audit'=>[$context['run_dir'],true],
         '/workspace/crmeb/public/install/crmeb.sql'=>[$context['repo_dir'].'/crmeb/public/install/crmeb.sql',false]];
-    $volumes=['/run/audit-app'=>['app-secrets',false],'/run/audit-fixtures'=>['fixture-secrets',true],
+    $volumes=['/workspace'=>['source-tree',false],'/source'=>['source-tree',false],
+        '/run/audit-app'=>['app-secrets',false],'/run/audit-fixtures'=>['fixture-secrets',true],
         M4AR_PRIVATE=>['aftersale-evidence',true],
         '/run/audit-customer-form'=>['customer-form-evidence',true]];
     $nativeMounts=[];$tmpMounts=[];
@@ -306,10 +306,10 @@ function m4ar_prerequisites(array $source):void
  $three=m4c_entry_read($base.'ms4-three-read-normal.json');
  m4ar_expect($three['run_id']===$source['run_id']&&$three['source_sha']===$source['source_sha']
   &&$three['container_id']===$old['id']&&$three['diagnostic']===null,'TASK78_ORIGINAL_TASK6_THREE_READ_SOURCE');
- $wanted=[];foreach(['mysql-data','redis-data','bootstrap-secrets','redis-secrets','app-secrets','fixture-secrets','aftersale-evidence','customer-form-evidence']as$suffix)
+ $wanted=[];foreach(['mysql-data','redis-data','bootstrap-secrets','redis-secrets','app-secrets','fixture-secrets','aftersale-evidence','customer-form-evidence','source-tree']as$suffix)
   $wanted[]=$source['context']['project'].'_'.$suffix;
  $actual=audit_manifest()['volumes'];sort($wanted,SORT_STRING);sort($actual,SORT_STRING);
- m4ar_expect($actual===$wanted,'TASK78_EXACT_EIGHT_CURRENT_VOLUMES');
+ m4ar_expect($actual===$wanted,'TASK78_EXACT_NINE_CURRENT_VOLUMES');
 }
 function m4ar_private_input(string $path,int $max):array
 {

@@ -130,10 +130,10 @@ function m5pc_source(): array
         &&in_array('audit-app',$created['networks'][$network['Name']]['Aliases']??[],true)
         &&filter_var(gethostbyname('audit-app'),FILTER_VALIDATE_IP,FILTER_FLAG_IPV4)!==false
         &&gethostbyname('audit-app')===gethostbyname(gethostname()),'M4C_REAL_SELF_HTTP_NETWORK_ALIAS');
-    $binds=['/workspace'=>[$context['repo_dir'],false],'/source'=>[$context['repo_dir'],false],
-        '/run/ms4-prep'=>[$context['prep_dir'],false],'/run/audit'=>[$context['run_dir'],true],
+    $binds=['/run/ms4-prep'=>[$context['prep_dir'],false],'/run/audit'=>[$context['run_dir'],true],
         '/workspace/crmeb/public/install/crmeb.sql'=>[$context['repo_dir'].'/crmeb/public/install/crmeb.sql',false]];
-    $volumes=['/run/audit-app'=>['app-secrets',false],'/run/audit-fixtures'=>['fixture-secrets',true],
+    $volumes=['/workspace'=>['source-tree',false],'/source'=>['source-tree',false],
+        '/run/audit-app'=>['app-secrets',false],'/run/audit-fixtures'=>['fixture-secrets',true],
         '/run/audit-customer-form'=>['customer-form-evidence',true]];
     $nativeMounts=[];$tmpMounts=[];
     foreach($created['mounts']as$mount){if($mount['Type']!=='tmpfs'){$nativeMounts[]=$mount;continue;}

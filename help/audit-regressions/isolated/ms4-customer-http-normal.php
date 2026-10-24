@@ -219,13 +219,15 @@ function m4c_entry_predecessor(array $source,string $proof,string $role,array $c
         m4c_expect(!isset($seen[$destination])&&!str_contains((string)($mount['Source']??''),'docker.sock'),'M4C_PREDECESSOR_UNIQUE_MOUNTS');$seen[$destination]=true;
         if(isset($binds[$destination]))m4c_expect($mount['Type']==='bind'&&$mount['RW']===$binds[$destination][1]
             &&audit_canonical_host_bind_source($mount['Source'])===audit_canonical_host_bind_source($binds[$destination][0]),'M4C_PREDECESSOR_ORIGINAL_HOST_BIND');
+        elseif($initializer&&$destination==='/run/audit-source-tree')m4c_expect($mount['Type']==='volume'&&$mount['RW']===true
+            &&$mount['Name']===$source['context']['project'].'_source-tree','M4C_INITIALIZER_ONLY_SOURCE_TREE_RW_VOLUME');
         elseif($initializer&&$destination==='/run/audit-customer-form')m4c_expect($mount['Type']==='volume'&&$mount['RW']===true
             &&$mount['Name']===$source['context']['project'].'_customer-form-evidence','M4C_INITIALIZER_OWN_CUSTOMER_FORM_RW_VOLUME');
         elseif(isset($volumes[$destination]))m4c_expect($mount['Type']==='volume'&&$mount['RW']===false
             &&$mount['Name']===$source['context']['project'].'_'.$volumes[$destination],'M4C_PREDECESSOR_PRIVATE_RO_VOLUME');
         else m4c_expect($destination==='/tmp'&&$mount['Type']==='tmpfs'&&$mount['RW']===true,'M4C_PREDECESSOR_ONLY_PRIVATE_TMPFS');}
     foreach(array_merge(array_keys($binds),array_keys($volumes))as$destination)m4c_expect(isset($seen[$destination]),'M4C_PREDECESSOR_ALL_REQUIRED_MOUNTS');
-    if($initializer)m4c_expect(isset($seen['/run/audit-customer-form']),'M4C_INITIALIZER_CUSTOMER_FORM_VOLUME_REQUIRED');
+    if($initializer)m4c_expect(isset($seen['/run/audit-customer-form'])&&isset($seen['/run/audit-source-tree']),'M4C_INITIALIZER_CUSTOMER_FORM_AND_SOURCE_TREE_VOLUMES_REQUIRED');
     m4c_expect(array_keys($created['tmpfs'])===['/tmp'],'M4C_PREDECESSOR_ONE_TMPFS');
     foreach(['started_at','finished_at']as$key)m4c_expect(is_string($terminal[$key])&&strtotime($terminal[$key])!==false
         &&strtotime($terminal[$key])>0,'M4C_PREDECESSOR_REAL_START_FINISH');
@@ -282,17 +284,17 @@ function m4c_entry_ms5_history(array $source): array
                 &&$mount['Name']===$context['project'].'_'.$mounts[$destination][0]&&$mount['RW']===$mounts[$destination][1],
                 'M4C_HISTORY_ORIGINAL_DB_NATIVE_VOLUME_MOUNT');$seen[$destination]=true;}}
     $volumeNames=[];$volumeIdentities=[];
-    m4c_expect(is_array($context['initial_volumes'])&&array_is_list($context['initial_volumes'])&&count($context['initial_volumes'])===8,
-        'M4C_HISTORY_CURRENT_EIGHT_NATIVE_VOLUME_ROWS');
+    m4c_expect(is_array($context['initial_volumes'])&&array_is_list($context['initial_volumes'])&&count($context['initial_volumes'])===9,
+        'M4C_HISTORY_CURRENT_NINE_NATIVE_VOLUME_ROWS');
     foreach($context['initial_volumes']as$row){m4c_entry_keys($row,['name','created_at','labels']);
         m4c_expect(is_string($row['name'])&&!isset($volumeIdentities[$row['name']])&&is_string($row['created_at'])&&$row['created_at']!==''
             &&$row['labels']['tianli.audit']==='1'&&$row['labels']['tianli.audit.run']===$source['run_id']
             &&$row['labels']['com.docker.compose.project']===$context['project'],'M4C_HISTORY_COMPLETE_ORIGINAL_VOLUME_IDENTITY');
         $volumeNames[]=$row['name'];$volumeIdentities[$row['name']]=$row['created_at'];}
-    $wantedVolumes=[];foreach(['app-secrets','bootstrap-secrets','fixture-secrets','mysql-data','redis-data','redis-secrets','aftersale-evidence','customer-form-evidence']as$name)
+    $wantedVolumes=[];foreach(['app-secrets','bootstrap-secrets','fixture-secrets','mysql-data','redis-data','redis-secrets','aftersale-evidence','customer-form-evidence','source-tree']as$name)
         $wantedVolumes[]=$context['project'].'_'.$name;
     $sortedVolumes=$volumeNames;sort($sortedVolumes,SORT_STRING);sort($wantedVolumes,SORT_STRING);
-    m4c_expect($sortedVolumes===$wantedVolumes,'M4C_HISTORY_EXACT_CURRENT_EIGHT_VOLUME_NAMES');
+    m4c_expect($sortedVolumes===$wantedVolumes,'M4C_HISTORY_EXACT_CURRENT_NINE_VOLUME_NAMES');
     $created=m4c_entry_predecessor($source,'initializer','audit-ms4-initialize',['/run/ms4-prep/ms4-initialize.php'],
         'initializer-created.json','initializer-completed-terminal.json');$init=m4c_entry_read($base.'initializer-result.json');
     m4c_expect(($init['schema']??null)===1&&($init['scope']??null)==='MS5_PAYMENT_PREREQUISITES_ONLY'
@@ -301,6 +303,34 @@ function m4c_entry_ms5_history(array $source): array
         &&($init['private_cleanup_verified']??null)===true&&($init['binding']['container_id']??null)===$created['id']
         &&($init['binding']['source_sha']??null)===$source['source_sha']&&($init['binding']['created_sha256']??null)===$hashes['initializer-created.json']
         &&($init['binding']['freeze_sha256']??null)===$source['freeze_sha256'],'M4C_ACTUAL_NINE_INITIALIZER_BINDING');
+    $treeSource=$source['freeze']['source_tree']??null;$treeContext=$context['source_tree']??null;$treeCopy=$init['source_tree']??null;
+    m4c_expect(is_array($treeSource)&&is_array($treeContext)&&is_array($treeCopy),'M4C_SOURCE_TREE_OBJECTS');
+    m4c_entry_keys($treeSource,['schema','scope','source_sha','requested_repo_source','volume_suffix','writer_destination','files','directories','file_count','directory_count','manifest_sha256']);
+    m4c_entry_keys($treeContext,['volume_name','manifest_sha256','file_count','directory_count']);
+    m4c_entry_keys($treeCopy,['schema','status','source_sha','freeze_sha256','manifest_sha256','volume_name','writer_destination','file_count','directory_count','root_identity','empty_before','complete_namespace','all_regular_no_links','source_bytes_readback_matches','writer_role']);
+    m4c_expect(is_array($treeCopy['root_identity']),'M4C_SOURCE_TREE_ROOT_OBJECT');$treeRoot=$treeCopy['root_identity'];
+    m4c_entry_keys($treeRoot,['dev','ino','mode','uid','gid']);
+    m4c_expect($treeSource['schema']===1&&$treeSource['scope']==='COMPLETE_TRACKED_SOURCE_TREE'
+        &&$treeSource['source_sha']===$context['source_sha']&&$treeSource['requested_repo_source']===$context['repo_dir']
+        &&$treeSource['volume_suffix']==='source-tree'&&$treeSource['writer_destination']==='/run/audit-source-tree'
+        &&is_array($treeSource['files'])&&array_is_list($treeSource['files'])&&is_int($treeSource['file_count'])
+        &&$treeSource['file_count']>0&&$treeSource['file_count']===count($treeSource['files'])
+        &&is_array($treeSource['directories'])&&array_is_list($treeSource['directories'])&&is_int($treeSource['directory_count'])
+        &&$treeSource['directory_count']>=0&&$treeSource['directory_count']===count($treeSource['directories'])
+        &&is_string($treeSource['manifest_sha256'])&&preg_match('/\A[a-f0-9]{64}\z/D',$treeSource['manifest_sha256'])===1
+        &&hash('sha256',json_encode(['files'=>$treeSource['files'],'directories'=>$treeSource['directories']],
+            JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_LINE_TERMINATORS|JSON_THROW_ON_ERROR))===$treeSource['manifest_sha256']
+        &&$treeContext===['volume_name'=>$context['project'].'_source-tree','manifest_sha256'=>$treeSource['manifest_sha256'],
+            'file_count'=>$treeSource['file_count'],'directory_count'=>$treeSource['directory_count']]
+        &&$treeCopy['schema']===1&&$treeCopy['status']==='COPIED_AND_VERIFIED_COMPLETE_TRACKED_SOURCE_TREE'
+        &&$treeCopy['source_sha']===$context['source_sha']&&$treeCopy['freeze_sha256']===$context['freeze_sha256']
+        &&$treeCopy['manifest_sha256']===$treeContext['manifest_sha256']&&$treeCopy['volume_name']===$treeContext['volume_name']
+        &&$treeCopy['writer_destination']===$treeSource['writer_destination']&&$treeCopy['file_count']===$treeContext['file_count']
+        &&$treeCopy['directory_count']===$treeContext['directory_count']&&$treeCopy['writer_role']==='audit-ms4-initialize'
+        &&$treeCopy['empty_before']===true&&$treeCopy['complete_namespace']===true&&$treeCopy['all_regular_no_links']===true
+        &&$treeCopy['source_bytes_readback_matches']===true&&is_int($treeRoot['dev'])&&$treeRoot['dev']>=0
+        &&is_int($treeRoot['ino'])&&$treeRoot['ino']>0&&$treeRoot['mode']===16832&&$treeRoot['uid']===0&&$treeRoot['gid']===0,
+        'M4C_COMPLETE_INITIALIZER_SOURCE_TREE_COPY_BOUND');
     $sequence=[['marketplace-ms1.php','check'],['marketplace-ms1.php','apply'],['marketplace-ms1.php','check'],
         ['marketplace-ms2.php','check'],['marketplace-ms2.php','apply-structure'],['marketplace-ms2.php','check'],
         ['marketplace-ms4.php','check'],['marketplace-ms4.php','apply-structure'],['marketplace-ms4.php','check']];
@@ -335,7 +365,7 @@ function m4c_entry_ms5_history(array $source): array
         &&$formal['network_internal']===true,'M4C_HISTORY_ORIGINAL_FORMAL_ISOLATION');
     m4c_entry_same($formal['network'],['id'=>$network['Id'],'name'=>$network['Name']]);
     $formalVolumes=$formal['volumes'];sort($formalVolumes,SORT_STRING);
-    m4c_expect($formalVolumes===$sortedVolumes,'M4C_HISTORY_FORMAL_EXACT_CURRENT_EIGHT_VOLUMES');
+    m4c_expect($formalVolumes===$sortedVolumes,'M4C_HISTORY_FORMAL_EXACT_CURRENT_NINE_VOLUMES');
     m4c_entry_same($formal['volume_identities'],$volumeIdentities);
     m4c_entry_keys($formal['services'],['audit-ms5-payment-migration','audit-mysql','audit-redis']);
     m4c_expect($formal['services']['audit-ms5-payment-migration']['id']===$migrationCreated['id']
@@ -974,10 +1004,10 @@ function m4c_entry_source(string $mode): array
         &&in_array('audit-app',$created['networks'][$network['Name']]['Aliases']??[],true)
         &&filter_var(gethostbyname('audit-app'),FILTER_VALIDATE_IP,FILTER_FLAG_IPV4)!==false
         &&gethostbyname('audit-app')===gethostbyname(gethostname()),'M4C_REAL_SELF_HTTP_NETWORK_ALIAS');
-    $binds=['/workspace'=>[$context['repo_dir'],false],'/source'=>[$context['repo_dir'],false],
-        '/run/ms4-prep'=>[$context['prep_dir'],false],'/run/audit'=>[$context['run_dir'],true],
+    $binds=['/run/ms4-prep'=>[$context['prep_dir'],false],'/run/audit'=>[$context['run_dir'],true],
         '/workspace/crmeb/public/install/crmeb.sql'=>[$context['repo_dir'].'/crmeb/public/install/crmeb.sql',false]];
-    $volumes=['/run/audit-app'=>['app-secrets',false],'/run/audit-fixtures'=>['fixture-secrets',$mode==='prepare']];
+    $volumes=['/workspace'=>['source-tree',false],'/source'=>['source-tree',false],
+        '/run/audit-app'=>['app-secrets',false],'/run/audit-fixtures'=>['fixture-secrets',$mode==='prepare']];
     if($mode==='verify')$volumes['/run/audit-customer-form']=['customer-form-evidence',true];
     $nativeMounts=[];$tmpMounts=[];
     foreach($created['mounts']as$mount){if($mount['Type']!=='tmpfs'){$nativeMounts[]=$mount;continue;}
@@ -1062,6 +1092,8 @@ function m4c_entry_child_environment(array $source): array
         'PHP_AUTH_SESSION_EPOCH'=>$config['auth']['session_epoch'],'PHP_AUTH_STAMP_KEY'=>$config['auth']['stamp_key'],
         'PHP_AUTH_ISSUER'=>$config['auth']['issuer']];
     foreach($source['environment'] as $key=>$value){m4c_expect(getenv($key)===$value,'M4C_CHILD_REAL_SOURCE_BOUND_ENV');$env[$key]=$value;}
+    $scan=getenv('PHP_INI_SCAN_DIR');
+    if($scan==='/usr/local/etc/php/conf.d:/run/audit/proof-php-ini')$env['PHP_INI_SCAN_DIR']=$scan;
     return $env;
 }
 function m4c_entry_child_status($process): ?array
