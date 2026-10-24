@@ -304,8 +304,9 @@ function m4trp_fixture(\think\App $app,PDO $db,array $owner):array
     m4fn_expect($app->config->get('marketplace.enabled')===false&&$app->config->get('marketplace.trade.enabled')===false
         &&MarketplaceTradePolicy::active()===false&&MarketplaceTradePolicy::v1CreateEnabled()===false,
         'TASK6_THREE_LEGACY_CONFIGURED_SELF_DOES_NOT_ENABLE_MARKETPLACE');
+    $paidOwnerAfter=m4cf_owner_after($owner['baseline']['customer_form'],$owner['baseline']['authenticated_owner']['actual_user'],$uid);
     $users=m5pcp_rows($db,'SELECT * FROM eb_user WHERE uid = ?',[$uid]);
-    m4fn_expect(count($users)===1&&$users[0]===$owner['baseline']['authenticated_owner']['actual_user'],
+    m4fn_expect(count($users)===1&&$users[0]===$paidOwnerAfter,
         'TASK6_THREE_LEGACY_REUSES_TRUE_PAID_HTTP_OWNER');
     foreach(['member_func_status','member_card_status','member_price_status']as$name){
         $rows=m5pcp_rows($db,'SELECT * FROM eb_system_config WHERE menu_name = ?',[$name]);
