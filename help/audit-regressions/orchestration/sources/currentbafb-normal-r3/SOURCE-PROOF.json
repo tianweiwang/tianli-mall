@@ -1,0 +1,67 @@
+{
+  "schema": 1,
+  "status": "PASS_R100_PURE_SOURCE_BYTES_AND_FULL_MODULE_INVERSE_ONLY_NO_CALLBACK_OR_TARGET_EXECUTION",
+  "modules": [
+    {
+      "path": "materializer/prepare.py",
+      "before": {
+        "bytes": 23693894,
+        "sha256": "57769bd95cd4f7a2be518584fe497cc8bb0cd8e4b7e8d09be49e1046f489d032"
+      },
+      "after": {
+        "bytes": 23693936,
+        "sha256": "306b33cd0d9a2e6d3cab8afa408c0588a5319bbc8d98aaed3ae999293197e0c5"
+      },
+      "only_function_change": "source_authority single F2 line",
+      "other_functions_raw": 11,
+      "historical_twentythree_with_original19literal_frame_and745389body_raw": true,
+      "full_module_inverse_with_only_F2_current_path_pin_seams": true,
+      "changed_current_literal_names": [
+        "CURRENT_COMPOSITE_CUSTOMER_FORM_SOURCE"
+      ]
+    },
+    {
+      "path": "validation/run.py",
+      "before": {
+        "bytes": 23709294,
+        "sha256": "98bbe9a43ce042d557fcf39bc6f0b0e7920b0a952b78f893637330225a3d9ebb"
+      },
+      "after": {
+        "bytes": 23709336,
+        "sha256": "66f0618dc90ee149d6242be72b47203c95ce39e88fe6260892e646645b759c42"
+      },
+      "only_function_change": "source_authority single F2 line",
+      "other_functions_raw": 14,
+      "historical_twentythree_with_original19literal_frame_and745389body_raw": true,
+      "full_module_inverse_with_only_F2_current_path_pin_seams": true,
+      "changed_current_literal_names": [
+        "CURRENT_COMPOSITE_CUSTOMER_FORM_SOURCE",
+        "PROFILE_PUBLICATION"
+      ]
+    }
+  ],
+  "launcher_three_current_path_hash_seams_full_inverse": true,
+  "source_reader_author_support_namespace_static_raw": true,
+  "profile9_whole_raw": true,
+  "finite_fragment_one_line_full_inverse": true,
+  "all18_runtime_plus_finite_forward_reverse_exact": true,
+  "changed_files": [
+    "launcher/launch.py",
+    "materializer/INVERSE.json",
+    "materializer/PLAN.md",
+    "materializer/prepare.py",
+    "validation/DESIGN-TASKS.md",
+    "validation/PINS.json",
+    "validation/PROFILE-PINS.json",
+    "validation/PROFILE-PUBLICATION.json",
+    "validation/run.py",
+    "d0a5-failed-finite-checks.py.fragment"
+  ],
+  "forward_hunks": 18,
+  "reverse_hunks": 18,
+  "stage_count": 24,
+  "M_keys": 37,
+  "native_budget_source_derived": 1150,
+  "new_Git_stage_or_whole_history": false,
+  "actual_source_callback_M_S_Git_PHP_Node_Docker_SQL_HTTP": false
+}

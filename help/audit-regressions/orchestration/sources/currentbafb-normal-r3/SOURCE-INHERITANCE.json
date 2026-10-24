@@ -1,0 +1,70 @@
+{
+  "schema": 1,
+  "scope": "R3_NARROW_RUNTIME_SUCCESSOR_USING_IMMUTABLE_FULL_R1_SOURCE_HISTORY_WITHOUT_RECURSIVE_DUPLICATION",
+  "full_r1_FINAL_PINS": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbafb-next-normal-preparation-r1/FINAL-PINS.json",
+    "bytes": 137773,
+    "sha256": "946f0518672072bb822fa892ba057cd5662e1cc25acf9b22f8a859c6903484b6"
+  },
+  "r1_normal_Source_PINS": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbafb-next-normal-preparation-r1/normal-source/PINS.json",
+    "bytes": 110525,
+    "sha256": "5b68e46c302d8f1c35d1e4d08d66563df043899a6c9a45c3af7cf53960e677e5"
+  },
+  "R2_qualification_only_overlay": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbafb-next-normal-preparation-r2/PINS.json",
+    "bytes": 6756,
+    "sha256": "319d829a0833f521723816b320ccb07d6f2b8706f949ef02d2ae836c99bc86c9"
+  },
+  "old_all212_source_members_and_before18_history": "Preserved whole in fixed r1, referenced rather than recopied; original runtime authority reads its unchanged original absolute historical paths.",
+  "original23_authority": {
+    "bytes": 745389,
+    "sha256": "78395c25c1cbcfd7222805f1eaab34bb7f23b5ddc97260dd1c5ff29e1dfddfdc"
+  },
+  "original19_recursive_literal_names": [
+    "COMMITTED_PATHS",
+    "COMMIT_CHAIN",
+    "CURRENT_COMPOSITE_CUSTOMER_FORM_SOURCE",
+    "CURRENT_OWNER_PROFILE_ATTEMPT",
+    "CURRENT_TASK6_OWNER_EXPORT_ROOT_READBACK",
+    "CURRENT_TASK6_OWNER_PROFILE_MANIFEST",
+    "CURRENT_TASK6_OWNER_PROFILE_SOURCE",
+    "CURRENT_TASK6_OWNER_QUALIFICATION_RECEIPTS",
+    "CURRENT_TASK6_OWNER_SOURCE_HISTORY",
+    "CURRENT_TASK6_OWNER_SOURCE_INPUTS",
+    "CURRENT_TASK6_OWNER_SOURCE_QUALIFICATION",
+    "HISTORICAL_TWENTYTWO_AUTHORITY_SOURCE",
+    "HISTORICAL_TWENTYTWO_CONSTANTS",
+    "HISTORICAL_TWENTYTWO_M_SOURCE",
+    "HISTORICAL_TWENTYTWO_PUBLICATION",
+    "MAIN_SOURCE",
+    "NEW_TRACKED_PATHS",
+    "SOURCE_REQUIREMENT_PATHS",
+    "VALIDATION_SOURCE"
+  ],
+  "all11_whole_history_objects_and_all_old_finite_attempts": "RAW_PRESERVED_BY_IDENTICAL_AUTHORITY_AND_ORIGINAL_HISTORICAL_PATH_REFERENCES",
+  "no_new_Git_stage_or_recursive_whole": true,
+  "r3_own_current_runtime_members18": [
+    "launcher/launch.py",
+    "materializer/INVERSE.json",
+    "materializer/PLAN.md",
+    "materializer/prepare.py",
+    "validation/actual-profile/compose.yml",
+    "validation/actual-profile/interface-v1.json",
+    "validation/actual-profile/ms4-host.py",
+    "validation/actual-profile/ms4-initialize.php",
+    "validation/actual-profile/normal-close-ms4-fulfillment.py",
+    "validation/actual-profile/README.md",
+    "validation/actual-profile/seed-source-inverse.json",
+    "validation/actual-profile/source-derivation.json",
+    "validation/actual-profile/verify-zero-ms4-fulfillment.py",
+    "validation/DESIGN-TASKS.md",
+    "validation/PINS.json",
+    "validation/PROFILE-PINS.json",
+    "validation/PROFILE-PUBLICATION.json",
+    "validation/run.py"
+  ],
+  "only_semantic_source_change": "removed is strict dict of three actual int counts4/1/9 instead of len(int)",
+  "other_changes": "Necessary new current paths/hash DAG and R99 current qualification explanation only",
+  "mutable_total_D_C_runtime_guard": false
+}

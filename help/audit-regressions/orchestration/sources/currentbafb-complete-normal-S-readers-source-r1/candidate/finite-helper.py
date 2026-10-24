@@ -1,0 +1,382 @@
+import ast
+import collections
+import difflib
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import stat
+import sys
+import time
+
+sys.stdout.reconfigure(encoding='utf-8')
+B = Path('H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1')
+PACK = B/'customer-form-current-three-front-material-producer-source-r1'
+OLD = B/'n2-current-three-front-material-producer-source-r2'
+ORIGIN = B/'n2-current-three-front-material-producer-source-r1'
+OUT = Path(__file__).parent
+CURRENT = '4e2723c2b96f4e0265b9fc75483e307820f3fe79'
+BUILT = 'eadf74f8924a5ed5b801043030b579dffe5d1702'
+KEYS = ['st_dev','st_ino','st_mode','st_nlink','st_uid','st_gid','st_size','st_mtime_ns','st_ctime_ns']
+
+def need(ok, code):
+    if not ok:
+        raise AssertionError(code)
+
+def fp(raw):
+    return {'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest()}
+
+def pairs(rows):
+    out = {}
+    for k,v in rows:
+        need(k not in out,'DUPLICATE_KEY:'+k)
+        out[k] = v
+    return out
+
+def loads(raw):
+    return json.loads(raw.decode('utf-8'),object_pairs_hook=pairs)
+
+def enc(value):
+    return (json.dumps(value,ensure_ascii=False,indent=2)+'\n').encode('utf-8')
+
+def pinpart(value):
+    return {k:value[k] for k in ['bytes','sha256']}
+
+def n9(info):
+    out = [getattr(info,k) for k in KEYS]
+    need(all(type(v) is int for v in out),'EXACT_PYTHON_INT_NATIVE9')
+    return out
+
+class Finite:
+    def __init__(self):
+        self.rows = {}
+        self.raws = {}
+
+    def observe(self,path):
+        path = Path(path)
+        a = path.lstat()
+        need(stat.S_ISREG(a.st_mode) and not a.st_file_attributes & 0x400,'ORDINARY_FILE:'+str(path))
+        pn = n9(a)
+        total = 0
+        digest = hashlib.sha256()
+        chunks = []
+        with path.open('rb') as f:
+            x = os.fstat(f.fileno())
+            fn = n9(x)
+            # Windows path ctime and descriptor ctime have different API meanings.
+            need(all(pn[i] == fn[i] for i,k in enumerate(KEYS) if k in {'st_dev', 'st_ino', 'st_size', 'st_mtime_ns'}),'NAMED_FD_COMMON_IDENTITY:'+str(path))
+            need(a.st_birthtime_ns == x.st_birthtime_ns,'NAMED_FD_BIRTHTIME:'+str(path))
+            while True:
+                raw = f.read(262144)
+                if not raw:
+                    break
+                chunks.append(raw);digest.update(raw);total += len(raw)
+            need(f.read(1) == b'' and total == a.st_size,'FULL_EOF:'+str(path))
+            y = os.fstat(f.fileno())
+            need(n9(y) == fn and y.st_birthtime_ns == x.st_birthtime_ns,'FD_FIRST_FINAL:'+str(path))
+        z = path.lstat()
+        need(n9(z) == pn and z.st_birthtime_ns == a.st_birthtime_ns,'NAMED_FIRST_FINAL:'+str(path))
+        return {'path':path.as_posix(),'pin':{'bytes':total,'sha256':digest.hexdigest()},
+                'named_before':pn,'named_after':n9(z),'fd_open':fn,'fd_after':n9(y),
+                'named_birthtime_ns':a.st_birthtime_ns,'fd_birthtime_ns':x.st_birthtime_ns},b''.join(chunks)
+
+    def read(self,path,expected=None):
+        path = Path(path);key = str(path)
+        if key not in self.rows:
+            row,raw = self.observe(path)
+            self.rows[key] = row;self.raws[key] = raw
+        raw = self.raws[key]
+        if expected is not None:
+            need(fp(raw) == pinpart(expected),'EXPECTED_FULL_PIN:'+path.as_posix())
+        return raw
+
+    def json(self,path,expected=None):
+        return loads(self.read(path,expected))
+
+    def end(self):
+        for key,row in self.rows.items():
+            final,raw = self.observe(Path(key))
+            need(final == row and raw == self.raws[key],'WHOLE_REVIEW_FIRST_FINAL:'+key)
+        return time.time_ns()
+
+def apply_unified(raw,patch):
+    source = raw.decode('utf-8').splitlines(keepends=True)
+    lines = patch.decode('utf-8').splitlines(keepends=True)
+    need(lines[0].startswith('--- ') and lines[1].startswith('+++ '),'UNIFIED_HEADERS')
+    out=[];cursor=0;i=2
+    while i < len(lines):
+        m=re.fullmatch(r'@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@\n',lines[i])
+        need(m is not None,'UNIFIED_HUNK_HEADER')
+        oldstart=int(m[1]);oldcount=int(m[2] or '1');newstart=int(m[3]);newcount=int(m[4] or '1')
+        at=oldstart-1 if oldcount else oldstart
+        need(at>=cursor,'UNIFIED_ORDER');out.extend(source[cursor:at]);cursor=at
+        need(len(out)==newstart-1 if newcount else len(out)==newstart,'UNIFIED_NEW_OFFSET')
+        used=made=0;i+=1
+        while i < len(lines) and not lines[i].startswith('@@ '):
+            line=lines[i];need(line[:1] in [' ','-','+'],'UNIFIED_BODY')
+            if line[:1] in [' ','-']:
+                need(cursor<len(source) and source[cursor]==line[1:],'UNIFIED_EXACT_CONTEXT')
+                cursor+=1;used+=1
+            if line[:1] in [' ','+']:
+                out.append(line[1:]);made+=1
+            i+=1
+        need((used,made)==(oldcount,newcount),'UNIFIED_HUNK_COUNTS')
+    out.extend(source[cursor:])
+    return ''.join(out).encode('utf-8')
+
+def parts(raw):
+    text=raw.decode('utf-8');tree=ast.parse(text)
+    lines=text.splitlines(keepends=True)
+    nodes={n.name:n for n in tree.body if isinstance(n,(ast.FunctionDef,ast.ClassDef))}
+    blocks={name:''.join(lines[node.lineno-1:node.end_lineno]) for name,node in nodes.items()}
+    constants={}
+    for node in tree.body:
+        if isinstance(node,ast.Assign) and len(node.targets)==1 and isinstance(node.targets[0],ast.Name):
+            constants[node.targets[0].id]=ast.literal_eval(node.value)
+    return tree,nodes,blocks,constants
+
+def once(text,old,new,label):
+    need(text.count(old)==1,'EXACT_SEAM_ONCE:'+label)
+    return text.replace(old,new)
+
+def catalog(rows):
+    need(type(rows) is list,'CATALOG_LIST')
+    out={}
+    for row in rows:
+        need(type(row) is dict and set(row)>={'path','bytes','sha256'},'CATALOG_ROW')
+        name=row['path']
+        need(type(name) is str and name and not re.search(r'(^/|/$|\\|:|[\x00-\x1f\x7f])',name)
+             and all(x not in ['', '.', '..'] for x in name.split('/')) and name not in out,'CATALOG_CANONICAL_UNIQUE')
+        need(type(row['bytes']) is int and row['bytes']>=0 and type(row['sha256']) is str
+             and re.fullmatch('[a-f0-9]{64}',row['sha256']),'CATALOG_DESCRIPTOR')
+        out[name]=pinpart(row)
+    return out
+
+def tool_mounts(argv):
+    targets={'/hbx/plugins/'+x for x in ['uniapp-cli','about','compile-dart-sass','uni_helpers','compile-stylus']}
+    out={}
+    need(type(argv) is list and all(type(x) is str for x in argv),'ARGV_LIST')
+    for i,x in enumerate(argv):
+        if x!='--mount':continue
+        need(i+1<len(argv),'MOUNT_NEXT')
+        f={}
+        for v in argv[i+1].split(','):
+            k,sep,value=v.partition('=');need(k not in f,'MOUNT_UNIQUE_FIELD');f[k]=value if sep else True
+        if f.get('target') not in targets:continue
+        need(set(f)=={'type','source','target','readonly'} and f['type']=='bind' and f['readonly'] is True
+             and Path(f['source']).is_absolute() and f['target'] not in out,'FIVE_TOOLS_RO_BIND')
+        out[f['target']]=f['source']
+    need(set(out)==targets,'FIVE_EXACT_TOOL_TARGETS')
+    return out
+
+def pinmap(value):
+    need(type(value) is dict and value and all(type(v) is dict and set(v)=={'bytes','sha256'} for v in value.values()),'CLOSED_NONEMPTY_PIN_MAP')
+    return catalog([{'path':k,**v} for k,v in value.items()])
+
+def main():
+    r=Finite()
+    pins=r.json(PACK/'PINS.json',{'bytes':35339,'sha256':'06136f5489c828c8cb1ff24453c716d46647f7b2b65302c6cacc100c585e8c17'})
+    manifest=r.json(PACK/'MANIFEST.json',{'bytes':35217,'sha256':'9dd88ae33e5b9b3cf645731aceeca28ea11b71e0b16f17b3423cba73a3f52e89'})
+    need(pins['files']==manifest['files'] and len(pins['files'])==213,'COMPLETE213_PIN_MAP')
+    actual={p.relative_to(PACK).as_posix() for p in PACK.rglob('*') if p.is_file()}
+    need(actual==set(pins['files'])|{'PINS.json','MANIFEST.json','metadata/PINS.json'},'COMPLETE216_SOURCE_MEMBERS')
+    for name,desc in pins['files'].items():
+        r.read(PACK/name,desc)
+    need(fp(r.read(PACK/'MANIFEST.json'))==pins['MANIFEST'],'MANIFEST_TOP_BINDING')
+    for key,name in [('candidate','candidate/ms4-ui-materials.py'),('paths','paths.json'),('metadata_PINS','metadata/PINS.json'),('REPORT','REPORT.json')]:
+        need(pins[key]==manifest[key]==fp(r.read(PACK/name)),'TOP_DESCRIPTOR:'+key)
+    oldpins=r.json(OLD/'PINS.json');oldsource=r.read(OLD/'candidate/ms4-ui-materials.py',oldpins['members']['candidate/ms4-ui-materials.py'])
+    oldpaths=r.read(OLD/'paths.json',oldpins['members']['paths.json'])
+    need(oldsource==r.read(PACK/'before/ms4-ui-materials.py'),'ORIGINAL_R2_SOURCE_EXACT_BEFORE')
+    need(oldpaths==r.read(PACK/'before/paths.json'),'ORIGINAL_R2_PATHS_EXACT_BEFORE')
+    op=oldpins['predecessor_r1_PIN'];need(Path(op['path'])==ORIGIN/'PINS.json','R1_ORIGIN_AUTHORITY_PATH')
+    originpins=r.json(ORIGIN/'PINS.json',op)
+    originmetapins=r.json(ORIGIN/'metadata/PINS.json',originpins['members']['metadata/PINS.json'])
+    source=r.read(PACK/'candidate/ms4-ui-materials.py',{'bytes':64397,'sha256':'1085a16410a9fbbd2ac15918ae8aa5ce8ea44a71dc5a94179b846f762c618083'})
+    need(apply_unified(oldsource,r.read(PACK/'DIFF.patch'))==source,'COMPLETE_SOURCE_FORWARD')
+    need(apply_unified(source,r.read(PACK/'REVERSE.patch'))==oldsource,'COMPLETE_SOURCE_REVERSE')
+    newpathsraw=r.read(PACK/'paths.json')
+    need(apply_unified(oldpaths,r.read(PACK/'PATHS-DIFF.patch'))==newpathsraw,'COMPLETE_PATHS_FORWARD')
+    need(apply_unified(newpathsraw,r.read(PACK/'PATHS-REVERSE.patch'))==oldpaths,'COMPLETE_PATHS_REVERSE')
+    ot,on,ob,oc=parts(oldsource);nt,nn,nb,nc=parts(source)
+    changed=['h5','merchant','admin','materialize']
+    added=['current_source_equivalence','readonly_tool_mounts','h5_tool_snapshot_provenance']
+    need(set(nn)-set(on)==set(added) and not set(on)-set(nn),'EXACT_THREE_ADDITIONS_NO_REMOVED')
+    need({n for n in on if ob[n]!=nb[n]}==set(changed),'EXACT_FOUR_MODIFIED_BLOCKS')
+    unchanged=sorted(n for n in on if n not in changed)
+    need(len(unchanged)==30,'THIRTY_ORIGINAL_FUNCTION_CLASS_BYTES')
+    # Independently enumerate all permitted existing function seams, preserving every other byte.
+    h=ob['h5']
+    h=once(h,"{'bytes':233228,'sha256':H5_SOURCE_PINS_SHA}","{'bytes':219536,'sha256':H5_SOURCE_PINS_SHA}",'h5-packet-pin')
+    h=once(h,"pins['source_sha'] == '187d9765873ecc02a29d2e9376553486ff00a262'","pins['source_sha'] == BUILD_SOURCE_HEAD",'h5-build-head')
+    for a,b in [('source_count\'] == 557','source_count\'] == 559'),('len(members) == 616','len(members) == 579'),('ACTUAL_COMPLETE617_H5_PACKET','ACTUAL_COMPLETE580_H5_PACKET'),('len(expected) == 557','len(expected) == 559'),('ACTUAL_H5_FULL557_SOURCE','ACTUAL_H5_FULL559_SOURCE'),('ACTUAL_DOCKER_RUNTIME_FULL557_INPUT','ACTUAL_DOCKER_RUNTIME_FULL559_INPUT')]:
+        h=once(h,a,b,a)
+    h=once(h,"need(tools['scope'] == 'CURRENT_ACTUAL_DOCKER_RO_TOOL_MOUNT_SOURCE_SNAPSHOT'\n        and tools['create_arguments_sha256'] == reader.file(root/'evidence/005-container-create.arguments.json')['sha256'],\n        'ACTUAL_DOCKER_TOOL_SNAPSHOT_MOUNT_PROVENANCE')","need(tools['scope'] == 'CURRENT_ACTUAL_DOCKER_RO_TOOL_MOUNT_SOURCE_SNAPSHOT',\n        'ACTUAL_ORIGINAL_DOCKER_TOOL_SNAPSHOT_SCOPE')\n    h5_tool_snapshot_provenance(reader,paths,md,tools,observed[4][0])",'h5-historical-provenance')
+    need(h==nb['h5'],'H5_EXACT_SEAMS_ALL_REMAINDER_BYTES')
+    need(once(ob['merchant'],"report['source_sha'] == '0d5499ecf95ec9c9c29d7f6e011cecb69a2b81c1'","report['source_sha'] == BUILD_SOURCE_HEAD",'merchant-head')==nb['merchant'],'MERCHANT_EXACT_HEAD_ONLY')
+    need(once(ob['admin'],"need(report['source_head'] == CURRENT_HEAD, 'ACTUAL_CURRENT093_ADMIN_BUILD_SOURCE')","need(report['source_head'] == BUILD_SOURCE_HEAD, 'ACTUAL_ORIGINAL_EADF_ADMIN_BUILD_SOURCE')",'admin-head')==nb['admin'],'ADMIN_EXACT_HEAD_ONLY')
+    need(once(ob['materialize'],"meta = metadata(reader,paths['metadata'])","meta = metadata(reader,paths['metadata'])\n    current_source_equivalence(reader,paths,meta)",'materialize-proof')==nb['materialize'],'MATERIALIZE_EXACT_PROOF_ONLY')
+    # Verify every other top-level source byte, including imports and all original module guards.
+    merged=oldsource.decode('utf-8')
+    for name in changed:merged=once(merged,ob[name],nb[name],'top:'+name)
+    merged=once(merged,"META_SHA = '"+oc['META_SHA']+"'","META_SHA = '"+nc['META_SHA']+"'",'META_SHA')
+    merged=once(merged,"ADMIN_ROOT_PROOF_SHA = '"+oc['ADMIN_ROOT_PROOF_SHA']+"'","ADMIN_ROOT_PROOF_SHA = '"+nc['ADMIN_ROOT_PROOF_SHA']+"'",'ADMIN_ROOT_PROOF_SHA')
+    merged=once(merged,"CURRENT_HEAD = '"+oc['CURRENT_HEAD']+"'","CURRENT_SOURCE_HEAD = '"+CURRENT+"'\nBUILD_SOURCE_HEAD = '"+BUILT+"'",'TWO_HEAD_CONSTANTS')
+    merged=once(merged,"H5_SOURCE_PINS_SHA = '"+oc['H5_SOURCE_PINS_SHA']+"'","H5_SOURCE_PINS_SHA = '"+nc['H5_SOURCE_PINS_SHA']+"'",'H5_SOURCE_PINS_SHA')
+    first=nn['current_source_equivalence'].lineno
+    end=nn['h5_tool_snapshot_provenance'].end_lineno
+    added_chunk=''.join(source.decode('utf-8').splitlines(keepends=True)[first-1:end])+ '\n\n'
+    merged=once(merged,nb['h5'],added_chunk+nb['h5'],'INSERT_ONLY_THREE_HELPERS')
+    need(merged.encode('utf-8')==source,'ENTIRE_SOURCE_EXACT_ALLOWED_TRANSFORM')
+    need(nc['STATE_KEYS']==KEYS and nc['PATH_KEYS']==oc['PATH_KEYS'] and len(nc['PATH_KEYS'])==20,'NATIVE9_PATH20_UNCHANGED')
+    need(nc['PNG_PIN']==oc['PNG_PIN'] and nc['INSTALLER_TEMPLATE']==oc['INSTALLER_TEMPLATE'] and nc['STYLUS_QUALIFICATION_SHA']==oc['STYLUS_QUALIFICATION_SHA'],'ORIGINAL_FIXTURE_ENV_EXCEPTION_STYLUS_PINS')
+    need(not any(isinstance(x,(ast.Import,ast.ImportFrom)) and ('subprocess' in ast.unparse(x)) for x in ast.walk(nt)),'NO_SUBPROCESS_IMPORT')
+    newconfig=loads(newpathsraw);oldconfig=loads(oldpaths);paths={k:Path(v) for k,v in newconfig['paths'].items()}
+    need(set(newconfig)=={'schema','paths'} and type(newconfig['schema']) is int and newconfig['schema']==1 and set(paths)==set(nc['PATH_KEYS']) and all(p.is_absolute() for p in paths.values()),'EXACT20_ABSOLUTE_PATHS')
+    expected_changes={'metadata':PACK/'metadata','h5_build':B/'customer-order-form-h5-build-runs/202610221651085b5fa275','h5_packet':B/'customer-order-form-three-front-build-preparation-r1/h5','merchant_build':Path('H:/天俪商城/artifacts/cfm-build/eadf-r2'),'merchant_builder':B/'customer-order-form-merchant-build-shortpath-r2/build-merchant.py','admin_build':B/'customer-order-form-admin-build-runs/eadf74f8-r1','admin_root_readback':B/'customer-order-form-admin-build-root-readback-r1/RESULT.json'}
+    changes={k for k in paths if newconfig['paths'][k]!=oldconfig['paths'][k]}
+    need(changes==set(expected_changes) and all(paths[k]==v for k,v in expected_changes.items()),'EXACT_SEVEN_CHANGED_PATH_BINDINGS')
+    meta=paths['metadata'];mp=r.json(meta/'PINS.json')
+    need(set(mp)=={'schema','scope','members'} and mp['schema']==1 and mp['scope']=='FROZEN_ACTUAL_EADF_BUILD_METADATA_AND_CURRENT_SOURCE_EQUIVALENCE_ONLY' and len(mp['members'])==166,'EXACT166_METADATA_MEMBERS_SCHEMA')
+    need({p.relative_to(meta).as_posix() for p in meta.rglob('*') if p.is_file()}==set(mp['members'])|{'PINS.json'},'METADATA_COMPLETE167_MEMBERS')
+    need(nc['META_SHA']==fp(r.read(meta/'PINS.json'))['sha256'],'SOURCE_META_PIN_ACTUAL')
+    for name,desc in mp['members'].items():
+        need(desc==fp(r.read(meta/name)) and desc==pins['files']['metadata/'+name],'ALL166_META_SOURCE_PIN_JOINS')
+    sm=r.json(meta/'SOURCE-MAP.json');copies=sm['copies']
+    need(sm['schema']==1 and sm['current_source_head']==CURRENT and sm['original_build_head']==BUILT and sm['all_original_build_revisions_preserved'] is True and sm['output_schema']=={'material_files':5,'public_copy_profile_keys':10},'SOURCE_MAP_HEADS_SCHEMA')
+    generated={'SOURCE-MAP.json','source-equivalence/REPORT.json','h5/TOOL-SNAPSHOT-PROVENANCE.json'}
+    expected_copy_paths=set(mp['members'])-generated
+    need(len(copies)==163 and {row['path'] for row in copies}==expected_copy_paths and len({row['path'] for row in copies})==163,'EXACT163_ORIGINAL_COUNTERPARTS')
+    joins=[]
+    for row in copies:
+        need(set(row)=={'path','source','bytes','sha256'},'COPY_DESCRIPTOR_CLOSED')
+        name=row['path'];p=Path(row['source'])
+        if name.startswith('source-equivalence/'):expected=PACK/'git-readonly'/name.split('/',1)[1]
+        elif name.startswith('fixture/'):expected=ORIGIN/'metadata'/name
+        elif name=='h5/source-PINS.json':expected=paths['h5_packet']/'PINS.json'
+        elif name.startswith('h5/evidence/'):expected=paths['h5_build']/'evidence'/name.split('/',2)[2]
+        elif name in ['h5/TOOL-INPUTS.json','h5/STYLUS-QUALIFICATION.json']:expected=ORIGIN/'metadata'/name
+        elif name=='h5/tool-snapshot-origin/005-container-create.arguments.json':expected=ORIGIN/'metadata/h5/evidence/005-container-create.arguments.json'
+        elif name.startswith('merchant/'):expected=paths['merchant_build']/name.split('/',1)[1]
+        elif name.startswith('admin/'):expected=paths['admin_build']/name.split('/',1)[1]
+        elif name=='root-current-admin/RESULT.json':expected=paths['admin_root_readback']
+        else:raise AssertionError('UNKNOWN_COPY:'+name)
+        need(p==expected,'INDEPENDENT_ACTUAL_COUNTERPART_PATH:'+name)
+        need(r.read(p,row)==r.read(meta/name) and pinpart(row)==mp['members'][name],'FULL_COUNTERPART_BYTES:'+name)
+        if p.is_relative_to(ORIGIN):
+            rel=p.relative_to(ORIGIN).as_posix();need(pinpart(originpins['members'][rel])==fp(r.read(p)),'OLD_FROZEN_MEMBER_AUTHORITY:'+rel)
+            need(pinpart(originmetapins['members'][rel[len('metadata/'):]])==fp(r.read(p)),'OLD_META_PINS_AUTHORITY:'+rel)
+        joins.append({'metadata':name,'original':p.as_posix(),'pin':fp(r.read(p))})
+    r.read(paths['h5_tools_manifest'],mp['members']['h5/TOOL-INPUTS.json'])
+    r.read(paths['h5_stylus_qualification'],mp['members']['h5/STYLUS-QUALIFICATION.json'])
+    need(nc['STYLUS_QUALIFICATION_SHA']==fp(r.read(paths['h5_stylus_qualification']))['sha256'],'ACTUAL_STYLUS_QUALIFICATION')
+    need(nc['ADMIN_ROOT_PROOF_SHA']==fp(r.read(paths['admin_root_readback']))['sha256'],'ACTUAL_ADMIN_ROOT_PROOF')
+    hp=r.json(paths['h5_packet']/'PINS.json');hsource=r.json(paths['h5_packet']/'source-manifest.json',hp['files']['source-manifest.json'])
+    need(hp['source_sha']==hsource['source_sha']==BUILT and hp['source_count']==hsource['tracked_count']==559 and len(hp['files'])==579,'H5_PACKET_EDAF559_579')
+    need(fp(r.read(paths['h5_packet']/'PINS.json'))=={'bytes':219536,'sha256':nc['H5_SOURCE_PINS_SHA']},'H5_SOURCE_PIN_STRICT')
+    hs=catalog(hsource['entries']);need(len(hs)==559 and all(n.startswith('template/uni-app/') for n in hs),'H5_COMPLETE_SOURCE_MANIFEST559')
+    need({'source/'+name for name in hs}<=set(hp['files']) and all(pinpart(hp['files']['source/'+name])==desc for name,desc in hs.items()),'ALL559_PACKET_SOURCE_DESCRIPTORS')
+    hrep=r.json(meta/'h5/evidence/build-result.json')
+    need(hrep['source_sha']==BUILT and hrep['source_manifest_sha256']==fp(r.read(paths['h5_packet']/'source-manifest.json'))['sha256'],'H5_SOURCE_MANIFEST_BUILD_JOIN')
+    # Exact five tool roots: old recorded snapshot and original argv remain history; current argv binds same sources.
+    tools=r.json(meta/'h5/TOOL-INPUTS.json');provenance=r.json(meta/'h5/TOOL-SNAPSHOT-PROVENANCE.json')
+    need(set(provenance)=={'schema','scope','tool_snapshot','original_create_arguments','current_create_arguments','retrospective_full_build_time_tool_freeze_claimed'} and provenance['schema']==1 and provenance['scope']=='ORIGINAL_TOOL_SNAPSHOT_AND_CURRENT_BUILD_READONLY_MOUNT_PROVENANCE_ONLY' and provenance['retrospective_full_build_time_tool_freeze_claimed'] is False and tools['retrospective_full_compile_time_tool_freeze_claimed'] is False,'NO_RETROSPECTIVE_BUILD_TIME_TOOL_FREEZE')
+    need(provenance['tool_snapshot']==fp(r.read(meta/'h5/TOOL-INPUTS.json')) and tools['scope']=='CURRENT_ACTUAL_DOCKER_RO_TOOL_MOUNT_SOURCE_SNAPSHOT','OLD_TOOL_SNAPSHOT_EXACT')
+    oa=provenance['original_create_arguments'];ca=provenance['current_create_arguments']
+    need(set(oa)==set(ca)=={'metadata_path','bytes','sha256'} and oa['metadata_path']=='h5/tool-snapshot-origin/005-container-create.arguments.json' and ca['metadata_path']=='h5/evidence/005-container-create.arguments.json','TWO_DISTINCT_ARGV_DESCRIPTORS')
+    oldargv=r.json(meta/oa['metadata_path'],oa);newargv=r.json(meta/ca['metadata_path'],ca)
+    need(tools['create_arguments_sha256']==oa['sha256'] and oa['sha256']!=ca['sha256'],'OLD_TOOL_CREATE_PROVENANCE_RETAINED')
+    om=tool_mounts(oldargv);nm=tool_mounts(newargv)
+    roots={x:paths['h5_plugins']/x for x in ['uniapp-cli','about','compile-dart-sass','uni_helpers']};roots['compile-stylus']=paths['h5_stylus']
+    need(set(tools['roots'])==set(roots) and set(om)==set(nm)=={'/hbx/plugins/'+x for x in roots},'FIVE_TOOL_ROOTS_EXACT')
+    toolcounts={}
+    for part,base in roots.items():
+        target='/hbx/plugins/'+part;need(Path(om[target])==Path(nm[target])==base==Path(tools['roots'][part]['root']),'REAL_OLD_CURRENT_TOOL_SOURCE:'+part)
+        tree=tools['roots'][part]['tree'];need(set(tree)==({'files','directories','aliases'} if part=='compile-stylus' else {'files','directories'}),'TOOL_TREE_SCHEMA')
+        rows=catalog(tree['files']);dirs=tree['directories'];need(len(set(dirs))==len(dirs) and not set(dirs)&set(rows),'TOOL_DIR_CATALOG')
+        aliases=tree.get('aliases',[])
+        if part=='compile-stylus':
+            need([x['path'] for x in aliases]==['node_modules/.bin/'+x for x in ['atob','mkdirp','semver','stylus']],'FOUR_ORIGINAL_STYLUS_ALIASES')
+            for alias in aliases:
+                need(set(alias)=={'path','native9','reparse_tag','raw_reparse','payload_version','target_text','target_path','target'} and len(alias['native9'])==9 and all(type(v) is int for v in alias['native9']) and alias['payload_version']==2 and alias['reparse_tag']==2684354589 and alias['target_path'] in rows and alias['target']==rows[alias['target_path']],'ORIGINAL_STYLUS_ALIAS_DESCRIPTOR')
+                need(fp(bytes.fromhex(alias['raw_reparse']['hex']))==pinpart(alias['raw_reparse']),'ORIGINAL_ALIAS_RAW_REPARSE_PIN')
+        toolcounts[part]={'files':len(rows),'directories':len(dirs),'aliases':len(aliases),'bytes':sum(v['bytes'] for v in rows.values())}
+    # New equivalence helper: independently consume all saved native rows and both full streams; no Git launch.
+    eq=r.json(meta/'source-equivalence/REPORT.json')
+    need(set(eq)=={'schema','scope','build_head','current_source_head','source','trees','native_operations','not_proved','runtime_head_observation'} and eq['schema']==1 and eq['scope']=='ACTUAL_TRACKED_THREE_FRONTEND_SOURCE_TREES_IDENTICAL_ONLY' and eq['build_head']==BUILT and eq['current_source_head']==CURRENT and Path(eq['source'])==paths['source'],'EQUIVALENCE_CLOSED_SCHEMA_HEADS')
+    expectedtrees=[('template/uni-app','c55a6b835af00bf89f17f690e1ebfcf82ab27ae7'),('template/merchant','1e7fc41a0d40d7e52c89f3d764721f0e9ec6f89d'),('template/admin','ebf08448774587c08d8f4b3c05f93c40fa2b876f')]
+    need(eq['trees']==[{'path':p,'build_tree':h,'current_tree':h} for p,h in expectedtrees],'EXACT_THREE_KNOWN_TRACKED_TREE_IDS')
+    labels=['head-before','status-before','parent','tree-uni-app','tree-merchant','tree-admin','head-after','status-after']
+    args=[['rev-parse','HEAD'],['status','--porcelain=v1','-z'],['show','--no-patch','--format=%P',CURRENT],*[['rev-parse',BUILT+':'+p,CURRENT+':'+p] for p,h in expectedtrees],['rev-parse','HEAD'],['status','--porcelain=v1','-z']]
+    expectedoutputs=[(CURRENT+'\n').encode(),b'',b'0a0c35b4d7f7fdf0532a4cff65a7b98df1aaa3b8\n',*[(h+'\n'+h+'\n').encode() for p,h in expectedtrees],(CURRENT+'\n').encode(),b'']
+    need(len(eq['native_operations'])==8,'EIGHT_SAVED_GIT_RECORDS_ONLY')
+    saved=[]
+    for i,(label,tail,wanted,row) in enumerate(zip(labels,args,expectedoutputs,eq['native_operations']),1):
+        stem='%02d-'%i+label
+        need(set(row)=={'stem','argv','pid','native_exit','wait_returncode','started_ns','finished_ns','stdout','stderr'} and row['stem']==stem,'GIT_NATIVE_CLOSED_FIELDS')
+        need(row['argv']==['git','--no-optional-locks','-c','safe.directory='+paths['source'].as_posix(),'-C',paths['source'].as_posix(),*tail],'GIT_EXACT_RO_ARGV')
+        created=r.json(meta/'source-equivalence'/(stem+'.created.json'));terminal=r.json(meta/'source-equivalence'/(stem+'.terminal.json'))
+        need(created=={k:row[k] for k in ['argv','pid','started_ns']} and terminal=={k:v for k,v in row.items() if k!='stem'},'GIT_SAME_ORIGINAL_CREATED_TERMINAL')
+        need(type(row['pid']) is int and row['pid']>0 and type(row['native_exit']) is int and type(row['wait_returncode']) is int and row['native_exit']==row['wait_returncode']==0 and type(row['started_ns']) is int and type(row['finished_ns']) is int and row['started_ns']<row['finished_ns'],'GIT_PID_EXIT_WAIT_TIMES')
+        out=r.read(meta/'source-equivalence'/(stem+'.stdout'),row['stdout']);err=r.read(meta/'source-equivalence'/(stem+'.stderr'),row['stderr'])
+        need(out==wanted and err==b'','SAVED_GIT_EXACT_FULL_OUTPUTS')
+        saved.append({'stem':stem,'pid':row['pid'],'native_exit':0,'wait_returncode':0,'stdout':fp(out),'stderr':fp(err)})
+    report=r.json(PACK/'REPORT.json')
+    need(report['actual_readonly_Git_operations']==eq['native_operations'],'AUTHOR_REPORT_SAVED_GIT_BOUND')
+    need(report['modified_functions']==changed and set(report['added_functions'])==set(added) and set(report['unchanged_functions_and_classes'])==set(unchanged),'AUTHOR_SOURCE_SHAPE_REPORT_MATCH')
+    need(report['producer_or_target_execution']=='NOT RUN' and report['actual_five_material_generation']=='NOT RUN' and report['full_A_postA_or_B_qualification']=='NOT PROVIDED','AUTHOR_SCOPE_NO_COMPLETION_OVERCLAIM')
+    # Admin Source/dependency/native input-preservation catalogs are unchanged producer obligations.
+    admin=r.json(meta/'admin/BUILD-REPORT.json');merchant=r.json(meta/'merchant/build-receipt.json')
+    need(admin['source_head']==merchant['source_sha']==BUILT and admin['source_head']!=CURRENT,'ADMIN_MERCHANT_BUILD_HEAD_NOT_RELABELLED')
+    am=pinmap(r.json(meta/'admin/SOURCE-INPUTS.json'));ad=pinmap(r.json(meta/'admin/DEPENDENCY-INPUTS.json'));ms=pinmap(r.json(meta/'merchant/source-before.json'));md=pinmap(r.json(meta/'merchant/old-dependencies-before.json'))
+    need(ms==pinmap(r.json(meta/'merchant/source-after.json')) and len(ms)>0 and len(md)==merchant['dependency_files']==26540,'MERCHANT_COMPLETE_INPUT_DEPENDENCY_CATALOG')
+    need(len(am)==admin['platform_sources']+admin['prebuild_helper_sources']==1090 and len(ad)==admin['dependency_files']==68460,'ADMIN_COMPLETE_INPUT_DEPENDENCY_CATALOG')
+    preservation=r.json(meta/'admin/NATIVE-INPUT-PRESERVATION.json')
+    need(set(preservation)=={'original_sources','copied_sources','original_dependencies','copied_dependencies','runtime','all_complete_original_and_copy_first_final_native9_equal'} and preservation['all_complete_original_and_copy_first_final_native9_equal'] is True,'ADMIN_FULL_PRESERVATION_SCHEMA')
+    for k,wanted in [('original_sources',am),('copied_sources',am),('original_dependencies',ad),('copied_dependencies',ad)]:
+        need(set(preservation[k])==set(wanted),'ADMIN_FULL_NATIVE_CATALOG_SET:'+k)
+        for name,vals in preservation[k].items():
+            need(type(vals) is list and len(vals)==9 and all(type(v) is int for v in vals) and vals[6]==wanted[name]['bytes'],'ADMIN_NATIVE9_CATALOG_TYPES_BYTES:'+k+':'+name)
+    need(set(preservation['runtime'])=={str(paths['node']),str(paths['npm'])},'ADMIN_EXACT_RUNTIME_NATIVE9_CATALOG')
+    for vals in preservation['runtime'].values():need(type(vals) is list and len(vals)==9 and all(type(v) is int for v in vals),'ADMIN_RUNTIME_NATIVE9_TYPES')
+    peerroot=B/'customer-form-current-three-front-material-producer-native-independent-r1'
+    peerpins=r.json(peerroot/'PINS.json',{'bytes':659,'sha256':'43f6bad70d9a0160d40ca4a2fb9b920ecc93a1fa19323e662675edc92f01c9fa'})
+    peer=r.json(peerroot/'REPORT.json',{'bytes':25265,'sha256':'4ca52a94d665e79001c8db055f8585ab6aebe8c56dd82d26af3807d132279d6a'})
+    need(peer['findings']==[],'SECOND_READER_NATIVE_CATALOG_FINDINGS_EMPTY')
+    r.read(peerroot/'FINITE-WINDOWS.json',{'bytes':225865,'sha256':'1363c6469dbadae074178b72161ffc69bba713e81624ea5e11fe20232d98f019'})
+    joins_pin=fp(enc(joins));(OUT/'COUNTERPART-JOINS.json').write_bytes(enc(joins))
+    ended=r.end()
+    inventory={'schema':1,'native_fields':KEYS,'reader':'independent Python full EOF with separate named and fd first/final native9, Windows common identity and birthtime; all reread at review end','members':list(r.rows.values()),'all_windows_ended':True,'ended_ns':ended}
+    invraw=enc(inventory);(OUT/'INPUTS.json').write_bytes(invraw)
+    result={'schema':1,'status':'SOURCE_REVIEW_PASS_WITHIN_REPORTED_SCOPE','findings':[],
+        'scope':'INDEPENDENT_READONLY_CURRENT_THREE_FRONT_FIVE_MATERIAL_PRODUCER_SOURCE_AND_FINITE_METADATA_ONLY',
+        'reviewed_package':PACK.as_posix(),'source_PINS':fp(r.read(PACK/'PINS.json')),'source_MANIFEST':fp(r.read(PACK/'MANIFEST.json')),'candidate':fp(source),
+        'original_before':{'path':(OLD/'candidate/ms4-ui-materials.py').as_posix(),'pin':fp(oldsource)},
+        'whole_forward_reverse_source_and_paths':True,'whole_source_exact_allowed_transform':True,
+        'modified_functions':changed,'added_functions':added,'unchanged_functions_and_classes_full_bytes':unchanged,
+        'closed_path_map':{'keys':20,'changed':sorted(changes),'others_unchanged':True},
+        'metadata':{'members':166,'complete_package_pinned_files':213,'complete_package_files_including_PINS_MANIFEST_metaPINS':216,'original_counterparts_full_bytes':163,'new_generated_proofs':sorted(generated),'all_meta_PINS_and_Source_constants_exact':True,'counterpart_joins':joins_pin},
+        'head_boundary':{'original_build_head':BUILT,'current_source_head':CURRENT,'admin_original_build_head_preserved':True,'three_tracked_trees':eq['trees'],'saved_readonly_Git_native_operations':saved,'new_Git_operations':0,'runtime_head_requalification':'Root responsibility; this source proof is an earlier saved observation'},
+        'tool_provenance':{'old_snapshot':fp(r.read(meta/'h5/TOOL-INPUTS.json')),'old_create_argv':pinpart(oa),'current_create_argv':pinpart(ca),'five_exact_readonly_mount_sources_equal':True,'complete_tool_catalogs':toolcounts,'retrospective_full_compile_time_freeze_claimed':False,'current_real_tool_body_reads':'NOT REPEATED; full unchanged runtime Inputs/StylusToolInputs checks remain prerequisite'},
+        'build_input_catalogs':{'h5_tracked':559,'h5_packet_members_excluding_PINS':579,'merchant_sources':len(ms),'merchant_dependencies':len(md),'admin_sources_including_helper':len(am),'admin_dependencies':len(ad),'admin_native9_preservation_catalogs_complete':True},
+        'second_independent_native_catalog_reader':{'REPORT':fp(r.read(peerroot/'REPORT.json')),'PINS':fp(r.read(peerroot/'PINS.json')),'finite':fp(r.read(peerroot/'FINITE-WINDOWS.json')),'scope':'H5 9 same-PID/wrapper native0/wait0; Merchant 8 same-PID native0 and full streams, historical schema lacks wait; Admin 8 same-PID/start native0/wait0 with raw native9. Actual catalog totals 337/11800601, 30/1623227, 603/40997389. No producer or native command run.'},
+        'preserved_runtime_contracts':['complete current and copied frontend source bytes','all pinned packet input members','complete original/copied dependency bodies and versions','real runtime archives and executables','all original native receipts and full streams','full dist files and directories','index and critical resource existence and exact bytes','PNG source and provenance','complete original public copy with exact installer template exception','exact five files and closed ten-key public copy profile','all first/final byte-native checks and no-input-output-overlap'],
+        'source_qualification':'AST parse and manual Source checks only; candidate not imported, compiled, or executed',
+        'not_repeated':['full previous independent history review beyond named frozen before/origin counterparts','all untracked dependency/tool/dist bodies','producer execution or material generation','new build','Git/Docker/PHP/Host/application/HTTP/DOM','A postA or new B prerequisite/DAG/readiness','UI20 observer ACK or native frames'],
+        'author_original_failure_preserved':fp(r.read(PACK/'FIRST-AUTHOR-FAILURE.json')),
+        'all_input_windows_ended':True,'finite_input_count':len(r.rows),'finite_input_bytes':sum(x['pin']['bytes'] for x in r.rows.values()),'ended_ns':ended,'inputs':fp(invraw),
+        'W_Val_old_packages_canonical_mutation':False,'new_five_materials_created':False,'new_B_READY_NOT_GUI_or_UI20_acceptance':False}
+    # No further input is introduced after the finite end; all these read() calls above are cached only.
+    rr=enc(result);(OUT/'REPORT.json').write_bytes(rr)
+    pp={'schema':1,'status':result['status'],'scope':result['scope'],'REPORT':fp(rr),'INPUTS':fp(invraw),'COUNTERPART-JOINS':joins_pin,'review_source':fp(Path(__file__).read_bytes()),'source_PINS':result['source_PINS'],'candidate':fp(source),'all_input_windows_ended':True,'ended_ns':ended,'read_only_target_review':True}
+    (OUT/'PINS.json').write_bytes(enc(pp))
+    print(json.dumps({'REPORT':fp(rr),'PINS':fp(enc(pp)),'finite':len(r.rows),'ended_ns':ended,'findings':[]},ensure_ascii=False))
+
+if __name__=='__main__':
+    try:
+        main()
+    except Exception as e:
+        failure={'schema':1,'status':'INDEPENDENT_READER_ASSERTION_FAILED_NO_TARGET_EXECUTION','class':type(e).__name__,'message':str(e),'failed_ns':time.time_ns()}
+        (OUT/('READER-FAILURE-'+str(failure['failed_ns'])+'.json')).write_bytes(enc(failure))
+        raise

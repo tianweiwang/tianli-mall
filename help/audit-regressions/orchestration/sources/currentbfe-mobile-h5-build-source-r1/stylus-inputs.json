@@ -1,0 +1,215 @@
+{
+  "schema": 1,
+  "root": "H:/天俪商城/artifacts/ms1-task7/uni-h5-build-prep/dependency-plugins/compile-stylus",
+  "installed_packages": 28,
+  "files": [
+    {
+      "path": "package.json",
+      "bytes": 145,
+      "sha256": "ebfbb05b100c6a5f7af44f5aee30d69be1bbd3686e2d740a1ec266d4ab50146d",
+      "kind": "fixed_source"
+    },
+    {
+      "path": "package-lock.json",
+      "bytes": 11175,
+      "sha256": "45e4bcc64d96e6886777eb2be3ce41e98b17925a87d75981d7f6b849546e2908",
+      "kind": "fixed_source"
+    },
+    {
+      "path": "node_modules/atob/package.json",
+      "bytes": 585,
+      "sha256": "ec5f817e82b3589ffa74b5d955a87b10d314357f992e7171c9f2669521f75098",
+      "kind": "installed_package",
+      "version": "2.1.2"
+    },
+    {
+      "path": "node_modules/balanced-match/package.json",
+      "bytes": 1069,
+      "sha256": "b30c328501dead1870b894ad604405b2284b571c1f12664cdc61d92a2e3397c2",
+      "kind": "installed_package",
+      "version": "1.0.2"
+    },
+    {
+      "path": "node_modules/brace-expansion/package.json",
+      "bytes": 1156,
+      "sha256": "3183ac1fc70f2bdd53b876019fe35fafc25536889529352db26da06e047e8a00",
+      "kind": "installed_package",
+      "version": "1.1.21"
+    },
+    {
+      "path": "node_modules/concat-map/package.json",
+      "bytes": 989,
+      "sha256": "4fe5e8089b65ebfd55bb86f465ba896ba6a8e24b7b61de1e0f420f590616b118",
+      "kind": "installed_package",
+      "version": "0.0.1"
+    },
+    {
+      "path": "node_modules/css/package.json",
+      "bytes": 787,
+      "sha256": "5617a44d7651f9f5253de8d89d76e217e518b9224262b1d3cfb9ad37d5c7dd5d",
+      "kind": "installed_package",
+      "version": "2.2.4"
+    },
+    {
+      "path": "node_modules/css-parse/package.json",
+      "bytes": 408,
+      "sha256": "c35cf4a0e0befe29348f67be8c63c6ba469a01908e042563224b0df5846a70f4",
+      "kind": "installed_package",
+      "version": "2.0.0"
+    },
+    {
+      "path": "node_modules/css/node_modules/source-map/package.json",
+      "bytes": 2579,
+      "sha256": "3fdebd9f5c0107bcf7b73e0d17e0147042bcfb74884106e4428afbf17171ef06",
+      "kind": "installed_package",
+      "version": "0.6.1"
+    },
+    {
+      "path": "node_modules/debug/package.json",
+      "bytes": 1021,
+      "sha256": "607790755743bf6fffb337f7661460fda64b9de81b0f3e4c27954ea41b46abd3",
+      "kind": "installed_package",
+      "version": "3.1.0"
+    },
+    {
+      "path": "node_modules/decode-uri-component/package.json",
+      "bytes": 698,
+      "sha256": "8f2e9784337b3b4fa69359f88f75a2847e0aa17776f062cb518d008d8d408bca",
+      "kind": "installed_package",
+      "version": "0.2.2"
+    },
+    {
+      "path": "node_modules/fs.realpath/package.json",
+      "bytes": 577,
+      "sha256": "2985019b1b3cf5894df9b831816f7b480833931da982489e3a98c346ce7da897",
+      "kind": "installed_package",
+      "version": "1.0.0"
+    },
+    {
+      "path": "node_modules/glob/package.json",
+      "bytes": 1237,
+      "sha256": "b00b6d35eda6d4aa6893baf19e53b7d005019ed840e4fa116c926a532ec577cf",
+      "kind": "installed_package",
+      "version": "7.2.3"
+    },
+    {
+      "path": "node_modules/inflight/package.json",
+      "bytes": 658,
+      "sha256": "5f2489e13f73e9ebad999134fae8a591f6d8b58e8341ec8e3b33397c4d1ef817",
+      "kind": "installed_package",
+      "version": "1.0.6"
+    },
+    {
+      "path": "node_modules/inherits/package.json",
+      "bytes": 581,
+      "sha256": "be645800bc94fd8de29c8ae91690549b316cc437100108aeea7b2f347693cc80",
+      "kind": "installed_package",
+      "version": "2.0.4"
+    },
+    {
+      "path": "node_modules/minimatch/package.json",
+      "bytes": 700,
+      "sha256": "eefa1c89527d52bbb2e8b053fe8ecf3e3ced399bdba82cf27e0e92edfd833938",
+      "kind": "installed_package",
+      "version": "3.1.5"
+    },
+    {
+      "path": "node_modules/mkdirp/package.json",
+      "bytes": 804,
+      "sha256": "a7357d86be1fd6cd9ac7bc78c4d49155ce08c6087a2378fae5b15ce2eb34b9a2",
+      "kind": "installed_package",
+      "version": "1.0.4"
+    },
+    {
+      "path": "node_modules/ms/package.json",
+      "bytes": 704,
+      "sha256": "30fbfaa3840b2f63978ad4bcd7ed8dc24d277b818e4755fe93eda8cb1bc8b74c",
+      "kind": "installed_package",
+      "version": "2.0.0"
+    },
+    {
+      "path": "node_modules/once/package.json",
+      "bytes": 574,
+      "sha256": "33840d74c14c94bfb75c76374765b635531b1eacb88d7f1f2f380c94d0ea1328",
+      "kind": "installed_package",
+      "version": "1.4.0"
+    },
+    {
+      "path": "node_modules/path-is-absolute/package.json",
+      "bytes": 733,
+      "sha256": "be5b83877f6998b840b9365d7ab77e885f0d583337826c22daccaeb6e303fd4c",
+      "kind": "installed_package",
+      "version": "1.0.1"
+    },
+    {
+      "path": "node_modules/resolve-url/package.json",
+      "bytes": 710,
+      "sha256": "9263bada694d57c6a441b3fed7901eab5c70b944fb58411e7341d55e83f91212",
+      "kind": "installed_package",
+      "version": "0.2.1"
+    },
+    {
+      "path": "node_modules/safer-buffer/package.json",
+      "bytes": 822,
+      "sha256": "4247a3a63c45a6a7ced1557fe4dd9d2a163af4915d594b95e5867b69a53edb52",
+      "kind": "installed_package",
+      "version": "2.1.2"
+    },
+    {
+      "path": "node_modules/sax/package.json",
+      "bytes": 655,
+      "sha256": "90ecabd0e7f8e890806661a1b93e2d76c515a7bb97cbe0c9ef1a65db2a5e0877",
+      "kind": "installed_package",
+      "version": "1.2.4"
+    },
+    {
+      "path": "node_modules/semver/package.json",
+      "bytes": 981,
+      "sha256": "aa906c5bf8a2fa68683cae07d18553ae2538ed0d5a567911980b2ef25ee8b9ba",
+      "kind": "installed_package",
+      "version": "6.3.1"
+    },
+    {
+      "path": "node_modules/source-map/package.json",
+      "bytes": 2801,
+      "sha256": "9be309364953f1d7cdd525bc3c24381717930ee7480aead3ddc972d81c6b7c42",
+      "kind": "installed_package",
+      "version": "0.7.6"
+    },
+    {
+      "path": "node_modules/source-map-resolve/package.json",
+      "bytes": 1101,
+      "sha256": "436a794b5e91e7bc0be8c1adb6d5e161bed7508a21c68b4524bc278c036cdac9",
+      "kind": "installed_package",
+      "version": "0.5.3"
+    },
+    {
+      "path": "node_modules/source-map-url/package.json",
+      "bytes": 837,
+      "sha256": "e2ab48be878647a77117a669e3ccaf51359bd56be889ab5b8424927a9c8c24ab",
+      "kind": "installed_package",
+      "version": "0.4.1"
+    },
+    {
+      "path": "node_modules/stylus/package.json",
+      "bytes": 1312,
+      "sha256": "85e972bec5f6cd3c1175960699f7e8dccb57ffb10a657e59b8e95a13f8545940",
+      "kind": "installed_package",
+      "version": "0.54.8"
+    },
+    {
+      "path": "node_modules/urix/package.json",
+      "bytes": 494,
+      "sha256": "a4af24af6e377d268d9a32c714b90d0752eaff9d192862c28f1a878482c4310b",
+      "kind": "installed_package",
+      "version": "0.1.0"
+    },
+    {
+      "path": "node_modules/wrappy/package.json",
+      "bytes": 606,
+      "sha256": "712ac9c4c3cef8bc79f42cf6075ff18551f4cb768f35158214fd643853ad7abc",
+      "kind": "installed_package",
+      "version": "1.0.2"
+    }
+  ]
+}

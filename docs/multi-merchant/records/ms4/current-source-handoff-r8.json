@@ -1,0 +1,154 @@
+{
+  "schema": 1,
+  "status": "COMPLETE_SELECTED_SOURCE_ARCHIVE_CANDIDATE_NOT_RUNTIME_READY_NOT_PUSHED",
+  "generic_multi_merchant_mall": true,
+  "archive_work_branch": "codex/orchestration-handoff-20261023",
+  "archive_candidate_parent": "e9df0b8fe119b7614099661d6716355f485d1a77",
+  "new_archive_commit": "UNBOUND",
+  "normal_source_commit": "bafb6305062aeb6b6e945c21da572863062ca480",
+  "package": "currentbafb-normal-r3",
+  "current_M_fields": 37,
+  "source_steps": 24,
+  "current_original_Source_members": 29,
+  "source_PINS_included": true,
+  "previous_source_files_preserved": 525,
+  "selected_existing_sources_added": 60,
+  "selected_existing_source_bytes": 52814250,
+  "archive_sources": 585,
+  "archive_source_bytes": 171739425,
+  "archive_packages": 54,
+  "normal_materialization": "ACTUAL_M1150_AND_BOTH_FULL_M_READBACKS_QUALIFIED_EXTERNALLY_NO_RUNTIME_RECEIPTS_DELIVERED",
+  "normal_S": "ROOT_REPORTED_STARTED_NOT_SIGNED_SUCCESS_BY_THIS_SOURCE_ARCHIVE",
+  "native_outer_sources": {
+    "required_roles": [
+      "materialize_root_outer",
+      "success_S_readers_root_outer"
+    ],
+    "source_complete": true,
+    "sources": {
+      "materialize_root_outer": {
+        "path": "sources/currentbafb-root-delivery-entries-source-r2/candidate/run-bafb-organized-materialize.py",
+        "bytes": 6333,
+        "sha256": "5c5dae6aa5d03cfd5886c7622270aa20305290fa3f44076b75c5f90e0a1f0077"
+      },
+      "success_S_readers_root_outer": {
+        "path": "sources/currentbafb-root-delivery-entries-source-r2/candidate/run-bafb-success-S-readback.py",
+        "bytes": 11494,
+        "sha256": "21642b6413225572f7773684da7dd794b985fcb5d0e32b5daf5e9d7038e6daf8"
+      }
+    },
+    "pending_roles": []
+  },
+  "source_delivery_complete": true,
+  "runtime_ready": false,
+  "new_machine_independent_replay": false,
+  "original_static_source_native9_and_birth_preserved_as_metadata_only": true,
+  "actual_runtime_Root_reports_Run_streams_ENV_or_private_inputs_delivered": false,
+  "feature_heads": {
+    "feature/ms4-asset-consumers": "bafb6305062aeb6b6e945c21da572863062ca480",
+    "feature/ms4-ui-source-tree-normal-20261025": "83daa6283ed5280beddd9ce0886712e5654a0766",
+    "feature/product-typed-media-normal-20261024": "d7b6a5f485775a711a4e43a3e3a21af6208d36c9"
+  },
+  "feature_branches_merged": false,
+  "Git_worktree_index_or_remote_changed": false,
+  "remaining_delivery": {
+    "development_or_connection": 7,
+    "historical_uncertain": 1,
+    "major_verification": 11,
+    "open_groups": 19
+  },
+  "stopped_negative_security_fault_concurrency_recovery_samples": "NOT RUN",
+  "financial_real_device_UI_cloud_provider_or_production_acceptance": "NOT_GRANTED_BY_SOURCE_ARCHIVE",
+  "historical_r7_snapshot": "Unchanged exact historical175f/486files/35packages; not current archive count or bafb qualification.",
+  "complete_selected_script_texts_only_not_original_authoring_or_runtime_inputs": true,
+  "outgoing_product_backup_scope": {
+    "definition": "Four full outgoing product commits outside both freshly observed remote ancestors, not merely selected HEAD-parent path lists.",
+    "remote_main_ancestor": "d0a5d5398546e223122b5c2a2f115e1908f78ced",
+    "remote_handoff_ancestor": "e9df0b8fe119b7614099661d6716355f485d1a77",
+    "commits": {
+      "bfe311cbb727af093fe73fb4ce22ead58e8f3345": 44,
+      "d7b6a5f485775a711a4e43a3e3a21af6208d36c9": 41,
+      "bafb6305062aeb6b6e945c21da572863062ca480": 2,
+      "83daa6283ed5280beddd9ce0886712e5654a0766": 2
+    },
+    "unique_changed_blobs": 89,
+    "changed_blob_bytes": 2158491,
+    "Root_high_confidence_secret_sensitive_runtime_name_and_50MiB_scan": "NO_HITS_ON_COMPLETE_PRODUCT_OUTGOING_BLOBS",
+    "Root_manual_diff_still_required": true,
+    "new_archive_commit_requires_separate_scan": true,
+    "selected_HEAD_parent_file_count": 45,
+    "selected_HEAD_parent_paths_are_not_complete_outgoing_history": true,
+    "push_of_exact_d7b6_includes_bfe44_ancestor_paths": true,
+    "feature_forks_merged": false,
+    "pushed_by_this_candidate": false
+  },
+  "selected_HEAD_parent_diff_lists": [
+    {
+      "branch": "feature/ms4-asset-consumers",
+      "HEAD": "bafb6305062aeb6b6e945c21da572863062ca480",
+      "parent": "d0a5d5398546e223122b5c2a2f115e1908f78ced",
+      "HEAD_changed_paths": [
+        "help/audit-regressions/isolated/ms4-aftersale-review-normal.php",
+        "help/audit-regressions/isolated/ms4-aftersale-warm-failure-context.md"
+      ]
+    },
+    {
+      "branch": "feature/ms4-ui-source-tree-normal-20261025",
+      "HEAD": "83daa6283ed5280beddd9ce0886712e5654a0766",
+      "parent": "bafb6305062aeb6b6e945c21da572863062ca480",
+      "HEAD_changed_paths": [
+        "help/audit-regressions/isolated/lib/ms4-ui-backend-normal.php",
+        "help/audit-regressions/isolated/ms4-ui-prepare.php"
+      ]
+    },
+    {
+      "branch": "feature/product-typed-media-normal-20261024",
+      "HEAD": "d7b6a5f485775a711a4e43a3e3a21af6208d36c9",
+      "parent": "bfe311cbb727af093fe73fb4ce22ead58e8f3345",
+      "HEAD_changed_paths": [
+        "crmeb/app/adminapi/controller/v1/marketplace/PlatformAsset.php",
+        "crmeb/app/adminapi/controller/v1/product/PlatformProductMedia.php",
+        "crmeb/app/adminapi/route/marketplace.php",
+        "crmeb/app/api/controller/v1/admin/StoreManageController.php",
+        "crmeb/app/api/middleware/CustomerMiddleware.php",
+        "crmeb/app/api/route/v1.php",
+        "crmeb/app/dao/marketplace/MerchantAttachmentDao.php",
+        "crmeb/app/dao/marketplace/assets/PlatformAssetDao.php",
+        "crmeb/app/dao/marketplace/product/PlatformProductMediaDao.php",
+        "crmeb/app/merchantapi/controller/Attachment.php",
+        "crmeb/app/merchantapi/route/attachment.php",
+        "crmeb/app/services/marketplace/AuditLogServices.php",
+        "crmeb/app/services/marketplace/MerchantAttachmentServices.php",
+        "crmeb/app/services/marketplace/PlatformAccessServices.php",
+        "crmeb/app/services/marketplace/assets/PlatformAssetServices.php",
+        "crmeb/app/services/marketplace/assets/PlatformAssetStorage.php",
+        "crmeb/app/services/marketplace/product/LegacyProductAccessServices.php",
+        "crmeb/app/services/marketplace/product/PlatformProductMediaServices.php",
+        "crmeb/app/services/system/log/SystemLogServices.php",
+        "docs/multi-merchant/00-implementation-spec.md",
+        "docs/multi-merchant/records/ms2/upload-asset-domains.md",
+        "help/migrations/marketplace-ms1.md",
+        "help/migrations/marketplace-ms4-platform-asset-menus.md",
+        "help/migrations/marketplace-ms4-platform-asset-menus.php",
+        "help/migrations/marketplace-ms4-product-media-menus.md",
+        "help/migrations/marketplace-ms4-product-media-menus.php",
+        "template/admin/src/api/product-media.js",
+        "template/admin/src/components/uploadPictures/index.vue",
+        "template/admin/src/components/uploadVideo2/index.vue",
+        "template/admin/src/components/uploadVideo2/model.js",
+        "template/admin/src/components/uploadVideo2/videoModal.vue",
+        "template/admin/src/components/wangEditor/editor.js",
+        "template/admin/src/components/wangEditor/html.js",
+        "template/admin/src/components/wangEditor/index.vue",
+        "template/admin/src/pages/product/productAdd/index.vue",
+        "template/merchant/src/api/index.js",
+        "template/merchant/src/components/AttachmentLibrary.vue",
+        "template/merchant/src/components/AttachmentPicker.vue",
+        "template/merchant/src/pages/product/edit.vue",
+        "template/merchant/src/styles.css",
+        "template/uni-app/pages/admin/goods/addGoods.vue"
+      ]
+    }
+  ],
+  "selected_HEAD_parent_list_note": "Main2/UI2/MEDIA41 list only each HEAD against its direct parent; full outgoing includesbfe44 ancestor and89 unique blobs. These are split Git source histories, not a merged integrated product."
+}

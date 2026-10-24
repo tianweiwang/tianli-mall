@@ -1,0 +1,846 @@
+{
+  "files": [
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbafb-next-normal-preparation-r3/normal-source/author_support.py",
+      "bytes": 4968,
+      "sha256": "8a8d574ce925b0f5bf7d98489602fa589cf007a166974eecf2dcb085b5735351",
+      "native9": [
+        1618373208947831848,
+        281474987444255,
+        33206,
+        1,
+        0,
+        0,
+        4968,
+        1792858731142643000,
+        1792858731142643000
+      ],
+      "fd9": [
+        1618373208947831848,
+        281474987444255,
+        33206,
+        1,
+        0,
+        0,
+        4968,
+        1792858731142643000,
+        1792858731142643000
+      ],
+      "birthtime_ns": 1792858731142643000,
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbafb-next-normal-preparation-r3/normal-source/authority-next.py.fragment",
+      "bytes": 15842,
+      "sha256": "d6529e05f29fd9d7ed46e28317b650b8744120c016f9098e5b99e754d91477a7",
+      "native9": [
+        1618373208947831848,
+        281474987444261,
+        33206,
+        1,
+        0,
+        0,
+        15842,
+        1792858731146642900,
+        1792858731146642900
+      ],
+      "fd9": [
+        1618373208947831848,
+        281474987444261,
+        33206,
+        1,
+        0,
+        0,
+        15842,
+        1792858731146642900,
+        1792858731146642900
+      ],
+      "birthtime_ns": 1792858731146642900,
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbafb-next-normal-preparation-r3/normal-source/current-profile-checks.py.fragment",
+      "bytes": 7123,
+      "sha256": "6ea981363dc36da62c99c5db53b681281ab6b82106e1b446f7a02a9e815a6c80",
+      "native9": [
+        1618373208947831848,
+        281474987444263,
+        33206,
+        1,
+        0,
+        0,
+        7123,
+        1792858731148146600,
+        1792858731148146600
+      ],
+      "fd9": [
+        1618373208947831848,
+        281474987444263,
+        33206,
+        1,
+        0,
+        0,
+        7123,
+        1792858731148146600,
+        1792858731148146600
+      ],
+      "birthtime_ns": 1792858731148146600,
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbafb-next-normal-preparation-r3/normal-source/d0a5-failed-finite-checks.py.fragment",
+      "bytes": 14328,
+      "sha256": "4bec75c3f01d1e8b1452cf8a455ee99bdcc59663606706679ba7a43369bb7520",
+      "native9": [
+        1618373208947831848,
+        281474987444265,
+        33206,
+        1,
+        0,
+        0,
+        14328,
+        1792858731155225700,
+        1792858731155225700
+      ],
+      "fd9": [
+        1618373208947831848,
+        281474987444265,
+        33206,
+        1,
+        0,
+        0,
+        14328,
+        1792858731155225700,
+        1792858731155225700
+      ],
+      "birthtime_ns": 1792858731155225700,
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbafb-next-normal-preparation-r3/normal-source/launcher/launch.py",
+      "bytes": 19276,
+      "sha256": "7aa97994a1b765e14e46dbd7265fe270db328f6ca1261f65e1848792d5da253c",
+      "native9": [
+        1618373208947831848,
+        281474987444268,
+        33206,
+        1,
+        0,
+        0,
+        19276,
+        1792858849321083700,
+        1792858736386377200
+      ],
+      "fd9": [
+        1618373208947831848,
+        281474987444268,
+        33206,
+        1,
+        0,
+        0,
+        19276,
+        1792858849321083700,
+        1792858849321083700
+      ],
+      "birthtime_ns": 1792858736386377200,
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbafb-next-normal-preparation-r3/normal-source/materializer/INVERSE.json",
+      "bytes": 1172123,
+      "sha256": "43b5cfd7683e0b63c3ccfe24b874d18b8cb243b293310391f384dab4770b3bdb",
+      "native9": [
+        1618373208947831848,
+        281474987444270,
+        33206,
+        1,
+        0,
+        0,
+        1172123,
+        1792858736388936300,
+        1792858736386924900
+      ],
+      "fd9": [
+        1618373208947831848,
+        281474987444270,
+        33206,
+        1,
+        0,
+        0,
+        1172123,
+        1792858736388936300,
+        1792858736388936300
+      ],
+      "birthtime_ns": 1792858736386924900,
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbafb-next-normal-preparation-r3/normal-source/materializer/PLAN.md",
+      "bytes": 20693,
+      "sha256": "3847de09a46738cc864f5ec2826a9bbf244f071d11e7d2f429ed7e631d1fed50",
+      "native9": [
+        1618373208947831848,
+        281474987444271,
+        33206,
+        1,
+        0,
+        0,
+        20693,
+        1792858736388936300,
+        1792858736388936300
+      ],
+      "fd9": [
+        1618373208947831848,
+        281474987444271,
+        33206,
+        1,
+        0,
+        0,
+        20693,
+        1792858736388936300,
+        1792858736388936300
+      ],
+      "birthtime_ns": 1792858736388936300,
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbafb-next-normal-preparation-r3/normal-source/materializer/prepare.py",
+      "bytes": 23693936,
+      "sha256": "306b33cd0d9a2e6d3cab8afa408c0588a5319bbc8d98aaed3ae999293197e0c5",
+      "native9": [
+        1618373208947831848,
+        281474987444272,
+        33206,
+        1,
+        0,
+        0,
+        23693936,
+        1792858849309333900,
+        1792858736388936300
+      ],
+      "fd9": [
+        1618373208947831848,
+        281474987444272,
+        33206,
+        1,
+        0,
+        0,
+        23693936,
+        1792858849309333900,
+        1792858849309333900
+      ],
+      "birthtime_ns": 1792858736388936300,
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbafb-next-normal-preparation-r3/normal-source/namespace_static.py",
+      "bytes": 1947,
+      "sha256": "2d0f6cb263c2144601ff36ae561a39461eb20ca53571da7e46174f4153d26956",
+      "native9": [
+        1618373208947831848,
+        281474987444257,
+        33206,
+        1,
+        0,
+        0,
+        1947,
+        1792858731143643200,
+        1792858731143643200
+      ],
+      "fd9": [
+        1618373208947831848,
+        281474987444257,
+        33206,
+        1,
+        0,
+        0,
+        1947,
+        1792858731143643200,
+        1792858731143643200
+      ],
+      "birthtime_ns": 1792858731143643200,
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbafb-next-normal-preparation-r3/normal-source/NORMAL8-SYNTAX-QUALIFICATION.json",
+      "bytes": 1538,
+      "sha256": "513fdc8c127e165a51f5165c987201753c0819ed2ebcdffa38fde96a696986ab",
+      "native9": [
+        1618373208947831848,
+        281474987444313,
+        33206,
+        1,
+        0,
+        0,
+        1538,
+        1792859041891200400,
+        1792859041891200400
+      ],
+      "fd9": [
+        1618373208947831848,
+        281474987444313,
+        33206,
+        1,
+        0,
+        0,
+        1538,
+        1792859041891200400,
+        1792859041891200400
+      ],
+      "birthtime_ns": 1792859041891200400,
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbafb-next-normal-preparation-r3/normal-source/R100-SOURCE-CHANGES.json",
+      "bytes": 1943,
+      "sha256": "5c4054b88ea418aec8086b4d7aa90cf124ef4fa23fa1c54e7034847f0604b6d0",
+      "native9": [
+        1618373208947831848,
+        281474987444289,
+        33206,
+        1,
+        0,
+        0,
+        1943,
+        1792858736480350600,
+        1792858736480350600
+      ],
+      "fd9": [
+        1618373208947831848,
+        281474987444289,
+        33206,
+        1,
+        0,
+        0,
+        1943,
+        1792858736480350600,
+        1792858736480350600
+      ],
+      "birthtime_ns": 1792858736480350600,
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbafb-next-normal-preparation-r3/normal-source/SOURCE-INHERITANCE.json",
+      "bytes": 3259,
+      "sha256": "b37b8d3af8e5150d57a59eb0959c65ef48f5dd14ad4111e2ab474de4f3c73cb1",
+      "native9": [
+        1618373208947831848,
+        281474987444314,
+        33206,
+        1,
+        0,
+        0,
+        3259,
+        1792859041894319900,
+        1792859041894319900
+      ],
+      "fd9": [
+        1618373208947831848,
+        281474987444314,
+        33206,
+        1,
+        0,
+        0,
+        3259,
+        1792859041894319900,
+        1792859041894319900
+      ],
+      "birthtime_ns": 1792859041894319900,
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbafb-next-normal-preparation-r3/normal-source/SOURCE-PROOF.json",
+      "bytes": 2382,
+      "sha256": "271c457e25310f4633c068b2f3c0b06deaa1ff82186ba0737a14f379cc24e73d",
+      "native9": [
+        1618373208947831848,
+        281474987444315,
+        33206,
+        1,
+        0,
+        0,
+        2382,
+        1792859041894837200,
+        1792859041894837200
+      ],
+      "fd9": [
+        1618373208947831848,
+        281474987444315,
+        33206,
+        1,
+        0,
+        0,
+        2382,
+        1792859041894837200,
+        1792859041894837200
+      ],
+      "birthtime_ns": 1792859041894837200,
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbafb-next-normal-preparation-r3/normal-source/source_reader.py",
+      "bytes": 4175,
+      "sha256": "1edb62a4c988e338a1d5d397b118b8407c8b7e6ead4477d5c523454045710610",
+      "native9": [
+        1618373208947831848,
+        281474987444259,
+        33206,
+        1,
+        0,
+        0,
+        4175,
+        1792858731145650200,
+        1792858731144643300
+      ],
+      "fd9": [
+        1618373208947831848,
+        281474987444259,
+        33206,
+        1,
+        0,
+        0,
+        4175,
+        1792858731145650200,
+        1792858731145650200
+      ],
+      "birthtime_ns": 1792858731144643300,
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbafb-next-normal-preparation-r3/normal-source/validation/actual-profile/compose.yml",
+      "bytes": 13115,
+      "sha256": "22aed47453c67499c361efa57b24c954433fb5a68863a07ede5896f845451b7b",
+      "native9": [
+        1618373208947831848,
+        281474987444275,
+        33206,
+        1,
+        0,
+        0,
+        13115,
+        1792858736421312000,
+        1792858736421312000
+      ],
+      "fd9": [
+        1618373208947831848,
+        281474987444275,
+        33206,
+        1,
+        0,
+        0,
+        13115,
+        1792858736421312000,
+        1792858736421312000
+      ],
+      "birthtime_ns": 1792858736421312000,
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbafb-next-normal-preparation-r3/normal-source/validation/actual-profile/interface-v1.json",
+      "bytes": 110526,
+      "sha256": "c536e9c0bb90b357d87dc266ae7cf7723093db6eec608bf80391cfd28f6a521d",
+      "native9": [
+        1618373208947831848,
+        281474987444276,
+        33206,
+        1,
+        0,
+        0,
+        110526,
+        1792858736422312000,
+        1792858736422312000
+      ],
+      "fd9": [
+        1618373208947831848,
+        281474987444276,
+        33206,
+        1,
+        0,
+        0,
+        110526,
+        1792858736422312000,
+        1792858736422312000
+      ],
+      "birthtime_ns": 1792858736422312000,
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbafb-next-normal-preparation-r3/normal-source/validation/actual-profile/ms4-host.py",
+      "bytes": 357359,
+      "sha256": "e8d27a350bccc7c7c1f607d46b6dabbeababb2f62e3ea0a0b36b5bb7890e87ed",
+      "native9": [
+        1618373208947831848,
+        281474987444277,
+        33206,
+        1,
+        0,
+        0,
+        357359,
+        1792858736423311800,
+        1792858736422312000
+      ],
+      "fd9": [
+        1618373208947831848,
+        281474987444277,
+        33206,
+        1,
+        0,
+        0,
+        357359,
+        1792858736423311800,
+        1792858736423311800
+      ],
+      "birthtime_ns": 1792858736422312000,
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbafb-next-normal-preparation-r3/normal-source/validation/actual-profile/ms4-initialize.php",
+      "bytes": 91460,
+      "sha256": "1e5a882975311d431993127940f02ac14934ca9e46d30742108a9c8a607afe98",
+      "native9": [
+        1618373208947831848,
+        281474987444278,
+        33206,
+        1,
+        0,
+        0,
+        91460,
+        1792858736424312100,
+        1792858736424312100
+      ],
+      "fd9": [
+        1618373208947831848,
+        281474987444278,
+        33206,
+        1,
+        0,
+        0,
+        91460,
+        1792858736424312100,
+        1792858736424312100
+      ],
+      "birthtime_ns": 1792858736424312100,
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbafb-next-normal-preparation-r3/normal-source/validation/actual-profile/normal-close-ms4-fulfillment.py",
+      "bytes": 48793,
+      "sha256": "2582823071eb1acfcd7ed37c16b2d0c379f57328f27c5c803d8587e3ecf9040d",
+      "native9": [
+        1618373208947831848,
+        281474987444279,
+        33206,
+        1,
+        0,
+        0,
+        48793,
+        1792858736425312600,
+        1792858736424312100
+      ],
+      "fd9": [
+        1618373208947831848,
+        281474987444279,
+        33206,
+        1,
+        0,
+        0,
+        48793,
+        1792858736425312600,
+        1792858736425312600
+      ],
+      "birthtime_ns": 1792858736424312100,
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbafb-next-normal-preparation-r3/normal-source/validation/actual-profile/README.md",
+      "bytes": 92239,
+      "sha256": "8ef95e9271dc027b08592f84f05ecc57668f2de5f0656bb28c35cbf37cdabd88",
+      "native9": [
+        1618373208947831848,
+        281474987444280,
+        33206,
+        1,
+        0,
+        0,
+        92239,
+        1792858736425312600,
+        1792858736425312600
+      ],
+      "fd9": [
+        1618373208947831848,
+        281474987444280,
+        33206,
+        1,
+        0,
+        0,
+        92239,
+        1792858736425312600,
+        1792858736425312600
+      ],
+      "birthtime_ns": 1792858736425312600,
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbafb-next-normal-preparation-r3/normal-source/validation/actual-profile/seed-source-inverse.json",
+      "bytes": 639,
+      "sha256": "c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a",
+      "native9": [
+        1618373208947831848,
+        281474987444281,
+        33206,
+        1,
+        0,
+        0,
+        639,
+        1792858736426313500,
+        1792858736426313500
+      ],
+      "fd9": [
+        1618373208947831848,
+        281474987444281,
+        33206,
+        1,
+        0,
+        0,
+        639,
+        1792858736426313500,
+        1792858736426313500
+      ],
+      "birthtime_ns": 1792858736426313500,
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbafb-next-normal-preparation-r3/normal-source/validation/actual-profile/source-derivation.json",
+      "bytes": 633891,
+      "sha256": "73d057d68590dfd8db2d03b8dbfcd71830f6b1d69a7edd6c656433585f8b4587",
+      "native9": [
+        1618373208947831848,
+        281474987444282,
+        33206,
+        1,
+        0,
+        0,
+        633891,
+        1792858736427441300,
+        1792858736426313500
+      ],
+      "fd9": [
+        1618373208947831848,
+        281474987444282,
+        33206,
+        1,
+        0,
+        0,
+        633891,
+        1792858736427441300,
+        1792858736427441300
+      ],
+      "birthtime_ns": 1792858736426313500,
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbafb-next-normal-preparation-r3/normal-source/validation/actual-profile/verify-zero-ms4-fulfillment.py",
+      "bytes": 302705,
+      "sha256": "dd615834d3ff3a314de0288546a7a210d6b32130333822632dc95cb6f85542d6",
+      "native9": [
+        1618373208947831848,
+        281474987444283,
+        33206,
+        1,
+        0,
+        0,
+        302705,
+        1792858736428440000,
+        1792858736427441300
+      ],
+      "fd9": [
+        1618373208947831848,
+        281474987444283,
+        33206,
+        1,
+        0,
+        0,
+        302705,
+        1792858736428440000,
+        1792858736428440000
+      ],
+      "birthtime_ns": 1792858736427441300,
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbafb-next-normal-preparation-r3/normal-source/validation/DESIGN-TASKS.md",
+      "bytes": 22292,
+      "sha256": "4fc242f017a851094fcdb6e5086c7e0d704d5967beb95ce267fa50f1e5b58ed9",
+      "native9": [
+        1618373208947831848,
+        281474987444284,
+        33206,
+        1,
+        0,
+        0,
+        22292,
+        1792858736428440000,
+        1792858736428440000
+      ],
+      "fd9": [
+        1618373208947831848,
+        281474987444284,
+        33206,
+        1,
+        0,
+        0,
+        22292,
+        1792858736428440000,
+        1792858736428440000
+      ],
+      "birthtime_ns": 1792858736428440000,
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbafb-next-normal-preparation-r3/normal-source/validation/PINS.json",
+      "bytes": 358,
+      "sha256": "e40e95ba18acbdd3d42843129535be813f471b5bb1b45e018ba3f453466cd920",
+      "native9": [
+        1618373208947831848,
+        281474987444285,
+        33206,
+        1,
+        0,
+        0,
+        358,
+        1792858849083391000,
+        1792858736429440700
+      ],
+      "fd9": [
+        1618373208947831848,
+        281474987444285,
+        33206,
+        1,
+        0,
+        0,
+        358,
+        1792858849083391000,
+        1792858849083391000
+      ],
+      "birthtime_ns": 1792858736429440700,
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbafb-next-normal-preparation-r3/normal-source/validation/PROFILE-PINS.json",
+      "bytes": 1518,
+      "sha256": "8448447770a15bce89821f57e84b875e709c04475df40fce651d8742b27fdb15",
+      "native9": [
+        1618373208947831848,
+        281474987444286,
+        33206,
+        1,
+        0,
+        0,
+        1518,
+        1792858847172367600,
+        1792858736431439800
+      ],
+      "fd9": [
+        1618373208947831848,
+        281474987444286,
+        33206,
+        1,
+        0,
+        0,
+        1518,
+        1792858847172367600,
+        1792858847172367600
+      ],
+      "birthtime_ns": 1792858736431439800,
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbafb-next-normal-preparation-r3/normal-source/validation/PROFILE-PUBLICATION.json",
+      "bytes": 1463213,
+      "sha256": "569a51661c2e2ed48d0737f87b1c2c4f525d56db08ca2123852500e331b88732",
+      "native9": [
+        1618373208947831848,
+        281474987444287,
+        33206,
+        1,
+        0,
+        0,
+        1463213,
+        1792858847160422300,
+        1792858736431439800
+      ],
+      "fd9": [
+        1618373208947831848,
+        281474987444287,
+        33206,
+        1,
+        0,
+        0,
+        1463213,
+        1792858847160422300,
+        1792858847160422300
+      ],
+      "birthtime_ns": 1792858736431439800,
+      "EOF": true,
+      "closed": true
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbafb-next-normal-preparation-r3/normal-source/validation/run.py",
+      "bytes": 23709336,
+      "sha256": "66f0618dc90ee149d6242be72b47203c95ce39e88fe6260892e646645b759c42",
+      "native9": [
+        1618373208947831848,
+        281474987444288,
+        33206,
+        1,
+        0,
+        0,
+        23709336,
+        1792858848935194200,
+        1792858736434873300
+      ],
+      "fd9": [
+        1618373208947831848,
+        281474987444288,
+        33206,
+        1,
+        0,
+        0,
+        23709336,
+        1792858848935194200,
+        1792858848935194200
+      ],
+      "birthtime_ns": 1792858736434873300,
+      "EOF": true,
+      "closed": true
+    }
+  ],
+  "all_own9_fd9_cross4_birthtime_EOF_and_final_named_windows": true,
+  "target_callback_execution": false
+}

@@ -1,0 +1,34 @@
+{
+  "schema": 1,
+  "scope": "FIXED_ACTUAL_CURRENT_NORMAL8_SOURCEIO_SYNTAX_ONLY_NOT_BUSINESS_OR_BUI",
+  "actual_result": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbafb-source-io-eight-php-syntax-actual-r1/RESULT.json",
+    "bytes": 12335,
+    "sha256": "064dc0e93230d2539bc923b05db1bb877269d81bfdb6c1e8f19805aa88a05ed0"
+  },
+  "Root_readback": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/current41c0-normal-root-admission-r1/R100-EIGHT-PHP-ACTUAL-ROOT-READBACK.json",
+    "bytes": 32965,
+    "sha256": "1fc551dbc152bc197c2f2c83ee420f863fd8bd717e6b98191cf39dc87bd531a7"
+  },
+  "fixed_self_contained_actual_copy": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbafb-next-normal-preparation-r3/inputs/NORMAL8-ACTUAL.json",
+    "bytes": 12335,
+    "sha256": "064dc0e93230d2539bc923b05db1bb877269d81bfdb6c1e8f19805aa88a05ed0"
+  },
+  "fixed_Root_copy": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbafb-next-normal-preparation-r3/inputs/NORMAL8-ROOT-READBACK.json",
+    "bytes": 32965,
+    "sha256": "1fc551dbc152bc197c2f2c83ee420f863fd8bd717e6b98191cf39dc87bd531a7"
+  },
+  "RESULT_keys": 18,
+  "complete_PHP_children0": 8,
+  "host_native0": 8,
+  "saved_public": 36,
+  "outer_public": 4,
+  "total_public": 40,
+  "same_normal_PHP_sources_in_r1_and_r3": true,
+  "F2_changes_Python_only": true,
+  "B_UI20_8_38_postA12_and_M_S_business": "UNBOUND_NOT_QUALIFIED_BY_THIS_SYNTAX",
+  "author_actual_runner_execution": false
+}

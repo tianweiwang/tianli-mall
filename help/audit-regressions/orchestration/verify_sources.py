@@ -132,6 +132,77 @@ def check_pipeline_schema(root, package, source_commit, size, steps):
                 'Current36 must preserve the complete historical35 schema')
 
 
+def check_bafb_archive(root, manifest, expected):
+    """Inspect current complete source bytes/literals, never original runtime paths."""
+    current = manifest['current_full_a_required']
+    package = manifest['current_source_alias']['package']
+    require(len(current) == len(set(current)) == 18
+            and all(PurePosixPath(rel).parts[0] == package and 'sources/' + rel in expected for rel in current),
+            'Current bafb complete18 source members missing')
+    folder = root / 'sources' / package
+    pins = load_json((folder / 'PINS.json').read_bytes())
+    require(type(pins['files']) is dict and len(pins['files']) == 29, 'Current bafb original Source29 contract')
+    require({path.relative_to(folder).as_posix() for path in folder.rglob('*') if path.is_file()}
+            == set(pins['files']) | {'PINS.json'}, 'Current Source29 plus PINS namespace mismatch')
+    for rel, descriptor in pins['files'].items():
+        pure = PurePosixPath(rel)
+        require(not pure.is_absolute() and '..' not in pure.parts and str(pure) == rel,
+                'Noncanonical current source contract member')
+        require(set(descriptor) == {'path', 'bytes', 'sha256'} and type(descriptor['path']) is str,
+                'Original current Source row must retain true three-field schema')
+        raw = (folder / rel).read_bytes()
+        require({'bytes': len(raw), 'sha256': hashlib.sha256(raw).hexdigest()}
+                == {key: descriptor[key] for key in ('bytes', 'sha256')}, 'Current original Source contract bytes mismatch')
+    # descriptor.path/native9/birth are historical Source data, never file-system targets here.
+    for entry in ('materializer/prepare.py', 'validation/run.py'):
+        check_declared_authority_globals(folder / entry)
+    check_pipeline_schema(root, package, manifest['current_orchestration_source_commit'], 37, 24)
+    for entry in ('materializer/prepare.py', 'validation/run.py', 'launcher/launch.py'):
+        values = literal_values(ast.parse((folder / entry).read_bytes()))
+        require(values['CURRENT_M_RESULT_KEYS36'] == [name for name in values['CURRENT_M_RESULT_KEYS37']
+                if name != 'current_6e3850_paid_producer_failure_retirement'],
+                'Current37 must preserve complete historical36 field contract')
+        if entry != 'launcher/launch.py':
+            require(len(values['SOURCE_REQUIREMENT_PATHS']) == 316
+                    and len(values['COMMITTED_PATHS']) == 311 and len(values['NEW_TRACKED_PATHS']) == 264,
+                    'Current complete source path/lifecycle coverage changed')
+    controls = manifest['current_author_code_required']
+    require(len(controls) == len(set(controls)) == 10 and all('sources/' + rel in expected for rel in controls),
+            'Selected current source-control ten-member set incomplete')
+    selected = manifest['current_source_delivery']
+    require(selected['runtime_ready'] is False and selected['actual_runtime_receipts_archived'] is False
+            and selected['complete_original_authoring_replay_inputs_archived'] is False,
+            'Current source-only boundaries changed')
+    paths = selected['selected_paths']
+    require(paths and len(paths) == len(set(paths))
+            and all(path in expected for path in paths), 'Selected source delivery membership mismatch')
+    require(selected['selected_files'] == len(paths)
+            and selected['selected_bytes'] == sum(row['bytes'] for row in manifest['files'] if row['path'] in paths),
+            'Selected source delivery count/bytes mismatch')
+    outer = selected['native_outer_sources']
+    roles = {'materialize_root_outer', 'success_S_readers_root_outer'}
+    require(set(outer['required_roles']) == roles and type(outer['sources']) is dict,
+            'Two native outer roles must be recorded')
+    if outer['source_complete']:
+        require(set(outer['sources']) == roles and selected['source_delivery_complete'] is True,
+                'Complete source delivery lacks actual native outer entries')
+        for role, descriptor in outer['sources'].items():
+            require(descriptor['path'] in paths, 'Native outer not part of exact selected manifest')
+            raw = (root / descriptor['path']).read_bytes()
+            require({'bytes': len(raw), 'sha256': hashlib.sha256(raw).hexdigest()}
+                    == {key: descriptor[key] for key in ('bytes', 'sha256')}, 'Native outer source bytes mismatch')
+    else:
+        require(outer['sources'] == {} and set(outer['pending_roles']) == roles
+                and selected['source_delivery_complete'] is False,
+                'Pending native outer sources must not be promoted to complete')
+    return {'package': package, 'selected_source_files': len(paths),
+            'source_delivery_complete': selected['source_delivery_complete'],
+            'native_outer_sources_complete': outer['source_complete'],
+            'current_normal_Source_members': len(pins['files']),
+            'current_author_code_members': len(controls)}
+
+
+
 def main():
     root = Path(__file__).resolve().parent
     manifest = load_json((root / 'source-manifest.json').read_bytes())
@@ -154,7 +225,13 @@ def main():
         expected.add(rel)
         require(type(row['bytes']) is int and row['bytes'] >= 0, 'Invalid file length')
         require(re.fullmatch(r'[0-9a-f]{64}', row['sha256']) is not None, 'Invalid hash')
-        require(row['origin_relative_path'] == '/'.join(pure.parts[1:]), 'Origin path mismatch')
+        alias = manifest['current_source_alias']
+        if row['package'] == alias['package']:
+            require(row['origin_root'] == alias['origin_root']
+                    and row['origin_relative_path'] == alias['origin_relative_root'] + '/' + '/'.join(pure.parts[2:]),
+                    'Current source snapshot alias origin mismatch')
+        else:
+            require(row['origin_relative_path'] == '/'.join(pure.parts[1:]), 'Origin path mismatch')
         require(row['package'] == pure.parts[1], 'Source package mismatch')
         path = root
         for part in pure.parts:
@@ -186,7 +263,7 @@ def main():
                 'Incomplete historical pipeline member set')
         for rel in members:
             require('sources/' + rel in expected, 'Preserved complete pipeline source missing: ' + rel)
-    current = manifest['current_full_a_required']
+    current = manifest['preserved_6e_full_a_required']
     require(len(current) == len(set(current)) == 18, 'Current pipeline must contain all 18 members')
     for rel in current:
         require('sources/' + rel in expected, 'Current pipeline source missing: ' + rel)
@@ -218,8 +295,8 @@ def main():
         check_declared_authority_globals(root / 'sources' / preserved_28dc_package / entry)
     check_pipeline_schema(root, preserved_28dc_package, '28dcab632da3e62f7c8b8d926b6ab9406534d0d3', 34, 18)
     check_pipeline_schema(root, previous_package, '175f3cd6183894185656a2974579e1be39eed7a7', 35, 19)
-    check_pipeline_schema(root, current_package, manifest['current_orchestration_source_commit'], 36, 20)
-    authors = manifest['current_author_code_required']
+    check_pipeline_schema(root, current_package, manifest['preserved_6e_orchestration_source_commit'], 36, 20)
+    authors = manifest['preserved_6e_author_code_required']
     author_names = {
         'assemble.py', 'source_reader.py', 'author_support.py', 'authority-current.py.fragment',
         'prepare-inputs.py', 'profile-author.py', 'retirement-author.py', 'DESIGN.md',
@@ -292,9 +369,15 @@ def main():
             'Source selection cannot be promoted to runtime qualification')
     dependencies = load_json((root / 'runtime-dependencies.json').read_bytes())
     require(dependencies['runtime_ready'] is False, 'Runtime readiness cannot be inferred from source verification')
-    require(dependencies['current_source']['package'] == current_package, 'Current package metadata mismatch')
-    require(dependencies['current_source']['source_commit'] == manifest['current_orchestration_source_commit'],
-            'Current business source metadata mismatch')
+    require(dependencies['preserved_e9df_current_source']['package'] == current_package, 'Preserved6e package metadata mismatch')
+    require(dependencies['preserved_e9df_current_source']['source_commit'] == manifest['preserved_6e_orchestration_source_commit'],
+            'Preserved6e business source metadata mismatch')
+    new_source = check_bafb_archive(root, manifest, expected)
+    require(dependencies['current_source']['package'] == new_source['package']
+            and dependencies['current_source']['source_commit'] == manifest['current_orchestration_source_commit']
+            and dependencies['current_source']['runtime_ready'] is False
+            and dependencies['current_source']['source_delivery_complete'] == new_source['source_delivery_complete'],
+            'Current bafb source-only metadata mismatch')
     print(json.dumps({
         'status': 'PASS_SOURCE_ARCHIVE_ONLY',
         'files': len(rows),
@@ -304,7 +387,13 @@ def main():
         'json_parsed': json_count,
         'current_source_authority_global_checks': 2,
         'preserved_previous_authority_global_checks': 2,
-        'strict_current_M_result_fields': 36,
+        'strict_current_M_result_fields': 37,
+        'strict_preserved_6e_M_result_fields': 36,
+        'current_source_steps': 24,
+        'current_normal_Source_members': new_source['current_normal_Source_members'],
+        'selected_current_source_files': new_source['selected_source_files'],
+        'source_delivery_complete': new_source['source_delivery_complete'],
+        'native_outer_sources_complete': new_source['native_outer_sources_complete'],
         'strict_previous_M_result_fields': 35,
         'strict_preserved_28dc_M_result_fields': 34,
         'strict_preserved_historical_M_result_fields': 33,
@@ -313,7 +402,8 @@ def main():
         'supplemental_source_packages': len(manifest['supplemental_source_packages']),
         'preserved_historical_authority_global_checks': 2,
         'previous_author_code_members': len(previous_authors),
-        'current_author_code_members': len(authors),
+        'preserved_6e_author_code_members': len(authors),
+        'current_selected_source_control_members': new_source['current_author_code_members'],
         'archived_programs_executed': False,
         'runtime_ready': False,
         'runtime_dependencies': 'runtime-dependencies.json',

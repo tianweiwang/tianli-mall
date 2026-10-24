@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "status": "R100_NARROW_F2_SOURCE_CANDIDATE_NOT_EXECUTED",
+  "source_sha": "bafb6305062aeb6b6e945c21da572863062ca480",
+  "parent": "d0a5d5398546e223122b5c2a2f115e1908f78ced",
+  "source_members18": [
+    "launcher/launch.py",
+    "materializer/INVERSE.json",
+    "materializer/PLAN.md",
+    "materializer/prepare.py",
+    "validation/actual-profile/compose.yml",
+    "validation/actual-profile/interface-v1.json",
+    "validation/actual-profile/ms4-host.py",
+    "validation/actual-profile/ms4-initialize.php",
+    "validation/actual-profile/normal-close-ms4-fulfillment.py",
+    "validation/actual-profile/README.md",
+    "validation/actual-profile/seed-source-inverse.json",
+    "validation/actual-profile/source-derivation.json",
+    "validation/actual-profile/verify-zero-ms4-fulfillment.py",
+    "validation/DESIGN-TASKS.md",
+    "validation/PINS.json",
+    "validation/PROFILE-PINS.json",
+    "validation/PROFILE-PUBLICATION.json",
+    "validation/run.py"
+  ],
+  "changed_runtime_members": [
+    "launcher/launch.py",
+    "materializer/INVERSE.json",
+    "materializer/PLAN.md",
+    "materializer/prepare.py",
+    "validation/DESIGN-TASKS.md",
+    "validation/PINS.json",
+    "validation/PROFILE-PINS.json",
+    "validation/PROFILE-PUBLICATION.json",
+    "validation/run.py"
+  ],
+  "all_profile9_raw": true,
+  "F2_only_semantic_line_before": "        and len(closed['removed']['containers'])==4 and len(closed['removed']['networks'])==1 and len(closed['removed']['volumes'])==9",
+  "F2_only_semantic_line_after": "        and type(closed['removed']) is dict and closed['removed']=={'containers':4,'networks':1,'volumes':9} and all(type(value) is int for value in closed['removed'].values())",
+  "exact_static_actual_removed_dict": {
+    "containers": 4,
+    "networks": 1,
+    "volumes": 9
+  },
+  "source_PHP_changed": false,
+  "new_Git_stage_or_whole_history": false,
+  "new_Root14_M3_M_S_actuals": "UNBOUND_NOT_RUN"
+}

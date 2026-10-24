@@ -3,50 +3,51 @@
   "runtime_ready": false,
   "scope": "source recovery, not a portable business-validation runtime",
   "last_executed_pipeline": {
-    "package": "full-a-preflight-diagnostic-current6e3850-normal-next-source-r2",
-    "source_commit": "6e3850fe210b2b1e99b2a33baa68123e34aefab6",
-    "outcome": "FAILED_AT_PAID_PRODUCER",
-    "original_S_session": 23097,
-    "original_S_pid": 2388,
-    "state_observed_ns": 1792800012677784900,
-    "original_resources_closed_and_independently_verified": true,
-    "S_native_exit": 1,
-    "paid_native_exit": 1,
-    "normal_close_native_zero": 93,
-    "independent_zero_native_zero": 20,
-    "Root_and_peer_complete_actual_readbacks": "NATIVE_WAIT_ZERO",
-    "eleventh_whole_authority_sealed": true,
-    "business_acceptance": "INCOMPLETE",
-    "A0": false
+    "package": "currentbafb-normal-r3",
+    "source_commit": "bafb6305062aeb6b6e945c21da572863062ca480",
+    "outcome": "ORIGINAL_S_STARTED_NOT_SIGNED_SUCCESS_BY_SOURCE_ARCHIVE",
+    "original_runtime_receipts_archived": false,
+    "full_business_acceptance": "INCOMPLETE",
+    "A0": false,
+    "resources_owned_by_original_S_Root_only": true
   },
   "last_materialization_attempt": {
-    "package": "full-a-preflight-diagnostic-current6e3850-normal-next-source-r2",
-    "source_commit": "6e3850fe210b2b1e99b2a33baa68123e34aefab6",
-    "outcome": "COMPLETED_CURRENT_NORMAL_MATERIALIZATION",
-    "native_operations": 1104,
-    "Root_materialization_readback_not_archived": {
-      "bytes": 3565,
-      "sha256": "93ae4947412f5972906f70d27f0d3affedceeb49716e6cc8274c13b2c4bddbae"
-    }
+    "package": "currentbafb-normal-r3",
+    "source_commit": "bafb6305062aeb6b6e945c21da572863062ca480",
+    "outcome": "COMPLETED_CURRENT_NORMAL_MATERIALIZATION_AND_BOTH_FULL_READBACKS_QUALIFIED_EXTERNALLY",
+    "native_operations": 1150,
+    "M_RESULT_fields": 37,
+    "source_steps": 24,
+    "original_runtime_receipts_archived": false
   },
   "current_source": {
-    "package": "full-a-preflight-diagnostic-current6e3850-normal-next-source-r2",
-    "source_commit": "6e3850fe210b2b1e99b2a33baa68123e34aefab6",
-    "profile_sources_present": true,
-    "materializer_present": true,
-    "validation_driver_present": true,
-    "launcher_present": true,
+    "package": "currentbafb-normal-r3",
+    "source_commit": "bafb6305062aeb6b6e945c21da572863062ca480",
     "required_program_members": 18,
-    "materialization": "COMPLETED_LOCALLY",
-    "initializer_php82_syntax": "PASS_SYNTAX_ONLY",
-    "full_business_run": "FAILED_AT_PAID_PRODUCER_NOT_ACCEPTED",
-    "original_115_member_namespace_satisfied_by_archive": false,
+    "complete_original_selected_source_members": 29,
+    "original_selected_PINS_included": true,
+    "M_RESULT_fields": 37,
+    "source_commit_steps": 24,
+    "Source_declared_native_formula": 1150,
+    "actual_M_at_original_machine": "M_NATIVE_WAIT_ZERO_AND_TWO_FULL_READBACKS_QUALIFIED_EXTERNALLY",
+    "actual_M_S_or_reader_runtime_receipts_delivered": false,
+    "S_observed_stage": "ROOT_REPORTED_ORIGINAL_NORMAL_S_STARTED_NO_SUCCESS_TERMINAL_OR_SUCCESS_READBACK_QUALIFIED_IN_THIS_ARCHIVE",
+    "full_business_acceptance": "INCOMPLETE",
     "runtime_ready": false,
-    "additional_author_code_members": 11,
-    "M_RESULT_fields": 36,
-    "source_commit_steps": 20,
-    "native_budget_derived_not_actual": 1104,
-    "original_runtime_receipts_delivered": false
+    "source_delivery_complete": true,
+    "native_outer_source_entries_pending": [],
+    "native_outer_entries_present": {
+      "materialize_root_outer": {
+        "path": "sources/currentbafb-root-delivery-entries-source-r2/candidate/run-bafb-organized-materialize.py",
+        "bytes": 6333,
+        "sha256": "5c5dae6aa5d03cfd5886c7622270aa20305290fa3f44076b75c5f90e0a1f0077"
+      },
+      "success_S_readers_root_outer": {
+        "path": "sources/currentbafb-root-delivery-entries-source-r2/candidate/run-bafb-success-S-readback.py",
+        "bytes": 11494,
+        "sha256": "21642b6413225572f7773684da7dd794b985fcb5d0e32b5daf5e9d7038e6daf8"
+      }
+    }
   },
   "requirements_not_satisfied_by_copying_source": [
     {
@@ -398,5 +399,109 @@
     ],
     "archived_programs_executed": false,
     "runtime_ready": false
+  },
+  "preserved_e9df_current_source": {
+    "package": "full-a-preflight-diagnostic-current6e3850-normal-next-source-r2",
+    "source_commit": "6e3850fe210b2b1e99b2a33baa68123e34aefab6",
+    "profile_sources_present": true,
+    "materializer_present": true,
+    "validation_driver_present": true,
+    "launcher_present": true,
+    "required_program_members": 18,
+    "materialization": "COMPLETED_LOCALLY",
+    "initializer_php82_syntax": "PASS_SYNTAX_ONLY",
+    "full_business_run": "FAILED_AT_PAID_PRODUCER_NOT_ACCEPTED",
+    "original_115_member_namespace_satisfied_by_archive": false,
+    "runtime_ready": false,
+    "additional_author_code_members": 11,
+    "M_RESULT_fields": 36,
+    "source_commit_steps": 20,
+    "native_budget_derived_not_actual": 1104,
+    "original_runtime_receipts_delivered": false
+  },
+  "preserved_e9df_last_executed_pipeline": {
+    "package": "full-a-preflight-diagnostic-current6e3850-normal-next-source-r2",
+    "source_commit": "6e3850fe210b2b1e99b2a33baa68123e34aefab6",
+    "outcome": "FAILED_AT_PAID_PRODUCER",
+    "original_S_session": 23097,
+    "original_S_pid": 2388,
+    "state_observed_ns": 1792800012677784900,
+    "original_resources_closed_and_independently_verified": true,
+    "S_native_exit": 1,
+    "paid_native_exit": 1,
+    "normal_close_native_zero": 93,
+    "independent_zero_native_zero": 20,
+    "Root_and_peer_complete_actual_readbacks": "NATIVE_WAIT_ZERO",
+    "eleventh_whole_authority_sealed": true,
+    "business_acceptance": "INCOMPLETE",
+    "A0": false
+  },
+  "preserved_e9df_last_materialization_attempt": {
+    "package": "full-a-preflight-diagnostic-current6e3850-normal-next-source-r2",
+    "source_commit": "6e3850fe210b2b1e99b2a33baa68123e34aefab6",
+    "outcome": "COMPLETED_CURRENT_NORMAL_MATERIALIZATION",
+    "native_operations": 1104,
+    "Root_materialization_readback_not_archived": {
+      "bytes": 3565,
+      "sha256": "93ae4947412f5972906f70d27f0d3affedceeb49716e6cc8274c13b2c4bddbae"
+    }
+  },
+  "source_contract_metadata_boundary": {
+    "included": "Complete fixed N29+PINS30 including SOURCE-WINDOWS.json21407B and NORMAL8-SYNTAX-QUALIFICATION.json1538B; raw static Source-contract bytes only.",
+    "identity": "Saved native9/birth in Source JSON is historical metadata. No claim that archive copies have those file identities; no generated qualification or portable runtime.",
+    "not_imported": "No additional Root runtime REPORT/INPUTS, Run, created/terminal/streams, huge M/freeze/snapshot, ENV/private/actors/data volumes or credentials.",
+    "old_live_stat_gates": "Original conditional current-stat==old-native9 and current28 lstat+birth checks are unchanged. New files on another machine do not preserve old dev/inode/ctime/birth. A separately reviewed recovery/requalification design is unresolved.",
+    "finite_history": "Metadata-only history and d0 finite367/53 current stability are distinct from conditional old-stat gates; no Run body is reconstructed or read by the archive checker."
+  },
+  "current_source_backup": {
+    "archive_branch": "codex/orchestration-handoff-20261023",
+    "archive_candidate_base": "e9df0b8fe119b7614099661d6716355f485d1a77",
+    "feature_heads": {
+      "feature/ms4-asset-consumers": "bafb6305062aeb6b6e945c21da572863062ca480",
+      "feature/ms4-ui-source-tree-normal-20261025": "83daa6283ed5280beddd9ce0886712e5654a0766",
+      "feature/product-typed-media-normal-20261024": "d7b6a5f485775a711a4e43a3e3a21af6208d36c9"
+    },
+    "merged_feature_tree": false,
+    "push_by_this_candidate": false,
+    "remaining_delivery_groups": 19,
+    "new_machine_independent_replay": "NOT_ESTABLISHED",
+    "source_only_verifier_must_not_start_archived_programs": true,
+    "full_outgoing_product_scope": {
+      "definition": "Four full outgoing product commits outside both freshly observed remote ancestors, not merely selected HEAD-parent path lists.",
+      "remote_main_ancestor": "d0a5d5398546e223122b5c2a2f115e1908f78ced",
+      "remote_handoff_ancestor": "e9df0b8fe119b7614099661d6716355f485d1a77",
+      "commits": {
+        "bfe311cbb727af093fe73fb4ce22ead58e8f3345": 44,
+        "d7b6a5f485775a711a4e43a3e3a21af6208d36c9": 41,
+        "bafb6305062aeb6b6e945c21da572863062ca480": 2,
+        "83daa6283ed5280beddd9ce0886712e5654a0766": 2
+      },
+      "unique_changed_blobs": 89,
+      "changed_blob_bytes": 2158491,
+      "Root_high_confidence_secret_sensitive_runtime_name_and_50MiB_scan": "NO_HITS_ON_COMPLETE_PRODUCT_OUTGOING_BLOBS",
+      "Root_manual_diff_still_required": true,
+      "new_archive_commit_requires_separate_scan": true,
+      "selected_HEAD_parent_file_count": 45,
+      "selected_HEAD_parent_paths_are_not_complete_outgoing_history": true,
+      "push_of_exact_d7b6_includes_bfe44_ancestor_paths": true,
+      "feature_forks_merged": false,
+      "pushed_by_this_candidate": false
+    },
+    "Root_fresh_remote_snapshot": {
+      "default_branch": "master",
+      "visibility": "public",
+      "main": "d0a5d5398546e223122b5c2a2f115e1908f78ced",
+      "handoff": "e9df0b8fe119b7614099661d6716355f485d1a77",
+      "UI_ref": "ABSENT",
+      "MEDIA_ref": "ABSENT",
+      "GitHub_workflows": 0,
+      "hooks": [],
+      "source": "Root readonly preflight summary; source preparation does not query remote or push."
+    }
+  },
+  "current_native_entry_limits": {
+    "materialize": "New entry did not participate in old actualbafb M; existing original materialize OUT/created/terminal refuse before launch. No retry or deletion authorization.",
+    "S_readers": "Original live S must not invoke either reader. Six genuine successful-S CLI/context/PIDs remain UNBOUND in immutable Source until Root proves real S0 and all original gates. Source archive verification never invokes the outer.",
+    "source_complete_vs_runtime": "Selected complete script texts and two raw native entries are present. Complete historical author replay/qualification/runtime inputs and cross-machine identity recovery are not delivered; runtime_ready=false."
   }
 }

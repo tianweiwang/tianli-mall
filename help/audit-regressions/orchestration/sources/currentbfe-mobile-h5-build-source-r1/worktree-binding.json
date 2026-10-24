@@ -1,0 +1,361 @@
+{
+  "schema": 1,
+  "base_head": "bfe311cbb727af093fe73fb4ce22ead58e8f3345",
+  "branch": "feature/product-typed-media-normal-20261024",
+  "source_repo": "H:/天俪商城/worktrees/product-typed-media-normal",
+  "expected_status_porcelain_v1": " M crmeb/app/adminapi/controller/v1/product/PlatformProductMedia.php\n M crmeb/app/api/controller/v1/admin/StoreManageController.php\n M crmeb/app/api/middleware/CustomerMiddleware.php\n M crmeb/app/api/route/v1.php\n M crmeb/app/dao/marketplace/MerchantAttachmentDao.php\n M crmeb/app/dao/marketplace/product/PlatformProductMediaDao.php\n M crmeb/app/merchantapi/controller/Attachment.php\n M crmeb/app/merchantapi/route/attachment.php\n M crmeb/app/services/marketplace/AuditLogServices.php\n M crmeb/app/services/marketplace/MerchantAttachmentServices.php\n M crmeb/app/services/marketplace/product/PlatformProductMediaServices.php\n M docs/multi-merchant/00-implementation-spec.md\n M help/migrations/marketplace-ms1.md\n M template/admin/src/api/product-media.js\n M template/admin/src/components/uploadVideo2/index.vue\n M template/admin/src/components/uploadVideo2/model.js\n M template/admin/src/components/uploadVideo2/videoModal.vue\n M template/admin/src/components/wangEditor/editor.js\n M template/admin/src/components/wangEditor/html.js\n M template/admin/src/components/wangEditor/index.vue\n M template/admin/src/pages/product/productAdd/index.vue\n M template/merchant/src/api/index.js\n M template/merchant/src/components/AttachmentLibrary.vue\n M template/merchant/src/components/AttachmentPicker.vue\n M template/merchant/src/pages/product/edit.vue\n M template/merchant/src/styles.css\n M template/uni-app/pages/admin/goods/addGoods.vue\n",
+  "files": [
+    {
+      "path": "crmeb/app/adminapi/controller/v1/product/PlatformProductMedia.php",
+      "bytes": 5874,
+      "sha256": "daf68f681f22e778db1f0cdc8593a45fb39babef1bd085bdf247db8dd0349f25",
+      "base_blob_sha1": "e4b52aa7fe92e657bbbab2ca00922f1a1c2e616d",
+      "current_blob_sha1": "1eeb4ea7a43facde44edb539025bf1aa4c9f04b6",
+      "base_before": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-type1-video-category-source-r2/before/crmeb/app/adminapi/controller/v1/product/PlatformProductMedia.php",
+        "bytes": 5140,
+        "sha256": "9f80314f4d474cf067a978e79c362b5cb20c44a230ff1902c9f76eb4af553588"
+      }
+    },
+    {
+      "path": "crmeb/app/api/controller/v1/admin/StoreManageController.php",
+      "bytes": 10215,
+      "sha256": "1d720942840a8d72279940fb1bb0ea2d5ff658a8dba734fb4486429b2bc65cc0",
+      "base_blob_sha1": "b51f1911e5e9fd6199ab2d4ee26400899563b0c9",
+      "current_blob_sha1": "93637c5f7d3acdbb95cec24c6220849d9294b6a4",
+      "base_before": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-mobile-product-image-adoption-actual-r1/before/crmeb/app/api/controller/v1/admin/StoreManageController.php",
+        "bytes": 9411,
+        "sha256": "a6cd5ee5e2124f15d7e36da6a191a60d659b91431092e8b1dc98221ed6e6ac05"
+      }
+    },
+    {
+      "path": "crmeb/app/api/middleware/CustomerMiddleware.php",
+      "bytes": 6291,
+      "sha256": "26a5cf1d607e82164f9811b42d925c13d30a40b2655ae4946b5d274a8fcb0387",
+      "base_blob_sha1": "0cdb2bac7b72985d00ed06e1480e5751c1fc53b1",
+      "current_blob_sha1": "0bfde1518c9cd73478f6c984630d5746d78bc7cc",
+      "base_before": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-mobile-product-image-adoption-actual-r1/before/crmeb/app/api/middleware/CustomerMiddleware.php",
+        "bytes": 1879,
+        "sha256": "30e28bdec1a271bad8baf3a7da6253b5c18e17cc8e5a7eed95ca9caaacd6b507"
+      }
+    },
+    {
+      "path": "crmeb/app/api/route/v1.php",
+      "bytes": 61299,
+      "sha256": "18add6e6e0cbf78e0d9f8d8e1a7c14902815b55d95b6aecbcb080726f4ef0211",
+      "base_blob_sha1": "3a2ef272f64cd079f5377ca03d981b10fbd8004e",
+      "current_blob_sha1": "3b30d2ce77b825f978f839ab5b3e7921c04d76f3",
+      "base_before": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-mobile-product-image-adoption-actual-r1/before/crmeb/app/api/route/v1.php",
+        "bytes": 61113,
+        "sha256": "02328a2f4d471910dc3f7c7e7f188b35e74fe6dd702b02f339bd31c3a67e8320"
+      }
+    },
+    {
+      "path": "crmeb/app/dao/marketplace/MerchantAttachmentDao.php",
+      "bytes": 32078,
+      "sha256": "9ac92da86c88aae9b0c61b20b32e85887920e1d7a8e4b17c703d6415a5a72ca0",
+      "base_blob_sha1": "cb62f5543c1d6df85e3840b07f7d5a86c16bd7c7",
+      "current_blob_sha1": "9c119b8a680655c8f9969ef80c72147c11f0f1e6",
+      "base_before": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-type1-video-category-source-r2/before/crmeb/app/dao/marketplace/MerchantAttachmentDao.php",
+        "bytes": 18713,
+        "sha256": "9398d305a368af7c82ad2a2d5832527bc2625d395e3f867deb321bf224f09c6f"
+      }
+    },
+    {
+      "path": "crmeb/app/dao/marketplace/product/PlatformProductMediaDao.php",
+      "bytes": 41339,
+      "sha256": "5cbab8eee88138756f5f5d83942ed0dbb66aacb51f1b23fb7194e3923486af5a",
+      "base_blob_sha1": "b71edb4eeae04cc1d1c12b2c679f3007a8faa824",
+      "current_blob_sha1": "f806c7f77d25b9cc1cf250a06461d6baa0df42e9",
+      "base_before": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-type1-video-category-source-r2/before/crmeb/app/dao/marketplace/product/PlatformProductMediaDao.php",
+        "bytes": 32046,
+        "sha256": "f393772f7c9bf894442674de0e73a94d9e9211965b54b9c4c1a7888551dce7fb"
+      }
+    },
+    {
+      "path": "crmeb/app/merchantapi/controller/Attachment.php",
+      "bytes": 4263,
+      "sha256": "59d20a798bdefc354acf973f8f439a89b1cdaa4c815377795fc9c0389bc13249",
+      "base_blob_sha1": "ce6a31ae89ea8728849f8e1f9d86ac452dc77a12",
+      "current_blob_sha1": "7ded0e802eec52a163c1e11668099cac51e2b483",
+      "base_before": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-type1-video-category-source-r2/before/crmeb/app/merchantapi/controller/Attachment.php",
+        "bytes": 3244,
+        "sha256": "0f94816ccf032f9e15864d5f33f8c505cbc9d21483663c62a5ccf8830aa8e7db"
+      }
+    },
+    {
+      "path": "crmeb/app/merchantapi/route/attachment.php",
+      "bytes": 1769,
+      "sha256": "7f43f118a05ee222f5930af320ba67871d2552e1be6c0ee85b44915a0d0365c8",
+      "base_blob_sha1": "c0362e7f2a4d468aa6e09571d0ede13520f6a58c",
+      "current_blob_sha1": "b9c42495f416124c4b51732dbfa2c2e4f91e8e51",
+      "base_before": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-type1-video-category-source-r2/before/crmeb/app/merchantapi/route/attachment.php",
+        "bytes": 1604,
+        "sha256": "3394c4225e4eea9a1ccdfe8d6180d2c0e8e1946307896873e8d48e1f2be8bbb8"
+      }
+    },
+    {
+      "path": "crmeb/app/services/marketplace/AuditLogServices.php",
+      "bytes": 16078,
+      "sha256": "75cb67ae1966b7d46617acfaed518c64e2269b9e56c26fbea7de0af29a028da9",
+      "base_blob_sha1": "68b68031ee3aac3804b296b4a80f8ddd1b96be5a",
+      "current_blob_sha1": "df494f86b35d6df355cd0c84c38b3c3e1c16eaac",
+      "base_before": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-mobile-product-image-adoption-actual-r1/before/crmeb/app/services/marketplace/AuditLogServices.php",
+        "bytes": 11568,
+        "sha256": "6b4caa716aa97a6b4fa00ffd0cbea77cd50231bd7a1e54ddb87c522b6a0932a7"
+      }
+    },
+    {
+      "path": "crmeb/app/services/marketplace/MerchantAttachmentServices.php",
+      "bytes": 14254,
+      "sha256": "9267a0a5bfaf0d6cf67c391f6b95a60c80407680ec091802431753b0862f48c0",
+      "base_blob_sha1": "bef7e2656715da24d98b8d4bceed88500a61c933",
+      "current_blob_sha1": "b1ffc9a71ab1a326f3ddfebca02863572af22e8b",
+      "base_before": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-type1-video-category-source-r2/before/crmeb/app/services/marketplace/MerchantAttachmentServices.php",
+        "bytes": 8773,
+        "sha256": "f1734d42b1194445b84625afee3f95f64f9751d659f4a05c6deb5ba754da9a66"
+      }
+    },
+    {
+      "path": "crmeb/app/services/marketplace/product/PlatformProductMediaServices.php",
+      "bytes": 57333,
+      "sha256": "7a6b3bbc5a72047e21c219f5c774753906db2992e094441eee228d602a6794a5",
+      "base_blob_sha1": "d03040cf555ef03f93a9aebdc3af594bcce93b86",
+      "current_blob_sha1": "c87ec78ce1c61a82291585c971a6fd09beca594c",
+      "base_before": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-type1-video-category-source-r2/before/crmeb/app/services/marketplace/product/PlatformProductMediaServices.php",
+        "bytes": 39448,
+        "sha256": "ccba8fa93132fe1a5a990736e88c2e0915df7dff14b4edd51ceb4b3a9c0dc1bc"
+      }
+    },
+    {
+      "path": "docs/multi-merchant/00-implementation-spec.md",
+      "bytes": 23917,
+      "sha256": "c4831eb26c52a103a4efeebc2b62e0ddfa4b164de33c247f79246dec1de40d79",
+      "base_blob_sha1": "fc55d1a4acaa954d14f285c5dd8dabbc96ded9ec",
+      "current_blob_sha1": "1f74c6b70776f075cba86ecf4e634bd86381c833",
+      "base_before": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-mobile-product-image-adoption-actual-r1/before/docs/multi-merchant/00-implementation-spec.md",
+        "bytes": 22624,
+        "sha256": "981ea9e769f3b5924a70c0ffe909c672e9bf177a1f1b39c01215e472f0fd0570"
+      }
+    },
+    {
+      "path": "help/migrations/marketplace-ms1.md",
+      "bytes": 18374,
+      "sha256": "4d6c9d0f3c89d7603d7f56da89b468cd4dbdc47f82b98c885243154d7bf19cbf",
+      "base_blob_sha1": "93cab06e18823a3c88282fe5efed9f75d3038f7d",
+      "current_blob_sha1": "c9e893d74f16bd273f472b798cfeb540f7e1cf89",
+      "base_before": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-mobile-product-image-adoption-actual-r1/before/help/migrations/marketplace-ms1.md",
+        "bytes": 17155,
+        "sha256": "1f83fca71b47cdaa6398c5d1ec1cd1a86d68ca103b0aa88d8cd64e608a285012"
+      }
+    },
+    {
+      "path": "template/admin/src/api/product-media.js",
+      "bytes": 15539,
+      "sha256": "35c08999b07b3949fdc92642ce94ac51978681e41189c5ad59f6887d504accb9",
+      "base_blob_sha1": "a47b309c14d3c62c17fb3128d357f22f559e2d3e",
+      "current_blob_sha1": "5c1129eeb75833287b23a1b90bac87b4ed4681cf",
+      "base_before": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-owned-video-ui-source-r2/before/template/admin/src/api/product-media.js",
+        "bytes": 14472,
+        "sha256": "14f71422c3bc9469b9ef6e33730b0f61a7ab2e82a116ca09abc51a5d3d100963"
+      }
+    },
+    {
+      "path": "template/admin/src/components/uploadVideo2/index.vue",
+      "bytes": 51538,
+      "sha256": "8fabaff83b922819903e1f1fb96896da2c5ff9eafed9cde751d51e966fb81d83",
+      "base_blob_sha1": "f8e38fe08ae8859a7678acf51e1d4180ee16e445",
+      "current_blob_sha1": "a015f145bb93c6b2192ee5ff1e839bb327a4f996",
+      "base_before": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-owned-video-ui-source-r2/before/template/admin/src/components/uploadVideo2/index.vue",
+        "bytes": 32983,
+        "sha256": "91ee983a23173b4de520a40d6b2db6f702ad7b5b0c38d286fea603ff48909f7b"
+      }
+    },
+    {
+      "path": "template/admin/src/components/uploadVideo2/model.js",
+      "bytes": 1032,
+      "sha256": "bf4cb3eab09cffd78a4e4fee78c8720a0ddda931b61fe0c130e88c73c1f7b395",
+      "base_blob_sha1": "ef5dfc0e904bb763dbbec1e4a4eaf1108dbdac69",
+      "current_blob_sha1": "ea1468aaf12a0ff194865c35e1bd35c4e4e027e9",
+      "base_before": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-owned-video-ui-source-r2/before/template/admin/src/components/uploadVideo2/model.js",
+        "bytes": 583,
+        "sha256": "3100e931d9aa2001d91efc1622a157afacf98532ff039c9c08fdb709222f3c12"
+      }
+    },
+    {
+      "path": "template/admin/src/components/uploadVideo2/videoModal.vue",
+      "bytes": 1514,
+      "sha256": "1944164110e85e6f7b11fc69fea0d714fb28b30d5c62752a186d2cb9cee0456a",
+      "base_blob_sha1": "7f812f9e09069027b0b291ded04dff63a84d6d49",
+      "current_blob_sha1": "ee125758f94133dc0d7cd34bd5113d711cf6e218",
+      "base_before": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-owned-video-ui-source-r2/before/template/admin/src/components/uploadVideo2/videoModal.vue",
+        "bytes": 1056,
+        "sha256": "978c616f9c5e17f904c8c9919ab438880ef7ee21595b833f1d0de18077141086"
+      }
+    },
+    {
+      "path": "template/admin/src/components/wangEditor/editor.js",
+      "bytes": 810,
+      "sha256": "5e98389b141225d33acbcdbf2eff3546cf4fd441bbd9dc0ada6ca07088008c11",
+      "base_blob_sha1": "d4abfb8c21e27ac6ed08d90dbc2577947f91377c",
+      "current_blob_sha1": "9e47a2de4d5840efae580f2287d9d0310ce6e29f",
+      "base_before": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-owned-video-ui-source-r2/before/template/admin/src/components/wangEditor/editor.js",
+        "bytes": 799,
+        "sha256": "b94ba7c3ef83ae9a86a4491f747b7d0c8a4d741f440da13e62a77b31d3ded684"
+      }
+    },
+    {
+      "path": "template/admin/src/components/wangEditor/html.js",
+      "bytes": 780,
+      "sha256": "0ba0974fadac4a395647571ea51a89e4bb47f0eb8a1610972862e992b7091838",
+      "base_blob_sha1": "821b82bf5e5dc7aa677df87b4bcde3c553baa3d7",
+      "current_blob_sha1": "cede4743ce95538e59e615635ccd9b51bd134e12",
+      "base_before": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-owned-video-ui-source-r2/before/template/admin/src/components/wangEditor/html.js",
+        "bytes": 769,
+        "sha256": "48f02f11e8f246517cc545a09bac14a8b4de29b19ededfa144c276ef6dc34d45"
+      }
+    },
+    {
+      "path": "template/admin/src/components/wangEditor/index.vue",
+      "bytes": 12423,
+      "sha256": "acf473d8c405add13fdd8192f3458588cd746273bddd280099745c1530d78a8c",
+      "base_blob_sha1": "f8c1faf4cc7f2b76e3e9d513e5e3d789f1d8e075",
+      "current_blob_sha1": "894099d3986ed5e62bf1536f838ee553db57f34f",
+      "base_before": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-owned-video-ui-source-r2/before/template/admin/src/components/wangEditor/index.vue",
+        "bytes": 9528,
+        "sha256": "f159491f2a448a82da033fef86ea1505b8321b9feba44df6a801d224d882843f"
+      }
+    },
+    {
+      "path": "template/admin/src/pages/product/productAdd/index.vue",
+      "bytes": 68653,
+      "sha256": "677e632505e5425ca1b82f76eda312d5b2ad39b296d2d1dffb714bde39f652ad",
+      "base_blob_sha1": "7066591d7262c5ff58d4fa7372c6843542c17446",
+      "current_blob_sha1": "e8337dcae3122043656eae9ffdfb7f9f910ff97b",
+      "base_before": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-owned-video-ui-source-r2/before/template/admin/src/pages/product/productAdd/index.vue",
+        "bytes": 68174,
+        "sha256": "3d2dd7e49472e1be1c35599cdcdff624a7cd2f6108805c9b10e1b55861026975"
+      }
+    },
+    {
+      "path": "template/merchant/src/api/index.js",
+      "bytes": 8118,
+      "sha256": "db0fd5d352456a5d7297a0cffe054becfa482117595e136e86e0a90b7734b13c",
+      "base_blob_sha1": "991695a34ac53b8123505f8bd07b7994bf543b4a",
+      "current_blob_sha1": "639b8be1a074b0a0d740e916ce92cfdb55ab0134",
+      "base_before": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-merchant-video-audio-ui-source-r1/before/template/merchant/src/api/index.js",
+        "bytes": 2888,
+        "sha256": "9c70139a2ecb87d4806012849b5fad395ad62d3ec72c7525be79db08f6479298"
+      }
+    },
+    {
+      "path": "template/merchant/src/components/AttachmentLibrary.vue",
+      "bytes": 17017,
+      "sha256": "f7f0c0ef59469a738fa5fefa774db6985cf609d059abf47f01511050bb05c09a",
+      "base_blob_sha1": "8c3cd9bf05016fe99bfeaea73836f4d326ae6bf0",
+      "current_blob_sha1": "a342b1e52a1fb0976794dea8924e467bc7777d76",
+      "base_before": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-merchant-video-audio-ui-source-r1/before/template/merchant/src/components/AttachmentLibrary.vue",
+        "bytes": 7662,
+        "sha256": "a324585f7b68ddd16f4a068a708414ee2263305d5754fcd846e45e62d0209a98"
+      }
+    },
+    {
+      "path": "template/merchant/src/components/AttachmentPicker.vue",
+      "bytes": 1055,
+      "sha256": "120fb7dc677ca0c13784ca0c6aef8e6eccbb0803023d89af479752a65f3069a9",
+      "base_blob_sha1": "8b8b6cfe704908ff1b1ea9a047c643ef6d9b4dc4",
+      "current_blob_sha1": "7d1ce8e44dea01c1ea927e432fc12899f9e02569",
+      "base_before": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-merchant-video-audio-ui-source-r1/before/template/merchant/src/components/AttachmentPicker.vue",
+        "bytes": 411,
+        "sha256": "8a15507bacf72d3652a3c4ee6e0ddc50ec3e496b0d5e8b9eace93b699a8317ce"
+      }
+    },
+    {
+      "path": "template/merchant/src/pages/product/edit.vue",
+      "bytes": 20546,
+      "sha256": "421a23a909f460faee8ea0de96d54a399beb3271ccbb39765a0d1a8773e37448",
+      "base_blob_sha1": "7ec1122b71c80ace2c473e6475b81f33d713ed8b",
+      "current_blob_sha1": "e0b7829ba42ddf1fca73d2f7724148fe8d228433",
+      "base_before": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-merchant-video-audio-ui-source-r1/before/template/merchant/src/pages/product/edit.vue",
+        "bytes": 14292,
+        "sha256": "9891c2939725f03a9db4a738c00750628cd5bcea5a1c28f047b0a84af8e7522d"
+      }
+    },
+    {
+      "path": "template/merchant/src/styles.css",
+      "bytes": 6511,
+      "sha256": "81d4ac812325ccff6960943a373baec5fef79bc912693ed31389a7d0142a6549",
+      "base_blob_sha1": "a818192a934c1b711e1ea7043fecb4bd091cbff3",
+      "current_blob_sha1": "a51b57f0f73105cba02fc57ee3adaf751d014dc9",
+      "base_before": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-merchant-video-audio-ui-source-r1/before/template/merchant/src/styles.css",
+        "bytes": 5521,
+        "sha256": "f871ecfa41d52ea90bb1760d1419ff179d914b7166d280c005a51144b26ec54b"
+      }
+    },
+    {
+      "path": "template/uni-app/pages/admin/goods/addGoods.vue",
+      "bytes": 24650,
+      "sha256": "0ad4b8ef1cd34fb836befc2f967e8d6556c8f984b92d07cb48c6d40c9b482216",
+      "base_blob_sha1": "79676aecf5281cf04feeb9cbdec10fe62e7d6f6d",
+      "current_blob_sha1": "edef4f76b9ed16c450158979e17ffe42068c0748",
+      "base_before": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-mobile-product-image-adoption-actual-r1/before/template/uni-app/pages/admin/goods/addGoods.vue",
+        "bytes": 15926,
+        "sha256": "7c7c33829217c2be7b2282eb8f840eff1580e8e89eb20f690d2887d6b0d3d21c"
+      }
+    }
+  ],
+  "source_identity": {
+    "kind": "BASE_HEAD_PLUS_EXACT_27_UNSTAGED_FILES_AND_COMPLETE_UNI_SOURCE",
+    "base_head": "bfe311cbb727af093fe73fb4ce22ead58e8f3345",
+    "source_repository": "H:/天俪商城/worktrees/product-typed-media-normal",
+    "complete_uni_source_sha256": "b819e107021799acd67937f29abb3edb927128464db0b81493cd6312ec4818b0",
+    "controlled_worktree_sha256": "28837306b5ab9cbb7266d812e07b56730cf54871f56b5a277b4676e4bcc238e7",
+    "source_count": 559,
+    "controlled_modifications": 27,
+    "contains_uncommitted_changes": true,
+    "identity_sha256": "6316a2b7729663dd397de75a832a221b54a690e6964ce44264b0cb266ea821bd"
+  },
+  "authority": [
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-media-client-adoption-inventory-r1/FINAL-FILES.json",
+      "bytes": 87901,
+      "sha256": "6a193713b60b632f7125a69d2c1de48e42c15ea7b381f105dd7835593e89f6b3"
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-media-client-adoption-actual-r1/REPORT.json",
+      "bytes": 20674,
+      "sha256": "98470ba601e31fed96c60ab40b20d4b70d862d6c7930b64b2da0e9c92fe47643"
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-mobile-product-image-adoption-actual-r1/REPORT.json",
+      "bytes": 16082,
+      "sha256": "14060b52de6155a81cf26fcd1f2dcedb6fa9c8c084f9ce5bae0588e9e19abc91"
+    }
+  ]
+}
