@@ -1140,6 +1140,25 @@ function m4ar_language_prepare(PDO $db,array $source,array $task6Names):void
  $after=m4ar_snapshot($db);$nativeAfter=m5pc_native_snapshot($db);
  m4ar_language_delta($before,$after,$rows,$nativeBefore,$nativeAfter);
 }
+/** Real language getters shared by normal warm-up and its isolated component check. */
+function m4ar_language_warm(\think\App $app):array
+{
+ $code=$app->make(\app\services\system\lang\LangCodeServices::class);$type=$app->make(\app\services\system\lang\LangTypeServices::class);
+ $country=$app->make(\app\services\system\lang\LangCountryServices::class);$range=$type->value(['is_default'=>1],'file_name');
+ $typeId=$country->value(['code'=>'zh-CN'],'type_id')?:1;$types=$type->getColumn(['status'=>1,'is_del'=>0],'file_name','id');
+ m4ar_expect($range==='zh-CN'&&($types[$typeId]??null)==='zh-CN','TASK78_REAL_INSTALLED_NORMAL_LANGUAGE');
+ $lang=['range_name'=>$range,'sys_lang_source_map'=>$code->getColumn(['type_id'=>1],'code','remarks'),'type_id_zh-CN'=>$typeId,
+ 'lang_type_data'=>$types,'lang_zh_CN'=>$code->getColumn(['type_id'=>$typeId],'lang_explain','code')];
+ m4ar_expect(is_array($lang['sys_lang_source_map'])&&$lang['sys_lang_source_map']!==[]
+  &&is_array($lang['lang_type_data'])&&$lang['lang_type_data']!==[],'TASK78_LANGUAGE_INSTALLED_NONEMPTY_SOURCE_MAPS');
+ // Earlier normal requests can cache empty maps before this fixture installs the source rows.
+ // Invalidate only those empty maps; the original getter rebuilds values, TTLs and tag members.
+ foreach(['sys_lang_source_map','lang_type_data']as$name)
+  if(\crmeb\services\CacheService::get($name,null)===[])
+   m4ar_expect(\crmeb\services\CacheService::delete($name)===true,'TASK78_LANGUAGE_OWN_EMPTY_MAP_INVALIDATED');
+ getLang('操作成功');
+ return $lang;
+}
 function m4ar_warm(\think\App $app,PDO $db):void
 {
  unset($GLOBALS['m4ar_warm_failure_context'],$GLOBALS['m4ar_warm_failure_diagnostic']);
@@ -1159,12 +1178,7 @@ function m4ar_warm(\think\App $app,PDO $db):void
   $expectedLogical=$cacheType==='string'&&is_numeric($expected)?(string)$expected:$expected;
   $actual=\crmeb\services\SystemConfigService::get($name);m4ar_expect($actual===$expectedLogical,'TASK78_SOURCE_CONFIG_WARM_EQUALS_NATIVE_DB_PRODUCER');
   $known['system_config_'.$name]=['value'=>$expected,'ttl'=>0];}
- $code=$app->make(\app\services\system\lang\LangCodeServices::class);$type=$app->make(\app\services\system\lang\LangTypeServices::class);
- $country=$app->make(\app\services\system\lang\LangCountryServices::class);$range=$type->value(['is_default'=>1],'file_name');
- $typeId=$country->value(['code'=>'zh-CN'],'type_id')?:1;$types=$type->getColumn(['status'=>1,'is_del'=>0],'file_name','id');
- m4ar_expect($range==='zh-CN'&&($types[$typeId]??null)==='zh-CN','TASK78_REAL_INSTALLED_NORMAL_LANGUAGE');
- $lang=['range_name'=>$range,'sys_lang_source_map'=>$code->getColumn(['type_id'=>1],'code','remarks'),'type_id_zh-CN'=>$typeId,
- 'lang_type_data'=>$types,'lang_zh_CN'=>$code->getColumn(['type_id'=>$typeId],'lang_explain','code')];getLang('操作成功');
+ $lang=m4ar_language_warm($app);
  foreach($lang as$name=>$value)$known[$name]=['value'=>$value,'ttl'=>$name==='range_name'?0:3600];$after=m4ar_snapshot($db);$changes=[];$added=[];
  foreach($known as$name=>$item){$key='c:'.$name;$added[]=$key;$raw=$redis->get($key);if($item['value']===null&&$raw===false)continue;
   try{
