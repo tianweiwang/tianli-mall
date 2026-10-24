@@ -2,7 +2,17 @@
 
 整理日期：2026-10-24。本文件是开发检查点和导航，不替代实施规格、原执行清单、测试报告或人工验收。
 
-### 当前检查点（175f上传preflight诊断，2026-10-24）
+### 当前检查点（fa来源 / profile-r2 的Task6失败，2026-10-24）
+
+通用多商户商城继续复用原商品列表、SKU、规格、价格和库存。本次完整正常链使用来源 `fa2088f9571bdc215be1ec05a59b840ed8b3943c`、profile-r2，Run `2026102403521460e674`，冻结摘要 `5b9f812ec1104beba4fcd3c1463a988165acfb236d178dd25ffeb0d31f448638`。initializer、files-bootstrap自然退出0；paid真正启动并自然退出0。原S（PID7400）与履约Task6自然退出1，外层阶段为 `three_true_legacy_cli`。售后评价、Worker、fresh B及成功A0尚未取得，完整正常A仍未通过。
+
+Root已对本次失败执行一次受限safe collector并退出0；公开内部定位为 `three_legacy_source` / `M4C_CLOSED_NATIVE_MOUNT_SET`。根据公开字段重建记录，并与已发布的327字节长度及摘要比对；未读取原子进程输出体。后继仅修 `ms4-three-legacy-producer.php` 的严格挂载列表，使其与同源父履约合同一致为3个bind与5个volume挂载项；不改业务、TTL、每次完整Source读取、native0、原类型/Name/RW断言或全实例9卷合同。详见[本次诊断与最小修订](records/ms4/fulfillment-legacy-producer-repair.md)。
+
+候选53,384字节 / `89e982e22b1c9e98a52360b328a9fa8f974dc6ae390d70e8862a94cb131cdd36` 已完成完整PHP语法检查及真实created29挂载守卫正常检查，均实际0；结果5,472字节 / `873009da173b23ef2b20d45b3364e54ba642e6f6c7f714ae57a56d9fab42acbb`。这些检查不代签新的Task6业务、完整A或A0。本次提交仅采用该最小修订及配套状态记录，采用身份以真实Git为准；新来源完整链尚未运行。该失败实例已普通回收4个容器、1个网络、9个卷，90项原生操作均0；独立核零的12项操作均0，六项查询为空。原失败和冻结证据保留，旧Run不重启。
+
+T4的31份候选仍在外部目录，未采用到当前运行来源，不并入本次单文件挂载修复。完整正常链后续、同源fresh B、三端页面与设备、独立H5、真实金融、发布恢复及人工验收继续未完成；只有BASE已登记签收，原停止样本保持NOT RUN。以下检查点均保留其原执行时点。
+
+### 历史检查点（175f上传preflight诊断，保留原时点，2026-10-24）
 
 通用多商户商城继续推进 MS4 订单确认、履约、售后与评价，复用原商品列表、SKU、规格、价格和库存。最新实际来源 `175f3cd6183894185656a2974579e1be39eed7a7`、Run `20261023182634096f57` 的完整来源物化1,088项原生操作通过；付款准备在 `paid_real_confirmation` 的 `M4C_FORM_NORMAL_HTTP_JSON_200` 失败，原S与paid均实际退出1。一次受限采集证明同次上传为POST、HTTP503、JSON解析成功、216字节；内部首个Throwable尚未确定，不能宣称确认期限或其他因素已是唯一根因。Task6、售后评价、Worker和fresh B未开始，无成功A0，完整正常A未通过。
 

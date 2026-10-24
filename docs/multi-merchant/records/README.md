@@ -9,6 +9,8 @@
 | `acceptance.md` | 验收人 | 验收记录，模板见 11 文档 §8 |
 | 其他 `.md` | 执行方 | 计划中要求的盘点、矩阵、清单（例如 `route-permission-matrix.md`） |
 
+专项记录：[Task6 legacy producer 挂载合同诊断与最小修订](ms4/fulfillment-legacy-producer-repair.md)（当前候选验证与未完成边界）。
+
 ## `report.md` 模板
 
 ```markdown
