@@ -144,11 +144,22 @@ function m4up_source(bool $beforePublicCopy=true): array
     m4up_expect($created['stop_signal']==='SIGTERM'&&getmypid()===1
         &&in_array('audit-app',$created['networks'][$network['Name']]['Aliases']??[],true)
         &&gethostbyname('audit-app')===gethostbyname(gethostname()),'TASK78_REAL_PID_ONE_AND_SELF_HTTP_ALIAS');
-    $binds=['/workspace'=>[$context['repo_dir'],false],'/source'=>[$context['repo_dir'],false],
-        '/run/ms4-prep'=>[$context['prep_dir'],false],'/run/audit'=>[$context['run_dir'],true],
+    $sourceTree=$context['source_tree']??null;$frozenTree=$freeze['source_tree']??null;
+    m4up_expect(is_array($sourceTree)&&!array_is_list($sourceTree)&&is_array($frozenTree)&&!array_is_list($frozenTree),
+        'UI_SOURCE_TREE_CONTEXT_AND_FROZEN_OBJECTS');
+    m4c_entry_keys($sourceTree,['volume_name','manifest_sha256','file_count','directory_count']);
+    m4up_expect(is_string($sourceTree['volume_name'])&&$sourceTree['volume_name']===$context['project'].'_source-tree'
+        &&is_string($sourceTree['manifest_sha256'])&&preg_match('/\A[a-f0-9]{64}\z/D',$sourceTree['manifest_sha256'])===1
+        &&is_int($sourceTree['file_count'])&&$sourceTree['file_count']>0
+        &&is_int($sourceTree['directory_count'])&&$sourceTree['directory_count']>=0
+        &&$sourceTree['manifest_sha256']===($frozenTree['manifest_sha256']??null)
+        &&$sourceTree['file_count']===($frozenTree['file_count']??null)
+        &&$sourceTree['directory_count']===($frozenTree['directory_count']??null),'UI_SOURCE_TREE_EXACT_FOUR_FIELD_FROZEN_JOIN');
+    $sourceRoots=['/workspace'=>[$sourceTree['volume_name'],false],'/source'=>[$sourceTree['volume_name'],false]];
+    $binds=['/run/ms4-prep'=>[$context['prep_dir'],false],'/run/audit'=>[$context['run_dir'],true],
         '/workspace/crmeb/public/install/crmeb.sql'=>[$context['repo_dir'].'/crmeb/public/install/crmeb.sql',false]];
-    $volumes=['/run/audit-app'=>['app-secrets',false],'/run/audit-fixtures'=>['fixture-secrets',true],
-        M4AR_PRIVATE=>['aftersale-evidence',true],M4CF_ROOT=>['customer-form-evidence',false]];
+    $volumes=array_merge($sourceRoots,['/run/audit-app'=>['app-secrets',false],'/run/audit-fixtures'=>['fixture-secrets',true],
+        M4AR_PRIVATE=>['aftersale-evidence',true],M4CF_ROOT=>['customer-form-evidence',false]]);
     $nativeMounts=[];$tmpMounts=[];
     foreach($created['mounts']as$mount){if($mount['Type']!=='tmpfs'){$nativeMounts[]=$mount;continue;}
         m4c_expect(in_array($mount['Destination'],['/tmp','/workspace/crmeb/public','/workspace/crmeb/runtime'],true)
@@ -160,7 +171,7 @@ function m4up_source(bool $beforePublicCopy=true): array
         m4c_expect($mount['RW']===$expected[1],'M4C_ORIGINAL_MOUNT_ACCESS');
         if(isset($binds[$target]))m4c_expect($mount['Type']==='bind'&&audit_canonical_host_bind_source($mount['Source'])
             ===audit_canonical_host_bind_source($expected[0]),'M4C_ORIGINAL_HOST_SOURCE_BIND');
-        else m4c_expect($mount['Type']==='volume'&&$mount['Name']===$context['project'].'_'.$expected[0],'M4C_ORIGINAL_PRIVATE_VOLUME');}
+        else m4c_expect($mount['Type']==='volume'&&$mount['Name']===(isset($sourceRoots[$target])?$expected[0]:$context['project'].'_'.$expected[0]),'M4C_ORIGINAL_PRIVATE_VOLUME');}
     $cuKernel=file('/proc/self/mountinfo',FILE_IGNORE_NEW_LINES);
     m4up_expect(is_array($cuKernel)&&$cuKernel!==[],'UI_CU_ACTUAL_KERNEL_MOUNTINFO');$cuMounts=[];
     foreach($cuKernel as$line){$halves=explode(' - ',$line,2);$left=explode(' ',$halves[0]);
