@@ -50,4 +50,19 @@ final class Attachment
     {
         return Response::create(['status'=>503,'msg'=>'素材操作未完成，请保留本次结果','data'=>$error->receipt],'json',503);
     }
+
+    public function videos(Request $request): Response
+    {
+        return $this->mediaList($request,'video');
+    }
+    public function audio(Request $request): Response
+    {
+        return $this->mediaList($request,'audio');
+    }
+    private function mediaList(Request $request,string $kind): Response
+    {
+        $query=Input::body($request->get(false),['category_id','page','limit']);
+        return self::success($this->services->listMedia($request->merchantContext(),$kind,Input::id($query['category_id']??0,true),
+            MerchantManagementInput::integer($query['page']??1,1,2147483647,true),MerchantManagementInput::integer($query['limit']??20,1,100,true)));
+    }
 }

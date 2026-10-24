@@ -166,7 +166,7 @@ class Oss extends BaseUpload
      * @return array|bool|mixed
      * @throws OssException
      */
-    public function stream($fileContent, string $key = null)
+    public function stream($fileContent, string $key = null, ?string $mime = null)
     {
         try {
             if (!$key) {
@@ -174,7 +174,11 @@ class Oss extends BaseUpload
             }
             $key = $this->getUploadPath($key);
             $fileContent = (string)EntityBody::factory($fileContent);
-            $uploadInfo = $this->app()->putObject($this->storageName, $key, $fileContent);
+            if ($mime === null) {
+                $uploadInfo = $this->app()->putObject($this->storageName, $key, $fileContent);
+            } else {
+                $uploadInfo = $this->app()->putObject($this->storageName, $key, $fileContent, [OssClient::OSS_CONTENT_TYPE => $mime]);
+            }
             if (!isset($uploadInfo['info']['url'])) {
                 return $this->setError('Upload failure');
             }

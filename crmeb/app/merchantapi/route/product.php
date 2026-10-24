@@ -9,6 +9,8 @@ return static function(): void {
     $middleware=[MerchantAuthTokenMiddleware::class,MerchantPermissionMiddleware::class];
     Route::get('products','Product/index')->option(['merchant_permission'=>'product.read'])->middleware($middleware)->name('merchant.product.list');
     Route::post('products','Product/create')->option(['merchant_permission'=>'product.write'])->middleware($middleware)->name('merchant.product.create');
+    Route::post('products/<id>/media/videos/upload','Product/uploadVideo')->option(['merchant_permission'=>'product.write'])->middleware($middleware)->name('merchant.product.media.video.upload');
+    Route::post('products/<id>/media/audio/upload','Product/uploadAudio')->option(['merchant_permission'=>'product.write'])->middleware($middleware)->name('merchant.product.media.audio.upload');
     Route::put('products/batch/show','Product/batchShow')->option(['merchant_permission'=>'product.write'])->middleware($middleware)->name('merchant.product.batch.show');
     Route::get('products/<id>','Product/read')->option(['merchant_permission'=>'product.read'])->middleware($middleware)->name('merchant.product.read');
     Route::put('products/<id>','Product/update')->option(['merchant_permission'=>'product.write'])->middleware($middleware)->name('merchant.product.update');

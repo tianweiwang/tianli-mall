@@ -19,6 +19,10 @@ final class PlatformProductMediaServices
 {
     private const LIST_ACTION='legacy-product-media-list';
     private const UPLOAD_ACTION='legacy-product-media-upload';
+    private const MULTIPART_MODES=[
+        'multipart-video'=>['kind'=>'video','action'=>'legacy-product-media-video-upload'],
+        'multipart-audio'=>['kind'=>'audio','action'=>'legacy-product-media-audio-upload'],
+    ];
 
     public function __construct(private LegacyProductAccessServices $access,private LegacyProductWriteServices $writer,
         private PlatformProductMediaDao $attachments,private MerchantAttachmentStorage $storage,private AuditLogServices $audit,private MerchantAttachmentDao $references) {}
@@ -125,6 +129,51 @@ final class PlatformProductMediaServices
         }
     }
 
+    public function uploadVideo(Request $request,int $productIdOrZero,array $body): string
+    { return $this->uploadTyped($request,$productIdOrZero,$body,'video'); }
+
+    public function uploadAudio(Request $request,int $productIdOrZero,array $body): string
+    { return $this->uploadTyped($request,$productIdOrZero,$body,'audio'); }
+
+    /** Single current Request upload; owner and commit remain the original product writer's. */
+    private function uploadTyped(Request $request,int $productIdOrZero,array $body,string $kind): string
+    {
+        $mode='multipart-'.$kind;
+        if(!isset(self::MULTIPART_MODES[$mode])||self::MULTIPART_MODES[$mode]['kind']!==$kind)throw new AuthUnavailableException();
+        $this->request($request,self::MULTIPART_MODES[$mode]['action']);
+        $body=Input::body($body,['pid']);$pid=MerchantAttachmentInput::id($body['pid']??0,true);
+        $receipt=self::receipt();$objects=[];$observations=[self::receipt()];$snapshot=null;
+        try {
+            $src=$this->within($request,$productIdOrZero,function()use($request,$productIdOrZero,$pid,$kind,$mode,&$receipt,&$objects,&$observations,&$snapshot):string{
+                [$pdo,$owner]=$this->publishContext($productIdOrZero,$mode,$request);
+                if($pid)$this->attachments->categoryForMedia($productIdOrZero,$pid,$kind==='video'?1:0);
+                $uploaded=$this->storage->readTypedUploadedFile($request);
+                if(array_keys($uploaded)!==['bytes','display_name']||!is_string($uploaded['bytes'])||!is_string($uploaded['display_name']))throw new AuthUnavailableException();
+                if(LegacyProductWriteServices::transaction()!==$pdo||LegacyProductWriteServices::mediaOwner($productIdOrZero)!==$owner)throw new AuthUnavailableException();
+                $images=[['bytes'=>$uploaded['bytes'],'display_name'=>$uploaded['display_name'],'resolved_kind'=>$kind]];
+                unset($uploaded);
+                try {
+                    $rows=$this->publishQualifiedBytesInCurrentWriter($productIdOrZero,$images,$pid,$receipt,$objects,$observations,$mode,$request);
+                } finally { unset($images); }
+                self::onlinePhysical($receipt,$observations,1);
+                if(count($rows)!==1||LegacyProductWriteServices::transaction()!==$pdo||LegacyProductWriteServices::mediaOwner($productIdOrZero)!==$owner)throw new AuthUnavailableException();
+                $snapshot=$this->copyCommitSnapshot($rows);
+                return $rows[0]['att_dir'];
+            });
+            if(!is_array($snapshot))throw new AuthUnavailableException();
+            $this->observeCopyCommit($snapshot);
+            $receipt['database_committed']=true;$receipt['complete']=true;$receipt['phase']='complete';
+            return $src;
+        } catch(\Throwable $error) {
+            self::onlinePhysical($receipt,$observations,1);
+            if($receipt['physical_changed']===false&&$receipt['database_committed']===false
+                &&(($error instanceof HttpException&&in_array($error->getStatusCode(),[401,403,404,422],true))
+                    ||($error instanceof AuthException&&!$error instanceof AuthUnavailableException)))throw $error;
+            $this->copyFailure($receipt,$objects,$observations,1);
+            throw new MerchantAttachmentOperationException($receipt);
+        }
+    }
+
     /** Download/qualify the complete ordered batch before acquiring any product/merchant lock. */
     public function onlineUpload(Request $request,int $productIdOrZero,array $body): array
     {
@@ -146,31 +195,8 @@ final class PlatformProductMediaServices
             unset($image);
             foreach($images as$index=>$image){$objects[$index]=[];$observations[$index]=self::receipt();}
             $list=$this->within($request,$productIdOrZero,function()use($request,$productIdOrZero,$pid,$images,&$receipt,&$objects,&$observations):array{
-                $this->request($request,'legacy-product-media-online-upload');
-                $pdo=LegacyProductWriteServices::transaction();$owner=LegacyProductWriteServices::mediaOwner($productIdOrZero);
-                if($pid)$this->attachments->category($productIdOrZero,$pid);$data=[];
-                // No attachment INSERT is attempted until every requested physical object has completed.
-                foreach($images as$index=>$image){
-                    $this->request($request,'legacy-product-media-online-upload');$receipt['phase']='physical_upload';
-                    $data[$index]=$this->storage->uploadBytesForProduct($productIdOrZero,$image['bytes'],$image['display_name'],$objects[$index],$observations[$index]);
-                    if(LegacyProductWriteServices::transaction()!==$pdo||LegacyProductWriteServices::mediaOwner($productIdOrZero)!==$owner
-                        ||!in_array($observations[$index]['physical_changed'],[true,null],true)||$observations[$index]['physical_complete']!==true
-                        ||$observations[$index]['cleanup_complete']===false)throw new AuthUnavailableException();
-                }
-                $receipt['physical_complete']=true;$list=[];
-                foreach($data as$index=>$fields){
-                    $this->request($request,'legacy-product-media-online-upload');
-                    if(LegacyProductWriteServices::transaction()!==$pdo||LegacyProductWriteServices::mediaOwner($productIdOrZero)!==$owner)throw new AuthUnavailableException();
-                    $now=time();Input::integer($now,1,2147483647);
-                    $receipt['phase']='database_insert';$receipt['database_committed']=null;
-                    $row=$this->attachments->add($productIdOrZero,$fields+['pid'=>$pid,'time'=>$now,'module_type'=>1,'type'=>0,'scan_token'=>'']);
-                    $located=$this->storage->locateForProduct($row,$productIdOrZero);
-                    if($this->storage->identity($located)!==$this->storage->identity($objects[$index]))throw new AuthUnavailableException();
-                    $receipt['phase']='audit';$this->record($request,$productIdOrZero,'attachment',(int)$row['att_id'],['name','att_dir','satt_dir','pid']);
-                    if(LegacyProductWriteServices::transaction()!==$pdo||LegacyProductWriteServices::mediaOwner($productIdOrZero)!==$owner)throw new AuthUnavailableException();
-                    $list[]=['att_id'=>(int)$row['att_id'],'src'=>$row['att_dir']];
-                }
-                $receipt['phase']='commit_observation';return $list;
+                $rows=$this->publishQualifiedBytesInCurrentWriter($productIdOrZero,$images,$pid,$receipt,$objects,$observations,'online',$request);
+                return array_map(static fn(array $row):array=>['att_id'=>(int)$row['att_id'],'src'=>$row['att_dir']],$rows);
             });
             self::onlinePhysical($receipt,$observations,$expected);
             $receipt['database_committed']=true;$receipt['complete']=true;$receipt['phase']='complete';return $list;
@@ -194,6 +220,200 @@ final class PlatformProductMediaServices
             throw new MerchantAttachmentOperationException($receipt);
         }
     }
+    /** Internal product copy publisher; it never impersonates the public online Request. */
+    public function publishCopyImageInCurrentWriter(int $productIdOrZero,string $bytes,string $displayName,int $pid,array &$receipt): array
+    {
+        return $this->publishCopyMediaInCurrentWriter($productIdOrZero,$bytes,$displayName,'image',$pid,$receipt);
+    }
+
+    /** Typed copy uses the same real product writer and receipt, never a new actor or transaction. */
+    public function publishCopyMediaInCurrentWriter(int $productIdOrZero,string $bytes,string $displayName,string $resolvedKind,int $pid,array &$receipt): array
+    {
+        $objects=[];$observations=[self::receipt()];$receipt=self::receipt();
+        $images=[['bytes'=>$bytes,'display_name'=>$displayName,'resolved_kind'=>$resolvedKind]];
+        try {
+            if(!in_array($resolvedKind,['image','video','audio'],true)
+                ||(LegacyProductWriteServices::isSelfWorker()&&$resolvedKind!=='image'))throw new AuthUnavailableException();
+            $request=LegacyProductWriteServices::isSelfWorker()?null:app()->request;
+            $rows=$this->publishQualifiedBytesInCurrentWriter($productIdOrZero,$images,$pid,$receipt,$objects,$observations,'copy',$request);
+            self::onlinePhysical($receipt,$observations,1);
+            return $rows[0];
+        } catch(\Throwable $error) {
+            $this->copyFailure($receipt,$objects,$observations,1);
+            throw new MerchantAttachmentOperationException($receipt);
+        }
+    }
+
+    /** All spooled bytes are consumed/closed before the first metadata INSERT. */
+    public function publishCopyPlanInCurrentWriter(int $productIdOrZero,array &$plan): array
+    {
+        if(!isset($plan['images'],$plan['request'])||!is_array($plan['images'])||!array_is_list($plan['images'])
+            ||$plan['images']===[]||$plan['request']!==app()->request||!array_key_exists('scope',$plan))throw new AuthUnavailableException();
+        $expectedScope=$this->writer->authorizeCurrentRequest();
+        if($expectedScope!==$plan['scope']||($expectedScope!==null&&LegacyProductWriteServices::rawScope()!==$expectedScope)
+            ||($expectedScope===null&&LegacyProductWriteServices::hasPlatformScope()))throw new AuthUnavailableException();
+        $plan['receipt']=self::receipt();$plan['objects']=[];$plan['observations']=[];
+        foreach($plan['images']as$ignored)$plan['observations'][]=self::receipt();
+        try {
+            $rows=$this->publishQualifiedBytesInCurrentWriter($productIdOrZero,$plan['images'],0,$plan['receipt'],$plan['objects'],$plan['observations'],'copy',$plan['request']);
+            self::onlinePhysical($plan['receipt'],$plan['observations'],count($plan['images']));
+            $plan['commit_snapshot']=$this->copyCommitSnapshot($rows);return $rows;
+        } catch(\Throwable $error) {
+            $this->copyFailure($plan['receipt'],$plan['objects'],$plan['observations'],count($plan['images']));$plan['failure_finalized']=true;
+            throw new MerchantAttachmentOperationException($plan['receipt']);
+        }
+    }
+
+    /** Called only after the original writer returned or threw; unknown SQL is never cleaned. */
+    public function finishCopyPlan(array &$plan,bool $completed): void
+    {
+        if(!isset($plan['receipt'])||($plan['failure_finalized']??false)===true)return;
+        if($completed){$this->observeCopyCommit($plan['commit_snapshot']);$plan['receipt']['database_committed']=true;$plan['receipt']['complete']=true;$plan['receipt']['phase']='complete';return;}
+        $this->copyFailure($plan['receipt'],$plan['objects'],$plan['observations'],count($plan['images']));
+    }
+
+    /** Original native rows are captured inside the actual writer, never reconstructed after commit. */
+    public function copyCommitSnapshot(array $rows): array
+    {
+        $pdo=LegacyProductWriteServices::transaction();$connection=\think\facade\Db::connect();
+        if($rows===[]||!array_is_list($rows)||$connection->getPdo()!==$pdo)throw new AuthUnavailableException();
+        $prefix=$connection->getConfig('prefix');
+        if(!is_string($prefix)||preg_match('/\A[A-Za-z0-9_]*\z/D',$prefix)!==1||strlen($prefix.'system_attachment')>64)throw new AuthUnavailableException();
+        foreach($rows as$row)if(!is_array($row)||array_keys($row)!==PlatformProductMediaDao::ATTACHMENT_FIELDS)throw new AuthUnavailableException();
+        return ['connection'=>$connection,'pdo'=>$pdo,'prefix'=>$prefix,'rows'=>$rows];
+    }
+
+    /** Observed persisted commit, not a fabricated PDO::commit boolean ACK. */
+    public function observeCopyCommit(array $snapshot): void
+    {
+        if(array_keys($snapshot)!==['connection','pdo','prefix','rows']||!is_object($snapshot['connection'])
+            ||!is_string($snapshot['prefix'])||preg_match('/\A[A-Za-z0-9_]*\z/D',$snapshot['prefix'])!==1
+            ||strlen($snapshot['prefix'].'system_attachment')>64||!is_array($snapshot['rows'])
+            ||!array_is_list($snapshot['rows'])||$snapshot['rows']===[])throw new AuthUnavailableException();
+        $connection=$snapshot['connection'];$pdo=$snapshot['pdo'];
+        if(!$pdo instanceof \PDO||\think\facade\Db::connect()!==$connection||$connection->getPdo()!==$pdo
+            ||$pdo->inTransaction()||$connection->getConfig('prefix')!==$snapshot['prefix'])throw new AuthUnavailableException();
+        $state=$pdo->query('SELECT @@session.autocommit AS actual_autocommit');if($state===false)throw new AuthUnavailableException();
+        try{$rows=$state->fetchAll(\PDO::FETCH_ASSOC);if(!is_array($rows)||count($rows)!==1||array_keys($rows[0])!==['actual_autocommit']
+            ||!in_array($rows[0]['actual_autocommit'],[1,'1'],true))throw new AuthUnavailableException();}
+        finally{if($state->closeCursor()!==true)throw new AuthUnavailableException();}
+        $table='`'.$snapshot['prefix'].'system_attachment`';
+        foreach($snapshot['rows']as$expected){
+            if(!is_array($expected)||array_keys($expected)!==PlatformProductMediaDao::ATTACHMENT_FIELDS)throw new AuthUnavailableException();
+            $statement=$pdo->prepare('SELECT * FROM '.$table.' WHERE att_id=? AND mer_id=? LIMIT 2');if($statement===false)throw new AuthUnavailableException();
+            try{if($statement->execute([$expected['att_id'],$expected['mer_id']])!==true||$statement->fetchAll(\PDO::FETCH_ASSOC)!==[$expected])throw new AuthUnavailableException();}
+            finally{if($statement->closeCursor()!==true)throw new AuthUnavailableException();}
+        }
+        if(\think\facade\Db::connect()!==$connection||$connection->getPdo()!==$pdo||$pdo->inTransaction())throw new AuthUnavailableException();
+    }
+
+    private function copyFailure(array &$receipt,array $objects,array $observations,int $expected): void
+    {
+        $priorCleanup=$receipt['cleanup_complete'];self::onlinePhysical($receipt,$observations,$expected);
+        if($receipt['phase']==='preflight')$receipt['phase']='preflight_unknown';
+        if($receipt['database_committed']===false){
+            $cleanup=[];
+            foreach($objects as$index=>$object){
+                $prior=$observations[$index]['cleanup_complete'];
+                if($object!==[]){
+                    try{$done=$this->storage->cleanupNew($object,$observations[$index]);$cleanup[]=$prior===false?false:($done===true);}
+                    catch(\Throwable $ignored){$cleanup[]=false;}
+                }elseif($prior===false||$observations[$index]['physical_changed']!==false){$cleanup[]=$prior===false?false:null;}
+            }
+            if($cleanup!==[])$receipt['cleanup_complete']=in_array(false,$cleanup,true)?false:(in_array(null,$cleanup,true)?null:true);
+        }
+        if($priorCleanup===false)$receipt['cleanup_complete']=false;
+    }
+
+    /** Two finite callers share the original bytes -> native14 body, not authorization. */
+    private function publishQualifiedBytesInCurrentWriter(int $productIdOrZero,array &$images,int $pid,array &$receipt,array &$objects,array &$observations,string $mode,?Request $request): array
+    {
+        [$pdo,$owner]=$this->publishContext($productIdOrZero,$mode,$request);$resolvedKinds=[];
+        if($mode==='online'){
+            if($pid)$this->attachments->category($productIdOrZero,$pid);
+        }else{
+            foreach($images as$index=>$image){
+                $kind=$image['resolved_kind']??null;
+                if(!in_array($kind,['image','video','audio'],true)
+                    ||(LegacyProductWriteServices::isSelfWorker()&&$kind!=='image')
+                    ||(isset(self::MULTIPART_MODES[$mode])&&$kind!==self::MULTIPART_MODES[$mode]['kind']))throw new AuthUnavailableException();
+                $resolvedKinds[$index]=$kind;
+                if($pid)$this->attachments->categoryForMedia($productIdOrZero,$pid,$kind==='video'?1:0);
+            }
+            unset($image);
+        }
+        $data=[];
+        // No attachment INSERT is attempted until every requested physical object has completed.
+        foreach($images as$index=>&$image){
+            if(!isset($objects[$index]))$objects[$index]=[];
+            if(!isset($observations[$index]))$observations[$index]=self::receipt();
+            $this->publishContext($productIdOrZero,$mode,$request);$receipt['phase']='physical_upload';
+            try{$bytes=array_key_exists('spool',$image)?\app\services\product\product\CopyTaobaoServices::readCopySpool($image):$image['bytes'];}
+            catch(\Throwable $error){if(($image['cleanup_complete']??null)===false)$receipt['cleanup_complete']=false;throw $error;}
+            try{
+                if($mode==='online')$data[$index]=$this->storage->uploadBytesForProduct($productIdOrZero,$bytes,$image['display_name'],$objects[$index],$observations[$index]);
+                else{
+                    $data[$index]=$this->storage->uploadTypedBytesForProduct($productIdOrZero,$bytes,$image['display_name'],$resolvedKinds[$index],$objects[$index],$observations[$index]);
+                    $keys=array_keys($data[$index]);sort($keys,SORT_STRING);
+                    if($keys!==['att_dir','att_size','att_type','image_type','name','real_name','satt_dir','type']
+                        ||$data[$index]['type']!==($resolvedKinds[$index]==='video'?1:0))throw new AuthUnavailableException();
+                }
+            }finally{unset($bytes);}
+            if(LegacyProductWriteServices::transaction()!==$pdo||LegacyProductWriteServices::mediaOwner($productIdOrZero)!==$owner
+                ||!in_array($observations[$index]['physical_changed'],[true,null],true)||$observations[$index]['physical_complete']!==true
+                ||$observations[$index]['cleanup_complete']===false)throw new AuthUnavailableException();
+        }
+        unset($image);$receipt['physical_complete']=true;$rows=[];
+        foreach($data as$index=>$fields){
+            $this->publishContext($productIdOrZero,$mode,$request);
+            if(LegacyProductWriteServices::transaction()!==$pdo||LegacyProductWriteServices::mediaOwner($productIdOrZero)!==$owner)throw new AuthUnavailableException();
+            $now=time();Input::integer($now,1,2147483647);
+            $receipt['phase']='database_insert';$receipt['database_committed']=null;
+            if($mode==='online')$row=$this->attachments->add($productIdOrZero,$fields+['pid'=>$pid,'time'=>$now,'module_type'=>1,'type'=>0,'scan_token'=>'']);
+            else $row=$this->attachments->addTyped($productIdOrZero,$fields+['pid'=>$pid,'time'=>$now,'module_type'=>1,'scan_token'=>''],$resolvedKinds[$index]);
+            $located=$this->storage->locateForProduct($row,$productIdOrZero);
+            if($this->storage->identity($located)!==$this->storage->identity($objects[$index]))throw new AuthUnavailableException();
+            $receipt['phase']='audit';
+            if($mode==='online')$this->record($request,$productIdOrZero,'attachment',(int)$row['att_id'],['name','att_dir','satt_dir','pid']);
+            elseif($request!==null&&LegacyProductWriteServices::hasPlatformScope()){
+                $scope=LegacyProductWriteServices::rawScope();$this->access->authorizeScope($scope);
+                $this->audit->record('admin',$scope->adminId,$owner,$scope->permission,'attachment',(string)$row['att_id'],'success',['changed_fields'=>['name','att_dir','satt_dir','pid']]);
+            }
+            if(LegacyProductWriteServices::transaction()!==$pdo||LegacyProductWriteServices::mediaOwner($productIdOrZero)!==$owner)throw new AuthUnavailableException();
+            $rows[]=$row;
+        }
+        $receipt['phase']='commit_observation';return $rows;
+    }
+
+    private function publishContext(int $productIdOrZero,string $mode,?Request $request): array
+    {
+        Input::integer($productIdOrZero,0,8388607);
+        $pdo=LegacyProductWriteServices::transaction();$owner=LegacyProductWriteServices::mediaOwner($productIdOrZero);
+        if($mode==='online'){
+            if($request===null)throw new AuthUnavailableException();
+            $this->request($request,'legacy-product-media-online-upload');
+        }elseif(isset(self::MULTIPART_MODES[$mode])){
+            if($request===null||app()->request!==$request||LegacyProductWriteServices::isSelfWorker())throw new AuthUnavailableException();
+            $this->request($request,self::MULTIPART_MODES[$mode]['action']);
+            if(LegacyProductWriteServices::rawScope()!==$request->platformScope())throw new AuthUnavailableException();
+        }elseif($mode==='copy'){
+            if(!LegacyProductWriteServices::enabled())throw new AuthUnavailableException();
+            if(LegacyProductWriteServices::isSelfWorker()){
+                if($request!==null||$productIdOrZero<1||$owner!==LegacyProductWriteServices::selfId())throw new AuthUnavailableException();
+            }else{
+                if($request===null||app()->request!==$request)throw new AuthUnavailableException();
+                $scope=$this->writer->authorizeCurrentRequest();
+                if($scope!==null){
+                    if(!in_array($scope->permission,['legacy-product-save','legacy-product-copy-save'],true)
+                        ||LegacyProductWriteServices::rawScope()!==$scope)throw new AuthUnavailableException();
+                    $this->access->authorizeScope($scope);
+                }elseif(LegacyProductWriteServices::hasPlatformScope()||$owner!==LegacyProductWriteServices::selfId())throw new AuthUnavailableException();
+            }
+        }else throw new AuthUnavailableException();
+        if(LegacyProductWriteServices::transaction()!==$pdo||LegacyProductWriteServices::mediaOwner($productIdOrZero)!==$owner)throw new AuthUnavailableException();
+        return [$pdo,$owner];
+    }
+
     /** Any observed physical change survives a later unknown item; private cleanup failure also survives. */
     private static function onlinePhysical(array &$receipt,array $observations,int $expected): void
     {

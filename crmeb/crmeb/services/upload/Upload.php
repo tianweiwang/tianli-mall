@@ -31,6 +31,22 @@ class Upload extends BaseManager
      */
     protected $namespace = '\\crmeb\\services\\upload\\storage\\';
 
+    /** Server-qualified typed media only; the legacy stream defaults stay unchanged. */
+    public function streamTyped($bytes, string $key, string $qualifiedMime)
+    {
+        if (!in_array($qualifiedMime, [
+            'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
+            'image/x-icon', 'image/vnd.microsoft.icon',
+            'video/mp4', 'application/mp4',
+            'audio/wav', 'audio/wave', 'audio/x-wav', 'audio/vnd.wave',
+            'audio/mpeg', 'audio/mp3', 'audio/x-mp3', 'audio/amr', 'audio/amr-wb',
+            'audio/x-ms-wma', 'audio/x-ms-asf', 'video/x-ms-asf', 'application/vnd.ms-asf',
+        ], true)) {
+            throw new \InvalidArgumentException('Unsupported typed media MIME');
+        }
+        return $this->driver()->stream($bytes, $key, $qualifiedMime);
+    }
+
     /**
      * 设置默认上传类型
      * @return mixed

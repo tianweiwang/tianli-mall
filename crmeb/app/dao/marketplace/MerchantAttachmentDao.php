@@ -16,6 +16,10 @@ use think\facade\Db;
 final class MerchantAttachmentDao
 {
     public const FIELDS = ['att_id','mer_id','name','real_name','att_dir','satt_dir','att_size','att_type','pid','time','image_type','module_type','type'];
+    public const MEDIA_FIELDS=\app\dao\marketplace\product\PlatformProductMediaDao::ATTACHMENT_FIELDS;
+    private const VIDEO_MIMES=['video/mp4','application/mp4'];
+    private const AUDIO_MIMES=['audio/mpeg','audio/mp3','audio/x-mp3','audio/wav','audio/wave','audio/x-wav','audio/vnd.wave',
+        'audio/amr','audio/amr-wb','audio/x-ms-wma','audio/x-ms-asf','video/x-ms-asf','application/vnd.ms-asf'];
     public const MAX_CATEGORIES = 10000;
     public const MAX_DEPTH = 64;
     private static function tx(): PDO
@@ -84,6 +88,8 @@ final class MerchantAttachmentDao
     {
         if ($categoryId) $this->category($ctx, $categoryId);
         $q = (new SystemAttachment())->db()->where('module_type', 1)->where('type', 0);
+        // Keep the original image/local-MP4 page, excluding only new typed audio.
+        $q->whereRaw('(`att_type` IS NULL OR BINARY `att_type` NOT IN ('.implode(',',array_fill(0,count(self::AUDIO_MIMES),'?')).'))',self::AUDIO_MIMES);
         if ($categoryId) $q->where('pid', $categoryId);
         $q = MerchantScope::apply($q, $ctx);
         $count = (clone $q)->count();
@@ -177,5 +183,123 @@ final class MerchantAttachmentDao
     private static function identifier(string $value): void
     {
         if (strlen($value) > 64 || preg_match('/\A[A-Za-z0-9_]+\z/D', $value) !== 1) Input::unavailable();
+    }
+
+    /** The real merchant product writer, never the legacy/platform writer. */
+    private function mediaContext(MerchantContext $ctx,int $productIdOrZero): array
+    {
+        Input::id($productIdOrZero,true);$connection=Db::connect();$pdo=self::tx();
+        if($connection->getPdo()!==$pdo||$pdo->getAttribute(PDO::ATTR_DRIVER_NAME)!=='mysql'
+            ||$pdo->getAttribute(PDO::ATTR_ERRMODE)!==PDO::ERRMODE_EXCEPTION
+            ||!in_array($pdo->getAttribute(PDO::ATTR_EMULATE_PREPARES),[false,0],true))Input::unavailable();
+        if($productIdOrZero>0){
+            $product=app()->make(\app\dao\marketplace\product\MerchantProductDao::class)->find($ctx,$productIdOrZero,true);
+            if((int)$product['is_del']!==0)Input::invalid();
+        }
+        if(Db::connect()!==$connection||$connection->getPdo()!==$pdo||!$pdo->inTransaction())Input::unavailable();
+        return [$connection,$pdo,$ctx->merId];
+    }
+
+    private function mediaTable(): string
+    {
+        $prefix=Db::connect()->getConfig('prefix');
+        if(!is_string($prefix)||preg_match('/\A[A-Za-z0-9_]*\z/D',$prefix)!==1||strlen($prefix.'system_attachment')>64)Input::unavailable();
+        return '`'.$prefix.'system_attachment`';
+    }
+
+    private function mediaCategory(MerchantContext $ctx,int $id,?int $nativeType,bool $lock): array
+    {
+        Input::id($id);if($nativeType!==null)\app\services\marketplace\MerchantManagementInput::integer($nativeType,0,1);
+        $connection=Db::connect();$q=(new SystemAttachmentCategory())->db()->where('id',$id);
+        if($nativeType===null)$q->whereIn('type',[0,1]);else $q->where('type',$nativeType);
+        if($q->getConnection()!==$connection||($lock&&$q->getConnection()->getPdo()!==self::tx()))Input::unavailable();
+        $model=MerchantScope::apply($q,$ctx)->lock($lock)->find();
+        if($model===null)throw new MerchantNotFoundException();$row=$model->getData();MerchantScope::assertOwned($row,$ctx);
+        if(array_keys($row)!==['id','pid','name','enname','type','mer_id']
+            ||Input::id($row['id'])!==$id||\app\services\marketplace\MerchantManagementInput::integer($row['mer_id'],1,4294967295,true)!==$ctx->merId
+            ||($nativeType!==null&&\app\services\marketplace\MerchantManagementInput::integer($row['type'],0,1,true)!==$nativeType))Input::unavailable();
+        \app\services\marketplace\MerchantManagementInput::integer($row['type'],0,1,true);
+        Input::id($row['pid'],true);
+        foreach(['name','enname']as$field)if(!is_string($row[$field])||str_contains($row[$field],"\0")
+            ||preg_match('//u',$row[$field])!==1||mb_strlen($row[$field],'UTF-8')>50)Input::unavailable();
+        return $row;
+    }
+
+    public function categoryForMedia(MerchantContext $ctx,int $productIdOrZero,int $categoryId,int $nativeType): array
+    {
+        $state=$this->mediaContext($ctx,$productIdOrZero);Input::id($categoryId,true);
+        if($categoryId===0)return [];
+        $row=$this->mediaCategory($ctx,$categoryId,$nativeType,true);
+        if($this->mediaContext($ctx,$productIdOrZero)!==$state)Input::unavailable();return $row;
+    }
+
+    private static function assertTypedMedia(array $row,MerchantContext $ctx,string $kind,bool $native,bool $legacyLocalVideo=false): void
+    {
+        $mimes=match($kind){'image'=>\app\dao\marketplace\product\PlatformProductMediaDao::IMAGE_MIMES,
+            'video'=>self::VIDEO_MIMES,'audio'=>self::AUDIO_MIMES,default=>[]};
+        if($mimes===[])Input::invalid();
+        if($native){if(array_keys($row)!==self::MEDIA_FIELDS)Input::unavailable();Input::id($row['att_id']);}
+        $owner=\app\services\marketplace\MerchantManagementInput::integer($row['mer_id'],1,4294967295,true);
+        $type=\app\services\marketplace\MerchantManagementInput::integer($row['type'],0,1,true);
+        $storage=\app\services\marketplace\MerchantManagementInput::integer($row['image_type'],1,7,true);
+        $legacy=$legacyLocalVideo&&$kind==='video'&&$storage===1&&$type===0&&($row['att_type']??null)==='video/mp4';
+        if($owner!==$ctx->merId||\app\services\marketplace\MerchantManagementInput::integer($row['module_type'],0,255,true)!==1
+            ||($type!==($kind==='video'?1:0)&&!$legacy))Input::unavailable();
+        Input::id($row['pid'],true);\app\services\marketplace\MerchantManagementInput::integer($row['time'],1,2147483647,true);
+        foreach(['name'=>100,'att_dir'=>200,'satt_dir'=>200,'att_size'=>30,'att_type'=>30,'real_name'=>255,'scan_token'=>32]as$field=>$limit){
+            if(!is_string($row[$field])||str_contains($row[$field],"\0")||preg_match('//u',$row[$field])!==1
+                ||mb_strlen($row[$field],'UTF-8')>$limit)Input::unavailable();
+        }
+        \app\services\marketplace\MerchantManagementInput::integer($row['att_size'],1,PHP_INT_MAX,true);
+        if($row['name']===''||$row['real_name']===''||$row['att_dir']===''||$row['satt_dir']===''
+            ||$row['scan_token']!==''||!in_array($row['att_type'],$mimes,true))Input::unavailable();
+    }
+
+    /** INSERT thirteen actual columns; reselect the complete fourteen-column row. */
+    public function addTyped(MerchantContext $ctx,int $productIdOrZero,array $data,string $kind): array
+    {
+        $state=$this->mediaContext($ctx,$productIdOrZero);[$connection,$pdo,$owner]=$state;$data['mer_id']=$owner;
+        $fields=array_slice(self::MEDIA_FIELDS,1);$keys=array_keys($data);sort($keys);$expected=$fields;sort($expected);
+        if($keys!==$expected)Input::unavailable();self::assertTypedMedia($data,$ctx,$kind,false);
+        if($data['pid'])$this->categoryForMedia($ctx,$productIdOrZero,Input::id($data['pid']),$kind==='video'?1:0);
+        $values=[];foreach($fields as$field)$values[]=$data[$field];
+        if($this->mediaContext($ctx,$productIdOrZero)!==$state)Input::unavailable();
+        $table=$this->mediaTable();$statement=$pdo->prepare('INSERT INTO '.$table.' (`'.implode('`,`',$fields).'`) VALUES ('.implode(',',array_fill(0,count($fields),'?')).')');
+        if($statement===false)Input::unavailable();
+        try{
+            if($statement->execute($values)!==true||$statement->rowCount()!==1)Input::unavailable();$id=Input::id($pdo->lastInsertId());
+        }finally{if($statement->closeCursor()!==true)Input::unavailable();}
+        if($this->mediaContext($ctx,$productIdOrZero)!==$state)Input::unavailable();
+        $statement=$pdo->prepare('SELECT * FROM '.$table.' WHERE att_id=? AND mer_id=? AND module_type=1 AND type=? LIMIT 2 FOR UPDATE');
+        if($statement===false)Input::unavailable();
+        try{
+            if($statement->execute([$id,$owner,$kind==='video'?1:0])!==true)Input::unavailable();$rows=$statement->fetchAll(PDO::FETCH_ASSOC);
+        }finally{if($statement->closeCursor()!==true)Input::unavailable();}
+        if(!is_array($rows)||count($rows)!==1)Input::unavailable();$row=$rows[0];self::assertTypedMedia($row,$ctx,$kind,true);
+        if(Input::id($row['att_id'])!==$id)Input::unavailable();
+        foreach($data as$field=>$value)if(is_int($value)?(string)$row[$field]!== (string)$value:$row[$field]!==$value)Input::unavailable();
+        if($this->mediaContext($ctx,$productIdOrZero)!==$state)Input::unavailable();return $row;
+    }
+
+    /** Metadata selection; actual use still goes through complete typed bytes qualification. */
+    public function listingMedia(MerchantContext $ctx,string $kind,int $categoryId,int $page,int $limit): array
+    {
+        if(!in_array($kind,['video','audio'],true))Input::invalid();
+        $categoryType=null;
+        if($categoryId){$category=$this->mediaCategory($ctx,$categoryId,$kind==='video'?null:0,false);$categoryType=(int)$category['type'];}
+        $q=MerchantScope::apply((new SystemAttachment())->db()->where('module_type',1),$ctx);
+        if($kind==='video'){
+            $q->whereRaw('((`type`=? AND BINARY `att_type` IN (?,?)) OR (`type`=? AND `image_type`=? AND BINARY `att_type`=?))',
+                [1,'video/mp4','application/mp4',0,1,'video/mp4']);
+        }else{
+            $q->where('type',0)->whereRaw('BINARY `att_type` IN ('.implode(',',array_fill(0,count(self::AUDIO_MIMES),'?')).')',self::AUDIO_MIMES);
+        }
+        // The old local type0 MP4 retains its real type0 category. New video
+        // remains type1 with type1 categories; category0 can show both forms.
+        if($categoryType!==null)$q->where('type',$categoryType);
+        if($categoryId)$q->where('pid',$categoryId);
+        $count=(clone $q)->count();$rows=(clone $q)->field(self::MEDIA_FIELDS)->order('att_id','desc')->page($page,$limit)->select()->toArray();
+        foreach($rows as$row){MerchantScope::assertOwned($row,$ctx);self::assertTypedMedia($row,$ctx,$kind,true,true);}
+        return ['list'=>$rows,'count'=>$count];
     }
 }

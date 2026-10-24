@@ -147,4 +147,13 @@ final class MerchantAttachmentServices
             throw new MerchantAttachmentOperationException($receipt);
         }
     }
+
+    public function listMedia(MerchantContext $ctx,string $kind,int $categoryId,int $page,int $limit): array
+    {
+        $this->authorize($ctx);Input::id($categoryId,true);
+        MerchantManagementInput::integer($page,1,2147483647);MerchantManagementInput::integer($limit,1,100);
+        if(!in_array($kind,['video','audio'],true))Input::invalid();
+        $result=$this->attachments->listingMedia($ctx,$kind,$categoryId,$page,$limit);
+        $result['list']=array_map([self::class,'dto'],$result['list']);return $result;
+    }
 }

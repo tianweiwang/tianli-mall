@@ -29,6 +29,28 @@ final class PlatformProductMedia
         }
     }
 
+    public function uploadVideo(Request $request): Response
+    {
+        $id=LegacyProductWriteServices::routeId($request->route('product_id',null,null),true);
+        try {
+            $src=$this->services->uploadVideo($request,$id,$request->post(false));
+            return app('json')->success('上传成功',['src'=>$src]);
+        } catch(MerchantAttachmentOperationException $error) {
+            return Response::create(['status'=>503,'msg'=>'素材操作未完成，请保留本次结果','data'=>$error->receipt],'json',503);
+        }
+    }
+
+    public function uploadAudio(Request $request): Response
+    {
+        $id=LegacyProductWriteServices::routeId($request->route('product_id',null,null),true);
+        try {
+            $src=$this->services->uploadAudio($request,$id,$request->post(false));
+            return app('json')->success('上传成功',['src'=>$src]);
+        } catch(MerchantAttachmentOperationException $error) {
+            return Response::create(['status'=>503,'msg'=>'素材操作未完成，请保留本次结果','data'=>$error->receipt],'json',503);
+        }
+    }
+
     public function onlineUpload(Request $request): Response
     {
         $id=LegacyProductWriteServices::routeId($request->route('product_id',null,null),true);

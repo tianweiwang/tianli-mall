@@ -361,4 +361,56 @@ final class PlatformProductMediaDao
         if($this->rows($productIdOrZero,$pdo,$owner,'SELECT * FROM '.$this->table('system_attachment')
             .' WHERE att_id IN ('.implode(',',array_fill(0,count($ids),'?')).') LIMIT 1',$ids)!==[])self::fail();
     }
+
+    /** Typed producers retain the original complete native category on the actual writer. */
+    public function categoryForMedia(int $productId,int $categoryId,int $nativeType): array
+    {
+        [$pdo,$owner]=$this->context($productId);self::integer($categoryId,1,2147483647);self::integer($nativeType,0,1);
+        $rows=$this->rows($productId,$pdo,$owner,'SELECT * FROM '.$this->table('system_attachment_category').' WHERE id=? AND mer_id=? AND type=? LIMIT 2 FOR UPDATE',[$categoryId,$owner,$nativeType]);
+        if($rows===[])throw new HttpException(404,'资源不存在');if(count($rows)!==1)self::fail();$row=$rows[0];
+        if(array_keys($row)!==self::CATEGORY_FIELDS||self::integer($row['id'],1,2147483647)!==$categoryId
+            ||self::integer($row['mer_id'],1,4294967295)!==$owner||self::integer($row['type'],0,1)!==$nativeType)self::fail();
+        self::integer($row['pid'],0,2147483647);self::text($row['name'],50);self::text($row['enname'],50);return $row;
+    }
+
+    /** No image-list/scan fallback: this receives only a completed typed producer's fields. */
+    public function addTyped(int $productId,array $data,string $resolvedKind): array
+    {
+        [$pdo,$owner]=$this->context($productId);$data['mer_id']=$owner;
+        $fields=array_slice(self::ATTACHMENT_FIELDS,1);$keys=array_keys($data);sort($keys);$expected=$fields;sort($expected);
+        if($keys!==$expected)self::fail();
+        $this->typedAttachment($data,$owner,$resolvedKind,false);
+        if($data['pid'])$this->categoryForMedia($productId,self::integer($data['pid'],1,2147483647),$resolvedKind==='video'?1:0);
+        $values=[];foreach($fields as$field)$values[]=$data[$field];
+        if($this->context($productId)!==[$pdo,$owner])self::fail();
+        $statement=$pdo->prepare('INSERT INTO '.$this->table('system_attachment').' (`'.implode('`,`',$fields).'`) VALUES ('.implode(',',array_fill(0,count($fields),'?')).')');
+        if(!$statement)self::fail();
+        try{if($statement->execute($values)!==true||$statement->rowCount()!==1)self::fail();$id=self::integer($pdo->lastInsertId(),1,2147483647);}
+        finally{if($statement->closeCursor()!==true)self::fail();}
+        $rows=$this->rows($productId,$pdo,$owner,'SELECT * FROM '.$this->table('system_attachment').' WHERE att_id=? AND mer_id=? AND module_type=1 AND type=? LIMIT 2 FOR UPDATE',[$id,$owner,$resolvedKind==='video'?1:0]);
+        if(count($rows)!==1)self::fail();$row=$rows[0];$this->typedAttachment($row,$owner,$resolvedKind);
+        if(self::integer($row['att_id'],1,2147483647)!==$id)self::fail();
+        foreach($data as$field=>$value)if((is_int($value)?(string)$row[$field]!== (string)$value:$row[$field]!==$value))self::fail();
+        return $row;
+    }
+
+    /** Metadata classification only. Actual complete content was qualified by Storage before INSERT. */
+    private function typedAttachment(array $row,int $owner,string $resolvedKind,bool $native=true): void
+    {
+        $mimes=match($resolvedKind){
+            'image'=>self::IMAGE_MIMES,
+            'video'=>['video/mp4','application/mp4'],
+            'audio'=>['audio/mpeg','audio/mp3','audio/x-mp3','audio/wav','audio/wave','audio/x-wav','audio/vnd.wave',
+                'audio/amr','audio/amr-wb','audio/x-ms-wma','audio/x-ms-asf','video/x-ms-asf','application/vnd.ms-asf'],
+            default=>[],
+        };
+        if($mimes===[])self::fail();
+        if($native){if(array_keys($row)!==self::ATTACHMENT_FIELDS)self::fail();self::integer($row['att_id'],1,2147483647);}
+        self::integer($row['pid'],0,2147483647);self::integer($row['time'],1,2147483647);
+        if(self::integer($row['mer_id'],1,4294967295)!==$owner||self::integer($row['module_type'],0,255)!==1
+            ||self::integer($row['type'],0,1)!==($resolvedKind==='video'?1:0))self::fail();self::integer($row['image_type'],1,7);
+        foreach(['name'=>100,'att_dir'=>200,'satt_dir'=>200,'att_size'=>30,'att_type'=>30,'real_name'=>255,'scan_token'=>32]as$field=>$max)self::text($row[$field],$max);
+        self::integer($row['att_size'],1,PHP_INT_MAX);
+        if($row['name']===''||$row['real_name']===''||$row['att_dir']===''||$row['satt_dir']===''||$row['scan_token']!==''||!in_array($row['att_type'],$mimes,true))self::fail();
+    }
 }

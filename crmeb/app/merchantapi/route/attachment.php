@@ -10,6 +10,8 @@ return static function(): void {
     $options=['merchant_permission'=>'attachment.manage'];
     $middleware=[MerchantAuthTokenMiddleware::class,MerchantPermissionMiddleware::class];
     Route::get('attachments','Attachment/index')->option($options)->middleware($middleware)->name('merchant.attachment.list');
+    Route::get('attachments/videos','Attachment/videos')->option($options)->middleware($middleware)->name('merchant.attachment.video.list');
+    Route::get('attachments/audio','Attachment/audio')->option($options)->middleware($middleware)->name('merchant.attachment.audio.list');
     Route::post('attachments/upload','Attachment/upload')->option($options)->middleware($middleware)->name('merchant.attachment.upload');
     Route::delete('attachments','Attachment/delete')->option($options)->middleware($middleware)->name('merchant.attachment.delete');
     Route::get('attachment-categories','Attachment/categories')->option($options)->middleware($middleware)->name('merchant.attachment.category.list');

@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__.'/marketplace-ms1.php';
 
-/** Ten finite leaf grants and additive per-role FILE-grant copies; no application bootstrap or DDL. */
+/** Finite leaf grants and additive per-role FILE-grant copies; no application bootstrap or DDL. */
 final class MarketplaceMs4ProductMediaMenus
 {
     private const MARKER='marketplace-ms4-product-media-menus-v1';
@@ -199,6 +199,8 @@ final class MarketplaceMs4ProductMediaMenus
             'legacy-product-media-scan-preview'=>['GET','file/scan_upload/image/<scan_token>'],
             'legacy-product-media-scan-claim'=>['PUT','file/file/do_move'],
             'legacy-product-media-scan-close'=>['DELETE','file/scan_upload/qrcode'],
+            'legacy-product-media-video-upload'=>['POST','file/upload/<upload_type?>'],
+            'legacy-product-media-audio-upload'=>['POST','file/upload/<upload_type?>'],
         ];
     }
 
@@ -224,6 +226,8 @@ final class MarketplaceMs4ProductMediaMenus
             ['商品扫码预览','GET','product/product/<product_id>/media/scan/<lease_id>/items/<stage_id>/content','legacy-product-media-scan-preview'],
             ['商品扫码认领','POST','product/product/<product_id>/media/scan/<lease_id>/claim','legacy-product-media-scan-claim'],
             ['商品扫码关闭','DELETE','product/product/<product_id>/media/scan/<lease_id>','legacy-product-media-scan-close'],
+            ['商品视频上传','POST','product/product/<product_id>/media/videos/upload','legacy-product-media-video-upload'],
+            ['商品音频上传','POST','product/product/<product_id>/media/audio/upload','legacy-product-media-audio-upload'],
         ]);
     }
     private function sameMenu(array $actual,array $expected): bool

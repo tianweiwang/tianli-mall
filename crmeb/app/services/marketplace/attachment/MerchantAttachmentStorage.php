@@ -525,4 +525,324 @@ final class MerchantAttachmentStorage
         if(LegacyProductWriteServices::transaction()!==$pdo||LegacyProductWriteServices::mediaOwner($productIdOrZero)!==$owner)MerchantAttachmentInput::unavailable();
         $receipt['physical_complete']=true;return $row;
     }
+
+    /**
+     * Internal physical leaf only. The caller has locked this full native row
+     * and established the actual owner on its original writer PDO.
+     */
+    public function assertTypedReference(array $native14,array $locatedObject,string $expectedKind,string $selectedCanonical): array
+    {
+        if(PHP_INT_SIZE<8||array_keys($native14)!==\app\dao\marketplace\product\PlatformProductMediaDao::ATTACHMENT_FIELDS
+            ||!in_array($expectedKind,['image','video','audio','unresolved'],true))MerchantAttachmentInput::unavailable();
+        self::referenceInteger($native14['att_id'],1,2147483647);
+        self::referenceInteger($native14['mer_id'],1,4294967295);
+        self::referenceInteger($native14['pid'],0,2147483647);self::referenceInteger($native14['time'],0,2147483647);
+        if(self::referenceInteger($native14['module_type'],0,255)!==1)MerchantAttachmentInput::invalid();
+        $type=self::referenceInteger($native14['image_type'],1,7);$mediaType=self::referenceInteger($native14['type'],0,1);
+        foreach(['name'=>100,'att_dir'=>200,'satt_dir'=>200,'att_size'=>30,'att_type'=>30,'real_name'=>255,'scan_token'=>32]as$field=>$limit){
+            if(!is_string($native14[$field])||str_contains($native14[$field],"\0")||preg_match('//u',$native14[$field])!==1
+                ||mb_strlen($native14[$field],'UTF-8')>$limit)MerchantAttachmentInput::unavailable();
+        }
+        $size=self::referenceInteger($native14['att_size'],1,PHP_INT_MAX);
+        // Re-locate from the original row; a caller-provided URL/path/config is
+        // never used as an alternative object authority.
+        $before=$this->locateObject($native14);
+        if(self::referenceLocatorFacts($before)!==self::referenceLocatorFacts($locatedObject))MerchantAttachmentInput::unavailable();
+        if($before['type']!==$type||!in_array($selectedCanonical,$before['canonical'],true))MerchantAttachmentInput::invalid();
+        $credential=$type===1?null:$this->credentials($type);
+        $originalCanonical=$type===1?$native14['att_dir']:self::domain($before['storage']['domain']).'/'.$before['key'];
+        if(!in_array($originalCanonical,$before['canonical'],true))MerchantAttachmentInput::unavailable();
+        $bytes=$this->referenceBytes($before,$credential,$originalCanonical,$size);
+        try{$original=MerchantAttachmentReferenceFormat::qualify($bytes);}
+        finally{unset($bytes);}
+        if($original['bytes']!==$size||!in_array($native14['att_type'],$original['mime_aliases'],true))MerchantAttachmentInput::invalid();
+        $resolved=$original['resolved_kind'];
+        if($expectedKind!=='unresolved'&&$resolved!==$expectedKind)MerchantAttachmentInput::invalid();
+        if($selectedCanonical===$originalCanonical){$selected=$original;}
+        else{
+            // Local thumbnails have their own real size. All current cloud
+            // canonical forms are aliases of the same configured bucket/key.
+            $selectedSize=$size;
+            if($type===1){
+                $matches=array_values(array_filter($before['files'],static fn(array $file):bool=>$file['canonical']===$selectedCanonical));
+                if(count($matches)!==1||!is_int($matches[0]['stat']['size'])||$matches[0]['stat']['size']<1)MerchantAttachmentInput::unavailable();
+                $selectedSize=$matches[0]['stat']['size'];
+            }
+            $bytes=$this->referenceBytes($before,$credential,$selectedCanonical,$selectedSize);
+            try{$selected=MerchantAttachmentReferenceFormat::qualify($bytes);}
+            finally{unset($bytes);}
+            if($selected['resolved_kind']!==$resolved||$selected['bytes']!==$selectedSize
+                ||($type!==1&&$selected['sha256']!==$original['sha256']))MerchantAttachmentInput::invalid();
+        }
+        // Keep complete private locators/config in this scope only. A second
+        // locate confirms the same physical family/identity after all reads.
+        $after=$this->locateObject($native14);
+        if(self::referenceLocatorFacts($after)!==self::referenceLocatorFacts($before)||$this->identity($after)!==$this->identity($before)
+            ||($type!==1&&$this->credentials($type)!==$credential))MerchantAttachmentInput::unavailable();
+        // The original merchant upload stored a real local MP4 as type0.
+        // Preserve only that exact legacy representation after every complete
+        // native/located/original/selected-byte check; new video writes type1.
+        $legacyLocalMp4=$resolved==='video'&&($original['format']['format']??null)==='mp4'
+            &&$type===1&&$mediaType===0&&$native14['att_type']==='video/mp4';
+        if($mediaType!==($resolved==='video'?1:0)&&!$legacyLocalMp4)MerchantAttachmentInput::invalid();
+        unset($original['mime_aliases'],$selected['mime_aliases']);
+        return ['resolved_kind'=>$resolved,'identity'=>$this->identity($before),
+            'native14_sha256'=>hash('sha256',json_encode($native14,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR)),
+            'original'=>['canonical'=>$originalCanonical]+$original,'selected'=>['canonical'=>$selectedCanonical]+$selected];
+    }
+
+    /** Reading may advance atime; all other original locator/stat facts stay exact. */
+    private static function referenceLocatorFacts(array $object): array
+    {
+        foreach($object['files'] as&$file)unset($file['stat'][8],$file['stat']['atime']);
+        unset($file);return $object;
+    }
+
+    private function referenceBytes(array $object,?array $credential,string $canonical,int $size,?string &$servedMime=null): string
+    {
+        $servedMime=null;
+        if($object['type']===1){
+            $files=array_values(array_filter($object['files'],static fn(array $file):bool=>$file['canonical']===$canonical));
+            if(count($files)!==1)MerchantAttachmentInput::unavailable();
+            return MerchantAttachmentReferenceBytes::local($files[0],$size,$size);
+        }
+        if($credential===null)MerchantAttachmentInput::unavailable();
+        return MerchantAttachmentReferenceBytes::cloud($object,$credential,$canonical,$size,$size,$servedMime);
+    }
+
+    private static function referenceInteger(mixed $value,int $minimum,int $maximum): int
+    {
+        if(is_string($value)&&preg_match('/\A(?:0|[1-9][0-9]*)\z/D',$value)===1){
+            $ceiling=(string)$maximum;
+            if(strlen($value)>strlen($ceiling)||(strlen($value)===strlen($ceiling)&&strcmp($value,$ceiling)>0))MerchantAttachmentInput::unavailable();
+            $value=(int)$value;
+        }
+        if(!is_int($value)||$value<$minimum||$value>$maximum)MerchantAttachmentInput::unavailable();return $value;
+    }
+
+    /** Current new-upload policy only; this does not authorize an owner or writer. */
+    public function qualifyTypedUploadBytes(string $bytes,string $displayName,string $expectedKind): array
+    {
+        $maximum=Config::get('upload.filesize');$extensions=Config::get('upload.fileExt',[]);$mimes=Config::get('upload.fileMime',[]);
+        if(!is_int($maximum)||$maximum<1||!is_array($extensions)||!is_array($mimes))MerchantAttachmentInput::unavailable();
+        return MerchantAttachmentUploadQualifier::qualify($bytes,$displayName,$expectedKind,$maximum,$extensions,$mimes);
+    }
+
+    /** Internal product-writer leaf. Returns eight observed fields, never a fabricated native14. */
+    /** One actual multipart intake for both real product writers; never an owner grant. */
+    public function readTypedUploadedFile(\app\Request $request): array
+    {
+        if(app()->request!==$request)MerchantAttachmentInput::unavailable();
+        $files=$request->file();
+        if(!is_array($files)||array_keys($files)!==['file']
+            ||!$files['file'] instanceof \think\file\UploadedFile||!$files['file']->isValid())MerchantAttachmentInput::invalid();
+        $file=$files['file'];$displayName=$file->getOriginalName();
+        \app\services\marketplace\MerchantManagementInput::text($displayName,255,true);
+        $path=$file->getRealPath();$named=$file->getPathname();
+        if(!is_string($path)||$path===''||is_link($named)||is_link($path)||realpath($named)!==$path)MerchantAttachmentInput::invalid();
+        clearstatcache(true,$path);$before=lstat($path);$maximum=Config::get('upload.filesize');
+        if(!is_int($maximum)||$maximum<1)MerchantAttachmentInput::unavailable();
+        if(!is_array($before)||($before['mode']&0170000)!==0100000||!is_int($before['size'])
+            ||$before['size']<1||$before['size']>$maximum)MerchantAttachmentInput::invalid();
+        $handle=fopen($path,'rb');if(!is_resource($handle))MerchantAttachmentInput::unavailable();
+        try{
+            $opened=fstat($handle);$fields=['dev','ino','mode','nlink','uid','gid','size','mtime','ctime'];
+            foreach($fields as$field)if(!is_array($opened)||$opened[$field]!==$before[$field])MerchantAttachmentInput::unavailable();
+            $bytes='';$read=0;$hash=hash_init('sha256');
+            while($read<$before['size']){
+                $chunk=fread($handle,min(1048576,$before['size']-$read));
+                if(!is_string($chunk)||$chunk==='')MerchantAttachmentInput::unavailable();
+                $read+=strlen($chunk);hash_update($hash,$chunk);$bytes.=$chunk;
+            }
+            if(fread($handle,1)!==''||!feof($handle)||$read!==$before['size']
+                ||strlen($bytes)!==$read||hash_final($hash)!==hash('sha256',$bytes))MerchantAttachmentInput::unavailable();
+            clearstatcache(true,$path);$after=lstat($path);$fdAfter=fstat($handle);
+            foreach($fields as$field)if(!is_array($after)||!is_array($fdAfter)
+                ||$after[$field]!==$before[$field]||$fdAfter[$field]!==$before[$field])MerchantAttachmentInput::unavailable();
+            if(is_link($named)||is_link($path)||realpath($named)!==$path||!$file->isValid()
+                ||app()->request!==$request||Config::get('upload.filesize')!==$maximum)MerchantAttachmentInput::unavailable();
+            return ['bytes'=>$bytes,'display_name'=>$displayName];
+        }finally{
+            if(fclose($handle)!==true)MerchantAttachmentInput::unavailable();
+        }
+    }
+
+    /** Legacy product wrapper keeps its actual current writer/owner contract. */
+    public function uploadTypedBytesForProduct(int $productIdOrZero,string $bytes,string $displayName,string $expectedKind,array &$object,array &$receipt): array
+    {
+        return $this->uploadTypedBytes(null,$productIdOrZero,$bytes,$displayName,$expectedKind,$object,$receipt);
+    }
+
+    /** A real merchant Request and its original product writer are required. */
+    public function uploadTypedBytesForMerchant(MerchantContext $ctx,int $productIdOrZero,string $bytes,string $displayName,string $expectedKind,array &$object,array &$receipt): array
+    {
+        return $this->uploadTypedBytes($ctx,$productIdOrZero,$bytes,$displayName,$expectedKind,$object,$receipt);
+    }
+
+    private function typedUploadContext(?MerchantContext $ctx,int $productIdOrZero): array
+    {
+        \app\services\marketplace\product\MerchantProductInput::integer($productIdOrZero,0,\app\services\marketplace\product\MerchantProductInput::ROOT_MAX);
+        $connection=\think\facade\Db::connect();
+        if($ctx===null){
+            $pdo=LegacyProductWriteServices::transaction();$owner=LegacyProductWriteServices::mediaOwner($productIdOrZero);
+        }else{
+            $request=app()->request;
+            if(!$request instanceof \app\Request||$request->merchantContext()!==$ctx)MerchantAttachmentInput::unavailable();
+            $pdo=$connection->getPdo();
+            if(!$pdo instanceof \PDO||!$pdo->inTransaction())MerchantAttachmentInput::unavailable();
+            $authentication=app()->make(\app\services\marketplace\EmployeeAuthServices::class);
+            $authentication->authorizeAction($ctx,'product.write',true);
+            $authentication->authorizeAction($ctx,'attachment.manage',true);
+            if($productIdOrZero>0){
+                $product=app()->make(\app\dao\marketplace\product\MerchantProductDao::class)->find($ctx,$productIdOrZero,true);
+                if((int)$product['is_del']!==0)MerchantAttachmentInput::invalid();
+            }
+            $owner=$ctx->merId;
+        }
+        if(!$pdo instanceof \PDO||!$pdo->inTransaction()||\think\facade\Db::connect()!==$connection
+            ||$connection->getPdo()!==$pdo)MerchantAttachmentInput::unavailable();
+        return [$connection,$pdo,$owner];
+    }
+
+    /** Shared physical algorithm; the two wrappers choose only their real writer. */
+    private function uploadTypedBytes(?MerchantContext $ctx,int $productIdOrZero,string $bytes,string $displayName,string $expectedKind,array &$object,array &$receipt): array
+    {
+        $state=$this->typedUploadContext($ctx,$productIdOrZero);[$connection,$pdo,$owner]=$state;
+        if($object!==[])MerchantAttachmentInput::unavailable();
+        $receiptKeys=array_keys($receipt);sort($receiptKeys,SORT_STRING);
+        if($receiptKeys!==['cleanup_complete','complete','database_committed','phase','physical_changed','physical_complete']
+            ||$receipt['complete']!==false||$receipt['phase']!=='preflight'||$receipt['physical_changed']!==false
+            ||$receipt['physical_complete']!==false||$receipt['database_committed']!==false||$receipt['cleanup_complete']!==null)MerchantAttachmentInput::unavailable();
+        $qualified=$this->qualifyTypedUploadBytes($bytes,$displayName,$expectedKind);
+        \app\services\marketplace\MerchantManagementInput::text($displayName,255,true);
+        if($this->typedUploadContext($ctx,$productIdOrZero)!==$state)MerchantAttachmentInput::unavailable();
+        $configured=sys_config('upload_type',1);
+        if(is_string($configured)&&preg_match('/\A[1-7]\z/D',$configured)===1)$configured=(int)$configured;
+        if(!is_int($configured)||$configured<1||$configured>7)MerchantAttachmentInput::unavailable();
+        $type=$configured;$storage=$type===1?null:$this->activeStorage($type);
+        $directory='merchant/'.$owner.'/'.bin2hex(random_bytes(16));$fileName=bin2hex(random_bytes(16)).'.'.$qualified['extension'];
+        $key=($type===1?'':'uploads/').$directory.'/'.$fileName;self::key($key);
+        $localRoot=$type===1?realpath(Config::get('filesystem.disks.public.root','')):null;
+        if($type===1&&($localRoot===false||Config::get('filesystem.disks.public.type')!=='local'
+            ||Config::get('filesystem.disks.public.url')!=='/uploads'))MerchantAttachmentInput::unavailable();
+        $object=['type'=>$type,'directory'=>$directory,'local_root'=>$localRoot,'storage'=>$storage,'files'=>[],'key'=>$type===1?$fileName:$key];
+        if($type===1){
+            $relative=$directory.'/'.$fileName;$destination=$localRoot.DIRECTORY_SEPARATOR.str_replace('/',DIRECTORY_SEPARATOR,$relative);
+            $cursor=$localRoot;foreach(explode('/',$directory)as$part){$cursor.=DIRECTORY_SEPARATOR.$part;
+                if(is_link($cursor)||(file_exists($cursor)&&!is_dir($cursor)))MerchantAttachmentInput::unavailable();}
+            if(file_exists($cursor)||is_link($cursor)||$this->localPath($relative,false)!==null)MerchantAttachmentInput::unavailable();
+            $disk=Filesystem::disk('public');
+            if(realpath($disk->path(''))!==$localRoot)MerchantAttachmentInput::unavailable();
+            $temporary=null;$temporaryPath=null;$failure=null;$row=null;
+            try{
+                $temporary=tmpfile();if(!is_resource($temporary))MerchantAttachmentInput::unavailable();
+                $meta=stream_get_meta_data($temporary);$uri=$meta['uri']??null;
+                $temporaryPath=is_string($uri)?realpath($uri):false;$temporaryRoot=realpath(sys_get_temp_dir());
+                $publicRoot=realpath(app()->getRootPath().'public');$initial=fstat($temporary);
+                if(!is_string($temporaryPath)||$temporaryRoot===false||$publicRoot===false||dirname($temporaryPath)!==$temporaryRoot
+                    ||$temporaryPath===$publicRoot||str_starts_with($temporaryPath,$publicRoot.DIRECTORY_SEPARATOR)
+                    ||$temporaryPath===$localRoot||str_starts_with($temporaryPath,$localRoot.DIRECTORY_SEPARATOR)
+                    ||is_link($uri)||!is_array($initial)||($initial['mode']&0170000)!==0100000||($initial['mode']&0777)!==0600
+                    ||$initial['size']!==0)MerchantAttachmentInput::unavailable();
+                if(fwrite($temporary,$bytes)!==$qualified['size']||fflush($temporary)!==true)MerchantAttachmentInput::unavailable();
+                clearstatcache(true,$temporaryPath);$written=fstat($temporary);$native=lstat($temporaryPath);
+                if(!is_array($written)||!is_array($native)||is_link($temporaryPath)||$written['size']!==$qualified['size'])MerchantAttachmentInput::unavailable();
+                foreach(['dev','ino','mode','nlink','uid','gid']as$field)if($written[$field]!==$initial[$field]||$native[$field]!==$written[$field])MerchantAttachmentInput::unavailable();
+                if($native['size']!==$qualified['size']||hash_file('sha256',$temporaryPath)!==$qualified['sha256'])MerchantAttachmentInput::unavailable();
+                clearstatcache(true,$temporaryPath);$checked=lstat($temporaryPath);
+                foreach(['dev','ino','mode','nlink','uid','gid','size','mtime','ctime']as$field)if(!is_array($checked)||$checked[$field]!==$native[$field])MerchantAttachmentInput::unavailable();
+                if($this->typedUploadContext($ctx,$productIdOrZero)!==$state)MerchantAttachmentInput::unavailable();
+                $receipt['phase']='physical_upload';$receipt['physical_changed']=null;
+                $result=$disk->putFileAs($directory,new File($temporaryPath),$fileName);
+                if($result!==$relative)MerchantAttachmentInput::unavailable();
+                $actual=$this->localPath($relative,true);
+                if($actual!==$destination||realpath($disk->path($relative))!==$actual)MerchantAttachmentInput::unavailable();
+                $receipt['physical_changed']=true;clearstatcache(true,$actual);$savedBefore=lstat($actual);
+                if(!is_array($savedBefore)||($savedBefore['mode']&0170000)!==0100000||is_link($actual)||$savedBefore['size']!==$qualified['size'])MerchantAttachmentInput::unavailable();
+                $saved=file_get_contents($actual);
+                if(!is_string($saved)||$saved!==$bytes||strlen($saved)!==$qualified['size']||hash('sha256',$saved)!==$qualified['sha256']
+                    ||mime_content_type($actual)!==$qualified['mime'])MerchantAttachmentInput::unavailable();
+                unset($saved);clearstatcache(true,$actual);$savedAfter=lstat($actual);
+                foreach(['dev','ino','mode','nlink','uid','gid','size','mtime','ctime']as$field)if(!is_array($savedAfter)||$savedAfter[$field]!==$savedBefore[$field])MerchantAttachmentInput::unavailable();
+                clearstatcache(true,$temporaryPath);$intakeAfter=fstat($temporary);$intakePathAfter=lstat($temporaryPath);
+                foreach(['dev','ino','mode','nlink','uid','gid','size','mtime','ctime']as$field)if(!is_array($intakeAfter)||!is_array($intakePathAfter)
+                    ||$intakeAfter[$field]!==$checked[$field]||$intakePathAfter[$field]!==$checked[$field])MerchantAttachmentInput::unavailable();
+                $path='/uploads/'.$relative;
+                $row=['name'=>$fileName,'real_name'=>$displayName,'att_dir'=>$path,'satt_dir'=>$path,
+                    'att_size'=>(string)$qualified['size'],'att_type'=>$qualified['mime'],'image_type'=>1];
+                $object=$this->locateObject($row)+['directory'=>$directory,'local_root'=>$localRoot];
+                if(($object['files'][0]['path']??null)!==$actual)MerchantAttachmentInput::unavailable();
+            }catch(\Throwable $error){$failure=$error;}
+            finally{
+                if($temporary!==null){
+                    $closed=false;
+                    try{$closed=is_resource($temporary)&&fclose($temporary)===true;}catch(\Throwable $error){$failure??=$error;}
+                    $temporary=null;
+                    if(is_string($temporaryPath))clearstatcache(true,$temporaryPath);
+                    if(!$closed||!is_string($temporaryPath)||file_exists($temporaryPath)||is_link($temporaryPath)){
+                        $receipt['cleanup_complete']=false;$failure??=new \crmeb\exceptions\AuthUnavailableException();
+                    }
+                }
+            }
+            if($failure!==null)throw $failure;
+            if(!is_array($row))MerchantAttachmentInput::unavailable();
+        }else{
+            if($this->typedUploadContext($ctx,$productIdOrZero)!==$state)MerchantAttachmentInput::unavailable();
+            $upload=UploadService::fresh($type,$storage);$upload->setAuthThumb(false);
+            $receipt['phase']='physical_upload';$receipt['physical_changed']=null;
+            $upload->to('uploads/'.$directory);
+            $result=$upload->streamTyped($bytes,$fileName,$qualified['mime']);$info=$upload->getFileInfo();
+            if(!$info instanceof \StdClass||$result!==$info||!isset($info->fileName,$info->filePath)
+                ||!is_string($info->fileName)||$info->fileName!==$key||!is_string($info->filePath))MerchantAttachmentInput::unavailable();
+            if(in_array($type,[4,6,7],true)){
+                $observed=$upload->observation();
+                if(($observed['transport_complete']??null)!==true||!is_int($observed['http_status']??null)
+                    ||$observed['http_status']<200||$observed['http_status']>=300)MerchantAttachmentInput::unavailable();
+            }elseif($type===2){if(!isset($info->uploadInfo)||!is_array($info->uploadInfo)||$info->uploadInfo===[])MerchantAttachmentInput::unavailable();}
+            elseif($type===3){if(!isset($info->uploadInfo['info']['url'])||!is_string($info->uploadInfo['info']['url'])||$info->uploadInfo['info']['url']==='')MerchantAttachmentInput::unavailable();}
+            elseif($type===5){if(($info->uploadInfo['@metadata']['statusCode']??null)!==200)MerchantAttachmentInput::unavailable();}
+            else MerchantAttachmentInput::unavailable();
+            \app\services\marketplace\MerchantManagementInput::text($info->fileName,100,true);
+            \app\services\marketplace\MerchantManagementInput::text($info->filePath,200,true);
+            $row=['name'=>$info->fileName,'real_name'=>$displayName,'att_dir'=>$info->filePath,'satt_dir'=>$info->filePath,
+                'att_size'=>(string)$qualified['size'],'att_type'=>$qualified['mime'],'image_type'=>$type];
+            $object=$this->locateObject($row)+['directory'=>$directory,'local_root'=>null];
+            if($object['key']!==$key||$object['storage']!==$storage)MerchantAttachmentInput::unavailable();
+            // A provider ACK is not an independent read of the stored cloud bytes: changed remains null.
+        }
+        if($this->typedUploadContext($ctx,$productIdOrZero)!==$state)MerchantAttachmentInput::unavailable();
+        $row['type']=$qualified['type'];
+        $credential=$type===1?null:$this->credentials($type);
+        $locatedBefore=$object;$receipt['phase']='physical_readback';
+        // Local canonical includes possible thumbnail names; read only real
+        // located files and require the actual original. Cloud canonical has
+        // only the configured origin/CDN aliases of this same stored key.
+        $readCanonicals=$type===1?array_column($object['files'],'canonical'):$object['canonical'];
+        if($readCanonicals===[]||!in_array($row['att_dir'],$readCanonicals,true))MerchantAttachmentInput::unavailable();
+        foreach(array_values(array_unique($readCanonicals))as$canonical){
+            $servedMime=null;
+            $stored=$this->referenceBytes($object,$credential,$canonical,$qualified['size'],$servedMime);
+            if(strlen($stored)!==$qualified['size']||hash('sha256',$stored)!==$qualified['sha256'])MerchantAttachmentInput::unavailable();
+            $observed=MerchantAttachmentReferenceFormat::qualify($stored);
+            if($observed['resolved_kind']!==$qualified['resolved_kind']||$observed['bytes']!==$qualified['size']
+                ||$observed['sha256']!==$qualified['sha256']||$observed['mime']!==$qualified['mime']
+                ||$observed['format']!==$qualified['format'])MerchantAttachmentInput::unavailable();
+            // A header alone is not content proof. Require the same full GET's
+            // finite MIME family only for newly produced cloud objects.
+            if($type!==1&&($servedMime===null||!in_array($servedMime,$observed['mime_aliases'],true)))MerchantAttachmentInput::unavailable();
+            unset($stored,$observed,$servedMime);
+            if($this->typedUploadContext($ctx,$productIdOrZero)!==$state)MerchantAttachmentInput::unavailable();
+        }
+        $objectAfter=$this->locateObject($row)+['directory'=>$directory,'local_root'=>$localRoot];
+        if(self::referenceLocatorFacts($objectAfter)!==self::referenceLocatorFacts($locatedBefore))MerchantAttachmentInput::unavailable();
+        $currentType=sys_config('upload_type',1);
+        if(is_string($currentType)&&preg_match('/\A[1-7]\z/D',$currentType)===1)$currentType=(int)$currentType;
+        if($currentType!==$type||($type!==1&&($this->activeStorage($type)!==$storage||$this->credentials($type)!==$credential)))MerchantAttachmentInput::unavailable();
+        if($this->qualifyTypedUploadBytes($bytes,$displayName,$expectedKind)!==$qualified
+            ||$this->typedUploadContext($ctx,$productIdOrZero)!==$state)MerchantAttachmentInput::unavailable();
+        $object=$objectAfter;
+        // Cloud changed stays unknown: readback proves current contents, not
+        // the pre-upload state. The publisher retains the original six keys.
+        $receipt['physical_complete']=true;return $row;
+    }
 }

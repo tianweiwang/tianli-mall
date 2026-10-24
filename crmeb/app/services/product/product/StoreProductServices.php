@@ -623,12 +623,50 @@ class StoreProductServices extends BaseServices
      */
     public function save(int $id, array $data)
     {
+        if($id===0&&in_array($data['type']??0,[-1,'-1'],true)
+            &&\app\services\marketplace\product\LegacyProductWriteServices::enabled())return $this->saveMaterializedCopy($data);
         return app()->make(\app\services\marketplace\product\LegacyProductWriteServices::class)->run($id?[$id]:[],function()use($id,$data){
             \app\services\marketplace\product\LegacyProductWriteServices::saveReferences($id,$data);
             return $this->legacySave($id,$data);
         },$id===0,true);
     }
-    private function legacySave(int $id, array $data)
+    /** Strict copy commits only already-published target-merchant media. */
+    private function saveMaterializedCopy(array $data)
+    {
+        $writer=app()->make(\app\services\marketplace\product\LegacyProductWriteServices::class);
+        $scope=$writer->authorizeCurrentRequest();
+        $copy=app()->make(CopyTaobaoServices::class);
+        $publisher=app()->make(\app\services\marketplace\product\PlatformProductMediaServices::class);$plan=[];
+        try {
+            $plan=$copy->prepareCopyPlan($data,$scope);
+            $id=$writer->run([],function()use($data,$copy,$publisher,&$plan){
+                $rows=$publisher->publishCopyPlanInCurrentWriter(0,$plan);
+                $converted=$copy->applyCopyPlan($data,$plan,$rows);
+                if(!CopyTaobaoServices::releaseCopyPlan($plan)){
+                    $plan['receipt']['cleanup_complete']=false;throw new \crmeb\exceptions\AuthUnavailableException();
+                }
+                \app\services\marketplace\product\LegacyProductWriteServices::saveReferences(0,$converted);
+                $plan['receipt']['phase']='product_save';$plan['receipt']['database_committed']=null;
+                return $this->legacySave(0,$converted,true);
+            },true,true);
+            $publisher->finishCopyPlan($plan,true);return $id;
+        } catch(\Throwable $error) {
+            $closed=CopyTaobaoServices::releaseCopyPlan($plan);
+            if(isset($plan['receipt'])){
+                if(!$closed)$plan['receipt']['cleanup_complete']=false;
+                $publisher->finishCopyPlan($plan,false);
+                throw new \app\services\marketplace\attachment\MerchantAttachmentOperationException($plan['receipt']);
+            }
+            if(!$closed)throw new \app\services\marketplace\attachment\MerchantAttachmentOperationException([
+                'complete'=>false,'phase'=>'copy_prefetch_cleanup','physical_changed'=>true,'physical_complete'=>false,
+                'database_committed'=>false,'cleanup_complete'=>false]);
+            throw $error;
+        } finally {
+            CopyTaobaoServices::releaseCopyPlan($plan);
+        }
+    }
+
+    private function legacySave(int $id, array $data,bool $copyMaterialized=false)
     {
         if (count($data['cate_id']) < 1) throw new AdminException('请选择商品分类');
         if (!$data['store_name']) throw new AdminException('请输入商品名称');
@@ -756,7 +794,7 @@ class StoreProductServices extends BaseServices
         if (isset($data['description_images'])) {
             $descriptionImages = $data['description_images'];
         }
-        return $this->transaction(function () use ($id, $is_copy, $data, $descriptionImages, $description, $cate_id, $storeDescriptionServices, $storeProductCateServices, $storeProductAttrServices, $storeProductCouponServices, $storeCategoryServices, $detail, $attr, $coupon_ids, $type, $slider_image) {
+        return $this->transaction(function () use ($id, $is_copy, $data, $descriptionImages, $description, $cate_id, $storeDescriptionServices, $storeProductCateServices, $storeProductAttrServices, $storeProductCouponServices, $storeCategoryServices, $detail, $attr, $coupon_ids, $type, $slider_image, $copyMaterialized) {
             if ($data['spec_type'] == 0) {
                 $attr = [
                     [
@@ -820,7 +858,7 @@ class StoreProductServices extends BaseServices
                 if (!$attrRes) throw new AdminException('添加失败');
 
                 //采集商品下载图片
-                if ($type == -1) {
+                if ($type == -1 && !$copyMaterialized) {
                     $s_image_down = [];
                     //下载商品轮播图
                     foreach ($slider_image as $s_image) {
