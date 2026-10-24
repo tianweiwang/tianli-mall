@@ -1142,6 +1142,7 @@ function m4ar_language_prepare(PDO $db,array $source,array $task6Names):void
 }
 function m4ar_warm(\think\App $app,PDO $db):void
 {
+ unset($GLOBALS['m4ar_warm_failure_context'],$GLOBALS['m4ar_warm_failure_diagnostic']);
  m4ar_phase('real_source_cache_preparation');$before=m4ar_snapshot($db);$redis=audit_redis();$tag='c:CRMEB:'.md5('crmeb');
  $GLOBALS['m4ar_tag_members'][$tag]=$redis->sMembers($tag);$apiTag='c:CRMEB:'.md5('api');$GLOBALS['m4ar_tag_members'][$apiTag]=$redis->sMembers($apiTag);$known=[];$names=['site_name','site_url','tourist_avatar','site_logo','site_logo_square',
  'nncnL_crmeb_copyright','login_logo','queue_open','wechat_open_app_id','nncnL_crmeb_copyright_image','custom_admin_js','param_filter_type','param_filter_data',
@@ -1166,7 +1167,28 @@ function m4ar_warm(\think\App $app,PDO $db):void
  'lang_type_data'=>$types,'lang_zh_CN'=>$code->getColumn(['type_id'=>$typeId],'lang_explain','code')];getLang('操作成功');
  foreach($lang as$name=>$value)$known[$name]=['value'=>$value,'ttl'=>$name==='range_name'?0:3600];$after=m4ar_snapshot($db);$changes=[];$added=[];
  foreach($known as$name=>$item){$key='c:'.$name;$added[]=$key;$raw=$redis->get($key);if($item['value']===null&&$raw===false)continue;
-  m4ar_expect(is_string($raw)&&$raw===m4tr_cache_wire($item['value']),'TASK78_WARM_EXACT_SERIALIZED_SOURCE_VALUE');
+  try{
+   m4ar_expect(is_string($raw)&&$raw===m4tr_cache_wire($item['value']),'TASK78_WARM_EXACT_SERIALIZED_SOURCE_VALUE');
+  }catch(Throwable $warmFailure){
+   $warmHadAssertion=array_key_exists('m4ar_failed_assertion',$GLOBALS);$warmAssertion=$GLOBALS['m4ar_failed_assertion']??null;
+   try{
+    if($warmAssertion==='TASK78_WARM_EXACT_SERIALIZED_SOURCE_VALUE'&&$warmFailure instanceof RuntimeException
+     &&$warmFailure->getMessage()==='M4AR_ASSERTION'){
+     $warmOrdinal=array_search($name,array_keys($known),true);$warmWire=m4tr_cache_wire($item['value']);
+     if(is_int($warmOrdinal)&&$warmOrdinal>=0&&$warmOrdinal<40){
+      $warmContext=['ordinal'=>$warmOrdinal+1,'logical_name'=>$name,'expected_null'=>$item['value']===null,
+       'expected_wire_bytes'=>strlen($warmWire),'expected_wire_sha256'=>hash('sha256',$warmWire),
+       'raw_type'=>gettype($raw),'raw_bytes'=>is_string($raw)?strlen($raw):null,
+       'raw_sha256'=>is_string($raw)?hash('sha256',$raw):null];
+      $warmDiagnostic=['code'=>$warmAssertion,'class'=>get_class($warmFailure),
+       'file'=>basename($warmFailure->getFile()),'line'=>$warmFailure->getLine()];
+      $GLOBALS['m4ar_warm_failure_context']=$warmContext;$GLOBALS['m4ar_warm_failure_diagnostic']=$warmDiagnostic;
+     }
+    }
+   }catch(Throwable $warmDiagnosticFailure){}
+   finally{if($warmHadAssertion)$GLOBALS['m4ar_failed_assertion']=$warmAssertion;else unset($GLOBALS['m4ar_failed_assertion']);}
+   throw $warmFailure;
+  }
   $entry=$after['redis']['keys'][hash('sha256',$key)]??null;m4ar_expect(is_array($entry)&&$entry['type']==='string','TASK78_WARM_NATIVE_STRING');
   if($item['ttl']===0)m4ar_expect($entry['expires']===-1,'TASK78_CONFIG_PERMANENT_DEADLINE');
   else m4ar_expect($entry['expires']>=$before['redis']['time_ms']+1&&$entry['expires']<=$after['redis']['time_ms']+3600001,'TASK78_REAL_LANGUAGE_SOURCE_DEADLINE');
@@ -2269,7 +2291,7 @@ function m4ar_diagnostic(Throwable $error):array
 }
 function m4ar_result(array $source,?array $business,?array $observer,?array $diagnostic,bool $success):array
 {
- return ['schema'=>1,'scope'=>M4AR_RULE['scope'],'status'=>$success?M4AR_RULE['status']:'INCOMPLETE_MS4_AFTERSALE_REVIEW_HTTP_ONLY',
+ $result=['schema'=>1,'scope'=>M4AR_RULE['scope'],'status'=>$success?M4AR_RULE['status']:'INCOMPLETE_MS4_AFTERSALE_REVIEW_HTTP_ONLY',
  'run_id'=>$source['run_id'],'source_sha'=>$source['source_sha'],'container_id'=>$source['container_id'],'freeze_sha256'=>$source['freeze_sha256'],
  'native_created_sha256'=>$source['native_created_sha256'],'source_binding_sha256'=>$source['source_binding_sha256'],
  'environment_sha256'=>$source['environment_sha256'],'environment_native_sha256'=>$source['environment_native_sha256'],
@@ -2278,6 +2300,71 @@ function m4ar_result(array $source,?array $business,?array $observer,?array $dia
  'full_source_unchanged'=>$success,'metadata_observer'=>$observer,'business'=>$business,'child'=>$GLOBALS['m4ar_child_proof']??null,'diagnostic'=>$diagnostic,
  'mobile_workbench_HTTP_DOM'=>'NOT RUN','three_end_DOM'=>'NOT RUN','worker'=>'NOT RUN','finance'=>'NOT RUN','full_acceptance'=>'INCOMPLETE',
  'stopped_samples'=>'NOT RUN','assertions'=>($GLOBALS['m4ar_assertions']??0)+($GLOBALS['m4fn_assertions']??0)+($GLOBALS['m5pcp_assertions']??0)+($GLOBALS['m4c_assertions']??0)];
+ if(!$success&&($GLOBALS['m4c_phase']??null)==='real_source_cache_preparation'
+  &&is_array($diagnostic)&&($diagnostic['code']??null)==='TASK78_WARM_EXACT_SERIALIZED_SOURCE_VALUE'){
+  $warmHadAssertion=array_key_exists('m4ar_failed_assertion',$GLOBALS);$warmAssertion=$GLOBALS['m4ar_failed_assertion']??null;
+  try{
+   $warmContext=$GLOBALS['m4ar_warm_failure_context']??null;$warmDiagnostic=$GLOBALS['m4ar_warm_failure_diagnostic']??null;
+   $warmNames=[
+    'system_config_site_name',
+    'system_config_site_url',
+    'system_config_tourist_avatar',
+    'system_config_site_logo',
+    'system_config_site_logo_square',
+    'system_config_nncnL_crmeb_copyright',
+    'system_config_login_logo',
+    'system_config_queue_open',
+    'system_config_wechat_open_app_id',
+    'system_config_nncnL_crmeb_copyright_image',
+    'system_config_custom_admin_js',
+    'system_config_param_filter_type',
+    'system_config_param_filter_data',
+    'system_config_new_order_audio_link',
+    'system_config_model_checkbox',
+    'system_config_upload_type',
+    'system_config_image_thumb_status',
+    'system_config_member_func_status',
+    'system_config_member_card_status',
+    'system_config_member_price_status',
+    'system_config_store_brokerage_binding_status',
+    'system_config_store_brokerage_binding_time',
+    'system_config_system_delivery_time',
+    'system_config_h5_avatar',
+    'system_config_offline_postage',
+    'system_config_integral_ratio',
+    'system_config_offline_pay_status',
+    'system_config_balance_func_status',
+    'system_config_yue_pay_status',
+    'system_config_pay_weixin_open',
+    'system_config_friend_pay_status',
+    'system_config_store_self_mention',
+    'system_config_ali_pay_status',
+    'system_config_invoice_func_status',
+    'system_config_special_invoice_status',
+    'range_name',
+    'sys_lang_source_map',
+    'type_id_zh-CN',
+    'lang_type_data',
+    'lang_zh_CN',
+   ];
+   $warmValid=is_array($warmContext)&&array_keys($warmContext)===['ordinal','logical_name','expected_null',
+    'expected_wire_bytes','expected_wire_sha256','raw_type','raw_bytes','raw_sha256']
+    &&is_array($warmDiagnostic)&&array_keys($warmDiagnostic)===['code','class','file','line']&&$warmDiagnostic===$diagnostic
+    &&is_int($warmContext['ordinal'])&&$warmContext['ordinal']>=1&&$warmContext['ordinal']<=40
+    &&is_string($warmContext['logical_name'])&&$warmContext['logical_name']===$warmNames[$warmContext['ordinal']-1]
+    &&is_bool($warmContext['expected_null'])&&is_int($warmContext['expected_wire_bytes'])&&$warmContext['expected_wire_bytes']>=0
+    &&is_string($warmContext['expected_wire_sha256'])&&preg_match('/\A[a-f0-9]{64}\z/D',$warmContext['expected_wire_sha256'])===1
+    &&is_string($warmContext['raw_type'])&&in_array($warmContext['raw_type'],
+     ['boolean','integer','double','string','array','object','resource','resource (closed)','NULL','unknown type'],true)
+    &&(!$warmContext['expected_null']||($warmContext['expected_wire_bytes']===2&&$warmContext['expected_wire_sha256']===hash('sha256','N;')))
+    &&($warmContext['raw_type']==='string'?(is_int($warmContext['raw_bytes'])&&$warmContext['raw_bytes']>=0
+     &&is_string($warmContext['raw_sha256'])&&preg_match('/\A[a-f0-9]{64}\z/D',$warmContext['raw_sha256'])===1)
+     :($warmContext['raw_bytes']===null&&$warmContext['raw_sha256']===null));
+   if($warmValid)$result['warm_failure_context']=$warmContext;
+  }catch(Throwable $warmDiagnosticFailure){}
+  finally{if($warmHadAssertion)$GLOBALS['m4ar_failed_assertion']=$warmAssertion;else unset($GLOBALS['m4ar_failed_assertion']);}
+ }
+ return $result;
 }
 function m4ar_run():int
 {
