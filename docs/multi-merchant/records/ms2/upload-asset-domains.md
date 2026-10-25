@@ -869,3 +869,11 @@ Root修后实际检查（2026-10-25）：最终normal入口37405/5d9d1406与harn
 旧214及其stdout/stderr、既有准备/续行失败历史、原源码和场景永久保留，不重跑当前prepare、不补丁运行旧App，不用既有全成功close合同冒签当前失败可直接收尾。Root将对本次Source独审/实际PHP8.2语法后保存新checkpoint，绑定新clean HEAD/独立Val并fresh ISO验证；HTTP、业务、视觉/设备及19交付组均仍待，不以本修订或既有旧语法结果标新版本通过。
 
 本次作者实际检查仅为两文件UTF-8/LF、PHP字符串/注释/括号词法平衡、原全部断言code与四回执合并断言保持及git diff --check均0；不是PHP解析或运行。只出现这两条tracked路径差量，作者停写；实际PHP8.2语法、独审、新checkpoint及新ISO正常验证交Root执行，未提交/推送，也未触碰旧Val/Caller/Run。
+
+2026-10-25 verify140计数器观察失败的实证与修订设计（先记录，后改Source）：新实例202610250241450732f5的native139 ENTRY prepare实际0，四迁移原receipt依次applicable/native0、completed/changed=true/native0、completed/native0及repeat changed=false/native0；native140 ENTRY verify实际1，停于M4AL_ONLY_EXPECTED_NATIVE_COUNTER_ADVANCE。真实HTTP已启动，finally沿原TERM-only停止，members空、listener=false、force=false，但整条正常链未通过，没有成功NORMAL结果。当前140与其真实已保存payload、原源码及旧Val/Run永久保留，不重跑当前verify，也不能调用成功retire合同冒签收尾。
+
+Root同实例只读诊断licence-fresh2-verify140-readonly-diagnosis-r1/RESULT.json（10417B，SHA256 c34d28e00076ec798028ac9c7f6dc3f4af9d1a0a2fe8712c2631def71b739b64）证实默认observer SESSION information_schema_stats_expiry=86400；只对诊断新连接设SESSION=0后，资产AUTO_INCREMENT由缓存1变即时2，SHOW CREATE亦为2，实际row_count/min/max=1/1/1；其它多个空表也由cached NULL变fresh1。没有更改GLOBAL mode、grant、DDL、数据或HTTP。故整个原生counter观察门均须即时metadata，不能只放宽资产+1或忽略其它表。
+
+本次仅在m4al_verify获取独立audit_db observer后、任何before snapshot之前SET SESSION information_schema_stats_expiry=0并实际SELECT确认0；m4al_database入口另只读确认同session仍为0，防遗漏初始化。复用既有m4lc_db的局部session前提，不改生产/ORM连接、GLOBAL配置、DDL或权限；原+1、其它counter不变、完整行/34字段、文件和Redis断言全部保持，不以MAX+1代替真实ID或修改期望值。作者只改本normal入口与本记录；新checkpoint、新Val/fresh ISO及实际PHP8.2语法/非作者审由Root后续完成，本Source修订不签业务、视觉/设备或19交付组完成。
+
+本轮作者仅核两文件UTF-8/LF、PHP词法平衡、原全部断言code顺序保持、m4al_transition整函数原字节保持及git diff --check为0；不是PHP解析或运行。只这两条tracked路径差量，作者再次停写，未Docker/PHP/HTTP/提交，未动当前140场景、旧Val或Run。

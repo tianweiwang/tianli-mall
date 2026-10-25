@@ -141,6 +141,8 @@ function m4al_prepare():array
 function m4al_database(PDO $db):array
 {
     m4al_expect(!$db->inTransaction(),'M4AL_INDEPENDENT_OBSERVER_OUTSIDE_TRANSACTION');
+    m4al_expect(in_array($db->query('SELECT @@SESSION.information_schema_stats_expiry')->fetchColumn(),[0,'0'],true),
+        'M4AL_OBSERVER_METADATA_EXPIRY_ZERO');
     $tables=$db->query("SELECT TABLE_NAME,AUTO_INCREMENT FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() ORDER BY TABLE_NAME")->fetchAll(PDO::FETCH_KEY_PAIR);
     $out=['hashes'=>[],'rows'=>[],'ddl'=>[],'next'=>[]];
     foreach($tables as$name=>$next){
@@ -346,7 +348,11 @@ function m4al_verify():array
     m4al_expect(($fixture['run_id']??null)===$manifest['run_id']&&($fixture['source_sha']??null)===$manifest['commit_sha']
         &&($fixture['private_uid']??null)===posix_geteuid(),'M4AL_CURRENT_RUN_SOURCE_AND_PRIVATE_OWNER');
     m4al_expect(time()-$fixture['created_at']>=0&&time()-$fixture['created_at']<300,'M4AL_FRESH_VALID_SYNTHETIC_CODE_WINDOW');
-    m4al_app($fixture['prefix']);$db=audit_db();$started=false;$error=null;$closed=false;$cases=[];
+    m4al_app($fixture['prefix']);$db=audit_db();
+    m4al_expect($db->exec('SET SESSION information_schema_stats_expiry=0')===0
+        &&in_array($db->query('SELECT @@SESSION.information_schema_stats_expiry')->fetchColumn(),[0,'0'],true),
+        'M4AL_OBSERVER_FRESH_METADATA');
+    $started=false;$error=null;$closed=false;$cases=[];
     try{
         $started=true;audit_app_start(['CACHE_PREFIX'=>$fixture['prefix'],'LICENCE_PRIVATE_ROOT'=>M4AL_ROOT]);
         $login=m4al_success(m4al_http('POST','/api/login',null,['account'=>$fixture['customer']['account'],'password'=>$fixture['customer']['password'],'spread'=>0,'agent_id'=>0]));
