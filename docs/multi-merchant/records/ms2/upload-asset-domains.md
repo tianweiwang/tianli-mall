@@ -1377,3 +1377,18 @@ Root实际纯检查：withdrawal-qr-production-php82-r1以固定本地PHP8.2.33�
 - [x] 当前14 PHP实际-l与4前端module/2Vue模板离线检查。
 - [ ] 专用普通验证Source、同clean HEAD真实ISO全链及普通退役/独立zero。
 - [ ] 原三端/财务页面实际运行验收及其余T5/发布条件。
+
+
+##### withdrawal_qr 专用普通验证Source采用与本地检查点（2026-10-25）
+
+在生产43371dd1基础上，四件专用normal/profile/compose/harness Source已冻结；Root全文读35函数、固定profile/overlay与完整harness差量，并由非作者/root/refund_memory_repair_source/b_ui_profile_source独立逐项追真实cash/佣金13列link_id、Notice handler/SysMsg全10列/原DAO完整receiver、WeWork空URL真实前提、adminNewPush/Custom/Channel、财务原GET权限、Request/Auth、Redis票据与私有fullFD/EOF/bytes/原SQL25-13-10列，未发现新的确定缺陷，Source0。同行结论只签源码阅读，未运行候选、目标、资金、GUI或Host；保存外部withdrawal-qr-normal-root-adoption-r1/PEER-SOURCE-REVIEW.json，不将其写成运行回执。
+
+采用的正常范围保持七次独立合成cash：原weixin/alipay零图各一次、旧URL各一次、新weixin私有首次、同UID同BOUND引用的新alipay申请保首次ID/time且按当前新财务行读取、另一alipay私有首次；两真实multipart上传，本人STAGED/BOUND及最高管理员原列表/票据/完整原图。既有合成user_101起始100.00只改必要brokerage字段，原真实min=1、fee=0、两手动提现方式、queue0/原通知receiver与模板均不修改；每次仍执行全部原hook并核完整站内信。准备前实际外发条件不满足即停，不能禁hook、改配置、靠断网或伪造权限凑通过。原80归属/真实历史、商户提现开放、真实通道/支付/资金和外部通知均不在本合成运行范围。
+
+Root当前三个PHP真实8.2.33纯-l与完整5native/10双流1760B回读全0，natural helper原CID退出0/PID0/restart_count0、network none/3RO后非force移除，当前文件完整字节不变；不是include或执行业务。四件Source及本record合计五路径本地提交，保生产18件原完整字节。后续只能在真实clean Source与独立Val均已绑定同一新HEAD后派生新的专用Host/PINS，Root再独审实际资格与串行运行；未来HEAD、Val、Run、CID、volume/engine身份、native PID、setup/normal/ordinaryclose/六fresh raw zero结果不能预填或借旧成功。
+
+- [x] 四normal Source完整独立审查并采用，原生产/数据/权限/通知/停止样本边界保全。
+- [x] 当前三PHP纯语法检查及完整原生双流回读。
+- [ ] 真正新clean Source/独立Val与完整Tracked namespace资格、有限Host/安装引导Source及PINS独审。
+- [ ] 新ISO正向业务、所有原完整oracle、单次TERM/同代普通清退和独立六fresh原始空查询。
+- [ ] H5/MP/APP/财务页面、设备/CORS/外部与旧客户端发布责任；默认兼容/聊天及整个T5仍开放。

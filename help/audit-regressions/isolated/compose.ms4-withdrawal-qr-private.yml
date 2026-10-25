@@ -1,0 +1,26 @@
+# Narrow overlay for compose.yml. No new network, published port, app secret or database privilege.
+services:
+  audit-bootstrap:
+    environment:
+      AUDIT_WITHDRAWAL_QR_NORMAL: "1"
+      AUDIT_GUARD_MODE: read-only
+    volumes:
+      - customer-withdrawal-qr-private:/run/audit-customer-withdrawal-qr
+  audit-app:
+    environment:
+      AUDIT_WITHDRAWAL_QR_NORMAL: "1"
+      AUDIT_GUARD_MODE: read-only
+    volumes:
+      - customer-withdrawal-qr-private:/run/audit-customer-withdrawal-qr
+  audit-runner:
+    environment:
+      AUDIT_WITHDRAWAL_QR_NORMAL: "1"
+      AUDIT_GUARD_MODE: read-only
+    volumes:
+      - customer-withdrawal-qr-private:/run/audit-customer-withdrawal-qr:ro
+
+volumes:
+  customer-withdrawal-qr-private:
+    labels:
+      tianli.audit: "1"
+      tianli.audit.run: ${AUDIT_RUN_ID:?required}
