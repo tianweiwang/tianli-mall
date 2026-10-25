@@ -215,3 +215,32 @@ public function adjust(MerchantContext $ctx, int $productId, string $unique, int
 ### 上传素材域增量设计索引（T2，2026-10-22，PROPOSED）
 
 [上传资产域设计记录](records/ms2/upload-asset-domains.md)细化既定唯一T1–T8清单的T2：顾客34列/平台29列资产与平台10列分类拟议DDL、同writer PDO文件前授权、原DTO/旧14列兼容、混合type目录叶删和真实历史/发布门。尚未实现、迁移或运行，不新增第二执行清单，不勾原Task1四框、Task4及其他验收。原owner-only backfill不含另审的非商业元数据可恢复转存；真实清单/引用/备份恢复及新writer/旧consumer闭合后才可enforce/最终启用。原停止点、合法业务及三端/金融义务保持。
+
+
+### Task 2 type4/type6 活动盘点兼容修复（2026-10-25，L2 Source）
+
+需求与实证：原四命令盘点只识别type0普通商品/1秒杀/2砍价/3拼团；当前StoreIntegralServices:90/100、StoreAdvanceServices:104/115和PublicCatalogServices:20–25、144–156真实生产/消费积分4与预售6。Root Env9的prepare-media在真实MS2 backfill后quarantined；其新连接已确认五根152个owner提交。公开941安装SQL可静态精确重现71个type1/2/3缺父与9个type4支持集外项。它们都是待核活动规格，不能认定非商业；本修复不是删除、转存或恢复数据，也不使原80问题自动清零。
+
+设计：只在help/migrations/marketplace-ms2.php补真实typed family4/6、父表/schema和必要Source绑定，并更新同名md与本原执行记录。活动规格product_id先指向相应活动真实PK，再由活动product_id继承已确认普通商品owner；不按同号普通商品、不按NULL/0/默认自营推断。全表盘点保全部实际父行，不加上架/删除/活动时间过滤，父/普通商品缺失仍输出原隔离原因；未识别type仍ACTIVITY_TYPE_UNKNOWN。五根、owner-only backfill、原四命令/事务/提交未知/全部差分/enforce全零门原样。
+
+实际结构/运费：安装store_integral仅id/product_id而无freight/temp_id/postage；store_advance有id/product_id/temp_id而无freight。故分别选择真实列，不能对二者执行原四列SELECT或人为补freight。积分独立StoreIntegralOrderServices:160–202实际不消费运费模板；其普通base仍受原root全量运费盘点。预售在商城启用后由MerchantFreightPolicy:32–51重读普通base并覆盖所有已确认owner的freight/temp_id，这一普通base保持原盘点；PublicCatalogServices:333对预售原本没有的freight/is_virtual取已核base，Computed:378–380、398、425–427分别跳过免运费/固定运费/虚拟模板。故base freight1/2或is_virtual1不因native temp_id=0新增孤儿；base mode未知沿原root问题继续阻断，mode3且虚拟语义未知另明确隔离。对physical+freight3仍可达的旧native模板路径，正数须真实存在且与base确认同owner；精确0或未知继续unknown_reference隔离，明确需要显式确认或业务修复，不用Computed:429–430的旧fallback1制造迁移通过例外。原Review Focus:27要求商家商品必须引用本家模板、缺失报错；同owner的模板1也不能替代缺失的真实引用。当前enabled仅消费base的已知路径不代签仍可达的legacy缺失；本修复不改该业务fallback算法，不按未知引用推定无用途。此检查不修改业务报价、不把未读或未核原生模板声明为unused。原type0–3盘点分支语义保持。
+
+schema绑定补store_integral/store_advance，source绑定补真实两producer、积分订单和PublicCatalog/freight消费者；原绑定成员保持。所有已有映射因源码/schema绑定实际变化需重新生成和确认，不重签旧Run或原私有映射。现9个type4项在缺真实积分父时应变为同规则TYPED_PARENT_MISSING，原71继续保持；type6无seed行，静态支持不等于运行覆盖。历史订单/cart/积分权益和可恢复归档仍另项待核；本次不实现归档CLI，不改安装SQL或任何旧Run。
+
+验收与任务：
+
+- [x] 已从真实941独立branch/worktree建立；无CodeGraph索引不初始化；git-auto-sync未启用，不提交/推送。
+- [x] 已先记录原需求、真实列/producer/consumer、运费语义、未知阻断和原范围保留。
+- [x] 完成CLI窄接线、同名说明；原五根/四命令/写事务/数据/0–3行为保留的静态差分核对。
+- [x] 纯Source检查和非作者独审完成，无新增确定问题；此只签源码。
+- [ ] Root另行串行PHP8.2语法/正常计划与专用ISO四命令验证，不以静态代签运行。
+- [ ] 真实历史归属/关系确认、Task2/G01–G07/37步四CLI及enforce/enabled=true和人工验收仍未完成；真实存量L3d/L4另授权，停止恢复/故障/并发/安全样本仍NOT RUN。
+
+本作者仅Source/静态验证，不执行Docker/PHPhelper/SQL/HTTP/Run/目标或读取秘密；主工作树、所有Val和sealed Source保持。
+
+
+本次Source实际结果：独立W HEAD941、原工作树clean保持；只有本07记录与同名CLI/md三路径未暂存变化，没有新增/暂存文件。57个原方法只有mappingBinding/sourceBinding/ownershipInventory三个盘点/绑定方法改变，其余54方法完整原字节保持（含四命令、owner-only DML/事务/commitunknown、私有报告、enforce和结构检查）。新活动地图与真实PublicCatalog NATIVE一致，4/6所选字段逐列属于原DDL；schema绑定新增两真实父表。原来源数组10文件（9PHP加安装SQL）保持，追加6必要PHP成16文件；迁移自身SHA另绑定。安装SQL保持10237459B/1e5e56c805f551a75332be58b2ab96572509c82835b812cdff3ca5c3eb7ad828；原07前34514B完整保持。LF/纯词法括号完整性及git diff --check均通过，不冒称PHP解析。非作者全文/diff独审最终CLI116625B/92819382bff5a72624f4a927764a73e301ece6a9e81b84d376b1860347951799、同名md20822B/e932c347a18df607df50aa66c66e3200b8c61dd6d069f638b10f8ce347d9cbb5，无新增确定问题。
+
+最终physical+freight3的native0/未知继续ADVANCE_LEGACY_TEMPLATE_UNCONFIRMED，未留下模板1赋值/通过例外；正数缺失仍CONSUMED_TEMPLATE_MISSING，正数存在还须已确认同base owner。免运费/固定/虚拟不因native0新增问题，原root未知仍阻断。公开seed的80项、type6真实运行、历史权益/关系及完整Task2未验；本作者没运行PHP/SQL/Docker/候选/HTTP、没读秘密、没提交推送或改Run。
+
+Root补充（当前三路径L2本地提交前）：已全文核对三路径diff及实际MerchantFreightPolicy/Computed/IntegralOrder/PublicCatalog消费。实际固定1099镜像PHP8.2.33在networknone/只读挂载中对当前CLI -l及真实--help原生0；5native/10完整双流1459B均核对0，helper自然Exited0/PID0并非force移除。凭据、数据库、SQL、App、HTTP均未调用，不能据此签类型行为、真实80存量、四命令普通ISO或完整Task2。报告 `artifacts/project-organization-20261023/ms2-activity-type-php82-qualification-r1/RESULT.json` 6810/1e72bc8b7d4ec2de160ff50f66aa9d42d01458bcb60c2101056707898b09ee48。上述待实际ISO和原完整验收复选框保持未完成。

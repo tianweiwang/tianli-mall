@@ -373,7 +373,7 @@ final class MarketplaceMs2Migration
     {
         $source = $this->sourceBinding();
         $tables = array_keys($this->catalogTables());
-        $tables = array_merge($tables, ['store_product_attr', 'store_product_attr_value', 'store_product_attr_result', 'store_product_description', 'store_product_cate', 'store_product_coupon', 'store_product_virtual', 'store_product_log', 'store_product_relation', 'store_product_reply', 'store_seckill', 'store_bargain', 'store_combination', 'shipping_templates_free', 'shipping_templates_region', 'shipping_templates_no_delivery', 'marketplace_merchant', 'marketplace_employee', 'marketplace_stock_log']);
+        $tables = array_merge($tables, ['store_product_attr', 'store_product_attr_value', 'store_product_attr_result', 'store_product_description', 'store_product_cate', 'store_product_coupon', 'store_product_virtual', 'store_product_log', 'store_product_relation', 'store_product_reply', 'store_seckill', 'store_bargain', 'store_combination', 'store_integral', 'store_advance', 'shipping_templates_free', 'shipping_templates_region', 'shipping_templates_no_delivery', 'marketplace_merchant', 'marketplace_employee', 'marketplace_stock_log']);
         $schemas = [];
         foreach ($tables as $table) {
             $meta = $this->metadata($table);
@@ -391,7 +391,7 @@ final class MarketplaceMs2Migration
     private function sourceBinding(): array
     {
         $files = [];
-        foreach (['help/migrations/marketplace-ms1.php', 'crmeb/public/install/crmeb.sql', 'crmeb/app/services/product/product/StoreProductServices.php', 'crmeb/app/services/product/product/StoreDescriptionServices.php', 'crmeb/app/services/system/attachment/SystemAttachmentServices.php', 'crmeb/app/services/order/StoreOrderComputedServices.php', 'crmeb/app/services/activity/seckill/StoreSeckillServices.php', 'crmeb/app/services/activity/bargain/StoreBargainServices.php', 'crmeb/app/services/activity/combination/StoreCombinationServices.php', 'crmeb/app/model/product/product/StoreProductRelation.php'] as $file) { $hash = hash_file('sha256', $this->repoRoot . '/' . $file); if (!is_string($hash)) { throw new RuntimeException('Source unavailable'); } $files[$file] = $hash; }
+        foreach (['help/migrations/marketplace-ms1.php', 'crmeb/public/install/crmeb.sql', 'crmeb/app/services/product/product/StoreProductServices.php', 'crmeb/app/services/product/product/StoreDescriptionServices.php', 'crmeb/app/services/system/attachment/SystemAttachmentServices.php', 'crmeb/app/services/order/StoreOrderComputedServices.php', 'crmeb/app/services/activity/seckill/StoreSeckillServices.php', 'crmeb/app/services/activity/bargain/StoreBargainServices.php', 'crmeb/app/services/activity/combination/StoreCombinationServices.php', 'crmeb/app/model/product/product/StoreProductRelation.php', 'crmeb/app/services/activity/integral/StoreIntegralServices.php', 'crmeb/app/services/activity/advance/StoreAdvanceServices.php', 'crmeb/app/services/activity/integral/StoreIntegralOrderServices.php', 'crmeb/app/services/marketplace/PublicCatalogServices.php', 'crmeb/app/services/marketplace/freight/MerchantFreightPolicy.php', 'crmeb/app/services/order/StoreCartServices.php'] as $file) { $hash = hash_file('sha256', $this->repoRoot . '/' . $file); if (!is_string($hash)) { throw new RuntimeException('Source unavailable'); } $files[$file] = $hash; }
         return ['migration_sha256' => hash_file('sha256', __FILE__), 'catalog_source_sha256' => hash('sha256', self::json($files))];
     }
 
@@ -599,6 +599,7 @@ final class MarketplaceMs2Migration
             'relation_parent' => ['product' => 'store_product', 'other_category' => 'UNKNOWN', 'type_is_action' => true],
             'html_media' => ['parser' => 'DOMDocument', 'decode' => 'legacy_htmlspecialchars_decode_once', 'network' => 'NONET', 'unsupported_content' => 'unknown_reference'],
             'unused_template_references' => [],
+            'activity_freight_sources' => ['integral' => 'NO_NATIVE_TEMPLATE_IN_INTEGRAL_ORDER', 'advance' => 'CONFIRMED_BASE_AND_EXPLICIT_LEGACY_NATIVE_TEMPLATE'],
             'counts_unit' => 'issue_items',
             'orphan_child_rows_unit' => 'distinct_actual_child_table_and_PK_or_row_hash',
         ];
@@ -620,25 +621,46 @@ final class MarketplaceMs2Migration
         };
         foreach ($maps['store_product'] as $pk => $row) $freight('store_product', $row, $owners['store_product'][$pk] ?? null);
         $activities = [];
-        foreach ([1 => 'store_seckill', 2 => 'store_bargain', 3 => 'store_combination'] as $type => $table) {
+        $activityTables = [1 => 'store_seckill', 2 => 'store_bargain', 3 => 'store_combination', 4 => 'store_integral', 6 => 'store_advance'];
+        foreach ($activityTables as $type => $table) {
             $activities[$type] = [];
-            foreach ($this->ownershipInventoryRows($table, 'id,product_id,temp_id,freight', 'id', $read, $tableCounts) as $row) {
+            // Integral has no freight/template columns; advance has temp_id but no freight.
+            $columns = $type === 4 ? 'id,product_id' : ($type === 6 ? 'id,product_id,temp_id' : 'id,product_id,temp_id,freight');
+            foreach ($this->ownershipInventoryRows($table, $columns, 'id', $read, $tableCounts) as $row) {
                 $id = $uint($row['id'] ?? null);
                 if ($id === null || isset($activities[$type][$id])) throw new RuntimeException('Ownership inventory unavailable');
                 $activities[$type][$id] = $row;
                 $product = $uint($row['product_id'] ?? null);
                 if ($product === null || !isset($maps['store_product'][$product])) $emit('orphan', $table, $id, 'ACTIVITY_BASE_PRODUCT_MISSING', $product === null ? [] : ['table' => 'store_product', 'pk' => $product]);
-                $freight($table, $row, $product === null ? null : ($owners['store_product'][$product] ?? null));
+                if ($type === 1 || $type === 2 || $type === 3) {
+                    $freight($table, $row, $product === null ? null : ($owners['store_product'][$product] ?? null));
+                } elseif ($type === 6 && $product !== null && isset($maps['store_product'][$product])) {
+                    $base = $maps['store_product'][$product];
+                    $mode = $uint($base['freight'] ?? null, true);
+                    $virtual = $uint($base['is_virtual'] ?? null, true);
+                    // freshCart inherits these missing inputs; the enabled policy revalidates the complete base.
+                    if ($mode === 1 || $mode === 2 || $virtual === 1) {
+                        if (($row['temp_id'] ?? null) !== null && (string) $row['temp_id'] !== '0') $limits['unused_template_references'][$table] = ($limits['unused_template_references'][$table] ?? 0) + 1;
+                        continue;
+                    }
+                    if ($mode !== 3) continue; // The unchanged complete root inventory already records an unknown mode.
+                    if ($virtual !== 0) { $emit('unknown_reference', $table, $id, 'ACTIVITY_VIRTUAL_MODE_UNKNOWN'); continue; }
+                    $template = $uint($row['temp_id'] ?? null, true);
+                    // A reachable legacy fallback is not an explicit confirmed template reference.
+                    if ($template === null || $template === 0) { $emit('unknown_reference', $table, $id, 'ADVANCE_LEGACY_TEMPLATE_UNCONFIRMED'); continue; }
+                    if (!isset($maps['shipping_templates'][$template])) $emit('orphan', $table, $id, 'CONSUMED_TEMPLATE_MISSING', ['table' => 'shipping_templates', 'pk' => $template]);
+                    else $sameOwner($table, $id, $owners['store_product'][$product] ?? null, 'shipping_templates', $template, 'CONSUMED_TEMPLATE');
+                }
             }
         }
-        $parent = static function (string $table, $pk, array $row) use ($uint, &$maps, &$activities, &$owners, $emit): ?int {
+        $parent = static function (string $table, $pk, array $row) use ($uint, &$maps, &$activities, &$activityTables, &$owners, $emit): ?int {
             $type = $uint($row['type'] ?? null, true);
             $id = $uint($row['product_id'] ?? null);
-            if ($type === null || !in_array($type, [0, 1, 2, 3], true)) {
+            if ($type === null || ($type !== 0 && !isset($activityTables[$type]))) {
                 $emit('unknown_reference', $table, $pk, 'ACTIVITY_TYPE_UNKNOWN');
                 return null;
             }
-            $target = [0 => 'store_product', 1 => 'store_seckill', 2 => 'store_bargain', 3 => 'store_combination'][$type];
+            $target = $type === 0 ? 'store_product' : $activityTables[$type];
             if ($id === null || ($type === 0 ? !isset($maps['store_product'][$id]) : !isset($activities[$type][$id]))) {
                 $emit('orphan', $table, $pk, 'TYPED_PARENT_MISSING', $id === null ? [] : ['table' => $target, 'pk' => $id]);
                 return null;
@@ -897,7 +919,7 @@ final class MarketplaceMs2Migration
         $limits['rows_read'] = $read;
         $limits['media_references_examined'] = $references;
         $limits['maximum_rows_items_and_media_each'] = $limit;
-        $orphanChildTables = ['store_product_attr', 'store_product_attr_value', 'store_product_attr_result', 'store_product_description', 'store_product_cate', 'store_product_coupon', 'store_product_virtual', 'store_product_log', 'store_product_reply', 'store_product_relation', 'shipping_templates_free', 'shipping_templates_region', 'shipping_templates_no_delivery', 'store_seckill', 'store_bargain', 'store_combination', 'marketplace_stock_log'];
+        $orphanChildTables = ['store_product_attr', 'store_product_attr_value', 'store_product_attr_result', 'store_product_description', 'store_product_cate', 'store_product_coupon', 'store_product_virtual', 'store_product_log', 'store_product_reply', 'store_product_relation', 'shipping_templates_free', 'shipping_templates_region', 'shipping_templates_no_delivery', 'store_seckill', 'store_bargain', 'store_combination', 'store_integral', 'store_advance', 'marketplace_stock_log'];
         $orphanChildCounts = [];
         foreach ($orphanChildTables as $table) { if (array_key_exists($table, $tableCounts)) { $orphanChildCounts[$table] = count($orphanChildSeen[$table] ?? []); } }
         ksort($orphanChildCounts);

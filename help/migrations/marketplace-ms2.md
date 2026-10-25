@@ -129,7 +129,7 @@ php /workspace/help/migrations/marketplace-ms2.php enforce \
 
 owner 计数分别报告未知、未确认、孤儿、跨店和未知引用。`NULL`、0、目标 merchant 不存在属于未知 current owner；现有正值仍未由映射确认则属于未确认 owner。引用同店核对使用确认的目标归属，不靠旧正数推断。
 
-普通 attr/value/result/description 按真实 type 选父：`0=store_product`、`1=store_seckill`、`2=store_bargain`、`3=store_combination`。活动子表 `product_id` 指向活动自身 PK；活动自身再经其 `product_id` 指向普通商品。relation 使用真实 category 区分父语义，`type` 是收藏等动作，不能当活动类型。普通分类、优惠券、虚拟 SKU、日志、评论及运输 free/region/no_delivery 等按实际源码关系盘点，子表不新加 owner。
+普通 attr/value/result/description 按真实 type 选父：`0=store_product`、`1=store_seckill`、`2=store_bargain`、`3=store_combination`、`4=store_integral`、`6=store_advance`。活动子表 `product_id` 指向活动自身 PK；活动自身再经其 `product_id` 指向普通商品。relation 使用真实 category 区分父语义，`type` 是收藏等动作，不能当活动类型。普通分类、优惠券、虚拟 SKU、日志、评论及运输 free/region/no_delivery 等按实际源码关系盘点，子表不新加 owner。
 
 素材分类正 pid 是父类别，须存在、确认同店且无循环。附件正 pid 可能是分类，也可能是固定用途：必须由 `attachment_category_links` 明确语义；`category` 关联实际类别，`usage` 只接受源码明确用途 1–6，pid 0 无分类。未使用或拼错的人工 link 不静默忽略。
 
@@ -168,3 +168,14 @@ MySQL DDL逐条隐式提交；任何失败可能保留合法已完成的列/表/
 先前R1/R2 CREATE初始化FAIL及其清理收据保持；R3只在独立fresh CREATE窗口采用旧镜像原安装mode，真实157原块均完成且无安装INSERT，原生COMPACT ticket(191)元数据/SHOW CREATE与旧成功baseline一致，源列/索引声明与手工ALTER均未改。SESSION实际精确恢复，GLOBAL与InnoDB strict保持；四命令严格模式断言也实际通过。初始化兼容范围与后续命令验证分别记录。
 
 真实历史映射、SP-MS2-1、L3d/L4、仓库内完整 `ms2-migration.php` 测试辅助脚本、完整原验收、商品/公众/订单消费者、上线与人工签收仍未完成。当前仅集成原字节CLI、使用说明和普通摘要；没有操作真实数据库、改写原冻结候选/manifest、推送或部署。
+
+
+### type4/type6 真实活动盘点兼容（L2 Source，2026-10-25）
+
+积分、预售都先按各自真实活动PK查父，再沿其product_id查普通商品和已确认owner；读取全部实际父行，不加上架/删除/时间过滤。缺活动父仍TYPED_PARENT_MISSING，活动base缺失仍ACTIVITY_BASE_PRODUCT_MISSING；其它未知type继续ACTIVITY_TYPE_UNKNOWN。没有给活动新增owner或改四命令/backfill/enforce门。
+
+分别选择原生列：积分id/product_id（没有freight/temp_id/postage）；预售id/product_id/temp_id（没有freight）。积分独立积分订单不消费运费模板，不虚造freight；普通base仍受原全量root运费检查。预售当前enabled运费由MerchantFreightPolicy重读base，保原root检查；其兼容旧路径经freshCart继承缺失freight/is_virtual。base freight1/2或is_virtual1不需模板，不因预售temp_id=0新增问题，非零未消费字段只计unused；base freight未知已有原root问题，mode3且虚拟语义未知另报告unknown_reference。physical+freight3时，正native temp_id须真实存在并已确认同base owner；明确0/负值/未知按ADVANCE_LEGACY_TEMPLATE_UNCONFIRMED隔离，正数缺失继续CONSUMED_TEMPLATE_MISSING。旧Computed429–430可达fallback1不是显式确认引用，不能因模板1恰好同owner而通过；此遵守原07 Review Focus:27，需确认真实引用或另行修复业务，不在本次猜ID或改报价。当前enabled只消费base的路径不能代签仍可达的legacy缺失。此为盘点现有消费，不修改报价算法。
+
+mapping_binding新增两活动表的完整schema，source绑定保原成员并补两producer、积分订单、PublicCatalog、MerchantFreightPolicy和StoreCart真实消费者；旧映射必须以新check真实binding重新确认，旧Run/映射不重签。当前公开安装seed的9个type4支持集外项会转为缺真实积分父，原71保留，总80仍待核；type6无seed行，未签其运行覆盖。完整历史订单/cart/权益、归档恢复、Task2/G01–G07、真实存量L3d/L4及业务启用仍未完成。
+
+仅完成Source和静态检查后交Root/非作者审；本作者不运行PHP、SQL、Docker、HTTP或任何候选，不提交/推送。停止的恢复/故障/并发/安全样本保持NOT RUN。
