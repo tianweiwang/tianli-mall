@@ -1542,3 +1542,19 @@ Root当前三个PHP真实8.2.33纯-l与完整5native/10双流1760B回读全0，n
 标准双父合入独立QR来源75468834（父线含生产43371dd1和设计c46516af）。二十二份非record输入逐体精确保全；本record以共同3a51前缀一次、UI完整新增段、QR完整新增段按顺序合并，两边历史事实及未完成任务均保留。原两UI PHP逐体不变。QR原专用正常验证35HTTP/7合成提现/7站内信、普通close及独立六raw-zero已在其754来源实际完成，完整证据留ORG；该结果不签本次统一HEAD Runtime。
 
 新统一来源仍须修复已记录的专用profile加载与默认included闭集不一致，并按真实新HEAD重新资格M、独立Val、完整tracked SourceTree、全A/Worker/普通close/独立zero/postA、三真实build与fresh B。原完整UI20/20/42、merchant34/25/9/23、H5、CU_FORM、历史37/四CLI及真实金融/发布/人工验收责任继续保留；没有部署、推送或真实资金/外发，停止样本NOT RUN。
+
+
+##### Root采用：专用正常profile按实际进程标志加载（2026-10-25，先设计后修改）
+
+已在4bdadaf5实读两份profile完整正文：都只有两个函数声明，无顶层App/资源/数据库动作；全仓固定caller仅对应专用normal入口和harness已存在的flag分支，未发现导入后putenv这些flag的调用。无条件require使普通A、Worker、商家/H5及B的完整included_files闭集混入不属于本场景的专用定义。采用两行有限修复：仅AUDIT_LEGACY_REFUND_NORMAL严格为1时require原退款profile，仅AUDIT_WITHDRAWAL_QR_NORMAL严格为1时require原QR profile。两profile整份、harness全部34函数、所有旧default/licence/media/refund/QR实际调用分支及单次TERM保留，不扩原34/37 extras、不删included检查。必要固定消费者为backend的M4UIB_BOOTSTRAP中harness一个descriptor：只在新harness正文固定且完整inverse审后重绑实际bytes/SHA。原冻结B包不覆盖；未来必须派生新代际更新其固定producer边和完整DAG。
+
+验证限定为Source全文与逆证、现有PHP8.2纯语法，以及五个独立正向PHP导入进程（默认、licence、media、refund、QR）：不调用harness CLI或函数，不启动App/Timer/SQL/Redis/HTTP，逐个核确切included_files和专用函数存在集。helper只读挂载、network none、非root，必须自然Exited0/PID0后精确非force移除及自有标签残留原始空查询。此验证不替代新完整A/B、原QR/refund专用业务链或页面验收；原全部业务和停止样本责任保留。
+
+
+##### Root专用profile加载修复实际检查点（2026-10-25）
+
+两PHP有限差量已由非作者独立Source0：harness只有顶层两个条件require，逆回全文即4bdadaf5原件、全部34函数raw；backend只一个固定harness descriptor，逆回全文原件、全部56函数raw。两个profile完整原件不动，原34/37、所有included_files/namespace/业务与TERM检查均保留。现harness60737/686be41b、backend132938/0ad8bd2b。
+
+实际固定PHP8.2.33执行3项-l，以及默认/licence/media/refund/QR五个独立纯定义导入，八child均真实原proc handle自然proc_close0/stderr空；默认三类只加载harness+guard且私有四函数全false，refund仅原退款两函数、QR仅原QR两函数。未调用App/guard函数、SQL/Redis/HTTP/Timer或金融。原检查Host在postinspect误断言labels仅本次purpose而exit1，原因已核固定镜像自身继承三compose标签；原Source、FAILURE和全部原raw保留，不改写为整体0。独立只读镜像标签与完整容器标签逐项相同后，另经独立Source0及Root精确原CID完整重核（已自然Exited0/PID0/restart0、7RO、netnone、uid65534）才nonforce rm；三fresh自有purpose资源查询stdout/stderr都0字节。无重跑业务或检查，证据ORG/profile-load-import-check-r1/ordinary-close/RESULT.json。
+
+本地仅本record及两PHP三路径提交；不是新统一HEAD完整A/B或页面验收。另已发现并记录B r1迁移role volume/bind不一致，旧包保持冻结，后继同源A/Core、B和两个repo必要接缝须完整同步后再资格与运行。所有原功能与停止样本/真实外部边界继续保留。

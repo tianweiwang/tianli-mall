@@ -685,8 +685,8 @@ function audit_assert_licence_private_mount():void
         &&($found[0]['RW']??null)===true,'normal licence actual private mount rejected');
 }
 
-require_once __DIR__.'/legacy-refund-normal-profile.php';
-require_once __DIR__.'/withdrawal-qr-normal-profile.php';
+if (getenv('AUDIT_LEGACY_REFUND_NORMAL') === '1') { require_once __DIR__.'/legacy-refund-normal-profile.php'; }
+if (getenv('AUDIT_WITHDRAWAL_QR_NORMAL') === '1') { require_once __DIR__.'/withdrawal-qr-normal-profile.php'; }
 
 function audit_serve(string $channel = 'app'): void
 {
