@@ -120,3 +120,15 @@ Env7 Root余审的真实producer修正（Source-only，先记后改）：实际v
 Root在中断的完整交易Run仅普通退役并独立zero后，串行使用原固定PHP镜像297b37d4…做纯`php -n -l`：实际PHP 8.2.33，当前W的3个PHP和外部包9个PHP共12件均原生0；5个外层原生created/terminal/同PID/wait与完整双流已实际读回，来源前后摘要保持。结果 `H:/天俪商城/artifacts/project-organization-20261023/media-env7-php82-syntax-r1/RESULT.json` 为11225B / 4e529edb28b0e2e1e0d2c5b7cc708bd0bb14b586e1b82786df5b3bb0f18d0a55。检查容器只挂只读公共源码、network none、只读根、无cap，真实Exited0/PID0后nonforce移除，没有执行候选include、应用、HTTP、Composer或Timer。
 
 本轮独立Source复核确认4目标/16外部成员、完整mount及原29函数保持、预建0600空timer.log/serve/GC身份链接无新确定问题；离线Compose配置解析0仅为配置证据。当前将这4件源码保存本地检查点；实际新HEAD/tar/Tree/PINS须提交后绑定，原b908 HTTP候选保持不改。完整正常HTTP、真实600秒自然回收、浏览器/设备及T4全验收仍NOT RUN，不能以语法或Source复核关闭。
+
+### 全新安装附件目录完整性修复（2026-10-25，Root已采用，先记设计）
+
+Root真实Env7 Run20261025060617546d5d的prepare已正常完成，prepare-media在原M86_FRESH_ATTACHMENT_PID_VALID_SOURCE停止；真实只读PDO与原安装SQL一致：135条原附件引用的category只存在1..8，pid9有41条、pid10有20条，共61条原生缺目录。仅修改本record与`crmeb/public/install/crmeb.sql`两路径：待Root确认该失败实例已普通close与独立zero后，为全新安装种子追加id9/10两条type0、pid0、enname空的中性“历史未分类图片 9/10”目录（明确新增归档名称，不能声称恢复丢失旧名）；仅该表AUTO_INCREMENT声明可相应9→11。原8目录与135附件逐列、全部原文件/路径及其它SQL原bytes保持，不伪造MS2 usage、删附件、改pid、放宽M86或补权限seed/DDL列，不连接或修复真实历史库、不在旧失败Run临时改数据。修复后以静态完整INSERT/前后逆变换证明仅两新行及该计数声明变化，并由Root后续新提交/new Source/fresh Run原断言重验；静态声明11不是实际运行计数，当前不记业务通过。当前W起点40a5f3c222c49dc3dfbe19d8b37177d3b7a127f3实核clean/index空；auto-sync实际project_not_enabled，未enroll；sealed r7、HTTP9、旧Run、云W和canonical均保持。
+
+- [x] 记录真实问题、已采用两路径设计与验收，保持本record原前缀；SQL尚未修改。
+- [x] Root实际普通close与独立zero完成并通知后，仅追加两中性目录及计数声明；完整静态逆变换/附件135与原目录8逐原值核对、diffcheck。
+- [ ] 非作者Source复核；Root按新真实提交/Source/Run执行原初始化与媒体完整正常链，实际PDO/附件目录/计数/业务原断言及普通收尾独立读回，当前NOT RUN。
+
+本修复是新安装种子产品完整性修复，不是验证夹具掩盖历史缺口。当前仅本设计已写，无SQL/目标数据变更、PHP/Docker/HTTP、提交或推送；原失败保留、T4及19组仍未关闭。
+
+安装种子修复实际Source补记：Root已完成原失败Env7的普通close与独立zero并交实际ROOT-FAILED-ENV7-CLOSE-ZERO-READBACK.json；其后作者才保存SQL，仅分类表声明9→11和id9/10两中性归档种子。SQL现10237459B/SHA256 1e5e56c805f551a75332be58b2ab96572509c82835b812cdff3ca5c3eb7ad828；对三处作精确逆变换恢复原10237372B/7af188f42c622db523d8000c0cf50f95fa48df2fe41123969ca2dbb65ffb5eb2每个字节。原135附件整INSERT35633B/5fec502a23636cfaf4eea327a8ae4241c6211a5c40081c5001a174bb1673a5cf及原8目录tuple逐原bytes保持；不声称新名字是旧名称。只完成新安装Source修复，未运行SQL/改旧实例或历史库；真实新Source/newRun原M86/媒体完整链及实际计数仍NOT RUN。独审/本地提交和后继Source绑定交Root；r7封存包/HTTP9/原Run/canonical均保持，停止样本NOT RUN。
