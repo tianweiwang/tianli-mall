@@ -114,150 +114,171 @@ class Jdoss extends BaseUpload
      */
     protected function app()
     {
-        if (!$this->accessKey || !$this->secretKey) {
-            throw new UploadException('请先配置accessKey和secretKey');
-        }
-        $this->handle = new S3Client([
-            'version' => 'latest',
-            'region' => $this->storageRegion,
-            'endpoint' => "http://s3.{$this->storageRegion}.jdcloud-oss.com",
-            'signature_version' => 'v4',
-            'use_path_style_endpoint' => true,
-            'credentials' => [
-                'key' => $this->accessKey,
-                'secret' => $this->secretKey,
-            ],
-        ]);
-        return $this->handle;
+        return \crmeb\compat\AwsErrorCompatibility::run(function(){
+            if (!$this->accessKey || !$this->secretKey) {
+                throw new UploadException('请先配置accessKey和secretKey');
+            }
+            $this->handle = new S3Client([
+                'version' => 'latest',
+                'region' => $this->storageRegion,
+                'endpoint' => "http://s3.{$this->storageRegion}.jdcloud-oss.com",
+                'signature_version' => 'v4',
+                'use_path_style_endpoint' => true,
+                'credentials' => [
+                    'key' => $this->accessKey,
+                    'secret' => $this->secretKey,
+                ],
+            ]);
+            return $this->handle;
+        });
     }
 
     public function move(string $file = 'file')
     {
-        $fileHandle = app()->request->file($file);
-        if (!$fileHandle) {
-            return $this->setError('上传的文件不存在');
-        }
-        if ($this->validate) {
-            if (!in_array(strtolower(pathinfo($fileHandle->getOriginalName(), PATHINFO_EXTENSION)), $this->validate['fileExt'])) {
-                return $this->setError('不合法的文件后缀');
+        return \crmeb\compat\AwsErrorCompatibility::run(function()use($file){
+            $fileHandle = app()->request->file($file);
+            if (!$fileHandle) {
+                return $this->setError('上传的文件不存在');
             }
-            if (filesize($fileHandle) > $this->validate['filesize']) {
-                return $this->setError('文件过大');
+            if ($this->validate) {
+                if (!in_array(strtolower(pathinfo($fileHandle->getOriginalName(), PATHINFO_EXTENSION)), $this->validate['fileExt'])) {
+                    return $this->setError('不合法的文件后缀');
+                }
+                if (filesize($fileHandle) > $this->validate['filesize']) {
+                    return $this->setError('文件过大');
+                }
+                if (!in_array($fileHandle->getOriginalMime(), $this->validate['fileMime'])) {
+                    return $this->setError('不合法的文件类型');
+                }
             }
-            if (!in_array($fileHandle->getOriginalMime(), $this->validate['fileMime'])) {
-                return $this->setError('不合法的文件类型');
+            $key = $this->saveFileName($fileHandle->getRealPath(), $fileHandle->getOriginalExtension());
+            $key = $this->getUploadPath($key);
+            try {
+                $uploadInfo = $this->app()->putObject([
+                    'Bucket' => $this->storageName,
+                    'Key' => $key,
+                    'SourceFile' => $fileHandle->getRealPath()
+                ]);
+                if (!isset($uploadInfo['ObjectURL'])) {
+                    return $this->setError('Upload failure');
+                }
+                $this->fileInfo->uploadInfo = $uploadInfo;
+                $this->fileInfo->realName = $fileHandle->getOriginalName();
+                $this->fileInfo->filePath = ($this->cdn ?: $this->uploadUrl) . '/' . $key;
+                $this->fileInfo->fileName = $key;
+                $this->fileInfo->filePathWater = $this->water($this->fileInfo->filePath);
+                $this->authThumb && $this->thumb($this->fileInfo->filePath);
+                return $this->fileInfo;
+            } catch (\Throwable $e) {
+                return $this->setError($e->getMessage());
             }
-        }
-        $key = $this->saveFileName($fileHandle->getRealPath(), $fileHandle->getOriginalExtension());
-        $key = $this->getUploadPath($key);
-        try {
-            $uploadInfo = $this->app()->putObject([
-                'Bucket' => $this->storageName,
-                'Key' => $key,
-                'SourceFile' => $fileHandle->getRealPath()
-            ]);
-            if (!isset($uploadInfo['ObjectURL'])) {
-                return $this->setError('Upload failure');
-            }
-            $this->fileInfo->uploadInfo = $uploadInfo;
-            $this->fileInfo->realName = $fileHandle->getOriginalName();
-            $this->fileInfo->filePath = ($this->cdn ?: $this->uploadUrl) . '/' . $key;
-            $this->fileInfo->fileName = $key;
-            $this->fileInfo->filePathWater = $this->water($this->fileInfo->filePath);
-            $this->authThumb && $this->thumb($this->fileInfo->filePath);
-            return $this->fileInfo;
-        } catch (\Throwable $e) {
-            return $this->setError($e->getMessage());
-        }
+        });
     }
 
-    public function stream($fileContent, string $key = null)
+    public function stream($fileContent, string $key = null, ?string $mime = null)
     {
-        try {
-            if (!$key) {
-                $key = $this->saveFileName();
+        return \crmeb\compat\AwsErrorCompatibility::run(function()use($fileContent,$key,$mime){
+            try {
+                if (!$key) {
+                    $key = $this->saveFileName();
+                }
+                $key = $this->getUploadPath($key);
+                $fileContent = (string)EntityBody::factory($fileContent);
+                if ($mime === null) {
+                    $uploadInfo = $this->app()->putObject([
+                        'Bucket' => $this->storageName,
+                        'Key' => $key,
+                        'Body' => $fileContent
+                    ]);
+                } else {
+                    $uploadInfo = $this->app()->putObject([
+                        'Bucket' => $this->storageName,
+                        'Key' => $key,
+                        'Body' => $fileContent,
+                        'ContentType' => $mime
+                    ]);
+                }
+                $uploadInfo = $uploadInfo->toArray();
+                if (isset($uploadInfo['@metadata']['statusCode']) && $uploadInfo['@metadata']['statusCode'] !== 200) {
+                    return $this->setError('Upload failure');
+                }
+                $this->fileInfo->uploadInfo = $uploadInfo;
+                $this->fileInfo->realName = $key;
+                $this->fileInfo->filePath = ($this->cdn ?: $this->uploadUrl) . '/' . $key;
+                $this->fileInfo->fileName = $key;
+                $this->fileInfo->filePathWater = $this->water($this->fileInfo->filePath);
+                $this->authThumb && $this->thumb($this->fileInfo->filePath);
+                return $this->fileInfo;
+            } catch (\Throwable $e) {
+                return $this->setError($e->getMessage());
             }
-            $key = $this->getUploadPath($key);
-            $fileContent = (string)EntityBody::factory($fileContent);
-            $uploadInfo = $this->app()->putObject([
-                'Bucket' => $this->storageName,
-                'Key' => $key,
-                'Body' => $fileContent
-            ]);
-            $uploadInfo = $uploadInfo->toArray();
-            if (isset($uploadInfo['@metadata']['statusCode']) && $uploadInfo['@metadata']['statusCode'] !== 200) {
-                return $this->setError('Upload failure');
-            }
-            $this->fileInfo->uploadInfo = $uploadInfo;
-            $this->fileInfo->realName = $key;
-            $this->fileInfo->filePath = ($this->cdn ?: $this->uploadUrl) . '/' . $key;
-            $this->fileInfo->fileName = $key;
-            $this->fileInfo->filePathWater = $this->water($this->fileInfo->filePath);
-            $this->authThumb && $this->thumb($this->fileInfo->filePath);
-            return $this->fileInfo;
-        } catch (\Throwable $e) {
-            return $this->setError($e->getMessage());
-        }
+        });
     }
 
     public function delete(string $key)
     {
-        try {
-            return $this->app()->deleteObject([
-                'Bucket' => $this->storageName,
-                'Key' => $key
-            ]);
-        } catch (\Throwable $e) {
-            return $this->setError($e->getMessage());
-        }
+        return \crmeb\compat\AwsErrorCompatibility::run(function()use($key){
+            try {
+                return $this->app()->deleteObject([
+                    'Bucket' => $this->storageName,
+                    'Key' => $key
+                ]);
+            } catch (\Throwable $e) {
+                return $this->setError($e->getMessage());
+            }
+        });
     }
 
 
     public function listbuckets(string $region, bool $line = false, bool $shared = false)
     {
-        try {
-            $res = $this->app()->listBuckets();
-            return $res ?? [];
-        } catch (\Throwable $e) {
-            return [];
-        }
+        return \crmeb\compat\AwsErrorCompatibility::run(function()use($region,$line,$shared){
+            try {
+                $res = $this->app()->listBuckets();
+                return $res ?? [];
+            } catch (\Throwable $e) {
+                return [];
+            }
+        });
     }
 
     public function createBucket(string $name, string $region = '', string $acl = 'public-read')
     {
-        $regionData = $this->getRegion();
-        $regionData = array_column($regionData, 'value');
-        if (!in_array($region, $regionData)) {
-            return $this->setError('COS:无效的区域!');
-        }
-        $this->storageRegion = $region;
-        $app = $this->app();
-        //检测桶
-        try {
-            $app->headBucket([
-                'Bucket' => $name
-            ]);
-        } catch (\Throwable $e) {
-            //桶不存在返回404
-            if (strstr('404', $e->getMessage())) {
+        return \crmeb\compat\AwsErrorCompatibility::run(function()use($name,$region,$acl){
+            $regionData = $this->getRegion();
+            $regionData = array_column($regionData, 'value');
+            if (!in_array($region, $regionData)) {
+                return $this->setError('COS:无效的区域!');
+            }
+            $this->storageRegion = $region;
+            $app = $this->app();
+            //检测桶
+            try {
+                $app->headBucket([
+                    'Bucket' => $name
+                ]);
+            } catch (\Throwable $e) {
+                //桶不存在返回404
+                if (strstr('404', $e->getMessage())) {
+                    return $this->setError('COS:' . $e->getMessage());
+                }
+            }
+            //创建桶
+            try {
+                $res = $app->createBucket([
+                    'Bucket' => $name,
+                    'ACL' => $acl,
+                ]);
+            } catch (\Throwable $e) {
+                if (strstr('[curl] 6', $e->getMessage())) {
+                    return $this->setError('COS:无效的区域!!');
+                } else if (strstr('Access Denied.', $e->getMessage())) {
+                    return $this->setError('COS:无权访问');
+                }
                 return $this->setError('COS:' . $e->getMessage());
             }
-        }
-        //创建桶
-        try {
-            $res = $app->createBucket([
-                'Bucket' => $name,
-                'ACL' => $acl,
-            ]);
-        } catch (\Throwable $e) {
-            if (strstr('[curl] 6', $e->getMessage())) {
-                return $this->setError('COS:无效的区域!!');
-            } else if (strstr('Access Denied.', $e->getMessage())) {
-                return $this->setError('COS:无权访问');
-            }
-            return $this->setError('COS:' . $e->getMessage());
-        }
-        return $res;
+            return $res;
+        });
     }
 
     public function getRegion()
@@ -284,71 +305,79 @@ class Jdoss extends BaseUpload
 
     public function deleteBucket(string $name, string $region = '')
     {
-        try {
-            $this->storageRegion = $region;
-            $this->app()->deleteBucket([
-                'Bucket' => $name, // REQUIRED
-            ]);
-            return true;
-        } catch (AcmException $e) {
-            return $this->setError($e->getMessage());
-        }
+        return \crmeb\compat\AwsErrorCompatibility::run(function()use($name,$region){
+            try {
+                $this->storageRegion = $region;
+                $this->app()->deleteBucket([
+                    'Bucket' => $name, // REQUIRED
+                ]);
+                return true;
+            } catch (AcmException $e) {
+                return $this->setError($e->getMessage());
+            }
+        });
     }
 
     public function getDomian(string $name, string $region = null)
     {
-        try {
-            $this->storageRegion = $region;
-            $res = $this->app()->getBucketPolicy([
-                'Bucket' => $name
-            ]);
-            return $res['DomainName'] ?? [];
-        } catch (\Throwable $e) {
-            return $this->setError($e->getMessage());
-        }
+        return \crmeb\compat\AwsErrorCompatibility::run(function()use($name,$region){
+            try {
+                $this->storageRegion = $region;
+                $res = $this->app()->getBucketPolicy([
+                    'Bucket' => $name
+                ]);
+                return $res['DomainName'] ?? [];
+            } catch (\Throwable $e) {
+                return $this->setError($e->getMessage());
+            }
+        });
     }
 
     public function bindDomian(string $name, string $domain, string $region = null)
     {
-        try {
-            $this->storageRegion = $region;
-            $this->app()->putBucketWebsite([
-                'Bucket' => $name,
-                'WebsiteConfiguration' => [
-                    'RedirectAllRequestsTo' => [
-                        'HostName' => $domain,
-                        'Protocol' => 'http'
+        return \crmeb\compat\AwsErrorCompatibility::run(function()use($name,$domain,$region){
+            try {
+                $this->storageRegion = $region;
+                $this->app()->putBucketWebsite([
+                    'Bucket' => $name,
+                    'WebsiteConfiguration' => [
+                        'RedirectAllRequestsTo' => [
+                            'HostName' => $domain,
+                            'Protocol' => 'http'
+                        ]
                     ]
-                ]
-            ]);
-            return true;
-        } catch (\Throwable $e) {
-            return $this->setError($e->getMessage());
-        }
+                ]);
+                return true;
+            } catch (\Throwable $e) {
+                return $this->setError($e->getMessage());
+            }
+        });
     }
 
     public function setBucketCors(string $name, string $region)
     {
-        $this->storageRegion = $region;
-        try {
-            $this->app()->putBucketCors([
-                'Bucket' => $name, // REQUIRED
-                'CORSConfiguration' => [ // REQUIRED
-                    'CORSRules' => [ // REQUIRED
-                        [
-                            'AllowedHeaders' => ['*'],
-                            'AllowedMethods' => ['POST', 'GET', 'PUT', 'DELETE', 'HEAD'], // REQUIRED
-                            'AllowedOrigins' => ['*'], // REQUIRED
-                            'ExposeHeaders' => ['Etag'],
-                            'MaxAgeSeconds' => 0
+        return \crmeb\compat\AwsErrorCompatibility::run(function()use($name,$region){
+            $this->storageRegion = $region;
+            try {
+                $this->app()->putBucketCors([
+                    'Bucket' => $name, // REQUIRED
+                    'CORSConfiguration' => [ // REQUIRED
+                        'CORSRules' => [ // REQUIRED
+                            [
+                                'AllowedHeaders' => ['*'],
+                                'AllowedMethods' => ['POST', 'GET', 'PUT', 'DELETE', 'HEAD'], // REQUIRED
+                                'AllowedOrigins' => ['*'], // REQUIRED
+                                'ExposeHeaders' => ['Etag'],
+                                'MaxAgeSeconds' => 0
+                            ],
                         ],
-                    ],
-                ]
-            ]);
-            return true;
-        } catch (\Throwable $e) {
-            return $this->setError($e->getMessage());
-        }
+                    ]
+                ]);
+                return true;
+            } catch (\Throwable $e) {
+                return $this->setError($e->getMessage());
+            }
+        });
     }
 
     /**
@@ -357,25 +386,27 @@ class Jdoss extends BaseUpload
      */
     public function getTempKeys($key = '', $path = '', $contentType = '', $expires = '+10 minutes')
     {
-        try {
-            $app = $this->app();
-            $cmd = $app->getCommand(
-                'PutObject', [
-                    'Bucket' => $this->storageName,
-                    'Key' => $key,
-//                    'SourceFile' => $path,
-                    'ContentType' => $contentType
-                ]
-            );
-            $request = $app->createPresignedRequest($cmd, $expires, ['Scheme' => 'https']);
-            return [
-                'upload_url' => (string)$request->getUri(),
-                'type' => 'JDOSS',
-                'url' => $this->uploadUrl . '/' . $key
-            ];
-        } catch (\Throwable $e) {
-            return $this->setError($e->getMessage());
-        }
+        return \crmeb\compat\AwsErrorCompatibility::run(function()use($key,$path,$contentType,$expires){
+            try {
+                $app = $this->app();
+                $cmd = $app->getCommand(
+                    'PutObject', [
+                        'Bucket' => $this->storageName,
+                        'Key' => $key,
+    //                    'SourceFile' => $path,
+                        'ContentType' => $contentType
+                    ]
+                );
+                $request = $app->createPresignedRequest($cmd, $expires, ['Scheme' => 'https']);
+                return [
+                    'upload_url' => (string)$request->getUri(),
+                    'type' => 'JDOSS',
+                    'url' => $this->uploadUrl . '/' . $key
+                ];
+            } catch (\Throwable $e) {
+                return $this->setError($e->getMessage());
+            }
+        });
     }
 
     /**

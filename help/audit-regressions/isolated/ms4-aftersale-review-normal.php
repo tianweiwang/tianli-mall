@@ -1091,8 +1091,8 @@ function m4ar_language_prepare(PDO $db,array $source,array $task6Names):void
   'TASK78_LANGUAGE_REAL_APP_ACCOUNT_PDO_BEFORE_APP_OUTSIDE_TRANSACTION');
  $path='crmeb/public/install/crmeb.sql';$matches=array_values(array_filter($source['source_files'],
   static fn(array $row):bool=>$row['path']===$path));
- m4ar_expect(count($matches)===1&&$matches[0]===['path'=>$path,'bytes'=>10237372,
-  'sha256'=>'7af188f42c622db523d8000c0cf50f95fa48df2fe41123969ca2dbb65ffb5eb2'],'TASK78_LANGUAGE_ORIGINAL_FROZEN_SQL_DESCRIPTOR');
+ m4ar_expect(count($matches)===1&&$matches[0]===['path'=>$path,'bytes'=>10237459,
+  'sha256'=>'1e5e56c805f551a75332be58b2ab96572509c82835b812cdff3ca5c3eb7ad828'],'TASK78_LANGUAGE_ORIGINAL_FROZEN_SQL_DESCRIPTOR');
  $sql=null;
  foreach(['/source','/workspace']as$root){
   $file=$root.'/'.$path;m4ar_expect(is_file($file)&&!is_link($file)&&realpath($file)===$file,'TASK78_LANGUAGE_EXACT_SOURCE_SQL_FILE');

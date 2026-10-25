@@ -46,10 +46,14 @@ final class LegacyProductWriteServices
         $pdo=self::transaction();if($query->getConnection()!==Db::connect()||$query->getConnection()->getPdo()!==$pdo)
             throw new AuthUnavailableException();
     }
-    public static function selfId(): int
+    public static function enabled(): bool
     {
         $enabled=Config::get('marketplace.enabled',false);
-        if(!is_bool($enabled))throw new AuthUnavailableException();
+        if(!is_bool($enabled))throw new AuthUnavailableException();return $enabled;
+    }
+    public static function selfId(): int
+    {
+        self::enabled();
         try{$id=self::id(Config::get('marketplace.self_operated_mer_id',null),4294967295);}catch(AdminException $error){throw new AuthUnavailableException();}
         $row=Db::name('marketplace_merchant')->where('mer_id',$id)->field('mer_id')->find();
         if(!is_array($row)||(string)$row['mer_id']!==(string)$id)throw new AuthUnavailableException();return $id;
@@ -120,6 +124,11 @@ final class LegacyProductWriteServices
         if($productIdOrZero!==0||self::$operation['allow_create']!==true)throw new AuthUnavailableException();
         return self::$operation['self'];
     }
+    public static function isSelfWorker(): bool
+    {
+        self::transaction();$worker=self::$operation['self_worker']??null;
+        if(!is_bool($worker))throw new AuthUnavailableException();return $worker;
+    }
     public static function targetIds(): array { self::transaction();return array_keys(self::$operation['owners']); }
     public static function skip(int $id): void { self::assertParent($id);self::$operation['skipped'][$id]=true; }
     public static function afterCommit(callable $operation): void { self::transaction();self::$operation['after_commit'][]=$operation; }
@@ -186,38 +195,10 @@ final class LegacyProductWriteServices
     {
         self::transaction();$owner=$id?self::owner($id):self::$operation['self'];
         self::categories($data['cate_id']);self::freight($owner,$data['freight'],$data['temp_id']);
-        if($owner===self::$operation['self'])return;
-        $pictures=$data['slider_image'];if(!is_array($pictures))throw new AdminException('请求参数不正确');
-        foreach($data['attrs']as$sku)if(isset($sku['pic']))$pictures[]=$sku['pic'];
-        foreach($data['items']as$item)foreach($item['detail']??[]as$option)if(is_array($option)&&($option['pic']??'')!=='')$pictures[]=$option['pic'];
-        foreach(['recommend_image','video_link']as$field)if(($data[$field]??'')!=='')$pictures[]=$data[$field];
-        if(is_string($data['description']??null))$pictures=array_merge($pictures,MerchantProductInput::htmlMedia($data['description']));
-        foreach(array_unique($pictures)as$path){
-            if(!is_string($path)||$path===''||str_contains($path,"\0"))throw new AdminException('素材不可用');
-            self::mediaReference($owner,$path);
-        }
-    }
-    private static function mediaReference(int $owner,string $path): void
-    {
-        self::transaction();$decoded=html_entity_decode($path,ENT_QUOTES|ENT_HTML5,'UTF-8');
-        if(preg_match('//u',$decoded)!==1||str_contains($decoded,"\0"))throw new AdminException('素材不可用');
-        // Invert only the actual DTO producer, never an arbitrary URL basename/origin.
-        $site=sys_config('site_url');if(!is_string($site))throw new AuthUnavailableException();$candidates=[$decoded];
-        $origins=[$site];if(str_starts_with($site,'http:'))$origins[]='https:'.substr($site,5);
-        foreach($origins as$origin)if($origin!==''&&str_starts_with($decoded,$origin.'/')){
-            $relative=substr($decoded,strlen($origin));$display=set_file_url($relative,$site);
-            if($display===$decoded||(str_starts_with($display,'http:')&&'https:'.substr($display,5)===$decoded))$candidates[]=$relative;
-        }
-        if(str_starts_with($decoded,'https:'))$candidates[]='http:'.substr($decoded,6);
-        $candidates=array_values(array_unique($candidates));
-        $query=Db::name('system_attachment')->where('mer_id',$owner)->where(function($query)use($candidates){$query->whereIn('att_dir',$candidates)->whereOr('satt_dir','in',$candidates);})->lock(true);self::query($query);
-        $rows=$query->field(['att_id','mer_id','att_dir','satt_dir'])->select()->toArray();$matched=[];
-        foreach($rows as$row){if((string)$row['mer_id']!==(string)$owner)throw new AuthUnavailableException();
-            foreach(['att_dir','satt_dir']as$field){$canonical=$row[$field];if(!is_string($canonical))throw new AuthUnavailableException();
-                $aliases=[$canonical,set_file_url($canonical,$site)];foreach($aliases as$alias)if(str_starts_with($alias,'http:'))$aliases[]='https:'.substr($alias,5);
-                if(in_array($decoded,$aliases,true))$matched[(string)$row['att_id']]=true;}
-        }
-        if(count($matched)!==1)throw new AdminException('素材不可用');
+        $enabled=self::enabled();
+        if($enabled===false&&$owner===self::$operation['self'])return;
+        $media=app()->make(ProductMediaReferenceServices::class);
+        $media->assertForProduct($id,$media->legacyReferences($data));
     }
     public static function showEligibility(array $ids,bool $show): void
     {
@@ -293,14 +274,9 @@ final class LegacyProductWriteServices
         if(Db::connect()!==$connection||$connection->getPdo()!==$pdo)throw new AuthUnavailableException();
     }
 
-    /** Called only by authenticated existing caller/controller; request identity is not fabricated. */
-    public function run(array $ids,callable $operation,bool $allowCreate=false,bool $content=false): mixed
+    /** Shared original request authorization, including the self-only API/OutAccount callers. */
+    public function authorizeCurrentRequest(): ?PlatformScope
     {
-        $ids=self::ids($ids);
-        if(self::active()){
-            self::transaction();if(array_diff($ids,self::targetIds())||($allowCreate&&!self::$operation['allow_create']))throw new AuthUnavailableException();
-            return $operation();
-        }
         $request=app()->request;$scope=null;
         if($request instanceof Request&&LegacyProductAccessServices::isWriter($request)){
             $scope=$request->platformScope();$this->access->authorizeScope($scope);
@@ -311,6 +287,17 @@ final class LegacyProductWriteServices
             if($module==='api'&&(!$request instanceof Request||$request->isLogin()!==true))throw new AuthUnavailableException();
             if($module==='outapi'&&(!$request instanceof Request||(int)$request->outId()<1))throw new AuthUnavailableException();
         }
+        return $scope;
+    }
+    /** Called only by authenticated existing caller/controller; request identity is not fabricated. */
+    public function run(array $ids,callable $operation,bool $allowCreate=false,bool $content=false): mixed
+    {
+        $ids=self::ids($ids);
+        if(self::active()){
+            self::transaction();if(array_diff($ids,self::targetIds())||($allowCreate&&!self::$operation['allow_create']))throw new AuthUnavailableException();
+            return $operation();
+        }
+        $scope=$this->authorizeCurrentRequest();
         $cacheKeys=[];$deferred=[];$controlled=null;
         // A self-only caller must own its outer commit too; an unknown surrounding transaction cannot flush side effects.
         $outerPdo=Db::connect()->connect();if(!$outerPdo instanceof PDO||$outerPdo->inTransaction())throw new AuthUnavailableException();
@@ -322,7 +309,7 @@ final class LegacyProductWriteServices
                 if($scope===null&&$owner!==$self)throw new AuthUnavailableException();$owners[$id]=$owner;}
             $merchants=array_values(array_unique(array_values($owners)));if($allowCreate)$merchants[]=$self;sort($merchants,SORT_NUMERIC);
             foreach(array_unique($merchants)as$owner){$row=Db::name('marketplace_merchant')->where('mer_id',$owner)->field('mer_id')->lock(true)->find();if(!is_array($row))throw new AuthUnavailableException();}
-            self::$operation=['scope'=>$scope,'self'=>$self,'owners'=>$owners,'allow_create'=>$allowCreate,'connection'=>$connection,'pdo'=>$pdo,'before'=>[],'skipped'=>[],'after_commit'=>[],'after_content'=>[],'phase'=>'content'];
+            self::$operation=['scope'=>$scope,'self'=>$self,'owners'=>$owners,'allow_create'=>$allowCreate,'self_worker'=>false,'connection'=>$connection,'pdo'=>$pdo,'before'=>[],'skipped'=>[],'after_commit'=>[],'after_content'=>[],'phase'=>'content'];
             try{
                 foreach($ids as$id){self::assertParent($id);self::$operation['before'][$id]=$this->snapshot($id);}
                 $result=$operation();$this->finish($content);$this->finishInventory();$cacheKeys=$this->stockCacheKeys();$deferred=self::$operation['after_commit'];return $result;
@@ -349,7 +336,7 @@ final class LegacyProductWriteServices
         $cacheKeys=[];$deferred=[];try{$result=Db::connect()->transaction(function()use($ids,$operation,&$cacheKeys,&$deferred):mixed{
             $connection=Db::connect();$pdo=$connection->getPdo();if(!$pdo instanceof PDO||!$pdo->inTransaction())throw new AuthUnavailableException();$self=self::selfId();
             if(Db::name('marketplace_merchant')->where('mer_id',$self)->lock(true)->find()===null)throw new AuthUnavailableException();
-            self::$operation=['scope'=>null,'self'=>$self,'owners'=>array_fill_keys($ids,$self),'allow_create'=>false,'connection'=>$connection,'pdo'=>$pdo,'before'=>[],'skipped'=>[],'after_commit'=>[],'after_content'=>[],'phase'=>'content'];
+            self::$operation=['scope'=>null,'self'=>$self,'owners'=>array_fill_keys($ids,$self),'allow_create'=>false,'self_worker'=>true,'connection'=>$connection,'pdo'=>$pdo,'before'=>[],'skipped'=>[],'after_commit'=>[],'after_content'=>[],'phase'=>'content'];
             try{foreach($ids as$id){self::assertParent($id);self::$operation['before'][$id]=$this->snapshot($id);} $result=$operation();$this->finish(false);$cacheKeys=$this->stockCacheKeys();$deferred=self::$operation['after_commit'];return $result;}
             finally{self::$operation=null;}
         });if(Db::connect()->getPdo()->inTransaction())throw new AuthUnavailableException();$this->expireCommittedKeys($cacheKeys);foreach($deferred as$effect)$effect();return $result;}catch(AdminException|ApiException|AuthException $error){throw $error;}catch(\Throwable $error){throw new AuthUnavailableException();}

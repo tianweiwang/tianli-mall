@@ -139,4 +139,46 @@ final class MerchantProductInput
         }
         return array_values(array_unique($media));
     }
+    /** Ordered parsing intent only; no ownership or physical-media qualification. */
+    public static function typedHtmlMedia(string $html): array
+    {
+        if ($html === '') return [];
+        if (!class_exists(\DOMDocument::class) || stripos($html,'<!DOCTYPE') !== false || stripos($html,'<?xml') !== false) self::invalid();
+        $old = libxml_use_internal_errors(true); libxml_clear_errors();
+        try { $dom = new \DOMDocument(); $ok = $dom->loadHTML('<?xml encoding="UTF-8">'.$html, LIBXML_NONET | LIBXML_NOERROR | LIBXML_NOWARNING); }
+        finally { libxml_clear_errors(); libxml_use_internal_errors($old); }
+        if (!$ok) self::invalid(); $media = [];
+        $fields = ['img'=>['src'],'video'=>['src','poster'],'audio'=>['src'],'source'=>['src']];
+        foreach ($dom->getElementsByTagName('*') as $node) {
+            $tag = strtolower($node->nodeName); if (in_array($tag,['script','iframe','object','embed','svg','image','link','style'],true)) self::invalid();
+            foreach ($node->attributes as $attribute) if (preg_match('/\Aon[a-z]+\z/i',$attribute->nodeName) || in_array(strtolower($attribute->nodeName),['srcset','srcdoc','data-src','data-original'],true) || ($attribute->nodeName === 'style' && preg_match('/url\s*\(|@import/i',$attribute->nodeValue))) self::invalid();
+            // libxml HTML4 may create element children inside browser text contexts.
+            // Keep all original node/attribute syntax checks above, but such children
+            // are not typed media intentions and have no raw attribute copy slot.
+            $ancestor = $node->parentNode; $textContext = false;
+            while ($ancestor instanceof \DOMElement) {
+                if (in_array(strtolower($ancestor->nodeName), ['title','textarea','script','style','xmp','iframe','noembed','noframes','plaintext'], true)) { $textContext = true; break; }
+                $ancestor = $ancestor->parentNode;
+            }
+            if ($textContext) continue;
+            foreach ($fields[$tag] ?? [] as $name) if ($node->hasAttribute($name) && $node->getAttribute($name) !== '') {
+                $path = self::text($node->getAttribute($name),512,true);
+                $parent = $node->parentNode;
+                $parentTag = $parent instanceof \DOMElement ? strtolower($parent->nodeName) : '';
+                $kind = match ($tag) {
+                    'img' => 'image',
+                    'video' => $name === 'poster' ? 'image' : 'video',
+                    'audio' => 'audio',
+                    'source' => match ($parentTag) {
+                        'video' => 'video',
+                        'audio' => 'audio',
+                        default => 'unresolved',
+                    },
+                };
+                $media[] = ['kind'=>$kind, 'path'=>$path, 'tag'=>$tag, 'attribute'=>$name, 'parentTag'=>$parentTag, 'index'=>count($media)];
+            }
+            if (count($media)>256) self::invalid();
+        }
+        return $media;
+    }
 }

@@ -94,6 +94,8 @@ Route::group('product', function () {
         // Product media derives its owner inside the real authorized product operation.
         Route::get('product/:product_id/media', 'v1.product.PlatformProductMedia/index')->option(['legacy_product_write'=>'legacy-product-media-list', 'real_name'=>'商品图片列表']);
         Route::post('product/:product_id/media', 'v1.product.PlatformProductMedia/upload')->option(['legacy_product_write'=>'legacy-product-media-upload', 'real_name'=>'商品图片上传']);
+        Route::post('product/:product_id/media/videos/upload', 'v1.product.PlatformProductMedia/uploadVideo')->option(['legacy_product_write'=>'legacy-product-media-video-upload', 'real_name'=>'商品视频上传']);
+        Route::post('product/:product_id/media/audio/upload', 'v1.product.PlatformProductMedia/uploadAudio')->option(['legacy_product_write'=>'legacy-product-media-audio-upload', 'real_name'=>'商品音频上传']);
         //商品详情
         Route::get('product/:id', 'v1.product.StoreProduct/get_product_info')->option(['real_name' => '商品详情']);
         //加入回收站
@@ -149,7 +151,7 @@ Route::group('product', function () {
         //复制其他平台商品
         Route::post('copy', 'v1.product.CopyTaobao/copyProduct')->option(['real_name' => '复制其他平台商品']);
         //保存商品数据
-        Route::post('crawl/save', 'v1.product.CopyTaobao/save_product')->option(['real_name' => '保存采集商品数据']);
+        Route::post('crawl/save', 'v1.product.CopyTaobao/save_product')->option(['legacy_product_write'=>'legacy-product-copy-save', 'real_name' => '保存采集商品数据']);
     })->option(['parent' => 'product', 'cate_name' => '商品采集']);
 
     /** 商品标签 */

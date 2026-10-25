@@ -20,8 +20,12 @@ final class LegacyProductAccessServices
 {
     public const ACTIONS = [
         'legacy-product-save'=>['POST','product/product/<id>'],
+        'legacy-product-copy-save'=>['POST','product/crawl/save'],
+        'marketplace-products-import-platform-image'=>['POST','marketplace/products/<id>/import-platform-image'],
         'legacy-product-media-list'=>['GET','product/product/<product_id>/media'],
         'legacy-product-media-upload'=>['POST','product/product/<product_id>/media'],
+        'legacy-product-media-video-upload'=>['POST','product/product/<product_id>/media/videos/upload'],
+        'legacy-product-media-audio-upload'=>['POST','product/product/<product_id>/media/audio/upload'],
         'legacy-product-media-online-upload'=>['POST','product/product/<product_id>/media/online_upload'],
         'legacy-product-media-scan-issue'=>['POST','product/product/<product_id>/media/scan'],
         'legacy-product-media-scan-poll'=>['GET','product/product/<product_id>/media/scan/<lease_id>'],
@@ -55,8 +59,11 @@ final class LegacyProductAccessServices
 
     /** Finite media-only compatibility grants; each is ANDed with its own leaf and product save. */
     public const MEDIA_GRANTS = [
+        'marketplace-products-import-platform-image'=>['GET','file/file'],
         'legacy-product-media-list'=>['GET','file/file'],
         'legacy-product-media-upload'=>['POST','file/upload/<upload_type?>'],
+        'legacy-product-media-video-upload'=>['POST','file/upload/<upload_type?>'],
+        'legacy-product-media-audio-upload'=>['POST','file/upload/<upload_type?>'],
         'legacy-product-media-online-upload'=>['POST','file/online_upload'],
         'legacy-product-media-scan-issue'=>['GET','file/scan_upload/qrcode'],
         'legacy-product-media-scan-poll'=>['GET','file/scan_upload/image/<scan_token>'],
@@ -70,6 +77,11 @@ final class LegacyProductAccessServices
         'legacy-product-media-rename'=>['PUT','file/file/update/<id>'],
         'legacy-product-media-move'=>['PUT','file/file/do_move'],
         'legacy-product-media-delete'=>['POST','file/file/delete'],
+    ];
+
+    /** Copy uses its actual leaf AND standard product save; it is not a media action. */
+    public const COPY_GRANTS = [
+        'legacy-product-copy-save'=>['POST','product/product/<id>'],
     ];
 
     /** Finite operations, never a caller-supplied authorization rule. */
@@ -167,6 +179,17 @@ final class LegacyProductAccessServices
         $grants=[];foreach((new SystemRole())->db()->whereIn('id',$ids)->where('status',1)->column('rules')as$rules)
             $grants=array_merge($grants,self::ids($rules));
         if(!$grants)throw new HttpException(403,'没有权限访问');
+        if(isset(self::COPY_GRANTS[$action])){
+            $required=[self::ACTIONS[$action],self::COPY_GRANTS[$action]];$found=array_fill(0,count($required),false);
+            foreach((new SystemMenus())->db()->whereIn('id',array_values(array_unique($grants)))
+                ->where('auth_type',2)->where('is_del',0)->field(['id','api_url','methods'])->select()as$model){
+                $menu=self::raw($model);if($menu===null)continue;
+                foreach($required as$index=>[$method,$rule])
+                    if(strtoupper(trim($menu['methods']))===$method&&self::rule($menu['api_url'])===$rule)$found[$index]=true;
+            }
+            if(!in_array(false,$found,true))return $roles;
+            throw new HttpException(403,'没有权限访问');
+        }
         [$method,$rule]=self::ACTIONS[$action];
         foreach((new SystemMenus())->db()->whereIn('id',array_values(array_unique($grants)))
             ->where('auth_type',2)->where('is_del',0)->field(['id','api_url','methods'])->select()as$model){

@@ -83,6 +83,7 @@ class CopyTaobao extends AuthController
      */
     public function save_product()
     {
+        \app\services\marketplace\product\LegacyProductWriteServices::assertRawBody($this->request->post());
         $data = $this->request->postMore([
             ['cate_id', ''],
             ['store_name', ''],

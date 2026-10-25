@@ -429,6 +429,7 @@ export default {
       modals: false,
       goods_modals: false,
       spinShow: false,
+      productVideoClose: null,
       openSubimit: false,
       virtualList: [
         {
@@ -671,6 +672,7 @@ export default {
     },
   },
   watch: {
+    productMediaId() { if (this.productVideoClose) this.productVideoClose(); this.productVideoClose = null; },
     typeConfig(val) {
       if (val.length) {
         // 对virtual中的id等于val中的id的
@@ -682,6 +684,7 @@ export default {
       }
     },
   },
+  beforeDestroy() { if (this.productVideoClose) this.productVideoClose(); },
   beforeRouteUpdate(to, from, next) {
     this.bus.$emit('onTagsViewRefreshRouterView', this.$route.path);
     next();
@@ -1227,9 +1230,12 @@ export default {
       this.$refs.templates.isTemplate = true;
     },
     addVideo() {
-      this.$videoModal((e) => {
-        this.formValidate.video_link = e;
-      });
+      const scope = this.productMediaId;
+      if (this.productVideoClose) this.productVideoClose();
+      this.productVideoClose = this.$videoModal((value) => {
+        if (this.productMediaId !== scope || typeof value !== 'string' || !value) return;
+        this.formValidate.video_link = value;
+      }, false, undefined, undefined, scope);
     },
     // 删除视频；
     delVideo() {

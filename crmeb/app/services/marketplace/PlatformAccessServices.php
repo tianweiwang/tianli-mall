@@ -29,6 +29,10 @@ final class PlatformAccessServices
         'marketplace-merchants-review' => ['PUT', 'marketplace/merchants/<id>/review', true],
         'marketplace-merchants-flags' => ['PUT', 'marketplace/merchants/<id>/flags', true],
         'marketplace-merchants-admin-employee' => ['POST', 'marketplace/merchants/<id>/admin-employee', true],
+        'platform-assets-list' => ['GET', 'marketplace/platform-assets', false],
+        'platform-assets-upload' => ['POST', 'marketplace/platform-assets', false],
+        'platform-asset-categories-list' => ['GET', 'marketplace/platform-asset-categories', false],
+        'marketplace-products-import-platform-image' => ['POST', 'marketplace/products/<id>/import-platform-image', false],
         'marketplace-products-list' => ['GET', 'marketplace/products', false],
         'marketplace-products-review' => ['PUT', 'marketplace/products/<id>/review', false],
         'marketplace-products-off-shelf' => ['PUT', 'marketplace/products/<id>/off-shelf', false],
@@ -127,6 +131,18 @@ final class PlatformAccessServices
         catch (\Throwable $error) { throw new AuthUnavailableException(); }
     }
 
+    /** The source-read grant is additional to this actual import leaf + file + product-save grants. */
+    public function additionalPlatformAssetReadGrant(PlatformScope $scope): void
+    {
+        try {
+            if($scope->permission!=='marketplace-products-import-platform-image'||$scope->targetMerId!==null)throw new HttpException(403,'没有权限访问');
+            $this->authorizeScope($scope,$scope->permission);
+            app()->make(LegacyProductAccessServices::class)->authorizeScope($scope);
+            $this->authorizeCurrent($scope->adminId,'platform-assets-list');
+        }catch(AuthException|HttpException $error){throw $error;}
+        catch(\Throwable $error){throw new AuthUnavailableException();}
+    }
+
     private static function assertRoute(Request $request, string $permission): void
     {
         if (!isset(self::ACTIONS[$permission]) || !self::isMarketplace($request)
@@ -163,6 +179,8 @@ final class PlatformAccessServices
         if ($roles === []) throw new HttpException(403, '没有权限访问');
         $rows = (new SystemRole())->db()->whereIn('id', $roles)->where('status', '=', 1)->column('rules');
         foreach ($rows as $rules) {
+            // A legal NULL role has no grants; another enabled role may still grant this leaf.
+            if ($rules === null) continue;
             if (in_array((int)$menu['id'], self::ids($rules), true)) return $cacheRoles;
         }
         throw new HttpException(403, '没有权限访问');

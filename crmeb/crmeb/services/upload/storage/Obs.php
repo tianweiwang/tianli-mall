@@ -60,7 +60,7 @@ class Obs extends BaseUpload
      */
     protected $cdn;
 
-    public function move(string $file = 'file', bool $isStream = false, string $fileContent = null)
+    public function move(string $file = 'file', bool $isStream = false, string $fileContent = null, ?string $mime = null)
     {
         if (!$isStream) {
             $fileHandle = app()->request->file($file);
@@ -89,7 +89,11 @@ class Obs extends BaseUpload
         $key = $this->getUploadPath($key);
 
         try {
-            $uploadInfo = $this->app()->putObject($key, $body, 'application/octet-stream');
+            if ($mime === null) {
+                $uploadInfo = $this->app()->putObject($key, $body, 'application/octet-stream');
+            } else {
+                $uploadInfo = $this->app()->putObject($key, $body, $mime);
+            }
             $this->fileInfo->uploadInfo = $uploadInfo;
             $this->fileInfo->realName = isset($fileHandle) ? $fileHandle->getOriginalName() : $key;
             $this->fileInfo->filePath = ($this->cdn ?: $this->uploadUrl) . '/' . $key;
@@ -102,12 +106,13 @@ class Obs extends BaseUpload
         }
     }
 
-    public function stream($fileContent, string $key = null)
+    public function stream($fileContent, string $key = null, ?string $mime = null)
     {
         if (!$key) {
             $key = $this->saveFileName();
         }
-        return $this->move($key, true, $fileContent);
+        if ($mime === null) return $this->move($key, true, $fileContent);
+        return $this->move($key, true, $fileContent, $mime);
     }
 
     public function delete(string $filePath)

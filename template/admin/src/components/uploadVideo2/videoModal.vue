@@ -1,8 +1,9 @@
 <template>
-  <el-dialog :visible.sync="visible" width="1024px" title="选择视频" :close-on-click-modal="false">
+  <el-dialog @closed="resetIfClosed" :visible.sync="visible" :width="productId !== null ? 'min(1024px, calc(100vw - 32px))' : '1024px'" title="选择视频" :close-on-click-modal="false">
     <uploaFile
       v-if="visible"
       :isChoice="isMore"
+      :productId="productId"
       @getVideo="getImage"
       :gridBtn="gridBtn"
       :gridPic="gridPic"
@@ -35,6 +36,9 @@ export default {
         xs: 12,
       },
       more: false,
+      productId: null,
+      modelName: undefined,
+      booleanVal: undefined,
     };
   },
   computed: {
@@ -43,11 +47,17 @@ export default {
     },
   },
   methods: {
+    resetScope() {
+      this.productId = null; this.callback = function () {}; this.more = false;
+      this.modelName = undefined; this.booleanVal = undefined;
+    },
+    resetIfClosed() { if (!this.visible) this.resetScope(); },
     handleClose() {
       this.visible = false;
       this.callback(this.visible);
     },
     getImage(img) {
+      if (!this.visible) return;
       this.callback(img);
       this.visible = false;
     },

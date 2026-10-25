@@ -38,6 +38,37 @@ final class ProductMediaRemoteImages
         catch(\Throwable $error){self::unavailable();}
     }
 
+    /** Internal copy prefetch: one authorized source URL, original transport,
+     * current new-upload Config bound, no unrelated online batch-size cap. */
+    public function fetchOneForProductCopy(string $url): array
+    {
+        try{
+            $maximum=Config::get('upload.filesize');
+            if(!is_int($maximum)||$maximum<1||PHP_INT_SIZE<8||!extension_loaded('curl')||!function_exists('dns_get_record'))self::unavailable();
+            $uri=$this->absolute($url);$start=hrtime(true);
+            if(!is_int($start)||$start<1||$start>PHP_INT_MAX-self::BUDGET_NS)self::unavailable();
+            $deadline=$start+self::BUDGET_NS;$total=0;
+            $bytes=$this->download($uri,$maximum,$total,$deadline,true);$this->remaining($deadline);
+            return ['bytes'=>$bytes,'url_sha256'=>hash('sha256',$url)];
+        }catch(HttpException|AuthException $error){throw $error;}
+        catch(\Throwable $error){self::unavailable();}
+    }
+
+    /** Internal generic media copy, with the same bounded transport and no cloud credentials. */
+    public function fetchOneForTypedProductCopy(string $url): array
+    {
+        try{
+            $maximum=Config::get('upload.filesize');
+            if(!is_int($maximum)||$maximum<1||PHP_INT_SIZE<8||!extension_loaded('curl')||!function_exists('dns_get_record'))self::unavailable();
+            $uri=$this->absolute($url);$start=hrtime(true);
+            if(!is_int($start)||$start<1||$start>PHP_INT_MAX-self::BUDGET_NS)self::unavailable();
+            $deadline=$start+self::BUDGET_NS;$total=0;
+            $bytes=$this->download($uri,$maximum,$total,$deadline,true,true);$this->remaining($deadline);
+            return ['bytes'=>$bytes,'url_sha256'=>hash('sha256',$url)];
+        }catch(HttpException|AuthException $error){throw $error;}
+        catch(\Throwable $error){self::unavailable();}
+    }
+
     private function raw(string $value): void
     {
         if($value===''||strlen($value)>2048||str_contains($value,'\\')||preg_match('/[\x00-\x20\x7f]/',$value)===1
@@ -72,13 +103,13 @@ final class ProductMediaRemoteImages
     private function port(UriInterface $uri): int
     { return $uri->getPort()??($uri->getScheme()==='https'?443:80); }
 
-    private function download(UriInterface $uri,int $maximum,int &$total,int $deadline): string
+    private function download(UriInterface $uri,int $maximum,int &$total,int $deadline,bool $copySingle=false,bool $typedCopy=false): string
     {
         for($redirects=0;$redirects<=3;$redirects++){
             $this->remaining($deadline);
             $allowLocal=$this->siteUpload($uri);$host=$this->host($uri->getHost());
             $pin=$this->address($host,$allowLocal,$deadline);$this->remaining($deadline);
-            $response=$this->get($uri,$host,$pin,$maximum,$total,$deadline);
+            $response=$this->get($uri,$host,$pin,$maximum,$total,$deadline,$copySingle,$typedCopy);
             if($response['status']===200)return $response['bytes'];
             if($redirects===3||!in_array($response['status'],[301,302,303,307,308],true)
                 ||$response['location']===null)self::unavailable();
@@ -177,7 +208,7 @@ final class ProductMediaRemoteImages
             &&($remainder===0||((ord($address[$whole])^ord($packed[$whole]))&(255<<(8-$remainder)))===0);
     }
 
-    private function get(UriInterface $uri,string $host,string $pin,int $maximum,int &$total,int $deadline): array
+    private function get(UriInterface $uri,string $host,string $pin,int $maximum,int &$total,int $deadline,bool $copySingle=false,bool $typedCopy=false): array
     {
         $timeout=min(10000,$this->remaining($deadline));$port=$this->port($uri);$bytes='';$headerBytes=0;$status=null;$location=null;$bad=false;
         $handle=curl_init();if(!$handle instanceof \CurlHandle)self::unavailable();
@@ -187,7 +218,7 @@ final class ProductMediaRemoteImages
                 CURLOPT_REDIR_PROTOCOLS=>CURLPROTO_HTTP|CURLPROTO_HTTPS,CURLOPT_SSL_VERIFYPEER=>true,CURLOPT_SSL_VERIFYHOST=>2,
                 CURLOPT_PROXY=>'',CURLOPT_NOPROXY=>'*',CURLOPT_NETRC=>CURL_NETRC_IGNORED,CURLOPT_HTTPAUTH=>CURLAUTH_NONE,
                 CURLOPT_UNRESTRICTED_AUTH=>false,CURLOPT_CONNECTTIMEOUT_MS=>min(5000,$timeout),CURLOPT_TIMEOUT_MS=>$timeout,
-                CURLOPT_NOSIGNAL=>true,CURLOPT_HTTPHEADER=>['Accept: image/*','Accept-Encoding: identity'],
+                CURLOPT_NOSIGNAL=>true,CURLOPT_HTTPHEADER=>[$typedCopy?'Accept: */*':'Accept: image/*','Accept-Encoding: identity'],
                 CURLOPT_HEADERFUNCTION=>function(\CurlHandle $curl,string $line)use(&$headerBytes,&$status,&$location,&$bad):int{
                     $length=strlen($line);$headerBytes+=$length;
                     if($headerBytes>65536){$bad=true;return 0;}
@@ -206,9 +237,17 @@ final class ProductMediaRemoteImages
                     if($name==='content-encoding'&&strcasecmp($value,'identity')!==0){$bad=true;return 0;}
                     return $length;
                 },
-                CURLOPT_WRITEFUNCTION=>function(\CurlHandle $curl,string $chunk)use(&$bytes,&$total,$maximum,&$bad,$deadline):int{
-                    $length=strlen($chunk);$total+=$length;
-                    if($total>self::TOTAL_BYTES||strlen($bytes)+$length>$maximum||hrtime(true)>=$deadline){$bad=true;return 0;}
+                CURLOPT_WRITEFUNCTION=>function(\CurlHandle $curl,string $chunk)use(&$bytes,&$total,$maximum,&$bad,$deadline,$copySingle):int{
+                    $length=strlen($chunk);
+                    if($copySingle){
+                        if($length>PHP_INT_MAX-$total||$length>$maximum-strlen($bytes)||hrtime(true)>=$deadline){$bad=true;return 0;}
+                        try{\app\services\marketplace\attachment\MerchantAttachmentReferenceBytes::room(strlen($bytes)+$length);}
+                        catch(\Throwable $error){$bad=true;return 0;}
+                        $total+=$length;
+                    }else{
+                        $total+=$length;
+                        if($total>self::TOTAL_BYTES||strlen($bytes)+$length>$maximum||hrtime(true)>=$deadline){$bad=true;return 0;}
+                    }
                     $bytes.=$chunk;return $length;
                 }];
             if(filter_var($host,FILTER_VALIDATE_IP)===false)$options[CURLOPT_RESOLVE]=[$host.':'.$port.':'.(str_contains($pin,':')?'['.$pin.']':$pin)];

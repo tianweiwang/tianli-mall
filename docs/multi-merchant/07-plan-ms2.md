@@ -215,3 +215,121 @@ public function adjust(MerchantContext $ctx, int $productId, string $unique, int
 ### 上传素材域增量设计索引（T2，2026-10-22，PROPOSED）
 
 [上传资产域设计记录](records/ms2/upload-asset-domains.md)细化既定唯一T1–T8清单的T2：顾客34列/平台29列资产与平台10列分类拟议DDL、同writer PDO文件前授权、原DTO/旧14列兼容、混合type目录叶删和真实历史/发布门。尚未实现、迁移或运行，不新增第二执行清单，不勾原Task1四框、Task4及其他验收。原owner-only backfill不含另审的非商业元数据可恢复转存；真实清单/引用/备份恢复及新writer/旧consumer闭合后才可enforce/最终启用。原停止点、合法业务及三端/金融义务保持。
+
+
+### Task 2 type4/type6 活动盘点兼容修复（2026-10-25，L2 Source）
+
+需求与实证：原四命令盘点只识别type0普通商品/1秒杀/2砍价/3拼团；当前StoreIntegralServices:90/100、StoreAdvanceServices:104/115和PublicCatalogServices:20–25、144–156真实生产/消费积分4与预售6。Root Env9的prepare-media在真实MS2 backfill后quarantined；其新连接已确认五根152个owner提交。公开941安装SQL可静态精确重现71个type1/2/3缺父与9个type4支持集外项。它们都是待核活动规格，不能认定非商业；本修复不是删除、转存或恢复数据，也不使原80问题自动清零。
+
+设计：只在help/migrations/marketplace-ms2.php补真实typed family4/6、父表/schema和必要Source绑定，并更新同名md与本原执行记录。活动规格product_id先指向相应活动真实PK，再由活动product_id继承已确认普通商品owner；不按同号普通商品、不按NULL/0/默认自营推断。全表盘点保全部实际父行，不加上架/删除/活动时间过滤，父/普通商品缺失仍输出原隔离原因；未识别type仍ACTIVITY_TYPE_UNKNOWN。五根、owner-only backfill、原四命令/事务/提交未知/全部差分/enforce全零门原样。
+
+实际结构/运费：安装store_integral仅id/product_id而无freight/temp_id/postage；store_advance有id/product_id/temp_id而无freight。故分别选择真实列，不能对二者执行原四列SELECT或人为补freight。积分独立StoreIntegralOrderServices:160–202实际不消费运费模板；其普通base仍受原root全量运费盘点。预售在商城启用后由MerchantFreightPolicy:32–51重读普通base并覆盖所有已确认owner的freight/temp_id，这一普通base保持原盘点；PublicCatalogServices:333对预售原本没有的freight/is_virtual取已核base，Computed:378–380、398、425–427分别跳过免运费/固定运费/虚拟模板。故base freight1/2或is_virtual1不因native temp_id=0新增孤儿；base mode未知沿原root问题继续阻断，mode3且虚拟语义未知另明确隔离。对physical+freight3仍可达的旧native模板路径，正数须真实存在且与base确认同owner；精确0或未知继续unknown_reference隔离，明确需要显式确认或业务修复，不用Computed:429–430的旧fallback1制造迁移通过例外。原Review Focus:27要求商家商品必须引用本家模板、缺失报错；同owner的模板1也不能替代缺失的真实引用。当前enabled仅消费base的已知路径不代签仍可达的legacy缺失；本修复不改该业务fallback算法，不按未知引用推定无用途。此检查不修改业务报价、不把未读或未核原生模板声明为unused。原type0–3盘点分支语义保持。
+
+schema绑定补store_integral/store_advance，source绑定补真实两producer、积分订单和PublicCatalog/freight消费者；原绑定成员保持。所有已有映射因源码/schema绑定实际变化需重新生成和确认，不重签旧Run或原私有映射。现9个type4项在缺真实积分父时应变为同规则TYPED_PARENT_MISSING，原71继续保持；type6无seed行，静态支持不等于运行覆盖。历史订单/cart/积分权益和可恢复归档仍另项待核；本次不实现归档CLI，不改安装SQL或任何旧Run。
+
+验收与任务：
+
+- [x] 已从真实941独立branch/worktree建立；无CodeGraph索引不初始化；git-auto-sync未启用，不提交/推送。
+- [x] 已先记录原需求、真实列/producer/consumer、运费语义、未知阻断和原范围保留。
+- [x] 完成CLI窄接线、同名说明；原五根/四命令/写事务/数据/0–3行为保留的静态差分核对。
+- [x] 纯Source检查和非作者独审完成，无新增确定问题；此只签源码。
+- [ ] Root另行串行PHP8.2语法/正常计划与专用ISO四命令验证，不以静态代签运行。
+- [ ] 真实历史归属/关系确认、Task2/G01–G07/37步四CLI及enforce/enabled=true和人工验收仍未完成；真实存量L3d/L4另授权，停止恢复/故障/并发/安全样本仍NOT RUN。
+
+本作者仅Source/静态验证，不执行Docker/PHPhelper/SQL/HTTP/Run/目标或读取秘密；主工作树、所有Val和sealed Source保持。
+
+
+本次Source实际结果：独立W HEAD941、原工作树clean保持；只有本07记录与同名CLI/md三路径未暂存变化，没有新增/暂存文件。57个原方法只有mappingBinding/sourceBinding/ownershipInventory三个盘点/绑定方法改变，其余54方法完整原字节保持（含四命令、owner-only DML/事务/commitunknown、私有报告、enforce和结构检查）。新活动地图与真实PublicCatalog NATIVE一致，4/6所选字段逐列属于原DDL；schema绑定新增两真实父表。原来源数组10文件（9PHP加安装SQL）保持，追加6必要PHP成16文件；迁移自身SHA另绑定。安装SQL保持10237459B/1e5e56c805f551a75332be58b2ab96572509c82835b812cdff3ca5c3eb7ad828；原07前34514B完整保持。LF/纯词法括号完整性及git diff --check均通过，不冒称PHP解析。非作者全文/diff独审最终CLI116625B/92819382bff5a72624f4a927764a73e301ece6a9e81b84d376b1860347951799、同名md20822B/e932c347a18df607df50aa66c66e3200b8c61dd6d069f638b10f8ce347d9cbb5，无新增确定问题。
+
+最终physical+freight3的native0/未知继续ADVANCE_LEGACY_TEMPLATE_UNCONFIRMED，未留下模板1赋值/通过例外；正数缺失仍CONSUMED_TEMPLATE_MISSING，正数存在还须已确认同base owner。免运费/固定/虚拟不因native0新增问题，原root未知仍阻断。公开seed的80项、type6真实运行、历史权益/关系及完整Task2未验；本作者没运行PHP/SQL/Docker/候选/HTTP、没读秘密、没提交推送或改Run。
+
+Root补充（当前三路径L2本地提交前）：已全文核对三路径diff及实际MerchantFreightPolicy/Computed/IntegralOrder/PublicCatalog消费。实际固定1099镜像PHP8.2.33在networknone/只读挂载中对当前CLI -l及真实--help原生0；5native/10完整双流1459B均核对0，helper自然Exited0/PID0并非force移除。凭据、数据库、SQL、App、HTTP均未调用，不能据此签类型行为、真实80存量、四命令普通ISO或完整Task2。报告 `artifacts/project-organization-20261023/ms2-activity-type-php82-qualification-r1/RESULT.json` 6810/1e72bc8b7d4ec2de160ff50f66aa9d42d01458bcb60c2101056707898b09ee48。上述待实际ISO和原完整验收复选框保持未完成。
+
+
+#### type4/type6 正向四命令正常扩展设计（Root采用，2026-10-25）
+
+本节沿原Task2唯一执行记录补正常验证，不改冻结生产CLI116625B/92819382bff5a72624f4a927764a73e301ece6a9e81b84d376b1860347951799。基于已clean本地62e570fc576ed354f7918f2d4f1623d32058883f，只扩现有`help/audit-regressions/isolated/ms2-migration.php`及本记录/同名CLI说明三个路径；原shell/compose只读作契约，不建新测试框架。源码/静态完成交Root独立审、同镜像语法和专用正常运行，当前不运行PHP/Docker/SQL/HTTP/Run/目标或读秘密，不提交推送。
+
+保原10条声明行和其字段/主键/PNG路径语义，原157 CREATE零安装行、严格模式、真实schema/自增ID、同真实self与五owner根不变。在同专用合成夹具增到38行：四base商品分别physical(freight3/is_virtual0/真实同owner模板T)、free(1/0/temp0)、fixed(2/0/temp0/正postage)、virtual(3/1/T)；一积分父连physical，四预售父各连四base，预售native模板分别T/0/0/0。积分严格仅真实id/product_id语义，不加不存在freight/temp/postage；预售不加不存在freight。原root运费盘点不看is_virtual，故虚拟base保真实T而native0，单独验证新virtual skip，不改原root规则或引入fallback1例外。
+
+四共享子表attr/value/result/description各6族：保原type0一族，新增积分type4一族、预售type6四族，均按真实活动PK→普通base product_id→明确确认owner。原DDL自增起点product5/integral3/advance1仅作源码合同；运行仍真实lastInsertId、真实metadata并显式核活动PK与全部base PK集合disjoint，绝不硬写业务PK或按同号/0/NULL/默认自营归属。可使用合法inactive父行证明全量盘点不按上架/删除/时间过滤。根表8行(product4+其余四根各1)+活动父5+共享子24+region1=38；仅这些预声明新增行，原库存/交易/日志及其它表不因夹具获豁免。
+
+完整独立expected-full-state由原声明与逐INSERT真实完整行/PK/默认列组成，所有新增表/每行均真实schema核列。多行映射与非owner hash严格按原真实PK顺序逐行去mer_id并原json flags计算，不能排序行hash或用单行double-hash；description无PK，用完整行多重集或明确product_id/type/description次序比较，不依赖SELECT自然顺序。五根map仍逐PK确认：product四行0、其余四根NULL，全部仅到实际self；首次backfill仅8个mer_id变化，重复0，活动与所有子行/非owner/PK/path保持。enforce只保原五根owner约束变化；完整全表rows/DDL/真实counter/Redis值与绝对期限/四RO runtime/整PNG卷及RO别名/私有精确清理的原oracle不缩减。
+
+Source闭包在原19路径原成员上补CLI新绑定6件成25：StoreIntegralServices、StoreAdvanceServices、StoreIntegralOrderServices、PublicCatalogServices、MerchantFreightPolicy、StoreCartServices。仍调用实际MS1 apply1及原MS2 check3/apply2/backfill2/enforce2共10个不同真实进程，原stderr/native/重复/最终check只读/apply不放宽/assertions保留。追加核真实table_counts(integral1/advance4/四shared各6)、新活动运费来源limits、全部issues/orphan0和精确38行，不能仅以PHP解析或空表通过代签type4/6。
+
+原.sh会自动down，不能据其旧teardown冒签当前TERM-only/nonforce。此次不执行/不改wrapper；Root将按实际三角色/全部专用卷/内部网用已有普通TERM/nonforce流程接管收口，并另做六fresh selector zero，实际Source/Run/CID/结果待真实证据。原80存量、9type4缺父/71其它缺父、37历史与原G01–G07、SP-MS2-1、L3d/L4/真实用户权益/历史确认/enabled和人工验收保持未完成；不加入已停止negative/故障/恢复/并发样本，不重签旧Run/旧映射。
+
+- [x] Root采用上述6落点与38声明行/25Source/8→0/原10CLI方案；实施前记录设计、范围和验收边界。
+- [x] 完成本三路径正常Source扩展；原10行/完整字段、58函数中的7件有限变化、25路径与完整原oracle/私有清理静态核对，非作者仅Source复核完成。
+- [x] Root独立Source/固定Runtime语法与真实专用正常四命令验证、普通收口和独立zero；实际Run202610250939271702e3证据见下文，原完整Task2仍未验。
+
+本扩展实际Source结果：normal入口94188B / `c5d55faeae98d4e0e8aacf796c4c4620016939d94e23ae322e12d0e31c402999`，58个原顶层函数集合不变，只有m2m_sourcePaths/m2f_fixture/m2f_mapping/m2f_ownedRows/m2f_backfillState/m2f_clearReceipt/m2f_main七件改变，其余51件完整字节保持。原10个INSERT完整3648B片段（含region）仍逐字保留，追加28行只在原夹具事务内；新表/字段均按真实DDL，完整38行计数、多行PK序hash、description保重复multiset和活动PK disjoint门已静态核。Source25均唯一且真实存在，生产CLI原16绑定叶全含；生产CLI116625/92819382保持原件，原shell/compose/其它文件未改。原cleanup/claimReports/insert/enforceState/enforcedSql/cli/snapshot/fullSame/schemaSame/source等完整函数未动。
+
+本作者实际仅原生Git/file读、纯词法括号平衡和diff --check native0；词法检查不冒称PHP解析。非作者ms2_activity_positive_schema_review已全文读候选/三路径diff并核字段、38矩阵、原10声明、十CLI及完整副作用责任，无新增确定Source问题；其结论也不签PHP/Runtime PASS。没有运行PHP/Docker/SQL/HTTP/候选/目标或读秘密，没有提交推送。Root最终独立审、同镜像语法、真实正常四CLI/普通TERM-nonforce收口和独立six-zero仍待真实证据；当前原80/37/G01–G07/启用及完整验收状态不变。
+
+
+#### Windows 仓库内 MS2 正常宿主入口设计（Root采用，2026-10-25）
+
+为补齐“Git中缺完整编排脚本”的原交付缺口，在现有正常验证上仅新增`help/audit-regressions/isolated/ms2-migration-host.py`；同现normal PHP、本07、同名CLI.md共四路径，生产迁移CLI92819382、原shell/compose/guard/harness不改。新增入口本身是运行依赖，故m2m_sourcePaths原25+1成26，保全原成员和38声明行/8 owner/10真实CLI/全部断言与完整副作用oracle。宿主只负责现有阶段和资源，不复制四CLI业务、SQL安装、映射或通用测试框架。
+
+公开输入为绝对repo、实际40位clean commit、新绝对run-dir；Git/Docker可显式路径或本机发现。不得写死本机盘符、已有Run/PID/CID、未来结果或秘密。仅本地Windows npipe engine，固定已有PHP1099/MySQL c7a313/Redis6c8f6e身份和现compose.ms2-migration profile；三原角色audit-ms2-migration/mysql/redis，原12声明卷/selected三角色实际mount closure11件（不启动app/worker/chat/runner/HTTP；backup-output未挂载，不为凑12创建；若Compose原生也创建该原声明卷，仅在同代双labels/CreatedAt正确时纳入完整actual清单，绝不漏清或容许未知卷），同专用internal网络/noports、完整mount对象和重复数、tmpfs/只读/labels/原生CID generation/UID均实核。所有资源查询分别核project和run单label，额外卷消费者必须精确only-own。
+
+四阶段只能显式调用setup|normal|close|zero，各有新排他输出和完整原生创建/同句柄终态/双流/ledger。setup创建新run与私有ACL、核clean Git实际完整namespace/blob及26叶、镜像本地资格和project/run全新，运行原ENTRY prepare→仅mysql/redis up→finite create；注册使用原harness __register，原source-binding和host-verify PHP叶从同commit原.sh提取并核固定边界，绝不调用shell主体/teardown。必要bootstrap是固定有限命令helper，无keeper、无--rm；每个helper实际自然0/sameCID/PID0/无restart后才nonforce移除，失败保留。注册快照只列三实际角色，辅助helper仅写注册，不混入业务manifest；prepare原audit_prepare(false)不建vendor/不跑App，原有限ENTRY负责CREATE-only严格schema与原8formal结果。
+
+normal必须绑定真实SETUP sha、同engine/commit/26叶/manifest/3 CID/实际卷/完整mount与UID，启动同一个created finite CID，namespace PID1的原ENTRY完成后自然wait0/PID0/无restart；保完整stdout/stderr、原normal/shutdown/各snapshot/十CLI进程和私有精确清理。调用原source-binding/host-verify叶并核8formal(T2M_NORMAL PASS且G01–G07 NOT RUN)，只形成normal待收口证据，不自动close或重POST/重放。任何native失败、未知live或receipt不齐则固定失败记录与现场保留，不自动重跑/重启/清退。
+
+close须另行显式调用并输入实际SETUP/NORMAL sha，核前序完整ledger/native双流、全部native0、finite真实Exited0/PID0不重启；同代mysql/redis显式SIGTERM、timeout -1原生自然0，再核三CID终态、完整不可变配置/mount/StartedAt/UID/volume CreatedAt/empty网络与only-own，才nonforce精确移除原容器、空内网和实际专用卷。不得调用down/remove-orphans/force/kill/teardown，不停其它服务、不读秘密、不写repo env/install.lock；失败保留且不提供failed bypass。zero须独立进程输入实际close sha，重新绑定同engine/Source与完整收尾流，分别对project/run单label查container/network/volume六fresh，六次stdout与stderr均实际空且native0才签资源zero。普通收口及zero只签本Run资源，不签业务发布。
+
+验收先Source与非作者独审、AST/compile/diff，不import/执行候选或Docker/PHP/SQL/HTTP/Run/目标；Root后续负责固定Runtime资格、L2本地提交和全新专用实例真实四阶段。旧shell自动down保持原样但不能用于当前TERM-only/nonforce签收。原80存量/37历史/G01–G07完整范围/真实用户归属与权益/活动媒体报价/启用及完整Task2不因这次入口或38新fixture获得通过；停止的negative/故障/恢复/并发仍NOT RUN。
+
+- [x] Root授权并采用仓库内唯一Host、26闭包、四显式阶段和现有正常叶复用设计；编码前记录。
+- [x] 完成四路径Source、原业务与shell叶字节复用证明、原12声明/11必需挂载闭包/全部实际卷和3角色/mount/有限helper/完整native/成功close/独立zero静态与非作者复核；仅Source，未执行。
+- [x] Root独立语法/新clean commit与实际专用setup、normal、普通close、独立zero；实际同057f来源四阶段均0，完整历史与启用不在此通过。
+
+Host初稿静态复核修正依据：原finite m2f_seed第175行会合法给manifest增加fixture_table_count/create_only_initializer，close不能错误要求仍等于SETUP字节。SETUP保完整原manifest，NORMAL仅允许该原函数精确新增字段/实际initializer hash，再保真实NORMAL manifest完整值及digest；close/zero按实际NORMAL pin全量核，其余source-binding/created保持SETUP原件。Windows原PHP canonical只识别drive:/路径，宿主AUDIT挂载环境和传原PHP binding参数统一as_posix，原生Git/Docker路径仍argv，不走shell。均是保持原流程的接线修正，不改业务oracle。
+
+Host最终Source自审补齐：一次性helper的docker wait客户端成功但容器退出非0时，仍先取完整logs和真实terminal原件，再拒绝成功/不删除，保故障现场而不运行新故障样本。repo/Run与其所有已有父目录在canonical化前拒绝symlink/reparse，避免Windows宿主路径别名绕开“仓库外新Run”边界；不新增恢复或清退路径。
+
+本Host实际Source收口：49759B / `0c1ee4a38689fa1dbac146ef52e4b7579710ad273c063f5055255b85313bc060`，仅标准库且Runtime不依赖仓库外Host/PINS/旧Run。成熟Host6的11个工具函数正文（仅temporary用途名有限替换）及native方法（仅证据目录self.run_dir→self.output）逐字逆等；其它有限适配明确为本MS2三角色与四显式阶段。原.sh的bind2146B/e0cc8adb3f79dee23579a52d839d3ee648200942be1efe732696ad464376ab24、verify3584B/1e6be25f65f14cf0032acbe73bf50dbe73ff005d0c21738602239a3ed0555d8c由同commit唯一原heredoc提取，未复制/改业务。normal PHP94244B / `88db586d64cd6cbfc8f21580087411d7b132d8812f12d99351a76232d76d00b4`，仅去新增Host叶56B即精确逆回上一94188/c5d55fae，38case/原10CLI/oracle/私有精确cleanup保持。
+
+本作者及非作者ms2_host_resource_review已全文/全部修后差量独审最终Host、四路径闭包及两md，最终无新增确定Source缺陷；实际只AST/compile（不执行）、UTF8/LF、源码文件/Git与diff --check原生0，未import任何候选、未PHP/Compose解析/Docker/SQL/HTTP/Run/目标/secret，未提交推送。生产CLI116625/92819382、原shell/compose/harness/guard均与HEAD原字节相同，原07前40974B与同名CLI.md前20822B保留。现只有3 modified+新Host untracked四授权路径，index空；后续必须Root独立审/纯语法、实际clean提交与全新专用实例四阶段，成功普通收尾/六freshzero尚无结果，不能据Source补填。原80/37/G完整/启用/人工及整体Task2继续未验。
+
+
+Root本地提交前核对（2026-10-25）：已读四路径完整变化及Host635行（最后441–635亦逐段核），normal38声明行/原10CLI/8→0/full-state与源闭包26保持，生产CLI116625/92819382未改。独立非作者的最终Source0保持；Root实际AST/compile及仅--help原生0，Host49759/0c1ee4a3未变，help完整stdout1170B/a0d72d0f04abb60865323428c6119a2b229fde35d25bc030dd5c904cc85d06c5、stderr空，不进入setup/normal或Docker。当前normal94244/88db586d与退款normal一起在固定1099镜像PHP8.2.33纯-l原生0；Root逐份核5条创建/同句柄终态及10完整双流1352B全0，networknone/两source只读挂载、helper自然Exited0/PID0后nonforce移除。实际报告 `artifacts/project-organization-20261023/migration-and-refund-normal-php82-r1/RESULT.json` 6486B/35097bf8c72f0dbf1baa0a5589f12f4605a4e3939f4ad2e1e1f09cf78021e243；报告只签两个-l，没有include/App/DB/HTTP或迁移SQL。Root后续对新clean提交使用新专用Run逐阶段setup、normal、普通close、独立zero；当前四阶段、完整历史/存量80/启用/Task2仍未通过，不据解析或Source关闭业务责任。
+
+
+#### Windows Host Tmpfs 缺键兼容与本次失败准备普通收尾（2026-10-25）
+
+Root实际以07f9090866448e9599d5db3973c2e0ede0216972和独立detached Val-r1启动新Run2026102509180493bd26；setup在第31个原生inspect因数据库HostConfig映射没有Tmpfs键而失败。前30原生为0，prepare有限helper已经真实自然0并nonforce移除，两个数据库运行、finite仅created且未启动；尚无SETUP成功、有限normal、迁移SQL、App或HTTP。原失败证据、Val、Run与07f对象保持，不重放。
+
+实施前设计：本07先记录，再仅把本仓库Host的CID_FORMAT中一次`{{json .HostConfig.Tmpfs}}`改成`{{json (index .HostConfig "Tmpfs")}}`。这是Go模板对可选映射键的原生null读取兼容，不能把数据库声明为存在tmpfs，也不能放宽PHP两tmpfs/完整mount、labels、状态或任一成功准入。除该字面量外Host全字节逆回，四阶段、有限helper、完整源码/26叶/38行/10CLI及所有oracle不变；新语法与未来fresh正常运行由Root另行完成，不据静态代签。
+
+本次失败现场的有界普通收尾单独在仓库外Source实现，不给生产Host增加failed bypass。仅固定导入冻结Val中原07f Host实际SHA，并只覆盖上述可选键模板；原Caller/labels/container contract/完整mount/CreatedAt/only-own/query/TERM工具复用。实际失败31条同句柄终态/全部双流、Run/Source/context/engine/原公共输入、原helper真实0及移除证据全部固定。任何资源mutation前须实际fresh读取完整三角色/网络/全部实际专用卷，核完整mount对象及重复数、原生UID/只读/command、声明actual卷与CreatedAt、精确双labels和only-own。两个DB分别显式SIGTERM timeout -1并核同代Exited0/PID0/noRestart后才nonforce；finite只按原created/未启动/PID0/StartedAt0001保持并nonforce删除，绝不启动或伪造Exited成功；空内部网和原实际卷精确nonforce移除。独立close与zero只写新的私有输出，原Run不注册、不加helper、不写receipt、不改ACL；后续zero必须输入actualclose并核完整收尾流，再作六次fresh单label查询且双流空。未来close/zero结果均UNBOUND，失败不代表正常业务通过。
+
+单执行清单：
+
+- [x] Root限定本07与Host单字面量后继修复；编码前记录兼容依据、失败边界和收尾设计。
+- [x] Host单字面量正逆/AST与两路径diff静态核、独立Source复核；不import/执行候选。
+- [x] 独立失败收尾Source固定全部实际公共证据与资源，只做Source/静态/独审；不执行Docker/PHP/SQL/HTTP/目标，不读private配置或秘密。
+- [x] Root另行实际普通close/独立zero并核全部原生流；新057f clean提交、独立Val-r2与fresh正常四阶段已实跑0，旧失败Run未重放。
+
+本小修不改变活动type4/type6生产算法、原映射与归属、38合成行、完整原Task2/G01–G07/80存量/37历史/启用或人工验收；停止样本维持NOT RUN。此处不做提交、推送或canonical记录修改。
+
+Root对失败收尾Source初稿发现一项真实准入误差：原0031失败inspect的stdout为1B换行，非空流，stderr固定112B模板错误；原31ledger已经正确绑定真实双流。作者先记录再仅把附加stdout门修成bytes===1且raw精确换行，唯一31exit1/完整流/所有资源门不变。初稿不得执行，不据这次作者静态误差新增Runtime样本或审批。
+
+本次实际Source收口：Host49769B/`ba6b40f1863413f263e5c18b5163a1c8b06cd6eda5327a236364895fc0e1ec44`仅10B可选键表达式变化，精确逆回原49759/0c1ee4a3；非作者对全部46个class/function（含嵌套）raw核同。外部失败收尾单件22565B/`ed851b76eeeecbf5c8f9b4a2ed15e58b6ba6bc3df54a589ba85ca32b04ceb86c`已固定14公共pins、原31失败ledger/62流与Root40只读ledger/80流，唯一31exit1和实际1B换行/112B错误精确限定；本作者与非作者都实际逐项读回公共证据、只做Source AST/差量/原生Git与文件核，无新增确定问题。完整资源逻辑复用冻结Val旧Host，单Tmpfs内存覆盖，不改原Run；finite neverstarted保created不冒签Exited，2DB TERM/11actual卷/完整mount及CreatedAt/only-own/六freshzero门保持。仓库index空、恰两路径变化、diff --check为0；未import或执行候选、Docker/PHP/SQL/HTTP/目标，没有提交推送。Root未来实际ordinary close/zero及后续fresh正常四阶段仍待真实证据，不据Source0补业务通过。
+
+
+Root实际普通收尾证据（2026-10-25）：已435908全文核外部Source原版并678fa2/4fa9f4全文差量、14实际pins及精确inverse核最终22565/ed851b76，legacy_refund_implementation独立71native/142完整双流Source0。Root130cc2/123b32只执行最终版close一次，自然0，eefa27完整119native/238双流3823358B全部0；两个数据库明确TERM/-1后真实同代Exited0/PID0/noRestart，finite保持原created/0001/PID0从未启动，nonforce精确3CID/11实际卷/原空内部网。独立3a3d08 zero自然0，d89ef5完整13native/26双流1873920B全0，六fresh单label查询双流原字节空。Root回执 `artifacts/project-organization-20261023/ms2-activity-type-normal-r1-failed-setup-retire-launcher-r1/ROOT-CLOSE-ZERO-READBACK.json` 879B/80b233373c08760fce064169d9937e841f781f39eb8184fc5043962341432142。旧失败Run/Val/07f/全部流原件保留，不重放、不计SQL或业务通过。Root6b3c85当前Host49769/ba6b40f1实际AST/compile0且单字面量inverse回原49759/0c1ee4a3，原PHP/生产CLI未变，无须重复-l。本两路径进入新的L2本地提交；后续新独立Val/fresh四阶段仍待，原完整Task2/80/37/启用/人工验收均不关闭。
+
+
+#### 2026-10-25 积分/预售正常四阶段实际通过
+
+实际验证Source为057f769e37bc79c31d96b3ad05d56e8590d26768，独立detached Val-r2和新Run202610250939271702e3；未重放原失败Run。setup原77232/d0eac7自然0，Root32b169完整115native/230双流3857354B全0，15765真实tracked body/26叶及三角色/11实际专用卷原合同通过。normal原25824/5eb1a5自然0，Root ed1d44/686a72/d1b0e9核87native/174双流3818052B全0（stderr仅Compose正常helper创建进度）；12个完整snapshot共10839120B与全部20个normal报告11038288B实际指纹读回。正常入口183656B，实际MS1 apply1与MS2 check3/apply2/backfill2/enforce2共10个不同PID全部native0。首次结构前check的self为空，真实结构绑定后同self1；不能把结构前未绑定解释为归属不一致。
+
+38个明确声明新行含积分type4和预售type6、四base运费模式；真实活动PK均与全部base PK不同号，实际模板2由明确同owner映射生成。首次backfill精确8 owner写入，重复0；enforce首次改变/重复不变，final check只读/final apply不放宽owner。全部原行/PK/路径/非owner字段、schema仅批准变化、Redis完整值/绝对期限、四RO runtime、整PNG卷和别名及私有精确清理原oracle均通过；实际T2M_NORMAL PASS，原G01–G07均NOT RUN，finite原生ORDERLY_SHUTDOWN/Exited0/PID0/noRestart。
+
+普通close原53394/5b95d4自然0，Root e5f19f完整121native/242双流3818748B全0，两DB显式SIGTERM/-1自然0，三同代CID/11原卷/原空内部网络nonforce清退。另独立zero4901c7自然0，Root f017f7完整11native/22双流1873700B全0、六fresh单label双流空。四阶段334native/668完整双流13367854B全部原生0。最终Root回执 `artifacts/project-organization-20261023/ms2-activity-type-normal-launcher-r2/ROOT-NORMAL-CLOSE-ZERO-READBACK.json` 1277B/657bb388f1212ebfe1f7b181afc439e7e65a5bad697d3d91591e3b1d680cae7c。NORMAL50203/ebab7547985f2b2a4259a240218396fd6083b6d92a1bfb2b011a3209b603144e只签正常四命令与本声明fixture。
+
+这次完成本节正向扩展及仓库WindowsHost四阶段，不能签原80存量/37步两族旧真实余额支付历史、真实用户权益/活动媒体报价、启用、G完整、原完整Task2、浏览器设备或人工验收；只BASE人工已签。生产CLI928、normal88db、Hostba6b保持实际测试原件；本次只提交两说明文档，未推送部署，不因文档提交把其新HEAD冒充057f实际Runtime。

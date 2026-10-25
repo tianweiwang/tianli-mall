@@ -59,3 +59,29 @@ POST online_upload仅接pid和有序1..50项images，保重复。先真实Reques
 原十 leaf 和整段迁移算法保持；preview 是独立第五权限，不复用 poll 的新 leaf。手机 POST image/product_scan_upload 不登记管理员 leaf，只接受 file/lease_id/scan_cap，到 private staging 为止。每个 PC 动作仍验证原发行者真实会话、当前新 leaf+原 FILE+商品保存三 AND；匿名手机不能写 system_attachment/商品或选择商家/分类。
 
 claim 支持明确 destination_pid，有序 stage_ids 原顺序与目标一起冻结。初次仅由真实 writer 同 PDO保存服务端32hex claim marker、完整14字段和真实审计；原通用 add 的空 scan_token 门保持。DONE 通过专用实际 PDO 的完整只读 rows/object/audit 核验返回原结果，不进入原 writer 产生新 product audit。处理中、未知或私人清理未证不得返回“上传成功”。扫码 PHP/HTTP/菜单首次与重复/GC及 UI 正常验收均待实际执行，不计作 T4 完成。
+
+
+## R85 平台单件视频/音频两项追加 leaf（总数17）
+
+本节追加原15项；前述各阶段的十项、十五项说明均为当时历史范围，原entries顺序、完整字段和已有native菜单ID保持。
+
+| 方法 | API规则 | unique_auth | 原 FILE grant |
+| --- | --- | --- | --- |
+| POST | product/product/<product_id>/media/videos/upload | legacy-product-media-video-upload | POST file/upload/<upload_type?> |
+| POST | product/product/<product_id>/media/audio/upload | legacy-product-media-audio-upload | POST file/upload/<upload_type?> |
+
+原具名菜单CLI只在oldFileGrants与menuRows末尾各追加以上两项，实际枚举15→17。原schema authority、锁/事务、完整22列menu和5列role、真实lastInsertId/full-row读回、逐角色FILE-grant有限复制、原rules文本前缀、repeat零写算法均不改。仅持有真实原单件multipart FILE grant的角色可获对应新leaf；空/null rules仍原值，不新增角色或授予product-save，不修改安装业务种子。
+
+运行时继续要求当前有效角色并集同时具备新canonical leaf、对应原POST file/upload/<upload_type?>以及实际legacy-product-save三项AND；level0保原有限action规则。菜单登记不会代替真实Request、product0/实际商品锁、owner、typed完整内容和native14/PDO/审计/提交资格。
+
+本节仅接平台单件multipart路由。原图片/online/扫码15项、分片/云直传finalize、商家、typed列表/选择器和UI/platform29的后续责任保持；不能以两leaf登记代表这些功能完成。
+
+状态：仅外部Source overlay；必要PHP语法、后继专用ISO实例原check/apply/check/repeat、实际有限角色权限与单件HTTP/native14保存回读均NOT RUN。Root后续在专用隔离实例执行原CLI；本次未连接真实或隔离数据库、未运行CLI/PHP/SQL、未修改W/Val或已固定平台四件，未推送/合并/部署。
+
+
+Root后继检查点：17叶CLI整份PHP语法已在固定隔离PHP8.2中通过；check/apply/check/repeat、角色实际生效和接口业务仍未运行。本地联调状态见[商品媒体记录](../../docs/multi-merchant/records/ms4/product-typed-media-integration.md)。
+
+
+## R97 平台图片显式导入（第18项）
+
+保原17完整菜单/native IDs/marker/算法，仅追加POST marketplace/products/<id>/import-platform-image，unique_auth=marketplace-products-import-platform-image，旧兼容grant固定GET file/file。仅向status=1角色追加此新leaf；原17复制停用角色等历史行为不变，原rules前缀及其它列保持。运行时仍import leaf+旧file GET+真实product save三AND，另核platform-assets-list当前真实grant。scope来自实际双route标记而非构造，target0仍真实创建资格，正ID原writer实际owner。此Source未运行迁移，正常check/apply/check/repeat和权限实际生效单独待验。

@@ -106,6 +106,8 @@ Route::group(function () {
     Route::post('admin/manage/product/save_attr/:id', 'v1.admin.StoreManageController/saveProductAttr');
     Route::get('admin/manage/product/shipping_temp', 'v1.admin.StoreManageController/shippingTemp');
     Route::post('admin/manage/product/create', 'v1.admin.StoreManageController/createProduct');
+    Route::post('admin/manage/product/<product_id>/media/images/upload', 'v1.admin.StoreManageController/uploadProductImage')
+        ->option(['mobile_product_media'=>'image-upload']);
     // 商家管理用户管理
     Route::get('admin/manage/user', 'v1.admin.StoreManageController/user');
     Route::get('admin/manage/user/group', 'v1.admin.StoreManageController/userGroup');

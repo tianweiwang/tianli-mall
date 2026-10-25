@@ -21,4 +21,23 @@ final class Product
     public function show(Request $request): Response { $body=Input::body($request->put(false),['show'],['show']);$this->services->setShow($request->merchantContext(),self::id($request),(bool)Input::integer($body['show'],0,1));return self::success(); }
     public function batchShow(Request $request): Response { $body=Input::body($request->put(false),['ids','show'],['ids','show']);$this->services->batchSetShow($request->merchantContext(),Input::ids($body['ids']),(bool)Input::integer($body['show'],0,1));return self::success(); }
     public function delete(Request $request): Response { Input::body($request->delete(false),[]);$this->services->delete($request->merchantContext(),self::id($request));return self::success(); }
+
+    private static function mediaId(Request $request): int
+    {
+        return Input::integer($request->route('id',null,null),0,Input::ROOT_MAX,true);
+    }
+    public function uploadVideo(Request $request): Response
+    {
+        try{return self::success($this->services->uploadVideo($request,self::mediaId($request)));}
+        catch(\app\services\marketplace\attachment\MerchantAttachmentOperationException $error){return self::mediaIncomplete($error);}
+    }
+    public function uploadAudio(Request $request): Response
+    {
+        try{return self::success($this->services->uploadAudio($request,self::mediaId($request)));}
+        catch(\app\services\marketplace\attachment\MerchantAttachmentOperationException $error){return self::mediaIncomplete($error);}
+    }
+    private static function mediaIncomplete(\app\services\marketplace\attachment\MerchantAttachmentOperationException $error): Response
+    {
+        return Response::create(['status'=>503,'msg'=>'素材操作未完成，请保留本次结果','data'=>$error->receipt],'json',503);
+    }
 }

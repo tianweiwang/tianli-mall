@@ -163,7 +163,7 @@ class Qiniu extends BaseUpload
      * @param string|null $key
      * @return array|bool|mixed|\StdClass
      */
-    public function stream($fileContent, string $key = null)
+    public function stream($fileContent, string $key = null, ?string $mime = null)
     {
         if (!$key) {
             $key = $this->saveFileName();
@@ -172,7 +172,11 @@ class Qiniu extends BaseUpload
         $token = $this->app()->uploadToken($this->storageName, $key);
         try {
             $uploadMgr = new UploadManager();
-            [$result, $error] = $uploadMgr->put($token, $key, $fileContent);
+            if ($mime === null) {
+                [$result, $error] = $uploadMgr->put($token, $key, $fileContent);
+            } else {
+                [$result, $error] = $uploadMgr->put($token, $key, $fileContent, null, $mime, $key);
+            }
             if ($error !== null) {
                 return $this->setError($error->message());
             }

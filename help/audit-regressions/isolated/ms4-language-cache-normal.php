@@ -4,7 +4,7 @@ declare(strict_types=1);
 /** Fresh synthetic component feedback only; no business flow or cache repair. */
 require_once __DIR__.'/ms4-aftersale-review-normal.php';
 
-const M4LC_SQL=['bytes'=>10237372,'sha256'=>'7af188f42c622db523d8000c0cf50f95fa48df2fe41123969ca2dbb65ffb5eb2'];
+const M4LC_SQL=['bytes'=>10237459,'sha256'=>'1e5e56c805f551a75332be58b2ab96572509c82835b812cdff3ca5c3eb7ad828'];
 const M4LC_COLUMNS=[
  'eb_lang_type'=>['id','language_name','file_name','status','is_default','is_del'],
  'eb_lang_country'=>['id','type_id','code','name'],

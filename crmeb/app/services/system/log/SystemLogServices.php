@@ -69,6 +69,36 @@ class SystemLogServices extends BaseServices
         }
     }
 
+    /** This one platform upload retains the original log payload and returns its actual native10. */
+    public function recordPlatformAssetUploadRow(\app\Request $request,\app\dao\marketplace\scope\PlatformScope $scope,\PDO $pdo): array
+    {
+        \app\services\marketplace\assets\PlatformAssetServices::assertContext($request,$scope,$pdo);
+        if($scope->permission!==\app\services\marketplace\assets\PlatformAssetServices::UPLOAD)throw new \crmeb\exceptions\AuthUnavailableException();
+        $admin=$request->adminInfo();$connection=\think\facade\Db::connect();$query=(new \app\model\system\log\SystemLog())->db();
+        if(!is_array($admin)||(string)($admin['id']??'')!==(string)$scope->adminId||!is_string($admin['account']??null)
+            ||$query->getConnection()!==$connection||$connection->getPdo()!==$pdo)throw new \crmeb\exceptions\AuthUnavailableException();
+        $rule=trim(strtolower($request->rule()->getRule()));
+        $data=['method'=>'adminapi','admin_id'=>$scope->adminId,'add_time'=>time(),'admin_name'=>$admin['account'],'path'=>$rule,
+            'page'=>app()->make(\app\services\system\SystemMenusServices::class)->getVisitName($rule)?:'未知','ip'=>$request->ip(),'type'=>'system'];
+        foreach(['method'=>12,'admin_name'=>64,'path'=>128,'page'=>64,'ip'=>16,'type'=>32]as$key=>$maximum)
+            \app\services\marketplace\MerchantManagementInput::text($data[$key],$maximum,true);
+        $prefix=$connection->getConfig('prefix');
+        if(!is_string($prefix)||preg_match('/\A[A-Za-z0-9_]*\z/D',$prefix)!==1||strlen($prefix.'system_log')>64)throw new \crmeb\exceptions\AuthUnavailableException();
+        $table='`'.$prefix.'system_log`';$columns=array_keys($data);
+        $insert=$pdo->prepare('INSERT INTO '.$table.' (`'.implode('`,`',$columns).'`) VALUES ('.implode(',',array_fill(0,count($columns),'?')).')');
+        if($insert===false)throw new \crmeb\exceptions\AuthUnavailableException();
+        try{if($insert->execute(array_values($data))!==true||$insert->rowCount()!==1)throw new \crmeb\exceptions\AuthUnavailableException();
+            $id=\app\dao\marketplace\assets\PlatformAssetDao::integer($pdo->lastInsertId(),1,4294967295);}
+        finally{if($insert->closeCursor()!==true)throw new \crmeb\exceptions\AuthUnavailableException();}
+        $select=$pdo->prepare('SELECT * FROM '.$table.' WHERE id=? LIMIT 2 FOR UPDATE');if($select===false)throw new \crmeb\exceptions\AuthUnavailableException();
+        try{if($select->execute([$id])!==true)throw new \crmeb\exceptions\AuthUnavailableException();$rows=$select->fetchAll(\PDO::FETCH_ASSOC);}
+        finally{if($select->closeCursor()!==true)throw new \crmeb\exceptions\AuthUnavailableException();}
+        $fields=['id','admin_id','admin_name','path','page','method','ip','type','add_time','merchant_id'];
+        if(count($rows)!==1||array_keys($rows[0])!==$fields||(string)$rows[0]['id']!==(string)$id||(string)$rows[0]['merchant_id']!=='0')throw new \crmeb\exceptions\AuthUnavailableException();
+        foreach($data as$key=>$value)if(is_int($value)?(string)$rows[0][$key]!== (string)$value:$rows[0][$key]!==$value)throw new \crmeb\exceptions\AuthUnavailableException();
+        \app\services\marketplace\assets\PlatformAssetServices::assertContext($request,$scope,$pdo);return $rows[0];
+    }
+
     /**
      * 获取系统日志列表
      * @param array $where

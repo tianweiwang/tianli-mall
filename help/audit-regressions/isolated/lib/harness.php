@@ -141,13 +141,16 @@ function audit_assert_unchanged(array $before, array $after, array $allow = []):
     }
     return $differences;
 }
-function audit_app_request(string $action, array $overrides = []): void
+function audit_app_request(string $action, array $overrides = [], string $channel = 'app'): void
 {
+    audit_expect((int)(getenv('AUDIT_MEDIA_NORMAL') === '1') + (int)(getenv('AUDIT_LICENCE_NORMAL') === '1')
+        + (int)(getenv('AUDIT_LEGACY_REFUND_NORMAL') === '1') <= 1, 'normal profiles must not be mixed');
+    audit_expect($channel === 'app' || (getenv('AUDIT_MEDIA_NORMAL') === '1' && $channel === 'media-timer'), 'unapproved supervisor channel');
     $revision = bin2hex(random_bytes(8));
-    audit_write_json(audit_run_dir() . '/app-control.json', ['run_id' => getenv('AUDIT_RUN_ID'), 'revision' => $revision, 'action' => $action, 'overrides' => $overrides]);
+    audit_write_json(audit_run_dir() . '/' . $channel . '-control.json', ['run_id' => getenv('AUDIT_RUN_ID'), 'revision' => $revision, 'action' => $action, 'overrides' => $overrides]);
     for ($i = 0; $i < 200; $i++) {
         usleep(100000);
-        $status = audit_read_control_json(audit_run_dir() . '/app-status.json');
+        $status = audit_read_control_json(audit_run_dir() . '/' . $channel . '-status.json');
         if (($status['revision'] ?? '') === $revision) {
             audit_expect(($status['status'] ?? '') === $action, 'isolated app supervisor failed');
             return;
@@ -571,16 +574,22 @@ function audit_app_register_group($process, array $supervisor): array
     } while (microtime(true) < $deadline);
     throw new RuntimeException('setsid independent process group was not observed');
 }
-function audit_app_stop_group(&$process, ?array &$group, array $supervisor): array
+function audit_app_stop_group(&$process, ?array &$group, array $supervisor, bool $nativeZero = false): array
 {
     if ($group === null && is_resource($process) && proc_get_status($process)['running']) {
         // Do not guess a group from a PID. Registration still must prove the
         // actual independent SID/PGID before cleanup may signal that group.
         $group = audit_app_register_group($process, $supervisor);
     }
-    $stopped = $group; $remaining = [];
+    $stopped = $group; $remaining = []; $nativeExit = null; $nativeOrigin = null;
+    $recordExit = static function (int $code, string $origin) use (&$nativeExit, &$nativeOrigin): void {
+        if ($code < 0) { return; }
+        audit_expect($nativeExit === null || $nativeExit === $code, 'direct child native exit observations differ');
+        $nativeExit = $code; $nativeOrigin ??= $origin;
+    };
     if ($group !== null) {
-        foreach ([[SIGTERM, 3.0], [SIGKILL, 2.0]] as [$signal, $seconds]) {
+        $steps = getenv('AUDIT_MEDIA_NORMAL') === '1' ? [[SIGTERM, 3.0]] : [[SIGTERM, 3.0], [SIGKILL, 2.0]];
+        foreach ($steps as [$signal, $seconds]) {
             $remaining = audit_app_group_members($group, $supervisor);
             if ($remaining !== [] && !posix_kill(-$group['pgid'], $signal)) {
                 // A group that exited between the read and signal is already
@@ -589,9 +598,14 @@ function audit_app_stop_group(&$process, ?array &$group, array $supervisor): arr
             }
             $deadline = microtime(true) + $seconds;
             do {
-                if (is_resource($process)) { proc_get_status($process); }
+                if (is_resource($process)) { $status = proc_get_status($process); if ($nativeZero && !$status['running']) { $recordExit($status['exitcode'], 'proc_get_status'); } }
                 // Only direct/adopted children in the exact registered group.
-                while (pcntl_waitpid(-$group['pgid'], $waitStatus, WNOHANG) > 0) {}
+                while (($waited = pcntl_waitpid(-$group['pgid'], $waitStatus, WNOHANG)) > 0) {
+                    if ($nativeZero && $waited === $group['leader_pid']) {
+                        audit_expect(pcntl_wifexited($waitStatus), 'original Timer direct child did not exit normally');
+                        $recordExit(pcntl_wexitstatus($waitStatus), 'pcntl_waitpid');
+                    }
+                }
                 $remaining = audit_app_group_members($group, $supervisor);
                 if ($remaining === [] && !audit_app_listener_open()) { break 2; }
                 usleep(20000);
@@ -599,12 +613,19 @@ function audit_app_stop_group(&$process, ?array &$group, array $supervisor): arr
         }
     }
     if (is_resource($process)) {
-        audit_expect(!proc_get_status($process)['running'], 'registered direct child still running after bounded cleanup');
-        proc_close($process); $process = null;
+        $status = proc_get_status($process);
+        audit_expect(!$status['running'], 'registered direct child still running after bounded cleanup');
+        if ($nativeZero) { $recordExit($status['exitcode'], 'proc_get_status'); }
+        $closed = proc_close($process); if ($nativeZero) { $recordExit($closed, 'proc_close'); } $process = null;
     }
     audit_expect($remaining === [] && !audit_app_listener_open(), 'registered group or application listener remains after cleanup');
     $group = null;
-    return ['stopped_group' => $stopped, 'remaining_members' => [], 'listener_closed' => true];
+    $result = ['stopped_group' => $stopped, 'remaining_members' => [], 'listener_closed' => true];
+    if ($nativeZero && $stopped !== null) {
+        audit_expect($nativeExit === 0 && is_string($nativeOrigin), 'original Timer direct child native zero unavailable');
+        $result += ['direct_child_native_exit' => $nativeExit, 'native_exit_origin' => $nativeOrigin, 'stop_mode' => 'term-only', 'force_signal_sent' => false];
+    }
+    return $result;
 }
 /** One ordinary TERM for the fixed licence profile; failure retains the actual handle and generation. */
 function audit_app_stop_licence_normal_group(&$process, ?array &$group, array $supervisor, bool &$termSent): array
@@ -666,8 +687,13 @@ function audit_assert_licence_private_mount():void
 
 require_once __DIR__.'/legacy-refund-normal-profile.php';
 
-function audit_serve(): void
+function audit_serve(string $channel = 'app'): void
 {
+    audit_expect((int)(getenv('AUDIT_MEDIA_NORMAL') === '1') + (int)(getenv('AUDIT_LICENCE_NORMAL') === '1')
+        + (int)(getenv('AUDIT_LEGACY_REFUND_NORMAL') === '1') <= 1, 'normal profiles must not be mixed');
+    audit_expect($channel === 'app' || (getenv('AUDIT_MEDIA_NORMAL') === '1' && $channel === 'media-timer'), 'unapproved supervisor channel');
+    if (getenv('AUDIT_MEDIA_NORMAL') === '1') { require_once audit_repo_dir() . '/help/audit-regressions/isolated/lib/media-normal-profile.php'; }
+    $timer = $channel === 'media-timer';
     audit_guard_assert();
     $normalLicence = getenv('AUDIT_LICENCE_NORMAL') === '1';
     $normalRefund = getenv('AUDIT_LEGACY_REFUND_NORMAL') === '1';
@@ -700,7 +726,7 @@ function audit_serve(): void
         } catch (Throwable $statusError) { fwrite(STDERR, 'BLOCKED normal status persistence; live state retained '.get_class($statusError)."\n"); }
     };
     $stop = static function () use (&$process, &$group, &$generation, &$normalTermSent, &$normalStopBlocked,
-        &$normalStopping, $normalTermOnly, $normalRefund, $supervisor): array {
+        &$normalStopping, $normalTermOnly, $normalRefund, $supervisor, $timer): array {
         if ($normalTermOnly) {
             audit_expect(!$normalStopBlocked, 'normal incomplete stop is retained; no second stop or restart');
             $normalStopping = true;
@@ -708,7 +734,7 @@ function audit_serve(): void
                 : audit_app_stop_licence_normal_group($process, $group, $supervisor, $normalTermSent); }
             catch (Throwable $error) { $normalStopBlocked = true; throw $error; }
             finally { $normalStopping = false; }
-        } else { $result = audit_app_stop_group($process, $group, $supervisor); }
+        } else { $result = audit_app_stop_group($process, $group, $supervisor, $timer); }
         $generation = ''; $normalTermSent = false;
         return $result;
     };
@@ -721,7 +747,7 @@ function audit_serve(): void
         }
     });
     while (true) {
-        $file = audit_run_dir() . '/app-control.json';
+        $file = audit_run_dir() . '/' . $channel . '-control.json';
         $control = audit_read_control_json($file);
         if (($control['run_id'] ?? '') === getenv('AUDIT_RUN_ID') && ($control['revision'] ?? '') !== $revision) {
             $revision = $control['revision']; $action = $control['action'] ?? '';
@@ -746,6 +772,9 @@ function audit_serve(): void
                     $env['PHP_AUTH_SESSION_EPOCH'] = $config['auth']['session_epoch'];
                     $env['PHP_AUTH_STAMP_KEY'] = $config['auth']['stamp_key'];
                     $env['PHP_AUTH_ISSUER'] = $config['auth']['issuer'];
+                    if (getenv('AUDIT_MEDIA_NORMAL') === '1') {
+                        audit_expect(($control['overrides'] ?? []) === audit_media_normal_overrides($timer), 'normal media exact trusted profile required');
+                    }
                     foreach ($control['overrides'] ?? [] as $key => $value) {
                         $mapping = ['APP_KEY' => 'PHP_APP_APP_KEY', 'CACHE_DRIVER' => 'PHP_CACHE_DRIVER',
                             'AUTH_SESSION_EPOCH' => 'PHP_AUTH_SESSION_EPOCH', 'AUTH_STAMP_KEY' => 'PHP_AUTH_STAMP_KEY',
@@ -753,6 +782,7 @@ function audit_serve(): void
                             'SERVER_WORKERS' => 'PHP_CLI_SERVER_WORKERS',
                             'LICENCE_PRIVATE_ROOT'=>'PHP_MARKETPLACE_CUSTOMER_LICENCE_PRIVATE_ROOT',
                             'REFUND_PRIVATE_ROOT'=>'PHP_MARKETPLACE_CUSTOMER_REFUND_PRIVATE_ROOT'];
+                        if (getenv('AUDIT_MEDIA_NORMAL') === '1') { $mapping += audit_media_normal_override_mapping(); }
                         $approved = is_string($value) && match ($key) {
                             'APP_KEY', 'CACHE_DRIVER' => in_array($value, ['', 'default', 'file', 'redis'], true),
                             'AUTH_SESSION_EPOCH' => $value === '',
@@ -763,7 +793,7 @@ function audit_serve(): void
                             'SERVER_WORKERS' => in_array($value, ['', '2'], true),
                             'LICENCE_PRIVATE_ROOT' => $value==='/run/audit-customer-licence'&&getenv('AUDIT_LICENCE_NORMAL')==='1',
                             'REFUND_PRIVATE_ROOT' => $value==='/run/audit-customer-refund'&&getenv('AUDIT_LEGACY_REFUND_NORMAL')==='1',
-                            default => false,
+                            default => getenv('AUDIT_MEDIA_NORMAL') === '1' && audit_media_normal_override_approved($key, $value),
                         };
                         audit_expect(isset($mapping[$key]) && $approved, 'unapproved application configuration override');
                         if($key==='LICENCE_PRIVATE_ROOT')audit_assert_licence_private_mount();
@@ -775,27 +805,28 @@ function audit_serve(): void
                     audit_expect(!audit_contains_secret_fingerprint($env, $credentialCheck['root_fingerprint']), 'root value rejected from application environment');
                     $credentialCheck['root_absent_from_app_environment'] = true;
                     audit_write_json(audit_run_dir() . '/credential-check.json', $credentialCheck);
-                    $log = audit_run_dir() . '/evidence/app-runtime.log';
-                    $process = proc_open(['setsid', 'php', 'think', 'run', '-H', '0.0.0.0', '-p', '8000'], [['file', '/dev/null', 'r'], ['file', $log, 'a'], ['file', $log, 'a']], $pipes, audit_repo_dir() . '/crmeb', $env);
+                    $log = audit_run_dir() . '/evidence/' . ($timer ? 'media-timer-runtime.log' : 'app-runtime.log');
+                    $command = $timer ? ['setsid', 'php', 'think', 'timer', 'start'] : ['setsid', 'php', 'think', 'run', '-H', '0.0.0.0', '-p', '8000'];
+                    $process = proc_open($command, [['file', '/dev/null', 'r'], ['file', $timer ? $log . '.stdout' : $log, 'a'], ['file', $timer ? $log . '.stderr' : $log, 'a']], $pipes, audit_repo_dir() . '/crmeb', $env);
                     audit_expect(is_resource($process), 'cannot start PHP server');
                     $group = audit_app_register_group($process, $supervisor); $generation = $revision;
                     $deadline = microtime(true) + 3.0;
                     do {
                         $facts = audit_app_process_observation($group, $supervisor);
-                        if ($facts['members'] !== [] && $facts['listener_open']) { break; }
+                        if ($timer ? count($facts['members']) >= 2 && !$facts['listener_open'] : $facts['members'] !== [] && $facts['listener_open']) { break; }
                         usleep(10000);
                     } while (microtime(true) < $deadline);
-                    audit_expect($facts['members'] !== [] && $facts['listener_open'], 'registered server group did not listen');
+                    audit_expect($timer ? count($facts['members']) >= 2 && !$facts['listener_open'] : $facts['members'] !== [] && $facts['listener_open'], 'registered original server/Timer group was not ready');
                 }
                 $retainedNormal = $normalTermOnly && $normalFirstFailure !== null
                     ? ['first_incomplete_stop' => $normalFirstFailure, 'state_preserved' => true, 'restart_blocked' => true] : [];
-                audit_write_json(audit_run_dir() . '/app-status.json', ['revision' => $revision, 'status' => $action,
+                audit_write_json(audit_run_dir() . '/' . $channel . '-status.json', ['revision' => $revision, 'status' => $action,
                     'run_id' => getenv('AUDIT_RUN_ID'), 'generation_revision' => $generation] + $facts + $retainedNormal);
             } catch (Throwable $error) {
                 if ($normalTermOnly) { $normalFailure($error, $revision); continue; }
                 $cleanupError = null;
                 if ($action !== 'observe') { try { $stop(); } catch (Throwable $cleanup) { $cleanupError = get_class($cleanup); } }
-                audit_write_json(audit_run_dir() . '/app-status.json', ['revision' => $revision, 'status' => 'failed',
+                audit_write_json(audit_run_dir() . '/' . $channel . '-status.json', ['revision' => $revision, 'status' => 'failed',
                     'error_class' => get_class($error), 'cleanup_error_class' => $cleanupError]);
             }
         }

@@ -1209,3 +1209,50 @@ Root另已实际固定1099镜像PHP8.2.33当前normal纯-l原生0（e585fe），
 - [ ] 继续原完整A/fresh B/V1/Worker/三端与设备、真实外部条件和人工阶段等未验项；已停止样本保持NOT RUN，不因组件局部通过关闭原责任。
 
 Root采用：已全文核本节设计及共享源差量，独立复核Source0；Root另完整读取两Git SQL正文并核三语言CREATE到下一CREATE的全部原字节与31 INSERT一致。允许在此独立集成W按本节分步进行代码union及必要完整来源绑定，先整合MS2，再合并云finalize，全部保持仅L2/source阶段；实际目标由Root串行安排，统一HEAD验收仍未执行，旧退款r4 Source/Val/Run冻结保持。
+
+
+#### MS2来源独有历史补录（文档冲突union，保留原时点）
+
+以下原段完整来自MS2提交`63260f9d2d7a943e382c4f5f83f60be6e33ed9b8`相对共同祖先`41c0d795ff36ff98ed267bc49bb042e2f6e17bf8`的独有追加。前文退款HEAD及统一设计/Root采用句完整保留；本段原候选状态按当时来源读取，不与其它HEAD的局部PASS相加为统一验收，原停止样本继续NOT RUN。
+
+
+## R97 平台site_image第一片真实生产与显式导入
+
+固定GET/POST marketplace/platform-assets、GET marketplace/platform-asset-categories；POST marketplace/products/<id>/import-platform-image。scope/current admin/权限及完整native29、类别10按Root原单一T4记录；purpose只服务端site_image。新公开库件STAGED，expires_at/bound_at/retired_at均NULL，created_at实际time，无自动过期/清理；复制生成目标实际商家的另一物理对象/native14，平台原29/state/完整bytes保持。source BIGINT id全链decimal string，不伪装商业att_id/mer。
+
+GET平台category_id=0列全部合格图片；POST=0写真实未分组。分页page1/limit18最多100/real_name，list返回独立platform_asset_id/src/satt_dir/name/real_name/category_id/state/byte_size/width/height/media_type，count实际同谓词；分类按原混合type树/lazy，id/pid是真实INT。import body仅platform_asset_id和目标商业pid，返回list[{att_id:真实新INT,src:真实新商业路径}]，不能直接把平台src选入商品。原商品transport身份/epoch/generation和最终image/SKU/HTML等保存门保持。
+
+import实际route同时标记同一marketplace_permission与legacy_product_write，当前scope仍同一真实对象；newleaf/旧GET file/file/实际productsave AND额外platform-assets-list。平台三leaf具名注册，仅按对应原grant向启用角色追加；原17商品菜单完整保持，第18 import仅同样向启用角色复制。无生产/角色默认全权、伪scope、假self或自动enabled。
+
+平台上传审计具名recordPlatformAssetUpload同PDO完整重选真实29，SystemLogServices新增有限row-return方法，原recordAdminLog八payload/bool行为完整保持。实际安装system_log为10列（id,admin_id,admin_name,path,page,method,ip,type,add_time,merchant_id），最后原default0不得丢弃；新方法仍只插原八payload，真实PK SELECT*核全10及原merchant_id0，未把该0当商业owner。全局generic record(null)写闭集保持。当前候选未做真实PHP语法、正常HTTP/数据库/存储/菜单/浏览器验证，provider1..7完整合同保留。其它平台purpose/绑定/退役/CRUD/商家平台导入、旧61分类、私有迁移和完整T4各原责任未被本片替代。
+
+
+##### 第一阶段MS2标准merge与语言身份必要闭包（2026-10-25，实施前补充）
+
+Root已采用设计并形成仅doc提交23c812e72cfb22d2d5ef856af1abd5a4d6021587；本独立W实际执行`git merge --no-ff --no-commit 63260f9d2d7a943e382c4f5f83f60be6e33ed9b8`，保标准MERGE_HEAD和两个真实父历史，不手拼单父提交。真实交集仍为前述五路径，其中routes/config已自动合并，两个doc与harness为三处实际内容冲突。两个doc先保HEAD全部原文，再附MS2相对共同祖先的完整独有历史原段及其原时点说明；本record首225934B仍精确等于已采用HEAD，不把MS2原历史状态当统一HEAD通过。
+
+实际语言调用链还存在第二个相同身份硬门：`ms4-language-cache-normal.php::M4LC_SQL`之外，共享`ms4-aftersale-review-normal.php::m4ar_language_prepare`也严格要求source_files中唯一SQL描述为10237372/7af。前节及Root已对两完整SQL、三语言完整DDL/31 INSERT/原全rows作独立字节证明；统一树现采用MS2的941 SQL，故这两处均只窄改固定bytes为10237459及SHA为1e5e56c805f551a75332be58b2ab96572509c82835b812cdff3ca5c3eb7ad828。两个原完整文件读取根、唯一descriptor、所有列/PK/类型、decode全总量与中文选集、原真实事务/commit/reselect、b54两个精确空map及原getter、bafb失败诊断/原异常继续保持。只替换每处这一对来源literal，再用整份逆证证明无其它变动；旧SQL、旧Run/Val/Host和归档的历史pins不改，不执行安装或PHP。
+
+harness按已采用最小union解决：保MS2原media-timer专属channel/trusted overrides/Timer原生0与TERM-only，保两个private leaf的原完整身份及普通停止失败保留分支，默认app路径原分支保持；在request及serve两个调度入口先拒绝media/licence/refund profile混用，不把private hardcoded app状态路径暴露给Timer。Source资格与全部原业务case保全另据实际diff/独审，不以本段实施设计代签Runtime。
+
+梳理另发现active `lib/ms4-ui-backend-normal.php::M4UIB_BOOTSTRAP`五producer中四个来源literal落后当前文件，guard仍符。四项涉及customer HTTP entry、harness、customer HTTP library和customer form library；目前只定位，不抄当前hash放行。先追各producer真实来源差量、active UI消费者及完整原契约，保原merchant34步骤/25captures/9screens/23facts，不能以UI20或未采用UI17替代，也不引入旧未采用分支的新需求。只有必要功能兼容与原身份/fixture/返回值/副作用责任保持经Source核清后，才先在本record记具体有限来源设计再rebind；静态资格不代统一HEAD实际merchant验收。尚未发生的整合提交、统一Runtime、close/zero和人工阶段继续NOT RUN。
+
+
+##### 第一阶段UI来源开放项与Source收口边界
+
+四producer已追到真实Git原件，不以当前hash自行放行：customer HTTP entry121046B/9ba3cf59、HTTP library65119B/925314fc、form library72482B/a1ee3249在共同祖先41c、HEAD23c及MS2 632均已同字节，三处旧pin早于本次merge；旧entry115616/84186来自2fa872e6，旧两library65044/90317与66236/1d06来自0a0c35b4。harness旧48344/d1f6来自ceadbcff，HEAD56450与MS2 51190各有已采用增量，本次union59726/af3a3b24另按真实完整diff资格核对。
+
+完整差量区分：entry后继有source-tree第9卷/initializer完整copy/freeze、两个RO源码卷、公有uploads根初始化及唯一fixed PHP_INI_SCAN_DIR透传；HTTP library仅官方initialize后按整个initializedEnv的真实key存在及原值严格相等；form后继包括原上传quota真实decimal string/100/86400及tag保持、有限失败/期限诊断与M4C_FORM错误前缀，原sealed owner_after保持。它们不是仅hash变化，也不应因旧pin倒退已采用修订。
+
+M4UIB_BOOTSTRAP的真实调用是`ms4-ui-backend.php`→`lib/ms4-ui-backend-normal.php::m4uib_bootstrap`，在两个源码根逐件稳定读取完整bytes/SHA后function-only require customer entry；不会改SCRIPT_FILENAME或直接运行customer main。其直接消费的terminal/child_status、sealed owner_after以及harness七个proc/组/监听/immutable-source primitive与旧原件正文保持；child environment只增加精确fixedINI值两行。因此这些有限primitive有Source兼容证据，但不能据此宣称整个UI上游profile/装配、history、mount/volume及完整闭包已取得新资格。UI自身原8卷与原8+UI4门、customer完整链9卷属于不同用途，尚不能仅据数字认定必需把UI改9；后继由Root确认原fullS/active UI调用链及实际同源profile，必要时先在本record限定完整source-tree/copy/freeze/mount/history设计，再处理。
+
+Root已限定本阶段保持M4UIB五项原常量（含四旧pin）、原8卷等硬门，consumer127620B/5d6f3496保持原字节，不作仅hash rebind、不引入旧未采用UI17需求；这处开放项不标PASS，也不阻断其它正确union。原商家34步走`ms4-merchant-http.php`及`ms4-merchant-browser-prepare.php`→merchant-browser/read helpers，未引用M4UIB；本次不改其原34steps/25captures/9screens/23facts及其它原要求，UI20不替代它，统一HEAD全部实际merchant/UI/设备验收仍待。
+
+本次harness 34原命名函数相对HEAD仅request/stop_group/serve三处变化，相对MS2仅request/serve两处变化；全部其余原函数正文、两个private leaf及原seven UI primitives逐字保持，stop_group完整3446B/1ed94c76等于MS2原实现。两个SQL身份文件各只改固定bytes/SHA一对literal，整份逆回原b54正文；原warm/诊断/完整oracle和所有case不变。当前仅Source union，非PHP解析或Runtime结果；标准MERGE_HEAD、完整变化范围/独审及精确暂存状态以本次实际收口为准，不在这里编写未来合并提交或通过结果。
+
+
+第一阶段Source实际收口（尚未merge commit）：标准HEAD保持23c812e7、MERGE_HEAD保持63260f9d；真实变化89路径（16新增/73修改），七个明确union/身份路径外其余82变更Git blob逐件等MS2，所有其它15704个HEAD路径保持原blob，index有15793个真实条目。两冲突doc保各HEAD完整前缀及MS2独有历史全文；无U、无unstaged/untracked，cached及worktree diffcheck均0的实际检查已取得，最后doc事实追加后再作同样最终检查。harness59726/af3a3b24经非作者全文与函数边界Source0：31个HEAD原函数和MS2 stop_group原文保持，profile互斥/两个private TERM叶、原media Timer通路/nativeZero及默认原支无确定问题；两语言身份文件保持前述精确二literal逆证。M4UIB四旧pin及完整原8/12装配门不改，开放项不标通过。
+
+Root另已全文核本次harness union及两SQL精确literal diff，并实际用固定1099镜像PHP8.2.33对当前三文件纯-l全0：harness59726/af3a3b24、M4LC17628/9021f1be、afterreview245730/898eb47a前后字节保持。Root6583ef实际核5native/10完整双流1726B，三Source只读/netnone/helper自然Exited0/PID0后nonforce移除，报告`artifacts/project-organization-20261023/integrated-ms2-union-php82-r2/RESULT.json`为7116B/0a2aa6ff0352f5a8a8e0048daa3925436ed4962d2dac52b1bfa6a26e44521bb7。首个Root wrapper把自有created放入要求fresh的输出目录，被既有前置保护拒绝且未启动Docker；外置launcher后的r2正常0，保护未改，不是业务目标失败。本作者仅只读核公开报告指纹并引用Root实际回读事实，没有执行PHP、候选或目标。
+
+这些证据只签本阶段Source与当前三文件解析；Root完整scope审与此次标准MS2 merge提交尚待，之后才进入第二阶段cloud普通merge。真实统一HEAD/new Val/Host/fresh Run、完整A/fresh B/商家34及其它原页面/设备/资金/外部/人工与ordinary close/独立zero仍须各自按实际新来源验证，旧组件及已退役退款Run不代签本次统一Runtime。未提交推送、未更改其它W/Val/Host/Run或Root canonical C/D，停止样本继续NOT RUN。

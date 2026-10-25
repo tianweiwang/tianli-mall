@@ -282,3 +282,10 @@ verifyAndParseNotification(rawRequest)
 ### 上传资产域增量记录（T2，2026-10-22，PROPOSED）
 
 拟议顾客资产、平台资产及独立平台分类的完整合同见[上传资产域设计](records/ms2/upload-asset-domains.md)。它细化既定唯一T1–T8清单的T2，不是已采用源码/数据库状态。商业system_attachment/category的真实正商家归属、完整五根门、旧14列资格及原Task1/历史确认/三端与金融义务保持。新表/用途/private读取/旧客户端适配与可恢复域转存须另行实现并取得真实证据，不以补self、排除旧行或Source/语法结果代签backfill、enforce或marketplace.enabled=true。原文与既有验收状态不变。
+
+
+### T4 R93: authenticated mobile product-image producer
+
+The fixed POST `/api/admin/manage/product/<product_id>/media/images/upload` uses the real API management roles and existing self-only product writer; product0 means authorized creation preparation, never an unknown owner fallback. It produces actual commercial image content and native14 without changing the mobile product-save DTO, SKU identity, prices, stock or generic `upload/image` purposes. Current image qualification includes JPEG/PNG/GIF/WebP/ICO.
+
+This producer requires one real `api_user` audit whose actor_id is the current verified API UID, mer_id is the writer-derived self merchant, and resource_id is the actual attachment ID. Only its dedicated audit entry point supports this actor; generic administrator/merchant auditing and existing readers remain unchanged. Attachment14/audit10, physical bytes, real quota increment/86400 TTL and commit observation must agree before complete success. Unknown results retain the six-field receipt and never cause automatic resubmission or cleanup of a committed object. This is a finite application contract extension over the existing audit schema, with no DDL or new context framework. Source, syntax, build and actual mobile/runtime acceptance remain separate obligations.

@@ -40,9 +40,10 @@ class ProductCopyJob extends BaseJobs
      */
     public function copyDescriptionImage($id, $description, $image, $count)
     {
+        $copyReceipt=[];$copyCommit=[];
         try {
             $id=LegacyProductWriteServices::id($id);
-            return app()->make(LegacyProductWriteServices::class)->selfWorker([$id],function()use($id,$description,$image,$count):bool{
+            $completed=app()->make(LegacyProductWriteServices::class)->selfWorker([$id],function()use($id,$description,$image,$count,&$copyReceipt,&$copyCommit):bool{
             /** @var CopyTaobaoServices $copyTaobao */
             $copyTaobao = app()->make(CopyTaobaoServices::class);
             /** @var StoreDescriptionServices $storeDescriptionServices */
@@ -57,10 +58,12 @@ class ProductCopyJob extends BaseJobs
                 $description_cache = $description;
                 CacheService::set('desc_images_count' . $id, 0);
             }
-            $res = $copyTaobao->downloadCopyImage($d_image);
-            $description_cache = str_replace($image, $res, $description_cache);
+            $res = LegacyProductWriteServices::enabled()?$copyTaobao->downloadCopyImageForProduct($id,$image,$copyReceipt,$copyCommit,true):$copyTaobao->downloadCopyImage($d_image);
+            $description_cache = LegacyProductWriteServices::enabled()?$copyTaobao->replaceCopyImageInHtml($description_cache,$image,$res):str_replace($image, $res, $description_cache);
             $desc_count = CacheService::get('desc_images_count' . $id) + 1;
             if ($desc_count == $count) {
+                if(LegacyProductWriteServices::enabled())app()->make(\app\services\marketplace\product\ProductMediaReferenceServices::class)->assertForProduct($id,
+                    array_map(static fn(array $r):array=>['kind'=>$r['kind'],'path'=>$r['path']],\app\services\marketplace\product\MerchantProductInput::typedHtmlMedia($description_cache)));
                 CacheService::delete('desc_images_' . $id);
                 CacheService::delete('desc_images_count' . $id);
                 $storeDescriptionServices->saveDescription((int)$id, $description_cache);
@@ -70,7 +73,10 @@ class ProductCopyJob extends BaseJobs
             }
             return true;
             });
+            if($copyReceipt!==[]){app()->make(\app\services\marketplace\product\PlatformProductMediaServices::class)->observeCopyCommit($copyCommit);$copyReceipt['database_committed']=true;$copyReceipt['complete']=true;$copyReceipt['phase']='complete';}
+            return $completed;
         } catch (\Throwable $e) {
+            if($copyReceipt!==[])throw new \app\services\marketplace\attachment\MerchantAttachmentOperationException($copyReceipt);
             self::unavailable('description');
         }
     }
@@ -82,15 +88,16 @@ class ProductCopyJob extends BaseJobs
      */
     public function copySliderImage($id, $image, $count)
     {
+        $copyReceipt=[];$copyCommit=[];
         try {
             $id=LegacyProductWriteServices::id($id);
-            return app()->make(LegacyProductWriteServices::class)->selfWorker([$id],function()use($id,$image,$count):bool{
+            $completed=app()->make(LegacyProductWriteServices::class)->selfWorker([$id],function()use($id,$image,$count,&$copyReceipt,&$copyCommit):bool{
             /** @var CopyTaobaoServices $copyTaobao */
             $copyTaobao = app()->make(CopyTaobaoServices::class);
             /** @var StoreProductServices $StoreProductServices */
             $StoreProductServices = app()->make(StoreProductServices::class);
             //下载图片
-            $res = $copyTaobao->downloadCopyImage($image);
+            $res = LegacyProductWriteServices::enabled()?$copyTaobao->downloadCopyImageForProduct($id,$image,$copyReceipt,$copyCommit):$copyTaobao->downloadCopyImage($image);
             //获取缓存中的轮播图
             $slider_images = CacheService::get('slider_images_' . $id) ?? [];
             //缓存为null则赋值[]
@@ -99,6 +106,8 @@ class ProductCopyJob extends BaseJobs
             array_push($slider_images, $res);
             //如果$slider_images中图片数量和传入的$count相等，说明已经下载完成，写入商品表，如果不等则继续插入缓存
             if (count($slider_images) == $count) {
+                if(LegacyProductWriteServices::enabled())app()->make(\app\services\marketplace\product\ProductMediaReferenceServices::class)->assertForProduct($id,
+                    array_map(static fn(string $path):array=>['kind'=>'image','path'=>$path],$slider_images));
                 CacheService::delete('slider_images_' . $id);
                 $image = $slider_images[0];
                 $slider_images = $slider_images ? json_encode($slider_images) : '';
@@ -108,7 +117,10 @@ class ProductCopyJob extends BaseJobs
             }
             return true;
             });
+            if($copyReceipt!==[]){app()->make(\app\services\marketplace\product\PlatformProductMediaServices::class)->observeCopyCommit($copyCommit);$copyReceipt['database_committed']=true;$copyReceipt['complete']=true;$copyReceipt['phase']='complete';}
+            return $completed;
         } catch (\Throwable $e) {
+            if($copyReceipt!==[])throw new \app\services\marketplace\attachment\MerchantAttachmentOperationException($copyReceipt);
             self::unavailable('slider');
         }
     }
@@ -121,11 +133,12 @@ class ProductCopyJob extends BaseJobs
      */
     public function copyAttrImage($value_id, $value_image)
     {
+        $copyReceipt=[];$copyCommit=[];
         try {
             $value_id=LegacyProductWriteServices::id($value_id,2147483647);
             $row=Db::name('store_product_attr_value')->where('id',$value_id)->where('type',0)->field(['id','product_id','unique'])->find();
             if(!is_array($row))throw new AuthUnavailableException();$id=LegacyProductWriteServices::id($row['product_id']);
-            return app()->make(LegacyProductWriteServices::class)->selfWorker([$id],function()use($id,$value_id,$value_image,$row):bool{
+            $completed=app()->make(LegacyProductWriteServices::class)->selfWorker([$id],function()use($id,$value_id,$value_image,$row,&$copyReceipt,&$copyCommit):bool{
             $query=Db::name('store_product_attr_value')->where('id',$value_id)->where('product_id',$id)->where('type',0)->where('unique',$row['unique'])->lock(true);
             LegacyProductWriteServices::query($query);$current=$query->find();if(!is_array($current))throw new AuthUnavailableException();
             /** @var CopyTaobaoServices $copyTaobao */
@@ -133,11 +146,14 @@ class ProductCopyJob extends BaseJobs
             /** @var StoreProductAttrValueServices $StoreProductAttrValueServices */
             $StoreProductAttrValueServices = app()->make(StoreProductAttrValueServices::class);
             //下载图片
-            $res = $copyTaobao->downloadCopyImage($value_image);
+            $res = LegacyProductWriteServices::enabled()?$copyTaobao->downloadCopyImageForProduct($id,$value_image,$copyReceipt,$copyCommit):$copyTaobao->downloadCopyImage($value_image);
             $affected=$query->update(['image'=>$res]);if(!is_int($affected)||$affected<0||$affected>1||$query->value('image')!==$res)throw new AuthUnavailableException();
             return true;
             });
+            if($copyReceipt!==[]){app()->make(\app\services\marketplace\product\PlatformProductMediaServices::class)->observeCopyCommit($copyCommit);$copyReceipt['database_committed']=true;$copyReceipt['complete']=true;$copyReceipt['phase']='complete';}
+            return $completed;
         } catch (\Throwable $e) {
+            if($copyReceipt!==[])throw new \app\services\marketplace\attachment\MerchantAttachmentOperationException($copyReceipt);
             self::unavailable('attribute');
         }
     }

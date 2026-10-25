@@ -29628,7 +29628,7 @@ CREATE TABLE IF NOT EXISTS `eb_system_attachment_category` (
   `type` tinyint(1) NOT NULL DEFAULT '0' COMMENT '类型，0图片，1视频',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE KEY `id` (`id`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COMMENT='附件分类表';
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COMMENT='附件分类表';
 
 --
 -- 转存表中的数据 `eb_system_attachment_category`
@@ -29642,7 +29642,9 @@ INSERT INTO `eb_system_attachment_category` (`id`, `pid`, `name`, `enname`, `typ
 (5, 0, '活动素材', '', 0),
 (6, 0, '商城设置', '', 0),
 (7, 0, '金刚区', '', 0),
-(8, 0, '客服二维码', '', 0);
+(8, 0, '客服二维码', '', 0),
+(9, 0, '历史未分类图片 9', '', 0),
+(10, 0, '历史未分类图片 10', '', 0);
 
 -- --------------------------------------------------------
 

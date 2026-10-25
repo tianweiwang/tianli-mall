@@ -20,8 +20,8 @@ final class Attachment
     }
     public function categories(Request $request): Response
     {
-        Input::body($request->get(false),[]);
-        return self::success($this->services->categories($request->merchantContext()));
+        $query=Input::body($request->get(false),['type']);
+        return self::success($this->services->categories($request->merchantContext(),MerchantManagementInput::integer($query['type']??0,0,1,true)));
     }
     public function createCategory(Request $request): Response
     {
@@ -49,5 +49,36 @@ final class Attachment
     private static function incomplete(MerchantAttachmentOperationException $error): Response
     {
         return Response::create(['status'=>503,'msg'=>'素材操作未完成，请保留本次结果','data'=>$error->receipt],'json',503);
+    }
+
+    public function videos(Request $request): Response
+    {
+        return $this->mediaList($request,'video');
+    }
+    public function audio(Request $request): Response
+    {
+        return $this->mediaList($request,'audio');
+    }
+    private function mediaList(Request $request,string $kind): Response
+    {
+        $query=Input::body($request->get(false),['category_id','page','limit']);
+        return self::success($this->services->listMedia($request->merchantContext(),$kind,Input::id($query['category_id']??0,true),
+            MerchantManagementInput::integer($query['page']??1,1,2147483647,true),MerchantManagementInput::integer($query['limit']??20,1,100,true)));
+    }
+
+    public function deleteCategory(Request $request): Response
+    {
+        return self::success($this->services->deleteCategory($request->merchantContext(),Input::id($request->route('id',null,null)),self::categoryDeleteSelector($request)));
+    }
+
+    private static function categoryDeleteSelector(Request $request): array
+    {
+        // Existing DELETE callers had no body contract; inspect only the optional type, leaving other old fields ignored.
+        $query=$request->get(false);$body=$request->delete(false);$selected=null;$present=false;
+        foreach([$query,$body]as$values)if(array_key_exists('type',$values)){
+            $type=\app\services\marketplace\MerchantManagementInput::integer($values['type'],0,1,true);
+            if($present&&$type!==$selected)\app\services\marketplace\attachment\MerchantAttachmentInput::invalid();$selected=$type;$present=true;
+        }
+        return $present?['type'=>$selected]:[];
     }
 }

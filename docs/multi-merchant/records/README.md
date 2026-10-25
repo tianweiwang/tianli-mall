@@ -11,6 +11,8 @@
 
 专项记录：[Task6 legacy producer 挂载合同诊断与最小修订](ms4/fulfillment-legacy-producer-repair.md)（当前候选验证与未完成边界）。
 
+专项记录：[商品媒体本地联调](ms4/product-typed-media-integration.md)（源码接入与局部检查，完整业务待验）。
+
 ## `report.md` 模板
 
 ```markdown

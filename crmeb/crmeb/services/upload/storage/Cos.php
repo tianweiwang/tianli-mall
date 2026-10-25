@@ -131,7 +131,7 @@ class Cos extends BaseUpload
      * @param string|null $fileContent 流内容
      * @return array|bool|\StdClass
      */
-    protected function upload(string $file = null, bool $isStream = false, string $fileContent = null)
+    protected function upload(string $file = null, bool $isStream = false, string $fileContent = null, ?string $mime = null)
     {
         if (!$isStream) {
             $fileHandle = app()->request->file($file);
@@ -158,7 +158,11 @@ class Cos extends BaseUpload
         }
         try {
             $key = $this->getUploadPath($key);
-            $this->fileInfo->uploadInfo = $this->app()->putObject($key, $body);
+            if ($mime === null) {
+                $this->fileInfo->uploadInfo = $this->app()->putObject($key, $body);
+            } else {
+                $this->fileInfo->uploadInfo = $this->app()->putObject($key, $body, $mime);
+            }
             $this->fileInfo->filePath = ($this->cdn ?: $this->uploadUrl) . '/' . $key;
             $this->fileInfo->realName = isset($fileHandle) ? $fileHandle->getOriginalName() : $key;
             $this->fileInfo->fileName = $key;
@@ -176,12 +180,13 @@ class Cos extends BaseUpload
      * @param string|null $key
      * @return array|bool|mixed|\StdClass
      */
-    public function stream($fileContent, string $key = null)
+    public function stream($fileContent, string $key = null, ?string $mime = null)
     {
         if (!$key) {
             $key = $this->saveFileName();
         }
-        return $this->upload($key, true, $fileContent);
+        if ($mime === null) return $this->upload($key, true, $fileContent);
+        return $this->upload($key, true, $fileContent, $mime);
     }
 
     /**

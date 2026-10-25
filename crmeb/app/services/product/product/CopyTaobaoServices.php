@@ -156,6 +156,327 @@ class CopyTaobaoServices extends BaseServices
         }
     }
 
+    /** The old crawl payload uses the real standard-save defaults, not invented owners. */
+    public function save(array $data)
+    {
+        $defaults=['virtual_type'=>0,'cate_id'=>[],'store_name'=>'','keyword'=>'','unit_name'=>'件','store_info'=>'',
+            'slider_image'=>[],'video_open'=>0,'video_link'=>'','spec_type'=>0,'items'=>[],'attrs'=>[],
+            'description'=>'','description_images'=>[],'logistics'=>[],'freight'=>1,'postage'=>0,'temp_id'=>0,
+            'give_integral'=>0,'presale'=>0,'presale_time'=>0,'presale_day'=>0,'vip_product'=>0,'vip_product_type'=>0,
+            'is_sub'=>[],'recommend'=>[],'activity'=>[],'recommend_list'=>[],'coupon_ids'=>[],'label_id'=>[],
+            'command_word'=>'','is_show'=>0,'ficti'=>0,'sort'=>0,'recommend_image'=>'','sales'=>0,'custom_form'=>[],
+            'is_copy'=>0,'is_limit'=>0,'limit_type'=>0,'limit_num'=>0,'min_qty'=>1,'params_list'=>[],
+            'label_list'=>[],'protection_list'=>[],'is_gift'=>0,'gift_price'=>0];
+        $data=array_replace($defaults,$data);
+        if(is_string($data['cate_id']))$data['cate_id']=$data['cate_id']===''?[]:explode(',',$data['cate_id']);
+        elseif(is_int($data['cate_id']))$data['cate_id']=[$data['cate_id']];
+        $data['type']=-1;
+        return app()->make(StoreProductServices::class)->save(0,$data);
+    }
+
+    /** Prefetch has current real identity, but grants no merchant ownership or write authority. */
+    public function prepareCopyPlan(array $data,?\app\dao\marketplace\scope\PlatformScope $scope): array
+    {
+        $writer=app()->make(\app\services\marketplace\product\LegacyProductWriteServices::class);
+        if(!\app\services\marketplace\product\LegacyProductWriteServices::enabled()
+            ||$writer->authorizeCurrentRequest()!==$scope)throw new \crmeb\exceptions\AuthUnavailableException();
+        if($scope!==null&&!in_array($scope->permission,['legacy-product-save','legacy-product-copy-save'],true))throw new \crmeb\exceptions\AuthUnavailableException();
+        $plan=['request'=>app()->request,'scope'=>$scope,'images'=>[]];$seen=[];
+        try {
+            $references=app()->make(\app\services\marketplace\product\ProductMediaReferenceServices::class)->legacyReferences($data);
+            foreach($references as$reference){
+                if(!in_array($reference['kind'],['image','video','audio','unresolved'],true))throw new \crmeb\exceptions\AuthUnavailableException();
+                $key=$reference['kind']."\0".$reference['path'];if(isset($seen[$key]))continue;$seen[$key]=true;
+                $source=$reference['path'];$url=self::copyUrl($source);
+                $fetched=(new \app\services\marketplace\product\ProductMediaRemoteImages())->fetchOneForTypedProductCopy($url);
+                if($fetched['url_sha256']!==hash('sha256',$url))throw new \crmeb\exceptions\AuthUnavailableException();
+                $facts=$this->qualifyCopyMediaBytes($fetched['bytes'],$fetched['url_sha256'],$reference['kind']);
+                $entry=self::spoolCopyBytes($fetched['bytes']);
+                $entry['source']=$source;$entry['source_kind']=$reference['kind'];
+                $entry['resolved_kind']=$facts['resolved_kind'];$entry['display_name']=$facts['display_name'];
+                $plan['images'][]=$entry;unset($fetched,$facts,$entry);
+            }
+            return $plan;
+        } catch(\Throwable $error) {
+            if(!self::releaseCopyPlan($plan))throw new \app\services\marketplace\attachment\MerchantAttachmentOperationException([
+                'complete'=>false,'phase'=>'copy_prefetch_cleanup','physical_changed'=>true,'physical_complete'=>false,
+                'database_committed'=>false,'cleanup_complete'=>false]);
+            throw $error;
+        }
+    }
+
+    /** Current new-upload policy; original field intent remains separate from resolved content. */
+    private function qualifyCopyMediaBytes(string $bytes,string $urlSha256,string $sourceKind): array
+    {
+        if(!in_array($sourceKind,['image','video','audio','unresolved'],true)
+            ||preg_match('/\A[a-f0-9]{64}\z/D',$urlSha256)!==1)throw new \crmeb\exceptions\AuthUnavailableException();
+        $content=\app\services\marketplace\attachment\MerchantAttachmentReferenceFormat::qualify($bytes);
+        if($sourceKind!=='unresolved'&&$content['resolved_kind']!==$sourceKind)
+            \app\services\marketplace\attachment\MerchantAttachmentInput::invalid();
+        $possible=match($content['format']['format']){
+            'jpg'=>['jpg','jpeg'],'png'=>['png'],'gif'=>['gif'],'webp'=>['webp'],'ico'=>['ico'],
+            'mp4'=>['mp4'],'mpeg-audio'=>['mp3'],'asf-wma'=>['wma'],'wave'=>['wav'],'amr','amr-wb'=>['amr'],
+            default=>[],
+        };
+        $extensions=Config::get('upload.fileExt',[]);if(!is_array($extensions))throw new \crmeb\exceptions\AuthUnavailableException();
+        $extension=null;foreach($possible as$value)if(in_array($value,$extensions,true)){$extension=$value;break;}
+        if($extension===null)\app\services\marketplace\attachment\MerchantAttachmentInput::invalid();
+        $displayName='copy_'.$urlSha256.'.'.$extension;
+        $qualified=app()->make(\app\services\marketplace\attachment\MerchantAttachmentStorage::class)
+            ->qualifyTypedUploadBytes($bytes,$displayName,$content['resolved_kind']);
+        if($qualified['size']!==strlen($bytes)||$qualified['sha256']!==hash('sha256',$bytes)
+            ||$qualified['resolved_kind']!==$content['resolved_kind']||$qualified['mime']!==$content['mime']
+            ||$qualified['format']!==$content['format'])throw new \crmeb\exceptions\AuthUnavailableException();
+        return $qualified+['display_name'=>$displayName];
+    }
+
+    private static function copyUrl(string $source): string
+    {
+        // Collector paths are already DOM-decoded; plain URL slots are literal.
+        $url=$source;
+        if(preg_match('~\Ahttps?://~iD',$url)===1)return $url;
+        if(str_starts_with($url,'/uploads/')){
+            $site=sys_config('site_url');if(!is_string($site)||$site==='')throw new \crmeb\exceptions\AuthUnavailableException();
+            return rtrim($site,'/').$url;
+        }
+        return 'http://'.ltrim($url,'\\/');
+    }
+
+    private static function spoolStat($handle): array
+    {
+        if(!is_resource($handle)||get_resource_type($handle)!=='stream')throw new \crmeb\exceptions\AuthUnavailableException();
+        $stat=fstat($handle);$out=[];
+        foreach(['dev','ino','mode','nlink','uid','gid','size','mtime','ctime']as$key){
+            if(!is_array($stat)||!array_key_exists($key,$stat)||!is_int($stat[$key]))throw new \crmeb\exceptions\AuthUnavailableException();
+            $out[$key]=$stat[$key];
+        }
+        if(($out['mode']&0170000)!==0100000||($out['mode']&0777)!==0600||$out['ino']<1||!in_array($out['nlink'],[0,1],true)||$out['size']<0)throw new \crmeb\exceptions\AuthUnavailableException();
+        return $out;
+    }
+
+    private static function spoolCopyBytes(string $bytes): array
+    {
+        $handle=tmpfile();if($handle===false)throw new \crmeb\exceptions\AuthUnavailableException();
+        $entry=['spool'=>$handle,'pin'=>['bytes'=>strlen($bytes),'sha256'=>hash('sha256',$bytes)],'stat'=>[],
+            'close_attempted'=>false,'cleanup_complete'=>null];
+        try {
+            $initial=self::spoolStat($handle);if($initial['size']!==0)throw new \crmeb\exceptions\AuthUnavailableException();
+            $offset=0;$length=strlen($bytes);
+            while($offset<$length){$written=fwrite($handle,substr($bytes,$offset,min(262144,$length-$offset)));
+                if(!is_int($written)||$written<1)throw new \crmeb\exceptions\AuthUnavailableException();$offset+=$written;}
+            if(fflush($handle)!==true||rewind($handle)!==true)throw new \crmeb\exceptions\AuthUnavailableException();
+            $after=self::spoolStat($handle);
+            foreach(['dev','ino','mode','nlink','uid','gid']as$key)if($after[$key]!==$initial[$key])throw new \crmeb\exceptions\AuthUnavailableException();
+            if($after['size']!==$length)throw new \crmeb\exceptions\AuthUnavailableException();$entry['stat']=$after;
+            self::observeCopySpool($entry,false);if(rewind($handle)!==true)throw new \crmeb\exceptions\AuthUnavailableException();
+            return $entry;
+        } catch(\Throwable $error) {
+            $entry['close_attempted']=true;$entry['cleanup_complete']=fclose($handle)===true;
+            if(!$entry['cleanup_complete'])throw new \app\services\marketplace\attachment\MerchantAttachmentOperationException([
+                'complete'=>false,'phase'=>'copy_spool_cleanup','physical_changed'=>true,'physical_complete'=>false,
+                'database_committed'=>false,'cleanup_complete'=>false]);
+            throw $error;
+        }
+    }
+
+    private static function observeCopySpool(array $entry,bool $collect=true): string
+    {
+        $handle=$entry['spool'];if(self::spoolStat($handle)!==$entry['stat']||rewind($handle)!==true)throw new \crmeb\exceptions\AuthUnavailableException();
+        $hash=hash_init('sha256');$chunks=[];$total=0;
+        if($collect)self::copyReadMemory($entry['pin']['bytes']);
+        while(!feof($handle)){
+            $chunk=fread($handle,262144);if(!is_string($chunk)||($chunk===''&&!feof($handle)))throw new \crmeb\exceptions\AuthUnavailableException();
+            $total+=strlen($chunk);if($total>$entry['pin']['bytes'])throw new \crmeb\exceptions\AuthUnavailableException();
+            hash_update($hash,$chunk);if($collect)$chunks[]=$chunk;
+        }
+        if(fread($handle,1)!==''||$total!==$entry['pin']['bytes']||hash_final($hash)!==$entry['pin']['sha256']
+            ||self::spoolStat($handle)!==$entry['stat'])throw new \crmeb\exceptions\AuthUnavailableException();
+        return implode('',$chunks);
+    }
+
+    private static function copyReadMemory(int $bytes): void
+    {
+        $configured=ini_get('memory_limit');if(!is_string($configured))throw new \crmeb\exceptions\AuthUnavailableException();
+        $value=trim($configured);if($value==='-1')return;
+        if(preg_match('/\A([0-9]+)([KMG]?)\z/iD',$value,$match)!==1)throw new \crmeb\exceptions\AuthUnavailableException();
+        $limit=(int)$match[1];$power=match(strtoupper($match[2])){'K'=>1,'M'=>2,'G'=>3,default=>0};
+        for($i=0;$i<$power;$i++){if($limit>intdiv(PHP_INT_MAX,1024))throw new \crmeb\exceptions\AuthUnavailableException();$limit*=1024;}
+        $used=memory_get_usage(true);if($bytes<0||$bytes>intdiv(PHP_INT_MAX-1048576,2)||$used>$limit
+            ||2*$bytes+1048576>$limit-$used)throw new \crmeb\exceptions\AuthUnavailableException();
+    }
+
+    /** A publisher consumes only this request's original spool resource, then closes it once. */
+    public static function readCopySpool(array &$entry): string
+    {
+        try{return self::observeCopySpool($entry);}
+        finally{
+            $entry['close_attempted']=true;$entry['cleanup_complete']=fclose($entry['spool'])===true;
+            if($entry['cleanup_complete'])$entry['spool']=null;
+            if(!$entry['cleanup_complete'])throw new \crmeb\exceptions\AuthUnavailableException();
+        }
+    }
+
+    public static function releaseCopyPlan(array &$plan): bool
+    {
+        $complete=true;if(!isset($plan['images']))return true;
+        foreach($plan['images']as&$entry){
+            if(($entry['cleanup_complete']??null)===true&&$entry['spool']===null)continue;
+            if(($entry['close_attempted']??false)===true){$complete=false;continue;}
+            $entry['close_attempted']=true;$entry['cleanup_complete']=is_resource($entry['spool'])&&fclose($entry['spool'])===true;
+            if($entry['cleanup_complete'])$entry['spool']=null;else$complete=false;
+        }
+        unset($entry);return $complete;
+    }
+
+    /** Rewrites known slots once; array order, duplicates and unrelated HTML bytes stay intact. */
+    public function applyCopyPlan(array $data,array $plan,array $rows): array
+    {
+        if(count($rows)!==count($plan['images']))throw new \crmeb\exceptions\AuthUnavailableException();$maps=[];
+        foreach($plan['images']as$index=>$image){$row=$rows[$index];
+            if(!is_array($row)||!is_string($row['att_dir']??null)||$row['att_dir']==='')throw new \crmeb\exceptions\AuthUnavailableException();
+            $maps[$image['source_kind']][$image['source']]=$row['att_dir'];}
+        $imageMap=$maps['image']??[];
+        foreach($data['slider_image']as&$path)if(isset($imageMap[$path]))$path=$imageMap[$path];unset($path);
+        foreach($data['attrs']as&$sku)if(isset($sku['pic'],$imageMap[$sku['pic']]))$sku['pic']=$imageMap[$sku['pic']];unset($sku);
+        foreach($data['items']as&$item)if(isset($item['detail'])&&is_array($item['detail'])){foreach($item['detail']as&$option)if(is_array($option)&&isset($option['pic'],$imageMap[$option['pic']]))$option['pic']=$imageMap[$option['pic']];unset($option);}unset($item);
+        foreach(['image','recommend_image']as$field)if(isset($data[$field],$imageMap[$data[$field]]))$data[$field]=$imageMap[$data[$field]];
+        $videoMap=$maps['video']??[];if(isset($data['video_link'],$videoMap[$data['video_link']]))$data['video_link']=$videoMap[$data['video_link']];
+        if(is_string($data['description']??null))$data['description']=self::rewriteCopyHtml($data['description'],$maps);
+        if(is_array($data['description_images']??null))foreach($data['description_images']as&$path)if(is_string($path)&&isset($imageMap[$path]))$path=$imageMap[$path];unset($path);
+        return $data;
+    }
+
+    public function replaceCopyImageInHtml(string $html,string $source,string $destination): string
+    {
+        // The original description queue captures the raw double-quoted img.src.
+        // Recover its decoded URL only from that actual attribute in this HTML.
+        $slots=array_values(array_filter(self::copyHtmlSlots($html),static fn(array $slot):bool=>
+            $slot['tag']==='img'&&$slot['attribute']==='src'&&$slot['raw']===$source));$maps=[];
+        foreach($slots as$slot){
+            $maps['image'][$slot['path']]=$destination;
+        }
+        return self::rewriteCopyHtml($html,$maps,$slots);
+    }
+
+    private static function rewriteCopyHtml(string $html,array $maps,?array $slots=null): string
+    {
+        $slots??=self::copyHtmlSlots($html);$changes=[];
+        foreach($slots as$slot){
+            if(!isset($maps[$slot['kind']][$slot['path']]))continue;
+            $value=htmlspecialchars($maps[$slot['kind']][$slot['path']],ENT_QUOTES|ENT_SUBSTITUTE|ENT_HTML5,'UTF-8');
+            if($slot['quote']===''&&preg_match('/[\s"\'=<>`]/',$value)===1)$value='"'.$value.'"';
+            $changes[]=['start'=>$slot['start'],'length'=>$slot['length'],'value'=>$value];
+        }
+        // All offsets belong to the original source; reverse application cannot
+        // consume a replacement or alter any unrelated HTML text/attribute.
+        usort($changes,static fn(array $a,array $b):int=>$b['start']<=>$a['start']);
+        foreach($changes as$change)$html=substr_replace($html,$change['value'],$change['start'],$change['length']);
+        return $html;
+    }
+
+    /** Byte offsets only; the existing DOM parser still supplies every URL/kind. */
+    private static function copyHtmlSlots(string $html): array
+    {
+        $input=\app\services\marketplace\product\MerchantProductInput::class;
+        $media=$input::typedHtmlMedia($html);$slots=[];$cursor=0;$length=strlen($html);$next=0;
+        $space=" \t\r\n\f";
+        while($cursor<$length){
+            $start=strpos($html,'<',$cursor);if($start===false)break;
+            if(substr($html,$start,4)==='<!--'){
+                $end=strpos($html,'-->',$start+4);$bang=strpos($html,'--!>',$start+4);
+                if($bang!==false&&($end===false||$bang<$end)){$end=$bang;$close=4;}else$close=3;
+                $cursor=$end===false?$length:$end+$close;continue;
+            }
+            $at=$start+1;$closing=($html[$at]??'')==='/';if($closing)$at++;
+            if(!isset($html[$at])||preg_match('/[a-z]/iD',$html[$at])!==1){
+                // Declarations/processing instructions are not element content.
+                if(in_array($html[$start+1]??'',['!','?'],true)){
+                    $end=strpos($html,'>',$start+2);$cursor=$end===false?$length:$end+1;
+                }else$cursor=$start+1;
+                continue;
+            }
+            $nameStart=$at;
+            while($at<$length&&!str_contains($space.'/>',$html[$at]))$at++;
+            $name=strtolower(substr($html,$nameStart,$at-$nameStart));$attributes=[];
+            while($at<$length){
+                while($at<$length&&str_contains($space,$html[$at]))$at++;
+                if($at===$length)break;
+                if($html[$at]==='>'){$at++;break;}
+                if($html[$at]==='/'){$at++;continue;}
+                $attributeStart=$at;
+                while($at<$length&&!str_contains($space.'=/>',$html[$at]))$at++;
+                if($at===$attributeStart){$at++;continue;}
+                $attribute=strtolower(substr($html,$attributeStart,$at-$attributeStart));
+                while($at<$length&&str_contains($space,$html[$at]))$at++;
+                $value=null;
+                if($at<$length&&$html[$at]==='='){
+                    $at++;while($at<$length&&str_contains($space,$html[$at]))$at++;
+                    $quote=in_array($html[$at]??'',['"',"'"],true)?$html[$at++]:'';$valueStart=$at;
+                    if($quote!==''){
+                        $end=strpos($html,$quote,$at);$at=$end===false?$length:$end;
+                    }else while($at<$length&&!str_contains($space.'>',$html[$at]))$at++;
+                    $value=['start'=>$valueStart,'length'=>$at-$valueStart,'quote'=>$quote,
+                        'raw'=>substr($html,$valueStart,$at-$valueStart)];
+                    if($quote!==''&&$at<$length)$at++;
+                }
+                // HTML keeps the first occurrence, including an empty/boolean one.
+                if(!array_key_exists($attribute,$attributes))$attributes[$attribute]=$value;
+            }
+            $cursor=$at;
+            if(!$closing&&in_array($name,['img','video','audio','source'],true)){
+                // Decode the actual raw tag using exactly the full document's
+                // existing libxml rules, never ENT_HTML5 or a second URL decode.
+                $tagRows=$input::typedHtmlMedia(substr($html,$start,$at-$start));
+                foreach($tagRows as$row){
+                    $field=$row['attribute'];$slot=$attributes[$field]??null;$whole=$media[$next]??null;
+                    if(!is_array($slot)||$row['tag']!==$name||!is_array($whole)
+                        ||$whole['tag']!==$name||$whole['attribute']!==$field||$whole['path']!==$row['path'])
+                        throw new \crmeb\exceptions\AuthUnavailableException();
+                    $slots[]=$slot+['path'=>$whole['path'],'kind'=>$whole['kind'],'tag'=>$name,'attribute'=>$field];$next++;
+                }
+            }
+            if(!$closing&&in_array($name,['title','textarea','script','style','xmp','iframe','noembed','noframes','plaintext'],true)){
+                // RCDATA/raw-text may contain '<img>' literally. Only its real
+                // end tag resumes element scanning; plaintext consumes the rest.
+                if($name==='plaintext'){$cursor=$length;continue;}
+                $matched=preg_match('~</'.preg_quote($name,'~').'(?=[\x20\t\r\n\f/>])~i',$html,$endTag,PREG_OFFSET_CAPTURE,$cursor);
+                if($matched===false)throw new \crmeb\exceptions\AuthUnavailableException();
+                $cursor=$matched===1?$endTag[0][1]:$length;
+            }
+        }
+        if($next!==count($media))throw new \crmeb\exceptions\AuthUnavailableException();
+        return $slots;
+    }
+
+    /** The legacy description producer supplies one raw double-quoted attribute. */
+    private static function copyDescriptionSource(string $source): string
+    {
+        if(str_contains($source,'"'))throw new \crmeb\exceptions\AuthUnavailableException();
+        $rows=\app\services\marketplace\product\MerchantProductInput::typedHtmlMedia('<img src="'.$source.'">');
+        if(count($rows)!==1||$rows[0]['tag']!=='img'||$rows[0]['attribute']!=='src')throw new \crmeb\exceptions\AuthUnavailableException();
+        return $rows[0]['path'];
+    }
+
+    /** Existing selfWorker jobs publish owned objects; they do not borrow an admin Request. */
+    public function downloadCopyImageForProduct(int $productId,string $source,array &$receipt,array &$commitSnapshot,bool $htmlAttribute=false): string
+    {
+        $receipt=['complete'=>false,'phase'=>'copy_download','physical_changed'=>false,'physical_complete'=>false,'database_committed'=>false,'cleanup_complete'=>null];
+        $guard=\app\services\marketplace\product\LegacyProductWriteServices::class;
+        if(!$guard::enabled()||!$guard::isSelfWorker())throw new \crmeb\exceptions\AuthUnavailableException();
+        $guard::assertParent($productId);$pdo=$guard::transaction();$owner=$guard::mediaOwner($productId);
+        if($htmlAttribute)$source=self::copyDescriptionSource($source);
+        $url=self::copyUrl($source);
+        $fetched=(new \app\services\marketplace\product\ProductMediaRemoteImages())->fetchOneForProductCopy($url);
+        if($fetched['url_sha256']!==hash('sha256',$url))throw new \crmeb\exceptions\AuthUnavailableException();
+        $facts=$this->qualifyCopyMediaBytes($fetched['bytes'],$fetched['url_sha256'],'image');
+        if($guard::transaction()!==$pdo||$guard::mediaOwner($productId)!==$owner)throw new \crmeb\exceptions\AuthUnavailableException();
+        $row=app()->make(\app\services\marketplace\product\PlatformProductMediaServices::class)->publishCopyImageInCurrentWriter($productId,$fetched['bytes'],$facts['display_name'],0,$receipt);
+        $commitSnapshot=app()->make(\app\services\marketplace\product\PlatformProductMediaServices::class)->copyCommitSnapshot([$row]);
+        unset($fetched,$facts);
+        app()->make(\app\services\marketplace\product\ProductMediaReferenceServices::class)->assertForProduct($productId,[['kind'=>'image','path'=>$row['att_dir']]]);
+        return $row['att_dir'];
+    }
+
     /**
      * 下载商品详情图片
      * @param int $id

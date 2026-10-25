@@ -35,6 +35,14 @@ return [
         'gc_batch'=>Env::get('marketplace.product_media_scan.gc_batch',16),
         'gc_period_seconds'=>Env::get('marketplace.product_media_scan.gc_period_seconds',60),
     ],
+    'product_video_upload'=>[
+        // Opt-in; the original whole-file upload remains available while disabled.
+        'enabled'=>Env::get('marketplace.product_video_upload.enabled',false),
+        'private_root'=>Env::get('marketplace.product_video_upload.private_root',''),
+        'max_open_sessions'=>Env::get('marketplace.product_video_upload.max_open_sessions',16),
+        'per_actor'=>Env::get('marketplace.product_video_upload.per_actor',4),
+        'ttl_seconds'=>Env::get('marketplace.product_video_upload.ttl_seconds',600),
+    ],
     'payment'=>[
         // Think Env reads PHP_MARKETPLACE_PAYMENT_TEST_ENABLED; APP_ENV is checked separately at resolution.
         'test_enabled'=>Env::get('marketplace.payment.test_enabled',false),

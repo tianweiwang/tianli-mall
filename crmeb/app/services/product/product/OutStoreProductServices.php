@@ -55,7 +55,8 @@ class OutStoreProductServices extends BaseServices
         $guard=\app\services\marketplace\product\LegacyProductWriteServices::class;
         $guard::assertRawBody($data);
         return app()->make($guard)->run($id?[$id]:[],function()use($id,$data,$guard){
-            $guard::categories($data['cate_id']);return $this->legacySave($id,$data);
+            $references=$data;$references['freight']=2;$references['temp_id']=0;$references['image']=$data['slider_image'][0]??'';
+            $guard::saveReferences($id,$references);return $this->legacySave($id,$data);
         },$id===0,true);
     }
     private function legacySave(int $id, array $data)

@@ -177,7 +177,7 @@ class Local extends BaseUpload
      * @param string|null $key
      * @return array|bool|mixed|\StdClass
      */
-    public function stream($fileContent, string $key = null)
+    public function stream($fileContent, string $key = null, ?string $mime = null)
     {
         if (!$key) {
             $key = $this->saveFileName();

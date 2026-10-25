@@ -7,9 +7,9 @@ use app\model\product\product\StoreProduct;
 use app\model\product\sku\StoreProductAttrValue;
 use app\model\product\sku\StoreProductRule;
 use app\model\shipping\ShippingTemplates;
-use app\model\system\attachment\SystemAttachment;
 use app\services\marketplace\context\MerchantContext;
 use app\services\marketplace\product\MerchantProductInput as Input;
+use app\services\marketplace\product\ProductMediaReferenceServices;
 use app\services\marketplace\category\MerchantCategoryPolicy;
 use crmeb\exceptions\AuthUnavailableException;
 use crmeb\exceptions\MerchantNotFoundException;
@@ -97,7 +97,7 @@ final class MerchantProductDao
         }unset($row);
         return $rows;
     }
-    public function references(MerchantContext $ctx,array $input,array $definitions): array
+    public function references(MerchantContext $ctx,int $productIdOrZero,array $input,array $definitions): array
     {
         // The GET limit also bounds this write preflight; current locks follow separately.
         $inventory=Db::name('store_category')->field('id')->order('id')->limit(MerchantCategoryPolicy::ROW_MAX+1);
@@ -117,8 +117,8 @@ final class MerchantProductDao
             $categoryParents[$category]=$row['pid']===0?$category:$row['pid'];
         }
         $temp=$input['root']['temp_id'];if($input['root']['freight']===3){$q=MerchantScope::apply((new ShippingTemplates())->db()->where('id',$temp),$ctx);self::transaction($q);if(self::raw($q->lock(true)->find())===null)Input::invalid();}
-        $media=array_merge($input['slider'],$definitions['media'],Input::htmlMedia($input['description']));if($input['root']['video_link']!=='')$media[]=$input['root']['video_link'];
-        foreach(array_unique($media)as$value){$q=(new SystemAttachment())->db()->where(static function(Query $q)use($value):void{$q->where('att_dir',$value)->whereOr('satt_dir',$value);});$q=MerchantScope::apply($q,$ctx);self::transaction($q);$rows=$q->field(['att_id','mer_id'])->lock(true)->limit(2)->select()->toArray();if(count($rows)!==1)Input::invalid();MerchantScope::assertOwned($rows[0],$ctx);}
+        $media=app()->make(ProductMediaReferenceServices::class);
+        $media->assertForMerchant($ctx,$productIdOrZero,$media->merchantReferences($input,$definitions));
         return $categoryParents;
     }
     public function preset(MerchantContext $ctx,int $id): ?array
