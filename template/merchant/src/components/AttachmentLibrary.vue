@@ -31,7 +31,7 @@ function flatten(list, type, depth = 0) {
 export default {
   mixins: [fieldNames],
   props: { selectable: Boolean, kind: { type: String, default: 'image' }, productId: { default: null }, productContext: { default: null }, invocation: { type: Number, default: 0 } },
-  data: () => ({ rows: [], categories: [], categoryId: 0, uploadCategoryId: 0, page: 1, limit: 20, count: 0, loading: false, busy: false, error: '', notice: '', receipt: null, categoryDialog: false, categoryError: '', categoryRecord: null, categoryForm: { name: '', pid: 0, type: 0 }, context: null, generation: 0, readJob: 0, alive: true, unsubscribe: null }),
+  data: () => ({ rows: [], categories: [], categoryId: 0, uploadCategoryId: 0, page: 1, limit: 20, count: 0, videoChunkUpload: false, loading: false, busy: false, error: '', notice: '', receipt: null, categoryDialog: false, categoryError: '', categoryRecord: null, categoryForm: { name: '', pid: 0, type: 0 }, context: null, generation: 0, readJob: 0, alive: true, unsubscribe: null }),
   computed: {
     kindLabel() { return { image: '图片', video: '视频', audio: '音频' }[this.kind] || '素材'; },
     categoryType() { return this.kind === 'video' ? 1 : 0; },
@@ -54,7 +54,7 @@ export default {
   beforeDestroy() { this.alive = false; this.clear(); if (this.unsubscribe) this.unsubscribe(); },
   methods: {
     rowKind: mediaKind,
-    clear() { this.generation += 1; this.readJob += 1; this.context = null; this.rows = []; this.categories = []; this.categoryId = 0; this.uploadCategoryId = 0; this.page = 1; this.count = 0; this.loading = false; this.busy = false; this.categoryDialog = false; this.receipt = null; this.notice = ''; this.error = ''; this.categoryError = ''; },
+    clear() { this.generation += 1; this.readJob += 1; this.context = null; this.rows = []; this.categories = []; this.categoryId = 0; this.uploadCategoryId = 0; this.page = 1; this.count = 0; this.videoChunkUpload = false; this.loading = false; this.busy = false; this.categoryDialog = false; this.receipt = null; this.notice = ''; this.error = ''; this.categoryError = ''; },
     start() {
       this.clear();
       try {
@@ -76,12 +76,13 @@ export default {
         const [categories, data, legacy] = await Promise.all(calls); if (!this.current(ticket) || job !== this.readJob) return false;
         if (!categories || !Array.isArray(categories.list) || !data || !Array.isArray(data.list) || !Number.isInteger(data.count) || data.count < 0 || (this.kind === 'video' && (!legacy || !Array.isArray(legacy.list)))) throw new Error('素材列表返回不完整');
         const primary = flatten(categories.list, this.categoryType); const old = legacy ? flatten(legacy.list, 0).map((row) => ({ ...row, label: '旧本地视频 / ' + row.label })) : [];
-        this.categories = primary.concat(old); this.rows = data.list.map((row) => mediaRow(row, this.kind === 'image' ? null : this.kind)); this.count = data.count; return true;
+        this.categories = primary.concat(old); this.rows = data.list.map((row) => mediaRow(row, this.kind === 'image' ? null : this.kind)); this.count = data.count;
+        this.videoChunkUpload = this.kind === 'video' && data.video_chunk_upload === true; return true;
       } catch (error) { if (this.current(ticket) && job === this.readJob) this.error = error.message; if (propagate === true) throw error; return false; }
       finally { if (this.current(ticket) && job === this.readJob) this.loading = false; }
     },
     firstPage() { this.page = 1; this.reload(); }, changePage(page) { if (!this.loading && !this.busy) { this.page = page; this.reload(); } },
-    operationError(error) { this.receipt = mediaReceipt(error.data); if (error.status === 0) return '本次素材写入结果尚未确认，请刷新核对，勿直接重复提交'; return error.message + (this.receipt ? '，请保留本次收据并刷新核对素材状态' : ''); },
+    operationError(error) { this.receipt = mediaReceipt(error.data); if (error.mediaStagingOnly === true) return '视频分片未完成，尚未提交入库：' + error.message; if (error.status === 0) return '本次素材写入结果尚未确认，请刷新核对，勿直接重复提交'; return error.message + (this.receipt ? '，请保留本次收据并刷新核对素材状态' : ''); },
     async upload(event) {
       const file = event.target.files[0]; event.target.value = ''; if (!file || this.busy || this.loading || !this.canUpload) return;
       const ticket = this.ticket(); if (!this.current(ticket)) return;
@@ -89,7 +90,7 @@ export default {
       if (this.kind !== 'image' && !(this.kind === 'video' ? /\.mp4$/i : /\.(mp3|wav|wma|amr)$/i).test(file.name)) { this.error = '请选择支持的' + this.kindLabel + '文件'; return; }
       this.busy = true; this.notice = ''; this.error = ''; this.receipt = null; let uploaded = false;
       try {
-        const value = this.kind === 'image' ? await api.uploadAttachment(file, this.uploadCategoryId) : await api.uploadProductMedia(this.productId, this.kind, file, this.uploadCategoryId);
+        const value = this.kind === 'image' ? await api.uploadAttachment(file, this.uploadCategoryId) : await api.uploadProductMedia(this.productId, this.kind, file, this.uploadCategoryId, { chunked: this.videoChunkUpload, context: ticket.context, isCurrent: () => this.current(ticket) });
         if (!this.current(ticket)) return; const row = mediaRow(value, this.kind); uploaded = true;
         if (row.pid !== this.uploadCategoryId || row.type !== this.categoryType) throw new Error('上传对象的实际分类或类型尚未核对'); this.categoryId = this.uploadCategoryId; this.page = 1;
         const loaded = await this.reload(true); if (!this.current(ticket)) return;

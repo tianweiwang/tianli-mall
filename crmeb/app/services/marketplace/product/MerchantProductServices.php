@@ -115,7 +115,70 @@ final class MerchantProductServices
 
     public function uploadVideo(\app\Request $request,int $productIdOrZero): array
     {
+        if(array_key_exists('upload_operation',$request->post(false)))return $this->uploadVideoSession($request,$productIdOrZero);
         return $this->uploadTypedMedia($request,$productIdOrZero,'video');
+    }
+
+    /** Only the existing authenticated merchant writer may derive a cross-request binding. */
+    private function videoSessionIdentity(\app\Request $request,MerchantContext $ctx,int $id,int $category): array
+    {
+        if(app()->request!==$request||$request->merchantContext()!==$ctx)throw new AuthUnavailableException();
+        $this->authentication->authorizeAction($ctx,'attachment.manage',true);
+        $connection=\think\facade\Db::connect();$pdo=$connection->getPdo();
+        if(!$pdo instanceof \PDO||!$pdo->inTransaction())throw new AuthUnavailableException();
+        if($id>0){$product=$this->products->find($ctx,$id,true);if((int)$product['is_del']!==0)MerchantProductInput::invalid();}
+        if($category)app()->make(\app\dao\marketplace\MerchantAttachmentDao::class)->categoryForMedia($ctx,$id,$category,1);
+        $fingerprint=$request->verifiedTokenFingerprint();$epoch=\crmeb\services\AuthConfigGuard::authConfig()['session_epoch'];
+        if(!is_string($epoch)||$epoch===''||\think\facade\Db::connect()!==$connection
+            ||$connection->getPdo()!==$pdo||!$pdo->inTransaction())throw new AuthUnavailableException();
+        return ['binding'=>hash('sha256',json_encode(['purpose'=>'merchant-product-video','mer_id'=>$ctx->merId,
+            'employee_id'=>$ctx->employeeId,'session_version'=>$ctx->sessionVersion,'fingerprint'=>$fingerprint,
+            'epoch'=>$epoch,'product_id'=>$id,'category_id'=>$category],JSON_THROW_ON_ERROR)),
+            'actor'=>hash('sha256','merchant:'.$ctx->merId.':'.$ctx->employeeId)];
+    }
+
+    private function uploadVideoSession(\app\Request $request,int $id): array
+    {
+        if(app()->request!==$request)throw new AuthUnavailableException();$ctx=$request->merchantContext();
+        $this->authorize($ctx,'product.write');$this->authorize($ctx,'attachment.manage');
+        MerchantProductInput::integer($id,0,MerchantProductInput::ROOT_MAX);$body=$request->post(false);
+        $fields=match($body['upload_operation']??null){
+            'issue'=>['upload_operation','category_id','filename','total_size'],
+            'chunk'=>['upload_operation','category_id','upload_reference','chunkNumber'],
+            'finalize','cancel'=>['upload_operation','category_id','upload_reference'],
+            default=>throw new \think\exception\HttpException(422,'请求参数不正确'),
+        };
+        $body=MerchantManagementInput::body($body,$fields,$fields);
+        $category=\app\services\marketplace\attachment\MerchantAttachmentInput::id($body['category_id'],true);
+        $identity=$this->write($ctx,'product.write',fn():array=>$this->videoSessionIdentity($request,$ctx,$id,$category));
+        $same=function()use($request,$ctx,$id,$category,$identity):void{
+            if($this->videoSessionIdentity($request,$ctx,$id,$category)!==$identity)throw new AuthUnavailableException();
+        };
+        $dto=null;
+        $publish=function(array $source)use($request,$id,$category,$same,&$dto):string{
+            $dto=$this->uploadTypedMedia($request,$id,'video',static function()use($source,$same):array{
+                $same();return $source;
+            },$category);
+            return $dto['att_dir'];
+        };
+        $observe=function(string $src)use($ctx,$id,$category,$same,&$dto):void{
+            $dto=$this->write($ctx,'product.write',function()use($ctx,$id,$category,$src,$same):array{
+                $same();
+                $proofs=app()->make(ProductMediaReferenceServices::class)->assertForMerchant($ctx,$id,[['kind'=>'video','path'=>$src]]);
+                if(count($proofs)!==1||!is_array($proofs[0]['native14']??null))throw new AuthUnavailableException();
+                $row=$proofs[0]['native14'];
+                if(array_keys($row)!==\app\dao\marketplace\MerchantAttachmentDao::MEDIA_FIELDS
+                    ||(string)$row['mer_id']!==(string)$ctx->merId||(string)$row['pid']!==(string)$category
+                    ||(string)$row['type']!=='1'||$row['att_dir']!==$src)throw new AuthUnavailableException();
+                return self::mediaDto($row);
+            });
+        };
+        $result=app()->make(ProductVideoUploadSessions::class)->command($request,$identity['binding'],$identity['actor'],$body,$publish,$observe);
+        if(array_key_exists('src',$result)){
+            if(!is_array($dto)||$dto['att_dir']!==$result['src'])throw new AuthUnavailableException();
+            return $dto;
+        }
+        return $result;
     }
 
     public function uploadAudio(\app\Request $request,int $productIdOrZero): array
@@ -138,25 +201,32 @@ final class MerchantProductServices
     }
 
     /** The original writer owns the sole transaction and actual merchant audit. */
-    private function uploadTypedMedia(\app\Request $request,int $productIdOrZero,string $kind): array
+    private function uploadTypedMedia(\app\Request $request,int $productIdOrZero,string $kind,?callable $sessionSource=null,?int $sessionCategory=null): array
     {
         if(app()->request!==$request)throw new AuthUnavailableException();$ctx=$request->merchantContext();
         $this->authorize($ctx,'product.write');$this->authorize($ctx,'attachment.manage');
         MerchantProductInput::integer($productIdOrZero,0,MerchantProductInput::ROOT_MAX);
-        $body=\app\services\marketplace\attachment\MerchantAttachmentInput::body($request->post(false),['category_id']);
-        $category=\app\services\marketplace\attachment\MerchantAttachmentInput::id($body['category_id']??0,true);
+        if($sessionSource!==null){
+            if($kind!=='video'||$sessionCategory===null)throw new AuthUnavailableException();
+            $category=\app\services\marketplace\attachment\MerchantAttachmentInput::id($sessionCategory,true);
+        }else{
+            if($sessionCategory!==null)throw new AuthUnavailableException();
+            $body=\app\services\marketplace\attachment\MerchantAttachmentInput::body($request->post(false),['category_id']);
+            $category=\app\services\marketplace\attachment\MerchantAttachmentInput::id($body['category_id']??0,true);
+        }
         $storage=app()->make(\app\services\marketplace\attachment\MerchantAttachmentStorage::class);
         $attachments=app()->make(\app\dao\marketplace\MerchantAttachmentDao::class);
         $receipt=self::mediaReceipt();$object=[];$snapshot=null;
         try{
-            $result=$this->write($ctx,'product.write',function()use($request,$ctx,$productIdOrZero,$kind,$category,$storage,$attachments,&$receipt,&$object,&$snapshot):array{
+            $result=$this->write($ctx,'product.write',function()use($request,$ctx,$productIdOrZero,$kind,$category,$storage,$attachments,$sessionSource,&$receipt,&$object,&$snapshot):array{
                 if(app()->request!==$request||$request->merchantContext()!==$ctx)throw new AuthUnavailableException();
                 $this->authentication->authorizeAction($ctx,'attachment.manage',true);
                 if($productIdOrZero>0){$product=$this->products->find($ctx,$productIdOrZero,true);if((int)$product['is_del']!==0)MerchantProductInput::invalid();}
                 $connection=\think\facade\Db::connect();$pdo=$connection->getPdo();
                 if(!$pdo instanceof \PDO||!$pdo->inTransaction())throw new AuthUnavailableException();
                 if($category)$attachments->categoryForMedia($ctx,$productIdOrZero,$category,$kind==='video'?1:0);
-                $file=$storage->readTypedUploadedFile($request);
+                $file=$sessionSource===null?$storage->readTypedUploadedFile($request):$sessionSource();
+                if(!is_array($file)||array_keys($file)!==['bytes','display_name']||!is_string($file['bytes'])||!is_string($file['display_name']))throw new AuthUnavailableException();
                 try{$fields=$storage->uploadTypedBytesForMerchant($ctx,$productIdOrZero,$file['bytes'],$file['display_name'],$kind,$object,$receipt);}
                 finally{unset($file);}
                 $keys=array_keys($fields);sort($keys,SORT_STRING);

@@ -1,4 +1,4 @@
-import { request } from './request';
+import { request, ApiError, staleSessionError } from './request';
 import { captureSession, isCurrentSession } from './session';
 import { orderRecordId } from '../domain/order';
 function id(value) { if (!Number.isSafeInteger(value) || value <= 0) throw new Error('缺少有效的实际记录编号'); return value; }
@@ -49,6 +49,40 @@ export function mediaReceiptText(receipt) {
   return '阶段：' + receipt.phase + '；物理变化：' + state(receipt.physical_changed) + '；物理完成：' + state(receipt.physical_complete)
     + '；数据库提交：' + state(receipt.database_committed) + '；清理完成：' + state(receipt.cleanup_complete) + '。保留本次结果，刷新后核对，勿直接重复上传。';
 }
+async function uploadProductVideoChunks(productId, file, categoryId, context, isCurrent) {
+  const product = mediaId(productId);
+  if (!Number.isSafeInteger(categoryId) || categoryId < 0 || categoryId > 2147483647) throw new Error('素材分类不正确');
+  const current = () => {
+    if (!context || context.productId !== product || !currentMediaContext(context) || typeof isCurrent !== 'function' || isCurrent() !== true) throw staleSessionError();
+  };
+  const endpoint = 'products/' + product + '/media/videos/upload'; let issued;
+  try {
+    current();
+    issued = await request('POST', endpoint, { upload_operation: 'issue', category_id: categoryId, filename: file.name, total_size: file.size });
+    current();
+    if (!issued || typeof issued.upload_reference !== 'string' || !/^[0-9a-f]{32}$/.test(issued.upload_reference)
+      || issued.chunk_size !== 3145728 || issued.total_chunks !== Math.ceil(file.size / issued.chunk_size)
+      || issued.code !== 1 || issued.file_path !== '') throw new ApiError(503, '视频暂存响应不完整');
+    for (let number = 1; number <= issued.total_chunks; number += 1) {
+      current(); const start = (number - 1) * issued.chunk_size;
+      const body = new FormData(); body.append('file', file.slice(start, Math.min(start + issued.chunk_size, file.size), file.type), file.name);
+      body.append('upload_operation', 'chunk'); body.append('category_id', String(categoryId));
+      body.append('upload_reference', issued.upload_reference); body.append('chunkNumber', String(number));
+      const part = await request('POST', endpoint, body); current();
+      const last = number === issued.total_chunks;
+      if (!part || part.code !== (last ? 2 : 1) || part.file_path !== (last ? issued.upload_reference : '')) throw new ApiError(503, '视频分片结果不完整');
+    }
+  } catch (error) {
+    // These finite operations cannot publish an attachment. Retain private staging for the original timer.
+    if (!error.staleSession) error.mediaStagingOnly = true;
+    throw error;
+  }
+  current();
+  // Keep original ApiError/unknown-commit semantics after publication may have started.
+  const result = await request('POST', endpoint, { upload_operation: 'finalize', category_id: categoryId, upload_reference: issued.upload_reference });
+  current();
+  try { return mediaRow(result, 'video'); } catch (error) { throw new ApiError(0, '视频保存结果尚未确认'); }
+}
 export const api = {
   login: (body) => request('POST', 'login', body, { public: true }),
   setupPassword: (body) => request('POST', 'password/setup', body, { public: true }),
@@ -77,8 +111,11 @@ export const api = {
   saveAttachmentCategory: (value, body) => value ? request('PUT', 'attachment-categories/' + id(value), body) : request('POST', 'attachment-categories', body),
   deleteVideoCategory: (value) => request('DELETE', 'attachment-categories/' + id(value), { type: 1 }),
   uploadAttachment: (file, categoryId) => { const body = new FormData(); body.append('file', file); body.append('category_id', String(categoryId)); return request('POST', 'attachments/upload', body); },
-  uploadProductMedia: (productId, kind, file, categoryId) => {
+  uploadProductMedia: (productId, kind, file, categoryId, options = {}) => {
     if (!['video', 'audio'].includes(kind)) throw new Error('素材类型不正确');
+    if (kind === 'video' && options.chunked === true && file instanceof File && file.size > 3145728) {
+      return uploadProductVideoChunks(productId, file, categoryId, options.context, options.isCurrent);
+    }
     const body = new FormData(); body.append('file', file); body.append('category_id', String(categoryId));
     return request('POST', 'products/' + mediaId(productId) + '/media/' + (kind === 'video' ? 'videos' : 'audio') + '/upload', body);
   },

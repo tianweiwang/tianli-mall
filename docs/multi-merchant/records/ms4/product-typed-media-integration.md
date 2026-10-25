@@ -42,3 +42,23 @@ Root实际PHP语法：固定已有PHP8.2镜像对本增量全部5份PHP完整输
 Root与非作者已完成源码余审，确定finding为0。非作者完整审查原8件差分、新增325行服务及实际会话/商品/归属/分类、typed生产和提交观察、最终引用、选择器消费者、原GC Timer接线；报告为仓库外 `H:/天俪商城/artifacts/project-organization-20261023/current41c0-normal-root-admission-r1/R112-PRODUCT-VIDEO-SESSIONS-INDEPENDENT-SOURCE-REVIEW.json`，5655字节、SHA256 `f741d3a2869674881e043565e36ebccd77ed1431760a00ae73a813c63ce7aba2`。报告明确为Source独审，未运行PHP、Docker、HTTP、GC或浏览器，也没有编造逐输入FD/时间窗口。原两份JS script纯语法检查和diff检查0仍对应未改变的代码。
 
 本增量真实隔离HTTP/多请求完整MP4上传、私有文件/native14/业务审计/提交回读、同引用完成态实际读回、自然Timer GC及浏览器实际选择后商品保存均 NOT RUN；本增量Composer自然加载、设备和外部存储供应商验证仍待。商家跨请求分片、云直传finalize仍未实现/未验，原整件视频上传保持。只形成可保存L2本地检查点的Source增量，不代表完整T4、19交付组或上线验收完成；不推送、合并、部署或处理真实资金。用户停止的安全、负向、故障、并发及恢复样本保持 NOT RUN，仅BASE人工签收状态不变。
+
+## 2026-10-25 商家商品视频分片接线（编码前设计，待Root复核）
+
+从已确认clean的818cf0374ae8cf4844a6b834ac8486895df4ac61建立专用 `H:/天俪商城/worktrees/merchant-video-upload-session` / `feature/merchant-video-upload-session-20261025`，原平台工作树和818cf保持。需求是原T4/W13的商家真实商品/创建准备的视频跨请求链，接入现有商家素材选择器；不变更商品/SKU/价格/库存，不扩大为云直传finalize，也不签完整T4。
+
+设计：沿原 `POST products/<id>/media/videos/upload` 和真实merchantapi中间件，全部阶段保 `product.write` 与 `attachment.manage`。当前中间件在真实AuthTokenV2验证后写入的token fingerprint、MerchantContext实际merId/employeeId/sessionVersion、当前session_epoch，与writer锁定的真实商品/创建准备及type1分类形成商家专用用途绑定；不使用每请求变化的requestId，不接受client owner/session/path。分片issue/chunk/finalize/cancel复用818cf的ProductVideoUploadSessions原字节、同配置/容量/期限/私有根及原GC Timer，actor hash明确区分商家与平台。预备/最终消费/完成态读回均通过原商家writer再次验证真实身份与范围；最终完整MP4仍走原typed物理生产、完整native14、审计及真实提交观察。首次成功继续原11字段素材DTO；重复finalize由原ProductMediaReferenceServices的真实native14/完整物理proof复用mediaDto，不按路径猜查或由前端拼造。
+
+实际前端：仅视频列表顶层加video_chunk_upload能力位，逐行原11字段不变。AttachmentLibrary读取严格true后，对大于3MiB的真实File经已有API封装执行issue→顺序真实multipart chunks→finalize；关闭/小文件/音频/图片保原整件链。每请求前后检查冻结merchant context及本次picker ticket有效性；只有最终11字段通过原mediaRow、实际分类/type核对及列表回读后才能反馈上传成功，原select→form.video_link→saveProduct消费者保持。暂存阶段的失败只反馈分片未完成，finalize仍保原ApiError/六键收据及未知提交提示，不自动重试/重issue/取消。
+
+允许Files仅5件：本记录；`crmeb/app/services/marketplace/product/MerchantProductServices.php`；`crmeb/app/services/marketplace/MerchantAttachmentServices.php`；`template/merchant/src/api/index.js`；`template/merchant/src/components/AttachmentLibrary.vue`。不改平台代码、共享session类、Request/认证中间件、路由/权限种子、DB或调度，不新建框架/验证包。
+
+任务/验收：①保原授权/商品和分类范围、稳定会话用途及同writer连接；②新链首次和完成态重复返回真实11字段并保原MP4/native14/审计/提交路径；③真实picker调用及生命周期/未知结果处理、旧整件分支和平台原字节保持；④纯Node/source检查、diff与原方法静态比较；⑤Root审完整新diff后安排PHP纯语法、实际正常HTTP/文件/SQL/自然GC和浏览器验收。本轮仅Source及无资源副作用静态检查，不Docker/PHP/HTTP/设备/目标执行，不提交或推送；运行、视觉/设备和云直传继续NOT RUN/未完成，停用样本不运行。auto-sync实际project_not_enabled，不enroll；.codegraph不存在，不初始化。
+
+Source候选已接线，待Root完整diff复核，不提交。现有 `template/merchant/scripts/source-check.cjs` 实际纯静态执行为PASS：40个script语法、97个本地import，明确build/browser/HTTP=false；`git diff --check` 为0。逐方法原文核对：MerchantProductServices原19方法保17个，只改uploadVideo/uploadTypedMedia并加2个私有session接缝；MerchantAttachmentServices原13方法保12个，只在listMedia加能力位。原native14/审计/提交观察、mediaDto及最终引用门原文不变；共享session整20318字节/SHA256 `08a459199729d0aaa9a6b536b0811ad1d92c81b8c55a8f64e7a31138a1e66bd3` 保持，平台服务/页面、原GC Timer、配置和Request/merchant认证中间件均与818cf原字节相同。商家AttachmentLibrary的template/style未改，只接原上传/错误反馈行为；没有据此声称视觉验收。
+
+本候选2份PHP的实际PHP8.2语法和Composer自然加载均NOT RUN（交Root串行）；实际HTTP/完整大MP4多请求/完成态同引用回读/native14/文件/审计与提交、自然GC、浏览器选择到商品保存、设备及云直传仍NOT RUN/未完成。既有平台语法/独审报告不覆盖这2份新PHP差分；本轮未运行或导入应用模块/停用样本，不把Source静态检查、候选接线或原检查点代签商家业务/完整T4/19交付组通过。
+
+Root验证与本地检查点补记：上述2份商家PHP的完整输入已在固定PHP8.2实际php-l通过；与Licence诊断1份合计3/3、5原生操作均0，同一原bootstrap的CID/PID/StartedAt/readonly前后保持，未创建Docker资源或执行候选。仓库外fixture-and-merchant-video-php82-syntax-r1/RESULT.json为6750B、SHA256 ec37ff71b1cef7eafbef4c0c830f1999ff947ca19822edf840df56bd7c6b52bb。Root a81531完整5件diff及真实typed上传/授权writer/Request fingerprint/前端context/import等消费者已读，无确定新问题；非作者private_asset_next_gap全文5件及共享session/原producer-consumer核对finding0，独立Node40scripts/97imports纯检查0。该独审对应本追加前记录15331B；本追加只记已发生事实，其余4件应用代码原文不变，不把原审代签新追加文档。
+
+当前仅保存L2本地Source检查点；实际merchant多请求大MP4、首次/重复finalize的真实11字段/native14/审计与提交回读、自然GC、浏览器选择后商品保存及设备仍NOT RUN，Composer自然加载未验。模板/样式保持，已完整读Control-quality，未据Source/构建声明视觉通过。云直传finalize仍未实现/未验，完整T4/19组未关闭，不合并、推送、部署或处理真实资金。

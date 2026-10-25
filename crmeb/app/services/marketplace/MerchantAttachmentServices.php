@@ -202,7 +202,9 @@ final class MerchantAttachmentServices
         MerchantManagementInput::integer($page,1,2147483647);MerchantManagementInput::integer($limit,1,100);
         if(!in_array($kind,['video','audio'],true))Input::invalid();
         $result=$this->attachments->listingMedia($ctx,$kind,$categoryId,$page,$limit);
-        $result['list']=array_map([self::class,'dto'],$result['list']);return $result;
+        $result['list']=array_map([self::class,'dto'],$result['list']);
+        if($kind==='video')$result['video_chunk_upload']=\app\services\marketplace\product\ProductVideoUploadSessions::enabled();
+        return $result;
     }
 
     public function deleteCategory(MerchantContext $ctx,int $id,array $selector=[]): array
