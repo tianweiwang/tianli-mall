@@ -1550,3 +1550,34 @@ R39原实例已正常关闭并独立核零：close84原生自然0（db58b47b8ed5
 两个候选PHP在固定PHP8.2、nonroot、network none、RO容器内实际各一次 `php -l` 通过；8项原生命令和外层40000 native/wait0，原同CID普通移除、前后自有label查询为空。必要语法结果9021B / `960e77e3193b9aef06492dc282400d403a31a815c74e2a64d07d7e6b5825443c`；Root合并实际读回2514B / `87c2de85205ebd5ddcb0d9faa47f769ac6a4f78291c674f707bb5b37e0ff8cd5`。这只证明修订的Source与必要语法，尚无修后完整业务通过。此次本地采用范围仅两份测试PHP及本README/09计划，实际提交以Git为准；原冻结Source/Run/失败结果不改。
 
 后续仍需新clean同源完整A及close/zero、同HEAD fresh B、三端UI20/20 ACK/42原生frames与三宽DOM、独立H5九场景、顾客真实multipart/原图、非空旧历史37与四CLI/完整权益归属/current reader/最终enabled=true；真实支付退款回调对账费用结算、发布恢复及人工验收未完成。MP/APP正式构建仍缺明确正式HTTPS API origin。继续仅L2本地，无推送部署或真实资金；已停止样本保持NOT RUN，Task9新商家客服关闭、原平台客服保留，只有BASE既有人工签收，不换算整体百分比。
+
+
+### Root采用MS6商家静态路由有限Source准备（2026-10-26）
+
+沿原Task1及ms6-current-runtime-source-plan-r1/PLAN.md的A片实施，先在独立feature/ms6-release-source-20261026源码工作树准备docker/nginx/default.conf与本记录两路径。此为既有L2授权内技术Source准备，Q2 vendor/public跟踪及Q3历史凭据归属/轮换决定保持待落实，原D9跟踪现状不变；不将本片当作完整MS6开工验收、正式发布、镜像就绪或真实凭据操作。
+
+采用四个商家专属location：/merchant以308规范到/merchant/；/merchant/index.html只读真实entry且no-cache；/merchant/static/只读真实静态文件；其它/merchant/深链只回商家entry。缺失entry或static的404仅Source核，不恢复已停止的负向样本。保原/install、/pages、/notice、/msg、通用PHP及既有公开资源完整正文，保/merchantapi走原后端；不得改旧help/docker/nginx/vhost.conf冒充实际镜像消费者。
+
+本片不复制demo、不伪造商家dist，不改默认Dockerfile、数据库、密钥、开关或Compose。后续镜像交付必须以新同源真实冻结商家build完整产物及manifest接public/merchant；当前只有9237旧来源admin build通过，尚无当前商家正式dist可供签收。
+
+任务/验证：一、有限加入四location并全文正逆核保旧路由；二、以现有本机Nginx镜像做专用无网络只读语法检查，真实镜像版本覆盖边界单列，不拉取替代运行资格；三、Root窄提交后标准合并到统一Source。正式同源商家build、规范入口/深链刷新/静态MIME与完整bytes、原API/H5不串及页面浏览验收仍待原链执行。停止样本NOT RUN，真实发布和资金边界不变。
+
+
+### MS6 A片商家静态路由Source完成，实际验证待Root执行（2026-10-26）
+
+按Root已采用的A片及其实际ADOPTION记录，本次仅修改docker/nginx/default.conf与本记录。在原/pages之前加入四个商家专属location：exact /merchant返回308到/merchant/；exact /merchant/index.html仅try_files真实entry、no-cache；^~ /merchant/static/仅真实文件、12h缓存；^~ /merchant/深链fallback到商家自己的entry。路径边界含末尾斜线，/merchantapi不匹配这些商家前缀，仍走原后端入口。
+
+Source已完整字节正逆核：移除唯一新增块即可逐字恢复原Nginx配置，原八个location及其它正文原样；本记录只在Root采用段后追加，不覆盖497059B原历史或1746B采用段。before/after与完整保全报告单独保存在artifacts/project-organization-20261023/ms6-merchant-route-source-r1。未改旧help vhost、Dockerfile、Compose、业务代码/数据库、凭据/开关、vendor/public跟踪现状或其它工作树。
+
+本片仅L2 Source准备。作者未执行Nginx语法、Docker/任何目标、HTTP、构建或浏览器，未伪造/复制商家dist；当前正式商家build和发布资源接入、/merchant规范URL/深链刷新/静态MIME及完整bytes、原API/H5不串和实际页面视觉仍待原验收。Q2/Q3继续保持待发布条件，Source不签MS6整体、发布/镜像就绪或生产保障。
+
+任务：[x]原采用范围内四location Source实现与完整正逆保全；[ ]Root现有本机Nginx专用无网络只读语法及实际版本边界；[ ]Root窄本地提交/标准合并；[ ]当前正式商家build与实际页面/资源验收。停止负向/故障/并发/恢复/K样本继续NOT RUN；未推送、部署、真实资金或外发。
+
+
+### MS6 A片Root实际语法验证与本地提交收口（2026-10-26）
+
+[x] 四商家location及原全部配置完整字节逆证；[x] Root实际现有本机nginx:1.28-alpine固定镜像a8b39bd9的nginx -t自然0；[x] 本两路径窄本地提交；[ ] 合并统一来源；[ ] 正式v1.29.6镜像及同源商家dist/完整资源/browser验收。
+
+语法第一次helper自然1因root/allcapsdrop对新root-owned临时缓存chown到镜像UID101被拒，完整失败流保留。Root核原已退出CID后nonforce移除且三fresh双raw-zero，再采用fresh UID101:101/tmpfs101/mode0700，不扩cap、不重启旧helper。第二次同配置实际nginx -t为0，保原非root user-directive提示和两条成功banner的完整stderr；独立无网络/只读配置及root/allcapsdrop/no-new-privileges，原CID自然Exited0/PID0/noRestart后nonforce移除，三fresh每stdout/stderr原始0B，11native完整双流实读。证据ms6-merchant-route-nginx-syntax-r2/RESULT.json及ms6-merchant-route-nginx-check-environment-r1/ADOPTION.json。检查未发业务HTTP或启动监听服务，未运行停用样本。
+
+这里只保存docker/nginx/default.conf与本09记录。现有本机1.28镜像语法证据不替代正式Dockerfile的v1.29.6运行、商家真实构建/冻结dist接入、URL刷新/静态MIME/完整bytes、旧API/H5及页面验收。Q2/Q3、原D9跟踪、私有卷/后台任务/回滚版本门/日志配额监控/完整发布责任保持，未推送/部署或真实资金。
