@@ -1281,3 +1281,71 @@ typed-media两分支均在共同16616B/8bc86aae后追加：本次保de5完整335
 UI开放项后续只读证据（Root/media当前时点，保前述未核段历史）：已从de5真实来源核实可达链`m4up_source → m4up_prerequisites`，后者在`ms4-ui-prepare.php:256–257`先强制同一formal为原8卷，258再真实调用`m4fn_prerequisites(m4up_old_view(source))`；old_view:229–237只投影环境与前提hash，并不改context/formal。当前`m4fn_prerequisites`又在`ms4-fulfillment-normal.php:248`调用`m4c_entry_ms5_history`，该entry:287–297要求同一context.initial_volumes为精确9卷并含source-tree，306–333还要求initializer完整source_tree copy。这已是实际可达上游资格矛盾，超出前段仅见不同用途数字时的未核假设；有限import primitive兼容不能消除此完整资格问题。
 
 本阶段仅如实保留这一后续Source事实：当前该UI资格需后继限定适配，不能仅改四hash或把8改9，必须在确认原S/B实际必经链后先设计完整formal/context/Source卷、copy/freeze/mount/history/consumer闭包并核全部原契约。Root/media继续追实际S/B依赖和必要最小profile范围；本cloud阶段不改UI代码、旧pins或原8/12门，不扩旧未采用UI17要求，也不缩减原merchant34/25captures/9screens/23facts等验收。统一Source合并提交不等于UI ready，实际UI/原全链仍未通过。
+
+
+#### withdrawal_qr 私有材料接线设计（2026-10-25，Source-only，待Root与非作者采用）
+
+本节只细化原T5/T6的CU_WITHDRAWAL/W06，不另开需求或验收清单。原规格00 §9/Q5的首版不开放自动结算与提现不变；本项不新增商家提现、付款/审核/转账能力，不改金额、手续费、佣金、状态或通知规则，不执行真实资金及外发。chat使用platform29、default public_upload_compat及外部旧client发布门是另外的未完子项，本节只列依赖，不暗扩其实现。已通过局部正常链的证照/旧退款与已接T4不重做、不据本项关闭整个T5或整体验收。
+
+**工作来源与阶段。** 已核原证照/退款W为各自冻结历史来源，不承接集成后的新材料工作；目标目录与分支原先均不存在，已原生创建独立 `H:/天俪商城/worktrees/remaining-private-assets` / `feature/remaining-private-assets-20261025`，精确起点 `3a5106fd0df6580ef527a6744b48068f5994fdbb`，初始clean。原集成W的UI/B文档由另一作者独占，本W不覆盖它，后继合入须保全两份各自增量。无.codegraph，不初始化；已读spec-workflow、git-auto-sync及原规约/规格/上传域与现调用源，sync实际返回project_not_enabled，不enroll。当前只追加本record；业务/测试/Host代码、PHP/Node候选、Docker/SQL/HTTP/Run、资金、提交推送、C-D均NOT RUN。以后真实clean HEAD/Val/Host/PINS/Run及结果UNBOUND，不能将3a51提前写成未来实现已测身份。
+
+**已核事实及需求。** 原 `user_cash/index.vue:251–259` 两种收款码均经 `upload/image`，将返回url存qrcodeUrlW/Z；365/373再放原cash的qrcode_url。API `UserExtractController:51–85`以真实request.uid调用cash，qrcode_url默认空；weixin/alipay原来都不强制有图，零图继续合法。`UserExtractServices:510–617`保原资格/金额/冻结佣金检查，586/595收该字段，603原事务604保存真实UserExtract model，607–615扣brokerage并记原佣金流水，616返回这个真实model。原DDL的user_extract为25列、qrcode_url是varchar(255)、id/uid为unsigned int；不是另造收款码业务表。
+
+财务原 `GET adminapi/finance/extract → UserExtract::index → UserExtractServices::index/getUserExtractList`返回完整记录，`finance/userExtract/index.vue:130–138`直接img读qrcode_url。本人现只有本页上传后preview；bank()仅银行/金额/配置，内部getExtract()不是本人详情API，getUserExtract()只是求和。不能虚构本人提现详情/列表、把bank当确认读取，或凭资产BOUND/first extract_id推断本次cash已成功。
+
+安装SQL另有system_route的GET finance/extract接口文档，但其system_menus没有该auth_type=2读叶：39只是页面菜单，2967–2970是拒绝/通过/修改/修改表单。原finance路由有AdminAuthToken+AdminCheckRole；新材料reader须重核原GET finance/extract的当前真实登记与grant。最高管理员保原level0范围；当前fresh种子受限管理员仍默认拒绝，不借PUT审核/编辑或menu39授读，不加新菜单/seed/白名单。未查询真实实例，不能把实际部署已登记/未登记当已知事实。
+
+**D1：purpose、私有对象与34列。** 复用现customer_asset完整34列及AssetSchema既有withdrawal_qr/extract_id定义；没有mer_id，不引selfMer、MerchantContext或商家owner。上传真实当前Request UID、会话fingerprint、完整有效user及原weixin/alipay类型资格，从原认证/配置取，不信body uid/mer/purpose，不触发现金申请或任何资金动作。上传类型先只限原提案的weixin/alipay，不扩大bank/balance的图片职责；不新增强制二维码规则。先沿真实writer Connection/PDO锁user并核同一身份，再检查完整实际file、MIME/完整解码/大小/摘要与当前存储资格后才创建对象，保原100次/86400秒限频及其实际Redis副作用。
+
+新对象固定withdrawal_qr私有namespace，local root必须真实位于public外、同预期Linux owner，目录0700/文件0600、exclusive新建/fsync/同FD与path identity/无link/全bytes EOF读回；图片资格复用CustomerAssetStorage当前真实qualify能力，不扩大支持集。配置拟只增加 `marketplace.customer_withdrawal_qr.private_root`，默认空，类似现licence/refund的实际root前提，不另加默认false业务开关。根缺失或物理能力未知时新私有上传返回未完成，不回退upload/image或公开云。不得通过复用证照/退款的实际root、purpose、票据scope冒认本材料；可复用已审物理/会话/六键接缝，不改原消费者语义。云私有ACL/期限/原图资格本项不实现、不借公开云冒签。
+
+完整34列中uid/purpose真实，created_by_uid恰一项；extract_id初始NULL，所有无关root/item/refund/form/agent/source父列均NULL。STAGED原目的性行与文件保留；不在本项增加新定时器、自动清除或资金幂等规则，expires_at按既有允许NULL合同固定，不按ticket到期删材料；BOUND更不按新上传期限清理。收到真实asset自增ID后使用新固定opaque locator `mp-withdrawal:v1:<asset_id>`（拟议新合同，须严格native ID范围），原qrcode_url仍是string且长度适合原255列。任何mp-withdrawal保留前缀但格式不符均拒绝，不降格为旧URL；数据库只存永久locator，不存signed URL、票据、Blob URL或实际磁盘路径。
+
+**D2：原cash事务内绑定与未知提交。** CustomerAssetServices保原提案uploadWithdrawalQr/bindWithdrawalQr薄门，具体窄服务/DAO只接withdrawal_qr，不放宽现avatar/review/licence/refund叶。新引用的cash由原controller交真实当前Request及其verified identity进入材料接缝；旧零图/URL分支保持原调用、返回/异常与金融算法。现BaseServices::transaction委托Db::transaction，真实PDOConnection callback传同一Connection后才commit；私有绑定只在原603–617 callback里接实际ConnectionInterface，核它与默认Db::connect同对象、同PDO、depth=1、inTransaction、实际database/CURRENT_USER/CONNECTION_ID一致，不能另开资产事务/savepoint、提前commit或另接observer PDO。
+
+在原save/扣佣金/income的全部原DML完成后、原callback return之前，用$res1的真实保存PK在同PDO锁/重选完整user_extract25列及真实native user；asset ID只作locator，按真实uid+withdrawal_qr锁完整34列及实际物理对象。第一次STAGED只能绑定本次真实extract行（uid及qrcode_url精确对应），改state/extract_id/bound_at并读回完整行；同UID后续合法cash再次保存同引用时，验证这次真实extract的uid/qrcode_url并保持首次extract_id/bound_at原字节，不用新PK覆盖，也不能要求首次ID等于每次新PK。金额、balance、费率、订单号、原status、流水link_id等一律来自原writer，不从AFTER拼期待或MAX+1猜ID。资产复用不是cash重放幂等。
+
+原事务外619后的Channel WITHDRAW、adminNewPush、Notice、CustomEvent顺序与原异常责任完整保留；新增图片提交后观察放在全部原责任之后，不让图片readback在SQL已经提交后截断原hook。观察同原Connection/PDO、outside transaction/autocommit、真实extract/asset完整行及private全bytes，并按独立列明的原hook合法delta复核，不把取得PDO commit ACK作为已有事实。vendor commit布尔返回并未传上层；不能改ORM、set autocommit或开补偿写求通过。
+
+沿六键complete/phase/physical_changed/physical_complete/database_committed/cleanup_complete真实收据。仅原callback完整结束且本次有真实私有绑定结果时，transaction外commit异常才转材料unknown（database_committed=null）；原callback未完的业务错误及无私有引用分支保原异常，不统一吞错。cash不创建新物理文件，未知时不得删已上传对象/资产/旧引用或自动再POST，亦不执行原本只会在transaction成功返回后才执行的hook来伪造成功。controller只对新增材料OperationException窄返回503/no-store/原六键，不改global handler。成功返回仍保原cash的status/msg与流程，不把本项扩成提现详情或资金回执API。
+
+**D3：旧URL、新写与合法读取分开。** 过渡语义与本记录原证照/旧退款兼容责任一致：新首方页面选图只走具名private，失败保草稿/原始File、ref与安全收据，无公开fallback；零图仍传原空字符串。外部旧client按原DTO提交的合法URL型新写继续原可达分支，原字符串保持，不为它造asset/uid、下载转存、改object或声称已私有。已存旧URL历史只由原真实extract/财务权限读取，不新增迁移、改写、删除或公开下载代理。旧URL新写与旧URL历史只读须在报告分别计数；它们仍使default public_upload_compat/T5最终发布门未闭合，不能把仅新增private上传当作全部客户端完成。以后限制旧URL新写，须先有原仓库内/真实外部版本发布与历史兼容实证并另在原record记录，不在本项关旧功能求通过。
+
+拟议仅新增材料读叶（不是提现详情）：本人对自己STAGED图片的上传preview及已绑定图片，财务对当前真实extract行的图片。本人BOUND读取从asset首次真实extract引用重核；财务读取从本次实际列表行id/uid/qrcode_url派生，合法同UID复用时不以首次ID强等于当前ID。每次重新取真实user/asset/extract和当前session/权限，不把URL/assetid当授权。保旧name/url/attachment_ref上传DTO；新前端用attachment_ref提交qrcode_url，url只是需认证的content位置，不把临时preview值回写。
+
+具体拟议闭集：`POST api/extract/files/<extractType>`；本人 `POST api/extract/files/<asset_id>/read-ticket`、`GET .../content`；财务 `POST adminapi/finance/extract/<extract_id>/qr/<asset_id>/read-ticket`、`GET .../content`。现extract/bank/cash原路由及财务原list/edit/adopt/refuse不变。新财务读组用真实AdminAuthToken及一个仅这些fixed routes的WithdrawalQrReadPermission适配器，沿原GET finance/extract当前真实已启用角色登记重核权限，保原最高管理员，绝不改Request伪装旧route，不沿用adminInfo缓存roles或添加菜单登记。本人读组沿真实api认证，商家/客服无此权限。
+
+采用与refund相同的Redis TIME/Lua有限票据模式，但独立固定withdrawal_qr scope/缓存前缀和 `X-Withdrawal-Qr-Read-Ticket` header，300000ms期限；不把withdrawal加进原退款/售后票据闭集，licence当前是直接认证binary而不是已有ticket类。票据严绑reader_kind/app/actor/session fingerprint/uid/asset/content SHA/purpose及实际extract引用（本人STAGED为NULL、BOUND为真实原引用；财务为请求行），二次重核后原图binary/no-store。private read只返回完整已验证内容/MIME，保实际文件/FD/全bytes与票据peek/consume责任，不传URL query bearer。cookie.header仅追加这一固定允许header，原origin/credentials/CORS权限不放宽；跨域正常与原图读取未测不得签通过。
+
+UI保留原两种可选二维码、原金额输入与提交反馈：新增helper将永久ref、原始File、临时Blob preview及完整pending body/阶段分开，type/UID/session/路由context不混用，旧URL展示并存，票据/Blob及时释放但不把unknown改成失败。busy在首await前锁住，unknowncash保草稿/只读安全收据，不自动重复原cash、不提示可安全重试；读取图片或资产已BOUND不等于本次cash成功，不添加虚假的“读取已保存提现结果”。当前没有本人业务确认reader，跨会话未知仍须按原财务业务核实，不能承诺资金强幂等。正常明确HTTP成功保持原页面更新/跳转。状态是只读反馈，不画成按钮；真实动作另列，控件边界/双轴文字居中/长文与loading须按control-quality实际runtime核，Source/build不代视觉验收。
+
+**最小Files（本步实际只改本record；待采用后精确限定实现）。**
+
+| 路径 | 必要职责 |
+|---|---|
+| 本 `docs/multi-merchant/records/ms2/upload-asset-domains.md` | 原唯一设计/任务/实际证据，旧前缀保全。 |
+| `crmeb/app/services/marketplace/assets/CustomerAssetServices.php` | 原拟议withdrawal具名薄门，不改已接其它用途。 |
+| 新 `crmeb/app/services/marketplace/assets/CustomerWithdrawalQrAssetServices.php`、`CustomerWithdrawalQrPrivateStorage.php`、`CustomerWithdrawalQrReadTickets.php`、`CustomerWithdrawalQrPlatformAccessServices.php` | 同PDO上传/绑定/提交观察、专用非public物理、独立票据/本人及财务read、原真实GET读权限；复用原能力不另造通用owner或事务框架。 |
+| 新 `crmeb/app/dao/marketplace/assets/CustomerWithdrawalQrAssetDao.php` | 完整34列/原生类型与锁、first extract及实际新引用重核；AssetSchema表/列/索引/seed均不改。 |
+| `crmeb/app/api/controller/v1/user/UserExtractController.php`、`crmeb/app/api/route/v1.php`、`crmeb/app/services/user/UserExtractServices.php` | 原当前Request/UID与材料闭集、原cash事务内实际PK绑定及有限unknown catch；原零图/旧URL/金额/通知保持。 |
+| `crmeb/app/adminapi/controller/v1/finance/UserExtract.php`、`crmeb/app/adminapi/route/finance.php`、新 `crmeb/app/adminapi/middleware/WithdrawalQrReadPermissionMiddleware.php` | 已有财务列表实际行到私有材料读取，仅复用原真实GET权限，不新菜单/白名单/金融操作。 |
+| `crmeb/config/marketplace.php`、`crmeb/config/cookie.php` | 仅专用root默认空与固定ticket允许header；保其他既有默认开关、origin/credentials。 |
+| 新 `template/uni-app/api/withdrawal-qr-materials.js`、`template/uni-app/pages/users/user_cash/index.vue` | 私有上传/认证binary preview、永久ref提交/原可选图/零图、完整pending与unknown不自动POST；原cash DTO和旧正常分支保持。 |
+| 新 `template/admin/src/api/withdrawal-qr-materials.js`、`template/admin/src/pages/finance/userExtract/index.vue` | 原已授权列表行图片的票据/binary与旧URL并显、Blob/context释放，不新增审核或详情业务。 |
+| 新 `help/audit-regressions/isolated/ms4-withdrawal-qr-private-normal.php`、`lib/withdrawal-qr-normal-profile.php`、`compose.ms4-withdrawal-qr-private.yml`及必要 `lib/harness.php` dispatcher | 复用既有正常ISO完整资格/资源模式做原材料正向链，不造新测试框架、不改原default或其它profile门。实际normal/Host设计与代码须另经Root串行采用，不能以Files行当本轮执行授权。 |
+
+外部Host只有后续真实源码冻结后才按既有licence/refund成熟caller派生同源专用新包并绑定真实W/独立Val/Run；本步不创建它、不抄旧PINS/Runtime结果，不复用旧成功Run。若实际实现证明其它原调用点必要，先将精确事实/Files/保全验收追加本record再动，不广改公共上传或聊天。默认公共兼容、旧确认表单、platform29聊天与真实历史转存仍未完成，另按各自原合同推进。
+
+本子项任务与验收（Source/实际Runtime/浏览器分开，不另闭合原T1–T8）：
+
+- [x] 核3a51真实source、原默认空图/DTO、25列extract与34列asset、当前Request UID、唯一cash callback/PDO及财务原读权限缺登记事实；独立新W/sync检查完成。
+- [x] 在原record先记本有限需求/设计/Files/旧URL过渡与验收；当前仅文档，不写业务/测试代码、不运行候选或目标。
+- [ ] Root与非作者全文Source审并采用；未采用前不开始QR代码。
+- [ ] 在所列真实接口/同PDO/私有根/字段/purpose范围实现并冻结Source，完整正逆diff及原零图、旧URL、金额/费率/流水/通知/其余用途raw合同保全；独立Source审和最小当前PHP/前端静态检查分别记结果。
+- [ ] Root在新clean Source/独立Val/专用ISO实际SQL/Redis/private/files正向链验证：原允许weixin/alipay可选零图、合法旧URL新写与历史读取、新真实私有上传→本人STAGED预览→cash首次完整34绑定→同UID后续真实cash复用不改首次ID→本人BOUND图片/真实最高管理员财务列表原图读取，全部完整原bytes/MIME/引用/DTO保持。fresh种子不存在受限读grant，不制造该正向演员权限或运行新负向样本。
+- [ ] 独立before→expected delta→after核全数据库所有旧行/原生DDL/真实next counter、extract25/asset34、user扣佣金与income原link_id/全部原hook允许delta、完整Redis值/类型/绝对期和原限频/票据/Snowflake实际时间窗、public与private目录/对象/log/原生权限身份；期待来自原Source/实际before和真实返回ID，不从after生成、MAX+1、prefix豁免或删记录凑通过。新材料upload和read不发生资金动作；cash仅专用合成正向原DML，不能冒真实支付/提现通道验收。
+- [ ] 原Channel/Notice/Custom等hook不删/不stub；准备先从真实配置/receiver/调用源证明不会外发，只在新专用实例显式采用已审必要测试配置并核原完整站内副作用，缺此前提则该normal保持NOT RUN，不靠断网、伪造号码或关hook通过。真实金融/外部短信微信及其它渠道均NOT RUN。
+- [ ] Root串行真实普通TERM/同代自然Exited0/PID0/only-own/nonforce退役，再独立六fresh单label raw双流全空及全native/PID/wait/双流读回；UI H5/MP/APP及财务实际runtime、代表尺寸/状态/原图预览与跨域分别验收，当前无build/浏览器/设备结果。
+- [ ] 零图/旧URL兼容、旧client调用与真实历史/发布条件继续记录，不把局部私有链通过写成default公共兼容/T5/商户提现开放或整体验收完成；停止negative/fault/concurrency/recovery/K继续NOT RUN，不新增恢复/批量迁移执行。
+
+Root非作者全文采用本withdrawal_qr限定设计：98ac2e完整核新增17959B，1df7c3实读原cash/两个controller/34列无mer_id，27d6a0实核BaseServices原Db::transaction与vendor原callback实际Connection及commit返回未上抛；c15a66 enrollment仍project_not_enabled。补明必要调用者边界：只有新增私有码cash分支，一经真实POST派发，对网络/5xx/无可证未提交收据的原hook异常等都须保持未确认状态和安全草稿，不把旧异常擅当已回滚或安全可重发；无新增本人业务确认API，BOUND也不证明本次cash成功。保原零图/旧URL金融分支与异常/全部hook，材料读写不等于开放提现；不会持久化登录票据或向日志/Git写私有财务请求。实现与Runtime仍分开，真实外部/资金及停止样本NOT RUN。现在仅允许本节Files范围Source实现，Root实际隔离验证另按真实源码冻结串行安排。
