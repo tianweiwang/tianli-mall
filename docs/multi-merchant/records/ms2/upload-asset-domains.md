@@ -1281,3 +1281,62 @@ typed-media两分支均在共同16616B/8bc86aae后追加：本次保de5完整335
 UI开放项后续只读证据（Root/media当前时点，保前述未核段历史）：已从de5真实来源核实可达链`m4up_source → m4up_prerequisites`，后者在`ms4-ui-prepare.php:256–257`先强制同一formal为原8卷，258再真实调用`m4fn_prerequisites(m4up_old_view(source))`；old_view:229–237只投影环境与前提hash，并不改context/formal。当前`m4fn_prerequisites`又在`ms4-fulfillment-normal.php:248`调用`m4c_entry_ms5_history`，该entry:287–297要求同一context.initial_volumes为精确9卷并含source-tree，306–333还要求initializer完整source_tree copy。这已是实际可达上游资格矛盾，超出前段仅见不同用途数字时的未核假设；有限import primitive兼容不能消除此完整资格问题。
 
 本阶段仅如实保留这一后续Source事实：当前该UI资格需后继限定适配，不能仅改四hash或把8改9，必须在确认原S/B实际必经链后先设计完整formal/context/Source卷、copy/freeze/mount/history/consumer闭包并核全部原契约。Root/media继续追实际S/B依赖和必要最小profile范围；本cloud阶段不改UI代码、旧pins或原8/12门，不扩旧未采用UI17要求，也不缩减原merchant34/25captures/9screens/23facts等验收。统一Source合并提交不等于UI ready，实际UI/原全链仍未通过。
+
+
+#### 专用B/UI SourceTree完整适配设计（2026-10-25，基线3a51，待Root采用）
+
+本节继续原唯一执行记录，当前只交付需求/设计/Files/任务，不修改PHP、Host、Profile、包PINS或其它代码，不commit/push/启动目标。真实基线为第二阶段双父merge `3a5106fd0df6580ef527a6744b48068f5994fdbb`（parents de5b60d5+021a7de4），本W开工前clean、15,795 tracked；Root已核cloud十五路径及原树保全、共享config实际PHP8.2.33纯-l0。该源码提交及解析不代表统一Runtime或UI ready。未来采用代码后的实际clean HEAD、Val、Source/Host/包/三个build资格、A/B Run与全部结果仍UNBOUND，不把3a51写成未来代码已测身份。
+
+**需求及范围。** 修复既有专用B的UI准备、copy、backend、observe/DOM这一条真实验收通路，使它使用当前Core的完整SourceTree资格；复用通用多商户既有功能、商品/SKU/规格/价格/库存与原界面，不新增UI17需求或改业务UI样式。fullS/A main没有调用M4UIB；原merchant34与H5走独立入口，不能拿UI20替代。保原B二十step/二十observer ACK/四十二frame及320/390/1440真实DOM、原merchant34steps/25captures/9screens/23facts与H5、完整A/Worker/普通收尾/postA和其它原未验项。只Source适配，真实第三方/通知/资金/部署不启，已停止negative/fault/concurrent/recovery/K仍NOT RUN。
+
+**已核最小callflow与根因。** 只读参考Core为 `ORG/currentb54-next-normal-preparation-r3/normal-source/validation/actual-profile/ms4-host.py`（ORG是project-organization-20261023）：manifest99、context129、copy_result160、start_guard188、native224、freeze611；start_guard现在只列原七normal proof，未覆盖UI两角色。它的manifest是完整clean tracked集合、各文件bytes/SHA和精确目录集合，另有原materializer/validation的全Git blob与双树稳定身份资格，不能只拿业务extra清单代完整树。
+
+B原件采用已冻结Git `57de95a1cd5852348e2dcb56752e3723983f6e13` 下 `help/audit-regressions/orchestration/sources/fresh-b-customer-form-external-source-r3/`；当前3a51中该整棵归档子树与57de逐字Git无差量，均只读。`root-source/root-ui-start-to-ready.py:596–649`实际调用UI prepare→seal/retire→public-copy→web/backend bind/start/ready，后续window/DOM bridge还会exec observer。`ms4-ui-prepare.php`的source→prerequisites先要求formal旧8卷，再经未改变context/formal的old_view→m4fn_prerequisites→m4c_entry_ms5_history要求同一context精确9卷/source-tree和initializer完整copy。这是已证可达资格矛盾。M4UIB另有四个过期bootstrap pin、旧8基础/加UI4为12和旧host-bind来源门；仅四pin或数字改动都不能闭合整条链。有限import primitive兼容与旧未核段历史保留，不再用它们代完整profile资格。
+
+**D1：同一真实来源与完整SourceTree。** 新B派生包复用现Core source_tree_manifest/context/copy_result/start_guard及source authority/全tracked blob资格，而不是复制旧UI17或扩大宽松模式。先在两个独立clean Source/Val上核真实Git HEAD、完整tracked namespace、每body Git blob1/SHA256与稳定path/handle/原生身份，禁链接、case碰撞、额外配置和install.lock；N与总字节依实际新树生成，不沿用旧15,752/31,008等计数。冻结manifest精确files+directories、manifest_sha256、source_sha/requested_repo_source，context只按该冻结值join volume_name/manifest/count。原prepare34、backend37个extra、四根/完整included与冻结artifact集合不减；SourceTree全树是另一层资格，不用增加extra子集冒充全树。
+
+沿原有限initializer真实创建并完整复制到本project独有 `source-tree` 卷的 `/run/audit-source-tree`：原全tree/目录/每完整bytes/digest、regular/no-link/owner/mode/同句柄/EOF和原生root identity均须读回，真实结果标记且绑定同source/freeze、实际卷CreatedAt/labels与writer role。initializer必须真实自然0、同CID/PID0/noRestart并精确nonforce退役，才允许任何读取这份树的UI consumer start；不能只引用旧copy receipt。source_tree_start_guard必须沿实际native start分发覆盖固定ui-prepare/ui-backend及原copy等真实SourceTree读取角色的必要调用点，核已登记原CID、initializer结果、原移除回执及fresh writer不存在；不得只把两个名字加入未经过的列表或给任意CID豁免。原其它normal消费者的严格门保留。
+
+**D2：9基础+4UI=13的完整资源合同。** 本B基础是原8卷加独有source-tree为9，再加原ui-public/ui-comments/ui-customer-assets/ui-control四卷共13；与refund的13是不同purpose/名字/挂载/角色，不能互借合同。新compose/context/formal/initial_volumes/volume_identities/native完整投影/history/copy/binding/close/zero一致为这个精确集合，不是只把8/12常量改9/13。initializer仅它的原有限写职责可RW source-tree；prepare/backend/copy的 `/workspace`、`/source` 改为同一精确source-tree卷两条RO mount，校验Type/Name/Destination/RW、完整原mount对象和重复数、CreatedAt/双labels及kernel mountinfo，禁止把相同卷两条挂载去重。新profile不接受旧host-bind与volume任选其一的fallback；旧冻结Source/Run保持原合同不改。原SQL独立RO绑定、prep/run mount权限、私有form/aftersale、public/comment/customer/control覆盖挂载、tmpfs和网络/port/UID/cap/原alias门逐项保持。source-tree全量copy资格从原独有卷与writer证明，UI public/dist覆盖层仍按各自原完整oracle核，不混为全Source树。
+
+prepare仍是原四个formal角色，backend仍是原五个formal角色；source-tree不增加长期服务。原九项环境名、精确字符串/排序JSON投影/同Run同CID原生inspect与private根保持，测试payment flag仍仅既有testing driver语义，不启真实渠道。m4up_old_view只保原环境/前提hash投影，不能删context/source_tree或伪造旧formal过门。prepare的paid历史、backend的prepare seal/原历史/新volumes/native/kernel mounts和observe自己的相同完整检查均要join同一9基础/13总量与初始化copy。所有未知/失败保现场，不宽放key集合、权限或原actor/fixture/数据库事务资格。
+
+**D3：生产者—consumer—浏览器来源闭包。** 先核全部改动的producer功能差量和真实callee契约，再固定更新M4UIB_BOOTSTRAP五描述符中确有变化的四项及所有必要literal；不动态读当前hash代替授权literal，不删两Root稳定完整字节门。UI prepare/backend、copy wrapper及Host的Source/冻结/context/created/environment/history/初始卷/native/current之间应是同一实际新HEAD与同一代CID；不改业务rows/返回值/owner_after/原getter或业务期望来适配来源。shared m4c/m4fn现9卷及initializer copy门直接保留，新的UI上游生产真实满足它们的数据。
+
+browser-v1仍固定原三PHP语义vector（ui backend entry、backend helper、prepare oracle）与原八成员命名/顺序/实际Source读取责任；business-producer、window-native-bridge中的必要固定vector及相关contract/PINS、DOM按freeze读取三成员的join、Root CORE-AUX authority及materializer/start source边必须同步重新资格。schema/字段/ACK/20case/42frame语义不改，不拿新pin掩盖函数差异。prepare oracle、DOM/network/private-reader/close等未证必要变化的代码先保raw，若发现实际固定literal依赖才先在本record限定必要调用点；不因“联动”一揽子重写。
+
+**D4：dist/public-copy与A/postA不可伪造。** 保三端dist各完整文件/目录/modes/bytes与manifest、原PNG及完整public-copy来源/结果/前后字节检查；原物理 `ms4-ui-public-copy.php`叶先保raw，只在 `ms4-ui-copy.php`资格wrapper及Host适配已证source/卷合同，不能更改copy内容去凑结果。新HEAD的实际build资格必须独立核实；旧53e6/b54等frozen dist/manifest不能只换Source SHA冒充新构建，缺匹配build或原完整来源即记BUILD_UNBOUND并阻断物化/页面验收。本设计不产生dist、不运行build、不填写build成功或新hash。
+
+root materializer中原A_QUALIFICATION精确五项、outer native0、真实normal_root_result/worker_close/independent_zero/post_a_history、实际outer session/Source review authority/当前postA合同门不删；B start caller还须完整回读这些真实公开证据。当前退款r4局部通过、不同HEAD旧A或内部检查结果不能代真实本轮完整A成功。只有统一新HEAD的完整A正常关闭及独立zero/postA封存具备后，才另建同Source fresh B；不能为调试UI跳过该门、重用旧A/B材料或把None改空dict。S/A原main、merchant/H5原独立入口不因本适配插入M4UIB或降低其原验收。
+
+**D5：ordinary close/zero与恢复。** B Host的新资源登记、同CID current/stop/terminal和完整mount/history依赖必须同步进入本B close/zero消费者；source-tree原writer已退役也是前提。只原注册group/原句柄/PGID代际TERM及有界观察，无KILL/force/escalation、重启、重复未知写入或假成功；原native -1等观测值按原合同保事实，不能改写或当0。未完成/未知即保现场，Root再按真实失败同代证据派生有限ordinary清退，禁止generic failed bypass。各容器按实际原生终态、only-own消费者、同代CreatedAt/labels/卷/空内网核后nonforce精确移除13实际卷；zero另进程六次fresh单label容器/网络/卷查询须原始stdout和stderr均空，并保完整native PID/argv/句柄/wait及全部流。仅无剩余资源不代业务成功。
+
+恢复只设计为保留旧Git/Source/PINS/Host/Run/失败/公私材料，新建后继Source版本或有界revert新提交、重新clean导出/独立Val/完整qualified新包，再用新Run验证；不reset/改旧冻结物、不补丁续跑旧失败、不回滚共享业务数据，不执行已停止恢复或故障样本。新包、actual qualification和全部Run/资源/成功字段一律future UNBOUND。
+
+**最小Files（本轮实际只写第一行；其余须Root采用后按限定派生）。** 拟用全新 `ORG/integrated-b-ui-source-tree-source-r1/` 保存可审B Source代际，旧Core/currentb54和上述冻结Git归档仅引用，不覆盖；目录/PINS及下列候选当前均未创建/改写。
+
+| 层次/具体路径 | 必要职责及边界 |
+|---|---|
+| 本 `docs/multi-merchant/records/ms2/upload-asset-domains.md` | 唯一要求、设计、Files、任务与实际证据；旧前缀保持。 |
+| repo `help/audit-regressions/isolated/ms4-ui-prepare.php` | 精确9基础formal/context/copy前提与同源RO卷挂载、原34 source/9env/4roles/paid历史；不改业务准备。 |
+| repo `help/audit-regressions/isolated/lib/ms4-ui-backend-normal.php` | 五bootstrap重新资格、9/13 volume/history/mount/own backend与observe闭包，原37 source/9env/5roles/原windows保持。 |
+| 新B包 `candidate/ms4-host.py`、`candidate/compose.yml`、`candidate/ms4-initialize.php` | 从现Core完整SourceTree加既有B有限UI派生；实际copy/freeze/context/start guard、原UI四卷、prepare/copy/backend来源和13资源状态机；原seed业务函数与初始化责任保全，不改seed历史80。 |
+| 新B包 `candidate/ms4-ui-copy.php` | 资格wrapper的9基础/13总量与SourceTree实际挂载/history/Source pin，完整原public-copy行为不改。`candidate/ms4-ui-public-copy.php`、nginx配置、原PNG和三dist/public manifests列为受保护原输入，先保持正文；仅实际必要描述符/事实来源资格按新包冻结。 |
+| 新B包 `candidate/normal-close-ms4-fulfillment.py`、`candidate/verify-zero-ms4-fulfillment.py` | 同新profile的完整Source/role/13卷/native mount/history/only-own/ordinary与独立六fresh raw-zero闭包，不引入通用清理。 |
+| 新B包 `root-source/root-ui-materialize-freeze.py`、`root-source/root-ui-start-to-ready.py` | 同真实新Source的SourceTree/实例/context/profile/publication/root-inputs/actual A/postA资格及真实create/bind/start/seal/retire/copy/ready顺序；保原全部A成功门，不能只更新顶层SHA。 |
+| 新B包 `browser-v1/ms4-ui-business-producer.mjs`、`ms4-ui-window-native-bridge.mjs`与相关 `PINS.json`/`ui-business-consumer-contract.json` | 只必要的三PHP固定语义vector/新来源qualification及完整pin DAG。DOM按freeze读三成员的join需复核，DOM/reader/network/close和repo prepare-oracle/entry先保raw；确有固定依赖才先记录必要精确差量。 |
+| 同新包 `interface-v1.json`、publication、source-derivation/seed-inverse、manifests、root-inputs/authority和PINS/README等原控制件 | 由真实已审成员和实际来源重建原完整闭包，覆盖新增source-tree与修改的语义vector；不复制旧Runtime receipt、伪造未来资格/构建/成功，旧包控制件一字不改。 |
+
+若后续实际Producer/Consumer证明必须动上述保护的oracle/DOM/public-copy正文或其它必要调用点，先把真实原因、最小差量和保持的原验收写入本record再实施；不把Files表当宽授权，不新增Source框架、业务权限、表/列/索引、测试数据清理或UI需求。
+
+本节任务与验收（当前只有设计，保持先设计后代码）：
+
+- [x] 核真实3a51 clean基线、冻结B原Git副本与现Core四函数；追已证prepare→履约/客户9卷矛盾及B/copy/backend/observe/browser实际链，保各独立验收边界。
+- [x] 在原record记录完整SourceTree/9+4/Files/依赖与Source回退设计；当前未修改PHP/Host/Profile/PINS，不执行任何候选、目标或build。
+- [ ] Root与media非作者审并采用本限定设计；未采用前不开始代码适配。
+- [ ] 按Files派生新B Source，两个repo PHP做必要合同差量，原其它Source保持；完成全部生产者/consumer/控制件固定literal/三语义vector/PINS联动、整份正逆与原合同/34/37/9env/4/5角色/所有case保全Source审。原sourceTree membership、copy真实性与guard实际经过点必须逐边证明，不能只给计数或pin列表。
+- [ ] Root必要当前PHP/Node/Python纯语法/静态及完整独审、真实Source归档/clean提交与独立Val/全tracked资格，再实际取得新Source匹配的三dist/public-copy完整构建资格并冻结新B完整包；所有实际结果未来UNBOUND，旧组件结果仅历史。
+- [ ] Root先完成统一新HEAD原完整A/fullS、Worker、普通close/独立zero/postA，后按同Source fresh B真实经历SourceTree copy/9基础→prepare34/9env/4roles→seal/retire→copy→13卷/backend37/5roles→ready→20step/20observer ACK/42frame及320/390/1440 DOM/普通close/独立zero；每一步真实同CID/原句柄/native终态和完整双流/Source/data/file独立副作用oracle逐项留证，未发生不补结果。
+- [ ] 原merchant34/25captures/9screens/23facts、独立H5、V1/完整A-B/全部原三端页面设备、真实外部/金融/发布/人工阶段继续各自完成；仅BASE人工已签，所有停止样本NOT RUN不恢复。实现、静态资格、B ready或部分20step都不代整体验收。
+
+Root采用本限定D1–D5设计：已全文核新增15235B及关键真实caller/consumer，media Source0；Root121151另核Core四SourceTree原函数和实际native start钩子、3a51/57de冻结B子树无差量。原B42frames的320/390/1440指三个视口宽度，不是字节预算。实施必须保原完整A/postA实际前提、原角色/namespace/copy/9+4资源及全部原业务断言；实际native仍须原PID/句柄wait和完整原始双流，旧metadata或strip/集合空不能代实际证据。现在允许按Files进行两个repo PHP和有限新B Source适配；新Source/Val/build/A-B/runtime结果仍UNBOUND，停止样本不恢复。
