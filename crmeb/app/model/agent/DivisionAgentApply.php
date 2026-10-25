@@ -37,7 +37,7 @@ class DivisionAgentApply extends BaseModel
      */
     public function searchUidAttr($query, $value)
     {
-        if ($value != '') $query->where('uid', $value);
+        if (!in_array($value, [0, '0', '', null, false], true)) $query->where('uid', $value);
     }
 
     /**
