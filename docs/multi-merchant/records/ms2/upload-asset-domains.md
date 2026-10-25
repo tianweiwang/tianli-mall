@@ -910,3 +910,24 @@ Files恰为crmeb/app/model/agent/DivisionAgentApply.php与本记录两件；原�
 本轮作者实际Source检查：model仅上述单行严格sentinel条件变化，逆还原该行即整model字节等HEADa476，所有其它函数/字段/事业部搜索器原字节保持；本记录只追加。两文件UTF-8/LF、model字符串/注释/括号词法平衡及git diff --check均0，工作树恰这两条tracked未暂存路径；Root当前6761B公件全文读回及SHA吻合。不是PHP解析或运行，未执行任何条件样本、目标、Docker、PHP或HTTP；作者停写交Root实际PHP8.2语法及product非作者审，不据本次静态结果签默认列表或整业务通过。
 
 Root真实检查与本地checkpoint追加：上述2237B模型完整输入已在固定PHP8.2纯php-l通过，3原生均0，同现bootstrap CID/PID/StartedAt/User/readonly前后保持，无candidate/query条件样本或HTTP执行；仓库外licence-list-uid-php82-syntax-r1/RESULT.json为3647B，SHA256 c386bba3c60003a0f8e3b5b7aee96244878045b6da771490a8fdf8bc33710b47。Root75ae13完整diff与原请求/DAO/模型链条已核，product_media_next_gap对追加前两件全文Source审finding0，模型原字节保持；本追加只记真实结果，不把旧审代签新文字。后继Source必须把该model作为实际第23路径并完整15763文件资格，在fresh实例正常默认列表/平台原图/新申请重用与副作用/普通close和独立zero后才签对应业务；当前仍未推送合并部署或处理真实资金。
+
+### CU_LICENCE fresh6 实际正常链验证与普通收尾（2026-10-25）
+
+本次实测 Source_HEAD 固定为 `864dda32fba62ab12944a01369d816a20be5aec2`，Run 为 `2026102512495632759f`；本段为该 Source 之后仅文档的追加，不包含执行源码变动，后续文档提交不替代上述实测 Source。Root 已完整读回原 normal 工具83299/46a3c2自然0及该 Run 的169条 native 创建/终态、原PID/同句柄wait和完整双流，共15,114,591B；prepare139与verify140均自然0。独立非作者正常结果复核 finding0。
+
+原正常 fixture 实际完成25个业务HTTP、7个原业务case、289326次原断言：真实multipart首次STAGED及完整34列、未选STAGED保留、首次真实申请与选择绑定、同实际ID重存且首绑不变、本人修改及第二资产绑定、原授权平台列表与私有原图、新申请复用已有BOUND资产。完整34列及全库表rows/DDL/hash/next、Redis完整类型/值/绝对expiry、public/runtime/private文件、legacy混合引用及原业务预期副作用均按原断言核对通过。首次counter快照记录业务HTTP4到4的零请求间隔及87表metadata初始化；原严格counter门保持并走完。服务器原生HTTP200共26次，其中原harness就绪探针1次、业务25次，按25次业务计数，未因计数重复运行测试。
+
+Root 随后使用已审正常成功收尾入口完成普通close，原36621/208d7b0自然0，实际109条native全部自然0。5个原同代CID均经显式SIGTERM/timeout=-1自然退出，Exited0/PID0/no-restart核验后，nonforce准确移除本Run的5CID、13专用卷、1内部网络及Val3精确ownlock。独立zero原终态17c01e已完成，Root b7456d完整读回10条native创建/终态/双流及原PID/wait均自然0；6条project/run资源查询的stdout与stderr均空，ownlock不存在。普通收尾与独立zero已完成。
+
+以下均为原机仓库外 `artifacts/project-organization-20261023` 下的运行证据；本记录只保存摘要、长度与SHA256，不含密码、私有locator或原始日志：
+
+| 证据相对路径 | 字节 | SHA256 |
+| --- | ---: | --- |
+| `licence-normal-runtime-r6/2026102512495632759f/NORMAL.json` | 788 | `f17841ea55086c900f3db37f988d24b58d304e56976cf9b4419262efc1c56c30` |
+| `licence-normal-runtime-r6/2026102512495632759f/evidence/ms4-agent-licence-verify.json` | 729 | `ac3994d57c2cd17a56bc7972f401b618ab3772fa506532ba2e818c339de01b25` |
+| `current41c0-normal-root-admission-r1/R115-LICENCE-864DDA-NORMAL-ROOT-READBACK.json` | 3425 | `1515e567cc42c5b38afbeb43f365f5709bbf3929f3b2260a0b256d15f05be320` |
+| `licence-fresh6-normal-close-r1/CLOSE.json` | 26733 | `1a22c8a6336271911672d3a6ffb73e86626e2f26bda0d6e913212b891e28857c` |
+| `licence-fresh6-normal-zero-r1/ZERO.json` | 1337 | `8cc6aa27c171645009727e2e34d14b647f309947373fb3efb6042099a7b6b97e` |
+| `current41c0-normal-root-admission-r1/R115-LICENCE-FRESH6-CLOSE-ZERO-ROOT-READBACK.json` | 1514 | `3c2bedb247761321fb1f64761c69dcf245f9d1d7f8df876a5a94d1bf246e1a40` |
+
+该结果完成本CU_LICENCE隔离实例后台正常链与资源收尾验证子项。H5/UI、MP/APP及真实设备、restricted-role变体、外部短信、旧client实际发布均NOT RUN；停止样本仍NOT RUN。T5整组及原19个交付组继续保持未关闭，浏览器/设备/外部发布与最终验收仍待完成。本次记录不包含部署、合并、推送或真实资金操作；文档作者仅追加本段，未运行Docker/PHP/HTTP或修改原Run/C-D。
