@@ -162,8 +162,23 @@ function m4lr_transition(PDO $db,array $before,array $after,array $fixture,array
         }unset($row);m4lr_expect($seen===1,'M4LR_ONLY_REAL_CUSTOMER_AUTH_TIMESTAMP');
     }
     foreach($a['hashes']as$table=>$hash){
-        if(isset($expected[$table]))m4lr_expect(m4lr_sorted($a['rows'][$table])===m4lr_sorted($expected[$table]),'M4LR_COMPLETE_EXPECTED_NATIVE_ROWS');
-        else m4lr_expect($hash===$b['hashes'][$table],'M4LR_OTHER_BUSINESS_EVENTS_AND_FINANCIAL_TABLES_UNCHANGED');
+        if(isset($expected[$table])){
+            $actualRows=m4lr_sorted($a['rows'][$table]);$expectedRows=m4lr_sorted($expected[$table]);$same=$actualRows===$expectedRows;
+            try{
+                if(!$same){
+                    $orders=static function(array $rows):array{
+                        $seen=[];foreach($rows as$row){$keys=array_keys($row);$seen[json_encode($keys,JSON_THROW_ON_ERROR)]=$keys;}return array_values($seen);
+                    };
+                    m4lr_write(audit_run_dir().'/evidence/ms4-legacy-refund-private-row-failure.json',m4lr_json([
+                        'scope'=>'CU_LEGACY_REFUND_ROW_FAILURE_DIAGNOSTIC_ONLY','status'=>'ORIGINAL_ROW_ASSERTION_FAILED',
+                        'run_id'=>$fixture['run_id'],'source_sha'=>$fixture['source_sha'],'actor'=>$actor,'table'=>$table,
+                        'expected_count'=>count($expectedRows),'actual_count'=>count($actualRows),
+                        'expected_column_orders'=>$orders($expected[$table]),'actual_column_orders'=>$orders($a['rows'][$table]),
+                        'expected_multiset_sha256'=>hash('sha256',serialize($expectedRows)),
+                        'actual_multiset_sha256'=>hash('sha256',serialize($actualRows)),'raw_row_values_omitted'=>true]));
+                }
+            }finally{m4lr_expect($same,'M4LR_COMPLETE_EXPECTED_NATIVE_ROWS');}
+        }else m4lr_expect($hash===$b['hashes'][$table],'M4LR_OTHER_BUSINESS_EVENTS_AND_FINANCIAL_TABLES_UNCHANGED');
         $wanted=$b['next'][$table];if(isset($increments[$table]))$wanted=(string)((int)$wanted+$increments[$table]);
         try{
             if($a['next'][$table]!==$wanted){
@@ -431,9 +446,10 @@ function m4lr_log_delta(PDO $db,array $before,array $after,array $fixture,array 
     $row=m4lr_find($after['database']['rows']['eb_system_log'],'id',$id);
     $names=m4lr_rows($db,'SELECT menu_name FROM eb_system_menus WHERE api_url=? LIMIT 1',[$rule]);$name=$names[0]['menu_name']??'未知';
     m4lr_window($row['add_time'],$reply);$expected=['id'=>m4lr_number($db,$id),'admin_id'=>m4lr_number($db,$fixture['admin']['id']),
-        'admin_name'=>$fixture['admin']['account'],'path'=>$rule,'page'=>$name?:'未知','ip'=>gethostbyname(gethostname()),
-        'type'=>'system','add_time'=>$row['add_time'],'method'=>'adminapi','merchant_id'=>m4lr_number($db,0)];
+        'admin_name'=>$fixture['admin']['account'],'path'=>$rule,'page'=>$name?:'未知','method'=>'adminapi','ip'=>gethostbyname(gethostname()),
+        'type'=>'system','add_time'=>$row['add_time'],'merchant_id'=>m4lr_number($db,0)];
     m4lr_expect(count($row)===count($expected)&&array_diff_key($row,$expected)===[],'M4LR_ALL_ORIGINAL_PLATFORM_LOG_COLUMNS');
+    m4lr_expect(array_keys($row)===array_keys($expected),'M4LR_NATIVE_PLATFORM_LOG_COLUMN_ORDER');
     foreach($expected as$key=>$value)m4lr_expect($row[$key]===$value,'M4LR_ALL_ORIGINAL_PLATFORM_LOG_VALUES');
     $rows=$before['database']['rows']['eb_system_log'];$rows[]=$expected;
     return [['eb_system_log'=>$rows],['eb_system_log'=>1]];

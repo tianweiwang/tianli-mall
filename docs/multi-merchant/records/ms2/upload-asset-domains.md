@@ -1122,3 +1122,14 @@ Root已采用两路径修正：本record及 `help/audit-regressions/isolated/ms4
 本轮Source实施与静态收口：normal当前73129B / `22f053f44f8b15e5db06a1203f66adfc6e649fbc57011fb95828b7996c2d4d02`，40个原函数中37个正文逐字节保持；仅prepare/apply/verify接线变化，新增4个有限通知helper，原main dispatcher不变。原完整record前缀保持，只有本节追加；两变更路径UTF-8/LF及git diff --check为0。静态保留核对确认原三次申请和全部既有case仍在，两个错误通知前提由本段Root已采用的正向严格条件替代。独立非作者已全文核新增helper、真实producer/10列DDL及相关原调用关系，finding0；其复核对应本段追加前record204710B/74b6dead…，normal字节未变。本作者与该独审均未执行候选、PHP或测试，当前字节的PHP语法、fresh正常链和清退/核零继续NOT RUN，Root另行安排；没有提交或推送。
 
 Root本地提交前补充：964783全文diff、138499原record增量及原NoticeListener/SystemMsg/配置getter/退款调用链逐项读回，未发现新增确定问题；独立notice_oracle_review对应相同normal73129/22f053f4 Source0。实际固定1099镜像PHP8.2.33对当前normal纯-l为0，5native/10完整双流983B经Root核对全0，只读networknone helper自然Exited0/PID0后nonforce移除，未include/App/DB/HTTP。结果 `artifacts/project-organization-20261023/legacy-refund-normal-notice-php82-r1/RESULT.json` 5851/2588785587c61964d6a7c4c25aedb0f57800b1394d946699e8b47d29aaa1dc0d。该证据只签解析，fresh普通业务及收尾仍未运行；原失败Run已普通close0/zero0、5CID13卷1网络精确清退，失败不重放。
+
+#### CU_LEGACY_REFUND 平台日志期望列顺序修正（2026-10-25）
+
+实际新Run20261025163202364696准备已通过，9个HTTP200后在零图平台同意后的完整行比较失败；原FAIL不重签、不重放。Root已全文查实际SystemLog DDL和m4lr_log_delta：真实列序page/method/ip/type/add_time，而独立expected把method放add_time后。逐字段值门已先通过，完整serialize多重集才因PHP关联数组键序误报；新只读PDO afc61a用相同值复现“旧序不同、原生序相同”，只用作诊断，不从after生成新expected。原App finally已TERM-only关闭，失败实例现普通close0/独立zero0、5CID13卷1内部网nonforce并完整Root回读c3bf2f。
+
+此小修复复用当前独立feature工作树，保e499提交对象、detached Val-r2、Host/Run/回执不变；只把m4lr_log_delta独立literal的method移到真实DDL位置并加入明确原生键序门。原完整所有列值/类型/时间窗、完整行与全表/DDL/next/Redis/files校验保持。另在原完整行断言失败前写一个不含原行值的专用诊断：实际table/actor/行数、列序集合与整行多重集摘要；诊断写失败也必须保原断言失败，不能因此通过或遮蔽原错误。无生产服务、fixture数据、seed、前端、profile或原业务case变化。
+
+验收：先核只改本record与normal两个文件，再Source独审/当前PHP语法；新本地提交后采用新来源/独立Val/fresh实例复跑完整普通链，原失败不续跑/不冒签。此时实现及实际运行结果待下文按事实补记，外发/金融/37历史/完整A/B/V1/浏览器设备与阶段验收仍未运行，停止样本仍NOT RUN。
+
+
+Root实际提交前证据（2026-10-25）：已全文核两路径diff；非作者media_env7_review独审当前normal74444B/69da1241cf914fa058dbc16486f2fd19ed9f61f1b8dcf473bd004665e43ae485为Source0，原日志值独立、原排序/全状态及全部case保持。实际固定1099镜像PHP8.2.33当前normal纯-l原生0，与MS2 normal共同报告 `artifacts/project-organization-20261023/migration-and-refund-normal-php82-r1/RESULT.json` 6486B/35097bf8c72f0dbf1baa0a5589f12f4605a4e3939f4ad2e1e1f09cf78021e243。Root核5native/10完整双流1352B均0、source pin一致、两只读mount/networknone、helper自然Exited0/PID0/noRestart后nonforce移除；没有include/App/DB/HTTP。旧r2失败已普通close/zero，109+10native全0；Root回读 `artifacts/project-organization-20261023/legacy-refund-normal-r2-launcher-r1/ROOT-FAILED-VERIFY-CLOSE-ZERO-READBACK.json` 1318B/fcd36f04cf8a0723df99340c873b6a69727607d924eb2ba8b342a91ad7dae579。仅本两路径进入新L2本地提交；新独立Val/fresh普通链仍待，未签业务通过、未推送部署。
