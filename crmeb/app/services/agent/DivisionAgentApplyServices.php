@@ -63,22 +63,39 @@ class DivisionAgentApplyServices extends BaseServices
      */
     public function applyAgent($data, $id = 0)
     {
-        $data['images'] = json_encode($data['images']);
+        $request=app()->request;
+        if(!$request instanceof \app\Request)throw new \crmeb\exceptions\AuthUnavailableException();
+        $uid=(int)$request->uid();$data['uid']=$uid;
+        $id=\app\dao\marketplace\assets\CustomerAgentLicenceAssetDao::integer($id,0,2147483647);
         $data['add_time'] = time();
         /** @var UserServices $userServices */
         $userServices = app()->make(UserServices::class);
         $divisionId = $userServices->value(['division_invite' => $data['division_invite']], 'division_id');
         if (!$divisionId) throw new ApiException('邀请码无效');
         $data['division_id'] = $divisionId;
-        if ($id) {
-            $data['status'] = 0;
-            $res = $this->dao->update(['id' => $id], $data);
-        } else {
-            $this->dao->update(['uid' => $data['uid']], ['is_del' => 1]);
-            $res = $this->dao->save($data);
-        }
-        if (!$res) throw new ApiException('提交失败');
-        return true;
+        $assets=app()->make(\app\services\marketplace\assets\CustomerAgentLicenceAssetServices::class);
+        return $assets->save($request,$uid,$id,$data,
+            function(\think\db\ConnectionInterface $connection,\PDO $pdo,int $actualUid,int $actualId,string $encoded)
+                use($uid,$id,$data,$userServices,$divisionId):int {
+                if($actualUid!==$uid||$actualId!==$id)throw new \crmeb\exceptions\AuthUnavailableException();
+                $this->dao->assertLicenceWriter($connection,$pdo,$uid,$id);
+                // Re-read the original invitation through its real service on the same writer.
+                if((string)$userServices->value(['division_invite'=>$data['division_invite']],'division_id')!==(string)$divisionId)
+                    throw new ApiException('邀请码无效');
+                $actualData=$data;$actualData['images']=$encoded;
+                if($id){
+                    $actualData['status']=0;
+                    $res=$this->dao->update(['id'=>$id,'uid'=>$uid,'is_del'=>0],$actualData);
+                    $savedId=$id;
+                }else{
+                    $this->dao->update(['uid'=>$uid],['is_del'=>1]);
+                    $res=$this->dao->save($actualData);
+                    $savedId=$res?\app\dao\marketplace\assets\CustomerAgentLicenceAssetDao::integer($res->getData('id'),1,2147483647):0;
+                }
+                if(!$res)throw new ApiException('提交失败');
+                $this->dao->assertLicenceWriter($connection,$pdo,$uid,$id);
+                return $savedId;
+            });
     }
 
 

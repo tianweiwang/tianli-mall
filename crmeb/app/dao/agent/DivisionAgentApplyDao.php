@@ -16,6 +16,17 @@ use app\model\agent\DivisionAgentApply;
 
 class DivisionAgentApplyDao extends BaseDao
 {
+    /** The named licence service owns the actual primary transaction and customer/application locks. */
+    public function assertLicenceWriter(\think\db\ConnectionInterface $connection,\PDO $pdo,int $uid,int $applyId):void
+    {
+        \app\services\marketplace\assets\CustomerAgentLicenceAssetServices::assertWriter($connection,$pdo,$uid,$applyId);
+        $query=$this->getModel()->db();
+        if(!$connection instanceof \crmeb\compat\think\orm\db\connector\Mysql
+            ||\think\facade\Db::connect()!==$connection||$query->getConnection()!==$connection
+            ||$connection->getPdo()!==$pdo||$connection->transactionDepth()!==1||!$pdo->inTransaction())
+            throw new \crmeb\exceptions\AuthUnavailableException();
+    }
+
     /**
      * 设置模型
      * @return string

@@ -606,19 +606,112 @@ function audit_app_stop_group(&$process, ?array &$group, array $supervisor): arr
     $group = null;
     return ['stopped_group' => $stopped, 'remaining_members' => [], 'listener_closed' => true];
 }
+/** One ordinary TERM for the fixed licence profile; failure retains the actual handle and generation. */
+function audit_app_stop_licence_normal_group(&$process, ?array &$group, array $supervisor, bool &$termSent): array
+{
+    audit_assert_licence_private_mount();
+    if ($group === null && is_resource($process) && proc_get_status($process)['running']) {
+        $group = audit_app_register_group($process, $supervisor);
+    }
+    $stopped = $group; $remaining = [];
+    if ($group !== null) {
+        audit_expect(is_resource($process) && proc_get_status($process)['pid'] === $group['leader_pid'],
+            'normal stop requires the original registered child handle');
+        $remaining = audit_app_group_members($group, $supervisor);
+        if ($remaining !== [] && !$termSent) {
+            // Mark before the native call: an unknown signal result must not be retried.
+            $termSent = true;
+            if (!posix_kill(-$group['pgid'], SIGTERM)) {
+                audit_expect(audit_app_group_members($group, $supervisor) === [], 'normal TERM signal failed; state retained');
+            }
+        }
+        $deadline = microtime(true) + 3.0;
+        do {
+            if (is_resource($process)) { proc_get_status($process); }
+            while (pcntl_waitpid(-$group['pgid'], $waitStatus, WNOHANG) > 0) {}
+            $remaining = audit_app_group_members($group, $supervisor);
+            if ($remaining === [] && !audit_app_listener_open()) { break; }
+            usleep(20000);
+        } while (microtime(true) < $deadline);
+    }
+    audit_expect($remaining === [] && !audit_app_listener_open()
+        && (!is_resource($process) || !proc_get_status($process)['running']),
+        'normal TERM observation incomplete; original state retained without escalation');
+    if (is_resource($process)) { proc_close($process); $process = null; }
+    $group = null;
+    return ['stopped_group' => $stopped, 'remaining_members' => [], 'members' => [], 'listener_closed' => true, 'listener_open' => false,
+        'stop_mode' => 'term-only', 'term_sent' => $termSent, 'force_signal_sent' => false];
+}
+/** Fixed normal licence root only, backed by the actual registered project volume and app mount. */
+function audit_assert_licence_private_mount():void
+{
+    $manifest=audit_manifest();$project=$manifest['project']??'';
+    audit_expect(getenv('AUDIT_LICENCE_NORMAL')==='1'&&($manifest['guard_mode']??null)==='read-only'
+        &&$project==='tianli-audit-'.getenv('AUDIT_RUN_ID'),'normal licence profile identity rejected');
+    $volume=$project.'_customer-licence-private';
+    audit_expect(in_array($volume,$manifest['volumes']??[],true)&&isset($manifest['volume_identities'][$volume]),
+        'normal licence private volume must have a registered native identity');
+    $found=[];
+    foreach(file(audit_run_dir().'/containers.jsonl',FILE_IGNORE_NEW_LINES|FILE_SKIP_EMPTY_LINES)as$line){
+        $item=json_decode($line,true,512,JSON_THROW_ON_ERROR);
+        if(($item['id']??null)!==($manifest['services']['audit-app']['id']??null))continue;
+        audit_expect(($item['labels']['com.docker.compose.project']??null)===$project
+            &&($item['labels']['tianli.audit.run']??null)===getenv('AUDIT_RUN_ID')
+            &&($item['read_only']??null)===true&&($item['privileged']??null)===false,'normal licence actual application rejected');
+        foreach($item['mounts']??[]as$mount)if(($mount['Destination']??null)==='/run/audit-customer-licence')$found[]=$mount;
+    }
+    audit_expect(count($found)===1&&($found[0]['Type']??null)==='volume'&&($found[0]['Name']??null)===$volume
+        &&($found[0]['RW']??null)===true,'normal licence actual private mount rejected');
+}
+
 function audit_serve(): void
 {
     audit_guard_assert();
+    $normalLicence = getenv('AUDIT_LICENCE_NORMAL') === '1';
+    if ($normalLicence) { audit_assert_licence_private_mount(); }
     $supervisor = audit_app_proc_stat(getmypid());
     audit_expect($supervisor !== null, 'supervisor numeric process identity unavailable');
     $process = null; $group = null; $revision = ''; $generation = '';
-    $stop = static function () use (&$process, &$group, &$generation, $supervisor): array {
-        $result = audit_app_stop_group($process, $group, $supervisor); $generation = '';
+    $normalTermSent = false; $normalStopBlocked = false; $normalStopping = false; $normalFirstFailure = null;
+    $normalFailure = static function (Throwable $error, string $failedRevision) use (&$process, &$group, &$generation,
+        &$normalTermSent, &$normalStopBlocked, &$normalFirstFailure, $supervisor): void {
+        $facts = ['group' => $group];
+        if ($group !== null) {
+            try { $facts = audit_app_process_observation($group, $supervisor);
+                $facts['remaining_members'] = audit_app_group_members($group, $supervisor);
+                $facts['listener_open'] = audit_app_listener_open();
+            } catch (Throwable $observation) { $facts['observation_error_class'] = get_class($observation); }
+        }
+        if (is_resource($process)) { $facts['child_handle'] = array_intersect_key(proc_get_status($process), array_flip(['pid', 'running'])); }
+        if ($normalStopBlocked && $normalFirstFailure === null) {
+            $normalFirstFailure = ['revision' => $failedRevision, 'generation_revision' => $generation,
+                'error_class' => get_class($error), 'reason' => 'ordinary_stop_incomplete', 'term_sent' => $normalTermSent] + $facts;
+        }
+        try { audit_write_json(audit_run_dir() . '/app-status.json', ['revision' => $failedRevision, 'status' => 'failed',
+            'run_id' => getenv('AUDIT_RUN_ID'), 'generation_revision' => $generation, 'error_class' => get_class($error),
+            'stop_mode' => 'term-only', 'term_sent' => $normalTermSent, 'force_signal_sent' => false,
+            'state_preserved' => true, 'restart_blocked' => $normalStopBlocked, 'first_incomplete_stop' => $normalFirstFailure] + $facts);
+        } catch (Throwable $statusError) { fwrite(STDERR, 'BLOCKED normal status persistence; live state retained '.get_class($statusError)."\n"); }
+    };
+    $stop = static function () use (&$process, &$group, &$generation, &$normalTermSent, &$normalStopBlocked,
+        &$normalStopping, $normalLicence, $supervisor): array {
+        if ($normalLicence) {
+            audit_expect(!$normalStopBlocked, 'normal incomplete stop is retained; no second stop or restart');
+            $normalStopping = true;
+            try { $result = audit_app_stop_licence_normal_group($process, $group, $supervisor, $normalTermSent); }
+            catch (Throwable $error) { $normalStopBlocked = true; throw $error; }
+            finally { $normalStopping = false; }
+        } else { $result = audit_app_stop_group($process, $group, $supervisor); }
+        $generation = ''; $normalTermSent = false;
         return $result;
     };
     pcntl_async_signals(true);
-    pcntl_signal(SIGTERM, static function () use ($stop): void {
-        try { $stop(); exit(0); } catch (Throwable $error) { exit(2); }
+    pcntl_signal(SIGTERM, static function () use ($stop, $normalLicence, $normalFailure, &$normalStopping, &$revision): void {
+        if ($normalLicence && $normalStopping) { return; }
+        try { $stop(); exit(0); } catch (Throwable $error) {
+            if ($normalLicence) { $normalFailure($error, $revision); return; }
+            exit(2);
+        }
     });
     while (true) {
         $file = audit_run_dir() . '/app-control.json';
@@ -628,6 +721,9 @@ function audit_serve(): void
             try {
                 audit_expect(is_string($revision) && preg_match('/^[a-f0-9]{16}$/D', $revision) === 1
                     && in_array($action, ['start', 'stop', 'observe'], true), 'invalid supervisor action');
+                if ($normalLicence && $action === 'start') {
+                    audit_expect(!$normalStopBlocked, 'normal incomplete stop forbids restart; state retained');
+                }
                 if ($action === 'observe') {
                     audit_expect($group !== null && $generation !== '' && ($control['overrides'] ?? []) === [], 'no registered generation or invalid observation options');
                     $facts = audit_app_process_observation($group, $supervisor);
@@ -647,7 +743,8 @@ function audit_serve(): void
                         $mapping = ['APP_KEY' => 'PHP_APP_APP_KEY', 'CACHE_DRIVER' => 'PHP_CACHE_DRIVER',
                             'AUTH_SESSION_EPOCH' => 'PHP_AUTH_SESSION_EPOCH', 'AUTH_STAMP_KEY' => 'PHP_AUTH_STAMP_KEY',
                             'APP_DEBUG' => 'PHP_APP_DEBUG', 'DB_PORT' => 'PHP_DATABASE_HOSTPORT', 'CACHE_PREFIX' => 'PHP_CACHE_CACHE_PREFIX',
-                            'SERVER_WORKERS' => 'PHP_CLI_SERVER_WORKERS'];
+                            'SERVER_WORKERS' => 'PHP_CLI_SERVER_WORKERS',
+                            'LICENCE_PRIVATE_ROOT'=>'PHP_MARKETPLACE_CUSTOMER_LICENCE_PRIVATE_ROOT'];
                         $approved = is_string($value) && match ($key) {
                             'APP_KEY', 'CACHE_DRIVER' => in_array($value, ['', 'default', 'file', 'redis'], true),
                             'AUTH_SESSION_EPOCH' => $value === '',
@@ -656,9 +753,11 @@ function audit_serve(): void
                             'DB_PORT' => in_array($value, ['1', '3306'], true),
                             'CACHE_PREFIX' => (bool)preg_match('/^audit:http-lang:' . preg_quote((string)getenv('AUDIT_RUN_ID'), '/') . ':[0-9]+:$/D', $value),
                             'SERVER_WORKERS' => in_array($value, ['', '2'], true),
+                            'LICENCE_PRIVATE_ROOT' => $value==='/run/audit-customer-licence'&&getenv('AUDIT_LICENCE_NORMAL')==='1',
                             default => false,
                         };
                         audit_expect(isset($mapping[$key]) && $approved, 'unapproved application configuration override');
+                        if($key==='LICENCE_PRIVATE_ROOT')audit_assert_licence_private_mount();
                         if ($key === 'SERVER_WORKERS' && $value === '') { unset($env['PHP_CLI_SERVER_WORKERS']); }
                         else { $env[$mapping[$key]] = $value; }
                     }
@@ -678,9 +777,12 @@ function audit_serve(): void
                     } while (microtime(true) < $deadline);
                     audit_expect($facts['members'] !== [] && $facts['listener_open'], 'registered server group did not listen');
                 }
+                $retainedNormal = $normalLicence && $normalFirstFailure !== null
+                    ? ['first_incomplete_stop' => $normalFirstFailure, 'state_preserved' => true, 'restart_blocked' => true] : [];
                 audit_write_json(audit_run_dir() . '/app-status.json', ['revision' => $revision, 'status' => $action,
-                    'run_id' => getenv('AUDIT_RUN_ID'), 'generation_revision' => $generation] + $facts);
+                    'run_id' => getenv('AUDIT_RUN_ID'), 'generation_revision' => $generation] + $facts + $retainedNormal);
             } catch (Throwable $error) {
+                if ($normalLicence) { $normalFailure($error, $revision); continue; }
                 $cleanupError = null;
                 if ($action !== 'observe') { try { $stop(); } catch (Throwable $cleanup) { $cleanupError = get_class($cleanup); } }
                 audit_write_json(audit_run_dir() . '/app-status.json', ['revision' => $revision, 'status' => 'failed',

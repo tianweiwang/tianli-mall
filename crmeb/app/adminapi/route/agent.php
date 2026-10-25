@@ -10,6 +10,17 @@
 // +----------------------------------------------------------------------
 use think\facade\Route;
 
+// Same current original application-list grant and actual division range as the existing reviewer.
+Route::group(function () {
+    Route::get('agent/division/apply/<apply_id>/licence/<asset_id>/content','v1.agent.AgentLicenceFile/content')
+        ->option(['real_name'=>'代理申请执照原图']);
+})->middleware([
+    \app\http\middleware\AllowOriginMiddleware::class,
+    \app\adminapi\middleware\AdminAuthTokenMiddleware::class,
+    \app\adminapi\middleware\AgentLicenceReadPermissionMiddleware::class,
+    \app\adminapi\middleware\AdminLogMiddleware::class
+])->option(['mark'=>'agent','mark_name'=>'分销模块']);
+
 /**
  * 分销管理 相关路由
  */

@@ -58,17 +58,19 @@
 								<text class="item-title">{{$t(`请上传营业执照及行业相关资质证明图片`)}}</text>
 								<text class="item-desc">({{$t(`图片最多可上传10张,图片格式支持JPG、PNG、JPEG`)}})</text>
 								<view class="upload">
-									<view class='pictrue' v-for="(item,index) in images" :key="index"
-										:data-index="index" @click="getPhotoClickIdx">
-										<image :src='item'></image>
+									<view class='pictrue' v-for="(item,index) in savedLicenceRows" :key="item.ref + ':' + index">
+										<image v-if="item.url" :src="item.url" :data-index="index" @click="getPhotoClickIdx" @error="licenceImageFailed(item)"></image>
+										<view v-else class="licence-image-info">{{item.loading ? $t(`读取中`) : $t(`图片未取得`)}}</view>
 										<text class='iconfont icon-guanbi1' @click.stop='DelPic(index)'></text>
 									</view>
-									<view class='pictrue acea-row row-center-wrapper row-column' @click='uploadpic'
-										v-if="images.length < 10">
+									<button class='pictrue licence-upload acea-row row-center-wrapper row-column' @click='uploadpic'
+										v-if="images.length < 10" :disabled="licenceUploading || licenceSubmitting || licenceNeedsHistory">
 										<text class='iconfont icon-icon25201'></text>
-										<view>{{$t(`上传图片`)}}</view>
-									</view>
+										<view>{{licenceUploading ? $t(`上传中`) : $t(`上传图片`)}}</view>
+									</button>
 								</view>
+								<view v-if="licenceMessage" class="licence-notice">{{licenceMessage}}</view>
+								<button v-if="licenceNeedsHistory" class="licence-reload" :disabled="licenceHistoryPending" @click="getHistoryData">{{$t(`重新读取申请`)}}</button>
 							</view>
 						</view>
 
@@ -78,7 +80,7 @@
 							</checkbox-group>
 							<button class="settleAgree" @click="getAgentAgreement">《{{$t(`代理商协议`)}}》</button>
 						</view>
-						<button class='submitBtn' :class="isAgree === true ? 'on':''"
+						<button class='submitBtn' :class="isAgree === true ? 'on':''" :disabled="licenceSubmitting || licenceUploading || licenceNeedsHistory" :loading="licenceSubmitting"
 							@click="formSubmit">{{$t(`提交申请`)}}</button>
 
 					</view>
@@ -165,6 +167,16 @@
 		<view class="settledSuccessful">
 			<image class="image" src="../static/success.png" alt="">
 				<view class="title">{{$t(`恭喜，您的资料提交成功！`)}}</view>
+				<view v-if="isAgent" class="saved-licence-images">
+					<view class="saved-licence-title">{{$t(`已提交的资质图片`)}}</view>
+					<view class="saved-licence-grid">
+						<view class="saved-licence-image" v-for="(item,index) in savedLicenceRows" :key="item.ref + ':' + index">
+							<image v-if="item.url" :src="item.url" :data-index="index" @click="getPhotoClickIdx" @error="licenceImageFailed(item)"></image>
+							<view v-else class="licence-image-info">{{item.loading ? $t(`读取中`) : $t(`图片未取得`)}}</view>
+						</view>
+					</view>
+					<view v-if="licenceMessage" class="licence-notice">{{licenceMessage}}</view>
+				</view>
 				<view class="goHome" hover-class="none" @click="goHome">
 					{{$t(`返回首页`)}}
 				</view>
@@ -174,6 +186,16 @@
 		<view class="settledSuccessful">
 			<image class="image" src="../static/success.png" alt="">
 				<view class="title">{{$t(`恭喜，您的资料通过审核！`)}}</view>
+				<view v-if="isAgent" class="saved-licence-images">
+					<view class="saved-licence-title">{{$t(`已提交的资质图片`)}}</view>
+					<view class="saved-licence-grid">
+						<view class="saved-licence-image" v-for="(item,index) in savedLicenceRows" :key="item.ref + ':' + index">
+							<image v-if="item.url" :src="item.url" :data-index="index" @click="getPhotoClickIdx" @error="licenceImageFailed(item)"></image>
+							<view v-else class="licence-image-info">{{item.loading ? $t(`读取中`) : $t(`图片未取得`)}}</view>
+						</view>
+					</view>
+					<view v-if="licenceMessage" class="licence-notice">{{licenceMessage}}</view>
+				</view>
 				<view class="goHome" hover-class="none" @click="goHome">
 					{{$t(`返回首页`)}}
 				</view>
@@ -184,6 +206,16 @@
 			<image class="image" src="../static/error.png" alt="">
 				<view class="title">{{$t(`您的申请未通过！`)}}</view>
 				<view class="info" v-if="refusal_reason">{{refusal_reason}}</view>
+				<view v-if="isAgent" class="saved-licence-images">
+					<view class="saved-licence-title">{{$t(`已提交的资质图片`)}}</view>
+					<view class="saved-licence-grid">
+						<view class="saved-licence-image" v-for="(item,index) in savedLicenceRows" :key="item.ref + ':' + index">
+							<image v-if="item.url" :src="item.url" :data-index="index" @click="getPhotoClickIdx" @error="licenceImageFailed(item)"></image>
+							<view v-else class="licence-image-info">{{item.loading ? $t(`读取中`) : $t(`图片未取得`)}}</view>
+						</view>
+					</view>
+					<view v-if="licenceMessage" class="licence-notice">{{licenceMessage}}</view>
+				</view>
 				<view class="again" hover-class="none" @click="applyAgain">
 					{{$t(`重新申请`)}}
 				</view>
@@ -199,10 +231,8 @@
 		toLogin
 	} from '@/libs/login.js';
 	import {
-		create,
 		getCodeApi,
 		registerVerify,
-		getHistoryData,
 		updateGoodsRecord,
 		getAgentAgreement,
 		userSpreadInfo,
@@ -222,6 +252,7 @@
 	import Verify from '../components/verify/verify.vue';
 	import sendVerifyCode from "@/mixins/SendVerifyCode";
 	import { HTTP_REQUEST_URL } from '@/config/app';
+	import { openAgentLicenceScope, isPrivateAgentLicence } from '@/api/agent-licence';
 	const app = getApp();
 	export default {
 		components: {
@@ -271,6 +302,20 @@
 				mer_classification: "",
 				mer_storeType: '',
 				images: [],
+				licenceRows: [],
+				licenceActive: false,
+				licenceContext: null,
+				licenceIdentity: null,
+				licenceOpening: null,
+				licenceGeneration: 0,
+				licenceImageVersion: 0,
+				licenceUnsubscribe: null,
+				licenceUploading: false,
+				licenceSubmitting: false,
+				licenceHistoryPending: false,
+				licenceNeedsHistory: false,
+				licenceLoaded: false,
+				licenceMessage: '',
 				tagStyle: {
 					img: 'width:100%;display:block;',
 					table: 'width:100%',
@@ -286,16 +331,26 @@
 		},
 		beforeDestroy() {
 			clearTimeout(this.timer)
+			this.licenceActive = false;
+			this.closeLicenceScope();
+			this.licenceIdentity = null;
+			if (this.licenceUnsubscribe) this.licenceUnsubscribe();
 		},
 		computed:{
 			...mapGetters(['isLogin']),
+			savedLicenceRows() {
+				return this.licenceActive && this.licenceContext && this.licenceContext.current() ? this.licenceRows : [];
+			},
 			headerBg() {
 				return HTTP_REQUEST_URL + `/statics/images/${this.isAgent? 'agent_apply.jpg' :'spread_apply.jpg'}`;
 			}
 		},
 		onLoad(options) {
+			this.licenceActive = true;
+			this.isAgent = !!options.type;
+			this.licenceUnsubscribe = this.$store.subscribe(() => this.syncLicenceIdentity());
 			if (options.id) {
-				this.id = id
+				this.id = /^(0|[1-9][0-9]{0,9})$/.test(String(options.id)) ? Number(options.id) : 0;
 				uni.showLoading({
 					title: this.$t(`正在加载中`),
 				});
@@ -321,9 +376,111 @@
 		
 		},
 		onShow() {
-
+			this.licenceActive = true;
+			this.syncLicenceIdentity();
+			if (this.isAgent && this.isLogin && !this.licenceHistoryPending) {
+				if (!this.licenceLoaded || this.licenceNeedsHistory) this.getHistoryData();
+				else this.refreshLicenceImages();
+			}
+		},
+		onHide() {
+			this.licenceActive = false;
+			if (this.licenceSubmitting) this.licenceNeedsHistory = true;
+			this.closeLicenceScope();
+		},
+		onUnload() {
+			this.licenceActive = false;
+			this.closeLicenceScope();
+			this.licenceIdentity = null;
+			if (this.licenceUnsubscribe) this.licenceUnsubscribe();
+			this.licenceUnsubscribe = null;
 		},
 		methods: {
+			closeLicenceScope() {
+				this.licenceGeneration += 1;
+				this.licenceImageVersion += 1;
+				if (this.licenceContext) this.licenceContext.dispose();
+				this.licenceContext = null;
+				this.licenceOpening = null;
+				this.licenceRows.forEach(row => { if (row.release) row.release(); });
+				this.licenceRows = [];
+				this.licenceUploading = false;
+				this.licenceSubmitting = false;
+				this.licenceHistoryPending = false;
+			},
+			syncLicenceIdentity() {
+				// Closing transport on hide does not remove the proof associated with the retained draft.
+				if (typeof this.licenceIdentity !== 'function' || this.licenceIdentity()) return;
+				this.closeLicenceScope();
+				this.licenceIdentity = null;
+				this.images = [];
+				this.id = 0;
+				['agent_name', 'name', 'phone', 'division_invite', 'code'].forEach(key => { this.merchantData[key] = ''; });
+				this.status = -1;
+				this.isAgree = false;
+				this.refusal_reason = '';
+				this.licenceLoaded = false;
+				this.licenceNeedsHistory = true;
+				this.licenceMessage = this.$t(`登录身份已变化，请重新读取申请`);
+			},
+			async ensureLicenceScope() {
+				this.syncLicenceIdentity();
+				if (this.licenceContext && this.licenceContext.current()) return this.licenceContext;
+				if (this.licenceOpening) return this.licenceOpening;
+				const generation = this.licenceGeneration;
+				const current = () => this.licenceActive && this.isAgent && generation === this.licenceGeneration;
+				const opening = openAgentLicenceScope(current).then(context => {
+					if (!current()) { context.dispose(); throw new Error(this.$t(`页面已变化，请重新读取申请`)); }
+					this.licenceContext = context;
+					this.licenceIdentity = context.sameIdentity;
+					return context;
+				});
+				this.licenceOpening = opening;
+				try { return await opening; }
+				finally { if (this.licenceOpening === opening) this.licenceOpening = null; }
+			},
+			async refreshLicenceImages() {
+				this.syncLicenceIdentity();
+				const generation = this.licenceGeneration, version = ++this.licenceImageVersion;
+				this.licenceRows.forEach(row => { if (row.release) row.release(); });
+				const rows = this.images.map(ref => ({ ref, url: isPrivateAgentLicence(ref) ? '' : ref, release: null, loading: isPrivateAgentLicence(ref), error: '' }));
+				this.licenceRows = rows;
+				let context;
+				try { context = await this.ensureLicenceScope(); }
+				catch (error) {
+					if (generation === this.licenceGeneration && version === this.licenceImageVersion) {
+						rows.forEach(row => { row.loading = false; });
+						this.licenceMessage = error.message || this.$t(`执照图片读取未完成`);
+					}
+					return;
+				}
+				const current = () => this.licenceActive && generation === this.licenceGeneration && version === this.licenceImageVersion && this.licenceContext === context && context.current();
+				if (!current() || !rows.some(row => row.loading)) return;
+				const queue = rows.filter(row => row.loading);
+				const worker = async () => {
+					while (queue.length && current()) {
+						const row = queue.shift();
+						try {
+							const image = await context.image(row.ref);
+							if (!current() || !this.licenceRows.includes(row)) { image.release(); return; }
+							row.url = image.url;
+							row.release = image.release;
+						} catch (error) {
+							if (current()) { row.error = error.message || this.$t(`图片读取未完成`); this.licenceMessage = row.error; }
+						} finally { if (current()) row.loading = false; }
+					}
+				};
+				await Promise.all([worker(), worker(), worker()]);
+			},
+			licenceImageFailed(row) {
+				if (!this.licenceRows.includes(row)) return;
+				if (row.release) row.release();
+				row.url = '';
+				row.release = null;
+				row.loading = false;
+				row.error = this.$t(`图片未能显示，请重新读取申请`);
+				this.licenceMessage = row.error;
+			},
 			getAgentAgreement() {
 				if(this.isAgent){
 					getAgentAgreement().then(res => {
@@ -383,22 +540,37 @@
 					});
 			},
 			// 获取历史提交数据详情
-			getHistoryData() {
-				getHistoryData().then(res => {
-					this.status = res.data.status
-					let resData = res.data
-					if (res.data.status !== -1) {
-						let arr = Object.keys(this.merchantData)
-						arr.map(item => {
-							this.merchantData[item] = resData[item]
-						})
-						uni.hideLoading();
+			async getHistoryData() {
+				this.syncLicenceIdentity();
+				if (!this.licenceActive || this.licenceHistoryPending) return;
+				this.licenceHistoryPending = true;
+				const generation = this.licenceGeneration;
+				try {
+					const context = await this.ensureLicenceScope(), resData = await context.history();
+					if (!this.licenceActive || generation !== this.licenceGeneration || !context.current()) return;
+					if (!resData || typeof resData !== 'object' || ![-1, 0, 1, 2, '-1', '0', '1', '2'].includes(resData.status)) throw new Error(this.$t(`申请记录未确认`));
+					const status = Number(resData.status), id = status === -1 ? 0 : Number(resData.id);
+					if (!Number.isSafeInteger(id) || id < (status === -1 ? 0 : 1) || id > 2147483647 || status !== -1 && (!Array.isArray(resData.images) || resData.images.length > 10 || resData.images.some(ref => typeof ref !== 'string' || !ref))) throw new Error(this.$t(`申请记录未完整取得`));
+					this.id = id;
+					this.status = status;
+					if (status !== -1) ['agent_name', 'name', 'phone', 'division_invite'].forEach(key => { this.merchantData[key] = resData[key]; });
+					this.images = status === -1 ? [] : resData.images.slice();
+					this.refusal_reason = status === 2 ? resData.refusal_reason : '';
+					this.licenceLoaded = true;
+					this.licenceNeedsHistory = false;
+					this.licenceMessage = '';
+					this.inloading = false;
+					await this.refreshLicenceImages();
+				} catch (error) {
+					if (this.licenceActive && generation === this.licenceGeneration) {
+						this.inloading = false;
+						this.licenceNeedsHistory = true;
+						this.licenceMessage = error.message || this.$t(`申请读取未完成，请重试`);
 					}
-					if (this.status === 2) {
-						this.refusal_reason = resData.refusal_reason
-					}
-					this.inloading = false
-				})
+				} finally {
+					if (generation === this.licenceGeneration) this.licenceHistoryPending = false;
+					uni.hideLoading();
+				}
 			},
 			//获取代理商分类名称
 			getCategoryName(id, arr) {
@@ -411,9 +583,10 @@
 			// 图片预览
 			// 获得相册 idx
 			getPhotoClickIdx(e) {
-				let _this = this;
-				let idx = e.currentTarget.dataset.index;
-				_this.imgPreview(_this.images, idx);
+				const row = this.licenceRows[Number(e.currentTarget.dataset.index)];
+				if (!row || !row.url || this.licenceContext && !this.licenceContext.current()) return;
+				const urls = this.licenceRows.map(item => item.url).filter(Boolean);
+				this.imgPreview(urls, urls.indexOf(row.url));
 			},
 			// 图片预览
 			imgPreview: function(list, idx) {
@@ -428,6 +601,7 @@
 			// 授权回调
 			onLoadFun: function() {
 				this.isShowAuth = false;
+				if (this.isAgent) { this.licenceActive = true; this.getHistoryData(); }
 			},
 			// 授权关闭
 			authColse: function(e) {
@@ -444,28 +618,39 @@
 			},
 			applyAgain() {
 				this.status = -1
+				if (this.isAgent) this.refreshLicenceImages();
 			},
 			/**
 			 * 上传文件
 			 * 
 			 */
-			uploadpic: function() {
-				let that = this;
-				that.$util.uploadImageOne('upload/image', (res) => {
-					this.images.push(res.data.url);
-					that.$set(that, 'images', that.images);
-				});
-
+			async uploadpic() {
+				if (this.licenceUploading || this.licenceSubmitting || this.licenceNeedsHistory || this.images.length >= 10) return;
+				this.licenceUploading = true;
+				const generation = this.licenceGeneration;
+				try {
+					const context = await this.ensureLicenceScope();
+					const path = await new Promise((resolve, reject) => uni.chooseImage({ count: 1, sizeType: ['original'], sourceType: ['album', 'camera'], success(result) { resolve(result.tempFilePaths && result.tempFilePaths[0]); }, fail(error) { reject(error); } }));
+					if (generation !== this.licenceGeneration || !context.current() || !path) return;
+					const ref = await context.upload(this.id, path);
+					if (generation !== this.licenceGeneration || !context.current() || this.images.length >= 10) return;
+					this.images.push(ref);
+					this.licenceMessage = '';
+					await this.refreshLicenceImages();
+				} catch (error) {
+					if (this.licenceActive && generation === this.licenceGeneration && !String(error.errMsg || '').includes('cancel')) this.licenceMessage = error.message || this.$t(`图片上传未完成，请重新选择`);
+				} finally { if (generation === this.licenceGeneration) this.licenceUploading = false; }
 			},
 			/**
 			 * 删除图片
 			 * 
 			 */
 			DelPic: function(index) {
-				let that = this,
-					pic = this.images[index];
-				that.images.splice(index, 1);
-				that.$set(that, 'images', that.images);
+				if (this.licenceUploading || this.licenceSubmitting || this.licenceNeedsHistory) return;
+				const row = this.licenceRows[index];
+				if (row && row.release) row.release();
+				this.images.splice(index, 1);
+				this.licenceRows.splice(index, 1);
 			},
 
 			getcaptcha() {
@@ -536,32 +721,26 @@
 						});
 					});
 			},
-			formSubmit: function(e) {
-				let that = this;
-				if (that.validateForm() && that.validate) {
-					let requestData = {
-						uid: this.$store.state.app.uid,
-						phone: that.merchantData.phone,
-						agent_name: that.merchantData.agent_name,
-						name: that.merchantData.name,
-						code: that.merchantData.code,
-						division_invite: that.merchantData.division_invite,
-						images: that.images,
-						id: this.id
+			async formSubmit() {
+				this.syncLicenceIdentity();
+				if (this.licenceSubmitting || this.licenceUploading || this.licenceNeedsHistory || !this.validateForm()) return;
+				this.licenceSubmitting = true;
+				const generation = this.licenceGeneration;
+				try {
+					const context = await this.ensureLicenceScope();
+					const requestData = { phone: this.merchantData.phone, agent_name: this.merchantData.agent_name,
+						name: this.merchantData.name, code: this.merchantData.code, division_invite: this.merchantData.division_invite,
+						images: this.images.slice(), id: this.id };
+					await context.save(this.id, requestData);
+					if (generation !== this.licenceGeneration || !context.current()) return;
+					this.licenceMessage = this.$t(`申请已提交，正在读取保存结果`);
+					await this.getHistoryData();
+				} catch (error) {
+					if (this.licenceActive && generation === this.licenceGeneration) {
+						this.licenceMessage = error.message || this.$t(`申请提交未完成，请重新确认`);
+						if (error.resultUnconfirmed) this.licenceNeedsHistory = true;
 					}
-					create(requestData).then(data => {
-						if (data.status == 200) {
-							this.timer = setTimeout(() => {
-								that.getHistoryData()
-							}, 1000)
-						}
-
-					}).catch(res => {
-						that.$util.Tips({
-							title: res
-						});
-					})
-				}
+				} finally { if (generation === this.licenceGeneration) this.licenceSubmitting = false; }
 			},
 			validateBtn: function() {
 				let that = this,
@@ -815,6 +994,75 @@
 		}
 	}
 
+	.licence-image-info {
+		width: 100%;
+		height: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		text-align: center;
+		font-size: 22rpx;
+		background: #f5f5f5;
+		color: #777;
+	}
+	.saved-licence-images {
+		margin: 30rpx 0;
+		text-align: left;
+	}
+	.saved-licence-title {
+		font-size: 26rpx;
+		color: #666;
+		margin-bottom: 16rpx;
+	}
+	.saved-licence-grid {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 16rpx;
+	}
+	.saved-licence-image {
+		width: 130rpx;
+		height: 130rpx;
+		flex-shrink: 0;
+	}
+	.saved-licence-image image {
+		width: 100%;
+		height: 100%;
+	}
+	.merchantsSettled .list .item .licence-upload {
+		padding: 0;
+		line-height: normal;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		text-align: center;
+		box-sizing: border-box;
+		background: #fff;
+		flex-shrink: 0;
+	}
+	.merchantsSettled .list .item .licence-upload::after {
+		border: 0;
+	}
+	.licence-notice {
+		margin-top: 20rpx;
+		font-size: 24rpx;
+		line-height: 1.6;
+		color: #666;
+		word-break: break-word;
+	}
+	.licence-reload {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		text-align: center;
+		box-sizing: border-box;
+		max-width: 100%;
+		width: 260rpx;
+		margin: 16rpx 0 0;
+		padding: 12rpx;
+		font-size: 24rpx;
+		line-height: 1.5;
+	}
+
 	.uni-list-cell-db {
 		position: relative;
 	}
@@ -914,6 +1162,11 @@
 
 	.merchantsSettled .submitBtn {
 		width: 588rpx;
+		max-width: 100%;
+		box-sizing: border-box;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 		margin: 0 auto;
 		height: 86rpx;
 		border-radius: 25px;

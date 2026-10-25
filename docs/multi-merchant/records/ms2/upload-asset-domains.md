@@ -792,3 +792,72 @@ Root固定PHP8.2纯语法实际0，来源与完整native双流见仓库外 norma
 采用前原Run20261022134605842b51的正常close84原生和独立zero12原生已实际0、Root完整读回96回执，精确退役其4容器/1内部网/7专用卷并保47295原公件；原093内部Task6成功及评价图片POST175 HTTP503失败原样保留。新增诊断仅保控制器原有六键处理收据，不记录令牌/URL/原图或其它响应，不放行503；当前生产根因细节仍未知。
 
 专用持久private_root仍默认空且需显式配置，未据Source签实际上传/首次下单绑定/多角色读取/原图、SQL/Redis或副作用通过。新Source三端正式构建、正常API与H5/MP/APP/三宽浏览器、完整A/B/N1N2、旧数据历史权益归属和最终启用、真实金融/MS6与人工签收均待；旧093结果不改署本次提交。用户停止样本NOT RUN，Task9新商家客服关闭，目标为通用多商户，L2本地不推送部署或操作真实资金。
+
+## 2026-10-25 CU_LICENCE 私有执照接线设计与执行记录
+
+范围仅为原 CU_LICENCE（本文件298–306行）及 W07：真实本人申请、执照上传、同事务绑定、本人申请详情和平台审核图片。复用34列 customer asset 表及原 division_agent_apply.images，不新增表、列、索引、种子、通用owner框架；不改现form/review/avatar消费者，不涉及退款、提现或T4。当前独立工作树从 b54ad9c39 起步，L2源码实施；PHP/App/Docker/HTTP、浏览器/设备和业务验收本步均NOT RUN。
+
+已核原发布边界：本文件“真实历史、可恢复转存与发布门”要求所有仓库内及外部private消费者完成专用入口及合法读取后才可保默认public_upload_compat；T5先行记录要求default upload/image保原路径直到完整门实证闭合。该边界不等于批准新增默认false的CU_LICENCE开关。本步不增加该开关：新仓库执照消费者始终走具名private入口，根未配置或上传失败只报告未完成，绝不回退公开上传。旧保存URL展示及旧外部客户端原提交格式暂保兼容；原外部发布/历史转存/T8门仍未完成，不据此声称全部历史或外部写入已私有化。
+
+接口与权限：新增POST /api/agent/apply/:id/files（id0=真实本人首次申请上下文，正id必须是本人未删除申请），只接受pics multipart；返回name、attachment_ref（mp-licence:v1:十进制asset id）及受权内容定位。新增GET /api/agent/licence/:asset_id/content作本人预览/保存后读取。平台新增GET /adminapi/agent/division/apply/:apply_id/licence/:asset_id/content；固定新route专用中间件复用原GET agent/division/agent_apply/list的当前真实session、fresh启用角色/menu授权，并保持实际admin.division_id=0全范围、正值只本事业部的原列表语义。内容每次重读实际申请images及完整资产，不借form/refund票据或商品PlatformScope；直接认证响应使用private,no-store、nosniff，不颁发可匿名读取的URL。
+
+数据/事务：所有申请写入强制Request.uid；更新锁本人实际申请，保原验证码/邀请/审核规则。与原ORM writer使用同一真实Connection/PDO，先锁user/申请/所选完整34列资产并核私有原图，再执行原申请保存；仅首次选中STAGED改state/bound_at/agent_apply_id，值来自真实保存后的申请。BOUND重用须由本人原已保存images证明，首次绑定ID/时间不改；不删除旧图或未选择预览图，不新增GC/TTL。原URL分支保持原保存格式；新private引用不得变成public URL或临时显示URL。事务外用同PDO完整原生行及原图读回确认持久结果，不冒充取得ORM未提供的commit ACK；未知结果保留文件且不重试清理。
+
+物理叶复用现form严格文件读写与窄清理实现，但使用独立CustomerAgentLicencePrivateStorage及显式customer_licence.private_root空默认、固定agent-licence/v1/{uid}/{申请上下文0或真实id}/{随机}/content.ext。继续复用CustomerAssetStorage.qualify完整字节检查，不假造confirmation，不改form叶，不fallback public/runtime/cloud。前端只保locator进申请，认证下载成页面临时图；切页/身份变化/销毁释放临时图。原最多10张及原平台图片展示位置保持，状态反馈与上传控件分开。
+
+Files（本修复必要调用点）：新具名CustomerAgentLicenceAssetServices/PrivateStorage/AssetDao及平台Access/中间件/内容controller；原CustomerAssetServices具名委托、DivisionController、DivisionAgentApplyServices/Dao、api/adminapi agent route和marketplace配置；uni-app api/具名图片transport与annex/settled页面；admin api/具名图片transport与division/agent/applyList页面；本记录及既有isolated目录中的正常用例。现form/review/avatar原实现保持零差分。本作者当前只写Source、不提交；Root可在既有L2授权内于Source/测试审查和必要语法之后做限定local checkpoint，以满足clean HEAD真实绑定，不构成新审批或业务验收；推送/部署依原范围另列。
+
+唯一CU_LICENCE执行清单：
+
+- [ ] 实现具名私有上传、完整34列STAGED及真实本人/申请上下文；保持完整文件与未知结果处理。
+- [ ] 原真实ORM申请保存的同PDO锁/绑定、UID强制、本人更新、BOUND正常重用及原业务兼容。
+- [ ] 本人详情/平台审核受权原图及三端临时图消费者，原保存locator保持。
+- [x] 有界Source/静态检查及独立复核：19路径修后独审未有其它确定问题，全部14PHP实际PHP8.2语法0；仅该有界源码项完成，运行/业务/视觉仍待。
+- [ ] ISO-FULL正常验证：真实认证multipart→首次申请→同体再保存→本人修改/再申请→本人和原有权平台审核读原图；完整34列/原申请行/文件/Redis/原业务事件前后比对，普通close/独立zero。
+- [ ] 实际H5三宽、MP/APP构建/设备、外部客户端发布和历史转存/T8验收。用户停止样本保持NOT RUN；源码或构建不勾业务验收。
+
+本次Source实施已写入：具名上传/34列STAGED、真实Request UID与本人申请锁、原ORM同Connection/PDO保存后绑定、本人及原列表有权平台的认证原图读取；uni-app编辑及待审/通过/拒绝状态的临时图、平台审核临时图均已接线。首次绑定后普通同体保存/后续真实本人申请重用不更新首次agent_apply_id/bound_at，不删旧图；503完整收据为未知/已提交或响应坏包时，前端要求先读回申请而非继续首次创建。旧全局upload/image及保存的legacy URL未改，新私有消费者没有公开回退。没有新增enabled开关。
+
+初次Source有限静态检查：19变更路径UTF-8/LF；14份PHP字符串/注释/括号词法平衡（不是PHP解析）；4份前端脚本Babel解析、2份模板解析均0，uni模板使用原生image/input unary规则；git diff --check为0。独立前端作者及本任务分别解析了同四份脚本/两模板。新存储的13个完整物理guard方法与现form叶机械相同，rootGate只换固定配置键；现form三件及CustomerAssetStorage四个原件零diff。其后的Source独审与Root实际PHP8.2语法证据见下文；正式构建、HTTP/SQL/Redis/文件/正常收尾及视觉/设备仍NOT RUN，执行清单不勾完整业务完成。
+
+后继ISO-FULL需显式设置PHP_MARKETPLACE_CUSTOMER_LICENCE_PRIVATE_ROOT，绑定实际应用uid拥有的0700持久私有根，并由既有隔离机制准备真实合成本人、原合法邀请码/手机验证码及原申请列表有权平台账号。最小正常调用顺序为：本人GET agent/apply/info；POST agent/apply/0/files（filename=pics、真实pics multipart）；本人GET agent/licence/{asset}/content；POST agent/apply/0以原业务字段和locator保存；GET本人info取得真实id；POST该真实id同体重存，再在本人原申请上下文上传/修改；GET平台原申请列表，再GET agent/division/apply/{真实id}/licence/{asset}/content；本人保存后再次读原图。须用独立原生前后观察核全部34列、实际申请行/原UID与邀请/审核状态、首次绑定保持、真实图片完整bytes、所有其它表/文件/Redis及既有事件允许差分，之后正常close/独立zero。下节仅准备具名normal入口/profile/fixture及原harness必要接线的Source；Root独审、必要语法与clean checkpoint之后才可实际隔离执行，不改变或扩权当前另一个W/Val的冻结正常S。
+
+Source独审后的两项正常行为修订：页面隐藏dispose只关闭传输/释放临时图，同账号草稿保留；另保存完整token/revision/verified UID/当前user/Cache的sameIdentity谓词，不依赖已dispose的alive或页面scope。隐藏期间订阅及onShow即使context=null也先核该身份，变化时清本人字段/申请/图片/同意状态；同账号返回包括仅legacy URL的图片也先建立有效scope才展示。验证码错误、空邀请码等明确尚未进入申请保存的原校验失败保原msg并带标准六键database_committed=false收据，因此不锁成未知提交或丢弃刚上传的草稿；实际保存未知null/true及坏包仍须先读回。仅修改必要API/Vue/controller及本记录，不恢复任何停止样本；后继正常身份生命周期、表单校验和业务/视觉检查仍待实际隔离验证。
+
+该修订实际静态检查：2份受影响前端脚本Babel解析、1份uni原生模板解析均0；4份修订文件UTF-8/LF；Controller词法平衡及git diff --check为0。剩余原非空邀请码校验在原service进入资产save之前抛出的ApiException亦返回同样明确未保存收据；真正writer/commit异常已由资产save统一包装为MerchantAttachmentOperationException，仍先返回其原真实六键未知收据，不被该校验分支覆盖。没有执行账号切换、校验失败或任何其它App/HTTP/浏览器样本，没有PHP/Docker运行，不冒签这些行为已实测。
+
+独审又确认原Json::make在data=null时只生成status/msg；原申请成功返回success('提交成功')没有data，新transport原先误判为未知。最小Source修订仅具名save为json传saveAcknowledgement标志：真实HTTP200/status200及字符串msg的原无data成功DTO可完成保存应答，随后仍沿原页面读取实际申请；GET history继续必须有data，上传的三字段结果不变。所有身份门、错误六键收据及null/true未知结果先读回均保持，不改后端成功DTO或制造空data。实际业务调用仍NOT RUN。
+
+该DTO修订后实际2脚本Babel/1uni模板静态解析0、两份修订文件UTF-8/LF、git diff --check=0；未执行PHP、App、HTTP、样本或浏览器，未提交/推送。当前Source再次停写交原独审者复核，不以静态解析代签保存成功。
+
+Root实际PHP8.2检查（2026-10-25）：固定已有镜像PHP8.2.33，对本修复全部14个完整PHP逐件-l均自然0；8项Docker原生命令均0/空stderr，nonroot、只读源/根、network-none及专用/tmp内存目录，唯一语法容器普通移除、前后专用label查询为空，镜像无声明匿名卷，14源完整字节保持。仓库外证据licence-private-php82-syntax-r2/RESULT.json。首轮因/tmp未提供而PHP启动失败，在源码解析前停止，已正常移除；不作为业务红信号。此仅PHP语法，不是App/ORM/HTTP/数据库/文件或UI验收；上述正常ISO-FULL与浏览器设备清单仍待。
+
+### CU_LICENCE 正常验证 Source 准备
+
+复用现ISO-FULL compose、bootstrap的prepare/register/seed与原harness App supervisor、固定audit-app:8000 HTTP、read-only guard、数据库/Redis双哨兵及DML检查，不复制完整MS4编排或恢复bootstrap的旧停止样本。新增Files仅isolated/ms4-agent-licence-normal.php、compose.ms4-agent-licence.yml，以及原lib/harness.php的具名固定private-root传递叶。Root先完成原实例普通精确回收/独立zero，再串行安排任何新Docker变更；作者本步不运行Docker/PHP/App/HTTP。
+
+当前feature工作树有未提交的真实实现，不能以b54的HEAD签新运行。顺序为：测试Source/必要公共harness差量独审、新改PHP纯语法→Root依既有L2限定local checkpoint→新clean HEAD及独立Val/原Source导出与完整字节绑定→全新RUN。保全部clean/source guard，不制造未提交代码已测的结果。旧bootstrap脚本会自动运行历史cleanup probe，新的正常操作只复用其已核原语，不直接无区别重放该完整脚本；所有启动、观察、停止、回收仍由Root用实际原生句柄及原严格资源清单执行。
+
+专用overlay只给app/runner/bootstrap增加同一新customer-licence-private卷（app/bootstrap RW，runner RO），固定/run/audit-customer-licence，纳入真实volume labels/created_at、mount Name/Type/RW、内部唯一网络和零宿主端口核对。应用public源码和私密配置仍RO；App/runner只有audit_app四DML，无migrator/root卷。新harness叶只允许该overlay具名标志下的固定LICENCE_PRIVATE_ROOT值，传PHP_MARKETPLACE_CUSTOMER_LICENCE_PRIVATE_ROOT，不放开任意ENV/path。新卷0700、真实App运行uid拥有，非public/runtime；配置空或任何前提缺失都拒绝准备，不通过生产hook、假Request或直接调用待测保存服务求通过。
+
+该overlay沿用原base容器user，并未把Root语法容器的nonroot条件冒称App实际用户。运行前须由Root原生核实际bootstrap/App/runner euid一致及卷owner；固定root不因用户名推定而放宽。真实登录、首次不存在详情和原列表预热发生在模块baseline之前；具名正常验证检查实际签名身份并使用原会话，未将这段准备声称为完整旧登录/AuthV2套件重新验收。
+
+prepare仅在本RUN专用bootstrap中用原CREATE-only资产迁移完成三表check/apply/check/repeat；之后原生独立DML观察，真实App以audit_app初始化。沿原合成账号夹具和真实密码登录：本人、原最高平台账号（原列表有权）；邀请码由原DivisionServices为本RUN合成事业部实际产生，验证码仅作为本RUN私有合成CacheService夹具，明确不证明外部短信。账号、密码、验证码、原生行和HTTP响应体只进0700/0600私有区，不入公开报告。旧URL样本使用当前真实同源静态图片，不生成假远程材料；三张新PNG为本RUN明确合成fixture，两张最终选中、一张始终STAGED。
+
+verify沿真实HTTP：本人/平台正常登录和必要预热；首次multipart及本人原图；第二张未选中multipart；首次申请保存并由本人详情取得真实ID；同体重存；在该真实申请上下文上传第三张并修改；本人详情原图及原平台列表/所列原图；合法本人再申请重用BOUND引用，核旧申请is_del及新真实ID、首次agent_apply_id/bound_at保持；legacy URL与private locator保存、返回和实际图分别核对。没有错误口令、越权、故障、并发或恢复样本。
+
+独立expected固定完整34列、所有其余绑定列NULL、真实uid/purpose/保存申请、path命名/PNG原bytes/尺寸/摘要；首次仅state/agent_apply_id/bound_at改变，重复/再申请不重绑，未选中预览图与旧图不删。全库表集合、原DDL、完整原生行前后观察：仅真实本人auth的last_time、原申请保存/软删除和原平台访问日志有按实际HTTP窗口/原字段合同独立建立的变化；其它业务/财务/事件表全部保持。完整Redis类型/值/绝对过期独立观察：预热后仅真实上传配额按次+1、86400秒及原tag成员的明确变化；原短信夹具与真实auth/session等其它键保持。完整public/runtime/private文件观察禁止未列变化，新private文件0600、父目录0700且同真实owner。测试Source仍需独审和实际验证，不据准备值代签通过。
+
+App正常停止由原supervisor同句柄完成，要求原组/8000监听为空；Root再按原manifest及原生CID/卷/网普通精确回收，另进程独立zero，不能将entry结束或清理Source当已回收。页面草稿/隐藏同账号保留、正常切换另一合成账号后的旧申请清除及legacy预览仍需真实构建+BROWSER验证；PHP正常HTTP不冒充页面行为或MP/APP/外部发布验收。全部19交付组保持未闭环。
+
+本轮Source实际检查仅有：新增normal PHP与受影响harness的字符串/注释/括号词法平衡，4个受影响文件UTF-8/LF，现有js-yaml解析overlay及固定3服务/具名卷/mode约束，git diff --check均0。一次辅助静态脚本错误地预设25个函数而失败，改为检查实际26个局部函数名无重复后自然0；不涉及PHP或App，不记业务红/绿。此前14PHP语法结果不覆盖本轮新增normal入口与新harness差量；两者仍待Root独审和实际PHP8.2纯-l。作者停写，不提交/推送。
+
+仅当上述新clean/source绑定、原prepare/register/seed、原生private挂载/euid和全新RUN前提已满足，Root可串行复用同一原compose调用（加此overlay）运行audit-bootstrap的`help/audit-regressions/isolated/ms4-agent-licence-normal.php prepare`，随后audit-runner的同入口`verify`。prepare只回PREPARED_NOT_HTTP_VERIFIED，verify的正常业务检查即使通过也仍列resource retirement/浏览器/设备/外部发布未完成；不运行原完整bootstrap/run脚本中的停止样本，不跳过任何guard。
+
+正常收尾接缝修订设计（先记录，后改Source）：独审确认原audit_app_stop_group会在TERM三秒后升级KILL，与本轮普通停/超时保留不符。仅AUDIT_LICENCE_NORMAL=1且原read-only/实际private挂载身份合格的固定profile改用独立term-only分支；沿原proc句柄、supervisor/leader starttime、SID/PGID、精确组成员及8000监听保护，只一次TERM并有限观察/回收已经自然退出的本组子进程。未结束或身份/观察失败保留原proc/group/generation及状态，不close活句柄、不KILL、不自动再stop、不重启；后续start被拒绝。supervisor自身TERM若无法正常关组也报告并继续保留，不以退出PID1间接清掉现场。其它mode原两级逻辑不改。本normal入口的finally只发这一次普通stop请求，未知/失败收据保留并阻断业务通过。新entry+harness前一版Root实际PHP8.2-l为2/2自然0、8原生0，证据licence-normal-fixture-php82-syntax-r1/RESULT.json；本修订后harness仍待Root串行语法，作者不执行Docker/PHP/App或停止样本。
+
+上述Source修订已写入audit_app_stop_licence_normal_group及原supervisor的固定profile分支；只在完整组/监听/原handle均自然退出后close，超时留住generation。普通停成功回执显式含members空、listener_open=false及stop_mode=term-only，normal入口同时核该回执。状态落盘失败亦保留supervisor/活句柄并报告，不因异常退出间接清现场。实际3文件UTF-8/LF、两PHP词法平衡和git diff --check均0；原audit_app_stop_group函数与HEAD逐字相同，新普通叶仅一个TERM原生signal调用、无KILL词法路径。此为源码复查，未执行进程或样本；修后PHP8.2语法/独审/正常业务/普通回收仍待，作者再次停写交原独审者。
+
+Root补核后的状态保留约束：首次普通stop不完整后闭锁后继stop/start，只有原observe可继续只读观察；不会第二次signal、close或清空原generation。后续失败状态还须保留首次不完整stop的原revision/句柄/组/监听事实，不能用一次被拒绝的start覆盖首次原因。该固定profile在supervisor内保留首次快照并随失败状态重复发布；其它profile无此闭锁变化。
+
+Root修后实际检查（2026-10-25）：最终normal入口37405/5d9d1406与harness55618/9027eacd经完整源码独审无剩余确定缺陷；固定PHP8.2.33两整文件纯-l实际2/2自然0，8原生0/空stderr，专用network-none/nonroot/只读源/tmpfs容器普通移除、前后专用label查询空。原14生产PHP完整字节仍等此前已过语法的版本。仓库外证据licence-normal-fixture-php82-syntax-r2/RESULT.json。此不执行App/HTTP/业务或停止样本。Root按已授权L2保存22路径限定本地checkpoint，仅为后续clean实际HEAD/独立Val绑定；正式正常业务/资源回收核零及BROWSER/设备仍待，不标功能交付通过，不推送或部署。

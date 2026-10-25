@@ -51,10 +51,24 @@ class DivisionController
             ['division_invite', 0],
             ['images', []]
         ]);
+        // Application ownership is always the authenticated customer, including the legacy URL branch.
+        $data['uid'] = (int)$request->uid();
+        $id = \app\dao\marketplace\assets\CustomerAgentLicenceAssetDao::integer($id,0,2147483647);
+        // This request has not entered the application writer or changed any uploaded asset.
+        $notSaved=['complete'=>false,'phase'=>'application_validation','physical_changed'=>false,
+            'physical_complete'=>false,'database_committed'=>false,'cleanup_complete'=>null];
         $verifyCode = CacheService::get('code_' . $data['phone']);
-        if ($verifyCode != $data['code']) return app('json')->fail('验证码错误');
-        if ($data['division_invite'] == 0) return app('json')->fail('请填写邀请码');
-        $this->services->applyAgent($data, $id);
+        if ($verifyCode != $data['code']) return app('json')->fail('验证码错误',$notSaved);
+        if ($data['division_invite'] == 0) return app('json')->fail('请填写邀请码',$notSaved);
+        try {
+            $this->services->applyAgent($data, $id);
+        } catch (\app\services\marketplace\attachment\MerchantAttachmentOperationException $error) {
+            return \think\Response::create(['status'=>503,'msg'=>'申请图片保存未完成，请保留本次结果','data'=>$error->receipt],'json',503);
+        } catch (\crmeb\exceptions\ApiException $error) {
+            // The owning asset save wraps every writer/commit exception above. Remaining original invitation
+            // validation exceptions are raised before that owner is entered and have no save outcome to infer.
+            return app('json')->fail($error->getMessage(),$notSaved);
+        }
         return app('json')->success('提交成功');
     }
 

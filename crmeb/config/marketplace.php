@@ -19,6 +19,10 @@ return [
     'customer_form'=>[
         'private_root'=>Env::get('marketplace.customer_form.private_root',''),
     ],
+    'customer_licence'=>[
+        // Persistent private mount, explicitly configured; empty never falls back to public/runtime storage.
+        'private_root'=>Env::get('marketplace.customer_licence.private_root',''),
+    ],
     'product_media_scan'=>[
         'private_root'=>Env::get('marketplace.product_media_scan.private_root',''),
         'max_open_leases'=>Env::get('marketplace.product_media_scan.max_open_leases',16),

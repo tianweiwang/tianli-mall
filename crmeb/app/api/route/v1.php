@@ -365,8 +365,10 @@ Route::group(function () {
 
     Route::group(function () {
         /** 代理商相关 */
+        Route::post('agent/apply/<apply_id>/files','v1.user.AgentLicenceController/upload')->option(['real_name'=>'本人执照图片上传','customer_agent_licence_files'=>true]);
+        Route::get('agent/licence/<asset_id>/content','v1.user.AgentLicenceController/content')->option(['real_name'=>'本人执照原图','customer_agent_licence_content'=>true]);
         Route::get('agent/apply/info', 'v1.user.DivisionController/applyInfo')->name('申请详情')->option(['real_name' => '申请详情']);//申请详情
-        Route::post('agent/apply/:id', 'v1.user.DivisionController/applyAgent')->name('applyAgent')->option(['real_name' => '申请代理商']);//申请代理商
+        Route::post('agent/apply/:id', 'v1.user.DivisionController/applyAgent')->name('applyAgent')->option(['real_name' => '申请代理商','customer_agent_licence_profile'=>true]);//申请代理商
         Route::get('agent/get_agent_agreement', 'v1.user.DivisionController/getAgentAgreement')->name('getAgentAgreement')->option(['real_name' => '代理商规则']);//代理商规则
         Route::get('agent/get_staff_list', 'v1.user.DivisionController/getStaffList')->name('getStaffList')->option(['real_name' => '员工列表']);//员工列表
         Route::post('agent/set_staff_percent', 'v1.user.DivisionController/setStaffPercent')->name('setStaffPercent')->option(['real_name' => '设置员工分佣比例']);//设置员工分佣比例

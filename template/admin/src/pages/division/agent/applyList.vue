@@ -36,6 +36,7 @@
               :name="item.id"
             ></el-tab-pane>
           </el-tabs>
+          <p v-if="licenceMessage" class="licence-notice">{{ licenceMessage }}</p>
           <el-table
             :data="userLists"
             ref="table"
@@ -66,9 +67,12 @@
             </el-table-column>
             <el-table-column label="申请图片" min-width="150">
               <template slot-scope="scope">
-                <div class="pictrue-box" v-if="scope.row.images.length">
-                  <div v-viewer v-for="(item, index) in scope.row.images || []" :key="index">
-                    <img class="pictrue mr10" v-lazy="item" :src="item" />
+                <div class="pictrue-box" v-if="licenceImagesFor(scope.row).length">
+                  <div v-for="(image, index) in licenceImagesFor(scope.row)" :key="image.ref + ':' + index">
+                    <div v-viewer v-if="image.url">
+                      <img class="pictrue mr10" :src="image.url" alt="申请资质图片" @error="licenceImageFailed(image)" />
+                    </div>
+                    <span v-else class="licence-image-info">{{ image.loading ? '读取中' : '图片未取得' }}</span>
                   </div>
                 </div>
               </template>
@@ -117,6 +121,8 @@
 import { mapState } from 'vuex';
 import { divisionList, divisionFrom, isShowApi, clerkList } from '@/api/agent';
 import { formatDate } from '@/utils/validate';
+import { captureContext, currentContext, closeContext, isPrivateAgentLicence, privateAgentLicenceImage } from '@/api/agent-licence';
+import { subscribePlatformAuthEpoch } from '@/libs/platform-auth-epoch';
 export default {
   name: 'agent_extra',
   data() {
@@ -166,6 +172,14 @@ export default {
         limit: 15,
       },
       clerkLists: [],
+      licenceImages: {},
+      licenceContext: null,
+      licenceGeneration: 0,
+      licenceActive: true,
+      licenceLoaded: false,
+      licenceMessage: '',
+      licenceUnsubscribe: null,
+      licenceEpochUnsubscribe: null,
     };
   },
   filters: {
@@ -188,7 +202,84 @@ export default {
   mounted() {
     this.getList();
   },
+  created() {
+    this.licenceUnsubscribe = this.$store.subscribe(() => this.syncLicenceIdentity());
+    this.licenceEpochUnsubscribe = subscribePlatformAuthEpoch(this.syncLicenceIdentity);
+    window.addEventListener('focus', this.syncLicenceIdentity);
+    window.addEventListener('storage', this.syncLicenceIdentity);
+  },
+  activated() {
+    if (!this.licenceActive) { this.licenceActive = true; this.getList(); }
+  },
+  deactivated() {
+    this.licenceActive = false;
+    this.clearLicenceImages();
+  },
+  beforeDestroy() {
+    this.licenceActive = false;
+    this.clearLicenceImages();
+    if (this.licenceUnsubscribe) this.licenceUnsubscribe();
+    if (this.licenceEpochUnsubscribe) this.licenceEpochUnsubscribe();
+    window.removeEventListener('focus', this.syncLicenceIdentity);
+    window.removeEventListener('storage', this.syncLicenceIdentity);
+  },
+  watch: {
+    '$route.fullPath'() { this.clearLicenceImages(); }
+  },
   methods: {
+    licenceImagesFor(application) {
+      return this.licenceActive && currentContext(this.licenceContext) ? this.licenceImages[String(application.id)] || [] : [];
+    },
+    clearLicenceImages() {
+      closeContext(this.licenceContext);
+      this.licenceContext = null;
+      this.licenceGeneration += 1;
+      Object.keys(this.licenceImages).forEach(key => this.licenceImages[key].forEach(image => {
+        if (image.owned && image.url) window.URL.revokeObjectURL(image.url);
+        image.url = '';
+        image.owned = false;
+      }));
+      this.licenceImages = {};
+    },
+    syncLicenceIdentity() {
+      if (!this.licenceContext || currentContext(this.licenceContext)) return;
+      this.clearLicenceImages();
+      this.userLists = [];
+      this.total = 0;
+      this.loading = false;
+      this.licenceMessage = '登录身份或权限已变化，请重新查询申请';
+    },
+    licenceImageFailed(image) {
+      if (image.owned && image.url) window.URL.revokeObjectURL(image.url);
+      image.url = '';
+      image.owned = false;
+      image.loading = false;
+      image.error = '图片未能显示，请重新查询申请';
+      this.licenceMessage = image.error;
+    },
+    async loadLicenceImages(context, generation, applications) {
+      const current = () => this.licenceActive && this.licenceContext === context && currentContext(context) && generation === this.licenceGeneration && applications === this.userLists;
+      const queue = [];
+      applications.forEach(application => {
+        const rows = application.images.map(ref => ({ ref, url: isPrivateAgentLicence(ref) ? '' : ref, owned: false, loading: isPrivateAgentLicence(ref), error: '' }));
+        this.$set(this.licenceImages, String(application.id), rows);
+        rows.forEach(image => { if (image.loading) queue.push({ application, image }); });
+      });
+      const worker = async () => {
+        while (queue.length && current()) {
+          const { application, image } = queue.shift();
+          try {
+            const url = await privateAgentLicenceImage(context, application, image.ref);
+            if (!current() || !this.licenceImagesFor(application).includes(image)) { window.URL.revokeObjectURL(url); return; }
+            image.url = url;
+            image.owned = true;
+          } catch (error) {
+            if (current()) { image.error = error.message || '图片读取未完成'; this.licenceMessage = image.error; }
+          } finally { if (current()) image.loading = false; }
+        }
+      };
+      await Promise.all([worker(), worker(), worker()]);
+    },
     userSearchs() {
       this.formValidate.page = 1;
       this.getList();
@@ -207,17 +298,32 @@ export default {
     },
     // 列表
     getList() {
+      this.clearLicenceImages();
+      this.userLists = [];
+      if (!this.licenceActive) return;
+      let context;
+      try { context = captureContext(this.$store); this.licenceContext = context; }
+      catch (error) { this.loading = false; this.licenceMessage = '登录身份未确认，请重新查询申请'; return; }
+      const generation = this.licenceGeneration, route = this.$route.fullPath;
+      const query = { ...this.formValidate };
+      const current = () => this.licenceActive && this.licenceContext === context && currentContext(context) && generation === this.licenceGeneration && route === this.$route.fullPath;
       this.loading = true;
-      divisionList(this.formValidate)
+      this.licenceMessage = '';
+      divisionList(query)
         .then(async (res) => {
-          let data = res.data;
+          if (!current()) return;
+          const data = res.data;
+          if (!data || !Array.isArray(data.list) || data.list.some(application => !application || !Array.isArray(application.images) || application.images.some(ref => typeof ref !== 'string' || !ref))) throw new Error('申请列表未完整取得');
           this.userLists = data.list;
           this.total = data.count;
           this.loading = false;
+          this.licenceLoaded = true;
+          await this.loadLicenceImages(context, generation, data.list);
         })
         .catch((res) => {
+          if (!current()) return;
           this.loading = false;
-          this.$message.error(res.msg);
+          this.licenceMessage = res.msg || res.message || '申请读取未完成，请重新查询';
         });
     },
     pageChange(index) {
@@ -263,7 +369,7 @@ export default {
       this.$modalSure(delfromData)
         .then((res) => {
           this.$message.success(res.msg);
-          this.userLists.splice(num, 1);
+          this.getList();
         })
         .catch((res) => {
           this.$message.error(res.msg);
@@ -351,7 +457,20 @@ export default {
 }
 .pictrue-box {
   display: flex;
-  align-item: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.licence-notice {
+  color: #606266;
+  line-height: 1.6;
+  margin: 12px 0;
+  word-break: break-word;
+}
+.licence-image-info {
+  display: inline-block;
+  font-size: 12px;
+  color: #909399;
 }
 .pictrue {
   width: 25px;

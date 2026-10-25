@@ -17,6 +17,10 @@ final class CustomerAssetServices
 {
     public function __construct(private MarketplaceOrderReviewServices $reviews,private CustomerAssetDao $assets,private CustomerAssetStorage $storage){}
 
+    /** Named private use; it never reuses a review/root/merchant context or the public upload path. */
+    public function uploadAgentLicence(Request $request,int $actualUid,int $ownedApplyId):array
+    {return app()->make(CustomerAgentLicenceAssetServices::class)->upload($request,$actualUid,$ownedApplyId);}
+
     public function uploadForReview(Request $request,int $actualUid,int $rootId,int $itemId):array
     {
         $receipt=['complete'=>false,'phase'=>'preflight','physical_changed'=>false,'physical_complete'=>false,
