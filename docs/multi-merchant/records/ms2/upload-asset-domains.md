@@ -2029,3 +2029,17 @@ Root采用只给专用chat overlay的bootstrap加app-runtime:/run/audit-app-runt
 N8 Root实施收口（2026-10-26）：旧Run20261025200232887c39成功SETUP108条、normal prepare145真实2及完整290双raw11390558B均保留。Root已完成专用五原CID各一次TERM自然0、精确13卷/单internal网非force清退、仅原Val own lock删除及独立六fresh每stdout/stderr真实0B，完整原生读回见platform-chat-prepare-failed-root-retire-launch-r1/ROOT-ZERO-READBACK.json。prepare先前真实四组迁移changed=true，未伪改成无写入或业务通过。
 
 仅在真实清退后才落专用compose bootstrap既有app-runtime只读观察别名；Root完整单行正逆与七成员包核对通过，main109883/2090b699、profile24464/8aab6465和全部生产/前端无源码变动。仍原13卷，不修改base或业务oracle。这个本地两路径提交只修观察接线；新真实Source/Val、Host精确挂载、fresh setup、完整普通prepare/verify、上传/HTTP/WS/ACK/转接及后续页面、全A/B/历史/真实金融/发布全部按原责任继续，停止样本NOT RUN，未推送或部署。
+
+
+### 当前产品媒体功能承接及私有根隔离有限修复（2026-10-26）
+
+Root已全文核新的独立13产品PHP Source审9617/f8eb8442（原商品/SKU/价格库存复用、typed完整native14引用、真实owner/PDO/copy与原保存闭包均有具体承接；不主张OutAPI原body保护字段拒绝，也不签Runtime）及新的cloud8PHP/4前端/配置记录有限Source审7802/450e2c9c，不把历史未定位的全14旧报告伪造为找回、不把六plan/语法升级为真实provider/CORS/Timer验收。
+
+已确认当前cloud metadata root的既有forbidden列表仅四旧私有用途，后增执照、旧退款、提现二维码、平台聊天根未纳入；其中合法同owner0700的初始chat/cloud同根可先被同时接纳，chat普通写产生platform-chat目录后cloud严格枚举会失败。现采用并只在ProductVideoCloudUploadSessions::locked既有列表补四个实际Config key：customer_licence.private_root、assets.customer_refund_private_root、customer_withdrawal_qr.private_root、platform_chat.private_root。原realpath及同根/祖孙拒绝、完整entries/锁/身份/持久化/processing/GC职责全部原样，不删文件/改历史、不启用开关或实跑误配置/负向样本。
+
+这是两路径有限Source修复；完整单段正逆保原其余body。PHP语法及正式正常Runtime待后续实际检查，真实云/HTTP/native14/自然Timer/CORS/GUI/M/A/B与阶段验收均继续待。旧实际chat失败Run仍单独保留，未改其Val/Source/进程/信号。
+
+
+云私有根四用途补齐本地Source收口：新有限非作者审3767/b1a01b5b确认四key与实际Config/消费者完全对应、单段整文件逆回、空根兼容及原same/ancestor/descendant门保持；F1仅在Source层关闭，不签误配置或真实云Runtime。Root实际PHP8.2.33 -n -l新15239/4e501f87为0，nonroot65534/networknone/readonly root+精确源码RO镜像helper自然Exited0/PID0/restart0后nonforce删除、三个fresh自有purpose查询stdout/stderr原始0B，10native原件保留；证据cloud-private-root-php82-syntax-r1/RESULT.json。
+
+本次只提交该类与本record两个路径，未合并到当前运行804统一Source或旧Val，不改正在保留的失败进程。真实HTTP/native14/自然GC/供应商/CORS/GUI/全M A B和MS4验收仍待；未推送、部署或真实资金/外发，停止样本NOT RUN。

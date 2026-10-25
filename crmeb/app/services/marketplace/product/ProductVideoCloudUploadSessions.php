@@ -110,7 +110,8 @@ final class ProductVideoCloudUploadSessions
         $root=realpath($configured);$public=realpath(app()->getRootPath().'public');$uploads=realpath(Config::get('filesystem.disks.public.root',''));
         if($root===false||$root!==rtrim($configured,'/\\')||$public===false||$uploads===false||!is_writable($root))self::fail();
         $forbidden=[$public,$uploads,rtrim(app()->getRuntimePath(),'/\\'),rtrim(app()->getRootPath(),'/\\').DIRECTORY_SEPARATOR.'runtime'];
-        foreach(['marketplace.product_media_scan.private_root','marketplace.product_video_upload.private_root','marketplace.aftersale.private_root','marketplace.customer_form.private_root']as$setting){
+        foreach(['marketplace.product_media_scan.private_root','marketplace.product_video_upload.private_root','marketplace.aftersale.private_root','marketplace.customer_form.private_root',
+            'marketplace.customer_licence.private_root','marketplace.assets.customer_refund_private_root','marketplace.customer_withdrawal_qr.private_root','marketplace.platform_chat.private_root']as$setting){
             $v=Config::get($setting,'');if(is_string($v)&&$v!==''){$v=realpath($v);if($v===false)self::fail();$forbidden[]=$v;}}
         foreach($forbidden as$v)if($root===$v||str_starts_with($root,$v.DIRECTORY_SEPARATOR)||str_starts_with($v,$root.DIRECTORY_SEPARATOR))self::fail();
         clearstatcache(true,$root);$native=lstat($root);
