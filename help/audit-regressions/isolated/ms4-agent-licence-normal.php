@@ -239,7 +239,17 @@ function m4al_transition(PDO $db,array $before,array $after,array $fixture,array
         if(isset($expected[$table]))m4al_expect(m4al_sorted($a['rows'][$table])===m4al_sorted($expected[$table]),'M4AL_COMPLETE_EXPECTED_NATIVE_ROWS');
         else m4al_expect($hash===$b['hashes'][$table],'M4AL_OTHER_BUSINESS_EVENTS_AND_FINANCIAL_TABLES_UNCHANGED');
         $wanted=$b['next'][$table];if(isset($increments[$table]))$wanted=(string)((int)$wanted+$increments[$table]);
-        m4al_expect($a['next'][$table]===$wanted,'M4AL_ONLY_EXPECTED_NATIVE_COUNTER_ADVANCE');
+        try{
+            if($a['next'][$table]!==$wanted){
+                m4al_write(audit_run_dir().'/evidence/ms4-agent-licence-counter-failure.json',m4al_json([
+                    'scope'=>'CU_LICENCE_NATIVE_COUNTER_FAILURE_ONLY','status'=>'ORIGINAL_COUNTER_ASSERTION_FAILED',
+                    'run_id'=>$fixture['run_id'],'source_sha'=>$fixture['source_sha'],'actor'=>$actor,
+                    'first_mismatch'=>['table'=>$table,'before'=>$b['next'][$table],'wanted'=>$wanted,'actual'=>$a['next'][$table]],
+                    'increments'=>$increments]));
+            }
+        }finally{
+            m4al_expect($a['next'][$table]===$wanted,'M4AL_ONLY_EXPECTED_NATIVE_COUNTER_ADVANCE');
+        }
     }
     $redis=$before['redis'];
     if($upload){

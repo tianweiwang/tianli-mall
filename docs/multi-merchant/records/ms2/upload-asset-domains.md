@@ -877,3 +877,14 @@ Root同实例只读诊断licence-fresh2-verify140-readonly-diagnosis-r1/RESULT.j
 本次仅在m4al_verify获取独立audit_db observer后、任何before snapshot之前SET SESSION information_schema_stats_expiry=0并实际SELECT确认0；m4al_database入口另只读确认同session仍为0，防遗漏初始化。复用既有m4lc_db的局部session前提，不改生产/ORM连接、GLOBAL配置、DDL或权限；原+1、其它counter不变、完整行/34字段、文件和Redis断言全部保持，不以MAX+1代替真实ID或修改期望值。作者只改本normal入口与本记录；新checkpoint、新Val/fresh ISO及实际PHP8.2语法/非作者审由Root后续完成，本Source修订不签业务、视觉/设备或19交付组完成。
 
 本轮作者仅核两文件UTF-8/LF、PHP词法平衡、原全部断言code顺序保持、m4al_transition整函数原字节保持及git diff --check为0；不是PHP解析或运行。只这两条tracked路径差量，作者再次停写，未Docker/PHP/HTTP/提交，未动当前140场景、旧Val或Run。
+
+
+2026-10-25 fresh3首笔上传counter失败的证据补充设计（先记录，后改Source）：当前实例20261025110820af91a9绑定Source65ab44b4aff4927f9c59a0467b59b384fea248e1，Root实际normal139 prepare为0、140 verify为1，仍返回M4AL_ONLY_EXPECTED_NATIVE_COUNTER_ADVANCE（stdout109B、SHA256 649d4211226e36cd8856d690befe03b126bad07145d45ec1b82742ef0b799fb3，stderr空）；App组由TERM-only正常停止、members空/listener=false。Root从本Run真实app-runtime.log安全提取确认仅login、admin login、本人info、平台list和首次POST files200共五请求，尚无GET执照原图，故停于首upload的transition；此前真实资产id与完整34列断言已通过。当前Source已固定并确认observer SESSION stats_expiry=0，不能再将同错误码直接归因旧默认缓存；当前before/after counter快照未持久化，事后metadata不足以确认NULL到1或其它具体根因。旧Run/Val/日志、首次实际payload及失败结果保持，不重跑或补丁运行当前实例。
+
+本轮仅为下一fresh正常验证补安全失败证据，不改baseline、读取顺序、NULL归一、独立expected或生产分配。在原counter严格比较失败时，沿现m4al_write创建一次audit evidence/ms4-agent-licence-counter-failure.json（create-only、0600、完整写入/flush/完整读回）；仅保存当前fixture已验证的Run/source、actor、首个table、原before/wanted/actual及具名increments，不含凭据、令牌、任何用户/业务行、原图或其路径。该目录不在被观察的public、runtime或private原图根中。沿finally执行原比较与原M4AL_ONLY_EXPECTED_NATIVE_COUNTER_ADVANCE断言；若证据写入失败，仍保原失败码，缺失或不完整receipt不得当成有效证据。正常比较成功分支无新增写入、HTTP或业务行为；每轮首个失败即抛原code，不覆盖或追加第二份失败收据。
+
+Files仍仅本normal.php与本记录；原counter/所有行与34字段/Redis/文件断言均保留。作者只做Source与静态差分检查，实际PHP8.2语法、非作者审、新checkpoint/独立Val/fresh ISO由Root安排；此修订仅补定位材料，不宣称已修复counter问题，不勾业务、视觉/设备或19交付组完成，不Docker/PHP/HTTP/提交，也不动旧Source/Val/Run。
+
+本轮实际静态检查：两文件UTF-8/LF、PHP字符串/注释/括号词法平衡、原全部断言code顺序一致、仅将该安全证据块逆还原即整PHP字节等HEAD65ab，以及git diff --check均0。不是PHP解析或执行；工作树恰这两条tracked路径、无暂存。作者停写交Root实际PHP8.2语法和非作者审，不将证据补充当作counter修复或正常验证通过。
+
+Root实际复核追加（只记已发生结果）：上述38983B诊断PHP完整输入已由固定PHP8.2纯php-l通过，同行商家2PHP合计3/3、5原生全0；前后同一原bootstrap的CID/PID/StartedAt/readonly保持，未执行候选或产生业务请求。结果仓库外fixture-and-merchant-video-php82-syntax-r1/RESULT.json为6750B，SHA256 ec37ff71b1cef7eafbef4c0c830f1999ff947ca19822edf840df56bd7c6b52bb。Root aaec8c完整diff及原writer/断言已核，非作者product_media_next_gap对追加前两件完整Source审finding0；本追加仅记录，不改变PHP或把旧审当新文档审。fresh3失败实例已正常close110/独立zero10全0、六查询空，原失败输入保持。当前仅本地Source检查点；下一新clean HEAD/Val/fresh正常链的首坏表receipt尚未生成，counter根因、正常业务、页面/设备与19交付组仍未通过。
