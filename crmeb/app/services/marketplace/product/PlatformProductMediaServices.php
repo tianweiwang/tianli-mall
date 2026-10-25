@@ -82,7 +82,7 @@ final class PlatformProductMediaServices
                 }
                 return $item;
             },$result['list']);
-            if($type===1)$result['video_chunk_upload']=ProductVideoUploadSessions::enabled();
+            if($type===1){$result['video_chunk_upload']=ProductVideoUploadSessions::enabled();$result['video_cloud_upload']=ProductVideoCloudUploadSessions::enabled();}
             return $result;
         });
     }
@@ -238,6 +238,7 @@ final class PlatformProductMediaServices
 
     public function uploadVideo(Request $request,int $productIdOrZero,array $body): string|array
     {
+        if(in_array($body['upload_operation']??null,['cloud_issue','cloud_finalize','cloud_cancel'],true))return $this->uploadCloudVideo($request,$productIdOrZero,$body);
         if(array_key_exists('upload_operation',$body))return $this->uploadVideoSession($request,$productIdOrZero,$body);
         if(array_key_exists('url',$body))return $this->importRemoteVideo($request,$productIdOrZero,$body);
         return $this->uploadTyped($request,$productIdOrZero,$body,'video');
@@ -284,6 +285,40 @@ final class PlatformProductMediaServices
             });
         };
         return app()->make(ProductVideoUploadSessions::class)->command($request,$identity['binding'],$identity['actor'],$body,$publish,$observe);
+    }
+
+    /** Exact cloud reference operations keep the original route, grants and product writer. */
+    private function uploadCloudVideo(Request $request,int $id,array $body): array
+    {
+        $this->request($request,'legacy-product-media-video-upload');
+        $fields=match($body['upload_operation']??null){
+            'cloud_issue'=>['upload_operation','pid','filename','total_size','sha256'],
+            'cloud_finalize','cloud_cancel'=>['upload_operation','pid','upload_reference'],
+            default=>throw new HttpException(422,'请求参数不正确'),
+        };
+        $body=Input::body($body,$fields,$fields);$pid=MerchantAttachmentInput::id($body['pid'],true);
+        $identity=$this->within($request,$id,fn():array=>$this->videoSessionBinding($request,$id,$pid));
+        $same=function()use($request,$id,$pid,$identity):void{
+            if($this->videoSessionBinding($request,$id,$pid)!==$identity)throw new AuthUnavailableException();
+        };
+        $within=function(callable $operation)use($request,$id,$same):mixed{
+            return $this->within($request,$id,function()use($id,$same,$operation):mixed{
+                $same();$configuration=$this->storage->cloudVideoForProduct($id);$result=$operation($configuration);$same();
+                if($this->storage->cloudVideoForProduct($id)!==$configuration)throw new AuthUnavailableException();return $result;
+            });
+        };
+        $publish=function(array $source,array $configuration)use($request,$id,$pid,$same):string{
+            return $this->uploadTyped($request,$id,['pid'=>$pid],'video',function()use($id,$source,$configuration,$same):array{
+                $same();if($this->storage->cloudVideoForProduct($id)!==$configuration)throw new AuthUnavailableException();return $source;
+            });
+        };
+        $observe=function(string $src,array $configuration)use($within,$id):void{
+            $within(function(array $current)use($configuration,$id,$src):void{
+                if($configuration!==$current)throw new AuthUnavailableException();
+                app()->make(ProductMediaReferenceServices::class)->assertForProduct($id,[['kind'=>'video','path'=>$src]]);
+            });
+        };
+        return app()->make(ProductVideoCloudUploadSessions::class)->command($request,$identity['binding'],$identity['actor'],$body,$within,$publish,$observe);
     }
 
     public function uploadAudio(Request $request,int $productIdOrZero,array $body): string

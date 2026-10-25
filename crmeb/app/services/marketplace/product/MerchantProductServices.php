@@ -115,6 +115,7 @@ final class MerchantProductServices
 
     public function uploadVideo(\app\Request $request,int $productIdOrZero): array
     {
+        if(in_array($request->post(false)['upload_operation']??null,['cloud_issue','cloud_finalize','cloud_cancel'],true))return $this->uploadCloudVideo($request,$productIdOrZero);
         if(array_key_exists('upload_operation',$request->post(false)))return $this->uploadVideoSession($request,$productIdOrZero);
         return $this->uploadTypedMedia($request,$productIdOrZero,'video');
     }
@@ -177,6 +178,50 @@ final class MerchantProductServices
         if(array_key_exists('src',$result)){
             if(!is_array($dto)||$dto['att_dir']!==$result['src'])throw new AuthUnavailableException();
             return $dto;
+        }
+        return $result;
+    }
+
+    private function uploadCloudVideo(\app\Request $request,int $id): array
+    {
+        if(app()->request!==$request)throw new AuthUnavailableException();$ctx=$request->merchantContext();
+        $this->authorize($ctx,'product.write');$this->authorize($ctx,'attachment.manage');$body=$request->post(false);
+        $fields=match($body['upload_operation']??null){
+            'cloud_issue'=>['upload_operation','category_id','filename','total_size','sha256'],
+            'cloud_finalize','cloud_cancel'=>['upload_operation','category_id','upload_reference'],
+            default=>throw new \think\exception\HttpException(422,'请求参数不正确'),
+        };
+        $body=MerchantManagementInput::body($body,$fields,$fields);
+        $category=\app\services\marketplace\attachment\MerchantAttachmentInput::id($body['category_id'],true);
+        $identity=$this->write($ctx,'product.write',fn():array=>$this->videoSessionIdentity($request,$ctx,$id,$category));
+        $same=function()use($request,$ctx,$id,$category,$identity):void{
+            if($this->videoSessionIdentity($request,$ctx,$id,$category)!==$identity)throw new AuthUnavailableException();
+        };
+        $storage=app()->make(\app\services\marketplace\attachment\MerchantAttachmentStorage::class);$dto=null;
+        $within=function(callable $operation)use($ctx,$id,$same,$storage):mixed{
+            return $this->write($ctx,'product.write',function()use($ctx,$id,$same,$storage,$operation):mixed{
+                $same();$configuration=$storage->cloudVideoForMerchant($ctx,$id);$result=$operation($configuration);$same();
+                if($storage->cloudVideoForMerchant($ctx,$id)!==$configuration)throw new AuthUnavailableException();return $result;
+            });
+        };
+        $publish=function(array $source,array $configuration)use($request,$ctx,$id,$category,$same,$storage,&$dto):string{
+            $dto=$this->uploadTypedMedia($request,$id,'video',static function()use($ctx,$id,$source,$configuration,$same,$storage):array{
+                $same();if($storage->cloudVideoForMerchant($ctx,$id)!==$configuration)throw new AuthUnavailableException();return $source;
+            },$category);return $dto['att_dir'];
+        };
+        $observe=function(string $src,array $configuration)use($within,$ctx,$id,$category,&$dto):void{
+            $dto=$within(function(array $current)use($configuration,$ctx,$id,$category,$src):array{
+                if($configuration!==$current)throw new AuthUnavailableException();
+                $proofs=app()->make(ProductMediaReferenceServices::class)->assertForMerchant($ctx,$id,[['kind'=>'video','path'=>$src]]);
+                if(count($proofs)!==1||!is_array($proofs[0]['native14']??null))throw new AuthUnavailableException();$row=$proofs[0]['native14'];
+                if(array_keys($row)!==\app\dao\marketplace\MerchantAttachmentDao::MEDIA_FIELDS
+                    ||(string)$row['mer_id']!==(string)$ctx->merId||(string)$row['pid']!==(string)$category
+                    ||(string)$row['type']!=='1'||$row['att_dir']!==$src)throw new AuthUnavailableException();return self::mediaDto($row);
+            });
+        };
+        $result=app()->make(ProductVideoCloudUploadSessions::class)->command($request,$identity['binding'],$identity['actor'],$body,$within,$publish,$observe);
+        if(array_key_exists('src',$result)){
+            if(!is_array($dto)||$dto['att_dir']!==$result['src'])throw new AuthUnavailableException();return $dto;
         }
         return $result;
     }

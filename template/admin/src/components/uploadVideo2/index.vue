@@ -335,7 +335,7 @@ export default {
       productListSequence: 0,
       productMoveSequence: 0,
       productMessage: '', productReceipt: null, productReceiptDescription: '',
-      productBusy: false, productWriteUnknown: false, productChunkUpload: false,
+      productBusy: false, productWriteUnknown: false, productChunkUpload: false, productCloudUpload: false, productPendingVideo: null,
       productCategoryVisible: false, productCategory: { id: 0, pid: 0, name: '' },
       productCategorySaving: false,
       productMoveTree: [{ id: 0, title: '未分组', pid: 0 }],
@@ -424,7 +424,7 @@ export default {
       closeProductContext(this.productSession); this.productSession = null;
       this.productTreeSequence += 1; this.productListSequence += 1; this.productMoveSequence += 1;
       this.productMessage = ''; this.productReceipt = null; this.productReceiptDescription = '';
-      this.productBusy = false; this.productWriteUnknown = false; this.productChunkUpload = false;
+      this.productBusy = false; this.productWriteUnknown = false; this.productChunkUpload = false; this.productCloudUpload = false; this.productPendingVideo = null;
       this.productCategoryVisible = false; this.inputModal = false; this.videoModal = false; this.inputUrl = ''; this.imageUrl = '';
       if (this.productId === null && !hadProduct) return;
       this.treeId = this.productId === null ? '' : 0; this.treeData = []; this.treeData2 = [];
@@ -439,7 +439,7 @@ export default {
       closeProductContext(this.productSession); this.productSession = null;
       this.productTreeSequence += 1; this.productListSequence += 1; this.productMoveSequence += 1;
       this.productCategoryVisible = false; this.inputModal = false; this.videoModal = false;
-      this.productChunkUpload = false;
+      this.productChunkUpload = false; this.productCloudUpload = false; this.productPendingVideo = null;
       this.inputUrl = ''; this.imageUrl = ''; this.pictrueList = []; this.treeData = []; this.treeData2 = [];
       this.total = 0; this.initData(); this.productMoveTree = [{ id: 0, title: '未分组', pid: 0 }];
       this.productMessage = '登录身份已变化，进行中的提交结果请先核对，再重新打开商品视频';
@@ -462,6 +462,7 @@ export default {
           if (write && error.state === 'unknown') this.productWriteUnknown = true;
           this.productReceipt = error.receipt || null; this.productReceiptDescription = receiptText(this.productReceipt);
           this.productMessage = error.message || '商品视频操作未完成';
+          if (this.productPendingVideo) this.productMessage += '；本次视频核对编号：' + this.productPendingVideo.upload_reference + '，原文件已保留，请先核对保存结果';
         }
       } finally { if (ownsBusy && this.productSession === context) this.productBusy = false; }
     },
@@ -482,6 +483,7 @@ export default {
         value.list.forEach(item => { item.isSelect = false; item.isEdit = false; item.isShowEdit = false; item.realName = false; item.num = 0; this.editName(item); });
         this.pictrueList = value.list; this.total = value.count; this.isShowPic = value.list.length === 0;
         this.productChunkUpload = value.video_chunk_upload === true;
+        this.productCloudUpload = value.video_cloud_upload === true;
       });
     },
     openProductCategory(id, pid, name = '') {
@@ -565,8 +567,25 @@ export default {
     uploadProductVideo(event) {
       const input = event.target; const selected = Array.from(input.files || []); input.value = '';
       if (selected.length !== 1) { this.productMessage = '请选择一个视频文件'; return; }
+      if (this.productPendingVideo) { this.productMessage = '请先核对本次视频保存结果，编号：' + this.productPendingVideo.upload_reference; return; }
       const pid = this.treeId === '' ? 0 : this.treeId;
-      return this.productWork(ctx => mediaVideoUpload(ctx, selected[0], pid, this.productChunkUpload), () => {
+      const cloud = this.productCloudUpload && selected[0].size > 3145728;
+      return this.productWork(async ctx => {
+        const saved = await mediaVideoUpload(ctx, selected[0], pid, this.productChunkUpload, this.productCloudUpload, () => {
+          if (this.productSession === ctx && currentProductContext(ctx)) this.productMessage = '视频已传入暂存，正在保存';
+        }, pending => {
+          if (this.productSession !== ctx || !currentProductContext(ctx)) return false;
+          this.productPendingVideo = pending; return true;
+        });
+        if (cloud) {
+          const actual = await mediaList(ctx, { pid: mediaId(pid, true), real_name: selected[0].name, type: 1, page: 1, limit: 100 });
+          if (!actual.list.some(row => row.att_dir === saved.src && Number(row.pid) === mediaId(pid, true) && Number(row.type) === 1)) {
+            const error = new Error('视频已保存，列表核对尚未完成，请刷新核对本次结果'); error.state = 'unknown'; throw error;
+          }
+        }
+        if (cloud && this.productSession === ctx && currentProductContext(ctx)) this.productPendingVideo = null;
+        return saved;
+      }, () => {
         this.fileData.page = 1; this.initData(); this.getProductVideos(); this.$message.success('视频已上传');
       }, true);
     },

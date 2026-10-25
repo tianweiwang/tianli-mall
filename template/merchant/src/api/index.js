@@ -83,6 +83,71 @@ async function uploadProductVideoChunks(productId, file, categoryId, context, is
   current();
   try { return mediaRow(result, 'video'); } catch (error) { throw new ApiError(0, '视频保存结果尚未确认'); }
 }
+async function uploadProductVideoCloud(productId, file, categoryId, context, isCurrent, onStage, onPending) {
+  const product = mediaId(productId);
+  if (!Number.isSafeInteger(categoryId) || categoryId < 0 || categoryId > 2147483647) throw new Error('素材分类不正确');
+  const current = () => {
+    if (!context || context.productId !== product || !currentMediaContext(context) || typeof isCurrent !== 'function' || isCurrent() !== true) throw staleSessionError();
+  };
+  const endpoint = 'products/' + product + '/media/videos/upload'; let issued; let pending;
+  const keep = (phase, receipt = null) => {
+    current(); pending = Object.freeze({ upload_reference: pending.upload_reference, filename: file.name, byte_size: file.size, sha256: pending.sha256, file, phase, receipt });
+    if (onPending(pending) !== true) throw staleSessionError();
+  };
+  try {
+    if (typeof onPending !== 'function') throw new Error('视频暂存记录尚未准备，请重新打开素材库');
+    current();
+    if (!window.crypto || !window.crypto.subtle || !file.size || !/\.mp4$/i.test(file.name)) throw new Error('当前浏览器尚不能核对云视频，请使用 HTTPS 支持的浏览器');
+    const digest = await window.crypto.subtle.digest('SHA-256', await file.arrayBuffer()); current();
+    const sha256 = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
+    issued = await request('POST', endpoint, { upload_operation: 'cloud_issue', category_id: categoryId, filename: file.name, total_size: file.size, sha256 }); current();
+    if (!issued || !/^[a-f0-9]{32}$/.test(issued.upload_reference)) throw new Error('视频暂存引用未确认');
+    pending = { upload_reference: issued.upload_reference, sha256 }; keep('issued');
+    const plan = issued && issued.upload_plan;
+    if (!issued || !/^[a-f0-9]{32}$/.test(issued.upload_reference) || !plan || ![2, 3, 4, 5, 6, 7].includes(plan.provider)
+      || plan.byte_size !== file.size || plan.content_type !== 'video/mp4' || !Number.isSafeInteger(plan.expires_at)
+      || plan.expires_at * 1000 <= Date.now() || !['form', 'put'].includes(plan.transport)
+      || (plan.provider === 4) !== (plan.transport === 'put')) throw new Error('云视频暂存计划不完整');
+    const url = new URL(plan.url);
+    if (url.protocol !== 'https:' || url.username || url.password || url.hash || url.search) throw new Error('云视频暂存地址不正确');
+    const fieldNames = ['key', 'token', 'Content-Type', 'success_action_status', 'policy', 'signature', 'AccessKeyId', 'OSSAccessKeyId', 'Signature', 'X-Amz-Credential', 'X-Amz-Algorithm', 'X-Amz-Date', 'Policy', 'X-Amz-Signature'];
+    const checked = (value, allowed) => {
+      if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).length > allowed.length) throw new Error('云视频暂存参数不完整');
+      const result = {};
+      Object.keys(value).forEach(key => {
+        if (!allowed.includes(key) || typeof value[key] !== 'string' || !value[key] || value[key].length > 16384 || /[\r\n\0]/.test(value[key])) throw new Error('云视频暂存参数不正确');
+        result[key] = value[key];
+      }); return result;
+    };
+    const fields = checked(plan.fields, fieldNames); const headers = checked(plan.headers, ['Content-Type', 'Authorization']);
+    const keyPattern = new RegExp('^uploads/merchant/' + context.merchant + '/video-staging/' + issued.upload_reference + '/[a-f0-9]{32}\\.mp4$');
+    let body = file;
+    if (plan.transport === 'form') {
+      if (Object.keys(headers).length || !keyPattern.test(fields.key || '')) throw new Error('云视频暂存对象不正确');
+      body = new FormData(); Object.keys(fields).forEach(key => body.append(key, fields[key])); body.append('file', file, file.name);
+    } else if (Object.keys(fields).length || headers['Content-Type'] !== 'video/mp4' || !headers.Authorization || !keyPattern.test(url.pathname.slice(1))) throw new Error('云视频暂存对象不正确');
+    const controller = new AbortController(); const timer = window.setTimeout(() => controller.abort(), 100000);
+    try {
+      current(); const response = await fetch(url.href, { method: plan.transport === 'put' ? 'PUT' : 'POST', body, headers,
+        signal: controller.signal, credentials: 'omit', redirect: 'error', cache: 'no-store', mode: 'cors', referrerPolicy: 'no-referrer' }); current();
+      if (response.redirected || ![200, 201, 204].includes(response.status)) throw new Error('云视频传输尚未确认，请核对本次暂存');
+      if (response.body) await response.body.cancel();
+    } finally { window.clearTimeout(timer); }
+    current(); keep('staged'); if (typeof onStage === 'function') onStage();
+  } catch (error) {
+    if (!error.staleSession) error.mediaStagingOnly = true;
+    throw error;
+  }
+  current();
+  // No automatic retry after this request can publish the original commercial attachment.
+  keep('unknown');
+  try {
+    const result = await request('POST', endpoint, { upload_operation: 'cloud_finalize', category_id: categoryId, upload_reference: issued.upload_reference }); current();
+    let saved; try { saved = mediaRow(result, 'video'); } catch (error) { throw new ApiError(0, '视频保存结果尚未确认'); }
+    keep('saved'); return saved;
+  } catch (error) { if (!error.staleSession) { keep('unknown', mediaReceipt(error.data)); error.videoPending = pending; } throw error; }
+}
+
 export const api = {
   login: (body) => request('POST', 'login', body, { public: true }),
   setupPassword: (body) => request('POST', 'password/setup', body, { public: true }),
@@ -113,6 +178,9 @@ export const api = {
   uploadAttachment: (file, categoryId) => { const body = new FormData(); body.append('file', file); body.append('category_id', String(categoryId)); return request('POST', 'attachments/upload', body); },
   uploadProductMedia: (productId, kind, file, categoryId, options = {}) => {
     if (!['video', 'audio'].includes(kind)) throw new Error('素材类型不正确');
+    if (kind === 'video' && options.cloud === true && file instanceof File && file.size > 3145728) {
+      return uploadProductVideoCloud(productId, file, categoryId, options.context, options.isCurrent, options.onStage, options.onPending);
+    }
     if (kind === 'video' && options.chunked === true && file instanceof File && file.size > 3145728) {
       return uploadProductVideoChunks(productId, file, categoryId, options.context, options.isCurrent);
     }

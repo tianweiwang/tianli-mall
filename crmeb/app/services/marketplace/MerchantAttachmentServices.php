@@ -203,7 +203,7 @@ final class MerchantAttachmentServices
         if(!in_array($kind,['video','audio'],true))Input::invalid();
         $result=$this->attachments->listingMedia($ctx,$kind,$categoryId,$page,$limit);
         $result['list']=array_map([self::class,'dto'],$result['list']);
-        if($kind==='video')$result['video_chunk_upload']=\app\services\marketplace\product\ProductVideoUploadSessions::enabled();
+        if($kind==='video'){$result['video_chunk_upload']=\app\services\marketplace\product\ProductVideoUploadSessions::enabled();$result['video_cloud_upload']=\app\services\marketplace\product\ProductVideoCloudUploadSessions::enabled();}
         return $result;
     }
 

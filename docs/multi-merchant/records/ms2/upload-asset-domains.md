@@ -1256,3 +1256,28 @@ Root已限定本阶段保持M4UIB五项原常量（含四旧pin）、原8卷等�
 Root另已全文核本次harness union及两SQL精确literal diff，并实际用固定1099镜像PHP8.2.33对当前三文件纯-l全0：harness59726/af3a3b24、M4LC17628/9021f1be、afterreview245730/898eb47a前后字节保持。Root6583ef实际核5native/10完整双流1726B，三Source只读/netnone/helper自然Exited0/PID0后nonforce移除，报告`artifacts/project-organization-20261023/integrated-ms2-union-php82-r2/RESULT.json`为7116B/0a2aa6ff0352f5a8a8e0048daa3925436ed4962d2dac52b1bfa6a26e44521bb7。首个Root wrapper把自有created放入要求fresh的输出目录，被既有前置保护拒绝且未启动Docker；外置launcher后的r2正常0，保护未改，不是业务目标失败。本作者仅只读核公开报告指纹并引用Root实际回读事实，没有执行PHP、候选或目标。
 
 这些证据只签本阶段Source与当前三文件解析；Root完整scope审与此次标准MS2 merge提交尚待，之后才进入第二阶段cloud普通merge。真实统一HEAD/new Val/Host/fresh Run、完整A/fresh B/商家34及其它原页面/设备/资金/外部/人工与ordinary close/独立zero仍须各自按实际新来源验证，旧组件及已退役退款Run不代签本次统一Runtime。未提交推送、未更改其它W/Val/Host/Run或Root canonical C/D，停止样本继续NOT RUN。
+
+
+##### 第二阶段cloud标准merge实施前事实与有限union（2026-10-25，Source-only）
+
+Root已实际提交第一阶段双父merge`de5b60d5e345a1e9535635b3d88a84117f8744fc`（parents为23c812e7与63260f9d），本W进入第二阶段前真实clean；不把该源码合并提交算成统一Runtime通过。现依已采用设计，仅在此W以`git merge --no-ff --no-commit 021a7de4b07fb1c6375b8b1b1772a12db74ee408`保标准MERGE_HEAD/父历史，暂不commit、push或执行目标。
+
+实施前原生Git实核的新共同祖先为`b9089a5ae9d34bdeb350df774ec96b87b0eb55c6`，cloud相对该祖先恰14路径（9PHP、4前端、1原typed-media记录）；de5侧相对该祖先66路径，真实交集仅`crmeb/config/marketplace.php`及`docs/multi-merchant/records/ms4/product-typed-media-integration.md`。9PHP/4前端的021原Git正文、完整bytes/SHA256/blob1已逐件读取冻结；除下述实际union外不重写已审cloud实现、不重复原完整功能。
+
+最小合并：marketplace配置以de5完整内容为基础，仅加入021原`product_video_cloud_upload`块，已有本地视频块不重复，原assets退款根/customer_licence根及其它配置保持；cloud的enabled默认false、空私有根/零staging storage/限额/期限/上传完成上界、固定供应商端点等完整值原样。typed-media记录保两边既有完整历史与原时点，不能拿旧941普通结果或离线SDK计划充作新统一HEAD真实云验收；若实际发生尾部冲突，以两边原完整独有段union并注明历史边界。本原record保de5完整236682B前缀，仅续本节唯一任务清单；实际冲突范围及最终diff按真实合并收口记录，不预填成功结果。
+
+其余8PHP与4前端必须逐字等021原Gitbody，并逐项保持原默认off、本地/整件兼容、私有staging、正式对象另生新key及完整bytes/内容校验、原writer/owner/native14/审计和提交后回读、unknown不自动issue/finalize/重发/取消/降级、原ctx/pending及安全六键receipt。Timer只保原scan与本地视频之后的原具名cloud gcBatch及已核有限配置/held/absence责任，不新增Timer、手动清理或改时钟TTL。不开第三方/真实凭据/实际资金；真实type2–7云、私有性/CORS/浏览器长度/期限/生命周期/自然GC与UI设备等原验收继续未验，不以Source导入或旧静态结果补签。
+
+de5已有harness media channel及三profile互斥/private TERM-only/default原支、941 SQL两新身份门、d0a sealed owner_after、b54两精确空map/原getter及bafb诊断、本record和所有原未验责任必须整份保持；UI四旧pin与原8/12门及其不确定开放项不变，不引入UI17。完成后只精确stage本次必要路径，冻结完整范围和全部非cloud路径原blob保全、8PHP/4前端原021正文、config有限逆证及两文档原文保全证明，再由非作者Source复核及Root当前必要静态/完整scope审后决定此标准merge提交。统一HEAD新Val/Run/完整A-B/商家34及其25captures/9screens/23facts、V1/Worker/三端与设备/外部/金融/人工和ordinary close/独立zero责任不缩减；停止样本仍NOT RUN。当前仍未执行Docker/PHP/SQL/HTTP/候选或目标、未改其它W/Val/Host/Run或Root canonical C/D。
+
+
+第二阶段有限Source union事实：实际标准merge保持HEAD de5与MERGE_HEAD021，唯一内容冲突是typed-media文档；config自动合并。config当前3840B/56b5c100，可完整减去021原1127B/4843a3b3的cloud配置块后逐字逆回de5的2713B/a1339e42，其余配置完全不变；本地与云两个视频块各仅一份，所有原private roots、默认off与cloud期限/上界等原值保持。其余8PHP、4前端逐件完整正文直接等021 Git原件，未重写任何已审功能。
+
+typed-media两分支均在共同16616B/8bc86aae后追加：本次保de5完整33507B/d662b1f2前缀，再加434B原时点归属说明并接021独有28586B/e54dc5e6原文，最终62527B/4d070109；两个分支原历史/设计/未验条款一字未丢，不把局部941或离线SDK当统一HEAD真实云通过。本原record仍保de5完整236682B前缀，后面仅本阶段设计与事实。真实范围为原14cloud路径加本record这一必要记录路径，不能为强求14删设计；完整清单、Git blob/正文与非cloud旧树保全、冲突解除和精确stage/diff检查按最终实际冻结证据交Root非作者审。
+
+当前仍只Source；021原9PHP解析/离线6plan等历史证据仅归旧组件。本次新config当前解析与全部最终scope仍由Root另行检查，完整统一Runtime、真实云与自然清理/跨域/browser/设备/金融/完整A-B/V1/merchant34及人工验收均未由此次merge完成。UI四旧pin和原8/12装配门/开放项、全部原停止NOT RUN保持；未提交或推送、未执行第三方/资金/Docker/PHP/SQL/HTTP/目标，不改其它W/Val/Host/Run或Root canonical C/D。最终Source冻结后停写，待Root采用才可形成此第二阶段标准merge提交。
+
+
+UI开放项后续只读证据（Root/media当前时点，保前述未核段历史）：已从de5真实来源核实可达链`m4up_source → m4up_prerequisites`，后者在`ms4-ui-prepare.php:256–257`先强制同一formal为原8卷，258再真实调用`m4fn_prerequisites(m4up_old_view(source))`；old_view:229–237只投影环境与前提hash，并不改context/formal。当前`m4fn_prerequisites`又在`ms4-fulfillment-normal.php:248`调用`m4c_entry_ms5_history`，该entry:287–297要求同一context.initial_volumes为精确9卷并含source-tree，306–333还要求initializer完整source_tree copy。这已是实际可达上游资格矛盾，超出前段仅见不同用途数字时的未核假设；有限import primitive兼容不能消除此完整资格问题。
+
+本阶段仅如实保留这一后续Source事实：当前该UI资格需后继限定适配，不能仅改四hash或把8改9，必须在确认原S/B实际必经链后先设计完整formal/context/Source卷、copy/freeze/mount/history/consumer闭包并核全部原契约。Root/media继续追实际S/B依赖和必要最小profile范围；本cloud阶段不改UI代码、旧pins或原8/12门，不扩旧未采用UI17要求，也不缩减原merchant34/25captures/9screens/23facts等验收。统一Source合并提交不等于UI ready，实际UI/原全链仍未通过。

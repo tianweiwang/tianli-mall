@@ -153,10 +153,13 @@ LUA;
         $summary = app()->make(ProductMediaScanStaging::class)->gcBatch($settings['batch']);
         $videoSummary = ProductVideoUploadSessions::needsCollection()
             ? app()->make(ProductVideoUploadSessions::class)->gcBatch($settings['batch']) : null;
+        $cloudSummary = ProductVideoCloudUploadSessions::needsCollection()
+            ? app()->make(ProductVideoCloudUploadSessions::class)->gcBatch(1) : null;
         self::same($context);
         $result = ['state' => 'ran', 'wake_seconds' => 1, 'gc_period_seconds' => $settings['period'],
             'gc_batch' => $settings['batch'], 'summary' => $summary];
         if ($videoSummary !== null) $result['video_summary'] = $videoSummary;
+        if ($cloudSummary !== null) $result['cloud_video_summary'] = $cloudSummary;
         return $result;
     }
 

@@ -845,4 +845,84 @@ final class MerchantAttachmentStorage
         // the pre-upload state. The publisher retains the original six keys.
         $receipt['physical_complete']=true;return $row;
     }
+    /** Called only after the original product writer established its actual owner. */
+    public function cloudVideoForProduct(int $id): array
+    {
+        $state=$this->typedUploadContext(null,$id);$config=$this->cloudVideoConfiguration($state[2]);
+        if($this->typedUploadContext(null,$id)!==$state)MerchantAttachmentInput::unavailable();return $config;
+    }
+    public function cloudVideoForMerchant(MerchantContext $ctx,int $id): array
+    {
+        $state=$this->typedUploadContext($ctx,$id);$config=$this->cloudVideoConfiguration($state[2]);
+        if($this->typedUploadContext($ctx,$id)!==$state)MerchantAttachmentInput::unavailable();return $config;
+    }
+    private function cloudVideoConfiguration(int $owner): array
+    {
+        \app\services\marketplace\MerchantManagementInput::integer($owner,1,4294967295);
+        $type=sys_config('upload_type',1);if(is_string($type)&&preg_match('/\A[2-7]\z/D',$type)===1)$type=(int)$type;
+        if(!is_int($type)||$type<2||$type>7)MerchantAttachmentInput::unavailable();
+        $settings=Config::get('marketplace.product_video_cloud_upload');if(!is_array($settings))MerchantAttachmentInput::unavailable();
+        $stageId=MerchantAttachmentInput::id($settings['staging_storage_id']??null);
+        $credential=$this->credentials($type);$final=$this->activeStorage($type);$matches=[];
+        foreach($this->storageRows($type)as$row)if((string)$row['id']===(string)$stageId&&$row['access_key']===$credential['accessKey'])$matches[]=$row;
+        if(count($matches)!==1)MerchantAttachmentInput::unavailable();$stage=$matches[0];self::storageShape($stage);
+        // A dedicated private staging bucket is never the active published bucket/alias.
+        if((string)$stage['id']===(string)$final['id']||$stage['name']===$final['name']||$stage['domain']===$final['domain']||$stage['cdn']!=='')MerchantAttachmentInput::unavailable();
+        ProductVideoCloudUploadSigner::endpoint($stage['domain']);ProductVideoCloudUploadSigner::endpoint($final['domain']);
+        $up=$settings['qiniu_upload_url']??'';$rs=$settings['qiniu_rs_url']??'';
+        if(!is_string($up)||!is_string($rs))MerchantAttachmentInput::unavailable();
+        if($type===2){$up=ProductVideoCloudUploadSigner::endpoint($up);$rs=ProductVideoCloudUploadSigner::endpoint($rs);}
+        $bound=\app\services\marketplace\MerchantManagementInput::integer($settings['upload_completion_bound_seconds']??null,0,86400,true);
+        $auth=\crmeb\services\AuthConfigGuard::authConfig();
+        $fingerprint=hash_hmac('sha256',json_encode(['purpose'=>'product-video-cloud-config-v1','owner'=>$owner,'type'=>$type,
+            'stage'=>$stage,'final'=>$final,'credential'=>$credential,'qiniu_upload_url'=>$up,'qiniu_rs_url'=>$rs,
+            'upload_completion_bound_seconds'=>$bound,'epoch'=>$auth['session_epoch']],JSON_THROW_ON_ERROR),$auth['stamp_key']);
+        return ['owner'=>$owner,'type'=>$type,'stage'=>$stage,'final'=>$final,'fingerprint'=>$fingerprint,
+            'qiniu_upload_url'=>$up,'qiniu_rs_url'=>$rs,'completion_bound_seconds'=>$bound];
+    }
+    private function currentCloudVideo(array $configuration): array
+    {
+        if(!is_int($configuration['owner']??null)||$this->cloudVideoConfiguration($configuration['owner'])!==$configuration)MerchantAttachmentInput::unavailable();
+        return $this->credentials($configuration['type']);
+    }
+    private static function cloudVideoObject(array $configuration,string $key): array
+    {
+        $owner=$configuration['owner'];$prefix='uploads/merchant/'.$owner.'/video-staging/';self::key($key);
+        if(!str_starts_with($key,$prefix)||preg_match('~\A'.preg_quote($prefix,'~').'[a-f0-9]{32}/[a-f0-9]{32}\.mp4\z~D',$key)!==1)MerchantAttachmentInput::unavailable();
+        return ['type'=>$configuration['type'],'files'=>[],'storage'=>$configuration['stage'],'key'=>$key,
+            'canonical'=>[ProductVideoCloudUploadSigner::endpoint($configuration['stage']['domain']).'/'.$key]];
+    }
+    public function issueCloudVideo(array $configuration,string $reference,int $size,int $expires): array
+    {
+        if(preg_match('/\A[a-f0-9]{32}\z/D',$reference)!==1)MerchantAttachmentInput::unavailable();
+        $credential=$this->currentCloudVideo($configuration);
+        $key='uploads/merchant/'.$configuration['owner'].'/video-staging/'.$reference.'/'.bin2hex(random_bytes(16)).'.mp4';
+        $object=self::cloudVideoObject($configuration,$key);
+        $plan=ProductVideoCloudUploadSigner::issue($object,$credential,$size,$expires,$configuration['qiniu_upload_url']);
+        $this->currentCloudVideo($configuration);return ['key'=>$key,'plan'=>$plan];
+    }
+    public function readCloudVideo(array $configuration,string $key,int $size): string
+    {
+        $credential=$this->currentCloudVideo($configuration);$object=self::cloudVideoObject($configuration,$key);$mime=null;
+        $bytes=MerchantAttachmentReferenceBytes::cloud($object,$credential,$object['canonical'][0],$size,$size,$mime);
+        if(!in_array($mime,['video/mp4','application/mp4'],true))MerchantAttachmentInput::unavailable();
+        $this->currentCloudVideo($configuration);return $bytes;
+    }
+    /** Read-only eligibility; no provider request and no collection attempt is consumed here. */
+    public function assertCloudVideoCollectionReady(array $configuration,string $key): void
+    {
+        $this->currentCloudVideo($configuration);
+        self::cloudVideoObject($configuration,$key);
+    }
+    /** Timer-only normal cleanup. Caller separately enforces expiry plus a qualified finite completion bound. */
+    public function collectCloudVideo(array $configuration,string $key): bool
+    {
+        $credential=$this->currentCloudVideo($configuration);$object=self::cloudVideoObject($configuration,$key);
+        $presence=MerchantAttachmentReferenceBytes::cloudPresence($object,$credential,$object['canonical'][0]);
+        if($presence==='present')ProductVideoCloudUploadSigner::remove($object,$credential,$configuration['qiniu_rs_url']);
+        $this->currentCloudVideo($configuration);
+        $absent=MerchantAttachmentReferenceBytes::cloudPresence($object,$credential,$object['canonical'][0])==='absent';
+        $this->currentCloudVideo($configuration);return $absent;
+    }
+
 }
