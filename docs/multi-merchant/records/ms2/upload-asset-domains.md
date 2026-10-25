@@ -1099,3 +1099,26 @@ Root采用前端回读细节修正：没有本次关联proof的零图/不完整�
 Root当前Source验证与本地检查点（2026-10-25）：17件生产PHP已在固定PHP8.2.33纯-l17/17全0，原结果17100B/e44987a0ff1ef60807d5d1f6e254026f68b8721390dc0ac4e0b66ce00c123c0e；当前正常入口63283/6a6bb03a、profile3652/5f2faa42与harness56450/84f36a6e亦串行纯-l3/3全0，5native结果7196B/f4e3e7caceadb9bbb6c734548f2398d53e4d0daa7dedba6c6ad55c538e0c56a2，Root0d2f82完整PID/wait/双流1763B和3来源前后指纹读回。均只解析，不include/App/HTTP；只读network-none helper自然Exited0/PID0后nonforce移除。当前生产17和正常3共20件PHP有对应实际语法证据，不能据此宣称正常业务通过。
 
 九前端当前r3解析9/9与74依赖存在检查0，结果9538B/e8036159fff350226b976329333fb5c900f234b63bfc3a87df8e76ed6d5e2bf6；非作者已逐段复核六键收据保留/只读呈现、同步busy锁、PC原URL并显、本次已上传ref+阶段和完整cart件数/原因说明才确认unknown，零图不猜关联且主动读取确实GET，正常HTTP明确成功保原跳转。其它原5件保持原字节，V1和普通订单未漂移。当前normal4件全Source独审0且全部原副作用条件保留；表/Redis实际效果、真实5reader/跨域/模板构建/浏览器/设备与外部精确资源收尾尚未执行，不计Runtime/阶段验收。原17server/9front/normal4/record共31路径保存本地Source检查点，后续须clean Source/独立Val/fresh ISO-FULL真实正常链后才记该范围业务通过，不代真实付款/37历史/fullA/T5全部/19组完成；未推送部署。
+
+#### CU_LEGACY_REFUND 正常通知准备与站内信独立核对修正（2026-10-25，Root采用）
+
+Root回传的原Run `202610251550496d5a8f` 中，setup正常完成；normal的prepare原生退出2，唯一失败为 `M4LR_ORIGINAL_REFUND_NOTICE_NO_QUALIFIED_SYSTEM_RECEIVER`。prepare尚未完成，verify及业务HTTP未启动。原DAO实际按status=1且notify=1选择客服；原通知配置开启站内信和短信、公众号渠道，实际存在合法接收者，故前述“必须空列表且不改原配置”的合成前提错误。本段取代该准备假设，不改写原失败和冻结Source/Val/Host/Run，不把阻断计为业务通过。
+
+Root已采用两路径修正：本record及 `help/audit-regressions/isolated/ms4-legacy-refund-private-normal.php`。在从81ec14建立的新独立 `ms4-legacy-refund-normal-notice` 工作树实现，原生产服务、hook、seed SQL、客服行、前端、profile/harness/overlay保持。新fresh实例在预热通知及任何HTTP之前，只经原后台 `SystemNotification::set_status` 所使用的 `SystemNotificationServices::update($actualId, [$type => $status])` 真实服务叶，分别把本次唯一 `send_order_apply_refund` 的is_sms、is_wechat从1设为原DDL明确的关闭值2；不使用0伪造“渠道不存在”。保is_system=1、原全部模板及接收客服全集/重复关系/UID/手机号、is_routine=0、原is_ent_wechat=1和空url；后两项继续用真实严格门确认无可达企业外发。准备不调用controller的宽缓存clear、不清Redis、不替换消息驱动或依赖空凭据、断网、异常被吞来通过。原业务仍执行所有Notice/RefundCreate/OutPush/Custom/Channel hook；真实外部短信/微信验收继续NOT RUN。
+
+配置准备先以原生PDO独立读取完整通知行集合和客服全表，服务写后核只改变真实唯一ID的上述两列；其余字段、行和接收者关系完全保持。专用0600证据记录本Run实际来源、原默认、精确配置差量及接收者资格摘要；完整实际配置和接收者投影只冻结进原0600私有fixture，报告不含手机号等个人信息。不能在prepare复用verify的首次counter证据输出路径，原完整读取后重读native next的门保持。
+
+三次原正常申请均须由真实SystemMsg hook新增站内信。独立oracle在请求前据冻结模板、原真实order_id和实际eligible客服多重集合构造期待，按实际原生AUTO_INCREMENT next与接收行数核新增ID集合及完整列；不取MAX+1、不从after反选期待、不得去重接收者。当前安装DDL为10列id/mark/uid/title/content/data/look/type/add_time/is_del，严格按真实完整列集核对，不人为添加“第11列”。模板占位替换与原json_encode订单参数、type=2、look=0、is_del=0、实际HTTP时间窗和全部旧站内信行保全均必核；保存失败若被原hook捕获，缺少预期新行仍必须让本oracle失败。只有三次申请可有这些精确新行和native next增量；其它请求和全库所有其它rows/DDL/next、Redis类型/值/tag/绝对期、公私/runtime文件继续原完整比较。
+
+本修正继续原唯一执行清单，不新增平行验收流程：
+
+- [x] Root采用实际失败原因、专用测试配置与保留真实站内信的设计；新独立worktree及两路径范围已核。
+- [x] 实现prepare的真实两字段配置、独立完整行差量、私有fixture冻结及三次真实站内信oracle，原业务case和严格完整比较不减。
+- [x] 仅做Source/静态及原生Git差分检查，向Root提供当前精确bytes/SHA及余审点；不执行候选或自行提交/推送。
+- [ ] Root独立复核、当前字节PHP语法、新commit/Val/Host绑定及fresh正常运行、普通收尾/独立zero按实际另记；目前均NOT RUN。
+
+原零图/旧URL/私有材料、真实equalSplit、type4同意/type5寄回及同体保存确认、五reader、完整34列和全部原副作用责任不变。Source SHA沿现manifest和真实未来commit自然绑定，不写未来Run、通过结果或资源身份；停止的负向/故障/并发/恢复及K样本仍NOT RUN。本作者当前只在上述新W写Source，不Docker/PHP/SQL/HTTP/资金/目标或秘密读取。
+
+本轮Source实施与静态收口：normal当前73129B / `22f053f44f8b15e5db06a1203f66adfc6e649fbc57011fb95828b7996c2d4d02`，40个原函数中37个正文逐字节保持；仅prepare/apply/verify接线变化，新增4个有限通知helper，原main dispatcher不变。原完整record前缀保持，只有本节追加；两变更路径UTF-8/LF及git diff --check为0。静态保留核对确认原三次申请和全部既有case仍在，两个错误通知前提由本段Root已采用的正向严格条件替代。独立非作者已全文核新增helper、真实producer/10列DDL及相关原调用关系，finding0；其复核对应本段追加前record204710B/74b6dead…，normal字节未变。本作者与该独审均未执行候选、PHP或测试，当前字节的PHP语法、fresh正常链和清退/核零继续NOT RUN，Root另行安排；没有提交或推送。
+
+Root本地提交前补充：964783全文diff、138499原record增量及原NoticeListener/SystemMsg/配置getter/退款调用链逐项读回，未发现新增确定问题；独立notice_oracle_review对应相同normal73129/22f053f4 Source0。实际固定1099镜像PHP8.2.33对当前normal纯-l为0，5native/10完整双流983B经Root核对全0，只读networknone helper自然Exited0/PID0后nonforce移除，未include/App/DB/HTTP。结果 `artifacts/project-organization-20261023/legacy-refund-normal-notice-php82-r1/RESULT.json` 5851/2588785587c61964d6a7c4c25aedb0f57800b1394d946699e8b47d29aaa1dc0d。该证据只签解析，fresh普通业务及收尾仍未运行；原失败Run已普通close0/zero0、5CID13卷1网络精确清退，失败不重放。

@@ -11,7 +11,8 @@ const M4LR_FIELDS=['id','uid','purpose','state','storage_type','object_key','thu
     'form_definition_sha256','form_field_index','extract_id','agent_apply_id','source_product_id','source_qrcode_id',
     'created_by_uid','created_by_admin_id','created_by_job','legacy_att_id'];
 const M4LR_ROWS=['eb_user','eb_store_order','eb_store_order_cart_info','eb_store_order_refund','eb_store_order_status',
-    'eb_marketplace_customer_asset','eb_system_log'];
+    'eb_marketplace_customer_asset','eb_system_log','eb_message_system','eb_system_notification','eb_store_service'];
+const M4LR_MESSAGE_FIELDS=['id','mark','uid','title','content','data','look','type','add_time','is_del'];
 
 function m4lr_expect(bool $ok,string $code):void
 {
@@ -291,6 +292,73 @@ function m4lr_legacy_order(\think\App $app,PDO $db,int $uid,array $product,array
     m4lr_expect((int)$order['marketplace_trade_version']===0&&(int)$item['uid']===$uid,'M4LR_REAL_SAVED_SYNTHETIC_LEGACY_FAMILY');
     return ['order'=>$order,'item'=>$item];
 }
+
+/** Independent projection of the original status/notify eligibility; preserve duplicate UIDs. */
+function m4lr_notice_recipients(array $rows):array
+{
+    $out=[];
+    foreach($rows as$row)if(in_array($row['status'],[1,'1'],true)&&in_array($row['notify'],[1,'1'],true)){
+        m4lr_expect(isset($row['uid'])&&ctype_digit((string)$row['uid'])&&(int)$row['uid']>0,'M4LR_REAL_NOTICE_RECIPIENT_UID');
+        $out[]=['nickname'=>$row['nickname'],'phone'=>$row['phone'],'uid'=>$row['uid'],'customer'=>$row['customer']];
+    }
+    return $out;
+}
+
+/** New isolated fixture configuration only; the real notification hook and recipients remain enabled. */
+function m4lr_prepare_notice(\think\App $app,PDO $db,array $manifest):array
+{
+    $columns=m4lr_rows($db,'SHOW FULL COLUMNS FROM eb_message_system');
+    m4lr_expect(array_column($columns,'Field')===M4LR_MESSAGE_FIELDS,'M4LR_COMPLETE_ORIGINAL_MESSAGE_SCHEMA');
+    $types=['id'=>'int(?:\(10\))?','mark'=>'varchar\(50\)','uid'=>'int(?:\(11\))? unsigned',
+        'title'=>'varchar\(256\)','content'=>'varchar\(512\)','data'=>'varchar\(5000\)',
+        'look'=>'tinyint(?:\(1\))?','type'=>'tinyint(?:\(1\))?','add_time'=>'int(?:\(11\))?','is_del'=>'tinyint(?:\(1\))?'];
+    foreach($columns as$column){
+        $name=$column['Field'];$numeric=in_array($name,['uid','look','type','add_time','is_del'],true);
+        m4lr_expect(preg_match('~\A'.$types[$name].'\z~D',$column['Type'])===1&&$column['Null']==='NO'
+            &&$column['Key']===($name==='id'?'PRI':'')&&$column['Extra']===($name==='id'?'auto_increment':'')
+            &&($name==='id'?$column['Default']===null:($numeric?in_array($column['Default'],[0,'0'],true):$column['Default']==='')),
+            'M4LR_ALL_ORIGINAL_MESSAGE_TYPES_DEFAULTS_AND_PRIMARY');
+    }
+    $create=$db->query('SHOW CREATE TABLE eb_message_system')->fetch(PDO::FETCH_NUM);
+    m4lr_expect(is_array($create)&&is_string($create[1]??null),'M4LR_NATIVE_MESSAGE_DDL');
+    $ddl=preg_replace('/ AUTO_INCREMENT=[0-9]+/','',$create[1]);
+    $before=m4lr_rows($db,'SELECT * FROM eb_system_notification ORDER BY id');
+    $serviceBefore=m4lr_rows($db,'SELECT * FROM eb_store_service ORDER BY id');
+    $matches=array_values(array_filter($before,fn(array $row):bool=>$row['mark']==='send_order_apply_refund'));
+    m4lr_expect(count($matches)===1,'M4LR_ONE_ORIGINAL_REFUND_NOTIFICATION');$original=$matches[0];
+    foreach(['is_system','is_sms','is_wechat','is_ent_wechat']as$key)m4lr_expect(in_array($original[$key],[1,'1'],true),'M4LR_ORIGINAL_REFUND_NOTICE_ENABLED_DEFAULTS');
+    m4lr_expect(in_array($original['is_routine'],[0,'0'],true)&&$original['url']===''
+        &&is_string($original['system_title'])&&is_string($original['system_text']),'M4LR_ORIGINAL_REFUND_NOTICE_TEMPLATE_AND_NO_WEBHOOK');
+    $recipients=m4lr_notice_recipients($serviceBefore);m4lr_expect($recipients!==[],'M4LR_ORIGINAL_NONEMPTY_NOTICE_RECIPIENTS');
+    $services=$app->make(\app\services\kefu\service\StoreServiceServices::class);
+    m4lr_expect(m4lr_sorted($services->getStoreServiceOrderNotice())===m4lr_sorted($recipients),'M4LR_REAL_RECIPIENT_PRODUCER_MAPPING');
+    foreach($recipients as$recipient)m4lr_one($db,'eb_user','uid',$recipient['uid']);
+    $notice=$app->make(\app\services\message\SystemNotificationServices::class);$configured=$original;
+    foreach(['is_sms','is_wechat']as$key){
+        // This is the exact original SystemNotification::set_status service leaf, before any notice warmup or HTTP.
+        m4lr_expect($notice->update((int)$original['id'],[$key=>2])!==false,'M4LR_REAL_ISOLATED_NOTICE_CONFIGURATION_PRODUCER');
+        $configured[$key]=m4lr_number($db,2);
+    }
+    $expected=m4lr_replace($before,'id',$original['id'],$configured);
+    $after=m4lr_rows($db,'SELECT * FROM eb_system_notification ORDER BY id');
+    $serviceAfter=m4lr_rows($db,'SELECT * FROM eb_store_service ORDER BY id');
+    m4lr_expect($after===$expected&&$serviceAfter===$serviceBefore
+        &&m4lr_sorted($services->getStoreServiceOrderNotice())===m4lr_sorted($recipients),'M4LR_ONLY_TWO_NOTICE_FLAGS_AND_ALL_RECIPIENTS_RETAINED');
+    m4lr_write(audit_run_dir().'/evidence/ms4-legacy-refund-private-notice-preparation.json',m4lr_json([
+        'scope'=>'CU_LEGACY_REFUND_ISOLATED_NOTICE_CONFIGURATION_ONLY','run_id'=>$manifest['run_id'],'source_sha'=>$manifest['commit_sha'],
+        'producer'=>'SystemNotification::set_status / SystemNotificationServices::update','notification_id'=>(string)$original['id'],
+        'changed_columns'=>['is_sms'=>['before'=>1,'after'=>2],'is_wechat'=>['before'=>1,'after'=>2]],
+        'notification_rows'=>count($before),'before_sha256'=>hash('sha256',serialize($before)),
+        'expected_sha256'=>hash('sha256',serialize($expected)),'after_sha256'=>hash('sha256',serialize($after)),
+        'other_notification_fields_and_rows_retained'=>true,'store_service_rows'=>count($serviceBefore),
+        'store_service_before_sha256'=>hash('sha256',serialize($serviceBefore)),'store_service_after_sha256'=>hash('sha256',serialize($serviceAfter)),
+        'eligible_count'=>count($recipients),'eligible_multiset_sha256'=>hash('sha256',serialize(m4lr_sorted($recipients))),
+        'message_schema_sha256'=>hash('sha256',serialize($columns)),'is_system'=>1,'is_routine'=>0,'is_ent_wechat'=>1,
+        'enterprise_url_empty'=>true,'seed_and_business_hooks_changed'=>false,'cache_clear_called'=>false,'external_sms_wechat'=>'NOT RUN']));
+    return ['configuration'=>$configured,'recipients'=>$recipients,'store_service_sha256'=>hash('sha256',serialize(m4lr_sorted($serviceBefore))),
+        'message_schema'=>$columns,'message_ddl'=>$ddl];
+}
+
 function m4lr_prepare():array
 {
     $manifest=m4lr_guard();$root=lstat(M4LR_ROOT);
@@ -325,9 +393,7 @@ function m4lr_prepare():array
     m4lr_expect(m4lr_rows($db,"SELECT id FROM eb_system_event WHERE mark IN ('user_login','admin_login','order_initiated_refund') AND is_del=0 AND is_open=1")===[],'M4LR_NO_EXTERNAL_CUSTOM_EVENT_CANDIDATES');
     foreach(m4lr_rows($db,"SELECT * FROM eb_system_notification WHERE custom_trigger='login_success'")as$row)
         foreach(['is_sms','is_wechat','is_routine','is_ent_wechat']as$key)m4lr_expect((int)$row[$key]===0,'M4LR_ORIGINAL_EXTERNAL_NOTICE_DISABLED');
-    m4lr_expect($app->make(\app\services\kefu\service\StoreServiceServices::class)->getStoreServiceOrderNotice()===[],'M4LR_ORIGINAL_REFUND_NOTICE_NO_QUALIFIED_SYSTEM_RECEIVER');
-    $refundNotice=m4lr_rows($db,"SELECT * FROM eb_system_notification WHERE mark='send_order_apply_refund'");
-    m4lr_expect(count($refundNotice)===1&&((int)$refundNotice[0]['is_ent_wechat']!==1||$refundNotice[0]['url']===''),'M4LR_ORIGINAL_REFUND_NOTICE_NO_EXTERNAL_WEBHOOK_CANDIDATE');
+    $refundNotice=m4lr_prepare_notice($app,$db,$manifest);
     $queue=m4lr_rows($db,"SELECT value FROM eb_system_config WHERE menu_name='queue_open'");
     m4lr_expect(count($queue)===1&&json_decode($queue[0]['value'],true,16,JSON_THROW_ON_ERROR)===0,'M4LR_ORIGINAL_QUEUE_DISABLED');
     foreach(m4lr_rows($db,'SELECT menu_name FROM eb_system_config ORDER BY id')as$row)\crmeb\services\SystemConfigService::get($row['menu_name']);
@@ -342,7 +408,8 @@ function m4lr_prepare():array
         $path='/run/audit-fixtures/refund-'.$name.'.png';m4lr_write($path,$bytes);$images[$name]=['path'=>$path,'name'=>'refund-'.$name.'.png','bytes'=>strlen($bytes),'sha256'=>hash('sha256',$bytes),'width'=>16,'height'=>16];
     }
     $fixture=['schema'=>1,'run_id'=>$manifest['run_id'],'source_sha'=>$manifest['commit_sha'],'prefix'=>$prefix,'private_uid'=>posix_geteuid(),
-        'customer'=>$customer,'mobile'=>$mobile,'admin'=>$admin,'families'=>$families,'images'=>$images,'legacy'=>$legacy,'created_at'=>time()];
+        'customer'=>$customer,'mobile'=>$mobile,'admin'=>$admin,'families'=>$families,'images'=>$images,'legacy'=>$legacy,
+        'refund_notice'=>$refundNotice,'created_at'=>time()];
     m4lr_write(M4LR_PRIVATE,m4lr_json($fixture));return ['scope'=>'CU_LEGACY_REFUND_PREPARATION_ONLY','status'=>'PREPARED_NOT_HTTP_VERIFIED',
         'source_sha'=>$manifest['commit_sha'],'synthetic_legacy_families'=>3,'actual_equalSplit'=>true,'business_HTTP'=>'NOT RUN',
         'paid_status'=>'SYNTHETIC_T5_PREREQUISITE_NOT_PAYMENT_PROOF','history_mapping'=>'NOT RUN','browser'=>'NOT RUN','acceptance'=>'INCOMPLETE'];
@@ -386,6 +453,52 @@ function m4lr_status_delta(PDO $db,array $before,array $after,array $reply,int $
         m4lr_expect($row===$wanted,'M4LR_COMPLETE_ORIGINAL_STATUS_EVENT');$expected[]=$wanted;unset($remaining[$key]);
     }return $expected;
 }
+
+/** Build all business values and the native ID set before the request, never from its new message rows. */
+function m4lr_notice_intent(PDO $db,array $fixture,array $before,array $order):array
+{
+    $frozen=$fixture['refund_notice'];$notice=$frozen['configuration'];
+    m4lr_expect(m4lr_find($before['database']['rows']['eb_system_notification'],'id',$notice['id'])===$notice
+        &&in_array($notice['is_system'],[1,'1'],true)&&in_array($notice['is_sms'],[2,'2'],true)
+        &&in_array($notice['is_wechat'],[2,'2'],true)&&in_array($notice['is_routine'],[0,'0'],true)
+        &&in_array($notice['is_ent_wechat'],[1,'1'],true)&&$notice['url']==='','M4LR_EXACT_ISOLATED_NOTICE_CONFIGURATION_BEFORE_HTTP');
+    $serviceRows=$before['database']['rows']['eb_store_service'];
+    // Database snapshots have no ORDER BY; compare their complete native row multiset with the prepared set hash.
+    m4lr_expect(m4lr_sorted(m4lr_notice_recipients($serviceRows))===m4lr_sorted($frozen['recipients'])
+        &&hash('sha256',serialize(m4lr_sorted($serviceRows)))===$frozen['store_service_sha256']
+        &&$before['database']['ddl']['eb_message_system']===$frozen['message_ddl'],'M4LR_FROZEN_REAL_NOTICE_RECIPIENTS_AND_SCHEMA');
+    $templates=[];
+    foreach($frozen['recipients']as$recipient)$templates[]=['mark'=>$notice['mark'],'uid'=>m4lr_number($db,$recipient['uid']),
+        'title'=>str_replace('{order_id}',$order['order_id'],$notice['system_title']),
+        'content'=>str_replace('{order_id}',$order['order_id'],$notice['system_text']),
+        'data'=>json_encode(['order_id'=>$order['order_id']],JSON_THROW_ON_ERROR),'look'=>m4lr_number($db,0),'type'=>m4lr_number($db,2),
+        'is_del'=>m4lr_number($db,0)];
+    $next=$before['database']['next']['eb_message_system'];
+    m4lr_expect(is_string($next)&&ctype_digit($next)&&(int)$next>0&&(int)$next<=PHP_INT_MAX-count($templates),'M4LR_REAL_MESSAGE_NATIVE_NEXT');
+    $ids=[];foreach($templates as$index=>$unused)$ids[]=m4lr_number($db,(int)$next+$index);
+    return ['ids'=>$ids,'templates'=>$templates];
+}
+
+function m4lr_notice_delta(PDO $db,array $before,array $after,array $reply,array $intent):array
+{
+    $expected=$before['database']['rows']['eb_message_system'];$templates=$intent['templates'];
+    m4lr_expect(count($templates)>0&&count($intent['ids'])===count($templates),'M4LR_NONEMPTY_REAL_NOTICE_INTENT');
+    foreach($intent['ids']as$id){
+        $row=m4lr_find($after['database']['rows']['eb_message_system'],'id',$id);
+        m4lr_expect(array_keys($row)===M4LR_MESSAGE_FIELDS,'M4LR_FULL10_MESSAGE_NATIVE_ROW');m4lr_window($row['add_time'],$reply);
+        $values=$row;unset($values['id'],$values['add_time']);$match=null;
+        foreach($templates as$key=>$template)if($values===$template){$match=$key;break;}
+        m4lr_expect($match!==null,'M4LR_MESSAGE_MATCHES_PRE_HTTP_RECIPIENT_AND_TEMPLATE');$template=$templates[$match];unset($templates[$match]);
+        $wanted=['id'=>$id,'mark'=>$template['mark'],'uid'=>$template['uid'],'title'=>$template['title'],'content'=>$template['content'],
+            'data'=>$template['data'],'look'=>$template['look'],'type'=>$template['type'],'add_time'=>$row['add_time'],'is_del'=>$template['is_del']];
+        m4lr_expect($row===$wanted,'M4LR_ALL10_INDEPENDENT_MESSAGE_VALUES');$expected[]=$wanted;
+    }
+    m4lr_expect($templates===[],'M4LR_EVERY_ORIGINAL_NOTICE_RECIPIENT_PRESERVED');
+    $GLOBALS['m4lr_notice_application_requests']=($GLOBALS['m4lr_notice_application_requests']??0)+1;
+    $GLOBALS['m4lr_notice_rows']=($GLOBALS['m4lr_notice_rows']??0)+count($intent['ids']);
+    return [$expected,count($intent['ids'])];
+}
+
 function m4lr_descriptor(array $asset):array
 {
     $row=$asset['row'];return ['attachment_ref'=>$asset['reference'],'asset_id'=>$asset['id'],'media_type'=>$row['media_type'],
@@ -446,6 +559,7 @@ function m4lr_apply(PDO $db,array $fixture,string $token,array $family,array $im
         &&m4lr_find($before['database']['rows']['eb_store_order_cart_info'],'id',$item['id'])===$item,'M4LR_IMMUTABLE_REAL_ORDER_AND_CART_INTENT');
     $body=['text'=>'隔离正常材料申请','refund_reason_wap_explain'=>'保留原申请说明','refund_reason_wap_img'=>implode(',',$images),
         'refund_type'=>2,'cart_ids'=>[['cart_id'=>$item['cart_id'],'cart_num'=>(int)$item['cart_num']]]];
+    $noticeIntent=m4lr_notice_intent($db,$fixture,$before,$order);
     $reply=m4lr_http('POST','/api/order/refund/apply/'.$order['id'],$token,$body);m4lr_success($reply,false);$after=m4lr_state($db);
     $id=$before['database']['next']['eb_store_order_refund'];m4lr_expect(is_string($id)&&ctype_digit($id),'M4LR_REAL_REFUND_NATIVE_NEXT');
     $actual=m4lr_find($after['database']['rows']['eb_store_order_refund'],'id',$id);m4lr_window($actual['add_time'],$reply);
@@ -461,9 +575,11 @@ function m4lr_apply(PDO $db,array $fixture,string $token,array $family,array $im
     $cart=$item;$cart['refund_num']=$item['cart_num'];$carts=m4lr_replace($before['database']['rows']['eb_store_order_cart_info'],'id',$item['id'],$cart);
     $status=m4lr_status_delta($db,$before,$after,$reply,(int)$order['id'],[['apply_refund','用户申请退款，原因：'.$body['text']]]);
     $assets=m4lr_bind_expected($db,$before,$after,$reply,$selected,(int)$id);
+    [$messages,$messageCount]=m4lr_notice_delta($db,$before,$after,$reply,$noticeIntent);
     $adds=m4lr_snowflake_delta($before,$after,$reply,$expected['order_id']);$cache=$fixture['prefix'].md5('store_order_cart_info_'.$order['id']);
     m4lr_transition($db,$before,$after,$fixture,$reply,'customer',['eb_store_order_refund'=>$refunds,'eb_store_order_cart_info'=>$carts,
-        'eb_store_order_status'=>$status,'eb_marketplace_customer_asset'=>$assets],['eb_store_order_refund'=>1],null,false,$adds,[$cache]);
+        'eb_store_order_status'=>$status,'eb_marketplace_customer_asset'=>$assets,'eb_message_system'=>$messages],
+        ['eb_store_order_refund'=>1,'eb_message_system'=>$messageCount],null,false,$adds,[$cache]);
     return $expected;
 }
 function m4lr_agree(PDO $db,array $fixture,string $token,array $refund):array
@@ -636,6 +752,9 @@ function m4lr_verify():array
         m4lr_expect(m4lr_one($db,'eb_marketplace_customer_asset','id',$a['id'])===$firstBound,'M4LR_APPLICATION_FIRST_BINDING_ALL34_RETAINED');
         foreach([$b,$d]as$unselected)m4lr_expect(m4lr_one($db,'eb_marketplace_customer_asset','id',$unselected['id'])===$unselected['row'],'M4LR_UNSELECTED_STAGED_ALL34_RETAINED');
         $cases[]='all_original_rows_objects_and_first_bindings_retained_with_complete_independent_side_effect_oracle';
+        m4lr_expect(($GLOBALS['m4lr_notice_application_requests']??0)===3
+            &&($GLOBALS['m4lr_notice_rows']??0)===3*count($fixture['refund_notice']['recipients']),'M4LR_ALL_THREE_REAL_APPLICATION_NOTICE_HOOKS');
+        $cases[]='three_original_refund_notice_hooks_full_message_rows_and_native_counters';
     }catch(Throwable $failure){$error=$failure;}
     finally{if($started)try{audit_app_stop();$status=audit_read_control_json(audit_run_dir().'/app-status.json');
         m4lr_expect(($status['status']??null)==='stop'&&($status['members']??null)===[]&&($status['listener_open']??null)===false
@@ -644,6 +763,8 @@ function m4lr_verify():array
     if($error!==null)throw $error;
     return ['scope'=>'CU_LEGACY_REFUND_REAL_NORMAL_HTTP_ONLY','source_sha'=>$manifest['commit_sha'],'business_cases'=>$cases,
         'requests'=>$GLOBALS['m4lr_requests']??0,'assertions'=>$GLOBALS['m4lr_assertions']??0,'normal_app_group_closed'=>$closed,
+        'real_system_notice_application_requests'=>$GLOBALS['m4lr_notice_application_requests']??0,'real_system_notice_rows'=>$GLOBALS['m4lr_notice_rows']??0,
+        'external_sms_wechat'=>'NOT RUN',
         'resource_retirement'=>'PENDING_ROOT_ORDINARY_CLOSE_AND_INDEPENDENT_ZERO','browser_device_CORS'=>'NOT RUN',
         'financial_channel'=>'NOT RUN','historical_mapping'=>'NOT RUN','full_transaction_A_B'=>'NOT RUN','full_V1_regression'=>'NOT RUN',
         'stopped_negative_fault_concurrent_recovery'=>'NOT RUN','acceptance'=>'INCOMPLETE'];
