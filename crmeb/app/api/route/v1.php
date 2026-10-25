@@ -296,6 +296,9 @@ Route::group(function () {
 
     Route::group(function () {
         //提现类
+        Route::post('extract/files/<extractType>','v1.user.UserExtractController/uploadQr')->option(['real_name'=>'本人提现二维码上传','customer_withdrawal_qr_files'=>true]);
+        Route::post('extract/files/<asset_id>/read-ticket','v1.user.UserExtractController/qrMaterial')->option(['real_name'=>'本人提现二维码读票据','withdrawal_qr_private_reader'=>'customer']);
+        Route::get('extract/files/<asset_id>/content','v1.user.UserExtractController/qrMaterial')->option(['real_name'=>'本人提现二维码原图','withdrawal_qr_private_reader'=>'customer']);
         Route::get('extract/bank', 'v1.user.UserExtractController/bank')->name('extractBank')->option(['real_name' => '提现银行']);//提现银行/提现最低金额
         Route::post('extract/cash', 'v1.user.UserExtractController/cash')->name('extractCash')->option(['real_name' => '提现申请']);//提现申请
     })->option(['mark' => 'extract', 'mark_name' => '提现']);

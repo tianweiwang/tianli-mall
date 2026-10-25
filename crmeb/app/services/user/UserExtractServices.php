@@ -13,6 +13,10 @@ declare (strict_types=1);
 namespace app\services\user;
 
 use app\dao\user\UserExtractDao;
+use app\Request;
+use app\dao\marketplace\assets\CustomerWithdrawalQrAssetDao;
+use app\services\marketplace\assets\CustomerWithdrawalQrAssetServices;
+use think\db\ConnectionInterface;
 use app\services\BaseServices;
 use app\services\order\StoreOrderCreateServices;
 use app\services\statistic\CapitalFlowServices;
@@ -507,7 +511,7 @@ class UserExtractServices extends BaseServices
      * @param int $uid
      * @param array $data
      */
-    public function cash(int $uid, array $data)
+    public function cash(int $uid, array $data, ?Request $materialRequest = null)
     {
         /** @var UserServices $userService */
         $userService = app()->make(UserServices::class);
@@ -600,7 +604,18 @@ class UserExtractServices extends BaseServices
                 }
             }
         }
-        $res1 = $this->transaction(function () use ($insertData, $data, $uid, $userService, $user, $mark) {
+        $privateMaterials = CustomerWithdrawalQrAssetDao::isPrivate($data['qrcode_url'] ?? null)
+            ? app()->make(CustomerWithdrawalQrAssetServices::class) : null;
+        $privateOutcome = null;
+        $privateCallbackCompleted = false;
+        try {
+        $res1 = $this->transaction(function (ConnectionInterface $connection) use ($insertData, $data, $uid, $userService, $user, $mark,
+            $privateMaterials, $materialRequest, &$privateOutcome, &$privateCallbackCompleted) {
+            $materialContext = null;
+            if ($privateMaterials !== null) {
+                if (!$materialRequest instanceof Request) throw new \crmeb\exceptions\AuthUnavailableException();
+                $materialContext = $privateMaterials->prepareCash($connection, $materialRequest, $uid, $data['qrcode_url']);
+            }
             if (!$res1 = $this->dao->save($insertData)) {
                 throw new ApiException('申请提现失败');
             }
@@ -613,8 +628,18 @@ class UserExtractServices extends BaseServices
             /** @var UserBrokerageServices $userBrokerageServices */
             $userBrokerageServices = app()->make(UserBrokerageServices::class);
             $userBrokerageServices->income('extract', $uid, ['mark' => $mark, 'number' => $data['extract_price']], $balance, $res1['id']);
+            if ($privateMaterials !== null) {
+                $privateOutcome = $privateMaterials->bindCash($materialContext, (int)$res1['id']);
+                $privateCallbackCompleted = true;
+            }
             return $res1;
         });
+        } catch (\Throwable $error) {
+            // The ORM does not return the native commit acknowledgement. A completed callback is not proof of rollback.
+            if ($privateMaterials !== null && $privateCallbackCompleted && is_array($privateOutcome))
+                throw CustomerWithdrawalQrAssetServices::cashUnknown();
+            throw $error;
+        }
 
         try {
             ChannelService::instance()->send('WITHDRAW', ['id' => $res1->id]);
@@ -636,6 +661,8 @@ class UserExtractServices extends BaseServices
             'extract_time' => date('Y-m-d H:i:s'),
         ]]);
 
+        // Preserve all original post-cash responsibilities before observing the new private material.
+        if ($privateMaterials !== null) $privateMaterials->committed($privateOutcome);
         return true;
     }
 

@@ -27,6 +27,10 @@ return [
         // Persistent private mount, explicitly configured; empty never falls back to public/runtime storage.
         'private_root'=>Env::get('marketplace.customer_licence.private_root',''),
     ],
+    'customer_withdrawal_qr'=>[
+        // Explicit private mount; no public/cloud fallback and no change to withdrawal availability.
+        'private_root'=>Env::get('marketplace.customer_withdrawal_qr.private_root',''),
+    ],
     'product_media_scan'=>[
         'private_root'=>Env::get('marketplace.product_media_scan.private_root',''),
         'max_open_leases'=>Env::get('marketplace.product_media_scan.max_open_leases',16),

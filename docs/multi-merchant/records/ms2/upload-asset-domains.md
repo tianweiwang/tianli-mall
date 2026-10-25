@@ -1349,3 +1349,31 @@ UI保留原两种可选二维码、原金额输入与提交反馈：新增helper
 - [ ] 零图/旧URL兼容、旧client调用与真实历史/发布条件继续记录，不把局部私有链通过写成default公共兼容/T5/商户提现开放或整体验收完成；停止negative/fault/concurrency/recovery/K继续NOT RUN，不新增恢复/批量迁移执行。
 
 Root非作者全文采用本withdrawal_qr限定设计：98ac2e完整核新增17959B，1df7c3实读原cash/两个controller/34列无mer_id，27d6a0实核BaseServices原Db::transaction与vendor原callback实际Connection及commit返回未上抛；c15a66 enrollment仍project_not_enabled。补明必要调用者边界：只有新增私有码cash分支，一经真实POST派发，对网络/5xx/无可证未提交收据的原hook异常等都须保持未确认状态和安全草稿，不把旧异常擅当已回滚或安全可重发；无新增本人业务确认API，BOUND也不证明本次cash成功。保原零图/旧URL金融分支与异常/全部hook，材料读写不等于开放提现；不会持久化登录票据或向日志/Git写私有财务请求。实现与Runtime仍分开，真实外部/资金及停止样本NOT RUN。现在仅允许本节Files范围Source实现，Root实际隔离验证另按真实源码冻结串行安排。
+
+
+##### withdrawal_qr 第一批生产 Source 实施交接（2026-10-25，尚未运行）
+
+在已采用 c46516af（父 3a5106fd）的独立 remaining-private-assets W 内，按上述18个生产 Files 写具名 private 上传、完整34列专用DAO、独立 root/namespace、独立300000ms票据与固定 header、本人上传 preview/BOUND 图片及原财务列表材料读取；配置只加默认空 private_root，不增加业务开关。保 name/url/attachment_ref 原DTO三字段；原 qrcode_url 只写永久 mp-withdrawal:v1 引用，临时 Blob/票据不入库。原 GET finance/extract 未登记受限权限的事实保留，新读叶按当前真实原 GET grant/最高管理员判断，不加菜单/seed，不借 PUT 审核权限。
+
+cash 原 save/扣佣/income 源片段及其后 Channel/adminNewPush/Notice/Custom 完整原责任块逐字保留；新私有分支只在同实际 callback/PDO 前核真实 UID/session/user、DML末尾用实际保存PK绑定，首次 extract_id/bound_at 保留且同 UID 后续合法申请允许复用。原 callback 完成后的 commit 异常给六键 unknown；新增提交观察在全部原 hook 之后。原零图/URL调用与金融算法保留。Uni 新 private POST 前保 memory-only 完整 body/ref/File 草稿，所有无确证的结果保 unknown 并阻断自动再次 cash POST；不从 BOUND、首次ID或图片可读推定本次提现成功，没有虚构本人提现详情确认入口。原明确成功仍走原更新/跳转；旧URL仍按原列表并显。临时预览在隐藏/身份/route失效时释放，pending不由隐藏/abort改成失败或安全重试。
+
+本批实际只有18生产路径；本段是第19个dirty路径。作者只做 Python 字节/词法括号自核和原生 Git 检查：14个 PHP 的词法括号平衡（不是 PHP parser/-l）、原 financial/hook 片段 raw 保全、实际18路径/index空，以及 diff --check。尚未 PHP/Node parse/build、候选执行、Docker/SQL/HTTP/真实资金/外发或浏览器；不能据此标 Source 独审0或功能通过。代码暂冻结交 Root 非作者审，之后才继续既定专用 normal/profile/overlay 源码；现没有 Host/Run/Val、测试结果或未来身份。
+
+- [x] 原采用设计内的生产 Source 第一批实现；未经独立复核/实际验证，不作完成验收。
+- [ ] Root/非作者完整核现金原责任、真实34/25行/PDO、票据/财务scope、未知草稿及旧DTO兼容。
+- [ ] 依采用设计补既有范式的专用普通验证 Source，再经独审/真实clean HEAD派生Host。
+- [ ] 原完整正向隔离/全库DDL/Redis/files副作用、UI/CORS/设备与发布gate仍待实际证据；外部通道和全部停止样本保持NOT RUN。
+
+
+##### withdrawal_qr Root非作者生产源码检查点（2026-10-25）
+
+Root已全文核18个生产路径的实际差量、6份新PHP与2份helper完整内容，并追原cash事务/25列extract/34列asset/财务原GET权限/通知与认证上下游。原金融save、扣佣金和income区段、其后Channel/adminNewPush/Notice/Custom完整原责任块均以c465原件逐字核同；没有改金额、费率、资金规则或开放商户提现。首次材料绑定和同UID后续复用保首extract_id/bound_at；每次财务读取仍按当前真实提现行核UID与永久ref。private cash一经派发，前端把无法确证的结果保留为memory-only pending，不自动再次POST；零图/旧URL继续原分支，隐藏/abort/BOUND不能作已回滚或本次成功的证明。
+
+Root实际纯检查：withdrawal-qr-production-php82-r1以固定本地PHP8.2.33镜像执行14文件-l，5个原生进程/10份完整双流全0，容器自然Exited0/PID0/restart_count0，14只读文件挂载、network none，随后仅原CID非force删除；未include或执行App。withdrawal-qr-production-frontend-r1用现有Babel7.27.5与Vue2.7.16 compiler完整解析4份前端module、编译两份Vue模板，原Node PID15820自然0、双流完整且stderr空；执行器为Node24.18.0，证据仅为解析/模板，不宣称满足项目Node<23完整构建资格。两项检查前后源字节相同，完整回读见外部withdrawal-qr-production-root-review-r1/RESULT.json。
+
+此为生产Source本地里程碑：18生产路径和本record共19路径，专用normal/profile/compose/harness仍由作者独立实现，未纳入本检查点。没有新Source运行资格、ISO业务、SQL/Redis/HTTP、实际H5/MP/APP/财务页面或设备、第三方渠道/真实资金/外发的通过记录；原完整正向链、全库DDL/Redis/files与通知副作用及UI/发布gate仍待。默认公共兼容、平台聊天及旧客户端发布边界仍开放；停止的负向/故障/并发/恢复/K样本继续NOT RUN。
+
+- [x] Root非作者生产Source审查及原金融/通知raw区段保全核对。
+- [x] 当前14 PHP实际-l与4前端module/2Vue模板离线检查。
+- [ ] 专用普通验证Source、同clean HEAD真实ISO全链及普通退役/独立zero。
+- [ ] 原三端/财务页面实际运行验收及其余T5/发布条件。
