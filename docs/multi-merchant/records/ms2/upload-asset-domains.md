@@ -1558,3 +1558,23 @@ Root当前三个PHP真实8.2.33纯-l与完整5native/10双流1760B回读全0，n
 实际固定PHP8.2.33执行3项-l，以及默认/licence/media/refund/QR五个独立纯定义导入，八child均真实原proc handle自然proc_close0/stderr空；默认三类只加载harness+guard且私有四函数全false，refund仅原退款两函数、QR仅原QR两函数。未调用App/guard函数、SQL/Redis/HTTP/Timer或金融。原检查Host在postinspect误断言labels仅本次purpose而exit1，原因已核固定镜像自身继承三compose标签；原Source、FAILURE和全部原raw保留，不改写为整体0。独立只读镜像标签与完整容器标签逐项相同后，另经独立Source0及Root精确原CID完整重核（已自然Exited0/PID0/restart0、7RO、netnone、uid65534）才nonforce rm；三fresh自有purpose资源查询stdout/stderr都0字节。无重跑业务或检查，证据ORG/profile-load-import-check-r1/ordinary-close/RESULT.json。
 
 本地仅本record及两PHP三路径提交；不是新统一HEAD完整A/B或页面验收。另已发现并记录B r1迁移role volume/bind不一致，旧包保持冻结，后继同源A/Core、B和两个repo必要接缝须完整同步后再资格与运行。所有原功能与停止样本/真实外部边界继续保留。
+
+
+##### Root采用：履约迁移同源源码卷的完整接线（2026-10-25，实施前设计）
+
+独立审实际发现B r1 compose对audit-ms4-fulfillment-migration已为source-tree双RO，而Host owned、verify-zero owned及仓库m4fm_source/m4c_entry_predecessor仍要求双宿主bind，且root-start会真实create/bind/start。B source_tree_start_guard已含该proof并执行同CID、copy完整结果、writer自然0/唯一nonforce删除/fresh absence；原Core/A normal9却仍全体保持旧bind且guard proof集未含该role。Root已分别实读这些原调用点，不能只改B种类或固定hash。
+
+采用原完整SourceTree架构：此迁移role统一使用本project同代source-tree在/workspace和/source两只读挂载。仓库Files仅ms4-fulfillment-migration.php的本人双源native/kernel RO及既有初始化copy块末live根dev/ino/mode/uid/gid同身份，和ms4-customer-http-normal.php的m4c_entry_predecessor精确proof/role配对分支；其余initializer/原MS5 driver继续原bind，全17 Source、4+16 CLI、原完整DDL/rows/next counters/历史receipts及角色挂载闭集不减。两repo作者不碰record/backend/其它文件。Root在其最终固定正文采用后，才必要更新backend的m4c一个固定descriptor；四路径连本record另作新本地提交。
+
+外部Source在ORG/integrated-normal-and-b-source-tree-source-r2新不可变代际派生：B的compose与现完整start_guard保留，Host/zero只该role双volume；Core normal9同时改同role compose/Host-owned/zero-owned，并将fulfillment-migration精确proof加入原完整writer gate，不能影响未登记role或跳过既有资格。Core现native digest-only事实须先完整追producer/consumer并与已审B原Popen/fullraw叶对照，在Root审其有限设计后才能修改；未闭该实际证据链不得准入M/A。旧r1、所有旧成功/失败及真实Source保留。所有新HEAD/Val/M/A/postA/build/Run/authority/sealed继续UNBOUND，不复制旧成功或动态把当前文件当期待值。必要完整producer固定资格和code-pin DAG随新两PHP/harness/backend联动，原全部34/37、B20/20/42、merchant34/25/9/23、H5/CU_FORM/历史37与真实金融发布验收保留。
+
+当前基线016fd646 clean已实际提交的conditional修复保持；本段先于新接线代码。作者只Source实现及字节逆证，不运行目标、Docker/SQL/HTTP/浏览器/候选，不commit/push或改C/D。Root负责采用/必要纯语法及后续同clean HEAD真实资格和正常隔离链，真实外部/部署和全部停止样本不在此计划内。
+
+
+##### Root履约迁移源码卷仓库接缝本地检查点（2026-10-25）
+
+Root完整读两PHP实际差量并以7处有限逆证回到016原Git整份；非作者media又独立逐处读diff/callee/全部完整逆证Source0。m4fm193258/97a559保55/57原函数raw，仅本人mount/kernel与初始化copy后live五值join；m4c121457/1fae54保33/34原函数raw，仅精确proof/role分支，initializer/MS5 driver继续原bind，全部17Source/20CLI/DDLrows/counters/history和结果shape保留。Root只在backend一个m4c固定descriptor重绑，整份逆回016原body，全部函数raw，backend132938/a517ca25；原harness686be4不动。
+
+当前三PHP实际固定8.2.33纯-l全0，原5native/10完整双流Root读回、自然helper Exited0/PID0/restart0/netnone/3RO后同CID非force移除；另3fresh自有purpose容器/网络/卷查询stdout/stderr原始全空。证据ORG/migration-source-tree-repo-php82-r1/ROOT-READBACK.json。未include或运行App/SQL/HTTP/Timer/迁移业务；旧general root-identity正向probe不冒新role已运行。四路径连本record本地提交，不能签新统一HEAD完整A/B。
+
+外部新r2 Source正在同步Core/A和B该role compose/owned/startguard/zero及必要固定provenance/DAG；旧r1完整冻结保留。Core原native/active close/zero还有digest-only元数据事实及非递归public keep，必须先有完整有限producer/consumer设计、Popen/fullraw闭包和Root/独立资格，未来HEAD/Val/M/A/postA/三build/B仍UNBOUND；全部原功能、验收和停止样本责任不减。

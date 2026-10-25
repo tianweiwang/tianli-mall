@@ -130,8 +130,8 @@ function m4fm_source(): array
     }
     foreach (['/workspace', '/source'] as $destination) {
         $mount = m4fm_mount($facts, $destination);
-        m4fm_expect(($mount['Type'] ?? '') === 'bind' && ($mount['RW'] ?? null) === false
-            && audit_canonical_host_bind_source((string) ($mount['Source'] ?? '')) === audit_canonical_host_bind_source($binding['requested_repo_source']), 'CURRENT_SOURCE_RO');
+        m4fm_expect(($mount['Type'] ?? '') === 'volume' && ($mount['RW'] ?? null) === false
+            && ($mount['Name'] ?? '') === $manifest['project'] . '_source-tree', 'CURRENT_SOURCE_RO');
     }
     $mount = m4fm_mount($facts, '/run/audit');
     m4fm_expect(($mount['Type'] ?? '') === 'bind' && ($mount['RW'] ?? null) === true
@@ -142,11 +142,17 @@ function m4fm_source(): array
             && ($mount['Name'] ?? '') === $manifest['project'] . '_' . $name, 'OWN_PRIVATE_INPUT_RO');
     }
     m4fm_expect(is_array($facts['tmpfs'] ?? null) && array_keys($facts['tmpfs']) === ['/tmp'], 'PRIVATE_TMPFS_DECLARED');
-    $tmp = false;
+    $tmp = false; $sourceRoots = ['/workspace' => 0, '/source' => 0];
     foreach (file('/proc/self/mountinfo', FILE_IGNORE_NEW_LINES) as $line) {
         $parts = explode(' - ', $line, 2); $left = explode(' ', $parts[0]); $right = isset($parts[1]) ? explode(' ', $parts[1]) : [];
         if (($left[4] ?? '') === '/tmp' && ($right[0] ?? '') === 'tmpfs') $tmp = true;
+        $destination = $left[4] ?? '';
+        if (array_key_exists($destination, $sourceRoots)) {
+            $sourceRoots[$destination]++; $options = explode(',', $left[5] ?? '');
+            m4fm_expect(in_array('ro', $options, true) && !in_array('rw', $options, true), 'CURRENT_SOURCE_KERNEL_RO');
+        }
     }
+    m4fm_expect($sourceRoots === ['/workspace' => 1, '/source' => 1], 'CURRENT_SOURCE_KERNEL_BOTH_ROOTS_ONCE');
     m4fm_expect($tmp && !file_exists('/workspace/crmeb/.env') && !is_link('/workspace/crmeb/.env')
         && !file_exists('/workspace/crmeb/public/install.lock') && !is_link('/workspace/crmeb/public/install.lock'), 'NO_HOST_CONFIG_PRIVATE_TMPFS');
     m4fm_expect($binding['entry_sha256'] === hash_file('sha256', __FILE__)
@@ -380,6 +386,12 @@ function m4fm_initialization_predecessor(array $manifest,array $binding,string $
         &&$treeCopy['source_bytes_readback_matches']===true&&is_int($treeRoot['dev'])&&$treeRoot['dev']>=0
         &&is_int($treeRoot['ino'])&&$treeRoot['ino']>0&&$treeRoot['mode']===16832&&$treeRoot['uid']===0&&$treeRoot['gid']===0,
         'CUSTOMER_COMPLETE_INITIALIZER_SOURCE_TREE_COPY_BOUND');
+    m4fm_expect(hash_file('sha256',$base.'initializer-result.json')===$before['initializer-result.json'],'EARLY_SOURCE_TREE_INITIALIZER_FROZEN_BYTES');
+    foreach(['/workspace','/source']as$root){clearstatcache(true,$root);$actualRoot=lstat($root);
+        m4fm_expect(is_array($actualRoot)&&is_dir($root)&&!is_link($root)&&realpath($root)===$root,'EARLY_SOURCE_TREE_REAL_CURRENT_ROOT');
+        foreach(['dev','ino','mode','uid','gid']as$key)
+            m4fm_expect($actualRoot[$key]===$treeRoot[$key],'EARLY_SOURCE_TREE_CURRENT_ROOT_SAME_INITIALIZER');}
+    m4fm_expect(hash_file('sha256',$base.'initializer-result.json')===$before['initializer-result.json'],'EARLY_SOURCE_TREE_INITIALIZER_BYTES_UNCHANGED');
     $sequence = [['marketplace-ms1.php', 'check'], ['marketplace-ms1.php', 'apply'], ['marketplace-ms1.php', 'check'],
         ['marketplace-ms2.php', 'check'], ['marketplace-ms2.php', 'apply-structure'], ['marketplace-ms2.php', 'check'],
         ['marketplace-ms4.php', 'check'], ['marketplace-ms4.php', 'apply-structure'], ['marketplace-ms4.php', 'check']];
