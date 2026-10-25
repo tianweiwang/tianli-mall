@@ -82,6 +82,7 @@ final class PlatformProductMediaServices
                 }
                 return $item;
             },$result['list']);
+            if($type===1)$result['video_chunk_upload']=ProductVideoUploadSessions::enabled();
             return $result;
         });
     }
@@ -235,17 +236,61 @@ final class PlatformProductMediaServices
         if(\think\facade\Db::connect()!==$connection||$connection->getPdo()!==$pdo||$pdo->inTransaction())throw new AuthUnavailableException();
     }
 
-    public function uploadVideo(Request $request,int $productIdOrZero,array $body): string
+    public function uploadVideo(Request $request,int $productIdOrZero,array $body): string|array
     {
+        if(array_key_exists('upload_operation',$body))return $this->uploadVideoSession($request,$productIdOrZero,$body);
         if(array_key_exists('url',$body))return $this->importRemoteVideo($request,$productIdOrZero,$body);
         return $this->uploadTyped($request,$productIdOrZero,$body,'video');
+    }
+
+    private function videoSessionBinding(Request $request,int $id,int $pid): array
+    {
+        [, $owner]=$this->publishContext($id,'multipart-video',$request);
+        if($pid)$this->attachments->categoryForMedia($id,$pid,1);
+        $session=$request->verifiedAdminSession();$scope=LegacyProductWriteServices::rawScope();
+        $epoch=\crmeb\services\AuthConfigGuard::authConfig()['session_epoch'];
+        if($request->isAdminLogin()!==true||(string)$scope->adminId!==$session['id']
+            ||(string)$request->adminId()!==$session['id']||!hash_equals($request->verifiedTokenFingerprint(),$session['fingerprint'])
+            ||!is_string($epoch)||$epoch==='')throw new AuthUnavailableException();
+        return ['binding'=>hash('sha256',json_encode(['purpose'=>'platform-product-video','session'=>$session,'epoch'=>$epoch,
+            'product_id'=>$id,'mer_id'=>$owner,'category_id'=>$pid],JSON_THROW_ON_ERROR)),
+            'actor'=>hash('sha256','admin:'.$session['id'])];
+    }
+
+    /** Same fixed route and grants as whole-file video; no client path/owner or new role permission. */
+    private function uploadVideoSession(Request $request,int $id,array $body): array
+    {
+        $this->request($request,'legacy-product-media-video-upload');
+        $operation=$body['upload_operation']??null;
+        $fields=match($operation){
+            'issue'=>['upload_operation','pid','filename','total_size'],
+            'chunk'=>['upload_operation','pid','upload_reference','chunkNumber'],
+            'finalize','cancel'=>['upload_operation','pid','upload_reference'],
+            default=>throw new HttpException(422,'请求参数不正确'),
+        };
+        $body=Input::body($body,$fields,$fields);$pid=MerchantAttachmentInput::id($body['pid'],true);
+        $identity=$this->within($request,$id,fn():array=>$this->videoSessionBinding($request,$id,$pid));
+        $same=function()use($request,$id,$pid,$identity):void{
+            if($this->videoSessionBinding($request,$id,$pid)!==$identity)throw new AuthUnavailableException();
+        };
+        $publish=function(array $source)use($request,$id,$pid,$same):string{
+            return $this->uploadTyped($request,$id,['pid'=>$pid],'video',static function()use($source,$same):array{
+                $same();return $source;
+            });
+        };
+        $observe=function(string $src)use($request,$id,$same):void{
+            $this->within($request,$id,function()use($id,$src,$same):void{
+                $same();app()->make(ProductMediaReferenceServices::class)->assertForProduct($id,[['kind'=>'video','path'=>$src]]);
+            });
+        };
+        return app()->make(ProductVideoUploadSessions::class)->command($request,$identity['binding'],$identity['actor'],$body,$publish,$observe);
     }
 
     public function uploadAudio(Request $request,int $productIdOrZero,array $body): string
     { return $this->uploadTyped($request,$productIdOrZero,$body,'audio'); }
 
     /** Single current Request upload; owner and commit remain the original product writer's. */
-    private function uploadTyped(Request $request,int $productIdOrZero,array $body,string $kind): string
+    private function uploadTyped(Request $request,int $productIdOrZero,array $body,string $kind,?callable $sessionSource=null): string
     {
         $mode='multipart-'.$kind;
         if(!isset(self::MULTIPART_MODES[$mode])||self::MULTIPART_MODES[$mode]['kind']!==$kind)throw new AuthUnavailableException();
@@ -253,10 +298,11 @@ final class PlatformProductMediaServices
         $body=Input::body($body,['pid']);$pid=MerchantAttachmentInput::id($body['pid']??0,true);
         $receipt=self::receipt();$objects=[];$observations=[self::receipt()];$snapshot=null;
         try {
-            $src=$this->within($request,$productIdOrZero,function()use($request,$productIdOrZero,$pid,$kind,$mode,&$receipt,&$objects,&$observations,&$snapshot):string{
+            $src=$this->within($request,$productIdOrZero,function()use($request,$productIdOrZero,$pid,$kind,$mode,$sessionSource,&$receipt,&$objects,&$observations,&$snapshot):string{
                 [$pdo,$owner]=$this->publishContext($productIdOrZero,$mode,$request);
                 if($pid)$this->attachments->categoryForMedia($productIdOrZero,$pid,$kind==='video'?1:0);
-                $uploaded=$this->storage->readTypedUploadedFile($request);
+                if($sessionSource!==null&&$kind!=='video')throw new AuthUnavailableException();
+                $uploaded=$sessionSource===null?$this->storage->readTypedUploadedFile($request):$sessionSource();
                 if(array_keys($uploaded)!==['bytes','display_name']||!is_string($uploaded['bytes'])||!is_string($uploaded['display_name']))throw new AuthUnavailableException();
                 if(LegacyProductWriteServices::transaction()!==$pdo||LegacyProductWriteServices::mediaOwner($productIdOrZero)!==$owner)throw new AuthUnavailableException();
                 $images=[['bytes'=>$uploaded['bytes'],'display_name'=>$uploaded['display_name'],'resolved_kind'=>$kind]];

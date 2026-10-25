@@ -123,9 +123,41 @@ function savedVideo(value) {
   if (!value || typeof value.src !== 'string' || !value.src || /^(blob:|data:)/i.test(value.src)) throw failure('视频保存结果未确认', 'unknown');
   return value;
 }
-export function mediaVideoUpload(context, file, pid = 0) {
+export function mediaVideoUpload(context, file, pid = 0, chunked = false) {
+  if (chunked && file instanceof File && file.size > 3145728) return mediaVideoUploadChunks(context, file, pid);
   const body = new FormData(); body.append('file', file); body.append('pid', String(mediaId(pid, true)));
   return transfer(context, 'POST', path(context) + '/videos/upload', body).then(savedVideo);
+}
+async function mediaVideoUploadChunks(context, file, pid) {
+  const category = mediaId(pid, true); const endpoint = path(context) + '/videos/upload';
+  let issued;
+  try {
+    issued = await transfer(context, 'POST', endpoint, { upload_operation: 'issue', pid: category, filename: file.name, total_size: file.size });
+    if (!issued || typeof issued.upload_reference !== 'string' || !/^[0-9a-f]{32}$/.test(issued.upload_reference)
+      || !Number.isSafeInteger(issued.chunk_size) || issued.chunk_size < 1 || issued.chunk_size > 3145728
+      || issued.total_chunks !== Math.ceil(file.size / issued.chunk_size) || issued.code !== 1 || issued.file_path !== '') {
+      throw failure('视频暂存响应不完整', 'rejected');
+    }
+    for (let number = 1; number <= issued.total_chunks; number += 1) {
+      requireProductContext(context);
+      const start = (number - 1) * issued.chunk_size;
+      const body = new FormData(); body.append('file', file.slice(start, Math.min(start + issued.chunk_size, file.size), file.type), file.name);
+      body.append('upload_operation', 'chunk'); body.append('pid', String(category));
+      body.append('upload_reference', issued.upload_reference); body.append('chunkNumber', String(number));
+      const part = await transfer(context, 'POST', endpoint, body);
+      const last = number === issued.total_chunks;
+      if (!part || part.code !== (last ? 2 : 1) || part.file_path !== (last ? issued.upload_reference : '')) {
+        throw failure('视频分片结果不完整', 'rejected');
+      }
+    }
+  } catch (error) {
+    // issue/chunk cannot publish an attachment. A failed transfer leaves only bounded private staging for the existing timer.
+    if (error.state === 'unknown') { error.state = 'rejected'; error.message = '视频分片未完成，尚未提交入库，请重新选择文件'; }
+    throw error;
+  }
+  requireProductContext(context);
+  // Only this separate server-reference save can publish; retain the existing unknown-commit handling here.
+  return transfer(context, 'POST', endpoint, { upload_operation: 'finalize', pid: category, upload_reference: issued.upload_reference }).then(savedVideo);
 }
 export function mediaVideoImport(context, url, pid = 0) {
   if (typeof url !== 'string' || !url) throw new Error('请输入视频链接');

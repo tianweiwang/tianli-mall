@@ -151,9 +151,13 @@ LUA;
         // An old scheduler callback or a delayed Redis acknowledgment cannot bypass current disable/edit state.
         self::currentRow($context);
         $summary = app()->make(ProductMediaScanStaging::class)->gcBatch($settings['batch']);
+        $videoSummary = ProductVideoUploadSessions::needsCollection()
+            ? app()->make(ProductVideoUploadSessions::class)->gcBatch($settings['batch']) : null;
         self::same($context);
-        return ['state' => 'ran', 'wake_seconds' => 1, 'gc_period_seconds' => $settings['period'],
+        $result = ['state' => 'ran', 'wake_seconds' => 1, 'gc_period_seconds' => $settings['period'],
             'gc_batch' => $settings['batch'], 'summary' => $summary];
+        if ($videoSummary !== null) $result['video_summary'] = $videoSummary;
+        return $result;
     }
 
     private static function currentRow(array $context): void

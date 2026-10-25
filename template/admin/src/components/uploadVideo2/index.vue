@@ -335,7 +335,7 @@ export default {
       productListSequence: 0,
       productMoveSequence: 0,
       productMessage: '', productReceipt: null, productReceiptDescription: '',
-      productBusy: false, productWriteUnknown: false,
+      productBusy: false, productWriteUnknown: false, productChunkUpload: false,
       productCategoryVisible: false, productCategory: { id: 0, pid: 0, name: '' },
       productCategorySaving: false,
       productMoveTree: [{ id: 0, title: '未分组', pid: 0 }],
@@ -424,7 +424,7 @@ export default {
       closeProductContext(this.productSession); this.productSession = null;
       this.productTreeSequence += 1; this.productListSequence += 1; this.productMoveSequence += 1;
       this.productMessage = ''; this.productReceipt = null; this.productReceiptDescription = '';
-      this.productBusy = false; this.productWriteUnknown = false;
+      this.productBusy = false; this.productWriteUnknown = false; this.productChunkUpload = false;
       this.productCategoryVisible = false; this.inputModal = false; this.videoModal = false; this.inputUrl = ''; this.imageUrl = '';
       if (this.productId === null && !hadProduct) return;
       this.treeId = this.productId === null ? '' : 0; this.treeData = []; this.treeData2 = [];
@@ -439,6 +439,7 @@ export default {
       closeProductContext(this.productSession); this.productSession = null;
       this.productTreeSequence += 1; this.productListSequence += 1; this.productMoveSequence += 1;
       this.productCategoryVisible = false; this.inputModal = false; this.videoModal = false;
+      this.productChunkUpload = false;
       this.inputUrl = ''; this.imageUrl = ''; this.pictrueList = []; this.treeData = []; this.treeData2 = [];
       this.total = 0; this.initData(); this.productMoveTree = [{ id: 0, title: '未分组', pid: 0 }];
       this.productMessage = '登录身份已变化，进行中的提交结果请先核对，再重新打开商品视频';
@@ -480,6 +481,7 @@ export default {
         this.initData();
         value.list.forEach(item => { item.isSelect = false; item.isEdit = false; item.isShowEdit = false; item.realName = false; item.num = 0; this.editName(item); });
         this.pictrueList = value.list; this.total = value.count; this.isShowPic = value.list.length === 0;
+        this.productChunkUpload = value.video_chunk_upload === true;
       });
     },
     openProductCategory(id, pid, name = '') {
@@ -564,7 +566,7 @@ export default {
       const input = event.target; const selected = Array.from(input.files || []); input.value = '';
       if (selected.length !== 1) { this.productMessage = '请选择一个视频文件'; return; }
       const pid = this.treeId === '' ? 0 : this.treeId;
-      return this.productWork(ctx => mediaVideoUpload(ctx, selected[0], pid), () => {
+      return this.productWork(ctx => mediaVideoUpload(ctx, selected[0], pid, this.productChunkUpload), () => {
         this.fileData.page = 1; this.initData(); this.getProductVideos(); this.$message.success('视频已上传');
       }, true);
     },
