@@ -297,3 +297,28 @@ Host最终Source自审补齐：一次性helper的docker wait客户端成功但�
 
 
 Root本地提交前核对（2026-10-25）：已读四路径完整变化及Host635行（最后441–635亦逐段核），normal38声明行/原10CLI/8→0/full-state与源闭包26保持，生产CLI116625/92819382未改。独立非作者的最终Source0保持；Root实际AST/compile及仅--help原生0，Host49759/0c1ee4a3未变，help完整stdout1170B/a0d72d0f04abb60865323428c6119a2b229fde35d25bc030dd5c904cc85d06c5、stderr空，不进入setup/normal或Docker。当前normal94244/88db586d与退款normal一起在固定1099镜像PHP8.2.33纯-l原生0；Root逐份核5条创建/同句柄终态及10完整双流1352B全0，networknone/两source只读挂载、helper自然Exited0/PID0后nonforce移除。实际报告 `artifacts/project-organization-20261023/migration-and-refund-normal-php82-r1/RESULT.json` 6486B/35097bf8c72f0dbf1baa0a5589f12f4605a4e3939f4ad2e1e1f09cf78021e243；报告只签两个-l，没有include/App/DB/HTTP或迁移SQL。Root后续对新clean提交使用新专用Run逐阶段setup、normal、普通close、独立zero；当前四阶段、完整历史/存量80/启用/Task2仍未通过，不据解析或Source关闭业务责任。
+
+
+#### Windows Host Tmpfs 缺键兼容与本次失败准备普通收尾（2026-10-25）
+
+Root实际以07f9090866448e9599d5db3973c2e0ede0216972和独立detached Val-r1启动新Run2026102509180493bd26；setup在第31个原生inspect因数据库HostConfig映射没有Tmpfs键而失败。前30原生为0，prepare有限helper已经真实自然0并nonforce移除，两个数据库运行、finite仅created且未启动；尚无SETUP成功、有限normal、迁移SQL、App或HTTP。原失败证据、Val、Run与07f对象保持，不重放。
+
+实施前设计：本07先记录，再仅把本仓库Host的CID_FORMAT中一次`{{json .HostConfig.Tmpfs}}`改成`{{json (index .HostConfig "Tmpfs")}}`。这是Go模板对可选映射键的原生null读取兼容，不能把数据库声明为存在tmpfs，也不能放宽PHP两tmpfs/完整mount、labels、状态或任一成功准入。除该字面量外Host全字节逆回，四阶段、有限helper、完整源码/26叶/38行/10CLI及所有oracle不变；新语法与未来fresh正常运行由Root另行完成，不据静态代签。
+
+本次失败现场的有界普通收尾单独在仓库外Source实现，不给生产Host增加failed bypass。仅固定导入冻结Val中原07f Host实际SHA，并只覆盖上述可选键模板；原Caller/labels/container contract/完整mount/CreatedAt/only-own/query/TERM工具复用。实际失败31条同句柄终态/全部双流、Run/Source/context/engine/原公共输入、原helper真实0及移除证据全部固定。任何资源mutation前须实际fresh读取完整三角色/网络/全部实际专用卷，核完整mount对象及重复数、原生UID/只读/command、声明actual卷与CreatedAt、精确双labels和only-own。两个DB分别显式SIGTERM timeout -1并核同代Exited0/PID0/noRestart后才nonforce；finite只按原created/未启动/PID0/StartedAt0001保持并nonforce删除，绝不启动或伪造Exited成功；空内部网和原实际卷精确nonforce移除。独立close与zero只写新的私有输出，原Run不注册、不加helper、不写receipt、不改ACL；后续zero必须输入actualclose并核完整收尾流，再作六次fresh单label查询且双流空。未来close/zero结果均UNBOUND，失败不代表正常业务通过。
+
+单执行清单：
+
+- [x] Root限定本07与Host单字面量后继修复；编码前记录兼容依据、失败边界和收尾设计。
+- [x] Host单字面量正逆/AST与两路径diff静态核、独立Source复核；不import/执行候选。
+- [x] 独立失败收尾Source固定全部实际公共证据与资源，只做Source/静态/独审；不执行Docker/PHP/SQL/HTTP/目标，不读private配置或秘密。
+- [ ] Root另行实际普通close/独立zero并核全部原生流；其后新clean提交、独立Val与fresh正常四阶段，旧Run不得重放。
+
+本小修不改变活动type4/type6生产算法、原映射与归属、38合成行、完整原Task2/G01–G07/80存量/37历史/启用或人工验收；停止样本维持NOT RUN。此处不做提交、推送或canonical记录修改。
+
+Root对失败收尾Source初稿发现一项真实准入误差：原0031失败inspect的stdout为1B换行，非空流，stderr固定112B模板错误；原31ledger已经正确绑定真实双流。作者先记录再仅把附加stdout门修成bytes===1且raw精确换行，唯一31exit1/完整流/所有资源门不变。初稿不得执行，不据这次作者静态误差新增Runtime样本或审批。
+
+本次实际Source收口：Host49769B/`ba6b40f1863413f263e5c18b5163a1c8b06cd6eda5327a236364895fc0e1ec44`仅10B可选键表达式变化，精确逆回原49759/0c1ee4a3；非作者对全部46个class/function（含嵌套）raw核同。外部失败收尾单件22565B/`ed851b76eeeecbf5c8f9b4a2ed15e58b6ba6bc3df54a589ba85ca32b04ceb86c`已固定14公共pins、原31失败ledger/62流与Root40只读ledger/80流，唯一31exit1和实际1B换行/112B错误精确限定；本作者与非作者都实际逐项读回公共证据、只做Source AST/差量/原生Git与文件核，无新增确定问题。完整资源逻辑复用冻结Val旧Host，单Tmpfs内存覆盖，不改原Run；finite neverstarted保created不冒签Exited，2DB TERM/11actual卷/完整mount及CreatedAt/only-own/六freshzero门保持。仓库index空、恰两路径变化、diff --check为0；未import或执行候选、Docker/PHP/SQL/HTTP/目标，没有提交推送。Root未来实际ordinary close/zero及后续fresh正常四阶段仍待真实证据，不据Source0补业务通过。
+
+
+Root实际普通收尾证据（2026-10-25）：已435908全文核外部Source原版并678fa2/4fa9f4全文差量、14实际pins及精确inverse核最终22565/ed851b76，legacy_refund_implementation独立71native/142完整双流Source0。Root130cc2/123b32只执行最终版close一次，自然0，eefa27完整119native/238双流3823358B全部0；两个数据库明确TERM/-1后真实同代Exited0/PID0/noRestart，finite保持原created/0001/PID0从未启动，nonforce精确3CID/11实际卷/原空内部网。独立3a3d08 zero自然0，d89ef5完整13native/26双流1873920B全0，六fresh单label查询双流原字节空。Root回执 `artifacts/project-organization-20261023/ms2-activity-type-normal-r1-failed-setup-retire-launcher-r1/ROOT-CLOSE-ZERO-READBACK.json` 879B/80b233373c08760fce064169d9937e841f781f39eb8184fc5043962341432142。旧失败Run/Val/07f/全部流原件保留，不重放、不计SQL或业务通过。Root6b3c85当前Host49769/ba6b40f1实际AST/compile0且单字面量inverse回原49759/0c1ee4a3，原PHP/生产CLI未变，无须重复-l。本两路径进入新的L2本地提交；后续新独立Val/fresh四阶段仍待，原完整Task2/80/37/启用/人工验收均不关闭。
