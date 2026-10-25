@@ -1578,3 +1578,14 @@ Root完整读两PHP实际差量并以7处有限逆证回到016原Git整份；非
 当前三PHP实际固定8.2.33纯-l全0，原5native/10完整双流Root读回、自然helper Exited0/PID0/restart0/netnone/3RO后同CID非force移除；另3fresh自有purpose容器/网络/卷查询stdout/stderr原始全空。证据ORG/migration-source-tree-repo-php82-r1/ROOT-READBACK.json。未include或运行App/SQL/HTTP/Timer/迁移业务；旧general root-identity正向probe不冒新role已运行。四路径连本record本地提交，不能签新统一HEAD完整A/B。
 
 外部新r2 Source正在同步Core/A和B该role compose/owned/startguard/zero及必要固定provenance/DAG；旧r1完整冻结保留。Core原native/active close/zero还有digest-only元数据事实及非递归public keep，必须先有完整有限producer/consumer设计、Popen/fullraw闭包和Root/独立资格，未来HEAD/Val/M/A/postA/三build/B仍UNBOUND；全部原功能、验收和停止样本责任不减。
+
+
+##### Root采用：Core公开原生进程完整双流与独立保全sidecar（2026-10-25，修改前）
+
+已全文读新r2的CORE-NATIVE-DESIGN-v2（14920/787e9f01，含原8361/4549ac00）与PRODUCER-REBIND-DESIGN（3276/f6ff4b7d）。原Core Host native/compose/四public6/7/9 env及两retire、close两global与两stop、zero两global和两组六fresh存在digest-only或无raw事实；实际41 Host caller和foreign受限inspect/own固定INSPECT/quiet compose均为公开资源身份，不含Config.Env/exec/logs/attach/auth/private child输出。准入仅这些已追实际Source调用点，原固定模板/argv不扩。四个原Popen只围绕既有同handle增created/raw/terminal，原STATE/waiting/created-before-wait与TERM-1/no-force不变，不二次spawn或重跑。
+
+原AR85/worker105 basename public maps非递归，不假称新raw目录自然保全。采用独立evidence/native-streams每序四件的完整闭集（created/双raw/terminal），正PID、同argv/stage/sequence、真实同handle返回、完整legacy receipt元数据join；按v2十键固定sidecar及AR/worker分别四个具名phase在close前后/zero前后独立整份再读原byte、旧prefix全保、追加组逐项资格。unknown/partial/extra目录拒绝，不新增全宽豁免；原85/105、旧结果schema与独立proofINI目录全文保持。Core三个Python及必要身份DAG/最早None拒绝门为唯一Source范围；作者只新r2里有限修改，所有旧冻结物保留，未来M/HEAD/Val/A/postA/build/Run/authority仍None，不产生假sidecar或结果。
+
+必要固定producer同时采用Root已审07a四body（m4c1fae54、m4fm97a559、backenda517、harness686be4）；B当前vector/browser/interface active边和Core相关当前source group须有限联动，历史嵌套与原oracle不变。Root又实际两Git全body核旧afterreview245730/7b44到当前245730/898e仅SQL bytes10237372→10237459及固定SQL SHA7af→1e5两literal正逆整份相同；当前安装SQL完整10237459/1e5及原1495/1b84三语言完整DDL/31INSERT raw证明同，故Core对应原七件组/active interface身份可仅窄重绑该898e，不改生产getter/语言oracle/业务函数或从当前运行After自造期待。
+
+这是Source设计采用与必要源码身份资格；新Core原生代码尚待实现、全文逆证/独审、Root纯解析与全包资格，新M/完整A/Worker正常close/独立zero/postA/三真实build/freshB及全部界面设备仍未运行。真实金融/部署/外部与全部停止样本边界不变。
