@@ -653,6 +653,7 @@ class StoreOrderController
     {
         $data = $this->savedMarketplaceRefund($services,$orders,(string)$uni)
             ? $services->getUserRefundDetail((string)$uni,(int)$request->uid()) : $services->refundDetail($uni);
+        if(($data['schema']??null)!==2)$data=app()->make(\app\services\marketplace\assets\CustomerLegacyRefundAssetServices::class)->project($data);
         return app('json')->success($data);
     }
 

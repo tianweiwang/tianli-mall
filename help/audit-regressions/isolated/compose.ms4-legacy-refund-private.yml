@@ -1,0 +1,26 @@
+# Narrow overlay for compose.yml. No new network, published port, app secret or database privilege.
+services:
+  audit-bootstrap:
+    environment:
+      AUDIT_LEGACY_REFUND_NORMAL: "1"
+      AUDIT_GUARD_MODE: read-only
+    volumes:
+      - customer-refund-private:/run/audit-customer-refund
+  audit-app:
+    environment:
+      AUDIT_LEGACY_REFUND_NORMAL: "1"
+      AUDIT_GUARD_MODE: read-only
+    volumes:
+      - customer-refund-private:/run/audit-customer-refund
+  audit-runner:
+    environment:
+      AUDIT_LEGACY_REFUND_NORMAL: "1"
+      AUDIT_GUARD_MODE: read-only
+    volumes:
+      - customer-refund-private:/run/audit-customer-refund:ro
+
+volumes:
+  customer-refund-private:
+    labels:
+      tianli.audit: "1"
+      tianli.audit.run: ${AUDIT_RUN_ID:?required}

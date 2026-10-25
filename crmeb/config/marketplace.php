@@ -16,6 +16,10 @@ return [
         // Explicit persistent private storage; no public/runtime path fallback.
         'private_root'=>Env::get('marketplace.aftersale.private_root',''),
     ],
+    'assets'=>[
+        // Explicit persistent non-public root; an empty value never falls back.
+        'customer_refund_private_root'=>Env::get('marketplace.customer_refund_private_root',''),
+    ],
     'customer_form'=>[
         'private_root'=>Env::get('marketplace.customer_form.private_root',''),
     ],

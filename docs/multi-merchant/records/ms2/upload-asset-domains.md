@@ -931,3 +931,171 @@ Root 随后使用已审正常成功收尾入口完成普通close，原36621/208d
 | `current41c0-normal-root-admission-r1/R115-LICENCE-FRESH6-CLOSE-ZERO-ROOT-READBACK.json` | 1514 | `3c2bedb247761321fb1f64761c69dcf245f9d1d7f8df876a5a94d1bf246e1a40` |
 
 该结果完成本CU_LICENCE隔离实例后台正常链与资源收尾验证子项。H5/UI、MP/APP及真实设备、restricted-role变体、外部短信、旧client实际发布均NOT RUN；停止样本仍NOT RUN。T5整组及原19个交付组继续保持未关闭，浏览器/设备/外部发布与最终验收仍待完成。本次记录不包含部署、合并、推送或真实资金操作；文档作者仅追加本段，未运行Docker/PHP/HTTP或修改原Run/C-D。
+
+### CU_LEGACY_REFUND / W03–W04 独立设计与任务（2026-10-25，待Root阅读采用）
+
+本项沿原T5/L2，独立工作树为 `H:/天俪商城/worktrees/ms4-legacy-refund-private`，分支 `feature/ms4-legacy-refund-private-20261025`，从实际 `c8913ba9fb8ce5e052287360fb8b64ddf4fd139c` 创建。c891仅追加已实测Source864dda的执照记录；本项不改旧执照W/Val/Run、C-D或其它候选。原规格/规约、当前MS4计划及验收文件已读；本W无.codegraph，不初始化。Git-auto-sync只读检查为project_not_enabled，不enroll/自动推送。本步只设计并修改本原record，业务实现、PHP/App/Docker/HTTP/实际资金与提交/推送均NOT RUN；Root读设计后再进入实现，不向用户重复索取既定授权。
+
+#### 范围与实际调用依据
+
+目标是旧v0退款申请材料及寄回物流材料的具名私有上传、原业务保存绑定、本人/原平台合法读取。商品/SKU/价格库存、退款金额/件数/拆单/原事件与原V1售后链保持。旧订单由原平台自营业务责任处理；不写mer_id=0表示自营，不造MerchantContext，不把旧根送入V1文件服务。
+
+已核实际链：`goods/goods_return/index.vue:198-234 → api/order.js:returnGoodsSubmit → StoreOrderController::applyRefund`；Controller先按保存order版本分流V1，v0将 `refund_reason_wap_img` 逗号串编码为 `store_order_refund.refund_img` JSON数组，`StoreOrderRefundServices::applyRefund:1109-1133` 在原transaction保存真实uid/store_order_id/退款PK及单号。`order_refund_goods/index.vue:132-168 → refundExpress → StoreOrderRefundController::applyExpress:133-157 → editRefundExpress:1000-1021`；旧两页仍用公开upload/image。寄回writer原非空refund_img/refund_explain被unset，空值仍进入update；两行来自2022年原提交2fcbe8a231，未找到“忽略寄回凭证”产品约定。本项替代图片丢失/覆盖断口，不通过删图片UI或停旧业务入口消除责任。
+
+必须同时补保存端真实身份：现旧applyExpress只调editRefundExpress($data)，assertLegacySavedRefund仅核真实行/legacy父单而未核当前顾客。拟改必填调用为 `editRefundExpress(array $data,int $actualUid)`，Controller传 `(int)$request->uid()`，不得提供默认UID或信post.uid；该方法的全部旧调用均经过同一核验。原V1 JSON refund_no分支仍按原uid查询并交原MarketplaceOrderRefundWriter，不改其输入、版本、权限、18列文件表或正常链。
+
+#### 两purpose与完整34列
+
+| 固定用途 | 新上传的必要真实父关系 | 正式保存时 |
+| --- | --- | --- |
+| legacy_refund_evidence | 认证本人uid；真实可申请旧订单及其legacy根；root_order_id非空，refund_id暂NULL | 原申请真实插入refund后，用该真实PK绑定refund_id，STAGED→BOUND并记首次bound_at |
+| refund_shipping_proof | 认证本人uid；真实refund及store_order_id解析出的同一legacy根；root_order_id/refund_id均非空 | 原寄回transaction核待寄回阶段后绑定；不覆盖申请资产及其首次绑定 |
+
+复用 `marketplace_customer_asset` 原完整34列，purpose枚举、root_order_id/refund_id已存在，不加表/列/索引/种子。uid及created_by_uid来自同一真实认证本人，created_by_admin_id/created_by_job及无关父列均NULL；实际storage_type/object_key/文件名/MIME/尺寸/字节/摘要来自完整真实物理观察，不猜常量。新文件legacy_att_id为NULL。应用引用用具名格式 `mp-refund:v1:<fixed-purpose>:<asset_id>`，无逗号、无磁盘路径/签名URL；服务器校验完整34列后认定purpose与关系，不相信客户端前缀自行授予资格。
+
+root_order_id取原legacy父链实际规范根PK，同时保留当前选择order/当前refund的真实store_order_id关系在本次事务上下文中；旧拆单根pid=-1或合法子单不能套V1的pid=0门。父链各行UID/版本与实际业务关系须一致，部分退款后store_order_id转为真实子单仍须能归回原根，资产父列不随显示查询改写。未知/断裂历史关系不能猜根或补mer；只记录未完成，不做历史转存/修复。此关系解析须以原拆单真实源及正常夹具复核，不另建通用owner框架。
+
+具名上传在任何读上传临时bytes/文件写入前，核当前Request/应用/会话、有效顾客、实际旧order/refund及原业务允许条件。申请图先复用原待处理退款/商品剩余件数等合法申请资格；不是仅有一个order PK就可上传。寄回图要求原退款未取消/未删除且refund_type=4“商品待退货”，当前顾客同时等于refund.uid与真实parent.uid。type5用于既有结果/凭证读取；不为新上传重开已结束阶段。新私有根拟用 `marketplace.assets.customer_refund_private_root`（隔离注入 `PHP_MARKETPLACE_CUSTOMER_REFUND_PRIVATE_ROOT`），为实际应用uid拥有的持久非public/runtime根；缺失/失败不回退公开上传或公开云。只复用既有完整图片校验/安全私有I/O叶子与六键收据模式，现V1/表单/执照固定purpose校验不放宽。
+
+#### refund_img统一持久化、分组DTO与旧client合同
+
+DB仍为一个有序JSON字符串数组 `refund_img`，保原合法URL字符串和新具名私有ref字符串，不改成JSON对象、不另建图片列。初次申请按原选择顺序保存；寄回时在同事务先读完整已保存数组，保全部原申请ref/旧URL及已绑定历史，再有序追加本次寄回ref或兼容URL，稳定去重同一已有ref而不重绑。未选/上传后移除的STAGED保持，不删BOUND文件；页面删除只作用于未提交选择。已绑定申请/寄回资料都作为历史保留，新集合不能替换另一用途集合。对保存结果未知先读回真实refund与资产，不自动重放物流动作、重建ref或清理对象。
+
+旧客户端字段名及CSV提交保持：申请仍传refund_reason_wap_img，寄回仍传refund_img；合法旧URL型申请材料保原存储，旧URL型寄回材料按兼容项追加，修复原非空被丢弃而不覆盖原申请图。不远程下载旧URL，不伪造其asset/UID/私有归属。旧refund_explain及其它业务字段的业务语义单列保持，不因图片合并顺手改退款说明、金额、电话、单号、拆单或事件；若为空值行为需另修，先报告，不混进图片私有化。首方两页改具名private上传，失败保草稿/明确结果，不尝试upload/image fallback；global upload/image及外部旧client发布门保持原责任，未升级client不能被写成已支持新私有图。
+
+读取在现本人/平台授权后增加一个最小 `refund_materials` DTO：`{schema:1, application:[私有图元数据], shipping:[私有图元数据]}`，分组由完整asset.purpose及实际保存引用推导。每项仅attachment_ref、asset_id、media_type、byte_size、width、height等预览必需元数据，不返回object_key/磁盘路径/永久可读URL。原响应refund_img数组投影为原兼容URL集合，保持旧合法URL顺序/值；新私有ref不再作为img src冒充URL。新页面同时显示原URL组及两私有组，私有原图经ticket→完整binary→临时图，临时URL只放预览映射，绝不提交回refund_img。旧client仍处理原字段/URL和原物流动作；其读取新私有图需发布升级，真实外部兼容/T8门继续未完成，不能据DTO存在关闭旧入口或宣称全部历史已私有化。
+
+实际消费者包括顾客goods_return、order_refund_goods的上传/提交，goods/order_details的本人退款原图；平台PC `admin/src/pages/order/refund/index.vue` 列表图；移动 `pages/admin/refund_order_detail` 与 `pages/admin/orderDetail` 的legacy图。它们都需通过真实API新增DTO读取与释放临时图，不能只改上传器。`StoreOrderRefund::getRefundImgAttr` 保原JSON解码，不在全局模型getter发网络/读私有磁盘或承担权限；投影在已经确认实际旧业务身份的服务响应叶子完成。V1 schema2分支仍走原售后DTO/前端组件。
+
+#### 原事务、读取权限与失败边界
+
+申请绑定插入原 `StoreOrderRefundServices::applyRefund` 的真实transaction：同Connection/PDO锁当前user、选择order/legacy父链和相关退款/资产，重核真实UID/版本/原申请条件；原save产生真实refund PK后绑定选择资产，再核完整refund/34列和当前身份；不另开transaction、不提前commit。原金额/部分件数计算、cart退款数量、clearOrderCartInfo及OrderRefundCreateAfterListener/Notice/OutPush/CustomEvent/Channel顺序保持。测试独立列出这些真实允许delta，不能把它们当零副作用或取消hook。
+
+寄回保存的必填actualUid在原transaction内复核，锁真实refund+parent/family并核refunder/parent均属当前UID、原version0与type4等允许阶段，再按上述合并结果绑定/保存；更新WHERE含真实refund PK、uid及已核store_order_id，不只靠上传器授权。原refund_type=5推进与refund_express日志保持一次真实首次动作的原顺序。已保存结果的同体确认只依据真实回读，不自动再执行状态/日志；如实际原重复合同与此不同，先向Root回报明确差异，不改断言或自动重试。原V1 refund_no调用、退款支付/入库/清算函数完全不接入新purpose。
+
+本人ticket/content从当前认证UID、完整旧order/refund和实际保存ref集合确认；本人未提交STAGED仅在其真实允许上传上下文可预览，平台仅读已保存且BOUND的引用。平台PC按真实DTO消费者区分固定列表/详情预览来源，分别核原GET refund/list或GET refund/info/:uni的登记/已启用角色及对应旧数据范围，不能把仅列表合法读者一律改成必须具详情权限，也不能把来源选择器当授权。沿现AdminAuth和原角色归一化核当前账号/授权，票据绑定该固定reader_kind；不新增宽泛白名单、菜单/seed或商家权限。最高管理员仍先过真实认证。移动管理页的api身份不是adminapi：新读路由留在原admin组，沿AuthTokenMiddleware+CustomerMiddleware当前客服/门店员工/配送资格，且只读原该退款详情已允许的v0数据，不加withRule例外、不把普通顾客或门店当入驻商家；当前actor与退款owner分别绑定并复核。两类原权限适配必须按真实接口/角色源冻结，不能由前端“admin”标志决定。
+
+新票据使用独立固定namespace/scope，绑定实际app/reader_kind/actor_id、认证fingerprint、owner uid、规范root、refund（未提交申请可NULL）、asset及固定purpose/内容摘要，短有效期、peek后重新核业务/当前资格及完整bytes，成功发布前consume；返回private/no-store binary。复用既有票据和临时图机制，不向MarketplaceAftersaleReadTickets塞34资产ID：原V1 marketplace_aftersale_file为18列/STAGED→CLAIMED，要求version1/真实正mer_id，原300秒票据scope保持。六键物理/数据库结果收据沿用，真正commit未知保持null并保对象，只有明确未提交且本次新对象可窄cleanup；不恢复已消费票据，不删历史文件。真实凭据、完整token、私有locator和原始日志不进入本记录。
+
+#### 拟议最小Files与唯一执行清单
+
+本步实际Files只有本record。Root阅读采用后，生产改动限定现api/route/v1.php、adminapi/route/order.php、StoreOrderController::applyRefund、StoreOrderRefundController::applyExpress、StoreOrderRefundServices的上述保存/响应叶子、config/marketplace.php；按实际职责新增具名legacy退款asset/DAO/private-storage/read-ticket/read及原平台权限适配、api/adminapi文件控制器，优先复用现有叶子，不复制整套售后或增加通用owner框架。前端限定现uni api/order.js、具名legacy-material API/helper、上述5个Uni页面及PC退款列表/其API helper。实现前把最终必要类/路由/方法精确列回本段供Root核，不边写边扩大。正常验证复用ISO-FULL/bootstrap/harness及既有fixture能力，新增有限normal入口/profile的具体Files也先审；不改原冻结运行包或旧Run，不写未来资格/结果。
+
+- [x] 从c891建立独立分支/工作树，核原licence W保持clean；读取原规格/规约、用途清单及真实producer/writer/consumer；记录本设计。
+- [ ] Root阅读采用本设计及refund_img合并/DTO/旧client/移动原权限合同；此项为内部设计核对，不是用户重新授权。
+- [ ] 冻结精确Files和必要调用点后实现两purpose；独立Source复核、PHP8.2真实语法及前端解析/构建按实际发生记录，不代业务通过。
+- [ ] 新clean Source/独立Val/fresh ISO-FULL中真实本人v0正常申请：零图/旧URL、新multipart图、真实refund PK绑定、完整34列/原申请行与预期事件；原图片内容/顺序和字段保存。
+- [ ] 原平台正常同意退货进入type4，真实本人寄回：含已保存申请图、新寄回图和兼容URL的合并保存→type5；申请和寄回组均可本人/原平台PC及原移动资格读取，图片bytes/摘要/尺寸一致；同体已保存确认不重绑，不丢原申请材料。无真实扣款/退款。
+- [ ] 独立完整34列、全退款行及相关order/cart/status/event表、全库rows/DDL/hash/next、Redis完整类型/值/tag/绝对expiry、public/runtime/private全部文件做before→允许delta→after；原legacy URL、字段形状、原V1文件/票据/业务保持。Counter观察沿已修完整读后metadata方式，不用MAX+1或NULL归一，不镜像被测DAO造expected。
+- [ ] 真实H5/PC及移动UI分组、选择/预览/保存/返回、临时图释放、原图与正常账号往返和适用尺寸；浏览器/MP/APP/设备/外部client发布分层记录，缺少条件保持NOT RUN。
+- [ ] Root串行真实普通TERM→同代自然Exited0→nonforce精确only-own资源与ownlock清理，再独立六查询zero及完整原native/PID/wait/双流读回。普通收尾不签T5/19组全完成。
+
+当前只完成工作树和设计；全部实现/语法/业务/UI/设备/EXTERNAL及新资源收尾仍NOT RUN。用户停止的负向/故障/并发/恢复样本继续NOT RUN，不新增跨号/权限请求或重新触发；源码须保认证/权限边界，未运行项不能计PASS。没有提交、推送、Docker/HTTP/资金、部署或canonical写入；作者在本record追加后停写交Root，原前缀保持。
+
+### CU_LEGACY_REFUND 内部设计补充与精确Files（2026-10-25，待Root最后核定）
+
+Root已采用上一节图片两purpose、完整34列、原事务真实PK绑定、历史材料追加、分组DTO及原合法读者方向。本补充只完善实际发现的寄回备注与type5确认，未编码、未运行或提交。当前寄回页面的`getOrderInfo`仅赋orderInfo/express_list/id，备注输入实际初始空，未从申请说明初始化；此前会话摘要中相反说法以此实际源码纠正。
+
+**备注的数据落点。** 安装DDL中`store_order_refund.refund_explain varchar(255)`为退款用户说明，Controller申请时写真实申请说明；`remark`由PC `RefundOrder::remark`和移动refundRemark作为原平台售后备注写入，二者都不能被顾客寄回覆盖。现status已有`oid/change_type varchar(32)/change_message varchar(256)/change_time`。`StoreOrderStatusServices::getStatusList`原样返回change_message，PC `orderList/handle/orderRecord.vue:12`和`orderDetails.vue:369`均以文本插值显示，故不用裸JSON。
+
+采用固定`change_type=refund_shipping_note`，`change_message='退款单#'+实际refund主键+' 寄回备注：'+note`。oid必须为已锁真实refund.store_order_id；前缀完全由真实PK产生，读者按同oid/type及当前精确前缀读取，而非模糊搜索用户文本。备注须有效UTF-8、≤100 Unicode字符；完整最终message须≤256 Unicode字符，超长拒绝，无静默截断。blank不增加备注行；非空在同原transaction、原refund_express首次事件之后保存一行，正常验证将其单列为允许delta。读侧为真实refund新增`refund_shipping_note`字符串，匹配记录只能0或1，重复/异常不猜取最后一条。
+
+原`refund_explain`始终保存申请说明，包括寄回提交空值也不得抹除；不更新平台`remark`、原订单说明或图片字段承载文本。首方页面明确将备注输入绑定新字段`refund_shipping_note`，保留可编辑的寄回备注能力。旧client未发新字段时，原`refund_explain`提交仅作为寄回备注兼容别名，仍不UPDATE申请说明；若显式新字段存在，按该新字段处理。真正已保存备注只从上述实际status记录回读；不得伪造已有历史备注或迁移旧数据。
+
+**type4首次推进与type5确认。** upload仍只允许新材料对应的真实合法申请/待寄回上下文，寄回新增上传限定type4。原writer接收必填actualUid并在事务内锁refund、parent/family及选择资产。type4首次保持原refund_express事件文案/顺序、refund_type=5及物流保存。type5仅允许真实保存状态等价确认：物流3字段（refund_express/refund_phone/refund_express_name）及上述回读备注相同，按原序稳定合并本次图片后必须与已存完整refund_img数组完全相同，所有引用资产已正确BOUND给同一refund，不能含待绑定STAGED；无任何UPDATE、状态日志或rebind。此为保存状态等价合同，不声称存在原请求字节摘要；网络结果未知仍先读回，前端不自动重发动作。其它阶段不重新推进寄回。
+
+**精确Files。** 本项业务实现限定以下相对路径和职责，必要调用点已逐一有源码依据；不修改全局模型getter、V1票据/18列文件服务、生产SQL/DDL/种子或其它资产用途。需要扩大时先给Root实际依据并先更新本段。
+
+| 相对路径 | 精确职责 |
+| --- | --- |
+| `docs/multi-merchant/records/ms2/upload-asset-domains.md` | 本唯一设计/执行清单与实证摘要，只追加，不改原前缀 |
+| `crmeb/config/marketplace.php` | 固定assets.customer_refund_private_root配置，无public/runtime/cloud fallback |
+| `crmeb/app/dao/marketplace/assets/CustomerLegacyRefundAssetDao.php`（新） | 同Connection/PDO的真实user/legacy family/refund锁、34列读取、STAGED及BOUND；备注有限事件原生读回 |
+| `crmeb/app/services/marketplace/assets/CustomerLegacyRefundPrivateStorage.php`（新） | 固定退款根/用途的完整图片资格、0700/0600私有I/O和六键对象收据；复用现图片qualification，既有固定purpose门不放宽 |
+| `crmeb/app/services/marketplace/assets/CustomerLegacyRefundAssetServices.php`（新） | 两固定上传、原writer内选择/绑定、真实业务身份/会话复核、旧URL与ref有序解析及授权后DTO投影 |
+| `crmeb/app/services/marketplace/assets/CustomerLegacyRefundReadTickets.php`（新） | 固定独立namespace/scope、实际actor/owner/root/refund/purpose/hash/session绑定、短票据peek/consume |
+| `crmeb/app/services/marketplace/assets/CustomerLegacyRefundReadServices.php`（新） | 本人STAGED/BOUND和原平台PC/移动读者的真实业务复核、完整bytes、票据发布及no-store结果 |
+| `crmeb/app/services/marketplace/assets/CustomerLegacyRefundPlatformAccessServices.php`（新） | PC固定list/detail来源分别重核当前原GET refund/list或GET refund/info/:uni授权，不新增角色/菜单seed |
+| `crmeb/app/adminapi/middleware/LegacyRefundReadPermissionMiddleware.php`（新） | 固定私有读路由只映射上述原权限，认证沿原AdminAuth |
+| `crmeb/app/api/controller/v1/order/LegacyRefundMaterialController.php`（新） | 顾客两固定上传及本人/移动读票据与binary薄控制器 |
+| `crmeb/app/adminapi/controller/v1/order/LegacyRefundMaterial.php`（新） | PC固定list/detail读票据及binary薄控制器 |
+| `crmeb/app/api/route/v1.php` | 在原顾客认证组及原移动CustomerMiddleware组加具名固定路由，无withRule豁免 |
+| `crmeb/app/adminapi/route/order.php` | PC具名私有读路由，原AdminAuth及具名原权限适配 |
+| `crmeb/app/api/controller/v1/order/StoreOrderRefundController.php` | applyExpress必传Request真实uid；接新寄回备注字段，原V1分支不改 |
+| `crmeb/app/services/order/StoreOrderRefundServices.php` | applyRefund原真实save后同事务绑定；editRefundExpress真实归属/阶段/合并/备注/同体确认；customer/platform/list已授权叶子DTO |
+| `crmeb/app/api/controller/v1/admin/StoreOrderController.php` | 原refundOrderDetail legacy响应叶子加DTO，原CustomerMiddleware资格保持；不修改资金动作 |
+| `template/uni-app/api/legacy-refund-materials.js`（新） | 实际认证/页面scope、具名multipart、票据binary临时图与释放、明确结果未知先读回；不改公用upload/image |
+| `template/uni-app/pages/goods/goods_return/index.vue` | 本人旧申请具名上传/选择，原申请字段和V1分支保持 |
+| `template/uni-app/pages/goods/order_refund_goods/index.vue` | 本人寄回具名上传/选择、新寄回备注、原材料显示及结果回读 |
+| `template/uni-app/pages/goods/order_details/index.vue` | 本人真实退款两私有组+原URL图、寄回备注、页面退出释放 |
+| `template/uni-app/pages/admin/refund_order_detail/index.vue` | 原移动退款详情分组/备注及原资格读取、退出释放 |
+| `template/uni-app/pages/admin/orderDetail/index.vue` | 同原移动退款详情实际消费者，非退款/原V1分支保持 |
+| `template/admin/src/api/legacy-refund-materials.js`（新） | PC当前身份scope、固定list/detail票据与完整bytes/临时图释放 |
+| `template/admin/src/pages/order/refund/index.vue` | 原退款列表合法读者的两组预览与备注，原URL和动作保持 |
+| `template/admin/src/pages/order/orderList/handle/orderDetails.vue` | is_refund旧退款分支两组预览/申请说明与寄回备注；普通订单分支保持。该组件实际由退款列表details-from渲染，为必要消费者 |
+| `help/audit-regressions/isolated/ms4-legacy-refund-private-normal.php`（新） | 仅具名新ISO-FULL正常入口、真实multipart/旧业务写读和独立完整副作用oracle；不调用停跑样本 |
+| `help/audit-regressions/isolated/compose.ms4-legacy-refund-private.yml`（新） | 单一具名私有卷overlay，bootstrap/app RW及runner RO，无端口/新网络/提权 |
+| `help/audit-regressions/isolated/lib/legacy-refund-normal-profile.php`（新） | 对实际注册Run/私有卷/容器代际的固定profile资格及普通TERM监督接线，不接管其它运行包 |
+| `help/audit-regressions/isolated/lib/harness.php` | 仅固定新profile的加载/白名单配置/既有监督接入；原默认及现licence流程保持 |
+
+未来具名外部编排包/SourceTree/tar/PINS/实际Run需由Root在代码与真实语法复核后按实际提交绑定；此清单不是这些未来产物已存在的声明。当前冻结候选共29个仓库路径；`StoreOrderController::applyRefund`现CSV→JSON已经容纳新ref，不因形式需要修改；公用api/order.js原字段/外部入口保持，新helper由涉及页面直接引入。已读Control quality；现有PrivateEvidence只接收真实asset id及具名reader，可复用组件而不放宽其原V1调用。
+
+- [ ] Root最后核定本补充（人类可读备注事件/保存状态等价/29 Files）。
+- [ ] 核定后在本W实现；交独立Source复核，Root串行真实PHP/完整正常业务与UI按原唯一清单推进，未跑仍NOT RUN。
+
+- [x] Root实际e6be12全文核定995–1044补充：采用人类可读寄回备注、type5真实保存状态等价和29路径；原935节及本节的内部设计核对项据此完成。2026-10-25在本独立W进入server producer/writer/consumer实现，随后前端与normal；真实PHP/HTTP/运行/提交推送仍未发生，按实际分别记录。
+
+#### CU_LEGACY_REFUND 必要调用点与独审修正（2026-10-25，Root采用）
+
+独审确认committed()的已提交/未知读回异常若经原api全局handler，会退成无六键的generic fail。Root采用唯一新增第30路径`crmeb/app/api/controller/v1/order/StoreOrderController.php`：只包当前legacy `applyRefund`既有service调用的MerchantAttachmentOperationException窄catch，固定HTTP503/private no-store及原六键receipt；第14路径StoreOrderRefundController同样只包legacy applyExpress调用。原V1分支、全局exception handler、字段/金额/cart/hook不动。新前端失败先读取真实保存状态，不自动POST。此项在修改该新增路径前先记录；原29路径保留，其它新增需继续有实际依据。
+
+另按实际源码纠正调用清单：确有两个editRefundExpress文本caller；StoreOrderRefundController::applyExpress是当前唯一已注册入口，传真实Request.uid；StoreOrderController::refund_express:864旧死方法未有路由/前端引用，本来使用不匹配的(id,express_id)调用，此次保持未接入，不加路由、不造物流字段、不兼容错误签名或默认UID。
+
+正常局部退款会把cartInfos替换为getSplitOrderCartInfo计算结果；故另保原首次getCartColunm的实际snapshot，在同事务锁内对原snapshot核对，保原局部金额/件数计算。独审还确认原cart/cache与Refund/Notice/OutPush/Custom/Channel责任必须先保持完成：最终图片committed读回移至原全部post-commit责任之后、return前，绑定仍在原transaction；不吞未知异常、不取消原hook、不引入outbox。
+
+Root采用独审确认的固定CORS header必要调用点，第31路径`crmeb/config/cookie.php`：只将`X-Legacy-Refund-Read-Ticket`追加到现Access-Control-Allow-Headers，原允许域/凭据/认证/权限种子和其它header不改。ReadServices/前端binary已使用该固定header；同源normal不会据此计跨域、H5/PC视觉或外部client验收通过，真实browser仍按原清单分别验证。先记录后修改该新路径。
+
+### CU_LEGACY_REFUND 当前实际源码与验证边界（2026-10-25）
+
+在上述独立W、基线c891上，当前已实现具名legacy退款申请/寄回上传、原保存transaction中真实PK绑定、实际UID/旧父链/阶段复核、旧材料稳定追加与独立寄回备注、同体保存状态确认、本人/原PC list/detail及移动合法资格的票据和完整binary、原授权后最小DTO；两上传页与5个既定Uni消费者（其中两页兼上传）及PC列表/共享详情已接线。原商品/SKU/价格库存业务未改；新数据仍为原34列两purpose，不改变V1 18列表/服务或原V1调用分支。此为实际候选实现，不是完整业务通过。
+
+Root实际固定image `297b37…` 的PHP8.2.33 `-n -l`对server17件均native0；5项原生命令及完整created/terminal同PID、wait和双流已由Root读回，专用readonly/network-none语法helper自然Exited0/PID0并nonforce移除。仓库外`legacy-refund-server-php82-syntax-r1/RESULT.json`为17100B / `e44987a0ff1ef60807d5d1f6e254026f68b8721390dc0ac4e0b66ce00c123c0e`。本作者af5e1f/7947f0及本次再次核原件及17个实际文件fp一致。只parse，无include/App/HTTP/Timer/业务/Composer；后写normal profile/harness不在该17内。
+
+前端两helper和7个Vue共9script已实际Node纯module编译9/9 native0，74个真正静态相对/alias依赖全部存在；没有evaluate任何应用module。仓库外`legacy-refund-private-source-check-r1/JAVASCRIPT.json`为9368B / `d7f1c123c16b64f6ec0a5fb889a33e5f5d28c9bf4fc1a8f23e0a09b1d2ecd2b4`，本次9文件fp仍一致。Node的VM模块实验性提示与项目代码错误分开；早先regex把原注释中的esp.js算入，真实编译依赖已排除该原注释。检查不覆盖Vue template编译/build、实际UI/交互/浏览器或MP/APP/设备，这些仍NOT RUN。
+
+独审已指出并按Root采用修正：末尾私有读回置于原全部postcommit责任之后；两个legacy控制器保原六键未知回执；显式新备注presence与旧别名区分；固定票据header的CORS追加；实际PDO在callback之后commit的异常以“callback全部原写入完成且有本用途outcome”有限转换commit=null，不把早前bind后的outcome当完成标志，不猜rollback等于未提交，不跑未确认提交后的hook、不改ORM/加重试。独立最终Source结论仍以review者实际修后读回为准，不能由这些修正推定全PASS。
+
+normal已写独立private卷overlay、function-only固定profile及harness有限接线，只有新AUDIT_LEGACY_REFUND_NORMAL、固定/run/audit-customer-refund与REFUND_PRIVATE_ROOT、原同代TERM-only停止；旧默认/执照flag各自原根保持，新旧profile不可混用。normal完整入口fixture/oracle还在实现；新Source/Val/Root host编排、提交/新HEAD/tar/Tree/PINS/实际Run均未绑定。除上述Root纯语法Docker helper外，截止本段无本项App/HTTP/实际资金、业务结果、业务实例收口或推送/部署。
+
+#### normal fixture与独立oracle设计补充（Root已采用方向，尚未运行）
+
+新专用ISO-FULL准备先执行既有MS1 check/apply/check/repeat、MS2及MS4/Asset原check/apply-structure/check/repeat，使用仅bootstrap的audit_migrator和MS2本Run新0600stateFile；不手写跳过原schema gate，不扩大audit_app DDL权限。原MS2会在该新实例产生真实测试自营正ID，但不作真实历史映射、不启用marketplace/trade，也不把旧mer_id=0解释为自营。普通业务及oracle始终切回DML audit_app。
+
+T5夹具是本Run合成v0 paid状态、真实顾客UID、完整order/cart/商品snapshot；paid=1仅为本隔离材料用例的合成前提，不冒充付款producer、真实渠道、真实旧数据或原历史37步。至少零图、旧URL、新私有申请三条正常材料路径；新私有路径在准备中真实调用原equalSplit取得pid=-1规范根及合法子单，在HTTP申请里使用子单真实PK，资产root_order_id必须实际归回规范根。合法移动actor由原配送资格业务建立，与退款owner分别核对；原PC使用现真实最高管理员认证，不伪造受限授权菜单。
+
+HTTP保原申请/真实refund PK→原平台同意退货(type4，无资金)→本人寄回→type5→同体保存状态确认。选中和未选STAGED区别保留，已有申请图/旧URL/申请说明/首次bound不得覆盖；新寄回备注作为唯一人类可读原status事件；本人、PC list/detail和原移动资格分别经真实ticket/content读取原bytes，真实旧URL单独读取。每个实际请求前后均独立比较所有实际表rows/DDL/hash/真实next counters，Redis全部实际类型/值/tag/绝对expires，public/runtime/private完整文件/目录、真实原14列与原事件/audit/commit允许delta；不镜像新DAO生成expected，不用MAX+1/NULL归一、不宽泛豁免整表或缓存prefix。首次metadata计数沿完整表读取后真实重读记录，不把观察初始化当业务写入。
+
+原Notice/OutPush/Custom/Channel责任保留，通过实际配置与候选查询证明不会发外部消息/资金；不能删除hook以消除副作用，真实允许delta需独立列清。原完整交易A/B、V1完整运行回归、历史37步、真实支付/退款/对账/结算与全部UI/设备/外部client/人工验收仍按原goal清单推进，不由本T5合成正常链代签。已停止负向/故障/并发/恢复样本不运行，也不记PASS。
+
+#### CU_LEGACY_REFUND 前端独审有限修正（Root采用，2026-10-25）
+
+原api旧退款列表包含type3/6，旧application仅阻断pending1/2/4/5；同一旧订单可再次合法申请，故内容/时间相近不能证明unknown POST因果。补有限完整意图确认：保POST前不可变body及真实cart_id/件数选择、请求退款类型；只有本草稿真实上传并选中的私有ref提供本次关联，保存行仍为确切申请type1/2且全部选择/说明/用途ref匹配时，才可确认对应已保存状态。由于原agreeExpress能将任意原类型改为4，不能从4/5反推初始类型；无法证明、零图或缺完整cart/本次关联时保持unknown，只读取真实记录供查看，不自动重POST，不以旧type3/6确认。此为有限旧接口结果核对，不加通用幂等框架/数据列。
+
+将同步busy锁移至首个await之前，冻结该次body/选择；真实scope仍先于业务POST。finally统一释放，双击不能替换pending。严格解析服务端六键receipt（固定字段、类型及安全phase），随error传递并在当前草稿保留，以只读状态文字呈现；不显示locator/token或把状态做按钮。PC共享退款详情legacy分支补原refund_img旧URL顺序预览，与两私有组并显，普通订单/V1分支保持。Root已采用，限现helper、PC详情与两上传页，修后重跑9script实际编译/依赖及diff检查；不添加故障/负向请求或样本。
+
+前端修正后实际Node9/9 script编译、74个真实静态依赖存在、diff --check native0；外部r2 `legacy-refund-private-source-check-r2/JAVASCRIPT.json`为9538B / `a57d611a5858df7313b1d39af780f20955f7e9f8a6b00dfba829166777768579`。此证据只parse/deps，不覆盖template/build/UI/设备/业务，原r1不再是当前前端pin。独审仍按修后实际源码收口。
+
+normal原producer补充：`StoreOrderCreateServices::getNewOrderId('')`走原RedisSequenceResolver，raw handler无prefix，key为Snowflake实际毫秒（由真实新退款号反解2022-01-01 epoch），首次原Lua设string 1及PSETEX1000。这里只独立核该确切单key/值/实际HTTP毫秒与Redis时钟期限；不是放宽时间prefix。Redis观察置于全表读取前并记录观察前后实际TIME，旧key自然到期只能按该key原绝对deadline和实际after观察时钟证明，仍保所有其它类型/值/绝对到期/标签；不睡眠等过期来消除副作用。完整正常入口继续据此实现，尚未执行。
+
+normal初始化事实纠正：安装seed的`send_order_apply_refund`存在渠道flag=1，不能将全0当原安装状态；原设计中“实际flags0”不适用于该退款通知。已逐个读原Sms::sendAdminRefund、Wechat::sendAdminOrder、SystemMsg::kefuSystemSend：三者均先取原`getStoreServiceOrderNotice`；本新专用夹具必须真实空notify客服列表，配送资格不构成该客服列表。原EnterpriseWechat::weComSend另要求`is_ent_wechat==1 && url!=''`；准备守门须实际证明退款通知唯一且其flag非1或url空，保原配置不修改；登录通知仍按原实际关闭渠道核，另保原queue_open0实读。保Notice/OutPush/Custom/Channel代码/实际责任及完整副作用oracle；此为按真实producer修正合成前提，不冒称消息发送验收。已向Root报告，尚无目标执行。
+
+Root采用前端回读细节修正：没有本次关联proof的零图/不完整意图也需真实读取原退款列表，才符合“读取已保存结果”按钮含义；仅删findApplication无intent早退，仍完整GET原实际分页，matchesApplication(!intent)始终false，因此结果维持unknown、不猜本次因果、不自动POST。先记录后改，normal63283/6a6bb03a冻结供独审/Root纯-l，不并写。
+
+当前normal候选已写完整prepare/verify入口：真实MS1/MS2/MS4/Asset前提、合成paid旧单与真实equalSplit、完整34列上传、零图/旧URL/私有申请原transaction、原同意(type4无资金)、寄回type5/人类可读独立备注/实际保存同体确认、本人/PC list/detail/原移动资格真实ticket/content/旧URL，以及每次请求完整表/真实next/Redis/文件精确副作用核对；normal完整运行、外部编排/提交Source绑定与TERM/资源独立收口均仍NOT RUN，不能由入口存在计PASS。entry现63283B / `6a6bb03a848b75980ca08c6a146dbf5e9b97db0dc028074decc416c343534f8c`；profile3652B / `5f2faa424be4ceed36aeeeb37f5c73a1f2a14a0717fc174d904ee6fe8ae76f50`；harness56450B / `84f36a6e70049ce21eb8c1908af824fbaa338d9daed38c46f630cd396ac245b1`；overlay767B / `c271fcb387b0b783a7496d33af22383d0a6796d53c8ad2c691473a1b5503c986`。这3PHP尚未有本作者运行/parse声明，Root拟串行纯-l；独审最终source仍待实际读回。
+
+仅删无intent早退后实际Node9/9、74静态依赖及diff --check native0；外部r3 `legacy-refund-private-source-check-r3/JAVASCRIPT.json`为9538B / `e8036159fff350226b976329333fb5c900f234b63bfc3a87df8e76ed6d5e2bf6`。Uni helper30277B / `f33f005bdabf90b962168f6afd68102890d52201697af1fb3d59e97e2e79378c`，其余8前端保持r2。Vue template/build/实际browser/CORS/MP/APP/设备仍NOT RUN，不由纯script parse代签。
+
+
+Root当前Source验证与本地检查点（2026-10-25）：17件生产PHP已在固定PHP8.2.33纯-l17/17全0，原结果17100B/e44987a0ff1ef60807d5d1f6e254026f68b8721390dc0ac4e0b66ce00c123c0e；当前正常入口63283/6a6bb03a、profile3652/5f2faa42与harness56450/84f36a6e亦串行纯-l3/3全0，5native结果7196B/f4e3e7caceadb9bbb6c734548f2398d53e4d0daa7dedba6c6ad55c538e0c56a2，Root0d2f82完整PID/wait/双流1763B和3来源前后指纹读回。均只解析，不include/App/HTTP；只读network-none helper自然Exited0/PID0后nonforce移除。当前生产17和正常3共20件PHP有对应实际语法证据，不能据此宣称正常业务通过。
+
+九前端当前r3解析9/9与74依赖存在检查0，结果9538B/e8036159fff350226b976329333fb5c900f234b63bfc3a87df8e76ed6d5e2bf6；非作者已逐段复核六键收据保留/只读呈现、同步busy锁、PC原URL并显、本次已上传ref+阶段和完整cart件数/原因说明才确认unknown，零图不猜关联且主动读取确实GET，正常HTTP明确成功保原跳转。其它原5件保持原字节，V1和普通订单未漂移。当前normal4件全Source独审0且全部原副作用条件保留；表/Redis实际效果、真实5reader/跨域/模板构建/浏览器/设备与外部精确资源收尾尚未执行，不计Runtime/阶段验收。原17server/9front/normal4/record共31路径保存本地Source检查点，后续须clean Source/独立Val/fresh ISO-FULL真实正常链后才记该范围业务通过，不代真实付款/37历史/fullA/T5全部/19组完成；未推送部署。

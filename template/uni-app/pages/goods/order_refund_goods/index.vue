@@ -37,10 +37,21 @@
 							v-model="refundInfo.refund_phone" />
 					</view>
 					<view class='item textarea acea-row row-between'>
-						<view>{{$t(`备注说明`)}}</view>
+						<view>{{$t(`寄回备注`)}}</view>
 						<textarea :placeholder='$t(`填写备注信息，100字以内`)' class='num'
-							v-model="refundInfo.refund_explain"></textarea>
+							v-model="refundInfo.refund_shipping_note" maxlength="100"></textarea>
 					</view>
+                    <view v-if="orderInfo.refund_explain" class="item">申请说明：{{orderInfo.refund_explain}}</view>
+                    <view v-if="legacyMaterialProblem" class="item">{{legacyMaterialProblem}}</view>
+                    <view v-if="legacyMaterialsActive && legacyApplicationIds.length" class="item">
+                      <view>申请材料</view><private-evidence :key="'return-application-' + legacyMaterialEpoch" :files="legacyApplicationIds" :reader="readLegacyMaterial"></private-evidence>
+                    </view>
+                    <view v-if="legacyMaterialsActive && legacyShippingIds.length" class="item">
+                      <view>已保存寄回材料</view><private-evidence :key="'return-shipping-' + legacyMaterialEpoch" :files="legacyShippingIds" :reader="readLegacyMaterial"></private-evidence>
+                    </view>
+                    <view v-if="orderInfo.refund_img && orderInfo.refund_img.length" class="item">
+                      <view>原有材料</view><view v-for="(url,index) in orderInfo.refund_img" :key="'legacy-url-' + index" class="pictrue"><image :src="url"></image></view>
+                    </view>
 					<view class='item acea-row row-between'>
 						<view class='title acea-row row-between-wrapper'>
 							<view>{{$t(`上传图片`)}}</view>
@@ -48,26 +59,31 @@
 						</view>
 						<view class='upload acea-row row-middle'>
 							<view class='pictrue' v-for="(item,index) in refund_reason_wap_img" :key="index">
-								<image :src='item'></image>
+								<image v-if="legacyDraftPreviews[item]" :src="legacyDraftPreviews[item]"></image><text v-else>原图待读取</text>
 								<view class='iconfont icon-guanbi1 font-num' @tap='DelPic(index)'></view>
 							</view>
 							<view class='pictrue acea-row row-center-wrapper row-column' @tap='uploadpic'
-								v-if="refund_reason_wap_img.length < 3">
+								v-if="refund_reason_wap_img.length < 3 && !legacyDraftUnknown && !legacyDraftConfirmed && !legacyDraftBlocked">
 								<text class='iconfont icon-icon25201'></text>
 								<view>{{$t(`上传图片`)}}</view>
 							</view>
 						</view>
 					</view>
 				</view>
-				<button class='returnBnt bg-color' form-type="submit">{{$t(`提交`)}}</button>
+				<view v-if="legacyDraftError">{{legacyDraftError}}</view>
+				<view v-if="legacyDraftReceipt" role="status"><view v-for="(line,index) in legacyDraftReceiptLines" :key="'receipt-' + index">{{line}}</view></view>
+			<button v-if="legacyDraftUnknown" class="returnBnt" :disabled="legacyDraftBusy" @tap="readLegacyDraftResult">读取已保存结果</button>
+			<button v-else-if="legacyDraftMissingPreviews" class="returnBnt" :disabled="legacyDraftBusy" @tap="reloadLegacyDraftPreviews">重新读取图片</button>
+			<button class='returnBnt bg-color' form-type="submit" :disabled="legacyDraftBusy || !!legacyDraftUnknown || legacyDraftConfirmed || legacyDraftBlocked">{{$t(`提交`)}}</button>
 			</view>
 		</form>
 	</view>
 </template>
 <script>
+import {legacyRefundDraft, legacyRefundImages} from '@/api/legacy-refund-materials.js';
+import PrivateEvidence from '@/components/marketplaceAftersaleEvidence/index.vue';
 	import {
-		refundOrderDetail,
-		refundExpress
+		refundOrderDetail
 	} from '@/api/order.js';
 	import {
 		toLogin
@@ -77,7 +93,8 @@
 	} from "vuex";
 	import colors from '@/mixins/color.js';
 	export default {
-		mixins: [colors],
+		components: {PrivateEvidence},
+		mixins: [colors, legacyRefundDraft, legacyRefundImages],
 		data() {
 			return {
 				expressList: [],
@@ -87,14 +104,14 @@
 				refundInfo: {
 					refund_express: '',
 					refund_phone: '',
-					refund_explain: '',
+					refund_shipping_note: '',
 					id: '',
 					refund_express_name: '',
 					refund_img: ''
 				}
 			};
 		},
-		computed: mapGetters(['isLogin']),
+		computed: { ...mapGetters(['isLogin']), legacyDraftKind() { return 'shipping'; }, legacyDraftId() { return this.refundInfo.id; }, legacyRefundReader() { return 'customer'; }, legacyRefundSource() { return this.orderInfo && this.orderInfo.schema !== 2 ? this.orderInfo : null; }, legacyRefundVisible() { return this.legacyDraftActive; } },
 		watch: {
 			isLogin: {
 				handler: function(newV, oldV) {
@@ -118,6 +135,7 @@
 			 * 申请退货
 			 */
 			subRefund: function(e) {
+				if(this.legacyDraftBusy || this.legacyDraftUnknown || this.legacyDraftConfirmed || this.legacyDraftBlocked)return;
 				let that = this
 				if (!that.refundInfo.refund_express) return this.$util.Tips({
 					title: that.$t(`填写快递单号`)
@@ -130,7 +148,7 @@
 				});
 				that.refundInfo.refund_express_name = that.expressList[that.seIndex].name;
 				that.refundInfo.refund_img = that.refund_reason_wap_img.join(',');
-				refundExpress(that.refundInfo).then(res => {
+				this.submitLegacyDraft({...that.refundInfo}).then(res => {
 					return this.$util.Tips({
 						title: res.msg,
 						icon: 'success'
@@ -140,7 +158,7 @@
 					});
 				}).catch(err => {
 					return this.$util.Tips({
-						title: err
+						title: err && err.message || err
 					});
 				})
 			},
@@ -148,25 +166,14 @@
 			 * 删除图片
 			 * 
 			 */
-			DelPic: function(e) {
-				let index = e,
-					that = this,
-					pic = this.refund_reason_wap_img[index];
-				that.refund_reason_wap_img.splice(index, 1);
-				that.$set(that, 'refund_reason_wap_img', that.refund_reason_wap_img);
-			},
+			DelPic: function(index) { this.removeLegacyDraft(index); },
 
 			/**
 			 * 上传文件
 			 * 
 			 */
-			uploadpic: function() {
-				let that = this;
-				this.$util.uploadImageOne('upload/image', function(res) {
-					that.refund_reason_wap_img.push(res.data.url);
-					that.$set(that, 'refund_reason_wap_img', that.refund_reason_wap_img);
-				});
-			},
+			uploadpic: function() { return this.uploadLegacyDraft(); },
+
 			/**
 			 * 获取订单详情
 			 * 
@@ -177,6 +184,10 @@
 					that.$set(that, 'orderInfo', res.data);
 					that.expressList = res.data.express_list;
 					that.refundInfo.id = res.data.id;
+					if(Number(res.data.refund_type)===5 && !that.legacyDraftUnknown){
+						that.legacyDraftConfirmed=true;
+						['refund_express','refund_phone','refund_express_name','refund_shipping_note'].forEach(key=>{that.refundInfo[key]=res.data[key]||'';});
+					}
 				});
 			},
 			bindPickerChange(e) {

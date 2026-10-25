@@ -664,11 +664,17 @@ function audit_assert_licence_private_mount():void
         &&($found[0]['RW']??null)===true,'normal licence actual private mount rejected');
 }
 
+require_once __DIR__.'/legacy-refund-normal-profile.php';
+
 function audit_serve(): void
 {
     audit_guard_assert();
     $normalLicence = getenv('AUDIT_LICENCE_NORMAL') === '1';
+    $normalRefund = getenv('AUDIT_LEGACY_REFUND_NORMAL') === '1';
+    audit_expect(!($normalLicence && $normalRefund), 'normal private profiles must not be mixed');
+    $normalTermOnly = $normalLicence || $normalRefund;
     if ($normalLicence) { audit_assert_licence_private_mount(); }
+    if ($normalRefund) { audit_assert_legacy_refund_private_mount(); }
     $supervisor = audit_app_proc_stat(getmypid());
     audit_expect($supervisor !== null, 'supervisor numeric process identity unavailable');
     $process = null; $group = null; $revision = ''; $generation = '';
@@ -694,11 +700,12 @@ function audit_serve(): void
         } catch (Throwable $statusError) { fwrite(STDERR, 'BLOCKED normal status persistence; live state retained '.get_class($statusError)."\n"); }
     };
     $stop = static function () use (&$process, &$group, &$generation, &$normalTermSent, &$normalStopBlocked,
-        &$normalStopping, $normalLicence, $supervisor): array {
-        if ($normalLicence) {
+        &$normalStopping, $normalTermOnly, $normalRefund, $supervisor): array {
+        if ($normalTermOnly) {
             audit_expect(!$normalStopBlocked, 'normal incomplete stop is retained; no second stop or restart');
             $normalStopping = true;
-            try { $result = audit_app_stop_licence_normal_group($process, $group, $supervisor, $normalTermSent); }
+            try { $result = $normalRefund ? audit_app_stop_legacy_refund_normal_group($process, $group, $supervisor, $normalTermSent)
+                : audit_app_stop_licence_normal_group($process, $group, $supervisor, $normalTermSent); }
             catch (Throwable $error) { $normalStopBlocked = true; throw $error; }
             finally { $normalStopping = false; }
         } else { $result = audit_app_stop_group($process, $group, $supervisor); }
@@ -706,10 +713,10 @@ function audit_serve(): void
         return $result;
     };
     pcntl_async_signals(true);
-    pcntl_signal(SIGTERM, static function () use ($stop, $normalLicence, $normalFailure, &$normalStopping, &$revision): void {
-        if ($normalLicence && $normalStopping) { return; }
+    pcntl_signal(SIGTERM, static function () use ($stop, $normalTermOnly, $normalFailure, &$normalStopping, &$revision): void {
+        if ($normalTermOnly && $normalStopping) { return; }
         try { $stop(); exit(0); } catch (Throwable $error) {
-            if ($normalLicence) { $normalFailure($error, $revision); return; }
+            if ($normalTermOnly) { $normalFailure($error, $revision); return; }
             exit(2);
         }
     });
@@ -721,7 +728,7 @@ function audit_serve(): void
             try {
                 audit_expect(is_string($revision) && preg_match('/^[a-f0-9]{16}$/D', $revision) === 1
                     && in_array($action, ['start', 'stop', 'observe'], true), 'invalid supervisor action');
-                if ($normalLicence && $action === 'start') {
+                if ($normalTermOnly && $action === 'start') {
                     audit_expect(!$normalStopBlocked, 'normal incomplete stop forbids restart; state retained');
                 }
                 if ($action === 'observe') {
@@ -744,7 +751,8 @@ function audit_serve(): void
                             'AUTH_SESSION_EPOCH' => 'PHP_AUTH_SESSION_EPOCH', 'AUTH_STAMP_KEY' => 'PHP_AUTH_STAMP_KEY',
                             'APP_DEBUG' => 'PHP_APP_DEBUG', 'DB_PORT' => 'PHP_DATABASE_HOSTPORT', 'CACHE_PREFIX' => 'PHP_CACHE_CACHE_PREFIX',
                             'SERVER_WORKERS' => 'PHP_CLI_SERVER_WORKERS',
-                            'LICENCE_PRIVATE_ROOT'=>'PHP_MARKETPLACE_CUSTOMER_LICENCE_PRIVATE_ROOT'];
+                            'LICENCE_PRIVATE_ROOT'=>'PHP_MARKETPLACE_CUSTOMER_LICENCE_PRIVATE_ROOT',
+                            'REFUND_PRIVATE_ROOT'=>'PHP_MARKETPLACE_CUSTOMER_REFUND_PRIVATE_ROOT'];
                         $approved = is_string($value) && match ($key) {
                             'APP_KEY', 'CACHE_DRIVER' => in_array($value, ['', 'default', 'file', 'redis'], true),
                             'AUTH_SESSION_EPOCH' => $value === '',
@@ -754,10 +762,12 @@ function audit_serve(): void
                             'CACHE_PREFIX' => (bool)preg_match('/^audit:http-lang:' . preg_quote((string)getenv('AUDIT_RUN_ID'), '/') . ':[0-9]+:$/D', $value),
                             'SERVER_WORKERS' => in_array($value, ['', '2'], true),
                             'LICENCE_PRIVATE_ROOT' => $value==='/run/audit-customer-licence'&&getenv('AUDIT_LICENCE_NORMAL')==='1',
+                            'REFUND_PRIVATE_ROOT' => $value==='/run/audit-customer-refund'&&getenv('AUDIT_LEGACY_REFUND_NORMAL')==='1',
                             default => false,
                         };
                         audit_expect(isset($mapping[$key]) && $approved, 'unapproved application configuration override');
                         if($key==='LICENCE_PRIVATE_ROOT')audit_assert_licence_private_mount();
+                        if($key==='REFUND_PRIVATE_ROOT')audit_assert_legacy_refund_private_mount();
                         if ($key === 'SERVER_WORKERS' && $value === '') { unset($env['PHP_CLI_SERVER_WORKERS']); }
                         else { $env[$mapping[$key]] = $value; }
                     }
@@ -777,12 +787,12 @@ function audit_serve(): void
                     } while (microtime(true) < $deadline);
                     audit_expect($facts['members'] !== [] && $facts['listener_open'], 'registered server group did not listen');
                 }
-                $retainedNormal = $normalLicence && $normalFirstFailure !== null
+                $retainedNormal = $normalTermOnly && $normalFirstFailure !== null
                     ? ['first_incomplete_stop' => $normalFirstFailure, 'state_preserved' => true, 'restart_blocked' => true] : [];
                 audit_write_json(audit_run_dir() . '/app-status.json', ['revision' => $revision, 'status' => $action,
                     'run_id' => getenv('AUDIT_RUN_ID'), 'generation_revision' => $generation] + $facts + $retainedNormal);
             } catch (Throwable $error) {
-                if ($normalLicence) { $normalFailure($error, $revision); continue; }
+                if ($normalTermOnly) { $normalFailure($error, $revision); continue; }
                 $cleanupError = null;
                 if ($action !== 'observe') { try { $stop(); } catch (Throwable $cleanup) { $cleanupError = get_class($cleanup); } }
                 audit_write_json(audit_run_dir() . '/app-status.json', ['revision' => $revision, 'status' => 'failed',

@@ -74,6 +74,8 @@ Route::group(function () {
     Route::post('admin/order/detail/<root_id>/form-files/<asset_id>/read-ticket','v1.order.OrderFormReadController/mobile')->name('mobileOrderFormTicket')->option(['real_name'=>'订单表单原图票据']);
     Route::get('admin/order/detail/<root_id>/form-files/<asset_id>/content','v1.order.OrderFormReadController/mobile')->name('mobileOrderFormContent')->option(['real_name'=>'订单表单原图']);
     Route::get('admin/order/detail/:orderId', 'v1.admin.StoreOrderController/detail')->name('adminOrderDetail')->option(['real_name' => '订单详情']);//订单详情
+    Route::post('admin/refund_order/detail/<refund_id>/materials/<asset_id>/read-ticket','v1.order.LegacyRefundMaterialController/mobile')->option(['real_name'=>'旧退款材料读票据','legacy_refund_private_reader'=>'mobile']);
+    Route::get('admin/refund_order/detail/<refund_id>/materials/<asset_id>/content','v1.order.LegacyRefundMaterialController/mobile')->option(['real_name'=>'旧退款材料原图','legacy_refund_private_reader'=>'mobile']);
     Route::get('admin/refund_order/detail/:uni', 'v1.admin.StoreOrderController/refundOrderDetail')->name('RefundOrderDetail')->option(['real_name' => '退款订单详情']);//退款订单详情
     Route::get('admin/order/delivery/gain/:orderId', 'v1.admin.StoreOrderController/delivery_gain')->name('adminOrderDeliveryGain')->option(['real_name' => '订单发货获取订单信息']);//订单发货获取订单信息
     Route::post('admin/order/delivery/keep/:id', 'v1.admin.StoreOrderController/delivery_keep')->name('adminOrderDeliveryKeep')->option(['real_name' => '订单发货']);//订单发货
@@ -350,16 +352,22 @@ Route::group(function () {
 
     Route::group(function () {
         /** 退款相关 */
+        Route::post('order/refund/legacy/orders/<order_id>/materials','v1.order.LegacyRefundMaterialController/uploadApplication')->option(['real_name'=>'本人旧退款申请图片','customer_legacy_refund_upload'=>'legacy_refund_evidence']);
+        Route::post('order/refund/legacy/<refund_id>/shipping-materials','v1.order.LegacyRefundMaterialController/uploadShipping')->option(['real_name'=>'本人旧退款寄回图片','customer_legacy_refund_upload'=>'refund_shipping_proof']);
+        Route::post('order/refund/legacy/orders/<order_id>/materials/<asset_id>/read-ticket','v1.order.LegacyRefundMaterialController/application')->option(['real_name'=>'本人旧退款草稿读票据','legacy_refund_private_reader'=>'application']);
+        Route::get('order/refund/legacy/orders/<order_id>/materials/<asset_id>/content','v1.order.LegacyRefundMaterialController/application')->option(['real_name'=>'本人旧退款草稿原图','legacy_refund_private_reader'=>'application']);
+        Route::post('order/refund/legacy/<refund_id>/materials/<asset_id>/read-ticket','v1.order.LegacyRefundMaterialController/customer')->option(['real_name'=>'本人旧退款材料读票据','legacy_refund_private_reader'=>'customer']);
+        Route::get('order/refund/legacy/<refund_id>/materials/<asset_id>/content','v1.order.LegacyRefundMaterialController/customer')->option(['real_name'=>'本人旧退款材料原图','legacy_refund_private_reader'=>'customer']);
         Route::post('order/refund/files/:root_id','v1.order.AftersaleFileController/upload')->name('aftersaleFileUpload')->option(['real_name'=>'上传售后凭证']);
         Route::post('order/refund/files/:file_id/read-ticket','v1.order.AftersaleFileController/ticket')->name('aftersaleFileTicket')->option(['real_name'=>'申请售后凭证读票']);
         Route::get('order/refund/files/:file_id/content','v1.order.AftersaleFileController/content')->name('aftersaleFileContent')->option(['real_name'=>'读取售后凭证']);
         Route::get('order/refund/cart_info/:id', 'v1.order.StoreOrderController/refundCartInfo')->name('refundCartInfo')->option(['real_name' => '退款中间页面订单商品列表']);//退款中间页面订单商品列表
         Route::post('order/refund/cart_info', 'v1.order.StoreOrderController/refundCartInfoList')->name('StoreOrderRefundCartInfoList')->option(['real_name' => '获取退款商品列表']);//获取退款商品列表
-        Route::post('order/refund/apply/:id', 'v1.order.StoreOrderController/applyRefund')->name('StoreOrderApplyRefund')->option(['real_name' => '订单申请退款']);//订单申请退款
+        Route::post('order/refund/apply/:id', 'v1.order.StoreOrderController/applyRefund')->name('StoreOrderApplyRefund')->option(['real_name' => '订单申请退款','customer_legacy_refund_application'=>true]);//订单申请退款
         Route::get('order/refund/list', 'v1.order.StoreOrderRefundController/refundList')->name('refundList')->option(['real_name' => '退款单列表']);//退款单列表
         Route::get('order/refund/detail/:uni', 'v1.order.StoreOrderRefundController/refundDetail')->name('refundDetail')->option(['real_name' => '退款单详情']);//退款单详情
         Route::post('order/refund/cancel/:uni', 'v1.order.StoreOrderRefundController/cancelApply')->name('cancelApply')->option(['real_name' => '用户取消退款申请']);//用户取消退款申请
-        Route::post('order/refund/express', 'v1.order.StoreOrderRefundController/applyExpress')->name('refundDetail')->option(['real_name' => '退款单详情']);//退款单详情
+        Route::post('order/refund/express', 'v1.order.StoreOrderRefundController/applyExpress')->name('refundDetail')->option(['real_name' => '退款单详情','customer_legacy_refund_shipping'=>true]);//退款单详情
         Route::get('order/refund/del/:uni', 'v1.order.StoreOrderRefundController/delRefund')->name('delRefund')->option(['real_name' => '用户取消退款申请']);//用户取消退款申请
     })->option(['mark' => 'refund', 'mark_name' => '售后']);
 

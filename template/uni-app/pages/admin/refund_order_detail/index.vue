@@ -261,6 +261,16 @@
 					<view>退货留言：</view>
 					<view class='conter'>{{orderInfo.refund_goods_explain}}</view>
 				</view> -->
+				<view v-if="legacyRefundVisible && legacyMaterialProblem" class="item">{{legacyMaterialProblem}}</view>
+				<view v-if="legacyMaterialsActive && legacyApplicationIds.length" class="item">
+				  <view>申请材料</view>
+				  <private-evidence :key="'legacy-application-' + legacyMaterialEpoch" :files="legacyApplicationIds" :reader="readLegacyMaterial"></private-evidence>
+				</view>
+				<view v-if="legacyMaterialsActive && legacyShippingIds.length" class="item">
+				  <view>寄回材料</view>
+				  <private-evidence :key="'legacy-shipping-' + legacyMaterialEpoch" :files="legacyShippingIds" :reader="readLegacyMaterial"></private-evidence>
+				</view>
+				<view v-if="legacyRefundVisible && legacyRefundSource && legacyRefundSource.refund_shipping_note" class="item">寄回备注：{{legacyRefundSource.refund_shipping_note}}</view>
 				<view class="item acea-row row-between" v-if="orderInfo.refund_img && orderInfo.refund_img.length">
 					<view>退款凭证：</view>
 					<view class="conter">
@@ -335,6 +345,8 @@
 	</view>
 </template>
 <script>
+import {legacyRefundImages} from '@/api/legacy-refund-materials.js';
+
 	import PriceChange from "../components/PriceChange/index.vue";
 	import customForm from "../components/customForm";
 	import PrivateEvidence from '@/components/marketplaceAftersaleEvidence/index.vue';
@@ -362,6 +374,7 @@
 	} from '@/utils/validate.js'
 
 	export default {
+  mixins: [legacyRefundImages],
 		name: "AdminOrder",
 		components: {
 			PriceChange,
@@ -419,6 +432,9 @@
 			};
 		},
 		computed: {
+    legacyRefundReader() { return 'mobile'; },
+    legacyRefundSource() { return this.refundKind === 'legacy' ? this.orderInfo : null; },
+    legacyRefundVisible() { return this.refundPageVisible && !this.refundLoading && !this.refundError && this.refundKind === 'legacy'; },
 			refundSession() { const app = this.$store.state.app; return JSON.stringify([app.token, app.authRevision]); },
 			savedMarketplaceV1() { return this.refundKind === 'marketplace' || this.orderInfo.marketplace_trade_version===1 || this.orderInfo.marketplace_trade_version==='1'; }
 		},

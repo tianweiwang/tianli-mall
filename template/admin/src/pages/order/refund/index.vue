@@ -49,6 +49,7 @@
       </div>
     </el-card>
     <el-card :bordered="false" shadow="never" class="ivu-mt mt16">
+      <div v-if="legacyPlatformProblem">{{legacyPlatformProblem}}</div>
       <el-table
         :data="tbody"
         ref="table"
@@ -153,6 +154,15 @@
         <el-table-column label="退款信息" min-width="120">
           <template slot-scope="scope">
             <div v-html="scope.row.refund_reason" class="pt5"></div>
+            <div v-for="group in ['application','shipping']" :key="'private-' + group">
+              <div v-if="legacyMaterialImagesFor(scope.row,group).length">{{group === 'application' ? '申请材料' : '寄回材料'}}</div>
+              <div v-for="image in legacyMaterialImagesFor(scope.row,group)" :key="image.key">
+                <el-image v-if="image.url" class="pictrue mr10" :src="image.url" :preview-src-list="[image.url]" @error="legacyMaterialImageFailed(image)"></el-image>
+                <span v-else>{{image.loading ? '正在读取原图' : image.error || '原图待读取'}}</span>
+                <el-button v-if="!image.loading && !image.url" type="text" @click="loadLegacyMaterialImage(image)">重新读取原图</el-button>
+              </div>
+            </div>
+            <div v-if="scope.row.refund_shipping_note">寄回备注：{{scope.row.refund_shipping_note}}</div>
             <div class="pictrue-box" v-if="scope.row.refund_img.length">
               <div v-viewer v-for="(item, index) in scope.row.refund_img || []" :key="index">
                 <img class="pictrue mr10" v-lazy="item" :src="item" />
@@ -228,6 +238,7 @@
 </template>
 
 <script>
+import {legacyRefundMaterialImages} from '@/api/legacy-refund-materials';
 import { mapState } from 'vuex';
 import {
   orderRefundList,
@@ -245,6 +256,7 @@ import detailsFrom from '../orderList/handle/orderDetails';
 import orderRemark from '../orderList/handle/orderRemark';
 import timeOptions from '@/libs/timeOptions';
 export default {
+  mixins: [legacyRefundMaterialImages],
   components: { editFrom, detailsFrom, orderRemark, userDetails },
   data() {
     return {
@@ -279,6 +291,9 @@ export default {
     };
   },
   computed: {
+    legacyRefundReader() { return 'list'; },
+    legacyRefundSources() { return this.tbody; },
+    legacyRefundActive() { return !this.loading; },
     ...mapState('order', ['orderChartType']),
     // ...mapState("admin/layout", ["isMobile"]),
     labelWidth() {

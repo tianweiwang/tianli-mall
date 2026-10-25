@@ -152,6 +152,17 @@ Route::group('order', function () {
     \app\adminapi\middleware\AdminLogMiddleware::class
 ])->option(['mark' => 'order', 'mark_name' => '订单管理']);
 
+// Private materials reuse each consumer's current original action grant, with no broad ACL exception.
+Route::group(function () {
+    Route::post('refund/<reader_kind>/<refund_id>/materials/<asset_id>/read-ticket','v1.order.LegacyRefundMaterial/read')->option(['real_name'=>'旧退款材料读票据','legacy_refund_private_reader'=>'platform']);
+    Route::get('refund/<reader_kind>/<refund_id>/materials/<asset_id>/content','v1.order.LegacyRefundMaterial/read')->option(['real_name'=>'旧退款材料原图','legacy_refund_private_reader'=>'platform']);
+})->middleware([
+    \app\http\middleware\AllowOriginMiddleware::class,
+    \app\adminapi\middleware\AdminAuthTokenMiddleware::class,
+    \app\adminapi\middleware\LegacyRefundReadPermissionMiddleware::class,
+    \app\adminapi\middleware\AdminLogMiddleware::class
+])->option(['mark'=>'refund','mark_name'=>'退款订单']);
+
 /**
  * 售后 相关路由
  */

@@ -55,7 +55,7 @@
 					</view>
 					<view class='item textarea acea-row row-between'>
 						<view>{{$t(`备注说明`)}}</view>
-						<textarea :placeholder='$t(`填写备注信息，100字以内`)' class='num' name="refund_reason_wap_explain"
+						<textarea :placeholder='$t(`填写备注信息，100字以内`)' class='num' name="refund_reason_wap_explain" v-model="applicationExplain"
 							:placeholder-class='$t(`填写备注信息，100字以内`)'></textarea>
 					</view>
 					<view class='item acea-row row-between upload'>
@@ -65,28 +65,32 @@
 						</view>
 						<view class='upload acea-row row-middle'>
 							<view class='pictrue' v-for="(item,index) in refund_reason_wap_img" :key="index">
-								<image :src='item'></image>
+								<image v-if="legacyDraftPreviews[item]" :src="legacyDraftPreviews[item]"></image><text v-else>原图待读取</text>
 								<view class='iconfont icon-guanbi1 font-num' @tap='DelPic(index)'></view>
 							</view>
 							<view class='pictrue acea-row row-center-wrapper row-column' @tap='uploadpic'
-								v-if="refund_reason_wap_img.length < 3">
+								v-if="refund_reason_wap_img.length < 3 && !legacyDraftUnknown && !legacyDraftConfirmed && !legacyDraftBlocked">
 								<text class='iconfont icon-icon25201'></text>
 								<view>{{$t(`上传图片`)}}</view>
 							</view>
 						</view>
 					</view>
 				</view>
-				<button class='returnBnt bg-color' form-type="submit">{{$t(`申请退款`)}}</button>
+				<view v-if="legacyDraftError">{{legacyDraftError}}</view>
+				<view v-if="legacyDraftReceipt" role="status"><view v-for="(line,index) in legacyDraftReceiptLines" :key="'receipt-' + index">{{line}}</view></view>
+			<button v-if="legacyDraftUnknown" class="returnBnt" :disabled="legacyDraftBusy" @tap="readLegacyDraftResult">读取已保存结果</button>
+			<button v-else-if="legacyDraftMissingPreviews" class="returnBnt" :disabled="legacyDraftBusy" @tap="reloadLegacyDraftPreviews">重新读取图片</button>
+			<button class='returnBnt bg-color' form-type="submit" :disabled="isRes || legacyDraftBusy || !!legacyDraftUnknown || legacyDraftConfirmed || legacyDraftBlocked">{{$t(`申请退款`)}}</button>
 			</view>
 		</form>
 	</view>
 </template>
 <script>
+import {legacyRefundDraft} from '@/api/legacy-refund-materials.js';
 	import {
 		ordeRefundReason,
 		orderRefundVerify,
 		getOrderDetail,
-		returnGoodsSubmit,
 		postRefundGoods
 	} from '@/api/order.js';
 	import {
@@ -105,10 +109,11 @@
 			authorize
 			// #endif
 		},
-		mixins: [colors],
+		mixins: [colors, legacyRefundDraft],
 		data() {
 			return {
 				id: 0,
+				applicationExplain: '',
 				cartIds: [],
 				refund_reason_wap_img: [],
 				status: {},
@@ -124,7 +129,7 @@
 				isRes: false
 			};
 		},
-		computed: mapGetters(['isLogin']),
+		computed: { ...mapGetters(['isLogin']), legacyDraftKind() { return 'application'; }, legacyDraftId() { return this.id; } },
 		watch: {
 			isLogin: {
 				handler: function(newV, oldV) {
@@ -165,7 +170,7 @@
 					this.refundCartInfo.length === 1 ? this.refund_num_index = this.refundNumData.length - 1 : ''
 				}).catch(err => {
 					return this.$util.Tips({
-						title: err
+						title: err && err.message || err
 					});
 				})
 			},
@@ -183,31 +188,19 @@
 			 * 删除图片
 			 * 
 			 */
-			DelPic: function(e) {
-				let index = e,
-					that = this,
-					pic = this.refund_reason_wap_img[index];
-				that.refund_reason_wap_img.splice(index, 1);
-				that.$set(that, 'refund_reason_wap_img', that.refund_reason_wap_img);
-			},
+			DelPic: function(index) { this.removeLegacyDraft(index); },
 
 			/**
 			 * 上传文件
 			 * 
 			 */
-			uploadpic: function() {
-				let that = this;
-				this.$util.uploadImageOne('upload/image', function(res) {
-					that.refund_reason_wap_img.push(res.data.url);
-					that.$set(that, 'refund_reason_wap_img', that.refund_reason_wap_img);
-				});
-			},
+			uploadpic: function() { return this.uploadLegacyDraft(); },
 
 			/**
 			 * 申请退货
 			 */
 			subRefund: function(e) {
-				if (this.isRes) return
+				if (this.isRes || this.legacyDraftBusy || this.legacyDraftUnknown || this.legacyDraftConfirmed || this.legacyDraftBlocked) return
 				uni.showLoading({
 					title: this.$t(`申请中`)
 				});
@@ -225,7 +218,7 @@
 					}]
 				}
 				this.isRes = true
-				returnGoodsSubmit(this.id, {
+				this.submitLegacyDraft({
 					text: that.RefundArray[that.index] || '',
 					refund_reason_wap_explain: value.refund_reason_wap_explain,
 					refund_reason_wap_img: that.refund_reason_wap_img.join(','),
@@ -246,7 +239,7 @@
 					uni.hideLoading();
 					this.isRes = false
 					return this.$util.Tips({
-						title: err
+						title: err && err.message || err
 					});
 				})
 			},

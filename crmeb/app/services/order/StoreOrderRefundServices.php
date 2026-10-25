@@ -997,27 +997,49 @@ class StoreOrderRefundServices extends BaseServices
      * @param $express
      * @return bool
      */
-    public function editRefundExpress($data)
+    public function editRefundExpress(array $data, int $actualUid)
     {
-        $this->transaction(function () use ($data) {
-            $id = $data['id'];
-            $actualRefund = $this->assertLegacySavedRefund($id);
-            $data['refund_type'] = 5;
+        $materials=app()->make(\app\services\marketplace\assets\CustomerLegacyRefundAssetServices::class);
+        $outcome=null;$callbackCompleted=false;
+        try {
+        $this->transaction(function (\think\db\ConnectionInterface $connection) use ($data,$actualUid,$materials,&$outcome,&$callbackCompleted) {
+            $context=$materials->prepareShipping($connection,$actualUid,$data);
+            if($context['confirmation']){
+                $outcome=$materials->finishShipping($context);
+                $callbackCompleted=true;
+                return true;
+            }
+            $id=\app\dao\marketplace\assets\CustomerLegacyRefundAssetDao::integer($context['prior']['id'],1,2147483647);
             /** @var StoreOrderStatusServices $statusService */
             $statusService = app()->make(StoreOrderStatusServices::class);
             $res1 = false !== $statusService->save([
-                    'oid' => $actualRefund->getData('store_order_id'),
+                    'oid' => $context['prior']['store_order_id'],
                     'change_type' => 'refund_express',
-                    'change_message' => '用户已退货，订单号：' . $data['refund_express'],
+                    'change_message' => '用户已退货，订单号：' . $context['write']['refund_express'],
                     'change_time' => time()
                 ]);
-            if ($data['refund_img'] != '') unset($data['refund_img']);
-            if ($data['refund_explain'] != '') unset($data['refund_explain']);
-            $res2 = false !== $this->dao->update(['id' => $id], $data);
-            $res = $res1 && $res2;
-            if (!$res)
-                throw new ApiException('提交失败');
+            $resNote=true;
+            if($context['note']!=='')$resNote=false!==$statusService->save([
+                'oid'=>$context['prior']['store_order_id'],'change_type'=>'refund_shipping_note',
+                'change_message'=>\app\dao\marketplace\assets\CustomerLegacyRefundAssetDao::noteMessage($id,$context['note']),
+                'change_time'=>time()
+            ]);
+            // Application explanation and all existing images remain; this writes only the fixed return fields.
+            $res2=false!==$this->dao->update(['id'=>$id,'uid'=>$actualUid,'store_order_id'=>$context['prior']['store_order_id']],$context['write']);
+            if(!$res1||!$resNote||!$res2)throw new ApiException('提交失败');
+            $outcome=$materials->finishShipping($context);
+            $callbackCompleted=true;
+            return true;
         });
+        } catch (\Throwable $error) {
+            if($callbackCompleted&&is_array($outcome))throw new \app\services\marketplace\attachment\MerchantAttachmentOperationException([
+                'complete'=>false,'phase'=>'commit_outcome_unknown','physical_changed'=>false,'physical_complete'=>false,
+                'database_committed'=>null,'cleanup_complete'=>null
+            ]);
+            throw $error;
+        }
+        if(!is_array($outcome))throw new \crmeb\exceptions\AuthUnavailableException();
+        $materials->committed($outcome);
         return true;
     }
 
@@ -1066,6 +1088,7 @@ class StoreOrderRefundServices extends BaseServices
         //退部分
         $cartInfo = [];
         $cartInfos = $storeOrderCartInfoServices->getCartColunm(['oid' => $id], 'id,cart_id,cart_num,refund_num,cart_info');
+        $privateRefundOriginalCartInfos=$cartInfos;
         if ($cart_ids) {
             $cartInfo = array_combine(array_column($cartInfos, 'cart_id'), $cartInfos);
             $refund_num = 0;
@@ -1116,7 +1139,11 @@ class StoreOrderRefundServices extends BaseServices
         $refundData['add_time'] = time();
         $refundData['cart_info'] = json_encode(array_column($cartInfos, 'cart_info'));
         $refundData['is_pink_cancel'] = $isPink;
-        $res = $this->transaction(function () use ($id, $order, $cart_ids, $refundData, $storeOrderCartInfoServices, $cartInfo, $orderServices, $cartInfos) {
+        $privateRefundOutcome=null;$privateRefundCallbackCompleted=false;
+        $privateRefundFiles=app()->make(\app\services\marketplace\assets\CustomerLegacyRefundAssetServices::class);
+        try {
+        $res = $this->transaction(function (\think\db\ConnectionInterface $connection) use ($id, $uid, $order, $cart_ids, $refundData, $storeOrderCartInfoServices, $cartInfo, $orderServices, $cartInfos, $privateRefundFiles, &$privateRefundOutcome, $privateRefundOriginalCartInfos, &$privateRefundCallbackCompleted) {
+            $privateRefundContext=$privateRefundFiles->prepareApplication($connection,$uid,$id,$refundData,$privateRefundOriginalCartInfos);
             /** @var StoreOrderStatusServices $statusService */
             $statusService = app()->make(StoreOrderStatusServices::class);
             $res1 = false !== $statusService->save([
@@ -1133,6 +1160,7 @@ class StoreOrderRefundServices extends BaseServices
             if (!$res3) {
                 throw new ApiException('申请失败');
             }
+            if($privateRefundContext!==null)$privateRefundOutcome=$privateRefundFiles->bindApplication($privateRefundContext,(int)$res3->getData('id'));
             $res4 = true;
             if ($cart_ids) {
                 //修改订单商品退款信息
@@ -1144,8 +1172,16 @@ class StoreOrderRefundServices extends BaseServices
                     $res4 = $res4 && $storeOrderCartInfoServices->update(['oid' => $id, 'cart_id' => $cart['cart_id']], ['refund_num' => $cart['cart_num']]);
                 }
             }
+            $privateRefundCallbackCompleted=true;
             return $res1 && $res2 && $res3 && $res4;
         });
+        } catch (\Throwable $error) {
+            if($privateRefundCallbackCompleted&&is_array($privateRefundOutcome))throw new \app\services\marketplace\attachment\MerchantAttachmentOperationException([
+                'complete'=>false,'phase'=>'commit_outcome_unknown','physical_changed'=>false,'physical_complete'=>false,
+                'database_committed'=>null,'cleanup_complete'=>null
+            ]);
+            throw $error;
+        }
         $storeOrderCartInfoServices->clearOrderCartInfo($order['id']);
         //申请退款事件
         event('OrderRefundCreateAfterListener', [$order]);
@@ -1171,6 +1207,7 @@ class StoreOrderRefundServices extends BaseServices
             ChannelService::instance()->send('NEW_REFUND_ORDER', ['order_id' => $order['order_id']]);
         } catch (\Exception $e) {
         }
+        if($privateRefundOutcome!==null)$privateRefundFiles->committed($privateRefundOutcome);
         return $res;
     }
 
@@ -1261,6 +1298,7 @@ class StoreOrderRefundServices extends BaseServices
                 $item['store_order_order_id'] = $orderInfoList[$item['store_order_id']]['order_id'] ?? '';
                 $item['store_order_status'] = $store_order_status[$orderInfoList[$item['store_order_id']]['status'] ?? -3] ?? '';
                 if($publicV1)$item=SavedOrder::refundListRow($item,$parent,$marketplaceScope);
+                elseif($marketplaceScope!=='')$item=app()->make(\app\services\marketplace\assets\CustomerLegacyRefundAssetServices::class)->project($item);
             }
         }
         $data['list'] = $list;
@@ -1309,7 +1347,7 @@ class StoreOrderRefundServices extends BaseServices
         $data=$this->refundDetail($uni);
         if((string)($data['uid'] ?? '')!==(string)$uid
             || (string)($data['store_order_id'] ?? '')!==(string)$owned['store_order_id'])throw new ApiException('订单不存在');
-        return $data;
+        return app()->make(\app\services\marketplace\assets\CustomerLegacyRefundAssetServices::class)->project($data);
     }
 
     /** Read-only platform endpoint adapter; existing administrator/role middleware remains authoritative. */
@@ -1323,7 +1361,7 @@ class StoreOrderRefundServices extends BaseServices
         $data=$this->refundDetail($uni);
         if((string)($data['id'] ?? '')!==(string)$refund['id']
             ||(string)($data['store_order_id'] ?? '')!==(string)$refund['store_order_id'])throw new ApiException('订单不存在');
-        return $data;
+        return app()->make(\app\services\marketplace\assets\CustomerLegacyRefundAssetServices::class)->project($data);
     }
 
     public function refundDetail($uni)

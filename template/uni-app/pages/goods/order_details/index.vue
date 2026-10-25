@@ -296,6 +296,16 @@
 					<view>{{ $t(`用户备注`) }}：</view>
 					<view class="conter">{{ orderInfo.refund_explain }}</view>
 				</view>
+				<view v-if="legacyRefundVisible && legacyMaterialProblem" class="item">{{legacyMaterialProblem}}</view>
+				<view v-if="legacyMaterialsActive && legacyApplicationIds.length" class="item">
+				  <view>申请材料</view>
+				  <private-evidence :key="'legacy-application-' + legacyMaterialEpoch" :files="legacyApplicationIds" :reader="readLegacyMaterial"></private-evidence>
+				</view>
+				<view v-if="legacyMaterialsActive && legacyShippingIds.length" class="item">
+				  <view>寄回材料</view>
+				  <private-evidence :key="'legacy-shipping-' + legacyMaterialEpoch" :files="legacyShippingIds" :reader="readLegacyMaterial"></private-evidence>
+				</view>
+				<view v-if="legacyRefundVisible && legacyRefundSource && legacyRefundSource.refund_shipping_note" class="item">寄回备注：{{legacyRefundSource.refund_shipping_note}}</view>
 				<view class="item acea-row row-between" v-if="orderInfo.refund_img && orderInfo.refund_img.length">
 					<view>{{ $t(`申请图片`) }}：</view>
 					<view class="upload acea-row row-middle">
@@ -605,6 +615,9 @@
 </template>
 
 <script>
+import {legacyRefundImages} from '@/api/legacy-refund-materials.js';
+import PrivateEvidence from '@/components/marketplaceAftersaleEvidence/index.vue';
+
 import { getCustomerFulfillmentPackage, receiveCustomerFulfillmentPackage, getSavedOrderFulfillment, refundOrderDetail, orderAgain, orderTake, orderDel, refundOrderDel, orderCancel, refundExpress, cancelRefundOrder } from '@/api/order.js';
 import { openOrderRefundSubscribe } from '@/utils/SubscribeMessage.js';
 import { getCustomerType } from '@/api/api.js';
@@ -658,7 +671,7 @@ function addSavedMoney(left, right) {
 }
 
 export default {
-	components: {
+	components: { PrivateEvidence,
 		home,
 		marketplaceAgainStorePicker,
 		invoicePicker,
@@ -672,7 +685,7 @@ export default {
 		authorize
 		// #endif
 	},
-	mixins: [colors, orderFormImages],
+	mixins: [colors, orderFormImages, legacyRefundImages],
 	data() {
 		return {
 			imgHost: HTTP_REQUEST_URL,
@@ -807,6 +820,9 @@ export default {
 		};
 	},
 	computed: {
+    legacyRefundReader() { return 'customer'; },
+    legacyRefundSource() { return this.isReturn && this.orderInfo && this.orderInfo.schema !== 2 ? this.orderInfo : null; },
+    legacyRefundVisible() { return this.privateFormImagesVisible && !this.fulfillmentLoading && !this.fulfillmentError && !!this.isReturn; },
 		...mapGetters(['isLogin']),
 		orderFormImageContext() { return this.fulfillmentKind === 'root' && this.fulfillmentView ? {kind: 'customer_order', rootId: this.fulfillmentView.order.id, route: this.order_id} : null; },
 		orderFormImageGroups() { return this.savedMarketplaceFormGroups; },

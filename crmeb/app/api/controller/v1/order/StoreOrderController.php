@@ -848,7 +848,12 @@ class StoreOrderController
             'refund_explain' => $data['refund_reason_wap_explain'],
             'refund_img' => json_encode($data['refund_reason_wap_img'] != '' ? explode(',', $data['refund_reason_wap_img']) : []),
         ];
-        $res = $services->applyRefund((int)$id, $uid, $order, $data['cart_ids'], (int)$data['refund_type'], (float)$data['refund_price'], $refundData);
+        try {
+            $res = $services->applyRefund((int)$id, $uid, $order, $data['cart_ids'], (int)$data['refund_type'], (float)$data['refund_price'], $refundData);
+        } catch (\app\services\marketplace\attachment\MerchantAttachmentOperationException $error) {
+            return \think\Response::create(['status'=>503,'msg'=>'退款申请结果未确认，请保留草稿并先读取已保存退款','data'=>$error->receipt],'json',503)
+                ->allowCache(false)->header(['Cache-Control'=>'private, no-store, max-age=0','Pragma'=>'no-cache','Expires'=>'0']);
+        }
         if ($res)
             return app('json')->success('申请成功');
         else

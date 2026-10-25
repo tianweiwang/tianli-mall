@@ -152,9 +152,17 @@ class StoreOrderRefundController
             ['refund_express_name', ''],
             ['refund_img', ''],
             ['refund_explain', ''],
+            ['refund_shipping_note', null],
         ]);
+        $originalPost=$request->post(false);
+        if(!is_array($originalPost)||!array_key_exists('refund_shipping_note',$originalPost))unset($data['refund_shipping_note']);
         if ($data['id'] == '') return app('json')->fail('参数错误');
-        $res = $this->services->editRefundExpress($data);
+        try {
+            $res = $this->services->editRefundExpress($data,(int)$request->uid());
+        } catch (\app\services\marketplace\attachment\MerchantAttachmentOperationException $error) {
+            return \think\Response::create(['status'=>503,'msg'=>'寄回结果未确认，请保留草稿并先读取已保存退款','data'=>$error->receipt],'json',503)
+                ->allowCache(false)->header(['Cache-Control'=>'private, no-store, max-age=0','Pragma'=>'no-cache','Expires'=>'0']);
+        }
         if ($res)
             return app('json')->success('提交成功');
         else

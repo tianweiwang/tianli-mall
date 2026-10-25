@@ -295,6 +295,24 @@
                 </li>
               </ul>
             </div>
+            <div v-if="is_refund && !savedMarketplaceV1 && orderDatalist.orderInfo.refund_materials" class="section">
+              <div class="title">退款材料</div>
+              <div v-if="orderDatalist.orderInfo.refund_explain">申请说明：{{orderDatalist.orderInfo.refund_explain}}</div>
+              <div v-if="orderDatalist.orderInfo.refund_img && orderDatalist.orderInfo.refund_img.length">
+                <div>原有材料</div>
+                <el-image v-for="(url,index) in orderDatalist.orderInfo.refund_img" :key="'legacy-url-' + index" :src="url" :preview-src-list="orderDatalist.orderInfo.refund_img"></el-image>
+              </div>
+              <div v-if="legacyPlatformProblem">{{legacyPlatformProblem}}</div>
+              <div v-for="group in ['application','shipping']" :key="'private-' + group">
+                <div v-if="legacyMaterialImagesFor(orderDatalist.orderInfo,group).length">{{group === 'application' ? '申请材料' : '寄回材料'}}</div>
+                <div v-for="image in legacyMaterialImagesFor(orderDatalist.orderInfo,group)" :key="image.key">
+                  <el-image v-if="image.url" :src="image.url" :preview-src-list="[image.url]" @error="legacyMaterialImageFailed(image)"></el-image>
+                  <span v-else>{{image.loading ? '正在读取原图' : image.error || '原图待读取'}}</span>
+                  <el-button v-if="!image.loading && !image.url" type="text" @click="loadLegacyMaterialImage(image)">重新读取原图</el-button>
+                </div>
+              </div>
+              <div v-if="orderDatalist.orderInfo.refund_shipping_note">寄回备注：{{orderDatalist.orderInfo.refund_shipping_note}}</div>
+            </div>
             <div class="section">
               <div class="title">订单备注</div>
               <ul class="list">
@@ -403,6 +421,7 @@
   </div>
 </template>
 <script>
+import {legacyRefundMaterialImages} from '@/api/legacy-refund-materials';
 import { getExpress } from '@/api/order';
 import fulfillmentPackages, { rootOrderStatusText, readPlatformFulfillment } from '../components/fulfillmentPackages.vue';
 import { orderFormImages, readSavedOrderFormRoot } from '@/api/marketplace-order-form';
@@ -410,7 +429,7 @@ import { getOrderRecord } from '@/api/order';
 export default {
   name: 'orderDetails',
   components: { fulfillmentPackages },
-  mixins: [orderFormImages],
+  mixins: [orderFormImages, legacyRefundMaterialImages],
   data() {
     return {
       activeName: 'detail',
@@ -451,6 +470,9 @@ export default {
     },
   },
   computed: {
+    legacyRefundReader() { return 'detail'; },
+    legacyRefundSources() { const source=this.orderDatalist && this.orderDatalist.orderInfo; return this.is_refund && !this.savedMarketplaceV1 && source ? [source] : []; },
+    legacyRefundActive() { return this.modals && this.is_refund === 1 && !this.savedMarketplaceV1; },
     formImageSource() { return this.fulfillmentView && this.fulfillmentView.kind !== 'legacy' ? this.fulfillmentView : null; },
     formImageGroups() { return this.formImageSource ? this.formImageSource.order.custom_form : null; },
     formImageActive() { return this.modals && !!this.formImageSource && !this.fulfillmentLoading && !this.fulfillmentError; },
