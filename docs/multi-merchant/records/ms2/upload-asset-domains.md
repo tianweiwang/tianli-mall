@@ -1133,3 +1133,29 @@ Root本地提交前补充：964783全文diff、138499原record增量及原Notice
 
 
 Root实际提交前证据（2026-10-25）：已全文核两路径diff；非作者media_env7_review独审当前normal74444B/69da1241cf914fa058dbc16486f2fd19ed9f61f1b8dcf473bd004665e43ae485为Source0，原日志值独立、原排序/全状态及全部case保持。实际固定1099镜像PHP8.2.33当前normal纯-l原生0，与MS2 normal共同报告 `artifacts/project-organization-20261023/migration-and-refund-normal-php82-r1/RESULT.json` 6486B/35097bf8c72f0dbf1baa0a5589f12f4605a4e3939f4ad2e1e1f09cf78021e243。Root核5native/10完整双流1352B均0、source pin一致、两只读mount/networknone、helper自然Exited0/PID0/noRestart后nonforce移除；没有include/App/DB/HTTP。旧r2失败已普通close/zero，109+10native全0；Root回读 `artifacts/project-organization-20261023/legacy-refund-normal-r2-launcher-r1/ROOT-FAILED-VERIFY-CLOSE-ZERO-READBACK.json` 1318B/fcd36f04cf8a0723df99340c873b6a69727607d924eb2ba8b342a91ad7dae579。仅本两路径进入新L2本地提交；新独立Val/fresh普通链仍待，未签业务通过、未推送部署。
+
+
+#### CU_LEGACY_REFUND 完整观察器有界内存与局部引用生命周期（2026-10-25）
+
+Root实际r3 Run20261025095534ceb090以Source92c6eaf运行，setup/原145 prepare均0；原146 verify为255，stdout0/547B stderr明确134217728B内存分配失败，发生在normal第50行完整原表serialized多重集hash。原完整146native/292流11364329B已Root核，未生成NORMAL/verify成功，19条HTTP日志不代完整oracle通过。OOM未执行原finally，Root已另用原harness single audit_app_stop及原registered supervisor/child handle实际TERM-only关闭同一group，5native/10流9035B全0，members空/listener关/no force。随后专用内存失败准入Source33716/58bcb4df经Root/非作者Source0，Root实际普通close109native/218流95133B和独立zero10native/20流298B均0，5同代Exited0/PID0/noRestart、13卷1内网nonforce及Val3 ownlock精确清退。最终Root回执817B/0e5d98ad9045e4ce7b89ea7f568cb731c1ed4ac6d394347d624a7f99274bf1dd；旧Run/Val/Source/失败原件保持且不重放。
+
+实施前只读Source设计及Root采用：m4lr_database保存所有原表native rows，同时按原serialize→sort→serialize公式hash；上一表serialized临时数组直到下一赋值RHS仍在。m4lr_read的ticket完整transition后旧before/after仍在，紧随的before=m4lr_state() RHS可在同一时刻保留三份完整库快照。只在normal及本原record两路径修复，不丢表/行/duplicate、不改公式、不换stream hash、不从after构造expected、不减任何原断言。
+
+1. 每表原hash、完整rows、DDL和初始next均入out后，释放本地serialized/rows/create三个临时引用；out原完整行仍保留，两个独立counter map/HTTP为零的观察窗不变。
+2. ticket的完整transition成功后，在这些值最后真实使用点释放before/after/changes/increments，再取原content前后两个完整独立快照。其后无旧值消费者；原ticket/payload/Redis类型与绝对期限、真实binary及全表/DDL/counter/files检查保持。
+3. 仅m4lr_verify()内，在原profile/ISO/source guard成功后且任何完整快照前，给这一个CLI设固定512M并readback；App初始化后及正常返回前再核保持，结果只新增before/effective/fixed bytes/真实peak数字。prepare、独立HTTP App、php.ini、Host/Compose、数据库权限、原私有根/notice/全部业务case不改，不设-1或动态按失败翻倍。
+
+原base/overlay/Host Source未声明mem_limit；Root另实际只读engine MemTotal33498484736B（31.2GiB），capacity RESULT770B/865adeb3ca8abe6dae1a5316e8ea962979f76646d145ef82d3773b9d1898b36a，支持单verify固定536870912B有界选择。容量/Source不证明真实峰值或业务通过；新Source须Root同固定1099 Runtime纯-l、新clean提交/Val/Host及fresh完整正常链实跑并记录实际peak，再普通close/独立zero，旧失败不续跑。
+
+- [x] 冻结旧Run，Root实际App普通TERM关闭与5resident/13卷/独立zero完成后才开始写本两路径；设计先写入本原执行记录。
+- [x] 仅三原函数的小范围Source实施、最后使用点/原所有oracle及case字节保全、静态与非作者独审；本轮Source0，实际Runtime仍待。
+- [ ] Root当前PHP语法、真实新Source完整正常流程/有效512M与实际peak、普通清退及独立归零，未发生仍NOT RUN。
+
+Source修复不会关闭真实退款渠道/37历史/FullA-B/V1/CORS/浏览器设备/外发或人工阶段；原停止的negative/故障/恢复/并发/K仍NOT RUN。此时本作者仅写Source和静态核，不执行PHP/Docker/SQL/HTTP/目标、秘密、提交推送或C-D。
+
+
+本次Source实际收口：normal75398B/`d23151e3b2a1e03fc78cca40794bac68f3ec5d72004540dd0a63312d92740527`，44原函数只database/read/verify三件有限变化、其余41正文原字节保持；六编辑点整份逆回原74444/69da1241，原expectation字面量、case/HTTP/state调用数量及原dispatcher完全保持。227cc9仅词法括号/UTF8LF/diff-check原生0，不冒PHP解析；d694f2为完整逆证。非作者media_env7_review实际97b258/677ff3/ff1489全文核三函数和全部调用处、最后使用点及Host消费：原out全行保留、ticket原pair无后继消费者，key/ticket/addition标量留用，独立content前后state和完整transition不变；verify-only512M和三次readback、真实PHP allocated peak字段不混称RSS，不改变独立App/prepare或Host。当前normal字节Source0；其审Doc为本事实段追加前212660/ae2a424a，之后仅本原record补事实。
+
+Root另已实际固定1099镜像PHP8.2.33当前normal纯-l原生0（e585fe），1ca19a核完整5native/10双流983B全0、当前Source before/after一致，networknone/只读helper自然Exited0/PID0后nonforce移除。报告 `artifacts/project-organization-20261023/legacy-refund-normal-memory-php82-r1/RESULT.json` 5820B/096c9cc2502c7c3574349861cef6ea8b32409f86ac972eae32d529d08bc49dd5。这只签解析，没有include/App/DB/HTTP或新业务Runtime，也不证明真实peak低于512M。新clean commit/Val/Host、原完整普通链有效配置与实际峰值、普通close/独立zero仍须Root实际完成；未因Source0或-l关闭原验收项。
+
+本作者没有运行PHP/候选/任何目标、读秘密、提交推送或改C-D，只改normal及原record；原冻结Run/Val/Host/Source对象保持。原80/37历史、真实金融、FullA-B/V1/CORS/浏览器设备/外发/人工及停止样本边界不变。

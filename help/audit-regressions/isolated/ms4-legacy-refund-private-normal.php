@@ -52,6 +52,8 @@ function m4lr_database(PDO $db):array
         $create=$db->query('SHOW CREATE TABLE `'.$name.'`')->fetch(PDO::FETCH_NUM);
         m4lr_expect(is_array($create)&&is_string($create[1]??null),'M4LR_COMPLETE_NATIVE_DDL');
         $out['ddl'][$name]=preg_replace('/ AUTO_INCREMENT=[0-9]+/','',$create[1]);$initialNext[$name]=$next===null?null:(string)$next;
+        // Keep every native row in out; only this table's finished scratch references are no longer needed.
+        unset($serialized,$rows,$create);
     }
     $fresh=$db->query("SELECT TABLE_NAME,AUTO_INCREMENT FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() ORDER BY TABLE_NAME")->fetchAll(PDO::FETCH_KEY_PAIR);
     m4lr_expect(array_keys($fresh)===array_keys($tables),'M4LR_COUNTER_TABLE_NAMESPACE_UNCHANGED');
@@ -657,6 +659,8 @@ function m4lr_read(PDO $db,array $fixture,string $token,array $family,array $ass
     $addition=[$key=>['type'=>Redis::REDIS_STRING,'value'=>$raw,'expires'=>$ticket['expires_at_ms']]];
     [$changes,$increments]=$platform?m4lr_log_delta($db,$before,$after,$fixture,$reply,$rule.'/read-ticket'):[[],[]];
     m4lr_transition($db,$before,$after,$fixture,$reply,$actor,$changes,$increments,null,false,$addition);
+    // The ticket transition consumed these snapshots; release them before allocating the next complete pair.
+    unset($before,$after,$changes,$increments);
     $before=m4lr_state($db);$reply=m4lr_content($base.'/content',$token,$asset['image'],$ticket['read_ticket']);$after=m4lr_state($db);
     [$changes,$increments]=$platform?m4lr_log_delta($db,$before,$after,$fixture,$reply,$rule.'/content'):[[],[]];
     m4lr_transition($db,$before,$after,$fixture,$reply,$actor,$changes,$increments,null,false,[],[$key]);
@@ -706,13 +710,17 @@ function m4lr_legacy_image(PDO $db,array $fixture):void
 
 function m4lr_verify():array
 {
-    $manifest=m4lr_guard();$stat=lstat(M4LR_PRIVATE);
+    $manifest=m4lr_guard();$observerMemoryBefore=ini_get('memory_limit');
+    m4lr_expect(PHP_SAPI==='cli'&&is_string($observerMemoryBefore)&&ini_set('memory_limit','512M')!==false
+        &&ini_get('memory_limit')==='512M','M4LR_VERIFY_CLI_FIXED_MEMORY_LIMIT');
+    $stat=lstat(M4LR_PRIVATE);
     m4lr_expect(is_array($stat)&&($stat['mode']&0777)===0600&&$stat['uid']===posix_geteuid()&&!is_link(M4LR_PRIVATE),'M4LR_PRIVATE_CURRENT_FIXTURE_FILE');
     $fixture=json_decode(file_get_contents(M4LR_PRIVATE),true,64,JSON_THROW_ON_ERROR);
     m4lr_expect(($fixture['schema']??null)===1&&($fixture['run_id']??null)===$manifest['run_id']&&($fixture['source_sha']??null)===$manifest['commit_sha']
         &&($fixture['private_uid']??null)===posix_geteuid(),'M4LR_CURRENT_RUN_SOURCE_AND_PRIVATE_OWNER');
     m4lr_expect(time()>=$fixture['created_at']&&time()-$fixture['created_at']<600,'M4LR_CURRENT_FRESH_SYNTHETIC_PREREQUISITE');
-    m4lr_app($fixture['prefix']);$db=audit_db();m4lr_expect($db->exec('SET SESSION information_schema_stats_expiry=0')===0
+    m4lr_app($fixture['prefix']);m4lr_expect(ini_get('memory_limit')==='512M','M4LR_VERIFY_CLI_MEMORY_LIMIT_AFTER_APP');
+    $db=audit_db();m4lr_expect($db->exec('SET SESSION information_schema_stats_expiry=0')===0
         &&in_array($db->query('SELECT @@SESSION.information_schema_stats_expiry')->fetchColumn(),[0,'0'],true),'M4LR_OBSERVER_FRESH_METADATA');
     $started=false;$error=null;$closed=false;$cases=[];
     try{
@@ -777,8 +785,11 @@ function m4lr_verify():array
             &&($status['stop_mode']??null)==='term-only'&&($status['force_signal_sent']??null)===false,'M4LR_NORMAL_TERM_ONLY_APP_GROUP_CLOSED');$closed=true;
     }catch(Throwable $failure){$error??=$failure;}}
     if($error!==null)throw $error;
+    m4lr_expect(ini_get('memory_limit')==='512M','M4LR_VERIFY_CLI_MEMORY_LIMIT_HELD');
     return ['scope'=>'CU_LEGACY_REFUND_REAL_NORMAL_HTTP_ONLY','source_sha'=>$manifest['commit_sha'],'business_cases'=>$cases,
         'requests'=>$GLOBALS['m4lr_requests']??0,'assertions'=>$GLOBALS['m4lr_assertions']??0,'normal_app_group_closed'=>$closed,
+        'observer_memory'=>['scope'=>'VERIFY_CLI_ONLY','before'=>$observerMemoryBefore,'effective'=>ini_get('memory_limit'),
+            'fixed_limit_bytes'=>536870912,'peak_php_allocated_bytes'=>memory_get_peak_usage(true)],
         'real_system_notice_application_requests'=>$GLOBALS['m4lr_notice_application_requests']??0,'real_system_notice_rows'=>$GLOBALS['m4lr_notice_rows']??0,
         'external_sms_wechat'=>'NOT RUN',
         'resource_retirement'=>'PENDING_ROOT_ORDINARY_CLOSE_AND_INDEPENDENT_ZERO','browser_device_CORS'=>'NOT RUN',
