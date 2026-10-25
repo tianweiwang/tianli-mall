@@ -1,0 +1,26 @@
+# Only the exact platform-chat ordinary profile; base resources, network and permissions remain.
+services:
+  audit-bootstrap:
+    environment:
+      AUDIT_PLATFORM_CHAT_NORMAL: "1"
+      AUDIT_GUARD_MODE: read-only
+    volumes:
+      - platform-chat-private:/run/audit-platform-chat
+  audit-app:
+    command: [help/audit-regressions/isolated/lib/platform-chat-private-profile.php, __serve]
+    environment:
+      AUDIT_PLATFORM_CHAT_NORMAL: "1"
+      AUDIT_GUARD_MODE: read-only
+    volumes:
+      - platform-chat-private:/run/audit-platform-chat
+  audit-runner:
+    environment:
+      AUDIT_PLATFORM_CHAT_NORMAL: "1"
+      AUDIT_GUARD_MODE: read-only
+    volumes:
+      - platform-chat-private:/run/audit-platform-chat:ro
+volumes:
+  platform-chat-private:
+    labels:
+      tianli.audit: "1"
+      tianli.audit.run: ${AUDIT_RUN_ID:?required}

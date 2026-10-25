@@ -687,6 +687,7 @@ function audit_assert_licence_private_mount():void
 
 if (getenv('AUDIT_LEGACY_REFUND_NORMAL') === '1') { require_once __DIR__.'/legacy-refund-normal-profile.php'; }
 if (getenv('AUDIT_WITHDRAWAL_QR_NORMAL') === '1') { require_once __DIR__.'/withdrawal-qr-normal-profile.php'; }
+if (getenv('AUDIT_PLATFORM_CHAT_NORMAL') === '1') { require_once __DIR__.'/platform-chat-private-profile.php'; }
 
 function audit_serve(string $channel = 'app'): void
 {
