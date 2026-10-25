@@ -140,11 +140,13 @@ function m4al_prepare():array
 
 function m4al_database(PDO $db):array
 {
+    static $firstCountersRecorded=false;
     m4al_expect(!$db->inTransaction(),'M4AL_INDEPENDENT_OBSERVER_OUTSIDE_TRANSACTION');
     m4al_expect(in_array($db->query('SELECT @@SESSION.information_schema_stats_expiry')->fetchColumn(),[0,'0'],true),
         'M4AL_OBSERVER_METADATA_EXPIRY_ZERO');
+    $requestsBefore=$GLOBALS['m4al_requests']??0;
     $tables=$db->query("SELECT TABLE_NAME,AUTO_INCREMENT FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() ORDER BY TABLE_NAME")->fetchAll(PDO::FETCH_KEY_PAIR);
-    $out=['hashes'=>[],'rows'=>[],'ddl'=>[],'next'=>[]];
+    $out=['hashes'=>[],'rows'=>[],'ddl'=>[],'next'=>[]];$initialNext=[];
     foreach($tables as$name=>$next){
         m4al_expect(preg_match('/\A(?:eb_[a-z0-9_]+|audit_sentinel)\z/D',$name)===1,'M4AL_COMPLETE_KNOWN_TABLE_NAMESPACE');
         $rows=m4al_rows($db,'SELECT * FROM `'.$name.'`');$serialized=array_map('serialize',$rows);sort($serialized,SORT_STRING);
@@ -152,9 +154,23 @@ function m4al_database(PDO $db):array
         if(in_array($name,M4AL_ROWS,true))$out['rows'][$name]=$rows;
         $create=$db->query('SHOW CREATE TABLE `'.$name.'`')->fetch(PDO::FETCH_NUM);
         m4al_expect(is_array($create)&&is_string($create[1]??null),'M4AL_COMPLETE_NATIVE_DDL');
-        $out['ddl'][$name]=preg_replace('/ AUTO_INCREMENT=[0-9]+/','',$create[1]);$out['next'][$name]=$next===null?null:(string)$next;
+        $out['ddl'][$name]=preg_replace('/ AUTO_INCREMENT=[0-9]+/','',$create[1]);$initialNext[$name]=$next===null?null:(string)$next;
     }
-    foreach(M4AL_ROWS as$name)m4al_expect(isset($out['rows'][$name]),'M4AL_REQUIRED_ORIGINAL_TABLES');return $out;
+    $fresh=$db->query("SELECT TABLE_NAME,AUTO_INCREMENT FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() ORDER BY TABLE_NAME")->fetchAll(PDO::FETCH_KEY_PAIR);
+    m4al_expect(array_keys($fresh)===array_keys($tables),'M4AL_COUNTER_TABLE_NAMESPACE_UNCHANGED');
+    foreach($fresh as$name=>$next)$out['next'][$name]=$next===null?null:(string)$next;
+    foreach(M4AL_ROWS as$name)m4al_expect(isset($out['rows'][$name]),'M4AL_REQUIRED_ORIGINAL_TABLES');
+    if(!$firstCountersRecorded){
+        $requestsAfter=$GLOBALS['m4al_requests']??0;
+        m4al_expect(is_int($requestsBefore)&&$requestsBefore>=0&&$requestsAfter===$requestsBefore,'M4AL_FIRST_SNAPSHOT_NO_HTTP_BETWEEN_COUNTER_MAPS');
+        $manifest=audit_manifest();
+        m4al_write(audit_run_dir().'/evidence/ms4-agent-licence-first-snapshot-counters.json',m4al_json([
+            'scope'=>'CU_LICENCE_FIRST_OBSERVER_COUNTER_MAPS','run_id'=>$manifest['run_id'],'source_sha'=>$manifest['commit_sha'],
+            'business_HTTP_between_maps'=>0,'normal_http_request_count_before'=>$requestsBefore,'normal_http_request_count_after'=>$requestsAfter,
+            'before_table_reads'=>$initialNext,'after_table_reads'=>$out['next']]));
+        $firstCountersRecorded=true;
+    }
+    return $out;
 }
 function m4al_redis():array
 {
