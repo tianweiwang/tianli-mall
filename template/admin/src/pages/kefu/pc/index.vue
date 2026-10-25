@@ -14,6 +14,7 @@
           <div class="chat-body">
             <happy-scroll size="5" resize hide-horizontal :scroll-top="scrollTop" @vertical-start="scrollHandler">
               <div style="width: 600px; padding: 20px" id="chat_scroll" ref="scrollBox" v-loading="isLoad">
+                <p v-if="chatMaterialNotice" role="status">{{ chatMaterialNotice }}</p>
                 <div
                   class="chat-item"
                   v-for="(item, index) in records"
@@ -33,8 +34,8 @@
                       </template>
                       <!-- 图片 -->
                       <template v-if="item.msn_type == 3">
-                        <div class="img-wraper" v-viewer>
-                          <img v-lazy="item.msn" alt="" />
+                        <div class="img-wraper platform-chat-material-viewer" v-viewer>
+                          <img v-if="chatMaterialImage(item)" v-lazy="chatMaterialImage(item)" alt="聊天图片" /><span v-else role="status">原图尚未读取</span>
                         </div>
                       </template>
                       <!-- 商品 -->
@@ -96,6 +97,7 @@
                 </div>
                 <div class="icon-item">
                   <el-upload
+          :disabled="chatMaterialBusy || chatMaterialBlocked || !chatReady"
                     :show-file-list="false"
                     :headers="header"
                     :data="uploadData"
@@ -118,7 +120,7 @@
                   <span>转接</span>
                 </div>
                 <div class="transfer-box" v-if="isTransfer">
-                  <transfer @close="msgClose" @transferPeople="transferPeople" :userUid="userActive.to_uid"></transfer>
+                  <transfer @close="msgClose" @transferPeople="transferPeople" :userUid="userActive.to_uid" :material-context="platformChatContext" :active="isTransfer"></transfer>
                 </div>
                 <div class="transfer-bg" v-if="isTransfer" v-db-click @click.stop="isTransfer = false"></div>
               </div>
@@ -177,6 +179,7 @@
 </template>
 
 <script>
+import { platformChatMaterialMixin } from '@/api/platform-chat-materials';
 var mp3 = require('../../../assets/video/notice.wav');
 var mp3 = new Audio(mp3);
 import Setting from '@/setting';
@@ -209,6 +212,7 @@ const chunk = function (arr, num) {
   return ret;
 };
 export default {
+  mixins: [platformChatMaterialMixin],
   name: 'index',
   components: {
     baseHeader,
@@ -369,9 +373,11 @@ export default {
           // mp3.play();
         });
         ws.$on('socket_error', () => {
+          this.chatMaterialUncertain();
           this.$message.error('连接失败');
         });
         ws.$on('err_tip', (data) => {
+          this.chatMaterialUncertain(data);
           this.$message.error(data.msg);
         });
         //用户上线提醒广播
@@ -399,6 +405,16 @@ export default {
     // Socket.init(this,'kefu');
   },
   methods: {
+    platformChatRows() { return this.chatList; },
+    platformChatContext() {
+      const socket = this.ws, identity = socket && socket.identity || {};
+      const token = getCookies('kefu_token') || '', kind = 'kefu';
+      return { kind, uid: Number(identity.uid), peer: Number(this.userActive.to_uid), tourist: Number(this.tourist), serviceId: Number(this.kefuInfo.id),
+        token, tokenSource: kind === 'guest' ? 'guest' : 'kefu-cookie', expiresAt: this.guestExpiresAt || 0,
+        route: this.$route.fullPath, ready: !this._isDestroyed && !this._isBeingDestroyed && !this._inactive && this.chatReady === true
+          && !!socket && socket.isAuthenticated(kind) && socket.authenticatedCredential === token && Number(this.kefuInfo.uid) === Number(identity.uid) };
+    },
+
     async authenticateChat() {
       const ws = await Socket;
       this.ws = ws;
@@ -420,6 +436,7 @@ export default {
       this.chatReady = target !== 0;
     },
     onChatConnectionError() {
+      this.chatMaterialUncertain();
       this.chatReady = false;
       this.$message.error('聊天室连接未完成');
     },
@@ -428,6 +445,7 @@ export default {
       this.authenticateChat().catch(this.onChatConnectionError);
     },
     onSocketClose(data) {
+      this.chatMaterialUncertain();
       if (data.key !== 2) return;
       this.chatReady = false;
       if (data.serverClose && data.serverClose !== 'timeout') return;
@@ -440,7 +458,8 @@ export default {
       }, 2000);
     },
     beforeUpload(file) {
-      return isPicUpload(file);
+      if (!isPicUpload(file)) return false;
+      return this.chatMaterialBeforeUpload(file);
     },
     handleFormatError(file) {
       this.$message.error('上传图片只能是 jpg、jpg、jpeg、gif 格式!');
@@ -466,7 +485,8 @@ export default {
       }
       this.update(file);
     },
-    update(e) {
+    async update(e) {
+      if (!isPicUpload(e) || !(await this.chatMaterialBeforeUpload(e))) return;
       // 上传照片
       let file = e;
       let param = new FormData(); // 创建form对象

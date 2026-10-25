@@ -56,6 +56,7 @@
         <div class="slot-refresh" slot="refresh-deactive"></div>
         <div class="slot-refresh" slot="refresh-beforeDeactive"></div>
         <div id="chatBox" class="chat" ref="chat" style="padding: 0.3rem">
+          <p v-if="chatMaterialNotice" role="status">{{ chatMaterialNotice }}</p>
           <div v-for="(item, index) in records" :key="index" :id="`chat_${item.id}`">
             <div class="day-box" v-if="item.show">{{ item.time }}</div>
             <div class="chat-item" :class="{ 'right-box': item.to_uid == toUid }">
@@ -63,7 +64,7 @@
               <!-- 消息 -->
               <div class="msg-box" v-if="item.msn_type == 1" v-html="item.msn"></div>
               <!-- 图片 -->
-              <div class="img-box" v-if="item.msn_type == 3" v-viewer><img v-lazy="item.msn" mode="widthFix" /></div>
+              <div class="img-box platform-chat-material-viewer" v-if="item.msn_type == 3" v-viewer><img v-if="chatMaterialImage(item)" v-lazy="chatMaterialImage(item)" mode="widthFix" alt="聊天图片" /><span v-else role="status">原图尚未读取</span></div>
               <!-- 商品 -->
               <div class="product-box" v-if="item.msn_type == 5" v-db-click @click="goProduct(item)">
                 <img :src="item.productInfo.image" />
@@ -91,6 +92,7 @@
     <div class="footer-box">
       <div class="words" v-if="userToken" v-db-click @click="showWords">
         <el-upload
+          :disabled="chatMaterialBusy || chatMaterialBlocked || !chatReady"
           :show-file-list="false"
           :action="fileUrl"
           :before-upload="beforeUpload"
@@ -127,6 +129,7 @@
 </template>
 
 <script>
+import { platformChatMaterialMixin } from '@/api/platform-chat-materials';
 import Setting from '@/setting';
 import { Socket } from '@/libs/socket';
 import util from '@/libs/util';
@@ -148,6 +151,7 @@ const chunk = function (arr, num) {
 };
 
 export default {
+  mixins: [platformChatMaterialMixin],
   name: 'chat_mobile',
   data() {
     return {
@@ -293,6 +297,16 @@ export default {
     this.chatReady = false;
   },
   methods: {
+    platformChatRows() { return this.chatList; },
+    platformChatContext() {
+      const socket = this.socket, identity = socket && socket.identity || {};
+      const token = (window.localStorage.getItem('LOGIN_STATUS_TOKEN') || '') || this.guestToken, kind = this.userToken ? 'api' : 'guest';
+      return { kind, uid: Number(identity.uid), peer: Number(this.toUid), tourist: Number(this.userToken ? 0 : 1), serviceId: null,
+        token, tokenSource: kind === 'guest' ? 'guest' : 'user-storage', expiresAt: this.guestExpiresAt || 0,
+        route: this.$route.fullPath, ready: !this._isDestroyed && !this._isBeingDestroyed && !this._inactive && this.chatReady === true
+          && !!socket && socket.isAuthenticated(kind) && socket.authenticatedCredential === token };
+    },
+
     onAvatarError(event) {
       const image = event.target;
       if (image.getAttribute('src') !== this.defaultAvatar) image.src = this.defaultAvatar;
@@ -318,6 +332,7 @@ export default {
       this.joinCurrentRoom().catch(this.onSocketError);
     },
     onSocketClose(data) {
+      this.chatMaterialUncertain();
       if (data.key !== 2) return;
       this.chatReady = false;
       if (data.serverClose && data.serverClose !== 'timeout') return;
@@ -330,6 +345,7 @@ export default {
       }, 2000);
     },
     onSocketError() {
+      this.chatMaterialUncertain();
       this.chatReady = false;
       this.$message.error('聊天室连接未完成');
     },
@@ -415,11 +431,12 @@ export default {
         });
     },
     // 上传之前
-    beforeUpload(file) {
+    async beforeUpload(file) {
       const isImage = file.type === 'image/jpeg' || file.type === 'image/png';
       if (!isImage) {
         this.$message.error('上传图片只能是 JPG、PNG 格式!');
       }
+      if (!isImage || !(await this.chatMaterialBeforeUpload(file))) return false;
       this.uploadData = {
         filename: file,
         token: this.userToken,
@@ -576,12 +593,11 @@ export default {
     },
     // 图片上传
     uploadImg() {
-      let self = this;
-      self.$util.uploadImageOne('upload/image', function (res) {
-        if (res.status == 200) {
-          self.sendMsg(res.data.url, 3);
-        }
-      });
+      const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*';
+      input.onchange = async () => { const file = input.files && input.files[0]; if (!file || !isPicUpload(file)) return;
+        if (!(await this.chatMaterialBeforeUpload(file))) return;
+        await this.chatMaterialLegacyFile(file);
+      }; input.click();
     },
     //  商品详情页
     goProduct(item) {

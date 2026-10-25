@@ -18,6 +18,7 @@
           <div class="record" @scroll="onScroll" ref="record">
             <div id="chat_scroll" ref="scrollBox" v-loading="loading">
               <ul>
+                <li v-if="chatMaterialNotice" role="status">{{ chatMaterialNotice }}</li>
                 <template v-for="item in records">
                   <li :key="item.id" :class="{ right: item.uid === serviceData.tourist_uid }" :id="`chat_${item.id}`">
                     <div v-if="item.show" class="time-tag">
@@ -33,8 +34,8 @@
                           <i :class="`em ${item.msn}`"></i>
                         </div>
                       </div>
-                      <div v-if="item.msn_type === 3" class="image" v-viewer>
-                        <img v-lazy="item.msn" />
+                      <div v-if="item.msn_type === 3" class="image platform-chat-material-viewer" v-viewer>
+                        <img v-if="chatMaterialImage(item)" v-lazy="chatMaterialImage(item)" alt="聊天图片" /><span v-else role="status">原图尚未读取</span>
                       </div>
                       <div v-if="item.msn_type === 5" class="goods">
                         <div class="thumb">
@@ -97,6 +98,7 @@
                 </button>
                 <button title="图片" v-if="kufuToken">
                   <el-upload
+          :disabled="chatMaterialBusy || chatMaterialBlocked || !chatReady"
                     :show-file-list="false"
                     :action="uploadAction"
                     :before-upload="beforeUpload"
@@ -147,6 +149,7 @@
 </template>
 
 <script>
+import { platformChatMaterialMixin } from '@/api/platform-chat-materials';
 import 'emoji-awesome/dist/css/google.min.css';
 import emojiList from '@/utils/emoji';
 import { Socket } from '@/libs/socket';
@@ -169,6 +172,7 @@ const chunk = function (arr, num) {
   return ret;
 };
 export default {
+  mixins: [platformChatMaterialMixin],
   name: 'ChatRoom',
   auth: false,
   components: {
@@ -322,6 +326,16 @@ export default {
     this.chatReady = false;
   },
   methods: {
+    platformChatRows() { return this.recordList; },
+    platformChatContext() {
+      const socket = this.socket, identity = socket && socket.identity || {};
+      const token = ((Cookies.get('auth._token.local1') || '').startsWith('Bearer ') ? (Cookies.get('auth._token.local1') || '').slice(7) : '') || this.guestToken, kind = this.kufuToken ? 'api' : 'guest';
+      return { kind, uid: Number(identity.uid), peer: Number(this.toUid), tourist: Number(this.kufuToken ? 0 : 1), serviceId: null,
+        token, tokenSource: kind === 'guest' ? 'guest' : 'user-cookie', expiresAt: this.guestExpiresAt || 0,
+        route: this.$route.fullPath, ready: !this._isDestroyed && !this._isBeingDestroyed && !this._inactive && this.chatReady === true
+          && !!socket && socket.isAuthenticated(kind) && socket.authenticatedCredential === token };
+    },
+
     async joinCurrentRoom() {
       if (this._isDestroyed || this._isBeingDestroyed || !this.toUid) return;
       const ws = await Socket;
@@ -343,6 +357,7 @@ export default {
       this.joinCurrentRoom().catch(this.onSocketError);
     },
     onSocketClose(data) {
+      this.chatMaterialUncertain();
       if (data.key !== 2) return;
       this.chatReady = false;
       if (data.serverClose && data.serverClose !== 'timeout') return;
@@ -355,6 +370,7 @@ export default {
       }, 2000);
     },
     onSocketError() {
+      this.chatMaterialUncertain();
       this.chatReady = false;
       this.$message.error('聊天室连接未完成');
     },
@@ -363,7 +379,7 @@ export default {
       this.joinCurrentRoom().catch(this.onSocketError);
     },
     hideEmoji() { this.emojiShow = false; },
-    onChatError(data) { this.$message.error(data.msg || '聊天室消息未完成'); },
+    onChatError(data) { this.chatMaterialUncertain(data); this.$message.error(data.msg || '聊天室消息未完成'); },
     onChatMessage(data) {
       if (data.msn_type == 1) data.msn = this.replace_em(data.msn);
       this.recordList.push(data);
@@ -561,7 +577,8 @@ export default {
         this.notice = res.data.content;
       });
     },
-    beforeUpload(file) {
+    async beforeUpload(file) {
+      if (!isPicUpload(file) || !(await this.chatMaterialBeforeUpload(file))) return false;
       if (isPicUpload(file)) {
         this.uploadData = {
           filename: file,

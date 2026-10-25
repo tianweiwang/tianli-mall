@@ -9,6 +9,32 @@
 // +----------------------------------------------------------------------
 
 import request from '@/libs/request';
+import { guardedPlatformChatTransfer } from '@/api/platform-chat-materials';
+
+/** Real caller supplies its current socket-authenticated staff/room; never retries a dispatched transfer. */
+export function serviceTransferGuarded(data, currentContext) {
+  return guardedPlatformChatTransfer(currentContext, data, (body, frame) => request({
+    url: 'service/transfer',
+    method: 'post',
+    data: body,
+    kefu: true,
+    headers: { 'Content-Type': 'application/json', 'Authori-zation': 'Bearer ' + frame.token },
+    transformRequest: [(value, headers) => {
+      const now = currentContext();
+      const authorization = headers && typeof headers.get === 'function' ? headers.get('Authori-zation')
+        : headers && headers[Object.keys(headers).find(key => key.toLowerCase() === 'authori-zation')];
+      if (!now || now.kind !== frame.kind || Number(now.uid) !== frame.uid || Number(now.peer) !== frame.peer
+        || Number(now.serviceId) !== frame.serviceId || Number(now.tourist) !== frame.tourist || now.token !== frame.token
+        || String(now.route || '') !== frame.route || now.ready !== true || now.active === false || authorization !== 'Bearer ' + frame.token) {
+        throw new Error('转接派发前身份或房间已变化，请查看原聊天记录');
+      }
+      if (!value || Object.keys(value).sort().join(',') !== 'kefuToUid,uid' || value.uid !== body.uid || value.kefuToUid !== body.kefuToUid) {
+        throw new Error('转接正文已变化，操作尚未派发');
+      }
+      return JSON.stringify(body);
+    }],
+  }));
+}
 
 /*
  * 登录

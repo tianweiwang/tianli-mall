@@ -80,6 +80,7 @@
       >
         <Loading :loaded="status" :loading="loading"></Loading>
         <view id="box" class="chat" ref="chat">
+          <view v-if="chatMaterialNotice" role="status">{{ chatMaterialNotice }}</view>
           <view
             v-for="(item, index) in records"
             :key="index"
@@ -97,10 +98,12 @@
               <!-- 图片 -->
               <view class="img-box" v-if="item.msn_type == 3">
                 <image
-                  :src="item.msn"
+                  v-if="chatMaterialImage(item)"
+                  :src="chatMaterialImage(item)"
                   mode="widthFix"
-                  @tap="previewImage(item.msn)"
+                  @tap="previewImage(item)"
                 ></image>
+                <text v-else role="status">原图尚未读取</text>
               </view>
               <!-- 商品 -->
               <view
@@ -149,7 +152,8 @@
       </scroll-view>
     </view>
     <view class="footer-box">
-      <view class="words" @click="uploadImg"
+      <view class="words" role="button" tabindex="0" :aria-disabled="chatMaterialSelecting || chatMaterialBusy || chatMaterialBlocked"
+        @click="uploadImg" @keydown.enter.prevent="uploadImg" @keydown.space.prevent="uploadImg"
         ><text class="iconfont icon-tupian"></text
       ></view>
       <view class="input-box">
@@ -235,11 +239,17 @@ import emojiList from "@/utils/emoji";
 import Loading from "@/components/Loading";
 import colors from "@/mixins/color";
 import { HTTP_REQUEST_URL } from "@/config/app.js";
+import { createPlatformChatScope, isPlatformChatRef } from '@/api/platform-chat-materials';
 export default {
   name: "adminChat_index",
   data() {
     return {
       status: false,
+      chatMaterialNotice: '',
+      chatMaterialBusy: false,
+      chatMaterialBlocked: false,
+      chatMaterialSelecting: false,
+      chatMaterialVisible: true,
       loading: false,
       sysHead: statusBarHeight,
       isTool: false,
@@ -304,7 +314,17 @@ export default {
       });
     },
   },
+  watch: {
+    chatList() { this.chatMaterialRefresh(); },
+    toUid() { this.releaseChatMaterialViews(); this.chatMaterialRefresh(); },
+    '$store.state.app.token'() { this.releaseChatMaterialViews(); },
+    '$store.state.app.authRevision'() { this.releaseChatMaterialViews(); },
+  },
   onLoad(options) {
+    this._chatMaterials = createPlatformChatScope(() => this.platformChatContext(), value => {
+      this.chatMaterialNotice = value.notice; this.chatMaterialBusy = value.busy; this.chatMaterialBlocked = value.blocked;
+      if (value.invalidated) { this.closeChatMaterialPreview(); this.chatList.forEach(row => this.$set(row, '_platformChatURL', '')); }
+    });
     uni.showLoading({
       title: this.$t(`客服连接中`),
     });
@@ -317,9 +337,13 @@ export default {
     this.getOrderInfo();
   },
   onUnload() {
+    this.closeChatMaterialPreview();
+    if (this._chatMaterials) this._chatMaterials.dispose();
     this.$socket.onClose();
     uni.$off();
   },
+  onShow() { this.chatMaterialVisible = true; this.chatMaterialRefresh(); },
+  onHide() { this.chatMaterialVisible = false; this.releaseChatMaterialViews(); },
   onReady() {
     this.httpUrl = `${HTTP_REQUEST_URL}/statics/images/look.png`;
     // #ifdef H5
@@ -377,7 +401,7 @@ export default {
         this.$util.Tips({ title: this.$t('客服连接未完成') });
       });
     });
-    uni.$on('socket_close', () => { app.globalData.isWsOpen = false; });
+    uni.$on('socket_close', () => { app.globalData.isWsOpen = false; if (this._chatMaterials) this._chatMaterials.uncertain(); });
     // 消息接收
     uni.$on(["reply", "chat"], (data) => {
       if (data.msn_type == 1) {
@@ -390,11 +414,13 @@ export default {
       });
     });
     uni.$on("socket_error", () => {
+      if (this._chatMaterials) this._chatMaterials.uncertain();
       this.$util.Tips({
         title: this.$t(`连接失败`),
       });
     });
     uni.$on("err_tip", (e) => {
+      if (this._chatMaterials) this._chatMaterials.uncertain(e);
       this.$util.Tips({
         title: e.msg,
       });
@@ -420,9 +446,38 @@ export default {
     });
   },
   methods: {
-    previewImage(n) {
+    platformChatContext() {
+      const socket = this.$socket, identity = socket && socket.identity || {}, state = this.$store.state.app;
+      return { kind: 'api', uid: Number(identity.uid), peer: Number(this.toUid), token: state.token, revision: state.authRevision,
+        route: String(this.$page && this.$page.fullPath || '/pages/extension/customer_list/chat'),
+        ready: this.chatMaterialVisible && !!socket && socket.isAuthenticated('api') && socket.authenticatedCredential === state.token };
+    },
+    chatMaterialImage(row) { return isPlatformChatRef(row.msn) ? row._platformChatURL || '' : row.msn; },
+    releaseChatMaterialViews() {
+      this.closeChatMaterialPreview();
+      if (this._chatMaterials) this._chatMaterials.releaseViews();
+      this.chatList.forEach(row => this.$set(row, '_platformChatURL', ''));
+    },
+    chatMaterialRefresh() {
+      if (!this._chatMaterials || !this.chatMaterialVisible) return;
+      this._chatMaterials.hydrate(this.chatList, (row, path) => this.$set(row, '_platformChatURL', path))
+        .catch(() => { if (this.chatMaterialVisible) this.chatMaterialNotice = '部分私有原图尚未读取，请重新查看当前聊天'; });
+    },
+    closeChatMaterialPreview() {
+      if (this._chatPrivatePreviewOpen && typeof uni.closePreviewImage === 'function') uni.closePreviewImage({ fail: () => { this.chatMaterialNotice = '原图预览关闭尚未确认'; } });
+      this._chatPrivatePreviewOpen = false;
+    },
+    previewImage(row) {
+      const n = this.chatMaterialImage(row);
+      if (isPlatformChatRef(row.msn)) {
+        if (!this._chatMaterials || !this._chatMaterials.owns(n) || typeof uni.closePreviewImage !== 'function') {
+          this.chatMaterialNotice = '当前身份或原图预览关闭能力尚未确认'; return;
+        }
+        this._chatPrivatePreviewOpen = true;
+      }
       uni.previewImage({
         urls: [n],
+        success: () => { if (isPlatformChatRef(row.msn) && (!this._chatMaterials || !this._chatMaterials.owns(n))) { this._chatPrivatePreviewOpen = true; this.closeChatMaterialPreview(); } },
       });
     },
     // 返回
@@ -574,7 +629,7 @@ export default {
     // ws发送
     sendMsg(msn, type) {
       if (!this.$socket.isAuthenticated('api')) return this.$util.Tips({ title: this.$t('聊天室身份尚未确认') });
-      this.$socket.send({
+      return this.$socket.send({
         data: {
           msn,
           type,
@@ -589,12 +644,29 @@ export default {
         type: "chat",
       });
     },
-    uploadImg() {
+    async uploadImg() {
+      if (this.chatMaterialSelecting || this.chatMaterialBusy || this.chatMaterialBlocked || !this._chatMaterials) return;
+      this.chatMaterialSelecting = true;
+      try {
+        const mode = await this._chatMaterials.selectionMode();
+        if (!mode.current()) return;
+        if (mode.private) {
+          const filePath = await new Promise((resolve, reject) => uni.chooseImage({ count: 1, sizeType: ['compressed'], sourceType: ['album', 'camera'],
+            success(result) { if (result.tempFilePaths && result.tempFilePaths[0]) resolve(result.tempFilePaths[0]); else reject(new Error('尚未选择图片')); },
+            fail() { reject(new Error('尚未选择图片')); } }));
+          if (!mode.current()) return;
+          await this._chatMaterials.uploadAndSend(filePath, (ref, type) => this.sendMsg(ref, type));
+          return;
+        }
+        // The explicitly advertised legacy mode keeps the original canvas/chooser/upload path.
+        await this.$store.dispatch('USERINFO', true);
+        if (!mode.current()) return;
       let self = this;
       self.canvasStatus = true;
       self.$util.uploadImageChange(
         "upload/image",
         function (res) {
+          if (!mode.current()) return;
           if (res.status == 200) {
             self.sendMsg(res.data.url, 3);
           }
@@ -605,8 +677,12 @@ export default {
         (res) => {
           this.canvasWidth = res.w;
           this.canvasHeight = res.h;
-        }
+        },
+        () => { this.canvasStatus = false; },
+        mode.current
       );
+      } catch (error) { this.chatMaterialNotice = error.message || '图片操作尚未完成，请保留草稿'; }
+      finally { this.chatMaterialSelecting = false; }
     },
     // 发送商品
     sendProduct() {

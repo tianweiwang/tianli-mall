@@ -1800,3 +1800,46 @@ Root已保存17后台+record完整快照 `ORG/platform-chat-backend-root-review-
 非作者读真实UserAuthServices.parseToken47–79证明每次正常调用均UPDATE user.last_time；新RoomAccess.credential(api)在sameHttp内反复调用，会自改完整user快照，正常处理跨秒即可误拒/提交后unknown。未运行失败样本；这是确定Source缺陷，不以“多数同秒”忽略。Root已实际追AuthConfigGuard/JwtAuth/SessionWhitelist与原middleware/currentIdentity并采用精确修法，真实采用件 `ORG/integrated-continuation-20261026-r1/PLATFORM-CHAT-AUTH-F1-FINITE-REPAIR-ADOPTION.json`。
 
 本次只重开 `crmeb/app/services/marketplace/assets/PlatformChatRoomAccessServices.php` 的新增credential(api)分支和必要imports（修前8904B/d3eba4026bbceefe988157ff273269d4b04f89369b2ed3296d5dd40faf6786ce），改为既有AuthConfigGuard.assertRedisSessionStore→JwtAuth.decodeVerified→严格api/规范正十进制uid→SessionWhitelist.read/matches真实type/id/token的只读重验。不调用Assets.primary进入depth1，不新增DAO或写入/TTL更新；现current/room/reader/sameHttp完整原User行/PDO/depth/uid/status/is_del门全保，不mask last_time、不放宽整行比较。原HTTP AuthTokenMiddleware/UserAuth.parseToken及WS currentIdentity原认证调用/last_time全部保原正文。其它16后台仍freeze；前端冻结HTTP形状不变。任务：[ ] 单分支/import有限Source修复并全文逆回修前；[ ] 发真实新pin/diff交非作者复核；[ ] Root纯PHP82-l及后续完整普通链。作者不compile/执行目标/提交/C-D，不把有限修复签作运行通过；完成后才继续本批前端九件。
+
+#### 前端独立预审FE-F1：新guarded transfer必须真实POST正文（先记录，后修）
+
+Root及非作者实读确定：原`template/admin/src/api/kefu.js`的serviceTransfer使用params，把uid/kefuToUid编码query；原Request.postMore可读它，但新私有transfer的RoomAccess.http明确QUERY_STRING为空。新guarded dispatch若直接复用旧导出会让合法private转接自拒，不能靠后台放宽query。Root已明确采用按原设计“POST body”修复：只改本批新serviceTransferGuarded的dispatch，经作者实读原导出精确字面量为`service/transfer`，以`request({url:'service/transfer',method:'post',data:body,kefu:true})`发送不可变正文；旧serviceTransfer导出及其其它旧caller兼容原样保留，不改后台/route/权限或加确认API。先记本项再有限代码修正，后交独审；未运行该失败样本或实际转接，不把静态发现/修正签为Runtime。当前后台已由Root精确本地提交a15442d87278d6e7e9febcd86c02fdc07c54ebe5（17+原record、父a155），前端全部未暂存，本批不动其后台源码。
+
+#### 前端预审FE-F2：H5实际ImageInfo缺type，按平台有限适配（先记录，后修）
+
+Root实际读固定HBuilderX `E:/HBuilderX/plugins/uniapp-cli/node_modules/@dcloudio/uni-h5/src/platforms/h5/service/api/media/get-image-info.js:13–19`，作者本次亦读该原件，成功回包仅errMsg/width/height/path，没有type。作者中间Source把type改为可空，虽可避免H5误拒，却同时放宽了MP/APP，不是正确平台边界。现按Root明确采用：新uni helper以编译平台条件分开；H5保原fetch严格允许MIME/Content-Length/blob真实size与原生图片完整正尺寸，不要求SDK不存在的type；非H5保持原type严格allowlist、owned temp真实完整size及正整数尺寸，不从H5证据外推非H5能力。MP/APP若后续原SDK证据显示不同回包，再先记实际证据/具体有限修法，当前运行与设备均未验，不静默全平台放宽。此项仅本批新uni helper/record，不改backend17、公共SDK、测试或控件样式；先记后修，未parse/编译/执行候选或目标。
+
+#### 新guarded转接的实际会话派发点守卫（本批两文件内的原合同落实）
+
+作者实读`template/admin/src/libs/request.js:34–50`：现request interceptor按届时kefu cookie重设Authori-zation。为落实已采用“实际session/immutable pending”而不修改全局request或借customer flag，新guarded helper在私有回调中传入其已固定的actor-frame；本批api/kefu.js仅在该新request的同步transformRequest派发点检查当前ctx仍同kind/uid/serviceId/peer/tourist/token/route且ready，最终header实际Bearer仍等该固定token，才将原不可变POST body序列化。若不符则在网络派发前抛固定无私有参数错误，不能由旧动作写到新登录身份；不更新Cookie/权限、没有重试，原serviceTransfer及其它request caller不变。这是既有实际ctx守卫的调用点落实，不新增协议字段/接口/后端文件，未运行并发/换号/故障样本。
+
+#### 前端九件作者Source冻结事实（不是独立Source0/编译/界面验收）
+
+本批9件均已写入，后台17继续逐字等Root已提交a15442d87278d6e7e9febcd86c02fdc07c54ebe5。两新helper分别按真实store token/authRevision/WS identity，及客服cookie+Service.id/uid、appChat桌面UserAuth cookie、appChat手机UserAuth localStorage、当前guest cap/实际lease取ctx；不读取管理员token代客服/顾客。私有响应只按新严格DTO，受权ticket/binary生成自有Blob或native download临时文件，五页实时与原合法历史/原图用派生字段，全部原msn/ref不改，私有类型3的img不再直接用msn。H5 wire MIME/blob size和真实尺寸严核；MP/APP owned download文件size/type/dim保持门但尚待实际SDK/设备资格，不冒H5等价。
+
+新写模式从真实protocol=1/capabilities决定，显式defaultfalse保旧公开模式并提示尚未私有发布；未知协议/身份先不上传，私有尝试后不公开fallback。uni旧模式继续原uploadImageChange/canvas/chooser正常路径，并使用现真实USERINFO验证后的旧scoped current guard；私有模式使用当前框架compressed选择图，不在选图时丢actor/room/session，配置变化则保所选草稿、未派发不误签成功。PC普通上传/粘贴、mobile及其原secondary helper、两个appChat普通/secondary路径都接同能力判断；secondary路径保可实际上传的旧模式，不用提示替换原正常功能。AppChat guest原无上传控件，新helper也不允许guest私有生产；收到原真实私有消息仅走当前cap窄读，未新增guest历史列表。
+
+上传/WS派发保memory-only File或原选择path、ref、immutable body、typed receipt和分阶段busy/unknown；首await前busy，HTTP上传派发与WS消息派发分别标记，只有本次实际已派发私有消息的真实新log/同ref/同pair/实际sender加受权content核对才确认“消息已保存”，不从upload成功/STAGED/旧BOUND推本次消息成功。WS send Promise不作ACK，连接错误/err_tip/unknown不自动重发。两个真实transfer调用新guarded POST正文，原导出兼容保留；实际明确HTTP成功才原关闭/提示，未知保内存body/选择与锁、不伪造aux确认或再POST。状态用普通notice/p等只读语义，真实转接/上传控件忙态独立，未新增主题/布局CSS。
+
+生命周期仅释放helper拥有的读任务、Blob/native temp和所属预览；不unlink用户原选文件、不删SQL/原对象。component/room/route/identity失效时关闭所属v-viewer/当前私有uni preview并清派生src；uni私有fullscreen仅在SDK确有closePreviewImage能力时开放，迟到结果再次核ctx。选中/已派发草稿不因普通隐藏/关闭变成未发送；真实logout/epoch变化清私有内容/凭据，只保安全未确认标记。原图片公开URL和其余五消息类型、原六类服务端游客边界、原Socket认证/读消息流程保留；没有新确认/恢复API或新商家客服。
+
+作者实际仅做文件/Git静态核：9路径齐全/无范围外dirty，7原文件与2新helper按实际allowlist；6个Vue SFC所有原style块逐byte等a154，template/script外围保持，旧serviceTransfer完整函数原文未改，私有图片五页无剩余裸item.msn的src/v-lazy。全部LF/无尾空白，index空、git diff --check=0；未使用JS/PHP解析器、import、编译、build、测试、HTTP/WS/Docker或浏览器。FE-F1/FE-F2与派发会话守卫均已在上述记录后有限实施，待独立语义审与Root必要静态/模板检查；真实设备/CORS、三宽/长文案/unknown与原图实际视觉、全部普通业务/全副作用/TERM-close-sixzero、外部sender/receiver及default compat发布均仍依原清单未验，不能据Source冻结勾整个T5完成。
+
+
+#### 前端非作者FE-F3：移动客服按真实route游客分类取私有ctx（先采用，后修）
+
+Root已实读原mobile/chat_list.vue真实goPage:341–349，把实际record的is_tourist传到$route.query；原mobile/index.vue:getChatList:465–472也读同query。新platformChatContext却读取data.tourist，而其230初值0在本页没有赋值，因此真实游客房间（包含旧正数tourist UID）会把私有ctx错误固定member0，与后台实际房间分类不符。Root已先采用有限修法，采用件为ORG/integrated-continuation-20261026-r1/PLATFORM-CHAT-FE-F3-MOBILE-TOURIST-ADOPTION.json；真实producer17610B/4b2d6cf9958992f3e3d4b008d39f2c65f76efb08efbd6b0eacca87c6bb278b6f，修前mobile32992B/8503035013e1b901c78da422464361a5912ad4dd76b07febd8f6b61fd95fb605。
+
+本批只重开template/admin/src/pages/kefu/mobile/index.vue的platformChatContext接缝及本record：缺失undefined按原member0；仅数字0/1或字符串'0'/'1'归一为对应数值，其它值为不可用ctx，由原helper严格integer拒绝。不得从UID正负猜游客；不改backend真实推导、原history/send/其余五类+旧URL图片、token/session/Service.id与uid/ready或样式。原data.tourist和其它旧caller不顺手改动，其余八frontend及17backend继续冻结。任务：[ ] 只新增局部route取值与严格归一、替换返回ctx的tourist；[ ] 完整正文逆回修前pin及其它八/17逐byte保持，发新pin交Root/非作者；[ ] Root只重验changed SFC必要语法/模板，真实guest HTTP/WS/browser/设备仍未运行。本批不parse/compile/执行候选或目标、不提交推送/C-D，不以Source修复签Runtime。
+
+
+FE-F3作者实际Source修后冻结：mobile33171B/678010b831072908fc28e3c683999598bfba92fb55559f090f401c25d19dd504，仅platformChatContext内新增rawTourist/严格0或1局部归一、返回tourist改用该值两编辑点；两点逆回完整32992B/85030350原件相等，不是只数行。真实route缺失默认0；显式null/空串/数组/其它值保持不可用，原helper的Number.isSafeInteger门会拒绝null，不因Number(null)把它偷变0。作者纯文件/Git核其它8frontend全旧freeze SHA、17backend逐byte等a154、原record384341B/d2878d9d前缀保全、样式raw、dirty仍精确9+record/index空/diffcheck0。上述有限Source和保全两项任务已完成，Root/非作者修后复核及changed SFC实际纯检查待执行，真实guest/旧正数tourist的HTTP/WS/UI/设备仍未验；无解析/编译/候选或目标运行。
+
+
+### 2026-10-26 Root前端九件Source本地检查点（运行/视觉仍未验）
+
+最终九件216790B已由非作者全文Source审；FE-F1新guarded转接真实POST body且原旧export整段保留，FE-F2依据固定HBuilderX H5回包分支而保MP/APP类型校验，FE-F3 mobile真实route游客位严格0/1/missing0且原history/send/其它八件/17后台完整保全。最终独审依据为ORG/platform-chat-frontend-final-peer-review-r1/fe-f3-closure/SOURCE-CLOSURE.json（6718/3169a448e22d9fb200424cbd326bc17797ed0ee2237e88377eaa6d730e1199f5），不覆盖运行或外部发布。
+
+Root在最初九件冻结来源实际用Node22.23.3、Babel7.27.5及admin Vue2.7.16/uni Vue2.6.14核3JS+6SFC script与6template全0；FE3之后只对唯一改变的mobile SFC重新实际script/template核0，其他八件逐体原样。两个Source来源及原真实PID/argv/同handle wait/完整双流均独立保留，原六Vue style整块raw；没有执行新前端模块、实际平台预编译、完整三build、浏览器、MP/APP或HTTP/WS。证据分别platform-chat-frontend-static-r1/RESULT.json与platform-chat-frontend-fe3-static-r1/RESULT.json，静态检查不代视觉/消息/转接/通知通过。
+
+本次仅将九前端及本record精确十路径保存到独立工作分支的本地提交，后台17仍等a154且new-write默认false。普通验证四件在另一独立Source分支继续，后续须保全两记录增量合入并在同一最终clean HEAD重新做独立Val/完整Source/Host/正常业务及三真实build/fresh B。原D1-D7/N1-N5、全产品/设备/旧client/defaultcompat/真实渠道/发布与所有停止样本未验责任继续保留；本检查点不是完整功能、阶段人工验收或部署。
