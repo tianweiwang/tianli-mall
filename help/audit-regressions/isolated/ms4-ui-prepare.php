@@ -144,10 +144,10 @@ function m4up_source(bool $beforePublicCopy=true): array
     m4up_expect($created['stop_signal']==='SIGTERM'&&getmypid()===1
         &&in_array('audit-app',$created['networks'][$network['Name']]['Aliases']??[],true)
         &&gethostbyname('audit-app')===gethostbyname(gethostname()),'TASK78_REAL_PID_ONE_AND_SELF_HTTP_ALIAS');
-    $binds=['/workspace'=>[$context['repo_dir'],false],'/source'=>[$context['repo_dir'],false],
-        '/run/ms4-prep'=>[$context['prep_dir'],false],'/run/audit'=>[$context['run_dir'],true],
+    $binds=['/run/ms4-prep'=>[$context['prep_dir'],false],'/run/audit'=>[$context['run_dir'],true],
         '/workspace/crmeb/public/install/crmeb.sql'=>[$context['repo_dir'].'/crmeb/public/install/crmeb.sql',false]];
-    $volumes=['/run/audit-app'=>['app-secrets',false],'/run/audit-fixtures'=>['fixture-secrets',true],
+    $volumes=['/workspace'=>['source-tree',false],'/source'=>['source-tree',false],
+        '/run/audit-app'=>['app-secrets',false],'/run/audit-fixtures'=>['fixture-secrets',true],
         M4AR_PRIVATE=>['aftersale-evidence',true],M4CF_ROOT=>['customer-form-evidence',false]];
     $nativeMounts=[];$tmpMounts=[];
     foreach($created['mounts']as$mount){if($mount['Type']!=='tmpfs'){$nativeMounts[]=$mount;continue;}
@@ -161,10 +161,15 @@ function m4up_source(bool $beforePublicCopy=true): array
         if(isset($binds[$target]))m4c_expect($mount['Type']==='bind'&&audit_canonical_host_bind_source($mount['Source'])
             ===audit_canonical_host_bind_source($expected[0]),'M4C_ORIGINAL_HOST_SOURCE_BIND');
         else m4c_expect($mount['Type']==='volume'&&$mount['Name']===$context['project'].'_'.$expected[0],'M4C_ORIGINAL_PRIVATE_VOLUME');}
+    $sourceRoots=[];foreach(['/workspace','/source']as$root)$sourceRoots[$root]=0;
     $cuKernel=file('/proc/self/mountinfo',FILE_IGNORE_NEW_LINES);
     m4up_expect(is_array($cuKernel)&&$cuKernel!==[],'UI_CU_ACTUAL_KERNEL_MOUNTINFO');$cuMounts=[];
     foreach($cuKernel as$line){$halves=explode(' - ',$line,2);$left=explode(' ',$halves[0]);
-        if(($left[4]??'')===M4CF_ROOT)$cuMounts[]=explode(',',$left[5]??'');}
+        if(($left[4]??'')===M4CF_ROOT)$cuMounts[]=explode(',',$left[5]??'');
+        if(array_key_exists($left[4]??'', $sourceRoots)){++$sourceRoots[$left[4]];
+            m4up_expect(in_array('ro',explode(',',$left[5]??''),true)&&!in_array('rw',explode(',',$left[5]??''),true),
+                'UI_SOURCE_TREE_ACTUAL_KERNEL_ROOT_READONLY');}}
+    m4up_expect($sourceRoots===['/workspace'=>1,'/source'=>1],'UI_SOURCE_TREE_BOTH_KERNEL_ROOTS_ONCE');
     m4up_expect(count($cuMounts)===1&&in_array('ro',$cuMounts[0],true)&&!in_array('rw',$cuMounts[0],true),
         'UI_CU_SINGLE_ACTUAL_PRIVATE_ROOT_READONLY_MOUNT');
     $tmpfs=$created['tmpfs'];$tmpKeys=array_keys($tmpfs);sort($tmpKeys,SORT_STRING);
@@ -253,9 +258,16 @@ function m4up_prerequisites(array $source):void
  $oldRoles=array_keys($old['services']);sort($oldRoles,SORT_STRING);
  m4up_expect($oldRoles===['audit-ms5-paid-producer','audit-mysql','audit-redis'],'UI_SAVED_ORIGINAL_THREE_ROLE_PAID_FORMAL');
  foreach($old['services']as$role=>$service)m4c_entry_same($actual['services'][$role],$service);
- $wanted=[];foreach(['mysql-data','redis-data','bootstrap-secrets','redis-secrets','app-secrets','fixture-secrets','aftersale-evidence','customer-form-evidence']as$s)$wanted[]=$source['context']['project'].'_'.$s;
- $vols=$actual['volumes'];sort($vols,SORT_STRING);sort($wanted,SORT_STRING);m4up_expect($vols===$wanted,'UI_ONLY_CURRENT_EIGHT_VOLUMES');
+ $wanted=[];foreach(['mysql-data','redis-data','bootstrap-secrets','redis-secrets','app-secrets','fixture-secrets','aftersale-evidence','customer-form-evidence','source-tree']as$s)$wanted[]=$source['context']['project'].'_'.$s;
+ $vols=$actual['volumes'];sort($vols,SORT_STRING);sort($wanted,SORT_STRING);m4up_expect($vols===$wanted,'UI_ONLY_CURRENT_NINE_SOURCE_TREE_VOLUMES');
  m4fn_prerequisites(m4up_old_view($source));
+ $initFile='/run/audit/evidence/initializer-result.json';
+ m4up_expect(hash_file('sha256',$initFile)===$hashes['initializer-result.json'],'UI_SOURCE_TREE_INITIALIZER_FROZEN_BYTES');
+ $init=m4c_entry_read($initFile);$rootIdentity=$init['source_tree']['root_identity'];
+ foreach(['/workspace','/source']as$root){clearstatcache(true,$root);$actual=lstat($root);
+  m4up_expect(is_array($actual)&&is_dir($root)&&!is_link($root)&&realpath($root)===$root,'UI_SOURCE_TREE_REAL_CURRENT_ROOT');
+  foreach(['dev','ino','mode','uid','gid']as$key)m4up_expect($actual[$key]===$rootIdentity[$key],'UI_SOURCE_TREE_CURRENT_ROOT_SAME_INITIALIZER');}
+ m4up_expect(hash_file('sha256',$initFile)===$hashes['initializer-result.json'],'UI_SOURCE_TREE_INITIALIZER_BYTES_STILL_FROZEN');
 }
 function m4up_paid_owner_before_app(array $source,PDO $db):array
 {

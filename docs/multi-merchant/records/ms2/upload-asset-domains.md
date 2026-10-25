@@ -1340,3 +1340,87 @@ root materializer中原A_QUALIFICATION精确五项、outer native0、真实norma
 - [ ] 原merchant34/25captures/9screens/23facts、独立H5、V1/完整A-B/全部原三端页面设备、真实外部/金融/发布/人工阶段继续各自完成；仅BASE人工已签，所有停止样本NOT RUN不恢复。实现、静态资格、B ready或部分20step都不代整体验收。
 
 Root采用本限定D1–D5设计：已全文核新增15235B及关键真实caller/consumer，media Source0；Root121151另核Core四SourceTree原函数和实际native start钩子、3a51/57de冻结B子树无差量。原B42frames的320/390/1440指三个视口宽度，不是字节预算。实施必须保原完整A/postA实际前提、原角色/namespace/copy/9+4资源及全部原业务断言；实际native仍须原PID/句柄wait和完整原始双流，旧metadata或strip/集合空不能代实际证据。现在允许按Files进行两个repo PHP和有限新B Source适配；新Source/Val/build/A-B/runtime结果仍UNBOUND，停止样本不恢复。
+
+
+##### B/UI SourceTree实施细化（Root采用fad44后的Source阶段）
+
+仅在已列两个repo PHP内实施资格差量：prepare把两个源码host-bind改同一source-tree卷两RO对象并保原mount总destinations/临时层，基础formal精确九卷且原old_view保持；其原m4fn→m4c历史已经完整证明initializer/source_tree copy，不复制业务准备逻辑。backend在原serve与exec observe共用的volumes资格入口增加有限SourceTree validator，复用现m4c initializer predecessor原生终态与其完整manifest/context/copy_result schema校验，保同源初始卷CreatedAt/labels；不是只改计数，也不引入通用验证框架。backend原八+四闭包改为九+四，并核两个同卷RO native/kernel挂载；历史prepare/pay/formal/actual context均精确一致。原source34/37/九环境/四五角色及原业务函数不动。
+
+五bootstrap literal只把已核当前producer四描述符固定重绑到现已采用Git正文，guard条目保持；任何运行时“读取当前值即接受”做法禁止。新B Host负责writer真实0/精确nonforce退役及所有真实SourceTree consumer start路径的fresh guard，repo PHP再从不可变freeze/context/initializer原始结果和完整native体复核copy资格。两个repo文件的完整diff、原函数raw保全/唯一新增有限validator、两个源码根完整读门、原所有20case/window/observe行为和private/app权限保全将在Source冻结时逐项报告；本阶段仍不执行PHP/Node/候选或目标。
+
+
+新B Host具体guard分发设计：逐个原实际Docker start调用点核两条native/ui_copy_native通路，有限解析原已用的`start CID`与`start -a CID`（其余实际别名仅在源码证实后精确纳入），fresh inspect完整mount与实际登记CID来识别source-tree消费者，不能只依proof短列表或len(args)==2使attach漏守门。读取本project source-tree的未知CID必须拒绝；原initializer writer按其原绑定CID/role/image/command及精确RW写根单独识别，不能先要求自身copy完成导致永远不能初始化。所有已识别RO读者均须真实writer natural0、原nonforce移除回执和fresh不存在，再允许原同CID start；非SourceTree原DB路径仍保原资格，不扩大权限。移植Core initializer的完整copy helpers与其source/scope/mount/main接缝时，B其它UI初始化及seed正文保持。旧B原顶部有未封闭UI17 source-seal阻断，新副本只将其改为明确的B SourceTree资格UNBOUND门，运行仍阻断直到Root真实新Source资格，不借旧seal假新通过、不引入UI17验收。旧candidate没有三个dist manifest实体目录，不能猜复制：新build与manifest资格仍由Root物料侧按实际取得，未取得保持UNBOUND。
+
+
+B派生Source后继实际边补充：旧close/zero的UI资源归档/全局消费者按12卷，而部分result/resources/zero结果资格仍写10，这是旧未运行Source内部元数据差量，不是新Runtime失败。新B仅在UI专用资源/来源路径把全部真实集合、归档、结果与独立zero合同统一到9基础+4UI的精确13，不能只做12→13遗漏旧10；业务验证器及A/worker原函数正文保持。新B专用副本CLI仅允许原`--ui-web`用途进入，默认A/worker定义可原文保留但不在本新包公开执行；原Core/旧包其它用途不改，前置新Source资格UNBOUND在任何目标/输出前仍拒绝。zero内置Host离线source/mount/history副本同步必要新SourceTree闭包，不能为复用而import带顶部行为的Host；原六fresh查询实际raw双流都必须0，不以strip或集合空代替。
+
+copy资格wrapper两Source根应从原bind表移入同source-tree两RO volume对象，完整总mount数仍10（原7bind+3volume变5bind+5volume），具体原非Source挂载/RW/kernel/9与13历史不减。wrapper复用本次backend新增有限`m4uib_source_tree($source)`资格叶（context、freeze、prerequisites_sha256及同源requested路径/run/source/freeze字段），实读原initializer native0与完整copy_result schema；调用前后原wrapper来源/actor/namespace/paid与prepare完整门仍保，不另抄弱副本，不新增PHP文件。只在其真实source结构满足原schema时接入，若具体调用字段不同先按本记录限定的同义完整结构联动，不删字段过门。
+
+
+Source闭包实际补点（修改前记录）：原完整copy_result校验已验证writer的root_identity，native与kernel也核同名RO source-tree，但两PHP尚未读取当前`/workspace`、`/source`根的实际stat与copy_result的dev/ino/mode/uid/gid逐项join。现在只在既有prepare资格与backend共享source_tree资格叶补两根实际directory/no-link/realpath与五值严格相等，prepare重读原initializer结果前后仍绑定其原冻结hash，copy wrapper复用该叶；不改业务/App/数据、不新增文件或宽fallback。此必要加强会改变两个已解析PHP字节，Root后续仅对修后实际字节再作必要解析，旧1377b6结果保留为旧版本事实，不续签。
+
+另核完整profile/browser固定来源，除两PHP外还有基线oracle等旧描述符：当前oracle为243930/e611而旧三语义vector写242783/b149；oracle正文继续保护，先追原Git差量/真实消费者契约后仅固定literal与PINS联动，不以“只更新两个PHP”遗漏第三语义成员。Host/zero其它PAID/FULFILLMENT/form/legacy producer旧literal同样须列精确旧/新body与已采用Git出处、必要消费者合同，任何未完成实际Source资格继续明确UNBOUND；不得动态信任运行中的当前hash或拷旧Runtime receipt当新资格。
+
+固定producer来源的实际后继设计（先记后绑）：原B的描述符实际为11处nested/10个unique producer，aftersale-review在两个原map各占一处；另有paid/fulfillment/aftersale-review/worker共4条scalar producer边，各含entry bytes与SHA两个字段（每份Host/zero共8赋值）。此前9unique及“paid/fulfillment共4字段”只是尚未列全的中间观察，以本次完整来源枚举为准；四producer保持各自原入口，分别绑定110169/e6cf、128345/c373、245730/898e、127340/9cb8，不能误指customer entry121046/9ba3。新包`producer-source-qualification/PRODUCER-SOURCE-PROVENANCE.json`保留52次真实只读Git created/terminal/same PID/argv/wait0及完整双流；十个旧literal均找到真实Git正文。当前八个受保护producer逐字等于已采用fad44 Git blob，只有本次两PHP是已列授权的未提交Source正文，不冒称它们已取得clean Source/Runtime资格。
+
+| 原producer（isolated相对路径） | 真实旧Git来源 | 当前固定Source及有限合同差量 |
+|---|---|---|
+| `lib/ms4-customer-form-normal.php` | `0a0c35b4`，66236/1d06 | fad44 72482/a1ee；保原sealed owner及完整34列，quota采用真实Redis十进制原串/100/86400与tag，有限HTTP/preflight/期限诊断仅元数据且原失败继续抛出；原actor、请求、返回及原生child关闭不减。 |
+| `ms4-aftersale-review-normal.php` | `0a0c35b4`，239863/4873 | fad44 245730/898e；同源RO tree/九卷、已审SQL941 identity、b54两精确空map删除后原getter重建与bafb原失败诊断，完整语言行/事务/TTL/wire/副作用断言保留。 |
+| `ms4-customer-http-normal.php` | `2fa872e6`，115616/8418 | fad44 121046/9ba3；真实sourceTree9/copy与RO两根，原public初始化新增自身0700空uploads根，固定INI两行透传；terminal/status原函数raw。 |
+| `ms4-fulfillment-normal.php` | `0a0c35b4`，128280/b877 | fad44 128345/c373；两源码RO卷与官方initialize后完整env按存在/原值严格比较，保其它54/56原函数raw。 |
+| `ms4-worker-normal.php` | `0a0c35b4`，127354/2f52 | fad44 127340/9cb8；只有两源码挂载改同RO tree，69/70原函数raw。 |
+| `ms5-paid-consumer-normal.php` | `0a0c35b4`，108005/ee59 | fad44 110169/e6cf；两RO tree、原env严格比较、有限throwable/HTTP/preflight元数据诊断；原failure/exit1/NOT RUN责任及60/62原函数raw。 |
+| `lib/ms4-three-legacy-producer.php` | `dc651a7f`，53328/9da2 | fad44 53480/6bbe；两RO tree及原private-form挂载，d0a完整sealed `m4cf_owner_after`与整行严格比较，不回退为仅UID；15/17原函数raw。 |
+| `ms4-ui-prepare.php` | `1b819d0f`，42883/5ef9 | 本次44109/e50f；只source/prerequisites两函数，16/18原函数raw，真实live双根五值join。 |
+| `lib/ms4-ui-prepare-oracle.php` | `f73040c1`，242783/b149 | fad44 243930/e611；仅`m4upo_files`一函数配合真实public初始化oracle新增空uploads：前态禁止已有uploads、后态精确一个目录、0700/自身uidgid/同dev/nlink2、独立ino及根nlink+1，原三文件/全部旧节点不变；其余150/151函数raw。正文不改。 |
+| `lib/ms4-ui-backend-normal.php` | `2fa872e6`，127620/5d6f | 本次132938/97e2；只history/volumes/mounts三函数和一个SourceTree叶，52/55原函数raw，serve/observe/业务window保持。 |
+
+上表的完整old/current/diff原件及静态词法named-global spans已保存在同一来源目录，`NAMED-FUNCTION-PRESERVATION.json`为3069/7340d7addf12e8d9c7983dec3b63fe05e23b1fe19cd889f26e299b2d9603801d；仅Source字节/调用合同证明，不是PHP执行或新业务PASS。新B Host/zero固定literal只在这些已逐项追溯的consumer边更新，scalar仍指向同一原entry，不改原caller集合、业务断言或namespace。browser的三PHP vector只有限重绑本次backend与上述原oracle，第三entry3034/ae4e保持；两JS/contract外其余五个browser成员raw保全，DOM按原freeze三成员join，原20步/20observer ACK/42frame/320、390、1440与merchant34/25/9/23/H5责任全部保留。固定Source pin不能代未来clean HEAD/Val/A/newbuild/Run资格，三dist原实际字节仍须以后真实构建取得，当前继续UNBOUND。
+
+D4真实caller补充设计（Root已采用，修改前记录）：冻结B root caller仍有旧M特定的15504 tracked、62 committed、277 native、69 SourceRows，以及旧adoption receipt、旧M/CLI/profile与三dist描述符。新包只保这些原A/M验证函数及原断言为历史，不能把旧receipt搬进新active资格。新active `current_*`只消费未来Root依据真实同HEAD新M Source审定的一份固定完整契约；该契约、HEAD/parent/Val、完整tracked路径和每体blob、native精确命令/数量、result精确schema/角色Source行、normal9/publication/selected17、observer3/browser8、三dist与A五项/outer/postA当前全部None或UNBOUND。不会从运行中当前文件生成期望值，也不加宽fallback。旧数字只作为历史，不作为新资格，原同PID/wait0/完整双流、两全tracked树每体与stable身份、全角色source/freeze/postA比较继续严格由已审固定新契约驱动。
+
+新增有限SourceTree join落在实际producer/consumer边：materializer消费新Host的完整freeze `source_tree`，对同一Root固定manifest的全部files/directories/count/compact hash与source_sha/requested_repo/volume_suffix/writer_destination精确比较，再把简明tree资格写入真实未来materialize result；start caller在创建Run前从setup/freeze再join相同完整tree，在`prepare`返回后校验实际context的volume_name/manifest/count和九个初始卷中同代source-tree身份。writer copy_result/自然0/nonforce退役及每个RO start仍由原Host真实调用门和两个PHP实读复核，不凭caller声明代实际copy。新输入/控制件明确列所需字段及其producer，当前缺少任何固定新M/A/build资格时，main首句在新输出目录/Run/目标前拒绝。未来Root完成真实同HEAD来源与构建后，才逐项固定绑定这些值；Source ready不等于可运行或B ready。
+
+interface/seed控制件有限派生：新interface保留冻结B全部业务与版本历史，只将当前topology和fresh_B当前合同精确适配9/13与已追溯producer；新source_sha/parent/adoption保持None，旧53e6与旧adoption只明确保存为历史。新增B SourceTree当前合同列完整manifest/context/writer/copy_result/live双根/实际start路径/13资源和六raw-zero责任，原版本段不批量伪重绑。Host/close/zero仅在该新interface实际Source定稿后有限更新SHA边。原seed-source-inverse先核其source_path当前固定Git正文和initializer原seed及原两处inverse仍成立后才原样复制；不改变seed历史80，不以旧seed记录代实际新初始化。
+
+上述interface实核细化：fresh实际使用`base_volumes8`、`complete_UI_volumes12`、`ui_source_vector8`（四个旧row）及`customer_form_sources7`（六个旧row），因此新当前字段为base9/complete13并仅这十处逐path固定重绑；旧身份、browser/CoreAux/material layers/candidate A/r4_delta完整值保存在明确historical snapshot。其它含旧组件/前驱authority的top fulfillment/three_read/source_helper/customer_form等字段连同原SEVEN_VOLUME scope正文保持，新增historical_field_roles逐pointer说明其历史用途；本包当前身份由新的integrated_B_source_tree_contract与fresh scope明确，不能批量把旧scope或旧采用记录换成当前资格。原UI_r4业务块仅9/13拓扑与历史注记差量，其余业务全保。实际Host/zero/root未按这些fresh字段动态dispatch，但整份interface SHA仍是硬门。
+
+seed资格实际发现：原控制件whole-source身份已不匹配统一fad44的`help/audit-regressions/isolated/ms2-migration.php`（实际Git body94244/88db586d）；原m2f_seed与派生m4i_seed的完整函数、五个source guard和两处finite inverse仍逐字成立。不能原样复制这个失配身份；待Root真实Git回读采用后，只窄重绑whole-source bytes/SHA，完整函数/guard/inverse与seed历史80不改。
+
+D4继续可达点：原`original_retirement`在新A真实前提仍检查八卷/close八卷，`post_a_history`仍调用旧R33固定相对目录。新包保两函数与相关旧公共历史验证函数全文为历史；active有限current retirement/postA适配只接受未来Root从真实producer审定的完整固定契约，精确加入新A九卷和同一完整tree身份、普通close/六raw-zero/完整native/public inventory，原A五门与only-own/global foreign-consumer检查不减。先前公共inventory/协议历史、完整公共树列表、header/files_key、逐文件descriptor及原生精确命令/终态字段均须由真实Root来源绑定，当前None；不猜新schema或复制旧回执，不从当前运行数据自造期望值。
+
+code-pin DAG又一实际硬门：Host及zero的`ui_copy_freeze_values`仍写旧wrapper48958/f853，而冻结B原wrapper本体为49037，本次SourceTree派生为49275/5a9a。旧literal自身不能冒作当前wrapper来源；当前wrapper的固定资格来自冻结B原件→仅四个已设计source/mount/history/bootstrap函数差量（13/17原函数raw）、本次backend真实SourceTree/live根共用叶及整份正逆证明，物理public-copy原叶25847/0f2a原样。因真实freeze会执行此门，须在已审wrapper正文固定后只把这两个code描述符更新到49275/5a9a，并连同新interface→Host→close→zero有限DAG一起冻结；不删除entry/library硬门或把public-copy/build改为新成功。
+
+原生记录实际缺口与最小补齐（Root已审采用，代码前记录）：Host主`native()`目前`subprocess.run`只留digest metadata，没有真实child PID及raw双流；compose和五个公开6/7/9环境名模板inspect也同样。新包只加一个有限process记录叶并接这七个真实调用点：原Popen handle→created→同handle communicate/wait→完整raw stdout/stderr→terminal，同序列/argv/PID/返回码/每流完整bytes/hash/readback独立保存到`evidence/native-streams/`。主native仍另写原`native-N.json`全部原字段/schema及原return.strip，compose/public-env原metadata与完整原字节断言保持；新子目录不污染原`native-*.json` glob。只原固定公开模板，不读取Config.Env全集或私密child内容，不增加retry/force/样本。UI close已走Host的真实copy-native，UI zero自身也已Popen/created/raw/terminal，因此这两条不重复改；新包CLI不可达的历史A/worker subprocess.run不为整理而改。修后Host及interface/wrapper→close→zero完整有限DAG须重新冻结，旧pins只保历史，不把它当无代码变化或已Runtime验证。
+
+native-streams消费者实读闭包（Source，不是运行结果）：Host原`ui_prepare_public_keep`递归完整Run树收每个普通文件，`ui_prepare_keep_unchanged`逐原路径比完整hash；`ui_web_copy_join(initial=True)`同样递归收全部普通Run文件、仅排除原四个会更新的资源清单，`ui_web_kept`逐完整descriptor再读。因此新子目录/四件自然进入原public keep，不需新增豁免。close原`ui_close_public`完整稳定目录遍历递归所有普通子目录并收完整bytes/hash，`ui_close_preserved`逐已收路径保全；独立zero的`ui_zero_preservation`及`ui_zero_predecessor_keep`同样逐该完整map再读。新记录只追加新序号文件，不改已收原文件；`native-*.json`、`*-created.json`、`copy-native-*.terminal.json`原glob均非递归，不把新子目录中的created/terminal误当旧schema。repo PHP按原完整固定prerequisite/Source路径读而不限制evidence子目录名；public-copy/backend的完整public目录oracle检查的是`/workspace/crmeb/public`，不把Run证据目录混为业务public。future postA完整public inventory的tree也自然包含这些新证据；实际header/行与新M/A仍须Root真实取得后固定绑定，不据此签运行。
+
+browser manifest硬门补点（修改前记录）：新八成员PINS已固定1222/6aeb8340dc7fa1818caf705449ea952ca7b129a2f9be80983895fca5e78237d4，完整八成员逆回冻结B（五raw、两JS及contract仅helper/oracle描述符）。Host与离线zero的`TASK2_BROWSER_MANIFEST_PIN`仍写旧83b926，应仅这两处常量固定改为6aeb，保持原八成员/reader目录/wholemanifest及三PHP vector全部硬门，不动态接受当前manifest。随后再次联动Host→close→zero代码pin，旧Root小AST结果只保旧body事实。
+
+该manifest边精确枚举补全：zero另有原business消费者`UI_AUX_SOURCE_PIN`也固定同一旧1222/83b926，与其`TASK2_BROWSER_MANIFEST_PIN`是两个独立检查点；因此实际为Host一处、zero两处共三处固定引用，全部仍指向同一已审1222/6aeb完整八成员PINS，不能漏此business消费者或删原硬门。第一次有限编辑在计数断言发现第二处后只停Source作者工具，未运行候选/目标或产生任何业务结果，现按真实三边收口。
+
+##### 本轮B/UI Source实施冻结候选状态
+
+两repo PHP固定为prepare44109/e50f1a1395111d40981f066c60f24a91c2e2d997bf0a0723c43d2a97288b01a2和backend132938/97e20bc364b6236e48a2d0cc8b9f7d1ff0e2c48677de7c98902eaf8c6a32f69c；Source词法整函数比较分别保16/18、52/55原函数raw，仅已设计的source/prerequisite、history/volumes/mount及一个新SourceTree叶。Root已报告修后两件实际r2纯解析0及独立跨容器正向rootidentity probe0/正常清退，正式证据由Root留C/D；这不代完整B真实链或业务验收。
+
+新Source包`ORG/integrated-b-ui-source-tree-source-r1`包含完整有限profile源码、原interface/seed有限控制件、browser8、两Root caller与明确未绑定输入。当前Host571238/0dce6f1bc9cf3660ba6e27956e9fffa23d01d35a7a0049302871f5a0d8297e7d、close264062/c079119c216fe232bceda45fff2619bc3e2cc1fc8aef2096326fa51727fd414d、zero661658/e99a2516850c10fa7ff4c4cdbee190562e7f2740d51e8378b7ce704187507e1e；完整interface→wrapper/browser→Host→close→zero硬门联动，offset整份逆证及完整line diff在`source-proof/`。Host原271/298、initializer23/30、wrapper13/17、close83/86、zero225/237 named-global函数raw；额外差量全部为已记录SourceTree、实际native记录、必要producer固定资格与资源闭包。原seed9373B函数及两finite/五guard由Root真实Git独立回读后采用，仅whole-source身份cf2→88db；interface保旧完整历史snapshot与全部原业务合同，物理public-copy/nginx/PNG三叶原字节保持。
+
+Root caller保全部旧历史A/M验证函数完整，active有限适配只消费未来Root审定的一份固定同HEAD完整契约；原A五项、samePID/wait0/full raw、九卷/only-own/global foreign-consumer、完整先前及新public inventory、同完整tree/freeze/context/初始卷身份保持。`QUALIFICATION-FIELDS.json`逐组列真实producer/consumer和缺项，输入sealed=false、HEAD/Val/M/A/build/Run/Source authority均None，main首句拒绝。旧15504/62/277/69只留历史函数，不当新实际数量；没有从当前文件动态自产信任或拿旧53e6/R40 receipt签新Source。
+
+当前Source runtime成员实际只有13件，加DESIGN/PUBLICATION形成15个已有Source member；四个真实runtime manifest（H5/merchant/admin三dist及public-copy profile）刻意未制造。`candidate/PINS.json`明确Source候选而非完整17件runtime seal；新构建、complete full17、正常A/postA和新B全部UNBOUND，须Root真实取得后派生新的已资格Source代际并重新冻结，不覆盖本轮/旧Source或伪构建。`root-source/PINS.json`闭合原四件caller Source；browser八成员和三个PHP semantic vector的whole inverse均实核，其余五成员raw，原DOM/observer正文不改。
+
+本轮作者仅Source读写、实际只读Git及整份字节/静态词法逆证；没有候选执行或编译、Docker/PHP/Node/SQL/HTTP/build/目标/真实外部/提交推送或C/D写入。旧作者早期三Python静态检查、Root中间Host/close/zero小AST结果仅对应各自旧body，不能冒称最后整包已审。repo真实HEAD仍fad44、tracked15795、index空且仅原record及两PHP dirty，原record258903B前缀保持；最后完整Source审核/必要纯解析、code commit/clean Val/fulltracked资格、原完整A/fullS/worker ordinary close/独立raw-zero/postA、三真实build、新B UI20/20/42与merchant34/25/9/23/H5/整体三端设备人工验收继续未完成。停止negative/fault/concurrent/recovery/K仍NOT RUN，不做force/kill/escalation或真实资金/部署。
+
+D4最后资格事实（Root采用，代码前记）：本UI作者的当前范围严格只有两PHP+record三dirty；这不等于未来合入QR等组件后的最终统一HEAD最新Git差量也是三路径。故active Root caller的`COMMITTED_PATHS`同样None，由Root依据真实新M来源固定完整闭集、真实parent与native Git差量定义，逐完整名单/每体核对，不能以len3或当前值自动信任代替。原历史三件断言完整保留；本调整不扩大本作者Files，不碰QR W/Val，也不将UI首次三路径提交混作最终merge HEAD资格。
+
+最后Source检查的真实后继事实：Root已完整实读native-streams相关11个递归keep/close/zero消费者，独立确认无需新增豁免，并对最终Host0dce/closec079/zeroe99a实际指纹作纯AST/compile0（未import或执行），证据`ORG/integrated-b-ui-native-consumer-closure-root-r1/RESULT.json`已由Root进C/D。这是三件当前Python及该消费者Source闭包的小检查，不是两Root caller、整包Source0、新M/A/build或B Runtime通过；其余未资格项仍以上述None/UNBOUND及`QUALIFICATION-FIELDS.json`为准。
+
+
+##### Root统一集成前的UI Source本地检查点（2026-10-25）
+
+本次仅提交已经Root实读、独立非作者复核和实际PHP8.2纯语法通过的两PHP及本record，共三路径；完整SourceTree真实复制、完整A/B、三dist构建及页面业务尚未运行。两PHP分别44109/e50f与132938/97e2，原34/37成员、20步/20ACK/42frame三宽及全部原业务断言保留；这不是全包或Runtime签收。
+
+合入withdrawal QR 75468834前已发现具体调用边：lib/harness.php无条件require原legacy-refund-normal-profile.php，新QR又无条件require withdrawal-qr-normal-profile.php；普通UI/AR/fulfillment/worker等完整included_files闭集未列这些专用文件。不能只更新harness固定SHA、删除included检查或扩大整个lib允许集。Root正在逐caller核专用flag与纯函数profile依赖，先在唯一设计记录决定有限加载或精确依赖方案，再实现必要调用点修复。当前旧冻结B包及QR已验证Run均不覆盖此新集成闭包，仍保留原成功/未运行事实。
+
+下一步保全本三路径提交后，以标准双父merge合入QR18生产及4normal/harness路径和原record完整增量；原两分支已测Source与Runtime结果按其身份保留，不代签新统一HEAD。新HEAD、M、独立Val、全SourceTree、A及postA、三真实build和fresh B均须重新取得真实资格；停止样本和真实资金/外部/部署边界不变。
