@@ -6,6 +6,7 @@ services:
       AUDIT_GUARD_MODE: read-only
     volumes:
       - platform-chat-private:/run/audit-platform-chat
+      - app-runtime:/run/audit-app-runtime:ro
   audit-app:
     command: [help/audit-regressions/isolated/lib/platform-chat-private-profile.php, __serve]
     environment:

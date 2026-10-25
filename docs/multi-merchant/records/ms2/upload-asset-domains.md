@@ -2017,3 +2017,15 @@ Root已全文核N7两处完整正逆与guard/Host真实调用顺序；非作者�
 
 
 N7本地静态收口：Root在实际普通旧场景close/独立zero后才应用两路径；media对完整294B两处差量及17函数/16raw、原fullself正文/每动作前全核给有限Source0。Root实际PHP8.2.33 -n -l检查最终24464/8aab profile为0，nonroot/networknone/两只读挂载helper原CID自然Exited0/PID0/noRestart后nonforce移除，三fresh自有purpose逐条stdout/stderr真实0B，总10native，证据platform-chat-normal-n7-php82-lint-r1/RESULT.json。这里只保存profile＋本record两个文件本地提交，原main2090及17后台/九前端全部原样；不能把语法或旧源码编译当新普通运行成功。新的真实Git/pair/Host/fresh setup/HTTPWS和全部完整oracle、普通close/独立zero仍须重新取得实际证据。
+
+
+### N8 失败prepare观察挂载补齐（待Root实际清退后追加）
+
+Run20261025200232887c39的029/Host3实际setup0；原prepare145自然2/M4PC_REAL_FILE_ROOT。真实公开SETUP显示bootstrap缺/run/audit-app-runtime，runner已有同一app-runtime RO别名、app在原/runtime RW。m4pc_prepare已先做真实迁移，原method receipts含四组apply changed=true，不把失败prepare写成无写入/无DDL或业务通过。
+
+Root采用只给专用chat overlay的bootstrap加app-runtime:/run/audit-app-runtime:ro，同步新Host4.mounts精确bootstrap RO项。仍原13卷，app唯一RW／runner原RO不变，不改base/main/profile/期待或所有完整oracle。runtime_expected的log/pid相对键和真实Workerman格式对应，无第二项已证修复。先保留原Run失败及145全部流，ordinary close/独立六fresh rawzero实毕再落compose＋本record，真实新HEAD/独立Pair资格后才冻结Host4并fresh正常验。所有目标/回归/资金/第三方/发布及停止样本未验责任保。
+
+
+N8 Root实施收口（2026-10-26）：旧Run20261025200232887c39成功SETUP108条、normal prepare145真实2及完整290双raw11390558B均保留。Root已完成专用五原CID各一次TERM自然0、精确13卷/单internal网非force清退、仅原Val own lock删除及独立六fresh每stdout/stderr真实0B，完整原生读回见platform-chat-prepare-failed-root-retire-launch-r1/ROOT-ZERO-READBACK.json。prepare先前真实四组迁移changed=true，未伪改成无写入或业务通过。
+
+仅在真实清退后才落专用compose bootstrap既有app-runtime只读观察别名；Root完整单行正逆与七成员包核对通过，main109883/2090b699、profile24464/8aab6465和全部生产/前端无源码变动。仍原13卷，不修改base或业务oracle。这个本地两路径提交只修观察接线；新真实Source/Val、Host精确挂载、fresh setup、完整普通prepare/verify、上传/HTTP/WS/ACK/转接及后续页面、全A/B/历史/真实金融/发布全部按原责任继续，停止样本NOT RUN，未推送或部署。
