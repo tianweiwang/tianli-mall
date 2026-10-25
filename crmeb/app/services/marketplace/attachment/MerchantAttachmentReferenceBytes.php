@@ -30,12 +30,50 @@ final class MerchantAttachmentReferenceBytes
         return $bytes;
     }
 
-    /** Config, bucket/key and canonical have already been derived from locateObject. */
+    /** Original body-qualified GET; signing remains the same finite provider leaf. */
     public static function cloud(array $object,#[\SensitiveParameter] array $credential,string $canonical,int $maximum,?int $expectedSize,?string &$servedMime=null): string
     {
-        $servedMime=null;
+        $servedMime=null;if($maximum<1)self::fail();
+        try{[$url,$headers]=self::signedCloudGet($object,$credential,$canonical);
+            return self::get($url,$headers,$maximum,$expectedSize,$servedMime);
+        }catch(\Throwable $error){self::fail();}
+    }
+
+    /** Origin presence only. A 404 does not prove that an unexpired/in-flight upload can never arrive. */
+    public static function cloudPresence(array $object,#[\SensitiveParameter] array $credential,string $canonical): string
+    {
+        [$url,$headers]=self::signedCloudGet($object,$credential,$canonical);
+        $parts=parse_url($url);if(!is_array($parts)||($parts['scheme']??null)!=='https')self::fail();
+        $lines=['Accept-Encoding: identity','Range: bytes=0-0'];
+        foreach($headers as$k=>$v){if(!is_string($k)||!is_string($v)||preg_match('/[\r\n\x00]/',$k.$v))self::fail();$lines[]=$k.': '.$v;}
+        $c=curl_init();if(!$c instanceof \CurlHandle)self::fail();$status=null;$headerBytes=0;$bad=false;$stopped=false;$bodyBytes=0;
+        try{
+            if(curl_setopt_array($c,[CURLOPT_URL=>$url,CURLOPT_HTTPGET=>true,CURLOPT_HTTPHEADER=>$lines,
+                CURLOPT_FOLLOWLOCATION=>false,CURLOPT_MAXREDIRS=>0,CURLOPT_PROTOCOLS=>CURLPROTO_HTTPS,
+                CURLOPT_SSL_VERIFYPEER=>true,CURLOPT_SSL_VERIFYHOST=>2,CURLOPT_PROXY=>'',CURLOPT_NOPROXY=>'*',
+                CURLOPT_NETRC=>CURL_NETRC_IGNORED,CURLOPT_HTTPAUTH=>CURLAUTH_NONE,CURLOPT_UNRESTRICTED_AUTH=>false,
+                CURLOPT_CONNECTTIMEOUT_MS=>5000,CURLOPT_TIMEOUT_MS=>5000,CURLOPT_NOSIGNAL=>true,
+                CURLOPT_HEADERFUNCTION=>static function($c,string $line)use(&$status,&$headerBytes,&$bad):int{
+                    $n=strlen($line);$headerBytes+=$n;if($headerBytes>65536){$bad=true;return 0;}
+                    if(preg_match('~\AHTTP/(?:1\.[01]|2|3) ([1-5][0-9]{2})(?: .*)?\r?\n\z~D',$line,$m)===1)$status=(int)$m[1];return $n;
+                },
+                CURLOPT_WRITEFUNCTION=>static function($c,string $bytes)use(&$status,&$stopped,&$bodyBytes):int{
+                    if(in_array($status,[200,206],true)){$stopped=true;return 0;}
+                    $bodyBytes+=strlen($bytes);return $bodyBytes<=65536?strlen($bytes):0;
+                }])!==true)self::fail();
+            $ok=curl_exec($c);$errno=curl_errno($c);$actual=curl_getinfo($c,CURLINFO_RESPONSE_CODE);
+            if($bad||$actual!==$status)self::fail();
+            if(in_array($status,[200,206],true)&&(($ok===true&&$errno===0)||($stopped&&$errno===CURLE_WRITE_ERROR)))return 'present';
+            if($ok===true&&$errno===0&&$status===404)return 'absent';
+            self::fail();
+        }finally{curl_close($c);}
+    }
+
+    /** Config, bucket/key and canonical have already been derived from locateObject. */
+    private static function signedCloudGet(array $object,#[\SensitiveParameter] array $credential,string $canonical): array
+    {
         if(!in_array($object['type'],[2,3,4,5,6,7],true)
-            ||!in_array($canonical,$object['canonical'],true)||$maximum<1)self::fail();
+            ||!in_array($canonical,$object['canonical'],true))self::fail();
         $storage=$object['storage'];$key=$object['key'];
         if($credential['accessKey']!==$storage['access_key']||!str_ends_with($canonical,'/'.$key))self::fail();
         $base=substr($canonical,0,-strlen('/'.$key));$parts=parse_url($canonical);
@@ -102,7 +140,7 @@ final class MerchantAttachmentReferenceBytes
                     break;
                 default:self::fail();
             }
-            return self::get($url,$headers,$maximum,$expectedSize,$servedMime);
+            return [$url,$headers];
         }catch(\Throwable $error){self::fail();}
     }
 

@@ -35,6 +35,19 @@ return [
         'per_actor'=>Env::get('marketplace.product_video_upload.per_actor',4),
         'ttl_seconds'=>Env::get('marketplace.product_video_upload.ttl_seconds',600),
     ],
+    'product_video_cloud_upload'=>[
+        // Enable only after the private staging bucket and provider browser policy are qualified.
+        'enabled'=>Env::get('marketplace.product_video_cloud_upload.enabled',false),
+        'private_root'=>Env::get('marketplace.product_video_cloud_upload.private_root',''),
+        'staging_storage_id'=>Env::get('marketplace.product_video_cloud_upload.staging_storage_id',0),
+        'max_open_sessions'=>Env::get('marketplace.product_video_cloud_upload.max_open_sessions',16),
+        'per_actor'=>Env::get('marketplace.product_video_cloud_upload.per_actor',4),
+        'ttl_seconds'=>Env::get('marketplace.product_video_cloud_upload.ttl_seconds',600),
+        // A declaration backed by provider qualification, not an inferred duration; zero holds capacity.
+        'upload_completion_bound_seconds'=>Env::get('marketplace.product_video_cloud_upload.upload_completion_bound_seconds',0),
+        'qiniu_upload_url'=>Env::get('marketplace.product_video_cloud_upload.qiniu_upload_url',''),
+        'qiniu_rs_url'=>Env::get('marketplace.product_video_cloud_upload.qiniu_rs_url',''),
+    ],
     'payment'=>[
         // Think Env reads PHP_MARKETPLACE_PAYMENT_TEST_ENABLED; APP_ENV is checked separately at resolution.
         'test_enabled'=>Env::get('marketplace.payment.test_enabled',false),

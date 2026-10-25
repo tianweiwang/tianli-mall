@@ -123,11 +123,82 @@ function savedVideo(value) {
   if (!value || typeof value.src !== 'string' || !value.src || /^(blob:|data:)/i.test(value.src)) throw failure('视频保存结果未确认', 'unknown');
   return value;
 }
-export function mediaVideoUpload(context, file, pid = 0, chunked = false) {
+export function mediaVideoUpload(context, file, pid = 0, chunked = false, cloud = false, onStage = null, onPending = null) {
+  if (cloud && file instanceof File && file.size > 3145728) return mediaVideoUploadCloud(context, file, pid, onStage, onPending);
   if (chunked && file instanceof File && file.size > 3145728) return mediaVideoUploadChunks(context, file, pid);
   const body = new FormData(); body.append('file', file); body.append('pid', String(mediaId(pid, true)));
   return transfer(context, 'POST', path(context) + '/videos/upload', body).then(savedVideo);
 }
+async function productCloudTransfer(context, file, issued) {
+  requireProductContext(context);
+  const plan = issued && issued.upload_plan;
+  if (!issued || !/^[a-f0-9]{32}$/.test(issued.upload_reference) || !plan || ![2, 3, 4, 5, 6, 7].includes(plan.provider)
+    || plan.byte_size !== file.size || plan.content_type !== 'video/mp4' || !Number.isSafeInteger(plan.expires_at)
+    || plan.expires_at * 1000 <= Date.now() || !['form', 'put'].includes(plan.transport)
+    || (plan.provider === 4) !== (plan.transport === 'put')) throw failure('云视频暂存计划不完整', 'rejected');
+  const url = new URL(plan.url);
+  if (url.protocol !== 'https:' || url.username || url.password || url.hash || url.search) throw failure('云视频暂存地址不正确', 'rejected');
+  const fieldNames = ['key', 'token', 'Content-Type', 'success_action_status', 'policy', 'signature', 'AccessKeyId', 'OSSAccessKeyId', 'Signature', 'X-Amz-Credential', 'X-Amz-Algorithm', 'X-Amz-Date', 'Policy', 'X-Amz-Signature'];
+  const checked = (value, allowed) => {
+    if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).length > allowed.length) throw failure('云视频暂存参数不完整', 'rejected');
+    const result = {};
+    Object.keys(value).forEach(key => {
+      if (!allowed.includes(key) || typeof value[key] !== 'string' || !value[key] || value[key].length > 16384 || /[\r\n\0]/.test(value[key])) throw failure('云视频暂存参数不正确', 'rejected');
+      result[key] = value[key];
+    });
+    return result;
+  };
+  const fields = checked(plan.fields, fieldNames); const headers = checked(plan.headers, ['Content-Type', 'Authorization']);
+  const keyPattern = new RegExp('^uploads/merchant/[1-9][0-9]*/video-staging/' + issued.upload_reference + '/[a-f0-9]{32}\\.mp4$');
+  let body = file;
+  if (plan.transport === 'form') {
+    if (Object.keys(headers).length || !keyPattern.test(fields.key || '')) throw failure('云视频暂存对象不正确', 'rejected');
+    body = new FormData(); Object.keys(fields).forEach(key => body.append(key, fields[key])); body.append('file', file, file.name);
+  } else if (Object.keys(fields).length || headers['Content-Type'] !== 'video/mp4' || !headers.Authorization || !keyPattern.test(url.pathname.slice(1))) {
+    throw failure('云视频暂存对象不正确', 'rejected');
+  }
+  const controller = new AbortController(); context.life.controllers.add(controller);
+  const timer = window.setTimeout(() => controller.abort(), 100000);
+  try {
+    const response = await fetch(url.href, { method: plan.transport === 'put' ? 'PUT' : 'POST', body, headers,
+      signal: controller.signal, credentials: 'omit', redirect: 'error', cache: 'no-store', mode: 'cors', referrerPolicy: 'no-referrer' });
+    requireProductContext(context);
+    if (response.redirected || ![200, 201, 204].includes(response.status)) throw failure('云视频传输尚未确认，请核对本次暂存', 'rejected');
+    // The provider response is a transfer acknowledgment only; never consume its URL/key/ETag as final authority.
+    if (response.body) await response.body.cancel();
+  } finally { window.clearTimeout(timer); context.life.controllers.delete(controller); }
+}
+async function mediaVideoUploadCloud(context, file, pid, onStage, onPending) {
+  const category = mediaId(pid, true); const endpoint = path(context) + '/videos/upload'; let issued; let pending;
+  const keep = (phase, receipt = null) => {
+    requireProductContext(context);
+    pending = Object.freeze({ upload_reference: pending.upload_reference, filename: file.name, byte_size: file.size, sha256: pending.sha256, file, phase, receipt });
+    if (onPending(pending) !== true) throw failure('商品上下文已变化，请核对原视频暂存', 'rejected');
+  };
+  try {
+    if (typeof onPending !== 'function') throw failure('视频暂存记录尚未准备，请重新打开视频库', 'rejected');
+    requireProductContext(context);
+    if (!window.crypto || !window.crypto.subtle || !file.size || !/\.mp4$/i.test(file.name)) throw failure('当前浏览器尚不能核对云视频，请使用 HTTPS 支持的浏览器', 'rejected');
+    const digest = await window.crypto.subtle.digest('SHA-256', await file.arrayBuffer()); requireProductContext(context);
+    const sha256 = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
+    issued = await transfer(context, 'POST', endpoint, { upload_operation: 'cloud_issue', pid: category, filename: file.name, total_size: file.size, sha256 });
+    if (!issued || !/^[a-f0-9]{32}$/.test(issued.upload_reference)) throw failure('视频暂存引用未确认', 'rejected');
+    pending = { upload_reference: issued.upload_reference, sha256 }; keep('issued');
+    await productCloudTransfer(context, file, issued); requireProductContext(context); keep('staged');
+    if (typeof onStage === 'function') onStage();
+  } catch (error) {
+    requireProductContext(context);
+    // No commercial publication occurs before the separate finalize call. Keep the server reference for natural collection.
+    throw failure('视频暂存未完成，尚未提交入库，请保留本次结果并核对', 'rejected');
+  }
+  requireProductContext(context);
+  keep('unknown');
+  try {
+    const result = savedVideo(await transfer(context, 'POST', endpoint, { upload_operation: 'cloud_finalize', pid: category, upload_reference: issued.upload_reference }));
+    keep('saved'); return result;
+  } catch (error) { keep('unknown', error.receipt || null); error.videoPending = pending; throw error; }
+}
+
 async function mediaVideoUploadChunks(context, file, pid) {
   const category = mediaId(pid, true); const endpoint = path(context) + '/videos/upload';
   let issued;
