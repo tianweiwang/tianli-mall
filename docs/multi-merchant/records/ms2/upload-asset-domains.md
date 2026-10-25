@@ -2083,3 +2083,24 @@ Source候选完成界限：四Files before/after完整字节及各有限替换�
 Root实际用已有固定297b PHP8.2.33、nonroot65534/network-none/read-only helper对最终API、profile、main、B/UI backend四PHP逐个原生-n -l，四个真实子PID均自然0、stderr空；原helper自然Exited0/PID0/noRestart后nonforce移除，三个fresh purpose查询双raw全0。证据platform-chat-lifecycle-and-b-ui-php82-syntax-r1/RESULT.json。另独立helper对真实新旧完整harness及相同guard，在default与显式chatflag=0下四个独立PHP进程仅导入定义，原函数完整定义hash和规范included集合一致；全部原始流与samehandle自然退出/普通清退及fresh zero实证见integrated-b-ui-default-definition-compatibility-r1/RESULT.json。未跑flag1、App/DB/HTTP/WS业务或停止样本。
 
 本次仅五路径精确本地提交，保全d119云根修复和原record全部增量。下一步统一Source合入独立MS6商家路由3dda7490，真实Git后才创建全新独立Val2、重新全树资格/新Host并跑完整正常链。旧Run202610252059380a34ef/Val1/五容器/十三卷/内部网/ownlock原样保留，原失败和未清退责任不被新成功覆盖。当前未推送/部署，完整M/A/B、原浏览器/设备/真实支付与外部验收仍待。
+
+
+### 首次平台聊天启动失败的有界公开诊断（Source候选，2026-10-26）
+
+Root采用platform-chat-first-start-failure-diagnostic-root-design-r1/ADOPTION.json。f035/Host6原Run202610252221284448cc实际setup0、prepare1450、verify1461；约1秒启动ACK失败，原finally TERM组合自然0/三监听空，原app-status被stop覆盖，首次具体guard仍UNKNOWN，不能称12秒timeout，也不由多时点观察猜定根因。Root现已完成该Run普通close/独立zero及Source/Val2 clean核对；本候选不进入或回填原Run。
+
+仅外部两路径：observe加默认null可选byref启动context，旧2arg调用继续合法；只投影既有组/成员/UID/端口和角色计数。原最终ports同处一次求值，仍原严格相等和禁止40001谓词。serve为原操作固定stage，原start catch仅从Throwable帧取__FILE__对应整数callsite，不序列化trace/args/message/ENV。首失败另存本Run/revision create-only xb、完整write/flush/close/chmod0600、<=64KiB固定schema；诊断I/O任何失败仅固定enum，不覆盖原failed ACK/retained或TERM。
+
+- [x] 外部Source与整文件有限逆；原17函数仅observe/serve必要缝变，其余15及main entry、API/harness/production/vendor原字节不改。
+- [x] 原record f035完整439318B/f067a75a前缀及全部云根/BUI/N9增量保留，仅追加本设计任务。
+- [x] Root已报告原失败Run实际普通close/独立zero，本Source不代签或重复执行该清退。
+- [ ] 非作者/Root完整Source审及必要真实PHP语法；Root审后另做新提交/Source与独立Val全树资格/新Host/fresh normal，以及原TERM8s/普通close/独立fresh六双rawzero。
+
+全部五process角色/三监听/12秒poll/identity-UID-receipt-ports guard/TERM8秒保持；无新proc/TCP/native采样、catch重试、握手或业务请求，不把失败谓词当暂态接受。完整M/A/postA/三build/freshB/UI/H5/设备/真实金融/发布仍待，停止样本NOT RUN。本段仅作者Source保全，非Source0/语法或Runtime通过。
+
+
+#### Root首失败诊断Source本地验证收口（2026-10-26）
+
+Root已完整读两函数和22有限缝并整文件正逆，原15具名函数和主入口raw、既有进程/TCP/信号/时限调用数保持；独立observe接线审与安全I/O窄审均未报确定问题。原严格ports相等及40001拒绝、五角色/12s、原TERM8s和全部业务门不改。reason_code表示固定操作上下文，实际抛错位置仍须看首失败owned source_line；旧Run具体guard不因此回填。Root另以固定297b PHP8.2.33 nonroot/networknone/RO helper真实-n-l最终profile一次为0；helper自然Exited0/PID0/noRestart后nonforce移除、三fresh purpose查询双raw0，共10native原件已完整读回，证据platform-chat-first-start-diagnostic-php82-syntax-r1/RESULT.json。没有执行停止的异常/I/O故障样本。
+
+本次仅profile+原record两路径本地提交并统一ff；下一步真实新Git/idle独立Val2全树/新Host/fresh完整normal仍待。Run202610252221284448cc原失败保留且已实际普通close/独立sixfresh双raw-zero；旧Val1/Run202610252059380a34ef保留未清退，不对其操作。当前不签完整M/A/B/UI/设备/真实支付或发布；未推送部署。

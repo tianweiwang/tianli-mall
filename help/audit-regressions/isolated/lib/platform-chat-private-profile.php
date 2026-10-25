@@ -73,18 +73,34 @@ function m4pc_profile_process_uid(int $pid):array
     $raw=@file_get_contents('/proc/'.$pid.'/status');audit_expect(is_string($raw)&&preg_match('/^Uid:\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)$/m',$raw,$m)===1,'actual own process UID tuple required');
     $uids=array_map('intval',array_slice($m,1));audit_expect($uids===array_fill(0,4,posix_geteuid()),'foreign process UID rejected');return $uids;
 }
-function m4pc_profile_observe(array $group,array $supervisor):array
+function m4pc_profile_observe(array $group,array $supervisor,?array &$startup=null):array
 {
+    if($startup!==null)$startup['stage']='observe_group';
     $members=audit_app_group_members($group,$supervisor);$inodes=[];
+    if($startup!==null){$startup['facts']['member_count']=count($members);$startup['stage']='observe_tcp_first';}
     foreach(audit_app_tcp_rows()as$row)if($row['state']==='0A'&&in_array($row['local_port'],[8000,40001,40002,40003],true))$inodes[$row['inode']]=$row['local_port'];
-    $ports=[];foreach($members as&$member){$before=audit_app_proc_stat($member['pid']);$uids=m4pc_profile_process_uid($member['pid']);$owned=[];
+    if($startup!==null){$firstPorts=array_values(array_unique(array_values($inodes)));sort($firstPorts,SORT_NUMERIC);$startup['facts']['first_listener_ports']=$firstPorts;}
+    $ports=[];foreach($members as&$member){
+        if($startup!==null){$startup['stage']='observe_member_before';$startup['facts']['member_pid']=$member['pid'];
+            foreach(['member_before_present','member_euid','member_owned_count','member_after_present']as$key)$startup['facts'][$key]=null;}
+        $before=audit_app_proc_stat($member['pid']);
+        if($startup!==null){$startup['facts']['member_before_present']=(int)($before!==null);$startup['stage']='observe_member_uid';}
+        $uids=m4pc_profile_process_uid($member['pid']);$owned=[];
+        if($startup!==null){$startup['facts']['member_euid']=$uids[1];$startup['stage']='observe_member_identity';}
         audit_expect($before!==null&&$before['starttime']===$member['starttime']&&$before['pgid']===$group['pgid']&&$before['sid']===$group['sid'],'same platform chat group member required');
+        if($startup!==null)$startup['stage']='observe_member_fd';
         foreach(glob('/proc/'.$member['pid'].'/fd/*')?:[]as$fd){$target=@readlink($fd);if(is_string($target)&&preg_match('/\Asocket:\[(\d+)\]\z/D',$target,$m)===1&&isset($inodes[$m[1]]))$owned[]=$inodes[$m[1]];}
-        $after=audit_app_proc_stat($member['pid']);audit_expect($after!==null&&$after['pid']===$before['pid']&&$after['starttime']===$before['starttime']
+        if($startup!==null){$startup['facts']['member_owned_count']=count($owned);$startup['stage']='observe_member_after';}
+        $after=audit_app_proc_stat($member['pid']);
+        if($startup!==null)$startup['facts']['member_after_present']=(int)($after!==null);
+        audit_expect($after!==null&&$after['pid']===$before['pid']&&$after['starttime']===$before['starttime']
             &&$after['pgid']===$before['pgid']&&$after['sid']===$before['sid']&&m4pc_profile_process_uid($member['pid'])===$uids,'member identity changed during socket ownership observation');
         $member['listener_ports']=array_values(array_unique($owned));sort($member['listener_ports'],SORT_NUMERIC);$ports=array_merge($ports,$owned);
     }unset($member);$ports=array_values(array_unique($ports));sort($ports,SORT_NUMERIC);
-    audit_expect($ports===m4pc_profile_ports()&&!in_array(40001,$ports,true),'all HTTP Chat Channel listeners must belong to the registered group');
+    if($startup!==null){$startup['stage']='observe_ports';$startup['facts']['owned_listener_ports']=$ports;}
+    $globalPorts=m4pc_profile_ports();
+    if($startup!==null)$startup['facts']['last_listener_ports']=$globalPorts;
+    audit_expect($ports===$globalPorts&&!in_array(40001,$ports,true),'all HTTP Chat Channel listeners must belong to the registered group');
     return ['group'=>$group,'members'=>$members,'listener_ports'=>$ports,'force_signal_sent'=>false];
 }
 /** One signal attempt for this original handle/generation. Failed observation retains the handle. */
@@ -154,40 +170,96 @@ function m4pc_profile_serve():never
     audit_expect(is_string($id)&&preg_match('/\A[a-f0-9]{64}\z/D',$id)===1&&gethostname()===substr($id,0,12),
         'registered platform chat passive supervisor container required');
     $supervisor=audit_app_proc_stat(getmypid());audit_expect($supervisor!==null,'real supervisor required');
-    $process=null;$group=null;$termSent=false;$generation='';$revision='';$shutdown=false;$stopBlocked=false;$meta=null;$firstTerminal=null;
+    $process=null;$group=null;$termSent=false;$generation='';$revision='';$shutdown=false;$stopBlocked=false;$meta=null;$firstTerminal=null;$startup=null;
     pcntl_async_signals(true);pcntl_signal(SIGTERM,static function()use(&$shutdown):void{$shutdown=true;});
+    // Fixed safe projection only; diagnostic I/O must never replace the original failed ACK or TERM.
+    $firstFailure=static function(array $context,?int $ownedLine,string $revision):string{
+        $handle=null;
+        try{
+            if(preg_match('/\A[a-f0-9]{16}\z/D',$revision)!==1)return 'NOT_WRITTEN_REVISION';
+            $reasons=[
+                'start_self'=>'START_SELF_GUARD_FAILED','start_control'=>'START_CONTROL_GUARD_FAILED',
+                'start_generation'=>'START_GENERATION_GUARD_FAILED','start_options'=>'START_OPTIONS_GUARD_FAILED',
+                'start_receipts'=>'START_RECEIPT_GUARD_FAILED','start_process'=>'START_PROCESS_FAILED',
+                'start_group'=>'START_GROUP_FAILED','start_created'=>'START_CREATED_RECEIPT_FAILED',
+                'start_observe'=>'START_OBSERVE_FAILED','observe_group'=>'OBSERVE_GROUP_FAILED',
+                'observe_tcp_first'=>'OBSERVE_FIRST_TCP_FAILED','observe_member_before'=>'OBSERVE_MEMBER_BEFORE_FAILED',
+                'observe_member_uid'=>'OBSERVE_MEMBER_UID_FAILED','observe_member_identity'=>'OBSERVE_MEMBER_IDENTITY_FAILED',
+                'observe_member_fd'=>'OBSERVE_MEMBER_FD_FAILED','observe_member_after'=>'OBSERVE_MEMBER_AFTER_FAILED',
+                'observe_ports'=>'OBSERVE_PORT_OWNERSHIP_FAILED','start_child_receipt'=>'START_CHILD_RECEIPT_FAILED',
+                'start_role_matrix'=>'START_ROLE_MATRIX_FAILED','start_deadline'=>'START_ROLE_DEADLINE_FAILED'];
+            $stage=is_string($context['stage']??null)&&isset($reasons[$context['stage']])?$context['stage']:'unknown';
+            $observed=is_array($context['facts']??null)?$context['facts']:[];$facts=[];
+            foreach(['poll_index','leader_pid','pgid','sid','member_count','member_pid','member_before_present','member_euid',
+                'member_owned_count','member_after_present','child_created_count','child_role_index','http_role_present',
+                'master_role_present','channel_worker_count','chat_worker_count']as$key){
+                $value=$observed[$key]??null;$facts[$key]=is_int($value)&&$value>=0?$value:null;
+            }
+            foreach(['first_listener_ports','owned_listener_ports','last_listener_ports']as$key){
+                $value=$observed[$key]??null;$valid=is_array($value)&&array_is_list($value)&&count($value)<=4;
+                if($valid)foreach($value as$port)if(!is_int($port)||!in_array($port,[8000,40001,40002,40003],true)){$valid=false;break;}
+                $facts[$key]=$valid?$value:null;
+            }
+            $record=['schema'=>1,'scope'=>'PLATFORM_CHAT_FIRST_START_FAILURE_SAFE_FACTS','revision'=>$revision,
+                'stage'=>$stage,'reason_code'=>$reasons[$stage]??'UNKNOWN_START_FAILURE',
+                'source'=>'help/audit-regressions/isolated/lib/platform-chat-private-profile.php',
+                'source_line'=>is_int($ownedLine)&&$ownedLine>0?$ownedLine:null,'facts'=>$facts];
+            $raw=json_encode($record,JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR)."\n";
+            if(strlen($raw)>65536)return 'NOT_WRITTEN_SIZE';
+            $path=audit_run_dir().'/evidence/platform-chat-'.$revision.'-start-failure.json';
+            $handle=@fopen($path,'xb');if(!is_resource($handle))return 'NOT_WRITTEN_CREATE';
+            if(!@chmod($path,0600))return 'NOT_WRITTEN_IO';
+            $offset=0;$length=strlen($raw);while($offset<$length){$written=@fwrite($handle,substr($raw,$offset));
+                if(!is_int($written)||$written<=0)return 'NOT_WRITTEN_IO';$offset+=$written;}
+            if(!@fflush($handle))return 'NOT_WRITTEN_IO';$closed=@fclose($handle);$handle=null;
+            return $closed?'WRITTEN':'NOT_WRITTEN_IO';
+        }catch(Throwable $diagnosticFailure){return 'NOT_WRITTEN_IO';}
+        finally{if(is_resource($handle))try{@fclose($handle);}catch(Throwable $diagnosticCloseFailure){}}
+    };
     while(!$shutdown){$control=audit_read_control_json(audit_run_dir().'/app-control.json');
         if(($control['run_id']??null)===getenv('AUDIT_RUN_ID')&&($control['revision']??'')!==$revision){
             $revision=$control['revision']??'';$action=$control['action']??'';
+            $startup=$action==='start'?['stage'=>'start_self','facts'=>['poll_index'=>0]]:null;
             try{
                 m4pc_profile_self();
+                if($startup!==null)$startup['stage']='start_control';
                 audit_expect(is_string($revision)&&preg_match('/\A[a-f0-9]{16}\z/D',$revision)===1&&in_array($action,['start','stop','observe'],true),'fixed control operation required');
                 if($action==='observe'){audit_expect($group!==null&&$generation!==''&&($control['overrides']??null)===[],'current generation required');$facts=m4pc_profile_observe($group,$supervisor);}
                 elseif($action==='stop'){audit_expect(!$stopBlocked,'prior incomplete stop remains blocked');try{$facts=m4pc_profile_stop($process,$group,$supervisor,$termSent,$meta,$firstTerminal);}catch(Throwable $e){$stopBlocked=true;throw $e;}$generation='';$termSent=false;}
                 else{
+                    $startup['stage']='start_generation';
                     audit_expect($group===null&&!is_resource($process)&&$generation===''&&!$termSent,'no restart or existing generation permitted');
+                    if($startup!==null)$startup['stage']='start_options';
                     $options=$control['overrides']??null;audit_expect(!$stopBlocked&&is_array($options),'exact unblocked start options required');$env=m4pc_profile_environment($options);$env['M4PC_GENERATION']=$revision;
+                    if($startup!==null)$startup['stage']='start_receipts';
                     $base=audit_run_dir().'/evidence/platform-chat-'.$revision.'-combination';foreach(['.stdout','.stderr','.created.json','.terminal.json']as$suffix)audit_expect(!file_exists($base.$suffix)&&!is_link($base.$suffix),'fresh combination receipts only');$command=['setsid',PHP_BINARY,__FILE__,'__runtime'];
+                    if($startup!==null)$startup['stage']='start_process';
                     $process=proc_open($command,[['file','/dev/null','r'],['file',audit_run_dir().'/evidence/platform-chat-'.$revision.'-combination.stdout','xb'],['file',audit_run_dir().'/evidence/platform-chat-'.$revision.'-combination.stderr','xb']],$pipes,audit_repo_dir().'/crmeb',$env);
-                    audit_expect(is_resource($process),'actual combination process required');$group=audit_app_register_group($process,$supervisor);$generation=$revision;$firstTerminal=null;
+                    audit_expect(is_resource($process),'actual combination process required');$startup['stage']='start_group';$group=audit_app_register_group($process,$supervisor);$generation=$revision;$firstTerminal=null;
+                    if($startup!==null)$startup['stage']='start_created';
                     $meta=['generation'=>$revision,'pid'=>$group['leader_pid'],'argv'=>$command,'group'=>$group,'base'=>$base];audit_write_json($base.'.created.json',$meta);
                     $deadline=microtime(true)+12;$ready=false;do{
-                        $facts=m4pc_profile_observe($group,$supervisor);$created=[];
-                        foreach(['http','chat']as$role){$path=audit_run_dir().'/evidence/platform-chat-'.$revision.'-'.$role.'.created.json';
+                        $startup['stage']='start_observe';$startup['facts']=['poll_index'=>$startup['facts']['poll_index']+1,
+                            'leader_pid'=>$group['leader_pid'],'pgid'=>$group['pgid'],'sid'=>$group['sid']];
+                        $facts=m4pc_profile_observe($group,$supervisor,$startup);$created=[];$startup['facts']['child_created_count']=0;
+                        foreach(['http','chat']as$role){$startup['stage']='start_child_receipt';$startup['facts']['child_role_index']=$role==='http'?1:2;$path=audit_run_dir().'/evidence/platform-chat-'.$revision.'-'.$role.'.created.json';
                             audit_expect(!is_link($path),'original child creation receipt cannot be a link');if(!file_exists($path))continue;
                             $pin=m4pc_profile_raw($path);$raw=file_get_contents($path);audit_expect(is_string($raw)&&strlen($raw)===$pin['bytes']&&hash('sha256',$raw)===$pin['sha256']&&m4pc_profile_raw($path)===$pin,'stable original child creation receipt required');
                             $row=json_decode($raw,true,32,JSON_THROW_ON_ERROR);$expectedArgv=$role==='http'?[PHP_BINARY,'-S','0.0.0.0:8000','-t',audit_repo_dir().'/crmeb/public',__FILE__]:[PHP_BINARY,__FILE__,'__chat'];
                             audit_expect(is_array($row)&&($row['role']??null)===$role&&is_int($row['pid']??null)&&$row['pid']>0&&($row['argv']??null)===$expectedArgv
                                 &&($row['group']['pid']??null)===$row['pid']&&($row['group']['ppid']??null)===$group['leader_pid']
                                 &&($row['group']['pgid']??null)===$group['pgid']&&($row['group']['sid']??null)===$group['sid'],
-                                'same original runtime child creation identity required');$created[$role]=$row;
+                                'same original runtime child creation identity required');$created[$role]=$row;$startup['facts']['child_created_count']=count($created);
                         }
+                        if($startup!==null)$startup['stage']='start_role_matrix';
                         if(count($created)===2&&$facts['listener_ports']===[8000,40002,40003]&&count($facts['members'])===5){
                             $members=[];foreach($facts['members']as$member)$members[$member['pid']]=$member;
                             $http=$members[$created['http']['pid']]??null;$master=$members[$created['chat']['pid']]??null;$leader=$members[$group['leader_pid']]??null;$roles=[];
                             foreach($facts['members']as$member)if($member['ppid']===$created['chat']['pid']){
                                 if($member['listener_ports']===[40003])$roles['channel'][]=$member;elseif($member['listener_ports']===[40002])$roles['chat'][]=$member;
                             }
+                            $startup['facts']['http_role_present']=(int)is_array($http);$startup['facts']['master_role_present']=(int)is_array($master);
+                            $startup['facts']['channel_worker_count']=count($roles['channel']??[]);$startup['facts']['chat_worker_count']=count($roles['chat']??[]);
                             $ready=count($members)===5&&is_array($leader)&&$leader['listener_ports']===[]&&$leader['starttime']===$group['leader_starttime']
                                 &&is_array($http)&&$http['ppid']===$group['leader_pid']&&$http['starttime']===$created['http']['group']['starttime']&&$http['listener_ports']===[8000]
                                 &&is_array($master)&&$master['ppid']===$group['leader_pid']&&$master['starttime']===$created['chat']['group']['starttime']&&$master['listener_ports']===[40002,40003]
@@ -196,11 +268,26 @@ function m4pc_profile_serve():never
                         }
                         if($ready)break;usleep(20000);
                     }while(microtime(true)<$deadline);
+                    if($startup!==null)$startup['stage']='start_deadline';
                     audit_expect($ready,'actual complete five-process HTTP Chat Channel role matrix not ready');
                 }
                 audit_write_json(audit_run_dir().'/app-status.json',['run_id'=>getenv('AUDIT_RUN_ID'),'revision'=>$revision,'status'=>$action,'generation_revision'=>$generation]+$facts);
-            }catch(Throwable $e){audit_write_json(audit_run_dir().'/app-status.json',['run_id'=>getenv('AUDIT_RUN_ID'),'revision'=>$revision,
-                'status'=>'failed','generation_revision'=>$generation,'error_class'=>get_class($e),'force_signal_sent'=>false,'retained'=>true]);}
+            }catch(Throwable $e){
+                $diagnosticStatus=null;
+                if($action==='start'&&is_array($startup)){
+                    $diagnosticStatus='NOT_WRITTEN_IO';
+                    try{
+                        $ownedLine=null;
+                        // Read only file/line from original frames; never retain/serialize a trace or inspect its arguments.
+                        foreach($e->getTrace()as$frame)if(($frame['file']??null)===__FILE__&&is_int($frame['line']??null)&&$frame['line']>0){$ownedLine=$frame['line'];break;}
+                        unset($frame);$diagnosticStatus=$firstFailure($startup,$ownedLine,$revision);
+                    }catch(Throwable $diagnosticFailure){}
+                }
+                $failedStatus=['run_id'=>getenv('AUDIT_RUN_ID'),'revision'=>$revision,
+                    'status'=>'failed','generation_revision'=>$generation,'error_class'=>get_class($e),'force_signal_sent'=>false,'retained'=>true];
+                if($diagnosticStatus!==null)$failedStatus['startup_diagnostic_status']=$diagnosticStatus;
+                audit_write_json(audit_run_dir().'/app-status.json',$failedStatus);
+            }
         }usleep(50000);
     }
     if($stopBlocked){while(true){usleep(100000);}}m4pc_profile_stop($process,$group,$supervisor,$termSent,$meta,$firstTerminal);exit(0);
