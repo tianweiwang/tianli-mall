@@ -1589,3 +1589,169 @@ Root完整读两PHP实际差量并以7处有限逆证回到016原Git整份；非
 必要固定producer同时采用Root已审07a四body（m4c1fae54、m4fm97a559、backenda517、harness686be4）；B当前vector/browser/interface active边和Core相关当前source group须有限联动，历史嵌套与原oracle不变。Root又实际两Git全body核旧afterreview245730/7b44到当前245730/898e仅SQL bytes10237372→10237459及固定SQL SHA7af→1e5两literal正逆整份相同；当前安装SQL完整10237459/1e5及原1495/1b84三语言完整DDL/31INSERT raw证明同，故Core对应原七件组/active interface身份可仅窄重绑该898e，不改生产getter/语言oracle/业务函数或从当前运行After自造期待。
 
 这是Source设计采用与必要源码身份资格；新Core原生代码尚待实现、全文逆证/独审、Root纯解析与全包资格，新M/完整A/Worker正常close/独立zero/postA/三真实build/freshB及全部界面设备仍未运行。真实金融/部署/外部与全部停止样本边界不变。
+
+## 2026-10-25 原T5：现平台聊天图片私有29接线提案（设计，待采用）
+
+### 需求、来源与当前边界
+
+本节承接同一T1–T8清单的T5/W15、PLATFORM_CHAT，不新开产品需求或第二份执行清单。目标为通用多商户商城中**现有平台客服**的图片素材边界；原Task9、新商家客服、K02–K05保持关闭，不做天俪业务，不增加商家聊天、mer0身份、管理员代顾客或客服权限。当前Source基线为真实Git `7a17c6bee8f5656235b7a68a5b2c1df21b11fa5c`，工作区 `platform-chat-private` / `feature/platform-chat-private-20261025`；本节修改前原record完整321242B/SHA256 `ae87d7e10efe095791619445c0db108c660560b17e0d95362aca6cc4c53bc6ea` 保留。Root只授权此record的设计追加，生产、测试、Host代码尚未获本轮实施授权。
+
+结果要求：新首方聊天图片走真实参与者专用私有上传，实际消息提交时在原writer的同一Connection/PDO绑定完整platform29；原发送、自身ACK、聊天记录、未读、通知和自动回复仍完成原责任。五个实际图片页面的历史/实时显示和原图预览均可合法读取。转接保留原功能及旧消息，用可信转接产生目标房间的独立私有对象和29行；不得凭另一个房间出现相同ref放宽读。旧公开URL历史不转存、不改写、不删除；旧客户端新URL写入是过渡分支，未关闭即不能宣称T5/default兼容发布完成。证照、旧退款、提现二维码及T4商品媒体已有接线/局部正常证据不因本项重做或重复计待开发。
+
+本次实际只读来源包括：当前完整record的platform29及W15/发布合同、`AssetSchema.php`现有purpose；下表各原生产者/消费者；原`BaseServices`/`BaseDao`、Think ORM与PDOConnection真实事务；原SQL完整log/record/auxiliary结构；现已接的CustomerWithdrawalQrPrivateStorage/ReadTickets仅作为物理/票据实现范式。Source发现不是Runtime结果；本轮没有执行PHP/Node/Docker/SQL/WS/HTTP/浏览器/候选程序，没有读取或记录凭据、私有fixture、真实资金或外发。
+
+| 原真实源码与位置（均相对仓库） | 已核事实与本项接缝 |
+| --- | --- |
+| `crmeb/app/api/controller/v1/PublicController.php:248–271`；`api/route/v1.php:143` | UserAuth下upload/image把文件写公开store/comment、写system_attachment module3；不是私有聊天上传。原100次/86400秒额度按真实顾客uid。 |
+| `crmeb/app/kefuapi/controller/User.php:159–181`；`kefuapi/route/route.php:30` | KefuAuth的upload同样公开；request.kefuId是真实Service.id，不能当聊天uid。原额度按该id。 |
+| `crmeb/app/kefuapi/controller/Common.php:43–55,77–128,167–188,235–268` | tourist/user可发行现GuestChatSession；tourist/chat实际读UserAuth header，tourist/upload实际解析body中的UserAuth token，均不是已有游客上传/游客历史能力。必须区别名称与真实身份。 |
+| `crmeb/crmeb/services/workerman/chat/ChatHandle.php:64–100,158–260,273–423` | 当前api/kefu/guest身份重验、真实chatToUid/roomTourist；主log303、self ACK348、record355、recipient358/364、离线tourist371提前return、Wechat389、autoReply413/419/420。这些顺序和原分支是保全项。 |
+| `crmeb/app/services/kefu/KefuServices.php:72–77,87–168`；`kefuapi/controller/Service.php:270–307` | getChatList按实际pair/tourist；setTransfer按实际source record与aux cutoff复制源log、改两端uid、去PK，原outer transaction中saveAll130→record136→aux137，后有两Channel通知。 |
+| `crmeb/app/services/kefu/service/StoreServiceLogServices.php:115–179`、`StoreServiceRecordServices.php:97–128` | tidyChat把图片msn原样投影；saveRecord会同时更新已有反向record，不能只核新方向一行。record列表以“[图片]”显示，无必要新增列表缩略图产品。 |
+| `crmeb/app/api/controller/v1/user/StoreService.php:68–107`；`v2/user/StoreService.php:49–59`；`StoreServiceServices.php:228–229`；`template/uni-app/api/user.js:396` | 原v1含实际UserAuth用户本身是客服uid时的合法历史分支；当前uni实际调用v2。新增读资格须保合法原读者，不将v1存在冒成当前uni调用，不伪造kefu token。 |
+| `crmeb/app/services/kefu/service/StoreServiceAuxiliaryServices.php:41–54`、`dao/service/StoreServiceAuxiliaryDao.php`及其AuxiliaryDao/Model | 真表是auxiliary，type固定0；仅binding_id/relation_id/时间，当前不写other，没有目标客服或原log→复制log lineage。不能猜other语义、改现表或把时间戳当转接成功凭据。 |
+| `crmeb/app/services/BaseServices.php:151–154`；`app/dao/BaseDao.php:329–342`；vendor Think `Model.php:525–548,689–717,757–784,830–844` | save/saveAll透传原ORM；create返回Model不代表save bool成功；saveAll按输入key逐模型保存并返回Collection。应核真实PK/行/同PDO，不能MAX+1、凭输入自造PK或全量新pair查询猜映射。 |
+| vendor Think `PDOConnection.php:1370–1384,1426–1434`，Query的getConnection/getPdo与Model.db/DbManager实例链 | callback实际传Connection；原commit:void不向服务传播PDO::commit bool；嵌套层只是savepoint/计数，rollback自身也可抛错。callback/ORM返回不是已获得物理commit ACK，任何异常都不能直接推安全重发。vendor不在本项修改范围。 |
+
+补充原结构：`store_service_log`完整11列是id/mer_id/msn/uid/to_uid/is_tourist/time_node/add_time/type/remind/msn_type；`store_service_record`完整13列、auxiliary完整7列依真实DDL原序读取。原log的mer_id默认值是已有数据字段，**不是**本项平台资产owner或可补的mer0 scope。Service表没有按uid唯一索引；新身份解析须实际唯一且id/uid相符，不能随便取第一行，也不新增索引改变原数据。
+
+### D1　平台29、真实房间与有限身份
+
+新增窄DAO/服务只消费现有`marketplace_platform_asset`的29列，固定purpose=`platform_chat_image`、category_id=0、storage_type=1、thumbnail_key=''；channel_qrcode_id/routine_version/legacy_att_id/retired_at等按本用途的完整原schema值，绝不造第四张表/新列/索引/菜单/seed。保现platform站点image服务不变，它目前只接受PlatformScope/site_image，不能传假Scope绕过。ref拟固定为无秘密的版本化ASCII `platform-chat:1:<真实asset十进制id>`，不把object_key、路径、ticket或signed/Blob URL写msn、record.message或29。严格解析后仍只是locator。
+
+四chat字段由真实房间构造：customer_uid、is_tourist、Service.id、Service.uid。新顾客上传creator仅真实UserAuth uid；客服上传creator仅当前KefuAuth的Service.id，均重验实际Service完整行/uid、对应实际User和当前session；admin/job creator为NULL。顾客上传的目标service_uid、客服上传的peer_uid/is_tourist是定位参数，最终采用当前服务记录/GuestChatSession及真实双方身份证明，不信body creator、purpose、service_id、customer_uid或mer。私有消息还须匹配当前WS连接已加入的chatToUid和roomTourist，不拿HTTP上传参数替代已加入房间。
+
+新游客依原GuestChatSession负UID/当前cap与租约；本项**不新增游客upload/私有素材生产**，保留原服务器已可达全部六类消息及原接收/历史读取界限，不把游客收窄为仅文字。原roomTourist先查is_tourist=1历史record，确实支持正数的旧游客ID，不能把正数旧游客重认成UserAuth顾客。对该已有历史路径，聊天私有元数据须允许“正数customer_uid+is_tourist1+实际原历史record”的有限组合（这是对早期只描述新负UID游客的细化，不是假用户）；客服可向其原合法房间发图/转接。该历史标识本身不发行新的游客cap，不给注册用户冒认历史游客，旧游客未持有当前真实cap不能新增本人HTTP历史能力。
+
+当前读者必须重新有效；历史对方的身份需与保存的Service.id/uid及实际原行一致，不因原上传者换班/离线而随意剥夺合法历史读取，也不要求目标房间的新creator必须是目标客服本人。Source不能证明运行实例是否有多个同uid Service/历史映射；这是准备阶段真实盘点前提，存在歧义时保持未完成，不自选第一行、补假id或改存量。
+
+### D2　独立私有物理与专用上传
+
+配置拟增加`marketplace.platform_chat.private_root`默认空及`marketplace.platform_chat.private_writes_enabled`默认false。private_root是持久非public/非runtime、真实独立chat namespace；空值/未知能力不回退公开本地或云，不复用证照/退款/二维码实际root或purpose。new-write开关仅控制新私有生产，已保存的BOUND合法读/原转接义务不能随其关闭而失效。若已存在私有消息，停用写开关不授权回滚到不识别ref的旧服务代码。
+
+物理实现复用已审模式而非冒用现服务：Linux受核owner、0700目录/0600文件、无link/reparse、多根边界、独占新建、同FD/path完整身份、fsync、实际全bytes/EOF/SHA256/MIME/尺寸及GD解码前后核对；只允许原配置与真实图片资格交集jpg/jpeg/png/gif/webp，不把多数页面的JPG/PNG提示当全系统允许集，亦不借通用上传扩ico/视频/音频。最大字节依当前upload/filesize与真实内存/GD预算核，不削掉既有合法WebP/GIF。transfer逐对象处理/释放bytes，不同时把全部历史原图留在内存，不为过验收加新批数限制截断转接。
+
+具名新上传：顾客`POST /api/user/service/files`（当前UserAuth；file+filename及service_uid locator）；客服`POST /kefuapi/service/files`（当前KefuAuth；file+filename及peer_uid/is_tourist locator）。新控制器固定本用途及真实route/options，精确multipart字段，不接受query token/客户端scope；appChat已登录用户也改走同顾客header链，不再把token放multipart body。无游客上传路由。原quota key/100/86400依真实原actor保留，私有上传不再创建公开SystemAttachment行；分别记录原公开上传未关闭的兼容状态。成功DTO保name/url/attachment_ref外形，但url仅无cap的受权content定位地址，首方只用attachment_ref；该地址不能被旧img无header直接当已可读原图，须版本门与新helper一起发布。
+
+上传在一个真实外层writer事务里重验身份/房间→物理新建→完整29 STAGED insert→完整同PDO重选/全bytes核→原正常提交观察与quota，expires_at只约束STAGED的后续新绑定。BOUND保首次bound_at，不由过期扫描删历史；本项不实现自动GC/旧公开材料迁移。清理只针对本次确知新对象且**可证明未提交**；DML/commit/rollback结果不明一概保留，不能声称SQL回滚撤销物理文件。复用六键真实收据，不输出完整私有行/文件/绝对路径或身份凭据。
+
+### D3　原消息writer同PDO绑定，原ACK/通知责任保全
+
+仅在`ChatHandle::chat`主保存303处，对**type3且显式新private-ref**使用具名`PlatformChatAssetServices::saveMessage`；其余五类消息、旧URL型type3图片及413自动回复继续原save。本文type3只指消息分类：WS `res.data.type`→本地`$msn_type`→DB `msn_type`，图片值为3；log的`type`仍按原`online ? 1 : 0`表示在线/已读状态，绝不写成3或拿它作素材门。不全局override StoreServiceLogServices.save/saveAll，不重构消息类型协议，不改to_chat/现安全身份规则。图片ref不代表权限；同writer核当前ChatIdentity、实际session/房间、完整29、真实物理对象，creator/四chat字段及state符合才保存。
+
+该具名方法以原默认实际Connection建立一层外事务，callback收到同一Connection并核Query/DAO/ORM的getConnection及getPdo为同对象、实际session/database/CURRENT_USER/CONNECTION_ID及事务depth。包住原ORM create，让原Model BeforeWrite/AfterInsert/AfterWrite仍执行；原小事务此时仅savepoint，不另new PDO/改ORM/reconnect/提前commit。保存原11列native log，实际新Model真实PK与原字段逐列回读，绑定29为BOUND并核全29/文件/房间，然后返回同一个原Model。false不能当rollback，原Model没有真实成功PK/完整行必须在外callback内抛错。首次绑定保bound_at；若允许同房间本人再发送已BOUND ref，只保首次29不重写，新的真实log仍须完整保存核对，旧一条可读消息不证明这次发送成功。
+
+**不能**在303返回以后、348 ACK或355 record以前插入一个会抛错的新“图片已提交”readback，令SQL已发生却跳过原责任。原304–423的数据转换/真实actor enrich、商品/订单分支、self ACK、未读和双向record更新、recipient/离线路径、Wechat及autoReply均保原次序和原异常责任；离线tourist371的提前return保留，不借私有材料让它额外跑autoReply/Wechat。自动回复的现配置图片仍按原可信模板来源，不把其任意ref字符串当另一房间的私有读取授权。
+
+提交未知单列：callback/commit/连接错误或原提交后Model/消息后续责任异常都不是未写证明。原库commit bool未上抛，不修改vendor获得假ACK，也不把外事务返回当已实测native ACK。新private保存接缝捕获只针对本次私有操作的安全六键（complete/phase/physical_changed/physical_complete/database_committed/cleanup_complete）；commit/rollback可能未知时database_committed=null，WS沿原err_tip形状添加经严格类型验证的安全receipt，不改变全局异常handler。原正常成功仍发原self ACK/消息，不能额外双发ACK、重发log或把Channel通知塞进DB回调。
+
+首方确认消息使用原self ACK的**真实新logID+同ref/当前pair**以及已有正常历史/新增受权ticket-content真实读取，不能拿BOUND或某旧同图当本次新消息提交证据。新内容reader可提供服务端完整实际行重核，但不是新的业务确认/恢复API。无self ACK且无法唯一关联本次真实新log时保持unknown；不从之后某相似消息猜成功，不擅造客户端operationId列或自动重复发送。原ACK早于record/通知，只证明其实际已经发生的阶段，不宣称后续hook必成；如后续抛错，原异常责任保留且草稿维持未完全确认，不吞掉原异常后谎称全流程成功。
+
+### D4　可信转接：独立对象/29 clone，严格单pair读不放宽
+
+原auxiliary只有type0 source pair/cutoff，**没有**可证明destination/log lineage。因此不允许“只要当前房间任意一条log使用这个ref就可跨原asset pair读”，不把body logid/新log同ref当授权，不借other造新授权关系。原转接必须继续工作，不能以私有不支持而关闭它。
+
+仅在现KefuAuth `Service::transfer`真实当前Service.id/uid与原`KefuServices::setTransfer`路径新增窄上下文；现body uid/kefuToUid只定位。重查source/target真实唯一Service.id+uid、current initiator session、原ownedRecord（先tourist1再0）和真实customer/现guest或原许可历史，固定原pair及isTourist。发起者creator是**原真实发起转接的Service.id**，target房间chat_service_id/uid来自实际目标客服；二者可不同，这仅是可信转接producer的有限语义，不把目标客服伪造成发起者，不给一般客服上传任意target房间权。
+
+原aux cutoff、源完整11列log查询和输入顺序保留；在现outer callback内重选并锁定真实source/target/record/cutoff/被复制log，核与准备快照完整一致。必要时将原相同谓词的准备/拷贝构造移入该callback，使物理前的授权与snapshot可证明；不加原来没有的历史limit、不改cutoff符号/查询条件、不把未复制的老消息猜为已转接。调用实际ORM saveAll前先保每个输入key对应原真实logPK/完整原行。
+
+对本次实际选择的每个distinct源私有asset：先严格源房间读资格与完整29/bytes；创建**新的独立物理object/key和完整29 STAGED**，四chat字段为目标房间，真实29列`created_by_service_id`为发起Service.id，其它creatorNULL；本文creator的语义简称都映射原`created_by_service_id`等真实列，不新增`creator_service_id`字段。不同asset即使bytes相同也不新建dedup规则；同一源asset在本次批次多条log只clone一次，再逐条改复制log的msn为该新ref。每次正常转接仍是独立本次新对象，不引跨请求去重表/idempotency/后台恢复。原asset/pair/state/bound_at、原object/原log一字不改；文字、表情、语音、商品/订单和旧URL复制值按原算法保留，只原有uid/to_uid/time/去PK及新private-ref改变。
+
+在**原122 outer transaction**内保130 saveAll，使用返回Collection的真实输入key→Model→实际PK逐条核完整11列与原source映射，再将本次clone29 BOUND/首次bound_at；same PDO/no alternate connection/完整重选与原权限物理前后核。136 saveRecord（包括反向旧行）和137 type0 aux仍在同callback且同一次提交，保原`$res && aux`及`!$res && !$record`行为，不顺手修改原短路业务；不能在事务外先提交asset或以MAX+1/newpair全查询猜copy ID。记录message最后一条若是私有ref，须自然使用本次实际clone ref，不把新pair记录仍指回源ref。
+
+事务后143–168两Channel通知保原顺序/catch责任，新增clone的提交后完整读回放在**全部原Channel尝试之后**，不得以图片readback截断原transfer/to_transfer消息。只有实际新log/29/physical与原record/aux同次结果及当前身份全核后才能成功返回；commit/Channel外原错误/后观察不明保持六键unknown，不额外发通知或再转接。证明未提交且仅本次新clone时才可逐对象窄cleanup；任何commit未知均不删clone、源对象、源metadata/源log，不借清理完成伪签事务未发生。保物理批级receipt any-true优先unknown/null，不让后一个对象掩盖前一个已发生事实。
+
+实际转接提交UI有两处：PC `kefu/pc/components/transfer.vue:42–54`；移动客服`kefu/mobile/index.vue:402–417`，都用admin `api/kefu.js:194`。uni api虽然导出同名方法，但当前未找到实际提交caller，不算第三个已接UI。两处须在首await前busy、保存immutable actor/session/source-room/target/body及安全receipt；真实派发后网络/5xx/无可证未提交的异常保unknown并阻止自动/重复POST。关闭弹层/路由隐藏不是安全取消、不能将unknown归回未发送。原aux只保存source cutoff，不足以确认target；页面可读取原合法双方历史作只读展示，但不能编造“确认转接”接口或用时间戳/某旧图宣称这次成功。logout清私有内容/凭据，unknown不能因下次登录同名用户而自动重试。
+
+### D5　受权票据、原图与全部合法读者
+
+新增窄票据/content读不复用QR/licence/refund实际scope或Redis prefix。ticket固定绑定用途/版本、actual actor kind和真实id/uid/session指纹、四chat字段、asset真实id/digest、真实logID（BOUND）或明确STAGED-preview模式、时窗；只能header携带，不生成query bearer URL、不落DB/日志。使用BoundedRedis固定命令、TIME/PTTL/绝对期、精确类型/值及单次消费模式；命令不明不恢复/重试票据。content再次完整验证当前身份、原scope、完整29+真实11列log、pair/tourist及全bytes/MIME/FD，cache-control no-store；票据只是能力之一，不能替代实际message及用户授权。
+
+拟固定API：`POST /api/user/service/files/<id>/read-ticket`、`GET .../<id>/content`供实际UserAuth；`POST /kefuapi/service/files/<id>/read-ticket`、`GET .../<id>/content`供实际KefuAuth；`POST /kefuapi/tourist/files/<id>/read-ticket`、`GET .../<id>/content`仅供当前GuestChatSession。ticket body为具名严格schema及实际message_id，或严格preview模式；不能同一次混传两模式/客户端pair。资产id/message_id均仅locator，最终全native重核。guest新窄leaf不发行guest会话、不增加upload或历史列表，不随意标为原issuer/chat_guest就继承未知放行；仅通过既有GuestChatSession.verify/assertCurrent验证显式新header `X-Platform-Chat-Guest-Token`，不能用uid/负号/过期cap授权。read票据header拟 `X-Platform-Chat-Read-Ticket`，CORS只加实际两header，不扩大origin/credentials/原ACL。
+
+读资格：STAGED仅原上传者+其原精确房间preview且未过期，不给对方/guest拿assetid看未发送图。BOUND必须有实际图片log引用此ref，asset/log四字段和真正参与者一致，原严格singlepair保留；客服按当前KefuAuth Service.id+uid/当前session，顾客按当前UserAuth uid。原v1实际UserAuth客服uid历史读取者保留为**只读参与者**分支，需当前UserAuth确为实际Service.uid且当前有效、完整Service.id唯一，不能冒kefu session/上传/转接权。新guest仅当前有效cap和自己实际收到的该房间真实消息；不能恢复老正数游客身份、查询任意历史list或借新ticket替换原Common.getChatList的UserAuth权限。转接目标读新clone pair，原客服/顾客继续读原pair；原creator后来离线/停用不自动删合法历史。
+
+现有history v1/v2/kefu/Common的原权限、筛选/分页、整行DTO/旧URL继续保留，type3 msn投影可继续稳定ref，不因前端预览而改数据库。私有ref reader不通过全局admin/site_image listing或商家menu获得权限。原record列表显示“[图片]”无需新缩略图读门。原公开URL继续原正常读/预览，不主动下载旧URL转存、不以代理读取绕过旧权限；本项没有把旧公开资源宣称私有或可撤销。
+
+### D6　五个实际页面、两个转接控件及unknown草稿
+
+四运行族是H5/MP/APP/PC，但实际图片源码有**五页**，都须接图片显示、原图预览和安全草稿；不能把旧W15四端描述当只有四源码文件：
+
+| 页面 | 真实上传/图片/路由接缝 |
+| --- | --- |
+| `template/uni-app/pages/extension/customer_list/chat.vue` | 98图片、423原图preview、592–609通用上传后type3发送；351–365 to_transfer换peer。Uni helper须支持真实H5/MP/APP binary/临时文件，而非只测Web Blob。 |
+| `template/admin/src/pages/kefu/pc/index.vue` | 35图片、98上传、325旧kefuapi/upload，469–478粘贴上传和481–487普通上传均在范围；121 transfer组件/547关闭事件不能丢unknown。 |
+| `template/admin/src/pages/kefu/mobile/index.vue` | 36图片、77上传、257旧upload、341成功发送、499旧helper，以及402真实转接提交；不能只换其中一个上传分支。 |
+| `template/admin/src/pages/kefu/appChat/mobile/index.vue` | 66图片、93上传（原userToken才显示）、250 tourist/upload、423 bodytoken、435 type3；270 to_transfer；原guest无上传控件保留。 |
+| `template/admin/src/pages/kefu/appChat/index.vue` | 36图片、99上传、285 tourist/upload、564上传、389发送、361 to_transfer；`router/modules/frameOut.js:141–158`分别真实导入该desktop页及mobile页，不能判desktop为dead source而遗漏。 |
+
+新增Uni/admin各一个窄helper，固定当前actor/session/route/room/真实peer上下文；私有ref先ticket/content校验再产生owned显示值。H5/PC使用Blob URL，MP/APP使用真实binary/temp path能力并核解码/尺寸；派生值放单独view字段，永不覆盖msn/ref、原DTO、record或copy正文。原`img/v-lazy/v-viewer`和uni.previewImage没有header，不能把受权content裸URL直接塞进去假称原图可读。图片加载/preview前核当前ctx；页面隐藏、route/身份/room改变、to_transfer时撤销旧ctx、revoke Blob/精确释放本helper新建temp；释放preview不删SQL/原对象，也不清掉unknown发送/转接记录后允许自动再发。历史旧消息仍按其真实log pair读取，不因当前peer被改就把旧asset owner重写为新peer。
+
+发送状态分清已选择/上传中/STAGED已上传但未发送/已派发待ACK/已确认新log/结果未知。保存File/ref和实际房间的memory-only草稿；首await前busy，发送前固定immutable body。真实发WS后断开/超时/err_tip不明、5xx或原后续hook错误均不自动重发；旧ref可读不等于本次消息成功。对正常原self ACK与新log/内容核确证后仍按原滚动/输入清理等流程完成，不让严格unknown把正常明确成功卡死。只读消息/收据提示与操作按钮分离，不用假按钮表示“结果未知”；实际“读取已保存消息”只是读原合法history/content，无法唯一关联则继续unknown，不提供暗中重POST的重试按钮。
+
+遵现Vue2/uni组件和原控件边界；busy/unknown/已保存反馈按control-quality选状态语义，保持按钮整组双轴居中、父区内边距均衡、长文案/窄屏不溢出，不用clip/offset藏问题。设计/parse/build不代替真实运行视觉验收；H5/MP/APP、PC客服/移动客服、两个appChat路由、正常/长文案/已上传/unknown展示/原图均待真实runtime，不能用仅Web成功代表其余设备。
+
+### D7　旧sender/receiver与default公开兼容发布门
+
+原PublicController.upload_image、Kefu User.upload、Common.upload仍有非聊天/外部旧调用者；本项**不**把它们静默改成public_upload_compat、关闭旧正常功能或把未迁私有URL当已安全。原自动回复配置公开图、真实旧URL历史与老type3写入分开统计。旧sender会继续发送URL，旧receiver将新private-ref当URL显示失败，因此仅升级上传端不构成可发布。
+
+新增具名只读`GET /api/user/service/files/capabilities`及`GET /kefuapi/service/files/capabilities`由各自现身份返回固定schema/protocol=1、实际`private_writes_enabled`及private_read_supported；当前guest使用已持有效cap的独立同用途capabilities leaf，不能因此发行新guest权限。此元数据无文件/私有行、不伪造外部版本兼容证明。首方只有新服务明确发布该protocol且本次部署已核**所有实际sender/receiver版本**及五页/转接/helper、持久私有root/票据/CORS资格后才采用私有新写；未知server/mode不能在一次失败的private尝试后再走public上传。defaultfalse过渡保原legacy行为并明确尚未私有，不把关闭新功能签作完成。
+
+服务器新private消息识别与BOUND读取是兼容底座，发布门不能只由客户端声明版本放行；新private-ref发送前核真实配置/房间及素材。老字符串URL按既定过渡保留，之后禁止新URL写必须先在本record采用完整外部client资格，不从仓库搜索无caller/无日志推无人用。保存私有历史后的服务回滚/开关关闭仍须有同版本读与转接能力；本轮不实现回滚/故障样本，也不承诺不识别ref的旧二进制可回滚。
+
+`public_upload_compat`本身仍未实现；表enum存在不是上线。原通用review、旧订单custom_form/确认上传、外部旧client、证照/旧退款/QR的合法URL新写过渡等均保各自真实权限/旧历史，待各原私有consumer专用入口+全部合法读和外部发布条件闭合后，另按原T5/T6处理默认兼容。平台聊天本项只列此依赖，不能暗扩订单表单、商家客服或默认上传切换，也不能因聊天专用上传完成就勾整个T5。
+
+### 精确Files与最小实现接缝（采用后才可编码）
+
+以下是本提案必要Source allowlist；不存在的文件是拟新增，不伪称已经实现。只改列明接缝，原相邻purpose/财务/商家产品/默认通用上传不改。实现发现新的必要callee或原生行为差异，先在本record补具体事实/差量，再依原授权范围继续，不以“必要其它文件”无限扩张。
+
+| 类型 | 精确路径（仓库相对） | 仅允许的职责 |
+| --- | --- | --- |
+| 新DAO | `crmeb/app/dao/marketplace/assets/PlatformChatAssetDao.php` | 完整29/schema+原11/13/7与真实Service/User读、同Connection/PDO、锁/真实PK重选、STAGED/BOUND/clone字段；不扩site_image DAO或造新表。 |
+| 新服务 | `crmeb/app/services/marketplace/assets/PlatformChatRoomAccessServices.php` | HTTP/WS实际api/kefu/guest的有限身份/当前或历史pair重验；不造通用OwnerContext/admin Scope/新商家context。 |
+| 新服务 | `crmeb/app/services/marketplace/assets/PlatformChatAssetServices.php` | 两上传/preview/受权read、主log具名保存、transfer准备+逐PK clone绑定+原责任后观察、严格六键。 |
+| 新物理/票据 | `crmeb/app/services/marketplace/assets/PlatformChatPrivateStorage.php`；`crmeb/app/services/marketplace/assets/PlatformChatReadTickets.php` | 独立root/namespace、真实全bytes/有限clone/known-uncommitted cleanup；新ticket prefix/scope/精确当前身份与实际log绑定。 |
+| 新具名控制器 | `crmeb/app/api/controller/v1/user/ChatAsset.php`；`crmeb/app/kefuapi/controller/ChatAsset.php` | 明确upload/capabilities/read-ticket/content，后者分kefu/guest方法且无guest upload，只窄安全receipt/header，保全局handler。 |
+| 原路由 | `crmeb/app/api/route/v1.php`；`crmeb/app/kefuapi/route/route.php` | 固定具名路径/options及原UserAuth/KefuAuth、新显式guest-cap读，不增菜单/role白名单，不误继承issuer能力。 |
+| 原消息/转接 | `crmeb/crmeb/services/workerman/chat/ChatHandle.php`；`crmeb/app/services/kefu/KefuServices.php`；`crmeb/app/kefuapi/controller/Service.php` | 303显式ref接缝与安全receipt；setTransfer同outer实际saveAll/record/aux、真实Request/Service.id及原两通知后观察；其它类型/guest早退/原责任不变。 |
+| 配置 | `crmeb/config/marketplace.php`；`crmeb/config/cookie.php` | explicit private_root/defaultfalse新写及精确两read/guest header；不放宽origin/credentials、不改seed系统配置。 |
+| 新前端helper | `template/uni-app/api/platform-chat-materials.js`；`template/admin/src/api/platform-chat-materials.js` | 固定协议/真实ctx/上传与binary/preview/安全receipt/pending，不持久化凭据或业务body。 |
+| 五原图片页 | `template/uni-app/pages/extension/customer_list/chat.vue`；`template/admin/src/pages/kefu/pc/index.vue`；`template/admin/src/pages/kefu/mobile/index.vue`；`template/admin/src/pages/kefu/appChat/index.vue`；`template/admin/src/pages/kefu/appChat/mobile/index.vue` | 所有普通/粘贴上传、实时与历史原图、room/to_transfer/session资源释放及明确状态；保原guest无上传及旧URL。 |
+| 原转接与API | `template/admin/src/pages/kefu/pc/components/transfer.vue`；`template/admin/src/api/kefu.js` | 两真实submit共用安全响应/unknown pending；mobile原submit在上行五页内；不顺手改uni未用transfer或新确认API。 |
+| 后续普通验证Source | `help/audit-regressions/isolated/ms4-platform-chat-private-normal.php`；`help/audit-regressions/isolated/lib/platform-chat-private-profile.php`；`help/audit-regressions/isolated/compose.platform-chat-private.yml`；`help/audit-regressions/isolated/lib/harness.php` | 具名prepare/verify、真实私有卷/profile与严格独立开关接线；原default/licence/refund/QR/B/Core profile/原Timer源不变。本轮不编码，未来Host必须等真正clean Source后单独派生。 |
+| 唯一记录 | `docs/multi-merchant/records/ms2/upload-asset-domains.md` | 本需求/设计/任务/验收/实际分层证据；原前缀不覆写，无C/D改动。 |
+
+原PlatformAssetDao/Services/Storage、AssetSchema、原customer34各purpose、SystemAttachment、StoreServiceLogServices/tidyChat/record/aux通用实现、GuestChatSession发行/分配、vendor/SQL/管理员路由菜单均不需本项改动。若实际实现为了得到真实ORM/Service数据需要调整这些callee，必须先提交具体Source差异和最小追加Files给Root；不能沿此声明绕过完整原actor/DAO或全局override save。原historyDTO不预先改写，新增有限read分支只在专用服务中取实际原权限事实。
+
+### 同一执行任务与验收（均未完成）
+
+- [x] 在真实7a17独立W只读追原上传/三种身份、五图页/两transfer、11/13/7/29结构、ORM/PDO/ACK/通知与无lineage反证，先追加本设计；未修改实现。
+- [ ] Root/非作者全文采用本提案，确认独立clone/真实发起者creator、原正数游客历史细化、guest窄读、双端发布门与必要Files；未采用前不写代码。
+- [ ] 按Files逐层实现DAO/房间/物理/票据→原同PDO主log与transfer→专用HTTP→五页/两transfer pending。每层可审diff、原責任保全与Source只读独审，必要差异先记本record；不提交推送旧统一W或改变其它目的域。
+- [ ] Source冻结后Root安排实际PHP82纯-l；前端module解析/模板仅静态层，不运行App冒充页面；再做真实clean Git提交、独立Val、全部tracked byte/blob/稳定FD/准确descriptor/native Git资格，未来HEAD/Val/Host/Run在此均UNBOUND。
+- [ ] 新ISO专用DB/Redis/本地镜像/internal network/私有卷，严格真实新安装schema/完整历史种子，按准备阶段真实通知/receiver判断外发前提，不删平台客服、stub hook或靠断网通过。无真实支付/金融/短信/微信外发；如普通场景原流程确实会产生外发，先如实阻断并在本record采用最小专用测试配置及完整副作用oracle，不擅改业务seed或吞通知。
+- [ ] 原普通正向：真实合成顾客/客服两向图片（包括允许的JPG/PNG/GIF/WebP真实文件及原图）、STAGED本人preview→真实WS登录/入房→发送→原selfACK/record/未读/recipient→BOUND双方ticket/content全bytes；同pair合法重复使用既有BOUND保首bound_at且生成新真实log。原文字/表情及原URL图片、商品/订单/语音其它正常分支及原自动回复按真实可达责任核，不假称全部消息类型只靠新imagecase验过。
+- [ ] 正常guest仅沿原真实发行/WS登录/当前cap收客服图片后窄read；保原guest不上传、离线tourist提前return及现历史读边界。原正数游客既有历史由实际原record证明、只合法客服读/发送/转接，不造新正数guest身份或复用真实生产历史。
+- [ ] 正常可信transfer：合成source/target两真实Service.id/uid、原顾客及允许的guest历史，选择原cutoff真实源logs，含一asset多log、多个distinct资产、混合文字/旧URL，核每distinct新独立object+29、逐真实copy PK、目标pair/发起者creator、源全不变、最后record/ref/反向旧行、aux原type0与两Channel真实消息。客服和顾客原/目标所有合法read及历史原图均正常，保原全部选中日志不截断；无跨请求去重/重复POST/恢复样本。
+- [ ] 每次正常prepare→HTTP/WS→after独立核**全表完整rows与schema/default/index/native next**、原11/13/7/29完整列序与字节、完整旧37/既有父链及全部其它表原行，具体新增/更新期望来自before+原输入+真实producer/时窗；不由after生成expected，不MAX+1、模糊COUNT/前缀豁免或只检查新asset。Model真实PK由返回值/既有selfACK和完整native行相互绑定，不以PK推断序号间无gap。
+- [ ] 全Redis逐key原type/value/绝对expiry与真实TIME，精确核100/86400 quota、GuestChatSession真实counter/cap有限写、既有未读/缓存/Channel实际delta、新ticket发行/单次消费及原TTL；全部公私文件/目录完整byte与身份、原log/syslog实际允许delta、无无依据审计admin行。通知、ACK、autoReply与双向record须逐原可达分支独立预期；文件回滚/commit未知不凭Source签Runtime通过。
+- [ ] 原完整A/S/B/H5/merchant34/25capture/9screen/23facts及完整设备/发布验收依原要求保留。原消息父链/source卷资格、同PID/argv/自然exit与全原生双流、真实TERM-only App group闭包、ordinary nonforce住留资源收尾/独立六fresh原双流空全部须后续实际完成；本项不得拿小HTTP/WS链替代全产品、UI或发布验收。
+- [ ] UI实际H5/PC、MP/APP、移动客服及两个appChat路由，核两参与者实时/历史/原图、粘贴及普通上传、正常transfer后旧/新图片、长文案/小屏/状态控件；反馈非按钮、全部控件边界/双轴对齐/无裁切。结果未知状态可先做只读/展示设计审，**不启动断网/故障注入/安全负向/权限攻击/并发/恢复等停止样本**来凑验收；未获运行条件的状态视觉明确未验。
+- [ ] 外部旧sender/receiver与真实版本/发布观察、持久私有storage/read能力、旧URL新写门和default public_upload_compat的其它私有consumer仍单列未完；当前新写开关defaultfalse不是完成证据。真实金融/外部/部署与K/negative/fault/concurrent/recovery停止边界保持，不因本记录恢复。
+
+当前结论：这是有真实源依据、**尚待Root采用的设计提案**，没有新增聊天实现、运行/视觉/外部发布或提交推送结果。源追明确不能依靠aux lineage、任意logid/ref、假Scope/mer0、公开fallback或删除旧功能完成本需求；上述未验项原样保留，不自签Source实现或Runtime PASS。
+
+### 2026-10-26 设计源事实文字校正（算法与范围不变）
+
+Root与非作者全文复核后，本节仅更正三处表述并明确一项字段映射：`ChatService.php:124–126`只重验已登录connection后分发，`ChatHandle.php:275–303`未对guest增加仅文字限制，`StoreServiceLogServices.php:33–35`原MSN_TYPE真实为1至6六类，故保全部既有可达消息与原接收/历史界限，不新增游客upload/私有生产；新private图片接缝以外为其余五类加旧URL型type3。`ChatHandle.php:280,297,302`证明WS data.type写入msn_type，而log.type由在线状态另设0/1，两个字段不得混用。转接creator准确落原platform29的`created_by_service_id`，语义简称不是新字段。原同PDO/ACK/通知/unknown、独立clone、五页/两transfer、双端发布及完整验收责任均保持；仍仅设计文字，未授权本轮生产/测试实施，未执行候选/目标、提交或推送。
+
+
+### 2026-10-26 Root全文采用与第一批后台Source实施范围
+
+Root已全文读前述完整设计及实际ChatHandle273–303/LogServices33–35、现platform29四chat列与类型；非作者refund_memory_repair_source全文设计审、其child同PDO/ORM/saveAll/transfer窄审均无剩余确定设计缺口。三处原guest六类/总类型数/created_by_service_id真列及WS data.type→msn_type、log.type在线位已按真实Source更正，修后359605/f8a2c9e与原321242前缀都已独立实核。现采用D1–D7/原完整验收和精确Files，不将设计签作实现/运行。
+
+本批授权仅上表后台十四生产路径：五个新DAO/服务/存储/票据、两个controller、两route、原ChatHandle/KefuServices/Service controller及marketplace/cookie配置，连本record为唯一过程记录；前端五页/helper/两transfer及四普通验证文件此批暂不改，先让同PDO/身份/29/clone与真实协议可审冻结。作者不在旧统一W写入、不改C/D、不运行PHP/Node/WS/Docker/SQL/HTTP/浏览器或候选，不commit/push；Root独立Source核与必要纯检查后再提交。若任何新必要异常/纯图片资格callee不在该十四Files，先以真实源/最小必要点补本record并交Root采用，不假Customer purpose/PlatformScope绕过、不改Schema/vendor或原通用save。
+
+接口在实现前固定为原HTTP成功envelope与最小三字段上传DTO{name,url,attachment_ref}；ref永久，url仅受权content定位、不直接供img。upload multipart file/filename：顾客仅service_uid locator，客服仅peer_uid/is_tourist locator，真实身份/房间均服务端重验，无guest upload。read-ticket正文严格二选一{mode:'preview'}或{mode:'message',message_id:<规范正十进制真实logID>}，不可混pair/actor；返回最小{ticket,expires_in_ms}，content固定对应route且只header ticket/现身份。capabilities固定protocol=1/private_writes_enabled/private_read_supported，后者不冒未配置物理能力；无private行/凭据。原WS data.type分类和原self ACK/raw DTO不改，新err_tip仅增加严格安全六键receipt，原记录/通知/earlyreturn/autoReply全部原顺序与异常责任保留。实际实现若原框架DTO确有必要差异，先记源依据修此合同，不临时猜新确认API。
+
+newwrite=false不禁已有BOUND合法读，也不禁原可信转接的clone义务；clone是现授权转接的有限producer，必须真实发起者created_by_service_id、目标四chat字段、每distinct新独立对象/29、实际saveAll key→Model→PK，同一原outer PDO和record/aux提交，原pair/对象/log不动。原六类消息/URL3兼容不因新private分支缩减，正数旧游客只沿实际旧record合法历史，guest不新增upload/private生产或本人historylist。未知提交保草稿/对象不自动重发，不能由BOUND/旧图/无原始commitACK推安全重试；全部原hooks/外部条件与停止样本保持原未验责任。未来前端、普通Host和所有真实Run资格仍UNBOUND。
