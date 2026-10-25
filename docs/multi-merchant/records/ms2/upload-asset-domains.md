@@ -1159,3 +1159,53 @@ Source修复不会关闭真实退款渠道/37历史/FullA-B/V1/CORS/浏览器设
 Root另已实际固定1099镜像PHP8.2.33当前normal纯-l原生0（e585fe），1ca19a核完整5native/10双流983B全0、当前Source before/after一致，networknone/只读helper自然Exited0/PID0后nonforce移除。报告 `artifacts/project-organization-20261023/legacy-refund-normal-memory-php82-r1/RESULT.json` 5820B/096c9cc2502c7c3574349861cef6ea8b32409f86ac972eae32d529d08bc49dd5。这只签解析，没有include/App/DB/HTTP或新业务Runtime，也不证明真实peak低于512M。新clean commit/Val/Host、原完整普通链有效配置与实际峰值、普通close/独立zero仍须Root实际完成；未因Source0或-l关闭原验收项。
 
 本作者没有运行PHP/候选/任何目标、读秘密、提交推送或改C-D，只改normal及原record；原冻结Run/Val/Host/Source对象保持。原80/37历史、真实金融、FullA-B/V1/CORS/浏览器设备/外发/人工及停止样本边界不变。
+
+
+#### 通用多商户统一集成设计与任务（2026-10-25，Source-only，待Root采用）
+
+本节继续本文件这一份执行清单。目标是在同一真实Git来源上整合MS2活动类型迁移、商品图片/本地分片视频/云视频finalize、既有执照与旧退款私有材料及完整正常链修复，复用原商品列表、SKU、规格、价格和库存，不引入天俪专属业务。当前授权仅为独立W准备和本节设计；不合并、不改应用/测试代码，不执行Docker/PHP/SQL/HTTP/目标，不提交推送或改canonical C/D。Root采用本设计后才进入代码整合，任何后续结果按实际另记。
+
+实际未发现合适的已存在集成W/branch；已从已提交退款`0d1c9d4b4f96983033a9f1f0029356e14f4c4c74`新建`H:/天俪商城/worktrees/multi-merchant-integrated`，分支`feature/multi-merchant-integrated-20261025`，创建后HEAD仍为0d1且初始clean。本节是该W当前唯一计划改动。原退款W、detached Val、全部冻结Source/Host/Run/失败与退役证据均保留；新分支不是已完成集成版本。Git auto-sync实际为project_not_enabled，不自动登记或同步。
+
+固定输入与依赖：MS2采用`63260f9d2d7a943e382c4f5f83f60be6e33ed9b8`，其文档所记实际正常四阶段来源是`057f769e37bc79c31d96b3ad05d56e8590d26768`，不得把632文档提交冒充057f测试来源；云视频采用`021a7de4b07fb1c6375b8b1b1772a12db74ee408`，其离线SDK/语法结果不证明真实供应商/自然云回收。退款0d1已真实继承`d0a5d5398546e223122b5c2a2f115e1908f78ced`、`b54ad9c39ca95a1b8b15ed6724082b98b1370c53`及`bafb6305062aeb6b6e945c21da572863062ca480`；不能被较早媒体叶覆盖。两个分支相对退款的真实共同祖先均为`41c0d795ff36ff98ed267bc49bb042e2f6e17bf8`。
+
+**最小union及真实五处交集。** 已用共同祖先到各输入的原生Git差量核对：MS2与退款恰有下表5路径交集；cloud与退款交集为其中除harness外的4路径。其它独有变更按真实差量整合；MS2/cloud共有的媒体实现先核原字节与后继云扩展，保一份完整最新实现，不复制整个旧树覆盖退款基线、不丢测试或文档责任。
+
+| 路径 | 必须保留的最小合并规则 |
+|---|---|
+| `crmeb/app/api/route/v1.php` | 保退款、执照及原路由完整分组/认证/options，另保MS2/cloud同一条mobile商品图片上传路由且只登记一次；不增加旧死方法入口、不替换真实actor或放宽权限。 |
+| `crmeb/config/marketplace.php` | 保assets.customer_refund_private_root、customer_licence等原私有根；并入product_video_upload及product_video_cloud_upload，重复本地视频块只留一份；保原Env键、显式私有根、全部限额/期限和enabled默认false。原marketplace/trade开关与整件上传默认路径不改变。 |
+| `help/audit-regressions/isolated/lib/harness.php` | 合并原media normal的app/media-timer分channel、独立control/status/Timer命令与日志、精确trusted overrides及Timer原生正常0观察；同时完整保licence/refund两个固定private profile的真实挂载资格、单次TERM、原句柄/组/代际、失败现场与restart_blocked。设计将media/licence/refund normal显式互斥，media-timer只在media profile可选；默认channel仍app、默认非normal原分支保留，不把任何private停止降回可升级路径，也不让channel/override跨用途通用化。 |
+| `docs/multi-merchant/CURRENT-STATUS.md` | 后续按组件真实来源合并事实与未验项，旧失败与收尾保留；不同HEAD局部PASS不能相加为统一HEAD、全MS2/MS4或人工签收，不填完成百分比。当前不写此文件。 |
+| `docs/multi-merchant/records/ms2/upload-asset-domains.md` | 保原0d1完整前缀、两分支既有设计/证据与本节统一任务；相冲突的历史状态按原时点保留，再追加当前事实，不覆盖原失败或减少原验收。 |
+
+非交集也须保持三项精确责任：d0a的`m4trp_fixture`继续通过既有`m4cf_owner_after(customer_form, authenticated_owner.actual_user, uid)`取得完整sealed付款用户后态，再保单行及整行严格比较，原native34/文件/身份/付款归档不变，不退成只比UID或忽略认证列。b54先由真实语言服务证明原映射非空，只在`sys_lang_source_map`、`lang_type_data`这两个逻辑键的原`CacheService::get(name,null) === []`时单键delete且必须true，再走原`getLang('操作成功')`；不删缺失/非空键、不set预制map、不flush Redis、不改生产getter或TTL/标签。bafb仅保限定元数据的warm_failure_context诊断，原失败断言与同一异常重抛，不增加缓存操作或把失败转成功。
+
+**安装SQL与语言组件的前置兼容证明。** 原b54/退款/cloud安装SQL为`crmeb/public/install/crmeb.sql`，10237372B / `7af188f42c622db523d8000c0cf50f95fa48df2fe41123969ca2dbb65ffb5eb2`；MS2携带媒体941安装SQL，10237459B / `1e5e56c805f551a75332be58b2ab96572509c82835b812cdff3ca5c3eb7ad828`。只读完整比对已证明差量仅attachment_category的AUTO_INCREMENT 9→11与追加原历史未分类图片PK9/10两行；不再改seed或原历史80归属。三语言表完整DDL及全部原INSERT（不是只比中文选集）在两份SQL分别逐字节相同，连续完整表段为：
+
+| 原表 | 完整DDL+全部INSERT连续段 bytes / SHA256 |
+|---|---|
+| `eb_lang_code` | 2457682 / `ba7c7d77fbf5505e9758f67680c3be74635afe7993eead861e4d5e5a218dc40a` |
+| `eb_lang_country` | 15875 / `3d5dd9950db16a71fe39de1a426a0d05e2d6274f3fa23cbe6147c6713fd71235` |
+| `eb_lang_type` | 1114 / `becde14465e6b02b9ba4b497696d8c609a3ab5b02e8fb73e9148ec1259170109` |
+
+作者与非作者已各自只读核三表raw段；独立DDL与全部INSERT各自的bytes/SHA亦相同。原全SQL语言rows为code25150/country350/type10；原decode仍严格核31条INSERT与这些完整总量，再按既有条件选择中文canonical code2515/country1/type1，不因集成删其它语言。若统一树采MS2的941 SQL，只窄重绑`ms4-language-cache-normal.php`的M4LC_SQL完整文件描述及依赖它的真实来源闭包，保两个只读Source根完整同字节、原全表解码/列集/原PK/参数类型、真实事务commit及完整reselect门；不得删EXACT_ORIGINAL_INSTALL_SQL或接受任意SQL。此时仍未修改该pin或执行安装。生产common.php原getter在两来源完整43222B / `a5379e999165f4fa1f1969523211111caf383d04d8c5a2ad21164a72f1ac4a7c`相同；941较早afterreview叶不包含b54后修，合并不能用它替换b54叶。
+
+**数据、权限与默认兼容。** 只复用组件已批准结构与接口，不另增表/列/索引/owner抽象或新种子；真实正mer_id来自原MerchantContext，0仍不代表自营。MS2 type4/type6活动PK与base商品PK、同owner模板映射及原首次8/重复0等完整oracle不改；历史80/37不据合成数据补签。bootstrap-only audit_migrator仅用于新的专用实例原迁移与真实初始化，普通App仍DML-only，无root/migrator秘密挂载。customer asset原34列两purpose/执照、product attachment原native14、原Notice/OutPush/Custom/Channel及提交未知责任、五reader与CORS前提保全；不靠清库、清缓存、放宽rows/DDL/next/Redis绝对期限/files断言取得通过。退款verify-only固定512M和三次readback/真实PHP allocated peak保留，prepare/独立App/Host/Compose不扩容。云视频默认关闭，保原本地/整件兼容、正式对象新key、unknown不自动重发、精确暂存责任与原自然Timer GC；供应商、私有性、CORS/上传期限/自然清理等真实资格仍单列未验。
+
+**统一验收与收尾/恢复设计。** 代码整合和独审后由Root形成真实统一clean提交；所有新Val/Source全tracked namespace、每body blob1/SHA256、稳定path-handle、分Git目录及Host/descriptor闭包按该同一统一HEAD重新绑定，数量以真实树为准，不搬用旧26/31闭包或旧Runtime结果。各互斥用途从该统一HEAD建立各自新的专用Val/Run，不把不同profile硬塞同一实例；setup→原完整normal→普通close→独立zero必须各有实际原生同PID/argv/句柄终态与完整双流。旧组件的057f/941/b54/0d1及退款历次失败/收尾仅保历史参考，不能给新HEAD代签。
+
+后续须在统一HEAD重跑MS2既有完整普通迁移/38行/10CLI与真实重复语义、商品媒体/原Timer正常链、语言组件、执照/旧退款完整链；再继续原完整交易A、同源fresh B、售后评价/Worker、V1完整回归和三端页面/CORS/浏览器设备等原验收，不以新增小样本代替。DB完整rows/DDL/native next、Redis所有类型/值/tag/绝对期、公私/runtime文件与原业务独立期望保持。真实支付退款/对账结算、供应商与外部通知、发布/部署/人工阶段仍需原条件和相应授权，当前不启真实资金；仅BASE人工已签。原停止的负向/故障/并发/恢复/K样本仍NOT RUN，不因本计划恢复。
+
+每个新实例成功也仅为retirement pending；只依它实际context/engine、同代role→CID、完整mount对象/重复数、labels、实际卷与内部网络设计有限收尾。普通TERM原注册group，保原句柄/代际；超时/身份不符/未知结果保现场，不KILL、不force、不重试原失败Run。仅真实同代Exited0/PID0/noRestart和only-own消费者门通过后nonforce精确移除，另进程六次fresh单label container/network/volume查询原始双流均空。失败不标PASS；Root先冻结真实失败及公共证据，再作该实例有限ordinary退役设计。恢复仅设计为保留旧Git/Source/Run证据、回到已核代码检查点并从新clean来源建立新的专用实例，不在旧失败上补丁续跑，不对共享/业务数据作回滚操作；本轮不执行恢复样本。
+
+本节单一任务表（本轮只完成设计准备，后继未执行）：
+
+- [x] 读Spec workflow、核Git enrollment与既有W/branch；实际从0d1创建独立集成W，真实共同祖先/五交集及三语言完整Source证明已核。
+- [x] 在原record先记最小union、依赖、默认off、数据/权限/兼容、完整验收与普通收尾/恢复设计；保原前缀，不写任何新业务PASS。
+- [ ] Root采用本节后，按真实差量整合MS2/cloud及五接缝，保d0a/b54/bafb和原全部case；语言SQL仅按上述证明窄rebind，再完成完整来源闭包检查。
+- [ ] 非作者Source审、变更范围/diff检查及Root当前PHP/前端必要静态检查；语法/离线检查不代Runtime或视觉验收。
+- [ ] Root形成统一clean提交，重新冻结完整Source/Val/Host；以同一HEAD的各用途fresh实例完成原正常链和普通close/独立六fresh raw-zero，逐项留实际证据。
+- [ ] 继续原完整A/fresh B/V1/Worker/三端与设备、真实外部条件和人工阶段等未验项；已停止样本保持NOT RUN，不因组件局部通过关闭原责任。
+
+Root采用：已全文核本节设计及共享源差量，独立复核Source0；Root另完整读取两Git SQL正文并核三语言CREATE到下一CREATE的全部原字节与31 INSERT一致。允许在此独立集成W按本节分步进行代码union及必要完整来源绑定，先整合MS2，再合并云finalize，全部保持仅L2/source阶段；实际目标由Root串行安排，统一HEAD验收仍未执行，旧退款r4 Source/Val/Run冻结保持。
