@@ -23,6 +23,7 @@ class HttpEndListener
 {
     public function handle(Response $response): void
     {
+        if (\app\services\marketplace\assets\PlatformChatAssetServices::isPrivateHttpRequest(app()->request)) return;
         // Login/setup responses and request bodies must never enter business logs.
         if (app()->http->getName() === 'merchantapi') return;
         if (\app\services\marketplace\PlatformAccessServices::isMarketplace(app()->request)) return;

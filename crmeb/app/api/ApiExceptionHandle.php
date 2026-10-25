@@ -45,6 +45,11 @@ class ApiExceptionHandle extends Handle
      */
     public function report(Throwable $exception): void
     {
+        if (\app\services\marketplace\assets\PlatformChatAssetServices::isPrivateHttpRequest($this->app->request)) {
+            if ($exception instanceof AuthException && in_array($exception->getCode(), [401, 403], true)) return;
+            try { $this->app->log->record('chat.private_unavailable', 'error'); } catch (Throwable $loggingError) {}
+            return;
+        }
         if ($exception instanceof \app\services\marketplace\freight\MerchantFreightException) return;
         if (!$this->isIgnoreReport($exception)) {
             $data = [
@@ -79,6 +84,12 @@ class ApiExceptionHandle extends Handle
      */
     public function render($request, Throwable $e): Response
     {
+        if (\app\services\marketplace\assets\PlatformChatAssetServices::isPrivateHttpRequest($request)) {
+            $status = $e instanceof AuthException && in_array($e->getCode(), [401, 403], true) ? $e->getCode() : 503;
+            $messages = [401 => '认证信息无效，请重新登录', 403 => '没有权限访问', 503 => '聊天图片服务暂不可用'];
+            return Response::create(['status' => $status, 'msg' => $messages[$status], 'data' => []], 'json', $status)
+                ->allowCache(false)->header(['Cache-Control' => 'private, no-store, max-age=0', 'X-Content-Type-Options' => 'nosniff']);
+        }
         if ($e instanceof \app\services\marketplace\freight\MerchantFreightException) {
             return Response::create(['status'=>$e->getCode(),'msg'=>$e->getMessage(),'data'=>[]], 'json', $e->getCode());
         }

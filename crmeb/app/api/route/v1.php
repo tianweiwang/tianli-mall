@@ -150,6 +150,10 @@ Route::group(function () {
         //用户类 客服聊天记录
         Route::get('user/service/list', 'v1.user.StoreService/lst')->name('userServiceList')->option(['real_name' => '客服列表']);//客服列表
         Route::get('user/service/record', 'v1.user.StoreService/record')->name('userServiceRecord')->option(['real_name' => '客服聊天记录']);//客服聊天记录
+        Route::get('user/service/files/capabilities','v1.user.ChatAsset/capabilities')->option(['real_name'=>'平台聊天素材协议','platform_chat_files'=>'api']);
+        Route::post('user/service/files','v1.user.ChatAsset/upload')->option(['real_name'=>'本人聊天图片上传','platform_chat_files'=>'api']);
+        Route::post('user/service/files/<asset_id>/read-ticket','v1.user.ChatAsset/ticket')->option(['real_name'=>'本人聊天原图票据','platform_chat_files'=>'api']);
+        Route::get('user/service/files/<asset_id>/content','v1.user.ChatAsset/content')->option(['real_name'=>'本人聊天原图','platform_chat_files'=>'api']);
         Route::post('user/service/feedback', 'v1.user.StoreService/saveFeedback')->name('saveFeedback')->option(['real_name' => '保存客服反馈信息']);//保存客服反馈信息
         Route::get('user/service/feedback', 'v1.user.StoreService/getFeedbackInfo')->name('getFeedbackInfo')->option(['real_name' => '获得客服反馈头部信息']);//获得客服反馈头部信息
         Route::get('user/service/get_adv', 'v1.user.StoreService/getKfAdv')->name('userServiceGetKfAdv')->option(['real_name' => '获取客服页面广告']);//获取客服页面广告

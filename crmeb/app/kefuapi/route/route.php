@@ -28,6 +28,10 @@ Route::group(function () {
     Route::group(function () {
 
         Route::post('upload', 'User/upload')->name('upload')->option(['real_name' => '上传图片', 'mark' => 'common', 'mark_name' => '公用接口']);//上传图片
+        Route::get('service/files/capabilities','ChatAsset/capabilities')->option(['real_name'=>'平台聊天素材协议','platform_chat_files'=>'kefu']);
+        Route::post('service/files','ChatAsset/upload')->option(['real_name'=>'客服房间图片上传','platform_chat_files'=>'kefu']);
+        Route::post('service/files/<asset_id>/read-ticket','ChatAsset/ticket')->option(['real_name'=>'客服聊天原图票据','platform_chat_files'=>'kefu']);
+        Route::get('service/files/<asset_id>/content','ChatAsset/content')->option(['real_name'=>'客服聊天原图','platform_chat_files'=>'kefu']);
 
     })->middleware(KefuAuthTokenMiddleware::class);
 
@@ -92,6 +96,10 @@ Route::group(function () {
         ->option(['mark' => 'service', 'mark_name' => '客服']);
 
     Route::group('tourist', function () {
+        // Current guest capability only; these leaves do not issue sessions, upload or list history.
+        Route::get('files/capabilities','ChatAsset/guestCapabilities')->option(['real_name'=>'当前游客聊天素材协议','platform_chat_files'=>'guest']);
+        Route::post('files/<asset_id>/read-ticket','ChatAsset/guestTicket')->option(['real_name'=>'当前游客收到图片票据','platform_chat_files'=>'guest']);
+        Route::get('files/<asset_id>/content','ChatAsset/guestContent')->option(['real_name'=>'当前游客收到图片','platform_chat_files'=>'guest']);
         Route::get('user', 'Common/getServiceUser')->name('getServiceUser')->option(['real_name' => '随机客服信息', 'chat_guest' => true]);//随机客服信息
         Route::get('adv', 'Common/getKfAdv')->name('getKfAdv')->option(['real_name' => '获取客服广告']);//获取客服广告
         Route::post('feedback', 'Common/saveFeedback')->name('saveFeedback')->option(['real_name' => '保存客服反馈内容']);//保存客服反馈内容

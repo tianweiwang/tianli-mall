@@ -300,7 +300,17 @@ class ChatHandle
         $recipient = $this->recipientConnection($identity, $to_uid, $isTourist);
         $online = $recipient !== null && isset($recipient->chatToUid) && $recipient->chatToUid == $uid;
         $data['type'] = $online ? 1 : 0;
-        $data = $logServices->save($data);
+        if ((int)$msn_type === 3 && \app\dao\marketplace\assets\PlatformChatAssetDao::isPrivate($msn)) {
+            try {
+                $data = app()->make(\app\services\marketplace\assets\PlatformChatAssetServices::class)
+                    ->saveMessage($identity, $to_uid, $isTourist, $data, $logServices);
+            } catch (\app\services\marketplace\attachment\MerchantAttachmentOperationException $error) {
+                return $response->send('err_tip', ['msg' => '图片消息结果尚未完整确认，请保留本次草稿',
+                    'receipt' => \app\services\marketplace\assets\PlatformChatAssetServices::safeReceipt($error->receipt)]);
+            }
+        } else {
+            $data = $logServices->save($data);
+        }
         $data = $data->toArray();
         $data['_add_time'] = $data['add_time'];
         $data['add_time'] = strtotime($data['add_time']);

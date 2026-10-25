@@ -31,6 +31,11 @@ return [
         // Explicit private mount; no public/cloud fallback and no change to withdrawal availability.
         'private_root'=>Env::get('marketplace.customer_withdrawal_qr.private_root',''),
     ],
+    'platform_chat'=>[
+        // New private production is opt-in. Saved reads and trusted transfer clones retain their obligations.
+        'private_writes_enabled'=>Env::get('marketplace.platform_chat.private_writes_enabled',false),
+        'private_root'=>Env::get('marketplace.platform_chat.private_root',''),
+    ],
     'product_media_scan'=>[
         'private_root'=>Env::get('marketplace.product_media_scan.private_root',''),
         'max_open_leases'=>Env::get('marketplace.product_media_scan.max_open_leases',16),

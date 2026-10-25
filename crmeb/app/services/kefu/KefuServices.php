@@ -84,7 +84,7 @@ class KefuServices extends BaseServices
      * @param int $toUid
      * @return mixed
      */
-    public function setTransfer(int $kfuUid, int $uid, int $kfuToUid)
+    public function setTransfer(int $kfuUid, int $uid, int $kfuToUid, ?\app\Request $privateRequest = null)
     {
         if ($uid === $kfuToUid) {
             throw new ApiException('自己不能转接给自己');
@@ -119,7 +119,19 @@ class KefuServices extends BaseServices
             unset($item['id']);
             $data[] = $item;
         }
-        $record = $this->transaction(function () use ($data, $service, $kfuUid, $uid, $kfuToUid, $auxiliaryServices, $isTourist) {
+        $privateChat = null;
+        $privateContext = null;
+        foreach ($list as $sourceLog) {
+            if ((int)$sourceLog['msn_type'] === 3 && \app\dao\marketplace\assets\PlatformChatAssetDao::isPrivate($sourceLog['msn'])) {
+                if (!$privateRequest instanceof \app\Request) throw new \crmeb\exceptions\AuthUnavailableException();
+                $privateChat = app()->make(\app\services\marketplace\assets\PlatformChatAssetServices::class);
+                $privateContext = $privateChat->prepareTransfer($privateRequest, $kfuUid, $uid, $kfuToUid, $isTourist, $list, $data);
+                break;
+            }
+        }
+        try {
+        $record = $this->transaction(function (\think\db\ConnectionInterface $actual) use ($data, $service, $kfuUid, $uid, $kfuToUid, $auxiliaryServices, $isTourist, $privateChat, &$privateContext) {
+            if ($privateContext !== null) $privateChat->startTransfer($privateContext, $actual, $data);
             /** @var StoreServiceRecordServices $serviceRecord */
             $serviceRecord = app()->make(StoreServiceRecordServices::class);
             $info = $serviceRecord->get(['user_id' => $kfuUid, 'to_uid' => $uid, 'is_tourist' => $isTourist], ['type', 'message_type', 'is_tourist', 'avatar', 'nickname']);
@@ -128,6 +140,7 @@ class KefuServices extends BaseServices
                 $num = count($data) - 1;
                 $messageData = $data[$num] ?? [];
                 $res = $service->saveAll($data);
+                if ($privateContext !== null) $privateChat->bindTransfer($privateContext, $res, $data);
             } else {
                 $num = 0;
                 $res = true;
@@ -138,8 +151,13 @@ class KefuServices extends BaseServices
             if (!$res && !$record) {
                 throw new ApiException('转接客服失败');
             }
+            if ($privateContext !== null) $privateChat->completeTransferCallback($privateContext);
             return $record;
         });
+        } catch (\Throwable $error) {
+            if ($privateContext !== null) throw $privateChat->transferUnknown($privateContext);
+            throw $error;
+        }
         try {
             if (!$record['is_tourist']) {
                 /** @var UserServices $userService */
@@ -165,6 +183,7 @@ class KefuServices extends BaseServices
                 ->send('to_transfer', ['toUid' => $kfuToUid, 'avatar' => $keufToInfo['avatar'] ?? '', 'nickname' => $keufToInfo['nickname'] ?? '', 'is_tourist' => (int)$record['is_tourist']], [$uid]);
         } catch (\Exception $e) {
         }
+        if ($privateContext !== null) $privateChat->transferCommitted($privateContext);
         return true;
     }
 

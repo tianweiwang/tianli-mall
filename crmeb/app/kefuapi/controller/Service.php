@@ -303,7 +303,11 @@ class Service extends AuthController
         if (!$kefuToUid || !$uid) {
             return app('json')->fail('缺少转接人id');
         }
-        $this->services->setTransfer($this->kefuInfo['uid'], (int)$uid, (int)$kefuToUid);
+        try {
+            $this->services->setTransfer($this->kefuInfo['uid'], (int)$uid, (int)$kefuToUid, $this->request);
+        } catch (\app\services\marketplace\attachment\MerchantAttachmentOperationException $error) {
+            return \app\api\controller\v1\user\ChatAsset::incomplete($error);
+        }
         return app('json')->success('转接成功');
     }
 }
