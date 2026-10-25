@@ -114,3 +114,24 @@ r2 原冻结设计有两句关于当前工作树的旧措辞，原件保留；�
 原用户停止的安全复现、负向、故障、并发、断连和恢复样本继续 NOT RUN。本目录不恢复这些样本，不改变真实支付、生产数据和部署的授权要求。
 
 原始收据、双流、私有环境、演员、Cookie/HAR、上传、数据库和 Redis 卷没有入库；失败历史与证据仍按原记录保留。源码交接补齐不补签任何业务、页面或发布验收。
+
+
+## 2026-10-25 后继源码交接
+
+本轮新增109份作者源码，共92,609,830B；归档累计694文件、72包、264,349,255B。原585份源码、原描述符和历史记录保留原件。精确文件、来源与摘要见[source-manifest.json](source-manifest.json)，执行与核对事实见[交接记录](../../../docs/multi-merchant/records/ms4/orchestration-source-handoff.md)和[r9摘要](../../../docs/multi-merchant/records/ms4/current-source-handoff-r9.json)。
+
+| 来源 | 本次交付 | 仍需准备的输入 |
+|---|---|---|
+| b54 Core R3 | 完整18件主程序、3本地模块、3模板、静态合同、补丁及PINS，共30件；保留M37/25步合同 | 原33成员中的4份资格及采用报告未复制 |
+| b54最新独立S与读回器 | 最新S、launcher、root/peer读器、同包helper、作者程序及Source合同；另补M reader直接读取的DESIGN.md与SOURCE-PINS.json | M仍使用Core R3；原M reader41路径中仍有36项前置Source、接口、重复原路径及资格材料未恢复 |
+| b54构造程序与模板 | 必要作者构造、回调、外层、M/S读器和模板；两份历史helper按既有归档及原hash引用 | 完整作者重放输入及原文件身份未交齐 |
+| Env9与941媒体HTTP | Env9选17件作者程序/配置/合同，941 HTTP保9件程序及静态素材合同 | 生成tar/Tree、实际图片/MP4、产品源码资格与新环境需重新准备 |
+| licence Host6与refund Host-r3 | 每包3件Host、README和Source PINS | 原路径、Git/stat/native身份仅保留历史元数据，实际Run和结果未复制 |
+
+MS2的仓库内Windows入口位于产品提交`057f769e37bc79c31d96b3ad05d56e8590d26768`的`help/audit-regressions/isolated/ms2-migration-host.py`，49769B/SHA256 `ba6b40f1863413f263e5c18b5163a1c8b06cd6eda5327a236364895fc0e1ec44`。本归档记录该Git引用，业务树仍基于2e4。
+
+现有离线核对已通过693文件、249份Python AST、178份JSON及7份Source合同检查；非作者已复核108份新增原件、旧585份保全和依赖差量。核对命令只读取本归档，不执行存档程序。完整693检查由作者实际运行；非作者另有首轮691检查及最终108差量复核，范围在交接记录中分别登记。
+
+`runtime_ready=false`。本次交齐的是选定脚本文本及所列Source依赖，完整历史权威、作者重放输入、原41路径、当前文件身份和新隔离运行资格仍有缺口。真实ENV、凭据、actors/cookies、上传、数据库及Redis卷、Run/原生双流、M/freeze和生成tar/Tree均未导入；不能从源码归档推导跨机复现、业务或发布验收。原完整交易、37步历史、三端页面和停止样本的边界继续沿用原计划。
+
+最后已知源码遗漏仅补历史清退程序`legacy-refund-normal-r3-memory-failed-retire-source-r1/retire.py`原33716B及固定平面来源映射；原108份快照和Root既有核对事实保留。只归档作者程序文本，不导入其oldRun、Stop、CLOSE、ZERO或原生双流，不扩到后续Host-r4。本次完整离线检查已自然0：694文件、72包、264,349,255B，250 AST、178 JSON、109选集及7份Source合同；未执行存档程序；非作者已对最后一件原件、固定平面映射及控制差量收口Source0，未重复运行完整694检查。上段693/249 AST的核对保留其原时点与范围。

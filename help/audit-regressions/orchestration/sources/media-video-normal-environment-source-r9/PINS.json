@@ -1,0 +1,79 @@
+{
+  "schema": 1,
+  "scope": "ENV9_ACTUAL_941_STRICT_FRESH_SEED_PLAN_COMPLETE_NORMAL_SOURCE_ONLY_NOT_RUNTIME",
+  "source_sha": "941fdc7fe81a5d5b44dfce29cf5f87c8411c0a58",
+  "files": {
+    "build_git_source.py": {
+      "bytes": 3765,
+      "sha256": "e5d39cf29625ad15148ed4bae91c2f75823b5a3c6d1fbd25389bbde24e82694b"
+    },
+    "INTERFACE.json": {
+      "bytes": 12084,
+      "sha256": "721de2f477777d6010e8c6bd18e9deba999336073f64eaa3b87e40a40fa53697"
+    },
+    "media-environment/compose.base.yml": {
+      "bytes": 5807,
+      "sha256": "e3882126a14d60f354686fd8c8c4bdc2f3bb231bf7f8e8d01f19dfc5742552a2"
+    },
+    "media-environment/compose.normal.yml": {
+      "bytes": 4589,
+      "sha256": "31b5664d0376632043fab34a3316cd94a3f20aa1f8159d26fdb3219455f7f8b3"
+    },
+    "media-environment/configure-upload.php": {
+      "bytes": 1821,
+      "sha256": "1e531ff8e163b9d833898addba93a07e596ad9e2e10c7e4b49770ed202470ca7"
+    },
+    "media-environment/control.php": {
+      "bytes": 4390,
+      "sha256": "a4257c202f248514e55fd3ee45af1eb37509f00abd1d91a6cadbfb0a44028e70"
+    },
+    "media-environment/fixtures/ms0a.php": {
+      "bytes": 3326,
+      "sha256": "a64a5cfe36bca6ecf38e73aca39c3d7e7e0f03c442cc05c58c3853e56f754919"
+    },
+    "media-environment/gc-observe.php": {
+      "bytes": 26195,
+      "sha256": "3c52a4f0fb0e9654af92594287bd1110a1f5c4e50adb1d2480d600c661be622b"
+    },
+    "media-environment/install-source.php": {
+      "bytes": 9359,
+      "sha256": "1d96c663afb2b8bebfbf48f8add852ca2d1cf30bdbb684fda576adead6ff4273"
+    },
+    "media-environment/lib/guard.php": {
+      "bytes": 4694,
+      "sha256": "a7a182c3a204dbb55f5669a61f44af099360223acd9835f82d9da3a8bf2f79a8"
+    },
+    "media-environment/lib/harness.php": {
+      "bytes": 65711,
+      "sha256": "94df54df2fabb3622d1914ae532da90990b418b06dae533467aa2d81bf65e43b"
+    },
+    "media-environment/media-seed-adapter.php": {
+      "bytes": 54311,
+      "sha256": "0ae2593e2d94d74892cdea5fd5533703f72d841b86cd2398f423827ca42e098d"
+    },
+    "media-environment/observe-ini.php": {
+      "bytes": 1408,
+      "sha256": "5843f27e62ff19431161a401a39adc95cd95d24eee9368ea6e24c61e8f6e64a5"
+    },
+    "media-environment/source-binding.json": {
+      "bytes": 730,
+      "sha256": "a82f9739d204b8b8373d203ac7927a8792de5153c7a30ea930fc57f9c9542dd7"
+    },
+    "README.md": {
+      "bytes": 13564,
+      "sha256": "8d99bbd9d0929be549213f4d6e31cf9a39ddda866cab0ceff3de0366f88104e4"
+    },
+    "run-environment.py": {
+      "bytes": 30336,
+      "sha256": "c680285891bc13a27b52c355c9d5dde89e93cbeae3a2f691ab45f07e0b5ee380"
+    },
+    "source-input/SOURCE-TREE.json": {
+      "bytes": 3982301,
+      "sha256": "a90047cadd2416175f649ecdaac82dbccfb83203b692333fa7e4ee564e1d8c0b"
+    },
+    "source-input/source.tar": {
+      "bytes": 356618240,
+      "sha256": "c801010949643aeeb0ef7370dfb6deadae4af5b137ea60ebb01bd9b169c8fc79"
+    }
+  }
+}

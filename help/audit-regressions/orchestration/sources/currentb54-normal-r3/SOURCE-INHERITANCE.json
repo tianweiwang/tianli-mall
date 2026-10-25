@@ -1,0 +1,90 @@
+{
+  "schema": 1,
+  "before": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbafb-next-normal-preparation-r3/normal-source/PINS.json",
+    "bytes": 13638,
+    "sha256": "7fd721b1c4b763ccdd7c798451fabe1d963e7908d3b67de04083362bf76b1279"
+  },
+  "current_Source_identity": "b54ad9c39ca95a1b8b15ed6724082b98b1370c53",
+  "original24_fn": {
+    "bytes": 808768,
+    "sha256": "ff5afcdf7364f98ee2bff78ef1f5062683968a19aad34bcaac1c4979166445db"
+  },
+  "all_original_literal_names": [
+    "COMMITTED_PATHS",
+    "COMMIT_CHAIN",
+    "CURRENT_COMPOSITE_CUSTOMER_FORM_SOURCE",
+    "CURRENT_D0A5_FAILED_FINITE_INDEX",
+    "CURRENT_WARM_EXPORT_ROOT_READBACK",
+    "CURRENT_WARM_PROFILE_MANIFEST",
+    "CURRENT_WARM_PROFILE_NEW_NODE",
+    "CURRENT_WARM_PROFILE_SOURCE",
+    "CURRENT_WARM_QUALIFICATION_RECEIPTS",
+    "CURRENT_WARM_SOURCE_HISTORY",
+    "CURRENT_WARM_SOURCE_INPUTS",
+    "CURRENT_WARM_SOURCE_QUALIFICATION",
+    "HISTORICAL_TWENTYTHREE_AUTHORITY_SOURCE",
+    "HISTORICAL_TWENTYTHREE_CONSTANTS",
+    "HISTORICAL_TWENTYTHREE_M_SOURCE",
+    "HISTORICAL_TWENTYTHREE_PUBLICATION",
+    "MAIN_SOURCE",
+    "NEW_TRACKED_PATHS",
+    "SOURCE_REQUIREMENT_PATHS",
+    "VALIDATION_SOURCE"
+  ],
+  "original_source_runtime18_full_patch_inverse": true,
+  "normal8_syntax": "UNBOUND_NOT_RUN",
+  "all_callbacks_targets_imported_or_executed": false,
+  "R103_F1_Source_only_successor": {
+    "engineering_before": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentb54-next-normal-preparation-r1/normal-source/PINS.json",
+      "bytes": 11900,
+      "sha256": "84bd5a863336b9c1cf895eacee4ba282f42db7e153933ed816524c58755514ca"
+    },
+    "historical24_before_unchanged": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbafb-next-normal-preparation-r3/normal-source/PINS.json",
+      "bytes": 13638,
+      "sha256": "7fd721b1c4b763ccdd7c798451fabe1d963e7908d3b67de04083362bf76b1279"
+    },
+    "newGit_or_whole": false,
+    "actual_qualification": "UNBOUND_NOT_RUN"
+  },
+  "R105_new_root_Source_only_successor": {
+    "schema": 1,
+    "scope": "R105_SAME_HEAD_NEW_SOURCE_ROOT_PROCESS_ONLY_ENVIRONMENT_NOT_NEW_GIT_OR_WHOLE",
+    "engineering_before_R2": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentb54-next-normal-preparation-r2/normal-source/PINS.json",
+      "bytes": 13692,
+      "sha256": "66b613acf0cd5d98cb4ed956bd5fe0f2b53b78cb5a1f81eb331e0ae5c2d3887a"
+    },
+    "failed_M_Root": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/current41c0-normal-root-admission-r1/R105-B54-FAILED-M-ROOT-READBACK.json",
+      "bytes": 2607,
+      "sha256": "86c1f99b4a9487e582ef9f7c42a57c09804471fd55ec13c7b944537862ecafa0"
+    },
+    "failed_M_public_list": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/current41c0-normal-root-admission-r1/R105-B54-FAILED-M-PUBLIC-OUTPUTS.json",
+      "bytes": 717164,
+      "sha256": "5d3ce24764eac79917c1d611631399d105a824486080cdd2bae2598ebd3208fb"
+    },
+    "original982_public_bodies_not_reread_or_nested": true,
+    "Root_process_only_environment_Source": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/current41c0-normal-root-admission-r1/run-r106-b54-organized-m.py",
+      "bytes": 2198,
+      "sha256": "7a8c8d5dbf203ade050003b139c51098be0c33c1a7eed0b3432d368d33f132d4"
+    },
+    "M_git_argv_and_functions_changed": false,
+    "new_Git_stage_or_whole_or_Run": false,
+    "prior_exact8PHP_actual_syntax_Root": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/current41c0-normal-root-admission-r1/R103-B54-NORMAL8-R2-ACTUAL-ROOT-READBACK.json",
+      "bytes": 48845,
+      "sha256": "5d7bcd177fc2b4fb3ea37f4b4400834d3a40d2d0d95f04d3090a1ba2e589a141"
+    },
+    "current_r3_callback_M_S_actual": "UNBOUND_NOT_RUN",
+    "historical_before_bafbR3_unchanged": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbafb-next-normal-preparation-r3/normal-source/PINS.json",
+      "bytes": 13638,
+      "sha256": "7fd721b1c4b763ccdd7c798451fabe1d963e7908d3b67de04083362bf76b1279"
+    }
+  }
+}

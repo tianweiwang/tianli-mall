@@ -1,0 +1,82 @@
+def validate_reader_source_inheritance(source, source_pins, read, decode, check):
+    """Whole fixed Source refs plus separate historical/current metadata; no path recursion inside records."""
+    from pathlib import Path
+    import hashlib,os,stat
+    def compact(row):return {key:row[key] for key in ('bytes','sha256')}
+    def namespace(folder,expected):
+        actual=[]
+        for current,dirs,files in os.walk(folder,followlinks=False):
+            for name in [*dirs,*files]:
+                path=Path(current)/name;facts=path.lstat()
+                check(not path.is_symlink() and not getattr(facts,'st_file_attributes',0)&1024,'HISTORY_SOURCE_NO_SYMLINK_OR_REPARSE')
+            for name in files:
+                path=Path(current)/name;check(stat.S_ISREG(path.lstat().st_mode),'HISTORY_SOURCE_REGULAR_LEAF')
+                actual.append(path.relative_to(folder).as_posix())
+        check(sorted(actual)==sorted(expected),'COMPLETE_FIXED_HISTORY_SOURCE_NAMESPACE')
+    def fixed_reference(pointer,count,self_name):
+        folder=Path(pointer['path']).parent;packet=decode(read(pointer))
+        check(type(packet['files']) is dict and len(packet['files'])==count,'COMPLETE_HISTORY_SOURCE_PINNED_MEMBER_COUNT')
+        for relative,row in packet['files'].items():
+            path=folder/relative
+            check(type(relative) is str and relative and all(part not in ('','.','..') for part in relative.split('/'))
+                and row['path']==path.as_posix(),'HISTORY_SOURCE_CANONICAL_DECLARED_PATH')
+            raw=read(row);check({'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest()}==compact(row),'WHOLE_FIXED_HISTORY_SOURCE_FILE_HASH')
+        namespace(folder,set(packet['files'])|{self_name})
+        return packet
+    inherit=decode(read(source_pins['files']['SOURCE-INHERITANCE.json']))
+    old=fixed_reference(inherit['full_r1_FINAL_PINS'],355,'FINAL-PINS.json')
+    fixed_reference(inherit['R2_qualification_only_overlay'],21,'PINS.json')
+    check(len(source_pins['files'])==29 and len(source_pins['source_members18'])==18,'CURRENT29_ORIGINAL_RUNTIME18_SOURCE_CONTRACT')
+    for name,row in source_pins['files'].items():
+        check(set(row)=={'path','bytes','sha256'} and row['path']==(source/name).as_posix(),'REAL_CURRENT_THREE_FIELD_SOURCE_MEMBER')
+        raw=read(row);check({'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest()}==compact(row),'WHOLE_CURRENT29_SOURCE_BYTES')
+    historical_pointer=old['files']['normal-source/predecessor-source/AUTHOR-INPUTS.json']
+    warm_pointer=old['files']['normal-source/AUTHOR-INPUTS.json']
+    historical=decode(read(historical_pointer))['files'];warm=decode(read(warm_pointer))['files']
+    check(type(historical) is dict and len(historical)==693 and type(warm) is dict and len(warm)==390,'SEPARATE_FULL693_HISTORICAL_AND390_WARM_AUTHOR_INPUT_MAPS')
+    current=decode(read(source_pins['files']['SOURCE-WINDOWS.json']))
+    check(set(current)=={'files','all_own9_fd9_cross4_birthtime_EOF_and_final_named_windows','target_callback_execution'}
+        and type(current['files']) is list and len(current['files'])==28
+        and current['all_own9_fd9_cross4_birthtime_EOF_and_final_named_windows'] is True
+        and current['target_callback_execution'] is False,'CURRENT28_SOURCE_WINDOWS_TRUE_LIST_NOT_OLD_AUTHOR_DICT')
+    current_rows={}
+    for row in current['files']:
+        check(type(row['path']) is str and row['path'] not in current_rows,'UNIQUE_CURRENT_SOURCE_WINDOW_PATH')
+        current_rows[row['path']]=row
+    expected={(source/name).as_posix() for name in source_pins['files'] if name!='SOURCE-WINDOWS.json'}
+    check(set(current_rows)==expected,'COMPLETE_CURRENT28_WINDOWS_EXCLUDE_ONLY_THEIR_OWN_SOURCE_FILE')
+    for mapping in (historical,warm,current_rows):
+        for path,row in mapping.items():
+            check(type(row) is dict and row['path']==path and type(row['bytes']) is int and row['bytes']>=0
+                and type(row['native9']) is list and type(row['fd9']) is list and len(row['native9'])==len(row['fd9'])==9
+                and all(type(value) is int for value in row['native9']+row['fd9'])
+                and row['native9'][6]==row['fd9'][6]==row['bytes']
+                and [row['native9'][i] for i in (0,1,6,7)]==[row['fd9'][i] for i in (0,1,6,7)]
+                and type(row['birthtime_ns']) is int and row['EOF'] is row['closed'] is True,
+                'ALL_SEPARATE_STATIC_AUTHOR_NATIVE9_FD9_CROSS4_EOF_WINDOW_SHAPES_NO_BODY_FOLLOW')
+    statkeys=('st_dev','st_ino','st_mode','st_nlink','st_uid','st_gid','st_size','st_mtime_ns','st_ctime_ns')
+    for path,row in current_rows.items():
+        facts=Path(path).lstat()
+        check([int(getattr(facts,key)) for key in statkeys]==row['native9'] and facts.st_birthtime_ns==row['birthtime_ns'],
+            'CURRENT_SOURCE_WINDOW_TRUE_NAMED_NINE_AND_BIRTHTIME_STILL_HELD')
+    return {'historical693':historical,'warm390':warm,'current28':current_rows}
+
+
+def validate_separate_author_intersections(authority, mappings, check):
+    """Keep every old/current intersecting pin/native join under its own provenance."""
+    counts={}
+    for label,mapping in mappings.items():
+        count=0
+        for path,row in authority.items():
+            if path in mapping:
+                held=mapping[path]
+                check({key:row[key] for key in ('bytes','sha256')}=={key:held[key] for key in ('bytes','sha256')}
+                    and row['stat9']==held['native9'],'EVERY_SEPARATE_STATIC_AUTHOR_AUTHORITY_INTERSECTION_BYTES_AND_TRUE_NATIVE9')
+                count+=1
+        check(count>0,'EACH_COMPLETE_STATIC_AUTHOR_PROVENANCE_HAS_REAL_AUTHORITY_INTERSECTIONS')
+        counts[label]=count
+    return counts
+
+
+def readback_check(ok,code):
+    assert ok,code

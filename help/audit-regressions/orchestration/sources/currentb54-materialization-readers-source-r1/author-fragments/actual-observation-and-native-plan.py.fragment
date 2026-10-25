@@ -1,0 +1,41 @@
+def validate_b54_actual_observation(pointer, result_pin, freeze_pin, m_pid, source_pin, read, decode, check):
+    value=decode(read(pointer))
+    check(value['status']=='ACTUAL_R3_M_NATIVE0_SMALL_PUBLIC_BINDING_ONLY_NOT_FULL_M_READER_ACCEPTANCE'
+        and value['actual_M_PID']==m_pid==16792 and value['native_exit_wait']==0
+        and value['actual_RESULT']==result_pin and value['actual_freeze']==freeze_pin and value['Core_PINS']==source_pin,
+        'B54_ORIGINAL_TRUE_M_PID_AND_RESULT_FREEZE_SOURCE_BINDING_NOT_EXTERNAL_LAUNCHER')
+    check(value['actual_RESULT_fields']==37 and value['actual_commit_stages']==25 and value['actual_native_operations']==1160
+        and value['actual_all_native0_empty_stderr'] is True and value['actual_committed_files']==313
+        and value['actual_union']==10886 and value['actual_source_counts']=={'driver':10,'customer':10865,'paid':10866,'fulfillment':10881,'aftersale_review':10885,'worker':10886},
+        'B54_ROOT_OBSERVED_M37_25_1160_ONLY_BINDING_NOT_READER_ORACLE')
+    check(value['Root_process_only_git_config']=={'GIT_CONFIG_COUNT':'1','GIT_CONFIG_KEY_0':'core.longpaths','GIT_CONFIG_VALUE_0':'true'}
+        and value['first_failed_longpath_read_now_actual0'] is True
+        and value['source_only']=={'Run_created':False,'App_DB_HTTP_business':'NOT RUN','SourceTree_copy_not_installation':True}
+        and value['complete_two_M_readers']=='NOT_RUN' and value['normal_S']=='NOT_RUN',
+        'B54_OBSERVATION_FROZEN_PRE_READER_SOURCE_ONLY_SCOPE_NO_S_OR_BUSINESS')
+    check([row['pid'] for row in value['inner_and_outer_terminals']]==[33232,40920,16792],
+        'B54_KEEP_ORGANIZED_LAUNCHER_AND_REAL_M_PIDS_DISTINCT')
+    return True
+
+
+def derive_b54_native_plan(values, launcher_values, profile, actual, proof_source):
+    from pathlib import Path
+    mainroot=Path(values['MAIN_SOURCE']);valroot=Path(values['VALIDATION_SOURCE'])
+    head=values['COMMIT_CHAIN'][-1]['source_sha'];python=str(Path(launcher_values['PY']));plan=[]
+    def git(repo,label,*args):plan.append((label,['git','-c','safe.directory='+repo.as_posix(),'-C',str(repo),*args]))
+    for label,repo in [('main',mainroot),('validation',valroot)]:
+        git(repo,label+'-head-before','rev-parse','HEAD');git(repo,label+'-status-before','status','--porcelain=v1','--untracked-files=all');git(repo,label+'-parent','rev-list','--parents','-n','1',head)
+    for index,step in enumerate(values['COMMIT_CHAIN'],1):
+        label='source-step-'+str(index);git(valroot,label+'-parent','rev-list','--parents','-n','1',step['source_sha']);git(valroot,label+'-paths','diff-tree','--no-commit-id','--name-only','-r',step['source_sha'])
+        for position,row in enumerate(step['files'],1):
+            mark=label+'-member-'+str(position);git(valroot,mark+'-after','show',step['source_sha']+':'+row['path'])
+            if row['before'] is None:git(valroot,mark+'-absent-before','ls-tree','--name-only',step['parent'],'--',row['path'])
+            else:git(valroot,mark+'-before','show',step['parent']+':'+row['path'])
+    git(valroot,'cumulative-changed-paths','diff','--name-only',values['BASELINE_AUTHORITY']['source_sha'],head)
+    for index,name in enumerate(values['COMMITTED_PATHS'],1):git(valroot,'committed-blob-'+str(index),'show',head+':'+name)
+    for label,repo in [('main',mainroot),('validation',valroot)]:git(repo,label+'-complete-tracked-inventory','ls-files','-z')
+    for name in ['ms4-host.py','normal-close-ms4-fulfillment.py','verify-zero-ms4-fulfillment.py']:plan.append(('help-'+name.replace('.','-'),[python,'-B','-X','utf8',str(profile/name),'--help']))
+    plan.append(('freeze',[python,'-B','-X','utf8',str(profile/'ms4-host.py'),'freeze','--repo',str(valroot),'--source',head,'--output',str(actual/'freeze-binding.json'),'--proof-ini-source',str(Path(proof_source))]))
+    for label,repo in [('main',mainroot),('validation',valroot)]:git(repo,label+'-head-after','rev-parse','HEAD');git(repo,label+'-status-after','status','--porcelain=v1','--untracked-files=all')
+    return plan
+

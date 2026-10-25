@@ -1,0 +1,147 @@
+def source_authority(pub, checked, check):
+    """Complete24 authority and recursive literal frame retained, then the actual local-only language cache fixture stage."""
+__HELPERS__
+    old_source=read(HISTORICAL_TWENTYFOUR_M_SOURCE);old_defs=definitions(old_source);old_values=constants(old_source)
+    check({'bytes':len(old_defs['source_authority'].encode()),'sha256':hashlib.sha256(old_defs['source_authority'].encode()).hexdigest()}==HISTORICAL_TWENTYFOUR_AUTHORITY_SOURCE
+        and {name:old_values[name] for name in HISTORICAL_TWENTYFOUR_CONSTANTS}==HISTORICAL_TWENTYFOUR_CONSTANTS,'FIX_FULL23_FUNCTION_AND_ALL_RECURSIVELY_USED_LITERALS')
+    oldpub=decode(read(HISTORICAL_TWENTYFOUR_PUBLICATION));prior_context=oldpub['finite_contexts']
+__HISTORICAL_24__
+    historical=historical_twentyfour(oldpub,checked,check)
+    check({name:old_values[name] for name in HISTORICAL_TWENTYFOUR_CONSTANTS}==HISTORICAL_TWENTYFOUR_CONSTANTS,'FIX_OLD_LITERAL_FRAME_UNCHANGED_AFTER_ORIGINAL_BODY')
+    context=pub['finite_contexts']
+    overlay={'commit_chain','committed_changes','committed_files','new_tracked_paths','actual_complete_expected_tracked_count','source_counts','current_composite_customer_form_source','source_authoring_qualification_scope','current_published_source_scope'}
+    extra={'current_fix_export_Root_readback','historical_twentyfourth_publication','current_fix_source_history','current_fix_source_qualification','current_fix_source_inputs','current_bafb_failed_finite_history','current_fix_profile_source','current_fix_profile_Source_admission','current_bafb_failed_finite_own_outputs'}
+    check(set(context)==set(prior_context)|extra and all(context[key]==value for key,value in prior_context.items() if key not in overlay),'FIX_ALL23_CONTEXT_ELEVEN_WHOLES_OLD_FINITE_ATTEMPTS_PRESERVED')
+    check(context['current_fix_export_Root_readback']==CURRENT_FIX_EXPORT_ROOT_READBACK and context['historical_twentyfourth_publication']==HISTORICAL_TWENTYFOUR_PUBLICATION
+        and context['current_fix_source_history']==CURRENT_FIX_SOURCE_HISTORY and context['current_fix_source_qualification']==CURRENT_FIX_SOURCE_QUALIFICATION
+        and context['current_fix_source_inputs']==CURRENT_FIX_SOURCE_INPUTS and context['current_bafb_failed_finite_history']==CURRENT_BAFB_FAILED_FINITE_INDEX
+        and context['current_fix_profile_source']==CURRENT_FIX_PROFILE_SOURCE and context['current_fix_profile_Source_admission']==CURRENT_FIX_PROFILE_SOURCE_ADMISSION
+        and context['current_bafb_failed_finite_own_outputs']==CURRENT_BAFB_OWN_OUTPUTS,'FIX_EXACT_CURRENT_SAFE_PUBLIC_POINTERS')
+    stage=decode(read(CURRENT_FIX_SOURCE_HISTORY));chain=context['commit_chain'];step=chain[-1]
+    check(chain==COMMIT_CHAIN and chain[:-1]==historical['commit_chain'] and len(chain)==len(historical['commit_chain'])+1
+        and step=={key:stage[key] for key in ['kind','source_sha','parent','files']}|{'commit':CURRENT_FIX_SOURCE_HISTORY}
+        and step['source_sha']==pub['source_sha']=='b54ad9c39ca95a1b8b15ed6724082b98b1370c53'
+        and step['parent']==pub['parent']==oldpub['source_sha']=='bafb6305062aeb6b6e945c21da572863062ca480','FIX_TRUE_NEXT_STAGE_OVER_COMPLETE24')
+    paths=[row['path'] for row in step['files']]
+    check(paths==sorted(set(paths)) and len(paths)==3 and [row['before'] is None for row in step['files']]==[True,False,True]
+        and stage['kind']=='language_cache_fixture_fix' and stage['scope']=='ACTUAL_READ_ONLY_GIT_LOCAL_BAFB_FIX_FAILURE_CONTEXT_STEP'
+        and stage['business']=='NOT RUN' and stage['worktree_mutations']==0,'FIX_REAL_THREE_PATH_A_M_A_STAGE_OVER_COMPLETE24')
+    local=decode(read(stage['actual_local_commit']));validation=decode(read(stage['actual_validation_update']));adoption=decode(read(stage['Root_design']))
+    red=decode(read(stage['actual_component_red_root']));green=decode(read(stage['actual_component_green_root']))
+    check(stage['source_admission']=={'mode':'LOCAL_ONLY_PENDING_FINAL_PUSH','remote_qualification':'UNBOUND','final_push':'PENDING'}
+        and local['status']=='LOCAL_L2_FIX_COMMITTED_CLEAN' and local['HEAD']==pub['source_sha'] and local['parent']==pub['parent']
+        and local['branch']=='fix/ms4-language-cache-fixture-20261025' and len(local['paths'])==len(set(local['paths']))==3 and sorted(local['paths'])==paths
+        and local['actual_component_red_green']==[1,0] and local['syntax3']==0 and local['ordinary_close_and_independent_zero']==[0,0]
+        and local['push']=='NOT_RUN' and local['fullnormal_UI_acceptance']=='PENDING_NOT_ASSERTED','FIX_TRUE_LOCAL_B54_THREE_PATH_COMPONENT_ONLY_NO_FULL_NORMAL_OR_PUSH')
+    check(validation['status']=='ACTUAL_NEW_FIX_W_AND_VALIDATION_HEAD_CLEAN' and validation['HEAD']==pub['source_sha']
+        and validation['W']==MAIN_SOURCE and validation['Val']==VALIDATION_SOURCE and type(validation['native_PID']) is int and validation['native_PID']>0 and validation['native_wait']==0
+        and validation['old_main_and_old_validation_unchanged'] is True,'FIX_SEPARATE_ACTUAL_VAL_ROOT_NO_BORROWED_BAFB_HEAD')
+    check(adoption['status']=='ROOT_DESIGN_ADOPTED_MINIMAL_B54_FULL_NORMAL_SUCCESSOR_SOURCE_FIRST' and adoption['HEAD']==pub['source_sha'] and adoption['PARENT']==pub['parent']
+        and adoption['W']==MAIN_SOURCE and adoption['Val']==VALIDATION_SOURCE and adoption['branch']==local['branch']
+        and adoption['exact_real_changed_paths_M_A_A']==[('A' if row['before'] is None else 'M')+'\t'+row['path'] for row in step['files']]
+        and adoption['real_commit_record']==stage['actual_local_commit'] and adoption['new_Val_native_worktree']==stage['actual_validation_update']
+        and adoption['component_real_red_root']==stage['actual_component_red_root'] and adoption['component_real_green_root']==stage['actual_component_green_root'],
+        'FIX_REAL_ROOT_ADOPTION_COMMIT_VAL_RED_GREEN_FIVE_SMALL_QUALIFIED_PUBLIC_REPORTS')
+    check(red['status']=='ROOT_FULL_ACTUAL_TARGET_RED1_CLOSE0_INDEPENDENT_ZERO0_VERIFIED' and red['native_wait']==1 and red['same_natural_two_App_exit']==[0,1]
+        and green['status']=='ROOT_FULL_ACTUAL_SAME_COMMAND_RED1_GREEN0_CLOSE0_INDEPENDENT_ZERO0_VERIFIED' and green['native_wait']==0 and green['same_natural_two_App_exit']==[0,0]
+        and green['same_actual_runner_CLI_as_red'] is green['only_shared_leaf_changed_between_real_red_green'] is green['two_original_empty_maps_rebuilt_by_real_getter'] is True,
+        'FIX_ACTUAL_COMPONENT_SAME_COMMAND_RED_GREEN_NOT_NORMAL_A')
+    for observed in (red,green):
+        check(observed['full_output_files_read']==613 and observed['all_native_pairs_and_whole_streams_verified']==[135,12]
+            and observed['source_full_rows']==[1,1,2515] and observed['syntax3_native_wait']==0
+            and observed['foreign53_all_safe_snapshots_unchanged'] is True and observed['ordinary_resources_removed']==[6,1,7]
+            and observed['ordinary_close_mutations']==5 and observed['fresh_six_raw_empty']==[6,6]
+            and observed['full_normal_UI19_groups']=='OPEN_NOT_ASSERTED','FIX_BOTH_COMPONENT_COMPLETE_ROOT_CLOSED_ZERO_QUALIFICATION_ONLY')
+    root_export=decode(read(CURRENT_FIX_EXPORT_ROOT_READBACK))
+    check(root_export['status']=='ACTUAL_B54_SOURCE_EXPORT_AND_CURRENT_MAIN_VAL_FULL_ROOT_READBACK0'
+        and root_export['authority']==CURRENT_FIX_SOURCE_HISTORY and root_export['qualification']==CURRENT_FIX_SOURCE_QUALIFICATION
+        and root_export['source_inputs']==CURRENT_FIX_SOURCE_INPUTS and root_export['actual_native']==25 and root_export['export_native']==stage['native_count']==13
+        and root_export['qualification_native']==12 and root_export['all_created_terminal_PID_samehandle_wait_full_double_streams_readback0'] is True
+        and root_export['remote_push']=='UNBOUND_PENDING_FINAL_PUSH' and root_export['M_S_App_business']=='NOT RUN'
+        and root_export['full15752_tracked_byte_replay']=='UNBOUND_PENDING_ORIGINAL_M','FIX_REAL_EXPORT13_AND_QUAL12_ROOT_FULL_PUBLIC_READBACK_NOT_COMPLETE_TREE_BYTES_OR_M_S')
+    export_root=Path(CURRENT_FIX_SOURCE_HISTORY['path']).parent;export_names=set()
+    for row in root_export['output_files']:
+        path=Path(row['path']);check(path.is_absolute() and path.is_relative_to(export_root) and '..' not in path.parts and path.as_posix() not in export_names,'FIX_EXACT_OWN_EXPORT_OUTPUT_CLOSED_FILE_IDENTITY')
+        export_names.add(path.as_posix());read(row)
+    check(type(root_export['all_own_output_files_EOF']) is int and len(export_names)==root_export['all_own_output_files_EOF'],'FIX_ALL_ACTUAL_OWN_EXPORT_FILES_EOF_NO_INNER_DESCRIPTOR_RECURSION')
+    git_raw={}
+    for label,receipt in stage['git_operations'].items():
+        made=decode(read(receipt['created']));ended=decode(read(receipt['terminal']));out=read(receipt['stdout']);err=read(receipt['stderr'])
+        check(set(made)=={'pid','argv','started_ns'} and all(ended[key]==value for key,value in made.items())
+            and type(made['pid']) is int and made['pid']>0 and made['started_ns']<=ended['finished_ns']
+            and ended['native_exit']==ended['wait_returncode']==0 and compact(ended['stdout'])==compact(receipt['stdout']) and compact(ended['stderr'])==compact(receipt['stderr']) and err==b'','FIX_FULL_EXPORT_NATIVE_RECEIPTS')
+        check(made['argv'][:5]==['git','-c','safe.directory='+MAIN_SOURCE,'-C',MAIN_SOURCE],'FIX_EXACT_READONLY_GIT_REPOSITORY')
+        git_raw[label]=(made['argv'][5:],out)
+    commands={'head-before':['rev-parse','HEAD'],'clean-before':['status','--porcelain=v1','--untracked-files=all'],'parent':['rev-list','--parents','-n','1',pub['source_sha']],
+        'commit-object':['cat-file','-p',pub['source_sha']],'changed-paths':['diff-tree','--no-commit-id','--name-only','-r',pub['source_sha']],
+        'name-status':['diff-tree','--no-commit-id','--name-status','-r',pub['source_sha']],'branch':['branch','--show-current'],'head-after':['rev-parse','HEAD'],'clean-after':['status','--porcelain=v1','--untracked-files=all']}
+    check(git_raw['head-before'][1]==git_raw['head-after'][1]==(pub['source_sha']+'\n').encode() and git_raw['clean-before'][1]==git_raw['clean-after'][1]==b''
+        and git_raw['parent'][1]==(pub['source_sha']+' '+pub['parent']+'\n').encode() and git_raw['commit-object'][1].splitlines()[1]==('parent '+pub['parent']).encode()
+        and git_raw['branch'][1]==(local['branch']+'\n').encode() and git_raw['changed-paths'][1].decode().splitlines()==paths
+        and git_raw['name-status'][1].decode().splitlines()==[('A' if row['before'] is None else 'M')+'\t'+row['path'] for row in step['files']],'FIX_COMPLETE_CURRENT_GIT_METADATA')
+    expected_sources=dict(historical['all']);blobs={}
+    for index,row in enumerate(step['files'],1):
+        relative=row['path'];stem='member-'+str(index);commands[stem+'-after']=['show',pub['source_sha']+':'+relative]
+        after=git_raw[stem+'-after'][1]
+        check({'bytes':len(after),'sha256':hashlib.sha256(after).hexdigest()}==row['after'],'FIX_COMPLETE_ACTUAL_AFTER_BLOB')
+        if row['before'] is None:
+            check(relative not in expected_sources and relative in {'docs/multi-merchant/records/ms4/language-cache-fixture.md','help/audit-regressions/isolated/ms4-language-cache-normal.php'},'FIX_TRUE_NEW_DOCUMENT_ABSENT_FROM_COMPLETE_PARENT_AUTHORITY')
+        else:
+            commands[stem+'-before']=['show',pub['parent']+':'+relative];before=git_raw[stem+'-before'][1]
+            check(relative in expected_sources and row['before']==compact(expected_sources[relative])
+                and {'bytes':len(before),'sha256':hashlib.sha256(before).hexdigest()}==row['before'],'FIX_COMPLETE_ACTUAL_EXISTING_BEFORE_BLOB')
+        expected_sources[relative]={'path':relative,**row['after']};blobs[relative]=after
+    check(set(git_raw)==set(commands) and all(git_raw[key][0]==value for key,value in commands.items())
+        and stage['native_count']==len(commands)==6+sum(1+(row['before'] is not None) for row in step['files'])+2+1,'FIX_REAL_EXPORT_DERIVED_FROM_ALL_ACTUAL_MEMBERS_NOT_FUTURE_M_BUDGET')
+    expected_sources=dict(sorted(expected_sources.items()));changes={row['path']:dict(row) for row in prior_context['committed_changes']}
+    for row in step['files']:
+        if row['path'] in changes:changes[row['path']]['after']=row['after']
+        else:changes[row['path']]=dict(row)
+    changes=[changes[name] for name in sorted(changes)];committed=[expected_sources[row['path']] for row in changes]
+    requirements=sorted(set(HISTORICAL_TWENTYFOUR_CONSTANTS['SOURCE_REQUIREMENT_PATHS'])|set(paths))
+    additions={row['path'] for row in step['files'] if row['before'] is None};newtracked=sorted(set(HISTORICAL_TWENTYFOUR_CONSTANTS['NEW_TRACKED_PATHS'])|additions)
+    check(context['committed_changes']==changes and context['committed_files']==committed and COMMITTED_PATHS==[row['path'] for row in changes]
+        and SOURCE_REQUIREMENT_PATHS==requirements and context['new_tracked_paths']==NEW_TRACKED_PATHS==newtracked
+        and pub['repository_Source_requirements']==[expected_sources[name] for name in requirements]
+        and context['actual_complete_expected_tracked_count']==len(expected_sources)==len(historical['all'])+len(additions),'FIX_FULL_TRACKED_ADDITION_AND_CUMULATIVE_SCOPE')
+    groups={};combined={}
+    for prefix,old_rows in historical['groups'].items():
+        rows=[expected_sources[row['path']] for row in old_rows];groups[prefix]=rows
+        for row in rows:check(row['path'] not in combined or combined[row['path']]==row,'FIX_GROUP_OVERLAP_EXACT');combined[row['path']]=row
+    check(context['source_counts']=={prefix:len(rows) for prefix,rows in groups.items()},'FIX_FULL_GROUPS_NO_TRACKED_SUBSTITUTION')
+__CURRENT_PROFILE_CHECKS__
+    composite=CURRENT_COMPOSITE_CUSTOMER_FORM_SOURCE
+    check(context['current_composite_customer_form_source']==composite and composite['source_sha']==pub['source_sha']
+        and composite['predecessor_composite']==prior_context['current_composite_customer_form_source']
+        and composite['profile_PINS']==CURRENT_FIX_PROFILE_SOURCE
+        and all(compact(expected_sources[row['path']])==compact(row) for row in composite['php_sources']),'FIX_RETAINED_CURRENT_CU7_PROFILE_COMPOSITE')
+    qualification=decode(read(CURRENT_FIX_SOURCE_QUALIFICATION));qfolder=Path(CURRENT_FIX_SOURCE_QUALIFICATION['path']).parent/'current-source-readback';qraw={}
+    check(qualification['source_sha']==pub['source_sha'] and qualification['parent']==pub['parent']
+        and qualification['required_files_per_checkout']==len(requirements) and qualification['tracked_names_per_checkout']==len(expected_sources)
+        and len(qualification['operations'])==12 and qualification['all_operations_read_only'] is qualification['current_Main_working_tree_asserted'] is qualification['current_Val_working_tree_asserted'] is True,'FIX_ACTUAL_TWO_WORKTREE_QUALIFICATION12')
+    for row in qualification['operations']:
+        receipt=CURRENT_FIX_QUALIFICATION_RECEIPTS[row['stem']];base=qfolder/row['stem']
+        made=decode(read(receipt['created']));ended=decode(read(receipt['terminal']));out=read(row['stdout']);err=read(row['stderr'])
+        check(ended==row and all(made[key]==row[key] for key in made) and row['native_exit']==row['wait_returncode']==0 and err==b'','FIX_WHOLE_QUALIFICATION_RECEIPTS')
+        check(Path(receipt['created']['path'])==Path(str(base)+'.created.json') and Path(receipt['terminal']['path'])==Path(str(base)+'.terminal.json')
+            and compact(receipt['stdout'])==compact(row['stdout']) and compact(receipt['stderr'])==compact(row['stderr']),'FIX_QUALIFICATION_NATIVE_FILE_IDENTITY')
+        qraw[row['stem']]=(row['argv'],out)
+    for label,repository in [('main',MAIN_SOURCE),('validation',VALIDATION_SOURCE)]:
+        expected_q={'head-before':['rev-parse','HEAD'],'clean-before':['status','--porcelain=v1','--untracked-files=all'],'parent':['rev-list','--parents','-n','1',pub['source_sha']],'tracked':['ls-files','-z'],'head-after':['rev-parse','HEAD'],'clean-after':['status','--porcelain=v1','--untracked-files=all']}
+        for suffix,argv in expected_q.items():check(qraw[label+'-'+suffix][0]==['git','-c','safe.directory='+repository,'-C',repository,*argv],'FIX_EXACT_CURRENT_QUALIFICATION_ARGV')
+        check(qraw[label+'-head-before'][1]==qraw[label+'-head-after'][1]==(pub['source_sha']+'\n').encode() and qraw[label+'-clean-before'][1]==qraw[label+'-clean-after'][1]==b''
+            and qraw[label+'-parent'][1]==(pub['source_sha']+' '+pub['parent']+'\n').encode() and qraw[label+'-tracked'][1].decode().split('\0')==[*expected_sources,''],'FIX_TRUE_COMPLETE_TRACKED_NAMES')
+    inputs=decode(read(CURRENT_FIX_SOURCE_INPUTS));input_rows=inputs['files']
+    check(inputs['all_first_final_EOF_closed'] is inputs['full_group_final_native9_birthtime'] is True and inputs['application_or_runtime_bodies_read'] is False,'FIX_SOURCE_EXPORT_COMPLETE_INPUT_WINDOWS')
+    check(root_export['full_source_input_EOF_windows_preserved']==len(input_rows),'FIX_ROOT_READBACK_OF_ALL_ACTUAL_SOURCE_INPUT_EOF_WINDOWS')
+    for repository in [MAIN_SOURCE,VALIDATION_SOURCE]:
+        for relative in requirements:
+            path=(Path(repository)/relative).as_posix();row=input_rows[path]
+            check(compact(row)==compact(expected_sources[relative]) and row['path']==path and row['EOF'] is row['closed'] is True
+                and len(row['native9'])==len(row['fd9'])==9 and [row['native9'][i] for i in (0,1,6,7)]==[row['fd9'][i] for i in (0,1,6,7)]
+                and type(row['birthtime_ns']) is int and row['birthtime_ns']>0,'FIX_ORIGINAL_SCOPE_FULL_DERIVED_EOF_SOURCE_ATTESTATIONS_PER_CHECKOUT_NOT_FRESH_BODY_READ')
+__CURRENT_FAILED_FINITE__
+    protected={}
+    for namespace in historical['protected_namespaces']:
+        names=[name for name in expected_sources if name.startswith(namespace+'/')];protected[namespace]={'count':len(names),'paths_sha256':hashlib.sha256(('\n'.join(names)+'\n').encode()).hexdigest()}
+    return {**historical,'all':expected_sources,'groups':groups,'committed':committed,'commit_chain':chain,'protected_namespaces':protected}

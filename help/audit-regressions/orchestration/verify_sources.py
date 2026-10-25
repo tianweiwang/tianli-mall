@@ -203,6 +203,131 @@ def check_bafb_archive(root, manifest, expected):
 
 
 
+def check_successor_archive(root, manifest, dependencies, expected):
+    """Finite r9 source selection only; never resolve original machine paths."""
+    selection = manifest['successor_source_delivery']
+    rows = manifest['files']
+    require(selection['preserved_files'] == 585 and selection['preserved_total_bytes'] == 171739425,
+            'Preserved585 baseline declaration changed')
+    old_rows_hash = hashlib.sha256(json.dumps(rows[:585], ensure_ascii=False,
+                                               separators=(',', ':')).encode('utf-8')).hexdigest()
+    require(old_rows_hash == selection['preserved_manifest_rows_sha256']
+            == 'd73c16f0be9a61a881037cccebdbf1f562dd34e9d86210c30414669b903bc4f3',
+            'Original585 manifest entries changed')
+    paths = selection['selected_paths']
+    require(len(paths) == len(set(paths)) == selection['selected_files'] == 109
+            and paths == [row['path'] for row in rows[585:]]
+            and selection['selected_bytes'] == sum(row['bytes'] for row in rows[585:]) == 92609830,
+            'Exact successor selection/count/bytes mismatch')
+    require(selection['archive_files'] == len(rows) == 694
+            and selection['archive_bytes'] == sum(row['bytes'] for row in rows) == 264349255
+            and selection['archive_packages'] == len({row['package'] for row in rows}) == 72,
+            'Successor archive totals mismatch')
+    require(selection['source_delivery_complete'] is True and selection['runtime_ready'] is False
+            and selection['archived_programs_executed'] is False
+            and selection['original_runtime_receipts_or_private_inputs_delivered'] is False
+            and selection['complete_original_author_replay_inputs_delivered'] is False,
+            'Selected script text cannot become runtime or full author replay admission')
+    require(dependencies['successor_source_delivery'] == selection,
+            'Successor dependency/source contract mismatch')
+    require(manifest['additional_source_aliases'] == {
+        'currentb54-normal-r3': {'origin_root': 'project-organization-20261023',
+                               'origin_relative_root': 'currentb54-next-normal-preparation-r3/normal-source'},
+        'legacy-refund-normal-r3-memory-failed-retire-source-r1': {
+            'origin_root': 'project-organization-20261023',
+            'origin_relative_file': 'legacy-refund-normal-r3-memory-failed-retire-source-r1.py',
+            'archive_leaf': 'retire.py'}},
+        'Only the fixed b54 root and historical retirement flat-source aliases may be added')
+    retirement = selection['historical_retirement_source']
+    require(retirement == {
+        'archive_path': 'sources/legacy-refund-normal-r3-memory-failed-retire-source-r1/retire.py',
+        'origin_relative_file': 'legacy-refund-normal-r3-memory-failed-retire-source-r1.py',
+        'bytes': 33716,
+        'sha256': '58bcb4dfdb7161c2cf648de14e38f4c30169866802f1fab797fae330c80d3fda',
+        'source_only': True, 'runnable': False, 'runtime_ready': False,
+        'runtime_receipts_delivered': False},
+        'Historical retirement text cannot become runnable or runtime-result admission')
+    retirement_row = next((row for row in rows if row['path'] == retirement['archive_path']), None)
+    require(retirement['archive_path'] in paths and retirement_row is not None
+            and retirement_row['origin_root'] == 'project-organization-20261023'
+            and retirement_row['origin_relative_path'] == retirement['origin_relative_file']
+            and retirement_row['bytes'] == retirement['bytes']
+            and retirement_row['sha256'] == retirement['sha256'],
+            'Exact historical retirement original source descriptor mismatch')
+    for rel in paths:
+        parts = PurePosixPath(rel).parts
+        leaf = parts[-1].lower()
+        require(not set(parts).intersection({'materialize-freeze', 'source-input', 'private', 'actors', 'cookies'})
+                and not leaf.endswith(('.stdout', '.stderr', '.stdout.bin', '.stderr.bin', '.tar', '.tar.gz',
+                                       '.created.json', '.terminal.json', '.running.json'))
+                and leaf not in {'result.json', 'source-tree.json', '.env'},
+                'Generated/runtime/private artifact cannot enter successor source selection')
+    for contract in selection['source_contracts']:
+        package = contract['package']; prefix = 'sources/' + package + '/'
+        pins_name = 'SOURCE-PINS.json' if package == 'currentb54-materialization-readers-source-r2' else 'PINS.json'
+        require(contract['pins_path'] == prefix + pins_name and contract['pins_path'] in paths
+                and contract['runtime_ready'] is False, 'Source PINS contract path or boundary changed')
+        declared = load_json((root / contract['pins_path']).read_bytes())[contract['member_field']]
+        members = contract['selected_members']; omitted = contract['excluded_contract_members']
+        actual_members = sorted(rel[len(prefix):] for rel in paths
+                                if rel.startswith(prefix) and rel != contract['pins_path'])
+        require(type(declared) is dict and len(declared) == contract['declared_members']
+                and actual_members == members and sorted(set(declared) - set(members)) == omitted,
+                'Selected Source contract coverage mismatch')
+        for name in members:
+            require(prefix + name in expected, 'Required authored contract member missing')
+            raw = (root / prefix / name).read_bytes()
+            require({'bytes': len(raw), 'sha256': hashlib.sha256(raw).hexdigest()}
+                    == {key: declared[name][key] for key in ('bytes', 'sha256')},
+                    'Original authored Source PINS member changed')
+        for name in omitted:
+            require(prefix + name not in expected, 'Deliberately excluded prerequisite was copied')
+    core = selection['core']; package = core['package']
+    require(core['source_commit'] == 'b54ad9c39ca95a1b8b15ed6724082b98b1370c53'
+            and core['required_program_members'] == 18 and core['static_source_selection_members'] == 30
+            and core['original_contract_members'] == 33 and core['original_contract_inputs_not_delivered'] == 4
+            and core['M_result_fields'] == 37 and core['source_steps'] == 25,
+            'b54 Core source contract mismatch')
+    for name in ('materializer/prepare.py', 'validation/run.py'):
+        check_declared_authority_globals(root / 'sources' / package / name)
+    check_pipeline_schema(root, package, core['source_commit'], 37, 25)
+    allowed_local_modules = {'source_reader', 'author_support', 'namespace_static'}
+    for rel in paths:
+        path = root / rel
+        if path.suffix != '.py':
+            continue
+        for node in ast.walk(ast.parse(path.read_bytes(), filename=rel)):
+            modules = []
+            if isinstance(node, ast.Import):
+                modules = [alias.name.split('.')[0] for alias in node.names]
+            elif isinstance(node, ast.ImportFrom):
+                require(node.level == 0 and node.module is not None, 'Unexpected relative successor import')
+                modules = [node.module.split('.')[0]]
+            require(all(module in sys.stdlib_module_names or module in allowed_local_modules for module in modules),
+                    'Unarchived successor module dependency: ' + rel)
+    for item in selection['required_local_code_dependencies']:
+        require(item['caller'] in paths, 'Caller missing from finite dependency closure')
+        targets = item.get('archive_dependencies', [item.get('archive_dependency')])
+        require(targets and all(target in expected for target in targets), 'Necessary local source dependency missing')
+    for item in selection['existing_archive_code_dependencies']:
+        require(item['existing_archive_path'] in {row['path'] for row in rows[:585]}
+                and item['runtime_original_path_or_identity_recovered'] is False,
+                'Historical reader/helper must reuse an existing source-only member')
+        raw = (root / item['existing_archive_path']).read_bytes()
+        require({'bytes': len(raw), 'sha256': hashlib.sha256(raw).hexdigest()}
+                == {key: item[key] for key in ('bytes', 'sha256')}, 'Existing reader/helper source changed')
+    refs = selection['external_product_source_references']
+    require(len(refs) == 1 and refs[0]['commit'] == '057f769e37bc79c31d96b3ad05d56e8590d26768'
+            and refs[0]['path'] == 'help/audit-regressions/isolated/ms2-migration-host.py'
+            and refs[0]['blob'] == 'c2bbb623fec9b9af6066d010abd149492967ed54'
+            and refs[0]['bytes'] == 49769
+            and refs[0]['sha256'] == 'ba6b40f1863413f263e5c18b5163a1c8b06cd6eda5327a236364895fc0e1ec44'
+            and refs[0]['archive_copy'] is False and refs[0]['runtime_or_business_accepted_by_reference'] is False,
+            'MS2 repo-native Host must remain an exact product Git reference only')
+    return {'selected_source_files': len(paths), 'source_contracts': len(selection['source_contracts']),
+            'core_source_steps': core['source_steps'], 'latest_S_separate_from_original_core': True}
+
+
 def main():
     root = Path(__file__).resolve().parent
     manifest = load_json((root / 'source-manifest.json').read_bytes())
@@ -226,7 +351,21 @@ def main():
         require(type(row['bytes']) is int and row['bytes'] >= 0, 'Invalid file length')
         require(re.fullmatch(r'[0-9a-f]{64}', row['sha256']) is not None, 'Invalid hash')
         alias = manifest['current_source_alias']
-        if row['package'] == alias['package']:
+        successor_alias = manifest.get('additional_source_aliases', {}).get(row['package'])
+        if row['package'] == 'legacy-refund-normal-r3-memory-failed-retire-source-r1':
+            require(successor_alias == {
+                'origin_root': 'project-organization-20261023',
+                'origin_relative_file': 'legacy-refund-normal-r3-memory-failed-retire-source-r1.py',
+                'archive_leaf': 'retire.py'}
+                and pure.parts == ('sources', 'legacy-refund-normal-r3-memory-failed-retire-source-r1', 'retire.py')
+                and row['origin_root'] == 'project-organization-20261023'
+                and row['origin_relative_path'] == 'legacy-refund-normal-r3-memory-failed-retire-source-r1.py',
+                'Fixed historical retirement flat-source alias origin mismatch')
+        elif successor_alias is not None:
+            require(row['origin_root'] == successor_alias['origin_root']
+                    and row['origin_relative_path'] == successor_alias['origin_relative_root'] + '/' + '/'.join(pure.parts[2:]),
+                    'Successor source snapshot alias origin mismatch')
+        elif row['package'] == alias['package']:
             require(row['origin_root'] == alias['origin_root']
                     and row['origin_relative_path'] == alias['origin_relative_root'] + '/' + '/'.join(pure.parts[2:]),
                     'Current source snapshot alias origin mismatch')
@@ -378,6 +517,7 @@ def main():
             and dependencies['current_source']['runtime_ready'] is False
             and dependencies['current_source']['source_delivery_complete'] == new_source['source_delivery_complete'],
             'Current bafb source-only metadata mismatch')
+    successor = check_successor_archive(root, manifest, dependencies, expected)
     print(json.dumps({
         'status': 'PASS_SOURCE_ARCHIVE_ONLY',
         'files': len(rows),
@@ -404,6 +544,10 @@ def main():
         'previous_author_code_members': len(previous_authors),
         'preserved_6e_author_code_members': len(authors),
         'current_selected_source_control_members': new_source['current_author_code_members'],
+        'successor_selected_source_files': successor['selected_source_files'],
+        'successor_source_contracts': successor['source_contracts'],
+        'successor_core_source_steps': successor['core_source_steps'],
+        'latest_S_separate_from_original_core': successor['latest_S_separate_from_original_core'],
         'archived_programs_executed': False,
         'runtime_ready': False,
         'runtime_dependencies': 'runtime-dependencies.json',

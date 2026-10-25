@@ -1,0 +1,180 @@
+x-php: &php
+  image: tianli/crmeb-php:acceptance
+  pull_policy: never
+  entrypoint: [php]
+  working_dir: /workspace
+  read_only: true
+  tmpfs: [/tmp]
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  networks: [isolation]
+  environment: &audit-env
+    AUDIT_ISOLATED: "1"
+    AUDIT_RUN_ID: ${AUDIT_RUN_ID:?required}
+    AUDIT_RUN_DIR: /run/audit
+    AUDIT_REPO_DIR: /workspace
+    AUDIT_PROJECT: ${AUDIT_PROJECT:?required}
+    AUDIT_SOURCE_SHA: ${AUDIT_SOURCE_SHA:?required}
+    AUDIT_GUARD_MODE: ${AUDIT_GUARD_MODE:-active-probe}
+  labels: &labels
+    tianli.audit: "1"
+    tianli.audit.run: ${AUDIT_RUN_ID}
+
+services:
+  audit-bootstrap:
+    <<: *php
+    tmpfs: [/tmp, /workspace/crmeb/runtime]
+    volumes:
+      - ${AUDIT_REPO_DIR:?required}:/workspace:ro
+      - ${AUDIT_REPO_DIR:?required}:/source:ro
+      - audit-vendor:/workspace/crmeb/vendor
+      - ${AUDIT_RUN_DIR:?required}:/run/audit
+      - bootstrap-secrets:/run/audit-bootstrap
+      - redis-secrets:/run/audit-redis
+      - app-secrets:/run/audit-app
+      - fixture-secrets:/run/audit-fixtures
+  audit-mysql:
+    image: ccr.ccs.tencentyun.com/crmebky_php/mysql:v8.0.45
+    pull_policy: never
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: /run/audit-bootstrap/root-password
+      MYSQL_ROOT_HOST: "%"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - bootstrap-secrets:/run/audit-bootstrap:ro
+    networks: [isolation]
+    labels: *labels
+    healthcheck:
+      test: [CMD, mysqladmin, ping, --protocol=tcp, --host=127.0.0.1, --silent]
+      interval: 2s
+      timeout: 2s
+      retries: 40
+  audit-redis:
+    image: ccr.ccs.tencentyun.com/crmebky_php/redis:v8.6.1
+    pull_policy: never
+    entrypoint: [redis-server]
+    command: [/run/audit-redis/redis.conf]
+    volumes:
+      - redis-secrets:/run/audit-redis:ro
+      - redis-data:/data
+    networks: [isolation]
+    labels: *labels
+  audit-app:
+    <<: *php
+    command: [help/audit-regressions/isolated/lib/harness.php, __serve]
+    volumes:
+      - ${AUDIT_REPO_DIR}:/workspace:ro
+      - audit-vendor:/workspace/crmeb/vendor:ro
+      - ${AUDIT_RUN_DIR}:/run/audit
+      - app-secrets:/run/audit-app:ro
+      - app-runtime:/workspace/crmeb/runtime
+      - backup-output:/workspace/crmeb/backup
+  audit-worker:
+    <<: *php
+    working_dir: /workspace/crmeb
+    command: [/workspace/help/audit-regressions/isolated/lib/ms1-worker-entry.php, "queue:work", "--queue=marketplace", "--sleep=1", "--tries=1", "--quiet"]
+    volumes:
+      - ${AUDIT_REPO_DIR}:/workspace:ro
+      - audit-vendor:/workspace/crmeb/vendor:ro
+      - ${AUDIT_RUN_DIR}:/run/audit
+      - app-secrets:/run/audit-app:ro
+      - worker-runtime:/workspace/crmeb/runtime
+  audit-chat:
+    <<: *php
+    profiles: [ms1-chat]
+    working_dir: /workspace/crmeb
+    command: [/workspace/help/audit-regressions/isolated/lib/ms1-chat-entry.php, __serve]
+    volumes:
+      - ${AUDIT_REPO_DIR}:/workspace:ro
+      - audit-vendor:/workspace/crmeb/vendor:ro
+      - ${AUDIT_RUN_DIR}:/run/audit
+      - app-secrets:/run/audit-app:ro
+      - chat-runtime:/workspace/crmeb/runtime
+  audit-runner:
+    <<: *php
+    environment:
+      <<: *audit-env
+      AUDIT_PHASE: ${AUDIT_PHASE:-after}
+      AUDIT_MILESTONE: ${AUDIT_MILESTONE:-MS0a}
+    volumes:
+      - ${AUDIT_REPO_DIR}:/workspace:ro
+      - audit-vendor:/workspace/crmeb/vendor:ro
+      - ${AUDIT_RUN_DIR}:/run/audit
+      - app-secrets:/run/audit-app:ro
+      - fixture-secrets:/run/audit-fixtures:ro
+      - runner-runtime:/workspace/crmeb/runtime
+      - app-runtime:/run/audit-app-runtime:ro
+      - worker-runtime:/run/audit-worker-runtime:ro
+      - chat-runtime:/run/audit-chat-runtime:ro
+      - backup-output:/workspace/crmeb/backup
+  audit-ui:
+    image: sha256:a8b39bd9cf0f83869a2162827a0caf6137ddf759d50a171451b335cecc87d236
+    pull_policy: never
+    profiles: [ms1-chat-browser]
+    user: nginx
+    entrypoint: [nginx]
+    command: [-g, 'daemon off;']
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    networks: [isolation]
+    labels: *labels
+    volumes:
+      - ${AUDIT_BROWSER_DIST:-./artifacts/not-configured-browser-dist}:/srv/admin:ro
+      - ${AUDIT_REPO_DIR}/help/audit-regressions/isolated/lib/ms1-chat-browser-nginx.conf:/etc/nginx/nginx.conf:ro
+  audit-browser:
+    image: sha256:12f8a18ee81e6496442101b53ed2e9b2f68eef56cbb63ed4393b5a81cf9e1dbe
+    pull_policy: never
+    profiles: [ms1-chat-browser]
+    user: "0:0"
+    entrypoint: [node]
+    command: [/opt/ms1-chat-browser.mjs]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    shm_size: 1gb
+    networks: [isolation]
+    labels: *labels
+    environment:
+      AUDIT_RUN_ID: ${AUDIT_RUN_ID:?required}
+      AUDIT_SOURCE_SHA: ${AUDIT_SOURCE_SHA:?required}
+      HOME: /tmp/audit-browser-home
+      XDG_CONFIG_HOME: /tmp/audit-browser-config
+      XDG_CACHE_HOME: /tmp/audit-browser-cache
+    volumes:
+      - ${AUDIT_PLAYWRIGHT_CORE:-./artifacts/not-configured-playwright-core}:/opt/playwright-core:ro
+      - ${AUDIT_REPO_DIR}/help/audit-regressions/isolated/lib/ms1-chat-browser.mjs:/opt/ms1-chat-browser.mjs:ro
+      - ${AUDIT_RUN_DIR}/browser-secret:/run/audit-browser-secret:ro
+      - ${AUDIT_RUN_DIR}/browser-evidence:/run/audit-browser-evidence
+
+networks:
+  isolation:
+    internal: true
+    labels: *labels
+volumes:
+  audit-vendor:
+    labels: *labels
+  mysql-data:
+    labels: *labels
+  redis-data:
+    labels: *labels
+  app-runtime:
+    labels: *labels
+  runner-runtime:
+    labels: *labels
+  worker-runtime:
+    labels: *labels
+  chat-runtime:
+    labels: *labels
+  backup-output:
+    labels: *labels
+  bootstrap-secrets:
+    labels: *labels
+  redis-secrets:
+    labels: *labels
+  app-secrets:
+    labels: *labels
+  fixture-secrets:
+    labels: *labels

@@ -1,0 +1,63 @@
+    profile_packet=decode(read(CURRENT_FIX_PROFILE_SOURCE));profile_manifest=decode(read(CURRENT_FIX_PROFILE_MANIFEST));profile_root=Path(CURRENT_FIX_PROFILE_SOURCE['path']).parent
+    for name,row in profile_packet['members'].items():read({'path':(profile_root/name).as_posix(),**compact(row)})
+    check(profile_manifest['before_selected9']==oldpub['selected9'] and profile_manifest['selected9']==pub['selected9'] and len(pub['selected9'])==9
+        and profile_manifest['source_admission']=='LOCAL_ONLY_PENDING_FINAL_PUSH' and profile_manifest['runtime_ready'] is False,'FIX_CURRENT_NORMAL_PROFILE9_OVER_EXACT_ORIGINAL9_SOURCE_ONLY')
+    normal_profile=Path(CURRENT_COMPOSITE_CUSTOMER_FORM_SOURCE['profile_interface']['path']).parent;prior_profile=Path(HISTORICAL_TWENTYFOUR_PUBLICATION['path']).parent/'actual-profile'
+    prior9={};current9={}
+    for oldrow,newrow in zip(oldpub['selected9'],pub['selected9']):
+        name=oldrow['path'];check(name==newrow['path'],'FIX_NINE_PROFILE_IDENTITY_ORDER')
+        oldraw=read({'path':(prior_profile/name).as_posix(),**compact(oldrow)});newraw=read({'path':(normal_profile/name).as_posix(),**compact(newrow)})
+        check(oldraw==read({'path':(profile_root/'before/profile'/name).as_posix(),**compact(oldrow)})
+            and newraw==read({'path':(profile_root/'candidate/profile'/name).as_posix(),**compact(newrow)}),'FIX_ALL_NINE_WHOLE_BEFORE_AFTER_PROFILE_SOURCES')
+        prior9[name]=oldraw;current9[name]=newraw
+    check({name for name in current9 if prior9[name]!=current9[name]}=={'ms4-initialize.php','ms4-host.py','normal-close-ms4-fulfillment.py','verify-zero-ms4-fulfillment.py','interface-v1.json','source-derivation.json'}
+        and all(current9[name]==prior9[name] for name in ['compose.yml','README.md','seed-source-inverse.json']),'FIX_EXACT_SIX_PIN_DAG_LEAVES_THREE_RAW_WHOLE')
+    ar='help/audit-regressions/isolated/ms4-aftersale-review-normal.php';entry=expected_sources[ar]
+    oldseven=decode(prior9['interface-v1.json'])['customer_form_current_profile']['php_sources'];seven=[dict(entry) if row['path']==ar else row for row in oldseven]
+    check(len(seven)==7 and sum(a!=b for a,b in zip(oldseven,seven))==1,'FIX_SINGLE_CURRENT_AR_ROW_IN_ORIGINAL_CU7')
+    def current_profile_statement(raw,name):
+        text=raw.decode('utf8');tree=ast.parse(text)
+        rows=[node for node in tree.body if isinstance(node,ast.Assign) and len(node.targets)==1 and isinstance(node.targets[0],ast.Name) and node.targets[0].id==name]
+        check(len(rows)==1,'FIX_ONE_ACTIVE_PROFILE_LITERAL_ASSIGNMENT')
+        return ast.get_source_segment(text,rows[0]).encode()
+    necessary={
+        'ms4-host.py':{'CUSTOMER_FORM_SOURCE_FILES':tuple(seven),'AFTERSALE_REVIEW_ENTRY_BYTES':entry['bytes'],'AFTERSALE_REVIEW_ENTRY_SHA256':entry['sha256'],'INTERFACE_SHA256':hashlib.sha256(current9['interface-v1.json']).hexdigest()},
+        'normal-close-ms4-fulfillment.py':{'HOST_SHA256':hashlib.sha256(current9['ms4-host.py']).hexdigest()},
+        'verify-zero-ms4-fulfillment.py':{'CUSTOMER_FORM_SOURCE_FILES':tuple(seven),'AFTERSALE_REVIEW_ENTRY_BYTES':entry['bytes'],'AFTERSALE_REVIEW_ENTRY_SHA256':entry['sha256'],
+            'INTERFACE_SHA256':hashlib.sha256(current9['interface-v1.json']).hexdigest(),'INTERFACE_BYTES':len(current9['interface-v1.json']),
+            'HOST_SHA256':hashlib.sha256(current9['ms4-host.py']).hexdigest(),'CLOSE_SHA256':hashlib.sha256(current9['normal-close-ms4-fulfillment.py']).hexdigest()}}
+    check(sum(len(values) for values in necessary.values())==12,'FIX_EXACT_TWELVE_CURRENT_PYTHON_PIN_DAG_ASSIGNMENTS')
+    for name,wanted in necessary.items():
+        before_values=constants(prior9[name]);after_values=constants(current9[name]);restored=current9[name]
+        check(all(after_values[key]==value for key,value in wanted.items())
+            and {key:value for key,value in before_values.items() if key not in wanted}=={key:value for key,value in after_values.items() if key not in wanted},'FIX_ONLY_CURRENT_AR_AND_INTERFACE_HOST_CLOSE_PYTHON_PINS')
+        for key in wanted:
+            old_stmt=current_profile_statement(prior9[name],key);new_stmt=current_profile_statement(current9[name],key)
+            check(prior9[name].count(old_stmt)==current9[name].count(new_stmt)==1,'FIX_SINGLE_REQUIRED_LITERAL_DAG_SEAM');restored=restored.replace(new_stmt,old_stmt,1)
+        check(restored==prior9[name],'FIX_FULL_THREE_PYTHON_MODULE_INVERSE_ALL344_FUNCTIONS_AND_BUSINESS_RAW')
+    initializer=current9['ms4-initialize.php'];seams=profile_manifest['initializer_seams'];check(len(seams)==2,'FIX_INITIALIZER_EXACT_TWO_ACTIVE_AR_SEAMS')
+    for row in reversed(seams):
+        old=row['before'].encode();new=row['after'].encode();check(initializer.count(new)==1 and prior9['ms4-initialize.php'].count(old)==1,'FIX_INITIALIZER_SINGLE_BOUNDED_LITERAL');initializer=initializer.replace(new,old,1)
+    check(initializer==prior9['ms4-initialize.php'] and profile_manifest['initializer_functions']=={'total':26,'changed':['m4i_cu_form_source_files','m4i_worker_sources'],'other_function_regions_raw':True},
+        'FIX_INITIALIZER_FULL_INVERSE_ALL_OTHER_BYTES_SOURCE_TREE_COPY_MOUNTS_FIXTURE_AND_TRANSACTION_RAW')
+    interface=decode(prior9['interface-v1.json']);interface['aftersale_review_normal_successor']['entry_bytes']=entry['bytes'];interface['aftersale_review_normal_successor']['entry_sha256']=entry['sha256']
+    interface['customer_form_current_profile']['php_sources']=seven;interface['source_tree_runtime_profile']['actual_candidate_tracked_sources'][0]=dict(entry)
+    check(decode(current9['interface-v1.json'])==interface,'FIX_INTERFACE_ONLY_THREE_ACTIVE_AR_PIN_LOCATIONS_SUCCESS29_DIAGNOSTIC4_UNCHANGED')
+    derivation=decode(prior9['source-derivation.json']);derivation['new_business_entry'].update(compact(entry));derivation['new_business_entry']['status']='ACTUAL_LOCAL_COMMITTED_BYTES_FULL_NORMAL_NOT_EXECUTED'
+    derivation['new_business_entry']['source']='Actual b54 local fix commit and clean dedicated W/Val; real component same-command red1/green0 with ordinaryclose/independentzero0 is separate from UNBOUND full normal export/M/S/UI qualification.'
+    derivation['b54_language_cache_fixture_source_successor']=CURRENT_FIX_PROFILE_NEW_NODE
+    derivation['current_nonself_artifacts']=[row for row in pub['selected9'] if row['path']!='source-derivation.json']
+    check(decode(current9['source-derivation.json'])==derivation and len(derivation['current_nonself_artifacts'])==8
+        and CURRENT_FIX_PROFILE_NEW_NODE['source_sha']==pub['source_sha'] and CURRENT_FIX_PROFILE_NEW_NODE['parent']==pub['parent']
+        and CURRENT_FIX_PROFILE_NEW_NODE['current_seven_PHP']==seven and CURRENT_FIX_PROFILE_NEW_NODE['normal_success_result_keys']==29
+        and CURRENT_FIX_PROFILE_NEW_NODE['diagnostic_keys']==4 and CURRENT_FIX_PROFILE_NEW_NODE['failure_only_optional_top_level']=='warm_failure_context'
+        and CURRENT_FIX_PROFILE_NEW_NODE['source_admission']=='LOCAL_ONLY_PENDING_FINAL_PUSH' and CURRENT_FIX_PROFILE_NEW_NODE['remote_qualification']=='UNBOUND',
+        'FIX_ONLY_CURRENT_ENTRY_AND_EIGHT_NONSELF_AND_FINITE_NEW_NODE_ALL_HISTORICAL_DERIVATION_SUBTREES_RAW')
+    profile_admission=decode(read(CURRENT_FIX_PROFILE_SOURCE_ADMISSION))
+    check(profile_admission['status']=='ROOT_AND_INDEPENDENT_B54_PROFILE9_SOURCE0_NO_RUNTIME_ACCEPTANCE'
+        and profile_admission['profile_PINS']==CURRENT_FIX_PROFILE_SOURCE
+        and profile_admission['actual_readonly_export_root']==CURRENT_FIX_EXPORT_ROOT_READBACK
+        and profile_admission['profile9_only_pin_DAG_changes'] is True
+        and profile_admission['new_initializer_actual_PHP82_syntax_normal8']=='NOT_RUN' and profile_admission['new_actual_M_S']=='NOT_RUN'
+        and CURRENT_FIX_PROFILE_NEW_NODE['actual_Git_export_qualification']=='UNBOUND_NOT_CONSUMED_BY_THIS_SOURCE_PACKET',
+        'FIX_EXACT_FROZEN_PROFILE_SOURCE_ADMISSION_AND_LATER_ACTUAL_EXPORT_SEPARATE_FROM_PROFILE_SOURCE_TIME_UNBOUND')

@@ -1,0 +1,42 @@
+{
+  "schema": 1,
+  "scope": "ADDITIONAL_REAL_ENCODED_NORMAL_MP4_ONLY",
+  "file": {
+    "name": "synthetic-testsrc2-720p30-16s.mp4",
+    "kind": "video",
+    "host_path": "H:/天俪商城/artifacts/project-organization-20261023/product-video-large-normal-fixture-r1/synthetic-testsrc2-720p30-16s.mp4",
+    "container_path": "/media-large-fixture/synthetic-testsrc2-720p30-16s.mp4",
+    "bytes": 8425717,
+    "sha256": "cbd202099bd7d410602bdc92a23f948a83a17f42f6465c45ee1e2ced89da8f55"
+  },
+  "chunk_bytes": 3145728,
+  "total_chunks": 3,
+  "chunks": [
+    {
+      "number": 1,
+      "offset": 0,
+      "bytes": 3145728,
+      "sha256": "6432cffb1eba3f22114b61ee616c9e2b9ebfc8dd812de0fe7aaa7caceeb6c044"
+    },
+    {
+      "number": 2,
+      "offset": 3145728,
+      "bytes": 3145728,
+      "sha256": "ef2b4d1c8c4cac82a10ae5b3654f73ccfcdaa4572d0e744aa6d46483e6d666b1"
+    },
+    {
+      "number": 3,
+      "offset": 6291456,
+      "bytes": 2134261,
+      "sha256": "43b12724fd9d2286d40de02e7395a2e3fd629f44e5bce9f68863b05c4abbdcc4"
+    }
+  ],
+  "actual_generation_result": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/product-video-large-normal-fixture-r1/RESULT.json",
+    "bytes": 6784,
+    "sha256": "a2cad5cee232d442f67f70ad85f6de857dd863722ffd5bc0ae370da3303ae5ea"
+  },
+  "new_host_readonly_mount": "REQUIRED_NOT_PREPARED_BY_THIS_LEAF",
+  "original_12_fixture_manifest_unchanged": true,
+  "business_acceptance": "NOT_RUN"
+}

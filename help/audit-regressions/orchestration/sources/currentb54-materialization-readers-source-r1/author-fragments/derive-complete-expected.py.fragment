@@ -1,0 +1,28 @@
+def derive_complete_b54_expected(values, pub, read, decode, check):
+    """Independently replay every original baseline/commit overlay; no worktree-body read."""
+    compact=lambda row:{key:row[key] for key in ('bytes','sha256')}
+    context=pub['finite_contexts']
+    rows=[decode(line) for line in read(context['baseline']['inventory']).splitlines()]
+    original={row['path']:{key:row[key] for key in ('path','bytes','sha256')} for row in rows}
+    check(len(rows)==len(original)==15486,'B54_ROOT_COMPLETE_ORIGINAL15486_BASELINE')
+    expected=dict(original);first={};chain=values['COMMIT_CHAIN']
+    check(len(chain)==25 and chain==context['commit_chain'],'B54_ROOT_FULL25_SOURCE_CHAIN')
+    for step in chain:
+        for row in step['files']:
+            name=row['path']
+            check(row['before']==(compact(expected[name]) if name in expected else None),'B54_ROOT_EVERY_STAGE_TRUE_BEFORE_OVERLAY')
+            first.setdefault(name,compact(original[name]) if name in original else None)
+            expected[name]={'path':name,**row['after']}
+    expected=dict(sorted(expected.items()))
+    changes=[{'path':name,'before':first[name],'after':compact(expected[name])} for name in sorted(first)]
+    committed=[expected[row['path']] for row in changes]
+    additions=sorted(set(expected)-set(original));requirements=values['SOURCE_REQUIREMENT_PATHS']
+    check(len(expected)==15752 and len(committed)==313 and len(requirements)==318 and len(additions)==266
+        and changes==context['committed_changes'] and committed==context['committed_files']
+        and additions==values['NEW_TRACKED_PATHS']==context['new_tracked_paths']
+        and [row['path'] for row in committed]==values['COMMITTED_PATHS']
+        and pub['repository_Source_requirements']==[expected[name] for name in requirements],
+        'B54_ROOT_COMPLETE15752_CUMULATIVE313_REQUIRED318_ADDITIONS266')
+    check(sum(row['bytes'] for row in expected.values())==341961431,'B54_ROOT_ALL_TRACKED341961431_EXPECTED_SOURCE_BYTES')
+    return expected
+

@@ -1,0 +1,124 @@
+{
+  "schema": 1,
+  "status": "SEALED_SOURCE_ROOT_AND_FRESH_STATIC_REVIEW0_NOT_RUNTIME_ADMISSION",
+  "files": {
+    "caller.FORWARD.diff": {
+      "bytes": 3639,
+      "sha256": "1d3a280d807c1ea45711fbc4d54353a1f286a17aeac6ea1fb9a297cdabadecb6"
+    },
+    "caller.REVERSE.diff": {
+      "bytes": 3639,
+      "sha256": "0acee2b074fb218e5d0bd12790c3c9111c45359631e8855f3ecc95b444aca2b0"
+    },
+    "candidate/normal-s.py": {
+      "bytes": 28532764,
+      "sha256": "f0fb35ff9080f97496ee858a1b6a9e0ece77631f46f0e8aea5aa17bbca523a70"
+    },
+    "construct_source.py": {
+      "bytes": 14121,
+      "sha256": "ae6048558f37c9332bdd67d5f70495f759848097fc7c224a71ee80e78716190d"
+    },
+    "construct_success_readers.py": {
+      "bytes": 8194,
+      "sha256": "38863a2924a7a8df138254852096033f11ec8eda3c24eeb2430e7096a63c4abc"
+    },
+    "driver.FORWARD.diff": {
+      "bytes": 7276,
+      "sha256": "882e3a69e0d483ad72df668f30d4fe436534ac006fb8819569d4ea5b423ddd9f"
+    },
+    "driver.REVERSE.diff": {
+      "bytes": 7276,
+      "sha256": "d8963ff275436ea4becec73d9b4d708d35ef12a0fbd0c7429ead8fc5b73ec5c7"
+    },
+    "launcher/launch.py": {
+      "bytes": 3812,
+      "sha256": "cd22a17462a43620b1b0be52a4c36698d8ac7e392408ec249c7c6f2fe9dbfed3"
+    },
+    "M-AND-S-BINDINGS.json": {
+      "bytes": 4260,
+      "sha256": "fe16721f68702fe331cc24b263a6758897b14e866d90de0f3ede9fcc1cf27ff1"
+    },
+    "peer-reader.py.FORWARD.diff": {
+      "bytes": 12654,
+      "sha256": "94b839d161c19fd5847406e0af7c443f93e8c546eeb4a7a8fcbc1046e319a7ca"
+    },
+    "peer-reader.py.REVERSE.diff": {
+      "bytes": 12654,
+      "sha256": "65a0294f81fe27a71b442b1d3e4dfa1a93290b73bc87ea524a1fbde8f1b47eb3"
+    },
+    "READERS-SOURCE-INPUTS.json": {
+      "bytes": 1441,
+      "sha256": "8fdc63ee3b2cf1eb7fa1d5c7f8046de16523cc499ccb2f268afde666ab5ff89c"
+    },
+    "READERS-SOURCE-REVIEW.json": {
+      "bytes": 3046,
+      "sha256": "0744b554762f6aaeb699952dba4ea3913934dd2ce6f6d9f0e68db49c793b45cb"
+    },
+    "README.md": {
+      "bytes": 4801,
+      "sha256": "e30e35291cef53583017bd8e501ff15523c08d4e0c8b203c3d7d5aa37cea8e12"
+    },
+    "root-reader.py.FORWARD.diff": {
+      "bytes": 11903,
+      "sha256": "2b25e4d61b4be9fd1d27c28be3cb3ac97643d299eece13f909a51f9ca072af2b"
+    },
+    "root-reader.py.REVERSE.diff": {
+      "bytes": 11903,
+      "sha256": "b2cb732878a3a85a435616981d0cfc7dedcd836c0eda90373bdc346300f24735"
+    },
+    "SOURCE-INPUTS.json": {
+      "bytes": 1753,
+      "sha256": "54542441b3f1f514faeb464f32d068a0037f2753068f7dbb123bc7ca6a040fa9"
+    },
+    "SOURCE-REVIEW.json": {
+      "bytes": 4271,
+      "sha256": "c2e0391c4a0575527e715a1e0056aaa359b3e15002366365ecff42be285bc847"
+    },
+    "success-readers/finite-helper.py": {
+      "bytes": 33935,
+      "sha256": "a84cb0edd5beaa998a26f8b96819b765e8cfe83e52a62619846b431c417855c0"
+    },
+    "success-readers/peer-reader.py": {
+      "bytes": 196685,
+      "sha256": "c112695e0f4d8504c6c2932b82e8ff1df680d07c77516a1504f5b441a2894ffd"
+    },
+    "success-readers/root-reader.py": {
+      "bytes": 181834,
+      "sha256": "681dd3fdb98ad8c8c259c1463373a0aa2f4f2a96a07695a72ae3c3aadd5bcf29"
+    }
+  },
+  "member_count": 21,
+  "Root_Source_review": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/current41c0-normal-root-admission-r1/R111-B54-NORMAL-REATTEMPT-ROOT-SOURCE-REVIEW.json",
+    "bytes": 6771,
+    "sha256": "20e30b6a488e576c7e827c3b88431ac917a6dde96bdca96075ff035684278182"
+  },
+  "fresh_independent_Source_review": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/current41c0-normal-root-admission-r1/R111-B54-NORMAL-REATTEMPT-INDEPENDENT-SOURCE-REVIEW.json",
+    "bytes": 16571,
+    "sha256": "a277645765bd0f6a51a70569018cbcd49226dcf7ad544a744df103e202fda7d0"
+  },
+  "diff_count_conventions": {
+    "explanation": "Logical SequenceMatcher splices and unified diff hunks are different counts; both reconstruct complete modules exactly.",
+    "driver": {
+      "logical_splices": 7,
+      "unified_diff_hunks": 5
+    },
+    "caller": {
+      "logical_splices": 5,
+      "unified_diff_hunks": 1
+    },
+    "root_reader": {
+      "logical_splices": 11,
+      "unified_diff_hunks": 6
+    },
+    "peer_reader": {
+      "logical_splices": 12,
+      "unified_diff_hunks": 7
+    }
+  },
+  "original_M_qualification_reused_only_for_unchanged_App_profile_and_freeze": true,
+  "new_driver_caller_and_success_readers_qualified_separately": true,
+  "actual_execution_admission": "NOT_CREATED",
+  "all_targets": "NOT_RUN"
+}

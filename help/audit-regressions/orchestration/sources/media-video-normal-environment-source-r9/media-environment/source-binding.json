@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "state": "ACTUAL_CLEAN_941_LOCAL_COMMIT_BOUND_SOURCE_ONLY",
+  "source_sha": "941fdc7fe81a5d5b44dfce29cf5f87c8411c0a58",
+  "parent_source_sha": "40a5f3c222c49dc3dfbe19d8b37177d3b7a127f3",
+  "worktree": "H:/天俪商城/worktrees/media-normal-env7",
+  "branch": "feature/media-normal-env7-20261025",
+  "runtime_ready": false,
+  "complete_source_archive_and_tree": {
+    "archive": {
+      "bytes": 356618240,
+      "sha256": "c801010949643aeeb0ef7370dfb6deadae4af5b137ea60ebb01bd9b169c8fc79"
+    },
+    "SourceTree": {
+      "bytes": 3982301,
+      "sha256": "a90047cadd2416175f649ecdaac82dbccfb83203b692333fa7e4ee564e1d8c0b"
+    },
+    "files": 15764,
+    "directories": 3880,
+    "total_bytes": 342445067
+  }
+}

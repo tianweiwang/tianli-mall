@@ -101,3 +101,161 @@ LOAD-01 R2 已有独立源码核对与 PHP 纯语法结果。startup R1 已有�
 真实M的1,060项native/wait均为0，freeze为10,985,209字节/`ed107cddd68676c945983a5a33cc3faf88dc7a92475ed2112f293cdfb82f1e47`，Root及独立完整回读指纹见[R5](current-source-handoff-r5.json)。完整S已启动，本快照为 `NOT_TERMINAL_AT_SNAPSHOT`，没有A成功或业务验收结论。881旧S1及93close/20zero的正常退役事实继续保留。
 
 交接分支业务树仍基于2e4，业务0c13只在feature分支；本次归档不改实际工作区或运行实例。原Run、原生双流、私有环境和完整作者历史输入未入Git，`runtime_ready=false`；跨机完整复跑仍缺运行材料和新环境资格。所有用户停止样本继续NOT RUN，未触生产、真实支付或部署。
+
+
+## 2026-10-25 后继 b54、Env9 与正常 Host 源码补交设计
+
+本轮沿本唯一执行记录补原“Git缺完整编排脚本”的后继遗漏。已核本分支codex/orchestration-handoff-20261023、HEAD fdfb017e53779eaa6e2c7fcd8cfaf693f3d06294且clean；本轮不合并产品分叉、不提交推送，不修改Root canonical C/D或任何Val/Run，不Docker/PHP/SQL/HTTP/目标或读秘密。原585文件/54包及原manifest585条描述符原件保持，原历史状态/摘要不改写。
+
+需求与最小设计：现有框架的manifest/verifier/runtime-dependencies/README继续使用，新增完整b54 CoreR3与最新reattempt S两套明确来源；M仍CoreR3，S为独立最新driver，不混用旧Core S或把资格指针当新结果。Core保完整18主程序、3本地模块、3代码接缝、3Source合同、正反patch和原PINS，共30选件；原PINS另列的4份资格/采用报告刻意不复制，不能称33输入完整或可直接复跑。补必要作者构造、原始外层、M/S读器与代码模板；重复helper为同包真实import的必要原字节，已有历史只读helper/旧reader按现archive路径和hash引用，不造恢复适配框架。Core沿现有bafb source-alias机制增加一个明确别名，原origin字段及旧别名保留。
+
+新媒体只选Env9的17件authored Source（原PINS尚声明tar/Tree两生成输入，不读不导入），941 HTTP9件完整程序及静态素材合同；不追其中实际generation-result指针。licence Host6和refund Host-r3各仅3件完整flat Host/README/Source-PINS，保其旧Git/stat/native资格元数据为历史Source合同，绝不写成归档副本的新portable资格。MS2已在产品057f769e的repo-nativeHost只记真实Git来源/路径/字节引用，不复制其业务实现。全新原件均来自ORG的显式允许清单，禁止目录递归拷贝。
+
+不交付内容继续为：真实ENV/private/凭据/actors/cookies/HAR/uploads/DB或Redis卷、实际Run/created-terminal/PIDCID收据或原始流、巨大M/freeze、生成source.tar/SOURCE-TREE、Runtime资格报告及其body。必要公开历史权威、完整作者重放输入、原机绝对路径/文件身份与新隔离环境仍有缺口。不得通过改Source路径、补造报告/模块或删验收门宣称可运行；runtime_ready=false及原停止样本NOT RUN保持。
+
+实现与验收：只追加选定Source原字节；manifest先585条完整保留再追加，补当前增量Source合同/依赖与精确排除项；verifier保全部原历史和bafb严格门，只加本次有限清单/Source PINS选集/本地模块/被引用旧源码及MS2 Git引用的离线字节AST/JSON检查。README与本分支CURRENT-STATUS仅增量说明“脚本文本交齐”和“新机器可实际复现”不同；新增r9机器摘要不另造执行清单。原collect_paid_failure、旧摘要及旧Source均不改。最后实际运行已读的离线verifier，核全部旧新字节/成员/AST/JSON、原585条与原585文件的保全，再交Root及非作者Source审；不执行任何存档程序。
+
+- [x] 已读原计划/框架并核clean分支，Root已授权上述Source范围；编码前记录约束、分类及验收。
+- [x] 按下列显式106成员增量补交、闭必要源码依赖与精确Runtime排除；记录真实数量/字节及未交付前提。
+- [x] 完成全部旧新原字节、offline verifier、差分/敏感运行材料排除及非作者Source审，冻结交Root；实际normal/业务/推送仍由Root。
+
+本轮预声明允许追加成员（Source-only，非运行输入）：
+- `sources/currentb54-normal-r3/launcher/launch.py` ← `currentb54-next-normal-preparation-r3/normal-source/launcher/launch.py`
+- `sources/currentb54-normal-r3/materializer/INVERSE.json` ← `currentb54-next-normal-preparation-r3/normal-source/materializer/INVERSE.json`
+- `sources/currentb54-normal-r3/materializer/PLAN.md` ← `currentb54-next-normal-preparation-r3/normal-source/materializer/PLAN.md`
+- `sources/currentb54-normal-r3/materializer/prepare.py` ← `currentb54-next-normal-preparation-r3/normal-source/materializer/prepare.py`
+- `sources/currentb54-normal-r3/validation/actual-profile/compose.yml` ← `currentb54-next-normal-preparation-r3/normal-source/validation/actual-profile/compose.yml`
+- `sources/currentb54-normal-r3/validation/actual-profile/interface-v1.json` ← `currentb54-next-normal-preparation-r3/normal-source/validation/actual-profile/interface-v1.json`
+- `sources/currentb54-normal-r3/validation/actual-profile/ms4-host.py` ← `currentb54-next-normal-preparation-r3/normal-source/validation/actual-profile/ms4-host.py`
+- `sources/currentb54-normal-r3/validation/actual-profile/ms4-initialize.php` ← `currentb54-next-normal-preparation-r3/normal-source/validation/actual-profile/ms4-initialize.php`
+- `sources/currentb54-normal-r3/validation/actual-profile/normal-close-ms4-fulfillment.py` ← `currentb54-next-normal-preparation-r3/normal-source/validation/actual-profile/normal-close-ms4-fulfillment.py`
+- `sources/currentb54-normal-r3/validation/actual-profile/README.md` ← `currentb54-next-normal-preparation-r3/normal-source/validation/actual-profile/README.md`
+- `sources/currentb54-normal-r3/validation/actual-profile/seed-source-inverse.json` ← `currentb54-next-normal-preparation-r3/normal-source/validation/actual-profile/seed-source-inverse.json`
+- `sources/currentb54-normal-r3/validation/actual-profile/source-derivation.json` ← `currentb54-next-normal-preparation-r3/normal-source/validation/actual-profile/source-derivation.json`
+- `sources/currentb54-normal-r3/validation/actual-profile/verify-zero-ms4-fulfillment.py` ← `currentb54-next-normal-preparation-r3/normal-source/validation/actual-profile/verify-zero-ms4-fulfillment.py`
+- `sources/currentb54-normal-r3/validation/DESIGN-TASKS.md` ← `currentb54-next-normal-preparation-r3/normal-source/validation/DESIGN-TASKS.md`
+- `sources/currentb54-normal-r3/validation/PINS.json` ← `currentb54-next-normal-preparation-r3/normal-source/validation/PINS.json`
+- `sources/currentb54-normal-r3/validation/PROFILE-PINS.json` ← `currentb54-next-normal-preparation-r3/normal-source/validation/PROFILE-PINS.json`
+- `sources/currentb54-normal-r3/validation/PROFILE-PUBLICATION.json` ← `currentb54-next-normal-preparation-r3/normal-source/validation/PROFILE-PUBLICATION.json`
+- `sources/currentb54-normal-r3/validation/run.py` ← `currentb54-next-normal-preparation-r3/normal-source/validation/run.py`
+- `sources/currentb54-normal-r3/author_support.py` ← `currentb54-next-normal-preparation-r3/normal-source/author_support.py`
+- `sources/currentb54-normal-r3/source_reader.py` ← `currentb54-next-normal-preparation-r3/normal-source/source_reader.py`
+- `sources/currentb54-normal-r3/namespace_static.py` ← `currentb54-next-normal-preparation-r3/normal-source/namespace_static.py`
+- `sources/currentb54-normal-r3/authority-next.py.fragment` ← `currentb54-next-normal-preparation-r3/normal-source/authority-next.py.fragment`
+- `sources/currentb54-normal-r3/current-profile-checks.py.fragment` ← `currentb54-next-normal-preparation-r3/normal-source/current-profile-checks.py.fragment`
+- `sources/currentb54-normal-r3/bafb-failed-finite-checks.py.fragment` ← `currentb54-next-normal-preparation-r3/normal-source/bafb-failed-finite-checks.py.fragment`
+- `sources/currentb54-normal-r3/SOURCE-INHERITANCE.json` ← `currentb54-next-normal-preparation-r3/normal-source/SOURCE-INHERITANCE.json`
+- `sources/currentb54-normal-r3/SOURCE-PROOF.json` ← `currentb54-next-normal-preparation-r3/normal-source/SOURCE-PROOF.json`
+- `sources/currentb54-normal-r3/SOURCE-WINDOWS.json` ← `currentb54-next-normal-preparation-r3/normal-source/SOURCE-WINDOWS.json`
+- `sources/currentb54-normal-r3/DIFF.patch` ← `currentb54-next-normal-preparation-r3/normal-source/DIFF.patch`
+- `sources/currentb54-normal-r3/REVERSE.patch` ← `currentb54-next-normal-preparation-r3/normal-source/REVERSE.patch`
+- `sources/currentb54-normal-r3/PINS.json` ← `currentb54-next-normal-preparation-r3/normal-source/PINS.json`
+- `sources/currentb54-normal-reattempt-source-r1/candidate/normal-s.py` ← `currentb54-normal-reattempt-source-r1/candidate/normal-s.py`
+- `sources/currentb54-normal-reattempt-source-r1/launcher/launch.py` ← `currentb54-normal-reattempt-source-r1/launcher/launch.py`
+- `sources/currentb54-normal-reattempt-source-r1/success-readers/root-reader.py` ← `currentb54-normal-reattempt-source-r1/success-readers/root-reader.py`
+- `sources/currentb54-normal-reattempt-source-r1/success-readers/peer-reader.py` ← `currentb54-normal-reattempt-source-r1/success-readers/peer-reader.py`
+- `sources/currentb54-normal-reattempt-source-r1/success-readers/finite-helper.py` ← `currentb54-normal-reattempt-source-r1/success-readers/finite-helper.py`
+- `sources/currentb54-normal-reattempt-source-r1/construct_source.py` ← `currentb54-normal-reattempt-source-r1/construct_source.py`
+- `sources/currentb54-normal-reattempt-source-r1/construct_success_readers.py` ← `currentb54-normal-reattempt-source-r1/construct_success_readers.py`
+- `sources/currentb54-normal-reattempt-source-r1/README.md` ← `currentb54-normal-reattempt-source-r1/README.md`
+- `sources/currentb54-normal-reattempt-source-r1/M-AND-S-BINDINGS.json` ← `currentb54-normal-reattempt-source-r1/M-AND-S-BINDINGS.json`
+- `sources/currentb54-normal-reattempt-source-r1/SOURCE-INPUTS.json` ← `currentb54-normal-reattempt-source-r1/SOURCE-INPUTS.json`
+- `sources/currentb54-normal-reattempt-source-r1/READERS-SOURCE-INPUTS.json` ← `currentb54-normal-reattempt-source-r1/READERS-SOURCE-INPUTS.json`
+- `sources/currentb54-normal-reattempt-source-r1/PINS.json` ← `currentb54-normal-reattempt-source-r1/PINS.json`
+- `sources/currentb54-next-normal-export-source-r1/AUTHOR-PREPARE.py` ← `currentb54-next-normal-export-source-r1/AUTHOR-PREPARE.py`
+- `sources/currentb54-next-normal-export-source-r1/candidate/export.py` ← `currentb54-next-normal-export-source-r1/candidate/export.py`
+- `sources/currentb54-normal-profile-source-r1/prepare.py` ← `currentb54-normal-profile-source-r1/prepare.py`
+- `sources/currentb54-next-normal-preparation-r1/assemble_next_source.py` ← `currentb54-next-normal-preparation-r1/assemble_next_source.py`
+- `sources/currentb54-next-normal-preparation-r1/authority-next.py.fragment` ← `currentb54-next-normal-preparation-r1/authority-next.py.fragment`
+- `sources/currentb54-next-normal-preparation-r1/current-profile-checks.py.fragment` ← `currentb54-next-normal-preparation-r1/current-profile-checks.py.fragment`
+- `sources/currentb54-next-normal-preparation-r1/bafb-failed-finite-checks.py.fragment` ← `currentb54-next-normal-preparation-r1/bafb-failed-finite-checks.py.fragment`
+- `sources/currentb54-next-normal-preparation-r2/prepare_source.py` ← `currentb54-next-normal-preparation-r2/prepare_source.py`
+- `sources/currentb54-next-normal-preparation-r3/construct_source.py` ← `currentb54-next-normal-preparation-r3/construct_source.py`
+- `sources/currentb54-original-source-callback-entry-preparation-r2/callbacks.py` ← `currentb54-original-source-callback-entry-preparation-r2/callbacks.py`
+- `sources/currentb54-root-materialize-entry-source-r2/candidate/run-b54-organized-materialize.py` ← `currentb54-root-materialize-entry-source-r2/candidate/run-b54-organized-materialize.py`
+- `sources/current41c0-normal-root-admission-r1/run-r106-b54-organized-m.py` ← `current41c0-normal-root-admission-r1/run-r106-b54-organized-m.py`
+- `sources/current41c0-normal-root-admission-r1/run-r107-b54-normal-s.py` ← `current41c0-normal-root-admission-r1/run-r107-b54-normal-s.py`
+- `sources/currentb54-materialization-readers-source-r2/root-reader.py` ← `currentb54-materialization-readers-source-r2/root-reader.py`
+- `sources/currentb54-materialization-readers-source-r2/peer-review.py` ← `currentb54-materialization-readers-source-r2/peer-review.py`
+- `sources/currentb54-materialization-readers-source-r2/construct_source.py` ← `currentb54-materialization-readers-source-r2/construct_source.py`
+- `sources/currentb54-materialization-readers-source-r2/seal_source.py` ← `currentb54-materialization-readers-source-r2/seal_source.py`
+- `sources/currentb54-materialization-readers-source-r1/construct_source.py` ← `currentb54-materialization-readers-source-r1/construct_source.py`
+- `sources/currentb54-materialization-readers-source-r1/author-fragments/actual-observation-and-native-plan.py.fragment` ← `currentb54-materialization-readers-source-r1/author-fragments/actual-observation-and-native-plan.py.fragment`
+- `sources/currentb54-materialization-readers-source-r1/author-fragments/current-b54-profile-checks.py.fragment` ← `currentb54-materialization-readers-source-r1/author-fragments/current-b54-profile-checks.py.fragment`
+- `sources/currentb54-materialization-readers-source-r1/author-fragments/current-b54-source-checks.py.fragment` ← `currentb54-materialization-readers-source-r1/author-fragments/current-b54-source-checks.py.fragment`
+- `sources/currentb54-materialization-readers-source-r1/author-fragments/current-bafb-finite-checks.py.fragment` ← `currentb54-materialization-readers-source-r1/author-fragments/current-bafb-finite-checks.py.fragment`
+- `sources/currentb54-materialization-readers-source-r1/author-fragments/current-source-metadata.py.fragment` ← `currentb54-materialization-readers-source-r1/author-fragments/current-source-metadata.py.fragment`
+- `sources/currentb54-materialization-readers-source-r1/author-fragments/derive-complete-expected.py.fragment` ← `currentb54-materialization-readers-source-r1/author-fragments/derive-complete-expected.py.fragment`
+- `sources/currentbafb-materialization-readers-source-r1/metadata-inheritance-checks.py.fragment` ← `currentbafb-materialization-readers-source-r1/metadata-inheritance-checks.py.fragment`
+- `sources/currentbafb-materialization-readers-source-r1/current-warm-profile-checks.py.fragment` ← `currentbafb-materialization-readers-source-r1/current-warm-profile-checks.py.fragment`
+- `sources/currentbafb-materialization-readers-source-r1/current-d0a5-finite-checks.py.fragment` ← `currentbafb-materialization-readers-source-r1/current-d0a5-finite-checks.py.fragment`
+- `sources/currentb54-complete-normal-S-readers-source-r1/construct_source.py` ← `currentb54-complete-normal-S-readers-source-r1/construct_source.py`
+- `sources/currentb54-complete-normal-S-readers-source-r2/construct_source.py` ← `currentb54-complete-normal-S-readers-source-r2/construct_source.py`
+- `sources/currentb54-complete-normal-S-readers-source-r2/candidate/root-reader.py` ← `currentb54-complete-normal-S-readers-source-r2/candidate/root-reader.py`
+- `sources/currentb54-complete-normal-S-readers-source-r2/candidate/peer-reader.py` ← `currentb54-complete-normal-S-readers-source-r2/candidate/peer-reader.py`
+- `sources/currentb54-complete-normal-S-readers-source-r2/candidate/finite-helper.py` ← `currentb54-complete-normal-S-readers-source-r2/candidate/finite-helper.py`
+- `sources/media-video-normal-environment-source-r9/build_git_source.py` ← `media-video-normal-environment-source-r9/build_git_source.py`
+- `sources/media-video-normal-environment-source-r9/INTERFACE.json` ← `media-video-normal-environment-source-r9/INTERFACE.json`
+- `sources/media-video-normal-environment-source-r9/README.md` ← `media-video-normal-environment-source-r9/README.md`
+- `sources/media-video-normal-environment-source-r9/run-environment.py` ← `media-video-normal-environment-source-r9/run-environment.py`
+- `sources/media-video-normal-environment-source-r9/PINS.json` ← `media-video-normal-environment-source-r9/PINS.json`
+- `sources/media-video-normal-environment-source-r9/media-environment/compose.base.yml` ← `media-video-normal-environment-source-r9/media-environment/compose.base.yml`
+- `sources/media-video-normal-environment-source-r9/media-environment/compose.normal.yml` ← `media-video-normal-environment-source-r9/media-environment/compose.normal.yml`
+- `sources/media-video-normal-environment-source-r9/media-environment/configure-upload.php` ← `media-video-normal-environment-source-r9/media-environment/configure-upload.php`
+- `sources/media-video-normal-environment-source-r9/media-environment/control.php` ← `media-video-normal-environment-source-r9/media-environment/control.php`
+- `sources/media-video-normal-environment-source-r9/media-environment/gc-observe.php` ← `media-video-normal-environment-source-r9/media-environment/gc-observe.php`
+- `sources/media-video-normal-environment-source-r9/media-environment/install-source.php` ← `media-video-normal-environment-source-r9/media-environment/install-source.php`
+- `sources/media-video-normal-environment-source-r9/media-environment/media-seed-adapter.php` ← `media-video-normal-environment-source-r9/media-environment/media-seed-adapter.php`
+- `sources/media-video-normal-environment-source-r9/media-environment/observe-ini.php` ← `media-video-normal-environment-source-r9/media-environment/observe-ini.php`
+- `sources/media-video-normal-environment-source-r9/media-environment/source-binding.json` ← `media-video-normal-environment-source-r9/media-environment/source-binding.json`
+- `sources/media-video-normal-environment-source-r9/media-environment/fixtures/ms0a.php` ← `media-video-normal-environment-source-r9/media-environment/fixtures/ms0a.php`
+- `sources/media-video-normal-environment-source-r9/media-environment/lib/guard.php` ← `media-video-normal-environment-source-r9/media-environment/lib/guard.php`
+- `sources/media-video-normal-environment-source-r9/media-environment/lib/harness.php` ← `media-video-normal-environment-source-r9/media-environment/lib/harness.php`
+- `sources/current941-media-normal-http-source-r1/common.php` ← `current941-media-normal-http-source-r1/common.php`
+- `sources/current941-media-normal-http-source-r1/prepare.php` ← `current941-media-normal-http-source-r1/prepare.php`
+- `sources/current941-media-normal-http-source-r1/verify.php` ← `current941-media-normal-http-source-r1/verify.php`
+- `sources/current941-media-normal-http-source-r1/README.md` ← `current941-media-normal-http-source-r1/README.md`
+- `sources/current941-media-normal-http-source-r1/INTERFACE.json` ← `current941-media-normal-http-source-r1/INTERFACE.json`
+- `sources/current941-media-normal-http-source-r1/PINS.json` ← `current941-media-normal-http-source-r1/PINS.json`
+- `sources/current941-media-normal-http-source-r1/FIXTURES.json` ← `current941-media-normal-http-source-r1/FIXTURES.json`
+- `sources/current941-media-normal-http-source-r1/INSTALLATION-UPLOADS.json` ← `current941-media-normal-http-source-r1/INSTALLATION-UPLOADS.json`
+- `sources/current941-media-normal-http-source-r1/LARGE-VIDEO.json` ← `current941-media-normal-http-source-r1/LARGE-VIDEO.json`
+- `sources/licence-normal-host-source-r6/licence-normal-host.py` ← `licence-normal-host-source-r6/licence-normal-host.py`
+- `sources/licence-normal-host-source-r6/README.md` ← `licence-normal-host-source-r6/README.md`
+- `sources/licence-normal-host-source-r6/PINS.json` ← `licence-normal-host-source-r6/PINS.json`
+- `sources/legacy-refund-normal-host-source-r3/legacy-refund-normal-host.py` ← `legacy-refund-normal-host-source-r3/legacy-refund-normal-host.py`
+- `sources/legacy-refund-normal-host-source-r3/README.md` ← `legacy-refund-normal-host-source-r3/README.md`
+- `sources/legacy-refund-normal-host-source-r3/PINS.json` ← `legacy-refund-normal-host-source-r3/PINS.json`
+
+Source增量实际实施：原允许清单106件均按源文件完整原字节复制并核稳定path/handle与摘要，共92,569,484B；当前总691件/71包/264,308,909B。Core alias只复用既有bafb机制，不改Source内绝对路径。六个PINS选集均匹配原bytes/SHA：Core29+自身且排4资格输入；latestS11+自身且不选10个非必要diff/静态review附件；Env9 authored16+自身且排tar/Tree；HTTP8+自身；两个Host各2+自身。MS2引用已通过实际local Git对象读核完整057f769e SHA、blob及49769/ba6b40f1，不复制生产实现。旧source-manifest的585条描述符prefix规范序列摘要d73c16f0be9a61a881037cccebdbf1f562dd34e9d86210c30414669b903bc4f3已固定，旧Source原件仍由完整verifier核字节；本次offline verifier正在自然运行，未提前签PASS。
+
+实际离线检查已自然退出0，输出PASS_SOURCE_ARCHIVE_ONLY：691文件/264,308,909B/71包，249份Python AST、177份JSON；原历史32/33/34/35/36及bafb37严格门保留，再核b54 Core37/25与六PINS选集及latestS分离。只读取本archive，不import/exec存档程序或读原机运行前提。原585文件完整bytes/SHA与旧585条描述符prefix均实核保持，原历史pipeline成员/快照行、bafb当前字段及collect_paid_failure/.gitattributes均未改；verifier原7个辅助函数正文全不变，仅main必要接线和一个有界后继检查函数。README/本record/CURRENT-STATUS原HEAD前缀保持。实际git diff --check为0、index空；106新源高置信PEM/GitHub/AWS/JWT字面及50MiB门无命中，只是被动Source卫生核对，不是用户停止的安全Runtime测试。非作者Source独审已在读冻结候选，未提前填写其结论。当前未提交推送、未合并业务分支，未修改Root C/D/Val/Run或执行任何目标。
+
+首轮106候选经非作者Source0后，主审又沿M peer-reader真实读取点发现两件必要Source遗漏，故不把首轮通过等同最终闭包。`currentb54-materialization-readers-source-r2/peer-review.py`第1251–1253行会读取同包DESIGN.md与SOURCE-PINS.json。后者scope明确为COMPLETE_FIXED_B54_R2_M_READER_SOURCE_EXACT_F1_ONLY_NOT_RUNTIME_RESULT，是authored静态Source合同，不是Runtime结果；本段先记录再只补这两份原件，原106文件和旧585不变。其41份原成员中的历史Source-before/资格/Runtime引用并未全部交付，仍只存合同元数据，不跟随指针导入Root报告/INPUT-WINDOWS/actualM/freeze或原生流。offline合同门增加本Source-PINS文件名和两依赖，计数/最新说明据实更正后重跑并请非作者审差量；不能借不完整原41 namespace宣称可实际复现。
+
+最终108选集offline已自然0/PASS_SOURCE_ARCHIVE_ONLY：693文件/264,315,539B/71包，249 Python AST、178 JSON，7份Source合同/后继25步；不import/执行存档程序。M-reader所余36须明确包含Source-before、接口说明、重复代码原路径、资格及报告，不能统称Runtime：6代码模板已在新r1包按hash存在，原只读helper已在旧585；但原41路径/身份/完整资格包并未恢复。最新Source0须以108差量经非作者再次审为准，首轮106结论原样保留其范围。
+
+最终非作者media_env7_review已对初106全文/控制差分与最终108有限差量收口Source0，逐件实核108原ORG完整字节和旧585/旧描述符原始文本/历史行、7原helper及main有限逆等、七合同选集、必要模块模板与两直接read；无新增确定遗漏。其独立完整offline实际为首轮691/249AST/177JSON原生0；最终693/249AST/178JSON的完整offline是本作者实际原句柄67546自然0，非作者未冒称重复跑693。最终未恢复的原41 Source-before/接口/重复原路径和资格报告等仍明确缺口，原运行/新机器可复现未签。只补本段和r9状态事实，不再改106+2快照或已审manifest/verifier/依赖代码。最终Source范围115路径（108新Source、6个既有控制/状态修改、1个r9机器摘要）；HEAD仍fdfb017e、index空，无提交推送/合并产品/Root C-D/Val-Run或目标修改。交Root独立最终审与后续Git交付。
+
+
+Root最终阅读整理：仅将本轮新增README与CURRENT-STATUS章节改写为最终108/693选集和当前明确边界，删除这两处新增文字中反复出现的106→108过程；原HEAD文档完整前缀及本执行记录的历史事实均保留，108原件/manifest/verifier/依赖代码与r9冻结候选数据不变。实际Root离线核对、采用提交及工作分支推送另按真实结果登记。
+
+
+Root独立最终核对：76e35d完整读取693文件264315539B，并对108新增92576114B逐件核原ORG完整原字节/摘要、原585描述符与Source字节保全、旧RuntimeDeps全部key/value及三文档原HEAD前缀保持，精确Source namespace及被动高置信字面/50MiB无命中。7913ed全文核新增有限verifier helper和main差量；241c8e/2e3989核Source合同/依赖/状态边界。Root实际6176b3/原句柄88436/9ef069原生0，独立offline stdout/stderr与同PID47700终态完整核：PASS_SOURCE_ARCHIVE_ONLY，693文件、71包、249 AST、178 JSON、108新增、7 Source合同、后继Core25步；未import/执行存档程序或任何Docker/业务目标。这些核对只签本次选定源码与静态合同，原41/完整作者重放/新机运行与全部业务验收仍未完成。下一步仅按实际115授权路径本地采用；工作分支推送需另核全outgoing范围、真实远端及结果，不据本段预填已推送。
+
+
+最后一项已知遗漏的109设计（先记录后实施）：Root指定仅补原ORG平面作者程序`legacy-refund-normal-r3-memory-failed-retire-source-r1.py`，原33716B/SHA256 `58bcb4dfdb7161c2cf648de14e38f4c30169866802f1fab797fae330c80d3fda`，目标固定`sources/legacy-refund-normal-r3-memory-failed-retire-source-r1/retire.py`。这是已存在的历史普通清退源码，不是其Runtime结果；不导入oldRun、Stop、CLOSE、ZERO、created/terminal或任何双流，不追导后续Host-r4。原693件（旧585+本轮108）、历史行、Root刚整理的两文档尾章节及本记录全部事实保留。
+
+只在既有additional_source_aliases加此一个固定flat-source映射：origin_root为project-organization-20261023，origin_relative_file为上述ORG平面文件名，archive_leaf严格为retire.py；与既有b54目录别名共存，不引入../或通用路径适配。有限verifier新helper严格核该确切path、33716B和原SHA、source_only=true、runnable=false、runtime_ready=false；main只增加此一个明确flat分支，原7辅助函数raw保持。manifest/deps/r9和三文档当前计数同步109/总694、72包、264349255B；新增总92609830B，预期250 AST、178 JSON，Source合同仍7。原Host依赖沿已归档Host-r3原件引用，但不改原绝对路径/历史身份或宣称跨机可运行。
+
+验收任务：复制单一原件并核EOF完整字节；静态AST/JSON与既有离线verifier完整跑694；核原693行与全部快照、旧deps及Root文档事实保全、原7helper/raw和main有限差量、Git diff --check与index空；请非作者只审本次109窄差量，最后交Root独立审/本地采用。当前尚未实施或签本次694检查通过；不提交推送、不合并产品分叉、不改Root C/D/Val/Run、不运行Docker/PHP/SQL/HTTP/业务目标或存档程序。
+
+本次109实际实施和离线事实：唯一新增retire.py原33716B/58bcb4df…完整EOF字节相等；原693描述符规范摘要仍c8daffbd3fdc06d76f5d4006d4cd41c3bde35b9376c97fe86ef936790863af0b。当前verifier经确切删除flat分支/历史退役guard并逆五计数可逐字还原34991B/e504ded3c0eba1af705f8512d17b501ba6d878e2a8d7abfed0cc9f4eadcd0c49，原7helper对HEAD raw保持；Root README/CURRENT只改当前计数并加本次尾段，逆回精确保持Root47326929/84af69ae全文，record原39673B/861a4094前缀全保。原session4690终态470c94自然0，完整离线PASS_SOURCE_ARCHIVE_ONLY：694文件/72包/264349255B、250 AST/178 JSON、109新增/7合同/后继25步；未import或执行存档程序。Git diff --check0、index空、范围116路径（109新Source、6既有控制/状态修改、1新r9摘要），单一新源被动高置信字面无命中，非Runtime测试。非作者109窄审仍待其实际结果，不借Root此前693核对预签；无提交推送、产品合并或目标操作。
+
+最终109非作者窄审已由media_env7_review实际收口Source0，无确定问题：fb223e逐EOF核retire.py原33716B/58bcb4df、AST仅stdlib，有限verifier差量精确inverse回34991/e504；57fa56/2e673b分别将manifest/deps唯一新增源和有限字段逆回414792/b18baa、52828/161693。2aacab核最终7control pins、原693描述符c8da、Root record原39673B/861a前缀、精确116授权Git路径/index空/diff0；固定flat映射没有../或通用adapter，runnable/runtime=false、Host-r3仅源码依赖，无Run/Stop/CLOSE/ZERO/流/Host-r4导入，七Source合同原门保持。其本轮未重复跑完整694；作者原session4690/470c94完整694自然0按原归属保留。此后只补本事实、r9与两文档review状态，Source/代码/manifest/deps继续冻结；仍未提交推送、合并产品或操作目标，交Root最终独审与本地采用。
+
+
+Root最终109采用核对：ba371b全文读固定flat别名/退役源码精确门及main有限差量；3bb57f逐694全文件264349255B和109原ORG 92609830B完整EOF相等、旧585与三文档原HEAD前缀再核保持。实际Root独立offline原7382/7a03d9 native0/PID14400，694/72包/250 AST/178 JSON/7合同/后继25步；stdout1193B与stderr0及同句柄创建/终态已核。新增唯一retire.py为33716/58bcb4df原程序，未带入其Run/Stop/CLOSE/ZERO或流，也未执行archive副本。原Root693检查保留其当时范围；本次109检查另记，未将Source-only结果扩作完整重放/业务/发布验收。远端实际核对974e7c显示此前585已在handoff fdfb017e，本次只采用109增量，master3e2a保持不动。接下来按本116授权路径本地提交及工作分支推送，实际提交/远端SHA由Root真实结果登记，不在本段预填。
+
+
+Root暂存完整116路径后的diff --cached --check发现32条仅位于冻结Source补丁/模板的原始空白提示；此前作者diff --check只覆盖其已跟踪控制差量。Root未修剪或重写任何Source原件，而将本目录既有sources/** -text规则补为-text -whitespace：只按数据快照保存空白，源内容仍由694文件完整摘要校验，普通控制代码与文档继续做常规空白检查。故实际采用范围增为117路径，额外仅本作用域.gitattributes。原694/109字节、Source合同与Runtime/业务门均未改；Git提交尚未在第一次前置拒绝时执行。

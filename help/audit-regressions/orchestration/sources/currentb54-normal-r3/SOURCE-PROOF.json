@@ -1,0 +1,268 @@
+{
+  "schema": 1,
+  "status": "COMPLETE_B54_ORIGINAL_FULL_NORMAL_SOURCE_STATIC_ONLY_CALLBACK_M_S_NOT_RUN",
+  "HEAD": "b54ad9c39ca95a1b8b15ed6724082b98b1370c53",
+  "parent": "bafb6305062aeb6b6e945c21da572863062ca480",
+  "predecessor_Source_PINS": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbafb-next-normal-preparation-r3/normal-source/PINS.json",
+    "bytes": 13638,
+    "sha256": "7fd721b1c4b763ccdd7c798451fabe1d963e7908d3b67de04083362bf76b1279"
+  },
+  "all_r3_Source_members_archived": 29,
+  "source_members18": [
+    "launcher/launch.py",
+    "materializer/INVERSE.json",
+    "materializer/PLAN.md",
+    "materializer/prepare.py",
+    "validation/actual-profile/compose.yml",
+    "validation/actual-profile/interface-v1.json",
+    "validation/actual-profile/ms4-host.py",
+    "validation/actual-profile/ms4-initialize.php",
+    "validation/actual-profile/normal-close-ms4-fulfillment.py",
+    "validation/actual-profile/README.md",
+    "validation/actual-profile/seed-source-inverse.json",
+    "validation/actual-profile/source-derivation.json",
+    "validation/actual-profile/verify-zero-ms4-fulfillment.py",
+    "validation/DESIGN-TASKS.md",
+    "validation/PINS.json",
+    "validation/PROFILE-PINS.json",
+    "validation/PROFILE-PUBLICATION.json",
+    "validation/run.py"
+  ],
+  "changed_runtime_members": [
+    "launcher/launch.py",
+    "materializer/INVERSE.json",
+    "materializer/PLAN.md",
+    "materializer/prepare.py",
+    "validation/actual-profile/interface-v1.json",
+    "validation/actual-profile/ms4-host.py",
+    "validation/actual-profile/ms4-initialize.php",
+    "validation/actual-profile/normal-close-ms4-fulfillment.py",
+    "validation/actual-profile/source-derivation.json",
+    "validation/actual-profile/verify-zero-ms4-fulfillment.py",
+    "validation/DESIGN-TASKS.md",
+    "validation/PINS.json",
+    "validation/PROFILE-PINS.json",
+    "validation/PROFILE-PUBLICATION.json",
+    "validation/run.py"
+  ],
+  "stages_derived": 25,
+  "tracked_derived": 15752,
+  "double_namespace_derived": 31504,
+  "complete_tracked_bytes_derived": 341961431,
+  "cumulative_derived": 313,
+  "required_derived": 318,
+  "newtracked_derived": 266,
+  "group_counts_derived": {
+    "driver": 10,
+    "customer": 10865,
+    "paid": 10866,
+    "fulfillment": 10881,
+    "aftersale_review": 10885,
+    "worker": 10886
+  },
+  "business_union_derived": 10886,
+  "M_native_budget_derived_not_actual": 1160,
+  "M_fields": 37,
+  "original24_authority": {
+    "bytes": 808768,
+    "sha256": "ff5afcdf7364f98ee2bff78ef1f5062683968a19aad34bcaac1c4979166445db"
+  },
+  "original24_recursive_actual_literal_names": [
+    "COMMITTED_PATHS",
+    "COMMIT_CHAIN",
+    "CURRENT_COMPOSITE_CUSTOMER_FORM_SOURCE",
+    "CURRENT_D0A5_FAILED_FINITE_INDEX",
+    "CURRENT_WARM_EXPORT_ROOT_READBACK",
+    "CURRENT_WARM_PROFILE_MANIFEST",
+    "CURRENT_WARM_PROFILE_NEW_NODE",
+    "CURRENT_WARM_PROFILE_SOURCE",
+    "CURRENT_WARM_QUALIFICATION_RECEIPTS",
+    "CURRENT_WARM_SOURCE_HISTORY",
+    "CURRENT_WARM_SOURCE_INPUTS",
+    "CURRENT_WARM_SOURCE_QUALIFICATION",
+    "HISTORICAL_TWENTYTHREE_AUTHORITY_SOURCE",
+    "HISTORICAL_TWENTYTHREE_CONSTANTS",
+    "HISTORICAL_TWENTYTHREE_M_SOURCE",
+    "HISTORICAL_TWENTYTHREE_PUBLICATION",
+    "MAIN_SOURCE",
+    "NEW_TRACKED_PATHS",
+    "SOURCE_REQUIREMENT_PATHS",
+    "VALIDATION_SOURCE"
+  ],
+  "original23_recursive_literal_count_preserved": 19,
+  "all11_whole_historical_objects_and_old_finite_preserved": true,
+  "new_bafb_failed_finite_index": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/current41c0-normal-root-admission-r1/R102-BAFB-FAILED-FINITE-HISTORY-INDEX.json",
+    "bytes": 4373,
+    "sha256": "ccb12a606de63db21ec621f90f913fed306fa7e4783346070533adcc2c6bb445"
+  },
+  "new_bafb_own_output_addendum": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/current41c0-normal-root-admission-r1/R102-BAFB-FAILED-FINITE-OWN-OUTPUTS.json",
+    "bytes": 402508,
+    "sha256": "28fa139a35022386d5e3fcea8a79bf4e3b72e8fa5969307253c4b8af3b40094d"
+  },
+  "new_recursive_retirement_whole": false,
+  "all_non_authority_M_S_functions_raw": true,
+  "S_business_suffix_raw": true,
+  "all_SourceTree_helpers_raw": true,
+  "F2_strict_removed_int_dict_retained": true,
+  "ordinary_all18_forward_reverse_exact": true,
+  "actual_current_export_native": 13,
+  "actual_current_qualification_native": 12,
+  "actual_full_tracked_byte_replay": "UNBOUND_PENDING_ORIGINAL_M",
+  "normal8_syntax": "UNBOUND_NORMAL18KEYS_FULL8PHP_PLUS8HOST_40",
+  "B_UI20_8_38": "SEPARATE_UNBOUND",
+  "new_callback_M_S_results": "UNBOUND_NOT_RUN",
+  "remote_qualification": "UNBOUND_PENDING_FINAL_PUSH",
+  "R103_F1_static_correction": {
+    "before_Source": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentb54-next-normal-preparation-r1/normal-source/PINS.json",
+      "bytes": 11900,
+      "sha256": "84bd5a863336b9c1cf895eacee4ba282f42db7e153933ed816524c58755514ca"
+    },
+    "Root_finding": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/current41c0-normal-root-admission-r1/R103-B54-SOURCE-F1-SCOPE-MISMATCH.json",
+      "bytes": 1461,
+      "sha256": "5abff74fd43812d81ad916f76638db722c541527925e7ec137a1d27e252d06b5"
+    },
+    "producer": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentb54-git-export-actual-r1/CURRENT-SOURCE-AUTHORITY.json",
+      "bytes": 29014,
+      "sha256": "14deb5164827d55bec14be37ac3f03d6eafb17b5d5d781fbbd5ddaaf03aca4ba"
+    },
+    "one_scope": "ACTUAL_READ_ONLY_GIT_LOCAL_B54_LANGUAGE_CACHE_FIX_STEP",
+    "module_inverse": {
+      "materializer/prepare.py": {
+        "full_module_inverse_to_R1": true,
+        "only_function_change": "source_authority one exact scope literal",
+        "historical24_whole_raw": true,
+        "non_authority_functions_raw": 11,
+        "original_profile9_and_SourceTree_raw": true,
+        "exact_current_consumer_scope_equals_true_producer": "ACTUAL_READ_ONLY_GIT_LOCAL_B54_LANGUAGE_CACHE_FIX_STEP"
+      },
+      "validation/run.py": {
+        "full_module_inverse_to_R1": true,
+        "only_function_change": "source_authority one exact scope literal",
+        "historical24_whole_raw": true,
+        "non_authority_functions_raw": 14,
+        "original_profile9_and_SourceTree_raw": true,
+        "exact_current_consumer_scope_equals_true_producer": "ACTUAL_READ_ONLY_GIT_LOCAL_B54_LANGUAGE_CACHE_FIX_STEP"
+      }
+    },
+    "R1_source_only_not_nested_as_whole": true
+  },
+  "R105_new_root_process_only_environment": {
+    "schema": 1,
+    "scope": "R105_SAME_HEAD_NEW_SOURCE_ROOT_PROCESS_ONLY_ENVIRONMENT_NOT_NEW_GIT_OR_WHOLE",
+    "engineering_before_R2": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentb54-next-normal-preparation-r2/normal-source/PINS.json",
+      "bytes": 13692,
+      "sha256": "66b613acf0cd5d98cb4ed956bd5fe0f2b53b78cb5a1f81eb331e0ae5c2d3887a"
+    },
+    "failed_M_Root": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/current41c0-normal-root-admission-r1/R105-B54-FAILED-M-ROOT-READBACK.json",
+      "bytes": 2607,
+      "sha256": "86c1f99b4a9487e582ef9f7c42a57c09804471fd55ec13c7b944537862ecafa0"
+    },
+    "failed_M_public_list": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/current41c0-normal-root-admission-r1/R105-B54-FAILED-M-PUBLIC-OUTPUTS.json",
+      "bytes": 717164,
+      "sha256": "5d3ce24764eac79917c1d611631399d105a824486080cdd2bae2598ebd3208fb"
+    },
+    "original982_public_bodies_not_reread_or_nested": true,
+    "Root_process_only_environment_Source": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/current41c0-normal-root-admission-r1/run-r106-b54-organized-m.py",
+      "bytes": 2198,
+      "sha256": "7a8c8d5dbf203ade050003b139c51098be0c33c1a7eed0b3432d368d33f132d4"
+    },
+    "M_git_argv_and_functions_changed": false,
+    "new_Git_stage_or_whole_or_Run": false,
+    "prior_exact8PHP_actual_syntax_Root": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/current41c0-normal-root-admission-r1/R103-B54-NORMAL8-R2-ACTUAL-ROOT-READBACK.json",
+      "bytes": 48845,
+      "sha256": "5d7bcd177fc2b4fb3ea37f4b4400834d3a40d2d0d95f04d3090a1ba2e589a141"
+    },
+    "current_r3_callback_M_S_actual": "UNBOUND_NOT_RUN",
+    "module_inverse": {
+      "materializer/prepare.py": {
+        "before": {
+          "bytes": 28512970,
+          "sha256": "0891124a66a89f4412c7ea9f3c2fffc01d7b24ae5c5d217a90d8358c86474b9d"
+        },
+        "candidate": {
+          "bytes": 28512970,
+          "sha256": "61df90ee2426214301c0e6cbecea25f13ae111403ae2cc3327911ad3da0bce08"
+        },
+        "all_functions_raw": [
+          "need",
+          "pin",
+          "descriptor",
+          "stamp",
+          "ordinary",
+          "row",
+          "write",
+          "save",
+          "native",
+          "git",
+          "source_authority",
+          "validate_complete_source_tree"
+        ],
+        "raw_function_count": 12,
+        "whole_module_inverse_exact_R2": true,
+        "top_level_active_path_or_pin_only": true
+      },
+      "validation/run.py": {
+        "before": {
+          "bytes": 28528366,
+          "sha256": "599564798c70660aa3a56a75a4c8f16df410084a20af71ebd503cebf3a2f82a4"
+        },
+        "candidate": {
+          "bytes": 28528366,
+          "sha256": "f23fd9ecee8447b0a50e328e6253ea9d73e97cc4f604b3c660f50c95f22c2deb"
+        },
+        "all_functions_raw": [
+          "require",
+          "sha",
+          "save",
+          "emit",
+          "command",
+          "stage",
+          "observe",
+          "finish_helper",
+          "registered",
+          "authorize",
+          "proof_group",
+          "proof_copy",
+          "source_authority",
+          "validate_complete_source_tree",
+          "main"
+        ],
+        "raw_function_count": 15,
+        "whole_module_inverse_exact_R2": true,
+        "top_level_active_path_or_pin_only": true
+      },
+      "launcher/launch.py": {
+        "before": {
+          "bytes": 19274,
+          "sha256": "b5188a4868df94175e6e9af202579a1864f7c0ee9490828d0ec9bfbf964950d2"
+        },
+        "candidate": {
+          "bytes": 19274,
+          "sha256": "60c89ce65be5fb860de9fff612011bb8989f1e50a92bf3260db4c521ff5f3e53"
+        },
+        "all_functions_raw": [
+          "read",
+          "descriptor",
+          "put"
+        ],
+        "raw_function_count": 3,
+        "whole_module_inverse_exact_R2": true,
+        "top_level_active_path_or_pin_only": true
+      }
+    },
+    "all_profile9_and_eight_PHP_body_raw": true,
+    "nativeplan1160_same_formula": true,
+    "Root_actual_normal8_identity_rebind_required_not_new_lint": true
+  }
+}

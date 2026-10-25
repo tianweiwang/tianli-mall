@@ -1,0 +1,97 @@
+{
+  "schema": 1,
+  "source_sha": "941fdc7fe81a5d5b44dfce29cf5f87c8411c0a58",
+  "entries": {
+    "prepare": [
+      "php",
+      "/media-checks/prepare.php"
+    ],
+    "verify": [
+      "php",
+      "-d",
+      "memory_limit=<actual finite configuration>",
+      "/media-checks/verify.php"
+    ]
+  },
+  "public_preparation": {
+    "path": "/run/audit/media-preparation.json",
+    "exact_keys": [
+      "schema",
+      "run_id",
+      "source_sha",
+      "self_operated_mer_id",
+      "upload_max_bytes",
+      "status"
+    ],
+    "status": "PREPARED_NORMAL_MEDIA_SCHEMA_AND_ACTORS"
+  },
+  "public_final_ms2": {
+    "path": "/run/audit/media-ms2-final-check.json",
+    "exact_keys": [
+      "schema",
+      "run_id",
+      "source_sha",
+      "self_operated_mer_id",
+      "actual_cli_receipt",
+      "native_exit",
+      "cli_control"
+    ],
+    "child_control_keys": [
+      "script",
+      "script_sha256",
+      "mode",
+      "pid",
+      "proc_close_exit",
+      "native_exit",
+      "native_exit_origin",
+      "stdout",
+      "stderr",
+      "private_config_and_argv_omitted"
+    ]
+  },
+  "private_actor_path": "/run/audit-fixtures/media-actors.json",
+  "private_actor_top_keys": [
+    "schema",
+    "run_id",
+    "source_sha",
+    "self_operated_mer_id",
+    "product_category_id",
+    "platform",
+    "merchant"
+  ],
+  "actual_upload_volume_readonly_observer": "/run/media-uploads-observe",
+  "public_results": [
+    "/run/audit/evidence/media-prepare.json",
+    "/run/audit/evidence/media-http.json"
+  ],
+  "runtime_ready": false,
+  "future_native_migration_HTTP_SQL_commit_results": "UNBOUND",
+  "additional_normal_input": {
+    "descriptor": "/media-checks/LARGE-VIDEO.json",
+    "readonly_mount": "/media-large-fixture",
+    "host_source": "H:/天俪商城/artifacts/project-organization-20261023/product-video-large-normal-fixture-r1",
+    "exact_file": "synthetic-testsrc2-720p30-16s.mp4"
+  },
+  "host_prerequisites": [
+    "actual 941fdc7fe81a5d5b44dfce29cf5f87c8411c0a58 full Git archive, complete SourceTree and Env8 Source PINS; Root is independently binding the actual committed environment, not runtime admission",
+    "Env8 finite App overrides enabling product_video_upload with actual dedicated persistent video and scan private roots shared with original Timer; actual setup and mount identities must be verified at runtime",
+    "original 12 fixture mount unchanged plus the independent readonly 8425717-byte real encoded large-MP4 mount",
+    "Env8 original Timer registration/start/ordinary-stop and independent 600s natural-expiry observation Source exists; its execution and results are not signed by this HTTP leaf"
+  ],
+  "normal_increment": "both actors: issue, three real multipart chunks, committed finalize, actual list selection, original product save/reopen, same completed reference finalize with no duplicate commercial rows/audit",
+  "natural_gc_and_browser": "NOT_RUN_NOT_SIGNED_BY_HTTP_LEAF",
+  "environment_Source": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/media-video-normal-environment-source-r8",
+    "source_sha": "941fdc7fe81a5d5b44dfce29cf5f87c8411c0a58",
+    "scope": "ACTUAL_COMPLETE_SOURCE_ONLY_RUNTIME_NOT_EXECUTED"
+  },
+  "dependency_identity": {
+    "predecessor_dependencies_retained": 208,
+    "current_dependencies": 208,
+    "changed_existing_dependencies": [
+      "crmeb/public/install/crmeb.sql"
+    ],
+    "added_actual_direct_dependencies": [],
+    "reason": "actual941 only new install SQL andrecord; original208 paths/HTTP behavior retained"
+  }
+}

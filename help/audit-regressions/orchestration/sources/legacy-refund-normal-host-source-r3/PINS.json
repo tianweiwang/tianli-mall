@@ -1,0 +1,499 @@
+{
+  "author_checks": {
+    "Docker_HTTP_SQL_PHP_App_or_business_executed": false,
+    "actual_cli_ast": {
+      "caller_import_or_exec": false,
+      "normal_additional_actual_input": "setup-sha256",
+      "phases": [
+        "setup",
+        "normal"
+      ],
+      "required": [
+        "run-id",
+        "pins-sha256"
+      ]
+    },
+    "ast_parse": "PARSED_WITHOUT_IMPORT_OR_EXEC",
+    "bounded_mapping_inverse": {
+      "all_callable_bodies_raw_unchanged": true,
+      "bytes": 38985,
+      "callable_count": 30,
+      "exact_predecessor_reproduced": true,
+      "sha256": "d03306db94faccf613aed78878ecca7f8b5d0d4459bf98dffd1c4bc9a42249ba"
+    },
+    "candidate_caller_import_or_exec": false,
+    "future_setup_normal_and_resource_retirement": "UNBOUND",
+    "native_git": [
+      {
+        "argv_tail": [
+          "worktree",
+          "add",
+          "--detach",
+          "H:\\天俪商城\\worktrees\\ms4-legacy-refund-normal-check-r3",
+          "92c6eaf55947ffc175335e025ff91457e28989ad"
+        ],
+        "native_exit": 0,
+        "pid": 17028,
+        "repository": "H:\\天俪商城\\worktrees\\ms4-legacy-refund-normal-notice",
+        "same_handle_wait": true,
+        "stderr_bytes": 3939,
+        "stderr_sha256": "c0c207e9553a0825416e69116475354f7e16b9731915c4e05ecd8822dfa45f54",
+        "stdout_bytes": 78,
+        "stdout_sha256": "eb7ee150c2906c605e13ba6eb90fa2c90b8cfe18a97194cde6d89a9033b0107e"
+      },
+      {
+        "argv_tail": [
+          "diff",
+          "--name-only",
+          "-z",
+          "c8913ba9fb8ce5e052287360fb8b64ddf4fd139c",
+          "92c6eaf55947ffc175335e025ff91457e28989ad"
+        ],
+        "native_exit": 0,
+        "pid": 31940,
+        "repository": "H:/天俪商城/worktrees/ms4-legacy-refund-normal-notice",
+        "same_handle_wait": true,
+        "stderr_bytes": 0,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_bytes": 1805,
+        "stdout_sha256": "4d090d451f899eb7642bfbe11009ac26c1f0a8b35123cf88b0a4174db51aacf1"
+      },
+      {
+        "argv_tail": [
+          "branch",
+          "--show-current"
+        ],
+        "native_exit": 0,
+        "pid": 50056,
+        "repository": "H:/天俪商城/worktrees/ms4-legacy-refund-normal-check-r3",
+        "same_handle_wait": true,
+        "stderr_bytes": 0,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_bytes": 0,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "argv_tail": [
+          "rev-parse",
+          "HEAD"
+        ],
+        "native_exit": 0,
+        "pid": 44064,
+        "repository": "H:/天俪商城/worktrees/ms4-legacy-refund-normal-notice",
+        "same_handle_wait": true,
+        "stderr_bytes": 0,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_bytes": 41,
+        "stdout_sha256": "67cfcaf3d658d15ffb71bf564572e76369a8bc5e76a2f8221537710d6c06c44c"
+      },
+      {
+        "argv_tail": [
+          "status",
+          "--porcelain=v1",
+          "-z",
+          "--untracked-files=all"
+        ],
+        "native_exit": 0,
+        "pid": 18924,
+        "repository": "H:/天俪商城/worktrees/ms4-legacy-refund-normal-notice",
+        "same_handle_wait": true,
+        "stderr_bytes": 0,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_bytes": 0,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "argv_tail": [
+          "rev-parse",
+          "--absolute-git-dir"
+        ],
+        "native_exit": 0,
+        "pid": 35296,
+        "repository": "H:/天俪商城/worktrees/ms4-legacy-refund-normal-notice",
+        "same_handle_wait": true,
+        "stderr_bytes": 0,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_bytes": 75,
+        "stdout_sha256": "0025fb63f28844ff354a9317d461b692279b95f048c535f4d9e3fe60d1aa690a"
+      },
+      {
+        "argv_tail": [
+          "ls-tree",
+          "-r",
+          "-z",
+          "--full-tree",
+          "92c6eaf55947ffc175335e025ff91457e28989ad"
+        ],
+        "native_exit": 0,
+        "pid": 39020,
+        "repository": "H:/天俪商城/worktrees/ms4-legacy-refund-normal-notice",
+        "same_handle_wait": true,
+        "stderr_bytes": 0,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_bytes": 1875034,
+        "stdout_sha256": "c55789b8065e1c540f3e51301a50f3adb264c7715979e68da41d8ca42fdf68e9"
+      },
+      {
+        "argv_tail": [
+          "status",
+          "--porcelain=v1",
+          "-z",
+          "--untracked-files=all"
+        ],
+        "native_exit": 0,
+        "pid": 31760,
+        "repository": "H:/天俪商城/worktrees/ms4-legacy-refund-normal-notice",
+        "same_handle_wait": true,
+        "stderr_bytes": 0,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_bytes": 0,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "argv_tail": [
+          "rev-parse",
+          "HEAD"
+        ],
+        "native_exit": 0,
+        "pid": 37260,
+        "repository": "H:/天俪商城/worktrees/ms4-legacy-refund-normal-notice",
+        "same_handle_wait": true,
+        "stderr_bytes": 0,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_bytes": 41,
+        "stdout_sha256": "67cfcaf3d658d15ffb71bf564572e76369a8bc5e76a2f8221537710d6c06c44c"
+      },
+      {
+        "argv_tail": [
+          "rev-parse",
+          "HEAD"
+        ],
+        "native_exit": 0,
+        "pid": 24860,
+        "repository": "H:/天俪商城/worktrees/ms4-legacy-refund-normal-check-r3",
+        "same_handle_wait": true,
+        "stderr_bytes": 0,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_bytes": 41,
+        "stdout_sha256": "67cfcaf3d658d15ffb71bf564572e76369a8bc5e76a2f8221537710d6c06c44c"
+      },
+      {
+        "argv_tail": [
+          "status",
+          "--porcelain=v1",
+          "-z",
+          "--untracked-files=all"
+        ],
+        "native_exit": 0,
+        "pid": 16240,
+        "repository": "H:/天俪商城/worktrees/ms4-legacy-refund-normal-check-r3",
+        "same_handle_wait": true,
+        "stderr_bytes": 0,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_bytes": 0,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "argv_tail": [
+          "rev-parse",
+          "--absolute-git-dir"
+        ],
+        "native_exit": 0,
+        "pid": 48880,
+        "repository": "H:/天俪商城/worktrees/ms4-legacy-refund-normal-check-r3",
+        "same_handle_wait": true,
+        "stderr_bytes": 0,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_bytes": 77,
+        "stdout_sha256": "9452d49f9577bac6fad2d934e08a39fa789b41a55ea580651b44ad807c0e98ab"
+      },
+      {
+        "argv_tail": [
+          "ls-tree",
+          "-r",
+          "-z",
+          "--full-tree",
+          "92c6eaf55947ffc175335e025ff91457e28989ad"
+        ],
+        "native_exit": 0,
+        "pid": 17536,
+        "repository": "H:/天俪商城/worktrees/ms4-legacy-refund-normal-check-r3",
+        "same_handle_wait": true,
+        "stderr_bytes": 0,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_bytes": 1875034,
+        "stdout_sha256": "c55789b8065e1c540f3e51301a50f3adb264c7715979e68da41d8ca42fdf68e9"
+      },
+      {
+        "argv_tail": [
+          "status",
+          "--porcelain=v1",
+          "-z",
+          "--untracked-files=all"
+        ],
+        "native_exit": 0,
+        "pid": 40956,
+        "repository": "H:/天俪商城/worktrees/ms4-legacy-refund-normal-check-r3",
+        "same_handle_wait": true,
+        "stderr_bytes": 0,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_bytes": 0,
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "argv_tail": [
+          "rev-parse",
+          "HEAD"
+        ],
+        "native_exit": 0,
+        "pid": 38900,
+        "repository": "H:/天俪商城/worktrees/ms4-legacy-refund-normal-check-r3",
+        "same_handle_wait": true,
+        "stderr_bytes": 0,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_bytes": 41,
+        "stdout_sha256": "67cfcaf3d658d15ffb71bf564572e76369a8bc5e76a2f8221537710d6c06c44c"
+      }
+    ],
+    "static_source_declarations": {
+      "actual_compose_config": "NOT RUN",
+      "base_declared_services": 9,
+      "base_named_volumes": 12,
+      "expected_total_named_volumes": 13,
+      "fixed_selected_roles": 5,
+      "future_run_root_write_probe": "NOT PERFORMED",
+      "new_private_named_volumes": 1,
+      "overlay_fixed_profile_and_private_root_modes": "MATCHED_SOURCE_DECLARATIONS",
+      "source_packet_three_files_actually_written": true
+    }
+  },
+  "binding_status": "SEALED_SOURCE_ONLY_NOT_RUNTIME_ADMISSION",
+  "changed31": {
+    "crmeb/app/adminapi/controller/v1/order/LegacyRefundMaterial.php": {
+      "blob": "05d86175ea6e848b1881f530b149cbe7762eaa6b",
+      "bytes": 2445,
+      "sha256": "16d050f55fd792909dfb573376bafff898438c6716cb3026b6ac17bafdf3d702"
+    },
+    "crmeb/app/adminapi/middleware/LegacyRefundReadPermissionMiddleware.php": {
+      "blob": "14113ea2628d805aeae6424ba81940deb6b741c4",
+      "bytes": 745,
+      "sha256": "9bc7eb89d27d6d00111e0e8623d9779ec0eff650227db3f0d8d86aa3bbe69bce"
+    },
+    "crmeb/app/adminapi/route/order.php": {
+      "blob": "a57c1b4d45d2cd02cf46b77f68fe4397371c08db",
+      "bytes": 14115,
+      "sha256": "599204a8cd85ecd2afcc33c35aa5c9ef9c95d0354eb2c972f1be0a3d63288b7c"
+    },
+    "crmeb/app/api/controller/v1/admin/StoreOrderController.php": {
+      "blob": "21f06029df400faa10769e66f4ff56bd3f5bee60",
+      "bytes": 30324,
+      "sha256": "42608fb8700cfc95355b682970449fe6690fa2af7d85f931c71a9e5ccba0a157"
+    },
+    "crmeb/app/api/controller/v1/order/LegacyRefundMaterialController.php": {
+      "blob": "8d25dd3fdbd66b9baac8b0cab270d9c0f249e327",
+      "bytes": 4484,
+      "sha256": "b7fa004575a351de66e730b3f97ae0c18db6c46489c55beb40d3e2400647f091"
+    },
+    "crmeb/app/api/controller/v1/order/StoreOrderController.php": {
+      "blob": "41d09d7bc7a2370339952e3d87af9b220f218bde",
+      "bytes": 51567,
+      "sha256": "909af9f5ce5c3e666a25c3ae735ec8faed6ff6edfe12e417a74f3e131641b98b"
+    },
+    "crmeb/app/api/controller/v1/order/StoreOrderRefundController.php": {
+      "blob": "1f0f38effd068bda8929414991051e7472d7c60d",
+      "bytes": 10459,
+      "sha256": "7a1d92a3710867f3f28091843ec0cbec95ec6446423ad31f8ae7f8255aac48aa"
+    },
+    "crmeb/app/api/route/v1.php": {
+      "blob": "6c1cb58ea329ea77bc2bdffde2a471e1b7afe239",
+      "bytes": 63508,
+      "sha256": "668341c995b200fcda76e290fd6fe64b7b343574004fd1f4d573aabb0745cb83"
+    },
+    "crmeb/app/dao/marketplace/assets/CustomerLegacyRefundAssetDao.php": {
+      "blob": "893e47169ea9c68089dd1a26c68401278519ee52",
+      "bytes": 19844,
+      "sha256": "ae988aeea324b563ed7219ddf8721cfa4d6d94c53a9714bcd2fa0af6ce765b79"
+    },
+    "crmeb/app/services/marketplace/assets/CustomerLegacyRefundAssetServices.php": {
+      "blob": "6d660ffe162e227ae27c665a350b06f6f79fb2ea",
+      "bytes": 21049,
+      "sha256": "46ef37b9feac5d27dfe180b939b4ce4f7d32175c787b1edde2dc77e3fd7ed8c3"
+    },
+    "crmeb/app/services/marketplace/assets/CustomerLegacyRefundPlatformAccessServices.php": {
+      "blob": "bc33e0e5dd0088c213eb4be3f87b1bb857bbed94",
+      "bytes": 6183,
+      "sha256": "e3791e316919974b3bea6c8b38fd3c05b4475b6983b2e6e8521f575eef5390a4"
+    },
+    "crmeb/app/services/marketplace/assets/CustomerLegacyRefundPrivateStorage.php": {
+      "blob": "9255e5b150cec4f2a735c3f96abe8bb681001c86",
+      "bytes": 16290,
+      "sha256": "d3055384ccde13c4da8b5ae1d097bfec99243c54ec883fb3be8e6f9783b8b9ab"
+    },
+    "crmeb/app/services/marketplace/assets/CustomerLegacyRefundReadServices.php": {
+      "blob": "d61b6bf9d2116654d10d440d72c3c32ca8bc3a01",
+      "bytes": 9788,
+      "sha256": "367494167ba1e5b78e5c2404dfe1cd63ad3e9a5d6ff6657cee3cabfaf24ea327"
+    },
+    "crmeb/app/services/marketplace/assets/CustomerLegacyRefundReadTickets.php": {
+      "blob": "c234677f3fe036f99f0f6a0b97399745236b6109",
+      "bytes": 12091,
+      "sha256": "edd87b9e8ffcf7412a3fc278d92ad560c56cf3b0820357c8f3a0eeff4916f753"
+    },
+    "crmeb/app/services/order/StoreOrderRefundServices.php": {
+      "blob": "b0a6c02986070d77ed7915558ca9cf287e9cb7e6",
+      "bytes": 77961,
+      "sha256": "03a70adfeed06435798b5057aecf1b2a0b1195d7afb695fa88342a2b0fb4d9ff"
+    },
+    "crmeb/config/cookie.php": {
+      "blob": "ee475c12b95b480d411646d2df9bea54aa1b15ca",
+      "bytes": 2337,
+      "sha256": "3a8d2c3420b63bf4aee2d7773de6dcbf7a9866f22b45c72f2fc79e540baa8e2f"
+    },
+    "crmeb/config/marketplace.php": {
+      "blob": "12f8e13a40cdfe5841ee5a15bba1fb9c8a7c46b8",
+      "bytes": 2167,
+      "sha256": "3050751f918433372d121c8806fdbc688bd615cf4a4260b626d1a825272ef4b1"
+    },
+    "docs/multi-merchant/records/ms2/upload-asset-domains.md": {
+      "blob": "994991c34cd5f6f1f98b82b97e11f2d21195a014",
+      "bytes": 209078,
+      "sha256": "0040a567dd0477652e987277a346bd55e188194d1193d9ee1d00679788db3df0"
+    },
+    "help/audit-regressions/isolated/compose.ms4-legacy-refund-private.yml": {
+      "blob": "a66cc5fea33b221dc4bdd923d05cbcf3712bfd26",
+      "bytes": 767,
+      "sha256": "c271fcb387b0b783a7496d33af22383d0a6796d53c8ad2c691473a1b5503c986"
+    },
+    "help/audit-regressions/isolated/lib/harness.php": {
+      "blob": "e1424df6f61dab100a2c918e29555e84e47ac8b5",
+      "bytes": 56450,
+      "sha256": "84f36a6e70049ce21eb8c1908af824fbaa338d9daed38c46f630cd396ac245b1"
+    },
+    "help/audit-regressions/isolated/lib/legacy-refund-normal-profile.php": {
+      "blob": "5014a4191f5f30e3ccd6a87a82ad4f2667200675",
+      "bytes": 3652,
+      "sha256": "5f2faa424be4ceed36aeeeb37f5c73a1f2a14a0717fc174d904ee6fe8ae76f50"
+    },
+    "help/audit-regressions/isolated/ms4-legacy-refund-private-normal.php": {
+      "blob": "92cc601b55838ddec8f0c97feea882484f245111",
+      "bytes": 74444,
+      "sha256": "69da1241cf914fa058dbc16486f2fd19ed9f61f1b8dcf473bd004665e43ae485"
+    },
+    "template/admin/src/api/legacy-refund-materials.js": {
+      "blob": "0efbbf0c3810fced3c44f94ab5e6c3557f66f804",
+      "bytes": 10148,
+      "sha256": "6ff7604eefd7ed0b7eb1fcce6d8fb563e083e989e4e021734eeca12b8c18d6cc"
+    },
+    "template/admin/src/pages/order/orderList/handle/orderDetails.vue": {
+      "blob": "a08641113f05a307ed464ad22caf444d908f3859",
+      "bytes": 32177,
+      "sha256": "ac9a2133b730d388cc81d2da89f4f3560b527eec7b8dc5cdc5590832f630f82d"
+    },
+    "template/admin/src/pages/order/refund/index.vue": {
+      "blob": "9c7855db4ad7bf9685b7cdd10d2955ecf6c613a7",
+      "bytes": 20568,
+      "sha256": "da84ef499e07e35ee4c2b80f8dc56c1ec3ce9d7c5dba5f3732fbb80d08b01cce"
+    },
+    "template/uni-app/api/legacy-refund-materials.js": {
+      "blob": "30d8ce6d8ef4205d0b5f53a19a0cbddbafe2de39",
+      "bytes": 30277,
+      "sha256": "f33f005bdabf90b962168f6afd68102890d52201697af1fb3d59e97e2e79378c"
+    },
+    "template/uni-app/pages/admin/orderDetail/index.vue": {
+      "blob": "9fc7d775b10da2d13c01cfea5b0d9568250a7181",
+      "bytes": 50958,
+      "sha256": "a1beed0c06b5e749d0e5da6a685872d38a372bc5b6a87e271c3e1458b743aa79"
+    },
+    "template/uni-app/pages/admin/refund_order_detail/index.vue": {
+      "blob": "601f2adbac6c7d4702907e7766ea9d208e98da65",
+      "bytes": 46914,
+      "sha256": "28c7495489dce4d893269c4bcb44a37859a856b0b48410bbf698dd513ea6a8ac"
+    },
+    "template/uni-app/pages/goods/goods_return/index.vue": {
+      "blob": "2e8da888d78f951f6e3361cd0822ad4a79ccc490",
+      "bytes": 10551,
+      "sha256": "cc73e6bcd20b06f133cffaa56963e99cbada044310749b51e3a81a61076cde9d"
+    },
+    "template/uni-app/pages/goods/order_details/index.vue": {
+      "blob": "0c778ae258e35d89b6cfd55ff3e147a0b320d699",
+      "bytes": 92620,
+      "sha256": "52dbb77fc501672982c2dd3ddc91463cf422677792cde848aaeb44c72897074e"
+    },
+    "template/uni-app/pages/goods/order_refund_goods/index.vue": {
+      "blob": "57705a3ca77950b62b47f83dedd63648b94689eb",
+      "bytes": 10213,
+      "sha256": "03bad8904b6e16f89b5d9b128b0af7b5e1c70478b73e275001f85ddc35092585"
+    }
+  },
+  "commit": "92c6eaf55947ffc175335e025ff91457e28989ad",
+  "derivation": {
+    "actual_descriptor_changes_vs_predecessor": [
+      "docs/multi-merchant/records/ms2/upload-asset-domains.md",
+      "help/audit-regressions/isolated/ms4-legacy-refund-private-normal.php"
+    ],
+    "fixed_runtime_image_unchanged": "sha256:1099f749e2a38ec9453c6b820db8a78174514bc72d14edf5c203e13b82816e0a",
+    "mapping": "Exactly four necessary constant bindings: packet, Val, Run root and commit; Source remains notice W; exact inverse to frozen r2; every callable raw unchanged",
+    "r1_r2_source_val_host_failed_runs_and_completed_retirement": "PRESERVED",
+    "remaining_raw_descriptor_count": 29,
+    "run_instance": "UNBOUND"
+  },
+  "descriptor_baseline": "c8913ba9fb8ce5e052287360fb8b64ddf4fd139c",
+  "execution": "NOT RUN",
+  "future_setup_normal_and_resource_retirement": "UNBOUND",
+  "packet_files": {
+    "README.md": {
+      "bytes": 9881,
+      "sha256": "269379df350883dea1fc476956ed4f4fddce674ec58d6d2a4bb80418260ce722"
+    },
+    "legacy-refund-normal-host.py": {
+      "bytes": 38985,
+      "sha256": "90e4cfeb7296001f28d9bd789d06e41b8a37c0c456603b8a0d6e86ac63aeb7d3"
+    }
+  },
+  "predecessor": {
+    "PINS.json": {
+      "bytes": 17414,
+      "sha256": "a0b922f5670b7ab1493ec497a3b619164724c7b46a56e757d0e672a2e1e703ee"
+    },
+    "README.md": {
+      "bytes": 8458,
+      "sha256": "29dee2cd769c61b339f10564815ab32033db3ac64ee0c7f6f1e15795e56cf6e0"
+    },
+    "legacy-refund-normal-host.py": {
+      "bytes": 38985,
+      "sha256": "d03306db94faccf613aed78878ecca7f8b5d0d4459bf98dffd1c4bc9a42249ba"
+    }
+  },
+  "runtime_results": "UNBOUND",
+  "schema": 1,
+  "scope": "CU_LEGACY_REFUND_NORMAL_HOST_SOURCE_ONLY",
+  "source": "H:/天俪商城/worktrees/ms4-legacy-refund-normal-notice",
+  "source_metadata": {
+    "aggregate_sha256": "5afe338970f8896d47dd52045316c3e02aa8c10f885b6223c7073a3aa393b146",
+    "all_tracked_native_blob_bodies_equal_W_Val": 15777,
+    "clean": true,
+    "exact_working_namespace": true,
+    "head": "92c6eaf55947ffc175335e025ff91457e28989ad",
+    "selected_native_git_blobs_equal_W_Val": 31,
+    "stable_native_path_and_handle_identities": "ALL_CURRENT_BODIES_QUALIFIED",
+    "total_tracked_bytes": 342425419,
+    "tracked_names": 15777
+  },
+  "val": "H:/天俪商城/worktrees/ms4-legacy-refund-normal-check-r3",
+  "val_metadata": {
+    "aggregate_sha256": "5afe338970f8896d47dd52045316c3e02aa8c10f885b6223c7073a3aa393b146",
+    "clean": true,
+    "detached": true,
+    "exact_working_namespace": true,
+    "full_actual_body_qualification": "SOURCE_ONLY_READ_ALL_15777_MATCHED_COMMITTED_GIT_BLOBS_IN_BOTH_TREES; runtime repeats",
+    "gitdirs": [
+      "H:/天俪商城/tianli-mall/.git/worktrees/ms4-legacy-refund-normal-notice",
+      "H:/天俪商城/tianli-mall/.git/worktrees/ms4-legacy-refund-normal-check-r3"
+    ],
+    "head": "92c6eaf55947ffc175335e025ff91457e28989ad",
+    "independent_gitdir": true,
+    "stable_native_path_and_handle_identities": "ALL_CURRENT_BODIES_QUALIFIED",
+    "total_tracked_bytes": 342425419,
+    "tracked_names": 15777
+  }
+}

@@ -1,0 +1,162 @@
+{
+  "binding_status": "SEALED_SOURCE_ONLY_NOT_RUNTIME_ADMISSION",
+  "changed23": {
+    "crmeb/app/adminapi/controller/v1/agent/AgentLicenceFile.php": {
+      "blob": "c30acd53f5d92d5744d6c5c819cc5af57c0bfdb7",
+      "bytes": 748,
+      "sha256": "3b2008506234460a584541da108e0939f49c2fde6f4bf4a353b5c0d881882a36"
+    },
+    "crmeb/app/adminapi/middleware/AgentLicenceReadPermissionMiddleware.php": {
+      "blob": "7cdafe0168d4419146a5e9345e4a291a4483ba6a",
+      "bytes": 763,
+      "sha256": "d45622a322232cf2daffba450a0ee1f322b73978168a08a7dce1242ab92cf647"
+    },
+    "crmeb/app/adminapi/route/agent.php": {
+      "blob": "2bd370a57eee2497a00159f5f680b624b3f1dab6",
+      "bytes": 9454,
+      "sha256": "e5f022b756cb37d3fef631c46303a1372bf0d88cc3c9ea1ece454159ebb923f0"
+    },
+    "crmeb/app/api/controller/v1/user/AgentLicenceController.php": {
+      "blob": "856bd278c080a587a1ca8d700a3aef28a3f61f6f",
+      "bytes": 2586,
+      "sha256": "2a6241589fe64289eaa273063ddbede5a19ab829bd3412d0182da34222ce4417"
+    },
+    "crmeb/app/api/controller/v1/user/DivisionController.php": {
+      "blob": "26dc0030b338f3a79f3325a4bc646b63de52529c",
+      "bytes": 6720,
+      "sha256": "4ec6de78201ba6ca84f861db72073be4e4299aa544b9f94ce7e9b2821c92d15f"
+    },
+    "crmeb/app/api/route/v1.php": {
+      "blob": "446687c97a10cfca747192902fc32f82daac9ebd",
+      "bytes": 61514,
+      "sha256": "fdc5c6f6ba96e2f2abd2f5a83abc7182e6e43f00ee1556a8561c7c9a9f2cba2c"
+    },
+    "crmeb/app/dao/agent/DivisionAgentApplyDao.php": {
+      "blob": "22ab5b9e0d345ce066b120f51f1c272674e6ff33",
+      "bytes": 2425,
+      "sha256": "1d64b237524e1d8871ac6b5a1b254aa4aca8ea49cdd8bfd3f5b2a08ae5f4d079"
+    },
+    "crmeb/app/dao/marketplace/assets/CustomerAgentLicenceAssetDao.php": {
+      "blob": "40204e8747bf8b3f15edd0dac2156c223538f69b",
+      "bytes": 16717,
+      "sha256": "86c9722aaf3fbce7a6f9b19d9fbb9e3f12a56ab5aae337f48158467b13acc226"
+    },
+    "crmeb/app/model/agent/DivisionAgentApply.php": {
+      "blob": "c86ae36bd39132a55bc98fbef802a86cc02f81a6",
+      "bytes": 2237,
+      "sha256": "6f21157264003b2ea17eb7ab10d8d9f3da75a116e73e8293c5dfa0dc2ec6cd4b"
+    },
+    "crmeb/app/services/agent/DivisionAgentApplyServices.php": {
+      "blob": "e4b4ff49720abc464795a18a206a7c54a9288084",
+      "bytes": 17867,
+      "sha256": "6f60d85ceab8fed152bd6f56a02301b16d41290f883abbe2f4e28d8aa4af6e0c"
+    },
+    "crmeb/app/services/marketplace/assets/CustomerAgentLicenceAssetServices.php": {
+      "blob": "e44114b9c1ff6f142d5509f4ce354e122ba19a67",
+      "bytes": 16851,
+      "sha256": "77e21131a6ab0baca6acbc6da2f4e1e03325774f78e95b643aa15bfe85ff0e3f"
+    },
+    "crmeb/app/services/marketplace/assets/CustomerAgentLicencePlatformAccessServices.php": {
+      "blob": "eeb6ce84eb569f8059369fbc19cc517be6c1b497",
+      "bytes": 6323,
+      "sha256": "177d56d48592a5fba1f7ee3ab0f31c7db11cca287d5ccb1eb1de87ca2571a959"
+    },
+    "crmeb/app/services/marketplace/assets/CustomerAgentLicencePrivateStorage.php": {
+      "blob": "4c6f1fd3a98b0eddcee322730c1b17389c145a7c",
+      "bytes": 15833,
+      "sha256": "69ae865fb136e4a08678e3e1f58825701e340810f4dd746c72ac194b579f6358"
+    },
+    "crmeb/app/services/marketplace/assets/CustomerAssetServices.php": {
+      "blob": "a0aa9ca18bfc6b5f3f6e96f3616eb747498a532b",
+      "bytes": 20665,
+      "sha256": "1df265432c61a7108eb8563fb6dfc5c58db5f84c29bdda2be826f257e914abb5"
+    },
+    "crmeb/config/marketplace.php": {
+      "blob": "ba8124151764831af031d9ac3a851b0a4d68cc99",
+      "bytes": 1966,
+      "sha256": "bc8a9e1ac0f0e9992d3b7374f2cb63901969cc73faa9e9f21000e97b070fd7ff"
+    },
+    "docs/multi-merchant/records/ms2/upload-asset-domains.md": {
+      "blob": "084c73b97123025336204a6d6fb3598319bb4662",
+      "bytes": 158708,
+      "sha256": "f3a290bc4bff898f725a7c7bca4b1705c3f81eb9c5332dc0dc9857c4603df7b1"
+    },
+    "help/audit-regressions/isolated/compose.ms4-agent-licence.yml": {
+      "blob": "34c6587f2348f0f97584cba927e7178227a9203a",
+      "bytes": 756,
+      "sha256": "d5e31f4760859ad26de839bd764a5f69e76aac6f14b2763cbe4abfb00146d32c"
+    },
+    "help/audit-regressions/isolated/lib/harness.php": {
+      "blob": "2ca48764268c6a1f422e0da3501d3c0263ab9d37",
+      "bytes": 55618,
+      "sha256": "9027eacd3d9791d62cd44d7b2680e47c652e755b1fc16ebedec57f9b2088404a"
+    },
+    "help/audit-regressions/isolated/ms4-agent-licence-normal.php": {
+      "blob": "9b11ff5faf38c24cfbdb04cc7e79d48658ac3e6f",
+      "bytes": 40238,
+      "sha256": "aab28ba737c78e6eb334b262f4dc5af3dc05750a4186096972ada9d17f50483c"
+    },
+    "template/admin/src/api/agent-licence.js": {
+      "blob": "3865ea33014113d898b539815e6ba0ba7271ba52",
+      "bytes": 3447,
+      "sha256": "e0b19283e318f9d6b9360d80074dab5f0beb1543733bfc6871e5fdf57cfd0ef2"
+    },
+    "template/admin/src/pages/division/agent/applyList.vue": {
+      "blob": "55793edb76cf032de231941278e68d815dc7efa4",
+      "bytes": 15272,
+      "sha256": "5701d9fb2623bec25d97a39f0551fe25b63ad9a9647789dc1bff2545be7d2c1e"
+    },
+    "template/uni-app/api/agent-licence.js": {
+      "blob": "a69174aaabe3798619c5d6ec70cec49587ebbc95",
+      "bytes": 10751,
+      "sha256": "45aefd72bad537cef8cdbd51a022fddb2b2668236b1093b7159234db7a4f0df6"
+    },
+    "template/uni-app/pages/annex/settled/index.vue": {
+      "blob": "5e352a49053011457ff9f087ec5fd45b5f48882f",
+      "bytes": 40012,
+      "sha256": "bcb8261dda62dc1837884dce31549a2a024ad4fc2278c07f3c4bc5aea153b20a"
+    }
+  },
+  "commit": "864dda32fba62ab12944a01369d816a20be5aec2",
+  "descriptor_baseline": "b54ad9c39ca95a1b8b15ed6724082b98b1370c53",
+  "execution": "NOT RUN",
+  "packet_files": {
+    "README.md": {
+      "bytes": 3820,
+      "sha256": "5120b8c7b358a28c9fcf765017a07ab4b263996fdc21a97bcc903e8c47064ef7"
+    },
+    "licence-normal-host.py": {
+      "bytes": 38127,
+      "sha256": "f7de01e8922a4ddf27384ffbe9e0999b90e933ee881070ee671897d67050565e"
+    }
+  },
+  "predecessor": {
+    "caller_bytes": 38127,
+    "caller_sha256": "822893e743be110db28b6f3d7b084669d36f6c782b9e9c2a1de62032896b27b6",
+    "pins_bytes": 6593,
+    "pins_sha256": "da1b6c0c426b5178ff3b8c2d4d79fe32c040d10e5bf4dcc9c8ebaa58c10d6642",
+    "source": "licence-normal-host-source-r5"
+  },
+  "runtime_results": "UNBOUND",
+  "schema": 1,
+  "scope": "CU_LICENCE_NORMAL_HOST_SOURCE_ONLY",
+  "source": "H:/天俪商城/worktrees/ms4-agent-licence-private-normal",
+  "source_metadata": {
+    "clean": true,
+    "head": "864dda32fba62ab12944a01369d816a20be5aec2",
+    "selected_native_git_blobs_equal_W": 23,
+    "tracked_names": 15763
+  },
+  "val": "H:/天俪商城/worktrees/ms4-agent-licence-normal-check-r3",
+  "val_metadata": {
+    "actual_full_file_byte_binding": "NOT RUN; original setup source_binding remains required",
+    "clean": true,
+    "detached": true,
+    "head": "864dda32fba62ab12944a01369d816a20be5aec2",
+    "independent_gitdir": true,
+    "lifecycle": "Existing detached Val3 reused after Root actual mid-list close110 and independent zero10, all native0 with six resource queries empty; Root actual5597cb clean rebind to864dda; no Val6 created",
+    "rebind_status": "ROOT_ACTUAL_POST_RETIREMENT_REBIND_CONFIRMED",
+    "selected_native_git_blobs_equal_W_Val": 23,
+    "tracked_names": 15763
+  }
+}

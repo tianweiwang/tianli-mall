@@ -1,0 +1,115 @@
+# Merge with unchanged compose.base.yml. Sixth Timer role starts only after actual HTTP verify0.
+services:
+  audit-bootstrap:
+    image: sha256:297b37d4b7b3ad44e7194b765e785f4a1734d697caa4d555fefef4186784b780
+    user: "0:0"
+    environment:
+      AUDIT_MEDIA_NORMAL: "1"
+    volumes:
+      - source-tree:/workspace:ro
+      - source-tree:/source:ro
+      - ${MEDIA_ENVIRONMENT_DIR:?required}:/media-environment:ro
+      - ${MEDIA_CHECKS_DIR:?required}:/media-checks:ro
+      - ${MEDIA_FIXTURES_DIR:?required}:/media-fixtures:ro
+      - media-video-private:/run/audit-media-video
+      - media-scan-private:/run/audit-media-scan
+      - media-timer-runtime:/run/audit-media-timer-runtime
+  audit-mysql:
+    image: sha256:c7a313f1402365dc91253bdbdb1e74c6a361b036106d8bd25b8ec8e2dd0069f4
+    command:
+      - --sql-mode=STRICT_TRANS_TABLES,ONLY_FULL_GROUP_BY,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION
+      - --innodb-strict-mode=ON
+  audit-redis:
+    image: sha256:6c8f6edc1aa871a76a257ef86a2089d108e64b78d16f45b89f09c6a4ab30d07e
+  audit-app:
+    image: sha256:297b37d4b7b3ad44e7194b765e785f4a1734d697caa4d555fefef4186784b780
+    user: "0:0"
+    stop_signal: SIGTERM
+    command: [/media-environment/lib/harness.php, __serve]
+    environment:
+      AUDIT_MEDIA_NORMAL: "1"
+    volumes:
+      - source-tree:/workspace:ro
+      - source-tree:/source:ro
+      - ${MEDIA_ENVIRONMENT_DIR:?required}:/media-environment:ro
+      - media-uploads:/workspace/crmeb/public/uploads
+      # Raw application logs remain private to this dedicated volume.
+      - app-private-logs:/run/audit/evidence
+      - media-video-private:/run/audit-media-video
+      - media-scan-private:/run/audit-media-scan
+  audit-runner:
+    image: sha256:297b37d4b7b3ad44e7194b765e785f4a1734d697caa4d555fefef4186784b780
+    user: "0:0"
+    environment:
+      AUDIT_MEDIA_NORMAL: "1"
+      AUDIT_MILESTONE: T4-NORMAL-MEDIA
+    volumes:
+      - source-tree:/workspace:ro
+      - source-tree:/source:ro
+      - ${MEDIA_ENVIRONMENT_DIR:?required}:/media-environment:ro
+      - ${MEDIA_CHECKS_DIR:?required}:/media-checks:ro
+      - ${MEDIA_FIXTURES_DIR:?required}:/media-fixtures:ro
+      - media-uploads:/run/media-uploads-observe:ro
+      - ${MEDIA_LARGE_FIXTURES_DIR:?required}:/media-large-fixture:ro
+      - media-video-private:/run/audit-media-video:ro
+      - media-scan-private:/run/audit-media-scan:ro
+      - media-timer-runtime:/run/media-timer-runtime-observe:ro
+      # Only the two finite Timer stdout/stderr files may be observed, never raw App logs.
+      - app-private-logs:/run/media-timer-logs-observe:ro
+  audit-media-timer:
+    image: sha256:297b37d4b7b3ad44e7194b765e785f4a1734d697caa4d555fefef4186784b780
+    pull_policy: never
+    user: "0:0"
+    entrypoint: [php]
+    working_dir: /workspace/crmeb
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    networks: [isolation]
+    stop_signal: SIGTERM
+    command: [/workspace/help/audit-regressions/isolated/lib/media-normal-profile.php, serve]
+    environment:
+      AUDIT_ISOLATED: "1"
+      AUDIT_RUN_ID: ${AUDIT_RUN_ID:?required}
+      AUDIT_RUN_DIR: /run/audit
+      AUDIT_REPO_DIR: /workspace
+      AUDIT_PROJECT: ${AUDIT_PROJECT:?required}
+      AUDIT_SOURCE_SHA: ${AUDIT_SOURCE_SHA:?required}
+      AUDIT_GUARD_MODE: read-only
+      AUDIT_MEDIA_NORMAL: "1"
+      AUDIT_MEDIA_TIMER_ROLE: "1"
+    labels:
+      tianli.audit: "1"
+      tianli.audit.run: ${AUDIT_RUN_ID}
+    volumes:
+      - source-tree:/workspace:ro
+      - source-tree:/source:ro
+      - audit-vendor:/workspace/crmeb/vendor:ro
+      - ${MEDIA_ENVIRONMENT_DIR:?required}:/media-environment:ro
+      - ${AUDIT_RUN_DIR:?required}:/run/audit
+      - app-secrets:/run/audit-app:ro
+      - media-timer-runtime:/workspace/crmeb/runtime
+      - media-uploads:/workspace/crmeb/public/uploads
+      - media-video-private:/run/audit-media-video
+      - media-scan-private:/run/audit-media-scan
+      - app-private-logs:/run/audit/evidence
+volumes:
+  source-tree:
+    external: true
+    name: ${AUDIT_PROJECT:?required}_source-tree
+  media-uploads:
+    external: true
+    name: ${AUDIT_PROJECT:?required}_media-uploads
+  app-private-logs:
+    external: true
+    name: ${AUDIT_PROJECT:?required}_app-private-logs
+  media-video-private:
+    external: true
+    name: ${AUDIT_PROJECT:?required}_media-video-private
+  media-scan-private:
+    external: true
+    name: ${AUDIT_PROJECT:?required}_media-scan-private
+  media-timer-runtime:
+    external: true
+    name: ${AUDIT_PROJECT:?required}_media-timer-runtime

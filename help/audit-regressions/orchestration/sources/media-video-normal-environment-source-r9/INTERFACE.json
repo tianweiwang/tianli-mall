@@ -1,0 +1,265 @@
+{
+  "schema": 1,
+  "scope": "ENV9_ACTUAL_941_EXACT_FRESH_SEED_PLAN_SOURCE_SUCCESSOR_NOT_RUNTIME",
+  "source_sha": "941fdc7fe81a5d5b44dfce29cf5f87c8411c0a58",
+  "host_entry": "run-environment.py",
+  "phase_order": [
+    "prepare",
+    "prepare-media",
+    "start",
+    "verify",
+    "start-timer",
+    "observe-gc",
+    "observe",
+    "close",
+    "zero"
+  ],
+  "required_arguments": [
+    "--run-dir",
+    "--source-pins-sha256",
+    "--checks-pins",
+    "--checks-pins-sha256",
+    "--fixtures-root",
+    "--large-fixtures-root",
+    "--fixtures-manifest",
+    "--fixtures-manifest-sha256",
+    "--authorize-normal-media"
+  ],
+  "checks_PINS": {
+    "files": "relative-path to whole bytes/sha256 descriptor; every declared member is read",
+    "dependencies": "actual941 committed Git-relative bytes/sha256; separate current941-media-normal-http-source-r1 preserves all original HTTP behavior and208 dependency names",
+    "required_entries": [
+      "common.php",
+      "prepare.php",
+      "verify.php"
+    ]
+  },
+  "container_entrypoints": {
+    "source_copy": "php /media-environment/install-source.php, dedicated networknone bootstrap, natural0 and ordinary rm before App",
+    "prepare": "php /media-environment/lib/harness.php __prepare",
+    "register": "php /media-environment/lib/harness.php __register",
+    "seed": "php /media-environment/lib/harness.php __seed; original code already calls audit_initialize_files once",
+    "configure_upload": "php /media-environment/configure-upload.php",
+    "prepare_media": "php /media-checks/prepare.php in audit-bootstrap",
+    "start": "php -d memory_limit=<actual derived finite memory> /media-environment/control.php start in audit-runner",
+    "verify": "php -d memory_limit=<same actual finite memory> /media-checks/verify.php in audit-runner",
+    "observe_stop": "same finite direct CLI /media-environment/control.php observe or stop",
+    "prepare_media_original_timer_dependencies": "after original HTTP prepare: committed media-normal-profile.php configure, schema (four original CLI x4), install (explicit liveRoom fixture + original GC register twice), preflight",
+    "start_timer": "only after actual complete HTTP verify0 and gc-before: preflight-timer, original dedicated supervisor channel, setsid php think timer start; all actual open original jobs plus original Task6",
+    "natural_gc": "gc-observe.php before then observe; no HTTP/issue/GC/tick call; real TTL600/cadence60 observations; planned TERM-only original child native0 before stable private log reads"
+  },
+  "mounts": {
+    "environment": "/media-environment RO",
+    "checks": "/media-checks RO",
+    "fixtures": "/media-fixtures RO; contains the original12 files, parent manifest stays a host binding input",
+    "SourceTree": "same named volume /workspace RO and /source RO, original vendor/runtime/backup child mounts retained",
+    "uploads": "audit-app /workspace/crmeb/public/uploads RW; runner /run/media-uploads-observe RO",
+    "public_Run": "/run/audit",
+    "app_private_logs": "dedicated volume /run/audit/evidence only in App, never read/exported",
+    "bootstrap_private": "/run/audit-bootstrap RW only bootstrap",
+    "app_private": "/run/audit-app bootstrap RW, App/runner RO",
+    "actor_private": "/run/audit-fixtures bootstrap RW, runner RO; absent from App",
+    "large_fixture": "runner only /media-large-fixture RO; exactly the existing 8425717B encoded MP4 per fixed HTTP LARGE-VIDEO descriptor",
+    "private_video": "new exclusive media-video-private, App/Timer/bootstrap /run/audit-media-video RW, runner RO;0700 root/0600 data",
+    "private_scan": "separate new exclusive media-scan-private, App/Timer/bootstrap /run/audit-media-scan RW, runner RO;0700 root/0600 data",
+    "timer_runtime": "new exclusive media-timer-runtime: Timer /workspace/crmeb/runtime RW, bootstrap /run/audit-media-timer-runtime RW, runner /run/media-timer-runtime-observe RO;0700/0600",
+    "timer_stream_observer": "runner RO shared private logs volume; only finite media-timer-runtime.log.stdout/stderr, never raw App logs"
+  },
+  "public_files": {
+    "media-preparation.json": [
+      "schema",
+      "run_id",
+      "source_sha",
+      "self_operated_mer_id",
+      "upload_max_bytes",
+      "status"
+    ],
+    "media-ms2-final-check.json": [
+      "schema",
+      "run_id",
+      "source_sha",
+      "self_operated_mer_id",
+      "actual_cli_receipt",
+      "native_exit",
+      "cli_control"
+    ],
+    "media-server-ini-<actualPID>.json": "only actual cli-server normal request can create; SAPI/run/source/PID plus three actual INI values",
+    "source-tree.json": "only actual Linux writer creates after complete Git files/directories/modes and tracked uploads copy readback",
+    "phase-<phase>.started.json": "actual host phase PID/start, prevents blind retry",
+    "phase-<phase>.json": "only written after actual complete phase0; not business acceptance",
+    "media-private-roots.json": "actual two roots plus dedicated Timer runtime numeric identity and timer_log {name,stat,bytes,sha256}: exclusively created real empty timer.log 0600; exact initial inode checked before Worker and after real log writes; no future values",
+    "media-timer-schema.json": "actual sixteen original schema child native/dual-stream metadata and final stage20; no business fixture",
+    "evidence/media-env7-<schema|timer-install>-cli-progress.json": "actual collected child controls even on failure; no raw private config/argv; not an acceptance result",
+    "media-timer-fixture-config.json": "explicit new normal database sole is_open switch safety summary; complete before/after row only 0600 private bootstrap",
+    "media-timer-install.json": "actual original GC registration and repeat native metadata/results",
+    "media-timer-preflight.json": "actual structure/native/config/cache/zero-candidate readiness, not scheduler execution",
+    "media-timer-preflight-before-start.json": "same original prerequisites reread after complete HTTP before actual Timer starts",
+    "media-gc-before.json": "actual two complete unexpired sessions hashed references/full real data and formal object/native DB/Redis baseline",
+    "media-gc-observed.json": "only emitted after real natural expiry, complete original observations and ordinary Timer native0; dedicated explicit configured scope only, full T4 still incomplete"
+  },
+  "runtime_ready": false,
+  "future_Run_PIDs_CIDs_migration_HTTP_SQL_commit_cleanup_results": "UNBOUND",
+  "large_file_50MiB_boundary_acceptance": false,
+  "parent_source_sha": "40a5f3c222c49dc3dfbe19d8b37177d3b7a127f3",
+  "logical_roles": [
+    "audit-bootstrap",
+    "audit-mysql",
+    "audit-redis",
+    "audit-app",
+    "audit-runner",
+    "audit-media-timer"
+  ],
+  "declared_dedicated_volume_keys": [
+    "app-private-logs",
+    "app-runtime",
+    "app-secrets",
+    "audit-vendor",
+    "backup-output",
+    "bootstrap-secrets",
+    "chat-runtime",
+    "fixture-secrets",
+    "media-scan-private",
+    "media-timer-runtime",
+    "media-uploads",
+    "media-video-private",
+    "mysql-data",
+    "redis-data",
+    "redis-secrets",
+    "runner-runtime",
+    "source-tree",
+    "worker-runtime"
+  ],
+  "actual_resource_identities_counts": "UNBOUND_NOT_CREATED",
+  "fixture_exception": "only original liveRoomStatus(id5).is_open=0 in future new dedicated normal database; all other original rows/fields retained; original entry schedules all actual open jobs",
+  "production_default_11_WeChat_full_day_month_MS6_browser": "NOT_RUN_NOT_COVERED",
+  "installation_adapter_contract": {
+    "schema": 1,
+    "mode_receipt_path": "evidence/media-installation-modes.json",
+    "original_fields_kept": true,
+    "new_mode_field": "INSERT_mode_scopes",
+    "mode_scope_counts": {
+      "original_six_flag_statements": 201,
+      "exact_five_flag_statements": 1
+    },
+    "compatibility192": [
+      "ordinal",
+      "table",
+      "source_rows",
+      "source_sha256",
+      "before",
+      "during",
+      "after",
+      "original_zero_row_count_before",
+      "original_zero_row_count_after",
+      "original_zero_row_preserved"
+    ],
+    "failure_path": "evidence/media-installation-data-failure.json",
+    "failure_exact_keys": [
+      "schema",
+      "run_id",
+      "source_sha",
+      "stage",
+      "ordinal",
+      "table",
+      "statement_sha256",
+      "exception_class",
+      "sqlstate",
+      "vendor_code"
+    ],
+    "failure_stage_enum": [
+      "adapter_plan",
+      "insert_mode_before",
+      "compatibility192_source_guard",
+      "compatibility192_count_before",
+      "compatibility192_mode_set",
+      "compatibility192_mode_verify",
+      "insert_execute",
+      "compatibility192_zero_verify",
+      "compatibility192_restore",
+      "insert_mode_after",
+      "data_modes_final",
+      "target_count",
+      "data_count_final",
+      "receipt_write"
+    ],
+    "failure_identity_nullable": true,
+    "actual_values": "UNBOUND",
+    "original_exception_priority": true,
+    "HTTP2_no_exactkeys_consumer_change": true,
+    "required_new_PHP_source_checks": [
+      "media-environment/media-seed-adapter.php",
+      "media-environment/lib/harness.php"
+    ],
+    "actual_seed_Source_qualification": {
+      "old_plan_raw_byte_reproduced": true,
+      "old_SQL": {
+        "bytes": 10237372,
+        "sha256": "7af188f42c622db523d8000c0cf50f95fa48df2fe41123969ca2dbb65ffb5eb2"
+      },
+      "old_REST": {
+        "bytes": 10060956,
+        "sha256": "48f9f44ede93fec592003a3475e2aa3e621b0f21e7d9ec0eb6fd80c9793075d7"
+      },
+      "new_SQL": {
+        "bytes": 10237459,
+        "sha256": "1e5e56c805f551a75332be58b2ab96572509c82835b812cdff3ca5c3eb7ad828"
+      },
+      "new_REST": {
+        "bytes": 10061042,
+        "sha256": "7d97145faeffb88e83c0bed53ae012830979af4c9a710559e14daace7c8dbc53"
+      },
+      "new_plan": {
+        "bytes": 50006,
+        "sha256": "6595557723ffd98a6b79445a33f37dca7e932f991ec400c9d5d3e64609104ed5"
+      },
+      "adapted_REST": {
+        "bytes": 10066454,
+        "sha256": "a777673ddb7a1674c7ed6941d4c102db409690f1e57ef2338ddf2ad846d08642"
+      },
+      "CREATE": 157,
+      "INSERT": 202,
+      "tables": 55,
+      "rows": 48251,
+      "changed_body_ordinals": [
+        73
+      ],
+      "later_offsets_delta": 86,
+      "DDL_changed_ordinal": 92,
+      "original_135_attachments_raw": true,
+      "old_8_category_tuples_raw": true,
+      "changed_columns": {
+        "error_code": {
+          "statements": 53,
+          "rows": 1153
+        },
+        "customCode": {
+          "statements": 1,
+          "rows": 11
+        }
+      },
+      "complete_inverse": true,
+      "target_execution": false
+    }
+  },
+  "actual_binding_state": "ACTUAL_CLEAN_941_LOCAL_COMMIT_SOURCE_ONLY_RUNTIME_NOT_RUN",
+  "source_successor": {
+    "predecessor": "media-video-normal-environment-source-r8",
+    "predecessor_source_sha": "941fdc7fe81a5d5b44dfce29cf5f87c8411c0a58",
+    "fresh_install_category_fix": "actual941 neutral category IDs9/10 only; all135 attachment rows and original8 categories preserved",
+    "host_changes": [
+      "foreign networks are complete JSON-native list pairs, not tuple/list mismatch",
+      "ordinary MySQL/Redis require actual exited/PID0/ExitCode0 before nonforce remove"
+    ],
+    "business_acceptance": "NOT_RUN_INCOMPLETE",
+    "old_Run_and_sealed_sources": "PRESERVED",
+    "host_changes_from_predecessor": [],
+    "exact_seed_plan_changes": [
+      "All202 INSERT statements are regenerated from actual941 SQL/REST; old202 compact plan raw bytes reproduced first",
+      "Only ordinal73 category INSERT gains two neutral rows; all later offsets increase by actual86 bytes",
+      "SQL guard at compatibility192 binds exact941 source; original192 statement identity and modes remain raw",
+      "All55 table targets retained; category8 to10 and strict total48249 to48251 are exact new seed counts",
+      "54 explicit empty TEXT adaptations, complete raw inverse,157 CREATE and202 INSERT stay strict"
+    ],
+    "unchanged_HTTP_packet": "current941-media-normal-http-source-r1; original sealed9 reused without copy or mutation"
+  }
+}

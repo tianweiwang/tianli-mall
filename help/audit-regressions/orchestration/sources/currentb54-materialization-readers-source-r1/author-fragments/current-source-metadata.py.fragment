@@ -1,0 +1,149 @@
+def validate_current_b54_metadata(source, source_pins, read, decode, check):
+    """Current Core33 and constructor input48 are separate from historical29/input28."""
+    from pathlib import Path
+    import hashlib, re, stat
+    def compact(row):return {key:row[key] for key in ('bytes','sha256')}
+    def digest(raw):return {'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest()}
+    def named(path):
+        facts=Path(path).lstat()
+        check(stat.S_ISREG(facts.st_mode) and not stat.S_ISLNK(facts.st_mode)
+            and not getattr(facts,'st_file_attributes',0)&1024,'B54_SOURCE_REGULAR_FILE_NO_REPARSE')
+        return [int(getattr(facts,key)) for key in ('st_dev','st_ino','st_mode','st_nlink','st_uid','st_gid','st_size','st_mtime_ns','st_ctime_ns')],facts.st_birthtime_ns
+    source=Path(source)
+    expected_source=Path('H:/天俪商城/artifacts/project-organization-20261023/currentb54-next-normal-preparation-r3/normal-source')
+    check(source==expected_source,'B54_EXACT_CURRENT_R3_CORE_SOURCE_ROOT')
+    expected_members={
+        'author_support.py','authority-next.py.fragment','bafb-failed-finite-checks.py.fragment',
+        'current-profile-checks.py.fragment','DIFF.patch','REVERSE.patch','namespace_static.py',
+        'source_reader.py','SOURCE-INHERITANCE.json','SOURCE-PROOF.json','SOURCE-WINDOWS.json',
+        'inputs/R1-INDEPENDENT-REPORT.json','inputs/R103-DESIGN-ADOPTION.json','inputs/R103-F1-ROOT.json',
+        'inputs/ROOT-DESIGN-ADOPTION.json','launcher/launch.py','materializer/INVERSE.json',
+        'materializer/PLAN.md','materializer/prepare.py','validation/DESIGN-TASKS.md','validation/PINS.json',
+        'validation/PROFILE-PINS.json','validation/PROFILE-PUBLICATION.json','validation/run.py',
+        'validation/actual-profile/README.md','validation/actual-profile/compose.yml',
+        'validation/actual-profile/ms4-host.py','validation/actual-profile/ms4-initialize.php',
+        'validation/actual-profile/seed-source-inverse.json','validation/actual-profile/interface-v1.json',
+        'validation/actual-profile/source-derivation.json','validation/actual-profile/normal-close-ms4-fulfillment.py',
+        'validation/actual-profile/verify-zero-ms4-fulfillment.py'}
+    check(type(source_pins['files']) is dict and set(source_pins['files'])==expected_members
+        and source_pins['member_count']==33 and len(source_pins['source_members18'])==18
+        and set(source_pins['source_members18'])<=expected_members,'B54_CURRENT33_DECLARED_SOURCE_ONLY_NOT_DYNAMIC_M_OUTPUTS')
+    current_rows={}
+    for relative,pointer in source_pins['files'].items():
+        path=source/relative
+        check(set(pointer)=={'path','bytes','sha256'} and pointer['path']==path.as_posix(),
+            'B54_CURRENT33_CANONICAL_THREE_FIELD_SOURCE_DESCRIPTOR')
+        raw=read(pointer);check(digest(raw)==compact(pointer),'B54_CURRENT33_WHOLE_SOURCE_BYTES')
+        native,birth=named(path)
+        check(native[6]==len(raw),'B54_CURRENT33_REAL_NAMED_SOURCE_LENGTH')
+        current_rows[path.as_posix()]={'path':path.as_posix(),**compact(pointer),'native9':native,
+            'birthtime_ns':birth,'metadata_origin':'CURRENT_READER_FULL_CORE33_SOURCE_READ'}
+    inherit=decode(read(source_pins['files']['SOURCE-INHERITANCE.json']))
+    historical={'path':'H:/天俪商城/artifacts/project-organization-20261023/currentbafb-next-normal-preparation-r3/normal-source/PINS.json',
+        'bytes':13638,'sha256':'7fd721b1c4b763ccdd7c798451fabe1d963e7908d3b67de04083362bf76b1279'}
+    engineering={'path':'H:/天俪商城/artifacts/project-organization-20261023/currentb54-next-normal-preparation-r2/normal-source/PINS.json',
+        'bytes':13692,'sha256':'66b613acf0cd5d98cb4ed956bd5fe0f2b53b78cb5a1f81eb331e0ae5c2d3887a'}
+    check(inherit['before']==source_pins['before_source']==source_pins['historical24_before_unchanged']==historical
+        and inherit['current_Source_identity']==source_pins['source_sha']=='b54ad9c39ca95a1b8b15ed6724082b98b1370c53'
+        and inherit['original24_fn']=={'bytes':808768,'sha256':'ff5afcdf7364f98ee2bff78ef1f5062683968a19aad34bcaac1c4979166445db'}
+        and inherit['original_source_runtime18_full_patch_inverse'] is True,
+        'B54_TRUE_HISTORICAL24_BEFORE_IS_BAFB_R3_NOT_ENGINEERING_R2')
+    successor=inherit['R105_new_root_Source_only_successor']
+    check(successor['engineering_before_R2']==source_pins['engineering_before_R2']==engineering
+        and successor['historical_before_bafbR3_unchanged']==historical
+        and successor['M_git_argv_and_functions_changed'] is successor['new_Git_stage_or_whole_or_Run'] is False
+        and successor['original982_public_bodies_not_reread_or_nested'] is True,
+        'B54_ENGINEERING_BEFORE_R2_DISTINCT_NO_NEW_WHOLE_OR_GIT_STAGE')
+    check(successor['failed_M_Root']==source_pins['R105_failed_M_preserved']
+        and successor['Root_process_only_environment_Source']==source_pins['R105_process_only_environment_Source'],
+        'B54_FAILED_SOURCE_PREPARATION_AND_PROCESS_ENV_POINTERS_PRESERVED')
+    engineer=decode(read(engineering));engineer_root=Path(engineering['path']).parent
+    check(type(engineer['files']) is dict and set(engineer['files'])==expected_members
+        and engineer['member_count']==33 and len(engineer['source_members18'])==18,
+        'B54_EXACT_ENGINEERING_R2_SOURCE33_NOT_ITS_FAILED_M_OUTPUT_NAMESPACE')
+    for relative,pointer in engineer['files'].items():
+        check(set(pointer)=={'path','bytes','sha256'} and pointer['path']==(engineer_root/relative).as_posix(),
+            'B54_ENGINEERING_R2_CANONICAL_DECLARED_SOURCE_ONLY')
+    frozen=decode(read(source_pins['files']['SOURCE-WINDOWS.json']))
+    check(set(frozen)=={'schema','files','all_first_final_own9_FD9_cross4_birth_EOF_closed',
+            'original_Run_M_S_private_ENV_body_reads','candidate_import_or_call'}
+        and frozen['schema']==1 and type(frozen['files']) is dict and len(frozen['files'])==48
+        and frozen['all_first_final_own9_FD9_cross4_birth_EOF_closed'] is True
+        and frozen['original_Run_M_S_private_ENV_body_reads'] is frozen['candidate_import_or_call'] is False,
+        'B54_TRUE48_INPUT_WINDOWS_DICTIONARY_NOT_CURRENT33_OR_OLD28_LIST')
+    prior_lint=decode(read(successor['prior_exact8PHP_actual_syntax_Root']))
+    check(prior_lint['status']=='ROOT_COMPLETE_NORMAL8_PHP82_8CHILDREN_8HOST_40PUBLIC_READBACK0'
+        and prior_lint['Root_outer_native_exit']==prior_lint['Root_outer_wait_returncode']==0
+        and prior_lint['RESULT_keys']==18 and prior_lint['host_native']==prior_lint['complete_PHP_native_wait0']==8
+        and prior_lint['total_public_files']==40 and prior_lint['business_executed'] is False,
+        'B54_PRIOR_REAL_NORMAL8_SOURCE_INPUT_NOT_A_NEW_LINT_OR_HOST_EXECUTION')
+    lint_source=Path(prior_lint['source_PINS']['path']).parent
+    lint_packet=decode(read(prior_lint['source_PINS']))
+    leaves_pointer={'path':(lint_source/'LEAVES.json').as_posix(),**compact(lint_packet['files']['LEAVES.json'])}
+    leaves=decode(read(leaves_pointer))
+    check(type(leaves) is list and len(leaves)==8 and [row['ordinal'] for row in leaves]==list(range(1,9))
+        and len({row['bundle_name'] for row in leaves})==8,'B54_EXACT_EIGHT_PRIOR_COMPILE_SOURCE_INPUTS')
+    expected_inputs={engineering['path'],*((engineer_root/name).as_posix() for name in engineer['files']),
+        successor['failed_M_Root']['path'],successor['failed_M_public_list']['path'],
+        successor['Root_process_only_environment_Source']['path'],successor['prior_exact8PHP_actual_syntax_Root']['path'],
+        prior_lint['source_PINS']['path'],leaves_pointer['path'],
+        *((lint_source/'bundle'/row['bundle_name']).as_posix() for row in leaves)}
+    check(len(expected_inputs)==48 and set(frozen['files'])==expected_inputs
+        and not any(path.startswith(source.as_posix()+'/') for path in frozen['files']),
+        'B54_EXACT48_INPUT_SOURCE_PUBLIC_PATH_SET_NO_CURRENT_SOURCE_SELF_MAP_OR_RUN_FOLLOW')
+    input_rows={}
+    for path,row in frozen['files'].items():
+        check(set(row)=={'path','bytes','sha256','named9','fd9','birthtime_ns','EOF','closed'} and row['path']==path
+            and type(row['bytes']) is int and row['bytes']>=0 and type(row['sha256']) is str
+            and re.fullmatch('[a-f0-9]{64}',row['sha256']) is not None
+            and type(row['named9']) is type(row['fd9']) is list and len(row['named9'])==len(row['fd9'])==9
+            and all(type(value) is int for value in row['named9']+row['fd9'])
+            and row['named9'][6]==row['fd9'][6]==row['bytes']
+            and [row['named9'][i] for i in (0,1,6,7)]==[row['fd9'][i] for i in (0,1,6,7)]
+            and type(row['birthtime_ns']) is int and row['EOF'] is row['closed'] is True,
+            'B54_ALL48_REAL_NAMED9_FD9_CROSS4_BIRTH_EOF_INPUT_WINDOW_SHAPES')
+        raw=read({'path':path,**compact(row)})
+        current,birth=named(path)
+        check(digest(raw)==compact(row) and current==row['named9'] and birth==row['birthtime_ns'],
+            'B54_ALL48_SOURCE_PUBLIC_FULL_BYTES_AND_REAL_SAVED_NAMED9_BIRTH_CONTINUITY')
+        input_rows[path]={'path':path,**compact(row),'native9':row['named9'],
+            'birthtime_ns':row['birthtime_ns'],'metadata_origin':'R3_CONSTRUCTOR_INPUT48_SAVED_NAMED9'}
+    for row in leaves:
+        key=(lint_source/'bundle'/row['bundle_name']).as_posix()
+        check(compact(input_rows[key])==compact(row)==compact(lint_packet['files']['bundle/'+row['bundle_name']]),
+            'B54_ALL_EIGHT_TRUE_LINT_BODY_INPUT_DESCRIPTORS_JOIN')
+    failed=decode(read(successor['failed_M_Root']));public=decode(read(successor['failed_M_public_list']))
+    check(failed['normal_Source_PINS']==engineering and failed['actual_M_PID']==35032 and failed['native_exit_wait']==1
+        and failed['native_operations']==241 and failed['preceding_native0_empty_stderr']==240
+        and failed['last_native']['native_exit']==failed['last_native']['wait_returncode']==128
+        and failed['own_M_complete_outputs']==968 and failed['outer_complete_outputs']==13
+        and failed['all_public_files']==len(public)==982 and failed['no_RESULT_or_freeze_or_S_start'] is True
+        and failed['App_DB_HTTP_Docker_Run_or_business_started'] is False
+        and failed['single_failed_attempt_preserved_no_retry'] is failed['source_environment_failure_not_business_result'] is True,
+        'B54_ENGINEERING_R2_FAILED_M_SOURCE_ONLY_FACT_NOT_NEW_APP_RUN_OR_WHOLE')
+    check(all(type(row) is dict and set(row)=={'bytes','sha256','named9','fd9','birthtime_ns','EOF','closed'}
+        and type(path) is str and Path(path).is_absolute() and row['EOF'] is row['closed'] is True
+        for path,row in public.items()),'B54982_PUBLIC_LIST_IS_NAMED_METADATA_ONLY_NO_NESTED_BODY_FOLLOW')
+    # The 982 listed output pointers above are never dereferenced by this helper.
+    return {'b54_input48':input_rows,'b54_currentCore33':current_rows}
+
+
+def validate_current_b54_intersections(authority, mappings, check):
+    """Join every genuine overlap; input48 has no invented positive-overlap promise."""
+    check(set(mappings)=={'b54_input48','b54_currentCore33'}
+        and len(mappings['b54_input48'])==48 and len(mappings['b54_currentCore33'])==33,
+        'B54_CURRENT_SOURCE33_AND_INPUT48_DISTINCT_INTERSECTION_PROVENANCE')
+    counts={}
+    for label,mapping in mappings.items():
+        count=0
+        for path,row in authority.items():
+            if path in mapping:
+                held=mapping[path]
+                check({key:row[key] for key in ('bytes','sha256')}=={key:held[key] for key in ('bytes','sha256')}
+                    and row['stat9']==held['native9'],
+                    'B54_EVERY_CURRENT_SOURCE_OR_SAVED_NAMED_INPUT_AUTHORITY_OVERLAP_PIN_AND_NATIVE9')
+                count+=1
+        if label=='b54_currentCore33':
+            check(count>0,'B54_CURRENT_CORE_HAS_GENUINE_CURRENT_PROFILE_AUTHORITY_INTERSECTIONS')
+        counts[label]=count
+    return counts

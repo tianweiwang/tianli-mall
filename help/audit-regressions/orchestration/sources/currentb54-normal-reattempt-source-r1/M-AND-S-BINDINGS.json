@@ -1,0 +1,89 @@
+{
+  "status": "SOURCE_ONLY_DISTINCT_M_BASELINE_AND_NEW_S_EXECUTION_NOT_RUN",
+  "M_engineering_before": {
+    "driver": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentb54-next-normal-preparation-r3/normal-source/validation/run.py",
+      "bytes": 28528366,
+      "sha256": "f23fd9ecee8447b0a50e328e6253ea9d73e97cc4f604b3c660f50c95f22c2deb"
+    },
+    "Root_PINS": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentb54-next-normal-preparation-r3/normal-source/validation/PINS.json",
+      "bytes": 358,
+      "sha256": "a5aba6db21420553b0cb1d9247512c0be8f5383081f41b8bf0730c46ac4f9863"
+    },
+    "RESULT": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentb54-next-normal-preparation-r3/normal-source/validation/materialize-freeze-assets-r1/RESULT.json",
+      "bytes": 265006271,
+      "sha256": "437984dd506e48300396b17ada94eda51d8c329c5d2e66463137b41e4adf96c3"
+    },
+    "freeze": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentb54-next-normal-preparation-r3/normal-source/validation/materialize-freeze-assets-r1/freeze-binding.json",
+      "bytes": 14519075,
+      "sha256": "caceceaab16b56d1177aeb8d423796d324c50a654a888526f5a0769211e3d5f0"
+    },
+    "full_acceptance": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/current41c0-normal-root-admission-r1/R108-B54-M-DUAL-READERS-ACTUAL-ROOT-ACCEPTANCE.json",
+      "bytes": 6251,
+      "sha256": "2ee996cc88a555f608a056d1d69ae64a71658a6bc31ed7270a53a2e3c8f687d7"
+    },
+    "M_PID": 16792,
+    "M37_stages25_native1160": true,
+    "new_M_executed_or_claimed": false
+  },
+  "new_S": {
+    "driver": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentb54-normal-reattempt-source-r1/candidate/normal-s.py",
+      "bytes": 28532764,
+      "sha256": "f0fb35ff9080f97496ee858a1b6a9e0ece77631f46f0e8aea5aa17bbca523a70"
+    },
+    "caller": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentb54-normal-reattempt-source-r1/launcher/launch.py",
+      "bytes": 3812,
+      "sha256": "cd22a17462a43620b1b0be52a4c36698d8ac7e392408ec249c7c6f2fe9dbfed3"
+    },
+    "native_before_Run_archive": "H:/天俪商城/artifacts/project-organization-20261023/currentb54-normal-reattempt-source-r1/native-normal-start-attempt-r1",
+    "caller_outputs_stem": "H:/天俪商城/artifacts/project-organization-20261023/currentb54-normal-reattempt-source-r1/launcher/normal-start",
+    "created_keys": [
+      "argv",
+      "pid",
+      "started_ns",
+      "process_only_git_config"
+    ],
+    "terminal_keys": [
+      "argv",
+      "pid",
+      "native_exit",
+      "wait_returncode",
+      "stdout",
+      "stderr",
+      "finished_ns",
+      "process_only_git_config"
+    ],
+    "driver_argv_items": 11,
+    "Root_admission_file": "H:/天俪商城/artifacts/project-organization-20261023/currentb54-normal-reattempt-source-r1/launcher/ROOT-NORMAL-S-ADMISSION.json",
+    "S_PID_Run_context_RESULTS": "UNBOUND_NOT_RUN"
+  },
+  "new_finite_retirement": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/current41c0-normal-root-admission-r1/R110-B54-RETIREMENT-ACTUAL-ROOT-READBACK.json",
+    "bytes": 1618,
+    "sha256": "ec9be707227f0347444ae4a116bc9e080d15e4160911194b805b76fbac13ceeb"
+  },
+  "new_whole_count": 0,
+  "success_readback_Source_successor": {
+    "root-reader.py": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentb54-normal-reattempt-source-r1/success-readers/root-reader.py",
+      "bytes": 181834,
+      "sha256": "681dd3fdb98ad8c8c259c1463373a0aa2f4f2a96a07695a72ae3c3aadd5bcf29"
+    },
+    "peer-reader.py": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentb54-normal-reattempt-source-r1/success-readers/peer-reader.py",
+      "bytes": 196685,
+      "sha256": "c112695e0f4d8504c6c2932b82e8ff1df680d07c77516a1504f5b441a2894ffd"
+    },
+    "finite-helper.py": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentb54-normal-reattempt-source-r1/success-readers/finite-helper.py",
+      "bytes": 33935,
+      "sha256": "a84cb0edd5beaa998a26f8b96819b765e8cfe83e52a62619846b431c417855c0"
+    }
+  }
+}

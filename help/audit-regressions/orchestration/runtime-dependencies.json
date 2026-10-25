@@ -503,5 +503,509 @@
     "materialize": "New entry did not participate in old actualbafb M; existing original materialize OUT/created/terminal refuse before launch. No retry or deletion authorization.",
     "S_readers": "Original live S must not invoke either reader. Six genuine successful-S CLI/context/PIDs remain UNBOUND in immutable Source until Root proves real S0 and all original gates. Source archive verification never invokes the outer.",
     "source_complete_vs_runtime": "Selected complete script texts and two raw native entries are present. Complete historical author replay/qualification/runtime inputs and cross-machine identity recovery are not delivered; runtime_ready=false."
+  },
+  "successor_source_delivery": {
+    "schema": 1,
+    "scope": "COMPLETE_SELECTED_AUTHORED_SOURCE_TEXT_NOT_PORTABLE_RUNTIME",
+    "preserved_files": 585,
+    "preserved_total_bytes": 171739425,
+    "preserved_manifest_rows_sha256": "d73c16f0be9a61a881037cccebdbf1f562dd34e9d86210c30414669b903bc4f3",
+    "selected_paths": [
+      "sources/currentb54-normal-r3/launcher/launch.py",
+      "sources/currentb54-normal-r3/materializer/INVERSE.json",
+      "sources/currentb54-normal-r3/materializer/PLAN.md",
+      "sources/currentb54-normal-r3/materializer/prepare.py",
+      "sources/currentb54-normal-r3/validation/actual-profile/compose.yml",
+      "sources/currentb54-normal-r3/validation/actual-profile/interface-v1.json",
+      "sources/currentb54-normal-r3/validation/actual-profile/ms4-host.py",
+      "sources/currentb54-normal-r3/validation/actual-profile/ms4-initialize.php",
+      "sources/currentb54-normal-r3/validation/actual-profile/normal-close-ms4-fulfillment.py",
+      "sources/currentb54-normal-r3/validation/actual-profile/README.md",
+      "sources/currentb54-normal-r3/validation/actual-profile/seed-source-inverse.json",
+      "sources/currentb54-normal-r3/validation/actual-profile/source-derivation.json",
+      "sources/currentb54-normal-r3/validation/actual-profile/verify-zero-ms4-fulfillment.py",
+      "sources/currentb54-normal-r3/validation/DESIGN-TASKS.md",
+      "sources/currentb54-normal-r3/validation/PINS.json",
+      "sources/currentb54-normal-r3/validation/PROFILE-PINS.json",
+      "sources/currentb54-normal-r3/validation/PROFILE-PUBLICATION.json",
+      "sources/currentb54-normal-r3/validation/run.py",
+      "sources/currentb54-normal-r3/author_support.py",
+      "sources/currentb54-normal-r3/source_reader.py",
+      "sources/currentb54-normal-r3/namespace_static.py",
+      "sources/currentb54-normal-r3/authority-next.py.fragment",
+      "sources/currentb54-normal-r3/current-profile-checks.py.fragment",
+      "sources/currentb54-normal-r3/bafb-failed-finite-checks.py.fragment",
+      "sources/currentb54-normal-r3/SOURCE-INHERITANCE.json",
+      "sources/currentb54-normal-r3/SOURCE-PROOF.json",
+      "sources/currentb54-normal-r3/SOURCE-WINDOWS.json",
+      "sources/currentb54-normal-r3/DIFF.patch",
+      "sources/currentb54-normal-r3/REVERSE.patch",
+      "sources/currentb54-normal-r3/PINS.json",
+      "sources/currentb54-normal-reattempt-source-r1/candidate/normal-s.py",
+      "sources/currentb54-normal-reattempt-source-r1/launcher/launch.py",
+      "sources/currentb54-normal-reattempt-source-r1/success-readers/root-reader.py",
+      "sources/currentb54-normal-reattempt-source-r1/success-readers/peer-reader.py",
+      "sources/currentb54-normal-reattempt-source-r1/success-readers/finite-helper.py",
+      "sources/currentb54-normal-reattempt-source-r1/construct_source.py",
+      "sources/currentb54-normal-reattempt-source-r1/construct_success_readers.py",
+      "sources/currentb54-normal-reattempt-source-r1/README.md",
+      "sources/currentb54-normal-reattempt-source-r1/M-AND-S-BINDINGS.json",
+      "sources/currentb54-normal-reattempt-source-r1/SOURCE-INPUTS.json",
+      "sources/currentb54-normal-reattempt-source-r1/READERS-SOURCE-INPUTS.json",
+      "sources/currentb54-normal-reattempt-source-r1/PINS.json",
+      "sources/currentb54-next-normal-export-source-r1/AUTHOR-PREPARE.py",
+      "sources/currentb54-next-normal-export-source-r1/candidate/export.py",
+      "sources/currentb54-normal-profile-source-r1/prepare.py",
+      "sources/currentb54-next-normal-preparation-r1/assemble_next_source.py",
+      "sources/currentb54-next-normal-preparation-r1/authority-next.py.fragment",
+      "sources/currentb54-next-normal-preparation-r1/current-profile-checks.py.fragment",
+      "sources/currentb54-next-normal-preparation-r1/bafb-failed-finite-checks.py.fragment",
+      "sources/currentb54-next-normal-preparation-r2/prepare_source.py",
+      "sources/currentb54-next-normal-preparation-r3/construct_source.py",
+      "sources/currentb54-original-source-callback-entry-preparation-r2/callbacks.py",
+      "sources/currentb54-root-materialize-entry-source-r2/candidate/run-b54-organized-materialize.py",
+      "sources/current41c0-normal-root-admission-r1/run-r106-b54-organized-m.py",
+      "sources/current41c0-normal-root-admission-r1/run-r107-b54-normal-s.py",
+      "sources/currentb54-materialization-readers-source-r2/root-reader.py",
+      "sources/currentb54-materialization-readers-source-r2/peer-review.py",
+      "sources/currentb54-materialization-readers-source-r2/construct_source.py",
+      "sources/currentb54-materialization-readers-source-r2/seal_source.py",
+      "sources/currentb54-materialization-readers-source-r1/construct_source.py",
+      "sources/currentb54-materialization-readers-source-r1/author-fragments/actual-observation-and-native-plan.py.fragment",
+      "sources/currentb54-materialization-readers-source-r1/author-fragments/current-b54-profile-checks.py.fragment",
+      "sources/currentb54-materialization-readers-source-r1/author-fragments/current-b54-source-checks.py.fragment",
+      "sources/currentb54-materialization-readers-source-r1/author-fragments/current-bafb-finite-checks.py.fragment",
+      "sources/currentb54-materialization-readers-source-r1/author-fragments/current-source-metadata.py.fragment",
+      "sources/currentb54-materialization-readers-source-r1/author-fragments/derive-complete-expected.py.fragment",
+      "sources/currentbafb-materialization-readers-source-r1/metadata-inheritance-checks.py.fragment",
+      "sources/currentbafb-materialization-readers-source-r1/current-warm-profile-checks.py.fragment",
+      "sources/currentbafb-materialization-readers-source-r1/current-d0a5-finite-checks.py.fragment",
+      "sources/currentb54-complete-normal-S-readers-source-r1/construct_source.py",
+      "sources/currentb54-complete-normal-S-readers-source-r2/construct_source.py",
+      "sources/currentb54-complete-normal-S-readers-source-r2/candidate/root-reader.py",
+      "sources/currentb54-complete-normal-S-readers-source-r2/candidate/peer-reader.py",
+      "sources/currentb54-complete-normal-S-readers-source-r2/candidate/finite-helper.py",
+      "sources/media-video-normal-environment-source-r9/build_git_source.py",
+      "sources/media-video-normal-environment-source-r9/INTERFACE.json",
+      "sources/media-video-normal-environment-source-r9/README.md",
+      "sources/media-video-normal-environment-source-r9/run-environment.py",
+      "sources/media-video-normal-environment-source-r9/PINS.json",
+      "sources/media-video-normal-environment-source-r9/media-environment/compose.base.yml",
+      "sources/media-video-normal-environment-source-r9/media-environment/compose.normal.yml",
+      "sources/media-video-normal-environment-source-r9/media-environment/configure-upload.php",
+      "sources/media-video-normal-environment-source-r9/media-environment/control.php",
+      "sources/media-video-normal-environment-source-r9/media-environment/gc-observe.php",
+      "sources/media-video-normal-environment-source-r9/media-environment/install-source.php",
+      "sources/media-video-normal-environment-source-r9/media-environment/media-seed-adapter.php",
+      "sources/media-video-normal-environment-source-r9/media-environment/observe-ini.php",
+      "sources/media-video-normal-environment-source-r9/media-environment/source-binding.json",
+      "sources/media-video-normal-environment-source-r9/media-environment/fixtures/ms0a.php",
+      "sources/media-video-normal-environment-source-r9/media-environment/lib/guard.php",
+      "sources/media-video-normal-environment-source-r9/media-environment/lib/harness.php",
+      "sources/current941-media-normal-http-source-r1/common.php",
+      "sources/current941-media-normal-http-source-r1/prepare.php",
+      "sources/current941-media-normal-http-source-r1/verify.php",
+      "sources/current941-media-normal-http-source-r1/README.md",
+      "sources/current941-media-normal-http-source-r1/INTERFACE.json",
+      "sources/current941-media-normal-http-source-r1/PINS.json",
+      "sources/current941-media-normal-http-source-r1/FIXTURES.json",
+      "sources/current941-media-normal-http-source-r1/INSTALLATION-UPLOADS.json",
+      "sources/current941-media-normal-http-source-r1/LARGE-VIDEO.json",
+      "sources/licence-normal-host-source-r6/licence-normal-host.py",
+      "sources/licence-normal-host-source-r6/README.md",
+      "sources/licence-normal-host-source-r6/PINS.json",
+      "sources/legacy-refund-normal-host-source-r3/legacy-refund-normal-host.py",
+      "sources/legacy-refund-normal-host-source-r3/README.md",
+      "sources/legacy-refund-normal-host-source-r3/PINS.json",
+      "sources/currentb54-materialization-readers-source-r2/DESIGN.md",
+      "sources/currentb54-materialization-readers-source-r2/SOURCE-PINS.json",
+      "sources/legacy-refund-normal-r3-memory-failed-retire-source-r1/retire.py"
+    ],
+    "selected_files": 109,
+    "selected_bytes": 92609830,
+    "archive_files": 694,
+    "archive_bytes": 264349255,
+    "archive_packages": 72,
+    "source_delivery_complete": true,
+    "runtime_ready": false,
+    "archived_programs_executed": false,
+    "original_runtime_receipts_or_private_inputs_delivered": false,
+    "complete_original_author_replay_inputs_delivered": false,
+    "source_contracts": [
+      {
+        "package": "currentb54-normal-r3",
+        "pins_path": "sources/currentb54-normal-r3/PINS.json",
+        "member_field": "files",
+        "declared_members": 33,
+        "selected_members": [
+          "DIFF.patch",
+          "REVERSE.patch",
+          "SOURCE-INHERITANCE.json",
+          "SOURCE-PROOF.json",
+          "SOURCE-WINDOWS.json",
+          "author_support.py",
+          "authority-next.py.fragment",
+          "bafb-failed-finite-checks.py.fragment",
+          "current-profile-checks.py.fragment",
+          "launcher/launch.py",
+          "materializer/INVERSE.json",
+          "materializer/PLAN.md",
+          "materializer/prepare.py",
+          "namespace_static.py",
+          "source_reader.py",
+          "validation/DESIGN-TASKS.md",
+          "validation/PINS.json",
+          "validation/PROFILE-PINS.json",
+          "validation/PROFILE-PUBLICATION.json",
+          "validation/actual-profile/README.md",
+          "validation/actual-profile/compose.yml",
+          "validation/actual-profile/interface-v1.json",
+          "validation/actual-profile/ms4-host.py",
+          "validation/actual-profile/ms4-initialize.php",
+          "validation/actual-profile/normal-close-ms4-fulfillment.py",
+          "validation/actual-profile/seed-source-inverse.json",
+          "validation/actual-profile/source-derivation.json",
+          "validation/actual-profile/verify-zero-ms4-fulfillment.py",
+          "validation/run.py"
+        ],
+        "excluded_contract_members": [
+          "inputs/R1-INDEPENDENT-REPORT.json",
+          "inputs/R103-DESIGN-ADOPTION.json",
+          "inputs/R103-F1-ROOT.json",
+          "inputs/ROOT-DESIGN-ADOPTION.json"
+        ],
+        "classification": "original qualification/adoption inputs omitted; static selected29 plus authored PINS retained; original33 namespace/runtime not delivered",
+        "runtime_ready": false
+      },
+      {
+        "package": "currentb54-normal-reattempt-source-r1",
+        "pins_path": "sources/currentb54-normal-reattempt-source-r1/PINS.json",
+        "member_field": "files",
+        "declared_members": 21,
+        "selected_members": [
+          "M-AND-S-BINDINGS.json",
+          "READERS-SOURCE-INPUTS.json",
+          "README.md",
+          "SOURCE-INPUTS.json",
+          "candidate/normal-s.py",
+          "construct_source.py",
+          "construct_success_readers.py",
+          "launcher/launch.py",
+          "success-readers/finite-helper.py",
+          "success-readers/peer-reader.py",
+          "success-readers/root-reader.py"
+        ],
+        "excluded_contract_members": [
+          "READERS-SOURCE-REVIEW.json",
+          "SOURCE-REVIEW.json",
+          "caller.FORWARD.diff",
+          "caller.REVERSE.diff",
+          "driver.FORWARD.diff",
+          "driver.REVERSE.diff",
+          "peer-reader.py.FORWARD.diff",
+          "peer-reader.py.REVERSE.diff",
+          "root-reader.py.FORWARD.diff",
+          "root-reader.py.REVERSE.diff"
+        ],
+        "classification": "nonessential generated Source forward/reverse diffs and static Source-review attachments not selected; required complete programs/authors/contracts retained",
+        "runtime_ready": false
+      },
+      {
+        "package": "media-video-normal-environment-source-r9",
+        "pins_path": "sources/media-video-normal-environment-source-r9/PINS.json",
+        "member_field": "files",
+        "declared_members": 18,
+        "selected_members": [
+          "INTERFACE.json",
+          "README.md",
+          "build_git_source.py",
+          "media-environment/compose.base.yml",
+          "media-environment/compose.normal.yml",
+          "media-environment/configure-upload.php",
+          "media-environment/control.php",
+          "media-environment/fixtures/ms0a.php",
+          "media-environment/gc-observe.php",
+          "media-environment/install-source.php",
+          "media-environment/lib/guard.php",
+          "media-environment/lib/harness.php",
+          "media-environment/media-seed-adapter.php",
+          "media-environment/observe-ini.php",
+          "media-environment/source-binding.json",
+          "run-environment.py"
+        ],
+        "excluded_contract_members": [
+          "source-input/SOURCE-TREE.json",
+          "source-input/source.tar"
+        ],
+        "classification": "generated tar/Tree excluded; selected authored16 plus PINS is17, not complete original19 execution inputs",
+        "runtime_ready": false
+      },
+      {
+        "package": "current941-media-normal-http-source-r1",
+        "pins_path": "sources/current941-media-normal-http-source-r1/PINS.json",
+        "member_field": "files",
+        "declared_members": 8,
+        "selected_members": [
+          "FIXTURES.json",
+          "INSTALLATION-UPLOADS.json",
+          "INTERFACE.json",
+          "LARGE-VIDEO.json",
+          "README.md",
+          "common.php",
+          "prepare.php",
+          "verify.php"
+        ],
+        "excluded_contract_members": [],
+        "classification": "all authored packet members retained; historical stat/native qualification is metadata, never portable runtime admission",
+        "runtime_ready": false
+      },
+      {
+        "package": "licence-normal-host-source-r6",
+        "pins_path": "sources/licence-normal-host-source-r6/PINS.json",
+        "member_field": "packet_files",
+        "declared_members": 2,
+        "selected_members": [
+          "README.md",
+          "licence-normal-host.py"
+        ],
+        "excluded_contract_members": [],
+        "classification": "all authored packet members retained; historical stat/native qualification is metadata, never portable runtime admission",
+        "runtime_ready": false
+      },
+      {
+        "package": "legacy-refund-normal-host-source-r3",
+        "pins_path": "sources/legacy-refund-normal-host-source-r3/PINS.json",
+        "member_field": "packet_files",
+        "declared_members": 2,
+        "selected_members": [
+          "README.md",
+          "legacy-refund-normal-host.py"
+        ],
+        "excluded_contract_members": [],
+        "classification": "all authored packet members retained; historical stat/native qualification is metadata, never portable runtime admission",
+        "runtime_ready": false
+      },
+      {
+        "package": "currentb54-materialization-readers-source-r2",
+        "pins_path": "sources/currentb54-materialization-readers-source-r2/SOURCE-PINS.json",
+        "member_field": "files",
+        "declared_members": 41,
+        "selected_members": [
+          "DESIGN.md",
+          "construct_source.py",
+          "peer-review.py",
+          "root-reader.py",
+          "seal_source.py"
+        ],
+        "excluded_contract_members": [
+          "CANDIDATE-CHECKS.json",
+          "CLI.json",
+          "DESIGN-BEFORE-R108.json",
+          "DESIGN.json",
+          "FINAL-INPUT-WINDOWS.json",
+          "INPUT-WINDOWS.json",
+          "INTERFACE.md",
+          "REPORT.json",
+          "SEAMS.json",
+          "SOURCE-PROOF.json",
+          "author-fragments/CURRENT-SOURCE-METADATA-NOTES.json",
+          "author-fragments/actual-observation-and-native-plan.py.fragment",
+          "author-fragments/current-b54-profile-checks.py.fragment",
+          "author-fragments/current-b54-source-checks.py.fragment",
+          "author-fragments/current-bafb-finite-checks.py.fragment",
+          "author-fragments/current-source-metadata.py.fragment",
+          "author-fragments/derive-complete-expected.py.fragment",
+          "before/CLI.json",
+          "before/PINS.json",
+          "before/REPORT.json",
+          "before/SOURCE-PINS.json",
+          "before/SOURCE-PROOF.json",
+          "before/peer-review.py",
+          "before/root-reader.py",
+          "inputs/CALLBACK-REPORT.json",
+          "inputs/CALLBACK-ROOT.json",
+          "inputs/M-OBSERVATION.json",
+          "inputs/ORIGINAL-READONLY-HELPER.py",
+          "inputs/R1-FINAL-INDEPENDENT-PINS.json",
+          "inputs/R1-FINAL-INDEPENDENT-READ-RECORDS.json",
+          "inputs/R1-FINAL-INDEPENDENT-REPORT.json",
+          "inputs/RUNTIME-PINS.json",
+          "peer-review.py.FORWARD.diff",
+          "peer-review.py.REVERSE.diff",
+          "root-reader.py.FORWARD.diff",
+          "root-reader.py.REVERSE.diff"
+        ],
+        "classification": "Authored own-source contract read by peer; selected program/design bytes copied. Remaining36 include Source-before, interface, repeated original template locations, qualification and report prerequisites not restored under the original41 namespace; do not classify all as runtime or fabricate them.",
+        "runtime_ready": false
+      }
+    ],
+    "core": {
+      "package": "currentb54-normal-r3",
+      "source_commit": "b54ad9c39ca95a1b8b15ed6724082b98b1370c53",
+      "required_program_members": 18,
+      "static_source_selection_members": 30,
+      "original_contract_members": 33,
+      "original_contract_inputs_not_delivered": 4,
+      "M_result_fields": 37,
+      "source_steps": 25,
+      "native_budget_declared_not_actual": 1160,
+      "source_required_paths": 318,
+      "new_tracked_paths": 266
+    },
+    "latest_S": {
+      "package": "currentb54-normal-reattempt-source-r1",
+      "driver": "sources/currentb54-normal-reattempt-source-r1/candidate/normal-s.py",
+      "root_reader": "sources/currentb54-normal-reattempt-source-r1/success-readers/root-reader.py",
+      "peer_reader": "sources/currentb54-normal-reattempt-source-r1/success-readers/peer-reader.py",
+      "finite_helper": "sources/currentb54-normal-reattempt-source-r1/success-readers/finite-helper.py",
+      "M_remains_core_R3": true,
+      "different_S_driver_qualification_not_M_runtime_receipt": true
+    },
+    "required_local_code_dependencies": [
+      {
+        "caller": "sources/currentb54-normal-r3/author_support.py",
+        "module": "source_reader",
+        "archive_dependency": "sources/currentb54-normal-r3/source_reader.py"
+      },
+      {
+        "caller": "sources/currentb54-original-source-callback-entry-preparation-r2/callbacks.py",
+        "module": "exact_module source_reader/author_support",
+        "archive_dependencies": [
+          "sources/currentb54-normal-r3/source_reader.py",
+          "sources/currentb54-normal-r3/author_support.py"
+        ]
+      },
+      {
+        "caller": "sources/currentb54-normal-reattempt-source-r1/success-readers/root-reader.py",
+        "module": "spec_from_file_location finite helper",
+        "archive_dependency": "sources/currentb54-normal-reattempt-source-r1/success-readers/finite-helper.py"
+      },
+      {
+        "caller": "sources/currentb54-materialization-readers-source-r2/peer-review.py",
+        "module": "literal own-source/design reads",
+        "archive_dependencies": [
+          "sources/currentb54-materialization-readers-source-r2/DESIGN.md",
+          "sources/currentb54-materialization-readers-source-r2/SOURCE-PINS.json"
+        ]
+      },
+      {
+        "caller": "sources/legacy-refund-normal-r3-memory-failed-retire-source-r1/retire.py",
+        "module": "literal historical Host source path; original identity not restored",
+        "archive_dependency": "sources/legacy-refund-normal-host-source-r3/legacy-refund-normal-host.py"
+      }
+    ],
+    "existing_archive_code_dependencies": [
+      {
+        "role": "historical_reader_text",
+        "existing_archive_path": "sources/current175f-complete-normal-S-readbacks-source-r1/before/root.py",
+        "bytes": 12417,
+        "sha256": "f76984c14e1bf004edf73d885093b6bfbecd2ff302316facfbed416f1e76a02e",
+        "runtime_original_path_or_identity_recovered": false
+      },
+      {
+        "role": "historical_readonly_helper",
+        "existing_archive_path": "sources/current175f-complete-normal-S-readbacks-source-r1/before/finite-helper.py",
+        "bytes": 33902,
+        "sha256": "4673d95c60c22f4653b6f22f833e24fb6accc3b286c555ca0462b0fb501252e0",
+        "runtime_original_path_or_identity_recovered": false
+      }
+    ],
+    "external_product_source_references": [
+      {
+        "repository": "tianweiwang/tianli-mall",
+        "commit": "057f769e37bc79c31d96b3ad05d56e8590d26768",
+        "path": "help/audit-regressions/isolated/ms2-migration-host.py",
+        "blob": "c2bbb623fec9b9af6066d010abd149492967ed54",
+        "bytes": 49769,
+        "sha256": "ba6b40f1863413f263e5c18b5163a1c8b06cd6eda5327a236364895fc0e1ec44",
+        "archive_copy": false,
+        "runtime_or_business_accepted_by_reference": false
+      }
+    ],
+    "original_absolute_paths_stat_native9_birth": "HISTORICAL_SOURCE_CONTRACT_METADATA_NOT_ARCHIVE_IDENTITY_OR_PORTABLE_QUALIFICATION",
+    "actual_new_runtime_or_business_outcome": "NOT_RUN_BY_SOURCE_HANDOFF",
+    "historical_retirement_source": {
+      "archive_path": "sources/legacy-refund-normal-r3-memory-failed-retire-source-r1/retire.py",
+      "origin_relative_file": "legacy-refund-normal-r3-memory-failed-retire-source-r1.py",
+      "bytes": 33716,
+      "sha256": "58bcb4dfdb7161c2cf648de14e38f4c30169866802f1fab797fae330c80d3fda",
+      "source_only": true,
+      "runnable": false,
+      "runtime_ready": false,
+      "runtime_receipts_delivered": false
+    }
+  },
+  "successor_required_runtime_prerequisites": [
+    {
+      "kind": "b54 core and latest S distinction",
+      "detail": "M belongs to currentb54 CoreR3; latest S and readers are the separate reattempt Source. No original M/freeze/R108/R110/reader result, native streams or successful Runtime admission is delivered."
+    },
+    {
+      "kind": "excluded qualification/adoption inputs",
+      "paths": [
+        "inputs/R1-INDEPENDENT-REPORT.json",
+        "inputs/R103-DESIGN-ADOPTION.json",
+        "inputs/R103-F1-ROOT.json",
+        "inputs/ROOT-DESIGN-ADOPTION.json"
+      ],
+      "detail": "Original static PINS retained unchanged, but these four original inputs are not in Git; do not fabricate them or remove the original33 namespace gate."
+    },
+    {
+      "kind": "Env9 generated source bundle",
+      "paths": [
+        "source-input/source.tar",
+        "source-input/SOURCE-TREE.json"
+      ],
+      "detail": "build_git_source.py is authored source; the existing generated tar/Tree are deliberately not copied. Regeneration and qualified source/environment identity require a separately reviewed recovery path, not an automatic portable claim."
+    },
+    {
+      "kind": "941 source and fixtures",
+      "detail": "The nine authored PHP/static fixture contracts refer to business941, image/SDK/installation assets, actual media fixtures and generated large MP4 qualification. Those binaries, generation results and runtime inputs are excluded. Env8 wording in original README/INTERFACE is historical; selected current environment Source is Env9."
+    },
+    {
+      "kind": "flat Host source contracts",
+      "detail": "LicenceHost6 binds864dda32 and refundHost-r3 binds92c6eaf. Their source Git/native/stat/Val metadata and absolute paths remain historical Source contracts; Root setup/normal/retirement results and new-machine identity/recovery are not supplied."
+    },
+    {
+      "kind": "MS2 repo-native entry",
+      "reference": {
+        "repository": "tianweiwang/tianli-mall",
+        "commit": "057f769e37bc79c31d96b3ad05d56e8590d26768",
+        "path": "help/audit-regressions/isolated/ms2-migration-host.py",
+        "blob": "c2bbb623fec9b9af6066d010abd149492967ed54",
+        "bytes": 49769,
+        "sha256": "ba6b40f1863413f263e5c18b5163a1c8b06cd6eda5327a236364895fc0e1ec44",
+        "archive_copy": false,
+        "runtime_or_business_accepted_by_reference": false
+      },
+      "detail": "Reference only to actual product057f769e commit/path/blob; no extra copy of product business code or claim that the old archive business tree contains it."
+    },
+    {
+      "kind": "full author replay and private setup",
+      "detail": "Necessary author programs/modules/templates are copied; complete original predecessor packages, public authorities/adoption and qualification reports, fresh private actors/configuration, pinned image environment and new full acceptance remain external. No old Run, credential or proof can be synthesized from this archive."
+    },
+    {
+      "kind": "M-reader own-source namespace",
+      "detail": "Directly read DESIGN.md and authored SOURCE-PINS.json are present. Remaining36 original41 members include historical Source-before, interface text, repeated template locations, qualification and reports; six code templates are already archived in r1 and the original readonly helper already in old585 by matching hash, but original paths/identities/full41 are not restored. They are not all runtime files; no full author replay or runnable namespace is claimed."
+    },
+    {
+      "kind": "historical failed-normal retirement source",
+      "detail": "Only the exact authored retire.py is archived, with its original Host-r3 code dependency already present. Original absolute source paths, Val/Run and Stop/CLOSE/ZERO/native receipt gates are historical and not restored; the archived program is not runnable admission. No actual runtime result or future Host-r4 is copied."
+    }
+  ],
+  "successor_offline_source_archive_verification": {
+    "status": "PASS_SOURCE_ARCHIVE_ONLY",
+    "native_exit": 0,
+    "files": 694,
+    "bytes": 264349255,
+    "packages": 72,
+    "python_ast_parsed": 250,
+    "json_parsed": 178,
+    "successor_selected_source_files": 109,
+    "successor_source_contracts": 7,
+    "successor_core_source_steps": 25,
+    "latest_S_separate_from_original_core": true,
+    "archived_programs_executed": false,
+    "runtime_ready": false
   }
 }

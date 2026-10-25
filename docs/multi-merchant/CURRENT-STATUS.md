@@ -130,3 +130,14 @@
 | `nonempty-history-host-handoff-components-source-r1` | 来源组件已冻结，最终绑定未完成，入口保持拒绝；未运行 |
 
 这些候选不能直接作为可运行发布包。published-current 两包冻结来源为归档前的 `584532ba2`；本次归档会前移 Git HEAD，不能把历史来源材料签成归档后提交已经运行。恢复时先核实际文件、原独立报告和未满足的绑定，避免把源码核对或脚本存在当作业务验收。
+
+
+## 本分支后继源码交接（2026-10-25）
+
+本轮补交109份作者源码，归档累计694文件、72包、264,349,255B；原585份与历史描述符保留原件。范围包括b54完整Core及最新独立S、M/S读回器与必要构造程序/模块/模板、Env9与941媒体HTTP、licence Host6和refund Host-r3。MS2仓库内Host引用真实产品提交057f769e及其Git路径，未在归档分支复制业务实现或合并产品分叉。
+
+完整离线核对通过693文件、249 AST、178 JSON及7份Source合同；非作者完成新增原件、历史保全与最终依赖差量复核。具体来源、核对范围和未交付项见[交接记录](records/ms4/orchestration-source-handoff.md)与[r9摘要](records/ms4/current-source-handoff-r9.json)。这项结果只证明选定源码归档的完整性。
+
+业务树仍基于2e4；原Core4份资格输入、M reader原41路径中的36项前置材料、生成tar/Tree、实际素材、完整作者重放输入和新环境身份资格尚未交齐。`runtime_ready=false`，跨机复现与业务验收仍未通过。Root另行管理实际产品分支、正常验证和Git交付，源码归档不关闭原交易、历史升级、真实支付、设备或阶段验收。
+
+最后已知源码遗漏仅补历史清退程序`legacy-refund-normal-r3-memory-failed-retire-source-r1/retire.py`原33716B及固定平面来源映射；原108份快照和Root既有核对事实保留。只归档作者程序文本，不导入其oldRun、Stop、CLOSE、ZERO或原生双流，不扩到后续Host-r4。本次完整离线检查已自然0：694文件、72包、264,349,255B，250 AST、178 JSON、109选集及7份Source合同；未执行存档程序；非作者已对最后一件原件、固定平面映射及控制差量收口Source0，未重复运行完整694检查。上段693/249 AST的核对保留其原时点与范围。

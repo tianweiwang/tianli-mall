@@ -1,0 +1,31 @@
+{
+  "scope": "before_complete_readers_and_fixed_new_driver_caller_Source_only",
+  "files": [
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentb54-normal-reattempt-source-r1/candidate/normal-s.py",
+      "bytes": 28532764,
+      "sha256": "f0fb35ff9080f97496ee858a1b6a9e0ece77631f46f0e8aea5aa17bbca523a70"
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentb54-normal-reattempt-source-r1/launcher/launch.py",
+      "bytes": 3812,
+      "sha256": "cd22a17462a43620b1b0be52a4c36698d8ac7e392408ec249c7c6f2fe9dbfed3"
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentb54-complete-normal-S-readers-source-r2/candidate/root-reader.py",
+      "bytes": 176252,
+      "sha256": "c997e6bb4ccd4712bbc3b86e7128a9d8a7324d2b86f5205d85d491f60bdb7da7"
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentb54-complete-normal-S-readers-source-r2/candidate/peer-reader.py",
+      "bytes": 190875,
+      "sha256": "d52705e5f365554c8ebd39b1be82d1de1ca7d238ec5b5929ef6cc9751fac0c57"
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentb54-complete-normal-S-readers-source-r2/candidate/finite-helper.py",
+      "bytes": 33935,
+      "sha256": "a84cb0edd5beaa998a26f8b96819b765e8cfe83e52a62619846b431c417855c0"
+    }
+  ],
+  "candidate_or_target_import_execution": false
+}

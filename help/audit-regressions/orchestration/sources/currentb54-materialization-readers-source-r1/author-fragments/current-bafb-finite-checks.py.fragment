@@ -1,0 +1,190 @@
+def validate_current_bafb_finite(values, pub, oldpub, read, decode, check):
+    from pathlib import Path
+    import hashlib,json,os,stat
+    def compact(row):return {key:row[key] for key in ('bytes','sha256')}
+    CURRENT_BAFB_FAILED_FINITE_INDEX=values['CURRENT_BAFB_FAILED_FINITE_INDEX']
+    CURRENT_BAFB_OWN_OUTPUTS=values['CURRENT_BAFB_OWN_OUTPUTS']
+    context=pub['finite_contexts']
+    failed_index=decode(read(CURRENT_BAFB_FAILED_FINITE_INDEX))
+    check(context['current_bafb_failed_finite_history']==CURRENT_BAFB_FAILED_FINITE_INDEX
+        and failed_index['scope']=='ROOT_QUALIFIED_CURRENT_BAFB_FAILED_FINITE_HISTORY_ONLY_NOT_A_NEW_WHOLE_HISTORY_OR_SUCCESS'
+        and failed_index['run_id']=='20261024174817c66be6' and failed_index['source_sha']==oldpub['source_sha']=='bafb6305062aeb6b6e945c21da572863062ca480'
+        and failed_index['original_S_pid']==20556 and failed_index['original_S_native_exit_wait']==failed_index['aftersale_review_exit']==1
+        and failed_index['Task6_exit0_retired'] is True and failed_index['worker']=='NOT_RUN' and failed_index['phase']=='real_source_cache_preparation'
+        and failed_index['failed_assertion']=='TASK78_WARM_EXACT_SERIALIZED_SOURCE_VALUE'
+        and failed_index['original_Run_first_cache_writer']=='UNPROVEN_NOT_INFERRED_FROM_COMPONENT',
+        'B54_ORIGINAL_BAFB_TRUE_S1_TASK6_RETIRED_WARM_FAILURE_FINITE_NOT_SUCCESS_OR_NEW_WHOLE')
+    failed_rows=failed_index['qualified_public']
+    check(set(failed_rows)=={'failed_projection','resource_snapshot','close_result','close_Root','zero_result','zero_Root','preserved_public_inputs','original_input_metadata_closure'},
+        'B54_ONLY_EIGHT_FIXED_SAVED_QUALIFIED_PUBLIC_REPORTS_NO_DESCRIPTOR_RECURSION')
+    failed={name:decode(read(row)) for name,row in failed_rows.items()}
+    projection=failed['failed_projection'];diagnostic=projection['diagnostic']
+    check(projection['status']=='SAFE_CURRENT_BAFB_ACTUAL_FAILED_AR_CACHE_PREPARATION_PROJECTION_ONLY'
+        and projection['run_id']==failed_index['run_id'] and projection['source_sha']==failed_index['source_sha']
+        and projection['original_S_pid']==20556 and projection['original_S_native_exit_wait']==projection['host_AR_exit']==1
+        and projection['phase']==failed_index['phase'] and projection['full_acceptance']=='INCOMPLETE'
+        and diagnostic=={'code':'TASK78_WARM_EXACT_SERIALIZED_SOURCE_VALUE','class':'RuntimeException','file':'ms4-aftersale-review-normal.php','line':117}
+        and projection['warm_failure_context']==failed_index['safe_failure_context']=={
+            'ordinal':37,'logical_name':'sys_lang_source_map','expected_null':False,'expected_wire_bytes':116796,
+            'expected_wire_sha256':'3662a8ddf48251018a88dad97ec27b45064a52f07e7149071f731bac61f53b57',
+            'raw_type':'string','raw_bytes':6,'raw_sha256':'35786c7117b4e38d0f169239752ce71158266ae2f6e4aa230fbbb87bd699c0e3'}
+        and projection['raw_matches_standard_empty_PHP_array_wire'] is projection['original_assertion_envelope_retained'] is True
+        and projection['raw_cache_values_DB_ENV_actors_private_or_original_M_S_stream_bodies_read'] is projection['current_run_restarted_or_repaired'] is False
+        and compact(projection['source_fingerprint'])=={'bytes':244912,'sha256':'a1258f537a3aa2de776d5a64afa5621141df0173e6d602feb168bd1f0c12ea0c'},
+        'B54_RETAIN_ORIGINAL_BAFB_FOUR_FIELD_DIAGNOSTIC_EIGHT_FIELD_CONTEXT_NO_FIRST_WRITER_INFERENCE')
+    snap=failed['resource_snapshot'];closed=failed['close_result'];zeroed=failed['zero_result'];close_root=failed['close_Root'];zero_root=failed['zero_Root']
+    check(snap['status']=='ROOT_CURRENT_FAILED_RUN_READONLY_SAFE_RESOURCE_STATE' and snap['resource_mutations']==0
+        and snap['raw_Run_ENV_actors_App_or_original_stream_bodies_read'] is False and snap['foreign_full_safe_fields'] is True
+        and snap['owned_counts']=={'container':4,'network':1,'volume':9} and len(snap['containers'])==4 and len(snap['networks'])==1 and len(snap['volumes'])==9 and len(snap['foreign'])==53
+        and len(snap['native_operations'])==23 and all(row['native_exit']==row['wait_returncode']==0 for row in snap['native_operations']),
+        'B54_ORIGINAL_SAFE_FOUR_ONE_NINE_AND_FOREIGN53_SNAPSHOT_NOT_NEW_RESOURCE_OPERATION')
+    check(closed['status']=='VERIFIED_AFTERSALE_REVIEW_FAILURE_NORMAL_CLOSE_ZERO_RESIDUAL' and zeroed['status']=='VERIFIED_AFTERSALE_REVIEW_FAILURE_INDEPENDENT_FRESH_SIX_QUERY_ZERO'
+        and closed['run_id']==zeroed['run_id']==snap['run_id']==failed_index['run_id'] and closed['source_sha']==zeroed['source_sha']==snap['source_sha']==oldpub['source_sha']
+        and closed['freeze_sha256']==zeroed['freeze_sha256']=='7d4a8c79a358009aff3716ea305d34ea69e8e79de17bb2972973ee384c2c2bb1'
+        and closed['original_S_pid']==20556 and closed['original_S_native_exit_wait']==closed['original_aftersale_review_exit']==1
+        and closed['original_task6_exit']==closed['original_paid_exit']==0 and closed['original_paid_status']=='EXITED_NATIVE0'
+        and closed['ordinary_nonforce_only'] is True and closed['business_acceptance']==zeroed['business_acceptance']=='INCOMPLETE'
+        and type(closed['removed']) is dict and closed['removed']=={'containers':4,'networks':1,'volumes':9} and all(type(value) is int for value in closed['removed'].values())
+        and len(closed['operations'])==90 and len(zeroed['operations'])==12 and zeroed['resource_mutations']==0
+        and zeroed['Host_imported'] is zeroed['close_imported_or_invoked'] is False
+        and zeroed['close_actual_native_operations_verified']==90 and zeroed['close_five_ordinary_mutations_verified'] is True
+        and zeroed['close_result']==failed_rows['close_result'], 'B54_FINITE_REAL_ORDINARY90_AND_INDEPENDENT12_NO_FORCE_RETRY_OR_FALSE_S0')
+    snapshot_foreign={row['id']:{**row,'mounts':sorted(row['mounts'],key=lambda value:json.dumps(value,sort_keys=True,separators=(',',':')))} for row in snap['foreign']}
+    check(len(snapshot_foreign)==53 and closed['global_foreign_baseline']==closed['global_foreign_after']==snapshot_foreign
+        and set(closed['resource_ids'].values())=={row['id'] for row in snap['containers']},
+        'B54_COMPLETE_ORIGINAL53_FOREIGN_MOUNT_MULTISET_NETWORK_AND_MODE_JOIN_SAFE_SNAPSHOT')
+    mutation_rows=[row for row in closed['operations'] if row['argv'][1:2] in (['stop'],['rm']) or row['argv'][1:3] in (['network','rm'],['volume','rm'])]
+    expected_mutations=[['stop','--timeout','-1',closed['resource_ids']['audit-mysql']],['stop','--timeout','-1',closed['resource_ids']['audit-redis']],
+        ['rm',*sorted(closed['resource_ids'].values())],['network','rm',snap['networks'][0]['Id']],['volume','rm',*sorted(row['Name'] for row in snap['volumes'])]]
+    check([row['index'] for row in mutation_rows]==[28,34,57,66,81] and [row['argv'][1:] for row in mutation_rows]==expected_mutations
+        and closed['ordinary_stop_roles']==['audit-mysql','audit-redis'], 'B54_EXACT_OLD_FIVE_ORDINARY_SAME_CID_NONFORCE_MUTATIONS')
+    check(close_root['status']=='ROOT_COMPLETE_CLOSE_NATIVE_OUTPUTS_READBACK0' and zero_root['status']=='ROOT_COMPLETE_ZERO_NATIVE_OUTPUTS_READBACK0',
+        'B54_BIND_REAL_COMPACT_ROOT_READBACK_SCHEMA_NOT_OLD_FULL_ROOT_REPORT')
+    for mode,root_report,count,mutations,outer,outputs,reads in [('close',close_root,90,5,14772,367,1415),('zero',zero_root,12,0,652,53,791)]:
+        check(set(root_report)=={'schema','status','result','source_program','native_outer_pid','native_operations','ordinary_mutations','fresh_six_native_empty','foreign_preserved','complete_output_files','full_public_EOF_reads','original_Run_and_Source_metadata_preserved','original_private_and_M_S_raw_bodies_read','failed_S1_AR1_and_Task6_0_retained','business_acceptance','completed_ns'}
+            and root_report['schema']==1 and root_report['result']==failed_rows[mode+'_result']
+            and root_report['native_outer_pid']==outer and root_report['native_operations']==count and root_report['ordinary_mutations']==mutations
+            and root_report['fresh_six_native_empty'] is root_report['original_Run_and_Source_metadata_preserved'] is root_report['failed_S1_AR1_and_Task6_0_retained'] is True
+            and root_report['foreign_preserved']==53 and root_report['complete_output_files']==outputs and root_report['full_public_EOF_reads']==reads
+            and root_report['original_private_and_M_S_raw_bodies_read'] is False and root_report['business_acceptance']=='INCOMPLETE',
+            'B54_EXACT_COMPACT_ROOT_COMPLETE_CLOSE_ZERO_QUALIFICATION')
+    bafb_own_outputs=decode(read(CURRENT_BAFB_OWN_OUTPUTS))
+    check(bafb_own_outputs['schema']==1 and bafb_own_outputs['scope']=='ROOT_PRECISE_EXISTING_BAFB_FAILED_RETIREMENT_OWN_OUTPUT_CLOSED_LIST_NOT_RUN_OUTPUTS'
+        and bafb_own_outputs['source_sha']==failed_index['source_sha'] and bafb_own_outputs['failed_finite_index']==CURRENT_BAFB_FAILED_FINITE_INDEX
+        and bafb_own_outputs['full_closed_namespace_files']==420 and bafb_own_outputs['full_closed_namespace_bytes']==12661425
+        and bafb_own_outputs['all420_full_body_EOF_and_named_FD_held_windows'] is bafb_own_outputs['only_two_fixed_prequalified_own_output_directories'] is bafb_own_outputs['original_Result_and_Source_body_pins_joined_to_prior_Root_proofs'] is True
+        and bafb_own_outputs['original_Run_private_ENV_actor_M_S_stream_reads'] is bafb_own_outputs['Docker_or_any_mutation_to_old_materials'] is False
+        and len(bafb_own_outputs['windows'])==420,
+        'B54_EXACT_FIXED_367_PLUS53_OWN_OUTPUT_ADDENDUM_NOT_ARBITRARY_ROOT_DESCRIPTOR_FOLLOW')
+    def bafb_finite_own_outputs(mode,result,root_report):
+        import os,stat
+        own_rule=bafb_own_outputs[mode]
+        own=Path(failed_rows[mode+'_result']['path']).parent
+        check(own_rule['root']==own.as_posix() and own_rule['original_qualified_result']==failed_rows[mode+'_result']
+            and own_rule['original_Root_complete_readback']==failed_rows[mode+'_Root']
+            and own_rule['original_native_ledger_count']==len(result['operations']), 'B54_OWN_LIST_REAL_RESULT_ROOT_AND_NATIVE_LEDGER_JOIN')
+        expected_root=Path('H:/天俪商城/artifacts/project-organization-20261023/currentbafb-aftersale-failed-retirement-source-r1')/('actual-'+mode+'-r1')
+        check(own==expected_root,'BAFB_FIXED_TWO_D0A5_OWN_OUTPUT_ROOTS_ONLY')
+        keys=('st_dev','st_ino','st_mode','st_nlink','st_uid','st_gid','st_size','st_mtime_ns','st_ctime_ns')
+        stamp=lambda facts:tuple(getattr(facts,key) for key in keys)
+        def safe(path,kind):
+            facts=path.lstat();check(stat.S_IFMT(facts.st_mode)==kind and not path.is_symlink() and not getattr(facts,'st_file_attributes',0)&1024,'BAFB_OWN_PUBLIC_REGULAR_NO_LINK_OR_REPARSE')
+            return stamp(facts),facts.st_birthtime_ns
+        def namespace():
+            names=[];directories=[];observations={}
+            for directory,children,files in os.walk(own,followlinks=False):
+                d=Path(directory);relative=d.relative_to(own).as_posix();directories.append(relative);observations[d.as_posix()]=safe(d,stat.S_IFDIR)
+                for child in children:safe(d/child,stat.S_IFDIR)
+                for name in files:
+                    file=d/name;names.append(file.relative_to(own).as_posix());observations[file.as_posix()]=safe(file,stat.S_IFREG)
+            return sorted(names),sorted(directories),observations
+        expected={};parents={'.'}
+        for row in own_rule['output_files']:
+            check(set(row)=={'path','bytes','sha256'},'B54_OWN_OUTPUT_LIST_EXACT_THREE_FIELD_ROWS')
+            path=Path(row['path']);check(path.is_absolute() and path.is_relative_to(own) and '..' not in path.parts and path!=own,'BAFB_EXACT_QUALIFIED_OWN_LEAF_PATH_NO_OUTSIDE_FOLLOW')
+            relative=path.relative_to(own).as_posix();check(relative not in expected,'BAFB_UNIQUE_OWN_PUBLIC_OUTPUT_PATH');expected[relative]=row
+            parents.update('/'.join(relative.split('/')[:i]) for i in range(1,len(relative.split('/'))))
+        reported=own_rule['all_own_output_files_EOF']
+        check(reported==root_report['complete_output_files']==(367 if mode=='close' else 53), 'B54_COMPACT_ROOT_AND_PRECISE_OWN_CLOSED_LIST_COUNTS')
+        check(type(reported) is int and reported==len(expected) and expected,'BAFB_OWN_OUTPUT_COUNTS_FROM_TRUE_CLOSED_LIST_NOT_FUTURE_ASSUMPTIONS')
+        first=namespace();check(first[:2]==(sorted(expected),sorted(parents)),'BAFB_EXACT_FIRST_SAVED_OWN_PUBLIC_NAMESPACE')
+        payloads={}
+        for relative,row in expected.items():
+            path=own/relative;before=safe(path,stat.S_IFREG);saved=bafb_own_outputs['windows'][path.as_posix()]
+            check(before==(tuple(saved['native9']),saved['birthtime_ns']) and saved['EOF'] is saved['closed'] is True
+                and len(saved['native9'])==len(saved['fd9'])==9 and saved['native9'][6]==row['bytes']
+                and [saved['native9'][i] for i in (0,1,6,7)]==[saved['fd9'][i] for i in (0,1,6,7)], 'B54_EXACT_ADDENDUM_OWN9_FD9_CROSS4_BIRTH_METADATA_JOIN')
+            with path.open('rb') as stream:
+                fb=os.fstat(stream.fileno());raw=stream.read();eof=stream.read(1);fa=os.fstat(stream.fileno())
+            after=safe(path,stat.S_IFREG)
+            check(eof==b'' and before==after==first[2][path.as_posix()] and stamp(fb)==stamp(fa) and fb.st_birthtime_ns==fa.st_birthtime_ns
+                and [before[0][i] for i in (0,1,6,7)]==[stamp(fb)[i] for i in (0,1,6,7)]
+                and {'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest()}==compact(row)
+                and raw==read({'path':path.as_posix(),**compact(row)}),'BAFB_ALL_FINITE_OWN_OUTPUT_FULL_EOF_HASH_OWN9_CROSS4_BIRTHTIME_AND_AUTHORITY_REGISTRATION')
+            payloads[relative]=raw
+        check(namespace()==first,'BAFB_COMPLETE_SAVED_OWN_PUBLIC_BYTES_AND_NATIVE_NAMESPACE_LAST_WINDOW')
+        check('RESULT.json' in expected and compact(expected['RESULT.json'])==compact(failed_rows[mode+'_result']) and decode(payloads['RESULT.json'])==result,'BAFB_SAME_ACTUAL_SAVED_OWN_RESULT')
+        for index,row in enumerate(result['operations'],1):
+            check(row['index']==index and type(row['pid']) is int and row['pid']>0 and row['native_exit']==row['wait_returncode']==0
+                and row['stderr_bytes']==0 and row['stderr_sha256']==hashlib.sha256(b'').hexdigest(),'BAFB_CURRENT_FINITE_NATIVE_PID_WAIT0_METADATA')
+            stem=row['stem'];made=decode(payloads[stem+'.created.json']);ended=decode(payloads[stem+'.terminal.json'])
+            check(made=={'argv':row['argv'],'pid':row['pid']} and ended==row
+                and len(payloads[stem+'.stdout'])==row['stdout_bytes'] and hashlib.sha256(payloads[stem+'.stdout']).hexdigest()==row['stdout_sha256']
+                and payloads[stem+'.stderr']==b'','BAFB_SAME_CREATED_TERMINAL_AND_TWO_FULL_NATIVE_STREAMS_NO_INNER_DESCRIPTOR_RECURSION')
+        queries=result['fresh_six_queries'];check({(row['kind'],row['label']) for row in queries}=={(kind,label) for kind in ('container','network','volume') for label in ('project','run')} and len(queries)==6,'BAFB_CURRENT_FINITE_SIX_INDEPENDENT_SINGLE_LABEL_KINDS')
+        for query in queries:
+            row=result['operations'][query['operation_index']-1]
+            check(payloads[row['stem']+'.stdout']==b'' and row['stdout_bytes']==0,'BAFB_CURRENT_FINITE_SIX_ACTUAL_EMPTY_OUTPUTS')
+    bafb_finite_own_outputs('close',closed,close_root);bafb_finite_own_outputs('zero',zeroed,zero_root)
+    all_owned_rows=bafb_own_outputs['close']['output_files']+bafb_own_outputs['zero']['output_files']
+    check(len(all_owned_rows)==len({row['path'] for row in all_owned_rows})==420 and set(bafb_own_outputs['windows'])=={row['path'] for row in all_owned_rows}
+        and sum(row['bytes'] for row in all_owned_rows)==bafb_own_outputs['full_closed_namespace_bytes'], 'B54_WHOLE_CLOSED_OWN_OUTPUT_NAMESPACE_NO_MISSING_OR_EXTRA_WINDOW')
+    preserved=failed['preserved_public_inputs'];windows=failed['original_input_metadata_closure'];frozen=closed['frozen_Source_and_original_M_S_control_metadata_preserved']
+    check(preserved['root']=='H:/天俪商城/artifacts/ms4-aftersale-review-normal-runs/20261024174817c66be6'
+        and preserved['public_full_body_files']==closed['finite_public_full_body_count']==zeroed['finite_public_full_body_count']==316
+        and preserved['other_files_named_metadata_only']==closed['other_files_metadata_only_count']==zeroed['other_Run_files_named_metadata_only_count']==11057
+        and len(preserved['files'])==11373 and len(preserved['directories'])==5
+        and sum('public_full_EOF_pin' in row for row in preserved['files'].values())==316
+        and all(row.get('body','')=='NOT READ; NAMED METADATA ONLY' for row in preserved['files'].values() if 'public_full_EOF_pin' not in row)
+        and closed['all_Run_named_metadata_namespace_preserved'] is zeroed['all_Run_and_close_named_metadata_namespace_preserved'] is True
+        and closed['private_ENV_actor_cookie_upload_appchild_body_reads']==zeroed['private_ENV_actor_cookie_upload_appchild_body_reads']==closed['original_outer_M_S_raw_stream_body_reads']==zeroed['original_outer_M_S_raw_stream_body_reads']==0,
+        'B54_ALL_ORIGINAL316_PUBLIC_AND11057_METADATA_PRESERVED_NO_ORIGINAL_RUN_BODY_REOPEN')
+    check(set(frozen)=={'public','original_outer_raw_metadata_only','initial_prepare_control_metadata','original_root_public_control_pairs','complete_normal_Source_named_namespace'}
+        and len(frozen['public'])==6 and len(frozen['original_root_public_control_pairs'])==137
+        and len(frozen['original_outer_raw_metadata_only'])==4 and all(row['body']=='NOT READ' for row in frozen['original_outer_raw_metadata_only'].values())
+        and set(frozen['initial_prepare_control_metadata']['created'])=={'argv','pid'}
+        and set(frozen['initial_prepare_control_metadata']['terminal'])=={'pid','native_exit','wait_returncode','stdout_bytes','stdout_sha256','stderr_bytes','stderr_sha256'}
+        and frozen['initial_prepare_control_metadata']['created']['pid']==frozen['initial_prepare_control_metadata']['terminal']['pid']==25700
+        and frozen['initial_prepare_control_metadata']['terminal']['native_exit']==frozen['initial_prepare_control_metadata']['terminal']['wait_returncode']==0,
+        'B54_ORIGINAL137_ROOT_PLUS_DISTINCT_PREPARE138_CONTROLS_FROZEN_WITHOUT_REOPENING_BODIES')
+    check(type(windows) is list and len(windows)==3101 and all(set(row)=={'path','bytes','sha256','named9','fd9','birthtime_ns','EOF','closed'}
+        and row['EOF'] is row['closed'] is True and len(row['named9'])==len(row['fd9'])==9
+        and row['bytes']==row['named9'][6]==row['fd9'][6]
+        and [row['named9'][i] for i in (0,1,6,7)]==[row['fd9'][i] for i in (0,1,6,7)] for row in windows),
+        'B54_ORIGINAL_SAVED_INPUT_WINDOWS_LIST_TRUE_EIGHT_FIELDS_NO_RUNTIME_REOPEN')
+    input_by_path={}
+    for row in windows:check(row==input_by_path.setdefault(row['path'],row),'B54_DUPLICATE_SAVED_INPUT_WINDOW_EXACT')
+    check(len(input_by_path)==695,'B54_ALL_ORIGINAL_INPUT_WINDOW_UNIQUE_PATHS')
+    original_root=Path(preserved['root'])
+    for pair in frozen['original_root_public_control_pairs']:
+        check(set(pair)=={'created','terminal'},'B54_ROOT_CONTROL_PAIR_DESCRIPTOR_SHAPE')
+        for kind,row in pair.items():
+            path=Path(row['path']);check(path.is_relative_to(original_root/'root-orchestration'),'B54_ROOT_CONTROLS_ONLY_METADATA_DESCRIPTORS')
+            relative=path.relative_to(original_root).as_posix()
+            check(preserved['files'][relative]['public_full_EOF_pin']==compact(row)
+                and compact(input_by_path[row['path']])==compact(row),'B54_ALL137_CONTROL_PAIR_METADATA_PINS_JOIN_SAVED_PUBLIC_AND_WINDOW_NO_ORIGINAL_BODY')
+    source_meta=frozen['complete_normal_Source_named_namespace']
+    check(source_meta['root']=='H:/天俪商城/artifacts/project-organization-20261023/currentbafb-next-normal-preparation-r3/normal-source'
+        and len(source_meta['files'])==4650 and len(source_meta['directories'])==7
+        and source_meta['public_full_body_files']==9 and source_meta['other_files_named_metadata_only']==4641,
+        'B54_COMPLETE_OLD_NORMAL_SOURCE_NAMED_METADATA_NAMESPACE_RETAINED')
+    check(failed_index['counts']=={'close_native':90,'independent_zero_native':12,'mutations':5,'containers_removed':4,'network_removed':1,'volumes_removed':9,'current_residual':0,
+        'original_root_controls':137,'separate_prepare_controls':1,'total_original_controls':138,'existing_public_full_body_reads':316,
+        'other_Run_files_metadata_only':11057,'foreign_complete_safe_containers':53,'close_complete_outputs':367,'zero_complete_outputs':53},
+        'B54_ORIGINAL_FINITE_COUNTS_EXACT_NOT_RECURSIVE_WHOLE')
+    host_proofs=('prepare','register-initializer','initializer','register-driver','driver','register-paid-producer','paid-producer',
+        'register-fulfillment-migration','fulfillment-migration','files-bootstrap','register-customer-prepare','customer-prepare','register-paid-after-c3',
+        'register-fulfillment-normal','fulfillment-normal','authorize-fulfillment-cleanup','register-aftersale-review-normal','aftersale-review-normal')
+    check(len(host_proofs)==18 and all('public_full_EOF_pin' in preserved['files']['evidence/'+proof+'-'+suffix+'.json']
+        for proof in host_proofs for suffix in ('created','terminal')),'B54_ALL_ORIGINAL18_HOST_PUBLIC_PROOF_PAIRS_RETAINED_IN_SAVED_METADATA_NO_ORIGINAL_READ')
+    return True
