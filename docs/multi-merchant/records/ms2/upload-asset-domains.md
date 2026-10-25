@@ -1800,3 +1800,145 @@ Root已保存17后台+record完整快照 `ORG/platform-chat-backend-root-review-
 非作者读真实UserAuthServices.parseToken47–79证明每次正常调用均UPDATE user.last_time；新RoomAccess.credential(api)在sameHttp内反复调用，会自改完整user快照，正常处理跨秒即可误拒/提交后unknown。未运行失败样本；这是确定Source缺陷，不以“多数同秒”忽略。Root已实际追AuthConfigGuard/JwtAuth/SessionWhitelist与原middleware/currentIdentity并采用精确修法，真实采用件 `ORG/integrated-continuation-20261026-r1/PLATFORM-CHAT-AUTH-F1-FINITE-REPAIR-ADOPTION.json`。
 
 本次只重开 `crmeb/app/services/marketplace/assets/PlatformChatRoomAccessServices.php` 的新增credential(api)分支和必要imports（修前8904B/d3eba4026bbceefe988157ff273269d4b04f89369b2ed3296d5dd40faf6786ce），改为既有AuthConfigGuard.assertRedisSessionStore→JwtAuth.decodeVerified→严格api/规范正十进制uid→SessionWhitelist.read/matches真实type/id/token的只读重验。不调用Assets.primary进入depth1，不新增DAO或写入/TTL更新；现current/room/reader/sameHttp完整原User行/PDO/depth/uid/status/is_del门全保，不mask last_time、不放宽整行比较。原HTTP AuthTokenMiddleware/UserAuth.parseToken及WS currentIdentity原认证调用/last_time全部保原正文。其它16后台仍freeze；前端冻结HTTP形状不变。任务：[ ] 单分支/import有限Source修复并全文逆回修前；[ ] 发真实新pin/diff交非作者复核；[ ] Root纯PHP82-l及后续完整普通链。作者不compile/执行目标/提交/C-D，不把有限修复签作运行通过；完成后才继续本批前端九件。
+
+
+### 2026-10-26 第三批 PLATFORM_CHAT 普通验证 Source：真实 HTTP／WS／Channel 设计与原清单任务（先记录，后编码）
+
+本批承接上述 D1–D7 和同一 T5 执行清单，不新增产品需求或第二套验收。本批真实工作树为 `H:/天俪商城/worktrees/platform-chat-normal-source`、分支 `feature/platform-chat-normal-source-20261026`，基线 `a15442d87278d6e7e9febcd86c02fdc07c54ebe5`；Root 创建回执在 `ORG/platform-chat-normal-source-creation-r1/RESULT.json`。作者已完整读取本树继承记录，并逐完整体核 17 后台等修后独立审的 234234B；本节追加前原 record 为 377405B/39dcacd1de1f1a168f792697f611f3bd950fa0745600ba3d0fdb787f447ac9bc，原历史及所有未验责任保留。git-auto-sync 已实际 project_not_enabled，不 enroll，不提交推送。本批只有 Source 编写，不执行、导入、parse/compile PHP/Node 或候选，不建 Docker/App/DB/Redis/HTTP/WS/目标，不写 C/D。真实 final HEAD/独立 Val/M/Host/Run/CID/PID、资源、fixture/native 结果及完成收据均 UNBOUND，不能用该基线或既有运行回执冒充新资格。
+
+**精确 Files**仍是已采用四件：`help/audit-regressions/isolated/ms4-platform-chat-private-normal.php`（新、具名 prepare/verify）、`help/audit-regressions/isolated/lib/platform-chat-private-profile.php`（新、唯一具名正常运行入口）、`help/audit-regressions/isolated/compose.platform-chat-private.yml`（新、原 compose 的专用 overlay）、`help/audit-regressions/isolated/lib/harness.php`（仅 exact `AUDIT_PLATFORM_CHAT_NORMAL==='1'` 条件 require 新 profile，原所有函数正文保持）。连同本 record 是作者唯一写域；17 生产、schema/SQL/vendor、旧 normal/profile、原 default/licence/refund/QR/media/B/Core/Timer、前端与旧 Host/Run 全不改。任何真实必要 callee/外发条件超出该范围，先在这里列精确事实和最小方案交 Root，不能造权限、stub 通知、删 hook、关现功能或以断网得到成功。
+
+#### N1　真实进程和调用闭包
+
+旧 `ms1-chat-entry.php:174–188` 已有实际 Workerman PHP8.2 compatibility、生产 `ChatService` 的 onConnect/onMessage/onWorkerStart/onClose 和原 `Channel\Server`/40003、chat WS/40002；该文件 208 起有无条件 main，旧 m7c_stop102–123 含 SIGKILL，故新 Source **不 import 或调用该文件**。只有限派生其已经存在的真实 App 初始化、监听进程身份核和原生产 Worker 接线，所有新控制件在本 profile 自身的真实 script/mode 入口调度；import 只声明函数。
+
+为保持 harness 只有条件 require，新 overlay 把专用 audit-app 的 command 指向新 profile `__serve`。它消费原 app-control/status 的固定 run/revision/action/overrides 合同，让原 audit_app_request/start/stop 的调用形状保留；专用入口额外核五个已有 normal flags 都关闭、当前平台 flag 精确为 1、guard read-only、manifest/注册 CID/image/IP/真实 mount/volume 身份。专用 cache prefix、private_root、new-write 布尔只接受具名精确值，不新增通用 env override。原其余 profiles 在非匹配 flag 下不加载新文件，不扩大默认 included_files。
+
+专用 supervisor 用原真实 proc_open/setsid 句柄创建一个已注册 PGID 的普通组合运行进程；组合进程保实际 HTTP `php -S :8000` 与原 Workerman chat+Channel 两子句柄和全原始双流，实际 HTTP 仍由原 Think App/生产 routes/middleware/controllers 处理。HTTP 和原 Chat/Channel 同容器同 namespace、同一注册 PGID，原 workerman.channel 的 127.0.0.1:40003 因而能被实际 `KefuServices::setTransfer` 两次 ChannelService 调用触达，不改生产 workerman.php，也不以虚构 publish 代替转接通知。WS 客户端在验证 PHP 内走真实握手、masked 客户端帧、原 Response JSON 和 close 帧；不能直接调用 ChatHandle 充作 WS/入房，也不拿 socket send 返回当 self ACK。
+
+原组身份使用 /proc 原 PID/starttime/pgid/sid/uid、原 handle、监听 inode→fd→组成员全量 join，三个端口 8000/40002/40003 必须同代；40001 admin notice 不启动。停止只对已注册本组发送一次 TERM，原句柄 wait/原退出和完整成员、三监听关闭均实际观察；标记先于 native signal，未知不重试，无 SIGKILL/force/escalation/超时强清，失败保留现场供 Root。后续 resident 资源普通非 force 清退/六次 fresh 查询双原始流为空是未来 Host 的独立合同，不能由 PHP 空集合或 strip stdout 替代。
+
+#### N2　专用持久物理与权限
+
+overlay 复用原 MySQL/Redis/internal network/镜像/已有权限，只新增独立平台聊天 private 卷，固定 `/run/audit-platform-chat`；bootstrap/app 可写、runner 只读，不能复用 QR/licence/refund 卷或公开/runtime root。prepare 用现 bootstrap/migrator 原途径初始化已有 AssetSchema 的完整三表/平台29资格，不新增 schema、改 seed 或给 App 扩权；root/0700/0600 与实际 Linux uid/device/native volume 注册必须在实际 future setup 核，不在 Source 预填值。实际 App 仍原内存/原 DML-only 身份，只有完整观察者 verify CLI 可沿已审 normal 范式固定 512M 并读回实际值/peak，不扩大 App 或宿主全局 php.ini。
+
+合成 fixture 的真实行和 session 在新隔离库/Redis中产生，完整旧 seed（包括原平台客服/通知和历史）原样保留；不把管理员当 kefu/顾客、不借商家 mer0 或 fake scope。服务必须是真实独立 Service.id 与 User.uid，目标客服另有实际原行且唯一；guest 仅原 GuestChatSession HTTP 发行和实际负 UID/租约，原正数 tourist 历史只准备真实 ownedRecord/原 log，不发行正数 guest token 或复用生产历史。prepare 必须先检查原自动历史清理时间范围、原已在线字段等真实构造副作用前提，不能靠生产构造器删除种子。每项准备 DML 和原构造副作用也进入完整 oracle，不能把 prepare 当无责任豁免。
+
+#### N3　完整普通场景（不是小函数验证）
+
+1. 实际 capabilities 的 protocol/read/write 和合法 default-false 状态；固定专用配置资格后正常 new-write=true，关回 false 时既有 BOUND 内容读与可信转接仍正常。开关资格是本隔离 profile 的明确配置，不能修改原默认值或把 disabled 当 private 成功。
+2. 顾客 api 和客服 kefu 各实际 HTTP multipart 上传，JPG/PNG/GIF/WebP 原允许图片完整 bytes、MIME/宽高/FD/native SHA 与全部29核；STAGED 本人 preview 走实际 ticket/content/header。原 quota key/100/86400、真实会话与用户 last_time 原责任分别独立期望；新增 credential 的只读 guard/JWT/whitelist 不再多写 last_time，不忽略该列。
+3. 两方实际 WS 登录、to_chat 入房、私有图片发送；等待原本人 chat ACK 的真实新 id/ref/发送人与当前 pair，原 Model/原11 log、29 首次 BOUND、首 bound_at、记录/未读/recipient 的实际 reply 或 mssage_num 及后继责任全部核。重复同房间既有 BOUND 必须生成另一真实新 log，完整29保持首次绑定而不重写；双方 BOUND 票据/content完整原图重复读取各用新实际单次票据。
+4. 同样实际 WS/HTTP链覆盖原六类中不走新 private 的文字、表情、旧 URL 图片、语音、商品与订单合法正常分支，分别核原 enrich/完整 rows/DTO；原 autoReply 通过实际配置和原真实保存/record/WS reply 验证，不手工生成 reply 冒替原 hook。在线与离线通知分支以真实当前连接和原 fixture/config 为前提；离线 tourist 的原 early return 保留，不能让它额外执行 Wechat/autoReply。
+5. 当前 guest 经原真实发行/WS 登录/入房，接收客服私有图片后用自己当前 cap 的窄 ticket/content读取；不新增 guest upload/私有生产或本人历史列表。原正数 tourist 历史由原允许客服按真实 record读/发送/转接，不能用负号/正号冒充凭据。
+6. 实际 `POST /kefuapi/service/transfer`，源有一 asset 多 log、多个 distinct asset、文字及旧 URL，保原 cutoff 和选中日志全量/顺序；每 distinct 源资产只本次 clone 一次，新独立 object/full29，真实发起 Service.id 是 creator，目标 Service.id/uid 是四 chat 字段；源对象/29/log、原 pair/首 bound_at 一字不动。成功生产路径内部实际 saveAll key→Model→PK 门保持；观察者用真实 upload ref/已 ACK 原 PK、目标 clone ref/完整 native log 差量和原输入独立核，绝不以 MAX+1/当前 pair 全查询猜 lineage，也不新增暴露 Model 的假确认 API。
+7. 原 saveRecord 新方向、已有反向、源 record 不变、type0 aux 原 cutoff更新及原两 Channel 消息，均与真实收件 WS event、完整 native 原行 join。通知 readback 不得先于/取代原 Channel 调用，Channel send 返回不等于实际收件；目标收到新 clone，顾客/原客服仍可读原 pair，目标可读新 pair。实际一次正常 HTTP POST，不重发、不注入断网/negative/fault/concurrent/recovery/K。
+
+#### N4　真实通知和禁止外发前提
+
+准备与 verify 在启动前完整盘点既有 `system_notification`/`system_event`/`system_config`、实际 synthetic sender/receiver 的 WechatUser/subscribe/openid/渠道及自动回复 key/template，保旧 rows/schema/flags。普通离线分支仅在真实受件者本就没有有效外发订阅/地址时自然不进入外发，不改 notification seed/关 hook，不凭 internal network 断网或 catch 外发失败宣称通过。需要验真实 autoReply 时用具名合成 keyword/template 和其原逻辑落库/WS收件，完整新增/更新与原父链均核，不覆盖现有配置。若原生产者的真实配置在本既有安装 seed 上必触发微信/短信/资金外部，则报告精确 callee和所需最小专用测试条件，先由 Root 在本 record 采用后才继续相关场景；本 Source 不发送外部通知，也不伪造外部成功。
+
+#### N5　独立全副作用 oracle 与输出边界
+
+沿成熟 QR/refund普通观察机制，独立 observer PDO 始终在事务外、metadata expiry=0，读取**所有原表完整 native rows**、排序原 serialize 哈希、完整 SHOW CREATE（单列 native counter）/完整索引默认与 fresh native AUTO_INCREMENT。保每表全 rows，不采样/截断，只在最后真实使用点释放 scratch；Source不削原 seed/history或原表 namespace。每一步 expected 从 before+实际 fixture/input+原生产源公式+响应/selfACK真实 PK及明确真实时间窗构造；不复制 after当expected、不统一忽略字段/所有owned prefix，不把新 asset/log之外的副作用当豁免。原用户最后活跃时间、在线/已读、原 record双向/aux/通知相关时窗逐真实动作限定。
+
+Redis 对全部 key 原 type/value 及 native PEXPIRETIME/真实 TIME 窗完整核，包含全现有 tag/语言/systemcache、SessionWhitelist、quota、GuestChatSession counter/cap/uid、原未读/通知和新 ticket 的发行/绝对期限/单次 DEL；只有逐实际 producer 说明的精确 delta允许。完整 public/private/runtime文件、目录与稳定物理身份/全 bytes/hash、App/Workerman/HTTP原生日志的实际允许增量也逐项核，不能删日志或以任意大小/前缀放行；凭据、guest cap、read ticket、绝对 private path、完整29行/文件不进入 public报告。private fixture/session/raw仅原隔离私有0700/0600位置，公开证据仅 hash/大小/计数/固定类别。实际原生同PID/argv/wait/退出和双raw须由未来Host全读，Source/report不预填PIDs/结果或制造四buildmanifest/A成功前提。
+
+#### 本批同一清单任务追加（当前只完成设计，所有实际验证仍未运行）
+
+- [x] 读继承 D1–D7/实际修后17后台，核原 QR/refund全副作用观察与原 Task7真实Chat/Channel可复用点，先追加本 normal outcome/合同/限制。
+- [ ] 在限定4验证 Files 实现具名 prepare/verify、真实HTTP/WS/Channel/profile/compose、独立完整副作用oracle；harness仅 exact flag require，原全部函数正文保持。
+- [ ] 源查全通知/原构造副作用和所有正常场景实际可达条件，必要范围差异先记本 record；完成四体完整 Source/保全证明及非作者独审，不能作者自签 Runtime。
+- [ ] Root后续单独安排必要当前PHP82纯检查、实际 clean commit/独立Val/完整namespace/blob/FD/source qualification、新不可变Host绑定；本批不提交或预签。
+- [ ] 新同一真实Run普通 prepare→verify、逐操作完整 rows/DDL/native next/Redis绝对期限/公私文件/ACK/record/autoReply/两Channel/原图全部实际通过；异常/缺前提均保未完，不改断言/扩权/假fixture通过。
+- [ ] 原同代TERM-only App组合group/全部member与8000/40002/40003关闭、原resident ordinary nonforce清退与独立六fresh raw双空，后续由Root实际串行执行；同一record保全部UI/设备/外部client/defaultcompat/发布未验责任。
+
+本批实现细化（同一正常场景）：为真实核 default-false capabilities 与“关闭新写仍保既有读/转接”，允许**前一普通 generation 已实际完整 TERM 关闭**后的有限下一代普通启动（false→true→false），不作故障恢复。每代使用原 control revision 的独占创建/终态/双原始流路径及真实组身份；每代仅一次 TERM，任何一次关闭不完整即永久 blocked，不能再次 stop/start 或 reset 信号标志。仅实际完整关闭后可重置下一代信号状态，旧收据/数据保全；全程不强杀、不恢复未知操作，不伪造资格。
+
+本批 N5 观察者预算有限采用（先记录，后实现）：Root已实际采用 `ORG/integrated-continuation-20261026-r1/PLATFORM-CHAT-NORMAL-OBSERVER-512M-ADOPTION.json`。精确 main entry `ms4-platform-chat-private-normal.php` 的 prepare/verify 两个 CLI mode才各固定512M，记录真实before/effective/allocated peak并必须读回512M；完整rows/SHOW CREATE/native next/Redis/files及最后真实使用点释放scratch不减。App/HTTP/Chat/Channel/宿主/php.ini不改，也不通过子argv/env继承CLI预算。不是声称本Run prepare已OOM：本批仍无实际Run；这是完整双快照需要的独立测试观察者容量设计。原任务中512M只写verify现有限补至prepare+verify，仍不签实际正常结果。
+
+新增真实fixture源事实（先记设计再改依赖此事实的Source）：当前安装SQL对 eb_store_product有1条原INSERT，但 eb_store_order 与 eb_store_order_cart_info均无INSERT；不能继续假定存在可clone的旧订单，或跳掉第6类订单正常消息。原 StoreOrderDao::getUserOrderDetail605–609只读当前uid/gift_uid+order_id/unique+is_del0，ChatHandle346–355随后真实tidyOrder；准备方案是在本新隔离库内以实际完整原store_order列/default/native类型构造**仅本合成顾客拥有、未支付、非活动、无外部/金融调用**的具名普通历史读fixture，实际INSERT取真实PK、完整native重选，原所有既有order/cart/金融行与原counter只允许这一精确准备增量；不调用下单/支付、不假确认API、不改原SQL/schema/权限或生产源码。合法商品仍取实际原可见产品，必要真实cartInfo只按原完整列/default及该实际商品输入写本fixture。Source expected由DDL/独立输入/真实返回PK和原时间窗构造，不由after整行回填，不把无order模板当成功前提。该有限fixture仍只在本normal entry/record内，编码前已报告Root；其它case/完整原责任继续，Source/Runtime均未签。
+
+本批 type6 读fixture已由Root实读原DAO currentowner/is_del、tidy/cartInfo与history链并有限采用，依据 `ORG/integrated-continuation-20261026-r1/PLATFORM-CHAT-NORMAL-LEGACY-ORDER-READ-FIXTURE-ADOPTION.json`。只原entry prepare exact2新增/2实际counter：本真实合成owner、原真实可见商品、quantity1及真实unit价，原完整DDL/default/native期待在DML前构造；实际lastInsertID/完整native重选。paid0、gift/活动/支付退款等关闭，不下单/支付，不冒历史生产订单/交易验收；所有旧表/金融/Redis/files原行保留。任务仍是原N3第6类与N5全oracle，不另建验证清单。
+
+N1首版自核/peer源审纠正：组合leader不能只看members/监听消失；必须记录独占created与两原始流、缓存原proc handle首次nonrunning native状态、同真实PID/argv/组与wait，并完整复核HTTP/Chat两子created/terminal/全raw指纹及实际TERM信号tuple。组合意外exit2等即保failed/blocked，绝不重置成下一代成功；原leader不得被supervisor先行pcntl_waitpid抢reap。仅正常终态/原native信号事实、全部成员及三监听均闭合后可成功，8秒仍只观测不强清；不重写-1为0。该修正是既有N1完整证据责任的实现闭合，源据不是已发生目标失败，当前无候选或目标运行。
+
+
+#### N1 原在线计时器的实际停止公式（Source 纠正，未运行）
+
+本批继续逐体读 `ChatService::onWorkerStart` 171–193 和 `onClose` 264–269：原两秒计时器分别只在当前非游客 UID 集/客服 UID 集非空时调用 `updateOnline(notUid)`；最后连接关闭后不再以空集合清全表。`onClose` 仅移除原连接身份，未写 online。初稿“先关闭所有连接再要求全表 online=0”会与原函数矛盾。保持原业务，普通观察改为保留真实 b 客服连接，正常关闭其余连接，等原计时器将这些已离开 UID 的 online 置 0；然后正常关闭最后 b，严格保留它最后 online 原值并核其余完整行。不得直接清 online、忽略字段或宣称生产修复。跨代 start/stop 不修改这些原行，所有成员及 8000/40002/40003 监听仍必须真实消失。此处仅限定旧源真实公式，不代表已发生目标执行。
+
+任务：以具体仍在线 UID 集独立构造两个原 `notUid` 完整表预期；保完整 DB/DDL/native-next/Redis/公私文件比较；最后一连接关闭也单独比较完整副作用。
+
+
+#### N1 专用真实 HTTP 就绪探针的有限调用点（Source，未运行）
+
+原 `audit_app_start` 170–178 会在控制协议 start 后 GET `/adminapi/login/info`。实际 `SystemAdminServices::getLoginInfo` 268–295 第 270–271 行总是 `uniqid()` 后 `CheckQueueJob::dispatchSecs(1, [$key])`，故它不是无副作用的聊天就绪探针。保共享 harness 全部旧函数逐字不变，本专用 entry 改用原 `audit_app_request('start', ['CACHE_PREFIX'=>..., 'PRIVATE_WRITES'=>...])` 完整原控制协议；本代 HTTP 就绪由真实 kefu Token GET `/kefuapi/service/files/capabilities` 的原 200/三键 DTO 和当前开关共同验证，再核 8000/40002/40003 全部属于原注册 PGID。使用真实 F1 纯读 kefu credential，无 stub/路由覆盖，不调用或删除 admin 登录通知/队列 hook，不以连上端口代 HTTP 响应。启动前后全 DB/Redis/公私文件及精确 Workerman 运行文件仍逐项对账。此为本专用普通入口的调用选择，不能改写旧阶段 login/info 必须 200 的历史验收。
+
+任务：闭合原 start ACK→真实三监听→该实际受权 GET→全副作用快照；原正常关闭及所有成熟 harness 函数 raw 保留。
+
+
+#### N1 原 Workerman 日志创建前置（Source，未运行）
+
+已读冻结 vendor `Worker::init` 563–567：只有 logFile 尚不存在时会 touch 后显式 chmod 0622，不能假定 umask 0077 能覆盖该 chmod。专用 profile 在调用原 `Worker::runAll` 前仅对自己的 `platform-chat-workerman.log` 做 create-only 空文件/flush/0600，后续代际严格复用原 regular/no-link/owner/0600 同路径；使原 Worker 走“文件已存在”支路。原 Worker、全部 Chat/Channel callbacks、日志文本/真实 PID/时间/完整 raw 保留，不改日志级别或丢行，也不触碰其它日志。普通 oracle 仍完整比较本文件的真实新增固定行和全 native 身份、PID 文件，其他 App runtime 字节无变。TERM 的原 Worker signalHandler 1127–1129 使用 gracefulStop=true，stopAll 1782–1791 不安装非 graceful 的 SIGKILL 计时器；测试包装层只发原 group TERM，不引入 force。
+
+
+#### N2 六类旧消息的真实媒体输入（Source）
+
+原 `ChatHandle::chat` 的 type 3 旧 URL/type 4 语音分支保存原规范化 msn，不调用私有写入口。本普通源采用仓库既存 `public/statics/system_images/admin_head_pic.png` 与 `public/admin/system_static/media/notice.367f95a9.mp3` 两个实际字节对象；固定 PHP router 仅对这两个已有公开路径返回 false 交给原 PHP static server，另用真实 GET 与源完整字节/SHA 对齐。其它全部路由继续走真实 App，不增加公开私有 fallback。type 4 仅验原消息存取、复制和已有公开媒体字节，不能签语音录制/播放 UI/设备。
+
+
+#### 本批普通验证 Source 首版编写与冻结（仅源码，不是验收）
+
+已按 N1–N5 写完约定四个验证文件：独立普通 entry 的 prepare/verify、专用同容器 HTTP＋原 Chat/Channel profile、平台聊天私有卷 compose overlay，以及共享 harness 的一个 exact flag 条件 require。原 default/licence/media/refund/QR/B/Core 函数与路由未改。entry 含实际三正常代际 false→true→false；真实 Token/WS 入房；顾客/客服 JPG/PNG/GIF/WebP、STAGED 创建者预览、BOUND 双方票据整图及重复读、同 BOUND 新真实主日志；顾客和当前实际负数游客原六类消息、type5/native 商品和 type6 两条纯读夹具的独立完整 enrichment 公式、原自动回复；顾客/当前游客双实际 Channel 转接与无伪造当前能力的正数旧游客历史转接。全部仍待真实运行，不预填业务结果或 native PID。
+
+Source 实现还明确计入原真实 auth last_time DML：API HTTP/WS、客服 `to_chat→roomTourist→recipientConnection` 对当前 API 顾客的原凭据重验，以及转接两条 Channel 到达后的 API currentIdentity；完整原 user 行仍逐字段对账。首次游客记录使用真实收件事件 PK＋原 Model 的完整输入 DTO，与新原会话计数一起校验，不能从 after 全行生成 expected。普通 transfer 对完整源集合、真实 saveAll/native 新 PK、每 distinct 新对象/29 列、完整 11 列副本、原 record/aux 和两 Channel 全 DTO 对账；源旧对象/行/绑定时间保留。
+
+完整 DB 全表行/SHOW CREATE/native-next、Redis 原类型/完整值/绝对期限、注册公私文件及物理身份保持；新增私有文件未知 inode 只作为实际 native 观察，必须完整原图字节/SHA/0600/owner/group/同卷设备/独立新 inode/真实时间窗口均满足，再精确加入指定对象，不能宽免目录。普通组合原 handle、首个真实自然终态、全双流和两子进程同代收据必须完整后才承认 TERM 关闭，异常 exit2/未知失败禁止重启或假成功；三监听及全 members 也必须实际闭合。prepare/verify 仅观察者 CLI 固定 512M，真实 before/effective/allocated peak 由未来实际程序产生，所有 App/Chat/Channel/子 argv/env/global php.ini 不扩容。
+
+作者实际只读 Git 与全字节保全证据：`artifacts/project-organization-20261023/platform-chat-normal-source-author-r1/SOURCE-PRESERVATION.json`（32085B，SHA256 `3be5da48d23566f9bd7d0d82243e9bdca930df4a55c4d4d3b757e791e50096f1`）。七次只读 Git 的原 PID/created/terminal/同 handle wait=0 与 14 原流 1479719B 保留；HEAD 仍 `a15442d87278d6e7e9febcd86c02fdc07c54ebe5`，index 空，仅四验证文件与本 record 五路径 dirty，diffcheck=0。15813 是真实 tracked namespace 计数，未冒称本批扫描所有旧源码体。已实际全读 17 生产体共 234234B，逐个等于已独审冻结体；harness 唯一 113B require 移除后整份等原 HEAD 60737B；本 record 原 377405B/SHA256 `39dcacd1de1f1a168f792697f611f3bd950fa0745600ba3d0fdb787f447ac9bc` 前缀完整保留。十个成熟 QR 纯 helper 只有限函数/断言前缀改名后整块原文相等；其它新聊天逻辑不能因此继承 QR Runtime 成功。
+
+任务状态：
+- [x] N1–N5 及实际必要 callee 事实先记录后在四文件内实现 Source 首版。
+- [x] 作者范围、原生产/共享旧函数和原记录前缀的完整字节保全核对；没有候选执行或语法检查。
+- [ ] media/Root 非作者完整 Source 审查，确定问题需在本清单收口后才可采用。
+- [ ] Root 必要 PHP8.2 语法检查及纯导入层；当前未运行，不能写通过。
+- [ ] 最终统一真实 HEAD、clean 独立 Val、Host/M/Run/容器/真实 native 全链及本普通 HTTP/WS 实际验收；全部 UNBOUND。
+- [ ] Root ordinary resource close＋独立六 fresh 查询每条真实双 raw 0B；当前没有目标资源。
+- [ ] 原 UI/设备/旧端双向发布/Full A-B/V1 和其余既有验收责任保留。停止 negative/fault/concurrent/recovery/K、真实外部/资金/部署仍 NOT RUN。
+
+本段不将作者保全或窄 helper 同源核对签成整包 Source0，不将未运行的分支/预算/峰值/通知/普通清退填成成功；没有修改 17 生产、SQL/schema/vendor/其它 profile、其它 W/Val/Host/Run、canonical C/D，也没有提交/推送。
+
+
+#### F2：首版主消息 wire 比较的两处限定类引用修正（Source，先记录后修）
+
+media 在首版 109070B/SHA256 `988ca568fe499cbebd716a187d8e73b1677e98101dbc597654d416015d01f688` 第 564 行发现 `m4pc_main_wire` 两次写成无命名空间分隔符的类名，真实首条 `chat_step` 在保存/ACK 后会调用不存在的类；普通 PHP -l 也不能证明类解析可用。Root 已逐字核实，并采用既有四文件范围内的纯实现拼写修正。保留作者 source/ 中完整错误首版，仅将两处类引用改为仓库既有 `\app\services\marketplace\order\MarketplaceOrderInput::canonical`，不更改 wire 数据、完整 expected/canonical 算法、断言、原调用、权限或预算。其它三代码文件原样。
+
+任务：两处明确有限替换、整份 forward/inverse 回到 988ca 原体，交 media 追加独审；最终三 PHP 的真实语法层由 Root 后续安排，当前仍未运行任何候选、编译或目标，不把此修正写成普通业务通过。
+
+
+#### F3：type6 原固定五键组合配置缓存来源闭合（Source，先记录后修）
+
+child DTO 窄审和 media 全文独审分别核到，真实 `ChatHandle::chat→StoreOrderServices::tidyOrder` 801–805/965–969 两次使用原 `SystemConfigService::more` 的固定顺序五键 `order_cancel_time, order_activity_time, order_bargain_time, order_seckill_time, order_pink_time`。原 more 54–66 经 `SystemConfigServices::getConfigAll` 277–281 取原 DB JSON 配置，`Arr::getDefaultValue` 26–39 逐给定键用原值/缺省空串构造完整数组，再 `CacheService::remember` 生成 `system_config_`＋该五键逗号连接的 MD5；缓存走原 serialize/无限期及 crmeb tag。首版仅预热单键会在 type6 后新增此组合键，严格全 Redis 比较将正确拒绝未登记副作用。不能跳过 type6 或忽略此差量。
+
+Root 已实读并采用 N5 已有预热合同的这一有限来源补全：只在现有 `m4pc_warm_expected` 加该唯一固定顺序组合项，expected 从原 DB getConfigAll 的完整映射及逐键缺省规则独立构造，再调用真实 more 回读必须全值相等；加入原 warm value/ttl0 集合后，已有 `m4pc_prepare_redis` 用完整 serialize 和永久 tag 集合纳入全量比较。原 cache getter/配置/标签规则、原所有 compare/DDL/rows/next/expiry 断言不改，无 prefix 豁免，其它三个代码原体不动。保留 b854 初稿和本次有限全文 inverse，交 media 追加独审。
+
+Root 已实际检查 F2 修后旧 b854 main 与 profile07c9、harness474fd 三份 PHP8.2 -n -l 全0，固定 nonroot/networknone/只读 helper 原 CID 自然 Exited0/PID0 后 nonforce rm，三 fresh 自有 purpose 查询逐条双流0B，总10 native。作者只读核其结果 `platform-chat-normal-php82-lint-r1/RESULT.json` 3823B/SHA256 `56a93e3d1050923bd9285057f86d66bc9331c43e010651a2b007dce9d8863019`，Root 快照 `platform-chat-normal-root-review-r1/SNAPSHOT.json` 1285B/SHA256 `c8bccf4e29e252125bfdca2a9a8a7463da1bb4b12da203849cf424f527d1ed30`。该层只证明所列旧体语法；新 F3 main 需 Root 唯一 changed-main 语法补查，原 profile/harness 体未改。整普通 Source0、App/SQL/Redis/HTTP/WS/Timer/构建/普通资源清退均尚未由该语法层授予，未来资格仍 UNBOUND。
+
+
+#### 修后独立 Source 审查收口（2026-10-26，普通运行仍未发生）
+
+media 已全文读取新 main/profile、原实际生产者与必要 callee，并独立核 F3 的唯一 711B 插入整份 inverse 回 b854，再核 F2 两处引用整份 inverse 回 988ca；其它三代码 raw、17 生产当前 bytes/pins 与原授权体均保留。其正式报告 `artifacts/project-organization-20261023/platform-chat-normal-source-media-review-r1/REVIEW.json` 为 7736B/SHA256 `e381fdb57da39630acd8effb87dc0ac807021fbc7d5ace5464290b2642b395ed`，结论严格为 `SOURCE0_NEW_CHAT_NORMAL_WIRING_WITH_EXPLICIT_PRIOR_AUTHOR_BODY_EXCLUSION`：新聊天 normal 接线/字段/语义已核，无剩余确定 Source 问题；该审查者以前写过的成熟 QR 纯前缀 helper 不由其重新独立签正确，其完整保全证据和 Root 非作者核对另存。
+
+child 的额外窄审只覆盖原 asset/quota/ticket/guest/cache 生产者，以及 type5/type6/Model/record/autoReply/last_time DTO 契约；发现 F3 后已如上有限修复，没有将它的窄审冒成 whole Source0。Root 最终合并范围与当前 changed-main 语法层仍须按真实收据各自记录；本段不预填。
+
+本批作者四验证文件和 record 已冻结交 Root；没有修改原 17 生产/SQL/schema/vendor/旧其它 profiles，没有候选解析、执行、目标操作或提交。只有 Root 已明示的旧 b854 三 PHP 语法检查/检查 helper 普通清退是真实已发生层；新普通 App/HTTP/WS/DB/Redis/Timer、clean 最终 HEAD/Val/Host/Run 及资源 close/六 fresh raw zero 均 UNBOUND/待验，原 Full A/B、浏览器设备、旧端发布、真实资金/外部/部署及所有停止样本状态不变。
+
+
+#### Root正常验证源码最终本地检查点（2026-10-26）
+
+四代码定稿为 main109791/abc76bd8、profile24170/07c9966d、compose843/7436cb88、harness60850/474fdc31。Root完整读取专用进程profile、prepare/Redis闭集、完整行与消息/转接/三代正常场景等关键接线；结合 media 对新接线的非作者全文审查和另一非作者对成熟 QR 纯 helper 全体保全/新consumer交界审查，确定 Source 问题均已修正。两份独审原报告、原初稿及 F2/F3 整份逆证外存保留。本记录不把旧 QR 的运行成功赋给新聊天。
+
+Root已实际补查最终 abc 主entry PHP8.2.33 -n -l=0；其余 profile/harness 与之前三-l检查体逐字相同，结果继续有效。最终补查独立 nonroot/network-none/两只读挂载 helper 原CID自然Exited0/PID0/noRestart，普通非force移除，三fresh自有purpose查询双raw均0B，总10真实native；证据 platform-chat-normal-f3-php82-lint-r1/RESULT.json。仅语法层，没有运行App/SQL/Redis/HTTP/WS/Timer，也没有UI、云、设备或构建通过。
+
+本次只把四验证代码和本record精确五路径保存本地Source提交；17生产体、SQL/schema/vendor/旧profile/默认入口全保。随后与前端40f6来源标准双父合并，本record按共同a154前缀一次＋双方完整增量保全；再固定统一最终Git与新独立Val/全树资格，准备本专用普通链和完整M/A/B。当前普通运行、清退、独立六fresh零及原产品/设备/旧client/真实渠道/人工验收责任仍待；private new-write默认false。没有push/deploy/真实资金/外发或恢复停止样本。
