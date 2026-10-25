@@ -79,10 +79,16 @@ function m4al_prepare():array
     $migrator=json_decode(file_get_contents('/run/audit-bootstrap/migrator.json'),true,16,JSON_THROW_ON_ERROR);
     m4al_expect(($migrator['username']??null)==='audit_migrator','M4AL_DEDICATED_MIGRATOR_ONLY');
     require_once audit_repo_dir().'/help/migrations/marketplace-ms4-assets.php';
-    $ddl=new MarketplaceMs4AssetMigration(audit_pdo($migrator),'eb_','audit_auth');$before=$ddl->check();$apply=$ddl->applyStructure();$after=$ddl->check();$repeat=$ddl->applyStructure();
+    $assetPdo=audit_pdo($migrator);
+    m4al_expect($assetPdo->setAttribute(PDO::ATTR_EMULATE_PREPARES,false)===true
+        &&in_array($assetPdo->getAttribute(PDO::ATTR_EMULATE_PREPARES),[false,0],true),'M4AL_ASSET_NATIVE_PREPARES');
+    $ddl=new MarketplaceMs4AssetMigration($assetPdo,'eb_','audit_auth');$before=$ddl->check();$apply=$ddl->applyStructure();$after=$ddl->check();$repeat=$ddl->applyStructure();
+    m4al_write(audit_run_dir().'/evidence/ms4-agent-licence-asset-migration.json',m4al_json([
+        'scope'=>'CU_LICENCE_NORMAL_ASSET_MIGRATION_RECEIPTS_ONLY','run_id'=>$manifest['run_id'],'source_sha'=>$manifest['commit_sha'],
+        'check_before'=>$before,'apply'=>$apply,'check_after'=>$after,'repeat_apply'=>$repeat]));
     m4al_expect($before['native_exit']===0&&$apply['native_exit']===0&&$after['native_exit']===0&&$after['state']==='completed'
         &&$repeat['native_exit']===0&&$repeat['changed']===false,'M4AL_ORIGINAL_ASSET_CREATE_CHECK_REPEAT');
-    unset($ddl,$migrator);$db=audit_db();
+    unset($ddl,$assetPdo,$migrator);$db=audit_db();
     foreach(['eb_marketplace_customer_asset','eb_division_agent_apply']as$table)
         m4al_expect(m4al_rows($db,'SELECT * FROM `'.$table.'`')===[],'M4AL_NEW_INSTANCE_NO_EXISTING_ASSET_OR_APPLICATION');
     $accounts=json_decode(file_get_contents('/run/audit-fixtures/accounts.json'),true,32,JSON_THROW_ON_ERROR);

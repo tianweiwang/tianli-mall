@@ -861,3 +861,11 @@ App正常停止由原supervisor同句柄完成，要求原组/8000监听为空�
 Root补核后的状态保留约束：首次普通stop不完整后闭锁后继stop/start，只有原observe可继续只读观察；不会第二次signal、close或清空原generation。后续失败状态还须保留首次不完整stop的原revision/句柄/组/监听事实，不能用一次被拒绝的start覆盖首次原因。该固定profile在supervisor内保留首次快照并随失败状态重复发布；其它profile无此闭锁变化。
 
 Root修后实际检查（2026-10-25）：最终normal入口37405/5d9d1406与harness55618/9027eacd经完整源码独审无剩余确定缺陷；固定PHP8.2.33两整文件纯-l实际2/2自然0，8原生0/空stderr，专用network-none/nonroot/只读源/tmpfs容器普通移除、前后专用label查询空。原14生产PHP完整字节仍等此前已过语法的版本。仓库外证据licence-normal-fixture-php82-syntax-r2/RESULT.json。此不执行App/HTTP/业务或停止样本。Root按已授权L2保存22路径限定本地checkpoint，仅为后续clean实际HEAD/独立Val绑定；正式正常业务/资源回收核零及BROWSER/设备仍待，不标功能交付通过，不推送或部署。
+
+2026-10-25 正常准备214失败的实证与修订设计（先记录，后改Source）：旧实例2026102501391094fcd4的native214只进入ENTRY prepare，因M4AL_ORIGINAL_ASSET_CREATE_CHECK_REPEAT自然2；prepare/verify结果均未产生，真实HTTP未开始。Root同bootstrap只读diag-r1/RESULT（2657B，SHA256 1f43b673c47e8d1e86d5dc805c0c3aa138aaa22896dbdc396c43db2c99abc9cf）确认原audit_pdo的emulate=1及check inspection_failed；局部false后的diag-r3/RESULT（2222B，SHA256 52b621dde4e7c14e758476a8f5b7d8531c55829ca17012998f92db3373e52898）确认仍缺strict mode；diag-r4/RESULT（2188B，SHA256 0268dd7e7131953cabd88e7570f14bfcd52b719f3c5324bf61bd2731ae669df9）确认SESSION/GLOBAL均只有NO_ENGINE_SUBSTITUTION，SELECT/TRIGGER直授予已具备。没有改权限、SQL mode或DDL。这是两个准备前提遗漏，缺表本身的applicable/native0合同正确，原四步合并断言不改。
+
+本次仅修改本normal prepare的局部assetPdo：关闭PDO::ATTR_EMULATE_PREPARES并实际读取确认native prepares，再执行原check/apply/check/repeat和全部原断言；在该合并断言前把四份完整真实receipt写入本RUN evidence的create-only私有0600文件，保留changed/attempted/applied/phase/lock等原始责任信息，不合成DDL结果。不改通用audit_pdo、生产逻辑、迁移schema或权限。新Host setup另由Root安排在原legacy seed完成后，仅为全新专用ISO实例设置并确认GLOBAL strict且保NO_ENGINE_SUBSTITUTION，避免更早strict改变旧安装SQL的导入行为；之后新连接须确认SESSION strict。作者不修改该Host或旧Val/Caller/Run。
+
+旧214及其stdout/stderr、既有准备/续行失败历史、原源码和场景永久保留，不重跑当前prepare、不补丁运行旧App，不用既有全成功close合同冒签当前失败可直接收尾。Root将对本次Source独审/实际PHP8.2语法后保存新checkpoint，绑定新clean HEAD/独立Val并fresh ISO验证；HTTP、业务、视觉/设备及19交付组均仍待，不以本修订或既有旧语法结果标新版本通过。
+
+本次作者实际检查仅为两文件UTF-8/LF、PHP字符串/注释/括号词法平衡、原全部断言code与四回执合并断言保持及git diff --check均0；不是PHP解析或运行。只出现这两条tracked路径差量，作者停写；实际PHP8.2语法、独审、新checkpoint及新ISO正常验证交Root执行，未提交/推送，也未触碰旧Val/Caller/Run。
