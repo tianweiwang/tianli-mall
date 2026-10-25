@@ -815,12 +815,16 @@ function m4pc_runtime_expected(array $before,array $after,string $oldLog,string 
             &&m4pc_file_descriptor($observationBase.'.start-workers.json',true)===$capture['workers_file'],'M4PC_ORIGINAL_CREATE_ONLY_START_EVIDENCE_PRESERVED');
         $observation=json_decode(file_get_contents($observationBase.'.start-workers.json'),true,64,JSON_THROW_ON_ERROR);m4pc_expect($observation===$capture['observation'],'M4PC_COMPLETE_ORIGINAL_WORKER_METADATA');$workers=$observation['workers'];
     }
-    $lines=explode("\n",substr($raw,strlen($oldLog)));m4pc_expect(array_pop($lines)===''&&($phase==='start'?count($lines)===1:(count($lines)>=2&&count($lines)<=8)),'M4PC_EXACT_NATIVE_WORKERMAN_LOG_COUNT');$addition='';$masterMessages=[];$vectors=['channel'=>[],'chat'=>[]];
+    $lines=explode("\n",substr($raw,strlen($oldLog)));m4pc_expect(array_pop($lines)===''&&($phase==='start'?count($lines)===1:(count($lines)>=2&&count($lines)<=10)),'M4PC_EXACT_NATIVE_WORKERMAN_LOG_COUNT');$addition='';$masterMessages=[];$vectors=['channel'=>[],'chat'=>[]];$workerNames=['channel'=>'ChannelServer','chat'=>'AuditPlatformChatOrdinary'];$waitReceipts=['channel'=>null,'chat'=>null];
     foreach($lines as$i=>$line){m4pc_expect(preg_match('/\A([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}) pid:([1-9][0-9]*) (.*)\z/D',$line,$m)===1,'M4PC_EXACT_ORIGINAL_LOG_LINE_FORMAT');
         $at=strtotime($m[1]);m4pc_expect(is_int($at)&&$at>=$window['start']&&$at<=$window['end'],'M4PC_RUNTIME_LOG_REAL_TIME_WINDOW');$actor=(int)$m[2];$message=$m[3];
         if($phase==='start')m4pc_expect($actor===$pid&&$message==='Workerman['.audit_repo_dir().'/help/audit-regressions/isolated/lib/platform-chat-private-profile.php] start in DEBUG mode','M4PC_EXACT_ORIGINAL_LOG_SOURCE_MESSAGE_AND_PID');
         elseif($actor===$pid&&in_array($message,['Workerman[platform-chat-private-profile.php] stopping ...','Workerman[platform-chat-private-profile.php] has been stopped'],true)){
             m4pc_expect(!isset($masterMessages[$message]),'M4PC_ONE_ORIGINAL_MASTER_MESSAGE');$masterMessages[$message]=$i;
+        }elseif($actor===$pid){
+            $role=null;foreach($workerNames as$candidate=>$name)if($message==='worker['.$name.':'.$workers[$candidate]['pid'].'] exit with status 15')$role=$candidate;
+            m4pc_expect($role!==null&&$waitReceipts[$role]===null,'M4PC_SAME_ORIGINAL_WORKER_RAW_TERM_WAIT_RECEIPT');
+            $waitReceipts[$role]=['role'=>$role,'name'=>$workerNames[$role],'pid'=>$workers[$role]['pid'],'raw_status'=>15,'line_index'=>$i];
         }else{
             $role=$actor===$workers['channel']['pid']?'channel':($actor===$workers['chat']['pid']?'chat':null);
             m4pc_expect($role!==null&&preg_match('/\Aworker\['.preg_quote((string)$actor,'/').'\] remains (0|[1-9][0-9]*) connection\(s\)\z/D',$message,$count)===1,'M4PC_SAME_ORIGINAL_WORKER_DESTRUCTOR_MESSAGE');$vectors[$role][]=(int)$count[1];
@@ -832,6 +836,8 @@ function m4pc_runtime_expected(array $before,array $after,string $oldLog,string 
         m4pc_expect(count($masterMessages)===2&&isset($masterMessages['Workerman[platform-chat-private-profile.php] stopping ...'])
             &&($masterMessages['Workerman[platform-chat-private-profile.php] has been stopped']??null)===count($lines)-1
             &&$masterMessages['Workerman[platform-chat-private-profile.php] stopping ...']<count($lines)-1,'M4PC_ORIGINAL_MASTER_REAP_PARTIAL_ORDER');
+        foreach($waitReceipts as$receipt)if($receipt!==null)m4pc_expect($masterMessages['Workerman[platform-chat-private-profile.php] stopping ...']<$receipt['line_index']
+            &&$receipt['line_index']<$masterMessages['Workerman[platform-chat-private-profile.php] has been stopped'],'M4PC_ORIGINAL_WORKER_TERM_WAIT_BETWEEN_MASTER_STOP_MESSAGES');
         $requests=$GLOBALS['m4pc_requests']??0;$frames=$GLOBALS['m4pc_ws_frames']??0;m4pc_expect(is_int($requests)&&$requests>=$observation['http_count_after_readiness']
             &&is_int($frames)&&$frames>=$observation['ws_frame_count'],'M4PC_REAL_GENERATION_REQUEST_FRAME_COUNTER_DELTAS');
         // Independent upper bound only: completed HTTP after start, known readiness HTTP, sent WS frames,
@@ -843,7 +849,7 @@ function m4pc_runtime_expected(array $before,array $after,string $oldLog,string 
             'start_workers_file'=>$capture['workers_file'],'start_http_after_readiness'=>$observation['http_count_after_readiness'],'stop_http'=>$requests,
             'start_ws_frames'=>$observation['ws_frame_count'],'stop_ws_frames'=>$frames,'known_readiness_http'=>1,'original_chat_channel_connection'=>1,
             'conservative_at_most_one_incomplete_no_retry_http'=>1,'independent_count_upper_bound'=>$bound,'not_actual_active_object_count'=>true,
-            'original_destructor_n_range'=>[0,$bound],'whole_worker_vectors'=>$vectors,'master_line_positions'=>$masterMessages,
+            'original_destructor_n_range'=>[0,$bound],'whole_worker_vectors'=>$vectors,'master_line_positions'=>$masterMessages,'worker_term_wait_receipts'=>$waitReceipts,
             'exact_addition'=>['bytes'=>strlen($addition),'sha256'=>hash('sha256',$addition)],'stop_window'=>$window]));
     }
     $wanted=$before;$wanted['directories']['session']=$sessionExpected;ksort($wanted['directories'],SORT_STRING);$descriptor=$after['files'][$log]??null;m4pc_expect(is_array($descriptor)&&$descriptor['bytes']===strlen($oldLog.$addition)&&$descriptor['sha256']===hash('sha256',$oldLog.$addition)

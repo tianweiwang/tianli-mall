@@ -2104,3 +2104,26 @@ Root采用platform-chat-first-start-failure-diagnostic-root-design-r1/ADOPTION.j
 Root已完整读两函数和22有限缝并整文件正逆，原15具名函数和主入口raw、既有进程/TCP/信号/时限调用数保持；独立observe接线审与安全I/O窄审均未报确定问题。原严格ports相等及40001拒绝、五角色/12s、原TERM8s和全部业务门不改。reason_code表示固定操作上下文，实际抛错位置仍须看首失败owned source_line；旧Run具体guard不因此回填。Root另以固定297b PHP8.2.33 nonroot/networknone/RO helper真实-n-l最终profile一次为0；helper自然Exited0/PID0/noRestart后nonforce移除、三fresh purpose查询双raw0，共10native原件已完整读回，证据platform-chat-first-start-diagnostic-php82-syntax-r1/RESULT.json。没有执行停止的异常/I/O故障样本。
 
 本次仅profile+原record两路径本地提交并统一ff；下一步真实新Git/idle独立Val2全树/新Host/fresh完整normal仍待。Run202610252221284448cc原失败保留且已实际普通close/独立sixfresh双raw-zero；旧Val1/Run202610252059380a34ef保留未清退，不对其操作。当前不签完整M/A/B/UI/设备/真实支付或发布；未推送部署。
+
+
+### 原生 worker TERM wait 日志的有限模型（Source候选，2026-10-26）
+
+Root已采用platform-chat-worker-term-wait-log-root-adoption-r1/ADOPTION.json与DESIGN.md7999B/1cba0010。原e37/Host7/Run20261025231445efcc78实际setup0、prepare1450、verify1461，首次start已完成并保存原两worker身份；本次失败为原stop日志断言M4PC_SAME_ORIGINAL_WORKER_DESTRUCTOR_MESSAGE，原完整日志的master21为已捕获ChannelServer22记录raw wait status15。不能冒正常exitcode15，也不能归因为上一Run的首次startup UNKNOWN guard。
+
+本候选仅main的m4pc_runtime_expected：原start恰一条不变；stop固定分类总上界2..10（master两条＋每worker原remains至多3条＋每worker新增monitor收据至多1条）。新增monitor记录者必须是本代原master，name仅原源ChannelServer/AuditPlatformChatOrdinary，PID仅同代start完整捕获的原worker，message精确raw status15；每role可选0或1，重复/其它name、actor、PID、status均拒绝。每条必须严格位于原唯一stopping之后与最终has-stopped之前；原remains仍可先于stopping，完整有限catalog整向量与独立HTTP/WS上界原字节保持。
+
+stop-log-proof仅增加channel/chat各自校验后的role/name/pid/raw_status15/line_index，缺失明确null。它不授予或更新expected身份；原start捕获描述符、UID/native字段、catalog/vectors/请求帧计数、master索引、addition完整bytes/hash/window均保。原全量prefix、0600/UID/nlink/inode/time-window、FullRuntime全树、完整DB/Redis/files/业务cases、原组和全部created/terminal/raw/samehandle/master自然0/TERM-only8s/监听空/no-force保持。
+
+- [x] 仅外部main+本record候选、整份有限正逆与66函数保全；原65函数和主入口逐字节不改，profile/vendor/生产业务及前端不改。
+- [x] 本record原e37完整442561B/bbd49d6c前缀及全部N9/云根/BUI/首失败诊断增量保留，仅追加本设计与任务。
+- [ ] 非作者有限Source审、Root完整审与必要真实PHP语法；当前仅作者字节保全，不签Source0/语法/Runtime。
+- [ ] Root完成本失败Run普通close/独立sixfresh双rawzero后，方可窄应用/本地提交；随后真实新HEAD、新Source/idle Val2完整全树资格、新Host及全新完整普通setup/prepare/verify，原三代与业务全oracle、普通TERM/close/独立zero均待实证。
+
+作者未解析/编译/import/执行候选、PHP、Docker、Git、HTTP/WS或目标，未写W/Val/C-D/原Run。未来commit/资格/Host/Run全部UNBOUND；旧e37/Host7结果不换标。停止的负向/故障/恢复/并发/K样本NOT RUN；完整M/A/B/UI/浏览器/设备/真实金融/发布仍待，清退本身不等于正常业务通过。
+
+
+#### Root原生worker TERM日志有限修正本地收口（2026-10-26）
+
+原Run20261025231445efcc78已实际普通close与独立zero均0：5原CID各一次TERM后自然0，13卷/内网/仅Val2 ownlock精确非force清退；112+10原生完整双raw及4Git已核。旧Run4/Val1仍保留未清退。非作者对四处实施的有限Source审findings为空，Root完整正逆及其余65函数/入口保全已核。固定297b PHP8.2真实-n-l新main为0，helper自然0后普通移除，三fresh查询双raw空，10原生完整读回。
+
+本次仅main的固定master/原worker/raw15日志模型及本执行记录本地提交；全部业务断言、完整正常三代、原TERM终态要求保持。新同源Source/Val完整资格、新Host及实际normal仍待，不冒整项或MS4验收；停止样本NOT RUN，未推送或部署。
