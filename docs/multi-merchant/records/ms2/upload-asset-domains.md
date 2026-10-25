@@ -2043,3 +2043,43 @@ Root已全文核新的独立13产品PHP Source审9617/f8eb8442（原商品/SKU/�
 云私有根四用途补齐本地Source收口：新有限非作者审3767/b1a01b5b确认四key与实际Config/消费者完全对应、单段整文件逆回、空根兼容及原same/ancestor/descendant门保持；F1仅在Source层关闭，不签误配置或真实云Runtime。Root实际PHP8.2.33 -n -l新15239/4e501f87为0，nonroot65534/networknone/readonly root+精确源码RO镜像helper自然Exited0/PID0/restart0后nonforce删除、三个fresh自有purpose查询stdout/stderr原始0B，10native原件保留；证据cloud-private-root-php82-syntax-r1/RESULT.json。
 
 本次只提交该类与本record两个路径，未合并到当前运行804统一Source或旧Val，不改正在保留的失败进程。真实HTTP/native14/自然GC/供应商/CORS/GUI/全M A B和MS4验收仍待；未推送、部署或真实资金/外发，停止样本NOT RUN。
+
+
+### B/UI默认关闭chat profile的固定harness身份接缝（2026-10-26）
+
+Root已采用integrated-b-ui-harness-successor-design-r1/DESIGN.md并逐字节确认：当前harness60850/474fdc31删唯一113B strict AUDIT_PLATFORM_CHAT_NORMAL===1 require后整份就是旧60737/686be41b，其它所有旧函数/分发/I/O无差量。B原compose/Host显式环境不生产或转发chatflag，但Source未赋值不能替未来固定镜像与真实角色签默认缺失；后继仍须独立窄核flag!==1及默认/0纯定义included兼容，不扩34/37、原roots/九env，也不运行停止的flag1负向样本。
+
+本次只将ms4-ui-backend-normal.php原M4UIB_BOOTSTRAP中一个harness bytes/SHA pair绑定真实新体；其它四pair、全部函数/样本/业务与身份门原体。PHP语法/独立纯定义和本地提交待Root实做；没有改harness/prepare、旧B r1-r3或任何freeze/旧成功。最终B包须在新finalHEAD/M-A-postA、同源三build物理copy四真manifest后完整更新单vector成员、两JS/contract/browserPINS→Host/zero/start固定reader/CoreAux/两code seals/interface/PINS全DAG，不得只换这一个hash冒B可执行。
+
+
+### N9 原生Session目录、Channel正常生命周期与无Cookie原图响应（外部Source候选，待Root采用落库）
+
+本段只存在新外部候选，不覆盖工作树、旧独立Val或原Run202610252059380a34ef。Root采用platform-chat-runtime-lifecycle-root-design-r1/ADOPTION.json：804/Host5/297b实际setup0、prepare145自然0；verify146自然1，第一代运行时预期漏原SessionInit/File驱动创建的空runtime/session。原TERM后真实Chat/Channel内部40003长连接仍存，原组合句柄保留失败；这不是normal或普通收尾/zero通过。旧五CID/十三卷/单internal网/原流/ownlock保持独立原样，不从本候选发控制、信号或重放。
+
+必要四Files仅主normal、platform-chat-private-profile、API ChatAsset、本record。本候选先记录本设计/任务，再构造Source：
+
+- [x] Source候选已生成：主normal只在原runtime_expected首次start精确建模session目录：规范/no-link/真实目录、0700、实际同卷dev/正ino、预期UID/GID、原start时窗mtime/ctime、精确空namespace、稳定lstat。后继同目录identity与原全runtime文件/目录严格比较保持，不从after拷完整expected、不删断言或设前缀豁免。
+- [x] Source候选已生成：仅profile的__chat在原Channel Server创建后，用公开Worker.getAllWorkers和该真实Channel对象onMessage/onClose找唯一原Worker；保原既有onWorkerStop，正常关闭该Worker实际accepted内部连接，原onClose自行执行。原生产ChatService/Channel/vendor/其它16 profile函数、三监听/三代cases/原SIGTERM/8s/真实handles与全部子回执不改。
+- [x] Source候选已生成：原API ChatAsset.respond用原生think Response匿名子类，构造只init(bytes,200)不持Cookie manager；原auth/字节/MIME/length/cache/headers及末getContent/code/cache检查保持。原SessionInit的setSession/Cookie.set/session.save、JSON/上传/登录和共享kefu/guest调用均保持；不能通过覆cookie()或全局中间件绕过原无Set-Cookie要求。
+- [x] Source候选已生成：Root已另采用RESPONSE-PIN-CLARIFICATION.json：main m4pc_production_source只把这一真实最终API体bytes/SHA重绑，其余16行与算法原样。
+- [x] Source候选已生成：原完整DB/DDL/rows/nativecounter、Redis精确类型值绝对期、29资产/11log/13record/7aux、全部文件原字节、六消息类别含type5/6、guest旧/新边界、四真实图片格式、同pair复用/三转接克隆/ACK/record/Channel/autoReply/defaultfalse均保；不恢复停止negative/fault/concurrent/recovery/K或真实外发样本。
+
+当前仅授权外部Source与有限字节正逆/原体保全，不运行PHP/Node/候选解析或编译/import/targets/HTTP/WS/Docker，不提交/推送。后续Root/非作者Source审、必要纯语法、实际新commit、新独立detached Val2与完整SourceTree资格、新不可变Host/全新Run，完整普通prepare/verify/真实正常TERM与普通close/独立sixfresh双raw0均待实证。旧失败Val1及其原句柄不能复制/换标或用本候选替换。未来HEAD/Val2/Host/Run/Runtime/清退结果全部UNBOUND。
+
+本批必要callee澄清亦经Root先采用：FINAL-NATIVE-LOG-CATALOG.json取代早期“固定四行/两个worker各必一零行”的错误假设；Worker原析构在graceful首次按ceil(n/3)取mod，既可能无日志，也可能有正数计数。TERM对组内成员没有先后屏障，不能凭当前旧实例的两条连接猜新代际。profile仍同12秒/原observe，不新增请求/握手/control，但必须原http/chat created及实际五process矩阵（组合、HTTP8000、master双ports、唯一Channel40003和Chat40002直接子）完整才发start，避免master已listen而worker尚未fork的旧时序缺口。
+
+main只在同runtime_expected保存create-only本代原start完整status raw、原created/实际role PID-ppid-PGID-SID-starttime与原UID guard事实、session原生9项及原请求/帧计数。stop仅接受同两worker整向量属于原destructor有限catalog n=0..独立上界；上界是该代完成HTTP增量＋已知1次readiness＋发送WS帧增量＋1原Chat Channel连接＋最多1次失败路径未完成且不重试HTTP。它不是实际active对象计数；全部向量每worker至多3行。master原stopping、hasstopped各恰一且后者最后，worker可先于stopping；完整旧前缀、逐行实际PID/message/时窗、全部append字节/hash/native身份及全runtime比较保持。另存create-only stop计数/上界/整向量/原文hash证明供Root独立读回，不把该记录反用为expected。原一组TERM、8秒、original samehandle/两child全部raw/native闭包仍必需。
+
+Source候选完成界限：四Files before/after完整字节及各有限替换已作者对比；主normal原66函数中仅runtime_expected与一行production pin变，其余64保持；profile原17函数中仅chat和serve两接缝变，其余15保持；API原6方法仅respond变，其余5保持。__chat一枚局部重入标志仅防原最后连接析构再次进入stop时重复调用既有onWorkerStop，原callback仍恰一次/原onClose原样，不改变信号/等待/业务。这里只是作者Source保全，非非作者Source0、PHP语法或Runtime通过。上述Source准备任务已生成；Root最终审/必要纯检查/新提交与新Val2/真实fresh normal及后续close/zero全部待办。
+
+
+#### Root N9候选采用落库（2026-10-26）
+
+上述外部候选5379B已由Root按非作者有限Source审6442/6787aff9采用；本段记录其后状态。三代码逐字节8阶段正逆与原804体相符，主normal其余64函数、profile其余15、API其余5方法按既有保全报告保留。原record804前缀后已有d119云根修复及BUI默认关闭harness接缝，两段完整保留，再追加原候选全文。实际新Source提交、PHP语法和BUI默认/0纯定义资格待完成；不把Source审签作HTTP/WS成功。新独立Val2/全树/新Host/全新正常Run、普通退出与独立zero仍待；旧失败Run202610252059380a34ef及原Val1五容器/十三卷/内部网/ownlock冻结保留，不强制清理、不重放停止样本。
+
+
+#### Root N9与B/UI接缝本地验证收口（2026-10-26）
+
+Root实际用已有固定297b PHP8.2.33、nonroot65534/network-none/read-only helper对最终API、profile、main、B/UI backend四PHP逐个原生-n -l，四个真实子PID均自然0、stderr空；原helper自然Exited0/PID0/noRestart后nonforce移除，三个fresh purpose查询双raw全0。证据platform-chat-lifecycle-and-b-ui-php82-syntax-r1/RESULT.json。另独立helper对真实新旧完整harness及相同guard，在default与显式chatflag=0下四个独立PHP进程仅导入定义，原函数完整定义hash和规范included集合一致；全部原始流与samehandle自然退出/普通清退及fresh zero实证见integrated-b-ui-default-definition-compatibility-r1/RESULT.json。未跑flag1、App/DB/HTTP/WS业务或停止样本。
+
+本次仅五路径精确本地提交，保全d119云根修复和原record全部增量。下一步统一Source合入独立MS6商家路由3dda7490，真实Git后才创建全新独立Val2、重新全树资格/新Host并跑完整正常链。旧Run202610252059380a34ef/Val1/五容器/十三卷/内部网/ownlock原样保留，原失败和未清退责任不被新成功覆盖。当前未推送/部署，完整M/A/B、原浏览器/设备/真实支付与外部验收仍待。

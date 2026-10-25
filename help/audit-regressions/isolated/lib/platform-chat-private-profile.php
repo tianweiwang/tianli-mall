@@ -171,8 +171,32 @@ function m4pc_profile_serve():never
                     $process=proc_open($command,[['file','/dev/null','r'],['file',audit_run_dir().'/evidence/platform-chat-'.$revision.'-combination.stdout','xb'],['file',audit_run_dir().'/evidence/platform-chat-'.$revision.'-combination.stderr','xb']],$pipes,audit_repo_dir().'/crmeb',$env);
                     audit_expect(is_resource($process),'actual combination process required');$group=audit_app_register_group($process,$supervisor);$generation=$revision;$firstTerminal=null;
                     $meta=['generation'=>$revision,'pid'=>$group['leader_pid'],'argv'=>$command,'group'=>$group,'base'=>$base];audit_write_json($base.'.created.json',$meta);
-                    $deadline=microtime(true)+12;do{$facts=m4pc_profile_observe($group,$supervisor);if($facts['listener_ports']===[8000,40002,40003])break;usleep(20000);}while(microtime(true)<$deadline);
-                    audit_expect($facts['listener_ports']===[8000,40002,40003],'actual three listeners not ready');
+                    $deadline=microtime(true)+12;$ready=false;do{
+                        $facts=m4pc_profile_observe($group,$supervisor);$created=[];
+                        foreach(['http','chat']as$role){$path=audit_run_dir().'/evidence/platform-chat-'.$revision.'-'.$role.'.created.json';
+                            audit_expect(!is_link($path),'original child creation receipt cannot be a link');if(!file_exists($path))continue;
+                            $pin=m4pc_profile_raw($path);$raw=file_get_contents($path);audit_expect(is_string($raw)&&strlen($raw)===$pin['bytes']&&hash('sha256',$raw)===$pin['sha256']&&m4pc_profile_raw($path)===$pin,'stable original child creation receipt required');
+                            $row=json_decode($raw,true,32,JSON_THROW_ON_ERROR);$expectedArgv=$role==='http'?[PHP_BINARY,'-S','0.0.0.0:8000','-t',audit_repo_dir().'/crmeb/public',__FILE__]:[PHP_BINARY,__FILE__,'__chat'];
+                            audit_expect(is_array($row)&&($row['role']??null)===$role&&is_int($row['pid']??null)&&$row['pid']>0&&($row['argv']??null)===$expectedArgv
+                                &&($row['group']['pid']??null)===$row['pid']&&($row['group']['ppid']??null)===$group['leader_pid']
+                                &&($row['group']['pgid']??null)===$group['pgid']&&($row['group']['sid']??null)===$group['sid'],
+                                'same original runtime child creation identity required');$created[$role]=$row;
+                        }
+                        if(count($created)===2&&$facts['listener_ports']===[8000,40002,40003]&&count($facts['members'])===5){
+                            $members=[];foreach($facts['members']as$member)$members[$member['pid']]=$member;
+                            $http=$members[$created['http']['pid']]??null;$master=$members[$created['chat']['pid']]??null;$leader=$members[$group['leader_pid']]??null;$roles=[];
+                            foreach($facts['members']as$member)if($member['ppid']===$created['chat']['pid']){
+                                if($member['listener_ports']===[40003])$roles['channel'][]=$member;elseif($member['listener_ports']===[40002])$roles['chat'][]=$member;
+                            }
+                            $ready=count($members)===5&&is_array($leader)&&$leader['listener_ports']===[]&&$leader['starttime']===$group['leader_starttime']
+                                &&is_array($http)&&$http['ppid']===$group['leader_pid']&&$http['starttime']===$created['http']['group']['starttime']&&$http['listener_ports']===[8000]
+                                &&is_array($master)&&$master['ppid']===$group['leader_pid']&&$master['starttime']===$created['chat']['group']['starttime']&&$master['listener_ports']===[40002,40003]
+                                &&count($roles['channel']??[])===1&&count($roles['chat']??[])===1;
+                            if($ready){$expected=[$group['leader_pid'],$http['pid'],$master['pid'],$roles['channel'][0]['pid'],$roles['chat'][0]['pid']];sort($expected,SORT_NUMERIC);$actual=array_keys($members);sort($actual,SORT_NUMERIC);$ready=$expected===$actual;}
+                        }
+                        if($ready)break;usleep(20000);
+                    }while(microtime(true)<$deadline);
+                    audit_expect($ready,'actual complete five-process HTTP Chat Channel role matrix not ready');
                 }
                 audit_write_json(audit_run_dir().'/app-status.json',['run_id'=>getenv('AUDIT_RUN_ID'),'revision'=>$revision,'status'=>$action,'generation_revision'=>$generation]+$facts);
             }catch(Throwable $e){audit_write_json(audit_run_dir().'/app-status.json',['run_id'=>getenv('AUDIT_RUN_ID'),'revision'=>$revision,
@@ -217,7 +241,26 @@ function m4pc_profile_chat():never
     clearstatcache(true,$log);$logStat=lstat($log);audit_expect(is_array($logStat)&&!is_link($log)&&($logStat['mode']&0170000)===0100000&&($logStat['mode']&07777)===0600&&$logStat['uid']===posix_geteuid()&&$logStat['nlink']===1,'own Workerman log identity required');
     $actual=(new ReflectionClass(\Workerman\Events\Select::class))->getFileName();
     audit_expect(is_string($actual)&&realpath($actual)===realpath(audit_repo_dir().'/crmeb/crmeb/compat/workerman/Events/Select.php'),'original compatibility event loop required');
-    $channel=new \Channel\Server('0.0.0.0',40003);$worker=new \Workerman\Worker('websocket://0.0.0.0:40002');$worker->name='AuditPlatformChatOrdinary';$worker->count=1;
+    $channel=new \Channel\Server('0.0.0.0',40003);$channelWorkers=[];
+    foreach(\Workerman\Worker::getAllWorkers()as$candidate)if($candidate->onMessage===[$channel,'onMessage'])$channelWorkers[]=$candidate;
+    audit_expect(count($channelWorkers)===1&&$channelWorkers[0]->getSocketName()==='frame://0.0.0.0:40003'
+        &&$channelWorkers[0]->onClose===[$channel,'onClose']&&$channelWorkers[0]->count===1,'one original Channel Server worker required');
+    $channelWorker=$channelWorkers[0];$originalStop=$channelWorker->onWorkerStop;$channelStopping=false;
+    audit_expect($originalStop===null||is_callable($originalStop),'original Channel stop callback required');
+    $channelWorker->onWorkerStop=static function(\Workerman\Worker $stopping)use($channelWorker,$channel,$originalStop,&$channelStopping):void{
+        audit_expect($stopping===$channelWorker&&$stopping->onMessage===[$channel,'onMessage']
+            &&$stopping->onClose===[$channel,'onClose'],'same original Channel worker stop required');
+        if($channelStopping)return;$channelStopping=true;
+        if($originalStop!==null)call_user_func($originalStop,$stopping);
+        foreach($stopping->connections as$connection){
+            audit_expect($connection instanceof \Workerman\Connection\TcpConnection&&$connection->worker===$stopping
+                &&$connection->onClose===[$channel,'onClose']&&$connection->getLocalIp()==='127.0.0.1'
+                &&$connection->getLocalPort()===40003&&$connection->getRemoteIp()==='127.0.0.1',
+                'only original accepted internal Channel connections may close normally');
+            $connection->close();
+        }
+    };
+    $worker=new \Workerman\Worker('websocket://0.0.0.0:40002');$worker->name='AuditPlatformChatOrdinary';$worker->count=1;
     $service=new \crmeb\services\workerman\chat\ChatService($worker);$worker->onConnect=[$service,'onConnect'];$worker->onMessage=[$service,'onMessage'];
     $worker->onWorkerStart=[$service,'onWorkerStart'];$worker->onClose=[$service,'onClose'];
     global $argv;$argv=[__FILE__,'start'];$_SERVER['argv']=$argv;\Workerman\Worker::runAll();exit(0);

@@ -737,7 +737,7 @@ function m4pc_production_source():void
         'crmeb/config/cookie.php'=>['bytes'=>2424,'sha256'=>'17100fc739ff6e8c22801af650a19f3e5a829c0a7f69b3a69b5fa490c6274240'],
         'crmeb/config/marketplace.php'=>['bytes'=>4391,'sha256'=>'be269615dc5f395786ad94d569234f5e41838e1fc7cea5454baea8c10d18012e'],
         'crmeb/crmeb/services/workerman/chat/ChatHandle.php'=>['bytes'=>23357,'sha256'=>'920b5e5894ce90306ca1620e19f79e98f52d0a327a7d5ad7edca4a5817005f0e'],
-        'crmeb/app/api/controller/v1/user/ChatAsset.php'=>['bytes'=>3200,'sha256'=>'d791ce5b14593b6879c56e4939dac0881ab6471257ec9baac005a8ec1ccd9ff4'],
+        'crmeb/app/api/controller/v1/user/ChatAsset.php'=>['bytes'=>3304,'sha256'=>'e3f558c335d75f05e580de53b92e5a25f174422472cf19c328be3aa10959407e'],
         'crmeb/app/dao/marketplace/assets/PlatformChatAssetDao.php'=>['bytes'=>21727,'sha256'=>'17634a11486f3deafc2d2236d6f614a20961cd348eee4367f26c5bbc8fbe2424'],
         'crmeb/app/kefuapi/controller/ChatAsset.php'=>['bytes'=>1772,'sha256'=>'5919c5568a5437cebcc42a4d38dcb3a6b9d2f84efa340ad6282781bb45e76274'],
         'crmeb/app/services/marketplace/assets/PlatformChatAssetServices.php'=>['bytes'=>28893,'sha256'=>'159ccc62155a7c66736ceb6ff1c6cb194ed3080d29d8a98a4b853e2605cb81e6'],
@@ -751,13 +751,102 @@ function m4pc_runtime_expected(array $before,array $after,string $oldLog,string 
 {
     m4pc_expect($phase==='start'||$phase==='stop','M4PC_FIXED_RUNTIME_PHASE');$base=audit_run_dir().'/evidence/platform-chat-'.$generation.'-chat';
     $created=json_decode(file_get_contents($base.'.created.json'),true,32,JSON_THROW_ON_ERROR);$pid=$created['pid']??null;m4pc_expect(is_int($pid)&&$pid>0&&($created['role']??null)==='chat','M4PC_ACTUAL_CHAT_CHILD_PID');
-    $log='platform-chat-workerman.log';$root='/run/audit-app-runtime';$raw=file_get_contents($root.'/'.$log);m4pc_expect(is_string($raw)&&str_starts_with($raw,$oldLog),'M4PC_RUNTIME_LOG_FULL_OLD_PREFIX_PRESERVED');
-    $messages=$phase==='start'?['Workerman['.audit_repo_dir().'/help/audit-regressions/isolated/lib/platform-chat-private-profile.php] start in DEBUG mode']:
-        ['Workerman[platform-chat-private-profile.php] stopping ...','Workerman[platform-chat-private-profile.php] has been stopped'];
-    $lines=explode("\n",substr($raw,strlen($oldLog)));m4pc_expect(array_pop($lines)===''&&count($lines)===count($messages),'M4PC_EXACT_NATIVE_WORKERMAN_LOG_COUNT');$addition='';
-    foreach($messages as$i=>$message){m4pc_expect(preg_match('/\A([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}) pid:([1-9][0-9]*) (.*)\z/D',$lines[$i],$m)===1
-            &&(int)$m[2]===$pid&&$m[3]===$message,'M4PC_EXACT_ORIGINAL_LOG_SOURCE_MESSAGE_AND_PID');$at=strtotime($m[1]);m4pc_expect(is_int($at)&&$at>=$window['start']&&$at<=$window['end'],'M4PC_RUNTIME_LOG_REAL_TIME_WINDOW');$addition.=$m[1].' pid:'.$pid.' '.$message."\n";}
-    $wanted=$before;$descriptor=$after['files'][$log]??null;m4pc_expect(is_array($descriptor)&&$descriptor['bytes']===strlen($oldLog.$addition)&&$descriptor['sha256']===hash('sha256',$oldLog.$addition)
+    $log='platform-chat-workerman.log';$root='/run/audit-app-runtime';$session=$root.'/session';
+    $firstSession=!array_key_exists('session',$before['directories']);
+    m4pc_expect(!$firstSession||($phase==='start'&&($GLOBALS['m4pc_cases']??null)===[]),'M4PC_SESSION_DIRECTORY_ONLY_FIRST_REAL_HTTP_START');
+    clearstatcache(true,$root);clearstatcache(true,$session);$rootStat=lstat($root);$sessionStat=lstat($session);
+    m4pc_expect(is_array($rootStat)&&!is_link($root)&&realpath($root)===$root&&($rootStat['mode']&0170000)===0040000
+        &&$rootStat['uid']===posix_geteuid()&&$rootStat['gid']===posix_getegid()
+        &&is_array($sessionStat)&&!is_link($session)&&realpath($session)===$session&&($sessionStat['mode']&0170000)===0040000
+        &&($sessionStat['mode']&07777)===0700&&$sessionStat['uid']===posix_geteuid()&&$sessionStat['gid']===posix_getegid()
+        &&$sessionStat['dev']===$rootStat['dev']&&is_int($sessionStat['ino'])&&$sessionStat['ino']>0,
+        'M4PC_CANONICAL_OWN_EMPTY_SESSION_DIRECTORY_NATIVE_IDENTITY');
+    m4pc_expect(scandir($session)===['.','..'],'M4PC_EXACT_EMPTY_SESSION_DIRECTORY');clearstatcache(true,$session);$sessionAfter=lstat($session);
+    foreach(['dev','ino','mode','nlink','uid','gid','size','mtime','ctime']as$key)
+        m4pc_expect(is_array($sessionAfter)&&$sessionAfter[$key]===$sessionStat[$key],'M4PC_SESSION_NATIVE_IDENTITY_STABLE_DURING_EMPTY_READ');
+    $sessionExpected=[$rootStat['dev'],$sessionStat['ino'],0700,posix_geteuid()];
+    if($firstSession){foreach(['mtime','ctime']as$key)m4pc_expect($sessionStat[$key]>=$window['start']&&$sessionStat[$key]<=$window['end'],'M4PC_FIRST_HTTP_SESSION_CREATION_TIME_WINDOW');}
+    else m4pc_expect($before['directories']['session']===$sessionExpected,'M4PC_ORIGINAL_SESSION_DIRECTORY_INODE_PRESERVED');
+    m4pc_expect(($after['directories']['session']??null)===$sessionExpected,'M4PC_EXACT_SESSION_OBSERVER_TUPLE');
+    $raw=file_get_contents($root.'/'.$log);m4pc_expect(is_string($raw)&&str_starts_with($raw,$oldLog),'M4PC_RUNTIME_LOG_FULL_OLD_PREFIX_PRESERVED');
+    $observationBase=audit_run_dir().'/evidence/platform-chat-'.$generation.'-runtime';
+    if($phase==='start'){
+        $statusPath=audit_run_dir().'/app-status.json';$statusPin=m4pc_profile_raw($statusPath);$statusRaw=file_get_contents($statusPath);
+        m4pc_expect(is_string($statusRaw)&&strlen($statusRaw)===$statusPin['bytes']&&hash('sha256',$statusRaw)===$statusPin['sha256']&&m4pc_profile_raw($statusPath)===$statusPin,'M4PC_STABLE_COMPLETE_START_STATUS_RAW');
+        $status=json_decode($statusRaw,true,64,JSON_THROW_ON_ERROR);$group=$status['group']??null;
+        m4pc_expect(is_array($status)&&($status['run_id']??null)===getenv('AUDIT_RUN_ID')&&($status['revision']??null)===$generation
+            &&($status['generation_revision']??null)===$generation&&($status['status']??null)==='start'&&($status['force_signal_sent']??null)===false
+            &&($status['listener_ports']??null)===[8000,40002,40003]&&is_array($group)&&array_keys($group)===['leader_pid','pgid','sid','leader_starttime']
+            &&is_int($group['leader_pid'])&&$group['leader_pid']>1&&$group['pgid']===$group['leader_pid']&&$group['sid']===$group['leader_pid']
+            &&is_string($group['leader_starttime'])&&ctype_digit($group['leader_starttime']),'M4PC_SAME_GENERATION_REGISTERED_START_STATUS');
+        $receipts=[];foreach(['http','chat']as$role){$path=audit_run_dir().'/evidence/platform-chat-'.$generation.'-'.$role.'.created.json';$pin=m4pc_profile_raw($path);$receiptRaw=file_get_contents($path);
+            m4pc_expect(is_string($receiptRaw)&&strlen($receiptRaw)===$pin['bytes']&&hash('sha256',$receiptRaw)===$pin['sha256']&&m4pc_profile_raw($path)===$pin,'M4PC_FULL_SAME_CHILD_CREATION_RAW');
+            $receipt=json_decode($receiptRaw,true,32,JSON_THROW_ON_ERROR);$expectedArgv=$role==='http'?[PHP_BINARY,'-S','0.0.0.0:8000','-t',audit_repo_dir().'/crmeb/public',audit_repo_dir().'/help/audit-regressions/isolated/lib/platform-chat-private-profile.php']:[PHP_BINARY,audit_repo_dir().'/help/audit-regressions/isolated/lib/platform-chat-private-profile.php','__chat'];
+            m4pc_expect(is_array($receipt)&&($receipt['role']??null)===$role&&is_int($receipt['pid']??null)&&$receipt['pid']>0&&($receipt['argv']??null)===$expectedArgv
+                &&($receipt['group']['pid']??null)===$receipt['pid']&&($receipt['group']['ppid']??null)===$group['leader_pid']
+                &&($receipt['group']['pgid']??null)===$group['pgid']&&($receipt['group']['sid']??null)===$group['sid'],'M4PC_ORIGINAL_CHILD_ARGV_AND_NATIVE_GROUP');$receipts[$role]=$receipt;
+        }
+        m4pc_expect($receipts['chat']===$created,'M4PC_SAME_ACTUAL_CHAT_MASTER_CREATION');$members=[];
+        m4pc_expect(is_array($status['members']??null)&&count($status['members'])===5,'M4PC_COMPLETE_FIVE_PROCESS_START_OBSERVATION');
+        foreach($status['members']as$member){m4pc_expect(is_array($member)&&array_keys($member)===['pid','ppid','pgid','sid','starttime','state','listener_ports']
+                &&is_int($member['pid'])&&$member['pid']>1&&!isset($members[$member['pid']])&&is_int($member['ppid'])
+                &&$member['pgid']===$group['pgid']&&$member['sid']===$group['sid']&&is_string($member['starttime'])&&ctype_digit($member['starttime'])
+                &&(int)$member['starttime']>=(int)$group['leader_starttime']&&is_string($member['state'])&&!in_array($member['state'],['Z','X','x'],true)
+                &&is_array($member['listener_ports']),'M4PC_ORIGINAL_NATIVE_MEMBER_FIELDS_ONLY');$members[$member['pid']]=$member;}
+        $leader=$members[$group['leader_pid']]??null;$http=$members[$receipts['http']['pid']]??null;$master=$members[$pid]??null;$workers=[];
+        foreach($members as$member)if($member['ppid']===$pid){if($member['listener_ports']===[40003])$workers['channel'][]=$member;elseif($member['listener_ports']===[40002])$workers['chat'][]=$member;}
+        m4pc_expect(is_array($leader)&&$leader['listener_ports']===[]&&$leader['starttime']===$group['leader_starttime']
+            &&is_array($http)&&$http['ppid']===$group['leader_pid']&&$http['starttime']===$receipts['http']['group']['starttime']&&$http['listener_ports']===[8000]
+            &&is_array($master)&&$master['ppid']===$group['leader_pid']&&$master['starttime']===$created['group']['starttime']&&$master['listener_ports']===[40002,40003]
+            &&count($workers['channel']??[])===1&&count($workers['chat']??[])===1,'M4PC_SOURCE_BOUND_FULL_ROLE_MATRIX');
+        $workers=['channel'=>$workers['channel'][0],'chat'=>$workers['chat'][0]];$expected=[$leader['pid'],$http['pid'],$master['pid'],$workers['channel']['pid'],$workers['chat']['pid']];sort($expected,SORT_NUMERIC);$actual=array_keys($members);sort($actual,SORT_NUMERIC);
+        m4pc_expect($expected===$actual,'M4PC_EXACT_FIVE_NATIVE_ROLE_IDENTITIES');$requests=$GLOBALS['m4pc_requests']??0;$frames=$GLOBALS['m4pc_ws_frames']??0;
+        m4pc_expect(is_int($requests)&&$requests>=1&&is_int($frames)&&$frames>=0&&!isset($GLOBALS['m4pc_runtime_workers'][$generation]),'M4PC_FRESH_GENERATION_INDEPENDENT_OBSERVER_COUNTERS');
+        $observation=['run_id'=>getenv('AUDIT_RUN_ID'),'generation'=>$generation,'registered_group'=>$group,'http_created'=>$receipts['http'],'chat_created'=>$created,
+            'start_status'=>$statusPin,'workers'=>$workers,'http_count_after_readiness'=>$requests,'ws_frame_count'=>$frames,'expected_uid'=>posix_geteuid(),
+            'uid_producer'=>'original m4pc_profile_observe/m4pc_profile_process_uid','session_native9'=>array_intersect_key($sessionStat,array_fill_keys(['dev','ino','mode','nlink','uid','gid','size','mtime','ctime'],true)),
+            'first_session_directory'=>$firstSession,'start_window'=>$window];
+        m4pc_write($observationBase.'.start-status.raw',$statusRaw);m4pc_write($observationBase.'.start-workers.json',m4pc_json($observation));
+        $GLOBALS['m4pc_runtime_workers'][$generation]=['observation'=>$observation,'status_file'=>m4pc_file_descriptor($observationBase.'.start-status.raw',true),'workers_file'=>m4pc_file_descriptor($observationBase.'.start-workers.json',true)];
+    }else{
+        $capture=$GLOBALS['m4pc_runtime_workers'][$generation]??null;m4pc_expect(is_array($capture)&&($capture['observation']['run_id']??null)===getenv('AUDIT_RUN_ID')
+            &&($capture['observation']['generation']??null)===$generation&&($capture['observation']['chat_created']??null)===$created,'M4PC_ORIGINAL_START_WORKER_CAPTURE_REQUIRED');
+        m4pc_expect(m4pc_file_descriptor($observationBase.'.start-status.raw',true)===$capture['status_file']
+            &&m4pc_file_descriptor($observationBase.'.start-workers.json',true)===$capture['workers_file'],'M4PC_ORIGINAL_CREATE_ONLY_START_EVIDENCE_PRESERVED');
+        $observation=json_decode(file_get_contents($observationBase.'.start-workers.json'),true,64,JSON_THROW_ON_ERROR);m4pc_expect($observation===$capture['observation'],'M4PC_COMPLETE_ORIGINAL_WORKER_METADATA');$workers=$observation['workers'];
+    }
+    $lines=explode("\n",substr($raw,strlen($oldLog)));m4pc_expect(array_pop($lines)===''&&($phase==='start'?count($lines)===1:(count($lines)>=2&&count($lines)<=8)),'M4PC_EXACT_NATIVE_WORKERMAN_LOG_COUNT');$addition='';$masterMessages=[];$vectors=['channel'=>[],'chat'=>[]];
+    foreach($lines as$i=>$line){m4pc_expect(preg_match('/\A([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}) pid:([1-9][0-9]*) (.*)\z/D',$line,$m)===1,'M4PC_EXACT_ORIGINAL_LOG_LINE_FORMAT');
+        $at=strtotime($m[1]);m4pc_expect(is_int($at)&&$at>=$window['start']&&$at<=$window['end'],'M4PC_RUNTIME_LOG_REAL_TIME_WINDOW');$actor=(int)$m[2];$message=$m[3];
+        if($phase==='start')m4pc_expect($actor===$pid&&$message==='Workerman['.audit_repo_dir().'/help/audit-regressions/isolated/lib/platform-chat-private-profile.php] start in DEBUG mode','M4PC_EXACT_ORIGINAL_LOG_SOURCE_MESSAGE_AND_PID');
+        elseif($actor===$pid&&in_array($message,['Workerman[platform-chat-private-profile.php] stopping ...','Workerman[platform-chat-private-profile.php] has been stopped'],true)){
+            m4pc_expect(!isset($masterMessages[$message]),'M4PC_ONE_ORIGINAL_MASTER_MESSAGE');$masterMessages[$message]=$i;
+        }else{
+            $role=$actor===$workers['channel']['pid']?'channel':($actor===$workers['chat']['pid']?'chat':null);
+            m4pc_expect($role!==null&&preg_match('/\Aworker\['.preg_quote((string)$actor,'/').'\] remains (0|[1-9][0-9]*) connection\(s\)\z/D',$message,$count)===1,'M4PC_SAME_ORIGINAL_WORKER_DESTRUCTOR_MESSAGE');$vectors[$role][]=(int)$count[1];
+            m4pc_expect(count($vectors[$role])<=3,'M4PC_ORIGINAL_DESTRUCTOR_AT_MOST_THREE_MESSAGES');
+        }
+        $addition.=$m[1].' pid:'.$actor.' '.$message."\n";
+    }
+    if($phase==='stop'){
+        m4pc_expect(count($masterMessages)===2&&isset($masterMessages['Workerman[platform-chat-private-profile.php] stopping ...'])
+            &&($masterMessages['Workerman[platform-chat-private-profile.php] has been stopped']??null)===count($lines)-1
+            &&$masterMessages['Workerman[platform-chat-private-profile.php] stopping ...']<count($lines)-1,'M4PC_ORIGINAL_MASTER_REAP_PARTIAL_ORDER');
+        $requests=$GLOBALS['m4pc_requests']??0;$frames=$GLOBALS['m4pc_ws_frames']??0;m4pc_expect(is_int($requests)&&$requests>=$observation['http_count_after_readiness']
+            &&is_int($frames)&&$frames>=$observation['ws_frame_count'],'M4PC_REAL_GENERATION_REQUEST_FRAME_COUNTER_DELTAS');
+        // Independent upper bound only: completed HTTP after start, known readiness HTTP, sent WS frames,
+        // one original Chat Channel connection and at most one incomplete no-retry request on a failed path.
+        $bound=$requests-$observation['http_count_after_readiness']+$frames-$observation['ws_frame_count']+3;$catalog=[[]];
+        for($n=1;$n<=$bound;$n++){$mod=(int)ceil($n/3);$vector=[];for($remaining=$n-1;$remaining>=0;$remaining--)if($remaining%$mod===0)$vector[]=$remaining;if(!in_array($vector,$catalog,true))$catalog[]=$vector;}
+        foreach($vectors as$vector)m4pc_expect(in_array($vector,$catalog,true),'M4PC_COMPLETE_ORIGINAL_DESTRUCTOR_FINITE_CATALOG_VECTOR');
+        m4pc_write($observationBase.'.stop-log-proof.json',m4pc_json(['run_id'=>getenv('AUDIT_RUN_ID'),'generation'=>$generation,
+            'start_workers_file'=>$capture['workers_file'],'start_http_after_readiness'=>$observation['http_count_after_readiness'],'stop_http'=>$requests,
+            'start_ws_frames'=>$observation['ws_frame_count'],'stop_ws_frames'=>$frames,'known_readiness_http'=>1,'original_chat_channel_connection'=>1,
+            'conservative_at_most_one_incomplete_no_retry_http'=>1,'independent_count_upper_bound'=>$bound,'not_actual_active_object_count'=>true,
+            'original_destructor_n_range'=>[0,$bound],'whole_worker_vectors'=>$vectors,'master_line_positions'=>$masterMessages,
+            'exact_addition'=>['bytes'=>strlen($addition),'sha256'=>hash('sha256',$addition)],'stop_window'=>$window]));
+    }
+    $wanted=$before;$wanted['directories']['session']=$sessionExpected;ksort($wanted['directories'],SORT_STRING);$descriptor=$after['files'][$log]??null;m4pc_expect(is_array($descriptor)&&$descriptor['bytes']===strlen($oldLog.$addition)&&$descriptor['sha256']===hash('sha256',$oldLog.$addition)
         &&$descriptor['mode']===0600&&$descriptor['uid']===posix_geteuid()&&$descriptor['nlink']===1,'M4PC_FULL_EXPECTED_WORKERMAN_LOG_BYTES_AND_METADATA');
     if(isset($before['files'][$log]))foreach(['dev','ino','mode','nlink','uid','gid']as$key)m4pc_expect($descriptor['native9'][$key]===$before['files'][$log]['native9'][$key],'M4PC_ORIGINAL_LOG_NATIVE_IDENTITY');
     foreach(['mtime','ctime']as$key)m4pc_expect($descriptor['native9'][$key]>=$window['start']&&$descriptor['native9'][$key]<=$window['end'],'M4PC_EXACT_LOG_METADATA_TIME_WINDOW');$wanted['files'][$log]=$descriptor;

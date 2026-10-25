@@ -39,7 +39,10 @@ final class ChatAsset
             ||!in_array($v['media_type'],['image/jpg','image/jpeg','image/png','image/gif','image/webp'],true)
             ||!is_string($v['file_name'])||preg_match('/\Aplatform-chat-[1-9][0-9]{0,19}\.(jpg|jpeg|png|gif|webp)\z/D',$v['file_name'])!==1)
             throw new AuthUnavailableException();
-        $r=Response::create($v['bytes'],'html',200)->allowCache(false)->header(['Content-Type'=>$v['media_type'],
+        $r=new class($v['bytes']) extends Response {
+            public function __construct(string $bytes){$this->init($bytes,200);}
+        };
+        $r->allowCache(false)->header(['Content-Type'=>$v['media_type'],
             'Content-Length'=>(string)$v['byte_size'],'Content-Disposition'=>'inline; filename="'.$v['file_name'].'"',
             'Cache-Control'=>'private, no-store, max-age=0','Pragma'=>'no-cache','Expires'=>'0','X-Content-Type-Options'=>'nosniff']);
         if($r->getContent()!==$v['bytes']||$r->getCode()!==200||$r->isAllowCache()!==false)throw new AuthUnavailableException();return $r;
