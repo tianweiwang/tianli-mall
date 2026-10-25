@@ -62,3 +62,61 @@ Source候选已接线，待Root完整diff复核，不提交。现有 `template/m
 Root验证与本地检查点补记：上述2份商家PHP的完整输入已在固定PHP8.2实际php-l通过；与Licence诊断1份合计3/3、5原生操作均0，同一原bootstrap的CID/PID/StartedAt/readonly前后保持，未创建Docker资源或执行候选。仓库外fixture-and-merchant-video-php82-syntax-r1/RESULT.json为6750B、SHA256 ec37ff71b1cef7eafbef4c0c830f1999ff947ca19822edf840df56bd7c6b52bb。Root a81531完整5件diff及真实typed上传/授权writer/Request fingerprint/前端context/import等消费者已读，无确定新问题；非作者private_asset_next_gap全文5件及共享session/原producer-consumer核对finding0，独立Node40scripts/97imports纯检查0。该独审对应本追加前记录15331B；本追加只记已发生事实，其余4件应用代码原文不变，不把原审代签新追加文档。
 
 当前仅保存L2本地Source检查点；实际merchant多请求大MP4、首次/重复finalize的真实11字段/native14/审计与提交回读、自然GC、浏览器选择后商品保存及设备仍NOT RUN，Composer自然加载未验。模板/样式保持，已完整读Control-quality，未据Source/构建声明视觉通过。云直传finalize仍未实现/未验，完整T4/19组未关闭，不合并、推送、部署或处理真实资金。
+
+
+## 2026-10-25 Env7 真实原 Timer 与商品视频正常环境（编码前设计，Source-only）
+
+从 clean b9089a5ae9d34bdeb350df774ec96b87b0eb55c6 独立建立 `H:/天俪商城/worktrees/media-normal-env7` / `feature/media-normal-env7-20261025`；原平台/商家工作树、b908 与已封 HTTP Source9 保留。当前新HEAD、完整Git SourceTree/tar、Env7与后继HTTP Source pins均UNBOUND，须Root完整diff审、串行PHP语法和真实本地commit后才能绑定；不能称b908已验证新增harness。auto-sync为project_not_enabled，不enroll；无.codegraph，不初始化。
+
+需求：以Env6原完整正常职责为供体，保原真实源码复制、vendor/SDK与SourceKeeper、原12素材/174安装素材、MS1/MS2/菜单17和真实账号准备、原HTTP全用例/native14/文件/MIME/业务审计/提交回读、同SKU身份库存和全部普通收尾/独立六查询zero。增加实际大MP4独立RO挂载、显式视频开关与独占持久video私有根；原扫码GC先于video，故同样配置另一独占持久scan根。App与原Timer共享两根RW，runner仅RO观察，目录0700/文件0600，不用public/uploads/runtime回退；migrator/root仅bootstrap，不扩App/Timer DML权限或新建业务表/权限种子。
+
+原Timer事实：真实入口为`php think timer start`，Workerman前台，不要求Swoole，不加daemon/reload/新调度或GC-only替代。它调度全部实际open SystemCrontab，并带原Task6每60秒scanDue；不能静默过滤原jobs、忽略tick异常或以视频删除覆盖其他Timer错误。原GC注册走现有`marketplace:product-scan-gc-install`及现有migrator/native PDO；原视频TTL600秒和原Redis cadence60秒不变。必须先从源码核所有启用jobs/Task6的实际结构、配置与初始化依赖，确需结构时只补原CLI check/apply/check/repeat的专用实例前置，保其它业务职责；未核清的前置明确保持BLOCKED，不能签自然Timer就绪。
+
+设计：在原正常HTTP验证完成后才启动新增明确登记的audit-media-timer角色，保持原App角色/控制与完整HTTP链；Timer复用原numeric PID/PGID/SID/starttime、同句柄proc/wait、双流、TERM-only普通组收尾，不另造进程框架。可信normal profile有限传递实际SELF、视频enabled和固定两root，原profile关闭时行为保持。未来独立观察须先保存真实完成引用及私有文件资格，在原600秒到期/原cadence下证明自然删除；期间不发新issue、不手调gcBatch、不改时钟/TTL。所有原native14/业务audit/正式文件/商品与SKU保持；实际Timer所有职责及日志错误必须分别如实验证。浏览器/三端/设备、云直传及原fullS/fullA等范围仍保留。
+
+允许仓库Files先限定3件：本记录；`help/audit-regressions/isolated/lib/harness.php`（normal有限allowlist及复用原supervisor的Timer channel/TERM-native结果）；新增`help/audit-regressions/isolated/lib/media-normal-profile.php`（固定profile、真实前置/原CLI安装与控制入口，不含GC调度或业务实现）。若现有原迁移/初始化调用的必要接缝需要其它文件，先补本段精确Files/依据再改；不改业务服务、原Timer/GC实现、schema定义/权限种子或原停用测试。
+
+仓库外Env7独占`artifacts/project-organization-20261023/media-video-normal-environment-source-r7`，只保必要当前Source：README/接口、原runner与完整Source构建/复制/安装/配置/observe脚本、compose base/normal、原seed adapter、固定harness/guard/fixture及有限自然观察入口。复用原事实合同不复制历史包/Run/RESULT；新完整Source构建及实际pins待真实commit，未封资格。原sealed HTTP9只能未来另建仅真实source身份/依赖pin后继，不覆写原件。
+
+任务/验收：①核原Timer、完整jobs/Task6和镜像真实前检来源；②实现限定normal profile与既有普通生命周期；③Env7有限角色/两private卷/大fixtureRO/真实CLI前置和自然观察接线；④pure AST/JSON/词法/diff/原函数保持检查；⑤Root/非作者完整Source审、Root串行PHP语法、本地checkpoint后真实绑定；⑥Root串行ISO-FULL完整正常业务/原Timer600s/普通close/zero与浏览器验收。当前仅①设计中，无Docker/PHP/HTTP/App/Timer/提交/推送或新Run，source≠runtime ready，安全/负向/故障/并发/恢复样本保持NOT RUN。
+
+
+Env7专用normal配置决定补记（Root明确限定后，相关实现前）：仅在本次全新专用媒体normal数据库，将原`liveRoomStatus`真实id5的`is_open`显式关闭，用来避免在internal/no-provider边界内触发无条件真实微信调用；不是关闭原Timer或改安装SQL/生产默认，也不添加provider替身。bootstrap必须先核原行完整来源、mark/id/周期/方法/open，优先复用原服务的开关生产者；若无合适接口才用受限单行DML严格前后态。0600私有收据完整保前后行和scope/目的，公开只给安全摘要。原GC注册开启，原Timer仍运行全部实际open任务、Task6和其它10个原任务保持；其它任务逐链结构/配置/零候选前检，不擅自全关。完整默认11任务/真实微信与MS6生产Timer验收继续未验证，不用该局部配置代签全目标。所有迁移、配置和运行均是未来新Run，未在当前任何实例执行。
+
+已证Task6额外前置：Env6的MS1/MS2不足；scanDue在空候选前仍严格验最终Task7五表，trade关闭不能代替。未来bootstrap补原`marketplace-ms4.php`→`marketplace-ms5-payment.php`→`marketplace-ms4-fulfillment.php`→`marketplace-ms4-aftersale.php`各自check/apply-structure/check/repeat；MS4原13步、payment/fulfillment原2表、aftersale最终20步保持原CLI断言。fulfillment原24列检查必须在aftersale20前结束，不能用该旧oracle拒绝正常最终结构，也不能少装最终五表。只在migrator原权限里建原结构，App/Timer仍DML；不造订单或金融业务结果。
+
+
+单行开关生产者核对：原`SystemCrontabServices::setTimerStatus():141–149`除is_open外还改update_time并重建cache，超出本次仅is_open的严格fixture差量；本轮采用Root已允许的受限单行DML，不改该业务服务。bootstrap锁定真实id5/full原19字段并核SQL来源，UPDATE只改该行is_open，事务内完整后态和其它全部timer行核对；随后原GC register本身重读所有实际open行并刷新crontabCache，不另加手工缓存状态。私有/公开收据边界按前段保持。
+
+
+Files必要补充（Root已批准，实现前）：第4件仅`crmeb/config/log.php`，把原timer_log硬false接为原Think Env `log.timer_log`、默认仍false。只有Env7可信normal Timer profile显式true，App和其它默认环境不启用。原真实crontab记录必须进入本Run私有runtime，0700目录/0600文件，不打印/入Git/消息传原文；有限观察只导出执行/失败计数与bytes/hash，检查原catch/log各错误分支。非空原成功crontab记录证明实际Timer配置读取生效；空日志不能签所有任务成功，600s窗口只能记实际已执行计划，不能代签全日/月或MS6。保原日志器/原异常处理，不加业务hook或运行时Repo补丁。
+
+
+Env7私有运行目录细节：另设专用Timer runtime命名卷，bootstrap配置时核空/真实inode并chmod0700，实际Timer角色核同dev/ino/uid并保umask0077；原日志文件必须0600。角色还声明固定公开AUDIT_MEDIA_TIMER_ROLE=1，有限Timer channel只由该真实角色入口使用；不把该声明当实际进程/扩展/配置通过。App原runtime及旧控制默认保持。完整原CLI stdout/stderr仅保本次bootstrap 0600私有文件，schema与timer-install使用互不覆盖的有限名字，公开只给native PID/exit和bytes/hash；不导出私有config/argv。
+
+
+Env7普通owned关闭的必要静态修正（先记后改）：Env6容器selector使用`docker ps -aq`默认短CID，而close循环拿完整inspect row.id与found.containers交叉比较，会误把本Run容器当foreign owned消费者。Env7全部容器list显式加`--no-trunc`并核64位ID，同原独立zero已有的full-ID合同一致；不改原6query范围、其它消费者完整mount/network接续、普通stop/nonforce rm，不修改或回写旧Env6/Run。仅源码合同核实，未运行或伪造失败样本。
+
+Node/UI范围：本轮不改Node、页面、前端构建或选择器；原b908源码与先前40scripts/97imports记录保持，不能将旧Node检查代签新的PHP/profile/Timer。自然观察用原Workerman Crontab Parser解析真实窗口内已到时的原规则，两个root的真实完整MP4过期后才观察删除；不调用GC/tick或新issue。自然成功后按计划TERM停止同一原Timer组、核原native0，再稳定读取私有原日志；失败不自动停服或清理资源。窗口未到时的日/月任务、生产默认11/真实微信/浏览器/MS6明确仍未验。
+
+
+原配置codec的精确连接：Think cache Driver::serialize/unserialize对numeric scalar写/读为原Redis numeric string；首次remember miss则直接返回原native JSON值。preflight不使用宽松相等或强制int，而先观察该确切cache key是否存在，按原miss/hit分支核返回类型，并核独立Redis内原codec的精确bytes/type/绝对expiry，防止把合法0到'0'误当失配或把默认值当配置ready。原配置值和业务代码不修改。
+
+
+Env7候选实现与本轮实际静态收口（待Root/peer，未运行）：允许四目标已形成。新增profile为当前单一normal叶，原harness32个命名函数保29个raw，只改app_request/stop_group/serve以承载有限Timer channel和原native/普通生命周期；默认非normal分支保持旧配置/双signal策略，normal只TERM。外部Env7当前16件，不含历史before/RESULT或旧tar；其harness同为32保29，原Env6 seed（157/202、compat192及失败路径）、guard、compose.base、configure-upload及原fixture原字节保留；两个channel/stop函数与新tracked正文相同，serve另保原media INI片段。aftersale原20步骤名逐一等既有正常helper，不在最终阶段重用旧24列oracle。
+
+本轮实际检查：4目标及外部全部文本UTF-8/LF/无BOM/空白检查通过；12份PHP仅字符串/注释/括号词法平衡（不是PHP解析），两份Python只AST/compile、不导入或执行候选；两JSON实际解析，git diff --check为0。当前Python没有YAML包，未安装、未做Docker compose config；YAML只有源缩进/有限角色/18声明卷键与原base目视静态核对，真实Compose解析留给Root。原b908工作树实核HEAD未变且clean，前端/业务/原Timer/GC与所有sealed材料未改。没有PHP/Composer/Docker/HTTP/App/Timer/Node新验证，完整Git archive/Tree/PINS/运行目录均未创建，source-binding仍null硬拒未绑定执行。
+
+本轮停写交Root完整语义/非作者审与串行PHP，之后才允许本地checkpoint、新完整Source及独立HTTP身份后继。Source就绪不代表native扩展/配置/迁移/真实HTTP/自然GC/普通关闭/独立zero、BROWSER/设备或T4通过；默认11任务/真实微信/全日月/MS6、原完整S/fullA/UI要求仍未验。当前不提交、推送、合并或部署，不在b54 S运行期做任何Docker目标动作。
+
+
+Env7 Root余审的真实producer修正（Source-only，先记后改）：实际vendor/workerman/workerman/Worker.php:563–566在原logFile不存在时touch后显式chmod0622；原crmeb/command/Timer.php:67–68固定runtime/timer.log。0077的umask不能限制该显式chmod，故原候选configure仅建空0700runtime，会与原mg_read运行后强制0600合同冲突。原Worker唯一umask(0)仅daemonize分支，当前前台timer start无-d会在该分支前返回，不为此改vendor/Timer或加hook。
+
+必要最小设计：只在configure已证全新空0700Timer runtime后，以xb真实创建精确0B的timer.log、不写任何日志内容；chmod0600，核regular/no-link/owner/nlink、同named/fd、完整空文件读回和同root dev/ino。初始实际文件name/stat/bytes/SHA并入原media-private-roots的timer_log字段；Timer serve启动前严格核同一原root及预建0B0600文件，防覆盖/替换。原Worker看到已存在regular log后自然跳过首次chmod分支，后续由原Logger真实写；gc-observe仍完整读取原真实日志且保持mg_read0600，只增加与初始文件dev/ino/mode/owner/nlink的对应，不接受伪日志或弱化断言。INTERFACE只补这一真实receipt字段合同，README无必要变化；没有改其它四目标、vendor/Timer、阶段或资源范围。当前不运行PHP/Docker/目标，不填未来文件identity或日志结果，Root原S继续隔离运行。
+
+
+### Env7 实际语法检查与本地源码检查点（2026-10-25）
+
+Root在中断的完整交易Run仅普通退役并独立zero后，串行使用原固定PHP镜像297b37d4…做纯`php -n -l`：实际PHP 8.2.33，当前W的3个PHP和外部包9个PHP共12件均原生0；5个外层原生created/terminal/同PID/wait与完整双流已实际读回，来源前后摘要保持。结果 `H:/天俪商城/artifacts/project-organization-20261023/media-env7-php82-syntax-r1/RESULT.json` 为11225B / 4e529edb28b0e2e1e0d2c5b7cc708bd0bb14b586e1b82786df5b3bb0f18d0a55。检查容器只挂只读公共源码、network none、只读根、无cap，真实Exited0/PID0后nonforce移除，没有执行候选include、应用、HTTP、Composer或Timer。
+
+本轮独立Source复核确认4目标/16外部成员、完整mount及原29函数保持、预建0600空timer.log/serve/GC身份链接无新确定问题；离线Compose配置解析0仅为配置证据。当前将这4件源码保存本地检查点；实际新HEAD/tar/Tree/PINS须提交后绑定，原b908 HTTP候选保持不改。完整正常HTTP、真实600秒自然回收、浏览器/设备及T4全验收仍NOT RUN，不能以语法或Source复核关闭。
