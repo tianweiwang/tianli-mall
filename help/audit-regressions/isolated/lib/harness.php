@@ -144,7 +144,7 @@ function audit_assert_unchanged(array $before, array $after, array $allow = []):
 function audit_app_request(string $action, array $overrides = [], string $channel = 'app'): void
 {
     audit_expect((int)(getenv('AUDIT_MEDIA_NORMAL') === '1') + (int)(getenv('AUDIT_LICENCE_NORMAL') === '1')
-        + (int)(getenv('AUDIT_LEGACY_REFUND_NORMAL') === '1') <= 1, 'normal profiles must not be mixed');
+        + (int)(getenv('AUDIT_LEGACY_REFUND_NORMAL') === '1') + (int)(getenv('AUDIT_WITHDRAWAL_QR_NORMAL') === '1') <= 1, 'normal profiles must not be mixed');
     audit_expect($channel === 'app' || (getenv('AUDIT_MEDIA_NORMAL') === '1' && $channel === 'media-timer'), 'unapproved supervisor channel');
     $revision = bin2hex(random_bytes(8));
     audit_write_json(audit_run_dir() . '/' . $channel . '-control.json', ['run_id' => getenv('AUDIT_RUN_ID'), 'revision' => $revision, 'action' => $action, 'overrides' => $overrides]);
@@ -686,21 +686,24 @@ function audit_assert_licence_private_mount():void
 }
 
 require_once __DIR__.'/legacy-refund-normal-profile.php';
+require_once __DIR__.'/withdrawal-qr-normal-profile.php';
 
 function audit_serve(string $channel = 'app'): void
 {
     audit_expect((int)(getenv('AUDIT_MEDIA_NORMAL') === '1') + (int)(getenv('AUDIT_LICENCE_NORMAL') === '1')
-        + (int)(getenv('AUDIT_LEGACY_REFUND_NORMAL') === '1') <= 1, 'normal profiles must not be mixed');
+        + (int)(getenv('AUDIT_LEGACY_REFUND_NORMAL') === '1') + (int)(getenv('AUDIT_WITHDRAWAL_QR_NORMAL') === '1') <= 1, 'normal profiles must not be mixed');
     audit_expect($channel === 'app' || (getenv('AUDIT_MEDIA_NORMAL') === '1' && $channel === 'media-timer'), 'unapproved supervisor channel');
     if (getenv('AUDIT_MEDIA_NORMAL') === '1') { require_once audit_repo_dir() . '/help/audit-regressions/isolated/lib/media-normal-profile.php'; }
     $timer = $channel === 'media-timer';
     audit_guard_assert();
     $normalLicence = getenv('AUDIT_LICENCE_NORMAL') === '1';
     $normalRefund = getenv('AUDIT_LEGACY_REFUND_NORMAL') === '1';
-    audit_expect(!($normalLicence && $normalRefund), 'normal private profiles must not be mixed');
-    $normalTermOnly = $normalLicence || $normalRefund;
+    $normalWithdrawalQr = getenv('AUDIT_WITHDRAWAL_QR_NORMAL') === '1';
+    audit_expect((int)$normalLicence + (int)$normalRefund + (int)$normalWithdrawalQr <= 1, 'normal private profiles must not be mixed');
+    $normalTermOnly = $normalLicence || $normalRefund || $normalWithdrawalQr;
     if ($normalLicence) { audit_assert_licence_private_mount(); }
     if ($normalRefund) { audit_assert_legacy_refund_private_mount(); }
+    if ($normalWithdrawalQr) { audit_assert_withdrawal_qr_private_mount(); }
     $supervisor = audit_app_proc_stat(getmypid());
     audit_expect($supervisor !== null, 'supervisor numeric process identity unavailable');
     $process = null; $group = null; $revision = ''; $generation = '';
@@ -726,12 +729,13 @@ function audit_serve(string $channel = 'app'): void
         } catch (Throwable $statusError) { fwrite(STDERR, 'BLOCKED normal status persistence; live state retained '.get_class($statusError)."\n"); }
     };
     $stop = static function () use (&$process, &$group, &$generation, &$normalTermSent, &$normalStopBlocked,
-        &$normalStopping, $normalTermOnly, $normalRefund, $supervisor, $timer): array {
+        &$normalStopping, $normalTermOnly, $normalRefund, $normalWithdrawalQr, $supervisor, $timer): array {
         if ($normalTermOnly) {
             audit_expect(!$normalStopBlocked, 'normal incomplete stop is retained; no second stop or restart');
             $normalStopping = true;
-            try { $result = $normalRefund ? audit_app_stop_legacy_refund_normal_group($process, $group, $supervisor, $normalTermSent)
-                : audit_app_stop_licence_normal_group($process, $group, $supervisor, $normalTermSent); }
+            try { $result = $normalWithdrawalQr ? audit_app_stop_withdrawal_qr_normal_group($process, $group, $supervisor, $normalTermSent)
+                : ($normalRefund ? audit_app_stop_legacy_refund_normal_group($process, $group, $supervisor, $normalTermSent)
+                    : audit_app_stop_licence_normal_group($process, $group, $supervisor, $normalTermSent)); }
             catch (Throwable $error) { $normalStopBlocked = true; throw $error; }
             finally { $normalStopping = false; }
         } else { $result = audit_app_stop_group($process, $group, $supervisor, $timer); }
@@ -781,7 +785,8 @@ function audit_serve(string $channel = 'app'): void
                             'APP_DEBUG' => 'PHP_APP_DEBUG', 'DB_PORT' => 'PHP_DATABASE_HOSTPORT', 'CACHE_PREFIX' => 'PHP_CACHE_CACHE_PREFIX',
                             'SERVER_WORKERS' => 'PHP_CLI_SERVER_WORKERS',
                             'LICENCE_PRIVATE_ROOT'=>'PHP_MARKETPLACE_CUSTOMER_LICENCE_PRIVATE_ROOT',
-                            'REFUND_PRIVATE_ROOT'=>'PHP_MARKETPLACE_CUSTOMER_REFUND_PRIVATE_ROOT'];
+                            'REFUND_PRIVATE_ROOT'=>'PHP_MARKETPLACE_CUSTOMER_REFUND_PRIVATE_ROOT',
+                            'WITHDRAWAL_QR_PRIVATE_ROOT'=>'PHP_MARKETPLACE_CUSTOMER_WITHDRAWAL_QR_PRIVATE_ROOT'];
                         if (getenv('AUDIT_MEDIA_NORMAL') === '1') { $mapping += audit_media_normal_override_mapping(); }
                         $approved = is_string($value) && match ($key) {
                             'APP_KEY', 'CACHE_DRIVER' => in_array($value, ['', 'default', 'file', 'redis'], true),
@@ -793,11 +798,13 @@ function audit_serve(string $channel = 'app'): void
                             'SERVER_WORKERS' => in_array($value, ['', '2'], true),
                             'LICENCE_PRIVATE_ROOT' => $value==='/run/audit-customer-licence'&&getenv('AUDIT_LICENCE_NORMAL')==='1',
                             'REFUND_PRIVATE_ROOT' => $value==='/run/audit-customer-refund'&&getenv('AUDIT_LEGACY_REFUND_NORMAL')==='1',
+                            'WITHDRAWAL_QR_PRIVATE_ROOT' => $value==='/run/audit-customer-withdrawal-qr'&&getenv('AUDIT_WITHDRAWAL_QR_NORMAL')==='1',
                             default => getenv('AUDIT_MEDIA_NORMAL') === '1' && audit_media_normal_override_approved($key, $value),
                         };
                         audit_expect(isset($mapping[$key]) && $approved, 'unapproved application configuration override');
                         if($key==='LICENCE_PRIVATE_ROOT')audit_assert_licence_private_mount();
                         if($key==='REFUND_PRIVATE_ROOT')audit_assert_legacy_refund_private_mount();
+                        if($key==='WITHDRAWAL_QR_PRIVATE_ROOT')audit_assert_withdrawal_qr_private_mount();
                         if ($key === 'SERVER_WORKERS' && $value === '') { unset($env['PHP_CLI_SERVER_WORKERS']); }
                         else { $env[$mapping[$key]] = $value; }
                     }

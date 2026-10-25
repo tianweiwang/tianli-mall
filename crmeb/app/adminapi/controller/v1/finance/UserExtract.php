@@ -146,4 +146,32 @@ class UserExtract extends AuthController
             return app('json')->success('操作失败');
         }
     }
+
+    /** The row id is the actual saved withdrawal shown by the original finance list. */
+    public function qrMaterial(\app\Request $request):\think\Response
+    {
+        $id=\app\dao\marketplace\assets\CustomerWithdrawalQrAssetDao::integer($request->route('extract_id',null,''),1,4294967295);
+        $asset=\app\dao\marketplace\assets\CustomerWithdrawalQrAssetDao::assetId($request->route('asset_id',null,''));
+        return self::qrResponse($request,app()->make(\app\services\marketplace\assets\CustomerWithdrawalQrAssetServices::class)
+            ->platformRead($request,$id,$asset));
+    }
+    private static function qrResponse(\app\Request $request,array $value):\think\Response
+    {
+        if($request->method(true)==='POST'){
+            if(array_keys($value)!==['read_ticket','issued_at_ms','expires_at_ms'])throw new \crmeb\exceptions\AuthUnavailableException();
+            return \think\Response::create(['status'=>200,'msg'=>'操作成功','data'=>$value],'json',200)->allowCache(false)
+                ->header(['Cache-Control'=>'private, no-store, max-age=0','Pragma'=>'no-cache','Expires'=>'0']);
+        }
+        if($request->method(true)!=='GET'||array_keys($value)!==['bytes','media_type','byte_size','file_name']
+            ||!is_string($value['bytes'])||$value['bytes']===''||!is_int($value['byte_size'])
+            ||$value['byte_size']!==strlen($value['bytes'])||!is_string($value['media_type'])
+            ||!in_array($value['media_type'],['image/jpeg','image/jpg','image/png','image/gif','image/webp'],true)
+            ||!is_string($value['file_name'])||preg_match('/\Awithdrawal-qr-[1-9][0-9]{0,19}\.(?:jpg|jpeg|png|gif|webp)\z/D',$value['file_name'])!==1)throw new \crmeb\exceptions\AuthUnavailableException();
+        $response=\think\Response::create($value['bytes'],'html',200)->allowCache(false)->header([
+            'Content-Type'=>$value['media_type'],'Content-Length'=>(string)$value['byte_size'],
+            'Content-Disposition'=>'inline; filename="'.$value['file_name'].'"',
+            'Cache-Control'=>'private, no-store, max-age=0','Pragma'=>'no-cache','Expires'=>'0','X-Content-Type-Options'=>'nosniff']);
+        if($response->getContent()!==$value['bytes']||$response->getCode()!==200||$response->isAllowCache()!==false)throw new \crmeb\exceptions\AuthUnavailableException();
+        return $response;
+    }
 }

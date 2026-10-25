@@ -67,3 +67,14 @@ Route::group('finance', function () {
     \app\adminapi\middleware\AdminCheckRoleMiddleware::class,
     \app\adminapi\middleware\AdminLogMiddleware::class
 ])->option(['mark' => 'finance', 'mark_name' => '财务管理']);
+
+// Only the actual original GET finance/extract grant authorizes these fixed private material leaves.
+Route::group('finance', function () {
+    Route::post('extract/<extract_id>/qr/<asset_id>/read-ticket','v1.finance.UserExtract/qrMaterial')->option(['real_name'=>'提现二维码读票据','withdrawal_qr_private_reader'=>'platform']);
+    Route::get('extract/<extract_id>/qr/<asset_id>/content','v1.finance.UserExtract/qrMaterial')->option(['real_name'=>'提现二维码原图','withdrawal_qr_private_reader'=>'platform']);
+})->middleware([
+    \app\http\middleware\AllowOriginMiddleware::class,
+    \app\adminapi\middleware\AdminAuthTokenMiddleware::class,
+    \app\adminapi\middleware\WithdrawalQrReadPermissionMiddleware::class,
+    \app\adminapi\middleware\AdminLogMiddleware::class
+])->option(['mark'=>'finance','mark_name'=>'财务管理']);

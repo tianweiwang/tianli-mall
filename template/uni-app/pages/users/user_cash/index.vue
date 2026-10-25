@@ -9,6 +9,7 @@
 				</view>
 			</view>
 			<view class='wrapper'>
+				<view v-if="qrProblem" class="qr-material-status" role="status"><text>{{qrProblem}}</text><view v-for="(line,i) in qrReceiptLines" :key="i"><text>{{line}}</text></view></view>
 				<view :hidden='currentTab != 0' class='list'>
 					<form @submit="subCash">
 						<view class='item acea-row row-between-wrapper'>
@@ -46,7 +47,7 @@
 						<view class='tip'>
 							{{$t(`说明: 每笔佣金的冻结期为`)}}{{userInfo.broken_day}}{{$t(`天，到期后可提现`)}}
 						</view>
-						<button formType="submit" class='bnt bg-color'>{{$t(`提现`)}}</button>
+						<button formType="submit" :disabled="prevent || qrBusy || !!qrCashPending" class='bnt bg-color'>{{$t(`提现`)}}</button>
 					</form>
 				</view>
 				<view :hidden='currentTab != 1' class='list'>
@@ -90,7 +91,7 @@
 						<view class='tip'>
 							{{$t(`说明: 每笔佣金的冻结期为`)}}{{userInfo.broken_day}}{{$t(`天，到期后可提现`)}}
 						</view>
-						<button formType="submit" class='bnt bg-color'>{{$t(`提现`)}}</button>
+						<button formType="submit" :disabled="prevent || qrBusy || !!qrCashPending" class='bnt bg-color'>{{$t(`提现`)}}</button>
 					</form>
 				</view>
 				<view :hidden='currentTab != 2' class='list'>
@@ -134,7 +135,7 @@
 						<view class='tip'>
 							{{$t(`说明: 每笔佣金的冻结期为`)}}{{userInfo.broken_day}}{{$t(`天，到期后可提现`)}}
 						</view>
-						<button formType="submit" class='bnt bg-color'>{{$t(`提现`)}}</button>
+						<button formType="submit" :disabled="prevent || qrBusy || !!qrCashPending" class='bnt bg-color'>{{$t(`提现`)}}</button>
 					</form>
 				</view>
 				<view :hidden='currentTab != 3' class='list'>
@@ -148,7 +149,7 @@
 							{{$t(`当前可提现金额`)}}: <text class="price">{{$t(`￥`)}}{{userInfo.commissionCount}}</text>，{{$t(`冻结佣金`)}}:
 							{{$t(`￥`)}}{{userInfo.broken_commission}}
 						</view>
-						<button formType="submit" class='bnt bg-color'>{{$t(`提现`)}}</button>
+						<button formType="submit" :disabled="prevent || qrBusy || !!qrCashPending" class='bnt bg-color'>{{$t(`提现`)}}</button>
 					</form>
 				</view>
 			</view>
@@ -179,13 +180,14 @@
 	} from '@/utils/SubscribeMessage.js';
 	// #endif
 	import colors from '@/mixins/color.js';
+	import { withdrawalQrDraft } from '@/api/withdrawal-qr-materials.js';
 	export default {
 		components: {
 			// #ifdef MP
 			authorize
 			// #endif
 		},
-		mixins: [colors],
+		mixins: [colors, withdrawalQrDraft],
 		data() {
 			return {
 				navList: [],
@@ -248,26 +250,9 @@
 			 * 上传文件
 			 * 
 			 */
-			uploadpic: function(type) {
-				let that = this;
-				that.$util.uploadImageOne('upload/image', function(res) {
-					if (type === 'W') {
-						that.qrcodeUrlW = res.data.url;
-					} else {
-						that.qrcodeUrlZ = res.data.url;
-					}
-				});
-			},
-			/**
-			 * 删除图片
-			 * 
-			 */
-			DelPicW: function() {
-				this.qrcodeUrlW = "";
-			},
-			DelPicZ: function() {
-				this.qrcodeUrlZ = "";
-			},
+			uploadpic: function(type) { return this.uploadWithdrawalQr(type); },
+			DelPicW: function() { this.removeWithdrawalQr('W'); },
+			DelPicZ: function() { this.removeWithdrawalQr('Z'); },
 			onLoadFun: function() {
 				this.getUserInfo();
 				this.getUserExtractBank();
@@ -338,7 +323,7 @@
 			subCash(e) {
 				let that = this,
 					value = e.detail.value;
-				if (this.prevent) return
+				if (this.prevent || this.qrBusy || this.qrCashPending) return
 				if (that.currentTab == 0) { //银行卡
 					if (!value.name.trim()) return this.$util.Tips({
 						title: this.$t(`请填写持卡人姓名`)
@@ -362,7 +347,7 @@
 						title: this.$t(`请填写微信号`)
 					});
 					value.weixin = value.name;
-					value.qrcode_url = that.qrcodeUrlW;
+					value.qrcode_url = that.qrReferences.W || that.qrcodeUrlW;
 					
 				} else if (that.currentTab == 2) { //支付宝
 					value.extract_type = 'alipay';
@@ -370,7 +355,7 @@
 						title: this.$t(`请填写支付宝号`)
 					});
 					value.alipay_code = value.name;
-					value.qrcode_url = that.qrcodeUrlZ;
+					value.qrcode_url = that.qrReferences.Z || that.qrcodeUrlZ;
 				}
 				if (!value.money.trim()) return this.$util.Tips({
 					title: this.$t(`请填写提现金额`)
@@ -382,7 +367,9 @@
 					title: this.$t(`提现金额不能高于500`)
 				});
 				this.prevent = true
-				extractCash(value).then(res => {
+				const privateQr = typeof value.qrcode_url === 'string' && value.qrcode_url.startsWith('mp-withdrawal:');
+				const action = privateQr ? this.submitWithdrawalQrCash(value) : extractCash(value);
+				action.then(res => {
 					that.getUserInfo();
 					// #ifdef MP
 					if(this.weixinExtractType == 1 && this.currentTab == 1){
@@ -399,7 +386,7 @@
 					});
 				}).catch(err => {
 					return this.$util.Tips({
-						title: err
+						title: privateQr ? (this.qrProblem || err.message || '提交结果尚未确认，请勿重复提交') : err
 					});
 				}).finally(e =>{
 					this.prevent = false
@@ -467,6 +454,8 @@
 </script>
 
 <style lang="scss">
+	.qr-material-status { margin: 0 30rpx 24rpx; font-size: 26rpx; line-height: 1.5; overflow-wrap: anywhere; }
+	.cash-withdrawal .wrapper .bnt { display: flex; align-items: center; justify-content: center; box-sizing: border-box; max-width: 100%; }
 	page {
 		background-color: #fff !important;
 	}

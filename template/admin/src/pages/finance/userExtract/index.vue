@@ -77,6 +77,7 @@
       <router-link :to="$routeProStr + '/finance/finance/commission'">
         <el-button type="primary">佣金记录</el-button>
       </router-link>
+      <p v-if="withdrawalQrProblem" class="withdrawal-qr-status" role="status">{{ withdrawalQrProblem }}</p>
       <el-table ref="table" :data="tabList" v-loading="loading" empty-text="暂无数据" class="mt14">
         <el-table-column label="ID" width="80">
           <template slot-scope="scope">
@@ -129,13 +130,15 @@
         </el-table-column>
         <el-table-column label="收款码" min-width="90">
           <template slot-scope="scope">
-            <div
-              class="tabBox_img"
-              v-viewer
-              v-if="scope.row.extract_type === 'weixin' || scope.row.extract_type === 'alipay'"
-            >
-              <img v-lazy="scope.row.qrcode_url" />
-            </div>
+            <template v-if="scope.row.extract_type === 'weixin' || scope.row.extract_type === 'alipay'">
+              <template v-if="isPrivateWithdrawalQr(scope.row.qrcode_url)">
+                <div class="tabBox_img" v-viewer v-if="withdrawalQrImageFor(scope.row) && withdrawalQrImageFor(scope.row).url">
+                  <img :src="withdrawalQrImageFor(scope.row).url" alt="收款码" @error="withdrawalQrImageFailed(withdrawalQrImageFor(scope.row))" />
+                </div>
+                <span v-else class="withdrawal-qr-status" role="status">{{ withdrawalQrImageFor(scope.row) && withdrawalQrImageFor(scope.row).error || '收款码读取中或尚未确认' }}</span>
+              </template>
+              <div class="tabBox_img" v-viewer v-else-if="scope.row.qrcode_url"><img v-lazy="scope.row.qrcode_url" /></div>
+            </template>
           </template>
         </el-table-column>
         <el-table-column label="申请时间" min-width="130">
@@ -199,8 +202,10 @@ import { mapState } from 'vuex';
 import { cashListApi, cashEditApi, refuseApi } from '@/api/finance';
 import { formatDate } from '@/utils/validate';
 import editFrom from '@/components/from/from';
+import { withdrawalQrImages } from '@/api/withdrawal-qr-materials';
 export default {
   name: 'cashApply',
+  mixins: [withdrawalQrImages],
   components: { cardsData, searchFrom, editFrom },
   filters: {
     formatDate(time) {
@@ -283,6 +288,7 @@ export default {
     },
   },
   computed: {
+    withdrawalQrSources() { return this.tabList; },
     ...mapState('media', ['isMobile']),
     labelWidth() {
       return this.isMobile ? undefined : '80px';
@@ -414,6 +420,7 @@ export default {
 };
 </script>
 <style lang="scss" scoped>
+.withdrawal-qr-status { overflow-wrap: anywhere; line-height: 1.5; }
 .ivu-mt .type .item {
   margin: 3px 0;
 }

@@ -13,6 +13,10 @@ namespace app\api\controller\v1\user;
 use app\Request;
 use app\services\user\UserExtractServices;
 use think\facade\Config;
+use app\dao\marketplace\assets\CustomerWithdrawalQrAssetDao as WithdrawalAssets;
+use app\services\marketplace\assets\CustomerAssetServices;
+use app\services\marketplace\assets\CustomerWithdrawalQrAssetServices;
+use app\services\marketplace\attachment\MerchantAttachmentOperationException;
 
 /**
  * 提现类
@@ -79,9 +83,57 @@ class UserExtractController
             if (!$extractInfo['bankname']) return app('json')->fail('请输入开户行信息');
         }
         $uid = (int)$request->uid();
+        if (WithdrawalAssets::isPrivate($extractInfo['qrcode_url'])) {
+            try {
+                $ok=$this->services->cash($uid,$extractInfo,$request);
+                return \think\Response::create(['status'=>$ok?200:400,'msg'=>$ok?'申请提现成功':'申请提现失败','data'=>[]],'json',200)
+                    ->allowCache(false)->header(['Cache-Control'=>'private, no-store, max-age=0','Pragma'=>'no-cache','Expires'=>'0']);
+            } catch (MerchantAttachmentOperationException $error) {
+                return \think\Response::create(['status'=>503,'msg'=>'提交结果尚未确认，请保留草稿，勿重复提交','data'=>$error->receipt],'json',503)
+                    ->allowCache(false)->header(['Cache-Control'=>'private, no-store, max-age=0','Pragma'=>'no-cache','Expires'=>'0']);
+            }
+        }
         if ($this->services->cash($uid, $extractInfo))
             return app('json')->success('申请提现成功');
         else
             return app('json')->fail('申请提现失败');
+    }
+
+    public function uploadQr(Request $request):\think\Response
+    {
+        $type=$request->route('extractType',null,'');
+        if(!is_string($type))throw new \crmeb\exceptions\AuthUnavailableException();
+        try{
+            $data=app()->make(CustomerAssetServices::class)->uploadWithdrawalQr($request,(int)$request->uid(),$type);
+            return \think\Response::create(['status'=>200,'msg'=>'图片上传成功','data'=>$data],'json',200)->allowCache(false)
+                ->header(['Cache-Control'=>'private, no-store, max-age=0','Pragma'=>'no-cache','Expires'=>'0']);
+        }catch(MerchantAttachmentOperationException $error){
+            return \think\Response::create(['status'=>503,'msg'=>'图片上传结果尚未确认，请保留草稿','data'=>$error->receipt],'json',503)->allowCache(false)
+                ->header(['Cache-Control'=>'private, no-store, max-age=0','Pragma'=>'no-cache','Expires'=>'0']);
+        }
+    }
+    public function qrMaterial(Request $request):\think\Response
+    {
+        return self::qrResponse($request,app()->make(CustomerWithdrawalQrAssetServices::class)->customerRead($request,
+            (int)$request->uid(),WithdrawalAssets::assetId($request->route('asset_id',null,''))));
+    }
+    private static function qrResponse(\app\Request $request,array $value):\think\Response
+    {
+        if($request->method(true)==='POST'){
+            if(array_keys($value)!==['read_ticket','issued_at_ms','expires_at_ms'])throw new \crmeb\exceptions\AuthUnavailableException();
+            return \think\Response::create(['status'=>200,'msg'=>'操作成功','data'=>$value],'json',200)->allowCache(false)
+                ->header(['Cache-Control'=>'private, no-store, max-age=0','Pragma'=>'no-cache','Expires'=>'0']);
+        }
+        if($request->method(true)!=='GET'||array_keys($value)!==['bytes','media_type','byte_size','file_name']
+            ||!is_string($value['bytes'])||$value['bytes']===''||!is_int($value['byte_size'])
+            ||$value['byte_size']!==strlen($value['bytes'])||!is_string($value['media_type'])
+            ||!in_array($value['media_type'],['image/jpeg','image/jpg','image/png','image/gif','image/webp'],true)
+            ||!is_string($value['file_name'])||preg_match('/\Awithdrawal-qr-[1-9][0-9]{0,19}\.(?:jpg|jpeg|png|gif|webp)\z/D',$value['file_name'])!==1)throw new \crmeb\exceptions\AuthUnavailableException();
+        $response=\think\Response::create($value['bytes'],'html',200)->allowCache(false)->header([
+            'Content-Type'=>$value['media_type'],'Content-Length'=>(string)$value['byte_size'],
+            'Content-Disposition'=>'inline; filename="'.$value['file_name'].'"',
+            'Cache-Control'=>'private, no-store, max-age=0','Pragma'=>'no-cache','Expires'=>'0','X-Content-Type-Options'=>'nosniff']);
+        if($response->getContent()!==$value['bytes']||$response->getCode()!==200||$response->isAllowCache()!==false)throw new \crmeb\exceptions\AuthUnavailableException();
+        return $response;
     }
 }

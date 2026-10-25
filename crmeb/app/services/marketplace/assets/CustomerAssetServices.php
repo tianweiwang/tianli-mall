@@ -21,6 +21,10 @@ final class CustomerAssetServices
     public function uploadAgentLicence(Request $request,int $actualUid,int $ownedApplyId):array
     {return app()->make(CustomerAgentLicenceAssetServices::class)->upload($request,$actualUid,$ownedApplyId);}
 
+    /** Withdrawal QR has its own UID/purpose namespace; no merchant, licence or refund parent. */
+    public function uploadWithdrawalQr(Request $request,int $actualUid,string $extractType):array
+    {return app()->make(CustomerWithdrawalQrAssetServices::class)->upload($request,$actualUid,$extractType);}
+
     public function uploadForReview(Request $request,int $actualUid,int $rootId,int $itemId):array
     {
         $receipt=['complete'=>false,'phase'=>'preflight','physical_changed'=>false,'physical_complete'=>false,
