@@ -220,3 +220,10 @@ py -3 $ms2Host zero --repo $ms2Repo --source $ms2Commit --run-dir $ms2Run --setu
 原25 Source闭包仅因入口本身为运行依赖扩为26；旧shell/compose/生产CLI保持原件。close仅接本Run成功normal，原finite已Exited0不重启；数据库仅显式SIGTERM/timeout -1自然0，全体同代Exited0/PID0再nonforce精确移除3容器/原空网络/完整实际卷。zero是另一个进程对project/run各单label的container/network/volume六fresh，原生0且每次stdout/stderr皆空。入口不调用teardown/down/remove-orphans/force，不访问外部DB/秘密，不停止其它项目，不修改repo的.env/install.lock。
 
 当前仅Source交付，尚未运行候选或签资源/业务通过。Root后续同镜像语法、L2本地提交及全新专用实例实跑另记原07；原80/37/G01–G07、历史/真实用户/权益、活动媒体报价、启用及整体Task2状态不变。旧shell仍有自动down，因此不能以其旧teardown回执代替本次普通TERM/nonforce与独立zero。
+
+
+### 2026-10-25 正常四阶段实际结果
+
+仓库Windows入口已经以实际Source057f769e37bc79c31d96b3ad05d56e8590d26768、新detached Val-r2和新Run202610250939271702e3完成setup/normal/普通close/独立zero，四阶段334native全部0。真实10个不同CLI进程完成MS1 apply1及MS2 check3/apply2/backfill2/enforce2；38声明行含积分/预售和四运费case，首次8 owner写入、重复0，完整原数据/文件/Redis/schema oracle及私有精确清理通过。普通TERM2DB、三Exited0/PID0同代CID/11卷/空内部网nonforce清退，独立六fresh单label双流空。原G01–G07仍NOT RUN；原80/37历史、真实归属权益、业务启用及整体Task2未获通过。
+
+完整证据与边界登记在原执行清单07-plan-ms2；Root最终回执1277B/657bb388f1212ebfe1f7b181afc439e7e65a5bad697d3d91591e3b1d680cae7c。早先段落的Source-only/尚未运行描述保留其写作时点。本次仅文档记录，不改生产CLI928、normal88db、Hostba6b或原Run；新的文档提交不替代实际测试Source057f，未推送部署。

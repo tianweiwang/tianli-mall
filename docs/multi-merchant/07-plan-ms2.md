@@ -262,7 +262,7 @@ Source闭包在原19路径原成员上补CLI新绑定6件成25：StoreIntegralSe
 
 - [x] Root采用上述6落点与38声明行/25Source/8→0/原10CLI方案；实施前记录设计、范围和验收边界。
 - [x] 完成本三路径正常Source扩展；原10行/完整字段、58函数中的7件有限变化、25路径与完整原oracle/私有清理静态核对，非作者仅Source复核完成。
-- [ ] Root独立Source/固定Runtime语法与真实专用正常四命令验证、普通收口和独立zero；未运行仍NOT RUN。
+- [x] Root独立Source/固定Runtime语法与真实专用正常四命令验证、普通收口和独立zero；实际Run202610250939271702e3证据见下文，原完整Task2仍未验。
 
 本扩展实际Source结果：normal入口94188B / `c5d55faeae98d4e0e8aacf796c4c4620016939d94e23ae322e12d0e31c402999`，58个原顶层函数集合不变，只有m2m_sourcePaths/m2f_fixture/m2f_mapping/m2f_ownedRows/m2f_backfillState/m2f_clearReceipt/m2f_main七件改变，其余51件完整字节保持。原10个INSERT完整3648B片段（含region）仍逐字保留，追加28行只在原夹具事务内；新表/字段均按真实DDL，完整38行计数、多行PK序hash、description保重复multiset和活动PK disjoint门已静态核。Source25均唯一且真实存在，生产CLI原16绑定叶全含；生产CLI116625/92819382保持原件，原shell/compose/其它文件未改。原cleanup/claimReports/insert/enforceState/enforcedSql/cli/snapshot/fullSame/schemaSame/source等完整函数未动。
 
@@ -285,7 +285,7 @@ close须另行显式调用并输入实际SETUP/NORMAL sha，核前序完整ledge
 
 - [x] Root授权并采用仓库内唯一Host、26闭包、四显式阶段和现有正常叶复用设计；编码前记录。
 - [x] 完成四路径Source、原业务与shell叶字节复用证明、原12声明/11必需挂载闭包/全部实际卷和3角色/mount/有限helper/完整native/成功close/独立zero静态与非作者复核；仅Source，未执行。
-- [ ] Root独立语法/新clean commit与实际专用setup、normal、普通close、独立zero；未发生仍NOT RUN。
+- [x] Root独立语法/新clean commit与实际专用setup、normal、普通close、独立zero；实际同057f来源四阶段均0，完整历史与启用不在此通过。
 
 Host初稿静态复核修正依据：原finite m2f_seed第175行会合法给manifest增加fixture_table_count/create_only_initializer，close不能错误要求仍等于SETUP字节。SETUP保完整原manifest，NORMAL仅允许该原函数精确新增字段/实际initializer hash，再保真实NORMAL manifest完整值及digest；close/zero按实际NORMAL pin全量核，其余source-binding/created保持SETUP原件。Windows原PHP canonical只识别drive:/路径，宿主AUDIT挂载环境和传原PHP binding参数统一as_posix，原生Git/Docker路径仍argv，不走shell。均是保持原流程的接线修正，不改业务oracle。
 
@@ -312,7 +312,7 @@ Root实际以07f9090866448e9599d5db3973c2e0ede0216972和独立detached Val-r1启
 - [x] Root限定本07与Host单字面量后继修复；编码前记录兼容依据、失败边界和收尾设计。
 - [x] Host单字面量正逆/AST与两路径diff静态核、独立Source复核；不import/执行候选。
 - [x] 独立失败收尾Source固定全部实际公共证据与资源，只做Source/静态/独审；不执行Docker/PHP/SQL/HTTP/目标，不读private配置或秘密。
-- [ ] Root另行实际普通close/独立zero并核全部原生流；其后新clean提交、独立Val与fresh正常四阶段，旧Run不得重放。
+- [x] Root另行实际普通close/独立zero并核全部原生流；新057f clean提交、独立Val-r2与fresh正常四阶段已实跑0，旧失败Run未重放。
 
 本小修不改变活动type4/type6生产算法、原映射与归属、38合成行、完整原Task2/G01–G07/80存量/37历史/启用或人工验收；停止样本维持NOT RUN。此处不做提交、推送或canonical记录修改。
 
@@ -322,3 +322,14 @@ Root对失败收尾Source初稿发现一项真实准入误差：原0031失败ins
 
 
 Root实际普通收尾证据（2026-10-25）：已435908全文核外部Source原版并678fa2/4fa9f4全文差量、14实际pins及精确inverse核最终22565/ed851b76，legacy_refund_implementation独立71native/142完整双流Source0。Root130cc2/123b32只执行最终版close一次，自然0，eefa27完整119native/238双流3823358B全部0；两个数据库明确TERM/-1后真实同代Exited0/PID0/noRestart，finite保持原created/0001/PID0从未启动，nonforce精确3CID/11实际卷/原空内部网。独立3a3d08 zero自然0，d89ef5完整13native/26双流1873920B全0，六fresh单label查询双流原字节空。Root回执 `artifacts/project-organization-20261023/ms2-activity-type-normal-r1-failed-setup-retire-launcher-r1/ROOT-CLOSE-ZERO-READBACK.json` 879B/80b233373c08760fce064169d9937e841f781f39eb8184fc5043962341432142。旧失败Run/Val/07f/全部流原件保留，不重放、不计SQL或业务通过。Root6b3c85当前Host49769/ba6b40f1实际AST/compile0且单字面量inverse回原49759/0c1ee4a3，原PHP/生产CLI未变，无须重复-l。本两路径进入新的L2本地提交；后续新独立Val/fresh四阶段仍待，原完整Task2/80/37/启用/人工验收均不关闭。
+
+
+#### 2026-10-25 积分/预售正常四阶段实际通过
+
+实际验证Source为057f769e37bc79c31d96b3ad05d56e8590d26768，独立detached Val-r2和新Run202610250939271702e3；未重放原失败Run。setup原77232/d0eac7自然0，Root32b169完整115native/230双流3857354B全0，15765真实tracked body/26叶及三角色/11实际专用卷原合同通过。normal原25824/5eb1a5自然0，Root ed1d44/686a72/d1b0e9核87native/174双流3818052B全0（stderr仅Compose正常helper创建进度）；12个完整snapshot共10839120B与全部20个normal报告11038288B实际指纹读回。正常入口183656B，实际MS1 apply1与MS2 check3/apply2/backfill2/enforce2共10个不同PID全部native0。首次结构前check的self为空，真实结构绑定后同self1；不能把结构前未绑定解释为归属不一致。
+
+38个明确声明新行含积分type4和预售type6、四base运费模式；真实活动PK均与全部base PK不同号，实际模板2由明确同owner映射生成。首次backfill精确8 owner写入，重复0；enforce首次改变/重复不变，final check只读/final apply不放宽owner。全部原行/PK/路径/非owner字段、schema仅批准变化、Redis完整值/绝对期限、四RO runtime、整PNG卷和别名及私有精确清理原oracle均通过；实际T2M_NORMAL PASS，原G01–G07均NOT RUN，finite原生ORDERLY_SHUTDOWN/Exited0/PID0/noRestart。
+
+普通close原53394/5b95d4自然0，Root e5f19f完整121native/242双流3818748B全0，两DB显式SIGTERM/-1自然0，三同代CID/11原卷/原空内部网络nonforce清退。另独立zero4901c7自然0，Root f017f7完整11native/22双流1873700B全0、六fresh单label双流空。四阶段334native/668完整双流13367854B全部原生0。最终Root回执 `artifacts/project-organization-20261023/ms2-activity-type-normal-launcher-r2/ROOT-NORMAL-CLOSE-ZERO-READBACK.json` 1277B/657bb388f1212ebfe1f7b181afc439e7e65a5bad697d3d91591e3b1d680cae7c。NORMAL50203/ebab7547985f2b2a4259a240218396fd6083b6d92a1bfb2b011a3209b603144e只签正常四命令与本声明fixture。
+
+这次完成本节正向扩展及仓库WindowsHost四阶段，不能签原80存量/37步两族旧真实余额支付历史、真实用户权益/活动媒体报价、启用、G完整、原完整Task2、浏览器设备或人工验收；只BASE人工已签。生产CLI928、normal88db、Hostba6b保持实际测试原件；本次只提交两说明文档，未推送部署，不因文档提交把其新HEAD冒充057f实际Runtime。
