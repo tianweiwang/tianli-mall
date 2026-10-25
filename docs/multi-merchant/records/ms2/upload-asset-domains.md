@@ -2000,3 +2000,20 @@ Root逐字核第三代原先按a→b登录，以及ChatService真实每2秒对�
 
 
 N6修后验证：media非作者仅有限顺序/注释差量独审Source0（platform-chat-normal-generation-order-fix-r1/PEER-REVIEW.json，2895/1a408a38），整份inverse恢复原abc体；原全部业务场景/断言/生产Timer保持。Root对最终2090主entry实际PHP8.2 -n -l=0；固定nonroot/networknone只读helper原CID自然Exited0/PID0/noRestart后普通移除，三fresh自有purpose逐条双raw0B，总10native，结果platform-chat-normal-n6-php82-lint-r1/RESULT.json。此只语法，没有HTTP/WS或自然Timer实际业务通过。仅main+本record两路径另本地提交，独立9237管理后台构建仍按其真实旧HEAD运行，之后统一来源/Val/Host/构建资格必须按真实新HEAD承接，不换标旧结果。
+
+
+### N7 普通setup被动supervisor登记顺序最小修复（拟追加，尚未写入仓库）
+
+Root实际原Run2026102519134469af67 setup自然2，原App同CID Exit2/PID0，normal/prepare/control均未开始；公开startup-diagnosis RESULT和failed-setup admission DESIGN确认created-app manifest在启动前地址为空，而profile __serve提前full self要求runningIP导致必拒。Root先按独立失败普通退役Source完成原5CID/13卷/单网的only-own TERM/nonforce及六fresh rawzero，不重放原Run或改其失败。
+
+退役后仅在profile serve被动入口保全部guard/DBRedis/sentinel/精确DML/privateMount并严格核registered64hex CID/hostname；把原完全不变full self移到每个start/observe/stop控制try首条，在任何business/child/listen前真实校验App IP。原full self正文及子App/HTTP/Chat/Runtime全self、cases/oracles、samePID/native/fullraw/TERM/no-force均保。外部Source草稿只两处文字替换及整份inverse，不新增等待/ack/protocol/权限/fallback或 stopped样本。
+
+此段是待Root实际退役及采用后才写原record的说明草稿；当前W/Val/旧Host/Run保持c4fd原件未动，未运行候选。未来实际必要静态、新提交/新pair/新Host/freshsetup/三代HTTPWS和普通收尾均未绑定，不能以Source修复签Runtime或整体完成。
+
+
+N7实施前Root已实际收口失败场景：专用failed-close原PID32264与独立zero原PID52552均自然0；106+10真实native的完整双raw90353B全部读回，原App Exit2保留且未exec/再stop，4live各一TERM自然0，精确5CID/13卷/单internal网nonforce清退、仅own Val lock删除、六fresh每stdout/stderr真实0B。旧失败原80native/160raw3832577B/原Source/Host及日志均保留，不伪改setup/业务成功。证据platform-chat-failed-setup-root-retire-launch-r1/ROOT-ZERO-READBACK.json。
+
+Root已全文核N7两处完整正逆与guard/Host真实调用顺序；非作者独审4393/195d7ec9确认16函数及fullself正文raw、每动作前fullself完整保留。现才在本record先追加原因/采用和真实清退证据，并仅profile落24464/8aab候选。后续必要PHP静态、新真实提交/完整pair/Host及fresh普通setup→HTTPWS验证仍待，没有重启或重放旧失败实例。
+
+
+N7本地静态收口：Root在实际普通旧场景close/独立zero后才应用两路径；media对完整294B两处差量及17函数/16raw、原fullself正文/每动作前全核给有限Source0。Root实际PHP8.2.33 -n -l检查最终24464/8aab profile为0，nonroot/networknone/两只读挂载helper原CID自然Exited0/PID0/noRestart后nonforce移除，三fresh自有purpose逐条stdout/stderr真实0B，总10native，证据platform-chat-normal-n7-php82-lint-r1/RESULT.json。这里只保存profile＋本record两个文件本地提交，原main2090及17后台/九前端全部原样；不能把语法或旧源码编译当新普通运行成功。新的真实Git/pair/Host/fresh setup/HTTPWS和全部完整oracle、普通close/独立zero仍须重新取得实际证据。

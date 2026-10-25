@@ -150,13 +150,17 @@ function m4pc_profile_environment(array $options):array
 }
 function m4pc_profile_serve():never
 {
-    m4pc_profile_self();$supervisor=audit_app_proc_stat(getmypid());audit_expect($supervisor!==null,'real supervisor required');
+    $m=m4pc_profile_guard();m4pc_profile_mount();$id=$m['services']['audit-app']['id']??'';
+    audit_expect(is_string($id)&&preg_match('/\A[a-f0-9]{64}\z/D',$id)===1&&gethostname()===substr($id,0,12),
+        'registered platform chat passive supervisor container required');
+    $supervisor=audit_app_proc_stat(getmypid());audit_expect($supervisor!==null,'real supervisor required');
     $process=null;$group=null;$termSent=false;$generation='';$revision='';$shutdown=false;$stopBlocked=false;$meta=null;$firstTerminal=null;
     pcntl_async_signals(true);pcntl_signal(SIGTERM,static function()use(&$shutdown):void{$shutdown=true;});
     while(!$shutdown){$control=audit_read_control_json(audit_run_dir().'/app-control.json');
         if(($control['run_id']??null)===getenv('AUDIT_RUN_ID')&&($control['revision']??'')!==$revision){
             $revision=$control['revision']??'';$action=$control['action']??'';
             try{
+                m4pc_profile_self();
                 audit_expect(is_string($revision)&&preg_match('/\A[a-f0-9]{16}\z/D',$revision)===1&&in_array($action,['start','stop','observe'],true),'fixed control operation required');
                 if($action==='observe'){audit_expect($group!==null&&$generation!==''&&($control['overrides']??null)===[],'current generation required');$facts=m4pc_profile_observe($group,$supervisor);}
                 elseif($action==='stop'){audit_expect(!$stopBlocked,'prior incomplete stop remains blocked');try{$facts=m4pc_profile_stop($process,$group,$supervisor,$termSent,$meta,$firstTerminal);}catch(Throwable $e){$stopBlocked=true;throw $e;}$generation='';$termSent=false;}
