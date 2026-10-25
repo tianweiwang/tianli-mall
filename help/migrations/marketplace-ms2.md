@@ -179,3 +179,44 @@ MySQL DDL逐条隐式提交；任何失败可能保留合法已完成的列/表/
 mapping_binding新增两活动表的完整schema，source绑定保原成员并补两producer、积分订单、PublicCatalog、MerchantFreightPolicy和StoreCart真实消费者；旧映射必须以新check真实binding重新确认，旧Run/映射不重签。当前公开安装seed的9个type4支持集外项会转为缺真实积分父，原71保留，总80仍待核；type6无seed行，未签其运行覆盖。完整历史订单/cart/权益、归档恢复、Task2/G01–G07、真实存量L3d/L4及业务启用仍未完成。
 
 仅完成Source和静态检查后交Root/非作者审；本作者不运行PHP、SQL、Docker、HTTP或任何候选，不提交/推送。停止的恢复/故障/并发/安全样本保持NOT RUN。
+
+
+### type4/type6 正向正常验证入口扩展（Source，尚未运行）
+
+复用既有`help/audit-regressions/isolated/ms2-migration.php`、原CREATE-only真实157表schema及原四CLI进程；生产CLI116625B/92819382bff5a72624f4a927764a73e301ece6a9e81b84d376b1860347951799保持冻结。normal Source绑定从原19必要路径保全扩为25，补原生积分/预售producer、积分订单、PublicCatalog、MerchantFreightPolicy、StoreCart；旧映射/旧Run不因新绑定获得重签。
+
+保原10个声明INSERT及先后关系，在本新专用合成夹具内加28行成38：五根表共8行(product4、其余各1)，积分父1、预售父4，四共享属性/value/result/description表各6行，运费region1。商品四种case为physical freight3/virtual0/同owner真实模板T；free freight1/virtual0/temp0；fixed freight2/virtual0/temp0/正postage；virtual freight3/virtual1/T。积分连physical，四预售各连四base，预售native模板T/0/0/0。虚拟base仍满足未改变的原root模板检查，native0才验证新虚拟跳过。合法inactive积分is_show0/预售status0也全量计入；不新增孤儿/拒绝/故障样本。
+
+所有PK来自真实lastInsertId并核schema；活动PK显式与四base PK集合disjoint，子表按type4/6及实际活动PK再到实际普通商品，不能用同号或默认owner替代。五根mapping仅逐PK明确确认本新8行0/NULL到真实self；原PK序完整nonowner hash、分组、schema/source绑定保留。首次backfill8、重复0，原MS1 apply1+MS2 check3/apply2/backfill2/enforce2仍10个真实不同子进程；enforce首次/重复、final check只读、final apply不放宽及完整全表rows/DDL/counters/Redis绝对期限/四RO runtime/整PNG卷/私有精确清理责任保持。新增正向receipt要求真实积分1/预售4/各共享6计数、新活动运费来源limits、全部issue/orphan0。没有由PHP解析代替这些实际命令。
+
+此处只修改normal Source与两份既定记录，不运行原shell或任何目标；原`.sh`的自动teardown/down不是当前TERM-only/nonforce收口证明。Root将以实际三角色/全部专用卷/内部网接已有普通TERM/nonforce流程，另做六fresh selector zero，实际输出待真实证据。原80存量、37历史、G01–G07完整范围、活动媒体/实际报价/积分权益/真实用户归属、SP-MS2-1/L3d/L4/enabled及人工验收均不由这38行新fixture代签。已停止negative/故障/恢复/并发保持NOT RUN；当前Source未提交推送，正常运行待Root独立核。
+
+
+### Windows 仓库内宿主入口（四个显式阶段）
+
+入口为`help/audit-regressions/isolated/ms2-migration-host.py`，只用Python标准库（Windows Python 3.12+）、本机Git与Docker Desktop本地npipe engine；Git/Docker可由PATH发现，或显式`--git`/`--docker`路径。提供一个独立、无.env/install.lock、实际全部clean且文件原字节等于Git blob的已提交checkout；Run必须是仓库外已有父目录下的全新绝对路径。`--source`必须取该checkout的真实40位HEAD，入口自身和26个Source叶必须已在该commit内，不支持dirty源码/旧Run换SHA或自动恢复。下列变量需设为实际路径，Run本身由setup创建。
+
+```powershell
+$ms2Repo = '<独立clean checkout的绝对路径>'
+$ms2Run = '<仓库外全新Run目录的绝对路径>'
+$ms2Host = Join-Path $ms2Repo 'help/audit-regressions/isolated/ms2-migration-host.py'
+$ms2Commit = (git -c "safe.directory=$ms2Repo" -C $ms2Repo rev-parse HEAD).Trim()
+py -3 $ms2Host setup --repo $ms2Repo --source $ms2Commit --run-dir $ms2Run
+# 先读实际SETUP.json及完整双流；成功后才输入它的实际SHA。
+$ms2SetupSha = (Get-FileHash -LiteralPath (Join-Path $ms2Run 'SETUP.json') -Algorithm SHA256).Hash.ToLowerInvariant()
+py -3 $ms2Host normal --repo $ms2Repo --source $ms2Commit --run-dir $ms2Run --setup-sha256 $ms2SetupSha
+# Root读完实际NORMAL/八formal/十CLI/原生终态并授权普通清退后，另行显式调用close。
+$ms2NormalSha = (Get-FileHash -LiteralPath (Join-Path $ms2Run 'NORMAL.json') -Algorithm SHA256).Hash.ToLowerInvariant()
+py -3 $ms2Host close --repo $ms2Repo --source $ms2Commit --run-dir $ms2Run --setup-sha256 $ms2SetupSha --normal-sha256 $ms2NormalSha
+# 独立进程读实际CLOSE及双流，再以实际SHA执行六次fresh单label查询。
+$ms2CloseSha = (Get-FileHash -LiteralPath (Join-Path $ms2Run 'CLOSE.json') -Algorithm SHA256).Hash.ToLowerInvariant()
+py -3 $ms2Host zero --repo $ms2Repo --source $ms2Commit --run-dir $ms2Run --setup-sha256 $ms2SetupSha --normal-sha256 $ms2NormalSha --close-sha256 $ms2CloseSha
+```
+
+必须逐阶段核原生命令exit，不把后续命令串成自动重跑/自动清退。入口每阶段新建`host-setup|normal|close|zero`独占证据目录，保同一句柄PID/argv创建与终态、完整stdout/stderr、顺序ledger以及实际SETUP/NORMAL/CLOSE/ZERO；任何阶段失败写固定`*-FAILURE.json`并保留现场，既有阶段不能重放，成功收尾入口不接失败现场。
+
+固定使用已有PHP1099、MySQL c7a313、Redis6c8f6e镜像，原base+ms2 compose不改；normal唯一三个原角色，finite是原ENTRY命令/namespace PID1，13个完整Mounts、2 tmpfs、实际11必需挂载卷与原12声明中的全部实际创建卷、internal网络/noports/同代CID/UID/CreatedAt/only-own均核。辅助bootstrap均有限任务，保原生wait/双流并自然Exited0/PID0后nonforce删除，不用--rm吞掉退出事实。setup仅原m2f_prepare/audit_prepare(false)，不执行旧seed、Composer、App、writeMd5或install.lock；原finite承担157 CREATE/严格模式/38新fixture与十真实CLI。原.sh的两段bind/verify PHP由同commit原文提取，原八formal仍T2M_NORMAL PASS、G01–G07 NOT RUN，不复制业务。
+
+原25 Source闭包仅因入口本身为运行依赖扩为26；旧shell/compose/生产CLI保持原件。close仅接本Run成功normal，原finite已Exited0不重启；数据库仅显式SIGTERM/timeout -1自然0，全体同代Exited0/PID0再nonforce精确移除3容器/原空网络/完整实际卷。zero是另一个进程对project/run各单label的container/network/volume六fresh，原生0且每次stdout/stderr皆空。入口不调用teardown/down/remove-orphans/force，不访问外部DB/秘密，不停止其它项目，不修改repo的.env/install.lock。
+
+当前仅Source交付，尚未运行候选或签资源/业务通过。Root后续同镜像语法、L2本地提交及全新专用实例实跑另记原07；原80/37/G01–G07、历史/真实用户/权益、活动媒体报价、启用及整体Task2状态不变。旧shell仍有自动down，因此不能以其旧teardown回执代替本次普通TERM/nonforce与独立zero。
