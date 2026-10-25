@@ -878,7 +878,8 @@ function m4pc_verify():array
         $GLOBALS['m4pc_cases'][]='offline_tourist_early_return_and_positive_legacy_history_without_fabricated_current_guest';
         m4pc_offline_step($db);$stopAttempted=true;$closed[]=m4pc_stop_step($db,$generation);$active=false;$stopAttempted=false;
         // Existing authenticated reads and trusted transfer remain real when only new private writes are disabled.
-        $active=true;$generation=m4pc_start_step($db,$fixture,false);m4pc_memory();foreach(['a','b']as$name)m4pc_login_step($db,$name,$fixture[$name]);
+        // Restore the staff retained by the empty-set timer before adding the other staff.
+        $active=true;$generation=m4pc_start_step($db,$fixture,false);m4pc_memory();foreach(['b','a']as$name)m4pc_login_step($db,$name,$fixture[$name]);
         m4pc_capabilities_step($db,$fixture['customer'],false);m4pc_capabilities_step($db,$fixture['a'],false);m4pc_capabilities_step($db,$guest,false);
         m4pc_bound_pair_reads($db,$fixture,$fixture['customer'],$fixture['a'],$first['asset'],$first['message']);m4pc_bound_pair_reads($db,$fixture,$guest,$fixture['a'],$guestAsset,$guestMessage['id']);
         $historicalClones=m4pc_transfer_step($db,$fixture,'a','b',$historic,null,1,$knownImages);$transfers[]=$historicalClones;

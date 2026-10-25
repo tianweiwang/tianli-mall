@@ -1990,3 +1990,13 @@ Root已实际补查最终 abc 主entry PHP8.2.33 -n -l=0；其余 profile/harnes
 #### Root聊天生产/前端/正常Source标准双父汇合（2026-10-26）
 
 前端40f6与独立正常验证来源实际标准双父merge；四normal代码及全部17后台/九前端逐体保全。本record采用共同a154完整前缀一次，然后前端完整新增段，再正常来源完整新增段，没有丢掉旧失败、待验和原需求。此为源码汇合，不是Runtime或三端验收。统一集成分支随后只采用这一真实Git后继，保持默认private new-write关闭；最终Source/Val全树、专用普通链与完整M/A/build/B责任继续执行。未推送或部署。
+
+
+#### N6 第三普通代际重连顺序与原自然 Timer（先记录后有限修复）
+
+Root逐字核第三代原先按a→b登录，以及ChatService真实每2秒对非空kefuUid/notUid更新：第二代最后b关闭后，原empty-set Timer按原行为保留b online=1及相应记录；第三代仅a先连接时，原Timer可以合法将旧b行清0。m4pc_login_step只预期本actor相关行，所以该正常副作用若落在完整before/after窗口会误拒；比Timer快偶然通过不能证明闭合。原normal作者也独立只读确认了此事实，尚无实际运行或触发证据。
+
+仅将第三代按b→a恢复同两个真实客服：先恢复上一代保留的b，原Timer对notUid集合无额外残留清理，随后再加入原a。两actor、三正常代际、全部消息/双向原图/游客/三转接/defaultfalse场景和所有全量DB/DDL/native-next/Redis/文件期望均原样；不改原生产Timer、onClose、种子或任何业务行，不跳场景或放宽断言。原9237及其可能的构建证据完整保留，只属原HEAD；新两个文件会另本地提交并重新固定真实当前Source身份，不能换标旧构建为新HEAD。
+
+
+N6修后验证：media非作者仅有限顺序/注释差量独审Source0（platform-chat-normal-generation-order-fix-r1/PEER-REVIEW.json，2895/1a408a38），整份inverse恢复原abc体；原全部业务场景/断言/生产Timer保持。Root对最终2090主entry实际PHP8.2 -n -l=0；固定nonroot/networknone只读helper原CID自然Exited0/PID0/noRestart后普通移除，三fresh自有purpose逐条双raw0B，总10native，结果platform-chat-normal-n6-php82-lint-r1/RESULT.json。此只语法，没有HTTP/WS或自然Timer实际业务通过。仅main+本record两路径另本地提交，独立9237管理后台构建仍按其真实旧HEAD运行，之后统一来源/Val/Host/构建资格必须按真实新HEAD承接，不换标旧结果。
