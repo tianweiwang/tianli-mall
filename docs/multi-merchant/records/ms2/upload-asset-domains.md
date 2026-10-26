@@ -2149,3 +2149,27 @@ Root采用platform-chat-ack-channel-root-successor-design-r1/ADOPTION.json。原
 Root已全文核新两函数/13成员与三路径完整正逆，独立5901/b9f9实现审无确定finding。仅新自有multi-merchant-integrated-r2应用，原Unified/Normal52f、Val2/Run7及旧Val1/Run4完整保留。固定297b PHP8.2实际-n-l两文件均0，helper自然0后普通移除、三fresh purpose查询双raw空，十个原生完整双流已读回。
 
 本地提交只包含profile普通Channel客户端stop钩子、main首ACK安全元数据诊断和本记录。ACK唯一差异仍UNKNOWN，既存保留组尚未清退。下一步真实新commit下独立Val3完整全树资格、新Host/fresh完整三代及业务/正常close/独立zero；本次Source和语法不签Runtime/M/A/B/页面/设备/金融/发布，停止样本NOT RUN；未推送部署。
+
+
+### 启动阶段同次监听采样变化的有限 pending（Source候选，2026-10-26）
+
+Root已采用platform-chat-startup-observation-pending-root-design-r1/ADOPTION.json。实际b6d3d52a/Host9/Run202610260044169b748f第二代poll7在原line103观察到first=[8000]、owned=[8000]、last=[8000,40002,40003]，member_count3且原PID/group/UID前后身份门均已通过。本次没有产生ACK值；这只能定位本次同一启动观察期间监听集合变化，不能回填旧Run首次startup UNKNOWN或ACK唯一根因。原两代TERM自然0/空组事实不等于完整normal成功。
+
+本候选仅profile的observe/serve与本记录追加：从原同一次TCP读取始终计算firstPorts（沿原公式，无新采样），保所有UID/PID/starttime/pgid/sid/FD及前后守门。原最后ports采样仍只调用一次；任何first/owned/last组有40001在pending前硬拒。只有startup上下文非null且firstPorts!==lastPorts才返回固定startup_pending=true和真实原group/members/owned ports/no-force，first/last原诊断facts仍真实保存，不抄期待端口或身份。
+
+仅原startup do/while在读取子创建收据/五角色前消费此标记，20ms后continue原12s截止条件，绝不发布ready。稳定样本继续原ports===global且无40001的完整谓词与原五进程角色矩阵，原原生创建、组登记、诊断、ACK、stop/8s、所有业务与全量DB/Redis/files/通知断言不变。运行期observe使用startup=null，不能返回pending，仍走原严格最终门。
+
+- [x] 原record全文前缀不改；外部before/after仅两路径、三finite缝整份正逆；原其余15具名函数及profile入口、完整normal main/harness逐体保持。
+- [ ] 独立有限Source审与Root必要真实PHP语法；作者不自签Source0/语法/Runtime，不解析/编译/import/执行候选。
+- [ ] 当前b6 SourceR2/Val3/Run普通close及独立zero完成后，Root才可应用并形成新来源/资格/Host/fresh完整normal；原失败不重放，旧Source/Val/所有Run不改。
+
+无额外进程/采样/控制/信号、延长deadline、放宽UID/角色或伪ready。停止的负向/故障/恢复/并发/K仍NOT RUN；M/A/postA/三build/正式copy/B/CU_FORM/H5/页面/设备/真实金融/发布原责任保持，MS6第三片设计仍仅待采用。
+
+
+#### Root启动期pending有限修复的实际本地检查点（2026-10-26）
+
+Root全文核observe/serve原完整生产消费与三处有限差，11件完整EOF/pin和整份正逆均独立复算；另一非作者43194/2f60bce4报告确定缺陷0。原15函数、完整五角色矩阵、稳定归属门、运行期observe严格以及原20ms/12s截止保持。只原启动同次TCP首尾真实集合变化时等待下一轮，40001在三组中均先硬拒，不抄期待端口、不发布假ready。
+
+本次实际先完成Run202610260044169b748f普通close句柄39008自然0与独立zero43244自然0；Root完整读原146/292raw11394992B及close112/98534B、zero10/303B，五原residents/13卷/internal网络和仅Val3锁已正常清退，六fresh查询双raw空。原verify1461和旧失败保留，旧Val1/Run4、Val2/Run7未动，不把本次退役记成客服业务成功。
+
+随后才在自有SourceR2应用profile39431/92ad39bb与原record全文前缀加新记录。固定297b镜像PHP8.2实际-n-l此profile=0；nonroot65534/network-none/RO helper自然Exited0/PID0/noRestart后非force移除，三fresh purpose查询双raw空，10个真实native及完整双流已读回。只保存这两路径本地Source提交；尚无新Source/Val全树、Host或fresh完整三代normal结果。ACK旧唯一差字段仍UNKNOWN；完整M/A/postA/三构建/正式copy/freshB/UI/H5/CU_FORM/历史/MS5/MS6及最终交付责任不变，停止样本NOT RUN；未推送部署。

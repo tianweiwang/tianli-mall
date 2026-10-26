@@ -79,7 +79,8 @@ function m4pc_profile_observe(array $group,array $supervisor,?array &$startup=nu
     $members=audit_app_group_members($group,$supervisor);$inodes=[];
     if($startup!==null){$startup['facts']['member_count']=count($members);$startup['stage']='observe_tcp_first';}
     foreach(audit_app_tcp_rows()as$row)if($row['state']==='0A'&&in_array($row['local_port'],[8000,40001,40002,40003],true))$inodes[$row['inode']]=$row['local_port'];
-    if($startup!==null){$firstPorts=array_values(array_unique(array_values($inodes)));sort($firstPorts,SORT_NUMERIC);$startup['facts']['first_listener_ports']=$firstPorts;}
+    $firstPorts=array_values(array_unique(array_values($inodes)));sort($firstPorts,SORT_NUMERIC);
+    if($startup!==null)$startup['facts']['first_listener_ports']=$firstPorts;
     $ports=[];foreach($members as&$member){
         if($startup!==null){$startup['stage']='observe_member_before';$startup['facts']['member_pid']=$member['pid'];
             foreach(['member_before_present','member_euid','member_owned_count','member_after_present']as$key)$startup['facts'][$key]=null;}
@@ -100,6 +101,11 @@ function m4pc_profile_observe(array $group,array $supervisor,?array &$startup=nu
     if($startup!==null){$startup['stage']='observe_ports';$startup['facts']['owned_listener_ports']=$ports;}
     $globalPorts=m4pc_profile_ports();
     if($startup!==null)$startup['facts']['last_listener_ports']=$globalPorts;
+    audit_expect(!in_array(40001,$firstPorts,true)&&!in_array(40001,$ports,true)&&!in_array(40001,$globalPorts,true),
+        'forbidden notice listener in platform chat observation');
+    if($startup!==null&&$firstPorts!==$globalPorts){
+        return ['group'=>$group,'members'=>$members,'listener_ports'=>$ports,'force_signal_sent'=>false,'startup_pending'=>true];
+    }
     audit_expect($ports===$globalPorts&&!in_array(40001,$ports,true),'all HTTP Chat Channel listeners must belong to the registered group');
     return ['group'=>$group,'members'=>$members,'listener_ports'=>$ports,'force_signal_sent'=>false];
 }
@@ -241,7 +247,9 @@ function m4pc_profile_serve():never
                     $deadline=microtime(true)+12;$ready=false;do{
                         $startup['stage']='start_observe';$startup['facts']=['poll_index'=>$startup['facts']['poll_index']+1,
                             'leader_pid'=>$group['leader_pid'],'pgid'=>$group['pgid'],'sid'=>$group['sid']];
-                        $facts=m4pc_profile_observe($group,$supervisor,$startup);$created=[];$startup['facts']['child_created_count']=0;
+                        $facts=m4pc_profile_observe($group,$supervisor,$startup);
+                        if(($facts['startup_pending']??false)===true){usleep(20000);continue;}
+                        $created=[];$startup['facts']['child_created_count']=0;
                         foreach(['http','chat']as$role){$startup['stage']='start_child_receipt';$startup['facts']['child_role_index']=$role==='http'?1:2;$path=audit_run_dir().'/evidence/platform-chat-'.$revision.'-'.$role.'.created.json';
                             audit_expect(!is_link($path),'original child creation receipt cannot be a link');if(!file_exists($path))continue;
                             $pin=m4pc_profile_raw($path);$raw=file_get_contents($path);audit_expect(is_string($raw)&&strlen($raw)===$pin['bytes']&&hash('sha256',$raw)===$pin['sha256']&&m4pc_profile_raw($path)===$pin,'stable original child creation receipt required');
