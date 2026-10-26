@@ -68,7 +68,8 @@ function returnSelection(value, quote = false) {
 export function refundView(value) {
   const fields = ['schema', 'scope', 'id', 'refund_no', 'root_order_id', 'root_order_no', 'merchant_name_snapshot', 'operation_kind', 'mode', 'business_state', 'physical_state', 'finance_state', 'requested_amount', 'confirmed_amount', 'held_amount', 'created_at', 'updated_at', 'reason', 'images', 'return_delivery', 'items', 'allowed_actions', 'return_selection'];
   const hasDestination = Object.prototype.hasOwnProperty.call(value || {}, 'return_destination');
-  exact(value, hasDestination ? fields.concat('return_destination') : fields);
+  const hasRejectionReason = Object.prototype.hasOwnProperty.call(value || {}, 'rejection_reason');
+  exact(value, fields.concat(hasDestination ? ['return_destination'] : [], hasRejectionReason ? ['rejection_reason'] : []));
   if (value.schema !== 2 || value.scope !== 'marketplace_aftersale_v1' || !KINDS.includes(value.operation_kind) || value.mode !== (value.operation_kind === 'return_goods' ? 'return_goods' : 'money_only')) fail();
   recordId(value.id); recordId(value.root_order_id); text(value.refund_no, 50, true); text(value.root_order_no, 32, true); text(value.merchant_name_snapshot, 65535);
   enumValue(value.business_state, businessLabels); enumValue(value.physical_state, physicalLabels); enumValue(value.finance_state, financeLabels);
@@ -81,6 +82,10 @@ export function refundView(value) {
   if (hasDestination) {
     if (value.operation_kind !== 'return_goods' || !['APPROVED', 'COMPLETED'].includes(value.business_state)) fail();
     returnDestination(value.return_destination);
+  }
+  if (hasRejectionReason) {
+    if (value.business_state !== 'REJECTED') fail();
+    text(value.rejection_reason, 255, true);
   }
   return value;
 }
@@ -158,6 +163,7 @@ export function intentWire(intent) { if (!intent || bodyLimit(intent.body) !== i
 export function actionResult(value, intent) {
   exact(value, ['schema', 'scope', 'action_id', 'action', 'refund', 'committed_at', 'acceptance_ids']); intentWire(intent);
   if (value.schema !== 2 || value.scope !== 'marketplace_aftersale_action_v1' || value.action !== intent.action) fail('本次提交结果尚未确认，请重试原提交');
+  if (Object.prototype.hasOwnProperty.call(value.refund || {}, 'rejection_reason')) fail();
   u64(value.action_id); integer(value.committed_at, 0, UINT_MAX); const view = refundView(value.refund);
   if (view.root_order_id !== intent.rootId || view.root_order_no !== intent.rootNo || (intent.refundId !== null && (view.id !== intent.refundId || view.refund_no !== intent.refundNo))) fail('本次提交目标尚未确认，请重试原提交');
   list(value.acceptance_ids).forEach(u64); distinct(value.acceptance_ids); if ((intent.action === 'accept_return') !== (value.acceptance_ids.length > 0)) fail();

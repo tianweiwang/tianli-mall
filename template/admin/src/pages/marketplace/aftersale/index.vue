@@ -16,7 +16,7 @@
         <el-form-item label="商家编号（可选）" for="aftersale-merchant"><el-input id="aftersale-merchant" v-model="merchantId" :disabled="loading" placeholder="全部已授权商家" maxlength="10" /></el-form-item>
         <el-button native-type="submit" :disabled="loading || !context">查询</el-button>
       </el-form>
-      <el-table v-loading="loading" v-table-scroll="'售后列表，可横向滚动'" :data="rows" border>
+      <el-table key="aftersale-list" v-loading="loading" v-table-scroll="'售后列表，可横向滚动'" :data="rows" border>
         <el-table-column prop="refund_no" label="售后单号" min-width="190" />
         <el-table-column prop="root_order_no" label="付款订单号" min-width="190" />
         <el-table-column prop="merchant_name_snapshot" label="保存商家名称" min-width="150" />
@@ -37,8 +37,11 @@
         <div><dt>申请时间</dt><dd>{{ timeText(view.created_at) }}</dd></div><div><dt>更新时间</dt><dd>{{ timeText(view.updated_at) }}</dd></div>
       </dl>
       <h2>申请理由</h2><p class="aftersale-saved">{{ view.reason }}</p>
+      <template v-if="view.business_state === 'REJECTED'">
+        <h2>拒绝原因</h2><p class="aftersale-saved">{{ view.rejection_reason || '此记录未提供拒绝原因，请联系商家确认。' }}</p>
+      </template>
       <h2>原保存商品与规格</h2>
-      <el-table v-table-scroll="'原保存商品，可横向滚动'" :data="view.items" border>
+      <el-table key="aftersale-items" v-table-scroll="'原保存商品，可横向滚动'" :data="view.items" border>
         <el-table-column label="商品及规格" min-width="260"><template slot-scope="scope"><div class="aftersale-product"><img v-if="scope.row.item.image" :src="scope.row.item.image" alt="原商品保存图片"><div>{{ scope.row.item.product_name }}<p class="aftersale-note">{{ scope.row.item.sku_name }}</p></div></div></template></el-table-column>
         <el-table-column label="申请数量 / 已验收" min-width="175"><template slot-scope="scope">{{ scope.row.selected_quantity }} / {{ scope.row.accepted_quantity }}</template></el-table-column>
         <el-table-column label="原成交单价（元）" min-width="145"><template slot-scope="scope">{{ scope.row.item.unit_price }}</template></el-table-column>
@@ -67,7 +70,7 @@
       <p v-if="view.return_delivery" class="aftersale-saved">{{ view.return_delivery.carrier_name }} · {{ view.return_delivery.tracking_no }}</p><p v-else class="aftersale-note">尚无顾客退件运单</p>
       <template v-if="view.return_selection">
         <p class="aftersale-saved">实际包裹：{{ view.return_selection.child_order_no }}</p>
-        <el-table v-table-scroll="'退件序号区间，可横向滚动'" :data="view.return_selection.items" border>
+        <el-table key="aftersale-return-selection" v-table-scroll="'退件序号区间，可横向滚动'" :data="view.return_selection.items" border>
           <el-table-column prop="item_id" label="实际包裹商品编号" min-width="155" />
           <el-table-column label="申请序号" min-width="170"><template slot-scope="scope">{{ segmentText(scope.row.selected_segments) }}</template></el-table-column>
           <el-table-column label="已验收序号" min-width="170"><template slot-scope="scope">{{ segmentText(scope.row.accepted_segments) || '—' }}</template></el-table-column>

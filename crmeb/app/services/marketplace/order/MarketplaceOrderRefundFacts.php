@@ -204,6 +204,18 @@ final class MarketplaceOrderRefundFacts
         $view=self::treeObject($refund['last']['result_payload']['public_result']['refund']);
         $view['return_selection']=self::returnSelection($inspection['source'],$refund,$inspection['fulfillment']);
         $view['allowed_actions']=['withdraw'=>false,'submit_return'=>false,'approve'=>false,'reject'=>false,'accept_return'=>false];
+        if($refund['after']['business_state']==='REJECTED'){
+            if($refund['last']['action']!=='reject') self::unavailable();
+            $rejections=0; $reason=null;
+            foreach($refund['actions'] as $action){
+                if($action['action']!=='reject') continue;
+                ++$rejections;
+                if($action['id']!==$refund['last']['id']) self::unavailable();
+                $reason=$action['request_payload']['public_body']['reason'];
+            }
+            if($rejections!==1||!is_string($reason)||$reason==='') self::unavailable();
+            $view['rejection_reason']=$reason;
+        }
         return $view;
     }
 

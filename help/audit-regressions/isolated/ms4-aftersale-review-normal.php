@@ -1378,6 +1378,15 @@ function m4ar_refund_view(array $model,array $record,array $state,array $actor,i
  }
  return $view;
 }
+function m4ar_refund_read_view(array $model,array $record,array $actor):array
+{
+ $view=m4ar_refund_view($model,$record,$record['state'],$actor,$record['updated_at']);
+ if($record['state']['business_state']==='REJECTED'){
+  m4ar_expect(isset($record['rejection_reason'])&&is_string($record['rejection_reason'])&&$record['rejection_reason']!=='','TASK78_READ_AUTHORED_REJECTION_REASON');
+  $view['rejection_reason']=$record['rejection_reason'];
+ }else m4ar_expect(!array_key_exists('rejection_reason',$record),'TASK78_REJECTION_REASON_ONLY_REJECTED');
+ return $view;
+}
 function m4ar_credit_oracle(array $before,array $after,array $model,array $actor,int $refund,string $actionId,string $kind,array $physical,int $at,array &$rows,array &$counts):array
 {
  if($physical===[])return [];$new=m4ar_new_rows($before['rows']['eb_marketplace_stock_movement'],$after['rows']['eb_marketplace_stock_movement']);
@@ -1437,6 +1446,11 @@ function m4ar_action(PDO $db,array &$model,array $actor,string $action,string $p
    // The oracle retains the authored request, independently of every API response and production projection.
    $record['return_destination']=$destination;
   }else m4c_entry_keys($body,['schema','idem_key']);
+ }
+ if($action==='reject'){
+  m4c_entry_keys($body,['schema','idem_key','reason']);
+  m4ar_expect(!array_key_exists('rejection_reason',$record),'TASK78_FIRST_AUTHORED_REJECTION_REASON');
+  $record['rejection_reason']=$body['reason'];
  }
  $previous=$record['state'];$record['accepted']=array_merge($record['accepted'],$accepted);
  $state=m4ar_refund_state($previous,$action,$body,$record['kind'],m4ar_quantity($record['accepted']),m4ar_quantity($record['allocations']));
@@ -1651,12 +1665,12 @@ function m4ar_reads(PDO $db,array $model,array $actors):void
  foreach($actors as$name=>$actor){if(!in_array($name,['customer','merchant','platform'],true))continue;
   $base=match($name){'customer'=>'/api/order/refund','merchant'=>'/merchantapi/aftersales','platform'=>'/adminapi/marketplace/aftersales'};
   foreach($model['refunds']as$record){$path=$name==='customer'?$base.'/detail/'.$record['number']:$base.'/'.$record['id'];$before=m4ar_snapshot($db);
-   $reply=m4ar_json('GET',$path,$actor);m4c_entry_same($reply['json']['data'],m4ar_refund_view($model,$record,$record['state'],$actor,$record['updated_at']));
+   $reply=m4ar_json('GET',$path,$actor);m4c_entry_same($reply['json']['data'],m4ar_refund_read_view($model,$record,$actor));
    $audit=$name==='platform'?['mer_id'=>(int)$model['root']['mer_id'],'action'=>'marketplace-aftersales-read','resource_type'=>'aftersale','resource_id'=>$record['id']]:null;
    m4ar_read_finish($db,$before,$actor,$reply,$audit);}
   $records=array_values($model['refunds']);usort($records,static fn(array $a,array $b):int=>$b['id']<=>$a['id']);$pages=(int)ceil(count($records)/2);
   foreach(array_values(array_unique([1,$pages,$pages+1]))as$page){$path=$name==='customer'?$base.'/list?contract=2&page='.$page.'&limit=2':$base.'?page='.$page.'&limit=2';
-   $before=m4ar_snapshot($db);$reply=m4ar_json('GET',$path,$actor);$list=[];foreach(array_slice($records,($page-1)*2,2)as$r)$list[]=m4ar_refund_view($model,$r,$r['state'],$actor,$r['updated_at']);
+   $before=m4ar_snapshot($db);$reply=m4ar_json('GET',$path,$actor);$list=[];foreach(array_slice($records,($page-1)*2,2)as$r)$list[]=m4ar_refund_read_view($model,$r,$actor);
    m4c_entry_same($reply['json']['data'],['schema'=>2,'page'=>$page,'limit'=>2,'count'=>count($records),'list'=>$list]);
    $audit=$name==='platform'?['global'=>true,'rule'=>'marketplace/aftersales']:null;m4ar_read_finish($db,$before,$actor,$reply,$audit);}
  }

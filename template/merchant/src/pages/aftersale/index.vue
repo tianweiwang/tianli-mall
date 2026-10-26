@@ -37,6 +37,9 @@
         <div><dt>申请时间</dt><dd>{{ timeText(view.created_at) }}</dd></div><div><dt>更新时间</dt><dd>{{ timeText(view.updated_at) }}</dd></div>
       </dl>
       <h2>申请理由</h2><p class="aftersale-saved">{{ view.reason }}</p>
+      <template v-if="view.business_state === 'REJECTED'">
+        <h2>拒绝原因</h2><p class="aftersale-saved">{{ view.rejection_reason || '此记录未提供拒绝原因，请联系商家确认。' }}</p>
+      </template>
       <h2>原保存商品与规格</h2>
       <el-table v-table-scroll="'原保存商品，可横向滚动'" :data="view.items" border>
         <el-table-column label="商品及规格" min-width="260"><template slot-scope="scope"><div class="aftersale-product"><img v-if="scope.row.item.image" :src="scope.row.item.image" alt="原商品保存图片"><div>{{ scope.row.item.product_name }}<p class="aftersale-note">{{ scope.row.item.sku_name }}</p></div></div></template></el-table-column>
