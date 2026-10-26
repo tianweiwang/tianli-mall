@@ -58,7 +58,9 @@ services:
     mem_limit: 512m
     environment:
       TZ: Asia/Shanghai
+      APP_ENV: production
       APP_DEBUG: "false"
+      MARKETPLACE_QUEUE_AUTOSTART: "${MARKETPLACE_QUEUE_AUTOSTART:-false}"
       DEFAULT_TIMEZONE: Asia/Shanghai
       UPGRADE_REMOTE_ENABLED: "false"
       MYSQL_HOST_IP: crmeb_demo_mysql
@@ -80,6 +82,7 @@ services:
       - ./.constant:/var/www/.constant:ro
       - ./data/runtime:/var/www/runtime
       - ./data/uploads:/var/www/public/uploads
+      - private-assets:/private
     healthcheck:
       test: ["CMD", "su", "-s", "/bin/sh", "www-data", "-c", "php -d open_basedir= /usr/local/bin/runtime-healthcheck.php"]
       interval: 5s
@@ -107,6 +110,9 @@ services:
       retries: 20
       start_period: 10s
     networks: [app_net]
+
+volumes:
+  private-assets:
 
 networks:
   app_net:

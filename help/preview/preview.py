@@ -96,9 +96,11 @@ def environment(state, root):
     legacy_fixture = state.get('legacy_review_fixture', False)
     full_runtime = state.get('full_runtime', False)
     image_runtime = state.get('image_runtime', False)
+    queue_autostart = state.get('marketplace_queue_autostart', False)
     if (not isinstance(legacy_fixture, bool) or not isinstance(full_runtime, bool)
             or not isinstance(image_runtime, bool) or (legacy_fixture and full_runtime)
-            or (image_runtime and not full_runtime)):
+            or (image_runtime and not full_runtime) or not isinstance(queue_autostart, bool)
+            or (queue_autostart and not full_runtime)):
         raise RuntimeError('Invalid preview fixture mode')
     env = dict(os.environ)
     env.update(PREVIEW_PROJECT=state['project'], PREVIEW_RUN_ID=state['run_id'],
@@ -106,6 +108,7 @@ def environment(state, root):
                PREVIEW_LEGACY_REVIEW_FIXTURE='1' if legacy_fixture else '0',
                PREVIEW_FULL_RUNTIME='1' if full_runtime else '0',
                PREVIEW_IMAGE_RUNTIME='1' if image_runtime else '0',
+               PREVIEW_MARKETPLACE_QUEUE_AUTOSTART='true' if queue_autostart else 'false',
                PREVIEW_NGINX_CONFIG=(COMPOSE.parent / ('nginx-runtime.conf' if full_runtime else 'nginx.conf')).as_posix(),
                PREVIEW_ADMIN_DIST=(root / 'build/admin/dist').as_posix(),
                PREVIEW_MERCHANT_DIST=(root / 'build/merchant/dist').as_posix(),
@@ -284,6 +287,8 @@ def main():
                         help='prepare only: separate legacy review fixture with synthetic balance')
     parser.add_argument('--full-runtime', action='store_true',
                         help='prepare only: new isolated root for the original FPM/Supervisor runtime')
+    parser.add_argument('--marketplace-queue-autostart', action='store_true',
+                        help='prepare only, with full runtime: persist marketplace Supervisor autostart')
     parser.add_argument('--php-image', help='prepare only: existing PHP image, paired with --nginx-image and --full-runtime')
     parser.add_argument('--nginx-image', help='prepare only: existing Nginx image, paired with --php-image and --full-runtime')
     parser.add_argument('--preview-subnet', help='image prepare only: RFC1918 IPv4 CIDR; check host routes separately')
@@ -291,6 +296,8 @@ def main():
     parser.add_argument('--hours', default='0.5', help='New unpaid order deadline in hours; timers only, 0 disables new deadlines')
     args = parser.parse_args()
     root = args.root.resolve()
+    if args.marketplace_queue_autostart and (args.action != 'prepare' or not args.full_runtime):
+        raise RuntimeError('Queue autostart is configured only for a new full-runtime preview')
     image_runtime = args.php_image is not None or args.nginx_image is not None
     if image_runtime and (not args.php_image or not args.nginx_image or args.action != 'prepare'
                           or not args.full_runtime or root.exists()):
@@ -330,7 +337,7 @@ def main():
         state = {'project': project, 'run_id': run, 'repo': REPO.as_posix(), 'base_head': head,
                  'port': args.port, 'images': images, 'scope': 'local_synthetic_preview_not_stage_acceptance',
                  'legacy_review_fixture': args.legacy_review_fixture, 'full_runtime': args.full_runtime,
-                 'image_runtime': image_runtime}
+                 'image_runtime': image_runtime, 'marketplace_queue_autostart': args.marketplace_queue_autostart}
         if image_runtime:
             state['network_subnets'] = network_subnets
         with (root / 'state.json').open('x', encoding='utf-8', newline='\n') as output:

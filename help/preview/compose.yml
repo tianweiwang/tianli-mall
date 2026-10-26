@@ -30,7 +30,12 @@ services:
       - redis-secrets:/run/preview-redis
       - runtime:/workspace/crmeb/runtime
       - uploads:/workspace/crmeb/public/uploads
-      - private-assets:/private
+      # The preview's existing bootstrap owns its fresh-directory initialization.
+      - type: volume
+        source: private-assets
+        target: /private
+        volume:
+          nocopy: true
       - runtime-app:/runtime-app
   preview-mysql:
     image: ${PREVIEW_MYSQL_IMAGE:?required}
@@ -107,6 +112,7 @@ services:
     stop_signal: SIGTERM
     environment:
       APP_ENV: testing
+      MARKETPLACE_QUEUE_AUTOSTART: ${PREVIEW_MARKETPLACE_QUEUE_AUTOSTART:-false}
     volumes:
       - runtime-app:/var/www:ro
       - vendor:/var/www/vendor:ro

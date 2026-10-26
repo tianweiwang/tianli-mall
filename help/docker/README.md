@@ -13,9 +13,17 @@ Copy-Item help\docker\.env.runtime.example help\docker\.env.runtime
 Copy-Item help\docker\.env.application.example help\docker\.env.application
 ```
 
-修改两个本地配置文件，确保 MySQL 和 Redis 口令一致。它们已加入 `.gitignore`，不得提交真实口令。
+修改两个本地配置文件，确保 MySQL 和 Redis 口令一致。应用模板使用两份编排共同的 `mysql` / `redis` 服务名；已有部署应保留其实际有效主机名。它们已加入 `.gitignore`，不得提交真实口令。
 
 现有验收库迁移时，应保留当前本地配置中的数据库口令，避免已有 MySQL 数据卷与新容器凭据不一致。
+
+应用模板的 `[AUTH] SESSION_EPOCH`、`STAMP_KEY` 留空，部署前必须填写：epoch为1–128位字母、数字或 `._-`，stamp key至少32字节且与实际 `APP.APP_KEY` 不同；原APP_KEY占位也必须替换。`ISSUER=generic-multi-merchant` 仅是新部署示例。已有部署复制模板时应保留现有有效APP_KEY、epoch、stamp key、issuer及实际自营商家ID，不能借更新模板自动轮换凭据或身份。容器health和版本检查通过不等于已具备后台/商家登录资格。
+
+`[MARKETPLACE]` 使用实际扁平键，例如 `TRADE_ENABLED`；进程环境对应 `PHP_MARKETPLACE_TRADE_ENABLED`。`SELF_OPERATED_MER_ID` 必须填写经过实际MS2归属确认的自营商家ID；公开商品查询在总开关关闭时也会校验它，不能填猜测值。全部新功能开关默认false，目录配置不自动开放交易、售后、聊天私有写或视频上传。两份发布Compose固定 `APP_ENV=production`，测试支付不可用；测试支付仅限另外明确隔离、实际进程为testing且测试开关已开的实例。云上传在真实私有暂存桶、供应商策略和资格未完成前保持关闭，不填写虚构存储ID或地址。
+
+两份发布Compose仅给PHP挂载项目命名卷 `private-assets:/private`，Nginx不挂载。镜像预置 `customer-form`、`aftersale`、`refund`、`licence`、`withdrawal`、`chat`、`product-video`、`product-media-scan`、`product-video-cloud` 九个子目录，所有者UID/GID33:33、模式0700；首次挂载新的空卷时由Docker copy-up初始化。既有卷沿用原内容，入口不递归修改私有文件权限；缺目录或权限异常应核对原卷及资产归属，不删卷来重新初始化。数据库、公开uploads和私有卷须共同纳入业务备份；现有上传快照清单不能代替私有卷备份。认证会话不随业务备份恢复，恢复后的epoch轮换仍按原独立维护流程执行。
+
+上述模板、私有卷copy-up和显式队列接线的实际正常结果见下文验证范围；真实生产Compose启动、完整恢复与生产验收仍未完成。
 
 ## 验收快照
 
@@ -85,6 +93,14 @@ python -X utf8 help/docker/deploy-marketplace.py `
 
 `--apply`已接线但本轮未执行；实际部署替换、完整R03及MS6验收仍待各自验证。停止的负向、故障、并发、恢复和K样本保持NOT RUN，以上正常只读结果不替代这些责任。
 
+### 认证、私有卷与队列接线验证
+
+2026-10-27候选在独立18187实例完成原镜像启动、健康检查与平台/商家/顾客真实登录；`prepare --marketplace-queue-autostart`保存的配置使专用队列自动进入RUNNING。合法合成员工沿原 `AuditLogJob::dispatch` 提交一条资料读取审计，常驻Worker实际生成唯一记录，队列三种计数归零，原商品/SKU/订单/余额投影保持。五个Supervisor程序PID保持。本次没有停止消费者或手动调用任务执行函数。
+
+应用模板由真实ThinkPHP Env读取，填入仅存内存的合成认证配置后通过原AuthConfigGuard。独立新空卷实际从镜像初始化九个UID/GID33、0700目录，六类原私有素材存储构造器读取通过；七个业务开关仍为false。两份发布Compose的默认/显式队列配置均已解析核对，但本次运行实例使用隔离预览编排，**没有启动生产Compose、执行`--apply`、重启恢复或本轮私有上传HTTP**。首次配置探针因未载框架helper失败，修正工具后通过，原失败保留。
+
+本轮改动位于独立工作树，旧完整预览所绑定的原启动文件已恢复并在运行容器内核同；原33个预览容器身份、状态、启动时间、镜像、重启数及挂载保持。汇总证据在仓库外 `artifacts/multi-merchant-release-images-20261027-r3/verification.json`。上述结果不代替完整MS6或生产验收。
+
 ## PHP 8.2 兼容性验证
 
 镜像构建后、切换容器前，先做静态验证。`Candidate` 模式检查运行时版本与扩展、平台依赖、应用 lint、运行期诊断、图像输出比对，以及九项离线集成用例：
@@ -120,7 +136,7 @@ docker exec crmeb_php supervisorctl status
 docker logs crmeb_php 2>&1 | Select-String -Pattern "Implicit conversion|process terminated" | Measure-Object
 ```
 
-四个程序都应为 `RUNNING`，且计数为 0。
+四个默认程序都应为 `RUNNING`，且计数为 0；显式启用marketplace队列时，另核该消费者状态及实际任务结果。
 
 ## 停止与回滚
 
@@ -134,7 +150,7 @@ docker compose --env-file help\docker\.env.runtime -f help\docker\docker-compose
 
 将拟回退的镜像配置为候选，再经过同一默认检查和已授权的 `--apply`。旧单商家镜像没有有效 manifest，或版本低于目标库 `min_app_version` 时，都不能启动。不得通过改标签、直接 `docker compose up`、旧 `run.sh install/start/restart` 或手工降 metadata 绕过；绕过发布入口属于不受支持的违规操作。
 
-旧 `run.sh` 的安装、启动和重启路径已停用，以免其旧清理逻辑在版本检查前删除数据或网络；查看日志和原停止路径仍保留。任何停止命令都不得添加 `-v`。数据库和上传文件必须保留；需要恢复时遵循单独授权的备份恢复方案，不能把恢复视为普通镜像回退的附带动作。原恢复验收未因本文的操作说明而完成。
+旧 `run.sh` 的安装、启动和重启路径已停用，以免其旧清理逻辑在版本检查前删除数据或网络；查看日志和原停止路径仍保留。任何停止命令都不得添加 `-v`。数据库、上传文件和私有素材卷必须保留；需要恢复时遵循单独授权的备份恢复方案，不能把恢复视为普通镜像回退的附带动作。原恢复验收未因本文的操作说明而完成。
 
 ## 已知问题（仍阻塞公网生产）
 
@@ -159,7 +175,7 @@ sh redeploy-demo-server.sh             # 默认只检查
 # 本次部署获授权后：sh redeploy-demo-server.sh --apply
 ```
 
-MySQL、Redis、runtime 和 uploads 分别保存在 `data/` 下。停止或升级不得清空这些目录，也不得在 Compose 命令中添加 `-v`。首次启动时 `init/` 下的权威示例 SQL 仅在空数据目录中导入一次。
+MySQL、Redis、runtime 和 uploads 分别保存在 `data/` 下；私有素材使用本项目的 `private-assets` 命名卷。停止或升级不得清空这些目录或私有卷，也不得在 Compose 命令中添加 `-v`。首次启动时 `init/` 下的权威示例 SQL 仅在空数据目录中导入一次。
 
 更新 PHP 镜像时使用上述入口；将新 `deploy-marketplace.py` 和 `marketplace-pre-up.php` 一同放在部署目录。默认检查不会重建 PHP 或重启 Nginx；显式应用成功后才按原逻辑刷新 Nginx 上游地址。候选镜像写入 `.env.runtime` 的 `PHP_IMAGE` / `NGINX_IMAGE`，检查与应用使用同一配置。
 

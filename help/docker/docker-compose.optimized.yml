@@ -58,7 +58,9 @@ services:
     restart: unless-stopped
     environment:
       TZ: Asia/Shanghai
+      APP_ENV: production
       APP_DEBUG: "false"
+      MARKETPLACE_QUEUE_AUTOSTART: "${MARKETPLACE_QUEUE_AUTOSTART:-false}"
       DEFAULT_TIMEZONE: Asia/Shanghai
       UPGRADE_REMOTE_ENABLED: "${UPGRADE_REMOTE_ENABLED:-false}"
       MYSQL_HOST_IP: crmeb_mysql
@@ -80,6 +82,7 @@ services:
       - ../../crmeb/.constant:/var/www/.constant:ro
       - runtime_data:/var/www/runtime
       - ../../crmeb/public/uploads:/var/www/public/uploads
+      - private-assets:/private
     healthcheck:
       test: ["CMD", "php", "-d", "open_basedir=", "/usr/local/bin/runtime-healthcheck.php"]
       interval: 5s
@@ -113,6 +116,7 @@ services:
       - app_net
 
 volumes:
+  private-assets:
   runtime_data:
     name: tianli_crmeb_runtime
   redis_data:

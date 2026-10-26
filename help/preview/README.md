@@ -80,9 +80,9 @@ python -X utf8 help/preview/preview.py accounts-file --root $runtimeRoot
 
 三端构建入口仍是上述 `build-frontends.py`；它输出默认预览目录，准备完整模式时需将同源构建的三个 `dist` 复制到新目录，逐文件核同后再运行 `runtime`。三个目录都须包含 `index.html`。访问入口与普通预览相同，只将端口换成18183；合成账号仍由 `accounts-file` 保存到该运行目录的私有文件。
 
-`runtime` 通过原entrypoint和Supervisor启动FPM、Workerman、Timer及普通CRMEB队列；marketplace专用队列保留原 `autostart=false`，新实例默认未启用。服务仅接入专用内部网络，网页由同一实例的nginx转发真实FastCGI和WebSocket。命令先等待原健康检查的版本、MySQL、Redis及9000/40001/40002/40003监听通过，再启动网页并检查原 `/adminapi/login/info`；不使用旧 `preview-health`。Timer、队列是否实际运行还须核对Supervisor及进程，网页和业务仍需单独验证。
+`runtime` 通过原entrypoint和Supervisor启动FPM、Workerman、Timer及普通CRMEB队列；marketplace专用队列默认 `autostart=false`，新实例可用下述显式prepare开关启用。服务仅接入专用内部网络，网页由同一实例的nginx转发真实FastCGI和WebSocket。命令先等待原健康检查的版本、MySQL、Redis及9000/40001/40002/40003监听通过，再启动网页并检查原 `/adminapi/login/info`；不使用旧 `preview-health`。Timer、队列是否实际运行还须核对Supervisor及进程，网页和业务仍需单独验证。
 
-完整模式和下述镜像模式均可在 `runtime` 成功后执行 `python -X utf8 help/preview/preview.py queue --root $runtimeRoot`。它使用同一容器的Supervisor管理 `marketplace-queue`，不增加拆分容器；只有STOPPED才执行start，已RUNNING时只读核对PID，其他状态保留并报错。确认运行和资源归属后才保存 `queue_configured`；之后正常 `runtime` 路径按该标记启用，不修改Supervisor的 `autostart=false`。
+完整模式和下述镜像模式均可在 `runtime` 成功后执行 `python -X utf8 help/preview/preview.py queue --root $runtimeRoot`。它使用同一容器的Supervisor管理 `marketplace-queue`，不增加拆分容器；只有STOPPED才执行start，已RUNNING时只读核对PID，其他状态保留并报错。确认运行和资源归属后才保存 `queue_configured`；之后正常 `runtime` 路径按该标记启用，默认仍不自动启动。为新的完整/镜像实例设置开机消费，可在 `prepare --full-runtime` 时增加 `--marketplace-queue-autostart`；该布尔值保存到实例state，后续runtime沿同一配置启动Supervisor。旧实例不会因源码更新自动重建。
 
 完整模式先核固定PHP镜像与当前源码的composer.lock（仅统一CRLF/LF行尾）及已安装包版本/源码引用，随后离线复制镜像中的依赖并按当前composer.json生成自动加载文件。原普通预览仍沿用其既有依赖来源。首次准备将当前应用源码复制到专用 `runtime-app` 卷，日常容器只读挂载；vendor另卷只读，runtime、uploads和私有素材目录可写并交给UID33，私有根权限保持0700。仅在专用卷生成 `.env`（root:33、0640）和安装锁，不在仓库生成凭据。已经完整准备的实例只核对来源、配置、权限和就绪标记，匹配才继续；部分准备现场保留，不能自动覆盖或修补。
 
@@ -91,6 +91,10 @@ python -X utf8 help/preview/preview.py accounts-file --root $runtimeRoot
 2026-10-27已在独立18184实例实际完成首装、原entrypoint启动、FPM/Timer/Workerman/普通CRMEB队列进程核对、完整health、三角色登录及商家商品列表页面。平台、商家、H5和客服入口均与复用构建字节一致。初次18183实例因复制仓库旧vendor造成队列退出，现改为上述锁一致的镜像依赖；原失败记录及停止后的数据卷保留。原18180/18181/18182共17个容器未重建或重启，登录信息接口仍正常。本次未重跑交易全链、普通队列业务任务、停止恢复或完整发布验收。
 
 ## 镜像运行模式（新实例）
+
+2026-10-27新18187使用显式 `--marketplace-queue-autostart` 准备，原startup/health和三角色登录通过，专用队列自动启动并消费一条真实合成审计任务。该实例使用工作树 `multi-merchant-release-config`，入口为 `http://127.0.0.1:18187/`；私有账号位于仓库外 `artifacts/multi-merchant-image-runtime-20261027-r3/private/preview-accounts.json`。无需新增浏览器标签即可打开。新发布空卷的九域初始化另经真实copy-up验证；预览原bootstrap路径仍独立使用，不把两者互相代证。完整发布、恢复及私有上传HTTP未由本次结果完成。
+
+新镜像内含九个私有素材目录（UID33、0700）。发布栈的新空命名卷由镜像复制初始化；预览bootstrap使用 `nocopy`，继续自己的隔离建目录和权限准备，两个初始化途径分别验证。既有非空私有卷不会自动补目录或改历史文件。
 
 从当前工作树执行以下步骤，逐条确认成功后再继续。三端须已有对应源码的成功构建；`--image-context` 只核对并装包，不触发构建，不修改旧产物。输出目录和运行目录都必须是新目录，宿主端口必须空闲。示例使用新时间戳生成本地镜像标签：
 

@@ -65,6 +65,13 @@ RUN mkdir -p /var/www/runtime /var/www/public/uploads /run/application \
     && chmod 0755 /usr/local/bin/runtime-entrypoint \
     && chmod 0644 /usr/local/bin/marketplace-startup-check.php
 
+# Docker initializes a new empty private volume from these image-owned directories.
+# Existing volumes and their files are never chowned or rewritten at startup.
+RUN install -d -o root -g root -m 0755 /private \
+    && for name in customer-form aftersale refund licence withdrawal chat product-video product-media-scan product-video-cloud; do \
+        install -d -o www-data -g www-data -m 0700 "/private/$name"; \
+    done
+
 STOPSIGNAL SIGTERM
 
 ENTRYPOINT ["runtime-entrypoint"]
