@@ -104,4 +104,8 @@ V1咨询订单卡片正常链已通过：顾客从自己的订单进入聊天并
 
 本次实际检查包括客服桌面与375像素手机视口（本机浏览器，非真机），以及顾客打开自己的订单详情，均为本机隔离合成数据。实时已付/未付卡片及已付历史证据见仓库外预览目录 `browser/platform-chat-order-card-live-paid.json`、`platform-chat-order-card-live-unpaid.json`、`platform-chat-order-card-paid-history.json`；移动客服历史、实际375像素边界与截图见同目录的 `platform-chat-order-card-mobile-history.json`、`platform-chat-order-card-mobile-geometry.json`、`platform-chat-order-card-mobile-375.png`。源码渲染与构建输入/HTTP字节核对分别记录在同目录的 `platform-chat-order-card-frontend-check.json` 和 `platform-chat-order-card-build-verification.json`。其他appChat旧客户端壳、全部客户端流程、真机及正式阶段验收仍待完成；本次卡片交付不代表完整客服订单管理，也未修复旧公共图片上传。
 
+顾客头像正常链已实际验证：进入顾客端“设置”，点击头像选择图片，再点“保存修改”。本机顾客3选用合成PNG后，具名 `user/avatar/files` 保存顾客资产5为STAGED，`user/edit` 实际保存后转为BOUND；重新打开设置页的 `user` 返回同一头像并实际加载。原图、保存文件均1054字节、320×240，内容哈希一致；上传计数5→6，保存不重复上传。375×812浏览器视口已检查，原商业附件、商品/库存、订单、聊天消息、其他用户及其他资产保持。此为现有源码的正常运行验收，未重建或改写上传业务；没有独立裁剪UI，不能把圆形头像显示称为图片已裁剪。证据见仓库外预览目录 `browser/customer-avatar-verification.json`。
+
+旧通用上传仍未修复：`upload/image`、原客服 `upload` 继续调用不带可信商家归属的旧商业附件写入；不补0或默认自营商家。现仓库generic调用分别属于旧评价、非V1订单表单与显式旧聊天模式，V1评价/表单/私有聊天已有具名入口。需按这些实际用途继续接线；本次头像通过不代表通用上传、旧客户端或完整资产阶段通过。
+
 本说明是操作入口；各功能实际完成状态统一维护在仓库外现有 `current20261025-business-progress-r1/PROGRESS.md`。
