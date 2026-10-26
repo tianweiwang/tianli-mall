@@ -75,6 +75,11 @@ services:
       PREVIEW_EVENTS_BIND: "1"
     command: [help/preview/console.php, workerman, start]
     volumes: *app-volumes
+  preview-timer:
+    <<: *php
+    user: "1000:1000"
+    command: [help/preview/console.php, timer, start]
+    volumes: *app-volumes
   preview-web:
     image: ${PREVIEW_NGINX_IMAGE:?required}
     pull_policy: never

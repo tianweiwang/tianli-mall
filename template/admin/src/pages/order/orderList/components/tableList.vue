@@ -49,7 +49,7 @@
           <div class="pink_name" :style="{ color: scope.row.color }">{{ scope.row.pink_name }}</div>
           <span v-if="scope.row.is_del === 1" style="color: #ed4014; display: block">用户已删除</span>
           <span v-if="scope.row.is_cancel === 1 && scope.row.is_del === 0" style="color: #ed4014; display: block"
-            >用户已取消</span
+            >{{ isSavedMarketplaceV1(scope.row) ? '订单已取消' : '用户已取消' }}</span
           >
           <span v-if="scope.row.refund_type === 6" style="color: #ed4014; display: block">订单已退款</span>
         </template>

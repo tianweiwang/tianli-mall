@@ -154,9 +154,10 @@ def export_accounts(state, root):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=['prepare', 'initialize', 'resume-initialize', 'storefront', 'serve-api', 'serve', 'smoke', 'accounts-file', 'status', 'stop'])
+    parser.add_argument('action', choices=['prepare', 'initialize', 'resume-initialize', 'storefront', 'serve-api', 'serve', 'timers', 'timers-restore', 'smoke', 'accounts-file', 'status', 'stop'])
     parser.add_argument('--root', type=Path, default=DEFAULT_ROOT)
     parser.add_argument('--port', type=int, default=18180)
+    parser.add_argument('--hours', default='0.5', help='New unpaid order deadline in hours; timers only, 0 disables new deadlines')
     args = parser.parse_args()
     root = args.root.resolve()
     if args.action == 'prepare':
@@ -202,8 +203,22 @@ def main():
         elif args.action == 'serve-api':
             if not state.get('initialized'):
                 raise RuntimeError('Complete preview initialization before starting the application')
-            compose(state, root, 'up', '-d', 'preview-events', 'preview-app')
+            services = ['preview-events', 'preview-app']
+            if state.get('timer_configured'):
+                services.append('preview-timer')
+            compose(state, root, 'up', '-d', *services)
             assert_resources(state)
+        elif args.action in ['timers', 'timers-restore']:
+            if not state.get('initialized'):
+                raise RuntimeError('Complete preview initialization and serve-api before configuring timers')
+            mode = 'restore' if args.action == 'timers-restore' else 'configure'
+            print(compose(state, root, 'exec', '-T', 'preview-app', 'php',
+                          'help/preview/timers.php', mode, args.hours))
+            state['timer_configured'] = True
+            (root / 'state.json').write_text(json.dumps(state, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+            compose(state, root, 'up', '-d', '--no-deps', 'preview-timer')
+            assert_resources(state)
+            print('Original Timer started; verify natural expiry through a new unpaid preview order.')
         elif args.action == 'smoke':
             compose(state, root, 'run', '--rm', '--no-deps', '-T', 'bootstrap', 'help/preview/smoke.php')
         elif args.action == 'accounts-file':
@@ -214,7 +229,10 @@ def main():
             for app in ['admin', 'merchant', 'h5']:
                 if not (root / f'build/{app}/dist/index.html').is_file():
                     raise RuntimeError(f'Current {app} frontend build is not ready')
-            compose(state, root, 'up', '-d', 'preview-events', 'preview-app', 'preview-web')
+            services = ['preview-events', 'preview-app', 'preview-web']
+            if state.get('timer_configured'):
+                services.append('preview-timer')
+            compose(state, root, 'up', '-d', *services)
             assert_resources(state)
             wait_web(state)
             print(f'Preview listening at http://127.0.0.1:{state["port"]}/ ; browser/business verification remains required.')

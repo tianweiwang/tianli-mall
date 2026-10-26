@@ -786,7 +786,8 @@ class StoreOrderServices extends BaseServices
         if ($order['is_cancel']) {
             $status['_type'] = 4;
             $status['_title'] = '已取消';
-            $status['_msg'] = '您已取消订单,感谢您的使用';
+            $status['_msg'] = in_array($order['marketplace_trade_version'] ?? null, [1, '1'], true)
+                ? '订单已取消' : '您已取消订单,感谢您的使用';
             $status['_class'] = 'nobuy';
         } else {
             if (!$order['paid'] && $order['pay_type'] == 'offline' && !$order['status'] >= 2) {

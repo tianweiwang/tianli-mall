@@ -734,7 +734,7 @@ final class MarketplaceOrderSnapshotProjection
     {
         $paid=self::merchantInteger($root['paid'],0,1);$cancel=self::merchantInteger($root['is_cancel'],0,1);
         $status=self::merchantInteger($root['status'],-128,127);$type=self::text($root['pay_type']);$summary=$extension['summary'];
-        if($cancel)$out=['_type'=>4,'_title'=>'已取消','_msg'=>'您已取消订单,感谢您的使用','_class'=>'nobuy'];
+        if($cancel)$out=['_type'=>4,'_title'=>'已取消','_msg'=>'订单已取消','_class'=>'nobuy'];
         elseif(!$paid&&$type==='offline'&&!$status>=2)$out=['_type'=>9,'_title'=>'线下付款,未支付','_msg'=>'等待商家处理,请耐心等待','_class'=>'nobuy'];
         elseif(!$paid){
             $config=$options['config'];$hours=$config['order_cancel_time'];
