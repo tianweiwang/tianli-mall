@@ -132,8 +132,21 @@ final class CustomerAssetStorage
         return $actual;
     }
     public function upload(array $context,string $bytes,string $displayName,array &$object,array &$receipt): array
+    {return $this->uploadReview($context,$bytes,$displayName,$object,$receipt,false);}
+
+    public function uploadForLegacyReview(array $context,string $bytes,string $displayName,array &$object,array &$receipt):array
+    {return $this->uploadReview($context,$bytes,$displayName,$object,$receipt,true);}
+
+    /** Two named review frames share bytes/storage handling, never each other's authority. */
+    private function reviewContext(array $context,bool $legacy):void
     {
-        MarketplaceOrderReviewServices::assertCustomerUploadContext($context);$uid=$context['actual_uid'];
+        if($legacy)CustomerLegacyReviewAssetServices::assertContext($context,'upload');
+        else MarketplaceOrderReviewServices::assertCustomerUploadContext($context);
+    }
+
+    private function uploadReview(array $context,string $bytes,string $displayName,array &$object,array &$receipt,bool $legacy):array
+    {
+        $this->reviewContext($context,$legacy);$uid=$context['actual_uid'];
         if($object!==[])self::fail();
         $receiptKeys=array_keys($receipt);sort($receiptKeys,SORT_STRING);
         if($receiptKeys!==['cleanup_complete','complete','database_committed','phase','physical_changed','physical_complete']
@@ -141,12 +154,12 @@ final class CustomerAssetStorage
             ||$receipt['physical_complete']!==false||$receipt['database_committed']!==false||$receipt['cleanup_complete']!==null)self::fail();
         $qualified=$this->qualify($bytes,$displayName);
         \app\services\marketplace\MerchantManagementInput::text($displayName,255,true);
-        MarketplaceOrderReviewServices::assertCustomerUploadContext($context);
+        $this->reviewContext($context,$legacy);
         $configured=sys_config('upload_type',1);
         if(is_string($configured)&&preg_match('/\A[1-7]\z/D',$configured)===1)$configured=(int)$configured;
         if(!is_int($configured)||$configured<1||$configured>7)self::fail();
         $type=$configured;$storage=$type===1?null:$this->activeStorage($type);
-        $directory='customer/'.$uid.'/'.bin2hex(random_bytes(16));$fileName=bin2hex(random_bytes(16)).'.'.$qualified['extension'];
+        $directory='customer/'.($legacy?'lr/':'').$uid.'/'.bin2hex(random_bytes(16));$fileName=bin2hex(random_bytes(16)).'.'.$qualified['extension'];
         $key=($type===1?'':'uploads/').$directory.'/'.$fileName;self::key($key);
         $localRoot=$type===1?realpath(Config::get('filesystem.disks.public.root','')):null;
         if($type===1&&($localRoot===false||Config::get('filesystem.disks.public.type')!=='local'
@@ -180,7 +193,7 @@ final class CustomerAssetStorage
                 if($native['size']!==$qualified['size']||hash_file('sha256',$temporaryPath)!==$qualified['sha256'])self::fail();
                 clearstatcache(true,$temporaryPath);$checked=lstat($temporaryPath);
                 foreach(['dev','ino','mode','nlink','uid','gid','size','mtime','ctime']as$field)if(!is_array($checked)||$checked[$field]!==$native[$field])self::fail();
-                MarketplaceOrderReviewServices::assertCustomerUploadContext($context);
+                $this->reviewContext($context,$legacy);
                 $receipt['phase']='physical_upload';$receipt['physical_changed']=null;
                 $result=$disk->putFileAs($directory,new File($temporaryPath),$fileName);
                 if($result!==$relative)self::fail();
@@ -216,7 +229,7 @@ final class CustomerAssetStorage
             if($failure!==null)throw $failure;
             if(!is_array($row))self::fail();
         }else{
-            MarketplaceOrderReviewServices::assertCustomerUploadContext($context);
+            $this->reviewContext($context,$legacy);
             $upload=UploadService::fresh($type,$storage);$upload->setAuthThumb(false);
             $receipt['phase']='physical_upload';$receipt['physical_changed']=null;
             $result=$upload->to('uploads/'.$directory)->stream($bytes,$fileName);$info=$upload->getFileInfo();
@@ -240,14 +253,20 @@ final class CustomerAssetStorage
             if($object['key']!==$key||$object['storage']!==$storage)self::fail();
             // A provider ACK is not an independent read of the stored cloud bytes: changed remains null.
         }
-        MarketplaceOrderReviewServices::assertCustomerUploadContext($context);
+        $this->reviewContext($context,$legacy);
         $receipt['physical_complete']=true;return $row;
     }
 
     /** Read only: local full bytes; cloud current storage/credential binding plus the earlier observed ACK. */
     public function assertStored(array $context,array $row,array $qualified,string $bytes,array $object):void
+    {$this->assertReviewStored($context,$row,$qualified,$bytes,$object,false);}
+
+    public function assertLegacyReviewStored(array $context,array $row,array $qualified,string $bytes,array $object):void
+    {$this->assertReviewStored($context,$row,$qualified,$bytes,$object,true);}
+
+    private function assertReviewStored(array $context,array $row,array $qualified,string $bytes,array $object,bool $legacy):void
     {
-        MarketplaceOrderReviewServices::assertCustomerUploadContext($context);$this->ownedObject($context,$object);
+        $this->reviewContext($context,$legacy);$this->ownedObject($context,$object,$legacy);
         if($this->qualify($bytes,$row['real_name'])!==$qualified||$row['att_dir']!==$row['satt_dir']
             ||$row['att_type']!==$qualified['mime']||(string)$row['att_size']!==(string)$qualified['size'])self::fail();
         $observed=$this->locateObject($row)+['directory'=>$object['directory'],'local_root'=>$object['local_root']];
@@ -264,26 +283,32 @@ final class CustomerAssetStorage
                 ||$before['size']!==$qualified['size']||hash('sha256',$actual)!==$qualified['sha256']||mime_content_type($path)!==$qualified['mime'])self::fail();
             foreach(['dev','ino','mode','nlink','uid','gid','size','mtime','ctime']as$key)if($before[$key]!==$after[$key])self::fail();
         }elseif($this->activeStorage($object['type'])!==$object['storage'])self::fail();
-        MarketplaceOrderReviewServices::assertCustomerUploadContext($context);
+        $this->reviewContext($context,$legacy);
     }
 
     /** Only the actual new generated namespace, while the original real frame is still active and no DML was attempted. */
     public function cleanup(array $context,array $object,array &$receipt):void
+    {$this->cleanupReview($context,$object,$receipt,false);}
+
+    public function cleanupLegacyReview(array $context,array $object,array &$receipt):void
+    {$this->cleanupReview($context,$object,$receipt,true);}
+
+    private function cleanupReview(array $context,array $object,array &$receipt,bool $legacy):void
     {
-        MarketplaceOrderReviewServices::assertCustomerUploadContext($context);$this->ownedObject($context,$object);
+        $this->reviewContext($context,$legacy);$this->ownedObject($context,$object,$legacy);
         if($receipt['database_committed']!==false)self::fail();$heldFalse=$receipt['cleanup_complete']===false;
         $cleanup=$receipt;$ok=$this->images->cleanupNew($object,$cleanup);
         // Preserve upload facts; cleanup cannot manufacture a known pre-upload state or replace a prior unknown.
         $receipt['cleanup_complete']=$heldFalse?false:($ok&&($object['type']===1||$cleanup['physical_complete']===true));
-        MarketplaceOrderReviewServices::assertCustomerUploadContext($context);
+        $this->reviewContext($context,$legacy);
     }
-    private function ownedObject(array $context,array $object):void
+    private function ownedObject(array $context,array $object,bool $legacy=false):void
     {
-        $uid=$context['actual_uid'];
+        $uid=$context['actual_uid'];$namespace=$legacy?'lr\/':'';
         if(!is_int($object['type']??null)||$object['type']<1||$object['type']>7||!is_string($object['directory']??null)
-            ||preg_match('/\Acustomer\/'.$uid.'\/[a-f0-9]{32}\z/D',$object['directory'])!==1)self::fail();
+            ||preg_match('/\Acustomer\/'.$namespace.$uid.'\/[a-f0-9]{32}\z/D',$object['directory'])!==1)self::fail();
         if($object['type']===1){if(!is_string($object['key']??null)||preg_match('/\A[a-f0-9]{32}\.(?:jpg|jpeg|png|gif|webp)\z/D',$object['key'])!==1)self::fail();}
-        elseif(!is_string($object['key']??null)||preg_match('/\Auploads\/customer\/'.$uid.'\/[a-f0-9]{32}\/[a-f0-9]{32}\.(?:jpg|jpeg|png|gif|webp)\z/D',$object['key'])!==1)self::fail();
+        elseif(!is_string($object['key']??null)||preg_match('/\Auploads\/customer\/'.$namespace.$uid.'\/[a-f0-9]{32}\/[a-f0-9]{32}\.(?:jpg|jpeg|png|gif|webp)\z/D',$object['key'])!==1)self::fail();
     }
     private static function fail():never {throw new AuthUnavailableException();}
 
@@ -561,6 +586,58 @@ final class CustomerAssetStorage
             foreach($file['stat']as$field=>$value)if($after[$field]!==$value||$held[$field]!==$value)self::fail();
         }finally{if(fclose($handle)!==true)self::fail();}
         if(!is_string($bytes))self::fail();return $bytes;
+    }
+
+    /** Read the exact named legacy-review object before/after binding, without avatar or V1 authority. */
+    public function verifyLegacyReviewSelection(array $context,array $asset):array
+    {
+        CustomerLegacyReviewAssetServices::assertContext($context,'save');$uid=$context['actual_uid'];
+        if($asset['purpose']!=='review_public_image'||!in_array($asset['state'],['STAGED','BOUND'],true)
+            ||self::avatarInteger($asset['uid'],4294967295)!==$uid
+            ||self::avatarInteger($asset['created_by_uid'],4294967295)!==$uid
+            ||$asset['object_key']!==$asset['thumbnail_key'])self::fail();
+        $type=self::avatarInteger($asset['storage_type'],7);$maximum=Config::get('upload.filesize');
+        if(!is_int($maximum)||$maximum<1||$maximum>=PHP_INT_MAX)self::fail();$maximum=min($maximum,52428800);
+        $size=self::avatarInteger($asset['byte_size'],$maximum);$leaf='[a-f0-9]{32}\.(?:jpg|jpeg|png|gif|webp)';
+        if($type===1){
+            if(preg_match('/\A\/uploads\/customer\/lr\/'.$uid.'\/[a-f0-9]{32}\/('.$leaf.')\z/D',$asset['object_key'],$parts)!==1
+                ||$asset['name']!==$parts[1])self::fail();
+        }elseif(preg_match('/\Auploads\/customer\/lr\/'.$uid.'\/[a-f0-9]{32}\/'.$leaf.'\z/D',$asset['name'])!==1)self::fail();
+        $physical=['name'=>$asset['name'],'real_name'=>$asset['real_name'],'att_dir'=>$asset['object_key'],
+            'satt_dir'=>$asset['thumbnail_key'],'att_size'=>(string)$size,'att_type'=>$asset['media_type'],'image_type'=>$type];
+        $locate=function()use($context,$physical,$type):array{
+            CustomerLegacyReviewAssetServices::assertContext($context,'save');$localRoot=null;
+            if($type===1){
+                if(Config::get('filesystem.disks.public.type')!=='local'||Config::get('filesystem.disks.public.url')!=='/uploads')self::fail();
+                $localRoot=realpath(Config::get('filesystem.disks.public.root',''));if(!is_string($localRoot))self::fail();
+                $directory=dirname(substr($physical['att_dir'],strlen('/uploads/')));
+            }else $directory=dirname(substr($physical['name'],strlen('uploads/')));
+            $object=$this->locateObject($physical)+['directory'=>$directory,'local_root'=>$localRoot];
+            $this->ownedObject($context,$object,true);
+            if($type===1){if(count($object['files'])!==1||$object['files'][0]['canonical']!==$physical['att_dir'])self::fail();}
+            elseif($this->activeStorage($type)!==$object['storage'])self::fail();
+            return $object;
+        };
+        $object=$locate();$proof=self::avatarObjectProof($object);
+        if($type===1)$bytes=$this->avatarLocalBytes($object,$maximum);
+        else{
+            $fetched=app()->make(\app\services\marketplace\product\ProductMediaRemoteImages::class)->fetch([$asset['object_key']]);
+            if(!array_is_list($fetched)||count($fetched)!==1||!is_array($fetched[0])
+                ||array_keys($fetched[0])!==['bytes','url_sha256']||!is_string($fetched[0]['bytes'])
+                ||$fetched[0]['url_sha256']!==hash('sha256',$asset['object_key']))self::fail();$bytes=$fetched[0]['bytes'];
+        }
+        $qualified=$this->qualify($bytes,$asset['real_name']);
+        if(strlen($bytes)!==$size||$qualified['size']!==$size||$qualified['mime']!==$asset['media_type']
+            ||$qualified['width']!==self::avatarInteger($asset['width'],4294967295)
+            ||$qualified['height']!==self::avatarInteger($asset['height'],4294967295)
+            ||$qualified['sha256']!==bin2hex($asset['content_sha256'])
+            ||strtolower(pathinfo($asset['name'],PATHINFO_EXTENSION))!==$qualified['extension']
+            ||self::avatarObjectProof($locate())!==$proof)self::fail();
+        $url=path_to_url($asset['object_key']);if(!is_string($url)||$url==='')self::fail();
+        if(strpos($url,'http')===false)$url=$context['request']->domain().$url;
+        $native=$asset;unset($native['state'],$native['review_id'],$native['bound_at']);
+        CustomerLegacyReviewAssetServices::assertContext($context,'save');
+        return ['url'=>$url,'qualified'=>$qualified,'object'=>$proof,'native'=>$native];
     }
 
     private static function avatarInteger(mixed $value,int $maximum):int

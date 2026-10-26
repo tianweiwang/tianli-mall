@@ -621,6 +621,19 @@ class StoreOrderController
     }
 
     /**
+     * 旧订单评价图片具名上传。
+     */
+    public function uploadLegacyReview(Request $request, \app\services\marketplace\assets\CustomerLegacyReviewAssetServices $assets)
+    {
+        try {
+            $data = $assets->upload($request, (int)$request->uid(), (string)$request->route('unique', '', null));
+            return app('json')->success('图片上传成功', $data);
+        } catch (\app\services\marketplace\attachment\MerchantAttachmentOperationException $error) {
+            return \think\Response::create(['status'=>503,'msg'=>'图片操作未完成，请保留本次结果','data'=>$error->receipt], 'json', 503);
+        }
+    }
+
+    /**
      * 订单评价
      * @param Request $request
      * @param StoreOrderCartInfoServices $cartInfoServices
@@ -674,7 +687,24 @@ class StoreOrderController
         //评价是否需要审核
         $group['status'] = sys_config('product_reply_examine') == 1 ? 0 : 1;
 
-        $res = $replyServices->save($group);
+        $body = $request->post(false);
+        if (is_array($body) && array_key_exists('review_asset_ids', $body)) {
+            if (!is_array($body['review_asset_ids'])) return app('json')->fail('评价图片格式错误');
+        }
+        $assetIds = is_array($body) ? ($body['review_asset_ids'] ?? []) : [];
+        if ($assetIds !== []) {
+            try {
+                $assets = app()->make(\app\services\marketplace\assets\CustomerLegacyReviewAssetServices::class);
+                $res = $assets->save($request, (int)$uid, (string)$unique, $group, $assetIds,
+                    static function ($connection, $pdo, array $actualGroup) use ($replyServices) {
+                        return $replyServices->save($actualGroup);
+                    });
+            } catch (\app\services\marketplace\attachment\MerchantAttachmentOperationException $error) {
+                return \think\Response::create(['status'=>503,'msg'=>'评价图片操作未完成，请保留本次结果','data'=>$error->receipt], 'json', 503);
+            }
+        } else {
+            $res = $replyServices->save($group);
+        }
         if (!$res) {
             return app('json')->fail('评价失败');
         }

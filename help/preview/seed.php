@@ -44,7 +44,8 @@ function preview_seed_install(PDO $db, bool $resume = false): array
     $allowed = ['eb_agreement', 'eb_express', 'eb_lang_code', 'eb_lang_country', 'eb_lang_type',
         'eb_system_city', 'eb_system_config', 'eb_system_config_tab', 'eb_system_event_data',
         'eb_system_group', 'eb_system_menus', 'eb_system_notification', 'eb_system_route', 'eb_system_route_cate'];
-    $statements = []; $created = []; $seeded = [];
+    $statements = []; $created = []; $seeded = []; $storageOverrides = [];
+    $routeStatements = 0; $routeRows = 0;
     foreach (explode(";\n", trim(str_replace("\r", '', $raw))) as $chunk) {
         $lines = array_filter(explode("\n", trim($chunk)), static fn(string $line): bool =>
             $line !== '' && !in_array(substr(ltrim($line), 0, 1), ['#', '-'], true));
@@ -52,24 +53,54 @@ function preview_seed_install(PDO $db, bool $resume = false): array
         if ($statement === '') continue;
         if (preg_match('/\ACREATE TABLE IF NOT EXISTS `(eb_[a-z0-9_]+)`\s*\(/D', $statement, $match) === 1) {
             preview_seed_require(!isset($created[$match[1]]), 'duplicate installation table');
+            if ($match[1] === 'eb_qrcode') {
+                // Keep the complete utf8mb4 ticket index under strict MySQL mode.
+                $statement = str_replace('ROW_FORMAT=COMPACT', 'ROW_FORMAT=DYNAMIC', $statement, $replacements);
+                preview_seed_require($replacements === 1, 'qrcode installation storage shape changed');
+                $storageOverrides['eb_qrcode.row_format'] = 'DYNAMIC';
+            }
             $created[$match[1]] = true; $statements[] = $statement;
         } elseif (preg_match('/\AINSERT INTO `(eb_[a-z0-9_]+)`\s*\(/D', $statement, $match) === 1
             && in_array($match[1], $allowed, true)) {
+            if ($match[1] === 'eb_system_route') {
+                // Original route writer stores the omitted error-code array as JSON [].
+                $routeLines = explode("\n", $statement);
+                $header = array_shift($routeLines);
+                preview_seed_require(!str_contains($header, '`error_code`') && $routeLines !== [], 'route installation columns changed');
+                $header = preg_replace('/\) VALUES\z/D', ', `error_code`) VALUES', $header, -1, $replacements);
+                preview_seed_require(is_string($header) && $replacements === 1, 'route installation header changed');
+                foreach ($routeLines as $index => &$line) {
+                    $last = $index === count($routeLines) - 1;
+                    preview_seed_require(str_starts_with($line, '(') && str_ends_with($line, $last ? ')' : '),'),
+                        'route installation tuple layout changed');
+                    $end = strlen($line) - ($last ? 1 : 2);
+                    $line = substr($line, 0, $end) . ", '[]'" . substr($line, $end);
+                    $routeRows++;
+                }
+                unset($line);
+                $statement = implode("\n", array_merge([$header], $routeLines));
+                $routeStatements++;
+            }
             $seeded[$match[1]] = true; $statements[] = $statement;
         }
         // All installation business rows, cached state, file MD5s and scheduled jobs are omitted.
     }
     preview_seed_require(count($created) === 157 && isset($seeded['eb_system_menus'], $seeded['eb_system_config'],
         $seeded['eb_system_event_data'], $seeded['eb_system_notification']), 'installation shape changed');
+    preview_seed_require($routeStatements === 53 && $routeRows === 1153, 'route installation data shape changed');
+    $sourceAdjustments = ['preview_storage_overrides' => $storageOverrides,
+        'preview_route_error_code_default' => ['json' => '[]', 'statements' => $routeStatements, 'rows' => $routeRows]];
     if ($resume) {
         $tables = $db->query('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN);
         preview_seed_require(array_diff(array_keys($created), $tables) === [], 'partial installation cannot resume');
-        return ['installation_tables' => count($created), 'source_sha256' => hash('sha256', $raw)];
+        return ['installation_tables' => count($created), 'source_sha256' => hash('sha256', $raw),
+            'installation_reused' => true, 'create_source_adjustments' => $sourceAdjustments];
     }
     foreach ($statements as $statement) $db->exec($statement);
     $count = (int)$db->query('SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE()')->fetchColumn();
     preview_seed_require($count === 158, 'installation namespace differs');
-    return ['installation_tables' => count($created), 'source_sha256' => hash('sha256', $raw)];
+    return ['installation_tables' => count($created), 'source_sha256' => hash('sha256', $raw),
+        'installation_reused' => false, 'create_source_adjustments' => $sourceAdjustments];
 }
 
 function preview_seed_private_json(string $path, array $value): void
@@ -194,6 +225,11 @@ function preview_seed_configuration(PDO $db): void
         'integral_ratio' => '0.00', 'balance_func_status' => 0, 'yue_pay_status' => 0, 'pay_weixin_open' => 0,
         'ali_pay_status' => 0, 'friend_pay_status' => 0, 'order_cancel_time' => '0', 'order_receiving_time' => '0',
         'sms_account' => '', 'sms_token' => '', 'custom_admin_js' => ''];
+    if ((preview_config()['legacy_review_fixture'] ?? false) === true) {
+        $values['site_name'] = '旧版评价合成验证（测试余额）';
+        $values['balance_func_status'] = 1;
+        $values['yue_pay_status'] = 1;
+    }
     foreach ($values as $name => $value) {
         $find = $db->prepare('SELECT id FROM eb_system_config WHERE menu_name=?'); $find->execute([$name]);
         $ids = $find->fetchAll(PDO::FETCH_COLUMN); preview_seed_require(count($ids) <= 1, 'duplicate configuration');
@@ -260,6 +296,19 @@ function preview_seed(bool $resume = false): array
         $merchantId = preview_seed_insert($db, 'eb_marketplace_merchant', ['name' => '预览合成商家', 'review_status' => 1,
             'accept_orders' => 1, 'fulfillment_enabled' => 1, 'security_locked' => 0, 'closed_at' => null,
             'after_sale_contact' => '隔离预览售后', 'add_time' => $now, 'update_time' => $now]);
+        $productMerchantId = $merchantId;
+        if (($config['legacy_review_fixture'] ?? false) === true) {
+            // The original catalog reads only the explicitly configured self-operated owner.
+            $enableSelf = $db->prepare('UPDATE eb_marketplace_merchant SET review_status=1, accept_orders=1, update_time=? WHERE mer_id=?');
+            $enableSelf->execute([$now, $selfId]);
+            preview_seed_require($enableSelf->rowCount() === 1, 'new synthetic self-operated merchant required');
+            $productMerchantId = $selfId;
+            preview_seed_insert($db, 'eb_shipping_templates', ['id' => 1, 'mer_id' => $selfId,
+                'name' => '合成默认运费（零费用）', 'type' => 1, 'add_time' => $now]);
+            preview_seed_insert($db, 'eb_shipping_templates_region', ['temp_id' => 1, 'city_id' => 0,
+                'first' => '1.00', 'first_price' => '0.00', 'continue' => '1.00', 'continue_price' => '0.00',
+                'type' => 1, 'uniqid' => 'preview-legacy-default']);
+        }
         $roleId = preview_seed_insert($db, 'eb_marketplace_role', ['mer_id' => $merchantId, 'name' => '预览管理员',
             'permissions' => preview_seed_json(\app\services\marketplace\MerchantPermissions::BUILTIN_ADMIN),
             'add_time' => $now, 'update_time' => $now]);
@@ -271,19 +320,20 @@ function preview_seed(bool $resume = false): array
             'token_hash' => hash('sha256', $capability, true), 'expires_at' => $now + 86400, 'consumed_at' => null, 'add_time' => $now]);
         $customerId = preview_seed_insert($db, 'eb_user', ['account' => $credentials['customer']['account'],
             'nickname' => '预览合成顾客', 'user_type' => 'h5', 'is_money_level' => 0,
+            'now_money' => ($config['legacy_review_fixture'] ?? false) === true ? '200.00' : '0.00',
             'status' => 1, 'is_del' => 0, 'spread_uid' => 0, 'add_time' => $now]);
         $addressId = preview_seed_insert($db, 'eb_user_address', ['uid' => $customerId, 'real_name' => '预览顾客',
             'phone' => '00000000000', 'province' => '预览省', 'city' => '预览市', 'district' => '预览区',
             'detail' => '专用隔离合成地址', 'is_default' => 1, 'add_time' => $now]);
         $categoryId = preview_seed_insert($db, 'eb_store_category', ['pid' => 0, 'cate_name' => '预览商品',
             'is_show' => 1, 'sort' => 0, 'pic' => $picture, 'add_time' => $now]);
-        preview_seed_insert($db, 'eb_system_attachment', ['mer_id' => $merchantId, 'name' => 'product.png',
+        preview_seed_insert($db, 'eb_system_attachment', ['mer_id' => $productMerchantId, 'name' => 'product.png',
             'att_dir' => $picture, 'satt_dir' => $picture, 'att_size' => (string)filesize('/workspace/crmeb/public' . $picture),
             'att_type' => 'image/png', 'pid' => 0, 'time' => $now, 'image_type' => 1, 'module_type' => 1,
             'real_name' => 'preview-product.png', 'scan_token' => '', 'type' => 0]);
         $products = [];
         foreach ([['name' => '基础体验商品', 'price' => '20.15'], ['name' => '第二件体验商品', 'price' => '30.25']] as $spec) {
-            $id = preview_seed_insert($db, 'eb_store_product', ['mer_id' => $merchantId, 'store_name' => $spec['name'],
+            $id = preview_seed_insert($db, 'eb_store_product', ['mer_id' => $productMerchantId, 'store_name' => $spec['name'],
                 'store_info' => '仅供当前隔离环境体验，不产生真实交易', 'unit_name' => '件', 'spec_type' => 0,
                 'stock' => 100, 'sales' => 0, 'price' => $spec['price'], 'cost' => '7.45', 'postage' => '0.00',
                 'freight' => 1, 'temp_id' => 0, 'is_show' => 1, 'review_status' => 2, 'is_vip' => 0,

@@ -49,6 +49,10 @@ function preview_app(bool $migrator = false): \think\App
     preview_assert_isolated();
     $config = preview_config();
     $role = $config['database'][$migrator ? 'migrator' : 'app'];
+    $legacyFixture = $config['legacy_review_fixture'] ?? false;
+    if (!is_bool($legacyFixture)) throw new RuntimeException('Invalid preview fixture mode');
+    // Only a separately prepared fixture uses the old create flow, after normal initialization.
+    $legacyRuntime = $legacyFixture && is_file('/run/preview-app/initialized.json');
     $environment = [
         'APP_ENV' => 'testing', 'PHP_APP_DEBUG' => 'false', 'PHP_DATABASE_DEBUG' => 'false',
         'PHP_APP_APP_KEY' => $config['signing_key'],
@@ -59,7 +63,7 @@ function preview_app(bool $migrator = false): \think\App
         'PHP_REDIS_PORT' => '6379', 'PHP_REDIS_REDIS_PASSWORD' => $config['redis_password'],
         'PHP_AUTH_SESSION_EPOCH' => $config['auth']['session_epoch'],
         'PHP_AUTH_STAMP_KEY' => $config['auth']['stamp_key'], 'PHP_AUTH_ISSUER' => $config['auth']['issuer'],
-        'PHP_MARKETPLACE_ENABLED' => 'true', 'PHP_MARKETPLACE_TRADE_ENABLED' => 'true',
+        'PHP_MARKETPLACE_ENABLED' => $legacyRuntime ? 'false' : 'true', 'PHP_MARKETPLACE_TRADE_ENABLED' => 'true',
         'PHP_MARKETPLACE_PAYMENT_TEST_ENABLED' => 'true',
         'PHP_MARKETPLACE_AFTERSALE_ENABLED' => 'true',
         'PHP_MARKETPLACE_SELF_OPERATED_MER_ID' => (string)($config['self_operated_mer_id'] ?? ''),

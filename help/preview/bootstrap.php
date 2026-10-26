@@ -46,7 +46,9 @@ try {
         chown('/run/preview-app', 1000);
         $rootPassword = bin2hex(random_bytes(24));
         file_put_contents('/run/preview-bootstrap/root-password', $rootPassword);
-        $config = ['project' => $project, 'run_id' => $run,
+        $legacyMode = getenv('PREVIEW_LEGACY_REVIEW_FIXTURE') ?: '0';
+        if (!in_array($legacyMode, ['0', '1'], true)) throw new RuntimeException('Invalid new fixture mode');
+        $config = ['project' => $project, 'run_id' => $run, 'legacy_review_fixture' => $legacyMode === '1',
             'database' => ['name' => 'mall_preview', 'host' => 'preview-mysql',
                 'app' => ['username' => 'preview_app', 'password' => bin2hex(random_bytes(24))]],
             'redis_password' => bin2hex(random_bytes(24)), 'signing_key' => bin2hex(random_bytes(32)),

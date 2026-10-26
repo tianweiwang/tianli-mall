@@ -43,9 +43,13 @@ def load(root):
 
 
 def environment(state, root):
+    legacy_fixture = state.get('legacy_review_fixture', False)
+    if not isinstance(legacy_fixture, bool):
+        raise RuntimeError('Invalid preview fixture mode')
     env = dict(os.environ)
     env.update(PREVIEW_PROJECT=state['project'], PREVIEW_RUN_ID=state['run_id'],
                PREVIEW_REPO=REPO.as_posix(), PREVIEW_PORT=str(state['port']),
+               PREVIEW_LEGACY_REVIEW_FIXTURE='1' if legacy_fixture else '0',
                PREVIEW_ADMIN_DIST=(root / 'build/admin/dist').as_posix(),
                PREVIEW_MERCHANT_DIST=(root / 'build/merchant/dist').as_posix(),
                PREVIEW_H5_DIST=(root / 'build/h5/dist').as_posix())
@@ -163,9 +167,13 @@ def main():
     parser.add_argument('action', choices=['prepare', 'initialize', 'resume-initialize', 'storefront', 'serve-api', 'serve', 'timers', 'timers-restore', 'queue', 'smoke', 'accounts-file', 'status', 'stop'])
     parser.add_argument('--root', type=Path, default=DEFAULT_ROOT)
     parser.add_argument('--port', type=int, default=18180)
+    parser.add_argument('--legacy-review-fixture', action='store_true',
+                        help='prepare only: separate legacy review fixture with synthetic balance')
     parser.add_argument('--hours', default='0.5', help='New unpaid order deadline in hours; timers only, 0 disables new deadlines')
     args = parser.parse_args()
     root = args.root.resolve()
+    if args.legacy_review_fixture and (args.action != 'prepare' or root == DEFAULT_ROOT.resolve() or args.port == 18180):
+        raise RuntimeError('Legacy fixture requires prepare, its own root and a separate local port')
     if args.action == 'prepare':
         if (root / 'state.json').exists():
             raise RuntimeError('Preview already recorded; use status, never reinitialize it')
@@ -185,7 +193,8 @@ def main():
         root.mkdir(parents=True, exist_ok=True)
         (root / 'commands').mkdir(exist_ok=False)
         state = {'project': project, 'run_id': run, 'repo': REPO.as_posix(), 'base_head': head,
-                 'port': args.port, 'images': images, 'scope': 'local_synthetic_preview_not_stage_acceptance'}
+                 'port': args.port, 'images': images, 'scope': 'local_synthetic_preview_not_stage_acceptance',
+                 'legacy_review_fixture': args.legacy_review_fixture}
         with (root / 'state.json').open('x', encoding='utf-8', newline='\n') as output:
             json.dump(state, output, ensure_ascii=False, indent=2)
             output.write('\n')

@@ -12,6 +12,7 @@ x-php: &php
     PREVIEW_ISOLATED: "1"
     PREVIEW_PROJECT: ${PREVIEW_PROJECT:?required}
     PREVIEW_RUN_ID: ${PREVIEW_RUN_ID:?required}
+    PREVIEW_LEGACY_REVIEW_FIXTURE: ${PREVIEW_LEGACY_REVIEW_FIXTURE:-0}
   labels: &labels
     marketplace.preview: ${PREVIEW_PROJECT}
 
