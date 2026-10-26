@@ -35,7 +35,7 @@
               </div>
             </li>
             <li class="item">
-              <div class="title">{{ savedTestPayment ? '测试支付金额' : '实际支付' }}</div>
+              <div class="title">{{ savedUnpaidOrder ? '订单金额' : savedTestPayment ? '测试支付金额' : '实际支付' }}</div>
               <div>¥ {{ orderDatalist.orderInfo.pay_price || '0.0' }}</div>
             </li>
             <li class="item" v-if="orderDatalist.orderInfo.refund_status == 2">
@@ -44,7 +44,8 @@
             </li>
             <li class="item">
               <div class="title">支付方式</div>
-              <div>{{ orderDatalist.orderInfo.pay_type | payType(savedMarketplaceV1) }}</div>
+              <div v-if="savedUnpaidOrder">未支付</div>
+              <div v-else>{{ orderDatalist.orderInfo.pay_type | payType(savedMarketplaceV1) }}</div>
             </li>
             <li class="item">
               <div class="title">支付时间</div>
@@ -130,7 +131,7 @@
                   <div class="value">{{ orderDatalist.orderInfo.memberPrice || '0.0' }}</div>
                 </li>
                 <li class="item">
-                  <div>{{ savedTestPayment ? '测试支付金额' : '实际支付' }}：</div>
+                  <div>{{ savedUnpaidOrder ? '订单金额' : savedTestPayment ? '测试支付金额' : '实际支付' }}：</div>
                   <div class="value">{{ orderDatalist.orderInfo.pay_price || '0.0' }}</div>
                 </li>
               </ul>
@@ -484,6 +485,9 @@ export default {
     },
     savedTestPayment() {
       return this.savedMarketplaceV1 && this.orderDatalist.orderInfo.pay_type === 'marketplace_test';
+    },
+    savedUnpaidOrder() {
+      return this.savedMarketplaceV1 && [0, '0'].includes(this.orderDatalist.orderInfo.paid);
     },
     savedGroups() {
       if(!this.savedMarketplaceV1)return [];

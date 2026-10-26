@@ -484,7 +484,7 @@
 					<view class="conter">-{{ $t(`￥`) }}{{ savedMarketplaceFormsV1 ? strictSavedMoney(orderInfo.deduction_price) : parseFloat(orderInfo.deduction_price).toFixed(2) }}</view>
 				</view>
 				<view class="actualPay acea-row row-right" v-if="!orderInfo.help_info.help_status">
-					{{ $t(savedTestPayment ? '测试支付金额' : '实付款') }}：
+					{{ $t(savedMarketplaceFormsV1 && [0, '0'].includes(orderInfo.paid) ? '订单金额' : savedTestPayment ? '测试支付金额' : '实付款') }}：
 					<text class="money font-color">{{ $t(`￥`) }}{{ savedMarketplaceFormsV1 ? strictSavedMoney(orderInfo.pay_price) : parseFloat(orderInfo.pay_price).toFixed(2) }}</text>
 				</view>
 				<view class="actualPay acea-row row-right" v-else>
@@ -499,8 +499,10 @@
 				</view>
 			</view>
 			<view style="height: 120rpx"></view>
+			<view v-if="fulfillmentKind === 'root' && marketplaceCancelFeedback" class="marketplace-cancel-feedback" role="status">{{ marketplaceCancelFeedback }}</view>
 			<view v-if="fulfillmentKind === 'root' && [0, '0'].includes(orderInfo.paid) && [0, '0'].includes(orderInfo.is_cancel)" class="marketplace-aftersale-navigation">
-				<button class="marketplace-aftersale-navigation-button" :disabled="!isLogin || fulfillmentLoading || !!fulfillmentError" @tap="pay_open">{{$t(`选择付款方式`)}}</button>
+				<button class="marketplace-aftersale-navigation-button" :disabled="!isLogin || fulfillmentLoading || !!fulfillmentError || marketplaceCancelPending" @tap="pay_open">{{$t(`选择付款方式`)}}</button>
+				<button class="marketplace-aftersale-navigation-button marketplace-order-cancel-button" :disabled="!isLogin || fulfillmentLoading || !!fulfillmentError || marketplaceCancelPending" @tap="cancelMarketplaceOrder">{{ marketplaceCancelPending ? $t('正在处理取消请求') : $t('取消订单') }}</button>
 			</view>
 			<view class="wrapper" v-if="fulfillmentKind === 'root' && orderInfo.paid == 1 && !is_gift && isReturn != 1">
 				<button v-if="invoiceData" class="fulfillment-again" :disabled="fulfillmentLoading || !!fulfillmentError" @tap="aleartStatusChange">{{ $t('查看发票') }}</button>
@@ -706,6 +708,8 @@ export default {
 			fulfillmentPendingPage: 1,
 			fulfillmentRevision: 0,
 			fulfillmentIdentity: '',
+			marketplaceCancelPending: false,
+			marketplaceCancelFeedback: '',
 			packageEntry: false,
 			receipt: null,
 			receiptActive: true,
@@ -846,7 +850,7 @@ export default {
 			if (this.isLogin && this.order_id) this.getOrderInfo(1);
 		},
 		receiptSessionRevision() {
-			if (!this.packageEntry && this.fulfillmentKind !== 'child' && !this.receiptPending) return;
+			if (!this.packageEntry && this.fulfillmentKind !== 'child' && !this.receiptPending && !this.marketplaceCancelPending && !this.marketplaceCancelFeedback) return;
 			this.clearSavedFulfillment();
 			if (this.isLogin && this.order_id) this.getOrderInfo(1);
 		},
@@ -1146,6 +1150,7 @@ export default {
 		 *
 		 */
 		clearSavedFulfillment() {
+			this.marketplaceCancelPending = false; this.marketplaceCancelFeedback = '';
 			this.receiptGeneration++; this.receipt = null; this.receiptReadIdentity = '';
 			this.receiptPending = null; this.receiptPendingIdentity = ''; this.receiptSending = false;
 			this.receiptPreparing = false; this.receiptNeedsRefresh = false; this.receiptError = ''; this.receiptFeedback = '';
@@ -1290,6 +1295,8 @@ export default {
 				this.fulfillmentView = null;
 				this.fulfillmentKind = '';
 				this.fulfillmentIdentity = identity;
+				this.marketplaceCancelPending = false;
+				this.marketplaceCancelFeedback = '';
 			}
 			const revision = ++this.fulfillmentRevision;
 			const requestedPage = page === undefined ? (this.fulfillmentView && this.fulfillmentView.children ? this.fulfillmentView.children.page : 1) : page;
@@ -1798,6 +1805,45 @@ export default {
 						return that.$util.Tips({
 							title: that.$t(`已取消`)
 						});
+					}
+				}
+			});
+		},
+		cancelMarketplaceOrder() {
+			if (!this.isLogin || this.isReturn == 1 || this.fulfillmentKind !== 'root' || this.fulfillmentLoading || this.fulfillmentError ||
+				this.marketplaceCancelPending || ![0, '0'].includes(this.orderInfo.paid) || ![0, '0'].includes(this.orderInfo.is_cancel)) return;
+			const orderNo = this.orderInfo.order_id;
+			if (typeof orderNo !== 'string' || !orderNo) return;
+			const identity = this.receiptIdentity();
+			const sameOrder = () => this.receiptCurrent(identity) && this.order_id === orderNo;
+			this.marketplaceCancelPending = true;
+			this.marketplaceCancelFeedback = '';
+			uni.showModal({
+				title: this.$t('取消订单'),
+				content: this.$t('确认取消这张未付款订单？取消后将释放本单占用的库存。'),
+				confirmText: this.$t('确认取消'),
+				cancelText: this.$t('保留订单'),
+				success: async (res) => {
+					if (!sameOrder()) return;
+					if (!res.confirm) { this.marketplaceCancelPending = false; return; }
+					if (this.isReturn == 1 || this.fulfillmentKind !== 'root' || this.fulfillmentLoading || this.fulfillmentError ||
+						![0, '0'].includes(this.orderInfo.paid) || ![0, '0'].includes(this.orderInfo.is_cancel)) {
+						this.marketplaceCancelPending = false; this.getOrderInfo(); return;
+					}
+					try {
+						await orderCancel(orderNo);
+						if (sameOrder()) this.marketplaceCancelFeedback = this.$t('取消请求已处理，请以最新订单状态为准。');
+					} catch (error) {
+						if (sameOrder()) this.marketplaceCancelFeedback = typeof error === 'string' ? error :
+							(error && (error.msg || error.message)) || this.$t('取消结果未确认，请重新读取订单状态。');
+					} finally {
+						if (sameOrder()) { this.marketplaceCancelPending = false; this.getOrderInfo(); }
+					}
+				},
+				fail: () => {
+					if (sameOrder()) {
+						this.marketplaceCancelPending = false;
+						this.marketplaceCancelFeedback = this.$t('未打开取消确认，请重试。');
 					}
 				}
 			});
@@ -2967,6 +3013,8 @@ export default {
 .marketplace-aftersale-navigation-button { box-sizing: border-box; display: flex; align-items: center; justify-content: center; width: 100%; min-width: 0; max-width: 100%; min-height: 44px; height: auto; margin: 0; padding: 10px 16px; border: 1px solid #ddd; border-radius: 6px; color: var(--view-theme, #333); background: #fff; font-size: 28rpx; line-height: 1.4; text-align: center; white-space: normal; }
 .marketplace-aftersale-navigation-button::after { border: 0; }
 .marketplace-review-navigation-button { margin-top: 16rpx; }
+.marketplace-order-cancel-button { margin-top: 16rpx; }
+.marketplace-cancel-feedback { box-sizing: border-box; width: 100%; padding: 12px 30rpx; color: #555; font-size: 26rpx; line-height: 1.6; overflow-wrap: anywhere; }
 .order-details .footer button.marketplace-again-button {
 	display: flex;
 	align-items: center;
