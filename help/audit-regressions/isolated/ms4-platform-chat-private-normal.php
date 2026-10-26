@@ -567,7 +567,29 @@ function m4pc_main_wire(array $dto,array $expected,string $nickname,string $avat
     m4pc_expect(isset($dto['id'])&&(is_int($dto['id'])||is_string($dto['id']))&&(string)$dto['id']===(string)$expected['id'],'M4PC_REAL_WIRE_PK_VALUE');$dto['id']=(int)$dto['id'];
     // The actual JSON wire legitimately normalizes integral PHP floats; no expected field comes from this DTO.
     $wanted=json_decode(json_encode($wanted,JSON_THROW_ON_ERROR),true,64,JSON_THROW_ON_ERROR);
-    m4pc_expect(\app\services\marketplace\order\MarketplaceOrderInput::canonical($dto)===\app\services\marketplace\order\MarketplaceOrderInput::canonical($wanted),'M4PC_FULL_ORIGINAL_ACK_AND_ENRICHMENT_DTO');
+    $actualCanonical=\app\services\marketplace\order\MarketplaceOrderInput::canonical($dto);$wantedCanonical=\app\services\marketplace\order\MarketplaceOrderInput::canonical($wanted);$same=$actualCanonical===$wantedCanonical;
+    if(!$same){
+        try{
+            $fields=['to_uid','msn_type','msn','uid','add_time','is_tourist','type','id','_add_time','nickname','avatar','productInfo','orderInfo'];
+            $summary=static function(array $value)use($fields):array{
+                $out=[];foreach($fields as$field){$present=array_key_exists($field,$value);$type=$present?gettype($value[$field]):'missing';$bytes=null;$digest=null;
+                    if($present){$encoded=json_encode($value[$field],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);$bytes=strlen($encoded);$digest=hash('sha256',$encoded);unset($encoded);}
+                    $out[$field]=['present'=>$present,'type'=>$type,'bytes'=>$bytes,'sha256'=>$digest];}
+                return $out;
+            };
+            $generation=array_key_last($GLOBALS['m4pc_runtime_workers']??[]);
+            if(is_string($generation)&&preg_match('/\A[a-f0-9]{16}\z/D',$generation)===1){
+                $diagnostic=m4pc_json(['schema'=>1,'scope'=>'FIRST_ORIGINAL_ACK_CANONICAL_MISMATCH_SAFE_METADATA_ONLY','generation'=>$generation,
+                    'message_type'=>in_array($wanted['msn_type'],[1,2,3,4,5,6],true)?$wanted['msn_type']:null,
+                    'field_encoding'=>'JSON_UNESCAPED_UNICODE_UNESCAPED_SLASHES_VALUE_BYTES_NOT_CANONICAL_SUBFIELDS',
+                    'actual_field_count'=>count($dto),'wanted_field_count'=>count($wanted),'actual'=>$summary($dto),'wanted'=>$summary($wanted),
+                    'actual_canonical'=>['bytes'=>strlen($actualCanonical),'sha256'=>hash('sha256',$actualCanonical)],
+                    'wanted_canonical'=>['bytes'=>strlen($wantedCanonical),'sha256'=>hash('sha256',$wantedCanonical)],'unique_cause'=>'UNKNOWN']);
+                if(strlen($diagnostic)<=65536)m4pc_write(audit_run_dir().'/evidence/platform-chat-'.$generation.'-ack-mismatch.json',$diagnostic);
+            }
+        }catch(\Throwable $diagnosticFailure){/* Best effort only; retain the original comparison failure and finally. */}
+    }
+    m4pc_expect($same,'M4PC_FULL_ORIGINAL_ACK_AND_ENRICHMENT_DTO');
 }
 function m4pc_chat_step(PDO $db,array $fixture,string $sender,?string $receiver,array $peer,int $tourist,int $msnType,string $msn,?array $asset=null,bool $auto=false):array
 {

@@ -350,6 +350,33 @@ function m4pc_profile_chat():never
     $worker=new \Workerman\Worker('websocket://0.0.0.0:40002');$worker->name='AuditPlatformChatOrdinary';$worker->count=1;
     $service=new \crmeb\services\workerman\chat\ChatService($worker);$worker->onConnect=[$service,'onConnect'];$worker->onMessage=[$service,'onMessage'];
     $worker->onWorkerStart=[$service,'onWorkerStart'];$worker->onClose=[$service,'onClose'];
+    $chatOriginalStop=$worker->onWorkerStop;$chatStopping=false;
+    audit_expect($chatOriginalStop===null||is_callable($chatOriginalStop),'original Chat stop callback required');
+    $worker->onWorkerStop=static function(\Workerman\Worker $stopping)use($worker,$service,$chatOriginalStop,&$chatStopping):void{
+        audit_expect($stopping===$worker&&$stopping->name==='AuditPlatformChatOrdinary'&&$stopping->count===1
+            &&$stopping->onConnect===[$service,'onConnect']&&$stopping->onMessage===[$service,'onMessage']
+            &&$stopping->onWorkerStart===[$service,'onWorkerStart']&&$stopping->onClose===[$service,'onClose'],
+            'same original Chat worker stop required');
+        if($chatStopping)return;$chatStopping=true;
+        $clientOriginalClose=\Channel\Client::$onClose;
+        audit_expect($clientOriginalClose===null||is_callable($clientOriginalClose),'original Channel Client close callback required');
+        \Channel\Client::clearTimer();
+        \Channel\Client::$onClose=static function()use($clientOriginalClose):void{
+            try{if($clientOriginalClose!==null)call_user_func($clientOriginalClose);}
+            finally{\Channel\Client::clearTimer();}
+        };
+        if($chatOriginalStop!==null)call_user_func($chatOriginalStop,$stopping);
+        foreach(\Workerman\Connection\TcpConnection::$connections as$connection){
+            if(!$connection instanceof \Workerman\Connection\AsyncTcpConnection)continue;
+            audit_expect(get_class($connection)===\Workerman\Connection\AsyncTcpConnection::class&&$connection->worker===null
+                &&$connection->transport==='tcp'&&$connection->protocol==='\\Workerman\\Protocols\\Frame'
+                &&$connection->getRemoteHost()==='127.0.0.1'&&$connection->getRemotePort()===40003
+                &&$connection->onConnect==='Channel\Client::onRemoteConnect'&&$connection->onMessage==='Channel\Client::onRemoteMessage'
+                &&$connection->onClose==='Channel\Client::onRemoteClose',
+                'only original outgoing internal Channel Client may close normally');
+            $connection->close();unset($connection);
+        }
+    };
     global $argv;$argv=[__FILE__,'start'];$_SERVER['argv']=$argv;\Workerman\Worker::runAll();exit(0);
 }
 function m4pc_profile_http():void

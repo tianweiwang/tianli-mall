@@ -2127,3 +2127,25 @@ stop-log-proof仅增加channel/chat各自校验后的role/name/pid/raw_status15/
 原Run20261025231445efcc78已实际普通close与独立zero均0：5原CID各一次TERM后自然0，13卷/内网/仅Val2 ownlock精确非force清退；112+10原生完整双raw及4Git已核。旧Run4/Val1仍保留未清退。非作者对四处实施的有限Source审findings为空，Root完整正逆及其余65函数/入口保全已核。固定297b PHP8.2真实-n-l新main为0，helper自然0后普通移除，三fresh查询双raw空，10原生完整读回。
 
 本次仅main的固定master/原worker/raw15日志模型及本执行记录本地提交；全部业务断言、完整正常三代、原TERM终态要求保持。新同源Source/Val完整资格、新Host及实际normal仍待，不冒整项或MS4验收；停止样本NOT RUN，未推送或部署。
+
+
+### 客服原 Channel Client 普通停止与 ACK 失配安全诊断（外部Source候选，2026-10-26）
+
+Root采用platform-chat-ack-channel-root-successor-design-r1/ADOPTION.json。原52f/Host8/Run2026102523493322addd首次代际正常退出，第二代际在原M4PC_FULL_ORIGINAL_ACK_AND_ENRICHMENT_DTO失败后仍保留原Chat28/master26/group24。原ACK字段值未保存，具体失配唯一原因仍UNKNOWN；Root后来公开FD证明仅确认同原Chat28的fd8/inode182323546为loopback40003 ESTABLISHED，不能反推ACK期望或修复已载入旧worker。
+
+本候选仅profile.m4pc_profile_chat追加原ChatWorker的普通onWorkerStop：保原service callbacks、原stop和局部重入门；先用公开Channel.Client.clearTimer取消原排队重连，stop-local public onClose包装调用原callback后只清其新重连timer。只从公开TcpConnection.connections辨认原精确Async类/Frame/tcp、127.0.0.1:40003与原三静态callback，借公开getRemoteHost/getRemotePort兼容尚connecting的真实对象，不假定localIP已就绪；无关联Async拒绝而不关闭。仅normal close并释放局部引用，不持久捕获连接对象；原ChannelServer hook、Worker信号/8秒/计数退出、所有vendor、Timer全集及业务callbacks保持。
+
+仅main.m4pc_main_wire保原PK门和wanted产生/JSON整数规范化；原canonical两次各一次、原strict相等和原错误码保持。仅不等时最佳努力create-only0600保存本代首失配metadata：固定13字段各presence/type/JSON值bytes/SHA及双方canonical bytes/SHA，外加有界代际/消息类别/字段数量；不输出正文、ref、avatar、nickname、订单值、PII、token、ENV、args、trace或未知键名。字段hash不是canonical子字段，因此不能由某个字段hash差异独断根因；原总canonical才是原比较。诊断≤64KiB并复用原完整write/flush/readback helper，任何I/O/编码失败由独立catch吞下，随后仍原失配异常与原finally；不采样DB、不重发WS、不替换expected。
+
+- [x] 外部三路径before/after与有限整份正逆；原profile17函数仅chat变，其余16和入口raw；main66函数仅main_wire变，其余65、所有cases/完整DB/Redis/files/native/runtime与finally raw；本record原52f完整446136B前缀保留。
+- [ ] 非作者实现Source审、Root完整审与必要真实PHP语法。当前仅作者Source字节保全，不签语法、首ACK具体原因、当前或未来Runtime。
+- [ ] 所有当前Source52/Val2/原保留group/Run、旧Val1和旧Run冻结；本候选不能修复旧载入worker，不操作其信号/控制/文件。后续另需真实新Source提交、独立可用Val资格/新Host/fresh完整普通三代与全部业务/原TERM/普通close/独立zero。
+
+没有vendor改写、Reflection新用法、destroy直接调用、Timer全删、额外信号、重试或业务旁路。负向/故障/恢复/并发/K样本仍NOT RUN；M/A/postA/实际build-copy/B/页面/设备/金融/发布及全部原25/318/Root14+M3/回调/历史责任不变。作者未解析/编译/import/执行候选、PHP、Git、Docker、SQL、HTTP/WS或目标，未改W/Val/C-D/Run；未来commit/资格/Host/Run全部UNBOUND。
+
+
+#### Root独立SourceR2采用与语法检查（2026-10-26）
+
+Root已全文核新两函数/13成员与三路径完整正逆，独立5901/b9f9实现审无确定finding。仅新自有multi-merchant-integrated-r2应用，原Unified/Normal52f、Val2/Run7及旧Val1/Run4完整保留。固定297b PHP8.2实际-n-l两文件均0，helper自然0后普通移除、三fresh purpose查询双raw空，十个原生完整双流已读回。
+
+本地提交只包含profile普通Channel客户端stop钩子、main首ACK安全元数据诊断和本记录。ACK唯一差异仍UNKNOWN，既存保留组尚未清退。下一步真实新commit下独立Val3完整全树资格、新Host/fresh完整三代及业务/正常close/独立zero；本次Source和语法不签Runtime/M/A/B/页面/设备/金融/发布，停止样本NOT RUN；未推送部署。
