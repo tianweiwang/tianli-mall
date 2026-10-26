@@ -85,3 +85,7 @@ Root后继检查点：17叶CLI整份PHP语法已在固定隔离PHP8.2中通过�
 ## R97 平台图片显式导入（第18项）
 
 保原17完整菜单/native IDs/marker/算法，仅追加POST marketplace/products/<id>/import-platform-image，unique_auth=marketplace-products-import-platform-image，旧兼容grant固定GET file/file。仅向status=1角色追加此新leaf；原17复制停用角色等历史行为不变，原rules前缀及其它列保持。运行时仍import leaf+旧file GET+真实product save三AND，另核platform-assets-list当前真实grant。scope来自实际双route标记而非构造，target0仍真实创建资格，正ID原writer实际owner。此Source未运行迁移，正常check/apply/check/repeat和权限实际生效单独待验。
+
+## 2026-10-26 新安装兼容
+
+原安装种子没有登记 online/scan 四种历史 FILE 路由，不能以全部旧路由存在作为18个新权限登记的前提。检查允许对应旧授权集合为空，复制结果自然为零；已有旧授权仍按原算法复制，运行时新权限、旧 FILE 权限、商品保存权限三项检查保持，不补造旧权限。独立预览新库的正常 apply/check/reapply 已实际通过，18项登记完成，原菜单/角色保持，重复执行 changed=false。证据为仓库外 `artifacts/multi-merchant-preview-20261026/commands/012`；这不代替有限角色的接口验收或已停止样本。

@@ -93,6 +93,15 @@ export function orderPay(data) {
 	return request.post('order/pay', data);
 }
 
+/** Testing capability and payment remain bound to the authenticated owner on the server. */
+export function getOrderTestPaymentOptions(orderNo) {
+	return request.get('order/' + encodeURIComponent(orderNo) + '/test-payment');
+}
+
+export function payOrderWithTestDriver(orderNo, paymentIdem) {
+	return request.post('order/' + encodeURIComponent(orderNo) + '/test-payment', { payment_idem: paymentIdem });
+}
+
 /**
  * 删除已退款和拒绝退款的订单
  * @param string uni

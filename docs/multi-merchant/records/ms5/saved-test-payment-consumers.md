@@ -1,5 +1,17 @@
 # 保存的测试付款在三端的读取与展示
 
+## 2026-10-26 独立预览的顾客测试支付接线
+
+目标是在独立预览中让真实登录顾客为自己新建的 V1 订单明确选择测试支付，并继续发货、收货体验。真实机构支付、退款、结算仍未完成；本接线不是完整 MS5 或正式验收。
+
+采用最小接缝：原强制顾客认证组增加 `GET/POST order/<order_no>/test-payment`。GET 用实际 UID、订单号及原 PaymentDao 验证 V1 归属，再返回严格 `APP_ENV=testing` 与 `marketplace.payment.test_enabled===true` 的能力；POST 再执行原 `PaymentAccount::assertTesting()`。请求只接收支付幂等键，不接收 UID、商家、金额、账户或 driver descriptor。服务器按真实商家注册原测试账户，在同一 App/同一 TestPaymentDriver 中调用原 `createForCustomer → completeTestPayment(create_result) → queryForCustomer`，最终仅以保存结果 `state=applied` 返回成功。同键已应用重放直接返回原结果；遗失 driver 的 pending 仍待确认，不重造尝试、不 SQL 写 paid、不补假网关结果。
+
+H5 由 V1 根订单详情进入原收银台的独立分支；读取原严格保存 DTO 和测试能力，显示后端精确金额。顾客需选中“测试支付”并点击“确认测试支付（不扣款）”；固定说明明确不扣真实资金、真实支付未开放。登录身份变化撤下原金额和能力；相同顾客/订单的幂等键保留，失败不换键。旧订单收银台、旧 `order/pay`、支付服务和 driver 原体不改。原收银台的空支付列表访问和 H5 非原生 `wx.getEnterOptionsSync` 访问同时作最小空值保护；移除原多余闭合标签。
+
+源码任务已实现；Node 的 API 脚本语法检查、按 H5 条件处理的两页脚本语法检查、PHP 8.2 语法及完整 H5 离线构建均通过。2026-10-26，独立预览真实 HTTP 创建2件共40.30元的订单后，Root通过顾客浏览器选择并确认测试支付；商家浏览器发出2件，顾客浏览器确认收货。平台、商家、顾客均读取到同一订单已收货/2件/40.30元，专用数据库只读回查为paid=1、pay_type=marketplace_test、status=2，商品和SKU库存保持100→98。运行证据为仓库外 `artifacts/multi-merchant-preview-20261026/commands/023`、`027` 与 `browser/` 三端截图。此为正常预览闭环，不代完整MS5/设备/正式验收；关闭测试配置、他人订单及金额边界不凭源码推定运行通过，已停止样本保持NOT RUN。旧验收范围和未完成项保留。
+
+后继实际浏览器走查补齐原商品详情的 productWindow 确认入口：启用原确认按钮并监听事件，保留本次加购/立即购买意图，关闭或成功后清除，原SKU/购物车/金额API保持。完整H5再次构建退出0，两pass无error（原警告保留），实际Web index与新dist一致；通过商家创建12.50元商品、入库20件、平台审核及商家上架，顾客浏览器从首页/店铺加购、确认并创建订单、测试支付，再由商家发出1件和顾客确认收货。三端均显示同单已收货1件/12.50元；033只读确认paid=1、marketplace_test、status=2、商品及SKU库存均为19。立即购买确认分支另进入原new=1订单确认，未另提交订单。手机尺寸、宽屏排版完善及新商家首次密码/登录串联继续待验。
+
 2026-10-17，Main 来源为 3a735e3d0fab9127eefdee8f37d6d1db1e5ad6cd，工作分支 feature/ms4-single-store，授权仍为本地 L2。本记录落实已经确定的测试付款消费者接缝，隶属 09 的 MS5 Task 2；不开放真实支付、退款、结算或发布。商品列表、规格、价格和金额快照继续复用现有实现。
 
 ## 保存字段与兼容性

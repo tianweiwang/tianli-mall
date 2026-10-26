@@ -247,6 +247,8 @@ Route::group(function () {
         Route::post('order/del', 'v1.order.StoreOrderController/del')->name('orderDel')->option(['real_name' => '订单删除']); //订单删除
         Route::post('order/again', 'v1.order.StoreOrderController/again')->name('orderAgain')->option(['real_name' => '再次下单']); //订单 再次下单
         Route::post('order/pay', 'v1.order.StoreOrderController/pay')->name('orderPay')->option(['real_name' => '订单支付']); //订单支付
+        Route::get('order/<order_no>/test-payment', 'v1.order.TestPaymentController/options')->name('orderTestPaymentOptions')->option(['real_name' => '本人V1订单测试支付能力']);
+        Route::post('order/<order_no>/test-payment', 'v1.order.TestPaymentController/pay')->name('orderTestPayment')->option(['real_name' => '本人V1订单测试支付']);
         Route::post('order/product', 'v1.order.StoreOrderController/product')->name('orderProduct')->option(['real_name' => '订单商品信息']); //订单商品信息
         Route::get('order/reviews/<root_id>/<item_id>', 'v1.order.OrderReviewController/quote')->name('orderReviewQuote')->option(['real_name'=>'订单商品评价准备']);
         Route::post('order/reviews/<root_id>/<item_id>', 'v1.order.OrderReviewController/create')->name('orderReviewCreate')->option(['real_name'=>'提交订单商品评价']);

@@ -499,6 +499,9 @@
 				</view>
 			</view>
 			<view style="height: 120rpx"></view>
+			<view v-if="fulfillmentKind === 'root' && [0, '0'].includes(orderInfo.paid) && [0, '0'].includes(orderInfo.is_cancel)" class="marketplace-aftersale-navigation">
+				<button class="marketplace-aftersale-navigation-button" :disabled="!isLogin || fulfillmentLoading || !!fulfillmentError" @tap="pay_open">{{$t(`选择付款方式`)}}</button>
+			</view>
 			<view class="wrapper" v-if="fulfillmentKind === 'root' && orderInfo.paid == 1 && !is_gift && isReturn != 1">
 				<button v-if="invoiceData" class="fulfillment-again" :disabled="fulfillmentLoading || !!fulfillmentError" @tap="aleartStatusChange">{{ $t('查看发票') }}</button>
 					<button class="marketplace-again-button fulfillment-again" v-if="orderInfo.paid == 1 && !is_gift && isReturn != 1"
@@ -1094,7 +1097,7 @@ export default {
 		 */
 		pay_open: function () {
 			uni.navigateTo({
-				url: `/pages/goods/cashier/index?order_id=${this.orderInfo.order_id}&from_type=order`
+				url: `/pages/goods/cashier/index?order_id=${encodeURIComponent(this.orderInfo.order_id)}&from_type=order${this.savedMarketplaceFormsV1 ? '&marketplace=1' : ''}`
 			});
 			// this.pay_close = true;
 			// this.pay_order_id = this.orderInfo.order_id;

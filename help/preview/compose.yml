@@ -1,0 +1,113 @@
+x-php: &php
+  image: ${PREVIEW_PHP_IMAGE:?required}
+  pull_policy: never
+  entrypoint: [php]
+  working_dir: /workspace
+  read_only: true
+  tmpfs: [/tmp]
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  networks: [preview]
+  environment: &environment
+    PREVIEW_ISOLATED: "1"
+    PREVIEW_PROJECT: ${PREVIEW_PROJECT:?required}
+    PREVIEW_RUN_ID: ${PREVIEW_RUN_ID:?required}
+  labels: &labels
+    marketplace.preview: ${PREVIEW_PROJECT}
+
+services:
+  bootstrap:
+    <<: *php
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER]
+    volumes:
+      - ${PREVIEW_REPO:?required}:/workspace:ro
+      - ${PREVIEW_REPO}:/source:ro
+      - vendor:/workspace/crmeb/vendor
+      - bootstrap-secrets:/run/preview-bootstrap
+      - app-secrets:/run/preview-app
+      - redis-secrets:/run/preview-redis
+      - runtime:/workspace/crmeb/runtime
+      - uploads:/workspace/crmeb/public/uploads
+      - private-assets:/private
+  preview-mysql:
+    image: ${PREVIEW_MYSQL_IMAGE:?required}
+    pull_policy: never
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: /run/preview-bootstrap/root-password
+      MYSQL_ROOT_HOST: "%"
+    command: [--innodb-buffer-pool-size=128M, --max-connections=50, "--sql-mode=STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION"]
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - bootstrap-secrets:/run/preview-bootstrap:ro
+    networks: [preview]
+    labels: *labels
+    healthcheck:
+      test: [CMD, mysqladmin, ping, --protocol=tcp, --host=127.0.0.1, --silent]
+      interval: 2s
+      timeout: 2s
+      retries: 40
+  preview-redis:
+    image: ${PREVIEW_REDIS_IMAGE:?required}
+    pull_policy: never
+    entrypoint: [redis-server]
+    command: [/run/preview-redis/redis.conf]
+    volumes:
+      - redis-secrets:/run/preview-redis:ro
+      - redis-data:/data
+    networks: [preview]
+    labels: *labels
+  preview-app:
+    <<: *php
+    user: "1000:1000"
+    command: [-S, "0.0.0.0:8000", -t, /workspace/crmeb/public, /workspace/help/preview/router.php]
+    volumes: &app-volumes
+      - ${PREVIEW_REPO}:/workspace:ro
+      - vendor:/workspace/crmeb/vendor:ro
+      - app-secrets:/run/preview-app:ro
+      - runtime:/workspace/crmeb/runtime
+      - uploads:/workspace/crmeb/public/uploads
+      - private-assets:/private
+  preview-events:
+    <<: *php
+    user: "1000:1000"
+    environment:
+      <<: *environment
+      PREVIEW_EVENTS_BIND: "1"
+    command: [help/preview/console.php, workerman, start]
+    volumes: *app-volumes
+  preview-web:
+    image: ${PREVIEW_NGINX_IMAGE:?required}
+    pull_policy: never
+    user: nginx
+    entrypoint: [nginx]
+    command: [-g, "daemon off;", -c, /etc/nginx/preview.conf]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    ports: ["127.0.0.1:${PREVIEW_PORT:-18180}:8080"]
+    volumes:
+      - ${PREVIEW_REPO}/help/preview/nginx.conf:/etc/nginx/preview.conf:ro
+      - ${PREVIEW_ADMIN_DIST:?required}:/srv/admin:ro
+      - ${PREVIEW_MERCHANT_DIST:?required}:/srv/merchant:ro
+      - ${PREVIEW_H5_DIST:?required}:/srv/h5:ro
+      - ${PREVIEW_REPO}/crmeb/public:/srv/public:ro
+      - uploads:/srv/uploads:ro
+    networks: [preview, ingress]
+    labels: *labels
+networks:
+  preview:
+    internal: true
+    labels: *labels
+  ingress:
+    labels: *labels
+volumes:
+  vendor: {labels: *labels}
+  bootstrap-secrets: {labels: *labels}
+  app-secrets: {labels: *labels}
+  redis-secrets: {labels: *labels}
+  mysql-data: {labels: *labels}
+  redis-data: {labels: *labels}
+  runtime: {labels: *labels}
+  uploads: {labels: *labels}
+  private-assets: {labels: *labels}

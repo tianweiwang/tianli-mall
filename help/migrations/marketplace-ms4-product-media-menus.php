@@ -152,7 +152,8 @@ final class MarketplaceMs4ProductMediaMenus
             foreach(self::oldFileGrants()as$action=>[$wantedMethod,$wantedRule])
                 if($method===$wantedMethod&&$rule===$wantedRule)$old[$action][]=$id;
         }
-        foreach($old as$values)if($values===[])$issues[]='old_file_grant_missing';
+        // A fresh installation does not register every historical FILE route.
+        // Empty source grants copy nothing; runtime still requires the corresponding FILE grant.
         $pending=count($ids)!==count(self::menuRows());
         if(!$pending)foreach($roles as$row)if($this->copiedRules($row['rules'],$old,$ids,(string)$row['status']==='1')!==$row['rules'])$pending=true;
         if($this->metadataAuthority()!==$authority)throw new RuntimeException('Metadata authority changed');

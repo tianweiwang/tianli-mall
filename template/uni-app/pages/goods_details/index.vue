@@ -110,10 +110,12 @@
         :attr="attr"
         :isShow="1"
         :iSplus="1"
+        :iScart="1"
         :limitNum="storeInfo.limit_num"
         :minQty="storeInfo.min_qty"
         :unitName="storeInfo.unit_name"
         @myevent="onMyEvent"
+        @goCat="confirmProductWindow"
         @ChangeAttr="ChangeAttr"
         @ChangeCartNum="ChangeCartNum"
         @attrVal="attrVal"
@@ -365,6 +367,7 @@ export default {
       isAuto: false, //没有授权的不会自动授权
       isShowAuth: false, //是否隐藏授权
       isOpen: false, //是否打开属性组件
+      productWindowIntent: "", //本次弹层动作：cart / buy；空值仅选择规格
       actionSheetHidden: true,
       posterImageStatus: false,
       storeImage: "", //海报产品图
@@ -1177,6 +1180,7 @@ export default {
      */
     selecAttr: function () {
       // this.$refs.proSwiper.videoIsPause();
+      this.productWindowIntent = "";
       this.$set(this.attr, "cartAttr", true);
       this.$set(this, "isOpen", true);
     },
@@ -1214,7 +1218,13 @@ export default {
     onMyEvent: function () {
       this.$set(this.attr, "cartAttr", false);
       this.$set(this, "isOpen", false);
+      this.productWindowIntent = "";
       this.isGiftOrder = 0;
+    },
+    confirmProductWindow() {
+      if (this.productWindowIntent === "buy") return this.goCat(true);
+      if (this.productWindowIntent === "cart") return this.goCat();
+      this.onMyEvent();
     },
     /**
      * 打开属性加入购物车
@@ -1240,6 +1250,7 @@ export default {
     goCat(news) {
       const selectedUnique = this.attr.productSelect && this.attr.productSelect.unique;
       if (!/^[A-Za-z0-9]{8}$/.test(selectedUnique || '')) return this.$util.Tips({ title: this.$t(`请选择有效的商品规格`) });
+      this.productWindowIntent = news === true ? "buy" : "cart";
       let that = this,
         productSelect = that.productValue[this.attrValue];
       that.currentPage = false;
@@ -1284,6 +1295,7 @@ export default {
         .then((res) => {
           that.isOpen = false;
           that.attr.cartAttr = false;
+          that.productWindowIntent = "";
           if (news) {
             let url =
               "/pages/goods/order_confirm/index?new=1&cartId=" +

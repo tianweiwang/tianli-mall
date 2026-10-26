@@ -1,0 +1,46 @@
+# 本机多商户预览
+
+使用当前工作树的 PHP、迁移和三端页面，配套专用 MySQL、Redis 和数据卷。后端服务仅接入专用内部网络；nginx 同时接入该内部网络和专用入口网络，对宿主机仅绑定 `127.0.0.1:18180`。所有账号、商品和订单均为合成数据；测试支付不扣真实资金。
+
+```powershell
+python -X utf8 help/preview/preview.py prepare
+python -X utf8 help/preview/preview.py initialize
+python -X utf8 help/preview/preview.py storefront
+python -X utf8 help/preview/build-frontends.py --frontend merchant
+python -X utf8 help/preview/build-frontends.py --frontend admin
+python -X utf8 help/preview/build-frontends.py --frontend h5 --allow-docker
+python -X utf8 help/preview/preview.py serve
+python -X utf8 help/preview/preview.py smoke
+python -X utf8 help/preview/preview.py accounts-file
+```
+
+构建复用本机已有 Node、HBuilderX 和依赖缓存；首次在其他机器使用时先调整 `build-frontends.py` 顶部工具路径。没有依赖下载或生产部署步骤。`prepare` 只用于新的运行目录，已有实例使用 `status` 检查，不重复初始化。
+
+`storefront` 要求实例已完成 `initialize`，仅在主题表全空时创建预览首页，使用原动态商品接口。它是 create-only 操作；已有实例已经创建首页或已有装修主题时，不重复执行，也不覆盖装修。
+
+入口：
+
+- 顾客端：`http://127.0.0.1:18180/`
+- 平台后台：`http://127.0.0.1:18180/admin/`
+- 商家后台：`http://127.0.0.1:18180/merchant/#/login`
+
+随机凭据在专用私有卷中生成。`accounts-file` 将三角色合成账号保存到运行目录的 `private/preview-accounts.json`，Windows 仅当前用户可读；不会把密码写入命令日志。应用仅有数据库读写权限，建表账号只供初始化使用。运行记录保存在仓库外 `artifacts/multi-merchant-preview-20261026/`，不提交凭据、上传文件、数据库或日志。
+
+`serve-api` 可在前端构建期间先启动真实接口。`serve` 只有在三端构建存在且应用健康检查成功后才报告可访问；实际业务和浏览器验收需另外完成。`stop` 正常停止本预览的服务并保留数据卷。
+
+初始化中断时先查看运行目录中对应命令的原始结果，确认断点后才使用 `resume-initialize`。续接要求当前实例身份一致且业务夹具尚未建立，不清空数据库。
+
+完成登录后，顾客可选择体验商品下单，从订单详情进入收银台并选择“测试支付（不扣款）”；商家在订单页发货，顾客回到订单详情确认收货。测试支付只在 `APP_ENV=testing` 和 `marketplace.payment.test_enabled=true` 同时成立时开放。真实支付、退款、结算和正式发布验收仍按主执行清单推进。
+
+## 操作顺序
+
+1. 使用 `accounts-file` 输出的本机私有文件取得平台、商家、顾客三个合成账号；顾客登录页选择“账号登录”。
+2. 平台“经营商家 → 入驻商家”可建立、审核商家并配置接单/履约开关；“建立管理员”返回仅本次显示的首次密码设置链接，新员工应亲自完成设置。初始化已提供一个可以直接登录的合成商家账号。
+3. 商家“商品列表 → 新建商品”：填写名称、分类、售价，选择本店图片并保存；在已保存SKU上调整库存，填写入库原因，再提交审核。
+4. 平台“经营商家 → 商品审核”审核通过后，商家回商品列表点击“上架”。顾客首页、所属店铺及商品详情均读取同一已上架商品。
+5. 顾客选择商品/规格/数量，加入购物车并按一家店结算，或立即购买；确认收件地址和服务端金额后提交订单。在订单详情进入付款方式，明确选择并确认测试支付。
+6. 商家“订单列表 → 详情”选择本次发货数量，填写合成承运信息和物流单号，核对并提交。顾客进入订单内“查看包裹”，确认本包裹实际收到的数量；平台订单详情与商家详情可以查看同一保存结果。
+
+2026-10-26 已验证正常预览：真实HTTP创建2件共40.30元的订单后，顾客浏览器测试支付、商家浏览器发货、顾客浏览器收货均成功，三端同为已收货2件，商品及SKU库存100→98。随后完全通过浏览器新建12.50元商品、入库20件、平台审核、商家上架、顾客从首页/店铺加购并下单、测试支付、商家发出1件及顾客确认收货；只读回查订单为已支付/已收货，商品和SKU库存均为19。新商家员工的首次密码设置及登录串联、手机尺寸、宽屏排版完善和正式阶段验收按当前执行清单继续记录。
+
+本说明是操作入口；各功能实际完成状态统一维护在仓库外现有 `current20261025-business-progress-r1/PROGRESS.md`。

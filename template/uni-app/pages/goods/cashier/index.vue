@@ -1,11 +1,12 @@
 <template>
-	<view class="page" v-if="payPriceShow">
-		<view class="pay-price">
+	<view class="page" v-if="payPriceShow || marketplaceV1">
+		<view class="pay-price" v-if="payPriceShow">
 			<view class="price">
 				<text class="unit">{{$t(`￥`)}}</text>
-				<numberScroll :num='payPriceShow' color="#E93323" width='30' height='50' fontSize='50'></numberScroll>
+				<text v-if="marketplaceV1" class="marketplace-test-amount">{{payPriceShow}}</text>
+				<numberScroll v-else :num='payPriceShow' color="#E93323" width='30' height='50' fontSize='50'></numberScroll>
 			</view>
-			<view class="count-down">
+			<view class="count-down" v-if="!marketplaceV1">
 				{{$t(`支付剩余时间`)}}：
 				<countDown :is-day="false" :tip-text="' '" :day-text="' '" :hour-text="' : '" :minute-text="' : '"
 					:second-text="' '" :datatime="invalidTime"></countDown>
@@ -14,6 +15,11 @@
 		<view class="payment">
 			<view class="title">
 				{{$t(`支付方式`)}}
+			</view>
+			<view v-if="marketplaceV1" class="marketplace-test-notice" aria-live="polite">
+				<view>{{$t(`此页面仅提供内部测试支付，不扣真实资金。真实支付尚未开放。`)}}</view>
+				<view v-if="!testPaymentAvailable && !testPaymentError">{{$t(`当前订单或环境未开放测试支付，请返回订单详情。`)}}</view>
+				<view v-if="testPaymentError">{{testPaymentError}}</view>
 			</view>
 			<view class="item acea-row row-between-wrapper" v-for="(item,index) in cartArr" :key="index"
 				v-show='item.payStatus' @click="payType(item.number || 0, item.value, index)">
@@ -31,11 +37,14 @@
 			</view>
 		</view>
 		<view class="btn">
-			<view class="button acea-row row-center-wrapper" @click='goPay(number, paytype)'>{{$t(`确认支付`)}}</view>
+			<button v-if="marketplaceV1" class="button marketplace-test-button acea-row row-center-wrapper"
+				:disabled="!testPaymentAvailable || !testPaymentSelected || testPaymentPending" @tap="goPay(number, paytype)">
+				{{testPaymentPending ? $t(`正在确认测试支付`) : $t(`确认测试支付（不扣款）`)}}
+			</button>
+			<view v-else class="button acea-row row-center-wrapper" @click='goPay(number, paytype)'>{{$t(`确认支付`)}}</view>
 			<view class="wait-pay" @click="waitPay">{{$t(`暂不支付`)}}</view>
 		</view>
 		<view v-show="false" v-html="formContent"></view>
-	</view>
 	</view>
 </template>
 
@@ -44,8 +53,12 @@
 	import numberScroll from '@/components/numberScroll.vue'
 	import {
 		getCashierOrder,
-		orderPay
+		orderPay,
+		getSavedOrderFulfillment,
+		getOrderTestPaymentOptions,
+		payOrderWithTestDriver
 	} from '@/api/order.js';
+	import { readOrderFulfillment, savedFulfillmentMoney } from '@/utils/marketplace-fulfillment.js';
 	import {
 		basicConfig
 	} from '@/api/public.js'
@@ -56,6 +69,14 @@
 		},
 		data() {
 			return {
+				marketplaceV1: false,
+				testPaymentAvailable: false,
+				testPaymentSelected: false,
+				testPaymentPending: false,
+				testPaymentError: '',
+				testPaymentOrderPk: '',
+				paytype: '',
+				number: 0,
 				checked: false,
 				datatime: 1676344056,
 				//支付方式
@@ -113,6 +134,14 @@
 			}
 		},
 		watch: {
+			testPaymentOwner() {
+				if (!this.marketplaceV1) return;
+				this.payPriceShow = 0;
+				this.testPaymentAvailable = false;
+				this.testPaymentSelected = false;
+				this.cartArr = [];
+				this.testPaymentError = '登录状态已变化，请重新打开原订单';
+			},
 			cartArr: {
 				handler(newV, oldValue) {
 					let newPayList = [];
@@ -123,6 +152,11 @@
 						}
 					});
 					this.$nextTick(e => {
+						if (this.marketplaceV1 || !newPayList.length) {
+							this.active = -1;
+							this.paytype = '';
+							return;
+						}
 						this.active = newPayList[0].index;
 						this.paytype = newPayList[0].value;
 					})
@@ -132,12 +166,18 @@
 				deep: true
 			}
 		},
+		computed: {
+			testPaymentOwner() { return String(this.$store.state.app.uid) + ':' + String(this.$store.state.app.authRevision); }
+		},
 		onLoad(options) {
 			if (options.order_id) this.orderId = options.order_id
 			if (options.from_type) this.fromType = options.from_type
-			this.getBasicConfig()
+			this.marketplaceV1 = options.marketplace === '1';
+			if (this.marketplaceV1) this.loadMarketplacePayment();
+			else this.getBasicConfig();
 		},
 		onShow() {
+			if (typeof wx === 'undefined' || typeof wx.getEnterOptionsSync !== 'function') return;
 			let options = wx.getEnterOptionsSync();
 			if (options.scene == '1038' && options.referrerInfo.appId == 'wxef277996acc166c3' && this.initIn) {
 				// 代表从收银台小程序返回
@@ -180,6 +220,56 @@
 			}
 		},
 		methods: {
+			testPaymentIdentity() {
+				return String(this.$store.state.app.uid) + ':' + String(this.$store.state.app.authRevision) + ':' + this.orderId;
+			},
+			loadMarketplacePayment() {
+				const identity = this.testPaymentIdentity();
+				this.cartArr = [];
+				this.testPaymentAvailable = false;
+				this.testPaymentSelected = false;
+				this.testPaymentError = '';
+				uni.showLoading({title: this.$t(`正在读取订单`)});
+				return Promise.all([getSavedOrderFulfillment(this.orderId, 1, 20), getOrderTestPaymentOptions(this.orderId)]).then(([saved, options]) => {
+					if (identity !== this.testPaymentIdentity()) return;
+					const view = readOrderFulfillment(saved.data, true), capability = options.data;
+					if (view.kind !== 'root' || view.order.order_id !== this.orderId || !capability || capability.schema !== 1 ||
+						capability.scope !== 'testing_payment_availability_v1' || capability.order_no !== this.orderId ||
+						typeof capability.available !== 'boolean' || capability.real_payment_available !== false) throw new Error('测试支付资料不完整');
+					this.payPriceShow = savedFulfillmentMoney(view.order.pay_price);
+					this.testPaymentOrderPk = String(view.order.id);
+					this.testPaymentAvailable = capability.available && [0, '0'].includes(view.order.paid) && [0, '0'].includes(view.order.is_cancel);
+					if (this.testPaymentAvailable) this.cartArr = [{name: '测试支付', icon: 'icon-yuezhifu1', value: 'marketplace_test',
+						title: '内部测试驱动，不扣真实资金', payStatus: 1}];
+				}).catch(error => {
+					if (identity === this.testPaymentIdentity()) this.testPaymentError = error.msg || error.message || String(error);
+				}).finally(() => uni.hideLoading());
+			},
+			payMarketplaceTest() {
+				if (!this.testPaymentAvailable || !this.testPaymentSelected || this.testPaymentPending) return;
+				const identity = this.testPaymentIdentity(), orderNo = this.orderId;
+				const storageKey = 'marketplace-test-payment:v1:' + String(this.$store.state.app.uid) + ':' + orderNo;
+				let paymentIdem;
+				try {
+					paymentIdem = uni.getStorageSync(storageKey);
+					if (!paymentIdem) {
+						paymentIdem = 'preview-payment:' + Date.now().toString(36) + ':' + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+						uni.setStorageSync(storageKey, paymentIdem);
+					}
+					if (typeof paymentIdem !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(paymentIdem) || uni.getStorageSync(storageKey) !== paymentIdem) throw new Error('测试支付请求未能保存，请保留原订单');
+				} catch (error) { this.testPaymentError = error.message || '测试支付请求未能保存'; return; }
+				this.testPaymentPending = true;
+				this.testPaymentError = '';
+				return payOrderWithTestDriver(orderNo, paymentIdem).then(response => {
+					if (identity !== this.testPaymentIdentity()) return;
+					const result = response.data;
+					if (!result || result.schema !== 1 || result.scope !== 'testing_persisted_payment_v1' || result.order_no !== orderNo ||
+						String(result.order_pk) !== this.testPaymentOrderPk || result.state !== 'applied') throw new Error('测试支付结果待确认，请查看原订单');
+					uni.redirectTo({url: '/pages/goods/order_details/index?order_id=' + encodeURIComponent(orderNo)});
+				}).catch(error => {
+					if (identity === this.testPaymentIdentity()) this.testPaymentError = error.msg || error.message || String(error);
+				}).finally(() => { this.testPaymentPending = false; });
+			},
 			getBasicConfig() {
 				basicConfig().then(res => {
 					//微信支付是否开启
@@ -228,6 +318,10 @@
 				})
 			},
 			payType(number, paytype, index) {
+				if (this.marketplaceV1) {
+					if (paytype !== 'marketplace_test' || !this.testPaymentAvailable || this.testPaymentPending) return;
+					this.testPaymentSelected = true;
+				}
 				this.active = index;
 				this.paytype = paytype;
 				this.number = number;
@@ -258,12 +352,14 @@
 				})
 			},
 			waitPay() {
+				if (this.marketplaceV1) return uni.redirectTo({url: '/pages/goods/order_details/index?order_id=' + encodeURIComponent(this.orderId)});
 				uni.reLaunch({
 					url: '/pages/goods/order_pay_status/index?order_id=' + this.orderId + '&msg=取消支付&type=3' +
 						'&status=2&totalPrice=' + this.payPriceShow
 				})
 			},
 			goPay(number, paytype) {
+				if (this.marketplaceV1) return this.payMarketplaceTest();
 				let that = this;
 				if (!that.orderId) return that.$util.Tips({
 					title: that.$t(`请选择要支付的订单`)
@@ -785,6 +881,12 @@
 			background-color: #E93323;
 
 		}
+
+		.marketplace-test-amount { font-size: 50px; font-weight: 600; }
+		.marketplace-test-notice { padding: 24rpx 30rpx; color: #666; font-size: 26rpx; line-height: 1.6; overflow-wrap: anywhere; }
+		.marketplace-test-button { box-sizing: border-box; min-width: 0; max-width: 100%; height: auto; min-height: 90rpx; margin: 0; padding: 16rpx 24rpx; font-size: 30rpx; line-height: 1.4; text-align: center; white-space: normal; }
+		.marketplace-test-button::after { border: 0; }
+		.marketplace-test-button[disabled] { background: #ddd; color: #777; }
 
 	}
 </style>
