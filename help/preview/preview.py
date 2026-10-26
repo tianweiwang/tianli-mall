@@ -106,6 +106,12 @@ def assert_resources(state):
                 raise RuntimeError('Shared preview volume rejected')
 
 
+def reload_web(state, root):
+    # Re-resolve upstream addresses after Compose recreates a backend container.
+    compose(state, root, 'exec', '-T', 'preview-web', 'nginx', '-t', '-c', '/etc/nginx/preview.conf')
+    compose(state, root, 'exec', '-T', 'preview-web', 'nginx', '-s', 'reload', '-c', '/etc/nginx/preview.conf')
+
+
 def wait_web(state):
     url = f'http://127.0.0.1:{state["port"]}/preview-health'
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
@@ -154,7 +160,7 @@ def export_accounts(state, root):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=['prepare', 'initialize', 'resume-initialize', 'storefront', 'serve-api', 'serve', 'timers', 'timers-restore', 'smoke', 'accounts-file', 'status', 'stop'])
+    parser.add_argument('action', choices=['prepare', 'initialize', 'resume-initialize', 'storefront', 'serve-api', 'serve', 'timers', 'timers-restore', 'queue', 'smoke', 'accounts-file', 'status', 'stop'])
     parser.add_argument('--root', type=Path, default=DEFAULT_ROOT)
     parser.add_argument('--port', type=int, default=18180)
     parser.add_argument('--hours', default='0.5', help='New unpaid order deadline in hours; timers only, 0 disables new deadlines')
@@ -206,8 +212,22 @@ def main():
             services = ['preview-events', 'preview-app']
             if state.get('timer_configured'):
                 services.append('preview-timer')
+            if state.get('queue_configured') is True:
+                services.append('preview-marketplace-queue')
             compose(state, root, 'up', '-d', *services)
             assert_resources(state)
+            if native([DOCKER, 'ps', '-q', '--filter', 'label=com.docker.compose.project=' + state['project'],
+                       '--filter', 'label=com.docker.compose.service=preview-web', '--filter', 'status=running']):
+                reload_web(state, root)
+        elif args.action == 'queue':
+            if not state.get('initialized'):
+                raise RuntimeError('Complete preview initialization before configuring the marketplace queue')
+            compose(state, root, 'up', '-d', '--no-deps', 'preview-marketplace-queue')
+            assert_resources(state)
+            state['queue_configured'] = True
+            (root / 'state.json').write_text(json.dumps(state, ensure_ascii=False, indent=2) + '\n',
+                                           encoding='utf-8', newline='\n')
+            print('Marketplace queue startup configured; verify normal task consumption separately.')
         elif args.action in ['timers', 'timers-restore']:
             if not state.get('initialized'):
                 raise RuntimeError('Complete preview initialization and serve-api before configuring timers')
@@ -232,8 +252,11 @@ def main():
             services = ['preview-events', 'preview-app', 'preview-web']
             if state.get('timer_configured'):
                 services.append('preview-timer')
+            if state.get('queue_configured') is True:
+                services.append('preview-marketplace-queue')
             compose(state, root, 'up', '-d', *services)
             assert_resources(state)
+            reload_web(state, root)
             wait_web(state)
             print(f'Preview listening at http://127.0.0.1:{state["port"]}/ ; browser/business verification remains required.')
         elif args.action == 'status':

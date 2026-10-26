@@ -578,7 +578,7 @@ export default {
       });
     },
     async beforeUpload(file) {
-      if (!isPicUpload(file) || !(await this.chatMaterialBeforeUpload(file))) return false;
+      if (!isPicUpload(file) || !(await this.chatMaterialBeforeUpload(file))) return Promise.reject();
       if (isPicUpload(file)) {
         this.uploadData = {
           filename: file,

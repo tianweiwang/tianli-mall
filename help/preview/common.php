@@ -69,6 +69,7 @@ function preview_app(bool $migrator = false): \think\App
         'PHP_MARKETPLACE_CUSTOMER_LICENCE_PRIVATE_ROOT' => '/private/licence',
         'PHP_MARKETPLACE_CUSTOMER_WITHDRAWAL_QR_PRIVATE_ROOT' => '/private/withdrawal',
         'PHP_MARKETPLACE_PLATFORM_CHAT_PRIVATE_ROOT' => '/private/chat',
+        'PHP_MARKETPLACE_PLATFORM_CHAT_PRIVATE_WRITES_ENABLED' => 'true',
         'PHP_UPGRADE_REMOTE_ENABLED' => 'false',
     ];
     foreach ($environment as $name => $value) putenv($name . '=' . $value);

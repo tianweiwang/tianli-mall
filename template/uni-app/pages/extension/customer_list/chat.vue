@@ -60,6 +60,7 @@
               <view class="broadcast_details_pic">
                 {{ $t(`￥`) }}{{ orderInfo.cartInfo[0].productInfo.price }}
                 <text class="broadcast_details_pic_num"
+                  v-if="orderInfo.cartInfo[0].costPrice !== undefined && orderInfo.cartInfo[0].costPrice !== null && orderInfo.cartInfo[0].costPrice !== ''"
                   >{{ $t(`￥`) }}{{ orderInfo.cartInfo[0].costPrice }}</text
                 >
               </view>

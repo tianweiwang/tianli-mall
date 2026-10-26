@@ -459,7 +459,7 @@ export default {
     },
     beforeUpload(file) {
       if (!isPicUpload(file)) return false;
-      return this.chatMaterialBeforeUpload(file);
+      return this.chatMaterialBeforeUpload(file).then((legacy) => legacy ? true : Promise.reject());
     },
     handleFormatError(file) {
       this.$message.error('上传图片只能是 jpg、jpg、jpeg、gif 格式!');
@@ -467,6 +467,8 @@ export default {
     bindEnter(e) {},
     //微信截图上传图片时触发
     handleParse(e) {
+      const items = e.clipboardData && Array.from(e.clipboardData.items || []);
+      if (!items || !items.some((item) => item.kind === 'file')) return;
       let file = null;
       if (
         e.clipboardData &&

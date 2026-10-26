@@ -11,6 +11,7 @@ python -X utf8 help/preview/build-frontends.py --frontend admin
 python -X utf8 help/preview/build-frontends.py --frontend h5 --allow-docker
 python -X utf8 help/preview/preview.py serve
 python -X utf8 help/preview/preview.py timers
+python -X utf8 help/preview/preview.py queue
 python -X utf8 help/preview/preview.py smoke
 python -X utf8 help/preview/preview.py accounts-file
 ```
@@ -32,9 +33,11 @@ python -X utf8 help/preview/preview.py accounts-file
 
 随机凭据在专用私有卷中生成。`accounts-file` 将三角色合成账号保存到运行目录的 `private/preview-accounts.json`，Windows 仅当前用户可读；不会把密码写入命令日志。应用仅有数据库读写权限，建表账号只供初始化使用。运行记录保存在仓库外 `artifacts/multi-merchant-preview-20261026/`，不提交凭据、上传文件、数据库或日志。
 
-`serve-api` 可在前端构建期间先启动真实接口。`serve` 只有在三端构建存在且应用健康检查成功后才报告可访问；实际业务和浏览器验收需另外完成。`stop` 正常停止本预览的服务并保留数据卷。
+`serve-api` 可在前端构建期间先启动真实接口。`serve` 只有在三端构建存在且应用健康检查成功后才报告可访问；实际业务和浏览器验收需另外完成。`stop` 正常停止本预览的服务并保留数据卷。 `serve` 在容器启动后检查并普通重载nginx，使重建后的后端地址及时生效；`serve-api` 在本实例web已运行时也执行此刷新，首次只启API不要求前端。events/timer显式使用Workerman普通停止信号SIGINT，marketplace队列使用SIGTERM；不继承PHP-FPM的SIGQUIT。普通维护先确认操作已保存并离开聊天页，再核主进程实际退出；普通停止不承诺连接排空，框架原有超时兜底仍保留。
 
 `timers` 在已启动的预览应用中用原服务登记每30秒执行的唯一 `orderCancel` 任务，并启动专用 `preview-timer`（原 `console.php timer start`）。默认新订单待付款期限为30分钟；配置成功后 `serve` / `serve-api` 会连同该服务启动。原Timer还保留每60秒的自动收货扫描，按已保存发货截止执行；本预览不另建调度器，也不启用其他后台定时任务。
+
+`queue` 启动原marketplace专用队列消费者（`queue:work marketplace --queue=marketplace --sleep=1 --tries=1`），复用内部网络、DML角色和现有任务实现。完成资源归属检查后才保存启用标记；之后 `serve` / `serve-api` 会带上该服务。当前实际验证为合成员工正常登录后投递一项 `merchant.profile.read` 审计任务，原worker消费并产生唯一成功审计行，pending/reserved/delayed均归零。该结果不代表订单异步任务或完整Worker验收，也未启动普通CRMEB队列。
 
 正常超时体验可使用 `timers --hours 0.025`，然后从顾客页面新建一张不付款订单，等待90秒截止及至多一个30秒扫描周期，再刷新详情核对关闭与库存；体验结束执行 `timers` 回到30分钟。修改只影响之后创建订单的截止，不改旧订单。`timers --hours 0` 关闭新单截止；`timers-restore` 恢复首次运行前保存的原始配置值。两者都不会取消已有订单的保存截止，Timer仍正常处理已经到期的订单。原配置保存在该实例runtime卷的 `preview-timer-config.json`；仅窄清相关配置缓存，其他设置与登录态保留。
 
@@ -95,6 +98,6 @@ python -X utf8 help/preview/preview.py accounts-file
 
 素材到商品展示的正常链已通过：商家真实建立分类、选择本机合成 PNG 上传，将其用于原商品主图和 SKU 图，保存后待审核/未上架；平台批准、商家重新上架后，顾客首页与详情实际加载同一新图片。上传文件及公开图片均为1054字节、320×240，内容哈希一致；原商品7/SKU106身份、12.50元价格、库存20及销量0保持，6条历史订单商品快照未变，原素材仍保留。编辑页保存说明已与实际审核流程一致，并在375宽度检查；临时说明验证草稿已还原、未再次保存。以上仅为本机合成正常预览，不代替其余素材类型、私有表单、真机或完整阶段验收。
 
-平台客服预览接线已验证：原先误返回顾客端HTML的客服入口现可显示客服登录页和工作台；九个客服及三端入口的HTML归属、四个后台首屏资源正常，浏览器聊天与通知WebSocket均完成101握手。顾客从实际订单点击联系客服后，经正常聊天连接进入离线留言，保存成功并返回原订单；平台读到留言1（合成顾客UID3），处理后列表显示已处理，重新打开备注与保存文字一致。客服账号尚待本人设置，实时对话、聊天图片、旧客户端兼容和完整阶段验收仍未完成；连接成功不代表已登录或可完整会话。用户停止的测试保持NOT RUN。
+平台客服预览接线已验证：原先误返回顾客端HTML的客服入口现可显示客服登录页和工作台；九个客服及三端入口的HTML归属、四个后台首屏资源正常，浏览器聊天与通知WebSocket均完成101握手。顾客从实际订单点击联系客服后，经正常聊天连接进入离线留言，保存成功并返回原订单；平台读到留言1（合成顾客UID3），处理后列表显示已处理，重新打开备注与保存文字一致。随后用户已亲自建立关联用户与客服账号；正常平台进入工作台、顾客与客服双向文字及私有图片收发、刷新历史读取已通过。专用预览开启现有私有聊天写入，原身份、房间、票据及资产绑定检查保留。客服选图钩子按ElementUI合同拒绝自动旧上传，避免私有消息已保存后又额外上传报错；普通文本粘贴不再触发图片提示，顾客订单预览仅在副价格存在时显示它。旧公共图片上传、聊天订单卡片、其他旧客户端和完整阶段验收仍有待完成，不能以本次正常聊天替代。用户停止的测试保持NOT RUN。
 
 本说明是操作入口；各功能实际完成状态统一维护在仓库外现有 `current20261025-business-progress-r1/PROGRESS.md`。

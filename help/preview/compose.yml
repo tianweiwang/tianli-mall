@@ -70,6 +70,7 @@ services:
   preview-events:
     <<: *php
     user: "1000:1000"
+    stop_signal: SIGINT
     environment:
       <<: *environment
       PREVIEW_EVENTS_BIND: "1"
@@ -78,7 +79,14 @@ services:
   preview-timer:
     <<: *php
     user: "1000:1000"
+    stop_signal: SIGINT
     command: [help/preview/console.php, timer, start]
+    volumes: *app-volumes
+  preview-marketplace-queue:
+    <<: *php
+    user: "1000:1000"
+    stop_signal: SIGTERM
+    command: [help/preview/console.php, "queue:work", marketplace, "--queue=marketplace", "--sleep=1", "--tries=1"]
     volumes: *app-volumes
   preview-web:
     image: ${PREVIEW_NGINX_IMAGE:?required}

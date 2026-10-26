@@ -436,7 +436,7 @@ export default {
       if (!isImage) {
         this.$message.error('上传图片只能是 JPG、PNG 格式!');
       }
-      if (!isImage || !(await this.chatMaterialBeforeUpload(file))) return false;
+      if (!isImage || !(await this.chatMaterialBeforeUpload(file))) return Promise.reject();
       this.uploadData = {
         filename: file,
         token: this.userToken,

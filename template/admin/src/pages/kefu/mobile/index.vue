@@ -362,7 +362,7 @@ export default {
     // 上传之前
     beforeUpload(file) {
       if (!isPicUpload(file)) return false;
-      return this.chatMaterialBeforeUpload(file);
+      return this.chatMaterialBeforeUpload(file).then((legacy) => legacy ? true : Promise.reject());
     },
     // 上传成功
     handleSuccess(res, file, fileList) {
