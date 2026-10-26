@@ -121,7 +121,7 @@ python -X utf8 help/preview/preview.py smoke --root $runtimeRoot
 python -X utf8 help/preview/preview.py accounts-file --root $runtimeRoot
 ```
 
-现有构建不在默认目录时，装包命令追加 `--build-root <已有build根>`。工具核对原成功命令记录、当前源码与构建工作副本、产物和H5原afterEmit摘要；将H5、平台和商家页面分别放入public根、`admin/`、`merchant/`，保留后端入口及依赖锁，排除运行配置、安装器和私有数据。`IMAGE-CONTEXT.json` 记录本次来源及复制读回；Admin/商家输出哈希是装包时观察值，不追认为原构建时回执，也不替代旧formal-copy资格。两个镜像须由上面的原Dockerfile实际构建，不能只给旧镜像换标签；构建可能需要原Dockerfile声明的基础镜像和依赖下载。
+现有构建不在默认目录时，装包命令追加 `--build-root <已有build根>`。后端和Docker输入仅来自Git已追踪的路径；新源码须先按明确范围加入Git索引，再核 `IMAGE-CONTEXT.json` 包含本次新增文件，不能把未追踪文件视为已装包。工具核对原成功命令记录、当前源码与构建工作副本、产物和H5原afterEmit摘要；将H5、平台和商家页面分别放入public根、`admin/`、`merchant/`，保留后端入口及依赖锁，排除运行配置、安装器和私有数据。`IMAGE-CONTEXT.json` 记录本次来源及复制读回；Admin/商家输出哈希是装包时观察值，不追认为原构建时回执，也不替代旧formal-copy资格。两个镜像须由上面的原Dockerfile实际构建，不能只给旧镜像换标签；构建可能需要原Dockerfile声明的基础镜像和依赖下载。
 
 镜像模式首次prepare必须同时提供两张本地镜像、`--full-runtime` 和成对网段；镜像解析为固定ID后写入本实例state，后续命令只需同一 `--root`。两个网段必须属于RFC1918、彼此不重叠且不与已有Docker网络重叠；操作者还须检查宿主机及VPN路由。当前机器本轮选择 `10.253.240.0/24` 和 `10.253.241.0/24`，这是当时核对后的实例选择，不能作为其他机器或后继实例的固定默认值。程序不清理旧网络来腾出地址。
 

@@ -11,7 +11,7 @@
 
 namespace app\listener\http;
 
-use think\facade\Log;
+use crmeb\services\RuntimeLog;
 use think\Response;
 
 /**
@@ -23,47 +23,6 @@ class HttpEndListener
 {
     public function handle(Response $response): void
     {
-        if (\app\services\marketplace\assets\PlatformChatAssetServices::isPrivateHttpRequest(app()->request)) return;
-        // Login/setup responses and request bodies must never enter business logs.
-        if (app()->http->getName() === 'merchantapi') return;
-        if (\app\services\marketplace\PlatformAccessServices::isMarketplace(app()->request)) return;
-        if (\crmeb\services\workerman\chat\GuestChatSession::isIssuerRequest(app()->request)) return;
-        if (!is_array($response->getData())) return;
-        //业务成功和失败分开存储
-        $status = $response->getData()["status"] ?? 0;
-        if ($status == 200) {
-            //业务成功日志开关
-            if (!config("log.success_log")) return;
-            $type = "success";
-        } else {
-            //业务失败日志开关
-            if (!config("log.fail_log")) return;
-            $type = "fail";
-        }
-
-        //当前用户身份标识
-        if (!empty(request()->uid())) {
-            $uid = request()->uid();
-        } elseif (!empty(request()->adminId())) {
-            $uid = request()->adminId();
-        } elseif (!empty(request()->kefuId())) {
-            $uid = request()->kefuId();
-        } else {
-            $uid = 0;
-        }
-
-        //日志内容
-        $log = [
-            $uid,                                                                                 //用户ID
-            request()->ip(),                                                                      //客户ip
-            ceil(msectime() - (request()->time(true) * 1000)),                                    //耗时（毫秒）
-            request()->rule()->getMethod(),                                                       //请求类型
-            str_replace("/", "", request()->rootUrl()),                                           //应用
-            request()->baseUrl(),                                                                 //路由
-            json_encode(request()->param(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),     //请求参数
-            json_encode($response->getData(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),   //响应数据
-
-        ];
-        Log::write(implode("|", $log), $type);
+        RuntimeLog::response(app(), $response);
     }
 }

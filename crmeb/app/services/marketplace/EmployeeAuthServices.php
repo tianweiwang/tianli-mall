@@ -60,9 +60,12 @@ final class EmployeeAuthServices
         }
     }
 
-    public function authenticate(string $token): MerchantContext
+    public function authenticate(string $token, ?string $requestId = null): MerchantContext
     {
         try {
+            if ($requestId !== null && preg_match('/\A[a-f0-9]{32}\z/D', $requestId) !== 1) {
+                throw new AuthUnavailableException();
+            }
             $identity = null;
             $verified = AuthTokenV2::fromConfig()->verify(self::APP, $token,
                 function (string $id) use (&$identity): string {
@@ -74,7 +77,7 @@ final class EmployeeAuthServices
             }
             return new MerchantContext((int)$identity['employee']['mer_id'],
                 (int)$identity['employee']['id'], $identity['role']['permissions'],
-                $verified['version'], bin2hex(random_bytes(16)));
+                $verified['version'], $requestId ?? bin2hex(random_bytes(16)));
         } catch (AuthException $error) {
             throw $error;
         } catch (\Throwable $error) {

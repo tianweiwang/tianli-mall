@@ -36,11 +36,26 @@ class Request extends \think\Request
     private ?MerchantContext $merchantContextValue = null;
     private ?PlatformScope $platformScopeValue = null;
 
+    /** Diagnostic identity belongs to this HTTP request, independently of its actor. */
+    private ?string $runtimeRequestIdValue = null;
+
     /** Fingerprint of the opaque token actually accepted for this request; never a credential. */
     private ?string $verifiedTokenFingerprintValue = null;
 
     /** Exact facts returned by this request's successful administrator verification. */
     private ?array $verifiedAdminSessionValue = null;
+
+    public function runtimeRequestId(): string
+    {
+        if ($this->runtimeRequestIdValue === null) {
+            // This FastCGI parameter is set by our gateway; HTTP headers have a different SERVER key.
+            $gatewayId = $this->server('MARKETPLACE_REQUEST_ID', '');
+            $this->runtimeRequestIdValue = is_string($gatewayId)
+                && preg_match('/\A[a-f0-9]{32}\z/D', $gatewayId) === 1
+                ? $gatewayId : bin2hex(random_bytes(16));
+        }
+        return $this->runtimeRequestIdValue;
+    }
 
     public function setVerifiedTokenFingerprint(string $fingerprint): void
     {

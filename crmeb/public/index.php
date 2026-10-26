@@ -31,10 +31,12 @@ if(file_exists("./install/") && !file_exists("./install.lock")){
 require __DIR__ . '/../vendor/autoload.php';
 
 // 执行HTTP应用并响应
-$http = (new App())->http;
+$app = new App();
+$http = $app->http;
 
 $response = $http->run();
 
+\crmeb\services\RuntimeLog::attach($app, $response);
 $response->send();
 
 $http->end($response);

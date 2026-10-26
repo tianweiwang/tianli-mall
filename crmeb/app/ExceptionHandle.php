@@ -48,8 +48,18 @@ class ExceptionHandle extends Handle
      */
     public function report(Throwable $exception): void
     {
-        // 使用内置的方式记录异常日志
-        parent::report($exception);
+        // CLI/worker reporting remains on its original path; this change covers HTTP only.
+        if ($this->app->runningInConsole()) {
+            parent::report($exception);
+            return;
+        }
+        $denied = ($exception instanceof \crmeb\exceptions\AuthException
+                && in_array($exception->getCode(), [401, 403], true))
+            || ($exception instanceof \think\exception\HttpException
+                && in_array($exception->getStatusCode(), [401, 403], true));
+        if ($denied || !$this->isIgnoreReport($exception)) {
+            \crmeb\services\RuntimeLog::exception($this->app, $exception);
+        }
     }
 
     /**

@@ -31,7 +31,7 @@ final class MerchantAuthTokenMiddleware implements MiddlewareInterface
         $request->clearVerifiedTokenFingerprint();
         try {
             $token = self::token($request);
-            $context = $this->services->authenticate($token);
+            $context = $this->services->authenticate($token, $request->runtimeRequestId());
             $request->setVerifiedTokenFingerprint(hash('sha256', $token));
             $request->setMerchantContext($context);
             return $next($request);

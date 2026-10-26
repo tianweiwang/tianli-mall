@@ -19,7 +19,6 @@ use think\db\exception\DbException;
 use think\exception\Handle;
 use think\exception\ValidateException;
 use think\facade\Env;
-use think\facade\Log;
 use think\Response;
 use Throwable;
 
@@ -44,37 +43,21 @@ class KefuApiExceptionHandle extends Handle
      */
     public function report(Throwable $exception): void
     {
-        if (\app\services\marketplace\assets\PlatformChatAssetServices::isPrivateHttpRequest($this->app->request)) {
-            if ($exception instanceof AuthException && in_array($exception->getCode(), [401, 403], true)) return;
-            try { $this->app->log->record('chat.private_unavailable', 'error'); } catch (Throwable $loggingError) {}
+        $denied = ($exception instanceof \crmeb\exceptions\AuthException
+                && in_array($exception->getCode(), [401, 403], true))
+            || ($exception instanceof \think\exception\HttpException
+                && in_array($exception->getStatusCode(), [401, 403], true));
+        if ($denied) {
+            \crmeb\services\RuntimeLog::exception($this->app, $exception);
             return;
         }
-        if (\crmeb\services\workerman\chat\GuestChatSession::isIssuerRequest($this->app->request)) {
-            if ($exception instanceof AuthException && in_array($exception->getCode(), [401, 403], true)) return;
-            try { $this->app->log->record('chat.guest_unavailable', 'error'); } catch (Throwable $loggingError) {}
+        if (\app\services\marketplace\assets\PlatformChatAssetServices::isPrivateHttpRequest($this->app->request)
+            || \crmeb\services\workerman\chat\GuestChatSession::isIssuerRequest($this->app->request)) {
+            \crmeb\services\RuntimeLog::exception($this->app, $exception);
             return;
         }
         if (!$this->isIgnoreReport($exception)) {
-            $data = [
-                'file' => $exception->getFile(),
-                'line' => $exception->getLine(),
-                'message' => $this->getMessage($exception),
-                'code' => $this->getCode($exception),
-            ];
-
-            //日志内容
-            $log = [
-                request()->kefuId(),                                                                  //客服ID
-                request()->ip(),                                                                      //客户ip
-                ceil(msectime() - (request()->time(true) * 1000)),                                    //耗时（毫秒）
-                request()->rule()->getMethod(),                                                       //请求类型
-                str_replace("/", "", request()->rootUrl()),                                           //应用
-                request()->baseUrl(),                                                                 //路由
-                json_encode(request()->param(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),     //请求参数
-                json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),                  //报错数据
-
-            ];
-            Log::write(implode("|", $log), "error");
+            \crmeb\services\RuntimeLog::exception($this->app, $exception);
         }
     }
 

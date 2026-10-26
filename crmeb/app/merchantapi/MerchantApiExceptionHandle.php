@@ -14,24 +14,19 @@ final class MerchantApiExceptionHandle extends Handle
 {
     public function report(Throwable $exception): void
     {
-        if ($exception instanceof AuthSessionException
-            || ($exception instanceof HttpException
-                && in_array($exception->getStatusCode(), [401, 403, 404, 422], true))) {
+        $denied = ($exception instanceof \crmeb\exceptions\AuthException
+                && in_array($exception->getCode(), [401, 403], true))
+            || ($exception instanceof \think\exception\HttpException
+                && in_array($exception->getStatusCode(), [401, 403], true));
+        if ($denied) {
+            \crmeb\services\RuntimeLog::exception($this->app, $exception);
             return;
         }
-
-        // Fixed event names keep arguments, credentials and driver details out
-        // of error logs, including when the global application is in debug mode.
-        try {
-            $this->app->log->record(
-                $exception instanceof AuthUnavailableException
-                    ? 'merchantapi.auth_unavailable'
-                    : 'merchantapi.unhandled_exception',
-                'error'
-            );
-        } catch (Throwable $loggingError) {
-            // Reporting must not replace the fixed response with a log failure.
+        if ($exception instanceof HttpException
+            && in_array($exception->getStatusCode(), [404, 422], true)) {
+            return;
         }
+        \crmeb\services\RuntimeLog::exception($this->app, $exception);
     }
 
     public function render($request, Throwable $exception): Response

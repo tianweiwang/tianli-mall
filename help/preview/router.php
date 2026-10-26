@@ -12,6 +12,7 @@ try {
     $app = preview_app();
     $http = $app->http;
     $response = $http->run();
+    \crmeb\services\RuntimeLog::attach($app, $response);
     $response->send();
     $http->end($response);
 } catch (Throwable $error) {
