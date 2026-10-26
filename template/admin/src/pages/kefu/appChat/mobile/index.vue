@@ -37,7 +37,7 @@
           <div class="acea-row row-between">
             <div class="broadcast_details_pic">
               ￥{{ cartInfo.productInfo.price
-              }}<text class="broadcast_details_pic_num">￥{{ cartInfo.productInfo.ot_price }}</text>
+              }}<text v-if="cartInfo.productInfo.ot_price !== undefined && cartInfo.productInfo.ot_price !== null && cartInfo.productInfo.ot_price !== ''" class="broadcast_details_pic_num">￥{{ cartInfo.productInfo.ot_price }}</text>
             </div>
             <div class="broadcast_details_btn" v-db-click @click="sendOrder">发送客服</div>
           </div>
@@ -265,7 +265,7 @@ export default {
     this.productId = this.$route.query.product_id || '';
   },
   mounted() {
-    if (!this.$wechat._isMobile()) return this.$router.replace('/kefu/appChat');
+    if (!this.$wechat._isMobile()) return this.$router.replace({ path: '/kefu/appChat', query: { ...this.$route.query } });
     if (this.userToken) {
       this.getOrderInfo();
       this.getGoodsInfo();
@@ -399,9 +399,20 @@ export default {
     // 获取订单信息
     getOrderInfo() {
       if (!this.orderId) return;
-      getOrderApi(this.orderId, {
-        token: this.userToken,
-      }).then((res) => {
+      const orderId = this.orderId, token = this.userToken;
+      const current = () => !this._isDestroyed && !this._isBeingDestroyed && !this._inactive
+        && this.orderId === orderId && this.userToken === token && window.localStorage.getItem('LOGIN_STATUS_TOKEN') === token;
+      this.orderInfo = {};
+      this.cartInfo = {};
+      return getOrderApi(orderId, token).then((res) => {
+        if (!current()) return;
+        const order = res.data;
+        if (!order || typeof order.order_id !== 'string' || !order.order_id.trim() || !Array.isArray(order.cartInfo)
+          || !order.cartInfo.length || !order.cartInfo[0] || !order.cartInfo[0].productInfo
+          || typeof order.cartInfo[0].productInfo !== 'object' || Array.isArray(order.cartInfo[0].productInfo)) {
+          this.$message.error('请从主订单进入咨询');
+          return;
+        }
         this.orderInfo = res.data;
         if (this.orderInfo.add_time_h) {
           this.orderInfo.add_time_h = this.orderInfo.add_time_h.substring(
@@ -409,9 +420,9 @@ export default {
             this.orderInfo.add_time_h.lastIndexOf(':'),
           );
         }
-        if (this.orderInfo.cartInfo.length) {
-          this.cartInfo = this.orderInfo.cartInfo[0];
-        }
+        this.cartInfo = this.orderInfo.cartInfo[0];
+      }).catch(() => {
+        if (current()) this.$message.error('订单信息读取失败，请稍后重试');
       });
     },
     // 获取随机客服
@@ -479,9 +490,8 @@ export default {
     },
     // 订单详情
     goOrderDetail(item) {
-      this.$router.push({
-        path: `/kefu/orderDetail/${item.orderInfo.id}`,
-      });
+      if (!item || typeof item.msn !== 'string' || !item.msn) return;
+      window.location.assign(window.location.origin + '/pages/goods/order_details/index?order_id=' + encodeURIComponent(item.msn));
     },
     // 底部功能区打开
     openBox(key) {
@@ -571,7 +581,10 @@ export default {
     },
     // 发送订单
     sendOrder() {
-      this.sendMsg(this.orderId, 6);
+      if (!this.orderInfo || typeof this.orderInfo.order_id !== 'string' || !this.orderInfo.order_id) {
+        return this.$message.error('订单信息尚未读取');
+      }
+      this.sendMsg(this.orderInfo.order_id, 6);
       this.orderId = 0;
       this.orderInfo = {};
     },

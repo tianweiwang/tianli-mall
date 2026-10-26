@@ -42,8 +42,10 @@ export default {
         document.documentElement.style.fontSize = css;
         this.setDevice('Mobile');
       } else if (matchMedia('(max-width: 992px)').matches) {
+        document.documentElement.style.removeProperty('font-size');
         this.setDevice('Tablet');
       } else {
+        document.documentElement.style.removeProperty('font-size');
         this.setDevice('Desktop');
       }
     },
@@ -77,9 +79,9 @@ export default {
     },
   },
   mounted() {
+    this.getLayoutThemeConfig();
     this.handleMatchMedia();
     this.openSetingsDrawer();
-    this.getLayoutThemeConfig();
     this.$nextTick((e) => {
       // this.getVersion();
     });

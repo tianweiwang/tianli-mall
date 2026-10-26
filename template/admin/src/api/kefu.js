@@ -9,6 +9,7 @@
 // +----------------------------------------------------------------------
 
 import request from '@/libs/request';
+import Setting from '@/setting';
 import { guardedPlatformChatTransfer } from '@/api/platform-chat-materials';
 
 /** Real caller supplies its current socket-authenticated staff/room; never retries a dispatched transfer. */
@@ -568,16 +569,34 @@ export function feedbackFromApi(data) {
 }
 
 /**
- * 客户端 游客获取用户订单号
+ * 已登录顾客读取自己的订单预览，沿用商城详情的真实归属校验。
  * @constructor
  */
-export function getOrderApi(order_id, params) {
-  return request({
-    url: `tourist/order/${order_id}`,
-    method: 'get',
-    params,
-    kefu: true,
-  });
+export async function getOrderApi(order_id, token) {
+  if (typeof order_id !== 'string' || !order_id || typeof token !== 'string' || !token
+    || window.localStorage.getItem('LOGIN_STATUS_TOKEN') !== token) throw new Error('请先登录商城再读取订单');
+  const base = new URL(Setting.apiBaseURL, window.location.origin);
+  if (!/^https?:$/.test(base.protocol) || base.origin !== window.location.origin || base.username || base.password
+    || base.search || base.hash || !/\/adminapi\/?$/.test(base.pathname)) throw new Error('订单详情需使用同源商城接口');
+  const path = base.pathname.replace(/\/adminapi\/?$/, '/api/order/detail/') + encodeURIComponent(order_id);
+  const target = new URL(path, base.origin);
+  if (target.origin !== base.origin || target.pathname !== path || target.search || target.hash) throw new Error('订单地址无效');
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), 100000);
+  try {
+    const response = await fetch(target.href, {
+      method: 'GET', headers: { 'Authori-zation': 'Bearer ' + token },
+      credentials: 'same-origin', mode: 'same-origin', cache: 'no-store', redirect: 'error', signal: controller.signal,
+    });
+    const result = await response.json();
+    if (window.localStorage.getItem('LOGIN_STATUS_TOKEN') !== token) throw new Error('登录状态已更新，请重新进入聊天');
+    if (!response.ok || !result || result.status !== 200 || !result.data || typeof result.data !== 'object') {
+      throw new Error('订单信息读取失败，请稍后重试');
+    }
+    return result;
+  } finally {
+    window.clearTimeout(timer);
+  }
 }
 
 /**

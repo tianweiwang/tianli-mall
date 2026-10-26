@@ -298,7 +298,7 @@ export default {
   },
   mounted() {
     window.addEventListener('click', this.hideEmoji);
-    if (this.$wechat._isMobile()) return this.$router.replace('/kefu/mobile_user_chat');
+    if (this.$wechat._isMobile()) return this.$router.replace({ path: '/kefu/mobile_user_chat', query: { ...this.$route.query } });
     this.getNotice();
     Socket.then((ws) => {
       if (this._isDestroyed || this._isBeingDestroyed) return;
