@@ -25,10 +25,13 @@ class AdminLoginListener
         try {
             [$key] = $event;
             //检测消息队列是否执行
-            $path = root_path('runtime') . '.queue';
-            $content = file_get_contents($path);
-            $res = $key === $content;
-            if (sys_config('queue_open', 0) == 0) $res = true;
+            if (sys_config('queue_open', 0) == 0) {
+                $res = true;
+            } else {
+                $path = root_path('runtime') . '.queue';
+                $content = file_get_contents($path);
+                $res = $key === $content;
+            }
         } catch (\Throwable $e) {
         }
 

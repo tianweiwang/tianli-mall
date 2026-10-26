@@ -133,7 +133,9 @@ python -X utf8 help/preview/preview.py accounts-file --root $runtimeRoot
 
 `trade-smoke.php` 继续使用原单店正常HTTP建单与金额、库存断言，请求地址按镜像/完整/拆分模式分别使用本实例web的80/8080端口或app的8000端口。新完整/镜像回执为UID/GID33:33、0600；已有完整/镜像回执只核验，不修补异常归属。18185实际创建2件单价20.15元、共40.30元订单，库存100→98；顾客页面确认测试支付、商家页面发出2件、顾客页面收货2件，平台列表及详情显示测试支付40.30元、已收货、已发2/已收2和1个包裹。原生独立复核通过；这些合成数据结果不代表真实收款或生产验收。
 
-平台登录时的旧“消息队列”提示已定位为检测缺陷：本实例 `queue_open=0` 且runtime的 `.queue` 文件不存在，`AdminLoginListener` 先读文件抛异常，未走关闭配置的豁免分支而返回false，前端因而误报。该提示不代表上述Supervisor队列故障；本轮尚未修复，保留为后续事项，未为消除提示修改业务队列配置或镜像。
+18185旧镜像的平台登录“消息队列”误提示源于 `AdminLoginListener`：`queue_open=0` 时仍先读取不存在的runtime `.queue`，异常使关闭配置的豁免未执行。18185镜像及实例保持原样；新候选仅调整检查顺序，先判断队列是否关闭，开启时仍读取 `.queue` 并严格比较原key，Timer的70秒检测保持不变。
+
+2026-10-27在独立18186使用新PHP候选镜像、复用已核同的原Nginx镜像，原入口health、三角色smoke及实际平台登录通过，登录结果queue/timer均为true。UID33实读确认 `console_remind=true`、`queue_open='0'`、`.queue` 仍不存在且运行中的listener与候选源码哈希一致；真实浏览器登录后首页没有队列或Timer通知，未关闭提醒来掩盖问题。截图保存在 `artifacts/multi-merchant-image-runtime-20261027-r2/admin-login-without-false-warning.png`。这项正常页面验证不替代完整MS6、真实支付或生产验收，用户停止的样本仍为NOT RUN。
 
 ## 操作顺序
 
