@@ -1446,10 +1446,18 @@ class StoreOrderRefundServices extends BaseServices
         $orderData['_add_time'] = date('Y-m-d H:i:s', $orderData['add_time']);
         $orderData['add_time_y'] = date('Y-m-d', $orderData['add_time']);
         $orderData['add_time_h'] = date('H:i:s', $orderData['add_time']);
-        if (in_array($orderData['refund_type'], [1, 2, 4, 5])) {
+        if (in_array($orderData['refund_type'], [1, 2])) {
             $_type = -1;
             $_msg = '商家审核中,请耐心等待';
             $_title = '申请退款中';
+        } elseif ($orderData['refund_type'] == 4) {
+            $_type = -1;
+            $_title = '商品待退货';
+            $_msg = '已同意退货，请确认退货地址并填写寄回信息';
+        } elseif ($orderData['refund_type'] == 5) {
+            $_type = -1;
+            $_title = '退货待收货';
+            $_msg = '寄回信息已提交，等待商家收货处理';
         } elseif ($orderData['refund_type'] == 3) {
             $_type = -3;
             $_title = '拒绝退款';
