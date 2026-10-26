@@ -392,7 +392,7 @@ final class MarketplaceOrderRefundWriter
         $after=$proposal['after']; $kind=$proposal['operation_kind']; $customer=$identity['actor_type']==='customer';
         $handler=in_array($identity['actor_type'],['employee','admin'],true); $requested=$after['business_state']==='REQUESTED';
         $approvedReturn=$after['business_state']==='APPROVED'&&$kind==='return_goods';
-        return ['schema'=>2,'scope'=>'marketplace_aftersale_v1','id'=>$id,'refund_no'=>self::text($nativeRefund['order_id'],50),
+        $view=['schema'=>2,'scope'=>'marketplace_aftersale_v1','id'=>$id,'refund_no'=>self::text($nativeRefund['order_id'],50),
             'root_order_id'=>$source['identity']['id'],'root_order_no'=>$source['identity']['order_no'],
             'merchant_name_snapshot'=>$source['root']['merchant_name_snapshot'],'operation_kind'=>$kind,
             'mode'=>$kind==='return_goods'?'return_goods':'money_only','business_state'=>$after['business_state'],
@@ -404,6 +404,14 @@ final class MarketplaceOrderRefundWriter
                 'approve'=>$handler&&$requested,'reject'=>$handler&&$requested,
                 'accept_return'=>$handler&&$approvedReturn&&self::quantity($accepted)<self::quantity($proposal['allocations'])],
             'return_selection'=>self::returnSelection($snapshot,$body,$kind,$after,$accepted)];
+        $destination=null;
+        if($action==='approve'&&$kind==='return_goods'){
+            $destination=MarketplaceOrderRefundInput::returnDestination($proposal['body']['return_destination']);
+        }elseif($action!=='apply'){
+            $destination=MarketplaceOrderRefundFacts::returnDestinationFromRefund($history);
+        }
+        if($destination!==null) $view['return_destination']=$destination;
+        return $view;
     }
 
     /** Projection only: saved allocation goods/postage have already been independently checked by prepareAction. */

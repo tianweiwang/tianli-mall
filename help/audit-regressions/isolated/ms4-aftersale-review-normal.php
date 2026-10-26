@@ -1362,7 +1362,7 @@ function m4ar_refund_view(array $model,array $record,array $state,array $actor,i
 {
  $customer=$actor['app']==='api';$handler=in_array($actor['app'],['merchantapi','adminapi'],true);$requested=$state['business_state']==='REQUESTED';
  $approved=$state['business_state']==='APPROVED'&&$record['kind']==='return_goods';$root=$model['root'];
- return ['schema'=>2,'scope'=>'marketplace_aftersale_v1','id'=>$record['id'],'refund_no'=>$record['number'],'root_order_id'=>(int)$root['id'],
+ $view=['schema'=>2,'scope'=>'marketplace_aftersale_v1','id'=>$record['id'],'refund_no'=>$record['number'],'root_order_id'=>(int)$root['id'],
  'root_order_no'=>$root['order_id'],'merchant_name_snapshot'=>$root['merchant_name_snapshot'],'operation_kind'=>$record['kind'],
  'mode'=>$record['kind']==='return_goods'?'return_goods':'money_only','business_state'=>$state['business_state'],'physical_state'=>$state['physical_state'],
  'finance_state'=>$state['finance_state'],'requested_amount'=>$state['requested_amount'],'confirmed_amount'=>'0.00','held_amount'=>$state['held_amount'],
@@ -1371,6 +1371,12 @@ function m4ar_refund_view(array $model,array $record,array $state,array $actor,i
  'allowed_actions'=>['withdraw'=>$customer&&$requested,'submit_return'=>$customer&&$approved,'approve'=>$handler&&$requested,'reject'=>$handler&&$requested,
  'accept_return'=>$handler&&$approved&&m4ar_quantity($record['accepted'])<m4ar_quantity($record['allocations'])],
  'return_selection'=>m4ar_return_view($model,$record,$state)];
+ if(array_key_exists('return_destination',$record)){
+  m4ar_expect($record['kind']==='return_goods'&&in_array($state['business_state'],['APPROVED','COMPLETED'],true),'TASK78_RETURN_DESTINATION_ONLY_APPROVED_RETURN');
+  m4c_entry_keys($record['return_destination'],['recipient_name','phone','address']);
+  $view['return_destination']=$record['return_destination'];
+ }
+ return $view;
 }
 function m4ar_credit_oracle(array $before,array $after,array $model,array $actor,int $refund,string $actionId,string $kind,array $physical,int $at,array &$rows,array &$counts):array
 {
@@ -1420,6 +1426,18 @@ function m4ar_action(PDO $db,array &$model,array $actor,string $action,string $p
    'allocations'=>m4ar_apply_allocations($model,$body),'accepted'=>[],'created_at'=>$at,'apply_action'=>$actionId,'last_action'=>null,'state'=>null];
  }else{m4ar_expect($refundId!==null&&isset($model['refunds'][$refundId]),'TASK78_EXISTING_INDEPENDENT_REFUND_HISTORY');$record=$model['refunds'][$refundId];
   $refund=m4ar_one($after['rows']['eb_store_order_refund'],'id',$refundId);}
+ if($action==='approve'){
+  if($record['kind']==='return_goods'){
+   m4c_entry_keys($body,['schema','idem_key','return_destination']);
+   m4ar_expect(!array_key_exists('return_destination',$record),'TASK78_FIRST_RETURN_DESTINATION');
+   $destination=$body['return_destination'];m4c_entry_keys($destination,['recipient_name','phone','address']);
+   foreach(['recipient_name'=>64,'phone'=>32,'address'=>500]as$field=>$limit){$value=$destination[$field];
+    m4ar_expect(is_string($value)&&preg_match('//u',$value)===1&&!str_contains($value,"\0")&&mb_strlen($value,'UTF-8')<=$limit
+     &&preg_match('/[^\s\p{Z}\x{0085}\x{FEFF}]/u',$value)===1,'TASK78_RETURN_DESTINATION_TEXT');}
+   // The oracle retains the authored request, independently of every API response and production projection.
+   $record['return_destination']=$destination;
+  }else m4c_entry_keys($body,['schema','idem_key']);
+ }
  $previous=$record['state'];$record['accepted']=array_merge($record['accepted'],$accepted);
  $state=m4ar_refund_state($previous,$action,$body,$record['kind'],m4ar_quantity($record['accepted']),m4ar_quantity($record['allocations']));
  $physical=$action==='approve'&&$record['kind']==='cancel_unshipped'?$record['allocations']:($action==='accept_return'?$accepted:[]);
@@ -2238,7 +2256,9 @@ function m4ar_business(\think\App $app,PDO $db,array $source,array $owner,array 
  'images'=>[(string)$file['id']],'selection'=>['mode'=>'child_items','child_order_no'=>$model['child']['order_id'],'items'=>$returnItems]];
  $record=m4ar_action($db,$model,$actors['customer'],'apply','/api/order/refund/apply/'.$root,$apply);
  $ticketProof=m4ar_tickets($db,$model,$actors,$file,$png,$record['id']);
- m4ar_action($db,$model,$actors['platform'],'approve','/adminapi/marketplace/aftersales/'.$record['id'].'/approve',['schema'=>2,'idem_key'=>$key('return-approve')],$record['id']);
+ $returnDestination=['recipient_name'=>'合成退货验收员（测试）','phone'=>'TEST-RETURN-0001','address'=>'合成地址：仅用于隔离验证，不可邮寄'];
+ m4ar_action($db,$model,$actors['platform'],'approve','/adminapi/marketplace/aftersales/'.$record['id'].'/approve',
+  ['schema'=>2,'idem_key'=>$key('return-approve'),'return_destination'=>$returnDestination],$record['id']);
  m4ar_action($db,$model,$actors['customer'],'express','/api/order/refund/express',['schema'=>2,'idem_key'=>$key('return-express'),'refund_no'=>$record['number'],
  'return_delivery'=>['carrier_name'=>'正常退货物流','tracking_no'=>'NORMALRETURN'.bin2hex(random_bytes(7))]],$record['id']);m4ar_reads($db,$model,$actors);
  foreach(['merchant','platform']as$i=>$name){$base=$name==='merchant'?'/merchantapi/aftersales/':'/adminapi/marketplace/aftersales/';

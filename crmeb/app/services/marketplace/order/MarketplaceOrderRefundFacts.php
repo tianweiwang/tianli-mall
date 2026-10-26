@@ -207,6 +207,22 @@ final class MarketplaceOrderRefundFacts
         return $view;
     }
 
+    /** Projection from an already validated refund history, never from current merchant configuration. */
+    public static function returnDestinationFromRefund(array $refund): ?array
+    {
+        self::list($refund['actions']); $approved=false; $destination=null;
+        foreach($refund['actions'] as $action){
+            if($action['action']!=='approve') continue;
+            if($approved) self::unavailable(); $approved=true;
+            $body=$action['request_payload']['public_body'];
+            if(array_key_exists('return_destination',$body)){
+                if($refund['kind']!=='return_goods') self::unavailable();
+                $destination=MarketplaceOrderRefundInput::returnDestination($body['return_destination']);
+            }
+        }
+        return $destination;
+    }
+
     private static function receiptCoordinates(array $rows):array
     {
         $out=[];
@@ -350,6 +366,7 @@ final class MarketplaceOrderRefundFacts
                     break;
                 case 'approve':
                     if($before['business_state']!=='REQUESTED') self::unavailable();
+                    if(($kind==='return_goods')!==array_key_exists('return_destination',$body)) self::unavailable();
                     $after['business_state']='APPROVED'; $after['finance_state']='UNSUPPORTED';
                     if($kind==='cancel_unshipped'){
                         self::disjoint($allocations,array_merge($history['ships'],$history['cancel']));
@@ -921,6 +938,8 @@ final class MarketplaceOrderRefundFacts
                     break;
                 case 'approve':
                     if($before['business_state']!=='REQUESTED') self::unavailable();
+                    // Historical approvals without a destination retain their original request and result shape.
+                    if(array_key_exists('return_destination',$body)&&$kind!=='return_goods') self::unavailable();
                     $expected['business_state']='APPROVED';
                     if(!in_array($after['finance_state'],['NOT_SUBMITTED','UNSUPPORTED'],true)) self::unavailable();
                     $expected['finance_state']=$after['finance_state'];
@@ -1208,9 +1227,13 @@ final class MarketplaceOrderRefundFacts
         }
         if(count($actualIds)!==count($ids)) self::unavailable();
         $view=self::treeObject($public['refund']);
-        self::keys($view,['schema','scope','id','refund_no','root_order_id','root_order_no','merchant_name_snapshot',
+        $destination=self::returnDestinationFromRefund($refund);
+        $viewFields=['schema','scope','id','refund_no','root_order_id','root_order_no','merchant_name_snapshot',
             'operation_kind','mode','business_state','physical_state','finance_state','requested_amount','confirmed_amount','held_amount',
-            'created_at','updated_at','reason','images','return_delivery','items','allowed_actions','return_selection']);
+            'created_at','updated_at','reason','images','return_delivery','items','allowed_actions','return_selection'];
+        if($destination!==null) $viewFields[]='return_destination';
+        self::keys($view,$viewFields);
+        if($destination!==null&&!self::same($view['return_destination'],$destination)) self::unavailable();
         self::text($view['refund_no'],50); $body=$refund['apply']['request_payload']['public_body'];
         self::exact($view,['schema'=>2,'scope'=>'marketplace_aftersale_v1','id'=>$action['refund_id'],'root_order_id'=>$source['identity']['id'],
             'root_order_no'=>$source['identity']['order_no'],'merchant_name_snapshot'=>$source['root']['merchant_name_snapshot'],

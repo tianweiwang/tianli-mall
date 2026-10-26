@@ -44,8 +44,25 @@ final class MarketplaceOrderRefundInput
 
     public static function approve(array $raw): array
     {
-        self::keys($raw, ['schema', 'idem_key']); self::schema($raw);
-        return self::bounded(['schema' => 2, 'idem_key' => self::key($raw['idem_key'])]);
+        $hasDestination = array_key_exists('return_destination', $raw);
+        self::keys($raw, $hasDestination ? ['schema', 'idem_key', 'return_destination'] : ['schema', 'idem_key']);
+        self::schema($raw);
+        $body = ['schema' => 2, 'idem_key' => self::key($raw['idem_key'])];
+        if ($hasDestination) $body['return_destination'] = self::returnDestination($raw['return_destination']);
+        return self::bounded($body);
+    }
+
+    /** Preserve the supplied text; the approval request is the immutable return destination snapshot. */
+    public static function returnDestination(mixed $value): array
+    {
+        $value = self::object($value, ['recipient_name', 'phone', 'address']);
+        $out = [];
+        foreach (['recipient_name' => 64, 'phone' => 32, 'address' => 500] as $field => $maximum) {
+            $text = self::text($value[$field], $field, $maximum);
+            if (preg_match('/[^\s\p{Z}\x{0085}\x{FEFF}]/u', $text) !== 1) self::failure($field);
+            $out[$field] = $text;
+        }
+        return $out;
     }
 
     public static function reject(array $raw): array

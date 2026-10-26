@@ -54,6 +54,15 @@
         <p v-if="image.error" class="aftersale-image-error" role="status">{{ image.error }}</p>
         <el-button v-if="image.error || !image.url" size="small" :disabled="image.loading || loading || !context" @click="loadImage(image)">重新读取凭证 {{ index + 1 }}</el-button>
       </figure></div>
+      <template v-if="view.operation_kind === 'return_goods'">
+        <h2>本次回寄地址</h2>
+        <dl v-if="view.return_destination" class="aftersale-facts">
+          <div><dt>收件人</dt><dd>{{ view.return_destination.recipient_name }}</dd></div>
+          <div><dt>联系电话</dt><dd>{{ view.return_destination.phone }}</dd></div>
+          <div><dt>完整地址</dt><dd class="aftersale-saved">{{ view.return_destination.address }}</dd></div>
+        </dl>
+        <p v-else class="aftersale-note">{{ view.business_state === 'REQUESTED' ? '批准退货时填写本次回寄地址。' : view.business_state === 'APPROVED' && view.physical_state !== 'RETURN_ACCEPTED' ? '此记录未登记回寄地址，请与顾客确认后再寄回。' : '此记录未登记回寄地址。' }}</p>
+      </template>
       <h2>退件信息</h2>
       <p v-if="view.return_delivery" class="aftersale-saved">{{ view.return_delivery.carrier_name }} · {{ view.return_delivery.tracking_no }}</p><p v-else class="aftersale-note">尚无顾客退件运单</p>
       <template v-if="view.return_selection">
@@ -68,6 +77,10 @@
       <section v-if="pending" class="aftersale-pending">
         <p role="status">本次{{ actionLabels[pending.action] }}结果尚未确认。重试会使用原目标、原内容及原提交编号。离开页面将清除本地重试内容。</p>
         <p v-if="pending.body.reason" class="aftersale-saved">本次拒绝原因：{{ pending.body.reason }}</p><p v-for="item in pending.body.items || []" :key="item.item_id">本次实际包裹商品 {{ item.item_id }} · 序号 {{ segmentText(item.segments) }}</p>
+        <div v-if="pending.body.return_destination">
+          <p class="aftersale-saved">回寄收件人：{{ pending.body.return_destination.recipient_name }} · 联系电话：{{ pending.body.return_destination.phone }}</p>
+          <p class="aftersale-saved">完整回寄地址：{{ pending.body.return_destination.address }}</p>
+        </div>
         <div class="aftersale-actions"><el-button :disabled="loading || sending || !can(pending.action)" @click="sendPending">重试同一提交</el-button></div>
       </section>
       <template v-else-if="fresh && !needsRefresh">
@@ -75,6 +88,12 @@
         <el-form v-if="choice && !preview" class="aftersale-command" label-position="top" @submit.native.prevent="prepare">
           <h2>{{ actionLabels[choice] }}</h2>
           <p v-if="choice === 'approve'">请核对本申请保存的商品、金额和理由，再确认本次批准。</p>
+          <template v-if="choice === 'approve' && view.operation_kind === 'return_goods'">
+            <p class="aftersale-note">填写本次收件信息。批准后顾客将按此地址回寄，保存后不能在本次售后中修改。</p>
+            <el-form-item label="回寄收件人" for="aftersale-return-recipient" required><el-input id="aftersale-return-recipient" v-model="returnDestination.recipient_name" maxlength="64" :disabled="loading || sending" /></el-form-item>
+            <el-form-item label="回寄联系电话" for="aftersale-return-phone" required><el-input id="aftersale-return-phone" v-model="returnDestination.phone" type="tel" maxlength="32" :disabled="loading || sending" /></el-form-item>
+            <el-form-item label="完整回寄地址" for="aftersale-return-address" required><el-input id="aftersale-return-address" v-model="returnDestination.address" type="textarea" :rows="3" maxlength="500" :disabled="loading || sending" placeholder="省市区、街道及门牌等完整收件地址" /></el-form-item>
+          </template>
           <el-form-item v-if="choice === 'reject'" label="拒绝原因" for="aftersale-reject-reason" required><el-input id="aftersale-reject-reason" v-model="rejectReason" type="textarea" :rows="4" :disabled="loading || sending" /></el-form-item>
           <template v-if="choice === 'accept_return' && view.return_selection">
             <p class="aftersale-note">逐项填写本次实际收到的序号，可只登记部分；格式如 1-2, 4。可用区间以刚读取的记录为准。</p>
@@ -84,6 +103,10 @@
         </el-form>
         <section v-if="preview" class="aftersale-command">
           <h2>确认{{ actionLabels[preview.action] }}</h2><p>售后单：{{ preview.refundNo }}</p><p v-if="preview.action === 'reject'" class="aftersale-saved">拒绝原因：{{ preview.body.reason }}</p>
+          <div v-if="preview.body.return_destination">
+            <p class="aftersale-saved">回寄收件人：{{ preview.body.return_destination.recipient_name }} · 联系电话：{{ preview.body.return_destination.phone }}</p>
+            <p class="aftersale-saved">完整回寄地址：{{ preview.body.return_destination.address }}</p>
+          </div>
           <p v-for="item in preview.body.items || []" :key="item.item_id">实际包裹商品 {{ item.item_id }} · 本次序号 {{ segmentText(item.segments) }}</p>
           <div class="aftersale-actions"><el-button type="primary" :disabled="loading || sending || !allowed(preview.action)" @click="commitPreview">确认提交</el-button><el-button :disabled="sending" @click="preview = null">返回修改</el-button></div>
         </section>
@@ -102,7 +125,7 @@ const tableScroll = { inserted: labelTable, componentUpdated: labelTable };
 function labelTable(element, binding) { const wrappers = element.querySelectorAll('.el-table__body-wrapper'); if (wrappers.length === 1) { wrappers[0].setAttribute('tabindex', '0'); wrappers[0].setAttribute('role', 'region'); wrappers[0].setAttribute('aria-label', binding.value); } }
 export default {
   name: 'marketplaceAftersales', directives: { 'table-scroll': tableScroll },
-  data: () => ({ context: null, contextTarget: '', alive: true, generation: 0, readJob: 0, sendJob: 0, loading: false, sending: false, error: '', commandError: '', notice: '', rows: [], count: 0, page: 1, limit: 20, businessState: '', merchantId: '', view: null, fresh: false, choice: '', preview: null, pending: null, rejectReason: '', ordinalInputs: {}, needsRefresh: false, imageRows: [], unsubscribe: null, unsubscribeEpoch: null, businessLabels, physicalLabels, financeLabels, kindLabels, actionLabels: { approve: '批准申请', reject: '拒绝申请', accept_return: '退件验收' } }),
+  data: () => ({ context: null, contextTarget: '', alive: true, generation: 0, readJob: 0, sendJob: 0, loading: false, sending: false, error: '', commandError: '', notice: '', rows: [], count: 0, page: 1, limit: 20, businessState: '', merchantId: '', view: null, fresh: false, choice: '', preview: null, pending: null, rejectReason: '', returnDestination: { recipient_name: '', phone: '', address: '' }, ordinalInputs: {}, needsRefresh: false, imageRows: [], unsubscribe: null, unsubscribeEpoch: null, businessLabels, physicalLabels, financeLabels, kindLabels, actionLabels: { approve: '批准申请', reject: '拒绝申请', accept_return: '退件验收' } }),
   computed: { authEpoch() { return platformAuthEpoch.value; }, target() { return this.$route.params.id || ''; }, listPath() { return setting.routePre + '/marketplace/aftersales'; } },
   created() { this.unsubscribeEpoch = subscribePlatformAuthEpoch(() => this.syncIdentity()); this.unsubscribe = this.$store.subscribe(() => this.syncIdentity()); window.addEventListener('focus', this.syncIdentity); window.addEventListener('storage', this.syncIdentity); this.reset(); },
   watch: { '$route.fullPath'() { this.reset(); } },
@@ -113,14 +136,14 @@ export default {
     allowed(action) { return this.fresh && !this.loading && !this.error && !!this.view && String(this.view.id) === String(this.target) && !!this.context && currentContext(this.context) && this.can(action) && this.view.allowed_actions[action] === true; },
     current(context, generation) { if (!this.alive || context !== this.context || generation !== this.generation || this.contextTarget !== String(this.target)) return false; if (!currentContext(context)) { this.syncIdentity(); return false; } return true; },
     revokeImages() { this.imageRows.forEach(image => { image.job += 1; if (image.url) window.URL.revokeObjectURL(image.url); image.url = ''; }); this.imageRows = []; },
-    clear() { closeContext(this.context); this.context = null; this.contextTarget = ''; this.generation += 1; this.readJob += 1; this.sendJob += 1; this.revokeImages(); this.rows = []; this.count = 0; this.view = null; this.fresh = false; this.loading = false; this.sending = false; this.choice = ''; this.preview = null; this.pending = null; this.rejectReason = ''; this.ordinalInputs = {}; this.needsRefresh = false; this.notice = ''; this.error = ''; this.commandError = ''; },
+    clear() { closeContext(this.context); this.context = null; this.contextTarget = ''; this.generation += 1; this.readJob += 1; this.sendJob += 1; this.revokeImages(); this.rows = []; this.count = 0; this.view = null; this.fresh = false; this.loading = false; this.sending = false; this.choice = ''; this.preview = null; this.pending = null; this.rejectReason = ''; this.returnDestination = { recipient_name: '', phone: '', address: '' }; this.ordinalInputs = {}; this.needsRefresh = false; this.notice = ''; this.error = ''; this.commandError = ''; },
     reset() { this.clear(); if (!this.alive) return; try { this.context = captureContext(this.$store); this.contextTarget = String(this.target); this.load(); } catch (error) { this.error = errorText(error); } },
     syncIdentity() { if (this.context && !currentContext(this.context)) { this.clear(); this.error = '身份已变化，请重新进入售后页面'; } else if (this.view && (!this.can('ticket') || !this.can('content'))) this.revokeImages(); },
     search() { if (!this.loading) { this.page = 1; this.load(); } },
     changePage(page) { if (!this.loading && Number.isSafeInteger(page) && page > 0) { this.page = page; this.load(); } },
     async load() {
       if (this.loading || !this.context) return false; const context = this.context; const generation = this.generation; const job = ++this.readJob;
-      this.loading = true; this.fresh = false; this.error = ''; this.choice = ''; this.preview = null;
+      this.loading = true; this.fresh = false; this.error = ''; this.choice = ''; this.preview = null; this.returnDestination = { recipient_name: '', phone: '', address: '' };
       try {
         if (this.target) {
           const id = routeId(this.target); const data = await detail(context, id); if (!this.current(context, generation) || job !== this.readJob) return false;
@@ -153,7 +176,7 @@ export default {
       finally { if (this.current(context, generation) && job === image.job && this.imageRows.includes(image)) image.loading = false; }
     },
     choose(action) { if (!this.pending && this.allowed(action)) { this.choice = action; this.preview = null; this.commandError = ''; } },
-    prepare() { if (this.pending || !this.allowed(this.choice)) return; this.commandError = ''; try { this.preview = commandIntent(this.view, this.choice, { reason: this.rejectReason, segments: this.ordinalInputs }); } catch (error) { this.commandError = errorText(error); } },
+    prepare() { if (this.pending || !this.allowed(this.choice)) return; this.commandError = ''; try { if (this.choice === 'approve' && this.view.operation_kind === 'return_goods' && Object.values(this.returnDestination).some(value => !value.trim())) throw new Error('请完整填写回寄收件人、联系电话和地址'); this.preview = commandIntent(this.view, this.choice, { reason: this.rejectReason, segments: this.ordinalInputs, return_destination: this.returnDestination }); } catch (error) { this.commandError = errorText(error); } },
     commitPreview() { if (!this.preview || this.pending || !this.allowed(this.preview.action)) return; this.pending = this.preview; this.preview = null; this.choice = ''; this.sendPending(); },
     async sendPending() {
       if (!this.pending || this.loading || this.sending || !this.context || !this.can(this.pending.action)) return;

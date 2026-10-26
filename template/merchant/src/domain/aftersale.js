@@ -31,6 +31,16 @@ function distinct(values) { if (new Set(values).size !== values.length) fail(); 
 function flags(value, names) { exact(value, names); names.forEach(name => { if (typeof value[name] !== 'boolean') fail(); }); return value; }
 function enumValue(value, labels) { if (!Object.prototype.hasOwnProperty.call(labels, value)) fail(); return value; }
 function freeze(value) { if (value && typeof value === 'object') { Object.keys(value).forEach(key => freeze(value[key])); Object.freeze(value); } return value; }
+export function returnDestination(value) {
+  exact(value, ['recipient_name', 'phone', 'address']);
+  const destination = { recipient_name: text(value.recipient_name, 64), phone: text(value.phone, 32), address: text(value.address, 500) };
+  if (Object.values(destination).some(part => /^[\s\u0085]*$/u.test(part))) fail('请填写回寄收件人、联系电话和完整地址');
+  return destination;
+}
+function sameReturnDestination(actual, expected) {
+  if (actual === null || expected === null) return actual === expected;
+  return ['recipient_name', 'phone', 'address'].every(key => actual[key] === expected[key]);
+}
 export function savedItem(value) {
   exact(value, ['id', 'product_id', 'product_name', 'sku_name', 'image', 'quantity', 'unit_price', 'line_price', 'postage_price']);
   recordId(value.id); integer(value.product_id, 1); text(value.product_name, 65535); text(value.sku_name, 65535); text(value.image, 65535);
@@ -56,7 +66,9 @@ function returnSelection(value, quote = false) {
   }); distinct(value.items.map(row => row.item_id)); return value;
 }
 export function refundView(value) {
-  exact(value, ['schema', 'scope', 'id', 'refund_no', 'root_order_id', 'root_order_no', 'merchant_name_snapshot', 'operation_kind', 'mode', 'business_state', 'physical_state', 'finance_state', 'requested_amount', 'confirmed_amount', 'held_amount', 'created_at', 'updated_at', 'reason', 'images', 'return_delivery', 'items', 'allowed_actions', 'return_selection']);
+  const fields = ['schema', 'scope', 'id', 'refund_no', 'root_order_id', 'root_order_no', 'merchant_name_snapshot', 'operation_kind', 'mode', 'business_state', 'physical_state', 'finance_state', 'requested_amount', 'confirmed_amount', 'held_amount', 'created_at', 'updated_at', 'reason', 'images', 'return_delivery', 'items', 'allowed_actions', 'return_selection'];
+  const hasDestination = Object.prototype.hasOwnProperty.call(value || {}, 'return_destination');
+  exact(value, hasDestination ? fields.concat('return_destination') : fields);
   if (value.schema !== 2 || value.scope !== 'marketplace_aftersale_v1' || !KINDS.includes(value.operation_kind) || value.mode !== (value.operation_kind === 'return_goods' ? 'return_goods' : 'money_only')) fail();
   recordId(value.id); recordId(value.root_order_id); text(value.refund_no, 50, true); text(value.root_order_no, 32, true); text(value.merchant_name_snapshot, 65535);
   enumValue(value.business_state, businessLabels); enumValue(value.physical_state, physicalLabels); enumValue(value.finance_state, financeLabels);
@@ -66,6 +78,10 @@ export function refundView(value) {
   list(value.items).forEach(row => { exact(row, ['item', 'selected_quantity', 'accepted_quantity', 'confirmed_amount']); savedItem(row.item); integer(row.selected_quantity, 1, row.item.quantity); integer(row.accepted_quantity, 0, row.selected_quantity); money(row.confirmed_amount); });
   distinct(value.items.map(row => row.item.id)); flags(value.allowed_actions, ['withdraw', 'submit_return', 'approve', 'reject', 'accept_return']);
   if (value.operation_kind === 'return_goods') returnSelection(value.return_selection); else if (value.return_selection !== null) fail();
+  if (hasDestination) {
+    if (value.operation_kind !== 'return_goods' || !['APPROVED', 'COMPLETED'].includes(value.business_state)) fail();
+    returnDestination(value.return_destination);
+  }
   return value;
 }
 export function refundPage(value, page, limit) {
@@ -128,10 +144,15 @@ export function commandIntent(view, action, draft = {}) {
   const flagsByAction = { withdraw: 'withdraw', approve: 'approve', reject: 'reject', express: 'submit_return', accept_return: 'accept_return' };
   if (!flagsByAction[action] || view.allowed_actions[flagsByAction[action]] !== true) fail('当前暂不能执行此操作，请重新读取');
   const body = { schema: 2, idem_key: newKey(action, view.id) };
+  let expectedReturnDestination = Object.prototype.hasOwnProperty.call(view, 'return_destination') ? returnDestination(view.return_destination) : null;
+  if (action === 'approve' && view.operation_kind === 'return_goods') {
+    body.return_destination = returnDestination(draft.return_destination);
+    expectedReturnDestination = returnDestination(body.return_destination);
+  }
   if (action === 'reject') body.reason = text(draft.reason, 255, true);
   if (action === 'express') { body.refund_no = view.refund_no; body.return_delivery = { carrier_name: text(draft.carrier_name, 255, true), tracking_no: text(draft.tracking_no, 100, true) }; }
   if (action === 'accept_return') { if (!view.return_selection) fail(); body.items = ordinalItems(view.return_selection.items, draft.segments || {}); }
-  const wire = bodyLimit(body); return freeze({ action, rootId: view.root_order_id, rootNo: view.root_order_no, refundId: view.id, refundNo: view.refund_no, body, wire });
+  const wire = bodyLimit(body); return freeze({ action, rootId: view.root_order_id, rootNo: view.root_order_no, refundId: view.id, refundNo: view.refund_no, expectedReturnDestination, body, wire });
 }
 export function intentWire(intent) { if (!intent || bodyLimit(intent.body) !== intent.wire) fail('原提交已变化，请重新进入页面'); return intent.wire; }
 export function actionResult(value, intent) {
@@ -141,7 +162,14 @@ export function actionResult(value, intent) {
   if (view.root_order_id !== intent.rootId || view.root_order_no !== intent.rootNo || (intent.refundId !== null && (view.id !== intent.refundId || view.refund_no !== intent.refundNo))) fail('本次提交目标尚未确认，请重试原提交');
   list(value.acceptance_ids).forEach(u64); distinct(value.acceptance_ids); if ((intent.action === 'accept_return') !== (value.acceptance_ids.length > 0)) fail();
   if (intent.action === 'apply' && (view.operation_kind !== intent.body.operation_kind || view.requested_amount !== intent.body.amount || view.reason !== intent.body.reason || JSON.stringify(view.images) !== JSON.stringify(intent.body.images))) fail('申请结果尚未完整确认，请重试原提交');
-  if (intent.action === 'express' && JSON.stringify(view.return_delivery) !== JSON.stringify(intent.body.return_delivery)) fail();
+  if (intent.action === 'express' && (!view.return_delivery || ['carrier_name', 'tracking_no'].some(key => view.return_delivery[key] !== intent.body.return_delivery[key]))) fail();
+  const submittedDestination = intent.action === 'approve' && Object.prototype.hasOwnProperty.call(intent.body, 'return_destination');
+  if (submittedDestination || Object.prototype.hasOwnProperty.call(intent, 'expectedReturnDestination')) {
+    const actual = Object.prototype.hasOwnProperty.call(view, 'return_destination') ? returnDestination(view.return_destination) : null;
+    const expected = submittedDestination ? returnDestination(intent.body.return_destination) :
+      intent.expectedReturnDestination === null ? null : returnDestination(intent.expectedReturnDestination);
+    if (!sameReturnDestination(actual, expected)) fail('回寄地址结果尚未完整确认，请重试原提交');
+  }
   return value;
 }
 export function fileView(value, rootId) {
