@@ -61,6 +61,7 @@ function preview_app(bool $migrator = false): \think\App
         'PHP_AUTH_STAMP_KEY' => $config['auth']['stamp_key'], 'PHP_AUTH_ISSUER' => $config['auth']['issuer'],
         'PHP_MARKETPLACE_ENABLED' => 'true', 'PHP_MARKETPLACE_TRADE_ENABLED' => 'true',
         'PHP_MARKETPLACE_PAYMENT_TEST_ENABLED' => 'true',
+        'PHP_MARKETPLACE_AFTERSALE_ENABLED' => 'true',
         'PHP_MARKETPLACE_SELF_OPERATED_MER_ID' => (string)($config['self_operated_mer_id'] ?? ''),
         'PHP_MARKETPLACE_CUSTOMER_FORM_PRIVATE_ROOT' => '/private/customer-form',
         'PHP_MARKETPLACE_AFTERSALE_PRIVATE_ROOT' => '/private/aftersale',
