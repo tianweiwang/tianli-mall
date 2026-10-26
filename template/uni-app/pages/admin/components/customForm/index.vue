@@ -14,12 +14,24 @@
 			</view>
 		</view>
 	<!-- 自定义组件 -->
-	<view class='wrapper card' v-if="!savedMarketplaceV1 && customForm && customForm.length && isShow">
-		<view class='item acea-row row-between' v-for="(item,index) in customForm" :key="index" v-if="(item.value && ['uploadPicture','dateranges'].indexOf(item.name) == -1) || (item.value.length && ['uploadPicture','dateranges'].indexOf(item.name) != -1)">
+	<view class="wrapper card legacy-flat-form" v-if="!savedMarketplaceV1 && flatFields.length">
+		<view class="saved-field" v-for="(field,index) in flatFields" :key="index">
+			<view class="saved-title">{{field.title}}：</view>
+			<view v-if="field.label==='img'" class="saved-images">
+				<view v-for="(image,imageIndex) in field.value" :key="imageIndex" class="legacy-flat-picture">
+					<image v-if="legacyFormImageSource(field,imageIndex)" :src="legacyFormImageSource(field,imageIndex)" mode="aspectFill" @click="previewLegacyFormImages(field,imageIndex)" @error="legacyFormImageFailed(field,imageIndex)"></image>
+					<text v-else class="legacy-form-image-note">{{legacyFormImageMessage(field,imageIndex)}}</text>
+				</view>
+			</view>
+			<view v-else class="saved-value">{{field.value}}</view>
+		</view>
+	</view>
+	<view class='wrapper card' v-if="!savedMarketplaceV1 && historicalFields.length">
+		<view class='item acea-row row-between' v-for="(item,index) in historicalFields" :key="index" v-if="(item.value && ['uploadPicture','dateranges'].indexOf(item.name) == -1) || (item.value.length && ['uploadPicture','dateranges'].indexOf(item.name) != -1)">
 			<view class="title">{{item.titleConfig.value}}：</view>
 			<view v-if="item.name == 'uploadPicture'" class='conter'>
 				<view class='pictrue' v-for="(img,indexn) in item.value" :key="indexn">
-					<image :src='img' mode="aspectFill" @click='getCustomForm(index,indexn)'></image>
+					<image :src='img' mode="aspectFill" @click='getCustomForm(item,indexn)'></image>
 				</view>
 			</view>
 			<view v-else-if="item.name == 'dateranges'" class="conter">
@@ -34,10 +46,12 @@
 
 <script>
 	import orderFormImages from '@/mixins/marketplace-order-form-images.js';
+	import legacyOrderFormImages from '@/mixins/legacy-order-form-images.js';
 	export default {
 		name: 'customForm',
-		mixins: [orderFormImages],
+		mixins: [orderFormImages, legacyOrderFormImages],
 		props: {
+			legacyOrderId: {type: [Number,String], default: null},
 			privateRootId: {type: [Number,String], default: null},
 			formImagesActive: {type: Boolean, default: true},
 			tradeVersion: {type: [Number,String], default: 0},
@@ -47,6 +61,11 @@
 			}
 		},
 		computed: {
+			legacyFormContext() { return !this.savedMarketplaceV1 && this.legacyOrderId !== null ? {kind: 'mobile', orderId: this.legacyOrderId} : null; },
+			legacyFormFields() { return this.savedMarketplaceV1 ? [] : this.customForm; },
+			legacyFormActive() { return this.formImagesActive && !!this.legacyFormContext; },
+			flatFields() { return this.savedMarketplaceV1 || !Array.isArray(this.customForm) ? [] : this.customForm.filter(field => field && typeof field.label === 'string' && typeof field.title === 'string' && field.value !== '' && (!Array.isArray(field.value) || field.value.length)); },
+			historicalFields() { return this.savedMarketplaceV1 || !Array.isArray(this.customForm) ? [] : this.customForm.filter(field => field && typeof field.name === 'string' && field.titleConfig && typeof field.label !== 'string'); },
 			orderFormImageContext() { return this.savedMarketplaceV1 && this.privateRootId !== null ? {kind: 'mobile_order', rootId: this.privateRootId} : null; },
 			orderFormImageGroups() { return this.savedGroups; },
 			orderFormImagesActive() { return this.formImagesActive; },
@@ -79,10 +98,10 @@
 		created() {},
 		mounted() {},
 		methods: {
-			getCustomForm: function(index,indexn) {
+			getCustomForm: function(item,indexn) {
 				uni.previewImage({
-					urls: this.customForm[index].value,
-					current: this.customForm[index].value[indexn]
+					urls: item.value,
+					current: item.value[indexn]
 				});
 			},
 		}
@@ -90,6 +109,8 @@
 </script>
 
 <style lang="scss">
+	.legacy-flat-picture { width: 140rpx; min-height: 100rpx; }
+	.legacy-form-image-note { display: block; color: #666; font-size: 22rpx; line-height: 1.5; overflow-wrap: anywhere; }
 	.saved-product + .saved-product { margin-top: 24rpx; }
 	.saved-product-name { font-weight: bold; margin-bottom: 16rpx; overflow-wrap: anywhere; }
 	.saved-field { margin-top: 16rpx; font-size: 28rpx; }

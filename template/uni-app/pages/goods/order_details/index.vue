@@ -383,8 +383,9 @@
 				<view class="item acea-row row-between" v-for="(item, index) in customForm" :key="index">
 					<view class="upload" v-if="item.label == 'img'">
 						<view class="diy-from-title">{{ item.title }}：</view>
-						<view class="pictrue" v-for="(img, index) in item.value" :key="index">
-							<image :src="img"></image>
+						<view class="pictrue legacy-form-picture" v-for="(img, imageIndex) in item.value" :key="imageIndex">
+							<image v-if="legacyFormImageSource(item,imageIndex)" :src="legacyFormImageSource(item,imageIndex)" @click="previewLegacyFormImages(item,imageIndex)" @error="legacyFormImageFailed(item,imageIndex)"></image>
+							<text v-else class="legacy-form-image-note">{{legacyFormImageMessage(item,imageIndex)}}</text>
 						</view>
 					</view>
 					<view v-if="item.label !== 'img'" class="diy-from-title">{{ item.title }}：</view>
@@ -644,6 +645,7 @@ import { mapGetters } from 'vuex';
 import authorize from '@/components/Authorize';
 // #endif
 import orderFormImages from '@/mixins/marketplace-order-form-images.js';
+import legacyOrderFormImages from '@/mixins/legacy-order-form-images.js';
 import colors from '@/mixins/color';
 import invoicePicker from '../components/invoicePicker/index.vue';
 import invoiceModal from '../components/invoiceModal/index.vue';
@@ -690,7 +692,7 @@ export default {
 		authorize
 		// #endif
 	},
-	mixins: [colors, orderFormImages, legacyRefundImages],
+	mixins: [colors, orderFormImages, legacyRefundImages, legacyOrderFormImages],
 	data() {
 		return {
 			imgHost: HTTP_REQUEST_URL,
@@ -827,6 +829,9 @@ export default {
 		};
 	},
 	computed: {
+		legacyFormContext() { return !this.savedMarketplaceFormsV1 && this.orderInfo.id ? {kind: 'customer', orderId: this.orderInfo.id, route: this.order_id} : null; },
+		legacyFormFields() { return !this.savedMarketplaceFormsV1 ? this.orderInfo.custom_form : []; },
+		legacyFormActive() { return this.privateFormImagesVisible && !this.fulfillmentLoading && !this.fulfillmentError && !!this.legacyFormContext; },
     legacyRefundReader() { return 'customer'; },
     legacyRefundSource() { return this.isReturn && this.orderInfo && this.orderInfo.schema !== 2 ? this.orderInfo : null; },
     legacyRefundVisible() { return this.privateFormImagesVisible && !this.fulfillmentLoading && !this.fulfillmentError && !!this.isReturn; },
@@ -2957,6 +2962,8 @@ export default {
 	color: #bbb;
 }
 
+.upload .legacy-form-picture { vertical-align: top; }
+.legacy-form-image-note { display: block; font-size: 24rpx; line-height: 1.5; color: #666; overflow-wrap: anywhere; }
 .upload .pictrue image {
 	width: 100%;
 	height: 100%;

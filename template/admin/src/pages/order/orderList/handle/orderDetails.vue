@@ -289,9 +289,11 @@
                   </template>
                   <template v-else>
                     <div>{{ item.title }}：</div>
-                    <div v-for="(img, i) in item.value" :key="i" class="img">
-                      <img v-viewer :src="img" alt="" />
+                    <div v-for="image in legacyFormImagesFor(item)" :key="image.key" class="img legacy-form-picture">
+                      <img v-if="image.url" v-viewer :src="image.url" alt="已保存图片" @error="legacyFormImageFailed(image)" />
+                      <span v-else class="legacy-form-image-note">{{image.loading ? '正在读取图片' : image.error || '图片待读取'}}</span>
                     </div>
+                    <span v-if="legacyFormImageBlocked" class="legacy-form-image-note">登录身份已变化，请重新打开订单</span>
                   </template>
                 </li>
               </ul>
@@ -423,6 +425,7 @@
 </template>
 <script>
 import {legacyRefundMaterialImages} from '@/api/legacy-refund-materials';
+import {legacyOrderFormImages} from '@/api/legacy-order-form';
 import { getExpress } from '@/api/order';
 import fulfillmentPackages, { rootOrderStatusText, readPlatformFulfillment } from '../components/fulfillmentPackages.vue';
 import { orderFormImages, readSavedOrderFormRoot } from '@/api/marketplace-order-form';
@@ -430,7 +433,7 @@ import { getOrderRecord } from '@/api/order';
 export default {
   name: 'orderDetails',
   components: { fulfillmentPackages },
-  mixins: [orderFormImages, legacyRefundMaterialImages],
+  mixins: [orderFormImages, legacyRefundMaterialImages, legacyOrderFormImages],
   data() {
     return {
       activeName: 'detail',
@@ -471,6 +474,9 @@ export default {
     },
   },
   computed: {
+    legacyFormOrder() { return !this.savedMarketplaceV1 ? this.orderDatalist && this.orderDatalist.orderInfo : null; },
+    legacyFormReadAllowed() { return !this.is_refund; },
+    legacyFormActive() { return this.modals && !this.fulfillmentLoading && !this.fulfillmentError && !!this.legacyFormOrder; },
     legacyRefundReader() { return 'detail'; },
     legacyRefundSources() { const source=this.orderDatalist && this.orderDatalist.orderInfo; return this.is_refund && !this.savedMarketplaceV1 && source ? [source] : []; },
     legacyRefundActive() { return this.modals && this.is_refund === 1 && !this.savedMarketplaceV1; },
@@ -574,6 +580,7 @@ export default {
 };
 </script>
 <style lang="scss" scoped>
+.legacy-form-image-note { display: block; max-width: 160px; font-size: 12px; line-height: 1.5; color: #666; overflow-wrap: anywhere; }
 .fulfillment-drawer ::v-deep .el-drawer { max-width: 1000px; }
 .fulfillment-parent { display: flex; justify-content: center; box-sizing: border-box; padding: 20px; }
 .fulfillment-control { display: flex; align-items: center; justify-content: center; box-sizing: border-box; max-width: 100%; min-width: 0; min-height: 44px; height: auto; margin: 0; padding: 10px 16px; line-height: 1.4; text-align: center; white-space: normal; }

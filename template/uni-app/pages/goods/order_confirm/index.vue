@@ -302,15 +302,16 @@
 					<!-- img -->
 					<view v-if="item.label=='img'" class="confirmImg">
 						<view class='list acea-row row-middle'>
-							<view class='pictrue' v-for="(items,indexs) in item.value" :key="indexs">
-								<image :src='items' class="img"></image>
-								<text class='iconfont icon-guanbi1 font-num del' @click='DelPic(index,indexs)'></text>
+							<view class='pictrue legacy-form-picture' v-for="(items,indexs) in item.value" :key="indexs">
+								<image v-if="legacyFormImageSource(item,indexs)" :src="legacyFormImageSource(item,indexs)" class="img" @click="previewLegacyFormImages(item,indexs)" @error="legacyFormImageFailed(item,indexs)"></image>
+								<text v-else class="legacy-form-image-note">{{legacyFormImageMessage(item,indexs)}}</text>
+								<button class='legacy-form-delete' :disabled="legacyFormLocked" @click='DelPic(index,indexs)' :aria-label="$t(`删除图片`)"><text class="iconfont icon-guanbi1"></text></button>
 							</view>
-							<view class='pictrue acea-row row-center-wrapper row-column bor' @click='uploadpic(index,item)'
+							<button class='pictrue legacy-form-upload bor' :disabled="legacyFormLocked" @click='uploadpic(index,item)'
 								v-if="item.value.length < 8">
 								<text class='iconfont icon-icon25201'></text>
 								<view>{{$t(`上传图片`)}}</view>
-							</view>
+							</button>
 						</view>
 					</view>
 				</view>
@@ -358,6 +359,7 @@
 					<view class='money'>-{{$t(`￥`)}}{{parseFloat(integral_price).toFixed(2)}}</view>
 				</view>
 			</view>
+			<view v-if="!marketplaceV1 && legacyFormNotice" class="legacy-form-notice" role="status">{{legacyFormNotice}}</view>
 			<view style='height:120rpx;'></view>
 			<view class='footer acea-row row-between-wrapper' v-if="!is_gift || is_gift == 1">
 				<view>{{$t(`合计`)}}:
@@ -366,8 +368,7 @@
 				<button v-if="marketplaceV1 || marketplaceResumeUnavailable || marketplaceRestoredUnknown" class="settlement marketplace-submit"
 					:disabled="marketplaceRestoredUnknown || (marketplaceSubmitState === 'uncertain' ? !marketplaceCreateAvailable || marketplaceLookupPending || marketplaceCleanupFailed : !marketplaceCanSubmit)"
 					:loading="marketplaceSubmitState === 'submitting'" @tap.stop="handleMarketplaceSubmit">{{marketplaceRestoredUnknown ? $t(`仅查询原订单`) : marketplaceSubmitState === 'uncertain' ? $t(`重试本次提交`) : $t(`提交订单`)}}</button>
-				<view v-else-if="(valid_count>0&&!discount_id) || (valid_count==cartInfo.length&&discount_id)" class='settlement' style='z-index:100' @tap.stop="Debounce(SubOrder())">{{$t(`提交订单`)}}
-				</view>
+				<button v-else-if="(valid_count>0&&!discount_id) || (valid_count==cartInfo.length&&discount_id)" class='settlement marketplace-submit' :disabled="legacyFormLocked" :loading="legacyFormSubmitPending" @tap.stop="Debounce(SubOrder())">{{$t(`提交订单`)}}</button>
 				<view class='settlement bg-color-hui' style='z-index:100' v-else>{{$t(`提交订单`)}}</view>
 			</view>
 		</view>
@@ -432,7 +433,9 @@
 	// #endif
 	import payment from '@/components/payment';
 	import orderFormImages from "@/mixins/marketplace-order-form-images.js";
-	import {createOrderFormPrivateScope, orderFormUploadReference} from "@/api/marketplace-order-form-private.js";
+	import {createOrderFormPrivateScope, openOrderFormPrivateScope, orderFormUploadReference, isLegacyOrderFormImage, legacyOrderFormUploadReference, legacyOrderFormReceipt} from "@/api/marketplace-order-form-private.js";
+	import legacyOrderFormImages from '@/mixins/legacy-order-form-images.js';
+	import request from '@/utils/request.js';
 	import colors from "@/mixins/color";
 	import Debounce from "@/mixins/debounce";
 	import {
@@ -456,7 +459,7 @@
 			authorize
 			// #endif
 		},
-		mixins: [colors, Debounce, orderFormImages],
+		mixins: [colors, Debounce, orderFormImages, legacyOrderFormImages],
 		data() {
 			const currentDate = this.getDate({
 				format: true
@@ -474,10 +477,18 @@
 				marketplaceSelection: {address: {mode: 'none', id: '0', status: 'none', snapshot: {}}, invoice: {mode: 'none', id: '0', status: 'none', snapshot: {}}},
 				marketplaceConfirmation: null,
 				marketplaceMerIntent: '',
+				legacyConfirmedKey: '',
 				marketplaceResumeUnavailable: false,
 				marketplaceComputing: false,
 				marketplaceComputeRevision: 0,
 				privateFormImagesVisible: true,
+				legacyFormUploadPending: false,
+				legacyFormSubmitPending: false,
+				legacyFormBlocked: false,
+				legacyFormSubmitted: false,
+				legacyFormNotice: '',
+				legacyFormReceipt: null,
+				legacyFormGeneration: 0,
 				marketplaceFormGroups: [],
 				marketplaceFormsReady: false,
 				marketplaceSubmitBinding: null,
@@ -625,12 +636,20 @@
 			};
 		},
 		computed: {
+			legacyFormContext() { return !this.marketplaceV1 && this.orderKey ? {kind: 'confirmation', key: this.orderKey} : null; },
+			legacyFormFields() { return this.marketplaceV1 ? [] : this.confirm; },
+			legacyFormActive() { return this.privateFormImagesVisible && !this.marketplaceConfirmPending && !!this.legacyFormContext; },
+			legacyFormLocked() { return this.legacyFormUploadPending || this.legacyFormSubmitPending || this.legacyFormBlocked || this.legacyFormSubmitted; },
+			legacyHasPrivateForm() { return !this.marketplaceV1 && this.confirm.some(field => field.label === 'img' && Array.isArray(field.value) && field.value.some(isLegacyOrderFormImage)); },
 			...mapGetters(['isLogin']),
 			orderFormImageContext() { return this.marketplaceV1 && this.orderKey ? {kind: 'confirmation', key: this.orderKey, generation: this.marketplaceEditGeneration, page: this.marketplacePageInstance} : null; },
 			orderFormImageGroups() { return this.marketplaceFormGroups; },
 			orderFormImagesActive() { return this.privateFormImagesVisible && !!this.marketplaceOwner && this.marketplaceFormsReady && !this.marketplaceRestoring && this._marketplaceAlive === true; },
 			marketplaceCleanupFailed() { return this.$store.state.app.confirmationCleanupFailed === true; },
-			marketplacePreparing() { return !!this.marketplaceMerIntent && (!this.marketplaceSubmitBinding || this.marketplaceHistoryPending); },
+			marketplacePreparing() {
+				const legacyReady = !this.marketplaceV1 && !!this.legacyConfirmedKey && this.legacyConfirmedKey === this.orderKey && marketplaceIdentityCurrent(this.$store, this.marketplaceOwner);
+				return !!this.marketplaceMerIntent && ((!this.marketplaceSubmitBinding && !legacyReady) || this.marketplaceHistoryPending);
+			},
 			marketplaceV1() {
 				return !!this.marketplaceConfirmation && this.marketplaceConfirmation.marketplace_confirmation_version === 1;
 			},
@@ -652,6 +671,8 @@
 		},
 		watch: {
 			'$store.state.app.authRevision'() {
+				this.legacyConfirmedKey = '';
+				this.invalidateLegacyFormWork(true);
 				this.closeOrderFormImages();
 				this._marketplaceLifecycle++;
 				this.marketplaceQuoteReady = false;
@@ -766,6 +787,7 @@
 
 		},
 		onHide() {
+			this.invalidateLegacyFormWork(false);
 			this.privateFormImagesVisible = false; this.closeOrderFormImages();
 			if (this.marketplaceV1 && this.marketplaceCanEdit) this.persistMarketplaceContext();
 			this._marketplaceLifecycle++;
@@ -774,6 +796,7 @@
 			if (this.orderKey) this._marketplaceInitializing = false;
 		},
 		onUnload() {
+			this.invalidateLegacyFormWork(false);
 			this.privateFormImagesVisible = false; this.closeOrderFormImages();
 			if (this.marketplaceV1 && this.marketplaceCanEdit) this.persistMarketplaceContext();
 			this._marketplaceAlive = false; this._marketplaceLifecycle++;
@@ -782,6 +805,50 @@
 			// #endif
 		},
 		methods: {
+			legacyFormGuard() {
+				const app = this.$store.state.app;
+				return {token: app.token, revision: app.authRevision, uid: app.verifiedUid, key: this.orderKey, fields: this.confirm, generation: this.legacyFormGeneration};
+			},
+			legacyFormCurrent(guard) {
+				const app = this.$store.state.app;
+				return !!guard && this.privateFormImagesVisible && !this.marketplaceV1 && !!guard.token && app.token === guard.token && app.authRevision === guard.revision &&
+					(!guard.uid || app.verifiedUid === guard.uid) && guard.key === this.orderKey && guard.fields === this.confirm && guard.generation === this.legacyFormGeneration;
+			},
+			invalidateLegacyFormWork(clear) {
+				const unconfirmed = this._legacyFormUploadIssued || this._legacyFormSubmitIssued;
+				this.legacyFormGeneration++;
+				if (this._legacyFormUploadScope) this._legacyFormUploadScope.dispose();
+				this._legacyFormUploadScope = null; this._legacyFormSubmitGuard = null;
+				this._legacyFormUploadIssued = false; this._legacyFormSubmitIssued = false;
+				this.legacyFormUploadPending = false; this.legacyFormSubmitPending = false;
+				if (!this.marketplaceV1) this.canvasStatus = false;
+				if (clear) { this.confirm = []; this.legacyFormBlocked = true; this.legacyFormNotice = this.$t(`登录身份已变化，请重新进入订单确认页`); }
+				else if (unconfirmed && !this.legacyFormSubmitted) this.legacyFormFailure(null);
+			},
+			legacyFormFailure(response) {
+				const receipt = legacyOrderFormReceipt(response); this.legacyFormReceipt = receipt;
+				this.legacyFormBlocked = !receipt || receipt.complete !== false || receipt.database_committed !== false || receipt.physical_changed === null ||
+					receipt.cleanup_complete === false || (receipt.physical_changed === true && receipt.cleanup_complete !== true);
+				this.legacyFormNotice = this.$t(this.legacyFormBlocked ?
+					(receipt && receipt.database_committed === true ? '资料已写入，但结果尚未完整确认。草稿已保留，请先核实原订单，勿重复操作' : '本次操作结果尚未确认。草稿已保留，请先核实原订单，勿重复操作') :
+					'本次操作未保存，草稿已保留，可核对后重新操作');
+			},
+			submitLegacyPrivateForm(data) {
+				if (this.legacyFormBlocked || this.legacyFormSubmitted || this.legacyFormUploadPending || this._legacyFormSubmitIssued) return;
+				const guard = this._legacyFormSubmitGuard || this.legacyFormGuard();
+				if (!this.legacyFormCurrent(guard)) return;
+				this._legacyFormSubmitGuard = guard; this.legacyFormSubmitPending = true; this.legacyFormNotice = ''; this.legacyFormReceipt = null;
+				const body = JSON.parse(JSON.stringify(data));
+				this._legacyFormSubmitIssued = true;
+				return request.post('order/create/' + encodeURIComponent(guard.key), body, {noVerify: true}).then(response => {
+					if (!this.legacyFormCurrent(guard)) return;
+					const orderId = response && response.data && response.data.result && response.data.result.orderId;
+					if (!response || response.status !== 200 || typeof orderId !== 'string' || !orderId || orderId.length > 64 || orderId.includes('\0')) return this.legacyFormFailure(response);
+					this.legacyFormSubmitted = true;
+					uni.reLaunch({url: '/pages/goods/cashier/index?order_id=' + encodeURIComponent(orderId) + '&from_type=order'});
+				}).catch(error => { if (this.legacyFormCurrent(guard)) this.legacyFormFailure(error); })
+					.finally(() => { if (this.legacyFormCurrent(guard)) { this.legacyFormSubmitPending = false; this._legacyFormSubmitIssued = false; this._legacyFormSubmitGuard = null; } });
+			},
 			marketplaceGuard(kind = '') {
 				if (!this._marketplaceRequestRevisions) this._marketplaceRequestRevisions = {};
 				const revision = kind ? this._marketplaceRequestRevisions[kind] = (this._marketplaceRequestRevisions[kind] || 0) + 1 : 0;
@@ -1734,6 +1801,7 @@
 				}
 				let that = this;
 				const confirmationRevision = ++this.marketplaceConfirmRevision;
+				this.legacyConfirmedKey = '';
 				this.marketplaceConfirmPending = 1;
 				// return;
 				uni.showLoading({
@@ -1752,6 +1820,9 @@
 				this.marketplaceStartedAt = Date.now();
 				return orderConfirm(data).then(res => {
 					if (guard && !this.marketplaceGuardCurrent(guard)) return;
+					if (confirmationRevision !== this.marketplaceConfirmRevision) return;
+					const versioned = Object.prototype.hasOwnProperty.call(res.data, 'marketplace_confirmation_version');
+					if (versioned && res.data.marketplace_confirmation_version !== 1) throw new Error(this.$t(`订单确认版本暂不可用，请重新确认商品`));
 					if (res.data.marketplace_confirmation_version === 1) {
 						this.hydrateMarketplaceConfirmation(res.data, null, null);
 						if (guard) guard.key = this.orderKey;
@@ -1832,6 +1903,12 @@
 					// that.$set(that, 'cartArr', that.cartArr);
 					that.$set(that, 'ChangePrice', that.totalPrice);
 					if (!that.marketplaceV1) that.getBargainId();
+					if (!versioned && !this.marketplaceV1 && !this.marketplaceRestoredUnknown && !this.marketplaceRestoring && !this.marketplaceResumeUnavailable &&
+						typeof res.data.orderKey === 'string' && res.data.orderKey && res.data.orderKey === this.orderKey) {
+						this.legacyConfirmedKey = res.data.orderKey;
+						this._marketplaceInitializing = false;
+						if (this.marketplaceMerIntent) this.marketplaceNotice = '';
+					}
 					setTimeout(() => {
 						if (!that.marketplaceV1) that.getCouponList();
 					}, 500);
@@ -2012,24 +2089,30 @@
 					tempform.submit();
 				})
 			},
-			payment(data) {
+			payment(data, queuedGuard) {
 				if (this.marketplacePreparing || this.marketplaceRestoredUnknown || this.marketplaceRestoring) return;
 				if (this.marketplaceV1) return this.submitMarketplaceOrder();
+				if (this.legacyHasPrivateForm || this._legacyFormSubmitGuard) return this.submitLegacyPrivateForm(data);
+				if (this.legacyFormLocked && (!queuedGuard || !this.legacyFormCurrent(queuedGuard))) return;
 				if (this.marketplaceResumeUnavailable || (this.marketplaceV1 && !this.marketplaceCanCreate)) {
 					return this.$util.Tips({title: this.$t(`当前商城暂未开放提交订单`)});
 				}
 				let that = this;
+				const legacyGuard = queuedGuard || this.legacyFormGuard(); this.legacyFormSubmitPending = true;
 				orderCreate(that.orderKey, data).then(res => {
+					if (!this.legacyFormCurrent(legacyGuard)) return;
+					this.legacyFormSubmitted = true;
 					let url = `/pages/goods/cashier/index?order_id=${res.data.result.orderId}&from_type=order`
 					uni.reLaunch({
 						url
 					})
 				}).catch(err => {
+					if (!this.legacyFormCurrent(legacyGuard)) return;
 					uni.hideLoading();
 					return that.$util.Tips({
 						title: err
 					});
-				});
+				}).finally(() => { if (this.legacyFormCurrent(legacyGuard)) this.legacyFormSubmitPending = false; });
 			},
 			clickTextArea() {
 				if (this.marketplacePreparing || this.marketplaceRestoredUnknown || this.marketplaceRestoring || (this.marketplaceV1 && !this.marketplaceCanEdit)) return;
@@ -2038,6 +2121,7 @@
 			SubOrder(e) {
 				if (this.marketplacePreparing || this.marketplaceRestoredUnknown || this.marketplaceRestoring) return;
 				if (this.marketplaceV1) return this.submitMarketplaceOrder();
+				if (this.legacyFormLocked) return;
 				if (this.marketplaceResumeUnavailable || (this.marketplaceV1 && !this.marketplaceCanCreate)) {
 					return this.$util.Tips({title: this.$t(`当前商城暂未开放提交订单`)});
 				}
@@ -2157,13 +2241,17 @@
 				// uni.showLoading({
 				// 	title: that.$t(`订单支付中`)
 				// });
+				const legacySubmitGuard = this.legacyFormGuard();
+				this.legacyFormSubmitPending = true;
+				if (this.legacyHasPrivateForm) this._legacyFormSubmitGuard = legacySubmitGuard;
+				data = JSON.parse(JSON.stringify(data));
 				// #ifdef MP
 				openPaySubscribe().then(() => {
-					that.payment(data);
-				});
+					if (this.legacyFormCurrent(legacySubmitGuard)) that.payment(data, legacySubmitGuard);
+				}).catch(() => { if (legacySubmitGuard && this.legacyFormCurrent(legacySubmitGuard)) { this.legacyFormSubmitPending = false; this._legacyFormSubmitGuard = null; } });
 				// #endif
 				// #ifndef MP
-				that.payment(data);
+				that.payment(data, legacySubmitGuard);
 				// #endif
 			},
 			receiveGift() {
@@ -2208,18 +2296,41 @@
 				return `${year}-${month}-${day}`;
 			},
 			uploadpic: function(index, item) {
-				let that = this;
-				this.canvasStatus = true
-				that.$util.uploadImageChange('upload/image', function(res) {
-					item.value.push(res.data.url);
-				}, (res) => {
-					this.canvasStatus = false
-				}, (res) => {
-					this.canvasWidth = res.w
-					this.canvasHeight = res.h
-				});
+				if (this.marketplaceV1 || this.legacyFormLocked || !this.orderKey || this.confirm[index] !== item || item.label !== 'img' || !Array.isArray(item.value) || item.value.length >= 8) return;
+				const first = this.cartInfo[0], productId = first && (first.product_id || first.productInfo && first.productInfo.id);
+				const guard = this.legacyFormGuard(); let scope, outcome = false;
+				const current = () => this.legacyFormCurrent(guard) && this.confirm[index] === item;
+				this.legacyFormUploadPending = true; this.legacyFormNotice = ''; this.legacyFormReceipt = null;
+				const finish = () => {
+					if (current()) {
+						if (this._legacyFormUploadIssued && !outcome) this.legacyFormFailure(null);
+						this.legacyFormUploadPending = false; this.canvasStatus = false; this._legacyFormUploadIssued = false;
+					}
+					if (scope) scope.dispose();
+					if (this._legacyFormUploadScope === scope) this._legacyFormUploadScope = null;
+				};
+				openOrderFormPrivateScope(current).then(value => {
+					scope = value;
+					if (!current()) { scope.dispose(); return; }
+					this._legacyFormUploadScope = scope;
+					const options = scope.legacyConfirmationUploadOptions(guard.key, productId, index), track = options.onUploadTask;
+					options.onUploadTask = task => { track(task); if (current()) this._legacyFormUploadIssued = true; };
+					this.canvasStatus = true;
+					this.$util.uploadImageChange(options, response => {
+						if (!current() || !scope.current()) return;
+						outcome = true;
+						try {
+							const reference = legacyOrderFormUploadReference(response && response.data);
+							if (item.value.length >= 8 || this.confirm.some(field => field.label === 'img' && Array.isArray(field.value) && field.value.includes(reference))) throw new Error('上传引用未确认');
+							item.value.push(reference); this.legacyFormNotice = this.$t(`图片已暂存，提交订单后保存`);
+						} catch (error) { this.legacyFormFailure(response); }
+					}, response => { if (current()) { outcome = true; this.legacyFormFailure(response); } }, size => {
+						if (current()) { this.canvasWidth = size.w; this.canvasHeight = size.h; }
+					}, finish, () => current() && scope.current());
+				}).catch(error => { if (current()) { if (this._legacyFormUploadIssued) this.legacyFormFailure(null); else this.legacyFormNotice = error && error.message || this.$t(`图片尚未上传，请重新选择`); } finish(); });
 			},
 			DelPic: function(index, indexs) {
+				if (this.marketplaceV1 || this.legacyFormLocked) return;
 				let that = this,
 					pic = this.confirm[index].value;
 				that.confirm[index].value.splice(indexs, 1);
@@ -2266,6 +2377,14 @@
 </script>
 
 <style lang="scss" scoped>
+	.legacy-form-notice { margin: 20rpx 30rpx; color: #666; font-size: 26rpx; line-height: 1.6; overflow-wrap: anywhere; }
+	.legacy-form-image-note { display: block; padding: 10rpx; box-sizing: border-box; font-size: 22rpx; line-height: 1.5; color: #666; overflow-wrap: anywhere; }
+	.confirmImg .list .legacy-form-picture { height: auto; min-height: 136rpx; }
+	.legacy-form-picture .legacy-form-image-note { padding-top: 46rpx; }
+	.confirmImg .list .legacy-form-upload { display: flex; align-items: center; justify-content: center; flex-direction: column; box-sizing: border-box; padding: 0; line-height: 1.5; background: transparent; }
+	.confirmImg .list .legacy-form-upload[disabled] { opacity: .55; }
+	.confirmImg .list .legacy-form-delete { position: absolute; top: 0; right: 0; width: 44rpx; height: 44rpx; margin: 0; padding: 0; display: flex; align-items: center; justify-content: center; line-height: 1; color: #fff; background: rgba(0,0,0,.65); border-radius: 0 8rpx 0 8rpx; }
+	.legacy-form-delete::after,.legacy-form-upload::after { border: 0; }
 	::v-deep uni-checkbox[disabled] .uni-checkbox-input {
 		background-color: #eee;
 	}

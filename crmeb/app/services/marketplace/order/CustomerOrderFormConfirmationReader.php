@@ -26,6 +26,12 @@ LUA;
 
     /** No TTL/marker/tag writes, fallback decoder or cache producer changes. Redis8.6.1 is required. */
     public function readCurrent(int $actualUid, string $confirmationKey): array
+    {return $this->read($actualUid,$confirmationKey,false);}
+
+    public function readLegacyCurrent(int $actualUid,string $confirmationKey):array
+    {return $this->read($actualUid,$confirmationKey,true);}
+
+    private function read(int $actualUid,string $confirmationKey,bool $legacy):array
     {
         try {
             if (PHP_INT_SIZE < 8 || $actualUid < 1 || $actualUid > 4294967295) self::fail();
@@ -49,10 +55,13 @@ LUA;
                     || !is_array($payload) || !str_starts_with($before['raw'],'a:')) self::fail();
                 $this->plain($payload);
                 if (serialize($payload) !== $before['raw']) self::fail();
-                foreach (['cartInfo','priceGroup','other','store'] as $key)
+                foreach ($legacy?['cartInfo','priceGroup','other']:['cartInfo','priceGroup','other','store'] as $key)
                     if (!is_array($payload[$key]??null)) self::fail();
                 if ($payload['cartInfo'] === []) self::fail();
-                $frame = MarketplaceCartSelection::frame($payload,$actualUid);
+                if($legacy){
+                    if(array_keys($payload)!==['cartInfo','priceGroup','other']||!array_is_list($payload['cartInfo']))self::fail();
+                    $frame=self::legacyDefinition($payload['cartInfo'][0],$actualUid);
+                }else $frame = MarketplaceCartSelection::frame($payload,$actualUid);
                 [$current,$currentHandler,$currentOptions,$currentName] = $this->store();
                 if ($current !== $driver || $currentHandler !== $handler || $currentOptions !== $options
                     || $currentName !== $name || $current->getCacheKey($logical) !== $physical) self::fail();
@@ -68,16 +77,43 @@ LUA;
 
     /** Same immutable confirmation and real original deadline; normal Redis TIME observations may differ. */
     public function assertSame(int $actualUid, string $confirmationKey, array $observed): array
+    {return $this->same($actualUid,$confirmationKey,$observed,false);}
+
+    public function assertLegacySame(int $actualUid,string $confirmationKey,array $observed):array
+    {return $this->same($actualUid,$confirmationKey,$observed,true);}
+
+    private function same(int $actualUid,string $confirmationKey,array $observed,bool $legacy):array
     {
         if (array_keys($observed) !== self::FIELDS || !is_array($observed['identity'])
             || array_keys($observed['identity']) !== self::IDENTITY
             || !is_int($observed['deadline_ms']) || !is_int($observed['expires_at'])
             || !is_int($observed['redis_time_ms']) || $observed['deadline_ms'] <= $observed['redis_time_ms']
             || $observed['expires_at'] !== intdiv($observed['deadline_ms'],1000)) self::fail();
-        $current = $this->readCurrent($actualUid,$confirmationKey);
+        $current = $legacy?$this->readLegacyCurrent($actualUid,$confirmationKey):$this->readCurrent($actualUid,$confirmationKey);
         foreach (['payload','frame','raw','deadline_ms','expires_at','identity'] as $key)
             if ($current[$key] !== $observed[$key]) self::fail();
         return $current;
+    }
+
+    /** Pure legacy first-cart definition; callers supply a real cached or saved cart, never a V1 frame. */
+    public static function legacyDefinition(array $firstCart,int $uid):array
+    {
+        if($uid<1||!in_array($firstCart['uid']??null,[$uid,(string)$uid],true)
+            ||!is_array($firstCart['productInfo']??null))self::fail();
+        $ref=$firstCart['id']??null;$product=$firstCart['product_id']??null;
+        if(is_int($ref))$ref=(string)$ref;
+        if(!is_string($ref)||preg_match('/\A[1-9][0-9]{0,29}\z/D',$ref)!==1)self::fail();
+        if(is_string($product)&&preg_match('/\A[1-9][0-9]{0,6}\z/D',$product)===1)$product=(int)$product;
+        if(!is_int($product)||$product<1||$product>8388607)self::fail();
+        $raw=$firstCart['productInfo']['custom_form']??null;
+        if($raw===null||$raw==='')$raw=[];
+        elseif(is_string($raw)){
+            try{$raw=json_decode($raw,true,32,JSON_THROW_ON_ERROR);}catch(\Throwable $error){self::fail();}
+        }
+        if(!is_array($raw))self::fail();
+        $fields=\app\services\marketplace\publiccatalog\PublicCatalogProjection::formConfig($raw);
+        $encoded=json_encode(['product_id'=>$product,'fields'=>$fields],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);
+        return ['first_cart_ref'=>$ref,'product_id'=>$product,'definition_sha256'=>hash('sha256',$encoded),'fields'=>$fields];
     }
 
     /** Exact actual framework defaults+configured options, never a guessed c: prefix or replacement client. */

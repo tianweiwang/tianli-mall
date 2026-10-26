@@ -39,6 +39,26 @@ export function orderFormUploadReference(response) {
   if (!isPrivateOrderFormImage(response.attachment_ref)) unavailable('上传结果未完整取得');
   return response.attachment_ref;
 }
+export function isLegacyOrderFormImage(value) { return typeof value === 'string' && value.startsWith('legacy-form:'); }
+export function legacyOrderFormAsset(value) {
+  if (!isLegacyOrderFormImage(value) || !value.startsWith('legacy-form:v1:')) unavailable();
+  return orderFormAssetId(value.slice('legacy-form:v1:'.length));
+}
+export function legacyOrderFormUploadReference(response) {
+  exact(response, ['name', 'url', 'attachment_ref']);
+  if (typeof response.name !== 'string' || !response.name || typeof response.url !== 'string' || !response.url) unavailable('上传结果未完整取得');
+  legacyOrderFormAsset(response.attachment_ref);
+  return response.attachment_ref;
+}
+export function legacyOrderFormReceipt(response) {
+  const value = response && response.data;
+  const keys = ['cleanup_complete', 'complete', 'database_committed', 'phase', 'physical_changed', 'physical_complete'];
+  if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).sort().join(',') !== keys.join(',') ||
+    typeof value.complete !== 'boolean' || typeof value.physical_complete !== 'boolean' || typeof value.phase !== 'string' ||
+    !/^[a-z][a-z0-9_:-]{0,63}(?![\s\S])/.test(value.phase) ||
+    !['cleanup_complete', 'database_committed', 'physical_changed'].every(name => value[name] === null || typeof value[name] === 'boolean')) return null;
+  return Object.freeze(keys.reduce((out, name) => { out[name] = value[name]; return out; }, {}));
+}
 function ticket(value) {
   exact(value, ['read_ticket', 'issued_at_ms', 'expires_at_ms']);
   if (typeof value.read_ticket !== 'string' || !/^[A-Za-z0-9_-]{43}(?![\s\S])/.test(value.read_ticket)) unavailable();
@@ -113,15 +133,17 @@ export function createOrderFormPrivateScope(realScope) {
       } catch (error) { finish(reject, error); }
     });
   }
-  async function image(path) {
-    const issued = await json(path); requireCurrent(); let localPath;
+  async function image(path, legacy = false) {
+    const issued = legacy ? null : await json(path); requireCurrent(); let localPath;
+    const readHeaders = () => issued ? { ...header(), 'X-Order-Form-Read-Ticket': issued.read_ticket } : header();
     // #ifdef H5
     const controller = new AbortController(); tasks.add(controller);
     try {
-      const response = await fetch(HTTP_REQUEST_URL + '/api/' + path + '/content', { method: 'GET', headers: { ...header(), 'X-Order-Form-Read-Ticket': issued.read_ticket },
+      const response = await fetch(HTTP_REQUEST_URL + '/api/' + path + '/content', { method: 'GET', headers: readHeaders(),
         mode: 'same-origin', credentials: 'same-origin', redirect: 'error', cache: 'no-store', signal: controller.signal });
       requireCurrent(); const type = response.headers.get('Content-Type'), length = response.headers.get('Content-Length');
-      if (response.status !== 200 || !mediaTypes.includes(type) || typeof length !== 'string' || !/^[1-9][0-9]{0,8}(?![\s\S])/.test(length)) unavailable();
+      if (response.status !== 200 || !(legacy ? ['image/jpg', ...mediaTypes] : mediaTypes).includes(type) || typeof length !== 'string' || !/^[1-9][0-9]{0,8}(?![\s\S])/.test(length)) unavailable();
+      if (legacy && (response.headers.get('X-Content-Type-Options') !== 'nosniff' || !(response.headers.get('Cache-Control') || '').toLowerCase().includes('no-store'))) unavailable();
       const expected = integer(Number(length), 1, MAX_FILE_BYTES), bytes = await response.blob(); requireCurrent();
       if (bytes.type !== type || bytes.size !== expected) unavailable();
       localPath = URL.createObjectURL(bytes);
@@ -131,7 +153,7 @@ export function createOrderFormPrivateScope(realScope) {
     localPath = await new Promise((resolve, reject) => {
       let task; const finish = (callback, value) => { if (task) tasks.delete(task); if (!current()) { if (typeof value === 'string') release(value); reject(stale()); } else callback(value); };
       try {
-        task = uni.downloadFile({ url: HTTP_REQUEST_URL + '/api/' + path + '/content', header: { ...header(), 'X-Order-Form-Read-Ticket': issued.read_ticket }, timeout: TIMEOUT,
+        task = uni.downloadFile({ url: HTTP_REQUEST_URL + '/api/' + path + '/content', header: readHeaders(), timeout: TIMEOUT,
           success(response) { const downloaded = response.tempFilePath; if (response.statusCode !== 200 || typeof downloaded !== 'string' || !downloaded) { if (downloaded) release(downloaded); finish(reject, new Error('表单原图未读回')); } else finish(resolve, downloaded); },
           fail() { finish(reject, new Error('表单原图未读回')); }, complete() { if (task) tasks.delete(task); } }); if (task) tasks.add(task);
       } catch (error) { finish(reject, error); }
@@ -147,6 +169,15 @@ export function createOrderFormPrivateScope(realScope) {
   }
   requireCurrent();
   return Object.freeze({ current, dispose, confirmationUploadOptions,
+    legacyConfirmationUploadOptions(key, productId, fieldIndex) {
+      requireCurrent();
+      if (typeof productId === 'string' && /^[1-9][0-9]{0,6}(?![\s\S])/.test(productId)) productId = Number(productId);
+      integer(productId, 1, 8388607); integer(fieldIndex, 0, 9);
+      return { url: 'order/form/legacy/confirm/' + confirmationKey(key) + '/products/' + productId + '/fields/' + fieldIndex + '/files', name: 'pics', count: 1, onUploadTask: trackUpload };
+    },
+    legacyConfirmationImage: (key, assetId) => image('order/form/legacy/confirm/' + confirmationKey(key) + '/files/' + orderFormAssetId(assetId), true),
+    legacyCustomerOrderImage: (order, assetId) => image('order/form/legacy/orders/' + rootId(order) + '/files/' + orderFormAssetId(assetId), true),
+    legacyMobileOrderImage: (order, assetId) => image('admin/order/form/legacy/orders/' + rootId(order) + '/files/' + orderFormAssetId(assetId), true),
     confirmationImage: (key, assetId) => image('order/confirm/' + confirmationKey(key) + '/form-files/' + orderFormAssetId(assetId)),
     customerOrderImage: (root, assetId) => image('order/' + rootId(root) + '/form-files/' + orderFormAssetId(assetId)),
     mobileOrderImage: (root, assetId) => image('admin/order/detail/' + rootId(root) + '/form-files/' + orderFormAssetId(assetId))

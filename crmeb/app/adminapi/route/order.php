@@ -24,6 +24,15 @@ Route::group(function () {
     \app\adminapi\middleware\AdminLogMiddleware::class
 ])->option(['mark'=>'order','mark_name'=>'订单管理']);
 
+// This fixed legacy stream verifies the current original order-info grant in its named service.
+Route::group(function () {
+    Route::get('order/form/legacy/orders/<order_id>/files/<asset_id>/content','v1.order.LegacyOrderFormFile/read')->option(['real_name'=>'旧订单资料原图','legacy_order_form_reader'=>'platform']);
+})->middleware([
+    \app\http\middleware\AllowOriginMiddleware::class,
+    \app\adminapi\middleware\AdminAuthTokenMiddleware::class,
+    \app\adminapi\middleware\AdminLogMiddleware::class
+])->option(['mark'=>'order','mark_name'=>'订单管理']);
+
 Route::group('order', function () {
     //获取快递信息
     Route::get('kuaidi_coms', 'v1.order.StoreOrder/getKuaidiComs')->option(['real_name' => '获取快递信息']);

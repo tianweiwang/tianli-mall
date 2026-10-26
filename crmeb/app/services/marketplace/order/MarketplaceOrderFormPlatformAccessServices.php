@@ -29,6 +29,35 @@ final class MarketplaceOrderFormPlatformAccessServices
     {
         try {
             self::assertRoute($request, $rootId);
+            return $this->authorizeDetailGrant($request);
+        } catch (AuthException|HttpException $error) {
+            throw $error;
+        } catch (\Throwable $error) {
+            throw new AuthUnavailableException();
+        }
+    }
+
+    /** Separate legacy stream leaf; the V1 route and ticket contract stay exact. */
+    public function authorizeLegacyRequest(Request $request, int $orderId): int
+    {
+        if ($request !== app()->request || app()->http->getName() !== 'adminapi'
+            || $request->method(true) !== 'GET'
+            || trim(strtolower((string)$request->rule()->getRule())) !== 'order/form/legacy/orders/<order_id>/files/<asset_id>/content'
+            || $request->rule()->getOption('legacy_order_form_reader') !== 'platform'
+            || self::positiveId($orderId) !== self::positiveId($request->route('order_id', null, ''))) {
+            throw new HttpException(403, '没有权限访问');
+        }
+        $assetId = $request->route('asset_id', null, '');
+        if (!is_string($assetId) || preg_match('/\A[1-9][0-9]{0,19}\z/D', $assetId) !== 1
+            || (strlen($assetId) === 20 && strcmp($assetId, '18446744073709551615') > 0)) {
+            throw new HttpException(403, '没有权限访问');
+        }
+        return $this->authorizeDetailGrant($request);
+    }
+
+    private function authorizeDetailGrant(Request $request): int
+    {
+        try {
             $identity = $request->adminInfo();
             $adminId = self::positiveId($request->adminId());
             $verified = $request->verifiedAdminSession();

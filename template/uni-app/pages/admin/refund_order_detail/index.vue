@@ -219,7 +219,7 @@
 					<view class='conter'>{{orderInfo.refund_num}}</view>
 				</view>
 			</view>
-				<customForm :customForm="orderInfo.custom_form" :tradeVersion="orderInfo.marketplace_trade_version"></customForm>
+				<customForm :customForm="orderInfo.custom_form" :tradeVersion="orderInfo.marketplace_trade_version" :legacy-order-id="statusType != -3 ? orderInfo.id : null" :form-images-active="refundPageVisible && !refundLoading && !refundError"></customForm>
 			<view class="wrapper">
 				<view class="item acea-row row-between">
 					<view>订单编号：</view>

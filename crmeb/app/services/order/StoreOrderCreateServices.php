@@ -297,7 +297,7 @@ class StoreOrderCreateServices extends BaseServices
         /** @var StoreOrderCartInfoServices $cartServices */
         $cartServices = app()->make(StoreOrderCartInfoServices::class);
         $priceData['coupon_id'] = $couponId;
-        $order = $this->transaction(function () use ($cartIds, $orderInfo, $cartInfo, $key, $userInfo, $useIntegral, $priceData, $combinationId, $seckillId, $bargainId, $cartServices, $uid, $addressId, $advanceId) {
+        $createWrites = function () use ($cartIds, $orderInfo, $cartInfo, $key, $userInfo, $useIntegral, $priceData, $combinationId, $seckillId, $bargainId, $cartServices, $uid, $addressId, $advanceId) {
             // Consume the coupon atomically with the order and stock reservation.
             if ($orderInfo['coupon_id']) {
                 $couponServices = app()->make(StoreCouponUserServices::class);
@@ -324,7 +324,24 @@ class StoreOrderCreateServices extends BaseServices
             //保存购物车商品信息
             $cartServices->setCartInfo($order['id'], $uid, $cartInfo);
             return $order;
+        };
+        $legacyFormAssets = null;
+        $legacyFormOutcome = null;
+        $order = $this->transaction(function () use ($createWrites, $uid, $key, $cartInfo, $customForm, &$legacyFormAssets, &$legacyFormOutcome) {
+            if (!is_array($customForm) || !\app\dao\marketplace\assets\CustomerLegacyOrderFormAssetDao::hasReferences($customForm)) {
+                return $createWrites();
+            }
+            $legacyFormAssets = app()->make(\app\services\marketplace\assets\CustomerLegacyOrderFormAssetServices::class);
+            $connection = \think\facade\Db::connect();
+            $pdo = $connection->getPdo();
+            if (!$pdo instanceof \PDO) throw new \crmeb\exceptions\AuthUnavailableException();
+            return $legacyFormAssets->withCreateAssets($connection, $pdo, (int)$uid, (string)$key,
+                $cartInfo, $customForm, $createWrites, $legacyFormOutcome);
         });
+        if ($legacyFormAssets !== null) {
+            if (!is_array($legacyFormOutcome)) throw new \crmeb\exceptions\AuthUnavailableException();
+            $legacyFormAssets->assertCreateCommitted($legacyFormOutcome);
+        }
 
         //创建开票数据
         if ($invoice_id) {

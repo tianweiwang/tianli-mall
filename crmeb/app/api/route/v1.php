@@ -68,6 +68,7 @@ Route::group(function () {
 //移动端商家管理
 Route::group(function () {
     Route::get('admin/order/statistics', 'v1.admin.StoreOrderController/statistics')->name('adminOrderStatistics')->option(['real_name' => '订单数据统计']);//订单数据统计
+    Route::get('admin/order/form/legacy/orders/<order_id>/files/<asset_id>/content','v1.order.LegacyOrderFormController/mobile')->option(['real_name'=>'旧订单资料原图','legacy_order_form_reader'=>'mobile']);
     Route::get('admin/order/data', 'v1.admin.StoreOrderController/data')->name('adminOrderData')->option(['real_name' => '订单每月统计数据']);//订单每月统计数据
     Route::get('admin/order/list', 'v1.admin.StoreOrderController/lst')->name('adminOrderList')->option(['real_name' => '订单列表']);//订单列表
     Route::get('admin/refund_order/list', 'v1.admin.StoreOrderController/refundOrderList')->name('adminOrderRefundList')->option(['real_name' => '退款订单列表']);//退款订单列表
@@ -227,6 +228,9 @@ Route::group(function () {
         Route::post('order/fulfillment/packages/:childNo/receipt','v1.order.FulfillmentController/receipt')->name('fulfillmentReceipt')->option(['real_name'=>'履约包裹收货']);
         Route::post('order/check_shipping', 'v1.order.StoreOrderController/checkShipping')->name('checkShipping')->option(['real_name' => '检测是否显示快递和自提标签']); //检测是否显示快递和自提标签
         Route::post('order/confirm', 'v1.order.StoreOrderController/confirm')->name('orderConfirm')->option(['real_name' => '订单确认']); //订单确认
+        Route::post('order/form/legacy/confirm/<key>/products/<product_id>/fields/<field_index>/files','v1.order.LegacyOrderFormController/upload')->option(['real_name'=>'旧订单资料图片上传','legacy_order_form_files'=>true]);
+        Route::get('order/form/legacy/confirm/<key>/files/<asset_id>/content','v1.order.LegacyOrderFormController/confirmation')->option(['real_name'=>'旧订单确认资料原图','legacy_order_form_reader'=>'confirmation']);
+        Route::get('order/form/legacy/orders/<order_id>/files/<asset_id>/content','v1.order.LegacyOrderFormController/customer')->option(['real_name'=>'旧订单资料原图','legacy_order_form_reader'=>'customer']);
         Route::post('order/confirm/<key>/forms/<product_id>/<field_index>/files', 'v1.order.OrderFormUploadController/upload')->name('orderFormFiles')->option(['real_name'=>'订单表单图片上传','customer_order_form_files'=>true]);
         Route::post('order/confirm/<key>/form-files/<asset_id>/read-ticket','v1.order.OrderFormReadController/confirmation')->name('confirmationFormTicket')->option(['real_name'=>'确认表单原图票据']);
         Route::get('order/confirm/<key>/form-files/<asset_id>/content','v1.order.OrderFormReadController/confirmation')->name('confirmationFormContent')->option(['real_name'=>'确认表单原图']);

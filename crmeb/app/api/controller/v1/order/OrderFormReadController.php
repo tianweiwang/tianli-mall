@@ -22,7 +22,7 @@ final class OrderFormReadController
     {return self::respond($request,$this->files->forCustomerOrder($request,(int)$request->uid(),self::root($request),self::asset($request)));}
     public function mobile(Request $request):Response
     {return self::respond($request,$this->files->forMobileOrder($request,(int)$request->uid(),self::root($request),self::asset($request)));}
-    private static function respond(Request $request,array $value):Response
+    public static function respond(Request $request,array $value):Response
     {
         if($request->method(true)==='POST'){
             if(array_keys($value)!==['read_ticket','issued_at_ms','expires_at_ms'])self::unavailable();

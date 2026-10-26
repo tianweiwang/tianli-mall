@@ -337,7 +337,7 @@
           <view class="conter">{{ orderInfo.virtual_info }}</view>
         </view>
       </view>
-      <customForm :customForm="orderInfo.custom_form" :tradeVersion="orderInfo.marketplace_trade_version" :private-root-id="fulfillmentKind === 'root' && fulfillmentView ? fulfillmentView.order.id : null" :form-images-active="privateFormImagesVisible && !fulfillmentLoading && !fulfillmentError"></customForm>
+      <customForm :customForm="orderInfo.custom_form" :tradeVersion="orderInfo.marketplace_trade_version" :legacy-order-id="fulfillmentKind === 'legacy' && statusType != -3 ? orderInfo.id : null" :private-root-id="fulfillmentKind === 'root' && fulfillmentView ? fulfillmentView.order.id : null" :form-images-active="privateFormImagesVisible && !fulfillmentLoading && !fulfillmentError"></customForm>
       <view class="wrapper">
         <view class="item acea-row row-between">
           <view>订单编号</view>

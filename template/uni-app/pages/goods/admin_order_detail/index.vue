@@ -81,8 +81,9 @@
 			<view class='item acea-row row-between' v-for="(item,index) in customForm" :key="index">
 				<view class='upload' v-if="item.label == 'img'">
 					<view>{{item.title}}：</view>
-					<view class='pictrue' v-for="(img,index) in item.value" :key="index">
-						<image :src='img'></image>
+					<view class='pictrue legacy-form-picture' v-for="(img,imageIndex) in item.value" :key="imageIndex">
+						<image v-if="legacyFormImageSource(item,imageIndex)" :src="legacyFormImageSource(item,imageIndex)" @click="previewLegacyFormImages(item,imageIndex)" @error="legacyFormImageFailed(item,imageIndex)"></image>
+						<text v-else class="legacy-form-image-note">{{legacyFormImageMessage(item,imageIndex)}}</text>
 					</view>
 				</view>
 				<view v-if="item.label !== 'img'">{{item.title}}：</view>
@@ -145,14 +146,24 @@
 	</view>
 </template>
 <script>
+	import legacyOrderFormImages from '@/mixins/legacy-order-form-images.js';
 	import {
 		getAdminOrderDetail
 	} from "@/api/admin";
 
 	export default {
 		name: "AdminOrder",
+		mixins: [legacyOrderFormImages],
+		computed: {
+			legacyFormContext() { return ![1,'1'].includes(this.orderInfo.marketplace_trade_version) && this.orderInfo.id ? {kind: 'mobile', orderId: this.orderInfo.id, route: this.order_id} : null; },
+			legacyFormFields() { return this.legacyFormContext ? this.orderInfo.custom_form : []; },
+			legacyFormActive() { return this.legacyPageVisible && !this.legacyReadPending && !!this.legacyFormContext; }
+		},
 		data: function() {
 			return {
+				legacyPageVisible: true,
+				legacyReadPending: false,
+				legacyReadRevision: 0,
 				order: false,
 				change: false,
 				order_id: "",
@@ -169,6 +180,7 @@
 			};
 		},
 		watch: {
+			'$store.state.app.authRevision'() { this.legacyReadRevision++; this.orderInfo = {_status:{}}; this.customForm = []; this.closeLegacyFormImages(); },
 			"$route.params.oid": function(newVal) {
 				let that = this;
 				if (newVal != undefined) {
@@ -181,13 +193,20 @@
 			let self = this
 			this.order_id = option.id;
 			this.goname = option.goname
-			this.getIndex();
 		},
+		onShow() { this.legacyPageVisible = true; this.getIndex(); },
+		onHide() { this.legacyPageVisible = false; this.legacyReadRevision++; this.legacyReadPending = false; },
+		onUnload() { this.legacyPageVisible = false; this.legacyReadRevision++; this.legacyReadPending = false; },
 		methods: {
 			getIndex: function() {
 				let that = this;
+				const revision = ++this.legacyReadRevision, locator = this.order_id;
+				this.legacyReadPending = true;
+				const current = () => this.legacyPageVisible && revision === this.legacyReadRevision && locator === this.order_id;
 				getAdminOrderDetail(that.order_id).then(
 					res => {
+						if (!current()) return;
+						this.legacyReadPending = false; this.customForm = [];
 						that.orderInfo = res.data;
 						that.types = res.data._status._type;
 						that.title = res.data._status._title;
@@ -203,6 +222,8 @@
 						}
 					},
 					err => {
+						if (!current()) return;
+						this.legacyReadPending = false; this.orderInfo = {_status:{}}; this.customForm = [];
 						that.$util.Tips({
 							title: err
 						}, {
@@ -217,6 +238,8 @@
 </script>
 
 <style>
+.legacy-form-image-note { display: block; font-size: 24rpx; line-height: 1.5; color: #666; overflow-wrap: anywhere; }
+.legacy-form-picture { vertical-align: top; }
 	/*商户管理订单详情*/
 	.pos-order-details .header {
 		background: linear-gradient(to right, #2291f8 0%, #1cd1dc 100%);
