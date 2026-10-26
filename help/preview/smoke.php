@@ -8,7 +8,8 @@ function preview_http(string $method, string $path, ?array $body = null, ?string
     $headers = ['Accept: application/json'];
     if ($body !== null) $headers[] = 'Content-Type: application/json';
     if ($token !== null) $headers[] = 'Authorization: Bearer ' . $token;
-    $curl = curl_init('http://preview-app:8000' . $path);
+    $origin = (preview_config()['full_runtime'] ?? false) ? 'http://preview-web:8080' : 'http://preview-app:8000';
+    $curl = curl_init($origin . $path);
     curl_setopt_array($curl, [CURLOPT_RETURNTRANSFER => true, CURLOPT_CUSTOMREQUEST => $method,
         CURLOPT_HTTPHEADER => $headers, CURLOPT_CONNECTTIMEOUT => 3, CURLOPT_TIMEOUT => 20,
         CURLOPT_FOLLOWLOCATION => false, CURLOPT_PROXY => '']);
@@ -25,7 +26,8 @@ function preview_http(string $method, string $path, ?array $body = null, ?string
 try {
     preview_assert_isolated();
     $config = preview_config();
-    preview_http('GET', '/preview-health');
+    // Full runtime readiness is the original container health, checked by its lifecycle command.
+    if (($config['full_runtime'] ?? false) !== true) preview_http('GET', '/preview-health');
     preview_http('GET', '/adminapi/login/info');
     foreach (['admin' => '/adminapi/login', 'merchant' => '/merchantapi/login', 'customer' => '/api/login'] as $role => $path) {
         $credentials = $config['credentials'][$role];

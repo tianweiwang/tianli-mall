@@ -886,6 +886,40 @@ function probeWorkermanTimer(): array
     return $checks;
 }
 
+function probeSymfonyProcess(): array
+{
+    $checks = [];
+    $reflection = new ReflectionClass(Symfony\Component\Process\Process::class);
+    probeCheck($checks, 'locked_vendor_class_loaded',
+        $reflection->getFileName() === '/var/www/vendor/symfony/process/Process.php');
+    probeCheck($checks, 'iterator_aggregate_contract',
+        $reflection->implementsInterface(IteratorAggregate::class));
+
+    $stdout = "process-stdout\n";
+    $stderr = "process-stderr\n";
+    // Match the queue Listener's array command, working directory and null input.
+    $process = new Symfony\Component\Process\Process(
+        [PHP_BINARY, '-r', 'fwrite(STDOUT, "process-stdout\\n"); fwrite(STDERR, "process-stderr\\n");'],
+        '/var/www', null, null, 5
+    );
+    probeCheck($checks, 'child_exit_zero', $process->run() === 0);
+    $iterator = $process->getIterator(Symfony\Component\Process\Process::ITER_KEEP_OUTPUT);
+    probeCheck($checks, 'iterator_is_generator', $iterator instanceof Generator);
+    $output = ['out' => '', 'err' => ''];
+    foreach ($iterator as $type => $chunk) {
+        if (!array_key_exists($type, $output)) {
+            throw new RuntimeException('Unexpected process output stream');
+        }
+        $output[$type] .= $chunk;
+    }
+    probeCheck($checks, 'iterator_stdout_exact', $output['out'] === $stdout);
+    probeCheck($checks, 'iterator_stderr_exact', $output['err'] === $stderr);
+    probeCheck($checks, 'stdout_retained', $process->getOutput() === $stdout);
+    probeCheck($checks, 'stderr_retained', $process->getErrorOutput() === $stderr);
+
+    return $checks;
+}
+
 function probeDaoJoinAliases(): array
 {
     $checks = [];
@@ -928,6 +962,7 @@ $caseHandlers = [
     'remote-upgrade-disabled' => 'probeRemoteUpgradeDisabled',
     'empty-filter-rules' => 'probeEmptyFilterRules',
     'workerman-timer' => 'probeWorkermanTimer',
+    'symfony-process' => 'probeSymfonyProcess',
     'dao-join-aliases' => 'probeDaoJoinAliases',
 ];
 

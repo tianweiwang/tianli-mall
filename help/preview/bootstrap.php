@@ -48,7 +48,12 @@ try {
         file_put_contents('/run/preview-bootstrap/root-password', $rootPassword);
         $legacyMode = getenv('PREVIEW_LEGACY_REVIEW_FIXTURE') ?: '0';
         if (!in_array($legacyMode, ['0', '1'], true)) throw new RuntimeException('Invalid new fixture mode');
+        $fullRuntime = getenv('PREVIEW_FULL_RUNTIME') ?: '0';
+        if (!in_array($fullRuntime, ['0', '1'], true) || ($fullRuntime === '1' && $legacyMode !== '0')) {
+            throw new RuntimeException('Invalid new runtime mode');
+        }
         $config = ['project' => $project, 'run_id' => $run, 'legacy_review_fixture' => $legacyMode === '1',
+            'full_runtime' => $fullRuntime === '1',
             'database' => ['name' => 'mall_preview', 'host' => 'preview-mysql',
                 'app' => ['username' => 'preview_app', 'password' => bin2hex(random_bytes(24))]],
             'redis_password' => bin2hex(random_bytes(24)), 'signing_key' => bin2hex(random_bytes(32)),
@@ -72,15 +77,64 @@ try {
         foreach (['customer-form', 'aftersale', 'refund', 'licence', 'withdrawal', 'chat'] as $name) {
             mkdir('/private/' . $name, 0700); chown('/private/' . $name, 1000);
         }
-        // Use the existing tracked dependencies, regenerating only autoload metadata offline.
+        // Full runtime uses the image's locked production dependencies; old preview keeps its original source.
+        $vendorSource = '/source/crmeb/vendor/.';
+        $dependencyReceipt = null;
+        if ($config['full_runtime']) {
+            $sourceLock = file_get_contents('/source/crmeb/composer.lock');
+            $imageLock = file_get_contents('/var/www/composer.lock');
+            if (!is_string($sourceLock) || $sourceLock === '' || !is_string($imageLock) || $imageLock === '') {
+                throw new RuntimeException('Preview runtime dependency lock unavailable');
+            }
+            // The image was built from CRLF input. No JSON field, whitespace or version is otherwise ignored.
+            $normalizedSource = str_replace("\r\n", "\n", $sourceLock);
+            $normalizedImage = str_replace("\r\n", "\n", $imageLock);
+            if ($normalizedSource !== $normalizedImage) {
+                throw new RuntimeException('Preview runtime dependency lock mismatch');
+            }
+            $lock = json_decode($sourceLock, true, 512, JSON_THROW_ON_ERROR);
+            $installed = json_decode(file_get_contents('/var/www/vendor/composer/installed.json'), true, 512, JSON_THROW_ON_ERROR);
+            if (!is_array($lock) || !is_array($lock['packages'] ?? null) || $lock['packages'] === []
+                || !is_array($installed) || !is_array($installed['packages'] ?? null)
+                || ($installed['dev'] ?? null) !== false || ($installed['dev-package-names'] ?? null) !== []) {
+                throw new RuntimeException('Preview runtime production dependencies unavailable');
+            }
+            $packageSet = static function (array $packages): array {
+                if (!array_is_list($packages)) throw new RuntimeException('Preview runtime dependency package shape mismatch');
+                $set = [];
+                foreach ($packages as $package) {
+                    if (!is_array($package) || !is_string($package['name'] ?? null) || $package['name'] === ''
+                        || !is_string($package['version'] ?? null) || $package['version'] === ''
+                        || !is_array($package['source'] ?? null)
+                        || !is_string($package['source']['reference'] ?? null) || $package['source']['reference'] === ''
+                        || isset($set[$package['name']])) {
+                        throw new RuntimeException('Preview runtime dependency package shape mismatch');
+                    }
+                    $set[$package['name']] = ['version' => $package['version'], 'source_reference' => $package['source']['reference']];
+                }
+                ksort($set, SORT_STRING);
+                return $set;
+            };
+            $packages = $packageSet($lock['packages']);
+            if ($packageSet($installed['packages']) !== $packages) {
+                throw new RuntimeException('Preview runtime installed dependencies mismatch');
+            }
+            $vendorSource = '/var/www/vendor/.';
+            $dependencyReceipt = ['source' => 'image:/var/www/vendor',
+                'source_lock_sha256' => hash('sha256', $sourceLock), 'image_lock_sha256' => hash('sha256', $imageLock),
+                'normalized_lock_sha256' => hash('sha256', $normalizedSource), 'packages' => count($packages),
+                'packages_sha256' => hash('sha256', json_encode($packages, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR))];
+        }
+        // Regenerate only autoload metadata with the current source composer.json, without network access.
         umask(0022);
-        foreach ([['cp', '-a', '/source/crmeb/vendor/.', '/workspace/crmeb/vendor/'],
+        foreach ([['cp', '-a', $vendorSource, '/workspace/crmeb/vendor/'],
             ['composer', 'dump-autoload', '--no-dev', '--optimize', '--no-interaction', '--no-plugins', '--no-scripts']] as $command) {
             $process = proc_open($command, [0 => ['file', '/dev/null', 'r'], 1 => STDOUT, 2 => STDERR],
                 $pipes, '/workspace/crmeb', ['PATH' => getenv('PATH'), 'COMPOSER_ALLOW_SUPERUSER' => '1',
                     'COMPOSER_DISABLE_NETWORK' => '1', 'COMPOSER_HOME' => '/tmp/composer']);
             if (!is_resource($process) || proc_close($process) !== 0) throw new RuntimeException('Offline autoload preparation failed');
         }
+        if ($dependencyReceipt !== null) echo json_encode(['dependencies' => $dependencyReceipt], JSON_THROW_ON_ERROR) . "\n";
         echo "Prepared new isolated preview; credentials stay in private volumes\n";
     } elseif (in_array($operation, ['initialize', 'resume-initialize'], true)) {
         $config = preview_config();
@@ -115,6 +169,9 @@ try {
         preview_private_json('/run/preview-app/initialized.json', ['project' => $config['project'],
             'run_id' => $config['run_id'], 'result' => $result], 1000);
         echo json_encode(['status' => 'INITIALIZED', 'result' => $result], JSON_THROW_ON_ERROR) . "\n";
+    } elseif ($operation === 'runtime') {
+        require __DIR__ . '/runtime.php';
+        echo json_encode(['status' => 'RUNTIME_READY', 'result' => preview_prepare_full_runtime()], JSON_THROW_ON_ERROR) . "\n";
     } elseif ($operation === 'video') {
         $config = preview_config();
         if (($config['legacy_review_fixture'] ?? false) !== false

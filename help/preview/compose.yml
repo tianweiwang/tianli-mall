@@ -13,6 +13,7 @@ x-php: &php
     PREVIEW_PROJECT: ${PREVIEW_PROJECT:?required}
     PREVIEW_RUN_ID: ${PREVIEW_RUN_ID:?required}
     PREVIEW_LEGACY_REVIEW_FIXTURE: ${PREVIEW_LEGACY_REVIEW_FIXTURE:-0}
+    PREVIEW_FULL_RUNTIME: ${PREVIEW_FULL_RUNTIME:-0}
   labels: &labels
     marketplace.preview: ${PREVIEW_PROJECT}
 
@@ -30,6 +31,7 @@ services:
       - runtime:/workspace/crmeb/runtime
       - uploads:/workspace/crmeb/public/uploads
       - private-assets:/private
+      - runtime-app:/runtime-app
   preview-mysql:
     image: ${PREVIEW_MYSQL_IMAGE:?required}
     pull_policy: never
@@ -90,6 +92,39 @@ services:
     stop_signal: SIGTERM
     command: [help/preview/console.php, "queue:work", marketplace, "--queue=marketplace", "--sleep=1", "--tries=1"]
     volumes: *app-volumes
+  preview-runtime:
+    image: ${PREVIEW_PHP_IMAGE:?required}
+    pull_policy: never
+    user: "0:0"
+    entrypoint: [/bin/sh, /usr/local/bin/runtime-entrypoint]
+    command: [/usr/bin/supervisord, -c, /etc/supervisor/supervisord.conf]
+    working_dir: /var/www
+    read_only: true
+    tmpfs: [/tmp, /var/run]
+    cap_drop: [ALL]
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, SETUID, SETGID, KILL]
+    security_opt: [no-new-privileges:true]
+    stop_signal: SIGTERM
+    environment:
+      APP_ENV: testing
+    volumes:
+      - runtime-app:/var/www:ro
+      - vendor:/var/www/vendor:ro
+      - runtime:/var/www/runtime
+      - uploads:/var/www/public/uploads
+      - private-assets:/private
+      - ${PREVIEW_REPO}/docker/php/runtime-entrypoint.sh:/usr/local/bin/runtime-entrypoint:ro
+      - ${PREVIEW_REPO}/docker/php/marketplace-startup-check.php:/usr/local/bin/marketplace-startup-check.php:ro
+      - ${PREVIEW_REPO}/docker/php/runtime-healthcheck.php:/usr/local/bin/runtime-healthcheck.php:ro
+      - ${PREVIEW_REPO}/docker/php/supervisord.conf:/etc/supervisor/supervisord.conf:ro
+    healthcheck:
+      test: [CMD, php, -d, "open_basedir=", /usr/local/bin/runtime-healthcheck.php]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+    networks: [preview]
+    labels: *labels
   preview-web:
     image: ${PREVIEW_NGINX_IMAGE:?required}
     pull_policy: never
@@ -102,7 +137,7 @@ services:
     security_opt: [no-new-privileges:true]
     ports: ["127.0.0.1:${PREVIEW_PORT:-18180}:8080"]
     volumes:
-      - ${PREVIEW_REPO}/help/preview/nginx.conf:/etc/nginx/preview.conf:ro
+      - ${PREVIEW_NGINX_CONFIG:-./nginx.conf}:/etc/nginx/preview.conf:ro
       - ${PREVIEW_ADMIN_DIST:?required}:/srv/admin:ro
       - ${PREVIEW_MERCHANT_DIST:?required}:/srv/merchant:ro
       - ${PREVIEW_H5_DIST:?required}:/srv/h5:ro
@@ -126,3 +161,4 @@ volumes:
   runtime: {labels: *labels}
   uploads: {labels: *labels}
   private-assets: {labels: *labels}
+  runtime-app: {labels: *labels}

@@ -63,6 +63,31 @@ python -X utf8 help/preview/preview.py accounts-file
 
 专用预览开启 `marketplace.aftersale.enabled`，允许顾客创建售后申请；原登录、订单归属、金额、数量和私有凭证校验保留。该开关只控制新申请，不关闭已有售后记录的读取或处理。当前测试支付驱动尚不支持资金退款：商家批准取消未发商品后会恢复相应库存，页面仍明确显示“资金退款暂不支持”和已确认金额0元，不能当作退款到账。
 
+## 完整运行模式（新实例）
+
+此模式使用独立的新运行目录和本机端口，例如18183；目录必须尚不存在，端口必须空闲。它不转换已有预览，不改18180/18181/18182的服务或数据。以下命令从当前工作树执行，后续始终使用同一个 `--root`：
+
+```powershell
+$runtimeRoot = 'H:\天俪商城\artifacts\multi-merchant-full-runtime-new'
+python -X utf8 help/preview/preview.py prepare --root $runtimeRoot --port 18183 --full-runtime
+python -X utf8 help/preview/preview.py initialize --root $runtimeRoot
+python -X utf8 help/preview/preview.py storefront --root $runtimeRoot
+# 将与当前源码对应并已核同的三端 dist 放到 $runtimeRoot/build/{admin,merchant,h5}/dist
+python -X utf8 help/preview/preview.py runtime --root $runtimeRoot
+python -X utf8 help/preview/preview.py smoke --root $runtimeRoot
+python -X utf8 help/preview/preview.py accounts-file --root $runtimeRoot
+```
+
+三端构建入口仍是上述 `build-frontends.py`；它输出默认预览目录，准备完整模式时需将同源构建的三个 `dist` 复制到新目录，逐文件核同后再运行 `runtime`。三个目录都须包含 `index.html`。访问入口与普通预览相同，只将端口换成18183；合成账号仍由 `accounts-file` 保存到该运行目录的私有文件。
+
+`runtime` 通过原entrypoint和Supervisor启动FPM、Workerman、Timer及普通CRMEB队列；marketplace专用队列保持原 `autostart=false`，没有自动启用。服务仅接入专用内部网络，网页由同一实例的nginx转发真实FastCGI和WebSocket。命令先等待原健康检查的版本、MySQL、Redis及9000/40001/40002/40003监听通过，再启动网页并检查原 `/adminapi/login/info`；不使用旧 `preview-health`。Timer、队列是否实际运行还须核对Supervisor及进程，网页和业务仍需单独验证。
+
+完整模式先核固定PHP镜像与当前源码的composer.lock（仅统一CRLF/LF行尾）及已安装包版本/源码引用，随后离线复制镜像中的依赖并按当前composer.json生成自动加载文件。原普通预览仍沿用其既有依赖来源。首次准备将当前应用源码复制到专用 `runtime-app` 卷，日常容器只读挂载；vendor另卷只读，runtime、uploads和私有素材目录可写并交给UID33，私有根权限保持0700。仅在专用卷生成 `.env`（root:33、0640）和安装锁，不在仓库生成凭据。已经完整准备的实例只核对来源、配置、权限和就绪标记，匹配才继续；部分准备现场保留，不能自动覆盖或修补。
+
+正常 `stop --root $runtimeRoot` 保留数据卷；在来源和配置未变时，可用同一 `runtime --root $runtimeRoot` 再启动。这里说明使用方式，不表示已完成重启或恢复验收。完整模式不支持 `serve`、`serve-api`、`video`、`timers`、`timers-restore`、`queue` 等拆分服务动作。当前复用已有PHP镜像和同源只读应用卷；正式不可变镜像构建、发布前端copy及完整MS6验收仍需另行完成。
+
+2026-10-27已在独立18184实例实际完成首装、原entrypoint启动、FPM/Timer/Workerman/普通CRMEB队列进程核对、完整health、三角色登录及商家商品列表页面。平台、商家、H5和客服入口均与复用构建字节一致。初次18183实例因复制仓库旧vendor造成队列退出，现改为上述锁一致的镜像依赖；原失败记录及停止后的数据卷保留。原18180/18181/18182共17个容器未重建或重启，登录信息接口仍正常。本次未重跑交易全链、普通队列业务任务、停止恢复或完整发布验收。
+
 ## 操作顺序
 
 1. 使用 `accounts-file` 输出的本机私有文件取得平台、商家、顾客三个合成账号；顾客登录页选择“账号登录”。

@@ -58,8 +58,8 @@ function preview_video_ready(array $config): bool
     return true;
 }
 
-/** Share the exact isolated configuration with App and the read-only standalone gate. */
-function preview_environment(bool $migrator = false): void
+/** One source for the original process environment and the separate runtime INI. */
+function preview_environment_values(bool $migrator = false): array
 {
     preview_assert_isolated();
     $config = preview_config();
@@ -69,7 +69,7 @@ function preview_environment(bool $migrator = false): void
     // Only a separately prepared fixture uses the old create flow, after normal initialization.
     $legacyRuntime = $legacyFixture && is_file('/run/preview-app/initialized.json');
     $videoReady = preview_video_ready($config);
-    $environment = [
+    return [
         'APP_ENV' => 'testing', 'PHP_APP_DEBUG' => 'false', 'PHP_DATABASE_DEBUG' => 'false',
         'PHP_APP_APP_KEY' => $config['signing_key'],
         'PHP_DATABASE_HOSTNAME' => 'preview-mysql', 'PHP_DATABASE_HOSTPORT' => '3306',
@@ -95,7 +95,11 @@ function preview_environment(bool $migrator = false): void
         'PHP_MARKETPLACE_PRODUCT_MEDIA_SCAN_PRIVATE_ROOT' => $videoReady ? '/private/product-media-scan' : '',
         'PHP_UPGRADE_REMOTE_ENABLED' => 'false',
     ];
-    foreach ($environment as $name => $value) putenv($name . '=' . $value);
+}
+
+function preview_environment(bool $migrator = false): void
+{
+    foreach (preview_environment_values($migrator) as $name => $value) putenv($name . '=' . $value);
 }
 
 function preview_schema(): array

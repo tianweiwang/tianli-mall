@@ -1,0 +1,204 @@
+<?php
+declare(strict_types=1);
+
+/** Preparation of a newly created full-runtime preview; completed preparations are verified, never repaired. */
+function preview_full_runtime_require(bool $condition): void
+{
+    if (!$condition) throw new RuntimeException('Preview runtime preparation rejected; preserve this instance');
+}
+
+function preview_full_runtime_write(string $path, string $bytes, int $mode = 0644, int $gid = 0): void
+{
+    $stream = fopen($path, 'x+b');
+    preview_full_runtime_require(is_resource($stream));
+    try {
+        preview_full_runtime_require(fwrite($stream, $bytes) === strlen($bytes) && fflush($stream)
+            && chown($path, 0) && chgrp($path, $gid) && chmod($path, $mode)
+            && rewind($stream) && stream_get_contents($stream) === $bytes);
+    } finally { fclose($stream); }
+}
+
+/** Same finite environment keys as preview_app, represented for the original INI readers. */
+function preview_full_runtime_ini(): string
+{
+    $environment = preview_environment_values();
+    preview_full_runtime_require(($environment['APP_ENV'] ?? null) === 'testing');
+    $expected = ['APP_ENV' => 'testing'];
+    foreach ($environment as $name => $value) {
+        if ($name === 'APP_ENV') continue;
+        preview_full_runtime_require(preg_match('/\APHP_(APP|DATABASE|CACHE|REDIS|AUTH|MARKETPLACE|UPGRADE)_([A-Z0-9_]+)\z/D', $name, $parts) === 1
+            && is_string($value) && preg_match('/\A[A-Za-z0-9_.:\/-]*\z/D', $value) === 1);
+        $expected[$parts[1]][$parts[2]] = $value;
+    }
+    $ini = "APP_ENV = \"testing\"\n";
+    foreach ($expected as $section => $values) {
+        if ($section === 'APP_ENV') continue;
+        $ini .= "\n[" . $section . "]\n";
+        foreach ($values as $key => $value) $ini .= $key . ' = "' . $value . '"' . "\n";
+    }
+    preview_full_runtime_require(parse_ini_string($ini, true, INI_SCANNER_RAW) === $expected);
+    return $ini;
+}
+
+function preview_full_runtime_excluded(string $relative): bool
+{
+    return in_array($relative, ['vendor', 'runtime', 'public/uploads', 'public/install', 'public/install.lock', '.env', '.constant'], true)
+        || str_starts_with($relative, '.env.') || str_starts_with($relative, '.constant.');
+}
+
+/** Only regular source files and directories enter the independent application volume. */
+function preview_full_runtime_source(string $directory, string $relative, array &$manifest, ?string $destination = null, bool $excludeSource = true): void
+{
+    $entries = scandir($directory);
+    preview_full_runtime_require(is_array($entries));
+    foreach ($entries as $name) {
+        if ($name === '.' || $name === '..') continue;
+        $path = $relative === '' ? $name : $relative . '/' . $name;
+        if ($excludeSource && preview_full_runtime_excluded($path)) continue;
+        $source = $directory . '/' . $name;
+        $before = lstat($source);
+        preview_full_runtime_require(is_array($before));
+        $type = $before['mode'] & 0170000;
+        preview_full_runtime_require($type === 0040000 || $type === 0100000);
+        $target = $destination === null ? null : $destination . '/' . $name;
+        if ($type === 0040000) {
+            if ($target !== null) preview_full_runtime_require(mkdir($target, 0755) && chown($target, 0)
+                && chgrp($target, 0) && chmod($target, 0755));
+            $manifest[$path] = ['type' => 'directory'];
+            preview_full_runtime_source($source, $path, $manifest, $target, $excludeSource);
+        } else {
+            $hash = hash_file('sha256', $source);
+            preview_full_runtime_require(is_string($hash));
+            if ($target !== null) {
+                $input = fopen($source, 'rb');
+                $output = fopen($target, 'x+b');
+                preview_full_runtime_require(is_resource($input) && is_resource($output));
+                try {
+                    preview_full_runtime_require(stream_copy_to_stream($input, $output) === $before['size'] && fflush($output)
+                        && chown($target, 0) && chgrp($target, 0) && chmod($target, 0644));
+                } finally { fclose($input); fclose($output); }
+                preview_full_runtime_require(hash_file('sha256', $target) === $hash);
+            }
+            clearstatcache(true, $source);
+            $after = lstat($source);
+            foreach (['dev', 'ino', 'mode', 'size', 'mtime', 'ctime'] as $field) {
+                preview_full_runtime_require(is_array($after) && $before[$field] === $after[$field]);
+            }
+            $manifest[$path] = ['type' => 'file', 'size' => $before['size'], 'sha256' => $hash];
+        }
+    }
+}
+
+/** This function is called only for the three fixed writable volumes of the new instance. */
+function preview_full_runtime_permissions(string $root, bool $public, bool $apply): void
+{
+    $paths = [$root];
+    $rootStat = lstat($root);
+    preview_full_runtime_require(is_array($rootStat) && ($rootStat['mode'] & 0170000) === 0040000);
+    $entries = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS),
+        RecursiveIteratorIterator::SELF_FIRST);
+    foreach ($entries as $entry) {
+        preview_full_runtime_require(!$entry->isLink() && ($entry->isDir() || $entry->isFile()));
+        $paths[] = $entry->getPathname();
+    }
+    foreach ($paths as $path) {
+        $directory = is_dir($path);
+        $mode = $public ? ($directory ? 0755 : 0644) : ($directory ? 0700 : 0600);
+        if ($apply) preview_full_runtime_require(chown($path, 33) && chgrp($path, 33) && chmod($path, $mode));
+        clearstatcache(true, $path);
+        $stat = lstat($path);
+        // Accept normal runtime directory modes; private and upload rules stay separate.
+        $modes = !$apply && $root === '/workspace/crmeb/runtime'
+            ? ($directory ? [0700, 0750, 0755] : [0600, 0640, 0644]) : [$mode];
+        // Workerman itself creates only these two configured logs with mode 0622.
+        if (!$apply && !$directory && in_array($path, ['/workspace/crmeb/runtime/timer.log',
+            '/workspace/crmeb/runtime/workerman.log'], true)) $modes[] = 0622;
+        preview_full_runtime_require(is_array($stat) && $stat['uid'] === 33 && $stat['gid'] === 33
+            && in_array($stat['mode'] & 0777, $modes, true));
+    }
+}
+
+/** Compare every copied/generated path and its ownership without exposing the private INI. */
+function preview_full_runtime_verify(array $manifest, array $identity, array $receipt, string $ini): void
+{
+    $expected = $manifest;
+    foreach (['vendor', 'runtime', 'public/uploads'] as $path) $expected[$path] = ['type' => 'directory'];
+    $generated = ['public/install.lock' => '', '.env' => $ini,
+        '.preview-runtime-preparing.json' => json_encode($identity, JSON_THROW_ON_ERROR) . "\n",
+        '.preview-runtime-ready.json' => json_encode($receipt, JSON_THROW_ON_ERROR) . "\n"];
+    foreach ($generated as $path => $bytes) {
+        preview_full_runtime_require(!isset($expected[$path]));
+        $expected[$path] = ['type' => 'file', 'size' => strlen($bytes), 'sha256' => hash('sha256', $bytes)];
+    }
+    $actual = [];
+    preview_full_runtime_source('/runtime-app', '', $actual, null, false);
+    ksort($actual); ksort($expected);
+    preview_full_runtime_require($actual === $expected);
+    $expected[''] = ['type' => 'directory'];
+    foreach ($expected as $path => $entry) {
+        $mode = $entry['type'] === 'directory' ? 0755 : 0644;
+        $gid = 0;
+        if ($path === '.env') { $mode = 0640; $gid = 33; }
+        if (in_array($path, ['.preview-runtime-preparing.json', '.preview-runtime-ready.json'], true)) $mode = 0600;
+        clearstatcache(true, '/runtime-app/' . $path);
+        $stat = lstat('/runtime-app/' . $path);
+        preview_full_runtime_require(is_array($stat) && $stat['uid'] === 0 && $stat['gid'] === $gid
+            && ($stat['mode'] & 0777) === $mode);
+    }
+    preview_full_runtime_permissions('/workspace/crmeb/runtime', false, false);
+    preview_full_runtime_permissions('/workspace/crmeb/public/uploads', true, false);
+    preview_full_runtime_permissions('/private', false, false);
+}
+
+function preview_prepare_full_runtime(): array
+{
+    $config = preview_config();
+    preview_full_runtime_require(PHP_SAPI === 'cli' && getenv('PREVIEW_FULL_RUNTIME') === '1'
+        && ($config['full_runtime'] ?? false) === true && ($config['legacy_review_fixture'] ?? false) === false
+        && is_file('/run/preview-bootstrap/config.json') && !is_link('/run/preview-app/initialized.json')
+        && is_file('/run/preview-app/initialized.json'));
+    $initialized = json_decode(file_get_contents('/run/preview-app/initialized.json'), true, 512, JSON_THROW_ON_ERROR);
+    preview_full_runtime_require(is_array($initialized) && ($initialized['project'] ?? null) === $config['project']
+        && ($initialized['run_id'] ?? null) === $config['run_id']);
+    preview_assert_isolated();
+    $source = '/source/crmeb';
+    $target = '/runtime-app';
+    foreach ([$source, $target] as $directory) {
+        $stat = lstat($directory);
+        preview_full_runtime_require(is_array($stat) && ($stat['mode'] & 0170000) === 0040000);
+    }
+    $identity = ['project' => $config['project'], 'run_id' => $config['run_id'], 'feature' => 'full-runtime-v1'];
+    $ini = preview_full_runtime_ini();
+    $manifest = [];
+    preview_full_runtime_source($source, '', $manifest);
+    preview_full_runtime_require(isset($manifest['public/index.php'], $manifest['marketplace-release.json']));
+    $receipt = $identity + ['source_sha256' => hash('sha256', json_encode($manifest, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR)),
+        'source_files' => count(array_filter($manifest, static fn(array $entry): bool => $entry['type'] === 'file')),
+        'source_directories' => count(array_filter($manifest, static fn(array $entry): bool => $entry['type'] === 'directory'))];
+    if (file_exists($target . '/.preview-runtime-ready.json') || is_link($target . '/.preview-runtime-ready.json')) {
+        preview_full_runtime_verify($manifest, $identity, $receipt, $ini);
+        return $receipt + ['changed' => false];
+    }
+    // A partial preparation has no valid ready marker. Preserve it without copying or repairing.
+    preview_full_runtime_require(scandir($target) === ['.', '..'] && chown($target, 0) && chgrp($target, 0)
+        && chmod($target, 0755));
+    preview_full_runtime_write($target . '/.preview-runtime-preparing.json',
+        json_encode($identity, JSON_THROW_ON_ERROR) . "\n", 0600);
+    $copied = [];
+    preview_full_runtime_source($source, '', $copied, $target);
+    $current = [];
+    preview_full_runtime_source($source, '', $current);
+    preview_full_runtime_require($copied === $manifest && $current === $manifest);
+    foreach (['vendor', 'runtime', 'public/uploads'] as $directory) {
+        preview_full_runtime_require(mkdir($target . '/' . $directory, 0755) && chown($target . '/' . $directory, 0)
+            && chgrp($target . '/' . $directory, 0) && chmod($target . '/' . $directory, 0755));
+    }
+    preview_full_runtime_write($target . '/public/install.lock', '');
+    preview_full_runtime_write($target . '/.env', $ini, 0640, 33);
+    preview_full_runtime_permissions('/workspace/crmeb/runtime', false, true);
+    preview_full_runtime_permissions('/workspace/crmeb/public/uploads', true, true);
+    preview_full_runtime_permissions('/private', false, true);
+    preview_full_runtime_write($target . '/.preview-runtime-ready.json', json_encode($receipt, JSON_THROW_ON_ERROR) . "\n", 0600);
+    preview_full_runtime_verify($manifest, $identity, $receipt, $ini);
+    return $receipt + ['changed' => true];
+}

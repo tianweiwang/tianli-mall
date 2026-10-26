@@ -64,5 +64,7 @@ RUN mkdir -p /var/www/runtime /var/www/public/uploads \
     && chmod 0755 /usr/local/bin/runtime-entrypoint \
     && chmod 0644 /usr/local/bin/marketplace-startup-check.php
 
+STOPSIGNAL SIGTERM
+
 ENTRYPOINT ["runtime-entrypoint"]
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]

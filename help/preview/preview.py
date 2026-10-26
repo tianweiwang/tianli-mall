@@ -39,17 +39,24 @@ def load(root):
     state = json.loads((root / 'state.json').read_text(encoding='utf-8'))
     if not state['project'].startswith('mall-preview-') or Path(state['repo']).resolve() != REPO:
         raise RuntimeError('Preview ownership mismatch')
+    if not isinstance(state.get('full_runtime', False), bool):
+        raise RuntimeError('Invalid preview runtime mode')
+    if state.get('full_runtime') and state.get('legacy_review_fixture', False):
+        raise RuntimeError('Full runtime cannot use the legacy fixture')
     return state
 
 
 def environment(state, root):
     legacy_fixture = state.get('legacy_review_fixture', False)
-    if not isinstance(legacy_fixture, bool):
+    full_runtime = state.get('full_runtime', False)
+    if not isinstance(legacy_fixture, bool) or not isinstance(full_runtime, bool) or (legacy_fixture and full_runtime):
         raise RuntimeError('Invalid preview fixture mode')
     env = dict(os.environ)
     env.update(PREVIEW_PROJECT=state['project'], PREVIEW_RUN_ID=state['run_id'],
                PREVIEW_REPO=REPO.as_posix(), PREVIEW_PORT=str(state['port']),
                PREVIEW_LEGACY_REVIEW_FIXTURE='1' if legacy_fixture else '0',
+               PREVIEW_FULL_RUNTIME='1' if full_runtime else '0',
+               PREVIEW_NGINX_CONFIG=(COMPOSE.parent / ('nginx-runtime.conf' if full_runtime else 'nginx.conf')).as_posix(),
                PREVIEW_ADMIN_DIST=(root / 'build/admin/dist').as_posix(),
                PREVIEW_MERCHANT_DIST=(root / 'build/merchant/dist').as_posix(),
                PREVIEW_H5_DIST=(root / 'build/h5/dist').as_posix())
@@ -87,7 +94,13 @@ def assert_resources(state):
         if item['Config']['Labels'].get('marketplace.preview') != project:
             raise RuntimeError('Foreign container rejected')
         attached = set(item['NetworkSettings']['Networks'])
-        web = item['Config']['Labels'].get('com.docker.compose.service') == 'preview-web'
+        service = item['Config']['Labels'].get('com.docker.compose.service')
+        if state.get('full_runtime', False):
+            if service in ['preview-app', 'preview-events', 'preview-timer', 'preview-marketplace-queue']:
+                raise RuntimeError('Split application services cannot share a full runtime preview')
+        elif service == 'preview-runtime':
+            raise RuntimeError('Full runtime cannot share a standard preview')
+        web = service == 'preview-web'
         permitted = [{project + '_preview'}]
         if web:
             permitted.append({project + '_preview', project + '_ingress'})
@@ -117,7 +130,8 @@ def reload_web(state, root):
 
 
 def wait_web(state):
-    url = f'http://127.0.0.1:{state["port"]}/preview-health'
+    path = '/adminapi/login/info' if state.get('full_runtime', False) else '/preview-health'
+    url = f'http://127.0.0.1:{state["port"]}{path}'
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
     deadline = time.monotonic() + 30
     while time.monotonic() < deadline:
@@ -164,16 +178,20 @@ def export_accounts(state, root):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=['prepare', 'initialize', 'resume-initialize', 'storefront', 'serve-api', 'serve', 'video', 'timers', 'timers-restore', 'queue', 'smoke', 'accounts-file', 'status', 'stop'])
+    parser.add_argument('action', choices=['prepare', 'initialize', 'resume-initialize', 'storefront', 'serve-api', 'serve', 'runtime', 'video', 'timers', 'timers-restore', 'queue', 'smoke', 'accounts-file', 'status', 'stop'])
     parser.add_argument('--root', type=Path, default=DEFAULT_ROOT)
     parser.add_argument('--port', type=int, default=18180)
     parser.add_argument('--legacy-review-fixture', action='store_true',
                         help='prepare only: separate legacy review fixture with synthetic balance')
+    parser.add_argument('--full-runtime', action='store_true',
+                        help='prepare only: new isolated root for the original FPM/Supervisor runtime')
     parser.add_argument('--hours', default='0.5', help='New unpaid order deadline in hours; timers only, 0 disables new deadlines')
     args = parser.parse_args()
     root = args.root.resolve()
     if args.legacy_review_fixture and (args.action != 'prepare' or root == DEFAULT_ROOT.resolve() or args.port == 18180):
         raise RuntimeError('Legacy fixture requires prepare, its own root and a separate local port')
+    if args.full_runtime and (args.action != 'prepare' or args.legacy_review_fixture or root.exists()):
+        raise RuntimeError('Full runtime requires prepare with a new root and no legacy fixture')
     if args.action == 'prepare':
         if (root / 'state.json').exists():
             raise RuntimeError('Preview already recorded; use status, never reinitialize it')
@@ -194,7 +212,7 @@ def main():
         (root / 'commands').mkdir(exist_ok=False)
         state = {'project': project, 'run_id': run, 'repo': REPO.as_posix(), 'base_head': head,
                  'port': args.port, 'images': images, 'scope': 'local_synthetic_preview_not_stage_acceptance',
-                 'legacy_review_fixture': args.legacy_review_fixture}
+                 'legacy_review_fixture': args.legacy_review_fixture, 'full_runtime': args.full_runtime}
         with (root / 'state.json').open('x', encoding='utf-8', newline='\n') as output:
             json.dump(state, output, ensure_ascii=False, indent=2)
             output.write('\n')
@@ -205,6 +223,10 @@ def main():
         print('Isolated database services ready; application initialization is still pending.')
     else:
         state = load(root)
+        if state.get('full_runtime', False) and args.action in ['serve', 'serve-api', 'video', 'timers', 'timers-restore', 'queue']:
+            raise RuntimeError('Full runtime previews use runtime; split application actions are unavailable')
+        if args.action == 'runtime' and (not state.get('full_runtime', False) or not state.get('initialized')):
+            raise RuntimeError('Runtime requires an initialized full-runtime preview created with a new root')
         assert_resources(state)
         if args.action in ['initialize', 'resume-initialize']:
             compose(state, root, 'run', '--rm', '--no-deps', '-T', 'bootstrap', 'help/preview/bootstrap.php', args.action)
@@ -215,6 +237,21 @@ def main():
                 raise RuntimeError('Complete preview initialization before creating the storefront')
             compose(state, root, 'run', '--rm', '--no-deps', '-T', 'bootstrap', 'help/preview/storefront.php', 'initialize')
             assert_resources(state)
+        elif args.action == 'runtime':
+            for app in ['admin', 'merchant', 'h5']:
+                if not (root / f'build/{app}/dist/index.html').is_file():
+                    raise RuntimeError(f'Current {app} frontend build is not ready')
+            compose(state, root, 'up', '-d', '--wait', '--wait-timeout', '120', 'preview-mysql', 'preview-redis')
+            assert_resources(state)
+            print(compose(state, root, 'run', '--rm', '--no-deps', '-T', 'bootstrap',
+                          'help/preview/bootstrap.php', 'runtime'))
+            compose(state, root, 'up', '-d', '--no-deps', '--wait', '--wait-timeout', '180', 'preview-runtime')
+            assert_resources(state)
+            compose(state, root, 'up', '-d', '--no-deps', 'preview-web')
+            assert_resources(state)
+            reload_web(state, root)
+            wait_web(state)
+            print(f'Full runtime listening at http://127.0.0.1:{state["port"]}/ ; browser/business verification remains required.')
         elif args.action == 'serve-api':
             if not state.get('initialized'):
                 raise RuntimeError('Complete preview initialization before starting the application')
