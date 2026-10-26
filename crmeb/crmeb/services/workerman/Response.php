@@ -33,6 +33,14 @@ class Response
         return $this;
     }
 
+    /** Release only this exact response target after its original close. */
+    public function releaseConnection(TcpConnection $connection): void
+    {
+        if ($this->connection === $connection) {
+            $this->connection = null;
+        }
+    }
+
     /**
      * 发送请求
      *
@@ -44,6 +52,7 @@ class Response
      */
     public function send(string $type, ?array $data = null, bool $close = false, array $other = [])
     {
+        if (!$this->connection instanceof TcpConnection) return false;
         $this->connection->lastMessageTime = time();
         $res = compact('type');
 

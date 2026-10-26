@@ -2173,3 +2173,26 @@ Root全文核observe/serve原完整生产消费与三处有限差，11件完整E
 本次实际先完成Run202610260044169b748f普通close句柄39008自然0与独立zero43244自然0；Root完整读原146/292raw11394992B及close112/98534B、zero10/303B，五原residents/13卷/internal网络和仅Val3锁已正常清退，六fresh查询双raw空。原verify1461和旧失败保留，旧Val1/Run4、Val2/Run7未动，不把本次退役记成客服业务成功。
 
 随后才在自有SourceR2应用profile39431/92ad39bb与原record全文前缀加新记录。固定297b镜像PHP8.2实际-n-l此profile=0；nonroot65534/network-none/RO helper自然Exited0/PID0/noRestart后非force移除，三fresh purpose查询双raw空，10个真实native及完整双流已读回。只保存这两路径本地Source提交；尚无新Source/Val全树、Host或fresh完整三代normal结果。ACK旧唯一差字段仍UNKNOWN；完整M/A/postA/三构建/正式copy/freshB/UI/H5/CU_FORM/历史/MS5/MS6及最终交付责任不变，停止样本NOT RUN；未推送部署。
+
+
+### Response关闭连接精确释放（外部Source候选，2026-10-26）
+
+Root已采用platform-chat-response-release-root-design-r1/ADOPTION.json及EMPTY-SEND-COMPATIBILITY-ADDENDUM.json。当前f47/Host10/Run20261026012309f73686原normal2/verify1461；Root只读现场确认第二代group24/master26/Chat28保留，Channel27退出且HTTP25已有TERM15收据，完整TCP无40003 ESTAB但原日志Chat28 remains1。TcpConnection.destroy移除socket/registry而仅__destruct递减对象计数；Response强持最后WS且ChatService.onClose未释放是可证源码路径，不能据此唯一指认当前保留对象，更不能称ACK或normal已修好。旧失败、唯一ACK差异及旧startup UNKNOWN均保留。
+
+本候选仅两个生产文件与本记录追加：Response新增public releaseConnection(TcpConnection $connection):void，仅当前protected引用与入参===同一对象时置null；关闭旧A不能清另一个当前B。ChatService.onClose原var_dump、connections map unset与detachIdentity完整原序置于try，finally只调用此精确release。不调用send/close/destroy，不碰vendor、计数器、Timer、反射或私有属性技巧，不通过profile越界改对象。
+
+Response.send最前仅在没有TcpConnection绑定时return false；其余活连接正文、DTO编码/格式/顺序、原send/close调用原字节保留。connection/success/fail/close全部原体，不每次send自动释放、不重绑定、不吞其它错误。因一条真实消息会多次使用同一Response，释放只在原onClose生命周期落点；释放后迟到send为可控false而非null解引用。共享WorkermanService等原消费者不在本次扩改范围，仍须按真实调用边界审查。
+
+- [x] 三路径f47完整before/after、三个代码有限缝完整正逆；原record453914B全文前缀仅追加。原profile/main/harness、ChatHandle、WorkermanService与vendor未改。
+- [ ] 非作者完整Source与真实caller/身份/多次send/empty-send语义审；作者不自签Source0。
+- [ ] Root必要真实PHP语法及独立普通对象生命周期验证：真实正常close、旧A不得清当前B、活连接连续多send、无绑定false；不reflection、不手改counter或直接destroy。
+- [ ] 当前SourceR2/Val3/Run9保持冻结。只能Root以后在新自有SourceR3/独立副本应用、形成真实新commit/完整资格/Host并执行原fresh完整三代normal、TERM、普通close与独立zero；不能给现有已载入组补control/stop，不能重放旧Run。
+
+该Source候选未解析/编译/import/执行，未Git/Docker/PHP/SQL/HTTP/WS或W/Val/C-D操作；不签Runtime、原M/A/postA/三build/正式copy/B/UI/H5/CU_FORM/历史/MS5/MS6/设备/真实金融/发布。停止负向/故障/并发/恢复/K仍NOT RUN，全部原业务断言及交付责任保留。
+
+
+#### Root关闭Response引用窄修的本地Source检查点（2026-10-26）
+
+Root逐体核原Response/ChatService真实入口、Channel原远端置null与Tcp destroy/destruct生命周期，并独立复算三literal整份正逆；非作者5992/03c44e05报告未见确定缺陷。只在新自有SourceR3从f47应用，原SourceR2/Val3/Run9及旧Run7/4完全保留，未给旧组补控制/信号。
+
+实际固定297b PHP8.2两个PHP各-n-l=0，nonroot65534/network-none/两RO挂载helper自然Exited0/PID0/noRestart后非force移除，三fresh purpose查询双raw空，十native完整原流已读。本文只记录三路径本地Source提交；普通真实对象生命周期、新HEAD独立副本全资格、新Host/fresh完整normal/TERM/普通close/独立zero仍待，不能把静态路径修复当当前保留对象已释放或业务已通过。ACK13对actual15的未知两键仍需独立原Model契约处理，原完整严格比较和所有场景不删。MS6formalcopy候选仍只Source，完整M/A/postA/三build/copy/freshB/UI/H5/CU_FORM/历史/金融/发布/最终交付责任全保，停止样本NOT RUN；未推送部署。

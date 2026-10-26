@@ -263,8 +263,12 @@ class ChatService
 
     public function onClose(TcpConnection $connection)
     {
-        var_dump('chatClose');
-        unset($this->connections[$connection->id]);
-        $this->detachIdentity($connection);
+        try {
+            var_dump('chatClose');
+            unset($this->connections[$connection->id]);
+            $this->detachIdentity($connection);
+        } finally {
+            $this->response->releaseConnection($connection);
+        }
     }
 }
