@@ -545,8 +545,8 @@ export default {
         });
         let selector = '';
         if (this.upperId == 0) {
-          selector = `chat_${res.data[res.data.length - 1].id}`;
-        } else {
+          if (res.data.length) selector = `chat_${res.data[res.data.length - 1].id}`;
+        } else if (this.chatList.length) {
           selector = `chat_${this.chatList[0].id}`;
         }
         this.selector = selector;
@@ -556,7 +556,10 @@ export default {
         this.$refs['scrollBox'].refresh();
         this.$nextTick(() => {
           this.$emit('change', true);
-          let num = parseFloat(document.getElementById(selector).offsetTop) - 60;
+          if (!selector) return;
+          const anchor = document.getElementById(selector);
+          if (!anchor) return;
+          let num = parseFloat(anchor.offsetTop) - 60;
           this.$refs['scrollBox'].scrollTo(
             {
               y: num,
@@ -643,6 +646,7 @@ export default {
       }, 1000);
     },
     handleActivate(vm, refreshDom) {
+      if (!this.chatList.length) return;
       this.upperId = this.chatList[0].id;
     },
     handleStart(vm, refreshDom, done) {
@@ -662,7 +666,10 @@ export default {
       }
     },
     handleDeactivate(vm, refreshDom) {
-      let num = parseFloat(document.getElementById(this.selector).offsetTop) - 60;
+      if (!this.selector) return;
+      const anchor = document.getElementById(this.selector);
+      if (!anchor) return;
+      let num = parseFloat(anchor.offsetTop) - 60;
       this.$refs['scrollBox'].scrollTo(
         {
           y: num,
