@@ -88,6 +88,45 @@ python -X utf8 help/preview/preview.py accounts-file --root $runtimeRoot
 
 2026-10-27已在独立18184实例实际完成首装、原entrypoint启动、FPM/Timer/Workerman/普通CRMEB队列进程核对、完整health、三角色登录及商家商品列表页面。平台、商家、H5和客服入口均与复用构建字节一致。初次18183实例因复制仓库旧vendor造成队列退出，现改为上述锁一致的镜像依赖；原失败记录及停止后的数据卷保留。原18180/18181/18182共17个容器未重建或重启，登录信息接口仍正常。本次未重跑交易全链、普通队列业务任务、停止恢复或完整发布验收。
 
+## 镜像运行模式（新实例）
+
+从当前工作树执行以下步骤，逐条确认成功后再继续。三端须已有对应源码的成功构建；`--image-context` 只核对并装包，不触发构建，不修改旧产物。输出目录和运行目录都必须是新目录，宿主端口必须空闲。示例使用新时间戳生成本地镜像标签：
+
+```powershell
+$runLabel = Get-Date -Format 'yyyyMMddHHmmss'
+$packageRoot = Join-Path 'H:\天俪商城\artifacts' "image-package-$runLabel"
+$runtimeRoot = Join-Path 'H:\天俪商城\artifacts' "image-runtime-$runLabel"
+$phpImage = "mall/php:local-$runLabel"
+$nginxImage = "mall/nginx:local-$runLabel"
+python -X utf8 -B help/preview/build-frontends.py --image-context $packageRoot
+$context = Join-Path $packageRoot 'context'
+docker build --pull=false -f (Join-Path $context 'docker/php/Dockerfile') -t $phpImage $context
+docker build --pull=false -f (Join-Path $context 'docker/nginx/Dockerfile') -t $nginxImage $context
+$phpId = docker image inspect --format '{{.Id}}' $phpImage
+$nginxId = docker image inspect --format '{{.Id}}' $nginxImage
+# 先核对本机及 VPN 路由，再填写两个不同且空闲的 RFC1918 IPv4 CIDR。
+$previewSubnet = Read-Host '内部网络 CIDR'
+$ingressSubnet = Read-Host '入口网络 CIDR'
+python -X utf8 help/preview/preview.py prepare --root $runtimeRoot --port 18185 --full-runtime --php-image $phpId --nginx-image $nginxId --preview-subnet $previewSubnet --ingress-subnet $ingressSubnet
+python -X utf8 help/preview/preview.py initialize --root $runtimeRoot
+python -X utf8 help/preview/preview.py storefront --root $runtimeRoot
+python -X utf8 help/preview/preview.py runtime --root $runtimeRoot
+python -X utf8 help/preview/preview.py smoke --root $runtimeRoot
+python -X utf8 help/preview/preview.py accounts-file --root $runtimeRoot
+```
+
+现有构建不在默认目录时，装包命令追加 `--build-root <已有build根>`。工具核对原成功命令记录、当前源码与构建工作副本、产物和H5原afterEmit摘要；将H5、平台和商家页面分别放入public根、`admin/`、`merchant/`，保留后端入口及依赖锁，排除运行配置、安装器和私有数据。`IMAGE-CONTEXT.json` 记录本次来源及复制读回；Admin/商家输出哈希是装包时观察值，不追认为原构建时回执，也不替代旧formal-copy资格。两个镜像须由上面的原Dockerfile实际构建，不能只给旧镜像换标签；构建可能需要原Dockerfile声明的基础镜像和依赖下载。
+
+镜像模式首次prepare必须同时提供两张本地镜像、`--full-runtime` 和成对网段；镜像解析为固定ID后写入本实例state，后续命令只需同一 `--root`。两个网段必须属于RFC1918、彼此不重叠且不与已有Docker网络重叠；操作者还须检查宿主机及VPN路由。当前机器本轮选择 `10.253.240.0/24` 和 `10.253.241.0/24`，这是当时核对后的实例选择，不能作为其他机器或后继实例的固定默认值。程序不清理旧网络来腾出地址。
+
+运行中的PHP/Nginx使用镜像原入口与内置代码、vendor、三端页面和配置，不绑定这些宿主机目录。PHP只挂配置卷到 `/run/application`，镜像内 `/var/www/.env` 链接到其中的 `.env`；该卷仅有私有配置和准备标记，`.env` 为root:33/0640。应用可写数据位于专用runtime、uploads、private-assets三个卷，沿用UID33和私有根0700；MySQL、Redis也各用本实例专用卷。初始化仍通过现有bootstrap使用受控源码和维护账号，日常应用继续仅有DML权限。
+
+`runtime` 等待镜像原health，再开放本机网页入口；FPM、Timer、Workerman及普通CRMEB队列沿原Supervisor启动，marketplace队列默认未启。四个默认程序须另核实际进程，`smoke` 的登录成功不能证明队列业务消费。原split/full实例和数据保持，镜像实例同样不支持 `serve`、`serve-api`、`video`、`timers`、`timers-restore`、`queue` 拆分动作。准备或构建失败时保留原命令、目录及实例现场，不覆盖失败记录或自动修补。
+
+2026-10-27已实际完成3818文件上下文装包和双镜像构建；镜像内PHP应用3809个来源文件、Nginx public的2357个文件全部核同，PHP另有Dockerfile生成的install.lock。独立18185实例已沿原入口启动，health及FPM/Timer/Workerman/普通CRMEB队列四进程正常，三角色HTTP登录成功；实际商家页面读到商品5/6、售价20.15/30.25、库存各100。六个首页/深链入口与镜像装包字节一致；运行中的PHP/Nginx没有应用、vendor、脚本或前端宿主绑定，DML身份和配置卷权限也已实核。已完成配置准备的再次核对只读返回changed=false。
+
+首次prepare因Docker默认地址池耗尽而未创建任何实例资源，原commands/002保留；加入上述显式网段后沿同一首次引导完成，未更改全局Docker配置或清理其他网络。原四个运行预览共21容器的身份、启动时间、重启数和挂载保持，四个登录信息接口正常；原18183停止实例及32个既有网络保持。浏览器核对后恢复原18180页面，仍仅两个标签。这是可运行的本地候选镜像验证，不是完整MS6或正式上线验收；本次未重跑完整交易、普通队列业务消费、真机或原formal-copy资格，用户停止的样本保持NOT RUN。
+
 ## 操作顺序
 
 1. 使用 `accounts-file` 输出的本机私有文件取得平台、商家、顾客三个合成账号；顾客登录页选择“账号登录”。

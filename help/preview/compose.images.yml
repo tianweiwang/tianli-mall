@@ -1,0 +1,41 @@
+# New image-runtime previews retain the built images' code, entrypoints and web configuration.
+services:
+  bootstrap:
+    environment:
+      PREVIEW_IMAGE_RUNTIME: ${PREVIEW_IMAGE_RUNTIME:?required}
+    volumes:
+      - runtime-config:/run/preview-runtime-config
+  preview-runtime:
+    entrypoint: !reset null
+    command: !reset null
+    volumes: !override
+      - runtime-config:/run/application:ro
+      - runtime:/var/www/runtime
+      - uploads:/var/www/public/uploads
+      - private-assets:/private
+    networks:
+      preview:
+        aliases: [phpfpm]
+  preview-web:
+    user: "0:0"
+    entrypoint: !reset null
+    command: !reset null
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER, SETUID, SETGID, KILL]
+    tmpfs: [/tmp, /var/run, /var/cache/nginx]
+    ports: !override
+      - "127.0.0.1:${PREVIEW_PORT:-18180}:80"
+    volumes: !override
+      - uploads:/var/www/public/uploads:ro
+networks:
+  preview:
+    ipam:
+      config:
+        - subnet: ${PREVIEW_NETWORK_SUBNET:?required}
+  ingress:
+    ipam:
+      config:
+        - subnet: ${PREVIEW_INGRESS_SUBNET:?required}
+volumes:
+  runtime-config:
+    labels:
+      marketplace.preview: ${PREVIEW_PROJECT}

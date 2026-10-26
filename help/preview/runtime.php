@@ -150,9 +150,64 @@ function preview_full_runtime_verify(array $manifest, array $identity, array $re
     preview_full_runtime_permissions('/private', false, false);
 }
 
+/** The image supplies code and dependencies; this volume contains only private configuration. */
+function preview_image_runtime_verify(array $identity, string $ini): void
+{
+    $target = '/run/preview-runtime-config';
+    $marker = json_encode($identity, JSON_THROW_ON_ERROR) . "\n";
+    $files = ['.env' => $ini, '.preview-runtime-preparing.json' => $marker, '.preview-runtime-ready.json' => $marker];
+    $names = array_merge(['.', '..'], array_keys($files));
+    sort($names, SORT_STRING);
+    clearstatcache(true, $target);
+    $directory = lstat($target);
+    preview_full_runtime_require(is_array($directory) && ($directory['mode'] & 0170000) === 0040000
+        && ($directory['mode'] & 0777) === 0755 && $directory['uid'] === 0 && $directory['gid'] === 0
+        && scandir($target) === $names);
+    foreach ($files as $name => $bytes) {
+        $path = $target . '/' . $name;
+        clearstatcache(true, $path);
+        $stat = lstat($path);
+        preview_full_runtime_require(is_array($stat) && ($stat['mode'] & 0170000) === 0100000
+            && $stat['nlink'] === 1 && $stat['uid'] === 0 && $stat['gid'] === ($name === '.env' ? 33 : 0)
+            && ($stat['mode'] & 0777) === ($name === '.env' ? 0640 : 0600)
+            && $stat['size'] === strlen($bytes) && file_get_contents($path) === $bytes);
+    }
+    preview_full_runtime_permissions('/workspace/crmeb/runtime', false, false);
+    preview_full_runtime_permissions('/workspace/crmeb/public/uploads', true, false);
+    preview_full_runtime_permissions('/private', false, false);
+}
+
+function preview_prepare_image_runtime(array $config): array
+{
+    $target = '/run/preview-runtime-config';
+    $stat = lstat($target);
+    preview_full_runtime_require(is_array($stat) && ($stat['mode'] & 0170000) === 0040000);
+    $identity = ['project' => $config['project'], 'run_id' => $config['run_id'], 'feature' => 'image-runtime-v1'];
+    $ini = preview_full_runtime_ini();
+    if (file_exists($target . '/.preview-runtime-ready.json') || is_link($target . '/.preview-runtime-ready.json')) {
+        preview_image_runtime_verify($identity, $ini);
+        return $identity + ['changed' => false];
+    }
+    // Never complete or overwrite a partial preparation from an earlier attempt.
+    preview_full_runtime_require(scandir($target) === ['.', '..'] && chown($target, 0) && chgrp($target, 0)
+        && chmod($target, 0755));
+    preview_full_runtime_write($target . '/.preview-runtime-preparing.json', json_encode($identity, JSON_THROW_ON_ERROR) . "\n", 0600);
+    preview_full_runtime_write($target . '/.env', $ini, 0640, 33);
+    preview_full_runtime_permissions('/workspace/crmeb/runtime', false, true);
+    preview_full_runtime_permissions('/workspace/crmeb/public/uploads', true, true);
+    preview_full_runtime_permissions('/private', false, true);
+    preview_full_runtime_write($target . '/.preview-runtime-ready.json', json_encode($identity, JSON_THROW_ON_ERROR) . "\n", 0600);
+    preview_image_runtime_verify($identity, $ini);
+    return $identity + ['changed' => true];
+}
+
 function preview_prepare_full_runtime(): array
 {
     $config = preview_config();
+    $imageRuntime = $config['image_runtime'] ?? false;
+    $imageMode = getenv('PREVIEW_IMAGE_RUNTIME') ?: '0';
+    preview_full_runtime_require(is_bool($imageRuntime) && in_array($imageMode, ['0', '1'], true)
+        && $imageRuntime === ($imageMode === '1'));
     preview_full_runtime_require(PHP_SAPI === 'cli' && getenv('PREVIEW_FULL_RUNTIME') === '1'
         && ($config['full_runtime'] ?? false) === true && ($config['legacy_review_fixture'] ?? false) === false
         && is_file('/run/preview-bootstrap/config.json') && !is_link('/run/preview-app/initialized.json')
@@ -161,6 +216,7 @@ function preview_prepare_full_runtime(): array
     preview_full_runtime_require(is_array($initialized) && ($initialized['project'] ?? null) === $config['project']
         && ($initialized['run_id'] ?? null) === $config['run_id']);
     preview_assert_isolated();
+    if ($imageRuntime) return preview_prepare_image_runtime($config);
     $source = '/source/crmeb';
     $target = '/runtime-app';
     foreach ([$source, $target] as $directory) {

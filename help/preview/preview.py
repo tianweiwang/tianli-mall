@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import csv
 from datetime import datetime, timezone
+import ipaddress
 import json
 import os
 from pathlib import Path
@@ -17,6 +18,7 @@ import urllib.request
 
 REPO = Path(__file__).resolve().parents[2]
 COMPOSE = Path(__file__).with_name('compose.yml')
+IMAGE_COMPOSE = Path(__file__).with_name('compose.images.yml')
 DEFAULT_ROOT = REPO.parents[1] / 'artifacts' / 'multi-merchant-preview-20261026'
 DOCKER = shutil.which('docker') or r'C:/Users/Vwang/AppData/Local/Programs/DockerDesktop/resources/bin/docker.exe'
 GIT = shutil.which('git') or r'C:/Program Files/Git/cmd/git.exe'
@@ -35,39 +37,97 @@ def native(argv, *, environment=None):
     return result.stdout.strip()
 
 
+def validate_network_subnets(mapping):
+    """Validate only the supplied pair; never inspect Docker or host routes."""
+    if not isinstance(mapping, dict) or set(mapping) != {'preview', 'ingress'}:
+        raise RuntimeError('Image runtime requires preview and ingress subnets')
+    private_ranges = [ipaddress.IPv4Network(value) for value in
+                      ['10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16']]
+    networks = {}
+    for name, value in mapping.items():
+        if not isinstance(value, str) or '/' not in value:
+            raise RuntimeError('Image runtime subnets must be explicit IPv4 CIDRs')
+        try:
+            network = ipaddress.IPv4Network(value, strict=True)
+        except (ipaddress.AddressValueError, ipaddress.NetmaskValueError, ValueError) as error:
+            raise RuntimeError('Invalid image runtime subnet: ' + name) from error
+        if str(network) != value or not any(network.subnet_of(block) for block in private_ranges):
+            raise RuntimeError('Image runtime subnets must be canonical RFC1918 IPv4 CIDRs')
+        networks[name] = network
+    if networks['preview'].overlaps(networks['ingress']):
+        raise RuntimeError('Preview and ingress subnets overlap')
+    return {name: str(networks[name]) for name in ['preview', 'ingress']}
+
+
+def check_network_subnets_available(mapping):
+    """Prepare-time Docker-only check; the operator checks host routes separately."""
+    subnets = validate_network_subnets(mapping)
+    wanted = [ipaddress.IPv4Network(value) for value in subnets.values()]
+    ids = native([DOCKER, 'network', 'ls', '-q']).split()
+    existing = json.loads(native([DOCKER, 'network', 'inspect', *ids])) if ids else []
+    for item in existing:
+        for config in (item.get('IPAM', {}).get('Config') or []):
+            value = config.get('Subnet')
+            if not value:
+                continue
+            network = ipaddress.ip_network(value, strict=False)
+            if network.version == 4 and any(candidate.overlaps(network) for candidate in wanted):
+                raise RuntimeError('Image runtime subnet overlaps Docker network: ' + item['Name'])
+    return subnets
+
+
 def load(root):
     state = json.loads((root / 'state.json').read_text(encoding='utf-8'))
     if not state['project'].startswith('mall-preview-') or Path(state['repo']).resolve() != REPO:
         raise RuntimeError('Preview ownership mismatch')
     if not isinstance(state.get('full_runtime', False), bool):
         raise RuntimeError('Invalid preview runtime mode')
+    if not isinstance(state.get('image_runtime', False), bool) or (
+            state.get('image_runtime', False) and not state.get('full_runtime', False)):
+        raise RuntimeError('Invalid preview image mode')
     if state.get('full_runtime') and state.get('legacy_review_fixture', False):
         raise RuntimeError('Full runtime cannot use the legacy fixture')
+    if state.get('image_runtime', False):
+        validate_network_subnets(state.get('network_subnets'))
     return state
 
 
 def environment(state, root):
     legacy_fixture = state.get('legacy_review_fixture', False)
     full_runtime = state.get('full_runtime', False)
-    if not isinstance(legacy_fixture, bool) or not isinstance(full_runtime, bool) or (legacy_fixture and full_runtime):
+    image_runtime = state.get('image_runtime', False)
+    if (not isinstance(legacy_fixture, bool) or not isinstance(full_runtime, bool)
+            or not isinstance(image_runtime, bool) or (legacy_fixture and full_runtime)
+            or (image_runtime and not full_runtime)):
         raise RuntimeError('Invalid preview fixture mode')
     env = dict(os.environ)
     env.update(PREVIEW_PROJECT=state['project'], PREVIEW_RUN_ID=state['run_id'],
                PREVIEW_REPO=REPO.as_posix(), PREVIEW_PORT=str(state['port']),
                PREVIEW_LEGACY_REVIEW_FIXTURE='1' if legacy_fixture else '0',
                PREVIEW_FULL_RUNTIME='1' if full_runtime else '0',
+               PREVIEW_IMAGE_RUNTIME='1' if image_runtime else '0',
                PREVIEW_NGINX_CONFIG=(COMPOSE.parent / ('nginx-runtime.conf' if full_runtime else 'nginx.conf')).as_posix(),
                PREVIEW_ADMIN_DIST=(root / 'build/admin/dist').as_posix(),
                PREVIEW_MERCHANT_DIST=(root / 'build/merchant/dist').as_posix(),
                PREVIEW_H5_DIST=(root / 'build/h5/dist').as_posix())
     for key, value in state['images'].items():
         env[f'PREVIEW_{key}_IMAGE'] = value
+    if image_runtime:
+        subnets = validate_network_subnets(state.get('network_subnets'))
+        env.update(PREVIEW_NETWORK_SUBNET=subnets['preview'], PREVIEW_INGRESS_SUBNET=subnets['ingress'])
     return env
+
+
+def compose_command(state, *arguments):
+    argv = [DOCKER, 'compose', '--project-name', state['project'], '--file', str(COMPOSE)]
+    if state.get('image_runtime', False):
+        argv += ['--file', str(IMAGE_COMPOSE)]
+    return [*argv, *arguments]
 
 
 def compose(state, root, *arguments):
     env = environment(state, root)
-    argv = [DOCKER, 'compose', '--project-name', state['project'], '--file', str(COMPOSE), *arguments]
+    argv = compose_command(state, *arguments)
     result = subprocess.run(argv, env=env, text=True, encoding='utf-8', errors='replace', capture_output=True)
     sequence = len(list((root / 'commands').glob('*.json'))) + 1
     prefix = root / 'commands' / f'{sequence:03d}'
@@ -84,9 +144,12 @@ def compose(state, root, *arguments):
 
 def assert_resources(state):
     project = state['project']
+    subnets = validate_network_subnets(state.get('network_subnets')) if state.get('image_runtime', False) else None
     network = json.loads(native([DOCKER, 'network', 'inspect', project + '_preview']))[0]
     if network['Internal'] is not True or network['Labels'].get('marketplace.preview') != project:
         raise RuntimeError('Preview network isolation mismatch')
+    if subnets and [row.get('Subnet') for row in network['IPAM'].get('Config') or []] != [subnets['preview']]:
+        raise RuntimeError('Preview network subnet differs from the recorded image instance')
     ids = native([DOCKER, 'ps', '-aq', '--filter', 'label=com.docker.compose.project=' + project]).split()
     if not ids:
         raise RuntimeError('No owned preview containers')
@@ -110,11 +173,16 @@ def assert_resources(state):
             ingress = json.loads(native([DOCKER, 'network', 'inspect', project + '_ingress']))[0]
             if ingress['Labels'].get('marketplace.preview') != project:
                 raise RuntimeError('Foreign preview ingress rejected')
+            if subnets and [row.get('Subnet') for row in ingress['IPAM'].get('Config') or []] != [subnets['ingress']]:
+                raise RuntimeError('Ingress subnet differs from the recorded image instance')
         if item['HostConfig']['Privileged']:
             raise RuntimeError('Privileged preview container rejected')
-        for bindings in (item['HostConfig'].get('PortBindings') or {}).values():
+        web_port = '80/tcp' if state.get('image_runtime', False) else '8080/tcp'
+        for port, bindings in (item['HostConfig'].get('PortBindings') or {}).items():
             if bindings and not web:
                 raise RuntimeError('Only the web preview may publish a port')
+            if bindings and port != web_port:
+                raise RuntimeError('Unexpected preview web container port')
             for binding in bindings or []:
                 if binding['HostIp'] != '127.0.0.1' or binding['HostPort'] != str(state['port']):
                     raise RuntimeError('Non-local preview exposure rejected')
@@ -125,8 +193,9 @@ def assert_resources(state):
 
 def reload_web(state, root):
     # Re-resolve upstream addresses after Compose recreates a backend container.
-    compose(state, root, 'exec', '-T', 'preview-web', 'nginx', '-t', '-c', '/etc/nginx/preview.conf')
-    compose(state, root, 'exec', '-T', 'preview-web', 'nginx', '-s', 'reload', '-c', '/etc/nginx/preview.conf')
+    config = [] if state.get('image_runtime', False) else ['-c', '/etc/nginx/preview.conf']
+    compose(state, root, 'exec', '-T', 'preview-web', 'nginx', '-t', *config)
+    compose(state, root, 'exec', '-T', 'preview-web', 'nginx', '-s', 'reload', *config)
 
 
 def wait_web(state):
@@ -163,8 +232,8 @@ def export_accounts(state, root):
         return
     # Deliberately bypass the public command logger: credential stdout stays in memory.
     code = "require 'help/preview/common.php'; preview_assert_isolated(); if(!is_file('/run/preview-app/initialized.json'))exit(1); $c=preview_config(); echo json_encode(['project'=>$c['project'],'synthetic_only'=>true,'accounts'=>$c['credentials']],JSON_THROW_ON_ERROR);"
-    raw = native([DOCKER, 'compose', '--project-name', state['project'], '--file', str(COMPOSE),
-                  'run', '--rm', '--no-deps', '-T', 'bootstrap', '-r', code], environment=environment(state, root))
+    raw = native(compose_command(state, 'run', '--rm', '--no-deps', '-T', 'bootstrap', '-r', code),
+                 environment=environment(state, root))
     value = json.loads(raw)
     if value.get('project') != state['project'] or set(value.get('accounts', {})) != {'admin', 'merchant', 'customer'}:
         raise RuntimeError('Private preview credentials do not match this instance')
@@ -185,9 +254,22 @@ def main():
                         help='prepare only: separate legacy review fixture with synthetic balance')
     parser.add_argument('--full-runtime', action='store_true',
                         help='prepare only: new isolated root for the original FPM/Supervisor runtime')
+    parser.add_argument('--php-image', help='prepare only: existing PHP image, paired with --nginx-image and --full-runtime')
+    parser.add_argument('--nginx-image', help='prepare only: existing Nginx image, paired with --php-image and --full-runtime')
+    parser.add_argument('--preview-subnet', help='image prepare only: RFC1918 IPv4 CIDR; check host routes separately')
+    parser.add_argument('--ingress-subnet', help='image prepare only: separate RFC1918 IPv4 CIDR; check host routes separately')
     parser.add_argument('--hours', default='0.5', help='New unpaid order deadline in hours; timers only, 0 disables new deadlines')
     args = parser.parse_args()
     root = args.root.resolve()
+    image_runtime = args.php_image is not None or args.nginx_image is not None
+    if image_runtime and (not args.php_image or not args.nginx_image or args.action != 'prepare'
+                          or not args.full_runtime or root.exists()):
+        raise RuntimeError('Image runtime requires both local images, full runtime and a new prepare root')
+    network_subnets = None
+    if image_runtime:
+        network_subnets = validate_network_subnets({'preview': args.preview_subnet, 'ingress': args.ingress_subnet})
+    elif args.preview_subnet is not None or args.ingress_subnet is not None:
+        raise RuntimeError('Explicit preview subnets are only used by new image runtime instances')
     if args.legacy_review_fixture and (args.action != 'prepare' or root == DEFAULT_ROOT.resolve() or args.port == 18180):
         raise RuntimeError('Legacy fixture requires prepare, its own root and a separate local port')
     if args.full_runtime and (args.action != 'prepare' or args.legacy_review_fixture or root.exists()):
@@ -197,12 +279,17 @@ def main():
             raise RuntimeError('Preview already recorded; use status, never reinitialize it')
         if not 1024 <= args.port <= 65535:
             raise RuntimeError('Invalid local preview port')
+        if image_runtime:
+            network_subnets = check_network_subnets_available(network_subnets)
         with socket.socket() as probe:
             probe.bind(('127.0.0.1', args.port))
         run = datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S') + secrets.token_hex(3)
         project = 'mall-preview-' + run
+        image_references = dict(IMAGES)
+        if image_runtime:
+            image_references.update(PHP=args.php_image, NGINX=args.nginx_image)
         images = {key: native([DOCKER, 'image', 'inspect', '--format', '{{.Id}}', image])
-                  for key, image in IMAGES.items()}
+                  for key, image in image_references.items()}
         head = native([GIT, '-c', f'safe.directory={REPO.as_posix()}', '-C', str(REPO), 'rev-parse', 'HEAD'])
         for kind in ['container', 'network', 'volume']:
             listing = ['ps', '-aq'] if kind == 'container' else [kind, 'ls', '-q']
@@ -212,7 +299,10 @@ def main():
         (root / 'commands').mkdir(exist_ok=False)
         state = {'project': project, 'run_id': run, 'repo': REPO.as_posix(), 'base_head': head,
                  'port': args.port, 'images': images, 'scope': 'local_synthetic_preview_not_stage_acceptance',
-                 'legacy_review_fixture': args.legacy_review_fixture, 'full_runtime': args.full_runtime}
+                 'legacy_review_fixture': args.legacy_review_fixture, 'full_runtime': args.full_runtime,
+                 'image_runtime': image_runtime}
+        if image_runtime:
+            state['network_subnets'] = network_subnets
         with (root / 'state.json').open('x', encoding='utf-8', newline='\n') as output:
             json.dump(state, output, ensure_ascii=False, indent=2)
             output.write('\n')
@@ -238,9 +328,10 @@ def main():
             compose(state, root, 'run', '--rm', '--no-deps', '-T', 'bootstrap', 'help/preview/storefront.php', 'initialize')
             assert_resources(state)
         elif args.action == 'runtime':
-            for app in ['admin', 'merchant', 'h5']:
-                if not (root / f'build/{app}/dist/index.html').is_file():
-                    raise RuntimeError(f'Current {app} frontend build is not ready')
+            if not state.get('image_runtime', False):
+                for app in ['admin', 'merchant', 'h5']:
+                    if not (root / f'build/{app}/dist/index.html').is_file():
+                        raise RuntimeError(f'Current {app} frontend build is not ready')
             compose(state, root, 'up', '-d', '--wait', '--wait-timeout', '120', 'preview-mysql', 'preview-redis')
             assert_resources(state)
             print(compose(state, root, 'run', '--rm', '--no-deps', '-T', 'bootstrap',

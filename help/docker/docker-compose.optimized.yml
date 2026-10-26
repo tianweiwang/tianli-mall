@@ -76,7 +76,7 @@ services:
       redis:
         condition: service_healthy
     volumes:
-      - ./.env.application:/var/www/.env:ro
+      - ./.env.application:/run/application/.env:ro
       - ../../crmeb/.constant:/var/www/.constant:ro
       - runtime_data:/var/www/runtime
       - ../../crmeb/public/uploads:/var/www/public/uploads

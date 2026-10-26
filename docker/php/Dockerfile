@@ -58,7 +58,8 @@ COPY docker/php/runtime-healthcheck.php /usr/local/bin/runtime-healthcheck.php
 COPY --chown=root:root docker/php/marketplace-startup-check.php /usr/local/bin/marketplace-startup-check.php
 COPY --from=vendor --chown=root:root /var/www/ /var/www/
 
-RUN mkdir -p /var/www/runtime /var/www/public/uploads \
+RUN mkdir -p /var/www/runtime /var/www/public/uploads /run/application \
+    && ln -s /run/application/.env /var/www/.env \
     && touch /var/www/public/install.lock \
     && chown -R www-data:www-data /var/www/runtime /var/www/public/uploads \
     && chmod 0755 /usr/local/bin/runtime-entrypoint \

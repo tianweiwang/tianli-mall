@@ -12,13 +12,16 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import hashlib
+from html.parser import HTMLParser
 import json
 import os
 from pathlib import Path
 import shutil
+import stat
 import subprocess
 import sys
 import time
+from urllib.parse import unquote, urlsplit
 
 SOURCE = Path(__file__).resolve().parents[2]
 OUTPUT = Path('H:/天俪商城/artifacts/multi-merchant-preview-20261026/build')
@@ -59,24 +62,28 @@ def copy_file(source, destination):
     shutil.copy2(source, destination)
 
 
-def inputs(frontend):
-    name = 'uni-app' if frontend == 'h5' else frontend
-    origin = SOURCE / 'template' / name
-    destination = OUTPUT / 'work' / 'template' / name
+def input_entries(origin):
     if not origin.is_dir():
         raise RuntimeError('Missing current frontend: ' + str(origin))
-    rows = []
     for directory, children, files in os.walk(origin):
         relative = Path(directory).relative_to(origin)
         children[:] = [child for child in children if child not in {'.git', 'node_modules', '.cache'}
                        and not (relative == Path('.') and child == 'dist')
                        and not (relative == Path('unpackage') and child in {'dist', 'cache'})]
+        files = [name for name in files
+                 if (not name.startswith('.env') or name in {'.env.production', '.env.development'})
+                 and name != '.npmrc' and not name.endswith('.local')]
+        yield relative, Path(directory), files
+
+
+def inputs(frontend):
+    name = 'uni-app' if frontend == 'h5' else frontend
+    origin = SOURCE / 'template' / name
+    destination = OUTPUT / 'work' / 'template' / name
+    rows = []
+    for relative, directory, files in input_entries(origin):
         (destination / relative).mkdir(parents=True, exist_ok=True)
         for filename in files:
-            if filename.startswith('.env') and filename not in {'.env.production', '.env.development'}:
-                continue
-            if filename == '.npmrc' or filename.endswith('.local'):
-                continue
             source = Path(directory) / filename
             if source.is_symlink():
                 raise RuntimeError('Unexpected linked frontend source: ' + str(source))
@@ -93,10 +100,8 @@ def inputs(frontend):
                          'copied_input_sha256': hashlib.sha256(signature.encode()).hexdigest()}
 
 
-def limit_parallelism(work, workers):
-    config = work / 'vue.config.js'
-    # This is a disposable input copy, never a source or dependency edit.
-    addition = '''\n// Isolated preview: bound build workers; application configuration stays above.
+def parallelism_addition(workers):
+    return '''\n// Isolated preview: bound build workers; application configuration stays above.
 const previewOriginalConfigure = module.exports.configureWebpack;
 module.exports.parallel = false;
 module.exports.configureWebpack = function (config) {
@@ -108,7 +113,12 @@ module.exports.configureWebpack = function (config) {
   }
   return returned;
 };\n'''.replace('PREVIEW_WORKERS', str(workers))
-    config.write_text(config.read_text('utf-8') + addition, encoding='utf-8', newline='\n')
+
+
+def limit_parallelism(work, workers):
+    config = work / 'vue.config.js'
+    # This is a disposable input copy, never a source or dependency edit.
+    config.write_text(config.read_text('utf-8') + parallelism_addition(workers), encoding='utf-8', newline='\n')
 
 
 def modules(frontend, work):
@@ -283,15 +293,291 @@ def build(frontend, args):
         print(json.dumps({'frontend': frontend, 'status': record['status'], 'dist': record['dist']}, ensure_ascii=False), flush=True)
 
 
+def context_require(condition, message):
+    if not condition:
+        raise RuntimeError('Image context: ' + message)
+
+
+def context_relative(name):
+    context_require(isinstance(name, str) and name and '\\' not in name and ':' not in name
+                    and all(ord(char) >= 32 for char in name)
+                    and all(part not in {'', '.', '..'} for part in name.split('/')), 'invalid relative path')
+    return name
+
+
+def context_regular(path, directory=False):
+    info = path.lstat()
+    context_require(not path.is_symlink() and not (getattr(info, 'st_file_attributes', 0) & 1024)
+                    and (stat.S_ISDIR(info.st_mode) if directory else stat.S_ISREG(info.st_mode)),
+                    'linked or non-regular input: ' + str(path))
+    return info
+
+
+def context_pin(raw):
+    return {'bytes': len(raw), 'sha256': hashlib.sha256(raw).hexdigest()}
+
+
+def context_read(path, observed):
+    path = path.absolute()
+    before = context_regular(path)
+    raw = path.read_bytes()
+    after = context_regular(path)
+    fields = ('st_dev', 'st_ino', 'st_mode', 'st_size', 'st_mtime_ns', 'st_ctime_ns')
+    context_require(len(raw) == before.st_size and all(getattr(before, key) == getattr(after, key) for key in fields),
+                    'input changed while reading: ' + str(path))
+    signature = context_pin(raw)
+    context_require(path not in observed or observed[path] == signature, 'input changed: ' + str(path))
+    observed[path] = signature
+    return raw
+
+
+def context_namespace(files, directories):
+    names = [*files, *directories]
+    for name in names:
+        context_relative(name)
+    context_require(len(names) == len({name.casefold() for name in names}), 'case or file/directory collision')
+
+
+def context_tree(root, observed):
+    context_regular(root, True)
+    files, directories = {}, []
+    for directory, children, names in os.walk(root, followlinks=False):
+        context_regular(Path(directory), True)
+        for name in children:
+            path = Path(directory) / name
+            context_regular(path, True)
+            directories.append(path.relative_to(root).as_posix())
+        for name in names:
+            path = Path(directory) / name
+            files[path.relative_to(root).as_posix()] = context_pin(context_read(path, observed))
+    context_namespace(files, directories)
+    return {'files': dict(sorted(files.items())), 'directories': sorted(directories)}
+
+
+class ContextResources(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.urls = []
+
+    def handle_starttag(self, tag, attrs):
+        self.urls += [value for key, value in attrs
+                      if (tag == 'script' and key == 'src') or (tag == 'link' and key == 'href')]
+
+
+def context_builds(build_root, observed):
+    summary = json.loads(context_read(build_root / 'BUILD.json', observed))
+    builds = {}
+    for frontend in ['admin', 'merchant', 'h5']:
+        folder = build_root / frontend
+        record = json.loads(context_read(folder / 'BUILD.json', observed))
+        context_require(summary['frontends'][frontend] == record and record['frontend'] == frontend
+                        and record['status'] == 'BUILT' and Path(record['dist']).resolve() == folder / 'dist',
+                        'original successful build record required: ' + frontend)
+        name = 'uni-app' if frontend == 'h5' else frontend
+        work = build_root / 'work/template' / name
+        current, copied = {}, {}
+        for origin, result in [(SOURCE / 'template' / name, current), (work, copied)]:
+            for relative, directory, files in input_entries(origin):
+                context_regular(directory, True)
+                for leaf in files:
+                    result[context_relative((relative / leaf).as_posix())] = context_pin(context_read(directory / leaf, observed))
+        context_require(current.keys() == copied.keys(), 'build work has missing or extra source files: ' + frontend)
+        workers = record['preview_only_config']['minifier_workers']
+        context_require(type(workers) is int and workers in (1, 2)
+                        and record['preview_only_config']['loader_parallel'] is False, 'unknown build configuration')
+        for path, expected in current.items():
+            if path == 'vue.config.js':
+                raw = context_read(SOURCE / 'template' / name / path, observed).decode('utf-8')
+                expected = context_pin((raw.replace('\r\n', '\n').replace('\r', '\n')
+                                        + parallelism_addition(workers)).encode('utf-8'))
+            context_require(copied[path] == expected, 'build work differs from declared source: ' + frontend + '/' + path)
+        signature = ''.join(path + '\0' + str(row['bytes']) + '\0' + row['sha256'] + '\n'
+                            for path, row in sorted(current.items()))
+        source_inputs = {'file_count': len(current), 'bytes': sum(row['bytes'] for row in current.values()),
+                         'copied_input_sha256': hashlib.sha256(signature.encode()).hexdigest()}
+        context_require(all(record['source_inputs'][key] == value for key, value in source_inputs.items()),
+                        'current source does not match the original build input signature: ' + frontend)
+        if frontend == 'admin':
+            helper = Path('help/audit-regressions/frontend-source-check.cjs')
+            context_require(context_read(SOURCE / helper, observed) == context_read(build_root / 'work' / helper, observed),
+                            'admin source-check helper differs')
+        commands = record['commands']
+        labels = ['h5-build'] if frontend == 'h5' else ['prebuild', 'build']
+        context_require([item['label'] for item in commands] == labels, 'original build command sequence required')
+        for index, item in enumerate(commands, 1):
+            context_require(type(item['exit']) is int and item['exit'] == 0 and type(item['pid']) is int and item['pid'] > 0
+                            and dt.datetime.fromisoformat(item['finished']) >= dt.datetime.fromisoformat(item['started'])
+                            and Path(item['cwd']).resolve() == (folder if frontend == 'h5' else work),
+                            'original normal build completion required')
+            for stream in ['stdout', 'stderr']:
+                log = folder / f'{index:02d}-{item["label"]}.{stream}.log'
+                context_require(Path(item[stream]).resolve() == log, 'build log must belong to its original build')
+                context_read(log, observed)
+        if frontend != 'h5':
+            check = work / 'scripts/source-check.cjs' if frontend == 'merchant' else build_root / 'work/help/audit-regressions/frontend-source-check.cjs'
+            cli = CACHES[frontend] / 'node_modules/@vue/cli-service/bin/vue-cli-service.js'
+            expected = [[str(NODE), str(check)], [str(NODE), str(cli), 'build', '--mode', 'production', '--dest', str(folder / 'dist')]]
+            context_require([item['argv'] for item in commands] == expected, 'unexpected frontend build command')
+        else:
+            command_record = json.loads(context_read(folder / 'H5-COMMAND.json', observed))
+            argv = commands[0]['argv']
+            context_require(command_record['argv'] == argv and argv[:3] == [DOCKER, 'run', '--rm']
+                            and argv[-5:] == [H5_IMAGE, 'node', '--require', '/tool/main-cli-preload.cjs', '/hbx/plugins/uniapp-cli/bin/uniapp-cli.js']
+                            and argv[argv.index('--network') + 1] == 'none', 'unexpected H5 compiler command')
+        dist = context_tree(folder / 'dist', observed)
+        context_require(dist['files'].get('index.html', {}).get('bytes', 0) > 0
+                        and record['dist_files'] == len(dist['files'])
+                        and record['dist_bytes'] == sum(row['bytes'] for row in dist['files'].values()), 'dist inventory differs from build')
+        parser = ContextResources()
+        parser.feed(context_read(folder / 'dist/index.html', observed).decode('utf-8'))
+        prefix = '/' if frontend == 'h5' else '/' + frontend + '/'
+        context_require(parser.urls, 'frontend HTML has no local resources')
+        for url in parser.urls:
+            parsed = urlsplit(url)
+            context_require(not parsed.scheme and not parsed.netloc and parsed.path.startswith(prefix), 'unexpected HTML resource base')
+            resource = context_relative(unquote(parsed.path[len(prefix):]))
+            context_require(resource in dist['files'], 'HTML resource absent from dist: ' + resource)
+        output_scope = 'PACKAGING_TIME_OBSERVATION_NOT_ORIGINAL_BUILD_HASH'
+        if frontend == 'h5':
+            receipt = json.loads(context_read(folder / 'compiler-evidence/adapter-receipt.json', observed))
+            inventory = ''.join(path + '\0' + str(dist['files'][path]['bytes']) + '\0' + dist['files'][path]['sha256'] + '\n'
+                                for path in sorted(dist['files'], key=lambda value: value.encode('utf-16-be')))
+            context_require(record['compiler_adapter_status'] == receipt['status'] == 'SECOND_PASS_OBSERVED'
+                            and receipt['factory_count'] == receipt['callback_count'] == 1 and receipt['first_callback_success'] is True
+                            and receipt['explicit_invalidations'] == 1 and receipt['purged_module_count'] == 8
+                            and [item['pass'] for item in receipt['passes']] == [1, 2]
+                            and all(item['has_errors'] is False and item['asset_count'] > 0 for item in receipt['passes'])
+                            and receipt['after_emit_passes'] == [2] and receipt['phase_counts']['failed'] == 0
+                            and receipt['error_observations'] == [] and receipt['failure_close_requested'] is False
+                            and receipt['native_failure_exit_requested'] is False
+                            and receipt['after_emit_inventories'] == [{'pass': 2, 'file_count': len(dist['files']),
+                                'bytes': sum(row['bytes'] for row in dist['files'].values()),
+                                'manifest_sha256': hashlib.sha256(inventory.encode()).hexdigest()}], 'original H5 afterEmit receipt mismatch')
+            output_scope = 'ORIGINAL_H5_AFTER_EMIT_HASH_MATCHED_AT_PACKAGING'
+        builds[frontend] = {'root': folder / 'dist', 'tree': dist, 'source_inputs': source_inputs, 'output_hash_scope': output_scope}
+    return builds
+
+
+def context_git(*args):
+    git = shutil.which('git') or 'C:/Program Files/Git/cmd/git.exe'
+    result = subprocess.run([git, '--no-optional-locks', '-c', 'safe.directory=' + SOURCE.as_posix(),
+                             '-C', str(SOURCE), *args], capture_output=True)
+    context_require(result.returncode == 0, 'read-only source inventory unavailable')
+    return result.stdout
+
+
+def context_excluded(name):
+    parts = name.split('/')
+    return (any(part.startswith(('.env', '.constant')) or part in {'.git', '.cache', '.tmp', '.secret', '.secrets',
+                'private', 'private-assets', '__ms4_assets', '__ms4_fixture__'} for part in parts)
+            or parts[-1] == 'install.lock' or parts[-1].endswith(('.log', '.tmp', '.local'))
+            or any(name == base or name.startswith(base + '/') for base in
+                   ['crmeb/vendor', 'crmeb/runtime', 'crmeb/public/uploads', 'crmeb/public/install']))
+
+
+def image_context(output, build_root):
+    output, build_root = output.absolute(), build_root.resolve()
+    context_require(output.resolve() == output and not output.exists() and not output.is_symlink(), 'output must be a new canonical directory')
+    context_regular(output.parent, True)
+    for protected in [SOURCE, build_root]:
+        context_require(not output.is_relative_to(protected) and not protected.is_relative_to(output), 'output overlaps source or build inputs')
+    observed = {}
+    builds = context_builds(build_root, observed)
+    head = context_git('rev-parse', 'HEAD').decode().strip()
+    tracked = context_git('ls-files', '--stage', '-z', '--', 'crmeb', 'docker', '.dockerignore')
+    files, origins, directories = {}, {}, set()
+    checked_directories = set()
+    for entry in tracked.rstrip(b'\0').split(b'\0'):
+        metadata, raw_name = entry.split(b'\t', 1)
+        mode, _, stage = metadata.decode().split()
+        name = context_relative(raw_name.decode('utf-8'))
+        context_require(mode in ('100644', '100755') and stage == '0', 'non-regular or conflicted tracked source')
+        if context_excluded(name):
+            continue
+        leaf = name.removeprefix('crmeb/public/') if name.startswith('crmeb/public/') else ''
+        if leaf in ('index.html', 'admin', 'merchant', 'static') or leaf.startswith(('admin/', 'merchant/', 'static/')):
+            continue
+        for parent in (SOURCE / name).parents:
+            if parent not in checked_directories:
+                context_regular(parent, True)
+                checked_directories.add(parent)
+            if parent == SOURCE:
+                break
+        files[name] = context_pin(context_read(SOURCE / name, observed))
+        origins[name] = (SOURCE / name).as_posix()
+    for frontend, build in builds.items():
+        prefix = 'crmeb/public/' + (frontend + '/' if frontend != 'h5' else '')
+        for name, signature in build['tree']['files'].items():
+            context_require(not context_excluded('crmeb/public/' + name), 'runtime state in frontend output')
+            shared = frontend == 'h5' and name.startswith(('assets/', 'pages/'))
+            context_require(frontend != 'h5' or name == 'index.html' or name.startswith('static/') or shared, 'unknown H5 output ownership')
+            target = prefix + name
+            if shared:
+                context_require(files.get(target) == signature, 'H5 shared public asset must match original source: ' + name)
+            else:
+                context_require(target not in files, 'backend/frontend file collision: ' + target)
+                files[target] = signature
+                origins[target] = (build['root'] / name).as_posix()
+        for name in build['tree']['directories']:
+            context_require(frontend != 'h5' or name.split('/')[0] in ('static', 'assets', 'pages'), 'unknown H5 directory')
+            directories.add(prefix + name)
+    for name in files:
+        directories.update(parent.as_posix() for parent in Path(name).parents if parent.as_posix() != '.')
+    context_namespace(files, directories)
+    context_require(all(name in files for name in ['.dockerignore', 'docker/php/Dockerfile', 'docker/nginx/Dockerfile',
+                    'crmeb/composer.lock', 'crmeb/public/index.php', 'crmeb/public/index.html',
+                    'crmeb/public/admin/index.html', 'crmeb/public/merchant/index.html']), 'required image source or entry absent')
+    output.mkdir()
+    destination = output / 'context'
+    destination.mkdir()
+    for name in sorted(directories, key=lambda value: (len(Path(value).parts), value)):
+        (destination / name).mkdir()
+    for name, expected in sorted(files.items()):
+        raw = context_read(Path(origins[name]), observed)
+        context_require(context_pin(raw) == expected, 'copy source differs from plan')
+        with (destination / name).open('xb') as stream:
+            context_require(stream.write(raw) == len(raw), 'incomplete new context write')
+        context_require(context_pin(context_read(destination / name, {})) == expected, 'new context readback differs')
+    expected_tree = {'files': dict(sorted(files.items())), 'directories': sorted(directories)}
+    context_require(context_tree(destination, {}) == expected_tree, 'complete context tree differs from plan')
+    for path in list(observed):
+        context_read(path, observed)
+    context_require(context_git('rev-parse', 'HEAD').decode().strip() == head
+                    and context_git('ls-files', '--stage', '-z', '--', 'crmeb', 'docker', '.dockerignore') == tracked,
+                    'controlled source inventory changed during packaging')
+    # These are actual packaging observations, not backfilled old formal qualification or build receipts.
+    manifest = {'schema': 1, 'status': 'IMAGE_CONTEXT_PREPARED_NOT_FORMAL_ACCEPTANCE', 'observed_at': now(),
+                'source_directory': SOURCE.as_posix(), 'source_head': head, 'source_bytes': 'CURRENT_CONTROLLED_WORKTREE',
+                'build_root': build_root.as_posix(), 'context': destination.as_posix(), **expected_tree,
+                'origins': dict(sorted(origins.items())),
+                'builds': {name: {key: value for key, value in data.items() if key != 'root'} for name, data in builds.items()},
+                'observed_inputs': {path.as_posix(): value for path, value in sorted(observed.items())},
+                'formal_copy_qualification': 'NOT_CREATED', 'image_build_runtime_release': 'NOT_VERIFIED'}
+    raw = (json.dumps(manifest, ensure_ascii=False, indent=2) + '\n').encode('utf-8')
+    with (output / 'IMAGE-CONTEXT.json').open('xb') as stream:
+        context_require(stream.write(raw) == len(raw), 'incomplete manifest write')
+    context_require((output / 'IMAGE-CONTEXT.json').read_bytes() == raw, 'manifest readback differs')
+    print(json.dumps({'status': manifest['status'], 'context': destination.as_posix(), 'files': len(files)}, ensure_ascii=False), flush=True)
+    return 0
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--frontend', choices=['merchant', 'admin', 'h5', 'all'], default='merchant')
     parser.add_argument('--memory-mb', type=int, default=2048)
     parser.add_argument('--workers', type=int, choices=[1, 2], default=2)
     parser.add_argument('--allow-docker', action='store_true', help='Root only; only used by h5')
+    parser.add_argument('--image-context', type=Path, help='prepare a new image context from existing builds; does not build')
+    parser.add_argument('--build-root', type=Path, help='existing build root for --image-context; defaults to the preview build directory')
     args = parser.parse_args()
     if not 1024 <= args.memory_mb <= 4096:
         parser.error('memory-mb must be 1024..4096')
+    if args.image_context is not None:
+        if args.allow_docker or args.frontend != 'merchant':
+            parser.error('image-context cannot be combined with frontend build actions')
+        return image_context(args.image_context, args.build_root or OUTPUT)
+    if args.build_root is not None:
+        parser.error('build-root is only used by image-context')
     OUTPUT.mkdir(parents=True, exist_ok=True)
     frontends = ['merchant', 'admin', 'h5'] if args.frontend == 'all' else [args.frontend]
     for frontend in frontends:
