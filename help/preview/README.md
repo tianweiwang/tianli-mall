@@ -167,3 +167,11 @@ V1咨询订单卡片正常链已通过：顾客从自己的订单进入聊天并
 本机已通过小MP3正常链：5秒低音量合成音，60,857字节，44.1kHz双声道，新增商家2附件96。商品7原说明后仅追加一个audio，详情在数据库编码一次、读取解码一次；上传后商品未变，保存/审核/上架正常完成。顾客实际播放0.1627→5秒结束，刷新后再次播放结束，播放器error为空；375像素浏览器视口无横向溢出。源文件、落盘文件与公开HTTP200/audio/mpeg的大小和SHA256一致；原两视频文件、视频链接、SKU106、12.50元、库存19、自定义表单及原订单/资金/私有材料保持。
 
 本批复用既有实现和构建，无业务代码、权限、开关或服务重启。证据见主预览目录 product-audio-ui-verification.json、browser/product-audio-playback.json；大音频、其他格式、云供应商、真机和完整阶段仍待验，不能把本次小MP3正常链当作50MiB业务上限已验收。停止的样本保持NOT RUN。
+
+MS6版本检查：新源码在业务App启动时检查固定发布描述和数据库兼容元数据，功能开关关闭也不豁免。新预览的原维护初始化会在首次App之前调用既有metadata迁移，随后以日常DML账户检查同一版本；App仍无DDL权限。健康入口也执行原standalone版本检查，成功返回实际schema，不再只检查sentinel。
+
+现有实例升级必须先在维护阶段准备metadata，再切换源码。不要把新App强门直接写入仍绑定旧数据库的预览目录，也不要对已有root重复initialize。本次使用独立工作树multi-merchant-ms6-runtime和新专用root multi-merchant-ms6-runtime-20261027-r1（本机端口18182），原18180/18181保持原绑定。三端前端源未变，复用并逐文件核同已有预览构建，不代表正式发布的前端copy资格。
+
+原维护CLI及正式容器接线见 help/migrations/marketplace-ms6-schema.md。版本0.1.0/schema1是兼容代际，不是生产发布或完整MS6验收；正式镜像的entrypoint、单容器全部监听、pre-up/runbook及其余原需求仍需各自实际验证，停止的样本保持NOT RUN。
+
+本机MS6正常接线已验证：新18182首装metadata返回created，原维护CLI重复apply为unchanged、默认check为compatible；重复维护前后176张表的完整结构/行摘要、两账户权限、runtime/上传/私有文件及Redis内容一致。日常App以preview_app成功初始化，仍只有SELECT/INSERT/UPDATE/DELETE权限；HTTP健康返回同一schema，两次读取约45–59ms（本机观察，不是性能承诺）。三端真实登录及商家me均200，浏览器商家正常登录后显示两件合成商品和原价格/库存。旧18180/18181的12个容器身份、启动时间、挂载及重启数保持，两者原登录信息接口仍200。汇总位于新预览目录 schema-gate-verification.json；正式镜像完整启动/health仍未因此验收。

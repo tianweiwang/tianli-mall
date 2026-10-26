@@ -30,6 +30,16 @@ if ($missingPorts) {
     $failures[] = 'listeners ' . implode(',', $missingPorts);
 }
 
+try {
+    @require_once '/usr/local/bin/marketplace-startup-check.php';
+    $schemaFailure = marketplaceSchemaStartupFailure();
+    if ($schemaFailure !== null) {
+        $failures[] = $schemaFailure;
+    }
+} catch (Throwable $exception) {
+    $failures[] = 'SCHEMA_UNAVAILABLE';
+}
+
 $config = @parse_ini_file('/var/www/.env', true, INI_SCANNER_RAW);
 if (!is_array($config)) {
     $failures[] = 'application config';

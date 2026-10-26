@@ -4,9 +4,9 @@ require __DIR__ . '/common.php';
 try {
     if (!is_file('/run/preview-app/initialized.json')) throw new RuntimeException('Preview not initialized');
     if (parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) === '/preview-health') {
-        preview_assert_isolated();
+        $schema = preview_schema();
         header('Content-Type: application/json');
-        echo json_encode(['status' => 200, 'mode' => 'isolated-preview']);
+        echo json_encode(['status' => 200, 'mode' => 'isolated-preview', 'schema' => $schema], JSON_THROW_ON_ERROR);
         return;
     }
     $app = preview_app();

@@ -58,7 +58,8 @@ function preview_video_ready(array $config): bool
     return true;
 }
 
-function preview_app(bool $migrator = false): \think\App
+/** Share the exact isolated configuration with App and the read-only standalone gate. */
+function preview_environment(bool $migrator = false): void
 {
     preview_assert_isolated();
     $config = preview_config();
@@ -95,6 +96,24 @@ function preview_app(bool $migrator = false): \think\App
         'PHP_UPGRADE_REMOTE_ENABLED' => 'false',
     ];
     foreach ($environment as $name => $value) putenv($name . '=' . $value);
+}
+
+function preview_schema(): array
+{
+    preview_environment();
+    require_once '/workspace/crmeb/vendor/autoload.php';
+    $manifest = \crmeb\services\marketplace\SchemaVersionGate::manifest('/workspace/crmeb/marketplace-release.json');
+    [$db, $prefix] = \crmeb\services\marketplace\SchemaVersionRuntime::standalone('/workspace/crmeb/');
+    if ($prefix !== 'eb_' || $db->query('SELECT DATABASE()')->fetchColumn() !== 'mall_preview'
+        || $db->query('SELECT run_id FROM audit_sentinel')->fetchAll(PDO::FETCH_COLUMN) !== [preview_config()['run_id']]) {
+        throw new RuntimeException('Preview database sentinel mismatch');
+    }
+    return \crmeb\services\marketplace\SchemaVersionGate::assertCompatible($db, $prefix, $manifest);
+}
+
+function preview_app(bool $migrator = false): \think\App
+{
+    preview_environment($migrator);
     require_once '/workspace/crmeb/vendor/autoload.php';
     $app = new \think\App('/workspace/crmeb/');
     $app->setRuntimePath('/workspace/crmeb/runtime/');

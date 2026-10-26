@@ -19,6 +19,7 @@ use think\exception\HttpResponseException;
 use think\exception\ValidateException;
 use think\Response;
 use Throwable;
+use crmeb\exceptions\MarketplaceSchemaException;
 
 /**
  * 应用异常处理类
@@ -35,6 +36,7 @@ class ExceptionHandle extends Handle
         ModelNotFoundException::class,
         DataNotFoundException::class,
         ValidateException::class,
+        MarketplaceSchemaException::class,
     ];
 
     /**
@@ -60,9 +62,22 @@ class ExceptionHandle extends Handle
      */
     public function render($request, Throwable $e): Response
     {
+        if ($e instanceof MarketplaceSchemaException) {
+            return Response::create(['status' => 503, 'msg' => $e->getMessage(), 'data' => []], 'json', 503)
+                ->header(['Cache-Control' => 'no-store']);
+        }
         // 添加自定义异常处理机制
 
         // 其他错误交给系统处理
         return parent::render($request, $e);
+    }
+
+    public function renderForConsole(\think\console\Output $output, Throwable $e): void
+    {
+        if ($e instanceof MarketplaceSchemaException) {
+            fwrite(STDERR, $e->getMessage() . PHP_EOL);
+            exit(2);
+        }
+        parent::renderForConsole($output, $e);
     }
 }

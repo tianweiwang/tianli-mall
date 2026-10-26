@@ -216,6 +216,24 @@ function preview_seed_migrations(PDO $db): int
     return $self;
 }
 
+/** Metadata only, on native PDOs, before the first App can enforce its version gate. */
+function preview_seed_schema(PDO $db): array
+{
+    require_once '/workspace/help/migrations/marketplace-ms6-schema.php';
+    $manifest = \crmeb\services\marketplace\SchemaVersionGate::manifest('/workspace/crmeb/marketplace-release.json');
+    $migration = new \Audit\Migration\MarketplaceMs6SchemaMigration($db, 'eb_', $manifest);
+    $applied = $migration->apply();
+    $checked = $migration->check();
+    $schema = \crmeb\services\marketplace\SchemaVersionGate::assertCompatible(preview_pdo(), 'eb_', $manifest);
+    $state = $applied['state'] ?? null;
+    preview_seed_require(in_array($state, ['created', 'unchanged'], true)
+        && $applied === ['mode' => 'apply', 'state' => $state, 'changed' => $state === 'created',
+            'code' => null, 'schema' => $schema]
+        && $checked === ['mode' => 'check', 'state' => 'compatible', 'changed' => false,
+            'code' => null, 'schema' => $schema], 'schema migration receipt mismatch');
+    return ['apply' => $applied, 'check' => $checked, 'application_schema' => $schema];
+}
+
 function preview_seed_configuration(PDO $db): void
 {
     $values = ['site_name' => '多商户商城隔离预览', 'site_url' => '', 'station_open' => 1, 'queue_open' => 0,
@@ -284,6 +302,7 @@ function preview_seed(bool $resume = false): array
     }
     $install = preview_seed_install($db, $resume);
     $selfId = preview_seed_migrations($db); preview_seed_publish_self($selfId);
+    $schemaBootstrap = preview_seed_schema($db);
     require_once '/workspace/crmeb/vendor/autoload.php';
     preview_seed_configuration($db);
     $picture = preview_seed_picture($config['run_id']); $now = time();
@@ -375,5 +394,6 @@ function preview_seed(bool $resume = false): array
     preview_assert_isolated();
     return $install + ['self_operated_mer_id' => $selfId, 'admin_id' => $adminId, 'merchant_id' => $merchantId,
         'employee_id' => $employeeId, 'customer_id' => $customerId, 'address_id' => $addressId,
-        'products' => $products, 'synthetic_only' => true, 'orders_created' => 0, 'management_workflows_verified' => false];
+        'products' => $products, 'schema_bootstrap' => $schemaBootstrap,
+        'synthetic_only' => true, 'orders_created' => 0, 'management_workflows_verified' => false];
 }

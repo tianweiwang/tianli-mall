@@ -55,12 +55,14 @@ COPY docker/php/opcache.ini /usr/local/etc/php/conf.d/zz-runtime.ini
 COPY docker/php/supervisord.conf /etc/supervisor/supervisord.conf
 COPY docker/php/runtime-entrypoint.sh /usr/local/bin/runtime-entrypoint
 COPY docker/php/runtime-healthcheck.php /usr/local/bin/runtime-healthcheck.php
+COPY --chown=root:root docker/php/marketplace-startup-check.php /usr/local/bin/marketplace-startup-check.php
 COPY --from=vendor --chown=root:root /var/www/ /var/www/
 
 RUN mkdir -p /var/www/runtime /var/www/public/uploads \
     && touch /var/www/public/install.lock \
     && chown -R www-data:www-data /var/www/runtime /var/www/public/uploads \
-    && chmod 0755 /usr/local/bin/runtime-entrypoint
+    && chmod 0755 /usr/local/bin/runtime-entrypoint \
+    && chmod 0644 /usr/local/bin/marketplace-startup-check.php
 
 ENTRYPOINT ["runtime-entrypoint"]
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]

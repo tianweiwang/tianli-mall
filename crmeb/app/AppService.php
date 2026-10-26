@@ -44,6 +44,7 @@ class AppService extends Service
     public function boot()
     {
         defined('DS') || define('DS', DIRECTORY_SEPARATOR);
+        \crmeb\services\marketplace\SchemaVersionRuntime::assertApp($this->app);
         if (PHP_VERSION_ID >= 80000 && $this->app->runningInConsole()
             && in_array($_SERVER['argv'][1] ?? '', ['queue:work', 'queue:listen'], true)) {
             CarbonErrorCompatibility::install($this->app->getRootPath() . 'vendor/nesbot/carbon/src');
