@@ -2242,3 +2242,45 @@ Root完整逐体核官方ModelService/两次独立now/Log与Record生产者及�
 此前55e的Response生产修复另已完成真实局部正向：两个实际Worker.acceptConnection连接、原ChatService ping/onClose、关闭A不清B、B两次真实发送均正常；两个普通关闭/unset后WeakRef自然释放，原公共连接计数自然为0，无反射、计数改写、直接destroy、信号或强制GC。该局部使用正常INI；原两次测试启动失败完整保留，三个helper均自然终止后精确普通移除、各三fresh purpose双流空。它不证明完整App/SQL/Redis/HTTP/WS正常链，也不证明旧Run4/7/9已退出；旧SourceR2/Val3/Run及锁/组保持冻结。
 
 完整M/A/postA/三真实同源build/正式物理copy/freshB、商家与独立H5、私有表单、历史37步、MS5真实金融与MS6发布运行保障、完整编排Git交接及最终推送仍保留。停止负向/故障/并发/恢复/K仍NOT RUN。本次仅本地提交，未推送、部署或操作真实业务。
+
+
+### 退款准备读取仅本人订单：F1/F2有限Source修正设计（2026-10-26）
+
+G04当前283a的26路径已按actual Q/TREE与实物逐一核同，有限功能Source审发现相关既有F1：goods_return经postRefundGoods调用POST order/refund/cart_info，控制器与StoreOrderServices按ID返回购物车快照却未带认证UID。随后按Root要求追相邻入口，确认F2：goods_return_list经refundGoodsList调用GET order/refund/cart_info/:id的非contract旧分支，getRefundCartList仅按oid查询，也没有本人门。均为Source确定权限缺口，未发跨用户/负向HTTP或读取真实订单；不是新private material/ticket内容owner门失守。
+
+目标与约束：两个原本人准备读取接口只返回认证UID拥有的实际保存订单；缺少/非正UID或不存在/非本人须拒。POST控制器只传request认证UID，Service三个参数均必需，不留可省略UID的兼容入口，并按saved id+uid查询。GET原contract/V1分流全文保留，只在非contract旧分支调用共享getRefundCartList之前加saved id+认证uid门；不改被后台共享的CartInfo Service合同。
+
+版本兼容：order_details的legacy footer进入goods_return/goods_return_list，当前V1 root/child走openMarketplaceAftersale。相邻GET contract分支与applyRefund已根据实际保存订单作V1分流。此隐私修正不新增legacy-only guard，不把原合法owner的既有版本兼容关掉，也不宣称legacy计算新增实现了marketplace业务。原cart选择/数量/状态/金额算法与成功返回形状全保，未动原applyRefund/contract分流、private绑定和其它后台调用。
+
+验收标准：唯一当前POST caller必须显式传认证UID；Service缺参不能走旧PK读取，非正UID在查询前拒；GET旧分支在共享cart读取前证明saved id+uid；本人原成功输出、选择/数量/状态计算不变，原contract分流全raw；两个PHP/原记录以完整before/after、有限正逆及保护体给Root和非作者审。普通本人合成正向检查只由Root后续另跑；本片不运行跨用户、负向、故障或任何真实订单/资金。
+
+- [x] Source F1/F2、实际consumer与相邻版本分流已核；Root已同意同一窄候选。
+- [x] 先记录目标、约束、设计、AC与本任务，当前SourceR3/Val4及所有Run冻结不改。
+- [ ] 外部create-only三路径候选及有限整份正逆/保护体冻结，Root和非作者复核。
+- [ ] Root待当前普通Run退役后再采用、必要语法/全资格/普通本人合成正向；不据Source签Runtime或完整退款金融。
+
+本记录完整继承283a原465788B/a512ef7b前缀；仅外部Source追加，不写W/Val/Git/C-D，不执行候选/目标/Docker/SQL/HTTP/浏览器。原G04报告保留F1及未通过事实，F2在本有限后继另记，不倒改旧审。完整M/A/postA/build-copy/B/UI/H5/CU_FORM/history/真实金融/发布及167组采用责任保留。
+
+
+#### 平台客服正常链auto关键词夹具的独立命名修正设计（2026-10-26，Source候选）
+
+实际Run20261026024921275ef7的原normal终态2/native146=1仅报告M4PC_EXACT_REAL_AUTO_REPLY_PRECONDITION；原finally第二代普通关停成功不等于业务通过。失败前置条件发生于发送当前消息前，失败唯一msn_type/值未留，当前仍UNKNOWN，不能从旧日志hash猜测。success-only reader/passive候选保持未执行，本失败后普通退役须继承Run8 failed-but-closed原14资源helper并以本Run真实失败/closed公件换inputs，不能借三代success准入。
+
+确定Source问题：原夹具自动关键词audit-chat-key-<含数字run>与原WechatKey.searchKeysLikeAttr的keys LIKE '%消息%'发生命名空间重叠。原六type中的type5继续使用真实可见商品十进制ID；若ID是原关键词中出现的短数字（例如安装源首可见商品id1），合成关键词会匹配该商品消息，$auto=false的严格前置断言会正确拒绝。这里只证明具体机制和夹具设计缺陷，原Run实际失败type仍待有界只读摘要。
+
+最窄候选只将新合成keyword改为auditchatkey加SHA256(run)前40个hex字符逐字母a-p编码，共52个小写字母，符合原keys varchar64，无数字/%/_。它仍确定性绑定Run，保留原唯一性断言/真实insert与PK、replyText、行数/完整状态公式。任何正十进制商品ID均不能成为该关键词子串；其它原text/emoji/HTTP图片/voice/订单/私有reference各含该纯字母域没有的字面字符。原全部六type及游客/转接/auto真实场景、原m4pc_chat_step前置条件/生产匹配/DAO/Model/缓存/产品规格价格库存/消息字段/超时完全不变，不删seed、不跳type5、不放宽no-auto断言，不以production改匹配求绿。
+
+另有独立Source观察：WechatKeyDao::search默认search=false，BaseDao::value虚派发后getSearchData把无searchKeyTypeAttr的key_type列入otherWhere，而withSearchSelect的when(false)未追加该过滤。生产ChatHandle和本前置检查均承此原行为；此候选不修改该生产范围，也不把它当本失败唯一因。要排除其它原seed碰撞，Root可对本专用实例做一次有界只读摘要：首visible product id、精确合成order/service归属、仅本Run日志按msn_type计数及key exact/like的id/reply_id/key_type/字节/SHA和匹配计数，不读消息、回复data、tokens或ENV。完整查询字段提案随外部Source包保留。没有查询缓存命中的源码证据：本链未设options.cache，官方PDO.value仅在显式cache选项非空时取缓存。
+
+本段及一表达式仅Source候选，尚未应用/真实PHP语法/提交/新全树资格/fresh normal或closezero。旧283a/Val4/失败Run及旧Run9/7/4冻结不重放；后继仍须非作者/Root Source审、必要语法、独立来源资格及全原正常链。停止负向/故障/并发/恢复/K维持NOT RUN，完整M/A/postA/build-copy/B/UI/H5/CU_FORM/history/真实金融/发布与最终Git交付未关闭。
+
+
+#### Root退款准备本人约束与alpha夹具的本地Source检查点（2026-10-26）
+
+Root与两份非作者有限功能Source审已闭合：GET旧分支在共享购物车计算前验证认证uid和保存id/uid；POST只由认证request.uid传入必需参数，Service直接DAO where数组按id AND uid取单。原GET contract/V1分流、完整applyRefund、原金额/数量/状态/返回tail及共享CartInfo/client/router不改，不加legacy-only拒绝。两条本人读取仍需新的普通本人合成HTTP检查；停止的越权/负向/故障等样本不执行，不把Source和语法当实际拒绝结果。
+
+客服仅一合成关键词表达式改成52纯字母，原生产exact/LIKE、六type、strict PK/DTO/前置断言、收发期限和finally全部保。原Run20261026024921275ef7实际normal2/verify1461是auto-reply前置；原失败未直接记录type。Root随后只读SQL/ROLLBACK实证唯一own关键词会LIKE匹配商品1，消息摘要已过type1–4而未见5/6；这支持夹具碰撞机制，未改原失败公件或原种子/商品/SKU/规格/价格/库存。原source Model时间候选和Response释放修正保持。
+
+该失败Run的两代原组合进程已按TERM完整结束，Root新13只读现场核空组/四port/同PID1后，正式普通close112native与独立zero10native均原句柄0、完整双原流读回；原五resident各一次TERM-1后自然Exited0/PID0/noRestart，精确非force移除5容器/13卷/内网，仅Val4自身锁删除，独立六fresh查询双流全空。旧Run9/Val3、Run7/Val2、Run4/Val1及原Source继续冻结。
+
+本次四路径Source仅在上述清退后从283a应用，记录完整保共同465788前缀加owner2933与alpha3052两份原append。实际固定297b PHP8.2三PHP逐一-n-l=0，语法helper自然0后精确普通移除、三fresh purpose查询双流空，十native全部原双流已读。随后仅本地提交；新Source/idle Val4全树资格、fresh完整客服normal、退款本人HTTP及原M/A/postA/build/copy/B/UI/H5/CU_FORM/历史/金融/发布/最终推送仍待。独立MS6分支1a450未混入本次Source，未推送部署或操作真实数据。

@@ -338,7 +338,7 @@ function m4pc_prepare():array
         $row=m4pc_insert($db,'eb_store_service_record',['user_id'=>$from,'to_uid'=>$to,'nickname'=>'audit-chat-'.($tourist?'historic-guest':'customer'),'avatar'=>$customer['avatar'],
             'is_tourist'=>$tourist,'online'=>0,'type'=>1,'add_time'=>time(),'update_time'=>time(),'mssage_num'=>0,'message'=>'','message_type'=>1]);$created['eb_store_service_record'][]=$row;
     }
-    $keyword='audit-chat-key-'.$m['run_id'];$replyText='audit-chat-original-auto-reply-'.$m['run_id'];m4pc_expect(m4pc_rows($db,'SELECT id FROM eb_wechat_key WHERE `keys`=? AND key_type=1',[$keyword])===[],'M4PC_NEW_OWN_KEYWORD');
+    $keyword='auditchatkey'.strtr(substr(hash('sha256',$m['run_id']),0,40),'0123456789abcdef','abcdefghijklmnop');$replyText='audit-chat-original-auto-reply-'.$m['run_id'];m4pc_expect(m4pc_rows($db,'SELECT id FROM eb_wechat_key WHERE `keys`=? AND key_type=1',[$keyword])===[],'M4PC_NEW_OWN_KEYWORD');
     $autoReply=m4pc_insert($db,'eb_wechat_reply',['type'=>'text','data'=>json_encode(['content'=>$replyText],JSON_THROW_ON_ERROR),'status'=>1,'hide'=>0]);
     $autoKey=m4pc_insert($db,'eb_wechat_key',['reply_id'=>$autoReply['id'],'keys'=>$keyword,'key_type'=>1]);$created['eb_wechat_reply'][]=$autoReply;$created['eb_wechat_key'][]=$autoKey;
     $images=[];foreach(['jpg','png','gif','webp']as$index=>$extension){$image=imagecreatetruecolor(16,16);m4pc_expect($image instanceof GdImage,'M4PC_REAL_SYNTHETIC_IMAGE');

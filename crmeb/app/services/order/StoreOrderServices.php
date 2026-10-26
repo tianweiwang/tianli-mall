@@ -3121,14 +3121,18 @@ HTML;
      * 获取退货商品列表
      * @param array $cart_ids
      * @param int $id
+     * @param int $uid Authenticated customer UID; required for this customer preparation reader.
      * @return array
      * @throws \think\db\exception\DataNotFoundException
      * @throws \think\db\exception\DbException
      * @throws \think\db\exception\ModelNotFoundException
      */
-    public function refundCartInfoList(array $cart_ids = [], int $id = 0)
+    public function refundCartInfoList(array $cart_ids, int $id, int $uid)
     {
-        $orderInfo = $this->dao->get($id);
+        if ($uid < 1) {
+            throw new ApiException('订单不存在');
+        }
+        $orderInfo = $this->dao->get(['id' => $id, 'uid' => $uid]);
         if (!$orderInfo) {
             throw new ApiException('订单不存在');
         }

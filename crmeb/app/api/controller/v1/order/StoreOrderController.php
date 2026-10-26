@@ -762,6 +762,10 @@ class StoreOrderController
         [$cart_ids] = $request->postMore([
             ['cart_ids', []]
         ], true);
+        $uid = (int)$request->uid();
+        if ($uid < 1 || !$this->services->get(['id' => (int)$id, 'uid' => $uid], ['id'])) {
+            return app('json')->fail('订单不存在');
+        }
         $list = $services->getRefundCartList((int)$id);
         if ($cart_ids) {
             foreach ($cart_ids as $cart) {
@@ -794,7 +798,7 @@ class StoreOrderController
         if (!$id) {
             return app('json')->fail('参数错误');
         }
-        return app('json')->success($this->services->refundCartInfoList((array)$cart_ids, (int)$id));
+        return app('json')->success($this->services->refundCartInfoList((array)$cart_ids, (int)$id, (int)$request->uid()));
     }
 
     /**
