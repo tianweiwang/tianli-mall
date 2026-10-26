@@ -220,8 +220,13 @@ final class MarketplaceOrderRefundReadServices
         if($inspection['last_action_id']===null){
             $legacyLogs=array_values(array_filter($snapshot['context']['logs'],static fn(array $row):bool=>
                 in_array($row['change_type'],['marketplace_fulfillment_ship','marketplace_fulfillment_receive'],true)));
-            $s1=$this->fulfillment->readHistoryFromFacts($root,$snapshot['observation'],$inspection['credit_facts'],$family,
-                $snapshot['raw']['operations'],$legacyLogs);
+            // The history reader consumes typed rows; keep native snapshot rows unchanged for page correspondence.
+            $historyFamily=$family;
+            $historyFamily['ranges']=array_map([MarketplaceOrderFulfillmentDao::class,'rangeRow'],$family['ranges']);
+            $historyOperations=array_map([MarketplaceOrderFulfillmentDao::class,'operation'],$snapshot['raw']['operations']);
+            foreach($historyOperations as$operation)if($operation['contract_version']!==1||$operation['aftersale_cut_id']!==null)self::unavailable();
+            $s1=$this->fulfillment->readHistoryFromFacts($root,$snapshot['observation'],$inspection['credit_facts'],$historyFamily,
+                $historyOperations,$legacyLogs);
         }
         foreach($native['list'] as$index=>$raw){
             $id=self::big($raw['id']);$childId=self::id($raw['child_order_id']);$op=$expected[$index];

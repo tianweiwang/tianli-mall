@@ -1,5 +1,5 @@
 <template>
-	<view class="page" v-if="payPriceShow || marketplaceV1">
+	<view class="page" :class="{'marketplace-cashier': marketplaceV1}" v-if="payPriceShow || marketplaceV1">
 		<view class="pay-price" v-if="payPriceShow">
 			<view class="price">
 				<text class="unit">{{$t(`￥`)}}</text>
@@ -18,7 +18,8 @@
 			</view>
 			<view v-if="marketplaceV1" class="marketplace-test-notice" aria-live="polite">
 				<view>{{$t(`此页面仅提供内部测试支付，不扣真实资金。真实支付尚未开放。`)}}</view>
-				<view v-if="!testPaymentAvailable && !testPaymentError">{{$t(`当前订单或环境未开放测试支付，请返回订单详情。`)}}</view>
+				<view v-if="testPaymentLoading">{{$t(`正在读取订单和支付方式…`)}}</view>
+				<view v-else-if="!testPaymentAvailable && !testPaymentError">{{$t(`当前订单或环境未开放测试支付，请返回订单详情。`)}}</view>
 				<view v-if="testPaymentError">{{testPaymentError}}</view>
 			</view>
 			<view class="item acea-row row-between-wrapper" v-for="(item,index) in cartArr" :key="index"
@@ -70,6 +71,7 @@
 		data() {
 			return {
 				marketplaceV1: false,
+				testPaymentLoading: false,
 				testPaymentAvailable: false,
 				testPaymentSelected: false,
 				testPaymentPending: false,
@@ -137,6 +139,7 @@
 			testPaymentOwner() {
 				if (!this.marketplaceV1) return;
 				this.payPriceShow = 0;
+				this.testPaymentLoading = false;
 				this.testPaymentAvailable = false;
 				this.testPaymentSelected = false;
 				this.cartArr = [];
@@ -225,6 +228,7 @@
 			},
 			loadMarketplacePayment() {
 				const identity = this.testPaymentIdentity();
+				this.testPaymentLoading = true;
 				this.cartArr = [];
 				this.testPaymentAvailable = false;
 				this.testPaymentSelected = false;
@@ -243,7 +247,10 @@
 						title: '内部测试驱动，不扣真实资金', payStatus: 1}];
 				}).catch(error => {
 					if (identity === this.testPaymentIdentity()) this.testPaymentError = error.msg || error.message || String(error);
-				}).finally(() => uni.hideLoading());
+				}).finally(() => {
+					if (identity === this.testPaymentIdentity()) this.testPaymentLoading = false;
+					uni.hideLoading();
+				});
 			},
 			payMarketplaceTest() {
 				if (!this.testPaymentAvailable || !this.testPaymentSelected || this.testPaymentPending) return;
@@ -887,6 +894,26 @@
 		.marketplace-test-button { box-sizing: border-box; min-width: 0; max-width: 100%; height: auto; min-height: 90rpx; margin: 0; padding: 16rpx 24rpx; font-size: 30rpx; line-height: 1.4; text-align: center; white-space: normal; }
 		.marketplace-test-button::after { border: 0; }
 		.marketplace-test-button[disabled] { background: #ddd; color: #777; }
+
+		&.marketplace-cashier {
+			box-sizing: border-box;
+			width: 100%;
+			max-width: 560px;
+			margin: 0 auto;
+			padding: 0 16px 120px;
+			padding-bottom: calc(120px + constant(safe-area-inset-bottom));
+			padding-bottom: calc(120px + env(safe-area-inset-bottom));
+
+			.payment { width: 100%; margin: 0; }
+			.payment .item { box-sizing: border-box; height: auto; min-height: 130rpx; padding-top: 24rpx; padding-bottom: 24rpx; }
+			.payment .item .left, .payment .item .left .text { min-width: 0; }
+			.payment .item .left .text { overflow-wrap: anywhere; }
+			.payment .item > .iconfont { flex-shrink: 0; margin-left: 16rpx; }
+
+			.btn { box-sizing: border-box; left: 0; right: 0; width: 100%; max-width: 560px; margin: 0 auto; padding: 0 16px; }
+			.button { width: 100%; min-height: 44px; display: flex; align-items: center; justify-content: center; }
+			.wait-pay { display: flex; align-items: center; justify-content: center; min-height: 44px; padding-top: 0; text-align: center; }
+		}
 
 	}
 </style>
