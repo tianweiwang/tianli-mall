@@ -9,8 +9,9 @@ function preview_http(string $method, string $path, ?array $body = null, ?string
     if ($body !== null) $headers[] = 'Content-Type: application/json';
     if ($token !== null) $headers[] = 'Authorization: Bearer ' . $token;
     $config = preview_config();
-    $origin = ($config['image_runtime'] ?? false) ? 'http://preview-web:80'
-        : (($config['full_runtime'] ?? false) ? 'http://preview-web:8080' : 'http://preview-app:8000');
+    $origin = ($config['release_runtime'] ?? false) ? 'http://nginx:80'
+        : (($config['image_runtime'] ?? false) ? 'http://preview-web:80'
+            : (($config['full_runtime'] ?? false) ? 'http://preview-web:8080' : 'http://preview-app:8000'));
     $curl = curl_init($origin . $path);
     curl_setopt_array($curl, [CURLOPT_RETURNTRANSFER => true, CURLOPT_CUSTOMREQUEST => $method,
         CURLOPT_HTTPHEADER => $headers, CURLOPT_CONNECTTIMEOUT => 3, CURLOPT_TIMEOUT => 20,

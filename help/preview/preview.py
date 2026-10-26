@@ -8,6 +8,7 @@ import ipaddress
 import json
 import os
 from pathlib import Path
+import re
 import secrets
 import shutil
 import socket
@@ -19,6 +20,8 @@ import urllib.request
 REPO = Path(__file__).resolve().parents[2]
 COMPOSE = Path(__file__).with_name('compose.yml')
 IMAGE_COMPOSE = Path(__file__).with_name('compose.images.yml')
+RELEASE_COMPOSE = Path(__file__).with_name('compose.release.yml')
+OPTIMIZED_COMPOSE = REPO / 'help/docker/docker-compose.optimized.yml'
 DEFAULT_ROOT = REPO.parents[1] / 'artifacts' / 'multi-merchant-preview-20261026'
 DOCKER = shutil.which('docker') or r'C:/Users/Vwang/AppData/Local/Programs/DockerDesktop/resources/bin/docker.exe'
 GIT = shutil.which('git') or r'C:/Program Files/Git/cmd/git.exe'
@@ -89,6 +92,14 @@ def load(root):
         raise RuntimeError('Full runtime cannot use the legacy fixture')
     if state.get('image_runtime', False):
         validate_network_subnets(state.get('network_subnets'))
+    if not isinstance(state.get('release_runtime', False), bool) or (
+            state.get('release_runtime', False) and not state.get('image_runtime', False)):
+        raise RuntimeError('Invalid preview release mode')
+    if state.get('release_runtime', False):
+        if not re.fullmatch(r'sha256:[0-9a-f]{64}', state.get('checker_image', '')):
+            raise RuntimeError('Release runtime requires an explicit immutable checker image')
+        if Path(state.get('release_env_file', '')).resolve() != root / 'empty.env':
+            raise RuntimeError('Release runtime environment path differs from its owned root')
     return state
 
 
@@ -113,6 +124,18 @@ def environment(state, root):
                PREVIEW_ADMIN_DIST=(root / 'build/admin/dist').as_posix(),
                PREVIEW_MERCHANT_DIST=(root / 'build/merchant/dist').as_posix(),
                PREVIEW_H5_DIST=(root / 'build/h5/dist').as_posix())
+    if state.get('release_runtime', False):
+        # Bootstrap is enabled only by an explicit `run bootstrap`, never by apply/up.
+        env.pop('COMPOSE_PROFILES', None)
+        env['PREVIEW_RELEASE_RUNTIME'] = '1'
+        values = release_environment(state, root)
+        # These placeholders are used only to resolve Compose before bootstrap prepare.
+        # compose() rejects service startup until the private values have been saved.
+        env.update(values or {'MYSQL_ROOT_PASSWORD': 'bootstrap-not-ready',
+                             'MYSQL_PASSWORD': 'bootstrap-not-ready',
+                             'MYSQL_USER': 'preview_app', 'MYSQL_DATABASE': 'mall_preview',
+                             'REDIS_PASSWORD': 'bootstrap-not-ready'})
+        env['MARKETPLACE_QUEUE_AUTOSTART'] = 'true' if queue_autostart else 'false'
     for key, value in state['images'].items():
         env[f'PREVIEW_{key}_IMAGE'] = value
     if image_runtime:
@@ -122,6 +145,10 @@ def environment(state, root):
 
 
 def compose_command(state, *arguments):
+    if state.get('release_runtime', False):
+        return [DOCKER, 'compose', '--project-name', state['project'],
+                '--env-file', state['release_env_file'], '--file', str(OPTIMIZED_COMPOSE),
+                '--file', str(RELEASE_COMPOSE), *arguments]
     argv = [DOCKER, 'compose', '--project-name', state['project'], '--file', str(COMPOSE)]
     if state.get('image_runtime', False):
         argv += ['--file', str(IMAGE_COMPOSE)]
@@ -129,9 +156,18 @@ def compose_command(state, *arguments):
 
 
 def compose(state, root, *arguments, expected_exits=(0,)):
+    if state.get('release_runtime', False) and release_environment(state, root) is None:
+        permitted = [('config', '--quiet'),
+                     ('run', '--rm', '--no-deps', '-T', 'bootstrap', 'help/preview/bootstrap.php', 'prepare')]
+        if arguments not in permitted:
+            raise RuntimeError('Release bootstrap secrets are not ready; service startup refused')
     env = environment(state, root)
     argv = compose_command(state, *arguments)
     result = subprocess.run(argv, env=env, text=True, encoding='utf-8', errors='replace', capture_output=True)
+    return record_command(root, arguments, result, expected_exits)
+
+
+def record_command(root, arguments, result, expected_exits=(0,)):
     sequence = len(list((root / 'commands').glob('*.json'))) + 1
     prefix = root / 'commands' / f'{sequence:03d}'
     prefix.with_suffix('.stdout.txt').write_text(result.stdout, encoding='utf-8', newline='\n')
@@ -146,7 +182,7 @@ def compose(state, root, *arguments, expected_exits=(0,)):
 
 
 def ensure_runtime_queue(state, root):
-    command = ('exec', '-T', 'preview-runtime', 'supervisorctl',
+    command = ('exec', '-T', runtime_service(state), 'supervisorctl',
                '-c', '/etc/supervisor/supervisord.conf')
 
     def status(expected_exits=(0,)):
@@ -196,7 +232,9 @@ def assert_resources(state):
                 raise RuntimeError('Split application services cannot share a full runtime preview')
         elif service == 'preview-runtime':
             raise RuntimeError('Full runtime cannot share a standard preview')
-        web = service == 'preview-web'
+        if state.get('release_runtime', False) and service not in ['mysql', 'redis', 'phpfpm', 'nginx', 'bootstrap']:
+            raise RuntimeError('Unexpected service in the isolated release stack')
+        web = service == web_service(state)
         permitted = [{project + '_preview'}]
         if web:
             permitted.append({project + '_preview', project + '_ingress'})
@@ -227,8 +265,20 @@ def assert_resources(state):
 def reload_web(state, root):
     # Re-resolve upstream addresses after Compose recreates a backend container.
     config = [] if state.get('image_runtime', False) else ['-c', '/etc/nginx/preview.conf']
-    compose(state, root, 'exec', '-T', 'preview-web', 'nginx', '-t', *config)
-    compose(state, root, 'exec', '-T', 'preview-web', 'nginx', '-s', 'reload', *config)
+    compose(state, root, 'exec', '-T', web_service(state), 'nginx', '-t', *config)
+    compose(state, root, 'exec', '-T', web_service(state), 'nginx', '-s', 'reload', *config)
+
+
+def runtime_service(state):
+    return 'phpfpm' if state.get('release_runtime', False) else 'preview-runtime'
+
+
+def web_service(state):
+    return 'nginx' if state.get('release_runtime', False) else 'preview-web'
+
+
+def database_services(state):
+    return ['mysql', 'redis'] if state.get('release_runtime', False) else ['preview-mysql', 'preview-redis']
 
 
 def wait_web(state):
@@ -248,7 +298,7 @@ def wait_web(state):
     raise RuntimeError('Preview health did not become ready; inspect the owned service logs')
 
 
-def export_accounts(state, root):
+def private_directory(root):
     directory = root / 'private'
     directory.mkdir(mode=0o700, exist_ok=True)
     if os.name == 'nt':
@@ -259,6 +309,73 @@ def export_accounts(state, root):
         native(['icacls', str(directory), '/inheritance:r', '/grant:r', f'*{sid}:(OI)(CI)F'])
     else:
         directory.chmod(0o700)
+    return directory
+
+
+def release_environment(state, root):
+    path = root / 'private/release-environment.json'
+    if not path.exists():
+        return None
+    value = json.loads(path.read_text(encoding='utf-8'))
+    variables = value.get('variables')
+    if (value.get('project') != state['project'] or value.get('run_id') != state['run_id']
+            or not isinstance(variables, dict)
+            or set(variables) != {'MYSQL_ROOT_PASSWORD', 'MYSQL_PASSWORD', 'MYSQL_USER', 'MYSQL_DATABASE', 'REDIS_PASSWORD'}
+            or variables['MYSQL_USER'] != 'preview_app' or variables['MYSQL_DATABASE'] != 'mall_preview'
+            or any(not isinstance(variables[key], str) or not re.fullmatch(r'[0-9a-f]{48}', variables[key])
+                   for key in ['MYSQL_ROOT_PASSWORD', 'MYSQL_PASSWORD', 'REDIS_PASSWORD'])):
+        raise RuntimeError('Private release environment identity or shape differs')
+    return variables
+
+
+def export_release_environment(state, root):
+    directory = private_directory(root)
+    path = directory / 'release-environment.json'
+    if path.exists():
+        raise RuntimeError('Release bootstrap environment already exists; original file retained')
+    code = ("require 'help/preview/common.php'; $c=preview_config(); "
+            "$p=file_get_contents('/run/preview-bootstrap/root-password'); "
+            "echo json_encode(['project'=>$c['project'],'run_id'=>$c['run_id'],'variables'=>["
+            "'MYSQL_ROOT_PASSWORD'=>$p,'MYSQL_PASSWORD'=>$c['database']['app']['password'],"
+            "'MYSQL_USER'=>$c['database']['app']['username'],'MYSQL_DATABASE'=>$c['database']['name'],"
+            "'REDIS_PASSWORD'=>$c['redis_password']]],JSON_THROW_ON_ERROR);")
+    # Secret output is never sent to native(), record_command(), or an exception.
+    result = subprocess.run(compose_command(state, 'run', '--rm', '--no-deps', '-T', 'bootstrap', '-r', code),
+                            env=environment(state, root), text=True, encoding='utf-8', errors='replace',
+                            capture_output=True)
+    if result.returncode:
+        raise RuntimeError('Private release environment export failed; raw output withheld')
+    try:
+        value = json.loads(result.stdout)
+    except (ValueError, TypeError):
+        raise RuntimeError('Private release environment export was not valid JSON') from None
+    with path.open('x', encoding='utf-8', newline='\n') as output:
+        json.dump(value, output, ensure_ascii=False, indent=2)
+        output.write('\n')
+    if os.name != 'nt':
+        path.chmod(0o600)
+    release_environment(state, root)
+
+
+def apply_release(state, root):
+    if release_environment(state, root) is None:
+        raise RuntimeError('Release bootstrap secrets are not ready')
+    arguments = [sys.executable, '-X', 'utf8', str(REPO / 'help/docker/deploy-marketplace.py'),
+                 '--compose-file', str(OPTIMIZED_COMPOSE), '--compose-file', str(RELEASE_COMPOSE),
+                 '--env-file', state['release_env_file'], '--project-name', state['project'],
+                 '--checker-image', state['checker_image'], '--docker', DOCKER, '--apply']
+    result = subprocess.run(arguments, env=environment(state, root), text=True,
+                            encoding='utf-8', errors='replace', capture_output=True)
+    output = record_command(root, ['deploy-marketplace.py', '--apply'], result)
+    receipt = json.loads(output)
+    if (receipt.get('status') != 'APPLIED' or receipt.get('php_image') != state['images']['PHP']
+            or receipt.get('nginx_image') != state['images']['NGINX']
+            or receipt.get('checker_image') != state['checker_image']):
+        raise RuntimeError('Release apply did not confirm the recorded immutable images')
+
+
+def export_accounts(state, root):
+    directory = private_directory(root)
     path = directory / 'preview-accounts.json'
     if path.exists():
         print(f'Existing private account file: {path}')
@@ -287,6 +404,9 @@ def main():
                         help='prepare only: separate legacy review fixture with synthetic balance')
     parser.add_argument('--full-runtime', action='store_true',
                         help='prepare only: new isolated root for the original FPM/Supervisor runtime')
+    parser.add_argument('--release-runtime', action='store_true',
+                        help='prepare only: original release Compose with full runtime and both images')
+    parser.add_argument('--checker-image', help='release prepare only: independently approved immutable sha256 image ID')
     parser.add_argument('--marketplace-queue-autostart', action='store_true',
                         help='prepare only, with full runtime: persist marketplace Supervisor autostart')
     parser.add_argument('--php-image', help='prepare only: existing PHP image, paired with --nginx-image and --full-runtime')
@@ -299,6 +419,12 @@ def main():
     if args.marketplace_queue_autostart and (args.action != 'prepare' or not args.full_runtime):
         raise RuntimeError('Queue autostart is configured only for a new full-runtime preview')
     image_runtime = args.php_image is not None or args.nginx_image is not None
+    if args.release_runtime and (args.action != 'prepare' or not args.full_runtime or not image_runtime
+                                 or not args.checker_image or root.exists()):
+        raise RuntimeError('Release runtime requires a new full/image prepare and an explicit checker image')
+    if args.checker_image is not None and (not args.release_runtime
+            or not re.fullmatch(r'sha256:[0-9a-f]{64}', args.checker_image)):
+        raise RuntimeError('Checker image is only accepted as a full immutable ID for release prepare')
     if image_runtime and (not args.php_image or not args.nginx_image or args.action != 'prepare'
                           or not args.full_runtime or root.exists()):
         raise RuntimeError('Image runtime requires both local images, full runtime and a new prepare root')
@@ -327,6 +453,8 @@ def main():
             image_references.update(PHP=args.php_image, NGINX=args.nginx_image)
         images = {key: native([DOCKER, 'image', 'inspect', '--format', '{{.Id}}', image])
                   for key, image in image_references.items()}
+        if args.release_runtime and native([DOCKER, 'image', 'inspect', '--format', '{{.Id}}', args.checker_image]) != args.checker_image:
+            raise RuntimeError('Approved checker image ID differs from the local image')
         head = native([GIT, '-c', f'safe.directory={REPO.as_posix()}', '-C', str(REPO), 'rev-parse', 'HEAD'])
         for kind in ['container', 'network', 'volume']:
             listing = ['ps', '-aq'] if kind == 'container' else [kind, 'ls', '-q']
@@ -337,7 +465,12 @@ def main():
         state = {'project': project, 'run_id': run, 'repo': REPO.as_posix(), 'base_head': head,
                  'port': args.port, 'images': images, 'scope': 'local_synthetic_preview_not_stage_acceptance',
                  'legacy_review_fixture': args.legacy_review_fixture, 'full_runtime': args.full_runtime,
-                 'image_runtime': image_runtime, 'marketplace_queue_autostart': args.marketplace_queue_autostart}
+                 'image_runtime': image_runtime, 'marketplace_queue_autostart': args.marketplace_queue_autostart,
+                 'release_runtime': args.release_runtime}
+        if args.release_runtime:
+            state['checker_image'] = args.checker_image
+            state['release_env_file'] = (root / 'empty.env').as_posix()
+            (root / 'empty.env').write_text('', encoding='utf-8')
         if image_runtime:
             state['network_subnets'] = network_subnets
         with (root / 'state.json').open('x', encoding='utf-8', newline='\n') as output:
@@ -345,7 +478,9 @@ def main():
             output.write('\n')
         compose(state, root, 'config', '--quiet')
         compose(state, root, 'run', '--rm', '--no-deps', '-T', 'bootstrap', 'help/preview/bootstrap.php', 'prepare')
-        compose(state, root, 'up', '-d', '--wait', '--wait-timeout', '120', 'preview-mysql', 'preview-redis')
+        if args.release_runtime:
+            export_release_environment(state, root)
+        compose(state, root, 'up', '-d', '--wait', '--wait-timeout', '120', *database_services(state))
         assert_resources(state)
         print('Isolated database services ready; application initialization is still pending.')
     else:
@@ -369,17 +504,21 @@ def main():
                 for app in ['admin', 'merchant', 'h5']:
                     if not (root / f'build/{app}/dist/index.html').is_file():
                         raise RuntimeError(f'Current {app} frontend build is not ready')
-            compose(state, root, 'up', '-d', '--wait', '--wait-timeout', '120', 'preview-mysql', 'preview-redis')
+            compose(state, root, 'up', '-d', '--wait', '--wait-timeout', '120', *database_services(state))
             assert_resources(state)
             print(compose(state, root, 'run', '--rm', '--no-deps', '-T', 'bootstrap',
                           'help/preview/bootstrap.php', 'runtime'))
-            compose(state, root, 'up', '-d', '--no-deps', '--wait', '--wait-timeout', '180', 'preview-runtime')
+            if state.get('release_runtime', False):
+                apply_release(state, root)
+            else:
+                compose(state, root, 'up', '-d', '--no-deps', '--wait', '--wait-timeout', '180', 'preview-runtime')
             assert_resources(state)
             if state.get('queue_configured') is True:
                 ensure_runtime_queue(state, root)
-            compose(state, root, 'up', '-d', '--no-deps', 'preview-web')
-            assert_resources(state)
-            reload_web(state, root)
+            if not state.get('release_runtime', False):
+                compose(state, root, 'up', '-d', '--no-deps', 'preview-web')
+                assert_resources(state)
+                reload_web(state, root)
             wait_web(state)
             print(f'Full runtime listening at http://127.0.0.1:{state["port"]}/ ; browser/business verification remains required.')
         elif args.action == 'serve-api':

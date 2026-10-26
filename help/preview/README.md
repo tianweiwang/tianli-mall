@@ -141,6 +141,29 @@ python -X utf8 help/preview/preview.py accounts-file --root $runtimeRoot
 
 2026-10-27在独立18186使用新PHP候选镜像、复用已核同的原Nginx镜像，原入口health、三角色smoke及实际平台登录通过，登录结果queue/timer均为true。UID33实读确认 `console_remind=true`、`queue_open='0'`、`.queue` 仍不存在且运行中的listener与候选源码哈希一致；真实浏览器登录后首页没有队列或Timer通知，未关闭提醒来掩盖问题。截图保存在 `artifacts/multi-merchant-image-runtime-20261027-r2/admin-login-without-false-warning.png`。这项正常页面验证不替代完整MS6、真实支付或生产验收，用户停止的样本仍为NOT RUN。
 
+## 发布 Compose 隔离首装（新实例）
+
+`--release-runtime` 复用 `help/docker/docker-compose.optimized.yml` 的 `mysql/redis/phpfpm/nginx` 四个日常服务；`compose.release.yml` 仅提供隔离资源和临时引导接点。它要求新的运行目录、空闲端口、已核同的双镜像与两个空闲网段，并显式指定独立认可的检查器完整镜像ID。使用上文镜像准备方式取得这些输入，再逐条执行：
+
+```powershell
+$releaseRoot = Join-Path 'H:\天俪商城\artifacts' ("release-runtime-" + (Get-Date -Format 'yyyyMMddHHmmss'))
+$checkerImage = Read-Host '事先独立认可的检查器 sha256 镜像ID'
+python -X utf8 help/preview/preview.py prepare --root $releaseRoot --port 18188 --full-runtime --release-runtime --php-image $phpId --nginx-image $nginxId --checker-image $checkerImage --preview-subnet $previewSubnet --ingress-subnet $ingressSubnet --marketplace-queue-autostart
+python -X utf8 help/preview/preview.py initialize --root $releaseRoot
+python -X utf8 help/preview/preview.py storefront --root $releaseRoot
+python -X utf8 help/preview/preview.py runtime --root $releaseRoot
+python -X utf8 help/preview/preview.py smoke --root $releaseRoot
+python -X utf8 help/preview/preview.py accounts-file --root $releaseRoot
+```
+
+数据库首次即属于该发布栈。MySQL不自动建立应用库或高权限应用用户，仍由原create-only引导建立数据库、维护用户和仅DML的日常用户。临时bootstrap只有显式运行时启用；日常apply不启动它。专用根密码和连接配置只保存在本实例私有卷及受ACL保护的 `private/release-environment.json`，不要把它们或展开的Compose配置放进日志或Git。`empty.env` 不包含凭据。
+
+日常应用配置由实际 `.env.application.example` 生成，填入本实例连接、认证配置和已确认自营商家ID，使用 `APP_ENV=production`，七个业务开关保持false。此模式用于发布运行检查，**不提供测试支付或交易体验**；交易体验继续使用原testing预览。初始化自身仍采用原隔离testing流程，不能拿引导进程环境代替日常应用配置。bootstrap私有夹具卷和日常 `private-assets` 分开，后者从镜像首次初始化九个私有目录。
+
+`runtime` 准备配置后调用原 `deploy-marketplace.py --apply`，经过真实版本检查、固定镜像启动及Nginx刷新后的健康检查，成功才报告入口可用；不直接启动另一套preview应用服务。原拆分动作在此模式不可用。失败保留原回执和实例，不自动覆盖配置、放宽权限或清空数据。此模式不修改已有实例，不代表已获生产部署授权或已完成完整MS6及恢复验收。
+
+2026-10-27本机新18188已沿上述路径完成原发布四服务首装、默认CHECKED、实际APPLIED与刷新后健康确认，五个Supervisor程序RUNNING。平台/商家/顾客真实HTTP登录通过，商家商品列表读到两件原合成商品及20.15/30.25价格、各100库存；生产默认开关关闭时，公开列表正确返回无自营商品。实际私有卷九目录UID/GID33、0700，日常数据库角色仅DML，认证与schema检查通过。浏览器首页/商家登录入口已打开核对，原两页随后恢复；完整交易和浏览器角色操作不由本批代验。运行目录为 `artifacts/multi-merchant-release-runtime-20261027-r1`，私有账号仍在其 `private/preview-accounts.json`；汇总位于 `artifacts/multi-merchant-release-compose-20261027-r1/verification.json`。旧41容器及原绑定控制源码保持，生产部署及完整MS6尚未完成。
+
 ## 操作顺序
 
 1. 使用 `accounts-file` 输出的本机私有文件取得平台、商家、顾客三个合成账号；顾客登录页选择“账号登录”。

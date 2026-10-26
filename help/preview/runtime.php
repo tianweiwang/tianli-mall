@@ -40,6 +40,64 @@ function preview_full_runtime_ini(): string
     return $ini;
 }
 
+/** Release services consume the actual application template; bootstrap itself remains in testing. */
+function preview_release_runtime_ini(array $config): string
+{
+    $template = '/source/help/docker/.env.application.example';
+    preview_full_runtime_require(is_file($template) && !is_link($template));
+    $expected = parse_ini_file($template, true, INI_SCANNER_RAW);
+    preview_full_runtime_require(is_array($expected) && is_int($config['self_operated_mer_id'] ?? null)
+        && $config['self_operated_mer_id'] > 0);
+    $replacements = [
+        'APP' => ['APP_KEY' => $config['signing_key']],
+        'AUTH' => ['SESSION_EPOCH' => $config['auth']['session_epoch'], 'STAMP_KEY' => $config['auth']['stamp_key'],
+            'ISSUER' => $config['auth']['issuer']],
+        'DATABASE' => ['USERNAME' => $config['database']['app']['username'], 'PASSWORD' => $config['database']['app']['password'],
+            'DATABASE' => $config['database']['name']],
+        'REDIS' => ['REDIS_PASSWORD' => $config['redis_password']],
+        'MARKETPLACE' => ['SELF_OPERATED_MER_ID' => (string)$config['self_operated_mer_id']],
+    ];
+    foreach ($replacements as $section => $values) {
+        preview_full_runtime_require(is_array($expected[$section] ?? null));
+        foreach ($values as $key => $value) {
+            preview_full_runtime_require(array_key_exists($key, $expected[$section]) && is_string($value) && $value !== '');
+            $expected[$section][$key] = $value;
+        }
+    }
+    preview_full_runtime_require(($expected['DATABASE']['HOSTNAME'] ?? null) === 'mysql'
+        && ($expected['REDIS']['REDIS_HOSTNAME'] ?? null) === 'redis');
+    foreach (['ENABLED', 'TRADE_ENABLED', 'AFTERSALE_ENABLED', 'PLATFORM_CHAT_PRIVATE_WRITES_ENABLED',
+        'PRODUCT_VIDEO_UPLOAD_ENABLED', 'PRODUCT_VIDEO_CLOUD_UPLOAD_ENABLED', 'PAYMENT_TEST_ENABLED'] as $key) {
+        preview_full_runtime_require(($expected['MARKETPLACE'][$key] ?? null) === 'false');
+    }
+    foreach (['CUSTOMER_FORM_PRIVATE_ROOT', 'AFTERSALE_PRIVATE_ROOT', 'CUSTOMER_REFUND_PRIVATE_ROOT',
+        'CUSTOMER_LICENCE_PRIVATE_ROOT', 'CUSTOMER_WITHDRAWAL_QR_PRIVATE_ROOT', 'PLATFORM_CHAT_PRIVATE_ROOT',
+        'PRODUCT_VIDEO_UPLOAD_PRIVATE_ROOT', 'PRODUCT_MEDIA_SCAN_PRIVATE_ROOT', 'PRODUCT_VIDEO_CLOUD_UPLOAD_PRIVATE_ROOT'] as $key) {
+        $value = $expected['MARKETPLACE'][$key] ?? null;
+        preview_full_runtime_require(is_string($value) && preg_match('/\A\/private\/[a-z-]+\z/D', $value) === 1);
+    }
+    $expected = ['APP_ENV' => 'production'] + $expected;
+    $scalars = '';
+    $sections = '';
+    foreach ($expected as $section => $values) {
+        preview_full_runtime_require(is_string($section) && preg_match('/\A[A-Za-z][A-Za-z0-9_]*\z/D', $section) === 1);
+        if (!is_array($values)) {
+            preview_full_runtime_require(is_string($values) && preg_match('/\A[A-Za-z0-9_.:\/-]*\z/D', $values) === 1);
+            $scalars .= $section . ' = "' . $values . '"' . "\n";
+            continue;
+        }
+        $sections .= "\n[" . $section . "]\n";
+        foreach ($values as $key => $value) {
+            preview_full_runtime_require(is_string($key) && preg_match('/\A[A-Za-z][A-Za-z0-9_]*\z/D', $key) === 1
+                && is_string($value) && preg_match('/\A[A-Za-z0-9_.:\/-]*\z/D', $value) === 1);
+            $sections .= $key . ' = "' . $value . '"' . "\n";
+        }
+    }
+    $ini = $scalars . $sections;
+    preview_full_runtime_require(parse_ini_string($ini, true, INI_SCANNER_RAW) === $expected);
+    return $ini;
+}
+
 function preview_full_runtime_excluded(string $relative): bool
 {
     return in_array($relative, ['vendor', 'runtime', 'public/uploads', 'public/install', 'public/install.lock', '.env', '.constant'], true)
@@ -182,8 +240,10 @@ function preview_prepare_image_runtime(array $config): array
     $target = '/run/preview-runtime-config';
     $stat = lstat($target);
     preview_full_runtime_require(is_array($stat) && ($stat['mode'] & 0170000) === 0040000);
-    $identity = ['project' => $config['project'], 'run_id' => $config['run_id'], 'feature' => 'image-runtime-v1'];
-    $ini = preview_full_runtime_ini();
+    $releaseRuntime = ($config['release_runtime'] ?? false) === true;
+    $identity = ['project' => $config['project'], 'run_id' => $config['run_id'],
+        'feature' => $releaseRuntime ? 'release-runtime-v1' : 'image-runtime-v1'];
+    $ini = $releaseRuntime ? preview_release_runtime_ini($config) : preview_full_runtime_ini();
     if (file_exists($target . '/.preview-runtime-ready.json') || is_link($target . '/.preview-runtime-ready.json')) {
         preview_image_runtime_verify($identity, $ini);
         return $identity + ['changed' => false];
@@ -208,6 +268,10 @@ function preview_prepare_full_runtime(): array
     $imageMode = getenv('PREVIEW_IMAGE_RUNTIME') ?: '0';
     preview_full_runtime_require(is_bool($imageRuntime) && in_array($imageMode, ['0', '1'], true)
         && $imageRuntime === ($imageMode === '1'));
+    $releaseRuntime = $config['release_runtime'] ?? false;
+    $releaseMode = getenv('PREVIEW_RELEASE_RUNTIME') ?: '0';
+    preview_full_runtime_require(is_bool($releaseRuntime) && in_array($releaseMode, ['0', '1'], true)
+        && $releaseRuntime === ($releaseMode === '1') && (!$releaseRuntime || $imageRuntime));
     preview_full_runtime_require(PHP_SAPI === 'cli' && getenv('PREVIEW_FULL_RUNTIME') === '1'
         && ($config['full_runtime'] ?? false) === true && ($config['legacy_review_fixture'] ?? false) === false
         && is_file('/run/preview-bootstrap/config.json') && !is_link('/run/preview-app/initialized.json')

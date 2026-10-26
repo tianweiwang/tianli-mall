@@ -56,8 +56,14 @@ try {
         if (!in_array($imageRuntime, ['0', '1'], true) || ($imageRuntime === '1' && $fullRuntime !== '1')) {
             throw new RuntimeException('Invalid new image runtime mode');
         }
+        $releaseRuntime = getenv('PREVIEW_RELEASE_RUNTIME') ?: '0';
+        if (!in_array($releaseRuntime, ['0', '1'], true)
+            || ($releaseRuntime === '1' && ($fullRuntime !== '1' || $imageRuntime !== '1' || $legacyMode !== '0'))) {
+            throw new RuntimeException('Invalid new release runtime mode');
+        }
         $config = ['project' => $project, 'run_id' => $run, 'legacy_review_fixture' => $legacyMode === '1',
             'full_runtime' => $fullRuntime === '1', 'image_runtime' => $imageRuntime === '1',
+            'release_runtime' => $releaseRuntime === '1',
             'database' => ['name' => 'mall_preview', 'host' => 'preview-mysql',
                 'app' => ['username' => 'preview_app', 'password' => bin2hex(random_bytes(24))]],
             'redis_password' => bin2hex(random_bytes(24)), 'signing_key' => bin2hex(random_bytes(32)),

@@ -37,7 +37,7 @@ def require(value, reason='RELEASE_IDENTITY_INVALID'):
         raise Rejected(reason)
 
 
-def invoke(argv, *, environment=None, data=None, limit=8 * 1024 * 1024):
+def invoke(argv, *, environment=None, data=None, limit=8 * 1024 * 1024, timeout=300):
     """Capture bounded bytes in memory; never emit command/environment/stderr."""
     result, errors = bytearray(), bytearray()
     process = subprocess.Popen(argv, stdin=subprocess.PIPE if data is not None else subprocess.DEVNULL,
@@ -52,7 +52,7 @@ def invoke(argv, *, environment=None, data=None, limit=8 * 1024 * 1024):
                 process.stdin.close()
             except BrokenPipeError:
                 pass
-        deadline = time.monotonic() + 300
+        deadline = time.monotonic() + timeout
         while streams or process.poll() is None:
             require(time.monotonic() < deadline, 'SCHEMA_UNAVAILABLE')
             progress = False
@@ -281,6 +281,33 @@ def check_target(args, manifest, inputs, environment):
             cleanup_container(args.docker, container, args.checker_image, ownership)
 
 
+def wait_nginx_healthy(args, command, project, image_id, timeout=180):
+    """Observe the refreshed container; do not restart or recreate on failure."""
+    deadline = time.monotonic() + timeout
+    raw = invoke(command + ['ps', '--all', '--quiet', args.nginx_service],
+                 limit=1024, timeout=min(30, timeout)).decode().strip()
+    require(CONTAINER_ID.fullmatch(raw), 'SCHEMA_UNAVAILABLE')
+    while True:
+        remaining = deadline - time.monotonic()
+        require(remaining > 0, 'SCHEMA_UNAVAILABLE')
+        rows = decode(invoke([args.docker, 'container', 'inspect', raw],
+                             timeout=min(30, remaining)))
+        require(isinstance(rows, list) and len(rows) == 1, 'SCHEMA_UNAVAILABLE')
+        container = rows[0]
+        labels = container.get('Config', {}).get('Labels', {})
+        state = container.get('State', {})
+        require(container.get('Id') == raw and container.get('Image') == image_id
+                and labels.get('com.docker.compose.project') == project
+                and labels.get('com.docker.compose.service') == args.nginx_service
+                and state.get('Running') is True and state.get('Paused') is False
+                and state.get('Restarting') is False, 'SCHEMA_UNAVAILABLE')
+        health = state.get('Health', {}).get('Status')
+        if health == 'healthy':
+            return
+        require(health == 'starting', 'SCHEMA_UNAVAILABLE')
+        time.sleep(min(0.5, max(0, deadline - time.monotonic())))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--compose-file', type=Path, action='append', required=True)
@@ -329,6 +356,7 @@ def main():
                 apply_started = True
                 invoke(command + ['up', '--no-build', '--pull', 'never', '-d', '--wait'])
                 invoke(command + ['restart', args.nginx_service])
+                wait_nginx_healthy(args, command, compose['name'], nginx['Id'])
                 invoke(command + ['ps'])
             mode = 'APPLIED'
         print(json.dumps({**result, 'status': mode, 'php_image': php['Id'], 'nginx_image': nginx['Id'],

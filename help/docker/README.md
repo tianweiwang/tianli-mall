@@ -83,7 +83,7 @@ python -X utf8 help/docker/deploy-marketplace.py `
   --checker-image $checkerImage --apply
 ```
 
-应用路径重新核配置和版本，使用同一固定双镜像 ID，禁止临时拉取或构建；然后执行原 `up --wait` 并刷新 Nginx。镜像内启动版本门仍保留。操作期间不得并行修改配置或迁移；这不宣称消除了全部外部并发窗口。多份 Compose 使用重复 `--compose-file` 参数，非默认服务名使用 `--php-service` / `--nginx-service`，项目可用 `--project-name` 指定。
+应用路径重新核配置和版本，使用同一固定双镜像 ID，禁止临时拉取或构建；然后执行原 `up --wait` 并刷新 Nginx。刷新后在180秒内核同一容器、项目、服务及固定镜像，并等待其健康状态为 `healthy`，才返回 `APPLIED`；无健康检查、异常状态或超时均保留现场并返回 `APPLY_FAILED`，不自动重启或重建。镜像内启动版本门仍保留。操作期间不得并行修改配置或迁移；这不宣称消除了全部外部并发窗口。多份 Compose 使用重复 `--compose-file` 参数，非默认服务名使用 `--php-service` / `--nginx-service`，项目可用 `--project-name` 指定。
 
 源码或静态页面变化后重复“构建 → 默认检查 → 已授权的 apply”，不要直接运行 `up --build`。发布后的快照、页面与业务验证仍按原验收责任执行；优化栈入口默认 `http://127.0.0.1:8011/`，MySQL、Redis、FPM 和 Workerman 仅在 Compose 网络内访问。
 
@@ -91,7 +91,7 @@ python -X utf8 help/docker/deploy-marketplace.py `
 
 2026-10-27已在本机专用18186实例，以实际 Compose、配置卷和内部网络完成默认检查。候选app 0.1.0、schema范围1，与实际目标库schema1/最低app0.1.0相符；检查器源码哈希核同。检查前后版本行、商品/SKU库存、订单和余额投影、Redis值及绝对期限、配置/上传/私有文件哈希保持；原33容器身份、启动时间、重启数和挂载保持，临时检查容器零残留。Python/PHP/shell语法和独立源码审查通过。
 
-`--apply`已接线但本轮未执行；实际部署替换、完整R03及MS6验收仍待各自验证。停止的负向、故障、并发、恢复和K样本保持NOT RUN，以上正常只读结果不替代这些责任。
+该18186批次只执行默认检查；后续隔离首启的apply结果见下文。实际生产部署替换、完整R03及MS6验收仍待各自验证。停止的负向、故障、并发、恢复和K样本保持NOT RUN，以上正常只读结果不替代这些责任。
 
 ### 认证、私有卷与队列接线验证
 
@@ -100,6 +100,14 @@ python -X utf8 help/docker/deploy-marketplace.py `
 应用模板由真实ThinkPHP Env读取，填入仅存内存的合成认证配置后通过原AuthConfigGuard。独立新空卷实际从镜像初始化九个UID/GID33、0700目录，六类原私有素材存储构造器读取通过；七个业务开关仍为false。两份发布Compose的默认/显式队列配置均已解析核对，但本次运行实例使用隔离预览编排，**没有启动生产Compose、执行`--apply`、重启恢复或本轮私有上传HTTP**。首次配置探针因未载框架helper失败，修正工具后通过，原失败保留。
 
 本轮改动位于独立工作树，旧完整预览所绑定的原启动文件已恢复并在运行容器内核同；原33个预览容器身份、状态、启动时间、镜像、重启数及挂载保持。汇总证据在仓库外 `artifacts/multi-merchant-release-images-20261027-r3/verification.json`。上述结果不代替完整MS6或生产验收。
+
+### 原发布 Compose 的隔离首启验证
+
+2026-10-27已在新专属18188使用原optimized Compose与 `help/preview/compose.release.yml` 完成首次安装、默认 `CHECKED` 及实际 `--apply`。四个日常服务均healthy，Nginx刷新后重新通过健康确认才返回 `APPLIED`；五个Supervisor程序均RUNNING。方法与命令见 [预览说明](../preview/README.md#发布-compose-隔离首装新实例)。本次是本机新隔离实例，不是生产替换。
+
+三角色实际HTTP登录、商家me及商品列表通过；两件合成商品价格20.15/30.25、库存各100。默认七开关关闭时，公开列表只显示自营商品；该实例尚无自营商品，实际正常返回空列表。浏览器已打开顾客首页和商家登录入口，未将入口渲染当成浏览器完整交易验收。日常应用实际为production、DML用户仅SELECT/INSERT/UPDATE/DELETE，认证配置与schema1检查通过；真实私有卷九目录UID/GID33、0700，六类原存储构造器正常，Nginx不挂私有卷，bootstrap夹具卷独立。
+
+41个原预览容器的身份、状态、启动时间、镜像、重启数及挂载保持，旧绑定控制源码哈希保持，临时版本检查容器零残留。汇总证据在仓库外 `artifacts/multi-merchant-release-compose-20261027-r1/verification.json`。未运行负向、故障、并发、恢复或K样本；真实支付、生产部署、完整MS6和正式验收仍待完成。
 
 ## PHP 8.2 兼容性验证
 

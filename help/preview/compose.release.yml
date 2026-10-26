@@ -1,0 +1,148 @@
+# Isolated first installation of the original optimized release services.
+# Bootstrap is temporary; it never replaces the four daily release services.
+services:
+  mysql:
+    container_name: ${PREVIEW_PROJECT:?required}-mysql
+    image: ${PREVIEW_MYSQL_IMAGE:?required}
+    pull_policy: never
+    environment:
+      # The original bootstrap creates the database and separate DML/migration users.
+      MYSQL_DATABASE: ""
+      MYSQL_USER: ""
+      MYSQL_PASSWORD: ""
+      MYSQL_ROOT_HOST: "%"
+    command: [--innodb-buffer-pool-size=128M, --max-connections=50, "--sql-mode=STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION"]
+    volumes: !override
+      - mysql-data:/var/lib/mysql
+    networks:
+      app_net:
+        aliases: [preview-mysql]
+    labels: &labels
+      marketplace.preview: ${PREVIEW_PROJECT}
+
+  redis:
+    container_name: ${PREVIEW_PROJECT}-redis
+    image: ${PREVIEW_REDIS_IMAGE:?required}
+    pull_policy: never
+    networks:
+      app_net:
+        aliases: [preview-redis]
+    labels: *labels
+
+  phpfpm:
+    container_name: ${PREVIEW_PROJECT}-phpfpm
+    image: ${PREVIEW_PHP_IMAGE:?required}
+    build: !reset null
+    pull_policy: never
+    environment:
+      MYSQL_HOST_IP: mysql
+      REDIS_HOST_IP: redis
+    volumes: !override
+      - runtime-config:/run/application:ro
+      - ${PREVIEW_REPO:?required}/crmeb/.constant:/var/www/.constant:ro
+      - runtime_data:/var/www/runtime
+      - uploads:/var/www/public/uploads
+      - private-assets:/private
+    labels: *labels
+
+  nginx:
+    container_name: ${PREVIEW_PROJECT}-nginx
+    image: ${PREVIEW_NGINX_IMAGE:?required}
+    build: !reset null
+    pull_policy: never
+    ports: !override
+      - "127.0.0.1:${PREVIEW_PORT:?required}:80"
+    volumes: !override
+      - uploads:/var/www/public/uploads:ro
+    networks: !override
+      app_net: {}
+      ingress: {}
+    labels: *labels
+
+  bootstrap:
+    profiles: [bootstrap]
+    image: ${PREVIEW_PHP_IMAGE:?required}
+    pull_policy: never
+    entrypoint: [php]
+    working_dir: /workspace
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    cap_add: [CHOWN, DAC_OVERRIDE, FOWNER]
+    security_opt: [no-new-privileges:true]
+    environment:
+      PREVIEW_ISOLATED: "1"
+      PREVIEW_PROJECT: ${PREVIEW_PROJECT}
+      PREVIEW_RUN_ID: ${PREVIEW_RUN_ID:?required}
+      PREVIEW_LEGACY_REVIEW_FIXTURE: "0"
+      PREVIEW_FULL_RUNTIME: "1"
+      PREVIEW_IMAGE_RUNTIME: "1"
+      PREVIEW_RELEASE_RUNTIME: "1"
+    volumes:
+      - ${PREVIEW_REPO}:/workspace:ro
+      - ${PREVIEW_REPO}:/source:ro
+      - vendor:/workspace/crmeb/vendor
+      - bootstrap-secrets:/run/preview-bootstrap
+      - app-secrets:/run/preview-app
+      - redis-secrets:/run/preview-redis
+      - runtime_data:/workspace/crmeb/runtime
+      - uploads:/workspace/crmeb/public/uploads
+      - type: volume
+        source: bootstrap-private-assets
+        target: /private
+        volume:
+          nocopy: true
+      - runtime-config:/run/preview-runtime-config
+    networks: [app_net]
+    labels: *labels
+
+networks:
+  app_net:
+    name: ${PREVIEW_PROJECT}_preview
+    internal: true
+    labels: *labels
+    ipam:
+      config:
+        - subnet: ${PREVIEW_NETWORK_SUBNET:?required}
+  ingress:
+    name: ${PREVIEW_PROJECT}_ingress
+    driver: bridge
+    labels: *labels
+    ipam:
+      config:
+        - subnet: ${PREVIEW_INGRESS_SUBNET:?required}
+
+volumes:
+  runtime_data:
+    name: ${PREVIEW_PROJECT}_runtime
+    labels: *labels
+  redis_data:
+    name: ${PREVIEW_PROJECT}_redis-data
+    labels: *labels
+  mysql-data:
+    name: ${PREVIEW_PROJECT}_mysql-data
+    labels: *labels
+  uploads:
+    name: ${PREVIEW_PROJECT}_uploads
+    labels: *labels
+  private-assets:
+    name: ${PREVIEW_PROJECT}_private-assets
+    labels: *labels
+  bootstrap-private-assets:
+    name: ${PREVIEW_PROJECT}_bootstrap-private-assets
+    labels: *labels
+  runtime-config:
+    name: ${PREVIEW_PROJECT}_runtime-config
+    labels: *labels
+  vendor:
+    name: ${PREVIEW_PROJECT}_vendor
+    labels: *labels
+  bootstrap-secrets:
+    name: ${PREVIEW_PROJECT}_bootstrap-secrets
+    labels: *labels
+  app-secrets:
+    name: ${PREVIEW_PROJECT}_app-secrets
+    labels: *labels
+  redis-secrets:
+    name: ${PREVIEW_PROJECT}_redis-secrets
+    labels: *labels
