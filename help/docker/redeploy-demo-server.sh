@@ -3,9 +3,10 @@ set -eu
 
 cd "$(dirname "$0")"
 
-chgrp 33 .env.application .constant
-chmod 0640 .env.application .constant
+: "${MARKETPLACE_CHECKER_IMAGE:?Set an approved fixed sha256 checker image ID}"
 
-docker compose --env-file .env.runtime -f docker-compose.demo-server.yml up -d --wait
-docker compose --env-file .env.runtime -f docker-compose.demo-server.yml restart nginx
-docker compose --env-file .env.runtime -f docker-compose.demo-server.yml ps
+# Check only by default. An explicitly requested --apply uses the same version gate.
+exec python3 ./deploy-marketplace.py \
+    --env-file .env.runtime \
+    --compose-file docker-compose.demo-server.yml \
+    --checker-image "$MARKETPLACE_CHECKER_IMAGE" "$@"

@@ -21,9 +21,7 @@ show_help() {
     echo "用法: $0 [选项]"
     echo ""
     echo "选项:"
-    echo "  install   安装并启动（清理数据，首次部署）"
-    echo "  start     启动容器"
-    echo "  restart   重启容器"
+    echo "  install/start/restart 已停用；使用 deploy-marketplace.py 的版本检查入口"
     echo "  stop      停止容器"
     echo "  delete    删除容器和数据"
     echo "  logs      查看日志"
@@ -33,9 +31,7 @@ show_help() {
     echo "  COMPOSE_FILE  指定 compose 文件 (默认: docker-compose.yml)"
     echo ""
     echo "示例:"
-    echo "  $0 install                    # 使用默认配置"
-    echo "  COMPOSE_FILE=docker-compose.build.yml $0 install   # 使用其他配置"
-    echo "  $0 start                      # 启动服务"
+    echo "  python3 deploy-marketplace.py --help  # 多商户发布入口（默认只检查）"
     echo "  $0 logs                       # 查看日志"
 }
 
@@ -98,6 +94,7 @@ cleanup_network() {
 
 # 安装（清理数据并启动）
 do_install() {
+    refuse_legacy_start
     check_docker
     
     echo -e "${YELLOW}=== 停止旧容器 ===${NC}"
@@ -120,6 +117,7 @@ do_install() {
 
 # 启动
 do_start() {
+    refuse_legacy_start
     check_docker
     cleanup_network
     echo -e "${YELLOW}=== 启动容器 ===${NC}"
@@ -132,6 +130,7 @@ do_start() {
 
 # 重启
 do_restart() {
+    refuse_legacy_start
     check_docker
     echo -e "${YELLOW}=== 重启容器 ===${NC}"
     docker-compose -f "$COMPOSE_FILE" restart
@@ -190,6 +189,13 @@ show_menu() {
         8) echo "已退出"; exit 0 ;;
         *) echo "无效选择，请重试"; show_menu ;;
     esac
+}
+
+# The old paths can remove data/networks before starting an unversioned image.
+# Keep inspection/stop commands available, but never use them for marketplace deployment.
+refuse_legacy_start() {
+    echo "旧 install/start/restart 入口不支持多商户版本；请使用 deploy-marketplace.py。" >&2
+    exit 2
 }
 
 # 主逻辑

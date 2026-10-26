@@ -1,4 +1,4 @@
-# 天俪商城优化版验收环境
+# 通用多商户商城 Docker 运行与发布检查
 
 优化版将 PHP 源码、Composer 依赖和前端静态文件构建进 Docker 镜像，避免 Windows 绑定盘的小文件性能问题。它启用了 OPcache，并修复了 Workerman 在容器重启后因残留 PID 无法启动的问题。
 
@@ -46,30 +46,44 @@ pwsh -NoProfile -File help\docker\capture-acceptance-snapshot.ps1 `
 
 采集和严格比对必须在停写的迁移窗口执行。恢复业务写入后，新增订单、用户或上传文件会让旧快照校验失败，这是预期保护行为，不应通过修改快照绕过。
 
-## 构建与启动
+## 构建、检查与发布
+
+部署主机需要 Docker Compose v2、Python 3.10+（Windows 为 3.12+，依据[标准库管道支持](https://docs.python.org/3/library/os.html#os.set_blocking)），以及事先独立认可的检查器镜像完整 `sha256:` ID。检查器必须来自可信的当前发布工具链，不能自动把本次候选镜像当成可信检查器。`MARKETPLACE_CHECKER_IMAGE` 只填写这个已核准的固定 ID；镜像来源认可与版本兼容检查是两项不同责任。
+
+先完成三端构建和镜像构建；这里的构建不会切换现有服务：
 
 ```powershell
 docker compose --env-file help\docker\.env.runtime -f help\docker\docker-compose.optimized.yml config --quiet
 docker compose --env-file help\docker\.env.runtime -f help\docker\docker-compose.optimized.yml build
-docker compose -f help\docker\docker-compose.yml down
-docker compose --env-file help\docker\.env.runtime -f help\docker\docker-compose.optimized.yml up -d --wait
-pwsh -NoProfile -File help\docker\verify-optimized.ps1 `
-  -SnapshotManifest "D:\backups\crmeb-before-change\acceptance-snapshot.json"
+$checkerImage = $env:MARKETPLACE_CHECKER_IMAGE
+python -X utf8 help/docker/deploy-marketplace.py `
+  --env-file help/docker/.env.runtime `
+  --compose-file help/docker/docker-compose.optimized.yml `
+  --checker-image $checkerImage
 ```
 
-商城地址：`http://127.0.0.1:8011/`
+`deploy-marketplace.py` **默认只检查**。它将 Compose 中的候选 PHP/Nginx 镜像解析为固定 ID，只从未启动的 PHP 候选容器读取 `marketplace-release.json`；真正连接数据库的检查在独立可信镜像中执行。检查复用目标服务的配置、环境与现存网络，沿原主库连接核真实 metadata 结构、schema 范围和最低应用版本，不初始化应用、不迁移数据库。成功不等于已部署。前置失败返回 `REJECTED`；一旦已尝试启动，后续失败返回 `APPLY_FAILED` 并标明可能已有变更，保留现场且不自动回滚。检查器只支持明确的应用配置和数据挂载；应用代码、vendor、版本声明或数据库配置代码被挂载覆盖时拒绝，未支持的网络/DNS或配置提供方式也会明确拒绝，不能静默换成其他数据库。
 
-优化栈只向宿主机开放 `8011`。MySQL、Redis、PHP-FPM 和 Workerman 仅在 Compose 网络内访问。
+首次安装应先按原安装和维护流程准备数据库、网络、私有配置并完成 [MS6 metadata 迁移](../migrations/marketplace-ms6-schema.md)；库或 metadata 缺失不能跳过检查。配置必须由运行用户 UID33 可读，使用 `/run/application/.env`；不要把真实配置、凭据或展开后的 Compose 配置提交到 Git。新的默认检查不再替操作者修改文件权限。
 
-## 修改代码后重建
-
-优化版不再实时挂载 PHP 源码。源码或打包后的静态文件发生变化后执行：
+只有已获本次部署授权、原检查通过且进入配置/迁移串行维护窗口后，才显式应用：
 
 ```powershell
-docker compose --env-file help\docker\.env.runtime -f help\docker\docker-compose.optimized.yml up -d --build --wait
-pwsh -NoProfile -File help\docker\verify-optimized.ps1 `
-  -SnapshotManifest "D:\backups\crmeb-before-change\acceptance-snapshot.json"
+python -X utf8 help/docker/deploy-marketplace.py `
+  --env-file help/docker/.env.runtime `
+  --compose-file help/docker/docker-compose.optimized.yml `
+  --checker-image $checkerImage --apply
 ```
+
+应用路径重新核配置和版本，使用同一固定双镜像 ID，禁止临时拉取或构建；然后执行原 `up --wait` 并刷新 Nginx。镜像内启动版本门仍保留。操作期间不得并行修改配置或迁移；这不宣称消除了全部外部并发窗口。多份 Compose 使用重复 `--compose-file` 参数，非默认服务名使用 `--php-service` / `--nginx-service`，项目可用 `--project-name` 指定。
+
+源码或静态页面变化后重复“构建 → 默认检查 → 已授权的 apply”，不要直接运行 `up --build`。发布后的快照、页面与业务验证仍按原验收责任执行；优化栈入口默认 `http://127.0.0.1:8011/`，MySQL、Redis、FPM 和 Workerman 仅在 Compose 网络内访问。
+
+### 当前验证范围
+
+2026-10-27已在本机专用18186实例，以实际 Compose、配置卷和内部网络完成默认检查。候选app 0.1.0、schema范围1，与实际目标库schema1/最低app0.1.0相符；检查器源码哈希核同。检查前后版本行、商品/SKU库存、订单和余额投影、Redis值及绝对期限、配置/上传/私有文件哈希保持；原33容器身份、启动时间、重启数和挂载保持，临时检查容器零残留。Python/PHP/shell语法和独立源码审查通过。
+
+`--apply`已接线但本轮未执行；实际部署替换、完整R03及MS6验收仍待各自验证。停止的负向、故障、并发、恢复和K样本保持NOT RUN，以上正常只读结果不替代这些责任。
 
 ## PHP 8.2 兼容性验证
 
@@ -116,35 +130,11 @@ docker logs crmeb_php 2>&1 | Select-String -Pattern "Implicit conversion|process
 docker compose --env-file help\docker\.env.runtime -f help\docker\docker-compose.optimized.yml down
 ```
 
-### 回滚到 PHP 7.4
+### 回退兼容版本
 
-`tianli/crmeb-php:php74-rollback` 是切换前保留的 7.4 镜像。Compose 引用 `:acceptance` 标签，所以回滚通过改标签完成：
+将拟回退的镜像配置为候选，再经过同一默认检查和已授权的 `--apply`。旧单商家镜像没有有效 manifest，或版本低于目标库 `min_app_version` 时，都不能启动。不得通过改标签、直接 `docker compose up`、旧 `run.sh install/start/restart` 或手工降 metadata 绕过；绕过发布入口属于不受支持的违规操作。
 
-```powershell
-docker tag tianli/crmeb-php:acceptance tianli/crmeb-php:php82-verified
-docker tag tianli/crmeb-php:php74-rollback tianli/crmeb-php:acceptance
-docker compose --env-file help\docker\.env.runtime -f help\docker\docker-compose.optimized.yml up -d --wait --no-build
-```
-
-恢复 8.2：
-
-```powershell
-docker tag tianli/crmeb-php:php82-verified tianli/crmeb-php:acceptance
-docker compose --env-file help\docker\.env.runtime -f help\docker\docker-compose.optimized.yml up -d --wait --no-build
-```
-
-必须加 `--no-build`，否则会用当前源码重新构建并覆盖 `:acceptance` 标签。
-
-本次迁移不含任何库表结构或数据变更，因此回滚不需要恢复数据库。`help/docker/backup/` 下的转储是防御性备份，不是常规回滚手段。
-
-回滚到旧栈（非优化版）：
-
-```powershell
-docker compose --env-file help\docker\.env.runtime -f help\docker\docker-compose.optimized.yml down
-docker compose -f help\docker\docker-compose.yml up -d
-```
-
-以上命令都不得添加 `-v`。MySQL 示例数据位于 `help/docker/mysql/data`，上传文件位于 `crmeb/public/uploads`；删除卷或清空这些目录会造成数据损失。
+旧 `run.sh` 的安装、启动和重启路径已停用，以免其旧清理逻辑在版本检查前删除数据或网络；查看日志和原停止路径仍保留。任何停止命令都不得添加 `-v`。数据库和上传文件必须保留；需要恢复时遵循单独授权的备份恢复方案，不能把恢复视为普通镜像回退的附带动作。原恢复验收未因本文的操作说明而完成。
 
 ## 已知问题（仍阻塞公网生产）
 
@@ -164,14 +154,16 @@ PHP 8.2 兼容迁移已完成，但以下问题未解决，上线前必须单独
 
 ```bash
 cd /srv/tianli/crmeb-demo
-sh redeploy-demo-server.sh
+export MARKETPLACE_CHECKER_IMAGE='sha256:替换为已核准的64位摘要'
+sh redeploy-demo-server.sh             # 默认只检查
+# 本次部署获授权后：sh redeploy-demo-server.sh --apply
 ```
 
 MySQL、Redis、runtime 和 uploads 分别保存在 `data/` 下。停止或升级不得清空这些目录，也不得在 Compose 命令中添加 `-v`。首次启动时 `init/` 下的权威示例 SQL 仅在空数据目录中导入一次。
 
-更新 PHP 镜像时必须使用上述脚本：Compose 重建 PHP 容器后，脚本会重启 Nginx 以刷新上游 IP 解析，避免旧地址导致 502。
+更新 PHP 镜像时使用上述入口；将新 `deploy-marketplace.py` 和 `marketplace-pre-up.php` 一同放在部署目录。默认检查不会重建 PHP 或重启 Nginx；显式应用成功后才按原逻辑刷新 Nginx 上游地址。候选镜像写入 `.env.runtime` 的 `PHP_IMAGE` / `NGINX_IMAGE`，检查与应用使用同一配置。
 
-脚本会把 `.env.application` 和 `.constant` 设置为 `root:www-data`、权限 `0640`。PHP 健康检查也以 `www-data` 身份运行，确保 FPM 实际能够读取配置；不要手工改回仅 root 可读的 `0600`。
+首次配置时由维护人员将 `.env.application` 和 `.constant` 设为 `root:www-data`、权限 `0640`，再进行检查。默认检查不会改权限；PHP 健康检查及版本检查均以 `www-data` 身份读取配置。demo 与优化模式均把 `.env.application` 只读挂载到 `/run/application/.env`，与镜像内链接一致。
 
 阿里云安全组还必须放行入方向 TCP `8011`；演示期间优先限制为甲方和维护人员的公网出口地址，确需公开演示时再临时放宽来源范围。
 
@@ -191,141 +183,6 @@ MySQL、Redis、runtime 和 uploads 分别保存在 `data/` 下。停止或升�
 | `Pimple\Container` | 接口返回类型声明 |
 | `Workerman\Events\Select` | `stream_select()` 微秒参数隐式浮点转换 |
 
----
+## 旧单商户说明的适用范围
 
-# 安装docker
-## docker 官网下载
-https://www.docker.com/products/docker-desktop
-## 命令安装
-```
-curl -sSL https://get.daocloud.io/docker | sh
-```
-
-# 方式一：一键启动CRMEB 系统
-
-```
-docker run -d \
-  --name crmeb_app \
-  -p 8111:80 \
-  -v $(pwd)/crmeb/runtime:/var/www/crmeb/runtime \
-  -v $(pwd)/crmeb/uploads:/var/www/crmeb/public/uploads \
-  -v $(pwd)/crmeb_mysql:/var/lib/mysql \
-  -v $(pwd)/crmeb_redis:/var/lib/redis \
-  -e TZ=Asia/Shanghai \
-  ccr.ccs.tencentyun.com/zbkj/crmebky:latest
- ``` 
- 
-# 方式二：docker-compose 快速运行项目
-
-
-## 1、安装docker-compose
-https://www.runoob.com/docker/docker-compose.html
-
-## 2、下载CRMEB程序
-建议去下载最新开源代码 https://gitee.com/ZhongBangKeJi/CRMEB
-程序放到docker 同级目录下
-
-## 3、启动项目
-```
-进入docker-compose目录 cd /docker
-
-运行命令：
-```
-docker-compose up -d
-
-```
-## 4、访问CRMEB 系统
-移动端访问地址：http://localhost:8011/
-PC端访问地址：http://localhost:8011/admin
-
-
-## 5、安装CRMEB
-### Mysql数据库信息：
-```
-Host:crmeb_mysql
-Post:3306
-user:crmeb
-pwd:123456
-```
-### Redis信息：
-```
-Host:crmeb_redis
-Post:6379
-db:0
-pwd:123456
-```
-
-## 6、常见错误及解决方案
-
-### 6.1 MySQL 启动失败
-**错误现象**：MySQL 容器启动失败，日志显示 "--initialize specified but the data directory has files in it. Aborting."
-
-**解决方案**：
-1. 停止所有容器：`docker-compose down`
-2. 清空数据目录：`rm -rf mysql/data/*`
-3. 重新启动服务：`docker-compose up -d`
-
-**原因**：MySQL 数据目录不为空，导致初始化失败。
-
-### 6.2 数据目录映射问题
-**错误现象**：数据库无法启动或数据无法持久化
-
-**解决方案**：
-1. 确保 `mysql/data` 目录存在：`mkdir -p mysql/data`
-2. 确保 `mysql/data` 目录为空
-3. 确保 docker-compose.yml 中正确配置了数据卷映射：
-   ```yaml
-   volumes:
-     - ./mysql/data:/var/lib/mysql
-   ```
-
-**原因**：数据目录未映射或映射不正确，导致数据库无法创建或数据丢失。
-
-## 6.3 常见需要映射的目录说明
-
-### 6.3.1 MySQL 数据目录
-- **本地路径**：`mysql/data`
-- **容器路径**：`/var/lib/mysql`
-- **用途**：存储 MySQL 数据库的数据文件
-- **注意事项**：必须为空目录，否则 MySQL 初始化会失败
-
-### 6.2 MySQL 日志目录
-- **本地路径**：`mysql/log`
-- **容器路径**：`/var/log/mysql`
-- **用途**：存储 MySQL 的日志文件
-- **注意事项**：确保目录存在且有读写权限
-
-### 6.3.2 PHP 应用目录
-- **本地路径**：`../../crmeb`
-- **容器路径**：`/var/www`
-- **用途**：存储 CRMEB 应用代码
-- **注意事项**：确保目录存在且包含完整的 CRMEB 代码
-
-### 6.3.3 PHP 运行时目录
-- **本地路径**：`../../crmeb/runtime`
-- **容器路径**：`/var/www/runtime`
-- **用途**：存储 PHP 应用的运行时文件，如缓存、日志等
-- **注意事项**：确保目录存在且有读写权限
-
-### 6.3.4 Nginx 配置目录
-- **本地路径**：`./nginx/vhost.conf`
-- **容器路径**：`/etc/nginx/conf.d/default.conf`
-- **用途**：Nginx 虚拟主机配置文件
-- **注意事项**：确保配置文件存在且格式正确
-
-### 6.3.5 Nginx 日志目录
-- **本地路径**：`./nginx/log`
-- **容器路径**：`/etc/nginx/log`
-- **用途**：存储 Nginx 的日志文件
-- **注意事项**：确保目录存在且有读写权限
-
-### 6.3.6 目录创建命令
-```bash
-# 创建所有必要的目录
-mkdir -p mysql/data mysql/log nginx/log
-
-# 确保 CRMEB 应用目录存在
-mkdir -p ../crmeb ../crmeb/runtime
-```
-
-
+原上游的一键镜像、直接 Compose 启动和“清空目录重新安装”步骤不适用于当前多商户版本，已从当前运行手册退役。已有数据库目录非空时，先核对实例身份、原卷映射、安装完成状态和配置，保留数据与失败现场；不得通过清空数据库、上传目录或重置安装锁来通过检查。首次空库准备与恢复是单独流程，后续启动仍走上面的版本检查入口。
