@@ -226,7 +226,7 @@ class StoreServiceServices extends BaseServices
         $logServices = app()->make(StoreServiceLogServices::class);
         $result = ['serviceList' => [], 'uid' => $toUid, 'nickname' => $userInfo['nickname'], 'avatar' => $userInfo['avatar']];
         $serviceLogList = $logServices->getServiceChatList(['chat' => [$uid, $toUid], 'is_tourist' => 0], $limit, $uidTo);
-        $result['serviceList'] = array_reverse($logServices->tidyChat($serviceLogList));
+        $result['serviceList'] = array_reverse($logServices->tidyChat($serviceLogList,'api',$uid));
         return $result;
     }
 }

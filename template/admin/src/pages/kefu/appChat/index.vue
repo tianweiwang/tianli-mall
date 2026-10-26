@@ -62,7 +62,11 @@
                           </div>
                         </div>
                       </div>
-                      <template v-if="item.msn_type === 6">
+                      <PlatformChatOrderCard
+                        v-if="item.msn_type === 6 && item.orderInfo && item.orderInfo.scope === 'platform_chat_order_card_v1' && item.orderInfo.marketplace_trade_version === 1"
+                        :order="item.orderInfo"
+                      />
+                      <template v-else-if="item.msn_type === 6 && item.orderInfo">
                         <div v-for="itm in item.orderInfo.cartInfo" :key="itm.id" class="order">
                           <div class="thumb">
                             <img :src="itm.productInfo.image" />
@@ -150,6 +154,7 @@
 
 <script>
 import { platformChatMaterialMixin } from '@/api/platform-chat-materials';
+import PlatformChatOrderCard from '../components/PlatformChatOrderCard.vue';
 import 'emoji-awesome/dist/css/google.min.css';
 import emojiList from '@/utils/emoji';
 import { Socket } from '@/libs/socket';
@@ -176,6 +181,7 @@ export default {
   name: 'ChatRoom',
   auth: false,
   components: {
+    PlatformChatOrderCard,
     feedBack,
   },
   props: {

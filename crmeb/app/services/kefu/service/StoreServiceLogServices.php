@@ -103,7 +103,7 @@ class StoreServiceLogServices extends BaseServices
     {
         [$page, $limit] = $this->getPageValue();
         $list = $this->dao->getServiceList($where, $page, $limit);
-        return $this->tidyChat($list);
+        return $this->tidyChat($list,'api',$uid);
     }
 
     /**
@@ -112,8 +112,10 @@ class StoreServiceLogServices extends BaseServices
      * @param int $uid
      * @return array
      */
-    public function tidyChat(array $list)
+    public function tidyChat(array $list,string $readerKind='none',int $actualReaderUid=0)
     {
+        $sharedCards = app()->make(\app\services\kefu\PlatformChatOrderCardServices::class)
+            ->projectHistory($list,$readerKind,$actualReaderUid);
         $productIds = $orderIds = $productList = $orderInfo = $toUser = $user = [];
         $toUid = $list[0]['to_uid'] ?? 0;
         $uid = $list[0]['uid'] ?? 0;
@@ -124,7 +126,7 @@ class StoreServiceLogServices extends BaseServices
             if ($item['msn_type'] == self::MSN_TYPE_GOODS && $item['msn']) {
                 $productIds[] = $item['msn'];
             } elseif ($item['msn_type'] == self::MSN_TYPE_ORDER && $item['msn']) {
-                $orderIds[] = $item['msn'];
+                if (!($sharedCards[$item['id']]['handled'] ?? false)) $orderIds[] = $item['msn'];
             }
         }
         if ($productIds) {
@@ -157,14 +159,18 @@ class StoreServiceLogServices extends BaseServices
             if ($item['msn_type'] == self::MSN_TYPE_GOODS && $item['msn']) {
                 $item['productInfo'] = $productList[$item['msn']] ?? null;
             } elseif ($item['msn_type'] == self::MSN_TYPE_ORDER && $item['msn']) {
-                $order = $orderInfo[$item['msn']] ?? null;
-                if ($order) {
-                    $order = $orderServices->tidyOrder($order, true, true);
-                    $order['add_time_y'] = date('Y-m-d', $order['add_time']);
-                    $order['add_time_h'] = date('H:i:s', $order['add_time']);
-                    $item['orderInfo'] = $order;
+                if ($sharedCards[$item['id']]['handled'] ?? false) {
+                    $item['orderInfo'] = $sharedCards[$item['id']]['card'];
                 } else {
-                    $item['orderInfo'] = null;
+                    $order = $orderInfo[$item['msn']] ?? null;
+                    if ($order) {
+                        $order = $orderServices->tidyOrder($order, true, true);
+                        $order['add_time_y'] = date('Y-m-d', $order['add_time']);
+                        $order['add_time_h'] = date('H:i:s', $order['add_time']);
+                        $item['orderInfo'] = $order;
+                    } else {
+                        $item['orderInfo'] = null;
+                    }
                 }
             }
             $item['msn_type'] = (int)$item['msn_type'];

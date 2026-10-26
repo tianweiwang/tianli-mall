@@ -125,8 +125,31 @@
               </view>
               <!-- 订单 -->
               <view
+                class="platform-order-summary"
+                v-if="item.msn_type == 6 && userType && item.orderInfo && item.orderInfo.scope === 'platform_chat_order_card_v1' && item.orderInfo.marketplace_trade_version === 1"
+              >
+                <view class="summary-heading">{{ $t('咨询订单摘要') }}</view>
+                <view>{{ $t('订单号') }}：{{ item.orderInfo.order_id }}</view>
+                <view>{{ $t('商家') }}：{{ item.orderInfo.merchant_name_snapshot }}</view>
+                <view>{{ $t('下单时间') }}：{{ item.orderInfo.add_time_y }} {{ item.orderInfo.add_time_h }}</view>
+                <view v-for="product in item.orderInfo.cartInfo" :key="product.id" class="summary-product">
+                  <image :src="product.productInfo.image" mode="aspectFill" class="summary-image" />
+                  <view class="summary-product-info">
+                    <view>{{ product.productInfo.store_name }}</view>
+                    <view>{{ $t('规格') }}：{{ product.sku_name }}</view>
+                    <view>{{ $t('数量') }}：{{ product.cart_num }}</view>
+                    <view>{{ $t('下单单价') }}：{{ $t('￥') }}{{ product.productInfo.price }}</view>
+                  </view>
+                </view>
+                <view class="summary-total">
+                  <view>{{ $t('商品总数量') }}：{{ item.orderInfo.total_num }}</view>
+                  <view>{{ $t(item.orderInfo.paid === 1 ? '实付金额' : '订单金额') }}：{{ $t('￥') }}{{ item.orderInfo.pay_price }}</view>
+                </view>
+                <view class="summary-note">{{ $t('仅供咨询查看') }}</view>
+              </view>
+              <view
                 class="order-box"
-                v-if="item.msn_type == 6 && item.orderInfo"
+                v-else-if="item.msn_type == 6 && item.orderInfo"
                 @click="goOrder(item)"
               >
                 <view class="title"
@@ -501,6 +524,7 @@ export default {
     },
     // 订单详情
     goOrder(item) {
+      if (this.userType && item.orderInfo && item.orderInfo.scope === 'platform_chat_order_card_v1' && item.orderInfo.marketplace_trade_version === 1) return;
       if (this.userType) {
         uni.navigateTo({
           url: `/pages/admin/orderDetail/index?id=${item.msn}`,
@@ -965,6 +989,28 @@ body {
     margin-bottom: 36rpx;
     -webkit-user-select: auto;
 
+    .platform-order-summary {
+      flex: 0 1 452rpx;
+      width: 452rpx;
+      max-width: calc(100% - 102rpx);
+      box-sizing: border-box;
+      margin-left: 22rpx;
+      padding: 20rpx;
+      border: 1rpx solid #e7e9ed;
+      border-radius: 14rpx;
+      background: #fff;
+      color: #333;
+      font-size: 24rpx;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+      .summary-heading { margin-bottom: 12rpx; font-size: 26rpx; font-weight: 600; }
+      .summary-product { display: flex; align-items: flex-start; margin-top: 20rpx; }
+      .summary-image { flex: 0 0 80rpx; width: 80rpx; height: 80rpx; margin-right: 16rpx; border-radius: 8rpx; }
+      .summary-product-info { flex: 1; min-width: 0; }
+      .summary-total { margin-top: 20rpx; padding-top: 16rpx; border-top: 1rpx solid #eceff3; }
+      .summary-note { margin-top: 12rpx; color: #606266; }
+    }
+
     .avatar {
       width: 80rpx;
       height: 80rpx;
@@ -1061,6 +1107,11 @@ body {
 
     &.right-box {
       flex-direction: row-reverse;
+
+      .platform-order-summary {
+        margin-left: 0;
+        margin-right: 22rpx;
+      }
 
       .msg-box {
         margin-left: 0;

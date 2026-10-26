@@ -72,7 +72,8 @@ class StoreService
         ], true);
         $serviceInfoList = $services->getServiceList(['status' => 1]);
         if (!count($serviceInfoList)) return app('json')->fail('暂无客服人员在线，请稍后联系');
-        $uid = $request->uid();
+        $actualReaderUid = (int)$request->uid();
+        $uid = $actualReaderUid;
         $uids = array_column($serviceInfoList['list'], 'uid');
         if (!$uidTo) {
             //自己是客服
@@ -99,7 +100,7 @@ class StoreService
 
         if (!$toUid) return app('json')->fail('暂无客服人员在线，请稍后联系');
         $result = ['serviceList' => [], 'uid' => $toUid];
-        $serviceLogList = $this->services->getChatList(['uid' => $uid], $uid);
+        $serviceLogList = $this->services->getChatList(['uid' => $uid], $actualReaderUid);
         if (!$serviceLogList) return app('json')->success($result);
         $idArr = array_column($serviceLogList, 'id');
         array_multisort($idArr, SORT_ASC, $serviceLogList);

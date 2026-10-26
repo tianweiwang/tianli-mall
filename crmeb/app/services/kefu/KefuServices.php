@@ -69,12 +69,12 @@ class KefuServices extends BaseServices
      * @throws \think\db\exception\DbException
      * @throws \think\db\exception\ModelNotFoundException
      */
-    public function getChatList(int $uid, int $toUid, int $upperId, int $is_tourist = 0)
+    public function getChatList(int $uid, int $toUid, int $upperId, int $is_tourist = 0, string $readerKind = 'kefu')
     {
         /** @var StoreServiceLogServices $service */
         $service = app()->make(StoreServiceLogServices::class);
         [$page, $limit] = $this->getPageValue();
-        return array_reverse($service->tidyChat($service->getServiceChatList(['chat' => [$uid, $toUid], 'is_tourist' => $is_tourist], $limit, $upperId)));
+        return array_reverse($service->tidyChat($service->getServiceChatList(['chat' => [$uid, $toUid], 'is_tourist' => $is_tourist], $limit, $upperId),$readerKind,$uid));
     }
 
     /**

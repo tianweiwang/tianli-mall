@@ -74,7 +74,11 @@
                 </div>
               </div>
               <!-- 订单 -->
-              <div class="order-box" v-if="item.msn_type == 6" v-db-click @click="goOrderDetail(item)">
+              <PlatformChatOrderCard
+                v-if="item.msn_type == 6 && item.orderInfo && item.orderInfo.scope === 'platform_chat_order_card_v1' && item.orderInfo.marketplace_trade_version === 1"
+                :order="item.orderInfo"
+              />
+              <div class="order-box" v-else-if="item.msn_type == 6 && item.orderInfo" v-db-click @click="goOrderDetail(item)">
                 <div class="title">订单ID: {{ item.orderInfo.order_id }}</div>
                 <div class="info">
                   <img :src="item.orderInfo.cartInfo[0].productInfo.image" />
@@ -130,6 +134,7 @@
 
 <script>
 import { platformChatMaterialMixin } from '@/api/platform-chat-materials';
+import PlatformChatOrderCard from '../../components/PlatformChatOrderCard.vue';
 import Setting from '@/setting';
 import { Socket } from '@/libs/socket';
 import util from '@/libs/util';
@@ -153,6 +158,7 @@ const chunk = function (arr, num) {
 export default {
   mixins: [platformChatMaterialMixin],
   name: 'chat_mobile',
+  components: { PlatformChatOrderCard },
   data() {
     return {
       defaultAvatar: require('@/assets/images/moren.jpg'),
@@ -991,6 +997,12 @@ export default {
     display: flex;
     margin-bottom: 0.36rem;
     font-size: 0.28rem;
+    .platform-chat-order-card {
+      flex: 0 1 4.52rem;
+      width: 4.52rem;
+      max-width: calc(100% - 1.02rem);
+      margin-left: 0.22rem;
+    }
     .avatar {
       width: 0.8rem;
       height: 0.8rem;
@@ -1076,6 +1088,10 @@ export default {
     }
     &.right-box {
       flex-direction: row-reverse;
+      .platform-chat-order-card {
+        margin-left: 0;
+        margin-right: 0.22rem;
+      }
       .msg-box {
         margin-left: 0;
         margin-right: 0.22rem;

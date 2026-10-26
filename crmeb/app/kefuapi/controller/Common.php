@@ -185,7 +185,7 @@ class Common extends BaseController
             return app('json')->fail('无效的token不能查找到用户聊天记录');
         }
 
-        return app('json')->success($services->getChatList($authInfo['user']['uid'], $uid, (int)$upperId));
+        return app('json')->success($services->getChatList($authInfo['user']['uid'], $uid, (int)$upperId, 0, 'api'));
     }
 
     /**

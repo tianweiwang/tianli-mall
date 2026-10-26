@@ -59,8 +59,12 @@
                         </div>
                       </template>
                       <!-- 订单 -->
+                      <PlatformChatOrderCard
+                        v-if="item.msn_type == 6 && item.orderInfo && item.orderInfo.scope === 'platform_chat_order_card_v1' && item.orderInfo.marketplace_trade_version === 1"
+                        :order="item.orderInfo"
+                      />
                       <template
-                        v-if="item.msn_type == 6 && item.orderInfo && (item.orderInfo.length > 0 || item.orderInfo.id)"
+                        v-else-if="item.msn_type == 6 && item.orderInfo && (item.orderInfo.length > 0 || item.orderInfo.id)"
                       >
                         <div class="order-wrapper pad16">
                           <div class="img-box">
@@ -180,6 +184,7 @@
 
 <script>
 import { platformChatMaterialMixin } from '@/api/platform-chat-materials';
+import PlatformChatOrderCard from '../components/PlatformChatOrderCard.vue';
 var mp3 = require('../../../assets/video/notice.wav');
 var mp3 = new Audio(mp3);
 import Setting from '@/setting';
@@ -215,6 +220,7 @@ export default {
   mixins: [platformChatMaterialMixin],
   name: 'index',
   components: {
+    PlatformChatOrderCard,
     baseHeader,
     chatList,
     rightMenu,

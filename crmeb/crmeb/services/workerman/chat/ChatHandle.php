@@ -12,6 +12,7 @@
 namespace crmeb\services\workerman\chat;
 
 use app\services\kefu\LoginServices;
+use app\services\kefu\PlatformChatOrderCardServices;
 use app\services\kefu\service\StoreServiceLogServices;
 use app\services\kefu\service\StoreServiceRecordServices;
 use app\services\kefu\service\StoreServiceServices;
@@ -294,6 +295,10 @@ class ChatHandle
             return $response->send('err_tip', ['msg' => '格式错误']);
         }
         $msn = trim(strip_tags(str_replace(["\n", "\t", "\r", "&nbsp;"], '', htmlspecialchars_decode($msn))));
+        $orderCard = null;
+        if (!$isTourist && (int)$msn_type === StoreServiceLogServices::MSN_TYPE_ORDER && $msn !== '') {
+            $orderCard = app()->make(PlatformChatOrderCardServices::class)->prepareSend($identity,$to_uid,$msn);
+        }
         $data = compact('to_uid', 'msn_type', 'msn', 'uid');
         $data['add_time'] = time();
         $data['is_tourist'] = (int)$isTourist;
@@ -342,8 +347,8 @@ class ChatHandle
             $data['productInfo'] = $productInfo ? $productInfo->toArray() : [];
         }
         //订单消息类型
-        $data['orderInfo'] = [];
-        if (!$isTourist && $msn_type == StoreServiceLogServices::MSN_TYPE_ORDER && $msn) {
+        $data['orderInfo'] = $orderCard ?? [];
+        if ($orderCard === null && !$isTourist && $msn_type == StoreServiceLogServices::MSN_TYPE_ORDER && $msn) {
             /** @var StoreOrderServices $orderServices */
             $orderServices = app()->make(StoreOrderServices::class);
             $order = $orderServices->getUserOrderDetail($msn, $uid);

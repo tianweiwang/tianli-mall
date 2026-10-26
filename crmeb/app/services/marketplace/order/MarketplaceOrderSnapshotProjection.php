@@ -204,6 +204,26 @@ final class MarketplaceOrderSnapshotProjection
         return self::checkedCommercialRoot($saved,$items,false);
     }
 
+    /** Only the authenticated sharing/history service may admit these saved facts. */
+    public static function platformChatOrderCard(array $saved,array $items):array
+    {
+        if(self::merchantInteger($saved['marketplace_trade_version']??null,1,1)!==1
+            ||self::merchantInteger($saved['pid']??null,0,0)!==0
+            ||self::merchantInteger($saved['is_del']??null,0,0)!==0
+            ||self::merchantInteger($saved['is_system_del']??null,0,0)!==0)self::unavailable();
+        $commercial=self::checkedCommercialRoot($saved,$items,false);
+        $out=['scope'=>'platform_chat_order_card_v1','marketplace_trade_version'=>1,
+            'id'=>$commercial['id'],'order_id'=>$commercial['order_id'],'paid'=>$commercial['paid'],
+            'pay_price'=>$commercial['pay_price'],'total_num'=>$commercial['total_num'],
+            'add_time_y'=>date('Y-m-d',$commercial['add_time']),'add_time_h'=>date('H:i:s',$commercial['add_time']),
+            'merchant_name_snapshot'=>self::text($saved['merchant_name_snapshot']??null),'cartInfo'=>[]];
+        foreach($commercial['items'] as$item){
+            $out['cartInfo'][]=['id'=>$item['id'],'cart_num'=>$item['quantity'],'sku_name'=>$item['sku_name'],
+                'productInfo'=>['image'=>$item['image'],'store_name'=>$item['product_name'],'price'=>$item['unit_price']]];
+        }
+        return $out;
+    }
+
     /** Shared complete saved-row conservation; caller-specific admission precedes this pure check. */
     private static function checkedCommercialRoot(array $saved,array $items,bool $detail=false,?array &$decoded=null):array
     {

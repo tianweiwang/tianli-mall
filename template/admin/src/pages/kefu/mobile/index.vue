@@ -44,7 +44,11 @@
                 </div>
               </div>
               <!-- 订单 -->
-              <div class="order-box" v-if="item.msn_type == 6" v-db-click @click="goOrderDetail(item)">
+              <PlatformChatOrderCard
+                v-if="item.msn_type == 6 && item.orderInfo && item.orderInfo.scope === 'platform_chat_order_card_v1' && item.orderInfo.marketplace_trade_version === 1"
+                :order="item.orderInfo"
+              />
+              <div class="order-box" v-else-if="item.msn_type == 6 && item.orderInfo" v-db-click @click="goOrderDetail(item)">
                 <div class="title">订单ID: {{ item.orderInfo.order_id }}</div>
                 <div class="info">
                   <img v-lazy="item.orderInfo.cartInfo[0].productInfo.image" />
@@ -139,6 +143,7 @@
 
 <script>
 import { platformChatMaterialMixin } from '@/api/platform-chat-materials';
+import PlatformChatOrderCard from '../components/PlatformChatOrderCard.vue';
 var mp3 = require('@/assets/video/notice.mp3');
 var mp3 = new Audio(mp3);
 import Setting from '@/setting';
@@ -237,6 +242,7 @@ export default {
     isTransfer(value) { if (value && this.transferPending && !this.transferBusy) this.transferNotice = '此前转接结果尚未确认，请先查看原聊天记录'; },
   },
   components: {
+    PlatformChatOrderCard,
     words,
   },
   computed: {
@@ -969,6 +975,12 @@ body {
     display: flex;
     margin-bottom: 0.36rem;
     font-size: 0.28rem;
+    .platform-chat-order-card {
+      flex: 0 1 4.52rem;
+      width: 4.52rem;
+      max-width: calc(100% - 1.02rem);
+      margin-left: 0.22rem;
+    }
     .avatar {
       width: 0.8rem;
       height: 0.8rem;
@@ -1054,6 +1066,10 @@ body {
     }
     &.right-box {
       flex-direction: row-reverse;
+      .platform-chat-order-card {
+        margin-left: 0;
+        margin-right: 0.22rem;
+      }
       .msg-box {
         margin-left: 0;
         margin-right: 0.22rem;
