@@ -3,6 +3,7 @@ declare(strict_types=1);
 namespace app\services\marketplace\product;
 
 use think\exception\HttpException;
+use crmeb\exceptions\AuthUnavailableException;
 
 /** Finite ordinary physical-product DTO; integers and decimal yuan stay exact. */
 final class MerchantProductInput
@@ -47,6 +48,69 @@ final class MerchantProductInput
             . str_pad((string)mt_rand(1, 99999), 5, '0', STR_PAD_LEFT);
     }
     public static function json(array $value): string { return json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR); }
+    /** Existing four-field configuration; values are retained defaults, never merchant-entered answers. */
+    public static function customForm(mixed $value): array
+    {
+        return self::customFormFields($value, false);
+    }
+    private static function customFormFields(mixed $value, bool $stored): array
+    {
+        if (!is_array($value) || !array_is_list($value) || count($value) > 10) self::invalid();
+        $fields = [];
+        foreach ($value as $field) {
+            if (!is_array($field)) self::invalid();
+            self::body($field, ['title','label','value','status'], ['title','label','value','status']);
+            // Historical definitions were not subject to the new editor's required 128-character title.
+            $title = self::text($field['title'], $stored ? 65535 : 128, !$stored);
+            if (!in_array($field['label'], ['text','number','email','data','time','id','phone','img'], true) || !is_bool($field['status'])) self::invalid();
+            $answer = $field['value'];
+            if ($field['label'] === 'img' && $answer !== '') {
+                if (!is_array($answer) || !array_is_list($answer) || count($answer) > 8) self::invalid();
+                foreach ($answer as $image) self::text($image, 65535);
+            } else self::text($answer, 65535);
+            $fields[] = ['title'=>$title, 'label'=>$field['label'], 'value'=>$answer, 'status'=>$field['status']];
+        }
+        if (strlen(self::json($fields)) > 65535) self::invalid();
+        return $fields;
+    }
+    /** Decode owned stored definitions without trimming titles or replacing historical defaults. */
+    public static function savedCustomForm(mixed $raw): array
+    {
+        if ($raw === null || $raw === '') return [];
+        if (!is_string($raw) || strlen($raw) > 65535) throw new AuthUnavailableException();
+        try {
+            $decoded = json_decode($raw, false, 32, JSON_THROW_ON_ERROR);
+            if (!is_array($decoded)) throw new AuthUnavailableException();
+            $fields = [];
+            foreach ($decoded as $field) {
+                if (!$field instanceof \stdClass) throw new AuthUnavailableException();
+                $fields[] = (array)$field;
+            }
+            return self::customFormFields($fields, true);
+        } catch (\JsonException | HttpException $error) { throw new AuthUnavailableException(); }
+    }
+    /** Caller supplies the locked owned root. Nonempty defaults may only survive once from that definition. */
+    public static function customFormForSave(array $fields, mixed $before): ?string
+    {
+        $fields = self::customForm($fields); $old = self::savedCustomForm($before);
+        $semantic = static function(array $rows): array {
+            foreach ($rows as &$row) if ($row['label'] === 'img' && $row['value'] === '') $row['value'] = [];
+            unset($row); return $rows;
+        };
+        if ($semantic($fields) === $semantic($old)) return $before;
+        $used = [];
+        foreach ($fields as $field) {
+            if ($field['value'] === '' || $field['value'] === []) continue;
+            $matched = false;
+            foreach ($old as $index => $previous) {
+                if (!isset($used[$index]) && $field['label'] === $previous['label'] && $field['value'] === $previous['value']) {
+                    $used[$index] = true; $matched = true; break;
+                }
+            }
+            if (!$matched) self::invalid();
+        }
+        return self::json($fields);
+    }
     public static function ids(mixed $values, int $max = self::ROOT_MAX): array
     {
         if (!is_array($values) || !array_is_list($values) || !$values || count($values) > 100) self::invalid();
@@ -64,7 +128,7 @@ final class MerchantProductInput
     }
     public static function product(array $body): array
     {
-        self::body($body, ['store_name','store_info','keyword','unit_name','slider_image','video_link','description','cate_id','spec_type','items','attrs','rule_id','freight','postage','temp_id'], ['store_name','slider_image','cate_id','spec_type','attrs']);
+        self::body($body, ['store_name','store_info','keyword','unit_name','slider_image','video_link','description','cate_id','spec_type','items','attrs','rule_id','freight','postage','temp_id','custom_form'], ['store_name','slider_image','cate_id','spec_type','attrs']);
         $root = ['store_name' => self::text($body['store_name'], 128, true), 'store_info' => self::text($body['store_info'] ?? '', 256), 'keyword' => self::text($body['keyword'] ?? '', 256), 'unit_name' => self::text($body['unit_name'] ?? '件', 32, true), 'video_link' => self::text($body['video_link'] ?? '', 500)];
         $slider = $body['slider_image']; if (!is_array($slider) || !array_is_list($slider) || !$slider || count($slider) > 12) self::invalid();
         foreach ($slider as &$value) $value = self::text($value, 256, true); unset($value);
@@ -79,7 +143,9 @@ final class MerchantProductInput
         $rule = self::integer($body['rule_id'] ?? 0, 0, 2147483647);
         $items = $body['items'] ?? []; if (!is_array($items) || !array_is_list($items)) self::invalid();
         $attrs = $body['attrs']; if (!is_array($attrs) || !array_is_list($attrs) || !$attrs || count($attrs) > 256) self::invalid();
-        return ['root' => $root, 'categories' => $cats, 'description' => $description, 'rule_id' => $rule, 'items' => $items, 'attrs' => $attrs, 'slider' => $slider];
+        $input = ['root' => $root, 'categories' => $cats, 'description' => $description, 'rule_id' => $rule, 'items' => $items, 'attrs' => $attrs, 'slider' => $slider];
+        if (array_key_exists('custom_form', $body)) $input['custom_form'] = self::customForm($body['custom_form']);
+        return $input;
     }
     /** Source-compatible attr/result shape; no DAO reads or caller stock/identity write. */
     public static function definitions(array $input, ?array $preset = null): array

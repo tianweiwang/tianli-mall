@@ -9,6 +9,17 @@
       <div v-if="form.spec_type" class="definition-list"><div v-for="(item, index) in form.items" :key="index" class="rule-block"><div class="toolbar"><el-input :id="fieldId('dimension-' + index)" :label="'第' + (index + 1) + '项规格名称'" :value="item.value" @input="renameDimension(item, $event)" @change="renameDimension(item, item.value.trim())" :disabled="!editable || busy" placeholder="规格名称，如颜色" maxlength="32" /><el-button v-if="editable" size="small" :disabled="busy" @click="form.items.splice(index, 1)">移除此规格</el-button></div><div class="toolbar"><div v-for="(option, optionIndex) in item.detail" :key="optionIndex" class="option-field"><el-input :id="fieldId('dimension-' + index + '-option-' + optionIndex)" :label="'第' + (index + 1) + '项规格 ' + item.value + ' 第' + (optionIndex + 1) + '个选项'" :value="option.value" @input="renameOption(item, option, $event)" @change="renameOption(item, option, option.value.trim())" :disabled="!editable || busy" placeholder="规格选项" maxlength="64" /><el-button v-if="editable" size="mini" :disabled="busy" @click="item.detail.splice(optionIndex, 1)">移除</el-button></div><el-button v-if="editable" size="small" :disabled="busy || item.detail.length >= 100" @click="item.detail.push({ value: '' })">添加选项</el-button></div></div><div v-if="editable" class="toolbar"><el-button :disabled="busy || form.items.length >= 8" @click="form.items.push({ value: '', detail: [{ value: '' }] })">添加规格</el-button><el-button :disabled="busy" @click="generate">生成规格组合</el-button></div></div>
       <spec-stock :rows="form.attrs" :editable="editable && !busy" :media-allowed="can('attachment.manage')" :stock-allowed="Boolean(productId) && can('stock.adjust') && !busy" :preview="preview" @picture="pick('sku', $event)" @stock="adjust" /><p class="field-note">已有规格保留 SKU 身份。库存单独调整；新规格保存后可增加库存。</p>
       <h2 class="section-heading">运费</h2><div class="form-grid"><el-form-item label="运费方式" :for="fieldId('product-freight')"><el-select v-model="form.freight" :disabled="!editable || busy" :id="fieldId('product-freight')" v-control-label="'运费方式'"><el-option :value="1" label="包邮" /><el-option :value="2" label="固定运费" /><el-option :value="3" label="运费模板" /></el-select></el-form-item><el-form-item v-if="form.freight === 2" label="固定运费（元）" :for="fieldId('product-postage')"><el-input v-model="form.postage" inputmode="decimal" :disabled="!editable || busy" :id="fieldId('product-postage')" :label="'固定运费（元）'" /></el-form-item><el-form-item v-if="form.freight === 3" label="本店运费模板" :for="fieldId('product-template')"><el-select v-model="form.temp_id" :disabled="!editable || busy || !can('freight.manage')" :id="fieldId('product-template')" v-control-label="'本店运费模板'"><el-option v-for="template in freights" :key="template.id" :value="template.id" :label="template.name" /><el-option v-if="form.temp_id && !freights.some((item) => item.id === form.temp_id)" :value="form.temp_id" :label="'当前模板 ' + form.temp_id" /></el-select><p v-if="!can('freight.manage')" class="field-note">当前账号无运费模板管理权限，保留已选择的模板。</p></el-form-item></div>
+      <h2 class="section-heading">下单填写资料</h2>
+      <p class="field-note">顾客下单时填写以下资料，最多 10 项。图片作为订单私有资料保存，不进入公开商品素材库。修改定义会随商品重新审核，已下单内容保持不变。</p>
+      <p v-if="!form.custom_form.length" class="field-note">尚未设置额外资料，顾客可直接下单。</p>
+      <div v-for="(field, index) in form.custom_form" :key="index" class="rule-block">
+        <div class="form-grid">
+          <el-form-item :label="'第' + (index + 1) + '项资料标题'" :for="fieldId('custom-form-' + index + '-title')"><el-input v-model="field.title" :disabled="!editable || busy" :id="fieldId('custom-form-' + index + '-title')" :label="'第' + (index + 1) + '项资料标题'" placeholder="例如：定制说明" /></el-form-item>
+          <el-form-item :label="'第' + (index + 1) + '项资料类型'" :for="fieldId('custom-form-' + index + '-type')"><el-select :value="field.label" @change="changeFormType(field, $event)" :disabled="!editable || busy" :id="fieldId('custom-form-' + index + '-type')" v-control-label="'第' + (index + 1) + '项资料类型'"><el-option v-for="type in formTypes" :key="type.value" :value="type.value" :label="type.label" /></el-select></el-form-item>
+        </div>
+        <div class="toolbar"><el-checkbox v-model="field.status" :disabled="!editable || busy" v-control-label="'第' + (index + 1) + '项资料必填'">必填</el-checkbox><el-button v-if="editable" size="small" :disabled="busy" :aria-label="'移除第' + (index + 1) + '项资料'" @click="form.custom_form.splice(index, 1)">移除此项资料</el-button></div>
+      </div>
+      <el-button v-if="editable" :disabled="busy || form.custom_form.length >= 10" @click="form.custom_form.push({ title: '', label: 'text', value: '', status: false })">添加资料项</el-button>
       <h2 class="section-heading">商品详情</h2><div v-if="mediaAllowed" class="toolbar"><el-button :disabled="busy || loading" @click="pick('description-image')">追加详情图片</el-button><el-button :disabled="busy || loading" @click="pick('description-video')">追加详情视频</el-button><el-button :disabled="busy || loading" @click="pick('description-audio')">追加详情音频</el-button></div><el-form-item label="详情内容" :for="fieldId('product-description')"><el-input v-model="form.description" type="textarea" :rows="10" :disabled="!editable || busy" maxlength="60000" :id="fieldId('product-description')" :label="'详情内容'" /></el-form-item>
       <p v-if="dirty" class="field-note">有未保存修改。保存后商品将重新进入待审核并下架，审核通过后再上架。</p><div class="actions"><el-button v-if="editable" type="primary" native-type="submit" :loading="busy" :disabled="busy">保存商品</el-button><el-button v-if="productId && can('product.submit_review') && actual && [0,3].includes(actual.review_status)" :disabled="busy || dirty" @click="submitReview">提交审核</el-button><el-button :disabled="busy" @click="$router.push('/products')">返回列表</el-button></div>
     </el-form>
@@ -18,7 +29,7 @@
 <script>
 import { fieldNames } from '../../accessibility';
 import { api, captureMediaContext, currentMediaContext, mediaRow } from '../../api';
-import { blankProduct, fromDetail, productWrite, regenerateSkus, recordId, reviewLabel } from '../../domain/product';
+import { blankProduct, customFormTypes, fromDetail, productWrite, regenerateSkus, recordId, reviewLabel } from '../../domain/product';
 import SpecStock from '../../components/SpecStock.vue';
 import AttachmentPicker from '../../components/AttachmentPicker.vue';
 import StockAdjustment from '../../components/StockAdjustment.vue';
@@ -28,6 +39,7 @@ export default {
   components: { SpecStock, AttachmentPicker, StockAdjustment },
   data: () => ({ productId: null, form: blankProduct(), actual: null, savedDefinition: '', loaded: false, loading: false, busy: false, error: '', notice: '', categories: [], freights: [], previews: {}, pickerVisible: false, pickerTarget: '', pickerSku: null, pickerKind: 'image', pickerInvocation: 0, pickerContext: null, stockVisible: false, stockSku: null, pageContext: null, pageGeneration: 0, pageRoute: '', alive: true, active: true, unsubscribe: null }),
   computed: {
+    formTypes() { return customFormTypes; },
     editable() { return this.can('product.write'); },
     mediaAllowed() { return this.editable && this.can('attachment.manage'); },
     dirty() { if (!this.productId || !this.loaded) return false; try { return JSON.stringify(productWrite(this.form)) !== this.savedDefinition; } catch (error) { return true; } },
@@ -62,6 +74,10 @@ export default {
       finally { if (!context || this.current(context, generation)) this.loading = false; }
     },
     changeSpec() { try { if (this.form.spec_type && !this.form.items.length) this.form.items = [{ value: '', detail: [{ value: '' }] }]; if (!this.form.spec_type) regenerateSkus(this.form); } catch (error) { this.error = error.message; } },
+    changeFormType(field, label) {
+      if (!this.editable || this.busy || !this.form.custom_form.includes(field) || field.label === label || !customFormTypes.some((type) => type.value === label)) return;
+      field.label = label; field.value = label === 'img' ? [] : '';
+    },
     renameDimension(item, next) {
       const previous = item.value; if (previous === next) return;
       if (this.form.items.some((other) => other !== item && other.value === next)) { this.error = '规格名称不能重复'; return; }

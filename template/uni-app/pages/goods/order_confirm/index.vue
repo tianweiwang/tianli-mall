@@ -628,7 +628,7 @@
 			...mapGetters(['isLogin']),
 			orderFormImageContext() { return this.marketplaceV1 && this.orderKey ? {kind: 'confirmation', key: this.orderKey, generation: this.marketplaceEditGeneration, page: this.marketplacePageInstance} : null; },
 			orderFormImageGroups() { return this.marketplaceFormGroups; },
-			orderFormImagesActive() { return this.privateFormImagesVisible && this._marketplaceAlive === true && !!this.marketplaceOwner && this.marketplaceFormsReady && !this.marketplaceRestoring; },
+			orderFormImagesActive() { return this.privateFormImagesVisible && !!this.marketplaceOwner && this.marketplaceFormsReady && !this.marketplaceRestoring && this._marketplaceAlive === true; },
 			marketplaceCleanupFailed() { return this.$store.state.app.confirmationCleanupFailed === true; },
 			marketplacePreparing() { return !!this.marketplaceMerIntent && (!this.marketplaceSubmitBinding || this.marketplaceHistoryPending); },
 			marketplaceV1() {

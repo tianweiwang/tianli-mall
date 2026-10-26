@@ -21,8 +21,8 @@ use think\Model;
 /** Every typed child operation verifies and locks its owned parent first. */
 final class MerchantProductDao
 {
-    public const ROOT_FIELDS = ['id','mer_id','store_name','store_info','keyword','unit_name','image','slider_image','video_link','price','cost','ot_price','vip_price','stock','spec_type','freight','postage','temp_id','cate_id','default_sku','is_show','is_del','is_virtual','virtual_type','review_status','review_reason','review_time'];
-    private const WRITE_FIELDS = ['store_name','store_info','keyword','unit_name','image','slider_image','video_link','price','cost','ot_price','vip_price','stock','spec_type','freight','postage','temp_id','cate_id','default_sku','is_show','is_del','review_status','review_reason','review_admin_id','review_time'];
+    public const ROOT_FIELDS = ['id','mer_id','store_name','store_info','keyword','unit_name','image','slider_image','video_link','price','cost','ot_price','vip_price','stock','spec_type','freight','postage','temp_id','cate_id','default_sku','custom_form','is_show','is_del','is_virtual','virtual_type','review_status','review_reason','review_time'];
+    private const WRITE_FIELDS = ['store_name','store_info','keyword','unit_name','image','slider_image','video_link','price','cost','ot_price','vip_price','stock','spec_type','freight','postage','temp_id','cate_id','default_sku','custom_form','is_show','is_del','review_status','review_reason','review_admin_id','review_time'];
     public static function raw(array|Model|null $row): ?array { return $row instanceof Model ? $row->getData() : ($row ?: null); }
     private static function transaction(Query $query): void
     {
@@ -53,7 +53,7 @@ final class MerchantProductDao
     public function create(MerchantContext $ctx, array $root): int
     {
         $q=(new StoreProduct())->db(); self::transaction($q); foreach(array_keys($root) as $key) if(!in_array($key,self::WRITE_FIELDS,true)) throw new AuthUnavailableException();
-        $row=$root+['mer_id'=>$ctx->merId,'is_virtual'=>0,'virtual_type'=>0,'add_time'=>time(),'spu'=>Input::spu(),'review_status'=>0,'review_reason'=>'','review_admin_id'=>null,'review_time'=>null,'is_show'=>0,'is_del'=>0,'stock'=>0];
+        $row=$root+['mer_id'=>$ctx->merId,'is_virtual'=>0,'virtual_type'=>0,'custom_form'=>'[]','add_time'=>time(),'spu'=>Input::spu(),'review_status'=>0,'review_reason'=>'','review_admin_id'=>null,'review_time'=>null,'is_show'=>0,'is_del'=>0,'stock'=>0];
         $id=$q->insertGetId($row); $id=Input::integer($id,1,Input::ROOT_MAX,true); $this->find($ctx,$id,true); return $id;
     }
     public function updateRoot(MerchantContext $ctx, int $id, array $data): void

@@ -70,8 +70,9 @@ export default {
     orderFormImageSource(group, field, index) {
       const reference = field.value[index];
       if (!isPrivateOrderFormImage(reference)) return reference;
+      const source = this.orderFormTemporaryImages[imageKey(group, field, index, reference)] || '';
       const scope = this._orderFormImageScope;
-      return scope && scope.current() ? this.orderFormTemporaryImages[imageKey(group, field, index, reference)] || '' : '';
+      return scope && scope.current() ? source : '';
     },
     previewOrderFormImages(group, field, index) {
       const current = this.orderFormImageSource(group, field, index);

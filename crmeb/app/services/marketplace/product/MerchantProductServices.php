@@ -32,6 +32,7 @@ final class MerchantProductServices
     {
         $data=[];foreach(MerchantProductDao::ROOT_FIELDS as$key)if(!in_array($key,['is_virtual','virtual_type'],true))$data[$key]=$root[$key];
         $data['slider_image']=json_decode($root['slider_image'],true,32,JSON_THROW_ON_ERROR);$data['cate_id']=$root['cate_id']===''?[]:array_map('intval',explode(',',$root['cate_id']));
+        $data['custom_form']=MerchantProductInput::savedCustomForm($root['custom_form']);
         foreach(['id','mer_id','stock','spec_type','freight','temp_id','is_show','is_del','review_status']as$key)$data[$key]=(int)$data[$key];if($data['review_time']!==null)$data['review_time']=(int)$data['review_time'];
         foreach(['price','cost','ot_price','vip_price','postage']as$key)$data[$key]=MerchantProductInput::money($root[$key]);return $data;
     }
@@ -72,7 +73,9 @@ final class MerchantProductServices
             $before=$productId?$this->products->find($ctx,$productId,true):null;if($before!==null&&(int)$before['is_del']!==0)MerchantProductInput::invalid();
             $old=$productId?$this->products->skus($ctx,$productId,true):[];$stock=$this->products->physicalStock($old);if($before!==null&&$stock!==(int)$before['stock'])throw new AuthUnavailableException();
             $definitions=MerchantProductInput::definitions($input,$this->products->preset($ctx,$input['rule_id']));$categoryParents=$this->products->references($ctx,$productId,$input,$definitions);
-            $root=$input['root'];$values=array_column($definitions['skus'],'row');$default=array_values(array_filter($values,static fn(array$r):bool=>$r['is_default_select']===1));
+            $root=$input['root'];
+            if(array_key_exists('custom_form',$input))$root['custom_form']=MerchantProductInput::customFormForSave($input['custom_form'],$before===null?'[]':$before['custom_form']);
+            $values=array_column($definitions['skus'],'row');$default=array_values(array_filter($values,static fn(array$r):bool=>$r['is_default_select']===1));
             foreach(['price','cost','ot_price']as$key)$root[$key]=$default?$default[0][$key]:MerchantProductInput::minimum(array_column($values,$key));$root['vip_price']=MerchantProductInput::minimum(array_column($values,'vip_price'));$root['stock']=$stock;$root['default_sku']=$default?$default[0]['suk']:'';
             if($productId===0){$id=$this->products->create($ctx,$root);$result=$this->products->saveSkus($ctx,$id,$definitions,[]);$this->products->replaceDefinition($ctx,$id,$result,$input,$categoryParents);$fields=array_merge(array_keys($root),['categories']);$action='product.create';}
             else{$id=$productId;$oldResult=$this->products->currentResult($ctx,$id,true);$oldDescription=$this->products->description($ctx,$id,true);

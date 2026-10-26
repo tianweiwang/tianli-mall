@@ -6,6 +6,7 @@ require dirname(__DIR__, 3).'/crmeb/vendor/autoload.php';
 
 use app\services\marketplace\order\MarketplaceOrderCustomForm as Form;
 use app\services\marketplace\order\MarketplaceOrderInput as Input;
+use app\services\marketplace\product\MerchantProductInput as ProductInput;
 
 $assertions = 0;
 $check = static function (bool $ok) use (&$assertions): void {
@@ -87,5 +88,33 @@ $room = 65535-strlen(Form::encoded($boundary));
 $boundary[0]['fields'][0]['value'] = str_repeat('中',intdiv($room,3)).str_repeat('a',$room%3);
 $check(strlen(Form::encoded($boundary)) === 65535);
 $check(json_decode(Form::encoded($boundary),true,32,JSON_THROW_ON_ERROR) === $boundary);
+// Merchant definitions feed the same confirmation/snapshot contract without replacing old defaults.
+$merchantFields = [$field('定制说明','text',true),$field('参考图片','img',true)];
+$merchantFields[1]['value'] = [];
+$stored = ProductInput::customFormForSave($merchantFields, '');
+$check(ProductInput::savedCustomForm($stored) === $merchantFields);
+$configured = [7=>['id'=>7,'store_name'=>'普通商品甲','custom_form'=>$stored]];
+$configuredSelection = [['cart_ref'=>'2','product_id'=>7]];
+$configuredGroups = Form::definitions($configured,$configuredSelection,'persistent');
+$check($configuredGroups[0]['fields'][0]['title'] === '定制说明' && $configuredGroups[0]['fields'][1]['value'] === []);
+$oldBytes = '[ {"status":false,"value":"原默认说明","label":"text","title":"原标题"}, {"status":false,"value":"","label":"img","title":"图片"} ]';
+$oldFields = ProductInput::savedCustomForm($oldBytes);
+$check(ProductInput::customFormForSave($oldFields,$oldBytes) === $oldBytes);
+$oldFields[1]['value'] = [];
+$check(ProductInput::customFormForSave($oldFields,$oldBytes) === $oldBytes);
+$oldFields[0]['title'] = '改名保留原默认值';
+$changed = ProductInput::savedCustomForm(ProductInput::customFormForSave(array_reverse($oldFields),$oldBytes));
+$check($changed[1]['value'] === '原默认说明' && $changed[1]['title'] === '改名保留原默认值');
+$check(ProductInput::customFormForSave([],$oldBytes) === '[]');
+$check(ProductInput::customFormForSave([],null) === null && ProductInput::savedCustomForm('') === []);
+$legacyTitles = [$field('','text',false),$field(str_repeat('旧',129),'text',false)];
+$check(ProductInput::savedCustomForm(ProductInput::json($legacyTitles)) === $legacyTitles);
+$ordinaryBody = ['store_name'=>'普通商品','slider_image'=>['ordinary.png'],'cate_id'=>[1],'spec_type'=>0,'attrs'=>[['price'=>'12.50','pic'=>'ordinary.png']]];
+$check(!array_key_exists('custom_form',ProductInput::product($ordinaryBody)));
+$ordinaryBody['custom_form'] = [];
+$check(ProductInput::product($ordinaryBody)['custom_form'] === []);
+$ordinaryBody['custom_form'] = $merchantFields;
+$check(ProductInput::product($ordinaryBody)['custom_form'] === $merchantFields);
+
 echo json_encode(['status'=>'PASS','scope'=>'PURE_ORDINARY_PRODUCT_FORMS','assertions'=>$assertions,
     'App_SQL_auth_cache_HTTP_or_stopped_samples_run'=>false],JSON_THROW_ON_ERROR).PHP_EOL;

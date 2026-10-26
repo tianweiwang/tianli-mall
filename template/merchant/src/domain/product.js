@@ -8,17 +8,45 @@ export function decimal(value) {
   const [whole, fraction = ''] = value.split('.'); return whole + '.' + fraction.padEnd(2, '0');
 }
 const amounts = ['price', 'cost', 'ot_price', 'vip_price', 'weight', 'volume'];
+export const customFormTypes = [
+  { value: 'text', label: '文本框' }, { value: 'number', label: '数字' },
+  { value: 'email', label: '邮件' }, { value: 'data', label: '日期' },
+  { value: 'time', label: '时间' }, { value: 'id', label: '身份证' },
+  { value: 'phone', label: '手机号' }, { value: 'img', label: '图片' },
+];
+function formText(value) {
+  return typeof value === 'string' && !value.includes('\0')
+    && !Array.from(value).some((character) => character.length === 1 && /[\uD800-\uDFFF]/.test(character));
+}
+export function customFormDefinition(fields, validateTitles = true) {
+  if (!Array.isArray(fields) || fields.length > 10) throw new Error('下单填写资料最多可设置 10 项');
+  return Array.from(fields, (field) => {
+    if (!field || typeof field !== 'object' || Array.isArray(field)
+      || Object.keys(field).length !== 4 || !['title', 'label', 'value', 'status'].every((key) => Object.prototype.hasOwnProperty.call(field, key))) throw new Error('下单填写资料定义不完整，请重新读取商品');
+    if (!formText(field.title)) throw new Error('资料标题返回不完整，请重新读取商品');
+    if (validateTitles && (!field.title.trim() || Array.from(field.title).length > 128)) throw new Error('请填写每项资料的标题，最多 128 个字');
+    if (!customFormTypes.some((type) => type.value === field.label) || typeof field.status !== 'boolean') throw new Error('资料类型或必填设置不正确');
+    let value = field.value;
+    if (field.label === 'img') {
+      if (value !== '' && (!Array.isArray(value) || value.length > 8 || !Array.from(value).every(formText))) throw new Error('图片资料定义不完整，请重新读取商品');
+      if (Array.isArray(value)) value = value.slice();
+    } else if (!formText(value)) throw new Error('资料默认内容不完整，请重新读取商品');
+    return { title: field.title, label: field.label, value, status: field.status };
+  });
+}
 export function newSku(detail = { '规格': '默认' }) {
   return { detail, price: '0.00', cost: '0.00', ot_price: '0.00', vip_price: '0.00', weight: '0.00', volume: '0.00', pic: '', bar_code: '', bar_code_number: '', is_default_select: 0, stock: 0 };
 }
 export function blankProduct() {
-  return { store_name: '', store_info: '', keyword: '', unit_name: '件', slider_image: [], video_link: '', description: '', cate_id: [], spec_type: 0, items: [], attrs: [newSku()], rule_id: 0, freight: 1, postage: '0.00', temp_id: 0 };
+  return { store_name: '', store_info: '', keyword: '', unit_name: '件', slider_image: [], video_link: '', description: '', custom_form: [], cate_id: [], spec_type: 0, items: [], attrs: [newSku()], rule_id: 0, freight: 1, postage: '0.00', temp_id: 0 };
 }
 export function fromDetail(data) {
   if (!data || !data.product || !Array.isArray(data.attrs) || !Array.isArray(data.items)) throw new Error('商品详情返回不完整');
   const form = blankProduct();
   ['store_name', 'store_info', 'keyword', 'unit_name', 'slider_image', 'video_link', 'cate_id', 'spec_type', 'freight', 'postage', 'temp_id'].forEach((key) => { form[key] = data.product[key]; });
   form.description = data.description; form.items = JSON.parse(JSON.stringify(data.items));
+  form.custom_form = customFormDefinition(data.product.custom_form, false);
+  form.originalCustomForm = customFormDefinition(form.custom_form, false);
   form.attrs = data.attrs.map((row) => {
     const sku = newSku({ ...row.detail });
     ['id', 'unique', 'pic', 'stock', 'bar_code', 'bar_code_number', 'is_default_select', ...amounts].forEach((key) => { if (row[key] !== undefined) sku[key] = row[key]; });
@@ -79,6 +107,9 @@ export function productWrite(form) {
   const body = {};
   ['store_name', 'store_info', 'keyword', 'unit_name', 'slider_image', 'video_link', 'description', 'spec_type', 'freight'].forEach((key) => { body[key] = form[key]; });
   body.cate_id = form.cate_id.map(recordId); body.items = items; body.attrs = attrs; body.rule_id = 0; body.postage = decimal(form.postage); body.temp_id = form.freight === 3 ? recordId(form.temp_id) : 0;
+  // Unchanged legacy definitions must not block unrelated edits or rewrite their saved bytes.
+  const fields = customFormDefinition(form.custom_form, false);
+  if (!Object.prototype.hasOwnProperty.call(form, 'originalCustomForm') || JSON.stringify(fields) !== JSON.stringify(form.originalCustomForm)) body.custom_form = customFormDefinition(fields);
   return body; // Absolute stock is never included in product definition writes.
 }
 export const reviewLabel = (status) => ['草稿', '待审核', '审核通过', '已驳回'][status] || '状态未知';
