@@ -515,16 +515,17 @@ function m4pc_expected_log(PDO $db,int|string $id,int $from,int $to,int $tourist
         'to_uid'=>m4pc_number($db,$to),'is_tourist'=>m4pc_number($db,$tourist),'time_node'=>m4pc_number($db,0),'add_time'=>$at,
         'type'=>m4pc_number($db,$type),'remind'=>m4pc_number($db,0),'msn_type'=>m4pc_number($db,$msnType)];
 }
-function m4pc_record_formula(PDO $db,array $rows,int $from,int $to,int $tourist,string $message,int $messageType,int $unread,string $nickname,string $avatar,array $window,?array $receipt=null):array
+function m4pc_record_formula(PDO $db,array $rows,int $from,int $to,int $tourist,string $message,int $messageType,int $unread,string $nickname,string $avatar,array $window,?array $receipt=null,?array $wireWindow=null,?string &$matchedRecordCanonical=null):array
 {
+    $matchedRecordCanonical=null;
     $reverse=[];foreach($rows as$i=>$row)if((int)$row['user_id']===$to&&(int)$row['to_uid']===$from&&(int)$row['is_tourist']===$tourist)$reverse[]=$i;
     m4pc_expect(count($reverse)<=1,'M4PC_UNIQUE_ORIGINAL_RECORD_PAIR');$actual=$window['record'];m4pc_expect(array_keys($actual)===M4PC_RECORD_FIELDS,'M4PC_COMPLETE_NATIVE_RECORD_COLUMNS');m4pc_window($actual['update_time'],$window);
     if($reverse!==[]){$i=$reverse[0];$want=$rows[$i];$want['type']=m4pc_number($db,1);$want['message']=$message;$want['message_type']=m4pc_number($db,$messageType);$want['update_time']=$actual['update_time'];$want['mssage_num']=m4pc_number($db,$unread);
-        if($avatar!=='')$want['avatar']=$avatar;if($nickname!=='')$want['nickname']=$nickname;m4pc_expect($actual===$want,'M4PC_ORIGINAL_REVERSE_RECORD_FULL_FORMULA');$rows[$i]=$want;
+        if($avatar!=='')$want['avatar']=$avatar;if($nickname!=='')$want['nickname']=$nickname;m4pc_expect($actual===$want,'M4PC_ORIGINAL_REVERSE_RECORD_FULL_FORMULA');$rows[$i]=$want;$matchedRecordCanonical=\app\services\marketplace\order\MarketplaceOrderInput::canonical($want);
     }else{m4pc_expect(is_array($receipt)&&(int)($receipt['id']??0)===(int)$actual['id'],'M4PC_NEW_RECORD_ID_FROM_REAL_RECIPIENT_EVENT');m4pc_window($actual['add_time'],$window);
         $want=['id'=>$actual['id'],'user_id'=>m4pc_number($db,$to),'to_uid'=>m4pc_number($db,$from),'nickname'=>$nickname,'avatar'=>$avatar,'is_tourist'=>m4pc_number($db,$tourist),'online'=>m4pc_number($db,0),
             'type'=>m4pc_number($db,1),'add_time'=>$actual['add_time'],'update_time'=>$actual['update_time'],'mssage_num'=>m4pc_number($db,$unread),'message'=>$message,'message_type'=>m4pc_number($db,$messageType)];
-        m4pc_expect($actual===$want,'M4PC_COMPLETE_NEW_RECORD_FROM_INPUT_AND_REAL_PK');$wire=$want;unset($wire['online']);m4pc_expect((is_int($receipt['id'])||is_string($receipt['id']))&&(string)$receipt['id']===(string)$want['id'],'M4PC_NATIVE_NEW_RECORD_WIRE_PK');$receipt['id']=(int)$receipt['id'];m4pc_expect(\app\services\marketplace\order\MarketplaceOrderInput::canonical($receipt)===\app\services\marketplace\order\MarketplaceOrderInput::canonical($wire),'M4PC_NEW_RECORD_FULL_REAL_MODEL_DTO');$rows[]=$want;
+        m4pc_expect($actual===$want,'M4PC_COMPLETE_NEW_RECORD_FROM_INPUT_AND_REAL_PK');$wire=$want;unset($wire['online']);m4pc_expect((is_int($receipt['id'])||is_string($receipt['id']))&&(string)$receipt['id']===(string)$want['id'],'M4PC_NATIVE_NEW_RECORD_WIRE_PK');$receipt['id']=(int)$receipt['id'];m4pc_expect(is_array($wireWindow),'M4PC_NEW_RECORD_INDEPENDENT_RECEIVE_WINDOW');$matchedRecordCanonical=m4pc_new_record_wire($receipt,$wire,$wireWindow);$rows[]=$want;
     }
     foreach($rows as&$row)if((int)$row['user_id']===$from&&(int)$row['to_uid']===$to&&(int)$row['is_tourist']===$tourist){$row['message']=$message;$row['message_type']=m4pc_number($db,$messageType);$row['update_time']=$actual['update_time'];}unset($row);return $rows;
 }
@@ -559,7 +560,90 @@ function m4pc_enrichment(PDO $db,array $fixture,int $msnType,string $msn,int $to
     }
     return ['productInfo'=>$product,'orderInfo'=>$order];
 }
-function m4pc_main_wire(array $dto,array $expected,string $nickname,string $avatar,array $enrichment):void
+/** New saved Record keeps native update_time; only create_time is an automatic transient field. */
+function m4pc_new_record_wire(array $dto,array $wantedBase,array $wireWindow):string
+{
+    $config=app()->config;$timeField=$config->get('database.datetime_field');
+    m4pc_expect($config->get('app.default_timezone')==='Asia/Shanghai'&&date_default_timezone_get()==='Asia/Shanghai'
+        &&$config->get('database.auto_timestamp')==='timestamp'&&$config->get('database.datetime_format')==='Y-m-d H:i:s'
+        &&empty($timeField),'M4PC_ORIGINAL_MODEL_TIME_CONFIGURATION');
+    m4pc_expect(array_keys($wantedBase)===['id','user_id','to_uid','nickname','avatar','is_tourist','type','add_time','update_time','mssage_num','message','message_type'],
+        'M4PC_ORIGINAL_COMPLETE_NEW_RECORD_WIRE_BASE');
+    m4pc_expect(array_keys($wireWindow)===['send','received']&&is_int($wireWindow['send'])&&is_int($wireWindow['received'])
+        &&$wireWindow['send']>=0&&$wireWindow['received']>=$wireWindow['send'],'M4PC_NEW_RECORD_COMPLETED_DELIVERY_WINDOW');
+    $at=$wantedBase['add_time'];m4pc_expect((is_int($at)||is_string($at))&&ctype_digit((string)$at),'M4PC_INDEPENDENT_ORIGINAL_RECORD_TIME');
+    $from=max($wireWindow['send'],(int)$at);$through=$wireWindow['received'];m4pc_expect($from<=$through,'M4PC_RECORD_CREATE_TIME_WITHIN_RECEIVE');
+    $actualCanonical=\app\services\marketplace\order\MarketplaceOrderInput::canonical($dto);$matchedCanonical=null;
+    for($created=$from;$created<=$through;$created++){
+        $candidate=$wantedBase;$candidate['create_time']=date('Y-m-d H:i:s',$created);
+        $canonical=\app\services\marketplace\order\MarketplaceOrderInput::canonical($candidate);
+        if($actualCanonical===$canonical)$matchedCanonical=$canonical;
+    }
+    m4pc_expect($matchedCanonical!==null,'M4PC_NEW_RECORD_FULL_REAL_MODEL_DTO');return $matchedCanonical;
+}
+/** Independent complete Model DTO candidates; never read either actual automatic timestamp. */
+function m4pc_model_time_candidates(array $base,int $from,int $through):Generator
+{
+    for($created=$from;$created<=$through;$created++){
+        for($updated=$created;$updated<=$through;$updated++){
+            $candidate=$base;$candidate['create_time']=date('Y-m-d H:i:s',$created);$candidate['update_time']=date('Y-m-d H:i:s',$updated);
+            yield $candidate;
+        }
+    }
+}
+function m4pc_model_wire_diagnostic(array $dto,array $base,string $actualCanonical,array $candidates,string $kind):void
+{
+    try{
+        $fields=['to_uid','msn_type','msn','uid','add_time','is_tourist','type','id','_add_time','nickname','avatar','productInfo','orderInfo','create_time','update_time'];
+        $baseFields=array_slice($fields,0,$kind==='auto_reply'?9:13);
+        $summary=static function(array $value,array $names):array{
+            $out=[];foreach($names as$field){$present=array_key_exists($field,$value);$type=$present?gettype($value[$field]):'missing';$bytes=null;$digest=null;
+                if($present){$encoded=json_encode($value[$field],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);$bytes=strlen($encoded);$digest=hash('sha256',$encoded);unset($encoded);}
+                $out[$field]=['present'=>$present,'type'=>$type,'bytes'=>$bytes,'sha256'=>$digest];}
+            return $out;
+        };
+        $generation=array_key_last($GLOBALS['m4pc_runtime_workers']??[]);
+        if(is_string($generation)&&preg_match('/\A[a-f0-9]{16}\z/D',$generation)===1){
+            $diagnostic=m4pc_json(['schema'=>2,'scope'=>'COMPLETE_MODEL_WIRE_CANDIDATE_MISMATCH_SAFE_METADATA_ONLY','generation'=>$generation,'wire_kind'=>$kind,
+                'message_type'=>in_array($base['msn_type'],[1,2,3,4,5,6],true)?$base['msn_type']:null,
+                'field_encoding'=>'JSON_UNESCAPED_UNICODE_UNESCAPED_SLASHES_VALUE_BYTES_NOT_CANONICAL_SUBFIELDS',
+                'actual_field_count'=>count($dto),'wanted_base_field_count'=>count($base),'actual'=>$summary($dto,$fields),'wanted_base'=>$summary($base,$baseFields),
+                'actual_canonical'=>['bytes'=>strlen($actualCanonical),'sha256'=>hash('sha256',$actualCanonical)],
+                'wanted_candidates'=>$candidates,'unique_cause'=>'UNKNOWN']);
+            if(strlen($diagnostic)<=65536)m4pc_write(audit_run_dir().'/evidence/platform-chat-'.$generation.'-ack-mismatch.json',$diagnostic);
+        }
+    }catch(\Throwable $diagnosticFailure){/* Best effort only; retain the original comparison failure and finally. */}
+}
+function m4pc_model_wire(array $dto,array $wantedBase,array $wireWindow,string $failure,string $kind,?array $requiredCandidate=null):array
+{
+    $config=app()->config;$timeField=$config->get('database.datetime_field');
+    m4pc_expect($config->get('app.default_timezone')==='Asia/Shanghai'&&date_default_timezone_get()==='Asia/Shanghai'
+        &&$config->get('database.auto_timestamp')==='timestamp'&&$config->get('database.datetime_format')==='Y-m-d H:i:s'
+        &&empty($timeField),'M4PC_ORIGINAL_MODEL_TIME_CONFIGURATION');
+    $fields=['to_uid','msn_type','msn','uid','add_time','is_tourist','type','id','_add_time','nickname','avatar','productInfo','orderInfo'];
+    m4pc_expect(in_array($kind,['main_ack','main_delivery','auto_reply'],true)
+        &&array_keys($wantedBase)===array_slice($fields,0,$kind==='auto_reply'?9:13),'M4PC_ORIGINAL_COMPLETE_MODEL_WIRE_BASE');
+    m4pc_expect(array_keys($wireWindow)===['send','received']&&is_int($wireWindow['send'])&&is_int($wireWindow['received'])
+        &&$wireWindow['send']>=0&&$wireWindow['received']>=$wireWindow['send'],'M4PC_INDEPENDENT_COMPLETED_WIRE_WINDOW');
+    $at=$wantedBase['add_time'];m4pc_expect((is_int($at)||is_string($at))&&ctype_digit((string)$at),'M4PC_INDEPENDENT_ORIGINAL_LOG_TIME');
+    $from=max($wireWindow['send'],(int)$at);$through=$wireWindow['received'];m4pc_expect($from<=$through,'M4PC_ORIGINAL_MODEL_TIME_AFTER_LOG_WITHIN_RECEIVE');
+    // Both now calls are independent; completed original receive bounds the finite range, not a new10s/count cap.
+    $candidates=$requiredCandidate===null?m4pc_model_time_candidates($wantedBase,$from,$through):[$requiredCandidate];
+    $actualCanonical=\app\services\marketplace\order\MarketplaceOrderInput::canonical($dto);
+    $matched=null;$count=0;$minBytes=null;$maxBytes=null;$aggregate=hash_init('sha256');
+    foreach($candidates as$candidate){
+        $canonical=\app\services\marketplace\order\MarketplaceOrderInput::canonical($candidate);$bytes=strlen($canonical);$count++;
+        $minBytes=$minBytes===null?$bytes:min($minBytes,$bytes);$maxBytes=$maxBytes===null?$bytes:max($maxBytes,$bytes);
+        hash_update($aggregate,(string)$bytes."\0".hash('sha256',$canonical)."\n");
+        if($actualCanonical===$canonical)$matched=$candidate;
+    }
+    $candidateSummary=['source'=>$requiredCandidate===null?'INDEPENDENT_COMPLETED_SEND_RECEIVE_WINDOW':'MAIN_ACK_MATCHED_INDEPENDENT_CANDIDATE',
+        'count'=>$count,'canonical_bytes_min'=>$minBytes,'canonical_bytes_max'=>$maxBytes,
+        'canonical_aggregate'=>['algorithm'=>'SHA256','encoding'=>'CREATE_SECOND_ASC_UPDATE_SECOND_ASC_DECIMAL_BYTES_NUL_HEX_SHA256_LF','sha256'=>hash_final($aggregate)]];
+    $same=$matched!==null;if(!$same)m4pc_model_wire_diagnostic($dto,$wantedBase,$actualCanonical,$candidateSummary,$kind);
+    m4pc_expect($same,$failure);return $matched;
+}
+function m4pc_main_wire(array $dto,array $expected,string $nickname,string $avatar,array $enrichment,array $wireWindow,?array $requiredCandidate=null):array
 {
     $wanted=['to_uid'=>(int)$expected['to_uid'],'msn_type'=>(int)$expected['msn_type'],'msn'=>$expected['msn'],'uid'=>(int)$expected['uid'],'add_time'=>(int)$expected['add_time'],
         'is_tourist'=>(int)$expected['is_tourist'],'type'=>(int)$expected['type'],'id'=>(int)$expected['id'],'_add_time'=>date('Y-m-d H:i:s',(int)$expected['add_time']),
@@ -567,29 +651,7 @@ function m4pc_main_wire(array $dto,array $expected,string $nickname,string $avat
     m4pc_expect(isset($dto['id'])&&(is_int($dto['id'])||is_string($dto['id']))&&(string)$dto['id']===(string)$expected['id'],'M4PC_REAL_WIRE_PK_VALUE');$dto['id']=(int)$dto['id'];
     // The actual JSON wire legitimately normalizes integral PHP floats; no expected field comes from this DTO.
     $wanted=json_decode(json_encode($wanted,JSON_THROW_ON_ERROR),true,64,JSON_THROW_ON_ERROR);
-    $actualCanonical=\app\services\marketplace\order\MarketplaceOrderInput::canonical($dto);$wantedCanonical=\app\services\marketplace\order\MarketplaceOrderInput::canonical($wanted);$same=$actualCanonical===$wantedCanonical;
-    if(!$same){
-        try{
-            $fields=['to_uid','msn_type','msn','uid','add_time','is_tourist','type','id','_add_time','nickname','avatar','productInfo','orderInfo'];
-            $summary=static function(array $value)use($fields):array{
-                $out=[];foreach($fields as$field){$present=array_key_exists($field,$value);$type=$present?gettype($value[$field]):'missing';$bytes=null;$digest=null;
-                    if($present){$encoded=json_encode($value[$field],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);$bytes=strlen($encoded);$digest=hash('sha256',$encoded);unset($encoded);}
-                    $out[$field]=['present'=>$present,'type'=>$type,'bytes'=>$bytes,'sha256'=>$digest];}
-                return $out;
-            };
-            $generation=array_key_last($GLOBALS['m4pc_runtime_workers']??[]);
-            if(is_string($generation)&&preg_match('/\A[a-f0-9]{16}\z/D',$generation)===1){
-                $diagnostic=m4pc_json(['schema'=>1,'scope'=>'FIRST_ORIGINAL_ACK_CANONICAL_MISMATCH_SAFE_METADATA_ONLY','generation'=>$generation,
-                    'message_type'=>in_array($wanted['msn_type'],[1,2,3,4,5,6],true)?$wanted['msn_type']:null,
-                    'field_encoding'=>'JSON_UNESCAPED_UNICODE_UNESCAPED_SLASHES_VALUE_BYTES_NOT_CANONICAL_SUBFIELDS',
-                    'actual_field_count'=>count($dto),'wanted_field_count'=>count($wanted),'actual'=>$summary($dto),'wanted'=>$summary($wanted),
-                    'actual_canonical'=>['bytes'=>strlen($actualCanonical),'sha256'=>hash('sha256',$actualCanonical)],
-                    'wanted_canonical'=>['bytes'=>strlen($wantedCanonical),'sha256'=>hash('sha256',$wantedCanonical)],'unique_cause'=>'UNKNOWN']);
-                if(strlen($diagnostic)<=65536)m4pc_write(audit_run_dir().'/evidence/platform-chat-'.$generation.'-ack-mismatch.json',$diagnostic);
-            }
-        }catch(\Throwable $diagnosticFailure){/* Best effort only; retain the original comparison failure and finally. */}
-    }
-    m4pc_expect($same,'M4PC_FULL_ORIGINAL_ACK_AND_ENRICHMENT_DTO');
+    return m4pc_model_wire($dto,$wanted,$wireWindow,'M4PC_FULL_ORIGINAL_ACK_AND_ENRICHMENT_DTO',$requiredCandidate===null?'main_ack':'main_delivery',$requiredCandidate);
 }
 function m4pc_chat_step(PDO $db,array $fixture,string $sender,?string $receiver,array $peer,int $tourist,int $msnType,string $msn,?array $asset=null,bool $auto=false):array
 {
@@ -597,12 +659,14 @@ function m4pc_chat_step(PDO $db,array $fixture,string $sender,?string $receiver,
     $clean=trim(strip_tags(str_replace(["\n","\t","\r",'&nbsp;'],'',htmlspecialchars_decode($msn))));m4pc_expect($clean===$msn,'M4PC_NORMAL_CANONICAL_MESSAGE_INPUT');
     $keys=app()->make(\app\services\wechat\WechatKeyServices::class);$replyId=$keys->value(['keys'=>$msn,'key_type'=>1],'reply_id');if(!$replyId)$replyId=$keys->value(['keys_like'=>$msn,'key_type'=>1],'reply_id');
     m4pc_expect($actor['kind']==='kefu'||($auto?(int)$replyId===(int)$fixture['auto_reply']['reply']['id']:!$replyId),'M4PC_EXACT_REAL_AUTO_REPLY_PRECONDITION');
+    $wireSend=time();
     m4pc_ws_send($sender,['type'=>'chat','form_type'=>1,'data'=>['to_uid'=>$peer['uid'],'type'=>$msnType,'msn'=>$msn]]);
     $ack=m4pc_ws_wait($sender,'chat',static fn(array $d):bool=>($d['msn']??null)===$msn&&(int)($d['uid']??0)===$actor['uid']&&(int)($d['to_uid']??0)===$peer['uid']);
+    $wireAck=time();
     $id=(string)($ack['data']['id']??'');m4pc_expect(preg_match('/\A[1-9][0-9]*\z/D',$id)===1,'M4PC_MAIN_REAL_SELF_ACK_NEW_PK');
-    $delivery=null;if($receiver!==null)$delivery=m4pc_ws_wait($receiver,'reply',static fn(array $d):bool=>(string)($d['id']??'')===$id&&($d['msn']??null)===$msn);
+    $delivery=null;$wireDelivery=null;if($receiver!==null){$delivery=m4pc_ws_wait($receiver,'reply',static fn(array $d):bool=>(string)($d['id']??'')===$id&&($d['msn']??null)===$msn);$wireDelivery=time();}
     else{$deadline=microtime(true)+8;do{$r=m4pc_record_native($db,$peer['uid'],$actor['uid'],$tourist);if($r['message']===$msn)break;usleep(10000);}while(microtime(true)<$deadline);m4pc_expect($r['message']===$msn,'M4PC_OFFLINE_RECORD_COMPLETES_AFTER_EARLY_ACK');}
-    $autoEvent=null;if($auto)$autoEvent=m4pc_ws_wait($sender,'reply',static fn(array $d):bool=>($d['msn']??null)===$fixture['auto_reply']['content']&&(int)($d['uid']??0)===$peer['uid']);
+    $autoEvent=null;$wireAuto=null;if($auto){$autoEvent=m4pc_ws_wait($sender,'reply',static fn(array $d):bool=>($d['msn']??null)===$fixture['auto_reply']['content']&&(int)($d['uid']??0)===$peer['uid']);$wireAuto=time();}
     $window['end']=time();$after=m4pc_state($db);$log=m4pc_find($after['database']['rows']['eb_store_service_log'],'id',$id);
     m4pc_expect(!array_filter($before['database']['rows']['eb_store_service_log'],static fn(array $r):bool=>(string)$r['id']===$id),'M4PC_ACK_IS_THIS_NEW_LOG_NOT_OLD_BOUND');
     $expected=m4pc_expected_log($db,$id,$actor['uid'],$peer['uid'],$tourist,$receiver!==null?1:0,$msn,$msnType,$log['add_time'],$window);
@@ -611,22 +675,22 @@ function m4pc_chat_step(PDO $db,array $fixture,string $sender,?string $receiver,
     $auth=[];if($actor['kind']==='api')$auth[]=$actor['uid'];if($receiver!==null&&$peer['kind']==='api')$auth[]=$peer['uid'];if($auth!==[])$changes['eb_user']=m4pc_auth_expected($db,$before,$after,$auth,$window);
     $nickname=$actor['kind']==='guest'?'游客'.abs($actor['uid']):($actor['kind']==='kefu'?$actor['service']['nickname']:$actor['user']['nickname']);
     $avatar=$actor['kind']==='guest'?set_file_url($actor['avatar']):($actor['kind']==='api'?$fixture['avatars']['customer']:$fixture['avatars'][$sender]);
-    m4pc_main_wire($ack['data'],$expected,$nickname,$avatar,$enrichment);if($delivery!==null){$wire=$delivery['data'];m4pc_expect(is_array($wire['recored']??null),'M4PC_REAL_DELIVERY_RECORD');unset($wire['recored']);m4pc_main_wire($wire,$expected,$nickname,$avatar,$enrichment);}
+    $wireWindow=['send'=>$wireSend,'received'=>$wireAck];$mainCandidate=m4pc_main_wire($ack['data'],$expected,$nickname,$avatar,$enrichment,$wireWindow);if($delivery!==null){$wire=$delivery['data'];m4pc_expect(is_array($wire['recored']??null),'M4PC_REAL_DELIVERY_RECORD');unset($wire['recored']);m4pc_main_wire($wire,$expected,$nickname,$avatar,$enrichment,$wireWindow,$mainCandidate);}
     $unread=count(array_filter($logs,static fn(array $r):bool=>(int)$r['uid']===$actor['uid']&&(int)$r['to_uid']===$peer['uid']&&(int)$r['type']===0&&(int)$r['is_tourist']===$tourist));
     $records=$before['database']['rows']['eb_store_service_record'];
-    if(!$auto){$window['record']=m4pc_record_native($db,$peer['uid'],$actor['uid'],$tourist);$records=m4pc_record_formula($db,$records,$actor['uid'],$peer['uid'],$tourist,$msn,$msnType,$unread,$nickname,$avatar,$window,$delivery['data']['recored']??null);}
+    if(!$auto){$window['record']=m4pc_record_native($db,$peer['uid'],$actor['uid'],$tourist);$records=m4pc_record_formula($db,$records,$actor['uid'],$peer['uid'],$tourist,$msn,$msnType,$unread,$nickname,$avatar,$window,$delivery['data']['recored']??null,['send'=>$wireSend,'received'=>$wireDelivery]);}
     else{
         $mainRecord=$delivery['data']['recored']??null;m4pc_expect(is_array($mainRecord),'M4PC_MAIN_DELIVERY_RECORD_BEFORE_AUTO_REPLY');$window['record']=$mainRecord;
         // DTO add/update time columns are native untouched record values, separate from main log time formatting.
-        $records=m4pc_record_formula($db,$records,$actor['uid'],$peer['uid'],$tourist,$msn,$msnType,$unread,$nickname,$avatar,$window,$mainRecord);
+        $records=m4pc_record_formula($db,$records,$actor['uid'],$peer['uid'],$tourist,$msn,$msnType,$unread,$nickname,$avatar,$window,$mainRecord,['send'=>$wireSend,'received'=>$wireDelivery]);
         $autoId=(string)($autoEvent['data']['id']??'');m4pc_expect($autoId!==$id&&preg_match('/\A[1-9][0-9]*\z/D',$autoId)===1,'M4PC_REAL_AUTO_REPLY_CREATED_PK');
         $autoRow=m4pc_find($after['database']['rows']['eb_store_service_log'],'id',$autoId);$autoExpected=m4pc_expected_log($db,$autoId,$peer['uid'],$actor['uid'],$tourist,1,$fixture['auto_reply']['content'],1,$autoRow['add_time'],$window);
         m4pc_expect($autoRow===$autoExpected,'M4PC_COMPLETE_ORIGINAL_AUTO_REPLY_LOG');$logs[]=$autoExpected;$changes['eb_store_service_log']=$logs;$increments['eb_store_service_log']=2;
         $window['record']=m4pc_record_native($db,$actor['uid'],$peer['uid'],$tourist);$count=count(array_filter($logs,static fn(array $r):bool=>(int)$r['uid']===$peer['uid']&&(int)$r['to_uid']===$actor['uid']&&(int)$r['type']===0&&(int)$r['is_tourist']===$tourist));
-        $records=m4pc_record_formula($db,$records,$peer['uid'],$actor['uid'],$tourist,$fixture['auto_reply']['content'],1,$count,$peer['service']['nickname'],$peer['service']['avatar'],$window,$autoEvent['data']['recored']??null);
+        $autoRecordCanonical=null;$records=m4pc_record_formula($db,$records,$peer['uid'],$actor['uid'],$tourist,$fixture['auto_reply']['content'],1,$count,$peer['service']['nickname'],$peer['service']['avatar'],$window,$autoEvent['data']['recored']??null,['send'=>$wireSend,'received'=>$wireAuto],$autoRecordCanonical);
         $autoWire=$autoEvent['data'];$recordWire=$autoWire['recored']??null;unset($autoWire['recored']);$autoWant=['to_uid'=>$actor['uid'],'msn_type'=>1,'msn'=>$fixture['auto_reply']['content'],'uid'=>$peer['uid'],'add_time'=>(int)$autoExpected['add_time'],'is_tourist'=>$tourist,'type'=>1,'id'=>(int)$autoId,'_add_time'=>date('Y-m-d H:i:s',(int)$autoExpected['add_time'])];
-        m4pc_expect(is_array($recordWire)&&\app\services\marketplace\order\MarketplaceOrderInput::canonical($recordWire)===\app\services\marketplace\order\MarketplaceOrderInput::canonical($window['record']),'M4PC_COMPLETE_AUTO_REPLY_RECORD_DTO');
-        m4pc_expect(isset($autoWire['id'])&&(string)$autoWire['id']===$autoId,'M4PC_AUTO_REPLY_REAL_WIRE_ID');$autoWire['id']=(int)$autoWire['id'];m4pc_expect(\app\services\marketplace\order\MarketplaceOrderInput::canonical($autoWire)===\app\services\marketplace\order\MarketplaceOrderInput::canonical($autoWant),'M4PC_COMPLETE_ORIGINAL_AUTO_REPLY_ACK_DTO');
+        m4pc_expect(is_array($recordWire)&&is_string($autoRecordCanonical)&&\app\services\marketplace\order\MarketplaceOrderInput::canonical($recordWire)===$autoRecordCanonical,'M4PC_COMPLETE_AUTO_REPLY_RECORD_DTO');
+        m4pc_expect(isset($autoWire['id'])&&(string)$autoWire['id']===$autoId,'M4PC_AUTO_REPLY_REAL_WIRE_ID');$autoWire['id']=(int)$autoWire['id'];m4pc_model_wire($autoWire,$autoWant,['send'=>$wireSend,'received'=>$wireAuto],'M4PC_COMPLETE_ORIGINAL_AUTO_REPLY_ACK_DTO','auto_reply');
     }
     $changes['eb_store_service_record']=$records;$newRecordCount=count($records)-count($before['database']['rows']['eb_store_service_record']);
     m4pc_expect($newRecordCount>=0&&$newRecordCount<=2,'M4PC_ONLY_ACTUAL_RECORD_INSERTS');if($newRecordCount>0)$increments['eb_store_service_record']=$newRecordCount;

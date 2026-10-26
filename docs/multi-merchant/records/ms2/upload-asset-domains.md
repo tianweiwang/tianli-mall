@@ -2196,3 +2196,49 @@ Response.send最前仅在没有TcpConnection绑定时return false；其余活连
 Root逐体核原Response/ChatService真实入口、Channel原远端置null与Tcp destroy/destruct生命周期，并独立复算三literal整份正逆；非作者5992/03c44e05报告未见确定缺陷。只在新自有SourceR3从f47应用，原SourceR2/Val3/Run9及旧Run7/4完全保留，未给旧组补控制/信号。
 
 实际固定297b PHP8.2两个PHP各-n-l=0，nonroot65534/network-none/两RO挂载helper自然Exited0/PID0/noRestart后非force移除，三fresh purpose查询双raw空，十native完整原流已读。本文只记录三路径本地Source提交；普通真实对象生命周期、新HEAD独立副本全资格、新Host/fresh完整normal/TERM/普通close/独立zero仍待，不能把静态路径修复当当前保留对象已释放或业务已通过。ACK13对actual15的未知两键仍需独立原Model契约处理，原完整严格比较和所有场景不删。MS6formalcopy候选仍只Source，完整M/A/postA/三build/copy/freshB/UI/H5/CU_FORM/历史/金融/发布/最终交付责任全保，停止样本NOT RUN；未推送部署。
+
+
+### 原Model瞬时时间完整DTO独立oracle（external Source候选，2026-10-26）
+
+Root已采用platform-chat-independent-model-time-root-design-r1/ADOPTION.json，以新SourceR3/55e08ec0263b8a1cafef44d247bbbfce2d9f3ef2为sole before。main124989/6f2b342d与profile39431/92ad39bb仍为原体；本记录before必须为55e最终457854B/7e325dff，完整prefix保留，不回退f47或pending Doc。
+
+旧Run9安全摘要仅证明固定13字段摘要相同、actual15对wanted13；两个额外key本次未保存名称，unique cause仍UNKNOWN。原11列log没有create_time/update_time，但官方ModelService继承timestamp/秒格式，原save Model在内存加入两次独立now，toArray带出；这是原producer机制，不能为绿关闭生产自动字段或删实际未知字段。此候选不回放/补造旧Run。
+
+本片只main与本记录追加。原chat send紧前整数time、原matching main ACK wait返回紧后、原matching autoReply wait返回紧后分别capture；不新增收帧、重试、截止/候选count cap，不改变原业务/WS顺序。原ws_wait的10秒只在非匹配完整事件后检查；阻塞read/queued event/ping递归及匹配直接return不构成总硬10秒上界，故不能新加elapsed<=10/12来误拒原合法frame。
+
+独立核实际App Asia/Shanghai、Y-m-d H:i:s、auto_timestamp=timestamp及无非空自定义时间字段名。原main13/auto9独立base、真实PK与原JSON归一保持；独立验证后的原DB add_time（允许PDO数字字符串，沿原校验/转换）仅作下界。以[max(原sendSec,该log.add_time),对应接收Sec]含端点，惰性枚举createSecond<=updateSecond的完整15/11键候选，允许同秒/跨秒。actual canonical每次只算一次，严格完整字节等某一独立候选；不读actual时间形成expected、不drop未知key或降为13子集。主ACK返回命中独立完整候选；delivery只去原recored后严格同一候选，不能另选合法时间对。auto下界仍原chat发送，不用autoWait开始/主ACK接收或后state时间；原record13独立比较和全部case保持。
+
+无值失败诊断明确wanted_base13或9，actual仅固定15字段presence/type/JSONlen/SHA及完整canonical摘要；候选只存count、完整canonical固定枚举顺序aggregateSHA及长度min/max，不列时间值或无限candidate列表，不冒单一wanted canonical。保generation/message-type/kind上下文、create-only0600/<=64KiB/diagnostic IO不盖原错误/finally。
+
+- [x] 外部候选完整before/after、六literal整份正逆、原main其它函数/原profile与生产/vendor保护体；本记录完整55e prefix仅追加。
+- [ ] 非作者及Root完整Source复核、必要真实语法；作者不自签Source0或Runtime。
+- [ ] Root在新自有后继Source/独立副本完整资格/新Host后，原fresh完整三代normal/TERM/普通close/独立zero真实验证；现SourceR3/旧Val/所有旧Run均冻结，不给已载入组补control。
+
+本片未解析/编译/import/执行候选或任何Git/Docker/PHP/SQL/HTTP/WS/目标，不写W/Val/C-D。原DB29/11、enrichment、record、Redis/files/通知、PK、全部case与原WS/stop/finally期限保持；原M/A/postA/三build/formalcopy/B/UI/H5/CU_FORM/历史/MS5/MS6/真实金融/设备/发布/最终交付责任保留，停止样本NOT RUN。
+
+
+#### 新建record同一create_time遗漏：r2独立oracle扩展（external Source，2026-10-26）
+
+Root已采用同目录NEW-RECORD-CREATE-TIME-EXTENSION.json。保冻结r1外部原件；r2实际before仍55e main124989/6f2b342d与最终Doc457854/7e325dff，after完整继承r1主15/auto11/同一delivery候选和固定无值诊断，再作此有限扩展。前段为r1历史候选记录，不据r2改写原包或旧Run。
+
+StoreServiceRecord仅updateTime=false，因此原update_time整数不自动格式化；既有get/save/toArray为原native13且不添create_time。新建save/toArray为原11输入+真实PK+唯一自动create_time，没有默认online；原wirebase=native13去online的12键遗漏该字段。不能为绿关闭生产时间戳、删实际create_time/online或缩原DB13、PK和记录公式。
+
+main delivery原matching replywait返回紧后额外capture整数秒，不加wait/重试/deadline。新建record只在[max(原chat sendSec,独立核过record.add_time),该record-bearing deliverySec]含端点逐秒生成create_time字符串，整13canonical严格匹配；不生成update_time自动候选。auto record用原send→已有对应autoSec，不用主ACK/后state/autoWait开始。原12字段/PK类型规范化、原native13 DB完整校验、rows返回和全部业务形状保持，未知多键/缺字段仍失败。
+
+record_formula末尾可选byref只输出独立expected record canonical：旧记录为已验证原native13，新记录为独立12base+create_time命中的完整13。auto最终整record比较明确使用该输出，绝不把actual字段直接当wanted或无差别去online/create_time。原transfer入口先核目标双向record已存在，保持原体/既有分支，不为其造无来源窗口。全部原case、日志、Redis/files/通知、PK、WS/stop/finally不变。
+
+- [x] r1层六literal+r2层九literal完整55e正逆；额外r1→r2整份正逆；原Doc完整55e prefix+r1append+本扩展精确；原受保护业务/producer/vendor及r1三个helper保持。
+- [ ] Root与非作者完整Source/必要真实语法；新Source/独立副本完整资格/新Host/fresh原三代normal/TERM/普通close/独立zero仍待。
+
+未解析/编译/import/执行候选或Git/Docker/PHP/SQL/HTTP/WS/目标，不写SourceR3/W/Val/C-D、旧包/旧Run。旧Run未知两key与unique原因保持UNKNOWN，不能把源码纠正当Runtime通过。原M/A/postA/三build/formalcopy/B/UI/H5/CU_FORM/历史/MS5/MS6/设备/真实金融/发布/最终交付责任全保，停止样本NOT RUN。
+
+
+#### Root独立Model时间契约本地检查点与Response局部正向结果（2026-10-26）
+
+Root完整逐体核官方ModelService/两次独立now/Log与Record生产者及原wait顺序，独立复算55e至r2十五处整份正逆、r1至r2九处及63原函数保全；非作者29701/87fe35全文有限Source审findings空。仅原测试入口和本记录两路径应用。主ACK保留原13字段加两独立自动时间的完整15 canonical；delivery使用主ACK命中的同一完整候选，auto保原9加两时间完整11；新Record保native13数据库公式和原12 wire基础加独立create_time，既有Record仍原13与整数update_time。原全部case、PK、归一、收发/截止/stop/finally不变，不从实际时间字段生成期望，不改生产消息/Model/表，不将旧Run唯一原因推定为已知。
+
+实际固定297b镜像PHP8.2仅上述一个测试PHP -n -l=0，65534/network-none/两RO挂载helper自然Exited0/PID0/noRestart后精确非force移除；三fresh purpose查询双流空，十native完整原双流已读。此为本地Source/语法结果，新HEAD独立副本全树、fresh Host与原完整客服normal/三代/TERM/close/独立zero仍待。
+
+此前55e的Response生产修复另已完成真实局部正向：两个实际Worker.acceptConnection连接、原ChatService ping/onClose、关闭A不清B、B两次真实发送均正常；两个普通关闭/unset后WeakRef自然释放，原公共连接计数自然为0，无反射、计数改写、直接destroy、信号或强制GC。该局部使用正常INI；原两次测试启动失败完整保留，三个helper均自然终止后精确普通移除、各三fresh purpose双流空。它不证明完整App/SQL/Redis/HTTP/WS正常链，也不证明旧Run4/7/9已退出；旧SourceR2/Val3/Run及锁/组保持冻结。
+
+完整M/A/postA/三真实同源build/正式物理copy/freshB、商家与独立H5、私有表单、历史37步、MS5真实金融与MS6发布运行保障、完整编排Git交接及最终推送仍保留。停止负向/故障/并发/恢复/K仍NOT RUN。本次仅本地提交，未推送、部署或操作真实业务。
