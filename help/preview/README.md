@@ -47,7 +47,7 @@ python -X utf8 help/preview/preview.py accounts-file
 
 `timers` 在已启动的预览应用中用原服务登记每30秒执行的唯一 `orderCancel` 任务，并启动专用 `preview-timer`（原 `console.php timer start`）。默认新订单待付款期限为30分钟；配置成功后 `serve` / `serve-api` 会连同该服务启动。原Timer还保留每60秒的自动收货扫描，按已保存发货截止执行；本预览不另建调度器，商品素材清理须另行执行 `video` 显式登记。
 
-`queue` 启动原marketplace专用队列消费者（`queue:work marketplace --queue=marketplace --sleep=1 --tries=1`），复用内部网络、DML角色和现有任务实现。完成资源归属检查后才保存启用标记；之后 `serve` / `serve-api` 会带上该服务。当前实际验证为合成员工正常登录后投递一项 `merchant.profile.read` 审计任务，原worker消费并产生唯一成功审计行，pending/reserved/delayed均归零。该结果不代表订单异步任务或完整Worker验收，也未启动普通CRMEB队列。
+普通拆分预览的 `queue` 启动原marketplace专用队列消费者（`queue:work marketplace --queue=marketplace --sleep=1 --tries=1`），复用内部网络、DML角色和现有任务实现。完成资源归属检查后才保存启用标记；之后 `serve` / `serve-api` 会带上该服务。2026-10-26在18180实际验证合成员工正常登录后投递一项 `merchant.profile.read` 审计任务，原worker消费并产生唯一成功审计行，pending/reserved/delayed均归零。该结果不代表订单异步任务或完整Worker验收；该次拆分预览没有启动普通CRMEB队列。
 
 `python -X utf8 help/preview/preview.py video` 为已初始化的标准预览启用原商品视频分片；指定其他标准实例时追加 `--root <运行目录>`，旧订单兼容实例不支持此动作。命令普通停止并重新启动该实例的HTTP应用和原Timer，登记原素材清理任务；重复登记保留同一任务。启用标记绑定本实例project/run，保存在app-secrets卷；两个独立暂存目录 `/private/product-video`、`/private/product-media-scan` 使用原private-assets卷，权限0700、所有者UID1000。之后 `serve` / `serve-api` 会带上原Timer，普通停止和重建保留标记及暂存数据。
 
@@ -80,11 +80,13 @@ python -X utf8 help/preview/preview.py accounts-file --root $runtimeRoot
 
 三端构建入口仍是上述 `build-frontends.py`；它输出默认预览目录，准备完整模式时需将同源构建的三个 `dist` 复制到新目录，逐文件核同后再运行 `runtime`。三个目录都须包含 `index.html`。访问入口与普通预览相同，只将端口换成18183；合成账号仍由 `accounts-file` 保存到该运行目录的私有文件。
 
-`runtime` 通过原entrypoint和Supervisor启动FPM、Workerman、Timer及普通CRMEB队列；marketplace专用队列保持原 `autostart=false`，没有自动启用。服务仅接入专用内部网络，网页由同一实例的nginx转发真实FastCGI和WebSocket。命令先等待原健康检查的版本、MySQL、Redis及9000/40001/40002/40003监听通过，再启动网页并检查原 `/adminapi/login/info`；不使用旧 `preview-health`。Timer、队列是否实际运行还须核对Supervisor及进程，网页和业务仍需单独验证。
+`runtime` 通过原entrypoint和Supervisor启动FPM、Workerman、Timer及普通CRMEB队列；marketplace专用队列保留原 `autostart=false`，新实例默认未启用。服务仅接入专用内部网络，网页由同一实例的nginx转发真实FastCGI和WebSocket。命令先等待原健康检查的版本、MySQL、Redis及9000/40001/40002/40003监听通过，再启动网页并检查原 `/adminapi/login/info`；不使用旧 `preview-health`。Timer、队列是否实际运行还须核对Supervisor及进程，网页和业务仍需单独验证。
+
+完整模式和下述镜像模式均可在 `runtime` 成功后执行 `python -X utf8 help/preview/preview.py queue --root $runtimeRoot`。它使用同一容器的Supervisor管理 `marketplace-queue`，不增加拆分容器；只有STOPPED才执行start，已RUNNING时只读核对PID，其他状态保留并报错。确认运行和资源归属后才保存 `queue_configured`；之后正常 `runtime` 路径按该标记启用，不修改Supervisor的 `autostart=false`。
 
 完整模式先核固定PHP镜像与当前源码的composer.lock（仅统一CRLF/LF行尾）及已安装包版本/源码引用，随后离线复制镜像中的依赖并按当前composer.json生成自动加载文件。原普通预览仍沿用其既有依赖来源。首次准备将当前应用源码复制到专用 `runtime-app` 卷，日常容器只读挂载；vendor另卷只读，runtime、uploads和私有素材目录可写并交给UID33，私有根权限保持0700。仅在专用卷生成 `.env`（root:33、0640）和安装锁，不在仓库生成凭据。已经完整准备的实例只核对来源、配置、权限和就绪标记，匹配才继续；部分准备现场保留，不能自动覆盖或修补。
 
-正常 `stop --root $runtimeRoot` 保留数据卷；在来源和配置未变时，可用同一 `runtime --root $runtimeRoot` 再启动。这里说明使用方式，不表示已完成重启或恢复验收。完整模式不支持 `serve`、`serve-api`、`video`、`timers`、`timers-restore`、`queue` 等拆分服务动作。当前复用已有PHP镜像和同源只读应用卷；正式不可变镜像构建、发布前端copy及完整MS6验收仍需另行完成。
+正常 `stop --root $runtimeRoot` 保留数据卷；在来源和配置未变时，可用同一 `runtime --root $runtimeRoot` 再启动。这里说明使用方式，不表示已完成重启或恢复验收。完整模式不支持 `serve`、`serve-api`、`video`、`timers`、`timers-restore` 等拆分服务动作。当前复用已有PHP镜像和同源只读应用卷；正式不可变镜像构建、发布前端copy及完整MS6验收仍需另行完成。
 
 2026-10-27已在独立18184实例实际完成首装、原entrypoint启动、FPM/Timer/Workerman/普通CRMEB队列进程核对、完整health、三角色登录及商家商品列表页面。平台、商家、H5和客服入口均与复用构建字节一致。初次18183实例因复制仓库旧vendor造成队列退出，现改为上述锁一致的镜像依赖；原失败记录及停止后的数据卷保留。原18180/18181/18182共17个容器未重建或重启，登录信息接口仍正常。本次未重跑交易全链、普通队列业务任务、停止恢复或完整发布验收。
 
@@ -121,11 +123,17 @@ python -X utf8 help/preview/preview.py accounts-file --root $runtimeRoot
 
 运行中的PHP/Nginx使用镜像原入口与内置代码、vendor、三端页面和配置，不绑定这些宿主机目录。PHP只挂配置卷到 `/run/application`，镜像内 `/var/www/.env` 链接到其中的 `.env`；该卷仅有私有配置和准备标记，`.env` 为root:33/0640。应用可写数据位于专用runtime、uploads、private-assets三个卷，沿用UID33和私有根0700；MySQL、Redis也各用本实例专用卷。初始化仍通过现有bootstrap使用受控源码和维护账号，日常应用继续仅有DML权限。
 
-`runtime` 等待镜像原health，再开放本机网页入口；FPM、Timer、Workerman及普通CRMEB队列沿原Supervisor启动，marketplace队列默认未启。四个默认程序须另核实际进程，`smoke` 的登录成功不能证明队列业务消费。原split/full实例和数据保持，镜像实例同样不支持 `serve`、`serve-api`、`video`、`timers`、`timers-restore`、`queue` 拆分动作。准备或构建失败时保留原命令、目录及实例现场，不覆盖失败记录或自动修补。
+`runtime` 等待镜像原health，再开放本机网页入口；FPM、Timer、Workerman及普通CRMEB队列沿原Supervisor启动，marketplace队列默认未启，可用上述同容器 `queue` 动作显式启用。四个默认程序须另核实际进程，`smoke` 的登录成功不能证明队列业务消费。原split/full实例和数据保持，镜像实例同样不支持 `serve`、`serve-api`、`video`、`timers`、`timers-restore` 拆分动作。准备或构建失败时保留原命令、目录及实例现场，不覆盖失败记录或自动修补。
 
 2026-10-27已实际完成3818文件上下文装包和双镜像构建；镜像内PHP应用3809个来源文件、Nginx public的2357个文件全部核同，PHP另有Dockerfile生成的install.lock。独立18185实例已沿原入口启动，health及FPM/Timer/Workerman/普通CRMEB队列四进程正常，三角色HTTP登录成功；实际商家页面读到商品5/6、售价20.15/30.25、库存各100。六个首页/深链入口与镜像装包字节一致；运行中的PHP/Nginx没有应用、vendor、脚本或前端宿主绑定，DML身份和配置卷权限也已实核。已完成配置准备的再次核对只读返回changed=false。
 
-首次prepare因Docker默认地址池耗尽而未创建任何实例资源，原commands/002保留；加入上述显式网段后沿同一首次引导完成，未更改全局Docker配置或清理其他网络。原四个运行预览共21容器的身份、启动时间、重启数和挂载保持，四个登录信息接口正常；原18183停止实例及32个既有网络保持。浏览器核对后恢复原18180页面，仍仅两个标签。这是可运行的本地候选镜像验证，不是完整MS6或正式上线验收；本次未重跑完整交易、普通队列业务消费、真机或原formal-copy资格，用户停止的样本保持NOT RUN。
+首次prepare因Docker默认地址池耗尽而未创建任何实例资源，原commands/002保留；加入上述显式网段后沿同一首次引导完成，未更改全局Docker配置或清理其他网络。原四个运行预览共21容器的身份、启动时间、重启数和挂载保持，四个登录信息接口正常；原18183停止实例及32个既有网络保持。该次首装浏览器核对后恢复原18180页面，仍仅两个标签。上述首装结果未包含交易全链及队列业务消费，后续结果如下；真机、原formal-copy资格、完整MS6和正式上线验收仍未完成，用户停止的样本保持NOT RUN。
+
+2026-10-27后续在同一18185实例，合成员工合法认证后通过原 `AuditLogJob::dispatch` 投递一项 `merchant.profile.read`，Supervisor常驻marketplace worker实际消费，产生唯一审计记录，pending/reserved/delayed均为0。marketplace worker及原四个默认程序均RUNNING。HTTP登录和 `me` 本身不自动投递任务；这只证明该项原生产任务的正常消费，不代表订单异步任务或完整Worker验收。
+
+`trade-smoke.php` 继续使用原单店正常HTTP建单与金额、库存断言，请求地址按镜像/完整/拆分模式分别使用本实例web的80/8080端口或app的8000端口。新完整/镜像回执为UID/GID33:33、0600；已有完整/镜像回执只核验，不修补异常归属。18185实际创建2件单价20.15元、共40.30元订单，库存100→98；顾客页面确认测试支付、商家页面发出2件、顾客页面收货2件，平台列表及详情显示测试支付40.30元、已收货、已发2/已收2和1个包裹。原生独立复核通过；这些合成数据结果不代表真实收款或生产验收。
+
+平台登录时的旧“消息队列”提示已定位为检测缺陷：本实例 `queue_open=0` 且runtime的 `.queue` 文件不存在，`AdminLoginListener` 先读文件抛异常，未走关闭配置的豁免分支而返回false，前端因而误报。该提示不代表上述Supervisor队列故障；本轮尚未修复，保留为后续事项，未为消除提示修改业务队列配置或镜像。
 
 ## 操作顺序
 

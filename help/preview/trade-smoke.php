@@ -60,7 +60,10 @@ function preview_trade_http(string $step, string $method, string $path, ?array $
     $headers = ['Accept: application/json'];
     if ($token !== null) $headers[] = 'Authorization: Bearer ' . $token;
     if ($body !== null) $headers[] = 'Content-Type: application/json';
-    $curl = curl_init('http://preview-app:8000' . $path);
+    $config = preview_config();
+    $origin = ($config['image_runtime'] ?? false) ? 'http://preview-web:80'
+        : (($config['full_runtime'] ?? false) ? 'http://preview-web:8080' : 'http://preview-app:8000');
+    $curl = curl_init($origin . $path);
     preview_trade_check($curl !== false, 'http.handle');
     curl_setopt_array($curl, [CURLOPT_RETURNTRANSFER => true, CURLOPT_CUSTOMREQUEST => $method,
         CURLOPT_HTTPHEADER => $headers, CURLOPT_CONNECTTIMEOUT => 3, CURLOPT_TIMEOUT => 30,
@@ -180,7 +183,17 @@ try {
     preview_trade_check(!is_link(PREVIEW_TRADE_FILE) && (!$exists || is_file(PREVIEW_TRADE_FILE)), 'receipt.regular');
     $stream = fopen(PREVIEW_TRADE_FILE, $exists ? 'r+b' : 'x+b');
     preview_trade_check(is_resource($stream) && flock($stream, LOCK_EX | LOCK_NB), 'receipt.exclusive');
-    preview_trade_check(chmod(PREVIEW_TRADE_FILE, 0600), 'receipt.mode');
+    if (($config['full_runtime'] ?? false) === true || ($config['image_runtime'] ?? false) === true) {
+        if (!$exists) {
+            preview_trade_check(chown(PREVIEW_TRADE_FILE, 33) && chgrp(PREVIEW_TRADE_FILE, 33)
+                && chmod(PREVIEW_TRADE_FILE, 0600), 'receipt.runtime_owner');
+        }
+        $receiptStat = fstat($stream);
+        preview_trade_check(is_array($receiptStat) && $receiptStat['uid'] === 33 && $receiptStat['gid'] === 33
+            && ($receiptStat['mode'] & 0777) === 0600, 'receipt.runtime_identity');
+    } else {
+        preview_trade_check(chmod(PREVIEW_TRADE_FILE, 0600), 'receipt.mode');
+    }
     if ($exists) {
         $raw = stream_get_contents($stream);
         $state = json_decode($raw, true, 64, JSON_THROW_ON_ERROR);

@@ -125,7 +125,7 @@ def compose_command(state, *arguments):
     return [*argv, *arguments]
 
 
-def compose(state, root, *arguments):
+def compose(state, root, *arguments, expected_exits=(0,)):
     env = environment(state, root)
     argv = compose_command(state, *arguments)
     result = subprocess.run(argv, env=env, text=True, encoding='utf-8', errors='replace', capture_output=True)
@@ -135,11 +135,41 @@ def compose(state, root, *arguments):
     prefix.with_suffix('.stderr.txt').write_text(result.stderr, encoding='utf-8', newline='\n')
     prefix.with_suffix('.json').write_text(json.dumps({'command': arguments, 'exit': result.returncode},
                                          ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-    if result.returncode:
+    if result.returncode not in expected_exits:
         raise RuntimeError(f'Preview command {sequence} failed ({result.returncode}); original output retained at {prefix}\n'
                            + result.stdout[-3000:] + result.stderr[-3000:])
     print(f'OK {sequence:03d}: ' + ' '.join(arguments), flush=True)
     return result.stdout.strip()
+
+
+def ensure_runtime_queue(state, root):
+    command = ('exec', '-T', 'preview-runtime', 'supervisorctl',
+               '-c', '/etc/supervisor/supervisord.conf')
+
+    def status(expected_exits=(0,)):
+        output = compose(state, root, *command, 'status', 'marketplace-queue',
+                         expected_exits=expected_exits)
+        lines = output.splitlines()
+        fields = lines[0].split() if len(lines) == 1 else []
+        if len(fields) < 2 or fields[0] != 'marketplace-queue':
+            raise RuntimeError('Unexpected marketplace Supervisor status; original output retained')
+        if fields[1] == 'RUNNING':
+            if len(fields) < 4 or fields[2] != 'pid' or not fields[3].endswith(','):
+                raise RuntimeError('Marketplace Supervisor PID unavailable; original output retained')
+            pid = fields[3][:-1]
+            if not pid.isascii() or not pid.isdecimal() or int(pid) <= 0:
+                raise RuntimeError('Invalid marketplace Supervisor PID; original output retained')
+            return fields[1], pid
+        return fields[1], None
+
+    before, original_pid = status(expected_exits=(0, 3))
+    if before == 'STOPPED':
+        compose(state, root, *command, 'start', 'marketplace-queue')
+    elif before != 'RUNNING':
+        raise RuntimeError('Marketplace Supervisor program is not STOPPED or RUNNING; original output retained')
+    after, current_pid = status()
+    if after != 'RUNNING' or (original_pid is not None and current_pid != original_pid):
+        raise RuntimeError('Marketplace Supervisor program did not remain RUNNING; original output retained')
 
 
 def assert_resources(state):
@@ -313,7 +343,7 @@ def main():
         print('Isolated database services ready; application initialization is still pending.')
     else:
         state = load(root)
-        if state.get('full_runtime', False) and args.action in ['serve', 'serve-api', 'video', 'timers', 'timers-restore', 'queue']:
+        if state.get('full_runtime', False) and args.action in ['serve', 'serve-api', 'video', 'timers', 'timers-restore']:
             raise RuntimeError('Full runtime previews use runtime; split application actions are unavailable')
         if args.action == 'runtime' and (not state.get('full_runtime', False) or not state.get('initialized')):
             raise RuntimeError('Runtime requires an initialized full-runtime preview created with a new root')
@@ -338,6 +368,8 @@ def main():
                           'help/preview/bootstrap.php', 'runtime'))
             compose(state, root, 'up', '-d', '--no-deps', '--wait', '--wait-timeout', '180', 'preview-runtime')
             assert_resources(state)
+            if state.get('queue_configured') is True:
+                ensure_runtime_queue(state, root)
             compose(state, root, 'up', '-d', '--no-deps', 'preview-web')
             assert_resources(state)
             reload_web(state, root)
@@ -376,7 +408,10 @@ def main():
         elif args.action == 'queue':
             if not state.get('initialized'):
                 raise RuntimeError('Complete preview initialization before configuring the marketplace queue')
-            compose(state, root, 'up', '-d', '--no-deps', 'preview-marketplace-queue')
+            if state.get('full_runtime', False):
+                ensure_runtime_queue(state, root)
+            else:
+                compose(state, root, 'up', '-d', '--no-deps', 'preview-marketplace-queue')
             assert_resources(state)
             state['queue_configured'] = True
             (root / 'state.json').write_text(json.dumps(state, ensure_ascii=False, indent=2) + '\n',
