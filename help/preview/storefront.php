@@ -108,6 +108,12 @@ function preview_storefront_layouts(): array
         $component = preview_storefront_component($builtin['detail'], $name);
         $component['id'] = 'preview-detail-' . $index; $component['timestamp'] = ($index + 1) * 100;
         $detail['value'][$component['id']] = $component;
+        if ($name === 'productInfo') {
+            $reviews = preview_storefront_component($builtin['detail'], 'reviews');
+            $reviews['id'] = 'preview-detail-reviews'; $reviews['timestamp'] = 150;
+            $reviews['checkBoxConfig']['type'] = [0, 1];
+            $detail['value'][$reviews['id']] = $reviews;
+        }
     }
     $member = preview_storefront_component($builtin['user'], 'member');
     $member['id'] = 'preview-member'; $member['timestamp'] = 100;

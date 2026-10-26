@@ -563,7 +563,7 @@ class ThemeServices extends BaseServices
                 'update_time' => date('Y-m-d H:i:s', $data['user_data_update_time']), // 用户中心数据更新时间
             ],
         ];
-        $theme['theme_data'] = json_decode($data['theme_data'], true); // 主题自身数据（JSON格式）
+        $theme['theme_data'] = json_decode($data['theme_data'] ?? 'null', true); // 保留空主题数据的 null 语义，兼容 PHP 8.2。
 
         return $theme;
     }
