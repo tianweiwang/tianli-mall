@@ -164,7 +164,7 @@ def export_accounts(state, root):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=['prepare', 'initialize', 'resume-initialize', 'storefront', 'serve-api', 'serve', 'timers', 'timers-restore', 'queue', 'smoke', 'accounts-file', 'status', 'stop'])
+    parser.add_argument('action', choices=['prepare', 'initialize', 'resume-initialize', 'storefront', 'serve-api', 'serve', 'video', 'timers', 'timers-restore', 'queue', 'smoke', 'accounts-file', 'status', 'stop'])
     parser.add_argument('--root', type=Path, default=DEFAULT_ROOT)
     parser.add_argument('--port', type=int, default=18180)
     parser.add_argument('--legacy-review-fixture', action='store_true',
@@ -219,7 +219,7 @@ def main():
             if not state.get('initialized'):
                 raise RuntimeError('Complete preview initialization before starting the application')
             services = ['preview-events', 'preview-app']
-            if state.get('timer_configured'):
+            if state.get('timer_configured') or state.get('video_configured'):
                 services.append('preview-timer')
             if state.get('queue_configured') is True:
                 services.append('preview-marketplace-queue')
@@ -228,6 +228,23 @@ def main():
             if native([DOCKER, 'ps', '-q', '--filter', 'label=com.docker.compose.project=' + state['project'],
                        '--filter', 'label=com.docker.compose.service=preview-web', '--filter', 'status=running']):
                 reload_web(state, root)
+        elif args.action == 'video':
+            if not state.get('initialized') or state.get('legacy_review_fixture', False):
+                raise RuntimeError('Video chunks require an initialized standard preview')
+            # Reload only the two consumers of these settings, using ordinary unbounded stop.
+            compose(state, root, 'stop', '--timeout', '-1', 'preview-app', 'preview-timer')
+            print(compose(state, root, 'run', '--rm', '--no-deps', '-T', 'bootstrap',
+                          'help/preview/bootstrap.php', 'video'))
+            state['video_configured'] = True
+            (root / 'state.json').write_text(json.dumps(state, ensure_ascii=False, indent=2) + '\n',
+                                           encoding='utf-8', newline='\n')
+            compose(state, root, 'up', '-d', '--no-deps', 'preview-app', 'preview-timer')
+            assert_resources(state)
+            if native([DOCKER, 'ps', '-q', '--filter', 'label=com.docker.compose.project=' + state['project'],
+                       '--filter', 'label=com.docker.compose.service=preview-web', '--filter', 'status=running']):
+                reload_web(state, root)
+                wait_web(state)
+            print('Video chunks configured; verify browser upload and natural timer cleanup separately.')
         elif args.action == 'queue':
             if not state.get('initialized'):
                 raise RuntimeError('Complete preview initialization before configuring the marketplace queue')
@@ -259,7 +276,7 @@ def main():
                 if not (root / f'build/{app}/dist/index.html').is_file():
                     raise RuntimeError(f'Current {app} frontend build is not ready')
             services = ['preview-events', 'preview-app', 'preview-web']
-            if state.get('timer_configured'):
+            if state.get('timer_configured') or state.get('video_configured'):
                 services.append('preview-timer')
             if state.get('queue_configured') is True:
                 services.append('preview-marketplace-queue')

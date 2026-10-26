@@ -60,7 +60,8 @@ services:
   preview-app:
     <<: *php
     user: "1000:1000"
-    command: [-d, "opcache.validate_timestamps=1", -d, "opcache.revalidate_freq=0", -S, "0.0.0.0:8000", -t, /workspace/crmeb/public, /workspace/help/preview/router.php]
+    stop_signal: SIGINT
+    command: [-d, "opcache.validate_timestamps=1", -d, "opcache.revalidate_freq=0", -d, "upload_max_filesize=4M", -d, "post_max_size=8M", -d, "memory_limit=256M", -S, "0.0.0.0:8000", -t, /workspace/crmeb/public, /workspace/help/preview/router.php]
     volumes: &app-volumes
       - ${PREVIEW_REPO}:/workspace:ro
       - vendor:/workspace/crmeb/vendor:ro

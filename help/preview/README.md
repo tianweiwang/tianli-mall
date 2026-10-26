@@ -43,11 +43,15 @@ python -X utf8 help/preview/preview.py accounts-file
 
 随机凭据在专用私有卷中生成。`accounts-file` 将三角色合成账号保存到运行目录的 `private/preview-accounts.json`，Windows 仅当前用户可读；不会把密码写入命令日志。应用仅有数据库读写权限，建表账号只供初始化使用。运行记录保存在仓库外 `artifacts/multi-merchant-preview-20261026/`，不提交凭据、上传文件、数据库或日志。
 
-`serve-api` 可在前端构建期间先启动真实接口。`serve` 只有在三端构建存在且应用健康检查成功后才报告可访问；实际业务和浏览器验收需另外完成。`stop` 正常停止本预览的服务并保留数据卷。 `serve` 在容器启动后检查并普通重载nginx，使重建后的后端地址及时生效；`serve-api` 在本实例web已运行时也执行此刷新，首次只启API不要求前端。events/timer显式使用Workerman普通停止信号SIGINT，marketplace队列使用SIGTERM；不继承PHP-FPM的SIGQUIT。普通维护先确认操作已保存并离开聊天页，再核主进程实际退出；普通停止不承诺连接排空，框架原有超时兜底仍保留。
+`serve-api` 可在前端构建期间先启动真实接口。`serve` 只有在三端构建存在且应用健康检查成功后才报告可访问；实际业务和浏览器验收需另外完成。`stop` 正常停止本预览的服务并保留数据卷。 `serve` 在容器启动后检查并普通重载nginx，使重建后的后端地址及时生效；`serve-api` 在本实例web已运行时也执行此刷新，首次只启API不要求前端。HTTP应用使用内置服务器普通停止信号SIGINT，events/timer使用Workerman普通停止信号SIGINT，marketplace队列使用SIGTERM；不继承PHP-FPM的SIGQUIT。普通维护先确认操作已保存并离开聊天页，再核主进程实际退出；普通停止不承诺连接排空，框架原有超时兜底仍保留。
 
-`timers` 在已启动的预览应用中用原服务登记每30秒执行的唯一 `orderCancel` 任务，并启动专用 `preview-timer`（原 `console.php timer start`）。默认新订单待付款期限为30分钟；配置成功后 `serve` / `serve-api` 会连同该服务启动。原Timer还保留每60秒的自动收货扫描，按已保存发货截止执行；本预览不另建调度器，也不启用其他后台定时任务。
+`timers` 在已启动的预览应用中用原服务登记每30秒执行的唯一 `orderCancel` 任务，并启动专用 `preview-timer`（原 `console.php timer start`）。默认新订单待付款期限为30分钟；配置成功后 `serve` / `serve-api` 会连同该服务启动。原Timer还保留每60秒的自动收货扫描，按已保存发货截止执行；本预览不另建调度器，商品素材清理须另行执行 `video` 显式登记。
 
 `queue` 启动原marketplace专用队列消费者（`queue:work marketplace --queue=marketplace --sleep=1 --tries=1`），复用内部网络、DML角色和现有任务实现。完成资源归属检查后才保存启用标记；之后 `serve` / `serve-api` 会带上该服务。当前实际验证为合成员工正常登录后投递一项 `merchant.profile.read` 审计任务，原worker消费并产生唯一成功审计行，pending/reserved/delayed均归零。该结果不代表订单异步任务或完整Worker验收，也未启动普通CRMEB队列。
+
+`python -X utf8 help/preview/preview.py video` 为已初始化的标准预览启用原商品视频分片；指定其他标准实例时追加 `--root <运行目录>`，旧订单兼容实例不支持此动作。命令普通停止并重新启动该实例的HTTP应用和原Timer，登记原素材清理任务；重复登记保留同一任务。启用标记绑定本实例project/run，保存在app-secrets卷；两个独立暂存目录 `/private/product-video`、`/private/product-media-scan` 使用原private-assets卷，权限0700、所有者UID1000。之后 `serve` / `serve-api` 会带上原Timer，普通停止和重建保留标记及暂存数据。
+
+按当前配置重新创建的HTTP应用，其PHP单文件限额为4MiB、POST为8MiB、内存为256MiB，nginx仍为20MiB。视频超过3MiB时使用原3MiB顺序分片，完整文件业务上限仍为50MiB；不放宽为整包大POST，云上传保持关闭。暂存TTL保持600秒，原清理任务每60秒检查；页面上传期间禁用操作，完整保存且列表读回后才提示成功。页面上传、审核上架后的播放及TTL后的自然清理须在目标实例分别验证，命令成功不代表这些验收已完成。
 
 正常超时体验可使用 `timers --hours 0.025`，然后从顾客页面新建一张不付款订单，等待90秒截止及至多一个30秒扫描周期，再刷新详情核对关闭与库存；体验结束执行 `timers` 回到30分钟。修改只影响之后创建订单的截止，不改旧订单。`timers --hours 0` 关闭新单截止；`timers-restore` 恢复首次运行前保存的原始配置值。两者都不会取消已有订单的保存截止，Timer仍正常处理已经到期的订单。原配置保存在该实例runtime卷的 `preview-timer-config.json`；仅窄清相关配置缓存，其他设置与登录态保留。
 
@@ -150,6 +154,10 @@ V1咨询订单卡片正常链已通过：顾客从自己的订单进入聊天并
 
 本机已通过商品7的正常页面闭环：商家2上传192641字节、320×240、6秒H264合成MP4，保存附件94，完成审核与上架；顾客实际播放时间从0.2836秒推进到6秒并结束，刷新后仍读到同一视频。公开HTTP 200、video/mp4、物理文件和上传原件字节哈希一致。SKU106、售价12.50元、库存19及原订单、私有材料、余额积分保持，原两份附件未删除；上传、保存、审核和上架分别产生原审计记录69–72。商家重新进入编辑页也正确显示原视频及已上架状态。本轮无业务源码修改、前端重建或服务重启；证据见主预览目录 product-video-ui-verification.json。
 
-当前预览PHP单文件限额为2MiB，POST为8MiB，nginx为20MiB，分片与云上传仍关闭；这次小视频正常链不代表已支持业务50MiB上限、分片或云供应商。浏览器375像素视口无横向溢出，实际手机设备及完整阶段验收仍待；停止的样本保持NOT RUN。
+上述小视频验收时，预览PHP单文件限额为2MiB，POST为8MiB，nginx为20MiB，分片与云上传均关闭；这次小视频正常链不代表业务50MiB上限、分片或云供应商已验收。浏览器375像素视口无横向溢出，实际手机设备及完整阶段验收仍待；停止的样本保持NOT RUN。
+
+大视频分片已在主预览完成正常页面验证：51,549,331字节（约49.16MiB）、1280×720、8秒H264合成视频，通过原17片上传和合并生成商家2附件95；每片及整文件哈希与原件一致。商品7保存后待审下架，经平台审核、商家上架，顾客实际播放0.2726→8秒结束，双方刷新仍读到相同视频；SKU106、12.50元、库存19、三份旧附件及原业务数据保持。原600秒TTL到期后，原Timer自然清理完成会话的临时JSON和数据文件，正式附件/MP4保持，清理后公开HTTP200及字节哈希仍正确。原orderCancel任务与素材GC并存，日常App仍仅DML权限，旧兼容预览实例未重启且分片关闭。
+
+接线过程中修正了原GC身份查询中current_user别名的MySQL引号，以及内置HTTP服务器继承FPM停止信号的问题；保持原认证、归属、大小、配额和回收算法。PHP语法、Python解析、compose配置、原登记与重复核对、独立源码/证据复核均通过；未重建前端。证据见主预览目录 product-video-chunks-verification.json。该正常大文件结果不替代云供应商、实际手机设备或完整阶段验收；停止的样本保持NOT RUN。
 
 本说明是操作入口；各功能实际完成状态统一维护在仓库外现有 `current20261025-business-progress-r1/PROGRESS.md`。

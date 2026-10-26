@@ -230,7 +230,7 @@ LUA;
         $connection->query('SELECT DATABASE() AS database_name', [], true);
         $pdo = self::pdo($connection);
         if ($pdo->inTransaction()) self::fail();
-        $rows = self::rows($pdo, 'SELECT DATABASE() AS database_name,CAST(CONNECTION_ID() AS CHAR) AS session_id,CURRENT_USER() AS current_user');
+        $rows = self::rows($pdo, 'SELECT DATABASE() AS database_name,CAST(CONNECTION_ID() AS CHAR) AS session_id,CURRENT_USER() AS `current_user`');
         if (count($rows) !== 1 || array_keys($rows[0]) !== ['database_name', 'session_id', 'current_user']) self::fail();
         $row = $rows[0]; $prefix = $connection->getConfig('prefix');
         if (!is_string($row['database_name']) || preg_match('/\A[^\x00]{1,64}\z/uD', $row['database_name']) !== 1
@@ -246,7 +246,7 @@ LUA;
     private static function same(array $context): void
     {
         if (self::pdo($context['connection']) !== $context['pdo']) self::fail();
-        $rows = self::rows($context['pdo'], 'SELECT DATABASE() AS database_name,CAST(CONNECTION_ID() AS CHAR) AS session_id,CURRENT_USER() AS current_user');
+        $rows = self::rows($context['pdo'], 'SELECT DATABASE() AS database_name,CAST(CONNECTION_ID() AS CHAR) AS session_id,CURRENT_USER() AS `current_user`');
         if ($rows !== [['database_name' => $context['database'], 'session_id' => $context['session'],
             'current_user' => $context['current_user']]]) self::fail();
     }

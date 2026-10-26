@@ -115,6 +115,37 @@ try {
         preview_private_json('/run/preview-app/initialized.json', ['project' => $config['project'],
             'run_id' => $config['run_id'], 'result' => $result], 1000);
         echo json_encode(['status' => 'INITIALIZED', 'result' => $result], JSON_THROW_ON_ERROR) . "\n";
+    } elseif ($operation === 'video') {
+        $config = preview_config();
+        if (($config['legacy_review_fixture'] ?? false) !== false
+            || !is_file('/run/preview-app/initialized.json')) {
+            throw new RuntimeException('Initialized standard preview required');
+        }
+        preview_assert_isolated();
+        foreach (['/private/product-video', '/private/product-media-scan'] as $directory) {
+            if (is_link($directory)) throw new RuntimeException('Unexpected video directory symlink');
+            if (!file_exists($directory)) {
+                if (!mkdir($directory, 0700) || !chown($directory, 1000)) {
+                    throw new RuntimeException('Video directory preparation failed');
+                }
+            }
+            clearstatcache(true, $directory);
+            $stat = lstat($directory);
+            if (!is_array($stat) || ($stat['mode'] & 0170000) !== 0040000
+                || ($stat['mode'] & 0777) !== 0700 || $stat['uid'] !== 1000) {
+                throw new RuntimeException('Video directory ownership mismatch');
+            }
+        }
+        // The existing installer needs metadata authority; ordinary HTTP keeps its DML role.
+        $app = preview_app(true);
+        $result = $app->make(\app\services\marketplace\product\MarketplaceProductScanGcTimer::class)->register();
+        preview_runtime_permissions();
+        if (!preview_video_ready($config)) {
+            preview_private_json('/run/preview-app/product-video-ready.json', [
+                'project' => $config['project'], 'run_id' => $config['run_id'],
+                'feature' => 'product-video-chunks-v1'], 1000);
+        }
+        echo json_encode(['status' => 'VIDEO_READY', 'timer' => $result], JSON_THROW_ON_ERROR) . "\n";
     } else {
         throw new RuntimeException('Unknown preview bootstrap operation');
     }

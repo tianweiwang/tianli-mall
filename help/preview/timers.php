@@ -39,14 +39,14 @@ try {
         || $backup['id'] !== $row['id'] || $backup['last_value'] !== $row['value']) {
         throw new RuntimeException('Deadline configuration changed outside this helper');
     }
-    $tasks = $db->query('SELECT * FROM eb_system_timer WHERE is_del=0 ORDER BY id')->fetchAll();
+    $tasks = $db->query("SELECT * FROM eb_system_timer WHERE is_del=0 AND mark='orderCancel' ORDER BY id")->fetchAll();
     $expected = ['mark'=>'orderCancel', 'type'=>1, 'is_open'=>1, 'month'=>0, 'week'=>0,
         'day'=>0, 'hour'=>0, 'minute'=>0, 'second'=>30, 'timeStr'=>'*/30 * * * * *'];
     if (!$tasks) {
         $data = $expected; unset($data['timeStr']);
         $app->make(SystemCrontabServices::class)->saveTimer($data + ['id'=>0, 'name'=>'',
             'content'=>'隔离预览：正常扫描到期未付款订单', 'customCode'=>'']);
-        $tasks = $db->query('SELECT * FROM eb_system_timer WHERE is_del=0 ORDER BY id')->fetchAll();
+        $tasks = $db->query("SELECT * FROM eb_system_timer WHERE is_del=0 AND mark='orderCancel' ORDER BY id")->fetchAll();
     }
     if (count($tasks) !== 1) throw new RuntimeException('Unexpected preview timer tasks');
     foreach ($expected as $key=>$value) {
@@ -56,6 +56,9 @@ try {
         throw new RuntimeException('Unexpected custom timer code');
     }
     $cached = Cache::get('crontabCache');
+    // Other original tasks, such as product-media GC, may share this scheduler.
+    if (is_array($cached)) $cached = array_values(array_filter($cached,
+        static fn($task): bool => is_array($task) && ($task['mark'] ?? null) === 'orderCancel'));
     if (!is_array($cached) || count($cached) !== 1 || (string)$cached[0]['id'] !== (string)$tasks[0]['id']) {
         throw new RuntimeException('Preview timer cache unavailable');
     }

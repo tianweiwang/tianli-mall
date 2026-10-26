@@ -44,6 +44,20 @@ function preview_assert_isolated(): void
     $redis->close();
 }
 
+function preview_video_ready(array $config): bool
+{
+    $path = '/run/preview-app/product-video-ready.json';
+    if (is_link($path)) throw new RuntimeException('Invalid preview video marker');
+    if (!file_exists($path)) return false;
+    $expected = ['project' => $config['project'], 'run_id' => $config['run_id'],
+        'feature' => 'product-video-chunks-v1'];
+    if (!is_file($path) || ($config['legacy_review_fixture'] ?? false) !== false
+        || json_decode(file_get_contents($path), true, 512, JSON_THROW_ON_ERROR) !== $expected) {
+        throw new RuntimeException('Preview video identity mismatch');
+    }
+    return true;
+}
+
 function preview_app(bool $migrator = false): \think\App
 {
     preview_assert_isolated();
@@ -53,6 +67,7 @@ function preview_app(bool $migrator = false): \think\App
     if (!is_bool($legacyFixture)) throw new RuntimeException('Invalid preview fixture mode');
     // Only a separately prepared fixture uses the old create flow, after normal initialization.
     $legacyRuntime = $legacyFixture && is_file('/run/preview-app/initialized.json');
+    $videoReady = preview_video_ready($config);
     $environment = [
         'APP_ENV' => 'testing', 'PHP_APP_DEBUG' => 'false', 'PHP_DATABASE_DEBUG' => 'false',
         'PHP_APP_APP_KEY' => $config['signing_key'],
@@ -74,6 +89,9 @@ function preview_app(bool $migrator = false): \think\App
         'PHP_MARKETPLACE_CUSTOMER_WITHDRAWAL_QR_PRIVATE_ROOT' => '/private/withdrawal',
         'PHP_MARKETPLACE_PLATFORM_CHAT_PRIVATE_ROOT' => '/private/chat',
         'PHP_MARKETPLACE_PLATFORM_CHAT_PRIVATE_WRITES_ENABLED' => 'true',
+        'PHP_MARKETPLACE_PRODUCT_VIDEO_UPLOAD_ENABLED' => $videoReady ? 'true' : 'false',
+        'PHP_MARKETPLACE_PRODUCT_VIDEO_UPLOAD_PRIVATE_ROOT' => $videoReady ? '/private/product-video' : '',
+        'PHP_MARKETPLACE_PRODUCT_MEDIA_SCAN_PRIVATE_ROOT' => $videoReady ? '/private/product-media-scan' : '',
         'PHP_UPGRADE_REMOTE_ENABLED' => 'false',
     ];
     foreach ($environment as $name => $value) putenv($name . '=' . $value);
