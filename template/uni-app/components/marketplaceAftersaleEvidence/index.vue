@@ -26,7 +26,13 @@ export default {
     async load(row) {
       if (row.loading) return; const generation = this.generation; row.loading = true; row.error = '';
       try {
+        // MP receives the page method before Vue binds it to its owning page.
+        // #ifdef MP
+        const image = await this.reader.call(this.$parent, row.id);
+        // #endif
+        // #ifndef MP
         const image = await this.reader(row.id);
+        // #endif
         if (generation !== this.generation || !this.rows.includes(row)) { image.release(); return; }
         if (row.release) row.release(); row.url = image.url; row.release = image.release;
       } catch (error) { if (generation === this.generation && this.rows.includes(row)) row.error = errorText(error); }
