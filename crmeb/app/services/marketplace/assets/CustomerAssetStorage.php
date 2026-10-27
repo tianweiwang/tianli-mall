@@ -313,9 +313,15 @@ final class CustomerAssetStorage
     private static function fail():never {throw new AuthUnavailableException();}
 
     /** Avatar uses a separate actual customer frame. Original review-only authority above is unchanged. */
-    public function uploadForAvatar(array $context,string $bytes,string $displayName,array &$object,array &$receipt): array
+    public function uploadForAvatar(array $context,string $bytes,string $displayName,array &$object,array &$receipt):array
+    {return $this->uploadPublicImage($context,$bytes,$displayName,$object,$receipt,false);}
+
+    public function uploadForPublicCompat(array $context,string $bytes,string $displayName,array &$object,array &$receipt):array
+    {return $this->uploadPublicImage($context,$bytes,$displayName,$object,$receipt,true);}
+
+    private function uploadPublicImage(array $context,string $bytes,string $displayName,array &$object,array &$receipt,bool $compat):array
     {
-        CustomerAssetServices::assertAvatarContext($context,'upload');$uid=$context['actual_uid'];
+        self::assertPublicUploadContext($context,$compat);$uid=$context['actual_uid'];
         if($object!==[])self::fail();
         $receiptKeys=array_keys($receipt);sort($receiptKeys,SORT_STRING);
         if($receiptKeys!==['cleanup_complete','complete','database_committed','phase','physical_changed','physical_complete']
@@ -323,12 +329,12 @@ final class CustomerAssetStorage
             ||$receipt['physical_complete']!==false||$receipt['database_committed']!==false||$receipt['cleanup_complete']!==null)self::fail();
         $qualified=$this->qualify($bytes,$displayName);
         \app\services\marketplace\MerchantManagementInput::text($displayName,255,true);
-        CustomerAssetServices::assertAvatarContext($context,'upload');
+        self::assertPublicUploadContext($context,$compat);
         $configured=sys_config('upload_type',1);
         if(is_string($configured)&&preg_match('/\A[1-7]\z/D',$configured)===1)$configured=(int)$configured;
         if(!is_int($configured)||$configured<1||$configured>7)self::fail();
         $type=$configured;$storage=$type===1?null:$this->activeStorage($type);
-        $directory='customer/a/'.$uid.'/'.bin2hex(random_bytes(16));$fileName=bin2hex(random_bytes(16)).'.'.$qualified['extension'];
+        $directory='customer/'.($compat?'compat':'a').'/'.$uid.'/'.bin2hex(random_bytes($compat?12:16));$fileName=bin2hex(random_bytes(16)).'.'.$qualified['extension'];
         $key=($type===1?'':'uploads/').$directory.'/'.$fileName;self::key($key);
         $localRoot=$type===1?realpath(Config::get('filesystem.disks.public.root','')):null;
         if($type===1&&($localRoot===false||Config::get('filesystem.disks.public.type')!=='local'
@@ -362,7 +368,7 @@ final class CustomerAssetStorage
                 if($native['size']!==$qualified['size']||hash_file('sha256',$temporaryPath)!==$qualified['sha256'])self::fail();
                 clearstatcache(true,$temporaryPath);$checked=lstat($temporaryPath);
                 foreach(['dev','ino','mode','nlink','uid','gid','size','mtime','ctime']as$field)if(!is_array($checked)||$checked[$field]!==$native[$field])self::fail();
-                CustomerAssetServices::assertAvatarContext($context,'upload');
+                self::assertPublicUploadContext($context,$compat);
                 $receipt['phase']='physical_upload';$receipt['physical_changed']=null;
                 $result=$disk->putFileAs($directory,new File($temporaryPath),$fileName);
                 if($result!==$relative)self::fail();
@@ -398,7 +404,7 @@ final class CustomerAssetStorage
             if($failure!==null)throw $failure;
             if(!is_array($row))self::fail();
         }else{
-            CustomerAssetServices::assertAvatarContext($context,'upload');
+            self::assertPublicUploadContext($context,$compat);
             $upload=UploadService::fresh($type,$storage);$upload->setAuthThumb(false);
             $receipt['phase']='physical_upload';$receipt['physical_changed']=null;
             $result=$upload->to('uploads/'.$directory)->stream($bytes,$fileName);$info=$upload->getFileInfo();
@@ -422,15 +428,21 @@ final class CustomerAssetStorage
             if($object['key']!==$key||$object['storage']!==$storage)self::fail();
             // A provider ACK is not an independent read of the stored cloud bytes: changed remains null.
         }
-        CustomerAssetServices::assertAvatarContext($context,'upload');
+        self::assertPublicUploadContext($context,$compat);
         $receipt['physical_complete']=true;return $row;
     }
 
     /** Same physical evidence and receipt semantics as upload; cloud ACK remains an ACK. */
     public function assertAvatarUploaded(array $context,array $physical7,array $qualified,string $bytes,array $object):void
+    {$this->assertPublicImageUploaded($context,$physical7,$qualified,$bytes,$object,false);}
+
+    public function assertPublicCompatUploaded(array $context,array $physical7,array $qualified,string $bytes,array $object):void
+    {$this->assertPublicImageUploaded($context,$physical7,$qualified,$bytes,$object,true);}
+
+    private function assertPublicImageUploaded(array $context,array $physical7,array $qualified,string $bytes,array $object,bool $compat):void
     {
         $row=$physical7;
-        CustomerAssetServices::assertAvatarContext($context,'upload');$this->ownedAvatarObject($context,$object);
+        self::assertPublicUploadContext($context,$compat);$this->ownedPublicImageObject($context,$object,$compat);
         if($this->qualify($bytes,$row['real_name'])!==$qualified||$row['att_dir']!==$row['satt_dir']
             ||$row['att_type']!==$qualified['mime']||(string)$row['att_size']!==(string)$qualified['size'])self::fail();
         $observed=$this->locateObject($row)+['directory'=>$object['directory'],'local_root'=>$object['local_root']];
@@ -447,28 +459,40 @@ final class CustomerAssetStorage
                 ||$before['size']!==$qualified['size']||hash('sha256',$actual)!==$qualified['sha256']||mime_content_type($path)!==$qualified['mime'])self::fail();
             foreach(['dev','ino','mode','nlink','uid','gid','size','mtime','ctime']as$key)if($before[$key]!==$after[$key])self::fail();
         }elseif($this->activeStorage($object['type'])!==$object['storage'])self::fail();
-        CustomerAssetServices::assertAvatarContext($context,'upload');
+        self::assertPublicUploadContext($context,$compat);
     }
 
     /** Only this upload's new avatar namespace, before any attempted metadata write. */
     public function cleanupAvatar(array $context,array $object,array &$receipt):void
+    {$this->cleanupPublicImage($context,$object,$receipt,false);}
+
+    public function cleanupPublicCompat(array $context,array $object,array &$receipt):void
+    {$this->cleanupPublicImage($context,$object,$receipt,true);}
+
+    private function cleanupPublicImage(array $context,array $object,array &$receipt,bool $compat):void
     {
-        CustomerAssetServices::assertAvatarContext($context,'upload');$this->ownedAvatarObject($context,$object);
+        self::assertPublicUploadContext($context,$compat);$this->ownedPublicImageObject($context,$object,$compat);
         if($receipt['database_committed']!==false)self::fail();$heldFalse=$receipt['cleanup_complete']===false;
         $cleanup=$receipt;$ok=$this->images->cleanupNew($object,$cleanup);
         // Preserve upload facts; cleanup cannot manufacture a known pre-upload state or replace a prior unknown.
         $receipt['cleanup_complete']=$heldFalse?false:($ok&&($object['type']===1||$cleanup['physical_complete']===true));
-        CustomerAssetServices::assertAvatarContext($context,'upload');
+        self::assertPublicUploadContext($context,$compat);
+    }
+
+    private function ownedPublicImageObject(array $context,array $object,bool $compat):void
+    {
+        $uid=$context['actual_uid'];$namespace=$compat?'compat':'a';$random=$compat?24:32;
+        if(!is_int($object['type']??null)||$object['type']<1||$object['type']>7||!is_string($object['directory']??null)
+            ||preg_match('/\Acustomer\/'.$namespace.'\/'.$uid.'\/[a-f0-9]{'.$random.'}\z/D',$object['directory'])!==1)self::fail();
+        if($object['type']===1){if(!is_string($object['key']??null)||preg_match('/\A[a-f0-9]{32}\.(?:jpg|jpeg|png|gif|webp)\z/D',$object['key'])!==1)self::fail();}
+        elseif(!is_string($object['key']??null)||preg_match('/\Auploads\/customer\/'.$namespace.'\/'.$uid.'\/[a-f0-9]{'.$random.'}\/[a-f0-9]{32}\.(?:jpg|jpeg|png|gif|webp)\z/D',$object['key'])!==1)self::fail();
     }
 
     private function ownedAvatarObject(array $context,array $object):void
-    {
-        $uid=$context['actual_uid'];
-        if(!is_int($object['type']??null)||$object['type']<1||$object['type']>7||!is_string($object['directory']??null)
-            ||preg_match('/\Acustomer\/a\/'.$uid.'\/[a-f0-9]{32}\z/D',$object['directory'])!==1)self::fail();
-        if($object['type']===1){if(!is_string($object['key']??null)||preg_match('/\A[a-f0-9]{32}\.(?:jpg|jpeg|png|gif|webp)\z/D',$object['key'])!==1)self::fail();}
-        elseif(!is_string($object['key']??null)||preg_match('/\Auploads\/customer\/a\/'.$uid.'\/[a-f0-9]{32}\/[a-f0-9]{32}\.(?:jpg|jpeg|png|gif|webp)\z/D',$object['key'])!==1)self::fail();
-    }
+    {$this->ownedPublicImageObject($context,$object,false);}
+
+    private static function assertPublicUploadContext(array $context,bool $compat):void
+    {if($compat)CustomerAssetServices::assertPublicCompatContext($context);else CustomerAssetServices::assertAvatarContext($context,'upload');}
 
     /** Read only. Complete native metadata is qualified by the DAO before this exact-byte check. */
     public function verifyAvatarSelection(array $context,array $asset34):array

@@ -328,6 +328,13 @@ class StoreOrderCreateServices extends BaseServices
         $legacyFormAssets = null;
         $legacyFormOutcome = null;
         $order = $this->transaction(function () use ($createWrites, $uid, $key, $cartInfo, $customForm, &$legacyFormAssets, &$legacyFormOutcome) {
+            if (is_array($customForm)) foreach ($customForm as $field) {
+                if (is_array($field) && ($field['label'] ?? null) === 'img') {
+                    $references = is_string($field['value'] ?? null) ? [$field['value']] : ($field['value'] ?? null);
+                    if (is_array($references)) foreach ($references as $reference)
+                        \app\services\marketplace\assets\CustomerAssetServices::assertNotPublicCompatMaterial($reference);
+                }
+            }
             if (!is_array($customForm) || !\app\dao\marketplace\assets\CustomerLegacyOrderFormAssetDao::hasReferences($customForm)) {
                 return $createWrites();
             }

@@ -604,6 +604,7 @@ class UserExtractServices extends BaseServices
                 }
             }
         }
+        \app\services\marketplace\assets\CustomerAssetServices::assertNotPublicCompatMaterial($insertData['qrcode_url'] ?? null);
         $privateMaterials = CustomerWithdrawalQrAssetDao::isPrivate($data['qrcode_url'] ?? null)
             ? app()->make(CustomerWithdrawalQrAssetServices::class) : null;
         $privateOutcome = null;

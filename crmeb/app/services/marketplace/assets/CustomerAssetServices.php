@@ -12,7 +12,7 @@ use think\facade\Config;
 use think\file\UploadedFile;
 use Throwable;
 
-/** Named customer-review and avatar producers. Default compatibility and private uses remain unpublished here. */
+/** Named customer-review, avatar and legacy public compatibility producers. */
 final class CustomerAssetServices
 {
     public function __construct(private MarketplaceOrderReviewServices $reviews,private CustomerAssetDao $assets,private CustomerAssetStorage $storage){}
@@ -77,59 +77,75 @@ final class CustomerAssetServices
     /** A real avatar frame is separate from the order-review upload frame. */
     private static ?array $avatarFrame=null;
     private static ?array $avatarDatabaseSession=null;
+    private static ?array $publicCompatFrame=null;
+    private static ?array $publicCompatDatabaseSession=null;
 
     public function uploadAvatar(Request $request,int $actualUid):array
+    {return $this->uploadPublicImage($request,$actualUid,false);}
+
+    /** Original public upload DTO, owned by the real authenticated customer rather than a merchant. */
+    public function uploadPublicCompat(Request $request,int $actualUid):array
+    {return $this->uploadPublicImage($request,$actualUid,true);}
+
+    private function uploadPublicImage(Request $request,int $actualUid,bool $compat):array
     {
         $receipt=['complete'=>false,'phase'=>'preflight','physical_changed'=>false,'physical_complete'=>false,
             'database_committed'=>false,'cleanup_complete'=>null];$object=[];
         try{
             $fingerprint=self::avatarIdentity($request,$actualUid);
             if($request->method(true)!=='POST'||strtolower($request->contentType())!=='multipart/form-data'
-                ||$request->rule()->getOption('customer_avatar_files')!==true||$request->get(false)!==[]
-                ||$request->server('QUERY_STRING','')!==''||$request->post(false)!==['filename'=>'pics'])self::fail();
-            $files=$request->file();if(!is_array($files)||array_keys($files)!==['pics']||!$files['pics'] instanceof UploadedFile)self::fail();
+                ||$request->rule()->getOption($compat?'customer_public_compat_files':'customer_avatar_files')!==true
+                ||$request->get(false)!==[]||$request->server('QUERY_STRING','')!=='')self::fail();
+            $post=$request->post(false);$filename=$compat?($post['filename']??'file'):'pics';
+            if(!is_string($filename)||preg_match('/\A[A-Za-z_][A-Za-z0-9_]{0,63}\z/D',$filename)!==1
+                ||($compat?($post!==[]&&$post!==['filename'=>$filename]):$post!==['filename'=>'pics']))self::fail();
+            $files=$request->file();if(!is_array($files)||array_keys($files)!==[$filename]||!$files[$filename] instanceof UploadedFile)self::fail();
             [$connection,$pdo]=$this->assets->avatarConnection($actualUid);$databaseSession=self::avatarSession($connection,$pdo);$published=false;
-            $out=$connection->transaction(function(\think\db\ConnectionInterface $actual)use($connection,$pdo,$request,$actualUid,$fingerprint,$databaseSession,&$published,&$receipt,&$object):array{
-                if($actual!==$connection||$published||self::$avatarFrame!==null)self::fail();$published=true;
+            $out=$connection->transaction(function(\think\db\ConnectionInterface $actual)use($connection,$pdo,$request,$actualUid,$fingerprint,$databaseSession,$compat,$filename,&$published,&$receipt,&$object):array{
+                if($actual!==$connection||$published||self::$avatarFrame!==null||self::$publicCompatFrame!==null)self::fail();$published=true;
                 self::avatarConnection($connection,$pdo,1);
                 $user=$this->assets->lockUser($connection,$pdo,$actualUid);$this->assets->assertStructure($connection,$pdo);
                 $context=['request'=>$request,'actual_uid'=>$actualUid,'user'=>$user,'connection'=>$connection,'pdo'=>$pdo,
                     'session_sha256'=>$fingerprint,'mode'=>'upload','asset_id'=>null];
-                self::$avatarFrame=$context;self::$avatarDatabaseSession=$databaseSession;
+                if($compat){self::$publicCompatFrame=$context;self::$publicCompatDatabaseSession=$databaseSession;}
+                else{self::$avatarFrame=$context;self::$avatarDatabaseSession=$databaseSession;}
                 try{
-                    self::assertAvatarContext($context,'upload');
+                    self::assertPublicUploadContext($context,$compat);
                     $count=self::counter(CacheService::get('start_uploads_'.$actualUid,0));if($count>=100)self::fail();
-                    [$bytes,$name]=$this->uploadedBytes($request->file('pics'));$qualified=$this->storage->qualify($bytes,$name);
-                    $physical=$this->storage->uploadForAvatar($context,$bytes,$name,$object,$receipt);
+                    [$bytes,$name]=$this->uploadedBytes($request->file($filename));$qualified=$this->storage->qualify($bytes,$name);
+                    $physical=($compat?$this->storage->uploadForPublicCompat($context,$bytes,$name,$object,$receipt):$this->storage->uploadForAvatar($context,$bytes,$name,$object,$receipt));
                     if($receipt['physical_complete']!==true||!in_array($receipt['physical_changed'],[true,null],true))self::fail();
-                    $this->storage->assertAvatarUploaded($context,$physical,$qualified,$bytes,$object);
+                    if($compat)$this->storage->assertPublicCompatUploaded($context,$physical,$qualified,$bytes,$object);
+                    else $this->storage->assertAvatarUploaded($context,$physical,$qualified,$bytes,$object);
                     $receipt['phase']='metadata_insert';$receipt['database_committed']=null;
-                    $asset=$this->assets->insertAvatar($context,$physical,$qualified);
-                    $this->storage->assertAvatarUploaded($context,$physical,$qualified,$bytes,$object);
-                    $this->assets->assertAvatarCurrent($context,$asset);
+                    $asset=($compat?$this->assets->insertPublicCompat($context,$physical,$qualified):$this->assets->insertAvatar($context,$physical,$qualified));
+                    if($compat)$this->storage->assertPublicCompatUploaded($context,$physical,$qualified,$bytes,$object);
+                    else $this->storage->assertAvatarUploaded($context,$physical,$qualified,$bytes,$object);
+                    if($compat)$this->assets->assertPublicCompatCurrent($context,$asset);else $this->assets->assertAvatarCurrent($context,$asset);
                     if($this->assets->lockUser($connection,$pdo,$actualUid)!==$user)self::fail();
                     $url=path_to_url($asset['object_key']);if(!is_string($url)||$url==='')self::fail();
                     if(strpos($url,'http')===false)$url=$request->domain().$url;
-                    $dto=['name'=>$asset['name'],'url'=>$url,'attachment_ref'=>$asset['object_key'],
-                        'avatar_asset_id'=>self::avatarId((string)$asset['id'])];
-                    self::assertAvatarContext($context,'upload');$receipt['phase']='commit_outcome_unknown';
+                    $dto=['name'=>$asset['name'],'url'=>$url,'attachment_ref'=>$asset['object_key']];
+                    if(!$compat)$dto['avatar_asset_id']=self::avatarId((string)$asset['id']);
+                    self::assertPublicUploadContext($context,$compat);$receipt['phase']='commit_outcome_unknown';
                     return ['asset'=>$asset,'user'=>$user,'dto'=>$dto];
                 }catch(Throwable $error){
                     if($receipt['database_committed']===false&&$object!==[]){
-                        try{$this->storage->cleanupAvatar($context,$object,$receipt);}catch(Throwable $ignored){$receipt['cleanup_complete']=false;}
+                        try{if($compat)$this->storage->cleanupPublicCompat($context,$object,$receipt);else $this->storage->cleanupAvatar($context,$object,$receipt);}catch(Throwable $ignored){$receipt['cleanup_complete']=false;}
                     }
                     throw $error;
-                }finally{self::$avatarFrame=null;self::$avatarDatabaseSession=null;}
+                }finally{self::clearPublicUploadContext($compat);}
             });
             $receipt['database_committed']=true;self::avatarConnection($connection,$pdo,0);
             if(self::avatarSession($connection,$pdo)!==$databaseSession||self::avatarIdentity($request,$actualUid)!==$fingerprint)self::fail();
-            $this->assets->assertAvatarCommitted($connection,$pdo,$out['asset'],$out['user']);
+            if($compat)$this->assets->assertPublicCompatCommitted($connection,$pdo,$out['asset'],$out['user']);
+            else $this->assets->assertAvatarCommitted($connection,$pdo,$out['asset'],$out['user']);
             $receipt['phase']='quota_update';$key='start_uploads_'.$actualUid;$count=self::counter(CacheService::get($key,0));
             if($count>=100)self::fail();$count++;
             if(CacheService::set($key,$count,86400)!==true||self::counter(CacheService::get($key,null))!==$count)self::fail();
             if(self::avatarIdentity($request,$actualUid)!==$fingerprint)self::fail();
             $receipt['complete']=true;$receipt['phase']='complete';return $out['dto'];
-        }catch(Throwable $error){self::$avatarFrame=null;self::$avatarDatabaseSession=null;throw new MerchantAttachmentOperationException($receipt);}
+        }catch(Throwable $error){self::clearPublicUploadContext($compat);throw new MerchantAttachmentOperationException($receipt);}
     }
 
     /** The callback is only the original user-profile ORM writer, not another transaction owner. */
@@ -188,6 +204,43 @@ final class CustomerAssetServices
         if(($mode==='upload'&&$context['asset_id']!==null)||($mode==='profile'&&self::avatarId($context['asset_id'])!==$context['asset_id']))self::fail();
         self::avatarConnection($connection,$pdo,1);
         if(self::avatarSession($connection,$pdo)!==self::$avatarDatabaseSession)self::fail();
+    }
+
+    /** Compatibility upload can never authorize avatar/profile selection or a private material. */
+    public static function assertPublicCompatContext(array $context):void
+    {
+        if(self::$publicCompatFrame===null||$context!==self::$publicCompatFrame||self::$publicCompatDatabaseSession===null
+            ||$context['mode']!=='upload'||$context['asset_id']!==null)self::fail();
+        $request=$context['request'];$connection=$context['connection'];$pdo=$context['pdo'];
+        if(!$request instanceof Request||!$connection instanceof \think\db\ConnectionInterface||!$pdo instanceof \PDO
+            ||self::avatarIdentity($request,$context['actual_uid'])!==$context['session_sha256']
+            ||!is_array($context['user'])||!in_array($context['user']['uid']??null,[$context['actual_uid'],(string)$context['actual_uid']],true)
+            ||$request->rule()->getOption('customer_public_compat_files')!==true||$request->method(true)!=='POST')self::fail();
+        self::avatarConnection($connection,$pdo,1);
+        if(self::avatarSession($connection,$pdo)!==self::$publicCompatDatabaseSession)self::fail();
+    }
+
+    private static function assertPublicUploadContext(array $context,bool $compat):void
+    {if($compat)self::assertPublicCompatContext($context);else self::assertAvatarContext($context,'upload');}
+
+    private static function clearPublicUploadContext(bool $compat):void
+    {
+        if($compat){self::$publicCompatFrame=null;self::$publicCompatDatabaseSession=null;}
+        else{self::$avatarFrame=null;self::$avatarDatabaseSession=null;}
+    }
+
+    /** Only new submissions use this guard. Historical URL readers retain their original contract. */
+    public static function assertNotPublicCompatMaterial(mixed $reference):void
+    {
+        if(!is_string($reference)||$reference==='')return;
+        $path=parse_url(str_replace('\\','/',$reference),PHP_URL_PATH);if(!is_string($path))return;
+        $parts=[];
+        foreach(explode('/',str_replace('\\','/',rawurldecode($path)))as$part){
+            if($part===''||$part==='.')continue;
+            if($part==='..'){array_pop($parts);continue;}$parts[]=$part;
+        }
+        if(preg_match('~(?:\A|/)customer/compat(?:/|\z)~D',implode('/',$parts))===1)
+            throw new \crmeb\exceptions\ApiException('公开图片不能作为私有材料，请重新选择图片');
     }
 
     /** Finite seam for the actual original UserDao writer, never a caller-supplied generic owner. */

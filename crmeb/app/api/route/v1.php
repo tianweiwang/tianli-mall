@@ -141,7 +141,7 @@ Route::group(function () {
         Route::get('logout', 'v1.LoginController/logout')->name('logout')->option(['real_name' => '退出登录']);// 退出登录
         Route::post('switch_h5', 'v1.LoginController/switch_h5')->name('switch_h5')->option(['real_name' => '切换账号']);// 切换账号
         //公共类
-        Route::post('upload/image', 'v1.PublicController/upload_image')->name('uploadImage')->option(['real_name' => '图片上传']);//图片上传
+        Route::post('upload/image', 'v1.PublicController/upload_image')->name('uploadImage')->option(['real_name' => '图片上传', 'customer_public_compat_files' => true]);//图片上传
         // 用户微信转账详情接口
         Route::get('transfer/info', 'v1.PublicController/getTransferInfo')->name('getTransferInfo')->option(['real_name' => '用户微信转账详情接口']);// 用户微信转账详情接口
 

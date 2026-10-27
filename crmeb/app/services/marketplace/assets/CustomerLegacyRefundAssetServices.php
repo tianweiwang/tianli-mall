@@ -73,6 +73,7 @@ final class CustomerLegacyRefundAssetServices
     public function prepareApplication(ConnectionInterface $connection,int $uid,int $orderId,array $refundData,array $originalCart):?array
     {
         $refs=Assets::images($refundData['refund_img']??null);
+        foreach($refs as$reference)CustomerAssetServices::assertNotPublicCompatMaterial($reference);
         if(!array_filter($refs,fn(string $ref):bool=>Assets::isPrivate($ref)))return null;
         $request=app()->request;$identity=self::identity($request,$uid);
         if($request->method(true)!=='POST'||$request->rule()->getOption('customer_legacy_refund_application')!==true
@@ -134,7 +135,9 @@ final class CustomerLegacyRefundAssetServices
         }
         $note=Assets::shippingNote(array_key_exists('refund_shipping_note',$data)?$data['refund_shipping_note']:($data['refund_explain']??''));
         if($note!=='')Assets::noteMessage($id,$note);
-        $before=Assets::images($refund['refund_img']);$submitted=Assets::csv($data['refund_img']??'');$merge=Assets::merge($before,$submitted);
+        $before=Assets::images($refund['refund_img']);$submitted=Assets::csv($data['refund_img']??'');
+        foreach($submitted as$reference)CustomerAssetServices::assertNotPublicCompatMaterial($reference);
+        $merge=Assets::merge($before,$submitted);
         $rootId=Assets::integer($saved['family']['root']['id'],1,2147483647);$bound=[];$bytes=[];$storage=null;
         foreach($before as$ref){
             if(!Assets::isPrivate($ref))continue;[$purpose,$assetId]=Assets::reference($ref);

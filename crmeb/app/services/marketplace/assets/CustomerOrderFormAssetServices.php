@@ -110,6 +110,8 @@ final class CustomerOrderFormAssetServices
     public function withCreateAssets(ConnectionInterface $connection,PDO $pdo,int $actualUid,string $key,
         array $frame,array $locked,array $snapshot,callable $createWrites):array
     {
+        foreach($snapshot as$group)foreach($group['fields'] as$field)
+            if($field['label']==='img')foreach($field['value'] as$reference)CustomerAssetServices::assertNotPublicCompatMaterial($reference);
         // Preserve old no-asset creates before new Redis/schema/private-root/identity dependencies are touched.
         if(!self::hasPrivateReference($snapshot))return $createWrites();
         $request=app()->request;if(!$request instanceof Request)self::fail();

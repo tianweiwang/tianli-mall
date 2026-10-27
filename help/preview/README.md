@@ -36,7 +36,7 @@ MP的商品列表、详情和规格接口会将已登记的 `/uploads/` 图片/�
 
 2026-10-27 已在微信开发者工具 r12 工程通过本机账号密码登录、单店确认、创建订单、测试支付和原生包裹收货。商品5/SKU104实际生成订单10，1件20.15元；商家原认证接口发出包裹11，小程序点击“查看包裹 → 确认当前可收全部 → 确认提交”，三端读回均已收货，商品与SKU库存98→97且仅一次预留。商家发货本轮为HTTP接口，原商家浏览器流程另有此前验证；此结果不是微信OAuth或真机验收。源码修复原密码输入的原生掩码、下单初始数据读取及子包模板事件编译问题；确认页、购物车和包裹图片沿用原公开路径补全。
 
-商品7仍保留必填参考图片；所选接口测试号实际选图返回 `api scope is not declared in the privacy agreement`，须满足账号隐私接口申报条件后继续，未取消必填或替换上传。正式微信授权还需后台配对的AppID/AppSecret，当前18180未配置；新图片上传、真机及正式发布仍待。后端公开上传候选尚未接入18180。重新编译后打开新的输出工程，保留旧失败证据。
+商品7仍保留必填参考图片；所选接口测试号实际选图返回 `api scope is not declared in the privacy agreement`，须满足账号隐私接口申报条件后继续，未取消必填或替换上传。正式微信授权还需后台配对的AppID/AppSecret，当前18180未配置；小程序原生新选图上传、真机及正式发布仍待。后端公开上传已接入18180，HTTP/H5正常上传与小程序历史图片读取的验证范围见下方共用图片上传说明。重新编译后打开新的输出工程，保留旧失败证据。
 
 最新本机工程为 `H:/天俪商城/artifacts/multi-merchant-miniprogram-20261027-r19/mp-weixin/dist`，默认仅模拟器窗口。r14按原商城订单页统一主题状态头、文字层级、信息行与胶囊按钮；售后/评价位于订单内容后，收银台金额恢复原50rpx字号。开发者工具390及320宽度检查了已收订单、包裹和已付款收银台的禁用状态。收货主按钮的新样式仍待下一次可收货正常订单验证，r12的真实收货结果保留；不代表全站、H5新样式或真机视觉验收。
 
@@ -44,16 +44,22 @@ r19补齐登录Logo与订单列表缩略图的MP服务器地址，保留原图�
 
 2026-10-27 已修正个人中心订单角标：装修接口复用订单列表现有 `getOrderData` 统计，保留原退款入口。当前合成顾客的待发货/待评价为1/0，与用户资料、订单列表一致；小程序实际点击分别得到订单9一条和空列表，返回个人中心仍一致。三端订单10金额20.15元、已收货状态、商品/SKU库存及四条原售后记录保持。本次为后端修复，继续使用r19小程序工程；没有重建前端、改变订单或重复付款。证据见同一仓库外目录 `r20-theme-count-*`；旧订单混合样本、其它客户端全流程和正式发布仍按原范围待验。
 
-本机18180当前HTTP服务通过独立只读controller覆盖运行本次修正，原源码工作树、数据库及其他服务保持。固定运行文件为 `H:/天俪商城/artifacts/multi-merchant-miniprogram-trade-20261027-r1/r20-theme-count-source/PublicController.php`，SHA256为 `9b61f4f124fc6264936519918833bf033f02917ad7b1fae386b50a2e5fca1cb4`，内容等于原基线加本次统计修正，不含尚未验证的上传候选。以下命令用于这个现有实例的HTTP维护，保留本次只读挂载：
+本机18180当前HTTP服务通过十个独立只读PHP文件运行订单统计与公开上传兼容修正，原源码工作树、数据库及其他服务保持。当前来源为 `H:/天俪商城/artifacts/multi-merchant-miniprogram-trade-20261027-r1/r21-public-upload-source/crmeb/`，逐文件SHA256见同目录上层 `r21-public-upload-preparation.json`，实际运行核对见 `r21-public-upload-final.json`。维护这个现有实例时，使用以下持久Compose保留覆盖：
 
 ```powershell
-$previewCompose = 'H:/天俪商城/artifacts/multi-merchant-preview-20261026/app-counts.compose.json'
+$previewCompose = 'H:/天俪商城/artifacts/multi-merchant-preview-20261026/app-upload.compose.json'
 docker compose --project-name mall-preview-20261026055805284f53 --file $previewCompose up -d --no-deps --timeout -1 preview-app
 docker compose --project-name mall-preview-20261026055805284f53 --file $previewCompose exec -T preview-web nginx -t -c /etc/nginx/preview.conf
 docker compose --project-name mall-preview-20261026055805284f53 --file $previewCompose exec -T preview-web nginx -s reload -c /etc/nginx/preview.conf
 ```
 
-该Compose是原实例配置的完整渲染，仅增加上述单文件只读挂载；它属于本机运行材料，不是通用升级工具。旧来源的 `preview.py serve`、`serve-api`、`video` 等可能按旧Compose重建HTTP服务并撤销此覆盖，应继续使用上述维护路径；不要重复initialize或改state.repo。新建预览仍使用仓库标准prepare/initialize流程及已提交源码。完整后端版本门升级与正式发布验收仍单独推进。
+该Compose沿原实例配置，仅替换/追加十个PHP只读挂载；它属于本机运行材料，不是通用升级工具。旧 `app-counts.compose.json` 仅含上一批统计修正，不是当前维护配置。旧来源的 `preview.py serve`、`serve-api`、`video` 等可能按旧Compose重建HTTP服务并撤销这些覆盖，应继续使用上述维护路径；不要重复initialize或改state.repo。新建预览仍使用仓库标准prepare/initialize流程及已提交源码。完整后端版本门升级与正式发布验收仍单独推进。
+
+共用图片上传兼容：顾客登录后原 `POST /api/upload/image` 支持单文件默认字段 `file`、显式 `filename=file`，以及当前聊天使用的文件字段 `pics` 和 `filename=pics`。保留 `name/url/attachment_ref` 响应；图片按真实顾客登记为 `public_upload_compat/STAGED`，保存到独立 `/uploads/customer/compat/` 目录，不写商家附件。它是公开图片，不用于新的执照、提现二维码、退款凭证或订单私有表单；这些入口继续使用已有具名接口，历史图片读取保持。
+
+本机已验证三种正常上传格式及原H5聊天选图，新增公开资产6–9；顾客3发出的图片消息20由客服实时收到，刷新历史和原图正常，小程序同一会话也实际显示并可预览原图。共享的具名头像上传正常回归新增暂存资产10，未保存头像资料；原头像、订单、库存、商业附件、私有聊天资产及余额积分保持，上传配额8→13。五张图片均1054字节、320×240，保存摘要、物理文件与HTTP内容一致。
+
+本次H5兼容页面验证临时仅在HTTP app的独立common.php副本关闭既有私有新上传开关，保留私有读取与原events服务；验证后已移除该临时挂载，当前写/读能力均恢复true。`app-upload-compat.compose.json`及副本仅保存当次验证来源，不是日常启动配置。小程序新选图仍待微信隐私声明条件，不能用历史读取替代上传验收；云存储、其它旧客户端、真机及完整阶段仍待，停止的测试保持NOT RUN。
 
 小程序评价：在已收货订单底部点击“商品评价”，选择商品后设置商品质量、服务态度星级，填写文字，再点“提交评价”。新评价显示待审核；平台“经营商家 → 商品评价”打开对应记录，选择审核通过并确认。商家“商品评价”打开同一记录，可以填写回复并确认。顾客刷新自己的评价记录，或从商品详情进入评价列表，即可读取通过审核的内容与商家回复。
 

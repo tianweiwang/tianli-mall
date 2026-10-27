@@ -32,7 +32,7 @@ use app\services\product\product\StoreProductServices;
 use app\services\shipping\ExpressServices;
 use app\services\shipping\SystemCityServices;
 use app\services\system\AppVersionServices;
-use app\services\system\attachment\SystemAttachmentServices;
+use app\services\marketplace\assets\CustomerAssetServices;
 use app\services\system\config\SystemConfigServices;
 use app\services\system\config\SystemStorageServices;
 use app\services\system\lang\LangCodeServices;
@@ -48,7 +48,6 @@ use app\services\wechat\RoutineSchemeServices;
 use app\services\wechat\WechatUserServices;
 use app\Request;
 use crmeb\services\CacheService;
-use app\services\other\UploadService;
 use crmeb\services\pay\Pay;
 use crmeb\services\workerman\ChannelService;
 
@@ -242,33 +241,16 @@ class PublicController
     /**
      * 图片上传
      * @param Request $request
-     * @param SystemAttachmentServices $services
+     * @param CustomerAssetServices $services
      * @return mixed
      */
-    public function upload_image(Request $request, SystemAttachmentServices $services)
+    public function upload_image(Request $request, CustomerAssetServices $services)
     {
-        $data = $request->postMore([
-            ['filename', 'file'],
-        ]);
-        if (!$data['filename']) return app('json')->fail('参数错误');
-        if (CacheService::has('start_uploads_' . $request->uid()) && CacheService::get('start_uploads_' . $request->uid()) >= 100) return app('json')->fail('非法操作');
-        $upload = UploadService::init();
-        $info = $upload->to('store/comment')->validate()->move($data['filename']);
-        if ($info === false) {
-            return app('json')->fail($upload->getError());
+        try {
+            return app('json')->success('图片上传成功', $services->uploadPublicCompat($request, (int)$request->uid()));
+        } catch (\app\services\marketplace\attachment\MerchantAttachmentOperationException $error) {
+            return \think\Response::create(['status'=>503,'msg'=>'图片操作未完成，请保留本次结果','data'=>$error->receipt], 'json', 503);
         }
-        $res = $upload->getUploadInfo();
-        $attachmentRef = $res['dir'];
-        $services->attachmentAdd($res['name'], $res['size'], $res['type'], $res['dir'], $res['thumb_path'], 1, (int)sys_config('upload_type', 1), $res['time'], 3);
-        if (CacheService::has('start_uploads_' . $request->uid()))
-            $start_uploads = (int)CacheService::get('start_uploads_' . $request->uid());
-        else
-            $start_uploads = 0;
-        $start_uploads++;
-        CacheService::set('start_uploads_' . $request->uid(), $start_uploads, 86400);
-        $res['dir'] = path_to_url($res['dir']);
-        if (strpos($res['dir'], 'http') === false) $res['dir'] = $request->domain() . $res['dir'];
-        return app('json')->success('图片上传成功', ['name' => $res['name'], 'url' => $res['dir'], 'attachment_ref' => $attachmentRef]);
     }
 
     /**

@@ -203,8 +203,14 @@ final class CustomerAssetDao
     }
 
     public function insertAvatar(array $context,array $physicalRow,array $qualified):array
+    {return $this->insertPublicImage($context,$physicalRow,$qualified,false);}
+
+    public function insertPublicCompat(array $context,array $physicalRow,array $qualified):array
+    {return $this->insertPublicImage($context,$physicalRow,$qualified,true);}
+
+    private function insertPublicImage(array $context,array $physicalRow,array $qualified,bool $compat):array
     {
-        [$connection,$pdo,$uid]=$this->avatarContext($context,'upload');$this->assertStructure($connection,$pdo);
+        [$connection,$pdo,$uid]=$this->publicImageContext($context,'upload',$compat);$this->assertStructure($connection,$pdo);
         self::keys($physicalRow,['name','real_name','att_dir','satt_dir','att_size','att_type','image_type']);
         self::keys($qualified,['extension','mime','size','width','height','sha256']);
         if(!in_array($qualified['extension'],['jpg','jpeg','png','gif','webp'],true)||!in_array($qualified['mime'],self::IMAGE_MIMES,true)
@@ -215,17 +221,17 @@ final class CustomerAssetDao
         if(strtolower(pathinfo($physicalRow['name'],PATHINFO_EXTENSION))!==$qualified['extension'])self::fail();
         $storage=self::integer($physicalRow['image_type'],1,7);$now=self::integer(time(),1,4294967295);
         $data=array_fill_keys(array_slice(self::FIELDS,1),null);
-        $data=array_replace($data,['uid'=>$uid,'purpose'=>'avatar_public','state'=>'STAGED','storage_type'=>$storage,'object_key'=>$reference,
+        $data=array_replace($data,['uid'=>$uid,'purpose'=>$compat?'public_upload_compat':'avatar_public','state'=>'STAGED','storage_type'=>$storage,'object_key'=>$reference,
             'thumbnail_key'=>$reference,'name'=>$physicalRow['name'],'real_name'=>$physicalRow['real_name'],'media_type'=>$qualified['mime'],
             'byte_size'=>(string)$size,'width'=>$width,'height'=>$height,'content_sha256'=>hex2bin($qualified['sha256']),'created_at'=>$now,'created_by_uid'=>$uid]);
         foreach(['uid','storage_type','byte_size','width','height','created_at','created_by_uid']as$field)$data[$field]=$this->nativeNumber($pdo,$data[$field]);
-        $this->avatarContext($context,'upload');$columns=array_keys($data);$statement=$pdo->prepare('INSERT INTO '.$this->table($connection,'marketplace_customer_asset')
+        $this->publicImageContext($context,'upload',$compat);$columns=array_keys($data);$statement=$pdo->prepare('INSERT INTO '.$this->table($connection,'marketplace_customer_asset')
             .' ('.implode(',',array_map(static fn(string $name):string=>chr(96).$name.chr(96),$columns)).') VALUES ('.implode(',',array_fill(0,count($columns),'?')).')');
         if(!$statement instanceof PDOStatement)self::fail();
         try{if($statement->execute(array_values($data))!==true||$statement->rowCount()!==1)self::fail();}
         finally{if($statement->closeCursor()!==true)self::fail();}
         $id=self::decimal($pdo->lastInsertId());$expected=['id'=>$this->nativeNumber($pdo,$id)]+$data;
-        $this->avatarRow($uid,$expected);$this->assertAvatarCurrent($context,$expected);return $expected;
+        $this->avatarRow($uid,$expected,$compat);$this->assertPublicImageCurrent($context,$expected,$compat);return $expected;
     }
 
     public function lockAvatar(array $context,string $id):array
@@ -237,10 +243,16 @@ final class CustomerAssetDao
     }
 
     public function assertAvatarCurrent(array $context,array $row):void
+    {$this->assertPublicImageCurrent($context,$row,false);}
+
+    public function assertPublicCompatCurrent(array $context,array $row):void
+    {$this->assertPublicImageCurrent($context,$row,true);}
+
+    private function assertPublicImageCurrent(array $context,array $row,bool $compat):void
     {
-        [$connection,$pdo,$uid]=$this->avatarContext($context,$context['mode']);$this->avatarRow($uid,$row);
+        [$connection,$pdo,$uid]=$this->publicImageContext($context,$context['mode'],$compat);$this->avatarRow($uid,$row,$compat);
         if($context['mode']==='profile'&&self::decimal($row['id'])!==$context['asset_id'])self::fail();
-        if($this->byId($connection,$pdo,self::decimal($row['id']))!==[$row])self::fail();$this->avatarContext($context,$context['mode']);
+        if($this->byId($connection,$pdo,self::decimal($row['id']))!==[$row])self::fail();$this->publicImageContext($context,$context['mode'],$compat);
     }
 
     /** Only actual profile selection turns STAGED into BOUND. Existing current BOUND rows do not move again. */
@@ -260,8 +272,14 @@ final class CustomerAssetDao
 
     /** Positive readback on the same actual primary after the owning transaction returned. */
     public function assertAvatarCommitted(ConnectionInterface $connection,PDO $pdo,array $asset,array $user):void
+    {$this->assertPublicImageCommitted($connection,$pdo,$asset,$user,false);}
+
+    public function assertPublicCompatCommitted(ConnectionInterface $connection,PDO $pdo,array $asset,array $user):void
+    {$this->assertPublicImageCommitted($connection,$pdo,$asset,$user,true);}
+
+    private function assertPublicImageCommitted(ConnectionInterface $connection,PDO $pdo,array $asset,array $user,bool $compat):void
     {
-        $this->outside($connection,$pdo);$uid=self::integer($user['uid']??null,1,4294967295);$this->avatarRow($uid,$asset);
+        $this->outside($connection,$pdo);$uid=self::integer($user['uid']??null,1,4294967295);$this->avatarRow($uid,$asset,$compat);
         $autocommit=$this->rows($connection,$pdo,'SELECT @@session.autocommit AS autocommit',[]);
         if(count($autocommit)!==1||!in_array($autocommit[0]['autocommit']??null,[1,'1'],true))self::fail();
         if($this->rows($connection,$pdo,'SELECT * FROM '.$this->table($connection,'marketplace_customer_asset').' WHERE id=? LIMIT 2',[self::decimal($asset['id'])])!==[$asset]
@@ -270,24 +288,32 @@ final class CustomerAssetDao
     }
 
     private function avatarContext(array $context,string $mode):array
+    {return $this->publicImageContext($context,$mode,false);}
+
+    private function publicImageContext(array $context,string $mode,bool $compat):array
     {
         self::keys($context,['request','actual_uid','user','connection','pdo','session_sha256','mode','asset_id']);
-        \app\services\marketplace\assets\CustomerAssetServices::assertAvatarContext($context,$mode);
+        if($compat){if($mode!=='upload')self::fail();\app\services\marketplace\assets\CustomerAssetServices::assertPublicCompatContext($context);}
+        else \app\services\marketplace\assets\CustomerAssetServices::assertAvatarContext($context,$mode);
         $connection=$context['connection'];$pdo=$context['pdo'];$uid=self::integer($context['actual_uid'],1,4294967295);
         if(!$connection instanceof ConnectionInterface||!$pdo instanceof PDO||!is_array($context['user']))self::fail();
         $user=$this->lockUser($connection,$pdo,$uid);
         if($mode==='upload'&&$user!==$context['user'])self::fail();
-        $this->writer($connection,$pdo);\app\services\marketplace\assets\CustomerAssetServices::assertAvatarContext($context,$mode);
+        $this->writer($connection,$pdo);if($compat){if($mode!=='upload')self::fail();\app\services\marketplace\assets\CustomerAssetServices::assertPublicCompatContext($context);}
+        else \app\services\marketplace\assets\CustomerAssetServices::assertAvatarContext($context,$mode);
         return [$connection,$pdo,$uid];
     }
 
-    private function avatarRow(int $uid,array $row):void
+    private function avatarRow(int $uid,array $row,bool $compat=false):void
     {
-        if(array_keys($row)!==self::FIELDS||$row['purpose']!=='avatar_public'||!in_array($row['state'],['STAGED','BOUND'],true)
+        if(array_keys($row)!==self::FIELDS||$row['purpose']!==($compat?'public_upload_compat':'avatar_public')
+            ||!in_array($row['state'],$compat?['STAGED']:['STAGED','BOUND'],true)
             ||self::integer($row['uid'],1,4294967295)!==$uid||self::integer($row['created_by_uid'],1,4294967295)!==$uid)self::fail();
         self::decimal($row['id']);self::integer($row['storage_type'],1,7);self::integer($row['byte_size'],1,52428800);
         self::integer($row['width'],1,4294967295);self::integer($row['height'],1,4294967295);$created=self::integer($row['created_at'],1,4294967295);
         self::text($row['name'],1,100);self::text($row['real_name'],1,255);self::reference($row['object_key']);
+        if($compat){$path=parse_url($row['object_key'],PHP_URL_PATH);
+            if(!is_string($path)||preg_match('~(?:\A|/)uploads/customer/compat/'.$uid.'/[a-f0-9]{24}/[a-f0-9]{32}\.(?:jpg|jpeg|png|gif|webp)\z~D',$path)!==1)self::fail();}
         if($row['thumbnail_key']!==$row['object_key']||!in_array($row['media_type'],self::IMAGE_MIMES,true)
             ||!is_string($row['content_sha256'])||strlen($row['content_sha256'])!==32)self::fail();
         foreach(['expires_at','retired_at','root_order_id','order_item_id','refund_id','review_id','confirmation_ref','form_product_id',

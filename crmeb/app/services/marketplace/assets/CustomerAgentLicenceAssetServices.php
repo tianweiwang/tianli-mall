@@ -73,6 +73,7 @@ final class CustomerAgentLicenceAssetServices
             if($request->method(true)!=='POST'||$request->rule()->getOption('customer_agent_licence_profile')!==true
                 ||!in_array($data['uid']??null,[$uid,(string)$uid],true)||!is_array($data['images']??null))self::fail();
             $references=CustomerAgentLicenceAssetDao::references($data['images']);
+            foreach($references as$reference)CustomerAssetServices::assertNotPublicCompatMaterial($reference);
             $encoded=json_encode($references,JSON_THROW_ON_ERROR);
             if(strlen($encoded)>2000)self::fail();
             [$connection,$pdo]=$this->assets->primary($uid);$session=self::session($pdo);$entered=false;
