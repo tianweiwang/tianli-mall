@@ -79,6 +79,12 @@ def check_network_subnets_available(mapping):
     return subnets
 
 
+def network_override_content(mapping):
+    subnets = validate_network_subnets(mapping)
+    return {'networks': {name: {'ipam': {'config': [{'subnet': subnets[name]}]}}
+                         for name in ['preview', 'ingress']}}
+
+
 def load(root):
     state = json.loads((root / 'state.json').read_text(encoding='utf-8'))
     if not state['project'].startswith('mall-preview-') or Path(state['repo']).resolve() != REPO:
@@ -92,6 +98,17 @@ def load(root):
         raise RuntimeError('Full runtime cannot use the legacy fixture')
     if state.get('image_runtime', False):
         validate_network_subnets(state.get('network_subnets'))
+        if 'network_override' in state:
+            raise RuntimeError('Image runtime does not use a source network override')
+    elif 'network_subnets' in state or 'network_override' in state:
+        expected = root / 'networks.compose.json'
+        override = state.get('network_override')
+        if (not isinstance(override, str) or override != expected.as_posix()
+                or expected.is_symlink() or not expected.is_file() or expected.resolve() != expected):
+            raise RuntimeError('Network override must be the regular file in its owned preview root')
+        content = json.loads(expected.read_text(encoding='utf-8'))
+        if content != network_override_content(state.get('network_subnets')):
+            raise RuntimeError('Network override differs from the recorded preview subnets')
     if not isinstance(state.get('release_runtime', False), bool) or (
             state.get('release_runtime', False) and not state.get('image_runtime', False)):
         raise RuntimeError('Invalid preview release mode')
@@ -138,7 +155,7 @@ def environment(state, root):
         env['MARKETPLACE_QUEUE_AUTOSTART'] = 'true' if queue_autostart else 'false'
     for key, value in state['images'].items():
         env[f'PREVIEW_{key}_IMAGE'] = value
-    if image_runtime:
+    if 'network_subnets' in state:
         subnets = validate_network_subnets(state.get('network_subnets'))
         env.update(PREVIEW_NETWORK_SUBNET=subnets['preview'], PREVIEW_INGRESS_SUBNET=subnets['ingress'])
     return env
@@ -152,6 +169,8 @@ def compose_command(state, *arguments):
     argv = [DOCKER, 'compose', '--project-name', state['project'], '--file', str(COMPOSE)]
     if state.get('image_runtime', False):
         argv += ['--file', str(IMAGE_COMPOSE)]
+    elif 'network_override' in state:
+        argv += ['--file', state['network_override']]
     return [*argv, *arguments]
 
 
@@ -213,12 +232,12 @@ def ensure_runtime_queue(state, root):
 
 def assert_resources(state):
     project = state['project']
-    subnets = validate_network_subnets(state.get('network_subnets')) if state.get('image_runtime', False) else None
+    subnets = validate_network_subnets(state.get('network_subnets')) if 'network_subnets' in state else None
     network = json.loads(native([DOCKER, 'network', 'inspect', project + '_preview']))[0]
     if network['Internal'] is not True or network['Labels'].get('marketplace.preview') != project:
         raise RuntimeError('Preview network isolation mismatch')
     if subnets and [row.get('Subnet') for row in network['IPAM'].get('Config') or []] != [subnets['preview']]:
-        raise RuntimeError('Preview network subnet differs from the recorded image instance')
+        raise RuntimeError('Preview network subnet differs from the recorded preview instance')
     ids = native([DOCKER, 'ps', '-aq', '--filter', 'label=com.docker.compose.project=' + project]).split()
     if not ids:
         raise RuntimeError('No owned preview containers')
@@ -245,7 +264,7 @@ def assert_resources(state):
             if ingress['Labels'].get('marketplace.preview') != project:
                 raise RuntimeError('Foreign preview ingress rejected')
             if subnets and [row.get('Subnet') for row in ingress['IPAM'].get('Config') or []] != [subnets['ingress']]:
-                raise RuntimeError('Ingress subnet differs from the recorded image instance')
+                raise RuntimeError('Ingress subnet differs from the recorded preview instance')
         if item['HostConfig']['Privileged']:
             raise RuntimeError('Privileged preview container rejected')
         web_port = '80/tcp' if state.get('image_runtime', False) else '8080/tcp'
@@ -411,8 +430,8 @@ def main():
                         help='prepare only, with full runtime: persist marketplace Supervisor autostart')
     parser.add_argument('--php-image', help='prepare only: existing PHP image, paired with --nginx-image and --full-runtime')
     parser.add_argument('--nginx-image', help='prepare only: existing Nginx image, paired with --php-image and --full-runtime')
-    parser.add_argument('--preview-subnet', help='image prepare only: RFC1918 IPv4 CIDR; check host routes separately')
-    parser.add_argument('--ingress-subnet', help='image prepare only: separate RFC1918 IPv4 CIDR; check host routes separately')
+    parser.add_argument('--preview-subnet', help='new prepare only: RFC1918 IPv4 CIDR, paired with ingress; check host routes separately')
+    parser.add_argument('--ingress-subnet', help='new prepare only: separate RFC1918 IPv4 CIDR, paired with preview; check host routes separately')
     parser.add_argument('--hours', default='0.5', help='New unpaid order deadline in hours; timers only, 0 disables new deadlines')
     args = parser.parse_args()
     root = args.root.resolve()
@@ -432,7 +451,9 @@ def main():
     if image_runtime:
         network_subnets = validate_network_subnets({'preview': args.preview_subnet, 'ingress': args.ingress_subnet})
     elif args.preview_subnet is not None or args.ingress_subnet is not None:
-        raise RuntimeError('Explicit preview subnets are only used by new image runtime instances')
+        if args.action != 'prepare' or root.exists():
+            raise RuntimeError('Explicit preview subnets require prepare with a new root')
+        network_subnets = validate_network_subnets({'preview': args.preview_subnet, 'ingress': args.ingress_subnet})
     if args.legacy_review_fixture and (args.action != 'prepare' or root == DEFAULT_ROOT.resolve() or args.port == 18180):
         raise RuntimeError('Legacy fixture requires prepare, its own root and a separate local port')
     if args.full_runtime and (args.action != 'prepare' or args.legacy_review_fixture or root.exists()):
@@ -442,7 +463,7 @@ def main():
             raise RuntimeError('Preview already recorded; use status, never reinitialize it')
         if not 1024 <= args.port <= 65535:
             raise RuntimeError('Invalid local preview port')
-        if image_runtime:
+        if network_subnets is not None:
             network_subnets = check_network_subnets_available(network_subnets)
         with socket.socket() as probe:
             probe.bind(('127.0.0.1', args.port))
@@ -460,7 +481,7 @@ def main():
             listing = ['ps', '-aq'] if kind == 'container' else [kind, 'ls', '-q']
             if native([DOCKER, *listing, '--filter', 'label=com.docker.compose.project=' + project]):
                 raise RuntimeError('Preview identity already in use')
-        root.mkdir(parents=True, exist_ok=True)
+        root.mkdir(parents=True, exist_ok=image_runtime or network_subnets is None)
         (root / 'commands').mkdir(exist_ok=False)
         state = {'project': project, 'run_id': run, 'repo': REPO.as_posix(), 'base_head': head,
                  'port': args.port, 'images': images, 'scope': 'local_synthetic_preview_not_stage_acceptance',
@@ -471,8 +492,14 @@ def main():
             state['checker_image'] = args.checker_image
             state['release_env_file'] = (root / 'empty.env').as_posix()
             (root / 'empty.env').write_text('', encoding='utf-8')
-        if image_runtime:
+        if network_subnets is not None:
             state['network_subnets'] = network_subnets
+            if not image_runtime:
+                override = root / 'networks.compose.json'
+                state['network_override'] = override.as_posix()
+                with override.open('x', encoding='utf-8', newline='\n') as output:
+                    json.dump(network_override_content(network_subnets), output, ensure_ascii=False, indent=2)
+                    output.write('\n')
         with (root / 'state.json').open('x', encoding='utf-8', newline='\n') as output:
             json.dump(state, output, ensure_ascii=False, indent=2)
             output.write('\n')

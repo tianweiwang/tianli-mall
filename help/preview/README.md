@@ -140,6 +140,12 @@ r26已在原客服界面保存个人分组“预览订单回复”及“订单�
 
 `timers` 在已启动的预览应用中用原服务登记每30秒执行的唯一 `orderCancel` 任务，并启动专用 `preview-timer`（原 `console.php timer start`）。默认新订单待付款期限为30分钟；配置成功后 `serve` / `serve-api` 会连同该服务启动。原Timer还保留每60秒的自动收货扫描，按已保存发货截止执行；本预览不另建调度器，商品素材清理须另行执行 `video` 显式登记。
 
+r36为原CrontabRunServices的14项登记任务和未知调用补齐有限JSON日志。普通日志沿原 `log.timer_log` 开关，默认关闭；开启后，同一次调用的 `timer.started` 与 `timer.returned`/`timer.exception` 共用 `timer_run_id`，可在runtime/log的crontab日志中按编号与task_name查找。`returned`只表示函数返回，不表示业务成功。两项special原本始终输出的GC异常及post-commit异常/游标诊断继续保留，换为有限字段并关联编号；关闭普通日志不会新增正常事件。记录不包含异常原文、trace、参数或自定义代码；底层旧业务服务日志仍需各自核对，不能由此签完整R04。
+
+本批在独立新ISO空库实际调用原自动取消和自动收货各一次，自动收货原配置为7天，V1/legacy取消及legacy收货候选均为0；取得两组开始/返回日志、原void返回，176张应用表的完整行摘要前后相同。仅验证进程内临时开启普通日志并恢复false，未启动调度器/队列/HTTP，未运行其它任务或故障样本。原18180七服务身份/镜像/启动时间/挂载字段保持，16单及已采集业务投影保持；原常驻Timer未替换，不把一次性正常验证说成旧进程已升级。新ISO `H:/天俪商城/artifacts/multi-merchant-timer-log-20261027-r2` 的两数据库已正常停止并保卷，未做恢复或重启验收。证据见原trade目录 `r36-timer-normal.json`、`r36-runtime-final.json` 和 `r36-data-before/after.json`。
+
+新建split/source full预览也可显式传 `--preview-subnet $previewSubnet --ingress-subnet $ingressSubnet`。两值须为已核与Docker和宿主路由不重叠的RFC1918 CIDR；工具检查Docker分配，宿主路由由操作者另核。它只在新root写固定 `networks.compose.json`，继续使用专用内部网络；已有root沿保存配置使用，不把额外参数当作现有网络修改。无参数旧实例及image/release路径保持。r36-r1因默认地址池耗尽的原失败保留；r2显式子网的真实prepare、initialize和正常调用通过，不删除旧网络或挪用既有商城网络。不要把本次已占用的子网复制给另一个新实例。
+
 普通拆分预览的 `queue` 启动原marketplace专用队列消费者（`queue:work marketplace --queue=marketplace --sleep=1 --tries=1`），复用内部网络、DML角色和现有任务实现。完成资源归属检查后才保存启用标记；之后 `serve` / `serve-api` 会带上该服务。2026-10-26在18180实际验证合成员工正常登录后投递一项 `merchant.profile.read` 审计任务，原worker消费并产生唯一成功审计行，pending/reserved/delayed均归零。该结果不代表订单异步任务或完整Worker验收；该次拆分预览没有启动普通CRMEB队列。
 
 `python -X utf8 help/preview/preview.py video` 为已初始化的标准预览启用原商品视频分片；指定其他标准实例时追加 `--root <运行目录>`，旧订单兼容实例不支持此动作。命令普通停止并重新启动该实例的HTTP应用和原Timer，登记原素材清理任务；重复登记保留同一任务。启用标记绑定本实例project/run，保存在app-secrets卷；两个独立暂存目录 `/private/product-video`、`/private/product-media-scan` 使用原private-assets卷，权限0700、所有者UID1000。之后 `serve` / `serve-api` 会带上原Timer，普通停止和重建保留标记及暂存数据。

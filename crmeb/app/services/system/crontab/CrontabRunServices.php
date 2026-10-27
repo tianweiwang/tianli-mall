@@ -22,8 +22,8 @@ use app\services\order\StoreOrderTakeServices;
 use app\services\product\product\StoreProductServices;
 use app\services\system\attachment\SystemAttachmentServices;
 use app\services\user\UserSignServices;
+use crmeb\services\RuntimeLog;
 use think\facade\Cache;
-use think\facade\Log;
 
 /**
  * 执行定时任务
@@ -57,33 +57,44 @@ class CrontabRunServices
     /** One-second scheduler wake-up; the timer applies the configured Redis-time GC cadence. */
     public function marketplaceProductScanGc(): array
     {
+        $timerRun = $this->beginTimerRun('marketplaceProductScanGc');
         try {
             return app()->make(MarketplaceProductScanGcTimer::class)->tick();
         } catch (\Throwable $error) {
-            try { Log::error('MARKETPLACE_PRODUCT_SCAN_GC_UNAVAILABLE'); } catch (\Throwable $ignored) {}
+            $this->timerRunEvent($timerRun, 'timer.exception', $error);
             return ['state' => 'unavailable'];
+        } finally {
+            $this->endTimerRun($timerRun);
         }
     }
 
     /** Scan only durable V1 post-commit responsibilities; this does not dispatch other timers. */
     public function marketplaceOrderPostCommit(): array
     {
-        // A progress hint only: candidates and completion always come from the durable ledger.
-        $cursor = 0;
+        $timerRun = $this->beginTimerRun('marketplaceOrderPostCommit');
         try {
-            $hint = Cache::get('marketplace_order_post_commit_cursor');
-            if ((is_int($hint) || is_string($hint)) && preg_match('/\A(?:0|[1-9][0-9]{0,9})\z/D', (string)$hint) === 1
-                && (int)$hint <= 2147483647) $cursor = (int)$hint;
+            // A progress hint only: candidates and completion always come from the durable ledger.
+            $cursor = 0;
+            try {
+                $hint = Cache::get('marketplace_order_post_commit_cursor');
+                if ((is_int($hint) || is_string($hint)) && preg_match('/\A(?:0|[1-9][0-9]{0,9})\z/D', (string)$hint) === 1
+                    && (int)$hint <= 2147483647) $cursor = (int)$hint;
+            } catch (\Throwable $error) {
+                $this->timerRunEvent($timerRun, 'timer.cursor_read_unavailable', $error);
+            }
+            $result = app()->make(MarketplaceOrderPostCommitServices::class)->scanPending($cursor, 100);
+            $stored = false;
+            $writeError = null;
+            try { $stored = Cache::set('marketplace_order_post_commit_cursor', $result['next_cursor']) === true; }
+            catch (\Throwable $error) { $writeError = $error; }
+            if (!$stored) {
+                $this->timerRunEvent($timerRun, 'timer.cursor_write_unavailable', $writeError);
+            }
         } catch (\Throwable $error) {
-            try { Log::error('MARKETPLACE_POST_COMMIT_CURSOR_READ_UNAVAILABLE'); } catch (\Throwable $ignored) {}
+            $this->timerRunEvent($timerRun, 'timer.exception', $error);
+            throw $error;
         }
-        $result = app()->make(MarketplaceOrderPostCommitServices::class)->scanPending($cursor, 100);
-        $stored = false;
-        try { $stored = Cache::set('marketplace_order_post_commit_cursor', $result['next_cursor']) === true; }
-        catch (\Throwable $error) {}
-        if (!$stored) {
-            try { Log::error('MARKETPLACE_POST_COMMIT_CURSOR_WRITE_UNAVAILABLE'); } catch (\Throwable $ignored) {}
-        }
+        $this->endTimerRun($timerRun);
         return $result;
     }
 
@@ -98,19 +109,48 @@ class CrontabRunServices
      */
     public function __call($name, $arguments)
     {
-        $this->crontabLog($name . '方法不存在');
+        $timerRun = $this->beginTimerRun('unknown');
+        $this->timerRunEvent($timerRun, 'timer.unknown_task');
+        $this->endTimerRun($timerRun);
     }
 
-    /**
-     * 定时任务日志
-     * @param $msg
-     */
-    protected function crontabLog($msg)
+    /** Invocation-local only; the two existing always-on diagnostic paths still need an identity. */
+    private function beginTimerRun(string $taskName): array
     {
-        $timer_log_open = config("log.timer_log", false);
-        if ($timer_log_open) {
-            $date = date('Y-m-d H:i:s', time());
-            Log::write($date . $msg, 'crontab');
+        try {
+            if (!config("log.timer_log", false) && !in_array($taskName, ['marketplaceProductScanGc', 'marketplaceOrderPostCommit'], true)) return [];
+            $started = hrtime(true);
+            if (!is_int($started) || $started < 0) return [];
+            $run = ['task_name' => $taskName, 'timer_run_id' => bin2hex(random_bytes(16)), 'started_ns' => $started];
+            $this->timerRunEvent($run, 'timer.started');
+            return $run;
+        } catch (\Throwable $ignored) {
+            return [];
+        }
+    }
+
+    /** Accept no free text; custom eval may change locals without changing its original business scope. */
+    private function timerRunEvent($run, string $event, ?\Throwable $error = null): void
+    {
+        try {
+            if (!is_array($run) || array_keys($run) !== ['task_name', 'timer_run_id', 'started_ns']
+                || !is_string($run['task_name']) || !is_string($run['timer_run_id'])
+                || !is_int($run['started_ns']) || $run['started_ns'] < 0) return;
+            $now = hrtime(true);
+            if (!is_int($now) || $now < $run['started_ns']) return;
+            $elapsed = $event === 'timer.started' ? 0 : min(2147483647, intdiv($now - $run['started_ns'], 1000000));
+            RuntimeLog::timerEvent(app(), $run['task_name'], $event, $run['timer_run_id'], $elapsed, $error);
+        } catch (\Throwable $ignored) {
+            // Logging, timing and malformed diagnostics never replace the task's original result.
+        }
+    }
+
+    private function endTimerRun($run): void
+    {
+        try {
+            $this->timerRunEvent($run, 'timer.returned');
+        } catch (\Throwable $ignored) {
+            // Preserve the original return or swallowed business exception.
         }
     }
 
@@ -122,11 +162,13 @@ class CrontabRunServices
      */
     public function orderCancel()
     {
+        $timerRun = $this->beginTimerRun('orderCancel');
         try {
             app()->make(StoreOrderServices::class)->orderUnpaidCancel();
-            $this->crontabLog(' 执行未支付自动取消订单');
         } catch (\Throwable $e) {
-            $this->crontabLog('自动取消订单失败,失败原因:' . $e->getMessage());
+            $this->timerRunEvent($timerRun, 'timer.exception', $e);
+        } finally {
+            $this->endTimerRun($timerRun);
         }
     }
 
@@ -138,11 +180,13 @@ class CrontabRunServices
      */
     public function pinkExpiration()
     {
+        $timerRun = $this->beginTimerRun('pinkExpiration');
         try {
             app()->make(StorePinkServices::class)->statusPink();
-            $this->crontabLog(' 执行拼团到期订单处理');
         } catch (\Throwable $e) {
-            $this->crontabLog('拼团到期订单处理失败,失败原因:' . $e->getMessage());
+            $this->timerRunEvent($timerRun, 'timer.exception', $e);
+        } finally {
+            $this->endTimerRun($timerRun);
         }
     }
 
@@ -154,11 +198,13 @@ class CrontabRunServices
      */
     public function agentUnbind()
     {
+        $timerRun = $this->beginTimerRun('agentUnbind');
         try {
             app()->make(AgentManageServices::class)->removeSpread();
-            $this->crontabLog(' 执行自动解绑上级绑定');
         } catch (\Throwable $e) {
-            $this->crontabLog('自动解除上级绑定失败,失败原因:' . $e->getMessage());
+            $this->timerRunEvent($timerRun, 'timer.exception', $e);
+        } finally {
+            $this->endTimerRun($timerRun);
         }
     }
 
@@ -170,11 +216,13 @@ class CrontabRunServices
      */
     public function liveProductStatus()
     {
+        $timerRun = $this->beginTimerRun('liveProductStatus');
         try {
             app()->make(LiveGoodsServices::class)->syncGoodStatus();
-            $this->crontabLog(' 执行更新直播商品状态');
         } catch (\Throwable $e) {
-            $this->crontabLog('更新直播商品状态失败,失败原因:' . $e->getMessage());
+            $this->timerRunEvent($timerRun, 'timer.exception', $e);
+        } finally {
+            $this->endTimerRun($timerRun);
         }
     }
 
@@ -186,11 +234,13 @@ class CrontabRunServices
      */
     public function liveRoomStatus()
     {
+        $timerRun = $this->beginTimerRun('liveRoomStatus');
         try {
             app()->make(LiveRoomServices::class)->syncRoomStatus();
-            $this->crontabLog(' 执行更新直播间状态');
         } catch (\Throwable $e) {
-            $this->crontabLog('更新直播间状态失败,失败原因:' . $e->getMessage());
+            $this->timerRunEvent($timerRun, 'timer.exception', $e);
+        } finally {
+            $this->endTimerRun($timerRun);
         }
     }
 
@@ -202,11 +252,13 @@ class CrontabRunServices
      */
     public function takeDelivery()
     {
+        $timerRun = $this->beginTimerRun('takeDelivery');
         try {
             app()->make(StoreOrderTakeServices::class)->autoTakeOrder();
-            $this->crontabLog(' 执行自动收货');
         } catch (\Throwable $e) {
-            $this->crontabLog('自动收货失败,失败原因:' . $e->getMessage());
+            $this->timerRunEvent($timerRun, 'timer.exception', $e);
+        } finally {
+            $this->endTimerRun($timerRun);
         }
     }
 
@@ -218,11 +270,13 @@ class CrontabRunServices
      */
     public function advanceOff()
     {
+        $timerRun = $this->beginTimerRun('advanceOff');
         try {
             app()->make(StoreProductServices::class)->downAdvance();
-            $this->crontabLog(' 执行预售到期商品自动下架');
         } catch (\Throwable $e) {
-            $this->crontabLog('预售到期商品自动下架失败,失败原因:' . $e->getMessage());
+            $this->timerRunEvent($timerRun, 'timer.exception', $e);
+        } finally {
+            $this->endTimerRun($timerRun);
         }
     }
 
@@ -234,11 +288,13 @@ class CrontabRunServices
      */
     public function productReplay()
     {
+        $timerRun = $this->beginTimerRun('productReplay');
         try {
             app()->make(StoreOrderServices::class)->autoComment();
-            $this->crontabLog(' 执行自动好评');
         } catch (\Throwable $e) {
-            $this->crontabLog('自动好评失败,失败原因:' . $e->getMessage());
+            $this->timerRunEvent($timerRun, 'timer.exception', $e);
+        } finally {
+            $this->endTimerRun($timerRun);
         }
     }
 
@@ -250,11 +306,13 @@ class CrontabRunServices
      */
     public function clearPoster()
     {
+        $timerRun = $this->beginTimerRun('clearPoster');
         try {
             app()->make(SystemAttachmentServices::class)->emptyYesterdayAttachment();
-            $this->crontabLog(' 执行清除昨日海报');
         } catch (\Throwable $e) {
-            $this->crontabLog('清除昨日海报失败,失败原因:' . $e->getMessage());
+            $this->timerRunEvent($timerRun, 'timer.exception', $e);
+        } finally {
+            $this->endTimerRun($timerRun);
         }
     }
 
@@ -266,13 +324,15 @@ class CrontabRunServices
      */
     public function autoInvoice()
     {
+        $timerRun = $this->beginTimerRun('autoInvoice');
         try {
             $invoiceServices = app()->make(StoreOrderInvoiceServices::class);
             $invoiceServices->autoInvoice();
             $invoiceServices->autoInvoiceRed();
-            $this->crontabLog(' 执行自动开具/冲红电子发票');
         } catch (\Throwable $e) {
-            $this->crontabLog('自动开具/冲红电子发票失败,失败原因:' . $e->getMessage());
+            $this->timerRunEvent($timerRun, 'timer.exception', $e);
+        } finally {
+            $this->endTimerRun($timerRun);
         }
     }
 
@@ -284,11 +344,13 @@ class CrontabRunServices
      */
     public function signRemind()
     {
+        $timerRun = $this->beginTimerRun('signRemind');
         try {
             app()->make(UserSignServices::class)->sendSignRemind();
-            $this->crontabLog(' 执行未签到提醒');
         } catch (\Throwable $e) {
-            $this->crontabLog('未签到提醒失败,失败原因:' . $e->getMessage());
+            $this->timerRunEvent($timerRun, 'timer.exception', $e);
+        } finally {
+            $this->endTimerRun($timerRun);
         }
     }
 
@@ -301,11 +363,13 @@ class CrontabRunServices
      */
     public function customTimer($customCode = '')
     {
+        $timerRun = $this->beginTimerRun('customTimer');
         try {
             eval($customCode);
-            $this->crontabLog(' 自定义定时器执行成功');
         } catch (\Throwable $e) {
-            $this->crontabLog('自定义定时器执行失败,失败原因:' . $e->getMessage());
+            $this->timerRunEvent($timerRun ?? [], 'timer.exception', $e);
+        } finally {
+            $this->endTimerRun($timerRun ?? []);
         }
     }
 }

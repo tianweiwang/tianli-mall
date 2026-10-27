@@ -163,6 +163,31 @@ final class RuntimeLog
         }
     }
 
+    public static function timerEvent(App $app, string $taskName, string $event, string $runId, int $elapsedMs, ?Throwable $error = null): void
+    {
+        try {
+            $always = ($taskName === 'marketplaceProductScanGc' && $event === 'timer.exception')
+                || ($taskName === 'marketplaceOrderPostCommit'
+                    && in_array($event, ['timer.exception', 'timer.cursor_read_unavailable', 'timer.cursor_write_unavailable'], true));
+            if ((!$app->config->get('log.timer_log', false) && !$always)
+                || !in_array($taskName, ['orderCancel', 'marketplaceOrderPostCommit', 'marketplaceProductScanGc',
+                    'pinkExpiration', 'agentUnbind', 'liveProductStatus', 'liveRoomStatus', 'takeDelivery',
+                    'advanceOff', 'productReplay', 'clearPoster', 'autoInvoice', 'signRemind', 'customTimer', 'unknown'], true)
+                || !in_array($event, ['timer.started', 'timer.returned', 'timer.exception', 'timer.unknown_task',
+                    'timer.cursor_read_unavailable', 'timer.cursor_write_unavailable'], true)
+                || !self::requestIdValid($runId) || $elapsedMs < 0 || $elapsedMs > 2147483647
+                || ($event === 'timer.started' && $elapsedMs !== 0)
+                || ($event === 'timer.exception' && $error === null)
+                || ($error !== null && !in_array($event, ['timer.exception', 'timer.cursor_read_unavailable', 'timer.cursor_write_unavailable'], true))) return;
+            $record = ['event' => $event, 'source_kind' => 'timer', 'task_name' => $taskName,
+                'timer_run_id' => $runId, 'elapsed_ms' => $elapsedMs];
+            if ($error !== null) $record += self::exceptionMetadata($app, $error);
+            self::write($app, $record, 'crontab');
+        } catch (Throwable $ignored) {
+            // Task arguments, custom code and exception messages never enter timer diagnostics.
+        }
+    }
+
     public static function consoleException(App $app, Throwable $error): void
     {
         try {
