@@ -9,6 +9,11 @@
 // +----------------------------------------------------------------------
 
 import request from "@/utils/request.js";
+// #ifdef MP
+import { HTTP_REQUEST_URL } from '@/config/app';
+const normalizePublicMedia = require('@/utils/public-media');
+const publicProductMedia = response => ({ ...response, data: normalizePublicMedia(response.data, HTTP_REQUEST_URL) });
+// #endif
 
 /** Public marketplace shop identity, distinct from pickup store_list. */
 export function getMarketplaceStore(merId) {
@@ -21,9 +26,15 @@ export function getMarketplaceStore(merId) {
  *
  */
 export function getProductDetail(id) {
-	return request.get('product/detail/' + id, {}, {
+	const response = request.get('product/detail/' + id, {}, {
 		noAuth: true
 	});
+	// #ifdef MP
+	return response.then(publicProductMedia);
+	// #endif
+	// #ifndef MP
+	return response;
+	// #endif
 }
 
 /**
@@ -94,9 +105,15 @@ export function getCategoryList() {
  * @param object data
  */
 export function getProductslist(data) {
-	return request.get('products', data, {
+	const response = request.get('products', data, {
 		noAuth: true
 	});
+	// #ifdef MP
+	return response.then(publicProductMedia);
+	// #endif
+	// #ifndef MP
+	return response;
+	// #endif
 }
 
 
@@ -249,7 +266,13 @@ export function getHistoryData() {
  * @returns {*}
  */
 export function getAttr(id, type) {
-	return request.get("v2/get_attr/" + id + "/" + type);
+	const response = request.get("v2/get_attr/" + id + "/" + type);
+	// #ifdef MP
+	return response.then(publicProductMedia);
+	// #endif
+	// #ifndef MP
+	return response;
+	// #endif
 }
 /**
  * 获取首页商品列表（所有活动的）

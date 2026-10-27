@@ -18,6 +18,22 @@ python -X utf8 help/preview/preview.py accounts-file
 
 构建复用本机已有 Node、HBuilderX 和依赖缓存；首次在其他机器使用时先调整 `build-frontends.py` 顶部工具路径。没有依赖下载或生产部署步骤。`prepare` 只用于新的运行目录，已有实例使用 `status` 检查，不重复初始化。
 
+## 微信小程序本机预览
+
+使用当前 uni-app 源码和现有 Node 22/HBuilderX 插件编译。输出目录必须是仓库外的新目录；AppID 与接口地址显式指定。以下为本机已选接口测试号和18180合成预览的命令：
+
+```powershell
+$mpOutput = Join-Path 'H:/天俪商城/artifacts' ('mall-mp-' + (Get-Date -Format 'yyyyMMddHHmmss'))
+python -B -X utf8 help/preview/build-frontends.py --frontend mp-weixin --mp-output $mpOutput --api-origin http://127.0.0.1:18180 --appid wxbb73db82f69581b3 --without-live-plugin
+wechatide -c Codex open_project_window --project (Join-Path $mpOutput 'mp-weixin/dist') --window-mode fullMode
+```
+
+`--without-live-plugin` 仅供未开通原微信直播插件的本机开发预览：在一次性输入副本去掉该插件声明，保留原源码/默认构建；此预览不含直播，直播资格与正式发布继续待验。工具不会安装依赖、改原AppID、上传代码或发布。编译成功还需在开发者工具实际检查页面，不能当作微信登录、下单或真机验收。
+
+MP的商品列表、详情和规格接口会将已登记的 `/uploads/` 图片/视频地址补为所选API origin；数据库引用、金额、库存和其它业务文本保持。首页主题没有搜索/组合导航时，会按当前状态栏和胶囊高度留出内容空间。H5保持原同源行为。本机HTTP地址用于开发者工具；真机及发布需相应可达地址和正式配置。
+
+2026-10-27 本机工程已实际打开于微信开发者工具：`H:/天俪商城/artifacts/multi-merchant-miniprogram-20261027-r6/mp-weixin/dist`。首页三件商品图片正常，标题避开状态栏/胶囊；商品7详情的媒体封面、12.50元价格、库存19及原评价已读到。此批尚未验证小程序登录、下单、测试支付、客服发送或真机；后端公开上传候选也尚未接入该18180实例。重新编译后应打开新的输出工程，保留旧失败证据。
+
 `storefront` 要求实例已完成 `initialize`，仅在主题表全空时创建预览首页，使用原动态商品接口。它是 create-only 操作；已有实例已经创建首页或已有装修主题时，不重复执行，也不覆盖装修。
 
 旧订单评价兼容使用另一个新运行目录：首次 `prepare --root <新目录> --port 18181 --legacy-review-fixture`，后续 `preview.py` 命令继续指定同一 `--root`。前端构建仍输出默认预览的 `build` 目录；第二实例可复制同一源码已成功构建的三个 `dist` 到新目录的 `build/{admin,merchant,h5}/dist` 后运行 `serve`。该模式在正常初始化后才启用原旧订单创建流程；合成商品归已确认自营商家，配置零费用默认运费和200元合成余额，仅开启余额测试支付。它不切换已有18180实例，不改变已有订单版本，也不代表真实资金或非空历史迁移验收。模式不能用于已有实例。

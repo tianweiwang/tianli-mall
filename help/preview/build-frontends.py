@@ -1,6 +1,8 @@
 """Build the isolated preview from current frontend inputs, without installs.
 
 Outcome: three real dist directories at build/{merchant,admin,h5}/dist.
+The explicit mp-weixin target instead creates a new development-only output
+with a selected AppID and API origin; it does not upload or publish.
 Only external work copies are changed. Existing dependencies stay in place;
 Windows packages are junctions, while generated caches are local to build.
 Merchant/admin run sequentially. H5 uses the existing Linux two-pass adapter
@@ -77,7 +79,7 @@ def input_entries(origin):
 
 
 def inputs(frontend):
-    name = 'uni-app' if frontend == 'h5' else frontend
+    name = 'uni-app' if frontend in {'h5', 'mp-weixin'} else frontend
     origin = SOURCE / 'template' / name
     destination = OUTPUT / 'work' / 'template' / name
     rows = []
@@ -237,6 +239,59 @@ def h5_command(work, dist, folder, memory):
     return argv
 
 
+def miniprogram_build(work, dist, folder, record, args):
+    """One development compile, with explicit local target and existing plugins."""
+    plugins = OUTPUT / 'hbx-plugins'
+    plugins.mkdir()
+    sources = {name: PLUGINS / name for name in ['uniapp-cli', 'about', 'compile-dart-sass', 'uni_helpers']}
+    sources['compile-stylus'] = STYLUS
+    wanted = [{'source': str(source), 'target': str(plugins / name)} for name, source in sources.items()]
+    if not all((source / 'package.json').is_file() for source in sources.values()):
+        raise RuntimeError('Missing existing Mini Program compiler plugin')
+    setup = "$items=[Console]::In.ReadToEnd()|ConvertFrom-Json; foreach($item in $items){New-Item -ItemType Junction -Path $item.target -Target $item.source -ErrorAction Stop|Out-Null}"
+    subprocess.run(['powershell.exe', '-NoProfile', '-NonInteractive', '-Command', setup],
+                   input=json.dumps(wanted).encode('ascii'), check=True, stdout=subprocess.DEVNULL,
+                   creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+    # Only the disposable input copy uses the explicitly selected development AppID.
+    import re
+    manifest = work / 'manifest.json'
+    text = manifest.read_text('utf-8')
+    text, count = re.subn(r'("mp-weixin"\s*:\s*\{\s*"appid"\s*:\s*)"[^"]*"',
+                         lambda match: match[1] + json.dumps(args.appid), text)
+    if count != 1:
+        raise RuntimeError('Expected one mp-weixin AppID in manifest')
+    manifest.write_text(text, encoding='utf-8', newline='\n')
+    if args.without_live_plugin:
+        pages = work / 'pages.json'
+        text, count = re.subn(r',\s*"plugins"\s*:\s*\{\s*"live-player-plugin"\s*:\s*\{\s*"version"\s*:\s*"[^"]+",\s*"provider"\s*:\s*"wx2b03c6e691cd7370"\s*\}\s*\}',
+                             '', pages.read_text('utf-8'))
+        if count != 1:
+            raise RuntimeError('Expected one original WeChat live plugin declaration')
+        pages.write_text(text, encoding='utf-8', newline='\n')
+        record['not_verified'].append('WeChat live plugin: explicitly absent from this local preview')
+    env = environment('mp-weixin', args.memory_mb)
+    compiler = PLUGINS / 'uniapp-cli'
+    env.update(NODE_ENV='development', UNI_PLATFORM='mp-weixin', UNI_INPUT_DIR=str(work),
+               UNI_OUTPUT_DIR=str(dist), VUE_CLI_CONTEXT=str(compiler),
+               VUE_CLI_SERVICE_CONFIG_PATH=str(work / 'vue.config.js'),
+               UNI_HBUILDERX_PLUGINS=str(plugins), VUE_APP_API_URL=args.api_origin)
+    record['preview_only_config'].update(api_origin=args.api_origin, appid=args.appid, mode='development', watch=False)
+    record['dependencies'] = {'plugins': wanted, 'installation': False}
+    # Call the original service command once; uniapp-cli's development wrapper enables watch.
+    command(record, 'mp-weixin-build', [NODE, compiler / 'node_modules/@vue/cli-service/bin/vue-cli-service.js', 'uni-build'],
+            compiler, env)
+    app = json.loads((dist / 'app.json').read_text('utf-8'))
+    project = json.loads((dist / 'project.config.json').read_text('utf-8'))
+    if project.get('appid') != args.appid or project.get('compileType') != 'miniprogram' or not app.get('pages'):
+        raise RuntimeError('Mini Program output config does not match the selected target')
+    for page in app['pages']:
+        if not all((dist / (page + suffix)).is_file() for suffix in ['.js', '.json', '.wxml', '.wxss']):
+            raise RuntimeError('Incomplete compiled Mini Program page: ' + page)
+    project['projectname'] = 'generic-mall-local-preview'
+    save(dist / 'project.config.json', project)
+    record['compiled_main_pages'] = len(app['pages'])
+
+
 def build(frontend, args):
     folder = OUTPUT / frontend
     folder.mkdir(parents=True, exist_ok=True)
@@ -258,7 +313,10 @@ def build(frontend, args):
             history = folder / ('dist-before-' + str(time.time_ns()))
             inside(dist); inside(history)
             dist.rename(history)
-        if frontend == 'h5':
+        if frontend == 'mp-weixin':
+            dist.mkdir(exist_ok=True)
+            miniprogram_build(work, dist, folder, record, args)
+        elif frontend == 'h5':
             dist.mkdir(exist_ok=True)
             argv = h5_command(work, dist, folder, args.memory_mb)
             command(record, 'h5-build', argv, folder, os.environ.copy())
@@ -274,7 +332,7 @@ def build(frontend, args):
             command(record, 'prebuild', [NODE, check], work, env)
             cli = CACHES[frontend] / 'node_modules/@vue/cli-service/bin/vue-cli-service.js'
             command(record, 'build', [NODE, cli, 'build', '--mode', 'production', '--dest', dist], work, env)
-        if not (dist / 'index.html').is_file():
+        if frontend != 'mp-weixin' and not (dist / 'index.html').is_file():
             raise RuntimeError('Build returned without index.html')
         files = [path for path in dist.rglob('*') if path.is_file()]
         record.update(status='BUILT', finished=now(), dist_files=len(files), dist_bytes=sum(p.stat().st_size for p in files))
@@ -285,7 +343,7 @@ def build(frontend, args):
     finally:
         save(folder / 'BUILD.json', record)
         summary = {}
-        for name in ['merchant', 'admin', 'h5']:
+        for name in ['merchant', 'admin', 'h5', 'mp-weixin']:
             path = OUTPUT / name / 'BUILD.json'
             if path.exists():
                 summary[name] = json.loads(path.read_text('utf-8'))
@@ -562,16 +620,32 @@ def image_context(output, build_root):
 
 
 def main():
+    global OUTPUT
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--frontend', choices=['merchant', 'admin', 'h5', 'all'], default='merchant')
+    parser.add_argument('--frontend', choices=['merchant', 'admin', 'h5', 'mp-weixin', 'all'], default='merchant')
     parser.add_argument('--memory-mb', type=int, default=2048)
     parser.add_argument('--workers', type=int, choices=[1, 2], default=2)
     parser.add_argument('--allow-docker', action='store_true', help='Root only; only used by h5')
     parser.add_argument('--image-context', type=Path, help='prepare a new image context from existing builds; does not build')
     parser.add_argument('--build-root', type=Path, help='existing build root for --image-context; defaults to the preview build directory')
+    parser.add_argument('--mp-output', type=Path, help='mp-weixin only: a new output directory outside the repository')
+    parser.add_argument('--api-origin', help='mp-weixin only: explicit development API origin')
+    parser.add_argument('--appid', help='mp-weixin only: explicitly selected WeChat development AppID')
+    parser.add_argument('--without-live-plugin', action='store_true', help='mp-weixin development only: omit the original licensed live plugin from the input copy')
     args = parser.parse_args()
     if not 1024 <= args.memory_mb <= 4096:
         parser.error('memory-mb must be 1024..4096')
+    if args.frontend == 'mp-weixin':
+        import re
+        if (args.mp_output is None or args.api_origin is None or not isinstance(args.appid, str)
+                or re.fullmatch(r'wx[0-9a-f]{16}', args.appid) is None
+                or args.image_context is not None or args.build_root is not None or args.allow_docker):
+            parser.error('mp-weixin requires --mp-output, --api-origin and --appid, without image/H5 options')
+        OUTPUT = args.mp_output.resolve()
+        if OUTPUT.exists() or OUTPUT.is_relative_to(SOURCE.resolve()) or SOURCE.resolve().is_relative_to(OUTPUT):
+            parser.error('mp-output must be a new directory outside the repository')
+    elif args.without_live_plugin or any(value is not None for value in [args.mp_output, args.api_origin, args.appid]):
+        parser.error('mp-output/api-origin/appid are only used by mp-weixin')
     if args.image_context is not None:
         if args.allow_docker or args.frontend != 'merchant':
             parser.error('image-context cannot be combined with frontend build actions')

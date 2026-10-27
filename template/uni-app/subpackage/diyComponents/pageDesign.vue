@@ -1,5 +1,5 @@
 <template>
-  <view class="page-design" :class="bgClass">
+  <view class="page-design" :class="bgClass" :style="[homeSafeAreaStyle]">
     <view v-if="!errorNetwork" :style="colorStyle">
       <!-- #ifdef MP -->
       <view
@@ -460,6 +460,14 @@ export default {
     };
   },
   computed: {
+    homeSafeAreaStyle() {
+      // #ifdef MP
+      if (this.isHome && !this.showHomeComb && !this.isHeaderSerch) {
+        return { paddingTop: this.getHeight.barTop + this.getHeight.barHeight + 'px', boxSizing: 'border-box' };
+      }
+      // #endif
+      return {};
+    },
     // #ifdef MP
     appletStyle() {
       return {
