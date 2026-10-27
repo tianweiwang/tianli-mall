@@ -22,7 +22,7 @@ import uuid
 IMAGE_ID = re.compile(r'sha256:[0-9a-f]{64}\Z')
 CONTAINER_ID = re.compile(r'[0-9a-f]{64}\Z')
 SAFE_NAME = re.compile(r'[A-Za-z0-9][A-Za-z0-9_.-]*\Z')
-FAILURES = {'SCHEMA_UNAVAILABLE', 'SCHEMA_INCOMPATIBLE', 'RELEASE_IDENTITY_INVALID'}
+FAILURES = {'SCHEMA_UNAVAILABLE', 'SCHEMA_INCOMPATIBLE', 'RELEASE_IDENTITY_INVALID', 'RUNTIME_NOT_READY'}
 DB_FIELDS = ('TYPE', 'DRIVER', 'HOSTNAME', 'DATABASE', 'USERNAME', 'PASSWORD', 'HOSTPORT', 'CHARSET', 'PREFIX', 'DEBUG')
 ENV_KEYS = {'APP_ENV'} | {prefix + field for prefix in ('DATABASE_', 'PHP_DATABASE_') for field in DB_FIELDS}
 
@@ -308,6 +308,76 @@ def wait_nginx_healthy(args, command, project, image_id, timeout=180):
         time.sleep(min(0.5, max(0, deadline - time.monotonic())))
 
 
+def supervisor_program_states(raw, required):
+    """Read only the named programs; never expose raw status or error text."""
+    states = {}
+    for line in raw.decode('ascii').splitlines():
+        if not line.strip():
+            continue
+        match = re.fullmatch(r'([a-z-]+)\s+(RUNNING|STARTING)(?:\s+(.*))?', line.strip())
+        require(match is not None, 'RUNTIME_NOT_READY')
+        name, state, detail = match.groups()
+        require(name in required and name not in states, 'RUNTIME_NOT_READY')
+        if state == 'RUNNING':
+            require(detail is not None and re.fullmatch(r'pid [1-9][0-9]{0,9}, uptime .+', detail) is not None,
+                    'RUNTIME_NOT_READY')
+        else:
+            require(not detail, 'RUNTIME_NOT_READY')
+        states[name] = state
+    require(set(states) == set(required), 'RUNTIME_NOT_READY')
+    return states
+
+
+def wait_runtime_processes(args, command, project, image_id, timeout=180):
+    """Observe this PHP container only; do not start, restart, or repair programs."""
+    try:
+        deadline = time.monotonic() + timeout
+        container_id = invoke(command + ['ps', '--all', '--quiet', args.php_service],
+                              limit=1024, timeout=min(30, timeout)).decode().strip()
+        require(CONTAINER_ID.fullmatch(container_id), 'RUNTIME_NOT_READY')
+        while True:
+            remaining = deadline - time.monotonic()
+            require(remaining > 0, 'RUNTIME_NOT_READY')
+            rows = decode(invoke([args.docker, 'container', 'inspect', container_id],
+                                 timeout=min(30, remaining)))
+            require(isinstance(rows, list) and len(rows) == 1, 'RUNTIME_NOT_READY')
+            container = rows[0]
+            config, state = container.get('Config', {}), container.get('State', {})
+            labels = config.get('Labels', {})
+            require(container.get('Id') == container_id and container.get('Image') == image_id
+                    and labels.get('com.docker.compose.project') == project
+                    and labels.get('com.docker.compose.service') == args.php_service
+                    and state.get('Running') is True and state.get('Paused') is False
+                    and state.get('Restarting') is False, 'RUNTIME_NOT_READY')
+            environment = config.get('Env') or []
+            require(isinstance(environment, list) and all(isinstance(entry, str) for entry in environment),
+                    'RUNTIME_NOT_READY')
+            flags = [entry.split('=', 1)[1] for entry in environment
+                     if entry.startswith('MARKETPLACE_QUEUE_AUTOSTART=')]
+            require(len(flags) <= 1 and (not flags or flags[0] in ('', 'true', 'false')), 'RUNTIME_NOT_READY')
+            queue_required = bool(flags and flags[0] == 'true')
+            required = ['php-fpm', 'queue', 'timer', 'workerman']
+            if queue_required:
+                required.append('marketplace-queue')
+            health = state.get('Health', {}).get('Status')
+            require(health in ('starting', 'healthy'), 'RUNTIME_NOT_READY')
+            if health == 'healthy':
+                # The operator already controls Docker. Keep the root-only socket
+                # and www-data health check unchanged; this command only reads status.
+                remaining = deadline - time.monotonic()
+                require(remaining > 0, 'RUNTIME_NOT_READY')
+                raw = invoke([args.docker, 'exec', '--user', '0', container_id,
+                              '/usr/bin/supervisorctl', '-c', '/etc/supervisor/supervisord.conf',
+                              'status', *required], limit=4096, timeout=min(30, remaining))
+                states = supervisor_program_states(raw, required)
+                if all(value == 'RUNNING' for value in states.values()):
+                    return {'status': 'READY', 'required_programs': states,
+                            'marketplace_queue_required': queue_required}
+            time.sleep(min(0.5, max(0, deadline - time.monotonic())))
+    except Exception:
+        raise Rejected('RUNTIME_NOT_READY') from None
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--compose-file', type=Path, action='append', required=True)
@@ -317,7 +387,8 @@ def main():
     parser.add_argument('--nginx-service', default='nginx')
     parser.add_argument('--checker-image', required=True, help='operator-approved immutable sha256 image ID')
     parser.add_argument('--docker', default=shutil.which('docker') or 'docker')
-    parser.add_argument('--apply', action='store_true', help='explicitly run up, then refresh Nginx; default is check only')
+    parser.add_argument('--apply', action='store_true',
+                        help='run up, refresh Nginx and require supervised programs ready; default is schema check only')
     args = parser.parse_args()
     if sys.version_info < ((3, 12) if sys.platform == 'win32' else (3, 10)):
         print(json.dumps({'status': 'REJECTED', 'reason': 'PYTHON_VERSION_UNSUPPORTED',
@@ -341,6 +412,7 @@ def main():
         manifest = manifest_from_image(args.docker, php['Id'])
         result = check_target(args, manifest, inputs, environment)
         mode = 'CHECKED'
+        runtime = None
         if args.apply:
             repeated = read_compose(args)
             require(digest(repeated) == digest(compose))
@@ -357,11 +429,14 @@ def main():
                 invoke(command + ['up', '--no-build', '--pull', 'never', '-d', '--wait'])
                 invoke(command + ['restart', args.nginx_service])
                 wait_nginx_healthy(args, command, compose['name'], nginx['Id'])
+                runtime = wait_runtime_processes(args, command, compose['name'], php['Id'])
                 invoke(command + ['ps'])
             mode = 'APPLIED'
-        print(json.dumps({**result, 'status': mode, 'php_image': php['Id'], 'nginx_image': nginx['Id'],
-                          'checker_image': args.checker_image, 'compose_sha256': digest(compose)},
-                         ensure_ascii=False, separators=(',', ':')))
+        receipt = {**result, 'status': mode, 'php_image': php['Id'], 'nginx_image': nginx['Id'],
+                   'checker_image': args.checker_image, 'compose_sha256': digest(compose)}
+        if runtime is not None:
+            receipt['runtime'] = runtime
+        print(json.dumps(receipt, ensure_ascii=False, separators=(',', ':')))
         return 0
     except Exception as error:
         reason = error.reason if isinstance(error, Rejected) else 'SCHEMA_UNAVAILABLE'

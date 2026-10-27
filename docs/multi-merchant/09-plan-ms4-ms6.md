@@ -1279,6 +1279,8 @@ H5实际失败状态收口与后继（2026-10-18）：Run `202610171222555a7646`
 
 - 更新部署编排：商家后台静态资源与 `/merchant/` 路由、`AUTH_SESSION_EPOCH`、`AUTH_STAMP_KEY`、`marketplace.*` 配置、队列与常驻进程；按 Q2 决定构建产物的跟踪方式；按 Q3 决定是否轮换历史凭据。
 
+2026-10-28 r44已接入原发布消费者的常驻进程就绪：仅--apply在APPLIED前核本次PHP CID/镜像/项目/服务/健康及Supervisor四必需程序；实际容器配置true时要求marketplace-queue第五项，严格具名完整/唯一/RUNNING/正PID，失败固定RUNTIME_NOT_READY，不自动修复。默认CHECKED合同、www-data健康及root0700 socket保持。两新隔离正常配置实际返回四项/五项READY、各两正常GET200；CHECKED无runtime且目标App控制状态保持。原132容器所选字段/430完整挂载及18180的42观测字段（22订单/24明细）保持，新8容器正常exit0且卷保留。详见[发布说明](../../help/docker/README.md#发布就绪的常驻进程补验2026-10-28)和唯一PROGRESS，证据根为原artifacts/multi-merchant-runtime-readiness-20261028-r1。此片只验证既有固定镜像上的发布进程就绪，不是新应用包、业务消费或整个Task1/MS6验收；STARTING未动态造场景，原停止样本及R01/R02责任保留。
+
 ### Task 2: 持久化与恢复演练
 
 - 用例 R01（重启、重新部署后商家、商品、订单、上传文件仍在，队列任务按规则恢复）、R02（备份恢复到隔离环境，数据与文件核对一致，恢复后的环境仍然隔离；认证会话**不随**业务备份恢复，恢复后按 MS0b 的 epoch 轮换）。

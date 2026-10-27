@@ -83,7 +83,11 @@ python -X utf8 help/docker/deploy-marketplace.py `
   --checker-image $checkerImage --apply
 ```
 
-应用路径重新核配置和版本，使用同一固定双镜像 ID，禁止临时拉取或构建；然后执行原 `up --wait` 并刷新 Nginx。刷新后在180秒内核同一容器、项目、服务及固定镜像，并等待其健康状态为 `healthy`，才返回 `APPLIED`；无健康检查、异常状态或超时均保留现场并返回 `APPLY_FAILED`，不自动重启或重建。镜像内启动版本门仍保留。操作期间不得并行修改配置或迁移；这不宣称消除了全部外部并发窗口。多份 Compose 使用重复 `--compose-file` 参数，非默认服务名使用 `--php-service` / `--nginx-service`，项目可用 `--project-name` 指定。
+应用路径重新核配置和版本，使用同一固定双镜像 ID，禁止临时拉取或构建；然后执行原 `up --wait` 并刷新 Nginx。刷新后在180秒内核同一Nginx容器、项目、服务及固定镜像，并等待其健康状态为 `healthy`，再完成下述PHP常驻进程检查，才返回 `APPLIED`；无健康检查、异常状态或超时均保留现场并返回 `APPLY_FAILED`，不自动重启或重建。镜像内启动版本门仍保留。操作期间不得并行修改配置或迁移；这不宣称消除了全部外部并发窗口。多份 Compose 使用重复 `--compose-file` 参数，非默认服务名使用 `--php-service` / `--nginx-service`，项目可用 `--project-name` 指定。
+
+发布成功前还会在独立180秒期限内核本次PHP容器的ID、固定镜像、Compose项目/服务和运行健康状态，再以已有Docker操作权限执行固定、只读的Supervisor具名状态查询。`php-fpm / queue / timer / workerman`必须各出现一次、为RUNNING并有正PID；实际容器环境`MARKETPLACE_QUEUE_AUTOSTART=true`时还必须满足`marketplace-queue`。未设置、空值或false沿入口默认只要求四项；false不是强制停止可选队列。STARTING只允许有界等待，其他非就绪、缺失或异常查询返回固定`RUNTIME_NOT_READY`及原`APPLY_FAILED/changes_may_have_occurred`，保留现场。检查本身不start/restart、修改权限或修复程序。
+
+成功的`APPLIED`回执增加`runtime.status=READY`、`runtime.required_programs`（固定名称与RUNNING）及`runtime.marketplace_queue_required`。默认`CHECKED`仍只核版本兼容，不查询进程、启动应用或增加runtime字段。Supervisor控制socket继续root所有/0700，业务worker和demo健康检查用户不变；不要给www-data增加控制socket权限。此结果是进程就绪快照，不能代替队列业务消费、Timer业务或稳定性验收。
 
 源码或静态页面变化后重复“构建 → 默认检查 → 已授权的 apply”，不要直接运行 `up --build`。发布后的快照、页面与业务验证仍按原验收责任执行；优化栈入口默认 `http://127.0.0.1:8011/`，MySQL、Redis、FPM 和 Workerman 仅在 Compose 网络内访问。
 
@@ -108,6 +112,12 @@ python -X utf8 help/docker/deploy-marketplace.py `
 三角色实际HTTP登录、商家me及商品列表通过；两件合成商品价格20.15/30.25、库存各100。默认七开关关闭时，公开列表只显示自营商品；该实例尚无自营商品，实际正常返回空列表。浏览器已打开顾客首页和商家登录入口，未将入口渲染当成浏览器完整交易验收。日常应用实际为production、DML用户仅SELECT/INSERT/UPDATE/DELETE，认证配置与schema1检查通过；真实私有卷九目录UID/GID33、0700，六类原存储构造器正常，Nginx不挂私有卷，bootstrap夹具卷独立。
 
 41个原预览容器的身份、状态、启动时间、镜像、重启数及挂载保持，旧绑定控制源码哈希保持，临时版本检查容器零残留。汇总证据在仓库外 `artifacts/multi-merchant-release-compose-20261027-r1/verification.json`。未运行负向、故障、并发、恢复或K样本；真实支付、生产部署、完整MS6和正式验收仍待完成。
+
+### 发布就绪的常驻进程补验（2026-10-28）
+
+r44已用既有已审不可变双镜像和检查器，在新18196默认配置、18197显式开启多商户队列配置沿原预览工具实际完成发布。两次APPLIED分别包含四项/五项RUNNING；具名原生状态及正PID观测相符，控制socket仍700/root，www-data原健康检查exit0。两环境各GET login/info与公开products，四次HTTP/业务状态均200，不据此签页面视觉或完整业务验收。默认CHECKED在配置已准备但尚无App容器时通过；另一已运行目标的CHECKED也保持原11字段及容器身份/启动/重启计数，无runtime字段。最初缺运行配置的CHECKED拒绝及准备时序/网段失败原件保留，补齐原生产步骤后核真实通过，未放宽断言。
+
+原132个容器的所选控制字段及430个完整挂载对象保持，原18180的42项观测值、22订单记录/24明细保持；不扩称整个Docker inspect、全库、Redis或卷内容逐字相同。两套本轮验证实例已沿原stop正常退出0，具名卷保留，本轮临时版本检查容器无残留。只改发布消费者，无新应用镜像/前端构建或生产部署；STARTING仅源合同审查，停止的负向、故障、并发、恢复和K样本保持NOT RUN；本轮未验证业务任务消费。证据位于`artifacts/multi-merchant-runtime-readiness-20261028-r1`，实际运行根分别为`multi-merchant-runtime-readiness-default-20261028-r1`和`multi-merchant-runtime-readiness-queue-20261028-r1`；本批不等于完整MS6验收。
 
 ### HTTP 请求关联与日志字段
 

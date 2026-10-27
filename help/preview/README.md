@@ -275,7 +275,9 @@ python -X utf8 help/preview/preview.py accounts-file --root $releaseRoot
 
 日常应用配置由实际 `.env.application.example` 生成，填入本实例连接、认证配置和已确认自营商家ID，使用 `APP_ENV=production`，七个业务开关保持false。此模式用于发布运行检查，**不提供测试支付或交易体验**；交易体验继续使用原testing预览。初始化自身仍采用原隔离testing流程，不能拿引导进程环境代替日常应用配置。bootstrap私有夹具卷和日常 `private-assets` 分开，后者从镜像首次初始化九个私有目录。
 
-`runtime` 准备配置后调用原 `deploy-marketplace.py --apply`，经过真实版本检查、固定镜像启动及Nginx刷新后的健康检查，成功才报告入口可用；不直接启动另一套preview应用服务。原拆分动作在此模式不可用。失败保留原回执和实例，不自动覆盖配置、放宽权限或清空数据。此模式不修改已有实例，不代表已获生产部署授权或已完成完整MS6及恢复验收。
+`runtime` 准备配置后调用原 `deploy-marketplace.py --apply`，经过真实版本检查、固定镜像启动、Nginx刷新后健康检查及PHP具名常驻进程就绪检查，成功才报告入口可用；不直接启动另一套preview应用服务。原拆分动作在此模式不可用。失败保留原回执和实例，不自动覆盖配置、放宽权限或清空数据。此模式不修改已有实例，不代表已获生产部署授权或已完成完整MS6及恢复验收。
+
+r44已补发布就绪消费者：四默认程序必须RUNNING，prepare显式`--marketplace-queue-autostart`时再要求第五项；APPLIED附固定runtime READY及具名结果，默认CHECKED不变。控制socket仍root/0700，www-data健康检查保持，不由检查自动启动或修复程序。新18196/18197分别实际通过四项/五项、两次默认CHECKED和各两个正常GET；两套验证实例随后正常停止并保留数据卷，当前交易预览18180及其22订单/24明细保持。详细行为、有限范围与保留失败见[发布说明](../docker/README.md#发布就绪的常驻进程补验2026-10-28)；只证明进程就绪，不代签任务消费、真机或生产运行。
 
 2026-10-27本机新18188已沿上述路径完成原发布四服务首装、默认CHECKED、实际APPLIED与刷新后健康确认，五个Supervisor程序RUNNING。平台/商家/顾客真实HTTP登录通过，商家商品列表读到两件原合成商品及20.15/30.25价格、各100库存；生产默认开关关闭时，公开列表正确返回无自营商品。实际私有卷九目录UID/GID33、0700，日常数据库角色仅DML，认证与schema检查通过。浏览器首页/商家登录入口已打开核对，原两页随后恢复；完整交易和浏览器角色操作不由本批代验。运行目录为 `artifacts/multi-merchant-release-runtime-20261027-r1`，私有账号仍在其 `private/preview-accounts.json`；汇总位于 `artifacts/multi-merchant-release-compose-20261027-r1/verification.json`。旧41容器及原绑定控制源码保持，生产部署及完整MS6尚未完成。
 
