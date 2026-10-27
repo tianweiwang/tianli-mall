@@ -8,7 +8,7 @@
     <template v-if="view && view.kind === 'root'">
       <view class="fulfillment-content">
       <view class="heading">包裹概况</view>
-      <view class="notice fulfillment-status" role="status">{{ rootText(view.summary, view.aftersale) }}</view>
+      <view class="notice fulfillment-status" role="status">{{ normalEmptyRootText || rootText(view.summary, view.aftersale) }}</view>
       <view v-if="view.summary" class="quantities">
         <text>共 {{ view.summary.original }} 件</text><text>已发 {{ view.summary.shipped }} 件</text>
         <text>已收 {{ view.summary.received }} 件</text><text>包裹 {{ view.summary.child_count }} 个</text>
@@ -16,7 +16,9 @@
       <view v-if="view.aftersale" class="line secondary">未发取消 {{ view.summary.cancelled_unshipped }} 件 · 已验收退件 {{ view.summary.returned_accepted }} 件 · 暂停发货 {{ view.aftersale.pending_cancel_quantity }} 件 · 待处理退件 {{ view.aftersale.pending_return_quantity }} 件</view>
       <view v-if="view.aftersale" class="line secondary">履约结束时间（含取消、退件）：{{ time(view.aftersale.fulfillment_completed_at) }}</view>
       <template v-if="view.children !== undefined">
-        <view v-if="view.children === null" class="notice">包裹资料暂不可用</view>
+        <template v-if="view.children === null">
+          <view v-if="!normalEmptyRootText" class="notice">包裹资料暂不可用</view>
+        </template>
         <template v-else>
           <view class="heading packages-heading">订单包裹</view>
           <view v-if="view.children.count === 0" class="notice">暂无履约包裹</view>
@@ -114,6 +116,15 @@ export default {
   },
   data() { return { expanded: {} }; },
   computed: {
+    normalEmptyRootText() {
+      const view = this.view;
+      if (this.loading || this.error || !view || view.kind !== 'root' || view.summary !== null || view.children !== null) return '';
+      const order = view.order;
+      if (!order || typeof order !== 'object' || Array.isArray(order) || (order.paid !== 0 && order.paid !== '0')) return '';
+      if (order.is_cancel === 1 || order.is_cancel === '1') return '订单已取消，暂无履约包裹';
+      if (order.is_cancel === 0 || order.is_cancel === '0') return '订单待付款，暂无履约包裹';
+      return '';
+    },
     orderFormImageContext() { return this.view && this.view.kind === 'child' ? {kind: this.formReader, rootId: this.view.package.root_order_id, childId: this.view.package.id} : null; },
     orderFormImageGroups() { return this.view && this.view.kind === 'child' ? this.view.package.custom_form : []; },
     orderFormImagesActive() { return this.formImagesActive && !this.loading && !this.error; }
