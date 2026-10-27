@@ -13,7 +13,7 @@
       <!-- 商品信息 -->
       <view class="broadcast-details_box" v-if="productId && productInfo.id">
         <view class="broadcast_details_img">
-          <image class="goods-img" :src="productInfo.image" />
+          <image class="goods-img" :src="publicImage(productInfo.image)" />
         </view>
         <view class="broadcast_details_picBox">
           <view
@@ -45,7 +45,7 @@
           <view class="broadcast_details_img">
             <image
               class="goods-img"
-              :src="orderInfo.cartInfo[0].productInfo.image"
+              :src="publicImage(orderInfo.cartInfo[0].productInfo.image)"
             />
             <view class="broadcast_details_model">
               {{ orderInfo.cartInfo ? orderInfo.cartInfo.length : 0
@@ -89,7 +89,7 @@
           >
             <view class="day-box" v-if="item.show">{{ item._add_time }}</view>
             <view class="chat-item" :class="{ 'right-box': item.uid == myUid }">
-              <image class="avatar" :src="item.avatar" mode=""></image>
+              <image class="avatar" :src="publicImage(item.avatar)" mode=""></image>
               <!-- 消息 -->
               <view
                 class="msg-box"
@@ -112,7 +112,7 @@
                 v-if="item.msn_type == 5"
                 @click="goProduct(item)"
               >
-                <image :src="item.productInfo.image" mode="widthFix"></image>
+                <image :src="publicImage(item.productInfo.image)" mode="widthFix"></image>
                 <view class="info">
                   <view class="price">
                     <text>{{ $t(`￥`) }}</text>
@@ -133,7 +133,7 @@
                 <view>{{ $t('商家') }}：{{ item.orderInfo.merchant_name_snapshot }}</view>
                 <view>{{ $t('下单时间') }}：{{ item.orderInfo.add_time_y }} {{ item.orderInfo.add_time_h }}</view>
                 <view v-for="product in item.orderInfo.cartInfo" :key="product.id" class="summary-product">
-                  <image :src="product.productInfo.image" mode="aspectFill" class="summary-image" />
+                  <image :src="publicImage(product.productInfo.image)" mode="aspectFill" class="summary-image" />
                   <view class="summary-product-info">
                     <view>{{ product.productInfo.store_name }}</view>
                     <view>{{ $t('规格') }}：{{ product.sku_name }}</view>
@@ -157,7 +157,7 @@
                 >
                 <view class="info">
                   <image
-                    :src="item.orderInfo.cartInfo[0].productInfo.image"
+                    :src="publicImage(item.orderInfo.cartInfo[0].productInfo.image)"
                   ></image>
                   <view class="product-info">
                     <view class="name line2"
@@ -227,6 +227,19 @@
         </block>
       </swiper>
     </view>
+    <!-- #ifdef MP -->
+    <view
+      v-if="chatPrivatePreview"
+      class="chat-private-preview"
+      @tap="closeChatMaterialPreview"
+      @touchmove.stop.prevent
+    >
+      <view class="chat-private-preview-image">
+        <image :src="chatPrivatePreview" mode="aspectFit" @tap.stop />
+      </view>
+      <button class="chat-private-preview-close" @tap.stop="closeChatMaterialPreview">{{ $t('关闭') }}</button>
+    </view>
+    <!-- #endif -->
     <canvas
       canvas-id="canvas"
       v-if="canvasStatus"
@@ -263,6 +276,7 @@ import emojiList from "@/utils/emoji";
 import Loading from "@/components/Loading";
 import colors from "@/mixins/color";
 import { HTTP_REQUEST_URL } from "@/config/app.js";
+import { publicMediaUrl } from "@/utils/public-media.js";
 import { createPlatformChatScope, isPlatformChatRef } from '@/api/platform-chat-materials';
 export default {
   name: "adminChat_index",
@@ -274,6 +288,7 @@ export default {
       chatMaterialBlocked: false,
       chatMaterialSelecting: false,
       chatMaterialVisible: true,
+      chatPrivatePreview: '',
       loading: false,
       sysHead: statusBarHeight,
       isTool: false,
@@ -470,13 +485,21 @@ export default {
     });
   },
   methods: {
+    publicImage(value) {
+      // #ifdef MP
+      return publicMediaUrl(value, HTTP_REQUEST_URL);
+      // #endif
+      // #ifndef MP
+      return value;
+      // #endif
+    },
     platformChatContext() {
       const socket = this.$socket, identity = socket && socket.identity || {}, state = this.$store.state.app;
       return { kind: 'api', uid: Number(identity.uid), peer: Number(this.toUid), token: state.token, revision: state.authRevision,
         route: String(this.$page && this.$page.fullPath || '/pages/extension/customer_list/chat'),
         ready: this.chatMaterialVisible && !!socket && socket.isAuthenticated('api') && socket.authenticatedCredential === state.token };
     },
-    chatMaterialImage(row) { return isPlatformChatRef(row.msn) ? row._platformChatURL || '' : row.msn; },
+    chatMaterialImage(row) { return isPlatformChatRef(row.msn) ? row._platformChatURL || '' : this.publicImage(row.msn); },
     releaseChatMaterialViews() {
       this.closeChatMaterialPreview();
       if (this._chatMaterials) this._chatMaterials.releaseViews();
@@ -488,16 +511,26 @@ export default {
         .catch(() => { if (this.chatMaterialVisible) this.chatMaterialNotice = '部分私有原图尚未读取，请重新查看当前聊天'; });
     },
     closeChatMaterialPreview() {
+      this.chatPrivatePreview = '';
       if (this._chatPrivatePreviewOpen && typeof uni.closePreviewImage === 'function') uni.closePreviewImage({ fail: () => { this.chatMaterialNotice = '原图预览关闭尚未确认'; } });
       this._chatPrivatePreviewOpen = false;
     },
     previewImage(row) {
       const n = this.chatMaterialImage(row);
       if (isPlatformChatRef(row.msn)) {
-        if (!this._chatMaterials || !this._chatMaterials.owns(n) || typeof uni.closePreviewImage !== 'function') {
+        if (!this._chatMaterials || !this._chatMaterials.owns(n)) {
+          this.chatMaterialNotice = '当前身份或原图预览权限尚未确认'; return;
+        }
+        // #ifdef MP
+        this.chatPrivatePreview = n;
+        return;
+        // #endif
+        // #ifndef MP
+        if (typeof uni.closePreviewImage !== 'function') {
           this.chatMaterialNotice = '当前身份或原图预览关闭能力尚未确认'; return;
         }
         this._chatPrivatePreviewOpen = true;
+        // #endif
       }
       uni.previewImage({
         urls: [n],
@@ -767,6 +800,62 @@ body {
 /* #endif */
 </style>
 <style lang="scss">
+/* #ifdef MP */
+.chat-private-preview {
+  position: fixed;
+  z-index: 1000;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  padding-top: calc(16px + env(safe-area-inset-top));
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  background: rgba(0, 0, 0, 0.92);
+}
+
+.chat-private-preview-image {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-private-preview-image image {
+  width: 100%;
+  height: 100%;
+}
+
+.chat-private-preview-close {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 96px;
+  min-height: 44px;
+  height: 44px;
+  margin: 16px 0 0;
+  padding: 0 16px;
+  border-radius: 22px;
+  background: #fff;
+  color: #333;
+  font-size: 14px;
+  line-height: 20px;
+  text-align: center;
+}
+
+.chat-private-preview-close::after {
+  border: 0;
+}
+/* #endif */
 .chat-box {
   display: flex;
   flex-direction: column;
