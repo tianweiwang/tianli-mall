@@ -728,6 +728,12 @@ MS5 Task2只增加 `crmeb/services/pay/marketplace/` 下PaymentAdapter/PaymentAc
 
 同Run关闭已实际完成：原cleanup helper实际exit0后按原ID移除；固定final关闭工具摘要 `e50c518c91b4c06d6852f273ecac5b40f16d59f8f8905ce4590c1661be0afc6b` 严格核完整普通证明及环境绑定，原MySQL/Redis正常stop，原3容器/唯一内部网络/6卷按原身份非force移除。Root独立复核源摘要 `954aa1dd725566e9658dfbe4ec188210bd111f17decd403a21724620916bc707` 实际6条双标签原生查询exit0/stderr空/count0，业务收据摘要未变。环境公开两值均由原生created容器核对并绑定同Run/source/CID/freeze。此结果限NORMAL_CANCEL_INTERNAL_TEST_DRIVER_ONLY及原普通内部链，不能据此完成Task5全部、MS4或MS5；HTTP/真实认证/DOM、真实支付/退款、跨进程attempt、wallclock daemon及用户停止的样本仍NOT RUN，创建gate仍关闭。两实现提交为 `cf285465c`（03环境说明）与上述 `1a1de7daf`（21PHP/09），均仅本地。
 
+#### Task 5 本机小程序自然超时正常补充（2026-10-28）
+
+r45复用r35原小程序及18180现有Timer，仅补正常非空小程序证据；旧H5自然关闭证据保留。先核完整legacy候选为空、唯一orderCancel任务10每30秒且任务缓存一致，捕获原期限JSON字符串0.5及旧15条保存截止。沿实际活动Compose在既有App执行原timers.php configure 0.025，不运行附带基础up的timers动作；原页面基础款107一件保存根23/cp638189278295228416/19.90＋2.00＝21.90、90秒截止。提交后即configure捕获0.5，旧V1保存截止不变；原Timer在截止后11秒系统取消，release32唯一关联reserve31、system/null/qty1，SKU库存7→6→7，商品11→10→11、销量回原值。未付款、未人工取消或直接调用扫描。
+
+原生详情关闭/按钮消失及三端认证读取金额/规格/状态一致。最终42观测字段35同，旧22单/24明细完整摘要、7旧支付尝试/30库存流水/14履约动作和范围、捕获商品/全部规格保持；旧15截止逐值同，配置/缓存/helper last_value/任务和任务缓存均恢复，7服务所选字段及60完整挂载对象保持。证据沿原trade目录r45-*，交付摘要见r45-delivery.json。官方运行时组件事件/提交tap与截图仅本机390；待付款底部控件部分可见，不签完整布局或其它设备。无业务源码/构建/新调度器，不代签其它任务、正式微信/真机/真实资金、完整Task5或阶段；停止负向/故障/并发/恢复/K保持NOT RUN，历史证据缺口保留。
+
 ### Task 6: 商家订单操作
 
 **持久履约接线采用（2026-10-18，实施前）：** 沿本 Task6 已采用的外部 DESIGN-r3（59699B/`99b3519e4ed84956f7359e8e17a9dff2e5d15061ba079aa48776b711291b3888`）、WRITE-SEAMS-r2（51310B/`674b9169005dd94d31e00a35ce19a728e7ee9c581386d2027dd1c026afe78d80`）及 Root writer R2 采用记录，现将已审候选合入当前通用商城分支。精确范围见仓库外 `artifacts/ms4-fulfillment-writer-preparation/INTEGRATION-MANIFEST-r1.json`，20877B/`14edcc85d5e212ccc0b06bbe28081928eeee9d85594439a3fcfa03a28ca23b9f`：20项中19项合入，唯一暂缓为实际 Worker Timer；迁移 CLI、Input、Fulfillment DAO/Services 四个真新增，纯 Planner 精确区间增量、共享拆单/发货两源、旧取消/评价/回调/扫描六源、旧售后首次写五源，以及测试付款身份断言两组修正。Root 已核全部实际前后 bytes/hash、报告摘要和14项完整字面正逆链；其余已审新源及 Planner 既有检查收据保持。剩余12 PHP（含暂缓 Worker）语法均实际 native0，收据28718B/`f12cf6848b3d637c48de294fb63109d1e46ba5d2163534fb9f87ec0067353897`；最初语法容器因只读根缺 `/tmp` 得到原生254，补专用 tmpfs 后通过，非应用/SQL失败。
