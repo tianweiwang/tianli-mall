@@ -32,7 +32,7 @@
       </template></el-table-column>
       <el-table-column label="状态" min-width="130"><template slot-scope="scope">
         <div>{{ status(scope.row) }}</div><p class="field-note">{{ paymentStatus(scope.row) }} · {{ scope.row.is_cancel === 1 ? '已取消' : '未取消' }}</p>
-        <p v-if="scope.row.fulfillment_summary === null" class="field-note">履约资料暂不可用</p>
+        <p v-if="scope.row.fulfillment_summary === null" class="field-note">{{ normalUnpaidText(scope.row) || '履约资料暂不可用' }}</p>
         <template v-else>
           <p class="field-note">已发货 {{ scope.row.fulfillment_summary.shipped }} / {{ scope.row.fulfillment_summary.original }} 件</p>
           <p class="field-note">已收货 {{ scope.row.fulfillment_summary.received }} 件 · {{ scope.row.fulfillment_summary.child_count }} 个包裹</p>
@@ -55,7 +55,7 @@
 <script>
 import { api } from '../../api';
 import { fieldNames, tableScroll } from '../../accessibility';
-import { orderList, orderQuery, orderRecordId, orderStatus } from '../../domain/order';
+import { orderList, orderQuery, orderRecordId, orderStatus, normalUnpaidFulfillmentText } from '../../domain/order';
 import { formatTime } from '../../domain/people';
 
 export default {
@@ -66,6 +66,7 @@ export default {
   beforeDestroy() { this.revision += 1; },
   methods: {
     time: formatTime, status: orderStatus,
+    normalUnpaidText(order) { return this.loading || this.error ? '' : normalUnpaidFulfillmentText(order); },
     testPayment(order) { return (order.marketplace_trade_version === 1 || order.marketplace_trade_version === '1') && order.pay_type === 'marketplace_test'; },
     paymentStatus(order) { if (order.paid !== 1) return '未支付'; return this.testPayment(order) ? '已支付（测试支付）' : '已支付'; },
     search() { if (this.loading) return; this.page = 1; this.load(); },

@@ -24,7 +24,7 @@
         <div class="fulfillment-actions"><el-button class="fulfillment-control" :disabled="loading || shipmentSending" @click="$router.push('/aftersales')">查看本店售后申请</el-button></div>
       </section>
       <h2 class="section-heading">履约信息</h2>
-      <p v-if="order.fulfillment_summary === null" class="field-note" role="status">履约资料暂不可用</p>
+      <p v-if="order.fulfillment_summary === null" class="field-note" role="status">{{ normalUnpaidText || '履约资料暂不可用' }}</p>
       <dl v-else class="order-facts">
         <div><dt>履约商品数量</dt><dd>{{ order.fulfillment_summary.original }}</dd></div>
         <div><dt>已发货数量</dt><dd>{{ order.fulfillment_summary.shipped }}</dd></div>
@@ -43,7 +43,7 @@
         <p class="field-note">本次提交结果尚未确认。重试会保留相同商品、数量与物流信息。离开或重载页面可能丢失重试内容，先前结果也可能已经保存，请先重试确认。</p>
         <div class="fulfillment-actions"><el-button class="fulfillment-control" :disabled="shipmentSending || loading" @click="sendShipment">重试本次请求</el-button></div>
       </section>
-      <fulfillment-packages v-if="snapshot" :snapshot="snapshot" :loading="loading" :detail="packageDetail"
+      <fulfillment-packages v-if="snapshot && !normalUnpaidText" :snapshot="snapshot" :loading="loading" :detail="packageDetail"
         :detail-loading="packageLoading" :detail-error="packageError" :form-images="visibleFormImages"
         @form-image-load="formImageLoaded" @form-image-error="formImageFailed" @page="load" @view="openPackage"
         @retry-detail="retryPackage" @close-detail="closePackage" />
@@ -104,7 +104,7 @@
 <script>
 import { api } from '../../api';
 import { tableScroll } from '../../accessibility';
-import { orderRecordId, orderStatus, orderPackages, orderPackageDetail, shipmentIntent, shipmentResult } from '../../domain/order';
+import { orderRecordId, orderStatus, normalUnpaidFulfillmentText, orderPackages, orderPackageDetail, shipmentIntent, shipmentResult } from '../../domain/order';
 import { formatTime } from '../../domain/people';
 import FulfillmentPackages from './components/fulfillmentPackages.vue';
 import ShipmentForm from './components/shipmentForm.vue';
@@ -119,6 +119,12 @@ export default {
     shipmentPreview: null, shipmentPreviewIdentity: '', shipmentPending: null, shipmentPendingIdentity: '', shipmentSending: false, shipmentPreparing: false, shipmentError: '', shipmentFeedback: '',
     shipmentGeneration: 0, savedNeedsRefresh: false }),
   computed: {
+    normalUnpaidText() {
+      if (this.loading || this.error || !this.snapshot || this.snapshot.root !== this.order
+        || this.snapshot.packages !== null || this.packageLoading || this.packageError || this.packageDetail
+        || !this.current(this.readIdentity)) return '';
+      return normalUnpaidFulfillmentText(this.order);
+    },
     formImageSource() { return this.snapshot; },
     formImageGroups() { return this.snapshot ? this.snapshot.root.custom_form : null; },
     formImageActive() { return !!this.snapshot && this.order === this.snapshot.root && !this.loading && !this.error && this.current(this.readIdentity); },

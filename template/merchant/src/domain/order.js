@@ -167,6 +167,13 @@ export function orderDetail(value) {
     user_address: text(recipient.user_address) }, mark: text(order.mark), custom_form: savedForms(order.custom_form) };
 }
 
+export function normalUnpaidFulfillmentText(order) {
+  if (!order || typeof order !== 'object' || Array.isArray(order) || order.marketplace_trade_version !== 1
+    || order.paid !== 0 || order.fulfillment_summary !== null) return '';
+  if (order.is_cancel === 0) return '订单待付款，暂无履约包裹';
+  return order.is_cancel === 1 ? '订单已取消，暂无履约包裹' : '';
+}
+
 export function orderStatus(order) {
   if (order.is_cancel === 1) return '已取消';
   if (order.paid === 0) return '待支付';
