@@ -121,6 +121,18 @@ python -X utf8 help/docker/deploy-marketplace.py `
 
 13个候选运行源码哈希与已审构建输入相同，原45个预览容器和两份绑定源码保持；新四服务healthy、五个原Supervisor程序RUNNING。浏览器核对顾客首页及商家登录入口后恢复原18180页面，仍保留两标签；未重跑完整浏览器交易。语法、实际HTTP/日志、资源保持和入口证据在仓库外 `artifacts/multi-merchant-http-logs-20261027-r1/verification.json`。停止的负向、故障、并发、恢复及K样本保持NOT RUN。
 
+### 队列关联与处理状态
+
+队列诊断沿原生任务编号关联投递、处理轮次、进入任务和返回。四个框架事件写有限字段的 `queue.processing`、`queue.returned`、`queue.exception`、`queue.failed`，包含连接类别、原生job ID、尝试次数及框架状态，不保存完整载荷或异常原文。`returned`只表示处理函数返回；`repeat_attempt`只表示再次处理轮次，`released`等标志不替代Redis确认。普通BaseJobs额外记录实际进入函数和其原吞错位置，原执行、删除、释放规则保持。
+
+原普通Queue封装保留两次入队尝试，记录 `queue.submit_returned` 或固定失败事件；正常返回不提升为严格持久化确认。由HTTP调用时使用当前请求编号，CLI来源明确记录为console。AuditLogJob在其原生RPUSH正确认后，以 `queue.submitted` 桥接已认证MerchantContext编号、独立任务编号及job ID；原六键签名载荷不增加字段，数据库提交与严格删除确认完成后才写 `queue.audit_completed`。当前业务Controller没有自动调用此审计任务，登录或读取本人资料不等于自动投递。
+
+通用BaseJobs异常、Queue最终入队失败和全局CLI report改用有限字段。console的异常渲染、框架状态输出、其他业务任务自有日志及失败任务表的原载荷/异常存储仍有各自范围；失败任务数据保留原重试用途。这里不宣称全部Worker输出或完整R04已经通过，停止的故障、重试故障、并发及恢复样本不因此恢复执行。
+
+正常验证（2026-10-27）：新专用18190实例沿原发布流程实际apply，复用既有正常Worker验证的身份、审计和业务投影断言。合法服务认证后经原AuditLogJob投递一项，由常驻消费者产生唯一成功审计；source context编号、独立任务编号及原生job ID贯通五条有限日志。再经原Queue封装投递原CheckQueueJob，由普通消费者写入本次合成检查标记，对应四条有限日志。两类任务均为首次正常处理，两队列的pending/reserved/delayed全零，商品/SKU/订单/用户余额投影不变，五个Supervisor程序状态及PID保持。未用HTTP登录代替任务投递，也未手动调用fire。
+
+当前ThinkPHP日志目录 `/var/www/runtime/log` 内文件及PHP容器当时全部stdout/stderr，以12项实际凭据、配置秘密及合成检测值作内存精确扫描，零匹配；不保存原始日志或私密扫描数组。运行8个受核来源（7个PHP和Nginx配置）与构建输入一致，49旧容器及两份旧绑定源码保持，三角色登录、消费后的正常API和商家浏览器入口可用。汇总证据为仓库外 `artifacts/multi-merchant-queue-logs-20261027-r1/verification.json`。这只证明两项正常任务及本次日志样本，不替代完整Worker、重试或正式验收。
+
 ## PHP 8.2 兼容性验证
 
 镜像构建后、切换容器前，先做静态验证。`Candidate` 模式检查运行时版本与扩展、平台依赖、应用 lint、运行期诊断、图像输出比对，以及九项离线集成用例：

@@ -13,7 +13,7 @@ namespace crmeb\utils;
 
 use think\facade\Config;
 use think\facade\Queue as QueueThink;
-use think\facade\Log;
+use crmeb\services\RuntimeLog;
 
 /**
  * Class Queue
@@ -158,10 +158,8 @@ class Queue
         $res = QueueThink::{$this->action()}(...$jodValue);
         if (!$res) {
             $res = QueueThink::{$this->action()}(...$jodValue);
-            if (!$res) {
-                Log::error('加入队列失败，参数：' . json_encode($this->getValues($data)));
-            }
         }
+        RuntimeLog::queueSubmitted(app(), $res);
         $this->clean();
         return $res;
     }

@@ -27,6 +27,10 @@ return [
         'LogLevel' => [],
         'LogWrite' => [],
         'QueueStartListener' => [\app\listener\queue\QueueStartListener::class],
+        \think\queue\event\JobProcessing::class => [\app\listener\queue\QueueLogListener::class],
+        \think\queue\event\JobProcessed::class => [\app\listener\queue\QueueLogListener::class],
+        \think\queue\event\JobExceptionOccurred::class => [\app\listener\queue\QueueLogListener::class],
+        \think\queue\event\JobFailed::class => [\app\listener\queue\QueueLogListener::class],
         'UserLoginListener' => [\app\listener\user\LoginListener::class],
         'AdminLoginListener' => [\app\listener\admin\AdminLoginListener::class],//管理员登录
         'UserRegisterListener' => [\app\listener\user\RegisterListener::class], //用户注册后置事件

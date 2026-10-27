@@ -13,6 +13,7 @@ use crmeb\exceptions\AuthSessionException;
 use crmeb\exceptions\AuthUnavailableException;
 use crmeb\exceptions\MerchantNotFoundException;
 use crmeb\services\AuthConfigGuard;
+use crmeb\services\RuntimeLog;
 use PDO;
 use think\db\connector\Mysql;
 use think\exception\HttpException;
@@ -71,6 +72,7 @@ final class AuditLogJob
             $id = $queue->push(self::class, $submission, self::QUEUE);
             // MarketplaceRedis returns this only after a positive native RPUSH acknowledgement.
             if (!is_string($id) || preg_match('/^[A-Za-z0-9]{32}$/D', $id) !== 1) throw new AuthUnavailableException();
+            RuntimeLog::queueSubmitted(app(), $id, $ctx->requestId, $requestId);
             return $id;
         } catch (AuthException|HttpException $error) {
             throw $error;
@@ -119,6 +121,7 @@ final class AuditLogJob
                 throw new AuthSessionException();
             }
             $submission = self::verifySubmission($data);
+            RuntimeLog::queueEvent(app(), $job, 'queue.handler_started', null, $submission['requestId']);
             self::withDatabase(function (Mysql $connection, PDO $pdo) use (&$ctx, $submission): void {
                 $connection->transaction(function () use (&$ctx, $submission, $connection, $pdo): void {
                     if (Db::connect() !== $connection || $connection->getPdo() !== $pdo || !$pdo->inTransaction()) {
@@ -138,6 +141,7 @@ final class AuditLogJob
             // The actual RedisJob delegates to the strict named connector's exact ZREM.
             $job->delete();
             if (!$job->isDeleted()) throw new AuthUnavailableException();
+            RuntimeLog::queueEvent(app(), $job, 'queue.audit_completed', null, $submission['requestId']);
         } catch (AuthException|HttpException $error) {
             throw $error;
         } catch (Throwable $error) {

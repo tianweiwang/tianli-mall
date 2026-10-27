@@ -48,9 +48,11 @@ class ExceptionHandle extends Handle
      */
     public function report(Throwable $exception): void
     {
-        // CLI/worker reporting remains on its original path; this change covers HTTP only.
+        // Keep CLI ignore rules while avoiding raw exception messages in the log sink.
         if ($this->app->runningInConsole()) {
-            parent::report($exception);
+            if (!$this->isIgnoreReport($exception)) {
+                \crmeb\services\RuntimeLog::consoleException($this->app, $exception);
+            }
             return;
         }
         $denied = ($exception instanceof \crmeb\exceptions\AuthException
