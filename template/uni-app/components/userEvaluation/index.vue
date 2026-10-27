@@ -3,7 +3,7 @@
 		<view class="evaluateItem" v-for="(item, indexw) in reply" :key="indexw">
 			<view class="pic-text acea-row row-middle">
 				<view class="pictrue">
-					<image :src="item.avatar"></image>
+					<image :src="publicImage(item.avatar)"></image>
 				</view>
 				<view class="acea-row row-middle">
 					<view class="acea-row row-middle" style="margin-right: 15rpx;">
@@ -17,7 +17,7 @@
 			<view class="evaluate-infor">{{ item.comment }}</view>
 			<view class="imgList acea-row">
 				<view class="pictrue" v-for="(itemn, indexn) in item.pics" :key="indexn">
-					<image :src="itemn" class="image" @click='getpreviewImage(indexw, indexn)'></image>
+					<image :src="publicImage(itemn)" class="image" @click='getpreviewImage(indexw, indexn)'></image>
 				</view>
 			</view>
 			<view class="reply" v-if="item.merchant_reply_content">
@@ -29,6 +29,8 @@
 	</view>
 </template>
 <script>
+	import { publicMediaUrl } from '@/utils/public-media.js';
+	import { HTTP_REQUEST_URL } from '@/config/app.js';
 	export default {
 		props: {
 			reply: {
@@ -40,10 +42,18 @@
 			return {};
 		},
 		methods: {
+			publicImage(value) {
+				// #ifdef MP
+				return publicMediaUrl(value, HTTP_REQUEST_URL);
+				// #endif
+				// #ifndef MP
+				return value;
+				// #endif
+			},
 			getpreviewImage: function(indexw, indexn) {
 				uni.previewImage({
-					urls: this.reply[indexw].pics,
-					current: this.reply[indexw].pics[indexn]
+					urls: this.reply[indexw].pics.map(picture => this.publicImage(picture)),
+					current: this.publicImage(this.reply[indexw].pics[indexn])
 				});
 			}
 		}
