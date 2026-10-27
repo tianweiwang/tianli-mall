@@ -1,6 +1,16 @@
 import { openOrderFormPrivateScope, isPrivateOrderFormImage, orderFormImageAsset } from '@/api/marketplace-order-form-private.js';
 
-function imageKey(group, field, index, reference) { return JSON.stringify([String(group.product_id), group.definition_sha256, field.field_index, index, reference]); }
+function imageKey(group, field, index, reference) {
+  const raw = JSON.stringify([String(group.product_id), group.definition_sha256, field.field_index, index, reference]);
+  // #ifdef MP
+  let key = 'k';
+  for (let i = 0; i < raw.length; i++) key += raw.charCodeAt(i).toString(16).padStart(4, '0');
+  return key;
+  // #endif
+  // #ifndef MP
+  return raw;
+  // #endif
+}
 function signature(vm) { return JSON.stringify([vm.orderFormImageContext, vm.orderFormImageGroups, vm.orderFormImagesActive]); }
 
 // Only transient display paths live here. Original field.value arrays remain the saved answers.
