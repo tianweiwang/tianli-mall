@@ -10,6 +10,7 @@ use app\dao\marketplace\order\MarketplaceOrderRefundDao;
 use crmeb\compat\think\orm\db\connector\Mysql;
 use app\services\marketplace\order\MarketplaceOrderInput;
 use crmeb\exceptions\AuthUnavailableException;
+use crmeb\services\RuntimeLog;
 use crmeb\services\pay\marketplace\PaymentAccount;
 use crmeb\services\pay\marketplace\PaymentAccountResolver;
 use crmeb\services\pay\marketplace\PaymentAdapter;
@@ -86,13 +87,15 @@ final class MarketplacePaymentServices
             if($reason!==null){
                 // The observation transaction has rolled back. This is a distinct bounded hold transaction, not a saved fact or ACK.
                 $this->outside($connection,$pdo);
-                $this->transaction($connection,$pdo,function()use($pdo,$uid,$orderId,$orderNo,$row,$reason):array{
+                $held=$this->transaction($connection,$pdo,function()use($pdo,$uid,$orderId,$orderNo,$row,$reason):array{
                     return $this->dao->holdEvidenceFailure($pdo,$uid,$orderId,$orderNo,$row['id'],$row,$reason,self::now());
                 });
+                $this->logSavedPayment('payment.hold_saved',$held,$admission['attempt_id'],'createPayment');
                 self::unavailable();
             }
             throw $error;
         }
+        $this->logSavedPayment('payment.fact_saved',$saved,$admission['attempt_id'],'createPayment');
         return self::dto($saved,$row['id']);
     }
 
@@ -204,14 +207,15 @@ final class MarketplacePaymentServices
                         return $this->finalApplicationReadback($connection,$pdo,$uid,$orderId,$orderNo,$before,$saved);
                     });
                 }catch(\Throwable $conflictError){
-                    $this->holdUnsavedObservation($connection,$pdo,$uid,$orderId,$orderNo,$attemptId,$row,$initialPayment,$conflictError);
+                    $this->holdUnsavedObservation($connection,$pdo,$uid,$orderId,$orderNo,$attemptId,$row,$initialPayment,$conflictError,$op);
                     throw $conflictError;
                 }
             }else{
-                $this->holdUnsavedObservation($connection,$pdo,$uid,$orderId,$orderNo,$attemptId,$row,$initialPayment,$error);
+                $this->holdUnsavedObservation($connection,$pdo,$uid,$orderId,$orderNo,$attemptId,$row,$initialPayment,$error,$op);
                 throw $error;
             }
         }
+        $this->logSavedPayment('payment.fact_saved',$saved,$attemptId,$op,true);
         // Inconsistent root values were not repaired or disguised. The actual observation/hold may be saved, but no stable DTO is claimed.
         if(!$saved['root_payment_consistent'])self::unavailable();return $saved;
     }
@@ -303,15 +307,47 @@ final class MarketplacePaymentServices
 
     /** Unsavable evidence never becomes an ACK; retain only the bounded first hold in a fresh actual transaction. */
     private function holdUnsavedObservation(ConnectionInterface $connection,PDO $pdo,int $uid,int $orderId,string $orderNo,
-        string $attemptId,array $original,?array $initialPayment,\Throwable $error): void
+        string $attemptId,array $original,?array $initialPayment,\Throwable $error,string $operation): void
     {
         $reason=self::evidenceFailure($error);if($reason===null)return;
         $this->outside($connection,$pdo);
-        $this->transaction($connection,$pdo,function()use($pdo,$uid,$orderId,$orderNo,$attemptId,$original,$initialPayment,$reason):array{
+        $held=$this->transaction($connection,$pdo,function()use($pdo,$uid,$orderId,$orderNo,$attemptId,$original,$initialPayment,$reason):array{
             if($initialPayment!==null)$this->dao->closedCancellationProof($pdo,$uid,$orderId,$orderNo,$initialPayment);
             return $this->dao->holdObservationFailure($pdo,$uid,$orderId,$orderNo,$attemptId,$original,$reason,self::now());
         });
+        $this->logSavedPayment('payment.hold_saved',$held,$attemptId,$operation,true);
         self::unavailable();
+    }
+
+    /** Read only the returned committed snapshot; diagnostic projection cannot affect payment behavior. */
+    private function logSavedPayment(string $event,mixed $saved,string $attemptId,string $operation,bool $observation=false): void
+    {
+        try {
+            $locked=$observation?($saved['locked']??null):$saved;
+            if(!is_array($locked)||!is_array($locked['attempts']??null)||count($locked['attempts'])>1024)return;
+            $row=null;
+            foreach($locked['attempts'] as $candidate){
+                if(($candidate['id']??null)===$attemptId){if($row!==null)return;$row=$candidate;}
+            }
+            if($row===null)return;
+            $evidence=$row['evidence'];
+            if(!is_array($evidence['observations']??null)||count($evidence['observations'])>8
+                ||!is_array($evidence['exceptions']??null)||count($evidence['exceptions'])>72)return;
+            $createState=null;
+            foreach($evidence['observations'] as $entry){
+                if(($entry['fact']['op']??null)==='createPayment')$createState=$entry['fact']['result']['state']??null;
+            }
+            $state=$evidence['application']!==null?'applied':($evidence['first_succeeded']!==null?'succeeded_observed':
+                ($evidence['first_closed']!==null?'closed':($createState==='pending'&&self::descriptor($row)!==null?'pending':'unresolved')));
+            $codes=[];
+            foreach($evidence['exceptions'] as $entry)$codes[]=$entry['code'];
+            $codes=array_values(array_unique($codes));
+            $registry=$locked['registry'];
+            RuntimeLog::paymentSaved($this->app,$event,$locked['root']['id'],$attemptId,$operation,$state,
+                $registry['fulfillment_hold'],$registry['hold_reason'],$codes);
+        } catch (\Throwable $ignored) {
+            // Never expose the snapshot, change an ACK, or replace the original payment exception.
+        }
     }
 
     private static function customerIdentity(int $uid,string $orderNo): void

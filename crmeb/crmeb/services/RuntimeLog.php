@@ -135,6 +135,61 @@ final class RuntimeLog
         }
     }
 
+    public static function paymentSaved(App $app, string $event, int $orderId, string $attemptId, string $operation,
+        string $savedState, int $fulfillmentHold, ?string $holdReason, array $exceptionCodes): void
+    {
+        try {
+            if (!in_array($event, ['payment.fact_saved', 'payment.hold_saved'], true)
+                || $orderId < 1 || $orderId > 2147483647
+                || preg_match('/\A[1-9][0-9]{0,19}\z/D', $attemptId) !== 1
+                || (strlen($attemptId) === 20 && strcmp($attemptId, '18446744073709551615') > 0)
+                || !in_array($operation, ['createPayment', 'queryPayment', 'closePayment'], true)
+                || !in_array($savedState, ['applied', 'succeeded_observed', 'closed', 'pending', 'unresolved'], true)
+                || !in_array($fulfillmentHold, [0, 1], true)) return;
+            $codes = ['BINDING_MISMATCH', 'CLOSED_THEN_SUCCESS', 'SUCCESS_REF_CHANGED', 'OTHER_WINNER',
+                'ROOT_CANCELLED', 'RESERVE_RELEASED', 'MERCHANT_UNAVAILABLE', 'FULFILLMENT_DISABLED', 'ROOT_PAYMENT_MISMATCH'];
+            if (($fulfillmentHold === 0 && $holdReason !== null)
+                || ($fulfillmentHold === 1 && !in_array($holdReason, [...$codes, 'EVIDENCE_CAPACITY', 'FACT_KEY_COLLISION'], true))
+                || !array_is_list($exceptionCodes) || count($exceptionCodes) > count($codes)) return;
+            foreach ($exceptionCodes as $code) if (!in_array($code, $codes, true)) return;
+            $exceptionCodes = array_values(array_unique($exceptionCodes));
+            sort($exceptionCodes);
+            $source = self::paymentSource($app);
+            if ($source === null) return;
+            $record = ['event' => $event] + $source + ['order_id' => $orderId, 'attempt_id' => $attemptId,
+                'operation' => $operation, 'saved_state' => $savedState, 'fulfillment_hold' => $fulfillmentHold,
+                'hold_reason' => $holdReason, 'exception_codes' => $exceptionCodes];
+            self::write($app, $record, $fulfillmentHold === 1 ? 'warning' : 'info');
+        } catch (Throwable $ignored) {
+            // A diagnostic failure never changes a committed payment result or the caller's error.
+        }
+    }
+
+    public static function paymentDiagnostic(App $app, string $event, ?Throwable $error = null): void
+    {
+        try {
+            if (!in_array($event, ['payment.alipay_callback_error', 'payment.alipay_verification_error',
+                'payment.alipay_transfer_failed', 'payment.alipay_transfer_error'], true)) return;
+            $source = self::paymentSource($app);
+            if ($source === null) return;
+            $record = ['event' => $event] + $source;
+            if ($error !== null) $record += self::exceptionMetadata($app, $error);
+            self::write($app, $record, 'error');
+        } catch (Throwable $ignored) {
+            // Provider data, callback parameters and exception messages never enter this record.
+        }
+    }
+
+    private static function paymentSource(App $app): ?array
+    {
+        if ($app->runningInConsole()) {
+            return ['source_kind' => 'console', 'request_id' => null, 'diagnostic_id' => bin2hex(random_bytes(16))];
+        }
+        $request = $app->request;
+        if (!$request instanceof Request) return null;
+        return ['source_kind' => 'http_request', 'request_id' => $request->runtimeRequestId(), 'diagnostic_id' => null];
+    }
+
     private static function exceptionMetadata(App $app, Throwable $error): array
     {
         $class = get_class($error);

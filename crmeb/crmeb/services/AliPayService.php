@@ -15,7 +15,6 @@ use Alipay\EasySDK\Payment\Wap\Models\AlipayTradeWapPayResponse;
 use app\services\pay\PayServices;
 use app\services\system\SystemPemServices;
 use think\facade\Event;
-use think\facade\Log;
 use think\facade\Route as Url;
 use Alipay\EasySDK\Kernel\Config;
 use Alipay\EasySDK\Kernel\Factory;
@@ -271,8 +270,7 @@ class AliPayService
                     return 'success';
                 }
             } catch (\Exception $e) {
-                Log::error($e->getMessage());
-                Log::error('支付宝异步会回调成功,执行函数错误。错误单号：' . $postOrder['out_trade_no']);
+                $this->logPaymentDiagnostic('payment.alipay_callback_error', $e);
             }
         }
         return 'fail';
@@ -288,7 +286,7 @@ class AliPayService
         try {
             return Factory::payment()->common()->verifyNotify($param);
         } catch (\Exception $e) {
-            Log::error('支付宝回调成功,验签发生错误，错误原因:' . $e->getMessage());
+            $this->logPaymentDiagnostic('payment.alipay_verification_error', $e);
         }
         return false;
     }
@@ -310,13 +308,22 @@ class AliPayService
             if ($this->response->success($result)) {
                 return $result;
             } else {
-                Log::error('支付宝转账失败，失败原因:' . $result->msg . ' | ' . $result->subCode . ' | ' . $result->subMsg);
+                $this->logPaymentDiagnostic('payment.alipay_transfer_failed');
                 return false;
             }
         } catch (\Exception $e) {
             // 记录日志并返回false
-            Log::error('支付宝转账失败，失败原因:' . $e->getMessage());
+            $this->logPaymentDiagnostic('payment.alipay_transfer_error', $e);
             return false;
+        }
+    }
+
+    private function logPaymentDiagnostic(string $event, ?\Throwable $error = null): void
+    {
+        try {
+            RuntimeLog::paymentDiagnostic(app(), $event, $error);
+        } catch (\Throwable $ignored) {
+            // Even application lookup for diagnostics must preserve provider handling.
         }
     }
 
