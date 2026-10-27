@@ -1145,6 +1145,8 @@ Run `202610181718152c21cc` 的原初始化9项、MS5四命令、早期16项、fi
 
 正常覆盖补齐（2026-10-18，实施前记录）：Root 已逐段核对现有正常入口，money_only 只有申请后撤回、商家正常驳回、平台正常驳回；两次批准分别属于 cancel_unshipped 和 return_goods。原三类库存行为责任保持，仅退款批准成功及库存完全不写尚未被该固定正常链覆盖。这是验收缺口，不是活动 Run 的失败。依据仓库外 next-acceptance-source-inventory-r1 的有限源码盘点，下一正常链沿真实已付保存来源、真实登录角色和原认证路由补齐；仅用显式隔离测试付款驱动，独立核金额额度、原生 action/镜像/审计的精确允许差分，以及库存、销量和库存流水完整不变。保留原固定链、全部原计数及断言，不直接写 paid/金额/演员，也不执行真实机构退款。当前冻结 57390fb 的活动 Run 不插入本后继增量，实施和新来源运行结果分别记录。
 
+2026-10-27本机正常增量r38：当前H5静态源与5个关键SFC核同，经原顾客上传/申请及商家3核对/批准完成root14/item14的money_only 1.00元，售后5；三端实际页面及顾客/平台保护接口同为APPROVED/NONE/UNSUPPORTED，confirmed0/held1、quote可用7.88。原16单完整行、商品/SKU库存销量/库存流水及支付记录的二进制安全原快照保持，7服务身份相同；新图CLAIMED归属及实际授权下载字节核同。额外三表观察器以未检查的json_encode(raw row)做摘要，旧12 action/4 file遇二进制列变空摘要，原old_rows_unchanged=true已由r38-aftersale-delta-corrected明确撤销；原失败不改写。旧4 refund行非空摘要可核同，旧action/file全字节保持仍无可靠原before，不能回填；改用serialize(row)建立当前lossless快照只供后续。该正常预览不是新clean完整N1、fresh B或退款资金验收，N1仍未勾。证据沿原trade目录r38-*、说明沿help/preview/README，原完整要求与停止样本保留。
+
 - [ ] N1：在新 clean 来源的正常验收链完成 money_only 合法批准及上述独立零库存差分；完整 Task7 和原停止样本状态保持。
 
 ### Task 8: 评价
