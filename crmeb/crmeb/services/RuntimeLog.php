@@ -247,6 +247,23 @@ final class RuntimeLog
         }
     }
 
+    public static function orderMaintenanceDiagnostic(App $app, string $event, ?Throwable $error = null): void
+    {
+        try {
+            $exceptions = ['order.cancel_exception', 'order.receipt_exception'];
+            if (!in_array($event, [...$exceptions, 'order.cancel_returned_false', 'order.receipt_returned_false'], true)
+                || (in_array($event, $exceptions, true) !== ($error !== null))) return;
+            // Use actual HTTP/CLI provenance; no task context or order data is retained.
+            $source = self::paymentSource($app);
+            if ($source === null) return;
+            $record = ['event' => $event] + $source;
+            if ($error !== null) $record += self::exceptionMetadata($app, $error);
+            self::write($app, $record, 'error');
+        } catch (Throwable $ignored) {
+            // Diagnostics never change a maintenance transaction or its original catch behavior.
+        }
+    }
+
     private static function paymentSource(App $app): ?array
     {
         if ($app->runningInConsole()) {

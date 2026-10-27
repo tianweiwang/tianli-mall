@@ -27,6 +27,7 @@ use app\services\user\UserServices;
 use crmeb\exceptions\ApiException;
 use crmeb\utils\Str;
 use think\facade\Log;
+use crmeb\services\RuntimeLog;
 
 /**
  * 订单收货
@@ -690,11 +691,11 @@ class StoreOrderTakeServices extends BaseServices
                         ]);
                     $res = $res && $this->storeProductOrderUserTakeDelivery($order, false);
                     if (!$res) {
-                        Log::error('订单号' . $order['order_id'] . '自动收货失败');
+                        RuntimeLog::orderMaintenanceDiagnostic(app(), 'order.receipt_returned_false');
                     }
                 });
             } catch (\Throwable $e) {
-                Log::error('自动收货失败,失败原因：' . $e->getMessage() . '|' . $e->getFile() . '|' . $e->getLine());
+                RuntimeLog::orderMaintenanceDiagnostic(app(), 'order.receipt_exception', $e);
             }
 
         }

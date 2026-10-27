@@ -53,6 +53,7 @@ use crmeb\services\SystemConfigService;
 use crmeb\utils\Arr;
 use Guzzle\Http\EntityBody;
 use think\facade\Log;
+use crmeb\services\RuntimeLog;
 
 /**
  * Class StoreOrderServices
@@ -2944,7 +2945,7 @@ HTML;
                         //修改订单状态
                         $res = $res && $this->dao->update($order['id'], ['is_cancel' => 1, 'mark' => '订单未支付已超过系统预设时间']);
                         if (!$res) {
-                            Log::error('订单号' . $order['order_id'] . '自动取消订单失败');
+                            RuntimeLog::orderMaintenanceDiagnostic(app(), 'order.cancel_returned_false');
                         }
                         return true;
                     });
@@ -2954,7 +2955,7 @@ HTML;
                     $cartInfo = $cartServices->getOrderCartInfo((int)$order['id']);
 
                 } catch (\Throwable $e) {
-                    Log::error('自动取消订单失败,失败原因:' . $e->getMessage(), $e->getTrace());
+                    RuntimeLog::orderMaintenanceDiagnostic(app(), 'order.cancel_exception', $e);
                 }
             }
         }
