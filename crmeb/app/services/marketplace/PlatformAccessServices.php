@@ -29,6 +29,7 @@ final class PlatformAccessServices
         'marketplace-merchants-review' => ['PUT', 'marketplace/merchants/<id>/review', true],
         'marketplace-merchants-flags' => ['PUT', 'marketplace/merchants/<id>/flags', true],
         'marketplace-merchants-admin-employee' => ['POST', 'marketplace/merchants/<id>/admin-employee', true],
+        'marketplace-merchants-password-setup-reissue' => ['POST', 'marketplace/merchants/<id>/password-setup-reissue', true],
         'platform-assets-list' => ['GET', 'marketplace/platform-assets', false],
         'platform-assets-upload' => ['POST', 'marketplace/platform-assets', false],
         'platform-asset-categories-list' => ['GET', 'marketplace/platform-asset-categories', false],

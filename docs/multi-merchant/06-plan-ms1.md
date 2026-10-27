@@ -237,6 +237,14 @@ Task5普通交付（2026-10-12）：RUN202610112248420b0204，基线源码f78b95
 
 ### Task 6: 平台商家管理
 
+2026-10-27后续授权扩展：用户明确批准“仅未设密码员工补发首次设置链接”。下述Task6“无重发接口”保留为当时冻结版本的历史合同，本扩展增加独立 `POST /adminapi/marketplace/merchants/:id/password-setup-reissue` 和 `marketplace-merchants-password-setup-reissue` 权限叶；body仅`account`，沿原规范化，在路由目标商家内精确查员工，不新增员工列表或密码重置入口。原创建管理员接口和重复账号422行为保持。
+
+补发复用现有首次设置表/页面及24小时能力格式，不加表列。事务沿商家行首锁，重新核平台当前授权、商家审核通过/未锁定/未关闭及本店员工有效、未删除、pwd=NULL；按实际员工终止全部旧未消费设置记录（consumed_at=本次时间，包括已过期记录），保留原有效期、摘要和历史行，再创建32随机字节base64url/原始SHA256的新24h单次能力。设置表的expires_at=add_time+86400约束保持，不改到期时间作废。账号、角色、权限、密码、员工时间及业务资料保持；成功审计仅含employee_id、invalidated_count等有类型元数据，不写账号、原文凭证或链接。新能力只在本次响应/弹窗交付，失败或未知提交不自动重发。新叶由独立可检查/应用的有限DML登记，新装流程接入；原迁移不改，不自动给受限平台角色增加授权。
+
+首次设密保持原AccountChangeGuard与真正密码初始化逻辑。为处理“旧能力首读有效、锁内已被补发终止”的确定未写密码路径，锁内复查可返回内部拒绝结果，由原guard真实提交并complete后在外层返回原认证拒绝；仅此已终止能力的无写路径使用该结果。DB/未知结果/密码写入失败仍保留原fail-closed，不在finally解锁、不重试、不恢复版本。补发与首设仍按同商家行串行；停止的并发/负向/故障/恢复样本不运行，不用源码审阅冒签这些动态验收。
+
+平台商家列表/详情在拥有新增权限且目标状态有效时提供“补发首次设置链接”，输入已有账号、明确提示旧链接失效/新链接24h/不重置密码，复用原隐藏链接交付与关闭清理。实际验证只用原隔离商家3未初始化员工，原页面单次补发，核旧能力终止、新能力期限/归属、审计及原员工/商家/商品订单资金不变；本人完成首设后再从正常登录页核本店。实现、正常页面和数据验证状态只维护现有PROGRESS，不另开执行清单。
+
 **Files:**
 - Create: `crmeb/app/adminapi/route/marketplace.php`、`crmeb/app/adminapi/controller/v1/marketplace/Merchant.php`、`crmeb/app/services/marketplace/MerchantAdminServices.php`、`crmeb/app/services/marketplace/AuditLogServices.php`
 - Create（必要接线）: `PlatformAccessServices.php`、marketplace的AuditLog model/dao、adminapi的MarketplaceBoundaryMiddleware/MarketplaceScopeMiddleware及 `help/audit-regressions/isolated/ms1-platform.php`；Modify（必要调用点）: `app/Request.php`、`AdminApiExceptionHandle.php`、`HttpEndListener.php`、marketplace的MerchantDao/RoleDao/EmployeeDao/PasswordSetupDao、merchantapi/config/database.php。

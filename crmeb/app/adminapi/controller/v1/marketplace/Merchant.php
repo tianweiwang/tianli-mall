@@ -24,6 +24,8 @@ final class Merchant
     { return self::success($this->services->flags($request->platformScope(), $request->put(false))); }
     public function createAdminEmployee(Request $request): Response
     { return self::success($this->services->createAdminEmployee($request->platformScope(), $request->post(false))); }
+    public function reissuePasswordSetup(Request $request): Response
+    { return self::success($this->services->reissuePasswordSetup($request->platformScope(), $request->post(false))); }
 
     private static function success(array $data): Response
     { return Response::create(['status'=>200, 'msg'=>'操作成功', 'data'=>$data], 'json', 200); }

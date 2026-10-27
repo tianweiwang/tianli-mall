@@ -58,16 +58,18 @@ r19补齐登录Logo与订单列表缩略图的MP服务器地址，保留原图�
 
 2026-10-27 已修正个人中心订单角标：装修接口复用订单列表现有 `getOrderData` 统计，保留原退款入口。当前合成顾客的待发货/待评价为1/0，与用户资料、订单列表一致；小程序实际点击分别得到订单9一条和空列表，返回个人中心仍一致。三端订单10金额20.15元、已收货状态、商品/SKU库存及四条原售后记录保持。本次为后端修复，继续使用r19小程序工程；没有重建前端、改变订单或重复付款。证据见同一仓库外目录 `r20-theme-count-*`；旧订单混合样本、其它客户端全流程和正式发布仍按原范围待验。
 
-本机18180当前HTTP服务通过十个独立只读PHP文件运行订单统计与公开上传兼容修正，原源码工作树、数据库及其他服务保持。当前来源为 `H:/天俪商城/artifacts/multi-merchant-miniprogram-trade-20261027-r1/r21-public-upload-source/crmeb/`，逐文件SHA256见同目录上层 `r21-public-upload-preparation.json`，实际运行核对见 `r21-public-upload-final.json`。维护这个现有实例时，使用以下持久Compose保留覆盖：
+本机18180当前HTTP服务保留r21十个只读PHP覆盖，并增加r28八个首次设置链接补发相关PHP覆盖及只读迁移目录。r21来源为 `H:/天俪商城/artifacts/multi-merchant-miniprogram-trade-20261027-r1/r21-public-upload-source/crmeb/`；r28来源为同一trade目录的 `r28-password-setup-source/`，逐文件SHA256与冻结迁移副本摘要见 `r28-source-manifest.json`。原源码工作树及其他六个服务保持，实际运行核对见 `r28-runtime-check.json`。维护这个现有实例时，使用以下持久Compose保留覆盖：
 
 ```powershell
-$previewCompose = 'H:/天俪商城/artifacts/multi-merchant-preview-20261026/app-upload.compose.json'
+$previewCompose = 'H:/天俪商城/artifacts/multi-merchant-preview-20261026/app-setup.compose.json'
 docker compose --project-name mall-preview-20261026055805284f53 --file $previewCompose up -d --no-deps --timeout -1 preview-app
 docker compose --project-name mall-preview-20261026055805284f53 --file $previewCompose exec -T preview-web nginx -t -c /etc/nginx/preview.conf
 docker compose --project-name mall-preview-20261026055805284f53 --file $previewCompose exec -T preview-web nginx -s reload -c /etc/nginx/preview.conf
 ```
 
-该Compose沿原实例配置，仅替换/追加十个PHP只读挂载；它属于本机运行材料，不是通用升级工具。旧 `app-counts.compose.json` 仅含上一批统计修正，不是当前维护配置。旧来源的 `preview.py serve`、`serve-api`、`video` 等可能按旧Compose重建HTTP服务并撤销这些覆盖，应继续使用上述维护路径；不要重复initialize或改state.repo。新建预览仍使用仓库标准prepare/initialize流程及已提交源码。完整后端版本门升级与正式发布验收仍单独推进。
+该Compose仅为原HTTP服务追加上述只读来源，不更换镜像、账户、卷或网络；它属于本机运行材料，不是通用升级工具。迁移目录包含与原实例逐字一致的27个旧文件及1个新增文件，避免向只读工作树创建新挂载点。旧 `app-upload.compose.json`、`app-counts.compose.json` 不含本批补发功能，不是当前维护配置。旧来源的 `preview.py serve`、`serve-api`、`video` 等可能按旧Compose重建HTTP服务并撤销这些覆盖，应继续使用上述维护路径；不要重复initialize或改state.repo。新建预览仍使用仓库标准prepare/initialize流程及已提交源码。完整后端版本门升级与正式发布验收仍单独推进。
+
+首次设置链接补发需要独立权限叶 `marketplace-merchants-password-setup-reissue`。现有环境在维护阶段显式执行 `php help/migrations/marketplace-password-setup-reissue-menu.php apply --config-file=<私有数据库配置>`，随后执行同文件的 `check`；先读check时，`applicable`表示尚未登记（退出码1），不得当作已经完成。迁移只补一项菜单，不修改普通角色授权；权限分配仍沿原角色管理。新装预览已在原seed流程接线，既有实例不要重跑seed。生产镜像不包含help迁移目录，发布维护需携带此迁移和原依赖；本批没有升级生产镜像、修改schema版本或完成正式发布。
 
 共用图片上传兼容：顾客登录后原 `POST /api/upload/image` 支持单文件默认字段 `file`、显式 `filename=file`，以及当前聊天使用的文件字段 `pics` 和 `filename=pics`。保留 `name/url/attachment_ref` 响应；图片按真实顾客登记为 `public_upload_compat/STAGED`，保存到独立 `/uploads/customer/compat/` 目录，不写商家附件。它是公开图片，不用于新的执照、提现二维码、退款凭证或订单私有表单；这些入口继续使用已有具名接口，历史图片读取保持。
 
@@ -240,7 +242,7 @@ python -X utf8 help/preview/preview.py accounts-file --root $releaseRoot
 ## 操作顺序
 
 1. 使用 `accounts-file` 输出的本机私有文件取得平台、商家、顾客三个合成账号；顾客登录页选择“账号登录”。
-2. 平台“经营商家 → 入驻商家”可建立、审核商家并配置接单/履约开关；“建立管理员”返回仅本次显示、24小时有效的一次性首次密码设置链接，新员工应亲自完成设置，再返回员工登录页登录。链接只在创建弹窗显示；首设页读取凭证后会清除地址栏参数，刷新该页会丢失当前凭证。目前没有补发入口，已过期链接不能完成首设；商家3的新员工仍待此环节。初始化已提供一个可以直接登录的合成商家账号。
+2. 平台“经营商家 → 入驻商家”可建立、审核商家并配置接单/履约开关；“建立管理员”返回仅本次显示、24小时有效的一次性首次密码设置链接。尚未设密码的有效员工链接过期或丢失时，有独立权限的平台管理员可在审核通过、未锁定且未关闭的商家行点击“补发首次设置链接”，输入该商家已有员工账号，确认后旧未使用链接全部作废、新链接有效24小时；账号和权限保持，已设密码员工不能通过此入口重置密码。新员工亲自完成设置，再返回员工登录页登录。链接仅在本次弹窗中交付；首设页读取凭证后会清除地址栏参数，刷新该页会丢失当前凭证。初始化已提供一个可以直接登录的合成商家账号。
 3. 商家“商品列表 → 新建商品”：填写名称、分类、售价，选择本店图片并保存；在已保存SKU上调整库存，填写入库原因，再提交审核。
 4. 平台“经营商家 → 商品审核”审核通过后，商家回商品列表点击“上架”。顾客首页、所属店铺及商品详情均读取同一已上架商品。
 5. 顾客选择商品/规格/数量，加入购物车并按一家店结算，或立即购买；确认收件地址和服务端金额后提交订单。在订单详情进入付款方式，明确选择并确认测试支付。尚未付款时也可在订单详情点击“取消订单”：弹窗可选择“保留订单”或“确认取消”，提交期间付款与取消按钮均禁用，结果以原页重新读取的状态为准；取消成功后相应库存释放。
@@ -249,6 +251,8 @@ python -X utf8 help/preview/preview.py accounts-file --root $releaseRoot
 8. 另选一张已测试支付但尚未发货的订单，进入“售后服务”，选择“取消未发商品”，填写实际申请金额、原因及数量，并上传至少一张合成私有凭证。提交后商家在“多商户售后”打开记录，点击“批准申请 → 核对本次处理 → 确认提交”。平台和顾客可读取同一业务、实物和资金状态；批准取消后相应商品及SKU库存恢复，资金退款仍未完成。
 
 多规格商品沿用原商品和SKU：新建页选择“多规格”，填写规格名称和选项，点击“生成规格组合”，逐行填写售价。生成后选择第一张本店图片会填入各行空图片；也可以逐项选择SKU图片。保存后分别调整各SKU库存，提交审核、审核通过再上架。顾客购买时先选择规格，再设置数量；切换规格会重新设置起购数量，提交前以确认页金额为准。
+
+2026-10-27已在18180原平台页面为商家3员工2正常补发一次：旧首设记录2终止且保留历史字段，新记录3有效期恰好24小时，成功审计94仅记员工编号和终止数量1。员工完整行、商家、商家角色及平台角色均未改变，原商品、订单、资产、余额积分和客服资料保持。后台构建、PHP8.2语法与独立源审通过；1280/375弹窗完整，成功提示与按钮可区分，设置链接默认隐藏，关闭后清除；正常复制后已打开原首次设密页。用户本人已在原页面完成设置，员工密码初始化状态及新凭证消费已实核；随后在localhost:18180正常登录，原本店信息显示“浏览器体验商家 / 浏览器体验管理员 / 管理员”，刷新后身份保持。127.0.0.1原商家2草稿来源保持独立，最终业务快照与首设后相同。证据见同一trade目录的 `r28-menu-*`、`r28-reissue-data-*`、`r28-reissue-verification.json`、`r28-runtime-check.json` 及截图；停止的负向、并发、故障、恢复样本仍NOT RUN。
 
 2026-10-27已通过正常页面发布商品8“隔离预览多规格商品”：基础款SKU107为19.90元、库存8，升级款SKU108为29.90元、库存5。顾客H5从首页进入商品，选择升级款2件并保存59.80元未付款订单13，再点击“取消订单 → 确认取消”。升级款库存5→3→5，基础款始终8，总库存13→11→13；唯一预留14及释放15均为2件且正确关联。顾客、商家和平台读回相同规格、数量、金额及未支付/已取消状态，两端刷新仍保持。原商品、订单、资产、余额积分、素材和客服记录保持。可从首页打开此商品或商家商品列表继续操作，已有取消订单保留作核对，不必重复创建。本批未支付、未发货；小程序同商品交易和真机仍待验，H5结果不代签。证据见同一trade目录的 `r29-product-*`、`r29-order-*-three-role.json`、`r29-multisku-data-*` 和页面截图。
 

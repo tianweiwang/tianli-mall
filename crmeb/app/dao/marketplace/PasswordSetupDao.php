@@ -82,6 +82,88 @@ final class PasswordSetupDao
         return $id;
     }
 
+    /** Revoke unused capabilities and insert their replacement under the caller's merchant lock. */
+    public function reissueForPlatform(PlatformScope $scope, int $employeeId, string $raw32Hash, int $now): int
+    {
+        if ($scope->targetMerId === null || $scope->targetMerId > 4294967295
+            || $scope->permission !== 'marketplace-merchants-password-setup-reissue'
+            || $employeeId <= 0 || $employeeId > 4294967295 || strlen($raw32Hash) !== 32
+            || $now <= 0 || $now > 4294967295 - 86400) {
+            throw new InvalidArgumentException('Invalid platform password setup reissue');
+        }
+        $base = $scope->apply((new PasswordSetup())->db()->where('employee_id', '=', $employeeId));
+        self::assertTransaction($base);
+        $pending = (clone $base)->whereNull('consumed_at');
+        $before = $this->reissueRows((clone $pending)->field(self::FIELDS)->order('id', 'asc')->lock(true));
+        foreach ($before as $row) {
+            if ($row['mer_id'] !== $scope->targetMerId || $row['employee_id'] !== $employeeId
+                || $row['consumed_at'] !== null || $row['add_time'] > $now
+                || $row['expires_at'] !== $row['add_time'] + 86400) {
+                throw new AuthUnavailableException();
+            }
+        }
+        $invalidated = count($before);
+        if ($invalidated > 4294967295) {
+            throw new AuthUnavailableException();
+        }
+        if ($invalidated > 0) {
+            $ids = array_column($before, 'id');
+            if ((clone $pending)->whereIn('id', $ids)->update(['consumed_at' => $now]) !== $invalidated) {
+                throw new AuthUnavailableException();
+            }
+            $expected = array_map(static fn(array $row): array => array_replace($row, ['consumed_at' => $now]), $before);
+            $after = $this->reissueRows((clone $base)->whereIn('id', $ids)->field(self::FIELDS)->order('id', 'asc'));
+            if ($after !== $expected) {
+                throw new AuthUnavailableException();
+            }
+        }
+        if ((int)(clone $pending)->count() !== 0) {
+            throw new AuthUnavailableException();
+        }
+        $query = (new PasswordSetup())->db();
+        self::assertTransaction($query);
+        $id = (int)$query->insertGetId([
+            'mer_id' => $scope->targetMerId, 'employee_id' => $employeeId, 'token_hash' => $raw32Hash,
+            'expires_at' => $now + 86400, 'consumed_at' => null, 'add_time' => $now,
+        ]);
+        if ($id <= 0 || $id > 4294967295) {
+            throw new AuthUnavailableException();
+        }
+        $expected = [['id' => $id, 'mer_id' => $scope->targetMerId, 'employee_id' => $employeeId,
+            'expires_at' => $now + 86400, 'consumed_at' => null, 'add_time' => $now]];
+        if ($this->reissueRows($this->lookup($raw32Hash)) !== $expected
+            || $this->reissueRows((clone $pending)->field(self::FIELDS)->order('id', 'asc')) !== $expected) {
+            throw new AuthUnavailableException();
+        }
+        return $invalidated;
+    }
+
+    private function reissueRows(Query $query): array
+    {
+        $rows = [];
+        foreach ($query->select() as $row) {
+            $data = $row instanceof Model ? $row->getData() : $row;
+            $result = [];
+            foreach (self::FIELDS as $field) {
+                if (!is_array($data) || !array_key_exists($field, $data)) {
+                    throw new AuthUnavailableException();
+                }
+                $value = $data[$field];
+                if ($field === 'consumed_at' && $value === null) {
+                    $result[$field] = null;
+                    continue;
+                }
+                if ((!is_int($value) && (!is_string($value) || !ctype_digit($value)))
+                    || (int)$value <= 0 || (int)$value > 4294967295) {
+                    throw new AuthUnavailableException();
+                }
+                $result[$field] = (int)$value;
+            }
+            $rows[] = $result;
+        }
+        return $rows;
+    }
+
     private function lookup(string $tokenHash): Query
     {
         // The service supplies the raw 32-byte SHA-256 of its canonical capability.

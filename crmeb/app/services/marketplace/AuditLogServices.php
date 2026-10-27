@@ -335,7 +335,7 @@ final class AuditLogServices
                 if (!is_int($value) || $value <= 0 || $value > 4294967295) {
                     throw new AuthUnavailableException();
                 }
-            } elseif ($key === 'protected_employee_count') {
+            } elseif ($key === 'protected_employee_count' || $key === 'invalidated_count') {
                 if (!is_int($value) || $value < 0 || $value > 4294967295) {
                     throw new AuthUnavailableException();
                 }

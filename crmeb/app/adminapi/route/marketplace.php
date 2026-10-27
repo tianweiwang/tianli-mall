@@ -27,6 +27,8 @@ Route::group('marketplace', function () {
         ->option(['marketplace_permission'=>'marketplace-merchants-flags']);
     Route::post('merchants/<id>/admin-employee', 'v1.marketplace.Merchant/createAdminEmployee')->name('marketplace-merchants-admin-employee')
         ->option(['marketplace_permission'=>'marketplace-merchants-admin-employee']);
+    Route::post('merchants/<id>/password-setup-reissue', 'v1.marketplace.Merchant/reissuePasswordSetup')->name('marketplace-merchants-password-setup-reissue')
+        ->option(['marketplace_permission'=>'marketplace-merchants-password-setup-reissue']);
     Route::get('products', 'v1.marketplace.ProductReview/index')->name('marketplace-products-list')
         ->option(['marketplace_permission'=>'marketplace-products-list']);
     Route::put('products/<id>/review', 'v1.marketplace.ProductReview/review')->name('marketplace-products-review')

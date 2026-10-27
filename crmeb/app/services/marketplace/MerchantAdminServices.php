@@ -25,6 +25,7 @@ final class MerchantAdminServices
     private const REVIEW = 'marketplace-merchants-review';
     private const FLAGS = 'marketplace-merchants-flags';
     private const ADMIN_EMPLOYEE = 'marketplace-merchants-admin-employee';
+    private const PASSWORD_SETUP_REISSUE = 'marketplace-merchants-password-setup-reissue';
     private const PROFILE_FIELDS = ['name', 'logo', 'after_sale_contact', 'shipping_note'];
 
     public function __construct(
@@ -235,6 +236,67 @@ final class MerchantAdminServices
                             'employee_id' => $employeeId, 'role_id' => $roleId, 'protected_employee_count' => 0,
                         ]);
                     // The guard returns this delivery only after the real commit.
+                    return ['employee' => $employee, 'password_setup' => [
+                        'endpoint' => '/merchantapi/password/setup', 'token' => $capability,
+                        'expires_at' => $now + 86400,
+                    ]];
+                });
+            });
+        } catch (AuthException|HttpException $error) {
+            throw $error;
+        } catch (\Throwable $error) {
+            throw new AuthUnavailableException();
+        }
+    }
+
+    public function reissuePasswordSetup(PlatformScope $scope, array $body): array
+    {
+        try {
+            $this->access->authorizeScope($scope, self::PASSWORD_SETUP_REISSUE);
+            $merId = self::target($scope);
+            $body = MerchantManagementInput::body($body, ['account'], ['account']);
+            if (!is_string($body['account'])) {
+                throw new HttpException(422, '请求参数不正确', null, [], 422);
+            }
+            $account = EmployeeAuthServices::normalizeAccount($body['account']);
+            return AccountChangeGuard::runMany(self::APP, [], function () use ($scope, $merId, $account): array {
+                return MerchantManagementInput::write(function () use ($scope, $merId, $account): array {
+                    $merchant = $this->merchants->findForPlatform($scope, true);
+                    $this->access->authorizeScope($scope, self::PASSWORD_SETUP_REISSUE);
+                    if ($merchant === null) {
+                        throw new MerchantNotFoundException();
+                    }
+                    if ($merchant['review_status'] !== 1 || $merchant['security_locked'] !== 0
+                        || $merchant['closed_at'] !== null) {
+                        throw new HttpException(422, '当前商家状态不可补发首次设置链接', null, [], 422);
+                    }
+                    $target = $this->employees->lockForPlatformPasswordSetupReissue($scope, $account);
+                    if ($target === null) {
+                        throw new MerchantNotFoundException();
+                    }
+                    $employee = $target['employee'];
+                    if ($employee['mer_id'] !== $merId || $employee['account'] !== $account) {
+                        throw new AuthUnavailableException();
+                    }
+                    if ($employee['status'] !== 1) {
+                        throw new HttpException(422, '员工账号已停用', null, [], 422);
+                    }
+                    if ($target['password_unset'] !== true) {
+                        throw new HttpException(422, '员工已设置密码，不可补发首次设置链接', null, [], 422);
+                    }
+                    $now = time();
+                    $capability = rtrim(strtr(base64_encode(random_bytes(32)), '+/', '-_'), '=');
+                    $invalidated = $this->setups->reissueForPlatform($scope, $employee['id'],
+                        hash('sha256', $capability, true), $now);
+                    if ($this->employees->lockForPlatformPasswordSetupReissue($scope, $account) !== $target
+                        || $this->merchants->findForPlatform($scope) !== $merchant) {
+                        throw new AuthUnavailableException();
+                    }
+                    $this->audit->record('admin', $scope->adminId, $merId, self::PASSWORD_SETUP_REISSUE,
+                        'employee', (string)$employee['id'], 'success', [
+                            'employee_id' => $employee['id'], 'invalidated_count' => $invalidated,
+                            'protected_employee_count' => 0,
+                        ]);
                     return ['employee' => $employee, 'password_setup' => [
                         'endpoint' => '/merchantapi/password/setup', 'token' => $capability,
                         'expires_at' => $now + 86400,

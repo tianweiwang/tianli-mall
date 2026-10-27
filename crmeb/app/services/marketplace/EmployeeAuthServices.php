@@ -129,13 +129,24 @@ final class EmployeeAuthServices
             if (!is_string($passwordHash) || $passwordHash === '') {
                 throw new AuthUnavailableException();
             }
-            AccountChangeGuard::run(self::APP, (string)$employeeId,
-                function () use ($tokenHash, $employeeId, $merId, $passwordHash): void {
+            $initialized = AccountChangeGuard::run(self::APP, (string)$employeeId,
+                function () use ($tokenHash, $employeeId, $merId, $passwordHash, $setup): bool {
                     if (!$this->merchants->lockForPasswordSetup($merId)) {
                         throw new AuthSessionException();
                     }
                     $now = time();
-                    $setup = $this->validSetup($this->setups->lockForSetup($tokenHash), $now);
+                    $lockedSetup = $this->setups->lockForSetup($tokenHash);
+                    if ($lockedSetup !== null && $lockedSetup['consumed_at'] !== null) {
+                        $consumed = $lockedSetup['consumed_at'];
+                        if ($lockedSetup !== array_replace($setup, ['consumed_at' => $consumed])
+                            || (!is_int($consumed) && (!is_string($consumed) || !ctype_digit($consumed)))
+                            || (int)$consumed < (int)$setup['add_time'] || (int)$consumed > $now) {
+                            throw new AuthUnavailableException();
+                        }
+                        // No password write occurred. Complete this guard before rejecting the retired capability.
+                        return false;
+                    }
+                    $setup = $this->validSetup($lockedSetup, $now);
                     $identity = $this->employees->lockIdentityForPasswordSetup($employeeId);
                     if ($identity === null || (int)$setup['employee_id'] !== $employeeId
                         || (int)$setup['mer_id'] !== $merId
@@ -153,7 +164,14 @@ final class EmployeeAuthServices
                             (int)$setup['mer_id'], $employeeId, $now) !== 1) {
                         throw new AuthUnavailableException();
                     }
+                    return true;
                 });
+            if ($initialized === false) {
+                throw new AuthSessionException();
+            }
+            if ($initialized !== true) {
+                throw new AuthUnavailableException();
+            }
         } catch (AuthException $error) {
             throw $error;
         } catch (\Throwable $error) {

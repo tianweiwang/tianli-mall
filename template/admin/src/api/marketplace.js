@@ -21,6 +21,7 @@ export const marketplaceApi = {
   reviewMerchant: (id, review_status) => call('put', '/marketplace/merchants/' + merchantId(id) + '/review', { review_status }),
   merchantFlags: (id, body) => call('put', '/marketplace/merchants/' + merchantId(id) + '/flags', body),
   createAdminEmployee: (id, body) => call('post', '/marketplace/merchants/' + merchantId(id) + '/admin-employee', body),
+  reissuePasswordSetup: (id, account) => call('post', '/marketplace/merchants/' + merchantId(id) + '/password-setup-reissue', { account }),
   products: (query) => call('get', '/marketplace/products', query),
   approveProduct: (id) => call('put', '/marketplace/products/' + productId(id) + '/review', { action: 'approve', reason: '' }),
   rejectProduct: (id, reason) => call('put', '/marketplace/products/' + productId(id) + '/review', { action: 'reject', reason }),

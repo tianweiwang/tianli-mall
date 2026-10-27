@@ -251,6 +251,26 @@ final class EmployeeDao
         return $id;
     }
 
+    /** The merchant row is already locked; no password digest leaves this fixed-purpose read. */
+    public function lockForPlatformPasswordSetupReissue(PlatformScope $scope, string $account): ?array
+    {
+        self::assertPlatformTarget($scope);
+        if ($scope->permission !== 'marketplace-merchants-password-setup-reissue' || $account === '') {
+            throw new InvalidArgumentException('Invalid platform password setup target');
+        }
+        $query = $scope->apply((new Employee())->db()->where('account', '=', $account)->where('is_del', '=', 0));
+        self::assertTransaction($query);
+        $row = $query->field(array_merge(self::MANAGEMENT_FIELDS, ['pwd']))->lock(true)->find();
+        $data = $row instanceof Model ? $row->getData() : $row;
+        if (!is_array($data) || $data === []) {
+            return null;
+        }
+        if (!array_key_exists('pwd', $data)) {
+            throw new AuthUnavailableException();
+        }
+        return ['employee' => self::managementData($data), 'password_unset' => $data['pwd'] === null];
+    }
+
     private static function assertPlatformTarget(PlatformScope $scope): void
     {
         if ($scope->targetMerId === null || $scope->targetMerId > 4294967295) {

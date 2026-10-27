@@ -146,7 +146,8 @@ function preview_seed_migrations(PDO $db): int
         'marketplace-ms4-fulfillment.php', 'marketplace-ms4-aftersale.php', 'marketplace-ms4-assets.php',
         'marketplace-ms2-task7-menus.php', 'marketplace-ms2-task7-stock-menu.php', 'marketplace-ms2-task7-submit-menu.php',
         'marketplace-ms4-order-read-menus.php', 'marketplace-ms4-review-menus.php', 'marketplace-ms4-aftersale-menus.php',
-        'marketplace-ms4-product-media-menus.php', 'marketplace-ms4-platform-asset-menus.php'] as $file) require_once $directory . $file;
+        'marketplace-ms4-product-media-menus.php', 'marketplace-ms4-platform-asset-menus.php',
+        'marketplace-password-setup-reissue-menu.php'] as $file) require_once $directory . $file;
     $ms1 = new \Audit\Migration\MarketplaceMs1Migration($db, 'eb_');
     preview_seed_completed($ms1->apply()); preview_seed_completed($ms1->check());
     $ms2 = new \Audit\Migration\MarketplaceMs2Migration($db, $ms1, 'eb_', '/workspace', ['enabled' => false],
@@ -209,7 +210,8 @@ function preview_seed_migrations(PDO $db): int
     $completeStructure($aftersale); $completeStructure($assets);
     foreach ([MarketplaceMs2Task7Menus::class, MarketplaceMs2Task7StockMenu::class, MarketplaceMs2Task7SubmitMenu::class,
         MarketplaceMs4OrderReadMenus::class, MarketplaceMs4ReviewMenus::class, MarketplaceMs4AftersaleMenus::class,
-        MarketplaceMs4ProductMediaMenus::class, MarketplaceMs4PlatformAssetMenus::class] as $class) {
+        MarketplaceMs4ProductMediaMenus::class, MarketplaceMs4PlatformAssetMenus::class,
+        MarketplacePasswordSetupReissueMenu::class] as $class) {
         $migration = new $class($db, 'eb_');
         preview_seed_completed($migration->apply()); preview_seed_completed($migration->check());
     }
