@@ -137,9 +137,21 @@ python -X utf8 help/docker/deploy-marketplace.py `
 
 测试支付的创建结果、查询/关闭观察和单独保存的履约暂停状态，在原事务提交并完成读回之后记录有限事件。HTTP事件沿响应的 `X-Request-ID` 关联；命令行入口使用独立诊断编号。内部订单主键、支付尝试ID、操作、保存状态和固定原因码用于定位原生支付记录，日志不包含订单号、账户快照、渠道交易号、幂等键或完整支付结果。日志异常不改变支付结果；暂停事件也不代表付款成功。
 
-旧支付宝回调处理、验签、转账失败和转账异常的原始错误日志改为固定事件及受限代码位置。验签、资金调用与返回值保持原语义。测试支付与支付宝回调是两条独立链路；本机测试支付的通过不能证明真实渠道回调或转账成功。通联等其他渠道日志、完整R04与真实收付款仍需分别完成，用户停止的故障、负向、并发和恢复样本保持NOT RUN。
+旧支付宝回调处理、验签、转账失败和转账异常的原始错误日志改为固定事件及受限代码位置。验签、资金调用与返回值保持原语义。测试支付与支付宝回调是两条独立链路；本机测试支付的通过不能证明真实渠道回调或转账成功。其他渠道日志、完整R04与真实收付款仍需分别完成，用户停止的故障、负向、并发和恢复样本保持NOT RUN。
 
 正常验证（2026-10-27）：新专用18191普通testing实例使用原镜像编排完成建单与一次测试支付。顾客、商家、平台付款前后均核对2件、40.30；付款后均为已支付、`marketplace_test`，商品与SKU库存保持98，余额和库存流水未被付款改变。真实创建结果pending与查询结果applied各产生一条有限支付日志，与响应、网关及HTTP完成记录使用同一请求编号；14次正常请求的关联均通过。15项实际合成凭据、配置秘密和本次支付键在当时应用日志及PHP/Nginx输出的内存扫描中零匹配。运行4个受核来源与已审输入一致，53旧容器及两份旧绑定源码保持；新四服务运行，MySQL/PHP健康、Redis/Nginx原本未配置health，五个Supervisor程序RUNNING。首次探针在付款前因平台请求头名称错误失败，原记录保留；修正为原`Authori-zation`后通过。汇总证据在仓库外 `artifacts/multi-merchant-payment-logs-20261027-r1/verification.json`；不代替真实渠道或完整验收。
+
+通联客户端只记录JSON成功解析、收到回调、签名验证返回等固定事件，保留原 `isDebug` 门；有限事件使用info级别。日志没有响应、header、回调参数或签名。原debug配置默认过滤debug，框架context只用于消息占位符替换，因此这里不宣称旧实例已实际记录完整响应。JSON错误判断先于日志编码，原解码标志、异常和返回保持；“解析成功”只描述JSON，不表示支付成功，`verification_returned`也不宣称验签通过。
+
+针对性正常检查脚本为 `help/audit-regressions/isolated/allin-logging-normal.php`。从仓库取得该脚本，以只读方式挂载到候选PHP镜像，替换下列两个占位值后执行：
+
+```sh
+docker run --rm --network none --read-only --user 33:33 --tmpfs /tmp --mount "type=bind,source=<绝对仓库路径>/help/audit-regressions/isolated/allin-logging-normal.php,target=/check.php,readonly" --entrypoint php <已核候选PHP镜像ID> -d opcache.enable_cli=0 /check.php --app-root=/var/www
+```
+
+测试进程仅替换HTTP传输及日志写入依赖，加载真实通联客户端、签名、回调、Request和Think日志代码。只使用本次生成的合成参数，标为UNIT-STUB；不调用机构、不写订单，不证明cURL/TLS、RSA或真实资金链路。现有浏览器预览实例仍保留原镜像，候选镜像和验证结果以本次交付记录为准。
+
+2026-10-27实际候选检查通过：成功JSON及U64字符串保持、默认MD5正常发送、有效签名回调三项正常检查全部通过；两次替身传输、一次回调、四条有限info记录，debug捕获自检开启。15项本次合成密钥、签名、业务与header标记在内存日志扫描中零匹配。候选运行的三生产文件哈希与已审构建输入相同，测试进程退出0、stderr为空并已清理；57旧预览容器及两份旧绑定源码保持，没有新建数据库实例。汇总证据位于仓库外 `artifacts/multi-merchant-allin-logs-20261027-r1/verification.json`。真实渠道及停止样本仍未运行。
 
 ## PHP 8.2 兼容性验证
 

@@ -168,13 +168,15 @@ final class RuntimeLog
     public static function paymentDiagnostic(App $app, string $event, ?Throwable $error = null): void
     {
         try {
-            if (!in_array($event, ['payment.alipay_callback_error', 'payment.alipay_verification_error',
+            $allin = in_array($event, ['payment.allin_response_parsed', 'payment.allin_callback_received',
+                'payment.allin_callback_verified', 'payment.allin_callback_verification_returned'], true);
+            if (!$allin && !in_array($event, ['payment.alipay_callback_error', 'payment.alipay_verification_error',
                 'payment.alipay_transfer_failed', 'payment.alipay_transfer_error'], true)) return;
             $source = self::paymentSource($app);
             if ($source === null) return;
             $record = ['event' => $event] + $source;
             if ($error !== null) $record += self::exceptionMetadata($app, $error);
-            self::write($app, $record, 'error');
+            self::write($app, $record, $allin ? 'info' : 'error');
         } catch (Throwable $ignored) {
             // Provider data, callback parameters and exception messages never enter this record.
         }

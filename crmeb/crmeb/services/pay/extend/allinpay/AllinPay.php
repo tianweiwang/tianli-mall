@@ -323,7 +323,7 @@ class AllinPay extends Client
             $params[$key] = $val;
         }
 
-        $this->debugLog('通联支付回调数据' . json_encode($params));
+        $this->debugLog('payment.allin_callback_received');
 
         if (count($params) < 1) {
             //如果参数为空,则不进行处理
@@ -332,7 +332,8 @@ class AllinPay extends Client
 
         $res = $this->validSign($params);
 
-        $this->debugLog('通联支付回调验证：' . json_encode(['res' => $res]));
+        $this->debugLog(($res === true || $res === 1)
+            ? 'payment.allin_callback_verified' : 'payment.allin_callback_verification_returned');
 
         if ($res && isset($params['trxstatus']) && $params['trxstatus'] === '0000') {
             //验签成功

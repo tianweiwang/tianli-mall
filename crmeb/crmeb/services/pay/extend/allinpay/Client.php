@@ -12,7 +12,7 @@ namespace crmeb\services\pay\extend\allinpay;
 
 use crmeb\exceptions\ApiException;
 use crmeb\services\HttpService;
-use think\facade\Log;
+use crmeb\services\RuntimeLog;
 
 /**
  * Class Client
@@ -158,22 +158,26 @@ class Client
 
         $respones = json_decode($content, true, 512, JSON_BIGINT_AS_STRING);
 
-        $this->debugLog('API response decoded:', ['content' => $respones, 'header' => $header]);
-
         if (JSON_ERROR_NONE !== json_last_error()) {
             throw new ApiException('Failed to parse JSON: ' . json_last_error_msg());
         }
+
+        $this->debugLog('payment.allin_response_parsed');
 
         return $respones;
     }
 
     /**
-     * @param string $message
-     * @param array $contents
+     * @param string $event Fixed diagnostic event; provider data is never accepted.
      */
-    protected function debugLog(string $message, array $contents = [])
+    protected function debugLog(string $event): void
     {
-        $this->isDebug && Log::debug($message, $contents);
+        try {
+            if (!$this->isDebug) return;
+            RuntimeLog::paymentDiagnostic(app(), $event);
+        } catch (\Throwable $ignored) {
+            // Logging and application lookup must not change provider handling.
+        }
     }
 
     /**
