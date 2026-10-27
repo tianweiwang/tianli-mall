@@ -66,16 +66,22 @@ r19补齐登录Logo与订单列表缩略图的MP服务器地址，保留原图�
 
 2026-10-27 已修正个人中心订单角标：装修接口复用订单列表现有 `getOrderData` 统计，保留原退款入口。当前合成顾客的待发货/待评价为1/0，与用户资料、订单列表一致；小程序实际点击分别得到订单9一条和空列表，返回个人中心仍一致。三端订单10金额20.15元、已收货状态、商品/SKU库存及四条原售后记录保持。本次为后端修复，继续使用r19小程序工程；没有重建前端、改变订单或重复付款。证据见同一仓库外目录 `r20-theme-count-*`；旧订单混合样本、其它客户端全流程和正式发布仍按原范围待验。
 
-本机18180当前HTTP服务保留r21十个只读PHP覆盖，并增加r28八个首次设置链接补发相关PHP覆盖及只读迁移目录。r21来源为 `H:/天俪商城/artifacts/multi-merchant-miniprogram-trade-20261027-r1/r21-public-upload-source/crmeb/`；r28来源为同一trade目录的 `r28-password-setup-source/`，逐文件SHA256与冻结迁移副本摘要见 `r28-source-manifest.json`。原源码工作树及其他六个服务保持，实际运行核对见 `r28-runtime-check.json`。维护这个现有实例时，使用以下持久Compose保留覆盖：
+本机18180当前HTTP服务保留r21十个只读PHP覆盖、r28八个首次设置链接补发相关PHP覆盖及只读迁移目录，r33再增加商家业务请求配额与日志接线。r21来源为 `H:/天俪商城/artifacts/multi-merchant-miniprogram-trade-20261027-r1/r21-public-upload-source/crmeb/`；r28来源为同一trade目录的 `r28-password-setup-source/`，逐文件SHA256与冻结迁移副本摘要见 `r28-source-manifest.json`；r33来源为 `r33-request-quota-source/candidate/`。维护这个现有实例时，使用以下持久Compose保留覆盖：
 
 ```powershell
-$previewCompose = 'H:/天俪商城/artifacts/multi-merchant-preview-20261026/app-setup.compose.json'
+$previewCompose = 'H:/天俪商城/artifacts/multi-merchant-preview-20261026/app-quota.compose.json'
 docker compose --project-name mall-preview-20261026055805284f53 --file $previewCompose up -d --no-deps --timeout -1 preview-app
 docker compose --project-name mall-preview-20261026055805284f53 --file $previewCompose exec -T preview-web nginx -t -c /etc/nginx/preview.conf
 docker compose --project-name mall-preview-20261026055805284f53 --file $previewCompose exec -T preview-web nginx -s reload -c /etc/nginx/preview.conf
 ```
 
-该Compose仅为原HTTP服务追加上述只读来源，不更换镜像、账户、卷或网络；它属于本机运行材料，不是通用升级工具。迁移目录包含与原实例逐字一致的27个旧文件及1个新增文件，避免向只读工作树创建新挂载点。旧 `app-upload.compose.json`、`app-counts.compose.json` 不含本批补发功能，不是当前维护配置。旧来源的 `preview.py serve`、`serve-api`、`video` 等可能按旧Compose重建HTTP服务并撤销这些覆盖，应继续使用上述维护路径；不要重复initialize或改state.repo。新建预览仍使用仓库标准prepare/initialize流程及已提交源码。完整后端版本门升级与正式发布验收仍单独推进。
+该Compose仅为原HTTP服务追加上述只读来源和显式本机配额配置，不更换镜像、账户、卷或网络；它属于本机运行材料，不是通用升级工具。原 `app-setup.compose.json` 保持，r33复制其25项挂载后增加7项只读覆盖；运行候选共313份源文件逐份核同。迁移目录包含与原实例逐字一致的27个旧文件及1个新增文件，避免向只读工作树创建新挂载点。旧 `app-setup.compose.json` 不含r33，`app-upload.compose.json`、`app-counts.compose.json` 也不是当前维护配置。旧来源的 `preview.py serve`、`serve-api`、`video` 等可能按旧Compose重建HTTP服务并撤销这些覆盖，应继续使用上述维护路径；不要重复initialize或改state.repo。新建预览仍使用仓库标准prepare/initialize流程及已提交源码。完整后端版本门升级与正式发布验收仍单独推进。
+
+r33配额只在原认证与权限通过后，对同商家的业务请求共用计数；登录、首次设密、刷新与退出保持原流程。本机显式策略为 `r33-local-v1 / 60秒 / 600次`。新源码默认关闭，正式部署需自行明确启用、策略版本、窗口和额度，不能照搬本机值。原子Redis窗口不随正常读取延长；关联日志只含可信商家、静态路由、请求编号和有限计数，不保存请求正文或凭据。当前merchantapi没有导出入口，本片不新增导出，也不代表完整R06资源治理或监控验收。
+
+正常验证中，商家2读取原订单13、商家3以原浏览器会话读取本人身份及订单14包裹，各自计数1→2且HTTP/业务均200；商家2订单响应数据摘要与变更前相同，商家3原登录及已收货8.88元状态保持。原16单、商品/SKU及完整已纳入快照的业务资料前后摘要一致。另以声明的合成Context做正常服务原语检查，实核关闭分支、同店累计、两店独立和绝对期限不续期；该原语不代替HTTP认证。PHP8.2语法和独立源审已通过。证据见同一trade目录 `r33-runtime-source-check.json`、`r33-native-normal.json`、`r33-live-log-projection.json`、`r33-data-before.json`、`r33-data-after.json`；超额、高频、故障、并发、恢复及K样本保持NOT RUN，真实渠道与正式发布仍待。
+
+运行资源核对见 `r33-runtime-comparison-diagnostic.json` 和 `r33-runtime-candidate-hashes-observed.json`：313项实际容器文件哈希与候选清单完全相同，其他六服务身份、启动时间及挂载字段值保持。HTTP app的 `/workspace` Source原始字符串由Docker Desktop的Linux路径变为Windows路径；该差异保留，并以未重建events的相同内核挂载、设备/inode及七个基础文件与宿主机的摘要对应证实仍是同一实际只读挂载，未把原始元数据写成全部相同。
 
 首次设置链接补发需要独立权限叶 `marketplace-merchants-password-setup-reissue`。现有环境在维护阶段显式执行 `php help/migrations/marketplace-password-setup-reissue-menu.php apply --config-file=<私有数据库配置>`，随后执行同文件的 `check`；先读check时，`applicable`表示尚未登记（退出码1），不得当作已经完成。迁移只补一项菜单，不修改普通角色授权；权限分配仍沿原角色管理。新装预览已在原seed流程接线，既有实例不要重跑seed。生产镜像不包含help迁移目录，发布维护需携带此迁移和原依赖；本批没有升级生产镜像、修改schema版本或完成正式发布。
 

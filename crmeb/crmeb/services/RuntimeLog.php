@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace crmeb\services;
 
 use app\Request;
+use app\services\marketplace\context\MerchantContext;
 use crmeb\exceptions\AuthException;
 use crmeb\exceptions\AuthUnavailableException;
 use think\App;
@@ -68,6 +69,45 @@ final class RuntimeLog
             self::write($app, $record, $denied ? 'warning' : 'error');
         } catch (Throwable $ignored) {
             // Never log the logging failure's message or replace the original error.
+        }
+    }
+
+    /** Called inside the authenticated stack, before its context is cleared. No request payload is retained. */
+    public static function merchantQuota(App $app, MerchantContext $context, string $routeName, array $decision): void
+    {
+        try {
+            $outcome = $decision['outcome'] ?? null;
+            if (($decision['log'] ?? null) !== true || !in_array($outcome, ['admitted', 'limited', 'unavailable'], true)) return;
+            $record = self::request($app);
+            if ($record === null || $record['surface'] !== 'merchantapi'
+                || !self::requestIdValid($context->requestId) || $record['request_id'] !== $context->requestId) return;
+
+            $version = $decision['policy_version'] ?? null;
+            $version = is_string($version) && preg_match('/\A[A-Za-z][A-Za-z0-9_-]{0,31}\z/D', $version) === 1 ? $version : null;
+            $window = $decision['window_seconds'] ?? null;
+            $window = is_int($window) && $window >= 1 && $window <= 86400 ? $window : null;
+            $limit = $decision['max_requests'] ?? null;
+            $limit = is_int($limit) && $limit >= 1 && $limit <= 1000000 ? $limit : null;
+            $used = $decision['used'] ?? null;
+            $remaining = $decision['remaining'] ?? null;
+            $retry = $decision['retry_after_seconds'] ?? null;
+            if ($outcome === 'unavailable') {
+                if ($used !== null || $remaining !== null || $retry !== null) return;
+            } elseif ($version === null || $window === null || $limit === null
+                || !is_int($used) || $used < 1 || $used > $limit
+                || !is_int($remaining) || $remaining !== $limit - $used
+                || !is_int($retry) || $retry < 1 || $retry > $window
+                || ($outcome === 'limited' && ($used !== $limit || $remaining !== 0))) {
+                return;
+            }
+
+            $record += ['event' => 'merchant.request_quota', 'mer_id' => $context->merId,
+                'route_name' => preg_match('/\Amerchant\.[A-Za-z0-9_.-]{1,100}\z/D', $routeName) === 1 ? $routeName : 'unknown',
+                'policy_version' => $version, 'outcome' => $outcome, 'window_seconds' => $window,
+                'max_requests' => $limit, 'used' => $used, 'remaining' => $remaining, 'retry_after_seconds' => $retry];
+            self::write($app, $record, $outcome === 'admitted' ? 'info' : ($outcome === 'limited' ? 'warning' : 'error'));
+        } catch (Throwable $ignored) {
+            // Diagnostics must not replace quota or business responses, or disclose driver messages.
         }
     }
 

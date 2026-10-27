@@ -6,6 +6,13 @@ use think\facade\Env;
 return [
     'enabled'=>Env::get('marketplace.enabled',false),
     'self_operated_mer_id'=>Env::get('marketplace.self_operated_mer_id',null),
+    'request_quota'=>[
+        // Opt-in: deployment must explicitly choose and version its merchant business-request policy.
+        'enabled'=>Env::get('marketplace.request_quota.enabled',false),
+        'policy_version'=>Env::get('marketplace.request_quota.policy_version',''),
+        'window_seconds'=>Env::get('marketplace.request_quota.window_seconds',null),
+        'max_requests'=>Env::get('marketplace.request_quota.max_requests',null),
+    ],
     'trade'=>[
         'enabled'=>Env::get('marketplace.trade.enabled',false),
         'disabled_features'=>['coupon','integral','balance','brokerage','activity'],

@@ -18,6 +18,7 @@ final class MerchantPermissionMiddleware implements MiddlewareInterface
             throw new HttpException(503, '服务暂不可用', null, [], 503);
         }
         $request->merchantContext()->require($permission);
-        return $next($request);
+        // Keep authentication and permission denials ahead of the optional business-request quota.
+        return app(MerchantRequestQuotaMiddleware::class)->handle($request, $next);
     }
 }

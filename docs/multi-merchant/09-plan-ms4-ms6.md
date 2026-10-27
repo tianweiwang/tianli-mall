@@ -1285,6 +1285,20 @@ H5实际失败状态收口与后继（2026-10-18）：Run `202610171222555a7646`
 
 - 用例 R05（新开关未启用时直接调用旧营销、余额入口 → 按约定拒绝）、R06（单商家高频请求、导出任务的限流与监控）。
 
+**2026-10-27 R06 商家已授权业务请求配额实施合同（r33，编码前）：**
+
+- 目标：补现有商家HTTP业务请求的聚合配额和可关联日志。原认证、权限、经营归属、业务状态及响应保持；限额只使用原认证产生的 `MerchantContext.merId`，同店所有员工、令牌、业务路由共用窗口。客户端 `mer_id`、IP、会话或路由不能改变商家分桶。当前merchantapi依D07不提供导出，本片不新造导出功能；完整R06、未来导出任务配额及发布验收仍保留。
+- 接线：复用 `MerchantPermissionMiddleware` 在原permission验证成功后调用独立 `MerchantRequestQuotaMiddleware`，再进入原控制器。这样未认证/未授权错误优先级不变，现有各业务模块不重复接线；仅Auth的refresh/logout及未认证login/password-setup明确不计入，保会话控制与退出能力。本配额不限制认证本身的数据库/Redis成本，也不替代并发或字节配额。
+- 配置：`marketplace.request_quota` 仅增 `enabled=false`、`policy_version=''`、`window_seconds=null`、`max_requests=null`。不设生产额度默认值。enabled必须为布尔；开启后策略名为1–32位ASCII字母起始的字母数字/下划线/短横线，窗口为规范正整数1–86400秒、额度为1–1000000，后两上界为实现技术边界而非推荐生产值。false直接沿原流程，不连Redis或初始化计数；错误配置固定503，不隐式关闭或回退。仅本机合成验证显式采用 `r33-local-v1 / 60秒 / 600次`，不将其推广为生产规则。
+- 计数：复用现有有界原生Redis连接，在独立purpose/version命名空间中按部署cache前缀和策略完整配置摘要隔离，再按可信merId建立单个有期限Hash。首个获准请求开启窗口；Lua一次原子验证/计数/设期限，达到额度后不再递增或延长期限，业务后续失败不返还已占用额度。Hash仅记录used与本窗口是否已记录首次限额事件；正常准入事件最多为配置额度，限额事件每商家每窗口仅首次写，以免新增诊断被拒绝流量无限放大。策略名/窗口/额度任一改变形成新窗口键，旧键按原TTL自然退出，不扫描/删除别人的键。
+- 生命周期与错误：独立非持久连接，序列化与隐式prefix关闭；原共享Cache/认证/队列客户端不改。一次Lua调用，无未知写重试、补偿或本地计数回退，finally关闭连接，服务对象不保留Request/Context/令牌/上次结果。配置、结构、期限、驱动或应答不能确认时固定503且不进控制器；计数可能已发生，不据此声明业务成功。
+- 响应：明确获准为admitted；明确用尽为limited，由配额中间件直接返回HTTP429及原JSON envelope `{status:429,msg:固定提示,data:[]}`、有界正整数Retry-After，绕开原异常器不支持429的映射。unavailable直接固定HTTP/业务503及空data；正常请求原样传递，原401/403/404/422/503处理不改。disabled不冒称已保护。
+- 日志：仅在已验证Context仍有效的中间件栈内调用原RuntimeLog的有限quota事件，关联原request_id及HttpEnd结果；不延长Context生命周期或新增公网监控入口。字段限request_id、mer_id、静态merchant路由名、method、policy_version、outcome、window/limit/used/remaining/retry_after，未知数值为null。不得记录token/指纹/sessionVersion、IP、query、body、原URL、私有票据或Redis异常原文。日志失败沿原约定不替换业务响应；保留/轮转与完整监控告警仍属原MS6责任。
+- 验证与交付：独立源审、PHP语法、复用现有工具的正常配置/首取/同店累计/两店分桶与有TTL检查；Root在18180以原商家2认证读取及商家3原浏览器会话读取，核200、独立used、关联日志、会话与完整原业务资料保持。只给当前HTTP app追加已核来源/显式测试配置，原r21/r28覆盖、其他六服务、MP/原草稿及冻结来源保持。超限/高频/故障/并发/恢复样本NOT RUN，不以本片关闭这些场景或完整R06。维护现有唯一执行清单，不另建编排框架。
+- 18180运行前实核补记：该较早只读基座尚无已提交的RuntimeLog及Request运行编号接线，不能假定当前HEAD依赖已在预览内。本片只为HTTP app补齐当前HEAD的Request、MerchantAuthTokenMiddleware、HttpEndListener三个既有日志依赖；runtime router从实际旧源只增加RuntimeLog::attach一行，保原health分支（旧common没有新preview_schema），不回退仓库新基座router。实际EmployeeAuthServices已与HEAD相同并支持传入requestId。前后依赖差异须独审、逐文件核同；不替换旧异常器、认证/会话服务、其它运行组或全局Cache客户端。新文件通过实际源目录逐字副本加精确新增的只读覆盖挂载，新app-quota.compose.json保原app-setup文件及25挂载，仅追加所需只读覆盖/显式本机策略；不向原只读工作树创建挂载点，完整原源和业务资料保持。正常原生Redis检查另确认空prefix读取为null、serializer为NONE，与严格服务应答合同匹配。
+- 本机正常运行补记：最终候选PHP8.2语法与独立源审通过；只正常重建18180 HTTP app，使用同一镜像及32项挂载，原app-setup文件不改。商家2正常读取原订单13两次、商家3原浏览器会话读取本人信息及订单14包裹，两店分别used1→2，四条quota事件和四条HTTP完成按request_id对应，均HTTP/业务200；订单13数据摘要与变更前相同，商家3原已收货8.88元状态保持。另声明Context夹具91001/91002的正常服务检查实核关闭分支、同店累计、两店独立、Hash与绝对TTL不续期；不以夹具代签认证。原16单和本次已采集表/投影前后快照逐字相同，不扩大成全数据库、全Redis或全部私有文件保全证明。正常健康响应正文摘要保持。实际来源、日志及数据证据在原trade目录r33-*材料，操作入口见help/preview/README.md；超限、高频、故障、并发、恢复/K样本仍NOT RUN，完整R06、生产策略、告警与导出隔离未签收。
+- 实际资源补核：313项容器文件哈希与候选清单相同，其他六服务原身份/启动时间/挂载字段保持。app的/workspace Source字符串Linux→Windows差异保留；与未重建events的内核9p挂载、目录设备/inode及七个未覆盖基础文件和宿主摘要对应，证实仍同一实际只读挂载，不将原始inspect字段全标相同。
+
 ### Task 6: 发布清单与全量回归
 
 - 全部用例在 ISO-FULL 与预发布环境各运行一次；发布清单（含外部调用方通知状态、回退方案、负责人）由用户逐项确认；写 `records/ms6/`；停止，等待验收（11 文档 §5.9）。真实发布需要 L4。
