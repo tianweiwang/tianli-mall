@@ -39,6 +39,12 @@
 			<view class="btn" @click="submitData">
 				{{$t(`${pageType == 1 ? '绑定手机号' : '立即登录'}`)}}
 			</view>
+			<!-- #ifdef MP -->
+			<navigator v-if="pageType == 0 && configData && configData.phone_auth_switch"
+				class="account-login" url="/pages/users/login/index?mode=account" open-type="redirect" hover-class="none">
+				{{$t(`账号密码登录`)}}
+			</navigator>
+			<!-- #endif -->
 		</view>
 		<view class="protocol" v-if="pageType == 0 && !canGetPrivacySetting">
 			<checkbox-group @click.stop='ChangeIsDefault'>
@@ -461,6 +467,20 @@
 				line-height: 44rpx;
 				margin-top: 48rpx;
 				letter-spacing: 1px;
+			}
+
+			.account-login {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				box-sizing: border-box;
+				width: 100%;
+				min-height: 72rpx;
+				margin-top: 16rpx;
+				font-size: 28rpx;
+				line-height: 40rpx;
+				text-align: center;
+				color: var(--view-theme);
 			}
 		}
 	}

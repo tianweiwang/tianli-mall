@@ -12,7 +12,7 @@
 					<view class="item">
 						<view class="acea-row row-middle">
 							<image src="../static/phone_1.png" style="width: 24rpx; height: 34rpx"></image>
-							<input type="text" :placeholder="$t(`输入手机号码`)" v-model="account" maxlength="11" required />
+							<input type="text" :placeholder="$t(`输入账号`)" v-model="account" maxlength="16" required />
 						</view>
 					</view>
 					<view class="item">
@@ -170,8 +170,11 @@ export default {
 			}
 		}
 	},
-	onLoad() {
+	onLoad(options) {
 		this.identityPageActive = true;
+		// #ifdef MP
+		if (options && options.mode === 'account') this.current = 0;
+		// #endif
 		let self = this;
 		uni.getSystemInfo({
 			success: (res) => {
