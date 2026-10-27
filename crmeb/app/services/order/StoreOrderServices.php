@@ -1474,7 +1474,7 @@ HTML;
                     if (!empty($order_list[$dd])) {
                         $cycle_list[$dd] = $order_list[$dd];
                     } else {
-                        $cycle_list[$dd] = ['count' => 0, 'day' => $dd, 'price' => ''];
+                        $cycle_list[$dd] = ['count' => 0, 'day' => $dd, 'price' => '0'];
                     }
                 }
                 $chartdata = [];
