@@ -42,7 +42,18 @@ MP的商品列表、详情和规格接口会将已登记的 `/uploads/` 图片/�
 
 r19补齐登录Logo与订单列表缩略图的MP服务器地址，保留原图片、缓存和接口数据。个人中心“多商户售后”移入已有装修底部插槽，紧接原菜单显示，点击可查看本人售后记录；原订单菜单仍进入原订单列表，再点“查看详情”进入售后与评价。实际原账号登录、登录页/个人中心320及390宽度、320订单图片，以及列表→订单10详情→售后/评价入口已验证。四个Logo消费者均完成源码与跨平台编译检查，其中登录页图片实际显示、头像资料组件原缓存的展示地址实际核对；Authorize弹窗、正式微信授权页全流程及H5/真机未由本轮代签。
 
-已知待修：当前18180的装修接口仍按旧订单状态生成个人中心角标，合成顾客的待发货/待评价显示2/3，原订单列表与正式统计接口实际为1/0。已定位到后端themeInfo，下一批在该生产者复用既有getOrderData；本批未在前端替换数字或改旧运行来源。三端订单10金额20.15元、已收货状态、商品/SKU库存以及四条原售后记录保持；证据为同一仓库外目录的r19-account-*与r19-order-*-click。新选图、正式微信登录与其它未验范围继续保留。
+2026-10-27 已修正个人中心订单角标：装修接口复用订单列表现有 `getOrderData` 统计，保留原退款入口。当前合成顾客的待发货/待评价为1/0，与用户资料、订单列表一致；小程序实际点击分别得到订单9一条和空列表，返回个人中心仍一致。三端订单10金额20.15元、已收货状态、商品/SKU库存及四条原售后记录保持。本次为后端修复，继续使用r19小程序工程；没有重建前端、改变订单或重复付款。证据见同一仓库外目录 `r20-theme-count-*`；旧订单混合样本、其它客户端全流程和正式发布仍按原范围待验。
+
+本机18180当前HTTP服务通过独立只读controller覆盖运行本次修正，原源码工作树、数据库及其他服务保持。固定运行文件为 `H:/天俪商城/artifacts/multi-merchant-miniprogram-trade-20261027-r1/r20-theme-count-source/PublicController.php`，SHA256为 `9b61f4f124fc6264936519918833bf033f02917ad7b1fae386b50a2e5fca1cb4`，内容等于原基线加本次统计修正，不含尚未验证的上传候选。以下命令用于这个现有实例的HTTP维护，保留本次只读挂载：
+
+```powershell
+$previewCompose = 'H:/天俪商城/artifacts/multi-merchant-preview-20261026/app-counts.compose.json'
+docker compose --project-name mall-preview-20261026055805284f53 --file $previewCompose up -d --no-deps --timeout -1 preview-app
+docker compose --project-name mall-preview-20261026055805284f53 --file $previewCompose exec -T preview-web nginx -t -c /etc/nginx/preview.conf
+docker compose --project-name mall-preview-20261026055805284f53 --file $previewCompose exec -T preview-web nginx -s reload -c /etc/nginx/preview.conf
+```
+
+该Compose是原实例配置的完整渲染，仅增加上述单文件只读挂载；它属于本机运行材料，不是通用升级工具。旧来源的 `preview.py serve`、`serve-api`、`video` 等可能按旧Compose重建HTTP服务并撤销此覆盖，应继续使用上述维护路径；不要重复initialize或改state.repo。新建预览仍使用仓库标准prepare/initialize流程及已提交源码。完整后端版本门升级与正式发布验收仍单独推进。
 
 小程序评价：在已收货订单底部点击“商品评价”，选择商品后设置商品质量、服务态度星级，填写文字，再点“提交评价”。新评价显示待审核；平台“经营商家 → 商品评价”打开对应记录，选择审核通过并确认。商家“商品评价”打开同一记录，可以填写回复并确认。顾客刷新自己的评价记录，或从商品详情进入评价列表，即可读取通过审核的内容与商家回复。
 

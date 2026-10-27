@@ -908,15 +908,16 @@ class PublicController
                 //是否分销员
                 $userIsPromoter = (bool)app()->make(UserServices::class)->checkUserPromoter($uid, $userInfo);
 
-                // 统计各状态订单数量，用于菜单角标显示
+                // 复用订单列表的商业订单统计，保持 legacy 与多商户订单口径一致。
+                $orderCounts = $orderServices->getOrderData((int)$uid);
                 $orderAuth = [];
-                $countWhere = ['is_del' => 0, 'is_system_del' => 0, 'uid' => $uid];
-                $orderAuth['/pages/goods/order_list/index'] = (int)$orderServices->count($countWhere + ['refund_status' => [0, 3], 'pid' => 0]);
-                $orderAuth['/pages/goods/order_list/index?status=0'] = (int)$orderServices->count($countWhere + ['status' => 0]);
-                $orderAuth['/pages/goods/order_list/index?status=1'] = (int)$orderServices->count($countWhere + ['status' => 1, 'pid' => 0]);
-                $orderAuth['/pages/goods/order_list/index?status=2'] = (int)$orderServices->count($countWhere + ['status' => 2, 'pid' => 0]);
-                $orderAuth['/pages/goods/order_list/index?status=3'] = (int)$orderServices->count($countWhere + ['status' => 3, 'pid' => 0]);
-                $orderAuth['/pages/goods/order_list/index?status=4'] = (int)$orderServices->count($countWhere + ['status' => 4, 'pid' => 0]);
+                $orderAuth['/pages/goods/order_list/index'] = (int)$orderCounts['order_count'];
+                $orderAuth['/pages/goods/order_list/index?status=9'] = (int)$orderCounts['order_count'];
+                $orderAuth['/pages/goods/order_list/index?status=0'] = (int)$orderCounts['unpaid_count'];
+                $orderAuth['/pages/goods/order_list/index?status=1'] = (int)$orderCounts['unshipped_count'];
+                $orderAuth['/pages/goods/order_list/index?status=2'] = (int)$orderCounts['received_count'];
+                $orderAuth['/pages/goods/order_list/index?status=3'] = (int)$orderCounts['evaluated_count'];
+                $orderAuth['/pages/goods/order_list/index?status=4'] = (int)$orderCounts['complete_count'];
                 $orderAuth['/pages/users/user_return_list/index'] = (int)$orderRefundServices->count(['uid' => $uid, 'is_cancel' => 0, 'is_del' => 0, 'refund_type' => [1, 2, 4, 5]]);
             }
 
