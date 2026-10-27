@@ -13,6 +13,16 @@ import request from "@/utils/request.js";
 import { HTTP_REQUEST_URL } from '@/config/app';
 const normalizePublicMedia = require('@/utils/public-media');
 const publicProductMedia = response => ({ ...response, data: normalizePublicMedia(response.data, HTTP_REQUEST_URL) });
+const publicCategoryMedia = category => {
+	const result = { ...category };
+	['pic', 'big_pic'].forEach(key => {
+		if (Object.prototype.hasOwnProperty.call(result, key)) {
+			result[key] = normalizePublicMedia.publicMediaUrl(result[key], HTTP_REQUEST_URL);
+		}
+	});
+	if (Array.isArray(result.children)) result.children = result.children.map(publicCategoryMedia);
+	return result;
+};
 // #endif
 
 /** Public marketplace shop identity, distinct from pickup store_list. */
@@ -95,9 +105,15 @@ export function postCartAdd(data) {
  *
  */
 export function getCategoryList() {
-	return request.get('category', {}, {
+	const response = request.get('category', {}, {
 		noAuth: true
 	});
+	// #ifdef MP
+	return response.then(result => ({ ...result, data: result.data.map(publicCategoryMedia) }));
+	// #endif
+	// #ifndef MP
+	return response;
+	// #endif
 }
 
 /**
