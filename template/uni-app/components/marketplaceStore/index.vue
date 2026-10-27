@@ -14,7 +14,8 @@ export default {
 };
 </script>
 <style scoped>
-.marketplace-store-link { display: flex; align-items: center; justify-content: space-between; gap: 20rpx; margin: 20rpx 24rpx; padding: 24rpx; box-sizing: border-box; max-width: 100%; background: #fff; border-radius: 16rpx; }
+/* Reserve the right-hand lane occupied by the product page's floating service button. */
+.marketplace-store-link { display: flex; align-items: center; justify-content: space-between; gap: 20rpx; margin: 20rpx 24rpx; padding: 24rpx 120rpx 24rpx 24rpx; box-sizing: border-box; max-width: 100%; background: #fff; border-radius: 16rpx; }
 .store-identity { display: flex; align-items: center; flex: 1; min-width: 0; gap: 20rpx; }
 .store-logo { width: 80rpx; height: 80rpx; flex-shrink: 0; }
 .store-text { min-width: 0; display: flex; flex-direction: column; gap: 8rpx; }
