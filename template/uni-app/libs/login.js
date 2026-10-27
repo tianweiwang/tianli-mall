@@ -30,11 +30,23 @@ function prePage() {
 	let pages = getCurrentPages();
 	let prePage = pages[pages.length - 1];
 	if (!prePage) return '';
+	// #ifdef MP
+	if (!prePage.route) return '';
+	const route = '/' + prePage.route.replace(/^\/+/, '');
+	const options = prePage.options || {};
+	const query = Object.keys(options)
+		.filter(key => options[key] !== null && options[key] !== undefined)
+		.map(key => encodeURIComponent(key) + '=' + encodeURIComponent(String(options[key])))
+		.join('&');
+	return route + (query ? '?' + query : '');
+	// #endif
+	// #ifndef MP
 	// #ifndef APP-PLUS
 	return prePage.route;
 	// #endif
 	// #ifdef APP-PLUS
 	return prePage.$page.fullPath;
+	// #endif
 	// #endif
 
 }
@@ -63,9 +75,16 @@ function _toLogin(push, pathLogin) {
 	const BASIC_CONFIG = Cache.get('BASIC_CONFIG') || {}
 	if (!pathLogin)
 		pathLogin = '/pages/users/login/index'
+	// #ifdef MP
+	if (path.split('?')[0] !== pathLogin.split('?')[0]) {
+		Cache.set('login_back_url', path);
+	}
+	// #endif
+	// #ifndef MP
 	if (path !== pathLogin) {
 		Cache.set('login_back_url', path);
 	}
+	// #endif
 	// #ifdef H5
 	if (isWeixin() && BASIC_CONFIG.wechat_status) {
 		uni.navigateTo({

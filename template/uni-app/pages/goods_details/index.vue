@@ -434,7 +434,9 @@ export default {
         if (newV == true) {
           this.getCouponList();
           this.getCartCount();
+          // #ifndef MP
           this.downloadFilePromotionCode();
+          // #endif
           // this.ShareInfo();
         }
       },
