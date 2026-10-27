@@ -188,6 +188,20 @@ try {
             || !is_file('/run/preview-app/initialized.json')) {
             throw new RuntimeException('Initialized standard preview required');
         }
+        if (($config['full_runtime'] ?? false) === true) {
+            if (($config['release_runtime'] ?? false) !== false || getenv('PREVIEW_FULL_RUNTIME') !== '1'
+                || is_link('/run/preview-app/initialized.json')) {
+                throw new RuntimeException('First testing runtime preparation required');
+            }
+            $initialized = json_decode(file_get_contents('/run/preview-app/initialized.json'), true, 512, JSON_THROW_ON_ERROR);
+            $target = ($config['image_runtime'] ?? false) ? '/run/preview-runtime-config' : '/runtime-app';
+            $stat = lstat($target);
+            if (!is_array($initialized) || ($initialized['project'] ?? null) !== $config['project']
+                || ($initialized['run_id'] ?? null) !== $config['run_id'] || !is_array($stat)
+                || ($stat['mode'] & 0170000) !== 0040000 || scandir($target) !== ['.', '..']) {
+                throw new RuntimeException('Video preparation requires an untouched runtime target');
+            }
+        }
         preview_assert_isolated();
         foreach (['/private/product-video', '/private/product-media-scan'] as $directory) {
             if (is_link($directory)) throw new RuntimeException('Unexpected video directory symlink');

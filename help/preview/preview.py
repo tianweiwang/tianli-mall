@@ -512,7 +512,7 @@ def main():
         print('Isolated database services ready; application initialization is still pending.')
     else:
         state = load(root)
-        if state.get('full_runtime', False) and args.action in ['serve', 'serve-api', 'video', 'timers', 'timers-restore']:
+        if state.get('full_runtime', False) and args.action in ['serve', 'serve-api', 'timers', 'timers-restore']:
             raise RuntimeError('Full runtime previews use runtime; split application actions are unavailable')
         if args.action == 'runtime' and (not state.get('full_runtime', False) or not state.get('initialized')):
             raise RuntimeError('Runtime requires an initialized full-runtime preview created with a new root')
@@ -564,14 +564,22 @@ def main():
         elif args.action == 'video':
             if not state.get('initialized') or state.get('legacy_review_fixture', False):
                 raise RuntimeError('Video chunks require an initialized standard preview')
-            # Reload only the two consumers of these settings, using ordinary unbounded stop.
-            compose(state, root, 'stop', '--timeout', '-1', 'preview-app', 'preview-timer')
+            full_runtime = state.get('full_runtime', False)
+            if full_runtime:
+                if state.get('release_runtime', False) or native([
+                        DOCKER, 'ps', '-aq', '--filter', 'label=com.docker.compose.project=' + state['project'],
+                        '--filter', 'label=com.docker.compose.service=preview-runtime']):
+                    raise RuntimeError('Full runtime video preparation is only available before its first testing runtime')
+            else:
+                # Reload only the two consumers of these settings, using ordinary unbounded stop.
+                compose(state, root, 'stop', '--timeout', '-1', 'preview-app', 'preview-timer')
             print(compose(state, root, 'run', '--rm', '--no-deps', '-T', 'bootstrap',
                           'help/preview/bootstrap.php', 'video'))
             state['video_configured'] = True
             (root / 'state.json').write_text(json.dumps(state, ensure_ascii=False, indent=2) + '\n',
                                            encoding='utf-8', newline='\n')
-            compose(state, root, 'up', '-d', '--no-deps', 'preview-app', 'preview-timer')
+            if not full_runtime:
+                compose(state, root, 'up', '-d', '--no-deps', 'preview-app', 'preview-timer')
             assert_resources(state)
             if native([DOCKER, 'ps', '-q', '--filter', 'label=com.docker.compose.project=' + state['project'],
                        '--filter', 'label=com.docker.compose.service=preview-web', '--filter', 'status=running']):
