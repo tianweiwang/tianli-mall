@@ -1550,7 +1550,7 @@ HTML;
                         'percent' => round((abs($cha_count) / intval($pre_total['count']) * 100), 2),
                         'is_plus' => $cha_count > 0 ? -1 : ($cha_count == 0 ? 0 : 1)
                     ];
-                    $cha_price = round($pre_total['price'], 2) - round($total['price'], 2);
+                    $cha_price = round($pre_total['price'] ?? 0, 2) - round($total['price'], 2);
                     $pre_total['price'] = $pre_total['price'] == 0 ? 1 : $pre_total['price'];
                     $chartdata['cycle']['price'] = [
                         'data' => $total['price'] ?: 0,
