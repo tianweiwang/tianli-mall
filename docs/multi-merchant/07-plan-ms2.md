@@ -151,6 +151,8 @@ public function adjust(MerchantContext $ctx, int $productId, string $unique, int
 
 操作和证据沿用[原预览说明](../../help/preview/README.md)、唯一PROGRESS及原trade目录r39-delivery、template-api、three-role-order18-final、definition-readback、前后快照和实际截图；无应用源码改动、重新构建或服务重建。
 
+2026-10-28本机正常补验r42：复用当前模板2与商品8基础107/升级108各1件，原小程序390购物车3/4→persistent确认→唯一未付根19，实际商品49.80+运费3.00=52.80；三端保存明细各分摊1.50元运费。原顾客页面正常取消，三端paid0/cancel1、数量2及金额保持，库存分别8→7→8、5→4→5，reserve25/26与release27/28各1且对应关联。商家真实未付/取消列表与详情及小程序两状态已核，补足r40待付源级证据。当前全商品/规格摘要最终同，原18单/18明细、6支付尝试和旧24库存流水保持；6售后/19动作/6文件与四运费表逐行同。无运费/商品修改、重建或新环境，7服务/60完整挂载对象保持（仅挂载数组枚举顺序规范化）。原trade目录r42-delivery与before/created/final、三端明细、原生/商家页面证据及唯一PROGRESS记录详情。只补两件同模板的正常续件分支，不签重量/体积/地域、320运费、真机、完整Task5/MS2或人工验收；停止样本及R38/R39旧证据缺口保留。
+
 ### Task 6: 分类绑定
 
 **Files:**
