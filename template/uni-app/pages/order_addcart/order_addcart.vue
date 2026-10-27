@@ -73,9 +73,9 @@
                     <view class="pictrue">
                       <image
                         v-if="entry.item.productInfo.attrInfo"
-                        :src="entry.item.productInfo.attrInfo.image"
+                        :src="productImage(entry.item.productInfo.attrInfo.image)"
                       ></image>
-                      <image v-else :src="entry.item.productInfo.image"></image>
+                      <image v-else :src="productImage(entry.item.productInfo.image)"></image>
                     </view>
                     <view class="text">
                       <view
@@ -155,9 +155,9 @@
                 <view class="pictrue">
                   <image
                     v-if="item.productInfo && item.productInfo.attrInfo"
-                    :src="item.productInfo.attrInfo.image"
+                    :src="productImage(item.productInfo.attrInfo.image)"
                   ></image>
-                  <image v-else-if="item.productInfo && item.productInfo.image" :src="item.productInfo.image"></image>
+                  <image v-else-if="item.productInfo && item.productInfo.image" :src="productImage(item.productInfo.image)"></image>
                 </view>
                 <view class="text acea-row row-column-between">
                   <view class="line1 name">{{
@@ -287,6 +287,7 @@ import pageFooter from "@/components/pageFooter/index.vue";
 import colors from "@/mixins/color";
 import { HTTP_REQUEST_URL, DEBOUNCETIME } from "@/config/app";
 import { Throttle } from "@/utils/validate.js";
+import { publicMediaUrl } from '@/utils/public-media.js';
 
 export default {
   components: {
@@ -443,6 +444,14 @@ export default {
     }
   },
   methods: {
+    productImage(value) {
+      // #ifdef MP
+      return publicMediaUrl(value, HTTP_REQUEST_URL);
+      // #endif
+      // #ifndef MP
+      return value;
+      // #endif
+    },
     // Only server cart references associate rows with a store; product/cache labels do not.
     mergeCartGroups(groups) {
       groups.forEach((incoming) => {

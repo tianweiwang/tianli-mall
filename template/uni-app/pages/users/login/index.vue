@@ -18,7 +18,7 @@
 					<view class="item">
 						<view class="acea-row row-middle">
 							<image src="../static/code_1.png" style="width: 28rpx; height: 32rpx"></image>
-							<input type="password" :placeholder="$t(`填写登录密码`)" v-model="password" required />
+							<input type="text" :password="true" :placeholder="$t(`填写登录密码`)" v-model="password" required />
 						</view>
 					</view>
 				</form>

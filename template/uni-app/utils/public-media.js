@@ -2,10 +2,14 @@
 // Keep this list finite: text, links, private references and business values are not media.
 const mediaFields = new Set(['image', 'slider_image', 'small_image', 'video_link', 'logo']);
 
+function publicMediaUrl(value, origin) {
+  return typeof value === 'string' && value.startsWith('/uploads/') ? origin + value : value;
+}
+
 module.exports = function normalizePublicMedia(value, origin) {
   function visit(item, media) {
     if (typeof item === 'string') {
-      return media && item.startsWith('/uploads/') ? origin + item : item;
+      return media ? publicMediaUrl(item, origin) : item;
     }
     if (Array.isArray(item)) return item.map(entry => visit(entry, media));
     if (item && typeof item === 'object') {
@@ -20,3 +24,5 @@ module.exports = function normalizePublicMedia(value, origin) {
   }
   return visit(value, false);
 };
+
+module.exports.publicMediaUrl = publicMediaUrl;

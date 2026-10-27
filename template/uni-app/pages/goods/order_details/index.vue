@@ -7,17 +7,13 @@
 			:pending="!!receiptPending" :sending="receiptSending" :reading="fulfillmentLoading"
 			:disabled="!isLogin || !!fulfillmentError || receiptPreparing || receiptNeedsRefresh"
 			:error="receiptError" :feedback="receiptFeedback" @submit="confirmReceipt" @retry="sendReceipt"></marketplace-receipt>
-		<view v-if="!isReturn && (fulfillmentKind === 'root' || fulfillmentKind === 'child') && fulfillmentView && fulfillmentView.order.paid === 1" class="marketplace-aftersale-navigation">
-			<button class="marketplace-aftersale-navigation-button" :disabled="fulfillmentLoading || !!fulfillmentError || receiptSending" @tap="openMarketplaceAftersale">售后服务（申请及记录）</button>
-			<button class="marketplace-aftersale-navigation-button marketplace-review-navigation-button" :disabled="!isLogin || fulfillmentLoading || !!fulfillmentError || receiptSending" @tap="openMarketplaceReview">{{ fulfillmentKind === 'root' ? '商品评价（资格及记录）' : '查看原订单商品评价' }}</button>
-		</view>
 		<view class="order-details" v-if="fulfillmentKind === 'legacy' || fulfillmentKind === 'root'">
 			<!-- 给header上与data上加on为退款订单-->
 			<view class="header bg-color acea-row row-middle" :class="isGoodsReturn ? 'on' : ''">
-				<view class="pictrue" v-if="isGoodsReturn == false">
+				<view class="pictrue" v-if="isGoodsReturn == false && orderInfo.status_pic">
 					<image :src="orderInfo.status_pic"></image>
 				</view>
-				<view class="data" :class="isGoodsReturn ? 'on' : ''">
+				<view class="data" :class="isGoodsReturn || !orderInfo.status_pic ? 'on' : ''">
 					<view v-if="fulfillmentKind === 'root' && orderInfo.schema === 2" class="state">{{ rootOrderStatusText(fulfillmentView.order) }}</view>
 					<view v-else class="state">{{ orderInfo._status._msg }}</view>
 					<view>
@@ -364,8 +360,8 @@
 				</view>
 			</view>
 			<view class="wrapper" v-if="savedMarketplaceFormsV1 && savedMarketplaceFormGroups.length">
-				<view class="marketplace-saved-form-product" v-for="group in savedMarketplaceFormGroups"
-					:key="String(group.product_id) + ':' + group.definition_sha256">
+				<view class="marketplace-saved-form-product" v-for="group in savedMarketplaceFormRenderGroups"
+					:key="group.renderKey">
 					<view class="item marketplace-saved-form-product-name">{{group.product_name}}</view>
 					<view class="item" v-for="field in group.fields" :key="field.field_index">
 						<view>{{field.field_index + 1}}. {{field.title}}：</view>
@@ -499,13 +495,13 @@
 					<text class="money font-color">{{ $t(`￥`) }}{{ savedMarketplaceFormsV1 ? strictSavedMoney(orderInfo.pay_price) : parseFloat(orderInfo.pay_price).toFixed(2) }}</text>
 				</view>
 			</view>
-			<view style="height: 120rpx"></view>
+			<view v-if="fulfillmentKind === 'legacy'" style="height: 120rpx"></view>
 			<view v-if="fulfillmentKind === 'root' && marketplaceCancelFeedback" class="marketplace-cancel-feedback" role="status">{{ marketplaceCancelFeedback }}</view>
 			<view v-if="fulfillmentKind === 'root' && [0, '0'].includes(orderInfo.paid) && [0, '0'].includes(orderInfo.is_cancel)" class="marketplace-aftersale-navigation">
-				<button class="marketplace-aftersale-navigation-button" :disabled="!isLogin || fulfillmentLoading || !!fulfillmentError || marketplaceCancelPending" @tap="pay_open">{{$t(`选择付款方式`)}}</button>
+				<button class="marketplace-aftersale-navigation-button marketplace-pay-button" :disabled="!isLogin || fulfillmentLoading || !!fulfillmentError || marketplaceCancelPending" @tap="pay_open">{{$t(`选择付款方式`)}}</button>
 				<button class="marketplace-aftersale-navigation-button marketplace-order-cancel-button" :disabled="!isLogin || fulfillmentLoading || !!fulfillmentError || marketplaceCancelPending" @tap="cancelMarketplaceOrder">{{ marketplaceCancelPending ? $t('正在处理取消请求') : $t('取消订单') }}</button>
 			</view>
-			<view class="wrapper" v-if="fulfillmentKind === 'root' && orderInfo.paid == 1 && !is_gift && isReturn != 1">
+			<view class="wrapper marketplace-order-actions" v-if="fulfillmentKind === 'root' && orderInfo.paid == 1 && !is_gift && isReturn != 1">
 				<button v-if="invoiceData" class="fulfillment-again" :disabled="fulfillmentLoading || !!fulfillmentError" @tap="aleartStatusChange">{{ $t('查看发票') }}</button>
 					<button class="marketplace-again-button fulfillment-again" v-if="orderInfo.paid == 1 && !is_gift && isReturn != 1"
 						:disabled="fulfillmentLoading || !!fulfillmentError || againPending || againNavigating || againGroups.length > 0" @tap="goOrderConfirm">
@@ -576,6 +572,10 @@
 					</view>
 				</view>
 			</view>
+		</view>
+		<view v-if="!isReturn && (fulfillmentKind === 'root' || fulfillmentKind === 'child') && fulfillmentView && fulfillmentView.order.paid === 1" class="marketplace-aftersale-navigation marketplace-service-actions">
+			<button class="marketplace-aftersale-navigation-button" :disabled="fulfillmentLoading || !!fulfillmentError || receiptSending" @tap="openMarketplaceAftersale">售后服务</button>
+			<button class="marketplace-aftersale-navigation-button marketplace-review-navigation-button" :disabled="!isLogin || fulfillmentLoading || !!fulfillmentError || receiptSending" @tap="openMarketplaceReview">{{ fulfillmentKind === 'root' ? '商品评价' : '原订单评价' }}</button>
 		</view>
 		<home v-show="!aleartStatus && !invShow"></home>
 		<view class="mask" v-if="refund_close" @click="refund_close = false"></view>
@@ -838,6 +838,12 @@ export default {
 		...mapGetters(['isLogin']),
 		orderFormImageContext() { return this.fulfillmentKind === 'root' && this.fulfillmentView ? {kind: 'customer_order', rootId: this.fulfillmentView.order.id, route: this.order_id} : null; },
 		orderFormImageGroups() { return this.savedMarketplaceFormGroups; },
+		savedMarketplaceFormRenderGroups() {
+			return this.savedMarketplaceFormGroups.map(group => ({
+				...group,
+				renderKey: String(group.product_id) + ':' + group.definition_sha256
+			}));
+		},
 		orderFormImagesActive() { return this.privateFormImagesVisible && !this.fulfillmentLoading && !this.fulfillmentError; },
 		fulfillmentActor() { return String(this.$store.state.app.uid); },
 		receiptSessionRevision() { return this.$store.state.app.authRevision; },
@@ -1893,7 +1899,10 @@ export default {
 };
 </script>
 <style scoped lang="scss">
-.fulfillment-again { display: flex; align-items: center; justify-content: center; box-sizing: border-box; width: 100%; max-width: 100%; min-width: 0; min-height: 44px; height: auto; margin: 0; padding: 12px 18px; font-size: 28rpx; line-height: 1.4; text-align: center; white-space: normal; }
+.fulfillment-again { display: flex; align-items: center; justify-content: center; box-sizing: border-box; max-width: 100%; min-width: 160rpx; min-height: 44px; height: auto; margin: 0; padding: 14rpx 28rpx; border: 1rpx solid #ccc; border-radius: 50rpx; color: #333; background: #fff; font-size: 26rpx; line-height: 1.4; text-align: center; white-space: normal; }
+.fulfillment-again::after { border: 0; }
+.fulfillment-again[disabled] { color: #999; border-color: #ddd; background: #f5f5f5; }
+.order-details .marketplace-order-actions { display: flex; justify-content: flex-end; align-items: stretch; flex-wrap: wrap; gap: 18rpx; }
 .refund-tip {
 	font-size: 24rpx;
 	margin-top: 10rpx;
@@ -3016,11 +3025,12 @@ export default {
 }
 </style>
 <style scoped lang="scss">
-.marketplace-aftersale-navigation { box-sizing: border-box; width: 100%; min-width: 0; padding: 24rpx 30rpx; background: #fff; }
-.marketplace-aftersale-navigation-button { box-sizing: border-box; display: flex; align-items: center; justify-content: center; width: 100%; min-width: 0; max-width: 100%; min-height: 44px; height: auto; margin: 0; padding: 10px 16px; border: 1px solid #ddd; border-radius: 6px; color: var(--view-theme, #333); background: #fff; font-size: 28rpx; line-height: 1.4; text-align: center; white-space: normal; }
+.marketplace-aftersale-navigation { box-sizing: border-box; display: flex; flex-wrap: wrap; align-items: stretch; justify-content: flex-end; gap: 18rpx; width: 100%; min-width: 0; margin-top: 12rpx; padding: 24rpx 30rpx; background: #fff; }
+.marketplace-aftersale-navigation-button { box-sizing: border-box; display: flex; align-items: center; justify-content: center; flex: 0 1 auto; min-width: 160rpx; max-width: 100%; min-height: 44px; height: auto; margin: 0; padding: 14rpx 28rpx; border: 1rpx solid #ccc; border-radius: 50rpx; color: #333; background: #fff; font-size: 26rpx; line-height: 1.4; text-align: center; white-space: normal; }
 .marketplace-aftersale-navigation-button::after { border: 0; }
-.marketplace-review-navigation-button { margin-top: 16rpx; }
-.marketplace-order-cancel-button { margin-top: 16rpx; }
+.marketplace-pay-button { border-color: var(--view-theme, #e93323); color: #fff; background: var(--view-theme, #e93323); }
+.marketplace-aftersale-navigation-button[disabled] { color: #999; border-color: #ddd; background: #f5f5f5; }
+.marketplace-service-actions { padding-bottom: calc(24rpx + env(safe-area-inset-bottom)); }
 .marketplace-cancel-feedback { box-sizing: border-box; width: 100%; padding: 12px 30rpx; color: #555; font-size: 26rpx; line-height: 1.6; overflow-wrap: anywhere; }
 .order-details .footer button.marketplace-again-button {
 	display: flex;

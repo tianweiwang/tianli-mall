@@ -889,7 +889,7 @@
 
 		}
 
-		.marketplace-test-amount { font-size: 50px; font-weight: 600; }
+		.marketplace-test-amount { font-size: 50rpx; font-weight: 600; line-height: 1; }
 		.marketplace-test-notice { padding: 24rpx 30rpx; color: #666; font-size: 26rpx; line-height: 1.6; overflow-wrap: anywhere; }
 		.marketplace-test-button { box-sizing: border-box; min-width: 0; max-width: 100%; height: auto; min-height: 90rpx; margin: 0; padding: 16rpx 24rpx; font-size: 30rpx; line-height: 1.4; text-align: center; white-space: normal; }
 		.marketplace-test-button::after { border: 0; }
@@ -900,7 +900,7 @@
 			width: 100%;
 			max-width: 560px;
 			margin: 0 auto;
-			padding: 0 16px 120px;
+			padding: 0 30rpx 120px;
 			padding-bottom: calc(120px + constant(safe-area-inset-bottom));
 			padding-bottom: calc(120px + env(safe-area-inset-bottom));
 
@@ -910,7 +910,7 @@
 			.payment .item .left .text { overflow-wrap: anywhere; }
 			.payment .item > .iconfont { flex-shrink: 0; margin-left: 16rpx; }
 
-			.btn { box-sizing: border-box; left: 0; right: 0; width: 100%; max-width: 560px; margin: 0 auto; padding: 0 16px; }
+			.btn { box-sizing: border-box; left: 0; right: 0; width: 100%; max-width: 560px; margin: 0 auto; padding: 0 30rpx; }
 			.button { width: 100%; min-height: 44px; display: flex; align-items: center; justify-content: center; }
 			.wait-pay { display: flex; align-items: center; justify-content: center; min-height: 44px; padding-top: 0; text-align: center; }
 		}

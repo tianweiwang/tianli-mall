@@ -192,9 +192,9 @@
 				</view>
 			</view>
 			<view v-if="marketplaceV1">
-				<view class='wrapper' v-for="group in marketplaceFormGroups" :key="String(group.product_id) + ':' + group.definition_sha256">
+				<view class='wrapper' v-for="group in marketplaceFormRenderGroups" :key="group.renderKey">
 					<view class='item'>{{group.product_name}}</view>
-					<view class='item acea-row row-between-wrapper' v-for="item in group.fields" :key="marketplaceFormIdentity(group,item)">
+					<view class='item acea-row row-between-wrapper' v-for="item in group.fields" :key="item.renderKey">
 						<view>
 							<span v-if="item.status" style="color: red;">*</span>
 							<span v-else style="marginLeft: 8px;"></span>
@@ -640,10 +640,17 @@
 			legacyFormFields() { return this.marketplaceV1 ? [] : this.confirm; },
 			legacyFormActive() { return this.privateFormImagesVisible && !this.marketplaceConfirmPending && !!this.legacyFormContext; },
 			legacyFormLocked() { return this.legacyFormUploadPending || this.legacyFormSubmitPending || this.legacyFormBlocked || this.legacyFormSubmitted; },
-			legacyHasPrivateForm() { return !this.marketplaceV1 && this.confirm.some(field => field.label === 'img' && Array.isArray(field.value) && field.value.some(isLegacyOrderFormImage)); },
+			legacyHasPrivateForm() { return !this.marketplaceV1 && Array.isArray(this.confirm) && this.confirm.some(field => field.label === 'img' && Array.isArray(field.value) && field.value.some(isLegacyOrderFormImage)); },
 			...mapGetters(['isLogin']),
 			orderFormImageContext() { return this.marketplaceV1 && this.orderKey ? {kind: 'confirmation', key: this.orderKey, generation: this.marketplaceEditGeneration, page: this.marketplacePageInstance} : null; },
 			orderFormImageGroups() { return this.marketplaceFormGroups; },
+			marketplaceFormRenderGroups() {
+				return this.marketplaceFormGroups.map(group => ({
+					...group,
+					renderKey: String(group.product_id) + ':' + group.definition_sha256,
+					fields: group.fields.map(field => ({...field, renderKey: marketplaceFormIdentity(group, field)}))
+				}));
+			},
 			orderFormImagesActive() { return this.privateFormImagesVisible && !!this.marketplaceOwner && this.marketplaceFormsReady && !this.marketplaceRestoring && this._marketplaceAlive === true; },
 			marketplaceCleanupFailed() { return this.$store.state.app.confirmationCleanupFailed === true; },
 			marketplacePreparing() {

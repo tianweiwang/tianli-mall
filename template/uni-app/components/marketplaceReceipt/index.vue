@@ -11,7 +11,7 @@
       <view class="receipt-heading">确认本包裹收货</view>
       <view class="receipt-notice">仅确认已实际收到的商品。当前资料可确认 {{ eligibleTotal }} 件，提交时按最新状态复核。</view>
       <view class="receipt-buttons">
-        <button class="receipt-button" :disabled="sending || reading" @click="$emit('submit', { mode: 'all_eligible' })">确认当前可收全部</button>
+        <button class="receipt-button receipt-primary" :disabled="sending || reading" @click="$emit('submit', { mode: 'all_eligible' })">确认当前可收全部</button>
         <button class="receipt-button" :disabled="sending || reading" @click="partial = !partial">{{ partial ? '收起部分选择' : '部分确认' }}</button>
       </view>
       <view v-if="partial">
@@ -31,7 +31,7 @@
             <button class="receipt-button receipt-small" :disabled="sending || reading" @click="chooseAll(row)">选择该商品可收范围</button>
           </view>
         </view>
-        <button class="receipt-button receipt-submit" :disabled="sending || reading" @click="submitPartial">确认所选范围</button>
+        <button class="receipt-button receipt-primary receipt-submit" :disabled="sending || reading" @click="submitPartial">确认所选范围</button>
       </view>
     </template>
     <view v-else-if="receipt && !pending && receipt.allowed_actions.receive === false" class="receipt-notice">{{ unavailableText }}</view>
@@ -77,18 +77,20 @@ export default {
 };
 </script>
 <style scoped>
-.receipt-controls { box-sizing: border-box; width: 100%; min-width: 0; padding: 30rpx; margin-top: 16rpx; background: #fff; color: #282828; font-size: 28rpx; line-height: 1.6; overflow-wrap: anywhere; }
-.receipt-heading { font-weight: 600; }
-.receipt-notice { padding: 12rpx 0; color: #606266; }
+.receipt-controls { box-sizing: border-box; width: 100%; min-width: 0; padding: 30rpx; margin-top: 12rpx; background: #fff; color: #282828; font-size: 28rpx; line-height: 1.6; overflow-wrap: anywhere; }
+.receipt-heading { font-size: 30rpx; font-weight: 600; }
+.receipt-notice { padding: 12rpx 0; color: #868686; font-size: 24rpx; }
 .receipt-note { color: #868686; font-size: 26rpx; margin-top: 8rpx; }
-.receipt-error { border-left: 3px solid #b65353; padding: 16rpx; background: #fff3f3; color: #9b3232; }
+.receipt-error { border-left: 4rpx solid #b65353; padding: 20rpx; background: #fff3f3; color: #9b3232; font-size: 26rpx; }
 .receipt-item { min-width: 0; margin-top: 20rpx; padding-top: 20rpx; border-top: 1px solid #eee; }
-.receipt-buttons, .receipt-range { display: flex; flex-wrap: wrap; align-items: stretch; justify-content: center; gap: 16rpx; margin-top: 16rpx; min-width: 0; }
+.receipt-buttons, .receipt-range { display: flex; flex-wrap: wrap; align-items: stretch; justify-content: flex-end; gap: 16rpx; margin-top: 20rpx; min-width: 0; }
 .receipt-input-group { flex: 1 1 180rpx; min-width: 0; }
-.receipt-input-group input { box-sizing: border-box; width: 100%; min-width: 0; height: 44px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 28rpx; }
-.receipt-button { box-sizing: border-box; display: flex; align-items: center; justify-content: center; min-height: 44px; height: auto; min-width: 0; max-width: 100%; flex: 0 1 auto; margin: 0; padding: 10px 16px; border: 1px solid #ddd; border-radius: 6px; background: #fff; color: var(--view-theme, #333); font-size: 28rpx; line-height: 1.4; text-align: center; white-space: normal; }
+.receipt-input-group > text { display: block; margin-bottom: 12rpx; color: #868686; font-size: 24rpx; }
+.receipt-input-group input { box-sizing: border-box; width: 100%; min-width: 0; height: 44px; padding: 16rpx; border: 1rpx solid #ddd; border-radius: 6rpx; font-size: 28rpx; }
+.receipt-button { box-sizing: border-box; display: flex; align-items: center; justify-content: center; min-height: 44px; height: auto; min-width: 0; max-width: 100%; flex: 0 1 auto; margin: 0; padding: 16rpx 30rpx; border: 1rpx solid #ccc; border-radius: 50rpx; background: #fff; color: #666; font-size: 28rpx; line-height: 1.4; text-align: center; white-space: normal; overflow-wrap: anywhere; }
+.receipt-primary { border-color: var(--view-theme, #e93323); background: var(--view-theme, #e93323); color: #fff; }
 .receipt-button::after { border: 0; }
-.receipt-button[disabled] { color: #999; background: #f5f5f5; }
+.receipt-button[disabled] { border-color: #ddd; color: #999; background: #f5f5f5; }
 .receipt-small { font-size: 26rpx; }
 .receipt-submit { width: 100%; margin-top: 24rpx; }
 </style>

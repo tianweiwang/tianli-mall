@@ -29,8 +29,8 @@
 				@click="jumpCon(item)">
 				<view class="item acea-row row-between-wrapper">
 					<view class='pictrue' :class="{gray:!item.is_valid}">
-						<image :src='item.productInfo.attrInfo.image' v-if="item.productInfo.attrInfo"></image>
-						<image :src='item.productInfo.image' v-else></image>
+						<image :src='productImage(item.productInfo.attrInfo.image)' v-if="item.productInfo.attrInfo"></image>
+						<image :src='productImage(item.productInfo.image)' v-else></image>
 					</view>
 					<view class='text'>
 						<view class='acea-row row-between-wrapper'>
@@ -82,6 +82,8 @@
 
 <script>
 	import { mapGetters } from 'vuex'
+	import { publicMediaUrl } from '@/utils/public-media.js';
+	import { HTTP_REQUEST_URL } from '@/config/app.js';
 	export default {
 		computed: mapGetters(['uid']),
 		props: {
@@ -211,6 +213,14 @@
 
 		},
 		methods: {
+			productImage(value) {
+			  // #ifdef MP
+			  return publicMediaUrl(value, HTTP_REQUEST_URL);
+			  // #endif
+			  // #ifndef MP
+			  return value;
+			  // #endif
+			},
 			evaluateTap: function(unique, orderId) {
 				if (this.readOnly) return;
 				uni.navigateTo({
