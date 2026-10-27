@@ -8,6 +8,7 @@
         <!-- #ifndef APP-PLUS -->
         <parser
           :html="productData.description"
+          :domain="mediaDomain"
           ref="article"
           :tag-style="tagStyle"
         ></parser>
@@ -23,6 +24,9 @@
 <script>
 import commonWrapper from "./commonWrapper.vue";
 import parser from "@/components/jyf-parser/jyf-parser";
+// #ifdef MP
+import { HTTP_REQUEST_URL } from "@/config/app";
+// #endif
 
 export default {
   name: "productDesc",
@@ -41,6 +45,14 @@ export default {
     },
   },
   computed: {
+    mediaDomain() {
+      // #ifdef MP
+      return HTTP_REQUEST_URL;
+      // #endif
+      // #ifndef MP
+      return "";
+      // #endif
+    },
     titleShow() {
       return this.dataConfig.isShow?.tabVal == 0;
     },
