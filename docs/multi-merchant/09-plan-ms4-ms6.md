@@ -1305,6 +1305,8 @@ H5实际失败状态收口与后继（2026-10-18）：Run `202610171222555a7646`
 
 2026-10-27订单维护内部诊断收口（r37）：自动取消及自动收货内部四处日志改为固定取消/收货的returned_false或exception事件，保原always-on/error级别；复用实际HTTP request_id或CLI独立diagnostic_id及有限异常元数据，不输出订单号、message、trace或绝对路径。原事务、返回、catch、调用签名与V1固定错误码保持，日志自身失败不替代业务；CLI独立编号不冒称外层timer_run_id。纯日志小修只做PHP8.2语法、有限源审和业务正文剔除差异核同，不为不命中的零候选场景另建环境或重复运行。四个错误分支的实际日志输出、false及异常样本继续NOT RUN，原R36正常样本不转签为本片运行验收；完整R04责任保留。
 
+2026-10-28旧付款通知Job日志源码收口（r46）：OrderJob七条活动原文日志改用现有RuntimeLog，移除客服昵称与异常message；QueueTrait可HTTP同步执行，故按实际runningInConsole分流HTTP request_id与CLI独立diagnostic_id，不冒称外层job_id/task_request_id关联。现helper只记录有限异常类/代码/相对源位置，隔离日志自身失败；七条catch、发送/订单/会员/标签调用、return/throw及重试正文保持，原ValidateException文案与注释打印段未改。精确七表达式及import逆变换与原文件字节核同，现PHP8.2.33对实际候选STDIN纯-l通过、未执行应用代码；有限独立源审另记交付结果。不运行异常/日志故障样本，不签整类输出或完整R04；当前18180原映射与常驻服务未切换，无前端/镜像构建，不能由源码提交代签运行接入。
+
 ### Task 5: 旧入口与配额
 
 - 用例 R05（新开关未启用时直接调用旧营销、余额入口 → 按约定拒绝）、R06（单商家高频请求、导出任务的限流与监控）。

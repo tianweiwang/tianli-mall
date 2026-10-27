@@ -28,11 +28,11 @@ use app\services\user\UserLevelServices;
 use app\services\user\UserServices;
 use app\services\wechat\WechatUserServices;
 use crmeb\basic\BaseJobs;
+use crmeb\services\RuntimeLog;
 use crmeb\services\app\WechatService;
 use crmeb\services\workerman\ChannelService;
 use crmeb\traits\QueueTrait;
 use think\exception\ValidateException;
-use think\facade\Log;
 
 /**
  * 订单消息队列
@@ -54,19 +54,19 @@ class OrderJob extends BaseJobs
         try {
             $this->setEconomizeMoney($order);
         } catch (\Throwable $e) {
-            Log::error('计算节省金额,失败原因:' . $e->getMessage());
+            app()->runningInConsole() ? RuntimeLog::consoleException(app(), $e) : RuntimeLog::exception(app(), $e);
         }
         //更新用户支付订单数量
         try {
             $this->setUserPayCountAndPromoter($order);
         } catch (\Throwable $e) {
-            Log::error('更新用户订单数失败,失败原因:' . $e->getMessage());
+            app()->runningInConsole() ? RuntimeLog::consoleException(app(), $e) : RuntimeLog::exception(app(), $e);
         }
         //增加用户标签
         try {
             $this->setUserLabel($order);
         } catch (\Throwable $e) {
-            Log::error('用户标签添加失败,失败原因:' . $e->getMessage());
+            app()->runningInConsole() ? RuntimeLog::consoleException(app(), $e) : RuntimeLog::exception(app(), $e);
         }
         try {
             if (in_array($order['is_channel'], [0, 2])) {//公众号发送模板消息
@@ -97,13 +97,13 @@ class OrderJob extends BaseJobs
             $levelServices = app()->make(UserLevelServices::class);
             $levelServices->detection((int)$order['uid']);
         } catch (\Throwable $e) {
-            Log::error('会员等级升级失败,失败原因:' . $e->getMessage());
+            app()->runningInConsole() ? RuntimeLog::consoleException(app(), $e) : RuntimeLog::exception(app(), $e);
         }
         //向后台发送新订单消息
         try {
             ChannelService::instance()->send('NEW_ORDER', ['order_id' => $order['order_id']]);
         } catch (\Throwable $e) {
-            Log::error('向后台发送新订单消息失败,失败原因:' . $e->getMessage());
+            app()->runningInConsole() ? RuntimeLog::consoleException(app(), $e) : RuntimeLog::exception(app(), $e);
         }
         return true;
     }
@@ -225,7 +225,7 @@ class OrderJob extends BaseJobs
                             try {
                                 WechatService::staffService()->message($message)->to($userInfo['openid'])->send();
                             } catch (\Exception $e) {
-                                Log::error($userInfo['nickname'] . '发送失败' . $e->getMessage());
+                                app()->runningInConsole() ? RuntimeLog::consoleException(app(), $e) : RuntimeLog::exception(app(), $e);
                             }
                         } else {
                             // 推送文字消息
@@ -234,7 +234,7 @@ class OrderJob extends BaseJobs
                             try {
                                 WechatService::staffService()->message($head)->to($userInfo['openid'])->send();
                             } catch (\Exception $e) {
-                                Log::error($userInfo['nickname'] . '发送失败' . $e->getMessage());
+                                app()->runningInConsole() ? RuntimeLog::consoleException(app(), $e) : RuntimeLog::exception(app(), $e);
                             }
                         }
                     }
