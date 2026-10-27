@@ -60,7 +60,7 @@
                 v-model="addMsg.title"
                 placeholder="输入标题（选填）"
                 style="width: 100%"
-                @on-focus="bindFocus"
+                @focus="bindFocus"
               />
               <div class="conBox" :class="{ active: addMsg.isEdit }">
                 <div class="content">
@@ -328,7 +328,7 @@ export default {
         // res.data.data.unshift(obj)
         this.sortList = res.data.data;
         if (this.cateId === '') {
-          this.cateId = res.data.data[0].id;
+          this.cateId = this.sortList.length ? this.sortList[0].id : '';
         }
         this.getList();
       });
@@ -393,7 +393,6 @@ export default {
           this.addMsg.cateId = '';
           this.addMsg.isEdit = false;
           this.$message.success(res.msg);
-          res.data.isEdit = false;
           this.page = 1;
           this.list = [];
           this.isScroll = true;
