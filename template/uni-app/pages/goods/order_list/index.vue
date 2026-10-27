@@ -83,7 +83,7 @@
 						</view>
 						<view class="item-info acea-row row-between row-top" v-for="(items, indexCat) in item.cartInfo" :key="indexCat">
 							<view class="pictrue">
-								<easy-loadimage mode="widthFix" :image-src="items.productInfo.image"></easy-loadimage>
+								<easy-loadimage mode="widthFix" :image-src="publicImage(items.productInfo.image)"></easy-loadimage>
 								<!-- <image :src="items.productInfo.image"></image> -->
 							</view>
 							<view class="text row-between">
@@ -162,6 +162,8 @@ import authorize from '@/components/Authorize';
 import emptyPage from '@/components/emptyPage.vue';
 import colors from '@/mixins/color.js';
 import { readOrderFulfillment, rootOrderStatusText } from '@/utils/marketplace-fulfillment.js';
+import { HTTP_REQUEST_URL } from '@/config/app';
+const { publicMediaUrl } = require('@/utils/public-media.js');
 export default {
 	components: {
 		home,
@@ -242,6 +244,14 @@ export default {
 		}
 	},
 	methods: {
+		publicImage(value) {
+			// #ifdef MP
+			return publicMediaUrl(value, HTTP_REQUEST_URL);
+			// #endif
+			// #ifndef MP
+			return value;
+			// #endif
+		},
 		rootOrderStatusText,
 		clearSavedOrderList() {
 			this.listRevision++;

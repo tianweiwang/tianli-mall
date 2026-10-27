@@ -1,9 +1,10 @@
-// API public-upload paths are relative to the server, not the Mini Program package.
+// API public uploads and system images are relative to the server, not the Mini Program package.
 // Keep this list finite: text, links, private references and business values are not media.
 const mediaFields = new Set(['image', 'slider_image', 'small_image', 'video_link', 'logo']);
 
 function publicMediaUrl(value, origin) {
-  return typeof value === 'string' && value.startsWith('/uploads/') ? origin + value : value;
+  return typeof value === 'string' &&
+    (value.startsWith('/uploads/') || value.startsWith('/statics/system_images/')) ? origin + value : value;
 }
 
 module.exports = function normalizePublicMedia(value, origin) {

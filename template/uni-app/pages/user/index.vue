@@ -32,11 +32,20 @@
       @changeLogin="changeLogin"
       @changeBarg="changeBarg"
       @goDetail="goDetail"
-    ></PageDesign>
-    <view class="marketplace-aftersale-entry" :style="colorStyle">
-      <text class="marketplace-aftersale-entry-note">多商户订单的申请、处理记录与私有凭证</text>
-      <button class="marketplace-aftersale-entry-button" @tap="openMarketplaceAftersales">多商户售后</button>
-    </view>
+    >
+      <template #bottom>
+        <view class="marketplace-aftersale-entry" :style="colorStyle">
+          <button class="marketplace-aftersale-entry-button" @tap="openMarketplaceAftersales">
+            <text class="iconfont icon-a-shouhoutuikuan marketplace-aftersale-entry-icon"></text>
+            <view class="marketplace-aftersale-entry-copy">
+              <text class="marketplace-aftersale-entry-title">多商户售后</text>
+              <text class="marketplace-aftersale-entry-note">申请进度与售后记录</text>
+            </view>
+            <text class="iconfont icon-xiangyou marketplace-aftersale-entry-arrow"></text>
+          </button>
+        </view>
+      </template>
+    </PageDesign>
     <image v-if="copyRightPic" :src="copyRightPic" alt="" class="support"></image>
     <editUserModal
       :isShow="editModal"
@@ -620,8 +629,12 @@ export default {
     display: block;
   }
 }
-.marketplace-aftersale-entry { box-sizing: border-box; width: 100%; padding: 24rpx 30rpx; background: #fff; }
-.marketplace-aftersale-entry-note { display: block; color: #606266; font-size: 24rpx; line-height: 1.6; overflow-wrap: anywhere; }
-.marketplace-aftersale-entry-button { box-sizing: border-box; width: 100%; min-width: 0; max-width: 100%; display: flex; align-items: center; justify-content: center; min-height: 44px; height: auto; margin: 16rpx 0 0; padding: 10px 16px; color: var(--view-theme, #333); background: #fff; border: 1px solid #ddd; border-radius: 6px; font-size: 28rpx; line-height: 1.4; text-align: center; white-space: normal; }
+.marketplace-aftersale-entry { box-sizing: border-box; width: 100%; padding: 20rpx 30rpx; }
+.marketplace-aftersale-entry-button { box-sizing: border-box; width: 100%; min-width: 0; max-width: 100%; display: flex; align-items: center; min-height: 96rpx; height: auto; margin: 0; padding: 24rpx; color: #333; background: #fff; border: 0; border-radius: 12rpx; line-height: 1.5; text-align: left; white-space: normal; }
 .marketplace-aftersale-entry-button::after { border: 0; }
+.marketplace-aftersale-entry-icon { flex: none; margin-right: 20rpx; color: var(--view-theme, #333); font-size: 40rpx; }
+.marketplace-aftersale-entry-copy { flex: 1; min-width: 0; }
+.marketplace-aftersale-entry-title { display: block; font-size: 28rpx; }
+.marketplace-aftersale-entry-note { display: block; margin-top: 4rpx; color: #999; font-size: 24rpx; }
+.marketplace-aftersale-entry-arrow { flex: none; margin-left: 20rpx; color: #999; font-size: 24rpx; }
 </style>

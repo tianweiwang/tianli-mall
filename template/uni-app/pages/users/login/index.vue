@@ -1,7 +1,7 @@
 <template>
 	<view class="login-wrapper" :style="colorStyle">
 		<view class="shading">
-			<image :src="logoUrl" />
+			<image :src="displayLogoUrl" />
 			<view v-if="configData && configData.site_name" class="name">
 				{{ configData.site_name }}
 			</view>
@@ -103,6 +103,10 @@ import sendVerifyCode from '@/mixins/SendVerifyCode';
 import { loginH5, loginMobile, registerVerify, register, getCodeApi, appleLogin } from '@/api/user';
 import attrs, { required, alpha_num, chs_phone } from '@/utils/validate';
 import { getLogo } from '@/api/public';
+// #ifdef MP
+import { HTTP_REQUEST_URL } from '@/config/app';
+const { publicMediaUrl } = require('@/utils/public-media');
+// #endif
 // import cookie from "@/utils/store/cookie";
 import { VUE_APP_API_URL } from '@/utils';
 // #ifdef APP-PLUS
@@ -146,6 +150,16 @@ export default {
 			captchaType: 'clickWord',
 			configData: Cache.get('BASIC_CONFIG')
 		};
+	},
+	computed: {
+		displayLogoUrl() {
+			// #ifdef MP
+			return publicMediaUrl(this.logoUrl, HTTP_REQUEST_URL);
+			// #endif
+			// #ifndef MP
+			return this.logoUrl;
+			// #endif
+		}
 	},
 	watch: {
 		formItem: function (nval, oVal) {

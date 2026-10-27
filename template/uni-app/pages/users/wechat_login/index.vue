@@ -16,7 +16,7 @@
     </view>
     <!-- #endif -->
     <view class="merchant-msg">
-      <img :src="configData.wap_login_logo" />
+      <img :src="displayLogoUrl" />
       <view class="name">
         {{ configData.site_name }}
       </view>
@@ -136,6 +136,9 @@ import Auth from "@/libs/wechat.js";
 import { HTTP_REQUEST_URL } from "@/config/app";
 import { isWeixin } from "@/utils";
 import Cache from "@/utils/cache";
+// #ifdef MP
+const { publicMediaUrl } = require('@/utils/public-media');
+// #endif
 export default {
   mixins: [colors],
   data() {
@@ -165,6 +168,16 @@ export default {
       bindPhone: false,
       identityPageActive: true,
     };
+  },
+  computed: {
+    displayLogoUrl() {
+      // #ifdef MP
+      return publicMediaUrl(this.configData.wap_login_logo, HTTP_REQUEST_URL);
+      // #endif
+      // #ifndef MP
+      return this.configData.wap_login_logo;
+      // #endif
+    },
   },
   components: {
     mobileLogin,

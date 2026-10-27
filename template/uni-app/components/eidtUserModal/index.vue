@@ -3,7 +3,7 @@
 		<view class="product-window" :class="{'on':isShow}">
 			<view class="iconfont icon-guanbi" @click="closeAttr"></view>
 			<view class="mp-data">
-				<image :src="mpData.siteLogo" mode=""></image>
+				<image :src="displayLogoUrl" mode=""></image>
 				<text class="mp-name">{{mpData.siteName}} 申请</text>
 			</view>
 			<view class="trip-msg">
@@ -61,6 +61,10 @@
 	import colors from "@/mixins/color";
 	import Cache from '@/utils/cache';
 	import { CUSTOMER_AVATAR_UPLOAD, avatarUploadSelection } from '@/api/customerAvatar.js';
+	// #ifdef MP
+	import { HTTP_REQUEST_URL } from '@/config/app';
+	const { publicMediaUrl } = require('@/utils/public-media');
+	// #endif
 	import {
 		userEdit,
 	} from '@/api/user.js';
@@ -84,6 +88,16 @@
 				mpData: uni.getStorageSync('copyRight'),
 				canvasStatus: false,
 			};
+		},
+		computed: {
+			displayLogoUrl() {
+				// #ifdef MP
+				return publicMediaUrl(this.mpData.siteLogo, HTTP_REQUEST_URL);
+				// #endif
+				// #ifndef MP
+				return this.mpData.siteLogo;
+				// #endif
+			}
 		},
 		watch: {
 			'$store.state.app.authRevision'() {

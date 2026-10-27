@@ -1,7 +1,7 @@
 <template>
 	<view>
 		<view class="Popup" v-if="isShowAuth">
-			<image :src="logoUrl"></image>
+			<image :src="displayLogoUrl"></image>
 			<view class="title">授权提醒</view>
 			<view class="tip">请授权头像等信息，以便为您提供更好的服务</view>
 			<view class="bottom flex">
@@ -26,6 +26,10 @@ import { LOGO_URL, EXPIRES_TIME, USER_INFO, STATE_R_KEY } from '../config/cache'
 import { mapGetters } from 'vuex';
 import Routine from '../libs/routine';
 import store from '../store';
+// #ifdef MP
+import { HTTP_REQUEST_URL } from '@/config/app';
+const { publicMediaUrl } = require('@/utils/public-media');
+// #endif
 
 export default {
 	name: 'Authorize',
@@ -49,7 +53,17 @@ export default {
 			authKey: ''
 		};
 	},
-	computed: mapGetters(['isLogin', 'userInfo']),
+	computed: {
+		...mapGetters(['isLogin', 'userInfo']),
+		displayLogoUrl() {
+			// #ifdef MP
+			return publicMediaUrl(this.logoUrl, HTTP_REQUEST_URL);
+			// #endif
+			// #ifndef MP
+			return this.logoUrl;
+			// #endif
+		}
+	},
 	watch: {
 		isLogin(n) {
 			n === true && this.$emit('onLoadFun', this.userInfo);
