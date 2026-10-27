@@ -261,6 +261,81 @@ function preview_prepare_image_runtime(array $config): array
     return $identity + ['changed' => true];
 }
 
+/** Enable video only in a stopped, already prepared testing image runtime. */
+function preview_enable_image_video(bool $apply): array
+{
+    $config = preview_config();
+    preview_full_runtime_require(PHP_SAPI === 'cli' && posix_geteuid() === 0
+        && getenv('PREVIEW_FULL_RUNTIME') === '1' && getenv('PREVIEW_IMAGE_RUNTIME') === '1'
+        && (getenv('PREVIEW_RELEASE_RUNTIME') ?: '0') === '0'
+        && ($config['full_runtime'] ?? false) === true && ($config['image_runtime'] ?? false) === true
+        && ($config['release_runtime'] ?? false) === false && ($config['legacy_review_fixture'] ?? false) === false);
+    $target = '/run/preview-runtime-config';
+    $archive = '/run/preview-bootstrap/image-video-upgrade';
+    $marker = '/run/preview-app/product-video-ready.json';
+    $roots = ['/private/product-video', '/private/product-media-scan'];
+    foreach (array_merge([$archive, $marker], $roots) as $path) {
+        preview_full_runtime_require(!file_exists($path) && !is_link($path));
+    }
+    preview_full_runtime_require(is_file($target . '/.preview-runtime-ready.json')
+        && !is_link($target . '/.preview-runtime-ready.json'));
+    // This existing-ready path verifies identity, exact canonical INI and all writable permissions without repairing them.
+    $ready = preview_prepare_full_runtime();
+    preview_full_runtime_require(($ready['changed'] ?? null) === false
+        && ($ready['feature'] ?? null) === 'image-runtime-v1');
+    $identity = ['project' => $config['project'], 'run_id' => $config['run_id'], 'feature' => 'image-runtime-v1'];
+    $oldIni = file_get_contents($target . '/.env');
+    preview_full_runtime_require(is_string($oldIni) && $oldIni === preview_full_runtime_ini());
+    $oldLines = ["\nPRODUCT_VIDEO_UPLOAD_ENABLED = \"false\"\n",
+        "\nPRODUCT_VIDEO_UPLOAD_PRIVATE_ROOT = \"\"\n", "\nPRODUCT_MEDIA_SCAN_PRIVATE_ROOT = \"\"\n"];
+    $newLines = ["\nPRODUCT_VIDEO_UPLOAD_ENABLED = \"true\"\n",
+        "\nPRODUCT_VIDEO_UPLOAD_PRIVATE_ROOT = \"/private/product-video\"\n",
+        "\nPRODUCT_MEDIA_SCAN_PRIVATE_ROOT = \"/private/product-media-scan\"\n"];
+    foreach ($oldLines as $line) preview_full_runtime_require(substr_count($oldIni, $line) === 1);
+    $expectedIni = str_replace($oldLines, $newLines, $oldIni, $replacements);
+    preview_full_runtime_require($replacements === 3);
+    $result = ['project' => $config['project'], 'run_id' => $config['run_id'], 'changed' => false,
+        'old_ini_sha256' => hash('sha256', $oldIni), 'new_ini_sha256' => hash('sha256', $expectedIni),
+        'changed_scope' => ['PRODUCT_VIDEO_UPLOAD_ENABLED', 'PRODUCT_VIDEO_UPLOAD_PRIVATE_ROOT',
+            'PRODUCT_MEDIA_SCAN_PRIVATE_ROOT'], 'timer' => null];
+    if (!$apply) return $result;
+
+    // An exclusive archive is also the partial-operation marker. Preserve every partial result on failure.
+    preview_full_runtime_require(mkdir($archive, 0700) && chown($archive, 0) && chgrp($archive, 0)
+        && chmod($archive, 0700));
+    preview_full_runtime_write($archive . '/original.env', $oldIni, 0600);
+    preview_full_runtime_write($archive . '/starting.json', json_encode($result + ['state' => 'starting'],
+        JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n", 0600);
+
+    // The installer keeps its existing metadata authority, with all transient runtime writes confined to this container.
+    preview_environment(true);
+    require_once '/workspace/crmeb/vendor/autoload.php';
+    $scratch = '/tmp/preview-image-video-upgrade';
+    preview_full_runtime_require(!file_exists($scratch) && !is_link($scratch) && mkdir($scratch, 0700));
+    $app = new \think\App('/workspace/crmeb/');
+    $app->setRuntimePath($scratch . '/');
+    $app->initialize();
+    $timer = $app->make(\app\services\marketplace\product\MarketplaceProductScanGcTimer::class)->register();
+    foreach ($roots as $root) {
+        preview_full_runtime_require(mkdir($root, 0700) && chown($root, 33) && chgrp($root, 33)
+            && chmod($root, 0700));
+        preview_full_runtime_permissions($root, false, false);
+    }
+    preview_private_json($marker, ['project' => $config['project'], 'run_id' => $config['run_id'],
+        'feature' => 'product-video-chunks-v1'], 1000);
+    $newIni = preview_full_runtime_ini();
+    preview_full_runtime_require($newIni === $expectedIni);
+    $temporary = $target . '/.preview-image-video-upgrade.env';
+    preview_full_runtime_write($temporary, $newIni, 0640, 33);
+    preview_full_runtime_require(rename($temporary, $target . '/.env'));
+    preview_image_runtime_verify($identity, $newIni);
+    $result['changed'] = true;
+    $result['timer'] = $timer;
+    preview_full_runtime_write($archive . '/completed.json', json_encode($result + ['state' => 'completed'],
+        JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n", 0600);
+    return $result;
+}
+
 function preview_prepare_full_runtime(): array
 {
     $config = preview_config();

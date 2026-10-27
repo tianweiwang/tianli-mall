@@ -182,6 +182,11 @@ try {
     } elseif ($operation === 'runtime') {
         require __DIR__ . '/runtime.php';
         echo json_encode(['status' => 'RUNTIME_READY', 'result' => preview_prepare_full_runtime()], JSON_THROW_ON_ERROR) . "\n";
+    } elseif (in_array($operation, ['video-runtime-check', 'video-runtime-enable'], true)) {
+        require __DIR__ . '/runtime.php';
+        $apply = $operation === 'video-runtime-enable';
+        echo json_encode(['status' => $apply ? 'VIDEO_RUNTIME_ENABLED' : 'VIDEO_RUNTIME_CHECKED',
+            'result' => preview_enable_image_video($apply)], JSON_THROW_ON_ERROR) . "\n";
     } elseif ($operation === 'video') {
         $config = preview_config();
         if (($config['legacy_review_fixture'] ?? false) !== false

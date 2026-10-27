@@ -331,6 +331,108 @@ def private_directory(root):
     return directory
 
 
+def enable_runtime_video(state, root, target_image):
+    """One normal off-to-on configuration change for an existing testing image runtime."""
+    if (state.get('initialized') is not True or state.get('full_runtime') is not True
+            or state.get('image_runtime') is not True or state.get('release_runtime', False)
+            or state.get('legacy_review_fixture', False) or state.get('video_configured', False) is not False):
+        raise RuntimeError('Video activation requires an initialized testing image runtime with video still off')
+    if native([DOCKER, 'image', 'inspect', '--format', '{{.Id}}', target_image]) != target_image:
+        raise RuntimeError('Runtime PHP image differs from the supplied immutable image ID')
+    ids = native([DOCKER, 'ps', '-aq', '--filter', 'label=com.docker.compose.project=' + state['project'],
+                  '--filter', 'label=com.docker.compose.service=preview-runtime']).split()
+    if len(ids) != 1:
+        raise RuntimeError('Exactly one existing runtime container is required')
+
+    def inspect_runtime(container_id):
+        item = json.loads(native([DOCKER, 'inspect', container_id]))[0]
+        labels = item['Config'].get('Labels') or {}
+        if (labels.get('marketplace.preview') != state['project']
+                or labels.get('com.docker.compose.service') != 'preview-runtime'):
+            raise RuntimeError('Runtime container ownership changed')
+        return item
+
+    original = inspect_runtime(ids[0])
+    if (original['Image'] != state['images']['PHP'] or original['State']['Status'] != 'running'
+            or original['State'].get('Health', {}).get('Status') != 'healthy'):
+        raise RuntimeError('Current runtime must be healthy and match its recorded PHP image')
+    backup = root / 'private' / 'video-runtime-before-state.json'
+    if backup.exists() or backup.is_symlink():
+        raise RuntimeError('Video activation was already started; preserve its original records')
+    checked = json.loads(compose(state, root, 'run', '--rm', '--no-deps', '-T', 'bootstrap',
+                                'help/preview/bootstrap.php', 'video-runtime-check'))
+    if (checked.get('status') != 'VIDEO_RUNTIME_CHECKED'
+            or checked.get('result', {}).get('project') != state['project']
+            or checked['result'].get('run_id') != state['run_id']
+            or checked['result'].get('changed') is not False
+            or not re.fullmatch(r'[0-9a-f]{64}', checked['result'].get('old_ini_sha256') or '')
+            or not re.fullmatch(r'[0-9a-f]{64}', checked['result'].get('new_ini_sha256') or '')
+            or checked['result']['old_ini_sha256'] == checked['result']['new_ini_sha256']):
+        raise RuntimeError('Existing runtime video preflight did not confirm its identity')
+    current_ids = native([DOCKER, 'ps', '-aq', '--filter', 'label=com.docker.compose.project=' + state['project'],
+                          '--filter', 'label=com.docker.compose.service=preview-runtime']).split()
+    current_before_stop = inspect_runtime(ids[0])
+    if (current_ids != ids or current_before_stop['Id'] != original['Id']
+            or current_before_stop['Image'] != original['Image']
+            or current_before_stop['State']['Status'] != 'running'
+            or not current_before_stop['State']['Running']
+            or current_before_stop['State'].get('Health', {}).get('Status') != 'healthy'
+            or current_before_stop['State']['StartedAt'] != original['State']['StartedAt']
+            or current_before_stop['State']['Pid'] != original['State']['Pid']
+            or current_before_stop['RestartCount'] != original['RestartCount']
+            or sorted(current_before_stop['Mounts'], key=lambda item: item['Destination'])
+            != sorted(original['Mounts'], key=lambda item: item['Destination'])):
+        raise RuntimeError('Bound runtime identity, health or mounts changed during preflight')
+    private_directory(root)
+    original_state = (root / 'state.json').read_bytes()
+    if json.loads(original_state) != state:
+        raise RuntimeError('Preview state changed during activation preflight')
+    with backup.open('xb') as output:
+        if output.write(original_state) != len(original_state):
+            raise RuntimeError('Original preview state backup was incomplete')
+        output.flush()
+        os.fsync(output.fileno())
+    # Bind ordinary unbounded stop to the inspected container, never to a newly replaced service.
+    stop_arguments = ('stop', '--timeout', '-1', original['Id'])
+    stop_result = subprocess.run([DOCKER, *stop_arguments], text=True, encoding='utf-8',
+                                 errors='replace', capture_output=True)
+    record_command(root, ('docker', *stop_arguments), stop_result)
+    stopped = inspect_runtime(ids[0])
+    if stopped['State']['Status'] != 'exited' or stopped['State']['Running'] or stopped['State']['ExitCode'] != 0:
+        raise RuntimeError('Runtime did not stop normally; activation was not applied')
+    activated = json.loads(compose(state, root, 'run', '--rm', '--no-deps', '-T', 'bootstrap',
+                                  'help/preview/bootstrap.php', 'video-runtime-enable'))
+    if (activated.get('status') != 'VIDEO_RUNTIME_ENABLED'
+            or activated.get('result', {}).get('project') != state['project']
+            or activated['result'].get('run_id') != state['run_id']
+            or activated['result'].get('changed') is not True
+            or activated['result'].get('old_ini_sha256') != checked['result'].get('old_ini_sha256')
+            or not re.fullmatch(r'[0-9a-f]{64}', activated['result'].get('new_ini_sha256') or '')
+            or activated['result'].get('new_ini_sha256') != checked['result']['new_ini_sha256']):
+        raise RuntimeError('Video activation did not confirm the original configuration; preserve this instance')
+    state['images']['PHP'] = target_image
+    (root / 'state.json').write_text(json.dumps(state, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+    compose(state, root, 'up', '-d', '--no-deps', '--wait', '--wait-timeout', '180', 'preview-runtime')
+    assert_resources(state)
+    current_id = native([DOCKER, 'ps', '-q', '--filter', 'label=com.docker.compose.project=' + state['project'],
+                         '--filter', 'label=com.docker.compose.service=preview-runtime']).split()
+    if len(current_id) != 1:
+        raise RuntimeError('Activated runtime container is unavailable')
+    current = inspect_runtime(current_id[0])
+    if (current['Image'] != target_image or current['State']['Status'] != 'running'
+            or not current['State']['Running'] or current['State'].get('Health', {}).get('Status') != 'healthy'
+            or sorted(current['Mounts'], key=lambda item: item['Destination'])
+            != sorted(original['Mounts'], key=lambda item: item['Destination'])):
+        raise RuntimeError('Activated runtime image, health or data mounts differ from the approved change')
+    if state.get('marketplace_queue_autostart') is True or state.get('queue_configured') is True:
+        ensure_runtime_queue(state, root)
+    reload_web(state, root)
+    wait_web(state)
+    state['video_configured'] = True
+    (root / 'state.json').write_text(json.dumps(state, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+    print(f'Video chunks enabled in the existing runtime at http://127.0.0.1:{state["port"]}/ ; business verification remains required.')
+
+
 def release_environment(state, root):
     path = root / 'private/release-environment.json'
     if not path.exists():
@@ -416,7 +518,7 @@ def export_accounts(state, root):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=['prepare', 'initialize', 'resume-initialize', 'storefront', 'serve-api', 'serve', 'runtime', 'video', 'timers', 'timers-restore', 'queue', 'smoke', 'accounts-file', 'status', 'stop'])
+    parser.add_argument('action', choices=['prepare', 'initialize', 'resume-initialize', 'storefront', 'serve-api', 'serve', 'runtime', 'video', 'enable-video', 'timers', 'timers-restore', 'queue', 'smoke', 'accounts-file', 'status', 'stop'])
     parser.add_argument('--root', type=Path, default=DEFAULT_ROOT)
     parser.add_argument('--port', type=int, default=18180)
     parser.add_argument('--legacy-review-fixture', action='store_true',
@@ -430,11 +532,15 @@ def main():
                         help='prepare only, with full runtime: persist marketplace Supervisor autostart')
     parser.add_argument('--php-image', help='prepare only: existing PHP image, paired with --nginx-image and --full-runtime')
     parser.add_argument('--nginx-image', help='prepare only: existing Nginx image, paired with --php-image and --full-runtime')
+    parser.add_argument('--runtime-php-image', help='enable-video only: approved local immutable PHP image for the existing runtime')
     parser.add_argument('--preview-subnet', help='new prepare only: RFC1918 IPv4 CIDR, paired with ingress; check host routes separately')
     parser.add_argument('--ingress-subnet', help='new prepare only: separate RFC1918 IPv4 CIDR, paired with preview; check host routes separately')
     parser.add_argument('--hours', default='0.5', help='New unpaid order deadline in hours; timers only, 0 disables new deadlines')
     args = parser.parse_args()
     root = args.root.resolve()
+    if ((args.runtime_php_image is not None and args.action != 'enable-video')
+            or (args.action == 'enable-video' and not re.fullmatch(r'sha256:[0-9a-f]{64}', args.runtime_php_image or ''))):
+        raise RuntimeError('Existing runtime video activation requires its explicit immutable PHP image')
     if args.marketplace_queue_autostart and (args.action != 'prepare' or not args.full_runtime):
         raise RuntimeError('Queue autostart is configured only for a new full-runtime preview')
     image_runtime = args.php_image is not None or args.nginx_image is not None
@@ -521,6 +627,8 @@ def main():
             compose(state, root, 'run', '--rm', '--no-deps', '-T', 'bootstrap', 'help/preview/bootstrap.php', args.action)
             state['initialized'] = True
             (root / 'state.json').write_text(json.dumps(state, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+        elif args.action == 'enable-video':
+            enable_runtime_video(state, root, args.runtime_php_image)
         elif args.action == 'storefront':
             if not state.get('initialized'):
                 raise RuntimeError('Complete preview initialization before creating the storefront')
