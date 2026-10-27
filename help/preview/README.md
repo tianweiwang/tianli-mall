@@ -18,6 +18,16 @@ python -X utf8 help/preview/preview.py accounts-file
 
 构建复用本机已有 Node、HBuilderX 和依赖缓存；首次在其他机器使用时先调整 `build-frontends.py` 顶部工具路径。没有依赖下载或生产部署步骤。`prepare` 只用于新的运行目录，已有实例使用 `status` 检查，不重复初始化。
 
+## 大视频分片预览（R55，2026-10-28）
+
+新隔离预览为 [localhost:18199商家商品列表](http://localhost:18199/merchant/#/products)，账号文件在仓库外 `multi-merchant-video-runtime-20261028-r55/private/preview-accounts.json`。原18198继续保留交易、评价和客服记录。新实例的“R55本机合成分片视频商品”为商品7/SKU106，16.00元、库存0，已经审核上架，仅供本机媒体展示。
+
+首次配置新的testing/full-runtime时，沿原 `prepare → initialize → storefront → video → runtime` 顺序，在首次runtime前执行 `python -B -X utf8 help/preview/preview.py video --root <新实例目录>`。该分支复用原两独立暂存根、GC注册和project/run标记，不启动split服务；release、已有runtime容器和非空runtime目标不适用。旧split流程保持。PHP镜像显式设upload4M/post8M/memory256M，FPM和CLI均已核对；原3MiB分片和50MiB业务上限保持，本轮未测试大小上界。
+
+实际用原商家选择器上传既有8,425,717字节合成MP4，分为3MiB、3MiB和2,134,261字节，三段SHA逐一与原文件吻合。完成态暂存bin、正式附件93、HTTP视频文件SHA一致（cbd20209…），原商品保存、审核和上架均成功。新r55小程序以匿名身份读取18199，真实窗口可见动态画面变化、随后停止外观，正常重入读回同一视频；未登录或接受新协议，原r49工程与顾客登录保留。不以videoPlaying布尔值代签播放，也不签精确ended回调、连续帧率或音频。
+
+原定时器按600秒TTL和60秒收集周期自然删除了本次complete暂存的json/bin，视频暂存根仍33:33/0700、.lock仍0600，正式8.4MB附件仍在且摘要不变。没有手调tick、改时间或再次issue来触发清理。证据沿原trade目录r55-*及新镜像装包目录；本轮只验证新image-runtime路径和这一正常业务链，旧实例就地启用、复制型full-runtime实测、扫码业务、云、正式微信/真机和完整T4继续待验，停止样本仍NOT RUN。
+
 ## 当前预览：商品视频与小程序播放（R54，2026-10-28）
 
 当前18198已新增独立的“R54本机合成视频商品”（商品7/SKU106，商家2），沿原商家视频选择器上传、选择、保存商品、提交审核，再由平台审核通过及商家上架。售价9.80元，初始库存0，小程序显示“已售罄”；本轮用于媒体展示，不创建订单。已有商品5/6和SKU104/105保持。操作入口是 [当前商家商品列表](http://localhost:18198/merchant/#/products)；小程序当前r49工程的商品详情路径为 `pages/goods_details/index?id=7`，点击原封面播放按钮。
