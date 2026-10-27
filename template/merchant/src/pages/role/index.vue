@@ -60,7 +60,7 @@ export default {
 </script>
 <style scoped>
 .permission-summary { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0; padding: 0; list-style: none; }
-.permission-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.permission-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; font-size: 14px; }
 .permission-option { min-width: 0; padding: 12px; border: 1px solid #dcdfe6; }
 .permission-option .el-checkbox { display: flex; align-items: center; margin: 0; white-space: normal; }
 .permission-option .field-note { margin-bottom: 0; }

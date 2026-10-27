@@ -11,7 +11,7 @@ export const permissions = [
   { value: 'freight.manage', label: '运费模板', description: '维护本店运费模板' },
   { value: 'order.read', label: '订单查看', description: '读取本店订单列表及保存的订单详情' },
   { value: 'order.ship', label: '订单发货', description: '按保存商品数量分包发货，读取实际物流与履约结果' },
-  { value: 'aftersale.handle', label: '售后处理', description: '订单售后权限；售后处理功能尚未开放' },
+  { value: 'aftersale.handle', label: '售后处理', description: '批准或拒绝本店售后申请，验收退回商品；查看需同时具备订单查看权限' },
 ];
 const known = permissions.map((item) => item.value);
 const phpTrim = (value) => value.replace(/^[ \t\n\r\u0000\u000b]+|[ \t\n\r\u0000\u000b]+$/g, '');
