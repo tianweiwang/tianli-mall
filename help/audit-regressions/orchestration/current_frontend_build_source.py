@@ -31,9 +31,40 @@ def safe_relative(name: str, require) -> None:
             "CLOSED_FRONTEND_SOURCE_RELATIVE_PATH")
 
 
-def derive_source(output: str | Path, authority_pointer: dict[str, Any]):
+def windows_copy_four(raw: bytes, h) -> bytes:
+    """Replace only the existing copy loop; retain every per-file check and its inverse."""
+    original = (
+        b"    for name, expected in before['files'].items():\n"
+        b"        raw = read(cache / 'node_modules' / name)\n"
+        b"        require(pin(raw) == expected, 'EVERY_ORIGINAL_MODULE_BEFORE_COPY')\n"
+        b"        create(destination / name, raw)\n"
+        b"        require((destination / name).stat().st_nlink == 1, 'NO_LINKED_MODULE_REUSE')\n"
+    )
+    replacement = (
+        b"    def copy_one(item):\n"
+        b"        name, expected = item\n"
+        + original.split(b"\n", 1)[1]
+        + b"    from concurrent.futures import ThreadPoolExecutor\n"
+        b"    executor = ThreadPoolExecutor(max_workers=4)\n"
+        b"    try:\n"
+        b"        for _ in executor.map(copy_one, before['files'].items(), buffersize=4):\n"
+        b"            pass\n"
+        b"    finally:\n"
+        b"        executor.shutdown(wait=True, cancel_futures=True)\n"
+    )
+    result = h.once(raw, original, replacement)
+    h.require(h.once(result, replacement, original) == raw, "WINDOWS_COPY_WHOLE_FILE_INVERSE_EXACT")
+    before_functions, after_functions = h.functions(raw), h.functions(result)
+    h.require(set(before_functions) == set(after_functions)
+              and {name for name in before_functions if before_functions[name] != after_functions[name]} == {"run"},
+              "ONLY_WINDOWS_RUN_COPY_SCHEDULING_CHANGED")
+    return result
+
+
+def derive_source(output: str | Path, authority_pointer: dict[str, Any], windows_copy_workers: int = 1):
     """Read fixed evidence and transform bytes in memory; create nothing."""
     h = helpers()
+    h.require(type(windows_copy_workers) is int and windows_copy_workers in (1, 4), "WINDOWS_COPY_WORKERS_ONE_OR_FOUR")
     # The caller supplies a fixed path/size/hash. A new commit still needs its
     # own independently reviewed complete capture; the old review cannot sign it.
     authority, compact = h.reviewed_authority(authority_pointer)
@@ -115,9 +146,17 @@ def derive_source(output: str | Path, authority_pointer: dict[str, Any]):
     h.require(h.replace_constant(after["build_common.py"], "QUALIFIED_INPUTS_PIN",
                                  h.constant(before["build_common.py"], "QUALIFIED_INPUTS_PIN")) == before["build_common.py"],
               "ONLY_COMMON_QUALIFIED_INPUT_POINTER_CHANGED")
+    if windows_copy_workers == 4:
+        after["windows_build.py"] = windows_copy_four(before["windows_build.py"], h)
     for name, raw in before.items():
         if name.endswith(".py"):
-            h.require(h.functions(raw) == h.functions(after[name]), "ALL_ORIGINAL_PYTHON_FUNCTION_BODIES_EXACT")
+            if name == "windows_build.py" and windows_copy_workers == 4:
+                original_functions, updated_functions = h.functions(raw), h.functions(after[name])
+                h.require(set(original_functions) == set(updated_functions)
+                          and all(original_functions[key] == updated_functions[key] for key in original_functions if key != "run"),
+                          "ALL_OTHER_WINDOWS_FUNCTION_BODIES_EXACT")
+            else:
+                h.require(h.functions(raw) == h.functions(after[name]), "ALL_ORIGINAL_PYTHON_FUNCTION_BODIES_EXACT")
             compile(after[name], str(out / name), "exec")
     intro = (
         "# R61 当前三端构建来源候选\n\n"
@@ -129,10 +168,24 @@ def derive_source(output: str | Path, authority_pointer: dict[str, Any]):
         "完整 A/post-A、B/UI、设备及发布均未由此取得成功证据。\n\n"
         "当前绑定见 QUALIFICATION.json 与 R61-SOURCE-DERIVATION.json；以下 r5 及更早文字完整保留为历史。\n\n---\n\n"
     ).encode("utf-8")
+    if windows_copy_workers == 4:
+        intro = h.once(intro, "本代仅将原 r5 完整构建器绑定到".encode("utf-8"),
+                       "本代将原 r5 完整构建器绑定到".encode("utf-8"))
+        intro = h.once(intro, "当前绑定见 QUALIFICATION.json".encode("utf-8"), (
+            "本代另显式选择 Windows 依赖复制 workers=4：只调整原 run 内的复制调度并增加局部 copy_one，"
+            "由标准库线程池有界提交。每文件原读取、哈希、独占物理写入、完整读回和单链接检查，以及"
+            "复制前后整树、文件身份、EOF 与全部 Node/npm 命令保持。异常时取消未启动任务并等待在途线程退出，"
+            "不再保证失败残留是严格串行前缀；不重试、不删除现场。其余原函数保持，H5 未改变，提速尚未实测。\n\n"
+            "当前绑定见 QUALIFICATION.json"
+        ).encode("utf-8"))
     after["README.md"] = intro + before["README.md"]
     changed = [name for name in before if before[name] != after[name]]
-    h.require(set(changed) == {"FULL-TREE.json", "QUALIFICATION.json", "build_common.py", "README.md"},
-              "ONLY_FOUR_CURRENT_SOURCE_BINDING_MEMBERS_CHANGED")
+    expected_changed = {"FULL-TREE.json", "QUALIFICATION.json", "build_common.py", "README.md"}
+    if windows_copy_workers == 4:
+        expected_changed.add("windows_build.py")
+    h.require(set(changed) == expected_changed,
+              "ONLY_FOUR_CURRENT_SOURCE_BINDING_MEMBERS_CHANGED" if windows_copy_workers == 1
+              else "ONLY_FIVE_CURRENT_SOURCE_AND_WINDOWS_COPY_MEMBERS_CHANGED")
     derivation = {
         "schema": 1, "scope": "R61_CURRENT_THREE_FRONTEND_BUILD_SOURCE_ONLY",
         "status": "SOURCE_CANDIDATE_PENDING_INDEPENDENT_PACKET_REVIEW",
@@ -144,12 +197,20 @@ def derive_source(output: str | Path, authority_pointer: dict[str, Any]):
         "full_tree": qualification["full_tree"], "file_count": len(files), "directory_count": len(directories),
         "qualification": qualification_pointer, "changed_existing_members": changed,
         "preserved_existing_members": [name for name in before if name not in changed],
-        "common_pointer_whole_file_inverse_exact": True, "all_original_python_function_bodies_exact": True,
+        "common_pointer_whole_file_inverse_exact": True, "all_original_python_function_bodies_exact": windows_copy_workers == 1,
         "dependency_authority_preserved": qualification["dependency_authority"],
         "npm_runtime_authority_preserved": qualification["npm_runtime_authority"],
         "output_parent_preserved": qualification["output_parent"],
         "build_Node_npm_Docker_App": "NOT RUN", "A_B_UI_release_acceptance": "NOT_GRANTED",
     }
+    if windows_copy_workers == 4:
+        derivation.update(windows_copy_workers=4, windows_copy_buffersize=4,
+                          windows_copy_whole_file_inverse_exact=True,
+                          python_function_changes={"windows_build.py": ["run"]},
+                          added_local_functions={"windows_build.py": ["run.copy_one"]},
+                          all_other_original_python_function_bodies_exact=True,
+                          copy_failure_order="NOT_SERIAL_PREFIX; queued work cancelled and running workers joined before failure",
+                          measured_copy_speedup="NOT RUN")
     after["R61-SOURCE-DERIVATION.json"] = h.encode(derivation)
     pins = {"schema": 1, "scope": baseline["scope"],
             "files": {name: h.pin(raw) for name, raw in sorted(after.items())},
@@ -159,11 +220,13 @@ def derive_source(output: str | Path, authority_pointer: dict[str, Any]):
               "source_packet": out.as_posix(), "PINS": {"path": (out / "PINS.json").as_posix(), **h.pin(after["PINS.json"])},
               "tracked_files": len(files), "tracked_directories": len(directories),
               "changed_existing_members": changed, "builds": "NOT RUN"}
+    if windows_copy_workers == 4:
+        result["windows_copy_workers"] = 4
     return h, out, after, baseline["directories"], result
 
 
-def build_source(output: str | Path, authority_pointer: dict[str, Any]) -> dict[str, Any]:
-    h, out, after, directories, result = derive_source(output, authority_pointer)
+def build_source(output: str | Path, authority_pointer: dict[str, Any], windows_copy_workers: int = 1) -> dict[str, Any]:
+    h, out, after, directories, result = derive_source(output, authority_pointer, windows_copy_workers)
     out.parent.mkdir(parents=True, exist_ok=True)
     h.ordinary(out.parent)
     out.mkdir()  # Exclusive packet root; never adopt an existing output.
@@ -180,6 +243,8 @@ def main() -> None:
     parser.add_argument("--output", required=True)
     parser.add_argument("--authority-file", required=True)
     parser.add_argument("--authority-sha256", required=True)
+    parser.add_argument("--windows-copy-workers", type=int, choices=(1, 4), default=1,
+                        help="1 retains the original bytes; 4 derives bounded Windows dependency copy only")
     args = parser.parse_args()
     h = helpers()
     h.require(re.fullmatch(r"[a-f0-9]{64}", args.authority_sha256) is not None, "EXPLICIT_TECHNICAL_AUTHORITY_SHA256")
@@ -187,7 +252,7 @@ def main() -> None:
     raw = h.stable_read(path)
     pointer = {"path": path.as_posix(), "bytes": len(raw), "sha256": args.authority_sha256}
     h.require(h.pin(raw)["sha256"] == args.authority_sha256, "FIXED_TECHNICAL_AUTHORITY_BYTES")
-    result = build_source(args.output, pointer)
+    result = build_source(args.output, pointer, args.windows_copy_workers)
     print(h.encode(result).decode("utf-8"), end="")
 
 
