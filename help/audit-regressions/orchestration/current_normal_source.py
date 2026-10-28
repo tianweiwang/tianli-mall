@@ -35,6 +35,8 @@ AR_CURRENT = {"path": AR_PATH, "bytes": 247958,
 CUSTOMER_PATH = "help/audit-regressions/isolated/ms4-customer-http-normal.php"
 CUSTOMER_BEFORE = {"path": CUSTOMER_PATH, "bytes": 121457,
                    "sha256": "1fae540f4f145ace9ed94d17648d785f1663c4e8d6dbd0b2de54b75ffcbdea75"}
+FULFILLMENT_PATH = "help/audit-regressions/isolated/ms4-fulfillment-normal.php"
+LEGACY_PATH = "help/audit-regressions/isolated/lib/ms4-three-legacy-producer.php"
 STAT_FIELDS = ("st_dev", "st_ino", "st_mode", "st_nlink", "st_uid", "st_gid",
                "st_size", "st_mtime_ns", "st_ctime_ns")
 
@@ -469,14 +471,32 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
             "ORIGINAL_FINITE_SEED_CURRENT_SOURCE_IDENTITY")
     original_interface = copy.deepcopy(interface)
     reviewed_updates = decode(read_pointer(authority["independent_review"])).get("active_profile_updates")
+    require(type(reviewed_updates) is list and len(reviewed_updates) in (2, 4),
+            "EXACT_TWO_OR_FOUR_INDEPENDENT_PROFILE_UPDATES")
+    extended_updates = len(reviewed_updates) == 4
     updates = [
         {"before": AR_BEFORE, "after": AR_CURRENT},
         {"before": CUSTOMER_BEFORE, "after": inventory[CUSTOMER_PATH]},
     ]
+    if extended_updates:
+        # These before rows belong to different fixed baseline groups. Only
+        # the independent review may join them to this same capture's after rows.
+        for path, source_rows in (
+            (FULFILLMENT_PATH, interface["customer_form_current_profile"]["php_sources"]),
+            (LEGACY_PATH, interface["fulfillment_normal_successor"]["three_read_internal"]["source_helper_files"]),
+        ):
+            matches = [row for row in source_rows if row["path"] == path]
+            require(len(matches) == 1 and set(matches[0]) == {"path", "bytes", "sha256"},
+                    "ONE_EXACT_FIXED_BASELINE_PROFILE_SOURCE_ROW")
+            previous = copy.deepcopy(matches[0])
+            require(inventory[path] != previous, "NEW_REVIEWED_FULFILLMENT_AND_LEGACY_SOURCE_BYTES")
+            updates.append({"before": previous, "after": inventory[path]})
     require(reviewed_updates == updates and inventory[CUSTOMER_PATH] != CUSTOMER_BEFORE,
             "INDEPENDENT_EXACT_AFTERSALE_AND_MS6_CUSTOMER_UPDATES")
-    old_active = {entry["before"]["path"]: entry["before"] for entry in updates}
-    new_active = {entry["after"]["path"]: entry["after"] for entry in updates}
+    common_updates = updates[:3] if extended_updates else updates
+    old_active = {entry["before"]["path"]: entry["before"] for entry in common_updates}
+    new_active = {entry["after"]["path"]: entry["after"] for entry in common_updates}
+    legacy_update = updates[3] if extended_updates else None
     rows = interface["customer_form_current_profile"]["php_sources"]
     require(all(sum(row == original for row in rows) == 1 for original in old_active.values()),
             "ONE_EACH_DECLARED_ACTIVE_FORM_ROW")
@@ -491,6 +511,15 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
     for row in runtime_rows:
         if row["path"] in new_active:
             row.update(new_active[row["path"]])
+    if legacy_update is not None:
+        legacy_rows = interface["fulfillment_normal_successor"]["three_read_internal"]["source_helper_files"]
+        require(sum(row == legacy_update["before"] for row in legacy_rows) == 1,
+                "ONE_DECLARED_THREE_READ_INTERFACE_SOURCE_ROW")
+        for row in legacy_rows:
+            wanted = legacy_update["after"] if row["path"] == LEGACY_PATH else row
+            require(inventory[row["path"]] == wanted, "REVIEWED_THREE_READ_INTERFACE_SOURCES")
+            if row["path"] == LEGACY_PATH:
+                row.update(wanted)
     after["interface-v1.json"] = encode(interface)
     restored_interface = copy.deepcopy(interface)
     for rows in (restored_interface["customer_form_current_profile"]["php_sources"],
@@ -498,9 +527,16 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
         for row in rows:
             if row["path"] in old_active:
                 row.update(old_active[row["path"]])
-    require(restored_interface == original_interface, "ONLY_FOUR_DECLARED_INTERFACE_ACTIVE_ROWS_CHANGED")
+    if legacy_update is not None:
+        for row in restored_interface["fulfillment_normal_successor"]["three_read_internal"]["source_helper_files"]:
+            if row["path"] == LEGACY_PATH:
+                row.update(legacy_update["before"])
+    require(restored_interface == original_interface,
+            "ONLY_SEVEN_DECLARED_INTERFACE_ACTIVE_ROWS_CHANGED" if extended_updates
+            else "ONLY_FOUR_DECLARED_INTERFACE_ACTIVE_ROWS_CHANGED")
     for name in ("ms4-host.py", "verify-zero-ms4-fulfillment.py"):
         raw = after[name]
+        original_raw = raw
         active = constant(raw, "CUSTOMER_FORM_SOURCE_FILES")
         require(type(active) is tuple
                 and all(sum(row == original for row in active) == 1 for original in old_active.values()),
@@ -508,17 +544,44 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
         updated = tuple(new_active.get(row["path"], row) for row in active)
         for row in updated:
             require(inventory[row["path"]] == row, "ALL_CURRENT_ACTIVE_SOURCE_TUPLE_MEMBERS")
-        for row in constant(raw, "THREE_READ_SOURCE_FILES"):
+        three_read = constant(raw, "THREE_READ_SOURCE_FILES")
+        if legacy_update is not None:
+            require(type(three_read) is list
+                    and sum(row == legacy_update["before"] for row in three_read) == 1,
+                    "ONE_DECLARED_ORIGINAL_THREE_READ_SOURCE_TUPLE")
+            three_read = [legacy_update["after"] if row["path"] == LEGACY_PATH else row
+                          for row in three_read]
+            raw = replace_constant(raw, "THREE_READ_SOURCE_FILES", three_read)
+        for row in three_read:
             require(inventory[row["path"]] == row, "THREE_LEGACY_SOURCE_BYTES_RETAINED")
         for entry in ("PAID_ENTRY", "FULFILLMENT_ENTRY", "WORKER_ENTRY"):
             path = constant(raw, entry)
-            require(inventory[path] == {"path": path, "bytes": constant(raw, entry + "_BYTES"),
-                                       "sha256": constant(raw, entry + "_SHA256")}, "OTHER_ENTRY_PINS_RETAINED")
+            original_entry = {"path": path, "bytes": constant(raw, entry + "_BYTES"),
+                              "sha256": constant(raw, entry + "_SHA256")}
+            if extended_updates and entry == "FULFILLMENT_ENTRY":
+                require(original_entry == updates[2]["before"], "ORIGINAL_FULFILLMENT_ENTRY_PIN")
+                raw = replace_constant(raw, entry + "_BYTES", updates[2]["after"]["bytes"])
+                raw = replace_constant(raw, entry + "_SHA256", updates[2]["after"]["sha256"])
+            else:
+                require(inventory[path] == original_entry, "OTHER_ENTRY_PINS_RETAINED")
         raw = replace_constant(raw, "CUSTOMER_FORM_SOURCE_FILES", updated)
         require(constant(raw, "AFTERSALE_REVIEW_ENTRY_BYTES") == AR_BEFORE["bytes"]
                 and constant(raw, "AFTERSALE_REVIEW_ENTRY_SHA256") == AR_BEFORE["sha256"], "OLD_ACTIVE_AFTERSALE_PIN")
         raw = replace_constant(raw, "AFTERSALE_REVIEW_ENTRY_BYTES", AR_CURRENT["bytes"])
         after[name] = replace_constant(raw, "AFTERSALE_REVIEW_ENTRY_SHA256", AR_CURRENT["sha256"])
+        if extended_updates:
+            recovered_raw = after[name]
+            for symbol in ("CUSTOMER_FORM_SOURCE_FILES", "THREE_READ_SOURCE_FILES", "FULFILLMENT_ENTRY_BYTES",
+                           "FULFILLMENT_ENTRY_SHA256", "AFTERSALE_REVIEW_ENTRY_BYTES", "AFTERSALE_REVIEW_ENTRY_SHA256"):
+                original_nodes = [node for node in ast.parse(original_raw).body
+                                  if isinstance(node, ast.Assign) and len(node.targets) == 1
+                                  and isinstance(node.targets[0], ast.Name) and node.targets[0].id == symbol]
+                require(len(original_nodes) == 1, "ONE_ORIGINAL_SOURCE_CONSTANT_ASSIGNMENT")
+                original_assignment = ast.get_source_segment(original_raw.decode("utf-8"), original_nodes[0])
+                require(type(original_assignment) is str, "COMPLETE_ORIGINAL_SOURCE_CONSTANT_BYTES")
+                replacement = (symbol + " = " + repr(constant(recovered_raw, symbol))).encode("utf-8")
+                recovered_raw = once(recovered_raw, replacement, original_assignment.encode("utf-8"))
+            require(recovered_raw == original_raw, "FINITE_HOST_ZERO_SOURCE_CONSTANTS_WHOLE_FILE_INVERSE")
     for name in ("ms4-host.py", "normal-close-ms4-fulfillment.py", "verify-zero-ms4-fulfillment.py"):
         require(constant(after[name], "CURRENT_SOURCE_AUTHORITY") is None, "ORIGINAL_UNBOUND_SOURCE_GUARD")
         after[name] = replace_constant(after[name], "CURRENT_SOURCE_AUTHORITY", authority_pointer)
@@ -545,6 +608,12 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
     after["ms4-initialize.php"] = once(previous_initializer, php_row(CUSTOMER_BEFORE), php_row(inventory[CUSTOMER_PATH]))
     require(once(after["ms4-initialize.php"], php_row(inventory[CUSTOMER_PATH]), php_row(CUSTOMER_BEFORE))
             == previous_initializer, "ONE_CUSTOMER_LITERAL_WHOLE_FILE_INVERSE")
+    if extended_updates:
+        previous_initializer = after["ms4-initialize.php"]
+        after["ms4-initialize.php"] = once(previous_initializer,
+                                             php_row(updates[2]["before"]), php_row(updates[2]["after"]))
+        require(once(after["ms4-initialize.php"], php_row(updates[2]["after"]), php_row(updates[2]["before"]))
+                == previous_initializer, "ONE_FULFILLMENT_LITERAL_WHOLE_FILE_INVERSE")
     after["ms4-initialize.php"], after["ms4-host.py"], schema_sources = schema_profile_changes(
         after["ms4-initialize.php"], after["ms4-host.py"], inventory)
     for name, symbol, target in (
@@ -575,6 +644,10 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
         "original_nine_volume_source_tree_topology_retained": True,
         "initializer_syntax": "NOT RUN", "M_A_B_Runtime": "NOT RUN",
     }
+    if extended_updates:
+        derivation[named].update(interface_declared_active_rows_changed=7,
+                                 initializer_fulfillment_literal_inverse_exact=True,
+                                 legacy_source_binding_inverse_exact=True)
     if isolation_subnet is not None:
         derivation[named]["isolation_subnet"] = isolation_subnet
         derivation[named]["isolation_subnet_availability"] = "NOT_CHECKED_BY_AUTHOR"
@@ -614,6 +687,12 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
         "all_derivation_history_retained": True, "whole_forward_reverse_replay": True,
         "actual_initializer_syntax": "NOT RUN", "M_S_Host_Docker_App_business": "NOT RUN",
     }
+    if extended_updates:
+        manifest.pop("interface_only_four_declared_active_rows")
+        manifest.update(interface_only_seven_declared_active_rows=True,
+                        interface_declared_active_rows_changed=7,
+                        initializer_fulfillment_literal_inverse_exact=True,
+                        legacy_source_binding_inverse_exact=True)
     if isolation_subnet is not None:
         manifest["isolation_subnet"] = isolation_subnet
         manifest["isolation_subnet_availability"] = "NOT_CHECKED_BY_AUTHOR"

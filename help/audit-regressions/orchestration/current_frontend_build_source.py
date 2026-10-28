@@ -61,10 +61,50 @@ def windows_copy_four(raw: bytes, h) -> bytes:
     return result
 
 
-def derive_source(output: str | Path, authority_pointer: dict[str, Any], windows_copy_workers: int = 1):
+def windows_lx_alias_attributes(raw: bytes, h) -> bytes:
+    """Retain raw observations; compare only the stable attributes of four fixed LX aliases."""
+    changes = [
+        (b"    from build_common import native9, regular, relative\n",
+         b"    from build_common import native9, regular, relative, put\n"),
+        (b"    files, directories, links, alias_states, directory_states = {}, [], {}, {}, {}\n",
+         b"    files, directories, links, alias_states, directory_states = {}, [], {}, {}, {}\n"
+         b"    require(os.name == 'nt', 'ONLY_WINDOWS_FIXED_LX_ALIAS_ATTRIBUTES')\n"
+         b"    raw_alias_attributes = {}\n"),
+        (b"                    and getattr(facts, 'st_file_attributes', 0) & 1024\n",
+         b"                    and getattr(facts, 'st_file_attributes', None) in (1056, 263200)\n"),
+        (b"                    and getattr(after, 'st_file_attributes', None) == getattr(facts, 'st_file_attributes', None),\n",
+         b"                    and getattr(after, 'st_file_attributes', None) in (1056, 263200),\n"),
+        (b"            links[name] = expected_links[name]\n",
+         b"            raw_alias_attributes[name] = {'before': facts.st_file_attributes, 'after': after.st_file_attributes,\n"
+         b"                'native9': before, 'birthtime_ns': birth, 'reparse_tag': facts.st_reparse_tag, 'reparse_query': pin(query)}\n"
+         b"            links[name] = expected_links[name]\n"),
+        (b"                'reparse_tag': facts.st_reparse_tag, 'file_attributes': facts.st_file_attributes,\n",
+         b"                'reparse_tag': facts.st_reparse_tag, 'file_attributes': 1056,\n"),
+        (b"    return {'tree': value, 'native9': identities(STYLUS, value['files']),\n",
+         b"    put(context['evidence'] / ('h5-stylus-' + phase + '-alias-attributes.json'),\n"
+         b"        {'schema': 1, 'scope': 'FOUR_FIXED_WINDOWS_LX_ALIAS_RAW_ATTRIBUTES', 'root': STYLUS.as_posix(), 'phase': phase, 'aliases': raw_alias_attributes})\n"
+         b"    return {'tree': value, 'native9': identities(STYLUS, value['files']),\n"),
+    ]
+    result = raw
+    for before, after in changes:
+        result = h.once(result, before, after)
+    inverse = result
+    for before, after in reversed(changes):
+        inverse = h.once(inverse, after, before)
+    h.require(inverse == raw, "LX_ALIAS_WHOLE_FILE_INVERSE_EXACT")
+    original, updated = h.functions(raw), h.functions(result)
+    h.require(set(original) == set(updated)
+              and {name for name in original if original[name] != updated[name]} == {"stylus_tree"},
+              "ONLY_FOUR_LX_ALIAS_ATTRIBUTE_OBSERVATION_CHANGED")
+    return result
+
+
+def derive_source(output: str | Path, authority_pointer: dict[str, Any], windows_copy_workers: int = 1,
+                  windows_lx_alias_attributes_enabled: bool = False):
     """Read fixed evidence and transform bytes in memory; create nothing."""
     h = helpers()
     h.require(type(windows_copy_workers) is int and windows_copy_workers in (1, 4), "WINDOWS_COPY_WORKERS_ONE_OR_FOUR")
+    h.require(type(windows_lx_alias_attributes_enabled) is bool, "EXPLICIT_WINDOWS_LX_ALIAS_ATTRIBUTE_OPTION")
     # The caller supplies a fixed path/size/hash. A new commit still needs its
     # own independently reviewed complete capture; the old review cannot sign it.
     authority, compact = h.reviewed_authority(authority_pointer)
@@ -148,6 +188,8 @@ def derive_source(output: str | Path, authority_pointer: dict[str, Any], windows
               "ONLY_COMMON_QUALIFIED_INPUT_POINTER_CHANGED")
     if windows_copy_workers == 4:
         after["windows_build.py"] = windows_copy_four(before["windows_build.py"], h)
+    if windows_lx_alias_attributes_enabled:
+        after["h5_build.py"] = windows_lx_alias_attributes(before["h5_build.py"], h)
     for name, raw in before.items():
         if name.endswith(".py"):
             if name == "windows_build.py" and windows_copy_workers == 4:
@@ -155,6 +197,11 @@ def derive_source(output: str | Path, authority_pointer: dict[str, Any], windows
                 h.require(set(original_functions) == set(updated_functions)
                           and all(original_functions[key] == updated_functions[key] for key in original_functions if key != "run"),
                           "ALL_OTHER_WINDOWS_FUNCTION_BODIES_EXACT")
+            elif name == "h5_build.py" and windows_lx_alias_attributes_enabled:
+                original_functions, updated_functions = h.functions(raw), h.functions(after[name])
+                h.require(set(original_functions) == set(updated_functions)
+                          and all(original_functions[key] == updated_functions[key] for key in original_functions if key != "stylus_tree"),
+                          "ALL_OTHER_H5_FUNCTION_BODIES_EXACT")
             else:
                 h.require(h.functions(raw) == h.functions(after[name]), "ALL_ORIGINAL_PYTHON_FUNCTION_BODIES_EXACT")
             compile(after[name], str(out / name), "exec")
@@ -179,13 +226,20 @@ def derive_source(output: str | Path, authority_pointer: dict[str, Any], windows
             "当前绑定见 QUALIFICATION.json"
         ).encode("utf-8"))
     after["README.md"] = intro + before["README.md"]
+    if windows_lx_alias_attributes_enabled:
+        after["README.md"] = (
+            "本代显式启用四固定Windows LX链接属性适配：完整身份、链接全文、工具与编译命令保持；"
+            "仅允许实测属性1056/263200，稳定属性按1056保全，前后raw观察均保存于evidence。"
+            "此段取代下文历史候选的H5未改变描述；实际构建仍待运行。\n\n"
+        ).encode("utf-8") + after["README.md"]
     changed = [name for name in before if before[name] != after[name]]
     expected_changed = {"FULL-TREE.json", "QUALIFICATION.json", "build_common.py", "README.md"}
     if windows_copy_workers == 4:
         expected_changed.add("windows_build.py")
+    if windows_lx_alias_attributes_enabled:
+        expected_changed.add("h5_build.py")
     h.require(set(changed) == expected_changed,
-              "ONLY_FOUR_CURRENT_SOURCE_BINDING_MEMBERS_CHANGED" if windows_copy_workers == 1
-              else "ONLY_FIVE_CURRENT_SOURCE_AND_WINDOWS_COPY_MEMBERS_CHANGED")
+              "EXACT_CURRENT_SOURCE_AND_EXPLICIT_BUILDER_ADAPTATIONS")
     derivation = {
         "schema": 1, "scope": "R61_CURRENT_THREE_FRONTEND_BUILD_SOURCE_ONLY",
         "status": "SOURCE_CANDIDATE_PENDING_INDEPENDENT_PACKET_REVIEW",
@@ -197,7 +251,8 @@ def derive_source(output: str | Path, authority_pointer: dict[str, Any], windows
         "full_tree": qualification["full_tree"], "file_count": len(files), "directory_count": len(directories),
         "qualification": qualification_pointer, "changed_existing_members": changed,
         "preserved_existing_members": [name for name in before if name not in changed],
-        "common_pointer_whole_file_inverse_exact": True, "all_original_python_function_bodies_exact": windows_copy_workers == 1,
+        "common_pointer_whole_file_inverse_exact": True,
+        "all_original_python_function_bodies_exact": windows_copy_workers == 1 and not windows_lx_alias_attributes_enabled,
         "dependency_authority_preserved": qualification["dependency_authority"],
         "npm_runtime_authority_preserved": qualification["npm_runtime_authority"],
         "output_parent_preserved": qualification["output_parent"],
@@ -211,6 +266,12 @@ def derive_source(output: str | Path, authority_pointer: dict[str, Any], windows
                           all_other_original_python_function_bodies_exact=True,
                           copy_failure_order="NOT_SERIAL_PREFIX; queued work cancelled and running workers joined before failure",
                           measured_copy_speedup="NOT RUN")
+    if windows_lx_alias_attributes_enabled:
+        derivation.update(windows_lx_alias_attributes=True, lx_alias_whole_file_inverse_exact=True,
+                          raw_attribute_values=[1056, 263200], stable_alias_attributes=1056,
+                          raw_attribute_receipts=["h5-stylus-before-alias-attributes.json", "h5-stylus-after-alias-attributes.json"])
+        derivation.setdefault("python_function_changes", {})["h5_build.py"] = ["stylus_tree"]
+        derivation["all_other_original_python_function_bodies_exact"] = True
     after["R61-SOURCE-DERIVATION.json"] = h.encode(derivation)
     pins = {"schema": 1, "scope": baseline["scope"],
             "files": {name: h.pin(raw) for name, raw in sorted(after.items())},
@@ -225,8 +286,9 @@ def derive_source(output: str | Path, authority_pointer: dict[str, Any], windows
     return h, out, after, baseline["directories"], result
 
 
-def build_source(output: str | Path, authority_pointer: dict[str, Any], windows_copy_workers: int = 1) -> dict[str, Any]:
-    h, out, after, directories, result = derive_source(output, authority_pointer, windows_copy_workers)
+def build_source(output: str | Path, authority_pointer: dict[str, Any], windows_copy_workers: int = 1,
+                 windows_lx_alias_attributes_enabled: bool = False) -> dict[str, Any]:
+    h, out, after, directories, result = derive_source(output, authority_pointer, windows_copy_workers, windows_lx_alias_attributes_enabled)
     out.parent.mkdir(parents=True, exist_ok=True)
     h.ordinary(out.parent)
     out.mkdir()  # Exclusive packet root; never adopt an existing output.
@@ -245,6 +307,8 @@ def main() -> None:
     parser.add_argument("--authority-sha256", required=True)
     parser.add_argument("--windows-copy-workers", type=int, choices=(1, 4), default=1,
                         help="1 retains the original bytes; 4 derives bounded Windows dependency copy only")
+    parser.add_argument("--windows-lx-alias-attributes", action="store_true",
+                        help="Record both raw values of the four fixed Windows LX aliases; retain all stable checks")
     args = parser.parse_args()
     h = helpers()
     h.require(re.fullmatch(r"[a-f0-9]{64}", args.authority_sha256) is not None, "EXPLICIT_TECHNICAL_AUTHORITY_SHA256")
@@ -252,7 +316,7 @@ def main() -> None:
     raw = h.stable_read(path)
     pointer = {"path": path.as_posix(), "bytes": len(raw), "sha256": args.authority_sha256}
     h.require(h.pin(raw)["sha256"] == args.authority_sha256, "FIXED_TECHNICAL_AUTHORITY_BYTES")
-    result = build_source(args.output, pointer, args.windows_copy_workers)
+    result = build_source(args.output, pointer, args.windows_copy_workers, args.windows_lx_alias_attributes)
     print(h.encode(result).decode("utf-8"), end="")
 
 
