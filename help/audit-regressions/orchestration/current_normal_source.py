@@ -10,6 +10,7 @@ import ast
 import copy
 import difflib
 import hashlib
+import ipaddress
 import json
 import os
 from pathlib import Path
@@ -289,7 +290,24 @@ def write_set(output: Path, files: dict[str, bytes]) -> None:
         require(stable_read(target) == raw, "WRITTEN_OUTPUT_COMPLETE_BYTES")
 
 
-def build_profile(output: str | Path, authority_pointer: dict[str, Any]) -> dict[str, Any]:
+def validate_isolation_subnet(value: str) -> str:
+    """Validate the explicit choice only; do not inspect or reserve networks."""
+    require(type(value) is str and "/" in value, "EXPLICIT_ISOLATION_IPV4_CIDR")
+    try:
+        network = ipaddress.IPv4Network(value, strict=True)
+    except (ipaddress.AddressValueError, ipaddress.NetmaskValueError, ValueError) as error:
+        raise ValueError("INVALID_ISOLATION_IPV4_CIDR") from error
+    private_ranges = (ipaddress.IPv4Network(block) for block in
+                      ("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"))
+    require(str(network) == value and any(network.subnet_of(block) for block in private_ranges),
+            "CANONICAL_RFC1918_ISOLATION_IPV4_CIDR")
+    return str(network)
+
+
+def build_profile(output: str | Path, authority_pointer: dict[str, Any],
+                  isolation_subnet: str | None = None) -> dict[str, Any]:
+    if isolation_subnet is not None:
+        isolation_subnet = validate_isolation_subnet(isolation_subnet)
     authority, inventory = reviewed_authority(authority_pointer)
     out = Path(output)
     require(out.is_absolute(), "ABSOLUTE_EXTERNAL_PROFILE_OUTPUT")
@@ -306,6 +324,14 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any]) -> dict
         require(key in baseline["members"], "FIXED_BASELINE_CORE9_MEMBER")
         before[name] = read_pointer({"path": (BASELINE / key).as_posix(), **baseline["members"][key]})
     after = dict(before)
+    if isolation_subnet is not None:
+        original_network = b"networks:\n  isolation:\n    internal: true\n    labels: *labels\nvolumes:"
+        selected_network = (b"networks:\n  isolation:\n    internal: true\n    labels: *labels\n"
+                            b"    ipam:\n      config:\n        - subnet: "
+                            + isolation_subnet.encode("ascii") + b"\nvolumes:")
+        after["compose.yml"] = once(before["compose.yml"], original_network, selected_network)
+        require(once(after["compose.yml"], selected_network, original_network) == before["compose.yml"],
+                "ONLY_EXPLICIT_ISOLATION_IPAM_BLOCK_CHANGED")
     interface = decode(before["interface-v1.json"])
     require(encode(interface) == before["interface-v1.json"], "ORIGINAL_INTERFACE_SERIALIZATION_RETAINED")
     seed = decode(before["seed-source-inverse.json"])
@@ -393,6 +419,9 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any]) -> dict
         "original_nine_volume_source_tree_topology_retained": True,
         "initializer_syntax": "NOT RUN", "M_A_B_Runtime": "NOT RUN",
     }
+    if isolation_subnet is not None:
+        derivation[named]["isolation_subnet"] = isolation_subnet
+        derivation[named]["isolation_subnet_availability"] = "NOT_CHECKED_BY_AUTHOR"
     after["source-derivation.json"] = encode(derivation)
     recovered = copy.deepcopy(derivation)
     recovered.pop(named)
@@ -419,6 +448,9 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any]) -> dict
         "all_derivation_history_retained": True, "whole_forward_reverse_replay": True,
         "actual_initializer_syntax": "NOT RUN", "M_S_Host_Docker_App_business": "NOT RUN",
     }
+    if isolation_subnet is not None:
+        manifest["isolation_subnet"] = isolation_subnet
+        manifest["isolation_subnet_availability"] = "NOT_CHECKED_BY_AUTHOR"
     files = {"before/" + name: before[name] for name in NAMES}
     files.update({"FORWARD.patch": forward, "REVERSE.patch": reverse, "MANIFEST.json": encode(manifest)})
     profile_pins = {"schema": 1, "scope": "R61_REVIEWED_CORE9_SOURCE_ONLY_NOT_RUNTIME",
@@ -1099,10 +1131,12 @@ def main() -> None:
     destination = parser.add_mutually_exclusive_group(required=True)
     destination.add_argument("--output", help="Derive the exact Core9 profile directory.")
     destination.add_argument("--normal-source", help="Author the complete normal18 around an existing reviewed Core9.")
+    parser.add_argument("--isolation-subnet", help="Optional canonical RFC1918 IPv4 CIDR; only with --output.")
     parser.add_argument("--initializer-syntax-result", help="Actual successful current initializer syntax receipt, for normal18.")
     parser.add_argument("--authority-file", required=True)
     parser.add_argument("--authority-sha256", required=True)
     args = parser.parse_args()
+    require(args.normal_source is None or args.isolation_subnet is None, "ISOLATION_SUBNET_ONLY_FOR_PROFILE_OUTPUT")
     require(re.fullmatch(r"[a-f0-9]{64}", args.authority_sha256) is not None, "FIXED_AUTHORITY_SHA256")
     path = Path(args.authority_file)
     raw = stable_read(path)
@@ -1113,7 +1147,7 @@ def main() -> None:
         result = build_normal(args.normal_source, pointer, args.initializer_syntax_result)
     else:
         require(args.initializer_syntax_result is None, "SYNTAX_RECEIPT_ONLY_FOR_NORMAL18")
-        result = build_profile(args.output, pointer)
+        result = build_profile(args.output, pointer, isolation_subnet=args.isolation_subnet)
     print(json.dumps(result, ensure_ascii=False))
 
 
