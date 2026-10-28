@@ -109,6 +109,43 @@ class AccountChangeGuard
         }
     }
 
+    /** Top-level merchant transition: its read-only preparation precedes any session protection. */
+    public static function runManyAfterValidation(string $app,callable $prepare,callable $dbChange): mixed
+    {
+        $phase='input';$count=0;$owners=[];$store=null;
+        try{
+            if(!in_array($app,['adminapi','outapi','merchantapi'],true))throw new AuthUnavailableException();
+            $phase='connection';$connection=Db::connect();$pdo=$connection->connect();
+            if(!$pdo instanceof PDO||self::$managedContext!==null||$pdo->inTransaction())throw new AuthUnavailableException();
+            $result=$connection->transaction(static function()use($app,$connection,$pdo,$prepare,$dbChange,&$phase,&$count,&$owners,&$store):mixed{
+                if(Db::connect()!==$connection||$connection->connect()!==$pdo||!$pdo->inTransaction()
+                    ||self::$managedContext!==null)throw new AuthUnavailableException();
+                $phase='prepare';$prepared=$prepare();
+                if(!is_array($prepared)||array_keys($prepared)!==['ids','value']||!is_array($prepared['ids'])
+                    ||Db::connect()!==$connection||$connection->connect()!==$pdo||!$pdo->inTransaction()
+                    ||self::$managedContext!==null)throw new AuthUnavailableException();
+                $ids=self::normalizeIds($prepared['ids']);$count=count($ids);$phase='protect';
+                $store=$ids===[]?null:AuthSessionStore::fromConfig();
+                foreach($ids as$id)$owners[$id]=$store->beginChange($app,$id);
+                $phase='database';
+                self::$managedContext=['app'=>$app,'ids'=>$ids,'connection'=>$connection,'pdo'=>$pdo];
+                try{return $dbChange($prepared['value']);}
+                finally{self::$managedContext=null;}
+            });
+            $phase='commit_observation';
+            if(Db::connect()!==$connection||$connection->connect()!==$pdo||$pdo->inTransaction())throw new AuthUnavailableException();
+            $phase='complete';foreach($owners as$id=>$owner)$store->completeChange($app,(string)$id,$owner);
+            return $result;
+        }catch(\Throwable $error){
+            if($phase==='prepare'&&($error instanceof AdminException||$error instanceof ApiException
+                ||$error instanceof ValidateException||($error instanceof AuthException&&!$error instanceof AuthUnavailableException)
+                ||($app==='merchantapi'&&$error instanceof HttpException&&in_array($error->getStatusCode(),[401,403,404,422],true))))throw $error;
+            self::recordUnavailable($app,$phase,$count);
+            // After protection, an uncertain write/commit remains fail-closed, exactly as runMany.
+            throw new AuthUnavailableException();
+        }
+    }
+
     private static function normalizeIds(array $ids): array
     {
         $normalized = [];

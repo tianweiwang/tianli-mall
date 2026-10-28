@@ -215,6 +215,40 @@ final class MarketplacePaymentDao
         return self::observationResult($ownerUid,$orderId,$orderNo,$ledger,$root,$merchant,$registry,$attempts);
     }
 
+    /** Exact native projections for the finite, independently owned merchant-exit snapshot. */
+    public static function merchantExitColumns(): array
+    {
+        return ['customer'=>['uid'],'ledger'=>self::LEDGER_FIELDS,'root'=>self::PAYMENT_ROOT_FIELDS,
+            'merchant'=>self::PAYMENT_MERCHANT_FIELDS,'registry'=>self::REGISTRY_FIELDS,'attempts'=>self::ATTEMPT_FIELDS];
+    }
+
+    /** No SQL, provider call or authorization. Historical payment writers keep their original semantics. */
+    public static function merchantExitStateFromFacts(array $facts): string
+    {
+        $root=$facts['root']??null;if(!is_array($root))self::unavailable();
+        self::paymentText($root['order_id']??null,32,false);
+        $observed=self::readObservationFromFacts(self::integer($root['uid']??null,1,self::INT_MAX),
+            self::integer($root['id']??null,1,self::INT_MAX),$root['order_id'],$facts);
+        $locked=$observed['locked'];
+        if(!$observed['root_payment_consistent']||!self::cancellationPaymentClear($locked))return 'UNKNOWN';
+        foreach($locked['attempts'] as$row){
+            // closedTriplet alone permits the same query to occupy both ends.
+            // Exit requires three distinct, ordered saved observations of this exact intent.
+            if(self::closedTriplet($row)===null)return 'OPEN';
+            $phase=0;
+            foreach($row['evidence']['observations'] as$fact){
+                $op=$fact['fact']['op'];$result=$fact['fact']['result'];
+                if(!self::qualified($result,$row))continue;
+                if($phase===0&&$op==='queryPayment'&&in_array($result['state'],['pending','closed'],true))$phase=1;
+                elseif($phase===1&&$op==='closePayment'&&$result['state']==='closed')$phase=2;
+                elseif($phase===2&&$op==='queryPayment'&&$result['state']==='closed'){$phase=3;break;}
+            }
+            if($phase!==3)return 'OPEN';
+        }
+        // observationResult/paymentCollection proves the true generation-zero empty case.
+        return 'CLEAR';
+    }
+
     /** Complete authorized same-snapshot native headers; saved owners are data, never actor capabilities. */
     public function readObservationsForRoots(PDO $pdo,array $roots): array
     {

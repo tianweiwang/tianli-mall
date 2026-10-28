@@ -1583,7 +1583,7 @@ final class MarketplaceOrderDao
             'root_ids'=>$roots,'sku_ids'=>$skus];
     }
 
-    private function releaseAction(int $uid,int $merId,int $id,string $parentId,array $group):array
+    private static function releaseAction(int $uid,int $merId,int $id,string $parentId,array $group):array
     {
         return ['contract_version'=>1,'uid'=>$uid,'mer_id'=>$merId,'order_id'=>$id,'product_id'=>$group['product_id'],
             'sku_id'=>$group['sku_id'],'sku_type'=>0,'sku_unique'=>$group['unique'],'qty'=>$group['qty'],
@@ -1614,6 +1614,69 @@ final class MarketplaceOrderDao
             if($qty>$stock||$qty>$max-$sales)self::unavailable();
             self::stored($movement,[$part.'_stock_after'=>$stock-$qty,$part.'_sales_after'=>$sales+$qty]);
         }
+    }
+
+    /** Finite native columns; this does not relax any existing default-PDO snapshot gate. */
+    public static function merchantExitColumns(): array
+    {
+        return ['ledger'=>self::IDEM_FIELDS,'items'=>self::ITEM_FIELDS,'movements'=>self::MOVEMENT_FIELDS,
+            'statuses'=>self::STATUS_FIELDS];
+    }
+
+    /** Complete saved unpaid cancellation, without current catalog reads or reverse-order row locks. */
+    public static function merchantExitCancelledFromFacts(array $facts): bool
+    {
+        self::keys($facts,['customer','ledger','root','items','movements','statuses']);
+        $root=$facts['root'];if(!is_array($root))self::unavailable();
+        $id=self::integer($root['id']??null,1,self::INT_MAX);$uid=self::integer($root['uid']??null,1,self::INT_MAX);
+        $merId=self::integer($root['mer_id']??null,1,self::UINT_MAX);
+        self::customerFacts($facts['customer'],$uid);
+        $ledger=self::applicationLedger($uid,$id,$facts['ledger']);
+        if(self::integer($ledger['post_commit_done'],0,1)!==1)return false;
+        $refs=self::committedReferences($ledger);$order=self::savedOrderFacts($root,false);
+        self::stored($order,['id'=>$id,'uid'=>$uid,'mer_id'=>$merId]);
+        $order=self::committedOrderReferences($ledger,$order,$refs);
+        foreach(['paid','status','refund_status','pid','is_gift'] as$field)
+            if(self::integer($root[$field]??null,0,self::UINT_MAX)!==0)return false;
+        if(self::integer($root['is_cancel']??null,0,1)!==1
+            ||self::integer($root['shipping_type']??null,1,1)!==1
+            ||($root['delivery_type']??null)!==''||($root['delivery_id']??null)!==''||($root['delivery_name']??null)!=='')return false;
+        foreach(['items','movements','statuses'] as$key)if(!is_array($facts[$key])||!array_is_list($facts[$key]))self::unavailable();
+        $items=$facts['items'];
+        foreach($items as$item){self::keys($item,self::ITEM_FIELDS);
+            if((string)$item['split_status']!=='0'||(string)$item['refund_num']!=='0'
+                ||(string)$item['surplus_num']!==(string)$item['cart_num'])return false;}
+        $selection=self::postCommitItemsFromRows($ledger,$order,$items,self::postCommitIdentity($ledger,$order));
+        $groups=self::applicationGroups($items,$selection);$parents=[];$children=[];
+        foreach($facts['movements'] as$row){self::keys($row,self::MOVEMENT_FIELDS);$row=self::paymentMovement($row);
+            self::stored($row,['mer_id'=>$merId,'order_id'=>$id]);
+            if($row['kind']==='reserve')$parents[]=$row;
+            elseif($row['kind']==='release'){$parent=$row['parent_reserve_id'];if($parent===null)self::unavailable();$children[$parent][]=$row;}
+            else return false;
+        }
+        if(!$groups||count($parents)!==count($groups))self::unavailable();$seen=[];$stamp=null;
+        foreach($parents as$parent){
+            [$parent,$parentId,$group,$seen]=self::applicationReserve($uid,$merId,$id,$parent,$groups,$seen);
+            $released=$children[$parentId]??[];if(count($released)!==1)return false;$release=$released[0];
+            self::stored($release,['mer_id'=>$merId,'order_id'=>$id,'product_id'=>$group['product_id'],
+                'sku_id'=>$group['sku_id'],'sku_type'=>0,'sku_unique'=>$group['unique'],'parent_reserve_id'=>$parentId,
+                'idem_key'=>'release:'.$id.':'.$parentId,'qty'=>$group['qty'],'order_item_id'=>null,'refund_id'=>null]);
+            if(!($release['actor_type']==='customer'&&(string)$release['actor_id']===(string)$uid)
+                &&!($release['actor_type']==='system'&&$release['actor_id']===null))self::unavailable();
+            self::movementDigest($release,self::releaseAction($uid,$merId,$id,$parentId,$group));self::releaseArithmetic($release);
+            $current=[self::integer($release['add_time'],1,self::UINT_MAX),$release['actor_type'],
+                $release['actor_id']===null?null:(string)$release['actor_id']];
+            if($stamp!==null&&$stamp!==$current)self::unavailable();$stamp=$current;
+        }
+        if(array_diff_key($children,$seen)!==[]||$stamp===null)self::unavailable();$cancel=[];$created=[];
+        foreach($facts['statuses'] as$row){self::keys($row,self::STATUS_FIELDS);self::stored($row,['oid'=>$id]);
+            if($row['change_type']===self::CANCEL_STATUS)$cancel[]=$row;
+            if($row['change_type']===self::CREATED_STATUS)$created[]=$row;
+        }
+        if(count($cancel)!==1||count($created)!==1)return false;
+        self::stored($cancel[0],['oid'=>$id,'change_type'=>self::CANCEL_STATUS,'change_message'=>'订单取消','change_time'=>$stamp[0]]);
+        self::stored($created[0],['oid'=>$id,'change_type'=>self::CREATED_STATUS,'change_message'=>'订单生成','change_time'=>$order['add_time']]);
+        return true;
     }
 
     /** Saved item facts only, including exact opaque refs and original physical SKU lineage. */

@@ -25,6 +25,10 @@ Route::group('marketplace', function () {
         ->option(['marketplace_permission'=>'marketplace-merchants-review']);
     Route::put('merchants/<id>/flags', 'v1.marketplace.Merchant/flags')->name('marketplace-merchants-flags')
         ->option(['marketplace_permission'=>'marketplace-merchants-flags']);
+    Route::get('merchants/<id>/exit-precheck', 'v1.marketplace.Merchant/exitPrecheck')->name('marketplace-merchants-exit-precheck')
+        ->option(['marketplace_permission'=>'marketplace-merchants-exit-precheck']);
+    Route::put('merchants/<id>/close', 'v1.marketplace.Merchant/close')->name('marketplace-merchants-close')
+        ->option(['marketplace_permission'=>'marketplace-merchants-close']);
     Route::post('merchants/<id>/admin-employee', 'v1.marketplace.Merchant/createAdminEmployee')->name('marketplace-merchants-admin-employee')
         ->option(['marketplace_permission'=>'marketplace-merchants-admin-employee']);
     Route::post('merchants/<id>/password-setup-reissue', 'v1.marketplace.Merchant/reissuePasswordSetup')->name('marketplace-merchants-password-setup-reissue')

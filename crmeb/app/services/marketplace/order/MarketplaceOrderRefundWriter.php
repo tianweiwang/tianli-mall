@@ -135,6 +135,7 @@ final class MarketplaceOrderRefundWriter
                 $observed=$this->refunds->findCommittedActionByActorKey($connection,$pdo,$actorRef,$body['idem_key']);
                 $this->writer($connection,$pdo); if($observed!==null) self::unavailable();
                 $phase='new_action_admission'; self::paid($candidate,$root,$payment); self::normalRoot($root); self::holdClear($payment['registry']);
+                if(($payment['merchant']['closed_at']??null)!==null)self::unavailable();
                 if($action==='apply'&&Config::get('marketplace.aftersale.enabled',false)!==true) self::unavailable();
                 $this->sameIdentity($request,$identity,$action,$merchant,$scope);
                 $proposal=MarketplaceOrderRefundFacts::prepareAction($before['capture'],$before['context'],$payment,$action,$refundId,$body);

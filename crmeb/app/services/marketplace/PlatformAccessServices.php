@@ -28,6 +28,8 @@ final class PlatformAccessServices
         'marketplace-merchants-update' => ['PUT', 'marketplace/merchants/<id>', true],
         'marketplace-merchants-review' => ['PUT', 'marketplace/merchants/<id>/review', true],
         'marketplace-merchants-flags' => ['PUT', 'marketplace/merchants/<id>/flags', true],
+        'marketplace-merchants-exit-precheck' => ['GET', 'marketplace/merchants/<id>/exit-precheck', true],
+        'marketplace-merchants-close' => ['PUT', 'marketplace/merchants/<id>/close', true],
         'marketplace-merchants-admin-employee' => ['POST', 'marketplace/merchants/<id>/admin-employee', true],
         'marketplace-merchants-password-setup-reissue' => ['POST', 'marketplace/merchants/<id>/password-setup-reissue', true],
         'platform-assets-list' => ['GET', 'marketplace/platform-assets', false],

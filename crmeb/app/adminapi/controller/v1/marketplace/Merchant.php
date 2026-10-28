@@ -4,11 +4,12 @@ namespace app\adminapi\controller\v1\marketplace;
 
 use app\Request;
 use app\services\marketplace\MerchantAdminServices;
+use app\services\marketplace\MerchantExitServices;
 use think\Response;
 
 final class Merchant
 {
-    public function __construct(private MerchantAdminServices $services) {}
+    public function __construct(private MerchantAdminServices $services, private MerchantExitServices $exit) {}
 
     public function index(Request $request): Response
     { return self::success($this->services->listing($request->platformScope(), $request->get(false))); }
@@ -26,6 +27,10 @@ final class Merchant
     { return self::success($this->services->createAdminEmployee($request->platformScope(), $request->post(false))); }
     public function reissuePasswordSetup(Request $request): Response
     { return self::success($this->services->reissuePasswordSetup($request->platformScope(), $request->post(false))); }
+    public function exitPrecheck(Request $request): Response
+    { return self::success($this->exit->precheck($request->platformScope(), $request->get(false))); }
+    public function close(Request $request): Response
+    { return self::success($this->exit->close($request->platformScope(), $request->put(false))); }
 
     private static function success(array $data): Response
     { return Response::create(['status'=>200, 'msg'=>'操作成功', 'data'=>$data], 'json', 200); }

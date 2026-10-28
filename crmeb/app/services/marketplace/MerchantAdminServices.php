@@ -335,6 +335,9 @@ final class MerchantAdminServices
                         if ($current === null || $current !== $before) {
                             throw new AuthUnavailableException();
                         }
+                        if ($permission === self::FLAGS && $current['closed_at'] !== null) {
+                            throw new HttpException(422, '商家已关闭，不能修改经营开关');
+                        }
                         if ($eligibilityChanges
                             && $this->employees->idsForPlatformMerchant($scope, true) !== $protectedIds) {
                             throw new AuthUnavailableException();

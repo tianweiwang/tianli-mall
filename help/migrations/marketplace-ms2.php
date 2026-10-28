@@ -412,9 +412,9 @@ final class MarketplaceMs2Migration
         if (!is_array($map['tables'])) { throw new RuntimeException('Mapping unavailable'); }
         self::exactKeys($map['tables'], array_keys($this->catalogTables()));
         $merchants = [];
-        $merchantRows = $this->rows('SELECT mer_id FROM ' . $this->table('marketplace_merchant') . ' ORDER BY mer_id LIMIT 200001' . ($this->pdo->inTransaction() ? ' FOR UPDATE' : ''));
+        $merchantRows = $this->rows('SELECT mer_id,closed_at FROM ' . $this->table('marketplace_merchant') . ' ORDER BY mer_id LIMIT 200001' . ($this->pdo->inTransaction() ? ' FOR UPDATE' : ''));
         if (count($merchantRows) > 200000) { throw new RuntimeException('Inventory limit'); }
-        foreach ($merchantRows as $row) { $merchants[self::positiveUint($row['mer_id'])] = true; }
+        foreach ($merchantRows as $row) { $merchants[self::positiveUint($row['mer_id'])] = ['closed_at'=>$row['closed_at']]; }
         $summary = $this->catalogSummary($catalog); $confirmed = $updates = $expectedAfter = []; $allAtTarget = true; $total = 0;
         foreach ($this->catalogTables() as $table => $pk) {
             $entry = $map['tables'][$table]; if (!is_array($entry)) { throw new RuntimeException('Mapping unavailable'); }
@@ -430,6 +430,7 @@ final class MarketplaceMs2Migration
                 if (!is_int($decision['pk']) || $decision['pk'] < 1 || !isset($actual[$decision['pk']]) || isset($confirmed[$table][$decision['pk']]) || ($decision['from_mer_id'] !== null && (!is_int($decision['from_mer_id']) || $decision['from_mer_id'] < 0 || $decision['from_mer_id'] > 4294967295)) || !is_int($decision['to_mer_id']) || $decision['to_mer_id'] < 1 || $decision['to_mer_id'] > 4294967295 || !isset($merchants[$decision['to_mer_id']])) { throw new RuntimeException('Mapping target unavailable'); }
                 $owner = $actual[$decision['pk']]['mer_id'] === null ? null : self::ownerValue($actual[$decision['pk']]['mer_id']);
                 if ($owner !== $decision['from_mer_id'] && $owner !== $decision['to_mer_id']) { throw new RuntimeException('Mapping row owner changed'); }
+                if ($owner !== $decision['to_mer_id'] && $merchants[$decision['to_mer_id']]['closed_at'] !== null) { throw new RuntimeException('Mapping target closed'); }
                 $confirmed[$table][$decision['pk']] = $decision['to_mer_id'];
                 $projected[$decision['pk']]['mer_id'] = $decision['to_mer_id'];
                 if ($owner !== $decision['to_mer_id']) { $updates[] = ['table' => $table, 'pk_name' => $pk, 'pk' => $decision['pk'], 'from' => $owner, 'to' => $decision['to_mer_id']]; $allAtTarget = false; }

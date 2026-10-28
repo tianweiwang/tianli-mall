@@ -123,6 +123,16 @@ final class MerchantDao
         return $query->update($changes);
     }
 
+    /** A terminal transition only; neither the request nor generic flags can supply closed_at. */
+    public function closeForPlatform(PlatformScope $scope,int $now): int
+    {
+        self::assertTarget($scope);self::assertPlatformTime($now);
+        if($scope->permission!=='marketplace-merchants-close')throw new InvalidArgumentException('Invalid merchant close scope');
+        $query=$scope->apply((new Merchant())->db())->whereNull('closed_at');
+        self::assertPlatformTransaction($query);
+        return $query->update(['closed_at'=>$now,'accept_orders'=>0,'update_time'=>$now]);
+    }
+
     private static function assertGlobalCreate(PlatformScope $scope): void
     {
         if ($scope->targetMerId !== null || $scope->permission !== 'marketplace-merchants-create') {
