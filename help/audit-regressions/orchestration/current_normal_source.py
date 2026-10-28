@@ -2297,12 +2297,13 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
         "original_builds_retained":True,"complete17":selected,"all_finite_inverse_proofs":True,
         "network_subnets":selected_subnets,
         "network_availability":"NOT_PROVED_BY_AUTHOR_ROOT_FRESH_RECHECK_REQUIRED_BEFORE_START_ISOLATION_REUSE_ONLY_AFTER_ACTUAL_A_CLOSE_AND_ZERO",
-        "changed_python_bodies":{"ms4-host.py":["verify_files_bootstrap","ui_copy_freeze_values","ui_web_connect","ui_web_networks"],
+        "changed_python_bodies":{"ms4-host.py":["verify_files_bootstrap","ui_copy_freeze_values","ui_web_connect","ui_web_networks","prerequisite_result"],
             "verify-zero-ms4-fulfillment.py":["ui_copy_freeze_values","ui_zero_network_identity","ui_zero_resource_networks"],
             "normal-close-ms4-fulfillment.py":[],
             "root-ui-materialize-freeze.py":["main","current_known_normal_root","current_consume_materialization","current_verify_sources","frozen_materials"],
             "root-ui-start-to-ready.py":["main","current_core_aux_authority"]},
         "added_schema_consumer":"ms4-host.py:verify_schema_bootstrap",
+        "added_merchant_exit_consumer":"ms4-host.py:verify_merchant_exit_bootstrap",
         "runtime":"NOT RUN","approval":"NOT_GRANTED_REQUIRES_INDEPENDENT_SOURCE_REVIEW"}
     after["SOURCE-CHECKS.json"] = encode(checks)
     inputs = decode(before["root-source/INPUTS.json"])
