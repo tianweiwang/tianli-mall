@@ -4,6 +4,14 @@
 
 这是**源码归档和恢复资料**。包含旧完整编排、后续失败版本和修正后的完整编排源码。本目录不宣称可直接跨机器运行或业务验证通过。交付分支为 `feature/ms4-asset-consumers`；最早的 `codex/audit-base` 链接不包含本次交接。
 
+## 当前候选的正常回归接入
+
+新增的 `current_source_inventory.py` 与 `current_normal_source.py` 是当前候选的本机作者入口，归档 `sources/` 保持原字节。前者核完整 Git blob、两份独立干净检出和保护目录，只输出 `CAPTURED_NOT_APPROVED`；后者必须读取固定的独立技术复核，不能把捕获结果自行批准。当前候选固定为 `7dfcc37459043959f648aa25921325ae677ed039`，更换候选必须重新核对来源，不能沿用本次批准。
+
+新版复用已存在的九卷 Core profile（含独立 `source-tree`），只更新当前售后入口的必要固定引用及摘要依赖。旧八卷归档不通过替换 HEAD 或摘要获得新资格。新材料写入仓库外目录；旧运行、失败、退役和来源记录仍按原身份保留。完整正常迁移、顾客、测试付款、履约、售后评价、Worker、普通关闭和独立核零的责任不减；源码派生、语法检查和来源技术通过都不代表这些业务已经运行。
+
+执行顺序和实际结果继续只维护在现有 [PROGRESS.md](H:/天俪商城/artifacts/project-organization-20261023/current20261025-business-progress-r1/PROGRESS.md)。本轮正在接入完整编排；未获得新 M/A/B 结果前，不直接启动旧 `launch.py` 或把 profile 的来源常量非空视为运行资格。
+
 ## 从 Git 离线核对
 
 在仓库根目录执行，使用 Python 3.14（与原检查环境一致），无需第三方库：
