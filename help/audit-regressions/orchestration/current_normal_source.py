@@ -80,7 +80,12 @@ def stable_read(path: Path) -> bytes:
         # On Windows lstat's ctime is creation time while fstat's ctime can be
         # change time. Keep each complete nine-field observation stable, and
         # join the path/handle on their eight fields with matching semantics.
-        require(opened[:-1] == initial[:-1], "OPEN_SOURCE_IDENTITY")
+        comparable = list(opened[:-1])
+        # CPython's Windows update_st_mode_from_path adds execute bits for
+        # these exact extensions; fstat has no filename for that adjustment.
+        if os.name == "nt" and path.suffix.lower() in (".exe", ".bat", ".cmd", ".com"):
+            comparable[2] |= 0o111
+        require(tuple(comparable) == initial[:-1], "OPEN_SOURCE_IDENTITY")
         raw = handle.read()
         require(handle.read(1) == b"", "COMPLETE_SOURCE_EOF")
         require(tuple(getattr(os.fstat(handle.fileno()), key) for key in STAT_FIELDS) == opened,
@@ -565,7 +570,11 @@ def current_stream(pointer, keep=False):
     digest=hashlib.sha256();amount=0;parts=[]
     with path.open('rb') as handle:
         opened=[getattr(os.fstat(handle.fileno()),key) for key in keys]
-        current_assert(opened[:-1]==before[:-1],'SAME_CURRENT_PATH_AND_HANDLE_IDENTITY')
+        comparable=list(opened[:-1])
+        # Match only CPython Windows' four filename-based execute-bit additions.
+        if os.name=='nt' and path.suffix.lower() in ('.exe','.bat','.cmd','.com'):
+            comparable[2]|=0o111
+        current_assert(comparable==before[:-1],'SAME_CURRENT_PATH_AND_HANDLE_IDENTITY')
         while True:
             block=handle.read(1024*1024)
             if not block:break
