@@ -1372,26 +1372,847 @@ try:
             "cumulative_paths": len(committed), "source_members": 18, "runtime": "NOT RUN"}
 
 
+def _b_replace_function(raw: bytes, name: str, replacement: str) -> bytes:
+    previous = _source_function(raw, name).encode("utf-8")
+    changed = once(raw, previous, replacement.rstrip().encode("utf-8"))
+    require(once(changed, replacement.rstrip().encode("utf-8"), previous) == raw,
+            "B_FINITE_COMPLETE_FUNCTION_INVERSE")
+    return changed
+
+
+def _b_constant(raw: bytes, name: str, value: Any) -> bytes:
+    if not isinstance(value, Path):
+        return replace_constant(raw, name, value)
+    text = raw.decode("utf-8")
+    nodes = [node for node in ast.parse(text).body if isinstance(node, ast.Assign)
+             and len(node.targets) == 1 and isinstance(node.targets[0], ast.Name) and node.targets[0].id == name]
+    require(len(nodes) == 1, "B_ONE_FIXED_PATH_ASSIGNMENT")
+    previous = ast.get_source_segment(text, nodes[0]).encode("utf-8")
+    replacement = (name + " = Path(" + repr(value.as_posix()) + ")").encode("utf-8")
+    updated = once(raw, previous, replacement)
+    require(once(updated, replacement, previous) == raw, "B_FIXED_PATH_WHOLE_FILE_INVERSE")
+    return updated
+
+
+def _b_baseline() -> dict[str, bytes]:
+    pins = decode(read_pointer(BASELINE_PINS))["members"]
+    prefix = "b/"
+    names = [name for name in pins if name.startswith(prefix) and (
+        name.startswith("b/candidate/") or name.startswith("b/browser-v1/")
+        or name.startswith("b/root-source/") or name == "b/current-core-aux/CORE-AUX-AUTHORITY.json")]
+    require(names, "FIXED_COMPLETE_B_FUNCTIONAL_SOURCE")
+    return {name[len(prefix):]: read_pointer({"path": (BASELINE / name).as_posix(), **pins[name]})
+            for name in names}
+
+
+def _b_networks(after: dict[str, bytes], subnets: dict[str, str]) -> dict[str, str]:
+    require(type(subnets) is dict and set(subnets) == {"isolation", "ui_web"}, "B_TWO_EXPLICIT_NETWORK_SUBNETS")
+    selected = {name: validate_isolation_subnet(value) for name,value in subnets.items()}
+    require(not ipaddress.IPv4Network(selected["isolation"]).overlaps(ipaddress.IPv4Network(selected["ui_web"])),
+            "B_EXPLICIT_NETWORK_SUBNETS_DISJOINT")
+    original = b"networks:\n  isolation:\n    internal: true\n    labels: *labels\nvolumes:"
+    replacement = (b"networks:\n  isolation:\n    internal: true\n    labels: *labels\n    ipam:\n      config:\n        - subnet: "
+                   + selected["isolation"].encode() + b"\nvolumes:")
+    after["candidate/compose.yml"] = once(after["candidate/compose.yml"], original, replacement)
+    for name in ("ms4-host.py", "verify-zero-ms4-fulfillment.py"):
+        key = "candidate/" + name
+        format_value = constant(after[key], "UI_WEB_NETWORK_FORMAT")
+        require(format_value.endswith('}}}'), "B_ORIGINAL_NETWORK_PROJECTION_END")
+        format_value = format_value[:-1] + ',"IPAM":{{json .IPAM}}}'
+        after[key] = replace_constant(after[key], "UI_WEB_NETWORK_FORMAT", format_value)
+    host = after["candidate/ms4-host.py"]
+    old = b"argv=['docker','network','create','--driver','bridge',"
+    new = ("argv=['docker','network','create','--driver','bridge','--subnet'," + repr(selected["ui_web"]) + ",").encode()
+    host = once(host, old, new)
+    source = _source_function(host, "ui_web_networks")
+    source = once(source.encode(), b"'Labels','Containers'}", b"'Labels','Containers','IPAM'}").decode()
+    checks = ("    expect(type(original['IPAM']) is dict and type(original['IPAM']['Config']) is list and len(original['IPAM']['Config'])==1\n"
+        "        and original['IPAM']['Config'][0]['Subnet']==" + repr(selected["isolation"]) + ", 'WEB_SELECTED_ORIGINAL_ISOLATION_IPAM')\n"
+        "    if frontend is not None:\n"
+        "        expect(type(frontend['IPAM']) is dict and type(frontend['IPAM']['Config']) is list and len(frontend['IPAM']['Config'])==1\n"
+        "            and frontend['IPAM']['Config'][0]['Subnet']==" + repr(selected["ui_web"]) + ", 'WEB_SELECTED_FRONTEND_IPAM')\n")
+    source = once(source.encode(), b"    return {'internal':original,'frontend':frontend}",
+                  checks.encode() + b"    return {'internal':original,'frontend':frontend}").decode()
+    after["candidate/ms4-host.py"] = _b_replace_function(host, "ui_web_networks", source)
+    zero = after["candidate/verify-zero-ms4-fulfillment.py"]
+    for symbol in ("ui_zero_network_identity", "ui_zero_resource_networks"):
+        source = _source_function(zero, symbol)
+        source = once(source.encode(), b"'Labels','Containers'}", b"'Labels','Containers','IPAM'}").decode()
+        if symbol == "ui_zero_network_identity":
+            checks = ("    require(type(value['IPAM']) is dict and type(value['IPAM']['Config']) is list and len(value['IPAM']['Config'])==1\n"
+                "        and value['IPAM']['Config'][0]['Subnet']==" + repr(selected["ui_web"]) + ", 'UI_ZERO_SELECTED_FRONTEND_IPAM')\n")
+            source = once(source.encode(), b"    return value", checks.encode() + b"    return value").decode()
+        else:
+            checks = ("        require(type(row['IPAM']) is dict and type(row['IPAM']['Config']) is list and len(row['IPAM']['Config'])==1\n"
+                "            and row['IPAM']['Config'][0]['Subnet']==(" + repr(selected["isolation"]) + " if name=='internal' else "
+                + repr(selected["ui_web"]) + "), 'UI_ZERO_BOTH_SELECTED_NETWORK_IPAM')\n")
+            source = once(source.encode(), b"        if empty:\n", checks.encode() + b"        if empty:\n").decode()
+        zero = _b_replace_function(zero, symbol, source)
+    after["candidate/verify-zero-ms4-fulfillment.py"] = zero
+    return selected
+
+
+def derive_b_profile(authority_pointer: dict[str, Any],
+                     network_subnets: dict[str, str] | None = None) -> dict[str, Any]:
+    """Pure finite B Source transformation; no A claim, output, import or runtime."""
+    authority, inventory = reviewed_authority(authority_pointer)
+    before = _b_baseline()
+    after = dict(before)
+    active_paths = {AR_PATH, CUSTOMER_PATH, FULFILLMENT_PATH, LEGACY_PATH,
+                    "help/audit-regressions/isolated/ms4-ui-prepare.php",
+                    "help/audit-regressions/isolated/lib/ms4-ui-backend-normal.php"}
+    def current_row(row):
+        wanted = inventory[row["path"]]
+        require(wanted == row or row["path"] in active_paths, "B_ONLY_DECLARED_REVIEWED_SOURCE_PIN_UPDATES")
+        return wanted
+    interface = decode(before["candidate/interface-v1.json"])
+    require(encode(interface) == before["candidate/interface-v1.json"], "B_ORIGINAL_JSON_BYTES")
+    # These are current B vectors. Earlier customer-form and historical profile
+    # records intentionally retain the identities of their own generations.
+    current = interface["fresh_B_current_UI_profile_source"]
+    for rows in (current["ui_source_vector8"].values(), current["customer_form_sources7"],
+                 interface["integrated_B_source_tree_contract"]
+                 ["fixed_producer_source_qualification"]["producers10"],
+                 interface["fulfillment_normal_successor"]["three_read_internal"]["source_helper_files"]):
+        for row in rows:
+            require(set(row) == {"path", "bytes", "sha256"} and row["path"] in inventory,
+                    "B_EXACT_REVIEWED_ACTIVE_INTERFACE_ROW")
+            row.update(current_row(row))
+    for name in ("ms4-host.py", "verify-zero-ms4-fulfillment.py"):
+        key = "candidate/" + name
+        raw = after[key]
+        for symbol in ("CUSTOMER_FORM_SOURCE_FILES", "THREE_READ_SOURCE_FILES"):
+            rows = constant(raw, symbol)
+            updated = [current_row(row) for row in rows]
+            raw = replace_constant(raw, symbol, tuple(updated) if isinstance(rows, tuple) else updated)
+        rows = constant(raw, "UI_CURRENT_SOURCE_PINS")
+        require(len(rows) == 8, "B_ORIGINAL_RUNTIME_EIGHT")
+        raw = replace_constant(raw, "UI_CURRENT_SOURCE_PINS", {path: current_row(row) for path,row in rows.items()})
+        for symbol in ("PAID_ENTRY", "FULFILLMENT_ENTRY", "AFTERSALE_REVIEW_ENTRY", "WORKER_ENTRY"):
+            row = inventory[constant(raw, symbol)]
+            current_row({"path":row["path"],"bytes":constant(raw,symbol+"_BYTES"),
+                         "sha256":constant(raw,symbol+"_SHA256")})
+            raw = replace_constant(raw, symbol + "_BYTES", row["bytes"])
+            raw = replace_constant(raw, symbol + "_SHA256", row["sha256"])
+        after[key] = raw
+    initializer = after["candidate/ms4-initialize.php"]
+    old_rows = constant(before["candidate/ms4-host.py"], "CUSTOMER_FORM_SOURCE_FILES")
+    old_ui = constant(before["candidate/ms4-host.py"], "UI_CURRENT_SOURCE_PINS")
+    def php_row(row):
+        return ("['path' => '" + row["path"] + "', 'bytes' => " + str(row["bytes"])
+                + ", 'sha256' => '" + row["sha256"] + "']").encode("utf-8")
+    for row in old_rows:
+        if inventory[row["path"]] != row:
+            initializer = once(initializer, php_row(row), php_row(inventory[row["path"]]))
+    for path, row in old_ui.items():
+        if inventory[path] != row:
+            old = ("'" + path + "' => [" + str(row["bytes"]) + ", '" + row["sha256"] + "']").encode()
+            new = ("'" + path + "' => [" + str(inventory[path]["bytes"]) + ", '"
+                   + inventory[path]["sha256"] + "']").encode()
+            initializer = once(initializer, old, new)
+    initializer, host, schema_rows = schema_profile_changes(initializer, after["candidate/ms4-host.py"], inventory)
+    after["candidate/ms4-initialize.php"] = initializer
+    after["candidate/ms4-host.py"] = host
+    # The public installer remains in both complete source reads. Only deployment
+    # descriptors use this exact root-only projection; nested install stays in.
+    projection = "    public = {**public, 'files':[r for r in public['files'] if r['path'] != 'install' and not r['path'].startswith('install/')], 'directories':[p for p in public['directories'] if p != 'install' and not p.startswith('install/')]}\n"
+    for name in ("ms4-host.py", "verify-zero-ms4-fulfillment.py"):
+        key = "candidate/" + name
+        anchor = b"    public = ui_copy_tree(Path(repo) / 'crmeb/public')\n"
+        after[key] = once(after[key], anchor, anchor + projection.encode())
+    library = after["candidate/ms4-ui-public-copy.php"]
+    anchor = b"    $source = m4uic_tree('/source/crmeb/public');\n"
+    require(anchor in library, "B_ORIGINAL_COMPLETE_PUBLIC_READER")
+    php_projection = (b"    $deployable=$source;\n"
+        b"    $deployable['files']=array_filter($source['files'],static fn($row)=>$row['path']!=='install'&&!str_starts_with($row['path'],'install/'));\n"
+        b"    $deployable['directories']=array_values(array_filter($source['directories'],static fn($path)=>$path!=='install'&&!str_starts_with($path,'install/')));\n")
+    library = once(library, anchor, anchor + php_projection)
+    for field, target in (("files", "$sourceFiles"), ("directories", "$sourceDirs")):
+        old = ("$source['" + field + "'] === " + target).encode()
+        new = ("$deployable['" + field + "'] === " + target).encode()
+        library = once(library, old, new)
+    after["candidate/ms4-ui-public-copy.php"] = library
+    # The browser has two independently fixed vectors plus the exact contract.
+    core = decode(before["current-core-aux/CORE-AUX-AUTHORITY.json"])
+    old_core = copy.deepcopy(core["core_sources"])
+    core["core_sources"] = [current_row(row) for row in old_core]
+    for row in old_core:
+        changed = inventory[row["path"]]
+        if changed != row:
+            for name in ("ms4-ui-business-producer.mjs", "ms4-ui-window-native-bridge.mjs"):
+                key = "browser-v1/" + name
+                after[key] = once(after[key], row["sha256"].encode(), changed["sha256"].encode())
+                require(row["bytes"] == changed["bytes"], "B_BROWSER_ONLY_FIXED_SAME_SIZE_BACKEND_LITERAL")
+    contract = decode(after["browser-v1/ui-business-consumer-contract.json"])
+    contract["php_sources"] = {row["path"]: {k:row[k] for k in ("bytes", "sha256")} for row in core["core_sources"]}
+    after["browser-v1/ui-business-consumer-contract.json"] = encode(contract)
+    browser = decode(before["browser-v1/PINS.json"])
+    browser["members"] = {name: pin(after["browser-v1/" + name]) for name in browser["members"]}
+    after["browser-v1/PINS.json"] = encode(browser)
+    after["candidate/verify-zero-ms4-fulfillment.py"] = replace_constant(
+        after["candidate/verify-zero-ms4-fulfillment.py"], "UI_AUX_SOURCE_PIN", pin(after["browser-v1/PINS.json"]))
+    after["current-core-aux/CORE-AUX-AUTHORITY.json"] = encode(core)
+    after["candidate/interface-v1.json"] = encode(interface)
+    # These source constants precede the original interface -> Host -> close ->
+    # zero seals. No resource, role, ordinary close or business code is replaced.
+    for name in ("ms4-host.py", "verify-zero-ms4-fulfillment.py"):
+        key = "candidate/" + name
+        raw = after[key]
+        for leaf in ("ms4-ui-copy.php", "ms4-ui-public-copy.php"):
+            old, new = pin(before["candidate/" + leaf]), pin(after["candidate/" + leaf])
+            old_literal = ("'bytes': " + str(old["bytes"]) + ",\n        'sha256': '" + old["sha256"] + "'").encode()
+            new_literal = ("'bytes': " + str(new["bytes"]) + ",\n        'sha256': '" + new["sha256"] + "'").encode()
+            if old != new:
+                raw = once(raw, old_literal, new_literal)
+        after[key] = raw
+    if network_subnets is not None:
+        network_subnets = _b_networks(after, network_subnets)
+    for name, symbol, target in (("ms4-host.py", "INTERFACE_SHA256", "interface-v1.json"),
+        ("normal-close-ms4-fulfillment.py", "HOST_SHA256", "ms4-host.py"),
+        ("normal-close-ms4-fulfillment.py", "UI_HOST_SHA256", "ms4-host.py"),
+        ("verify-zero-ms4-fulfillment.py", "HOST_SHA256", "ms4-host.py"),
+        ("verify-zero-ms4-fulfillment.py", "UI_HOST_SHA256", "ms4-host.py"),
+        ("verify-zero-ms4-fulfillment.py", "CLOSE_SHA256", "normal-close-ms4-fulfillment.py"),
+        ("verify-zero-ms4-fulfillment.py", "UI_CLOSE_SHA256", "normal-close-ms4-fulfillment.py"),
+        ("verify-zero-ms4-fulfillment.py", "INTERFACE_SHA256", "interface-v1.json"),
+        ("verify-zero-ms4-fulfillment.py", "UI_INTERFACE_SHA256", "interface-v1.json")):
+        after["candidate/" + name] = replace_constant(after["candidate/" + name], symbol, pin(after["candidate/" + target])["sha256"])
+    for symbol in ("INTERFACE_BYTES", "UI_INTERFACE_BYTES"):
+        after["candidate/verify-zero-ms4-fulfillment.py"] = replace_constant(
+            after["candidate/verify-zero-ms4-fulfillment.py"], symbol, len(after["candidate/interface-v1.json"]))
+    members = tuple(name for name in before if before[name] != after[name])
+    left, right = ({name: before[name] for name in members}, {name: after[name] for name in members})
+    forward, reverse = make_patch(left, right, members), make_patch(right, left, members)
+    require(apply_patch(left, forward, members) == right and apply_patch(right, reverse, members) == left,
+            "B_COMPLETE_FUNCTIONAL_SOURCE_FORWARD_REVERSE")
+    for name, raw in after.items():
+        if name.endswith(".py"): compile(raw, name, "exec")
+        elif name.endswith(".json"): decode(raw)
+    for name, changed, added in (("ms4-host.py", {"verify_files_bootstrap", "ui_copy_freeze_values"}, {"verify_schema_bootstrap"}),
+                                 ("verify-zero-ms4-fulfillment.py", {"ui_copy_freeze_values"}, set()),
+                                 ("normal-close-ms4-fulfillment.py", set(), set())):
+        original_functions = functions(before["candidate/" + name])
+        current_functions = functions(after["candidate/" + name])
+        if network_subnets is not None:
+            changed |= ({"ui_web_connect", "ui_web_networks"} if name == "ms4-host.py"
+                        else {"ui_zero_network_identity", "ui_zero_resource_networks"} if name == "verify-zero-ms4-fulfillment.py" else set())
+        require(set(current_functions) == set(original_functions) | added
+                and all(current_functions[symbol] == body for symbol, body in original_functions.items() if symbol not in changed),
+                "B_ALL_NON_TARGET_PYTHON_BUSINESS_AND_RESOURCE_FUNCTIONS_RAW_EXACT")
+    return {"before": before, "after": after, "authority": authority, "inventory": inventory,
+            "schema_sources": schema_rows, "forward": forward, "reverse": reverse,
+            "network_subnets": network_subnets,
+            "status": "PURE_B_PROFILE_DERIVED_NOT_APPROVED_NO_A_OR_RUNTIME"}
+
+
+def _b_outer(outcome: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
+    require(type(outcome) is dict and set(outcome) == {"created", "terminal", "stdout", "stderr"},
+            "B_EXPLICIT_ACTUAL_OUTER_FOUR_FILES")
+    created, terminal = (decode(read_pointer(outcome[key])) for key in ("created", "terminal"))
+    require(type(created) is dict and {"pid", "argv", "started_ns"} <= set(created)
+            and type(created["pid"]) is int and created["pid"] > 0
+            and type(created["argv"]) is list and created["argv"]
+            and type(created["started_ns"]) is int, "B_ACTUAL_OUTER_CREATED")
+    require(set(terminal) == set(created) | {"native_exit", "wait_returncode", "finished_ns", "stdout", "stderr"}
+            and all(terminal[key] == value for key, value in created.items())
+            and type(terminal["native_exit"]) is int and type(terminal["wait_returncode"]) is int
+            and terminal["native_exit"] == terminal["wait_returncode"] == 0
+            and type(terminal["finished_ns"]) is int
+            and terminal["finished_ns"] > created["started_ns"], "B_ACTUAL_SAME_PID_OUTER_NATURAL_ZERO")
+    for kind in ("stdout", "stderr"):
+        require(type(terminal[kind]) is dict and set(terminal[kind]) == {"bytes", "sha256"}
+                and terminal[kind] == {key:outcome[kind][key] for key in ("bytes", "sha256")},
+                "B_ORIGINAL_FULL_OUTER_STREAM_POINTER")
+        raw = read_pointer(outcome[kind])
+        require(raw == b"" if kind == "stderr" else bool(raw), "B_COMPLETE_OUTER_RAW_STREAM")
+    return created, terminal
+
+
+_B_NATIVE_REPLAY = r'''
+    # Preserve the original B consumer's semantic native replay, upgraded only
+    # for schema2 complete parents, explicit NUL delta/index and two extra rows.
+    expected=[]
+    def record(label, argv, result): expected.append((label,argv,result))
+    def git_record(label, root, args, result):
+        record(label,['git','-c','safe.directory='+root.as_posix(),'-C',root,*args],result)
+    main=Path(binding['candidate']);repo=REPO;parents=qualified['commit_chain'][-1]['parents']
+    for label,root in [('main',main),('validation',repo)]:
+        git_record(label+'-head-before',root,['rev-parse','HEAD'],(SOURCE+'\n').encode())
+        git_record(label+'-status-before',root,['status','--porcelain=v1','--untracked-files=all'],b'')
+        git_record(label+'-parent',root,['rev-list','--parents','-n','1',SOURCE],(' '.join([SOURCE,*parents])+'\n').encode())
+    for index,step in enumerate(qualified['commit_chain'],1):
+        label='source-step-'+str(index)
+        git_record(label+'-parent',repo,['rev-list','--parents','-n','1',step['source_sha']],(' '.join([step['source_sha'],*step['parents']])+'\n').encode())
+        delta=b''.join((':{} {} {} {} {}\0{}\0'.format(row['before_git_mode'],row['after_git_mode'],row['before_git_blob'] or '0'*40,row['after_git_blob'],'A' if row['before'] is None else 'M',row['path'])).encode('utf-8') for row in step['files'])
+        git_record(label+'-paths',repo,['diff-tree','--no-commit-id','--raw','--no-abbrev','--no-renames','-r','-z',step['parent'],step['source_sha']],delta)
+        for number,row in enumerate(step['files'],1):
+            mark=label+'-member-'+str(number)
+            git_record(mark+'-after',repo,['show',step['source_sha']+':'+row['path']],row['after'])
+            if row['before'] is None:
+                git_record(mark+'-absent-before',repo,['ls-tree','--name-only',step['parent'],'--',row['path']],b'')
+            else:git_record(mark+'-before',repo,['show',step['parent']+':'+row['path']],row['before'])
+    git_record('cumulative-changed-paths',repo,['diff','--name-only','--no-renames','-z',SOURCE_PATCH_BASE,SOURCE],
+        b''.join((row['path']+'\0').encode('utf-8') for row in qualified['committed']))
+    for number,row in enumerate(qualified['committed'],1):
+        git_record('committed-blob-'+str(number),repo,['show',SOURCE+':'+row['path']],{key:row[key] for key in ['bytes','sha256']})
+    inventory=b''.join((name+'\0').encode('utf-8') for name in qualified['all'])
+    for label,root in [('main',main),('validation',repo)]:
+        git_record(label+'-complete-tracked-inventory',root,['ls-files','-z'],inventory)
+    index=b''.join((row['git_mode']+' '+row['git_blob']+' 0\t'+row['path']+'\0').encode('utf-8') for row in qualified['git_index'])
+    for label,root in [('main',main),('validation',repo)]:
+        git_record(label+'-complete-index',root,['ls-files','--stage','-z'],index)
+    for name in ['ms4-host.py','normal-close-ms4-fulfillment.py','verify-zero-ms4-fulfillment.py']:
+        record('help-'+name.replace('.','-'),[Path(sys.executable),'-B','-X','utf8',PROFILE/name,'--help'],None)
+    record('freeze',[Path(sys.executable),'-B','-X','utf8',HOST,'freeze','--repo',repo,'--source',SOURCE,'--output',Path(actual_setup['freeze']),'--proof-ini-source',Path(frozen['proof_php_ini']['source_root'])],
+        {'status':'CLEAN_SOURCE_FROZEN_ONLY','source_sha':SOURCE,'freeze_sha256':actual_setup['freeze_sha256'],'runtime_SQL_App':'NOT RUN'})
+    for label,root in [('main',main),('validation',repo)]:
+        git_record(label+'-head-after',root,['rev-parse','HEAD'],(SOURCE+'\n').encode())
+        git_record(label+'-status-after',root,['status','--porcelain=v1','--untracked-files=all'],b'')
+    require(len(expected)==len(native),'B_EXACT_COMPLETE_SCHEMA2_NATIVE_GRAMMAR')
+    for operation,(label,argv,wanted) in zip(native,expected):
+        require(operation['label']==label and len(operation['argv'])==len(argv)
+            and all(Path(value)==part if isinstance(part,Path) else value==part for value,part in zip(operation['argv'],argv)),
+            'B_EVERY_ORIGINAL_NATIVE_LABEL_ARGV_AND_ORDER')
+        raw=current_stream({'path':(folder/(operation['stem']+'.stdout')).as_posix(),'bytes':operation['stdout_bytes'],'sha256':operation['stdout_sha256']},True)
+        if type(wanted) is bytes:require(raw==wanted,'B_EXACT_PARENT_DELTA_INDEX_STATUS_AND_NAMESPACE_STREAM')
+        elif wanted is None:require(bool(raw),'B_ORIGINAL_NONEMPTY_PROFILE_HELP')
+        elif set(wanted)=={'bytes','sha256'}:require({'bytes':len(raw),'sha256':sha(raw)}==wanted,'B_EVERY_REAL_BEFORE_AND_AFTER_GIT_BLOB')
+        else:require(json.loads(raw)==wanted,'B_ONE_ORIGINAL_FREEZE_JSON_STREAM')
+'''
+
+
+def _b_normal_consumer(normal_root: Path, binding: dict[str, Any], normal_review: dict[str, Any],
+                       setup_pointer: dict[str, Any]) -> str:
+    """Reuse the exact current normal source and M preflight, without its CLI/business."""
+    preflight = _S_PREFLIGHT
+    old = preflight[:preflight.index("    verify_normal_review(args.source_review_file,args.source_review_sha256)\n")]
+    header = ("\ndef current_b_normal_materialization():\n"
+        "    BASE=NORMAL_ROOT/'validation'; PROFILE=BASE/'actual-profile'; HOST=PROFILE/'ms4-host.py'\n"
+        "    SOURCE=CURRENT_SOURCE_SHA; CURRENT_PARENT=CURRENT_B_PARENT; SETUP=Path(CURRENT_B_M_RESULT['path'])\n"
+        "    args=argparse.Namespace(source_review_file=CURRENT_B_NORMAL_REVIEW['path'],"
+        "source_review_sha256=CURRENT_B_NORMAL_REVIEW['sha256'])\n")
+    preflight = once(preflight.encode(), old.encode(), header.encode()).decode()
+    preflight = once(preflight.encode(),
+        b"    root_pins={'path':(BASE/'PINS.json').as_posix(),'bytes':(BASE/'PINS.json').stat().st_size,'sha256':args.root_source_pins_sha256}\n",
+        b"    root_pins=CURRENT_B_NORMAL_ROOT_PINS\n").decode()
+    preflight = once(preflight.encode(),
+        b"    actual_setup=current_json({'path':SETUP.as_posix(),'bytes':SETUP.stat().st_size,'sha256':args.setup_sha256})\n",
+        b"    actual_setup=current_json(CURRENT_B_M_RESULT)\n").decode()
+    preflight += _B_NATIVE_REPLAY + "    return actual_setup\n"
+    review = decode(read_pointer(normal_review))
+    normal_s = read_pointer({"path": (normal_root / "validation/run.py").as_posix(),
+                             **review["members"]["validation/run.py"]})
+    tree_join = _source_function(normal_s, "validate_complete_source_tree")
+    constants = {
+        "NORMAL_ROOT": normal_root, "CURRENT_SOURCE_SHA": binding["source_sha"],
+        "CURRENT_SOURCE_BINDING": _pointer(normal_root / "qualification/CURRENT-BINDING.json"),
+        "PROFILE_NAMES9": list(NAMES), "NORMAL_MEMBERS18": list(review["members"]),
+        "SOURCE_PATCH_BASE": PATCH_BASE, "CURRENT_M_RESULT_KEYS": M_RESULT_KEYS,
+        "CURRENT_B_PARENT": binding["parent"], "CURRENT_B_NORMAL_REVIEW": normal_review,
+        "CURRENT_B_M_RESULT": setup_pointer, "CURRENT_B_NORMAL_ROOT_PINS": _pointer(normal_root / "validation/PINS.json"),
+        "PROFILE_PUBLICATION": pin(stable_read(normal_root / "validation/PROFILE-PINS.json")),
+    }
+    prefix = "\n".join(name + " = " + ("Path(" + repr(value.as_posix()) + ")" if isinstance(value, Path) else repr(value))
+                       for name, value in constants.items()) + "\n"
+    return prefix + _COMMON_RUNTIME + "\nrequire=current_assert\n" + tree_join + "\n" + preflight
+
+
+def _b_materials(materials: dict[str, Any], authority_pointer: dict[str, Any],
+                 inventory: dict[str, Any], proofs_pointer: dict[str, Any]) -> tuple[dict[str, bytes], dict[str, Any]]:
+    require(set(materials) == {"root", "producer_result", "independent_review"}, "B_EXPLICIT_STATIC_MATERIAL_INPUTS")
+    result = decode(read_pointer(materials["producer_result"]))
+    require(result["schema"] == 1 and result["scope"] == "UI_FIVE_STATIC_MATERIAL_BYTES_ONLY"
+            and result["status"] == "STATIC_MATERIAL_BYTES_CREATED_ONLY"
+            and result["current_frontend_bytes_match_original_builds"] is True
+            and result["original_build_revisions_preserved"] is True and result["compiler_rerun"] is False
+            and result["full_acceptance"] is False, "B_REAL_STATIC_MATERIALS_NOT_RUNTIME_ACCEPTANCE")
+    review = decode(read_pointer(materials["independent_review"]))
+    require(review["status"] == "PASS_CURRENT_UI_STATIC_MATERIALS_REVIEW"
+            and review["producer_result"] == materials["producer_result"], "B_INDEPENDENT_ACTUAL_FIVE_MATERIAL_REVIEW")
+    proofs = decode(read_pointer(proofs_pointer))
+    require(proofs["schema"] == 1 and proofs["scope"] == "CURRENT_THREE_FRONTEND_BUILD_PROOFS"
+            and set(proofs["builds"]) == {"h5", "merchant", "admin"}, "B_EXPLICIT_THREE_TRUE_BUILD_PROOFS")
+    scope = result["public_source_scope"]
+    authority = decode(read_pointer(authority_pointer))
+    require(scope["technical_authority"] == authority_pointer and scope["source_sha"] == authority["source_sha"]
+            == proofs["source_sha"] and scope["capture"] == authority["capture"]
+            and scope["excluded_root_directories"] == ["install"]
+            and scope["nested_same_name_directories_excluded"] is False
+            and scope["excluded_source_fully_read_and_rechecked"] is True,
+            "B_MATERIALS_CURRENT_COMPLETE_CAPTURE_AND_EXACT_ROOT_ONLY_PROJECTION")
+    names = ["ms4-order.png", "manifests/ui-h5-dist.json", "manifests/ui-merchant-dist.json",
+             "manifests/ui-admin-dist.json", "manifests/ui-public-copy-profile.json"]
+    require(list(result["materials"]) == names, "B_EXACT_FIVE_STATIC_MATERIALS")
+    root = Path(materials["root"])
+    emitted = {name: read_pointer({"path": (root / name).as_posix(), **result["materials"][name]}) for name in names}
+    children = list(root.rglob('*'))
+    for path in children: ordinary(path)
+    require(sorted(p.relative_to(root).as_posix() for p in children if p.is_file()) == sorted(names)
+            and sorted(p.relative_to(root).as_posix() for p in children if p.is_dir()) == ["manifests"],
+            "B_MATERIALS_EXACT_CLOSED_FIVE_FILE_NAMESPACE")
+    profile = decode(emitted[names[-1]])
+    expected = [{"path": path[len("crmeb/public/"):], "bytes": row["bytes"], "sha256": row["sha256"]}
+                for path, row in inventory.items() if path.startswith("crmeb/public/")
+                and not path.startswith("crmeb/public/install/")]
+    require(profile["public_source_files"] == expected, "B_PROFILE_EXACT_CURRENT_DEPLOYABLE_PUBLIC_BYTES")
+    for name in ("h5", "merchant", "admin"):
+        build = result["builds"][name]
+        require(build["current_source_revision"] == authority["source_sha"]
+                and build["reuse_basis"] == "COMPLETE_BUILD_INPUT_EQUIVALENCE_ORIGINAL_HEAD_RETAINED",
+                "B_BUILD_ORIGINAL_PROVENANCE_RETAINED")
+        row = proofs["builds"][name]
+        require(type(row) is dict and set(row) == {"packet", "pins", "run", "outer"}, "B_BUILD_EXACT_SOURCE_RUN_POINTERS")
+        read_pointer({"path": (Path(row["packet"]) / "PINS.json").as_posix(), **row["pins"]})
+        tree = decode(emitted["manifests/ui-" + name + "-dist.json"])
+        require(profile[name + "_dist_files"] == tree["files"]
+                and profile[name + "_dist_directories"] == tree["directories"], "B_REAL_THREE_DIST_MANIFEST_JOIN")
+    return emitted, result
+
+
+def build_b_source(output: str | Path, authority_pointer: dict[str, Any],
+                   fixed_inputs_pointer: dict[str, Any]) -> dict[str, Any]:
+    """Publish a Source candidate only after every original actual B prerequisite."""
+    fixed = decode(read_pointer(fixed_inputs_pointer))
+    require(type(fixed) is dict and set(fixed) == {"schema", "scope", "source_authority", "normal",
+        "A", "materials", "build_proofs", "base_source", "history", "runtime_root", "network_subnets"}
+        and fixed["schema"] == 1 and fixed["scope"] == "CURRENT_B_FIXED_ACTUAL_PREREQUISITES"
+        and fixed["source_authority"] == authority_pointer, "B_EXPLICIT_FIXED_ACTUAL_PREREQUISITES")
+    derived = derive_b_profile(authority_pointer, fixed["network_subnets"])
+    authority, inventory = derived["authority"], derived["inventory"]
+    out = Path(output)
+    ordinary(out, missing_leaf=True)
+    require(out.is_absolute() and not out.exists(), "ONE_CREATE_ONLY_EXTERNAL_B_SOURCE")
+    for protected in (Path(__file__).resolve().parents[3], BASELINE, HISTORICAL_NORMAL,
+                      Path(authority["candidate_root"]), Path(authority["validation_root"])):
+        require(not out.is_relative_to(protected) and not protected.is_relative_to(out), "B_OUTPUT_DISJOINT_FROM_ALL_FIXED_SOURCES")
+    for protected in (Path(fixed["normal"]["root"]), Path(fixed["materials"]["root"]), Path(fixed["base_source"]["root"])):
+        require(not out.is_relative_to(protected) and not protected.is_relative_to(out), "B_OUTPUT_DISJOINT_FROM_ACTUAL_INPUT_PACKETS")
+    require(not Path(fixed_inputs_pointer["path"]).is_relative_to(out), "B_FIXED_INPUT_DESCRIPTOR_OUTSIDE_NEW_OUTPUT")
+    normal = fixed["normal"]
+    require(set(normal) == {"root", "review", "result", "outer"}, "B_EXACT_CURRENT_NORMAL_M_INPUTS")
+    normal_root = Path(normal["root"])
+    binding = decode(read_pointer(_pointer(normal_root / "qualification/CURRENT-BINDING.json")))
+    require(binding["technical_authority"] == authority_pointer
+            and binding["source_sha"] == authority["source_sha"], "B_CURRENT_NORMAL_SAME_REVIEWED_SOURCE")
+    m_created, _ = _b_outer(normal["outer"])
+    def actual_normal_argv(created, mode):
+        argv = created["argv"]
+        require(len(argv) == 11 and argv[1:5] == ["-I", "-B", "-X", "utf8"]
+                and Path(argv[5]) == normal_root / "launcher/launch.py" and argv[6] == mode
+                and argv[7] == "--source-review-file" and Path(argv[8]) == Path(normal["review"]["path"])
+                and argv[9:] == ["--source-review-sha256", normal["review"]["sha256"]],
+                "B_ORIGINAL_CURRENT_NORMAL_LAUNCHER_MODE_AND_REVIEW_ARGV")
+    actual_normal_argv(m_created, "materialize")
+    consumer = _b_normal_consumer(normal_root, binding, normal["review"], normal["result"])
+    namespace = {"Path": Path, "os": os, "stat": stat, "re": re, "json": json,
+                 "hashlib": hashlib, "argparse": argparse, "sys": __import__("sys"),
+                 "sha": lambda raw: pin(raw)["sha256"],
+                 "REPO": Path(authority["validation_root"])}
+    exec(compile(consumer, "reviewed-current-normal-readonly-preflight", "exec"), namespace)
+    setup = namespace["current_b_normal_materialization"]()
+    a = fixed["A"]
+    require(type(a) is dict and set(a) == {"session", "outer", "normal_root_result", "worker_close",
+        "independent_zero", "post_a_history", "context", "post_a_contract"}, "B_ALL_FIVE_ACTUAL_A_PROOFS_REQUIRED")
+    require(type(a["session"]) is int and a["session"] > 0, "B_REAL_SUCCESSFUL_A_OUTER_SESSION")
+    a_created, _ = _b_outer(a["outer"])
+    actual_normal_argv(a_created, "normal-start")
+    context = decode(read_pointer(a["context"]))
+    final = decode(read_pointer(a["normal_root_result"]))
+    close = decode(read_pointer(a["worker_close"])); zero = decode(read_pointer(a["independent_zero"]))
+    post = decode(read_pointer(a["post_a_history"]))
+    require(final["status"] == "ROOT_NORMAL_MIGRATIONS_BUSINESS_WORKER_CLOSE_AND_INDEPENDENT_ZERO_NATIVE_ZERO"
+            and close["status"] == "VERIFIED_MS4_WORKER_NORMAL_CLOSE_ZERO_RESIDUAL"
+            and zero["status"] == "VERIFIED_MS4_WORKER_NORMAL_INDEPENDENT_SIX_QUERY_ZERO",
+            "B_REAL_SUCCESSFUL_A_RESULT_CLOSE_AND_INDEPENDENT_ZERO")
+    for value in (final, close, zero, context):
+        require(value["source_sha"] == authority["source_sha"] and value["run_id"] == context["run_id"],
+                "B_SAME_ACTUAL_A_RUN_AND_CURRENT_SOURCE")
+    require(context["repo_dir"] == authority["validation_root"] and context["freeze_sha256"] == setup["freeze_sha256"]
+            and context["prep_dir"] == (normal_root / "validation/actual-profile").as_posix(), "B_A_CONTEXT_JOINS_ACTUAL_M")
+    require(close["exact_nonforce_removed"] == {"containers": 4, "networks": 1, "volumes": 9}
+            and close["ordinary_stop_and_exact_nonforce_remove"] is True
+            and [(row["kind"], row["label"]) for row in zero["queries"]]
+                == [(kind, label) for kind in ("container", "network", "volume") for label in ("project", "run")]
+            and all(type(row["native_exit"]) is int and row["native_exit"] == 0
+                    and row["stdout_bytes"] == row["stderr_bytes"] == 0 for row in zero["queries"]),
+            "B_ORIGINAL_ORDINARY_A_RETIREMENT_AND_SIX_NATIVE_RAW_EMPTY_QUERIES")
+    post_contract = a["post_a_contract"]
+    require(set(post_contract) == {"header", "files_key", "retained_public_files", "prior_public_inventory",
+                                   "public_roots", "public_root_files"}
+            and set(post) == set(post_contract["header"]) | {post_contract["files_key"]}
+            and {key: post[key] for key in post_contract["header"]} == post_contract["header"],
+            "B_FIXED_REAL_POST_A_INVENTORY_SCHEMA")
+    for row in post[post_contract["files_key"]]: read_pointer(row)
+    materials, material_result = _b_materials(fixed["materials"], authority_pointer, inventory, fixed["build_proofs"])
+    # Construction below has no runtime side effects; all emitted scripts retain
+    # the original guards and require a separate fixed independent Source review.
+    return _b_publish(out, fixed_inputs_pointer, fixed, derived, consumer, setup, context,
+                      materials, material_result)
+
+
+_B_SOURCE_REVIEW = r'''
+def current_b_outer(outcome):
+    current_assert(set(outcome)=={'created','terminal','stdout','stderr'},'B_FIXED_ACTUAL_OUTER_FOUR')
+    created=current_json(outcome['created']);terminal=current_json(outcome['terminal'])
+    current_assert(type(created['pid']) is int and created['pid']>0 and type(created['argv']) is list
+        and type(created['started_ns']) is int and set(terminal)==set(created)|{'native_exit','wait_returncode','finished_ns','stdout','stderr'}
+        and all(terminal[key]==value for key,value in created.items())
+        and type(terminal['native_exit']) is int and type(terminal['wait_returncode']) is int
+        and terminal['native_exit']==terminal['wait_returncode']==0
+        and type(terminal['finished_ns']) is int and terminal['finished_ns']>created['started_ns'],'B_REAL_SAME_PID_NATURAL_OUTER_ZERO')
+    for kind in ['stdout','stderr']:
+        current_assert(type(terminal[kind]) is dict and set(terminal[kind])=={'bytes','sha256'}
+            and terminal[kind]=={key:outcome[kind][key] for key in ['bytes','sha256']},'B_EXACT_FULL_OUTER_STREAM_POINTER')
+        raw=current_stream(outcome[kind],True)
+        current_assert(raw==b'' if kind=='stderr' else bool(raw),'B_COMPLETE_ACTUAL_OUTER_STREAM')
+
+def current_b_source_review(path, expected_sha):
+    current_assert(re.fullmatch('[a-f0-9]{64}',expected_sha),'EXPLICIT_B_SOURCE_REVIEW_SHA')
+    review=current_json({'path':Path(path).as_posix(),'bytes':Path(path).stat().st_size,'sha256':expected_sha})
+    current_assert(review['schema']==1 and review['status']=='PASS_CURRENT_B_SOURCE_REVIEW'
+        and review['source_sha']==CURRENT_SOURCE_SHA and review['fixed_inputs']==CURRENT_B_FIXED_INPUT
+        and review['original_business_and_resource_contracts_retained'] is True
+        and review['complete_source_and_materials_reviewed'] is True,'INDEPENDENT_COMPLETE_B_SOURCE_REVIEW_REQUIRED')
+    root=ROOT_SOURCE.parent
+    current_assert(review['source_pins']['path']==(root/'SOURCE-PINS.json').as_posix(),'B_FIXED_SOURCE_PUBLICATION_PATH')
+    publication=current_json({'path':(root/'SOURCE-PINS.json').as_posix(),**CURRENT_B_SOURCE_PINS})
+    current_assert(publication['schema']==1 and publication['scope']=='CURRENT_B_COMPLETE_SOURCE_CANDIDATE_NOT_RUNTIME'
+        and publication['source_sha']==CURRENT_SOURCE_SHA and publication['fixed_inputs']==CURRENT_B_FIXED_INPUT
+        and review['members']==publication['members'],
+        'B_REVIEW_EXACT_SOURCE_CANDIDATE_MEMBERS')
+    for name,wanted in review['members'].items():
+        current_assert(not Path(name).is_absolute() and '..' not in Path(name).parts,'B_REVIEW_SAFE_SOURCE_MEMBER')
+        current_stream({'path':(root/name).as_posix(),**wanted})
+    fixed=current_json(CURRENT_B_FIXED_INPUT)
+    current_assert(fixed['source_authority']==CURRENT_B_TECHNICAL_AUTHORITY,'B_FIXED_SOURCE_AUTHORITY_INPUT')
+    current_b_outer(fixed['normal']['outer']);current_b_outer(fixed['A']['outer'])
+    current_assert(fixed['A']['session']==A_OUTER_SESSION
+        and all(fixed['A'][key]==A_QUALIFICATION[key] for key in ['normal_root_result','worker_close','independent_zero','post_a_history']),
+        'B_REVIEW_REAL_A_FIVE_PROOFS_STILL_EXACT')
+    for name in ['normal_root_result','worker_close','independent_zero','post_a_history','context']:current_stream(fixed['A'][name])
+    current_stream(fixed['materials']['producer_result']);current_stream(fixed['materials']['independent_review'])
+    current_stream(fixed['build_proofs'])
+'''
+
+
+def _b_proof(name: str, before: bytes, after: bytes, previous: dict[str, Any],
+             current: dict[str, Any]) -> dict[str, Any]:
+    require(before == after or before.endswith(b"\n") and after.endswith(b"\n"), "B_COMPLETE_LINE_SEAMS")
+    old_lines, new_lines = before.splitlines(keepends=True), after.splitlines(keepends=True)
+    old_offsets, new_offsets = [0], [0]
+    for line in old_lines: old_offsets.append(old_offsets[-1] + len(line))
+    for line in new_lines: new_offsets.append(new_offsets[-1] + len(line))
+    value = before; stages = []; chunks = []
+    for kind, a, b, c, d in difflib.SequenceMatcher(None, old_lines, new_lines, autojunk=False).get_opcodes():
+        if kind == "equal":
+            raw = before[old_offsets[a]:old_offsets[b]]
+            chunks.append({"before_utf8_offset": old_offsets[a], "after_utf8_offset": new_offsets[c], **pin(raw)})
+        else:
+            old, new = b"".join(old_lines[a:b]), b"".join(new_lines[c:d])
+            offset = new_offsets[c]
+            require(value[offset:offset + len(old)] == old, "B_FINITE_STAGE_EXACT_OFFSET")
+            changed = value[:offset] + new + value[offset + len(old):]
+            stages.append({"before_utf8": old.decode("utf-8"), "after_utf8": new.decode("utf-8"),
+                           "stage_utf8_offset": offset, "whole_before": pin(value), "whole_after": pin(changed)})
+            value = changed
+    require(value == after, "B_ALL_STAGES_REPLAY_TO_EXACT_SOURCE")
+    for stage in reversed(stages):
+        old, new = stage["before_utf8"].encode(), stage["after_utf8"].encode(); offset = stage["stage_utf8_offset"]
+        require(value[offset:offset + len(new)] == new, "B_INDEPENDENT_REVERSE_STAGE_OFFSET")
+        value = value[:offset] + old + value[offset + len(new):]
+    require(value == before, "B_ALL_STAGES_EXACT_WHOLE_SOURCE_INVERSE")
+    return {"name": name, "before": previous, "after": current, "stages": stages, "unchanged_chunks": chunks}
+
+
+def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], derived: dict[str, Any],
+               normal_consumer: str, setup: dict[str, Any], context: dict[str, Any],
+               materials: dict[str, bytes], material_result: dict[str, Any]) -> dict[str, Any]:
+    before, after = derived["before"], dict(derived["after"])
+    authority, inventory = derived["authority"], derived["inventory"]
+    head = authority["source_sha"]; normal_root = Path(fixed["normal"]["root"])
+    binding = decode(read_pointer(_pointer(normal_root / "qualification/CURRENT-BINDING.json")))
+    data = decode(read_pointer(binding["source_data"]))
+    parent = binding["parent"]; a = fixed["A"]
+    selected_subnets = derived["network_subnets"]
+    require(("        - subnet: " + selected_subnets["isolation"] + "\n").encode()
+            in stable_read(normal_root / "validation/actual-profile/compose.yml"),
+            "B_ISOLATION_REUSES_ONLY_THE_ACTUAL_SUCCESSFUL_A_SELECTED_SUBNET")
+    runtime = Path(fixed["runtime_root"])
+    require(runtime.is_absolute() and runtime.parent == BASELINE.parent and not runtime.exists()
+            and not runtime.is_relative_to(out) and not out.is_relative_to(runtime), "B_ORIGINAL_EXCLUSIVE_RUNTIME_BOUNDARY")
+    artifacts = constant(before["root-source/root-ui-materialize-freeze.py"], "ARTIFACTS")
+    require(len(artifacts) == 17, "B_ORIGINAL_COMPLETE_SEVENTEEN")
+    for name, raw in materials.items(): after["candidate/" + name] = raw
+    base = fixed["base_source"]
+    require(set(base) == {"root", "PINS", "FINAL"}, "B_ORIGINAL_OBSERVER59_SOURCE_AUTHORITY")
+    base_root = Path(base["root"])
+    base_pins = decode(read_pointer({"path": (base_root / "PINS.json").as_posix(), **base["PINS"]}))
+    base_members = base_pins.get("members", base_pins)
+    require(len(base_members) == 59, "B_ORIGINAL_COMPLETE_OBSERVER_SOURCE59")
+    for name, row in base_members.items():read_pointer({"path": (base_root / name).as_posix(), **row})
+    original_final = decode(read_pointer({"path": (base_root / "FINAL-CANDIDATES.json").as_posix(), **base["FINAL"]}))
+    tools = original_final["task2_observer_tools"]
+    require(len(tools) == 3, "B_ORIGINAL_OBSERVER_TOOLS_THREE")
+    for row in tools:read_pointer({"path": row["source"], **{key:row[key] for key in ("bytes", "sha256")}})
+    core = decode(after["current-core-aux/CORE-AUX-AUTHORITY.json"])
+    browser_pin = {"path": (out / "browser-v1/PINS.json").as_posix(), **pin(after["browser-v1/PINS.json"])}
+    core.update(source_sha=head, browser_manifest=browser_pin, base_source=base)
+    after["current-core-aux/CORE-AUX-AUTHORITY.json"] = encode(core)
+    core_pointer = {"path": (out / "current-core-aux/CORE-AUX-AUTHORITY.json").as_posix(),
+                    **pin(after["current-core-aux/CORE-AUX-AUTHORITY.json"])}
+    rows = {row["path"]: row for row in data["requirements"]}
+    for row in core["core_sources"]:
+        require(row["path"] not in rows or rows[row["path"]] == row, "B_CONSISTENT_CORE_AND_NORMAL_SOURCE_OVERLAP")
+        rows[row["path"]] = row
+    latest = [inventory[row["path"]] for row in data["commit_chain"][-1]["files"]]
+    require(latest and data["commit_chain"][-1]["source_sha"] == head, "B_ACTUAL_LAST_PARENT_COMMIT_FILES")
+    members = {"files": list(inventory.values())}
+    directories = set()
+    for path in inventory:
+        parts = path.split('/')
+        directories.update('/'.join(parts[:i]) for i in range(1, len(parts)))
+    members.update(directories=sorted(directories), file_count=len(inventory), directory_count=len(directories))
+    members["manifest_sha256"] = pin(json.dumps({"files": members["files"], "directories": members["directories"]},
+        ensure_ascii=False, separators=(',', ':')).encode())["sha256"]
+    proofs = decode(read_pointer(fixed["build_proofs"]))
+    qualification = {"schema":1, "scope":"B_UI_SOURCE_TREE_ACTUAL_QUALIFICATION", "source_sha":head,
+        "source_tree_members":members, "source_authority":fixed["source_authority"],
+        "builds":{name:{"actual_proof":proofs["builds"][name], **material_result["builds"][name]}
+                  for name in ("h5", "merchant", "admin")}, "runtime_root":runtime.as_posix()}
+    a_qualification = {"outer_native_exit":0, **{key:a[key] for key in (
+        "normal_root_result", "worker_close", "independent_zero", "post_a_history")}}
+    interface = decode(after["candidate/interface-v1.json"])
+    current = interface["fresh_B_current_UI_profile_source"]
+    current.update(source_sha=head, parent=parent, actual_adoption_authority=fixed["source_authority"],
+        A_outer_exit=0, A_worker_close=a["worker_close"], A_independent_zero=a["independent_zero"],
+        A_post_history=a["post_a_history"], materials_equivalence_authority=fixed["materials"]["independent_review"])
+    contract = interface["integrated_B_source_tree_contract"]
+    contract.update(source_sha=head, parent=parent, actual_adoption_authority=fixed["source_authority"],
+        qualified_source_head=head, validation_worktree=authority["validation_root"],
+        build_source=fixed["build_proofs"], actual_A=a_qualification, actual_A_post_history=a["post_a_history"])
+    contract["build_and_materials"].update({name:material_result["builds"][name] for name in ("h5", "merchant", "admin")})
+    contract["build_and_materials"]["public_copy"] = fixed["materials"]["producer_result"]
+    after["candidate/interface-v1.json"] = encode(interface)
+    for name in ("ms4-host.py", "normal-close-ms4-fulfillment.py", "verify-zero-ms4-fulfillment.py"):
+        key = "candidate/" + name
+        after[key] = replace_constant(after[key], "B_SOURCE_TREE_SOURCE_SEAL", "SEALED_BY_ROOT_AFTER_B_SOURCE_TREE_QUALIFICATION")
+        if name != "normal-close-ms4-fulfillment.py":
+            after[key] = replace_constant(after[key], "SOURCE_TREE_ENTRY_PINS_STATUS", "BOUND_FROZEN_PHP_SOURCE")
+    for name, symbol, target in (("ms4-host.py", "INTERFACE_SHA256", "interface-v1.json"),
+        ("normal-close-ms4-fulfillment.py", "HOST_SHA256", "ms4-host.py"),
+        ("normal-close-ms4-fulfillment.py", "UI_HOST_SHA256", "ms4-host.py"),
+        ("verify-zero-ms4-fulfillment.py", "HOST_SHA256", "ms4-host.py"),
+        ("verify-zero-ms4-fulfillment.py", "UI_HOST_SHA256", "ms4-host.py"),
+        ("verify-zero-ms4-fulfillment.py", "CLOSE_SHA256", "normal-close-ms4-fulfillment.py"),
+        ("verify-zero-ms4-fulfillment.py", "UI_CLOSE_SHA256", "normal-close-ms4-fulfillment.py"),
+        ("verify-zero-ms4-fulfillment.py", "INTERFACE_SHA256", "interface-v1.json"),
+        ("verify-zero-ms4-fulfillment.py", "UI_INTERFACE_SHA256", "interface-v1.json")):
+        after["candidate/" + name] = replace_constant(after["candidate/" + name], symbol, pin(after["candidate/" + target])["sha256"])
+    for symbol in ("INTERFACE_BYTES", "UI_INTERFACE_BYTES"):
+        after["candidate/verify-zero-ms4-fulfillment.py"] = replace_constant(
+            after["candidate/verify-zero-ms4-fulfillment.py"], symbol, len(after["candidate/interface-v1.json"]))
+    derivation = decode(after["candidate/source-derivation.json"])
+    derivation["current_nonself_artifacts"] = [{"path": name, **pin(after["candidate/" + name])}
+                                               for name in artifacts if name != "source-derivation.json"]
+    derivation["runtime_full17_sealed"] = True
+    derivation["actual_clean_Source_Val_M_A_build_B_Run"] = {"source_sha":head,
+        "normal_M":fixed["normal"]["result"], "A":a_qualification, "materials":fixed["materials"]["producer_result"], "B_Run":None}
+    after["candidate/source-derivation.json"] = encode(derivation)
+    selected = [{"path": name, **pin(after["candidate/" + name])} for name in artifacts]
+    browser = decode(after["browser-v1/PINS.json"])
+    proof_names = artifacts + ["browser-v1/" + name for name in browser["members"]] + ["browser-v1/PINS.json"]
+    inverse = []
+    for name in proof_names:
+        key = name if name.startswith("browser-v1/") else "candidate/" + name
+        if key in before:
+            old = before[key]; previous = {"path": (BASELINE / "b" / key).as_posix(), **pin(old)}
+        else:
+            old = materials[name]; previous = {"path": (Path(fixed["materials"]["root"]) / name).as_posix(), **pin(old)}
+        inverse.append(_b_proof(name, old, after[key], previous, {"path": (out / key).as_posix(), **pin(after[key])}))
+    normal_publication = {"root":(normal_root / "validation").as_posix(),
+        "profile_root":(normal_root / "validation/actual-profile").as_posix(),
+        "PINS":_pointer(normal_root / "validation/PROFILE-PINS.json"),
+        "PUBLICATION":_pointer(normal_root / "validation/PROFILE-PUBLICATION.json")}
+    publication = {"schema":1,"scope":"INTEGRATED_B_UI_SOURCE_TREE_KNOWN_SOURCE_METADATA_ONLY",
+        "source_sha":head,"parent":parent,"base_source":base,"base_profile":(BASELINE / "b/candidate").as_posix(),
+        "selected17":selected,"repository_Source_requirements":data["requirements"],
+        "finite_contexts":{"repository_committed_files":latest,"normal9_authority":{
+            "root":normal_publication["root"],"profile_root":normal_publication["profile_root"],
+            "PROFILE_PINS":normal_publication["PINS"],"PROFILE_PUBLICATION":normal_publication["PUBLICATION"]},
+            "current_core_aux_authority":core_pointer,"current_Core3":core["core_sources"],
+            "ordered_auxiliary_members":[{"path":name,**row} for name,row in browser["members"].items()],
+            "whole_forward_inverse_files":inverse,"SourceRows":list(rows.values()),"unchanged_tools3":tools,
+            "original_build_provenance_and_current_input_equivalence":fixed["materials"]["producer_result"]},
+        "target_execution":"NOT RUN"}
+    after["candidate/PUBLICATION.json"] = encode(publication)
+    after["candidate/PINS.json"] = encode({"schema":1,"scope":"INTEGRATED_B_UI_SOURCE_TREE_METADATA_SOURCE_PINS_NOT_RUNTIME_SEAL",
+        "members":{name:pin(after["candidate/" + name]) for name in artifacts + ["DESIGN.md", "PUBLICATION.json"]}})
+    checks = {"schema":1,"status":"CURRENT_B_SOURCE_CANDIDATE_NOT_APPROVED_NO_B_RUNTIME", "source_sha":head,
+        "fixed_inputs":fixed_pointer,"original_A_five_proofs":a_qualification,"actual_materials":fixed["materials"]["producer_result"],
+        "original_builds_retained":True,"complete17":selected,"all_finite_inverse_proofs":True,
+        "network_subnets":selected_subnets,
+        "network_availability":"NOT_PROVED_BY_AUTHOR_ROOT_FRESH_RECHECK_REQUIRED_BEFORE_START_ISOLATION_REUSE_ONLY_AFTER_ACTUAL_A_CLOSE_AND_ZERO",
+        "changed_python_bodies":{"ms4-host.py":["verify_files_bootstrap","ui_copy_freeze_values","ui_web_connect","ui_web_networks"],
+            "verify-zero-ms4-fulfillment.py":["ui_copy_freeze_values","ui_zero_network_identity","ui_zero_resource_networks"],
+            "normal-close-ms4-fulfillment.py":[],
+            "root-ui-materialize-freeze.py":["main","current_known_normal_root","current_consume_materialization","current_verify_sources","frozen_materials"],
+            "root-ui-start-to-ready.py":["main","current_core_aux_authority"]},
+        "added_schema_consumer":"ms4-host.py:verify_schema_bootstrap",
+        "runtime":"NOT RUN","approval":"NOT_GRANTED_REQUIRES_INDEPENDENT_SOURCE_REVIEW"}
+    after["SOURCE-CHECKS.json"] = encode(checks)
+    inputs = decode(before["root-source/INPUTS.json"])
+    inputs.update(sealed=True, head=head, parent=parent, root_baseline=BASELINE_PINS,
+        normal_root={"root":(normal_root / "validation").as_posix(),"PINS":_pointer(normal_root / "validation/PINS.json")},
+        normal_profile_publication=normal_publication, ui_profile_publication={"root":(out / "candidate").as_posix(),
+            "PINS":{"path":(out / "candidate/PINS.json").as_posix(),**pin(after["candidate/PINS.json"])},
+            "PUBLICATION":{"path":(out / "candidate/PUBLICATION.json").as_posix(),**pin(after["candidate/PUBLICATION.json"])}},
+        committed_files=latest,history=fixed["history"],A_QUALIFICATION=a_qualification,A_OUTER_SESSION=a["session"],
+        source_review_authority=fixed["source_authority"],post_a_history_contract=a["post_a_contract"],
+        body_preservation={"path":(out / "SOURCE-CHECKS.json").as_posix(),**pin(after["SOURCE-CHECKS.json"])},
+        current_core_aux_authority=core_pointer)
+    after["root-source/INPUTS.json"] = encode(inputs)
+    constants = {"PREPARED":out,"RUNTIME":runtime,"MAIN":Path(authority["candidate_root"]),
+        "REPO":Path(authority["validation_root"]),"PROFILE_SOURCE":out / "candidate",
+        "NORMAL_SOURCE":normal_root / "validation","HEAD":head,"PREVIOUS":head,"COMMIT_PARENT":parent,
+        "A_OUTER_SESSION":a["session"],"A_QUALIFICATION":a_qualification,"OLD_RUN":context["run_id"],
+        "OLD_FREEZE":setup["freeze_sha256"],"OLD_FREEZE_BYTES":setup["freeze_bytes"],
+        "OLD_CONTEXT_PIN":{key:a["context"][key] for key in ("bytes","sha256")},
+        "NORMAL_SETUP_PIN":{key:fixed["normal"]["result"][key] for key in ("bytes","sha256")},
+        "OLD_COORDINATOR_SHA":pin(stable_read(normal_root / "validation/run.py"))["sha256"],
+        "OLD_CLI_PINS":{name:pin(stable_read(normal_root / "validation/actual-profile" / name))["sha256"]
+                        for name in ("ms4-host.py","normal-close-ms4-fulfillment.py","verify-zero-ms4-fulfillment.py")},
+        "DIST_SOURCES":{name:material_result["builds"][name]["dist_root"] for name in ("h5","merchant","admin")},
+        "B_SOURCE_TREE_QUALIFICATION":qualification,"ROOT_INPUTS_PIN":pin(after["root-source/INPUTS.json"]),
+        "SOURCE_REVIEW_AUTHORITY":fixed["source_authority"],"POST_A_HISTORY_CONTRACT":a["post_a_contract"],
+        "TOOL_SOURCE":base_root / "observer-source","SOURCE_ROWS":rows,"COMMITTED_FILES":latest,
+        "COMMITTED_PATHS":set(row["path"] for row in latest),"NORMAL_SOURCE_PINS":decode(stable_read(normal_root / "validation/PINS.json"))["members"],
+        "CURRENT_M_SOURCE_CONTRACT":{"source_sha":head,"SourceRows":list(rows.values()),
+            "latest_commit_paths":sorted(row["path"] for row in latest),"source_requirements":data["requirements"]}}
+    root_m = after["root-source/root-ui-materialize-freeze.py"]
+    for name,value in constants.items():root_m = _b_constant(root_m,name,value)
+    root_m = _b_replace_function(root_m, "current_known_normal_root", '''def current_known_normal_root(inputs):
+    current_b_outer(CURRENT_B_M_OUTER)
+    setup=current_b_normal_materialization()
+    authority=inputs['normal_root']
+    assert authority['root']==NORMAL_SOURCE.as_posix() and setup['root_source_pins']==authority['PINS']
+    return authority,setup''')
+    root_m = _b_replace_function(root_m, "current_consume_materialization", '''def current_consume_materialization(inputs):
+    setup=current_known_normal_root(inputs)[1]
+    for name,row in CURRENT_READS.items():
+        OLD_NATIVE_PINS.append({key:row[key] for key in ['path','bytes','sha256']})
+    return setup''')
+    old = _source_function(root_m,"current_verify_sources")
+    first = old.index("    normal_root,normal_manifest,normal_pub,normal_state=publication_source(")
+    last = old.index("    assert normal_root==OLD_PROFILE", first)
+    prefix = '''    normal_root=OLD_PROFILE
+    normal_manifest=current_json(inputs['normal_profile_publication']['PINS'])
+    normal_pub=current_json(inputs['normal_profile_publication']['PUBLICATION'])
+    source_authority(normal_pub,lambda pointer:current_stream(pointer,True),current_assert)
+    normal_state=tree(normal_root)
+'''
+    root_m = _b_replace_function(root_m,"current_verify_sources",old[:first]+prefix+old[last:])
+    anchor = b"    public = tree(REPO / 'crmeb/public')\n"
+    projection = b"    public = {'files':{name:row for name,row in public['files'].items() if name!='install' and not name.startswith('install/')},'directories':[name for name in public['directories'] if name!='install' and not name.startswith('install/')]}\n"
+    root_m = once(root_m,anchor,anchor+projection)
+    root_s = after["root-source/root-ui-start-to-ready.py"]
+    s_constants = {"RUNTIME":runtime,"SOURCE":head,"SOURCE_PARENT":parent,"A_OUTER_SESSION":a["session"],
+        "SOURCE_REVIEW_AUTHORITY":fixed["source_authority"],"POST_A_HISTORY_CONTRACT":a["post_a_contract"],
+        "B_SOURCE_TREE_QUALIFICATION":qualification,"ROOT_INPUTS_PIN":pin(after["root-source/INPUTS.json"]),
+        "A_QUALIFICATION":a_qualification,"CURRENT_CORE_AUX_AUTHORITY_PIN":core_pointer,
+        "REPO":Path(authority["validation_root"]),"RUN_ROOT":runtime / "runs",
+        "PINS":{name:pin(after["candidate/"+name])["sha256"] for name in constants["OLD_CLI_PINS"]},
+        "SOURCE_BYTES":{name:len(after["candidate/"+name]) for name in constants["OLD_CLI_PINS"]},
+        "PROFILE_ARTIFACTS":[{"artifact":row["path"],**row} for row in selected]}
+    for name,value in s_constants.items():root_s=_b_constant(root_s,name,value)
+    old_browser_pin = pin(before["browser-v1/PINS.json"])
+    root_s = once(root_s,("'bytes':1222,'sha256':'"+old_browser_pin["sha256"]+"'").encode(),
+        ("'bytes':"+str(browser_pin["bytes"])+",'sha256':'"+browser_pin["sha256"]+"'").encode())
+    shared_constants = "\nCURRENT_B_FIXED_INPUT = "+repr(fixed_pointer)+"\nCURRENT_B_TECHNICAL_AUTHORITY = "+repr(fixed["source_authority"])+"\n"
+    # SOURCE-PINS omits itself; its fixed digest is installed only after the two
+    # callers are complete through an external reviewed publication descriptor.
+    review_runtime = _B_SOURCE_REVIEW.replace("**CURRENT_B_SOURCE_PINS", "**review['source_pins']")
+    for name,raw,shared in (("root-ui-materialize-freeze.py",root_m,normal_consumer),
+                            ("root-ui-start-to-ready.py",root_s,normal_consumer)):
+        raw = once(raw,b"import sys\n",b"import sys\nimport os\nimport stat\n") if name.startswith("root-ui-materialize") else raw
+        raw = once(raw,b"    args = parser.parse_args()\n",b"    parser.add_argument('--source-review-file',required=True)\n    parser.add_argument('--source-review-sha256',required=True)\n    args = parser.parse_args()\n    current_b_source_review(args.source_review_file,args.source_review_sha256)\n")
+        if name == "root-ui-start-to-ready.py":
+            anchor = b"    current_b_source_review(args.source_review_file,args.source_review_sha256)\n"
+            raw = once(raw,anchor,anchor+b"    current_b_normal_materialization()\n")
+        extra = shared_constants + "CURRENT_B_M_OUTER = "+repr(fixed["normal"]["outer"])+"\n"+shared+review_runtime
+        # Insert before the original main dispatch, leaving all original helpers
+        # and business-stage bodies intact.
+        marker = b"if __name__ == '__main__':\n"
+        after["root-source/"+name] = once(raw,marker,extra.encode()+"\n".encode()+marker)
+    for name, changed in (("root-ui-materialize-freeze.py", {"main", "current_known_normal_root",
+            "current_consume_materialization", "current_verify_sources", "frozen_materials"}),
+            ("root-ui-start-to-ready.py", {"main", "current_core_aux_authority"})):
+        original = functions(before["root-source/" + name]); candidate = functions(after["root-source/" + name])
+        require(all(symbol in candidate and candidate[symbol] == raw
+                    for symbol, raw in original.items() if symbol not in changed),
+                "B_ALL_ORIGINAL_NON_TARGET_ROOT_AND_BUSINESS_FUNCTIONS_RAW_EXACT")
+    root_names = ["DESIGN-TASKS.md","INPUTS.json","root-ui-materialize-freeze.py","root-ui-start-to-ready.py"]
+    after["root-source/PINS.json"] = encode({"schema":1,"scope":"INTEGRATED_B_UI_SOURCE_TREE_ROOT_SOURCE_PINS",
+        "members":{name:pin(after["root-source/"+name]) for name in root_names}})
+    for name,raw in after.items():
+        if name.endswith('.py'):compile(raw,name,'exec')
+        elif name.endswith('.json'):decode(raw)
+    original_text_names = tuple(name for name, raw in before.items() if raw.endswith(b'\n'))
+    original_text = {name:before[name] for name in original_text_names}
+    current_text = {name:after[name] for name in original_text_names}
+    forward, reverse = make_patch(original_text,current_text,original_text_names), make_patch(current_text,original_text,original_text_names)
+    require(apply_patch(original_text,forward,original_text_names)==current_text
+            and apply_patch(current_text,reverse,original_text_names)==original_text,
+            "B_ALL_ORIGINAL_TEXT_MEMBERS_COMPLETE_FORWARD_AND_REVERSE_REPLAY")
+    require(all(after[name] == raw for name,raw in before.items() if name not in original_text),
+            "B_ORIGINAL_BINARY_MEMBERS_RAW_EXACT")
+    after['SOURCE-FORWARD.patch']=forward; after['SOURCE-REVERSE.patch']=reverse
+    # No generated package is executable until a nonauthor reviews these exact
+    # bytes. The publication pointer is read from that explicit review at runtime.
+    source_pins = encode({"schema":1,"scope":"CURRENT_B_COMPLETE_SOURCE_CANDIDATE_NOT_RUNTIME",
+        "source_sha":head,"fixed_inputs":fixed_pointer,"members":{name:pin(raw) for name,raw in after.items()}})
+    after["SOURCE-PINS.json"] = source_pins
+    # Every original file not intentionally changed is still present and raw;
+    # new four manifests come only from the actual qualified producer above.
+    require(set(before) <= set(after) and all(after["candidate/"+row["path"]] == materials[row["path"]]
+        for row in selected if row["path"] in materials), "B_COMPLETE_ORIGINAL_AND_TRUE_MATERIAL_SOURCE")
+    write_set(out,after)
+    return {**checks,"source_root":out.as_posix(),"SOURCE_PINS":_pointer(out / "SOURCE-PINS.json")}
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     destination = parser.add_mutually_exclusive_group(required=True)
     destination.add_argument("--output", help="Derive the exact Core9 profile directory.")
     destination.add_argument("--normal-source", help="Author the complete normal18 around an existing reviewed Core9.")
+    destination.add_argument("--b-source", help="Derive original B Source after fixed actual M, A and five-material proofs.")
+    parser.add_argument("--b-inputs-file", help="Explicit completed current B prerequisite descriptor; only with --b-source.")
+    parser.add_argument("--b-inputs-sha256", help="Fixed SHA256 of the complete B prerequisite descriptor.")
     parser.add_argument("--isolation-subnet", help="Optional canonical RFC1918 IPv4 CIDR; only with --output.")
     parser.add_argument("--initializer-syntax-result", help="Actual successful current initializer syntax receipt, for normal18.")
     parser.add_argument("--authority-file", required=True)
     parser.add_argument("--authority-sha256", required=True)
     args = parser.parse_args()
-    require(args.normal_source is None or args.isolation_subnet is None, "ISOLATION_SUBNET_ONLY_FOR_PROFILE_OUTPUT")
+    require(args.output is not None or args.isolation_subnet is None, "ISOLATION_SUBNET_ONLY_FOR_PROFILE_OUTPUT")
     require(re.fullmatch(r"[a-f0-9]{64}", args.authority_sha256) is not None, "FIXED_AUTHORITY_SHA256")
     path = Path(args.authority_file)
     raw = stable_read(path)
     pointer = {"path": path.as_posix(), "bytes": len(raw), "sha256": args.authority_sha256}
     require(pin(raw)["sha256"] == args.authority_sha256, "EXPLICIT_AUTHORITY_SHA256_MATCH")
-    if args.normal_source:
+    if args.b_source:
+        require(args.initializer_syntax_result is None and args.b_inputs_file is not None
+                and type(args.b_inputs_sha256) is str and re.fullmatch(r"[a-f0-9]{64}", args.b_inputs_sha256),
+                "B_FIXED_COMPLETE_PREREQUISITE_FILE_AND_SHA_REQUIRED")
+        fixed_path = Path(args.b_inputs_file)
+        fixed_raw = stable_read(fixed_path)
+        fixed_pointer = {"path": fixed_path.as_posix(), "bytes": len(fixed_raw), "sha256": args.b_inputs_sha256}
+        require(pin(fixed_raw)["sha256"] == args.b_inputs_sha256, "B_EXPLICIT_INPUT_DESCRIPTOR_SHA")
+        result = build_b_source(args.b_source, pointer, fixed_pointer)
+    elif args.normal_source:
+        require(args.b_inputs_file is None and args.b_inputs_sha256 is None, "B_INPUTS_ONLY_FOR_B_SOURCE")
         require(args.initializer_syntax_result is not None, "ACTUAL_INITIALIZER_SYNTAX_RESULT_REQUIRED")
         result = build_normal(args.normal_source, pointer, args.initializer_syntax_result)
     else:
+        require(args.b_inputs_file is None and args.b_inputs_sha256 is None, "B_INPUTS_ONLY_FOR_B_SOURCE")
         require(args.initializer_syntax_result is None, "SYNTAX_RECEIPT_ONLY_FOR_NORMAL18")
         result = build_profile(args.output, pointer, isolation_subnet=args.isolation_subnet)
     print(json.dumps(result, ensure_ascii=False))

@@ -522,12 +522,13 @@ function m4o_app(bool $expectedTrade=false): \think\App
         'REDIS_REDIS_PASSWORD'=>$config['redis_password'],'REDIS_SELECT'=>0,'CACHE_CACHE_PREFIX'=>$cachePrefix,
         'AUTH_SESSION_EPOCH'=>$config['auth']['session_epoch'],'AUTH_STAMP_KEY'=>$config['auth']['stamp_key'],
         'AUTH_ISSUER'=>$config['auth']['issuer']]);
-    $app->register(\app\AppService::class); $app->bootService($app->getService(\app\AppService::class));
+    $app->register(\app\AppService::class);
     $app->bind(require '/workspace/crmeb/app/provider.php');
     foreach (['app','cache','log','marketplace','auth'] as $name) $app->config->set(require '/workspace/crmeb/config/'.$name.'.php',$name);
     $database = require '/workspace/crmeb/config/database.php';
     $database['connections']['mysql']['params'] = [PDO::ATTR_EMULATE_PREPARES=>false,PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION];
     $database['connections']['mysql']['break_reconnect'] = false; $app->config->set($database,'database');
+    $app->bootService($app->getService(\app\AppService::class));
     require_once '/workspace/crmeb/app/common.php';
     $app->register(\think\service\ModelService::class); $app->bootService($app->getService(\think\service\ModelService::class));
     date_default_timezone_set($app->config->get('app.default_timezone','Asia/Shanghai'));

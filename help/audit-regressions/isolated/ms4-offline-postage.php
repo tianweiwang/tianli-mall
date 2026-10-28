@@ -32,7 +32,7 @@ try {
     $app->setRuntimePath($runtime);
     $app->env->set(['APP_DEBUG'=>false, 'CACHE_DRIVER'=>'file']);
     $app->register(\app\AppService::class);
-    $app->bootService($app->getService(\app\AppService::class));
+    // Component registration only; full App startup and Schema acceptance are outside this no-DB test.
     $app->bind(require $root.'app/provider.php');
     foreach (['app','cache','log','marketplace','database'] as $name) {
         $app->config->set(require $root.'config/'.$name.'.php', $name);
