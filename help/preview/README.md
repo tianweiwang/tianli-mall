@@ -397,6 +397,8 @@ python -X utf8 help/preview/preview.py accounts-file --root $runtimeRoot
 
 现有构建不在默认目录时，装包命令追加 `--build-root <已有build根>`。后端和Docker输入仅来自Git已追踪的路径；新源码须先按明确范围加入Git索引，再核 `IMAGE-CONTEXT.json` 包含本次新增文件，不能把未追踪文件视为已装包。工具核对原成功命令记录、当前源码与构建工作副本、产物和H5原afterEmit摘要；将H5、平台和商家页面分别放入public根、`admin/`、`merchant/`，保留后端入口及依赖锁，排除运行配置、安装器和私有数据。`IMAGE-CONTEXT.json` 记录本次来源及复制读回；Admin/商家输出哈希是装包时观察值，不追认为原构建时回执，也不替代旧formal-copy资格。两个镜像须由上面的原Dockerfile实际构建，不能只给旧镜像换标签；构建可能需要原Dockerfile声明的基础镜像和依赖下载。
 
+三端来自不同原构建目录时，在 `--image-context <新目录>` 后同时提供 `--admin-build-root <平台原build根>`、`--merchant-build-root <商家原build根>`、`--h5-build-root <H5原build根>`；三项必须一起提供，与 `--build-root` 互斥，不能用于构建动作。每端仍从自己的原目录核对完整报告、原cwd/argv/日志、当前输入、H5双pass和完整dist，不复制或改写旧报告。所有原root须为普通、规范的有效目录，输出与源码及全部原root互不包含；不同root时manifest的 `build_root` 为null，`build_roots` 如实记录三端原root，显式三项同root时同时记录公共root。不提供新参数时，原默认行为及manifest字段保持。
+
 镜像模式首次prepare必须同时提供两张本地镜像、`--full-runtime` 和成对网段；镜像解析为固定ID后写入本实例state，后续命令只需同一 `--root`。两个网段必须属于RFC1918、彼此不重叠且不与已有Docker网络重叠；操作者还须检查宿主机及VPN路由。当前机器本轮选择 `10.253.240.0/24` 和 `10.253.241.0/24`，这是当时核对后的实例选择，不能作为其他机器或后继实例的固定默认值。程序不清理旧网络来腾出地址。
 
 运行中的PHP/Nginx使用镜像原入口与内置代码、vendor、三端页面和配置，不绑定这些宿主机目录。PHP只挂配置卷到 `/run/application`，镜像内 `/var/www/.env` 链接到其中的 `.env`；该卷仅有私有配置和准备标记，`.env` 为root:33/0640。应用可写数据位于专用runtime、uploads、private-assets三个卷，沿用UID33和私有根0700；MySQL、Redis也各用本实例专用卷。初始化仍通过现有bootstrap使用受控源码和维护账号，日常应用继续仅有DML权限。

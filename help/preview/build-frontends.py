@@ -422,10 +422,14 @@ class ContextResources(HTMLParser):
                       if (tag == 'script' and key == 'src') or (tag == 'link' and key == 'href')]
 
 
-def context_builds(build_root, observed):
+def context_builds(build_root, observed, selected_frontends=None):
+    frontends = ['admin', 'merchant', 'h5'] if selected_frontends is None else selected_frontends
+    context_require(isinstance(frontends, (list, tuple)) and frontends
+                    and all(frontend in ['admin', 'merchant', 'h5'] for frontend in frontends)
+                    and len(frontends) == len(set(frontends)), 'unknown or duplicate selected frontend')
     summary = json.loads(context_read(build_root / 'BUILD.json', observed))
     builds = {}
-    for frontend in ['admin', 'merchant', 'h5']:
+    for frontend in frontends:
         folder = build_root / frontend
         record = json.loads(context_read(folder / 'BUILD.json', observed))
         context_require(summary['frontends'][frontend] == record and record['frontend'] == frontend
@@ -533,14 +537,29 @@ def context_excluded(name):
                    ['crmeb/vendor', 'crmeb/runtime', 'crmeb/public/uploads', 'crmeb/public/install']))
 
 
-def image_context(output, build_root):
-    output, build_root = output.absolute(), build_root.resolve()
+def image_context(output, build_root, build_roots=None):
+    output = output.absolute()
+    if build_roots is None:
+        build_root = build_root.resolve()
+        roots = {frontend: build_root for frontend in ['admin', 'merchant', 'h5']}
+    else:
+        context_require(build_root is None and isinstance(build_roots, dict)
+                        and set(build_roots) == {'admin', 'merchant', 'h5'}, 'three exclusive frontend build roots required')
+        roots = {frontend: Path(build_roots[frontend]).absolute() for frontend in ['admin', 'merchant', 'h5']}
+    for root in roots.values():
+        context_require(root.resolve() == root, 'build root must be canonical')
+        context_regular(root, True)
     context_require(output.resolve() == output and not output.exists() and not output.is_symlink(), 'output must be a new canonical directory')
     context_regular(output.parent, True)
-    for protected in [SOURCE, build_root]:
+    for protected in [SOURCE, *roots.values()]:
         context_require(not output.is_relative_to(protected) and not protected.is_relative_to(output), 'output overlaps source or build inputs')
     observed = {}
-    builds = context_builds(build_root, observed)
+    if build_roots is None:
+        builds = context_builds(build_root, observed)
+    else:
+        builds = {}
+        for frontend in ['admin', 'merchant', 'h5']:
+            builds.update(context_builds(roots[frontend], observed, (frontend,)))
     head = context_git('rev-parse', 'HEAD').decode().strip()
     tracked = context_git('ls-files', '--stage', '-z', '--', 'crmeb', 'docker', '.dockerignore')
     files, origins, directories = {}, {}, set()
@@ -604,13 +623,16 @@ def image_context(output, build_root):
                     and context_git('ls-files', '--stage', '-z', '--', 'crmeb', 'docker', '.dockerignore') == tracked,
                     'controlled source inventory changed during packaging')
     # These are actual packaging observations, not backfilled old formal qualification or build receipts.
+    common_root = next(iter(roots.values())) if len(set(roots.values())) == 1 else None
     manifest = {'schema': 1, 'status': 'IMAGE_CONTEXT_PREPARED_NOT_FORMAL_ACCEPTANCE', 'observed_at': now(),
                 'source_directory': SOURCE.as_posix(), 'source_head': head, 'source_bytes': 'CURRENT_CONTROLLED_WORKTREE',
-                'build_root': build_root.as_posix(), 'context': destination.as_posix(), **expected_tree,
+                'build_root': common_root.as_posix() if common_root is not None else None, 'context': destination.as_posix(), **expected_tree,
                 'origins': dict(sorted(origins.items())),
                 'builds': {name: {key: value for key, value in data.items() if key != 'root'} for name, data in builds.items()},
                 'observed_inputs': {path.as_posix(): value for path, value in sorted(observed.items())},
                 'formal_copy_qualification': 'NOT_CREATED', 'image_build_runtime_release': 'NOT_VERIFIED'}
+    if build_roots is not None:
+        manifest['build_roots'] = {frontend: root.as_posix() for frontend, root in roots.items()}
     raw = (json.dumps(manifest, ensure_ascii=False, indent=2) + '\n').encode('utf-8')
     with (output / 'IMAGE-CONTEXT.json').open('xb') as stream:
         context_require(stream.write(raw) == len(raw), 'incomplete manifest write')
@@ -628,11 +650,22 @@ def main():
     parser.add_argument('--allow-docker', action='store_true', help='Root only; only used by h5')
     parser.add_argument('--image-context', type=Path, help='prepare a new image context from existing builds; does not build')
     parser.add_argument('--build-root', type=Path, help='existing build root for --image-context; defaults to the preview build directory')
+    parser.add_argument('--admin-build-root', type=Path, help='original admin build root; requires merchant/h5 build roots and --image-context')
+    parser.add_argument('--merchant-build-root', type=Path, help='original merchant build root; requires admin/h5 build roots and --image-context')
+    parser.add_argument('--h5-build-root', type=Path, help='original H5 build root; requires admin/merchant build roots and --image-context')
     parser.add_argument('--mp-output', type=Path, help='mp-weixin only: a new output directory outside the repository')
     parser.add_argument('--api-origin', help='mp-weixin only: explicit development API origin')
     parser.add_argument('--appid', help='mp-weixin only: explicitly selected WeChat development AppID')
     parser.add_argument('--without-live-plugin', action='store_true', help='mp-weixin development only: omit the original licensed live plugin from the input copy')
     args = parser.parse_args()
+    frontend_build_roots = {'admin': args.admin_build_root, 'merchant': args.merchant_build_root, 'h5': args.h5_build_root}
+    if any(root is not None for root in frontend_build_roots.values()):
+        if any(root is None for root in frontend_build_roots.values()):
+            parser.error('admin/merchant/h5-build-root must be supplied together')
+        if args.build_root is not None:
+            parser.error('frontend build roots cannot be combined with build-root')
+        if args.image_context is None:
+            parser.error('frontend build roots are only used by image-context')
     if not 1024 <= args.memory_mb <= 4096:
         parser.error('memory-mb must be 1024..4096')
     if args.frontend == 'mp-weixin':
@@ -649,6 +682,8 @@ def main():
     if args.image_context is not None:
         if args.allow_docker or args.frontend != 'merchant':
             parser.error('image-context cannot be combined with frontend build actions')
+        if any(root is not None for root in frontend_build_roots.values()):
+            return image_context(args.image_context, None, frontend_build_roots)
         return image_context(args.image_context, args.build_root or OUTPUT)
     if args.build_root is not None:
         parser.error('build-root is only used by image-context')
