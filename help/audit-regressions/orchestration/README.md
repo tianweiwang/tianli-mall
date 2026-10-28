@@ -16,6 +16,14 @@
 
 该作者可选 `--windows-copy-workers 1|4`，默认1保持原派生产物及元数据逻辑。4只在新的来源包中将 Windows 依赖复制改为标准库四线程、有界提交；每个文件仍执行原完整读取、哈希、独占创建、读回及单链接检查，原前后整树、文件身份和全部构建命令保持。所有线程退出后才继续校验或记录失败；失败现场保留，但不保证残留按严格串行前缀排列。派生元数据明确标注 run 与局部 copy_one 的有限变化，并以整文件逆还原核对；不修改旧来源或正在运行的构建，也不改变 H5。四线程的实际耗时须由后继正常构建测量，来源派生不证明提速。
 
+`current_ui_material_source.py` 沿固定 r3 五材料 producer 派生当前报告读取接缝，不执行构建或材料生产。新 producer 保留原 `--paths-json` 和 `--output`，另须显式提供 `--current-build-proofs` 及其固定 `--current-build-proofs-sha256`。证明文件分别绑定三端真实 builder 包、PINS、资格、Run 与外层原生回执；本代应用来源须与独审一致，各 builder 保留自己的真实来源。未完成真实三端构建时，只能取得源码候选，不能借旧报告字段获得执行通过。旧 metadata 只保留原固定图片与历史依据；原输入反复核读、PNG、碰撞、五材料和四 manifest 输出合同保留。当前布局读取使用真实 `DIST-TREE`、依赖目录和原生四件，不生成旧成功字段；H5仍核原双 pass、工具与普通清退。Windows跨API身份只为四种普通可执行扩展名规范化比较用的FD执行位，双方各自完整观测及其余身份不变。实际材料生产与B/UI须后续独立验证。
+
+H5 仅接收已独审的四个固定 LX 别名属性后继算法；原 r5 只作有限派生依据。producer 只读核对实际 before/after 原始回执、完整身份和原生查询流，原始属性只接受1056或263200；当前重算仅比较稳定字段，不改写历史回执。无需新增 CLI 参数，实际 H5 完成证明仍是运行前提。
+
+作者使用 `--output`、`--authority-file`、`--authority-sha256`，仅创建新的源码候选及其正逆变更。producer 的 paths 文件仍为 `{schema:1, paths:{...}}`，路径键精确为 `metadata/source/public/h5_build/merchant_build/admin_build`。current-build-proofs 文件精确包含 `schema:1`、`scope:CURRENT_THREE_FRONTEND_BUILD_PROOFS`、`source_sha` 和 `builds`；builds 下三端各自包含 `packet`、`pins`、`run`、`outer`，pins 是对应包 `PINS.json` 的绝对路径、字节数和SHA-256，outer 是该 Run 的原 `-launch` 目录。旧 metadata 不能替代这份当前三端证明。
+
+本代应用来源从调用方的真实独审 authority 动态固定。允许复用较早完成的真实构建，但逐端保留其原报告 head、资格、builder authority 和全部原生 argv；按原 `frontend_source` 规则推导的完整输入、目录、Git mode/blob、字节数及SHA-256必须与本代来源完全相同，任何差异都须重建该端。prebuild/helper、编译器、lock和原工具依赖仍核对；public另按本代候选完整清单验证。结果分别记录原构建来源和本代输入等价关系，不宣称旧构建是在新 head 上重跑。
+
 Docker 默认地址池耗尽时，可在 profile 作者的 `--output` 阶段指定 `--isolation-subnet`，将一个规范 RFC1918 IPv4 子网固定写入新来源的内部网络 IPAM。生成前和实际启动前须检查现有 Docker 网段及宿主/VPN/WSL 路由；作者本身不证明网段空闲，也不自动尝试其他地址。启动后核对实际 IPAM 与绑定子网，保留 `internal: true`、原标签和九卷拓扑；不修改 Docker 全局设置或既有网络。未指定此参数时，原生成逻辑保持。
 
 执行顺序和实际结果继续只维护在现有 [PROGRESS.md](H:/天俪商城/artifacts/project-organization-20261023/current20261025-business-progress-r1/PROGRESS.md)。本轮正在接入完整编排；未获得新 M/A/B 结果前，不直接启动旧 `launch.py` 或把 profile 的来源常量非空视为运行资格。
