@@ -330,6 +330,55 @@ function m4cf_owner_after(array $proof,array $original,int $uid):array
     m4cf_expect(m4cf_files()===$proof['private'],'SEALED_PAID_PRIVATE_ORIGINALS_STILL_IDENTICAL');
     return $proof['owner_after'];
 }
+/** Independent public DTO expectation from the saved root; private cart refs never leave this oracle. */
+function m4cf_saved_public_form(string $raw):array
+{
+    m4cf_expect(strlen($raw)<=65535,'SAVED_FORM_TEXT_BOUND');$groups=json_decode($raw,true,32,JSON_THROW_ON_ERROR);
+    m4cf_expect(is_array($groups)&&array_is_list($groups)&&count($groups)<=500,'SAVED_FORM_GROUP_LIST');$out=[];$seen=[];
+    foreach($groups as$group){
+        m4cf_expect(is_array($group),'SAVED_FORM_GROUP_OBJECT');
+        m4c_entry_keys($group,['product_id','product_name','cart_refs','definition_sha256','fields']);
+        m4cf_expect(is_int($group['product_id'])&&$group['product_id']>0&&$group['product_id']<=8388607
+            &&!isset($seen[$group['product_id']])&&is_string($group['product_name'])
+            &&is_string($group['definition_sha256'])&&preg_match('/\A[a-f0-9]{64}\z/D',$group['definition_sha256'])===1
+            &&is_array($group['cart_refs'])&&array_is_list($group['cart_refs']),'SAVED_FORM_GROUP_VALUES');
+        foreach($group['cart_refs']as$ref)m4cf_expect(is_string($ref),'SAVED_FORM_PRIVATE_CART_REF_TYPE');
+        $fields=$group['fields'];m4cf_expect(is_array($fields)&&array_is_list($fields)&&count($fields)>=1&&count($fields)<=10,'SAVED_FORM_FIELD_LIST');$values=[];
+        foreach($fields as$index=>$field){
+            m4cf_expect(is_array($field),'SAVED_FORM_FIELD_OBJECT');m4c_entry_keys($field,['field_index','title','label','value','status']);
+            m4cf_expect($field['field_index']===$index&&is_string($field['title'])&&is_bool($field['status'])
+                &&in_array($field['label'],['text','number','email','data','time','id','phone','img'],true),'SAVED_FORM_FIELD_VALUES');
+            if($field['label']==='img'){
+                m4cf_expect(is_array($field['value'])&&array_is_list($field['value'])&&count($field['value'])<=8,'SAVED_FORM_IMAGE_LIST');
+                foreach($field['value']as$image)m4cf_expect(is_string($image),'SAVED_FORM_IMAGE_VALUE_TYPE');
+            }else m4cf_expect(is_string($field['value']),'SAVED_FORM_TEXT_VALUE_TYPE');
+            $values[]=['field_index'=>$field['field_index'],'title'=>$field['title'],'label'=>$field['label'],'status'=>$field['status'],'value'=>$field['value']];
+        }
+        $out[]=['product_id'=>$group['product_id'],'product_name'=>$group['product_name'],'definition_sha256'=>$group['definition_sha256'],'fields'=>$values];
+        $seen[$group['product_id']]=true;
+    }
+    return $out;
+}
+/** Read saved child ownership/items, never the response under test, to select its public form groups. */
+function m4cf_package_public_form(PDO $db,array $root,array $child):array
+{
+    $saved=m5pcp_rows($db,'SELECT * FROM eb_store_order WHERE id=?',[$child['id']]);
+    m4cf_expect(count($saved)===1,'PACKAGE_FORM_REAL_SAVED_CHILD');$saved=$saved[0];
+    m4cf_expect((int)$saved['id']===(int)$child['id']&&$saved['order_id']===$child['order_id']
+        &&(int)$saved['pid']===(int)$root['id']&&(int)$saved['uid']===(int)$root['uid']
+        &&(int)$saved['mer_id']===(int)$root['mer_id']&&(int)$saved['marketplace_trade_version']===1,'PACKAGE_FORM_SAVED_CHILD_IDENTITY');
+    $items=m5pcp_rows($db,'SELECT * FROM eb_store_order_cart_info WHERE oid=? ORDER BY id',[$saved['id']]);
+    m4cf_expect($items!==[]&&count($items)<=500,'PACKAGE_FORM_REAL_SAVED_ITEMS');$products=[];
+    foreach($items as$item){
+        m4cf_expect((int)$item['oid']===(int)$saved['id']&&(int)$item['uid']===(int)$saved['uid']
+            &&(int)$item['mer_id']===(int)$saved['mer_id']&&(int)$item['product_id']>0&&(int)$item['product_id']<=8388607,'PACKAGE_FORM_SAVED_ITEM_IDENTITY');
+        $products[(int)$item['product_id']]=true;
+    }
+    $expected=[];foreach(m4cf_saved_public_form($root['custom_form'])as$group)if(isset($products[$group['product_id']]))$expected[]=$group;
+    m4cf_expect(is_string($saved['custom_form']),'PACKAGE_FORM_SAVED_CHILD_TEXT');
+    m4c_entry_same(json_decode($saved['custom_form'],true,32,JSON_THROW_ON_ERROR),$expected);
+    return $expected;
+}
 function m4cf_saved_readers(PDO $db,array $root,array $actors):void
 {
     $uid=(int)$root['uid'];$id=(int)$root['id'];$number=$root['order_id'];$customer=$actors['customer'];
@@ -350,7 +399,7 @@ function m4cf_saved_readers(PDO $db,array $root,array $actors):void
         $before=m4cf_snapshot($db);$reply=m4cf_transport('GET',$spec['view'],$spec['actor']['token']);$view=m4cf_json($reply);
         if($kind==='platform_order')$view=$view['orderInfo'];
         m4cf_expect((int)$view['id']===$id&&$view['order_id']===$number&&$view['marketplace_trade_version']===1
-            &&$view['custom_form']===json_decode($root['custom_form'],true,32,JSON_THROW_ON_ERROR),'REAL_AUTHORIZED_SAVED_ROOT_VIEW');
+            &&$view['custom_form']===m4cf_saved_public_form($root['custom_form']),'REAL_AUTHORIZED_SAVED_ROOT_VIEW');
         $after=m4cf_snapshot($db);$rows=[];$counts=[];m4ar_auth_delta($before,$after,$spec['actor'],$reply['actual_interval'],$rows);
         if($kind==='platform_order')m4ar_audit_delta($before,$after,$spec['actor'],['global'=>true,'rule'=>'order/info/<id>'],$reply['actual_interval'],$rows,$counts);
         m4ar_database_delta($before,$after,$rows,$counts);m4ar_redis_delta($before,$after,m4ar_cache_deletes($before,$after,$spec['actor']));
@@ -364,13 +413,14 @@ function m4cf_package_readers(PDO $db,array $root,array $actors,array $child):vo
 {
     $id=(int)$root['id'];$number=$root['order_id'];
     m4cf_expect((int)$child['pid']===$id&&(int)$child['uid']===(int)$root['uid'],'REAL_CHILD_SAVED_ROOT_RELATION');
+    $publicForm=m4cf_package_public_form($db,$root,$child);
     foreach([['actor'=>$actors['customer'],'path'=>'/api/order/fulfillment/packages/'.$child['order_id']],
         ['actor'=>$actors['merchant'],'path'=>'/merchantapi/packages/'.$child['id']]]as$spec){
         $before=m4cf_snapshot($db);$reply=m4cf_transport('GET',$spec['path'],$spec['actor']['token']);$data=m4cf_json($reply);
         $package=$data['package']??null;
         m4cf_expect(is_array($package)&&(int)$package['id']===(int)$child['id']&&$package['order_id']===$child['order_id']
             &&$package['root_order_id']===$id&&$package['root_order_no']===$number&&$package['marketplace_trade_version']===1
-            &&$package['custom_form']===json_decode($root['custom_form'],true,32,JSON_THROW_ON_ERROR),'ACTUAL_PACKAGE_DTO_SAME_SAVED_FORM_ROOT');
+            &&$package['custom_form']===$publicForm,'ACTUAL_PACKAGE_DTO_SAME_SAVED_FORM_ROOT');
         $after=m4cf_snapshot($db);$rows=[];m4ar_auth_delta($before,$after,$spec['actor'],$reply['actual_interval'],$rows);
         m4ar_database_delta($before,$after,$rows);m4ar_redis_delta($before,$after,m4ar_cache_deletes($before,$after,$spec['actor']));
         m4cf_expect($before['private']===$after['private']&&$before['public']===$after['public'],'PACKAGE_VIEW_ALL_ORIGINAL_BYTES_HELD');
