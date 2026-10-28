@@ -19,7 +19,6 @@ import stat
 import subprocess
 from typing import Any
 
-SOURCE_SHA = "7dfcc37459043959f648aa25921325ae677ed039"
 BASELINE = Path("H:/天俪商城/artifacts/project-organization-20261023/integrated-normal-and-b-source-tree-source-r3")
 BASELINE_PINS = {"path": (BASELINE / "PINS.json").as_posix(), "bytes": 93140,
                  "sha256": "67c9baf29f98230cd7a1e0bdd70157f2b3d1ac30b48adab6e241a84f51995b62"}
@@ -33,6 +32,9 @@ AR_BEFORE = {"path": AR_PATH, "bytes": 245730,
              "sha256": "898eb47ab921a0572bcf04a4680e11d0eb4899465ea9598c60130d92bbc073fa"}
 AR_CURRENT = {"path": AR_PATH, "bytes": 247958,
               "sha256": "3b914f6b6f995d7a3a2cb9b8f6460bb7eb16519864f1dceb7f6cd5df595a01d1"}
+CUSTOMER_PATH = "help/audit-regressions/isolated/ms4-customer-http-normal.php"
+CUSTOMER_BEFORE = {"path": CUSTOMER_PATH, "bytes": 121457,
+                   "sha256": "1fae540f4f145ace9ed94d17648d785f1663c4e8d6dbd0b2de54b75ffcbdea75"}
 STAT_FIELDS = ("st_dev", "st_ino", "st_mode", "st_nlink", "st_uid", "st_gid",
                "st_size", "st_mtime_ns", "st_ctime_ns")
 
@@ -108,13 +110,16 @@ def read_pointer(pointer: dict[str, Any]) -> bytes:
 
 def reviewed_authority(pointer: dict[str, Any]) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
     authority = decode(read_pointer(pointer))
+    source_sha = authority.get("source_sha") if type(authority) is dict else None
+    require(type(source_sha) is str and re.fullmatch(r"[a-f0-9]{40}", source_sha) is not None,
+            "EXPLICIT_REVIEWED_SOURCE_COMMIT")
     require(type(authority) is dict and set(authority) == {
         "schema", "scope", "status", "source_sha", "candidate_root", "validation_root",
         "capture", "independent_review", "baseline_profile"}, "EXACT_TECHNICAL_AUTHORITY_SCHEMA")
     require(type(authority["schema"]) is int and authority["schema"] == 1
             and authority["scope"] == "R61_CURRENT_NORMAL_SOURCE_TECHNICAL_AUTHORITY"
             and authority["status"] == "INDEPENDENTLY_REVIEWED_SOURCE_ONLY"
-            and authority["source_sha"] == SOURCE_SHA
+            and authority["source_sha"] == source_sha
             and authority["baseline_profile"] == BASELINE_PINS, "FIXED_CURRENT_SOURCE_AND_BASELINE_AUTHORITY")
     require(type(authority["candidate_root"]) is str and type(authority["validation_root"]) is str
             and authority["candidate_root"] != authority["validation_root"], "TWO_DISTINCT_REVIEWED_TREES")
@@ -124,13 +129,13 @@ def reviewed_authority(pointer: dict[str, Any]) -> tuple[dict[str, Any], dict[st
         require(root.is_dir() and root.resolve(strict=True).as_posix() == authority[name], "CANONICAL_REVIEWED_TREE")
     capture = decode(read_pointer(authority["capture"]))
     require(capture["schema"] == 1 and capture["status"] == "CAPTURED_NOT_APPROVED"
-            and capture["source_approval"] == "NOT_GRANTED" and capture["source_sha"] == SOURCE_SHA
+            and capture["source_approval"] == "NOT_GRANTED" and capture["source_sha"] == source_sha
             and capture["candidate"] == authority["candidate_root"]
             and capture["validation"] == authority["validation_root"], "CAPTURE_MATCHES_REVIEWED_TWO_TREES")
     review = decode(read_pointer(authority["independent_review"]))
     require(type(review) is dict and review.get("schema") == 1
             and review.get("status") == "PASS_CURRENT_SOURCE_TECHNICAL_REVIEW"
-            and review.get("source_sha") == SOURCE_SHA
+            and review.get("source_sha") == source_sha
             and review.get("capture") == authority["capture"]
             and review.get("candidate_root") == authority["candidate_root"]
             and review.get("validation_root") == authority["validation_root"]
@@ -147,7 +152,7 @@ def reviewed_authority(pointer: dict[str, Any]) -> tuple[dict[str, Any], dict[st
     inventory = {row["path"]: {key: row[key] for key in ("path", "bytes", "sha256")} for row in rows}
     require(inventory.get(AR_PATH) == AR_CURRENT, "FIXED_REVIEWED_CURRENT_AFTERSALE_SOURCE")
     delta = decode(read_pointer(capture["files"]["SOURCE-DELTA.json"]))
-    require(delta["source_sha"] == SOURCE_SHA and delta["status"] == "CAPTURED_NOT_APPROVED"
+    require(delta["source_sha"] == source_sha and delta["status"] == "CAPTURED_NOT_APPROVED"
             and len(delta["files"]) == capture["delta_file_count"], "REVIEWED_COMPLETE_DELTA_POINTER")
     read_pointer(capture["files"]["BASELINE-INVENTORY.jsonl"])
     read_pointer(BASELINE_PINS)
@@ -304,11 +309,136 @@ def validate_isolation_subnet(value: str) -> str:
     return str(network)
 
 
+_SCHEMA_INITIALIZER = r'''
+/** Explicit maintenance metadata, after original prerequisites and before any App. */
+function m4i_schema_bootstrap(array $binding, array $history): array
+{
+    audit_guard_assert();
+    $sourceFiles = m4c_entry_schema_sources();
+    $privatePath = '/run/audit-bootstrap/migrator.json';
+    $privateBefore = m2f_file($privatePath);
+    $migrator = m4i_read($privatePath);
+    $config = audit_config();
+    m2f_assert(($migrator['username'] ?? null) === 'audit_migrator'
+        && ($config['database']['username'] ?? null) === 'audit_app', 'MS6_SEPARATE_NATIVE_MAINTENANCE_ACCOUNT');
+    $db = new PDO('mysql:host=audit-mysql;port=3306;dbname=audit_auth;charset=utf8mb4',
+        $migrator['username'], $migrator['password'], [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC, PDO::ATTR_EMULATE_PREPARES => false,
+            PDO::ATTR_TIMEOUT => 3]);
+    unset($migrator);
+    m2f_assert(!$db->inTransaction() && $db->query('SELECT CURRENT_USER()')->fetchColumn() === 'audit_migrator@%'
+        && $db->query('SELECT DATABASE()')->fetchColumn() === 'audit_auth', 'MS6_NATIVE_MAINTENANCE_IDENTITY');
+    $schemaGrant = false;
+    foreach ($db->query('SHOW GRANTS')->fetchAll(PDO::FETCH_COLUMN) as $grant) {
+        if (preg_match('/^GRANT USAGE ON \*\.\* TO /', $grant) === 1) continue;
+        m2f_assert(preg_match('/^GRANT ALL PRIVILEGES ON \x60audit_auth\x60\.\* TO /', $grant) === 1
+            && !str_contains($grant, 'GRANT OPTION'), 'MS6_EXISTING_SCHEMA_ONLY_MAINTENANCE_GRANT');
+        $schemaGrant = true;
+    }
+    m2f_assert($schemaGrant, 'MS6_EXISTING_MAINTENANCE_GRANT_PRESENT');
+    require_once '/workspace/help/migrations/marketplace-ms6-schema.php';
+    $manifest = \crmeb\services\marketplace\SchemaVersionGate::manifest('/workspace/crmeb/marketplace-release.json');
+    m2f_assert($manifest === ['product' => 'generic-multi-merchant', 'app_version' => '0.1.0',
+        'schema_min' => 1, 'schema_max' => 1]
+        && \crmeb\services\marketplace\SchemaVersionGate::inspect($db, 'eb_') === null,
+        'MS6_FIXED_MANIFEST_AND_ABSENT_METADATA_AFTER_ORIGINAL_PREREQUISITES');
+    $started = time();
+    $migration = new \Audit\Migration\MarketplaceMs6SchemaMigration($db, 'eb_', $manifest);
+    $applied = $migration->apply();
+    $checked = $migration->check();
+    $schema = \crmeb\services\marketplace\SchemaVersionGate::assertCompatible(audit_db(), 'eb_', $manifest);
+    m2f_assert(array_keys($schema) === ['id', 'schema_version', 'min_app_version', 'updated_at']
+        && $schema['id'] === 1 && $schema['schema_version'] === 1 && $schema['min_app_version'] === '0.1.0'
+        && is_int($schema['updated_at']) && $schema['updated_at'] >= $started && $schema['updated_at'] <= time()
+        && $applied === ['mode' => 'apply', 'state' => 'created', 'changed' => true, 'code' => null, 'schema' => $schema]
+        && $checked === ['mode' => 'check', 'state' => 'compatible', 'changed' => false, 'code' => null, 'schema' => $schema],
+        'MS6_ORIGINAL_MIGRATION_AND_DML_GATE_SAME_INDEPENDENT_INITIAL_ROW');
+    $receipt = ['schema' => 1, 'scope' => 'MS6_SCHEMA_METADATA_BEFORE_FIRST_APP_ONLY',
+        'status' => 'VERIFIED_MS6_SCHEMA_METADATA_BEFORE_FIRST_APP_ONLY',
+        'binding' => ['run_id' => getenv('AUDIT_RUN_ID'), 'source_sha' => $binding['source_sha'],
+            'container_id' => $binding['container_id'], 'entry_namespace_pid' => $binding['entry_namespace_pid'],
+            'created_sha256' => $binding['created_sha256'], 'freeze_sha256' => $binding['freeze_sha256'],
+            'early_result_sha256' => $history['hashes']['ms4-aftersale-early-migration-normal.json']],
+        'source_files' => $sourceFiles, 'manifest' => $manifest, 'apply' => $applied, 'check' => $checked,
+        'application_schema' => $schema, 'App_business' => 'NOT RUN'];
+    m2f_assert(m4c_entry_schema_receipt($receipt, $history) === $schema
+        && m4c_entry_schema_sources() === $sourceFiles && m2f_file($privatePath) === $privateBefore,
+        'MS6_SOURCE_PRIVATE_INPUT_AND_EXACT_CONSUMER_CONTRACT_RETAINED');
+    audit_guard_assert();
+    return $receipt;
+}
+
+'''
+
+_SCHEMA_HOST = r'''
+def verify_schema_bootstrap(context, result):
+    receipt = result['schema_bootstrap']; row = receipt['application_schema']
+    expect(type(receipt) is dict and set(receipt) == {'schema', 'scope', 'status', 'binding', 'source_files',
+        'manifest', 'apply', 'check', 'application_schema', 'App_business'}
+        and type(receipt['schema']) is int and receipt['schema'] == 1
+        and receipt['scope'] == 'MS6_SCHEMA_METADATA_BEFORE_FIRST_APP_ONLY'
+        and receipt['status'] == 'VERIFIED_MS6_SCHEMA_METADATA_BEFORE_FIRST_APP_ONLY'
+        and receipt['App_business'] == 'NOT RUN', 'EXACT_MS6_BEFORE_APP_RECEIPT')
+    binding = result['binding']
+    expect(receipt['binding'] == {'run_id': context['run_id'], 'source_sha': context['source_sha'],
+        'container_id': binding['container_id'], 'entry_namespace_pid': binding['entry_namespace_pid'],
+        'created_sha256': binding['created_sha256'], 'freeze_sha256': context['freeze_sha256'],
+        'early_result_sha256': digest((Path(context['run_dir']) / 'evidence/ms4-aftersale-early-migration-normal.json').read_bytes())}
+        and receipt['source_files'] == list(SCHEMA_SOURCE_FILES)
+        and receipt['manifest'] == {'product': 'generic-multi-merchant', 'app_version': '0.1.0', 'schema_min': 1, 'schema_max': 1},
+        'MS6_SAME_ORIGINAL_BOOTSTRAP_AND_FIXED_SOURCE')
+    expect(type(row) is dict and set(row) == {'id', 'schema_version', 'min_app_version', 'updated_at'}
+        and type(row['id']) is int and row['id'] == 1 and type(row['schema_version']) is int and row['schema_version'] == 1
+        and row['min_app_version'] == '0.1.0' and type(row['updated_at']) is int and 0 < row['updated_at'] <= 4294967295
+        and receipt['apply'] == {'mode': 'apply', 'state': 'created', 'changed': True, 'code': None, 'schema': row}
+        and receipt['check'] == {'mode': 'check', 'state': 'compatible', 'changed': False, 'code': None, 'schema': row},
+        'MS6_EXACT_NATIVE_MAINTENANCE_APPLY_CHECK_AND_DML_GATE')
+
+
+'''
+
+
+def schema_profile_changes(initializer: bytes, host: bytes, inventory: dict[str, dict[str, Any]]):
+    """Extend the existing bootstrap only; inverse-check both complete old files."""
+    paths = (
+        "crmeb/crmeb/exceptions/MarketplaceSchemaException.php",
+        "crmeb/crmeb/services/marketplace/SchemaVersionGate.php",
+        "crmeb/marketplace-release.json",
+        "help/migrations/marketplace-ms6-schema.php",
+    )
+    source_files = tuple(inventory[name] for name in paths)
+    helper = _SCHEMA_INITIALIZER.encode("utf-8")
+    anchor = b"function m6i_migrator(): array\n"
+    updated = once(initializer, anchor, helper + anchor)
+    old_call = b"    $evidence['installation'] = m6i_migrator();"
+    new_call = (b"    $evidence['schema_bootstrap'] = m4i_schema_bootstrap($evidence['binding'], $prerequisites['early_history']);\n"
+                b"    $evidence['schema_bootstrap_preservation'] = m4c_entry_early_preserved(\n"
+                b"        $prerequisites['early_history'], 'schema-bootstrap-completed', $evidence['schema_bootstrap']);\n"
+                + old_call)
+    updated = once(updated, old_call, new_call)
+    old_completed = b"    m4c_entry_early_preserved($currentEarly,'files-bootstrap-completed');"
+    new_completed = b"    m4c_entry_early_preserved($currentEarly,'files-bootstrap-completed',$evidence['schema_bootstrap']);"
+    updated = once(updated, old_completed, new_completed)
+    restored = once(once(once(updated, new_completed, old_completed), new_call, old_call), helper + anchor, anchor)
+    require(restored == initializer, "EXACT_INITIALIZER_MS6_ONLY_WHOLE_FILE_INVERSE")
+    host_helper = ("SCHEMA_SOURCE_FILES = " + repr(source_files) + "\n" + _SCHEMA_HOST).encode("utf-8")
+    host_anchor = b"def verify_files_bootstrap(context, native_required=True):\n"
+    updated_host = once(host, host_anchor, host_helper + host_anchor)
+    before = b"           and installation['application_dml_only'] is True, 'ACTUAL_DEDICATED_FILES_BOOTSTRAP')\n"
+    after = before + b"    verify_schema_bootstrap(context, result)\n"
+    updated_host = once(updated_host, before, after)
+    require(once(once(updated_host, after, before), host_helper + host_anchor, host_anchor) == host,
+            "EXACT_HOST_MS6_ONLY_WHOLE_FILE_INVERSE")
+    compile(updated_host, "derived-ms4-host.py", "exec")
+    return updated, updated_host, source_files
+
+
 def build_profile(output: str | Path, authority_pointer: dict[str, Any],
                   isolation_subnet: str | None = None) -> dict[str, Any]:
     if isolation_subnet is not None:
         isolation_subnet = validate_isolation_subnet(isolation_subnet)
     authority, inventory = reviewed_authority(authority_pointer)
+    source_sha = authority["source_sha"]
     out = Path(output)
     require(out.is_absolute(), "ABSOLUTE_EXTERNAL_PROFILE_OUTPUT")
     ordinary(out, missing_leaf=True)
@@ -338,31 +468,44 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
     require(inventory[seed["source_path"]]["sha256"] == seed["source_sha256"],
             "ORIGINAL_FINITE_SEED_CURRENT_SOURCE_IDENTITY")
     original_interface = copy.deepcopy(interface)
+    reviewed_updates = decode(read_pointer(authority["independent_review"])).get("active_profile_updates")
+    updates = [
+        {"before": AR_BEFORE, "after": AR_CURRENT},
+        {"before": CUSTOMER_BEFORE, "after": inventory[CUSTOMER_PATH]},
+    ]
+    require(reviewed_updates == updates and inventory[CUSTOMER_PATH] != CUSTOMER_BEFORE,
+            "INDEPENDENT_EXACT_AFTERSALE_AND_MS6_CUSTOMER_UPDATES")
+    old_active = {entry["before"]["path"]: entry["before"] for entry in updates}
+    new_active = {entry["after"]["path"]: entry["after"] for entry in updates}
     rows = interface["customer_form_current_profile"]["php_sources"]
-    require(sum(row == AR_BEFORE for row in rows) == 1, "ONE_ACTIVE_AFTERSALE_FORM_ROW")
+    require(all(sum(row == original for row in rows) == 1 for original in old_active.values()),
+            "ONE_EACH_DECLARED_ACTIVE_FORM_ROW")
     for row in rows:
-        require(inventory[row["path"]] == (AR_CURRENT if row["path"] == AR_PATH else row),
+        require(inventory[row["path"]] == new_active.get(row["path"], row),
                 "REVIEWED_SEVEN_ACTIVE_NORMAL_SOURCES")
-        if row["path"] == AR_PATH:
-            row.update(AR_CURRENT)
+        if row["path"] in new_active:
+            row.update(new_active[row["path"]])
     runtime_rows = interface["source_tree_runtime_profile"]["actual_candidate_tracked_sources"]
-    require(sum(row == AR_BEFORE for row in runtime_rows) == 1, "ONE_ACTIVE_AFTERSALE_SOURCE_TREE_ROW")
+    require(all(sum(row == original for row in runtime_rows) == 1 for original in old_active.values()),
+            "ONE_EACH_DECLARED_ACTIVE_SOURCE_TREE_ROW")
     for row in runtime_rows:
-        if row["path"] == AR_PATH:
-            row.update(AR_CURRENT)
+        if row["path"] in new_active:
+            row.update(new_active[row["path"]])
     after["interface-v1.json"] = encode(interface)
     restored_interface = copy.deepcopy(interface)
     for rows in (restored_interface["customer_form_current_profile"]["php_sources"],
                  restored_interface["source_tree_runtime_profile"]["actual_candidate_tracked_sources"]):
         for row in rows:
-            if row["path"] == AR_PATH:
-                row.update(AR_BEFORE)
-    require(restored_interface == original_interface, "ONLY_TWO_INTERFACE_ACTIVE_ROWS_CHANGED")
+            if row["path"] in old_active:
+                row.update(old_active[row["path"]])
+    require(restored_interface == original_interface, "ONLY_FOUR_DECLARED_INTERFACE_ACTIVE_ROWS_CHANGED")
     for name in ("ms4-host.py", "verify-zero-ms4-fulfillment.py"):
         raw = after[name]
         active = constant(raw, "CUSTOMER_FORM_SOURCE_FILES")
-        require(type(active) is tuple and sum(row == AR_BEFORE for row in active) == 1, "ORIGINAL_FROZEN_SOURCE_TUPLE")
-        updated = tuple(AR_CURRENT if row["path"] == AR_PATH else row for row in active)
+        require(type(active) is tuple
+                and all(sum(row == original for row in active) == 1 for original in old_active.values()),
+                "ORIGINAL_FROZEN_SOURCE_TUPLE")
+        updated = tuple(new_active.get(row["path"], row) for row in active)
         for row in updated:
             require(inventory[row["path"]] == row, "ALL_CURRENT_ACTIVE_SOURCE_TUPLE_MEMBERS")
         for row in constant(raw, "THREE_READ_SOURCE_FILES"):
@@ -395,6 +538,15 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
     after["ms4-initialize.php"] = once(once(before["ms4-initialize.php"], old_row, new_row), old_tuple, new_tuple)
     require(once(once(after["ms4-initialize.php"], new_tuple, old_tuple), new_row, old_row)
             == before["ms4-initialize.php"], "TWO_INITIALIZER_LITERALS_WHOLE_FILE_INVERSE")
+    def php_row(row):
+        return ("['path' => '" + row["path"] + "', 'bytes' => " + str(row["bytes"])
+                + ", 'sha256' => '" + row["sha256"] + "']").encode("utf-8")
+    previous_initializer = after["ms4-initialize.php"]
+    after["ms4-initialize.php"] = once(previous_initializer, php_row(CUSTOMER_BEFORE), php_row(inventory[CUSTOMER_PATH]))
+    require(once(after["ms4-initialize.php"], php_row(inventory[CUSTOMER_PATH]), php_row(CUSTOMER_BEFORE))
+            == previous_initializer, "ONE_CUSTOMER_LITERAL_WHOLE_FILE_INVERSE")
+    after["ms4-initialize.php"], after["ms4-host.py"], schema_sources = schema_profile_changes(
+        after["ms4-initialize.php"], after["ms4-host.py"], inventory)
     for name, symbol, target in (
         ("ms4-host.py", "INTERFACE_SHA256", "interface-v1.json"),
         ("normal-close-ms4-fulfillment.py", "HOST_SHA256", "ms4-host.py"),
@@ -411,11 +563,15 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
     named = "r61_current_source_profile_binding"
     require(named not in derivation, "ONE_NEW_NAMED_SOURCE_DERIVATION")
     derivation[named] = {
-        "scope": "REVIEWED_CURRENT_SOURCE_PROFILE_ONLY_NO_RUNTIME_ACCEPTANCE", "source_sha": SOURCE_SHA,
+        "scope": "REVIEWED_CURRENT_SOURCE_PROFILE_ONLY_NO_RUNTIME_ACCEPTANCE", "source_sha": source_sha,
         "baseline_profile": BASELINE_PINS, "technical_authority": authority_pointer,
         "capture": authority["capture"], "independent_review": authority["independent_review"],
         "active_aftersale_before": AR_BEFORE, "active_aftersale_current": AR_CURRENT,
-        "all_original_python_function_bodies_exact": True, "initializer_two_literal_inverse_exact": True,
+        "active_profile_updates": updates,
+        "all_original_python_function_bodies_exact": False,
+        "python_function_changes": {"ms4-host.py": ["verify_files_bootstrap", "verify_schema_bootstrap"]},
+        "initializer_two_literal_inverse_exact": True, "initializer_customer_literal_inverse_exact": True,
+        "initializer_schema_bootstrap_inverse_exact": True, "schema_bootstrap_sources": list(schema_sources),
         "original_nine_volume_source_tree_topology_retained": True,
         "initializer_syntax": "NOT RUN", "M_A_B_Runtime": "NOT RUN",
     }
@@ -429,7 +585,13 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
     require(recovered == old_derivation, "ALL_DERIVATION_HISTORY_RETAINED")
     counts = {}
     for name in ("ms4-host.py", "normal-close-ms4-fulfillment.py", "verify-zero-ms4-fulfillment.py"):
-        require(functions(before[name]) == functions(after[name]), "ALL_ORIGINAL_PYTHON_FUNCTION_BODIES_EXACT")
+        observed = functions(after[name])
+        if name == "ms4-host.py":
+            require("verify_schema_bootstrap" not in functions(before[name]), "ONE_NEW_SCHEMA_HOST_CONSUMER")
+            observed.pop("verify_schema_bootstrap")
+            observed["verify_files_bootstrap"] = once(observed["verify_files_bootstrap"],
+                                                       b"    verify_schema_bootstrap(context, result)\n", b"")
+        require(functions(before[name]) == observed, "ALL_OTHER_ORIGINAL_PYTHON_FUNCTION_BODIES_EXACT")
         compile(after[name], str(out / name), "exec")
         counts[name] = len(functions(after[name]))
     forward = make_patch(before, after)
@@ -437,13 +599,17 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
     require(apply_patch(before, forward) == after and apply_patch(after, reverse) == before,
             "WHOLE_NINE_FORWARD_AND_REVERSE_REPLAY")
     manifest = {
-        "schema": 1, "status": "REVIEWED_PROFILE_SOURCE_DERIVED_NOT_RUNTIME_QUALIFIED", "source_sha": SOURCE_SHA,
+        "schema": 1, "status": "REVIEWED_PROFILE_SOURCE_DERIVED_NOT_RUNTIME_QUALIFIED", "source_sha": source_sha,
         "technical_authority": authority_pointer, "baseline_profile": BASELINE_PINS,
         "ordered_members9": list(NAMES), "before": {name: pin(before[name]) for name in NAMES},
         "candidate": {name: pin(after[name]) for name in NAMES},
         "changed": [name for name in NAMES if before[name] != after[name]],
-        "all_original_python_function_bodies_exact": True, "python_named_function_counts": counts,
-        "interface_only_two_active_rows": True, "initializer_two_literal_inverse_exact": True,
+        "all_original_python_function_bodies_exact": False, "python_named_function_counts": counts,
+        "python_function_changes": {"ms4-host.py": ["verify_files_bootstrap", "verify_schema_bootstrap"]},
+        "all_other_original_python_function_bodies_exact": True,
+        "active_profile_updates": updates, "interface_only_four_declared_active_rows": True,
+        "initializer_two_literal_inverse_exact": True, "initializer_customer_literal_inverse_exact": True,
+        "initializer_schema_bootstrap_inverse_exact": True, "schema_bootstrap_sources": list(schema_sources),
         "all_five_original_hash_edges_rebound": True, "current_nonself_eight_exact": True,
         "all_derivation_history_retained": True, "whole_forward_reverse_replay": True,
         "actual_initializer_syntax": "NOT RUN", "M_S_Host_Docker_App_business": "NOT RUN",
@@ -454,14 +620,14 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
     files = {"before/" + name: before[name] for name in NAMES}
     files.update({"FORWARD.patch": forward, "REVERSE.patch": reverse, "MANIFEST.json": encode(manifest)})
     profile_pins = {"schema": 1, "scope": "R61_REVIEWED_CORE9_SOURCE_ONLY_NOT_RUNTIME",
-                    "source_sha": SOURCE_SHA, "technical_authority": authority_pointer,
+                    "source_sha": source_sha, "technical_authority": authority_pointer,
                     "candidate_root": out.as_posix(), "candidate": manifest["candidate"],
                     "manifest": {"path": (proof / "MANIFEST.json").as_posix(), **pin(files["MANIFEST.json"])},
                     "runtime": "NOT RUN"}
     files["PINS.json"] = encode(profile_pins)
     write_set(proof, files)
     write_set(out, after)
-    return {"status": manifest["status"], "source_sha": SOURCE_SHA,
+    return {"status": manifest["status"], "source_sha": source_sha,
             "PINS": {"path": (proof / "PINS.json").as_posix(), **pin(files["PINS.json"])},
             "profile_root": out.as_posix(), "changed": manifest["changed"]}
 
@@ -856,6 +1022,7 @@ if __name__=='__main__':main()
 def build_normal(output: str | Path, authority_pointer: dict[str, Any], syntax_result: str | Path) -> dict[str, Any]:
     """Author the complete18; only an independent fixed review can run it later."""
     authority, inventory = reviewed_authority(authority_pointer)
+    source_sha = authority["source_sha"]
     normal = Path(output)
     require(normal.is_absolute(), "ABSOLUTE_NEW_NORMAL_SOURCE")
     ordinary(normal, missing_leaf=True)
@@ -869,7 +1036,7 @@ def build_normal(output: str | Path, authority_pointer: dict[str, Any], syntax_r
     current_profile = decode(read_pointer(profile_pin))
     require(current_profile["candidate_root"] == profile.as_posix()
             and current_profile["technical_authority"] == authority_pointer
-            and current_profile["source_sha"] == SOURCE_SHA
+            and current_profile["source_sha"] == source_sha
             and set(current_profile["candidate"]) == set(NAMES)
             and {path.name for path in profile.iterdir()} == set(NAMES), "EXACT_ALREADY_DERIVED_CURRENT_CORE9")
     current9 = {name: read_pointer({"path": (profile / name).as_posix(), **current_profile["candidate"][name]}) for name in NAMES}
@@ -890,12 +1057,12 @@ def build_normal(output: str | Path, authority_pointer: dict[str, Any], syntax_r
     parent = capture["source_parents"][0]
     repository = Path(authority["validation_root"])
     current_edges = []
-    history = _git(repository, "rev-list", "--first-parent", "--reverse", "--parents", HISTORICAL_HEAD + ".." + SOURCE_SHA)
+    history = _git(repository, "rev-list", "--first-parent", "--reverse", "--parents", HISTORICAL_HEAD + ".." + source_sha)
     for line in history.decode("ascii").splitlines():
         fields = line.split(" ")
         current_edges.append({"source_sha": fields[0], "parent": fields[1], "parents": fields[1:]})
     require(current_edges and current_edges[0]["parent"] == HISTORICAL_HEAD
-            and current_edges[-1]["source_sha"] == SOURCE_SHA, "COMPLETE_CURRENT_FIRST_PARENT_SUCCESSOR")
+            and current_edges[-1]["source_sha"] == source_sha, "COMPLETE_CURRENT_FIRST_PARENT_SUCCESSOR")
     edges = []
     objects: set[str] = set()
     previous = PATCH_BASE
@@ -909,7 +1076,7 @@ def build_normal(output: str | Path, authority_pointer: dict[str, Any], syntax_r
         edges.append({**original, "parents": fields[1:], "files": rows})
         objects.update(row[key] for row in rows for key in ("before_git_blob", "after_git_blob") if row[key] is not None)
         previous = source
-    cumulative = _raw_delta(repository, PATCH_BASE, SOURCE_SHA)
+    cumulative = _raw_delta(repository, PATCH_BASE, source_sha)
     objects.update(row[key] for row in cumulative for key in ("before_git_blob", "after_git_blob") if row[key] is not None)
     object_pins = _object_pins(repository, objects)
     added = set()
@@ -947,7 +1114,7 @@ def build_normal(output: str | Path, authority_pointer: dict[str, Any], syntax_r
     require(read_pointer(syntax_group["stdout"]) == b"No syntax errors detected in /source/ms4-initialize.php\n"
             and read_pointer(syntax_group["stderr"]) == b"", "ACTUAL_COMPLETE_CURRENT_SYNTAX_STREAMS")
     qualification = normal / "qualification"
-    data = {"schema": 1, "status": "CAPTURED_SOURCE_GRAPH_NOT_APPROVED", "source_sha": SOURCE_SHA, "parent": parent,
+    data = {"schema": 1, "status": "CAPTURED_SOURCE_GRAPH_NOT_APPROVED", "source_sha": source_sha, "parent": parent,
             "capture": authority["capture"], "capture_delta_base": capture["baseline_sha"], "capture_delta_count": capture["delta_file_count"],
             "source_patch_base": PATCH_BASE, "profile_pins": profile_pin, "chain_historical_prefix_count": 25,
             "chain_current_count": len(current_edges), "chain_total_count": len(edges),
@@ -961,7 +1128,7 @@ def build_normal(output: str | Path, authority_pointer: dict[str, Any], syntax_r
     business_suffix = old_s.decode("utf-8").split(BUSINESS_MARKER, 1)
     require(len(business_suffix) == 2, "ONE_COMPLETE_ORIGINAL_BUSINESS_SUFFIX")
     suffix = BUSINESS_MARKER + business_suffix[1]
-    binding = {"schema": 1, "status": "DERIVED_CURRENT_NORMAL_BINDING_NOT_APPROVED", "source_sha": SOURCE_SHA,
+    binding = {"schema": 1, "status": "DERIVED_CURRENT_NORMAL_BINDING_NOT_APPROVED", "source_sha": source_sha,
                "parent": parent, "normal_root": normal.as_posix(), "candidate": authority["candidate_root"],
                "validation": authority["validation_root"], "technical_authority": authority_pointer,
                "capture": authority["capture"], "baseline_profile": BASELINE_PINS, "profile_pins": profile_pin,
@@ -973,12 +1140,12 @@ def build_normal(output: str | Path, authority_pointer: dict[str, Any], syntax_r
                "runtime_authorization": "REQUIRES_SEPARATE_FIXED_INDEPENDENT_NORMAL18_SOURCE_REVIEW"}
     binding_raw = encode(binding)
     binding_pointer = {"path": (qualification / "CURRENT-BINDING.json").as_posix(), **pin(binding_raw)}
-    common = ("\nimport os,stat\n" + "CURRENT_SOURCE_SHA = " + repr(SOURCE_SHA) + "\nSOURCE_PATCH_BASE = " + repr(PATCH_BASE)
+    common = ("\nimport os,stat\n" + "CURRENT_SOURCE_SHA = " + repr(source_sha) + "\nSOURCE_PATCH_BASE = " + repr(PATCH_BASE)
               + "\nCURRENT_PARENT = " + repr(parent) + "\nNORMAL_ROOT = Path(" + repr(normal.as_posix()) + ")"
               + "\nCURRENT_SOURCE_BINDING = " + repr(binding_pointer) + "\nNORMAL_MEMBERS18 = " + repr(list(members))
               + "\nPROFILE_NAMES9 = " + repr(list(NAMES)) + "\nCURRENT_M_RESULT_KEYS = " + repr(list(M_RESULT_KEYS)) + "\n" + _COMMON_RUNTIME)
     selected = [{"path": name, **pin(current9[name])} for name in NAMES]
-    publication = {"schema": 2, "scope": "CURRENT_COMPLETE_NORMAL9_SOURCE_PUBLICATION", "source_sha": SOURCE_SHA,
+    publication = {"schema": 2, "scope": "CURRENT_COMPLETE_NORMAL9_SOURCE_PUBLICATION", "source_sha": source_sha,
                    "parent": parent, "current_source_binding": binding_pointer, "selected9": selected,
                    "repository_Source_requirements": data["requirements"], "target_execution": "NOT RUN"}
     publication_raw = encode(publication)
@@ -987,7 +1154,7 @@ def build_normal(output: str | Path, authority_pointer: dict[str, Any], syntax_r
     pp["members"]["PROFILE-PUBLICATION.json"] = pin(publication_raw)
     pp_raw = encode(pp)
     s_prefix = "".join(old_s.decode("utf-8").splitlines(keepends=True)[:165]).encode("utf-8")
-    s_prefix = replace_constant(s_prefix, "SOURCE", SOURCE_SHA)
+    s_prefix = replace_constant(s_prefix, "SOURCE", source_sha)
     s_prefix = once(s_prefix, ("Path('H:/天俪商城/worktrees/ms4-language-cache-normal-check')").encode(), ("Path(" + repr(authority["validation_root"]) + ")").encode())
     s_prefix = replace_constant(s_prefix, "PINS", {name: pin(current9[name])["sha256"] for name in (
         "ms4-host.py", "normal-close-ms4-fulfillment.py", "verify-zero-ms4-fulfillment.py")})
@@ -1006,7 +1173,7 @@ def build_normal(output: str | Path, authority_pointer: dict[str, Any], syntax_r
     m_prefix = m_prefix.replace((HISTORICAL_NORMAL / "validation").as_posix(), (normal / "validation").as_posix())
     m_prefix = m_prefix.replace("H:/天俪商城/worktrees/ms4-language-cache-normal-check", authority["validation_root"])
     m_prefix = m_prefix.replace("H:/天俪商城/worktrees/ms4-language-cache-normal", authority["candidate_root"])
-    m_prefix = replace_constant(m_prefix.encode(), "head", SOURCE_SHA)
+    m_prefix = replace_constant(m_prefix.encode(), "head", source_sha)
     m_prefix = replace_constant(m_prefix, "parent", parent).decode()
     m_body = old_m.decode("utf-8").split("\ntry:\n", 1)[1]
     m_body = m_body.replace((HISTORICAL_NORMAL / "materializer").as_posix(), (normal / "materializer").as_posix())
@@ -1093,7 +1260,7 @@ try:
     reverse = make_patch(after, before, members)
     require(apply_patch(before, forward, members) == after and apply_patch(after, reverse, members) == before,
             "COMPLETE_NORMAL18_FORWARD_REVERSE_REPLAY")
-    checks = {"schema": 1, "status": "CURRENT_NORMAL18_DERIVED_NOT_APPROVED_NO_RUNTIME", "source_sha": SOURCE_SHA,
+    checks = {"schema": 1, "status": "CURRENT_NORMAL18_DERIVED_NOT_APPROVED_NO_RUNTIME", "source_sha": source_sha,
               "binding": binding_pointer, "source_data": data_pointer, "source_members18": list(members),
               "before": {name: pin(before[name]) for name in members}, "candidate": {name: pin(after[name]) for name in members},
               "historical_prefix_edges": 25, "current_edges": len(current_edges), "total_edges": len(edges),
@@ -1104,7 +1271,7 @@ try:
               "complete_forward_reverse_replay": True, "history_fixed_descriptors_not_current_runtime": True,
               "runtime": "NOT RUN", "approval": "NOT_GRANTED_REQUIRES_INDEPENDENT_NORMAL18_SOURCE_REVIEW"}
     proofs = {"FORWARD.patch": forward, "REVERSE.patch": reverse, "AUTHOR-CHECKS.json": encode(checks)}
-    proofs["PINS.json"] = encode({"schema": 1, "status": checks["status"], "source_sha": SOURCE_SHA,
+    proofs["PINS.json"] = encode({"schema": 1, "status": checks["status"], "source_sha": source_sha,
                                  "binding": binding_pointer, "source_data": data_pointer, "source_members18": list(members),
                                  "members": checks["candidate"], "author_checks": {"path": (normal / "source-proof-r61/AUTHOR-CHECKS.json").as_posix(), **pin(proofs["AUTHOR-CHECKS.json"])}})
     # All candidates and inverse proofs are complete before the first new write.
@@ -1120,7 +1287,7 @@ try:
         if not target.exists():
             with target.open("xb") as handle:require(handle.write(raw) == len(raw), "COMPLETE_NEW_NORMAL_SOURCE_WRITE")
         require(stable_read(target) == raw, "COMPLETE_NORMAL18_SOURCE_READBACK")
-    return {"status": checks["status"], "source_sha": SOURCE_SHA, "normal_root": normal.as_posix(),
+    return {"status": checks["status"], "source_sha": source_sha, "normal_root": normal.as_posix(),
             "binding": binding_pointer, "source_data": data_pointer, "PINS": _pointer(normal / "source-proof-r61/PINS.json"),
             "current_edges": len(current_edges), "total_edges": len(edges), "merges": data["merge_count"],
             "cumulative_paths": len(committed), "source_members": 18, "runtime": "NOT RUN"}

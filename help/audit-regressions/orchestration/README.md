@@ -6,9 +6,13 @@
 
 ## 当前候选的正常回归接入
 
-新增的 `current_source_inventory.py` 与 `current_normal_source.py` 是当前候选的本机作者入口，归档 `sources/` 保持原字节。前者核完整 Git blob、两份独立干净检出和保护目录，只输出 `CAPTURED_NOT_APPROVED`；后者必须读取固定的独立技术复核，不能把捕获结果自行批准。当前候选固定为 `7dfcc37459043959f648aa25921325ae677ed039`，更换候选必须重新核对来源，不能沿用本次批准。
+`current_source_inventory.py` 与 `current_normal_source.py` 是当前候选的本机作者入口，归档 `sources/` 保持原字节。前者核完整 Git blob、两份独立干净检出和保护目录，只输出 `CAPTURED_NOT_APPROVED`；后者必须读取调用方明确指定摘要的独立技术复核，不能把捕获结果自行批准。每次来源 SHA 必须在 authority、独审、完整捕获与差量中一致，再固定到生成的 M/S；更换候选必须重新核对来源，不能沿用旧批准。
 
 新版复用已存在的九卷 Core profile（含独立 `source-tree`），更新当前售后入口的必要固定引用及摘要依赖。旧八卷归档不通过替换 HEAD 或摘要获得新资格。新材料写入仓库外目录；旧运行、失败、退役和来源记录仍按原身份保留。完整正常迁移、顾客、测试付款、履约、售后评价、Worker、普通关闭和独立核零的责任不减；源码派生、语法检查和来源技术通过都不代表这些业务已经运行。
+
+当前应用要求 MS6 版本表。普通验证沿现有 files-bootstrap 容器和专用维护账号，在原175表先决条件之后、首次 App 初始化之前调用原 MS6 迁移的 apply/check，再由 DML 账号读取同一版本记录。新增回执嵌入原 files-bootstrap 结果，由原四件证据链继续传递；原表、Redis和SQL模式保持检查保留，表清单只精确增加这一张元数据表。新独审必须逐项列明售后及顾客消费者的 before/after 固定引用；旧 Run、业务版本门和应用权限不变。
+
+`current_frontend_build_source.py` 复用已有三端构建器，接收同样明确固定的独审依据。它更新当前完整 Git 清单及资格引用，保留原依赖依据、工具和构建命令；作者不运行构建。实际三端构建及 B/UI 仍需各自验证，不能由来源派生代签。
 
 Docker 默认地址池耗尽时，可在 profile 作者的 `--output` 阶段指定 `--isolation-subnet`，将一个规范 RFC1918 IPv4 子网固定写入新来源的内部网络 IPAM。生成前和实际启动前须检查现有 Docker 网段及宿主/VPN/WSL 路由；作者本身不证明网段空闲，也不自动尝试其他地址。启动后核对实际 IPAM 与绑定子网，保留 `internal: true`、原标签和九卷拓扑；不修改 Docker 全局设置或既有网络。未指定此参数时，原生成逻辑保持。
 
