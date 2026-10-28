@@ -14,6 +14,8 @@
 
 B的两个网络使用固定输入 `network_subnets.isolation/ui_web`，只接收互不重叠的规范RFC1918网段并核实际IPAM。Root启动前仍须检查地址空闲；复用A网段须先有真实关闭及独立核零。部署public采用同一根部install排除投影，完整安装器来源仍保全；三端构建保留各自真实来源，只有完整输入一致才能复用。
 
+B Root M 的 proof 配置回执保留原 Host `PROOF_INI_REFERENCE` 的真实绝对路径、字节数和摘要，不随新 B 包的 `PREPARED` 目录迁移。作者核原/派生 Host 指针完全相同并读取原回执，只替换 `frozen_resources` 内这一处路径表达式；不复制旧回执或放宽单文件、内存值、角色、扫描目录和完整资源比较。B 工具修复独立记录实际工具字节，不改已冻结的应用来源或重启正在运行的 A。
+
 新商家退出的两权限叶在原 initializer 的九个迁移子进程全部完成后、private cleanup 与完整 source-tree 复制前调用原迁移的 check→apply→check；该点仍早于首次 App 及所有 paid/early 快照。沿原维护账号，不追加角色授权；独立回执绑定同一 run、CID、freeze 和三份完整当前来源，逐行保留旧菜单，并核除两条新叶以外的全部原表数据、表结构、Redis、SQL 模式及账户授权保持。Host 在原 initializer 结果消费点验证回执，后续原菜单全量保全继续使用含两叶的真实 early 快照，不过滤新叶或改写旧 hash。新实例必须实际执行；本机 R65 迁移回执不可跨实例复用，源码派生与语法通过不代表数据库或完整 M/A/B 已通过。
 
 当前应用要求 MS6 版本表。普通验证沿现有 files-bootstrap 容器和专用维护账号，在原175表先决条件之后、首次 App 初始化之前调用原 MS6 迁移的 apply/check，再由 DML 账号读取同一版本记录。新增回执嵌入原 files-bootstrap 结果，由原四件证据链继续传递；原表、Redis和SQL模式保持检查保留，表清单只精确增加这一张元数据表。新独审必须逐项列明售后及顾客消费者的 before/after 固定引用；旧 Run、业务版本门和应用权限不变。

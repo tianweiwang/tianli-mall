@@ -2300,7 +2300,7 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
         "changed_python_bodies":{"ms4-host.py":["verify_files_bootstrap","ui_copy_freeze_values","ui_web_connect","ui_web_networks","prerequisite_result"],
             "verify-zero-ms4-fulfillment.py":["ui_copy_freeze_values","ui_zero_network_identity","ui_zero_resource_networks"],
             "normal-close-ms4-fulfillment.py":[],
-            "root-ui-materialize-freeze.py":["main","current_known_normal_root","current_consume_materialization","current_verify_sources","frozen_materials"],
+            "root-ui-materialize-freeze.py":["main","current_known_normal_root","current_consume_materialization","current_verify_sources","frozen_materials","frozen_resources"],
             "root-ui-start-to-ready.py":["main","current_core_aux_authority"]},
         "added_schema_consumer":"ms4-host.py:verify_schema_bootstrap",
         "added_merchant_exit_consumer":"ms4-host.py:verify_merchant_exit_bootstrap",
@@ -2336,6 +2336,17 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
             "latest_commit_paths":sorted(row["path"] for row in latest),"source_requirements":data["requirements"]}}
     root_m = after["root-source/root-ui-materialize-freeze.py"]
     for name,value in constants.items():root_m = _b_constant(root_m,name,value)
+    # PREPARED now names the new B package; the original proof receipt remains
+    # at the exact independently pinned path already used by both Hosts.
+    proof_reference = constant(after["candidate/ms4-host.py"], "PROOF_INI_REFERENCE")
+    require(proof_reference == constant(before["candidate/ms4-host.py"], "PROOF_INI_REFERENCE"),
+            "B_ORIGINAL_PROOF_INI_REFERENCE_RETAINED")
+    read_pointer(proof_reference)
+    frozen_resources = _source_function(root_m, "frozen_resources")
+    frozen_resources = once(frozen_resources.encode(),
+        b"(PREPARED / 'r20-proof-memory-budget-public-readback-r1/RESULT.json').as_posix()",
+        repr(proof_reference["path"]).encode()).decode()
+    root_m = _b_replace_function(root_m, "frozen_resources", frozen_resources)
     root_m = _b_replace_function(root_m, "current_known_normal_root", '''def current_known_normal_root(inputs):
     current_b_outer(CURRENT_B_M_OUTER)
     setup=current_b_normal_materialization()
@@ -2390,7 +2401,7 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
         marker = b"if __name__ == '__main__':\n"
         after["root-source/"+name] = once(raw,marker,extra.encode()+"\n".encode()+marker)
     for name, changed in (("root-ui-materialize-freeze.py", {"main", "current_known_normal_root",
-            "current_consume_materialization", "current_verify_sources", "frozen_materials"}),
+            "current_consume_materialization", "current_verify_sources", "frozen_materials", "frozen_resources"}),
             ("root-ui-start-to-ready.py", {"main", "current_core_aux_authority"})):
         original = functions(before["root-source/" + name]); candidate = functions(after["root-source/" + name])
         require(all(symbol in candidate and candidate[symbol] == raw
