@@ -16,6 +16,10 @@ B的两个网络使用固定输入 `network_subnets.isolation/ui_web`，只接�
 
 B Root M 的 proof 配置回执保留原 Host `PROOF_INI_REFERENCE` 的真实绝对路径、字节数和摘要，不随新 B 包的 `PREPARED` 目录迁移。作者核原/派生 Host 指针完全相同并读取原回执，只替换 `frozen_resources` 内这一处路径表达式；不复制旧回执或放宽单文件、内存值、角色、扫描目录和完整资源比较。B 工具修复独立记录实际工具字节，不改已冻结的应用来源或重启正在运行的 A。
 
+隔离初始化只创建原安装表结构，按声明准备测试资料。原九个迁移完成后、退出权限及全部 early 快照之前，`isolated/lib/ms4-order-menu-fixture.php` 从当前已审安装 SQL 的唯一菜单块解析四个原订单锚；不执行安装 INSERT。四锚使用数据库生成 ID，按实际父 ID 映射 `pid` 和页面/分组的 `path`，其余全部字段保留原 SQL。normal-A 固定调用既有 `marketplace-ms4-order-read-menus.php` 的 check→apply→check/reapply，B 固定只准备四锚，原 UI 阶段仍须首次登记两个读取叶。此差别由作者生成的源码常量确定，不提供运行时开关；AR、B UI 与独立 oracle 的既有权限断言保留。
+
+`order_menu_receipt.py` 由作者按本次冻结来源及完整摘要读出、原字节嵌入 Host，消费同一 initializer 的独立回执；不增加运行时 import。回执绑定同 Run/CID/source/freeze、四锚完整源字段与真实 ID 映射、A 原两叶迁移结果或 B 严格未创建状态，以及全部旧菜单、角色、其它表、结构、Redis、模式、授权和原私有配置保持。仅允许本次声明的四条（B）或六条（A）新菜单；现有角色不追加授权，不导入其它原接口。
+
 新商家退出的两权限叶在原 initializer 的九个迁移子进程全部完成后、private cleanup 与完整 source-tree 复制前调用原迁移的 check→apply→check；该点仍早于首次 App 及所有 paid/early 快照。沿原维护账号，不追加角色授权；独立回执绑定同一 run、CID、freeze 和三份完整当前来源，逐行保留旧菜单，并核除两条新叶以外的全部原表数据、表结构、Redis、SQL 模式及账户授权保持。Host 在原 initializer 结果消费点验证回执，后续原菜单全量保全继续使用含两叶的真实 early 快照，不过滤新叶或改写旧 hash。新实例必须实际执行；本机 R65 迁移回执不可跨实例复用，源码派生与语法通过不代表数据库或完整 M/A/B 已通过。
 
 当前应用要求 MS6 版本表。普通验证沿现有 files-bootstrap 容器和专用维护账号，在原175表先决条件之后、首次 App 初始化之前调用原 MS6 迁移的 apply/check，再由 DML 账号读取同一版本记录。新增回执嵌入原 files-bootstrap 结果，由原四件证据链继续传递；原表、Redis和SQL模式保持检查保留，表清单只精确增加这一张元数据表。新独审必须逐项列明售后及顾客消费者的 before/after 固定引用；旧 Run、业务版本门和应用权限不变。

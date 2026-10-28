@@ -628,6 +628,102 @@ def merchant_exit_profile_changes(initializer: bytes, host: bytes, inventory: di
     return updated, updated_host, rows
 
 
+ORDER_MENU_SOURCE_PATHS = (
+    "help/audit-regressions/isolated/lib/ms4-order-menu-fixture.php",
+    "help/audit-regressions/orchestration/order_menu_receipt.py",
+    "help/preview/storefront.php",
+    "crmeb/public/install/crmeb.sql",
+    "help/migrations/marketplace-ms4-order-read-menus.php",
+    "help/migrations/marketplace-ms1.php",
+)
+ORDER_MENU_PROFILE_MODES = {"normal": "NORMAL_A_WITH_READ_LEAVES", "ui": "UI_B_ANCHORS_ONLY"}
+
+_ORDER_MENU_INITIALIZER = r'''function m4i_order_menu_sources(array $binding): array
+{
+    $context = m4i_read('/run/audit/actual-run-context.json');
+    $freeze = m4i_read('/run/audit/preparation-source-binding.json');
+    m2f_assert(getenv('AUDIT_RUN_ID') === $context['run_id'] && $binding['source_sha'] === $context['source_sha']
+        && $binding['freeze_sha256'] === hash_file('sha256', '/run/audit/preparation-source-binding.json'),
+        'ORDER_MENU_SAME_INITIALIZER_AND_COMPLETE_SOURCE_AUTHORITY');
+    $tree = m4i_source_tree_plan($context, $freeze); $sources = M4I_ORDER_MENU_SOURCES;
+    foreach ($sources as $row) {
+        $matches = array_values(array_filter($tree['files'], static fn(array $item): bool => $item['path'] === $row['path']));
+        m2f_assert($matches === [$row], 'ORDER_MENU_EXACT_CURRENT_COMPLETE_TREE_SOURCE');
+        foreach (['/workspace', '/source'] as $root) {
+            m2f_assert(realpath($root . '/' . $row['path']) === $root . '/' . $row['path'], 'ORDER_MENU_CANONICAL_SOURCE');
+            m4i_sourceFile($root, $row);
+        }
+    }
+    return $sources;
+}
+function m4i_order_menu_bootstrap(array $binding): array
+{
+    $sources = m4i_order_menu_sources($binding);
+    require_once '/workspace/help/audit-regressions/isolated/lib/ms4-order-menu-fixture.php';
+    $receipt = m4iom_prepare($binding, $sources, M4I_ORDER_MENU_WITH_READ_LEAVES);
+    m2f_assert(m4i_order_menu_sources($binding) === $sources, 'ORDER_MENU_COMPLETE_SOURCE_RETAINED');
+    return $receipt;
+}
+
+'''
+
+
+def order_menu_profile_changes(initializer: bytes, host: bytes, inventory: dict[str, dict[str, Any]],
+                               source_root: Path, *, with_read_leaves: bool):
+    """Declare four original menu fixtures; only normal-A preinstalls the two read leaves."""
+    require(type(with_read_leaves) is bool, "FIXED_AUTHOR_ORDER_MENU_PROFILE_MODE")
+    rows = tuple(inventory[name] for name in ORDER_MENU_SOURCE_PATHS)
+    source = read_pointer({"path": (source_root / ORDER_MENU_SOURCE_PATHS[0]).as_posix(),
+                           **{key: rows[0][key] for key in ("bytes", "sha256")}})
+    matches = re.findall(rb"^const M4I_ORDER_MENU_SOURCE_META = <<<'M4I_ORDER_MENU_SOURCE_JSON'\n(.*?)\nM4I_ORDER_MENU_SOURCE_JSON;",
+                         source, flags=re.MULTILINE | re.DOTALL)
+    require(len(matches) == 1, "ONE_FIXED_ORDER_MENU_SOURCE_META")
+    meta = decode(matches[0])
+    names = ["order_root", "order_page", "order_info_group", "order_info"]
+    require(type(meta) is dict and set(meta) == {"columns", "rows"}
+            and type(meta["columns"]) is list and len(meta["columns"]) == len(set(meta["columns"])) == 22
+            and {"id", "pid", "path", "unique_auth", "auth_type", "api_url", "methods"} <= set(meta["columns"])
+            and type(meta["rows"]) is dict and list(meta["rows"]) == names
+            and all(type(row) is list and len(row) == 22
+                    and all(value is None or type(value) in (str, int) for value in row)
+                    for row in meta["rows"].values()), "EXACT_FOUR_DECLARED_NATIVE_MENU_SOURCE_ROWS")
+    unique_index = meta["columns"].index("unique_auth")
+    require([meta["rows"][name][unique_index] for name in names] == [
+        "admin-order", "admin-order-storeOrder-index", "order-info", "order-info-6465a369a2c3b"],
+        "ONLY_FOUR_ORIGINAL_ORDER_MENU_IDENTITIES")
+    reader = read_pointer({"path": (source_root / ORDER_MENU_SOURCE_PATHS[1]).as_posix(),
+                           **{key: rows[1][key] for key in ("bytes", "sha256")}})
+    parsed_reader = ast.parse(reader)
+    require(set(functions(reader)) == {"verify_order_menu_bootstrap"}
+            and all(isinstance(node, ast.FunctionDef) or isinstance(node, ast.Expr)
+                    and isinstance(node.value, ast.Constant) and isinstance(node.value.value, str)
+                    for node in parsed_reader.body), "ONE_READONLY_ORDER_MENU_HOST_CONSUMER_NO_IMPORT_OR_TOPLEVEL_IO")
+    mode = ORDER_MENU_PROFILE_MODES["normal" if with_read_leaves else "ui"]
+    php_rows = ("const M4I_ORDER_MENU_SOURCES = [" + ", ".join(
+        "['path' => '" + row["path"] + "', 'bytes' => " + str(row["bytes"])
+        + ", 'sha256' => '" + row["sha256"] + "']" for row in rows) + "];\n"
+        + "const M4I_ORDER_MENU_WITH_READ_LEAVES = " + ("true" if with_read_leaves else "false") + ";\n\n").encode()
+    helper = php_rows + _ORDER_MENU_INITIALIZER.encode("utf-8")
+    anchor = b"function m4i_initialize(array &$evidence, ?array &$primary, ?array &$cleanup): void\n"
+    updated = once(initializer, anchor, helper + anchor)
+    old_call = b"        $evidence['merchant_exit_menus'] = m4i_exit_menus($evidence['binding']);\n"
+    call = b"        $evidence['order_menu_fixture'] = m4i_order_menu_bootstrap($evidence['binding']);\n"
+    updated = once(updated, old_call, call + old_call)
+    require(once(once(updated, call + old_call, old_call), helper + anchor, anchor) == initializer,
+            "EXACT_INITIALIZER_DECLARED_ORDER_MENU_ONLY_WHOLE_FILE_INVERSE")
+    host_helper = ("ORDER_MENU_SOURCE_FILES = " + repr(rows) + "\nORDER_MENU_SOURCE_META = " + repr(meta)
+                   + "\nORDER_MENU_PROFILE_MODE = " + repr(mode) + "\n").encode() + reader + b"\n\n"
+    host_anchor = b"def prerequisite_result(context, created_facts, terminal, result):\n"
+    updated_host = once(host, host_anchor, host_helper + host_anchor)
+    original = b"    verify_merchant_exit_bootstrap(context, result)\n"
+    consumer = b"    verify_order_menu_bootstrap(context, result)\n"
+    updated_host = once(updated_host, original, consumer + original)
+    require(once(once(updated_host, consumer + original, original), host_helper + host_anchor, host_anchor) == host,
+            "EXACT_HOST_DECLARED_ORDER_MENU_ONLY_WHOLE_FILE_INVERSE")
+    compile(updated_host, "derived-ms4-host-order-menu.py", "exec")
+    return updated, updated_host, rows, mode
+
+
 def schema_profile_changes(initializer: bytes, host: bytes, inventory: dict[str, dict[str, Any]]):
     """Extend the existing bootstrap only; inverse-check both complete old files."""
     paths = (
@@ -846,6 +942,9 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
         after["ms4-initialize.php"], after["ms4-host.py"], inventory)
     after["ms4-initialize.php"], after["ms4-host.py"], exit_sources = merchant_exit_profile_changes(
         after["ms4-initialize.php"], after["ms4-host.py"], inventory)
+    after["ms4-initialize.php"], after["ms4-host.py"], order_sources, order_mode = order_menu_profile_changes(
+        after["ms4-initialize.php"], after["ms4-host.py"], inventory, Path(authority["validation_root"]),
+        with_read_leaves=True)
     for name, symbol, target in (
         ("ms4-host.py", "INTERFACE_SHA256", "interface-v1.json"),
         ("normal-close-ms4-fulfillment.py", "HOST_SHA256", "ms4-host.py"),
@@ -869,10 +968,12 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
         "active_profile_updates": updates,
         "all_original_python_function_bodies_exact": False,
         "python_function_changes": {"ms4-host.py": ["verify_files_bootstrap", "verify_schema_bootstrap",
-            "prerequisite_result", "verify_merchant_exit_bootstrap"]},
+            "prerequisite_result", "verify_merchant_exit_bootstrap", "verify_order_menu_bootstrap"]},
         "initializer_two_literal_inverse_exact": True, "initializer_customer_literal_inverse_exact": True,
         "initializer_schema_bootstrap_inverse_exact": True, "schema_bootstrap_sources": list(schema_sources),
         "initializer_merchant_exit_inverse_exact": True, "merchant_exit_bootstrap_sources": list(exit_sources),
+        "initializer_order_menu_inverse_exact": True, "order_menu_bootstrap_sources": list(order_sources),
+        "order_menu_profile_mode": order_mode,
         "original_nine_volume_source_tree_topology_retained": True,
         "initializer_syntax": "NOT RUN", "M_A_B_Runtime": "NOT RUN",
     }
@@ -896,6 +997,10 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
             observed.pop("verify_schema_bootstrap")
             require("verify_merchant_exit_bootstrap" not in functions(before[name]), "ONE_NEW_EXIT_HOST_CONSUMER")
             observed.pop("verify_merchant_exit_bootstrap")
+            require("verify_order_menu_bootstrap" not in functions(before[name]), "ONE_NEW_ORDER_MENU_HOST_CONSUMER")
+            observed.pop("verify_order_menu_bootstrap")
+            observed["prerequisite_result"] = once(observed["prerequisite_result"],
+                b"    verify_order_menu_bootstrap(context, result)\n", b"")
             observed["prerequisite_result"] = once(observed["prerequisite_result"],
                 b"    verify_merchant_exit_bootstrap(context, result)\n", b"")
             observed["verify_files_bootstrap"] = once(observed["verify_files_bootstrap"],
@@ -915,12 +1020,14 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
         "changed": [name for name in NAMES if before[name] != after[name]],
         "all_original_python_function_bodies_exact": False, "python_named_function_counts": counts,
         "python_function_changes": {"ms4-host.py": ["verify_files_bootstrap", "verify_schema_bootstrap",
-            "prerequisite_result", "verify_merchant_exit_bootstrap"]},
+            "prerequisite_result", "verify_merchant_exit_bootstrap", "verify_order_menu_bootstrap"]},
         "all_other_original_python_function_bodies_exact": True,
         "active_profile_updates": updates, "interface_only_four_declared_active_rows": True,
         "initializer_two_literal_inverse_exact": True, "initializer_customer_literal_inverse_exact": True,
         "initializer_schema_bootstrap_inverse_exact": True, "schema_bootstrap_sources": list(schema_sources),
         "initializer_merchant_exit_inverse_exact": True, "merchant_exit_bootstrap_sources": list(exit_sources),
+        "initializer_order_menu_inverse_exact": True, "order_menu_bootstrap_sources": list(order_sources),
+        "order_menu_profile_mode": order_mode,
         "all_five_original_hash_edges_rebound": True, "current_nonself_eight_exact": True,
         "all_derivation_history_retained": True, "whole_forward_reverse_replay": True,
         "actual_initializer_syntax": "NOT RUN", "M_S_Host_Docker_App_business": "NOT RUN",
@@ -1063,7 +1170,9 @@ def _profile_groups(host: bytes, inventory: dict[str, dict[str, Any]]) -> dict[s
             "references": [inventory[name] for name in values["REFERENCES"]],
             "source_counts": {name: len(rows) for name, rows in groups.items()},
             "unique_source_files": len({row["path"] for rows in groups.values() for row in rows}),
-            "merchant_exit_bootstrap_sources": [inventory[name] for name in MERCHANT_EXIT_SOURCE_PATHS]}
+            "merchant_exit_bootstrap_sources": [inventory[name] for name in MERCHANT_EXIT_SOURCE_PATHS],
+            "order_menu_bootstrap_sources": [inventory[name] for name in ORDER_MENU_SOURCE_PATHS],
+            "order_menu_profile_modes": ORDER_MENU_PROFILE_MODES}
 
 
 _COMMON_RUNTIME = r'''
@@ -1187,6 +1296,8 @@ def source_authority(pub, reader, check):
     check(previous==CURRENT_SOURCE_SHA and data['new_tracked_paths']==sorted(added),'EXACT_CURRENT_SOURCE_GRAPH_TERMINAL_AND_ADDITIONS')
     check(all(complete.get(row['path'])==row for row in data['committed']) and data['requirements']==[complete[name] for name in data['requirement_paths']],'CURRENT_COMMITTED_AND_REQUIREMENT_ROWS_COMPLETE')
     check(data['merchant_exit_bootstrap_sources']==[complete[name] for name in ('help/migrations/marketplace-merchant-exit-menus.php', 'help/migrations/marketplace-ms1.php', 'help/migrations/marketplace-ms2-task7-submit-menu.php')],'EXACT_CURRENT_MERCHANT_EXIT_MIGRATION_GROUP')
+    check(data['order_menu_bootstrap_sources']==[complete[name] for name in ('help/audit-regressions/isolated/lib/ms4-order-menu-fixture.php', 'help/audit-regressions/orchestration/order_menu_receipt.py', 'help/preview/storefront.php', 'crmeb/public/install/crmeb.sql', 'help/migrations/marketplace-ms4-order-read-menus.php', 'help/migrations/marketplace-ms1.php')]
+        and data['order_menu_profile_modes']=={'normal':'NORMAL_A_WITH_READ_LEAVES','ui':'UI_B_ANCHORS_ONLY'},'EXACT_CURRENT_NATIVE_ORDER_MENU_FIXTURE_GROUP_AND_FIXED_MODES')
     groups={'driver':[complete[name] for name in data['driver']]}
     for name,roots in data['roots'].items():
         paths=sorted(set(data['extras'][name])|{path for path in complete if any(path.startswith(root+'/') for root in roots)})
@@ -1412,7 +1523,7 @@ def build_normal(output: str | Path, authority_pointer: dict[str, Any], syntax_r
     require(all(inventory[row["path"]] == row for row in committed), "CUMULATIVE_B7_CURRENT_BLOBS_EQUAL_REVIEWED_COMPLETE_INVENTORY")
     groups = _profile_groups(current9["ms4-host.py"], inventory)
     requirement_paths = sorted({row["path"] for row in historical_pub["repository_Source_requirements"]}
-        | {row["path"] for row in committed} | set(MERCHANT_EXIT_SOURCE_PATHS))
+        | {row["path"] for row in committed} | set(MERCHANT_EXIT_SOURCE_PATHS) | set(ORDER_MENU_SOURCE_PATHS))
     retirements = {key: historical_pub["finite_contexts"]["current_retirement" if key == "prior_retirement" else key]
                    for key in ("prior_retirement", "current_driver_failure_retirement", "current_early_failure_retirement",
                                "current_customer_prepare_failure_retirement", "current_paid_producer_failure_retirement",
@@ -1753,6 +1864,8 @@ def derive_b_profile(authority_pointer: dict[str, Any],
             initializer = once(initializer, old, new)
     initializer, host, schema_rows = schema_profile_changes(initializer, after["candidate/ms4-host.py"], inventory)
     initializer, host, exit_rows = merchant_exit_profile_changes(initializer, host, inventory)
+    initializer, host, order_rows, order_mode = order_menu_profile_changes(
+        initializer, host, inventory, Path(authority["validation_root"]), with_read_leaves=False)
     after["candidate/ms4-initialize.php"] = initializer
     after["candidate/ms4-host.py"] = host
     # The public installer remains in both complete source reads. Only deployment
@@ -1831,7 +1944,7 @@ def derive_b_profile(authority_pointer: dict[str, Any],
         if name.endswith(".py"): compile(raw, name, "exec")
         elif name.endswith(".json"): decode(raw)
     for name, changed, added in (("ms4-host.py", {"verify_files_bootstrap", "ui_copy_freeze_values", "prerequisite_result"},
-                                  {"verify_schema_bootstrap", "verify_merchant_exit_bootstrap"}),
+                                  {"verify_schema_bootstrap", "verify_merchant_exit_bootstrap", "verify_order_menu_bootstrap"}),
                                  ("verify-zero-ms4-fulfillment.py", {"ui_copy_freeze_values"}, set()),
                                  ("normal-close-ms4-fulfillment.py", set(), set())):
         original_functions = functions(before["candidate/" + name])
@@ -1843,7 +1956,9 @@ def derive_b_profile(authority_pointer: dict[str, Any],
                 and all(current_functions[symbol] == body for symbol, body in original_functions.items() if symbol not in changed),
                 "B_ALL_NON_TARGET_PYTHON_BUSINESS_AND_RESOURCE_FUNCTIONS_RAW_EXACT")
     return {"before": before, "after": after, "authority": authority, "inventory": inventory,
-            "schema_sources": schema_rows, "merchant_exit_sources": exit_rows, "forward": forward, "reverse": reverse,
+            "schema_sources": schema_rows, "merchant_exit_sources": exit_rows,
+            "order_menu_sources": order_rows, "order_menu_profile_mode": order_mode,
+            "forward": forward, "reverse": reverse,
             "network_subnets": network_subnets,
             "status": "PURE_B_PROFILE_DERIVED_NOT_APPROVED_NO_A_OR_RUNTIME"}
 
@@ -2260,6 +2375,9 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
     derivation["runtime_full17_sealed"] = True
     derivation["merchant_exit_bootstrap_sources"] = list(derived["merchant_exit_sources"])
     derivation["merchant_exit_before_original_early_seal"] = True
+    derivation["order_menu_bootstrap_sources"] = list(derived["order_menu_sources"])
+    derivation["order_menu_profile_mode"] = derived["order_menu_profile_mode"]
+    derivation["declared_native_order_anchors_before_original_early_seal"] = True
     derivation["actual_clean_Source_Val_M_A_build_B_Run"] = {"source_sha":head,
         "normal_M":fixed["normal"]["result"], "A":a_qualification, "materials":fixed["materials"]["producer_result"], "B_Run":None}
     after["candidate/source-derivation.json"] = encode(derivation)
@@ -2304,6 +2422,7 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
             "root-ui-start-to-ready.py":["main","current_core_aux_authority"]},
         "added_schema_consumer":"ms4-host.py:verify_schema_bootstrap",
         "added_merchant_exit_consumer":"ms4-host.py:verify_merchant_exit_bootstrap",
+        "added_order_menu_consumer":"ms4-host.py:verify_order_menu_bootstrap",
         "runtime":"NOT RUN","approval":"NOT_GRANTED_REQUIRES_INDEPENDENT_SOURCE_REVIEW"}
     after["SOURCE-CHECKS.json"] = encode(checks)
     inputs = decode(before["root-source/INPUTS.json"])
