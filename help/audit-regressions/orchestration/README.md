@@ -20,6 +20,8 @@
 
 H5 仅接收已独审的四个固定 LX 别名属性后继算法；原 r5 只作有限派生依据。producer 只读核对实际 before/after 原始回执、完整身份和原生查询流，原始属性只接受1056或263200；当前重算仅比较稳定字段，不改写历史回执。无需新增 CLI 参数，实际 H5 完成证明仍是运行前提。
 
+部署 public 只排除根部 `install/`，同名嵌套目录仍包含；安装器另以原 reader 完整读取并随原 finish 复核，included/excluded 两套完整目录、文件哈希及摘要均绑定同一 capture，写入现有 `producer-result.json.public_source_scope`。原逐文件 input-inventory、五材料、10键 profile 和 `NO_PUBLIC_ENV_FILE` 保持。后续 B 的 `ms4-ui-public-copy.php` 在 `m4uic_copy` 的完整 public 比较及末尾全树复读（原276–278、351行）须同步为完整来源保全与根 install 排除投影，既有 `install/.env` 固定模板读取/复制特例（原18–28、77–78、167–170行）也须一并明确调整；本作者不改 B，不以允许部署 `.env` 绕过检查。
+
 作者使用 `--output`、`--authority-file`、`--authority-sha256`，仅创建新的源码候选及其正逆变更。producer 的 paths 文件仍为 `{schema:1, paths:{...}}`，路径键精确为 `metadata/source/public/h5_build/merchant_build/admin_build`。current-build-proofs 文件精确包含 `schema:1`、`scope:CURRENT_THREE_FRONTEND_BUILD_PROOFS`、`source_sha` 和 `builds`；builds 下三端各自包含 `packet`、`pins`、`run`、`outer`，pins 是对应包 `PINS.json` 的绝对路径、字节数和SHA-256，outer 是该 Run 的原 `-launch` 目录。旧 metadata 不能替代这份当前三端证明。
 
 本代应用来源从调用方的真实独审 authority 动态固定。允许复用较早完成的真实构建，但逐端保留其原报告 head、资格、builder authority 和全部原生 argv；按原 `frontend_source` 规则推导的完整输入、目录、Git mode/blob、字节数及SHA-256必须与本代来源完全相同，任何差异都须重建该端。prebuild/helper、编译器、lock和原工具依赖仍核对；public另按本代候选完整清单验证。结果分别记录原构建来源和本代输入等价关系，不宣称旧构建是在新 head 上重跑。

@@ -122,9 +122,21 @@ def current_proofs(reader, path, sha, paths, output):
             and outer['run_id'] == report['run_id'], 'ALL_THREE_REAL_COMPLETE_BUILDS_BEFORE_OUTPUT')
     value['_current_inputs'] = {name:current_input_projection(rows,directories,name) for name in NAMES}
     prefix = 'crmeb/public/'
-    value['_current_public'] = {'files':[{'path':name[len(prefix):],**{key:row[key] for key in ['bytes','sha256']}}
+    public = {'files':[{'path':name[len(prefix):],**{key:row[key] for key in ['bytes','sha256']}}
         for name,row in sorted(rows.items(),key=lambda pair:order(pair[0])) if name.startswith(prefix)],
         'directories':sorted([name[len(prefix):] for name in directories if name.startswith(prefix)],key=order)}
+    need('install' in public['directories'] and not any(row['path'] == 'install' for row in public['files']),
+        'CAPTURED_ROOT_INSTALL_DIRECTORY_ONLY')
+    value['_current_public'] = {'files':[row for row in public['files'] if not row['path'].startswith('install/')],
+        'directories':[name for name in public['directories'] if name != 'install' and not name.startswith('install/')]}
+    value['_current_public_install'] = {'files':[{'path':row['path'][8:],**{key:row[key] for key in ['bytes','sha256']}}
+        for row in public['files'] if row['path'].startswith('install/')],
+        'directories':[name[8:] for name in public['directories'] if name.startswith('install/')]}
+    need(value['_current_public_install']['files'] and len(value['_current_public']['files'])
+        + len(value['_current_public_install']['files']) == len(public['files'])
+        and len(value['_current_public']['directories']) + len(value['_current_public_install']['directories'])
+        + 1 == len(public['directories']), 'COMPLETE_PUBLIC_AND_EXCLUDED_INSTALL_CAPTURE_PARTITION')
+    value['_current_public_source_binding'] = {'capture':authority['capture'], 'source_inventory':inventory}
     return value
 
 
@@ -598,7 +610,21 @@ def derive_source(output: str | Path, authority_pointer: dict):
             b"    roots = [Path(evidence[name]['dist_root']) for name in NAMES]\n")
     replace('public bytes belong to this generation independently of build reuse',
             b"    original = reader.tree(paths['public'],public=True)\n",
-            b"    original = reader.tree(paths['public'],public=True)\n    need(original == paths['_current_build_proofs']['_current_public'], 'COMPLETE_CURRENT_PUBLIC_SOURCE')\n")
+            b"    original = reader.tree(paths['public'],excluded=('install',),top_only=True,public=True)\n"
+            b"    need(original == paths['_current_build_proofs']['_current_public'], 'COMPLETE_CURRENT_DEPLOYABLE_PUBLIC_SOURCE')\n"
+            b"    excluded_install = reader.tree(paths['public']/'install')\n"
+            b"    need(excluded_install == paths['_current_build_proofs']['_current_public_install'], 'COMPLETE_CURRENT_EXCLUDED_INSTALL_SOURCE')\n"
+            b"    public_source_scope = {'schema':1, 'source_sha':CURRENT_SOURCE_SHA, 'technical_authority':CURRENT_SOURCE_AUTHORITY,\n"
+            b"        **paths['_current_build_proofs']['_current_public_source_binding'], 'public_root':paths['public'].as_posix(),\n"
+            b"        'excluded_root_directories':['install'], 'nested_same_name_directories_excluded':False,\n"
+            b"        'rule':'Exclude only the root install directory; fully retain its source bytes and namespace as input evidence',\n"
+            b"        'included':original, 'excluded':{'install':excluded_install},\n"
+            b"        'included_summary':{'file_count':len(original['files']), 'directory_count':len(original['directories']), **fp(encode(original))},\n"
+            b"        'excluded_summary':{'install':{'file_count':len(excluded_install['files']), 'directory_count':len(excluded_install['directories']),\n"
+            b"            **fp(encode(excluded_install))}}, 'excluded_source_fully_read_and_rechecked':True}\n")
+    replace('public scope evidence outside the unchanged five materials and ten-key profile',
+            b"        'materials':emitted,'builds':evidence,'input_inventory':inventory_pin,\n",
+            b"        'materials':emitted,'builds':evidence,'input_inventory':inventory_pin,\n        'public_source_scope':public_source_scope,\n")
     original_materialize = h.functions(after)['materialize']
     h.require(original_materialize.count(b'    reader.finish()') == 3, 'THREE_ORIGINAL_COMPLETE_INPUT_RECHECKS')
     replace('retain all finish bodies and repeat the four exceptional alias observations', original_materialize,
@@ -647,6 +673,7 @@ def derive_source(output: str | Path, authority_pointer: dict):
                 'all_undeclared_original_function_bodies_exact':True, 'producer_build_Docker_Node_materials_UI':'NOT RUN',
                 'required_current_build_proofs':'Explicit file plus fixed SHA; all three actual outer/Run/source packets required before output',
                 'build_reuse':'Each original build head/authority remains real; complete frontend_source files/directories/Git mode/blob/bytes/SHA must equal this independently reviewed generation. Public is checked against the current capture separately.',
+                 'public_source_scope':'Only the root install directory is excluded from deployable public. Both complete included and excluded namespaces and bytes are independently checked against the same current capture and rechecked by the original Inputs.finish; nested install directories are included.',
                 'contexts':contexts}
     files = {'before/ms4-ui-materials.py':before, 'candidate/ms4-ui-materials.py':after,
              'FORWARD.patch':forward, 'REVERSE.patch':reverse, 'SOURCE-DERIVATION.json':h.encode(metadata)}
