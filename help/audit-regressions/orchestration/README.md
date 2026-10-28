@@ -16,6 +16,10 @@ B的两个网络使用固定输入 `network_subnets.isolation/ui_web`，只接�
 
 B Root M 的 proof 配置回执保留原 Host `PROOF_INI_REFERENCE` 的真实绝对路径、字节数和摘要，不随新 B 包的 `PREPARED` 目录迁移。作者核原/派生 Host 指针完全相同并读取原回执，只替换 `frozen_resources` 内这一处路径表达式；不复制旧回执或放宽单文件、内存值、角色、扫描目录和完整资源比较。B 工具修复独立记录实际工具字节，不改已冻结的应用来源或重启正在运行的 A。
 
+B 浏览器接线沿 `derive_b_profile` 作有限派生：Task2 使用同一真实 owned tab、自然完成的 HTML 文档 URL 和原生事件的完整 `{tabId}` 来源绑定。保留原始事件、序号、请求 ID、完整响应和两类 ExtraInfo，以及原 clean/readiness 的零未分配事件检查。当前工具不支持的 `Target.getTargetInfo` 与直接 CSS 文档导航不再作为该接缝的前置；不补造 targetId，不修改通用网络采集器或业务场景。
+
+DOM 截图从同一真实 tab 的 CDP `Page.captureScreenshot` 显式取得原生 PNG，仅作有界、canonical base64 解码，随后沿原 PNG 解析与原字节保存路径。PNG 签名、CRC、IHDR、zlib、像素尺寸、DOM 前后稳定性、调用时间、隐私、布局、三种宽度及关闭/核零检查保持。标准截图接口的 JPEG 输出不伪装或转码为原 PNG。原 browser8/PINS 和交叉摘要继续重算并完整正逆核对；新工具字节另行固定与独审，应用来源及其实际 A 资格分别保留。
+
 隔离初始化只创建原安装表结构，按声明准备测试资料。原九个迁移完成后、退出权限及全部 early 快照之前，`isolated/lib/ms4-order-menu-fixture.php` 从当前已审安装 SQL 的唯一菜单块解析四个原订单锚；不执行安装 INSERT。四锚使用数据库生成 ID，按实际父 ID 映射 `pid` 和页面/分组的 `path`，其余全部字段保留原 SQL。normal-A 固定调用既有 `marketplace-ms4-order-read-menus.php` 的 check→apply→check/reapply，B 固定只准备四锚，原 UI 阶段仍须首次登记两个读取叶。此差别由作者生成的源码常量确定，不提供运行时开关；AR、B UI 与独立 oracle 的既有权限断言保留。
 
 `order_menu_receipt.py` 由作者按本次冻结来源及完整摘要读出、原字节嵌入 Host，消费同一 initializer 的独立回执；不增加运行时 import。回执绑定同 Run/CID/source/freeze、四锚完整源字段与真实 ID 映射、A 原两叶迁移结果或 B 严格未创建状态，以及全部旧菜单、角色、其它表、结构、Redis、模式、授权和原私有配置保持。仅允许本次声明的四条（B）或六条（A）新菜单；现有角色不追加授权，不导入其它原接口。

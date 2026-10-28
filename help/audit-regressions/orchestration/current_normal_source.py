@@ -1804,6 +1804,158 @@ def _b_networks(after: dict[str, bytes], subnets: dict[str, str]) -> dict[str, s
     return selected
 
 
+def _b_browser_compatibility(after: dict[str, bytes]) -> dict[str, Any]:
+    """Fixed B-only CUA transport changes; preserve the original business gates."""
+    network_key = "browser-v1/ms4-ui-network-capture.mjs"
+    dom_key = "browser-v1/ms4-ui-dom-producer.mjs"
+    contract_key = "browser-v1/ui-business-consumer-contract.json"
+    original = {name: after[name] for name in (network_key, dom_key, contract_key)}
+    old_capture = b'''export async function createTask2OwnedNetworkCapture({tab,companion,role,origin}) {
+  requireValue(Object.getPrototypeOf(companion)===Task2OwnedBrowser.prototype
+    &&['customer','merchant','platform'].includes(role)&&tab&&typeof tab.id==='string'
+    &&typeof tab.url==='function'&&tab.capabilities&&typeof tab.capabilities.get==='function',
+    'TASK2_SAME_GENUINE_OWNED_TAB_CAPABILITY');
+  const owner=Task2OwnedBrowser.prototype.ownedTabIdentity.call(companion,role);
+  requireValue(owner.role===role&&owner.tab_id_sha256===task2Sha(tab.id),'TASK2_REGISTERED_OWNED_TAB');
+  const cssURL=await tab.url();let parsed;
+  try{parsed=new URL(cssURL);}catch{throw new Error('TASK2_EXISTING_HTTP_CSS_BOOTSTRAP_REQUIRED');}
+  requireValue(sameOrigin(cssURL,origin)&&parsed.pathname.endsWith('.css')&&parsed.hash===''
+    &&parsed.username===''&&parsed.password==='','TASK2_EXISTING_HTTP_CSS_BOOTSTRAP_REQUIRED');
+  const capability=await tab.capabilities.get('cdp');
+  requireValue(capability&&typeof capability.send==='function'&&typeof capability.readEvents==='function',
+    'TASK2_REAL_TAB_CDP_CAPABILITY');
+  const observation=jsonCopy(await capability.send('Target.getTargetInfo',{}));
+  requireValue(object(observation)&&object(observation.targetInfo),'TASK2_ACTUAL_TARGET_INFO_RESULT');
+  const target=observation.targetInfo;
+  requireValue(typeof target.targetId==='string'&&target.targetId.length>0&&target.targetId.length<=1024
+    &&target.type==='page'&&target.url===cssURL&&await tab.url()===cssURL,
+    'TASK2_CSS_OWNED_TARGET_INFO_JOIN');
+  const capture=new UiNormalNetworkCapture(capability,{origin});
+  task2OwnedCaptures.set(capture,{tab,companion,role,origin,target:jsonCopy(target),
+    owner:jsonCopy(owner),cssURL,sourceKey:null,mapping:null});
+  return capture;
+}'''
+    new_capture = b'''export async function createTask2OwnedNetworkCapture({tab,companion,role,origin}) {
+  requireValue(Object.getPrototypeOf(companion)===Task2OwnedBrowser.prototype
+    &&['customer','merchant','platform'].includes(role)&&tab&&typeof tab.id==='string'
+    &&typeof tab.url==='function'&&tab.capabilities&&typeof tab.capabilities.get==='function'
+    &&tab.playwright&&typeof tab.playwright.evaluate==='function'
+    &&typeof tab.playwright.waitForLoadState==='function',
+    'TASK2_SAME_GENUINE_OWNED_TAB_CAPABILITY');
+  const owner=Task2OwnedBrowser.prototype.ownedTabIdentity.call(companion,role);
+  requireValue(owner.role===role&&owner.tab_id_sha256===task2Sha(tab.id),'TASK2_REGISTERED_OWNED_TAB');
+  await tab.playwright.waitForLoadState({state:'networkidle'});
+  const readDocument=()=>({url:document.URL,readyState:document.readyState,
+    contentType:document.contentType,rootTag:document.documentElement?document.documentElement.tagName:null});
+  const documentURL=await tab.url(),before=jsonCopy(await tab.playwright.evaluate(readDocument));let parsed;
+  try{parsed=new URL(documentURL);}catch{throw new Error('TASK2_EXISTING_SAME_ORIGIN_HTML_DOCUMENT_REQUIRED');}
+  requireValue(sameOrigin(documentURL,origin)&&parsed.username===''&&parsed.password===''
+    &&object(before)&&before.url===documentURL&&before.readyState==='complete'
+    &&before.contentType==='text/html'&&before.rootTag==='HTML',
+    'TASK2_EXISTING_SAME_ORIGIN_HTML_DOCUMENT_REQUIRED');
+  const capability=await tab.capabilities.get('cdp');
+  requireValue(capability&&typeof capability.send==='function'&&typeof capability.readEvents==='function',
+    'TASK2_REAL_TAB_CDP_CAPABILITY');
+  const observed=jsonCopy(await tab.playwright.evaluate(readDocument));
+  const stillOwned=Task2OwnedBrowser.prototype.ownedTabIdentity.call(companion,role);
+  requireValue(JSON.stringify(canonical(observed))===JSON.stringify(canonical(before))
+    &&await tab.url()===documentURL&&stillOwned.role===role
+    &&stillOwned.tab_id_sha256===owner.tab_id_sha256&&owner.tab_id_sha256===task2Sha(tab.id),
+    'TASK2_SAME_OWNED_TAB_STABLE_NATIVE_HTML_DOCUMENT');
+  const capture=new UiNormalNetworkCapture(capability,{origin});
+  task2OwnedCaptures.set(capture,{tab,companion,role,origin,owner:jsonCopy(owner),
+    documentURL,sourceKey:null,mapping:null});
+  return capture;
+}'''
+    old_mapping = b'''export function task2OwnedCaptureSource(capture,{tab,companion,role,origin,source}) {
+  const original=task2OwnedCaptures.get(capture);
+  requireValue(original&&original.tab===tab&&original.companion===companion&&original.role===role
+    &&original.origin===origin&&object(source),'TASK2_ORIGINAL_OWNED_CAPTURE_REQUIRED');
+  const owner=Task2OwnedBrowser.prototype.ownedTabIdentity.call(companion,role);
+  requireValue(owner.tab_id_sha256===original.owner.tab_id_sha256&&owner.tab_id_sha256===task2Sha(tab.id),
+    'TASK2_OWNED_CAPTURE_STILL_SAME_TAB');
+  const raw=jsonCopy(source),sourceKey=JSON.stringify(canonical(raw));
+  let kind;
+  if(typeof raw.targetId==='string'){
+    requireValue(raw.targetId===original.target.targetId,'TASK2_REAL_EVENT_TARGET_ID_JOIN');kind='targetId';
+  }else{
+    requireValue(Number.isSafeInteger(raw.tabId)&&raw.tabId>=0,'TASK2_REAL_EVENT_TAB_MAPPING_REQUIRED');
+    const value=String(raw.tabId);
+    requireValue(tab.id===value,'TASK2_REAL_PUBLIC_TAB_ID_JOIN');kind='tabId';
+  }
+  if(original.sourceKey===null){original.sourceKey=sourceKey;original.mapping={kind,
+    tab_id_sha256:owner.tab_id_sha256,target_id_sha256:task2Sha(original.target.targetId),
+    source_sha256:task2Sha(sourceKey),css_url_sha256:task2Sha(original.cssURL)};}
+  else requireValue(original.sourceKey===sourceKey,'TASK2_ONE_REAL_OWNED_CAPTURE_SOURCE_SCOPE');
+  return jsonCopy(original.mapping);
+}'''
+    new_mapping = b'''export function task2OwnedCaptureSource(capture,{tab,companion,role,origin,source}) {
+  const original=task2OwnedCaptures.get(capture);
+  requireValue(original&&original.tab===tab&&original.companion===companion&&original.role===role
+    &&original.origin===origin&&object(source),'TASK2_ORIGINAL_OWNED_CAPTURE_REQUIRED');
+  const owner=Task2OwnedBrowser.prototype.ownedTabIdentity.call(companion,role);
+  requireValue(owner.tab_id_sha256===original.owner.tab_id_sha256&&owner.tab_id_sha256===task2Sha(tab.id),
+    'TASK2_OWNED_CAPTURE_STILL_SAME_TAB');
+  const raw=jsonCopy(source),sourceKey=JSON.stringify(canonical(raw));
+  requireValue(Object.keys(raw).length===1&&Object.hasOwn(raw,'tabId')
+    &&Number.isSafeInteger(raw.tabId)&&raw.tabId>=0&&tab.id===String(raw.tabId),
+    'TASK2_EXACT_NATIVE_EVENT_SOURCE_SAME_OWNED_TAB_ID');
+  if(original.sourceKey===null){original.sourceKey=sourceKey;original.mapping={kind:'tabId',
+    tab_id_sha256:owner.tab_id_sha256,source_sha256:task2Sha(sourceKey),
+    document_url_sha256:task2Sha(original.documentURL)};}
+  else requireValue(original.sourceKey===sourceKey,'TASK2_ONE_REAL_OWNED_CAPTURE_SOURCE_SCOPE');
+  return jsonCopy(original.mapping);
+}'''
+    network = once(once(original[network_key], old_capture, new_capture), old_mapping, new_mapping)
+    require(once(once(network, new_mapping, old_mapping), new_capture, old_capture) == original[network_key],
+            "B_CUA_TWO_EXPORTS_EXACT_WHOLE_FILE_INVERSE_GENERIC_NETWORK_CORE_UNCHANGED")
+    old_guard = b"&&typeof tab.screenshot==='function');"
+    new_guard = b"&&tab.capabilities&&typeof tab.capabilities.get==='function');"
+    old_png = b'''      const callStart=Date.now(),returned=await tab.screenshot({fullPage:false}),callEnd=Date.now();need(ArrayBuffer.isView(returned)&&Object.prototype.toString.call(returned)==='[object Uint8Array]');const raw=Buffer.from(returned);
+      try{const pixels=png(raw);last=copy(await tab.playwright.evaluate(measureVisible,arg));'''
+    new_png = b'''      const capability=await tab.capabilities.get('cdp');need(capability&&typeof capability.send==='function');
+      const callStart=Date.now(),returned=copy(await capability.send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false,fromSurface:true})),callEnd=Date.now();
+      keys(returned,['data']);need(typeof returned.data==='string'&&returned.data.length>0&&returned.data.length<=44739244);
+      const raw=Buffer.from(returned.data,'base64');
+      try{need(raw.toString('base64')===returned.data);const pixels=png(raw);last=copy(await tab.playwright.evaluate(measureVisible,arg));'''
+    dom = once(once(original[dom_key], old_guard, new_guard), old_png, new_png)
+    require(once(once(dom, new_png, old_png), new_guard, old_guard) == original[dom_key],
+            "B_CUA_NATIVE_PNG_ACQUISITION_EXACT_WHOLE_FILE_INVERSE_ALL_DOM_PNG_GATES_UNCHANGED")
+    contract = decode(original[contract_key]); previous_contract = copy.deepcopy(contract)
+    old_text = {
+        "capture_mapping": "GENUINE_SAME_OWNED_TAB_CAPABILITY_AFTER_EXISTING_SAME_ORIGIN_CSS_TARGET_GET_TARGET_INFO_AND_ACTUAL_EVENT_SOURCE_JOIN",
+        "screenshot_operand": "original SDK screenshot",
+        "pixels_vs_CSS": "Actual PNG physical width/height from original SDK bytes separate from CSS viewport/DPR/bounds; do not assume equal.",
+    }
+    require(contract["task2"]["capture_mapping"] == old_text["capture_mapping"]
+            and contract["wire_rules"]["relations"]["SCREENSHOT_ORIGINAL_PNG"]["operands"][0] == old_text["screenshot_operand"]
+            and contract["dom_rules"]["screenshot_mapping"]["pixels_vs_CSS"] == old_text["pixels_vs_CSS"],
+            "B_THREE_EXACT_ORIGINAL_BROWSER_TOOL_PROVENANCE_VALUES")
+    contract["task2"]["capture_mapping"] = "GENUINE_SAME_OWNED_TAB_CDP_CAPABILITY_STABLE_SAME_ORIGIN_HTML_DOM_URL_AND_EXACT_ORIGINAL_EVENT_SOURCE_TAB_ID_JOIN"
+    contract["wire_rules"]["relations"]["SCREENSHOT_ORIGINAL_PNG"]["operands"][0] = "same-owned-tab native CDP Page.captureScreenshot original PNG bytes; canonical base64 decoding only"
+    contract["dom_rules"]["screenshot_mapping"]["pixels_vs_CSS"] = "Actual PNG physical width/height from the same owned tab native CDP Page.captureScreenshot original bytes, decoded from canonical base64 only, separate from CSS viewport/DPR/bounds; do not assume equal."
+    restored = copy.deepcopy(contract)
+    restored["task2"]["capture_mapping"] = old_text["capture_mapping"]
+    restored["wire_rules"]["relations"]["SCREENSHOT_ORIGINAL_PNG"]["operands"][0] = old_text["screenshot_operand"]
+    restored["dom_rules"]["screenshot_mapping"]["pixels_vs_CSS"] = old_text["pixels_vs_CSS"]
+    require(restored == previous_contract and encode(restored) == original[contract_key],
+            "B_THREE_TOOL_PROVENANCE_ONLY_EXACT_CONTRACT_INVERSE_NO_SCHEMA_OR_BUSINESS_CHANGE")
+    after.update({network_key: network, dom_key: dom, contract_key: encode(contract)})
+    return {"schema": 1, "scope": "B_ONLY_NATIVE_CUA_BROWSER_TRANSPORT_SOURCE_CHANGE",
+            "tool_author": _pointer(Path(__file__).resolve()),
+            "changed_exports": {network_key: ["createTask2OwnedNetworkCapture", "task2OwnedCaptureSource"]},
+            "changed_method_seams": {dom_key: ["UiNormalDomProducer.observe: screenshot capability guard and original native PNG acquisition only"]},
+            "changed_contract_paths": ["task2.capture_mapping", "wire_rules.relations.SCREENSHOT_ORIGINAL_PNG.operands[0]",
+                                       "dom_rules.screenshot_mapping.pixels_vs_CSS"],
+            "files": [{"path": name, "before": pin(original[name]), "after": pin(after[name])}
+                      for name in original],
+            "whole_file_inverse": True, "generic_network_and_original_dom_png_business_gates": "UNCHANGED",
+            "native_event_source": "EXACT_ORIGINAL_TAB_ID_OBJECT_NO_SYNTHETIC_TARGET_ID",
+            "screenshot": "SAME_OWNED_TAB_NATIVE_CDP_PNG_CANONICAL_BASE64_DECODE_ONLY_NO_TRANSCODING",
+            "application_source_qualification": "UNCHANGED_CURRENT_CAPTURE_NOT_NEW_TOOL_GIT_HEAD_A_APPROVAL",
+            "runtime_GUI": "NOT RUN", "approval": "NOT_GRANTED_REQUIRES_INDEPENDENT_SOURCE_REVIEW"}
+
+
 def derive_b_profile(authority_pointer: dict[str, Any],
                      network_subnets: dict[str, str] | None = None) -> dict[str, Any]:
     """Pure finite B Source transformation; no A claim, output, import or runtime."""
@@ -1901,6 +2053,7 @@ def derive_b_profile(authority_pointer: dict[str, Any],
     contract = decode(after["browser-v1/ui-business-consumer-contract.json"])
     contract["php_sources"] = {row["path"]: {k:row[k] for k in ("bytes", "sha256")} for row in core["core_sources"]}
     after["browser-v1/ui-business-consumer-contract.json"] = encode(contract)
+    browser_compatibility = _b_browser_compatibility(after)
     browser = decode(before["browser-v1/PINS.json"])
     browser["members"] = {name: pin(after["browser-v1/" + name]) for name in browser["members"]}
     after["browser-v1/PINS.json"] = encode(browser)
@@ -1958,6 +2111,7 @@ def derive_b_profile(authority_pointer: dict[str, Any],
     return {"before": before, "after": after, "authority": authority, "inventory": inventory,
             "schema_sources": schema_rows, "merchant_exit_sources": exit_rows,
             "order_menu_sources": order_rows, "order_menu_profile_mode": order_mode,
+            "browser_compatibility": browser_compatibility,
             "forward": forward, "reverse": reverse,
             "network_subnets": network_subnets,
             "status": "PURE_B_PROFILE_DERIVED_NOT_APPROVED_NO_A_OR_RUNTIME"}
@@ -2378,6 +2532,7 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
     derivation["order_menu_bootstrap_sources"] = list(derived["order_menu_sources"])
     derivation["order_menu_profile_mode"] = derived["order_menu_profile_mode"]
     derivation["declared_native_order_anchors_before_original_early_seal"] = True
+    derivation["browser_compatibility"] = derived["browser_compatibility"]
     derivation["actual_clean_Source_Val_M_A_build_B_Run"] = {"source_sha":head,
         "normal_M":fixed["normal"]["result"], "A":a_qualification, "materials":fixed["materials"]["producer_result"], "B_Run":None}
     after["candidate/source-derivation.json"] = encode(derivation)
@@ -2405,6 +2560,7 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
             "current_core_aux_authority":core_pointer,"current_Core3":core["core_sources"],
             "ordered_auxiliary_members":[{"path":name,**row} for name,row in browser["members"].items()],
             "whole_forward_inverse_files":inverse,"SourceRows":list(rows.values()),"unchanged_tools3":tools,
+            "browser_compatibility":derived["browser_compatibility"],
             "original_build_provenance_and_current_input_equivalence":fixed["materials"]["producer_result"]},
         "target_execution":"NOT RUN"}
     after["candidate/PUBLICATION.json"] = encode(publication)
@@ -2423,6 +2579,7 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
         "added_schema_consumer":"ms4-host.py:verify_schema_bootstrap",
         "added_merchant_exit_consumer":"ms4-host.py:verify_merchant_exit_bootstrap",
         "added_order_menu_consumer":"ms4-host.py:verify_order_menu_bootstrap",
+        "browser_compatibility":derived["browser_compatibility"],
         "runtime":"NOT RUN","approval":"NOT_GRANTED_REQUIRES_INDEPENDENT_SOURCE_REVIEW"}
     after["SOURCE-CHECKS.json"] = encode(checks)
     inputs = decode(before["root-source/INPUTS.json"])
