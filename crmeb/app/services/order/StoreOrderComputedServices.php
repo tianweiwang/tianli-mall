@@ -491,7 +491,7 @@ class StoreOrderComputedServices extends BaseServices
                             if ($marketplace ? bccomp((string)$fv['continue'], '0', 6) <= 0 : $fv['continue'] <= 0) {
                                 $Postage = $Postage;
                             } else {
-                                $Postage = bcadd(bcadd($Postage, $fv['first_price'], 2), bcmul(($marketplace ? MarketplaceDecimal::ceil(bcdiv(bcsub($fv['number'], $fv['first'], 2), $fv['continue'] ?? 0, 2)) : ceil(bcdiv(bcsub($fv['number'], $fv['first'], 2), $fv['continue'] ?? 0, 2))), $fv['continue_price'], 4), 2);
+                                $Postage = bcadd(bcadd($Postage, $fv['first_price'], 2), bcmul(($marketplace ? MarketplaceDecimal::ceilRatio(bcsub($fv['number'], $fv['first'], 6), (string)($fv['continue'] ?? '0')) : ceil(bcdiv(bcsub($fv['number'], $fv['first'], 2), $fv['continue'] ?? 0, 2))), $fv['continue_price'], 4), 2);
                             }
                         }
                         $postageArr[$i]['data'][$fk] = $Postage;
@@ -503,7 +503,7 @@ class StoreOrderComputedServices extends BaseServices
                             if ($marketplace ? bccomp((string)$cv['continue'], '0', 6) <= 0 : $cv['continue'] <= 0) {
                                 $Postage = $Postage;
                             } else {
-                                $one_postage = bcmul(($marketplace ? MarketplaceDecimal::ceil(bcdiv($cv['number'], $cv['continue'] ?? 0, 2)) : ceil(bcdiv($cv['number'], $cv['continue'] ?? 0, 2))), $cv['continue_price'], 2);
+                                $one_postage = bcmul(($marketplace ? MarketplaceDecimal::ceilRatio((string)$cv['number'], (string)($cv['continue'] ?? '0')) : ceil(bcdiv($cv['number'], $cv['continue'] ?? 0, 2))), $cv['continue_price'], 2);
                                 $Postage = bcadd($Postage, $one_postage, 2);
                                 $postageArr[$i]['data'][$ck] = $one_postage;
                             }

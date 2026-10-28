@@ -25,6 +25,19 @@ final class MarketplaceDecimal
         return bccomp($quotient, $whole, 2) > 0 ? bcadd($whole, '1', 0) : $whole;
     }
 
+    /** Round a nonnegative quantity ratio up without truncating the deciding remainder. */
+    public static function ceilRatio(string $numerator, string $denominator): string
+    {
+        $numerator = self::value($numerator, 6);
+        $denominator = self::value($denominator, 6);
+        if (bccomp($numerator, '0', 6) < 0 || bccomp($denominator, '0', 6) <= 0) {
+            throw new InvalidArgumentException('Quote quantity ratio is unavailable.');
+        }
+        $whole = bcdiv($numerator, $denominator, 0);
+        return bccomp($numerator, bcmul($whole, $denominator, 6), 6) > 0
+            ? bcadd($whole, '1', 0) : $whole;
+    }
+
     public static function greatest(array $values): string
     {
         $max = '0.00';
