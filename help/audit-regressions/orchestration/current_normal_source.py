@@ -400,6 +400,234 @@ def verify_schema_bootstrap(context, result):
 '''
 
 
+
+MERCHANT_EXIT_SOURCE_PATHS = (
+    "help/migrations/marketplace-merchant-exit-menus.php",
+    "help/migrations/marketplace-ms1.php",
+    "help/migrations/marketplace-ms2-task7-submit-menu.php",
+)
+
+_MERCHANT_EXIT_INITIALIZER = r'''/** Add the two leaves before any early snapshot; never bootstrap App here. */
+function m4i_exit_sources(array $binding): array
+{
+    $context = m4i_read('/run/audit/actual-run-context.json');
+    $freeze = m4i_read('/run/audit/preparation-source-binding.json');
+    m2f_assert(getenv('AUDIT_RUN_ID') === $context['run_id'] && $binding['source_sha'] === $context['source_sha']
+        && $binding['freeze_sha256'] === hash_file('sha256', '/run/audit/preparation-source-binding.json'),
+        'EXIT_SAME_INITIALIZER_AND_COMPLETE_SOURCE_AUTHORITY');
+    $tree = m4i_source_tree_plan($context, $freeze); $sources = M4I_MERCHANT_EXIT_SOURCES;
+    foreach ($sources as $row) {
+        $matches = array_values(array_filter($tree['files'], static fn(array $item): bool => $item['path'] === $row['path']));
+        m2f_assert($matches === [$row], 'EXIT_EXACT_CURRENT_COMPLETE_TREE_SOURCE');
+        foreach (['/workspace', '/source'] as $root) {
+            m2f_assert(realpath($root . '/' . $row['path']) === $root . '/' . $row['path'], 'EXIT_CANONICAL_SOURCE');
+            m4i_sourceFile($root, $row);
+        }
+    }
+    return $sources;
+}
+function m4i_exit_snapshot(PDO $db, PDO $maintenance): array
+{
+    $names = $db->query('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN); sort($names, SORT_STRING);
+    m2f_assert(count($names) === 166 && in_array('eb_system_menus', $names, true)
+        && in_array('eb_system_role', $names, true) && in_array('eb_marketplace_role', $names, true),
+        'EXIT_ORIGINAL_POST_NINE_166_TABLES');
+    $spec = ['tables' => [], 'redis' => ['*']]; $ddl = [];
+    foreach ($names as $name) {
+        m2f_assert(preg_match('/\A(eb_[a-z0-9_]+|audit_sentinel)\z/D', $name) === 1, 'EXIT_FIXED_SCHEMA_TABLE_NAME');
+        if ($name !== 'eb_system_menus') $spec['tables'][$name] = null;
+        $sql = $db->query('SHOW CREATE TABLE ' . m2f_quote($name))->fetch(PDO::FETCH_NUM)[1];
+        if ($name === 'eb_system_menus') {
+            $sql = preg_replace('/ AUTO_INCREMENT=[0-9]+\b/', '', $sql, -1, $count);
+            m2f_assert(is_string($sql) && $count <= 1, 'EXIT_ONLY_MENU_AUTO_INCREMENT_OPTION_NORMALIZED');
+        }
+        $ddl[$name] = hash('sha256', $sql);
+    }
+    $snapshot = audit_snapshot($spec); $cache = [];
+    foreach ($snapshot['redis']['*'] as $key => $hash) {
+        $keyHash = hash('sha256', (string)$key);
+        m2f_assert(!isset($cache[$keyHash]), 'EXIT_DISTINCT_ORIGINAL_SNAPSHOT_CACHE_KEYS');
+        $cache[$keyHash] = $hash;
+    }
+    ksort($cache, SORT_STRING);
+    return ['names' => $names, 'tables' => $snapshot['tables'], 'ddl' => $ddl, 'redis' => $cache,
+        'application_modes' => m2f_modes($db), 'maintenance_modes' => m2f_modes($maintenance),
+        'application_grants_sha256' => hash('sha256', m2f_json($db->query('SHOW GRANTS')->fetchAll(PDO::FETCH_COLUMN))),
+        'maintenance_grants_sha256' => hash('sha256', m2f_json($maintenance->query('SHOW GRANTS')->fetchAll(PDO::FETCH_COLUMN)))];
+}
+function m4i_exit_menus(array $binding): array
+{
+    audit_guard_assert(); $sourceFiles = m4i_exit_sources($binding);
+    $privatePath = '/run/audit-bootstrap/migrator.json'; $privateBefore = m2f_file($privatePath);
+    $appPath = '/run/audit-app/config.json'; $appBefore = m2f_file($appPath);
+    $migrator = m4i_read($privatePath); $config = audit_config();
+    m2f_assert(($migrator['username'] ?? null) === 'audit_migrator'
+        && ($config['database']['username'] ?? null) === 'audit_app', 'EXIT_ORIGINAL_SEPARATE_ACCOUNTS');
+    $maintenance = new PDO('mysql:host=audit-mysql;port=3306;dbname=audit_auth;charset=utf8mb4',
+        $migrator['username'], $migrator['password'], [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC, PDO::ATTR_EMULATE_PREPARES => false,
+            PDO::ATTR_PERSISTENT => false, PDO::ATTR_TIMEOUT => 3]);
+    unset($migrator); $db = audit_db();
+    m2f_assert(!$maintenance->inTransaction() && !$db->inTransaction()
+        && $maintenance->query('SELECT CURRENT_USER()')->fetchColumn() === 'audit_migrator@%'
+        && $db->query('SELECT CURRENT_USER()')->fetchColumn() === 'audit_app@%'
+        && $maintenance->query('SELECT DATABASE()')->fetchColumn() === 'audit_auth'
+        && $db->query('SELECT DATABASE()')->fetchColumn() === 'audit_auth', 'EXIT_REAL_DEDICATED_SCHEMA_IDENTITIES');
+    require_once '/workspace/help/migrations/marketplace-merchant-exit-menus.php';
+    $permissions = ['marketplace-merchants-exit-precheck', 'marketplace-merchants-close'];
+    $before = m4i_exit_snapshot($db, $maintenance);
+    $menusBefore = $db->query('SELECT * FROM eb_system_menus ORDER BY id')->fetchAll(PDO::FETCH_ASSOC);
+    $migration = new MarketplaceMerchantExitMenus($maintenance, 'eb_');
+    $precheck = $migration->check();
+    $expectedPre = ['mode' => 'check', 'state' => 'applicable', 'changed' => false, 'tables' => [],
+        'menu_ids' => [], 'roles_modified' => false, 'atomic_scope' => 'one_permission_leaf', 'leaves' => [], 'issues' => []];
+    foreach ($permissions as $permission) $expectedPre['leaves'][$permission] = ['mode' => 'check',
+        'state' => 'applicable', 'changed' => false, 'tables' => [], 'menu_ids' => [], 'roles_modified' => false, 'issues' => []];
+    m2f_assert($precheck === $expectedPre, 'EXIT_FRESH_EXACT_TWO_ABSENT_LEAVES');
+    $applied = $migration->apply(); $checked = $migration->check(); $ids = $applied['menu_ids'] ?? [];
+    m2f_assert(is_array($ids) && array_keys($ids) === $permissions && count(array_unique(array_values($ids))) === 2,
+        'EXIT_TWO_DISTINCT_CREATED_IDENTITIES');
+    $expectedApply = ['mode' => 'apply', 'state' => 'completed', 'changed' => true, 'tables' => [],
+        'menu_ids' => $ids, 'roles_modified' => false, 'atomic_scope' => 'one_permission_leaf', 'leaves' => [], 'issues' => []];
+    $expectedCheck = $expectedApply; $expectedCheck['mode'] = 'check'; $expectedCheck['changed'] = false;
+    foreach ($ids as $permission => $id) {
+        m2f_assert(is_int($id) && $id > 0 && $id <= 65535, 'EXIT_NATIVE_SMALLINT_MENU_ID');
+        $leaf = ['mode' => 'check', 'state' => 'completed', 'changed' => false, 'tables' => [],
+            'menu_ids' => [$permission => $id], 'roles_modified' => false, 'issues' => []];
+        $expectedCheck['leaves'][$permission] = $leaf;
+        $leaf['mode'] = 'apply'; $leaf['changed'] = true; $leaf['write_attempted'] = true;
+        $leaf['commit_observed'] = true; $leaf['rollback_observed'] = null; $leaf['created_menu_ids'] = [$permission => $id];
+        $expectedApply['leaves'][$permission] = $leaf;
+    }
+    m2f_assert($applied === $expectedApply && $checked === $expectedCheck && !$maintenance->inTransaction(),
+        'EXIT_ORIGINAL_TWO_LEAF_NATIVE_APPLY_CHECK_COMPLETED');
+    $menusAfter = $db->query('SELECT * FROM eb_system_menus ORDER BY id')->fetchAll(PDO::FETCH_ASSOC);
+    $retained = []; $added = [];
+    foreach ($menusAfter as $row) {
+        $permission = array_search((int)$row['id'], $ids, true);
+        if ($permission === false) $retained[] = $row;
+        else { m2f_assert($row['unique_auth'] === $permission, 'EXIT_CREATED_ROW_MATCHES_EXACT_PERMISSION'); $added[] = $row; }
+    }
+    $after = m4i_exit_snapshot($db, $maintenance);
+    m2f_assert($before === $after && $retained === $menusBefore && count($added) === 2
+        && count($menusAfter) === count($menusBefore) + 2, 'EXIT_ONLY_TWO_INSERTS_ALL_OLD_MENUS_ROLES_SCHEMA_CACHE_MODES_RETAINED');
+    m2f_assert(m4i_exit_sources($binding) === $sourceFiles && m2f_file($privatePath) === $privateBefore
+        && m2f_file($appPath) === $appBefore, 'EXIT_SOURCE_AND_ORIGINAL_PRIVATE_INPUTS_RETAINED');
+    audit_guard_assert();
+    return ['schema' => 1, 'scope' => 'MERCHANT_EXIT_MENUS_BEFORE_FIRST_APP_ONLY',
+        'status' => 'VERIFIED_MERCHANT_EXIT_MENUS_BEFORE_FIRST_APP_ONLY',
+        'stage' => 'AFTER_ORIGINAL_NINE_BEFORE_EARLY_SEAL',
+        'binding' => ['run_id' => getenv('AUDIT_RUN_ID')] + array_intersect_key($binding, array_flip([
+            'source_sha', 'container_id', 'entry_namespace_pid', 'created_sha256', 'freeze_sha256'])),
+        'source_files' => $sourceFiles, 'maintenance_account' => 'audit_migrator', 'application_account' => 'audit_app',
+        'precheck' => $precheck, 'apply' => $applied, 'check' => $checked, 'menu_ids' => $ids,
+        'preservation_before' => $before, 'preservation_after' => $after,
+        'menus_before' => ['count' => count($menusBefore), 'sha256' => hash('sha256', m2f_json($menusBefore))],
+        'retained_menus_after' => ['count' => count($retained), 'sha256' => hash('sha256', m2f_json($retained))],
+        'menus_after' => ['count' => count($menusAfter), 'sha256' => hash('sha256', m2f_json($menusAfter))],
+        'added_menu_rows_sha256' => hash('sha256', m2f_json($added)), 'App_business' => 'NOT RUN'];
+}
+
+'''
+
+_MERCHANT_EXIT_HOST = r'''def verify_merchant_exit_bootstrap(context, result):
+    receipt = result['merchant_exit_menus']; binding = result['binding']
+    expect(type(receipt) is dict and set(receipt) == {'schema', 'scope', 'status', 'stage', 'binding',
+        'source_files', 'maintenance_account', 'application_account', 'precheck', 'apply', 'check', 'menu_ids',
+        'preservation_before', 'preservation_after', 'menus_before', 'retained_menus_after', 'menus_after',
+        'added_menu_rows_sha256', 'App_business'} and type(receipt['schema']) is int and receipt['schema'] == 1
+        and receipt['scope'] == 'MERCHANT_EXIT_MENUS_BEFORE_FIRST_APP_ONLY'
+        and receipt['status'] == 'VERIFIED_MERCHANT_EXIT_MENUS_BEFORE_FIRST_APP_ONLY'
+        and receipt['stage'] == 'AFTER_ORIGINAL_NINE_BEFORE_EARLY_SEAL'
+        and receipt['maintenance_account'] == 'audit_migrator' and receipt['application_account'] == 'audit_app'
+        and receipt['App_business'] == 'NOT RUN', 'EXIT_EXACT_BEFORE_APP_NATIVE_RECEIPT')
+    expect(receipt['binding'] == {'run_id':context['run_id'], **{key: binding[key] for key in ['source_sha', 'container_id',
+        'entry_namespace_pid', 'created_sha256', 'freeze_sha256']}}
+        and binding['source_sha'] == context['source_sha']
+        and binding['freeze_sha256'] == context['freeze_sha256'] and binding['entry_namespace_pid'] == 1,
+        'EXIT_SAME_ACTUAL_INITIALIZER_RUN_CID_AND_FREEZE')
+    frozen = load(Path(context['run_dir']) / 'preparation-source-binding.json')
+    complete = {row['path']: row for row in frozen['source_tree']['files']}
+    expect(receipt['source_files'] == list(MERCHANT_EXIT_SOURCE_FILES)
+        and receipt['source_files'] == [complete[row['path']] for row in MERCHANT_EXIT_SOURCE_FILES],
+        'EXIT_EXACT_THREE_CURRENT_FROZEN_MIGRATION_INPUTS')
+    permissions = ['marketplace-merchants-exit-precheck', 'marketplace-merchants-close']; ids = receipt['menu_ids']
+    expect(type(ids) is dict and list(ids) == permissions and len(set(ids.values())) == 2
+        and all(type(value) is int and 0 < value <= 65535 for value in ids.values()), 'EXIT_EXACT_TWO_NEW_MENU_IDENTITIES')
+    pre = {'mode':'check','state':'applicable','changed':False,'tables':[], 'menu_ids':{},
+        'roles_modified':False,'atomic_scope':'one_permission_leaf','leaves':{},'issues':[]}
+    applied = {'mode':'apply','state':'completed','changed':True,'tables':[],'menu_ids':ids,
+        'roles_modified':False,'atomic_scope':'one_permission_leaf','leaves':{},'issues':[]}
+    checked = {**applied,'mode':'check','changed':False,'leaves':{}}
+    for permission in permissions:
+        pre['leaves'][permission] = {'mode':'check','state':'applicable','changed':False,'tables':[],
+            'menu_ids':[],'roles_modified':False,'issues':[]}
+        leaf = {'mode':'check','state':'completed','changed':False,'tables':[],
+            'menu_ids':{permission:ids[permission]},'roles_modified':False,'issues':[]}
+        checked['leaves'][permission] = leaf
+        applied['leaves'][permission] = {**leaf,'mode':'apply','changed':True,'write_attempted':True,
+            'commit_observed':True,'rollback_observed':None,'created_menu_ids':{permission:ids[permission]}}
+    # PHP's empty associative menu_ids is encoded as []; all nonempty identity maps stay objects.
+    pre['menu_ids'] = []
+    expect(receipt['precheck'] == pre and receipt['apply'] == applied and receipt['check'] == checked,
+        'EXIT_ORIGINAL_NATIVE_TWO_LEAF_APPLY_CHECK_AND_NO_ROLE_GRANTS')
+    before = receipt['preservation_before']; after = receipt['preservation_after']
+    expect(type(before) is dict and set(before) == {'names','tables','ddl','redis','application_modes',
+        'maintenance_modes','application_grants_sha256','maintenance_grants_sha256'} and before == after
+        and type(before['names']) is list and before['names'] == sorted(set(before['names']))
+        and len(before['names']) == 166 and set(before['tables']) == set(before['names']) - {'eb_system_menus'}
+        and set(before['ddl']) == set(before['names']) and {'eb_system_role','eb_marketplace_role'} <= set(before['tables']),
+        'EXIT_ALL_OLD_TABLES_ROLES_SCHEMA_REDIS_MODES_GRANTS_RETAINED')
+    for value in before['tables'].values():
+        expect(type(value) is dict and set(value) == {'count','sha256'} and type(value['count']) is int
+            and value['count'] >= 0 and re.fullmatch('[a-f0-9]{64}',value['sha256']), 'EXIT_COMPLETE_PROTECTED_TABLE_DIGESTS')
+    for value in list(before['ddl'].values()) + [before['application_grants_sha256'], before['maintenance_grants_sha256'],
+            receipt['added_menu_rows_sha256']]:
+        expect(type(value) is str and re.fullmatch('[a-f0-9]{64}',value), 'EXIT_TYPED_NATIVE_SCHEMA_AND_GRANT_DIGESTS')
+    for key in ['application_modes','maintenance_modes']:
+        expect(type(before[key]) is dict and set(before[key]) == {'session_mode','global_mode'}, 'EXIT_ORIGINAL_NATIVE_MODE_PAIR')
+    expect(type(before['redis']) is dict and bool(before['redis']), 'EXIT_ORIGINAL_SENTINEL_CACHE_SNAPSHOT')
+    for key,value in before['redis'].items():
+        expect(type(key) is str and re.fullmatch('[a-f0-9]{64}',key) and type(value) is str
+            and re.fullmatch('[a-f0-9]{64}',value), 'EXIT_ORIGINAL_FULL_CACHE_SNAPSHOT_VALUES')
+    for key in ['menus_before','retained_menus_after','menus_after']:
+        value = receipt[key]
+        expect(type(value) is dict and set(value) == {'count','sha256'} and type(value['count']) is int
+            and value['count'] >= 0 and re.fullmatch('[a-f0-9]{64}',value['sha256']), 'EXIT_COMPLETE_MENU_ROW_DIGEST')
+    expect(receipt['menus_before'] == receipt['retained_menus_after']
+        and receipt['menus_after']['count'] == receipt['menus_before']['count'] + 2,
+        'EXIT_ONLY_TWO_NEW_ROWS_AND_ALL_ORIGINAL_MENU_ROWS_EXACT')
+
+
+'''
+
+
+def merchant_exit_profile_changes(initializer: bytes, host: bytes, inventory: dict[str, dict[str, Any]]):
+    """Append the original two-leaf DML after the nine children, before early sealing."""
+    rows = tuple(inventory[name] for name in MERCHANT_EXIT_SOURCE_PATHS)
+    php_rows = ("const M4I_MERCHANT_EXIT_SOURCES = [" + ", ".join(
+        "['path' => '" + row["path"] + "', 'bytes' => " + str(row["bytes"])
+        + ", 'sha256' => '" + row["sha256"] + "']" for row in rows) + "];\n\n").encode()
+    helper = php_rows + _MERCHANT_EXIT_INITIALIZER.encode('utf-8')
+    anchor = b"function m4i_initialize(array &$evidence, ?array &$primary, ?array &$cleanup): void\n"
+    updated = once(initializer, anchor, helper + anchor)
+    nine = b"        m2f_assert(count($evidence['children']) === 9 && count(array_unique(array_column($evidence['children'], 'pid'))) === 9, 'NINE_REAL_PREREQUISITE_CHILDREN');\n"
+    call = b"        $evidence['merchant_exit_menus'] = m4i_exit_menus($evidence['binding']);\n"
+    updated = once(updated, nine, nine + call)
+    require(once(once(updated, nine + call, nine), helper + anchor, anchor) == initializer,
+            'EXACT_INITIALIZER_EXIT_ONLY_WHOLE_FILE_INVERSE')
+    host_helper = ("MERCHANT_EXIT_SOURCE_FILES = " + repr(rows) + "\n" + _MERCHANT_EXIT_HOST).encode('utf-8')
+    host_anchor = b"def prerequisite_result(context, created_facts, terminal, result):\n"
+    updated_host = once(host, host_anchor, host_helper + host_anchor)
+    original = host_anchor + b"    owned(context, terminal, 'audit-ms4-initialize'); same_created(created_facts, terminal)\n    source_tree_copy_result(context, result)\n"
+    consumer = b"    verify_merchant_exit_bootstrap(context, result)\n"
+    updated_host = once(updated_host, original, original + consumer)
+    require(once(once(updated_host, original + consumer, original), host_helper + host_anchor, host_anchor) == host,
+            'EXACT_HOST_EXIT_ONLY_WHOLE_FILE_INVERSE')
+    compile(updated_host, 'derived-ms4-host-exit.py', 'exec')
+    return updated, updated_host, rows
+
+
 def schema_profile_changes(initializer: bytes, host: bytes, inventory: dict[str, dict[str, Any]]):
     """Extend the existing bootstrap only; inverse-check both complete old files."""
     paths = (
@@ -616,6 +844,8 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
                 == previous_initializer, "ONE_FULFILLMENT_LITERAL_WHOLE_FILE_INVERSE")
     after["ms4-initialize.php"], after["ms4-host.py"], schema_sources = schema_profile_changes(
         after["ms4-initialize.php"], after["ms4-host.py"], inventory)
+    after["ms4-initialize.php"], after["ms4-host.py"], exit_sources = merchant_exit_profile_changes(
+        after["ms4-initialize.php"], after["ms4-host.py"], inventory)
     for name, symbol, target in (
         ("ms4-host.py", "INTERFACE_SHA256", "interface-v1.json"),
         ("normal-close-ms4-fulfillment.py", "HOST_SHA256", "ms4-host.py"),
@@ -638,9 +868,11 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
         "active_aftersale_before": AR_BEFORE, "active_aftersale_current": AR_CURRENT,
         "active_profile_updates": updates,
         "all_original_python_function_bodies_exact": False,
-        "python_function_changes": {"ms4-host.py": ["verify_files_bootstrap", "verify_schema_bootstrap"]},
+        "python_function_changes": {"ms4-host.py": ["verify_files_bootstrap", "verify_schema_bootstrap",
+            "prerequisite_result", "verify_merchant_exit_bootstrap"]},
         "initializer_two_literal_inverse_exact": True, "initializer_customer_literal_inverse_exact": True,
         "initializer_schema_bootstrap_inverse_exact": True, "schema_bootstrap_sources": list(schema_sources),
+        "initializer_merchant_exit_inverse_exact": True, "merchant_exit_bootstrap_sources": list(exit_sources),
         "original_nine_volume_source_tree_topology_retained": True,
         "initializer_syntax": "NOT RUN", "M_A_B_Runtime": "NOT RUN",
     }
@@ -662,6 +894,10 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
         if name == "ms4-host.py":
             require("verify_schema_bootstrap" not in functions(before[name]), "ONE_NEW_SCHEMA_HOST_CONSUMER")
             observed.pop("verify_schema_bootstrap")
+            require("verify_merchant_exit_bootstrap" not in functions(before[name]), "ONE_NEW_EXIT_HOST_CONSUMER")
+            observed.pop("verify_merchant_exit_bootstrap")
+            observed["prerequisite_result"] = once(observed["prerequisite_result"],
+                b"    verify_merchant_exit_bootstrap(context, result)\n", b"")
             observed["verify_files_bootstrap"] = once(observed["verify_files_bootstrap"],
                                                        b"    verify_schema_bootstrap(context, result)\n", b"")
         require(functions(before[name]) == observed, "ALL_OTHER_ORIGINAL_PYTHON_FUNCTION_BODIES_EXACT")
@@ -678,11 +914,13 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
         "candidate": {name: pin(after[name]) for name in NAMES},
         "changed": [name for name in NAMES if before[name] != after[name]],
         "all_original_python_function_bodies_exact": False, "python_named_function_counts": counts,
-        "python_function_changes": {"ms4-host.py": ["verify_files_bootstrap", "verify_schema_bootstrap"]},
+        "python_function_changes": {"ms4-host.py": ["verify_files_bootstrap", "verify_schema_bootstrap",
+            "prerequisite_result", "verify_merchant_exit_bootstrap"]},
         "all_other_original_python_function_bodies_exact": True,
         "active_profile_updates": updates, "interface_only_four_declared_active_rows": True,
         "initializer_two_literal_inverse_exact": True, "initializer_customer_literal_inverse_exact": True,
         "initializer_schema_bootstrap_inverse_exact": True, "schema_bootstrap_sources": list(schema_sources),
+        "initializer_merchant_exit_inverse_exact": True, "merchant_exit_bootstrap_sources": list(exit_sources),
         "all_five_original_hash_edges_rebound": True, "current_nonself_eight_exact": True,
         "all_derivation_history_retained": True, "whole_forward_reverse_replay": True,
         "actual_initializer_syntax": "NOT RUN", "M_S_Host_Docker_App_business": "NOT RUN",
@@ -824,7 +1062,8 @@ def _profile_groups(host: bytes, inventory: dict[str, dict[str, Any]]) -> dict[s
     return {"roots": roots, "extras": extras, "driver": values["DRIVER"],
             "references": [inventory[name] for name in values["REFERENCES"]],
             "source_counts": {name: len(rows) for name, rows in groups.items()},
-            "unique_source_files": len({row["path"] for rows in groups.values() for row in rows})}
+            "unique_source_files": len({row["path"] for rows in groups.values() for row in rows}),
+            "merchant_exit_bootstrap_sources": [inventory[name] for name in MERCHANT_EXIT_SOURCE_PATHS]}
 
 
 _COMMON_RUNTIME = r'''
@@ -947,6 +1186,7 @@ def source_authority(pub, reader, check):
         previous=step['source_sha']
     check(previous==CURRENT_SOURCE_SHA and data['new_tracked_paths']==sorted(added),'EXACT_CURRENT_SOURCE_GRAPH_TERMINAL_AND_ADDITIONS')
     check(all(complete.get(row['path'])==row for row in data['committed']) and data['requirements']==[complete[name] for name in data['requirement_paths']],'CURRENT_COMMITTED_AND_REQUIREMENT_ROWS_COMPLETE')
+    check(data['merchant_exit_bootstrap_sources']==[complete[name] for name in ('help/migrations/marketplace-merchant-exit-menus.php', 'help/migrations/marketplace-ms1.php', 'help/migrations/marketplace-ms2-task7-submit-menu.php')],'EXACT_CURRENT_MERCHANT_EXIT_MIGRATION_GROUP')
     groups={'driver':[complete[name] for name in data['driver']]}
     for name,roots in data['roots'].items():
         paths=sorted(set(data['extras'][name])|{path for path in complete if any(path.startswith(root+'/') for root in roots)})
@@ -1171,7 +1411,8 @@ def build_normal(output: str | Path, authority_pointer: dict[str, Any], syntax_r
     committed = [{"path": row["path"], **object_pins[row["after_git_blob"]]} for row in cumulative]
     require(all(inventory[row["path"]] == row for row in committed), "CUMULATIVE_B7_CURRENT_BLOBS_EQUAL_REVIEWED_COMPLETE_INVENTORY")
     groups = _profile_groups(current9["ms4-host.py"], inventory)
-    requirement_paths = sorted({row["path"] for row in historical_pub["repository_Source_requirements"]} | {row["path"] for row in committed})
+    requirement_paths = sorted({row["path"] for row in historical_pub["repository_Source_requirements"]}
+        | {row["path"] for row in committed} | set(MERCHANT_EXIT_SOURCE_PATHS))
     retirements = {key: historical_pub["finite_contexts"]["current_retirement" if key == "prior_retirement" else key]
                    for key in ("prior_retirement", "current_driver_failure_retirement", "current_early_failure_retirement",
                                "current_customer_prepare_failure_retirement", "current_paid_producer_failure_retirement",
@@ -1511,6 +1752,7 @@ def derive_b_profile(authority_pointer: dict[str, Any],
                    + inventory[path]["sha256"] + "']").encode()
             initializer = once(initializer, old, new)
     initializer, host, schema_rows = schema_profile_changes(initializer, after["candidate/ms4-host.py"], inventory)
+    initializer, host, exit_rows = merchant_exit_profile_changes(initializer, host, inventory)
     after["candidate/ms4-initialize.php"] = initializer
     after["candidate/ms4-host.py"] = host
     # The public installer remains in both complete source reads. Only deployment
@@ -1588,7 +1830,8 @@ def derive_b_profile(authority_pointer: dict[str, Any],
     for name, raw in after.items():
         if name.endswith(".py"): compile(raw, name, "exec")
         elif name.endswith(".json"): decode(raw)
-    for name, changed, added in (("ms4-host.py", {"verify_files_bootstrap", "ui_copy_freeze_values"}, {"verify_schema_bootstrap"}),
+    for name, changed, added in (("ms4-host.py", {"verify_files_bootstrap", "ui_copy_freeze_values", "prerequisite_result"},
+                                  {"verify_schema_bootstrap", "verify_merchant_exit_bootstrap"}),
                                  ("verify-zero-ms4-fulfillment.py", {"ui_copy_freeze_values"}, set()),
                                  ("normal-close-ms4-fulfillment.py", set(), set())):
         original_functions = functions(before["candidate/" + name])
@@ -1600,7 +1843,7 @@ def derive_b_profile(authority_pointer: dict[str, Any],
                 and all(current_functions[symbol] == body for symbol, body in original_functions.items() if symbol not in changed),
                 "B_ALL_NON_TARGET_PYTHON_BUSINESS_AND_RESOURCE_FUNCTIONS_RAW_EXACT")
     return {"before": before, "after": after, "authority": authority, "inventory": inventory,
-            "schema_sources": schema_rows, "forward": forward, "reverse": reverse,
+            "schema_sources": schema_rows, "merchant_exit_sources": exit_rows, "forward": forward, "reverse": reverse,
             "network_subnets": network_subnets,
             "status": "PURE_B_PROFILE_DERIVED_NOT_APPROVED_NO_A_OR_RUNTIME"}
 
@@ -2015,6 +2258,8 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
     derivation["current_nonself_artifacts"] = [{"path": name, **pin(after["candidate/" + name])}
                                                for name in artifacts if name != "source-derivation.json"]
     derivation["runtime_full17_sealed"] = True
+    derivation["merchant_exit_bootstrap_sources"] = list(derived["merchant_exit_sources"])
+    derivation["merchant_exit_before_original_early_seal"] = True
     derivation["actual_clean_Source_Val_M_A_build_B_Run"] = {"source_sha":head,
         "normal_M":fixed["normal"]["result"], "A":a_qualification, "materials":fixed["materials"]["producer_result"], "B_Run":None}
     after["candidate/source-derivation.json"] = encode(derivation)
