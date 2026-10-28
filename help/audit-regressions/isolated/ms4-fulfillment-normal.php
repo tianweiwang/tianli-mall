@@ -504,12 +504,19 @@ function m4fn_restore_metadata(array $table):array
     $metadata=unserialize($raw,['allowed_classes'=>false,'max_depth'=>32]);
     m4fn_expect(is_array($metadata)&&serialize($metadata)===$raw,'TASK6_ORIGINAL_METADATA_NATIVE_TYPES_NO_OBJECTS');return $metadata;
 }
-function m4fn_migration_database(PDO $db,array $owner):void
+function m4fn_migration_database(PDO $db,array $owner,array $source):void
 {
-    $result=m4c_entry_read('/run/audit/evidence/ms4-aftersale-early-migration-normal.json');
-    $after=$result['snapshots']['assets'];
+    $history=m4c_entry_early_history($source);
+    $after=$history['result']['snapshots']['assets'];
     m4c_entry_keys($after,['names','tables','redis','modes','metadata_observer_modes','native_snapshot_sha256']);$restored=[];
-    $full=m5pcp_snapshot($db);m4fn_expect($full['names']===$after['names'],'TASK6_ACTUAL_POST_EARLY_ASSETS_TABLE_NAMESPACE');
+    $installed=m4c_entry_read('/run/audit/evidence/files-bootstrap-result.json');
+    m4fn_expect(is_array($installed['schema_bootstrap']??null),'TASK6_BOUND_SCHEMA_MAINTENANCE_RECEIPT');
+    m4c_entry_schema_receipt($installed['schema_bootstrap'],$history);
+    $expectedNames=$after['names'];
+    m4fn_expect(count($expectedNames)===175&&!in_array('eb_marketplace_schema',$expectedNames,true),
+        'TASK6_ORIGINAL_175_PRE_SCHEMA_TABLE_NAMESPACE');
+    $expectedNames[]='eb_marketplace_schema';sort($expectedNames,SORT_STRING);
+    $full=m5pcp_snapshot($db);m4fn_expect($full['names']===$expectedNames,'TASK6_ACTUAL_POST_EARLY_ASSETS_TABLE_NAMESPACE');
     $targets=['eb_marketplace_aftersale_action','eb_marketplace_aftersale_file','eb_store_order_refund',
         'eb_marketplace_fulfillment_operation','eb_marketplace_fulfillment_range'];
     foreach($after['tables']as$name=>$table){
@@ -1323,7 +1330,7 @@ function m4fn_run():int
     m4c_entry_public_materials($source);m4fn_full_source($source);$app=m4fn_app($source);$db=audit_db();
     m4fn_expect(!$db->inTransaction(),'TASK6_ONE_INDEPENDENT_OBSERVER');$observer=m5pc_observer_configure($db);
     $GLOBALS['m4fn_observer']=$observer;m4fn_phase('original_paid_owner_and_native_archive');$owner=m4fn_owner($source,$db);
-    m4fn_migration_database($db,$owner);m4cb_guard_readonly();
+    m4fn_migration_database($db,$owner,$source);m4cb_guard_readonly();
     $GLOBALS['m4tr_read_stages']=[];$GLOBALS['m4tr_legacy_child']=[];
     $GLOBALS['m4tr_prepared']=m4tr_prepare_native($app,$db,$source,$owner,$GLOBALS['m4tr_legacy_child']);
     $produced=m4fn_produce($app,$db,$source,$owner);$sealed=m4fn_seal($source,$owner,$produced,$db);

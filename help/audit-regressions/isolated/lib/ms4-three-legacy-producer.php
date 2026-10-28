@@ -535,7 +535,7 @@ function m4trp_run():int
 {
     m4fn_phase('three_legacy_source');$source=m4trp_source();$GLOBALS['m4trp_source']=$source;$app=m4trp_app($source);
     $db=audit_db();m4fn_expect(!$db->inTransaction(),'TASK6_THREE_LEGACY_INDEPENDENT_NATIVE_OBSERVER');$observer=m5pc_observer_configure($db);
-    m4fn_phase('three_legacy_original_paid_owner');$owner=m4fn_owner($source,$db);m4fn_migration_database($db,$owner);m4cb_guard_readonly();
+    m4fn_phase('three_legacy_original_paid_owner');$owner=m4fn_owner($source,$db);m4fn_migration_database($db,$owner,$source);m4cb_guard_readonly();
     $connection=Db::connect();$default=$connection->getPdo();
     if(!$default instanceof PDO){$connection->query('SELECT 1',[],true);$default=$connection->getPdo();}
     m4fn_expect($default instanceof PDO,'TASK6_REAL_APP_DEFAULT_PDO');m4fn_context($app,$connection,$default,$db);

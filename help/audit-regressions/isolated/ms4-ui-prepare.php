@@ -357,7 +357,7 @@ function m4up_paid_owner_before_app(array $source,PDO $db):array
 function m4up_owner(array $source,PDO $db):array
 {
  $view=m4up_old_view($source);$owner=m4up_paid_owner_before_app($view,$db);
- m4fn_migration_database($db,$owner); // Includes complete original post-paid DB/absolute Redis equality.
+ m4fn_migration_database($db,$owner,$view); // Includes complete original post-paid DB/absolute Redis equality.
  $root=$owner['saved']['order'];$registry=m5pcp_rows($db,'SELECT * FROM eb_marketplace_payment_registry WHERE order_id=?',[$root['id']]);
  m4up_expect(count($registry)===1&&m5pcp_int($registry[0]['attempt_generation'],1,1)===1
   &&m5pcp_int($registry[0]['fulfillment_hold'],0,0)===0&&m5pcp_int($root['is_cancel'],0,0)===0,'UI_FRESH_PAID_GENERATION_AND_UNCANCELLED_ROOT');
