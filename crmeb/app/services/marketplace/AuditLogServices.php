@@ -235,6 +235,33 @@ final class AuditLogServices
             ||!is_string($rows[0]['detail']))throw new AuthUnavailableException();return $rows[0];
     }
 
+    /** Only the two finance draft routes: metadata log joins the same native transaction, never the payload. */
+    public function recordFinanceSettingsScope(PlatformScope $scope,PDO $pdo): void
+    {
+        try {
+            $methods=['marketplace-finance-settings-read'=>'GET','marketplace-finance-settings-write'=>'PUT'];
+            $request=app()->request;$connection=Db::connect();
+            if (!isset($methods[$scope->permission])||$scope->targetMerId!==null||!$request instanceof Request
+                ||app('http')->getName()!=='adminapi'||$request->method()!==$methods[$scope->permission]
+                ||$request->platformScope()!==$scope||$request->isAdminLogin()!==true
+                ||(string)$request->adminId()!==(string)$scope->adminId||$connection->getPdo()!==$pdo||!$pdo->inTransaction())
+                throw new AuthUnavailableException();
+            $rule=$request->rule();
+            if ($rule===null||$rule->getOption('marketplace_api')!==true
+                ||$rule->getOption('marketplace_permission')!==$scope->permission
+                ||trim(strtolower($rule->getRule()))!=='marketplace/finance-settings') throw new AuthUnavailableException();
+            app()->make(PlatformAccessServices::class)->authorizeScope($scope,$scope->permission);
+            $admin=$request->adminInfo();
+            if (!is_array($admin)||(string)($admin['id']??'')!==(string)$scope->adminId
+                ||!is_string($admin['account']??null)||$admin['account']===''||str_contains($admin['account'],"\0")
+                ||preg_match('//u',$admin['account'])!==1) throw new AuthUnavailableException();
+            $logConnection=(new SystemLog())->db()->getConnection();
+            if ($logConnection!==$connection||$logConnection->getPdo()!==$pdo
+                ||$this->platformLog->recordAdminLog($scope->adminId,$admin['account'],'system')!==true
+                ||Db::connect()!==$connection||$connection->getPdo()!==$pdo||!$pdo->inTransaction()) throw new AuthUnavailableException();
+        } catch (Throwable $error) { throw new AuthUnavailableException(); }
+    }
+
     private function recordPlatformRead(
         string $actorType,
         int $actorId,

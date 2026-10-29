@@ -147,7 +147,8 @@ function preview_seed_migrations(PDO $db): int
         'marketplace-ms2-task7-menus.php', 'marketplace-ms2-task7-stock-menu.php', 'marketplace-ms2-task7-submit-menu.php',
         'marketplace-ms4-order-read-menus.php', 'marketplace-ms4-review-menus.php', 'marketplace-ms4-aftersale-menus.php',
         'marketplace-ms4-product-media-menus.php', 'marketplace-ms4-platform-asset-menus.php',
-        'marketplace-password-setup-reissue-menu.php', 'marketplace-merchant-exit-menus.php'] as $file) require_once $directory . $file;
+        'marketplace-password-setup-reissue-menu.php', 'marketplace-merchant-exit-menus.php',
+        'marketplace-finance-settings.php'] as $file) require_once $directory . $file;
     $ms1 = new \Audit\Migration\MarketplaceMs1Migration($db, 'eb_');
     preview_seed_completed($ms1->apply()); preview_seed_completed($ms1->check());
     $ms2 = new \Audit\Migration\MarketplaceMs2Migration($db, $ms1, 'eb_', '/workspace', ['enabled' => false],
@@ -215,6 +216,12 @@ function preview_seed_migrations(PDO $db): int
         $migration = new $class($db, 'eb_');
         preview_seed_completed($migration->apply()); preview_seed_completed($migration->check());
     }
+    // Fresh installations receive only an unconfigured draft and ungranted permission leaves.
+    // Existing previews use the dedicated migration, never replay this seed for a settings update.
+    $finance = new MarketplaceFinanceSettingsMigration($db, 'eb_');
+    $financeBefore = $finance->check();
+    preview_seed_require(in_array($financeBefore['state'] ?? null, ['applicable', 'completed'], true), 'finance settings precheck failed');
+    preview_seed_completed($finance->apply()); preview_seed_completed($finance->check());
     return $self;
 }
 
