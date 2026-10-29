@@ -28,6 +28,10 @@ B 对该 helper 使用同一独审前后值，并逐项连接 B 当前表单向�
 
 `post_a_contract` 保留原六键：`header/files_key/retained_public_files/prior_public_inventory/public_roots/public_root_files`。六棵公共树和十三个固定公件从当前绑定推导，与输入全等；旧清单原件及全部原行、retained 和当前公件形成完整并集，重叠路径必须字节相同。显式未来 B 的 runtime_root 只用于原隔离边界检查，不创建 B。全量复读及原六键消费者回读通过后，依次保留 `POST-A-PUBLIC-HISTORY.json`、`POST-A-CONTRACT.json`、`PUBLIC-INPUT-WINDOWS.json`，最后发布 `RESULT.json`；失败时保留已有输出，不能覆盖重用。回执单列实际维护工具摘要，既不改写冻结 App 资格，也不代表 B、页面或完整验收已经通过。
 
+同一作者的 `--history-source <全新外部目录>` 配合原 authority 两参数，组合已归档的非空历史组件。固定 overlay 的原 13 件末尾只加 reader，保留 producer 的 13 件／11 控制文件合同；reader 使用独立的 12 项控制文件，完整包为 14 件。内部 `history_host_source.py`、`history_reader_source.py` 只作固定原件的有限字节变换，核整件正逆和非目标成员保全，没有独立 CLI，也不运行 Host、应用或资源操作。
+
+输出保存 before/candidate、实际作者及两模块原字节、完整输入来源、publication、标准正逆 patch 和全成员摘要。publication 只是来源清单；本阶段不生成运行采用的独审文件，原 prepare/main 和 reader 未接通入口继续拒绝执行。当前已接来源投影、独立控制集合和源码明确的退款 DTO 差量；结构升级、完整阶段接线、reader 新基线、普通关闭与独立核零仍须完成后再独审和实际运行。不能仅填写七项绑定或改掉拒绝条件就启动历史业务。
+
 B的两个网络使用固定输入 `network_subnets.isolation/ui_web`，只接收互不重叠的规范RFC1918网段并核实际IPAM。Root启动前仍须检查地址空闲；复用A网段须先有真实关闭及独立核零。部署public采用同一根部install排除投影，完整安装器来源仍保全；三端构建保留各自真实来源，只有完整输入一致才能复用。
 
 B Root M 的 proof 配置回执保留原 Host `PROOF_INI_REFERENCE` 的真实绝对路径、字节数和摘要，不随新 B 包的 `PREPARED` 目录迁移。作者核原/派生 Host 指针完全相同并读取原回执，只替换 `frozen_resources` 内这一处路径表达式；不复制旧回执或放宽单文件、内存值、角色、扫描目录和完整资源比较。B 工具修复独立记录实际工具字节，不改已冻结的应用来源或重启正在运行的 A。

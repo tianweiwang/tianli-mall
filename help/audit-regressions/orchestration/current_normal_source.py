@@ -3200,6 +3200,152 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
     return {**checks,"source_root":out.as_posix(),"SOURCE_PINS":_pointer(out / "SOURCE-PINS.json")}
 
 
+HISTORY_NAMES = (
+    "README.md", "compose.yml", "ms4-host.py", "ms4-initialize.php", "seed-source-inverse.json",
+    "legacy-app.php", "legacy-files-bootstrap.php", "legacy-normal-config.php", "legacy-actors.php",
+    "legacy-history-http.php", "legacy-history-channel.php", "legacy-history-producer.php", "legacy-history-router.php",
+    "legacy-current-reader.php",
+)
+HISTORY_OVERLAY_RELATIVE = "nonempty-history-current-reader-private-context-components-source-r2/SOURCE-OVERLAY.json"
+HISTORY_OVERLAY_PIN = {"bytes": 8013, "sha256": "503c0d3d4554a18dbbc114150172c1297cb59c359f1a366ca92a6743ffb172f1"}
+HISTORY_ORIGINAL_ROOT = "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/"
+
+
+def build_history_source(output: str | Path, authority_pointer: dict[str, Any]) -> dict[str, Any]:
+    """Compose reviewed historical components; this first adoption has no runtime admission."""
+    authority, inventory = reviewed_authority(authority_pointer)
+    tool_root = Path(__file__).resolve().parent
+    out = Path(output)
+    ordinary(out, missing_leaf=True)
+    require(out.is_absolute() and out.parent.is_dir() and not out.exists(), "NEW_HISTORY_SOURCE_OUTPUT")
+    for root in (tool_root, Path(authority["candidate_root"]), Path(authority["validation_root"])):
+        require(not out.is_relative_to(root) and not root.is_relative_to(out), "HISTORY_SOURCE_OUTPUT_SEPARATE")
+
+    held: dict[Path, bytes] = {}
+    def read(path: Path) -> bytes:
+        raw = stable_read(path)
+        if path in held:
+            require(raw == held[path], "HISTORY_INPUT_STILL_IDENTICAL")
+        else:
+            held[path] = raw
+        return raw
+
+    tool_path = Path(__file__).resolve()
+    tool_raw = read(tool_path)
+    archive_path = tool_root / "source-manifest.json"
+    archive = decode(read(archive_path))
+    require(archive["schema"] == 2 and archive["status"] == "SOURCE_ARCHIVE_RUNTIME_NOT_READY"
+            and archive["file_count"] == len(archive["files"]), "HISTORY_ARCHIVE_MANIFEST")
+    archived = {row["path"]: row for row in archive["files"]}
+    require(len(archived) == len(archive["files"]), "HISTORY_UNIQUE_ARCHIVED_PATHS")
+    overlay_path = tool_root / "sources" / HISTORY_OVERLAY_RELATIVE
+    overlay_raw = read(overlay_path)
+    require(pin(overlay_raw) == HISTORY_OVERLAY_PIN, "EXACT_LATEST_HISTORY_COMPONENT_OVERLAY")
+    overlay = decode(overlay_raw)
+    legacy = overlay["preserved_producer_phase_complete13_artifacts9PHP11controls"]
+    require(legacy["actual_artifact_count"] == 13 and legacy["actual_PHP_component_count"] == 9
+            and legacy["exact_control_count"] == 11
+            and list(legacy["artifacts"]) == list(HISTORY_NAMES[:-1]), "EXACT_ORIGINAL_HISTORY_THIRTEEN")
+    selected = dict(legacy["artifacts"])
+    selected[HISTORY_NAMES[-1]] = overlay["reader_candidate"]
+    before: dict[str, bytes] = {}
+    sources: dict[str, dict[str, Any]] = {}
+    for name in HISTORY_NAMES:
+        source = selected[name]
+        require(type(source) is dict and set(source) == {"source", "bytes", "sha256"}
+                and type(source["source"]) is str and source["source"].startswith(HISTORY_ORIGINAL_ROOT),
+                "HISTORY_FIXED_ORIGINAL_COMPONENT_POINTER")
+        relative = source["source"][len(HISTORY_ORIGINAL_ROOT):]
+        require("\\" not in relative and ".." not in Path(relative).parts
+                and Path(relative).name == name, "HISTORY_ORIGINAL_COMPONENT_PATH")
+        archive_relative = "sources/" + relative
+        row = archived[archive_relative]
+        require(row["origin_relative_path"] == relative
+                and {key: row[key] for key in ("bytes", "sha256")} == {key: source[key] for key in ("bytes", "sha256")},
+                "HISTORY_COMPONENT_ARCHIVE_AND_ORIGINAL_PIN_JOIN")
+        path = tool_root / archive_relative
+        raw = read(path)
+        require(pin(raw) == {key: source[key] for key in ("bytes", "sha256")}, "HISTORY_COMPLETE_ORIGINAL_COMPONENT_BYTES")
+        before[name] = raw
+        sources[name] = {"path": path.as_posix(), **pin(raw)}
+    require(constant(before["ms4-host.py"], "ARTIFACTS") == list(HISTORY_NAMES[:-1]), "HISTORY_ORIGINAL_HOST_ORDER")
+    controls = constant(before["ms4-host.py"], "LEGACY_CONTROL")
+    require(len(controls) == 11, "HISTORY_ORIGINAL_ELEVEN_CONTROLS")
+    application_controls = []
+    for kind, relative, destination in controls:
+        if kind == "current":
+            source = inventory[relative]
+            raw = read(Path(authority["candidate_root"]) / relative)
+            require(pin(raw) == {key: source[key] for key in ("bytes", "sha256")}, "HISTORY_REVIEWED_CURRENT_CONTROL_BYTES")
+            application_controls.append({"path": destination, **pin(raw)})
+        else:
+            require(kind == "bundle" and relative in before
+                    and destination == "/run/nonempty/" + relative, "HISTORY_FIXED_BUNDLE_CONTROL_PATH")
+    require(len(application_controls) == 3, "HISTORY_THREE_CURRENT_APPLICATION_CONTROLS")
+
+    after = dict(before)
+    modules = {}
+    author_sources = {tool_path.name: tool_raw}
+    for kind, name in (("host", "ms4-host.py"), ("reader", "legacy-current-reader.php")):
+        path = tool_root / ("history_" + kind + "_source.py")
+        raw = read(path)
+        namespace = {"__name__": "history_" + kind + "_source", "__file__": str(path)}
+        # These are this author's internal pure byte transformers, never the archived programs.
+        exec(compile(raw, str(path), "exec"), namespace)
+        transform, reverse = namespace["transform_" + kind], namespace["reverse_" + kind]
+        require(callable(transform) and callable(reverse), "HISTORY_PURE_SOURCE_TRANSFORM_INTERFACE")
+        after[name] = transform(before[name])
+        require(type(after[name]) is bytes and reverse(after[name]) == before[name], "HISTORY_COMPLETE_MODULE_INVERSE")
+        modules[path.name] = {"path": path.as_posix(), **pin(raw)}
+        author_sources[path.name] = raw
+    require(set(after) == set(before) and all(after[name] == before[name] for name in HISTORY_NAMES
+            if name not in ("ms4-host.py", "legacy-current-reader.php")), "HISTORY_OTHER_TWELVE_COMPLETE_FILES_UNCHANGED")
+    require(constant(after["ms4-host.py"], "ARTIFACTS") == list(HISTORY_NAMES), "HISTORY_FINAL_FOURTEEN_ARTIFACTS")
+    require(after["ms4-host.py"].count(b"raise RuntimeError('NONEMPTY_HISTORY_RUNTIME_NOT_IMPLEMENTED')") == 2
+            and b"nhecr_expect(false, 'NHECR_EXACT13_READER_FINAL_SOURCE_UNBOUND');" in after["legacy-current-reader.php"],
+            "HISTORY_UNFINISHED_RUNTIME_ADMISSION_REMAINS_CLOSED")
+    for name, raw in after.items():
+        if name.endswith(".py"):
+            compile(raw, name, "exec")
+        elif name.endswith(".json"):
+            decode(raw)
+    forward = make_patch(before, after, HISTORY_NAMES)
+    reverse = make_patch(after, before, HISTORY_NAMES)
+    require(apply_patch(before, forward, HISTORY_NAMES) == after
+            and apply_patch(after, reverse, HISTORY_NAMES) == before, "HISTORY_WHOLE_STANDARD_PATCH_FORWARD_REVERSE")
+    publication = {"schema": 1, "scope": "CURRENT_HISTORY_SOURCE_PUBLICATION",
+                   "source_sha": authority["source_sha"],
+                   "artifact_files": [{"path": name, **pin(after[name])} for name in HISTORY_NAMES]}
+    checks = {"schema": 1, "status": "CURRENT_HISTORY_SOURCE_PROJECTIONS_ONLY_RUNTIME_INCOMPLETE",
+              "source_sha": authority["source_sha"], "legacy_source_sha": constant(before["ms4-host.py"], "LEGACY_SOURCE"),
+              "changed_members": [name for name in HISTORY_NAMES if before[name] != after[name]],
+              "original_other_members_unchanged": True, "complete_forward_and_reverse": True,
+              "python_syntax": "PASS", "modified_php_syntax": "NOT RUN",
+              "independent_review": "PENDING", "runtime": "NOT RUN", "source_review_written": False,
+              "remaining": ["current structure upgrade and complete reader baseline",
+                            "producer and reader actual stage wiring and normal retirement",
+                            "normal close and independent zero", "independent adoption review", "full normal history run"],
+              "stopped_samples": "NOT RUN"}
+    inputs = {"schema": 1, "source_authority": authority_pointer,
+              "archive_manifest": {"path": archive_path.as_posix(), **pin(held[archive_path])},
+              "component_overlay": {"path": overlay_path.as_posix(), **pin(overlay_raw)},
+              "original_components": sources, "author_modules": modules,
+              "author_tool": {"path": tool_path.as_posix(), **pin(tool_raw)},
+              "application_controls": application_controls}
+    files = {"before/" + name: before[name] for name in HISTORY_NAMES}
+    files.update({"candidate/" + name: after[name] for name in HISTORY_NAMES})
+    files.update({"author-source/" + name: raw for name, raw in author_sources.items()})
+    files.update({"SOURCE-PUBLICATION.json": encode(publication), "SOURCE-INPUTS.json": encode(inputs),
+                  "SOURCE-CHECKS.json": encode(checks), "FORWARD.patch": forward, "REVERSE.patch": reverse})
+    files["SOURCE-PINS.json"] = encode({"schema": 1, "scope": "CURRENT_HISTORY_SOURCE_CANDIDATE_NOT_RUNTIME",
+        "source_sha": authority["source_sha"], "members": {name: pin(raw) for name, raw in files.items()}})
+    for path, raw in held.items():
+        require(stable_read(path) == raw, "HISTORY_ALL_FIXED_AUTHOR_INPUTS_HELD")
+    write_set(out, files)
+    return {**checks, "source_root": out.as_posix(), "publication": _pointer(out / "SOURCE-PUBLICATION.json"),
+            "source_pins": _pointer(out / "SOURCE-PINS.json")}
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     destination = parser.add_mutually_exclusive_group(required=True)
@@ -3207,6 +3353,7 @@ def main() -> None:
     destination.add_argument("--normal-source", help="Author the complete normal18 around an existing reviewed Core9.")
     destination.add_argument("--b-source", help="Derive original B Source after fixed actual M, A and five-material proofs.")
     destination.add_argument("--post-a-history", help="Collect only completed A public history in one new external directory.")
+    destination.add_argument("--history-source", help="Compose existing nonempty-history sources; incomplete runtime stages remain refused.")
     parser.add_argument("--b-inputs-file", help="Explicit completed current B prerequisite descriptor; only with --b-source.")
     parser.add_argument("--b-inputs-sha256", help="Fixed SHA256 of the complete B prerequisite descriptor.")
     parser.add_argument("--post-a-inputs-file", help="Explicit completed A, prior inventory, retained and six-key public contract; only with --post-a-history.")
@@ -3224,7 +3371,11 @@ def main() -> None:
     raw = stable_read(path)
     pointer = {"path": path.as_posix(), "bytes": len(raw), "sha256": args.authority_sha256}
     require(pin(raw)["sha256"] == args.authority_sha256, "EXPLICIT_AUTHORITY_SHA256_MATCH")
-    if args.post_a_history:
+    if args.history_source:
+        require(args.b_inputs_file is None and args.b_inputs_sha256 is None and args.initializer_syntax_result is None,
+                "HISTORY_SOURCE_HAS_NO_B_OR_INITIALIZER_INPUTS")
+        result = build_history_source(args.history_source, pointer)
+    elif args.post_a_history:
         require(args.b_inputs_file is None and args.b_inputs_sha256 is None and args.initializer_syntax_result is None
                 and args.post_a_inputs_file is not None and type(args.post_a_inputs_sha256) is str
                 and re.fullmatch(r"[a-f0-9]{64}", args.post_a_inputs_sha256) is not None,
