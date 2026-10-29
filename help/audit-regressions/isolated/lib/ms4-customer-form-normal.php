@@ -466,7 +466,7 @@ function m4cf_saved_readers(PDO $db,array $root,array $actors):void
             $members=$redis->sMembers($tag);m4cf_expect(is_array($members)&&array_is_list($members),'ORDER_AUTH_NATIVE_BEFORE_TAG_MEMBERS');
             foreach($members as$member)m4cf_expect(is_string($member),'ORDER_AUTH_NATIVE_BEFORE_TAG_MEMBER');
             m4cf_expect(count($members)===count(array_unique($members,SORT_STRING)),'ORDER_AUTH_UNIQUE_BEFORE_TAG_MEMBERS');sort($members,SORT_STRING);
-            $entry=$before['redis']['keys'][hash('sha256',$tag)]??null;$type=$redis->rawCommand('TYPE',$tag);$expiry=$redis->rawCommand('PEXPIRETIME',$tag);
+            $entry=$before['redis']['keys'][hash('sha256',$tag)]??null;$type=m4tr_redis_type($redis,$tag);$expiry=$redis->rawCommand('PEXPIRETIME',$tag);
             m4cf_expect(($entry===null&&$members===[]&&$type==='none'&&$expiry===-2)
                 ||($type==='set'&&$expiry===-1&&$entry===['type'=>'set','sha256'=>hash('sha256',"set\0".serialize($members)),'expires'=>-1]),
                 'ORDER_AUTH_COMPLETE_BEFORE_TAG_SNAPSHOT');$GLOBALS['m4ar_tag_members'][$tag]=$members;
