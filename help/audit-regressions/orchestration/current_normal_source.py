@@ -955,6 +955,12 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
                                              php_row(updates[2]["before"]), php_row(updates[2]["after"]))
         require(once(after["ms4-initialize.php"], php_row(updates[2]["after"]), php_row(updates[2]["before"]))
                 == previous_initializer, "ONE_FULFILLMENT_LITERAL_WHOLE_FILE_INVERSE")
+    if helper_update is not None:
+        previous_initializer = after["ms4-initialize.php"]
+        after["ms4-initialize.php"] = once(previous_initializer,
+                                             php_row(helper_update["before"]), php_row(helper_update["after"]))
+        require(once(after["ms4-initialize.php"], php_row(helper_update["after"]), php_row(helper_update["before"]))
+                == previous_initializer, "ONE_FORM_HELPER_LITERAL_WHOLE_FILE_INVERSE")
     after["ms4-initialize.php"], after["ms4-host.py"], schema_sources = schema_profile_changes(
         after["ms4-initialize.php"], after["ms4-host.py"], inventory)
     after["ms4-initialize.php"], after["ms4-host.py"], exit_sources = merchant_exit_profile_changes(
@@ -962,6 +968,18 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
     after["ms4-initialize.php"], after["ms4-host.py"], order_sources, order_mode = order_menu_profile_changes(
         after["ms4-initialize.php"], after["ms4-host.py"], inventory, Path(authority["validation_root"]),
         with_read_leaves=True)
+    if helper_update is not None:
+        form_sources = interface["customer_form_current_profile"]["php_sources"]
+        require(len(form_sources) == 7 and len({row["path"] for row in form_sources}) == 7
+                and all(inventory[row["path"]] == row for row in form_sources),
+                "SEVEN_CURRENT_FORM_SOURCE_DESCRIPTORS")
+        expected_php_sources = (b"function m4i_cu_form_source_files(): array\n{\n    return [\n"
+                                + b"".join(b"        " + php_row(row) + b",\n" for row in form_sources)
+                                + b"    ];\n}")
+        require(after["ms4-initialize.php"].count(expected_php_sources) == 1
+                and all(constant(after[name], "CUSTOMER_FORM_SOURCE_FILES") == tuple(form_sources)
+                        for name in ("ms4-host.py", "verify-zero-ms4-fulfillment.py")),
+                "INITIALIZER_HOST_ZERO_INTERFACE_SAME_SEVEN_FORM_SOURCES")
     for name, symbol, target in (
         ("ms4-host.py", "INTERFACE_SHA256", "interface-v1.json"),
         ("normal-close-ms4-fulfillment.py", "HOST_SHA256", "ms4-host.py"),
@@ -1001,6 +1019,7 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
     if helper_update is not None:
         derivation[named].update(customer_form_helper_update=helper_update,
                                  customer_form_helper_interface_rows_changed=1,
+                                 initializer_form_helper_literal_inverse_exact=True,
                                  interface_declared_active_rows_changed=interface_changed_rows)
     if isolation_subnet is not None:
         derivation[named]["isolation_subnet"] = isolation_subnet
@@ -1065,6 +1084,7 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
         manifest.update(interface_only_declared_active_rows=True,
                         interface_declared_active_rows_changed=interface_changed_rows,
                         customer_form_helper_update=helper_update,
+                        initializer_form_helper_literal_inverse_exact=True,
                         customer_form_helper_interface_rows_changed=1)
     if isolation_subnet is not None:
         manifest["isolation_subnet"] = isolation_subnet
@@ -1990,18 +2010,31 @@ def derive_b_profile(authority_pointer: dict[str, Any],
     authority, inventory = reviewed_authority(authority_pointer)
     before = _b_baseline()
     after = dict(before)
-    active_paths = {AR_PATH, CUSTOMER_PATH, FULFILLMENT_PATH, LEGACY_PATH,
-                    "help/audit-regressions/isolated/ms4-ui-prepare.php",
-                    "help/audit-regressions/isolated/lib/ms4-ui-backend-normal.php"}
-    def current_row(row):
-        wanted = inventory[row["path"]]
-        require(wanted == row or row["path"] in active_paths, "B_ONLY_DECLARED_REVIEWED_SOURCE_PIN_UPDATES")
-        return wanted
     interface = decode(before["candidate/interface-v1.json"])
     require(encode(interface) == before["candidate/interface-v1.json"], "B_ORIGINAL_JSON_BYTES")
     # These are current B vectors. Earlier customer-form and historical profile
     # records intentionally retain the identities of their own generations.
     current = interface["fresh_B_current_UI_profile_source"]
+    form_helper_path = "help/audit-regressions/isolated/lib/ms4-customer-form-normal.php"
+    helper_rows = [row for row in current["customer_form_sources7"] if row["path"] == form_helper_path]
+    require(len(helper_rows) == 1 and set(helper_rows[0]) == {"path", "bytes", "sha256"},
+            "B_ONE_EXACT_BASELINE_FORM_HELPER")
+    helper_update = None
+    if inventory[form_helper_path] != helper_rows[0]:
+        helper_update = {"before": copy.deepcopy(helper_rows[0]), "after": inventory[form_helper_path]}
+    source_review = decode(read_pointer(authority["independent_review"]))
+    require(source_review.get("customer_form_helper_update") == helper_update,
+            "B_EXACT_INDEPENDENT_FORM_HELPER_UPDATE")
+    active_paths = {AR_PATH, CUSTOMER_PATH, FULFILLMENT_PATH, LEGACY_PATH,
+                    "help/audit-regressions/isolated/ms4-ui-prepare.php",
+                    "help/audit-regressions/isolated/lib/ms4-ui-backend-normal.php"}
+    def current_row(row):
+        wanted = inventory[row["path"]]
+        require(wanted == row or row["path"] in active_paths
+                or (row["path"] == form_helper_path and helper_update is not None
+                    and row == helper_update["before"] and wanted == helper_update["after"]),
+                "B_ONLY_DECLARED_REVIEWED_SOURCE_PIN_UPDATES")
+        return wanted
     for rows in (current["ui_source_vector8"].values(), current["customer_form_sources7"],
                  interface["integrated_B_source_tree_contract"]
                  ["fixed_producer_source_qualification"]["producers10"],
