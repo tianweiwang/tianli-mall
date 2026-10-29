@@ -1,4 +1,4 @@
-"""Fixed initializer and file-observer seams for the history author; no I/O or CLI.
+"""Fixed initializer, file-observer and producer-entry seams; no I/O or CLI.
 
 The emitted source candidate requires a real external source review, the original
 producer seal/four CLI and both real normal retirements before registration.
@@ -6,6 +6,7 @@ It does not grant runtime qualification. The original seed, initialize and
 child functions are preserved byte for byte. The default-shipping oracle alone
 includes the nullable owner column already declared by MS2. The separate file
 bootstrap receives a bounded CLI budget; shared and HTTP configuration is unchanged.
+The producer adopts only its existing complete main through the fixed direct entry.
 """
 
 import hashlib
@@ -831,4 +832,39 @@ def reverse_files_bootstrap(candidate: bytes) -> bytes:
         raise ValueError("FILES_BOOTSTRAP_UNIQUE_REVERSE_SEAM_REQUIRED")
     raw = candidate.replace(_FILES_BOOTSTRAP_AFTER, _FILES_BOOTSTRAP_BEFORE, 1)
     _files_bootstrap_source(raw)
+    return raw
+
+
+PRODUCER_ENTRY_SOURCE_PIN = (1081876, "8e3156f29e1aedb87fbbce359da41025992f3ebe88a67299fba6487e540f20b1")
+_PRODUCER_ENTRY_BEFORE = br"""if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
+    fwrite(STDERR, "{\"status\":\"FAIL\",\"code\":\"NHE_PRODUCER_NOT_IMPLEMENTED\"}\n");
+    exit(1);
+}
+"""
+_PRODUCER_ENTRY_AFTER = b"""if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
+    exit(nhep_normal_history_main());
+}
+"""
+
+
+def _producer_entry_source(raw):
+    if not isinstance(raw, bytes) or (len(raw), hashlib.sha256(raw).hexdigest()) != PRODUCER_ENTRY_SOURCE_PIN:
+        raise ValueError("HISTORY_PRODUCER_EXACT_ARCHIVED_SOURCE_REQUIRED")
+
+
+def transform_producer_entry(raw: bytes) -> bytes:
+    _producer_entry_source(raw)
+    if raw.count(_PRODUCER_ENTRY_BEFORE) != 1 or not raw.endswith(_PRODUCER_ENTRY_BEFORE):
+        raise ValueError("HISTORY_PRODUCER_UNIQUE_FINAL_ENTRY_REQUIRED")
+    candidate = raw[:-len(_PRODUCER_ENTRY_BEFORE)] + _PRODUCER_ENTRY_AFTER
+    if reverse_producer_entry(candidate) != raw:
+        raise ValueError("HISTORY_PRODUCER_COMPLETE_ENTRY_REVERSE_REQUIRED")
+    return candidate
+
+
+def reverse_producer_entry(candidate: bytes) -> bytes:
+    if not isinstance(candidate, bytes) or candidate.count(_PRODUCER_ENTRY_AFTER) != 1 or not candidate.endswith(_PRODUCER_ENTRY_AFTER):
+        raise ValueError("HISTORY_PRODUCER_UNIQUE_FINAL_REVERSE_ENTRY_REQUIRED")
+    raw = candidate[:-len(_PRODUCER_ENTRY_AFTER)] + _PRODUCER_ENTRY_BEFORE
+    _producer_entry_source(raw)
     return raw
