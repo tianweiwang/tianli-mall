@@ -3286,23 +3286,53 @@ def build_history_source(output: str | Path, authority_pointer: dict[str, Any]) 
     after = dict(before)
     modules = {}
     author_sources = {tool_path.name: tool_raw}
-    for kind, name in (("host", "ms4-host.py"), ("reader", "legacy-current-reader.php")):
+    upgrade_application_sources = []
+    changed_names = ("ms4-host.py", "ms4-initialize.php", "legacy-current-reader.php")
+    for kind, function, name in (("host", "host", "ms4-host.py"),
+                                 ("reader", "reader", "legacy-current-reader.php"),
+                                 ("upgrade", "initializer", "ms4-initialize.php")):
         path = tool_root / ("history_" + kind + "_source.py")
         raw = read(path)
         namespace = {"__name__": "history_" + kind + "_source", "__file__": str(path)}
         # These are this author's internal pure byte transformers, never the archived programs.
         exec(compile(raw, str(path), "exec"), namespace)
-        transform, reverse = namespace["transform_" + kind], namespace["reverse_" + kind]
+        transform, reverse = namespace["transform_" + function], namespace["reverse_" + function]
         require(callable(transform) and callable(reverse), "HISTORY_PURE_SOURCE_TRANSFORM_INTERFACE")
         after[name] = transform(before[name])
         require(type(after[name]) is bytes and reverse(after[name]) == before[name], "HISTORY_COMPLETE_MODULE_INVERSE")
         modules[path.name] = {"path": path.as_posix(), **pin(raw)}
         author_sources[path.name] = raw
+        if kind == "upgrade":
+            migration_relative = "help/audit-regressions/isolated/ms4-migration.php"
+            migration_raw = read(Path(authority["candidate_root"]) / migration_relative)
+            require((len(migration_raw), pin(migration_raw)["sha256"]) == namespace["M4M_SOURCE_PIN"],
+                    "HISTORY_UPGRADE_ORIGINAL_OBSERVER_SOURCE")
+            observers = namespace["M4M_OBSERVER_FUNCTIONS"]
+            functions = list(re.finditer(rb"(?m)^function ([a-zA-Z0-9_]+)\(", observers))
+            require([row[1].decode() for row in functions] == ["m4m_expect", "m4m_quote", "m4m_rows",
+                    "m4m_metadata", "m4m_projection", "m4m_snapshot"], "HISTORY_UPGRADE_EXACT_SIX_ORIGINAL_OBSERVERS")
+            for index, row in enumerate(functions):
+                end = functions[index + 1].start() if index + 1 < len(functions) else len(observers)
+                body = observers[row.start():end].rstrip(b"\n") + b"\n"
+                require(migration_raw.count(body) == 1, "HISTORY_UPGRADE_OBSERVER_COMPLETE_ORIGINAL_BYTES")
+            source_rows = re.findall(rb"\['path' => '([^']+)', 'bytes' => ([0-9]+), 'sha256' => '([a-f0-9]{64})'\]",
+                                     namespace["UPGRADE_SOURCE_FILES"])
+            require(len(source_rows) == 11 and len({row[0] for row in source_rows}) == 11,
+                    "HISTORY_UPGRADE_COMPLETE_FIXED_MIGRATION_DEPENDENCIES")
+            for relative, size, digest in source_rows:
+                relative = relative.decode()
+                expected = {"bytes": int(size), "sha256": digest.decode()}
+                require(relative in inventory and {key: inventory[relative][key] for key in expected} == expected,
+                        "HISTORY_UPGRADE_REVIEWED_CURRENT_APPLICATION_DEPENDENCY")
+                actual = Path(authority["candidate_root"]) / relative
+                require(pin(read(actual)) == expected, "HISTORY_UPGRADE_COMPLETE_APPLICATION_SOURCE_BYTES")
+                upgrade_application_sources.append({"path": actual.as_posix(), **expected})
     require(set(after) == set(before) and all(after[name] == before[name] for name in HISTORY_NAMES
-            if name not in ("ms4-host.py", "legacy-current-reader.php")), "HISTORY_OTHER_TWELVE_COMPLETE_FILES_UNCHANGED")
+            if name not in changed_names), "HISTORY_OTHER_ELEVEN_COMPLETE_FILES_UNCHANGED")
     require(constant(after["ms4-host.py"], "ARTIFACTS") == list(HISTORY_NAMES), "HISTORY_FINAL_FOURTEEN_ARTIFACTS")
     require(after["ms4-host.py"].count(b"raise RuntimeError('NONEMPTY_HISTORY_RUNTIME_NOT_IMPLEMENTED')") == 2
-            and b"nhecr_expect(false, 'NHECR_EXACT13_READER_FINAL_SOURCE_UNBOUND');" in after["legacy-current-reader.php"],
+            and b"nhecr_expect(false, 'NHECR_EXACT13_READER_FINAL_SOURCE_UNBOUND');" in after["legacy-current-reader.php"]
+            and b"m2f_assert(false, 'CURRENT_STRUCTURE_UPGRADE_HANDOFF_UNBOUND');" in after["ms4-initialize.php"],
             "HISTORY_UNFINISHED_RUNTIME_ADMISSION_REMAINS_CLOSED")
     for name, raw in after.items():
         if name.endswith(".py"):
@@ -3319,7 +3349,8 @@ def build_history_source(output: str | Path, authority_pointer: dict[str, Any]) 
     checks = {"schema": 1, "status": "CURRENT_HISTORY_SOURCE_PROJECTIONS_ONLY_RUNTIME_INCOMPLETE",
               "source_sha": authority["source_sha"], "legacy_source_sha": constant(before["ms4-host.py"], "LEGACY_SOURCE"),
               "changed_members": [name for name in HISTORY_NAMES if before[name] != after[name]],
-              "original_other_members_unchanged": True, "complete_forward_and_reverse": True,
+              "original_other_members_unchanged": True, "unchanged_whole_members": 11,
+              "complete_forward_and_reverse": True,
               "python_syntax": "PASS", "modified_php_syntax": "NOT RUN",
               "independent_review": "PENDING", "runtime": "NOT RUN", "source_review_written": False,
               "remaining": ["current structure upgrade and complete reader baseline",
@@ -3331,7 +3362,8 @@ def build_history_source(output: str | Path, authority_pointer: dict[str, Any]) 
               "component_overlay": {"path": overlay_path.as_posix(), **pin(overlay_raw)},
               "original_components": sources, "author_modules": modules,
               "author_tool": {"path": tool_path.as_posix(), **pin(tool_raw)},
-              "application_controls": application_controls}
+              "application_controls": application_controls,
+              "upgrade_application_sources": upgrade_application_sources}
     files = {"before/" + name: before[name] for name in HISTORY_NAMES}
     files.update({"candidate/" + name: after[name] for name in HISTORY_NAMES})
     files.update({"author-source/" + name: raw for name, raw in author_sources.items()})

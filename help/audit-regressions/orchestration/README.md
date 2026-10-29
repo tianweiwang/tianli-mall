@@ -32,7 +32,7 @@ B 对该 helper 使用同一独审前后值，并逐项连接 B 当前表单向�
 
 同一作者的 `--history-source <全新外部目录>` 配合原 authority 两参数，组合已归档的非空历史组件。固定 overlay 的原 13 件末尾只加 reader，保留 producer 的 13 件／11 控制文件合同；reader 使用独立的 12 项控制文件，完整包为 14 件。内部 `history_host_source.py`、`history_reader_source.py` 只作固定原件的有限字节变换，核整件正逆和非目标成员保全，没有独立 CLI，也不运行 Host、应用或资源操作。
 
-输出保存 before/candidate、实际作者及两模块原字节、完整输入来源、publication、标准正逆 patch 和全成员摘要。publication 只是来源清单；本阶段不生成运行采用的独审文件，原 prepare/main 和 reader 未接通入口继续拒绝执行。当前已接来源投影、独立控制集合和源码明确的退款 DTO 差量；结构升级、完整阶段接线、reader 新基线、普通关闭与独立核零仍须完成后再独审和实际运行。不能仅填写七项绑定或改掉拒绝条件就启动历史业务。
+输出保存 before/candidate、实际作者及内部模块原字节、完整输入来源、publication、标准正逆 patch 和全成员摘要。publication 只是来源清单；本阶段不生成运行采用的独审文件，原 prepare/main 和 reader 未接通入口继续拒绝执行。来源投影、独立控制集合和源码明确的退款 DTO 差量已接入；`history_upgrade_source.py` 另为 initializer 加入独立 `current-structure-upgrade` 源码阶段，复用原迁移 CLI 和完整观察函数，核对应的真实应用依赖字节。该阶段继续以 `HANDOFF_UNBOUND` 拒绝运行，真实上游退役资格、完整阶段接线、reader 新基线、普通关闭与独立核零仍须完成后再独审和实际运行。不能仅填写七项绑定或改掉拒绝条件就启动历史业务。
 
 B的两个网络使用固定输入 `network_subnets.isolation/ui_web`，只接收互不重叠的规范RFC1918网段并核实际IPAM。Root启动前仍须检查地址空闲；复用A网段须先有真实关闭及独立核零。部署public采用同一根部install排除投影，完整安装器来源仍保全；三端构建保留各自真实来源，只有完整输入一致才能复用。
 
