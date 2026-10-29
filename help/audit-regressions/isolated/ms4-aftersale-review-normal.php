@@ -1251,14 +1251,46 @@ function m4ar_audit_delta(array $before,array $after,array $actor,array $spec,ar
 }
 function m4ar_sequence_delta(array $before,array $after,string $number):array
 {
+ unset($GLOBALS['m4ar_sequence_failure_context'],$GLOBALS['m4ar_sequence_failure_diagnostic'],$GLOBALS['m4ar_sequence_failure_phase']);
  $suffix=preg_replace('/\A(?:cp|cf)/','',$number);m4ar_expect(is_string($suffix)&&preg_match('/\A[1-9][0-9]{0,18}\z/D',$suffix)===1,'TASK78_TRUE_SNOWFLAKE_PRODUCER_ID');
  $millis=bcadd('1640966400000',bcdiv($suffix,'4194304',0),0);$key=(string)$millis;$hash=hash('sha256',$key);
  $entry=$after['redis']['keys'][$hash]??null;if($entry===null){
   m4ar_expect($after['redis']['time_ms']>=$millis+1000&&!isset($before['redis']['keys'][$hash]),'TASK78_ALREADY_NATURALLY_EXPIRED_NEW_SEQUENCE_KEY');return [];
  }
- $raw=audit_redis()->get($key);$seq=bcmod($suffix,'4096',0);m4ar_expect(is_string($raw)&&preg_match('/\A[1-9][0-9]*\z/D',$raw)===1
+ $raw=audit_redis()->get($key);$seq=bcmod($suffix,'4096',0);
+ try{
+ m4ar_expect(is_string($raw)&&preg_match('/\A[1-9][0-9]*\z/D',$raw)===1
  &&($seq==='0'?$raw==='1':$raw===$seq)&&$entry['type']==='string'&&$entry['expires']>=$millis+1000&&$entry['expires']>=$before['redis']['time_ms']+1000&&$entry['expires']<=$after['redis']['time_ms']+1000,
- 'TASK78_EXACT_SNOWFLAKE_RESOLVER_VALUE_AND_ONE_SECOND_DEADLINE');return [$key=>$entry];
+ 'TASK78_EXACT_SNOWFLAKE_RESOLVER_VALUE_AND_ONE_SECOND_DEADLINE');
+ }catch(Throwable $sequenceFailure){
+  $sequenceHadAssertion=array_key_exists('m4ar_failed_assertion',$GLOBALS);$sequenceAssertion=$GLOBALS['m4ar_failed_assertion']??null;
+  try{
+   $sequencePhase=$GLOBALS['m4c_phase']??null;
+   if($sequenceAssertion==='TASK78_EXACT_SNOWFLAKE_RESOLVER_VALUE_AND_ONE_SECOND_DEADLINE'
+    &&$sequenceFailure instanceof RuntimeException&&$sequenceFailure->getMessage()==='M4AR_ASSERTION'
+    &&in_array($sequencePhase,['new_root_real_cart_confirm_create','normal_aftersale_apply','normal_s2_ship'],true)){
+    // Recompute only after the original assertion failed, using its captured values; no new observation.
+    $sequenceExpected=$seq==='0'?'1':$seq;
+    $sequenceContext=['before_redis_time_ms'=>$before['redis']['time_ms'],'after_redis_time_ms'=>$after['redis']['time_ms'],
+     'entry_type'=>$entry['type'],'entry_expires_ms'=>$entry['expires'],'raw_type'=>gettype($raw),
+     'raw_bytes'=>is_string($raw)?strlen($raw):null,'raw_sha256'=>is_string($raw)?hash('sha256',$raw):null,
+     'expected_wire_bytes'=>strlen($sequenceExpected),'expected_wire_sha256'=>hash('sha256',$sequenceExpected),
+     'post_failure_predicates'=>['get_is_string'=>is_string($raw),
+      'get_positive_decimal'=>is_string($raw)&&preg_match('/\A[1-9][0-9]*\z/D',$raw)===1,
+      'sequence_value_matches'=>$seq==='0'?$raw==='1':$raw===$seq,'entry_type_string'=>$entry['type']==='string',
+      'expiry_ge_number_time_plus1000'=>$entry['expires']>=$millis+1000,
+      'expiry_ge_before_time_plus1000'=>$entry['expires']>=$before['redis']['time_ms']+1000,
+      'expiry_le_after_time_plus1000'=>$entry['expires']<=$after['redis']['time_ms']+1000]];
+    $sequenceDiagnostic=['code'=>$sequenceAssertion,'class'=>get_class($sequenceFailure),
+     'file'=>basename($sequenceFailure->getFile()),'line'=>$sequenceFailure->getLine()];
+    $GLOBALS['m4ar_sequence_failure_context']=$sequenceContext;$GLOBALS['m4ar_sequence_failure_diagnostic']=$sequenceDiagnostic;
+    $GLOBALS['m4ar_sequence_failure_phase']=$sequencePhase;
+   }
+  }catch(Throwable $sequenceDiagnosticFailure){}
+  finally{if($sequenceHadAssertion)$GLOBALS['m4ar_failed_assertion']=$sequenceAssertion;else unset($GLOBALS['m4ar_failed_assertion']);}
+  throw $sequenceFailure;
+ }
+ return [$key=>$entry];
 }
 
 function m4ar_settle_sequence(PDO $db,string $identifier):array
@@ -2411,6 +2443,44 @@ function m4ar_result(array $source,?array $business,?array $observer,?array $dia
    if($warmValid)$result['warm_failure_context']=$warmContext;
   }catch(Throwable $warmDiagnosticFailure){}
   finally{if($warmHadAssertion)$GLOBALS['m4ar_failed_assertion']=$warmAssertion;else unset($GLOBALS['m4ar_failed_assertion']);}
+ }
+ if(!$success&&in_array($GLOBALS['m4c_phase']??null,['new_root_real_cart_confirm_create','normal_aftersale_apply','normal_s2_ship'],true)
+  &&is_array($diagnostic)&&($diagnostic['code']??null)==='TASK78_EXACT_SNOWFLAKE_RESOLVER_VALUE_AND_ONE_SECOND_DEADLINE'){
+  $sequenceHadAssertion=array_key_exists('m4ar_failed_assertion',$GLOBALS);$sequenceAssertion=$GLOBALS['m4ar_failed_assertion']??null;
+  try{
+   $sequenceContext=$GLOBALS['m4ar_sequence_failure_context']??null;$sequenceDiagnostic=$GLOBALS['m4ar_sequence_failure_diagnostic']??null;
+   $sequenceValid=is_array($sequenceContext)&&array_keys($sequenceContext)===['before_redis_time_ms','after_redis_time_ms','entry_type','entry_expires_ms',
+    'raw_type','raw_bytes','raw_sha256','expected_wire_bytes','expected_wire_sha256','post_failure_predicates']
+    &&is_array($sequenceDiagnostic)&&array_keys($sequenceDiagnostic)===['code','class','file','line']&&$sequenceDiagnostic===$diagnostic
+    &&($GLOBALS['m4ar_sequence_failure_phase']??null)===($GLOBALS['m4c_phase']??null)
+    &&is_string($sequenceContext['before_redis_time_ms'])&&preg_match('/\A[1-9][0-9]{0,18}\z/D',$sequenceContext['before_redis_time_ms'])===1
+    &&is_string($sequenceContext['after_redis_time_ms'])&&preg_match('/\A[1-9][0-9]{0,18}\z/D',$sequenceContext['after_redis_time_ms'])===1
+    &&is_string($sequenceContext['entry_type'])&&in_array($sequenceContext['entry_type'],['string','list','set','zset','hash','stream'],true)
+    &&is_int($sequenceContext['entry_expires_ms'])&&($sequenceContext['entry_expires_ms']===-1||$sequenceContext['entry_expires_ms']>0)
+    &&is_string($sequenceContext['raw_type'])&&in_array($sequenceContext['raw_type'],
+     ['boolean','integer','double','string','array','object','resource','resource (closed)','NULL','unknown type'],true)
+    &&($sequenceContext['raw_type']==='string'?(is_int($sequenceContext['raw_bytes'])&&$sequenceContext['raw_bytes']>=0
+     &&is_string($sequenceContext['raw_sha256'])&&preg_match('/\A[a-f0-9]{64}\z/D',$sequenceContext['raw_sha256'])===1)
+     :($sequenceContext['raw_bytes']===null&&$sequenceContext['raw_sha256']===null))
+    &&is_int($sequenceContext['expected_wire_bytes'])&&$sequenceContext['expected_wire_bytes']>=1&&$sequenceContext['expected_wire_bytes']<=4
+    &&is_string($sequenceContext['expected_wire_sha256'])&&preg_match('/\A[a-f0-9]{64}\z/D',$sequenceContext['expected_wire_sha256'])===1
+    &&is_array($sequenceContext['post_failure_predicates'])&&array_keys($sequenceContext['post_failure_predicates'])===['get_is_string','get_positive_decimal',
+     'sequence_value_matches','entry_type_string','expiry_ge_number_time_plus1000','expiry_ge_before_time_plus1000','expiry_le_after_time_plus1000'];
+   if($sequenceValid){
+    $sequencePredicates=$sequenceContext['post_failure_predicates'];
+    foreach($sequencePredicates as$predicate)if(!is_bool($predicate))$sequenceValid=false;
+    $sequenceValid=$sequenceValid&&in_array(false,$sequencePredicates,true)
+     &&$sequencePredicates['get_is_string']===($sequenceContext['raw_type']==='string')
+     &&(!$sequencePredicates['get_positive_decimal']||$sequencePredicates['get_is_string'])
+     &&(!$sequencePredicates['sequence_value_matches']||($sequencePredicates['get_positive_decimal']
+      &&$sequenceContext['raw_bytes']===$sequenceContext['expected_wire_bytes']&&$sequenceContext['raw_sha256']===$sequenceContext['expected_wire_sha256']))
+     &&$sequencePredicates['entry_type_string']===($sequenceContext['entry_type']==='string')
+     &&$sequencePredicates['expiry_ge_before_time_plus1000']===($sequenceContext['entry_expires_ms']>=$sequenceContext['before_redis_time_ms']+1000)
+     &&$sequencePredicates['expiry_le_after_time_plus1000']===($sequenceContext['entry_expires_ms']<=$sequenceContext['after_redis_time_ms']+1000);
+   }
+   if($sequenceValid)$result['sequence_failure_context']=$sequenceContext;
+  }catch(Throwable $sequenceDiagnosticFailure){}
+  finally{if($sequenceHadAssertion)$GLOBALS['m4ar_failed_assertion']=$sequenceAssertion;else unset($GLOBALS['m4ar_failed_assertion']);}
  }
  return $result;
 }
