@@ -10,6 +10,10 @@
 
 新版复用已存在的九卷 Core profile（含独立 `source-tree`），更新当前售后入口的必要固定引用及摘要依赖。旧八卷归档不通过替换 HEAD 或摘要获得新资格。新材料写入仓库外目录；旧运行、失败、退役和来源记录仍按原身份保留。完整正常迁移、顾客、测试付款、履约、售后评价、Worker、普通关闭和独立核零的责任不减；源码派生、语法检查和来源技术通过都不代表这些业务已经运行。
 
+表单检查 helper 更新独立使用来源独审的 `customer_form_helper_update`，精确绑定唯一 `ms4-customer-form-normal.php` 的 baseline/capture 前后值，不加入原两项或四项 `active_profile_updates`。表单来源名单及 Host/zero 常量承接该行；source-tree 的七个主入口名单保持原成员集合和更新范围，其余完整来源比较和整件正逆还原保留。当前四项更新加该 helper 时，接口实际变更为原7行加1行，元数据记8行；旧 helper 未变的情形保持原九件输出。
+
+纯作者工具修复可与冻结的应用来源分别固定：应用 authority、capture、candidate/validation 和实际 M/A 继续绑定同一应用 SHA，两检出保持干净；另行记录新作者工具的完整字节摘要、提交、独立有限复核及真实执行 argv，新 normal18 独审覆盖完整派生产物。不得声称旧应用 capture 包含新工具，也不能把维护工具的工作树替代为 M 的 main/repo。
+
 同一作者的 `--b-source <新目录> --b-inputs-file <固定输入JSON> --b-inputs-sha256 <摘要>` 有限接入原13卷B来源；仍须提供 `--authority-file/--authority-sha256`。输入绑定真实M及外层双流、成功A的外层终态/正常结果/关闭/独立核零/后续历史五项证明，以及当前五材料和三端实际构建依据；A未通过时不生成B。来源包沿原17成员和浏览器合同固定完整摘要，两个Root入口在执行时读取独立技术复核，这不是新增用户确认。原A默认派生、历史记录、业务检查及停止样本范围保持。
 
 B的两个网络使用固定输入 `network_subnets.isolation/ui_web`，只接收互不重叠的规范RFC1918网段并核实际IPAM。Root启动前仍须检查地址空闲；复用A网段须先有真实关闭及独立核零。部署public采用同一根部install排除投影，完整安装器来源仍保全；三端构建保留各自真实来源，只有完整输入一致才能复用。

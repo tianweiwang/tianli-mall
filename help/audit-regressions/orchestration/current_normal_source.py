@@ -794,7 +794,8 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
     require(inventory[seed["source_path"]]["sha256"] == seed["source_sha256"],
             "ORIGINAL_FINITE_SEED_CURRENT_SOURCE_IDENTITY")
     original_interface = copy.deepcopy(interface)
-    reviewed_updates = decode(read_pointer(authority["independent_review"])).get("active_profile_updates")
+    source_review = decode(read_pointer(authority["independent_review"]))
+    reviewed_updates = source_review.get("active_profile_updates")
     require(type(reviewed_updates) is list and len(reviewed_updates) in (2, 4),
             "EXACT_TWO_OR_FOUR_INDEPENDENT_PROFILE_UPDATES")
     extended_updates = len(reviewed_updates) == 4
@@ -822,13 +823,28 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
     new_active = {entry["after"]["path"]: entry["after"] for entry in common_updates}
     legacy_update = updates[3] if extended_updates else None
     rows = interface["customer_form_current_profile"]["php_sources"]
-    require(all(sum(row == original for row in rows) == 1 for original in old_active.values()),
+    form_old_active, form_new_active = dict(old_active), dict(new_active)
+    # The form oracle has its own reviewed update; the original four retain their meanings.
+    form_helper_path = "help/audit-regressions/isolated/lib/ms4-customer-form-normal.php"
+    helper_rows = [row for row in rows if row["path"] == form_helper_path]
+    require(len(helper_rows) == 1 and set(helper_rows[0]) == {"path", "bytes", "sha256"},
+            "ONE_EXACT_BASELINE_FORM_HELPER")
+    helper_update = None
+    if inventory[form_helper_path] != helper_rows[0]:
+        helper_update = {"before": copy.deepcopy(helper_rows[0]), "after": inventory[form_helper_path]}
+    require(source_review.get("customer_form_helper_update") == helper_update,
+            "INDEPENDENT_EXACT_FORM_HELPER_UPDATE")
+    if helper_update is not None:
+        form_old_active[form_helper_path] = helper_update["before"]
+        form_new_active[form_helper_path] = helper_update["after"]
+    interface_changed_rows = len(form_old_active) + len(old_active) + (1 if legacy_update is not None else 0)
+    require(all(sum(row == original for row in rows) == 1 for original in form_old_active.values()),
             "ONE_EACH_DECLARED_ACTIVE_FORM_ROW")
     for row in rows:
-        require(inventory[row["path"]] == new_active.get(row["path"], row),
+        require(inventory[row["path"]] == form_new_active.get(row["path"], row),
                 "REVIEWED_SEVEN_ACTIVE_NORMAL_SOURCES")
-        if row["path"] in new_active:
-            row.update(new_active[row["path"]])
+        if row["path"] in form_new_active:
+            row.update(form_new_active[row["path"]])
     runtime_rows = interface["source_tree_runtime_profile"]["actual_candidate_tracked_sources"]
     require(all(sum(row == original for row in runtime_rows) == 1 for original in old_active.values()),
             "ONE_EACH_DECLARED_ACTIVE_SOURCE_TREE_ROW")
@@ -846,26 +862,27 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
                 row.update(wanted)
     after["interface-v1.json"] = encode(interface)
     restored_interface = copy.deepcopy(interface)
-    for rows in (restored_interface["customer_form_current_profile"]["php_sources"],
-                 restored_interface["source_tree_runtime_profile"]["actual_candidate_tracked_sources"]):
+    for rows, originals in ((restored_interface["customer_form_current_profile"]["php_sources"], form_old_active),
+                            (restored_interface["source_tree_runtime_profile"]["actual_candidate_tracked_sources"], old_active)):
         for row in rows:
-            if row["path"] in old_active:
-                row.update(old_active[row["path"]])
+            if row["path"] in originals:
+                row.update(originals[row["path"]])
     if legacy_update is not None:
         for row in restored_interface["fulfillment_normal_successor"]["three_read_internal"]["source_helper_files"]:
             if row["path"] == LEGACY_PATH:
                 row.update(legacy_update["before"])
     require(restored_interface == original_interface,
-            "ONLY_SEVEN_DECLARED_INTERFACE_ACTIVE_ROWS_CHANGED" if extended_updates
-            else "ONLY_FOUR_DECLARED_INTERFACE_ACTIVE_ROWS_CHANGED")
+            "ONLY_DECLARED_FORM_HELPER_AND_INTERFACE_ACTIVE_ROWS_CHANGED" if helper_update is not None
+            else ("ONLY_SEVEN_DECLARED_INTERFACE_ACTIVE_ROWS_CHANGED" if extended_updates
+                  else "ONLY_FOUR_DECLARED_INTERFACE_ACTIVE_ROWS_CHANGED"))
     for name in ("ms4-host.py", "verify-zero-ms4-fulfillment.py"):
         raw = after[name]
         original_raw = raw
         active = constant(raw, "CUSTOMER_FORM_SOURCE_FILES")
         require(type(active) is tuple
-                and all(sum(row == original for row in active) == 1 for original in old_active.values()),
+                and all(sum(row == original for row in active) == 1 for original in form_old_active.values()),
                 "ORIGINAL_FROZEN_SOURCE_TUPLE")
-        updated = tuple(new_active.get(row["path"], row) for row in active)
+        updated = tuple(form_new_active.get(row["path"], row) for row in active)
         for row in updated:
             require(inventory[row["path"]] == row, "ALL_CURRENT_ACTIVE_SOURCE_TUPLE_MEMBERS")
         three_read = constant(raw, "THREE_READ_SOURCE_FILES")
@@ -981,6 +998,10 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
         derivation[named].update(interface_declared_active_rows_changed=7,
                                  initializer_fulfillment_literal_inverse_exact=True,
                                  legacy_source_binding_inverse_exact=True)
+    if helper_update is not None:
+        derivation[named].update(customer_form_helper_update=helper_update,
+                                 customer_form_helper_interface_rows_changed=1,
+                                 interface_declared_active_rows_changed=interface_changed_rows)
     if isolation_subnet is not None:
         derivation[named]["isolation_subnet"] = isolation_subnet
         derivation[named]["isolation_subnet_availability"] = "NOT_CHECKED_BY_AUTHOR"
@@ -1038,6 +1059,13 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
                         interface_declared_active_rows_changed=7,
                         initializer_fulfillment_literal_inverse_exact=True,
                         legacy_source_binding_inverse_exact=True)
+    if helper_update is not None:
+        manifest.pop("interface_only_four_declared_active_rows", None)
+        manifest.pop("interface_only_seven_declared_active_rows", None)
+        manifest.update(interface_only_declared_active_rows=True,
+                        interface_declared_active_rows_changed=interface_changed_rows,
+                        customer_form_helper_update=helper_update,
+                        customer_form_helper_interface_rows_changed=1)
     if isolation_subnet is not None:
         manifest["isolation_subnet"] = isolation_subnet
         manifest["isolation_subnet_availability"] = "NOT_CHECKED_BY_AUTHOR"
