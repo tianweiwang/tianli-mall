@@ -30,6 +30,8 @@ B 对该 helper 使用同一独审前后值，并逐项连接 B 当前表单向�
 
 同一入口的 `--post-a-history <全新外部目录> --post-a-inputs-file <固定公开输入JSON> --post-a-inputs-sha256 <摘要>` 配合原 authority 两参数，收集成功 A 的公共记录。输入固定为 `schema/scope/source_authority/normal/A/post_a_contract/runtime_root`，scope 为 `CURRENT_POST_A_FIXED_PUBLIC_INPUTS`；normal 复用原 M 四项，A 提供真实 session、outer 四件及 context/normal_root_result/worker_close/independent_zero。工具先消费外层自然 exit/wait 0，再复用当前 M/A 关联与原协调器回执；不会启动、重跑或清理实例。A 驱动自身已串行执行普通关闭和独立核零，不能另行重复调用。
 
+正常 M 外层同时支持原完整复制布局，以及显式传入其独审指针时的精确七键 created／九键 terminal 投影。投影逐项核同四个进程身份字段，并真实读取正常来源独审、核 created 的固定 scope 与 longpaths=true、原十一项 materialize 参数及 launcher/cwd 关系；原自然 exit/wait 0、完成时间和完整双流检查保留。A 与 B 自身外层继续使用原完整复制规则，原回执不补写。
+
 `post_a_contract` 保留原六键：`header/files_key/retained_public_files/prior_public_inventory/public_roots/public_root_files`。六棵公共树和十三个固定公件从当前绑定推导，与输入全等；旧清单原件及全部原行、retained 和当前公件形成完整并集，重叠路径必须字节相同。显式未来 B 的 runtime_root 只用于原隔离边界检查，不创建 B。全量复读及原六键消费者回读通过后，依次保留 `POST-A-PUBLIC-HISTORY.json`、`POST-A-CONTRACT.json`、`PUBLIC-INPUT-WINDOWS.json`，最后发布 `RESULT.json`；失败时保留已有输出，不能覆盖重用。回执单列实际维护工具摘要，既不改写冻结 App 资格，也不代表 B、页面或完整验收已经通过。
 
 同一作者的 `--history-source <全新外部目录>` 配合原 authority 两参数，组合已归档的非空历史组件。固定 overlay 的原 13 件末尾只加 reader，保留 producer 的 13 件／11 控制文件合同；reader 使用独立的 12 项控制文件，完整包为 14 件。内部 `history_host_source.py`、`history_reader_source.py` 只作固定原件的有限字节变换，核整件正逆和非目标成员保全，没有独立 CLI，也不运行 Host、应用或资源操作。

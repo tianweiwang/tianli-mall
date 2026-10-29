@@ -2332,7 +2332,7 @@ def derive_b_profile(authority_pointer: dict[str, Any],
             "status": "PURE_B_PROFILE_DERIVED_NOT_APPROVED_NO_A_OR_RUNTIME"}
 
 
-def _b_outer(outcome: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
+def _b_outer(outcome: dict[str, Any], materialize_review: dict[str, Any] | None = None) -> tuple[dict[str, Any], dict[str, Any]]:
     require(type(outcome) is dict and set(outcome) == {"created", "terminal", "stdout", "stderr"},
             "B_EXPLICIT_ACTUAL_OUTER_FOUR_FILES")
     created, terminal = (decode(read_pointer(outcome[key])) for key in ("created", "terminal"))
@@ -2340,9 +2340,30 @@ def _b_outer(outcome: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
             and type(created["pid"]) is int and created["pid"] > 0
             and type(created["argv"]) is list and created["argv"]
             and type(created["started_ns"]) is int, "B_ACTUAL_OUTER_CREATED")
-    require(set(terminal) == set(created) | {"native_exit", "wait_returncode", "finished_ns", "stdout", "stderr"}
-            and all(terminal[key] == value for key, value in created.items())
-            and type(terminal["native_exit"]) is int and type(terminal["wait_returncode"]) is int
+    copied = (set(terminal) == set(created) | {"native_exit", "wait_returncode", "finished_ns", "stdout", "stderr"}
+              and all(terminal[key] == value for key, value in created.items()))
+    if not copied and materialize_review is not None:
+        identity = ("pid", "argv", "cwd", "started_ns")
+        require(set(created) == set(identity) | {"source_review", "scope", "process_local_git_longpaths"}
+                and set(terminal) == set(identity) | {"native_exit", "wait_returncode", "finished_ns", "stdout", "stderr"}
+                and all(terminal[key] == created[key] for key in identity), "B_EXACT_NORMAL_M_METADATA_PROJECTION")
+        require(created["source_review"] == materialize_review
+                and created["scope"] == "SOURCE_MATERIALIZATION_ONLY_NO_DOCKER_OR_APP_OPERATIONS"
+                and created["process_local_git_longpaths"] is True, "B_NORMAL_M_REVIEWED_CREATED_METADATA")
+        review = decode(read_pointer(materialize_review))
+        require(type(review) is dict and review["schema"] == 1 and review["status"] == "PASS_CURRENT_NORMAL18_SOURCE_REVIEW"
+                and type(review["source_sha"]) is str and re.fullmatch("[a-f0-9]{40}", review["source_sha"])
+                and review["original_business_suffix_exact"] is True and review["source_graph_and_stream_contract_reviewed"] is True
+                and type(review["members"]) is dict and len(review["members"]) == 18, "B_NORMAL_M_ACTUAL_SOURCE_REVIEW")
+        argv = created["argv"]
+        require(len(argv) == 11 and argv[1:5] == ["-I", "-B", "-X", "utf8"] and argv[6] == "materialize"
+                and argv[7] == "--source-review-file" and Path(argv[8]) == Path(materialize_review["path"])
+                and argv[9:] == ["--source-review-sha256", materialize_review["sha256"]]
+                and type(created["cwd"]) is str and Path(created["cwd"]).is_absolute()
+                and Path(argv[5]) == Path(created["cwd"]) / "launcher/launch.py"
+                and Path(created["cwd"]) == Path(argv[5]).parent.parent, "B_NORMAL_M_ORIGINAL_MATERIALIZE_ARGV_AND_CWD")
+        copied = True
+    require(copied and type(terminal["native_exit"]) is int and type(terminal["wait_returncode"]) is int
             and terminal["native_exit"] == terminal["wait_returncode"] == 0
             and type(terminal["finished_ns"]) is int
             and terminal["finished_ns"] > created["started_ns"], "B_ACTUAL_SAME_PID_OUTER_NATURAL_ZERO")
@@ -2506,7 +2527,7 @@ def _completed_normal_a(normal: dict[str, Any], a: dict[str, Any],
     binding = decode(read_pointer(_pointer(normal_root / "qualification/CURRENT-BINDING.json")))
     require(binding["technical_authority"] == authority_pointer
             and binding["source_sha"] == authority["source_sha"], "B_CURRENT_NORMAL_SAME_REVIEWED_SOURCE")
-    m_created, _ = _b_outer(normal["outer"])
+    m_created, _ = _b_outer(normal["outer"], normal["review"])
     def actual_normal_argv(created, mode):
         argv = created["argv"]
         require(len(argv) == 11 and argv[1:5] == ["-I", "-B", "-X", "utf8"]
@@ -2848,12 +2869,34 @@ def collect_post_a_history(output: str | Path, authority_pointer: dict[str, Any]
 
 
 _B_SOURCE_REVIEW = r'''
-def current_b_outer(outcome):
+def current_b_outer(outcome, materialize_review=None):
     current_assert(set(outcome)=={'created','terminal','stdout','stderr'},'B_FIXED_ACTUAL_OUTER_FOUR')
     created=current_json(outcome['created']);terminal=current_json(outcome['terminal'])
+    copied=(set(terminal)==set(created)|{'native_exit','wait_returncode','finished_ns','stdout','stderr'}
+        and all(terminal[key]==value for key,value in created.items()))
+    if not copied and materialize_review is not None:
+        identity=('pid','argv','cwd','started_ns')
+        current_assert(set(created)==set(identity)|{'source_review','scope','process_local_git_longpaths'}
+            and set(terminal)==set(identity)|{'native_exit','wait_returncode','finished_ns','stdout','stderr'}
+            and all(terminal[key]==created[key] for key in identity),'B_EXACT_NORMAL_M_METADATA_PROJECTION')
+        current_assert(created['source_review']==materialize_review
+            and created['scope']=='SOURCE_MATERIALIZATION_ONLY_NO_DOCKER_OR_APP_OPERATIONS'
+            and created['process_local_git_longpaths'] is True,'B_NORMAL_M_REVIEWED_CREATED_METADATA')
+        review=current_json(materialize_review)
+        current_assert(type(review) is dict and review['schema']==1 and review['status']=='PASS_CURRENT_NORMAL18_SOURCE_REVIEW'
+            and type(review['source_sha']) is str and re.fullmatch('[a-f0-9]{40}',review['source_sha'])
+            and review['original_business_suffix_exact'] is True and review['source_graph_and_stream_contract_reviewed'] is True
+            and type(review['members']) is dict and len(review['members'])==18,'B_NORMAL_M_ACTUAL_SOURCE_REVIEW')
+        argv=created['argv']
+        current_assert(len(argv)==11 and argv[1:5]==['-I','-B','-X','utf8'] and argv[6]=='materialize'
+            and argv[7]=='--source-review-file' and Path(argv[8])==Path(materialize_review['path'])
+            and argv[9:]==['--source-review-sha256',materialize_review['sha256']]
+            and type(created['cwd']) is str and Path(created['cwd']).is_absolute()
+            and Path(argv[5])==Path(created['cwd'])/'launcher/launch.py'
+            and Path(created['cwd'])==Path(argv[5]).parent.parent,'B_NORMAL_M_ORIGINAL_MATERIALIZE_ARGV_AND_CWD')
+        copied=True
     current_assert(type(created['pid']) is int and created['pid']>0 and type(created['argv']) is list
-        and type(created['started_ns']) is int and set(terminal)==set(created)|{'native_exit','wait_returncode','finished_ns','stdout','stderr'}
-        and all(terminal[key]==value for key,value in created.items())
+        and type(created['started_ns']) is int and copied
         and type(terminal['native_exit']) is int and type(terminal['wait_returncode']) is int
         and terminal['native_exit']==terminal['wait_returncode']==0
         and type(terminal['finished_ns']) is int and terminal['finished_ns']>created['started_ns'],'B_REAL_SAME_PID_NATURAL_OUTER_ZERO')
@@ -2882,7 +2925,7 @@ def current_b_source_review(path, expected_sha):
         current_stream({'path':(root/name).as_posix(),**wanted})
     fixed=current_json(CURRENT_B_FIXED_INPUT)
     current_assert(fixed['source_authority']==CURRENT_B_TECHNICAL_AUTHORITY,'B_FIXED_SOURCE_AUTHORITY_INPUT')
-    current_b_outer(fixed['normal']['outer']);current_b_outer(fixed['A']['outer'])
+    current_b_outer(fixed['normal']['outer'],fixed['normal']['review']);current_b_outer(fixed['A']['outer'])
     current_assert(fixed['A']['session']==A_OUTER_SESSION
         and all(fixed['A'][key]==A_QUALIFICATION[key] for key in ['normal_root_result','worker_close','independent_zero','post_a_history']),
         'B_REVIEW_REAL_A_FIVE_PROOFS_STILL_EXACT')
