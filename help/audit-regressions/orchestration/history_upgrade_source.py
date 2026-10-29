@@ -2,8 +2,9 @@
 
 The emitted source candidate requires a real external source review, the original
 producer seal/four CLI and both real normal retirements before registration.
-It does not grant runtime qualification. The original initializer phases and
-child function are preserved byte for byte.
+It does not grant runtime qualification. The original seed, initialize and
+child functions are preserved byte for byte. The default-shipping oracle alone
+includes the nullable owner column already declared by MS2.
 """
 
 import hashlib
@@ -674,8 +675,82 @@ function m4i_currentReaderRegistration(): void
 '''
 
 
+# The original seed stays canonical; its full snapshot follows the completed MS2 structure.
+DEFAULT_SHIPPING_SOURCE_PIN = (2723, '0155d6e6661fdb2899fe9f4ba51b88ab487aeef29d46ddc6eb40afa612f0c5f9')
+_DEFAULT_SHIPPING_ORIGINAL = r'''function m4i_defaultShipping(array &$evidence): void
+{
+    audit_guard_assert(); $db = audit_db();
+    $source = str_replace("\r", '', file_get_contents('/source/crmeb/public/install/crmeb.sql'));
+    $seed = "INSERT INTO `eb_shipping_templates` (`id`, `name`, `type`, `appoint`, `no_delivery`, `sort`, `add_time`) VALUES\n"
+        . "(1, '默认模版', 1, 0, 0, 0, 1658394592);";
+    m2f_assert(substr_count($source, $seed) === 1, 'REAL_CANONICAL_DEFAULT_SHIPPING_SEED');
+    $names = $db->query('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN); sort($names, SORT_STRING);
+    $tables = array_fill_keys($names, null); $spec = ['tables' => $tables, 'redis' => ['*']];
+    $metadataQuery = 'SELECT TABLE_NAME,TABLE_TYPE,ENGINE,ROW_FORMAT,TABLE_COLLATION,TABLE_COMMENT,CREATE_OPTIONS,AUTO_INCREMENT'
+        . ' FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() ORDER BY TABLE_NAME';
+    $before = audit_snapshot($spec); $metadata = $db->query($metadataQuery)->fetchAll(PDO::FETCH_ASSOC);
+    $ddl = $db->query('SHOW CREATE TABLE eb_shipping_templates')->fetch(PDO::FETCH_NUM);
+    m2f_assert($before['tables']['eb_shipping_templates']['count'] === 0
+        && $db->query("SELECT AUTO_INCREMENT FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='eb_shipping_templates'")->fetchColumn() === 2
+        && is_array($ddl) && is_string($ddl[1] ?? null), 'FRESH_ORIGINAL_DEFAULT_SHIPPING_TABLE');
+    $row = ['id' => 1, 'name' => '默认模版', 'type' => 1, 'appoint' => 0, 'no_delivery' => 0, 'sort' => 0, 'add_time' => 1658394592];
+    $expected = $before;
+    $expected['tables']['eb_shipping_templates'] = ['count' => 1,
+        'sha256' => hash('sha256', hash('sha256', json_encode($row, JSON_THROW_ON_ERROR)))];
+    m2f_assert($db->beginTransaction(), 'DEFAULT_SHIPPING_SEED_TRANSACTION');
+    try {
+        m2f_assert($db->exec($seed) === 1
+            && $db->query('SELECT id,name,type,appoint,no_delivery,sort,add_time FROM eb_shipping_templates')->fetchAll(PDO::FETCH_ASSOC) === [$row],
+            'COMPLETE_REAL_INSTALL_DEFAULT_SHIPPING_ROW');
+        m2f_assert($db->commit(), 'DEFAULT_SHIPPING_SEED_COMMIT');
+        m2f_assert(audit_snapshot($spec) === $expected && $db->query($metadataQuery)->fetchAll(PDO::FETCH_ASSOC) === $metadata
+            && $db->query('SHOW CREATE TABLE eb_shipping_templates')->fetch(PDO::FETCH_NUM) === $ddl,
+            'DEFAULT_SHIPPING_ONLY_ORIGINAL_SEED_DELTA');
+    } catch (Throwable $error) {
+        if ($db->inTransaction()) $db->rollBack();
+        throw $error;
+    }
+    $evidence['canonical_default_shipping_seed'] = ['rows' => 1, 'original_id' => 1,
+        'counter_unchanged' => true, 'other_database_and_redis_unchanged' => true];
+}
+
+'''.encode('utf-8')
+
+
+def _default_shipping_seam():
+    before = _DEFAULT_SHIPPING_ORIGINAL
+    if (len(before), hashlib.sha256(before).hexdigest()) != DEFAULT_SHIPPING_SOURCE_PIN:
+        raise ValueError('DEFAULT_SHIPPING_EXACT_ORIGINAL_FUNCTION_REQUIRED')
+    after = before
+    changes = (
+        (b"    $expected = $before;\n",
+         b"    // MS2 has appended its declared nullable owner column before this canonical seed.\n"
+         b"    $snapshotRow = $row + ['mer_id' => null];\n"
+         b"    $expected = $before;\n"),
+        (b"'sha256' => hash('sha256', hash('sha256', json_encode($row, JSON_THROW_ON_ERROR)))",
+         b"'sha256' => hash('sha256', hash('sha256', json_encode($snapshotRow, JSON_THROW_ON_ERROR)))"),
+        (b"            'COMPLETE_REAL_INSTALL_DEFAULT_SHIPPING_ROW');\n",
+         b"            'COMPLETE_REAL_INSTALL_DEFAULT_SHIPPING_ROW');\n"
+         b"        m2f_assert($db->query('SELECT * FROM eb_shipping_templates')->fetchAll(PDO::FETCH_ASSOC) === [$snapshotRow],\n"
+         b"            'COMPLETE_REAL_INSTALL_DEFAULT_SHIPPING_MS2_ROW');\n"),
+    )
+    for old, new in changes:
+        if after.count(old) != 1 or new in after:
+            raise ValueError('DEFAULT_SHIPPING_UNIQUE_FORWARD_SEAM_REQUIRED')
+        after = after.replace(old, new, 1)
+    restored = after
+    for old, new in reversed(changes):
+        if restored.count(new) != 1:
+            raise ValueError('DEFAULT_SHIPPING_UNIQUE_REVERSE_SEAM_REQUIRED')
+        restored = restored.replace(new, old, 1)
+    if restored != before:
+        raise ValueError('DEFAULT_SHIPPING_COMPLETE_FUNCTION_REVERSE_REQUIRED')
+    return before, after
+
+
 def _seams():
     return (
+        _default_shipping_seam(),
         (b"        'initializer' => ['initialize', 'audit-ms4-initialize']];",
          b"        'current-structure-upgrade' => ['current-structure-upgrade', 'audit-bootstrap'],\n"
          b"        'register-legacy-current-reader' => ['register', 'audit-bootstrap'],\n"
