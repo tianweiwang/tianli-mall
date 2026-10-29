@@ -3211,8 +3211,11 @@ HISTORY_OVERLAY_PIN = {"bytes": 8013, "sha256": "503c0d3d4554a18dbbc114150172c12
 HISTORY_ORIGINAL_ROOT = "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/"
 
 
-def build_history_source(output: str | Path, authority_pointer: dict[str, Any]) -> dict[str, Any]:
+def build_history_source(output: str | Path, authority_pointer: dict[str, Any],
+                         isolation_subnet: str | None = None) -> dict[str, Any]:
     """Compose fixed historical components; source-only output grants no runtime admission."""
+    if isolation_subnet is not None:
+        isolation_subnet = validate_isolation_subnet(isolation_subnet)
     authority, inventory = reviewed_authority(authority_pointer)
     tool_root = Path(__file__).resolve().parent
     out = Path(output)
@@ -3308,6 +3311,15 @@ def build_history_source(output: str | Path, authority_pointer: dict[str, Any]) 
             require(type(after["compose.yml"]) is bytes
                     and namespace["reverse_compose"](after["compose.yml"]) == before["compose.yml"],
                     "HISTORY_COMPLETE_READER_COMPOSE_INVERSE")
+            if isolation_subnet is not None:
+                original_network = b"networks:\n  isolation:\n    internal: true\n    labels: *labels\nvolumes:"
+                selected_network = (b"networks:\n  isolation:\n    internal: true\n    labels: *labels\n"
+                                    b"    ipam:\n      config:\n        - subnet: "
+                                    + isolation_subnet.encode("ascii") + b"\nvolumes:")
+                composed = after["compose.yml"]
+                after["compose.yml"] = once(composed, original_network, selected_network)
+                require(once(after["compose.yml"], selected_network, original_network) == composed,
+                        "HISTORY_ONLY_EXPLICIT_ISOLATION_IPAM_BLOCK_CHANGED")
         if kind == "upgrade":
             migration_relative = "help/audit-regressions/isolated/ms4-migration.php"
             migration_raw = read(Path(authority["candidate_root"]) / migration_relative)
@@ -3362,10 +3374,10 @@ def build_history_source(output: str | Path, authority_pointer: dict[str, Any]) 
     require(set(after) == set(before) and all(after[name] == before[name] for name in HISTORY_NAMES
             if name not in changed_names), "HISTORY_OTHER_TEN_COMPLETE_FILES_UNCHANGED")
     require(constant(after["ms4-host.py"], "ARTIFACTS") == list(HISTORY_NAMES), "HISTORY_FINAL_FOURTEEN_ARTIFACTS")
-    require(after["ms4-host.py"].count(b"raise RuntimeError('NONEMPTY_HISTORY_RUNTIME_NOT_IMPLEMENTED')") == 2
-            and b"nhecr_expect(false, 'NHECR_EXACT13_READER_FINAL_SOURCE_UNBOUND');" in after["legacy-current-reader.php"]
-            and b"m2f_assert(false, 'CURRENT_STRUCTURE_UPGRADE_HANDOFF_UNBOUND');" in after["ms4-initialize.php"],
-            "HISTORY_UNFINISHED_RUNTIME_ADMISSION_REMAINS_CLOSED")
+    require(b"raise RuntimeError('NONEMPTY_HISTORY_RUNTIME_NOT_IMPLEMENTED')" not in after["ms4-host.py"]
+            and b"nhecr_expect(false, 'NHECR_EXACT13_READER_FINAL_SOURCE_UNBOUND');" not in after["legacy-current-reader.php"]
+            and b"m2f_assert(false, 'CURRENT_STRUCTURE_UPGRADE_HANDOFF_UNBOUND');" not in after["ms4-initialize.php"],
+            "HISTORY_FINAL_ADMISSION_IMPLEMENTED_REQUIRES_EXTERNAL_REVIEW")
     for name, raw in after.items():
         if name.endswith(".py"):
             compile(raw, name, "exec")
@@ -3378,15 +3390,15 @@ def build_history_source(output: str | Path, authority_pointer: dict[str, Any]) 
     publication = {"schema": 1, "scope": "CURRENT_HISTORY_SOURCE_PUBLICATION",
                    "source_sha": authority["source_sha"],
                    "artifact_files": [{"path": name, **pin(after[name])} for name in HISTORY_NAMES]}
-    checks = {"schema": 1, "status": "CURRENT_HISTORY_SOURCE_PROJECTIONS_ONLY_RUNTIME_INCOMPLETE",
+    checks = {"schema": 1, "status": "CURRENT_HISTORY_SOURCE_REQUIRES_INDEPENDENT_ADOPTION",
               "source_sha": authority["source_sha"], "legacy_source_sha": constant(before["ms4-host.py"], "LEGACY_SOURCE"),
               "changed_members": [name for name in HISTORY_NAMES if before[name] != after[name]],
               "original_other_members_unchanged": True, "unchanged_whole_members": 10,
               "complete_forward_and_reverse": True,
               "python_syntax": "PASS", "modified_php_syntax": "NOT RUN",
               "independent_review": "PENDING", "runtime": "NOT RUN", "source_review_written": False,
-              "remaining": ["complete source review and final adoption bindings",
-                            "qualified runtime admission for Host, upgrade and reader",
+              "remaining": ["complete independent source review and final adoption bindings",
+                            "new reviewed dual-source freeze and isolated resources",
                             "full normal history run, normal close and independent zero"],
               "stopped_samples": "NOT RUN"}
     inputs = {"schema": 1, "source_authority": authority_pointer,
@@ -3396,7 +3408,9 @@ def build_history_source(output: str | Path, authority_pointer: dict[str, Any]) 
               "author_tool": {"path": tool_path.as_posix(), **pin(tool_raw)},
               "application_controls": application_controls,
               "upgrade_application_sources": upgrade_application_sources,
-              "upgrade_registration_donor": upgrade_registration_donor}
+              "upgrade_registration_donor": upgrade_registration_donor,
+              "isolation_subnet": isolation_subnet,
+              "isolation_subnet_availability": "NOT_CHECKED_BY_AUTHOR"}
     files = {"before/" + name: before[name] for name in HISTORY_NAMES}
     files.update({"candidate/" + name: after[name] for name in HISTORY_NAMES})
     files.update({"author-source/" + name: raw for name, raw in author_sources.items()})
@@ -3418,17 +3432,18 @@ def main() -> None:
     destination.add_argument("--normal-source", help="Author the complete normal18 around an existing reviewed Core9.")
     destination.add_argument("--b-source", help="Derive original B Source after fixed actual M, A and five-material proofs.")
     destination.add_argument("--post-a-history", help="Collect only completed A public history in one new external directory.")
-    destination.add_argument("--history-source", help="Compose existing nonempty-history sources; incomplete runtime stages remain refused.")
+    destination.add_argument("--history-source", help="Compose nonempty-history sources; independent adoption review is required before runtime.")
     parser.add_argument("--b-inputs-file", help="Explicit completed current B prerequisite descriptor; only with --b-source.")
     parser.add_argument("--b-inputs-sha256", help="Fixed SHA256 of the complete B prerequisite descriptor.")
     parser.add_argument("--post-a-inputs-file", help="Explicit completed A, prior inventory, retained and six-key public contract; only with --post-a-history.")
     parser.add_argument("--post-a-inputs-sha256", help="Fixed SHA256 of the complete public post-A input descriptor.")
-    parser.add_argument("--isolation-subnet", help="Optional canonical RFC1918 IPv4 CIDR; only with --output.")
+    parser.add_argument("--isolation-subnet", help="Optional canonical RFC1918 IPv4 CIDR; only with --output or --history-source.")
     parser.add_argument("--initializer-syntax-result", help="Actual successful current initializer syntax receipt, for normal18.")
     parser.add_argument("--authority-file", required=True)
     parser.add_argument("--authority-sha256", required=True)
     args = parser.parse_args()
-    require(args.output is not None or args.isolation_subnet is None, "ISOLATION_SUBNET_ONLY_FOR_PROFILE_OUTPUT")
+    require(args.output is not None or args.history_source is not None or args.isolation_subnet is None,
+            "ISOLATION_SUBNET_ONLY_FOR_PROFILE_OR_HISTORY_OUTPUT")
     require(args.post_a_history is not None or args.post_a_inputs_file is None and args.post_a_inputs_sha256 is None,
             "POST_A_INPUTS_ONLY_FOR_POST_A_HISTORY")
     require(re.fullmatch(r"[a-f0-9]{64}", args.authority_sha256) is not None, "FIXED_AUTHORITY_SHA256")
@@ -3439,7 +3454,7 @@ def main() -> None:
     if args.history_source:
         require(args.b_inputs_file is None and args.b_inputs_sha256 is None and args.initializer_syntax_result is None,
                 "HISTORY_SOURCE_HAS_NO_B_OR_INITIALIZER_INPUTS")
-        result = build_history_source(args.history_source, pointer)
+        result = build_history_source(args.history_source, pointer, isolation_subnet=args.isolation_subnet)
     elif args.post_a_history:
         require(args.b_inputs_file is None and args.b_inputs_sha256 is None and args.initializer_syntax_result is None
                 and args.post_a_inputs_file is not None and type(args.post_a_inputs_sha256) is str

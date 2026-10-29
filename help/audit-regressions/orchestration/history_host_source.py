@@ -1,8 +1,8 @@
 """Finite byte transformation of the archived nonempty-history Host R3.
 
 This internal author module has no CLI, filesystem reads or Host execution.
-The candidate still refuses prepare and runtime dispatch.  A later independent
-review supplies real external source bindings; this module supplies none.
+Runtime admission requires the independently reviewed final publication and
+real external source bindings.  This module supplies no review or runtime result.
 """
 from __future__ import annotations
 
@@ -245,7 +245,98 @@ def projection_seams() -> tuple[tuple[bytes, bytes], ...]:
 
 # Fixed donor provenance: legacy-current-reader-runtime-source-r2 Host 148439 bytes,
 # SHA256 8b4751a46fa81bbcc89711373641d375856c0ea772554e738fa78ff1fff2300d.
-_HISTORY_RUNTIME = r'''def history_process(context, argv, stem, env=None):
+_HISTORY_RUNTIME = r'''def history_run_source_aliases(context, binding):
+    """Read only: retain both original external documents and their exact Run copies."""
+    root = Path(context['run_dir'])
+    expect(root.is_absolute() and root.resolve(strict=True).as_posix() == root.as_posix()
+           and binding['source_sha'] == context['source_sha'] and binding['status'] == 'CLEAN_SOURCE_FROZEN_ONLY'
+           and binding['runtime_SQL_App'] == 'NOT RUN'
+           and binding['nonempty_history_runtime'] == 'SOURCE_ADOPTED_RUNTIME_NOT_RUN',
+           'HISTORY_ALIAS_ORIGINAL_RUN_AND_REVIEWED_SOURCE_ONLY')
+    rows = [('review', 'history_source_review', 'history-source-review.json'),
+            ('publication', 'history_source_publication', 'history-source-publication.json')]
+    originals = {}; aliases = {}; values = {}
+    for name, field, leaf in rows:
+        pointer = binding[field]; history_source_pointer(pointer)
+        raw, actual = history_source_bytes(pointer['path'])
+        expect(actual == pointer, 'HISTORY_ALIAS_ORIGINAL_FULL_POINTER')
+        copied, alias = history_source_bytes(root / leaf)
+        expect(copied == raw and alias['bytes'] == pointer['bytes'] and alias['sha256'] == pointer['sha256'],
+               'HISTORY_ALIAS_EXACT_ORIGINAL_RAW_BYTES_SHA')
+        originals[name] = (raw, actual); aliases[name] = (copied, alias)
+        values[name] = history_source_json(raw)
+    review, publication = values['review'], values['publication']
+    expect(type(review) is dict and set(review) == {'schema', 'status', 'source_sha', 'publication', 'bindings'}
+           and type(review['schema']) is int and review['schema'] == 1
+           and review['status'] == 'PASS_CURRENT_HISTORY_SOURCE_REVIEW'
+           and review['source_sha'] == context['source_sha']
+           and review['publication'] == binding['history_source_publication'], 'HISTORY_ALIAS_REAL_REVIEW_JOIN')
+    expect(type(publication) is dict and set(publication) == {'schema', 'scope', 'source_sha', 'artifact_files'}
+           and type(publication['schema']) is int and publication['schema'] == 1
+           and publication['scope'] == 'CURRENT_HISTORY_SOURCE_PUBLICATION'
+           and publication['source_sha'] == context['source_sha']
+           and history_source_equal(publication['artifact_files'], binding['artifact_files']),
+           'HISTORY_ALIAS_REVIEWED_COMPLETE_PUBLICATION14')
+    history_source_projection(publication['artifact_files'])
+    for name, field, leaf in rows:
+        expect(history_source_bytes(binding[field]['path']) == originals[name]
+               and history_source_bytes(root / leaf) == aliases[name], 'HISTORY_ALIAS_FULL_ORIGINAL_AND_COPY_WINDOW_HELD')
+    return {name: {'path': '/run/audit/' + leaf, 'bytes': aliases[name][1]['bytes'],
+                   'sha256': aliases[name][1]['sha256']} for name, field, leaf in rows}
+
+
+def history_copy_source_aliases(context, binding):
+    """Copy already verified public source documents before the first native resource call."""
+    root = Path(context['run_dir']); retained = {}
+    rows = [('history_source_review', 'history-source-review.json'),
+            ('history_source_publication', 'history-source-publication.json')]
+    for field, leaf in rows:
+        pointer = binding[field]; history_source_pointer(pointer)
+        raw, actual = history_source_bytes(pointer['path'])
+        expect(actual == pointer, 'HISTORY_COPY_ACTUAL_EXTERNAL_SOURCE_POINTER')
+        destination = root / leaf
+        expect(not destination.exists() and not destination.is_symlink(), 'HISTORY_SOURCE_ALIAS_CREATE_ONLY')
+        with destination.open('xb') as stream:
+            expect(stream.write(raw) == len(raw), 'HISTORY_SOURCE_ALIAS_FULL_WRITE')
+            stream.flush()
+        copied, alias = history_source_bytes(destination)
+        expect(copied == raw and alias['bytes'] == actual['bytes'] and alias['sha256'] == actual['sha256'],
+               'HISTORY_SOURCE_ALIAS_ACTUAL_FULL_READBACK')
+        retained[field] = (raw, actual)
+    for field, leaf in rows:
+        expect(history_source_bytes(binding[field]['path']) == retained[field], 'HISTORY_COPY_ORIGINAL_SOURCE_BYTES_HELD')
+    return history_run_source_aliases(context, binding)
+
+
+def history_created_network_subnet(context, binding):
+    """Verify the actual IPAM only when the reviewed Compose specifies a subnet."""
+    import ipaddress
+    rows = [row for row in binding['artifact_files'] if row['path'] == 'compose.yml']
+    expect(len(rows) == 1, 'HISTORY_SINGLE_REVIEWED_COMPOSE')
+    raw, actual = history_source_bytes(PREP / 'compose.yml')
+    expect(rows[0] == {'path': 'compose.yml', 'bytes': actual['bytes'], 'sha256': actual['sha256']},
+           'HISTORY_SUBNET_FROM_COMPLETE_PINNED_COMPOSE')
+    text = raw.decode('utf-8')
+    declarations = re.findall(r'(?m)^\s*(?:-\s*)?subnet\s*:', text)
+    if not declarations:
+        return
+    matches = re.findall(r'(?m)^        - subnet: ([0-9.]+/[0-9]+)$', text)
+    expect(len(declarations) == len(matches) == 1, 'HISTORY_ONE_LITERAL_EXPLICIT_SUBNET')
+    section = re.search(r'(?ms)^networks:\n(?P<block>.*?)(?=^\S|\Z)', text)
+    expect(section is not None and section.group('block').startswith('  isolation:\n')
+           and len(re.findall(r'(?m)^  [a-zA-Z0-9_-]+:', section.group('block'))) == 1
+           and re.findall(r'(?m)^        - subnet: ([0-9.]+/[0-9]+)$', section.group('block')) == matches,
+           'HISTORY_SUBNET_IN_ONLY_ORIGINAL_ISOLATION_NETWORK')
+    subnet = ipaddress.ip_network(matches[0], strict=True)
+    expect(isinstance(subnet, ipaddress.IPv4Network) and str(subnet) == matches[0], 'HISTORY_CANONICAL_IPV4_SUBNET')
+    config = json.loads(native(context, ['network', 'inspect', '--format', '{{json .IPAM.Config}}', context['network_id']],
+                               'history-created-network-ipam'))
+    expect(type(config) is list and len(config) == 1 and type(config[0]) is dict
+           and config[0].get('Subnet') == matches[0], 'HISTORY_ACTUAL_CREATED_NETWORK_EXACT_SINGLE_SUBNET')
+    expect(history_source_bytes(PREP / 'compose.yml') == (raw, actual), 'HISTORY_SUBNET_COMPOSE_BYTES_HELD')
+
+
+def history_process(context, argv, stem, env=None):
     """One real native process, with its complete four public files; never serialize env."""
     evidence = Path(context['run_dir']) / 'evidence'
     paths = {key: evidence / (stem + '.' + suffix) for key, suffix in
@@ -670,7 +761,8 @@ def history_public_reader(context):
     expect(root.is_absolute() and root.is_dir() and not root.is_symlink() and not root.is_junction()
            and (root / 'evidence').is_dir() and not (root / 'evidence').is_symlink()
            and not (root / 'evidence').is_junction(), 'HISTORY_ORIGINAL_REGULAR_PUBLIC_ROOTS')
-    fixed = {'preparation-source-binding.json', 'network.json', 'containers.jsonl', 'volumes.txt', 'volumes.jsonl',
+    fixed = {'preparation-source-binding.json', 'history-source-review.json', 'history-source-publication.json',
+        'network.json', 'containers.jsonl', 'volumes.txt', 'volumes.jsonl',
         'evidence/legacy-history-producer-created.json', 'evidence/legacy-history-producer-terminal.json',
         'evidence/audit-legacy-history-producer-container-created.json',
         'evidence/audit-legacy-history-producer-source-binding.json', 'evidence/legacy-history-producer-result.json',
@@ -813,6 +905,7 @@ def current_reader_archive(context):
         relative = receipt['normal_remove']['path'][len('/run/audit/'):]
         expect(re.fullmatch(r'evidence/native-[0-9]{4,}[.]json', relative), 'READER_ARCHIVE_ONLY_REAL_REMOVE_NATIVE_POINTER')
         leaves.append(relative)
+    leaves += ['history-source-review.json', 'history-source-publication.json']
     expect(len(leaves) == len(set(leaves)), 'READER_ARCHIVE_UNIQUE_PUBLIC_INPUTS')
     parent = (root / 'evidence/nonempty-history-phases'); parent.mkdir(exist_ok=True)
     expect(parent.is_dir() and not parent.is_symlink() and not parent.is_junction(), 'READER_ARCHIVE_REGULAR_PARENT')
@@ -1235,11 +1328,41 @@ _LIFECYCLE_SEAMS = (('def native(context, args, label):\n'
   '    print'))
 _COMPOSE_READER = b'  audit-legacy-current-reader:\n    <<: *php\n    working_dir: /workspace/crmeb\n    tmpfs: [/tmp, "/current-runtime:mode=0700"]\n    command: [/run/nonempty/legacy-current-reader.php, normal, "--freeze-bytes=${NONEMPTY_FREEZE_BYTES:?required}", "--freeze-sha256=${NONEMPTY_FREEZE_SHA256:?required}"]\n    volumes:\n      - ${AUDIT_REPO_DIR:?required}:/workspace:ro\n      - ${AUDIT_REPO_DIR:?required}:/source:ro\n      - ${MS4_PREP_DIR:?required}:/run/nonempty:ro\n      - ${AUDIT_RUN_DIR:?required}:/run/audit\n      - app-secrets:/run/audit-app:ro\n      - fixture-secrets:/run/audit-fixtures:ro\n'
 
+_ADOPTION_SEAMS = (
+    ('"""Nonempty-history source preparation. Runtime wiring remains incomplete."""',
+     '"""Adopt independently reviewed history sources; each runtime result requires its actual original evidence."""'),
+    ("    expect(not Path(output).resolve().is_relative_to(repo), 'PROOF_OUTSIDE_REPO')\n",
+     "    expect(not Path(output).resolve().is_relative_to(repo), 'PROOF_OUTSIDE_REPO')\n"
+     "    expect(not Path(output).resolve().is_relative_to(PREP), 'PROOF_OUTSIDE_PREPARATION_SOURCE')\n"),
+    ("'nonempty_history_runtime': 'NOT_READY_FOR_RUNTIME'", "'nonempty_history_runtime': 'SOURCE_ADOPTED_RUNTIME_NOT_RUN'"),
+    ("    # This candidate currently qualifies source components only. Do not start\n"
+     "    # the old empty-history runner before producer/handoff/close are wired.\n"
+     "    raise RuntimeError('NONEMPTY_HISTORY_RUNTIME_NOT_IMPLEMENTED')\n",
+     '    """Verify the real final source and retain its public originals before native preparation."""\n'),
+    ("    expect(not root.is_relative_to(Path(binding['requested_repo_source']).resolve()), 'RUN_OUTSIDE_SOURCE')\n",
+     "    for source_root in [Path(binding['requested_repo_source']),\n"
+     "                        Path(binding['nonempty_history']['requested_legacy_repo_source']), PREP]:\n"
+     "        expect(not root.is_relative_to(source_root.resolve(strict=True)), 'RUN_OUTSIDE_BOTH_APPLICATIONS_AND_PREPARATION')\n"),
+    ("    expect((directory / 'preparation-source-binding.json').read_bytes() == frozen, 'FREEZE_COPY_BYTES')\n",
+     "    expect((directory / 'preparation-source-binding.json').read_bytes() == frozen, 'FREEZE_COPY_BYTES')\n"
+     "    history_copy_source_aliases(context, binding)\n"),
+    ("    collect(context, expected, initial_services={'audit-mysql': mysql, 'audit-redis': redis})\n",
+     "    collect(context, expected, initial_services={'audit-mysql': mysql, 'audit-redis': redis})\n"
+     "    history_created_network_subnet(context, binding)\n"),
+    ("    binding = load(binding_file)\n    if source_required:\n",
+     "    binding = load(binding_file)\n    history_run_source_aliases(context, binding)\n    if source_required:\n"),
+    ("    else:\n        raise RuntimeError('NONEMPTY_HISTORY_RUNTIME_NOT_IMPLEMENTED')\n"
+     "        expect(args.context, 'EXPLICIT_ORIGINAL_HISTORY_CONTEXT')\n",
+     "    else:\n        expect(args.context, 'EXPLICIT_ORIGINAL_HISTORY_CONTEXT')\n"),
+)
+
+
 def fixed_seams() -> tuple[tuple[bytes, bytes], ...]:
     extra = tuple((before.encode('utf-8'), after.encode('utf-8')) for before, after in _LIFECYCLE_SEAMS)
     insertion = (_HISTORY_RUNTIME + '\n\n' + _READER_RUNTIME + '\n\n').encode()
+    adoption = tuple((before.encode('utf-8'), after.encode('utf-8')) for before, after in _ADOPTION_SEAMS)
     return projection_seams() + extra + ((b'def prepare(binding_file, run_root):',
-        insertion + b'def prepare(binding_file, run_root):'),)
+        insertion + b'def prepare(binding_file, run_root):'),) + adoption
 
 
 def transform_compose(raw: bytes) -> bytes:
@@ -1280,11 +1403,12 @@ def transform_host(raw: bytes) -> bytes:
         _require(candidate.count(before) == 1, "HISTORY_HOST_UNIQUE_LITERAL_SEAM")
         candidate = candidate.replace(before, after, 1)
     original = _definitions(raw); updated = _definitions(candidate)
-    changed = {"freeze", "verify_freeze", "legacy_handoff_source", "main", "native", "compose", "owned", "global_consumers", "proof_expected", "stage"}
+    changed = {"freeze", "verify_freeze", "legacy_handoff_source", "main", "native", "compose", "owned", "global_consumers", "proof_expected", "stage", "prepare", "current"}
     additions = {"history_source_bytes", "history_source_json", "history_source_pointer",
                  "history_source_equal", "history_source_projection", "history_source_review", "current_reader_authority"}
     additions |= set(_definitions((_HISTORY_RUNTIME + "\n\n" + _READER_RUNTIME).encode()))
-    _require(candidate.count(b"raise RuntimeError(\'NONEMPTY_HISTORY_RUNTIME_NOT_IMPLEMENTED\')") == 2, "HISTORY_BOTH_RUNTIME_REJECTIONS_HELD")
+    _require(b"NONEMPTY_HISTORY_RUNTIME_NOT_IMPLEMENTED" not in candidate,
+             "HISTORY_FINAL_ADMISSION_USES_REAL_REVIEW_AND_SOURCE_ALIASES")
     _require(set(updated) == set(original) | additions
              and all(updated[name] == body for name, body in original.items() if name not in changed),
              "HISTORY_HOST_ALL_OTHER_FUNCTIONS_WHOLE_BYTES_HELD")

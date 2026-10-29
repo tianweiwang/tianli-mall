@@ -1,9 +1,9 @@
 """Finite reader source seams for the existing normal-source author.
 
 This module accepts only the archived reader below. It performs no I/O and has
-no CLI. The original first UNBOUND remains. Upgrade receipts and normal retirement
-are consumed only as actual public inputs; their Host production and final role
-adoption remain separate, unfinished seams.
+no CLI. The emitted source candidate adopts only a real external review and its
+publication through two fixed Run aliases. Upgrade receipts and normal retirement
+remain actual public inputs; source adoption does not grant runtime qualification.
 
 Refund expectations come from MarketplaceMs4AftersaleMigration::refundAdditions
 and CustomerLegacyRefundAssetServices::project / its DAO's note reader, not an
@@ -20,10 +20,14 @@ _FIRST_UNBOUND = b"""function nhecr_qualify(array $freezePin, bool $httpChild = 
 {
     nhecr_expect(false, 'NHECR_EXACT13_READER_FINAL_SOURCE_UNBOUND');
 """
+_ADOPTED_QUALIFY = b"""function nhecr_qualify(array $freezePin, bool $httpChild = false): array
+{
+    // The real source review, publication and complete artifacts are joined after context qualification below.
+"""
 
 # Ordered, exact byte replacements; reverse_reader applies these in reverse.
 # All other bytes, including the producer's original eleven-control seal, stay
-# unchanged. These are source transformations, not a new runtime contract gate.
+# unchanged. These transformations do not establish a runtime verification result.
 READER_SEAMS = (
     (
         "includes_current_control_files",
@@ -185,15 +189,15 @@ def transform_reader(raw: bytes) -> bytes:
     candidate = raw
     for name, old, new in READER_SEAMS:
         candidate = _replace_once(candidate, old, new, name)
-    if candidate.count(_FIRST_UNBOUND) != 1 or reverse_reader(candidate) != raw:
-        raise ValueError("HISTORY_READER_UNBOUND_AND_WHOLE_REVERSE")
+    if candidate.count(_ADOPTED_QUALIFY) != 1 or _FIRST_UNBOUND in candidate or reverse_reader(candidate) != raw:
+        raise ValueError("HISTORY_READER_SOURCE_ADOPTION_AND_WHOLE_REVERSE")
     return candidate
 
 
 def reverse_reader(candidate: bytes) -> bytes:
     """Restore and authenticate the entire archived input, not only seams."""
-    if type(candidate) is not bytes or candidate.count(_FIRST_UNBOUND) != 1:
-        raise ValueError("HISTORY_READER_CANDIDATE_BYTES_AND_UNBOUND")
+    if type(candidate) is not bytes or candidate.count(_ADOPTED_QUALIFY) != 1 or _FIRST_UNBOUND in candidate:
+        raise ValueError("HISTORY_READER_CANDIDATE_BYTES_AND_SOURCE_ADOPTION")
     original = candidate
     for name, old, new in reversed(READER_SEAMS):
         original = _replace_once(original, new, old, name)
@@ -858,3 +862,155 @@ _UPGRADE_ADDITIONAL_SEAMS = (
     ('upgrade_pure_public_definitions', b'/** Full166 capture must join the original completed migration snapshot without discarding new columns. */', _UPGRADE_SHARED_CONTRACTS + _UPGRADE_READER_FUNCTIONS + b'\n/** Full173 capture joins the preserved original four-CLI166 and the independent structure upgrade. */'),
 )
 READER_SEAMS += _UPGRADE_ADDITIONAL_SEAMS
+
+# Final source adoption uses actual external original bytes; no review is authored
+# or inferred here. The Windows pointers are identifiers, never Linux file paths.
+_SOURCE_ADOPTION_FUNCTIONS = rb'''/** Public source-only adoption shared by the reader and the actual initializer gate. */
+function nhecr_source_handoff(array $context, array $freeze, string $artifactRoot, array &$proofs): void
+{
+    if ($artifactRoot === '/run/ms4-prep') {
+        $proof = getenv('MS4_PROOF_NAME');
+        nhecr_expect(function_exists('m4i_gate') && PHP_SAPI === 'cli'
+            && realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === '/run/ms4-prep/ms4-initialize.php'
+            && in_array($proof, ['current-structure-upgrade', 'register-legacy-current-reader'], true),
+            'NHECR_SOURCE_REAL_INITIALIZER_GATE_REQUIRED');
+        m4i_gate($proof === 'current-structure-upgrade' ? 'current-structure-upgrade' : 'register');
+    } else nhecr_expect($artifactRoot === '/run/nonempty' && __FILE__ === '/run/nonempty/legacy-current-reader.php'
+        && realpath(__FILE__) === __FILE__, 'NHECR_SOURCE_FIXED_READER_ARTIFACT_ROOT');
+    nhecr_expect(is_string($context['source_sha'] ?? null) && preg_match('/\A[a-f0-9]{40}\z/D', $context['source_sha']) === 1
+        && ($freeze['source_sha'] ?? null) === $context['source_sha'] && ($freeze['status'] ?? null) === 'CLEAN_SOURCE_FROZEN_ONLY'
+        && ($freeze['runtime_SQL_App'] ?? null) === 'NOT RUN'
+        && ($freeze['nonempty_history_runtime'] ?? null) === 'SOURCE_ADOPTED_RUNTIME_NOT_RUN'
+        && is_string($context['prep_dir'] ?? null) && preg_match('~\A(?:[A-Za-z]:/|/)~D', $context['prep_dir']) === 1
+        && !str_contains($context['prep_dir'], '\\') && !str_contains($context['prep_dir'], "\0")
+        && !preg_match('~(?:^|/)\.\.?(?:/|$)~D', $context['prep_dir']), 'NHECR_SOURCE_SAME_CURRENT_FREEZE_AND_HOST_PREP');
+    $documents = [];
+    foreach (['history_source_review' => 'history-source-review.json', 'history_source_publication' => 'history-source-publication.json'] as $key => $leaf) {
+        $pin = $freeze[$key] ?? null; nhecr_expect(is_array($pin), 'NHECR_SOURCE_REAL_EXTERNAL_DESCRIPTOR_REQUIRED');
+        nhecr_keys($pin, ['path', 'bytes', 'sha256']);
+        nhecr_expect(is_string($pin['path']) && preg_match('~\A(?:[A-Za-z]:/|/)~D', $pin['path']) === 1
+            && !str_contains($pin['path'], '\\') && !str_contains($pin['path'], "\0")
+            && !preg_match('~(?:^|/)\.\.?(?:/|$)~D', $pin['path'])
+            && is_int($pin['bytes']) && $pin['bytes'] > 0 && $pin['bytes'] <= 67108864
+            && is_string($pin['sha256']) && preg_match('/\A[a-f0-9]{64}\z/D', $pin['sha256']) === 1,
+            'NHECR_SOURCE_COMPLETE_ORIGINAL_EXTERNAL_POINTER');
+        $path = '/run/audit/' . $leaf; $documents[$key] = nhecu_public($path, $proofs);
+        nhecr_expect(nhecu_same($proofs[$path]['pin'], array_replace($pin, ['path' => $path])),
+            'NHECR_SOURCE_RUN_ALIAS_FULL_ORIGINAL_BYTES_AND_SHA');
+    }
+    $review = $documents['history_source_review']; $publication = $documents['history_source_publication'];
+    nhecr_keys($review, ['schema', 'status', 'source_sha', 'publication', 'bindings']);
+    nhecr_keys($publication, ['schema', 'scope', 'source_sha', 'artifact_files']);
+    nhecr_expect($review['schema'] === 1 && $review['status'] === 'PASS_CURRENT_HISTORY_SOURCE_REVIEW'
+        && $review['source_sha'] === $context['source_sha']
+        && nhecu_same($review['publication'], $freeze['history_source_publication'])
+        && $publication['schema'] === 1 && $publication['scope'] === 'CURRENT_HISTORY_SOURCE_PUBLICATION'
+        && $publication['source_sha'] === $context['source_sha'], 'NHECR_SOURCE_REAL_REVIEW_PUBLICATION_SAME_SOURCE_JOIN');
+    $names = ['README.md', 'compose.yml', 'ms4-host.py', 'ms4-initialize.php', 'seed-source-inverse.json',
+        'legacy-app.php', 'legacy-files-bootstrap.php', 'legacy-normal-config.php', 'legacy-actors.php',
+        'legacy-history-http.php', 'legacy-history-channel.php', 'legacy-history-producer.php',
+        'legacy-history-router.php', 'legacy-current-reader.php'];
+    $artifacts = $freeze['artifact_files'] ?? null;
+    nhecr_expect(is_array($artifacts) && array_is_list($artifacts) && count($artifacts) === 14
+        && array_column($artifacts, 'path') === $names && nhecu_same($publication['artifact_files'], $artifacts),
+        'NHECR_SOURCE_COMPLETE_ORDERED_FOURTEEN_PUBLICATION_AND_FREEZE');
+    $indexed = []; $raw = [];
+    foreach ($artifacts as $pin) {
+        nhecr_keys($pin, ['path', 'bytes', 'sha256']);
+        nhecr_expect(is_int($pin['bytes']) && $pin['bytes'] > 0 && $pin['bytes'] <= 67108864,
+            'NHECR_SOURCE_NONEMPTY_BOUNDED_ARTIFACT');
+        $indexed[$pin['path']] = $pin; $path = $artifactRoot . '/' . $pin['path'];
+        $raw[$pin['path']] = nhe_file($path, array_replace($pin, ['path' => $path]));
+    }
+    $legacy = $freeze['nonempty_history']; $current = $freeze['current_reader'];
+    nhecr_keys($current, ['schema', 'source_sha', 'source_files', 'source_directories', 'control_files']);
+    $paths = ['/run/nonempty/legacy-actors.php', '/run/nonempty/legacy-app.php', '/run/nonempty/legacy-current-reader.php',
+        '/run/nonempty/legacy-files-bootstrap.php', '/run/nonempty/legacy-history-channel.php', '/run/nonempty/legacy-history-http.php',
+        '/run/nonempty/legacy-history-producer.php', '/run/nonempty/legacy-history-router.php', '/run/nonempty/legacy-normal-config.php',
+        '/workspace/help/audit-regressions/isolated/lib/guard.php', '/workspace/help/audit-regressions/isolated/lib/harness.php',
+        '/workspace/help/audit-regressions/isolated/ms4-migration.php'];
+    nhecr_expect($current['schema'] === 1 && $current['source_sha'] === $context['source_sha']
+        && $legacy['legacy_source_sha'] === '477732e3e03ed4ba1dbb6b44a94dbba75f7e1978'
+        && is_array($legacy['control_files']) && array_is_list($legacy['control_files']) && count($legacy['control_files']) === 11
+        && is_array($current['control_files']) && array_is_list($current['control_files'])
+        && count($current['control_files']) === 12 && array_column($current['control_files'], 'path') === $paths,
+        'NHECR_SOURCE_ORIGINAL_ELEVEN_CURRENT_TWELVE_FIXED_CONTROLS');
+    $producerControls = []; $sources = array_column($current['source_files'], null, 'path');
+    foreach ($current['control_files'] as $pin) {
+        nhecr_keys($pin, ['path', 'bytes', 'sha256']); $path = $pin['path'];
+        if ($path !== '/run/nonempty/legacy-current-reader.php') $producerControls[] = $pin;
+        if (str_starts_with($path, '/run/nonempty/')) {
+            $leaf = substr($path, strlen('/run/nonempty/'));
+            nhecr_expect(isset($indexed[$leaf]) && nhecu_same($pin, array_replace($indexed[$leaf], ['path' => $path])),
+                'NHECR_SOURCE_EACH_BUNDLE_CONTROL_COMPLETE_ARTIFACT_JOIN');
+            nhecr_expect(nhe_file($artifactRoot . '/' . $leaf, array_replace($pin, ['path' => $artifactRoot . '/' . $leaf])) === $raw[$leaf],
+                'NHECR_SOURCE_EACH_ACTUAL_BUNDLE_CONTROL_FULL_BYTES');
+        } else {
+            $relative = substr($path, strlen('/workspace/'));
+            nhecr_expect(isset($sources[$relative]) && nhecu_same($pin, array_replace($sources[$relative], ['path' => $path])),
+                'NHECR_SOURCE_EACH_CURRENT_CONTROL_FULL_TREE_JOIN');
+            foreach (['/workspace', '/source'] as $root) nhe_file($root . '/' . $relative, array_replace($pin, ['path' => $root . '/' . $relative]));
+        }
+    }
+    nhecr_expect(nhecu_same($producerControls, $legacy['control_files']), 'NHECR_SOURCE_ALL_ORIGINAL_ELEVEN_CONTROLS_PRESERVED');
+    $bindings = $review['bindings']; nhecr_keys($bindings, ['producer', 'library', 'artifacts', 'control_files', 'startup', 'reader', 'consumer']);
+    $producerArtifacts = array_values(array_filter($artifacts, static fn(array $pin): bool => !in_array($pin['path'], ['ms4-host.py', 'legacy-current-reader.php'], true)));
+    nhecr_expect(count($producerArtifacts) === 12 && nhecu_same($bindings['artifacts'], $producerArtifacts)
+        && nhecu_same($bindings['control_files'], $legacy['control_files'])
+        && nhecu_same($bindings['producer'], $indexed['legacy-history-producer.php'])
+        && nhecu_same($bindings['library'], $indexed['legacy-app.php']), 'NHECR_SOURCE_FOUR_REAL_ORIGINAL_EXTERNAL_BINDINGS');
+    foreach (['startup' => 'legacy-history-producer.php', 'reader' => 'legacy-current-reader.php', 'consumer' => 'ms4-host.py'] as $key => $leaf)
+        nhecr_expect(nhecu_same($bindings[$key], array_replace($indexed[$leaf], ['path' => rtrim($context['prep_dir'], '/') . '/' . $leaf])),
+            'NHECR_SOURCE_THREE_REAL_HOST_POINTER_BINDINGS_NO_HOST_PATH_OPEN');
+    foreach ($artifacts as $pin) {
+        $path = $artifactRoot . '/' . $pin['path'];
+        nhecr_expect(nhe_file($path, array_replace($pin, ['path' => $path])) === $raw[$pin['path']], 'NHECR_SOURCE_ALL_FOURTEEN_ORIGINAL_BYTES_HELD');
+    }
+    nhecu_held($proofs);
+}
+
+/** Match real original public stage pins; never manufacture a registration stage. */
+function nhecr_manifest_stages(array $context, array $manifest, array &$proofs, bool $reader): void
+{
+    $history = $manifest['nonempty_history'] ?? null; nhecr_expect(is_array($history), 'NHECR_SOURCE_REAL_HISTORY_MANIFEST');
+    nhecr_keys($history, ['schema', 'stages']);
+    $wanted = ['audit-legacy-files-bootstrap', 'audit-legacy-history-producer'];
+    if ($reader) $wanted[] = 'audit-legacy-current-reader';
+    sort($wanted, SORT_STRING); $names = array_keys($history['stages']); sort($names, SORT_STRING);
+    nhecr_expect($history['schema'] === 1 && $names === $wanted, 'NHECR_SOURCE_EXACT_ORIGINAL_OR_READER_STAGE_SET');
+    foreach ($wanted as $role) {
+        $stage = $history['stages'][$role]; nhecr_keys($stage, ['created', 'binding']);
+        $base = '/run/audit/evidence/' . $role;
+        foreach (['created' => '-container-created.json', 'binding' => '-source-binding.json'] as $key => $suffix) {
+            $path = $base . $suffix; nhecu_public($path, $proofs);
+            nhecr_expect($stage[$key] === $proofs[$path]['pin'], 'NHECR_SOURCE_EACH_STAGE_REAL_ORIGINAL_FULL_PIN');
+        }
+        $made = json_decode($proofs[$base . '-container-created.json']['raw'], true, 128, JSON_THROW_ON_ERROR);
+        $binding = json_decode($proofs[$base . '-source-binding.json']['raw'], true, 128, JSON_THROW_ON_ERROR);
+        nhecr_expect($made['run_id'] === $context['run_id'] && $made['source_sha'] === $context['source_sha']
+            && $made['labels']['com.docker.compose.service'] === $role
+            && $binding['run_id'] === $context['run_id'] && $binding['source_sha'] === $context['source_sha']
+            && $binding['role'] === $role && $binding['container_id'] === $made['id'], 'NHECR_SOURCE_EACH_STAGE_SAME_RUN_ROLE_SOURCE_CID');
+        $alias = '/run/audit/evidence/' . substr($role, strlen('audit-')) . '-created.json';
+        nhecr_expect(nhecu_same(nhecu_public($alias, $proofs), $made), 'NHECR_SOURCE_EACH_STAGE_ORIGINAL_NATIVE_CREATED_ALIAS');
+    }
+}
+
+'''
+
+READER_SEAMS += (
+    ('adopt_real_external_source_after_context', _FIRST_UNBOUND, _ADOPTED_QUALIFY),
+    ('fixed_two_real_source_public_aliases',
+     b'actual-run-context|preparation-source-binding|manifest',
+     b'actual-run-context|preparation-source-binding|manifest|history-source-review|history-source-publication'),
+    ('source_adoption_pure_definitions',
+     b'/** Pure native-created validator shared by actual bootstrap registration and the new reader qualifier. */',
+     _SOURCE_ADOPTION_FUNCTIONS + b'/** Pure native-created validator shared by actual bootstrap registration and the new reader qualifier. */'),
+    ('source_adoption_current_context_join',
+     b"    $authority = $freeze['nonempty_history']; $current = $freeze['current_reader'];",
+     b"    $sourceProofs = []; nhecr_source_handoff($context, $freeze, '/run/nonempty', $sourceProofs);\n"
+     b"    $authority = $freeze['nonempty_history']; $current = $freeze['current_reader'];"),
+    ('source_adoption_public_input_window',
+     b'    $upgrade = nhecu_upgradePublic($context, $freeze, $handoff, $proofs);',
+     b'    $upgrade = nhecu_upgradePublic($context, $freeze, $handoff, $proofs);\n    $proofs += $sourceProofs; nhecr_manifest_stages($context, $manifest, $proofs, true);'),
+)
