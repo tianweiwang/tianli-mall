@@ -1,5 +1,17 @@
 # 本机多商户预览
 
+## 当前源码小程序（Source615，2026-10-30）
+
+最新独立工程为 `H:/天俪商城/artifacts/multi-merchant-final-normal-20261029-r81/mp-current-build/mp-weixin/dist`，由冻结 Source615 的原构建命令实际编译，继续连接18198和原接口测试AppID，未安装依赖或发布。原r49工程及其登录会话保留。正常打开仅模拟器模式：
+
+```powershell
+wechatide -c Codex open_project_window --project 'H:/天俪商城/artifacts/multi-merchant-final-normal-20261029-r81/mp-current-build/mp-weixin/dist' --window-mode liteMode
+```
+
+已有同一工程窗口不会因重复open切换模式。QA曾用fullMode正常登录“预览合成顾客”，只读重入商品5（20.15元、库存95、销量5）、已收根单18、已收包裹19及评价3的审核/商家回复；原富文本描述和WXS正常渲染，现有封面与旧评价图片可见。随后官方命令以liteMode实际新开同一工程，当前停在商品5的公开评价页，当前会话未登录，未重新登录或改缓存；不把之前的登录验收当作当前仍已登录。公开评价为3条、好评2／中评1／差评0、好评率66%。没有重新下单、支付、发货、收货或提交评价。
+
+当前565应用输入与r49相同，但旧构建缺完整历史工具/依赖记录，因此保留旧记录并实际重编一次。新1248产物及工具、五插件完整前后输入已独立复核；新旧差异均经全量解析说明，未改业务源码或生成空样式来补页。构建和静态资格见仓库外R81的 `actual-mp-current-build-readback.json`、`mp-current-build-independent-review.json`；新工程UI见 `mp-current-source-ui/verification.json`，仅模拟器窗口交付见 `mp-current-source-ui/window-mode-delivery.json`，两次开窗前后1248文件均保持。客户端为当前Source615，后端仍为既有18198预览；本结果不代签同源fresh B、正式微信、真机、新选图隐私或真实资金验收。
+
 ## 小程序文字评价正常闭环（R81，2026-10-30）
 
 现有 r49 小程序工程连接 18198，已用新合成根单18／商品项20／包裹19完成20.15元测试付款、发1收1，以及无图文字评价3、审核和商家回复。当前小程序停在商品5的公开评价页；可从“我的→订单→这笔20.15元已收货订单→商品评价”重入本人记录，或从商品详情进入商品评价。已有 H5 [本人评价记录](http://127.0.0.1:18198/pages/goods/marketplace_review/index?root_id=18&item_id=20)和[公开商品评价](http://127.0.0.1:18198/pages/goods/goods_comment_list/index?product_id=5)可查看同一资料。勿重复支付、收货或提交评价。
