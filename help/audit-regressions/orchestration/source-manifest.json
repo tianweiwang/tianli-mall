@@ -7,8 +7,8 @@
   "current_repaired_source_commit": "76efa7807c6137bc430e314e2faa78691cf60431",
   "originals_preserved_byte_for_byte": true,
   "runtime_executed_by_archive_verifier": false,
-  "file_count": 233,
-  "total_bytes": 37777631,
+  "file_count": 242,
+  "total_bytes": 38528209,
   "files": [
     {
       "path": "sources/customer-form-official-initialize-env-raw-source-r1/candidate/help/audit-regressions/isolated/lib/ms4-customer-http-normal.php",
@@ -1243,6 +1243,62 @@
       "sha256": "fecb7ae730de7dc203bbeec4d9009791bceaf546d3be0301d38bd516cdd034f2"
     },
     {
+      "path": "sources/legacy-current-reader-runtime-source-r2/SOURCE.json",
+      "origin_relative_path": "legacy-current-reader-runtime-source-r2/SOURCE.json",
+      "package": "legacy-current-reader-runtime-source-r2",
+      "role": "static-source-contract",
+      "bytes": 98656,
+      "sha256": "a70f52964582f688de027b6b6571e8fc72739aba0fd7301c0856e2aa88616f97"
+    },
+    {
+      "path": "sources/legacy-current-reader-runtime-source-r2/candidate/compose.yml",
+      "origin_relative_path": "legacy-current-reader-runtime-source-r2/candidate/compose.yml",
+      "package": "legacy-current-reader-runtime-source-r2",
+      "role": "static-source-contract",
+      "bytes": 5485,
+      "sha256": "bd8a58e2efbe9aa4673dc5ab975a868904f4c6ab629fb3adeb6b3e7e8181e634"
+    },
+    {
+      "path": "sources/legacy-current-reader-runtime-source-r2/candidate/ms4-host.py",
+      "origin_relative_path": "legacy-current-reader-runtime-source-r2/candidate/ms4-host.py",
+      "package": "legacy-current-reader-runtime-source-r2",
+      "role": "python-source",
+      "bytes": 148439,
+      "sha256": "8b4751a46fa81bbcc89711373641d375856c0ea772554e738fa78ff1fff2300d"
+    },
+    {
+      "path": "sources/legacy-current-reader-runtime-source-r2/candidate/ms4-initialize.php",
+      "origin_relative_path": "legacy-current-reader-runtime-source-r2/candidate/ms4-initialize.php",
+      "package": "legacy-current-reader-runtime-source-r2",
+      "role": "php-source",
+      "bytes": 62966,
+      "sha256": "9753365c2ff96690b82411d25aeecd0c28c1bf1d751aa1ec44ce272f8a610070"
+    },
+    {
+      "path": "sources/nonempty-history-current-reader-private-context-components-source-r2/PINS.json",
+      "origin_relative_path": "nonempty-history-current-reader-private-context-components-source-r2/PINS.json",
+      "package": "nonempty-history-current-reader-private-context-components-source-r2",
+      "role": "static-source-contract",
+      "bytes": 1758,
+      "sha256": "cb85966e54dbe4906a0cf00e8e48793931458a4e52d6bdce51f4475e2c8da196"
+    },
+    {
+      "path": "sources/nonempty-history-current-reader-private-context-components-source-r2/SOURCE-OVERLAY.json",
+      "origin_relative_path": "nonempty-history-current-reader-private-context-components-source-r2/SOURCE-OVERLAY.json",
+      "package": "nonempty-history-current-reader-private-context-components-source-r2",
+      "role": "static-source-contract",
+      "bytes": 8013,
+      "sha256": "503c0d3d4554a18dbbc114150172c1297cb59c359f1a366ca92a6743ffb172f1"
+    },
+    {
+      "path": "sources/nonempty-history-current-reader-private-context-components-source-r2/candidate/legacy-current-reader.php",
+      "origin_relative_path": "nonempty-history-current-reader-private-context-components-source-r2/candidate/legacy-current-reader.php",
+      "package": "nonempty-history-current-reader-private-context-components-source-r2",
+      "role": "php-source",
+      "bytes": 310962,
+      "sha256": "2b0dd14ff42adf9cc17776d4313f97fd7ad286ba11ccbfae849358610bb84c00"
+    },
+    {
       "path": "sources/nonempty-history-host-handoff-components-source-r1/DESIGN-TASKS.md",
       "origin_relative_path": "nonempty-history-host-handoff-components-source-r1/DESIGN-TASKS.md",
       "package": "nonempty-history-host-handoff-components-source-r1",
@@ -1273,6 +1329,22 @@
       "role": "python-source",
       "bytes": 35425,
       "sha256": "21cbc4d6c0b5b6ea607c2a6848be61dcfacf9ae46c057dc43c1a3374f651e8aa"
+    },
+    {
+      "path": "sources/nonempty-history-host-handoff-components-source-r3/PINS.json",
+      "origin_relative_path": "nonempty-history-host-handoff-components-source-r3/PINS.json",
+      "package": "nonempty-history-host-handoff-components-source-r3",
+      "role": "static-source-contract",
+      "bytes": 1901,
+      "sha256": "5c0e2ee2f7c5e4e5fb8cd23671e003bc4776f96a82e1f52d78daaf1a92ff9bdb"
+    },
+    {
+      "path": "sources/nonempty-history-host-handoff-components-source-r3/candidate/ms4-host.py",
+      "origin_relative_path": "nonempty-history-host-handoff-components-source-r3/candidate/ms4-host.py",
+      "package": "nonempty-history-host-handoff-components-source-r3",
+      "role": "python-source",
+      "bytes": 112398,
+      "sha256": "5b041cbb071353cf28186aad73d8fdeebd33b3919f467a3afb42569776af5066"
     },
     {
       "path": "sources/nonempty-history-normal-close-components-source-r1/DESIGN-TASKS.md",

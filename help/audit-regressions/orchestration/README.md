@@ -90,10 +90,15 @@ python -I -B help/audit-regressions/orchestration/verify_sources.py
 | `nonempty-history-normal-close-components-source-r1` | 完整 producer、Channel、公开视图接缝及合同 | 已有原独立源码核对，未签业务运行 |
 | `nonempty-history-normal-parent-components-source-r1` | 完整 parent producer 和接缝 | 保留 LOAD-01 缺陷与未完成的 startup 检查，供追溯 |
 | `nonempty-history-normal-parent-components-source-r2` | 完整 parent producer、作者程序及正逆变更 | 修正三组件固定装载；独立源码核对和 PHP 纯语法通过，未签业务运行 |
-| `nonempty-history-normal-startup-components-source-r1` | 完整 producer、启动检查、作者程序、正逆变更及公开上游源码依据 | 独立源码核对通过；新候选语法及完整业务待验，最终准入仍未闭合 |
+| `nonempty-history-normal-startup-components-source-r1` | 完整 producer、启动检查、作者程序、正逆变更及公开上游源码依据 | 原独立源码与对应完整 PHP 8.2 语法已通过；业务及最终准入仍待 |
 | `nonempty-history-host-handoff-components-source-r1` | 完整 Host 和交接接缝 | 最终资格未绑定，原拒绝入口保持 |
+| `nonempty-history-host-handoff-components-source-r3` | 后继 Host 完整源码与原 PINS | 修正旧订单唯一号类型检查；七项最终绑定与运行入口仍未闭合 |
+| `nonempty-history-current-reader-private-context-components-source-r2` | 最新 reader、原 PINS 与完整组件映射 | 对应完整 PHP 8.2 语法已通过；当前角色与最终采用仍未接通 |
+| `legacy-current-reader-runtime-source-r2` | reader 阶段的旧 Host、Compose、initializer 及 SOURCE 记录 | 仅供有限接缝复用；旧 producer 消费合同不能覆盖最新 Host |
 | `full-a-paid-producer-failed-close-source-r1` | 原失败实例的正常关闭、独立核零源码 | 原实例已经退役；不得用旧程序操作新实例 |
 | 三个 customer-form 来源与 proof INI | 原精确 PHP 快照及内存配置源码 | 只保存源码，不替代原运行回执 |
+
+新增历史来源按原路径完整保存，未复制运行数据、环境配置或账户资料。最新组件映射中的 producer 13 件与 reader 的额外来源均可在归档中定位；旧 reader Host/Compose/initializer 只提供阶段接线参考，不表示可直接整包运行。最终接线还须保留原 37 步及四次迁移，解决 producer 的 11 项控制文件与 reader 的 12 项控制文件使用同字段的冲突，并在原历史迁移保全之后独立完成当前应用必需的结构升级（含版本元数据及旧订单实际经过的履约/售后结构门；完整迁移集合仍待调用链核对）。新增归档及纯语法通过均不代表这些任务完成。
 
 所有实际文件以清单为准，不按目录名递归导入其他原机材料。没有把整份原材料目录、原 Run 或所有历史作者输入公开。两份 published-current 完整编排保留各自来源 `584532ba2`；归档提交本身会前移 Git HEAD，不能据此宣称已在归档后的 HEAD 运行通过。
 

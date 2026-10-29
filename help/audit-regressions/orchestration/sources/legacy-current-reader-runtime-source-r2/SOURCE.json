@@ -1,0 +1,2742 @@
+{
+  "schema": 1,
+  "scope": "SOURCE_ONLY_CURRENT_READER_R2_SIX_CONFIRMED_INTERFACE_FIXES",
+  "status": "AUTHOR_SOURCE_STATIC_CHECKED_NOT_ADOPTED_NOT_RUN",
+  "base_root": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-current-reader-runtime-source-r1",
+  "candidate_namespace": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-current-reader-runtime-source-r2\\candidate",
+  "artifact_files": [
+    {
+      "path": "compose.yml",
+      "bytes": 5485,
+      "sha256": "bd8a58e2efbe9aa4673dc5ab975a868904f4c6ab629fb3adeb6b3e7e8181e634"
+    },
+    {
+      "path": "legacy-actors.php",
+      "bytes": 55842,
+      "sha256": "cac4403932f939f6b89df1912ceea19402d87d69250c01de24f6ccb8b7b56213"
+    },
+    {
+      "path": "legacy-app.php",
+      "bytes": 43919,
+      "sha256": "0f0c59679bb12bf0ca5b2ea487187f5c6e58e6b3d78b926a41ddd82d139b94b8"
+    },
+    {
+      "path": "legacy-current-reader.php",
+      "bytes": 281228,
+      "sha256": "7a5e606c7ebdfa38fcd3e00211123924ab3dda79f58eae65bf48c0c729e5847f"
+    },
+    {
+      "path": "legacy-files-bootstrap.php",
+      "bytes": 14449,
+      "sha256": "dbe38371567d495d5567189599a025903b91a22ffa6c8b001aab2509baf1375b"
+    },
+    {
+      "path": "legacy-history-channel.php",
+      "bytes": 10051,
+      "sha256": "dc9e178fd56547170f9f3880cc89a6ad1355701c8fc8f4752fd1a64301d07474"
+    },
+    {
+      "path": "legacy-history-http.php",
+      "bytes": 36764,
+      "sha256": "2747c8227349c62e4c5f928561ffbb307a6b9c34cf0d24420a0bf15f5aa0a3f2"
+    },
+    {
+      "path": "legacy-history-producer.php",
+      "bytes": 1040124,
+      "sha256": "1e6ac2313db9d9cf25b759b5e1e5598cb036c93ca8eed339bfbf1d745b95662e"
+    },
+    {
+      "path": "legacy-history-router.php",
+      "bytes": 5551,
+      "sha256": "e6dea42b0f0ec0f93f7d718426f7be5f5c6963c832409f8f676632a956d2c554"
+    },
+    {
+      "path": "legacy-normal-config.php",
+      "bytes": 26434,
+      "sha256": "df95e3e546f638f79b31ede89ead808f7e641c80941d6ead87ff3c8e13c038b5"
+    },
+    {
+      "path": "ms4-host.py",
+      "bytes": 148439,
+      "sha256": "8b4751a46fa81bbcc89711373641d375856c0ea772554e738fa78ff1fff2300d"
+    },
+    {
+      "path": "ms4-initialize.php",
+      "bytes": 62966,
+      "sha256": "9753365c2ff96690b82411d25aeecd0c28c1bf1d751aa1ec44ce272f8a610070"
+    },
+    {
+      "path": "README.md",
+      "bytes": 5547,
+      "sha256": "295f78e8bef5a0af84a14324a6dab3afce3abaf9a53e5d3c47365f0d57ea9943"
+    },
+    {
+      "path": "seed-source-inverse.json",
+      "bytes": 639,
+      "sha256": "c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a"
+    }
+  ],
+  "artifact_namespace_exact14": true,
+  "held_whole_artifacts12": [
+    "compose.yml",
+    "legacy-actors.php",
+    "legacy-app.php",
+    "legacy-files-bootstrap.php",
+    "legacy-history-channel.php",
+    "legacy-history-http.php",
+    "legacy-history-producer.php",
+    "legacy-history-router.php",
+    "legacy-normal-config.php",
+    "ms4-initialize.php",
+    "README.md",
+    "seed-source-inverse.json"
+  ],
+  "changed_members": [
+    {
+      "path": "legacy-current-reader.php",
+      "before": {
+        "bytes": 273019,
+        "sha256": "947d0c0c65a232e6b71ac94ccf07ff51d492dd59c6311badd2e09fe519f3d686"
+      },
+      "after": {
+        "bytes": 281228,
+        "sha256": "7a5e606c7ebdfa38fcd3e00211123924ab3dda79f58eae65bf48c0c729e5847f"
+      },
+      "stages": [
+        {
+          "before_offset": 80946,
+          "after_offset": 80946,
+          "old_utf8": "            $path = $directory . '/legacy-' . $kind . '.' . $stream;\n",
+          "new_utf8": "            $path = $directory . '/current-' . $kind . '.' . $stream;\n",
+          "stage_offset": 80946,
+          "before": {
+            "bytes": 273019,
+            "sha256": "947d0c0c65a232e6b71ac94ccf07ff51d492dd59c6311badd2e09fe519f3d686"
+          },
+          "after": {
+            "bytes": 273020,
+            "sha256": "c50cb207ac26f27edc5fb848b18369ebdf8476959fba8609707e3aa3d6e52ec3"
+          }
+        },
+        {
+          "before_offset": 89985,
+          "after_offset": 89986,
+          "old_utf8": "",
+          "new_utf8": "function nhecr_file_tree(string $root): ?array\n{\n    nhep_expect(in_array($root, ['/run/audit-app', '/run/audit-fixtures', '/current-runtime',\n        '/workspace/crmeb/public', '/workspace/crmeb/runtime'], true), 'NHECR_FILE_FIXED_FIVE_CURRENT_OBSERVATION_ROOTS');\n    clearstatcache(true, $root);\n    if (!file_exists($root)) {\n        nhep_expect(!is_link($root), 'NHE_FILE_ABSENT_ROOT_NOT_DANGLING_LINK'); return null;\n    }\n    nhep_expect(is_dir($root) && !is_link($root) && realpath($root) === $root, 'NHE_FILE_ORIGINAL_REAL_DIRECTORY_ROOT');\n    $result = [];\n    $walk = static function (string $path, string $relative) use (&$walk, &$result): void {\n        clearstatcache(true, $path); $before = lstat($path);\n        nhep_expect(is_array($before) && !is_link($path) && realpath($path) === $path, 'NHE_FILE_REAL_ORIGINAL_TREE_ENTRY');\n        $stat = nhep_file_stat($before); $kind = $stat['mode'] & 0170000;\n        nhep_expect(in_array($kind, [0040000, 0100000], true), 'NHE_FILE_ONLY_DIRECTORY_OR_REGULAR_ENTRY');\n        $row = ['kind' => $kind === 0040000 ? 'directory' : 'file', 'stat' => $stat];\n        if ($kind === 0100000) {\n            nhep_expect($stat['nlink'] === 1 && $stat['size'] >= 0 && $stat['size'] <= 67108864,\n                'NHE_FILE_COMPLETE_SINGLE_LINK_FILE_WITHIN_ORIGINAL_LIMIT');\n            $raw = file_get_contents($path); clearstatcache(true, $path); $after = lstat($path);\n            nhep_expect(is_string($raw) && strlen($raw) === $stat['size'] && is_array($after)\n                && !is_link($path) && realpath($path) === $path && nhep_file_stat($after) === $stat,\n                'NHE_FILE_COMPLETE_BYTES_AND_ORIGINAL_STAT_STABLE');\n            $result[$relative] = $row + ['bytes' => strlen($raw), 'sha256' => hash('sha256', $raw)];\n            unset($raw); return;\n        }\n        $result[$relative] = $row; $names = scandir($path);\n        nhep_expect(is_array($names), 'NHE_FILE_COMPLETE_ORIGINAL_DIRECTORY_NAMESPACE');\n        foreach ($names as $name) {\n            if ($name === '.' || $name === '..') continue;\n            nhep_expect(is_string($name) && $name !== '' && !str_contains($name, \"\\0\") && !str_contains($name, '/'),\n                'NHE_FILE_REAL_DIRECTORY_LEAF_NAME');\n            $walk($path . '/' . $name, $relative === '' ? $name : $relative . '/' . $name);\n        }\n        clearstatcache(true, $path); $after = lstat($path);\n        nhep_expect(is_array($after) && !is_link($path) && realpath($path) === $path\n            && nhep_file_stat($after) === $stat && scandir($path) === $names,\n            'NHE_FILE_COMPLETE_DIRECTORY_STAT_AND_NAMESPACE_STABLE');\n    };\n    $walk($root, ''); ksort($result, SORT_STRING); return $result;\n}\n\n",
+          "stage_offset": 89986,
+          "before": {
+            "bytes": 273020,
+            "sha256": "c50cb207ac26f27edc5fb848b18369ebdf8476959fba8609707e3aa3d6e52ec3"
+          },
+          "after": {
+            "bytes": 275733,
+            "sha256": "9699fef6598f6820fc587c853533c9dbc21da27bd5a928ebfddea3fce2c99e37"
+          }
+        },
+        {
+          "before_offset": 92167,
+          "after_offset": 94881,
+          "old_utf8": "    nhep_expect(function_exists('nheh_snapshot') && function_exists('nhep_http_stream_expected'),\n        'NHE_AUTH_FILES_COMPLETE_OBSERVER_AND_INDEPENDENT_HTTP_STREAM_MODEL_REQUIRED');\n    nheh_snapshot($before7); nheh_snapshot($actual7);\n",
+          "new_utf8": "    nhep_expect(function_exists('nhecr_db_validate') && function_exists('nhecr_stream_expected'),\n        'NHECR_FILES_COMPLETE_CURRENT_OBSERVER_AND_HTTP_STREAM_MODEL_REQUIRED');\n    foreach ([$before7, $actual7] as $view) {\n        nhe_keys($view, ['database', 'rows', 'redis', 'private', 'public', 'logs', 'native'],\n            'NHECR_FILES_COMPLETE_CURRENT_SEVEN_PART_OBSERVATION');\n        foreach ($view as $part) nhep_expect(is_array($part), 'NHECR_FILES_NO_BOOLEAN_OBSERVER_ACK');\n        nhecr_db_validate(['database' => $view['database'], 'rows' => $view['rows']]);\n        nhe_keys($view['native'], ['http'], 'NHECR_FILES_ONLY_REAL_CURRENT_HTTP_CHILD');\n        $native = $view['native']['http'];\n        nhep_expect(is_array($native) && is_int($native['pid'] ?? null) && $native['pid'] > 0\n            && ($native['running'] ?? null) === true && ($native['signaled'] ?? null) === false\n            && ($native['stopped'] ?? null) === false && ($native['exitcode'] ?? null) === -1,\n            'NHECR_FILES_ACTUAL_OWN_HTTP_CHILD_STILL_RUNNING');\n    }\n",
+          "stage_offset": 94881,
+          "before": {
+            "bytes": 275733,
+            "sha256": "9699fef6598f6820fc587c853533c9dbc21da27bd5a928ebfddea3fce2c99e37"
+          },
+          "after": {
+            "bytes": 276556,
+            "sha256": "531afd4fe160e15260856c7412d6d83018b789cb797138c1683041c8100e7dbc"
+          }
+        },
+        {
+          "before_offset": 106475,
+          "after_offset": 110012,
+          "old_utf8": "    $filesBefore = ['app' => nhep_file_tree('/run/audit-app'), 'fixtures' => nhep_file_tree('/run/audit-fixtures'),\n        'runtime' => nhep_file_tree('/current-runtime'), 'public' => nhep_file_tree('/workspace/crmeb/public')];\n",
+          "new_utf8": "    $filesBefore = ['app' => nhecr_file_tree('/run/audit-app'), 'fixtures' => nhecr_file_tree('/run/audit-fixtures'),\n        'runtime' => nhecr_file_tree('/current-runtime'), 'public' => nhecr_file_tree('/workspace/crmeb/public')];\n",
+          "stage_offset": 110012,
+          "before": {
+            "bytes": 276556,
+            "sha256": "531afd4fe160e15260856c7412d6d83018b789cb797138c1683041c8100e7dbc"
+          },
+          "after": {
+            "bytes": 276560,
+            "sha256": "ba771af3daaa66268b1979122bfdf078d84342c62492ca45772a56ed7c9ad6a1"
+          }
+        },
+        {
+          "before_offset": 110281,
+          "after_offset": 113822,
+          "old_utf8": "        && $filesBefore === ['app' => nhep_file_tree('/run/audit-app'), 'fixtures' => nhep_file_tree('/run/audit-fixtures'),\n            'runtime' => nhep_file_tree('/current-runtime'), 'public' => nhep_file_tree('/workspace/crmeb/public')],\n",
+          "new_utf8": "        && $filesBefore === ['app' => nhecr_file_tree('/run/audit-app'), 'fixtures' => nhecr_file_tree('/run/audit-fixtures'),\n            'runtime' => nhecr_file_tree('/current-runtime'), 'public' => nhecr_file_tree('/workspace/crmeb/public')],\n",
+          "stage_offset": 113822,
+          "before": {
+            "bytes": 276560,
+            "sha256": "ba771af3daaa66268b1979122bfdf078d84342c62492ca45772a56ed7c9ad6a1"
+          },
+          "after": {
+            "bytes": 276564,
+            "sha256": "5b541f63a9edbca94d6e9e520873d7c05f6d917d3e16f6bec24d829d6886ce0a"
+          }
+        },
+        {
+          "before_offset": 116516,
+          "after_offset": 120061,
+          "old_utf8": "        'private' => ['app' => nhep_file_tree('/run/audit-app'), 'fixtures' => nhep_file_tree('/run/audit-fixtures')],\n        'public' => ['current_public' => nhep_file_tree('/workspace/crmeb/public')],\n        'logs' => ['runtime' => nhep_file_tree('/current-runtime'), 'current_root_runtime' => nhep_file_tree('/workspace/crmeb/runtime')],\n",
+          "new_utf8": "        'private' => ['app' => nhecr_file_tree('/run/audit-app'), 'fixtures' => nhecr_file_tree('/run/audit-fixtures')],\n        'public' => ['current_public' => nhecr_file_tree('/workspace/crmeb/public')],\n        'logs' => ['runtime' => nhecr_file_tree('/current-runtime'), 'current_root_runtime' => nhecr_file_tree('/workspace/crmeb/runtime')],\n",
+          "stage_offset": 120061,
+          "before": {
+            "bytes": 276564,
+            "sha256": "5b541f63a9edbca94d6e9e520873d7c05f6d917d3e16f6bec24d829d6886ce0a"
+          },
+          "after": {
+            "bytes": 276569,
+            "sha256": "53bc45a4761a38fcc368a816a79b8ccc23ed279bfb4ac688fea05338831b0e5c"
+          }
+        },
+        {
+          "before_offset": 230772,
+          "after_offset": 234322,
+          "old_utf8": "",
+          "new_utf8": "        $filesView = static fn(): array => [\n            'private' => ['app' => nhecr_file_tree('/run/audit-app'), 'fixtures' => nhecr_file_tree('/run/audit-fixtures')],\n            'public' => ['current_public' => nhecr_file_tree('/workspace/crmeb/public')],\n            'logs' => ['runtime' => nhecr_file_tree('/current-runtime'),\n                'current_root_runtime' => nhecr_file_tree('/workspace/crmeb/runtime')],\n        ];\n        $startupFilesBefore = $filesView();\n",
+          "stage_offset": 234322,
+          "before": {
+            "bytes": 276569,
+            "sha256": "53bc45a4761a38fcc368a816a79b8ccc23ed279bfb4ac688fea05338831b0e5c"
+          },
+          "after": {
+            "bytes": 277045,
+            "sha256": "44a12b46987aded538e1588e36e58c6e98fe7051e35d39c3a6b393b70e4bcae3"
+          }
+        },
+        {
+          "before_offset": 231412,
+          "after_offset": 235438,
+          "old_utf8": "",
+          "new_utf8": "        $startupFilesAfter = $filesView(); $startupFilesExpected = $startupFilesBefore;\n        $oldRuntime = $startupFilesBefore['logs']['runtime']; $newRuntime = $startupFilesAfter['logs']['runtime'];\n        nhecr_expect(is_array($oldRuntime) && is_array($newRuntime) && ($oldRuntime['']['kind'] ?? null) === 'directory'\n            && $oldRuntime['']['stat']['mode'] === (0040000 | 0700), 'NHECR_STARTUP_ORIGINAL_PRIVATE_RUNTIME_ROOT');\n        nhecr_files_streams(['native_streams' => $startup], $newRuntime);\n        foreach (['stdout', 'stderr'] as $name) {\n            $leaf = 'current-http.' . $name; $stream = $startup['http'][$name];\n            nhecr_expect(!array_key_exists($leaf, $oldRuntime), 'NHECR_STARTUP_ONLY_TWO_CREATE_ONLY_NATIVE_STREAMS');\n            $created = nhep_file_stat($children['http']['streams'][$name]['created']); $stat = $stream['stat'];\n            $raw = $name === 'stdout' ? '' : '[' . $startupMatch[1] . '] PHP ' . PHP_VERSION\n                . ' Development Server (http://127.0.0.1:8000) started' . \"\\n\";\n            foreach (['dev', 'ino', 'mode', 'nlink', 'uid', 'gid'] as $key)\n                nhecr_expect($stat[$key] === $created[$key], 'NHECR_STARTUP_STREAM_ORIGINAL_SIX_CREATED_FIELDS');\n            nhecr_expect($created['size'] === 0 && $created['mode'] === (0100000 | 0600) && $created['nlink'] === 1\n                && $stream['raw'] === $raw && $stat['size'] === strlen($raw)\n                && $stat['mtime'] >= $created['mtime'] && $stat['ctime'] >= $created['ctime']\n                && $stat['mtime'] >= $startupStart && $stat['mtime'] <= $startupEnd\n                && $stat['ctime'] >= $startupStart && $stat['ctime'] <= $startupEnd,\n                'NHECR_STARTUP_ONLY_PROVEN_START_LINE_AND_BOUNDED_NATIVE_STREAM_TIMES');\n            $expectedStat = $created; $expectedStat['size'] = strlen($raw);\n            $expectedStat['mtime'] = $stat['mtime']; $expectedStat['ctime'] = $stat['ctime'];\n            $startupFilesExpected['logs']['runtime'][$leaf] = ['kind' => 'file', 'stat' => $expectedStat,\n                'bytes' => strlen($raw), 'sha256' => hash('sha256', $raw)];\n        }\n        $oldRoot = $oldRuntime['']['stat']; $newRoot = $newRuntime['']['stat'];\n        foreach (['dev', 'ino', 'mode', 'nlink', 'uid', 'gid'] as $key)\n            nhecr_expect($newRoot[$key] === $oldRoot[$key], 'NHECR_STARTUP_SAME_PARENT_TWO_REGULAR_FILES_NO_NEW_DIRECTORY');\n        nhecr_expect($newRoot['size'] >= $oldRoot['size'] && $newRoot['mtime'] >= $oldRoot['mtime']\n            && $newRoot['ctime'] >= $oldRoot['ctime'] && $newRoot['mtime'] >= $startupStart && $newRoot['mtime'] <= $startupEnd\n            && $newRoot['ctime'] >= $startupStart && $newRoot['ctime'] <= $startupEnd,\n            'NHECR_STARTUP_PARENT_ONLY_BOUNDED_NATIVE_CREATION_METADATA');\n        foreach (['size', 'mtime', 'ctime'] as $key) $startupFilesExpected['logs']['runtime']['']['stat'][$key] = $newRoot[$key];\n        ksort($startupFilesExpected['logs']['runtime'], SORT_STRING);\n        nhecr_expect($startupFilesExpected === $startupFilesAfter, 'NHECR_STARTUP_INDEPENDENT_COMPLETE_FILES_DELTA_ONLY_TWO_STREAMS');\n        $startupNative = nhep_child_observation($children, 'http')['native'];\n",
+          "stage_offset": 235438,
+          "before": {
+            "bytes": 277045,
+            "sha256": "44a12b46987aded538e1588e36e58c6e98fe7051e35d39c3a6b393b70e4bcae3"
+          },
+          "after": {
+            "bytes": 280270,
+            "sha256": "f173046c99b4fe4d9dd9a3fd42a9f43a00e1b2af65f02cc2a96ae848a9be23b7"
+          }
+        },
+        {
+          "before_offset": 232274,
+          "after_offset": 239525,
+          "old_utf8": "",
+          "new_utf8": "            if ($accepted === null) {\n                nhecr_expect($index === 0 && $beforeDB === $baseline, 'NHECR_FIRST_BEFORE_IS_REAL_SEALED_CURRENT_166_BASELINE');\n                $continuous = ['database' => $baseline['database'], 'rows' => $baseline['rows'],\n                    'redis' => nhep_redis_expected($cache['snapshot'], [], $before['snapshot']['redis']['time']),\n                    'private' => $startupFilesExpected['private'], 'public' => $startupFilesExpected['public'],\n                    'logs' => $startupFilesExpected['logs'], 'native' => ['http' => $startupNative]];\n            } else {\n                $continuous = $accepted;\n                $continuous['redis'] = nhep_redis_expected($accepted['redis'], [], $before['snapshot']['redis']['time']);\n            }\n            nhecr_expect($continuous === $before['snapshot'], 'NHECR_COMPLETE_ACCEPTED_TO_NEXT_BEFORE_ONLY_PASSIVE_REDIS_EXPIRY');\n            unset($continuous);\n",
+          "stage_offset": 239525,
+          "before": {
+            "bytes": 280270,
+            "sha256": "f173046c99b4fe4d9dd9a3fd42a9f43a00e1b2af65f02cc2a96ae848a9be23b7"
+          },
+          "after": {
+            "bytes": 281223,
+            "sha256": "06af88237d56eeb65ebbefba74d95d7b5f8cb299c917d936825e37dbaf935c11"
+          }
+        },
+        {
+          "before_offset": 236457,
+          "after_offset": 244661,
+          "old_utf8": "            && $accepted['private'] === ['app' => nhep_file_tree('/run/audit-app'), 'fixtures' => nhep_file_tree('/run/audit-fixtures')]\n            && $accepted['public'] === ['current_public' => nhep_file_tree('/workspace/crmeb/public')]\n            && $accepted['logs'] === ['runtime' => nhep_file_tree('/current-runtime'), 'current_root_runtime' => nhep_file_tree('/workspace/crmeb/runtime')],\n",
+          "new_utf8": "            && $accepted['private'] === ['app' => nhecr_file_tree('/run/audit-app'), 'fixtures' => nhecr_file_tree('/run/audit-fixtures')]\n            && $accepted['public'] === ['current_public' => nhecr_file_tree('/workspace/crmeb/public')]\n            && $accepted['logs'] === ['runtime' => nhecr_file_tree('/current-runtime'), 'current_root_runtime' => nhecr_file_tree('/workspace/crmeb/runtime')],\n",
+          "stage_offset": 244661,
+          "before": {
+            "bytes": 281223,
+            "sha256": "06af88237d56eeb65ebbefba74d95d7b5f8cb299c917d936825e37dbaf935c11"
+          },
+          "after": {
+            "bytes": 281228,
+            "sha256": "7a5e606c7ebdfa38fcd3e00211123924ab3dda79f58eae65bf48c0c729e5847f"
+          }
+        }
+      ],
+      "unchanged_chunks": [
+        {
+          "before_offset": 0,
+          "after_offset": 0,
+          "bytes": 80946,
+          "sha256": "79d6f365131b97d0b0664df5be42a131209b8407d462fb5fa43302522ac93a24"
+        },
+        {
+          "before_offset": 81015,
+          "after_offset": 81016,
+          "bytes": 8970,
+          "sha256": "e0557ea1fcbd0de9631f838e8c0ad4ddcf6a3b273207482ab974d3a628282ecf"
+        },
+        {
+          "before_offset": 89985,
+          "after_offset": 92699,
+          "bytes": 2182,
+          "sha256": "36e7c3819a177f2aca7c2055a8c181166e97aa844f348070d736820291495a22"
+        },
+        {
+          "before_offset": 92407,
+          "after_offset": 95944,
+          "bytes": 14068,
+          "sha256": "46fc5d638d5a324be01fa5e036edeb33601123519d43680645c252a8c481ff66"
+        },
+        {
+          "before_offset": 106704,
+          "after_offset": 110245,
+          "bytes": 3577,
+          "sha256": "0943fb091a3806e62e93a8489934a8e56655e69d4216a6d8de3d4b1e3a2a9a75"
+        },
+        {
+          "before_offset": 110523,
+          "after_offset": 114068,
+          "bytes": 5993,
+          "sha256": "244754e3597d1e7b4dc3e5052ac6c2859f69be492445c80e71c01d5c045d1378"
+        },
+        {
+          "before_offset": 116859,
+          "after_offset": 120409,
+          "bytes": 113913,
+          "sha256": "d7eccdeb22e46cb0eb575e9caae1b5865ffa19d799d7c74ff05077a5c2d1b048"
+        },
+        {
+          "before_offset": 230772,
+          "after_offset": 234798,
+          "bytes": 640,
+          "sha256": "218a7d1330671e4c1473d26453d71a774169151fa41351528c70c6d722691634"
+        },
+        {
+          "before_offset": 231412,
+          "after_offset": 238663,
+          "bytes": 862,
+          "sha256": "eb1d21ad2a0889087e225a233859cf6760dab46489757f54dcb4f6ffbea497d4"
+        },
+        {
+          "before_offset": 232274,
+          "after_offset": 240478,
+          "bytes": 4183,
+          "sha256": "5ae0adae7b7a4a72dd0174089d616e89dec43520875153db2daea82cdf945093"
+        },
+        {
+          "before_offset": 236855,
+          "after_offset": 245064,
+          "bytes": 36164,
+          "sha256": "cf97641fa03b0b71ca369778ca34093e714b3802f94e1bd54d132fd9207f2fd6"
+        }
+      ],
+      "complete_forward_reverse_exact": true,
+      "held_definitions": [
+        "nhecr_expect",
+        "nhecr_keys",
+        "nhecr_four_cli_join",
+        "nhecr_request_plan",
+        "nhecr_original_image",
+        "nhecr_history_handoff",
+        "nhecr_public_read",
+        "nhecr_public_handoff",
+        "nhecr_created_facts",
+        "nhecr_includes",
+        "nhecr_qualify",
+        "nhecr_db_capture",
+        "nhecr_db_expected",
+        "nhecr_db_validate",
+        "nhecr_actors_read",
+        "nhecr_fresh",
+        "nhecr_parent_file",
+        "nhecr_parent_write",
+        "nhecr_baseline",
+        "nhecr_child_environment",
+        "nhecr_headers_model",
+        "nhecr_files_streams",
+        "nhecr_intent",
+        "nhecr_stream_expected",
+        "nhecr_router",
+        "nhecr_stream_capture",
+        "nhecr_wait_closing",
+        "nhecr_transport",
+        "nhecr_http_closed",
+        "nhecr_order_context",
+        "nhecr_order_value",
+        "nhecr_refund_context",
+        "nhecr_identities",
+        "nhecr_login_context",
+        "nhecr_user_update_key",
+        "nhecr_account_detail_verify",
+        "nhecr_json_exact",
+        "nhecr_catalog_context",
+        "nhecr_catalog_reply_envelopes",
+        "nhecr_catalog_envelopes",
+        "nhecr_catalog_auth_guid",
+        "nhecr_remember_sequence",
+        "nhecr_catalog_redis",
+        "nhecr_catalog_verify"
+      ],
+      "changed_definitions": [
+        "nhecr_child_start",
+        "nhecr_files_model",
+        "nhecr_build_app",
+        "nhecr_capture",
+        "nhecr_main"
+      ],
+      "added_definitions": [
+        "nhecr_file_tree"
+      ]
+    },
+    {
+      "path": "ms4-host.py",
+      "before": {
+        "bytes": 145131,
+        "sha256": "a57fafabee5b1768a8cce63ae568ffa919bce06263f2e427ec564c6b77f2e655"
+      },
+      "after": {
+        "bytes": 148439,
+        "sha256": "8b4751a46fa81bbcc89711373641d375856c0ea772554e738fa78ff1fff2300d"
+      },
+      "stages": [
+        {
+          "before_offset": 61267,
+          "after_offset": 61267,
+          "old_utf8": "        'evidence/driver-retired-resources.json'}\n",
+          "new_utf8": "        'evidence/driver-retired-resources.json',\n        'evidence/legacy-current-reader-created.json', 'evidence/legacy-current-reader-terminal.json',\n        'evidence/audit-legacy-current-reader-container-created.json',\n        'evidence/audit-legacy-current-reader-source-binding.json', 'evidence/legacy-current-reader-result.json',\n        'evidence/legacy-current-reader-retired.json', 'evidence/legacy-current-reader-retired-resources.json',\n        'evidence/register-legacy-current-reader-created.json', 'evidence/register-legacy-current-reader-terminal.json',\n        'evidence/register-legacy-current-reader-result.json'}\n",
+          "stage_offset": 61267,
+          "before": {
+            "bytes": 145131,
+            "sha256": "a57fafabee5b1768a8cce63ae568ffa919bce06263f2e427ec564c6b77f2e655"
+          },
+          "after": {
+            "bytes": 145715,
+            "sha256": "1c813ad2e6290038969f34e3dfe4a93f5965f34e653360f312498ea59fef77f1"
+          }
+        },
+        {
+          "before_offset": 111705,
+          "after_offset": 112289,
+          "old_utf8": "        owned(context, row, base_role); same_created(context['initial_service_created'][base_role], row)\n",
+          "new_utf8": "        original = context['initial_service_created'][base_role]\n        expect(type(row) is dict and set(row) == {'id', 'image_id', 'mounts', 'labels', 'networks', 'ports',\n            'read_only', 'privileged', 'network_mode'}, 'CURRENT_READER_COMPLETE_NINE_BASE_RESOURCE_PROJECTION')\n        for key, source in [('id', 'id'), ('image_id', 'image'), ('labels', 'labels'), ('read_only', 'read_only'),\n                ('privileged', 'privileged'), ('network_mode', 'network_mode')]:\n            expect(history_exact(row[key], original[source]), 'CURRENT_READER_ORIGINAL_IMMUTABLE_BASE_PROJECTION')\n        expect(type(row['mounts']) is list and type(original['mounts']) is list\n            and sorted(json.dumps(entry, sort_keys=True) for entry in row['mounts'])\n                == sorted(json.dumps(entry, sort_keys=True) for entry in original['mounts']),\n            'CURRENT_READER_ORIGINAL_COMPLETE_BASE_MOUNT_MULTISET')\n        network_name = context['project'] + '_isolation'\n        expect(type(row['networks']) is dict and set(row['networks']) == set(original['networks']) == {network_name}\n            and type(row['networks'][network_name]) is dict\n            and row['networks'][network_name].get('NetworkID') == context['initial_network']['Id']\n            and type(row['ports']) is dict and all(value is None for value in row['ports'].values())\n            and not original['port_bindings'], 'CURRENT_READER_ORIGINAL_NETWORK_ID_AND_NO_PUBLISHED_PORTS')\n",
+          "stage_offset": 112289,
+          "before": {
+            "bytes": 145715,
+            "sha256": "1c813ad2e6290038969f34e3dfe4a93f5965f34e653360f312498ea59fef77f1"
+          },
+          "after": {
+            "bytes": 147077,
+            "sha256": "d80da64197ff13d5cebacdb7441de0f36d48f2b786436b20876c128c18acbe43"
+          }
+        },
+        {
+          "before_offset": 114357,
+          "after_offset": 116303,
+          "old_utf8": "        owned(context, row, base_role); same_created(context['initial_service_created'][base_role], row)\n",
+          "new_utf8": "        original = context['initial_service_created'][base_role]\n        expect(type(row) is dict and set(row) == {'id', 'image_id', 'mounts', 'labels', 'networks', 'ports',\n            'read_only', 'privileged', 'network_mode'}, 'CURRENT_READER_COMPLETE_NINE_BASE_RESOURCE_PROJECTION')\n        for key, source in [('id', 'id'), ('image_id', 'image'), ('labels', 'labels'), ('read_only', 'read_only'),\n                ('privileged', 'privileged'), ('network_mode', 'network_mode')]:\n            expect(history_exact(row[key], original[source]), 'CURRENT_READER_ORIGINAL_IMMUTABLE_BASE_PROJECTION')\n        expect(type(row['mounts']) is list and type(original['mounts']) is list\n            and sorted(json.dumps(entry, sort_keys=True) for entry in row['mounts'])\n                == sorted(json.dumps(entry, sort_keys=True) for entry in original['mounts']),\n            'CURRENT_READER_ORIGINAL_COMPLETE_BASE_MOUNT_MULTISET')\n        network_name = context['project'] + '_isolation'\n        expect(type(row['networks']) is dict and set(row['networks']) == set(original['networks']) == {network_name}\n            and type(row['networks'][network_name]) is dict\n            and row['networks'][network_name].get('NetworkID') == context['initial_network']['Id']\n            and type(row['ports']) is dict and all(value is None for value in row['ports'].values())\n            and not original['port_bindings'], 'CURRENT_READER_ORIGINAL_NETWORK_ID_AND_NO_PUBLISHED_PORTS')\n",
+          "stage_offset": 116303,
+          "before": {
+            "bytes": 147077,
+            "sha256": "d80da64197ff13d5cebacdb7441de0f36d48f2b786436b20876c128c18acbe43"
+          },
+          "after": {
+            "bytes": 148439,
+            "sha256": "8b4751a46fa81bbcc89711373641d375856c0ea772554e738fa78ff1fff2300d"
+          }
+        }
+      ],
+      "unchanged_chunks": [
+        {
+          "before_offset": 0,
+          "after_offset": 0,
+          "bytes": 61267,
+          "sha256": "542a505ad53847083c4c19e1c0aba9fa64ce87c28022efffcfe88a7649f3db34"
+        },
+        {
+          "before_offset": 61317,
+          "after_offset": 61901,
+          "bytes": 50388,
+          "sha256": "1c4acea38aa870da10078ac356e7d84c424e919315ae6aa501aa747c79a7dc42"
+        },
+        {
+          "before_offset": 111810,
+          "after_offset": 113756,
+          "bytes": 2547,
+          "sha256": "9969832a57dcf6d1b96e2a87eb5763abd79449544ed3aa32e8a8579b7e2fe444"
+        },
+        {
+          "before_offset": 114462,
+          "after_offset": 117770,
+          "bytes": 30669,
+          "sha256": "9a3b614d76a36e8ce19719d9a938f72a60f7552256e136b8936df3f69cfe0a5e"
+        }
+      ],
+      "complete_forward_reverse_exact": true,
+      "held_definitions": [
+        "expect",
+        "digest",
+        "load",
+        "new",
+        "git",
+        "clean",
+        "source_row",
+        "seed_inverse",
+        "legacy_namespace",
+        "legacy_authority",
+        "verify_legacy_authority",
+        "current_reader_authority",
+        "freeze",
+        "verify_freeze",
+        "native",
+        "compose",
+        "ids",
+        "inspect",
+        "owned",
+        "role_id",
+        "global_consumers",
+        "active",
+        "same_created",
+        "base_roles",
+        "bound_created",
+        "proof_expected",
+        "collect",
+        "created",
+        "observe",
+        "remove_finished",
+        "helper",
+        "history_archive",
+        "history_mount_rows",
+        "bind_legacy_files",
+        "legacy_files_complete",
+        "legacy_actor_handoff",
+        "close_legacy_actor_prepare",
+        "legacy_producer_mounts",
+        "bind_legacy_producer",
+        "history_exact",
+        "history_producer_normal",
+        "history_driver_normal",
+        "history_retired_receipt",
+        "retire_history_role",
+        "current_reader_archive",
+        "current_reader_prerequisites",
+        "current_reader_mounts",
+        "bind_current_reader",
+        "current_reader_bound",
+        "current_reader_normal",
+        "prepare",
+        "current",
+        "stage",
+        "main"
+      ],
+      "changed_definitions": [
+        "history_public_reader",
+        "current_reader_retired_receipt",
+        "retire_current_reader"
+      ],
+      "added_definitions": []
+    }
+  ],
+  "source_inputs_final_read_window": [
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\app\\api\\route\\v1.php",
+      "bytes": 59245,
+      "sha256": "bed8b4414cbf30ac3a0de437294c33fdb869c208a4de99eb2189c6ef26bd8302",
+      "native_stat9": [
+        1618373208947831848,
+        281474985806513,
+        33206,
+        1,
+        0,
+        0,
+        59245,
+        1792307955719414000,
+        1792307955716809300
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\app\\api\\controller\\v1\\store\\StoreProductController.php",
+      "bytes": 9059,
+      "sha256": "e87cd736d241f3b69154a0cdaec7f1039157e296b4f4d8cfd62284c7704f3e47",
+      "native_stat9": [
+        1618373208947831848,
+        281474985806437,
+        33206,
+        1,
+        0,
+        0,
+        9059,
+        1792307955670829400,
+        1792307955670829400
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\app\\services\\product\\product\\StoreProductServices.php",
+      "bytes": 145261,
+      "sha256": "cc4fbb0e962bb30c005bfc2ce2b9ab3caa6234b99c88634715aebe1e8af5e6e5",
+      "native_stat9": [
+        1618373208947831848,
+        562949962518142,
+        33206,
+        1,
+        0,
+        0,
+        145261,
+        1792387953872411100,
+        1792307956298313700
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\app\\services\\marketplace\\PublicCatalogServices.php",
+      "bytes": 40332,
+      "sha256": "fe4a8471ead0447f102b4c673847a123616171d08dde36ce025ca4264884ab0f",
+      "native_stat9": [
+        1618373208947831848,
+        281474985807340,
+        33206,
+        1,
+        0,
+        0,
+        40332,
+        1792307956215134000,
+        1792307956215134000
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\app\\services\\marketplace\\publiccatalog\\PublicCatalogQuery.php",
+      "bytes": 7602,
+      "sha256": "cc041ed5b97f7469ce82e7d82dfa839fdf2749bf3eae66c8d5036b5db137b6a9",
+      "native_stat9": [
+        1618373208947831848,
+        281474985807402,
+        33206,
+        1,
+        0,
+        0,
+        7602,
+        1792307956254507100,
+        1792307956254507100
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\app\\services\\marketplace\\publiccatalog\\PublicCatalogSku.php",
+      "bytes": 4442,
+      "sha256": "002612c7359a96f29a385b144019a48f7407b72e074ce9cf3f46dd96f028b12c",
+      "native_stat9": [
+        1618373208947831848,
+        281474985807403,
+        33206,
+        1,
+        0,
+        0,
+        4442,
+        1792307956255507600,
+        1792307956254507100
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\app\\services\\marketplace\\publiccatalog\\PublicCatalogProjection.php",
+      "bytes": 18001,
+      "sha256": "119ee71dae0c30984f983ce5b3eed9295cf1bf464a3c531f4103cf812cddd020",
+      "native_stat9": [
+        1618373208947831848,
+        281474985807401,
+        33206,
+        1,
+        0,
+        0,
+        18001,
+        1792307956253502600,
+        1792307956253502600
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\app\\services\\product\\product\\StoreProductReplyServices.php",
+      "bytes": 9670,
+      "sha256": "7b12159c68fc1f49438fae5b4260f9371f9373943652a42112a33904318b326e",
+      "native_stat9": [
+        1618373208947831848,
+        281474985807484,
+        33206,
+        1,
+        0,
+        0,
+        9670,
+        1792307956297313900,
+        1792307956297313900
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\app\\dao\\product\\product\\StoreProductReplyDao.php",
+      "bytes": 4319,
+      "sha256": "1d76325649cc1f4bb0cbf317bd0836ca02bc1d6dbee9813dbde31875d5065a38",
+      "native_stat9": [
+        1618373208947831848,
+        281474985806715,
+        33206,
+        1,
+        0,
+        0,
+        4319,
+        1792307955886913700,
+        1792307955886391100
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\app\\model\\product\\product\\StoreProductReply.php",
+      "bytes": 3986,
+      "sha256": "a8cef7feb406d6cceb7492f11b1709be936ddf7c75e6915087799caf6691eb39",
+      "native_stat9": [
+        1618373208947831848,
+        281474985807120,
+        33206,
+        1,
+        0,
+        0,
+        3986,
+        1792307956104610200,
+        1792307956104094500
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\app\\model\\product\\product\\StoreProduct.php",
+      "bytes": 14902,
+      "sha256": "7d952cbcce5f980d6e0d4a6fca6fa66cce0ee7813467b70d27b48df3ea68860e",
+      "native_stat9": [
+        1618373208947831848,
+        281474985807111,
+        33206,
+        1,
+        0,
+        0,
+        14902,
+        1792307956100472700,
+        1792307956099958300
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\app\\model\\product\\product\\StoreDescription.php",
+      "bytes": 1467,
+      "sha256": "ec029b4859be1c74924ec559f02a49208a52b233b0417abfac6e1dd43932a712",
+      "native_stat9": [
+        1618373208947831848,
+        281474985807110,
+        33206,
+        1,
+        0,
+        0,
+        1467,
+        1792307956099958300,
+        1792307956099429000
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\app\\services\\user\\UserAuthServices.php",
+      "bytes": 2756,
+      "sha256": "ebe8f0928967d992a0f0a78d75ad740711b01b2274a8e2c47e8248155bd98983",
+      "native_stat9": [
+        1618373208947831848,
+        281474985807566,
+        33206,
+        1,
+        0,
+        0,
+        2756,
+        1792307956337846800,
+        1792307956337846800
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\app\\model\\user\\User.php",
+      "bytes": 10133,
+      "sha256": "cc9d08ec02188b8fcffe4ddba87444d6b52d5250491a8b0de88aee2a740f5181",
+      "native_stat9": [
+        1618373208947831848,
+        281474985807194,
+        33206,
+        1,
+        0,
+        0,
+        10133,
+        1792307956137840600,
+        1792307956137840600
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\app\\dao\\BaseDao.php",
+      "bytes": 18218,
+      "sha256": "fb7d6cdb23a9387d4979f529a8bf7d3e398bda78629aeb7621a5651e9600e60b",
+      "native_stat9": [
+        1618373208947831848,
+        281474985806534,
+        33206,
+        1,
+        0,
+        0,
+        18218,
+        1792307955749249400,
+        1792307955749249400
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\app\\Request.php",
+      "bytes": 7346,
+      "sha256": "7f87932e0882c55c96e98789a0be64d816e8cdb3266ca1ef73e376326274da0d",
+      "native_stat9": [
+        1618373208947831848,
+        281474985805985,
+        33206,
+        1,
+        0,
+        0,
+        7346,
+        1792307955402547600,
+        1792307955402547600
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\app\\common.php",
+      "bytes": 43222,
+      "sha256": "a5379e999165f4fa1f1969523211111caf383d04d8c5a2ad21164a72f1ac4a7c",
+      "native_stat9": [
+        1618373208947831848,
+        281474985806531,
+        33206,
+        1,
+        0,
+        0,
+        43222,
+        1792307955744056900,
+        1792307955741958300
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\crmeb\\services\\SystemConfigService.php",
+      "bytes": 2252,
+      "sha256": "e428242a758fb60b539a1319a1f309d1ce932483b000923da27f7856c4006d7b",
+      "native_stat9": [
+        1618373208947831848,
+        281474985807721,
+        33206,
+        1,
+        0,
+        0,
+        2252,
+        1792307956429968600,
+        1792307956429968600
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\crmeb\\services\\CacheService.php",
+      "bytes": 10153,
+      "sha256": "914bcd258d633fd3b1e6b8a91cdae271658e8e66176405bf9bdf88cde3e3fead",
+      "native_stat9": [
+        1618373208947831848,
+        281474985807712,
+        33206,
+        1,
+        0,
+        0,
+        10153,
+        1792307956425968500,
+        1792307956425968500
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\crmeb\\services\\SessionWhitelist.php",
+      "bytes": 790,
+      "sha256": "1fbbdef6a55ac30b852445ee1e4d69f984b074ae3a01888a1ea5ea387ec50f7f",
+      "native_stat9": [
+        1618373208947831848,
+        281474985807719,
+        33206,
+        1,
+        0,
+        0,
+        790,
+        1792307956428968500,
+        1792307956428968500
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\app\\services\\system\\config\\SystemConfigServices.php",
+      "bytes": 62173,
+      "sha256": "b9832b8869c17e4707de3f8e053e45268441b3c4d685f89bb4a1081ab55e01a2",
+      "native_stat9": [
+        1618373208947831848,
+        281474985807540,
+        33206,
+        1,
+        0,
+        0,
+        62173,
+        1792307956325431800,
+        1792307956325431800
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\app\\services\\user\\member\\MemberCardServices.php",
+      "bytes": 15924,
+      "sha256": "bf79678b65b5b0068e155e0cf3e7afe03358644138467d64052a8d431267c8fe",
+      "native_stat9": [
+        1618373208947831848,
+        281474985807593,
+        33206,
+        1,
+        0,
+        0,
+        15924,
+        1792307956351479400,
+        1792307956351479400
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\crmeb\\utils\\Json.php",
+      "bytes": 2143,
+      "sha256": "5ddf93d1c41ac9a0e06b78edceb1e9e76c7361f977c0ba70baf6e05a3fbd6530",
+      "native_stat9": [
+        1618373208947831848,
+        281474985807969,
+        33206,
+        1,
+        0,
+        0,
+        2143,
+        1792307956624684200,
+        1792307956624684200
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\vendor\\topthink\\think-orm\\src\\Model.php",
+      "bytes": 25433,
+      "sha256": "ed57b277ac84b326d3c4f3338baff55008f6a4a62fa38651b096c4063be95fac",
+      "native_stat9": [
+        1618373208947831848,
+        281474985822529,
+        33206,
+        1,
+        0,
+        0,
+        25433,
+        1792307971715325700,
+        1792307971715325700
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\vendor\\topthink\\think-orm\\src\\db\\Query.php",
+      "bytes": 10919,
+      "sha256": "1db49653c4fabd34b53783e772a5cfa0a917390c61adc5d2a312e896035dab30",
+      "native_stat9": [
+        1618373208947831848,
+        281474985822540,
+        33206,
+        1,
+        0,
+        0,
+        10919,
+        1792307971721498000,
+        1792307971721498000
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\vendor\\topthink\\think-orm\\src\\db\\BaseQuery.php",
+      "bytes": 35293,
+      "sha256": "3cf039c4e5de36c279d75247408f9af47f36275b7381224f1e69cfd60667328d",
+      "native_stat9": [
+        1618373208947831848,
+        281474985822532,
+        33206,
+        1,
+        0,
+        0,
+        35293,
+        1792307971717326300,
+        1792307971716325800
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\vendor\\topthink\\think-orm\\src\\db\\Connection.php",
+      "bytes": 7327,
+      "sha256": "017784a13f76f8d9ccedb7b91124c190b497ed21fe8c84257ea48ac9289bacce",
+      "native_stat9": [
+        1618373208947831848,
+        281474985822535,
+        33206,
+        1,
+        0,
+        0,
+        7327,
+        1792307971719498900,
+        1792307971718499300
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\vendor\\topthink\\think-orm\\src\\db\\PDOConnection.php",
+      "bytes": 48180,
+      "sha256": "14fc501e23525daddd627a3063301dd00b941a2de612f62f31fa0c1b78f253a2",
+      "native_stat9": [
+        1618373208947831848,
+        281474985822539,
+        33206,
+        1,
+        0,
+        0,
+        48180,
+        1792307971721498000,
+        1792307971721498000
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\vendor\\topthink\\think-orm\\src\\db\\Builder.php",
+      "bytes": 40336,
+      "sha256": "23b811f646fb04b6e44c7553945e248d07fba0beffd5fd5196fd8ef0555d1e52",
+      "native_stat9": [
+        1618373208947831848,
+        281474985822533,
+        33206,
+        1,
+        0,
+        0,
+        40336,
+        1792307971717326300,
+        1792307971717326300
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\vendor\\topthink\\think-orm\\src\\db\\builder\\Mysql.php",
+      "bytes": 14209,
+      "sha256": "f0e235fdef6fbcbb6995de18448bcd96f6fadaaebe5cd9a170f0ea413d364e28",
+      "native_stat9": [
+        1618373208947831848,
+        281474985822545,
+        33206,
+        1,
+        0,
+        0,
+        14209,
+        1792307971724002500,
+        1792307971724002500
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\vendor\\topthink\\think-orm\\src\\db\\concern\\ParamsBind.php",
+      "bytes": 2815,
+      "sha256": "3369db2fe3802e66ebfe9d894f5fee7c69e14989beac8701fff5babdd6924a07",
+      "native_stat9": [
+        1618373208947831848,
+        281474985822554,
+        33206,
+        1,
+        0,
+        0,
+        2815,
+        1792307971729015500,
+        1792307971729015500
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\vendor\\topthink\\think-orm\\src\\db\\concern\\TableFieldInfo.php",
+      "bytes": 2571,
+      "sha256": "8c525429b49840f6abdbf2feb1419f3db1c462ace9a72b6ed7a95429d6db35af",
+      "native_stat9": [
+        1618373208947831848,
+        281474985822556,
+        33206,
+        1,
+        0,
+        0,
+        2571,
+        1792307971730015500,
+        1792307971730015500
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\vendor\\topthink\\framework\\src\\think\\cache\\TagSet.php",
+      "bytes": 3311,
+      "sha256": "f986823d616970376c82f9f1a5ee805490a484f275a0a0afea589828ce314e97",
+      "native_stat9": [
+        1618373208947831848,
+        281474985822152,
+        33206,
+        1,
+        0,
+        0,
+        3311,
+        1792307971424771300,
+        1792307971424771300
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\vendor\\topthink\\framework\\src\\think\\cache\\Driver.php",
+      "bytes": 8251,
+      "sha256": "5b4b72918bdfb2c37235cf10166c42e0006e7c7ab8e3f7c6325b9f31e08a7ac7",
+      "native_stat9": [
+        1618373208947831848,
+        281474985822151,
+        33206,
+        1,
+        0,
+        0,
+        8251,
+        1792307971423769900,
+        1792307971423769900
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\vendor\\topthink\\framework\\src\\think\\cache\\driver\\Redis.php",
+      "bytes": 6886,
+      "sha256": "361e0d6c6546cca3f56f57361b8a50507775cedf65d957f43ce8c2bfb0c113e2",
+      "native_stat9": [
+        1618373208947831848,
+        281474985822157,
+        33206,
+        1,
+        0,
+        0,
+        6886,
+        1792307971427062900,
+        1792307971427062900
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\public\\install\\crmeb.sql",
+      "bytes": 10237372,
+      "sha256": "7af188f42c622db523d8000c0cf50f95fa48df2fe41123969ca2dbb65ffb5eb2",
+      "native_stat9": [
+        1618373208947831848,
+        281474985808593,
+        33206,
+        1,
+        0,
+        0,
+        10237372,
+        1792307957265634400,
+        1792307957245604700
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\app\\dao\\product\\product\\StoreProductDao.php",
+      "bytes": 32377,
+      "sha256": "d42eb1d17cc5728c75d9a5337bed7698ce77362d9ffb8123f6b12fe762855472",
+      "native_stat9": [
+        1618373208947831848,
+        281474985806703,
+        33206,
+        1,
+        0,
+        0,
+        32377,
+        1792307955881680500,
+        1792307955881143100
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\app\\dao\\activity\\coupon\\StoreCouponIssueDao.php",
+      "bytes": 18021,
+      "sha256": "3f79bebf2909c6d644f1e45e6e829f064ec4e17e86cf03cc502895a4ba095fda",
+      "native_stat9": [
+        1618373208947831848,
+        281474985806558,
+        33206,
+        1,
+        0,
+        0,
+        18021,
+        1792307955756971800,
+        1792307955756971800
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\app\\dao\\product\\product\\StoreProductLabelDao.php",
+      "bytes": 2743,
+      "sha256": "e7fb98912f3e8e0d7042fc339806456473acd1a81df03cc9b7c7e47382728ef9",
+      "native_stat9": [
+        1618373208947831848,
+        281474985806707,
+        33206,
+        1,
+        0,
+        0,
+        2743,
+        1792307955882734200,
+        1792307955882734200
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\app\\jobs\\ProductLogJob.php",
+      "bytes": 1373,
+      "sha256": "6f114daf0dc56543740669f75a36051d81dc5a70188ba25a8381748bb6f04600",
+      "native_stat9": [
+        1618373208947831848,
+        281474985806911,
+        33206,
+        1,
+        0,
+        0,
+        1373,
+        1792307955979221800,
+        1792307955979221800
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\app\\services\\product\\product\\StoreProductLogServices.php",
+      "bytes": 6972,
+      "sha256": "11d3d8acf3f292def7717517e068390d42095514cda504e39e89367c7135fef6",
+      "native_stat9": [
+        1618373208947831848,
+        281474985807480,
+        33206,
+        1,
+        0,
+        0,
+        6972,
+        1792307956295310700,
+        1792307956295310700
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\app\\model\\product\\product\\StoreProductLog.php",
+      "bytes": 2179,
+      "sha256": "dd845fb94662992868979b44284242f32318f77accee71e2547f36c870f5779a",
+      "native_stat9": [
+        1618373208947831848,
+        281474985807116,
+        33206,
+        1,
+        0,
+        0,
+        2179,
+        1792307956102551500,
+        1792307956102551500
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\app\\listener\\CustomEventListener.php",
+      "bytes": 1373,
+      "sha256": "574656356077a458403eadf4f7875ffbe6fbab31edb163b2dc062a54db57ea13",
+      "native_stat9": [
+        1618373208947831848,
+        281474985806960,
+        33206,
+        1,
+        0,
+        0,
+        1373,
+        1792307956006468000,
+        1792307956006468000
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\vendor\\topthink\\think-orm\\src\\model\\concern\\Attribute.php",
+      "bytes": 17383,
+      "sha256": "5817a7a71c5ea6053801bbf525798e703a227d7fc100911f5e8ff22f63a4c5d0",
+      "native_stat9": [
+        1618373208947831848,
+        281474985822583,
+        33206,
+        1,
+        0,
+        0,
+        17383,
+        1792307971743035000,
+        1792307971743035000
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\nonempty-history-upgrade-source-r2\\README.md",
+      "bytes": 5547,
+      "sha256": "295f78e8bef5a0af84a14324a6dab3afce3abaf9a53e5d3c47365f0d57ea9943",
+      "native_stat9": [
+        1618373208947831848,
+        281474986557621,
+        33206,
+        1,
+        0,
+        0,
+        5547,
+        1792550568191725200,
+        1792546177679299000
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\nonempty-history-upgrade-source-r2\\compose.yml",
+      "bytes": 4837,
+      "sha256": "a822e2883c44471e8f75cc8ae57f8bf9b8446065388d0f38f8e5d78e702192f0",
+      "native_stat9": [
+        1618373208947831848,
+        281474986557622,
+        33206,
+        1,
+        0,
+        0,
+        4837,
+        1792553343281728300,
+        1792546177684421200
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\nonempty-history-upgrade-source-r2\\legacy-actors.php",
+      "bytes": 25369,
+      "sha256": "5c50e02b84ff972fefdc802eba612c47934b384e314bbbd5130b5c3c55e9f3a5",
+      "native_stat9": [
+        1618373208947831848,
+        281474986558521,
+        33206,
+        1,
+        0,
+        0,
+        25369,
+        1792547097851374600,
+        1792546678789461300
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\nonempty-history-upgrade-source-r2\\legacy-app.php",
+      "bytes": 41807,
+      "sha256": "6341bb43552aa4f693640952602568f301ae66cf612d2a645d5dc2a2a52f8126",
+      "native_stat9": [
+        1618373208947831848,
+        281474986557626,
+        33206,
+        1,
+        0,
+        0,
+        41807,
+        1792553980437125500,
+        1792546177723102400
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\nonempty-history-upgrade-source-r2\\legacy-files-bootstrap.php",
+      "bytes": 14449,
+      "sha256": "dbe38371567d495d5567189599a025903b91a22ffa6c8b001aab2509baf1375b",
+      "native_stat9": [
+        1618373208947831848,
+        281474986557627,
+        33206,
+        1,
+        0,
+        0,
+        14449,
+        1792547616244212000,
+        1792546177734620900
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\nonempty-history-upgrade-source-r2\\legacy-history-channel.php",
+      "bytes": 7408,
+      "sha256": "ab2679e2fdfd8e7bb11bd54b7af4a61e236a72bfaa52135cee2d54931cd36224",
+      "native_stat9": [
+        1618373208947831848,
+        281474986561902,
+        33206,
+        1,
+        0,
+        0,
+        7408,
+        1792548361738009900,
+        1792548336344247800
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\nonempty-history-upgrade-source-r2\\legacy-history-http.php",
+      "bytes": 36764,
+      "sha256": "2747c8227349c62e4c5f928561ffbb307a6b9c34cf0d24420a0bf15f5aa0a3f2",
+      "native_stat9": [
+        1618373208947831848,
+        281474986558770,
+        33206,
+        1,
+        0,
+        0,
+        36764,
+        1792557246218043900,
+        1792546800121855000
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\nonempty-history-upgrade-source-r2\\legacy-history-producer.php",
+      "bytes": 922250,
+      "sha256": "cd5c5fe68cb3dac4c53b8c19a3d584262309a99772a1ee4dd441f5f0d96bffaa",
+      "native_stat9": [
+        1618373208947831848,
+        281474986562532,
+        33206,
+        1,
+        0,
+        0,
+        922250,
+        1792620771066244500,
+        1792548996152743300
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\nonempty-history-upgrade-source-r2\\legacy-history-router.php",
+      "bytes": 5551,
+      "sha256": "e6dea42b0f0ec0f93f7d718426f7be5f5c6963c832409f8f676632a956d2c554",
+      "native_stat9": [
+        1618373208947831848,
+        281474986563155,
+        33206,
+        1,
+        0,
+        0,
+        5551,
+        1792561046264042900,
+        1792551736280409500
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\nonempty-history-upgrade-source-r2\\legacy-normal-config.php",
+      "bytes": 26434,
+      "sha256": "df95e3e546f638f79b31ede89ead808f7e641c80941d6ead87ff3c8e13c038b5",
+      "native_stat9": [
+        1618373208947831848,
+        281474986557628,
+        33206,
+        1,
+        0,
+        0,
+        26434,
+        1792609551161723800,
+        1792546177746822300
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\nonempty-history-upgrade-source-r2\\ms4-host.py",
+      "bytes": 74827,
+      "sha256": "ca7e3a06e38361a5cd2df14d7b8433cde1c9d1656ef39c4a452cd2a68a22705c",
+      "native_stat9": [
+        1618373208947831848,
+        281474986557623,
+        33206,
+        1,
+        0,
+        0,
+        74827,
+        1792553531690666800,
+        1792546177690931600
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\nonempty-history-upgrade-source-r2\\ms4-initialize.php",
+      "bytes": 54964,
+      "sha256": "c6d9dd4913e3878157f85b247b7c35345b52b2de77265370717b16381482367a",
+      "native_stat9": [
+        1618373208947831848,
+        281474986557624,
+        33206,
+        1,
+        0,
+        0,
+        54964,
+        1792553771967369400,
+        1792546177698259800
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\nonempty-history-upgrade-source-r2\\seed-source-inverse.json",
+      "bytes": 639,
+      "sha256": "c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a",
+      "native_stat9": [
+        1618373208947831848,
+        281474986557625,
+        33206,
+        1,
+        0,
+        0,
+        639,
+        1792546177718002700,
+        1792546177718002700
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-history-final-components-source-r1\\legacy-history-producer.php",
+      "bytes": 971641,
+      "sha256": "a4a79bbc25b858164f061af6e2d9bacd439a33507d332024263f330b74b27db3",
+      "native_stat9": [
+        1618373208947831848,
+        281474986654990,
+        33206,
+        1,
+        0,
+        0,
+        971641,
+        1792621363820790400,
+        1792621363818790100
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\nonempty-history-observer-parts-r1\\complete-history-identities.php",
+      "bytes": 30092,
+      "sha256": "fcda8070d4d4083b49592bf0fa0cc7bff043bf3f999c29d1780159a94e07c985",
+      "native_stat9": [
+        1618373208947831848,
+        281474986652459,
+        33206,
+        1,
+        0,
+        0,
+        30092,
+        1792616754336206400,
+        1792616754335202200
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-current-reader-source-r1\\legacy-current-reader.php",
+      "bytes": 18281,
+      "sha256": "c970c0bb1715f23339329bc3b23f1516f4719042dc442350ae04fb0119b23403",
+      "native_stat9": [
+        1618373208947831848,
+        281474986659907,
+        33206,
+        1,
+        0,
+        0,
+        18281,
+        1792623680819516400,
+        1792623589960813300
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-history-entry-integration-source-r1\\candidate\\compose.yml",
+      "bytes": 4896,
+      "sha256": "934256345263282f54377e50ce9d934c565a54a0a56571cbb85dd6bf6183ac87",
+      "native_stat9": [
+        1618373208947831848,
+        281474986662505,
+        33206,
+        1,
+        0,
+        0,
+        4896,
+        1792624862023177800,
+        1792624862023177800
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-history-entry-integration-source-r1\\candidate\\legacy-actors.php",
+      "bytes": 55842,
+      "sha256": "cac4403932f939f6b89df1912ceea19402d87d69250c01de24f6ccb8b7b56213",
+      "native_stat9": [
+        1618373208947831848,
+        281474986662506,
+        33206,
+        1,
+        0,
+        0,
+        55842,
+        1792624862024184000,
+        1792624862024184000
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-history-entry-integration-source-r1\\candidate\\legacy-app.php",
+      "bytes": 43876,
+      "sha256": "0131b67ac66f6468fcecf533e1d20f086249a0096d57f9a1951140640782ceb2",
+      "native_stat9": [
+        1618373208947831848,
+        281474986662507,
+        33206,
+        1,
+        0,
+        0,
+        43876,
+        1792624862037965300,
+        1792624862037433600
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-history-entry-integration-source-r1\\candidate\\legacy-files-bootstrap.php",
+      "bytes": 14449,
+      "sha256": "dbe38371567d495d5567189599a025903b91a22ffa6c8b001aab2509baf1375b",
+      "native_stat9": [
+        1618373208947831848,
+        281474986662508,
+        33206,
+        1,
+        0,
+        0,
+        14449,
+        1792624862049722800,
+        1792624862048722500
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-history-entry-integration-source-r1\\candidate\\legacy-history-channel.php",
+      "bytes": 10051,
+      "sha256": "dc9e178fd56547170f9f3880cc89a6ad1355701c8fc8f4752fd1a64301d07474",
+      "native_stat9": [
+        1618373208947831848,
+        281474986662509,
+        33206,
+        1,
+        0,
+        0,
+        10051,
+        1792624862061738800,
+        1792624862061738800
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-history-entry-integration-source-r1\\candidate\\legacy-history-http.php",
+      "bytes": 36764,
+      "sha256": "2747c8227349c62e4c5f928561ffbb307a6b9c34cf0d24420a0bf15f5aa0a3f2",
+      "native_stat9": [
+        1618373208947831848,
+        281474986662510,
+        33206,
+        1,
+        0,
+        0,
+        36764,
+        1792624862073830100,
+        1792624862073830100
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-history-entry-integration-source-r1\\candidate\\legacy-history-producer.php",
+      "bytes": 1040124,
+      "sha256": "1e6ac2313db9d9cf25b759b5e1e5598cb036c93ca8eed339bfbf1d745b95662e",
+      "native_stat9": [
+        1618373208947831848,
+        281474986662511,
+        33206,
+        1,
+        0,
+        0,
+        1040124,
+        1792624862097973100,
+        1792624862096973100
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-history-entry-integration-source-r1\\candidate\\legacy-history-router.php",
+      "bytes": 5551,
+      "sha256": "e6dea42b0f0ec0f93f7d718426f7be5f5c6963c832409f8f676632a956d2c554",
+      "native_stat9": [
+        1618373208947831848,
+        281474986662512,
+        33206,
+        1,
+        0,
+        0,
+        5551,
+        1792624862295995700,
+        1792624862295995700
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-history-entry-integration-source-r1\\candidate\\legacy-normal-config.php",
+      "bytes": 26434,
+      "sha256": "df95e3e546f638f79b31ede89ead808f7e641c80941d6ead87ff3c8e13c038b5",
+      "native_stat9": [
+        1618373208947831848,
+        281474986662513,
+        33206,
+        1,
+        0,
+        0,
+        26434,
+        1792624862316767200,
+        1792624862316248100
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-history-entry-integration-source-r1\\candidate\\ms4-host.py",
+      "bytes": 116291,
+      "sha256": "984be56ee3f210b5a4e90fd71475b5b5da90d01dea7c5175952e5ae09e100e28",
+      "native_stat9": [
+        1618373208947831848,
+        281474986662514,
+        33206,
+        1,
+        0,
+        0,
+        116291,
+        1792624862329018000,
+        1792624862328496100
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-history-entry-integration-source-r1\\candidate\\ms4-initialize.php",
+      "bytes": 57457,
+      "sha256": "6f0f292a6840a3dac78e8797e2f04f984a68a48408e46082e0503bd270581d75",
+      "native_stat9": [
+        1618373208947831848,
+        281474986662515,
+        33206,
+        1,
+        0,
+        0,
+        57457,
+        1792624862338954500,
+        1792624862338954500
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-history-entry-integration-source-r1\\candidate\\README.md",
+      "bytes": 5547,
+      "sha256": "295f78e8bef5a0af84a14324a6dab3afce3abaf9a53e5d3c47365f0d57ea9943",
+      "native_stat9": [
+        1618373208947831848,
+        281474986662516,
+        33206,
+        1,
+        0,
+        0,
+        5547,
+        1792624862352569800,
+        1792624862351570500
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-history-entry-integration-source-r1\\candidate\\seed-source-inverse.json",
+      "bytes": 639,
+      "sha256": "c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a",
+      "native_stat9": [
+        1618373208947831848,
+        281474986662517,
+        33206,
+        1,
+        0,
+        0,
+        639,
+        1792624862356569500,
+        1792624862356569500
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-history-entry-integration-source-r1\\NOTES.md",
+      "bytes": 1910,
+      "sha256": "47bbd169641222f3816d2ca951a723050ef0b74d86b564058222e854c66dcecd",
+      "native_stat9": [
+        1618373208947831848,
+        281474986662503,
+        33206,
+        1,
+        0,
+        0,
+        1910,
+        1792624862022248500,
+        1792624862022248500
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-history-entry-integration-source-r1\\SOURCE.json",
+      "bytes": 73174,
+      "sha256": "dfa9879bb00c09b96598bb89406ad7e1bf6aa5665b775f50b6dec20524c6053a",
+      "native_stat9": [
+        1618373208947831848,
+        281474986662518,
+        33206,
+        1,
+        0,
+        0,
+        73174,
+        1792624862396271000,
+        1792624862395749200
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-current-reader-handoff-source-r2\\NOTES.md",
+      "bytes": 7650,
+      "sha256": "0ed23e5a6161231160563b55eaba23349cd605ac5b17fb0ceaf10ece807a684c",
+      "native_stat9": [
+        1618373208947831848,
+        281474986661981,
+        33206,
+        1,
+        0,
+        0,
+        7650,
+        1792624582363842100,
+        1792624582363842100
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-current-reader-handoff-source-r2\\SOURCE.json",
+      "bytes": 28554,
+      "sha256": "2f43f03f2c27e7a7d15a783416ed7f058ab9758d8e86c6d853ad42443ac0babd",
+      "native_stat9": [
+        1618373208947831848,
+        281474986661985,
+        33206,
+        1,
+        0,
+        0,
+        28554,
+        1792624582437708800,
+        1792624582436706500
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-current-reader-handoff-source-r2\\candidate\\legacy-current-reader.php",
+      "bytes": 34957,
+      "sha256": "a8bba9613279606c99fc1968a809e167e31540d9b0875113fd078b7eaf292b48",
+      "native_stat9": [
+        1618373208947831848,
+        281474986661984,
+        33206,
+        1,
+        0,
+        0,
+        34957,
+        1792624582365945800,
+        1792624582365945800
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-current-reader-handoff-source-r2\\candidate\\ms4-host.py",
+      "bytes": 116291,
+      "sha256": "984be56ee3f210b5a4e90fd71475b5b5da90d01dea7c5175952e5ae09e100e28",
+      "native_stat9": [
+        1618373208947831848,
+        281474986661983,
+        33206,
+        1,
+        0,
+        0,
+        116291,
+        1792624582364843200,
+        1792624582364843200
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-current-catalog-models-source-r1\\legacy-current-catalog-models.php",
+      "bytes": 33693,
+      "sha256": "d31f15243001c4a4c77c3dd68239b61b8104083a2b4213aa2eca63802e9872f2",
+      "native_stat9": [
+        1618373208947831848,
+        281474986665581,
+        33206,
+        1,
+        0,
+        0,
+        33693,
+        1792626549720583700,
+        1792626503825681400
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-current-catalog-models-source-r1\\NOTES.md",
+      "bytes": 19137,
+      "sha256": "c1e076db0f784adf085e9e34d301a546853a291fd4791a674d7e1ec745919a6d",
+      "native_stat9": [
+        1618373208947831848,
+        281474986665502,
+        33206,
+        1,
+        0,
+        0,
+        19137,
+        1792626463143169900,
+        1792626463143169900
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-history-host-dispatch-source-r2\\ms4-host.py",
+      "bytes": 116658,
+      "sha256": "673a63464dea774727a9e55c314ffa4c602a0c6f407b5995196c896c607d2d39",
+      "native_stat9": [
+        1618373208947831848,
+        281474986663029,
+        33206,
+        1,
+        0,
+        0,
+        116658,
+        1792625140676825500,
+        1792625140676302400
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-history-host-dispatch-source-r2\\NOTES.md",
+      "bytes": 2192,
+      "sha256": "5268728496eaf21fd4029cec2f8aa5fee221720367d8397033e060d0ca7d3127",
+      "native_stat9": [
+        1618373208947831848,
+        281474986663028,
+        33206,
+        1,
+        0,
+        0,
+        2192,
+        1792625140631338400,
+        1792625140631338400
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-history-host-dispatch-source-r2\\SOURCE.json",
+      "bytes": 27531,
+      "sha256": "0e06268ec9241e2ef0bdb62720f72457e5d8153d086d5c5f2f3a4149f3b3d87b",
+      "native_stat9": [
+        1618373208947831848,
+        281474986663030,
+        33206,
+        1,
+        0,
+        0,
+        27531,
+        1792625140692983600,
+        1792625140692983600
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-history-final-cleanup-source-r1\\NOTES.md",
+      "bytes": 2514,
+      "sha256": "ac2640ea85b3082b3c92edbf9056c82004ad2c3c52042633929c3962f6af82c3",
+      "native_stat9": [
+        1618373208947831848,
+        281474986665331,
+        33206,
+        1,
+        0,
+        0,
+        2514,
+        1792626651478245900,
+        1792626367514148300
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-history-final-cleanup-source-r1\\PATCHES.json",
+      "bytes": 5307,
+      "sha256": "7f6c8d2eee9187a939f5d903e7afc18f85aed0524dedd5cf1e59f96a5d56a976",
+      "native_stat9": [
+        1618373208947831848,
+        281474986666043,
+        33206,
+        1,
+        0,
+        0,
+        5307,
+        1792626712233924000,
+        1792626665581748300
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-history-final-cleanup-source-r1\\SOURCE.json",
+      "bytes": 6279,
+      "sha256": "05bd17ff34bdd436b4df150885f904ab3ac8c6de36776847682d2ff3087c68db",
+      "native_stat9": [
+        1618373208947831848,
+        281474986666158,
+        33206,
+        1,
+        0,
+        0,
+        6279,
+        1792626712288000000,
+        1792626712288000000
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-history-final-entry-source-r1\\NOTES.md",
+      "bytes": 1595,
+      "sha256": "d99aa467416a9b2397eb093e9e1ce843afdd5b28f53ab3d0f6bf2e1ddd3e2fa6",
+      "native_stat9": [
+        1618373208947831848,
+        281474986666833,
+        33206,
+        1,
+        0,
+        0,
+        1595,
+        1792627088484706400,
+        1792627043408142900
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-history-final-entry-source-r1\\PATCHES.json",
+      "bytes": 1125,
+      "sha256": "c3b74e189010c3991c0fbd3efcf4d252d60c3001b014f428b2c1f74cfe432c86",
+      "native_stat9": [
+        1618373208947831848,
+        281474986666835,
+        33206,
+        1,
+        0,
+        0,
+        1125,
+        1792627089180014700,
+        1792627043732149100
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-history-final-entry-source-r1\\SOURCE.json",
+      "bytes": 2515,
+      "sha256": "92d3b16311ef719f5c71675cb92834f956cb09b84e209ca5327bff8aa8bb7d0d",
+      "native_stat9": [
+        1618373208947831848,
+        281474986666965,
+        33206,
+        1,
+        0,
+        0,
+        2515,
+        1792627100772286400,
+        1792627100771300900
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\app\\services\\order\\StoreOrderServices.php",
+      "bytes": 179973,
+      "sha256": "4e3185551e8940785fe15a227900a852b1758f35a02e4f123518b1ba38b11c0c",
+      "native_stat9": [
+        1618373208947831848,
+        281474985807433,
+        33206,
+        1,
+        0,
+        0,
+        179973,
+        1792307956271205900,
+        1792307956271205900
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\app\\services\\order\\StoreOrderRefundServices.php",
+      "bytes": 74705,
+      "sha256": "3fa0206787f018d7e794e3fd16b8bcde7019220336a51e0f82126676fb814d17",
+      "native_stat9": [
+        1618373208947831848,
+        281474985807432,
+        33206,
+        1,
+        0,
+        0,
+        74705,
+        1792307956271205900,
+        1792307956270205100
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\app\\model\\order\\StoreOrder.php",
+      "bytes": 15383,
+      "sha256": "ca5249682a99abc04b0380fe391218cb52c28dcd3e668c02deb9cddced6a4412",
+      "native_stat9": [
+        1618373208947831848,
+        281474985807089,
+        33206,
+        1,
+        0,
+        0,
+        15383,
+        1792307956089677200,
+        1792307956089677200
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\app\\model\\order\\StoreOrderRefund.php",
+      "bytes": 4927,
+      "sha256": "21227827d9262127ed5919fc6f289768b31ecdd8ae8f98833623daed00b006fd",
+      "native_stat9": [
+        1618373208947831848,
+        281474985807093,
+        33206,
+        1,
+        0,
+        0,
+        4927,
+        1792307956091215200,
+        1792307956091215200
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\app\\model\\order\\StoreOrderCartInfo.php",
+      "bytes": 2592,
+      "sha256": "3710234e0e552a3153e05ba6c2c8815ea16dec006042f484e5d56a58c437c3eb",
+      "native_stat9": [
+        1618373208947831848,
+        281474985807090,
+        33206,
+        1,
+        0,
+        0,
+        2592,
+        1792307956090196300,
+        1792307956090196300
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\app\\services\\user\\UserServices.php",
+      "bytes": 99068,
+      "sha256": "6ccfca6b97fa189b2f072690b49219b7d833ffd6ff5f5d55606bd4550bdbe6ed",
+      "native_stat9": [
+        1618373208947831848,
+        281474985807583,
+        33206,
+        1,
+        0,
+        0,
+        99068,
+        1792307956346970700,
+        1792307956346970700
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\app\\api\\controller\\v1\\order\\StoreOrderController.php",
+      "bytes": 51129,
+      "sha256": "2fb70b8b46f23cc3b5da3300fb8bc18354a508df160e565616d7a756afd301f9",
+      "native_stat9": [
+        1618373208947831848,
+        281474985806421,
+        33206,
+        1,
+        0,
+        0,
+        51129,
+        1792307955660159200,
+        1792307955659637300
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\app\\api\\controller\\v1\\order\\StoreOrderRefundController.php",
+      "bytes": 9786,
+      "sha256": "7d93202e23408d3fa7634aacb3d5067a4914e9dafdff3c6fcf4e5bdc45de7c5c",
+      "native_stat9": [
+        1618373208947831848,
+        281474985806423,
+        33206,
+        1,
+        0,
+        0,
+        9786,
+        1792307955660675800,
+        1792307955660675800
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\app\\api\\middleware\\AuthTokenMiddleware.php",
+      "bytes": 3067,
+      "sha256": "9b73693be80c07223cdcf6408447df20795a4e836565d7048a6a883b4f9cc040",
+      "native_stat9": [
+        1618373208947831848,
+        281474985806502,
+        33206,
+        1,
+        0,
+        0,
+        3067,
+        1792307955706934500,
+        1792307955706934500
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\config\\marketplace.php",
+      "bytes": 1076,
+      "sha256": "637ae934a50fe3817778d6254c0c93c477f2313d5b7eda3ed49f2385750fdeef",
+      "native_stat9": [
+        1618373208947831848,
+        281474985807635,
+        33206,
+        1,
+        0,
+        0,
+        1076,
+        1792307956378479100,
+        1792307956378479100
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\worktrees\\ms4-aftersale-normal-check\\crmeb\\public\\statics\\system_images\\spread_level_1.png",
+      "bytes": 53659,
+      "sha256": "24f2038472ec8158292c74539610b241b74dbc49c8dc03b8b62b160a13b4b18d",
+      "native_stat9": [
+        1618373208947831848,
+        281474985810587,
+        33206,
+        1,
+        0,
+        0,
+        53659,
+        1792307960361021800,
+        1792307960361021800
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-current-reader-runtime-source-r1\\NOTES.md",
+      "bytes": 12937,
+      "sha256": "6b04fffbef38feba2ca3dc4dc346c80df54a2eaff54932fe073ac1a7dc4a3861",
+      "native_stat9": [
+        1618373208947831848,
+        281474986662294,
+        33206,
+        1,
+        0,
+        0,
+        12937,
+        1792627480299153800,
+        1792624761064901200
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-current-reader-runtime-source-r1\\SOURCE.json",
+      "bytes": 363343,
+      "sha256": "ab8cfb48b3bcff01abf9cca56b98494aae1f7bd48ca9a05e91d1bbc7e4f57dfa",
+      "native_stat9": [
+        1618373208947831848,
+        281474986667928,
+        33206,
+        1,
+        0,
+        0,
+        363343,
+        1792627615981945200,
+        1792627615979938000
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-current-reader-runtime-source-r1\\candidate\\compose.yml",
+      "bytes": 5485,
+      "sha256": "bd8a58e2efbe9aa4673dc5ab975a868904f4c6ab629fb3adeb6b3e7e8181e634",
+      "native_stat9": [
+        1618373208947831848,
+        281474986662430,
+        33206,
+        1,
+        0,
+        0,
+        5485,
+        1792624864062134300,
+        1792624824282262600
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-current-reader-runtime-source-r1\\candidate\\legacy-actors.php",
+      "bytes": 55842,
+      "sha256": "cac4403932f939f6b89df1912ceea19402d87d69250c01de24f6ccb8b7b56213",
+      "native_stat9": [
+        1618373208947831848,
+        281474986666899,
+        33206,
+        1,
+        0,
+        0,
+        55842,
+        1792624862024184000,
+        1792627059524275900
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-current-reader-runtime-source-r1\\candidate\\legacy-app.php",
+      "bytes": 43919,
+      "sha256": "0f0c59679bb12bf0ca5b2ea487187f5c6e58e6b3d78b926a41ddd82d139b94b8",
+      "native_stat9": [
+        1618373208947831848,
+        281474986662428,
+        33206,
+        1,
+        0,
+        0,
+        43919,
+        1792627058843336000,
+        1792624824281261700
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-current-reader-runtime-source-r1\\candidate\\legacy-current-reader.php",
+      "bytes": 273019,
+      "sha256": "947d0c0c65a232e6b71ac94ccf07ff51d492dd59c6311badd2e09fe519f3d686",
+      "native_stat9": [
+        1618373208947831848,
+        281474986662427,
+        33206,
+        1,
+        0,
+        0,
+        273019,
+        1792626946356619300,
+        1792624824280261400
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-current-reader-runtime-source-r1\\candidate\\legacy-files-bootstrap.php",
+      "bytes": 14449,
+      "sha256": "dbe38371567d495d5567189599a025903b91a22ffa6c8b001aab2509baf1375b",
+      "native_stat9": [
+        1618373208947831848,
+        281474986666900,
+        33206,
+        1,
+        0,
+        0,
+        14449,
+        1792624862049722800,
+        1792627059524859800
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-current-reader-runtime-source-r1\\candidate\\legacy-history-channel.php",
+      "bytes": 10051,
+      "sha256": "dc9e178fd56547170f9f3880cc89a6ad1355701c8fc8f4752fd1a64301d07474",
+      "native_stat9": [
+        1618373208947831848,
+        281474986666901,
+        33206,
+        1,
+        0,
+        0,
+        10051,
+        1792624862061738800,
+        1792627059525864200
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-current-reader-runtime-source-r1\\candidate\\legacy-history-http.php",
+      "bytes": 36764,
+      "sha256": "2747c8227349c62e4c5f928561ffbb307a6b9c34cf0d24420a0bf15f5aa0a3f2",
+      "native_stat9": [
+        1618373208947831848,
+        281474986666902,
+        33206,
+        1,
+        0,
+        0,
+        36764,
+        1792624862073830100,
+        1792627059526864400
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-current-reader-runtime-source-r1\\candidate\\legacy-history-producer.php",
+      "bytes": 1040124,
+      "sha256": "1e6ac2313db9d9cf25b759b5e1e5598cb036c93ca8eed339bfbf1d745b95662e",
+      "native_stat9": [
+        1618373208947831848,
+        281474986666903,
+        33206,
+        1,
+        0,
+        0,
+        1040124,
+        1792624862097973100,
+        1792627059527864800
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-current-reader-runtime-source-r1\\candidate\\legacy-history-router.php",
+      "bytes": 5551,
+      "sha256": "e6dea42b0f0ec0f93f7d718426f7be5f5c6963c832409f8f676632a956d2c554",
+      "native_stat9": [
+        1618373208947831848,
+        281474986666904,
+        33206,
+        1,
+        0,
+        0,
+        5551,
+        1792624862295995700,
+        1792627059530372100
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-current-reader-runtime-source-r1\\candidate\\legacy-normal-config.php",
+      "bytes": 26434,
+      "sha256": "df95e3e546f638f79b31ede89ead808f7e641c80941d6ead87ff3c8e13c038b5",
+      "native_stat9": [
+        1618373208947831848,
+        281474986666905,
+        33206,
+        1,
+        0,
+        0,
+        26434,
+        1792624862316767200,
+        1792627059531371600
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-current-reader-runtime-source-r1\\candidate\\ms4-host.py",
+      "bytes": 145131,
+      "sha256": "a57fafabee5b1768a8cce63ae568ffa919bce06263f2e427ec564c6b77f2e655",
+      "native_stat9": [
+        1618373208947831848,
+        281474986662426,
+        33206,
+        1,
+        0,
+        0,
+        145131,
+        1792627374112248100,
+        1792624824279261800
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-current-reader-runtime-source-r1\\candidate\\ms4-initialize.php",
+      "bytes": 62966,
+      "sha256": "9753365c2ff96690b82411d25aeecd0c28c1bf1d751aa1ec44ce272f8a610070",
+      "native_stat9": [
+        1618373208947831848,
+        281474986662429,
+        33206,
+        1,
+        0,
+        0,
+        62966,
+        1792626669287968800,
+        1792624824282262600
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-current-reader-runtime-source-r1\\candidate\\README.md",
+      "bytes": 5547,
+      "sha256": "295f78e8bef5a0af84a14324a6dab3afce3abaf9a53e5d3c47365f0d57ea9943",
+      "native_stat9": [
+        1618373208947831848,
+        281474986666897,
+        33206,
+        1,
+        0,
+        0,
+        5547,
+        1792624862352569800,
+        1792627059520768700
+      ]
+    },
+    {
+      "path": "H:\\天俪商城\\artifacts\\ms4-worker-normal-source-preparation-r1\\legacy-current-reader-runtime-source-r1\\candidate\\seed-source-inverse.json",
+      "bytes": 639,
+      "sha256": "c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a",
+      "native_stat9": [
+        1618373208947831848,
+        281474986666898,
+        33206,
+        1,
+        0,
+        0,
+        639,
+        1792624862356569500,
+        1792627059523276400
+      ]
+    }
+  ],
+  "source_inputs_all117_full_bytes_native9_held": true,
+  "native9_fields": [
+    "dev",
+    "ino",
+    "mode",
+    "nlink",
+    "uid",
+    "gid",
+    "size",
+    "mtime_ns",
+    "ctime_ns"
+  ],
+  "original_r1_all_source_and_101_prior_inputs_unchanged": true,
+  "actual_R2_Main_Val_canonical_Run_changed": false,
+  "definitions": {
+    "all_PHP_named_unique": 305,
+    "reader_named": 50,
+    "reader_function_pins": {
+      "nhecr_expect": {
+        "bytes": 104,
+        "sha256": "82cd6f2b87a76587c79eba4864ea38d2e8f095f60fc766ccacebf153de75fecc"
+      },
+      "nhecr_keys": {
+        "bytes": 211,
+        "sha256": "5d76e54d9096349f154ea4c0d059a3960d9336fe7ba85c06cec14670ecab16d8"
+      },
+      "nhecr_four_cli_join": {
+        "bytes": 11892,
+        "sha256": "747b69fe9b26ca399db387c8152b53d26124161c63c2862ac1dd03029f1a33af"
+      },
+      "nhecr_request_plan": {
+        "bytes": 1584,
+        "sha256": "bc92db2ae8c0f19b16519fe32c8db16cfe34da9f44c78b404dc329b8658bb257"
+      },
+      "nhecr_original_image": {
+        "bytes": 3793,
+        "sha256": "07ed6c41475acaf28d6fb7c11f714d68193c8547cd8b3eb188142a0b394a0e91"
+      },
+      "nhecr_history_handoff": {
+        "bytes": 16624,
+        "sha256": "1b8d352d3778c8b5d7c6b7682b5b45accde607d9437cce21dc84f66f516fb47a"
+      },
+      "nhecr_public_read": {
+        "bytes": 1695,
+        "sha256": "4e43f2497ebbe0a764fecef03e88f61e961f5d149686ab5be9999566272e8b3b"
+      },
+      "nhecr_public_handoff": {
+        "bytes": 2121,
+        "sha256": "9464f00893e0d866c59e0890901b493660ff70e58916555d90e311f724ba099a"
+      },
+      "nhecr_created_facts": {
+        "bytes": 6345,
+        "sha256": "de04736c2745a4d0697cd21338e2dce498fe413685b69d40969db0c1e1c02357"
+      },
+      "nhecr_includes": {
+        "bytes": 923,
+        "sha256": "da7af0874d1c637ca88cbc5fa48b01ba96b9f62a8ae2e96de13334c3c465416a"
+      },
+      "nhecr_qualify": {
+        "bytes": 8021,
+        "sha256": "bf03d5bd2bd159dd78a7c1e8e7b1aca83f000a627317e4ac71766f4beb0d7981"
+      },
+      "nhecr_db_capture": {
+        "bytes": 1763,
+        "sha256": "c8a1d361c22aa17f8aae520fcfa06e6aaee602ee19fee34afb18479b265f94a5"
+      },
+      "nhecr_db_expected": {
+        "bytes": 2547,
+        "sha256": "9c913ecfe7737f48bb80756f5c33a4907bdc7a567d282097e41a25451d70bf62"
+      },
+      "nhecr_db_validate": {
+        "bytes": 2091,
+        "sha256": "d3bda9b59300c0657b632126578eda97c299dea8897df06d5f0446867b1e48cb"
+      },
+      "nhecr_actors_read": {
+        "bytes": 8472,
+        "sha256": "dca31f4acbe90e6e77fcde3ea81a74b3f617cbdf80bcfda70a04a11926c8a1fb"
+      },
+      "nhecr_fresh": {
+        "bytes": 676,
+        "sha256": "f44a37abac68c5f2f8cbbb2e044c3cffd4a9d93268722989ea32474b044d85e4"
+      },
+      "nhecr_parent_file": {
+        "bytes": 1981,
+        "sha256": "01ce0a1b7fc0a0306099acec3e6143a700de342c282c919985949080603085dc"
+      },
+      "nhecr_parent_write": {
+        "bytes": 1664,
+        "sha256": "7cd11bcddc1f815ed2312ca9fbb1e10804fe4f2f1162c5ef981433f531050a6c"
+      },
+      "nhecr_baseline": {
+        "bytes": 2720,
+        "sha256": "60c9d6ce34263f7c95106e58df4fcf3c9e66e32e092f1636313e5d37ef1802af"
+      },
+      "nhecr_child_environment": {
+        "bytes": 1817,
+        "sha256": "50e622f3cdf9387af5f783ce73d1d6a62db265c9a4960e8ed0edcc6f6469387a"
+      },
+      "nhecr_child_start": {
+        "bytes": 5608,
+        "sha256": "75a07b371f5b932cb2ab8b8c8cc04f76b57e449c3874b08512f39a1a1609507e"
+      },
+      "nhecr_headers_model": {
+        "bytes": 6365,
+        "sha256": "1cf7f757aec2228fae46e10151f64e0c8b84c4cf8d999afa2ea8ff31324c7010"
+      },
+      "nhecr_file_tree": {
+        "bytes": 2711,
+        "sha256": "2b181d7a4b97ce5fef1d13234bad189eba20aa03ac87f8e38744b8bfd55fa2f9"
+      },
+      "nhecr_files_streams": {
+        "bytes": 1890,
+        "sha256": "fa73d333a7d0571f66892712c0729c411fdfc1376477582e90a719308db1aae0"
+      },
+      "nhecr_files_model": {
+        "bytes": 9252,
+        "sha256": "739e6de3536600d8298bbeb8e0cb0a5b82ab077b7e0b8e7039e7be5633929adc"
+      },
+      "nhecr_intent": {
+        "bytes": 1784,
+        "sha256": "1e79013e479d8cec632a125352cdb28aa7987439cec062607af7eba54c9d38aa"
+      },
+      "nhecr_stream_expected": {
+        "bytes": 2742,
+        "sha256": "f91504a3dd8acaa6f70936b35a89582d56f16da4748d090b2edb6f11ea02f522"
+      },
+      "nhecr_build_app": {
+        "bytes": 5980,
+        "sha256": "58629bc2a294b648abbc3a3d482a48b9c3c6ef5639f99d311229be9b5ded7580"
+      },
+      "nhecr_router": {
+        "bytes": 3474,
+        "sha256": "38935cfa8c10557c74fa86122b9fbb64f8b7d0b87d28586a6e077a57e7837654"
+      },
+      "nhecr_stream_capture": {
+        "bytes": 1333,
+        "sha256": "10fd0c7eba41f404001de1bc51aa10776fac7606648b6eb417d29d2b9aaecc56"
+      },
+      "nhecr_capture": {
+        "bytes": 1824,
+        "sha256": "f2b62cefdd3ba9b0c64e6d2b7d30f9b7700b77b3329d8477a9c57956c5baf407"
+      },
+      "nhecr_wait_closing": {
+        "bytes": 707,
+        "sha256": "31beaedc85c44a7ec37c1193bfa9b9578bc7dbae6e1e2929106ca6a0a98bdff0"
+      },
+      "nhecr_transport": {
+        "bytes": 3716,
+        "sha256": "009cea2c37469e61a7dc2a9e914e2c2115935412d6a8b55b7b3f9f45a9e82582"
+      },
+      "nhecr_http_closed": {
+        "bytes": 1248,
+        "sha256": "2e0273caea2d7db6816f7f4555da805c259f4de3f1aa24d4283b760ab4308257"
+      },
+      "nhecr_order_context": {
+        "bytes": 20352,
+        "sha256": "db08c120d77894e0babeed90ad3bac4cc3ca69456ab8cd300730cb58072f1875"
+      },
+      "nhecr_order_value": {
+        "bytes": 18659,
+        "sha256": "408ddac5acc4939ab60c259a7bac2133c436ac030d1aacd9acca731fbc65d21a"
+      },
+      "nhecr_refund_context": {
+        "bytes": 23719,
+        "sha256": "8e440b0a88f281811a8438c201da23c7b9723e0fb0061b283173cd0af1d7d842"
+      },
+      "nhecr_identities": {
+        "bytes": 30019,
+        "sha256": "4fa01a7fb779fcabe81c9de7615664c77d0da6aa5e4989c96b34dbfd3c91fab4"
+      },
+      "nhecr_login_context": {
+        "bytes": 3001,
+        "sha256": "1d645cc523e7522107f4dd01e7897c9a166d6a3072cf60c7347e4ff2a942da25"
+      },
+      "nhecr_user_update_key": {
+        "bytes": 1264,
+        "sha256": "a7b4dd4ce6b7d0409e14f6beff40645169551be92b807fc4f7e1d88c7d19cc52"
+      },
+      "nhecr_account_detail_verify": {
+        "bytes": 6349,
+        "sha256": "df2f66e9951460c9a4f9cf3bcefa1250334be242776ef4f1a530d8ae741b9f18"
+      },
+      "nhecr_json_exact": {
+        "bytes": 430,
+        "sha256": "11652d1b5c34b32e253219dc1bf9d4b03e93c6cd35f4aeefd2f63b3e22888904"
+      },
+      "nhecr_main": {
+        "bytes": 15430,
+        "sha256": "d27cb44c7b569e1253a02c4a55698ffd53f24408a7cdf448dee2ce07d21c7b4e"
+      },
+      "nhecr_catalog_context": {
+        "bytes": 10188,
+        "sha256": "fd04a133d8eb9ace8ca963e8718cabdc499015be6893ae94eb1b7f7f64ae613c"
+      },
+      "nhecr_catalog_reply_envelopes": {
+        "bytes": 1978,
+        "sha256": "7360fc520882d3d62b8e559b8d9a242850970052b010c5f00c81e7e16a82d6d2"
+      },
+      "nhecr_catalog_envelopes": {
+        "bytes": 4627,
+        "sha256": "ae2b3238f329c6f5c4466e69ab18c9eeade3533aac731f7339fdcf2b5e284885"
+      },
+      "nhecr_catalog_auth_guid": {
+        "bytes": 785,
+        "sha256": "5be603f23704b7f760bbfcdd6b9bc37b74e9e2a111442cc44a0a8fa2bea72731"
+      },
+      "nhecr_remember_sequence": {
+        "bytes": 4113,
+        "sha256": "e57c7984b3b0c47d3e01454c436b96deb4eefe2e30f31e425e75266e20148677"
+      },
+      "nhecr_catalog_redis": {
+        "bytes": 2992,
+        "sha256": "58e3277786d7c8acb7fdff9761e10e3bb028dfa1ecadc83593d7083d06a3be3e"
+      },
+      "nhecr_catalog_verify": {
+        "bytes": 8281,
+        "sha256": "28d21ebfdcde63de1891c3f26aed99eca0b159dc39d54121aea7cf0af7dac863"
+      }
+    }
+  },
+  "reader_file_tree_provenance": {
+    "original_producer_function": {
+      "bytes": 2699,
+      "sha256": "57cc80a0d562c3052bd5993a0d10f086254d8d620698073a8a84f56271b86c17"
+    },
+    "reader_function": {
+      "bytes": 2711,
+      "sha256": "2b181d7a4b97ce5fef1d13234bad189eba20aa03ac87f8e38744b8bfd55fa2f9"
+    },
+    "only_function_name_and_fixed_five_root_text_changes": true,
+    "complete_reverse_equals_original_function": true
+  },
+  "catalog_seven_complete_bodies_held": {
+    "nhecr_catalog_context": {
+      "bytes": 10188,
+      "sha256": "fd04a133d8eb9ace8ca963e8718cabdc499015be6893ae94eb1b7f7f64ae613c"
+    },
+    "nhecr_catalog_reply_envelopes": {
+      "bytes": 1978,
+      "sha256": "7360fc520882d3d62b8e559b8d9a242850970052b010c5f00c81e7e16a82d6d2"
+    },
+    "nhecr_catalog_envelopes": {
+      "bytes": 4627,
+      "sha256": "ae2b3238f329c6f5c4466e69ab18c9eeade3533aac731f7339fdcf2b5e284885"
+    },
+    "nhecr_catalog_auth_guid": {
+      "bytes": 785,
+      "sha256": "5be603f23704b7f760bbfcdd6b9bc37b74e9e2a111442cc44a0a8fa2bea72731"
+    },
+    "nhecr_remember_sequence": {
+      "bytes": 4113,
+      "sha256": "e57c7984b3b0c47d3e01454c436b96deb4eefe2e30f31e425e75266e20148677"
+    },
+    "nhecr_catalog_redis": {
+      "bytes": 2992,
+      "sha256": "58e3277786d7c8acb7fdff9761e10e3bb028dfa1ecadc83593d7083d06a3be3e"
+    },
+    "nhecr_catalog_verify": {
+      "bytes": 8281,
+      "sha256": "28d21ebfdcde63de1891c3f26aed99eca0b159dc39d54121aea7cf0af7dac863"
+    }
+  },
+  "fixed_public_input_count": 29,
+  "fixed_public_original19_plus_real_reader10": [
+    "preparation-source-binding.json",
+    "network.json",
+    "containers.jsonl",
+    "volumes.txt",
+    "volumes.jsonl",
+    "evidence/legacy-history-producer-created.json",
+    "evidence/legacy-history-producer-terminal.json",
+    "evidence/audit-legacy-history-producer-container-created.json",
+    "evidence/audit-legacy-history-producer-source-binding.json",
+    "evidence/legacy-history-producer-result.json",
+    "evidence/driver-created.json",
+    "evidence/driver-terminal.json",
+    "evidence/ms4-migration-container-created.json",
+    "evidence/ms4-migration-source-binding.json",
+    "evidence/ms4-migration-normal.json",
+    "evidence/legacy-history-producer-retired.json",
+    "evidence/legacy-history-producer-retired-resources.json",
+    "evidence/driver-retired.json",
+    "evidence/driver-retired-resources.json",
+    "evidence/legacy-current-reader-created.json",
+    "evidence/legacy-current-reader-terminal.json",
+    "evidence/audit-legacy-current-reader-container-created.json",
+    "evidence/audit-legacy-current-reader-source-binding.json",
+    "evidence/legacy-current-reader-result.json",
+    "evidence/legacy-current-reader-retired.json",
+    "evidence/legacy-current-reader-retired-resources.json",
+    "evidence/register-legacy-current-reader-created.json",
+    "evidence/register-legacy-current-reader-terminal.json",
+    "evidence/register-legacy-current-reader-result.json"
+  ],
+  "root_later_6dispatch_6cleanup_1direct_RAM_applicability": {
+    "all13_unique": true,
+    "Host": {
+      "bytes": 148587,
+      "sha256": "579d3b4c7ed905c6c4a88e2a25991ac2d3afa9fe72105aa9d2e4ecc640c05a72"
+    },
+    "initializer": {
+      "bytes": 62994,
+      "sha256": "51646954558350f853544ec03d6d71be4f2730464691aa8a95726ddba74ad27f"
+    },
+    "producer": {
+      "bytes": 1040045,
+      "sha256": "f20a64d359dedc7080ba9332321f2dc1b7b3f7f6b5a5dc2eac2bf2edb70fada4"
+    },
+    "persisted_imported_executed": false
+  },
+  "original169_direct_refusal_tail_held": {
+    "bytes": 169,
+    "sha256": "506e3f4533a517fb7b02b38b9cb2f03411c5fe7e8784aaa1b0bb3877230a08f9"
+  },
+  "Python_RAM_AST_compile_only": true,
+  "PHP_only_lexical_text_no_AST_or_syntax_or_functions": true,
+  "Docker_SQL_Redis_HTTP_App_resources_executed": false,
+  "R39_failure_independent_no_cause_claim": true,
+  "notes": {
+    "bytes": 6983,
+    "sha256": "c3f079b1ec643a8df50234b150c23d5c1f5ca6c89dcef8f33a3debe870319e27"
+  },
+  "remaining_qualification": [
+    "Root and nonauthor whole r2 Source review",
+    "Root actual final13 finite source composition and complete freeze",
+    "Unique required PHP syntax and fresh full normal37 fourCLI current9 close independent zero",
+    "Final enabled=true mapping backfill enforce actual historic rights three-end UI real finance release"
+  ],
+  "sixth_fix_continuity": {
+    "initial_files_before_start_independent": true,
+    "startup_only_two_source_created_streams_and_bounded_root_metadata": true,
+    "initial_before_full166_DB_equals_sealed_baseline": true,
+    "initial_redis_only_passive_expiry_from_original_capture": true,
+    "later_before_full_seven_equals_previous_accepted_except_passive_expiry": true,
+    "HTTP_only_after_continuity_gate": true,
+    "original_after_whole7_and_token_cookie_commit_order_held": true
+  }
+}

@@ -62,7 +62,7 @@
     },
     {
       "kind": "nonempty history readiness",
-      "detail": "Parent R1 retains LOAD-01. Parent R2 repairs fixed component loading and passed syntax-only verification. Startup R1 contains the complete startup plan/accept implementation and passed independent source review; its new full PHP bytes have not passed syntax or business execution. Final source bindings, Host admission, current reader, final enabled gate and the complete 37-step/four-CLI/close-zero run remain incomplete. Original refused/UNBOUND entries remain unchanged."
+      "detail": "Parent R1 retains LOAD-01. Parent R2 repairs fixed component loading. Startup R1 and the latest private-context reader R2 passed PHP 8.2 syntax for their exact archived bytes; this is not business execution. Host handoff R3, reader R2 and the older reader-runtime Host/Compose/initializer donors are now archived. Final source adoption still must reconcile producer 13-artifact/11-control and reader 14-artifact/12-control phase contracts, preserve the original 164-to-166 table migration before separate current-application structure upgrades (including version metadata and the fulfillment/aftersale structure checks reached by legacy order reads; the complete migration set still requires call-chain verification), bind real role retirement and reader admission, and finish the complete 37-step/four-CLI/current-reader/close-zero run. Final enabled mapping remains separate. Original refused/UNBOUND archived entries remain unchanged."
     }
   ],
   "existing_git_controls_for_history": [

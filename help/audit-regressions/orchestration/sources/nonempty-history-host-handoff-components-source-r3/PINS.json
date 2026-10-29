@@ -1,0 +1,58 @@
+{
+  "schema": 1,
+  "scope": "SOURCE_ONLY_SINGLE_ORDER_UNIQUE_DECIMAL_INT64_PREDICATE_NOT_RUNTIME_READY",
+  "members": {
+    "author.py": {
+      "bytes": 11268,
+      "sha256": "c5e91d395f58ec9bbf1ea4e010aaffd37aa028f069e970ea7472eebcc68805c2"
+    },
+    "before/ms4-host.py": {
+      "bytes": 112238,
+      "sha256": "b53553866e449bac213112d119830504610a0ae7ef29c5601319c1640e0c38e3"
+    },
+    "CALL-CLOSURE.json": {
+      "bytes": 1402,
+      "sha256": "f63d3b929f051d2cea5048a301b817897f110b4bb6a7223a5fa30bb473b288da"
+    },
+    "candidate/ms4-host.py": {
+      "bytes": 112398,
+      "sha256": "5b041cbb071353cf28186aad73d8fdeebd33b3919f467a3afb42569776af5066"
+    },
+    "CHECKS.json": {
+      "bytes": 959,
+      "sha256": "1c928c1d0d9a7d3c5d3394b44a43a98584aa1a6dd0a3e3a71966491737ec0259"
+    },
+    "DESIGN-TASKS.md": {
+      "bytes": 2647,
+      "sha256": "a9bab59f5895c6b1f28cb648a126cb3ccfe30ff7881429f1038636b9e49022a9"
+    },
+    "DIFF.patch": {
+      "bytes": 1134,
+      "sha256": "b9454acee74b730d344049ee86572b6e632f535c644371ffbc5e98acd9e928e2"
+    },
+    "HOST-TYPE-FINDING.json": {
+      "bytes": 1880,
+      "sha256": "f93ea35cddcaff177e433a25588d7b375acc3249b00bcffa776523e7eda73ddf"
+    },
+    "MANIFEST.json": {
+      "bytes": 967,
+      "sha256": "c0261bc60fc63b2d0bfd61a585366c2197b60deaa8871f722268b25f678b3a53"
+    },
+    "REVERSE.patch": {
+      "bytes": 1134,
+      "sha256": "e13b54711c946a76075ed1212804bbbea15ee852cf24af161b6f901fa21758b5"
+    },
+    "SOURCE-INPUTS.json": {
+      "bytes": 12707,
+      "sha256": "5370dbe8213603a757dbefb06489faf733dd44a220d3afd8ae9c0e70c7e7a891"
+    },
+    "SOURCE-OVERLAY.json": {
+      "bytes": 7139,
+      "sha256": "43a7db5c83427112bf5a82945a808f7b947d711dcc46cc1c53127ea25bd14bb7"
+    },
+    "TRANSFORM.json": {
+      "bytes": 821,
+      "sha256": "d876ee53b56152051ee2ae15b2169badeca2d2c8eb481402cc9f4c7c911baa0e"
+    }
+  }
+}

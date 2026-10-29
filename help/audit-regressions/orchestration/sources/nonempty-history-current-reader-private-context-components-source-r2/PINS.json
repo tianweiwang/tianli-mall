@@ -1,0 +1,54 @@
+{
+  "schema": 1,
+  "scope": "SOURCE_ONLY_TWO_CALLEE_REPAIRS_NOT_ADMISSION",
+  "members": {
+    "author.py": {
+      "bytes": 9592,
+      "sha256": "6c164634b180c9a6bdf72993787f6940df9f73f87934828e46847dccc332b4a5"
+    },
+    "before/legacy-current-reader.php": {
+      "bytes": 310263,
+      "sha256": "099d113f22faa339ebfe2abe5b3ad0bded5ea3dcce2c263e5dd932d698d3edce"
+    },
+    "CALLEE-SOURCE.json": {
+      "bytes": 1920,
+      "sha256": "3d719773a9c1a20a6d682a401c4a6d68b79c3d0b9b81b1838c5176c17cf90f03"
+    },
+    "candidate/legacy-current-reader.php": {
+      "bytes": 310962,
+      "sha256": "2b0dd14ff42adf9cc17776d4313f97fd7ad286ba11ccbfae849358610bb84c00"
+    },
+    "CHECKS.json": {
+      "bytes": 635,
+      "sha256": "30166d4fb65beaa75e73f61b801a20a0f0ee2fec9b54e1c5a5de41d5ca30f16c"
+    },
+    "DESIGN-TASKS.md": {
+      "bytes": 4447,
+      "sha256": "1bb44c1f3da7755a3a1951c5e8263a811f7f2735b8931928d6d6e59dbf1d1a11"
+    },
+    "DIFF.patch": {
+      "bytes": 1973,
+      "sha256": "d5708b9349b697cf53c5ef0c9f1f1969581081345f6c931de042941a9274d124"
+    },
+    "MANIFEST.json": {
+      "bytes": 8965,
+      "sha256": "23e4b356e87f81ae8b69ab66f0d5e3bc7c1f974fc777f95e2a97f8c683ea7e24"
+    },
+    "REVERSE.patch": {
+      "bytes": 1973,
+      "sha256": "851896b4ab23e2dd3e3e8a0fda6bc509bbbd003422cfb7116dfa11ae3f4fdd34"
+    },
+    "SOURCE-INPUTS.json": {
+      "bytes": 9581,
+      "sha256": "01a8a40d2a11ca35e75a941869ff9fb4cd7ff7e19d6f3f5fbb46b0178edf9f64"
+    },
+    "SOURCE-OVERLAY.json": {
+      "bytes": 8013,
+      "sha256": "503c0d3d4554a18dbbc114150172c1297cb59c359f1a366ca92a6743ffb172f1"
+    },
+    "TRANSFORM.json": {
+      "bytes": 2738,
+      "sha256": "3a39576a8a566f2701a5c9145acb6ef05a269454fee89439a49101beed702688"
+    }
+  }
+}

@@ -1,0 +1,132 @@
+{
+  "schema": 1,
+  "scope": "ONE_NEW_READER_SOURCE_COMPONENT_NOT_ADOPTED_PROFILE",
+  "reader_candidate": {
+    "source": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-current-reader-private-context-components-source-r2/candidate/legacy-current-reader.php",
+    "bytes": 310962,
+    "sha256": "2b0dd14ff42adf9cc17776d4313f97fd7ad286ba11ccbfae849358610bb84c00"
+  },
+  "preserved_producer_phase_complete13_artifacts9PHP11controls": {
+    "schema": 1,
+    "scope": "ACTUAL_COMPONENT_OVERLAY_NOT_FINAL_SOURCE_ADOPTION",
+    "artifacts": {
+      "README.md": {
+        "source": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-upgrade-source-r2/README.md",
+        "bytes": 5547,
+        "sha256": "295f78e8bef5a0af84a14324a6dab3afce3abaf9a53e5d3c47365f0d57ea9943"
+      },
+      "compose.yml": {
+        "source": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-private-prepare-components-source-r2/candidate/compose.yml",
+        "bytes": 4884,
+        "sha256": "63ecc33ea0b821cccc149dceff5de26ef54ad1fdcf2922b43fc55ad21f4e0ea9"
+      },
+      "ms4-host.py": {
+        "source": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-host-handoff-components-source-r3/candidate/ms4-host.py",
+        "bytes": 112398,
+        "sha256": "5b041cbb071353cf28186aad73d8fdeebd33b3919f467a3afb42569776af5066"
+      },
+      "ms4-initialize.php": {
+        "source": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-private-prepare-components-source-r2/candidate/ms4-initialize.php",
+        "bytes": 63165,
+        "sha256": "95c0e205d3596e3701aeceb5dcce3cd046682a4843c924df2c12128bf17379a8"
+      },
+      "seed-source-inverse.json": {
+        "source": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-upgrade-source-r2/seed-source-inverse.json",
+        "bytes": 639,
+        "sha256": "c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a"
+      },
+      "legacy-app.php": {
+        "source": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-pre37-app-init-components-source-r1/candidate/legacy-app.php",
+        "bytes": 52325,
+        "sha256": "36ee80b6e425aa5623f814bfb9efd8b8d0b2aede94a2762c03d4d696aab734c5"
+      },
+      "legacy-files-bootstrap.php": {
+        "source": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-upgrade-source-r2/legacy-files-bootstrap.php",
+        "bytes": 14449,
+        "sha256": "dbe38371567d495d5567189599a025903b91a22ffa6c8b001aab2509baf1375b"
+      },
+      "legacy-normal-config.php": {
+        "source": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-pre37-fixed-preparation-components-source-r1/candidate/legacy-normal-config.php",
+        "bytes": 26655,
+        "sha256": "46529a71de605c3ddb475c5fcaac487cf96cd68745996752401e24aac997d04f"
+      },
+      "legacy-actors.php": {
+        "source": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-pre37-actors-components-source-r1/candidate/legacy-actors.php",
+        "bytes": 25618,
+        "sha256": "44235713b307c9913ea9fbf92a0c26908e145a90f6d5636f61ec156f1588fb40"
+      },
+      "legacy-history-http.php": {
+        "source": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-upgrade-source-r2/legacy-history-http.php",
+        "bytes": 36764,
+        "sha256": "2747c8227349c62e4c5f928561ffbb307a6b9c34cf0d24420a0bf15f5aa0a3f2"
+      },
+      "legacy-history-channel.php": {
+        "source": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-normal-close-components-source-r1/candidate/legacy-history-channel.php",
+        "bytes": 11296,
+        "sha256": "98f1b863f3a5538e1c9ba867e58206adafdceb57d40faad39ca92e4018957ffc"
+      },
+      "legacy-history-producer.php": {
+        "source": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-normal-startup-components-source-r1/candidate/legacy-history-producer.php",
+        "bytes": 1081876,
+        "sha256": "8e3156f29e1aedb87fbbce359da41025992f3ebe88a67299fba6487e540f20b1"
+      },
+      "legacy-history-router.php": {
+        "source": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-upgrade-source-r2/legacy-history-router.php",
+        "bytes": 5551,
+        "sha256": "e6dea42b0f0ec0f93f7d718426f7be5f5c6963c832409f8f676632a956d2c554"
+      }
+    },
+    "actual_artifact_count": 13,
+    "actual_PHP_component_count": 9,
+    "bundle_control_files": {
+      "/run/nonempty/legacy-actors.php": {
+        "source": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-pre37-actors-components-source-r1/candidate/legacy-actors.php",
+        "bytes": 25618,
+        "sha256": "44235713b307c9913ea9fbf92a0c26908e145a90f6d5636f61ec156f1588fb40"
+      },
+      "/run/nonempty/legacy-app.php": {
+        "source": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-pre37-app-init-components-source-r1/candidate/legacy-app.php",
+        "bytes": 52325,
+        "sha256": "36ee80b6e425aa5623f814bfb9efd8b8d0b2aede94a2762c03d4d696aab734c5"
+      },
+      "/run/nonempty/legacy-files-bootstrap.php": {
+        "source": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-upgrade-source-r2/legacy-files-bootstrap.php",
+        "bytes": 14449,
+        "sha256": "dbe38371567d495d5567189599a025903b91a22ffa6c8b001aab2509baf1375b"
+      },
+      "/run/nonempty/legacy-history-channel.php": {
+        "source": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-normal-close-components-source-r1/candidate/legacy-history-channel.php",
+        "bytes": 11296,
+        "sha256": "98f1b863f3a5538e1c9ba867e58206adafdceb57d40faad39ca92e4018957ffc"
+      },
+      "/run/nonempty/legacy-history-http.php": {
+        "source": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-upgrade-source-r2/legacy-history-http.php",
+        "bytes": 36764,
+        "sha256": "2747c8227349c62e4c5f928561ffbb307a6b9c34cf0d24420a0bf15f5aa0a3f2"
+      },
+      "/run/nonempty/legacy-history-producer.php": {
+        "source": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-normal-startup-components-source-r1/candidate/legacy-history-producer.php",
+        "bytes": 1081876,
+        "sha256": "8e3156f29e1aedb87fbbce359da41025992f3ebe88a67299fba6487e540f20b1"
+      },
+      "/run/nonempty/legacy-history-router.php": {
+        "source": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-upgrade-source-r2/legacy-history-router.php",
+        "bytes": 5551,
+        "sha256": "e6dea42b0f0ec0f93f7d718426f7be5f5c6963c832409f8f676632a956d2c554"
+      },
+      "/run/nonempty/legacy-normal-config.php": {
+        "source": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/nonempty-history-pre37-fixed-preparation-components-source-r1/candidate/legacy-normal-config.php",
+        "bytes": 26655,
+        "sha256": "46529a71de605c3ddb475c5fcaac487cf96cd68745996752401e24aac997d04f"
+      }
+    },
+    "unchanged_Root_owned_current_control_paths": [
+      "/workspace/help/audit-regressions/isolated/lib/guard.php",
+      "/workspace/help/audit-regressions/isolated/lib/harness.php",
+      "/workspace/help/audit-regressions/isolated/ms4-migration.php"
+    ],
+    "exact_control_count": 11,
+    "final_adoption": "UNBOUND: all seven original Host binding values remain None. This overlay updates only actual Host component identity; it is not a Source freeze or permission to execute."
+  },
+  "actual_reader_role_Source_and_mount_adoption": "UNBOUND; original reader guard count14/12 retained, only total Source rejection added. No future pins or CID."
+}
