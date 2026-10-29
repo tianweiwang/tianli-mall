@@ -244,7 +244,7 @@ function m4cf_read(PDO $db,array $actor,string $kind,array $root,array $asset,st
     $rows=[];$counts=[];m4ar_auth_delta($before,$after,$actor,$reply['actual_interval'],$rows);
     if($actor['app']==='adminapi')m4ar_audit_delta($before,$after,$actor,['global'=>true,
         'rule'=>'order/info/<root_id>/form-files/<asset_id>/read-ticket'],$reply['actual_interval'],$rows,$counts);
-    m4ar_database_delta($before,$after,$rows,$counts);m4ar_redis_delta($before,$after,[$key=>$after['redis']['keys'][$hash]]+m4ar_cache_deletes($before,$after,$actor));
+    m4ar_database_delta($before,$after,$rows,$counts);m4ar_redis_delta($before,$after,[$key=>$after['redis']['keys'][$hash]]);
     m4cf_expect($before['private']===$after['private']&&$before['public']===$after['public'],'TICKET_FILES_UNCHANGED');
     $reply=m4cf_transport('GET',$base.'/content',$actor['token'],null,null,$ticket);$last=m4cf_snapshot($db);
     m4cf_expect($reply['http']===200&&$reply['raw']===$asset['bytes']&&($reply['headers']['content-type']??null)===$row['media_type']
@@ -254,7 +254,7 @@ function m4cf_read(PDO $db,array $actor,string $kind,array $root,array $asset,st
     $rows=[];$counts=[];m4ar_auth_delta($after,$last,$actor,$reply['actual_interval'],$rows);
     if($actor['app']==='adminapi')m4ar_audit_delta($after,$last,$actor,['global'=>true,
         'rule'=>'order/info/<root_id>/form-files/<asset_id>/content'],$reply['actual_interval'],$rows,$counts);
-    m4ar_database_delta($after,$last,$rows,$counts);m4ar_redis_delta($after,$last,[$key=>null]+m4ar_cache_deletes($after,$last,$actor));
+    m4ar_database_delta($after,$last,$rows,$counts);m4ar_redis_delta($after,$last,[$key=>null]);
     m4cf_expect(audit_redis()->exists($key)===0&&$after['private']===$last['private']&&$after['public']===$last['public'],'NATIVE_ONCE_CONSUMED_NO_FILE_CHANGE');
     $GLOBALS['m4cf_read_observations'][]=['reader_kind'=>$kind,'root_id'=>$rootId,'asset_id'=>$id,
         'content_sha256'=>hash('sha256',$reply['raw']),'bytes'=>strlen($reply['raw']),
@@ -379,6 +379,70 @@ function m4cf_package_public_form(PDO $db,array $root,array $child):array
     m4c_entry_same(json_decode($saved['custom_form'],true,32,JSON_THROW_ON_ERROR),$expected);
     return $expected;
 }
+/** Order is unspecified by the native menu SELECT; every duplicate route remains significant. */
+function m4cf_order_auth_groups(array $groups):array
+{
+    $out=[];
+    foreach($groups as$method=>$routes){
+        m4cf_expect(is_string($method)&&$method===trim(strtolower($method))
+            &&is_array($routes)&&array_is_list($routes)&&$routes!==[],'ORDER_AUTH_CANONICAL_METHOD_GROUP');
+        $values=[];foreach($routes as$route){
+            m4cf_expect(is_string($route)&&$route===trim(strtolower(str_replace(' ','',$route))),'ORDER_AUTH_CANONICAL_ROUTE_VALUE');
+            $values[]=$route;
+        }
+        sort($values,SORT_STRING);$out[$method]=$values;
+    }
+    ksort($out,SORT_STRING);return $out;
+}
+/** Independent native sources for the original SystemRoleServices order-detail cache contract. */
+function m4cf_order_auth_source(PDO $db,array $actor):array
+{
+    m4cf_expect(($actor['app']??null)==='adminapi'&&is_int($actor['id']??null)&&$actor['id']>0
+        &&is_int($actor['role_id']??null)&&$actor['role_id']>0&&is_string($actor['account']??null)
+        &&$actor['account']!=='','ORDER_AUTH_EXACT_PLATFORM_ACTOR');
+    $admins=m5pcp_rows($db,'SELECT id,account,roles,level,status,is_del FROM eb_system_admin WHERE id=?',[$actor['id']]);
+    m4cf_expect(count($admins)===1,'ORDER_AUTH_ONE_NATIVE_ADMIN');$admin=$admins[0];
+    m4cf_expect(m5pcp_u64($admin['id'])===(string)$actor['id']&&$admin['account']===$actor['account']
+        &&$admin['roles']===(string)$actor['role_id']&&(string)$admin['level']==='1'
+        &&(string)$admin['status']==='1'&&(string)$admin['is_del']==='0','ORDER_AUTH_NATIVE_CURRENT_ACCOUNT_SINGLE_ROLE');
+    $roles=m5pcp_rows($db,'SELECT id,rules,level,status FROM eb_system_role WHERE id=? AND status=1',[$actor['role_id']]);
+    m4cf_expect(count($roles)===1,'ORDER_AUTH_ONE_ENABLED_NATIVE_ROLE');$role=$roles[0];
+    m4cf_expect(m5pcp_u64($role['id'])===(string)$actor['role_id']&&(string)$role['level']==='1'
+        &&(string)$role['status']==='1'&&is_string($role['rules'])&&$role['rules']!=='','ORDER_AUTH_NATIVE_ROLE_IDENTITY');
+    $grants=array_values(array_unique(explode(',',$role['rules']),SORT_STRING));
+    foreach($grants as$grant)m4cf_expect(m5pcp_u64($grant)===$grant,'ORDER_AUTH_NATIVE_RULE_ID');
+    // BaseDao::getColumn applies exactly these predicates, with no is_del filter.
+    $menus=['c:all_auth'=>m5pcp_rows($db,"SELECT api_url,methods FROM eb_system_menus WHERE api_url<>'' AND auth_type=2"),
+        'c:'.md5('Admin_rules_level__2_'.$admin['roles'])=>m5pcp_rows($db,
+            'SELECT api_url,methods FROM eb_system_menus WHERE id IN ('.implode(',',array_fill(0,count($grants),'?')).') AND auth_type=2',$grants)];
+    $expected=[];foreach($menus as$key=>$rows){$groups=[];
+        foreach($rows as$row){m4cf_expect(is_string($row['api_url'])&&is_string($row['methods']),'ORDER_AUTH_NATIVE_COMPLETE_MENU_VALUES');
+            $groups[trim(strtolower($row['methods']))][]=trim(strtolower(str_replace(' ','',$row['api_url'])));}
+        $expected[$key]=m4cf_order_auth_groups($groups);
+        m4cf_expect(in_array('order/info/<id>',$expected[$key]['get']??[],true),'ORDER_AUTH_NATIVE_DETAIL_GRANT');
+    }
+    return $expected;
+}
+function m4cf_order_auth_cache_delta(array $before,array $after,array $expected):array
+{
+    $keys=array_keys($expected);
+    m4cf_expect(count($keys)===2&&$keys[0]==='c:all_auth'&&is_string($keys[1])
+        &&preg_match('/\Ac:[a-f0-9]{32}\z/D',$keys[1])===1,'ORDER_AUTH_ONLY_TWO_SOURCE_KEYS');
+    $redis=audit_redis();$changes=[];$added=[];
+    foreach($expected as$key=>$groups){$hash=hash('sha256',$key);$entry=$after['redis']['keys'][$hash]??null;
+        $raw=$redis->rawCommand('GET',$key);$dump=$redis->rawCommand('DUMP',$key);
+        m4cf_expect(is_string($raw)&&is_string($dump)&&$entry===['type'=>'string','sha256'=>hash('sha256',$dump),'expires'=>-1]
+            &&$redis->rawCommand('PEXPIRETIME',$key)===-1,'ORDER_AUTH_NATIVE_STRING_PERMANENT_DUMP');
+        $cached=unserialize($raw,['allowed_classes'=>false]);
+        m4cf_expect(is_array($cached)&&serialize($cached)===$raw
+            &&m4cf_order_auth_groups($cached)===$groups,'ORDER_AUTH_COMPLETE_SOURCE_MULTISET_CANONICAL_WIRE');
+        if(isset($before['redis']['keys'][$hash]))
+            m4cf_expect($entry===$before['redis']['keys'][$hash],'ORDER_AUTH_HOT_COMPLETE_VALUE_TYPE_DEADLINE_UNCHANGED');
+        else{$changes[$key]=$entry;$added[]=$key;}
+    }
+    if($added!==[])$changes+=m4ar_tag_change($before,$after,'c:CRMEB:'.md5('crmeb'),$added);
+    return $changes;
+}
 function m4cf_saved_readers(PDO $db,array $root,array $actors):void
 {
     $uid=(int)$root['uid'];$id=(int)$root['id'];$number=$root['order_id'];$customer=$actors['customer'];
@@ -396,13 +460,25 @@ function m4cf_saved_readers(PDO $db,array $root,array $actors):void
         'merchant_order'=>['actor'=>$actors['merchant'],'view'=>'/merchantapi/orders/'.$id,'base'=>'/merchantapi/orders/'.$id],
         'platform_order'=>['actor'=>$actors['platform'],'view'=>'/adminapi/order/info/'.$id,'base'=>'/adminapi/order/info/'.$id],
         'mobile_order'=>['actor'=>$customer,'view'=>'/api/admin/order/detail/'.$number,'base'=>'/api/admin/order/detail/'.$id]]as$kind=>$spec){
-        $before=m4cf_snapshot($db);$reply=m4cf_transport('GET',$spec['view'],$spec['actor']['token']);$view=m4cf_json($reply);
+        $before=m4cf_snapshot($db);$authSource=[];
+        if($kind==='platform_order'){
+            $authSource=m4cf_order_auth_source($db,$spec['actor']);$tag='c:CRMEB:'.md5('crmeb');$redis=audit_redis();
+            $members=$redis->sMembers($tag);m4cf_expect(is_array($members)&&array_is_list($members),'ORDER_AUTH_NATIVE_BEFORE_TAG_MEMBERS');
+            foreach($members as$member)m4cf_expect(is_string($member),'ORDER_AUTH_NATIVE_BEFORE_TAG_MEMBER');
+            m4cf_expect(count($members)===count(array_unique($members,SORT_STRING)),'ORDER_AUTH_UNIQUE_BEFORE_TAG_MEMBERS');sort($members,SORT_STRING);
+            $entry=$before['redis']['keys'][hash('sha256',$tag)]??null;$type=$redis->rawCommand('TYPE',$tag);$expiry=$redis->rawCommand('PEXPIRETIME',$tag);
+            m4cf_expect(($entry===null&&$members===[]&&$type==='none'&&$expiry===-2)
+                ||($type==='set'&&$expiry===-1&&$entry===['type'=>'set','sha256'=>hash('sha256',"set\0".serialize($members)),'expires'=>-1]),
+                'ORDER_AUTH_COMPLETE_BEFORE_TAG_SNAPSHOT');$GLOBALS['m4ar_tag_members'][$tag]=$members;
+        }
+        $reply=m4cf_transport('GET',$spec['view'],$spec['actor']['token']);$view=m4cf_json($reply);
         if($kind==='platform_order')$view=$view['orderInfo'];
         m4cf_expect((int)$view['id']===$id&&$view['order_id']===$number&&$view['marketplace_trade_version']===1
             &&$view['custom_form']===m4cf_saved_public_form($root['custom_form']),'REAL_AUTHORIZED_SAVED_ROOT_VIEW');
         $after=m4cf_snapshot($db);$rows=[];$counts=[];m4ar_auth_delta($before,$after,$spec['actor'],$reply['actual_interval'],$rows);
         if($kind==='platform_order')m4ar_audit_delta($before,$after,$spec['actor'],['global'=>true,'rule'=>'order/info/<id>'],$reply['actual_interval'],$rows,$counts);
-        m4ar_database_delta($before,$after,$rows,$counts);m4ar_redis_delta($before,$after,m4ar_cache_deletes($before,$after,$spec['actor']));
+        m4ar_database_delta($before,$after,$rows,$counts);m4ar_redis_delta($before,$after,$kind==='platform_order'
+            ?m4cf_order_auth_cache_delta($before,$after,$authSource):m4ar_cache_deletes($before,$after,$spec['actor']));
         m4cf_expect($before['private']===$after['private']&&$before['public']===$after['public'],'REAL_VIEW_FILES_UNCHANGED');
         foreach($assets as$assetId=>$asset)m4cf_read($db,$spec['actor'],$kind,$root,$asset,$spec['base'].'/form-files/'.$assetId);
     }
