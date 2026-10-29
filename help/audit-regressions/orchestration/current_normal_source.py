@@ -3212,7 +3212,7 @@ HISTORY_ORIGINAL_ROOT = "H:/天俪商城/artifacts/ms4-worker-normal-source-prep
 
 
 def build_history_source(output: str | Path, authority_pointer: dict[str, Any]) -> dict[str, Any]:
-    """Compose reviewed historical components; this first adoption has no runtime admission."""
+    """Compose fixed historical components; source-only output grants no runtime admission."""
     authority, inventory = reviewed_authority(authority_pointer)
     tool_root = Path(__file__).resolve().parent
     out = Path(output)
@@ -3287,7 +3287,8 @@ def build_history_source(output: str | Path, authority_pointer: dict[str, Any]) 
     modules = {}
     author_sources = {tool_path.name: tool_raw}
     upgrade_application_sources = []
-    changed_names = ("ms4-host.py", "ms4-initialize.php", "legacy-current-reader.php")
+    upgrade_registration_donor = None
+    changed_names = ("compose.yml", "ms4-host.py", "ms4-initialize.php", "legacy-current-reader.php")
     for kind, function, name in (("host", "host", "ms4-host.py"),
                                  ("reader", "reader", "legacy-current-reader.php"),
                                  ("upgrade", "initializer", "ms4-initialize.php")):
@@ -3302,6 +3303,11 @@ def build_history_source(output: str | Path, authority_pointer: dict[str, Any]) 
         require(type(after[name]) is bytes and reverse(after[name]) == before[name], "HISTORY_COMPLETE_MODULE_INVERSE")
         modules[path.name] = {"path": path.as_posix(), **pin(raw)}
         author_sources[path.name] = raw
+        if kind == "host":
+            after["compose.yml"] = namespace["transform_compose"](before["compose.yml"])
+            require(type(after["compose.yml"]) is bytes
+                    and namespace["reverse_compose"](after["compose.yml"]) == before["compose.yml"],
+                    "HISTORY_COMPLETE_READER_COMPOSE_INVERSE")
         if kind == "upgrade":
             migration_relative = "help/audit-regressions/isolated/ms4-migration.php"
             migration_raw = read(Path(authority["candidate_root"]) / migration_relative)
@@ -3315,6 +3321,32 @@ def build_history_source(output: str | Path, authority_pointer: dict[str, Any]) 
                 end = functions[index + 1].start() if index + 1 < len(functions) else len(observers)
                 body = observers[row.start():end].rstrip(b"\n") + b"\n"
                 require(migration_raw.count(body) == 1, "HISTORY_UPGRADE_OBSERVER_COMPLETE_ORIGINAL_BYTES")
+            registration = namespace["M4M_REGISTRATION_FUNCTIONS"]
+            constants = list(re.finditer(rb"(?m)^const ([A-Z0-9_]+) =", registration))
+            require([row[1].decode() for row in constants] == ["M4M_IMAGE", "M4M_ADDITIONS", "M4M_INDEXES"],
+                    "HISTORY_REGISTRATION_EXACT_ORIGINAL_CONSTANTS")
+            for row in constants:
+                end = registration.index(b";", row.start()) + 1
+                require(migration_raw.count(registration[row.start():end]) == 1,
+                        "HISTORY_REGISTRATION_ORIGINAL_CONSTANT_BYTES")
+            functions = list(re.finditer(rb"(?m)^function ([a-zA-Z0-9_]+)\(", registration))
+            require([row[1].decode() for row in functions] == ["m4m_mount", "m4m_preserved"],
+                    "HISTORY_REGISTRATION_EXACT_TWO_ORIGINAL_FUNCTIONS")
+            for index, row in enumerate(functions):
+                end = functions[index + 1].start() if index + 1 < len(functions) else len(registration)
+                body = registration[row.start():end].rstrip(b"\n") + b"\n"
+                require(migration_raw.count(body) == 1, "HISTORY_REGISTRATION_ORIGINAL_FUNCTION_BYTES")
+            donor_relative = "sources/legacy-current-reader-runtime-source-r2/candidate/ms4-initialize.php"
+            donor_path = tool_root / donor_relative
+            donor_raw = read(donor_path)
+            require((len(donor_raw), pin(donor_raw)["sha256"]) == namespace["READER_REGISTRATION_DONOR_PIN"]
+                    and {key: archived[donor_relative][key] for key in ("bytes", "sha256")} == pin(donor_raw),
+                    "HISTORY_READER_REGISTRATION_ARCHIVED_DONOR")
+            start = donor_raw.index(b"function m4i_currentReaderRegistration(")
+            size, wanted = namespace["READER_REGISTRATION_DONOR_FUNCTION_PIN"]
+            require(pin(donor_raw[start:start + size]) == {"bytes": size, "sha256": wanted},
+                    "HISTORY_READER_REGISTRATION_COMPLETE_DONOR_FUNCTION")
+            upgrade_registration_donor = {"path": donor_path.as_posix(), **pin(donor_raw)}
             source_rows = re.findall(rb"\['path' => '([^']+)', 'bytes' => ([0-9]+), 'sha256' => '([a-f0-9]{64})'\]",
                                      namespace["UPGRADE_SOURCE_FILES"])
             require(len(source_rows) == 11 and len({row[0] for row in source_rows}) == 11,
@@ -3328,7 +3360,7 @@ def build_history_source(output: str | Path, authority_pointer: dict[str, Any]) 
                 require(pin(read(actual)) == expected, "HISTORY_UPGRADE_COMPLETE_APPLICATION_SOURCE_BYTES")
                 upgrade_application_sources.append({"path": actual.as_posix(), **expected})
     require(set(after) == set(before) and all(after[name] == before[name] for name in HISTORY_NAMES
-            if name not in changed_names), "HISTORY_OTHER_ELEVEN_COMPLETE_FILES_UNCHANGED")
+            if name not in changed_names), "HISTORY_OTHER_TEN_COMPLETE_FILES_UNCHANGED")
     require(constant(after["ms4-host.py"], "ARTIFACTS") == list(HISTORY_NAMES), "HISTORY_FINAL_FOURTEEN_ARTIFACTS")
     require(after["ms4-host.py"].count(b"raise RuntimeError('NONEMPTY_HISTORY_RUNTIME_NOT_IMPLEMENTED')") == 2
             and b"nhecr_expect(false, 'NHECR_EXACT13_READER_FINAL_SOURCE_UNBOUND');" in after["legacy-current-reader.php"]
@@ -3349,13 +3381,13 @@ def build_history_source(output: str | Path, authority_pointer: dict[str, Any]) 
     checks = {"schema": 1, "status": "CURRENT_HISTORY_SOURCE_PROJECTIONS_ONLY_RUNTIME_INCOMPLETE",
               "source_sha": authority["source_sha"], "legacy_source_sha": constant(before["ms4-host.py"], "LEGACY_SOURCE"),
               "changed_members": [name for name in HISTORY_NAMES if before[name] != after[name]],
-              "original_other_members_unchanged": True, "unchanged_whole_members": 11,
+              "original_other_members_unchanged": True, "unchanged_whole_members": 10,
               "complete_forward_and_reverse": True,
               "python_syntax": "PASS", "modified_php_syntax": "NOT RUN",
               "independent_review": "PENDING", "runtime": "NOT RUN", "source_review_written": False,
-              "remaining": ["current structure upgrade and complete reader baseline",
-                            "producer and reader actual stage wiring and normal retirement",
-                            "normal close and independent zero", "independent adoption review", "full normal history run"],
+              "remaining": ["complete source review and final adoption bindings",
+                            "qualified runtime admission for Host, upgrade and reader",
+                            "full normal history run, normal close and independent zero"],
               "stopped_samples": "NOT RUN"}
     inputs = {"schema": 1, "source_authority": authority_pointer,
               "archive_manifest": {"path": archive_path.as_posix(), **pin(held[archive_path])},
@@ -3363,7 +3395,8 @@ def build_history_source(output: str | Path, authority_pointer: dict[str, Any]) 
               "original_components": sources, "author_modules": modules,
               "author_tool": {"path": tool_path.as_posix(), **pin(tool_raw)},
               "application_controls": application_controls,
-              "upgrade_application_sources": upgrade_application_sources}
+              "upgrade_application_sources": upgrade_application_sources,
+              "upgrade_registration_donor": upgrade_registration_donor}
     files = {"before/" + name: before[name] for name in HISTORY_NAMES}
     files.update({"candidate/" + name: after[name] for name in HISTORY_NAMES})
     files.update({"author-source/" + name: raw for name, raw in author_sources.items()})

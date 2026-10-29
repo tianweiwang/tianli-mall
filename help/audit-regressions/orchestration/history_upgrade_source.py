@@ -58,6 +58,49 @@ function m4m_snapshot(array $originalColumns = []): array
     ksort($snapshot['redis'], SORT_STRING); return $snapshot;
 }
 '''
+# Original donor registration is adapted below; it is never included wholesale.
+READER_REGISTRATION_DONOR_PIN = (62966, '9753365c2ff96690b82411d25aeecd0c28c1bf1d751aa1ec44ce272f8a610070')
+READER_REGISTRATION_DONOR_FUNCTION_PIN = (5223, '1262f4fbfa0be3501478c7c28b162e2726b46c2683109841552d4c7532aeb7e0')
+# Pure definitions copied byte-for-byte from the same fixed M4M_SOURCE_PIN.
+M4M_REGISTRATION_FUNCTIONS = rb'''const M4M_IMAGE = 'sha256:1099f749e2a38ec9453c6b820db8a78174514bc72d14edf5c203e13b82816e0a';
+const M4M_ADDITIONS = [
+    'eb_store_order' => ['marketplace_trade_version', 'merchant_name_snapshot', 'merchant_after_sale_contact_snapshot'],
+    'eb_store_order_cart_info' => ['mer_id'],
+    'eb_store_order_refund' => ['mer_id', 'marketplace_refund_mode'],
+    'eb_store_product_reply' => ['mer_id'],
+];
+const M4M_INDEXES = [
+    'eb_store_order' => ['mer_id', 'id'], 'eb_store_order_cart_info' => ['mer_id', 'oid', 'id'],
+    'eb_store_order_refund' => ['mer_id', 'store_order_id', 'id'], 'eb_store_product_reply' => ['mer_id', 'id'],
+];
+function m4m_mount(array $facts, string $destination): array
+{
+    $matches = array_values(array_filter($facts['mounts'] ?? [], static fn(array $m): bool => ($m['Destination'] ?? '') === $destination));
+    m4m_expect(count($matches) === 1, 'EXACT_MOUNT'); return $matches[0];
+}
+function m4m_preserved(array $before, array $after, bool $additions): void
+{
+    m4m_expect($before['modes'] === $after['modes'] && $before['redis'] === $after['redis'], 'SQL_MODES_AND_CACHE_UNCHANGED');
+    foreach ($before['tables'] as $name => $old) {
+        m4m_expect(isset($after['tables'][$name]) && $old['projection'] === $after['tables'][$name]['projection'], 'ORIGINAL_COLUMN_ROWS_UNCHANGED');
+        $actual = $after['tables'][$name]['metadata'];
+        if ($additions && isset(M4M_ADDITIONS[$name])) {
+            $wanted = M4M_ADDITIONS[$name];
+            m4m_expect(array_keys($actual['columns']) === array_merge(array_keys($old['metadata']['columns']), $wanted), 'ONLY_APPEND_COLUMNS');
+            foreach ($wanted as $column) unset($actual['columns'][$column]);
+            $originalIndexes = $old['metadata']['indexes'];
+            foreach ($actual['indexes'] as $index => $rows) if (!isset($originalIndexes[$index])) {
+                m4m_expect(array_column($rows, 'COLUMN_NAME') === M4M_INDEXES[$name] && count(array_unique(array_column($rows, 'NON_UNIQUE'))) === 1 && (string) $rows[0]['NON_UNIQUE'] === '1', 'ONLY_APPROVED_OWNER_INDEX');
+                unset($actual['indexes'][$index]);
+                $actual['constraints'] = array_values(array_filter($actual['constraints'], static fn(array $row): bool => $row['CONSTRAINT_NAME'] !== $index));
+            }
+        }
+        else m4m_expect($old['ddl_sha256'] === $after['tables'][$name]['ddl_sha256'], 'NONTARGET_FULL_DDL_UNCHANGED');
+        m4m_expect($actual === $old['metadata'], 'ORIGINAL_METADATA_AND_NONTARGET_UNCHANGED');
+    }
+}
+'''
+
 UPGRADE_SOURCE_FILES = rb'''function m4iu_sourceFiles(): array
 {
     return [
@@ -321,6 +364,13 @@ function m4iu_upgrade(array &$evidence, ?array &$primary, ?array &$cleanup): voi
 {
     // Composition must replace this rejection with the complete real public handoff join.
     m2f_assert(false, 'CURRENT_STRUCTURE_UPGRADE_HANDOFF_UNBOUND');
+    m4i_gate('current-structure-upgrade');
+    $registrationLevel = ob_get_level(); $registration = null;
+    ob_start();
+    try { audit_register_resources(); $registration = ob_get_contents(); }
+    finally { while (ob_get_level() > $registrationLevel) ob_end_clean(); }
+    m2f_assert($registration === "Registered dedicated internal network and container identities\n",
+        'CURRENT_UPGRADE_ACTUAL_RESOURCE_REGISTRATION');
     $evidence['scope'] = 'CURRENT_READER_STRUCTURE_UPGRADE_ONLY'; $evidence['binding'] = m4iu_source();
     $evidence['current_structure_upgrade'] = ['schema' => 1, 'expected_before_table_count' => 166, 'expected_after_table_count' => 173,
         'source_files' => m4iu_sourceFiles(), 'snapshots' => [], 'original_four_cli_unchanged' => false];
@@ -415,17 +465,196 @@ function m4iu_upgrade(array &$evidence, ?array &$primary, ?array &$cleanup): voi
 '''
 
 
+_READER_REGISTRATION_FUNCTIONS = rb'''
+/** Read the same fixed twelve controls through the registration helper's actual RO mount. */
+function m4ir_controls(array $context, array $freeze): array
+{
+    $current = $freeze['current_reader']; $authority = $freeze['nonempty_history'];
+    nhecr_keys($current, ['schema', 'source_sha', 'source_files', 'source_directories', 'control_files']);
+    m2f_assert($current['schema'] === 1 && $current['source_sha'] === $context['source_sha']
+        && $authority['legacy_source_sha'] === '477732e3e03ed4ba1dbb6b44a94dbba75f7e1978'
+        && is_array($authority['control_files']) && array_is_list($authority['control_files']) && count($authority['control_files']) === 11
+        && is_array($current['control_files']) && array_is_list($current['control_files']), 'CURRENT_READER_SEPARATE_LEGACY_AND_CURRENT_AUTHORITY');
+    $paths = ['/run/nonempty/legacy-actors.php', '/run/nonempty/legacy-app.php', '/run/nonempty/legacy-current-reader.php',
+        '/run/nonempty/legacy-files-bootstrap.php', '/run/nonempty/legacy-history-channel.php', '/run/nonempty/legacy-history-http.php',
+        '/run/nonempty/legacy-history-producer.php', '/run/nonempty/legacy-history-router.php', '/run/nonempty/legacy-normal-config.php',
+        '/workspace/help/audit-regressions/isolated/lib/guard.php', '/workspace/help/audit-regressions/isolated/lib/harness.php',
+        '/workspace/help/audit-regressions/isolated/ms4-migration.php'];
+    m2f_assert(array_column($current['control_files'], 'path') === $paths, 'CURRENT_READER_EXACT_CURRENT_TWELVE_CONTROL_PATHS');
+    $artifacts = array_column($freeze['artifact_files'], null, 'path'); $producer = [];
+    m2f_assert(count($artifacts) === 14 && count($freeze['artifact_files']) === 14, 'CURRENT_READER_REAL_FOURTEEN_ARTIFACTS');
+    foreach ($current['control_files'] as $pin) {
+        nhecr_keys($pin, ['path', 'bytes', 'sha256']); $path = $pin['path'];
+        if ($path !== '/run/nonempty/legacy-current-reader.php') $producer[] = $pin;
+        if (str_starts_with($path, '/run/nonempty/')) {
+            $leaf = substr($path, strlen('/run/nonempty/'));
+            m2f_assert(isset($artifacts[$leaf]) && array_replace($artifacts[$leaf], ['path' => $path]) === $pin,
+                'CURRENT_READER_EACH_ORIGINAL_CONTROL_ARTIFACT_JOIN');
+            $path = '/run/ms4-prep/' . $leaf;
+        }
+        nhe_file($path, array_replace($pin, ['path' => $path]));
+    }
+    m2f_assert($producer === $authority['control_files'], 'CURRENT_READER_ALL_ORIGINAL_ELEVEN_CONTROL_PINS_HELD');
+    $trees = []; foreach (['/workspace', '/source'] as $root)
+        $trees[$root] = nhe_tree($root, $current['source_files'], $current['source_directories']);
+    return $trees;
+}
+/** Exact current Host archive: only the pre-create containers collection differs from the later live collection. */
+function m4ir_archive(array $context, array $freeze, string $oldManifest, array $proofs): array
+{
+    $root = '/run/audit/evidence/nonempty-history-phases/before-current-reader';
+    $indexPath = $root . '/INDEX.json'; $stat = lstat($indexPath);
+    m2f_assert(is_array($stat) && is_file($indexPath) && !is_link($indexPath) && realpath($indexPath) === $indexPath
+        && $stat['nlink'] === 1 && $stat['size'] > 0 && $stat['size'] <= 1048576, 'CURRENT_READER_REGULAR_COMPLETE_ARCHIVE_INDEX');
+    $indexPin = ['path' => $indexPath, 'bytes' => $stat['size'], 'sha256' => hash_file('sha256', $indexPath)];
+    $indexRaw = nhe_file($indexPath, $indexPin); $index = json_decode($indexRaw, true, 128, JSON_THROW_ON_ERROR);
+    nhecr_keys($index, ['schema', 'phase', 'run_id', 'source_sha', 'legacy_source_sha', 'files', 'business_acceptance']);
+    m2f_assert($index['schema'] === 1 && $index['phase'] === 'before-current-reader'
+        && $index['run_id'] === $context['run_id'] && $index['source_sha'] === $context['source_sha']
+        && $index['legacy_source_sha'] === $freeze['nonempty_history']['legacy_source_sha']
+        && $index['business_acceptance'] === 'NOT RUN', 'CURRENT_READER_REAL_BEFORE_REGISTER_ARCHIVE');
+    $leaves = ['manifest.json', 'network.json', 'containers.jsonl', 'volumes.txt', 'volumes.jsonl',
+        'actual-run-context.json', 'preparation-source-binding.json',
+        'evidence/legacy-history-producer-created.json', 'evidence/legacy-history-producer-terminal.json',
+        'evidence/audit-legacy-history-producer-container-created.json',
+        'evidence/audit-legacy-history-producer-source-binding.json', 'evidence/legacy-history-producer-result.json',
+        'evidence/legacy-history-producer-retired.json', 'evidence/legacy-history-producer-retired-resources.json',
+        'evidence/register-legacy-history-producer-created.json', 'evidence/register-legacy-history-producer-terminal.json',
+        'evidence/register-legacy-history-producer-result.json',
+        'evidence/driver-created.json', 'evidence/driver-terminal.json', 'evidence/ms4-migration-container-created.json',
+        'evidence/ms4-migration-source-binding.json', 'evidence/ms4-migration-normal.json',
+        'evidence/driver-retired.json', 'evidence/driver-retired-resources.json',
+        'evidence/register-driver-created.json', 'evidence/register-driver-terminal.json', 'evidence/register-driver-result.json'];
+    foreach (['created.json', 'terminal.json', 'result.json', 'shutdown.json', 'retired.json', 'retired-resources.json'] as $suffix)
+        $leaves[] = 'evidence/current-structure-upgrade-' . $suffix;
+    foreach (range(1, 16) as $number) foreach (['created.json', 'terminal.json', 'stdout', 'stderr'] as $suffix)
+        $leaves[] = sprintf('evidence/current-structure-upgrade-cli-%02d.%s', $number, $suffix);
+    foreach (['legacy-history-producer', 'driver', 'current-structure-upgrade'] as $proof) {
+        $path = '/run/audit/evidence/' . $proof . '-retired.json';
+        $receipt = json_decode($proofs[$path]['raw'], true, 128, JSON_THROW_ON_ERROR);
+        m2f_assert(preg_match('~\A/run/audit/evidence/native-[0-9]{4,}\.json\z~D', $receipt['normal_remove']['path']) === 1,
+            'CURRENT_READER_ARCHIVE_ONLY_REAL_REMOVE_NATIVE_POINTER');
+        $leaves[] = substr($receipt['normal_remove']['path'], strlen('/run/audit/'));
+    }
+    m2f_assert(is_array($index['files']) && array_is_list($index['files'])
+        && count($leaves) === count(array_unique($leaves, SORT_STRING))
+        && array_column($index['files'], 'path') === $leaves, 'CURRENT_READER_COMPLETE_EXACT_HOST_ARCHIVE_CLOSED_SET');
+    $retired = json_decode($proofs['/run/audit/evidence/current-structure-upgrade-retired-resources.json']['raw'], true, 128, JSON_THROW_ON_ERROR);
+    $held = [];
+    foreach ($index['files'] as $row) {
+        nhecr_keys($row, ['path', 'bytes', 'sha256', 'original_stat']);
+        nhecr_keys($row['original_stat'], ['st_dev', 'st_ino', 'st_mode', 'st_nlink', 'st_uid', 'st_gid', 'st_size', 'st_mtime_ns', 'st_ctime_ns']);
+        foreach ($row['original_stat'] as $value) m2f_assert(is_int($value), 'CURRENT_READER_ORIGINAL_HOST_STAT_INTEGER');
+        $relative = $row['path']; $pin = ['path' => $root . '/' . $relative, 'bytes' => $row['bytes'], 'sha256' => $row['sha256']];
+        m2f_assert(is_int($row['bytes']) && $row['bytes'] >= 0 && $row['bytes'] <= 67108864
+            && ($row['bytes'] > 0 || preg_match('/\.(stdout|stderr)\z/D', $relative) === 1)
+            && $row['original_stat']['st_size'] === $row['bytes'] && $row['original_stat']['st_nlink'] === 1,
+            'CURRENT_READER_ORIGINAL_ARCHIVE_NATIVE_SIZE_AND_SINGLE_LINK');
+        $native = lstat($pin['path']);
+        m2f_assert(is_array($native) && $native['nlink'] === 1 && realpath($pin['path']) === $pin['path'], 'CURRENT_READER_REGULAR_ARCHIVE_MEMBER');
+        $raw = nhe_file($pin['path'], $pin); $held[$relative] = ['pin' => $pin, 'raw' => $raw];
+        if ($relative === 'containers.jsonl') {
+            m2f_assert($raw === $retired['public_raw']['containers.jsonl'], 'CURRENT_READER_ARCHIVED_PRECREATE_TWO_BASES_MATCH_REAL_UPGRADE_RETIREMENT');
+        } else {
+            m2f_assert(nhe_file('/run/audit/' . $relative, array_replace($pin, ['path' => '/run/audit/' . $relative])) === $raw,
+                'CURRENT_READER_ARCHIVED_ORIGINAL_FULL_BYTES');
+        }
+        if (in_array($relative, ['network.json', 'volumes.txt', 'volumes.jsonl'], true))
+            m2f_assert($raw === $retired['public_raw'][$relative], 'CURRENT_READER_ARCHIVED_ORIGINAL_NETWORK_AND_SIX_VOLUMES');
+    }
+    m2f_assert($held['manifest.json']['raw'] === $oldManifest, 'CURRENT_READER_OLD_MANIFEST_SAVED_BEFORE_REGISTER');
+    return ['index_pin' => $indexPin, 'index_raw' => $indexRaw, 'files' => $held];
+}
+/** Donor's real registration, with the current twelve controls and completed structure upgrade. */
+function m4i_currentReaderRegistration(): void
+{
+    m4i_gate('register');
+    $context = m4i_read('/run/audit/actual-run-context.json'); $freeze = m4i_read('/run/audit/preparation-source-binding.json');
+    // Both files contain definitions only on this CLI filename. Do not invoke reader qualification here.
+    require_once '/run/ms4-prep/legacy-app.php';
+    require_once '/run/ms4-prep/legacy-current-reader.php';
+    $trees = m4ir_controls($context, $freeze);
+    $oldRaw = file_get_contents('/run/audit/manifest.json'); $old = json_decode($oldRaw, true, 128, JSON_THROW_ON_ERROR);
+    m2f_assert($old['run_id'] === $context['run_id'] && $old['project'] === $context['project']
+        && $old['commit_sha'] === $context['source_sha'] && $old['guard_mode'] === 'read-only'
+        && $old['network_internal'] === true && $old['network']['id'] === $context['network_id'], 'CURRENT_READER_REGISTER_ORIGINAL_READ_ONLY_MANIFEST');
+    $oldHistory = $old['nonempty_history']; $oldStages = array_keys($oldHistory['stages']); sort($oldStages, SORT_STRING);
+    m2f_assert($oldStages === ['audit-legacy-files-bootstrap', 'audit-legacy-history-producer'], 'CURRENT_READER_ONLY_TWO_COMPLETED_OLD_STAGES');
+    $proofs = []; $handoff = nhecr_public_handoff($context, $proofs); $actorProofs = [];
+    $upgrade = nhecu_upgradePublic($context, $freeze, $handoff, $proofs, '/run/ms4-prep');
+    $actorReceipt = nhecr_actor_prepare_receipt($context, $actorProofs);
+    $archive = m4ir_archive($context, $freeze, $oldRaw, $proofs);
+    audit_guard_assert(); $before = m4iu_capture([]); $expected = $upgrade['after']['snapshot'];
+    foreach (['names', 'tables', 'modes'] as $key)
+        m2f_assert($before['snapshot'][$key] === $expected[$key], 'CURRENT_READER_REGISTER_ACTUAL_FULL173_UPGRADE_BASELINE');
+    m2f_assert(count($expected['names']) === 173, 'CURRENT_READER_REGISTER_EXACT_UPGRADED_TABLE_COUNT');
+    m4iu_cachePreserved($expected['redis'], $before);
+    foreach (array_slice(nhecu_newTables(), 0, 6) as $name)
+        m2f_assert($before['snapshot']['tables'][$name]['projection']['rows'] === 0, 'CURRENT_READER_REGISTER_SIX_NEW_EMPTY_BUSINESS_TABLES');
+    foreach (array_keys(m4iu_refundColumns()) as $column)
+        m2f_assert((int)audit_db()->query('SELECT COUNT(*) FROM eb_store_order_refund WHERE ' . m4m_quote($column) . ' IS NOT NULL')->fetchColumn() === 0,
+            'CURRENT_READER_REGISTER_ORIGINAL_REFUNDS_EIGHT_NULL_COLUMNS');
+    require_once '/workspace/crmeb/crmeb/exceptions/MarketplaceSchemaException.php';
+    require_once '/workspace/crmeb/crmeb/services/marketplace/SchemaVersionGate.php';
+    m2f_assert(m4iu_schema(audit_db(), $before['snapshot']) === $upgrade['schema_row'], 'CURRENT_READER_REGISTER_REAL_UNCHANGED_SCHEMA_SINGLETON');
+    audit_register_resources(); $manifest = audit_manifest(); $role = 'audit-legacy-current-reader';
+    $names = array_keys($manifest['services']); sort($names, SORT_STRING);
+    m2f_assert($names === [$role, 'audit-mysql', 'audit-redis'] && $manifest['nonempty_history'] === $oldHistory,
+        'CURRENT_READER_REGISTER_ONLY_CURRENT_THREE_ROLES_OLD_STAGES_HELD');
+    $expectedManifest = $old; $expectedManifest['services'] = $manifest['services'];
+    m2f_assert($manifest === $expectedManifest, 'CURRENT_READER_REGISTER_ONLY_SERVICES_VIEW_CHANGED');
+    foreach (['audit-mysql', 'audit-redis'] as $base)
+        m2f_assert($manifest['services'][$base]['id'] === $old['services'][$base]['id'], 'CURRENT_READER_ORIGINAL_BASE_CIDS');
+    $base = '/run/audit/evidence/' . $role;
+    $madeFile = nhecr_public_read($base . '-container-created.json'); $bindingFile = nhecr_public_read($base . '-source-binding.json');
+    $madeRaw = $madeFile['raw']; $bindingRaw = $bindingFile['raw'];
+    $made = json_decode($madeRaw, true, 128, JSON_THROW_ON_ERROR); $binding = json_decode($bindingRaw, true, 128, JSON_THROW_ON_ERROR);
+    m2f_assert(nhecu_same($made, m4i_read('/run/audit/evidence/legacy-current-reader-created.json')), 'CURRENT_READER_REAL_ORIGINAL_CREATED_ALIAS');
+    nhecr_created_facts($context, $freeze, $made, $binding, $manifest, $actorReceipt);
+    m2f_assert($binding['prerequisites'] === [
+        'producer_retired' => $proofs['/run/audit/evidence/legacy-history-producer-retired.json']['pin'],
+        'driver_retired' => $proofs['/run/audit/evidence/driver-retired.json']['pin'],
+        'upgrade_retired' => $proofs['/run/audit/evidence/current-structure-upgrade-retired.json']['pin']], 'CURRENT_READER_ORIGINAL_THREE_NORMAL_RETIRES_BOUND');
+    $stagePins = ['created' => $madeFile['pin'], 'binding' => $bindingFile['pin']];
+    foreach ($stagePins as $pin) nhe_file($pin['path'], $pin);
+    $manifest['nonempty_history']['stages'][$role] = $stagePins;
+    audit_write_json('/run/audit/manifest.json', $manifest);
+    m2f_assert(audit_manifest() === $manifest
+        && array_diff_key($manifest['nonempty_history']['stages'], [$role => true]) === $oldHistory['stages'],
+        'CURRENT_READER_NEW_STAGE_ONLY_OLD_STAGES_COMPLETE_READBACK');
+    audit_guard_assert(); $after = m4iu_capture([]); m4iu_unchanged($before, $after);
+    m2f_assert(nhecr_public_read($base . '-container-created.json') === $madeFile
+        && nhecr_public_read($base . '-source-binding.json') === $bindingFile, 'CURRENT_READER_REGISTER_ORIGINAL_CREATED_BINDING_HELD');
+    nhecu_held($proofs);
+    foreach ($actorProofs as $path => $proof) m2f_assert(nhecr_public_read($path) === $proof, 'CURRENT_READER_ALL_ACTOR_PREPARE_PUBLIC_BYTES_HELD');
+    foreach ($archive['files'] as $relative => $row) {
+        m2f_assert(nhe_file($row['pin']['path'], $row['pin']) === $row['raw'], 'CURRENT_READER_COMPLETE_ORIGINAL_ARCHIVE_HELD');
+        if (!in_array($relative, ['manifest.json', 'containers.jsonl'], true))
+            m2f_assert(nhe_file('/run/audit/' . $relative, array_replace($row['pin'], ['path' => '/run/audit/' . $relative])) === $row['raw'],
+                'CURRENT_READER_ALL_OTHER_ORIGINAL_PUBLIC_INPUTS_HELD');
+    }
+    m2f_assert(nhe_file($archive['index_pin']['path'], $archive['index_pin']) === $archive['index_raw']
+        && m4ir_controls($context, $freeze) === $trees, 'CURRENT_READER_ARCHIVE_INDEX_AND_COMPLETE_CURRENT_SOURCE_HELD');
+}
+'''
+
+
 def _seams():
     return (
         (b"        'initializer' => ['initialize', 'audit-ms4-initialize']];",
          b"        'current-structure-upgrade' => ['current-structure-upgrade', 'audit-bootstrap'],\n"
+         b"        'register-legacy-current-reader' => ['register', 'audit-bootstrap'],\n"
          b"        'initializer' => ['initialize', 'audit-ms4-initialize']];"),
+        (b"            if (getenv('MS4_PROOF_NAME') === 'register-legacy-history-producer') m4i_legacyProducerRegistration();",
+         b"            if (getenv('MS4_PROOF_NAME') === 'register-legacy-current-reader') m4i_currentReaderRegistration();\n"
+         b"            elseif (getenv('MS4_PROOF_NAME') === 'register-legacy-history-producer') m4i_legacyProducerRegistration();"),
         (b"['prepare', 'register', 'authorize-cleanup'], true)), 'FINITE_PHASE_ONLY');",
          b"['prepare', 'register', 'authorize-cleanup', 'current-structure-upgrade'], true)), 'FINITE_PHASE_ONLY');"),
         (b"        else { m4i_initialize($evidence, $primary, $cleanup); $evidence['status'] = 'VERIFIED_MS4_PREREQUISITES_ONLY'; }",
          b"        elseif ($phase === 'current-structure-upgrade') { m4iu_upgrade($evidence, $primary, $cleanup); $evidence['status'] = 'VERIFIED_CURRENT_STRUCTURE_UPGRADE_ONLY'; }\n"
          b"        else { m4i_initialize($evidence, $primary, $cleanup); $evidence['status'] = 'VERIFIED_MS4_PREREQUISITES_ONLY'; }"),
-        (b"function m4i_main(): int\n", M4M_OBSERVER_FUNCTIONS + UPGRADE_SOURCE_FILES + _UPGRADE_FUNCTIONS + b"\nfunction m4i_main(): int\n"),
+        (b"function m4i_main(): int\n", M4M_OBSERVER_FUNCTIONS + M4M_REGISTRATION_FUNCTIONS + UPGRADE_SOURCE_FILES + _UPGRADE_FUNCTIONS
+         + _READER_REGISTRATION_FUNCTIONS + b"\nfunction m4i_main(): int\n"),
     )
 
 
