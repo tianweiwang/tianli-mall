@@ -8,7 +8,9 @@
         <div class="shipment-copy"><div>{{ item.product_name }}</div><p class="field-note">{{ item.sku_name }}</p>
           <p class="field-note">保存单价 ￥{{ item.unit_price }} · 原数量 {{ item.quantity }} · 已发 {{ fact(item.id).shipped_quantity }} · 当前可发 {{ fact(item.id).to_ship }}</p>
           <el-form-item label="本次发货数量">
-            <el-input-number v-model="quantities[item.id]" :min="0" :max="fact(item.id).to_ship" :step="1" :precision="0" :disabled="disabled || fact(item.id).to_ship === 0" :controls="false" />
+            <!-- Element UI initializes disabled/max ARIA only on mount; keep them in sync after shipment updates. -->
+            <el-input-number :key="item.id + ':' + (disabled || fact(item.id).to_ship === 0) + ':' + fact(item.id).to_ship"
+              v-model="quantities[item.id]" :min="0" :max="fact(item.id).to_ship" :step="1" :precision="0" :disabled="disabled || fact(item.id).to_ship === 0" :controls="false" />
           </el-form-item>
         </div>
       </div>
