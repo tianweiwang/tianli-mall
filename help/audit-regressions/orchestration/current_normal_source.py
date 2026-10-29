@@ -401,6 +401,121 @@ def verify_schema_bootstrap(context, result):
 
 
 
+_FINANCE_INITIALIZER = r'''/** Fixed draft metadata after MS6, before the first App; original early history remains sealed. */
+function m4i_finance_bootstrap(array $binding,array $history,array $schemaReceipt): array
+{
+    audit_guard_assert();$sources=m4c_entry_finance_sources();
+    m4c_entry_early_preserved($history,'schema-bootstrap-completed',$schemaReceipt);
+    $privatePath='/run/audit-bootstrap/migrator.json';$privateBefore=m2f_file($privatePath);
+    $appPath='/run/audit-app/config.json';$appBefore=m2f_file($appPath);
+    $migrator=m4i_read($privatePath);$config=audit_config();
+    m2f_assert(($migrator['username']??null)==='audit_migrator'&&($config['database']['username']??null)==='audit_app',
+        'FINANCE_ORIGINAL_SEPARATE_MAINTENANCE_ACCOUNT');
+    $maintenance=new PDO('mysql:host=audit-mysql;port=3306;dbname=audit_auth;charset=utf8mb4',
+        $migrator['username'],$migrator['password'],[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE=>PDO::FETCH_ASSOC,PDO::ATTR_EMULATE_PREPARES=>false,
+            PDO::ATTR_PERSISTENT=>false,PDO::ATTR_TIMEOUT=>3]);unset($migrator);$db=audit_db();
+    m2f_assert(!$maintenance->inTransaction()&&!$db->inTransaction()
+        &&$maintenance->query('SELECT CURRENT_USER()')->fetchColumn()==='audit_migrator@%'
+        &&$maintenance->query('SELECT DATABASE()')->fetchColumn()==='audit_auth'
+        &&$db->query('SELECT CURRENT_USER()')->fetchColumn()==='audit_app@%'
+        &&$db->query('SELECT DATABASE()')->fetchColumn()==='audit_auth','FINANCE_REAL_NATIVE_ACCOUNT_IDENTITIES');
+    $grants=['application_before'=>hash('sha256',json_encode($db->query('SHOW GRANTS')->fetchAll(PDO::FETCH_COLUMN),JSON_THROW_ON_ERROR)),
+        'maintenance_before'=>hash('sha256',json_encode($maintenance->query('SHOW GRANTS')->fetchAll(PDO::FETCH_COLUMN),JSON_THROW_ON_ERROR))];
+    $schemaGrant=false;foreach($maintenance->query('SHOW GRANTS')->fetchAll(PDO::FETCH_COLUMN)as$grant){
+        if(preg_match('/^GRANT USAGE ON \*\.\* TO /',$grant)===1)continue;
+        m2f_assert(preg_match('/^GRANT ALL PRIVILEGES ON \x60audit_auth\x60\.\* TO /',$grant)===1
+            &&!str_contains($grant,'GRANT OPTION'),'FINANCE_ONLY_EXISTING_SCHEMA_MAINTENANCE_GRANT');$schemaGrant=true;}
+    m2f_assert($schemaGrant,'FINANCE_EXISTING_MAINTENANCE_GRANT_PRESENT');
+    $modes=m2f_modes($maintenance);$auto=m4cb_rows($maintenance,'SELECT @@SESSION.auto_increment_increment AS step,@@SESSION.auto_increment_offset AS first');
+    m2f_assert(count($auto)===1&&(string)$auto[0]['step']==='1'&&(string)$auto[0]['first']==='1','FINANCE_ORIGINAL_NATURAL_AUTO_INCREMENT');
+    $metadata=unserialize(base64_decode($history['result']['snapshots']['assets']['tables']['eb_system_menus']['metadata_serialized_base64'],true),
+        ['allowed_classes'=>false,'max_depth'=>64]);$counter=$metadata['table']['AUTO_INCREMENT'];
+    m2f_assert((is_int($counter)||is_string($counter))&&preg_match('/\A[1-9][0-9]*\z/D',(string)$counter)===1
+        &&(int)$counter<=65533,'FINANCE_EXACT_ORIGINAL_MENU_COUNTER');$counter=(int)$counter;
+    $ids=['marketplace-finance-settings-read'=>$counter,'marketplace-finance-settings-write'=>$counter+1];
+    require_once '/workspace/help/migrations/marketplace-finance-settings.php';
+    $migration=new MarketplaceFinanceSettingsMigration($maintenance,'eb_');$results=[];
+    foreach(['check','apply','check','apply']as$index=>$mode){$result=$migration->$mode();
+        m4c_entry_finance_result($result,$index,$ids,$sources[0]['sha256']);$results[]=$result;}
+    $native=m4c_entry_finance_observe($history,$ids);
+    $grants['application_after']=hash('sha256',json_encode($db->query('SHOW GRANTS')->fetchAll(PDO::FETCH_COLUMN),JSON_THROW_ON_ERROR));
+    $grants['maintenance_after']=hash('sha256',json_encode($maintenance->query('SHOW GRANTS')->fetchAll(PDO::FETCH_COLUMN),JSON_THROW_ON_ERROR));
+    m2f_assert($modes===m2f_modes($maintenance)
+        &&$auto===m4cb_rows($maintenance,'SELECT @@SESSION.auto_increment_increment AS step,@@SESSION.auto_increment_offset AS first')
+        &&!$maintenance->inTransaction()&&!$db->inTransaction(),'FINANCE_ORIGINAL_MODES_AND_IDLE_TRANSACTIONS');
+    $receipt=['schema'=>1,'scope'=>'FINANCE_DRAFT_METADATA_BEFORE_FIRST_APP_ONLY',
+        'status'=>'VERIFIED_FINANCE_DRAFT_METADATA_BEFORE_FIRST_APP_ONLY','binding'=>$schemaReceipt['binding'],
+        'source_files'=>$sources,'results'=>$results,'menu_ids'=>$ids,'native'=>$native,'grants'=>$grants,'App_business'=>'NOT RUN'];
+    m2f_assert(m4c_entry_finance_receipt($receipt,$history,$schemaReceipt)===$native
+        &&m4c_entry_finance_sources()===$sources&&m2f_file($privatePath)===$privateBefore&&m2f_file($appPath)===$appBefore,
+        'FINANCE_EXACT_CONSUMER_SOURCE_AND_PRIVATE_INPUTS_RETAINED');audit_guard_assert();return $receipt;
+}
+
+'''
+
+_FINANCE_HOST = r'''
+def verify_finance_bootstrap(context, result):
+    receipt = result['finance_bootstrap']; native = receipt['native']; ids = receipt['menu_ids']
+    expect(type(receipt) is dict and set(receipt) == {'schema','scope','status','binding','source_files','results','menu_ids','native','grants','App_business'}
+        and type(receipt['schema']) is int and receipt['schema'] == 1
+        and receipt['scope'] == 'FINANCE_DRAFT_METADATA_BEFORE_FIRST_APP_ONLY'
+        and receipt['status'] == 'VERIFIED_FINANCE_DRAFT_METADATA_BEFORE_FIRST_APP_ONLY'
+        and receipt['App_business'] == 'NOT RUN' and receipt['binding'] == result['schema_bootstrap']['binding']
+        and receipt['source_files'] == list(FINANCE_SOURCE_FILES), 'EXACT_FINANCE_SAME_BEFORE_APP_SOURCE_RECEIPT')
+    early = load(Path(context['run_dir']) / 'evidence/ms4-aftersale-early-migration-normal.json')['snapshots']['assets']
+    expect(type(native) is dict and set(native) == {'tables','menus','old_menu_projection','auto_increment_before','auto_increment_after'}
+        and type(native['auto_increment_before']) is int and 1 <= native['auto_increment_before'] <= 65533
+        and type(native['auto_increment_after']) is int and native['auto_increment_after'] == native['auto_increment_before'] + 2,
+        'FINANCE_EXACT_NATIVE_COUNTER_DELTA')
+    counter = native['auto_increment_before']
+    expect(type(ids) is dict and all(type(value) is int for value in ids.values())
+        and ids == {'marketplace-finance-settings-read':counter,'marketplace-finance-settings-write':counter+1}
+        and native['old_menu_projection'] == early['tables']['eb_system_menus']['projection'], 'FINANCE_EXACT_TWO_IDS_AND_ALL_OLD_MENU_ROWS')
+    tables = ['marketplace_finance_settings','marketplace_finance_settings_history']
+    expect(type(receipt['results']) is list and len(receipt['results']) == 4, 'FINANCE_FOUR_ORIGINAL_MIGRATION_CALLS')
+    for index, actual in enumerate(receipt['results']):
+        written = index == 1
+        progress = {'phase':'inspection','write_attempted':False,'ddl_attempted':[],'ddl_completed':[],
+            'ddl_outcome_unknown':False,'dml_commit_attempted':False,'dml_commit_observed':False,
+            'rollback_observed':None,'lock_acquired':False,'lock_release_observed':None}
+        if written: progress.update(phase='completed',write_attempted=True,ddl_attempted=tables,ddl_completed=tables,
+            dml_commit_attempted=True,dml_commit_observed=True,lock_acquired=True,lock_release_observed=True)
+        expected = {'mode':'check' if index % 2 == 0 else 'apply','state':'applicable' if index == 0 else 'completed',
+            'changed':written,'tables':{name:'missing' if index == 0 else 'compatible' for name in tables},
+            'pending':['table.'+name for name in tables]+['singleton','menu.marketplace-finance-settings-read','menu.marketplace-finance-settings-write'] if index == 0 else [],
+            'menu_ids':{} if index == 0 else ids,'issues':[],'revision':None if index == 0 else 0,'history_count':0,
+            'roles_modified':False,'real_funds_enabled':False,'progress':progress,'source_sha256':FINANCE_SOURCE_FILES[0]['sha256']}
+        # PHP's empty associative result is serialized as [] on the initial check.
+        if index == 0: expected['menu_ids'] = []
+        expect(type(actual) is dict and actual == expected and type(actual['changed']) is bool
+            and actual['roles_modified'] is False and actual['real_funds_enabled'] is False, 'FINANCE_EXACT_NORMAL_RESULT_AND_UNCHANGED_REPEAT')
+    expect(type(native['tables']) is dict and set(native['tables']) == {'eb_'+name for name in tables}, 'FINANCE_ONLY_TWO_NEW_TABLES')
+    for name, row in {**native['tables'],'eb_system_menus':native['menus']}.items():
+        expect(type(row) is dict and set(row) == {'ddl_sha256','projected_columns','projection','metadata_sha256','metadata_serialized_base64'}
+            and type(row['projected_columns']) is list and len(row['projected_columns']) == (22 if name == 'eb_system_menus' else 5)
+            and row['projection']['encoding'] == 'php-serialize-row-sha256-sorted-multiset-v1'
+            and type(row['projection']['rows']) is int
+            and row['projection']['rows'] == (early['tables']['eb_system_menus']['projection']['rows']+2 if name == 'eb_system_menus'
+                else 1 if name == 'eb_marketplace_finance_settings' else 0), 'FINANCE_FIXED_NATIVE_SNAPSHOTS')
+    grants = receipt['grants']
+    expect(type(grants) is dict and set(grants) == {'application_before','application_after','maintenance_before','maintenance_after'}
+        and all(type(value) is str and re.fullmatch('[a-f0-9]{64}',value) for value in grants.values())
+        and grants['application_before'] == grants['application_after'] and grants['maintenance_before'] == grants['maintenance_after'],
+        'FINANCE_ORIGINAL_NATIVE_GRANTS_RETAINED')
+    preservation = result['finance_bootstrap_preservation']
+    expect(type(preservation) is dict and set(preservation) == {'stage','early_result_sha256','metadata_observer_modes',
+        'protected_native_projections','application_schema','finance_settings'}
+        and preservation['stage'] == 'finance-bootstrap-completed'
+        and preservation['early_result_sha256'] == receipt['binding']['early_result_sha256']
+        and preservation['metadata_observer_modes'] == early['metadata_observer_modes']
+        and preservation['protected_native_projections'] == {name:row['projection'] for name,row in early['tables'].items()}
+        and preservation['application_schema'] == result['schema_bootstrap']['application_schema']
+        and preservation['finance_settings'] == native, 'FINANCE_ALL_ORIGINAL_175_PROJECTIONS_AND_SCHEMA_RETAINED')
+
+
+'''
+
 MERCHANT_EXIT_SOURCE_PATHS = (
     "help/migrations/marketplace-merchant-exit-menus.php",
     "help/migrations/marketplace-ms1.php",
@@ -759,6 +874,36 @@ def schema_profile_changes(initializer: bytes, host: bytes, inventory: dict[str,
     return updated, updated_host, source_files
 
 
+def finance_profile_changes(initializer: bytes, host: bytes, inventory: dict[str, dict[str, Any]]):
+    """One fixed post-MS6 maintenance step, shared by complete A and B."""
+    source_files = (inventory['help/migrations/marketplace-finance-settings.php'],)
+    helper = _FINANCE_INITIALIZER.encode('utf-8')
+    anchor = b'function m6i_migrator(): array\n'
+    updated = once(initializer, anchor, helper + anchor)
+    old_call = b"    $evidence['installation'] = m6i_migrator();"
+    new_call = (b"    $evidence['finance_bootstrap'] = m4i_finance_bootstrap(\n"
+        b"        $evidence['binding'], $prerequisites['early_history'], $evidence['schema_bootstrap']);\n"
+        b"    $evidence['finance_bootstrap_preservation'] = m4c_entry_early_preserved(\n"
+        b"        $prerequisites['early_history'], 'finance-bootstrap-completed', $evidence['schema_bootstrap'], $evidence['finance_bootstrap']);\n"
+        + old_call)
+    updated = once(updated, old_call, new_call)
+    old_completed = b"    m4c_entry_early_preserved($currentEarly,'files-bootstrap-completed',$evidence['schema_bootstrap']);"
+    new_completed = b"    m4c_entry_early_preserved($currentEarly,'files-bootstrap-completed',$evidence['schema_bootstrap'],$evidence['finance_bootstrap']);"
+    updated = once(updated, old_completed, new_completed)
+    restored = once(once(once(updated,new_completed,old_completed),new_call,old_call),helper+anchor,anchor)
+    require(restored == initializer, 'EXACT_INITIALIZER_FINANCE_ONLY_WHOLE_FILE_INVERSE')
+    host_helper = ('FINANCE_SOURCE_FILES = ' + repr(source_files) + '\n' + _FINANCE_HOST).encode('utf-8')
+    host_anchor = b'def verify_files_bootstrap(context, native_required=True):\n'
+    updated_host = once(host,host_anchor,host_helper+host_anchor)
+    old_consumer = b'    verify_schema_bootstrap(context, result)\n'
+    new_consumer = old_consumer + b'    verify_finance_bootstrap(context, result)\n'
+    updated_host = once(updated_host,old_consumer,new_consumer)
+    require(once(once(updated_host,new_consumer,old_consumer),host_helper+host_anchor,host_anchor)==host,
+        'EXACT_HOST_FINANCE_ONLY_WHOLE_FILE_INVERSE')
+    compile(updated_host,'derived-ms4-host-finance.py','exec')
+    return updated,updated_host,source_files
+
+
 def build_profile(output: str | Path, authority_pointer: dict[str, Any],
                   isolation_subnet: str | None = None) -> dict[str, Any]:
     if isolation_subnet is not None:
@@ -963,6 +1108,8 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
                 == previous_initializer, "ONE_FORM_HELPER_LITERAL_WHOLE_FILE_INVERSE")
     after["ms4-initialize.php"], after["ms4-host.py"], schema_sources = schema_profile_changes(
         after["ms4-initialize.php"], after["ms4-host.py"], inventory)
+    after["ms4-initialize.php"], after["ms4-host.py"], finance_sources = finance_profile_changes(
+        after["ms4-initialize.php"], after["ms4-host.py"], inventory)
     after["ms4-initialize.php"], after["ms4-host.py"], exit_sources = merchant_exit_profile_changes(
         after["ms4-initialize.php"], after["ms4-host.py"], inventory)
     after["ms4-initialize.php"], after["ms4-host.py"], order_sources, order_mode = order_menu_profile_changes(
@@ -1002,10 +1149,11 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
         "active_aftersale_before": AR_BEFORE, "active_aftersale_current": AR_CURRENT,
         "active_profile_updates": updates,
         "all_original_python_function_bodies_exact": False,
-        "python_function_changes": {"ms4-host.py": ["verify_files_bootstrap", "verify_schema_bootstrap",
+        "python_function_changes": {"ms4-host.py": ["verify_files_bootstrap", "verify_schema_bootstrap", "verify_finance_bootstrap",
             "prerequisite_result", "verify_merchant_exit_bootstrap", "verify_order_menu_bootstrap"]},
         "initializer_two_literal_inverse_exact": True, "initializer_customer_literal_inverse_exact": True,
         "initializer_schema_bootstrap_inverse_exact": True, "schema_bootstrap_sources": list(schema_sources),
+        "initializer_finance_bootstrap_inverse_exact": True, "finance_bootstrap_sources": list(finance_sources),
         "initializer_merchant_exit_inverse_exact": True, "merchant_exit_bootstrap_sources": list(exit_sources),
         "initializer_order_menu_inverse_exact": True, "order_menu_bootstrap_sources": list(order_sources),
         "order_menu_profile_mode": order_mode,
@@ -1035,6 +1183,8 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
         if name == "ms4-host.py":
             require("verify_schema_bootstrap" not in functions(before[name]), "ONE_NEW_SCHEMA_HOST_CONSUMER")
             observed.pop("verify_schema_bootstrap")
+            require("verify_finance_bootstrap" not in functions(before[name]), "ONE_NEW_FINANCE_HOST_CONSUMER")
+            observed.pop("verify_finance_bootstrap")
             require("verify_merchant_exit_bootstrap" not in functions(before[name]), "ONE_NEW_EXIT_HOST_CONSUMER")
             observed.pop("verify_merchant_exit_bootstrap")
             require("verify_order_menu_bootstrap" not in functions(before[name]), "ONE_NEW_ORDER_MENU_HOST_CONSUMER")
@@ -1045,6 +1195,8 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
                 b"    verify_merchant_exit_bootstrap(context, result)\n", b"")
             observed["verify_files_bootstrap"] = once(observed["verify_files_bootstrap"],
                                                        b"    verify_schema_bootstrap(context, result)\n", b"")
+            observed["verify_files_bootstrap"] = once(observed["verify_files_bootstrap"],
+                                                       b"    verify_finance_bootstrap(context, result)\n", b"")
         require(functions(before[name]) == observed, "ALL_OTHER_ORIGINAL_PYTHON_FUNCTION_BODIES_EXACT")
         compile(after[name], str(out / name), "exec")
         counts[name] = len(functions(after[name]))
@@ -1059,12 +1211,13 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
         "candidate": {name: pin(after[name]) for name in NAMES},
         "changed": [name for name in NAMES if before[name] != after[name]],
         "all_original_python_function_bodies_exact": False, "python_named_function_counts": counts,
-        "python_function_changes": {"ms4-host.py": ["verify_files_bootstrap", "verify_schema_bootstrap",
+        "python_function_changes": {"ms4-host.py": ["verify_files_bootstrap", "verify_schema_bootstrap", "verify_finance_bootstrap",
             "prerequisite_result", "verify_merchant_exit_bootstrap", "verify_order_menu_bootstrap"]},
         "all_other_original_python_function_bodies_exact": True,
         "active_profile_updates": updates, "interface_only_four_declared_active_rows": True,
         "initializer_two_literal_inverse_exact": True, "initializer_customer_literal_inverse_exact": True,
         "initializer_schema_bootstrap_inverse_exact": True, "schema_bootstrap_sources": list(schema_sources),
+        "initializer_finance_bootstrap_inverse_exact": True, "finance_bootstrap_sources": list(finance_sources),
         "initializer_merchant_exit_inverse_exact": True, "merchant_exit_bootstrap_sources": list(exit_sources),
         "initializer_order_menu_inverse_exact": True, "order_menu_bootstrap_sources": list(order_sources),
         "order_menu_profile_mode": order_mode,
@@ -2076,6 +2229,7 @@ def derive_b_profile(authority_pointer: dict[str, Any],
                    + inventory[path]["sha256"] + "']").encode()
             initializer = once(initializer, old, new)
     initializer, host, schema_rows = schema_profile_changes(initializer, after["candidate/ms4-host.py"], inventory)
+    initializer, host, finance_rows = finance_profile_changes(initializer, host, inventory)
     initializer, host, exit_rows = merchant_exit_profile_changes(initializer, host, inventory)
     initializer, host, order_rows, order_mode = order_menu_profile_changes(
         initializer, host, inventory, Path(authority["validation_root"]), with_read_leaves=False)
@@ -2158,7 +2312,7 @@ def derive_b_profile(authority_pointer: dict[str, Any],
         if name.endswith(".py"): compile(raw, name, "exec")
         elif name.endswith(".json"): decode(raw)
     for name, changed, added in (("ms4-host.py", {"verify_files_bootstrap", "ui_copy_freeze_values", "prerequisite_result"},
-                                  {"verify_schema_bootstrap", "verify_merchant_exit_bootstrap", "verify_order_menu_bootstrap"}),
+                                  {"verify_schema_bootstrap", "verify_finance_bootstrap", "verify_merchant_exit_bootstrap", "verify_order_menu_bootstrap"}),
                                  ("verify-zero-ms4-fulfillment.py", {"ui_copy_freeze_values"}, set()),
                                  ("normal-close-ms4-fulfillment.py", set(), set())):
         original_functions = functions(before["candidate/" + name])
@@ -2170,7 +2324,7 @@ def derive_b_profile(authority_pointer: dict[str, Any],
                 and all(current_functions[symbol] == body for symbol, body in original_functions.items() if symbol not in changed),
                 "B_ALL_NON_TARGET_PYTHON_BUSINESS_AND_RESOURCE_FUNCTIONS_RAW_EXACT")
     return {"before": before, "after": after, "authority": authority, "inventory": inventory,
-            "schema_sources": schema_rows, "merchant_exit_sources": exit_rows,
+            "schema_sources": schema_rows, "finance_sources": finance_rows, "merchant_exit_sources": exit_rows,
             "order_menu_sources": order_rows, "order_menu_profile_mode": order_mode,
             "browser_compatibility": browser_compatibility,
             "forward": forward, "reverse": reverse,
@@ -2588,6 +2742,8 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
     derivation["current_nonself_artifacts"] = [{"path": name, **pin(after["candidate/" + name])}
                                                for name in artifacts if name != "source-derivation.json"]
     derivation["runtime_full17_sealed"] = True
+    derivation["finance_bootstrap_sources"] = list(derived["finance_sources"])
+    derivation["finance_after_original_early_and_ms6_before_first_app"] = True
     derivation["merchant_exit_bootstrap_sources"] = list(derived["merchant_exit_sources"])
     derivation["merchant_exit_before_original_early_seal"] = True
     derivation["order_menu_bootstrap_sources"] = list(derived["order_menu_sources"])
@@ -2638,6 +2794,7 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
             "root-ui-materialize-freeze.py":["main","current_known_normal_root","current_consume_materialization","current_verify_sources","frozen_materials","frozen_resources"],
             "root-ui-start-to-ready.py":["main","current_core_aux_authority"]},
         "added_schema_consumer":"ms4-host.py:verify_schema_bootstrap",
+        "added_finance_consumer":"ms4-host.py:verify_finance_bootstrap",
         "added_merchant_exit_consumer":"ms4-host.py:verify_merchant_exit_bootstrap",
         "added_order_menu_consumer":"ms4-host.py:verify_order_menu_bootstrap",
         "browser_compatibility":derived["browser_compatibility"],

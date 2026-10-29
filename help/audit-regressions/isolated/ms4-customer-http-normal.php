@@ -429,7 +429,10 @@ function m4c_entry_ms5_history(array $source): array
         &&$shutdown['phase']==='files-bootstrap'&&$shutdown['fatal']===false&&$shutdown['primary_failure']===null&&$shutdown['cleanup_failure']===null,
         'M4C_REAL_ONCE_ONLY_MIGRATOR_FILES_BOOTSTRAP');
     m4c_expect(is_array($installed['schema_bootstrap']??null),'M4C_FILES_BOUND_SCHEMA_MAINTENANCE_RECEIPT');
-    m4c_entry_schema_receipt($installed['schema_bootstrap'],m4c_entry_early_history($source));
+    $early=m4c_entry_early_history($source);
+    m4c_entry_schema_receipt($installed['schema_bootstrap'],$early);
+    m4c_expect(is_array($installed['finance_bootstrap']??null),'M4C_FILES_BOUND_FINANCE_MAINTENANCE_RECEIPT');
+    m4c_entry_finance_receipt($installed['finance_bootstrap'],$early,$installed['schema_bootstrap']);
     foreach($names as$name)m4c_expect($hashes[$name]===m4c_entry_hash($base.$name),'M4C_HISTORY_ORIGINAL_BYTES_UNCHANGED');
     m4c_expect(m4c_entry_hash($contextPath)===$contextHash&&m4c_entry_read($contextPath)===$context
         &&$context===$source['context']&&m4c_entry_hash($freezePath)===$source['freeze_sha256']
@@ -1000,18 +1003,165 @@ function m4c_entry_schema_receipt(array $receipt,array $history): array
     m4c_expect(m4c_entry_schema_sources()===$sources,'M4C_SCHEMA_FOUR_SOURCE_BYTES_REMAIN_FROZEN');
     return $schema;
 }
-/** Fixed preparation stages; only the bound maintenance receipt admits the one new schema table. */
-function m4c_entry_early_preserved(array $history,string $stage,?array $schemaReceipt=null): array
+/** The one finance migration is read from both complete frozen trees, never the preview seed. */
+function m4c_entry_finance_sources(): array
 {
-    m4c_expect(in_array($stage,['files-bootstrap','schema-bootstrap-completed','files-bootstrap-completed','customer-prepare'],true),'M4C_EARLY_FIXED_PRESERVATION_STAGE');audit_guard_assert();
+    $context=m4c_entry_read('/run/audit/actual-run-context.json');
+    $freeze=m4c_entry_read('/run/audit/preparation-source-binding.json');$tree=$freeze['source_tree']??null;
+    m4c_expect(is_array($tree)&&$freeze['source_sha']===$context['source_sha']&&$tree['source_sha']===$context['source_sha']
+        &&$tree['requested_repo_source']===$context['repo_dir']&&m4c_entry_hash('/run/audit/preparation-source-binding.json')===$context['freeze_sha256']
+        &&is_array($tree['files'])&&array_is_list($tree['files'])&&count($tree['files'])===$tree['file_count'],'M4C_FINANCE_COMPLETE_FROZEN_TREE');
+    $path='help/migrations/marketplace-finance-settings.php';
+    $matches=array_values(array_filter($tree['files'],static fn(array $row):bool=>$row['path']===$path));
+    m4c_expect(count($matches)===1,'M4C_FINANCE_ONE_FROZEN_MIGRATION');$row=$matches[0];m4c_entry_keys($row,['path','bytes','sha256']);
+    m4c_expect(is_int($row['bytes'])&&$row['bytes']>0&&is_string($row['sha256'])&&preg_match('/\A[a-f0-9]{64}\z/D',$row['sha256'])===1,
+        'M4C_FINANCE_SOURCE_DESCRIPTOR');
+    foreach(['/workspace','/source']as$root){$file=$root.'/'.$path;clearstatcache(true,$file);
+        m4c_expect(is_file($file)&&!is_link($file)&&realpath($file)===$file&&filesize($file)===$row['bytes']
+            &&hash_file('sha256',$file)===$row['sha256'],'M4C_FINANCE_EXACT_SOURCE_BYTES');}
+    return [$row];
+}
+/** The four normal calls have a closed result contract, including the no-write repeat. */
+function m4c_entry_finance_result(array $result,int $index,array $ids,string $sourceHash): void
+{
+    m4c_expect($index>=0&&$index<=3,'M4C_FINANCE_FOUR_NORMAL_CALLS');
+    $tables=['marketplace_finance_settings','marketplace_finance_settings_history'];$written=$index===1;
+    $progress=['phase'=>'inspection','write_attempted'=>false,'ddl_attempted'=>[],'ddl_completed'=>[],
+        'ddl_outcome_unknown'=>false,'dml_commit_attempted'=>false,'dml_commit_observed'=>false,
+        'rollback_observed'=>null,'lock_acquired'=>false,'lock_release_observed'=>null];
+    if($written)$progress=array_replace($progress,['phase'=>'completed','write_attempted'=>true,'ddl_attempted'=>$tables,
+        'ddl_completed'=>$tables,'dml_commit_attempted'=>true,'dml_commit_observed'=>true,'lock_acquired'=>true,'lock_release_observed'=>true]);
+    $expected=['mode'=>$index%2===0?'check':'apply','state'=>$index===0?'applicable':'completed','changed'=>$written,
+        'tables'=>array_fill_keys($tables,$index===0?'missing':'compatible'),
+        'pending'=>$index===0?['table.marketplace_finance_settings','table.marketplace_finance_settings_history','singleton',
+            'menu.marketplace-finance-settings-read','menu.marketplace-finance-settings-write']:[],
+        'menu_ids'=>$index===0?[]:$ids,'issues'=>[],'revision'=>$index===0?null:0,'history_count'=>0,
+        'roles_modified'=>false,'real_funds_enabled'=>false,'progress'=>$progress,'source_sha256'=>$sourceHash];
+    m4c_entry_same($result,$expected);
+}
+/** Native snapshot for the three fixed finance-maintenance tables only. */
+function m4c_entry_finance_table(PDO $db,string $name): array
+{
+    m4c_expect(in_array($name,['eb_marketplace_finance_settings','eb_marketplace_finance_settings_history','eb_system_menus'],true),
+        'M4C_FINANCE_THREE_FIXED_NATIVE_TABLES');
+    $ddl=$db->query('SHOW CREATE TABLE '.m4c_entry_early_quote($name))->fetch(PDO::FETCH_NUM);
+    m4c_expect(is_array($ddl)&&is_string($ddl[1]??null),'M4C_FINANCE_NATIVE_DDL');
+    $metadata=m4c_entry_early_metadata($db,$name);$columns=array_keys($metadata['columns']);$hashes=[];
+    foreach(m4cb_rows($db,'SELECT '.implode(',',array_map('m4c_entry_early_quote',$columns)).' FROM '.m4c_entry_early_quote($name))as$row)
+        $hashes[]=hash('sha256',serialize($row));sort($hashes,SORT_STRING);
+    return ['ddl_sha256'=>hash('sha256',$ddl[1]),'projected_columns'=>$columns,
+        'projection'=>['encoding'=>'php-serialize-row-sha256-sorted-multiset-v1','rows'=>count($hashes),'sha256'=>hash('sha256',implode("\n",$hashes))],
+        'metadata_sha256'=>hash('sha256',serialize($metadata)),'metadata_serialized_base64'=>base64_encode(serialize($metadata))];
+}
+/** Independent fixed DDL and initial-row checks; no App or migration implementation is loaded. */
+function m4c_entry_finance_tables(PDO $db): array
+{
+    $definitions=['eb_marketplace_finance_settings'=>[['id','tinyint unsigned','NO'],['revision','int unsigned','NO'],
+        ['payload','json','NO'],['updated_by','int unsigned','YES'],['updated_at','int unsigned','YES']],
+        'eb_marketplace_finance_settings_history'=>[['revision','int unsigned','NO'],['payload','json','NO'],
+            ['changed_fields','json','NO'],['actor_id','int unsigned','NO'],['created_at','int unsigned','NO']]];$result=[];
+    foreach($definitions as$name=>$definition){$metadata=m4c_entry_early_metadata($db,$name);
+        m4c_expect($metadata['table']===['TABLE_TYPE'=>'BASE TABLE','ENGINE'=>'InnoDB','ROW_FORMAT'=>'Dynamic','TABLE_COLLATION'=>'utf8mb4_bin',
+            'TABLE_COMMENT'=>'','CREATE_OPTIONS'=>'','AUTO_INCREMENT'=>null]&&$metadata['checks']===[]&&$metadata['foreign']===[]&&$metadata['triggers']===[],
+            'M4C_FINANCE_FIXED_NATIVE_TABLE_AND_NO_HIDDEN_OBJECTS');
+        m4c_expect(array_keys($metadata['columns'])===array_column($definition,0),'M4C_FINANCE_EXACT_FIVE_COLUMNS');
+        foreach($definition as[$column,$type,$nullable]){$actual=$metadata['columns'][$column];
+            $actual['COLUMN_TYPE']=preg_replace('/\b(tinyint|int)\([0-9]+\)/','$1',strtolower($actual['COLUMN_TYPE']));
+            m4c_expect($actual===['COLUMN_NAME'=>$column,'COLUMN_TYPE'=>$type,'IS_NULLABLE'=>$nullable,'COLUMN_DEFAULT'=>null,
+                'CHARACTER_SET_NAME'=>null,'COLLATION_NAME'=>null,'EXTRA'=>'','GENERATION_EXPRESSION'=>'','COLUMN_COMMENT'=>''],
+                'M4C_FINANCE_EVERY_NATIVE_COLUMN_VALUE');}
+        m4c_expect(array_keys($metadata['indexes'])===['PRIMARY']&&count($metadata['indexes']['PRIMARY'])===1,'M4C_FINANCE_ONLY_ONE_PRIMARY_INDEX');
+        $index=$metadata['indexes']['PRIMARY'][0];$index['NON_UNIQUE']=(string)$index['NON_UNIQUE'];$index['SEQ_IN_INDEX']=(string)$index['SEQ_IN_INDEX'];
+        m4c_expect($index===['INDEX_NAME'=>'PRIMARY','NON_UNIQUE'=>'0','SEQ_IN_INDEX'=>'1','COLUMN_NAME'=>$definition[0][0],
+            'SUB_PART'=>null,'INDEX_TYPE'=>'BTREE','IS_VISIBLE'=>'YES','EXPRESSION'=>null,'COLLATION'=>'A','INDEX_COMMENT'=>'']
+            &&$metadata['constraints']===[['CONSTRAINT_NAME'=>'PRIMARY','CONSTRAINT_TYPE'=>'PRIMARY KEY','ENFORCED'=>'YES']],
+            'M4C_FINANCE_COMPLETE_PRIMARY_CONTRACT');$result[$name]=m4c_entry_finance_table($db,$name);}
+    $rows=m4cb_rows($db,'SELECT * FROM eb_marketplace_finance_settings ORDER BY id');
+    m4c_expect(count($rows)===1&&array_keys($rows[0])===['id','revision','payload','updated_by','updated_at']
+        &&(string)$rows[0]['id']==='1'&&(string)$rows[0]['revision']==='0'&&$rows[0]['updated_by']===null&&$rows[0]['updated_at']===null,
+        'M4C_FINANCE_ONLY_UNCONFIGURED_SINGLETON');
+    $draft=json_decode($rows[0]['payload'],true,32,JSON_THROW_ON_ERROR);m4c_expect(is_array($draft),'M4C_FINANCE_NATIVE_JSON_OBJECT');ksort($draft,SORT_STRING);
+    $expected=array_fill_keys(['contracting_entity','payment_provider','payment_product','account_model','platform_fee_enabled','aftersale_hold',
+        'platform_fee_payer','channel_fee_payer','platform_fee_basis','platform_fee_rate','settlement_trigger','settlement_cycle','settlement_delay_days','refund_platform_fee'],null);
+    ksort($expected,SORT_STRING);m4c_expect($draft===$expected&&m4cb_rows($db,'SELECT * FROM eb_marketplace_finance_settings_history ORDER BY revision')===[],
+        'M4C_FINANCE_EXACT_FOURTEEN_NULLS_AND_NO_HISTORY');return $result;
+}
+/** Permit exactly the two known rows and their two natural auto-increment advances. */
+function m4c_entry_finance_observe(array $history,array $ids): array
+{
+    m4c_entry_keys($ids,['marketplace-finance-settings-read','marketplace-finance-settings-write']);
+    $db=audit_db();m4c_expect(!$db->inTransaction()&&$db->setAttribute(PDO::ATTR_EMULATE_PREPARES,false)
+        &&$db->query('SELECT CURRENT_USER()')->fetchColumn()==='audit_app@%'
+        &&$db->query('SELECT DATABASE()')->fetchColumn()==='audit_auth','M4C_FINANCE_INDEPENDENT_DML_OBSERVER');
+    m4c_expect($db->exec('SET SESSION information_schema_stats_expiry=0')===0,'M4C_FINANCE_ONLY_OBSERVER_METADATA_EXPIRY');
+    $modeSql='SELECT @@SESSION.sql_mode AS session_mode,@@GLOBAL.sql_mode AS global_mode,@@SESSION.innodb_strict_mode AS session_innodb,@@GLOBAL.innodb_strict_mode AS global_innodb,@@SESSION.information_schema_stats_expiry AS session_stats_expiry,@@GLOBAL.information_schema_stats_expiry AS global_stats_expiry';
+    $observer=m4cb_rows($db,$modeSql);m4c_expect($observer===$history['result']['snapshots']['assets']['metadata_observer_modes'],
+        'M4C_FINANCE_ORIGINAL_SIX_NATIVE_OBSERVER_MODES');
+    $sealed=$history['result']['snapshots']['assets']['tables']['eb_system_menus'];
+    $before=unserialize(base64_decode($sealed['metadata_serialized_base64'],true),['allowed_classes'=>false,'max_depth'=>64]);
+    $counter=$before['table']['AUTO_INCREMENT'];m4c_expect((is_int($counter)||is_string($counter))
+        &&preg_match('/\A[1-9][0-9]*\z/D',(string)$counter)===1&&(int)$counter<=65533,'M4C_FINANCE_ORIGINAL_MENU_COUNTER');$counter=(int)$counter;
+    m4c_expect($ids===['marketplace-finance-settings-read'=>$counter,'marketplace-finance-settings-write'=>$counter+1],
+        'M4C_FINANCE_EXACT_TWO_NATURAL_MENU_IDS');
+    $common=['pid'=>0,'icon'=>'','module'=>'','controller'=>'','action'=>'','params'=>'[]','sort'=>1,'is_show'=>1,'is_show_path'=>1,
+        'access'=>1,'menu_path'=>'','path'=>'','auth_type'=>2,'header'=>'','is_header'=>0,'is_del'=>0,
+        'mark'=>'marketplace-finance-settings-v1','api_url'=>'marketplace/finance-settings'];
+    foreach([['marketplace-finance-settings-read','查看资金设置','GET'],['marketplace-finance-settings-write','保存资金设置','PUT']]as[$auth,$label,$method]){
+        $rows=m4cb_rows($db,'SELECT * FROM eb_system_menus WHERE id=?',[$ids[$auth]]);$expected=$common+['id'=>$ids[$auth],'unique_auth'=>$auth,'menu_name'=>$label,'methods'=>$method];
+        m4c_expect(count($rows)===1&&count($rows[0])===22,'M4C_FINANCE_TWO_COMPLETE_LEAF_ROWS');$actual=$rows[0];
+        foreach($expected as$key=>$value)m4c_expect(isset($actual[$key])&&(string)$actual[$key]===(string)$value,'M4C_FINANCE_EVERY_LEAF_VALUE');}
+    $metadata=m4c_entry_early_metadata($db,'eb_system_menus');m4c_expect((string)$metadata['table']['AUTO_INCREMENT']===(string)($counter+2),
+        'M4C_FINANCE_ONLY_TWO_COUNTER_ADVANCES');$metadata['table']['AUTO_INCREMENT']=$before['table']['AUTO_INCREMENT'];
+    m4c_expect(serialize($metadata)===serialize($before)&&hash('sha256',serialize($metadata))===$sealed['metadata_sha256'],
+        'M4C_FINANCE_ALL_OLD_MENU_METADATA_RETAINED');
+    $ddl=$db->query('SHOW CREATE TABLE eb_system_menus')->fetch(PDO::FETCH_NUM)[1];
+    $restored=str_replace(' AUTO_INCREMENT='.($counter+2).' ',' AUTO_INCREMENT='.$counter.' ',$ddl,$replaced);
+    m4c_expect($replaced===1&&hash('sha256',$restored)===$sealed['ddl_sha256'],'M4C_FINANCE_EXACT_OLD_DDL_WITH_ONLY_COUNTER_ADVANCE');
+    $columns=$sealed['projected_columns'];m4c_expect($columns===array_keys($metadata['columns']),'M4C_FINANCE_ORIGINAL_MENU_COLUMN_ORDER');$hashes=[];
+    foreach(m4cb_rows($db,'SELECT '.implode(',',array_map('m4c_entry_early_quote',$columns)).' FROM eb_system_menus WHERE id NOT IN (?,?)',array_values($ids))as$row)
+        $hashes[]=hash('sha256',serialize($row));sort($hashes,SORT_STRING);
+    $projection=['encoding'=>'php-serialize-row-sha256-sorted-multiset-v1','rows'=>count($hashes),'sha256'=>hash('sha256',implode("\n",$hashes))];
+    m4c_expect($projection===$sealed['projection'],'M4C_FINANCE_ALL_OLD_MENU_ROWS_TYPES_AND_MULTIPLICITY');
+    $observed=['tables'=>m4c_entry_finance_tables($db),'menus'=>m4c_entry_finance_table($db,'eb_system_menus'),
+        'old_menu_projection'=>$projection,'auto_increment_before'=>$counter,'auto_increment_after'=>$counter+2];
+    m4c_expect(m4cb_rows($db,$modeSql)===$observer&&!$db->inTransaction(),'M4C_FINANCE_NATIVE_OBSERVER_MODES_AND_IDLE_TRANSACTION_RETAINED');
+    return $observed;
+}
+function m4c_entry_finance_receipt(array $receipt,array $history,array $schemaReceipt): array
+{
+    m4c_entry_keys($receipt,['schema','scope','status','binding','source_files','results','menu_ids','native','grants','App_business']);
+    m4c_expect($receipt['schema']===1&&$receipt['scope']==='FINANCE_DRAFT_METADATA_BEFORE_FIRST_APP_ONLY'
+        &&$receipt['status']==='VERIFIED_FINANCE_DRAFT_METADATA_BEFORE_FIRST_APP_ONLY'&&$receipt['App_business']==='NOT RUN'
+        &&$receipt['binding']===$schemaReceipt['binding']&&$receipt['source_files']===m4c_entry_finance_sources(),
+        'M4C_FINANCE_SAME_SCHEMA_BOOTSTRAP_AND_FROZEN_SOURCE');
+    m4c_expect(is_array($receipt['results'])&&array_is_list($receipt['results'])&&count($receipt['results'])===4
+        &&is_array($receipt['menu_ids']),'M4C_FINANCE_EXACT_FOUR_RESULTS');
+    foreach($receipt['results']as$index=>$result)m4c_entry_finance_result($result,$index,$receipt['menu_ids'],$receipt['source_files'][0]['sha256']);
+    m4c_entry_keys($receipt['grants'],['application_before','application_after','maintenance_before','maintenance_after']);
+    foreach($receipt['grants']as$digest)m4c_expect(is_string($digest)&&preg_match('/\A[a-f0-9]{64}\z/D',$digest)===1,'M4C_FINANCE_GRANT_DIGEST');
+    m4c_expect($receipt['grants']['application_before']===$receipt['grants']['application_after']
+        &&$receipt['grants']['maintenance_before']===$receipt['grants']['maintenance_after']
+        &&hash('sha256',json_encode(audit_db()->query('SHOW GRANTS')->fetchAll(PDO::FETCH_COLUMN),JSON_THROW_ON_ERROR))===$receipt['grants']['application_after'],
+        'M4C_FINANCE_ORIGINAL_MAINTENANCE_AND_DML_GRANTS_RETAINED');
+    $native=m4c_entry_finance_observe($history,$receipt['menu_ids']);m4c_entry_same($receipt['native'],$native);return $native;
+}
+/** Fixed preparation stages; only these bound maintenance receipts admit the three new tables. */
+function m4c_entry_early_preserved(array $history,string $stage,?array $schemaReceipt=null,?array $financeReceipt=null): array
+{
+    m4c_expect(in_array($stage,['files-bootstrap','schema-bootstrap-completed','finance-bootstrap-completed','files-bootstrap-completed','customer-prepare'],true),'M4C_EARLY_FIXED_PRESERVATION_STAGE');audit_guard_assert();
     $sealed=$history['result']['snapshots']['assets'];
     m4c_entry_keys($sealed,['names','tables','redis','modes','metadata_observer_modes','native_snapshot_sha256']);
-    $schema=null;$expectedNames=$sealed['names'];
+    $schema=null;$finance=null;$expectedNames=$sealed['names'];
     m4c_expect(count($expectedNames)===175&&!in_array('eb_marketplace_schema',$expectedNames,true),
         'M4C_EARLY_ORIGINAL_175_PRE_SCHEMA_NAMESPACE');
     if($stage==='files-bootstrap')m4c_expect($schemaReceipt===null,'M4C_EARLY_NO_SCHEMA_RECEIPT_BEFORE_MAINTENANCE');
     else{m4c_expect(is_array($schemaReceipt),'M4C_EARLY_REQUIRED_SCHEMA_MAINTENANCE_RECEIPT');
         $schema=m4c_entry_schema_receipt($schemaReceipt,$history);$expectedNames[]='eb_marketplace_schema';sort($expectedNames,SORT_STRING);}
+    if(in_array($stage,['files-bootstrap','schema-bootstrap-completed'],true))
+        m4c_expect($financeReceipt===null,'M4C_EARLY_NO_FINANCE_RECEIPT_BEFORE_MAINTENANCE');
+    else{m4c_expect(is_array($financeReceipt),'M4C_EARLY_REQUIRED_FINANCE_MAINTENANCE_RECEIPT');
+        $finance=m4c_entry_finance_receipt($financeReceipt,$history,$schemaReceipt);
+        $expectedNames=[...$expectedNames,'eb_marketplace_finance_settings','eb_marketplace_finance_settings_history'];sort($expectedNames,SORT_STRING);}
     $db=audit_db();m4c_expect(!$db->inTransaction()&&$db->setAttribute(PDO::ATTR_EMULATE_PREPARES,false)
         &&$db->query('SELECT CURRENT_USER()')->fetchColumn()==='audit_app@%'
         &&$db->query('SELECT DATABASE()')->fetchColumn()==='audit_auth','M4C_EARLY_ORIGINAL_APP_READ_OBSERVER');
@@ -1021,18 +1171,20 @@ function m4c_entry_early_preserved(array $history,string $stage,?array $schemaRe
     m4c_expect($observer===$sealed['metadata_observer_modes']&&$modes===$sealed['modes'],'M4C_EARLY_ALL_ORIGINAL_OBSERVER_AND_SQL_MODES');
     $names=$db->query('SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() ORDER BY TABLE_NAME')->fetchAll(PDO::FETCH_COLUMN);sort($names,SORT_STRING);
     m4c_expect($names===$expectedNames&&array_keys($sealed['tables'])===$sealed['names'],'M4C_EARLY_ACTUAL_COMPLETE_TABLE_NAMES');
-    $targets=in_array($stage,['files-bootstrap','schema-bootstrap-completed'],true)?$sealed['names']:['eb_marketplace_fulfillment_operation','eb_marketplace_fulfillment_range',
+    $targets=in_array($stage,['files-bootstrap','schema-bootstrap-completed','finance-bootstrap-completed'],true)?$sealed['names']:['eb_marketplace_fulfillment_operation','eb_marketplace_fulfillment_range',
         'eb_marketplace_aftersale_action','eb_marketplace_aftersale_file','eb_store_order_refund','eb_system_menus',
         'eb_marketplace_customer_asset','eb_marketplace_platform_asset_category','eb_marketplace_platform_asset'];$observed=[];
-    foreach($targets as$name){m4c_expect(isset($sealed['tables'][$name]),'M4C_EARLY_ACTUAL_PROTECTED_TABLE');$observed[$name]=m4c_entry_early_table($db,$name,$sealed['tables'][$name]);}
-    if(in_array($stage,['files-bootstrap','schema-bootstrap-completed'],true)){$snapshot=audit_snapshot(['tables'=>[],'redis'=>['*']]);$redis=audit_redis();$actual=[];
+    foreach($targets as$name){m4c_expect(isset($sealed['tables'][$name]),'M4C_EARLY_ACTUAL_PROTECTED_TABLE');
+        $observed[$name]=$name==='eb_system_menus'&&$finance!==null?$finance['old_menu_projection']:m4c_entry_early_table($db,$name,$sealed['tables'][$name]);}
+    if(in_array($stage,['files-bootstrap','schema-bootstrap-completed','finance-bootstrap-completed'],true)){$snapshot=audit_snapshot(['tables'=>[],'redis'=>['*']]);$redis=audit_redis();$actual=[];
         foreach($snapshot['redis']['*']as$key=>$hash){$expires=$redis->rawCommand('PEXPIRETIME',$key);$keyHash=hash('sha256',(string)$key);
             m4c_expect(is_int($expires)&&($expires===-1||$expires>0)&&!isset($actual[$keyHash]),'M4C_EARLY_ACTUAL_ABSOLUTE_REDIS_EXPIRY');$actual[$keyHash]=['sha256'=>$hash,'expires'=>$expires];}
         ksort($actual,SORT_STRING);m4c_expect($actual===$sealed['redis'],'M4C_EARLY_BEFORE_APP_COMPLETE_REDIS_RETAINED');}
     $again=m4cb_rows($db,'SELECT @@SESSION.sql_mode AS session_mode,@@GLOBAL.sql_mode AS global_mode,@@SESSION.innodb_strict_mode AS session_innodb,@@GLOBAL.innodb_strict_mode AS global_innodb,@@SESSION.information_schema_stats_expiry AS session_stats_expiry,@@GLOBAL.information_schema_stats_expiry AS global_stats_expiry');
     m4c_expect($again===$observer,'M4C_EARLY_NATIVE_OBSERVER_SIX_MODES_RETAINED');audit_guard_assert();
     return ['stage'=>$stage,'early_result_sha256'=>$history['hashes']['ms4-aftersale-early-migration-normal.json'],
-        'metadata_observer_modes'=>$observer,'protected_native_projections'=>$observed,'application_schema'=>$schema];
+        'metadata_observer_modes'=>$observer,'protected_native_projections'=>$observed,'application_schema'=>$schema,
+        'finance_settings'=>$finance];
 }
 
 function m4c_entry_source(string $mode): array
@@ -1206,15 +1358,15 @@ function m4c_entry_stop(&$process,?array &$group,array $supervisor,bool &$sent,b
 function m4c_entry_run(string $mode): int
 {
     $GLOBALS['m4c_phase']='source';$source=m4c_entry_source($mode);$GLOBALS['m4c_entry_source']=$source;
-    $early=null;$schemaReceipt=null;
+    $early=null;$schemaReceipt=null;$financeReceipt=null;
     if($mode==='prepare'){$early=m4c_entry_early_history($source);m4c_entry_early_paid_unstarted($source,'customer-prepare');
         $filesPath='/run/audit/evidence/files-bootstrap-result.json';
         m4c_expect(m4c_entry_hash($filesPath)===$source['prerequisites_sha256']['files-bootstrap-result.json'],
             'M4C_PREPARE_SCHEMA_FROM_VERIFIED_FOUR_FILES');
-        $files=m4c_entry_read($filesPath);$schemaReceipt=$files['schema_bootstrap'];
-        m4c_expect(is_array($schemaReceipt)&&m4c_entry_hash($filesPath)===$source['prerequisites_sha256']['files-bootstrap-result.json'],
+        $files=m4c_entry_read($filesPath);$schemaReceipt=$files['schema_bootstrap'];$financeReceipt=$files['finance_bootstrap'];
+        m4c_expect(is_array($schemaReceipt)&&is_array($financeReceipt)&&m4c_entry_hash($filesPath)===$source['prerequisites_sha256']['files-bootstrap-result.json'],
             'M4C_PREPARE_SCHEMA_RECEIPT_BYTES_UNCHANGED');
-        m4c_entry_early_preserved($early,'customer-prepare',$schemaReceipt);}
+        m4c_entry_early_preserved($early,'customer-prepare',$schemaReceipt,$financeReceipt);}
     m4c_entry_public_materials($source);m4c_entry_full_source($source);$GLOBALS['m4c_phase']='app';m4c_app($mode,$source);
     $process=null;$group=null;$sent=false;$attempted=false;$childProof=null;$business=null;$failure=null;$failureMeta=null;
     $supervisor=audit_app_proc_stat(getmypid());
@@ -1245,7 +1397,7 @@ function m4c_entry_run(string $mode): int
     $GLOBALS['m4c_phase']='final_source';audit_guard_assert();m4c_entry_full_source($source);
     m4c_entry_ms5_prerequisites($source);
     if($early!==null){$currentEarly=m4c_entry_early_history($source);m4c_entry_same($currentEarly['hashes'],$early['hashes']);
-        m4c_entry_early_preserved($currentEarly,'customer-prepare',$schemaReceipt);}
+        m4c_entry_early_preserved($currentEarly,'customer-prepare',$schemaReceipt,$financeReceipt);}
     $rule=$source['rule'];$result=['schema'=>1,'scope'=>$rule['scope'],'status'=>$rule['status'],
         'run_id'=>$source['run_id'],'source_sha'=>$source['source_sha'],'container_id'=>$source['container_id'],
         'freeze_sha256'=>$source['freeze_sha256'],'native_created_sha256'=>$source['native_created_sha256'],
