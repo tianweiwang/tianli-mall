@@ -386,11 +386,17 @@ function m4ar_tables():array
 {
  $names=array_values(array_unique(array_merge(M4AR_TABLES,M4CB_TABLES,M5PC_AUX_TABLES,['eb_store_service']),SORT_STRING));sort($names,SORT_STRING);return $names;
 }
-function m4ar_snapshot(PDO $db):array
+function m4ar_snapshot(PDO $db,?array &$sequenceProof=null):array
 {
  $database=m5pcp_database_snapshot($db);$rows=[];
  foreach(m4ar_tables()as$table){m4ar_expect(in_array($table,$database['names'],true),'TASK78_ACTUAL_ORACLE_TABLE_EXISTS');
   $rows[$table]=m5pcp_rows($db,'SELECT * FROM '.m5pcp_quote($table));}
+ if(func_num_args()===2){
+  $redis=m5pcp_atomic_redis(audit_redis(),$sequenceProof);
+  $snapshot=['database'=>$database,'rows'=>$rows,'redis'=>$redis,'private'=>m4ar_files(M4AR_PRIVATE),
+   'public'=>m4ar_files('/workspace/crmeb/public'),'customer_form_private'=>m4cf_native_files()];
+  $sequenceProof['snapshot_sha256']=hash('sha256',serialize($snapshot));return $snapshot;
+ }
  return ['database'=>$database,'rows'=>$rows,'redis'=>m5pcp_atomic_redis(audit_redis()),'private'=>m4ar_files(M4AR_PRIVATE),
   'public'=>m4ar_files('/workspace/crmeb/public'),'customer_form_private'=>m4cf_native_files()];
 }
@@ -952,7 +958,7 @@ function m4ar_produce_paid(\think\App $app,PDO $db,array $source,array $owner,ar
   $formProof=m4cf_bound($db,$formStage,$roots[0],$kernelObservation,$formActor);
   $repeatBefore=m5pcp_database_snapshot($db);$replayed=$app->make(MarketplaceOrderCreateServices::class)->create($uid,$key,$raw);
   m4cf_expect($replayed===$created&&m5pcp_database_snapshot($db)===$repeatBefore,'AR_SAME_BODY_ORIGINAL_EARLY_RETURN');m4cf_replay($db,$formProof);
- $createdSnapshot=m4ar_snapshot($db);$expectedRows=[];$inserts=['eb_store_order'=>1,'eb_store_order_invoice'=>1,'eb_store_order_cart_info'=>2,
+ $sequenceProof=null;$createdSnapshot=m4ar_snapshot($db,$sequenceProof);$expectedRows=[];$inserts=['eb_store_order'=>1,'eb_store_order_invoice'=>1,'eb_store_order_cart_info'=>2,
  'eb_marketplace_order_idempotency'=>1,'eb_marketplace_stock_movement'=>2,'eb_store_cart'=>2,'eb_store_product_log'=>4,'eb_store_order_status'=>1,
  'eb_marketplace_payment_registry'=>1,'eb_store_product'=>0,'eb_store_product_attr_value'=>0];
   foreach($inserts as$table=>$n)$expectedRows[$table]=$createdFacts[$table];
@@ -962,7 +968,7 @@ function m4ar_produce_paid(\think\App $app,PDO $db,array $source,array $owner,ar
  m4ar_expect(audit_redis()->get($physical)===false&&$createdSnapshot['private']===$confirmed['private']&&$createdSnapshot['public']===$confirmed['public'],
  'TASK78_REAL_POSTCOMMIT_CONSUMED_ONLY_OWN_CONFIRMATION_AND_NO_FILES');
   m4cf_expect($createdSnapshot['customer_form_private']===$formStage['after']['private'],'AR_CREATE_PRIVATE_ORIGINALS_UNCHANGED');
-  m4ar_redis_delta($formStage['after'],$createdSnapshot,[$physical=>null]+m4ar_sequence_delta($formStage['after'],$createdSnapshot,$created['order_id']));
+  m4ar_redis_delta($formStage['after'],$createdSnapshot,[$physical=>null]+m4ar_sequence_delta($formStage['after'],$createdSnapshot,$created['order_id'],$sequenceProof));
  $sequence=m5pcp_sequence_keys($db,$app,$saved);$barrier=m5pcp_sequence_expiry_barrier($db,$sequence);$snapshot=m5pcp_snapshot($db);
  $resolver=$app->make(PaymentAccountResolver::class);$driver=$app->make(TestPaymentDriver::class);$service=$app->make(MarketplacePaymentServices::class);
  m4ar_expect($resolver instanceof PaymentAccountResolver&&$driver instanceof TestPaymentDriver&&$service instanceof MarketplacePaymentServices,
@@ -1249,18 +1255,47 @@ function m4ar_audit_delta(array $before,array $after,array $actor,array $spec,ar
   m4c_entry_same(get_object_vars($detail),$spec['detail']??[]);}
  m4fn_expected_row($before['database']['tables'][$table]['metadata'],$row,$values);$expected[$table]=array_merge($before['rows'][$table],[$row]);$counts[$table]=1;
 }
-function m4ar_sequence_delta(array $before,array $after,string $number):array
+function m4ar_sequence_delta(array $before,array $after,string $number,array $sequenceProof):array
 {
  unset($GLOBALS['m4ar_sequence_failure_context'],$GLOBALS['m4ar_sequence_failure_diagnostic'],$GLOBALS['m4ar_sequence_failure_phase']);
+ m4ar_expect(array_keys($after)===['database','rows','redis','private','public','customer_form_private']
+  &&is_array($after['redis'])&&array_keys($after['redis'])===['time','time_ms','keys']
+  &&array_keys($sequenceProof)===['schema','scope','time','time_ms','redis_snapshot_sha256','values','snapshot_sha256']
+  &&$sequenceProof['schema']===1&&$sequenceProof['scope']==='ATOMIC_REDIS_THIRTEEN_DIGIT_SEQUENCE_VALUES'
+  &&$sequenceProof['time']===$after['redis']['time']&&$sequenceProof['time_ms']===$after['redis']['time_ms']
+  &&m5pc_hex($sequenceProof['redis_snapshot_sha256'])&&m5pc_hex($sequenceProof['snapshot_sha256'])
+  &&$sequenceProof['redis_snapshot_sha256']===hash('sha256',serialize($after['redis']))
+  &&$sequenceProof['snapshot_sha256']===hash('sha256',serialize($after))&&is_array($sequenceProof['values']),
+  'TASK78_ATOMIC_SEQUENCE_PROOF_BINDS_COMPLETE_AFTER_SNAPSHOT');
+ $proofOrder=array_keys($sequenceProof['values']);$proofSorted=$proofOrder;sort($proofSorted,SORT_STRING);
+ m4ar_expect($proofOrder===$proofSorted,'TASK78_ATOMIC_SEQUENCE_PROOF_SORTED_TARGET_HASHES');
+ foreach($sequenceProof['values']as$h=>$observed){$snapshotEntry=$after['redis']['keys'][$h]??null;
+  m4ar_expect(m5pc_hex($h)&&is_array($observed)
+   &&array_keys($observed)===['entry_type','entry_expires_ms','raw_type','raw_bytes','raw_sha256','positive_decimal']
+   &&is_array($snapshotEntry)&&m5pcp_keys($snapshotEntry,['type','sha256','expires'])
+   &&is_string($observed['entry_type'])&&$observed['entry_type']!==''&&$observed['entry_type']!=='none'
+   &&is_int($observed['entry_expires_ms'])&&($observed['entry_expires_ms']===-1||$observed['entry_expires_ms']>0)
+   &&$observed['entry_type']===$snapshotEntry['type']&&$observed['entry_expires_ms']===$snapshotEntry['expires']
+   &&in_array($observed['raw_type'],['string','boolean'],true)&&is_bool($observed['positive_decimal'])
+   &&($observed['raw_type']==='string'?(is_int($observed['raw_bytes'])&&$observed['raw_bytes']>=0&&m5pc_hex($observed['raw_sha256'])
+     &&(!$observed['positive_decimal']||$observed['raw_bytes']>=1))
+    :($observed['raw_bytes']===null&&$observed['raw_sha256']===null&&$observed['positive_decimal']===false))
+   &&($observed['entry_type']==='string'||$observed['raw_type']==='boolean'),
+   'TASK78_ATOMIC_SEQUENCE_PROOF_COMPLETE_NATIVE_VALUE_METADATA');
+ }
  $suffix=preg_replace('/\A(?:cp|cf)/','',$number);m4ar_expect(is_string($suffix)&&preg_match('/\A[1-9][0-9]{0,18}\z/D',$suffix)===1,'TASK78_TRUE_SNOWFLAKE_PRODUCER_ID');
  $millis=bcadd('1640966400000',bcdiv($suffix,'4194304',0),0);$key=(string)$millis;$hash=hash('sha256',$key);
+ m4ar_expect(preg_match('/\A[1-9][0-9]{12}\z/D',$key)===1,'TASK78_ATOMIC_SEQUENCE_THIRTEEN_DIGIT_MILLISECOND_KEY');
  $entry=$after['redis']['keys'][$hash]??null;if($entry===null){
+  m4ar_expect(!array_key_exists($hash,$sequenceProof['values']),'TASK78_ATOMIC_SEQUENCE_MISSING_TARGET_HAS_NO_VALUE_PROOF');
   m4ar_expect($after['redis']['time_ms']>=$millis+1000&&!isset($before['redis']['keys'][$hash]),'TASK78_ALREADY_NATURALLY_EXPIRED_NEW_SEQUENCE_KEY');return [];
  }
- $raw=audit_redis()->get($key);$seq=bcmod($suffix,'4096',0);
+ m4ar_expect(isset($sequenceProof['values'][$hash]),'TASK78_ATOMIC_SEQUENCE_PRESENT_TARGET_HAS_EXACT_VALUE_PROOF');
+ $observed=$sequenceProof['values'][$hash];$seq=bcmod($suffix,'4096',0);$sequenceExpected=$seq==='0'?'1':$seq;
+ $sequenceValueMatches=$observed['raw_bytes']===strlen($sequenceExpected)&&$observed['raw_sha256']===hash('sha256',$sequenceExpected);
  try{
- m4ar_expect(is_string($raw)&&preg_match('/\A[1-9][0-9]*\z/D',$raw)===1
- &&($seq==='0'?$raw==='1':$raw===$seq)&&$entry['type']==='string'&&$entry['expires']>=$millis+1000&&$entry['expires']>=$before['redis']['time_ms']+1000&&$entry['expires']<=$after['redis']['time_ms']+1000,
+ m4ar_expect($observed['raw_type']==='string'&&$observed['positive_decimal']&&$sequenceValueMatches
+ &&$entry['type']==='string'&&$entry['expires']>=$millis+1000&&$entry['expires']>=$before['redis']['time_ms']+1000&&$entry['expires']<=$after['redis']['time_ms']+1000,
  'TASK78_EXACT_SNOWFLAKE_RESOLVER_VALUE_AND_ONE_SECOND_DEADLINE');
  }catch(Throwable $sequenceFailure){
   $sequenceHadAssertion=array_key_exists('m4ar_failed_assertion',$GLOBALS);$sequenceAssertion=$GLOBALS['m4ar_failed_assertion']??null;
@@ -1269,15 +1304,14 @@ function m4ar_sequence_delta(array $before,array $after,string $number):array
    if($sequenceAssertion==='TASK78_EXACT_SNOWFLAKE_RESOLVER_VALUE_AND_ONE_SECOND_DEADLINE'
     &&$sequenceFailure instanceof RuntimeException&&$sequenceFailure->getMessage()==='M4AR_ASSERTION'
     &&in_array($sequencePhase,['new_root_real_cart_confirm_create','normal_aftersale_apply','normal_s2_ship'],true)){
-    // Recompute only after the original assertion failed, using its captured values; no new observation.
-    $sequenceExpected=$seq==='0'?'1':$seq;
+    // Only the same EVAL_RO side proof is held here; never make a later GET or TIME observation.
     $sequenceContext=['before_redis_time_ms'=>$before['redis']['time_ms'],'after_redis_time_ms'=>$after['redis']['time_ms'],
-     'entry_type'=>$entry['type'],'entry_expires_ms'=>$entry['expires'],'raw_type'=>gettype($raw),
-     'raw_bytes'=>is_string($raw)?strlen($raw):null,'raw_sha256'=>is_string($raw)?hash('sha256',$raw):null,
+     'entry_type'=>$entry['type'],'entry_expires_ms'=>$entry['expires'],'raw_type'=>$observed['raw_type'],
+     'raw_bytes'=>$observed['raw_bytes'],'raw_sha256'=>$observed['raw_sha256'],
      'expected_wire_bytes'=>strlen($sequenceExpected),'expected_wire_sha256'=>hash('sha256',$sequenceExpected),
-     'post_failure_predicates'=>['get_is_string'=>is_string($raw),
-      'get_positive_decimal'=>is_string($raw)&&preg_match('/\A[1-9][0-9]*\z/D',$raw)===1,
-      'sequence_value_matches'=>$seq==='0'?$raw==='1':$raw===$seq,'entry_type_string'=>$entry['type']==='string',
+     'post_failure_predicates'=>['get_is_string'=>$observed['raw_type']==='string',
+      'get_positive_decimal'=>$observed['positive_decimal'],
+      'sequence_value_matches'=>$sequenceValueMatches,'entry_type_string'=>$entry['type']==='string',
       'expiry_ge_number_time_plus1000'=>$entry['expires']>=$millis+1000,
       'expiry_ge_before_time_plus1000'=>$entry['expires']>=$before['redis']['time_ms']+1000,
       'expiry_le_after_time_plus1000'=>$entry['expires']<=$after['redis']['time_ms']+1000]];
@@ -1454,7 +1488,8 @@ function m4ar_action(PDO $db,array &$model,array $actor,string $action,string $p
   'money-platform'=>'apply','business-reject-platform'=>'reject','cancel-apply'=>'apply','cancel-approve'=>'approve',
   'return-apply'=>'apply','return-approve'=>'approve','return-express'=>'express','accept-merchant'=>'accept_return','accept-platform'=>'accept_return']as$name=>$expectedAction)
   if($action===$expectedAction&&is_string($body['idem_key']??null)&&str_starts_with($body['idem_key'],'normal78:'.$name.':')){$operationId=$name;break;}
- $before=m4ar_snapshot($db);$reply=m4ar_json('POST',$path,$actor,$body,$operationId,'first');$after=m4ar_snapshot($db);$answer=$reply['json']['data'];
+ $before=m4ar_snapshot($db);$reply=m4ar_json('POST',$path,$actor,$body,$operationId,'first');$sequenceProof=null;
+ $after=$action==='apply'?m4ar_snapshot($db,$sequenceProof):m4ar_snapshot($db);$answer=$reply['json']['data'];
  m4c_entry_keys($answer,['schema','scope','action_id','action','refund','committed_at','acceptance_ids']);
  $new=m4ar_new_rows($before['rows']['eb_marketplace_aftersale_action'],$after['rows']['eb_marketplace_aftersale_action']);
  m4ar_expect(count($new)===1,'TASK78_ONE_REAL_NEW_COMMITTED_ACTION');$native=$new[0];$actionId=m5pcp_u64($native['id']);
@@ -1543,7 +1578,7 @@ function m4ar_action(PDO $db,array &$model,array $actor,string $action,string $p
   m4ar_audit_delta($before,$after,$actor,['mer_id'=>(int)$root['mer_id'],'action'=>$actor['app']==='merchantapi'?'aftersale.'.$action:
    match($action){'approve'=>'marketplace-aftersales-approve','reject'=>'marketplace-aftersales-reject','accept_return'=>'marketplace-aftersales-return-accept'},
    'resource_type'=>'aftersale','resource_id'=>$refundId,'detail'=>['changed_fields'=>$changed]],$reply['actual_interval'],$rows,$counts);}
- m4ar_database_delta($before,$after,$rows,$counts);$redis=m4ar_cache_deletes($before,$after,$actor);if($action==='apply')$redis+=m4ar_sequence_delta($before,$after,$record['number']);
+ m4ar_database_delta($before,$after,$rows,$counts);$redis=m4ar_cache_deletes($before,$after,$actor);if($action==='apply')$redis+=m4ar_sequence_delta($before,$after,$record['number'],$sequenceProof);
  m4ar_redis_delta($before,$after,$redis);m4ar_expect($before['private']===$after['private']&&$before['public']===$after['public'],'TASK78_ACTION_CLAIM_RETAINS_SAME_REAL_OBJECT_BYTES');
  $record['state']=$state;$record['last_action']=$actionId;$record['updated_at']=$at;$record['native']=$refund;$model['refunds'][$refundId]=$record;
  $model['last_action']=$actionId;$model['actions'][]=$native;$model['root']=$wanted;$model['command_counts'][$action]=($model['command_counts'][$action]??0)+1;
@@ -1578,7 +1613,8 @@ function m4ar_operation(PDO $db,array &$model,array $actor,string $action,string
  m4ar_phase('normal_s2_'.$action);$operationId='non_action';
  foreach(['ship-two'=>'ship','receive-one'=>'receive']as$name=>$expectedAction)
   if($action===$expectedAction&&is_string($body['idem_key']??null)&&str_starts_with($body['idem_key'],'normal78:'.$name.':')){$operationId=$name;break;}
- $before=m4ar_snapshot($db);$reply=m4ar_json('POST',$path,$actor,$body,$operationId,'first');$after=m4ar_snapshot($db);$ship=$action==='ship';
+ $before=m4ar_snapshot($db);$reply=m4ar_json('POST',$path,$actor,$body,$operationId,'first');$sequenceProof=null;
+ $after=$action==='ship'?m4ar_snapshot($db,$sequenceProof):m4ar_snapshot($db);$ship=$action==='ship';
  $ops='eb_marketplace_fulfillment_operation';$ranges='eb_marketplace_fulfillment_range';$orders='eb_store_order';$items='eb_store_order_cart_info';
  $added=m4ar_new_rows($before['rows'][$ops],$after['rows'][$ops]);m4ar_expect(count($added)===1,'TASK78_ONE_REAL_S2_OPERATION');$raw=$added[0];$id=m5pcp_u64($raw['id']);
  m4ar_expect($id===m5pcp_u64($before['database']['tables'][$ops]['metadata']['table']['AUTO_INCREMENT']),'TASK78_S2_NATURAL_OPERATION_PK');
@@ -1637,7 +1673,7 @@ function m4ar_operation(PDO $db,array &$model,array $actor,string $action,string
   'change_type'=>$ship?'marketplace_fulfillment_ship':'marketplace_fulfillment_receive','change_message'=>$ship?'多商户履约发货状态更新':'多商户履约收货状态更新','change_time'=>$at]);
   $rows['eb_store_order_status']=array_merge($before['rows']['eb_store_order_status'],$newLogs);$counts['eb_store_order_status']=1;}
  m4ar_auth_delta($before,$after,$actor,$reply['actual_interval'],$rows);m4ar_database_delta($before,$after,$rows,$counts);
- $changes=$ship?m4ar_sequence_delta($before,$after,$child['order_id']):[];m4ar_redis_delta($before,$after,$changes);
+ $changes=$ship?m4ar_sequence_delta($before,$after,$child['order_id'],$sequenceProof):[];m4ar_redis_delta($before,$after,$changes);
  m4ar_expect($before['private']===$after['private']&&$before['public']===$after['public'],'TASK78_S2_NO_INVENTORY_PAYMENT_OR_FILE_MUTATION');
  $model['root']=$want;$model['child']=$wantChild;$model['last_operation']=$id;$model['operations'][]=$raw;
  if($ship){$model['sequence_barriers'][]=m4ar_settle_sequence($db,$child['order_id']);$after=m4ar_snapshot($db);}

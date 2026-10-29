@@ -30,8 +30,13 @@ NAMES = (
 AR_PATH = "help/audit-regressions/isolated/ms4-aftersale-review-normal.php"
 AR_BEFORE = {"path": AR_PATH, "bytes": 245730,
              "sha256": "898eb47ab921a0572bcf04a4680e11d0eb4899465ea9598c60130d92bbc073fa"}
-AR_CURRENT = {"path": AR_PATH, "bytes": 254423,
-              "sha256": "441dd2e1b4a424df88fa21269a11580c471aedf0b60a759e23dee2c890b3903d"}
+AR_CURRENT = {"path": AR_PATH, "bytes": 257849,
+              "sha256": "2dacf029ef2148a2fc61f5a3cc9934a1c98207e7bf66310c44e36825b0cd42ef"}
+PAID_PATH = "help/audit-regressions/isolated/ms5-paid-consumer-normal.php"
+PAID_BEFORE = {"path": PAID_PATH, "bytes": 110169,
+               "sha256": "e6cf05cc96caf383f6a644785cf58cc38ee3b3a9623128484e8ccf79d90792f2"}
+PAID_CURRENT = {"path": PAID_PATH, "bytes": 113294,
+                "sha256": "4a93065d52decec47048c41d6c203e1cae0f301e5f74e5425a62ebd82451ce52"}
 CUSTOMER_PATH = "help/audit-regressions/isolated/ms4-customer-http-normal.php"
 CUSTOMER_BEFORE = {"path": CUSTOMER_PATH, "bytes": 121457,
                    "sha256": "1fae540f4f145ace9ed94d17648d785f1663c4e8d6dbd0b2de54b75ffcbdea75"}
@@ -153,6 +158,9 @@ def reviewed_authority(pointer: dict[str, Any]) -> tuple[dict[str, Any], dict[st
             "REVIEWED_COMPLETE_ORDERED_INVENTORY")
     inventory = {row["path"]: {key: row[key] for key in ("path", "bytes", "sha256")} for row in rows}
     require(inventory.get(AR_PATH) == AR_CURRENT, "FIXED_REVIEWED_CURRENT_AFTERSALE_SOURCE")
+    require(inventory.get(PAID_PATH) == PAID_CURRENT
+            and review.get("paid_consumer_helper_update") == {"before": PAID_BEFORE, "after": PAID_CURRENT},
+            "FIXED_INDEPENDENTLY_REVIEWED_PAID_CONSUMER_HELPER_UPDATE")
     delta = decode(read_pointer(capture["files"]["SOURCE-DELTA.json"]))
     require(delta["source_sha"] == source_sha and delta["status"] == "CAPTURED_NOT_APPROVED"
             and len(delta["files"]) == capture["delta_file_count"], "REVIEWED_COMPLETE_DELTA_POINTER")
@@ -967,6 +975,8 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
     old_active = {entry["before"]["path"]: entry["before"] for entry in common_updates}
     new_active = {entry["after"]["path"]: entry["after"] for entry in common_updates}
     legacy_update = updates[3] if extended_updates else None
+    paid_update = {"before": PAID_BEFORE, "after": PAID_CURRENT}
+    old_active[PAID_PATH], new_active[PAID_PATH] = PAID_BEFORE, PAID_CURRENT
     rows = interface["customer_form_current_profile"]["php_sources"]
     form_old_active, form_new_active = dict(old_active), dict(new_active)
     # The form oracle has its own reviewed update; the original four retain their meanings.
@@ -996,6 +1006,10 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
     for row in runtime_rows:
         if row["path"] in new_active:
             row.update(new_active[row["path"]])
+    paid_successor = interface["paid_producer_successor"]
+    require({"path": paid_successor["entry"], "bytes": paid_successor["entry_bytes"],
+             "sha256": paid_successor["entry_sha256"]} == PAID_BEFORE, "ORIGINAL_CURRENT_PAID_SUCCESSOR_PIN")
+    paid_successor.update(entry_bytes=PAID_CURRENT["bytes"], entry_sha256=PAID_CURRENT["sha256"])
     if legacy_update is not None:
         legacy_rows = interface["fulfillment_normal_successor"]["three_read_internal"]["source_helper_files"]
         require(sum(row == legacy_update["before"] for row in legacy_rows) == 1,
@@ -1012,14 +1026,14 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
         for row in rows:
             if row["path"] in originals:
                 row.update(originals[row["path"]])
+    restored_interface["paid_producer_successor"].update(
+        entry_bytes=PAID_BEFORE["bytes"], entry_sha256=PAID_BEFORE["sha256"])
     if legacy_update is not None:
         for row in restored_interface["fulfillment_normal_successor"]["three_read_internal"]["source_helper_files"]:
             if row["path"] == LEGACY_PATH:
                 row.update(legacy_update["before"])
     require(restored_interface == original_interface,
-            "ONLY_DECLARED_FORM_HELPER_AND_INTERFACE_ACTIVE_ROWS_CHANGED" if helper_update is not None
-            else ("ONLY_SEVEN_DECLARED_INTERFACE_ACTIVE_ROWS_CHANGED" if extended_updates
-                  else "ONLY_FOUR_DECLARED_INTERFACE_ACTIVE_ROWS_CHANGED"))
+            "ONLY_DECLARED_INTERFACE_ACTIVE_ROWS_AND_CURRENT_PAID_ENTRY_CHANGED")
     for name in ("ms4-host.py", "verify-zero-ms4-fulfillment.py"):
         raw = after[name]
         original_raw = raw
@@ -1044,7 +1058,15 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
             path = constant(raw, entry)
             original_entry = {"path": path, "bytes": constant(raw, entry + "_BYTES"),
                               "sha256": constant(raw, entry + "_SHA256")}
-            if extended_updates and entry == "FULFILLMENT_ENTRY":
+            if entry == "PAID_ENTRY":
+                require(original_entry == PAID_BEFORE, "ORIGINAL_PAID_ENTRY_PIN")
+                previous_entry_raw = raw
+                raw = replace_constant(raw, entry + "_BYTES", PAID_CURRENT["bytes"])
+                raw = replace_constant(raw, entry + "_SHA256", PAID_CURRENT["sha256"])
+                require(replace_constant(replace_constant(raw, entry + "_SHA256", PAID_BEFORE["sha256"]),
+                                         entry + "_BYTES", PAID_BEFORE["bytes"]) == previous_entry_raw,
+                        "TWO_PAID_ENTRY_CONSTANTS_WHOLE_FILE_INVERSE")
+            elif extended_updates and entry == "FULFILLMENT_ENTRY":
                 require(original_entry == updates[2]["before"], "ORIGINAL_FULFILLMENT_ENTRY_PIN")
                 raw = replace_constant(raw, entry + "_BYTES", updates[2]["after"]["bytes"])
                 raw = replace_constant(raw, entry + "_SHA256", updates[2]["after"]["sha256"])
@@ -1058,7 +1080,8 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
         if extended_updates:
             recovered_raw = after[name]
             for symbol in ("CUSTOMER_FORM_SOURCE_FILES", "THREE_READ_SOURCE_FILES", "FULFILLMENT_ENTRY_BYTES",
-                           "FULFILLMENT_ENTRY_SHA256", "AFTERSALE_REVIEW_ENTRY_BYTES", "AFTERSALE_REVIEW_ENTRY_SHA256"):
+                           "FULFILLMENT_ENTRY_SHA256", "AFTERSALE_REVIEW_ENTRY_BYTES", "AFTERSALE_REVIEW_ENTRY_SHA256",
+                           "PAID_ENTRY_BYTES", "PAID_ENTRY_SHA256"):
                 original_nodes = [node for node in ast.parse(original_raw).body
                                   if isinstance(node, ast.Assign) and len(node.targets) == 1
                                   and isinstance(node.targets[0], ast.Name) and node.targets[0].id == symbol]
@@ -1090,6 +1113,14 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
     def php_row(row):
         return ("['path' => '" + row["path"] + "', 'bytes' => " + str(row["bytes"])
                 + ", 'sha256' => '" + row["sha256"] + "']").encode("utf-8")
+    paid_old_tuple = ("[" + str(PAID_BEFORE["bytes"]) + ", '" + PAID_BEFORE["sha256"] + "']").encode("utf-8")
+    paid_new_tuple = ("[" + str(PAID_CURRENT["bytes"]) + ", '" + PAID_CURRENT["sha256"] + "']").encode("utf-8")
+    previous_initializer = after["ms4-initialize.php"]
+    after["ms4-initialize.php"] = once(once(previous_initializer, php_row(PAID_BEFORE), php_row(PAID_CURRENT)),
+                                       paid_old_tuple, paid_new_tuple)
+    require(once(once(after["ms4-initialize.php"], paid_new_tuple, paid_old_tuple),
+                 php_row(PAID_CURRENT), php_row(PAID_BEFORE)) == previous_initializer,
+            "TWO_PAID_INITIALIZER_LITERALS_WHOLE_FILE_INVERSE")
     previous_initializer = after["ms4-initialize.php"]
     after["ms4-initialize.php"] = once(previous_initializer, php_row(CUSTOMER_BEFORE), php_row(inventory[CUSTOMER_PATH]))
     require(once(after["ms4-initialize.php"], php_row(inventory[CUSTOMER_PATH]), php_row(CUSTOMER_BEFORE))
@@ -1148,6 +1179,9 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
         "capture": authority["capture"], "independent_review": authority["independent_review"],
         "active_aftersale_before": AR_BEFORE, "active_aftersale_current": AR_CURRENT,
         "active_profile_updates": updates,
+        "interface_declared_active_rows_changed": interface_changed_rows,
+        "paid_consumer_helper_update": paid_update, "initializer_paid_two_literal_inverse_exact": True,
+        "paid_current_successor_entry_pair_changed": True,
         "all_original_python_function_bodies_exact": False,
         "python_function_changes": {"ms4-host.py": ["verify_files_bootstrap", "verify_schema_bootstrap", "verify_finance_bootstrap",
             "prerequisite_result", "verify_merchant_exit_bootstrap", "verify_order_menu_bootstrap"]},
@@ -1161,7 +1195,7 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
         "initializer_syntax": "NOT RUN", "M_A_B_Runtime": "NOT RUN",
     }
     if extended_updates:
-        derivation[named].update(interface_declared_active_rows_changed=7,
+        derivation[named].update(interface_declared_active_rows_changed=interface_changed_rows,
                                  initializer_fulfillment_literal_inverse_exact=True,
                                  legacy_source_binding_inverse_exact=True)
     if helper_update is not None:
@@ -1214,7 +1248,10 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
         "python_function_changes": {"ms4-host.py": ["verify_files_bootstrap", "verify_schema_bootstrap", "verify_finance_bootstrap",
             "prerequisite_result", "verify_merchant_exit_bootstrap", "verify_order_menu_bootstrap"]},
         "all_other_original_python_function_bodies_exact": True,
-        "active_profile_updates": updates, "interface_only_four_declared_active_rows": True,
+        "active_profile_updates": updates, "interface_only_declared_active_rows": True,
+        "interface_declared_active_rows_changed": interface_changed_rows,
+        "paid_consumer_helper_update": paid_update, "initializer_paid_two_literal_inverse_exact": True,
+        "paid_current_successor_entry_pair_changed": True,
         "initializer_two_literal_inverse_exact": True, "initializer_customer_literal_inverse_exact": True,
         "initializer_schema_bootstrap_inverse_exact": True, "schema_bootstrap_sources": list(schema_sources),
         "initializer_finance_bootstrap_inverse_exact": True, "finance_bootstrap_sources": list(finance_sources),
@@ -1226,9 +1263,7 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
         "actual_initializer_syntax": "NOT RUN", "M_S_Host_Docker_App_business": "NOT RUN",
     }
     if extended_updates:
-        manifest.pop("interface_only_four_declared_active_rows")
-        manifest.update(interface_only_seven_declared_active_rows=True,
-                        interface_declared_active_rows_changed=7,
+        manifest.update(interface_declared_active_rows_changed=interface_changed_rows,
                         initializer_fulfillment_literal_inverse_exact=True,
                         legacy_source_binding_inverse_exact=True)
     if helper_update is not None:
@@ -2183,6 +2218,9 @@ def derive_b_profile(authority_pointer: dict[str, Any],
                     "help/audit-regressions/isolated/lib/ms4-ui-backend-normal.php"}
     def current_row(row):
         wanted = inventory[row["path"]]
+        if row["path"] == PAID_PATH:
+            require(row == PAID_BEFORE and wanted == PAID_CURRENT, "B_EXACT_REVIEWED_PAID_HELPER_UPDATE")
+            return wanted
         require(wanted == row or row["path"] in active_paths
                 or (row["path"] == form_helper_path and helper_update is not None
                     and row == helper_update["before"] and wanted == helper_update["after"]),
@@ -2220,7 +2258,7 @@ def derive_b_profile(authority_pointer: dict[str, Any],
         return ("['path' => '" + row["path"] + "', 'bytes' => " + str(row["bytes"])
                 + ", 'sha256' => '" + row["sha256"] + "']").encode("utf-8")
     for row in old_rows:
-        if inventory[row["path"]] != row:
+        if row["path"] != PAID_PATH and inventory[row["path"]] != row:
             initializer = once(initializer, php_row(row), php_row(inventory[row["path"]]))
     for path, row in old_ui.items():
         if inventory[path] != row:
@@ -2228,6 +2266,12 @@ def derive_b_profile(authority_pointer: dict[str, Any],
             new = ("'" + path + "' => [" + str(inventory[path]["bytes"]) + ", '"
                    + inventory[path]["sha256"] + "']").encode()
             initializer = once(initializer, old, new)
+    paid_old_tuple = ("[" + str(PAID_BEFORE["bytes"]) + ", '" + PAID_BEFORE["sha256"] + "']").encode("utf-8")
+    paid_new_tuple = ("[" + str(PAID_CURRENT["bytes"]) + ", '" + PAID_CURRENT["sha256"] + "']").encode("utf-8")
+    previous_initializer = initializer
+    initializer = once(once(initializer, php_row(PAID_BEFORE), php_row(PAID_CURRENT)), paid_old_tuple, paid_new_tuple)
+    require(once(once(initializer, paid_new_tuple, paid_old_tuple), php_row(PAID_CURRENT), php_row(PAID_BEFORE))
+            == previous_initializer, "B_TWO_PAID_INITIALIZER_LITERALS_WHOLE_FILE_INVERSE")
     initializer, host, schema_rows = schema_profile_changes(initializer, after["candidate/ms4-host.py"], inventory)
     initializer, host, finance_rows = finance_profile_changes(initializer, host, inventory)
     initializer, host, exit_rows = merchant_exit_profile_changes(initializer, host, inventory)
@@ -2324,6 +2368,8 @@ def derive_b_profile(authority_pointer: dict[str, Any],
                 and all(current_functions[symbol] == body for symbol, body in original_functions.items() if symbol not in changed),
                 "B_ALL_NON_TARGET_PYTHON_BUSINESS_AND_RESOURCE_FUNCTIONS_RAW_EXACT")
     return {"before": before, "after": after, "authority": authority, "inventory": inventory,
+            "paid_consumer_helper_update": {"before": PAID_BEFORE, "after": PAID_CURRENT},
+            "initializer_paid_two_literal_inverse_exact": True,
             "schema_sources": schema_rows, "finance_sources": finance_rows, "merchant_exit_sources": exit_rows,
             "order_menu_sources": order_rows, "order_menu_profile_mode": order_mode,
             "browser_compatibility": browser_compatibility,
@@ -3057,6 +3103,8 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
     derivation["runtime_full17_sealed"] = True
     derivation["finance_bootstrap_sources"] = list(derived["finance_sources"])
     derivation["finance_after_original_early_and_ms6_before_first_app"] = True
+    derivation["paid_consumer_helper_update"] = derived["paid_consumer_helper_update"]
+    derivation["initializer_paid_two_literal_inverse_exact"] = derived["initializer_paid_two_literal_inverse_exact"]
     derivation["merchant_exit_bootstrap_sources"] = list(derived["merchant_exit_sources"])
     derivation["merchant_exit_before_original_early_seal"] = True
     derivation["order_menu_bootstrap_sources"] = list(derived["order_menu_sources"])

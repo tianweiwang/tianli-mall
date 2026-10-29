@@ -510,8 +510,10 @@ function m5pcp_snapshot(PDO $db): array
 }
 /** Decode only the two real saved order numbers and three real temporary references. */
 
-function m5pcp_atomic_redis(Redis $redis): array
+function m5pcp_atomic_redis(Redis $redis,?array &$sequenceProof=null): array
 {
+    $withSequenceProof=func_num_args()===2;
+    if($withSequenceProof)$sequenceProof=null;
     $lua=<<<'LUA'
 local now = redis.call('TIME')
 local names = redis.call('KEYS', '*')
@@ -530,7 +532,30 @@ for _, key in ipairs(names) do
 end
 return {now, rows}
 LUA;
+    if($withSequenceProof){
+        // Only this explicit caller adds GETs; keep the default Lua and native call unchanged.
+        $lua=str_replace("local rows = {}\n","local rows = {}\nlocal sequenceRows = {}\n",$lua,$arraySeam);
+        $sequenceLua=<<<'SEQUENCE'
+    rows[#rows + 1] = {key, kind, expiry, value}
+    if string.len(key) == 13 and string.match(key, '^[1-9][0-9]*$') then
+        local sequenceValue = false
+        if kind == 'string' then
+            sequenceValue = redis.call('GET', key)
+        end
+        sequenceRows[#sequenceRows + 1] = {key, kind, expiry, sequenceValue}
+    end
+SEQUENCE;
+        $lua=str_replace('    rows[#rows + 1] = {key, kind, expiry, value}',$sequenceLua,$lua,$valueSeam);
+        $lua=str_replace('return {now, rows}','return {now, rows, sequenceRows}',$lua,$returnSeam);
+        m5pcp_expect($arraySeam===1&&$valueSeam===1&&$returnSeam===1,'ATOMIC_SEQUENCE_THREE_FINITE_LUA_SEAMS');
+    }
     $raw=$redis->rawCommand('EVAL_RO',$lua,0);
+    $sequenceRows=null;
+    if($withSequenceProof){
+        m5pcp_expect(is_array($raw)&&array_is_list($raw)&&count($raw)===3
+            &&is_array($raw[2])&&array_is_list($raw[2]),'ATOMIC_SEQUENCE_COMPLETE_NATIVE_SIDE_REPLY');
+        $sequenceRows=$raw[2];unset($raw[2]);
+    }
     m5pcp_expect(is_array($raw)&&array_is_list($raw)&&count($raw)===2
         &&is_array($raw[0])&&array_is_list($raw[0])&&count($raw[0])===2
         &&is_array($raw[1])&&array_is_list($raw[1]),'ATOMIC_REDIS_COMPLETE_NATIVE_REPLY');
@@ -553,7 +578,32 @@ LUA;
         }else{m5pcp_expect(is_string($value),'ATOMIC_REDIS_COMPLETE_NATIVE_DUMP');$hash=hash('sha256',$value);}
         $keys[$keyHash]=['type'=>$type,'sha256'=>$hash,'expires'=>$expiry];
     }
-    ksort($keys,SORT_STRING);return ['time'=>$raw[0],'time_ms'=>$nowMs,'keys'=>$keys];
+    ksort($keys,SORT_STRING);$snapshot=['time'=>$raw[0],'time_ms'=>$nowMs,'keys'=>$keys];
+    if($withSequenceProof){
+        $targets=[];
+        foreach($raw[1]as$row)if(preg_match('/\A[1-9][0-9]{12}\z/D',$row[0])===1)$targets[]=$row;
+        m5pcp_expect(count($sequenceRows)===count($targets),'ATOMIC_SEQUENCE_COMPLETE_THIRTEEN_DIGIT_TARGET_SET');
+        $values=[];
+        foreach($targets as$i=>$target){
+            $observed=$sequenceRows[$i];
+            m5pcp_expect(is_array($observed)&&array_is_list($observed)&&count($observed)===4
+                &&$observed[0]===$target[0]&&$observed[1]===$target[1]&&$observed[2]===$target[2]
+                &&(is_string($observed[3])||$observed[3]===false)
+                &&($target[1]==='string'||$observed[3]===false),'ATOMIC_SEQUENCE_SAME_KEY_TYPE_EXPIRY_AND_NATIVE_GET');
+            $keyHash=hash('sha256',$target[0]);$value=$observed[3];
+            m5pcp_expect(!isset($values[$keyHash])&&isset($keys[$keyHash])
+                &&$keys[$keyHash]['type']===$observed[1]&&$keys[$keyHash]['expires']===$observed[2],
+                'ATOMIC_SEQUENCE_UNIQUE_TARGET_MAIN_ROW_BINDING');
+            $values[$keyHash]=['entry_type'=>$observed[1],'entry_expires_ms'=>$observed[2],'raw_type'=>gettype($value),
+                'raw_bytes'=>is_string($value)?strlen($value):null,'raw_sha256'=>is_string($value)?hash('sha256',$value):null,
+                'positive_decimal'=>is_string($value)&&preg_match('/\A[1-9][0-9]*\z/D',$value)===1];
+        }
+        ksort($values,SORT_STRING);
+        $sequenceProof=['schema'=>1,'scope'=>'ATOMIC_REDIS_THIRTEEN_DIGIT_SEQUENCE_VALUES','time'=>$snapshot['time'],
+            'time_ms'=>$snapshot['time_ms'],'redis_snapshot_sha256'=>hash('sha256',serialize($snapshot)),'values'=>$values];
+        unset($sequenceRows,$targets,$observed,$target,$value);
+    }
+    return $snapshot;
 }
 /** Compare complete atomic observations while retaining each original absolute deadline. */
 function m5pcp_redis_deadline_compatible(array $expected,array $current):bool
