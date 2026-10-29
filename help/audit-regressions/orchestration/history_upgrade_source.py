@@ -1,10 +1,11 @@
-"""Fixed initializer seams for the existing history source author; no I/O or CLI.
+"""Fixed initializer and file-observer seams for the history author; no I/O or CLI.
 
 The emitted source candidate requires a real external source review, the original
 producer seal/four CLI and both real normal retirements before registration.
 It does not grant runtime qualification. The original seed, initialize and
 child functions are preserved byte for byte. The default-shipping oracle alone
-includes the nullable owner column already declared by MS2.
+includes the nullable owner column already declared by MS2. The separate file
+bootstrap receives a bounded CLI budget; shared and HTTP configuration is unchanged.
 """
 
 import hashlib
@@ -794,4 +795,40 @@ def reverse_initializer(candidate: bytes) -> bytes:
             raise ValueError("INITIALIZER_UNIQUE_REVERSE_SEAM_REQUIRED")
         raw = raw.replace(after, before, 1)
     _source(raw)
+    return raw
+
+
+FILES_BOOTSTRAP_SOURCE_PIN = (14449, "dbe38371567d495d5567189599a025903b91a22ffa6c8b001aab2509baf1375b")
+_FILES_BOOTSTRAP_BEFORE = b"""        $freezePin = ['path' => '/run/audit/preparation-source-binding.json', 'bytes' => (int) $bytes[1], 'sha256' => $sha[1]];
+        $state = nhe_qualify($freezePin, 'audit-legacy-files-bootstrap');"""
+_FILES_BOOTSTRAP_AFTER = b"""        $freezePin = ['path' => '/run/audit/preparation-source-binding.json', 'bytes' => (int) $bytes[1], 'sha256' => $sha[1]];
+        // This short-lived CLI retains full source proofs and performs the existing old-App bootstrap.
+        // Its local budget does not alter shared configuration or another PHP/HTTP process.
+        nhe_expect(ini_get('memory_limit') === '128M', 'NHE_FILES_ORIGINAL_CLI_MEMORY_BUDGET');
+        $previousMemoryLimit = ini_set('memory_limit', '512M');
+        nhe_expect($previousMemoryLimit === '128M' && ini_get('memory_limit') === '512M',
+            'NHE_FILES_BOUNDED_CLI_MEMORY_BUDGET');
+        $state = nhe_qualify($freezePin, 'audit-legacy-files-bootstrap');"""
+
+
+def _files_bootstrap_source(raw):
+    if not isinstance(raw, bytes) or (len(raw), hashlib.sha256(raw).hexdigest()) != FILES_BOOTSTRAP_SOURCE_PIN:
+        raise ValueError("FILES_BOOTSTRAP_EXACT_ARCHIVED_SOURCE_REQUIRED")
+
+
+def transform_files_bootstrap(raw: bytes) -> bytes:
+    _files_bootstrap_source(raw)
+    if raw.count(_FILES_BOOTSTRAP_BEFORE) != 1 or _FILES_BOOTSTRAP_AFTER in raw:
+        raise ValueError("FILES_BOOTSTRAP_UNIQUE_FORWARD_SEAM_REQUIRED")
+    candidate = raw.replace(_FILES_BOOTSTRAP_BEFORE, _FILES_BOOTSTRAP_AFTER, 1)
+    if reverse_files_bootstrap(candidate) != raw:
+        raise ValueError("FILES_BOOTSTRAP_COMPLETE_REVERSE_REQUIRED")
+    return candidate
+
+
+def reverse_files_bootstrap(candidate: bytes) -> bytes:
+    if not isinstance(candidate, bytes) or candidate.count(_FILES_BOOTSTRAP_AFTER) != 1:
+        raise ValueError("FILES_BOOTSTRAP_UNIQUE_REVERSE_SEAM_REQUIRED")
+    raw = candidate.replace(_FILES_BOOTSTRAP_AFTER, _FILES_BOOTSTRAP_BEFORE, 1)
+    _files_bootstrap_source(raw)
     return raw
