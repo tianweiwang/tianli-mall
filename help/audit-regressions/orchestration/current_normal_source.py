@@ -2496,26 +2496,11 @@ def _b_materials(materials: dict[str, Any], authority_pointer: dict[str, Any],
     return emitted, result
 
 
-def build_b_source(output: str | Path, authority_pointer: dict[str, Any],
-                   fixed_inputs_pointer: dict[str, Any]) -> dict[str, Any]:
-    """Publish a Source candidate only after every original actual B prerequisite."""
-    fixed = decode(read_pointer(fixed_inputs_pointer))
-    require(type(fixed) is dict and set(fixed) == {"schema", "scope", "source_authority", "normal",
-        "A", "materials", "build_proofs", "base_source", "history", "runtime_root", "network_subnets"}
-        and fixed["schema"] == 1 and fixed["scope"] == "CURRENT_B_FIXED_ACTUAL_PREREQUISITES"
-        and fixed["source_authority"] == authority_pointer, "B_EXPLICIT_FIXED_ACTUAL_PREREQUISITES")
-    derived = derive_b_profile(authority_pointer, fixed["network_subnets"])
-    authority, inventory = derived["authority"], derived["inventory"]
-    out = Path(output)
-    ordinary(out, missing_leaf=True)
-    require(out.is_absolute() and not out.exists(), "ONE_CREATE_ONLY_EXTERNAL_B_SOURCE")
-    for protected in (Path(__file__).resolve().parents[3], BASELINE, HISTORICAL_NORMAL,
-                      Path(authority["candidate_root"]), Path(authority["validation_root"])):
-        require(not out.is_relative_to(protected) and not protected.is_relative_to(out), "B_OUTPUT_DISJOINT_FROM_ALL_FIXED_SOURCES")
-    for protected in (Path(fixed["normal"]["root"]), Path(fixed["materials"]["root"]), Path(fixed["base_source"]["root"])):
-        require(not out.is_relative_to(protected) and not protected.is_relative_to(out), "B_OUTPUT_DISJOINT_FROM_ACTUAL_INPUT_PACKETS")
-    require(not Path(fixed_inputs_pointer["path"]).is_relative_to(out), "B_FIXED_INPUT_DESCRIPTOR_OUTSIDE_NEW_OUTPUT")
-    normal = fixed["normal"]
+def _completed_normal_a(normal: dict[str, Any], a: dict[str, Any],
+                        authority_pointer: dict[str, Any], authority: dict[str, Any]) -> tuple:
+    """Shared B/post-A gate; observe the real outer terminal before any Run read."""
+    require(type(a["session"]) is int and a["session"] > 0, "B_REAL_SUCCESSFUL_A_OUTER_SESSION")
+    a_created, _ = _b_outer(a["outer"])
     require(set(normal) == {"root", "review", "result", "outer"}, "B_EXACT_CURRENT_NORMAL_M_INPUTS")
     normal_root = Path(normal["root"])
     binding = decode(read_pointer(_pointer(normal_root / "qualification/CURRENT-BINDING.json")))
@@ -2537,16 +2522,9 @@ def build_b_source(output: str | Path, authority_pointer: dict[str, Any],
                  "REPO": Path(authority["validation_root"])}
     exec(compile(consumer, "reviewed-current-normal-readonly-preflight", "exec"), namespace)
     setup = namespace["current_b_normal_materialization"]()
-    a = fixed["A"]
-    require(type(a) is dict and set(a) == {"session", "outer", "normal_root_result", "worker_close",
-        "independent_zero", "post_a_history", "context", "post_a_contract"}, "B_ALL_FIVE_ACTUAL_A_PROOFS_REQUIRED")
-    require(type(a["session"]) is int and a["session"] > 0, "B_REAL_SUCCESSFUL_A_OUTER_SESSION")
-    a_created, _ = _b_outer(a["outer"])
     actual_normal_argv(a_created, "normal-start")
-    context = decode(read_pointer(a["context"]))
-    final = decode(read_pointer(a["normal_root_result"]))
-    close = decode(read_pointer(a["worker_close"])); zero = decode(read_pointer(a["independent_zero"]))
-    post = decode(read_pointer(a["post_a_history"]))
+    raw = {key: read_pointer(a[key]) for key in ("context", "normal_root_result", "worker_close", "independent_zero")}
+    context, final, close, zero = (decode(raw[key]) for key in ("context", "normal_root_result", "worker_close", "independent_zero"))
     require(final["status"] == "ROOT_NORMAL_MIGRATIONS_BUSINESS_WORKER_CLOSE_AND_INDEPENDENT_ZERO_NATIVE_ZERO"
             and close["status"] == "VERIFIED_MS4_WORKER_NORMAL_CLOSE_ZERO_RESIDUAL"
             and zero["status"] == "VERIFIED_MS4_WORKER_NORMAL_INDEPENDENT_SIX_QUERY_ZERO",
@@ -2563,6 +2541,69 @@ def build_b_source(output: str | Path, authority_pointer: dict[str, Any],
             and all(type(row["native_exit"]) is int and row["native_exit"] == 0
                     and row["stdout_bytes"] == row["stderr_bytes"] == 0 for row in zero["queries"]),
             "B_ORIGINAL_ORDINARY_A_RETIREMENT_AND_SIX_NATIVE_RAW_EMPTY_QUERIES")
+    # These are the original current_original_retirement public receipt joins.
+    # Sharing them here keeps B publication and post-A collection on one gate.
+    run = Path(context["run_dir"]); profile = normal_root / "validation/actual-profile"
+    require(context["project"] == "tianli-audit-" + context["run_id"]
+            and re.fullmatch(r"[0-9a-f]{20}", context["run_id"]) is not None
+            and run.name == context["run_id"], "A_EXACT_RUN_AND_PROJECT")
+    for key, path in {"context": run / "actual-run-context.json",
+                      "normal_root_result": run / "root-orchestration/RESULT.json",
+                      "worker_close": run / "evidence/ms4-worker-normal-close-result.json",
+                      "independent_zero": run / "evidence/ms4-worker-normal-independent-zero.json"}.items():
+        require(a[key]["path"] == path.as_posix(), "A_ORIGINAL_PUBLIC_RESULT_PATH_" + key)
+    require(final == {"status": "ROOT_NORMAL_MIGRATIONS_BUSINESS_WORKER_CLOSE_AND_INDEPENDENT_ZERO_NATIVE_ZERO",
+        "run_id": context["run_id"], "source_sha": authority["source_sha"], "context": a["context"]["path"],
+        "worker_scope": "VERIFIED_NORMAL_WORKER_NON_DUE_LIFECYCLE_ONLY", "full_acceptance": "INCOMPLETE",
+        "DOM_nonempty_history_due_finance_release": "NOT RUN"}, "A_ORIGINAL_COMPLETE_FINAL_RECEIPT")
+    for value, scope in ((close, "MS4_WORKER_NORMAL_CLOSE_ONLY"),
+                         (zero, "MS4_WORKER_NORMAL_CLOSE_INDEPENDENT_ZERO_ONLY")):
+        require(value["scope"] == scope and value["freeze_sha256"] == context["freeze_sha256"]
+                and value["context_sha256"] == pin(raw["context"])["sha256"]
+                and type(value["native_exit"]) is int and value["native_exit"] == 0
+                and value["full_acceptance"] == "INCOMPLETE" and value["stopped_samples"] == "NOT RUN",
+                "A_ORIGINAL_CLOSE_ZERO_CONTEXT_FREEZE_AND_SCOPE")
+    require(close["close_source_sha256"] == zero["close_source_sha256"]
+            == pin(stable_read(profile / "normal-close-ms4-fulfillment.py"))["sha256"]
+            and close["reviewed_host_sha256"] == zero["host_source_sha256"]
+            == pin(stable_read(profile / "ms4-host.py"))["sha256"]
+            and zero["zero_source_sha256"] == pin(stable_read(profile / "verify-zero-ms4-fulfillment.py"))["sha256"]
+            and zero["close_result_sha256"] == pin(raw["worker_close"])["sha256"], "A_ORIGINAL_CLOSE_ZERO_SOURCE_JOINS")
+    require(set(close["final_inventory"]) == {"container", "network", "volume"}
+            and all(set(labels) == {"project", "run"} and all(items == [] for items in labels.values())
+                    for labels in close["final_inventory"].values())
+            and all(row["stdout_sha256"] == row["stderr_sha256"] == pin(b"")["sha256"] for row in zero["queries"]),
+            "A_ORIGINAL_EMPTY_INVENTORY_AND_QUERY_HASHES")
+    frozen = stable_read(run / "preparation-source-binding.json")
+    require(frozen == read_pointer({"path": setup["freeze"], "bytes": len(frozen), "sha256": setup["freeze_sha256"]})
+            and decode(frozen)["source_sha"] == authority["source_sha"], "A_ORIGINAL_RUN_AND_M_FREEZE_BYTES")
+    return consumer, setup, context, raw
+
+
+def build_b_source(output: str | Path, authority_pointer: dict[str, Any],
+                   fixed_inputs_pointer: dict[str, Any]) -> dict[str, Any]:
+    """Publish a Source candidate only after every original actual B prerequisite."""
+    fixed = decode(read_pointer(fixed_inputs_pointer))
+    require(type(fixed) is dict and set(fixed) == {"schema", "scope", "source_authority", "normal",
+        "A", "materials", "build_proofs", "base_source", "history", "runtime_root", "network_subnets"}
+        and fixed["schema"] == 1 and fixed["scope"] == "CURRENT_B_FIXED_ACTUAL_PREREQUISITES"
+        and fixed["source_authority"] == authority_pointer, "B_EXPLICIT_FIXED_ACTUAL_PREREQUISITES")
+    derived = derive_b_profile(authority_pointer, fixed["network_subnets"])
+    authority, inventory = derived["authority"], derived["inventory"]
+    out = Path(output)
+    ordinary(out, missing_leaf=True)
+    require(out.is_absolute() and not out.exists(), "ONE_CREATE_ONLY_EXTERNAL_B_SOURCE")
+    for protected in (Path(__file__).resolve().parents[3], BASELINE, HISTORICAL_NORMAL,
+                      Path(authority["candidate_root"]), Path(authority["validation_root"])):
+        require(not out.is_relative_to(protected) and not protected.is_relative_to(out), "B_OUTPUT_DISJOINT_FROM_ALL_FIXED_SOURCES")
+    for protected in (Path(fixed["normal"]["root"]), Path(fixed["materials"]["root"]), Path(fixed["base_source"]["root"])):
+        require(not out.is_relative_to(protected) and not protected.is_relative_to(out), "B_OUTPUT_DISJOINT_FROM_ACTUAL_INPUT_PACKETS")
+    require(not Path(fixed_inputs_pointer["path"]).is_relative_to(out), "B_FIXED_INPUT_DESCRIPTOR_OUTSIDE_NEW_OUTPUT")
+    a = fixed["A"]
+    require(type(a) is dict and set(a) == {"session", "outer", "normal_root_result", "worker_close",
+        "independent_zero", "post_a_history", "context", "post_a_contract"}, "B_ALL_FIVE_ACTUAL_A_PROOFS_REQUIRED")
+    consumer, setup, context, _ = _completed_normal_a(fixed["normal"], a, authority_pointer, authority)
+    post = decode(read_pointer(a["post_a_history"]))
     post_contract = a["post_a_contract"]
     require(set(post_contract) == {"header", "files_key", "retained_public_files", "prior_public_inventory",
                                    "public_roots", "public_root_files"}
@@ -2575,6 +2616,235 @@ def build_b_source(output: str | Path, authority_pointer: dict[str, Any],
     # the original guards and require a separate fixed independent Source review.
     return _b_publish(out, fixed_inputs_pointer, fixed, derived, consumer, setup, context,
                       materials, material_result)
+
+
+class _PostAReads:
+    """Stable opaque public bytes plus the complete explicit tree namespaces."""
+    def __init__(self) -> None:
+        self.files: dict[str, dict[str, Any]] = {}
+        self.trees: dict[str, dict[str, Any]] = {}
+
+    @staticmethod
+    def identity(path: Path) -> list[int | None]:
+        ordinary(path)
+        info = path.lstat()
+        return [*(getattr(info, key) for key in STAT_FIELDS), getattr(info, "st_birthtime_ns", None)]
+
+    def read(self, path: Path, pointer: dict[str, Any] | None = None) -> bytes:
+        require(path.as_posix() == path.resolve(strict=True).as_posix(), "POST_A_CANONICAL_PUBLIC_PATH")
+        before = self.identity(path)
+        raw = read_pointer(pointer) if pointer is not None else stable_read(path)
+        require(pointer is None or pointer["path"] == path.as_posix(), "POST_A_EXACT_READ_PATH")
+        require(self.identity(path) == before, "POST_A_COMPLETE_READ_WINDOW")
+        row = {"path": path.as_posix(), **pin(raw), "native9_and_birthtime": before}
+        require(path.as_posix() not in self.files or self.files[path.as_posix()] == row,
+                "POST_A_REPEATED_BYTES_AND_IDENTITY_UNCHANGED")
+        self.files[path.as_posix()] = row
+        return raw
+
+    def pointer(self, pointer: dict[str, Any]) -> bytes:
+        return self.read(Path(pointer["path"]), pointer)
+
+    def namespace(self, root: Path) -> dict[str, Any]:
+        require(root.as_posix() == root.resolve(strict=True).as_posix(), "POST_A_CANONICAL_PUBLIC_TREE")
+        files: list[str] = []; directories: dict[str, list[int | None]] = {}
+        def walk(folder: Path) -> None:
+            before = self.identity(folder)
+            require(stat.S_ISDIR(before[2]), "POST_A_PUBLIC_DIRECTORY")
+            directories[folder.relative_to(root).as_posix()] = before
+            for path in sorted(folder.iterdir(), key=lambda value: value.name):
+                info = self.identity(path)
+                name = path.relative_to(root).as_posix()
+                require(not re.search(r"(^/|\\|[\x00-\x1f\x7f]|(^|/)\.\.?(/|$)|//|:|/$)", name),
+                        "POST_A_ORDINARY_PUBLIC_MEMBER")
+                if stat.S_ISDIR(info[2]):
+                    walk(path)
+                else:
+                    require(stat.S_ISREG(info[2]) and info[3] == 1, "POST_A_PUBLIC_REGULAR_SINGLE_LINK")
+                    files.append(name)
+            require(self.identity(folder) == before, "POST_A_DIRECTORY_ENUMERATION_WINDOW")
+        walk(root)
+        return {"files": sorted(files), "directories": dict(sorted(directories.items()))}
+
+    def tree(self, root: Path) -> list[dict[str, Any]]:
+        state = self.namespace(root)
+        require(root.as_posix() not in self.trees or self.trees[root.as_posix()] == state,
+                "POST_A_REPEATED_COMPLETE_NAMESPACE")
+        self.trees[root.as_posix()] = state
+        rows = [{"path": (root / name).as_posix(), **pin(self.read(root / name))} for name in state["files"]]
+        require(self.namespace(root) == state, "POST_A_TREE_READ_NAMESPACE_HELD")
+        return rows
+
+    def finish(self) -> dict[str, Any]:
+        for root, state in self.trees.items():
+            require(self.namespace(Path(root)) == state, "POST_A_FINAL_COMPLETE_NAMESPACE_BEFORE")
+        for row in list(self.files.values()):
+            self.pointer({key: row[key] for key in ("path", "bytes", "sha256")})
+        for root, state in self.trees.items():
+            require(self.namespace(Path(root)) == state, "POST_A_FINAL_COMPLETE_NAMESPACE_AFTER")
+        return {"files": [self.files[name] for name in sorted(self.files)],
+                "trees": dict(sorted(self.trees.items())), "all_full_reads_and_namespaces_held": True}
+
+
+def _post_a_paths(normal_root: Path, run: Path, public_names: list[str]) -> tuple[list[Path], list[Path]]:
+    validation = normal_root / "validation"
+    roots = [run / "evidence", run / "root-orchestration", validation / "actual-profile",
+             validation / "materialize-freeze-assets-r1", validation / "native-normal-start-assets-r1",
+             normal_root / "materializer"]
+    files = [validation / name for name in ("DESIGN-TASKS.md", "run.py", "PINS.json", "PROFILE-PINS.json", "PROFILE-PUBLICATION.json")]
+    files += [run / name for name in public_names + ["proof-php-ini/99-ms4-proof-memory.ini"]]
+    require(len(roots) == 6 and len(files) == 13, "POST_A_ORIGINAL_SIX_TREES_THIRTEEN_PUBLIC_FILES")
+    return roots, files
+
+
+def _post_a_rows(contract: dict[str, Any], roots: list[Path], files: list[Path],
+                 reads: _PostAReads) -> list[dict[str, Any]]:
+    require(type(contract) is dict and set(contract) == {"header", "files_key", "retained_public_files",
+        "prior_public_inventory", "public_roots", "public_root_files"}, "POST_A_ORIGINAL_SIX_KEY_CONTRACT")
+    require(contract["public_roots"] == [path.as_posix() for path in roots]
+            and contract["public_root_files"] == [path.as_posix() for path in files], "POST_A_EXACT_DERIVED_PUBLIC_CLOSED_SET")
+    prior = contract["prior_public_inventory"]
+    require(type(prior) is dict and set(prior) == {"descriptor", "header", "files_key"}, "POST_A_EXPLICIT_PRIOR_INVENTORY")
+    previous = decode(reads.pointer(prior["descriptor"]))
+    key = prior["files_key"]
+    require(type(prior["header"]) is dict and type(key) is str and key not in prior["header"]
+            and type(previous) is dict and set(previous) == set(prior["header"]) | {key}
+            and {name: previous[name] for name in prior["header"]} == prior["header"], "POST_A_EXACT_PRIOR_HEADER")
+    old_rows, retained = previous[key], contract["retained_public_files"]
+    for rows in (old_rows, retained):
+        require(type(rows) is list and rows and [row["path"] for row in rows] == sorted({row["path"] for row in rows}),
+                "POST_A_COMPLETE_SORTED_UNIQUE_PRIOR_AND_RETAINED")
+    expected: dict[str, dict[str, Any]] = {}
+    def add(row: dict[str, Any]) -> None:
+        reads.pointer(row)
+        require(row["path"] not in expected or expected[row["path"]] == row, "POST_A_IDENTICAL_COMPLETE_OVERLAP_ONLY")
+        expected[row["path"]] = row
+    for row in old_rows + [prior["descriptor"]] + retained:
+        add(row)
+    for root in roots:
+        for row in reads.tree(root):
+            # tree() already did the complete stable read; repeated origins
+            # must still have the same full descriptor, never a path whitelist.
+            require(row["path"] not in expected or expected[row["path"]] == row, "POST_A_IDENTICAL_TREE_OVERLAP_ONLY")
+            expected[row["path"]] = row
+    for path in files:
+        add({"path": path.as_posix(), **pin(reads.read(path))})
+    return sorted(expected.values(), key=lambda row: row["path"])
+
+
+def _post_a_consume(source: bytes, contract: dict[str, Any], history: dict[str, Any],
+                    normal_root: Path, runtime: Path, context: dict[str, Any], a: dict[str, Any],
+                    raw: dict[str, bytes]) -> list[dict[str, Any]]:
+    """Execute only the original pure six-key consumer and its read-only helpers."""
+    run = Path(context["run_dir"])
+    namespace = {"Path": Path, "stat": stat, "re": re, "json": json, "hashlib": hashlib,
+        "POST_A_HISTORY_CONTRACT": contract, "A_QUALIFICATION": {**a, "post_a_history": history},
+        "OLD_ROOT": run, "OLD_ARCHIVE": run / "root-orchestration", "OLD_PROFILE": normal_root / "validation/actual-profile",
+        "NORMAL_SOURCE": normal_root / "validation", "RUNTIME": runtime,
+        "OLD_RESULT": Path(a["normal_root_result"]["path"]), "PUBLIC_ROOT_FILES": constant(source, "PUBLIC_ROOT_FILES")}
+    names = ("sha", "ordinary", "file_pin", "tree", "current_post_a_history")
+    code = "\n\n".join(_source_function(source, name) for name in names)
+    exec(compile(code, "original-six-key-post-a-public-consumer", "exec"), namespace)
+    args = argparse.Namespace(public_history_inventory=history["path"], public_history_inventory_sha256=history["sha256"])
+    rows, _ = namespace["current_post_a_history"](args, context, raw["normal_root_result"], raw["worker_close"], raw["independent_zero"])
+    return rows
+
+
+def collect_post_a_history(output: str | Path, authority_pointer: dict[str, Any],
+                           fixed_inputs_pointer: dict[str, Any]) -> dict[str, Any]:
+    """Collect completed A public history only; never start/replay/retire a Run."""
+    require(__debug__, "POST_A_ORIGINAL_ASSERTIONS_ENABLED")
+    reads = _PostAReads()
+    tool_path = Path(__file__).resolve()
+    tool_pointer = {"path": tool_path.as_posix(), **pin(reads.read(tool_path))}
+    fixed = decode(reads.pointer(fixed_inputs_pointer))
+    require(type(fixed) is dict and set(fixed) == {"schema", "scope", "source_authority", "normal", "A", "post_a_contract", "runtime_root"}
+            and type(fixed["schema"]) is int and fixed["schema"] == 1
+            and fixed["scope"] == "CURRENT_POST_A_FIXED_PUBLIC_INPUTS" and fixed["source_authority"] == authority_pointer,
+            "POST_A_EXPLICIT_FIXED_PUBLIC_INPUTS")
+    a, normal = fixed["A"], fixed["normal"]
+    require(type(a) is dict and set(a) == {"session", "outer", "context", "normal_root_result", "worker_close", "independent_zero"},
+            "POST_A_COMPLETED_A_INPUTS_WITHOUT_FUTURE_HISTORY")
+    # This must precede authority/M traversal, context access and every Run read.
+    created, _ = _b_outer(a["outer"])
+    for row in a["outer"].values(): reads.pointer(row)
+    reads.pointer(authority_pointer)
+    authority, _ = reviewed_authority(authority_pointer)
+    for row in (authority["capture"], authority["independent_review"]): reads.pointer(row)
+    capture = decode(reads.pointer(authority["capture"]))
+    for name in ("SOURCE-INVENTORY.jsonl", "SOURCE-DELTA.json", "BASELINE-INVENTORY.jsonl"):
+        reads.pointer(capture["files"][name])
+    _, setup, context, actual_raw = _completed_normal_a(normal, a, authority_pointer, authority)
+    normal_root, run, out, runtime = Path(normal["root"]), Path(context["run_dir"]), Path(output), Path(fixed["runtime_root"])
+    ordinary(out, missing_leaf=True); ordinary(runtime, missing_leaf=True)
+    require(out.is_absolute() and not out.exists() and out.parent.is_dir(), "POST_A_ONE_NEW_EXTERNAL_DIRECTORY")
+    require(runtime.parent == BASELINE.parent and not runtime.exists(), "POST_A_ORIGINAL_FUTURE_B_RUNTIME_BOUNDARY")
+    protected = [Path(__file__).resolve().parents[3], BASELINE, HISTORICAL_NORMAL, normal_root, run, runtime,
+                 Path(authority["candidate_root"]), Path(authority["validation_root"])]
+    for path in protected:
+        require(not out.is_relative_to(path) and not path.is_relative_to(out), "POST_A_OUTPUT_DISJOINT_FROM_SOURCES_RUN_AND_B")
+    baseline = decode(reads.pointer(BASELINE_PINS))
+    member = "b/root-source/root-ui-materialize-freeze.py"
+    consumer_pointer = {"path": (BASELINE / member).as_posix(), **baseline["members"][member]}
+    original = reads.pointer(consumer_pointer)
+    # The original coordinator-history consumer reads saved same-child receipts;
+    # it never invokes a Host/CLI or repeats close/zero/Docker observations.
+    native_namespace = {"Path": Path, "stat": stat, "re": re, "json": json, "hashlib": hashlib,
+        "NORMAL_SOURCE": normal_root / "validation", "OLD_ARCHIVE": run / "root-orchestration", "OLD_ROOT": run,
+        "OLD_PROFILE": normal_root / "validation/actual-profile", "OLD_RUN": context["run_id"],
+        "PREVIOUS": authority["source_sha"], "OLD_FREEZE": setup["freeze_sha256"], "OLD_NATIVE_PINS": [],
+        "OLD_COORDINATOR_SHA": pin(reads.read(normal_root / "validation/run.py"))["sha256"],
+        "OLD_CLI_PINS": {name: pin(reads.read(normal_root / "validation/actual-profile" / name))["sha256"]
+                         for name in ("ms4-host.py", "normal-close-ms4-fulfillment.py", "verify-zero-ms4-fulfillment.py")}}
+    code = "\n\n".join(_source_function(original, name) for name in ("sha", "ordinary", "prior_native_history"))
+    exec(compile(code, "original-readonly-coordinator-history-consumer", "exec"), native_namespace)
+    commands = native_namespace["prior_native_history"](context, actual_raw["worker_close"], actual_raw["independent_zero"])
+    for row in native_namespace["OLD_NATIVE_PINS"]: reads.pointer(row)
+    roots, files = _post_a_paths(normal_root, run, constant(original, "PUBLIC_ROOT_FILES"))
+    contract = fixed["post_a_contract"]
+    header = {"schema": 1, "scope": "CURRENT_NORMAL_A_POST_SUCCESS_PUBLIC_HISTORY", "run_id": context["run_id"],
+              "source_sha": authority["source_sha"], "freeze_sha256": setup["freeze_sha256"],
+              "outer_session": a["session"], "outer_pid": created["pid"], "full_acceptance": "INCOMPLETE", "stopped_samples": "NOT RUN"}
+    require(contract["header"] == header and contract["files_key"] == "files", "POST_A_EXACT_CURRENT_PUBLIC_ONLY_HEADER")
+    for row in [*normal["outer"].values(), normal["review"], normal["result"],
+                *(a[key] for key in ("context", "normal_root_result", "worker_close", "independent_zero"))]: reads.pointer(row)
+    review = decode(reads.pointer(normal["review"]))
+    for name, row in review["members"].items():
+        require(not Path(name).is_absolute() and ".." not in Path(name).parts, "POST_A_NORMAL_REVIEW_SAFE_MEMBER")
+        reads.pointer({"path": (normal_root / name).as_posix(), **row})
+    reads.read(normal_root / "qualification/CURRENT-BINDING.json")
+    rows = _post_a_rows(contract, roots, files, reads)
+    for path in [Path(row["path"]) for row in reads.files.values()]:
+        require(not path.is_relative_to(out) and not out.is_relative_to(path), "POST_A_NO_INPUT_OUTPUT_OVERLAP")
+    for key in ("normal_root_result", "worker_close", "independent_zero"):
+        require(a[key] in rows and pin(actual_raw[key]) == {name: a[key][name] for name in ("bytes", "sha256")},
+                "POST_A_UNION_CONTAINS_ORIGINAL_SUCCESS_BYTES")
+    reads.finish()
+    history_raw = encode({**header, "files": rows})
+    history = {"path": (out / "POST-A-PUBLIC-HISTORY.json").as_posix(), **pin(history_raw)}
+    out.mkdir()
+    def write(name: str, data: bytes) -> dict[str, Any]:
+        path = out / name
+        ordinary(path, missing_leaf=True)
+        with path.open("xb") as stream:
+            require(stream.write(data) == len(data), "POST_A_COMPLETE_NEW_OUTPUT")
+        require(stable_read(path) == data, "POST_A_NEW_OUTPUT_EXACT_READBACK")
+        return {"path": path.as_posix(), **pin(data)}
+    write("POST-A-PUBLIC-HISTORY.json", history_raw)
+    require(_post_a_consume(original, contract, history, normal_root, runtime, context, a, actual_raw) == rows + [history],
+            "POST_A_ORIGINAL_SIX_KEY_CONSUMER_ACCEPTED_EXACT_UNION")
+    windows = reads.finish()
+    require(stable_read(Path(history["path"])) == history_raw, "POST_A_HISTORY_HELD_THROUGH_CONSUMER_AND_FINAL_WINDOW")
+    contract_pointer = write("POST-A-CONTRACT.json", encode(contract))
+    windows_pointer = write("PUBLIC-INPUT-WINDOWS.json", encode(windows))
+    result = {"schema": 1, "status": "COLLECTED_COMPLETED_A_PUBLIC_HISTORY_ONLY", "source_sha": authority["source_sha"],
+        "run_id": context["run_id"], "fixed_inputs": fixed_inputs_pointer, "maintenance_tool": tool_pointer,
+        "original_consumer": consumer_pointer, "history": history, "contract": contract_pointer, "windows": windows_pointer,
+        "public_files": len(rows), "original_six_key_consumer_accepted": True, "all_windows_ended": True,
+        "original_coordinator_native_commands": len(commands),
+        "original_close_zero_consumed_without_rerun": True, "B_generated": False, "full_acceptance": "INCOMPLETE", "stopped_samples": "NOT RUN"}
+    write("RESULT.json", encode(result))
+    return result
 
 
 _B_SOURCE_REVIEW = r'''
@@ -2936,20 +3206,35 @@ def main() -> None:
     destination.add_argument("--output", help="Derive the exact Core9 profile directory.")
     destination.add_argument("--normal-source", help="Author the complete normal18 around an existing reviewed Core9.")
     destination.add_argument("--b-source", help="Derive original B Source after fixed actual M, A and five-material proofs.")
+    destination.add_argument("--post-a-history", help="Collect only completed A public history in one new external directory.")
     parser.add_argument("--b-inputs-file", help="Explicit completed current B prerequisite descriptor; only with --b-source.")
     parser.add_argument("--b-inputs-sha256", help="Fixed SHA256 of the complete B prerequisite descriptor.")
+    parser.add_argument("--post-a-inputs-file", help="Explicit completed A, prior inventory, retained and six-key public contract; only with --post-a-history.")
+    parser.add_argument("--post-a-inputs-sha256", help="Fixed SHA256 of the complete public post-A input descriptor.")
     parser.add_argument("--isolation-subnet", help="Optional canonical RFC1918 IPv4 CIDR; only with --output.")
     parser.add_argument("--initializer-syntax-result", help="Actual successful current initializer syntax receipt, for normal18.")
     parser.add_argument("--authority-file", required=True)
     parser.add_argument("--authority-sha256", required=True)
     args = parser.parse_args()
     require(args.output is not None or args.isolation_subnet is None, "ISOLATION_SUBNET_ONLY_FOR_PROFILE_OUTPUT")
+    require(args.post_a_history is not None or args.post_a_inputs_file is None and args.post_a_inputs_sha256 is None,
+            "POST_A_INPUTS_ONLY_FOR_POST_A_HISTORY")
     require(re.fullmatch(r"[a-f0-9]{64}", args.authority_sha256) is not None, "FIXED_AUTHORITY_SHA256")
     path = Path(args.authority_file)
     raw = stable_read(path)
     pointer = {"path": path.as_posix(), "bytes": len(raw), "sha256": args.authority_sha256}
     require(pin(raw)["sha256"] == args.authority_sha256, "EXPLICIT_AUTHORITY_SHA256_MATCH")
-    if args.b_source:
+    if args.post_a_history:
+        require(args.b_inputs_file is None and args.b_inputs_sha256 is None and args.initializer_syntax_result is None
+                and args.post_a_inputs_file is not None and type(args.post_a_inputs_sha256) is str
+                and re.fullmatch(r"[a-f0-9]{64}", args.post_a_inputs_sha256) is not None,
+                "POST_A_FIXED_COMPLETE_PUBLIC_INPUT_FILE_AND_SHA_REQUIRED")
+        fixed_path = Path(args.post_a_inputs_file)
+        fixed_raw = stable_read(fixed_path)
+        fixed_pointer = {"path": fixed_path.as_posix(), "bytes": len(fixed_raw), "sha256": args.post_a_inputs_sha256}
+        require(pin(fixed_raw)["sha256"] == args.post_a_inputs_sha256, "POST_A_EXPLICIT_INPUT_DESCRIPTOR_SHA")
+        result = collect_post_a_history(args.post_a_history, pointer, fixed_pointer)
+    elif args.b_source:
         require(args.initializer_syntax_result is None and args.b_inputs_file is not None
                 and type(args.b_inputs_sha256) is str and re.fullmatch(r"[a-f0-9]{64}", args.b_inputs_sha256),
                 "B_FIXED_COMPLETE_PREREQUISITE_FILE_AND_SHA_REQUIRED")

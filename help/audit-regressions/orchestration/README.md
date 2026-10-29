@@ -22,6 +22,10 @@ B 对该 helper 使用同一独审前后值，并逐项连接 B 当前表单向�
 
 同一作者的 `--b-source <新目录> --b-inputs-file <固定输入JSON> --b-inputs-sha256 <摘要>` 有限接入原13卷B来源；仍须提供 `--authority-file/--authority-sha256`。输入绑定真实M及外层双流、成功A的外层终态/正常结果/关闭/独立核零/后续历史五项证明，以及当前五材料和三端实际构建依据；A未通过时不生成B。来源包沿原17成员和浏览器合同固定完整摘要，两个Root入口在执行时读取独立技术复核，这不是新增用户确认。原A默认派生、历史记录、业务检查及停止样本范围保持。
 
+同一入口的 `--post-a-history <全新外部目录> --post-a-inputs-file <固定公开输入JSON> --post-a-inputs-sha256 <摘要>` 配合原 authority 两参数，收集成功 A 的公共记录。输入固定为 `schema/scope/source_authority/normal/A/post_a_contract/runtime_root`，scope 为 `CURRENT_POST_A_FIXED_PUBLIC_INPUTS`；normal 复用原 M 四项，A 提供真实 session、outer 四件及 context/normal_root_result/worker_close/independent_zero。工具先消费外层自然 exit/wait 0，再复用当前 M/A 关联与原协调器回执；不会启动、重跑或清理实例。A 驱动自身已串行执行普通关闭和独立核零，不能另行重复调用。
+
+`post_a_contract` 保留原六键：`header/files_key/retained_public_files/prior_public_inventory/public_roots/public_root_files`。六棵公共树和十三个固定公件从当前绑定推导，与输入全等；旧清单原件及全部原行、retained 和当前公件形成完整并集，重叠路径必须字节相同。显式未来 B 的 runtime_root 只用于原隔离边界检查，不创建 B。全量复读及原六键消费者回读通过后，依次保留 `POST-A-PUBLIC-HISTORY.json`、`POST-A-CONTRACT.json`、`PUBLIC-INPUT-WINDOWS.json`，最后发布 `RESULT.json`；失败时保留已有输出，不能覆盖重用。回执单列实际维护工具摘要，既不改写冻结 App 资格，也不代表 B、页面或完整验收已经通过。
+
 B的两个网络使用固定输入 `network_subnets.isolation/ui_web`，只接收互不重叠的规范RFC1918网段并核实际IPAM。Root启动前仍须检查地址空闲；复用A网段须先有真实关闭及独立核零。部署public采用同一根部install排除投影，完整安装器来源仍保全；三端构建保留各自真实来源，只有完整输入一致才能复用。
 
 B Root M 的 proof 配置回执保留原 Host `PROOF_INI_REFERENCE` 的真实绝对路径、字节数和摘要，不随新 B 包的 `PREPARED` 目录迁移。作者核原/派生 Host 指针完全相同并读取原回执，只替换 `frozen_resources` 内这一处路径表达式；不复制旧回执或放宽单文件、内存值、角色、扫描目录和完整资源比较。B 工具修复独立记录实际工具字节，不改已冻结的应用来源或重启正在运行的 A。
