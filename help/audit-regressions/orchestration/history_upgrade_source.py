@@ -841,7 +841,44 @@ _PRODUCER_ENTRY_BEFORE = br"""if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') ==
     exit(1);
 }
 """
-_PRODUCER_ENTRY_AFTER = b"""if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
+_PRODUCER_ENTRY_AFTER = br"""if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
+    if (PHP_SAPI === 'cli') {
+        $nhepFatalReserve = str_repeat("\0", 32768);
+        register_shutdown_function(static function () use (&$nhepFatalReserve): void {
+            $nhepFatalReserve = null;
+            $fatal = error_get_last();
+            if (!is_array($fatal) || !in_array($fatal['type'] ?? null,
+                [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) return;
+            try {
+                $file = $fatal['file'] ?? null;
+                $limit = ini_get('memory_limit');
+                $allowed = null; $attempted = null;
+                $message = $fatal['message'] ?? null;
+                if (is_string($message) && strlen($message) <= 256
+                    && preg_match('/\AAllowed memory size of ([1-9][0-9]{0,18}) bytes exhausted \(tried to allocate ([1-9][0-9]{0,18}) bytes\)\z/D',
+                        $message, $memory) === 1) {
+                    $allowed = $memory[1]; $attempted = $memory[2];
+                }
+                $diagnostic = [
+                    'schema' => 1, 'status' => 'FAIL', 'code' => 'NHE_PRODUCER_NATIVE_FATAL',
+                    'scope' => 'LEGACY_HISTORY_PRODUCER_DIRECT_CLI_FATAL_ONLY',
+                    'fatal_type' => $fatal['type'],
+                    'file_tag' => $file === __FILE__ ? 'producer' : 'other',
+                    'file_path_sha256' => is_string($file) ? hash('sha256', $file) : null,
+                    'line' => is_int($fatal['line'] ?? null) && $fatal['line'] > 0 ? $fatal['line'] : null,
+                    'memory_limit' => is_string($limit)
+                        && preg_match('/\A(?:-1|0|[1-9][0-9]{0,9}[KMG]?)\z/D', $limit) === 1 ? $limit : null,
+                    'heap_bytes_after_reserve_release' => memory_get_usage(true),
+                    'heap_peak_bytes' => memory_get_peak_usage(true),
+                    'allowed_bytes' => $allowed, 'attempted_bytes' => $attempted,
+                ];
+                $json = json_encode($diagnostic, JSON_UNESCAPED_SLASHES);
+                if (is_string($json) && strlen($json) <= 2048) @fwrite(STDERR, $json . "\n");
+            } catch (Throwable $ignored) {
+                // Diagnostics never replace the original process result.
+            }
+        });
+    }
     exit(nhep_normal_history_main());
 }
 """

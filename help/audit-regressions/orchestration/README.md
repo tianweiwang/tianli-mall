@@ -46,6 +46,8 @@ B 对该 helper 使用同一独审前后值，并逐项连接 B 当前表单向�
 
 历史 producer 的固定直接入口采用同文件已有的 `nhep_normal_history_main()`；其固定原件摘要、末尾唯一接缝和整件逆变换均须核同。主函数、同文件 startup、原 37 步 HTTP、正常 seal/close/publish 及全部来源和业务断言逐字节保留；正常 CLI 参数和角色预算不改。新包仍为十四件，七件变换、七件整件保持；采用须另行独审、生成新 freeze 和新 Run，旧 R9 失败不重启或改签。
 
+同一直接 CLI 入口为运行时 fatal 诊断保留 32 KiB，并注册 shutdown handler；仅实际 `E_ERROR/E_PARSE/E_CORE_ERROR/E_COMPILE_ERROR` 时向 stderr 写入至多 2048 字节 JSON 加换行。只记录错误类型、文件标签及路径摘要、行号、严格格式的内存上限、堆用量/峰值，以及匹配固定内存耗尽消息时的两项字节数，不输出原消息、堆栈、参数、环境或 SQL。正常返回和非直接 CLI 调用静默，handler 不改退出码或内存预算，不安装到独立 HTTP 子进程；脚本在 handler 注册前的解析/启动失败无法由它捕获。原 R10 的退出 255、空双流不能据此追签为内存不足，后继新正常运行才提供诊断证据。
+
 B的两个网络使用固定输入 `network_subnets.isolation/ui_web`，只接收互不重叠的规范RFC1918网段并核实际IPAM。Root启动前仍须检查地址空闲；复用A网段须先有真实关闭及独立核零。部署public采用同一根部install排除投影，完整安装器来源仍保全；三端构建保留各自真实来源，只有完整输入一致才能复用。
 
 B Root M 的 proof 配置回执保留原 Host `PROOF_INI_REFERENCE` 的真实绝对路径、字节数和摘要，不随新 B 包的 `PREPARED` 目录迁移。作者核原/派生 Host 指针完全相同并读取原回执，只替换 `frozen_resources` 内这一处路径表达式；不复制旧回执或放宽单文件、内存值、角色、扫描目录和完整资源比较。B 工具修复独立记录实际工具字节，不改已冻结的应用来源或重启正在运行的 A。
