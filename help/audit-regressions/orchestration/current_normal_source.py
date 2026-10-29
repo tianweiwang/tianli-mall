@@ -3291,7 +3291,7 @@ def build_history_source(output: str | Path, authority_pointer: dict[str, Any],
     author_sources = {tool_path.name: tool_raw}
     upgrade_application_sources = []
     upgrade_registration_donor = None
-    changed_names = ("compose.yml", "ms4-host.py", "ms4-initialize.php", "legacy-current-reader.php")
+    changed_names = ("compose.yml", "ms4-host.py", "ms4-initialize.php", "seed-source-inverse.json", "legacy-current-reader.php")
     for kind, function, name in (("host", "host", "ms4-host.py"),
                                  ("reader", "reader", "legacy-current-reader.php"),
                                  ("upgrade", "initializer", "ms4-initialize.php")):
@@ -3371,8 +3371,51 @@ def build_history_source(output: str | Path, authority_pointer: dict[str, Any],
                 actual = Path(authority["candidate_root"]) / relative
                 require(pin(read(actual)) == expected, "HISTORY_UPGRADE_COMPLETE_APPLICATION_SOURCE_BYTES")
                 upgrade_application_sources.append({"path": actual.as_posix(), **expected})
+    seed_record = decode(before["seed-source-inverse.json"])
+    require(type(seed_record) is dict and set(seed_record) == {"schema", "scope", "source_path", "source_sha256",
+            "before_function_sha256", "after_function_sha256", "source_call_sites", "finite_changes",
+            "whole_function_inverse_equal", "runtime_SQL_App"}
+            and encode(seed_record) == before["seed-source-inverse.json"]
+            and type(seed_record["schema"]) is int and seed_record["schema"] == 1
+            and seed_record["scope"] == "SOURCE_ONLY_FINITE_SEED_TRANSFORM"
+            and seed_record["source_path"] == "help/audit-regressions/isolated/ms2-migration.php"
+            and seed_record["finite_changes"] == ["function m2f_seed -> m4i_seed",
+                "all exact source guards -> actual independent m4i_source"]
+            and seed_record["whole_function_inverse_equal"] is True and seed_record["runtime_SQL_App"] == "NOT RUN",
+            "HISTORY_COMPLETE_ORIGINAL_SEED_PROVENANCE_RECORD")
+    seed_source_path = Path(authority["candidate_root"]) / seed_record["source_path"]
+    seed_source_raw = read(seed_source_path)
+    seed_source_pin = pin(seed_source_raw)
+    require(seed_source_pin == {key: inventory[seed_record["source_path"]][key] for key in ("bytes", "sha256")},
+            "HISTORY_SEED_COMPLETE_REVIEWED_CURRENT_REFERENCE_BYTES")
+    # Match the original Host's read_text universal-newline function extraction.
+    seed_source_text = seed_source_raw.decode("utf-8").replace("\r\n", "\n").replace("\r", "\n")
+    initializer_text = after["ms4-initialize.php"].decode("utf-8").replace("\r\n", "\n").replace("\r", "\n")
+    seed_before = re.search(r"^function m2f_seed\(array &\$evidence\):array \{\n.*?^\}\n(?=\nfunction)",
+                            seed_source_text, re.M | re.S)
+    seed_after = re.search(r"^function m4i_seed\(array &\$evidence\):array \{\n.*?^\}\n(?=\nfunction)",
+                           initializer_text, re.M | re.S)
+    require(seed_before is not None and seed_after is not None, "HISTORY_EXACT_ORIGINAL_SEED_FUNCTIONS")
+    seed_before_raw, seed_after_raw = seed_before.group().encode("utf-8"), seed_after.group().encode("utf-8")
+    require(pin(seed_before_raw)["sha256"] == seed_record["before_function_sha256"]
+            and pin(seed_after_raw)["sha256"] == seed_record["after_function_sha256"]
+            and seed_after_raw.replace(b"function m4i_seed(", b"function m2f_seed(", 1)
+                .replace(b"m4i_source();", b"m2f_source();") == seed_before_raw
+            and type(seed_record["source_call_sites"]) is int and seed_record["source_call_sites"] == 5
+            and seed_before_raw.count(b"m2f_source();") == seed_after_raw.count(b"m4i_source();") == 5,
+            "HISTORY_WHOLE_ORIGINAL_SEED_HASHES_GUARDS_AND_INVERSE_HELD")
+    after["seed-source-inverse.json"] = encode({**seed_record, "source_sha256": seed_source_pin["sha256"]})
+    require(seed_record["source_sha256"] != seed_source_pin["sha256"]
+            and once(after["seed-source-inverse.json"], seed_source_pin["sha256"].encode("ascii"),
+                     seed_record["source_sha256"].encode("ascii")) == before["seed-source-inverse.json"],
+            "HISTORY_ONLY_SEED_WHOLE_FILE_REFERENCE_PIN_REBOUND")
+    seed_source_rebinding = {"source": {"path": seed_source_path.as_posix(), **seed_source_pin},
+        "original_source_sha256": seed_record["source_sha256"],
+        "before_function_sha256": seed_record["before_function_sha256"],
+        "after_function_sha256": seed_record["after_function_sha256"],
+        "source_call_sites": 5, "whole_original_functions_unchanged": True}
     require(set(after) == set(before) and all(after[name] == before[name] for name in HISTORY_NAMES
-            if name not in changed_names), "HISTORY_OTHER_TEN_COMPLETE_FILES_UNCHANGED")
+            if name not in changed_names), "HISTORY_OTHER_NINE_COMPLETE_FILES_UNCHANGED")
     require(constant(after["ms4-host.py"], "ARTIFACTS") == list(HISTORY_NAMES), "HISTORY_FINAL_FOURTEEN_ARTIFACTS")
     require(b"raise RuntimeError('NONEMPTY_HISTORY_RUNTIME_NOT_IMPLEMENTED')" not in after["ms4-host.py"]
             and b"nhecr_expect(false, 'NHECR_EXACT13_READER_FINAL_SOURCE_UNBOUND');" not in after["legacy-current-reader.php"]
@@ -3393,7 +3436,7 @@ def build_history_source(output: str | Path, authority_pointer: dict[str, Any],
     checks = {"schema": 1, "status": "CURRENT_HISTORY_SOURCE_REQUIRES_INDEPENDENT_ADOPTION",
               "source_sha": authority["source_sha"], "legacy_source_sha": constant(before["ms4-host.py"], "LEGACY_SOURCE"),
               "changed_members": [name for name in HISTORY_NAMES if before[name] != after[name]],
-              "original_other_members_unchanged": True, "unchanged_whole_members": 10,
+              "original_other_members_unchanged": True, "unchanged_whole_members": 9,
               "complete_forward_and_reverse": True,
               "python_syntax": "PASS", "modified_php_syntax": "NOT RUN",
               "independent_review": "PENDING", "runtime": "NOT RUN", "source_review_written": False,
@@ -3409,6 +3452,7 @@ def build_history_source(output: str | Path, authority_pointer: dict[str, Any],
               "application_controls": application_controls,
               "upgrade_application_sources": upgrade_application_sources,
               "upgrade_registration_donor": upgrade_registration_donor,
+              "seed_source_rebinding": seed_source_rebinding,
               "isolation_subnet": isolation_subnet,
               "isolation_subnet_availability": "NOT_CHECKED_BY_AUTHOR"}
     files = {"before/" + name: before[name] for name in HISTORY_NAMES}

@@ -110,6 +110,8 @@ python -I -B help/audit-regressions/orchestration/verify_sources.py
 
 最终采用须由独立审查绑定真实14件 publication 和七项来源。Host 在创建资源前复核，并把两份审查原件按原字节发布到新 Run 的固定公开别名；initializer 与 reader 从实际挂载逐件复核来源，新增两原件追加到原100项归档。升级入口另核完整旧业务结果、四次迁移及两个角色的真实普通退役，再登记当前维护角色；reader 仍在 HTTP 前核实际173表基线。缺少或不符的实际依据应拒绝，不能用固定字段或空值冒充成功。`--history-source` 可沿现有 `--isolation-subnet` 固定私有 IPv4 子网，生成前与启动前各自检查冲突，并在实际创建后核对 IPAM；作者只生成源码。源码实现、语法和正逆检查不表示历史流程已经运行通过。
 
+历史种子来源记录也必须连接当前已审的完整 `ms2-migration.php`。作者先核原记录、两个原种子函数的完整摘要、五个来源检查调用与整函数逆回，再仅更新候选记录的整文件来源摘要；原种子代码、函数摘要、Host 断言和存档原件保持。实际整文件来源及旧摘要另记在输入证明中，不能直接把失败记录改为成功。
+
 所有实际文件以清单为准，不按目录名递归导入其他原机材料。没有把整份原材料目录、原 Run 或所有历史作者输入公开。两份 published-current 完整编排保留各自来源 `584532ba2`；归档提交本身会前移 Git HEAD，不能据此宣称已在归档后的 HEAD 运行通过。
 
 r2 原冻结设计有两句关于当前工作树的旧措辞，原件保留；必须结合[设计澄清](sources/published-current-normal-next-source-r2-design-clarification-r1/CLARIFICATION.md)读取。实际作者核对复用旧 Main 已闭合证据，并读取历史 Git 对象和 Val 的 194 项；没有签当前 Main 或归档后的提交可以运行。校验器也要求该澄清随包存在。
