@@ -2414,9 +2414,19 @@ def _b_outer(outcome: dict[str, Any], materialize_review: dict[str, Any] | None 
             and type(terminal["finished_ns"]) is int
             and terminal["finished_ns"] > created["started_ns"], "B_ACTUAL_SAME_PID_OUTER_NATURAL_ZERO")
     for kind in ("stdout", "stderr"):
-        require(type(terminal[kind]) is dict and set(terminal[kind]) == {"bytes", "sha256"}
-                and terminal[kind] == {key:outcome[kind][key] for key in ("bytes", "sha256")},
-                "B_ORIGINAL_FULL_OUTER_STREAM_POINTER")
+        stream = terminal[kind]
+        if type(stream) is dict and set(stream) == {"path", "bytes", "sha256"}:
+            target = Path(stream["path"]) if type(stream["path"]) is str else None
+            require(type(outcome[kind]) is dict and set(outcome[kind]) == {"path", "bytes", "sha256"}
+                    and type(stream["bytes"]) is int and type(stream["sha256"]) is str
+                    and stream == outcome[kind] and target is not None and target.is_absolute()
+                    and target.suffix == "." + kind and target.as_posix() == stream["path"]
+                    and target.resolve(strict=True).as_posix() == stream["path"],
+                    "B_ORIGINAL_FULL_OUTER_STREAM_POINTER")
+        else:
+            require(type(terminal[kind]) is dict and set(terminal[kind]) == {"bytes", "sha256"}
+                    and terminal[kind] == {key:outcome[kind][key] for key in ("bytes", "sha256")},
+                    "B_ORIGINAL_FULL_OUTER_STREAM_POINTER")
         raw = read_pointer(outcome[kind])
         require(raw == b"" if kind == "stderr" else bool(raw), "B_COMPLETE_OUTER_RAW_STREAM")
     return created, terminal
@@ -2947,8 +2957,17 @@ def current_b_outer(outcome, materialize_review=None):
         and terminal['native_exit']==terminal['wait_returncode']==0
         and type(terminal['finished_ns']) is int and terminal['finished_ns']>created['started_ns'],'B_REAL_SAME_PID_NATURAL_OUTER_ZERO')
     for kind in ['stdout','stderr']:
-        current_assert(type(terminal[kind]) is dict and set(terminal[kind])=={'bytes','sha256'}
-            and terminal[kind]=={key:outcome[kind][key] for key in ['bytes','sha256']},'B_EXACT_FULL_OUTER_STREAM_POINTER')
+        stream=terminal[kind]
+        if type(stream) is dict and set(stream)=={'path','bytes','sha256'}:
+            target=Path(stream['path']) if type(stream['path']) is str else None
+            current_assert(type(outcome[kind]) is dict and set(outcome[kind])=={'path','bytes','sha256'}
+                and type(stream['bytes']) is int and type(stream['sha256']) is str
+                and stream==outcome[kind] and target is not None and target.is_absolute()
+                and target.suffix=='.'+kind and target.as_posix()==stream['path']
+                and target.resolve(strict=True).as_posix()==stream['path'],'B_EXACT_FULL_OUTER_STREAM_POINTER')
+        else:
+            current_assert(type(terminal[kind]) is dict and set(terminal[kind])=={'bytes','sha256'}
+                and terminal[kind]=={key:outcome[kind][key] for key in ['bytes','sha256']},'B_EXACT_FULL_OUTER_STREAM_POINTER')
         raw=current_stream(outcome[kind],True)
         current_assert(raw==b'' if kind=='stderr' else bool(raw),'B_COMPLETE_ACTUAL_OUTER_STREAM')
 
