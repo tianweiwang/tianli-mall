@@ -912,6 +912,50 @@ def finance_profile_changes(initializer: bytes, host: bytes, inventory: dict[str
     return updated,updated_host,source_files
 
 
+def normal_source_read_profile_changes(host: bytes) -> tuple[bytes, bytes, bytes, dict[str, Any]]:
+    """Reuse only this verification's complete read, then read the full tree again."""
+    original = functions(host)["verify_freeze"]
+    require(pin(original) == {"bytes": 5665,
+            "sha256": "5832d70cf192ff479ae02c0c6beed0c143bda761f19b2d47ccfb2c1a6614dea5"},
+            "EXACT_ORIGINAL_NORMAL_FREEZE_VERIFIER")
+    old_tree = (b"    expect(binding['source_tree'] == source_tree_manifest(repo, binding['source_sha']),\n"
+                b"           'SOURCE_TREE_FULL_TRACKED_SOURCE_NAMESPACE_AND_ALL_BYTES_UNCHANGED')\n")
+    new_tree = (b"    current_tree = source_tree_manifest(repo, binding['source_sha'])\n"
+                b"    expect(binding['source_tree'] == current_tree,\n"
+                b"           'SOURCE_TREE_FULL_TRACKED_SOURCE_NAMESPACE_AND_ALL_BYTES_UNCHANGED')\n"
+                b"    source_rows = {row['path']: row for row in current_tree['files']}\n")
+    replacements = (
+        (old_tree, new_tree, 1),
+        (b"source_row(repo, row['path'])", b"source_rows.get(row['path'])", 6),
+        (b"source_row(repo, AFTERSALE_REVIEW_ENTRY)", b"source_rows.get(AFTERSALE_REVIEW_ENTRY)", 1),
+        (b"source_row(repo, WORKER_ENTRY)", b"source_rows.get(WORKER_ENTRY)", 1),
+        (b"source_row(root, row['path'])",
+         b"(source_rows.get(row['path']) if root == repo else source_row(root, row['path']))", 1),
+    )
+    candidate = original
+    for previous, current, count in replacements:
+        require(candidate.count(previous) == count, "EXACT_NORMAL_SOURCE_READ_LITERAL_COUNT")
+        candidate = candidate.replace(previous, current)
+    final_read = (b"    expect(source_tree_manifest(repo, binding['source_sha']) == current_tree,\n"
+                  b"           'SOURCE_TREE_FULL_TRACKED_SOURCE_NAMESPACE_AND_ALL_BYTES_HELD_DURING_VERIFY')\n")
+    candidate += final_read
+    recovered = candidate[:-len(final_read)]
+    require(candidate.endswith(final_read), "NORMAL_FINAL_COMPLETE_SOURCE_READ_RETAINED")
+    for previous, current, count in reversed(replacements):
+        require(recovered.count(current) == count, "EXACT_NORMAL_SOURCE_READ_INVERSE_LITERAL_COUNT")
+        recovered = recovered.replace(current, previous)
+    require(recovered == original, "NORMAL_SOURCE_READ_FUNCTION_EXACT_INVERSE")
+    result = once(host, original, candidate)
+    require(once(result, candidate, original) == host, "NORMAL_SOURCE_READ_WHOLE_HOST_EXACT_INVERSE")
+    return result, original, candidate, {
+        "function": "verify_freeze", "before": pin(original), "after": pin(candidate),
+        "whole_host_inverse_exact": True, "full_source_tree_reads_per_verification": 2,
+        "role_rows_from_first_complete_read_only": True, "final_complete_tree_equality_required": True,
+        "artifact_reads_and_all_original_assertions_retained": True, "cross_cli_cache": False,
+        "B_history_business_changed": False,
+    }
+
+
 def build_profile(output: str | Path, authority_pointer: dict[str, Any],
                   isolation_subnet: str | None = None) -> dict[str, Any]:
     if isolation_subnet is not None:
@@ -1158,6 +1202,8 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
                 and all(constant(after[name], "CUSTOMER_FORM_SOURCE_FILES") == tuple(form_sources)
                         for name in ("ms4-host.py", "verify-zero-ms4-fulfillment.py")),
                 "INITIALIZER_HOST_ZERO_INTERFACE_SAME_SEVEN_FORM_SOURCES")
+    after["ms4-host.py"], source_read_before, source_read_after, source_read_proof = normal_source_read_profile_changes(
+        after["ms4-host.py"])
     for name, symbol, target in (
         ("ms4-host.py", "INTERFACE_SHA256", "interface-v1.json"),
         ("normal-close-ms4-fulfillment.py", "HOST_SHA256", "ms4-host.py"),
@@ -1184,7 +1230,8 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
         "paid_current_successor_entry_pair_changed": True,
         "all_original_python_function_bodies_exact": False,
         "python_function_changes": {"ms4-host.py": ["verify_files_bootstrap", "verify_schema_bootstrap", "verify_finance_bootstrap",
-            "prerequisite_result", "verify_merchant_exit_bootstrap", "verify_order_menu_bootstrap"]},
+            "prerequisite_result", "verify_merchant_exit_bootstrap", "verify_order_menu_bootstrap", "verify_freeze"]},
+        "normal_source_read_reuse": source_read_proof,
         "initializer_two_literal_inverse_exact": True, "initializer_customer_literal_inverse_exact": True,
         "initializer_schema_bootstrap_inverse_exact": True, "schema_bootstrap_sources": list(schema_sources),
         "initializer_finance_bootstrap_inverse_exact": True, "finance_bootstrap_sources": list(finance_sources),
@@ -1231,6 +1278,7 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
                                                        b"    verify_schema_bootstrap(context, result)\n", b"")
             observed["verify_files_bootstrap"] = once(observed["verify_files_bootstrap"],
                                                        b"    verify_finance_bootstrap(context, result)\n", b"")
+            observed["verify_freeze"] = once(observed["verify_freeze"], source_read_after, source_read_before)
         require(functions(before[name]) == observed, "ALL_OTHER_ORIGINAL_PYTHON_FUNCTION_BODIES_EXACT")
         compile(after[name], str(out / name), "exec")
         counts[name] = len(functions(after[name]))
@@ -1246,7 +1294,8 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
         "changed": [name for name in NAMES if before[name] != after[name]],
         "all_original_python_function_bodies_exact": False, "python_named_function_counts": counts,
         "python_function_changes": {"ms4-host.py": ["verify_files_bootstrap", "verify_schema_bootstrap", "verify_finance_bootstrap",
-            "prerequisite_result", "verify_merchant_exit_bootstrap", "verify_order_menu_bootstrap"]},
+            "prerequisite_result", "verify_merchant_exit_bootstrap", "verify_order_menu_bootstrap", "verify_freeze"]},
+        "normal_source_read_reuse": source_read_proof,
         "all_other_original_python_function_bodies_exact": True,
         "active_profile_updates": updates, "interface_only_declared_active_rows": True,
         "interface_declared_active_rows_changed": interface_changed_rows,

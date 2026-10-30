@@ -28,6 +28,8 @@ B 对该 helper 使用同一独审前后值，并逐项连接 B 当前表单向�
 
 纯作者工具修复可与冻结的应用来源分别固定：应用 authority、capture、candidate/validation 和实际 M/A 继续绑定同一应用 SHA，两检出保持干净；另行记录新作者工具的完整字节摘要、提交、独立有限复核及真实执行 argv，新 normal18 独审覆盖完整派生产物。不得声称旧应用 capture 包含新工具，也不能把维护工具的工作树替代为 M 的 main/repo。
 
+正常 Core9 派生仅在 Host 的 `verify_freeze` 内复用同次完整 `source_tree_manifest` 实际读取的 path/bytes/SHA 映射，核对各角色、准备引用及固定入口；接口和 PREP/artifact 仍按原方式读取。所有原角色集合、额外路径、Git 跟踪、seed 及比较断言保留，函数末尾再完整读取源码树并严格核同首次全部文件与目录闭集。无跨 CLI 缓存，不以 mtime 代替摘要；B、历史及业务步骤不变。唯一函数与整 Host 逆回、其余函数原字节和原九件正逆回放须通过；已冻结来源和旧运行不改，源码检查不代替实际只读校验、正常业务或完整验收，也不能据此宣称已测得运行提速。
+
 同一作者的 `--b-source <新目录> --b-inputs-file <固定输入JSON> --b-inputs-sha256 <摘要>` 有限接入原13卷B来源；仍须提供 `--authority-file/--authority-sha256`。输入绑定真实M及外层双流、成功A的外层终态/正常结果/关闭/独立核零/后续历史五项证明，以及当前五材料和三端实际构建依据；A未通过时不生成B。来源包沿原17成员和浏览器合同固定完整摘要，两个Root入口在执行时读取独立技术复核，这不是新增用户确认。原A默认派生、历史记录、业务检查及停止样本范围保持。
 
 同一入口的 `--post-a-history <全新外部目录> --post-a-inputs-file <固定公开输入JSON> --post-a-inputs-sha256 <摘要>` 配合原 authority 两参数，收集成功 A 的公共记录。输入固定为 `schema/scope/source_authority/normal/A/post_a_contract/runtime_root`，scope 为 `CURRENT_POST_A_FIXED_PUBLIC_INPUTS`；normal 复用原 M 四项，A 提供真实 session、outer 四件及 context/normal_root_result/worker_close/independent_zero。工具先消费外层自然 exit/wait 0，再复用当前 M/A 关联与原协调器回执；不会启动、重跑或清理实例。A 驱动自身已串行执行普通关闭和独立核零，不能另行重复调用。
