@@ -309,6 +309,7 @@ class SystemAdminServices extends BaseServices
         $service = app()->make(SystemRoleServices::class);
         $allRole = $service->getRoleArray();
         foreach ($list as &$item) {
+            unset($item['pwd']);
             if ($item['roles']) {
                 $roles = [];
                 foreach ($item['roles'] as $id) {

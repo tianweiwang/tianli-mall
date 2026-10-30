@@ -511,7 +511,7 @@ function m4cf_package_readers(PDO $db,array $root,array $actors,array $child):vo
 function m4cf_historical_readers(PDO $db,array $root,array $actors):void
 {
     $before=m4cf_snapshot($db);$deadline=0;$count=0;
-    foreach($before['rows']['eb_marketplace_customer_asset']as$row)if($row['state']==='BOUND'&&(int)$row['root_order_id']===(int)$root['id']){
+    foreach($before['rows']['eb_marketplace_customer_asset']as$row)if($row['purpose']==='order_form_image'&&$row['state']==='BOUND'&&(int)$row['root_order_id']===(int)$root['id']){
         m4cf_expect(preg_match('~\Aform/v1/[1-9][0-9]*/[a-f0-9]{64}/([1-9][0-9]{12,15})/[a-f0-9]{64}/content\.[a-z]+\z~D',$row['object_key'],$m)===1,
             'ORIGINAL_OBJECT_RETAINS_ACTUAL_CONFIRMATION_DEADLINE');
         $native=(int)$m[1];m4cf_expect((string)$native===$m[1]&&intdiv($native,1000)===(int)$row['expires_at'],'NATIVE_ACTUAL_ORIGINAL_CONFIRMATION_DEADLINE');
