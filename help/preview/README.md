@@ -1,5 +1,13 @@
 # 本机多商户预览
 
+## 管理员列表字段修复（2026-10-30）
+
+18198现用PHP镜像为`sha256:217a46aedfd2abe0d22bba3b131bea39cb3971f2148239bcc6c1fd069d69c5fd`，基于原R75固定镜像，仅替换`app/services/system/admin/SystemAdminServices.php`，对应源码提交`5435999ddacd11f445408dbf66835d467755edb4`。其它镜像及三端静态产物保持；这不是整个镜像与该提交所有文件完全相同的声明。
+
+正常接口已确认管理员列表不再返回pwd字段，其他完整列表字段与计数保持；原只读账号仍可登录，角色和资金只读权限保持，资金草稿v2及两版历史保持，真实资金仍未启用。原PHP正常停止0后通过已有Compose仅更新`preview-runtime`，保留四个卷的完整挂载及运行配置；其它三个容器身份保持，队列正常运行，原Nginx仅重载。不要对已有预览重跑prepare、初始化或seed。
+
+实际镜像、更新及API证据在仓库外`multi-merchant-final-normal-20261030-r83/preview-admin-dto-update-r1`。本轮浏览器连接不可用，更新后的UI刷新未补验；原页面结果保留。本次正常接口修复不代签完整A/B、历史迁移、设备或生产验收。
+
 ## 当前源码小程序（Source615，2026-10-30）
 
 最新独立工程为 `H:/天俪商城/artifacts/multi-merchant-final-normal-20261029-r81/mp-current-build/mp-weixin/dist`，由冻结 Source615 的原构建命令实际编译，继续连接18198和原接口测试AppID，未安装依赖或发布。原r49工程及其登录会话保留。正常打开仅模拟器模式：
