@@ -410,11 +410,18 @@ final class MarketplacePaymentServices
             $create=['state'=>$create['state'],'scope'=>$create['scope'],'attempt_ref'=>$create['attempt_ref'],
                 'binding_sha256'=>$create['binding_sha256'],'binding'=>$binding,'provider_trade_no'=>$create['provider_trade_no']];
         }
-        $state=$evidence['application']!==null?'applied':($evidence['first_succeeded']!==null?'succeeded_observed':
-            ($evidence['first_closed']!==null?'closed':(($create['state']??null)==='pending'&&self::descriptor($row)!==null?'pending':'unresolved')));
+        $state=self::savedAttemptState($row);
         return ['schema'=>1,'scope'=>'testing_persisted_payment_v1','order_pk'=>$locked['root']['id'],
             'order_no'=>$row['order_no'],'attempt_id'=>$row['id'],'admitted_generation'=>$row['admitted_generation'],
             'account_snapshot'=>$row['account_snapshot'],'state'=>$state,'create_result'=>$create];
+    }
+
+    /** Pure display state for a complete attempt already checked by MarketplacePaymentDao. */
+    public static function savedAttemptState(array $row): string
+    {
+        $evidence=$row['evidence'];
+        return $evidence['application']!==null?'applied':($evidence['first_succeeded']!==null?'succeeded_observed':
+            ($evidence['first_closed']!==null?'closed':((self::descriptor($row)['state']??null)==='pending'?'pending':'unresolved')));
     }
 
     private static function request(array $root,PaymentAccount $account,string $idem): array

@@ -140,5 +140,94 @@ async function run() {
   console.log('PASS: vendor 完整性、移动端配置/构建拒绝、200/401/400/402 和真实订单确认 loading 回归。');
 }
 
-module.exports = { requestModuleSource, orderConfirmConsumerSource };
-if (require.main === module) run().catch((error) => { console.error(error); process.exitCode = 1; });
+async function checkFinanceTransactions() {
+  const plain = value => JSON.parse(JSON.stringify(value));
+  const stripImports = value => value.replace(/import[\s\S]*?from\s*['"][^'"]+['"];?/g, '').replace(/^\s*import\s+['"][^'"]+['"];?\s*$/gm, '');
+  const domainContext = vm.createContext({});
+  vm.runInContext(source('template/admin/src/libs/marketplace-finance-transactions.js').replace(/\bexport\s+/g, '') + '\nglobalThis.domain = { transactionQuery, transactionsView, moneyText, payerText, attemptStateText, estimateText };', domainContext);
+  const domain = domainContext.domain;
+  const empty = { schema: 1, scope: 'testing_persisted_payment_v1', real_funds_enabled: false,
+    available_revisions: [{ revision: 2, created_at: 1700000000 }, { revision: 1, created_at: 1699999999 }],
+    selected_revision: null, rule: null, list: [], next_before_id: null,
+    channel_fee_amount: null, merchant_receivable: null, settled_amount: null };
+  assert.deepEqual(plain(domain.transactionQuery()), { limit: 20 });
+  assert.deepEqual(plain(domain.transactionQuery({ before_id: 12, revision: 1, limit: 50 })), { limit: 50, before_id: 12, revision: 1 });
+  assert.equal(domain.transactionsView(empty).selected_revision, null, '有保存版本也不自动选择最新');
+  assert.equal(domain.moneyText(null), '尚未确认');
+  const row = { root_order_id: 12, order_no: 'TEST-ROOT-12', mer_id: 3, currency: 'CNY',
+    order_amount: '12.50', goods_paid: '10.00', shipping_paid: '2.50', fulfillment_hold: false,
+    attempts: [{ attempt_id: '9007199254740993', admitted_generation: '1', created_at: 1700000000, state: 'applied', applied_at: 1700000001 }],
+    estimate_status: 'ESTIMATED', fee_estimate: { basis_amount: '10.00', platform_fee_amount: '0.25', payer: 'merchant' } };
+  const view = { ...empty, selected_revision: 1, rule: { platform_fee_enabled: true, platform_fee_basis: 'goods_paid', platform_fee_rate: '2.50', platform_fee_payer: 'merchant' }, list: [row], next_before_id: 12 };
+  const parsed = domain.transactionsView(view, { revision: 1 });
+  assert.equal(parsed.list[0].attempts[0].attempt_id, '9007199254740993', '尝试编号保持字符串');
+  assert.equal(parsed.list[0].fee_estimate.platform_fee_amount, '0.25');
+  assert.equal(parsed.next_before_id, 12);
+  const zero = { ...view, rule: { ...view.rule, platform_fee_enabled: false }, list: [{ ...row, fee_estimate: { basis_amount: null, platform_fee_amount: '0.00', payer: null } }] };
+  assert.equal(domain.transactionsView(zero, { revision: 1 }).list[0].fee_estimate.platform_fee_amount, '0.00');
+  const maximum = { ...empty, list: [{ ...row, order_amount: '9999999999.99', goods_paid: '9999999999.99', shipping_paid: '0.00', estimate_status: 'NO_REVISION', fee_estimate: null }] };
+  assert.equal(domain.transactionsView(maximum).list[0].order_amount, '9999999999.99');
+  assert.equal(domain.estimateText('NO_REVISION'), '未选择保存版本');
+  assert.equal(domain.attemptStateText('succeeded_observed'), '已观察到成功，尚未应用');
+
+  let active = true; let release; const requests = [];
+  const store = { state: { userInfo: { uniqueAuth: ['marketplace-finance-transactions-read'] } } };
+  const client = config => { requests.push(config); return release ? new Promise(resolve => { release.resolve = resolve; }) : Promise.resolve({ status: 200, data: { status: 200, msg: 'ok', data: empty } }); };
+  const apiContext = vm.createContext({ axios: { create: () => client, CancelToken: { source: () => ({ cancel() {}, token: 'synthetic-cancel' }) } },
+    setting: { apiBaseURL: '/adminapi/' }, captureContext: () => ({}), currentContext: context => active && context.life.open,
+    closeContext: context => { if (context) context.life.open = false; }, currentPermissions: async () => ({ unique: store.state.userInfo.uniqueAuth, menus: [] }),
+    platformCan: (value, grant) => value.state.userInfo.uniqueAuth.includes(grant), ...domain });
+  const apiSource = stripImports(source('template/admin/src/api/marketplace-finance-transactions.js')).replace(/export\s*\{[\s\S]*?\};?/g, '').replace(/\bexport\s+/g, '');
+  vm.runInContext(apiSource + '\nglobalThis.api = { read, can };', apiContext);
+  const context = { store, token: 'synthetic-fixture', life: { open: true, cancels: new Set() } };
+  assert.equal(apiContext.api.can(store, 'read'), true, '独立交易权限无需资金设置权限');
+  await apiContext.api.read(context);
+  assert.equal(requests[0].method, 'GET'); assert.equal(requests[0].url, 'marketplace/finance-transactions');
+  assert.deepEqual(plain(requests[0].params), { limit: 20 });
+  release = {}; const oldRead = apiContext.api.read(context); active = false;
+  release.resolve({ status: 200, data: { status: 200, msg: 'ok', data: empty } });
+  await assert.rejects(oldRead, /身份或页面已变化/); active = true; release = null;
+
+  const pageContext = vm.createContext({ ...domain, can: apiContext.api.can, currentContext: value => active && value.life.open,
+    closeContext: value => { if (value) value.life.open = false; }, captureContext() {}, refreshPermissions: async () => {},
+    read: async () => empty, subscribePlatformAuthEpoch() {} });
+  const pageSource = stripImports(source('template/admin/src/pages/marketplace/financeTransactions/index.vue').match(/<script>([\s\S]*?)<\/script>/)[1]).replace('export default', 'globalThis.component =');
+  vm.runInContext(pageSource, pageContext);
+  const component = pageContext.component; const page = { ...component.data(), $store: store, $route: { name: 'marketplace_finance_transactions', fullPath: '/admin/marketplace/finance-transactions' }, $router: { history: { pending: null } } };
+  Object.entries(component.methods).forEach(([name, method]) => { page[name] = method.bind(page); });
+  page.context = context; page.contextRoute = page.$route.fullPath; page.view = parsed; page.selectedRevision = 1;
+  page.clear(); assert.equal(page.view, null); assert.equal(page.selectedRevision, null); assert.equal(context.life.open, false);
+  let finishPageRead;
+  pageContext.read = () => new Promise(resolve => { finishPageRead = resolve; });
+  page.context = { store, life: { open: true, cancels: new Set() } }; page.contextRoute = page.$route.fullPath;
+  const oldPageRead = page.load(); await new Promise(resolve => setImmediate(resolve));
+  page.clear(); const newerContext = { store, life: { open: true, cancels: new Set() } }; const newerView = { ...parsed, list: [] };
+  page.context = newerContext; page.contextRoute = page.$route.fullPath; page.view = newerView; page.selectedRevision = 2;
+  finishPageRead(parsed); await oldPageRead;
+  assert.equal(page.view, newerView, '旧任务的晚到结果不得写回或清空新身份页面'); assert.equal(page.context, newerContext); assert.equal(page.selectedRevision, 2);
+  page.clear(); page.context = { store, life: { open: true, cancels: new Set() } }; page.contextRoute = page.$route.fullPath; page.selectedRevision = 1;
+  const currentPageRead = page.load(); await new Promise(resolve => setImmediate(resolve));
+  active = false; finishPageRead(parsed); await currentPageRead; active = true;
+  assert.equal(page.loading, false, '同一当前任务在身份不可用时必须结束loading');
+  assert.equal(page.context, null); assert.equal(page.view, null); assert.equal(page.selectedRevision, null); assert.deepEqual(plain(page.revisions), []);
+  const navigationContext = vm.createContext({ setting: { routePre: '/admin' } });
+  vm.runInContext(source('template/admin/src/libs/marketplace-navigation.js').replace(/^import .*;\s*$/gm, '').replace(/\bexport\s+/g, '') + '\nglobalThis.project = withMarketplaceMenus;', navigationContext);
+  const menus = navigationContext.project([], ['marketplace-finance-transactions-read']);
+  assert.deepEqual(plain(menus[0].children.map(item => item.path)), ['/admin/marketplace/finance-transactions']);
+  let transactionRefreshes = 0; let settingRefreshes = 0; const target = {};
+  const routeContext = vm.createContext({ Vue: { prototype: { $message: { error() {} } } }, LayoutMain: {}, setting: { routePre: '/admin' }, store,
+    platformCan: (value, grant) => value.state.userInfo.uniqueAuth.includes(grant), captureContext: () => ({ life: { open: true } }),
+    currentContext: value => value.life.open, closeContext: value => { value.life.open = false; },
+    refreshFinancePermissions: async () => { settingRefreshes++; }, refreshFinanceTransactionPermissions: async (value, current) => { assert.equal(current(), true); transactionRefreshes++; },
+    fakeRouter: { history: { pending: target } } });
+  const routeSource = source('template/admin/src/router/modules/marketplace.js').replace(/^import .*;\s*$/gm, '')
+    .replace(/await import\('@\/router'\)/g, 'await Promise.resolve({ default: fakeRouter })').replace('export default', 'globalThis.routes =');
+  vm.runInContext(routeSource, routeContext);
+  const transactionRoute = routeContext.routes.children.find(item => item.name === 'marketplace_finance_transactions');
+  let entered = 0; await transactionRoute.beforeEnter(target, {}, value => { assert.equal(value, undefined); entered++; });
+  assert.equal(entered, 1); assert.equal(transactionRefreshes, 1); assert.equal(settingRefreshes, 0);
+  console.log('PASS: 测试交易只读DTO/金额字符串/明确版本/游标/独立菜单权限/身份切换与清空（纯前端，无HTTP或业务）。');
+}
+
+module.exports = { requestModuleSource, orderConfirmConsumerSource, checkFinanceTransactions };
+if (require.main === module) (process.argv.includes('--finance-transactions-only') ? checkFinanceTransactions() : run()).catch((error) => { console.error(error); process.exitCode = 1; });

@@ -1,6 +1,6 @@
 # 平台资金设置草稿迁移
 
-仅新增资金规则草稿存储与两个权限叶，不启用真实收款、退款、结算或提现，不改订单、账户、旧配置、角色授权或旧安装 SQL。
+仅新增资金规则草稿存储与三个独立权限叶，不启用真实收款、退款、结算或提现，不改订单、账户、旧配置、角色授权或旧安装 SQL。测试交易查询复用已保存的支付事实，本迁移不新增交易账本或业务表。
 
 ## 执行
 
@@ -23,6 +23,8 @@ php help/migrations/marketplace-finance-settings.php check --config-file=/privat
 - 两表为 InnoDB、utf8mb4_bin；初始 revision=0，updated_by/updated_at=NULL，history 空。14 个 draft 字段全部为 JSON null，payload 不含 schema。HTTP 响应的 schema 另由应用提供。
 - 初始字段：contracting_entity、payment_provider、payment_product、account_model、platform_fee_enabled、aftersale_hold、platform_fee_payer、channel_fee_payer、platform_fee_basis、platform_fee_rate、settlement_trigger、settlement_cycle、settlement_delay_days、refund_platform_fee。
 - 权限：`marketplace-finance-settings-read`（GET）和 `marketplace-finance-settings-write`（PUT），同一路由 `marketplace/finance-settings`，均 auth_type=2、pid=0。不自动添加到已有角色。
+- 独立测试交易权限：`marketplace-finance-transactions-read`（GET），路由 `marketplace/finance-transactions`，auth_type=2、pid=0。不由草稿读权限继承，也不自动授予已有角色（含现有草稿只读角色）。
+- 继续使用原 `marketplace-finance-settings-v1` marker。原两个权限叶逐字段保留；旧实例兼容时，`check` 仅列出缺失的第三叶，`apply` 仅补该叶并保留草稿、全部历史及旧菜单行。补齐后重复 `apply` 返回 completed、changed=false；不重置版本、不重复插入权限叶或修改角色。
 
 ## 安装入口与现有预览
 

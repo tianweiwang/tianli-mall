@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/marketplace-ms1.php';
 
-/** Additive draft storage and two ungranted permission leaves; never activates funds. */
+/** Additive draft storage and three ungranted permission leaves; never activates funds. */
 final class MarketplaceFinanceSettingsMigration
 {
     public const FIELDS = ['contracting_entity','payment_provider','payment_product','account_model',
@@ -236,7 +236,9 @@ final class MarketplaceFinanceSettingsMigration
             'is_show'=>1,'is_show_path'=>1,'access'=>1,'menu_path'=>'','path'=>'','auth_type'=>2,'header'=>'',
             'is_header'=>0,'is_del'=>0,'mark'=>self::MARKER,'api_url'=>'marketplace/finance-settings'];
         return [$common+['menu_name'=>'查看资金设置','methods'=>'GET','unique_auth'=>'marketplace-finance-settings-read'],
-            $common+['menu_name'=>'保存资金设置','methods'=>'PUT','unique_auth'=>'marketplace-finance-settings-write']];
+            $common+['menu_name'=>'保存资金设置','methods'=>'PUT','unique_auth'=>'marketplace-finance-settings-write'],
+            array_replace($common,['menu_name'=>'查看测试交易','methods'=>'GET',
+                'unique_auth'=>'marketplace-finance-transactions-read','api_url'=>'marketplace/finance-transactions'])];
     }
 
     private function sameMenu(array $actual, array $expected): bool
@@ -347,7 +349,7 @@ final class MarketplaceFinanceSettingsMigration
 function marketplaceFinanceSettingsMain(array $arguments): int
 {
     if ($arguments===['help'] || $arguments===['--help']) {
-        echo "Usage: php help/migrations/marketplace-finance-settings.php [check|apply] --config-file=PRIVATE_JSON\nDefault check is read-only. Apply only adds absent draft tables, initial singleton and two permission leaves; roles and real funds are unchanged.\n";return 0;
+        echo "Usage: php help/migrations/marketplace-finance-settings.php [check|apply] --config-file=PRIVATE_JSON\nDefault check is read-only. Apply only adds absent draft tables, initial singleton and three permission leaves; roles and real funds are unchanged.\n";return 0;
     }
     $mode='check';$selected=false;$file=null;$migration=null;
     try {

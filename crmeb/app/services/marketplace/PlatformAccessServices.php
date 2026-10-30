@@ -24,6 +24,7 @@ final class PlatformAccessServices
     public const ACTIONS = [
         'marketplace-finance-settings-read' => ['GET', 'marketplace/finance-settings', false],
         'marketplace-finance-settings-write' => ['PUT', 'marketplace/finance-settings', false],
+        'marketplace-finance-transactions-read' => ['GET', 'marketplace/finance-transactions', false],
         'marketplace-merchants-list' => ['GET', 'marketplace/merchants', false],
         'marketplace-merchants-create' => ['POST', 'marketplace/merchants', false],
         'marketplace-merchants-read' => ['GET', 'marketplace/merchants/<id>', true],

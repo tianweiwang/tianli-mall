@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__.'/../../crmeb/vendor/autoload.php';
 
 use app\services\marketplace\finance\FinanceSettingsInput;
+use app\services\marketplace\finance\FinanceTransactionProjection;
 
 function financeNormalExpect(bool $value,string $name): void
 { if (!$value) throw new RuntimeException($name); }
@@ -41,5 +42,17 @@ financeNormalExpect($unicode['contracting_entity']==='本机合成平台'&&$unic
     &&$unicode['payment_provider']==="\u{0085}本机拟选服务商\u{0085}"
     &&FinanceSettingsInput::draft(json_decode(FinanceSettingsInput::encode($unicode),true,32,JSON_THROW_ON_ERROR))===$unicode,
     'ECMASCRIPT_EDGE_WHITESPACE_AND_SAVED_ROUNDTRIP');
-echo json_encode(['schema'=>1,'scope'=>'FINANCE_SETTINGS_PURE_NORMAL','checks'=>7,'status'=>'PASS',
+financeNormalExpect(FinanceTransactionProjection::estimate($empty,'100.00','10.00')===null,'UNDECIDED_FEE_IS_UNKNOWN');
+financeNormalExpect(FinanceTransactionProjection::estimate($withoutFee,'100.00','10.00')===
+    ['basis_amount'=>null,'platform_fee_amount'=>'0.00','payer'=>null],'EXPLICIT_NO_FEE_IS_ZERO');
+financeNormalExpect(FinanceTransactionProjection::estimate($full,'100.00','10.00')===
+    ['basis_amount'=>'100.00','platform_fee_amount'=>'2.50','payer'=>'merchant'],'GOODS_BASIS_EXCLUDES_SHIPPING');
+financeNormalExpect(FinanceTransactionProjection::estimate(array_replace($full,['platform_fee_basis'=>'order_paid']),'100.00','10.00')===
+    ['basis_amount'=>'110.00','platform_fee_amount'=>'2.75','payer'=>'merchant'],'ORDER_BASIS_INCLUDES_SHIPPING');
+financeNormalExpect(FinanceTransactionProjection::estimate(array_replace($full,['platform_fee_rate'=>'50.00']),'0.01','0.00')['platform_fee_amount']==='0.01'
+    &&FinanceTransactionProjection::estimate(array_replace($full,['platform_fee_rate'=>'49.99']),'0.01','0.00')['platform_fee_amount']==='0.00',
+    'INTEGER_HALF_UP_AT_HALF_CENT');
+financeNormalExpect(FinanceTransactionProjection::estimate(array_replace($full,['platform_fee_rate'=>'100.00']),'9999999999.99','0.00')['platform_fee_amount']==='9999999999.99',
+    'FULL_DECIMAL12_CAPACITY_WITHOUT_FLOATS');
+echo json_encode(['schema'=>1,'scope'=>'FINANCE_SETTINGS_PURE_NORMAL','checks'=>13,'status'=>'PASS',
     'App_DB_HTTP'=>'NOT RUN','real_funds_enabled'=>false],JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR)."\n";

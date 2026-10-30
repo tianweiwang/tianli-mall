@@ -235,11 +235,12 @@ final class AuditLogServices
             ||!is_string($rows[0]['detail']))throw new AuthUnavailableException();return $rows[0];
     }
 
-    /** Only the two finance draft routes: metadata log joins the same native transaction, never the payload. */
+    /** Closed finance routes only: normal access metadata, never financial payloads. */
     public function recordFinanceSettingsScope(PlatformScope $scope,PDO $pdo): void
     {
         try {
-            $methods=['marketplace-finance-settings-read'=>'GET','marketplace-finance-settings-write'=>'PUT'];
+            $methods=['marketplace-finance-settings-read'=>'GET','marketplace-finance-settings-write'=>'PUT','marketplace-finance-transactions-read'=>'GET'];
+            $path=$scope->permission==='marketplace-finance-transactions-read'?'marketplace/finance-transactions':'marketplace/finance-settings';
             $request=app()->request;$connection=Db::connect();
             if (!isset($methods[$scope->permission])||$scope->targetMerId!==null||!$request instanceof Request
                 ||app('http')->getName()!=='adminapi'||$request->method()!==$methods[$scope->permission]
@@ -249,7 +250,7 @@ final class AuditLogServices
             $rule=$request->rule();
             if ($rule===null||$rule->getOption('marketplace_api')!==true
                 ||$rule->getOption('marketplace_permission')!==$scope->permission
-                ||trim(strtolower($rule->getRule()))!=='marketplace/finance-settings') throw new AuthUnavailableException();
+                ||trim(strtolower($rule->getRule()))!==$path) throw new AuthUnavailableException();
             app()->make(PlatformAccessServices::class)->authorizeScope($scope,$scope->permission);
             $admin=$request->adminInfo();
             if (!is_array($admin)||(string)($admin['id']??'')!==(string)$scope->adminId
