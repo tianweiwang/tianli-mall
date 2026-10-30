@@ -481,8 +481,9 @@ function m4i_finance_bootstrap(array $binding,array $history,array $schemaReceip
     $metadata=unserialize(base64_decode($history['result']['snapshots']['assets']['tables']['eb_system_menus']['metadata_serialized_base64'],true),
         ['allowed_classes'=>false,'max_depth'=>64]);$counter=$metadata['table']['AUTO_INCREMENT'];
     m2f_assert((is_int($counter)||is_string($counter))&&preg_match('/\A[1-9][0-9]*\z/D',(string)$counter)===1
-        &&(int)$counter<=65533,'FINANCE_EXACT_ORIGINAL_MENU_COUNTER');$counter=(int)$counter;
-    $ids=['marketplace-finance-settings-read'=>$counter,'marketplace-finance-settings-write'=>$counter+1];
+        &&(int)$counter<=65532,'FINANCE_EXACT_ORIGINAL_MENU_COUNTER');$counter=(int)$counter;
+    $ids=['marketplace-finance-settings-read'=>$counter,'marketplace-finance-settings-write'=>$counter+1,
+        'marketplace-finance-transactions-read'=>$counter+2];
     require_once '/workspace/help/migrations/marketplace-finance-settings.php';
     $migration=new MarketplaceFinanceSettingsMigration($maintenance,'eb_');$results=[];
     foreach(['check','apply','check','apply']as$index=>$mode){$result=$migration->$mode();
@@ -514,13 +515,14 @@ def verify_finance_bootstrap(context, result):
         and receipt['source_files'] == list(FINANCE_SOURCE_FILES), 'EXACT_FINANCE_SAME_BEFORE_APP_SOURCE_RECEIPT')
     early = load(Path(context['run_dir']) / 'evidence/ms4-aftersale-early-migration-normal.json')['snapshots']['assets']
     expect(type(native) is dict and set(native) == {'tables','menus','old_menu_projection','auto_increment_before','auto_increment_after'}
-        and type(native['auto_increment_before']) is int and 1 <= native['auto_increment_before'] <= 65533
-        and type(native['auto_increment_after']) is int and native['auto_increment_after'] == native['auto_increment_before'] + 2,
+        and type(native['auto_increment_before']) is int and 1 <= native['auto_increment_before'] <= 65532
+        and type(native['auto_increment_after']) is int and native['auto_increment_after'] == native['auto_increment_before'] + 3,
         'FINANCE_EXACT_NATIVE_COUNTER_DELTA')
     counter = native['auto_increment_before']
     expect(type(ids) is dict and all(type(value) is int for value in ids.values())
-        and ids == {'marketplace-finance-settings-read':counter,'marketplace-finance-settings-write':counter+1}
-        and native['old_menu_projection'] == early['tables']['eb_system_menus']['projection'], 'FINANCE_EXACT_TWO_IDS_AND_ALL_OLD_MENU_ROWS')
+        and ids == {'marketplace-finance-settings-read':counter,'marketplace-finance-settings-write':counter+1,
+            'marketplace-finance-transactions-read':counter+2}
+        and native['old_menu_projection'] == early['tables']['eb_system_menus']['projection'], 'FINANCE_EXACT_THREE_IDS_AND_ALL_OLD_MENU_ROWS')
     tables = ['marketplace_finance_settings','marketplace_finance_settings_history']
     expect(type(receipt['results']) is list and len(receipt['results']) == 4, 'FINANCE_FOUR_ORIGINAL_MIGRATION_CALLS')
     for index, actual in enumerate(receipt['results']):
@@ -532,7 +534,8 @@ def verify_finance_bootstrap(context, result):
             dml_commit_attempted=True,dml_commit_observed=True,lock_acquired=True,lock_release_observed=True)
         expected = {'mode':'check' if index % 2 == 0 else 'apply','state':'applicable' if index == 0 else 'completed',
             'changed':written,'tables':{name:'missing' if index == 0 else 'compatible' for name in tables},
-            'pending':['table.'+name for name in tables]+['singleton','menu.marketplace-finance-settings-read','menu.marketplace-finance-settings-write'] if index == 0 else [],
+            'pending':['table.'+name for name in tables]+['singleton','menu.marketplace-finance-settings-read','menu.marketplace-finance-settings-write',
+                'menu.marketplace-finance-transactions-read'] if index == 0 else [],
             'menu_ids':{} if index == 0 else ids,'issues':[],'revision':None if index == 0 else 0,'history_count':0,
             'roles_modified':False,'real_funds_enabled':False,'progress':progress,'source_sha256':FINANCE_SOURCE_FILES[0]['sha256']}
         # PHP's empty associative result is serialized as [] on the initial check.
@@ -545,7 +548,7 @@ def verify_finance_bootstrap(context, result):
             and type(row['projected_columns']) is list and len(row['projected_columns']) == (22 if name == 'eb_system_menus' else 5)
             and row['projection']['encoding'] == 'php-serialize-row-sha256-sorted-multiset-v1'
             and type(row['projection']['rows']) is int
-            and row['projection']['rows'] == (early['tables']['eb_system_menus']['projection']['rows']+2 if name == 'eb_system_menus'
+            and row['projection']['rows'] == (early['tables']['eb_system_menus']['projection']['rows']+3 if name == 'eb_system_menus'
                 else 1 if name == 'eb_marketplace_finance_settings' else 0), 'FINANCE_FIXED_NATIVE_SNAPSHOTS')
     grants = receipt['grants']
     expect(type(grants) is dict and set(grants) == {'application_before','application_after','maintenance_before','maintenance_after'}

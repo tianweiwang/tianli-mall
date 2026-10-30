@@ -886,6 +886,30 @@ _PRODUCER_ENTRY_AFTER = br"""if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') ===
     exit(nhep_normal_history_main());
 }
 """
+_PRODUCER_FAILURE_BEFORE = br"""        fwrite(STDERR, json_encode(['status' => 'FAIL', 'code' => $code, 'class' => $class,
+            'normal_cleanup' => $cleanup], JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n");""".replace(b"\n", b"\r\n")
+_PRODUCER_FAILURE_AFTER = br"""        $diagnostic = ['source_tag' => null, 'line' => null, 'callsite' => null];
+        try {
+            $sourceTags = [__FILE__ => 'producer', '/run/nonempty/legacy-app.php' => 'legacy_app',
+                '/workspace/help/audit-regressions/isolated/lib/guard.php' => 'guard',
+                '/workspace/help/audit-regressions/isolated/lib/harness.php' => 'harness',
+                '/workspace/help/audit-regressions/isolated/ms4-migration.php' => 'migration'];
+            $sourceFile = $failure->getFile(); $sourceLine = $failure->getLine();
+            $diagnostic['source_tag'] = $sourceTags[$sourceFile] ?? 'other';
+            $diagnostic['line'] = is_int($sourceLine) && $sourceLine > 0 ? $sourceLine : null;
+            foreach (array_slice($failure->getTrace(), 0, 16) as $frame) {
+                if (!is_array($frame) || !is_string($frame['file'] ?? null)
+                    || !isset($sourceTags[$frame['file']])) continue;
+                $frameLine = $frame['line'] ?? null;
+                $diagnostic['callsite'] = ['source_tag' => $sourceTags[$frame['file']],
+                    'line' => is_int($frameLine) && $frameLine > 0 ? $frameLine : null];
+                break;
+            }
+        } catch (Throwable $ignored) {
+            $diagnostic = ['source_tag' => null, 'line' => null, 'callsite' => null];
+        }
+        fwrite(STDERR, json_encode(['status' => 'FAIL', 'code' => $code, 'class' => $class,
+            'normal_cleanup' => $cleanup, 'diagnostic' => $diagnostic], JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n");""".replace(b"\n", b"\r\n")
 
 
 def _producer_entry_source(raw):
@@ -897,7 +921,10 @@ def transform_producer_entry(raw: bytes) -> bytes:
     _producer_entry_source(raw)
     if raw.count(_PRODUCER_ENTRY_BEFORE) != 1 or not raw.endswith(_PRODUCER_ENTRY_BEFORE):
         raise ValueError("HISTORY_PRODUCER_UNIQUE_FINAL_ENTRY_REQUIRED")
+    if raw.count(_PRODUCER_FAILURE_BEFORE) != 1 or _PRODUCER_FAILURE_AFTER in raw:
+        raise ValueError("HISTORY_PRODUCER_UNIQUE_FAILURE_DIAGNOSTIC_REQUIRED")
     candidate = raw[:-len(_PRODUCER_ENTRY_BEFORE)] + _PRODUCER_ENTRY_AFTER
+    candidate = candidate.replace(_PRODUCER_FAILURE_BEFORE, _PRODUCER_FAILURE_AFTER, 1)
     if reverse_producer_entry(candidate) != raw:
         raise ValueError("HISTORY_PRODUCER_COMPLETE_ENTRY_REVERSE_REQUIRED")
     return candidate
@@ -906,6 +933,9 @@ def transform_producer_entry(raw: bytes) -> bytes:
 def reverse_producer_entry(candidate: bytes) -> bytes:
     if not isinstance(candidate, bytes) or candidate.count(_PRODUCER_ENTRY_AFTER) != 1 or not candidate.endswith(_PRODUCER_ENTRY_AFTER):
         raise ValueError("HISTORY_PRODUCER_UNIQUE_FINAL_REVERSE_ENTRY_REQUIRED")
-    raw = candidate[:-len(_PRODUCER_ENTRY_AFTER)] + _PRODUCER_ENTRY_BEFORE
+    if candidate.count(_PRODUCER_FAILURE_AFTER) != 1:
+        raise ValueError("HISTORY_PRODUCER_UNIQUE_FAILURE_DIAGNOSTIC_REVERSE_REQUIRED")
+    raw = candidate.replace(_PRODUCER_FAILURE_AFTER, _PRODUCER_FAILURE_BEFORE, 1)
+    raw = raw[:-len(_PRODUCER_ENTRY_AFTER)] + _PRODUCER_ENTRY_BEFORE
     _producer_entry_source(raw)
     return raw

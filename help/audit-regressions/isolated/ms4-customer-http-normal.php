@@ -1034,7 +1034,7 @@ function m4c_entry_finance_result(array $result,int $index,array $ids,string $so
     $expected=['mode'=>$index%2===0?'check':'apply','state'=>$index===0?'applicable':'completed','changed'=>$written,
         'tables'=>array_fill_keys($tables,$index===0?'missing':'compatible'),
         'pending'=>$index===0?['table.marketplace_finance_settings','table.marketplace_finance_settings_history','singleton',
-            'menu.marketplace-finance-settings-read','menu.marketplace-finance-settings-write']:[],
+            'menu.marketplace-finance-settings-read','menu.marketplace-finance-settings-write','menu.marketplace-finance-transactions-read']:[],
         'menu_ids'=>$index===0?[]:$ids,'issues'=>[],'revision'=>$index===0?null:0,'history_count'=>0,
         'roles_modified'=>false,'real_funds_enabled'=>false,'progress'=>$progress,'source_sha256'=>$sourceHash];
     m4c_entry_same($result,$expected);
@@ -1086,10 +1086,10 @@ function m4c_entry_finance_tables(PDO $db): array
     ksort($expected,SORT_STRING);m4c_expect($draft===$expected&&m4cb_rows($db,'SELECT * FROM eb_marketplace_finance_settings_history ORDER BY revision')===[],
         'M4C_FINANCE_EXACT_FOURTEEN_NULLS_AND_NO_HISTORY');return $result;
 }
-/** Permit exactly the two known rows and their two natural auto-increment advances. */
+/** Permit exactly the three known rows and their three natural auto-increment advances. */
 function m4c_entry_finance_observe(array $history,array $ids): array
 {
-    m4c_entry_keys($ids,['marketplace-finance-settings-read','marketplace-finance-settings-write']);
+    m4c_entry_keys($ids,['marketplace-finance-settings-read','marketplace-finance-settings-write','marketplace-finance-transactions-read']);
     $db=audit_db();m4c_expect(!$db->inTransaction()&&$db->setAttribute(PDO::ATTR_EMULATE_PREPARES,false)
         &&$db->query('SELECT CURRENT_USER()')->fetchColumn()==='audit_app@%'
         &&$db->query('SELECT DATABASE()')->fetchColumn()==='audit_auth','M4C_FINANCE_INDEPENDENT_DML_OBSERVER');
@@ -1100,9 +1100,9 @@ function m4c_entry_finance_observe(array $history,array $ids): array
     $sealed=$history['result']['snapshots']['assets']['tables']['eb_system_menus'];
     $before=unserialize(base64_decode($sealed['metadata_serialized_base64'],true),['allowed_classes'=>false,'max_depth'=>64]);
     $counter=$before['table']['AUTO_INCREMENT'];m4c_expect((is_int($counter)||is_string($counter))
-        &&preg_match('/\A[1-9][0-9]*\z/D',(string)$counter)===1&&(int)$counter<=65533,'M4C_FINANCE_ORIGINAL_MENU_COUNTER');$counter=(int)$counter;
-    m4c_expect($ids===['marketplace-finance-settings-read'=>$counter,'marketplace-finance-settings-write'=>$counter+1],
-        'M4C_FINANCE_EXACT_TWO_NATURAL_MENU_IDS');
+        &&preg_match('/\A[1-9][0-9]*\z/D',(string)$counter)===1&&(int)$counter<=65532,'M4C_FINANCE_ORIGINAL_MENU_COUNTER');$counter=(int)$counter;
+    m4c_expect($ids===['marketplace-finance-settings-read'=>$counter,'marketplace-finance-settings-write'=>$counter+1,
+        'marketplace-finance-transactions-read'=>$counter+2], 'M4C_FINANCE_EXACT_THREE_NATURAL_MENU_IDS');
     $common=['pid'=>0,'icon'=>'','module'=>'','controller'=>'','action'=>'','params'=>'[]','sort'=>1,'is_show'=>1,'is_show_path'=>1,
         'access'=>1,'menu_path'=>'','path'=>'','auth_type'=>2,'header'=>'','is_header'=>0,'is_del'=>0,
         'mark'=>'marketplace-finance-settings-v1','api_url'=>'marketplace/finance-settings'];
@@ -1110,20 +1110,25 @@ function m4c_entry_finance_observe(array $history,array $ids): array
         $rows=m4cb_rows($db,'SELECT * FROM eb_system_menus WHERE id=?',[$ids[$auth]]);$expected=$common+['id'=>$ids[$auth],'unique_auth'=>$auth,'menu_name'=>$label,'methods'=>$method];
         m4c_expect(count($rows)===1&&count($rows[0])===22,'M4C_FINANCE_TWO_COMPLETE_LEAF_ROWS');$actual=$rows[0];
         foreach($expected as$key=>$value)m4c_expect(isset($actual[$key])&&(string)$actual[$key]===(string)$value,'M4C_FINANCE_EVERY_LEAF_VALUE');}
-    $metadata=m4c_entry_early_metadata($db,'eb_system_menus');m4c_expect((string)$metadata['table']['AUTO_INCREMENT']===(string)($counter+2),
-        'M4C_FINANCE_ONLY_TWO_COUNTER_ADVANCES');$metadata['table']['AUTO_INCREMENT']=$before['table']['AUTO_INCREMENT'];
+    $auth='marketplace-finance-transactions-read';$rows=m4cb_rows($db,'SELECT * FROM eb_system_menus WHERE id=?',[$ids[$auth]]);
+    $expected=array_replace($common,['id'=>$ids[$auth],'unique_auth'=>$auth,'menu_name'=>'查看测试交易','methods'=>'GET',
+        'api_url'=>'marketplace/finance-transactions']);
+    m4c_expect(count($rows)===1&&count($rows[0])===22,'M4C_FINANCE_THIRD_COMPLETE_LEAF_ROW');$actual=$rows[0];
+    foreach($expected as$key=>$value)m4c_expect(isset($actual[$key])&&(string)$actual[$key]===(string)$value,'M4C_FINANCE_EVERY_LEAF_VALUE');
+    $metadata=m4c_entry_early_metadata($db,'eb_system_menus');m4c_expect((string)$metadata['table']['AUTO_INCREMENT']===(string)($counter+3),
+        'M4C_FINANCE_ONLY_THREE_COUNTER_ADVANCES');$metadata['table']['AUTO_INCREMENT']=$before['table']['AUTO_INCREMENT'];
     m4c_expect(serialize($metadata)===serialize($before)&&hash('sha256',serialize($metadata))===$sealed['metadata_sha256'],
         'M4C_FINANCE_ALL_OLD_MENU_METADATA_RETAINED');
     $ddl=$db->query('SHOW CREATE TABLE eb_system_menus')->fetch(PDO::FETCH_NUM)[1];
-    $restored=str_replace(' AUTO_INCREMENT='.($counter+2).' ',' AUTO_INCREMENT='.$counter.' ',$ddl,$replaced);
+    $restored=str_replace(' AUTO_INCREMENT='.($counter+3).' ',' AUTO_INCREMENT='.$counter.' ',$ddl,$replaced);
     m4c_expect($replaced===1&&hash('sha256',$restored)===$sealed['ddl_sha256'],'M4C_FINANCE_EXACT_OLD_DDL_WITH_ONLY_COUNTER_ADVANCE');
     $columns=$sealed['projected_columns'];m4c_expect($columns===array_keys($metadata['columns']),'M4C_FINANCE_ORIGINAL_MENU_COLUMN_ORDER');$hashes=[];
-    foreach(m4cb_rows($db,'SELECT '.implode(',',array_map('m4c_entry_early_quote',$columns)).' FROM eb_system_menus WHERE id NOT IN (?,?)',array_values($ids))as$row)
+    foreach(m4cb_rows($db,'SELECT '.implode(',',array_map('m4c_entry_early_quote',$columns)).' FROM eb_system_menus WHERE id NOT IN (?,?,?)',array_values($ids))as$row)
         $hashes[]=hash('sha256',serialize($row));sort($hashes,SORT_STRING);
     $projection=['encoding'=>'php-serialize-row-sha256-sorted-multiset-v1','rows'=>count($hashes),'sha256'=>hash('sha256',implode("\n",$hashes))];
     m4c_expect($projection===$sealed['projection'],'M4C_FINANCE_ALL_OLD_MENU_ROWS_TYPES_AND_MULTIPLICITY');
     $observed=['tables'=>m4c_entry_finance_tables($db),'menus'=>m4c_entry_finance_table($db,'eb_system_menus'),
-        'old_menu_projection'=>$projection,'auto_increment_before'=>$counter,'auto_increment_after'=>$counter+2];
+        'old_menu_projection'=>$projection,'auto_increment_before'=>$counter,'auto_increment_after'=>$counter+3];
     m4c_expect(m4cb_rows($db,$modeSql)===$observer&&!$db->inTransaction(),'M4C_FINANCE_NATIVE_OBSERVER_MODES_AND_IDLE_TRANSACTION_RETAINED');
     return $observed;
 }
