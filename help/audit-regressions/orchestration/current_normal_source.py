@@ -30,8 +30,8 @@ NAMES = (
 AR_PATH = "help/audit-regressions/isolated/ms4-aftersale-review-normal.php"
 AR_BEFORE = {"path": AR_PATH, "bytes": 245730,
              "sha256": "898eb47ab921a0572bcf04a4680e11d0eb4899465ea9598c60130d92bbc073fa"}
-AR_CURRENT = {"path": AR_PATH, "bytes": 265119,
-              "sha256": "a1c561bbad3095c3352525926394a752efc11d94bd2d66cf4b44581aef3105e5"}
+AR_CURRENT = {"path": AR_PATH, "bytes": 267112,
+              "sha256": "aa999cd76a66f86bfb9a3068271454702055a6e5e58769ee6786bb26b14d02a7"}
 PAID_PATH = "help/audit-regressions/isolated/ms5-paid-consumer-normal.php"
 PAID_BEFORE = {"path": PAID_PATH, "bytes": 110169,
                "sha256": "e6cf05cc96caf383f6a644785cf58cc38ee3b3a9623128484e8ccf79d90792f2"}

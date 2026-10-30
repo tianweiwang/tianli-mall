@@ -1637,3 +1637,11 @@ Source已完整字节正逆核：移除唯一新增块即可逐字恢复原Nginx
 语法第一次helper自然1因root/allcapsdrop对新root-owned临时缓存chown到镜像UID101被拒，完整失败流保留。Root核原已退出CID后nonforce移除且三fresh双raw-zero，再采用fresh UID101:101/tmpfs101/mode0700，不扩cap、不重启旧helper。第二次同配置实际nginx -t为0，保原非root user-directive提示和两条成功banner的完整stderr；独立无网络/只读配置及root/allcapsdrop/no-new-privileges，原CID自然Exited0/PID0/noRestart后nonforce移除，三fresh每stdout/stderr原始0B，11native完整双流实读。证据ms6-merchant-route-nginx-syntax-r2/RESULT.json及ms6-merchant-route-nginx-check-environment-r1/ADOPTION.json。检查未发业务HTTP或启动监听服务，未运行停用样本。
 
 这里只保存docker/nginx/default.conf与本09记录。现有本机1.28镜像语法证据不替代正式Dockerfile的v1.29.6运行、商家真实构建/冻结dist接入、URL刷新/静态MIME/完整bytes、旧API/H5及页面验收。Q2/Q3、原D9跟踪、私有卷/后台任务/回滚版本门/日志配额监控/完整发布责任保持，未推送/部署或真实资金。
+
+2026-10-30 正常语言缓存到期重建校验窄修：R87 原完整 A 两层进程均真实退出1；售后正常上传后的 Redis 保全发现一个新增语言类型缓存。原 stage6 保存的同内容缓存 expires=1793368057354，失败前原子快照 time_ms=1793368057996，已自然过期642ms；新 expiry 减3600000的创建时点落在原 before/after 窗口，原/新 Redis DUMP 摘要完全相同。原 warm 只读取命中值、不续期，因此这是正常 getter 重建被测试合同遗漏，不改上传业务或原失败结果。原 HTTP 序号3属于旧登录，不能关联此次上传。
+
+仅在原 warm 的40项源值 wire、原子类型/DUMP/TTL/tag、完整 DB/Redis/文件断言全部成功后，封存固定四个可到期语言缓存的同值证明；下一次 warm 开始清除证明。新增纯观察 helper 只接收原 held 快照与该证明：原项缺席或同内容旧期限早于新创建时点，新项必须同类型/同 DUMP、3600秒反推创建时点处于原两次快照之间。显式变化优先，永久 range_name、tag 和其他 Redis 键不新增例外，原完整期限比较不变。未知 HTTP/序号/gate 均置空，保留真实 typed caller。current_normal_source.AR_CURRENT 只更新本次整文件指纹，原固定 AR_BEFORE、来源资格和旧归档保持。
+
+实际 PHP8.2 语法通过；使用原失败的单项安全元数据、原 stage6 指纹和安装 SQL 中独立的中文 type-id，在无网络、只读解析器内重放比较：原完整 redis_delta 真实退出1，新 helper/central 真实退出0，覆盖缺席重建、窗内过期后重建、命中不变、自然消失、显式变化优先与首次 warm 不自动授权。此为有界单项组件判定，另外三项证明未在该元数据投影中实测；没有重放失败业务或改 Redis 时钟/TTL，不冒签完整40项 warm、新正常 A 或三端验收。两次组件观察器前置错误（文件属主读取、断言计数初始化）保留，候选源码未随其变化。原语言叶未改，既有双阶段安装组件不重复运行。后继仍须新来源的完整正常业务、Worker、普通关闭及独立核零。
+
+R87 失败实例原普通清退命令已完成；其宿主最终因三份 Mounts 列表顺序比较退出1，该失败不改签或重跑。非作者完整核原196组双流/精确4容器9卷1网非force移除、全部原件与冻结双树，逐字段确认仅挂载数组排列不同；随后独立六查询均真实0且双流为空。预览完整身份及挂载多重集保持，独立回执位于 R87/failed-aftersale-independent-zero-preservation-r1.json。源码修复与清退证据不代替完整 A/B、历史、设备、真实资金或发布验收；停止样本仍 NOT RUN。
