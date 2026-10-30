@@ -1189,6 +1189,8 @@ r43沿原小程序购物车和明确不扣款收银台，根20/cp638168689274781
 
 ### Task 10: 回归与交付
 
+2026-10-30正常来源路径窄修：R86原M自然0且完整独立读回通过；A在创建Run及首次Host调用前真实退出1，固定错误REAL_PINNED_RESOURCE_SOURCE。M与SOURCE-DATA已使用仓库归档的proof-php-ini，S前缀的proof_group却保留旧artifact目录；两目录均存在且原18字节INI/固定reference完整摘要一致。仅在唯一current_normal_source作者生成S前缀时exact-once将该固定Path绑定同一个proof_ini_root，不增加参数、备用目录或存在性选择。保持严格路径相等、单成员/六角色/scan_dir/固定reference/预算、其余11辅助函数及原7396字节业务后缀；proof_group只允许这一字面量变化并完整逆回原件。先提取真实生成函数消费旧M公开setup/freeze作纯读取检查，再沿新来源资格生成后继；不修改R86冻结源码或回执，不重跑旧A，不将源码检查转签为业务通过。
+
 2026-10-30历史准备诊断窄修（实施前）：R13 producer真实exit1、无seal，现有失败stderr将非NHE枚举折叠为generic，精确谓词无法追溯。只修改现有 `history_upgrade_source.py` 的producer正逆派生，保持归档供体、冻结R13及所有旧回执不变。在原失败JSON的status/code/class/normal_cleanup之外追加diagnostic：throw位置仅用固定source_tag和正整数line；从最多16个异常帧中只取首个固定控制源的source_tag/line作为callsite（否则null），不输出路径、函数、message、参数或原trace。成功路径、169个函数中的其余168个、37步/13seal、cleanup、真实返回码及128M→512M预算保持；只允许main失败输出和既有尾入口派生变化。以唯一seam完整正逆还原原供体SHA、非作者源审及原PHP8.2纯语法验证，不运行已停止的故障/负向样本，也不将此修复当旧R13死因或历史验收通过。失败实例另沿已有普通非force清退/独立核零收尾，不伪造成功seal授权。 本轮独立源审/完整正逆及实际PHP8.2纯语法已通过；未运行异常样本。R13已以原Host身份/原生记录/别名检查执行两base正常stop(-1)/wait0、producer原wait1，精确3容器/6卷/1网普通退役，6669旧公件及新增382件两遍保全、旧冻结源码复核通过，独立六fresh核零/历史ID及物理别名缺席、四个预览容器原24字段/完整挂载保持。旧exit1及死因UNKNOWN保留，成功关闭未调用，历史验收仍INCOMPLETE。
 
 - 运行全部既有用例与 O 系列、D19、R05（下单子场景）、K01（或 K02–K05）；写 `records/ms4/`；停止，等待验收（11 文档 §5.7）。

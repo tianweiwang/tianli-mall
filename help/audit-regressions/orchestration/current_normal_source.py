@@ -1983,6 +1983,9 @@ def build_normal(output: str | Path, authority_pointer: dict[str, Any], syntax_r
     s_prefix = "".join(old_s.decode("utf-8").splitlines(keepends=True)[:165]).encode("utf-8")
     s_prefix = replace_constant(s_prefix, "SOURCE", source_sha)
     s_prefix = once(s_prefix, ("Path('H:/天俪商城/worktrees/ms4-language-cache-normal-check')").encode(), ("Path(" + repr(authority["validation_root"]) + ")").encode())
+    proof_root_before = "Path('H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r20-proof-memory-budget-source-r1/candidate/proof-php-ini')".encode()
+    proof_root_after = ("Path(" + repr(proof_ini_root.as_posix()) + ")").encode()
+    s_prefix = once(s_prefix, proof_root_before, proof_root_after)
     s_prefix = replace_constant(s_prefix, "PINS", {name: pin(current9[name])["sha256"] for name in (
         "ms4-host.py", "normal-close-ms4-fulfillment.py", "verify-zero-ms4-fulfillment.py")})
     s_prefix = replace_constant(s_prefix, "PROFILE_PUBLICATION", pin(pp_raw))
@@ -2082,6 +2085,10 @@ try:
     require(s[s.index(BUSINESS_MARKER):].encode() == suffix.encode(), "ENTIRE_ORIGINAL_S_BUSINESS_SUFFIX_EXACT")
     old_helpers = functions(b"".join(old_s.splitlines(keepends=True)[:165]))
     new_s_functions = functions(after["validation/run.py"])
+    proof_group_before = old_helpers["proof_group"]
+    proof_group_after = new_s_functions["proof_group"]
+    new_s_functions["proof_group"] = once(proof_group_after, proof_root_after, proof_root_before)
+    require(new_s_functions["proof_group"] == proof_group_before, "PROOF_GROUP_ONLY_FIXED_SOURCE_ROOT_LITERAL_INVERSE")
     require(all(new_s_functions[name] == body for name, body in old_helpers.items()), "ALL_ORIGINAL_S_HELPER_FUNCTIONS_EXACT")
     require(_source_function(after["materializer/prepare.py"], "source_authority") == _source_function(after["validation/run.py"], "source_authority"), "IDENTICAL_M_S_CURRENT_SOURCE_AUTHORITY")
     require(_source_function(after["materializer/prepare.py"], "validate_complete_source_tree") == tree_join
@@ -2096,7 +2103,10 @@ try:
               "historical_prefix_edges": 25, "current_edges": len(current_edges), "total_edges": len(edges),
               "merges": data["merge_count"], "cumulative_patch_base": PATCH_BASE, "cumulative_paths": len(committed),
               "capture_patch_base": capture["baseline_sha"], "capture_paths": capture["delta_file_count"],
-              "original_business_suffix_exact": True, "all_original_S_helpers_exact": True,
+              "original_business_suffix_exact": True, "all_original_S_helpers_exact": False,
+              "S_helper_preservation": {"total": len(old_helpers), "direct_exact": len(old_helpers) - 1,
+                  "only_changed_helper": "proof_group", "before": pin(proof_group_before), "after": pin(proof_group_after),
+                  "only_fixed_source_root_literal_inverse_exact": True, "all_exact_after_literal_inverse": True},
               "whole_original_source_tree_join_exact": True, "identical_M_S_current_source_authority": True,
               "complete_forward_reverse_replay": True, "history_fixed_descriptors_not_current_runtime": True,
               "runtime": "NOT RUN", "approval": "NOT_GRANTED_REQUIRES_INDEPENDENT_NORMAL18_SOURCE_REVIEW"}
