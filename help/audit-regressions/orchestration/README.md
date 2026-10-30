@@ -4,7 +4,7 @@
 
 现用作者另需的两组固定公共 donor 也保存在同一索引：原 `project-organization-20261023` 下的 baseline PINS/Core9/B31 与 historical-normal PINS/18件，新增60件、66,018,409字节。新增行单列真实 `origin_root`，原242行及其归档字节保持；只选源码、来源索引和合成棋盘图，不递归收入原目录中的其它文件或运行资料。
 
-这是**源码归档和恢复资料**。包含旧完整编排、后续失败版本和修正后的完整编排源码。本目录不宣称可直接跨机器运行或业务验证通过。交付分支为 `feature/ms4-asset-consumers`；最早的 `codex/audit-base` 链接不包含本次交接。
+这是**源码归档和恢复资料**。包含旧完整编排、后续失败版本和修正后的完整编排源码。本目录不宣称可直接跨机器运行或业务验证通过。当前交付分支为 `feature/multi-merchant-release-config-20261027`；初次源码交接保留在 `feature/ms4-asset-consumers`；最早的 `codex/audit-base` 链接不包含本次交接。
 
 ## 当前候选的正常回归接入
 
