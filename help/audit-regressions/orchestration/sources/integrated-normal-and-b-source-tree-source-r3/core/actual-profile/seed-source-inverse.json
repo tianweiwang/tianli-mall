@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "scope": "SOURCE_ONLY_FINITE_SEED_TRANSFORM",
+  "source_path": "help/audit-regressions/isolated/ms2-migration.php",
+  "source_sha256": "88db586d64cd6cbfc8f21580087411d7b132d8812f12d99351a76232d76d00b4",
+  "before_function_sha256": "f1daaa24709f6fbafcaa774c9b609810c50c9f8b47a49c6e9f59db7c6ad9c3f1",
+  "after_function_sha256": "8a93a5a8bd30dd17e5811af62e012b837f60accd03cc8e1483598ef38bf1cc6c",
+  "source_call_sites": 5,
+  "finite_changes": [
+    "function m2f_seed -> m4i_seed",
+    "all exact source guards -> actual independent m4i_source"
+  ],
+  "whole_function_inverse_equal": true,
+  "runtime_SQL_App": "NOT RUN"
+}

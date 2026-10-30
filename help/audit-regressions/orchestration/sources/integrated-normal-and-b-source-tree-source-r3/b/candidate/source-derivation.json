@@ -1,0 +1,152 @@
+{
+  "schema": 1,
+  "scope": "INTEGRATED_B_UI_SOURCE_TREE_SOURCE_DERIVATION_NOT_RUNTIME_SEAL",
+  "source_sha": null,
+  "parent": null,
+  "baseline_source": "fad44a4f8f54febb4f5c60d7bf3ccbb58909af54",
+  "immutable_B_source": {
+    "commit": "57de95a1cd5852348e2dcb56752e3723983f6e13",
+    "path": "H:/天俪商城/worktrees/multi-merchant-integrated/help/audit-regressions/orchestration/sources/fresh-b-customer-form-external-source-r3",
+    "source_derivation": {
+      "bytes": 190569,
+      "sha256": "d6c67b4bbe2e4861d272e2b520e09108e8224f50cded4b56c9bf1df9e7a735e2"
+    }
+  },
+  "current_nonself_artifacts": [
+    {
+      "path": "compose.yml",
+      "bytes": 20968,
+      "sha256": "f060cbb4ff16c57030d1a1767fdbc26f503117607c18b330e40b717a42460e17"
+    },
+    {
+      "path": "interface-v1.json",
+      "bytes": 158902,
+      "sha256": "c4dc173d7ef7db5b1281b7a2ed80a9d37e42bdba7a6d2b4aaff406d3b265481b"
+    },
+    {
+      "path": "ms4-host.py",
+      "bytes": 571238,
+      "sha256": "0dce6f1bc9cf3660ba6e27956e9fffa23d01d35a7a0049302871f5a0d8297e7d"
+    },
+    {
+      "path": "ms4-initialize.php",
+      "bytes": 131354,
+      "sha256": "93bf9548ee40ff04c345d0503c7f889d4a97020ec8b6e05402abd1e74ee6a089"
+    },
+    {
+      "path": "normal-close-ms4-fulfillment.py",
+      "bytes": 264062,
+      "sha256": "c079119c216fe232bceda45fff2619bc3e2cc1fc8aef2096326fa51727fd414d"
+    },
+    {
+      "path": "README.md",
+      "bytes": 3668,
+      "sha256": "40641cb39b1a0fb2b9bbfd4ffcbf71a7f06197e2bb14a3b0acbcb0bcf4641166"
+    },
+    {
+      "path": "seed-source-inverse.json",
+      "bytes": 639,
+      "sha256": "c993a6d07c69fa8f534dc39fc2239278187040d909dffbd34d8c888e54a8cf2e"
+    },
+    {
+      "path": "verify-zero-ms4-fulfillment.py",
+      "bytes": 661658,
+      "sha256": "e99a2516850c10fa7ff4c4cdbee190562e7f2740d51e8378b7ce704187507e1e"
+    },
+    {
+      "path": "ms4-ui-nginx.conf",
+      "bytes": 4105,
+      "sha256": "033ae09499501ec9ef9a2ab87d5da53687491be06f20615781f2d5b01c4cbca5"
+    },
+    {
+      "path": "ms4-ui-public-copy.php",
+      "bytes": 25847,
+      "sha256": "0f2a7944b25db42cbf935816b4b9366a599049a28ac77e32bab167b08fec47d0"
+    },
+    {
+      "path": "ms4-ui-copy.php",
+      "bytes": 49275,
+      "sha256": "5a9a7885004680e542f93e21a6cbdf4a12782da0a11a6101a9492f30e4b0a54a"
+    },
+    {
+      "path": "ms4-order.png",
+      "bytes": 234,
+      "sha256": "1cb2b0cfb8e075b494268977c5f6360309edbc4e0800cd5c58399d291c5185b8"
+    }
+  ],
+  "pending_runtime_manifests": [
+    "manifests/ui-h5-dist.json",
+    "manifests/ui-merchant-dist.json",
+    "manifests/ui-admin-dist.json",
+    "manifests/ui-public-copy-profile.json"
+  ],
+  "protected_raw": [
+    {
+      "path": "ms4-ui-public-copy.php",
+      "before": {
+        "bytes": 25847,
+        "sha256": "0f2a7944b25db42cbf935816b4b9366a599049a28ac77e32bab167b08fec47d0"
+      },
+      "current": {
+        "bytes": 25847,
+        "sha256": "0f2a7944b25db42cbf935816b4b9366a599049a28ac77e32bab167b08fec47d0"
+      },
+      "whole_equal": true
+    },
+    {
+      "path": "ms4-ui-nginx.conf",
+      "before": {
+        "bytes": 4105,
+        "sha256": "033ae09499501ec9ef9a2ab87d5da53687491be06f20615781f2d5b01c4cbca5"
+      },
+      "current": {
+        "bytes": 4105,
+        "sha256": "033ae09499501ec9ef9a2ab87d5da53687491be06f20615781f2d5b01c4cbca5"
+      },
+      "whole_equal": true
+    },
+    {
+      "path": "ms4-order.png",
+      "before": {
+        "bytes": 234,
+        "sha256": "1cb2b0cfb8e075b494268977c5f6360309edbc4e0800cd5c58399d291c5185b8"
+      },
+      "current": {
+        "bytes": 234,
+        "sha256": "1cb2b0cfb8e075b494268977c5f6360309edbc4e0800cd5c58399d291c5185b8"
+      },
+      "whole_equal": true
+    }
+  ],
+  "producer_source_qualification": {
+    "path": "producer-source-qualification/PRODUCER-SOURCE-PROVENANCE.json",
+    "bytes": 8383,
+    "sha256": "9a24418113441567b4ce2a5909b5dcc6b48ad6625ddf8ac1aa25a45b45f43ed2"
+  },
+  "browser_source_derivation": {
+    "path": "BROWSER-SOURCE-DERIVATION.json",
+    "bytes": 4197,
+    "sha256": "5ae6f6c5e429bd26ca1b451025a790011b29432af784bdc114c4d6c06baed31f"
+  },
+  "runtime_full17_sealed": false,
+  "actual_clean_Source_Val_M_A_build_B_Run": null,
+  "stopped_samples": "NOT RUN",
+  "target_execution": "NOT RUN",
+  "full_source_body_proof": {
+    "path": "source-proof/FUNCTION-BODY-PRESERVATION.json",
+    "bytes": 25811,
+    "sha256": "cdc9ef8967258a9e87cd52d05f8ff016e44a852805a16a43b8aef195b342cb2c"
+  },
+  "final_code_DAG_proofs": [
+    {
+      "path": "source-proof/FINAL-CODE-PIN-DAG.json",
+      "bytes": 5041,
+      "sha256": "bde514b6e5417fc612c0bb11079b2e804816482cdf2605b9d3ad871e67d5d3b3"
+    },
+    {
+      "path": "source-proof/BROWSER-MANIFEST-CODE-DAG.json",
+      "bytes": 4011,
+      "sha256": "146c5899578be66af6107c5f33298868d8082a2be123f858da772635dab9d877"
+    }
+  ]
+}

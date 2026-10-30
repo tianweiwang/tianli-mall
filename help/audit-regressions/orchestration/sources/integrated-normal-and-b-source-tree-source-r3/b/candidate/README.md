@@ -1,0 +1,26 @@
+# Integrated B/UI SourceTree Source candidate
+
+This is Source preparation against fad44a4f8f54febb4f5c60d7bf3ccbb58909af54, not a runnable or accepted B package. Actual new clean HEAD/Val/M/A/build/B/Run qualification is UNBOUND. All new profile and caller entry points retain explicit early unbound seals; Root callers reject before creating output or a Run. No candidate, target, Docker/PHP/Node/build/SQL/HTTP or external funds were run by this Source author.
+
+The immutable input is the frozen B Source at Git57de95a1cd5852348e2dcb56752e3723983f6e13 plus the current reviewed Core complete SourceTree producer. Old sources, receipts and three dist bytes were not relabelled. Physical public-copy, nginx and PNG preserve exact original bytes. The original business/oracle/DOM/observer contracts remain; source metadata does not establish runtime success.
+
+Implemented Source: complete tracked manifest/context/full initializer blob copy/readback; actual writer identity and natural0/exact nonforce removal/fresh absence before readers; two physical same-volume RO roots with full native/kernel/namespace checks and live dev/ino/mode/uid/gid join; exact original nine base volumes plus four UI volumes; both actual start wrappers and start/start -a vectors; full ordinary close and independent six fresh raw-dual-empty queries. Unknown/RW/foreign alias consumers reject.
+
+The main Host native, compose and five fixed public6/7/9-env inspect sites now retain real Popen PID, same-handle communicate/wait, full created/raw stdout/raw stderr/terminal evidence in evidence/native-streams. Original native-N metadata, public templates and return.strip semantics remain. Existing public keep/close/zero inventory readers already recurse and preserve every file in that subtree; no exemption was added. Copy-native and UI zero retain their original complete native producers. Historical dead A/worker subprocess.run functions were not changed for cleanup.
+
+Fixed producer literals were qualified by real Git bodies, whole diffs and original contracts; browser8 keeps five members raw and changes only backend/oracle descriptors in its two JS members and contract. Full interface, wrapper, browser manifest, Host/close/zero code pins remain strict. The two repo PHP sources preserve prepare34/backend37, ENV9, four/five roles and all business windows. Original UI20 steps/20 observer ACK/42 frames/viewports320-390-1440, merchant34/25 captures/9 screens/23 facts, independent H5 and original A/fullS remain separate required acceptance.
+
+The four runtime manifest files are deliberately absent: ui-h5-dist, ui-merchant-dist, ui-admin-dist, ui-public-copy-profile. Root must obtain three real new same-HEAD builds and complete original physical-copy qualification before binding a new qualified generation. Source PINS below describe only existing Source files, not a full17 runtime seal. Future current M/A/postA/publication/native contracts remain None, without fallback or current-file-derived trust. See ../QUALIFICATION-FIELDS.json and ../root-source/DESIGN-TASKS.md.
+
+Pending: Root nonauthor whole Source review and necessary final parse checks, actual code commit/clean detached Val/full tree, original successful A/worker ordinary close/independent zero/postA, actual builds/full17 qualification, fresh B/browser/merchant/H5/full acceptance and ordinary retire/independent raw zero. Stopped negative/fault/concurrent/recovery/K samples remain NOT RUN; no force, retry, external third party, funds or deployment is enabled.
+
+Rollback is a new reviewed Source derivation from preserved inputs. Never edit old frozen sources/receipts, reuse an old Run or relax a guard.
+
+
+## r2 Source successor (not Runtime qualification)
+
+This profile is the separately derived r2 Source. The exact fulfillment-migration role now uses the existing same source-tree volume at both /workspace and /source, RO, with its original other three mounts and all original permissions, network, actor, source and business oracles retained. Known PHP producer bodies are fixed from Root-reviewed Git 07a2085; that is not the future final HEAD.
+
+Core public native calls retain the original legacy metadata and return contracts, and now record actual same-handle PID/argv/wait plus all four public evidence files. A separate, exact phase sidecar preserves the full original four-file prefix and all new records across ordinary close and independent six raw-empty queries. Old85/105 business names and result schemas remain unchanged. All three Core entry authorities are None; the earliest entry rejects before any Run, output or target. Existing proof-INI evidence remains a separate original namespace. No logs/exec/attach/private child environment is collected.
+
+The B Source keeps its original 34/37 extra files, 9 public env fields, 4 prepare/5 backend roles, existing three genuine dist/public-copy byte oracles, 20 steps/20 observer ACK/42 frames at viewports320/390/1440, plus independent merchant34/25captures/9screens/23facts/H5 and original full A/worker/ordinary-close/independent-zero/post-A duties. Four real build manifests are absent; none was manufactured. New HEAD/Val/M/A/post-A/build/Run/authority/sealed data are UNBOUND. This Source cannot be treated as a new successful Run or execution approval.

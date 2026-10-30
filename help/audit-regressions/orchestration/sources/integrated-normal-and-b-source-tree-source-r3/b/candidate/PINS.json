@@ -1,0 +1,66 @@
+{
+  "schema": 1,
+  "scope": "INTEGRATED_B_UI_SOURCE_TREE_SOURCE_CANDIDATE_PINS_NOT_RUNTIME_SEAL",
+  "members": {
+    "compose.yml": {
+      "bytes": 20968,
+      "sha256": "f060cbb4ff16c57030d1a1767fdbc26f503117607c18b330e40b717a42460e17"
+    },
+    "interface-v1.json": {
+      "bytes": 159230,
+      "sha256": "20440db702a06d1a17e4939f22d0253437d1ef72f3727a273b068bf19c869f03"
+    },
+    "ms4-host.py": {
+      "bytes": 571278,
+      "sha256": "54af1df114c8f67d36c80956598a22d1844020e8e7e3c735018560682264f0d8"
+    },
+    "ms4-initialize.php": {
+      "bytes": 131354,
+      "sha256": "aaa17caacccc4061de43f7e9692d79220c68b988633a89d89b18617e64c0aab4"
+    },
+    "normal-close-ms4-fulfillment.py": {
+      "bytes": 264062,
+      "sha256": "a0b97b63693e2e4d5403021a8f5aa0e58d1382581529ea2b2726a50ff9a91823"
+    },
+    "README.md": {
+      "bytes": 5290,
+      "sha256": "9113de181609092ba46ffb7c8ced51b611e401cf5d33b3515358ab8d1b6e50c8"
+    },
+    "seed-source-inverse.json": {
+      "bytes": 639,
+      "sha256": "c993a6d07c69fa8f534dc39fc2239278187040d909dffbd34d8c888e54a8cf2e"
+    },
+    "source-derivation.json": {
+      "bytes": 4849,
+      "sha256": "90c00a2aeb956fd7d0ff01ceb93d41edbffc1e9ffd847aa99f409c2e533b1de4"
+    },
+    "verify-zero-ms4-fulfillment.py": {
+      "bytes": 661698,
+      "sha256": "0a76ac46f8d5a8930977f303d1c32fad02135cafe9aebe2dbe21cbedeaf00de6"
+    },
+    "ms4-ui-nginx.conf": {
+      "bytes": 4105,
+      "sha256": "033ae09499501ec9ef9a2ab87d5da53687491be06f20615781f2d5b01c4cbca5"
+    },
+    "ms4-ui-public-copy.php": {
+      "bytes": 25847,
+      "sha256": "0f2a7944b25db42cbf935816b4b9366a599049a28ac77e32bab167b08fec47d0"
+    },
+    "ms4-ui-copy.php": {
+      "bytes": 49275,
+      "sha256": "775d5d941349f91dd7c3468e5f1b6d9e09308942ae8ac3b9c370534ac3717cdc"
+    },
+    "ms4-order.png": {
+      "bytes": 234,
+      "sha256": "1cb2b0cfb8e075b494268977c5f6360309edbc4e0800cd5c58399d291c5185b8"
+    },
+    "DESIGN.md": {
+      "bytes": 954,
+      "sha256": "9b8d4a8c03f6d88151ae86ddd76e6c29872cd22e8d51cf736eeb3f889e5e7711"
+    },
+    "PUBLICATION.json": {
+      "bytes": 995,
+      "sha256": "d2b673e2c80443563f87976c4d0795b4dd971ee3d8422a26d90bbfa4954d50c7"
+    }
+  }
+}

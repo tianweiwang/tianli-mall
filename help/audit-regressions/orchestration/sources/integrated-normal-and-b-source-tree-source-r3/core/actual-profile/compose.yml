@@ -1,0 +1,376 @@
+x-php: &php
+  image: sha256:1099f749e2a38ec9453c6b820db8a78174514bc72d14edf5c203e13b82816e0a
+  pull_policy: never
+  entrypoint: [php]
+  working_dir: /workspace
+  read_only: true
+  tmpfs: [/tmp]
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  networks: [isolation]
+  environment: &audit-env
+    AUDIT_ISOLATED: "1"
+    AUDIT_RUN_ID: ${AUDIT_RUN_ID:?required}
+    AUDIT_RUN_DIR: /run/audit
+    AUDIT_REPO_DIR: /workspace
+    AUDIT_PROJECT: ${AUDIT_PROJECT:?required}
+    AUDIT_SOURCE_SHA: ${AUDIT_SOURCE_SHA:?required}
+    AUDIT_GUARD_MODE: read-only
+    MS4_PROOF_NAME: ${MS4_PROOF_NAME:-initializer}
+  labels: &labels
+    tianli.audit: "1"
+    tianli.audit.run: ${AUDIT_RUN_ID}
+
+services:
+  audit-bootstrap:
+    <<: *php
+    command: [/run/ms4-prep/ms4-initialize.php, "${MS4_BOOTSTRAP_PHASE:-prepare}"]
+    volumes:
+      - ${AUDIT_REPO_DIR:?required}:/workspace:ro
+      - ${AUDIT_REPO_DIR:?required}:/source:ro
+      - ${MS4_PREP_DIR:?required}:/run/ms4-prep:ro
+      - ${AUDIT_RUN_DIR:?required}:/run/audit
+      - bootstrap-secrets:/run/audit-bootstrap:${MS4_BOOTSTRAP_PRIVATE_MODE:-ro}
+      - redis-secrets:/run/audit-redis:${MS4_BOOTSTRAP_PRIVATE_MODE:-ro}
+      - app-secrets:/run/audit-app:${MS4_BOOTSTRAP_PRIVATE_MODE:-ro}
+      - fixture-secrets:/run/audit-fixtures:${MS4_BOOTSTRAP_PRIVATE_MODE:-ro}
+  audit-ms4-initialize:
+    <<: *php
+    user: '0:0'
+    command: [/run/ms4-prep/ms4-initialize.php]
+    volumes:
+      - ${AUDIT_REPO_DIR:?required}:/workspace:ro
+      - ${AUDIT_REPO_DIR:?required}:/source:ro
+      - ${MS4_PREP_DIR:?required}:/run/ms4-prep:ro
+      - ${AUDIT_RUN_DIR:?required}:/run/audit
+      - bootstrap-secrets:/run/audit-bootstrap:ro
+      - app-secrets:/run/audit-app:ro
+      - customer-form-evidence:/run/audit-customer-form:rw
+      - type: volume
+        source: source-tree
+        target: /run/audit-source-tree
+        read_only: false
+        volume:
+          nocopy: true
+  audit-ms5-payment-migration:
+    <<: *php
+    command: [help/audit-regressions/isolated/ms5-payment-migration.php]
+    environment:
+      <<: *audit-env
+      AUDIT_MILESTONE: MS5
+      AUDIT_PHASE: normal-only
+    volumes:
+      - ${AUDIT_REPO_DIR:?required}:/workspace:ro
+      - ${AUDIT_REPO_DIR:?required}:/source:ro
+      - ${AUDIT_RUN_DIR:?required}:/run/audit
+      - bootstrap-secrets:/run/audit-bootstrap:ro
+      - app-secrets:/run/audit-app:ro
+  audit-ms4-customer-prepare:
+    <<: *php
+    command: [help/audit-regressions/isolated/ms4-customer-http-normal.php, prepare]
+    tmpfs: [/tmp:rw, /workspace/crmeb/runtime:rw, /workspace/crmeb/public:rw]
+    environment:
+      <<: *audit-env
+      AUDIT_MILESTONE: MS4
+      AUDIT_PHASE: customer-http
+      APP_ENV: testing
+      PHP_MARKETPLACE_ENABLED: "true"
+      PHP_MARKETPLACE_TRADE_ENABLED: "true"
+      PHP_MARKETPLACE_PAYMENT_TEST_ENABLED: "true"
+      PHP_MARKETPLACE_SELF_OPERATED_MER_ID: "${MS4_CUSTOMER_SELF_MER_ID:-}"
+      PHP_CACHE_DRIVER: redis
+    volumes:
+      - type: volume
+        source: source-tree
+        target: /workspace
+        read_only: true
+        volume:
+          nocopy: true
+      - type: volume
+        source: source-tree
+        target: /source
+        read_only: true
+        volume:
+          nocopy: true
+      - ${MS4_PREP_DIR:?required}:/run/ms4-prep:ro
+      - ${AUDIT_RUN_DIR:?required}:/run/audit
+      - ${AUDIT_REPO_DIR:?required}/crmeb/public/install/crmeb.sql:/workspace/crmeb/public/install/crmeb.sql:ro
+      - app-secrets:/run/audit-app:ro
+      - fixture-secrets:/run/audit-fixtures:rw
+  audit-ms4-customer-http:
+    <<: *php
+    stop_signal: SIGTERM
+    command: [help/audit-regressions/isolated/ms4-customer-http-normal.php, verify]
+    tmpfs: [/tmp:rw, /workspace/crmeb/runtime:rw, /workspace/crmeb/public:rw]
+    networks:
+      isolation:
+        aliases: [audit-app]
+    environment:
+      <<: *audit-env
+      AUDIT_MILESTONE: MS4
+      AUDIT_PHASE: customer-http
+      APP_ENV: testing
+      PHP_MARKETPLACE_ENABLED: "true"
+      PHP_MARKETPLACE_TRADE_ENABLED: "true"
+      PHP_MARKETPLACE_PAYMENT_TEST_ENABLED: "true"
+      PHP_MARKETPLACE_SELF_OPERATED_MER_ID: "${MS4_CUSTOMER_SELF_MER_ID:-}"
+      PHP_CACHE_DRIVER: redis
+      PHP_MARKETPLACE_CUSTOMER_FORM_PRIVATE_ROOT: /run/audit-customer-form
+    volumes:
+      - type: volume
+        source: source-tree
+        target: /workspace
+        read_only: true
+        volume:
+          nocopy: true
+      - type: volume
+        source: source-tree
+        target: /source
+        read_only: true
+        volume:
+          nocopy: true
+      - ${MS4_PREP_DIR:?required}:/run/ms4-prep:ro
+      - ${AUDIT_RUN_DIR:?required}:/run/audit
+      - ${AUDIT_REPO_DIR:?required}/crmeb/public/install/crmeb.sql:/workspace/crmeb/public/install/crmeb.sql:ro
+      - app-secrets:/run/audit-app:ro
+      - fixture-secrets:/run/audit-fixtures:ro
+      - customer-form-evidence:/run/audit-customer-form:rw
+  audit-ms5-paid-producer:
+    <<: *php
+    user: '0:0'
+    stop_signal: SIGTERM
+    command: [help/audit-regressions/isolated/ms5-paid-consumer-normal.php, produce]
+    tmpfs: [/tmp:rw, /workspace/crmeb/runtime:rw, /workspace/crmeb/public:rw]
+    networks:
+      isolation:
+        aliases: [audit-app]
+    environment:
+      PHP_INI_SCAN_DIR: /usr/local/etc/php/conf.d:/run/audit/proof-php-ini
+      <<: *audit-env
+      AUDIT_MILESTONE: MS5
+      AUDIT_PHASE: paid-producer
+      MS5_PROOF_NAME: paid-producer
+      APP_ENV: testing
+      PHP_MARKETPLACE_ENABLED: "true"
+      PHP_MARKETPLACE_TRADE_ENABLED: "true"
+      PHP_MARKETPLACE_PAYMENT_TEST_ENABLED: "true"
+      PHP_MARKETPLACE_SELF_OPERATED_MER_ID: "${MS4_CUSTOMER_SELF_MER_ID:-}"
+      PHP_CACHE_DRIVER: redis
+      PHP_MARKETPLACE_CUSTOMER_FORM_PRIVATE_ROOT: /run/audit-customer-form
+    volumes:
+      - type: volume
+        source: source-tree
+        target: /workspace
+        read_only: true
+        volume:
+          nocopy: true
+      - type: volume
+        source: source-tree
+        target: /source
+        read_only: true
+        volume:
+          nocopy: true
+      - ${MS4_PREP_DIR:?required}:/run/ms4-prep:ro
+      - ${AUDIT_RUN_DIR:?required}:/run/audit
+      - ${AUDIT_REPO_DIR:?required}/crmeb/public/install/crmeb.sql:/workspace/crmeb/public/install/crmeb.sql:ro
+      - app-secrets:/run/audit-app:ro
+      - fixture-secrets:/run/audit-fixtures:rw
+      - customer-form-evidence:/run/audit-customer-form:rw
+  audit-ms4-fulfillment-migration:
+    <<: *php
+    user: '0:0'
+    command: [help/audit-regressions/isolated/ms4-fulfillment-migration.php]
+    environment:
+      <<: *audit-env
+      AUDIT_MILESTONE: MS4
+      AUDIT_PHASE: fulfillment-migration
+    volumes:
+      - type: volume
+        source: source-tree
+        target: /workspace
+        read_only: true
+        volume:
+          nocopy: true
+      - type: volume
+        source: source-tree
+        target: /source
+        read_only: true
+        volume:
+          nocopy: true
+      - ${AUDIT_RUN_DIR:?required}:/run/audit
+      - bootstrap-secrets:/run/audit-bootstrap:ro
+      - app-secrets:/run/audit-app:ro
+  audit-ms4-fulfillment-normal:
+    <<: *php
+    user: '0:0'
+    stop_signal: SIGTERM
+    command: [help/audit-regressions/isolated/ms4-fulfillment-normal.php, normal]
+    tmpfs: [/tmp:rw, /workspace/crmeb/runtime:rw, /workspace/crmeb/public:rw]
+    environment:
+      PHP_INI_SCAN_DIR: /usr/local/etc/php/conf.d:/run/audit/proof-php-ini
+      <<: *audit-env
+      AUDIT_MILESTONE: MS4
+      AUDIT_PHASE: fulfillment-normal
+      MS4_FULFILLMENT_PROOF_NAME: fulfillment-normal
+      APP_ENV: testing
+      PHP_MARKETPLACE_ENABLED: "true"
+      PHP_MARKETPLACE_TRADE_ENABLED: "true"
+      PHP_MARKETPLACE_PAYMENT_TEST_ENABLED: "true"
+      PHP_MARKETPLACE_SELF_OPERATED_MER_ID: "${MS4_CUSTOMER_SELF_MER_ID:-}"
+      PHP_CACHE_DRIVER: redis
+      PHP_MARKETPLACE_CUSTOMER_FORM_PRIVATE_ROOT: /run/audit-customer-form
+    volumes:
+      - type: volume
+        source: source-tree
+        target: /workspace
+        read_only: true
+        volume:
+          nocopy: true
+      - type: volume
+        source: source-tree
+        target: /source
+        read_only: true
+        volume:
+          nocopy: true
+      - ${MS4_PREP_DIR:?required}:/run/ms4-prep:ro
+      - ${AUDIT_RUN_DIR:?required}:/run/audit
+      - ${AUDIT_REPO_DIR:?required}/crmeb/public/install/crmeb.sql:/workspace/crmeb/public/install/crmeb.sql:ro
+      - app-secrets:/run/audit-app:ro
+      - fixture-secrets:/run/audit-fixtures:rw
+      - customer-form-evidence:/run/audit-customer-form:ro
+  audit-ms4-aftersale-review-normal:
+    <<: *php
+    user: '0:0'
+    stop_signal: SIGTERM
+    command: [help/audit-regressions/isolated/ms4-aftersale-review-normal.php, normal]
+    tmpfs: [/tmp:rw, /workspace/crmeb/runtime:rw, /workspace/crmeb/public:rw]
+    networks:
+      isolation:
+        aliases: [audit-app]
+    environment:
+      PHP_INI_SCAN_DIR: /usr/local/etc/php/conf.d:/run/audit/proof-php-ini
+      <<: *audit-env
+      AUDIT_MILESTONE: MS4
+      AUDIT_PHASE: aftersale-review-normal
+      MS4_AFTERSALE_REVIEW_PROOF_NAME: aftersale-review-normal
+      APP_ENV: testing
+      PHP_MARKETPLACE_ENABLED: "true"
+      PHP_MARKETPLACE_TRADE_ENABLED: "true"
+      PHP_MARKETPLACE_PAYMENT_TEST_ENABLED: "true"
+      PHP_MARKETPLACE_SELF_OPERATED_MER_ID: "${MS4_CUSTOMER_SELF_MER_ID:-}"
+      PHP_CACHE_DRIVER: redis
+      PHP_MARKETPLACE_CUSTOMER_FORM_PRIVATE_ROOT: /run/audit-customer-form
+      PHP_MARKETPLACE_AFTERSALE_ENABLED: "true"
+      PHP_MARKETPLACE_AFTERSALE_PRIVATE_ROOT: /var/lib/crmeb-aftersale-evidence
+    volumes:
+      - type: volume
+        source: source-tree
+        target: /workspace
+        read_only: true
+        volume:
+          nocopy: true
+      - type: volume
+        source: source-tree
+        target: /source
+        read_only: true
+        volume:
+          nocopy: true
+      - ${MS4_PREP_DIR:?required}:/run/ms4-prep:ro
+      - ${AUDIT_RUN_DIR:?required}:/run/audit
+      - ${AUDIT_REPO_DIR:?required}/crmeb/public/install/crmeb.sql:/workspace/crmeb/public/install/crmeb.sql:ro
+      - app-secrets:/run/audit-app:ro
+      - fixture-secrets:/run/audit-fixtures:rw
+      - aftersale-evidence:/var/lib/crmeb-aftersale-evidence:rw
+      - customer-form-evidence:/run/audit-customer-form:rw
+  audit-ms4-worker-normal:
+    <<: *php
+    user: '0:0'
+    stop_signal: SIGTERM
+    command: [help/audit-regressions/isolated/ms4-worker-normal.php, normal]
+    tmpfs: [/tmp:rw, /workspace/crmeb/runtime:rw, /workspace/crmeb/public:rw]
+    environment:
+      PHP_INI_SCAN_DIR: /usr/local/etc/php/conf.d:/run/audit/proof-php-ini
+      <<: *audit-env
+      AUDIT_MILESTONE: MS4
+      AUDIT_PHASE: worker-normal
+      MS4_WORKER_NORMAL_PROOF_NAME: worker-normal
+      APP_ENV: testing
+      PHP_MARKETPLACE_ENABLED: "true"
+      PHP_MARKETPLACE_TRADE_ENABLED: "true"
+      PHP_MARKETPLACE_PAYMENT_TEST_ENABLED: "true"
+      PHP_MARKETPLACE_SELF_OPERATED_MER_ID: "${MS4_CUSTOMER_SELF_MER_ID:-}"
+      PHP_CACHE_DRIVER: redis
+      PHP_MARKETPLACE_CUSTOMER_FORM_PRIVATE_ROOT: /run/audit-customer-form
+      PHP_MARKETPLACE_AFTERSALE_ENABLED: "true"
+      PHP_MARKETPLACE_AFTERSALE_PRIVATE_ROOT: /var/lib/crmeb-aftersale-evidence
+    volumes:
+      - type: volume
+        source: source-tree
+        target: /workspace
+        read_only: true
+        volume:
+          nocopy: true
+      - type: volume
+        source: source-tree
+        target: /source
+        read_only: true
+        volume:
+          nocopy: true
+      - ${MS4_PREP_DIR:?required}:/run/ms4-prep:ro
+      - ${AUDIT_RUN_DIR:?required}:/run/audit
+      - ${AUDIT_REPO_DIR:?required}/crmeb/public/install/crmeb.sql:/workspace/crmeb/public/install/crmeb.sql:ro
+      - app-secrets:/run/audit-app:ro
+      - fixture-secrets:/run/audit-fixtures:rw
+      - aftersale-evidence:/var/lib/crmeb-aftersale-evidence:ro
+      - customer-form-evidence:/run/audit-customer-form:ro
+  audit-mysql:
+    image: sha256:c7a313f1402365dc91253bdbdb1e74c6a361b036106d8bd25b8ec8e2dd0069f4
+    pull_policy: never
+    command: [mysqld, "--sql-mode=STRICT_TRANS_TABLES,ONLY_FULL_GROUP_BY,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION"]
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: /run/audit-bootstrap/root-password
+      MYSQL_ROOT_HOST: "%"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - bootstrap-secrets:/run/audit-bootstrap:ro
+    networks: [isolation]
+    labels: *labels
+    healthcheck:
+      test: [CMD, mysqladmin, ping, --protocol=tcp, --host=127.0.0.1, --silent]
+      interval: 2s
+      timeout: 2s
+      retries: 40
+  audit-redis:
+    image: sha256:6c8f6edc1aa871a76a257ef86a2089d108e64b78d16f45b89f09c6a4ab30d07e
+    pull_policy: never
+    entrypoint: [redis-server]
+    command: [/run/audit-redis/redis.conf]
+    volumes:
+      - redis-secrets:/run/audit-redis:ro
+      - redis-data:/data
+    networks: [isolation]
+    labels: *labels
+
+networks:
+  isolation:
+    internal: true
+    labels: *labels
+volumes:
+  mysql-data:
+    labels: *labels
+  redis-data:
+    labels: *labels
+  bootstrap-secrets:
+    labels: *labels
+  redis-secrets:
+    labels: *labels
+  app-secrets:
+    labels: *labels
+  fixture-secrets:
+    labels: *labels
+  aftersale-evidence:
+    labels: *labels
+  customer-form-evidence:
+    labels: *labels
+  source-tree:
+    labels: *labels

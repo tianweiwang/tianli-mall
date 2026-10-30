@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "scope": "INTEGRATED_B_UI_SOURCE_TREE_ROOT_SOURCE_PINS",
+  "members": {
+    "DESIGN-TASKS.md": {
+      "bytes": 3197,
+      "sha256": "a9cf2716c6f98742a95c5a0a05aa5c668418677b80cad08deefa98dc0977ab90"
+    },
+    "INPUTS.json": {
+      "bytes": 488,
+      "sha256": "16e41d9e10d3833e3a6645278d48c6449ecb26483f0b2be8b84074c3f3b4cbf0"
+    },
+    "root-ui-materialize-freeze.py": {
+      "bytes": 136859,
+      "sha256": "344482038ab6df22d58256fb51fee6b68ac458e71010fbc403cf150f082d6e4e"
+    },
+    "root-ui-start-to-ready.py": {
+      "bytes": 56808,
+      "sha256": "de54dc880c807a8709a34784484a562debdc1c9c4b7aefc8120671042059a9da"
+    }
+  }
+}

@@ -115,6 +115,47 @@ def read_pointer(pointer: dict[str, Any]) -> bytes:
     return raw
 
 
+def _archived_public_pointer(origin: dict[str, Any]) -> dict[str, Any]:
+    """Resolve only the two fixed public donor allowlists; never open their origin."""
+    require(type(origin) is dict and set(origin) == {"path", "bytes", "sha256"}
+            and type(origin["path"]) is str and type(origin["bytes"]) is int and origin["bytes"] > 0
+            and type(origin["sha256"]) is str and re.fullmatch("[a-f0-9]{64}", origin["sha256"]),
+            "EXACT_PUBLIC_DONOR_LOGICAL_DESCRIPTOR")
+    logical = Path(origin["path"])
+    require(logical.is_absolute() and logical.as_posix() == origin["path"]
+            and ".." not in logical.parts, "PUBLIC_DONOR_LOGICAL_PATH")
+    if logical.is_relative_to(BASELINE):
+        relative = BASELINE.name + "/" + logical.relative_to(BASELINE).as_posix()
+        origin_root = BASELINE.parent.as_posix()
+    else:
+        require(logical.is_relative_to(HISTORICAL_NORMAL), "ONLY_TWO_FIXED_PUBLIC_DONOR_ORIGINS")
+        relative = HISTORICAL_NORMAL.parent.name + "/normal-source/" + logical.relative_to(HISTORICAL_NORMAL).as_posix()
+        origin_root = HISTORICAL_NORMAL.parent.parent.as_posix()
+    tool_root = Path(__file__).resolve().parent
+    manifest = decode(stable_read(tool_root / "source-manifest.json"))
+    require(manifest["schema"] == 2 and manifest["status"] == "SOURCE_ARCHIVE_RUNTIME_NOT_READY"
+            and manifest["file_count"] == len(manifest["files"]), "PUBLIC_DONOR_ARCHIVE_INDEX")
+    groups = manifest["public_donor_required"]
+    require(type(groups) is dict and set(groups) == {"core9", "b31", "normal18"}
+            and {name: len(rows) for name, rows in groups.items()} == {"core9": 10, "b31": 31, "normal18": 19},
+            "FIXED_PUBLIC_DONOR_GROUPS")
+    selected = [name for rows in groups.values() for name in rows]
+    require(len(selected) == len(set(selected)) == 60, "EXACT_PUBLIC_DONOR_SIXTY")
+    name = "sources/" + relative
+    indexed = {row["path"]: row for row in manifest["files"]}
+    require(len(indexed) == len(manifest["files"]) and name in selected, "FIXED_PUBLIC_DONOR_ALLOWLIST_MEMBER")
+    row = indexed[name]
+    require(row["origin_root"] == origin_root and row["origin_relative_path"] == relative
+            and manifest["public_donor_origins"][row["package"]] == origin_root
+            and row["package"] == Path(relative).parts[0]
+            and {key: row[key] for key in ("bytes", "sha256")} == {key: origin[key] for key in ("bytes", "sha256")},
+            "PUBLIC_DONOR_ORIGINAL_AND_ACTUAL_BYTES_JOIN")
+    actual = tool_root / name
+    ordinary(actual)
+    require(actual.resolve(strict=True).is_relative_to(tool_root / "sources"), "PUBLIC_DONOR_INSIDE_ARCHIVE")
+    return {"path": actual.as_posix(), "bytes": origin["bytes"], "sha256": origin["sha256"]}
+
+
 def reviewed_authority(pointer: dict[str, Any]) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
     authority = decode(read_pointer(pointer))
     source_sha = authority.get("source_sha") if type(authority) is dict else None
@@ -165,7 +206,7 @@ def reviewed_authority(pointer: dict[str, Any]) -> tuple[dict[str, Any], dict[st
     require(delta["source_sha"] == source_sha and delta["status"] == "CAPTURED_NOT_APPROVED"
             and len(delta["files"]) == capture["delta_file_count"], "REVIEWED_COMPLETE_DELTA_POINTER")
     read_pointer(capture["files"]["BASELINE-INVENTORY.jsonl"])
-    read_pointer(BASELINE_PINS)
+    read_pointer(_archived_public_pointer(BASELINE_PINS))
     return authority, inventory
 
 
@@ -970,12 +1011,14 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
     for protected in (Path(__file__).resolve().parents[3], BASELINE,
                       Path(authority["candidate_root"]), Path(authority["validation_root"])):
         require(not out.is_relative_to(protected), "PROFILE_OUTPUT_OUTSIDE_SOURCE_TREES")
-    baseline = decode(read_pointer(BASELINE_PINS))
+    baseline_source = _archived_public_pointer(BASELINE_PINS)
+    baseline = decode(read_pointer(baseline_source))
     before: dict[str, bytes] = {}
     for name in NAMES:
         key = "core/actual-profile/" + name
         require(key in baseline["members"], "FIXED_BASELINE_CORE9_MEMBER")
-        before[name] = read_pointer({"path": (BASELINE / key).as_posix(), **baseline["members"][key]})
+        before[name] = read_pointer(_archived_public_pointer(
+            {"path": (BASELINE / key).as_posix(), **baseline["members"][key]}))
     after = dict(before)
     if isolation_subnet is not None:
         original_network = b"networks:\n  isolation:\n    internal: true\n    labels: *labels\nvolumes:"
@@ -1221,7 +1264,8 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
     require(named not in derivation, "ONE_NEW_NAMED_SOURCE_DERIVATION")
     derivation[named] = {
         "scope": "REVIEWED_CURRENT_SOURCE_PROFILE_ONLY_NO_RUNTIME_ACCEPTANCE", "source_sha": source_sha,
-        "baseline_profile": BASELINE_PINS, "technical_authority": authority_pointer,
+        "baseline_profile": BASELINE_PINS, "baseline_profile_source": baseline_source,
+        "technical_authority": authority_pointer,
         "capture": authority["capture"], "independent_review": authority["independent_review"],
         "active_aftersale_before": AR_BEFORE, "active_aftersale_current": AR_CURRENT,
         "active_profile_updates": updates,
@@ -1289,6 +1333,7 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
     manifest = {
         "schema": 1, "status": "REVIEWED_PROFILE_SOURCE_DERIVED_NOT_RUNTIME_QUALIFIED", "source_sha": source_sha,
         "technical_authority": authority_pointer, "baseline_profile": BASELINE_PINS,
+        "baseline_profile_source": baseline_source,
         "ordered_members9": list(NAMES), "before": {name: pin(before[name]) for name in NAMES},
         "candidate": {name: pin(after[name]) for name in NAMES},
         "changed": [name for name in NAMES if before[name] != after[name]],
@@ -1344,6 +1389,35 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
 HISTORICAL_NORMAL = Path("H:/天俪商城/artifacts/project-organization-20261023/currentb54-next-normal-preparation-r3/normal-source")
 HISTORICAL_NORMAL_PINS = {"path": (HISTORICAL_NORMAL / "PINS.json").as_posix(), "bytes": 14595,
                           "sha256": "36aae1201b16d0d268e64d9eab53e1f9c86e38cec156d0882d4b6bb7b06c3c1c"}
+
+
+def _fixed_normal_public_sources() -> tuple[dict[str, dict[str, Any]], dict[str, dict[str, Any]]]:
+    """The five historical source inputs have fixed origins and real archive locations."""
+    pins = decode(read_pointer(_archived_public_pointer(HISTORICAL_NORMAL_PINS)))
+    origins = {"baseline_PINS": dict(BASELINE_PINS), "normal_PINS": dict(HISTORICAL_NORMAL_PINS)}
+    for name in ("materializer/prepare.py", "validation/run.py", "validation/PROFILE-PUBLICATION.json"):
+        row = pins["files"][name]
+        require(row["path"] == (HISTORICAL_NORMAL / name).as_posix(), "FIXED_NORMAL_SOURCE_LOGICAL_ORIGIN")
+        origins[name] = {key: row[key] for key in ("path", "bytes", "sha256")}
+    require(set(origins) == {"baseline_PINS", "normal_PINS", "materializer/prepare.py",
+                            "validation/run.py", "validation/PROFILE-PUBLICATION.json"}, "FIXED_FIVE_PUBLIC_SOURCE_INPUTS")
+    return origins, {name: _archived_public_pointer(row) for name, row in origins.items()}
+
+
+def _normal_public_source_selection(binding: dict[str, Any]) -> dict[str, Any]:
+    origins, actual = _fixed_normal_public_sources()
+    if "historical_source_origins" in binding:
+        require(binding["historical_source_origins"] == origins and binding["historical_sources"] == actual,
+                "EXACT_NEW_FIVE_PUBLIC_SOURCE_BINDING")
+        layout, selected = "ARCHIVED_FIXED5", origins
+    else:
+        selected = {name: row for name, row in origins.items() if name != "baseline_PINS"}
+        require(type(binding["historical_sources"]) is dict and binding["historical_sources"] == selected,
+                "EXACT_LEGACY_FOUR_LOGICAL_PUBLIC_SOURCE_BINDING")
+        layout = "LEGACY_FIXED4"
+    return {"layout": layout, "origins": selected, "actual": {name: actual[name] for name in selected}}
+
+
 PATCH_BASE = "b7cabe0619789b308203f86b799102539d9ef803"
 HISTORICAL_HEAD = "b54ad9c39ca95a1b8b15ed6724082b98b1370c53"
 BUSINESS_MARKER = "    require(not ARCHIVE.exists() and not ARCHIVE.is_symlink(), 'ONE_NEW_NORMAL_ORCHESTRATION_ONLY')"
@@ -1462,6 +1536,7 @@ def _profile_groups(host: bytes, inventory: dict[str, dict[str, Any]]) -> dict[s
 
 _COMMON_RUNTIME = r'''
 CURRENT_READS = {}
+CURRENT_PUBLIC_SOURCE_SELECTION = None
 SOURCE_REVIEW_POINTER = None
 
 def current_assert(value, code):
@@ -1550,6 +1625,33 @@ def verify_normal_review(path, expected_sha):
         current_stream({'path':(NORMAL_ROOT/name).as_posix(),**wanted})
     return review
 
+def current_public_source_inputs(binding):
+    global CURRENT_PUBLIC_SOURCE_SELECTION
+    names={'baseline_PINS','normal_PINS','materializer/prepare.py','validation/run.py','validation/PROFILE-PUBLICATION.json'}
+    current_assert(type(FIXED_PUBLIC_SOURCE_ORIGINS) is dict and type(FIXED_PUBLIC_SOURCE_FILES) is dict
+        and set(FIXED_PUBLIC_SOURCE_ORIGINS)==set(FIXED_PUBLIC_SOURCE_FILES)==names,'EXACT_FIXED_FIVE_PUBLIC_SOURCE_CONSTANTS')
+    if 'historical_source_origins' in binding:
+        current_assert(type(binding['historical_source_origins']) is dict and type(binding['historical_sources']) is dict
+            and binding['historical_source_origins']==FIXED_PUBLIC_SOURCE_ORIGINS
+            and binding['historical_sources']==FIXED_PUBLIC_SOURCE_FILES,'EXACT_NEW_FIVE_PUBLIC_SOURCE_BINDING')
+        layout='ARCHIVED_FIXED5';selected=FIXED_PUBLIC_SOURCE_ORIGINS
+    else:
+        selected={name:row for name,row in FIXED_PUBLIC_SOURCE_ORIGINS.items() if name!='baseline_PINS'}
+        current_assert(type(binding['historical_sources']) is dict and binding['historical_sources']==selected,
+            'EXACT_LEGACY_FOUR_LOGICAL_PUBLIC_SOURCE_BINDING')
+        layout='LEGACY_FIXED4'
+    current_assert(layout==FIXED_PUBLIC_SOURCE_LAYOUT,'EXACT_REVIEWED_PUBLIC_SOURCE_LAYOUT')
+    actual={name:FIXED_PUBLIC_SOURCE_FILES[name] for name in selected}
+    for name,origin in selected.items():
+        pointer=actual[name]
+        current_assert(type(origin) is dict and type(pointer) is dict
+            and set(origin)==set(pointer)=={'path','bytes','sha256'}
+            and {key:origin[key] for key in ['bytes','sha256']}=={key:pointer[key] for key in ['bytes','sha256']},
+            'FIXED_LOGICAL_AND_ACTUAL_PUBLIC_SOURCE_BYTES_SAME')
+        current_stream(pointer)
+    CURRENT_PUBLIC_SOURCE_SELECTION={'layout':layout,'origins':selected,'actual':actual}
+    return CURRENT_PUBLIC_SOURCE_SELECTION
+
 def source_authority(pub, reader, check):
     check(SOURCE_REVIEW_POINTER is not None,'CURRENT_SOURCE_GRAPH_NOT_APPROVED_WITHOUT_INDEPENDENT_NORMAL18_REVIEW')
     binding,capture,profile=verify_current_technical()
@@ -1566,7 +1668,7 @@ def source_authority(pub, reader, check):
     check(len(rows)==capture['tracked_file_count'] and [row['path'] for row in rows]==sorted({row['path'] for row in rows}),'EXACT_ALL_CURRENT_TRACKED_MEMBERS')
     complete={row['path']:{key:row[key] for key in ['path','bytes','sha256']} for row in rows}
     check(all(type(row['bytes']) is int and row['bytes']>=0 and re.fullmatch('[a-f0-9]{64}',row['sha256']) for row in complete.values()),'TYPED_FULL_CURRENT_TRACKED_RECORDS')
-    for pointer in binding['historical_sources'].values():current_stream(pointer)
+    public_selection=current_public_source_inputs(binding)
     for pointer in data['historical_retirements'].values():current_stream(pointer)
     check(len(data['historical_retirements'])==11 and data['source_patch_base']==SOURCE_PATCH_BASE
         and data['chain_historical_prefix_count']==25 and len(data['commit_chain'])==data['chain_total_count']
@@ -1596,7 +1698,8 @@ def source_authority(pub, reader, check):
     return {'all':complete,'groups':groups,'roots':data['roots'],'extras':data['extras'],'references':data['references'],
         'proof_php_ini':data['proof_php_ini'],'committed':data['committed'],'commit_chain':data['commit_chain'],
         'new_tracked_paths':data['new_tracked_paths'],'protected_namespaces':protected,
-        'historical_retirements':data['historical_retirements'],'git_index':[{key:row[key] for key in ['path','git_mode','git_blob']} for row in rows]}
+        'historical_retirements':data['historical_retirements'],'public_source_selection':public_selection,
+        'git_index':[{key:row[key] for key in ['path','git_mode','git_blob']} for row in rows]}
 '''
 
 
@@ -1755,12 +1858,13 @@ def build_normal(output: str | Path, authority_pointer: dict[str, Any], syntax_r
             and set(current_profile["candidate"]) == set(NAMES)
             and {path.name for path in profile.iterdir()} == set(NAMES), "EXACT_ALREADY_DERIVED_CURRENT_CORE9")
     current9 = {name: read_pointer({"path": (profile / name).as_posix(), **current_profile["candidate"][name]}) for name in NAMES}
-    baseline_pins = decode(read_pointer(HISTORICAL_NORMAL_PINS))
+    baseline_pins = decode(read_pointer(_archived_public_pointer(HISTORICAL_NORMAL_PINS)))
     members = tuple(baseline_pins["source_members18"])
     require(len(members) == len(set(members)) == 18, "COMPLETE_ORIGINAL_NORMAL18_SET")
-    before = {name: read_pointer({"path": (HISTORICAL_NORMAL / name).as_posix(),
-                                 **{key: baseline_pins["files"][name][key] for key in ("bytes", "sha256")}})
+    before = {name: read_pointer(_archived_public_pointer({"path": (HISTORICAL_NORMAL / name).as_posix(),
+                                 **{key: baseline_pins["files"][name][key] for key in ("bytes", "sha256")}}))
               for name in members}
+    historical_origins, historical_sources = _fixed_normal_public_sources()
     old_m = before["materializer/prepare.py"]
     old_s = before["validation/run.py"]
     historical_pub = decode(before["validation/PROFILE-PUBLICATION.json"])
@@ -1816,8 +1920,11 @@ def build_normal(output: str | Path, authority_pointer: dict[str, Any], syntax_r
                                "current_0c13_paid_producer_failure_retirement", "current_28dc_paid_producer_failure_retirement",
                                "current_175f_paid_producer_failure_retirement", "current_6e3850_paid_producer_failure_retirement")}
     host = current9["ms4-host.py"]
+    proof_ini_root = Path(__file__).resolve().parent / "sources/r20-proof-memory-budget-source-r1/candidate/proof-php-ini"
+    require(pin(stable_read(proof_ini_root / constant(host, "PROOF_INI_LEAF"))) == constant(host, "PROOF_INI_PIN"),
+            "TRACKED_ORIGINAL_PROOF_INI_SOURCE_BYTES")
     proof_ini = {"schema": 1, "scope": "MS4_PROOF_PHP_INI_RESOURCE_SOURCE",
-                 "source_root": "H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r20-proof-memory-budget-source-r1/candidate/proof-php-ini",
+                 "source_root": proof_ini_root.as_posix(),
                  "files": [{"path": constant(host, "PROOF_INI_LEAF"), **constant(host, "PROOF_INI_PIN")}],
                  "roles": constant(host, "PROOF_INI_ROLES"), "scan_dir": constant(host, "PROOF_INI_SCAN"),
                  "config_reference": constant(host, "PROOF_INI_REFERENCE")}
@@ -1838,7 +1945,7 @@ def build_normal(output: str | Path, authority_pointer: dict[str, Any], syntax_r
             "committed_count": len(committed), "committed": committed, "new_tracked_paths": sorted(added),
             "requirement_paths": requirement_paths, "requirements": [inventory[name] for name in requirement_paths],
             **groups, "proof_php_ini": proof_ini, "historical_retirements": retirements,
-            "target_runtime": "NOT RUN"}
+            "public_donor_source_layout": "ARCHIVED_FIXED5", "target_runtime": "NOT RUN"}
     data_raw = encode(data)
     data_pointer = {"path": (qualification / "SOURCE-DATA.json").as_posix(), **pin(data_raw)}
     business_suffix = old_s.decode("utf-8").split(BUSINESS_MARKER, 1)
@@ -1850,16 +1957,17 @@ def build_normal(output: str | Path, authority_pointer: dict[str, Any], syntax_r
                "capture": authority["capture"], "baseline_profile": BASELINE_PINS, "profile_pins": profile_pin,
                "source_data": data_pointer, "initializer_syntax": syntax_group,
                "original_business_suffix": pin(suffix.encode("utf-8")),
-               "historical_sources": {"normal_PINS": HISTORICAL_NORMAL_PINS,
-                                      **{name: {"path": (HISTORICAL_NORMAL / name).as_posix(), **pin(before[name])}
-                                         for name in ("materializer/prepare.py", "validation/run.py", "validation/PROFILE-PUBLICATION.json")}},
+               "historical_sources": historical_sources, "historical_source_origins": historical_origins,
                "runtime_authorization": "REQUIRES_SEPARATE_FIXED_INDEPENDENT_NORMAL18_SOURCE_REVIEW"}
     binding_raw = encode(binding)
     binding_pointer = {"path": (qualification / "CURRENT-BINDING.json").as_posix(), **pin(binding_raw)}
     common = ("\nimport os,stat\n" + "CURRENT_SOURCE_SHA = " + repr(source_sha) + "\nSOURCE_PATCH_BASE = " + repr(PATCH_BASE)
               + "\nCURRENT_PARENT = " + repr(parent) + "\nNORMAL_ROOT = Path(" + repr(normal.as_posix()) + ")"
               + "\nCURRENT_SOURCE_BINDING = " + repr(binding_pointer) + "\nNORMAL_MEMBERS18 = " + repr(list(members))
-              + "\nPROFILE_NAMES9 = " + repr(list(NAMES)) + "\nCURRENT_M_RESULT_KEYS = " + repr(list(M_RESULT_KEYS)) + "\n" + _COMMON_RUNTIME)
+              + "\nPROFILE_NAMES9 = " + repr(list(NAMES)) + "\nCURRENT_M_RESULT_KEYS = " + repr(list(M_RESULT_KEYS))
+              + "\nFIXED_PUBLIC_SOURCE_ORIGINS = " + repr(historical_origins)
+              + "\nFIXED_PUBLIC_SOURCE_FILES = " + repr(historical_sources)
+              + "\nFIXED_PUBLIC_SOURCE_LAYOUT = 'ARCHIVED_FIXED5'\n" + _COMMON_RUNTIME)
     selected = [{"path": name, **pin(current9[name])} for name in NAMES]
     publication = {"schema": 2, "scope": "CURRENT_COMPLETE_NORMAL9_SOURCE_PUBLICATION", "source_sha": source_sha,
                    "parent": parent, "current_source_binding": binding_pointer, "selected9": selected,
@@ -1889,6 +1997,9 @@ def build_normal(output: str | Path, authority_pointer: dict[str, Any], syntax_r
     m_prefix = m_prefix.replace((HISTORICAL_NORMAL / "validation").as_posix(), (normal / "validation").as_posix())
     m_prefix = m_prefix.replace("H:/天俪商城/worktrees/ms4-language-cache-normal-check", authority["validation_root"])
     m_prefix = m_prefix.replace("H:/天俪商城/worktrees/ms4-language-cache-normal", authority["candidate_root"])
+    m_prefix = once(m_prefix.encode(),
+        "ini=Path('H:/天俪商城/artifacts/ms4-worker-normal-source-preparation-r1/r20-proof-memory-budget-source-r1/candidate/proof-php-ini')".encode(),
+        ("ini=Path(" + repr(proof_ini_root.as_posix()) + ")").encode()).decode()
     m_prefix = replace_constant(m_prefix.encode(), "head", source_sha)
     m_prefix = replace_constant(m_prefix, "parent", parent).decode()
     m_body = old_m.decode("utf-8").split("\ntry:\n", 1)[1]
@@ -2032,13 +2143,13 @@ def _b_constant(raw: bytes, name: str, value: Any) -> bytes:
 
 
 def _b_baseline() -> dict[str, bytes]:
-    pins = decode(read_pointer(BASELINE_PINS))["members"]
+    pins = decode(read_pointer(_archived_public_pointer(BASELINE_PINS)))["members"]
     prefix = "b/"
     names = [name for name in pins if name.startswith(prefix) and (
         name.startswith("b/candidate/") or name.startswith("b/browser-v1/")
         or name.startswith("b/root-source/") or name == "b/current-core-aux/CORE-AUX-AUTHORITY.json")]
     require(names, "FIXED_COMPLETE_B_FUNCTIONAL_SOURCE")
-    return {name[len(prefix):]: read_pointer({"path": (BASELINE / name).as_posix(), **pins[name]})
+    return {name[len(prefix):]: read_pointer(_archived_public_pointer({"path": (BASELINE / name).as_posix(), **pins[name]}))
             for name in names}
 
 
@@ -2556,6 +2667,8 @@ def _b_normal_consumer(normal_root: Path, binding: dict[str, Any], normal_review
     normal_s = read_pointer({"path": (normal_root / "validation/run.py").as_posix(),
                              **review["members"]["validation/run.py"]})
     tree_join = _source_function(normal_s, "validate_complete_source_tree")
+    public_origins, public_sources = _fixed_normal_public_sources()
+    public_selection = _normal_public_source_selection(binding)
     constants = {
         "NORMAL_ROOT": normal_root, "CURRENT_SOURCE_SHA": binding["source_sha"],
         "CURRENT_SOURCE_BINDING": _pointer(normal_root / "qualification/CURRENT-BINDING.json"),
@@ -2564,6 +2677,8 @@ def _b_normal_consumer(normal_root: Path, binding: dict[str, Any], normal_review
         "CURRENT_B_PARENT": binding["parent"], "CURRENT_B_NORMAL_REVIEW": normal_review,
         "CURRENT_B_M_RESULT": setup_pointer, "CURRENT_B_NORMAL_ROOT_PINS": _pointer(normal_root / "validation/PINS.json"),
         "PROFILE_PUBLICATION": pin(stable_read(normal_root / "validation/PROFILE-PINS.json")),
+        "FIXED_PUBLIC_SOURCE_ORIGINS": public_origins, "FIXED_PUBLIC_SOURCE_FILES": public_sources,
+        "FIXED_PUBLIC_SOURCE_LAYOUT": public_selection["layout"],
     }
     prefix = "\n".join(name + " = " + ("Path(" + repr(value.as_posix()) + ")" if isinstance(value, Path) else repr(value))
                        for name, value in constants.items()) + "\n"
@@ -2909,9 +3024,10 @@ def collect_post_a_history(output: str | Path, authority_pointer: dict[str, Any]
                  Path(authority["candidate_root"]), Path(authority["validation_root"])]
     for path in protected:
         require(not out.is_relative_to(path) and not path.is_relative_to(out), "POST_A_OUTPUT_DISJOINT_FROM_SOURCES_RUN_AND_B")
-    baseline = decode(reads.pointer(BASELINE_PINS))
+    baseline = decode(reads.pointer(_archived_public_pointer(BASELINE_PINS)))
     member = "b/root-source/root-ui-materialize-freeze.py"
-    consumer_pointer = {"path": (BASELINE / member).as_posix(), **baseline["members"][member]}
+    consumer_origin = {"path": (BASELINE / member).as_posix(), **baseline["members"][member]}
+    consumer_pointer = _archived_public_pointer(consumer_origin)
     original = reads.pointer(consumer_pointer)
     # The original coordinator-history consumer reads saved same-child receipts;
     # it never invokes a Host/CLI or repeats close/zero/Docker observations.
@@ -2965,7 +3081,8 @@ def collect_post_a_history(output: str | Path, authority_pointer: dict[str, Any]
     windows_pointer = write("PUBLIC-INPUT-WINDOWS.json", encode(windows))
     result = {"schema": 1, "status": "COLLECTED_COMPLETED_A_PUBLIC_HISTORY_ONLY", "source_sha": authority["source_sha"],
         "run_id": context["run_id"], "fixed_inputs": fixed_inputs_pointer, "maintenance_tool": tool_pointer,
-        "original_consumer": consumer_pointer, "history": history, "contract": contract_pointer, "windows": windows_pointer,
+        "original_consumer": consumer_pointer, "original_consumer_origin": consumer_origin,
+        "history": history, "contract": contract_pointer, "windows": windows_pointer,
         "public_files": len(rows), "original_six_key_consumer_accepted": True, "all_windows_ended": True,
         "original_coordinator_native_commands": len(commands),
         "original_close_zero_consumed_without_rerun": True, "B_generated": False, "full_acceptance": "INCOMPLETE", "stopped_samples": "NOT RUN"}
@@ -3186,10 +3303,13 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
     browser = decode(after["browser-v1/PINS.json"])
     proof_names = artifacts + ["browser-v1/" + name for name in browser["members"]] + ["browser-v1/PINS.json"]
     inverse = []
+    inverse_origins = []
     for name in proof_names:
         key = name if name.startswith("browser-v1/") else "candidate/" + name
         if key in before:
-            old = before[key]; previous = {"path": (BASELINE / "b" / key).as_posix(), **pin(old)}
+            old = before[key]; origin = {"path": (BASELINE / "b" / key).as_posix(), **pin(old)}
+            previous = _archived_public_pointer(origin)
+            inverse_origins.append({"name": name, "origin": origin, "actual": previous})
         else:
             old = materials[name]; previous = {"path": (Path(fixed["materials"]["root"]) / name).as_posix(), **pin(old)}
         inverse.append(_b_proof(name, old, after[key], previous, {"path": (out / key).as_posix(), **pin(after[key])}))
@@ -3197,15 +3317,21 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
         "profile_root":(normal_root / "validation/actual-profile").as_posix(),
         "PINS":_pointer(normal_root / "validation/PROFILE-PINS.json"),
         "PUBLICATION":_pointer(normal_root / "validation/PROFILE-PUBLICATION.json")}
+    base_profile_source = Path(_archived_public_pointer({"path": (BASELINE / "b/candidate/ms4-host.py").as_posix(),
+                                                        **pin(before["candidate/ms4-host.py"])})["path"]).parent
     publication = {"schema":1,"scope":"INTEGRATED_B_UI_SOURCE_TREE_KNOWN_SOURCE_METADATA_ONLY",
-        "source_sha":head,"parent":parent,"base_source":base,"base_profile":(BASELINE / "b/candidate").as_posix(),
+        "source_sha":head,"parent":parent,"base_source":base,"base_profile":base_profile_source.as_posix(),
         "selected17":selected,"repository_Source_requirements":data["requirements"],
         "finite_contexts":{"repository_committed_files":latest,"normal9_authority":{
             "root":normal_publication["root"],"profile_root":normal_publication["profile_root"],
             "PROFILE_PINS":normal_publication["PINS"],"PROFILE_PUBLICATION":normal_publication["PUBLICATION"]},
             "current_core_aux_authority":core_pointer,"current_Core3":core["core_sources"],
             "ordered_auxiliary_members":[{"path":name,**row} for name,row in browser["members"].items()],
-            "whole_forward_inverse_files":inverse,"SourceRows":list(rows.values()),"unchanged_tools3":tools,
+            "whole_forward_inverse_files":inverse,"public_donor_origins":inverse_origins,
+            "normal_public_source_selection":_normal_public_source_selection(binding),
+            "baseline_profile_origin":BASELINE_PINS,"baseline_profile_source":_archived_public_pointer(BASELINE_PINS),
+            "base_profile_origin":(BASELINE / "b/candidate").as_posix(),
+            "SourceRows":list(rows.values()),"unchanged_tools3":tools,
             "browser_compatibility":derived["browser_compatibility"],
             "original_build_provenance_and_current_input_equivalence":fixed["materials"]["producer_result"]},
         "target_execution":"NOT RUN"}

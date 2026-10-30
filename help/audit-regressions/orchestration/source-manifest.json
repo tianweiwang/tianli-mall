@@ -7,8 +7,8 @@
   "current_repaired_source_commit": "76efa7807c6137bc430e314e2faa78691cf60431",
   "originals_preserved_byte_for_byte": true,
   "runtime_executed_by_archive_verifier": false,
-  "file_count": 242,
-  "total_bytes": 38528209,
+  "file_count": 302,
+  "total_bytes": 104546618,
   "files": [
     {
       "path": "sources/customer-form-official-initialize-env-raw-source-r1/candidate/help/audit-regressions/isolated/lib/ms4-customer-http-normal.php",
@@ -1945,6 +1945,546 @@
       "role": "static-source-contract",
       "bytes": 18,
       "sha256": "986c7e4b2587348a8d5ba59312a2106d38bbefec35acda4e7e5c14761cfe9ff1"
+    },
+    {
+      "path": "sources/integrated-normal-and-b-source-tree-source-r3/PINS.json",
+      "origin_relative_path": "integrated-normal-and-b-source-tree-source-r3/PINS.json",
+      "package": "integrated-normal-and-b-source-tree-source-r3",
+      "role": "source-metadata",
+      "bytes": 93140,
+      "sha256": "67c9baf29f98230cd7a1e0bdd70157f2b3d1ac30b48adab6e241a84f51995b62",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/integrated-normal-and-b-source-tree-source-r3/core/actual-profile/README.md",
+      "origin_relative_path": "integrated-normal-and-b-source-tree-source-r3/core/actual-profile/README.md",
+      "package": "integrated-normal-and-b-source-tree-source-r3",
+      "role": "source-documentation-or-config",
+      "bytes": 93861,
+      "sha256": "f04ff488a6a24ac53088a84d631e5b059f23fc3263fb916d826265f440290179",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/integrated-normal-and-b-source-tree-source-r3/core/actual-profile/compose.yml",
+      "origin_relative_path": "integrated-normal-and-b-source-tree-source-r3/core/actual-profile/compose.yml",
+      "package": "integrated-normal-and-b-source-tree-source-r3",
+      "role": "compose-source",
+      "bytes": 13293,
+      "sha256": "40cab7e28f380927bad43c98c65c94f79147a3155224d7e87b154af5b7319aa8",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/integrated-normal-and-b-source-tree-source-r3/core/actual-profile/ms4-host.py",
+      "origin_relative_path": "integrated-normal-and-b-source-tree-source-r3/core/actual-profile/ms4-host.py",
+      "package": "integrated-normal-and-b-source-tree-source-r3",
+      "role": "python-source",
+      "bytes": 371328,
+      "sha256": "a12c54514a182ee794e09735e809e10b59c054e29326d3c23e2bbdf74343ec19",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/integrated-normal-and-b-source-tree-source-r3/core/actual-profile/ms4-initialize.php",
+      "origin_relative_path": "integrated-normal-and-b-source-tree-source-r3/core/actual-profile/ms4-initialize.php",
+      "package": "integrated-normal-and-b-source-tree-source-r3",
+      "role": "php-source",
+      "bytes": 91460,
+      "sha256": "5331f57a25f8b73e48f81b6d220ba7aff7d6f29773129c70c4e598c3f0cf11f9",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/integrated-normal-and-b-source-tree-source-r3/core/actual-profile/seed-source-inverse.json",
+      "origin_relative_path": "integrated-normal-and-b-source-tree-source-r3/core/actual-profile/seed-source-inverse.json",
+      "package": "integrated-normal-and-b-source-tree-source-r3",
+      "role": "source-metadata",
+      "bytes": 639,
+      "sha256": "c993a6d07c69fa8f534dc39fc2239278187040d909dffbd34d8c888e54a8cf2e",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/integrated-normal-and-b-source-tree-source-r3/core/actual-profile/interface-v1.json",
+      "origin_relative_path": "integrated-normal-and-b-source-tree-source-r3/core/actual-profile/interface-v1.json",
+      "package": "integrated-normal-and-b-source-tree-source-r3",
+      "role": "source-metadata",
+      "bytes": 112889,
+      "sha256": "9335a6ae6a086dd5b63dfa0dff404a355de9c4246d396e96104b4544ec3b03ab",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/integrated-normal-and-b-source-tree-source-r3/core/actual-profile/source-derivation.json",
+      "origin_relative_path": "integrated-normal-and-b-source-tree-source-r3/core/actual-profile/source-derivation.json",
+      "package": "integrated-normal-and-b-source-tree-source-r3",
+      "role": "source-metadata",
+      "bytes": 640200,
+      "sha256": "180d06183f984ee59b2febe9525c38b8957fcf18f2687c15e2dd20b1f4d404f7",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/integrated-normal-and-b-source-tree-source-r3/core/actual-profile/normal-close-ms4-fulfillment.py",
+      "origin_relative_path": "integrated-normal-and-b-source-tree-source-r3/core/actual-profile/normal-close-ms4-fulfillment.py",
+      "package": "integrated-normal-and-b-source-tree-source-r3",
+      "role": "python-source",
+      "bytes": 50463,
+      "sha256": "824a3f607cf42c81eca87ce575aaef6fc2c1ace03ad776112766386ea497ea7b",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/integrated-normal-and-b-source-tree-source-r3/core/actual-profile/verify-zero-ms4-fulfillment.py",
+      "origin_relative_path": "integrated-normal-and-b-source-tree-source-r3/core/actual-profile/verify-zero-ms4-fulfillment.py",
+      "package": "integrated-normal-and-b-source-tree-source-r3",
+      "role": "python-source",
+      "bytes": 316192,
+      "sha256": "41debd12be4604f5b25a36ec13baa82e5f47a2f08ed7539fda3fc2c06ba8acdf",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/integrated-normal-and-b-source-tree-source-r3/b/browser-v1/ms4-ui-browser-close.mjs",
+      "origin_relative_path": "integrated-normal-and-b-source-tree-source-r3/b/browser-v1/ms4-ui-browser-close.mjs",
+      "package": "integrated-normal-and-b-source-tree-source-r3",
+      "role": "javascript-source",
+      "bytes": 23762,
+      "sha256": "f4a4378b920ff5069680d0ddbe738957cd653f85848fd835b87c1ba403828f00",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/integrated-normal-and-b-source-tree-source-r3/b/browser-v1/ms4-ui-business-producer.mjs",
+      "origin_relative_path": "integrated-normal-and-b-source-tree-source-r3/b/browser-v1/ms4-ui-business-producer.mjs",
+      "package": "integrated-normal-and-b-source-tree-source-r3",
+      "role": "javascript-source",
+      "bytes": 85112,
+      "sha256": "cf4e21c8b4ca037450f46b53b29032dfc7147c7df5156fb0ab441013339485da",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/integrated-normal-and-b-source-tree-source-r3/b/browser-v1/ms4-ui-dom-producer.mjs",
+      "origin_relative_path": "integrated-normal-and-b-source-tree-source-r3/b/browser-v1/ms4-ui-dom-producer.mjs",
+      "package": "integrated-normal-and-b-source-tree-source-r3",
+      "role": "javascript-source",
+      "bytes": 58407,
+      "sha256": "3660aef5db8dfd2a3a1a246d6b0a1d7cba1005d2e96b667e43cd07a05dc8c08b",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/integrated-normal-and-b-source-tree-source-r3/b/browser-v1/ms4-ui-network-capture.mjs",
+      "origin_relative_path": "integrated-normal-and-b-source-tree-source-r3/b/browser-v1/ms4-ui-network-capture.mjs",
+      "package": "integrated-normal-and-b-source-tree-source-r3",
+      "role": "javascript-source",
+      "bytes": 22253,
+      "sha256": "915a0d55c3f29d3ac415c1e07010e6772d7eb77cd50da7a70884d25879c1c174",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/integrated-normal-and-b-source-tree-source-r3/b/browser-v1/ms4-ui-private-caller.mjs",
+      "origin_relative_path": "integrated-normal-and-b-source-tree-source-r3/b/browser-v1/ms4-ui-private-caller.mjs",
+      "package": "integrated-normal-and-b-source-tree-source-r3",
+      "role": "javascript-source",
+      "bytes": 21351,
+      "sha256": "0fc9c608b667292fa43a161b5af81f0d09d0361ac855777ef175f19700a41288",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/integrated-normal-and-b-source-tree-source-r3/b/browser-v1/ms4-ui-window-native-bridge.mjs",
+      "origin_relative_path": "integrated-normal-and-b-source-tree-source-r3/b/browser-v1/ms4-ui-window-native-bridge.mjs",
+      "package": "integrated-normal-and-b-source-tree-source-r3",
+      "role": "javascript-source",
+      "bytes": 93094,
+      "sha256": "52e2ab5ad5c13a895b2dd065177c707397916cb543a898e5af6d830173727371",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/integrated-normal-and-b-source-tree-source-r3/b/browser-v1/PINS.json",
+      "origin_relative_path": "integrated-normal-and-b-source-tree-source-r3/b/browser-v1/PINS.json",
+      "package": "integrated-normal-and-b-source-tree-source-r3",
+      "role": "source-metadata",
+      "bytes": 1222,
+      "sha256": "a41865e51c03877db56f53b1255e42ce4b8c73944b2efd4bb940035978c4284d",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/integrated-normal-and-b-source-tree-source-r3/b/browser-v1/reader/ms4-ui-private-reader.mjs",
+      "origin_relative_path": "integrated-normal-and-b-source-tree-source-r3/b/browser-v1/reader/ms4-ui-private-reader.mjs",
+      "package": "integrated-normal-and-b-source-tree-source-r3",
+      "role": "javascript-source",
+      "bytes": 14107,
+      "sha256": "940d2a03103b26eab8766a1c50b38928f02d2eece2be1bd19fd1a6fac449fd3f",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/integrated-normal-and-b-source-tree-source-r3/b/browser-v1/ui-business-consumer-contract.json",
+      "origin_relative_path": "integrated-normal-and-b-source-tree-source-r3/b/browser-v1/ui-business-consumer-contract.json",
+      "package": "integrated-normal-and-b-source-tree-source-r3",
+      "role": "source-metadata",
+      "bytes": 379822,
+      "sha256": "b6bb0ff8b0a4d0c54a1a090431bb26431a4adb927c01a32ba7051c43de86ce93",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/integrated-normal-and-b-source-tree-source-r3/b/candidate/compose.yml",
+      "origin_relative_path": "integrated-normal-and-b-source-tree-source-r3/b/candidate/compose.yml",
+      "package": "integrated-normal-and-b-source-tree-source-r3",
+      "role": "compose-source",
+      "bytes": 20968,
+      "sha256": "f060cbb4ff16c57030d1a1767fdbc26f503117607c18b330e40b717a42460e17",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/integrated-normal-and-b-source-tree-source-r3/b/candidate/DESIGN.md",
+      "origin_relative_path": "integrated-normal-and-b-source-tree-source-r3/b/candidate/DESIGN.md",
+      "package": "integrated-normal-and-b-source-tree-source-r3",
+      "role": "source-documentation-or-config",
+      "bytes": 954,
+      "sha256": "9b8d4a8c03f6d88151ae86ddd76e6c29872cd22e8d51cf736eeb3f889e5e7711",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/integrated-normal-and-b-source-tree-source-r3/b/candidate/interface-v1.json",
+      "origin_relative_path": "integrated-normal-and-b-source-tree-source-r3/b/candidate/interface-v1.json",
+      "package": "integrated-normal-and-b-source-tree-source-r3",
+      "role": "source-metadata",
+      "bytes": 159230,
+      "sha256": "20440db702a06d1a17e4939f22d0253437d1ef72f3727a273b068bf19c869f03",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/integrated-normal-and-b-source-tree-source-r3/b/candidate/ms4-host.py",
+      "origin_relative_path": "integrated-normal-and-b-source-tree-source-r3/b/candidate/ms4-host.py",
+      "package": "integrated-normal-and-b-source-tree-source-r3",
+      "role": "python-source",
+      "bytes": 571278,
+      "sha256": "54af1df114c8f67d36c80956598a22d1844020e8e7e3c735018560682264f0d8",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/integrated-normal-and-b-source-tree-source-r3/b/candidate/ms4-initialize.php",
+      "origin_relative_path": "integrated-normal-and-b-source-tree-source-r3/b/candidate/ms4-initialize.php",
+      "package": "integrated-normal-and-b-source-tree-source-r3",
+      "role": "php-source",
+      "bytes": 131354,
+      "sha256": "aaa17caacccc4061de43f7e9692d79220c68b988633a89d89b18617e64c0aab4",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/integrated-normal-and-b-source-tree-source-r3/b/candidate/ms4-order.png",
+      "origin_relative_path": "integrated-normal-and-b-source-tree-source-r3/b/candidate/ms4-order.png",
+      "package": "integrated-normal-and-b-source-tree-source-r3",
+      "role": "synthetic-image-fixture",
+      "bytes": 234,
+      "sha256": "1cb2b0cfb8e075b494268977c5f6360309edbc4e0800cd5c58399d291c5185b8",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/integrated-normal-and-b-source-tree-source-r3/b/candidate/ms4-ui-copy.php",
+      "origin_relative_path": "integrated-normal-and-b-source-tree-source-r3/b/candidate/ms4-ui-copy.php",
+      "package": "integrated-normal-and-b-source-tree-source-r3",
+      "role": "php-source",
+      "bytes": 49275,
+      "sha256": "775d5d941349f91dd7c3468e5f1b6d9e09308942ae8ac3b9c370534ac3717cdc",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/integrated-normal-and-b-source-tree-source-r3/b/candidate/ms4-ui-nginx.conf",
+      "origin_relative_path": "integrated-normal-and-b-source-tree-source-r3/b/candidate/ms4-ui-nginx.conf",
+      "package": "integrated-normal-and-b-source-tree-source-r3",
+      "role": "source-documentation-or-config",
+      "bytes": 4105,
+      "sha256": "033ae09499501ec9ef9a2ab87d5da53687491be06f20615781f2d5b01c4cbca5",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/integrated-normal-and-b-source-tree-source-r3/b/candidate/ms4-ui-public-copy.php",
+      "origin_relative_path": "integrated-normal-and-b-source-tree-source-r3/b/candidate/ms4-ui-public-copy.php",
+      "package": "integrated-normal-and-b-source-tree-source-r3",
+      "role": "php-source",
+      "bytes": 25847,
+      "sha256": "0f2a7944b25db42cbf935816b4b9366a599049a28ac77e32bab167b08fec47d0",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/integrated-normal-and-b-source-tree-source-r3/b/candidate/normal-close-ms4-fulfillment.py",
+      "origin_relative_path": "integrated-normal-and-b-source-tree-source-r3/b/candidate/normal-close-ms4-fulfillment.py",
+      "package": "integrated-normal-and-b-source-tree-source-r3",
+      "role": "python-source",
+      "bytes": 264062,
+      "sha256": "a0b97b63693e2e4d5403021a8f5aa0e58d1382581529ea2b2726a50ff9a91823",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/integrated-normal-and-b-source-tree-source-r3/b/candidate/PINS.json",
+      "origin_relative_path": "integrated-normal-and-b-source-tree-source-r3/b/candidate/PINS.json",
+      "package": "integrated-normal-and-b-source-tree-source-r3",
+      "role": "source-metadata",
+      "bytes": 2207,
+      "sha256": "16e1d036bd8e8b0488017515e3cec894c7a71d918a5a41640ce5d1b365c386b0",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/integrated-normal-and-b-source-tree-source-r3/b/candidate/PUBLICATION.json",
+      "origin_relative_path": "integrated-normal-and-b-source-tree-source-r3/b/candidate/PUBLICATION.json",
+      "package": "integrated-normal-and-b-source-tree-source-r3",
+      "role": "source-metadata",
+      "bytes": 995,
+      "sha256": "d2b673e2c80443563f87976c4d0795b4dd971ee3d8422a26d90bbfa4954d50c7",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/integrated-normal-and-b-source-tree-source-r3/b/candidate/README.md",
+      "origin_relative_path": "integrated-normal-and-b-source-tree-source-r3/b/candidate/README.md",
+      "package": "integrated-normal-and-b-source-tree-source-r3",
+      "role": "source-documentation-or-config",
+      "bytes": 5290,
+      "sha256": "9113de181609092ba46ffb7c8ced51b611e401cf5d33b3515358ab8d1b6e50c8",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/integrated-normal-and-b-source-tree-source-r3/b/candidate/seed-source-inverse.json",
+      "origin_relative_path": "integrated-normal-and-b-source-tree-source-r3/b/candidate/seed-source-inverse.json",
+      "package": "integrated-normal-and-b-source-tree-source-r3",
+      "role": "source-metadata",
+      "bytes": 639,
+      "sha256": "c993a6d07c69fa8f534dc39fc2239278187040d909dffbd34d8c888e54a8cf2e",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/integrated-normal-and-b-source-tree-source-r3/b/candidate/source-derivation.json",
+      "origin_relative_path": "integrated-normal-and-b-source-tree-source-r3/b/candidate/source-derivation.json",
+      "package": "integrated-normal-and-b-source-tree-source-r3",
+      "role": "source-metadata",
+      "bytes": 4849,
+      "sha256": "90c00a2aeb956fd7d0ff01ceb93d41edbffc1e9ffd847aa99f409c2e533b1de4",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/integrated-normal-and-b-source-tree-source-r3/b/candidate/verify-zero-ms4-fulfillment.py",
+      "origin_relative_path": "integrated-normal-and-b-source-tree-source-r3/b/candidate/verify-zero-ms4-fulfillment.py",
+      "package": "integrated-normal-and-b-source-tree-source-r3",
+      "role": "python-source",
+      "bytes": 661698,
+      "sha256": "0a76ac46f8d5a8930977f303d1c32fad02135cafe9aebe2dbe21cbedeaf00de6",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/integrated-normal-and-b-source-tree-source-r3/b/current-core-aux/CORE-AUX-AUTHORITY.json",
+      "origin_relative_path": "integrated-normal-and-b-source-tree-source-r3/b/current-core-aux/CORE-AUX-AUTHORITY.json",
+      "package": "integrated-normal-and-b-source-tree-source-r3",
+      "role": "source-metadata",
+      "bytes": 996,
+      "sha256": "86d633dab2e1bfaf5e7ec2e79ba9cc1dceb6286d397f35be0413b718699d3770",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/integrated-normal-and-b-source-tree-source-r3/b/root-source/DESIGN-TASKS.md",
+      "origin_relative_path": "integrated-normal-and-b-source-tree-source-r3/b/root-source/DESIGN-TASKS.md",
+      "package": "integrated-normal-and-b-source-tree-source-r3",
+      "role": "source-documentation-or-config",
+      "bytes": 3197,
+      "sha256": "a9cf2716c6f98742a95c5a0a05aa5c668418677b80cad08deefa98dc0977ab90",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/integrated-normal-and-b-source-tree-source-r3/b/root-source/INPUTS.json",
+      "origin_relative_path": "integrated-normal-and-b-source-tree-source-r3/b/root-source/INPUTS.json",
+      "package": "integrated-normal-and-b-source-tree-source-r3",
+      "role": "source-metadata",
+      "bytes": 488,
+      "sha256": "16e41d9e10d3833e3a6645278d48c6449ecb26483f0b2be8b84074c3f3b4cbf0",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/integrated-normal-and-b-source-tree-source-r3/b/root-source/PINS.json",
+      "origin_relative_path": "integrated-normal-and-b-source-tree-source-r3/b/root-source/PINS.json",
+      "package": "integrated-normal-and-b-source-tree-source-r3",
+      "role": "source-metadata",
+      "bytes": 662,
+      "sha256": "973f173a5782d84c3c90c368aab0e49b231f67273f7c751426b0f74af9579c49",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/integrated-normal-and-b-source-tree-source-r3/b/root-source/root-ui-materialize-freeze.py",
+      "origin_relative_path": "integrated-normal-and-b-source-tree-source-r3/b/root-source/root-ui-materialize-freeze.py",
+      "package": "integrated-normal-and-b-source-tree-source-r3",
+      "role": "python-source",
+      "bytes": 136859,
+      "sha256": "344482038ab6df22d58256fb51fee6b68ac458e71010fbc403cf150f082d6e4e",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/integrated-normal-and-b-source-tree-source-r3/b/root-source/root-ui-start-to-ready.py",
+      "origin_relative_path": "integrated-normal-and-b-source-tree-source-r3/b/root-source/root-ui-start-to-ready.py",
+      "package": "integrated-normal-and-b-source-tree-source-r3",
+      "role": "python-source",
+      "bytes": 56808,
+      "sha256": "de54dc880c807a8709a34784484a562debdc1c9c4b7aefc8120671042059a9da",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/currentb54-next-normal-preparation-r3/normal-source/PINS.json",
+      "origin_relative_path": "currentb54-next-normal-preparation-r3/normal-source/PINS.json",
+      "package": "currentb54-next-normal-preparation-r3",
+      "role": "source-metadata",
+      "bytes": 14595,
+      "sha256": "36aae1201b16d0d268e64d9eab53e1f9c86e38cec156d0882d4b6bb7b06c3c1c",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/currentb54-next-normal-preparation-r3/normal-source/launcher/launch.py",
+      "origin_relative_path": "currentb54-next-normal-preparation-r3/normal-source/launcher/launch.py",
+      "package": "currentb54-next-normal-preparation-r3",
+      "role": "python-source",
+      "bytes": 19274,
+      "sha256": "60c89ce65be5fb860de9fff612011bb8989f1e50a92bf3260db4c521ff5f3e53",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/currentb54-next-normal-preparation-r3/normal-source/materializer/INVERSE.json",
+      "origin_relative_path": "currentb54-next-normal-preparation-r3/normal-source/materializer/INVERSE.json",
+      "package": "currentb54-next-normal-preparation-r3",
+      "role": "source-metadata",
+      "bytes": 1179630,
+      "sha256": "8e07238b42867929cfe554d6bc3168ad1f3aa3895a41589769403f933c2a99b6",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/currentb54-next-normal-preparation-r3/normal-source/materializer/PLAN.md",
+      "origin_relative_path": "currentb54-next-normal-preparation-r3/normal-source/materializer/PLAN.md",
+      "package": "currentb54-next-normal-preparation-r3",
+      "role": "source-documentation-or-config",
+      "bytes": 22623,
+      "sha256": "13ade53d4d47952f90df189bb6d82de739b4c982a414e272ca4743bd5062763c",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/currentb54-next-normal-preparation-r3/normal-source/materializer/prepare.py",
+      "origin_relative_path": "currentb54-next-normal-preparation-r3/normal-source/materializer/prepare.py",
+      "package": "currentb54-next-normal-preparation-r3",
+      "role": "python-source",
+      "bytes": 28512970,
+      "sha256": "61df90ee2426214301c0e6cbecea25f13ae111403ae2cc3327911ad3da0bce08",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/currentb54-next-normal-preparation-r3/normal-source/validation/actual-profile/compose.yml",
+      "origin_relative_path": "currentb54-next-normal-preparation-r3/normal-source/validation/actual-profile/compose.yml",
+      "package": "currentb54-next-normal-preparation-r3",
+      "role": "compose-source",
+      "bytes": 13115,
+      "sha256": "22aed47453c67499c361efa57b24c954433fb5a68863a07ede5896f845451b7b",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/currentb54-next-normal-preparation-r3/normal-source/validation/actual-profile/interface-v1.json",
+      "origin_relative_path": "currentb54-next-normal-preparation-r3/normal-source/validation/actual-profile/interface-v1.json",
+      "package": "currentb54-next-normal-preparation-r3",
+      "role": "source-metadata",
+      "bytes": 110526,
+      "sha256": "13c0a6672fefb30a09b40246dcc819b8d7aa2d9f75fee6a588ca3655efb03824",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/currentb54-next-normal-preparation-r3/normal-source/validation/actual-profile/ms4-host.py",
+      "origin_relative_path": "currentb54-next-normal-preparation-r3/normal-source/validation/actual-profile/ms4-host.py",
+      "package": "currentb54-next-normal-preparation-r3",
+      "role": "python-source",
+      "bytes": 357359,
+      "sha256": "20a97efeee9cf828c151bfb9f4f46b6ce04f4f304c90f439a65ea5672804f862",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/currentb54-next-normal-preparation-r3/normal-source/validation/actual-profile/ms4-initialize.php",
+      "origin_relative_path": "currentb54-next-normal-preparation-r3/normal-source/validation/actual-profile/ms4-initialize.php",
+      "package": "currentb54-next-normal-preparation-r3",
+      "role": "php-source",
+      "bytes": 91460,
+      "sha256": "13982ebc8a4ac9db52490040ada710128122698e941a14db4156422703e9918f",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/currentb54-next-normal-preparation-r3/normal-source/validation/actual-profile/normal-close-ms4-fulfillment.py",
+      "origin_relative_path": "currentb54-next-normal-preparation-r3/normal-source/validation/actual-profile/normal-close-ms4-fulfillment.py",
+      "package": "currentb54-next-normal-preparation-r3",
+      "role": "python-source",
+      "bytes": 48793,
+      "sha256": "bf490a612f4d0dba47578b1b53948939410c87bcb516bd62f21af0e1f5210c87",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/currentb54-next-normal-preparation-r3/normal-source/validation/actual-profile/README.md",
+      "origin_relative_path": "currentb54-next-normal-preparation-r3/normal-source/validation/actual-profile/README.md",
+      "package": "currentb54-next-normal-preparation-r3",
+      "role": "source-documentation-or-config",
+      "bytes": 92239,
+      "sha256": "8ef95e9271dc027b08592f84f05ecc57668f2de5f0656bb28c35cbf37cdabd88",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/currentb54-next-normal-preparation-r3/normal-source/validation/actual-profile/seed-source-inverse.json",
+      "origin_relative_path": "currentb54-next-normal-preparation-r3/normal-source/validation/actual-profile/seed-source-inverse.json",
+      "package": "currentb54-next-normal-preparation-r3",
+      "role": "source-metadata",
+      "bytes": 639,
+      "sha256": "c35433231ddcff315931e270d737a022a14818f8aac8c05ed67c3b155e88e14a",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/currentb54-next-normal-preparation-r3/normal-source/validation/actual-profile/source-derivation.json",
+      "origin_relative_path": "currentb54-next-normal-preparation-r3/normal-source/validation/actual-profile/source-derivation.json",
+      "package": "currentb54-next-normal-preparation-r3",
+      "role": "source-metadata",
+      "bytes": 640200,
+      "sha256": "180d06183f984ee59b2febe9525c38b8957fcf18f2687c15e2dd20b1f4d404f7",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/currentb54-next-normal-preparation-r3/normal-source/validation/actual-profile/verify-zero-ms4-fulfillment.py",
+      "origin_relative_path": "currentb54-next-normal-preparation-r3/normal-source/validation/actual-profile/verify-zero-ms4-fulfillment.py",
+      "package": "currentb54-next-normal-preparation-r3",
+      "role": "python-source",
+      "bytes": 302705,
+      "sha256": "61816d3dbef3a62579e47846901754b874ddf25321d49a528b9648f467da3d20",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/currentb54-next-normal-preparation-r3/normal-source/validation/DESIGN-TASKS.md",
+      "origin_relative_path": "currentb54-next-normal-preparation-r3/normal-source/validation/DESIGN-TASKS.md",
+      "package": "currentb54-next-normal-preparation-r3",
+      "role": "source-documentation-or-config",
+      "bytes": 24222,
+      "sha256": "4d5492560391e61480f1f36fcfb2d2a4433a33cba1a81fa50d94b5caf5c6e00f",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/currentb54-next-normal-preparation-r3/normal-source/validation/PINS.json",
+      "origin_relative_path": "currentb54-next-normal-preparation-r3/normal-source/validation/PINS.json",
+      "package": "currentb54-next-normal-preparation-r3",
+      "role": "source-metadata",
+      "bytes": 358,
+      "sha256": "a5aba6db21420553b0cb1d9247512c0be8f5383081f41b8bf0730c46ac4f9863",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/currentb54-next-normal-preparation-r3/normal-source/validation/PROFILE-PINS.json",
+      "origin_relative_path": "currentb54-next-normal-preparation-r3/normal-source/validation/PROFILE-PINS.json",
+      "package": "currentb54-next-normal-preparation-r3",
+      "role": "source-metadata",
+      "bytes": 1518,
+      "sha256": "2a0ceee3e34e113cd24779695d288061e0bcdd18f8a730eacdd0a456f5ced9bd",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/currentb54-next-normal-preparation-r3/normal-source/validation/PROFILE-PUBLICATION.json",
+      "origin_relative_path": "currentb54-next-normal-preparation-r3/normal-source/validation/PROFILE-PUBLICATION.json",
+      "package": "currentb54-next-normal-preparation-r3",
+      "role": "source-metadata",
+      "bytes": 1473227,
+      "sha256": "2b49f51ed5893ea48d499975b87be830a824ac1084e22aba6beb11bb46918f7a",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
+    },
+    {
+      "path": "sources/currentb54-next-normal-preparation-r3/normal-source/validation/run.py",
+      "origin_relative_path": "currentb54-next-normal-preparation-r3/normal-source/validation/run.py",
+      "package": "currentb54-next-normal-preparation-r3",
+      "role": "python-source",
+      "bytes": 28528366,
+      "sha256": "f23fd9ecee8447b0a50e328e6253ea9d73e97cc4f604b3c660f50c95f22c2deb",
+      "origin_root": "H:/天俪商城/artifacts/project-organization-20261023"
     }
   ],
   "historical_full_a_required": [
@@ -2019,5 +2559,77 @@
   "required_design_clarifications": [
     "published-current-normal-next-source-r2-design-clarification-r1/CLARIFICATION.md",
     "published-current-normal-next-source-r2-design-clarification-r1/PINS.json"
-  ]
+  ],
+  "public_donor_origins": {
+    "integrated-normal-and-b-source-tree-source-r3": "H:/天俪商城/artifacts/project-organization-20261023",
+    "currentb54-next-normal-preparation-r3": "H:/天俪商城/artifacts/project-organization-20261023"
+  },
+  "public_donor_required": {
+    "core9": [
+      "sources/integrated-normal-and-b-source-tree-source-r3/PINS.json",
+      "sources/integrated-normal-and-b-source-tree-source-r3/core/actual-profile/README.md",
+      "sources/integrated-normal-and-b-source-tree-source-r3/core/actual-profile/compose.yml",
+      "sources/integrated-normal-and-b-source-tree-source-r3/core/actual-profile/ms4-host.py",
+      "sources/integrated-normal-and-b-source-tree-source-r3/core/actual-profile/ms4-initialize.php",
+      "sources/integrated-normal-and-b-source-tree-source-r3/core/actual-profile/seed-source-inverse.json",
+      "sources/integrated-normal-and-b-source-tree-source-r3/core/actual-profile/interface-v1.json",
+      "sources/integrated-normal-and-b-source-tree-source-r3/core/actual-profile/source-derivation.json",
+      "sources/integrated-normal-and-b-source-tree-source-r3/core/actual-profile/normal-close-ms4-fulfillment.py",
+      "sources/integrated-normal-and-b-source-tree-source-r3/core/actual-profile/verify-zero-ms4-fulfillment.py"
+    ],
+    "b31": [
+      "sources/integrated-normal-and-b-source-tree-source-r3/b/browser-v1/ms4-ui-browser-close.mjs",
+      "sources/integrated-normal-and-b-source-tree-source-r3/b/browser-v1/ms4-ui-business-producer.mjs",
+      "sources/integrated-normal-and-b-source-tree-source-r3/b/browser-v1/ms4-ui-dom-producer.mjs",
+      "sources/integrated-normal-and-b-source-tree-source-r3/b/browser-v1/ms4-ui-network-capture.mjs",
+      "sources/integrated-normal-and-b-source-tree-source-r3/b/browser-v1/ms4-ui-private-caller.mjs",
+      "sources/integrated-normal-and-b-source-tree-source-r3/b/browser-v1/ms4-ui-window-native-bridge.mjs",
+      "sources/integrated-normal-and-b-source-tree-source-r3/b/browser-v1/PINS.json",
+      "sources/integrated-normal-and-b-source-tree-source-r3/b/browser-v1/reader/ms4-ui-private-reader.mjs",
+      "sources/integrated-normal-and-b-source-tree-source-r3/b/browser-v1/ui-business-consumer-contract.json",
+      "sources/integrated-normal-and-b-source-tree-source-r3/b/candidate/compose.yml",
+      "sources/integrated-normal-and-b-source-tree-source-r3/b/candidate/DESIGN.md",
+      "sources/integrated-normal-and-b-source-tree-source-r3/b/candidate/interface-v1.json",
+      "sources/integrated-normal-and-b-source-tree-source-r3/b/candidate/ms4-host.py",
+      "sources/integrated-normal-and-b-source-tree-source-r3/b/candidate/ms4-initialize.php",
+      "sources/integrated-normal-and-b-source-tree-source-r3/b/candidate/ms4-order.png",
+      "sources/integrated-normal-and-b-source-tree-source-r3/b/candidate/ms4-ui-copy.php",
+      "sources/integrated-normal-and-b-source-tree-source-r3/b/candidate/ms4-ui-nginx.conf",
+      "sources/integrated-normal-and-b-source-tree-source-r3/b/candidate/ms4-ui-public-copy.php",
+      "sources/integrated-normal-and-b-source-tree-source-r3/b/candidate/normal-close-ms4-fulfillment.py",
+      "sources/integrated-normal-and-b-source-tree-source-r3/b/candidate/PINS.json",
+      "sources/integrated-normal-and-b-source-tree-source-r3/b/candidate/PUBLICATION.json",
+      "sources/integrated-normal-and-b-source-tree-source-r3/b/candidate/README.md",
+      "sources/integrated-normal-and-b-source-tree-source-r3/b/candidate/seed-source-inverse.json",
+      "sources/integrated-normal-and-b-source-tree-source-r3/b/candidate/source-derivation.json",
+      "sources/integrated-normal-and-b-source-tree-source-r3/b/candidate/verify-zero-ms4-fulfillment.py",
+      "sources/integrated-normal-and-b-source-tree-source-r3/b/current-core-aux/CORE-AUX-AUTHORITY.json",
+      "sources/integrated-normal-and-b-source-tree-source-r3/b/root-source/DESIGN-TASKS.md",
+      "sources/integrated-normal-and-b-source-tree-source-r3/b/root-source/INPUTS.json",
+      "sources/integrated-normal-and-b-source-tree-source-r3/b/root-source/PINS.json",
+      "sources/integrated-normal-and-b-source-tree-source-r3/b/root-source/root-ui-materialize-freeze.py",
+      "sources/integrated-normal-and-b-source-tree-source-r3/b/root-source/root-ui-start-to-ready.py"
+    ],
+    "normal18": [
+      "sources/currentb54-next-normal-preparation-r3/normal-source/PINS.json",
+      "sources/currentb54-next-normal-preparation-r3/normal-source/launcher/launch.py",
+      "sources/currentb54-next-normal-preparation-r3/normal-source/materializer/INVERSE.json",
+      "sources/currentb54-next-normal-preparation-r3/normal-source/materializer/PLAN.md",
+      "sources/currentb54-next-normal-preparation-r3/normal-source/materializer/prepare.py",
+      "sources/currentb54-next-normal-preparation-r3/normal-source/validation/actual-profile/compose.yml",
+      "sources/currentb54-next-normal-preparation-r3/normal-source/validation/actual-profile/interface-v1.json",
+      "sources/currentb54-next-normal-preparation-r3/normal-source/validation/actual-profile/ms4-host.py",
+      "sources/currentb54-next-normal-preparation-r3/normal-source/validation/actual-profile/ms4-initialize.php",
+      "sources/currentb54-next-normal-preparation-r3/normal-source/validation/actual-profile/normal-close-ms4-fulfillment.py",
+      "sources/currentb54-next-normal-preparation-r3/normal-source/validation/actual-profile/README.md",
+      "sources/currentb54-next-normal-preparation-r3/normal-source/validation/actual-profile/seed-source-inverse.json",
+      "sources/currentb54-next-normal-preparation-r3/normal-source/validation/actual-profile/source-derivation.json",
+      "sources/currentb54-next-normal-preparation-r3/normal-source/validation/actual-profile/verify-zero-ms4-fulfillment.py",
+      "sources/currentb54-next-normal-preparation-r3/normal-source/validation/DESIGN-TASKS.md",
+      "sources/currentb54-next-normal-preparation-r3/normal-source/validation/PINS.json",
+      "sources/currentb54-next-normal-preparation-r3/normal-source/validation/PROFILE-PINS.json",
+      "sources/currentb54-next-normal-preparation-r3/normal-source/validation/PROFILE-PUBLICATION.json",
+      "sources/currentb54-next-normal-preparation-r3/normal-source/validation/run.py"
+    ]
+  }
 }

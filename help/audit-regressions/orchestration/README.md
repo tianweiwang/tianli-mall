@@ -2,6 +2,8 @@
 
 本目录补齐此前只保存在原机仓库外 `ms4-worker-normal-source-preparation-r1` 中的编排程序。`sources/` 按精确允许清单保存原文件的完整字节；[source-manifest.json](source-manifest.json) 记录逐文件来源相对路径、长度、SHA-256 和角色。
 
+现用作者另需的两组固定公共 donor 也保存在同一索引：原 `project-organization-20261023` 下的 baseline PINS/Core9/B31 与 historical-normal PINS/18件，新增60件、66,018,409字节。新增行单列真实 `origin_root`，原242行及其归档字节保持；只选源码、来源索引和合成棋盘图，不递归收入原目录中的其它文件或运行资料。
+
 这是**源码归档和恢复资料**。包含旧完整编排、后续失败版本和修正后的完整编排源码。本目录不宣称可直接跨机器运行或业务验证通过。交付分支为 `feature/ms4-asset-consumers`；最早的 `codex/audit-base` 链接不包含本次交接。
 
 ## 当前候选的正常回归接入
@@ -99,6 +101,14 @@ python -I -B help/audit-regressions/orchestration/verify_sources.py
 成功输出 `PASS_SOURCE_ARCHIVE_ONLY`。检查会完整读取清单内文件，校验长度、摘要、成员集合及 Python AST/JSON，并检查旧主编排与当前后继各自的完整 18 件源码。它不 import 或执行存档脚本，不连接 Docker、数据库、网络，也不读取原机目录。
 
 该命令在只有本目录的干净 Git 导出中也应通过。Python 接缝片段不是独立程序，与 PHP、JavaScript、YAML 等原件一样在该命令中只作字节校验；完整 Python 脚本才作 AST 解析。它不代替其他语言检查、真实环境或业务验收。
+
+现用 `current_normal_source.py` 通过同一索引的固定白名单读取这60件公共输入，不按文件是否存在选择原机路径。原来源的逻辑描述与真正读取的归档文件指针分别记录，并严格连接原长度和摘要；authority 的逻辑 baseline 描述不变，旧冻结包不改写。新 normal 的历史源码集合固定为 baseline PINS、normal PINS、materializer、driver 和 profile publication 五项；新派生文件明确保存实际归档位置。post-A/B 的公共源码和逆变换前件同样指向归档原件。INI源码复用原已归档的18字节配置，未把它等同于原运行时内存检查。
+
+新作者按自身真实 Git 目录定位同级索引与 `sources/`；只复制这一个 Python 文件不能替代该完整来源目录。已冻结的旧作者副本仍沿其原依赖合同使用。
+
+消费既有合格 normal 时，只兼容原 `historical_source_origins` 键不存在、且整份四项逻辑来源映射与固定原 PINS 完全相同的合同：normal PINS、materializer、driver、profile publication。此时读取同摘要的四份实际归档原件并明确记 `LEGACY_FIXED4`；有 origins 键时必须是完整新五项合同 `ARCHIVED_FIXED5`。两种布局及实际来源均绑定生成代码中的固定常量，不接受空 origins、任意键、按存在性搜索或仅由输入自报摘要；既有 binding、来源独审、M/A外层身份、正常关闭和独立核零要求保持。
+
+这只补齐现用作者选择公共 donor 的源码依赖。来源批准、真实语法/构建/付款/普通关闭与独立核零回执、十一份历史退役依据，以及固定 `PROOF_INI_REFERENCE` 对应的原实际证明仍属外部证据。它们不会由源码归档重新生成、降为可选或伪造成功；仅克隆 Git 仍不代表可以立即执行完整业务验收。
 
 ## 归档入口
 

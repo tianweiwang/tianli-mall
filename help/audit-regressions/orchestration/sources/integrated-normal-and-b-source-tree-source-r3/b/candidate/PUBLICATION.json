@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "scope": "INTEGRATED_B_UI_SOURCE_TREE_KNOWN_SOURCE_METADATA_ONLY",
+  "source_sha": null,
+  "parent": null,
+  "base_source": {
+    "commit": "57de95a1cd5852348e2dcb56752e3723983f6e13",
+    "path": "H:/天俪商城/worktrees/multi-merchant-integrated/help/audit-regressions/orchestration/sources/fresh-b-customer-form-external-source-r3"
+  },
+  "base_profile": "H:/天俪商城/worktrees/multi-merchant-integrated/help/audit-regressions/orchestration/sources/fresh-b-customer-form-external-source-r3/candidate",
+  "selected17": null,
+  "repository_Source_requirements": null,
+  "finite_contexts": {
+    "repository_committed_files": null,
+    "normal9_authority": null,
+    "current_core_aux_authority": null,
+    "current_Core3": null,
+    "ordered_auxiliary_members": null,
+    "browser_manifest": null,
+    "whole_forward_inverse_files": null,
+    "SourceRows": null,
+    "unchanged_tools3": null
+  },
+  "target_execution": "NOT RUN",
+  "pending_actual_builds_and_A": true
+}

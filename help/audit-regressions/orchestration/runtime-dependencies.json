@@ -46,7 +46,7 @@
     },
     {
       "kind": "authoring inputs",
-      "detail": "assemble/refresh programs still reference predecessor source packages, before-images, original PINS/authority metadata and syntax/readback results. Complete authoring replay inputs are not claimed by this archive."
+      "detail": "The current maintenance author selects the fixed public baseline PINS/Core9/B31 and historical-normal PINS/18 source donors from the tracked archive, retaining logical origins separately from actual file pointers. Historical archived assemble/refresh programs still retain predecessor paths and may need additional authoring inputs; complete historical authoring replay is not claimed. Independent authority, actual syntax/build/readback results and historical retirement evidence remain external runtime prerequisites."
     },
     {
       "kind": "fresh execution environment",
