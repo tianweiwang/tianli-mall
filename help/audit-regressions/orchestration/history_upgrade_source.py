@@ -878,6 +878,10 @@ _PRODUCER_ENTRY_AFTER = br"""if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') ===
                 // Diagnostics never replace the original process result.
             }
         });
+        nhep_expect(ini_get('memory_limit') === '128M', 'NHE_PRODUCER_ORIGINAL_CLI_MEMORY_BUDGET');
+        $nhepPreviousMemoryLimit = ini_set('memory_limit', '512M');
+        nhep_expect($nhepPreviousMemoryLimit === '128M' && ini_get('memory_limit') === '512M',
+            'NHE_PRODUCER_CLI_MEMORY_BUDGET_APPLIED');
     }
     exit(nhep_normal_history_main());
 }
