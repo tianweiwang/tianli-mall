@@ -435,12 +435,31 @@ function m4ar_database_delta(array $before,array $after,array $expectedRows,arra
 }
 function m4ar_redis_delta(array $before,array $after,array $changes=[]):void
 {
+ unset($GLOBALS['m4ar_redis_failure_context'],$GLOBALS['m4ar_redis_failure_diagnostic']);
  $expected=$before['redis']['keys'];foreach($changes as$rawKey=>$value){
   m4ar_expect(is_string($rawKey)||is_int($rawKey),'TASK78_REDIS_CHANGE_KEY_NATIVE_STRING_OR_INTEGER');$h=hash('sha256',(string)$rawKey);
   if($value===null){m4ar_expect(!isset($after['redis']['keys'][$h]),'TASK78_EXACT_REDIS_CONSUMED');unset($expected[$h]);}
   else{m4ar_expect(isset($after['redis']['keys'][$h])&&$after['redis']['keys'][$h]===$value,'TASK78_EXACT_REDIS_NATIVE_VALUE_EXPIRY');$expected[$h]=$value;}}
  ksort($expected,SORT_STRING);$expectedRedis=$before['redis'];$expectedRedis['keys']=$expected;
+ try{
  m4ar_expect(m5pcp_redis_deadline_compatible($expectedRedis,$after['redis']),'TASK78_ALL_OTHER_REDIS_TYPES_VALUES_EXPIRIES_UNCHANGED');
+ }catch(Throwable $redisFailure){
+  $redisHadAssertion=array_key_exists('m4ar_failed_assertion',$GLOBALS);$redisAssertion=$GLOBALS['m4ar_failed_assertion']??null;
+  try{
+   if($redisAssertion==='TASK78_ALL_OTHER_REDIS_TYPES_VALUES_EXPIRIES_UNCHANGED'
+    &&$redisFailure instanceof RuntimeException&&$redisFailure->getMessage()==='M4AR_ASSERTION'){
+    // Preserve only the already-held atomic observations; no later Redis or HTTP read is permitted here.
+    $httpCalls=$GLOBALS['m4ar_http_calls']??[];$lastHttp=is_array($httpCalls)&&$httpCalls!==[]?end($httpCalls):null;
+    $GLOBALS['m4ar_redis_failure_context']=['expected'=>$expectedRedis,'current'=>$after['redis'],
+     'trace'=>debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS,2),'request_sequence'=>$GLOBALS['m4ar_http_request_sequence']??null,
+     'http'=>$lastHttp,'gate'=>$GLOBALS['m4ar_http_gate']??null];
+    $GLOBALS['m4ar_redis_failure_diagnostic']=['code'=>$redisAssertion,'class'=>get_class($redisFailure),
+     'file'=>basename($redisFailure->getFile()),'line'=>$redisFailure->getLine()];
+   }
+  }catch(Throwable $redisDiagnosticFailure){}
+  finally{if($redisHadAssertion)$GLOBALS['m4ar_failed_assertion']=$redisAssertion;else unset($GLOBALS['m4ar_failed_assertion']);}
+  throw $redisFailure;
+ }
 }
 function m4ar_zero(array $before,array $after,bool $redis=true):void
 {m4ar_expect($before['customer_form_private']===$after['customer_form_private'],'TASK78_CUSTOMER_FORM_PHYSICAL_ZERO');m4ar_database_delta($before,$after,[]);if($redis)m4ar_redis_delta($before,$after);m4ar_expect($before['private']===$after['private']&&$before['public']===$after['public'],'TASK78_FILES_ZERO_DELTA');}
@@ -2517,6 +2536,70 @@ function m4ar_result(array $source,?array $business,?array $observer,?array $dia
    if($sequenceValid)$result['sequence_failure_context']=$sequenceContext;
   }catch(Throwable $sequenceDiagnosticFailure){}
   finally{if($sequenceHadAssertion)$GLOBALS['m4ar_failed_assertion']=$sequenceAssertion;else unset($GLOBALS['m4ar_failed_assertion']);}
+ }
+ if(!$success&&is_array($diagnostic)&&($diagnostic['code']??null)==='TASK78_ALL_OTHER_REDIS_TYPES_VALUES_EXPIRIES_UNCHANGED'){
+  $redisHadAssertion=array_key_exists('m4ar_failed_assertion',$GLOBALS);$redisAssertion=$GLOBALS['m4ar_failed_assertion']??null;
+  try{
+   $context=$GLOBALS['m4ar_redis_failure_context']??null;$caught=$GLOBALS['m4ar_redis_failure_diagnostic']??null;
+   if(is_array($context)&&array_keys($context)===['expected','current','trace','request_sequence','http','gate']
+    &&is_array($caught)&&array_keys($caught)===['code','class','file','line']&&$caught===$diagnostic
+    &&is_array($context['expected'])&&is_array($context['current'])){
+    // This is a projection of existing observations, never an alternative comparison or a new observation.
+    $safeRow=static function(mixed $row):?array{
+     if(!is_array($row)||array_keys($row)!==['type','sha256','expires']
+      ||!is_string($row['type'])||preg_match('/\A[a-z]{1,24}\z/D',$row['type'])!==1
+      ||!is_string($row['sha256'])||preg_match('/\A[a-f0-9]{64}\z/D',$row['sha256'])!==1
+      ||!is_int($row['expires'])||($row['expires']!==-1&&$row['expires']<=0))return null;
+     return ['type'=>$row['type'],'sha256'=>$row['sha256'],'expires'=>$row['expires']];
+    };
+    $safeSnapshot=static function(array $snapshot)use($safeRow):array{
+     $time=$snapshot['time']??null;$safeTime=is_array($time)&&array_is_list($time)&&count($time)===2
+      &&is_string($time[0])&&preg_match('/\A[1-9][0-9]{0,18}\z/D',$time[0])===1
+      &&is_string($time[1])&&preg_match('/\A[0-9]{1,6}\z/D',$time[1])===1&&(int)$time[1]<=999999?$time:null;
+     $ms=$snapshot['time_ms']??null;$safeMs=is_string($ms)&&preg_match('/\A[1-9][0-9]{0,21}\z/D',$ms)===1?$ms:null;
+     $keys=$snapshot['keys']??null;$valid=is_array($keys);$sorted=$valid?array_keys($keys):[];$order=$sorted;sort($sorted,SORT_STRING);
+     $valid=$valid&&$order===$sorted;
+     if($valid)foreach($keys as$hash=>$row)if(!is_string($hash)||preg_match('/\A[a-f0-9]{64}\z/D',$hash)!==1||$safeRow($row)===null){$valid=false;break;}
+     return ['snapshot_sha256'=>hash('sha256',serialize($snapshot)),'time'=>$safeTime,'time_ms'=>$safeMs,
+      'key_count'=>is_array($keys)?count($keys):null,'keys_well_formed'=>$valid];
+    };
+    $expectedMeta=$safeSnapshot($context['expected']);$currentMeta=$safeSnapshot($context['current']);
+    $differences=[];$differenceCount=null;$permittedExpiredMissing=null;
+    if($expectedMeta['keys_well_formed']&&$currentMeta['keys_well_formed']&&$currentMeta['time_ms']!==null){
+     $oldKeys=$context['expected']['keys'];$newKeys=$context['current']['keys'];
+     $hashes=array_keys($oldKeys+$newKeys);sort($hashes,SORT_STRING);$differenceCount=0;$permittedExpiredMissing=0;
+     foreach($hashes as$hash){$old=$oldKeys[$hash]??null;$new=$newKeys[$hash]??null;
+      // Exactly mirror the original helper's permitted disappearance for classification only.
+      if($old!==null&&$new===null&&$old['expires']>0&&bccomp((string)$old['expires'],$currentMeta['time_ms'],0)<0){++$permittedExpiredMissing;continue;}
+      if($old===$new)continue;++$differenceCount;
+      if(count($differences)<16)$differences[]=['key_sha256'=>$hash,'kind'=>$old===null?'added':($new===null?'missing':'changed'),
+       'expected'=>$old===null?null:$safeRow($old),'current'=>$new===null?null:$safeRow($new)];
+     }
+    }
+    $trace=$context['trace'];$caller=is_array($trace)&&isset($trace[0],$trace[1])&&is_array($trace[0])&&is_array($trace[1])?$trace:null;
+    $function=$caller[1]['function']??null;$line=$caller[0]['line']??null;$file=$caller[0]['file']??null;
+    $callerSafe=['function'=>is_string($function)&&preg_match('/\Am4[a-z0-9_]{1,76}\z/D',$function)===1?$function:null,
+     'file'=>is_string($file)&&basename($file)==='ms4-aftersale-review-normal.php'?'ms4-aftersale-review-normal.php':null,
+     'line'=>is_int($line)&&$line>0&&$line<=1000000?$line:null];
+    $sequence=$context['request_sequence'];$sequence=is_int($sequence)&&$sequence>=1&&$sequence<=2147483647?$sequence:null;
+    $http=$context['http'];$method=is_array($http)?($http['method']??null):null;$path=is_array($http)?($http['path']??null):null;
+    $family=is_string($path)?(str_starts_with($path,'/adminapi/')?'adminapi':(str_starts_with($path,'/merchantapi/')?'merchantapi':
+     (str_starts_with($path,'/api/')?'api':'public'))):null;
+    $gate=$context['gate'];$sameGate=is_array($gate)&&$sequence!==null&&($gate['request_sequence']??null)===$sequence;
+    $operation=$sameGate?($gate['operation_id']??null):null;$attempt=$sameGate?($gate['attempt']??null):null;
+    $result['redis_failure_context']=['schema'=>1,'scope'=>'HELD_ATOMIC_REDIS_DELTA_DIAGNOSTIC_ONLY',
+     'expected'=>$expectedMeta,'current'=>$currentMeta,'permitted_expired_missing_count'=>$permittedExpiredMissing,
+     'difference_count'=>$differenceCount,'listed_difference_count'=>count($differences),
+     'truncated'=>is_int($differenceCount)&&$differenceCount>count($differences),'differences'=>$differences,'caller'=>$callerSafe,
+     'http'=>['request_sequence'=>$sequence,'method'=>in_array($method,['GET','POST','PUT'],true)?$method:null,'route_family'=>$family,
+      'path_sha256'=>is_string($path)?hash('sha256',$path):null,
+      'operation_id'=>in_array($operation,['non_action','money-withdraw','withdraw','money-merchant','business-reject-merchant','money-platform',
+       'business-reject-platform','cancel-apply','cancel-approve','return-apply','return-approve','return-express','accept-merchant',
+       'accept-platform','ship-two','receive-one','file-ticket-customer','file-ticket-merchant','file-ticket-platform'],true)?$operation:null,
+      'attempt'=>in_array($attempt,['first','replay','single'],true)?$attempt:null]];
+   }
+  }catch(Throwable $redisDiagnosticFailure){}
+  finally{if($redisHadAssertion)$GLOBALS['m4ar_failed_assertion']=$redisAssertion;else unset($GLOBALS['m4ar_failed_assertion']);}
  }
  return $result;
 }
