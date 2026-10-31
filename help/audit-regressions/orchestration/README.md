@@ -16,7 +16,7 @@
 
 该 helper 变化时，initializer 的同一来源行也按唯一字面值替换并核整文件逆回；派生结束前逐项核对 initializer 完整七行与 Host、zero、interface 及当前 inventory 一致，避免初始化阶段仍携带旧 helper 摘要。旧 helper 未变化时不进入这两项补充处理。
 
-Worker 作者保留原 `129901/f420b2…` 目标，并允许入口有限 fatal 诊断的 `131974/1c192ecf…` 目标；只按实际 inventory 的完整 path/bytes/SHA 选择这两项之一。同次独审的 `worker_fixtures_archive_update.before` 必须仍精确为原 `127340/9cb8a8…`，`after` 必须等于所选完整目标；Core9 与 B 源接缝均拒绝其它值。接口当前行、Host/zero 常量和 initializer 两处字面量沿所选项传播并整件逆回，旧来源保持旧目标。入口诊断只在原 shutdown 前释放 65536 字节预留并输出有界安全 fatal 分类，不改变业务、原成功 schema 或资源上限；新目标仍须新的来源捕获与独审，语法通过不代替原 Worker 255 的根因或正常运行资格。
+Worker 作者保留原 `129901/f420b2…` 目标，并允许入口有限 fatal 诊断的 `131974/1c192ecf…` 目标，并允许分段释放 fixtures 校验副本的 `132395/0d0d0571…` 目标；只按实际 inventory 的完整 path/bytes/SHA 选择这三项之一。同次独审的 `worker_fixtures_archive_update.before` 必须仍精确为原 `127340/9cb8a8…`，`after` 必须等于所选完整目标；Core9 与 B 源接缝均拒绝其它值。接口当前行、Host/zero 常量和 initializer 两处字面量沿所选项传播并整件逆回，旧来源保持旧目标。入口诊断只在原 shutdown 前释放 65536 字节预留并输出有界安全 fatal 分类，不改变业务、原成功 schema 或资源上限；新目标仍须新的来源捕获与独审，语法通过不代替原 Worker 255 的根因或正常运行资格。 内存生命周期修复保留首轮完整 native/gzip 字节与摘要、严格数组逆回及实际重新序列化，再释放数组后按原96MiB上限重新解码逐字节比较；只释放完整校验后不再读取的 keep/封装读回对象，512M、64MiB封装、96MiB decoded及格式均保持。正常驻留组件与后续完整 A 的资格分别验证，源码检查不代表 Worker 已正常通过。
 
 平台订单表单读取前的 Redis tag 类型检查复用已有 `m4tr_redis_type`，通过只读 `EVAL_RO` 取得实际类型字符串。当前 PHP Redis 客户端的直接 `rawCommand('TYPE', ...)` 会返回布尔状态，不能直接与 `none/set` 比较。成员完整摘要、类型、绝对过期时间及后续整库检查保持；同一原隔离 Redis 的只读观察块已从原失败变为通过，完整 A 仍须在修后来源运行，旧失败保留。
 

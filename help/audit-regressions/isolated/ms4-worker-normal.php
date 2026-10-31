@@ -1678,7 +1678,12 @@ function m4w_fixtures_archive_verify(array $archive,array $fixtures):void
   &&hash('sha256',$decoded)===$archive['native_sha256']&&$decoded===$native,'M4W_FIXTURE_ARCHIVE_EXACT_GZIP_INVERSE');
  unset($native);
  $restored=unserialize($decoded,['allowed_classes'=>false,'max_depth'=>128]);
- m4w_expect(is_array($restored)&&$restored===$fixtures&&serialize($restored)===$decoded,
+ m4w_expect(is_array($restored)&&$restored===$fixtures,'M4W_FIXTURE_ARCHIVE_COMPLETE_NATIVE_ARRAY_ROUNDTRIP');
+ unset($decoded);
+ $roundtrip=serialize($restored);unset($restored);
+ $decoded=gzdecode($archive['body'],100663296);
+ m4w_expect(is_string($decoded)&&strlen($decoded)===$archive['native_bytes']
+  &&hash('sha256',$decoded)===$archive['native_sha256']&&$roundtrip===$decoded,
   'M4W_FIXTURE_ARCHIVE_COMPLETE_NATIVE_ARRAY_ROUNDTRIP');
 }
 function m4w_fixtures_archive(array $fixtures):array
@@ -1701,7 +1706,8 @@ function m4w_run():int
  $config=m4w_config_capture($source);$inputs=m4w_old_inputs();$fixtures=m4w_files_capture('/run/audit-fixtures');
  $db=audit_db();$GLOBALS['m4w_db']=$db;m4w_expect(!$db->inTransaction(),'M4W_REAL_OBSERVER_OUTSIDE_TRANSACTION');
  $GLOBALS['m4w_observer']=m5pc_observer_configure($db);m4w_phase('restore_public');
- $restored=m4w_public_restore($source,$inputs);$before=m4ar_snapshot($db);$GLOBALS['m4w_before_snapshot']=$before;
+ $restored=m4w_public_restore($source,$inputs);unset($restored['keep']);
+ $before=m4ar_snapshot($db);$GLOBALS['m4w_before_snapshot']=$before;
  m4ar_zero($restored['final']['native'],$before);
  m4w_expect(m4w_files_capture(M4AR_PRIVATE)['file_map']===$before['private'],'M4W_COMPLETE_READONLY_OLD_PRIVATE_FILES');
  m4w_expect(m4cf_native_files()===$before['customer_form_private'],'M4W_CUSTOMER_FORM_BEFORE_ORIGINALS');
@@ -1713,7 +1719,8 @@ function m4w_run():int
  $beforeSeal=m4ar_private_seal(M4W_BEFORE,'MS4_WORKER_NORMAL_BEFORE_NATIVE_FACTS',$source,$beforePayload);$GLOBALS['m4w_before_seal']=$beforeSeal;
  $read=m4w_archive_load(M4W_BEFORE,'MS4_WORKER_NORMAL_BEFORE_NATIVE_FACTS',$source,$beforeSeal);
  foreach($beforePayload as$k=>$v)m4w_expect(array_key_exists($k,$read)&&$read[$k]===$v,'M4W_COMPLETE_BEFORE_NATIVE_READBACK');
- m4w_fixtures_archive_verify($read['fixtures'],$fixtures);
+ $fixturesArchive=$read['fixtures'];unset($beforePayload,$read,$restored);
+ m4w_fixtures_archive_verify($fixturesArchive,$fixtures);unset($fixturesArchive);
  m4w_phase('launch_preconditions');m4w_launch_preconditions($before,$cache,$window);
  m4w_stable_unchanged($source,$inputs,$config,$fixtures);m4cb_guard_readonly();
  m4w_expect(time()+120<=$window['wall_through'],'M4W_PRELAUNCH_FULL_OBSERVATION_FITS_SAVED_WINDOW');

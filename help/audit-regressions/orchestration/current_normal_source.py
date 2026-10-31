@@ -44,6 +44,8 @@ WORKER_CURRENT = {"path": WORKER_PATH, "bytes": 129901,
                   "sha256": "f420b2afa7bb4e9ff76c8b75645fa6b7a2b146510e2eae7219efe23a97e1a196"}
 WORKER_FATAL_DIAGNOSTIC = {"path": WORKER_PATH, "bytes": 131974,
                            "sha256": "1c192ecf2b0a465c9d80126fea469bf2f7bc1aa08e3962d3b6cedf509956b3b9"}
+WORKER_MEMORY_LIFETIME = {"path": WORKER_PATH, "bytes": 132395,
+                           "sha256": "0d0d0571087d375c2bdff63e7458c7155482451f08d1b9134f99de4e255931a0"}
 CUSTOMER_PATH = "help/audit-regressions/isolated/ms4-customer-http-normal.php"
 CUSTOMER_BEFORE = {"path": CUSTOMER_PATH, "bytes": 121457,
                    "sha256": "1fae540f4f145ace9ed94d17648d785f1663c4e8d6dbd0b2de54b75ffcbdea75"}
@@ -1103,7 +1105,7 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
     worker_update = None
     worker_current = inventory[WORKER_PATH]
     if worker_current != WORKER_BEFORE:
-        require(worker_current in (WORKER_CURRENT, WORKER_FATAL_DIAGNOSTIC), "EXACT_CURRENT_WORKER_ARCHIVE_SOURCE")
+        require(worker_current in (WORKER_CURRENT, WORKER_FATAL_DIAGNOSTIC, WORKER_MEMORY_LIFETIME), "EXACT_CURRENT_WORKER_ARCHIVE_SOURCE")
         worker_review = source_review.get("worker_fixtures_archive_update")
         require(type(worker_review) is dict and worker_review.get("before") == WORKER_BEFORE
                 and worker_review.get("after") == worker_current,
@@ -2471,7 +2473,7 @@ def derive_b_profile(authority_pointer: dict[str, Any],
             return wanted
         if row["path"] == WORKER_PATH and wanted != row:
             worker_review = source_review.get("worker_fixtures_archive_update")
-            require(row == WORKER_BEFORE and wanted in (WORKER_CURRENT, WORKER_FATAL_DIAGNOSTIC)
+            require(row == WORKER_BEFORE and wanted in (WORKER_CURRENT, WORKER_FATAL_DIAGNOSTIC, WORKER_MEMORY_LIFETIME)
                     and type(worker_review) is dict and worker_review.get("before") == WORKER_BEFORE
                     and worker_review.get("after") == wanted,
                     "B_EXACT_REVIEWED_WORKER_FIXTURE_ARCHIVE_UPDATE")
