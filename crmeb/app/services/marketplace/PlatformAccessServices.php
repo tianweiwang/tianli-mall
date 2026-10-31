@@ -52,6 +52,7 @@ final class PlatformAccessServices
         'marketplace-aftersales-approve' => ['POST', 'marketplace/aftersales/<id>/approve', false],
         'marketplace-aftersales-reject' => ['POST', 'marketplace/aftersales/<id>/reject', false],
         'marketplace-aftersales-return-accept' => ['POST', 'marketplace/aftersales/<id>/return-accept', false],
+        'marketplace-aftersales-test-refund' => ['POST', 'marketplace/aftersales/<id>/test-refund', false],
         'marketplace-aftersale-files-ticket' => ['POST', 'marketplace/aftersale-files/<file_id>/read-ticket', false],
         'marketplace-aftersale-files-read' => ['GET', 'marketplace/aftersale-files/<file_id>/content', false],
     ];
@@ -151,10 +152,13 @@ final class PlatformAccessServices
 
     private static function assertRoute(Request $request, string $permission): void
     {
+        $rule=trim(strtolower((string)$request->rule()->getRule()));
+        $testOptionsAlias=$permission==='marketplace-aftersales-read'
+            && strtoupper($request->method())==='GET' && $rule==='marketplace/aftersales/<id>/test-refund-options';
         if (!isset(self::ACTIONS[$permission]) || !self::isMarketplace($request)
             || $request->rule()->getOption('marketplace_permission') !== $permission
             || strtoupper($request->method()) !== self::ACTIONS[$permission][0]
-            || trim(strtolower((string)$request->rule()->getRule())) !== self::ACTIONS[$permission][1]) {
+            || (!$testOptionsAlias && $rule !== self::ACTIONS[$permission][1])) {
             throw new HttpException(403, '没有权限访问');
         }
     }

@@ -4,9 +4,9 @@ import { getPlatformToken } from '@/utils/storage';
 import { getCookies } from '@/libs/util';
 import { platformAuthEpoch } from '@/libs/platform-auth-epoch';
 import { platformCan } from '@/libs/marketplace-navigation';
-import { refundView, refundPage, actionResult, intentWire, readTicket, recordId, u64 } from '@/libs/marketplace-aftersale';
+import { refundView, refundPage, actionResult, intentWire, readTicket, recordId, u64, testRefundOptions, testRefundResult, testRefundWire } from '@/libs/marketplace-aftersale';
 const apiBase = setting.apiBaseURL; const prefix = 'marketplace/'; const authHeader = 'Authori-zation';
-const permissionFor = { list: 'marketplace-aftersales-list', read: 'marketplace-aftersales-read', approve: 'marketplace-aftersales-approve', reject: 'marketplace-aftersales-reject', accept_return: 'marketplace-aftersales-return-accept', ticket: 'marketplace-aftersale-files-ticket', content: 'marketplace-aftersale-files-read' };
+const permissionFor = { list: 'marketplace-aftersales-list', read: 'marketplace-aftersales-read', approve: 'marketplace-aftersales-approve', reject: 'marketplace-aftersales-reject', accept_return: 'marketplace-aftersales-return-accept', test_refund: 'marketplace-aftersales-test-refund', ticket: 'marketplace-aftersale-files-ticket', content: 'marketplace-aftersale-files-read' };
 function hasPermission(store, permission) { return platformCan(store, permission); }
 function actor(value) {
   if (typeof value === 'number') return Number.isSafeInteger(value) && value > 0 && value <= 4294967295 ? String(value) : '';
@@ -66,6 +66,16 @@ export async function command(context, intent) {
   requireCurrent(context); if (!flagFor[intent.action] || !can(context.store, intent.action)) throw new Error('当前账号没有此项处理权限');
   const wire = intentWire(intent); recordId(intent.refundId);
   return actionResult(await json(context, 'POST', prefix + 'aftersales/' + intent.refundId + '/' + suffixFor[intent.action], undefined, wire), intent);
+}
+export async function testRefundAvailability(context, id) {
+  requireCurrent(context); if (!can(context.store, 'test_refund')) throw new Error('当前账号没有执行测试退款权限'); recordId(id);
+  const result = testRefundOptions(await json(context, 'GET', prefix + 'aftersales/' + id + '/test-refund-options'), id);
+  requireCurrent(context); if (!can(context.store, 'test_refund')) throw new Error('当前测试退款权限已变化'); return result;
+}
+export async function executeTestRefund(context, intent) {
+  requireCurrent(context); if (!can(context.store, 'test_refund')) throw new Error('当前账号没有执行测试退款权限'); recordId(intent.refundId);
+  const result = testRefundResult(await json(context, 'POST', prefix + 'aftersales/' + intent.refundId + '/test-refund', undefined, testRefundWire(intent)), intent);
+  requireCurrent(context); if (!can(context.store, 'test_refund')) throw new Error('当前测试退款权限已变化'); return result;
 }
 export async function privateImage(context, view, fileId) {
   requireCurrent(context); if (!can(context.store, 'ticket') || !can(context.store, 'content')) throw new Error('当前账号没有私有凭证读取权限');

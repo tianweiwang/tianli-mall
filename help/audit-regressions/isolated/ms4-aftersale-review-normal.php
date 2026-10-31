@@ -1515,6 +1515,8 @@ function m4ar_refund_read_view(array $model,array $record,array $actor):array
   m4ar_expect(isset($record['rejection_reason'])&&is_string($record['rejection_reason'])&&$record['rejection_reason']!=='','TASK78_READ_AUTHORED_REJECTION_REASON');
   $view['rejection_reason']=$record['rejection_reason'];
  }else m4ar_expect(!array_key_exists('rejection_reason',$record),'TASK78_REJECTION_REASON_ONLY_REJECTED');
+ $view['is_test_payment']=m5pcp_int($model['root']['marketplace_trade_version'],0,1)===1
+  &&$model['root']['pay_type']==='marketplace_test';
  return $view;
 }
 function m4ar_credit_oracle(array $before,array $after,array $model,array $actor,int $refund,string $actionId,string $kind,array $physical,int $at,array &$rows,array &$counts):array

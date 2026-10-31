@@ -321,6 +321,32 @@ final class MarketplaceOrderRefundFacts
     }
 
     /** A proposal before any business INSERT: no invented refund/action/movement PK, actor, clock or financial observation. */
+
+    /** Pure plan for a service-verified actual test-driver observation, never a public command. */
+    public static function prepareTestFinanceObservation(array $capture,array $context,array $payment,int $refundId,array $raw):array
+    {
+        $body=self::financeBody($raw);$snapshot=self::inspectForAftersale($capture,$context,$payment);
+        $refund=$snapshot['history']['refunds'][$refundId]??null;if(!is_array($refund))self::unavailable();
+        $before=$refund['after'];$after=$before;$kind=$refund['kind'];
+        if($before['business_state']!=='APPROVED'||bccomp($body['confirmed_amount'],$before['confirmed_amount'],2)<0
+            ||bccomp($body['confirmed_amount'],$before['requested_amount'],2)>0)self::unavailable();
+        $source=$snapshot['source'];$cap=$kind==='return_goods'?self::acceptedMoney($source,$refund):$before['requested_amount'];
+        if(bccomp($body['confirmed_amount'],$cap,2)>0)self::unavailable();
+        $claims=self::confirmMoney($source,$refund,$body['confirmed_amount']);$allocations=$refund['allocations'];
+        foreach($allocations as &$allocation)$allocation['confirmed_amount']=self::claimAmount($source,$claims,[$allocation]);unset($allocation);
+        $after['confirmed_amount']=$body['confirmed_amount'];$after['held_amount']=bcsub($before['requested_amount'],$body['confirmed_amount'],2);
+        $after['finance_state']=$body['observed_state'];
+        if($body['observed_state']==='SUCCEEDED'&&$body['confirmed_amount']!==$before['requested_amount'])self::unavailable();
+        if($body['observed_state']==='PARTIAL'&&(bccomp($body['confirmed_amount'],'0.00',2)<=0
+            ||bccomp($body['confirmed_amount'],$before['requested_amount'],2)>=0))self::unavailable();
+        if($after['finance_state']==='SUCCEEDED'&&($kind!=='return_goods'||$after['physical_state']==='RETURN_ACCEPTED')){
+            $after['business_state']='COMPLETED';$after['refund_type']=6;
+        }
+        if(self::same($before,$after))self::unavailable();self::state($after);
+        return ['snapshot'=>$snapshot,'body'=>$body,'operation_kind'=>$kind,'before'=>$before,'after'=>$after,
+            'allocations'=>$allocations,'physical'=>[],'inventory_plan'=>[]];
+    }
+
     public static function prepareAction(array $capture,array $context,array $lockedPayment,string $action,?int $refundId,array $raw): array
     {
         $body=match($action){

@@ -6,15 +6,20 @@ use app\Request;
 use app\services\marketplace\order\MarketplaceOrderRefundInput;
 use app\services\marketplace\order\MarketplaceOrderRefundReadServices;
 use app\services\marketplace\order\MarketplaceOrderRefundWriter;
+use app\services\marketplace\payment\MarketplaceRefundServices;
 use think\Response;
 
 final class Aftersale
 {
-    public function __construct(private MarketplaceOrderRefundReadServices $reads,private MarketplaceOrderRefundWriter $writes){}
+    public function __construct(private MarketplaceOrderRefundReadServices $reads,private MarketplaceOrderRefundWriter $writes,private MarketplaceRefundServices $tests){}
     public function index(Request $request):Response
     { return self::success($this->reads->pageForMerchant($request,$request->merchantContext(),$request->get(false))); }
     public function read(Request $request):Response
     { return self::success($this->reads->detailForMerchant($request,$request->merchantContext(),$request->route('id',null,null))); }
+    public function testRefundOptions(Request $request):Response
+    {return self::success($this->tests->optionsForMerchant($request,$request->merchantContext(),$request->route('id',null,null)));}
+    public function testRefund(Request $request):Response
+    {return self::success($this->tests->executeForMerchant($request,$request->merchantContext(),$request->route('id',null,null)));}
     public function approve(Request $request):Response {return $this->command($request,'approve');}
     public function reject(Request $request):Response {return $this->command($request,'reject');}
     public function acceptReturn(Request $request):Response {return $this->command($request,'accept_return');}

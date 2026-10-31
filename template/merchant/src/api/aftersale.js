@@ -1,10 +1,10 @@
 import axios from 'axios';
 import { captureSession, isCurrentSession } from './session';
-import { refundView, refundPage, actionResult, intentWire, readTicket, recordId, u64 } from '../domain/aftersale';
+import { refundView, refundPage, actionResult, intentWire, readTicket, recordId, u64, testRefundOptions, testRefundResult, testRefundWire } from '../domain/aftersale';
 const apiBase = process.env.VUE_APP_API_BASE || '/merchantapi';
 if (apiBase !== '/merchantapi') throw new Error('商家接口基础路径必须为 /merchantapi');
 const prefix = ''; const authHeader = 'Authorization';
-const permissionFor = { list: 'order.read', read: 'order.read', approve: 'aftersale.handle', reject: 'aftersale.handle', accept_return: 'aftersale.handle', ticket: 'order.read', content: 'order.read' };
+const permissionFor = { list: 'order.read', read: 'order.read', approve: 'aftersale.handle', reject: 'aftersale.handle', accept_return: 'aftersale.handle', test_refund: 'aftersale.test_refund', ticket: 'order.read', content: 'order.read' };
 function hasPermission(store, permission) { return store.getters.can(permission); }
 function actor(value) {
   if (typeof value === 'number') return Number.isSafeInteger(value) && value > 0 && value <= 4294967295 ? String(value) : '';
@@ -67,6 +67,16 @@ export async function command(context, intent) {
   requireCurrent(context); if (!flagFor[intent.action] || !can(context.store, intent.action)) throw new Error('当前账号没有此项处理权限');
   const wire = intentWire(intent); recordId(intent.refundId);
   return actionResult(await json(context, 'POST', prefix + 'aftersales/' + intent.refundId + '/' + suffixFor[intent.action], undefined, wire), intent);
+}
+export async function testRefundAvailability(context, id) {
+  requireCurrent(context); if (!can(context.store, 'test_refund')) throw new Error('当前账号没有执行测试退款权限'); recordId(id);
+  const result = testRefundOptions(await json(context, 'GET', prefix + 'aftersales/' + id + '/test-refund-options'), id);
+  requireCurrent(context); if (!can(context.store, 'test_refund')) throw new Error('当前测试退款权限已变化'); return result;
+}
+export async function executeTestRefund(context, intent) {
+  requireCurrent(context); if (!can(context.store, 'test_refund')) throw new Error('当前账号没有执行测试退款权限'); recordId(intent.refundId);
+  const result = testRefundResult(await json(context, 'POST', prefix + 'aftersales/' + intent.refundId + '/test-refund', undefined, testRefundWire(intent)), intent);
+  requireCurrent(context); if (!can(context.store, 'test_refund')) throw new Error('当前测试退款权限已变化'); return result;
 }
 export async function privateImage(context, view, fileId) {
   requireCurrent(context); if (!can(context.store, 'ticket') || !can(context.store, 'content')) throw new Error('当前账号没有私有凭证读取权限');

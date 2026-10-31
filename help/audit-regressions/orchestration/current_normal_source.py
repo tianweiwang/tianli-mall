@@ -32,6 +32,8 @@ AR_BEFORE = {"path": AR_PATH, "bytes": 245730,
              "sha256": "898eb47ab921a0572bcf04a4680e11d0eb4899465ea9598c60130d92bbc073fa"}
 AR_CURRENT = {"path": AR_PATH, "bytes": 267112,
               "sha256": "aa999cd76a66f86bfb9a3068271454702055a6e5e58769ee6786bb26b14d02a7"}
+AR_READ_MARKER = {"path": AR_PATH, "bytes": 267254,
+                  "sha256": "eac9f4bcc8d0a4e3a3d45925c40cdd068a14522b42670f38d8f39d217ce13a26"}
 PAID_PATH = "help/audit-regressions/isolated/ms5-paid-consumer-normal.php"
 PAID_BEFORE = {"path": PAID_PATH, "bytes": 110169,
                "sha256": "e6cf05cc96caf383f6a644785cf58cc38ee3b3a9623128484e8ccf79d90792f2"}
@@ -207,7 +209,13 @@ def reviewed_authority(pointer: dict[str, Any]) -> tuple[dict[str, Any], dict[st
             and rows and [row["path"] for row in rows] == sorted({row["path"] for row in rows}),
             "REVIEWED_COMPLETE_ORDERED_INVENTORY")
     inventory = {row["path"]: {key: row[key] for key in ("path", "bytes", "sha256")} for row in rows}
-    require(inventory.get(AR_PATH) == AR_CURRENT, "FIXED_REVIEWED_CURRENT_AFTERSALE_SOURCE")
+    ar_current = inventory.get(AR_PATH)
+    require(ar_current in (AR_CURRENT, AR_READ_MARKER), "FIXED_REVIEWED_CURRENT_AFTERSALE_SOURCE")
+    ar_updates = review.get("active_profile_updates")
+    require(type(ar_updates) is list and len(ar_updates) in (2, 4)
+            and ar_updates[0] == {"before": AR_BEFORE, "after": ar_current},
+            "FIXED_INDEPENDENTLY_REVIEWED_AFTERSALE_PROFILE_UPDATE")
+    read_pointer({**ar_current, "path": (Path(authority["candidate_root"]) / AR_PATH).as_posix()})
     require(inventory.get(PAID_PATH) == PAID_CURRENT
             and review.get("paid_consumer_helper_update") == {"before": PAID_BEFORE, "after": PAID_CURRENT},
             "FIXED_INDEPENDENTLY_REVIEWED_PAID_CONSUMER_HELPER_UPDATE")
@@ -1073,12 +1081,13 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
             "ORIGINAL_FINITE_SEED_CURRENT_SOURCE_IDENTITY")
     original_interface = copy.deepcopy(interface)
     source_review = decode(read_pointer(authority["independent_review"]))
+    ar_current = inventory[AR_PATH]
     reviewed_updates = source_review.get("active_profile_updates")
     require(type(reviewed_updates) is list and len(reviewed_updates) in (2, 4),
             "EXACT_TWO_OR_FOUR_INDEPENDENT_PROFILE_UPDATES")
     extended_updates = len(reviewed_updates) == 4
     updates = [
-        {"before": AR_BEFORE, "after": AR_CURRENT},
+        {"before": AR_BEFORE, "after": ar_current},
         {"before": CUSTOMER_BEFORE, "after": inventory[CUSTOMER_PATH]},
     ]
     if extended_updates:
@@ -1214,8 +1223,8 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
         raw = replace_constant(raw, "CUSTOMER_FORM_SOURCE_FILES", updated)
         require(constant(raw, "AFTERSALE_REVIEW_ENTRY_BYTES") == AR_BEFORE["bytes"]
                 and constant(raw, "AFTERSALE_REVIEW_ENTRY_SHA256") == AR_BEFORE["sha256"], "OLD_ACTIVE_AFTERSALE_PIN")
-        raw = replace_constant(raw, "AFTERSALE_REVIEW_ENTRY_BYTES", AR_CURRENT["bytes"])
-        after[name] = replace_constant(raw, "AFTERSALE_REVIEW_ENTRY_SHA256", AR_CURRENT["sha256"])
+        raw = replace_constant(raw, "AFTERSALE_REVIEW_ENTRY_BYTES", ar_current["bytes"])
+        after[name] = replace_constant(raw, "AFTERSALE_REVIEW_ENTRY_SHA256", ar_current["sha256"])
         if extended_updates:
             recovered_raw = after[name]
             symbols = ("CUSTOMER_FORM_SOURCE_FILES", "THREE_READ_SOURCE_FILES", "FULFILLMENT_ENTRY_BYTES",
@@ -1245,10 +1254,10 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
                            b"# Fixed independent Source review; runtime acceptance remains pending.")
     old_row = ("['path' => '" + AR_PATH + "', 'bytes' => " + str(AR_BEFORE["bytes"])
                + ", 'sha256' => '" + AR_BEFORE["sha256"] + "']").encode("utf-8")
-    new_row = ("['path' => '" + AR_PATH + "', 'bytes' => " + str(AR_CURRENT["bytes"])
-               + ", 'sha256' => '" + AR_CURRENT["sha256"] + "']").encode("utf-8")
+    new_row = ("['path' => '" + AR_PATH + "', 'bytes' => " + str(ar_current["bytes"])
+               + ", 'sha256' => '" + ar_current["sha256"] + "']").encode("utf-8")
     old_tuple = ("[" + str(AR_BEFORE["bytes"]) + ", '" + AR_BEFORE["sha256"] + "']").encode("utf-8")
-    new_tuple = ("[" + str(AR_CURRENT["bytes"]) + ", '" + AR_CURRENT["sha256"] + "']").encode("utf-8")
+    new_tuple = ("[" + str(ar_current["bytes"]) + ", '" + ar_current["sha256"] + "']").encode("utf-8")
     after["ms4-initialize.php"] = once(once(before["ms4-initialize.php"], old_row, new_row), old_tuple, new_tuple)
     require(once(once(after["ms4-initialize.php"], new_tuple, old_tuple), new_row, old_row)
             == before["ms4-initialize.php"], "TWO_INITIALIZER_LITERALS_WHOLE_FILE_INVERSE")
@@ -1333,7 +1342,7 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
         "baseline_profile": BASELINE_PINS, "baseline_profile_source": baseline_source,
         "technical_authority": authority_pointer,
         "capture": authority["capture"], "independent_review": authority["independent_review"],
-        "active_aftersale_before": AR_BEFORE, "active_aftersale_current": AR_CURRENT,
+        "active_aftersale_before": AR_BEFORE, "active_aftersale_current": ar_current,
         "active_profile_updates": updates,
         "interface_declared_active_rows_changed": interface_changed_rows,
         "paid_consumer_helper_update": paid_update, "initializer_paid_two_literal_inverse_exact": True,

@@ -7,11 +7,13 @@ use app\services\marketplace\order\MarketplaceOrderInput;
 use app\services\marketplace\payment\MarketplacePaymentServices;
 use crmeb\exceptions\AuthUnavailableException;
 
-/** Only this instance knows its attempts. No database/cache persistence, SDK, paid write or successful refund. */
+/** Only this instance knows its attempts. No database/cache persistence, SDK or paid write; refunds retain the same process-only authority. */
 final class TestPaymentDriver implements PaymentAdapter
 {
     private const SCOPE='testing_process_only';
     private array $attempts=[];
+    private array $refundAttempts=[];
+    private array $refundByKey=[];
     private array $byOrder=[];
     private array $byIdempotency=[];
     private readonly \think\App $app;
@@ -99,12 +101,61 @@ final class TestPaymentDriver implements PaymentAdapter
 
     public function createRefund(array $originalPaymentAttempt, array $actualRefund, string $idempotencyKey): array
     {
-        $this->assertScope();throw new \LogicException('MARKETPLACE_TEST_REFUND_UNSUPPORTED');
+        $this->assertScope();
+        $this->app->make(\app\services\marketplace\payment\MarketplaceRefundServices::class)
+            ->consumeCreateContext($this,$originalPaymentAttempt,$actualRefund,$idempotencyKey);
+        \app\services\marketplace\payment\MarketplaceRefundEvidence::key($idempotencyKey);
+        $binding=\app\services\marketplace\payment\MarketplaceRefundEvidence::binding($actualRefund['binding']);
+        $slot=$binding['refund_id']."\0".$idempotencyKey;
+        if(isset($this->refundByKey[$slot])){
+            $ref=$this->refundByKey[$slot];
+            if($this->refundAttempts[$ref]['binding']!==$binding)throw new AuthUnavailableException();
+            return $this->refundResult($ref);
+        }
+        do{$ref='test-refund:'.bin2hex(random_bytes(16));}while(isset($this->refundAttempts[$ref]));
+        $this->refundAttempts[$ref]=['state'=>'pending','binding'=>$binding,'provider_refund_no'=>null];
+        $this->refundByKey[$slot]=$ref;return $this->refundResult($ref);
     }
 
     public function queryRefund(array $refundAttempt): array
     {
-        $this->assertScope();throw new \LogicException('MARKETPLACE_TEST_REFUND_UNSUPPORTED');
+        $this->assertScope();$ref=$this->knownRefund($refundAttempt);
+        return $ref===null?self::unknownRefund():$this->refundResult($ref);
+    }
+
+
+    /** Internal testing control. It only completes this exact instance's known refund descriptor. */
+    public function completeTestRefund(array $original): array
+    {
+        $this->assertScope();$ref=$this->knownRefund($original);
+        if($ref===null)return self::unknownRefund();
+        if($this->refundAttempts[$ref]['state']==='pending'){
+            $this->refundAttempts[$ref]['state']='succeeded';
+            $this->refundAttempts[$ref]['provider_refund_no']='test-rfnd:'.substr($ref,strlen('test-refund:'));
+        }
+        return $this->refundResult($ref);
+    }
+
+    private function knownRefund(array $descriptor):?string
+    {
+        $ref=$descriptor['attempt_ref']??null;
+        if(($descriptor['scope']??null)!==\app\services\marketplace\payment\MarketplaceRefundEvidence::SCOPE
+            ||!is_string($ref)||!isset($this->refundAttempts[$ref]))return null;
+        $saved=$this->refundAttempts[$ref];
+        if(($descriptor['binding_sha256']??null)!==hash('sha256',MarketplaceOrderInput::canonical($saved['binding']))
+            ||($descriptor['binding']??null)!==$saved['binding'])return null;return $ref;
+    }
+    private function refundResult(string $ref):array
+    {
+        $saved=$this->refundAttempts[$ref];
+        return ['state'=>$saved['state'],'scope'=>\app\services\marketplace\payment\MarketplaceRefundEvidence::SCOPE,
+            'attempt_ref'=>$ref,'binding_sha256'=>hash('sha256',MarketplaceOrderInput::canonical($saved['binding'])),
+            'binding'=>$saved['binding'],'provider_refund_no'=>$saved['provider_refund_no']];
+    }
+    private static function unknownRefund():array
+    {
+        return ['state'=>'unknown','scope'=>\app\services\marketplace\payment\MarketplaceRefundEvidence::SCOPE,
+            'attempt_ref'=>null,'binding_sha256'=>null,'binding'=>null,'provider_refund_no'=>null];
     }
 
     public function verifyAndParseNotification(array $rawRequest): array

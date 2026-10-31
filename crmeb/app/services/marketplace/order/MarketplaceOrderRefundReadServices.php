@@ -75,8 +75,23 @@ final class MarketplaceOrderRefundReadServices
         return $this->read($request,$identity,'platform_detail',MarketplaceOrderRefundInput::id($refundId),[],null,$scope);
     }
 
+
+    /** Internal options producer: the original full RR/read-only snapshot supplies these facts to the test-refund service. */
+    public function testRefundSnapshotForMerchant(Request $request,MerchantContext $context,mixed $refundId):array
+    {
+        $identity=$this->merchant($request,$context);$this->employees->authorizeAction($context,'order.read',false);
+        $this->detailRequest($request);
+        return $this->read($request,$identity,'merchant_detail',MarketplaceOrderRefundInput::id($refundId),[],$context,null,true);
+    }
+    public function testRefundSnapshotForPlatform(Request $request,PlatformScope $scope,mixed $refundId):array
+    {
+        $identity=$this->administrator($request,$scope,'marketplace-aftersales-read');
+        $this->platform->authorizeScope($scope,'marketplace-aftersales-read');$this->detailRequest($request);
+        return $this->read($request,$identity,'platform_detail',MarketplaceOrderRefundInput::id($refundId),[],null,$scope,true);
+    }
+
     private function read(Request $request,array $identity,string $kind,int|string|null $locator,array $query,
-        ?MerchantContext $merchant,?PlatformScope $scope):array
+        ?MerchantContext $merchant,?PlatformScope $scope,bool $testRefundFacts=false):array
     {
         [$connection,$pdo,$prefix]=$this->defaultConnection();$options=['now'=>self::integer(time(),1,self::UINT_MAX),
             'timezone'=>date_default_timezone_get(),'config'=>[],'status_images'=>[]];
@@ -173,12 +188,22 @@ final class MarketplaceOrderRefundReadServices
                     if(!isset($complete[$rid])||$complete[$rid]!==$row)self::unavailable();
                     $view=MarketplaceOrderRefundFacts::refundReadViewFromInspection($snapshot['inspection'],$rid);
                     $view['allowed_actions']=self::viewActions($snapshot,$rid,$identity,$rights);
+                    $view['is_test_payment']=self::integer($snapshot['root']['marketplace_trade_version'],1,1)===1
+                        && $snapshot['root']['pay_type']==='marketplace_test';
                     if(!$snapshot['ready']&&$view['return_selection']!==null)foreach($view['return_selection']['items'] as&$item){
                         $item['eligible_quantity']=0;$item['eligible_segments']=[];
                     }unset($item);
                     $views[]=$view;
                 }
                 $data=str_ends_with($kind,'_page')?['schema'=>2,'page'=>$query['page'],'limit'=>$query['limit'],'count'=>$count,'list'=>$views]:($views[0]??self::unavailable());
+                if($testRefundFacts){
+                    if(!in_array($kind,['merchant_detail','platform_detail'],true)||count($views)!==1)self::unavailable();
+                    $rid=self::id($selected[0]['id']);$rootId=self::id($selected[0]['marketplace_root_order_id']);
+                    $testDao=app()->make(\app\dao\marketplace\payment\MarketplaceRefundDao::class);
+                    $structure=$testDao->structure($pdo);$attempt=$structure?$testDao->find($pdo,$rid,false):null;
+                    $data=['refund'=>$views[0],'attempt'=>$attempt,'structure'=>$structure,'inspection'=>$snapshots[$rootId]['inspection'],
+                        'root'=>$snapshots[$rootId]['root'],'payment'=>$snapshots[$rootId]['observation']['locked']];
+                }
                 if($scope!==null)$auditResource=str_ends_with($kind,'_page')?['mer'=>null,'id'=>'global']:
                     ['mer'=>self::integer($selected[0]['mer_id'],1,self::UINT_MAX),'id'=>(string)self::id($selected[0]['id'])];
             }

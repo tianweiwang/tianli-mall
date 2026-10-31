@@ -10,6 +10,8 @@ return static function():void {
     $middleware=[MerchantAuthTokenMiddleware::class,MerchantPermissionMiddleware::class];
     Route::get('aftersales','Aftersale/index')->option(['merchant_permission'=>'order.read'])->middleware($middleware)->name('merchant.aftersale.list');
     Route::get('aftersales/<id>','Aftersale/read')->option(['merchant_permission'=>'order.read'])->middleware($middleware)->name('merchant.aftersale.read');
+    Route::get('aftersales/<id>/test-refund-options','Aftersale/testRefundOptions')->option(['merchant_permission'=>'order.read'])->middleware($middleware)->name('merchant.aftersale.test-refund-options');
+    Route::post('aftersales/<id>/test-refund','Aftersale/testRefund')->option(['merchant_permission'=>'aftersale.test_refund'])->middleware($middleware)->name('merchant.aftersale.test-refund');
     Route::post('aftersales/<id>/approve','Aftersale/approve')->option(['merchant_permission'=>'aftersale.handle'])->middleware($middleware)->name('merchant.aftersale.approve');
     Route::post('aftersales/<id>/reject','Aftersale/reject')->option(['merchant_permission'=>'aftersale.handle'])->middleware($middleware)->name('merchant.aftersale.reject');
     Route::post('aftersales/<id>/return-accept','Aftersale/acceptReturn')->option(['merchant_permission'=>'aftersale.handle'])->middleware($middleware)->name('merchant.aftersale.return-accept');

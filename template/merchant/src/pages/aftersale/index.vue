@@ -22,7 +22,7 @@
         <el-table-column prop="merchant_name_snapshot" label="保存商家名称" min-width="150" />
         <el-table-column label="申请类型" min-width="140"><template slot-scope="scope">{{ kindLabels[scope.row.operation_kind] }}</template></el-table-column>
         <el-table-column label="业务 / 实物" min-width="210"><template slot-scope="scope">{{ businessLabels[scope.row.business_state] }}<br>{{ physicalLabels[scope.row.physical_state] }}</template></el-table-column>
-        <el-table-column label="资金状态" min-width="170"><template slot-scope="scope">{{ financeLabels[scope.row.finance_state] }}</template></el-table-column>
+        <el-table-column label="资金状态" min-width="170"><template slot-scope="scope"><span v-if="scope.row.is_test_payment === true">测试支付 · </span>{{ financeLabels[scope.row.finance_state] }}</template></el-table-column>
         <el-table-column prop="requested_amount" label="申请金额（元）" min-width="135" />
         <el-table-column label="操作" min-width="110"><template slot-scope="scope"><el-button v-if="can('read')" size="small" :aria-label="'查看售后 ' + scope.row.refund_no" :disabled="loading" @click="$router.push(listPath + '/' + scope.row.id)">查看详情</el-button><span v-else>无详情权限</span></template></el-table-column>
       </el-table>
@@ -36,6 +36,30 @@
         <div><dt>资金状态</dt><dd>{{ financeLabels[view.finance_state] }}</dd></div><div><dt>申请 / 确认 / 占用金额（元）</dt><dd>{{ view.requested_amount }} / {{ view.confirmed_amount }} / {{ view.held_amount }}</dd></div>
         <div><dt>申请时间</dt><dd>{{ timeText(view.created_at) }}</dd></div><div><dt>更新时间</dt><dd>{{ timeText(view.updated_at) }}</dd></div>
       </dl>
+      <p v-if="view.is_test_payment === true" class="aftersale-note">本单使用测试支付；本页展示保存的测试状态与金额，不代表真实扣款或资金退回。</p>
+      <section v-if="can('test_refund')" class="aftersale-test-refund" aria-labelledby="aftersale-test-refund-title">
+        <h2 id="aftersale-test-refund-title">测试退款</h2>
+        <p class="aftersale-note">此操作仅处理测试付款，不会退回真实资金。批准申请或验收入库后，仍需单独执行测试退款。</p>
+        <p v-if="testOptionsError" class="aftersale-note" role="status">测试退款状态未能确认：{{ testOptionsError }}。请重新读取，勿重新发起退款。</p>
+        <p v-if="testMessage" class="aftersale-notice" role="status" aria-live="polite">{{ testMessage }}</p>
+        <template v-if="testOptions">
+          <p class="aftersale-note" role="status">{{ testStatusText() }}</p>
+          <p v-if="testOptions.amount !== null" class="aftersale-saved">本次测试退款金额：{{ testOptions.amount }} 元</p>
+          <p class="aftersale-saved">保存的确认 / 占用金额：{{ testOptions.confirmed_amount }} / {{ testOptions.held_amount }} 元</p>
+          <p v-if="testOptions.attempt_id" class="aftersale-saved">保存的测试退款记录：{{ testOptions.attempt_id }}</p>
+        </template>
+        <section v-if="testPreview" class="aftersale-command">
+          <h2>确认执行测试退款</h2>
+          <p class="aftersale-saved">售后单：{{ testPreview.refundNo }} · 测试退款 {{ testPreview.amount }} 元</p>
+          <p class="aftersale-note">仅处理本申请的剩余全额；金额和原支付账户由服务端核对，不涉及真实资金。</p>
+          <div class="aftersale-actions"><el-button type="primary" :loading="sending" :disabled="loading || sending || !testReady()" @click="commitTestRefund">确认执行测试退款</el-button><el-button :disabled="sending" @click="testPreview = null">取消</el-button></div>
+        </section>
+        <div v-else class="aftersale-actions">
+          <el-button v-if="!testPending && testOptions && testOptions.available" type="primary" :disabled="loading || sending || !testReady() || !!choice || !!preview" @click="prepareTestRefund">执行测试退款</el-button>
+          <el-button v-if="testPending && testOptions && testOptions.available" :disabled="loading || sending || !testReady()" @click="sendTestRefund">重试原测试退款操作</el-button>
+          <el-button :disabled="loading || sending || !context" @click="load">重新读取测试退款状态</el-button>
+        </div>
+      </section>
       <h2>申请理由</h2><p class="aftersale-saved">{{ view.reason }}</p>
       <template v-if="view.business_state === 'REJECTED'">
         <h2>拒绝原因</h2><p class="aftersale-saved">{{ view.rejection_reason || '此记录未提供拒绝原因，请联系商家确认。' }}</p>
@@ -119,13 +143,13 @@
   </section>
 </template>
 <script>
-import { captureContext, currentContext, closeContext, can, page, detail, command, privateImage } from '../../api/aftersale';
-import { commandIntent, routeId, errorText, timeText, segmentText, businessLabels, physicalLabels, financeLabels, kindLabels } from '../../domain/aftersale';
+import { captureContext, currentContext, closeContext, can, page, detail, command, privateImage, testRefundAvailability, executeTestRefund } from '../../api/aftersale';
+import { commandIntent, testRefundIntent, routeId, errorText, timeText, segmentText, businessLabels, physicalLabels, financeLabels, kindLabels } from '../../domain/aftersale';
 const tableScroll = { inserted: labelTable, componentUpdated: labelTable };
 function labelTable(element, binding) { const wrappers = element.querySelectorAll('.el-table__body-wrapper'); if (wrappers.length === 1) { wrappers[0].setAttribute('tabindex', '0'); wrappers[0].setAttribute('role', 'region'); wrappers[0].setAttribute('aria-label', binding.value); } }
 export default {
   name: 'merchantAftersales', directives: { 'table-scroll': tableScroll },
-  data: () => ({ context: null, contextTarget: '', alive: true, generation: 0, readJob: 0, sendJob: 0, loading: false, sending: false, error: '', commandError: '', notice: '', rows: [], count: 0, page: 1, limit: 20, businessState: '', merchantId: '', view: null, fresh: false, choice: '', preview: null, pending: null, rejectReason: '', returnDestination: { recipient_name: '', phone: '', address: '' }, ordinalInputs: {}, needsRefresh: false, imageRows: [], unsubscribe: null, businessLabels, physicalLabels, financeLabels, kindLabels, actionLabels: { approve: '批准申请', reject: '拒绝申请', accept_return: '退件验收' } }),
+  data: () => ({ context: null, contextTarget: '', alive: true, generation: 0, readJob: 0, sendJob: 0, loading: false, sending: false, error: '', commandError: '', notice: '', rows: [], count: 0, page: 1, limit: 20, businessState: '', merchantId: '', view: null, fresh: false, testOptions: null, testOptionsError: '', testPreview: null, testPending: null, testMessage: '', choice: '', preview: null, pending: null, rejectReason: '', returnDestination: { recipient_name: '', phone: '', address: '' }, ordinalInputs: {}, needsRefresh: false, imageRows: [], unsubscribe: null, businessLabels, physicalLabels, financeLabels, kindLabels, actionLabels: { approve: '批准申请', reject: '拒绝申请', accept_return: '退件验收' } }),
   computed: { target() { return this.$route.params.id || ''; }, listPath() { return '/aftersales'; } },
   created() { this.unsubscribe = this.$store.subscribe(() => this.syncIdentity()); window.addEventListener('focus', this.syncIdentity); window.addEventListener('storage', this.syncIdentity); this.reset(); },
   watch: { '$route.fullPath'() { this.reset(); } },
@@ -136,19 +160,30 @@ export default {
     allowed(action) { return this.fresh && !this.loading && !this.error && !!this.view && String(this.view.id) === String(this.target) && !!this.context && currentContext(this.context) && this.can(action) && this.view.allowed_actions[action] === true; },
     current(context, generation) { if (!this.alive || context !== this.context || generation !== this.generation || this.contextTarget !== String(this.target)) return false; if (!currentContext(context)) { this.syncIdentity(); return false; } return true; },
     revokeImages() { this.imageRows.forEach(image => { image.job += 1; if (image.url) window.URL.revokeObjectURL(image.url); image.url = ''; }); this.imageRows = []; },
-    clear() { closeContext(this.context); this.context = null; this.contextTarget = ''; this.generation += 1; this.readJob += 1; this.sendJob += 1; this.revokeImages(); this.rows = []; this.count = 0; this.view = null; this.fresh = false; this.loading = false; this.sending = false; this.choice = ''; this.preview = null; this.pending = null; this.rejectReason = ''; this.returnDestination = { recipient_name: '', phone: '', address: '' }; this.ordinalInputs = {}; this.needsRefresh = false; this.notice = ''; this.error = ''; this.commandError = ''; },
+    clear() { closeContext(this.context); this.context = null; this.contextTarget = ''; this.generation += 1; this.readJob += 1; this.sendJob += 1; this.revokeImages(); this.rows = []; this.count = 0; this.view = null; this.fresh = false; this.testOptions = null; this.testOptionsError = ''; this.testPreview = null; this.testPending = null; this.testMessage = ''; this.loading = false; this.sending = false; this.choice = ''; this.preview = null; this.pending = null; this.rejectReason = ''; this.returnDestination = { recipient_name: '', phone: '', address: '' }; this.ordinalInputs = {}; this.needsRefresh = false; this.notice = ''; this.error = ''; this.commandError = ''; },
     reset() { this.clear(); if (!this.alive) return; try { this.context = captureContext(this.$store); this.contextTarget = String(this.target); this.load(); } catch (error) { this.error = errorText(error); } },
-    syncIdentity() { if (this.context && !currentContext(this.context)) { this.clear(); this.error = '身份已变化，请重新进入售后页面'; } else if (this.view && (!this.can('ticket') || !this.can('content'))) this.revokeImages(); },
+    syncIdentity() { if (this.context && !currentContext(this.context)) { this.clear(); this.error = '身份已变化，请重新进入售后页面'; } else { if (this.view && (!this.can('ticket') || !this.can('content'))) this.revokeImages(); if (!this.can('test_refund')) { this.testOptions = null; this.testPreview = null; this.testPending = null; this.testMessage = ''; this.testOptionsError = ''; } } },
     search() { if (!this.loading) { this.page = 1; this.load(); } },
     changePage(page) { if (!this.loading && Number.isSafeInteger(page) && page > 0) { this.page = page; this.load(); } },
     async load() {
       if (this.loading || !this.context) return false; const context = this.context; const generation = this.generation; const job = ++this.readJob;
-      this.loading = true; this.fresh = false; this.error = ''; this.choice = ''; this.preview = null; this.returnDestination = { recipient_name: '', phone: '', address: '' };
+      this.loading = true; this.fresh = false; this.error = ''; this.testOptions = null; this.testOptionsError = ''; this.testPreview = null; this.choice = ''; this.preview = null; this.returnDestination = { recipient_name: '', phone: '', address: '' };
       try {
         if (this.target) {
           const id = routeId(this.target); const data = await detail(context, id); if (!this.current(context, generation) || job !== this.readJob) return false;
           this.revokeImages(); this.view = data; this.ordinalInputs = {}; if (data.return_selection) data.return_selection.items.forEach(row => this.$set(this.ordinalInputs, row.item_id, ''));
           this.imageRows = data.images.map(id => ({ id, url: '', error: '', loading: false, loaded: false, job: 0 }));
+          if (this.can('test_refund')) {
+            try {
+              const options = await testRefundAvailability(context, id);
+              if (!this.current(context, generation) || job !== this.readJob || this.view !== data) return false;
+              this.testOptions = options;
+              if (options.state === 'applied') { this.testPending = null; this.testMessage = '已重新读取保存的测试退款结果；本单未退回真实资金。'; }
+            } catch (error) {
+              if (!this.current(context, generation) || job !== this.readJob || this.view !== data) return false;
+              this.testOptionsError = errorText(error);
+            }
+          }
           this.fresh = true; this.needsRefresh = false;
           if (this.can('ticket') && this.can('content')) this.imageRows.forEach(image => this.loadImage(image));
         } else {
@@ -175,7 +210,49 @@ export default {
       } catch (error) { if (this.current(context, generation) && job === image.job && this.imageRows.includes(image)) image.error = errorText(error); }
       finally { if (this.current(context, generation) && job === image.job && this.imageRows.includes(image)) image.loading = false; }
     },
-    choose(action) { if (!this.pending && this.allowed(action)) { this.choice = action; this.preview = null; this.commandError = ''; } },
+    testReady() {
+      return this.fresh && !this.loading && !this.sending && !this.error && !this.pending && !this.needsRefresh && !!this.view && this.view.is_test_payment === true
+        && !!this.context && currentContext(this.context) && String(this.view.id) === String(this.target) && this.can('test_refund')
+        && !!this.testOptions && this.testOptions.refund_id === this.view.id && this.testOptions.available
+        && this.testOptions.amount === this.view.held_amount && this.testOptions.confirmed_amount === this.view.confirmed_amount && this.testOptions.held_amount === this.view.held_amount;
+    },
+    testStatusText() {
+      if (!this.testOptions) return '';
+      if (this.testOptions.state === 'applied') return '已读取保存的测试退款结果；不代表真实资金退款。';
+      if (this.testOptions.state === 'pending' || this.testOptions.state === 'unresolved') return '原测试退款结果待确认，已保留原记录；请勿再次发起退款，请稍后重新读取原操作状态。';
+      if (this.testPending) return '已重新读取，原操作尚未开始。如需重试，将沿用原售后单、原金额和原操作。';
+      return { AVAILABLE: '本申请当前可以单独执行测试退款。', TESTING_DISABLED: '测试退款尚未启用。', STRUCTURE_UNAVAILABLE: '测试退款暂不可用，原售后处理仍可使用。', NOT_ELIGIBLE: '本申请尚不满足测试退款条件；退货申请须全部验收，且付款必须为测试付款。' }[this.testOptions.reason] || '';
+    },
+    prepareTestRefund() {
+      if (!this.testReady() || this.testPending || this.choice || this.preview) return;
+      this.testOptionsError = ''; this.testMessage = '';
+      try { this.testPreview = testRefundIntent(this.view, this.testOptions); } catch (error) { this.testOptionsError = errorText(error); }
+    },
+    commitTestRefund() {
+      if (!this.testPreview || this.testPending || !this.testReady()) return;
+      this.testPending = this.testPreview; this.testPreview = null; this.sendTestRefund();
+    },
+    async sendTestRefund() {
+      if (!this.testPending || !this.testReady()) return;
+      const context = this.context; const generation = this.generation; const intent = this.testPending; const job = ++this.sendJob;
+      try {
+        const checked = testRefundIntent(this.view, this.testOptions, intent.body.refund_idem);
+        if (checked.wire !== intent.wire || checked.amount !== intent.amount || checked.requestedAmount !== intent.requestedAmount || checked.refundNo !== intent.refundNo || checked.rootId !== intent.rootId || checked.rootNo !== intent.rootNo) throw new Error('原测试退款目标或金额已变化，请重新读取保存状态');
+      } catch (error) { this.testOptionsError = errorText(error); return; }
+      this.sending = true; this.fresh = false; this.needsRefresh = true; this.testOptions = null; this.testOptionsError = ''; this.testMessage = '正在提交测试退款，请稍候；不会退回真实资金。';
+      try {
+        const saved = await executeTestRefund(context, intent);
+        if (!this.current(context, generation) || job !== this.sendJob || this.testPending !== intent) return;
+        this.testMessage = saved.state === 'applied' ? '测试退款接口已返回保存结果，正在重新读取当前资料。' : '原测试退款结果待确认，请重新读取保存状态，勿重新发起。';
+        const refreshed = await this.load();
+        if (this.current(context, generation) && job === this.sendJob && !refreshed) this.testMessage += ' 最新资料尚未读回，请重新读取。';
+      } catch (error) {
+        if (this.current(context, generation) && job === this.sendJob && this.testPending === intent) {
+          this.testOptionsError = errorText(error); this.testMessage = '本次测试退款结果尚未确认，已保留原操作。请先重新读取状态；不会自动重试。';
+        }
+      } finally { if (this.current(context, generation) && job === this.sendJob) this.sending = false; }
+    },
+    choose(action) { if (!this.pending && this.allowed(action)) { this.choice = action; this.preview = null; this.testPreview = null; this.commandError = ''; } },
     prepare() { if (this.pending || !this.allowed(this.choice)) return; this.commandError = ''; try { if (this.choice === 'approve' && this.view.operation_kind === 'return_goods' && Object.values(this.returnDestination).some(value => !value.trim())) throw new Error('请完整填写回寄收件人、联系电话和地址'); this.preview = commandIntent(this.view, this.choice, { reason: this.rejectReason, segments: this.ordinalInputs, return_destination: this.returnDestination }); } catch (error) { this.commandError = errorText(error); } },
     commitPreview() { if (!this.preview || this.pending || !this.allowed(this.preview.action)) return; this.pending = this.preview; this.preview = null; this.choice = ''; this.sendPending(); },
     async sendPending() {
@@ -222,6 +299,7 @@ export default {
 .aftersale-image-error { color: #c45656; line-height: 1.6; overflow-wrap: anywhere; }
 .aftersale-command, .aftersale-pending { padding: 16px; border: 1px solid #dcdfe6; margin: 20px 0; line-height: 1.7; }
 .aftersale-command h2 { margin-top: 0; }
+.aftersale-test-refund { min-width: 0; margin-top: 20px; padding-top: 4px; border-top: 1px solid #ebeef5; }
 .aftersale-pagination { display: flex; justify-content: flex-end; margin-top: 20px; max-width: 100%; }
 @media (max-width: 760px) { .aftersale-facts { grid-template-columns: minmax(0, 1fr); } .aftersale-filter { display: block; } .aftersale-filter .el-form-item { width: 100%; margin-bottom: 16px; } .aftersale-pagination { justify-content: flex-start; } }
 </style>

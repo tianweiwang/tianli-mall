@@ -59,6 +59,10 @@ Route::group('marketplace', function () {
         ->option(['marketplace_permission'=>'marketplace-aftersales-list']);
     Route::get('aftersales/<id>', 'v1.marketplace.Aftersale/read')->name('marketplace-aftersales-read')
         ->option(['marketplace_permission'=>'marketplace-aftersales-read']);
+    Route::get('aftersales/<id>/test-refund-options', 'v1.marketplace.Aftersale/testRefundOptions')->name('marketplace-aftersales-test-refund-options')
+        ->option(['marketplace_permission'=>'marketplace-aftersales-read']);
+    Route::post('aftersales/<id>/test-refund', 'v1.marketplace.Aftersale/testRefund')->name('marketplace-aftersales-test-refund')
+        ->option(['marketplace_permission'=>'marketplace-aftersales-test-refund']);
     Route::post('aftersales/<id>/approve', 'v1.marketplace.Aftersale/approve')->name('marketplace-aftersales-approve')
         ->option(['marketplace_permission'=>'marketplace-aftersales-approve']);
     Route::post('aftersales/<id>/reject', 'v1.marketplace.Aftersale/reject')->name('marketplace-aftersales-reject')

@@ -148,7 +148,7 @@ function preview_seed_migrations(PDO $db): int
         'marketplace-ms4-order-read-menus.php', 'marketplace-ms4-review-menus.php', 'marketplace-ms4-aftersale-menus.php',
         'marketplace-ms4-product-media-menus.php', 'marketplace-ms4-platform-asset-menus.php',
         'marketplace-password-setup-reissue-menu.php', 'marketplace-merchant-exit-menus.php',
-        'marketplace-finance-settings.php'] as $file) require_once $directory . $file;
+        'marketplace-finance-settings.php', 'marketplace-ms5-refund.php'] as $file) require_once $directory . $file;
     $ms1 = new \Audit\Migration\MarketplaceMs1Migration($db, 'eb_');
     preview_seed_completed($ms1->apply()); preview_seed_completed($ms1->check());
     $ms2 = new \Audit\Migration\MarketplaceMs2Migration($db, $ms1, 'eb_', '/workspace', ['enabled' => false],
@@ -222,6 +222,17 @@ function preview_seed_migrations(PDO $db): int
     $financeBefore = $finance->check();
     preview_seed_require(in_array($financeBefore['state'] ?? null, ['applicable', 'completed'], true), 'finance settings precheck failed');
     preview_seed_completed($finance->apply()); preview_seed_completed($finance->check());
+    // Only a newly initialized preview receives the additive test-refund structure and ungranted operation leaf.
+    $testRefund = new MarketplaceMs5RefundMigration($db, 'eb_', 'mall_preview');
+    $refundBefore = $testRefund->check();
+    preview_seed_require(in_array($refundBefore['state'] ?? null, ['applicable', 'completed'], true)
+        && ($refundBefore['issues'] ?? null) === [] && ($refundBefore['native_exit'] ?? null) === 0, 'test refund precheck failed');
+    preview_seed_completed($testRefund->applyStructure()); preview_seed_completed($testRefund->verify());
+    $testRefundMenus = new MarketplaceMs5RefundMenus($db, 'eb_');
+    $refundMenusBefore = $testRefundMenus->check();
+    preview_seed_require(in_array($refundMenusBefore['state'] ?? null, ['applicable', 'completed'], true)
+        && ($refundMenusBefore['issues'] ?? null) === [], 'test refund menus precheck failed');
+    preview_seed_completed($testRefundMenus->apply()); preview_seed_completed($testRefundMenus->check());
     return $self;
 }
 

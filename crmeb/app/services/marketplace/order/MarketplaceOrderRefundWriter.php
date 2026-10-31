@@ -24,7 +24,7 @@ use think\facade\Config;
 use think\facade\Db;
 use think\facade\Log;
 
-/** Owned Task7 business writes only. This class never drives or simulates a financial refund. */
+/** Owned Task7 writes and one service-bound test-finance observation. This writer never calls a payment driver. */
 final class MarketplaceOrderRefundWriter
 {
     private const INT_MAX=2147483647;
@@ -88,6 +88,71 @@ final class MarketplaceOrderRefundWriter
         $root=$this->refunds->locateRoot($connection,$pdo,self::id($target['marketplace_root_order_id']??null));
         $this->outside($connection,$pdo); if($root===null) self::unavailable();
         return $this->run($connection,$pdo,$request,$identity,self::locator($root),$target,$action,$body,null,$scope);
+    }
+
+
+    /** Full original locked source reused by the testing refund service; it makes no financial write. */
+    public function lockTestRefundFacts(ConnectionInterface $connection,PDO $pdo,array $candidate):array
+    {
+        $this->inside($connection,$connection,$pdo);
+        $payment=$this->payments->lockPayment($pdo,$candidate['uid'],$candidate['root_order_id'],$candidate['root_order_no']);
+        $root=$this->family->lockRoot($pdo,$candidate);self::paid($candidate,$root,$payment);
+        $before=$this->capture($connection,$pdo,$candidate,$root,$payment);
+        return ['payment'=>$payment,'root'=>$root]+$before;
+    }
+
+    /** The service consumes the actual native driver fact before granting this one scoped finance action. */
+    public function observeTestRefund(ConnectionInterface $connection,PDO $pdo,array $candidate,int $refundId,array $body):array
+    {
+        $this->inside($connection,$connection,$pdo);
+        app()->make(\app\services\marketplace\payment\MarketplaceRefundServices::class)
+            ->consumeObservationContext($this,$connection,$pdo,$candidate,$refundId,$body);
+        $before=$this->lockTestRefundFacts($connection,$pdo,$candidate);$payment=$before['payment'];$root=$before['root'];
+        $proposal=MarketplaceOrderRefundFacts::prepareTestFinanceObservation($before['capture'],$before['context'],$payment,$refundId,$body);
+        $lockedRefund=self::refundRow($before['family']['refunds'],$refundId);if($lockedRefund===null)self::unavailable();
+        $filesBefore=[];foreach($before['family']['refunds'] as $oldRefund){
+            $rid=self::id($oldRefund['id']);$filesBefore[$rid]=$this->files->readClaimedForReplay($connection,$pdo,$root,$oldRefund);
+        }
+        $winner=$proposal['snapshot']['winner'];$actorRef='payment:'.$winner;
+        $createdAt=self::nowSigned();$request=['schema'=>1,'action'=>'finance_observe',
+            'root_order_id'=>$candidate['root_order_id'],'refund_id'=>$refundId,'public_body'=>$body];
+        $data=['contract_version'=>1,'root_order_id'=>$candidate['root_order_id'],'uid'=>$candidate['uid'],'mer_id'=>$candidate['mer_id'],
+            'refund_id'=>$refundId,'payment_attempt_id'=>$winner,'action'=>'finance_observe','actor_type'=>'payment','actor_id'=>null,
+            'actor_ref'=>$actorRef,'idem_key'=>'finance:'.hash('sha256',$body['source_ref']),
+            'request_digest'=>hash('sha256',self::canonical(['actor_ref'=>$actorRef,'request_payload'=>$request]),true),
+            'request_payload'=>$request,'result_payload'=>null,'state'=>0,
+            'previous_refund_action_id'=>self::big($lockedRefund['marketplace_last_action_id']),
+            'fulfillment_cut_id'=>$proposal['snapshot']['last_operation_id'],'apply_refund_id'=>null,
+            'created_at'=>$createdAt,'committed_at'=>null];
+        $began=false;
+        try{
+            $this->refunds->beginTestFinanceWrite($connection,$pdo,$refundId,$body);$began=true;
+            $pending=$this->refunds->insertAction($connection,$pdo,$data);self::pendingStored($pending,$data);
+            $view=self::refundView($proposal,$lockedRefund,'finance_observe',['actor_type'=>'payment','actor_id'=>null],$createdAt);
+            $mirror=self::mirror($proposal,$lockedRefund,$pending,$view,'finance_observe',$createdAt);
+            $afterRefund=$this->refunds->updateRefundMirror($connection,$pdo,$lockedRefund,$mirror);
+            self::refundNative($afterRefund);self::refundStored($afterRefund,$mirror);
+            $committedAt=self::nowUnsigned();if($committedAt<$createdAt)self::unavailable();
+            $public=['schema'=>2,'scope'=>'marketplace_aftersale_action_v1','action_id'=>self::big($pending['id']),
+                'action'=>'finance_observe','refund'=>$view,'committed_at'=>$committedAt,'acceptance_ids'=>[]];
+            $internal=['schema'=>1,'before'=>$proposal['before'],'after'=>$proposal['after'],
+                'allocations'=>$proposal['allocations'],'movements'=>[],'public_result'=>$public];
+            $finished=$this->refunds->finishAction($connection,$pdo,$pending,$internal,$committedAt);
+            self::finishedStored($finished,$pending,$internal,$committedAt);
+            $final=$this->lockTestRefundFacts($connection,$pdo,$candidate);
+            $children=[];foreach($before['family']['children'] as $child)$children[self::id($child['id'])]=$child;
+            self::preserved($before,$payment,$root,$root,$children,$afterRefund,$finished,[],$before['inspection']['summary'],
+                false,$createdAt,$final['payment'],$final['root'],$final['capture'],$final['family'],$final['operations'],
+                $final['logs'],$final['actions'],$final['inspection']);
+            foreach($before['family']['refunds'] as $row){
+                $rid=self::id($row['id']);$old=$filesBefore[$rid];
+                $current=self::refundRow($final['family']['refunds'],$rid);if($current===null)self::unavailable();
+                if($this->files->readFinalClaimed($connection,$pdo,$root,$current)!==$old)self::unavailable();
+            }
+            return ['action_id'=>self::big($finished['id']),'applied_at'=>$committedAt,'refund'=>$view];
+        }finally{
+            if($began)$this->refunds->endTestFinanceWrite();
+        }
     }
 
     private function run(ConnectionInterface $connection,PDO $pdo,Request $request,array $identity,array $candidate,?array $locatedRefund,

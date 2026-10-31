@@ -69,7 +69,9 @@ export function refundView(value) {
   const fields = ['schema', 'scope', 'id', 'refund_no', 'root_order_id', 'root_order_no', 'merchant_name_snapshot', 'operation_kind', 'mode', 'business_state', 'physical_state', 'finance_state', 'requested_amount', 'confirmed_amount', 'held_amount', 'created_at', 'updated_at', 'reason', 'images', 'return_delivery', 'items', 'allowed_actions', 'return_selection'];
   const hasDestination = Object.prototype.hasOwnProperty.call(value || {}, 'return_destination');
   const hasRejectionReason = Object.prototype.hasOwnProperty.call(value || {}, 'rejection_reason');
-  exact(value, fields.concat(hasDestination ? ['return_destination'] : [], hasRejectionReason ? ['rejection_reason'] : []));
+  const hasTestPayment = Object.prototype.hasOwnProperty.call(value || {}, 'is_test_payment');
+  exact(value, fields.concat(hasDestination ? ['return_destination'] : [], hasRejectionReason ? ['rejection_reason'] : [], hasTestPayment ? ['is_test_payment'] : []));
+  if (hasTestPayment && typeof value.is_test_payment !== 'boolean') fail();
   if (value.schema !== 2 || value.scope !== 'marketplace_aftersale_v1' || !KINDS.includes(value.operation_kind) || value.mode !== (value.operation_kind === 'return_goods' ? 'return_goods' : 'money_only')) fail();
   recordId(value.id); recordId(value.root_order_id); text(value.refund_no, 50, true); text(value.root_order_no, 32, true); text(value.merchant_name_snapshot, 65535);
   enumValue(value.business_state, businessLabels); enumValue(value.physical_state, physicalLabels); enumValue(value.finance_state, financeLabels);
@@ -188,6 +190,42 @@ export function readTicket(value, rootId, fileId, refundId) {
   if (value.schema !== 1 || value.scope !== 'marketplace_aftersale_read_ticket_v1') fail(); const file = fileView(value.file, rootId);
   if (file.id !== u64(fileId) || value.refund_id !== refundId || typeof value.read_ticket !== 'string' || value.read_ticket.length !== 43 || !/^[A-Za-z0-9_-]{43}(?![\s\S])/.test(value.read_ticket)) fail();
   integer(value.issued_at, 1, UINT_MAX - 300); integer(value.expires_at, 1, UINT_MAX); if (value.expires_at !== value.issued_at + 300) fail(); return value;
+}
+function refundKey(value) {
+  if (typeof value !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?![\s\S])/.test(value)) fail('原测试退款操作未确认');
+  return value;
+}
+export function testRefundOptions(value, refundId) {
+  exact(value, ['schema', 'scope', 'refund_id', 'available', 'reason', 'attempt_id', 'refund_idem', 'state', 'amount', 'currency', 'confirmed_amount', 'held_amount', 'is_test_payment', 'real_refund_enabled']);
+  const reasons = ['AVAILABLE', 'TESTING_DISABLED', 'STRUCTURE_UNAVAILABLE', 'NOT_ELIGIBLE', 'ALREADY_APPLIED', 'PENDING_CONFIRMATION'];
+  if (value.schema !== 1 || value.scope !== 'testing_refund_availability_v1' || value.refund_id !== recordId(refundId)
+    || typeof value.available !== 'boolean' || !reasons.includes(value.reason) || !['not_started', 'pending', 'applied', 'unresolved'].includes(value.state)
+    || value.currency !== 'CNY' || typeof value.is_test_payment !== 'boolean' || value.real_refund_enabled !== false) fail();
+  money(value.confirmed_amount); money(value.held_amount); if (value.amount !== null) money(value.amount, true);
+  if (value.state === 'not_started') {
+    if (value.attempt_id !== null || value.refund_idem !== null || ['ALREADY_APPLIED', 'PENDING_CONFIRMATION'].includes(value.reason)) fail();
+  } else {
+    u64(value.attempt_id); refundKey(value.refund_idem); money(value.amount, true);
+    if (value.available || !value.is_test_payment || value.reason !== (value.state === 'applied' ? 'ALREADY_APPLIED' : 'PENDING_CONFIRMATION')) fail();
+  }
+  if (value.available !== (value.reason === 'AVAILABLE') || (value.available && (value.state !== 'not_started' || !value.is_test_payment || value.amount === null))) fail();
+  return value;
+}
+export function testRefundIntent(view, options, originalKey) {
+  refundView(view); testRefundOptions(options, view.id);
+  if (view.is_test_payment !== true || !options.available || options.amount !== view.held_amount || options.confirmed_amount !== view.confirmed_amount || options.held_amount !== view.held_amount) fail('请先重新读取本申请的测试退款状态');
+  const body = { refund_idem: refundKey(originalKey === undefined ? newKey('test-refund', view.id) : originalKey) };
+  return freeze({ refundId: view.id, refundNo: view.refund_no, rootId: view.root_order_id, rootNo: view.root_order_no, requestedAmount: view.requested_amount, amount: options.amount, body, wire: bodyLimit(body) });
+}
+export function testRefundWire(intent) { exact(intent.body, ['refund_idem']); refundKey(intent.body.refund_idem); return intentWire(intent); }
+export function testRefundResult(value, intent) {
+  exact(value, ['schema', 'scope', 'attempt_id', 'refund_idem', 'state', 'refund_id', 'amount', 'currency', 'finance_state', 'confirmed_amount', 'held_amount', 'is_test_payment', 'real_refund_enabled']);
+  testRefundWire(intent);
+  if (value.schema !== 1 || value.scope !== 'testing_refund_action_v1' || value.refund_id !== intent.refundId || value.refund_idem !== refundKey(intent.body.refund_idem)
+    || value.amount !== intent.amount || !['pending', 'applied', 'unresolved'].includes(value.state) || value.currency !== 'CNY' || value.is_test_payment !== true || value.real_refund_enabled !== false) fail('测试退款结果尚未完整确认，请重新读取保存状态');
+  u64(value.attempt_id); money(intent.requestedAmount, true); money(value.amount, true); enumValue(value.finance_state, financeLabels); money(value.confirmed_amount); money(value.held_amount);
+  if (value.state === 'applied' && (value.finance_state !== 'SUCCEEDED' || value.held_amount !== '0.00' || value.confirmed_amount !== intent.requestedAmount)) fail();
+  return value;
 }
 export function errorText(error) { return error && typeof error.msg === 'string' ? error.msg : error && error.message ? error.message : typeof error === 'string' ? error : '请求未完成，请重试'; }
 export function timeText(value) { return value ? new Date(value * 1000).toLocaleString() : '—'; }

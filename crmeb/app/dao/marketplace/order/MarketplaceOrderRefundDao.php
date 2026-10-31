@@ -41,6 +41,7 @@ final class MarketplaceOrderRefundDao
     private const PRODUCT_FIELDS=['id','mer_id','stock','sales'];
     private const SKU_FIELDS=['id','product_id','type','unique','stock','sales'];
     private string $prefix;
+    private ?array $testFinanceWrite=null;
 
     public function __construct()
     {
@@ -408,6 +409,35 @@ final class MarketplaceOrderRefundDao
         $row=$this->refundById($connection,$pdo,$id);self::stored($row,['id'=>$id]+$data);$this->write($connection,$pdo);return $row;
     }
 
+
+    /** One-shot authority is issued only around an actual observation saved by the same App refund service. */
+    public function beginTestFinanceWrite(ConnectionInterface $connection,PDO $pdo,int $refundId,array $body):void
+    {
+        $this->write($connection,$pdo);if($this->testFinanceWrite!==null)self::unavailable();
+        $bound=app()->make(\app\services\marketplace\payment\MarketplaceRefundServices::class)
+            ->consumeDaoObservationContext($this,$connection,$pdo,$refundId,$body);
+        $this->testFinanceWrite=['connection'=>$connection,'pdo'=>$pdo,'bound'=>$bound,'pending'=>null];
+    }
+    public function endTestFinanceWrite():void {$this->testFinanceWrite=null;}
+    private function testFinanceData(ConnectionInterface $connection,PDO $pdo,array $data):void
+    {
+        $guard=$this->testFinanceWrite;
+        if($guard===null||$guard['connection']!==$connection||$guard['pdo']!==$pdo||$guard['pending']!==null
+            ||$data['action']!=='finance_observe'||$data['actor_type']!=='payment'||$data['actor_id']!==null)self::unavailable();
+        $bound=$guard['bound'];
+        foreach(['root_order_id','uid','mer_id','refund_id','payment_attempt_id'] as $k)
+            if((string)$data[$k]!== (string)$bound[$k])self::unavailable();
+        $request=self::decodeObject($data['request_payload'],65536);
+        if(self::encodeObject($request['public_body'],65536)!==self::encodeObject($bound['body'],65536))self::unavailable();
+    }
+    private function pendingForTestFinance(ConnectionInterface $connection,PDO $pdo,array $row):void
+    {
+        if($row['action']!=='finance_observe'){self::pending($row);return;}
+        $guard=$this->testFinanceWrite;
+        if($guard===null||$guard['connection']!==$connection||$guard['pdo']!==$pdo||$guard['pending']!==$row)self::unavailable();
+        self::stored($row,['state'=>0,'result_payload'=>null,'committed_at'=>null]);
+    }
+
     /** data20.request_payload is the already normalized server request object; no actor/price plan is taken from HTTP here. */
     public function insertAction(ConnectionInterface $connection,PDO $pdo,array $data):array
     {
@@ -415,7 +445,7 @@ final class MarketplaceOrderRefundDao
         if(!is_array($data['request_payload']))self::unavailable();
         $data['request_payload']=self::encodeObject($data['request_payload'],65536);self::actionValues($data);
         self::stored($data,['state'=>0,'result_payload'=>null,'committed_at'=>null]);
-        if($data['action']==='finance_observe')self::unavailable();
+        if($data['action']==='finance_observe')$this->testFinanceData($connection,$pdo,$data);
         self::integer($data['created_at'],1,self::INT_MAX);
         $refund=$this->refundById($connection,$pdo,self::integer($data['refund_id'],1,self::INT_MAX));
         self::stored($refund,['store_order_id'=>self::integer($data['root_order_id'],1,self::INT_MAX),
@@ -430,6 +460,7 @@ final class MarketplaceOrderRefundDao
         }
         $id=$this->insertNative($connection,$pdo,'marketplace_aftersale_action',$data);
         $row=$this->actionById($connection,$pdo,$id);self::stored($row,['id'=>$id]+$data,['request_payload','result_payload']);
+        if($data['action']==='finance_observe')$this->testFinanceWrite['pending']=$row;
         $this->write($connection,$pdo);return $row;
     }
 
@@ -440,7 +471,7 @@ final class MarketplaceOrderRefundDao
         $id=self::integer($before['id'],1,self::INT_MAX);self::stored($after,['id'=>$id]);
         $current=$this->refundById($connection,$pdo,$id);self::stored($current,$before);
         $newId=self::u64($after['marketplace_last_action_id']);$pending=$this->actionById($connection,$pdo,$newId);
-        self::pending($pending);
+        $this->pendingForTestFinance($connection,$pdo,$pending);
         self::stored($pending,['root_order_id'=>self::integer($after['store_order_id'],1,self::INT_MAX),
             'uid'=>self::integer($after['uid'],1,self::INT_MAX),'mer_id'=>self::integer($after['mer_id'],1,self::UINT_MAX),'refund_id'=>$id]);
         if(self::u64($after['marketplace_payment_attempt_id'])!==self::u64($pending['payment_attempt_id']))self::unavailable();
@@ -481,7 +512,7 @@ final class MarketplaceOrderRefundDao
     /** Only the inserted state0 row may complete. Caller still must reread and validate the final whole Context2 before commit. */
     public function finishAction(ConnectionInterface $connection,PDO $pdo,array $pending,array $result,int $committedAt):array
     {
-        $this->write($connection,$pdo);self::actionRow($pending);self::pending($pending);
+        $this->write($connection,$pdo);self::actionRow($pending);$this->pendingForTestFinance($connection,$pdo,$pending);
         $id=self::u64($pending['id']);$current=$this->actionById($connection,$pdo,$id);
         self::stored($current,$pending,['request_payload','result_payload']);
         self::integer($committedAt,self::integer($pending['created_at'],1,self::UINT_MAX),self::UINT_MAX);
