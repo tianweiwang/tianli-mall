@@ -42,6 +42,8 @@ WORKER_BEFORE = {"path": WORKER_PATH, "bytes": 127340,
                  "sha256": "9cb8a880b136afb13f704841e6581e1df2190a5c059c8010a2fe25cbf55f43b0"}
 WORKER_CURRENT = {"path": WORKER_PATH, "bytes": 129901,
                   "sha256": "f420b2afa7bb4e9ff76c8b75645fa6b7a2b146510e2eae7219efe23a97e1a196"}
+WORKER_FATAL_DIAGNOSTIC = {"path": WORKER_PATH, "bytes": 131974,
+                           "sha256": "1c192ecf2b0a465c9d80126fea469bf2f7bc1aa08e3962d3b6cedf509956b3b9"}
 CUSTOMER_PATH = "help/audit-regressions/isolated/ms4-customer-http-normal.php"
 CUSTOMER_BEFORE = {"path": CUSTOMER_PATH, "bytes": 121457,
                    "sha256": "1fae540f4f145ace9ed94d17648d785f1663c4e8d6dbd0b2de54b75ffcbdea75"}
@@ -1099,14 +1101,15 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
     paid_update = {"before": PAID_BEFORE, "after": PAID_CURRENT}
     old_active[PAID_PATH], new_active[PAID_PATH] = PAID_BEFORE, PAID_CURRENT
     worker_update = None
-    if inventory[WORKER_PATH] != WORKER_BEFORE:
-        require(inventory[WORKER_PATH] == WORKER_CURRENT, "EXACT_CURRENT_WORKER_ARCHIVE_SOURCE")
+    worker_current = inventory[WORKER_PATH]
+    if worker_current != WORKER_BEFORE:
+        require(worker_current in (WORKER_CURRENT, WORKER_FATAL_DIAGNOSTIC), "EXACT_CURRENT_WORKER_ARCHIVE_SOURCE")
         worker_review = source_review.get("worker_fixtures_archive_update")
         require(type(worker_review) is dict and worker_review.get("before") == WORKER_BEFORE
-                and worker_review.get("after") == WORKER_CURRENT,
+                and worker_review.get("after") == worker_current,
                 "INDEPENDENT_EXACT_WORKER_ARCHIVE_SOURCE_UPDATE")
-        worker_update = {"before": WORKER_BEFORE, "after": WORKER_CURRENT}
-        old_active[WORKER_PATH], new_active[WORKER_PATH] = WORKER_BEFORE, WORKER_CURRENT
+        worker_update = {"before": WORKER_BEFORE, "after": worker_current}
+        old_active[WORKER_PATH], new_active[WORKER_PATH] = WORKER_BEFORE, worker_current
     rows = interface["customer_form_current_profile"]["php_sources"]
     form_old_active, form_new_active = dict(old_active), dict(new_active)
     # The form oracle has its own reviewed update; the original four retain their meanings.
@@ -1202,8 +1205,8 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
                 raw = replace_constant(raw, entry + "_SHA256", updates[2]["after"]["sha256"])
             elif worker_update is not None and entry == "WORKER_ENTRY":
                 require(original_entry == WORKER_BEFORE, "ORIGINAL_WORKER_ENTRY_PIN")
-                raw = replace_constant(raw, entry + "_BYTES", WORKER_CURRENT["bytes"])
-                raw = replace_constant(raw, entry + "_SHA256", WORKER_CURRENT["sha256"])
+                raw = replace_constant(raw, entry + "_BYTES", worker_current["bytes"])
+                raw = replace_constant(raw, entry + "_SHA256", worker_current["sha256"])
             else:
                 require(inventory[path] == original_entry, "OTHER_ENTRY_PINS_RETAINED")
         raw = replace_constant(raw, "CUSTOMER_FORM_SOURCE_FILES", updated)
@@ -1260,12 +1263,12 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
             "TWO_PAID_INITIALIZER_LITERALS_WHOLE_FILE_INVERSE")
     if worker_update is not None:
         worker_old_tuple = ("[" + str(WORKER_BEFORE["bytes"]) + ", '" + WORKER_BEFORE["sha256"] + "']").encode("utf-8")
-        worker_new_tuple = ("[" + str(WORKER_CURRENT["bytes"]) + ", '" + WORKER_CURRENT["sha256"] + "']").encode("utf-8")
+        worker_new_tuple = ("[" + str(worker_current["bytes"]) + ", '" + worker_current["sha256"] + "']").encode("utf-8")
         previous_initializer = after["ms4-initialize.php"]
-        after["ms4-initialize.php"] = once(once(previous_initializer, php_row(WORKER_BEFORE), php_row(WORKER_CURRENT)),
+        after["ms4-initialize.php"] = once(once(previous_initializer, php_row(WORKER_BEFORE), php_row(worker_current)),
                                            worker_old_tuple, worker_new_tuple)
         require(once(once(after["ms4-initialize.php"], worker_new_tuple, worker_old_tuple),
-                     php_row(WORKER_CURRENT), php_row(WORKER_BEFORE)) == previous_initializer,
+                     php_row(worker_current), php_row(WORKER_BEFORE)) == previous_initializer,
                 "TWO_WORKER_INITIALIZER_LITERALS_WHOLE_FILE_INVERSE")
     previous_initializer = after["ms4-initialize.php"]
     after["ms4-initialize.php"] = once(previous_initializer, php_row(CUSTOMER_BEFORE), php_row(inventory[CUSTOMER_PATH]))
@@ -2467,7 +2470,10 @@ def derive_b_profile(authority_pointer: dict[str, Any],
             require(row == PAID_BEFORE and wanted == PAID_CURRENT, "B_EXACT_REVIEWED_PAID_HELPER_UPDATE")
             return wanted
         if row["path"] == WORKER_PATH and wanted != row:
-            require(row == WORKER_BEFORE and wanted == WORKER_CURRENT,
+            worker_review = source_review.get("worker_fixtures_archive_update")
+            require(row == WORKER_BEFORE and wanted in (WORKER_CURRENT, WORKER_FATAL_DIAGNOSTIC)
+                    and type(worker_review) is dict and worker_review.get("before") == WORKER_BEFORE
+                    and worker_review.get("after") == wanted,
                     "B_EXACT_REVIEWED_WORKER_FIXTURE_ARCHIVE_UPDATE")
             return wanted
         require(wanted == row or row["path"] in active_paths

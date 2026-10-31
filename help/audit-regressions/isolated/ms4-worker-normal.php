@@ -1753,10 +1753,42 @@ if(realpath($_SERVER['SCRIPT_FILENAME']??'')===__FILE__){
  if(($argv??[])===[$_SERVER['SCRIPT_FILENAME'],'--help']){echo "Usage: php help/audit-regressions/isolated/ms4-worker-normal.php normal\nDedicated isolated natural non-due Worker lifecycle only; independent Host native receipt required.\n";exit(0);}
  $GLOBALS['m4w_assertions']=0;$GLOBALS['m4ar_assertions']=0;$GLOBALS['m4w_termination_requested']=false;
  ini_set('display_errors','0');ini_set('log_errors','0');ini_set('zend.exception_ignore_args','1');umask(0077);
+ $m4wFatalReserve=str_repeat(' ',65536);
  set_error_handler(static function(int $severity,string $message,string $file,int $line):bool{
   if((error_reporting()&$severity)===0)return false;$GLOBALS['m4w_failed_assertion']='M4W_PHP_WARNING';throw new ErrorException('M4W_PHP_WARNING',0,$severity,$file,$line);});
- register_shutdown_function(static function():void{
-  $source=$GLOBALS['m4w_source']??null;if(!is_array($source))return;$last=error_get_last();
+ register_shutdown_function(static function()use(&$m4wFatalReserve):void{
+  $m4wFatalReserve=null;$last=error_get_last();
+  if(is_array($last)&&is_int($last['type']??null)
+   &&in_array($last['type'],[E_ERROR,E_PARSE,E_CORE_ERROR,E_COMPILE_ERROR,E_USER_ERROR,E_RECOVERABLE_ERROR],true)){
+   set_error_handler(static function(int $severity,string $message,string $file,int $line):bool{return true;});
+   try{
+    $category='M4W_NATIVE_FATAL_GENERAL';$message=$last['message']??null;
+    if($last['type']===E_ERROR&&is_string($message)&&str_starts_with($message,'Allowed memory size of '))
+     $category='M4W_NATIVE_FATAL_MEMORY_LIMIT';
+    elseif(in_array($last['type'],[E_ERROR,E_COMPILE_ERROR],true)&&is_string($message)
+     &&(str_starts_with($message,'Cannot declare ')||str_starts_with($message,'Cannot redeclare ')
+      ||str_starts_with($message,'Declaration of ')))$category='M4W_NATIVE_FATAL_DECLARATION';
+    unset($message);
+    $file=$last['file']??null;
+    if(is_string($file))$file=basename(str_replace('\\','/',$file));
+    if(!is_string($file)||preg_match('/\A[A-Za-z0-9][A-Za-z0-9_.-]{0,95}\z/D',$file)!==1)$file=null;
+    $line=$last['line']??null;if(!is_int($line)||$line<0)$line=null;
+    $phase=$GLOBALS['m4w_phase']??null;
+    if(!is_string($phase)||preg_match('/\A[a-z][a-z0-9_]{0,95}\z/D',$phase)!==1)$phase=null;
+    $limit=ini_get('memory_limit');
+    if(!is_string($limit)||strlen($limit)>32||preg_match('/\A(?:-1|[0-9]+[KMG]?)\z/Di',$limit)!==1)$limit=null;
+    $json=json_encode(['scope'=>'MS4_WORKER_NATIVE_FATAL_DIAGNOSTIC','category'=>$category,'type'=>$last['type'],
+     'file'=>$file,'line'=>$line,'phase'=>$phase,'memory_limit'=>$limit,'peak_bytes'=>memory_get_peak_usage(true)],
+     JSON_UNESCAPED_SLASHES);
+    if(is_string($json)&&strlen($json)+1<=4096&&defined('STDERR')&&is_resource(STDERR)){
+     $raw=$json."\n";$offset=0;
+     while($offset<strlen($raw)){$written=fwrite(STDERR,substr($raw,$offset));
+      if(!is_int($written)||$written<=0)break;$offset+=$written;}
+    }
+   }catch(Throwable $fatalDiagnosticError){}
+   finally{restore_error_handler();}
+  }
+  $source=$GLOBALS['m4w_source']??null;if(!is_array($source))return;
   $fatal=is_array($last)&&in_array($last['type'],[E_ERROR,E_PARSE,E_CORE_ERROR,E_COMPILE_ERROR,E_USER_ERROR],true);
   try{m4w_process_cleanup();}catch(Throwable $cleanupError){$GLOBALS['m4w_cleanup_failure']=m4w_diagnostic($cleanupError);}
   if(empty($GLOBALS['m4w_completed'])){try{m4w_seal_after_failure();}catch(Throwable $sealError){$GLOBALS['m4w_cleanup_failure']??=m4w_diagnostic($sealError);}}
