@@ -58,11 +58,23 @@ pwsh -NoProfile -File help\docker\capture-acceptance-snapshot.ps1 `
 
 部署主机需要 Docker Compose v2、Python 3.10+（Windows 为 3.12+，依据[标准库管道支持](https://docs.python.org/3/library/os.html#os.set_blocking)），以及事先独立认可的检查器镜像完整 `sha256:` ID。检查器必须来自可信的当前发布工具链，不能自动把本次候选镜像当成可信检查器。`MARKETPLACE_CHECKER_IMAGE` 只填写这个已核准的固定 ID；镜像来源认可与版本兼容检查是两项不同责任。
 
-先完成三端构建和镜像构建；这里的构建不会切换现有服务：
+正式候选先在已认可的 Windows / Python 3.14 资格机完成同一最终 HEAD、同一资格包的 admin / merchant / H5 三端真实构建，再运行该 Source 内的正式复制工具。下面变量须取自已复核的来源、构建和输出目录记录；B 验收材料或当前预览目录不能替代正式输出：
 
 ```powershell
+python -I -B -X utf8 "$qualifiedSource/help/docker/prepare-marketplace-public.py" `
+  --build-source $buildSource --pins-sha256 $buildPinsSha256 `
+  --runs-file $runsFile --out $copyOut
+```
+
+工具成功后，`$copyOut/context` 已是完整的正式构建目录：同一 qualified Source 的应用源码、Composer 锁文件、Dockerfile 和 Docker 配置，以及按正式映射装入的三端页面。直接以这份已完成全树读回的输出作为镜像 context。构建前核对 `FORMAL-COPY.json`、`COPY-PLAN.json`、`CONTEXT-TREE.json` 与该目录仍一致，并记录 `.dockerignore` 对实际镜像输入的排除。运行配置、上传数据和凭据不进入构建目录；Windows 的逻辑文件模式也不能代替镜像内的 Linux 权限检查。
+
+从这份已核对的完整目录构建双镜像，记录固定 `sha256:` ID，再进行默认检查。以下标签对应优化 Compose；演示配置须同步其 `PHP_IMAGE` / `NGINX_IMAGE`。构建不会切换现有服务：
+
+```powershell
+$imageContext = Join-Path $copyOut 'context'
+docker build --file "$imageContext/docker/php/Dockerfile" --tag tianli/crmeb-php:acceptance $imageContext
+docker build --file "$imageContext/docker/nginx/Dockerfile" --tag tianli/crmeb-nginx:acceptance $imageContext
 docker compose --env-file help\docker\.env.runtime -f help\docker\docker-compose.optimized.yml config --quiet
-docker compose --env-file help\docker\.env.runtime -f help\docker\docker-compose.optimized.yml build
 $checkerImage = $env:MARKETPLACE_CHECKER_IMAGE
 python -X utf8 help/docker/deploy-marketplace.py `
   --env-file help/docker/.env.runtime `
@@ -70,7 +82,7 @@ python -X utf8 help/docker/deploy-marketplace.py `
   --checker-image $checkerImage
 ```
 
-`deploy-marketplace.py` **默认只检查**。它将 Compose 中的候选 PHP/Nginx 镜像解析为固定 ID，只从未启动的 PHP 候选容器读取 `marketplace-release.json`；真正连接数据库的检查在独立可信镜像中执行。检查复用目标服务的配置、环境与现存网络，沿原主库连接核真实 metadata 结构、schema 范围和最低应用版本，不初始化应用、不迁移数据库。成功不等于已部署。前置失败返回 `REJECTED`；一旦已尝试启动，后续失败返回 `APPLY_FAILED` 并标明可能已有变更，保留现场且不自动回滚。检查器只支持明确的应用配置和数据挂载；应用代码、vendor、版本声明或数据库配置代码被挂载覆盖时拒绝，未支持的网络/DNS或配置提供方式也会明确拒绝，不能静默换成其他数据库。
+`deploy-marketplace.py` **默认只检查**。它将 Compose 中的候选 PHP/Nginx 镜像解析为固定 ID，只从未启动的 PHP 候选容器读取 `marketplace-release.json`；真正连接数据库的检查在独立可信镜像中执行。检查复用目标服务的配置、环境与现存网络，沿原主库连接核真实 metadata 结构、schema 范围和最低应用版本，不初始化应用、不迁移数据库。成功不等于已部署。前置失败返回 `REJECTED`；一旦已尝试启动，后续失败返回 `APPLY_FAILED` 并标明可能已有变更，保留现场且不自动回滚。检查器只支持明确的应用配置和数据挂载；应用代码、vendor、版本声明或数据库配置代码被挂载覆盖时拒绝。Nginx 的 public 和配置也必须来自镜像，public 内仅允许 uploads 数据挂载；不支持的 configs / secrets 提供方式会明确拒绝；tmpfs 临时目录也按同一目标路径规则检查，保留不覆盖代码或配置的正常用法。未支持的网络/DNS或配置提供方式也会明确拒绝，不能静默换成其他数据库。
 
 首次安装应先按原安装和维护流程准备数据库、网络、私有配置并完成 [MS6 metadata 迁移](../migrations/marketplace-ms6-schema.md)；库或 metadata 缺失不能跳过检查。配置必须由运行用户 UID33 可读，使用 `/run/application/.env`；不要把真实配置、凭据或展开后的 Compose 配置提交到 Git。新的默认检查不再替操作者修改文件权限。
 
@@ -89,7 +101,7 @@ python -X utf8 help/docker/deploy-marketplace.py `
 
 成功的`APPLIED`回执增加`runtime.status=READY`、`runtime.required_programs`（固定名称与RUNNING）及`runtime.marketplace_queue_required`。默认`CHECKED`仍只核版本兼容，不查询进程、启动应用或增加runtime字段。Supervisor控制socket继续root所有/0700，业务worker和demo健康检查用户不变；不要给www-data增加控制socket权限。此结果是进程就绪快照，不能代替队列业务消费、Timer业务或稳定性验收。
 
-源码或静态页面变化后重复“构建 → 默认检查 → 已授权的 apply”，不要直接运行 `up --build`。发布后的快照、页面与业务验证仍按原验收责任执行；优化栈入口默认 `http://127.0.0.1:8011/`，MySQL、Redis、FPM 和 Workerman 仅在 Compose 网络内访问。
+源码或静态页面变化后重复“同源三端构建 → 正式 public 复制 → 完整镜像 context 核对 → 双镜像构建 → 默认检查 → 已授权的 apply”，不要直接从仓库旧 public 构建正式候选或运行 `up --build`。发布后的快照、页面与业务验证仍按原验收责任执行；优化栈入口默认 `http://127.0.0.1:8011/`，MySQL、Redis、FPM 和 Workerman 仅在 Compose 网络内访问。
 
 ### 当前验证范围
 

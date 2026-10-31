@@ -139,6 +139,8 @@ def target_inputs(args, compose):
     require(not any(service.get(key) for key in ('network_mode', 'configs', 'secrets', 'extra_hosts', 'dns', 'dns_search', 'dns_opt')))
     mounts = service.get('volumes', [])
     require(isinstance(mounts, list) and all(isinstance(item, dict) for item in mounts))
+    tmpfs = service.get('tmpfs', [])
+    require(isinstance(tmpfs, list) and all(isinstance(item, str) for item in tmpfs))
     candidates = [item for item in mounts if item.get('target') in
                   ('/run/application', '/run/application/.env', '/var/www/.env')]
     require(len(candidates) == 1)
@@ -147,9 +149,9 @@ def target_inputs(args, compose):
     # and the one selected configuration mount may overlap these two roots.
     code_root, config_root = PurePosixPath('/var/www'), PurePosixPath('/run/application')
     data_roots = [PurePosixPath('/var/www/runtime'), PurePosixPath('/var/www/public/uploads')]
-    for item in mounts:
+    for item in [*mounts, *({'target': name.split(':', 1)[0]} for name in tmpfs)]:
         name = item.get('target')
-        require(isinstance(name, str) and name.startswith('/') and '\\' not in name
+        require(isinstance(name, str) and name.startswith('/') and not name.startswith('//') and '\\' not in name
                 and '..' not in name.split('/') and PurePosixPath(name).as_posix() == name)
         target = PurePosixPath(name)
         if item is mount:
@@ -158,6 +160,22 @@ def target_inputs(args, compose):
         if target.is_relative_to(code_root) or code_root.is_relative_to(target):
             require(target == PurePosixPath('/var/www/.constant')
                     or any(target.is_relative_to(root) for root in data_roots))
+    nginx = compose['services'][args.nginx_service]
+    require(not any(nginx.get(key) for key in ('configs', 'secrets')))
+    nginx_mounts = nginx.get('volumes', [])
+    require(isinstance(nginx_mounts, list) and all(isinstance(item, dict) for item in nginx_mounts))
+    nginx_tmpfs = nginx.get('tmpfs', [])
+    require(isinstance(nginx_tmpfs, list) and all(isinstance(item, str) for item in nginx_tmpfs))
+    public_root, nginx_root = PurePosixPath('/var/www/public'), PurePosixPath('/etc/nginx')
+    uploads_root = public_root / 'uploads'
+    for item in [*nginx_mounts, *({'target': name.split(':', 1)[0]} for name in nginx_tmpfs)]:
+        name = item.get('target')
+        require(isinstance(name, str) and name.startswith('/') and not name.startswith('//') and '\\' not in name
+                and '..' not in name.split('/') and PurePosixPath(name).as_posix() == name)
+        target = PurePosixPath(name)
+        require(not (target.is_relative_to(nginx_root) or nginx_root.is_relative_to(target)))
+        if target.is_relative_to(public_root) or public_root.is_relative_to(target):
+            require(target.is_relative_to(uploads_root))
     source, kind = mount.get('source'), mount.get('type')
     require(kind in ('bind', 'volume') and isinstance(source, str) and source)
     if kind == 'volume':

@@ -84,7 +84,7 @@ services:
       - ../../crmeb/public/uploads:/var/www/public/uploads
       - private-assets:/private
     healthcheck:
-      test: ["CMD", "php", "-d", "open_basedir=", "/usr/local/bin/runtime-healthcheck.php"]
+      test: ["CMD", "su", "-s", "/bin/sh", "www-data", "-c", "php -d open_basedir= /usr/local/bin/runtime-healthcheck.php"]
       interval: 5s
       timeout: 5s
       retries: 30
