@@ -604,14 +604,34 @@ function m4w_proc_exec_observe(array $observation, bool $ready): array
     $inventory = $observation['inventory'];
     $supervisor = m4w_proc_exec($inventory, $state['supervisor']['pid'], 'supervisor', true);
     m4w_expect($supervisor === $state['exec_supervisor'], 'M4W_SUPERVISOR_NATIVE_EXEC_STABLE');
-    $master = m4w_proc_exec($inventory, $state['master_initial']['pid'], 'master', $ready);
-    if ($state['exec_initial_master'] === null) {
+    $readExec = static function (int $pid, string $role) use ($observation, $inventory, $ready, &$state): ?array {
+        $native = $inventory['native'][$pid] ?? null;
+        $initial = $state[$role === 'master' ? 'master_initial' : 'child_initial'];
+        // This actual empty sample is not complete argv and never establishes exec_initial or readiness.
+        if (!$ready && $state['exec_ready'] === null && in_array($role, ['master', 'child'], true)
+            && is_array($initial) && is_array($native) && is_array($native['before']) && is_array($native['after'])
+            && m4w_proc_same($initial, $native['before']) && m4w_proc_same($native['before'], $native['after'])
+            && m4w_proc_live($native['before']) && m4w_proc_live($native['after'])
+            && is_string($native['exe']) && $native['exe'] === realpath(PHP_BINARY)
+            && is_string($native['cwd']) && $native['cwd'] === '/workspace/crmeb' && $native['cmdline'] === '') {
+            $index = array_key_last($state['proc_observations']);
+            m4w_expect(is_int($index) && $state['proc_observations'][$index]['stage'] === $observation['stage']
+                && $state['proc_observations'][$index]['monotonic_ns'] === $observation['monotonic_ns']
+                && $state['proc_observations'][$index]['inventory'] === $inventory,
+                'M4W_PENDING_EXEC_SAME_RECORDED_NATIVE_OBSERVATION');
+            $state['proc_observations'][$index]['exec_pending_roles'][] = $role;
+            return null;
+        }
+        return m4w_proc_exec($inventory, $pid, $role, $ready);
+    };
+    $master = $readExec($state['master_initial']['pid'], 'master');
+    if ($master !== null && $state['exec_initial_master'] === null) {
         $state['exec_initial_master'] = $master;
     }
     $child = null;
     if ($state['child_initial'] !== null) {
-        $child = m4w_proc_exec($inventory, $state['child_initial']['pid'], 'child', $ready);
-        if ($state['exec_initial_child'] === null) {
+        $child = $readExec($state['child_initial']['pid'], 'child');
+        if ($child !== null && $state['exec_initial_child'] === null) {
             $state['exec_initial_child'] = $child;
         }
     }
