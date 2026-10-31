@@ -956,6 +956,32 @@ def finance_profile_changes(initializer: bytes, host: bytes, inventory: dict[str
     return updated,updated_host,source_files
 
 
+def aftersale_review_image_profile_changes(host: bytes) -> tuple[bytes, bytes, bytes, dict[str, Any]]:
+    """Consume the current review uploader's owner-scoped generated PNG path."""
+    original = functions(host)["verify_aftersale_review_business"]
+    require(pin(original) == {"bytes": 10807,
+            "sha256": "ba581d4247402e7cadfd36c57034db3a44c80286692cdc04e82749dfbb38f72e"},
+            "EXACT_ORIGINAL_AFTERSALE_REVIEW_BUSINESS_CONSUMER")
+    previous = b"        if request['method'] == 'GET' and leaf.startswith('/uploads/store/comment/'):\n"
+    current = (b"        if request['method'] == 'GET' and leaf.startswith('/uploads/customer/'):\n"
+               b"            expect(re.fullmatch(r'/uploads/customer/' + str(business['authenticated_owner_uid'])\n"
+               b"                + r'/[a-f0-9]{32}/[a-f0-9]{32}\\.png', leaf) is not None,\n"
+               b"                'NEW_NORMAL_ANONYMOUS_CURRENT_OWNER_GENERATED_CUSTOMER_PNG_REFERENCE')\n")
+    candidate = once(original, previous, current)
+    require(once(candidate, current, previous) == original,
+            "AFTERSALE_REVIEW_IMAGE_FUNCTION_EXACT_INVERSE")
+    result = once(host, original, candidate)
+    require(once(result, candidate, original) == host,
+            "AFTERSALE_REVIEW_IMAGE_WHOLE_HOST_EXACT_INVERSE")
+    compile(result, 'derived-ms4-host-review-image.py', 'exec')
+    return result, original, candidate, {
+        "function": "verify_aftersale_review_business", "before": pin(original), "after": pin(candidate),
+        "whole_host_inverse_exact": True, "owner_scoped_generated_png_reference": True,
+        "original_http_multiplicity_and_image_digest_checks_retained": True,
+        "application_and_original_runtime_records_changed": False,
+    }
+
+
 def normal_source_read_profile_changes(host: bytes) -> tuple[bytes, bytes, bytes, dict[str, Any]]:
     """Reuse only this verification's complete read, then read the full tree again."""
     original = functions(host)["verify_freeze"]
@@ -1250,6 +1276,8 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
                 "INITIALIZER_HOST_ZERO_INTERFACE_SAME_SEVEN_FORM_SOURCES")
     after["ms4-host.py"], source_read_before, source_read_after, source_read_proof = normal_source_read_profile_changes(
         after["ms4-host.py"])
+    after["ms4-host.py"], review_image_before, review_image_after, review_image_proof = aftersale_review_image_profile_changes(
+        after["ms4-host.py"])
     for name, symbol, target in (
         ("ms4-host.py", "INTERFACE_SHA256", "interface-v1.json"),
         ("normal-close-ms4-fulfillment.py", "HOST_SHA256", "ms4-host.py"),
@@ -1277,8 +1305,9 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
         "paid_current_successor_entry_pair_changed": True,
         "all_original_python_function_bodies_exact": False,
         "python_function_changes": {"ms4-host.py": ["verify_files_bootstrap", "verify_schema_bootstrap", "verify_finance_bootstrap",
-            "prerequisite_result", "verify_merchant_exit_bootstrap", "verify_order_menu_bootstrap", "verify_freeze"]},
+            "prerequisite_result", "verify_merchant_exit_bootstrap", "verify_order_menu_bootstrap", "verify_freeze", "verify_aftersale_review_business"]},
         "normal_source_read_reuse": source_read_proof,
+        "aftersale_review_image_consumer": review_image_proof,
         "initializer_two_literal_inverse_exact": True, "initializer_customer_literal_inverse_exact": True,
         "initializer_schema_bootstrap_inverse_exact": True, "schema_bootstrap_sources": list(schema_sources),
         "initializer_finance_bootstrap_inverse_exact": True, "finance_bootstrap_sources": list(finance_sources),
@@ -1326,6 +1355,8 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
             observed["verify_files_bootstrap"] = once(observed["verify_files_bootstrap"],
                                                        b"    verify_finance_bootstrap(context, result)\n", b"")
             observed["verify_freeze"] = once(observed["verify_freeze"], source_read_after, source_read_before)
+            observed["verify_aftersale_review_business"] = once(
+                observed["verify_aftersale_review_business"], review_image_after, review_image_before)
         require(functions(before[name]) == observed, "ALL_OTHER_ORIGINAL_PYTHON_FUNCTION_BODIES_EXACT")
         compile(after[name], str(out / name), "exec")
         counts[name] = len(functions(after[name]))
@@ -1342,8 +1373,9 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
         "changed": [name for name in NAMES if before[name] != after[name]],
         "all_original_python_function_bodies_exact": False, "python_named_function_counts": counts,
         "python_function_changes": {"ms4-host.py": ["verify_files_bootstrap", "verify_schema_bootstrap", "verify_finance_bootstrap",
-            "prerequisite_result", "verify_merchant_exit_bootstrap", "verify_order_menu_bootstrap", "verify_freeze"]},
+            "prerequisite_result", "verify_merchant_exit_bootstrap", "verify_order_menu_bootstrap", "verify_freeze", "verify_aftersale_review_business"]},
         "normal_source_read_reuse": source_read_proof,
+        "aftersale_review_image_consumer": review_image_proof,
         "all_other_original_python_function_bodies_exact": True,
         "active_profile_updates": updates, "interface_only_declared_active_rows": True,
         "interface_declared_active_rows_changed": interface_changed_rows,
@@ -2450,6 +2482,7 @@ def derive_b_profile(authority_pointer: dict[str, Any],
     initializer, host, exit_rows = merchant_exit_profile_changes(initializer, host, inventory)
     initializer, host, order_rows, order_mode = order_menu_profile_changes(
         initializer, host, inventory, Path(authority["validation_root"]), with_read_leaves=False)
+    host, review_image_before, review_image_after, review_image_proof = aftersale_review_image_profile_changes(host)
     after["candidate/ms4-initialize.php"] = initializer
     after["candidate/ms4-host.py"] = host
     # The public installer remains in both complete source reads. Only deployment
@@ -2534,6 +2567,9 @@ def derive_b_profile(authority_pointer: dict[str, Any],
                                  ("normal-close-ms4-fulfillment.py", set(), set())):
         original_functions = functions(before["candidate/" + name])
         current_functions = functions(after["candidate/" + name])
+        if name == "ms4-host.py":
+            current_functions["verify_aftersale_review_business"] = once(
+                current_functions["verify_aftersale_review_business"], review_image_after, review_image_before)
         if network_subnets is not None:
             changed |= ({"ui_web_connect", "ui_web_networks"} if name == "ms4-host.py"
                         else {"ui_zero_network_identity", "ui_zero_resource_networks"} if name == "verify-zero-ms4-fulfillment.py" else set())
@@ -2545,6 +2581,7 @@ def derive_b_profile(authority_pointer: dict[str, Any],
             "initializer_paid_two_literal_inverse_exact": True,
             "schema_sources": schema_rows, "finance_sources": finance_rows, "merchant_exit_sources": exit_rows,
             "order_menu_sources": order_rows, "order_menu_profile_mode": order_mode,
+            "aftersale_review_image_consumer": review_image_proof,
             "browser_compatibility": browser_compatibility,
             "forward": forward, "reverse": reverse,
             "network_subnets": network_subnets,
@@ -3307,6 +3344,7 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
     derivation["merchant_exit_before_original_early_seal"] = True
     derivation["order_menu_bootstrap_sources"] = list(derived["order_menu_sources"])
     derivation["order_menu_profile_mode"] = derived["order_menu_profile_mode"]
+    derivation["aftersale_review_image_consumer"] = derived["aftersale_review_image_consumer"]
     derivation["declared_native_order_anchors_before_original_early_seal"] = True
     derivation["browser_compatibility"] = derived["browser_compatibility"]
     derivation["actual_clean_Source_Val_M_A_build_B_Run"] = {"source_sha":head,
@@ -3356,7 +3394,7 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
         "original_builds_retained":True,"complete17":selected,"all_finite_inverse_proofs":True,
         "network_subnets":selected_subnets,
         "network_availability":"NOT_PROVED_BY_AUTHOR_ROOT_FRESH_RECHECK_REQUIRED_BEFORE_START_ISOLATION_REUSE_ONLY_AFTER_ACTUAL_A_CLOSE_AND_ZERO",
-        "changed_python_bodies":{"ms4-host.py":["verify_files_bootstrap","ui_copy_freeze_values","ui_web_connect","ui_web_networks","prerequisite_result"],
+        "changed_python_bodies":{"ms4-host.py":["verify_files_bootstrap","ui_copy_freeze_values","ui_web_connect","ui_web_networks","prerequisite_result","verify_aftersale_review_business"],
             "verify-zero-ms4-fulfillment.py":["ui_copy_freeze_values","ui_zero_network_identity","ui_zero_resource_networks"],
             "normal-close-ms4-fulfillment.py":[],
             "root-ui-materialize-freeze.py":["main","current_known_normal_root","current_consume_materialization","current_verify_sources","frozen_materials","frozen_resources"],
@@ -3365,6 +3403,7 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
         "added_finance_consumer":"ms4-host.py:verify_finance_bootstrap",
         "added_merchant_exit_consumer":"ms4-host.py:verify_merchant_exit_bootstrap",
         "added_order_menu_consumer":"ms4-host.py:verify_order_menu_bootstrap",
+        "aftersale_review_image_consumer":derived["aftersale_review_image_consumer"],
         "browser_compatibility":derived["browser_compatibility"],
         "runtime":"NOT RUN","approval":"NOT_GRANTED_REQUIRES_INDEPENDENT_SOURCE_REVIEW"}
     after["SOURCE-CHECKS.json"] = encode(checks)
