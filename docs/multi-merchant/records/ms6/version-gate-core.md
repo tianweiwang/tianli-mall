@@ -90,3 +90,11 @@ Root实际回读独立reader16604原四件及完整报告，native/wait0、空st
 发布工具可单独复核，以免只有工具改动却重编完全不变的三个前端。默认无新参数时，原copier完整body仍必须等于同一qualified Source中的原工具行。显式新路径须同时提供--tool-review-file及--tool-review-sha256；由Root在非作者源码审后提供复核文件与完整SHA，程序不自行签署或发现复核。复核JSON只接受schema/scope/status/source_head/packet/before/after七字段，或再加一个仅供审计的tool_git_head字段；schema为整数1，scope固定ROOT_REVIEWED_FORMAL_COPIER_TOOL_ONLY，status固定REVIEWED_FOR_EXPLICIT_QUALIFIED_SOURCE_AND_PACKET。source_head必须仍等于三实际build的应用Source HEAD；packet为该原PINS绝对路径及完整bytes/SHA，before为qualified Source旧copier绝对路径及其原bytes/SHA，after必须等于当前实际工具绝对路径及完整body bytes/SHA。可选tool_git_head只接受40位Git SHA，不替代工具body或Root显式复核SHA。
 
 复核文件、旧Source工具和当前工具沿原tracked/read的完整字节、命名/open身份及输入稳定窗复核；没有复核文件或未知工具不能切换应用Source资格。FORMAL-COPY.json同时记录原source_head与copier_tool中的实际body descriptor和复核pointer。原main仍逐项消费同HEAD/同packet三个真实build，构造完整计划、独占复制并完整读回；不import builder、不重编前端、不增runner、不创建四B manifest或代签镜像/页面/发布。本次实现先交Root独审及真实三dist正常plan检查，再由Root生成明确复核，后继新独占输出实际main仍待。
+
+### P5 短输出父与原transfer正常实证（2026-10-31）
+
+138b80c32工具78153字节/2e74ff62…及Root显式工具复核已实际执行r2 main44644。原应用Source/三build/工具资格、完整计划、before双源和复制前输入稳定窗通过；在原长输出父下复制13654文件后退出2，仅公开FORMAL_COPY_FAILED_OR_UNKNOWN，未公开底层WinError，不将推断写成原异常。原COPY-PLAN、部分context及调用四件完整保留，未生成CONTEXT-TREE或FORMAL-COPY成功报告，不续写该失败目录。
+
+原完整计划有三条实际Source叶在原输出父下为269/267/271字符，本机LongPathsEnabled实读0。沿原138工具未经修改的transfer，以相同三个Source文件、原bytes/SHA及完整native9，在新专用短父下的独占正常组件目录真实复制和读回；原PID50224 native/wait0、stderr为空，三个原Source完整字节及身份保持，三叶均成功。该正常组件只复制这三叶，没有重放失败context、改注册表或造负向/故障样本；四件位于multi-merchant-ms6-final-release-20261031-r1/copier-short-output-component-r1.*，stdout4732字节/535ab6081d764b6b3fa0a04b154e2da7492c95d397a054a8fd04c6244682f89c。结果支持输出长度边界，不能补造原入口未公开的WinError。
+
+最小修复仅将固定COPY_PARENT改为ORG.parent / 'ms6-public-runs'，即H:/天俪商城/artifacts/ms6-public-runs，并同步main帮助文字；相同22位唯一Run名/context下，原完整15835文件计划的最长目标由271降为238字符。Source、三个真实build、所有文件、transfer/read/stat、完整复制/读回、输入窗口、原非重叠/no-reparse/碰撞守卫与独占输出约束均不变。新工具须Root重新完整body复核并提供新的显式review；旧Root review、r2失败现场和原长输出父保持。新完整main及最终复制仍待后继实际执行，不能由三叶组件代签。

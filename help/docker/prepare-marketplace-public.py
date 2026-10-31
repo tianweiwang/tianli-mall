@@ -9,7 +9,7 @@ from html.parser import HTMLParser
 ROOT = None
 ORG = Path('H:/天俪商城/artifacts/project-organization-20261023')
 RUN_PARENT = ORG / 'build-runs'
-COPY_PARENT = ORG / 'formal-public-runs'
+COPY_PARENT = ORG.parent / 'ms6-public-runs'
 QUALIFIED_INPUTS_PIN = None
 NODE_ROOT = Path('H:/天俪商城/artifacts/ms3-build-tools/source477732-node22/node-v22.23.3-win-x64')
 NODE = NODE_ROOT / 'node.exe'
@@ -1059,7 +1059,7 @@ def main():
     parser.add_argument('--build-source', required=True)
     parser.add_argument('--pins-sha256', required=True)
     parser.add_argument('--runs-file', required=True, help='JSON path index only: admin/merchant/h5 each has run and launch')
-    parser.add_argument('--out', required=True, help='new exclusive directory under the fixed formal-public-runs parent')
+    parser.add_argument('--out', required=True, help='new exclusive directory under the fixed artifacts/ms6-public-runs parent')
     parser.add_argument('--tool-review-file', help='explicit Root-reviewed copier tool descriptor; omitted for the same-source tool')
     parser.add_argument('--tool-review-sha256', help='explicit complete SHA256 of the Root tool review file')
     args = parser.parse_args()
