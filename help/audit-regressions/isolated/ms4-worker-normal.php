@@ -1659,6 +1659,41 @@ function m4w_seal_after_failure():void
  $GLOBALS['m4w_failure_after_seal']=m4ar_private_seal(M4W_AFTER,'MS4_WORKER_NORMAL_AFTER_NATIVE_FACTS',$source,$payload);
  m4w_archive_load(M4W_AFTER,'MS4_WORKER_NORMAL_AFTER_NATIVE_FACTS',$source,$GLOBALS['m4w_failure_after_seal']);
 }
+function m4w_fixtures_archive_verify(array $archive,array $fixtures):void
+{
+ m4c_entry_keys($archive,['encoding','native_bytes','native_sha256','gzip_bytes','gzip_sha256','body']);
+ m4w_expect(function_exists('gzencode')&&function_exists('gzdecode'),'M4W_FIXTURE_ARCHIVE_NATIVE_GZIP_CAPABILITY');
+ m4w_expect($archive['encoding']==='php-serialize-gzip-v1'
+  &&is_int($archive['native_bytes'])&&$archive['native_bytes']>0&&$archive['native_bytes']<=100663296
+  &&is_string($archive['native_sha256'])&&preg_match('/\A[0-9a-f]{64}\z/D',$archive['native_sha256'])===1
+  &&is_int($archive['gzip_bytes'])&&$archive['gzip_bytes']>0&&$archive['gzip_bytes']<=67108864
+  &&is_string($archive['gzip_sha256'])&&preg_match('/\A[0-9a-f]{64}\z/D',$archive['gzip_sha256'])===1
+  &&is_string($archive['body'])&&strlen($archive['body'])===$archive['gzip_bytes']
+  &&hash('sha256',$archive['body'])===$archive['gzip_sha256'],'M4W_FIXTURE_ARCHIVE_EXACT_BOUNDED_FIELDS');
+ $native=serialize($fixtures);
+ m4w_expect(strlen($native)===$archive['native_bytes']&&hash('sha256',$native)===$archive['native_sha256'],
+  'M4W_FIXTURE_ARCHIVE_REAL_LIVE_NATIVE_BYTES');
+ $decoded=gzdecode($archive['body'],100663296);
+ m4w_expect(is_string($decoded)&&strlen($decoded)===$archive['native_bytes']
+  &&hash('sha256',$decoded)===$archive['native_sha256']&&$decoded===$native,'M4W_FIXTURE_ARCHIVE_EXACT_GZIP_INVERSE');
+ unset($native);
+ $restored=unserialize($decoded,['allowed_classes'=>false,'max_depth'=>128]);
+ m4w_expect(is_array($restored)&&$restored===$fixtures&&serialize($restored)===$decoded,
+  'M4W_FIXTURE_ARCHIVE_COMPLETE_NATIVE_ARRAY_ROUNDTRIP');
+}
+function m4w_fixtures_archive(array $fixtures):array
+{
+ m4w_expect(function_exists('gzencode')&&function_exists('gzdecode'),'M4W_FIXTURE_ARCHIVE_NATIVE_GZIP_CAPABILITY');
+ $native=serialize($fixtures);
+ // Bound this reversible field's decoded bytes; the whole sealed payload still has its original 64MiB limit.
+ m4w_expect(strlen($native)>0&&strlen($native)<=100663296,'M4W_FIXTURE_ARCHIVE_BOUNDED_NATIVE_SERIALIZATION');
+ $gzip=gzencode($native,6);
+ m4w_expect(is_string($gzip)&&strlen($gzip)>0&&strlen($gzip)<=67108864,'M4W_FIXTURE_ARCHIVE_BOUNDED_NATIVE_GZIP');
+ $archive=['encoding'=>'php-serialize-gzip-v1','native_bytes'=>strlen($native),'native_sha256'=>hash('sha256',$native),
+  'gzip_bytes'=>strlen($gzip),'gzip_sha256'=>hash('sha256',$gzip),'body'=>$gzip];
+ unset($native);
+ m4w_fixtures_archive_verify($archive,$fixtures);return $archive;
+}
 function m4w_run():int
 {
  m4w_phase('source');$source=m4w_source();$GLOBALS['m4w_source']=$source;
@@ -1672,12 +1707,13 @@ function m4w_run():int
  m4w_expect(m4cf_native_files()===$before['customer_form_private'],'M4W_CUSTOMER_FORM_BEFORE_ORIGINALS');
  $cache=m4w_cache_native();$GLOBALS['m4w_before_cache']=$cache;$window=m4w_preflight($db,$before,$cache);$GLOBALS['m4w_preflight']=$window;
  $beforePayload=['snapshot'=>$before,'cache'=>$cache,'preflight'=>$window,'predecessor_hashes'=>$GLOBALS['m4w_predecessor_hashes'],
-  'original_inputs'=>m4w_input_public($inputs),'fixtures'=>$fixtures,'config'=>['path_basename'=>basename($config['path']),
+  'original_inputs'=>m4w_input_public($inputs),'fixtures'=>m4w_fixtures_archive($fixtures),'config'=>['path_basename'=>basename($config['path']),
    'bytes'=>strlen($config['raw']),'sha256'=>$config['sha256'],'stat'=>$config['stat']],
   'normal_final'=>$restored['final'],'normal_keep_descriptor'=>$restored['descriptor']];
  $beforeSeal=m4ar_private_seal(M4W_BEFORE,'MS4_WORKER_NORMAL_BEFORE_NATIVE_FACTS',$source,$beforePayload);$GLOBALS['m4w_before_seal']=$beforeSeal;
  $read=m4w_archive_load(M4W_BEFORE,'MS4_WORKER_NORMAL_BEFORE_NATIVE_FACTS',$source,$beforeSeal);
  foreach($beforePayload as$k=>$v)m4w_expect(array_key_exists($k,$read)&&$read[$k]===$v,'M4W_COMPLETE_BEFORE_NATIVE_READBACK');
+ m4w_fixtures_archive_verify($read['fixtures'],$fixtures);
  m4w_phase('launch_preconditions');m4w_launch_preconditions($before,$cache,$window);
  m4w_stable_unchanged($source,$inputs,$config,$fixtures);m4cb_guard_readonly();
  m4w_expect(time()+120<=$window['wall_through'],'M4W_PRELAUNCH_FULL_OBSERVATION_FITS_SAVED_WINDOW');

@@ -37,6 +37,11 @@ PAID_BEFORE = {"path": PAID_PATH, "bytes": 110169,
                "sha256": "e6cf05cc96caf383f6a644785cf58cc38ee3b3a9623128484e8ccf79d90792f2"}
 PAID_CURRENT = {"path": PAID_PATH, "bytes": 113294,
                 "sha256": "4a93065d52decec47048c41d6c203e1cae0f301e5f74e5425a62ebd82451ce52"}
+WORKER_PATH = "help/audit-regressions/isolated/ms4-worker-normal.php"
+WORKER_BEFORE = {"path": WORKER_PATH, "bytes": 127340,
+                 "sha256": "9cb8a880b136afb13f704841e6581e1df2190a5c059c8010a2fe25cbf55f43b0"}
+WORKER_CURRENT = {"path": WORKER_PATH, "bytes": 129901,
+                  "sha256": "f420b2afa7bb4e9ff76c8b75645fa6b7a2b146510e2eae7219efe23a97e1a196"}
 CUSTOMER_PATH = "help/audit-regressions/isolated/ms4-customer-http-normal.php"
 CUSTOMER_BEFORE = {"path": CUSTOMER_PATH, "bytes": 121457,
                    "sha256": "1fae540f4f145ace9ed94d17648d785f1663c4e8d6dbd0b2de54b75ffcbdea75"}
@@ -2425,6 +2430,10 @@ def derive_b_profile(authority_pointer: dict[str, Any],
         wanted = inventory[row["path"]]
         if row["path"] == PAID_PATH:
             require(row == PAID_BEFORE and wanted == PAID_CURRENT, "B_EXACT_REVIEWED_PAID_HELPER_UPDATE")
+            return wanted
+        if row["path"] == WORKER_PATH and wanted != row:
+            require(row == WORKER_BEFORE and wanted == WORKER_CURRENT,
+                    "B_EXACT_REVIEWED_WORKER_FIXTURE_ARCHIVE_UPDATE")
             return wanted
         require(wanted == row or row["path"] in active_paths
                 or (row["path"] == form_helper_path and helper_update is not None

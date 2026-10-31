@@ -125,3 +125,14 @@ Root完整九件耦合R1为57件/11组完整正逆，仅interface当前SOURCE状
 仅在当前R7失败实例真实正常close0、独立zero0后，Root在既有PHP8.2镜像对Worker R3与新initializer做-l；六条真实原生收据全部0/stderr空、两个无网只读临时语法容器前后为空。语法结果SHA256：e54ef801277d11c9395447e673c0df2a8b7606d652b2a0f975017cbdc0573c60。此前donor196190/79b已真实PHP8.2语法0；本检查点将已审R3完整123288/024d与donor196190/79b接Main，原业务/Timer不改，当前validation/P/Run保持原件。配套仍为仓库外SOURCE候选，不据此声称已freeze或实跑。
 
 当前付款正常验证在真实JSON解码时触及128M；其后Task6/售后评价/Worker未运行。先修该原验证脚本的内存占用，再刷新必要真实来源pins、新clean来源/新P/新Run和Root编排metadata，保留全部原断言与停止样本NOT RUN。有限non-due生命周期、13任务、到期、非空历史、API/页面、真实金融与发布责任仍未签收。
+
+
+## 2026-10-31：正常 Worker 前置归档的无损容量修复
+
+R89 的测试付款、履约与售后评价已分别正常结束；Worker 在进入生命周期前的 `restore_public` 阶段返回 1。实际失败为 `TASK78_BOUND_COMPLETE_INCREMENTAL_NATIVE_ARCHIVE`，不是已执行 Timer 的业务失败。四份公开旧归档描述的原始尺寸合计 50,989,969B，原 fixture 捕获逐文件 Base64 后仅这四项已达 67,986,628B，超过原总封存上限 67,108,864B。旧运行、原退出值和冻结来源保留；专用资源已普通清退并独立核零、完整保全。
+
+仅把 `beforePayload.fixtures` 的持久表示改为固定 `php-serialize-gzip-v1` 无损封装，记录原生序列化和 gzip 的长度、SHA256 与二进制内容。编码后及 before 归档读回后都严格解压、逐字节比较、恢复原数组/原生类型并重新序列化比较。live fixtures 与原有全量内容/元数据保全检查保持；原 outer envelope、64MiB 总封存界、96MiB 读取界和 512M 内存不变。B 后继仅采用此版本的精确 before→current Worker bytes/SHA，未加入任意变更允许清单。
+
+PHP 8.2.33 实际语法及正向 codec 组件均通过。公开合成六 fixture 正常样本的原生序列化为 69,388,858B，gzip 为 14,487,173B；完整逆回一致。保留全部 52,039,569B 合成原始输入时，组件峰值分配 445,612,032B，未修改 512M 限制；这不证明完整 Worker 的内存或生命周期验收。九组原生进程全部真实 native/wait 0、stderr 空，两个专用组件容器已按自身 ID 非 force 移除。源码完整逆回与 B 固定绑定独审通过。证据位于仓库外 R89 的 `worker-fixtures-archive-r1` 与 `worker-fixtures-b-binding-independent-review.json`。
+
+完整 Worker、新来源正常 A/B 和完整历史链仍待实际运行；停止的 expiry、负向、故障、并发、恢复及 K 样本保持 NOT RUN。
