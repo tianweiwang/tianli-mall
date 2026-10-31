@@ -571,7 +571,7 @@ def verify_lx_alias_inputs(q, build):
     require(phases['before'] == phases['after'], 'LX_BOTH_PHASES_COMPLETE_STABLE_IDENTITY_HELD')
 
 
-def reviewed_qualification(folder, expected_pins):
+def reviewed_qualification(folder, expected_pins, tool_review_file=None, tool_review_sha256=None):
     global ROOT, QUALIFIED_INPUTS_PIN
     ROOT = Path(folder)
     require(ROOT.is_absolute() and ROOT.resolve() == ROOT, 'REAL_REVIEWED_BUILD_SOURCE')
@@ -597,10 +597,40 @@ def reviewed_qualification(folder, expected_pins):
     builder_derivation_join(q)
     require(document(ROOT / 'QUALIFICATION.json') == {key: value for key, value in q.items() if not key.startswith('_')},
             'QUALIFICATION_FULL_DATA_MATCH')
-    own = read(Path(__file__).resolve())
+    own_path = Path(__file__).resolve()
+    own = tracked(own_path)
     own_row = q['_rows'].get('help/docker/prepare-marketplace-public.py')
-    require(type(own_row) is dict and pin(own) == {key: own_row[key] for key in ['bytes', 'sha256']},
-            'COPIER_BELONGS_TO_SAME_QUALIFIED_SOURCE')
+    require(type(own_row) is dict, 'QUALIFIED_SOURCE_HAS_ORIGINAL_COPIER')
+    require((tool_review_file is None) == (tool_review_sha256 is None), 'COPIER_TOOL_REVIEW_FILE_AND_SHA_TOGETHER')
+    tool = {'body': {'path': own_path.as_posix(), **pin(own)}, 'review': None}
+    if tool_review_file is None:
+        require(pin(own) == {key: own_row[key] for key in ['bytes', 'sha256']},
+                'COPIER_BELONGS_TO_SAME_QUALIFIED_SOURCE')
+    else:
+        review_path = Path(tool_review_file)
+        require(review_path.is_absolute() and review_path.resolve() == review_path
+                and type(tool_review_sha256) is str and re.fullmatch('[a-f0-9]{64}', tool_review_sha256),
+                'EXPLICIT_ROOT_COPIER_TOOL_REVIEW_PATH_AND_SHA')
+        review_raw = tracked(review_path)
+        require(pin(review_raw)['sha256'] == tool_review_sha256, 'ROOT_COPIER_TOOL_REVIEW_FULL_SHA')
+        review = json.loads(review_raw, object_pairs_hook=pairs)
+        fields = {'schema', 'scope', 'status', 'source_head', 'packet', 'before', 'after'}
+        require(type(review) is dict and set(review) in (fields, fields | {'tool_git_head'})
+                and type(review['schema']) is int and review['schema'] == 1
+                and review['scope'] == 'ROOT_REVIEWED_FORMAL_COPIER_TOOL_ONLY'
+                and review['status'] == 'REVIEWED_FOR_EXPLICIT_QUALIFIED_SOURCE_AND_PACKET'
+                and review['source_head'] == q['head'], 'ROOT_COPIER_TOOL_REVIEW_CLOSED_SOURCE_CONTRACT')
+        require('tool_git_head' not in review or (type(review['tool_git_head']) is str
+                and re.fullmatch('[a-f0-9]{40}', review['tool_git_head'])), 'ROOT_COPIER_TOOL_GIT_HEAD_AUDIT_FIELD')
+        source_tool = Path(q['source_repo']) / 'help/docker/prepare-marketplace-public.py'
+        require(review['packet'] == {'path': (ROOT / 'PINS.json').as_posix(), **pin(tracked(ROOT / 'PINS.json'))}
+                and review['packet']['sha256'] == expected_pins
+                and review['before'] == {'path': source_tool.as_posix(),
+                                         **{key: own_row[key] for key in ['bytes', 'sha256']}}
+                and review['after'] == tool['body'], 'ROOT_REVIEW_BINDS_EXACT_PACKET_OLD_AND_ACTUAL_TOOL_BODIES')
+        tracked(source_tool, review['before'])
+        tool['review'] = {'path': review_path.as_posix(), **pin(review_raw)}
+    q['_copier_tool'] = tool
     for name, expected in FORMAL_SOURCE_CONFIGS.items():
         row = q['_rows'].get(name)
         require(type(row) is dict and {key: row[key] for key in ['bytes', 'sha256']} == expected
@@ -894,8 +924,8 @@ def frontend_owned(name):
     if not name.startswith(prefix):
         return False
     leaf = name[len(prefix):]
-    return (leaf in ('admin', 'merchant', 'static', 'index.html')
-            or leaf.startswith(('admin/', 'merchant/', 'static/')))
+    return (leaf in ('admin', 'merchant', 'static', 'assets', 'pages', 'index.html')
+            or leaf.startswith(('admin/', 'merchant/', 'static/', 'assets/', 'pages/')))
 
 
 def excluded_runtime(name):
@@ -933,7 +963,7 @@ def copy_plan(q, builds):
         for row in data['manifest']['files']:
             name = relative(row['path'])
             require(not excluded_runtime('crmeb/public/' + name), 'NO_RUNTIME_DIST_INPUT')
-            require(frontend != 'h5' or name == 'index.html' or name.startswith('static/'), 'UNKNOWN_H5_ROOT_REQUIRES_NEW_DESIGN')
+            require(frontend != 'h5' or name == 'index.html' or name.startswith(('static/', 'assets/', 'pages/')), 'UNKNOWN_H5_ROOT_REQUIRES_NEW_DESIGN')
             target = prefix + name
             relative(target)
             require(target not in files and target not in directories, 'NO_BACKEND_OR_FRONTEND_FILE_COLLISION')
@@ -942,7 +972,7 @@ def copy_plan(q, builds):
             modes[target] = '100644'
         for name in data['manifest']['directories']:
             relative(name)
-            require(frontend != 'h5' or name == 'static' or name.startswith('static/'), 'UNKNOWN_H5_DIRECTORY_REQUIRES_NEW_DESIGN')
+            require(frontend != 'h5' or name in ('static', 'assets', 'pages') or name.startswith(('static/', 'assets/', 'pages/')), 'UNKNOWN_H5_DIRECTORY_REQUIRES_NEW_DESIGN')
             require(not excluded_runtime('crmeb/public/' + name), 'NO_RUNTIME_DIST_DIRECTORY')
             target = (prefix + name).rstrip('/')
             require(target not in files, 'NO_DIRECTORY_FILE_COLLISION')
@@ -1030,9 +1060,12 @@ def main():
     parser.add_argument('--pins-sha256', required=True)
     parser.add_argument('--runs-file', required=True, help='JSON path index only: admin/merchant/h5 each has run and launch')
     parser.add_argument('--out', required=True, help='new exclusive directory under the fixed formal-public-runs parent')
+    parser.add_argument('--tool-review-file', help='explicit Root-reviewed copier tool descriptor; omitted for the same-source tool')
+    parser.add_argument('--tool-review-sha256', help='explicit complete SHA256 of the Root tool review file')
     args = parser.parse_args()
     require(os.name == 'nt' and sys.version_info[:2] == (3, 14), 'QUALIFIED_WINDOWS_PYTHON314_HOST_ONLY')
-    q, authority = reviewed_qualification(args.build_source, args.pins_sha256)
+    q, authority = reviewed_qualification(args.build_source, args.pins_sha256,
+                                           args.tool_review_file, args.tool_review_sha256)
     q['_copy_pins'] = args.pins_sha256
     runs = document(Path(args.runs_file))
     require(type(runs) is dict and set(runs) == {'admin', 'merchant', 'h5'}, 'THREE_ACTUAL_RUNS_REQUIRED_NO_STUB')
@@ -1075,7 +1108,7 @@ def main():
     put(out / 'CONTEXT-TREE.json', {'source_head': q['head'], **observed})
     put(out / 'CONTEXT-NATIVE-IDENTITIES.json', after_identities)
     result = {'schema': 1, 'status': 'FORMAL_PUBLIC_CONTEXT_PHYSICAL_COPY_COMPLETE_NOT_IMAGE_OR_RELEASE',
-              'source_head': q['head'], 'source_qualification': QUALIFIED_INPUTS_PIN,
+              'source_head': q['head'], 'source_qualification': QUALIFIED_INPUTS_PIN, 'copier_tool': q['_copier_tool'],
               'full_tree': q['full_tree'], 'source_authority': q['source_authority'],
               'builds': {name: {'run_id': value['report']['run_id'], 'report': descriptor(value['run'] / 'BUILD-REPORT.json'),
                                 'dist': descriptor(value['run'] / 'DIST-TREE.json')} for name, value in builds.items()},

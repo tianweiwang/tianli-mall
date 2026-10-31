@@ -66,6 +66,8 @@ python -I -B -X utf8 "$qualifiedSource/help/docker/prepare-marketplace-public.py
   --runs-file $runsFile --out $copyOut
 ```
 
+仅发布工具更新时，可以保留已经通过的同一应用 Source 和三端构建。先独立复核新工具，再由 Root 明确提供复核文件及完整 SHA；用已复核的新工具路径执行同一命令，并同时追加 `--tool-review-file $toolReviewFile --tool-review-sha256 $toolReviewSha256`。复核必须绑定原构建包、原工具和当前工具的完整内容；三端同 HEAD、Source、依赖、复制及读回检查继续执行。未提供这两个参数时，仍要求工具本身属于同一 qualified Source。复核格式和实际范围见 [版本门记录](../../docs/multi-merchant/records/ms6/version-gate-core.md)。
+
 工具成功后，`$copyOut/context` 已是完整的正式构建目录：同一 qualified Source 的应用源码、Composer 锁文件、Dockerfile 和 Docker 配置，以及按正式映射装入的三端页面。直接以这份已完成全树读回的输出作为镜像 context。构建前核对 `FORMAL-COPY.json`、`COPY-PLAN.json`、`CONTEXT-TREE.json` 与该目录仍一致，并记录 `.dockerignore` 对实际镜像输入的排除。运行配置、上传数据和凭据不进入构建目录；Windows 的逻辑文件模式也不能代替镜像内的 Linux 权限检查。
 
 从这份已核对的完整目录构建双镜像，记录固定 `sha256:` ID，再进行默认检查。以下标签对应优化 Compose；演示配置须同步其 `PHP_IMAGE` / `NGINX_IMAGE`。构建不会切换现有服务：
