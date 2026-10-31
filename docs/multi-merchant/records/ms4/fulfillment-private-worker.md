@@ -136,3 +136,10 @@ R89 的测试付款、履约与售后评价已分别正常结束；Worker 在进
 PHP 8.2.33 实际语法及正向 codec 组件均通过。公开合成六 fixture 正常样本的原生序列化为 69,388,858B，gzip 为 14,487,173B；完整逆回一致。保留全部 52,039,569B 合成原始输入时，组件峰值分配 445,612,032B，未修改 512M 限制；这不证明完整 Worker 的内存或生命周期验收。九组原生进程全部真实 native/wait 0、stderr 空，两个专用组件容器已按自身 ID 非 force 移除。源码完整逆回与 B 固定绑定独审通过。证据位于仓库外 R89 的 `worker-fixtures-archive-r1` 与 `worker-fixtures-b-binding-independent-review.json`。
 
 完整 Worker、新来源正常 A/B 和完整历史链仍待实际运行；停止的 expiry、负向、故障、并发、恢复及 K 样本保持 NOT RUN。
+
+
+### 2026-10-31：Core9 的固定 Worker 来源传播
+
+R90 已独审的应用 Source 保留新 Worker 129901B/f420b2af…；首次原 Core9 作者14864在 REVIEWED_SEVEN_ACTIVE_NORMAL_SOURCES 返回1，write_set前停止且无输出，原四件保留。此前B入口的固定更新不覆盖Core9。维护生成器仅在build_profile中增加同一127340B/9cb8…→129901B/f420…精确来源传播，并强核已批准Source review中的before/after；表单/运行向量、Host与zero的入口摘要及initializer两处字面量一起更新，全部原断言/反向还原和其它定义保持。
+
+正常RAM组件31236真实native/wait0、stderr空：旧R89分支22个输出逐字保持，新R90全部Core9断言/七源/两向量/入口摘要/initializer两literal及九件正反均过。非作者源码复核与整份唯一函数逆回通过。原合同将被测Source和作者工具分开，__file__只作保护/固定donor定位；后继原CLI明确记录实际新工具完整body和四件，R90冻结Source/authority不变，不声称新生成器属于旧捕获，也不重捕应用Source。实际新Core9、独审及PHP语法尚待。证据为仓库外R90/core9-worker-positive-component-r1四件及保留的首作者失败。

@@ -1098,6 +1098,15 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
     legacy_update = updates[3] if extended_updates else None
     paid_update = {"before": PAID_BEFORE, "after": PAID_CURRENT}
     old_active[PAID_PATH], new_active[PAID_PATH] = PAID_BEFORE, PAID_CURRENT
+    worker_update = None
+    if inventory[WORKER_PATH] != WORKER_BEFORE:
+        require(inventory[WORKER_PATH] == WORKER_CURRENT, "EXACT_CURRENT_WORKER_ARCHIVE_SOURCE")
+        worker_review = source_review.get("worker_fixtures_archive_update")
+        require(type(worker_review) is dict and worker_review.get("before") == WORKER_BEFORE
+                and worker_review.get("after") == WORKER_CURRENT,
+                "INDEPENDENT_EXACT_WORKER_ARCHIVE_SOURCE_UPDATE")
+        worker_update = {"before": WORKER_BEFORE, "after": WORKER_CURRENT}
+        old_active[WORKER_PATH], new_active[WORKER_PATH] = WORKER_BEFORE, WORKER_CURRENT
     rows = interface["customer_form_current_profile"]["php_sources"]
     form_old_active, form_new_active = dict(old_active), dict(new_active)
     # The form oracle has its own reviewed update; the original four retain their meanings.
@@ -1191,6 +1200,10 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
                 require(original_entry == updates[2]["before"], "ORIGINAL_FULFILLMENT_ENTRY_PIN")
                 raw = replace_constant(raw, entry + "_BYTES", updates[2]["after"]["bytes"])
                 raw = replace_constant(raw, entry + "_SHA256", updates[2]["after"]["sha256"])
+            elif worker_update is not None and entry == "WORKER_ENTRY":
+                require(original_entry == WORKER_BEFORE, "ORIGINAL_WORKER_ENTRY_PIN")
+                raw = replace_constant(raw, entry + "_BYTES", WORKER_CURRENT["bytes"])
+                raw = replace_constant(raw, entry + "_SHA256", WORKER_CURRENT["sha256"])
             else:
                 require(inventory[path] == original_entry, "OTHER_ENTRY_PINS_RETAINED")
         raw = replace_constant(raw, "CUSTOMER_FORM_SOURCE_FILES", updated)
@@ -1200,9 +1213,12 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
         after[name] = replace_constant(raw, "AFTERSALE_REVIEW_ENTRY_SHA256", AR_CURRENT["sha256"])
         if extended_updates:
             recovered_raw = after[name]
-            for symbol in ("CUSTOMER_FORM_SOURCE_FILES", "THREE_READ_SOURCE_FILES", "FULFILLMENT_ENTRY_BYTES",
-                           "FULFILLMENT_ENTRY_SHA256", "AFTERSALE_REVIEW_ENTRY_BYTES", "AFTERSALE_REVIEW_ENTRY_SHA256",
-                           "PAID_ENTRY_BYTES", "PAID_ENTRY_SHA256"):
+            symbols = ("CUSTOMER_FORM_SOURCE_FILES", "THREE_READ_SOURCE_FILES", "FULFILLMENT_ENTRY_BYTES",
+                       "FULFILLMENT_ENTRY_SHA256", "AFTERSALE_REVIEW_ENTRY_BYTES", "AFTERSALE_REVIEW_ENTRY_SHA256",
+                       "PAID_ENTRY_BYTES", "PAID_ENTRY_SHA256")
+            if worker_update is not None:
+                symbols += ("WORKER_ENTRY_BYTES", "WORKER_ENTRY_SHA256")
+            for symbol in symbols:
                 original_nodes = [node for node in ast.parse(original_raw).body
                                   if isinstance(node, ast.Assign) and len(node.targets) == 1
                                   and isinstance(node.targets[0], ast.Name) and node.targets[0].id == symbol]
@@ -1242,6 +1258,15 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
     require(once(once(after["ms4-initialize.php"], paid_new_tuple, paid_old_tuple),
                  php_row(PAID_CURRENT), php_row(PAID_BEFORE)) == previous_initializer,
             "TWO_PAID_INITIALIZER_LITERALS_WHOLE_FILE_INVERSE")
+    if worker_update is not None:
+        worker_old_tuple = ("[" + str(WORKER_BEFORE["bytes"]) + ", '" + WORKER_BEFORE["sha256"] + "']").encode("utf-8")
+        worker_new_tuple = ("[" + str(WORKER_CURRENT["bytes"]) + ", '" + WORKER_CURRENT["sha256"] + "']").encode("utf-8")
+        previous_initializer = after["ms4-initialize.php"]
+        after["ms4-initialize.php"] = once(once(previous_initializer, php_row(WORKER_BEFORE), php_row(WORKER_CURRENT)),
+                                           worker_old_tuple, worker_new_tuple)
+        require(once(once(after["ms4-initialize.php"], worker_new_tuple, worker_old_tuple),
+                     php_row(WORKER_CURRENT), php_row(WORKER_BEFORE)) == previous_initializer,
+                "TWO_WORKER_INITIALIZER_LITERALS_WHOLE_FILE_INVERSE")
     previous_initializer = after["ms4-initialize.php"]
     after["ms4-initialize.php"] = once(previous_initializer, php_row(CUSTOMER_BEFORE), php_row(inventory[CUSTOMER_PATH]))
     require(once(after["ms4-initialize.php"], php_row(inventory[CUSTOMER_PATH]), php_row(CUSTOMER_BEFORE))
@@ -1331,6 +1356,11 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
                                  customer_form_helper_interface_rows_changed=1,
                                  initializer_form_helper_literal_inverse_exact=True,
                                  interface_declared_active_rows_changed=interface_changed_rows)
+    if worker_update is not None:
+        derivation[named].update(worker_helper_update=worker_update,
+                                 worker_helper_interface_rows_changed=2,
+                                 initializer_worker_two_literal_inverse_exact=True,
+                                 worker_current_successor_entry_pair_changed=True)
     if isolation_subnet is not None:
         derivation[named]["isolation_subnet"] = isolation_subnet
         derivation[named]["isolation_subnet_availability"] = "NOT_CHECKED_BY_AUTHOR"
@@ -1408,6 +1438,11 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
                         customer_form_helper_update=helper_update,
                         initializer_form_helper_literal_inverse_exact=True,
                         customer_form_helper_interface_rows_changed=1)
+    if worker_update is not None:
+        manifest.update(worker_helper_update=worker_update,
+                        worker_helper_interface_rows_changed=2,
+                        initializer_worker_two_literal_inverse_exact=True,
+                        worker_current_successor_entry_pair_changed=True)
     if isolation_subnet is not None:
         manifest["isolation_subnet"] = isolation_subnet
         manifest["isolation_subnet_availability"] = "NOT_CHECKED_BY_AUTHOR"
