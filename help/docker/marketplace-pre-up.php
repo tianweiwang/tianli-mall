@@ -48,7 +48,7 @@ try {
     clearstatcache(true, $configPath);
     if (hash_file('sha256', $configPath) !== $configHash) throw new RuntimeException('RELEASE_IDENTITY_INVALID');
     $hashes = [];
-    foreach (['SchemaVersionGate', 'SchemaVersionRuntime'] as $name) {
+    foreach (['SchemaVersionGate', 'SchemaVersionRuntime', 'RefundSchemaReadiness'] as $name) {
         $path = (new ReflectionClass('crmeb\\services\\marketplace\\' . $name))->getFileName();
         if ($path !== '/var/www/crmeb/services/marketplace/' . $name . '.php') {
             throw new RuntimeException('RELEASE_IDENTITY_INVALID');

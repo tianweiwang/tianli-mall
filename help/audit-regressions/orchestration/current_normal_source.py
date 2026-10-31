@@ -53,6 +53,15 @@ WORKER_STARTUP_READINESS = {"path": WORKER_PATH, "bytes": 133975,
 CUSTOMER_PATH = "help/audit-regressions/isolated/ms4-customer-http-normal.php"
 CUSTOMER_BEFORE = {"path": CUSTOMER_PATH, "bytes": 121457,
                    "sha256": "1fae540f4f145ace9ed94d17648d785f1663c4e8d6dbd0b2de54b75ffcbdea75"}
+SCHEMA_GATE_PATH = "crmeb/crmeb/services/marketplace/SchemaVersionGate.php"
+SCHEMA_GATE_LEGACY = {"path": SCHEMA_GATE_PATH, "bytes": 12267,
+                      "sha256": "25bf37fa585d76110d74fc8f8aa7615aad2915d99c04c83e3cab850ab2cbba31"}
+SCHEMA_GATE_REFUND = {"path": SCHEMA_GATE_PATH, "bytes": 12380,
+                      "sha256": "f4cac59718aad23680b095445be072943bf0b171d4f6a96c71173605b38dd4ce"}
+REFUND_READINESS_SOURCE = {"path": "crmeb/crmeb/services/marketplace/RefundSchemaReadiness.php", "bytes": 21017,
+                           "sha256": "6d1ed4f17379356c4a6cebbd50ae0be4d1298eeb25c2f437781792405915d133"}
+REFUND_MIGRATION_SOURCE = {"path": "help/migrations/marketplace-ms5-refund.php", "bytes": 39251,
+                          "sha256": "24b1a48f0b35378dcf66d7e5bb5462cb8fd06179597022c7b99419486de0d120"}
 FULFILLMENT_PATH = "help/audit-regressions/isolated/ms4-fulfillment-normal.php"
 LEGACY_PATH = "help/audit-regressions/isolated/lib/ms4-three-legacy-producer.php"
 STAT_FIELDS = ("st_dev", "st_ino", "st_mode", "st_nlink", "st_uid", "st_gid",
@@ -587,6 +596,143 @@ def verify_finance_bootstrap(context, result):
 
 '''
 
+_REFUND_INITIALIZER = r'''/** One table and ungranted operation leaf, after original 175-table proof, before the new MS6 Gate. */
+function m4i_refund_bootstrap(array $binding,array $history): array
+{
+    audit_guard_assert();$sources=m4c_entry_refund_sources();m4c_entry_early_preserved($history,'files-bootstrap');
+    $privatePath='/run/audit-bootstrap/migrator.json';$appPath='/run/audit-app/config.json';
+    $privateBefore=m2f_file($privatePath);$appBefore=m2f_file($appPath);$migrator=m4i_read($privatePath);
+    $maintenance=new PDO('mysql:host=audit-mysql;port=3306;dbname=audit_auth;charset=utf8mb4',
+        $migrator['username'],$migrator['password'],[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE=>PDO::FETCH_ASSOC,PDO::ATTR_EMULATE_PREPARES=>false,
+            PDO::ATTR_PERSISTENT=>false,PDO::ATTR_TIMEOUT=>3]);unset($migrator);$db=audit_db();
+    m2f_assert(!$maintenance->inTransaction()&&!$db->inTransaction()
+        &&$maintenance->query('SELECT CURRENT_USER()')->fetchColumn()==='audit_migrator@%'
+        &&$maintenance->query('SELECT DATABASE()')->fetchColumn()==='audit_auth'
+        &&$db->query('SELECT CURRENT_USER()')->fetchColumn()==='audit_app@%'
+        &&$db->query('SELECT DATABASE()')->fetchColumn()==='audit_auth','REFUND_REAL_SEPARATE_NATIVE_IDENTITIES');
+    $grants=['application_before'=>hash('sha256',json_encode($db->query('SHOW GRANTS')->fetchAll(PDO::FETCH_COLUMN),JSON_THROW_ON_ERROR)),
+        'maintenance_before'=>hash('sha256',json_encode($maintenance->query('SHOW GRANTS')->fetchAll(PDO::FETCH_COLUMN),JSON_THROW_ON_ERROR))];
+    $schemaGrant=false;foreach($maintenance->query('SHOW GRANTS')->fetchAll(PDO::FETCH_COLUMN)as$grant){
+        if(preg_match('/^GRANT USAGE ON \*\.\* TO /',$grant)===1)continue;
+        m2f_assert(preg_match('/^GRANT ALL PRIVILEGES ON \x60audit_auth\x60\.\* TO /',$grant)===1
+            &&!str_contains($grant,'GRANT OPTION'),'REFUND_ONLY_ORIGINAL_SCHEMA_MAINTENANCE_GRANT');$schemaGrant=true;}
+    m2f_assert($schemaGrant,'REFUND_NATIVE_MAINTENANCE_GRANT_PRESENT');
+    $modes=m2f_modes($maintenance);$auto=m4cb_rows($maintenance,'SELECT @@SESSION.auto_increment_increment AS step,@@SESSION.auto_increment_offset AS first');
+    m2f_assert(count($auto)===1&&(string)$auto[0]['step']==='1'&&(string)$auto[0]['first']==='1','REFUND_ORIGINAL_NATURAL_AUTO_INCREMENT');
+    $metadata=unserialize(base64_decode($history['result']['snapshots']['assets']['tables']['eb_system_menus']['metadata_serialized_base64'],true),
+        ['allowed_classes'=>false,'max_depth'=>64]);$counter=$metadata['table']['AUTO_INCREMENT'];
+    m2f_assert((is_int($counter)||is_string($counter))&&preg_match('/\A[1-9][0-9]*\z/D',(string)$counter)===1
+        &&(int)$counter<=65531,'REFUND_FIRST_OF_FOUR_NATURAL_IDS');$id=(int)$counter;
+    require_once '/workspace/help/migrations/marketplace-ms5-refund.php';
+    require_once '/workspace/crmeb/crmeb/services/marketplace/RefundSchemaReadiness.php';
+    $migration=new MarketplaceMs5RefundMigration($maintenance,'eb_','audit_auth');$structure=[];
+    foreach(['check','applyStructure','verify','applyStructure','verify']as$index=>$method){
+        $result=$migration->$method();
+        m2f_assert(($result['native_exit']??null)===0&&($result['issues']??null)===[]&&array_key_exists('failure_phase',$result)&&$result['failure_phase']===null
+            &&($result['mode']??null)===(['check','apply-structure','verify','apply-structure','verify'][$index])
+            &&($result['state']??null)===($index===0?'applicable':'completed')&&($result['changed']??null)===($index===1)
+            &&($result['pending_steps_known']??null)===true&&($result['pending_steps']??null)===($index===0?['marketplace_refund_attempt']:[])
+            &&($result['applied_steps']??null)===($index===1?['marketplace_refund_attempt']:[]),'REFUND_EACH_STRUCTURE_RESULT_BEFORE_NEXT_CALL');
+        $structure[]=$result;
+    }
+    $menus=new MarketplaceMs5RefundMenus($maintenance,'eb_');$menuResults=[];
+    foreach(['check','apply','check','apply']as$index=>$method){
+        $result=$menus->$method();
+        m2f_assert(($result['issues']??null)===[]&&($result['mode']??null)===($index%2===0?'check':'apply')
+            &&($result['state']??null)===($index===0?'applicable':'completed')&&($result['changed']??null)===($index===1)
+            &&($result['roles_modified']??null)===false&&($result['navigation_changed']??null)===false
+            &&($result['menu_ids']??null)===($index===0?[]:['marketplace-aftersales-test-refund'=>$id]),
+            'REFUND_EACH_MENU_RESULT_BEFORE_NEXT_CALL');
+        $menuResults[]=$result;
+    }
+    $parent=$menuResults[0]['parent_id'];
+    m2f_assert(is_int($parent)&&MarketplaceMs5RefundMigration::newTables()===\crmeb\services\marketplace\RefundSchemaReadiness::newTables()
+        &&MarketplaceMs5RefundMenus::menuRows($parent)===\crmeb\services\marketplace\RefundSchemaReadiness::menuRows($parent),
+        'REFUND_ORIGINAL_MIGRATION_AND_SHARED_READINESS_CONTRACTS_EQUAL');
+    m4c_entry_refund_results($structure,$menuResults,$id,$parent,$sources);$native=m4c_entry_refund_observe($history,$id);
+    $grants['application_after']=hash('sha256',json_encode($db->query('SHOW GRANTS')->fetchAll(PDO::FETCH_COLUMN),JSON_THROW_ON_ERROR));
+    $grants['maintenance_after']=hash('sha256',json_encode($maintenance->query('SHOW GRANTS')->fetchAll(PDO::FETCH_COLUMN),JSON_THROW_ON_ERROR));
+    m2f_assert($modes===m2f_modes($maintenance)&&$auto===m4cb_rows($maintenance,'SELECT @@SESSION.auto_increment_increment AS step,@@SESSION.auto_increment_offset AS first')
+        &&!$maintenance->inTransaction()&&!$db->inTransaction()&&m2f_file($privatePath)===$privateBefore&&m2f_file($appPath)===$appBefore,
+        'REFUND_MODES_TRANSACTIONS_PRIVATE_CONFIG_UNCHANGED');
+    $receipt=['schema'=>1,'scope'=>'TEST_REFUND_STRUCTURE_BEFORE_MS6_AND_FIRST_APP_ONLY',
+        'status'=>'VERIFIED_TEST_REFUND_STRUCTURE_BEFORE_MS6_AND_FIRST_APP_ONLY',
+        'binding'=>['run_id'=>getenv('AUDIT_RUN_ID'),'source_sha'=>$binding['source_sha'],'container_id'=>$binding['container_id'],
+            'entry_namespace_pid'=>$binding['entry_namespace_pid'],'created_sha256'=>$binding['created_sha256'],
+            'freeze_sha256'=>$binding['freeze_sha256'],'early_result_sha256'=>$history['hashes']['ms4-aftersale-early-migration-normal.json']],
+        'source_files'=>$sources,'structure_results'=>$structure,'menu_results'=>$menuResults,'menu_id'=>$id,'parent_id'=>$parent,
+        'native'=>$native,'grants'=>$grants,'App_business'=>'NOT RUN'];
+    m4c_entry_refund_receipt($receipt,$history);audit_guard_assert();return $receipt;
+}
+
+'''
+
+_REFUND_HOST = r'''
+def verify_refund_bootstrap(context, result):
+    receipt = result['refund_bootstrap']; native = receipt['native']
+    expect(type(receipt) is dict and set(receipt) == {'schema','scope','status','binding','source_files','structure_results',
+        'menu_results','menu_id','parent_id','native','grants','App_business'} and type(receipt['schema']) is int and receipt['schema'] == 1
+        and receipt['scope'] == 'TEST_REFUND_STRUCTURE_BEFORE_MS6_AND_FIRST_APP_ONLY'
+        and receipt['status'] == 'VERIFIED_TEST_REFUND_STRUCTURE_BEFORE_MS6_AND_FIRST_APP_ONLY' and receipt['App_business'] == 'NOT RUN'
+        and receipt['binding'] == result['schema_bootstrap']['binding'] and receipt['source_files'] == list(REFUND_SOURCE_FILES),
+        'REFUND_EXACT_SAME_HELPER_AND_FROZEN_SOURCE_RECEIPT')
+    early = load(Path(context['run_dir']) / 'evidence/ms4-aftersale-early-migration-normal.json')['snapshots']['assets']
+    expect(type(native) is dict and set(native) == {'table','menu_row','old_menu_projection','auto_increment_before','auto_increment_after_refund'}
+        and type(receipt['menu_id']) is int and 1 <= receipt['menu_id'] <= 65531 and type(receipt['parent_id']) is int
+        and 1 <= receipt['parent_id'] <= 65535 and native['auto_increment_before'] == receipt['menu_id']
+        and native['auto_increment_after_refund'] == receipt['menu_id']+1
+        and native['old_menu_projection'] == early['tables']['eb_system_menus']['projection'], 'REFUND_FIRST_ID_AND_COMPLETE_OLD_MENU_PROJECTION')
+    expect(type(receipt['structure_results']) is list and len(receipt['structure_results']) == 5
+        and type(receipt['menu_results']) is list and len(receipt['menu_results']) == 4, 'REFUND_FIVE_STRUCTURE_FOUR_MENU_CALLS')
+    for index, actual in enumerate(receipt['structure_results']):
+        expected = {'mode':['check','apply-structure','verify','apply-structure','verify'][index],
+            'state':'applicable' if index == 0 else 'completed','native_exit':0,'changed':index == 1,
+            'applied_steps':['marketplace_refund_attempt'] if index == 1 else [],
+            'pending_steps':['marketplace_refund_attempt'] if index == 0 else [],'pending_steps_known':True,'issues':[],
+            'failure_phase':None,'marker':'marketplace-ms5-refund-structure-v1','source_sha256':REFUND_SOURCE_FILES[0]['sha256'],
+            'history_mapping':'NOT RUN','refund_producer':'NOT RUN','acceptance':'NOT RUN'}
+        expect(actual == expected and type(actual['native_exit']) is int and type(actual['changed']) is bool, 'REFUND_EXACT_NORMAL_STRUCTURE_RESULT')
+    for index, actual in enumerate(receipt['menu_results']):
+        expected = {'mode':'check' if index % 2 == 0 else 'apply','state':'applicable' if index == 0 else 'completed',
+            'changed':index == 1,'tables':[],'menu_ids':[] if index == 0 else {'marketplace-aftersales-test-refund':receipt['menu_id']},
+            'issues':[],'source_binding':{'entry_sha256':REFUND_SOURCE_FILES[0]['sha256'],
+                'ms1_sha256':digest((Path(context['repo_dir']) / 'help/migrations/marketplace-ms1.php').read_bytes())},
+            'authorization_cache_producer':'fresh_scope_for_request_exact_all_auth_and_current_roles','roles_modified':False,
+            'parent_id':receipt['parent_id'],'navigation_changed':False,
+            'permission_scope':'EXISTING_REFUND_PAGE_OPERATION_LEAF_ONLY_STATIC_MARKETPLACE_ROUTE_UNCHANGED'}
+        if index % 2 == 1: expected['created_menu_ids'] = {'marketplace-aftersales-test-refund':receipt['menu_id']} if index == 1 else []
+        expect(actual == expected and type(actual['changed']) is bool and actual['roles_modified'] is False
+            and actual['navigation_changed'] is False, 'REFUND_EXACT_NORMAL_MENU_AND_UNCHANGED_REPEAT')
+    menu = {'id':receipt['menu_id'],'pid':receipt['parent_id'],'icon':'','module':'','controller':'','action':'','params':'[]','sort':1,
+        'is_show':1,'is_show_path':1,'access':1,'menu_path':'','path':'','auth_type':2,'header':'','is_header':0,'is_del':0,
+        'mark':'marketplace-ms5-refund-test-menu-v1','menu_name':'执行测试退款','methods':'POST',
+        'api_url':'marketplace/aftersales/<id>/test-refund','unique_auth':'marketplace-aftersales-test-refund'}
+    expect(type(native['menu_row']) is dict and set(native['menu_row']) == set(menu)
+        and {key:str(value) for key,value in native['menu_row'].items()} == {key:str(value) for key,value in menu.items()},
+        'REFUND_COMPLETE_TWENTYTWO_NATIVE_LEAF_FIELDS')
+    row = native['table']
+    expect(type(row) is dict and set(row) == {'ddl_sha256','projected_columns','projection','metadata_sha256','metadata_serialized_base64'}
+        and type(row['projected_columns']) is list and len(row['projected_columns']) == 20
+        and row['projection'] == {'encoding':'php-serialize-row-sha256-sorted-multiset-v1','rows':0,'sha256':hashlib.sha256(b'').hexdigest()},
+        'REFUND_FRESH_EMPTY_NATIVE_TABLE')
+    grants = receipt['grants']
+    expect(type(grants) is dict and set(grants) == {'application_before','application_after','maintenance_before','maintenance_after'}
+        and all(type(value) is str and re.fullmatch('[a-f0-9]{64}',value) for value in grants.values())
+        and grants['application_before'] == grants['application_after'] and grants['maintenance_before'] == grants['maintenance_after'],
+        'REFUND_UNCHANGED_ORIGINAL_NATIVE_GRANTS')
+    preservation = result['refund_bootstrap_preservation']
+    expect(set(preservation) == {'stage','early_result_sha256','metadata_observer_modes','protected_native_projections',
+        'application_schema','finance_settings','refund_readiness'} and preservation['stage'] == 'refund-bootstrap-completed'
+        and preservation['early_result_sha256'] == receipt['binding']['early_result_sha256']
+        and preservation['metadata_observer_modes'] == early['metadata_observer_modes']
+        and preservation['protected_native_projections'] == {name:row['projection'] for name,row in early['tables'].items()}
+        and preservation['application_schema'] is None and preservation['finance_settings'] is None
+        and preservation['refund_readiness'] == native, 'REFUND_ALL_ORIGINAL_175_PROJECTIONS_AND_MODES_PRESERVED')
+
+
+'''
+
 MERCHANT_EXIT_SOURCE_PATHS = (
     "help/migrations/marketplace-merchant-exit-menus.php",
     "help/migrations/marketplace-ms1.php",
@@ -910,6 +1056,21 @@ def order_menu_profile_changes(initializer: bytes, host: bytes, inventory: dict[
     return updated, updated_host, rows, mode
 
 
+def refund_readiness_sources(inventory: dict[str, dict[str, Any]]):
+    gate = inventory[SCHEMA_GATE_PATH]
+    if gate == SCHEMA_GATE_LEGACY:
+        require(REFUND_READINESS_SOURCE['path'] not in inventory, 'LEGACY_GATE_HAS_NO_NEW_READINESS_DEPENDENCY')
+        return None
+    require(gate == SCHEMA_GATE_REFUND
+            and inventory.get(REFUND_READINESS_SOURCE['path']) == REFUND_READINESS_SOURCE
+            and inventory.get(REFUND_MIGRATION_SOURCE['path']) == REFUND_MIGRATION_SOURCE,
+            'EXACT_REVIEWED_REFUND_GATE_READINESS_AND_MIGRATION_SOURCE_SET')
+    paths = ('crmeb/crmeb/exceptions/MarketplaceSchemaException.php', SCHEMA_GATE_PATH,
+             'crmeb/marketplace-release.json', 'help/migrations/marketplace-ms6-schema.php',
+             REFUND_READINESS_SOURCE['path'])
+    return (REFUND_MIGRATION_SOURCE, *(inventory[name] for name in paths))
+
+
 def schema_profile_changes(initializer: bytes, host: bytes, inventory: dict[str, dict[str, Any]]):
     """Extend the existing bootstrap only; inverse-check both complete old files."""
     paths = (
@@ -918,7 +1079,8 @@ def schema_profile_changes(initializer: bytes, host: bytes, inventory: dict[str,
         "crmeb/marketplace-release.json",
         "help/migrations/marketplace-ms6-schema.php",
     )
-    source_files = tuple(inventory[name] for name in paths)
+    refund_sources = refund_readiness_sources(inventory)
+    source_files = tuple(inventory[name] for name in paths) if refund_sources is None else refund_sources[1:]
     helper = _SCHEMA_INITIALIZER.encode("utf-8")
     anchor = b"function m6i_migrator(): array\n"
     updated = once(initializer, anchor, helper + anchor)
@@ -973,6 +1135,77 @@ def finance_profile_changes(initializer: bytes, host: bytes, inventory: dict[str
         'EXACT_HOST_FINANCE_ONLY_WHOLE_FILE_INVERSE')
     compile(updated_host,'derived-ms4-host-finance.py','exec')
     return updated,updated_host,source_files
+
+
+def refund_profile_changes(initializer: bytes, host: bytes, inventory: dict[str, dict[str, Any]]):
+    """Exact new Gate branch only; old four-source output remains byte-for-byte unchanged."""
+    sources = refund_readiness_sources(inventory)
+    if sources is None:
+        return initializer, host, None
+    original_initializer, original_host = initializer, host
+    changes: list[tuple[bytes, bytes]] = []
+    def change(previous: bytes, current: bytes) -> None:
+        nonlocal initializer
+        initializer = once(initializer, previous, current)
+        changes.append((previous, current))
+    anchor = b'function m6i_migrator(): array\n'
+    change(anchor, _REFUND_INITIALIZER.encode('utf-8') + anchor)
+    call = b"    $evidence['schema_bootstrap'] = m4i_schema_bootstrap($evidence['binding'], $prerequisites['early_history']);"
+    change(call, (b"    $evidence['refund_bootstrap'] = m4i_refund_bootstrap($evidence['binding'], $prerequisites['early_history']);\n"
+        b"    $evidence['refund_bootstrap_preservation'] = m4c_entry_early_preserved(\n"
+        b"        $prerequisites['early_history'], 'refund-bootstrap-completed', null, null, $evidence['refund_bootstrap']);\n" + call))
+    previous_finance = _FINANCE_INITIALIZER.encode('utf-8')
+    current_finance = previous_finance
+    for previous, current in (
+        (b'array $schemaReceipt): array', b'array $schemaReceipt,array $refundReceipt): array'),
+        (b"m4c_entry_early_preserved($history,'schema-bootstrap-completed',$schemaReceipt);",
+         b"m4c_entry_early_preserved($history,'schema-bootstrap-completed',$schemaReceipt,null,$refundReceipt);"),
+        (b"&&(int)$counter<=65532,'FINANCE_EXACT_ORIGINAL_MENU_COUNTER');$counter=(int)$counter;",
+         b"&&(int)$counter<=65531,'FINANCE_EXACT_ORIGINAL_MENU_COUNTER');$counter=(int)$counter+1;"),
+        (b'm4c_entry_finance_observe($history,$ids)', b'm4c_entry_finance_observe($history,$ids,$refundReceipt)'),
+        (b'm4c_entry_finance_receipt($receipt,$history,$schemaReceipt)',
+         b'm4c_entry_finance_receipt($receipt,$history,$schemaReceipt,$refundReceipt)'),
+    ):
+        current_finance = once(current_finance, previous, current)
+    change(previous_finance, current_finance)
+    for previous, current in (
+        (b"$prerequisites['early_history'], 'schema-bootstrap-completed', $evidence['schema_bootstrap']);",
+         b"$prerequisites['early_history'], 'schema-bootstrap-completed', $evidence['schema_bootstrap'], null, $evidence['refund_bootstrap']);"),
+        (b"$evidence['binding'], $prerequisites['early_history'], $evidence['schema_bootstrap']);",
+         b"$evidence['binding'], $prerequisites['early_history'], $evidence['schema_bootstrap'], $evidence['refund_bootstrap']);"),
+        (b"$prerequisites['early_history'], 'finance-bootstrap-completed', $evidence['schema_bootstrap'], $evidence['finance_bootstrap']);",
+         b"$prerequisites['early_history'], 'finance-bootstrap-completed', $evidence['schema_bootstrap'], $evidence['finance_bootstrap'], $evidence['refund_bootstrap']);"),
+        (b"m4c_entry_early_preserved($currentEarly,'files-bootstrap-completed',$evidence['schema_bootstrap'],$evidence['finance_bootstrap']);",
+         b"m4c_entry_early_preserved($currentEarly,'files-bootstrap-completed',$evidence['schema_bootstrap'],$evidence['finance_bootstrap'],$evidence['refund_bootstrap']);"),
+    ):
+        change(previous, current)
+    recovered = initializer
+    for previous, current in reversed(changes):
+        recovered = once(recovered, current, previous)
+    require(recovered == original_initializer, 'REFUND_INITIALIZER_COMPLETE_EXACT_INVERSE')
+    previous_finance_host = functions(host)['verify_finance_bootstrap']
+    current_finance_host = previous_finance_host
+    for previous, current in (
+        (b"<= 65532", b"<= 65531"),
+        (b"native['auto_increment_before'] + 3", b"native['auto_increment_before'] + 4"),
+        (b"counter = native['auto_increment_before']", b"counter = native['auto_increment_before'] + 1"),
+        (b"['projection']['rows']+3 if name", b"['projection']['rows']+4 if name"),
+        (b"'application_schema','finance_settings'}", b"'application_schema','finance_settings','refund_readiness'}"),
+        (b"and preservation['finance_settings'] == native,", b"and preservation['refund_readiness'] == result['refund_bootstrap']['native']\n        and preservation['finance_settings'] == native,"),
+    ):
+        current_finance_host = once(current_finance_host, previous, current)
+    host = once(host, previous_finance_host, current_finance_host)
+    host_anchor = b'def verify_files_bootstrap(context, native_required=True):\n'
+    helper = ('REFUND_SOURCE_FILES = ' + repr(sources) + '\n' + _REFUND_HOST).encode('utf-8')
+    host = once(host, host_anchor, helper + host_anchor)
+    old_consumer = b'    verify_schema_bootstrap(context, result)\n'
+    consumer = b'    verify_refund_bootstrap(context, result)\n' + old_consumer
+    host = once(host, old_consumer, consumer)
+    recovered_host = once(once(once(host, consumer, old_consumer), helper + host_anchor, host_anchor),
+                          current_finance_host, previous_finance_host)
+    require(recovered_host == original_host, 'REFUND_HOST_COMPLETE_EXACT_INVERSE')
+    compile(host, 'derived-ms4-host-refund.py', 'exec')
+    return initializer, host, sources
 
 
 def aftersale_review_image_profile_changes(host: bytes) -> tuple[bytes, bytes, bytes, dict[str, Any]]:
@@ -1303,6 +1536,8 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
         after["ms4-initialize.php"], after["ms4-host.py"], inventory)
     after["ms4-initialize.php"], after["ms4-host.py"], finance_sources = finance_profile_changes(
         after["ms4-initialize.php"], after["ms4-host.py"], inventory)
+    after["ms4-initialize.php"], after["ms4-host.py"], refund_sources = refund_profile_changes(
+        after["ms4-initialize.php"], after["ms4-host.py"], inventory)
     after["ms4-initialize.php"], after["ms4-host.py"], exit_sources = merchant_exit_profile_changes(
         after["ms4-initialize.php"], after["ms4-host.py"], inventory)
     after["ms4-initialize.php"], after["ms4-host.py"], order_sources, order_mode = order_menu_profile_changes(
@@ -1363,6 +1598,10 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
         "original_nine_volume_source_tree_topology_retained": True,
         "initializer_syntax": "NOT RUN", "M_A_B_Runtime": "NOT RUN",
     }
+    if refund_sources is not None:
+        derivation[named].update(refund_bootstrap_sources=list(refund_sources),
+                                 initializer_refund_bootstrap_inverse_exact=True)
+        derivation[named]["python_function_changes"]["ms4-host.py"].append("verify_refund_bootstrap")
     if extended_updates:
         derivation[named].update(interface_declared_active_rows_changed=interface_changed_rows,
                                  initializer_fulfillment_literal_inverse_exact=True,
@@ -1393,6 +1632,10 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
             observed.pop("verify_schema_bootstrap")
             require("verify_finance_bootstrap" not in functions(before[name]), "ONE_NEW_FINANCE_HOST_CONSUMER")
             observed.pop("verify_finance_bootstrap")
+            if refund_sources is not None:
+                observed.pop("verify_refund_bootstrap")
+                observed["verify_files_bootstrap"] = once(observed["verify_files_bootstrap"],
+                    b"    verify_refund_bootstrap(context, result)\n", b"")
             require("verify_merchant_exit_bootstrap" not in functions(before[name]), "ONE_NEW_EXIT_HOST_CONSUMER")
             observed.pop("verify_merchant_exit_bootstrap")
             require("verify_order_menu_bootstrap" not in functions(before[name]), "ONE_NEW_ORDER_MENU_HOST_CONSUMER")
@@ -1442,6 +1685,8 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
         "all_derivation_history_retained": True, "whole_forward_reverse_replay": True,
         "actual_initializer_syntax": "NOT RUN", "M_S_Host_Docker_App_business": "NOT RUN",
     }
+    if refund_sources is not None:
+        manifest.update(refund_bootstrap_sources=list(refund_sources), initializer_refund_bootstrap_inverse_exact=True)
     if extended_updates:
         manifest.update(interface_declared_active_rows_changed=interface_changed_rows,
                         initializer_fulfillment_literal_inverse_exact=True,
@@ -2542,6 +2787,7 @@ def derive_b_profile(authority_pointer: dict[str, Any],
             == previous_initializer, "B_TWO_PAID_INITIALIZER_LITERALS_WHOLE_FILE_INVERSE")
     initializer, host, schema_rows = schema_profile_changes(initializer, after["candidate/ms4-host.py"], inventory)
     initializer, host, finance_rows = finance_profile_changes(initializer, host, inventory)
+    initializer, host, refund_rows = refund_profile_changes(initializer, host, inventory)
     initializer, host, exit_rows = merchant_exit_profile_changes(initializer, host, inventory)
     initializer, host, order_rows, order_mode = order_menu_profile_changes(
         initializer, host, inventory, Path(authority["validation_root"]), with_read_leaves=False)
@@ -2631,6 +2877,8 @@ def derive_b_profile(authority_pointer: dict[str, Any],
         original_functions = functions(before["candidate/" + name])
         current_functions = functions(after["candidate/" + name])
         if name == "ms4-host.py":
+            if refund_rows is not None:
+                added = added | {"verify_refund_bootstrap"}
             current_functions["verify_aftersale_review_business"] = once(
                 current_functions["verify_aftersale_review_business"], review_image_after, review_image_before)
         if network_subnets is not None:
@@ -2642,7 +2890,7 @@ def derive_b_profile(authority_pointer: dict[str, Any],
     return {"before": before, "after": after, "authority": authority, "inventory": inventory,
             "paid_consumer_helper_update": {"before": PAID_BEFORE, "after": PAID_CURRENT},
             "initializer_paid_two_literal_inverse_exact": True,
-            "schema_sources": schema_rows, "finance_sources": finance_rows, "merchant_exit_sources": exit_rows,
+            "schema_sources": schema_rows, "finance_sources": finance_rows, "refund_sources": refund_rows, "merchant_exit_sources": exit_rows,
             "order_menu_sources": order_rows, "order_menu_profile_mode": order_mode,
             "aftersale_review_image_consumer": review_image_proof,
             "browser_compatibility": browser_compatibility,
@@ -3450,6 +3698,9 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
     derivation["runtime_full17_sealed"] = True
     derivation["finance_bootstrap_sources"] = list(derived["finance_sources"])
     derivation["finance_after_original_early_and_ms6_before_first_app"] = True
+    if derived["refund_sources"] is not None:
+        derivation["refund_bootstrap_sources"] = list(derived["refund_sources"])
+        derivation["refund_after_original_early_before_ms6_and_first_app"] = True
     derivation["paid_consumer_helper_update"] = derived["paid_consumer_helper_update"]
     derivation["initializer_paid_two_literal_inverse_exact"] = derived["initializer_paid_two_literal_inverse_exact"]
     derivation["merchant_exit_bootstrap_sources"] = list(derived["merchant_exit_sources"])

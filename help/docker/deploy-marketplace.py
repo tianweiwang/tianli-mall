@@ -262,7 +262,7 @@ def checked_result(raw):
     for key in ('database', 'prefix'):
         require(isinstance(result[key], str) and re.fullmatch(r'[A-Za-z0-9_]{0,64}', result[key]) is not None)
     require(isinstance(result['config_sha256'], str) and re.fullmatch(r'[0-9a-f]{64}', result['config_sha256']) is not None)
-    require(isinstance(result['source_sha256'], dict) and set(result['source_sha256']) == {'SchemaVersionGate', 'SchemaVersionRuntime'}
+    require(isinstance(result['source_sha256'], dict) and set(result['source_sha256']) == {'SchemaVersionGate', 'SchemaVersionRuntime', 'RefundSchemaReadiness'}
             and all(isinstance(value, str) and re.fullmatch(r'[0-9a-f]{64}', value) for value in result['source_sha256'].values()))
     return result
 

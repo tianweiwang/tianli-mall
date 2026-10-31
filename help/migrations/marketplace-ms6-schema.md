@@ -21,6 +21,25 @@ Without `--config-file`, the checker loads the official application Env and `con
 
 `check` is read-only. Missing metadata or incompatibility returns a fixed rejection and nonzero exit. `apply` takes a database/prefix-specific named lock, rechecks, then only creates an absent table and inserts its independently constructed initial row. Existing exact initial metadata is unchanged, including `updated_at`. An empty/partial table, heterogeneous structure, another schema/floor or a higher version is refused without overwrite. There is no `ALTER`, downgrade, `DROP`, `TRUNCATE`, historical migration, seed, business update, Redis operation, cache invalidation or automatic restore.
 
+### Refund prerequisite for the current candidate
+
+The shared startup gate now also reads the exact `marketplace_refund_attempt` structure and the installed `marketplace-aftersales-test-refund` operation leaf, including its original refund-page parent chain. This is a concrete prerequisite check; application `0.1.0`, schema generation `1`, and the original four-field schema result remain unchanged. It neither requires an existing role to have this permission nor activates testing refunds or real funds. The application image contains the shared `RefundSchemaReadiness` class and does not load maintenance migrations.
+
+Before this candidate's metadata `apply`/`check`, application startup, or deployment pre-up check, complete the original explicit refund maintenance sequence on the target database, after its original payment/aftersale prerequisites. Use the dedicated migration identity and the same private configuration rules as the original MS5 refund CLI:
+
+```sh
+php help/migrations/marketplace-ms5-refund.php check --config-file=/private-ms5/config.json
+php help/migrations/marketplace-ms5-refund.php apply-structure --config-file=/private-ms5/config.json
+php help/migrations/marketplace-ms5-refund.php verify --config-file=/private-ms5/config.json
+php help/migrations/marketplace-ms5-refund.php check-menus --config-file=/private-ms5/config.json
+php help/migrations/marketplace-ms5-refund.php apply-menus --config-file=/private-ms5/config.json
+php help/migrations/marketplace-ms5-refund.php check-menus --config-file=/private-ms5/config.json
+```
+
+Require the final structure and menu receipts to be `completed` with no issues. Initial `check` or `check-menus` may return `applicable` with exit zero; that is not completed readiness. Preserve existing table contents, orders, payments, refunds, inventory, files and roles. Do not rerun preview seed on an existing instance. Structure creation and insertion of the single ungranted operation leaf remain explicit maintenance actions; startup, health and pre-up only perform reads, including when the caller already has a read-only transaction. Application accounts retain DML-only privileges.
+
+The independently approved pre-up checker image must contain this candidate's gate and `RefundSchemaReadiness` implementation. The pre-up receipt and deployment consumer bind all three exact source files (`SchemaVersionGate`, `SchemaVersionRuntime`, `RefundSchemaReadiness`); an older checker receipt is insufficient. These source changes do not constitute a built/verified release image or authorize production deployment.
+
 MySQL DDL is not transactional. If creation or commit is ambiguous, the safe receipt reports `changed:null`; preserve that state for explicit investigation. A later call must not automatically repair or claim success for a partial table.
 
 ## Startup behavior

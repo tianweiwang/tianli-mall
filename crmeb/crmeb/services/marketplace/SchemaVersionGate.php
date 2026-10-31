@@ -7,6 +7,8 @@ use crmeb\exceptions\MarketplaceSchemaException as Failure;
 use PDO;
 use Throwable;
 
+require_once __DIR__ . '/RefundSchemaReadiness.php';
+
 /** This class never initializes App, writes SQL, touches Redis or formats translated errors. */
 final class SchemaVersionGate
 {
@@ -218,6 +220,7 @@ final class SchemaVersionGate
             || self::compare($manifest['app_version'], $row['min_app_version']) < 0) {
             throw new Failure(Failure::INCOMPATIBLE);
         }
+        RefundSchemaReadiness::assertReady($pdo, $prefix);
         return $row;
     }
 }

@@ -513,11 +513,19 @@ function m4fn_migration_database(PDO $db,array $owner,array $source):void
     m4fn_expect(is_array($installed['schema_bootstrap']??null),'TASK6_BOUND_SCHEMA_MAINTENANCE_RECEIPT');
     m4c_entry_schema_receipt($installed['schema_bootstrap'],$history);
     m4fn_expect(is_array($installed['finance_bootstrap']??null),'TASK6_BOUND_FINANCE_MAINTENANCE_RECEIPT');
-    $finance=m4c_entry_finance_receipt($installed['finance_bootstrap'],$history,$installed['schema_bootstrap']);
+    $refundReceipt=null;$refund=null;
+    if(m4c_entry_refund_required()){
+        m4fn_expect(is_array($installed['refund_bootstrap']??null),'TASK6_BOUND_REFUND_MAINTENANCE_RECEIPT');
+        $refundReceipt=$installed['refund_bootstrap'];
+        $refund=m4c_entry_refund_receipt($refundReceipt,$history,$installed['finance_bootstrap']['menu_ids']);
+    }
+    $finance=m4c_entry_finance_receipt($installed['finance_bootstrap'],$history,$installed['schema_bootstrap'],$refundReceipt);
     $expectedNames=$after['names'];
     m4fn_expect(count($expectedNames)===175&&!in_array('eb_marketplace_schema',$expectedNames,true),
         'TASK6_ORIGINAL_175_PRE_SCHEMA_TABLE_NAMESPACE');
     $expectedNames=[...$expectedNames,'eb_marketplace_schema',...array_keys($finance['tables'])];sort($expectedNames,SORT_STRING);
+    if($refund!==null){$expectedNames[]='eb_marketplace_refund_attempt';sort($expectedNames,SORT_STRING);
+        m4fn_expect(count($expectedNames)===179&&$refund['table']['projection']['rows']===0,'TASK6_EXACT_NEW_REFUND_EMPTY_TABLE_NAMESPACE');}
     $full=m5pcp_snapshot($db);m4fn_expect($full['names']===$expectedNames,'TASK6_ACTUAL_POST_EARLY_ASSETS_TABLE_NAMESPACE');
     $targets=['eb_marketplace_aftersale_action','eb_marketplace_aftersale_file','eb_store_order_refund',
         'eb_marketplace_fulfillment_operation','eb_marketplace_fulfillment_range'];
