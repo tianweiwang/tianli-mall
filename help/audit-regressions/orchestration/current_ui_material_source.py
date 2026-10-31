@@ -597,6 +597,23 @@ def derive_source(output: str | Path, authority_pointer: dict):
     replace('path participates in the original final identity bridge', b'cross_api_identity(path_after, fd_after)', b'cross_api_identity(path, path_after, fd_after)')
     replace('current proof validators and exact reused H5 readonly algorithms', b'def native_pair(reader, build, label, merchant=False):', runtime+b'def native_pair(reader, build, label, merchant=False):')
     old_functions = h.functions(before)
+    finish_before = (b"    def finish(self):\n"
+                     b"        for path in list(self.files):\n"
+                     b"            self.file(Path(path))\n"
+                     b"        for root, excluded, top, public in list(self.trees):\n"
+                     b"            self.tree(Path(root), excluded, top, public)\n")
+    finish_after = (b"    def finish(self):\n"
+                    b"        covered = {\n"
+                    b"            str(Path(spec[0]) / row['path'])\n"
+                    b"            for spec, snapshot in list(self.trees.items())\n"
+                    b"            for row in snapshot[0]['files']\n"
+                    b"        }\n"
+                    b"        for path in list(self.files):\n"
+                    b"            if path not in covered:\n"
+                    b"                self.file(Path(path))\n"
+                    b"        for root, excluded, top, public in list(self.trees):\n"
+                    b"            self.tree(Path(root), excluded, top, public)\n")
+    replace('omit only precise prior tree file overlap within this finish; final full trees remain', finish_before, finish_after)
     replace('actual four-file native schema, without subprocess', old_functions['native_pair'], NATIVE.encode('utf-8'))
     for name in ['h5','merchant','admin']:
         replace('current '+name+' report adapter', old_functions[name],
@@ -627,7 +644,7 @@ def derive_source(output: str | Path, authority_pointer: dict):
             b"        'materials':emitted,'builds':evidence,'input_inventory':inventory_pin,\n        'public_source_scope':public_source_scope,\n")
     original_materialize = h.functions(after)['materialize']
     h.require(original_materialize.count(b'    reader.finish()') == 3, 'THREE_ORIGINAL_COMPLETE_INPUT_RECHECKS')
-    replace('retain all finish bodies and repeat the four exceptional alias observations', original_materialize,
+    replace('retain all three finish calls and repeat the four exceptional alias observations', original_materialize,
             original_materialize.replace(b'    reader.finish()', b'    reader.finish(); current_alias_finish(reader)'))
     replace('all actual source proof and tool roots remain outside the output before its first write',
             b'    # Every true source/proof/tool/output was verified before the first output write.\n',
@@ -667,7 +684,7 @@ def derive_source(output: str | Path, authority_pointer: dict):
                 'h5_alias_raw_attributes':[1056,263200], 'h5_alias_stable_snapshot_attributes':1056,
                 'reused_h5_readonly_functions':['stylus_tree','dependency_window','adapter_receipt'],
                 'changed_original_functions':sorted(changed), 'whole_file_inverse_exact':True,
-                'changed_original_methods':{'Inputs':['file: two bridge call arguments only']},
+                'changed_original_methods':{'Inputs':['file: two bridge call arguments only', 'finish: omit precise tree-covered keys from the duplicate file pass; final full tree rereads unchanged']},
                 'native_identity_scope':'Only regular Windows exe/bat/cmd/com comparison FD mode OR0111; all other mode bits/common fields/birth and both raw nine-field observations retained',
                 'original_preserved_bodies':['ordinary','native_observation','png','collision_check','write_new','metadata','resources'],
                 'all_undeclared_original_function_bodies_exact':True, 'producer_build_Docker_Node_materials_UI':'NOT RUN',

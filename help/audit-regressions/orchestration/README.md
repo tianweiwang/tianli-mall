@@ -90,6 +90,8 @@ H5 仅接收已独审的四个固定 LX 别名属性后继算法；原 r5 只作
 
 作者使用 `--output`、`--authority-file`、`--authority-sha256`，仅创建新的源码候选及其正逆变更。producer 的 paths 文件仍为 `{schema:1, paths:{...}}`，路径键精确为 `metadata/source/public/h5_build/merchant_build/admin_build`。current-build-proofs 文件精确包含 `schema:1`、`scope:CURRENT_THREE_FRONTEND_BUILD_PROOFS`、`source_sha` 和 `builds`；builds 下三端各自包含 `packet`、`pins`、`run`、`outer`，pins 是对应包 `PINS.json` 的绝对路径、字节数和SHA-256，outer 是该 Run 的原 `-launch` 目录。旧 metadata 不能替代这份当前三端证明。
 
+`Inputs.finish` 仅从本次既有 tree snapshot 的精确文件 key 跳过首循环重复读；standalone 顺序、各树最后完整字节/FD/目录复读与三阶段 finish/alias 调用保持，不使用 mtime 或跨调用缓存，冻结来源不改签，提速须以后继正常运行实测。
+
 本代应用来源从调用方的真实独审 authority 动态固定。允许复用较早完成的真实构建，但逐端保留其原报告 head、资格、builder authority 和全部原生 argv；按原 `frontend_source` 规则推导的完整输入、目录、Git mode/blob、字节数及SHA-256必须与本代来源完全相同，任何差异都须重建该端。prebuild/helper、编译器、lock和原工具依赖仍核对；public另按本代候选完整清单验证。结果分别记录原构建来源和本代输入等价关系，不宣称旧构建是在新 head 上重跑。
 
 Docker 默认地址池耗尽时，可在 profile 作者的 `--output` 阶段指定 `--isolation-subnet`，将一个规范 RFC1918 IPv4 子网固定写入新来源的内部网络 IPAM。生成前和实际启动前须检查现有 Docker 网段及宿主/VPN/WSL 路由；作者本身不证明网段空闲，也不自动尝试其他地址。启动后核对实际 IPAM 与绑定子网，保留 `internal: true`、原标签和九卷拓扑；不修改 Docker 全局设置或既有网络。未指定此参数时，原生成逻辑保持。
