@@ -2636,20 +2636,36 @@ def _b_outer(outcome: dict[str, Any], materialize_review: dict[str, Any] | None 
     require(type(outcome) is dict and set(outcome) == {"created", "terminal", "stdout", "stderr"},
             "B_EXPLICIT_ACTUAL_OUTER_FOUR_FILES")
     created, terminal = (decode(read_pointer(outcome[key])) for key in ("created", "terminal"))
-    require(type(created) is dict and {"pid", "argv", "started_ns"} <= set(created)
+    milliseconds = materialize_review is not None and type(created) is dict and "started_ms" in created
+    started, finished = ("started_ms", "finished_ms") if milliseconds else ("started_ns", "finished_ns")
+    require(type(created) is dict and {"pid", "argv", started} <= set(created)
             and type(created["pid"]) is int and created["pid"] > 0
             and type(created["argv"]) is list and created["argv"]
-            and type(created["started_ns"]) is int, "B_ACTUAL_OUTER_CREATED")
-    copied = (set(terminal) == set(created) | {"native_exit", "wait_returncode", "finished_ns", "stdout", "stderr"}
+            and type(created[started]) is int, "B_ACTUAL_OUTER_CREATED")
+    copied = (not milliseconds and set(terminal) == set(created) | {"native_exit", "wait_returncode", "finished_ns", "stdout", "stderr"}
               and all(terminal[key] == value for key, value in created.items()))
     if not copied and materialize_review is not None:
-        identity = ("pid", "argv", "cwd", "started_ns")
-        require(set(created) == set(identity) | {"source_review", "scope", "process_local_git_longpaths"}
-                and set(terminal) == set(identity) | {"native_exit", "wait_returncode", "finished_ns", "stdout", "stderr"}
-                and all(terminal[key] == created[key] for key in identity), "B_EXACT_NORMAL_M_METADATA_PROJECTION")
+        if milliseconds:
+            identity = ("pid", "argv", "cwd", "started_ms", "source_review", "application_source_sha", "materialize_launcher")
+            require(set(created) == set(identity) | {"scope", "process_local_git_config", "git_safe_directory"}
+                    and set(terminal) == set(identity) | {"native_exit", "wait_returncode", "finished_ms", "stdout", "stderr"}
+                    and all(terminal[key] == created[key] for key in identity), "B_EXACT_NORMAL_M_MILLISECONDS_PROJECTION")
+            config = created["process_local_git_config"]
+            require(type(config) is dict and set(config) == {"prior_count", "appended_index", "key", "value", "persistent_configuration_changed"}
+                    and type(config["prior_count"]) is int and config["prior_count"] >= 0
+                    and type(config["appended_index"]) is int and config["appended_index"] == config["prior_count"]
+                    and config["key"] == "core.longpaths" and config["value"] == "true"
+                    and config["persistent_configuration_changed"] is False and created["started_ms"] > 0
+                    and created["git_safe_directory"] == "ORIGINAL_PER_COMMAND_EXACT_SOURCE_AND_VALIDATION_PATHS",
+                    "B_NORMAL_M_MILLISECONDS_FIXED_GIT_METADATA")
+        else:
+            identity = ("pid", "argv", "cwd", "started_ns")
+            require(set(created) == set(identity) | {"source_review", "scope", "process_local_git_longpaths"}
+                    and set(terminal) == set(identity) | {"native_exit", "wait_returncode", "finished_ns", "stdout", "stderr"}
+                    and all(terminal[key] == created[key] for key in identity), "B_EXACT_NORMAL_M_METADATA_PROJECTION")
         require(created["source_review"] == materialize_review
                 and created["scope"] == "SOURCE_MATERIALIZATION_ONLY_NO_DOCKER_OR_APP_OPERATIONS"
-                and created["process_local_git_longpaths"] is True, "B_NORMAL_M_REVIEWED_CREATED_METADATA")
+                and (milliseconds or created["process_local_git_longpaths"] is True), "B_NORMAL_M_REVIEWED_CREATED_METADATA")
         review = decode(read_pointer(materialize_review))
         require(type(review) is dict and review["schema"] == 1 and review["status"] == "PASS_CURRENT_NORMAL18_SOURCE_REVIEW"
                 and type(review["source_sha"]) is str and re.fullmatch("[a-f0-9]{40}", review["source_sha"])
@@ -2662,11 +2678,20 @@ def _b_outer(outcome: dict[str, Any], materialize_review: dict[str, Any] | None 
                 and type(created["cwd"]) is str and Path(created["cwd"]).is_absolute()
                 and Path(argv[5]) == Path(created["cwd"]) / "launcher/launch.py"
                 and Path(created["cwd"]) == Path(argv[5]).parent.parent, "B_NORMAL_M_ORIGINAL_MATERIALIZE_ARGV_AND_CWD")
+        if milliseconds:
+            launcher = created["materialize_launcher"]
+            member = review["members"]["launcher/launch.py"]
+            require(created["application_source_sha"] == review["source_sha"]
+                    and type(member) is dict and set(member) == {"bytes", "sha256"}
+                    and type(launcher) is dict and set(launcher) == {"path", "bytes", "sha256"}
+                    and launcher == {"path": (Path(created["cwd"]) / "launcher/launch.py").as_posix(), **member},
+                    "B_NORMAL_M_MILLISECONDS_EXACT_REVIEWED_LAUNCHER")
+            read_pointer(launcher)
         copied = True
     require(copied and type(terminal["native_exit"]) is int and type(terminal["wait_returncode"]) is int
             and terminal["native_exit"] == terminal["wait_returncode"] == 0
-            and type(terminal["finished_ns"]) is int
-            and terminal["finished_ns"] > created["started_ns"], "B_ACTUAL_SAME_PID_OUTER_NATURAL_ZERO")
+            and type(terminal[finished]) is int
+            and terminal[finished] > created[started], "B_ACTUAL_SAME_PID_OUTER_NATURAL_ZERO")
     for kind in ("stdout", "stderr"):
         stream = terminal[kind]
         if type(stream) is dict and set(stream) == {"path", "bytes", "sha256"}:
@@ -3188,16 +3213,32 @@ _B_SOURCE_REVIEW = r'''
 def current_b_outer(outcome, materialize_review=None):
     current_assert(set(outcome)=={'created','terminal','stdout','stderr'},'B_FIXED_ACTUAL_OUTER_FOUR')
     created=current_json(outcome['created']);terminal=current_json(outcome['terminal'])
-    copied=(set(terminal)==set(created)|{'native_exit','wait_returncode','finished_ns','stdout','stderr'}
+    milliseconds=materialize_review is not None and type(created) is dict and 'started_ms' in created
+    started,finished=('started_ms','finished_ms') if milliseconds else ('started_ns','finished_ns')
+    copied=(not milliseconds and set(terminal)==set(created)|{'native_exit','wait_returncode','finished_ns','stdout','stderr'}
         and all(terminal[key]==value for key,value in created.items()))
     if not copied and materialize_review is not None:
-        identity=('pid','argv','cwd','started_ns')
-        current_assert(set(created)==set(identity)|{'source_review','scope','process_local_git_longpaths'}
-            and set(terminal)==set(identity)|{'native_exit','wait_returncode','finished_ns','stdout','stderr'}
-            and all(terminal[key]==created[key] for key in identity),'B_EXACT_NORMAL_M_METADATA_PROJECTION')
+        if milliseconds:
+            identity=('pid','argv','cwd','started_ms','source_review','application_source_sha','materialize_launcher')
+            current_assert(set(created)==set(identity)|{'scope','process_local_git_config','git_safe_directory'}
+                and set(terminal)==set(identity)|{'native_exit','wait_returncode','finished_ms','stdout','stderr'}
+                and all(terminal[key]==created[key] for key in identity),'B_EXACT_NORMAL_M_MILLISECONDS_PROJECTION')
+            config=created['process_local_git_config']
+            current_assert(type(config) is dict and set(config)=={'prior_count','appended_index','key','value','persistent_configuration_changed'}
+                and type(config['prior_count']) is int and config['prior_count']>=0
+                and type(config['appended_index']) is int and config['appended_index']==config['prior_count']
+                and config['key']=='core.longpaths' and config['value']=='true'
+                and config['persistent_configuration_changed'] is False and created['started_ms']>0
+                and created['git_safe_directory']=='ORIGINAL_PER_COMMAND_EXACT_SOURCE_AND_VALIDATION_PATHS',
+                'B_NORMAL_M_MILLISECONDS_FIXED_GIT_METADATA')
+        else:
+            identity=('pid','argv','cwd','started_ns')
+            current_assert(set(created)==set(identity)|{'source_review','scope','process_local_git_longpaths'}
+                and set(terminal)==set(identity)|{'native_exit','wait_returncode','finished_ns','stdout','stderr'}
+                and all(terminal[key]==created[key] for key in identity),'B_EXACT_NORMAL_M_METADATA_PROJECTION')
         current_assert(created['source_review']==materialize_review
             and created['scope']=='SOURCE_MATERIALIZATION_ONLY_NO_DOCKER_OR_APP_OPERATIONS'
-            and created['process_local_git_longpaths'] is True,'B_NORMAL_M_REVIEWED_CREATED_METADATA')
+            and (milliseconds or created['process_local_git_longpaths'] is True),'B_NORMAL_M_REVIEWED_CREATED_METADATA')
         review=current_json(materialize_review)
         current_assert(type(review) is dict and review['schema']==1 and review['status']=='PASS_CURRENT_NORMAL18_SOURCE_REVIEW'
             and type(review['source_sha']) is str and re.fullmatch('[a-f0-9]{40}',review['source_sha'])
@@ -3210,12 +3251,20 @@ def current_b_outer(outcome, materialize_review=None):
             and type(created['cwd']) is str and Path(created['cwd']).is_absolute()
             and Path(argv[5])==Path(created['cwd'])/'launcher/launch.py'
             and Path(created['cwd'])==Path(argv[5]).parent.parent,'B_NORMAL_M_ORIGINAL_MATERIALIZE_ARGV_AND_CWD')
+        if milliseconds:
+            launcher=created['materialize_launcher'];member=review['members']['launcher/launch.py']
+            current_assert(created['application_source_sha']==review['source_sha']
+                and type(member) is dict and set(member)=={'bytes','sha256'}
+                and type(launcher) is dict and set(launcher)=={'path','bytes','sha256'}
+                and launcher=={'path':(Path(created['cwd'])/'launcher/launch.py').as_posix(),**member},
+                'B_NORMAL_M_MILLISECONDS_EXACT_REVIEWED_LAUNCHER')
+            current_stream(launcher)
         copied=True
     current_assert(type(created['pid']) is int and created['pid']>0 and type(created['argv']) is list
-        and type(created['started_ns']) is int and copied
+        and type(created[started]) is int and copied
         and type(terminal['native_exit']) is int and type(terminal['wait_returncode']) is int
         and terminal['native_exit']==terminal['wait_returncode']==0
-        and type(terminal['finished_ns']) is int and terminal['finished_ns']>created['started_ns'],'B_REAL_SAME_PID_NATURAL_OUTER_ZERO')
+        and type(terminal[finished]) is int and terminal[finished]>created[started],'B_REAL_SAME_PID_NATURAL_OUTER_ZERO')
     for kind in ['stdout','stderr']:
         stream=terminal[kind]
         if type(stream) is dict and set(stream)=={'path','bytes','sha256'}:
