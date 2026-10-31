@@ -150,6 +150,10 @@ python -I -B help/audit-regressions/orchestration/verify_sources.py
 
 还必须提供外部 `--classification` 及其 `--classification-sha256`：JSON精确为 `{"schema":1,"run_id":"原Run ID","files":{"相对文件名":"public或private_metadata_only"}}`。该正向分类须先依据原prepare/bootstrap/producer写入、阶段INDEX及真实native四件逐项确认，覆盖Run完整现存文件闭集；未知JSON/日志不能默认公开，也不提供自动全公开或空私有推断。命令在任何Docker调用前核分类，私有项只取metadata，不打开或哈希正文；三棵Source/Val/legacy树沿原冻结正向名单核全字节与stat，原Host排除的Git/runtime仅核metadata。缺少分类、来源/pin或资源身份即失败且不自动重试/清退。原native四件与自动summary逐项闭合、保全和本入口fresh六查询完成仍不构成历史成功；非作者独立fresh核零与保全另行执行。该工具没有运行或生产授权含义。
 
+失败正常 Worker 的普通退役使用 `python -I -B -X utf8 help/audit-regressions/orchestration/retire_failed_normal.py --help`。它仅支持已审402025字节正常Host、Worker真实退出255/paid退出0、两base与原九卷一网；复用实际R90普通退役步骤，保留原context归属、stop `--timeout=-1`、原wait及非force删除，不调用成功Worker close/zero，也不使用历史3/6/1入口。固定SHA的 `--host`、`--context`、`--source-authority`、`--preview-baseline`、`--classification`、原 `--freeze-sha256` 和全新外部 `--output` 均为必需输入；分类格式与上文相同，未知叶在Docker前拒绝，私有项只核metadata。
+
+该入口复用未改的 `retire_failed_history.py` 纯快照/preview函数；运行时不依赖归档R90脚本路径，原17945字节/SHA256与实际22392/0仅作为实现来源记录。原native四件及summary全部外置；原INI观察函数只替换两处输出根，全部原Run/source/reference/512M输入与原生分类断言保持，四角色20观察叶只写OUT。原Run零追加、两棵完整冻结树bytes/stat及8预览27字段/Cmd RAM/重复Mounts均须保全；真实清退0后仍需非作者独立fresh六零、全部历史CID及物理alias复核，不能签Worker或完整A通过。
+
 历史种子来源记录也必须连接当前已审的完整 `ms2-migration.php`。作者先核原记录、两个原种子函数的完整摘要、五个来源检查调用与整函数逆回，再仅更新候选记录的整文件来源摘要；原种子代码、函数摘要、Host 断言和存档原件保持。实际整文件来源及旧摘要另记在输入证明中，不能直接把失败记录改为成功。
 
 所有实际文件以清单为准，不按目录名递归导入其他原机材料。没有把整份原材料目录、原 Run 或所有历史作者输入公开。两份 published-current 完整编排保留各自来源 `584532ba2`；归档提交本身会前移 Git HEAD，不能据此宣称已在归档后的 HEAD 运行通过。
