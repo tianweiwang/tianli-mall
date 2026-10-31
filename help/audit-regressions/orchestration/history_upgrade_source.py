@@ -919,23 +919,41 @@ def _producer_entry_source(raw):
 
 def transform_producer_entry(raw: bytes) -> bytes:
     _producer_entry_source(raw)
+    observer_before = b"        $observer = audit_db(); $redis = audit_redis();\r\n"
+    observer_after = (b"        $observer = audit_db();\r\n"
+                      b"        nhep_expect($observer->setAttribute(PDO::ATTR_EMULATE_PREPARES, false) === true\r\n"
+                      b"            && $observer->getAttribute(PDO::ATTR_EMULATE_PREPARES) === 0,\r\n"
+                      b"            'NHE_NORMAL_MAIN_OBSERVER_NATIVE_PREPARES');\r\n"
+                      b"        $redis = audit_redis();\r\n")
     if raw.count(_PRODUCER_ENTRY_BEFORE) != 1 or not raw.endswith(_PRODUCER_ENTRY_BEFORE):
         raise ValueError("HISTORY_PRODUCER_UNIQUE_FINAL_ENTRY_REQUIRED")
     if raw.count(_PRODUCER_FAILURE_BEFORE) != 1 or _PRODUCER_FAILURE_AFTER in raw:
         raise ValueError("HISTORY_PRODUCER_UNIQUE_FAILURE_DIAGNOSTIC_REQUIRED")
+    if raw.count(observer_before) != 1 or observer_after in raw:
+        raise ValueError("HISTORY_PRODUCER_UNIQUE_OBSERVER_NATIVE_PREPARES_REQUIRED")
     candidate = raw[:-len(_PRODUCER_ENTRY_BEFORE)] + _PRODUCER_ENTRY_AFTER
     candidate = candidate.replace(_PRODUCER_FAILURE_BEFORE, _PRODUCER_FAILURE_AFTER, 1)
+    candidate = candidate.replace(observer_before, observer_after, 1)
     if reverse_producer_entry(candidate) != raw:
         raise ValueError("HISTORY_PRODUCER_COMPLETE_ENTRY_REVERSE_REQUIRED")
     return candidate
 
 
 def reverse_producer_entry(candidate: bytes) -> bytes:
+    observer_before = b"        $observer = audit_db(); $redis = audit_redis();\r\n"
+    observer_after = (b"        $observer = audit_db();\r\n"
+                      b"        nhep_expect($observer->setAttribute(PDO::ATTR_EMULATE_PREPARES, false) === true\r\n"
+                      b"            && $observer->getAttribute(PDO::ATTR_EMULATE_PREPARES) === 0,\r\n"
+                      b"            'NHE_NORMAL_MAIN_OBSERVER_NATIVE_PREPARES');\r\n"
+                      b"        $redis = audit_redis();\r\n")
     if not isinstance(candidate, bytes) or candidate.count(_PRODUCER_ENTRY_AFTER) != 1 or not candidate.endswith(_PRODUCER_ENTRY_AFTER):
         raise ValueError("HISTORY_PRODUCER_UNIQUE_FINAL_REVERSE_ENTRY_REQUIRED")
     if candidate.count(_PRODUCER_FAILURE_AFTER) != 1:
         raise ValueError("HISTORY_PRODUCER_UNIQUE_FAILURE_DIAGNOSTIC_REVERSE_REQUIRED")
-    raw = candidate.replace(_PRODUCER_FAILURE_AFTER, _PRODUCER_FAILURE_BEFORE, 1)
+    if candidate.count(observer_after) != 1 or observer_before in candidate:
+        raise ValueError("HISTORY_PRODUCER_UNIQUE_OBSERVER_NATIVE_PREPARES_REVERSE_REQUIRED")
+    raw = candidate.replace(observer_after, observer_before, 1)
+    raw = raw.replace(_PRODUCER_FAILURE_AFTER, _PRODUCER_FAILURE_BEFORE, 1)
     raw = raw[:-len(_PRODUCER_ENTRY_AFTER)] + _PRODUCER_ENTRY_BEFORE
     _producer_entry_source(raw)
     return raw
