@@ -3542,7 +3542,7 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
         repr(proof_reference["path"]).encode()).decode()
     root_m = _b_replace_function(root_m, "frozen_resources", frozen_resources)
     root_m = _b_replace_function(root_m, "current_known_normal_root", '''def current_known_normal_root(inputs):
-    current_b_outer(CURRENT_B_M_OUTER)
+    current_b_outer(CURRENT_B_M_OUTER, CURRENT_B_NORMAL_REVIEW)
     setup=current_b_normal_materialization()
     authority=inputs['normal_root']
     assert authority['root']==NORMAL_SOURCE.as_posix() and setup['root_source_pins']==authority['PINS']

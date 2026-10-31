@@ -40,6 +40,8 @@ B 对该 helper 使用同一独审前后值，并逐项连接 B 当前表单向�
 
 正常 M 的已知毫秒回执单列严格分支：created／terminal 分别精确匹配十键／十二键字段集合，七项共同身份必须相等，并核进程内 longpaths 记录、原 safe.directory 注记、应用 Source 与独审一致，以及完整 launcher 字节等于独审成员。时间只在原 started_ms／finished_ms 单位中比较，不换写为纳秒；仍须显式独审、原 materialize 十一参数、自然 exit/wait 0 和完整双流。原纳秒分支保持，未向 A/B 的其它回执开放毫秒布局。
 
+派生的 Root M 在 `current_known_normal_root` 前检中也显式传入已有 `CURRENT_B_NORMAL_REVIEW`，与来源复核入口使用同一严格消费者；不会因缺少第二参数误拒有效的 M 投影回执。
+
 `post_a_contract` 保留原六键：`header/files_key/retained_public_files/prior_public_inventory/public_roots/public_root_files`。六棵公共树和十三个固定公件从当前绑定推导，与输入全等；旧清单原件及全部原行、retained 和当前公件形成完整并集，重叠路径必须字节相同。显式未来 B 的 runtime_root 只用于原隔离边界检查，不创建 B。全量复读及原六键消费者回读通过后，依次保留 `POST-A-PUBLIC-HISTORY.json`、`POST-A-CONTRACT.json`、`PUBLIC-INPUT-WINDOWS.json`，最后发布 `RESULT.json`；失败时保留已有输出，不能覆盖重用。回执单列实际维护工具摘要，既不改写冻结 App 资格，也不代表 B、页面或完整验收已经通过。
 
 同一作者的 `--history-source <全新外部目录>` 配合原 authority 两参数，组合已归档的非空历史组件。固定 overlay 的原 13 件末尾只加 reader，保留 producer 的 13 件／11 控制文件合同；reader 使用独立的 12 项控制文件，完整包为 14 件。内部 `history_host_source.py`、`history_reader_source.py` 只作固定原件的有限字节变换，核整件正逆和非目标成员保全，没有独立 CLI，也不运行 Host、应用或资源操作。
