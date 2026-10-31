@@ -54,7 +54,9 @@ B 对该 helper 使用同一独审前后值，并逐项连接 B 当前表单向�
 
 历史文件准备 CLI 会解码完整双源清单并整读源码；实际 R8 在 PHP 128M 上限退出255。其固定字节变换只在原入口检查后、首次完整资格读取前，核原128M并将本进程预算设为512M、核返回值与回读；共享 Compose、挂载、命令及业务 HTTP 默认预算不变。该 CLI 同进程的旧 App 初始化也使用此预算，所有原数据与文件检查保持；新完整运行仍须实证，原失败不重启或改签。
 
-历史 producer 的固定直接入口采用同文件已有的 `nhep_normal_history_main()`；其固定原件摘要、末尾唯一接缝和整件逆变换均须核同。主函数在原 `audit_db()` 创建 observer 后显式设置 `PDO::ATTR_EMULATE_PREPARES=false`，严格核 setter 返回 `true` 和属性回读为整数 `0`，再接原 Redis 与 pre37。原 DML 账户和身份断言保持；同文件 startup、原 37 步 HTTP、正常 seal/close/publish 及其余来源和业务断言逐字节保留，正常 CLI 参数及共享角色配置保持。新包仍为十四件，七件变换、七件整件保持；采用须另行独审、生成新 freeze 和新 Run，旧 R9/R17 失败不重启或改签。同原镜像、私有配置及公共 factory 的新鲜连接已实测原属性为整数 `1`，显式设置后返回 `true` 与整数 `0`；完整新历史链仍须实际验证。
+历史 producer 的固定直接入口采用同文件已有的 `nhep_normal_history_main()`；其固定原件摘要、末尾唯一接缝和整件逆变换均须核同。主函数在原 `audit_db()` 创建 observer 后显式设置 `PDO::ATTR_EMULATE_PREPARES=false`，严格核 setter 返回 `true` 和属性回读为整数 `0`，再接原 Redis 与 pre37。原 DML 账户和身份断言保持；同文件 startup、原 37 步 HTTP、正常 seal/close/publish 及其余来源和业务断言逐字节保留，正常 CLI 参数及共享角色配置保持。新包仍为十四件，八件变换、六件整件保持；采用须另行独审、生成新 freeze 和新 Run，旧 R9/R17/R18 失败不重启或改签。同原镜像、私有配置及公共 factory 的新鲜连接已实测原属性为整数 `1`，显式设置后返回 `true` 与整数 `0`；完整新历史链仍须实际验证。
+
+HTTP 包装层仅在原失败 catch 内格式化一条不超过2048字节（含换行）的 CLI STDERR 安全诊断：固定 scope/status、受限异常类名和 NHE/NHEH 常量 code、固定来源标签/正整数行号及前16帧中的首个已知 callsite，以及 `step_entries_count`、`last_entry_sequence`。这两个数字只反映原 `nheh_step` 已追加条目的序号，0条时后一项为 null，不表示尝试次数或完整业务验收。原包装 code 过滤、throw、外层 cleanup/exit、成功37步和13字段 seal 保持；无原始 message/path/trace/args、请求/响应、配置或凭据输出，诊断错误不替换原失败。原 R18 具体失败原因仍未知。
 
 同一直接 CLI 入口为运行时 fatal 诊断保留 32 KiB，并注册 shutdown handler；仅实际 `E_ERROR/E_PARSE/E_CORE_ERROR/E_COMPILE_ERROR` 时向 stderr 写入至多 2048 字节 JSON 加换行。只记录错误类型、文件标签及路径摘要、行号、严格格式的内存上限、堆用量/峰值，以及匹配固定内存耗尽消息时的两项字节数，不输出原消息、堆栈、参数、环境或 SQL。正常返回和非直接 CLI 调用静默，handler 不改退出码或内存预算，不安装到独立 HTTP 子进程；脚本在 handler 注册前的解析/启动失败无法由它捕获。原 R10 的退出 255、空双流不能据此追签为内存不足，后继新正常运行才提供诊断证据。
 

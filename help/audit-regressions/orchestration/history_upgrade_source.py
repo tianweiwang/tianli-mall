@@ -957,3 +957,80 @@ def reverse_producer_entry(candidate: bytes) -> bytes:
     raw = raw[:-len(_PRODUCER_ENTRY_AFTER)] + _PRODUCER_ENTRY_BEFORE
     _producer_entry_source(raw)
     return raw
+
+
+HISTORY_HTTP_SOURCE_PIN = (36764, "2747c8227349c62e4c5f928561ffbb307a6b9c34cf0d24420a0bf15f5aa0a3f2")
+_HISTORY_HTTP_FAILURE_BEFORE = br"""    } catch (Throwable $error) {
+        $code = $error instanceof RuntimeException ? $error->getMessage() : '';
+        if (preg_match('/\ANHEH_[A-Z0-9_]+\z/D', $code) !== 1) $code = 'NHEH_NORMAL_HTTP_OR_OBSERVER_FAILED';
+        throw new RuntimeException($code);
+"""
+_HISTORY_HTTP_FAILURE_AFTER = br"""    } catch (Throwable $error) {
+        try {
+            $formatFailure = static function (Throwable $failure, mixed $entries): ?string {
+                $code = $failure instanceof RuntimeException ? $failure->getMessage() : '';
+                if (strlen($code) > 192 || preg_match('/\A(?:NHE|NHEH)_[A-Z0-9_]+\z/D', $code) !== 1)
+                    $code = 'NHEH_HTTP_NON_CONSTANT_FAILURE';
+                $class = get_class($failure);
+                if (strlen($class) > 192
+                    || preg_match('/\A(?:[A-Za-z_][A-Za-z0-9_]*\\\\)*[A-Za-z_][A-Za-z0-9_]*\z/D', $class) !== 1)
+                    $class = 'Throwable';
+                $sourceTags = [__FILE__ => 'history_http', '/run/nonempty/legacy-history-producer.php' => 'producer',
+                    '/run/nonempty/legacy-app.php' => 'legacy_app', '/run/nonempty/legacy-actors.php' => 'legacy_actors',
+                    '/run/nonempty/legacy-normal-config.php' => 'legacy_normal_config',
+                    '/workspace/help/audit-regressions/isolated/lib/guard.php' => 'guard',
+                    '/workspace/help/audit-regressions/isolated/lib/harness.php' => 'harness',
+                    '/workspace/help/audit-regressions/isolated/ms4-migration.php' => 'migration'];
+                $sourceTag = $sourceTags[$failure->getFile()] ?? 'other';
+                $line = $failure->getLine(); $line = is_int($line) && $line > 0 ? $line : null;
+                $callsite = null;
+                foreach (array_slice($failure->getTrace(), 0, 16) as $frame) {
+                    if (!is_array($frame) || !is_string($frame['file'] ?? null)
+                        || !isset($sourceTags[$frame['file']])) continue;
+                    $frameLine = $frame['line'] ?? null;
+                    $callsite = ['source_tag' => $sourceTags[$frame['file']],
+                        'line' => is_int($frameLine) && $frameLine > 0 ? $frameLine : null];
+                    break;
+                }
+                $entryCount = is_array($entries) && array_is_list($entries) && count($entries) <= 37 ? count($entries) : null;
+                // Entries are appended after nheh_step checks; they do not prove subsequent caller checks.
+                $summary = ['schema' => 1, 'status' => 'FAIL', 'scope' => 'LEGACY_HISTORY_HTTP_CATCH_DIAGNOSTIC_ONLY',
+                    'class' => $class, 'code' => $code, 'source_tag' => $sourceTag, 'line' => $line, 'callsite' => $callsite,
+                    'step_entries_count' => $entryCount, 'last_entry_sequence' => $entryCount > 0 ? $entryCount : null];
+                $json = json_encode($summary, JSON_UNESCAPED_SLASHES);
+                return is_string($json) && strlen($json) < 2048 ? $json : null;
+            };
+            if (PHP_SAPI === 'cli' && defined('STDERR')) {
+                $diagnostic = $formatFailure($error, $state['steps'] ?? null);
+                if (is_string($diagnostic)) @fwrite(STDERR, $diagnostic . "\n");
+            }
+        } catch (Throwable $ignored) {
+            // Diagnostics never replace the original failure or retain an exception chain.
+        }
+        $code = $error instanceof RuntimeException ? $error->getMessage() : '';
+        if (preg_match('/\ANHEH_[A-Z0-9_]+\z/D', $code) !== 1) $code = 'NHEH_NORMAL_HTTP_OR_OBSERVER_FAILED';
+        throw new RuntimeException($code);
+"""
+
+
+def _history_http_source(raw):
+    if not isinstance(raw, bytes) or (len(raw), hashlib.sha256(raw).hexdigest()) != HISTORY_HTTP_SOURCE_PIN:
+        raise ValueError("HISTORY_HTTP_EXACT_ARCHIVED_SOURCE_REQUIRED")
+
+
+def transform_history_http(raw: bytes) -> bytes:
+    _history_http_source(raw)
+    if raw.count(_HISTORY_HTTP_FAILURE_BEFORE) != 1 or _HISTORY_HTTP_FAILURE_AFTER in raw:
+        raise ValueError("HISTORY_HTTP_UNIQUE_FAILURE_CATCH_REQUIRED")
+    candidate = raw.replace(_HISTORY_HTTP_FAILURE_BEFORE, _HISTORY_HTTP_FAILURE_AFTER, 1)
+    if reverse_history_http(candidate) != raw:
+        raise ValueError("HISTORY_HTTP_COMPLETE_FAILURE_CATCH_REVERSE_REQUIRED")
+    return candidate
+
+
+def reverse_history_http(candidate: bytes) -> bytes:
+    if not isinstance(candidate, bytes) or candidate.count(_HISTORY_HTTP_FAILURE_AFTER) != 1:
+        raise ValueError("HISTORY_HTTP_UNIQUE_FAILURE_CATCH_REVERSE_REQUIRED")
+    raw = candidate.replace(_HISTORY_HTTP_FAILURE_AFTER, _HISTORY_HTTP_FAILURE_BEFORE, 1)
+    _history_http_source(raw)
+    return raw
