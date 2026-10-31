@@ -40,7 +40,7 @@
     </div>
     <el-dropdown :show-timeout="70" @command="onDropdownCommand">
       <span class="layout-navbars-breadcrumb-user-link">
-        <img :src="getUserInfos.head_pic" class="layout-navbars-breadcrumb-user-link-photo mr5" />
+        <img :src="avatarSrc" class="layout-navbars-breadcrumb-user-link-photo mr5" alt="" @error="onAvatarError" />
         {{ getUserInfos.account === '' ? 'test' : getUserInfos.account }}
         <i class="el-icon-arrow-down el-icon--right"></i>
       </span>
@@ -58,6 +58,7 @@
 
 <script>
 import { clearPlatformAuth } from '@/utils/storage';
+import Setting from '@/setting';
 import screenfull from 'screenfull';
 import { AccountLogout } from '@/api/account';
 import { Session, Local } from '@/utils/storage.js';
@@ -73,12 +74,24 @@ export default {
       disabledI18n: 'zh-cn',
       disabledSize: '',
       isDot: false,
+      avatarFailed: false,
     };
   },
   computed: {
     // 获取用户信息
     getUserInfos() {
       return this.$store.state.userInfo.userInfo || { account: '', head_pic: '' };
+    },
+    defaultAvatarSrc() {
+      const apiURL = new URL(Setting.apiBaseURL, window.location.href);
+      apiURL.pathname = apiURL.pathname.replace(/\/adminapi\/?$/, '/statics/system_images/admin_head_pic.png');
+      apiURL.search = '';
+      apiURL.hash = '';
+      return apiURL.href;
+    },
+    avatarSrc() {
+      const headPic = this.getUserInfos.head_pic;
+      return !this.avatarFailed && typeof headPic === 'string' && headPic.trim() ? headPic : this.defaultAvatarSrc;
     },
     // 设置弹性盒子布局 flex
     layoutUserFlexNum() {
@@ -89,6 +102,11 @@ export default {
       return num;
     },
   },
+  watch: {
+    'getUserInfos.head_pic'() {
+      this.avatarFailed = false;
+    },
+  },
   mounted() {
     if (Local.get('themeConfigPrev')) {
       this.initI18n();
@@ -96,6 +114,9 @@ export default {
     }
   },
   methods: {
+    onAvatarError(event) {
+      if (event.target.src !== this.defaultAvatarSrc) this.avatarFailed = true;
+    },
     closePopover() {
       this.$refs.searchPopover.doClose();
     },
