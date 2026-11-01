@@ -203,7 +203,10 @@ try{
     frp_check(PHP_SAPI==='cli'&&$argc===4&&extension_loaded('curl')&&extension_loaded('bcmath'),'fixed_CLI_actor_inputs');
     foreach([$argv[1],$argv[2]]as$input)frp_check(is_string($input)&&str_starts_with($input,'/run/refund-progress/')&&is_file($input)&&!is_link($input)&&str_starts_with((string)realpath($input),'/run/refund-progress/'),'only_mounted_parameter_files');
     $plan=json_decode(file_get_contents($argv[1]),true,32,JSON_THROW_ON_ERROR);
-    frp_check(is_array($plan)&&array_keys($plan)===['project','run_id','pause_after_partial']&&is_bool($plan['pause_after_partial']),'public_plan_exact_fields');
+    frp_check(is_array($plan)&&in_array(array_keys($plan),[['project','run_id','pause_after_partial'],['project','run_id','pause_after_partial','case_id']],true)
+        &&is_bool($plan['pause_after_partial'])&&(!array_key_exists('case_id',$plan)
+            ||(is_string($plan['case_id'])&&preg_match('/\A[a-z][a-z0-9_-]{0,7}\z/D',$plan['case_id'])===1)),'public_plan_exact_fields');
+    $caseId=$plan['case_id']??null;
     frp_check(!is_file('/run/preview-bootstrap/config.json')&&!is_link('/run/preview-bootstrap/config.json'),'no_bootstrap_config_before_any_private_config_read');
     preview_assert_isolated();$config=preview_config();
     frp_check(!is_file('/run/preview-bootstrap/config.json')&&!is_link('/run/preview-bootstrap/config.json')
@@ -234,7 +237,8 @@ try{
     $frpFile=fopen($file,'x+b');frp_check(is_resource($frpFile)&&flock($frpFile,LOCK_EX|LOCK_NB)&&chmod($file,0600),'new_private_receipt');
     $frpState=['schema'=>1,'scope'=>'NORMAL_SAME_APP_REFUND_PROGRESS_INTERNAL_CONTINUATION_ONLY','project'=>$plan['project'],'run_id'=>$plan['run_id'],
         'stage'=>'preparation','operations'=>[],'full_acceptance'=>false,'DOM_MiniProgram_real_funds'=>'NOT RUN','source_scope'=>'FOUR_CANDIDATE_PRODUCT_FILES_AND_EXISTING_TRACKED_APP',
-        'credential_inputs'=>'PATH_ONLY_CONTENT_RAM_NOT_SAVED_OR_HASHED'];frp_save();
+        'credential_inputs'=>'PATH_ONLY_CONTENT_RAM_NOT_SAVED_OR_HASHED'];
+    if($caseId!==null)$frpState['case_id']=$caseId;frp_save();
     $initialized=json_decode(file_get_contents('/run/preview-app/initialized.json'),true,64,JSON_THROW_ON_ERROR);
     frp_check($initialized['project']===$plan['project']&&$initialized['run_id']===$plan['run_id']&&($initialized['result']['synthetic_only']??null)===true,'actual_same_synthetic_seed');
     $fixture=$initialized['result'];$product=$fixture['products'][0]??null;frp_check(is_array($product),'actual_seed_product');
@@ -255,7 +259,7 @@ try{
     $attrs=frp_http('customer','GET','/api/v2/get_attr/'.$p['product_id'].'/0',null,$tokens['customer']);$sku=null;
     foreach($attrs['productValue']??[]as$row)if(($row['unique']??null)===$p['sku_unique']){frp_check($sku===null,'unique_sku');$sku=$row;}
     frp_check(is_array($sku)&&frp_id($sku['id']??null)===$p['sku_id']&&frp_id($detail['storeInfo']['mer_id']??null)===$p['merchant_id'],'real_product_sku_owner');
-    $unit=frp_money($sku['price']??null);$quantity=2;$goods=bcmul($unit,(string)$quantity,2);$prefix='refund-partial-progress:'.$kind.':'.FRP_RUN.($mode==='prepare_ui'?':UI':'');
+    $unit=frp_money($sku['price']??null);$quantity=2;$goods=bcmul($unit,(string)$quantity,2);$prefix='refund-partial-progress:'.$kind.':'.FRP_RUN.($mode==='prepare_ui'?':UI':'').($caseId===null?'':':'.$caseId);
     frp_check($unit==='20.15'&&$goods==='40.30','original_seed_price_no_price_mutation');
     $cart=frp_http('customer','GET','/api/cart/list?page=1&limit=20',null,$tokens['customer']);frp_check(($cart['valid']??null)===[]&&($cart['invalid']??null)===[],'new_case_empty_cart');
     $added=frp_http('customer','POST','/api/cart/add',['productId'=>$p['product_id'],'cartNum'=>$quantity,'uniqueId'=>$p['sku_unique'],'new'=>0,'is_new'=>0],$tokens['customer']);

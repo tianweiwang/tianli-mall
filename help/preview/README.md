@@ -4,11 +4,15 @@
 
 新专用实例入口：[顾客商城](http://127.0.0.1:18204/)、[商家售后](http://127.0.0.1:18204/merchant/#/aftersales)、[平台售后](http://127.0.0.1:18204/admin/marketplace/aftersales)。工作树为mall-refund-partial-progress；本轮运行时基于38c0及四个v2候选产品文件，不能只用baseline HEAD代称包含未提交候选。原18202、其它预览与冻结回归场景保持，均不收退真实资金。
 
-真实actor PID32812正常退出0：同一App、原TestPaymentDriver和同一退款尝试先保存pending/PARTIAL（确认20.15、占用20.15），再按原进程内可信观察推进到applied/SUCCEEDED（确认40.30、占用0.00）。两阶段均由新三角色HTTP读取保存结果，原付款40.30及库存保持。Root随后沿正常登录及售后列表/详情核对了新18204商家、平台桌面最终DOM，均显示业务已完成、资金已确认、40.30/40.30/0.00及保存测试记录1；两张桌面截图保存在本轮actual-app-progress18204-r1，两个临时标签随后全部关闭。此为本机合成数据的同App内部正常接续；新18204顾客DOM、PARTIAL阶段DOM、小程序原生/真机、旧无可信v2证据的PARTIAL历史迁移、跨进程恢复、真实渠道资金、费用冲回/对账结算与完整A/B验收尚未完成。停止的负向、故障、并发、恢复样本仍为NOT RUN。
+真实actor PID32812正常退出0：同一App、原TestPaymentDriver和同一退款尝试先保存pending/PARTIAL（确认20.15、占用20.15），再按原进程内可信观察推进到applied/SUCCEEDED（确认40.30、占用0.00）。两阶段均由新三角色HTTP读取保存结果，原付款40.30及库存保持。Root随后沿正常登录及售后列表/详情核对了新18204商家、平台桌面最终DOM，均显示业务已完成、资金已确认、40.30/40.30/0.00及保存测试记录1；两张桌面截图保存在本轮actual-app-progress18204-r1，两个临时标签随后全部关闭。此为本机合成数据的同App内部正常接续，初轮证据保持。
+
+后继r5已通过目标PHP语法及真实actor PID32820正常退出0；复用同一18204实例和已授予十三权限的原合成角色，以case_id=ui02建立根单2/售后2/尝试2。原App、driver和descriptor先保存确认20.15/占用20.15，三端实际显示PARTIAL；Root显式continue后保存确认40.30/占用0.00，三端重新读取并显示完成。两个阶段的新三角色HTTP均通过，原付款40.30、数量及退款阶段库存保持；页面窗口仅本次新根单2的is_remind有typed 0→1变化，严格RAM逆回与其余完整目标域比较通过，没有改写数据库通知值或重建driver。新18204根单1的顾客最终DOM也已补验。
+
+本轮三端PARTIAL和最终结果均已在桌面及375宽模拟视口实际核对，无页面级横向溢出；375视口下顾客/平台document宽375，商家document宽360（另有15像素滚动条），不将其写成clientWidth=375。采用的手机部分阶段记录为refund-ui-case18204-r1/partial-*-375-verified及partial-geometry-verified.json，最终记录为final-375-dom.json、final-*-375-full.jpg；桌面最终AX/截图和final-desktop-dom.json在同目录。初次未选中目标页而误标尺寸的记录保留，不作通过依据。三个临时标签已全部关闭，视口设置已恢复。小程序原生/真机、旧无可信v2证据的PARTIAL历史迁移、跨进程恢复、真实渠道资金、费用冲回/对账结算与完整A/B验收尚未完成；停止的负向、故障、并发、恢复样本仍为NOT RUN。
 
 可复用源码已归档：
 
-- [真实App/正常API actor](refund-partial-progress-actor.php)：已执行r4的完整原字节。
+- [真实App/正常API actor](refund-partial-progress-actor.php)：已执行r4正常链及带可选case_id的r5正常链；r5的ui02样本已完成上述三端两阶段页面核对。
 - [纯facts组件](../audit-regressions/refund-partial-progress-facts.php)：已验证r2的完整原字节；只运行公开合成数据和真实类静态合同，不启动App/数据库/HTTP/driver。
 - 运行回执继续保存在仓库外artifacts/refund-partial-progress-20261101-r1；不把私有参数、tokens、receipt、vendor或dist提交Git。
 
@@ -18,15 +22,23 @@ actor只接受三个参数：
 php /workspace/help/preview/refund-partial-progress-actor.php /run/refund-progress/plan.json /run/refund-progress/credentials.json /out/actor-result.json
 ~~~
 
-两个输入必须是/run/refund-progress/下的普通非symlink文件；输出必须是尚不存在的/out/actor-result.json。公开plan的键及顺序严格为：
+两个输入必须是/run/refund-progress/下的普通非symlink文件；输出必须是尚不存在的/out/actor-result.json。公开plan保持原有三个键及顺序：
 
 ~~~json
 {"project":"<本实例project>","run_id":"<本实例run_id>","pause_after_partial":false}
 ~~~
 
+同一已初始化实例要建立新的正常样本时，可仅按顺序追加第四键case_id，不重跑初始化或重建旧样本：
+
+~~~json
+{"project":"<本实例project>","run_id":"<本实例run_id>","pause_after_partial":true,"case_id":"ui02"}
+~~~
+
+case_id必须为1至8个ASCII字符，首字符为小写字母，其余仅小写字母、数字、下划线或短横线；须选用本实例尚未使用的标识。它只为该样本的原幂等前缀追加冒号及标识，并写入公开回执，不作为HTTP业务版本、金额或权限输入。省略case_id时，原三键调用的幂等前缀和回执保持。两种键集合以外的字段或顺序均不接受，原样本和旧运行回执不改签。
+
 pause_after_partial必须是布尔值。为true时须保持stdin打开，并在PARTIAL_READY后的300秒内显式输入一行continue（含末尾换行）；只允许原有一次正常进程内接续，不重启actor、不重建driver状态。凭据JSON顶层按顺序仅admin、merchant、customer，各项使用本实例已有合成账号的account/password。accounts-file的外层对象不能直接传入；仅在私有区域投影其accounts，不打印、不hash内容。
 
-先按正常API显式授权合成商家：原账号登录→GET /merchantapi/me核原商家/员工与原BUILTIN_ADMIN十二权限→POST /merchantapi/roles仅传name和permissions（原十二权限追加aftersale.test_refund）→PUT /merchantapi/employees/<原员工id>仅传role_id新角色整数ID→使用原凭据重新登录→再次GET me核同商家/员工、新角色和十三权限。name须为本轮唯一测试角色名；商家使用Authorization: Bearer。不修改默认角色、不通过SQL赋权。actor只核已授权角色，不自动授予权限；原成功流程可参考仓库外refund-normal-preview-r1.php143–160行。
+每轮先用原账号正常登录并GET /merchantapi/me，核同一商家/员工、实际角色及完整权限。已有18204已显式授予原十二权限加aftersale.test_refund的十三权限，新case须核对并复用该角色，不重复克隆角色或重新分配员工。仅首次新实例尚未授权、且实际角色恰为原BUILTIN_ADMIN十二权限时，才按正常API显式授权：POST /merchantapi/roles仅传本轮唯一name和permissions（原十二权限追加aftersale.test_refund）→PUT /merchantapi/employees/<原员工id>仅传role_id新角色整数ID→使用原凭据重新登录→再次GET me核同商家/员工、新角色和完整十三权限。身份或权限不符时停止核实，不通过SQL赋权或改默认角色；商家使用Authorization: Bearer。actor只核已授权角色，不自动授予权限；原首次授权成功流程可参考仓库外refund-normal-preview-r1.php143–160行。
 
 在Root确认隔离/输入、健康与环境窗口后，用已有PHP镜像建立一次app-only helper。运行选项为docker run --rm --pull=never，使用本轮唯一helper名、该实例既有<project>_preview网络、--read-only、--user 0:0、--cap-drop ALL、--cap-add DAC_OVERRIDE、--security-opt no-new-privileges、--tmpfs /tmp；pause_after_partial=true时另加-i。环境仅传公开的PREVIEW_ISOLATED=1、PREVIEW_PROJECT=<project>、PREVIEW_RUN_ID=<run_id>，三个值必须与原app配置和plan一致。按下表逐一用--mount提供输入；不把凭据值放进argv或日志：
 
@@ -60,7 +72,7 @@ php /workspace/help/audit-regressions/refund-partial-progress-facts.php
 
 已实际通过仅退款、取消未发商品、退回已发商品三种正常HTTP链，各40.30元，三角色读回的确认金额均40.30、占用0.00，同key后继HTTP保留原记录且不重复执行。另由商家桌面页和平台375宽页面分别实际点击退款，核保存的原付款/金额/库存及UI实际key。平台浏览产生的唯一订单变化是通知已读标记is_remind 0→1，其余订单字段通过完整摘要比对；原首次整行检查失败保留，并非改写成通过。另已实际核对订单7的买2退1正常申请：原测试付款40.30元/数量2保持，仅选择1件退款20.15元，确认20.15元/占用0，末尾原quote剩余额度及该商品可申请金额均20.15元，三角色API一致、同key后继HTTP不重复执行。该申请自身已全额确认；这不代表历史finance_state=PARTIAL的金融后继已实现。实际记录位于仓库外 `artifacts/ms5-test-refund-20261101-r1`。
 
-新小程序工程 `H:/天俪商城/artifacts/ms5-test-refund-20261101-r1/mp-build18202-r1/mp-weixin/dist` 已构建并指向18202；当前微信工具登录过期，尚未签此版本原生页面。旧330顾客H5的四个售后案例已完成桌面和375宽DOM核对；新18204顾客与PARTIAL阶段DOM及两版小程序原生页面仍未验。原生上传/设备、非空历史、旧无可信v2证据的PARTIAL历史推进、跨进程恢复、真实资金、费用冲回/对账结算及完整阶段验收继续待办；用户停止的负向、故障、并发、恢复样本保持NOT RUN。以下旧轮次说明仅对应各自当时来源与实例。
+新小程序工程 `H:/天俪商城/artifacts/ms5-test-refund-20261101-r1/mp-build18202-r1/mp-weixin/dist` 已构建并指向18202；当前微信工具登录过期，尚未签此版本原生页面。旧330顾客H5的四个售后案例已完成桌面和375宽DOM核对；新18204顾客最终DOM及ui02三端PARTIAL/最终的桌面和375视口已在前述本机同App增量中补验；两版小程序原生页面仍未验。原生上传/设备、非空历史、旧无可信v2证据的PARTIAL历史推进、跨进程恢复、真实资金、费用冲回/对账结算及完整阶段验收继续待办；用户停止的负向、故障、并发、恢复样本保持NOT RUN。以下旧轮次说明仅对应各自当时来源与实例。
 
 ## 管理员列表字段修复（2026-10-30）
 
