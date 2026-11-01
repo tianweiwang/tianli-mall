@@ -1,5 +1,15 @@
 # 本机多商户预览
 
+## 测试交易退款事实展示（18206，2026-11-02）
+
+入口：[平台测试交易](http://127.0.0.1:18206/admin/marketplace/finance-transactions)。这是新建的 source-full 隔离实例，应用基于 `104cd906`；该提交的应用及三端输入与退款展示提交 `b1c58ce8` 相同。平台使用这次真实构建，商家/H5复用已核同输入的原构建。账号只保存在本实例 `private/preview-accounts.json`；资金只读合成账号在 `private/finance-readonly-account.json`，不提交其内容。
+
+测试交易表新增“退款事实”，显示保存事实中的累计已确认退款和当前占用。根单2已在同一 App、同一原测试 driver 中由 `20.15 / 20.15` 推进到 `40.30 / 0.00`；两个阶段的三角色新HTTP、Finance真实接口、平台桌面与375宽页面均已核对。原订单金额始终40.30；完整Finance投影只有根单2的退款摘要变化，其他付款、规则、费用、分页及根单1保持。独立资金只读角色正常登录后也取得完全相同的投影，只授予 `marketplace-finance-transactions-read`。这些都是合成数据和测试支付，真实资金开关仍为false，通道费、实际应收和结算仍为null。
+
+根单1保留首轮控制台续推校验失败后的 `20.15 / 20.15`，未重放或重建driver，也不作为最终成功样本。后继fin02复用了原二进制PIPE调用，原进程实际退出0、stderr空，从观察partial到精确LF续推为25.308秒；原300秒和全部业务断言保持。Windows调用带暂停的actor时，应由宿主进程持有 `subprocess.PIPE`，显式写入 `b'continue\n'` 并flush；不要依赖终端的行尾转换。原actor及其参数、隔离挂载和正常角色授权方法见下文。
+
+本轮证据在仓库外 `artifacts/finance-refund-facts-20261102-r1`：`actual-api18206-r1`、`actor-fin02-r1` 和 `ui18206-r1`。这是可操作的退款事实查看增量，未完成机构账单对账、费用冲回/结算、真实渠道、旧PARTIAL跨进程、真机或完整A/B及发布验收；执行顺序仍只维护在原PROGRESS。
+
 ## 测试退款同App部分进度预览（18204，2026-11-01）
 
 新专用实例入口：[顾客商城](http://127.0.0.1:18204/)、[商家售后](http://127.0.0.1:18204/merchant/#/aftersales)、[平台售后](http://127.0.0.1:18204/admin/marketplace/aftersales)。工作树为mall-refund-partial-progress；本轮运行时基于38c0及四个v2候选产品文件，不能只用baseline HEAD代称包含未提交候选。原18202、其它预览与冻结回归场景保持，均不收退真实资金。
