@@ -84,13 +84,15 @@ final class MarketplaceRefundServices
             }
             if(!$this->eligible($saved))throw new HttpException(409,'该售后申请当前不可执行测试退款');
             $winner=$this->winner($saved);$approval=$this->approval($saved);$view=$saved['refund'];
-            $binding=MarketplaceRefundEvidence::binding(['refund_contract_version'=>1,'refund_id'=>$refundId,
+            $driver=$this->app->make(PaymentAdapter::class);if(!$driver instanceof TestPaymentDriver)self::fail();
+            $version=$driver->refundContractVersion($refundId,$idem);
+            $binding=MarketplaceRefundEvidence::binding(['refund_contract_version'=>$version,'refund_id'=>$refundId,
                 'root_order_id'=>$candidate['root_order_id'],'order_no'=>$candidate['root_order_no'],'uid'=>$candidate['uid'],
                 'mer_id'=>$candidate['mer_id'],'payment_attempt_id'=>$winner['id'],'payment_attempt_ref'=>$winner['attempt_ref'],
                 'provider_trade_no'=>$winner['applied_trade_no'],'approval_action_id'=>$approval,
                 'amount'=>$view['held_amount'],'confirmed_before'=>$view['confirmed_amount'],'requested_amount'=>$view['requested_amount'],
                 'currency'=>'CNY','account_snapshot'=>$winner['account_snapshot']]);
-            $now=self::now();$data=['contract_version'=>1,'refund_id'=>$refundId,'root_order_id'=>$candidate['root_order_id'],
+            $now=self::now();$data=['contract_version'=>$version,'refund_id'=>$refundId,'root_order_id'=>$candidate['root_order_id'],
                 'uid'=>$candidate['uid'],'mer_id'=>$candidate['mer_id'],'payment_attempt_id'=>$winner['id'],'approval_action_id'=>$approval,
                 'idem_key'=>$idem,'request_digest'=>hash('sha256',MarketplaceRefundEvidence::canonical(['binding'=>$binding,'idempotency_key'=>$idem]),true),
                 'binding_digest'=>hash('sha256',MarketplaceRefundEvidence::canonical($binding),true),'account_domain_digest'=>$winner['account_domain_digest'],
@@ -102,6 +104,17 @@ final class MarketplaceRefundServices
         $row=$admission['row'];
         if(!$admission['new']){
             if(MarketplaceRefundEvidence::state($row)==='applied')return $this->dto($row,$admission['saved']);
+            if($row['contract_version']===2&&MarketplaceRefundEvidence::state($row)==='pending'){
+                $driver=$this->app->make(PaymentAdapter::class);if(!$driver instanceof TestPaymentDriver)self::fail();
+                $this->outside($connection,$pdo);if($this->authorize($request,$merchant,$scope)!==$identity)self::fail();
+                $result=$driver->queryRefund(MarketplaceRefundEvidence::descriptor($row));
+                if(($result['state']??null)!=='unknown'){
+                    $saved=$this->saveResult($connection,$pdo,$request,$merchant,$scope,$identity,$candidate,$refundId,$row,'queryRefund',$result);
+                    return $this->dto($saved['row'],$saved['saved']);
+                }
+                // The shared unknown result conveys no authority. Never append it, recreate or complete an attempt here.
+                MarketplaceRefundEvidence::result($result);
+            }
             throw new HttpException(409,'测试退款结果待确认，请保留原申请，不要另建请求');
         }
         $driver=$this->app->make(PaymentAdapter::class);if(!$driver instanceof TestPaymentDriver)self::fail();
@@ -114,7 +127,8 @@ final class MarketplaceRefundServices
         if($this->app->make(PaymentAdapter::class)!==$driver)self::fail();
         $descriptor=MarketplaceRefundEvidence::descriptor($saved['row']);
         $completed=$driver->completeTestRefund($descriptor);
-        if(($completed['state']??null)!=='succeeded')throw new HttpException(409,'测试退款结果待确认，请保留原申请');
+        if(($completed['state']??null)!=='succeeded'&& !($row['contract_version']===2&&($completed['state']??null)==='pending'))
+            throw new HttpException(409,'测试退款结果待确认，请保留原申请');
         $actualResult=$driver->queryRefund($descriptor);
         $saved=$this->saveResult($connection,$pdo,$request,$merchant,$scope,$identity,$candidate,$refundId,$saved['row'],'queryRefund',$actualResult);
         return $this->dto($saved['row'],$saved['saved']);
@@ -127,7 +141,10 @@ final class MarketplaceRefundServices
             if($this->authorize($request,$merchant,$scope,true)!==$identity)self::fail();
             $before=$this->intents->find($pdo,$refundId,true);
             if($before===null||$before['id']!==$original['id']||!hash_equals($before['request_digest'],$original['request_digest']))self::fail();
-            $this->savedBinding($before,$saved);$observed=MarketplaceRefundEvidence::observe($before,$op,$result,self::now());
+            $this->savedBinding($before,$saved);
+            if($before['contract_version']===2)return $this->saveProgress($connection,$pdo,$request,$merchant,$scope,$identity,
+                $candidate,$refundId,$before,$saved,$op,$result);
+            $observed=MarketplaceRefundEvidence::observe($before,$op,$result,self::now());
             if(!$observed['new'])return ['row'=>$before,'saved'=>$saved];
             $row=$this->intents->save($pdo,$before,$observed['row']);$fact=$observed['fact'];$binding=$row['evidence']['binding'];
             $success=$fact['result']['state']==='succeeded';
@@ -156,6 +173,38 @@ final class MarketplaceRefundServices
             if($this->authorize($request,$merchant,$scope,true)!==$identity)self::fail();
             return ['row'=>$row,'saved'=>$final];
         });
+    }
+    /** Called only inside saveResult's original native transaction. No incomplete progress row is saved. */
+    private function saveProgress(ConnectionInterface $connection,PDO $pdo,Request $request,?MerchantContext $merchant,?PlatformScope $scope,
+        array $identity,array $candidate,int $refundId,array $before,array $saved,string $op,array $result):array
+    {
+        $this->inside($connection,$pdo);$observed=MarketplaceRefundEvidence::observe($before,$op,$result,self::now());
+        if(!$observed['new'])return ['row'=>$before,'saved'=>$saved];
+        $after=$observed['row'];$fact=$observed['fact'];$state=MarketplaceRefundEvidence::progressState($fact['result']);
+        $view=$saved['refund'];$applied=null;
+        if($view['finance_state']!==$state['finance_state']||$view['confirmed_amount']!==$state['confirmed_amount']){
+            $body=['source_ref'=>'test-refund:'.$before['id'].':'.$fact['key'],'observed_state'=>$state['finance_state'],
+                'currency'=>'CNY','confirmed_amount'=>$state['confirmed_amount'],'observed_at'=>$fact['at']];
+            $this->observationContext=['stage'=>'writer','writer'=>$this->writer,'dao'=>$this->refunds,'connection'=>$connection,'pdo'=>$pdo,
+                'candidate'=>$candidate,'refund_id'=>$refundId,'payment_attempt_id'=>$before['payment_attempt_id'],'body'=>$body];
+            try{$applied=$this->writer->observeTestRefund($connection,$pdo,$candidate,$refundId,$body);}
+            finally{$this->observationContext=null;}
+            $after['evidence']['applications'][]=['fact'=>$fact['key'],'action_id'=>$applied['action_id'],'applied_at'=>$applied['applied_at'],
+                'finance_state'=>$state['finance_state'],'confirmed_amount'=>$state['confirmed_amount'],'refund_no'=>$fact['result']['provider_refund_no']];
+            $after['updated_at']=max($after['updated_at'],$applied['applied_at']);
+        }
+        if($fact['result']['state']==='succeeded'){
+            if($op!=='queryRefund'||$applied===null)self::fail();
+            $after['applied_refund_no']=$fact['result']['provider_refund_no'];
+            $after['evidence']['application']=['fact'=>$fact['key'],'action_id'=>$applied['action_id'],
+                'applied_at'=>$applied['applied_at'],'refund_no'=>$fact['result']['provider_refund_no']];
+        }
+        $row=$this->intents->save($pdo,$before,MarketplaceRefundEvidence::row($after));
+        $final=$this->locked($connection,$pdo,$candidate,$refundId);$this->savedBinding($row,$final);
+        $this->audit->record($merchant===null?'admin':'merchant',$identity['actor_id'],$candidate['mer_id'],
+            $merchant===null?self::PERMISSION:self::MERCHANT_PERMISSION,'test_refund',(string)$refundId,'success');
+        if($this->authorize($request,$merchant,$scope,true)!==$identity)self::fail();
+        return ['row'=>$row,'saved'=>$final];
     }
     /** Called only by the exact driver before it creates any private refund map entry. */
     public function consumeCreateContext(TestPaymentDriver $driver,array $original,array $actual,string $idem):void
@@ -232,6 +281,7 @@ final class MarketplaceRefundServices
             ||$b['provider_trade_no']!==$winner['applied_trade_no']||$b['requested_amount']!==$saved['refund']['requested_amount']
             ||MarketplaceRefundEvidence::canonical($row['account_snapshot'])!==MarketplaceRefundEvidence::canonical($winner['account_snapshot'])
             ||!hash_equals($row['account_domain_digest'],$winner['account_domain_digest']))self::fail();
+        if($row['contract_version']===2){$this->savedProgressBinding($row,$saved);return;}
         if($row['evidence']['application']!==null){
             $a=$row['evidence']['application'];$match=null;
             foreach($saved['inspection']['actions'] as $action)if($action['id']===$a['action_id'])$match=$action;
@@ -240,6 +290,24 @@ final class MarketplaceRefundServices
                 ||$saved['refund']['finance_state']!=='SUCCEEDED'||$saved['refund']['confirmed_amount']!==$saved['refund']['requested_amount']
                 ||$saved['refund']['held_amount']!=='0.00')self::fail();
         }
+    }
+    private function savedProgressBinding(array $row,array $saved):void
+    {
+        $e=$row['evidence'];$facts=[];foreach($e['observations'] as $fact)$facts[$fact['key']]=$fact;
+        $actions=[];foreach($saved['inspection']['actions'] as $action)$actions[$action['id']]=$action;
+        foreach($e['applications'] as $a){
+            $fact=$facts[$a['fact']]??null;$action=$actions[$a['action_id']]??null;
+            if(!is_array($fact)||!is_array($action)||$action['action']!=='finance_observe'||$action['refund_id']!==$row['refund_id']
+                ||(string)$action['payment_attempt_id']!==$row['payment_attempt_id']||$action['actor_type']!=='payment'
+                ||MarketplaceRefundEvidence::id($action['committed_at'],4294967295)!==$a['applied_at'])self::fail();
+            $body=['source_ref'=>'test-refund:'.$row['id'].':'.$a['fact'],'observed_state'=>$a['finance_state'],'currency'=>'CNY',
+                'confirmed_amount'=>$a['confirmed_amount'],'observed_at'=>$fact['at']];
+            if(MarketplaceRefundEvidence::canonical($action['request_payload']['public_body'])!==MarketplaceRefundEvidence::canonical($body))self::fail();
+        }
+        $v=$saved['refund'];$last=$e['applications']===[]?null:$e['applications'][count($e['applications'])-1];
+        $confirmed=$last['confirmed_amount']??$e['binding']['confirmed_before'];
+        if($v['confirmed_amount']!==$confirmed||$v['held_amount']!==bcsub($v['requested_amount'],$confirmed,2)
+            ||($last===null?!in_array($v['finance_state'],['NOT_SUBMITTED','UNSUPPORTED'],true):$v['finance_state']!==$last['finance_state']))self::fail();
     }
     private function dto(array $row,array $saved):array
     {

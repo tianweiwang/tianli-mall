@@ -14,6 +14,7 @@ final class TestPaymentDriver implements PaymentAdapter
     private array $attempts=[];
     private array $refundAttempts=[];
     private array $refundByKey=[];
+    private array $refundProgressPlans=[];
     private array $byOrder=[];
     private array $byIdempotency=[];
     private readonly \think\App $app;
@@ -99,6 +100,26 @@ final class TestPaymentDriver implements PaymentAdapter
         return ['state'=>'known','scope'=>self::SCOPE,'attempts'=>$attempts];
     }
 
+    /** Internal normal-test control only: no route/configuration can register or reconstruct a plan. */
+    public function planTestRefundProgress(int $refundId,string $idempotencyKey,array $amounts):void
+    {
+        $this->assertScope();\app\services\marketplace\payment\MarketplaceRefundEvidence::id($refundId);
+        \app\services\marketplace\payment\MarketplaceRefundEvidence::key($idempotencyKey);
+        if(!array_is_list($amounts)||count($amounts)<2||count($amounts)>30)throw new AuthUnavailableException();
+        $previous='0.00';foreach($amounts as $amount){
+            \app\services\marketplace\payment\MarketplaceRefundEvidence::money($amount,true);
+            if(bccomp($amount,$previous,2)<=0)throw new AuthUnavailableException();$previous=$amount;
+        }
+        $slot=$refundId."\0".$idempotencyKey;
+        if(isset($this->refundByKey[$slot])||isset($this->refundProgressPlans[$slot]))throw new AuthUnavailableException();
+        $this->refundProgressPlans[$slot]=$amounts;
+    }
+    public function refundContractVersion(int $refundId,string $idempotencyKey):int
+    {
+        $this->assertScope();\app\services\marketplace\payment\MarketplaceRefundEvidence::id($refundId);
+        \app\services\marketplace\payment\MarketplaceRefundEvidence::key($idempotencyKey);
+        return isset($this->refundProgressPlans[$refundId."\0".$idempotencyKey])?2:1;
+    }
     public function createRefund(array $originalPaymentAttempt, array $actualRefund, string $idempotencyKey): array
     {
         $this->assertScope();
@@ -112,8 +133,14 @@ final class TestPaymentDriver implements PaymentAdapter
             if($this->refundAttempts[$ref]['binding']!==$binding)throw new AuthUnavailableException();
             return $this->refundResult($ref);
         }
+        $progress=[];
+        if($binding['refund_contract_version']===2){
+            $plan=$this->refundProgressPlans[$slot]??null;
+            if(!is_array($plan)||$plan[count($plan)-1]!==$binding['amount'])throw new AuthUnavailableException();
+            $progress=['confirmed_amount'=>'0.00','progress'=>$plan,'next'=>0];
+        }elseif(isset($this->refundProgressPlans[$slot]))throw new AuthUnavailableException();
         do{$ref='test-refund:'.bin2hex(random_bytes(16));}while(isset($this->refundAttempts[$ref]));
-        $this->refundAttempts[$ref]=['state'=>'pending','binding'=>$binding,'provider_refund_no'=>null];
+        $this->refundAttempts[$ref]=['state'=>'pending','binding'=>$binding,'provider_refund_no'=>null]+$progress;
         $this->refundByKey[$slot]=$ref;return $this->refundResult($ref);
     }
 
@@ -129,9 +156,28 @@ final class TestPaymentDriver implements PaymentAdapter
     {
         $this->assertScope();$ref=$this->knownRefund($original);
         if($ref===null)return self::unknownRefund();
+        if($this->refundAttempts[$ref]['binding']['refund_contract_version']===2)return $this->advanceTestRefund($original);
         if($this->refundAttempts[$ref]['state']==='pending'){
             $this->refundAttempts[$ref]['state']='succeeded';
             $this->refundAttempts[$ref]['provider_refund_no']='test-rfnd:'.substr($ref,strlen('test-refund:'));
+        }
+        return $this->refundResult($ref);
+    }
+
+    /** Advance only this instance's original descriptor; queryRefund itself never advances a plan. */
+    public function advanceTestRefund(array $original):array
+    {
+        $this->assertScope();$ref=$this->knownRefund($original);
+        if($ref===null)return self::unknownRefund();$saved=$this->refundAttempts[$ref];
+        if($saved['binding']['refund_contract_version']!==2)throw new AuthUnavailableException();
+        if($saved['state']==='pending'){
+            $amount=$saved['progress'][$saved['next']]??null;
+            if(!is_string($amount)||bccomp($amount,$saved['confirmed_amount'],2)<=0)throw new AuthUnavailableException();
+            $saved['confirmed_amount']=$amount;$saved['next']++;
+            if($amount===$saved['binding']['amount']){
+                $saved['state']='succeeded';$saved['provider_refund_no']='test-rfnd:'.substr($ref,strlen('test-refund:'));
+            }
+            $this->refundAttempts[$ref]=$saved;
         }
         return $this->refundResult($ref);
     }
@@ -148,9 +194,11 @@ final class TestPaymentDriver implements PaymentAdapter
     private function refundResult(string $ref):array
     {
         $saved=$this->refundAttempts[$ref];
-        return ['state'=>$saved['state'],'scope'=>\app\services\marketplace\payment\MarketplaceRefundEvidence::SCOPE,
+        $result=['state'=>$saved['state'],'scope'=>\app\services\marketplace\payment\MarketplaceRefundEvidence::SCOPE,
             'attempt_ref'=>$ref,'binding_sha256'=>hash('sha256',MarketplaceOrderInput::canonical($saved['binding'])),
             'binding'=>$saved['binding'],'provider_refund_no'=>$saved['provider_refund_no']];
+        if($saved['binding']['refund_contract_version']===2)$result+=['schema'=>2,'confirmed_amount'=>$saved['confirmed_amount']];
+        return $result;
     }
     private static function unknownRefund():array
     {

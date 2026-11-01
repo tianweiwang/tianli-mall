@@ -62,6 +62,8 @@ final class MarketplaceRefundDao
         if($before['applied_refund_no']!==null&&$before['applied_refund_no']!==$after['applied_refund_no'])self::fail();
         if(Facts::canonical(array_slice($after['evidence']['observations'],0,count($before['evidence']['observations'])))
             !==Facts::canonical($before['evidence']['observations']))self::fail();
+        if($before['contract_version']===2&&Facts::canonical(array_slice($after['evidence']['applications'],0,count($before['evidence']['applications'])))
+            !==Facts::canonical($before['evidence']['applications']))self::fail();
         foreach(['create','success','application'] as $key)if($before['evidence'][$key]!==null
             &&$after['evidence'][$key]!==$before['evidence'][$key])self::fail();
         if($after['updated_at']<$before['updated_at'])self::fail();if($after===$before)return $before;
