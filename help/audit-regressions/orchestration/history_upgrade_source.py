@@ -1497,7 +1497,9 @@ def _legacy_anchor_initializer_seams():
     refund_after = (b"                $refundObserver=audit_db();$refundObserver->setAttribute(PDO::ATTR_EMULATE_PREPARES,false);\n"
                     b"                \\crmeb\\services\\marketplace\\RefundSchemaReadiness::assertReady($refundObserver,'eb_');")
     return ((anchor, helper + anchor), (old_call, new_call),
-            (schema_before, schema_after), (refund_before, refund_after))
+            (schema_before, schema_after), (refund_before, refund_after),
+            (b"count($expected['names']) === 173", b"count($expected['names']) === 174"),
+            (b"CURRENT_READER_REGISTER_ACTUAL_FULL173_UPGRADE_BASELINE", b"CURRENT_READER_REGISTER_ACTUAL_FULL174_UPGRADE_BASELINE"))
 
 
 def _legacy_anchor_producer_seams():
