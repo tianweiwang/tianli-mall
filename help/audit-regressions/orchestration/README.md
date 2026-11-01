@@ -1,5 +1,9 @@
 # 多商户正常验证编排源码
 
+`verify_history_zero.py` 是当前 history reader 正常关闭后的独立只读入口，仅接受显式 `--profile current-history-reader-v1`，并要求 `--context`、`--close-result-sha256`、`--close-source-sha256`、`--source-sha256` 和全新外置 `--output`。Root 须先取得原 Host close 外层自然退出0；工具精确消费实际12键 close、9键 before、11条普通关闭操作及原7/12键 native 四件的 `wait_exit`，不补造旧协议字段。原冻结 independent-zero r2 及其 PLAN 保持，工具只依赖标准库和同目录固定摘要的 `retire_failed_history.py` 纯 helper，运行不加载仓库外脚本。
+
+该入口核 phase INDEX/原 pins、冻结双源及14件准备来源，从本次独立窗口起保全公件完整字节、原生九字段与命名空间，私有内容只读元数据；五个资源原件 `manifest.json/network.json/containers.jsonl/volumes.txt/volumes.jsonl` 按阶段正常演进，各归档自身仍严格按 INDEX 校验，其余已归档原件保持。随后仅执行六项 fresh 标签查询和安全全局 CID/名称/网络/物理挂载别名投影，全部原生四件写入 OUT，不停止或删除资源。结果不声称 R21 未产生的旧 PUBLIC-INPUTS 关闭期保全，不替代13seal→4CLI→22CLI→9HTTP的完整非作者业务读回，`full_acceptance` 保持 `INCOMPLETE`；SOURCE/compile/help 不代表真实 zero 已执行。
+
 本目录补齐此前只保存在原机仓库外 `ms4-worker-normal-source-preparation-r1` 中的编排程序。`sources/` 按精确允许清单保存原文件的完整字节；[source-manifest.json](source-manifest.json) 记录逐文件来源相对路径、长度、SHA-256 和角色。
 
 现用作者另需的两组固定公共 donor 也保存在同一索引：原 `project-organization-20261023` 下的 baseline PINS/Core9/B31 与 historical-normal PINS/18件，新增60件、66,018,409字节。新增行单列真实 `origin_root`，原242行及其归档字节保持；只选源码、来源索引和合成棋盘图，不递归收入原目录中的其它文件或运行资料。
