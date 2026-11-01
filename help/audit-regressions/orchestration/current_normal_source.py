@@ -1322,6 +1322,121 @@ def normal_source_read_profile_changes(host: bytes) -> tuple[bytes, bytes, bytes
     }
 
 
+def normal_source_parent_profile_changes(host: bytes) -> tuple[bytes, bytes, bytes, dict[str, Any]]:
+    """Check each complete parent set before and after this scan's full file read."""
+    original = functions(host)["source_tree_manifest"]
+    require(pin(original) == {"bytes": 1813,
+            "sha256": "1cb740acea8749676fbb233abbbb73e0113cc76e196351b1f2dc153166b7eb58"},
+            "EXACT_ORIGINAL_NORMAL_SOURCE_TREE_MANIFEST")
+    previous_parent = (b"            path = repo / parent\n"
+                       b"            expect(path.is_dir() and not path.is_symlink() and path.resolve(strict=True) == path,\n"
+                       b"                   'SOURCE_TREE_REAL_TRACKED_PARENT_NO_LINK')\n"
+                       b"            directories.add(parent)\n")
+    current_parent = (b"            if parent not in directories:\n"
+                      b"                path = repo / parent\n"
+                      b"                expect(path.is_dir() and not path.is_symlink() and path.resolve(strict=True) == path,\n"
+                      b"                       'SOURCE_TREE_REAL_TRACKED_PARENT_NO_LINK')\n"
+                      b"                directories.add(parent)\n"
+                      b"                parent_order.append(parent)\n")
+    previous_files = b"    files = [source_row(repo, relative) for relative in paths]\n"
+    current_files = (previous_files
+                     + b"    for parent in parent_order:\n"
+                       b"        path = repo / parent\n"
+                       b"        expect(path.is_dir() and not path.is_symlink() and path.resolve(strict=True) == path,\n"
+                       b"               'SOURCE_TREE_REAL_TRACKED_PARENT_NO_LINK')\n")
+    replacements = ((b"    directories = set()\n", b"    directories = set()\n    parent_order = []\n"),
+                    (previous_parent, current_parent), (previous_files, current_files))
+    candidate = original
+    for previous, current in replacements:
+        candidate = once(candidate, previous, current)
+    recovered = candidate
+    for previous, current in reversed(replacements):
+        recovered = once(recovered, current, previous)
+    require(recovered == original, "NORMAL_SOURCE_PARENT_FUNCTION_EXACT_INVERSE")
+    result = once(host, original, candidate)
+    require(once(result, candidate, original) == host, "NORMAL_SOURCE_PARENT_WHOLE_HOST_EXACT_INVERSE")
+    compile(result, 'derived-ms4-host-unique-parents.py', 'exec')
+    return result, original, candidate, {
+        "function": "source_tree_manifest", "before": pin(original), "after": pin(candidate),
+        "whole_host_inverse_exact": True, "all_unique_parents_checked_twice_per_scan": True,
+        "parent_first_encounter_order_retained": True, "all_file_bytes_and_hashes_retained": True,
+        "final_complete_parent_check_before_clean": True, "cross_scan_or_cli_cache": False,
+        "manifest_shape_and_git_clean_checks_retained": True,
+    }
+
+
+def normal_worker_source_profile_changes(initializer: bytes) -> tuple[bytes, dict[str, Any]]:
+    """Reuse this gate's fully verified Worker superset in the two Worker proofs."""
+    gate_start = initializer.index(b"function m4i_gate(string $phase): array\n")
+    source_start = initializer.index(b"\nfunction m4i_sourceFile(", gate_start)
+    worker_start = initializer.index(b"function m4i_worker_sources(array $binding): void\n")
+    worker_end = initializer.index(b"\nfunction m4i_source(", worker_start)
+    original_gate = initializer[gate_start:source_start]
+    original_worker = initializer[worker_start:worker_end]
+    require(pin(original_gate) == {"bytes": 13577,
+            "sha256": "981ab6002eda8f7d8a51903f3a7eea38e5f5599a0fc62f93bf585aed09b220db"},
+            "EXACT_ORIGINAL_NORMAL_WORKER_GATE")
+    require(pin(original_worker) == {"bytes": 4792,
+            "sha256": "c777c08e2f27002706b4ea91d03ee0f5a0e936897fdbf24c5515daf289182382"},
+            "EXACT_ORIGINAL_NORMAL_WORKER_SOURCE_VERIFIER")
+    previous_call = b"m4i_sourceFile("
+    current_call = b"$sourceFile("
+    require(original_gate.count(previous_call) == 8, "EXACT_NORMAL_GATE_SOURCE_CALL_COUNT")
+    gate = original_gate.replace(previous_call, current_call)
+    worker_call = (b"    if (in_array($proof, ['register-worker-normal', 'authorize-worker-cleanup'], true)) "
+                   b"m4i_worker_sources($binding);\n")
+    gate = once(gate, worker_call, b"")
+    anchor = b"    foreach (m4i_cu_form_source_files() as $row) {\n"
+    local_reader = b"""    $workerRows = in_array($proof, ['register-worker-normal', 'authorize-worker-cleanup'], true)
+        ? m4i_worker_sources($binding) : null;
+    $sourceFile = static function(string $namespace, array $row) use ($workerRows): void {
+        if ($workerRows !== null && in_array($namespace, ['/workspace', '/source'], true)
+            && is_string($row['path'] ?? null) && isset($workerRows[$row['path']])) {
+            m2f_assert($row === $workerRows[$row['path']], 'WORKER_SAME_GATE_COMPLETE_SOURCE_DESCRIPTOR');
+            return;
+        }
+        m4i_sourceFile($namespace, $row);
+    };
+"""
+    gate = once(gate, anchor, local_reader + anchor)
+    recovered_gate = once(gate, local_reader + anchor, anchor)
+    tail = b"    foreach ($binding['preparation_source_references'] as $item)"
+    recovered_gate = once(recovered_gate, tail, worker_call + tail)
+    require(recovered_gate.count(current_call) == 8, "EXACT_NORMAL_GATE_SOURCE_CALL_INVERSE_COUNT")
+    recovered_gate = recovered_gate.replace(current_call, previous_call)
+    require(recovered_gate == original_gate, "NORMAL_WORKER_GATE_FUNCTION_EXACT_INVERSE")
+    previous_signature = b"function m4i_worker_sources(array $binding): void\n"
+    current_signature = b"function m4i_worker_sources(array $binding): array\n"
+    previous_end = b"\n}\n"
+    current_end = b"\n    return $workerRows;\n}\n"
+    worker = once(once(original_worker, previous_signature, current_signature), previous_end, current_end)
+    recovered_worker = once(once(worker, current_end, previous_end), current_signature, previous_signature)
+    require(recovered_worker == original_worker, "NORMAL_WORKER_SOURCE_FUNCTION_EXACT_INVERSE")
+    result = once(once(initializer, original_gate, gate), original_worker, worker)
+    require(once(once(result, worker, original_worker), gate, original_gate) == initializer,
+            "NORMAL_WORKER_SOURCE_WHOLE_INITIALIZER_EXACT_INVERSE")
+    original_source_file = initializer[source_start:worker_start]
+    result_source_start = result.index(b"\nfunction m4i_sourceFile(")
+    result_worker_start = result.index(current_signature)
+    require(result[result_source_start:result_worker_start] == original_source_file,
+            "NORMAL_WORKER_ORIGINAL_SOURCE_FILE_VERIFIER_RETAINED")
+    return result, {
+        "functions": {
+            "m4i_gate": {"before": pin(original_gate), "after": pin(gate)},
+            "m4i_worker_sources": {"before": pin(original_worker), "after": pin(worker)},
+        },
+        "whole_initializer_inverse_exact": True, "both_function_inverses_exact": True,
+        "worker_proofs": ["register-worker-normal", "authorize-worker-cleanup"],
+        "verified_namespaces": ["/workspace", "/source"],
+        "five_complete_groups_and_31_extras_retained": True,
+        "both_namespace_full_reads_and_fixed_donors_retained": True,
+        "complete_descriptor_equality_required_for_reuse": True,
+        "nonworker_and_unmatched_and_artifact_reads_retained": True,
+        "original_source_file_function_and_other_call_sites_retained": True,
+        "cross_gate_or_phase_cache": False,
+    }
+
+
 def build_profile(output: str | Path, authority_pointer: dict[str, Any],
                   isolation_subnet: str | None = None) -> dict[str, Any]:
     if isolation_subnet is not None:
@@ -1599,7 +1714,13 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
                 and all(constant(after[name], "CUSTOMER_FORM_SOURCE_FILES") == tuple(form_sources)
                         for name in ("ms4-host.py", "verify-zero-ms4-fulfillment.py")),
                 "INITIALIZER_HOST_ZERO_INTERFACE_SAME_SEVEN_FORM_SOURCES")
+    worker_source_proof = None
+    if worker_current == WORKER_STARTUP_READINESS:
+        after["ms4-initialize.php"], worker_source_proof = normal_worker_source_profile_changes(
+            after["ms4-initialize.php"])
     after["ms4-host.py"], source_read_before, source_read_after, source_read_proof = normal_source_read_profile_changes(
+        after["ms4-host.py"])
+    after["ms4-host.py"], source_parent_before, source_parent_after, source_parent_proof = normal_source_parent_profile_changes(
         after["ms4-host.py"])
     after["ms4-host.py"], review_image_before, review_image_after, review_image_proof = aftersale_review_image_profile_changes(
         after["ms4-host.py"])
@@ -1630,8 +1751,9 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
         "paid_current_successor_entry_pair_changed": True,
         "all_original_python_function_bodies_exact": False,
         "python_function_changes": {"ms4-host.py": ["verify_files_bootstrap", "verify_schema_bootstrap", "verify_finance_bootstrap",
-            "prerequisite_result", "verify_merchant_exit_bootstrap", "verify_order_menu_bootstrap", "verify_freeze", "verify_aftersale_review_business"]},
+            "prerequisite_result", "verify_merchant_exit_bootstrap", "verify_order_menu_bootstrap", "verify_freeze", "source_tree_manifest", "verify_aftersale_review_business"]},
         "normal_source_read_reuse": source_read_proof,
+        "normal_source_parent_reuse": source_parent_proof,
         "aftersale_review_image_consumer": review_image_proof,
         "initializer_two_literal_inverse_exact": True, "initializer_customer_literal_inverse_exact": True,
         "initializer_schema_bootstrap_inverse_exact": True, "schema_bootstrap_sources": list(schema_sources),
@@ -1660,6 +1782,8 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
                                  worker_helper_interface_rows_changed=2,
                                  initializer_worker_two_literal_inverse_exact=True,
                                  worker_current_successor_entry_pair_changed=True)
+    if worker_source_proof is not None:
+        derivation[named]["normal_worker_source_reuse"] = worker_source_proof
     if isolation_subnet is not None:
         derivation[named]["isolation_subnet"] = isolation_subnet
         derivation[named]["isolation_subnet_availability"] = "NOT_CHECKED_BY_AUTHOR"
@@ -1693,6 +1817,7 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
             observed["verify_files_bootstrap"] = once(observed["verify_files_bootstrap"],
                                                        b"    verify_finance_bootstrap(context, result)\n", b"")
             observed["verify_freeze"] = once(observed["verify_freeze"], source_read_after, source_read_before)
+            observed["source_tree_manifest"] = once(observed["source_tree_manifest"], source_parent_after, source_parent_before)
             observed["verify_aftersale_review_business"] = once(
                 observed["verify_aftersale_review_business"], review_image_after, review_image_before)
         require(functions(before[name]) == observed, "ALL_OTHER_ORIGINAL_PYTHON_FUNCTION_BODIES_EXACT")
@@ -1711,8 +1836,9 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
         "changed": [name for name in NAMES if before[name] != after[name]],
         "all_original_python_function_bodies_exact": False, "python_named_function_counts": counts,
         "python_function_changes": {"ms4-host.py": ["verify_files_bootstrap", "verify_schema_bootstrap", "verify_finance_bootstrap",
-            "prerequisite_result", "verify_merchant_exit_bootstrap", "verify_order_menu_bootstrap", "verify_freeze", "verify_aftersale_review_business"]},
+            "prerequisite_result", "verify_merchant_exit_bootstrap", "verify_order_menu_bootstrap", "verify_freeze", "source_tree_manifest", "verify_aftersale_review_business"]},
         "normal_source_read_reuse": source_read_proof,
+        "normal_source_parent_reuse": source_parent_proof,
         "aftersale_review_image_consumer": review_image_proof,
         "all_other_original_python_function_bodies_exact": True,
         "active_profile_updates": updates, "interface_only_declared_active_rows": True,
@@ -1748,6 +1874,8 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
                         worker_helper_interface_rows_changed=2,
                         initializer_worker_two_literal_inverse_exact=True,
                         worker_current_successor_entry_pair_changed=True)
+    if worker_source_proof is not None:
+        manifest["normal_worker_source_reuse"] = worker_source_proof
     if isolation_subnet is not None:
         manifest["isolation_subnet"] = isolation_subnet
         manifest["isolation_subnet_availability"] = "NOT_CHECKED_BY_AUTHOR"
