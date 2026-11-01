@@ -1375,6 +1375,55 @@ def _legacy_anchor_reader_mode(refund_readiness, legacy_refund_anchors):
         raise ValueError("EXACT_NEW_HISTORY_REFUND_ANCHOR_READER_SOURCE_REQUIRED")
 
 
+_REFUND_APPLY_LOG_READER_SEAMS = (
+    ('refund_apply_log_dependency',
+     b"    foreach (['nhep_expect', 'nhe_keys', 'nhecr_order_context', 'nhepcv_native_row', 'nhepcv_config',\n",
+     b"    foreach (['nhep_expect', 'nhe_keys', 'nhecr_order_context', 'nhepcv_native_row', 'nhepcv_config', 'nhepcd_one',\n"),
+    ('refund_apply_log_saved_reason',
+     """    // Original status column query has no order. Reject ambiguous duplicate keys instead of choosing a row.
+    $logs = [];
+    $refundMessages = $refunded ? ['cache_key_create_order' => '订单生成', 'pay_success' => '用户付款成功',
+        'integral_back' => '商品退积分', 'refund_price' => '退款给用户：20.15元'] : [];
+""".encode('utf-8'),
+     """    // Original status column query has no order. Reject ambiguous duplicate keys instead of choosing a row.
+    if ($refunded) {
+        $savedRefundSelection = nhepcd_one($beforeDB2, 'eb_store_order_refund',
+            ['store_order_id' => $order['id'], 'uid' => $fixture['uid']]);
+        $savedRefundReasonRow = nhepcv_native_row($beforeDB2, 'eb_store_order_refund', $savedRefundSelection['index']);
+        nhep_expect($savedRefundReasonRow === $savedRefundSelection['row']
+            && $savedRefundReasonRow['refund_reason'] === 'normal-refund-' . $intent['run_id']
+            && $order['refund_reason_wap'] === $savedRefundReasonRow['refund_reason'],
+            'NHE_DETAIL_VALUE_ORIGINAL_SAVED_APPLY_REASON_AND_ROOT_MATCH_FIXED_ACTOR');
+    }
+    $logs = [];
+    $refundMessages = $refunded ? ['cache_key_create_order' => '订单生成', 'pay_success' => '用户付款成功',
+        'apply_refund' => '用户申请退款，原因：' . $savedRefundReasonRow['refund_reason'],
+        'integral_back' => '商品退积分', 'refund_price' => '退款给用户：20.15元'] : [];
+""".encode('utf-8')),
+    ('refund_apply_log_detail_order',
+     b"    if ($shipped) nhep_expect($logs['delivery_goods'] >= $logs['pay_success']\n",
+     b"    if ($refunded) nhep_expect($logs['pay_success'] <= $logs['apply_refund']\n"
+     b"        && $logs['apply_refund'] <= $logs['integral_back'] && $logs['integral_back'] <= $logs['refund_price'],\n"
+     b"        'NHE_DETAIL_VALUE_REFUNDED_ORIGINAL_APPLY_AND_REFUND_LOG_ORDER');\n"
+     b"    if ($shipped) nhep_expect($logs['delivery_goods'] >= $logs['pay_success']\n"),
+    ('refund_apply_log_identity_message',
+     """        $messages += $refunded ? ['integral_back' => '商品退积分', 'refund_price' => '退款给用户：20.15元']
+""".encode('utf-8'),
+     """        $messages += $refunded ? ['apply_refund' => '用户申请退款，原因：' . $root['refund_reason_wap'],
+            'integral_back' => '商品退积分', 'refund_price' => '退款给用户：20.15元']
+""".encode('utf-8')),
+    ('refund_apply_log_identity_count',
+     b'NHE_HISTORY_IDENTITIES_EXACT_REFUND_FOUR_OR_COMPLETED_FIVE_HISTORY_LOGS',
+     b'NHE_HISTORY_IDENTITIES_EXACT_REFUND_FIVE_OR_COMPLETED_FIVE_HISTORY_LOGS'),
+    ('refund_apply_log_identity_order',
+     b"            && $logs['pay_success'] >= $root['pay_time'], 'NHE_HISTORY_IDENTITIES_NATIVE_CREATE_PAY_LOG_ORDER');\n",
+     b"            && $logs['pay_success'] >= $root['pay_time']\n"
+     b"            && (!$refunded || ($logs['pay_success'] <= $logs['apply_refund']\n"
+     b"                && $logs['apply_refund'] <= $logs['integral_back'] && $logs['integral_back'] <= $logs['refund_price'])),\n"
+     b"            'NHE_HISTORY_IDENTITIES_NATIVE_CREATE_PAY_LOG_ORDER');\n"),
+)
+
+
 def _legacy_anchor_reader_apply(raw: bytes, *, reverse: bool = False) -> bytes:
     anchor=b'function nhecr_initializer_self(array $state, array &$proofs): int\n'
     helper=_LEGACY_ANCHOR_READER_PURE+b'\n'+_LEGACY_ANCHOR_READER_CONTEXT+b'\n'
@@ -1382,7 +1431,7 @@ def _legacy_anchor_reader_apply(raw: bytes, *, reverse: bool = False) -> bytes:
     baseline=b"    $upgrade = $state['structure_upgrade']; $before = $upgrade['before']['snapshot']; $after = $upgrade['after']['snapshot'];\n"
     pairs=(('legacy_anchor_initializer_receipt_source',anchor,helper+anchor),
            ('legacy_anchor_original_initializer_consumer',call,call+b'    nheca_initializer_receipt($proofs);\n'),
-           ('legacy_anchor_real_baseline_consumer',baseline,baseline+b'    nheca_baseline($state,$database,$driverAfter);\n'))
+           ('legacy_anchor_real_baseline_consumer',baseline,baseline+b'    nheca_baseline($state,$database,$driverAfter);\n')) + _REFUND_APPLY_LOG_READER_SEAMS
     for name,old,new in reversed(pairs) if reverse else pairs:
         raw=_replace_once(raw,new if reverse else old,old if reverse else new,name)
     return raw

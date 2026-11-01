@@ -180,6 +180,8 @@ normal 新退款 Gate 的 `m4i_refund_bootstrap` 在首次完整观察前，使�
 
 历史退款详情的独立模型在现有 `legacy_refund_anchors=true` 分支中沿用原 formatter 的 `cartInfo ?? []` 临时数组遍历语义：局部计算会员价及总价，但保存的 `cartInfo` 与 `cart_info` 均保持完整原购物车，不凭空追加 `vip_sum_truePrice`。原61个顶层字段及顺序、BC金额汇总、完整DTO严格比较，以及数据库、Redis、文件和时间断言保留；旧11依赖及无两锚13依赖输出不变。原R23失败及丢失的当时HTTP正文、before不重构；纯正常循环组件只证明该模型差异，修订源码和语法不代替后继完整历史验证。
 
+同一现有分支的历史 producer 与 current-reader 同时保留正常退款根单的五条日志：生成、付款、申请退款、退积分、退款。详情模型从独立 BEFORE 中唯一选择同根单、同顾客的保存退款行，核其原因与原 actor 的 `normal-refund-<run_id>` 及根单原因一致，再构造申请日志的完整期望文案；终态身份模型从已完整校核的根单原因构造文案，并继续核完整保存退款行，均不照抄状态日志自身的消息。精确五类、每类唯一、原生时间和范围、付款至申请至退款的顺序及完整状态行校核保留，原五项日期 DTO、四身份、164 表、Redis 和文件比较不变。只改这两份模型中的详情与身份函数，`historyTimes` 不外传；Host 无日志字段或行数合同变更。原 R24 失败材料保持；固定普通五日志组件的 red/green 只证明该模块，不能代替后继完整历史运行。
+
 所有实际文件以清单为准，不按目录名递归导入其他原机材料。没有把整份原材料目录、原 Run 或所有历史作者输入公开。两份 published-current 完整编排保留各自来源 `584532ba2`；归档提交本身会前移 Git HEAD，不能据此宣称已在归档后的 HEAD 运行通过。
 
 r2 原冻结设计有两句关于当前工作树的旧措辞，原件保留；必须结合[设计澄清](sources/published-current-normal-next-source-r2-design-clarification-r1/CLARIFICATION.md)读取。实际作者核对复用旧 Main 已闭合证据，并读取历史 Git 对象和 Val 的 194 项；没有签当前 Main 或归档后的提交可以运行。校验器也要求该澄清随包存在。

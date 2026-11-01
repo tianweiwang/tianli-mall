@@ -1523,13 +1523,56 @@ _REFUND_CART_TEMPORARY_PRODUCER_SEAMS = (
 )
 
 
+_REFUND_APPLY_LOG_PRODUCER_SEAMS = (
+    (b"    foreach (['nhep_expect', 'nhe_keys', 'nhepod_context', 'nhepcv_native_row', 'nhepcv_config',\n",
+     b"    foreach (['nhep_expect', 'nhe_keys', 'nhepod_context', 'nhepcv_native_row', 'nhepcv_config', 'nhepcd_one',\n"),
+    ("""    // Original status column query has no order. Reject ambiguous duplicate keys instead of choosing a row.
+    $logs = [];
+    $refundMessages = $refunded ? ['cache_key_create_order' => '订单生成', 'pay_success' => '用户付款成功',
+        'integral_back' => '商品退积分', 'refund_price' => '退款给用户：20.15元'] : [];
+""".encode('utf-8'),
+     """    // Original status column query has no order. Reject ambiguous duplicate keys instead of choosing a row.
+    if ($refunded) {
+        $savedRefundSelection = nhepcd_one($beforeDB2, 'eb_store_order_refund',
+            ['store_order_id' => $order['id'], 'uid' => $fixture['uid']]);
+        $savedRefundReasonRow = nhepcv_native_row($beforeDB2, 'eb_store_order_refund', $savedRefundSelection['index']);
+        nhep_expect($savedRefundReasonRow === $savedRefundSelection['row']
+            && $savedRefundReasonRow['refund_reason'] === 'normal-refund-' . $intent['run_id']
+            && $order['refund_reason_wap'] === $savedRefundReasonRow['refund_reason'],
+            'NHE_DETAIL_VALUE_ORIGINAL_SAVED_APPLY_REASON_AND_ROOT_MATCH_FIXED_ACTOR');
+    }
+    $logs = [];
+    $refundMessages = $refunded ? ['cache_key_create_order' => '订单生成', 'pay_success' => '用户付款成功',
+        'apply_refund' => '用户申请退款，原因：' . $savedRefundReasonRow['refund_reason'],
+        'integral_back' => '商品退积分', 'refund_price' => '退款给用户：20.15元'] : [];
+""".encode('utf-8')),
+    (b"    if ($shipped) nhep_expect($logs['delivery_goods'] >= $logs['pay_success']\n",
+     b"    if ($refunded) nhep_expect($logs['pay_success'] <= $logs['apply_refund']\n"
+     b"        && $logs['apply_refund'] <= $logs['integral_back'] && $logs['integral_back'] <= $logs['refund_price'],\n"
+     b"        'NHE_DETAIL_VALUE_REFUNDED_ORIGINAL_APPLY_AND_REFUND_LOG_ORDER');\n"
+     b"    if ($shipped) nhep_expect($logs['delivery_goods'] >= $logs['pay_success']\n"),
+    ("""        $messages += $refunded ? ['integral_back' => '商品退积分', 'refund_price' => '退款给用户：20.15元']
+""".encode('utf-8'),
+     """        $messages += $refunded ? ['apply_refund' => '用户申请退款，原因：' . $root['refund_reason_wap'],
+            'integral_back' => '商品退积分', 'refund_price' => '退款给用户：20.15元']
+""".encode('utf-8')),
+    (b'NHE_HISTORY_IDENTITIES_EXACT_REFUND_FOUR_OR_COMPLETED_FIVE_HISTORY_LOGS',
+     b'NHE_HISTORY_IDENTITIES_EXACT_REFUND_FIVE_OR_COMPLETED_FIVE_HISTORY_LOGS'),
+    (b"            && $logs['pay_success'] >= $root['pay_time'], 'NHE_HISTORY_IDENTITIES_NATIVE_CREATE_PAY_LOG_ORDER');\n",
+     b"            && $logs['pay_success'] >= $root['pay_time']\n"
+     b"            && (!$refunded || ($logs['pay_success'] <= $logs['apply_refund']\n"
+     b"                && $logs['apply_refund'] <= $logs['integral_back'] && $logs['integral_back'] <= $logs['refund_price'])),\n"
+     b"            'NHE_HISTORY_IDENTITIES_NATIVE_CREATE_PAY_LOG_ORDER');\n"),
+)
+
+
 def _legacy_anchor_producer_seams():
     pure = (_LEGACY_ANCHOR_PURE + b'\n' + _LEGACY_ANCHOR_CAPTURE).replace(b'm4iha_',b'nhepa_').replace(b'M4IHA_',b'NHEPA_').replace(b'm2f_assert',b'nhep_expect')
     anchor=b'function nhep_normal_history_main(): int\r\n'
     call=b'        $prepared = nhep_pre37_fixed_preparation($qualified, $observer, $redis);\r\n'
     return ((anchor,pure+b'\n'+_LEGACY_ANCHOR_PRODUCER_CONTEXT+b'\n'+anchor),
             (call,b'        nhepa_anchor_context($qualified,$observer);\r\n'+call),
-            (b"$root['give_integral'] === '0.00'", b"$root['give_integral'] === 0")) + _PAYMENT_DURING_PRODUCER_SEAMS + _REFUND_CART_TEMPORARY_PRODUCER_SEAMS
+            (b"$root['give_integral'] === '0.00'", b"$root['give_integral'] === 0")) + _PAYMENT_DURING_PRODUCER_SEAMS + _REFUND_CART_TEMPORARY_PRODUCER_SEAMS + _REFUND_APPLY_LOG_PRODUCER_SEAMS
 
 
 # Explicit current two-anchor private observation only; old default outputs stay byte-identical.
