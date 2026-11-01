@@ -1187,7 +1187,7 @@ def refund_profile_changes(initializer: bytes, host: bytes, inventory: dict[str,
     anchor = b'function m6i_migrator(): array\n'
     change(anchor, _REFUND_INITIALIZER.encode('utf-8') + anchor)
     call = b"    $evidence['schema_bootstrap'] = m4i_schema_bootstrap($evidence['binding'], $prerequisites['early_history']);"
-    change(call, (b"    $evidence['refund_bootstrap'] = m4i_refund_bootstrap($evidence['binding'], $prerequisites['early_history']);\n"
+    change(call, (b"    try {\n        $evidence['refund_bootstrap'] = m4i_refund_bootstrap($evidence['binding'], $prerequisites['early_history']);\n    } catch (Throwable $refundFailure) {\n        try {\n            $comparisonLines = [];\n            foreach ($refundFailure->getTrace() as $comparisonFrame) {\n                if (is_array($comparisonFrame)\n                    && ($comparisonFrame['file'] ?? null) === '/workspace/help/audit-regressions/isolated/ms4-customer-http-normal.php'\n                    && ($comparisonFrame['function'] ?? null) === 'm4c_entry_same'\n                    && is_int($comparisonFrame['line'] ?? null) && $comparisonFrame['line'] > 0)\n                    $comparisonLines[] = $comparisonFrame['line'];\n            }\n            $evidence['refund_prerequisite_comparison_callsite_lines'] = array_slice(array_values(array_unique($comparisonLines)), 0, 8);\n        } catch (Throwable) {\n            // Diagnostic extraction never replaces the original comparison failure.\n        } finally {\n            unset($comparisonFrame, $comparisonLines);\n        }\n        throw $refundFailure;\n    }\n"
         b"    $evidence['refund_bootstrap_preservation'] = m4c_entry_early_preserved(\n"
         b"        $prerequisites['early_history'], 'refund-bootstrap-completed', null, null, $evidence['refund_bootstrap']);\n" + call))
     previous_finance = _FINANCE_INITIALIZER.encode('utf-8')
@@ -4080,9 +4080,11 @@ def build_history_source(output: str | Path, authority_pointer: dict[str, Any],
                     and namespace["reverse_producer_entry"](after["legacy-history-producer.php"],
                         legacy_refund_anchors=history_legacy_refund_anchors) == before["legacy-history-producer.php"],
                     "HISTORY_COMPLETE_PRODUCER_DIRECT_ENTRY_INVERSE")
-            after["legacy-history-http.php"] = namespace["transform_history_http"](before["legacy-history-http.php"])
+            after["legacy-history-http.php"] = namespace["transform_history_http"](before["legacy-history-http.php"],
+                legacy_refund_anchors=history_legacy_refund_anchors)
             require(type(after["legacy-history-http.php"]) is bytes
-                    and namespace["reverse_history_http"](after["legacy-history-http.php"]) == before["legacy-history-http.php"],
+                    and namespace["reverse_history_http"](after["legacy-history-http.php"],
+                        legacy_refund_anchors=history_legacy_refund_anchors) == before["legacy-history-http.php"],
                     "HISTORY_COMPLETE_HTTP_FAILURE_DIAGNOSTIC_INVERSE")
             migration_relative = "help/audit-regressions/isolated/ms4-migration.php"
             migration_raw = read(Path(authority["candidate_root"]) / migration_relative)
