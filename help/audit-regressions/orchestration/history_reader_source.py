@@ -183,24 +183,29 @@ def _replace_once(raw: bytes, old: bytes, new: bytes, name: str) -> bytes:
     return result
 
 
-def transform_reader(raw: bytes, *, refund_readiness: bool = False) -> bytes:
+def transform_reader(raw: bytes, *, refund_readiness: bool = False, legacy_refund_anchors: bool = False) -> bytes:
     """Apply only the declared finite seams to the exact archived reader bytes."""
     _original_reader(raw)
+    _legacy_anchor_reader_mode(refund_readiness, legacy_refund_anchors)
     candidate = raw
     for name, old, new in READER_SEAMS:
         candidate = _replace_once(candidate, old, new, name)
     if refund_readiness:
         candidate = _refund_reader_apply(candidate)
-    if candidate.count(_ADOPTED_QUALIFY) != 1 or _FIRST_UNBOUND in candidate or reverse_reader(candidate, refund_readiness=refund_readiness) != raw:
+    if legacy_refund_anchors:
+        candidate = _legacy_anchor_reader_apply(candidate)
+    if candidate.count(_ADOPTED_QUALIFY) != 1 or _FIRST_UNBOUND in candidate or reverse_reader(candidate, refund_readiness=refund_readiness, legacy_refund_anchors=legacy_refund_anchors) != raw:
         raise ValueError("HISTORY_READER_SOURCE_ADOPTION_AND_WHOLE_REVERSE")
     return candidate
 
 
-def reverse_reader(candidate: bytes, *, refund_readiness: bool = False) -> bytes:
+def reverse_reader(candidate: bytes, *, refund_readiness: bool = False, legacy_refund_anchors: bool = False) -> bytes:
     """Restore and authenticate the entire archived input, not only seams."""
     if type(candidate) is not bytes or candidate.count(_ADOPTED_QUALIFY) != 1 or _FIRST_UNBOUND in candidate:
         raise ValueError("HISTORY_READER_CANDIDATE_BYTES_AND_SOURCE_ADOPTION")
-    original = _refund_reader_apply(candidate, reverse=True) if refund_readiness else candidate
+    _legacy_anchor_reader_mode(refund_readiness, legacy_refund_anchors)
+    original = _legacy_anchor_reader_apply(candidate, reverse=True) if legacy_refund_anchors else candidate
+    original = _refund_reader_apply(original, reverse=True) if refund_readiness else original
     for name, old, new in reversed(READER_SEAMS):
         original = _replace_once(original, new, old, name)
     _original_reader(original)
@@ -1192,4 +1197,192 @@ def _refund_reader_apply(raw: bytes, *, reverse: bool = False) -> bytes:
             raw = raw.replace(old, new)
         for name, old, new in pairs:
             raw = _replace_once(raw, old, new, name)
+    return raw
+
+
+# Shared initializer receipt and exact original SQL data; only the new fixture-pair branch emits these.
+_LEGACY_ANCHOR_READER_PURE = r'''const NHECA_SOURCE_META = <<<'NHECA_SOURCE_JSON'
+{"columns":["id","pid","icon","menu_name","module","controller","action","api_url","methods","params","sort","is_show","is_show_path","access","menu_path","path","auth_type","header","is_header","unique_auth","is_del","mark"],"rows":{"order_root":[4,0,"s-order","订单","admin","order","index","","","[]",120,1,1,1,"/order","",1,"home",1,"admin-order",0,"订单"],"refund_page":[897,4,"","售后订单","admin","","","","","[]",9,1,1,1,"/order/refund","4",1,"",0,"admin-order-refund",0,"售后订单"]}}
+NHECA_SOURCE_JSON;
+
+function nheca_literal(string $sql, int &$position): mixed
+{
+    while (isset($sql[$position]) && ctype_space($sql[$position])) ++$position;
+    nhecr_expect(isset($sql[$position]), 'ORDER_MENU_SQL_LITERAL_PRESENT');
+    if ($sql[$position] === "'") {
+        ++$position; $value = ''; $closed = false;
+        while (isset($sql[$position])) {
+            $character = $sql[$position++];
+            if ($character === '\\') {
+                nhecr_expect(isset($sql[$position]), 'ORDER_MENU_SQL_STRING_ESCAPE_COMPLETE');
+                $escaped = $sql[$position++];
+                $value .= match ($escaped) {
+                    '0' => "\0", 'n' => "\n", 'r' => "\r", 't' => "\t", 'b' => "\x08", 'Z' => "\x1a",
+                    default => $escaped,
+                };
+            } elseif ($character === "'") {
+                if (($sql[$position] ?? null) === "'") { $value .= "'"; ++$position; }
+                else { $closed = true; break; }
+            } else { $value .= $character; }
+        }
+        nhecr_expect($closed, 'ORDER_MENU_SQL_STRING_CLOSED');
+        return $value;
+    }
+    $start = $position;
+    while (isset($sql[$position]) && $sql[$position] !== ',' && $sql[$position] !== ')') ++$position;
+    $literal = trim(substr($sql, $start, $position - $start));
+    if (strcasecmp($literal, 'NULL') === 0) return null;
+    nhecr_expect(preg_match('/\A(?:0|[1-9][0-9]*|-[1-9][0-9]*)\z/D', $literal) === 1
+        && (string)(int)$literal === $literal, 'ORDER_MENU_SQL_CANONICAL_INTEGER_LITERAL');
+    return (int)$literal;
+}
+
+function nheca_source(string $sql): array
+{
+    nhecr_expect(strlen($sql) === 10237459 && hash('sha256', $sql) === '1e5e56c805f551a75332be58b2ab96572509c82835b812cdff3ca5c3eb7ad828', 'HISTORY_ANCHOR_EXACT_SHARED_LEGACY_SQL');
+    $meta = json_decode(NHECA_SOURCE_META, true, 16, JSON_THROW_ON_ERROR);
+    $anchorNames = ['order_root', 'refund_page'];
+    nhecr_expect(array_keys($meta) === ['columns', 'rows'] && count($meta['columns']) === 22
+        && count(array_unique($meta['columns'])) === 22
+        && array_keys($meta['rows']) === $anchorNames,
+        'ORDER_MENU_FIXED_DECLARATIVE_META');
+    $matched = preg_match_all('/^INSERT INTO `eb_system_menus` \(([^\r\n]+)\) VALUES\r?\n/m', $sql, $headers, PREG_OFFSET_CAPTURE);
+    nhecr_expect($matched === 1 && strlen($sql) <= 16777216, 'ORDER_MENU_ONE_ORIGINAL_SQL_STATEMENT');
+    $header = $headers[1][0][0];
+    nhecr_expect(preg_match('/\A`[a-z_]+`(?:,\s*`[a-z_]+`)*\z/D', $header) === 1,
+        'ORDER_MENU_SQL_ONLY_DECLARED_COLUMN_IDENTIFIERS');
+    preg_match_all('/`([a-z_]+)`/', $header, $matches); $columns = $matches[1];
+    nhecr_expect($columns === $meta['columns'], 'ORDER_MENU_ORIGINAL_EXACT_22_COLUMNS');
+    $selected = []; $names = [];
+    foreach ($meta['rows'] as $name => $cells) {
+        nhecr_expect(array_is_list($cells) && count($cells) === 22, 'ORDER_MENU_COMPLETE_SOURCE_ROW');
+        $names[$cells[array_search('unique_auth', $columns, true)]] = $name;
+    }
+    nhecr_expect(count($names) === count($anchorNames), 'ORDER_MENU_DECLARED_UNIQUE_SOURCE_IDENTITIES');
+    $position = $headers[0][0][1] + strlen($headers[0][0][0]); $tupleCount = 0;
+    while (true) {
+        while (isset($sql[$position]) && ctype_space($sql[$position])) ++$position;
+        nhecr_expect(($sql[$position] ?? null) === '(', 'ORDER_MENU_SQL_TUPLE_OPEN'); ++$position;
+        $cells = [];
+        for ($index = 0; $index < 22; ++$index) {
+            $cells[] = nheca_literal($sql, $position);
+            while (isset($sql[$position]) && ctype_space($sql[$position])) ++$position;
+            nhecr_expect(($sql[$position] ?? null) === ($index === 21 ? ')' : ','), 'ORDER_MENU_SQL_EXACT_TUPLE_SEPARATOR');
+            ++$position;
+        }
+        ++$tupleCount; $unique = $cells[array_search('unique_auth', $columns, true)];
+        if (is_string($unique) && isset($names[$unique])) {
+            $name = $names[$unique]; nhecr_expect(!isset($selected[$name]), 'ORDER_MENU_SOURCE_IDENTITY_NOT_DUPLICATED');
+            $selected[$name] = $cells;
+        }
+        while (isset($sql[$position]) && ctype_space($sql[$position])) ++$position;
+        $delimiter = $sql[$position] ?? null;
+        nhecr_expect($delimiter === ',' || $delimiter === ';', 'ORDER_MENU_SQL_STATEMENT_CLOSED'); ++$position;
+        if ($delimiter === ';') break;
+    }
+    $ordered = [];
+    foreach ($meta['rows'] as $name => $cells) {
+        nhecr_expect(isset($selected[$name]) && $selected[$name] === $cells, 'ORDER_MENU_RUNTIME_SQL_EQUALS_FULL_FIXED_SOURCE_META');
+        $ordered[$name] = $selected[$name];
+    }
+    nhecr_expect(count($ordered) === count($anchorNames) && $tupleCount >= count($anchorNames), 'ORDER_MENU_COMPLETE_DECLARED_ORIGINAL_ANCHORS');
+    return ['columns' => $columns, 'rows' => $ordered];
+}
+
+function nheca_project(array $rows, array $columns): array
+{
+    $hashes=[];
+    foreach($rows as$row){
+        nhecr_expect(is_array($row)&&array_keys($row)===$columns,'HISTORY_ANCHOR_EXACT_TYPED_COLUMNS');
+        $hashes[]=hash('sha256',json_encode($row,JSON_THROW_ON_ERROR));
+    }
+    sort($hashes,SORT_STRING);
+    return ['rows'=>count($rows),'sha256'=>hash('sha256',implode("\n",$hashes))];
+}
+function nheca_receipt(array $receipt,string $sql): void
+{
+    $keys=array_keys($receipt);sort($keys,SORT_STRING);
+    $wanted=['schema','scope','sql_source','columns','inserted_rows','original_ms1_rows','rows_after','before','after','initialized_before_legacy37'];sort($wanted,SORT_STRING);
+    nhecr_expect($keys===$wanted&&$receipt['schema']===1
+        &&$receipt['scope']==='CURRENT_HISTORY_ORIGINAL_REFUND_PARENT_PAGES_ONLY'
+        &&$receipt['initialized_before_legacy37']===true,'HISTORY_ANCHOR_EXACT_INITIALIZATION_RECEIPT');
+    $meta=nheca_source($sql);$columns=$meta['columns'];$rows=[];
+    foreach($meta['rows']as$cells)$rows[]=array_combine($columns,$cells);
+    nhecr_expect($receipt['sql_source']===['path'=>'crmeb/public/install/crmeb.sql','bytes'=>strlen($sql),'sha256'=>hash('sha256',$sql)]
+        &&$receipt['columns']===$columns&&$receipt['inserted_rows']===$rows
+        &&array_column($rows,'id')===[4,897]&&$rows[1]['pid']===4,'HISTORY_ANCHOR_COMPLETE_ORIGINAL_SQL_ROWS_AND_CHAIN');
+    $old=$receipt['original_ms1_rows'];$auth=['marketplace-merchants-list','marketplace-merchants-create','marketplace-merchants-read',
+        'marketplace-merchants-update','marketplace-merchants-review','marketplace-merchants-flags','marketplace-merchants-admin-employee'];
+    nhecr_expect(is_array($old)&&array_is_list($old)&&count($old)===7
+        &&array_column($old,'id')===range(2473,2479)&&array_column($old,'unique_auth')===$auth,'HISTORY_ANCHOR_ORIGINAL_SEVEN_MS1_ROWS');
+    foreach($old as$row)nhecr_expect(array_keys($row)===$columns&&is_int($row['id'])&&$row['auth_type']===2,'HISTORY_ANCHOR_ORIGINAL_NATIVE_MS1_ROW_TYPES');
+    $tables=['eb_system_menus','eb_system_role','eb_marketplace_role'];
+    nhecr_expect(array_keys($receipt['before'])===$tables&&array_keys($receipt['after'])===$tables,'HISTORY_ANCHOR_EXACT_THREE_TABLE_OBSERVATIONS');
+    foreach($tables as$table){
+        foreach(['before','after']as$phase){
+            $view=$receipt[$phase][$table];
+            nhecr_expect(array_keys($view)===['metadata','ddl','columns','projection']&&is_array($view['metadata'])
+                &&is_string($view['ddl'])&&$view['ddl']!==''&&$view['columns']===array_keys($view['metadata']['columns'])
+                &&array_keys($view['projection'])===['rows','sha256']&&is_int($view['projection']['rows'])&&$view['projection']['rows']>=0
+                &&is_string($view['projection']['sha256'])&&preg_match('/\A[a-f0-9]{64}\z/D',$view['projection']['sha256'])===1,
+                'HISTORY_ANCHOR_COMPLETE_METADATA_DDL_AND_TYPED_PROJECTION');
+        }
+        if($table!=='eb_system_menus')nhecr_expect($receipt['before'][$table]===$receipt['after'][$table],'HISTORY_ANCHOR_NO_ROLE_DATA_METADATA_OR_COUNTER_CHANGE');
+    }
+    $before=$receipt['before']['eb_system_menus'];$after=$receipt['after']['eb_system_menus'];
+    $counter=$before['metadata']['table']['AUTO_INCREMENT'];
+    nhecr_expect((is_int($counter)||is_string($counter))&&(string)$counter==='2480'
+        &&$before['metadata']===$after['metadata']&&$before['ddl']===$after['ddl']
+        &&$before['columns']===$columns&&$after['columns']===$columns,'HISTORY_ANCHOR_ONLY_EXPLICIT_OLD_IDS_NO_COUNTER_OR_DDL_CHANGE');
+    $all=array_merge($rows,$old);
+    nhecr_expect($receipt['rows_after']===$all&&$before['projection']===nheca_project($old,$columns)
+        &&$after['projection']===nheca_project($all,$columns),'HISTORY_ANCHOR_EXACT_ONLY_TWO_ROWS_ALL_SEVEN_ORIGINAL_TYPED_VALUES');
+}
+'''.encode('utf-8')
+
+_LEGACY_ANCHOR_READER_CONTEXT = rb'''function nheca_initializer_receipt(array $proofs): array
+{
+    $path='/run/audit/evidence/initializer-result.json';
+    nhecr_expect(isset($proofs[$path]['raw']),'HISTORY_ANCHOR_READER_ORIGINAL_INITIALIZER_PUBLIC_INPUT');
+    $result=json_decode($proofs[$path]['raw'],true,128,JSON_THROW_ON_ERROR);
+    $sqlPath='/workspace/crmeb/public/install/crmeb.sql';
+    $sql=nhe_file($sqlPath,['path'=>$sqlPath,'bytes'=>10237459,'sha256'=>'1e5e56c805f551a75332be58b2ab96572509c82835b812cdff3ca5c3eb7ad828']);
+    $receipt=$result['legacy_refund_page_anchors'];nheca_receipt($receipt,$sql);
+    return $receipt;
+}
+function nheca_baseline(array $state,array $database,array $driverAfter): void
+{
+    $path='/run/audit/evidence/initializer-result.json';$proofs=[$path=>nhecr_public_read($path)];
+    $receipt=nheca_initializer_receipt($proofs);
+    foreach(['eb_system_menus','eb_system_role','eb_marketplace_role']as$table){
+        $expected=$receipt['after'][$table];$driver=$driverAfter['tables'][$table];
+        nhecr_expect($driver['metadata']===$expected['metadata']&&$driver['ddl_sha256']===hash('sha256',$expected['ddl'])
+            &&$driver['projected_columns']===$expected['columns']&&$driver['projection']===$expected['projection'],
+            'HISTORY_ANCHOR_READER_ORIGINAL_NINE_ROWS_AND_ROLES_IN_REAL_DRIVER_SEAL');
+        if($table!=='eb_system_menus'){
+            $actual=$database['database']['tables'][$table];
+            nhecr_expect($actual['metadata']===$expected['metadata']&&$actual['ddl']===$expected['ddl']
+                &&$actual['projected_columns']===$expected['columns']
+                &&nheca_project($database['rows'][$table],$expected['columns'])===$expected['projection'],
+                'HISTORY_ANCHOR_READER_CURRENT_REAL_ROLES_METADATA_VALUES_AND_COUNTERS');
+        }
+    }
+}
+'''
+
+def _legacy_anchor_reader_mode(refund_readiness, legacy_refund_anchors):
+    if type(legacy_refund_anchors) is not bool or legacy_refund_anchors and refund_readiness is not True:
+        raise ValueError("EXACT_NEW_HISTORY_REFUND_ANCHOR_READER_SOURCE_REQUIRED")
+
+
+def _legacy_anchor_reader_apply(raw: bytes, *, reverse: bool = False) -> bytes:
+    anchor=b'function nhecr_initializer_self(array $state, array &$proofs): int\n'
+    helper=_LEGACY_ANCHOR_READER_PURE+b'\n'+_LEGACY_ANCHOR_READER_CONTEXT+b'\n'
+    call=b'    $self = nhe_business_self_id($state);\n'
+    baseline=b"    $upgrade = $state['structure_upgrade']; $before = $upgrade['before']['snapshot']; $after = $upgrade['after']['snapshot'];\n"
+    pairs=(('legacy_anchor_initializer_receipt_source',anchor,helper+anchor),
+           ('legacy_anchor_original_initializer_consumer',call,call+b'    nheca_initializer_receipt($proofs);\n'),
+           ('legacy_anchor_real_baseline_consumer',baseline,baseline+b'    nheca_baseline($state,$database,$driverAfter);\n'))
+    for name,old,new in reversed(pairs) if reverse else pairs:
+        raw=_replace_once(raw,new if reverse else old,old if reverse else new,name)
     return raw

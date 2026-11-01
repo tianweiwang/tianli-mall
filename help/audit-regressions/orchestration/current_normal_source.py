@@ -969,6 +969,14 @@ ORDER_MENU_SOURCE_PATHS = (
     "help/migrations/marketplace-ms1.php",
 )
 ORDER_MENU_PROFILE_MODES = {"normal": "NORMAL_A_WITH_READ_LEAVES", "ui": "UI_B_ANCHORS_ONLY"}
+ORDER_MENU_LEGACY_PAIR = (
+    {"bytes": 18293, "sha256": "478018ed9e4d91552709965129ea5f409b137afc282fbef5b77154ed176cc39a"},
+    {"bytes": 12799, "sha256": "32e2ee1c8df78728cf97f647edb48ccf2eb2dfad5d6cf63e66240b3184ac3c57"},
+)
+ORDER_MENU_REFUND_PAIR = (
+    {"bytes": 19095, "sha256": "d44d1aa3268a1672d9793d38c8d264d36c078f7a188e0b770d1f0b6ed98d8c79"},
+    {"bytes": 13064, "sha256": "30e70d6ed9ab4dbac6cec2f761ca5f540e4391b3fd07d65d36abdf92b42fdcf9"},
+)
 
 _ORDER_MENU_INITIALIZER = r'''function m4i_order_menu_sources(array $binding): array
 {
@@ -1007,11 +1015,28 @@ def order_menu_profile_changes(initializer: bytes, host: bytes, inventory: dict[
     rows = tuple(inventory[name] for name in ORDER_MENU_SOURCE_PATHS)
     source = read_pointer({"path": (source_root / ORDER_MENU_SOURCE_PATHS[0]).as_posix(),
                            **{key: rows[0][key] for key in ("bytes", "sha256")}})
+    reader = read_pointer({"path": (source_root / ORDER_MENU_SOURCE_PATHS[1]).as_posix(),
+                           **{key: rows[1][key] for key in ("bytes", "sha256")}})
+    pair = (pin(source), pin(reader))
+    require(pair in (ORDER_MENU_LEGACY_PAIR, ORDER_MENU_REFUND_PAIR), "EXACT_KNOWN_ORDER_MENU_FIXTURE_AND_CONSUMER_PAIR")
+    with_refund_page = pair == ORDER_MENU_REFUND_PAIR
+    if with_refund_page:
+        require(refund_readiness_sources(inventory) is not None, "REFUND_PAGE_ONLY_WITH_EXACT_REFUND_GATE_READINESS_AND_MIGRATION")
     matches = re.findall(rb"^const M4I_ORDER_MENU_SOURCE_META = <<<'M4I_ORDER_MENU_SOURCE_JSON'\n(.*?)\nM4I_ORDER_MENU_SOURCE_JSON;",
                          source, flags=re.MULTILINE | re.DOTALL)
     require(len(matches) == 1, "ONE_FIXED_ORDER_MENU_SOURCE_META")
     meta = decode(matches[0])
     names = ["order_root", "order_page", "order_info_group", "order_info"]
+    if with_refund_page:
+        refund_row = re.findall(rb"^const M4I_ORDER_MENU_REFUND_PAGE_SOURCE_ROW = <<<'M4I_ORDER_MENU_REFUND_PAGE_JSON'\n(.*?)\nM4I_ORDER_MENU_REFUND_PAGE_JSON;",
+                                source, flags=re.MULTILINE | re.DOTALL)
+        require(len(refund_row) == 1, "ONE_FIXED_ORIGINAL_REFUND_PAGE_SOURCE_ROW")
+        cells = decode(refund_row[0])
+        require(cells == [897, 4, "", "售后订单", "admin", "", "", "", "", "[]", 9, 1, 1, 1,
+                          "/order/refund", "4", 1, "", 0, "admin-order-refund", 0, "售后订单"],
+                "EXACT_ORIGINAL_REFUND_PAGE_TWENTY_TWO_SOURCE_CELLS")
+        meta["rows"]["refund_page"] = cells
+        names.append("refund_page")
     require(type(meta) is dict and set(meta) == {"columns", "rows"}
             and type(meta["columns"]) is list and len(meta["columns"]) == len(set(meta["columns"])) == 22
             and {"id", "pid", "path", "unique_auth", "auth_type", "api_url", "methods"} <= set(meta["columns"])
@@ -1021,10 +1046,9 @@ def order_menu_profile_changes(initializer: bytes, host: bytes, inventory: dict[
                     for row in meta["rows"].values()), "EXACT_FOUR_DECLARED_NATIVE_MENU_SOURCE_ROWS")
     unique_index = meta["columns"].index("unique_auth")
     require([meta["rows"][name][unique_index] for name in names] == [
-        "admin-order", "admin-order-storeOrder-index", "order-info", "order-info-6465a369a2c3b"],
+        "admin-order", "admin-order-storeOrder-index", "order-info", "order-info-6465a369a2c3b"]
+        + (["admin-order-refund"] if with_refund_page else []),
         "ONLY_FOUR_ORIGINAL_ORDER_MENU_IDENTITIES")
-    reader = read_pointer({"path": (source_root / ORDER_MENU_SOURCE_PATHS[1]).as_posix(),
-                           **{key: rows[1][key] for key in ("bytes", "sha256")}})
     parsed_reader = ast.parse(reader)
     require(set(functions(reader)) == {"verify_order_menu_bootstrap"}
             and all(isinstance(node, ast.FunctionDef) or isinstance(node, ast.Expr)
@@ -1035,7 +1059,13 @@ def order_menu_profile_changes(initializer: bytes, host: bytes, inventory: dict[
         "['path' => '" + row["path"] + "', 'bytes' => " + str(row["bytes"])
         + ", 'sha256' => '" + row["sha256"] + "']" for row in rows) + "];\n"
         + "const M4I_ORDER_MENU_WITH_READ_LEAVES = " + ("true" if with_read_leaves else "false") + ";\n\n").encode()
-    helper = php_rows + _ORDER_MENU_INITIALIZER.encode("utf-8")
+    initializer_helper = _ORDER_MENU_INITIALIZER.encode("utf-8")
+    if with_refund_page:
+        php_rows += b"const M4I_ORDER_MENU_WITH_REFUND_PAGE = true;\n\n"
+        initializer_helper = once(initializer_helper,
+            b"m4iom_prepare($binding, $sources, M4I_ORDER_MENU_WITH_READ_LEAVES)",
+            b"m4iom_prepare($binding, $sources, M4I_ORDER_MENU_WITH_READ_LEAVES, M4I_ORDER_MENU_WITH_REFUND_PAGE)")
+    helper = php_rows + initializer_helper
     anchor = b"function m4i_initialize(array &$evidence, ?array &$primary, ?array &$cleanup): void\n"
     updated = once(initializer, anchor, helper + anchor)
     old_call = b"        $evidence['merchant_exit_menus'] = m4i_exit_menus($evidence['binding']);\n"
@@ -1044,7 +1074,8 @@ def order_menu_profile_changes(initializer: bytes, host: bytes, inventory: dict[
     require(once(once(updated, call + old_call, old_call), helper + anchor, anchor) == initializer,
             "EXACT_INITIALIZER_DECLARED_ORDER_MENU_ONLY_WHOLE_FILE_INVERSE")
     host_helper = ("ORDER_MENU_SOURCE_FILES = " + repr(rows) + "\nORDER_MENU_SOURCE_META = " + repr(meta)
-                   + "\nORDER_MENU_PROFILE_MODE = " + repr(mode) + "\n").encode() + reader + b"\n\n"
+                   + "\nORDER_MENU_PROFILE_MODE = " + repr(mode) + "\n"
+                   + ("ORDER_MENU_REFUND_PAGE_REQUIRED = True\n" if with_refund_page else "")).encode() + reader + b"\n\n"
     host_anchor = b"def prerequisite_result(context, created_facts, terminal, result):\n"
     updated_host = once(host, host_anchor, host_helper + host_anchor)
     original = b"    verify_merchant_exit_bootstrap(context, result)\n"
@@ -3918,6 +3949,13 @@ def build_history_source(output: str | Path, authority_pointer: dict[str, Any],
         isolation_subnet = validate_isolation_subnet(isolation_subnet)
     authority, inventory = reviewed_authority(authority_pointer)
     history_refund_readiness = refund_readiness_sources(inventory) is not None
+    history_order_pair = tuple({key: inventory[path][key] for key in ("bytes", "sha256")}
+                               for path in ORDER_MENU_SOURCE_PATHS[:2])
+    require(history_order_pair in (ORDER_MENU_LEGACY_PAIR, ORDER_MENU_REFUND_PAIR),
+            "HISTORY_EXACT_KNOWN_ORDER_MENU_FIXTURE_AND_CONSUMER_PAIR")
+    history_legacy_refund_anchors = history_order_pair == ORDER_MENU_REFUND_PAIR
+    require(not history_legacy_refund_anchors or history_refund_readiness,
+            "HISTORY_LEGACY_REFUND_ANCHORS_ONLY_WITH_EXACT_REFUND_READINESS_SOURCE_SET")
     tool_root = Path(__file__).resolve().parent
     out = Path(output)
     ordinary(out, missing_leaf=True)
@@ -4005,8 +4043,10 @@ def build_history_source(output: str | Path, authority_pointer: dict[str, Any],
         exec(compile(raw, str(path), "exec"), namespace)
         transform, reverse = namespace["transform_" + function], namespace["reverse_" + function]
         require(callable(transform) and callable(reverse), "HISTORY_PURE_SOURCE_TRANSFORM_INTERFACE")
-        after[name] = transform(before[name], refund_readiness=history_refund_readiness)
-        require(type(after[name]) is bytes and reverse(after[name], refund_readiness=history_refund_readiness) == before[name],
+        after[name] = transform(before[name], refund_readiness=history_refund_readiness,
+                                legacy_refund_anchors=history_legacy_refund_anchors)
+        require(type(after[name]) is bytes and reverse(after[name], refund_readiness=history_refund_readiness,
+                legacy_refund_anchors=history_legacy_refund_anchors) == before[name],
                 "HISTORY_COMPLETE_MODULE_INVERSE")
         modules[path.name] = {"path": path.as_posix(), **pin(raw)}
         author_sources[path.name] = raw
@@ -4029,9 +4069,11 @@ def build_history_source(output: str | Path, authority_pointer: dict[str, Any],
             require(type(after["legacy-files-bootstrap.php"]) is bytes
                     and namespace["reverse_files_bootstrap"](after["legacy-files-bootstrap.php"]) == before["legacy-files-bootstrap.php"],
                     "HISTORY_COMPLETE_FILES_BOOTSTRAP_BUDGET_INVERSE")
-            after["legacy-history-producer.php"] = namespace["transform_producer_entry"](before["legacy-history-producer.php"])
+            after["legacy-history-producer.php"] = namespace["transform_producer_entry"](before["legacy-history-producer.php"],
+                legacy_refund_anchors=history_legacy_refund_anchors)
             require(type(after["legacy-history-producer.php"]) is bytes
-                    and namespace["reverse_producer_entry"](after["legacy-history-producer.php"]) == before["legacy-history-producer.php"],
+                    and namespace["reverse_producer_entry"](after["legacy-history-producer.php"],
+                        legacy_refund_anchors=history_legacy_refund_anchors) == before["legacy-history-producer.php"],
                     "HISTORY_COMPLETE_PRODUCER_DIRECT_ENTRY_INVERSE")
             after["legacy-history-http.php"] = namespace["transform_history_http"](before["legacy-history-http.php"])
             require(type(after["legacy-history-http.php"]) is bytes

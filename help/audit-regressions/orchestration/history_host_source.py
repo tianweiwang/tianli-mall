@@ -1357,13 +1357,15 @@ _ADOPTION_SEAMS = (
 )
 
 
-def fixed_seams(*, refund_readiness: bool = False) -> tuple[tuple[bytes, bytes], ...]:
+def fixed_seams(*, refund_readiness: bool = False, legacy_refund_anchors: bool = False) -> tuple[tuple[bytes, bytes], ...]:
+    if type(legacy_refund_anchors) is not bool or legacy_refund_anchors and refund_readiness is not True:
+        raise ValueError("EXACT_NEW_HISTORY_REFUND_ANCHOR_HOST_SOURCE_REQUIRED")
     extra = tuple((before.encode('utf-8'), after.encode('utf-8')) for before, after in _LIFECYCLE_SEAMS)
     insertion = (_HISTORY_RUNTIME + '\n\n' + _READER_RUNTIME + '\n\n').encode()
     adoption = tuple((before.encode('utf-8'), after.encode('utf-8')) for before, after in _ADOPTION_SEAMS)
     seams = projection_seams() + extra + ((b'def prepare(binding_file, run_root):',
         insertion + b'def prepare(binding_file, run_root):'),) + adoption
-    return seams + (_refund_host_seams() if refund_readiness else ())
+    return seams + (_refund_host_seams() if refund_readiness else ()) + (_legacy_anchor_host_seams() if legacy_refund_anchors else ())
 
 
 def transform_compose(raw: bytes) -> bytes:
@@ -1395,12 +1397,12 @@ def _definitions(raw: bytes) -> dict[str, bytes]:
             for node in ast.parse(raw).body if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))}
 
 
-def transform_host(raw: bytes, *, refund_readiness: bool = False) -> bytes:
+def transform_host(raw: bytes, *, refund_readiness: bool = False, legacy_refund_anchors: bool = False) -> bytes:
     """Transform only the exact archived R3; do not import or execute its code."""
     _require(type(raw) is bytes and len(raw) == BASE_BYTES
              and hashlib.sha256(raw).hexdigest() == BASE_SHA256, "HISTORY_HOST_EXACT_ARCHIVED_R3")
     candidate = raw
-    for before, after in fixed_seams(refund_readiness=refund_readiness):
+    for before, after in fixed_seams(refund_readiness=refund_readiness, legacy_refund_anchors=legacy_refund_anchors):
         _require(candidate.count(before) == 1, "HISTORY_HOST_UNIQUE_LITERAL_SEAM")
         candidate = candidate.replace(before, after, 1)
     original = _definitions(raw); updated = _definitions(candidate)
@@ -1410,18 +1412,20 @@ def transform_host(raw: bytes, *, refund_readiness: bool = False) -> bytes:
     additions |= set(_definitions((_HISTORY_RUNTIME + "\n\n" + _READER_RUNTIME).encode()))
     _require(b"NONEMPTY_HISTORY_RUNTIME_NOT_IMPLEMENTED" not in candidate,
              "HISTORY_FINAL_ADMISSION_USES_REAL_REVIEW_AND_SOURCE_ALIASES")
+    if legacy_refund_anchors:
+        additions |= {"history_anchor_projection", "history_anchor_receipt"}
     _require(set(updated) == set(original) | additions
              and all(updated[name] == body for name, body in original.items() if name not in changed),
              "HISTORY_HOST_ALL_OTHER_FUNCTIONS_WHOLE_BYTES_HELD")
-    _require(reverse_host(candidate, refund_readiness=refund_readiness) == raw, "HISTORY_HOST_COMPLETE_REVERSE_TO_ARCHIVED_R3")
+    _require(reverse_host(candidate, refund_readiness=refund_readiness, legacy_refund_anchors=legacy_refund_anchors) == raw, "HISTORY_HOST_COMPLETE_REVERSE_TO_ARCHIVED_R3")
     return candidate
 
 
-def reverse_host(candidate: bytes, *, refund_readiness: bool = False) -> bytes:
+def reverse_host(candidate: bytes, *, refund_readiness: bool = False, legacy_refund_anchors: bool = False) -> bytes:
     """Recover and verify the complete original Host, with no source-file reads."""
     _require(type(candidate) is bytes, "HISTORY_HOST_REVERSE_BYTES")
     original = candidate
-    for before, after in reversed(fixed_seams(refund_readiness=refund_readiness)):
+    for before, after in reversed(fixed_seams(refund_readiness=refund_readiness, legacy_refund_anchors=legacy_refund_anchors)):
         _require(original.count(after) == 1, "HISTORY_HOST_UNIQUE_REVERSE_SEAM")
         original = original.replace(after, before, 1)
     _require(len(original) == BASE_BYTES and hashlib.sha256(original).hexdigest() == BASE_SHA256,
@@ -1575,3 +1579,83 @@ def _refund_host_seams() -> tuple[tuple[bytes, bytes], ...]:
         _require(original.count(b'range(1, 17)') == 1, 'HISTORY_REFUND_EXACT_ORIGINAL_SIXTEEN_CLI_LEAF_RANGE')
         seams.append((original, original.replace(b'range(1, 17)', b'range(1, 23)', 1)))
     return tuple(seams)
+
+
+# Current source-pair receipt validation before old App/37 and in the archived self-identity consumer.
+_LEGACY_ANCHOR_HOST = r'''HISTORY_LEGACY_ANCHOR_META = {'columns': ['id', 'pid', 'icon', 'menu_name', 'module', 'controller', 'action', 'api_url', 'methods', 'params', 'sort', 'is_show', 'is_show_path', 'access', 'menu_path', 'path', 'auth_type', 'header', 'is_header', 'unique_auth', 'is_del', 'mark'], 'rows': {'order_root': [4, 0, 's-order', '订单', 'admin', 'order', 'index', '', '', '[]', 120, 1, 1, 1, '/order', '', 1, 'home', 1, 'admin-order', 0, '订单'], 'refund_page': [897, 4, '', '售后订单', 'admin', '', '', '', '', '[]', 9, 1, 1, 1, '/order/refund', '4', 1, '', 0, 'admin-order-refund', 0, '售后订单']}}
+
+def history_anchor_projection(rows, columns):
+    expect(type(rows) is list, 'HISTORY_ANCHOR_REAL_TYPED_ROW_LIST')
+    hashes=[]
+    for row in rows:
+        expect(type(row) is dict and list(row) == columns, 'HISTORY_ANCHOR_REAL_TYPED_ROW_COLUMNS')
+        encoded=json.dumps(row,ensure_ascii=True,separators=(',',':')).replace('/', '\\/').encode('utf-8')
+        hashes.append(digest(encoded))
+    hashes.sort()
+    return {'rows':len(rows),'sha256':digest(('\n'.join(hashes)).encode('utf-8'))}
+
+
+def history_anchor_receipt(context, result):
+    expect(result['run_id'] == context['run_id'] and result['source_sha'] == context['source_sha'],
+           'HISTORY_ANCHOR_SAME_ACTUAL_INITIALIZER')
+    receipt=result['legacy_refund_page_anchors']
+    expect(type(receipt) is dict and set(receipt) == {'schema','scope','sql_source','columns','inserted_rows',
+           'original_ms1_rows','rows_after','before','after','initialized_before_legacy37'}
+           and type(receipt['schema']) is int and receipt['schema'] == 1
+           and receipt['scope'] == 'CURRENT_HISTORY_ORIGINAL_REFUND_PARENT_PAGES_ONLY'
+           and receipt['initialized_before_legacy37'] is True, 'HISTORY_ANCHOR_EXACT_INITIALIZER_RECEIPT')
+    sql,pin_ = history_source_bytes(Path(context['repo_dir'])/'crmeb/public/install/crmeb.sql')
+    expect(len(sql) == 10237459 and digest(sql) == '1e5e56c805f551a75332be58b2ab96572509c82835b812cdff3ca5c3eb7ad828'
+           and pin_['bytes'] == len(sql) and pin_['sha256'] == digest(sql)
+           and history_exact(receipt['sql_source'], {'path':'crmeb/public/install/crmeb.sql','bytes':len(sql),'sha256':digest(sql)}),
+           'HISTORY_ANCHOR_EXACT_SHARED_ORIGINAL_SQL_SOURCE')
+    columns=HISTORY_LEGACY_ANCHOR_META['columns']
+    rows=[dict(zip(columns,cells)) for cells in HISTORY_LEGACY_ANCHOR_META['rows'].values()]
+    expect(history_exact(receipt['columns'],columns) and history_exact(receipt['inserted_rows'],rows),
+           'HISTORY_ANCHOR_ALL_22_ORIGINAL_FIELDS_AND_ORIGINAL_4_TO_897_CHAIN')
+    old=receipt['original_ms1_rows']
+    auth=['marketplace-merchants-list','marketplace-merchants-create','marketplace-merchants-read',
+          'marketplace-merchants-update','marketplace-merchants-review','marketplace-merchants-flags','marketplace-merchants-admin-employee']
+    expect(type(old) is list and len(old)==7 and all(type(row) is dict and list(row)==columns for row in old)
+           and history_exact([row['id']for row in old],list(range(2473,2480)))
+           and history_exact([row['unique_auth']for row in old],auth)
+           and all(type(row['auth_type']) is int and row['auth_type']==2 for row in old),
+           'HISTORY_ANCHOR_ORIGINAL_SEVEN_REAL_MS1_ROWS')
+    tables=['eb_system_menus','eb_system_role','eb_marketplace_role']
+    expect(type(receipt['before']) is dict and list(receipt['before'])==tables
+           and type(receipt['after']) is dict and list(receipt['after'])==tables,'HISTORY_ANCHOR_EXACT_THREE_TABLES')
+    for table in tables:
+        for phase in ['before','after']:
+            view=receipt[phase][table]
+            expect(type(view) is dict and list(view)==['metadata','ddl','columns','projection']
+                   and type(view['metadata']) is dict and type(view['ddl']) is str and bool(view['ddl'])
+                   and history_exact(view['columns'],list(view['metadata']['columns']))
+                   and type(view['projection']) is dict and list(view['projection'])==['rows','sha256']
+                   and type(view['projection']['rows']) is int and view['projection']['rows']>=0
+                   and type(view['projection']['sha256']) is str and re.fullmatch('[a-f0-9]{64}',view['projection']['sha256']),
+                   'HISTORY_ANCHOR_COMPLETE_NATIVE_METADATA_DDL_TYPED_PROJECTIONS')
+        if table!='eb_system_menus':
+            expect(history_exact(receipt['before'][table],receipt['after'][table]),'HISTORY_ANCHOR_BOTH_ROLES_UNCHANGED')
+    before=receipt['before']['eb_system_menus'];after=receipt['after']['eb_system_menus']
+    ai=before['metadata']['table']['AUTO_INCREMENT']
+    expect(type(ai) in (int,str) and str(ai)=='2480'
+           and history_exact(before['metadata'],after['metadata']) and before['ddl']==after['ddl']
+           and history_exact(before['columns'],columns) and history_exact(after['columns'],columns),
+           'HISTORY_ANCHOR_NO_METADATA_DDL_OR_NATIVE_COUNTER_CHANGE')
+    expect(history_exact(receipt['rows_after'],rows+old)
+           and history_exact(before['projection'],history_anchor_projection(old,columns))
+           and history_exact(after['projection'],history_anchor_projection(rows+old,columns)),
+           'HISTORY_ANCHOR_ONLY_TWO_ADDITIONS_ALL_SEVEN_TYPED_ROWS_PRESERVED')
+    return receipt
+'''
+
+def _legacy_anchor_host_seams():
+    helper=_LEGACY_ANCHOR_HOST.encode('utf-8')+b'\n\n'
+    anchor=b'def history_initializer_self(context):\n'
+    original=_definitions(_HISTORY_RUNTIME.encode())['history_initializer_self']
+    old_return=b"    return result['actual_self_mer_id']"
+    _require(original.count(old_return)==1,'HISTORY_ANCHOR_ONE_ARCHIVED_INITIALIZER_CONSUMER')
+    updated=original.replace(old_return,b'    history_anchor_receipt(context,result)\n'+old_return,1)
+    phase=b"        history_archive(context, 'before-legacy-files')\n"
+    return ((anchor,helper+anchor),(original,updated),
+            (phase,b'        history_anchor_receipt(context,result)\n'+phase))

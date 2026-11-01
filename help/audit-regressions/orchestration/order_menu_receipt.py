@@ -1,5 +1,5 @@
 def verify_order_menu_bootstrap(context, result):
-    """Read only the exact pre-early four-anchor/A-two-leaf native receipt."""
+    """Read only the exact pre-early four/five-anchor and optional A-two-leaf native receipt."""
     def check(value, code):
         expect(value, 'ORDER_MENU_' + code)
 
@@ -86,7 +86,8 @@ def verify_order_menu_bootstrap(context, result):
     check(receipt['source_sql_sha256'] == sources['crmeb/public/install/crmeb.sql']['sha256'],
           'EXACT_CAPTURED_INSTALL_SQL')
 
-    names = ('order_root', 'order_page', 'order_info_group', 'order_info')
+    check(type(ORDER_MENU_REFUND_PAGE_REQUIRED) is bool, 'EXACT_REFUND_PAGE_PROFILE_FLAG')
+    names = ('order_root', 'order_page', 'order_info_group', 'order_info') + (('refund_page',) if ORDER_MENU_REFUND_PAGE_REQUIRED else ())
     meta = ORDER_MENU_SOURCE_META
     keys(meta, ('columns', 'rows'), 'FIXED_SOURCE_META')
     columns = meta['columns']
@@ -101,7 +102,7 @@ def verify_order_menu_bootstrap(context, result):
         keys(receipt[key], names, 'EXACT_FOUR_' + key.upper())
         check(list(receipt[key]) == list(names), 'EXACT_ANCHOR_ORDER')
     ids = receipt['anchor_ids']
-    check(all(native_id(value) for value in ids.values()) and len(set(ids.values())) == 4,
+    check(all(native_id(value) for value in ids.values()) and len(set(ids.values())) == len(names),
           'FOUR_DISTINCT_DATABASE_GENERATED_IDS')
     source_ids = {}
     for name in names:
@@ -113,7 +114,7 @@ def verify_order_menu_bootstrap(context, result):
         check(native_id(expected['id']), 'ORIGINAL_SQL_SOURCE_ID')
         source_ids[name] = expected['id']
         expected['id'] = ids[name]
-        if name == 'order_page':
+        if name in ('order_page', 'refund_page'):
             expected['pid'] = ids['order_root']
             expected['path'] = str(ids['order_root'])
         elif name == 'order_info_group':
@@ -125,7 +126,7 @@ def verify_order_menu_bootstrap(context, result):
         keys(actual, columns, 'COMPLETE_NATIVE_ANCHOR_COLUMNS')
         check(list(actual) == columns and all(source_cell(actual[key], expected[key])
             for key in columns), 'ONLY_NATIVE_ID_PARENT_AND_PATH_MAPPING')
-    check(list(source_ids.values()) == [4, 5, 2562, 2585], 'FOUR_ORIGINAL_SQL_IDENTITIES')
+    check(list(source_ids.values()) == [4, 5, 2562, 2585] + ([897] if ORDER_MENU_REFUND_PAGE_REQUIRED else []), 'DECLARED_ORIGINAL_SQL_IDENTITIES')
     exact(receipt['source_anchor_ids'], source_ids, 'SOURCE_IDS_NOT_INSERTED_AS_NATIVE_IDS')
 
     proof_order = ('order_root', 'order_page', 'order_info', 'order_info_group')
@@ -192,7 +193,7 @@ def verify_order_menu_bootstrap(context, result):
         keys(receipt[key], ('count', 'sha256'), 'EXACT_MENU_ROW_DIGEST')
         check(uint(receipt[key]['count']) and digest(receipt[key]['sha256']), 'TYPED_MENU_ROW_DIGEST')
     exact(receipt['menus_before'], receipt['retained_menus_after'], 'EVERY_OLD_MENU_ROW_RETAINED')
-    check(receipt['menus_after']['count'] == receipt['menus_before']['count'] + 4 + len(leaf_ids),
+    check(receipt['menus_after']['count'] == receipt['menus_before']['count'] + len(names) + len(leaf_ids),
           'ONLY_FOUR_OR_SIX_NEW_MENU_ROWS')
     for key in ('private_inputs_before', 'private_inputs_after'):
         keys(receipt[key], ('migrator', 'app'), 'EXACT_TWO_ORIGINAL_PRIVATE_INPUTS')

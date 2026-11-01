@@ -954,9 +954,10 @@ def _source(raw):
         raise ValueError("INITIALIZER_EXACT_ARCHIVED_SOURCE_REQUIRED")
 
 
-def transform_initializer(raw: bytes, *, refund_readiness=False) -> bytes:
+def transform_initializer(raw: bytes, *, refund_readiness=False, legacy_refund_anchors=False) -> bytes:
     if type(refund_readiness) is not bool:
         raise ValueError("EXACT_HISTORY_REFUND_VARIANT_REQUIRED")
+    _legacy_anchor_mode(refund_readiness, legacy_refund_anchors)
     _source(raw)
     candidate = raw
     for before, after in _seams():
@@ -966,17 +967,24 @@ def transform_initializer(raw: bytes, *, refund_readiness=False) -> bytes:
     if refund_readiness:
         for previous,current in _refund_initializer_seams():
             candidate=_refund_once(candidate,previous,current)
-    if reverse_initializer(candidate, refund_readiness=refund_readiness) != raw:
+    if legacy_refund_anchors:
+        for previous, current in _legacy_anchor_initializer_seams():
+            candidate = _refund_once(candidate, previous, current)
+    if reverse_initializer(candidate, refund_readiness=refund_readiness, legacy_refund_anchors=legacy_refund_anchors) != raw:
         raise ValueError("INITIALIZER_COMPLETE_REVERSE_REQUIRED")
     return candidate
 
 
-def reverse_initializer(candidate: bytes, *, refund_readiness=False) -> bytes:
+def reverse_initializer(candidate: bytes, *, refund_readiness=False, legacy_refund_anchors=False) -> bytes:
     if type(refund_readiness) is not bool:
         raise ValueError("EXACT_HISTORY_REFUND_VARIANT_REQUIRED")
+    _legacy_anchor_mode(refund_readiness, legacy_refund_anchors)
     if not isinstance(candidate, bytes):
         raise ValueError("INITIALIZER_CANDIDATE_BYTES_REQUIRED")
     raw = candidate
+    if legacy_refund_anchors:
+        for previous, current in reversed(_legacy_anchor_initializer_seams()):
+            raw = _refund_once(raw, current, previous)
     if refund_readiness:
         for previous,current in reversed(_refund_initializer_seams()):
             raw=_refund_once(raw,current,previous)
@@ -1130,7 +1138,9 @@ def _producer_cookie_seams():
     )
 
 
-def transform_producer_entry(raw: bytes) -> bytes:
+def transform_producer_entry(raw: bytes, *, legacy_refund_anchors=False) -> bytes:
+    if type(legacy_refund_anchors) is not bool:
+        raise ValueError("EXACT_HISTORY_LEGACY_ANCHOR_VARIANT_REQUIRED")
     _producer_entry_source(raw)
     observer_before = b"        $observer = audit_db(); $redis = audit_redis();\r\n"
     observer_after = (b"        $observer = audit_db();\r\n"
@@ -1151,12 +1161,20 @@ def transform_producer_entry(raw: bytes) -> bytes:
         if candidate.count(previous) != 1 or current in candidate:
             raise ValueError("HISTORY_PRODUCER_EXACT_COOKIE_FORWARD_SEAM_REQUIRED")
         candidate = candidate.replace(previous, current, 1)
-    if reverse_producer_entry(candidate) != raw:
+    if legacy_refund_anchors:
+        for previous, current in _legacy_anchor_producer_seams():
+            candidate = _refund_once(candidate, previous, current)
+    if reverse_producer_entry(candidate, legacy_refund_anchors=legacy_refund_anchors) != raw:
         raise ValueError("HISTORY_PRODUCER_COMPLETE_ENTRY_REVERSE_REQUIRED")
     return candidate
 
 
-def reverse_producer_entry(candidate: bytes) -> bytes:
+def reverse_producer_entry(candidate: bytes, *, legacy_refund_anchors=False) -> bytes:
+    if type(legacy_refund_anchors) is not bool:
+        raise ValueError("EXACT_HISTORY_LEGACY_ANCHOR_VARIANT_REQUIRED")
+    if legacy_refund_anchors:
+        for previous, current in reversed(_legacy_anchor_producer_seams()):
+            candidate = _refund_once(candidate, current, previous)
     observer_before = b"        $observer = audit_db(); $redis = audit_redis();\r\n"
     observer_after = (b"        $observer = audit_db();\r\n"
                       b"        nhep_expect($observer->setAttribute(PDO::ATTR_EMULATE_PREPARES, false) === true\r\n"
@@ -1256,3 +1274,229 @@ def reverse_history_http(candidate: bytes) -> bytes:
     raw = candidate.replace(_HISTORY_HTTP_FAILURE_AFTER, _HISTORY_HTTP_FAILURE_BEFORE, 1)
     _history_http_source(raw)
     return raw
+
+
+# Explicit current fixture-pair branch only. False preserves every f609 historical output.
+def _legacy_anchor_mode(refund_readiness, legacy_refund_anchors):
+    if type(legacy_refund_anchors) is not bool or legacy_refund_anchors and refund_readiness is not True:
+        raise ValueError("EXACT_NEW_HISTORY_REFUND_ANCHOR_SOURCE_COMBINATION_REQUIRED")
+
+_LEGACY_ANCHOR_PURE = r'''const M4IHA_SOURCE_META = <<<'M4IHA_SOURCE_JSON'
+{"columns":["id","pid","icon","menu_name","module","controller","action","api_url","methods","params","sort","is_show","is_show_path","access","menu_path","path","auth_type","header","is_header","unique_auth","is_del","mark"],"rows":{"order_root":[4,0,"s-order","订单","admin","order","index","","","[]",120,1,1,1,"/order","",1,"home",1,"admin-order",0,"订单"],"refund_page":[897,4,"","售后订单","admin","","","","","[]",9,1,1,1,"/order/refund","4",1,"",0,"admin-order-refund",0,"售后订单"]}}
+M4IHA_SOURCE_JSON;
+
+function m4iha_literal(string $sql, int &$position): mixed
+{
+    while (isset($sql[$position]) && ctype_space($sql[$position])) ++$position;
+    m2f_assert(isset($sql[$position]), 'ORDER_MENU_SQL_LITERAL_PRESENT');
+    if ($sql[$position] === "'") {
+        ++$position; $value = ''; $closed = false;
+        while (isset($sql[$position])) {
+            $character = $sql[$position++];
+            if ($character === '\\') {
+                m2f_assert(isset($sql[$position]), 'ORDER_MENU_SQL_STRING_ESCAPE_COMPLETE');
+                $escaped = $sql[$position++];
+                $value .= match ($escaped) {
+                    '0' => "\0", 'n' => "\n", 'r' => "\r", 't' => "\t", 'b' => "\x08", 'Z' => "\x1a",
+                    default => $escaped,
+                };
+            } elseif ($character === "'") {
+                if (($sql[$position] ?? null) === "'") { $value .= "'"; ++$position; }
+                else { $closed = true; break; }
+            } else { $value .= $character; }
+        }
+        m2f_assert($closed, 'ORDER_MENU_SQL_STRING_CLOSED');
+        return $value;
+    }
+    $start = $position;
+    while (isset($sql[$position]) && $sql[$position] !== ',' && $sql[$position] !== ')') ++$position;
+    $literal = trim(substr($sql, $start, $position - $start));
+    if (strcasecmp($literal, 'NULL') === 0) return null;
+    m2f_assert(preg_match('/\A(?:0|[1-9][0-9]*|-[1-9][0-9]*)\z/D', $literal) === 1
+        && (string)(int)$literal === $literal, 'ORDER_MENU_SQL_CANONICAL_INTEGER_LITERAL');
+    return (int)$literal;
+}
+
+function m4iha_source(string $sql): array
+{
+    m2f_assert(strlen($sql) === 10237459 && hash('sha256', $sql) === '1e5e56c805f551a75332be58b2ab96572509c82835b812cdff3ca5c3eb7ad828', 'HISTORY_ANCHOR_EXACT_SHARED_LEGACY_SQL');
+    $meta = json_decode(M4IHA_SOURCE_META, true, 16, JSON_THROW_ON_ERROR);
+    $anchorNames = ['order_root', 'refund_page'];
+    m2f_assert(array_keys($meta) === ['columns', 'rows'] && count($meta['columns']) === 22
+        && count(array_unique($meta['columns'])) === 22
+        && array_keys($meta['rows']) === $anchorNames,
+        'ORDER_MENU_FIXED_DECLARATIVE_META');
+    $matched = preg_match_all('/^INSERT INTO `eb_system_menus` \(([^\r\n]+)\) VALUES\r?\n/m', $sql, $headers, PREG_OFFSET_CAPTURE);
+    m2f_assert($matched === 1 && strlen($sql) <= 16777216, 'ORDER_MENU_ONE_ORIGINAL_SQL_STATEMENT');
+    $header = $headers[1][0][0];
+    m2f_assert(preg_match('/\A`[a-z_]+`(?:,\s*`[a-z_]+`)*\z/D', $header) === 1,
+        'ORDER_MENU_SQL_ONLY_DECLARED_COLUMN_IDENTIFIERS');
+    preg_match_all('/`([a-z_]+)`/', $header, $matches); $columns = $matches[1];
+    m2f_assert($columns === $meta['columns'], 'ORDER_MENU_ORIGINAL_EXACT_22_COLUMNS');
+    $selected = []; $names = [];
+    foreach ($meta['rows'] as $name => $cells) {
+        m2f_assert(array_is_list($cells) && count($cells) === 22, 'ORDER_MENU_COMPLETE_SOURCE_ROW');
+        $names[$cells[array_search('unique_auth', $columns, true)]] = $name;
+    }
+    m2f_assert(count($names) === count($anchorNames), 'ORDER_MENU_DECLARED_UNIQUE_SOURCE_IDENTITIES');
+    $position = $headers[0][0][1] + strlen($headers[0][0][0]); $tupleCount = 0;
+    while (true) {
+        while (isset($sql[$position]) && ctype_space($sql[$position])) ++$position;
+        m2f_assert(($sql[$position] ?? null) === '(', 'ORDER_MENU_SQL_TUPLE_OPEN'); ++$position;
+        $cells = [];
+        for ($index = 0; $index < 22; ++$index) {
+            $cells[] = m4iha_literal($sql, $position);
+            while (isset($sql[$position]) && ctype_space($sql[$position])) ++$position;
+            m2f_assert(($sql[$position] ?? null) === ($index === 21 ? ')' : ','), 'ORDER_MENU_SQL_EXACT_TUPLE_SEPARATOR');
+            ++$position;
+        }
+        ++$tupleCount; $unique = $cells[array_search('unique_auth', $columns, true)];
+        if (is_string($unique) && isset($names[$unique])) {
+            $name = $names[$unique]; m2f_assert(!isset($selected[$name]), 'ORDER_MENU_SOURCE_IDENTITY_NOT_DUPLICATED');
+            $selected[$name] = $cells;
+        }
+        while (isset($sql[$position]) && ctype_space($sql[$position])) ++$position;
+        $delimiter = $sql[$position] ?? null;
+        m2f_assert($delimiter === ',' || $delimiter === ';', 'ORDER_MENU_SQL_STATEMENT_CLOSED'); ++$position;
+        if ($delimiter === ';') break;
+    }
+    $ordered = [];
+    foreach ($meta['rows'] as $name => $cells) {
+        m2f_assert(isset($selected[$name]) && $selected[$name] === $cells, 'ORDER_MENU_RUNTIME_SQL_EQUALS_FULL_FIXED_SOURCE_META');
+        $ordered[$name] = $selected[$name];
+    }
+    m2f_assert(count($ordered) === count($anchorNames) && $tupleCount >= count($anchorNames), 'ORDER_MENU_COMPLETE_DECLARED_ORIGINAL_ANCHORS');
+    return ['columns' => $columns, 'rows' => $ordered];
+}
+
+function m4iha_project(array $rows, array $columns): array
+{
+    $hashes=[];
+    foreach($rows as$row){
+        m2f_assert(is_array($row)&&array_keys($row)===$columns,'HISTORY_ANCHOR_EXACT_TYPED_COLUMNS');
+        $hashes[]=hash('sha256',json_encode($row,JSON_THROW_ON_ERROR));
+    }
+    sort($hashes,SORT_STRING);
+    return ['rows'=>count($rows),'sha256'=>hash('sha256',implode("\n",$hashes))];
+}
+function m4iha_receipt(array $receipt,string $sql): void
+{
+    $keys=array_keys($receipt);sort($keys,SORT_STRING);
+    $wanted=['schema','scope','sql_source','columns','inserted_rows','original_ms1_rows','rows_after','before','after','initialized_before_legacy37'];sort($wanted,SORT_STRING);
+    m2f_assert($keys===$wanted&&$receipt['schema']===1
+        &&$receipt['scope']==='CURRENT_HISTORY_ORIGINAL_REFUND_PARENT_PAGES_ONLY'
+        &&$receipt['initialized_before_legacy37']===true,'HISTORY_ANCHOR_EXACT_INITIALIZATION_RECEIPT');
+    $meta=m4iha_source($sql);$columns=$meta['columns'];$rows=[];
+    foreach($meta['rows']as$cells)$rows[]=array_combine($columns,$cells);
+    m2f_assert($receipt['sql_source']===['path'=>'crmeb/public/install/crmeb.sql','bytes'=>strlen($sql),'sha256'=>hash('sha256',$sql)]
+        &&$receipt['columns']===$columns&&$receipt['inserted_rows']===$rows
+        &&array_column($rows,'id')===[4,897]&&$rows[1]['pid']===4,'HISTORY_ANCHOR_COMPLETE_ORIGINAL_SQL_ROWS_AND_CHAIN');
+    $old=$receipt['original_ms1_rows'];$auth=['marketplace-merchants-list','marketplace-merchants-create','marketplace-merchants-read',
+        'marketplace-merchants-update','marketplace-merchants-review','marketplace-merchants-flags','marketplace-merchants-admin-employee'];
+    m2f_assert(is_array($old)&&array_is_list($old)&&count($old)===7
+        &&array_column($old,'id')===range(2473,2479)&&array_column($old,'unique_auth')===$auth,'HISTORY_ANCHOR_ORIGINAL_SEVEN_MS1_ROWS');
+    foreach($old as$row)m2f_assert(array_keys($row)===$columns&&is_int($row['id'])&&$row['auth_type']===2,'HISTORY_ANCHOR_ORIGINAL_NATIVE_MS1_ROW_TYPES');
+    $tables=['eb_system_menus','eb_system_role','eb_marketplace_role'];
+    m2f_assert(array_keys($receipt['before'])===$tables&&array_keys($receipt['after'])===$tables,'HISTORY_ANCHOR_EXACT_THREE_TABLE_OBSERVATIONS');
+    foreach($tables as$table){
+        foreach(['before','after']as$phase){
+            $view=$receipt[$phase][$table];
+            m2f_assert(array_keys($view)===['metadata','ddl','columns','projection']&&is_array($view['metadata'])
+                &&is_string($view['ddl'])&&$view['ddl']!==''&&$view['columns']===array_keys($view['metadata']['columns'])
+                &&array_keys($view['projection'])===['rows','sha256']&&is_int($view['projection']['rows'])&&$view['projection']['rows']>=0
+                &&is_string($view['projection']['sha256'])&&preg_match('/\A[a-f0-9]{64}\z/D',$view['projection']['sha256'])===1,
+                'HISTORY_ANCHOR_COMPLETE_METADATA_DDL_AND_TYPED_PROJECTION');
+        }
+        if($table!=='eb_system_menus')m2f_assert($receipt['before'][$table]===$receipt['after'][$table],'HISTORY_ANCHOR_NO_ROLE_DATA_METADATA_OR_COUNTER_CHANGE');
+    }
+    $before=$receipt['before']['eb_system_menus'];$after=$receipt['after']['eb_system_menus'];
+    $counter=$before['metadata']['table']['AUTO_INCREMENT'];
+    m2f_assert((is_int($counter)||is_string($counter))&&(string)$counter==='2480'
+        &&$before['metadata']===$after['metadata']&&$before['ddl']===$after['ddl']
+        &&$before['columns']===$columns&&$after['columns']===$columns,'HISTORY_ANCHOR_ONLY_EXPLICIT_OLD_IDS_NO_COUNTER_OR_DDL_CHANGE');
+    $all=array_merge($rows,$old);
+    m2f_assert($receipt['rows_after']===$all&&$before['projection']===m4iha_project($old,$columns)
+        &&$after['projection']===m4iha_project($all,$columns),'HISTORY_ANCHOR_EXACT_ONLY_TWO_ROWS_ALL_SEVEN_ORIGINAL_TYPED_VALUES');
+}
+'''.encode('utf-8')
+
+_LEGACY_ANCHOR_CAPTURE = rb'''function m4iha_snapshot(PDO $db): array
+{
+    $native=m4m_rows($db,'SELECT CURRENT_USER() AS actor,DATABASE() AS db,@@SESSION.information_schema_stats_expiry AS stats_expiry,@@SESSION.auto_increment_increment AS increment_value,@@SESSION.auto_increment_offset AS offset_value');
+    m2f_assert(count($native)===1&&$native[0]['actor']==='audit_app@%'&&$native[0]['db']==='audit_auth'
+        &&(string)$native[0]['stats_expiry']==='0'&&(string)$native[0]['increment_value']==='1'&&(string)$native[0]['offset_value']==='1',
+        'HISTORY_ANCHOR_ORIGINAL_DML_AND_FRESH_UNCACHED_NATIVE_METADATA');
+    $result=[];
+    foreach(['eb_system_menus','eb_system_role','eb_marketplace_role']as$table){
+        $metadata=m4m_metadata($db,$table);$columns=array_keys($metadata['columns']);
+        $ddl=$db->query('SHOW CREATE TABLE '.m4m_quote($table))->fetch(PDO::FETCH_NUM);
+        m2f_assert(is_array($ddl)&&is_string($ddl[1]??null),'HISTORY_ANCHOR_REAL_COMPLETE_DDL');
+        $result[$table]=['metadata'=>$metadata,'ddl'=>$ddl[1],'columns'=>$columns,'projection'=>m4m_projection($db,$table,$columns)];
+    }
+    return $result;
+}
+'''
+
+_LEGACY_ANCHOR_INSTALL = rb'''function m4iha_install(PDO $db,string $sql,array $ms1MenuIds): array
+{
+    $meta=m4iha_source($sql);$columns=$meta['columns'];$rows=[];
+    foreach($meta['rows']as$cells)$rows[]=array_combine($columns,$cells);
+    m2f_assert($ms1MenuIds===range(2473,2479)&&!$db->inTransaction()
+        &&$db->getAttribute(PDO::ATTR_DRIVER_NAME)==='mysql'
+        &&$db->getAttribute(PDO::ATTR_ERRMODE)===PDO::ERRMODE_EXCEPTION,'HISTORY_ANCHOR_ORIGINAL_COMPLETED_MS1_AND_OWN_NATIVE_TRANSACTION');
+    m2f_assert($db->beginTransaction(),'HISTORY_ANCHOR_BEGIN');
+    try{
+        $before=m4iha_snapshot($db);$old=m4m_rows($db,'SELECT * FROM eb_system_menus ORDER BY id');
+        m2f_assert(count($old)===7&&array_column($old,'id')===$ms1MenuIds,'HISTORY_ANCHOR_ONLY_SEVEN_ORIGINAL_MENU_ROWS_BEFORE');
+        $collision=m4m_rows($db,'SELECT id FROM eb_system_menus WHERE id IN (?,?) OR unique_auth IN (?,?) OR (auth_type=1 AND menu_path IN (?,?))',
+            [4,897,'admin-order','admin-order-refund','/order','/order/refund']);
+        m2f_assert($collision===[],'HISTORY_ANCHOR_NO_OLD_ID_PERMISSION_OR_ROUTE_COLLISION');
+        $statement=$db->prepare('INSERT INTO eb_system_menus ('.implode(',',array_map('m4m_quote',$columns)).') VALUES ('.implode(',',array_fill(0,22,'?')).')');
+        foreach($rows as$row)m2f_assert($statement->execute(array_values($row))&&$statement->rowCount()===1,'HISTORY_ANCHOR_EXACTLY_ONE_ORIGINAL_SQL_ROW_INSERT');
+        $after=m4iha_snapshot($db);$all=m4m_rows($db,'SELECT * FROM eb_system_menus ORDER BY id');
+        $receipt=['schema'=>1,'scope'=>'CURRENT_HISTORY_ORIGINAL_REFUND_PARENT_PAGES_ONLY',
+            'sql_source'=>['path'=>'crmeb/public/install/crmeb.sql','bytes'=>strlen($sql),'sha256'=>hash('sha256',$sql)],
+            'columns'=>$columns,'inserted_rows'=>$rows,'original_ms1_rows'=>$old,'rows_after'=>$all,
+            'before'=>$before,'after'=>$after,'initialized_before_legacy37'=>true];
+        m4iha_receipt($receipt,$sql);
+        m2f_assert($db->commit()&&!$db->inTransaction(),'HISTORY_ANCHOR_COMMIT');
+        m2f_assert(m4iha_snapshot($db)===$after&&m4m_rows($db,'SELECT * FROM eb_system_menus ORDER BY id')===$all,
+            'HISTORY_ANCHOR_REAL_POSTCOMMIT_ROWS_METADATA_AND_ROLES');
+        return $receipt;
+    }catch(Throwable $error){if($db->inTransaction())$db->rollBack();throw$error;}
+}
+'''
+
+_LEGACY_ANCHOR_PRODUCER_CONTEXT = rb'''function nhepa_anchor_context(array $qualified,PDO $db): void
+{
+    nhe_business_self_id($qualified);
+    $path='/run/audit/evidence/initializer-result.json';$archive='/run/audit/evidence/nonempty-history-phases/before-legacy-files/evidence/initializer-result.json';
+    $raw=file_get_contents($path);$saved=file_get_contents($archive);
+    nhep_expect(is_string($raw)&&$raw===$saved,'HISTORY_ANCHOR_PRODUCER_ORIGINAL_AND_ARCHIVED_INITIALIZER_BYTES');
+    $result=json_decode($raw,true,128,JSON_THROW_ON_ERROR);$receipt=$result['legacy_refund_page_anchors'];
+    $sql=file_get_contents('/legacy-source/crmeb/public/install/crmeb.sql');
+    nhep_expect(is_string($sql),'HISTORY_ANCHOR_PRODUCER_ORIGINAL_SQL_BYTES');
+    nhepa_receipt($receipt,$sql);
+    nhep_expect(nhepa_snapshot($db)===$receipt['after']&&m4m_rows($db,'SELECT * FROM eb_system_menus ORDER BY id')===$receipt['rows_after'],
+        'HISTORY_ANCHOR_PRODUCER_REAL_NINE_ROWS_AND_BOTH_ROLES_BEFORE_PRE37');
+}
+'''
+
+def _legacy_anchor_initializer_seams():
+    helper = _LEGACY_ANCHOR_PURE + b'\n' + _LEGACY_ANCHOR_CAPTURE + b'\n' + _LEGACY_ANCHOR_INSTALL + b'\n'
+    anchor = b'function m4i_initialize(array &$evidence, ?array &$primary, ?array &$cleanup): void\n'
+    old_call = b'        m4i_defaultShipping($evidence);\n'
+    new_call = old_call + (b"        m4i_source(); audit_guard_assert();\n"
+        b"        $sql=file_get_contents('/source/crmeb/public/install/crmeb.sql');\n"
+        b"        m2f_assert(is_string($sql),'HISTORY_ANCHOR_REAL_BOUND_INSTALL_SQL');\n"
+        b"        $evidence['legacy_refund_page_anchors']=m4iha_install(audit_db(),$sql,$evidence['children'][2]['result']['menu_ids']);\n"
+        b"        m4i_source(); audit_guard_assert();\n")
+    return ((anchor, helper + anchor), (old_call, new_call))
+
+
+def _legacy_anchor_producer_seams():
+    pure = (_LEGACY_ANCHOR_PURE + b'\n' + _LEGACY_ANCHOR_CAPTURE).replace(b'm4iha_',b'nhepa_').replace(b'M4IHA_',b'NHEPA_').replace(b'm2f_assert',b'nhep_expect')
+    anchor=b'function nhep_normal_history_main(): int\r\n'
+    call=b'        $prepared = nhep_pre37_fixed_preparation($qualified, $observer, $redis);\r\n'
+    return ((anchor,pure+b'\n'+_LEGACY_ANCHOR_PRODUCER_CONTEXT+b'\n'+anchor),
+            (call,b'        nhepa_anchor_context($qualified,$observer);\r\n'+call))

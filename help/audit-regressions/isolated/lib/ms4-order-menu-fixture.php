@@ -129,6 +129,11 @@ const M4I_ORDER_MENU_SOURCE_META = <<<'M4I_ORDER_MENU_SOURCE_JSON'
 }
 M4I_ORDER_MENU_SOURCE_JSON;
 
+/** The new refund Gate also requires this original installation page, not a new action grant. */
+const M4I_ORDER_MENU_REFUND_PAGE_SOURCE_ROW = <<<'M4I_ORDER_MENU_REFUND_PAGE_JSON'
+[897,4,"","售后订单","admin","","","","","[]",9,1,1,1,"/order/refund","4",1,"",0,"admin-order-refund",0,"售后订单"]
+M4I_ORDER_MENU_REFUND_PAGE_JSON;
+
 /** Same bounded SQL-literal state machine as preview_storefront_builtin; expressions are rejected. */
 function m4iom_literal(string $sql, int &$position): mixed
 {
@@ -162,12 +167,17 @@ function m4iom_literal(string $sql, int &$position): mixed
     return (int)$literal;
 }
 
-function m4iom_source_meta(string $sql): array
+function m4iom_source_meta(string $sql, bool $withRefundPage = false): array
 {
     $meta = json_decode(M4I_ORDER_MENU_SOURCE_META, true, 16, JSON_THROW_ON_ERROR);
+    $anchorNames = ['order_root', 'order_page', 'order_info_group', 'order_info'];
+    if ($withRefundPage) {
+        $meta['rows']['refund_page'] = json_decode(M4I_ORDER_MENU_REFUND_PAGE_SOURCE_ROW, true, 8, JSON_THROW_ON_ERROR);
+        $anchorNames[] = 'refund_page';
+    }
     m2f_assert(array_keys($meta) === ['columns', 'rows'] && count($meta['columns']) === 22
         && count(array_unique($meta['columns'])) === 22
-        && array_keys($meta['rows']) === ['order_root', 'order_page', 'order_info_group', 'order_info'],
+        && array_keys($meta['rows']) === $anchorNames,
         'ORDER_MENU_FIXED_DECLARATIVE_META');
     $matched = preg_match_all('/^INSERT INTO `eb_system_menus` \(([^\r\n]+)\) VALUES\r?\n/m', $sql, $headers, PREG_OFFSET_CAPTURE);
     m2f_assert($matched === 1 && strlen($sql) <= 16777216, 'ORDER_MENU_ONE_ORIGINAL_SQL_STATEMENT');
@@ -181,7 +191,7 @@ function m4iom_source_meta(string $sql): array
         m2f_assert(array_is_list($cells) && count($cells) === 22, 'ORDER_MENU_COMPLETE_SOURCE_ROW');
         $names[$cells[array_search('unique_auth', $columns, true)]] = $name;
     }
-    m2f_assert(count($names) === 4, 'ORDER_MENU_FOUR_UNIQUE_SOURCE_IDENTITIES');
+    m2f_assert(count($names) === count($anchorNames), 'ORDER_MENU_DECLARED_UNIQUE_SOURCE_IDENTITIES');
     $position = $headers[0][0][1] + strlen($headers[0][0][0]); $tupleCount = 0;
     while (true) {
         while (isset($sql[$position]) && ctype_space($sql[$position])) ++$position;
@@ -208,7 +218,7 @@ function m4iom_source_meta(string $sql): array
         m2f_assert(isset($selected[$name]) && $selected[$name] === $cells, 'ORDER_MENU_RUNTIME_SQL_EQUALS_FULL_FIXED_SOURCE_META');
         $ordered[$name] = $selected[$name];
     }
-    m2f_assert(count($ordered) === 4 && $tupleCount >= 4, 'ORDER_MENU_COMPLETE_FOUR_ORIGINAL_ANCHORS');
+    m2f_assert(count($ordered) === count($anchorNames) && $tupleCount >= count($anchorNames), 'ORDER_MENU_COMPLETE_DECLARED_ORIGINAL_ANCHORS');
     return ['columns' => $columns, 'rows' => $ordered];
 }
 
@@ -227,7 +237,7 @@ function m4iom_row(PDO $db, array $columns, int $id, array $expected): array
 }
 
 /** Called only by the source-bound initializer after its original nine children, before early sealing. */
-function m4iom_prepare(array $binding, array $sourceFiles, bool $withReadLeaves): array
+function m4iom_prepare(array $binding, array $sourceFiles, bool $withReadLeaves, bool $withRefundPage = false): array
 {
     audit_guard_assert();
     m2f_assert(empty($GLOBALS['m4c_app_started']) && !isset($GLOBALS['m4c_application']), 'ORDER_MENU_BEFORE_FIRST_APP_ONLY');
@@ -249,7 +259,7 @@ function m4iom_prepare(array $binding, array $sourceFiles, bool $withReadLeaves)
     $sql = file_get_contents('/workspace/crmeb/public/install/crmeb.sql'); $sqlRow = $byPath['crmeb/public/install/crmeb.sql'];
     m2f_assert(is_string($sql) && strlen($sql) === $sqlRow['bytes'] && hash('sha256', $sql) === $sqlRow['sha256'],
         'ORDER_MENU_ACTUAL_BOUND_INSTALL_SOURCE_BYTES');
-    $meta = m4iom_source_meta($sql); $columns = $meta['columns'];
+    $meta = m4iom_source_meta($sql, $withRefundPage); $columns = $meta['columns']; $anchorCount = $withRefundPage ? 5 : 4;
     $privateBefore = ['migrator' => m2f_file('/run/audit-bootstrap/migrator.json'), 'app' => m2f_file('/run/audit-app/config.json')];
     $migrator = m4i_read('/run/audit-bootstrap/migrator.json'); $config = audit_config();
     m2f_assert(($migrator['username'] ?? null) === 'audit_migrator' && ($config['database']['username'] ?? null) === 'audit_app',
@@ -291,7 +301,7 @@ function m4iom_prepare(array $binding, array $sourceFiles, bool $withReadLeaves)
     try {
         foreach ($meta['rows'] as $name => $cells) {
             $row = array_combine($columns, $cells); $sourceIds[$name] = $row['id']; unset($row['id']);
-            if ($name === 'order_page') { $row['pid'] = $ids['order_root']; $row['path'] = (string)$ids['order_root']; }
+            if ($name === 'order_page' || $name === 'refund_page') { $row['pid'] = $ids['order_root']; $row['path'] = (string)$ids['order_root']; }
             elseif ($name === 'order_info_group') { $row['pid'] = $ids['order_page']; $row['path'] = $ids['order_root'] . '/' . $ids['order_page']; }
             elseif ($name === 'order_info') $row['pid'] = $ids['order_info_group'];
             m2f_assert(array_keys($row) === $insertColumns && $insert->execute(array_values($row)) && $insert->rowCount() === 1,
@@ -302,7 +312,7 @@ function m4iom_prepare(array $binding, array $sourceFiles, bool $withReadLeaves)
             $ids[$name] = (int)$native; $expected[$name] = ['id' => $ids[$name]] + $row;
             $anchors[$name] = m4iom_row($db, $columns, $ids[$name], $expected[$name]);
         }
-        m2f_assert(count(array_unique($ids)) === 4 && $db->commit() && !$db->inTransaction(), 'ORDER_MENU_FOUR_REAL_NATIVE_ANCHORS_COMMITTED');
+        m2f_assert(count(array_unique($ids)) === $anchorCount && $db->commit() && !$db->inTransaction(), 'ORDER_MENU_DECLARED_REAL_NATIVE_ANCHORS_COMMITTED');
     } catch (Throwable $error) {
         if ($db->inTransaction()) $db->rollBack();
         throw $error;
@@ -343,7 +353,7 @@ function m4iom_prepare(array $binding, array $sourceFiles, bool $withReadLeaves)
     foreach ($menusAfter as $row) if (!in_array((int)$row['id'], $newIds, true)) $retained[] = $row;
     $after = m4i_exit_snapshot($db, $maintenance);
     $privateAfter = ['migrator' => m2f_file('/run/audit-bootstrap/migrator.json'), 'app' => m2f_file('/run/audit-app/config.json')];
-    m2f_assert($before === $after && $retained === $menusBefore && count($newIds) === ($withReadLeaves ? 6 : 4)
+    m2f_assert($before === $after && $retained === $menusBefore && count($newIds) === $anchorCount + ($withReadLeaves ? 2 : 0)
         && count($menusAfter) === count($menusBefore) + count($newIds) && $privateAfter === $privateBefore,
         'ORDER_MENU_ONLY_DECLARED_NEW_ROWS_ALL_OLD_ROWS_ROLES_AND_INPUTS_RETAINED');
     audit_guard_assert();
