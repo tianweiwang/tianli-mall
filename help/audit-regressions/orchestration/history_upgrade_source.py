@@ -1474,7 +1474,7 @@ _LEGACY_ANCHOR_PRODUCER_CONTEXT = rb'''function nhepa_anchor_context(array $qual
     $raw=file_get_contents($path);$saved=file_get_contents($archive);
     nhep_expect(is_string($raw)&&$raw===$saved,'HISTORY_ANCHOR_PRODUCER_ORIGINAL_AND_ARCHIVED_INITIALIZER_BYTES');
     $result=json_decode($raw,true,128,JSON_THROW_ON_ERROR);$receipt=$result['legacy_refund_page_anchors'];
-    $sql=file_get_contents('/legacy-source/crmeb/public/install/crmeb.sql');
+    $sql=file_get_contents('/workspace/crmeb/public/install/crmeb.sql');
     nhep_expect(is_string($sql),'HISTORY_ANCHOR_PRODUCER_ORIGINAL_SQL_BYTES');
     nhepa_receipt($receipt,$sql);
     nhep_expect(nhepa_snapshot($db)===$receipt['after']&&m4m_rows($db,'SELECT * FROM eb_system_menus ORDER BY id')===$receipt['rows_after'],
