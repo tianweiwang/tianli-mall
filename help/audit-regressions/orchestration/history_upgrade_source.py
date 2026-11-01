@@ -1507,4 +1507,5 @@ def _legacy_anchor_producer_seams():
     anchor=b'function nhep_normal_history_main(): int\r\n'
     call=b'        $prepared = nhep_pre37_fixed_preparation($qualified, $observer, $redis);\r\n'
     return ((anchor,pure+b'\n'+_LEGACY_ANCHOR_PRODUCER_CONTEXT+b'\n'+anchor),
-            (call,b'        nhepa_anchor_context($qualified,$observer);\r\n'+call))
+            (call,b'        nhepa_anchor_context($qualified,$observer);\r\n'+call),
+            (b"$root['give_integral'] === '0.00'", b"$root['give_integral'] === 0"))

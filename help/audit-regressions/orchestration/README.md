@@ -82,7 +82,7 @@ DOM 截图从同一真实 tab 的 CDP `Page.captureScreenshot` 显式取得原�
 
 精确的新退款 Gate、共享 readiness、退款迁移与已审 fixture/receipt 新源码对共同选择五锚分支：在上述四锚之后、原读取叶之前，从同一安装 SQL 解析原897退款页面完整22字段，使用数据库自然 ID，并将 `pid`/`path` 映射到实际订单根。新 A 仅增加这一个页面锚成为五锚加原两读取叶，B 仅五锚；原四锚 read-migration proof、旧来源整件派生、角色授权和全部保全断言保持。未知源码组合拒绝；旧53四锚失败来源不因本工具更新获得新回执或业务资格。
 
-同一新源码对也显式选择历史两锚准备：沿已绑定当前安装 SQL，在37步前准备原 ID4订单根与原 ID897退款页面的完整22字段原链，保留原七个商家操作叶、角色及其它材料；冲突拒绝，不使用 upsert。该分支是升级前的旧材料准备，不扩大后继13来源、22CLI、174表或唯一退款操作叶的允许差分。历史默认和旧源码对保持原派生；参数不作为运行时开关。两锚producer从`/workspace/crmeb/public/install/crmeb.sql`读取与initializer的`/source/crmeb/public/install/crmeb.sql`同属当前冻结应用的安装SQL，并保持原整件长度/SHA、完整行、角色及metadata断言和独立旧应用来源绑定。
+同一新源码对也显式选择历史两锚准备：沿已绑定当前安装 SQL，在37步前准备原 ID4订单根与原 ID897退款页面的完整22字段原链，保留原七个商家操作叶、角色及其它材料；冲突拒绝，不使用 upsert。该分支是升级前的旧材料准备，不扩大后继13来源、22CLI、174表或唯一退款操作叶的允许差分。历史默认和旧源码对保持原派生；参数不作为运行时开关。两锚producer从`/workspace/crmeb/public/install/crmeb.sql`读取与initializer的`/source/crmeb/public/install/crmeb.sql`同属当前冻结应用的安装SQL，并保持原整件长度/SHA、完整行、角色及metadata断言和独立旧应用来源绑定。两锚producer的商品`give_integral`沿旧安装SQL的unsigned int/default 0及原native metadata合同严格比较整数`0`；订单`gain_integral`仍保留decimal字符串合同，其余创建分支条件、fixture及旧11/无锚13派生不变。
 
 新商家退出的两权限叶在原 initializer 的九个迁移子进程全部完成后、private cleanup 与完整 source-tree 复制前调用原迁移的 check→apply→check；该点仍早于首次 App 及所有 paid/early 快照。沿原维护账号，不追加角色授权；独立回执绑定同一 run、CID、freeze 和三份完整当前来源，逐行保留旧菜单，并核除两条新叶以外的全部原表数据、表结构、Redis、SQL 模式及账户授权保持。Host 在原 initializer 结果消费点验证回执，后续原菜单全量保全继续使用含两叶的真实 early 快照，不过滤新叶或改写旧 hash。新实例必须实际执行；本机 R65 迁移回执不可跨实例复用，源码派生与语法通过不代表数据库或完整 M/A/B 已通过。
 
