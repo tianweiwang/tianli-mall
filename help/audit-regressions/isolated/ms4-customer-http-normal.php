@@ -1018,7 +1018,9 @@ function m4c_entry_refund_results(array $structure,array $menus,int $id,int $par
 /** Complete native read with only the explicitly bound refund leaf and optional three finance leaves excluded. */
 function m4c_entry_refund_observe(array $history,int $id,?array $financeIds=null): array
 {
-    $db=audit_db();m4c_expect(!$db->inTransaction()&&$db->query('SELECT CURRENT_USER()')->fetchColumn()==='audit_app@%'
+    $db=audit_db();$db->setAttribute(PDO::ATTR_EMULATE_PREPARES,false);
+    $db->exec('SET SESSION information_schema_stats_expiry=0');
+    m4c_expect(!$db->inTransaction()&&$db->query('SELECT CURRENT_USER()')->fetchColumn()==='audit_app@%'
         &&$db->query('SELECT DATABASE()')->fetchColumn()==='audit_auth','M4C_REFUND_REAL_DML_READ_OBSERVER');
     require_once '/workspace/crmeb/crmeb/services/marketplace/RefundSchemaReadiness.php';
     \crmeb\services\marketplace\RefundSchemaReadiness::assertReady($db,'eb_');
@@ -1118,7 +1120,8 @@ function m4c_entry_schema_receipt(array $receipt,array $history): array
         &&$receipt['apply']===['mode'=>'apply','state'=>'created','changed'=>true,'code'=>null,'schema'=>$schema]
         &&$receipt['check']===['mode'=>'check','state'=>'compatible','changed'=>false,'code'=>null,'schema'=>$schema],
         'M4C_SCHEMA_FRESH_SINGLETON_EXACT_APPLY_CHECK_ROW');
-    $db=audit_db();m4c_expect(!$db->inTransaction()&&$db->query('SELECT CURRENT_USER()')->fetchColumn()==='audit_app@%'
+    $db=audit_db();if(m4c_entry_refund_required()===true)$db->setAttribute(PDO::ATTR_EMULATE_PREPARES,false);
+    m4c_expect(!$db->inTransaction()&&$db->query('SELECT CURRENT_USER()')->fetchColumn()==='audit_app@%'
         &&$db->query('SELECT DATABASE()')->fetchColumn()==='audit_auth','M4C_SCHEMA_ORIGINAL_DML_READ_OBSERVER');
     m4c_expect(\crmeb\services\marketplace\SchemaVersionGate::assertCompatible($db,'eb_',$manifest)===$schema,
         'M4C_SCHEMA_ACTUAL_DML_GATE_AND_ORIGINAL_SINGLETON_ROW');

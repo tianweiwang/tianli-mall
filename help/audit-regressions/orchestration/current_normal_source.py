@@ -1113,6 +1113,11 @@ def schema_profile_changes(initializer: bytes, host: bytes, inventory: dict[str,
     refund_sources = refund_readiness_sources(inventory)
     source_files = tuple(inventory[name] for name in paths) if refund_sources is None else refund_sources[1:]
     helper = _SCHEMA_INITIALIZER.encode("utf-8")
+    if refund_sources is not None:
+        helper = once(helper,
+            b"    $schema = \\crmeb\\services\\marketplace\\SchemaVersionGate::assertCompatible(audit_db(), 'eb_', $manifest);",
+            b"    $observer = audit_db(); $observer->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);\n"
+            b"    $schema = \\crmeb\\services\\marketplace\\SchemaVersionGate::assertCompatible($observer, 'eb_', $manifest);")
     anchor = b"function m6i_migrator(): array\n"
     updated = once(initializer, anchor, helper + anchor)
     old_call = b"    $evidence['installation'] = m6i_migrator();"

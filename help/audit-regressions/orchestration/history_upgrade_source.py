@@ -1491,7 +1491,13 @@ def _legacy_anchor_initializer_seams():
         b"        m2f_assert(is_string($sql),'HISTORY_ANCHOR_REAL_BOUND_INSTALL_SQL');\n"
         b"        $evidence['legacy_refund_page_anchors']=m4iha_install(audit_db(),$sql,$evidence['children'][2]['result']['menu_ids']);\n"
         b"        m4i_source(); audit_guard_assert();\n")
-    return ((anchor, helper + anchor), (old_call, new_call))
+    schema_before = b"function m4iu_schema(PDO $db, array $snapshot): array\n{\n"
+    schema_after = schema_before + b"    $db->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);\n"
+    refund_before = b"                \\crmeb\\services\\marketplace\\RefundSchemaReadiness::assertReady(audit_db(),'eb_');"
+    refund_after = (b"                $refundObserver=audit_db();$refundObserver->setAttribute(PDO::ATTR_EMULATE_PREPARES,false);\n"
+                    b"                \\crmeb\\services\\marketplace\\RefundSchemaReadiness::assertReady($refundObserver,'eb_');")
+    return ((anchor, helper + anchor), (old_call, new_call),
+            (schema_before, schema_after), (refund_before, refund_after))
 
 
 def _legacy_anchor_producer_seams():
