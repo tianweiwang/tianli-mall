@@ -176,6 +176,8 @@ python -I -B help/audit-regressions/orchestration/verify_sources.py
 
 历史种子来源记录也必须连接当前已审的完整 `ms2-migration.php`。作者先核原记录、两个原种子函数的完整摘要、五个来源检查调用与整函数逆回，再仅更新候选记录的整文件来源摘要；原种子代码、函数摘要、Host 断言和存档原件保持。实际整文件来源及旧摘要另记在输入证明中，不能直接把失败记录改为成功。
 
+历史退款详情的独立模型在现有 `legacy_refund_anchors=true` 分支中沿用原 formatter 的 `cartInfo ?? []` 临时数组遍历语义：局部计算会员价及总价，但保存的 `cartInfo` 与 `cart_info` 均保持完整原购物车，不凭空追加 `vip_sum_truePrice`。原61个顶层字段及顺序、BC金额汇总、完整DTO严格比较，以及数据库、Redis、文件和时间断言保留；旧11依赖及无两锚13依赖输出不变。原R23失败及丢失的当时HTTP正文、before不重构；纯正常循环组件只证明该模型差异，修订源码和语法不代替后继完整历史验证。
+
 所有实际文件以清单为准，不按目录名递归导入其他原机材料。没有把整份原材料目录、原 Run 或所有历史作者输入公开。两份 published-current 完整编排保留各自来源 `584532ba2`；归档提交本身会前移 Git HEAD，不能据此宣称已在归档后的 HEAD 运行通过。
 
 r2 原冻结设计有两句关于当前工作树的旧措辞，原件保留；必须结合[设计澄清](sources/published-current-normal-next-source-r2-design-clarification-r1/CLARIFICATION.md)读取。实际作者核对复用旧 Main 已闭合证据，并读取历史 Git 对象和 Val 的 194 项；没有签当前 Main 或归档后的提交可以运行。校验器也要求该澄清随包存在。

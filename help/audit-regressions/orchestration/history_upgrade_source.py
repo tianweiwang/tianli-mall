@@ -1512,13 +1512,24 @@ def _legacy_anchor_initializer_seams():
             (b"CURRENT_READER_REGISTER_ACTUAL_FULL173_UPGRADE_BASELINE", b"CURRENT_READER_REGISTER_ACTUAL_FULL174_UPGRADE_BASELINE"))
 
 
+_REFUND_CART_TEMPORARY_PRODUCER_SEAMS = (
+    (b"    foreach ($dto['cartInfo'] as &$detailCart) {\n",
+     b"    foreach ($dto['cartInfo'] ?? [] as &$detailCart) {\n"),
+    (b"        && $dto['cart_info'] === [$cart] && $dto['cartInfo'][0]['sum_true_price'] === $cart['sum_true_price']\n"
+     b"        && array_keys($dto['cartInfo'][0]) === array_merge(array_keys($cart), ['vip_sum_truePrice'])\n"
+     b"        && $dto['cartInfo'][0]['vip_sum_truePrice'] === '0.00'\n",
+     b"        && $dto['cart_info'] === [$cart] && $dto['cartInfo'] === [$cart]\n"
+     b"        && $dto['cartInfo'][0]['sum_true_price'] === $cart['sum_true_price']\n"),
+)
+
+
 def _legacy_anchor_producer_seams():
     pure = (_LEGACY_ANCHOR_PURE + b'\n' + _LEGACY_ANCHOR_CAPTURE).replace(b'm4iha_',b'nhepa_').replace(b'M4IHA_',b'NHEPA_').replace(b'm2f_assert',b'nhep_expect')
     anchor=b'function nhep_normal_history_main(): int\r\n'
     call=b'        $prepared = nhep_pre37_fixed_preparation($qualified, $observer, $redis);\r\n'
     return ((anchor,pure+b'\n'+_LEGACY_ANCHOR_PRODUCER_CONTEXT+b'\n'+anchor),
             (call,b'        nhepa_anchor_context($qualified,$observer);\r\n'+call),
-            (b"$root['give_integral'] === '0.00'", b"$root['give_integral'] === 0")) + _PAYMENT_DURING_PRODUCER_SEAMS
+            (b"$root['give_integral'] === '0.00'", b"$root['give_integral'] === 0")) + _PAYMENT_DURING_PRODUCER_SEAMS + _REFUND_CART_TEMPORARY_PRODUCER_SEAMS
 
 
 # Explicit current two-anchor private observation only; old default outputs stay byte-identical.
