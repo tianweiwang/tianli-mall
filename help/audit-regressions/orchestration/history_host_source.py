@@ -1357,12 +1357,13 @@ _ADOPTION_SEAMS = (
 )
 
 
-def fixed_seams() -> tuple[tuple[bytes, bytes], ...]:
+def fixed_seams(*, refund_readiness: bool = False) -> tuple[tuple[bytes, bytes], ...]:
     extra = tuple((before.encode('utf-8'), after.encode('utf-8')) for before, after in _LIFECYCLE_SEAMS)
     insertion = (_HISTORY_RUNTIME + '\n\n' + _READER_RUNTIME + '\n\n').encode()
     adoption = tuple((before.encode('utf-8'), after.encode('utf-8')) for before, after in _ADOPTION_SEAMS)
-    return projection_seams() + extra + ((b'def prepare(binding_file, run_root):',
+    seams = projection_seams() + extra + ((b'def prepare(binding_file, run_root):',
         insertion + b'def prepare(binding_file, run_root):'),) + adoption
+    return seams + (_refund_host_seams() if refund_readiness else ())
 
 
 def transform_compose(raw: bytes) -> bytes:
@@ -1394,12 +1395,12 @@ def _definitions(raw: bytes) -> dict[str, bytes]:
             for node in ast.parse(raw).body if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))}
 
 
-def transform_host(raw: bytes) -> bytes:
+def transform_host(raw: bytes, *, refund_readiness: bool = False) -> bytes:
     """Transform only the exact archived R3; do not import or execute its code."""
     _require(type(raw) is bytes and len(raw) == BASE_BYTES
              and hashlib.sha256(raw).hexdigest() == BASE_SHA256, "HISTORY_HOST_EXACT_ARCHIVED_R3")
     candidate = raw
-    for before, after in fixed_seams():
+    for before, after in fixed_seams(refund_readiness=refund_readiness):
         _require(candidate.count(before) == 1, "HISTORY_HOST_UNIQUE_LITERAL_SEAM")
         candidate = candidate.replace(before, after, 1)
     original = _definitions(raw); updated = _definitions(candidate)
@@ -1412,17 +1413,165 @@ def transform_host(raw: bytes) -> bytes:
     _require(set(updated) == set(original) | additions
              and all(updated[name] == body for name, body in original.items() if name not in changed),
              "HISTORY_HOST_ALL_OTHER_FUNCTIONS_WHOLE_BYTES_HELD")
-    _require(reverse_host(candidate) == raw, "HISTORY_HOST_COMPLETE_REVERSE_TO_ARCHIVED_R3")
+    _require(reverse_host(candidate, refund_readiness=refund_readiness) == raw, "HISTORY_HOST_COMPLETE_REVERSE_TO_ARCHIVED_R3")
     return candidate
 
 
-def reverse_host(candidate: bytes) -> bytes:
+def reverse_host(candidate: bytes, *, refund_readiness: bool = False) -> bytes:
     """Recover and verify the complete original Host, with no source-file reads."""
     _require(type(candidate) is bytes, "HISTORY_HOST_REVERSE_BYTES")
     original = candidate
-    for before, after in reversed(fixed_seams()):
+    for before, after in reversed(fixed_seams(refund_readiness=refund_readiness)):
         _require(original.count(after) == 1, "HISTORY_HOST_UNIQUE_REVERSE_SEAM")
         original = original.replace(after, before, 1)
     _require(len(original) == BASE_BYTES and hashlib.sha256(original).hexdigest() == BASE_SHA256,
              "HISTORY_HOST_REVERSE_COMPLETE_ORIGINAL_SHA256")
     return original
+
+
+# Only the explicitly selected f4ca/6d1e/24b1 source combination emits this path.
+# The default archived 11-source / 16-child Host remains unchanged.
+_REFUND_UPGRADE_NORMAL = r'''def history_upgrade_normal(context, public):
+    read, pin, obj, held = public
+    producer = history_producer_normal(context, public)
+    history_retired_receipt(context, 'legacy-history-producer', public)
+    history_driver_normal(context, producer, public); history_retired_receipt(context, 'driver', public)
+    proof = 'current-structure-upgrade'; made = obj('evidence/' + proof + '-created.json')
+    terminal = obj('evidence/' + proof + '-terminal.json'); result = obj('evidence/' + proof + '-result.json')
+    expect(made == bound_created(context, proof, 'audit-bootstrap'), 'HISTORY_UPGRADE_EXACT_CREATED')
+    owned(context, terminal, 'audit-bootstrap'); same_created(made, terminal)
+    history_upgrade_mounts(context, made)
+    expect(terminal['status'] == 'exited' and terminal['pid'] == terminal['exit_code'] == 0
+           and result['scope'] == 'CURRENT_READER_STRUCTURE_UPGRADE_ONLY'
+           and result['status'] == 'VERIFIED_CURRENT_STRUCTURE_UPGRADE_ONLY' and result['native_exit'] == 0
+           and result['run_id'] == context['run_id'] and result['source_sha'] == context['source_sha']
+           and result['private_cleanup_verified'] is True
+           and result['binding']['container_id'] == made['id']
+           and result['binding']['freeze_sha256'] == context['freeze_sha256']
+           and result['binding']['source_sha'] == context['source_sha']
+           and result['binding']['created_sha256'] == pin('evidence/' + proof + '-created.json')['sha256'],
+           'HISTORY_UPGRADE_REAL_HELPER_NORMAL_SAME_SOURCE')
+    change = result['current_structure_upgrade']
+    expect(set(change) == {'schema', 'expected_before_table_count', 'expected_after_table_count', 'source_files', 'snapshots',
+           'original_four_cli_unchanged', 'original_four_cli', 'before_table_count', 'refund_null_counts',
+           'schema_create_window', 'schema_row', 'after_table_count', 'refund_readiness'}
+           and change['schema'] == 1 and change['expected_before_table_count'] == change['before_table_count'] == 166
+           and change['expected_after_table_count'] == change['after_table_count'] == 174
+           and change['original_four_cli_unchanged'] is True
+           and change['original_four_cli'] == pin('evidence/ms4-migration-normal.json')
+           and set(change['snapshots']) == {'before', 'after', *('cli_' + str(i) for i in range(1, 23))},
+           'HISTORY_UPGRADE_EXACT_FULL166_TO174_REFUND_ENVELOPE')
+    refund = change['refund_readiness']
+    expect(type(refund) is dict and set(refund) == {'menu_id', 'parent_id', 'gate_ready', 'empty_attempt_table'}
+           and type(refund['menu_id']) is int and 1 <= refund['menu_id'] <= 65534
+           and type(refund['parent_id']) is int and 1 <= refund['parent_id'] <= 65535
+           and refund['gate_ready'] is True and refund['empty_attempt_table'] is True,
+           'HISTORY_UPGRADE_EXACT_REFUND_READINESS_RECEIPT')
+    source_paths = ['help/audit-regressions/isolated/ms4-migration.php', 'help/migrations/marketplace-ms1.php',
+        'help/migrations/marketplace-ms4.php', 'help/migrations/marketplace-ms5-payment.php',
+        'help/migrations/marketplace-ms4-fulfillment.php', 'help/migrations/marketplace-ms4-aftersale.php',
+        'help/migrations/marketplace-ms6-schema.php', 'crmeb/crmeb/exceptions/MarketplaceSchemaException.php',
+        'crmeb/crmeb/services/marketplace/SchemaVersionGate.php', 'crmeb/marketplace-release.json',
+        'crmeb/public/install/crmeb.sql', 'crmeb/crmeb/services/marketplace/RefundSchemaReadiness.php',
+        'help/migrations/marketplace-ms5-refund.php']
+    fixed = {
+        'crmeb/crmeb/services/marketplace/SchemaVersionGate.php': (12380, 'f4cac59718aad23680b095445be072943bf0b171d4f6a96c71173605b38dd4ce'),
+        'crmeb/crmeb/services/marketplace/RefundSchemaReadiness.php': (21017, '6d1ed4f17379356c4a6cebbd50ae0be4d1298eeb25c2f437781792405915d133'),
+        'help/migrations/marketplace-ms5-refund.php': (39251, '24b1a48f0b35378dcf66d7e5bb5462cb8fd06179597022c7b99419486de0d120')}
+    frozen_sources = {row['path']: row for row in obj('preparation-source-binding.json')['current_reader']['source_files']}
+    expect(type(change['source_files']) is list and [row['path'] for row in change['source_files']] == source_paths,
+           'HISTORY_UPGRADE_FIXED_THIRTEEN_SOURCE_PATHS')
+    for row in change['source_files']:
+        raw, source_pin = history_source_bytes(Path(context['repo_dir']) / row['path'])
+        expect(row == {'path': row['path'], 'bytes': len(raw), 'sha256': digest(raw)}
+               and source_pin['bytes'] == row['bytes'] and source_pin['sha256'] == row['sha256']
+               and all(frozen_sources[row['path']][key] == row[key] for key in ['bytes', 'sha256']),
+               'HISTORY_UPGRADE_CURRENT_FULL_SOURCE_JOIN')
+        if row['path'] in fixed:
+            expect((row['bytes'], row['sha256']) == fixed[row['path']], 'HISTORY_UPGRADE_REVIEWED_REFUND_SOURCE_COMBINATION')
+    plan = [(script, mode) for script in ['marketplace-ms5-payment.php', 'marketplace-ms4-fulfillment.php', 'marketplace-ms4-aftersale.php']
+            for mode in ['check', 'apply-structure', 'check', 'apply-structure']]
+    plan += [('marketplace-ms5-refund.php', mode) for mode in ['check', 'apply-structure', 'verify', 'check-menus', 'apply-menus', 'check-menus']]
+    plan += [('marketplace-ms6-schema.php', mode) for mode in ['apply', 'check', 'apply', 'check']]
+    expect(type(result['children']) is list and len(result['children']) == 22, 'HISTORY_UPGRADE_TWENTYTWO_ORIGINAL_NATIVE_CHILDREN')
+    before = change['snapshots']['before']
+    view_keys = {'snapshot', 'original_projection', 'redis_time_before', 'redis_time_after', 'refund_menu'}
+    expect(set(before) == view_keys and before['refund_menu'] is None, 'HISTORY_UPGRADE_REFUND_MENU_ABSENT_BEFORE')
+    before_menu = before['snapshot']['tables']['eb_system_menus']
+    menu_id = refund['menu_id']; parent_id = refund['parent_id']
+    ai = before_menu['metadata']['table']['AUTO_INCREMENT']
+    expect(type(ai) in (int, str) and str(ai) == str(menu_id), 'HISTORY_UPGRADE_MENU_ID_IS_ORIGINAL_NATIVE_COUNTER')
+    expected_row = {'id': menu_id, 'pid': parent_id, 'icon': '', 'menu_name': '执行测试退款', 'module': '', 'controller': '',
+        'action': '', 'api_url': 'marketplace/aftersales/<id>/test-refund', 'methods': 'POST', 'params': '[]', 'sort': 1,
+        'is_show': 1, 'is_show_path': 1, 'access': 1, 'menu_path': '', 'path': '', 'auth_type': 2, 'header': '',
+        'is_header': 0, 'unique_auth': 'marketplace-aftersales-test-refund', 'is_del': 0, 'mark': 'marketplace-ms5-refund-test-menu-v1'}
+    pids = set()
+    for number, (child, (script, mode)) in enumerate(zip(result['children'], plan), 1):
+        stem = 'evidence/current-structure-upgrade-cli-%02d' % number
+        created_ = obj(stem + '.created.json'); terminal_ = obj(stem + '.terminal.json')
+        out = read(stem + '.stdout'); err = read(stem + '.stderr')
+        expect(set(created_) == {'argv', 'pid', 'started_at'} and type(created_['pid']) is int and created_['pid'] > 0
+               and created_['pid'] not in pids and all(terminal_[key] == value for key, value in created_.items())
+               and terminal_['native_exit'] == 0 and terminal_['finished_at'] >= terminal_['started_at']
+               and terminal_['stdout'] == pin(stem + '.stdout') and terminal_['stderr'] == pin(stem + '.stderr')
+               and err == b'' and child == terminal_ | {'script': script, 'mode': mode,
+                    'terminal': pin(stem + '.terminal.json'), 'result': json.loads(out)},
+               'HISTORY_UPGRADE_COMPLETE_REAL_CHILD_FOUR_FILES')
+        argv = created_['argv']
+        expect(len(argv) == (5 if script == 'marketplace-ms6-schema.php' else 4)
+               and argv[1:3] == ['/workspace/help/migrations/' + script, mode]
+               and (script != 'marketplace-ms6-schema.php' or argv[3] == '--repo-root=/workspace')
+               and argv[-1] == '--config-file=/tmp/current-structure-upgrade-' + context['run_id'] + '/config.json',
+               'HISTORY_UPGRADE_ORIGINAL_FIXED_CLI_ARGV')
+        view = change['snapshots']['cli_' + str(number)]
+        expect(set(view) == view_keys and history_exact(view['original_projection']['eb_system_menus'], before_menu['projection']),
+               'HISTORY_UPGRADE_ORIGINAL_MENU_ROWS_EACH_STEP')
+        menu = view['snapshot']['tables']['eb_system_menus']
+        if number < 17:
+            expect(view['refund_menu'] is None and history_exact(menu, before_menu), 'HISTORY_UPGRADE_MENU_FULLY_UNCHANGED_BEFORE_LEAF')
+        else:
+            evidence = view['refund_menu']
+            expect(type(evidence) is dict and set(evidence) == {'id', 'row', 'ddl_raw', 'old_projection'}
+                   and history_exact(evidence['id'], menu_id) and history_exact(evidence['row'], expected_row)
+                   and history_exact(evidence['old_projection'], before_menu['projection']), 'HISTORY_UPGRADE_ONE_EXACT_UNGRANTED_MENU_LEAF')
+            wanted = json.loads(json.dumps(before_menu['metadata']))
+            wanted['table']['AUTO_INCREMENT'] = menu_id + 1 if type(ai) is int else str(menu_id + 1)
+            expect(history_exact(menu['metadata'], wanted) and type(evidence['ddl_raw']) is str
+                   and digest(evidence['ddl_raw'].encode()) == menu['ddl_sha256'],
+                   'HISTORY_UPGRADE_ONLY_MENU_AUTO_INCREMENT_METADATA_CHANGED')
+            actual_clause = 'AUTO_INCREMENT=' + str(menu_id + 1)
+            old_clause = 'AUTO_INCREMENT=' + str(menu_id)
+            expect(evidence['ddl_raw'].count(actual_clause) == 1
+                   and digest(evidence['ddl_raw'].replace(actual_clause, old_clause, 1).encode()) == before_menu['ddl_sha256']
+                   and history_exact(menu['projected_columns'], before_menu['projected_columns'])
+                   and history_exact(menu['projection']['rows'], before_menu['projection']['rows'] + 1),
+                   'HISTORY_UPGRADE_COMPLETE_MENU_DDL_INVERSE_AND_SINGLE_ROW_COUNT')
+        pids.add(created_['pid'])
+    expect(history_exact(change['snapshots']['after'], change['snapshots']['cli_22'])
+           and change['schema_create_window'] == [result['children'][18]['started_at'], result['children'][18]['finished_at']],
+           'HISTORY_UPGRADE_EXACT_REFUND_THEN_SCHEMA_WINDOW')
+    for name in ['before', *('cli_' + str(i) for i in range(1, 23)), 'after']:
+        view = change['snapshots'][name]
+        if name != 'before' and (name == 'after' or int(name[4:]) >= 14):
+            expect(view['snapshot']['tables']['eb_marketplace_refund_attempt']['projection']['rows'] == 0,
+                   'HISTORY_UPGRADE_NEW_REFUND_ATTEMPTS_EMPTY_EACH_LATER_STEP')
+    shutdown = obj('evidence/' + proof + '-shutdown.json')
+    expect(set(shutdown) == {'schema', 'phase', 'fatal', 'type', 'file', 'line', 'primary_failure', 'cleanup_failure', 'memory_limit', 'peak_bytes'}
+           and shutdown['schema'] == 1 and shutdown['phase'] == proof and shutdown['fatal'] is False
+           and shutdown['type'] == 0 and shutdown['file'] == '' and shutdown['line'] == 0
+           and shutdown['primary_failure'] is None and shutdown['cleanup_failure'] is None, 'HISTORY_UPGRADE_REAL_NATURAL_SHUTDOWN')
+    for relative in list(held): read(relative)
+    return result
+'''
+
+
+def _refund_host_seams() -> tuple[tuple[bytes, bytes], ...]:
+    upgrade = _definitions(_HISTORY_RUNTIME.encode())['history_upgrade_normal']
+    replacement = _definitions(_REFUND_UPGRADE_NORMAL.encode())['history_upgrade_normal']
+    seams = [(upgrade, replacement)]
+    reader = _definitions(_READER_RUNTIME.encode())
+    for name in ('history_public_reader', 'current_reader_archive'):
+        original = reader[name]
+        _require(original.count(b'range(1, 17)') == 1, 'HISTORY_REFUND_EXACT_ORIGINAL_SIXTEEN_CLI_LEAF_RANGE')
+        seams.append((original, original.replace(b'range(1, 17)', b'range(1, 23)', 1)))
+    return tuple(seams)

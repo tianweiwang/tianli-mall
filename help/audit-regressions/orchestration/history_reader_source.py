@@ -183,22 +183,24 @@ def _replace_once(raw: bytes, old: bytes, new: bytes, name: str) -> bytes:
     return result
 
 
-def transform_reader(raw: bytes) -> bytes:
+def transform_reader(raw: bytes, *, refund_readiness: bool = False) -> bytes:
     """Apply only the declared finite seams to the exact archived reader bytes."""
     _original_reader(raw)
     candidate = raw
     for name, old, new in READER_SEAMS:
         candidate = _replace_once(candidate, old, new, name)
-    if candidate.count(_ADOPTED_QUALIFY) != 1 or _FIRST_UNBOUND in candidate or reverse_reader(candidate) != raw:
+    if refund_readiness:
+        candidate = _refund_reader_apply(candidate)
+    if candidate.count(_ADOPTED_QUALIFY) != 1 or _FIRST_UNBOUND in candidate or reverse_reader(candidate, refund_readiness=refund_readiness) != raw:
         raise ValueError("HISTORY_READER_SOURCE_ADOPTION_AND_WHOLE_REVERSE")
     return candidate
 
 
-def reverse_reader(candidate: bytes) -> bytes:
+def reverse_reader(candidate: bytes, *, refund_readiness: bool = False) -> bytes:
     """Restore and authenticate the entire archived input, not only seams."""
     if type(candidate) is not bytes or candidate.count(_ADOPTED_QUALIFY) != 1 or _FIRST_UNBOUND in candidate:
         raise ValueError("HISTORY_READER_CANDIDATE_BYTES_AND_SOURCE_ADOPTION")
-    original = candidate
+    original = _refund_reader_apply(candidate, reverse=True) if refund_readiness else candidate
     for name, old, new in reversed(READER_SEAMS):
         original = _replace_once(original, new, old, name)
     _original_reader(original)
@@ -1014,3 +1016,180 @@ READER_SEAMS += (
      b'    $upgrade = nhecu_upgradePublic($context, $freeze, $handoff, $proofs);',
      b'    $upgrade = nhecu_upgradePublic($context, $freeze, $handoff, $proofs);\n    $proofs += $sourceProofs; nhecr_manifest_stages($context, $manifest, $proofs, true);'),
 )
+
+
+# Explicit new-source branch; the original shared literals remain intact.
+_REFUND_PURE_CONTRACTS = b"function nhecu_testRefundReceipt(array $result,int $step,int $id,int $parent,string $migrationHash,string $ms1Hash): void\n{\n    nhecr_expect($step>=0&&$step<=5&&$id>=1&&$id<=65534&&$parent>=1&&$parent<=65535\n        &&preg_match('/\\A[a-f0-9]{64}\\z/D',$migrationHash)===1&&preg_match('/\\A[a-f0-9]{64}\\z/D',$ms1Hash)===1,\n        'CURRENT_UPGRADE_REFUND_SIX_FIXED_STEPS_AND_IDENTITIES');\n    if($step<3){\n        $expected=['mode'=>['check','apply-structure','verify'][$step],'state'=>$step===0?'applicable':'completed',\n            'native_exit'=>0,'changed'=>$step===1,'applied_steps'=>$step===1?['marketplace_refund_attempt']:[],\n            'pending_steps'=>$step===0?['marketplace_refund_attempt']:[],'pending_steps_known'=>true,'issues'=>[],\n            'failure_phase'=>null,'marker'=>'marketplace-ms5-refund-structure-v1','source_sha256'=>$migrationHash,\n            'history_mapping'=>'NOT RUN','refund_producer'=>'NOT RUN','acceptance'=>'NOT RUN'];\n    }else{\n        $expected=['mode'=>$step===4?'apply-menus':'check-menus','state'=>$step===3?'applicable':'completed','changed'=>$step===4,\n            'tables'=>[],'menu_ids'=>$step===3?[]:['marketplace-aftersales-test-refund'=>$id],'issues'=>[],\n            'source_binding'=>['entry_sha256'=>$migrationHash,'ms1_sha256'=>$ms1Hash],\n            'authorization_cache_producer'=>'fresh_scope_for_request_exact_all_auth_and_current_roles','roles_modified'=>false,\n            'parent_id'=>$parent,'navigation_changed'=>false,\n            'permission_scope'=>'EXISTING_REFUND_PAGE_OPERATION_LEAF_ONLY_STATIC_MARKETPLACE_ROUTE_UNCHANGED'];\n        if($step===4)$expected['created_menu_ids']=['marketplace-aftersales-test-refund'=>$id];\n        $expected['native_exit']=0;\n    }\n    nhecu_keys($result,array_keys($expected));\n    nhecr_expect($result===$expected,'CURRENT_UPGRADE_EXACT_REFUND_NORMAL_RECEIPT_BEFORE_NEXT_CLI');\n}\nfunction nhecu_refundMenuPreserved(array $before,array $current,array $proof,int $expectedId,int $expectedParent): void\n{\n    nhecu_keys($proof,['id','row','ddl_raw','old_projection']);\n    nhecr_expect($proof['id']===$expectedId&&is_int($expectedId)&&$expectedId>=1&&$expectedId<=65534\n        &&is_int($expectedParent)&&$expectedParent>=1&&$expectedParent<=65535,\n        'CURRENT_UPGRADE_SINGLE_EXPECTED_NATURAL_REFUND_MENU_ID');\n    $counter=$before['metadata']['table']['AUTO_INCREMENT'];\n    nhecr_expect((is_int($counter)||is_string($counter))&&preg_match('/\\A[1-9][0-9]*\\z/D',(string)$counter)===1\n        &&(int)$counter===$expectedId,'CURRENT_UPGRADE_ORIGINAL_MENU_COUNTER_IS_NEW_ID');\n    $metadata=$current['metadata'];\n    nhecr_expect((string)$metadata['table']['AUTO_INCREMENT']===(string)($expectedId+1),'CURRENT_UPGRADE_ONLY_ONE_MENU_COUNTER_ADVANCE');\n    $metadata['table']['AUTO_INCREMENT']=$before['metadata']['table']['AUTO_INCREMENT'];\n    nhecr_expect($metadata===$before['metadata']&&$current['projected_columns']===$before['projected_columns'],\n        'CURRENT_UPGRADE_ALL_ORIGINAL_MENU_METADATA_TYPES_AND_COLUMN_ORDER');\n    nhecr_expect(is_string($proof['ddl_raw'])&&strlen($proof['ddl_raw'])>0&&strlen($proof['ddl_raw'])<=1048576\n        &&hash('sha256',$proof['ddl_raw'])===$current['ddl_sha256'],'CURRENT_UPGRADE_FULL_NATIVE_MENU_DDL_BYTES');\n    $old=str_replace(' AUTO_INCREMENT='.($expectedId+1).' ',' AUTO_INCREMENT='.$expectedId.' ',$proof['ddl_raw'],$count);\n    nhecr_expect($count===1&&hash('sha256',$old)===$before['ddl_sha256'],'CURRENT_UPGRADE_ONLY_EXACT_MENU_DDL_COUNTER_INVERSE');\n    $row=$proof['row'];\n    nhecr_expect(is_array($row)&&count($row)===22&&array_keys($row)===$before['projected_columns'],\n        'CURRENT_UPGRADE_COMPLETE_NATIVE_REFUND_LEAF_ROW');\n    $wanted=['id'=>$expectedId]+\\crmeb\\services\\marketplace\\RefundSchemaReadiness::menuRows($expectedParent)[0];\n    nhecu_keys($row,array_keys($wanted));\n    foreach($wanted as$key=>$value)nhecr_expect($row[$key]!==null&&(string)$row[$key]===(string)$value,\n        'CURRENT_UPGRADE_EVERY_REFUND_MENU_FIELD_AND_ORIGINAL_PARENT');\n    nhecu_keys($proof['old_projection'],['rows','sha256']);\n    nhecr_expect($proof['old_projection']===$before['projection']&&$current['projection']['rows']===$before['projection']['rows']+1\n        &&is_string($current['projection']['sha256'])&&preg_match('/\\A[a-f0-9]{64}\\z/D',$current['projection']['sha256'])===1,\n        'CURRENT_UPGRADE_ALL_ORIGINAL_MENU_VALUES_TYPES_AND_MULTIPLICITY');\n}\n"
+_REFUND_GLOBAL_LITERALS = ((b'=== 173', b'=== 174', 10), (b'CURRENT_READER_VALIDATED173_PRIVATE_FIXTURE_CONTEXT', b'CURRENT_READER_VALIDATED174_PRIVATE_FIXTURE_CONTEXT', 4), (b'NHECR_ALL_WRITERS_NORMAL_STOPPED_FINAL173_FILES_AND_ONLY_PASSIVE_REDIS_EXPIRY', b'NHECR_ALL_WRITERS_NORMAL_STOPPED_FINAL174_FILES_AND_ONLY_PASSIVE_REDIS_EXPIRY', 1), (b'NHECR_CAT_FULL_173_TABLE_INDEPENDENT_EXPECTED', b'NHECR_CAT_FULL_174_TABLE_INDEPENDENT_EXPECTED', 1), (b'NHECR_COMPLETE173_CURRENT_LOGIN_OR_AUTH_ONLY_NATIVE_USER_TIME_IP', b'NHECR_COMPLETE174_CURRENT_LOGIN_OR_AUTH_ONLY_NATIVE_USER_TIME_IP', 1), (b'NHECR_CURRENT_APP_INITIALIZATION_INDEPENDENT_173_CACHE_FILES_ONLY_NATURAL_EXPIRY', b'NHECR_CURRENT_APP_INITIALIZATION_INDEPENDENT_174_CACHE_FILES_ONLY_NATURAL_EXPIRY', 1), (b'NHECR_FIRST_BEFORE_IS_REAL_SEALED_CURRENT_173_BASELINE', b'NHECR_FIRST_BEFORE_IS_REAL_SEALED_CURRENT_174_BASELINE', 1), (b'NHECU_COMPLETE173_REAL_METADATA_DDL_FULL_COLUMN_ROWS', b'NHECU_COMPLETE174_REAL_METADATA_DDL_FULL_COLUMN_ROWS', 1), (b'NHECU_EXACT_INDEPENDENT_166_TO_173_SOURCE_BOUNDARY', b'NHECU_EXACT_INDEPENDENT_166_TO_174_SOURCE_BOUNDARY', 1), (b'NHECU_REAL_COMPLETE173_SCHEMA_WINDOW_AND_REFUND_NULL_RECEIPT', b'NHECU_REAL_COMPLETE174_SCHEMA_WINDOW_AND_REFUND_NULL_RECEIPT', 1), (b'NHE_AUTH_DB_ORIGINAL_ALL_173_TABLES', b'NHE_AUTH_DB_ORIGINAL_ALL_174_TABLES', 1), (b'NHE_DATABASE_COMPLETE_CURRENT_173_TABLES', b'NHE_DATABASE_COMPLETE_CURRENT_174_TABLES', 1), (b'NHE_HISTORY_IDENTITIES_DISTINCT_PRIVATE173_CONTEXT_NOT_AN_ORIGINAL_RECEIPT', b'NHE_HISTORY_IDENTITIES_DISTINCT_PRIVATE174_CONTEXT_NOT_AN_ORIGINAL_RECEIPT', 1), (b'NHE_HISTORY_IDENTITIES_SAME_VALIDATED_PRIVATE173_NATIVE_CONTEXT_SCOPE', b'NHE_HISTORY_IDENTITIES_SAME_VALIDATED_PRIVATE174_NATIVE_CONTEXT_SCOPE', 1), (b'NHECU_ALL_SEVEN_CURRENT_STRUCTURE_TABLES_REQUIRED', b'NHECU_ALL_EIGHT_CURRENT_STRUCTURE_TABLES_REQUIRED', 1), (b'The seven declared additions are protected non-targets', b'The eight declared additions are protected non-targets', 1), (b'Only the 32 fixed CLI streams may be empty', b'Only the 44 fixed CLI streams may be empty', 1), (b'Full173 capture joins the preserved original four-CLI166', b'Full174 capture joins the preserved original four-CLI166', 1))
+
+
+_REFUND_READER_EXTRA = rb'''
+/** Derived from the one application contract, not another independently copied DDL definition. */
+function nhecu_refundAttemptMetadata(array $meta): void
+{
+    $contract=\crmeb\services\marketplace\RefundSchemaReadiness::newTables()['marketplace_refund_attempt'];
+    $table=$meta['table'];$counter=$table['AUTO_INCREMENT'];
+    nhecr_expect((is_int($counter)||is_string($counter))&&(string)$counter==='1','NHECU_EMPTY_REFUND_ATTEMPT_INITIAL_COUNTER');
+    $table['AUTO_INCREMENT']=1;
+    nhecr_expect($table===['TABLE_TYPE'=>'BASE TABLE','ENGINE'=>'InnoDB','ROW_FORMAT'=>'Dynamic',
+        'TABLE_COLLATION'=>'utf8mb4_bin','TABLE_COMMENT'=>'marketplace-ms5-refund-structure-v1','CREATE_OPTIONS'=>'','AUTO_INCREMENT'=>1]
+        &&array_keys($meta['columns'])===array_keys($contract['columns'])
+        &&$meta['checks']===[]&&$meta['foreign']===[]&&$meta['triggers']===[],
+        'NHECU_EXACT_EMPTY_REFUND_ATTEMPT_DECLARED_BASE_TABLE');
+    foreach($contract['columns'] as$name=>$definition){
+        $actual=$meta['columns'][$name];$type=$actual['COLUMN_TYPE'];
+        nhecr_expect(preg_replace('/\b(tinyint|smallint|mediumint|int|bigint)\([0-9]+\)/','$1',strtolower($type))===$definition['type']
+            &&$actual===['COLUMN_NAME'=>$name,'COLUMN_TYPE'=>$type,'IS_NULLABLE'=>$definition['nullable']?'YES':'NO',
+                'COLUMN_DEFAULT'=>$definition['default'],'CHARACTER_SET_NAME'=>$definition['charset'],
+                'COLLATION_NAME'=>$definition['charset']==='ascii'?'ascii_bin':null,
+                'EXTRA'=>$definition['auto']?'auto_increment':'','GENERATION_EXPRESSION'=>'','COLUMN_COMMENT'=>$definition['comment']],
+            'NHECU_ALL_REFUND_ATTEMPT_COLUMN_FIELDS_FROM_SHARED_CONTRACT');
+    }
+    $indexes=$contract['indexes'];ksort($indexes,SORT_STRING);$actualIndexes=$meta['indexes'];ksort($actualIndexes,SORT_STRING);
+    nhecr_expect(array_keys($actualIndexes)===array_keys($indexes),'NHECU_REFUND_ATTEMPT_EXACT_INDEX_SET');
+    $constraints=[];
+    foreach($indexes as$name=>[$unique,$columns]){
+        $rows=$actualIndexes[$name];nhecr_expect(count($rows)===count($columns),'NHECU_REFUND_ATTEMPT_FULL_INDEX_COLUMNS');
+        foreach($rows as$index=>$row)nhecr_expect((string)$row['NON_UNIQUE']===($unique?'0':'1')
+            &&(string)$row['SEQ_IN_INDEX']===(string)($index+1)
+            &&$row===['INDEX_NAME'=>$name,'NON_UNIQUE'=>$row['NON_UNIQUE'],'SEQ_IN_INDEX'=>$row['SEQ_IN_INDEX'],
+                'COLUMN_NAME'=>$columns[$index],'SUB_PART'=>null,'INDEX_TYPE'=>'BTREE','IS_VISIBLE'=>'YES',
+                'EXPRESSION'=>null,'COLLATION'=>'A','INDEX_COMMENT'=>''],'NHECU_COMPLETE_REFUND_ATTEMPT_INDEX_METADATA');
+        if($unique)$constraints[$name]=['CONSTRAINT_NAME'=>$name,'CONSTRAINT_TYPE'=>$name==='PRIMARY'?'PRIMARY KEY':'UNIQUE','ENFORCED'=>'YES'];
+    }
+    ksort($constraints,SORT_STRING);
+    nhecr_expect($meta['constraints']===array_values($constraints),'NHECU_REFUND_ATTEMPT_COMPLETE_UNIQUE_CONSTRAINTS');
+}
+/** The final native reader checks the actual full menu rows, including original value types. */
+function nhecu_refundMenuActual(array $rows,array $before,array $current,array $proof,int $id,int $parent): array
+{
+    nhecu_refundMenuPreserved($before,$current,$proof,$id,$parent);
+    $old=[];$new=[];$anchors=[];
+    foreach($rows as$row){
+        if((string)$row['id']===(string)$id)$new[]=$row;else$old[]=$row;
+        foreach(['admin-order','admin-order-refund'] as$auth)if($row['unique_auth']===$auth)$anchors[$auth][]=$row;
+    }
+    nhecr_expect(count($new)===1&&$new[0]===$proof['row']
+        &&nhecu_jsonProjection($old,$before['projected_columns'])===$before['projection'],
+        'NHECU_ACTUAL_SINGLE_REFUND_LEAF_AND_ALL_OLD_NATIVE_MENU_ROWS');
+    foreach(['admin-order'=>['pid'=>'0','menu_path'=>'/order'],'admin-order-refund'=>['menu_path'=>'/order/refund']] as$auth=>$fields){
+        nhecr_expect(isset($anchors[$auth])&&count($anchors[$auth])===1,'NHECU_ACTUAL_UNIQUE_ORIGINAL_MENU_PARENT');
+        $row=$anchors[$auth][0];
+        nhecr_expect(count($row)===22&&is_int($row['id'])&&$row['id']>=1&&$row['id']<=65535,'NHECU_ACTUAL_NATIVE_PARENT_ROW');
+        foreach($fields+['auth_type'=>'1','api_url'=>'','methods'=>'','is_show'=>'1','is_show_path'=>'1','access'=>'1','is_del'=>'0'] as$key=>$value)
+            nhecr_expect($row[$key]!==null&&(string)$row[$key]===$value,'NHECU_ALL_ORIGINAL_PARENT_IDENTITY_FIELDS');
+    }
+    nhecr_expect($anchors['admin-order-refund'][0]['id']===$parent
+        &&$anchors['admin-order-refund'][0]['pid']===$anchors['admin-order'][0]['id'],'NHECU_ACTUAL_ORIGINAL_PARENT_CHAIN');
+    return $old;
+}
+'''
+
+def _refund_php_function(raw: bytes, name: str) -> bytes:
+    marker = b'function ' + name.encode() + b'('
+    if raw.count(marker) != 1:
+        raise ValueError("HISTORY_REFUND_EXACT_PHP_FUNCTION:" + name)
+    start = raw.index(marker)
+    end = raw.index(b'\n}', start) + 2
+    return raw[start:end]
+
+
+def _refund_fragment(raw: bytes) -> bytes:
+    for old, new, count in _REFUND_GLOBAL_LITERALS:
+        raw = raw.replace(old, new)
+    return raw
+
+
+def refund_shared_contracts() -> bytes:
+    source = _UPGRADE_SHARED_CONTRACTS
+    old = b"['path' => 'crmeb/crmeb/services/marketplace/SchemaVersionGate.php', 'bytes' => 12267, 'sha256' => '25bf37fa585d76110d74fc8f8aa7615aad2915d99c04c83e3cab850ab2cbba31']"
+    new = b"['path' => 'crmeb/crmeb/services/marketplace/SchemaVersionGate.php', 'bytes' => 12380, 'sha256' => 'f4cac59718aad23680b095445be072943bf0b171d4f6a96c71173605b38dd4ce']"
+    source = _replace_once(source, old, new, 'refund_gate_exact_known_source')
+    anchor = b"        ['path' => 'crmeb/public/install/crmeb.sql', 'bytes' => 10237459, 'sha256' => '1e5e56c805f551a75332be58b2ab96572509c82835b812cdff3ca5c3eb7ad828'],"
+    source = _replace_once(source, anchor, anchor + b"\n        ['path' => 'crmeb/crmeb/services/marketplace/RefundSchemaReadiness.php', 'bytes' => 21017, 'sha256' => '6d1ed4f17379356c4a6cebbd50ae0be4d1298eeb25c2f437781792405915d133'],\n        ['path' => 'help/migrations/marketplace-ms5-refund.php', 'bytes' => 39251, 'sha256' => '24b1a48f0b35378dcf66d7e5bb5462cb8fd06179597022c7b99419486de0d120'],", 'refund_two_additional_fixed_sources')
+    anchor = b"    foreach (['apply', 'check', 'apply', 'check'] as $mode) $plan[] = ['marketplace-ms6-schema.php', $mode];"
+    source = _replace_once(source, anchor,
+        b"    foreach (['check', 'apply-structure', 'verify', 'check-menus', 'apply-menus', 'check-menus'] as $mode) $plan[] = ['marketplace-ms5-refund.php', $mode];\n" + anchor, 'refund_six_cli_before_schema')
+    return source + b'\n' + _REFUND_PURE_CONTRACTS
+
+
+def _refund_reader_seams() -> tuple[tuple[str, bytes, bytes], ...]:
+    result = []
+    old_shared = _refund_fragment(_UPGRADE_SHARED_CONTRACTS)
+    result.append(('refund_shared_exact_source_and_plan', old_shared, refund_shared_contracts()))
+    old = _refund_fragment(_refund_php_function(_UPGRADE_READER_FUNCTIONS, 'nhecu_newTables'))
+    new = old.replace(b"'eb_marketplace_aftersale_action', 'eb_marketplace_aftersale_file', 'eb_marketplace_schema'",
+        b"'eb_marketplace_aftersale_action', 'eb_marketplace_aftersale_file', 'eb_marketplace_refund_attempt', 'eb_marketplace_schema'")
+    result.append(('refund_eighth_protected_table', old, new))
+    old = _refund_fragment(_refund_php_function(_UPGRADE_READER_FUNCTIONS, 'nhecu_stream'))
+    new = old.replace(b'0[1-9]|1[0-6]', b'0[1-9]|1[0-9]|2[0-2]').replace(b'FIXED_SIXTEEN', b'FIXED_TWENTYTWO')
+    result.append(('refund_twenty_two_stream_pairs', old, new))
+    old = _refund_fragment(_refund_php_function(_UPGRADE_READER_FUNCTIONS, 'nhecu_view'))
+    new = old.replace(b"['snapshot', 'original_projection', 'redis_time_before', 'redis_time_after']",
+        b"['snapshot', 'original_projection', 'redis_time_before', 'redis_time_after', 'refund_menu']")
+    result.append(('refund_snapshot_exact_five_keys', old, new))
+
+    old = _refund_fragment(_refund_php_function(_UPGRADE_READER_FUNCTIONS, 'nhecu_upgradePublic'))
+    new = old
+    replacements = [
+      (b"'schema_create_window', 'schema_row', 'after_table_count']);",
+       b"'schema_create_window', 'schema_row', 'after_table_count', 'refund_readiness']);"),
+      (b"    $snapshots = $upgrade['snapshots']; $keys = ['before']; foreach (range(1, 16) as $i)",
+       b"    require_once '/workspace/crmeb/crmeb/services/marketplace/RefundSchemaReadiness.php';\n    $refund = $upgrade['refund_readiness']; nhecr_keys($refund, ['menu_id','parent_id','gate_ready','empty_attempt_table']);\n    nhecr_expect(is_int($refund['menu_id']) && $refund['menu_id'] >= 1 && $refund['menu_id'] <= 65534\n        && is_int($refund['parent_id']) && $refund['parent_id'] >= 1 && $refund['parent_id'] <= 65535\n        && $refund['gate_ready'] === true && $refund['empty_attempt_table'] === true, 'NHECU_EXACT_REFUND_READINESS');\n    $snapshots = $upgrade['snapshots']; $keys = ['before']; foreach (range(1, 22) as $i)"),
+      (b"count($result['children']) === 16 && count(array_unique(array_column($result['children'], 'pid'))) === 16",
+       b"count($result['children']) === 22 && count(array_unique(array_column($result['children'], 'pid'))) === 22"),
+      (b"    $changed = in_array($index, [1, 5, 9, 12], true);", b"    $changed = in_array($index, [1, 5, 9, 13, 16, 18], true);"),
+      (b"        else {\n            nhecr_keys($receipt, ['mode', 'state', 'changed', 'code', 'schema']);",
+       b"        elseif ($index < 18) nhecu_testRefundReceipt($receipt, $index - 12, $refund['menu_id'], $refund['parent_id'],\n            hash_file('sha256', '/workspace/help/migrations/marketplace-ms5-refund.php'), hash_file('sha256', '/workspace/help/migrations/marketplace-ms1.php'));\n        else {\n            nhecr_keys($receipt, ['mode', 'state', 'changed', 'code', 'schema']);"),
+      (b"[$index - 12]", b"[$index - 18]"),
+      (b"'changed' => $index === 12", b"'changed' => $index === 18"),
+      (b"[1 => 2, 5 => 4, 9 => 6, 12 => 7]", b"[1 => 2, 5 => 4, 9 => 6, 13 => 7, 16 => 7, 18 => 8]"),
+      (b"        if (!$changed) nhecu_unchanged($previous, $view);",
+       b"        if ($index < 16) nhecr_expect($view['refund_menu'] === null, 'NHECU_NO_REFUND_MENU_BEFORE_ITS_SINGLE_WRITE');\n        else nhecu_refundMenuPreserved($before['snapshot']['tables']['eb_system_menus'], $view['snapshot']['tables']['eb_system_menus'],\n            $view['refund_menu'], $refund['menu_id'], $refund['parent_id']);\n        if ($index >= 13) nhecu_refundAttemptMetadata($view['snapshot']['tables']['eb_marketplace_refund_attempt']['metadata']);\n        if (!$changed) nhecu_unchanged($previous, $view);"),
+      (b"$index === 9 ? ['eb_store_order_refund', 'eb_marketplace_fulfillment_operation'] : []",
+       b"$index === 9 ? ['eb_store_order_refund', 'eb_marketplace_fulfillment_operation'] : ($index === 16 ? ['eb_system_menus'] : [])"),
+      (b"$result['children'][12]", b"$result['children'][18]"),
+    ]
+    for number, (before, after) in enumerate(replacements):
+        count = new.count(before)
+        wanted = 2 if before in (b'[$index - 12]', b"$result['children'][12]") else 1
+        if count != wanted:
+            raise ValueError("HISTORY_REFUND_UPGRADE_READER_FIXED_SEAM:" + str(number) + ':' + str(count))
+        new = new.replace(before, after)
+    new = new.replace(b"'NHECU_COMPLETE_SIXTEEN_NATIVE_STEPS_AND_SNAPSHOTS'", b"'NHECU_COMPLETE_TWENTYTWO_NATIVE_STEPS_AND_SNAPSHOTS'")
+    new = new.replace(b"'NHECU_ONLY_SIX_EMPTY_TABLES_AND_ONE_SCHEMA_ROW'", b"'NHECU_ONLY_SEVEN_EMPTY_TABLES_AND_ONE_SCHEMA_ROW'")
+    new = new.replace(b"$old = $handoff['driver_after'];", b"nhecr_expect($snapshots['before']['refund_menu'] === null, 'NHECU_NO_REFUND_MENU_IN_OLD166_BASELINE');\n    $old = $handoff['driver_after'];")
+    result.append(('refund_exact_22_cli_and_menu_oracle', old, new))
+
+    old = _refund_fragment(_refund_php_function(_UPGRADE_READER_FUNCTIONS, 'nhecu_baseline'))
+    new = old.replace(b"    foreach ($driverAfter['tables'] as $name => $old) {",
+        b"    $refund = $upgrade['receipt']['current_structure_upgrade']['refund_readiness'];\n    foreach ($driverAfter['tables'] as $name => $old) {")
+    new = new.replace(b"        $rows = $database['rows'][$name]; $full166 = $before['tables'][$name];",
+        b"        $rows = $database['rows'][$name]; $full166 = $before['tables'][$name];\n        if ($name === 'eb_system_menus') $rows = nhecu_refundMenuActual($rows, $full166, $after['tables'][$name],\n            $upgrade['after']['refund_menu'], $refund['menu_id'], $refund['parent_id']);")
+    new = new.replace(b"        else nhecr_expect($after['tables'][$name] === $full166,",
+        b"        elseif ($name !== 'eb_system_menus') nhecr_expect($after['tables'][$name] === $full166,")
+    new = new.replace(b"array_slice(nhecu_newTables(), 0, 6)", b"array_slice(nhecu_newTables(), 0, 7)")
+    new = new.replace(b"NHECU_ALL_SIX_NEW_BUSINESS_TABLES_EMPTY", b"NHECU_ALL_SEVEN_NEW_BUSINESS_TABLES_EMPTY")
+    new = new.replace(b"NHECU_REAL_EXACT_ORIGINAL166_PLUS_SEVEN", b"NHECU_REAL_EXACT_ORIGINAL166_PLUS_EIGHT")
+    new += b'\n' + _REFUND_READER_EXTRA
+    result.append(('refund_final_native174_and_all_original_menu_rows', old, new))
+    return tuple(result)
+
+
+def _refund_reader_apply(raw: bytes, *, reverse: bool = False) -> bytes:
+    pairs = _refund_reader_seams()
+    if reverse:
+        for name, old, new in reversed(pairs):
+            raw = _replace_once(raw, new, old, name)
+        for old, new, count in reversed(_REFUND_GLOBAL_LITERALS):
+            if raw.count(new) != count:
+                raise ValueError("HISTORY_REFUND_READER_GLOBAL_INVERSE:" + repr(new))
+            raw = raw.replace(new, old)
+    else:
+        for old, new, count in _REFUND_GLOBAL_LITERALS:
+            if raw.count(old) != count:
+                raise ValueError("HISTORY_REFUND_READER_GLOBAL_FORWARD:" + repr(old))
+            raw = raw.replace(old, new)
+        for name, old, new in pairs:
+            raw = _replace_once(raw, old, new, name)
+    return raw

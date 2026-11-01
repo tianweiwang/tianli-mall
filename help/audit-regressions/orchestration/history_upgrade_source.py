@@ -750,6 +750,185 @@ def _default_shipping_seam():
     return before, after
 
 
+
+_REFUND_CONTRACTS = rb'''function m4iu_testRefundReceipt(array $result,int $step,int $id,int $parent,string $migrationHash,string $ms1Hash): void
+{
+    m2f_assert($step>=0&&$step<=5&&$id>=1&&$id<=65534&&$parent>=1&&$parent<=65535
+        &&preg_match('/\A[a-f0-9]{64}\z/D',$migrationHash)===1&&preg_match('/\A[a-f0-9]{64}\z/D',$ms1Hash)===1,
+        'CURRENT_UPGRADE_REFUND_SIX_FIXED_STEPS_AND_IDENTITIES');
+    if($step<3){
+        $expected=['mode'=>['check','apply-structure','verify'][$step],'state'=>$step===0?'applicable':'completed',
+            'native_exit'=>0,'changed'=>$step===1,'applied_steps'=>$step===1?['marketplace_refund_attempt']:[],
+            'pending_steps'=>$step===0?['marketplace_refund_attempt']:[],'pending_steps_known'=>true,'issues'=>[],
+            'failure_phase'=>null,'marker'=>'marketplace-ms5-refund-structure-v1','source_sha256'=>$migrationHash,
+            'history_mapping'=>'NOT RUN','refund_producer'=>'NOT RUN','acceptance'=>'NOT RUN'];
+    }else{
+        $expected=['mode'=>$step===4?'apply-menus':'check-menus','state'=>$step===3?'applicable':'completed','changed'=>$step===4,
+            'tables'=>[],'menu_ids'=>$step===3?[]:['marketplace-aftersales-test-refund'=>$id],'issues'=>[],
+            'source_binding'=>['entry_sha256'=>$migrationHash,'ms1_sha256'=>$ms1Hash],
+            'authorization_cache_producer'=>'fresh_scope_for_request_exact_all_auth_and_current_roles','roles_modified'=>false,
+            'parent_id'=>$parent,'navigation_changed'=>false,
+            'permission_scope'=>'EXISTING_REFUND_PAGE_OPERATION_LEAF_ONLY_STATIC_MARKETPLACE_ROUTE_UNCHANGED'];
+        if($step===4)$expected['created_menu_ids']=['marketplace-aftersales-test-refund'=>$id];
+        $expected['native_exit']=0;
+    }
+    m4iu_keys($result,array_keys($expected));
+    m2f_assert($result===$expected,'CURRENT_UPGRADE_EXACT_REFUND_NORMAL_RECEIPT_BEFORE_NEXT_CLI');
+}
+function m4iu_refundMenuPreserved(array $before,array $current,array $proof,int $expectedId,int $expectedParent): void
+{
+    m4iu_keys($proof,['id','row','ddl_raw','old_projection']);
+    m2f_assert($proof['id']===$expectedId&&is_int($expectedId)&&$expectedId>=1&&$expectedId<=65534
+        &&is_int($expectedParent)&&$expectedParent>=1&&$expectedParent<=65535,
+        'CURRENT_UPGRADE_SINGLE_EXPECTED_NATURAL_REFUND_MENU_ID');
+    $counter=$before['metadata']['table']['AUTO_INCREMENT'];
+    m2f_assert((is_int($counter)||is_string($counter))&&preg_match('/\A[1-9][0-9]*\z/D',(string)$counter)===1
+        &&(int)$counter===$expectedId,'CURRENT_UPGRADE_ORIGINAL_MENU_COUNTER_IS_NEW_ID');
+    $metadata=$current['metadata'];
+    m2f_assert((string)$metadata['table']['AUTO_INCREMENT']===(string)($expectedId+1),'CURRENT_UPGRADE_ONLY_ONE_MENU_COUNTER_ADVANCE');
+    $metadata['table']['AUTO_INCREMENT']=$before['metadata']['table']['AUTO_INCREMENT'];
+    m2f_assert($metadata===$before['metadata']&&$current['projected_columns']===$before['projected_columns'],
+        'CURRENT_UPGRADE_ALL_ORIGINAL_MENU_METADATA_TYPES_AND_COLUMN_ORDER');
+    m2f_assert(is_string($proof['ddl_raw'])&&strlen($proof['ddl_raw'])>0&&strlen($proof['ddl_raw'])<=1048576
+        &&hash('sha256',$proof['ddl_raw'])===$current['ddl_sha256'],'CURRENT_UPGRADE_FULL_NATIVE_MENU_DDL_BYTES');
+    $old=str_replace(' AUTO_INCREMENT='.($expectedId+1).' ',' AUTO_INCREMENT='.$expectedId.' ',$proof['ddl_raw'],$count);
+    m2f_assert($count===1&&hash('sha256',$old)===$before['ddl_sha256'],'CURRENT_UPGRADE_ONLY_EXACT_MENU_DDL_COUNTER_INVERSE');
+    $row=$proof['row'];
+    m2f_assert(is_array($row)&&count($row)===22&&array_keys($row)===$before['projected_columns'],
+        'CURRENT_UPGRADE_COMPLETE_NATIVE_REFUND_LEAF_ROW');
+    $wanted=['id'=>$expectedId]+\crmeb\services\marketplace\RefundSchemaReadiness::menuRows($expectedParent)[0];
+    m4iu_keys($row,array_keys($wanted));
+    foreach($wanted as$key=>$value)m2f_assert($row[$key]!==null&&(string)$row[$key]===(string)$value,
+        'CURRENT_UPGRADE_EVERY_REFUND_MENU_FIELD_AND_ORIGINAL_PARENT');
+    m4iu_keys($proof['old_projection'],['rows','sha256']);
+    m2f_assert($proof['old_projection']===$before['projection']&&$current['projection']['rows']===$before['projection']['rows']+1
+        &&is_string($current['projection']['sha256'])&&preg_match('/\A[a-f0-9]{64}\z/D',$current['projection']['sha256'])===1,
+        'CURRENT_UPGRADE_ALL_ORIGINAL_MENU_VALUES_TYPES_AND_MULTIPLICITY');
+}
+'''
+
+_REFUND_CAPTURE = rb'''function m4iu_capture(array $columns,?int $refundMenuId=null): array
+{
+    $start=m4iu_redisTime();$snapshot=m4m_snapshot();$projections=[];$db=audit_db();$proof=null;
+    foreach($columns as$name=>$list){
+        if($name==='eb_system_menus'&&$refundMenuId!==null){
+            $rows=m4m_rows($db,'SELECT '.implode(',',array_map('m4m_quote',$list)).' FROM eb_system_menus WHERE id<>?',[$refundMenuId]);
+            $hashes=array_map(static fn(array $row):string=>hash('sha256',json_encode($row,JSON_THROW_ON_ERROR)),$rows);
+            sort($hashes,SORT_STRING);$projections[$name]=['rows'=>count($rows),'sha256'=>hash('sha256',implode("\n",$hashes))];
+        }else $projections[$name]=m4m_projection($db,$name,$list);
+    }
+    if($refundMenuId!==null){
+        $rows=m4m_rows($db,'SELECT * FROM eb_system_menus WHERE id=?',[$refundMenuId]);
+        m2f_assert(count($rows)<=1,'CURRENT_UPGRADE_ONLY_EXPECTED_SINGLE_REFUND_LEAF');
+        if($rows!==[]){
+            $ddl=$db->query('SHOW CREATE TABLE eb_system_menus')->fetch(PDO::FETCH_NUM);
+            m2f_assert(isset($projections['eb_system_menus'])&&is_array($ddl)&&is_string($ddl[1]??null),'CURRENT_UPGRADE_COMPLETE_REFUND_MENU_CAPTURE');
+            $proof=['id'=>$refundMenuId,'row'=>$rows[0],'ddl_raw'=>$ddl[1],'old_projection'=>$projections['eb_system_menus']];
+        }
+    }
+    $end=m4iu_redisTime();m2f_assert($end>=$start,'CURRENT_UPGRADE_REAL_OBSERVER_WINDOW');
+    return ['snapshot'=>$snapshot,'original_projection'=>$projections,'redis_time_before'=>$start,'redis_time_after'=>$end,'refund_menu'=>$proof];
+}
+'''
+
+def upgrade_source_files(refund_readiness=False):
+    if type(refund_readiness) is not bool:
+        raise ValueError("EXACT_HISTORY_REFUND_VARIANT_REQUIRED")
+    if not refund_readiness:
+        return UPGRADE_SOURCE_FILES
+    previous=b"['path' => 'crmeb/crmeb/services/marketplace/SchemaVersionGate.php', 'bytes' => 12267, 'sha256' => '25bf37fa585d76110d74fc8f8aa7615aad2915d99c04c83e3cab850ab2cbba31']"
+    current=b"['path' => 'crmeb/crmeb/services/marketplace/SchemaVersionGate.php', 'bytes' => 12380, 'sha256' => 'f4cac59718aad23680b095445be072943bf0b171d4f6a96c71173605b38dd4ce']"
+    additions=(b"        ['path' => 'crmeb/crmeb/services/marketplace/RefundSchemaReadiness.php', 'bytes' => 21017, 'sha256' => '6d1ed4f17379356c4a6cebbd50ae0be4d1298eeb25c2f437781792405915d133'],\n"
+               b"        ['path' => 'help/migrations/marketplace-ms5-refund.php', 'bytes' => 39251, 'sha256' => '24b1a48f0b35378dcf66d7e5bb5462cb8fd06179597022c7b99419486de0d120'],\n")
+    return _refund_once(_refund_once(UPGRADE_SOURCE_FILES,previous,current),b"    ];\n",additions+b"    ];\n")
+
+def _refund_once(raw,previous,current):
+    if raw.count(previous)!=1:
+        raise ValueError("HISTORY_REFUND_EXACT_SINGLE_SOURCE_SEAM_REQUIRED")
+    return raw.replace(previous,current,1)
+
+def _refund_php_function(raw,name):
+    start=raw.index(b"function "+name+b"(")
+    stop=raw.find(b"\nfunction ",start+1)
+    return raw[start:] if stop<0 else raw[start:stop+1]
+
+def _refund_initializer_seams():
+    current=_UPGRADE_FUNCTIONS
+    old_plan=_refund_php_function(current,b"m4iu_plan")
+    new_plan=_refund_once(old_plan,
+        b"    foreach (['apply', 'check', 'apply', 'check'] as $mode) $plan[] = ['marketplace-ms6-schema.php', $mode];",
+        b"    foreach (['check','apply-structure','verify','check-menus','apply-menus','check-menus'] as $mode) $plan[] = ['marketplace-ms5-refund.php',$mode];\n"
+        b"    foreach (['apply', 'check', 'apply', 'check'] as $mode) $plan[] = ['marketplace-ms6-schema.php', $mode];")
+    current=_refund_once(current,old_plan,new_plan)
+    current=_refund_once(current,b"$index < 16, 'CURRENT_UPGRADE_FINITE_SIXTEEN_CHILDREN'",b"$index < 22, 'CURRENT_UPGRADE_FINITE_TWENTYTWO_CHILDREN'")
+    current=_refund_once(current,_refund_php_function(current,b"m4iu_capture"),_REFUND_CAPTURE)
+    unchanged=_refund_php_function(current,b"m4iu_unchanged")
+    current=_refund_once(current,unchanged,_refund_once(unchanged,
+        b"    m4iu_cachePreserved($before['snapshot']['redis'], $after);",
+        b"    m2f_assert($before['refund_menu']===$after['refund_menu'],'CURRENT_UPGRADE_READ_ONLY_COMPLETE_REFUND_MENU_PROOF');\n"
+        b"    m4iu_cachePreserved($before['snapshot']['redis'], $after);"))
+    preserved=_refund_php_function(current,b"m4iu_preserved")
+    current=_refund_once(current,preserved,_refund_once(preserved,
+        b"        else m2f_assert($actual['tables'][$name] === $row, 'CURRENT_UPGRADE_ALL_NONTARGET_DDL_METADATA_ROWS_AI');",
+        b"        elseif($name==='eb_system_menus'&&$after['refund_menu']!==null)\n"
+        b"            m4iu_refundMenuPreserved($row,$actual['tables'][$name],$after['refund_menu'],(int)$row['metadata']['table']['AUTO_INCREMENT'],(int)$after['refund_menu']['row']['pid']);\n"
+        b"        else m2f_assert($actual['tables'][$name] === $row, 'CURRENT_UPGRADE_ALL_NONTARGET_DDL_METADATA_ROWS_AI');"))
+    original=_refund_php_function(current,b"m4iu_upgrade")
+    upgrade=original
+    upgrade=_refund_once(upgrade,b"'expected_after_table_count' => 173",b"'expected_after_table_count' => 174")
+    anchor=b"    $evidence['current_structure_upgrade']['snapshots']['before'] = $before;"
+    setup=rb'''    $counter=$old['tables']['eb_system_menus']['metadata']['table']['AUTO_INCREMENT'];
+    m2f_assert((is_int($counter)||is_string($counter))&&preg_match('/\A[1-9][0-9]*\z/D',(string)$counter)===1
+        &&(int)$counter<=65534,'CURRENT_UPGRADE_REFUND_NATURAL_UNUSED_MENU_ID');$refundMenuId=(int)$counter;
+    m2f_assert(m4m_rows(audit_db(),'SELECT id FROM eb_system_menus WHERE id=?',[$refundMenuId])===[],'CURRENT_UPGRADE_REFUND_ID_ABSENT_BEFORE_WRITES');
+    $parents=m4m_rows(audit_db(),'SELECT * FROM eb_system_menus WHERE unique_auth=?',['admin-order-refund']);
+    m2f_assert(count($parents)===1&&preg_match('/\A[1-9][0-9]*\z/D',(string)$parents[0]['id'])===1
+        &&(int)$parents[0]['id']<=65535,'CURRENT_UPGRADE_ORIGINAL_REFUND_PAGE_ANCHOR');$refundParent=(int)$parents[0]['id'];
+    $evidence['current_structure_upgrade']['refund_readiness']=['menu_id'=>$refundMenuId,'parent_id'=>$refundParent,'gate_ready'=>false,'empty_attempt_table'=>false];
+'''
+    upgrade=_refund_once(upgrade,anchor,setup+anchor)
+    # The original capture before any mutation remains complete; all later captures carry the exact unused/new id.
+    if upgrade.count(b"m4iu_capture($columns)")!=3:
+        raise ValueError("HISTORY_REFUND_THREE_POSTBASELINE_CAPTURE_SITES_REQUIRED")
+    upgrade=upgrade.replace(b"m4iu_capture($columns)",b"m4iu_capture($columns,$refundMenuId)")
+    insert=rb'''        foreach(range(0,5)as$step){
+            $result=m4iu_child($config,$evidence);
+            m4iu_testRefundReceipt($result,$step,$refundMenuId,$refundParent,
+                hash_file('sha256','/workspace/help/migrations/marketplace-ms5-refund.php'),
+                hash_file('sha256','/workspace/help/migrations/marketplace-ms1.php'));
+            $current=m4iu_capture($columns,$refundMenuId);
+            if($step===1){
+                m4iu_existingTables($previous,$current,[]);$newNames[]='eb_marketplace_refund_attempt';
+                m4iu_preserved($before,$current,$newNames,true);
+            }elseif($step===4){
+                m2f_assert(is_array($current['refund_menu']),'CURRENT_UPGRADE_REFUND_MENU_ACTUALLY_CAPTURED');
+                m4iu_refundMenuPreserved($before['snapshot']['tables']['eb_system_menus'],
+                    $current['snapshot']['tables']['eb_system_menus'],$current['refund_menu'],$refundMenuId,$refundParent);
+                m4iu_existingTables($previous,$current,['eb_system_menus']);m4iu_preserved($before,$current,$newNames,true);
+            }else m4iu_unchanged($previous,$current);
+            if($step>=4){
+                \crmeb\services\marketplace\RefundSchemaReadiness::assertReady(audit_db(),'eb_');
+                m2f_assert($current['snapshot']['tables']['eb_marketplace_refund_attempt']['projection']['rows']===0,'CURRENT_UPGRADE_NEW_REFUND_TABLE_EMPTY');
+            }
+            $evidence['current_structure_upgrade']['snapshots']['cli_'.count($evidence['children'])]=$current;$previous=$current;
+            m2f_assert(m2f_file($config)===$owned[$config],'CURRENT_UPGRADE_REFUND_PRIVATE_CONFIG_IDENTITY_HELD');
+        }
+        $evidence['current_structure_upgrade']['refund_readiness']=['menu_id'=>$refundMenuId,'parent_id'=>$refundParent,'gate_ready'=>true,'empty_attempt_table'=>true];
+'''
+    upgrade=_refund_once(upgrade,b"        $schemaRow = null;",insert+b"        $schemaRow = null;")
+    upgrade=_refund_once(upgrade,b"$evidence['children'][12]",b"$evidence['children'][18]")
+    upgrade=_refund_once(upgrade,b"count($evidence['children']) === 16 && count(array_unique(array_column($evidence['children'], 'pid'))) === 16",
+        b"count($evidence['children']) === 22 && count(array_unique(array_column($evidence['children'], 'pid'))) === 22")
+    upgrade=_refund_once(upgrade,b"count($previous['snapshot']['names']) === 173",b"count($previous['snapshot']['names']) === 174")
+    upgrade=_refund_once(upgrade,b"CURRENT_UPGRADE_SIXTEEN_NATIVE_CHILDREN_EXACT173",b"CURRENT_UPGRADE_TWENTYTWO_NATIVE_CHILDREN_EXACT174")
+    current=_refund_once(current,original,upgrade)
+    current=_REFUND_CONTRACTS+current
+    registration=_READER_REGISTRATION_FUNCTIONS
+    registration=_refund_once(registration,b"foreach (range(1, 16) as $number)",b"foreach (range(1, 22) as $number)")
+    registration=_refund_once(registration,b"count($leaves) === 102",b"count($leaves) === 126")
+    return ((UPGRADE_SOURCE_FILES,upgrade_source_files(True)),(_UPGRADE_FUNCTIONS,current),(_READER_REGISTRATION_FUNCTIONS,registration))
+
+
 def _seams():
     return (
         _default_shipping_seam(),
@@ -775,22 +954,32 @@ def _source(raw):
         raise ValueError("INITIALIZER_EXACT_ARCHIVED_SOURCE_REQUIRED")
 
 
-def transform_initializer(raw: bytes) -> bytes:
+def transform_initializer(raw: bytes, *, refund_readiness=False) -> bytes:
+    if type(refund_readiness) is not bool:
+        raise ValueError("EXACT_HISTORY_REFUND_VARIANT_REQUIRED")
     _source(raw)
     candidate = raw
     for before, after in _seams():
         if candidate.count(before) != 1 or after in candidate:
             raise ValueError("INITIALIZER_UNIQUE_FORWARD_SEAM_REQUIRED")
         candidate = candidate.replace(before, after, 1)
-    if reverse_initializer(candidate) != raw:
+    if refund_readiness:
+        for previous,current in _refund_initializer_seams():
+            candidate=_refund_once(candidate,previous,current)
+    if reverse_initializer(candidate, refund_readiness=refund_readiness) != raw:
         raise ValueError("INITIALIZER_COMPLETE_REVERSE_REQUIRED")
     return candidate
 
 
-def reverse_initializer(candidate: bytes) -> bytes:
+def reverse_initializer(candidate: bytes, *, refund_readiness=False) -> bytes:
+    if type(refund_readiness) is not bool:
+        raise ValueError("EXACT_HISTORY_REFUND_VARIANT_REQUIRED")
     if not isinstance(candidate, bytes):
         raise ValueError("INITIALIZER_CANDIDATE_BYTES_REQUIRED")
     raw = candidate
+    if refund_readiness:
+        for previous,current in reversed(_refund_initializer_seams()):
+            raw=_refund_once(raw,current,previous)
     for before, after in reversed(_seams()):
         if raw.count(after) != 1:
             raise ValueError("INITIALIZER_UNIQUE_REVERSE_SEAM_REQUIRED")
@@ -917,6 +1106,30 @@ def _producer_entry_source(raw):
         raise ValueError("HISTORY_PRODUCER_EXACT_ARCHIVED_SOURCE_REQUIRED")
 
 
+def _producer_cookie_seams():
+    """The two enabled frozen middlewares each save one native zero-expiry cookie."""
+    return (
+        (b"    $bytes = 0; $cookieIds = [];\n",
+         b"    $bytes = 0; $cookieIds = []; $languageCookies = [];\n"),
+        (rb'''            // php-8.2.33 head.c/head.h, then CLI send_headers appends CRLF.
+            nhep_expect(preg_match('~\ASet-Cookie: PHPSESSID=([a-f0-9]{32}); path=/\r\n\z~D', $line, $cookie) === 1,
+                'NHE_AUTH_HEADER_EXACT_NATIVE_SESSION_COOKIE_AND_ONLY_SOURCE_ATTRIBUTES');
+            $cookieIds[] = $cookie[1];''',
+         rb'''            // Frozen LoadLangPack and SessionInit each save one zero-expiry cookie.
+            if (str_starts_with($line, 'Set-Cookie: cb_lang=')) {
+                nhep_expect(preg_match('~\ASet-Cookie: cb_lang=(zh-cn); path=/\r\n\z~D', $line, $language) === 1,
+                    'NHE_AUTH_HEADER_EXACT_NATIVE_LANGUAGE_COOKIE_AND_ONLY_SOURCE_ATTRIBUTES');
+                $languageCookies[] = $language[1];
+            } else {
+                nhep_expect(preg_match('~\ASet-Cookie: PHPSESSID=([a-f0-9]{32}); path=/\r\n\z~D', $line, $cookie) === 1,
+                    'NHE_AUTH_HEADER_EXACT_NATIVE_SESSION_COOKIE_AND_ONLY_SOURCE_ATTRIBUTES');
+                $cookieIds[] = $cookie[1];
+            }'''),
+        (b"    nhep_expect($bytes === $headers['bytes'] && count($cookieIds) === 1,\n",
+         b"    nhep_expect($bytes === $headers['bytes'] && count($cookieIds) === 1 && count($languageCookies) === 1,\n"),
+    )
+
+
 def transform_producer_entry(raw: bytes) -> bytes:
     _producer_entry_source(raw)
     observer_before = b"        $observer = audit_db(); $redis = audit_redis();\r\n"
@@ -934,6 +1147,10 @@ def transform_producer_entry(raw: bytes) -> bytes:
     candidate = raw[:-len(_PRODUCER_ENTRY_BEFORE)] + _PRODUCER_ENTRY_AFTER
     candidate = candidate.replace(_PRODUCER_FAILURE_BEFORE, _PRODUCER_FAILURE_AFTER, 1)
     candidate = candidate.replace(observer_before, observer_after, 1)
+    for previous, current in _producer_cookie_seams():
+        if candidate.count(previous) != 1 or current in candidate:
+            raise ValueError("HISTORY_PRODUCER_EXACT_COOKIE_FORWARD_SEAM_REQUIRED")
+        candidate = candidate.replace(previous, current, 1)
     if reverse_producer_entry(candidate) != raw:
         raise ValueError("HISTORY_PRODUCER_COMPLETE_ENTRY_REVERSE_REQUIRED")
     return candidate
@@ -952,7 +1169,12 @@ def reverse_producer_entry(candidate: bytes) -> bytes:
         raise ValueError("HISTORY_PRODUCER_UNIQUE_FAILURE_DIAGNOSTIC_REVERSE_REQUIRED")
     if candidate.count(observer_after) != 1 or observer_before in candidate:
         raise ValueError("HISTORY_PRODUCER_UNIQUE_OBSERVER_NATIVE_PREPARES_REVERSE_REQUIRED")
-    raw = candidate.replace(observer_after, observer_before, 1)
+    raw = candidate
+    for previous, current in reversed(_producer_cookie_seams()):
+        if raw.count(current) != 1:
+            raise ValueError("HISTORY_PRODUCER_EXACT_COOKIE_REVERSE_SEAM_REQUIRED")
+        raw = raw.replace(current, previous, 1)
+    raw = raw.replace(observer_after, observer_before, 1)
     raw = raw.replace(_PRODUCER_FAILURE_AFTER, _PRODUCER_FAILURE_BEFORE, 1)
     raw = raw[:-len(_PRODUCER_ENTRY_AFTER)] + _PRODUCER_ENTRY_BEFORE
     _producer_entry_source(raw)

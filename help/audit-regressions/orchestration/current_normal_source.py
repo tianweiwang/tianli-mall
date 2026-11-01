@@ -3917,6 +3917,7 @@ def build_history_source(output: str | Path, authority_pointer: dict[str, Any],
     if isolation_subnet is not None:
         isolation_subnet = validate_isolation_subnet(isolation_subnet)
     authority, inventory = reviewed_authority(authority_pointer)
+    history_refund_readiness = refund_readiness_sources(inventory) is not None
     tool_root = Path(__file__).resolve().parent
     out = Path(output)
     ordinary(out, missing_leaf=True)
@@ -4004,8 +4005,9 @@ def build_history_source(output: str | Path, authority_pointer: dict[str, Any],
         exec(compile(raw, str(path), "exec"), namespace)
         transform, reverse = namespace["transform_" + function], namespace["reverse_" + function]
         require(callable(transform) and callable(reverse), "HISTORY_PURE_SOURCE_TRANSFORM_INTERFACE")
-        after[name] = transform(before[name])
-        require(type(after[name]) is bytes and reverse(after[name]) == before[name], "HISTORY_COMPLETE_MODULE_INVERSE")
+        after[name] = transform(before[name], refund_readiness=history_refund_readiness)
+        require(type(after[name]) is bytes and reverse(after[name], refund_readiness=history_refund_readiness) == before[name],
+                "HISTORY_COMPLETE_MODULE_INVERSE")
         modules[path.name] = {"path": path.as_posix(), **pin(raw)}
         author_sources[path.name] = raw
         if kind == "host":
@@ -4074,8 +4076,9 @@ def build_history_source(output: str | Path, authority_pointer: dict[str, Any],
                     "HISTORY_READER_REGISTRATION_COMPLETE_DONOR_FUNCTION")
             upgrade_registration_donor = {"path": donor_path.as_posix(), **pin(donor_raw)}
             source_rows = re.findall(rb"\['path' => '([^']+)', 'bytes' => ([0-9]+), 'sha256' => '([a-f0-9]{64})'\]",
-                                     namespace["UPGRADE_SOURCE_FILES"])
-            require(len(source_rows) == 11 and len({row[0] for row in source_rows}) == 11,
+                                     namespace["upgrade_source_files"](history_refund_readiness))
+            source_count = 13 if history_refund_readiness else 11
+            require(len(source_rows) == source_count and len({row[0] for row in source_rows}) == source_count,
                     "HISTORY_UPGRADE_COMPLETE_FIXED_MIGRATION_DEPENDENCIES")
             for relative, size, digest in source_rows:
                 relative = relative.decode()
