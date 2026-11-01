@@ -28,8 +28,19 @@ final class FinanceTransactionProjection
         return ['basis_amount'=>self::amount($basis),'platform_fee_amount'=>self::amount($fee),'payer'=>$rule['platform_fee_payer']];
     }
 
-    /** Observation is the original DAO's fully validated complete same-root collection. */
-    public static function row(array $header,array $observation,?array $draft): array
+    /** Pure eligibility from the original DAO's fully validated complete collection. */
+    public static function hasAppliedPayment(array $observation): bool
+    {
+        if(($observation['root_payment_consistent']??null)!==true||!is_array($observation['locked']??null)
+            ||!is_array($observation['locked']['attempts']??null)||!array_is_list($observation['locked']['attempts']))throw new AuthUnavailableException();
+        $applied=false;
+        foreach($observation['locked']['attempts'] as $attempt)
+            if(MarketplacePaymentServices::savedAttemptState($attempt)==='applied')$applied=true;
+        return $applied;
+    }
+
+    /** Observation and optional refund summary are already verified on the same owned snapshot. */
+    public static function row(array $header,array $observation,?array $draft,?array $refundSummary=null): array
     {
         if(($observation['root_payment_consistent']??null)!==true)throw new AuthUnavailableException();
         $locked=$observation['locked'];$root=$locked['root'];
@@ -47,9 +58,13 @@ final class FinanceTransactionProjection
         elseif(!$applied)$status='NOT_APPLIED';
         elseif($hold)$status='PAYMENT_HOLD';
         else{$estimate=self::estimate($draft,self::amount($goods),self::amount($shipping));$status=$estimate===null?'RULE_INCOMPLETE':'ESTIMATED';}
+        if($applied){
+            if($refundSummary===null||array_keys($refundSummary)!==['confirmed_amount','held_amount'])throw new AuthUnavailableException();
+            self::cents($refundSummary['confirmed_amount']);self::cents($refundSummary['held_amount']);
+        }elseif($refundSummary!==null)throw new AuthUnavailableException();
         return ['root_order_id'=>$root['id'],'order_no'=>$root['order_id'],'mer_id'=>$root['mer_id'],'currency'=>'CNY',
             'order_amount'=>self::amount($paid),'goods_paid'=>self::amount($goods),'shipping_paid'=>self::amount($shipping),
-            'fulfillment_hold'=>$hold,'attempts'=>$attempts,'estimate_status'=>$status,'fee_estimate'=>$estimate];
+            'fulfillment_hold'=>$hold,'attempts'=>$attempts,'estimate_status'=>$status,'fee_estimate'=>$estimate,'refund_summary'=>$refundSummary];
     }
 
     private static function cents(string $amount): int

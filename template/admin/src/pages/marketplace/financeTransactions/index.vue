@@ -103,6 +103,7 @@
         </dl>
         <p class="finance-note">
           下列金额是根单保存金额，不按售后批准金额冲减。展开行可查看该根单全部付款尝试；估算值不能作为账单、收入统计或结算依据。
+          退款事实是本次读取的累计已确认金额与当前占用，不将多次观察相加；测试记录不代表真实资金退款。
         </p>
         <p v-if="!view.list.length" class="finance-empty" role="status">当前页没有符合条件的测试交易。</p>
         <el-table v-else :data="view.list" row-key="root_order_id" class="finance-table" border>
@@ -147,6 +148,15 @@
           <el-table-column label="订单金额" min-width="150"
             ><template slot-scope="scope">{{ moneyText(scope.row.order_amount) }}</template></el-table-column
           >
+          <el-table-column label="退款事实" min-width="220">
+            <template slot-scope="scope">
+              <template v-if="scope.row.refund_summary !== null">
+                <div>已确认退款 {{ moneyText(scope.row.refund_summary.confirmed_amount) }}</div>
+                <div class="finance-note">当前占用 {{ moneyText(scope.row.refund_summary.held_amount) }}</div>
+              </template>
+              <span v-else class="finance-note">尚无已应用付款</span>
+            </template>
+          </el-table-column>
           <el-table-column label="付款与履约" min-width="160"
             ><template slot-scope="scope"
               ><div>{{ scope.row.attempts.length }} 次付款尝试</div>

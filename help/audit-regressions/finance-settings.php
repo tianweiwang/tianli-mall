@@ -54,5 +54,45 @@ financeNormalExpect(FinanceTransactionProjection::estimate(array_replace($full,[
     'INTEGER_HALF_UP_AT_HALF_CENT');
 financeNormalExpect(FinanceTransactionProjection::estimate(array_replace($full,['platform_fee_rate'=>'100.00']),'9999999999.99','0.00')['platform_fee_amount']==='9999999999.99',
     'FULL_DECIMAL12_CAPACITY_WITHOUT_FLOATS');
-echo json_encode(['schema'=>1,'scope'=>'FINANCE_SETTINGS_PURE_NORMAL','checks'=>13,'status'=>'PASS',
+// Projection-only inputs stand for the original DAO's already validated observations.
+// These normal view checks neither reconstruct a payment proof nor invoke a driver.
+$header=['id'=>101,'order_id'=>'normal-finance-root','uid'=>3,'mer_id'=>2,'pid'=>0,'marketplace_trade_version'=>1,
+    'paid'=>0,'pay_time'=>0,'pay_type'=>'','pay_price'=>'40.30','pay_postage'=>'0.00','total_price'=>'40.30'];
+$closedAttempt=['id'=>'11','admitted_generation'=>'1','created_at'=>1700000000,
+    'evidence'=>['application'=>null,'first_succeeded'=>null,'first_closed'=>str_repeat('c',64)]];
+$unapplied=['root_payment_consistent'=>true,'locked'=>['root'=>$header,
+    'registry'=>['winner_attempt_id'=>null,'fulfillment_hold'=>0],'attempts'=>[$closedAttempt]]];
+$pendingView=FinanceTransactionProjection::row($header,$unapplied,$full);
+financeNormalExpect(array_key_exists('refund_summary',$pendingView)&&$pendingView['refund_summary']===null
+    &&$pendingView['estimate_status']==='NOT_APPLIED'&&$pendingView['fee_estimate']===null,
+    'UNAPPLIED_PAYMENT_REFUND_FACTS_UNKNOWN_WITH_PAYMENT_VIEW_RETAINED');
+$paidHeader=array_replace($header,['paid'=>1,'pay_time'=>1700000001,'pay_type'=>'marketplace_test']);
+$appliedAttempt=$closedAttempt;$appliedAttempt['evidence']=['application'=>['at'=>1700000001],
+    'first_succeeded'=>str_repeat('s',64),'first_closed'=>null];
+$applied=['root_payment_consistent'=>true,'locked'=>['root'=>$paidHeader,
+    'registry'=>['winner_attempt_id'=>'11','fulfillment_hold'=>0],'attempts'=>[$appliedAttempt]]];
+$noRefund=['confirmed_amount'=>'0.00','held_amount'=>'0.00'];
+$zeroView=FinanceTransactionProjection::row($paidHeader,$applied,$full,$noRefund);
+financeNormalExpect($zeroView['refund_summary']===$noRefund&&$zeroView['order_amount']==='40.30'
+    &&$zeroView['fee_estimate']===['basis_amount'=>'40.30','platform_fee_amount'=>'1.01','payer'=>'merchant'],
+    'VERIFIED_EMPTY_REFUND_HISTORY_HAS_KNOWN_ZERO_AND_ORIGINAL_FEE_ESTIMATE');
+$partialRefund=['confirmed_amount'=>'20.15','held_amount'=>'20.15'];
+$partialView=FinanceTransactionProjection::row($paidHeader,$applied,$full,$partialRefund);
+financeNormalExpect($partialView['refund_summary']===$partialRefund
+    &&array_diff_key($partialView,['refund_summary'=>true])===array_diff_key($zeroView,['refund_summary'=>true]),
+    'SAVED_PARTIAL_REFUND_AMOUNTS_DO_NOT_REDUCE_ORIGINAL_PAYMENT_OR_ESTIMATE');
+$finalRefund=['confirmed_amount'=>'40.30','held_amount'=>'0.00'];
+$finalView=FinanceTransactionProjection::row($paidHeader,$applied,$full,$finalRefund);
+financeNormalExpect($finalView['refund_summary']===$finalRefund
+    &&array_diff_key($finalView,['refund_summary'=>true])===array_diff_key($partialView,['refund_summary'=>true]),
+    'CURRENT_REFUND_SUMMARY_REPLACES_PRIOR_VIEW_WITHOUT_ACCUMULATING_SNAPSHOTS');
+$withoutRevision=FinanceTransactionProjection::row($paidHeader,$applied,null,$finalRefund);
+financeNormalExpect($withoutRevision['refund_summary']===$finalRefund&&$withoutRevision['estimate_status']==='NO_REVISION'
+    &&$withoutRevision['fee_estimate']===null,'SAVED_REFUND_FACTS_DO_NOT_REQUIRE_FEE_RULES_OR_A_REVISION');
+financeNormalExpect(FinanceTransactionProjection::row($paidHeader,$applied,$full,$finalRefund)===$finalView
+    &&$partialRefund===['confirmed_amount'=>'20.15','held_amount'=>'20.15']
+    &&$finalRefund===['confirmed_amount'=>'40.30','held_amount'=>'0.00'],
+    'NORMAL_REFUND_PROJECTION_REPEAT_PRESERVES_INPUTS_AND_CURRENT_VIEW');
+
+echo json_encode(['schema'=>1,'scope'=>'FINANCE_SETTINGS_PURE_NORMAL','checks'=>19,'status'=>'PASS',
     'App_DB_HTTP'=>'NOT RUN','real_funds_enabled'=>false],JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR)."\n";

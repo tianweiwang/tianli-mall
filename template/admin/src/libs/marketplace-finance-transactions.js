@@ -122,6 +122,7 @@ export function transactionsView(value, query = {}) {
       'shipping_paid',
       'fulfillment_hold',
       'attempts',
+      'refund_summary',
       'estimate_status',
       'fee_estimate',
     ]);
@@ -153,6 +154,15 @@ export function transactionsView(value, query = {}) {
         throw new Error('测试付款尝试状态未确认');
       return { ...attempt };
     });
+    let refundSummary = null;
+    if (row.refund_summary !== null) {
+      exact(row.refund_summary, ['confirmed_amount', 'held_amount']);
+      if (!amount(row.refund_summary.confirmed_amount) || !amount(row.refund_summary.held_amount))
+        throw new Error('测试退款事实金额未确认');
+      refundSummary = { ...row.refund_summary };
+    }
+    if (attempts.some((attempt) => attempt.state === 'applied') !== (refundSummary !== null))
+      throw new Error('测试退款事实与已应用付款状态不一致');
     let estimate = null;
     if (row.fee_estimate !== null) {
       exact(row.fee_estimate, ['basis_amount', 'platform_fee_amount', 'payer']);
@@ -165,7 +175,7 @@ export function transactionsView(value, query = {}) {
         throw new Error('平台费估算金额未确认');
     }
     if ((row.estimate_status === 'ESTIMATED') !== (estimate !== null)) throw new Error('平台费估算状态与金额不一致');
-    return { ...row, attempts, fee_estimate: estimate };
+    return { ...row, attempts, refund_summary: refundSummary, fee_estimate: estimate };
   });
   if (
     value.next_before_id !== null &&

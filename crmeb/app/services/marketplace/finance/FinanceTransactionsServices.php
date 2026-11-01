@@ -3,11 +3,16 @@ declare(strict_types=1);
 
 namespace app\services\marketplace\finance;
 
+use app\dao\marketplace\order\MarketplaceOrderDao;
+use app\dao\marketplace\order\MarketplaceOrderFulfillmentDao;
+use app\dao\marketplace\order\MarketplaceOrderRefundDao;
 use app\dao\marketplace\payment\MarketplacePaymentDao;
 use app\dao\marketplace\scope\PlatformScope;
 use app\services\marketplace\AuditLogServices;
 use app\services\marketplace\MerchantManagementInput;
 use app\services\marketplace\PlatformAccessServices;
+use app\services\marketplace\order\MarketplaceOrderFulfillmentServices;
+use app\services\marketplace\order\MarketplaceOrderRefundFacts;
 use crmeb\compat\think\orm\db\connector\Mysql;
 use crmeb\exceptions\AuthException;
 use crmeb\exceptions\AuthUnavailableException;
@@ -19,7 +24,9 @@ use Throwable;
 final class FinanceTransactionsServices
 {
     public const READ='marketplace-finance-transactions-read';
-    public function __construct(private PlatformAccessServices $access,private AuditLogServices $audit,private MarketplacePaymentDao $payments) {}
+    public function __construct(private PlatformAccessServices $access,private AuditLogServices $audit,private MarketplacePaymentDao $payments,
+        private MarketplaceOrderDao $orders,private MarketplaceOrderFulfillmentDao $families,
+        private MarketplaceOrderRefundDao $refunds,private MarketplaceOrderFulfillmentServices $fulfillment) {}
 
     public function read(PlatformScope $scope,array $query=[]): array
     {
@@ -47,15 +54,17 @@ final class FinanceTransactionsServices
                     $decoded=json_decode($saved[0]['payload'],true,32,JSON_THROW_ON_ERROR);$draft=FinanceSettingsInput::draft($decoded);
                     foreach($draft as $key=>$value)if($decoded[$key]!==$value)throw new AuthUnavailableException();
                 }
-                $fields=array_merge(MarketplacePaymentDao::merchantExitColumns()['root'],['pay_postage','total_price']);
-                $columns=implode(',',array_map(static fn(string $field):string=>'o.`'.$field.'`',$fields));
-                $sql='SELECT '.$columns.' FROM `'.$prefix.'store_order` o JOIN `'.$prefix.'marketplace_payment_registry` r ON r.order_id=o.id AND r.payment_contract_version=1'
+                // Keep the original page; the internal complete rows are needed by the existing refund capture verifier.
+                $sql='SELECT o.* FROM `'.$prefix.'store_order` o JOIN `'.$prefix.'marketplace_payment_registry` r ON r.order_id=o.id AND r.payment_contract_version=1'
                     .' WHERE o.pid=0 AND o.marketplace_trade_version=1 AND EXISTS (SELECT 1 FROM `'.$prefix.'marketplace_payment_attempt` a WHERE a.order_id=o.id)';
                 $params=[];if($before!==null){$sql.=' AND o.id<?';$params[]=$before;}
                 $headers=self::rows($pdo,$sql.' ORDER BY o.id DESC LIMIT '.($limit+1),$params);$hasMore=count($headers)>$limit;
                 if($hasMore)array_pop($headers);
-                $observations=$this->payments->readObservationsForRoots($pdo,$headers);$list=[];
-                foreach($headers as $header){$id=self::number($header['id'],1);$list[]=FinanceTransactionProjection::row($header,$observations[$id],$draft);}
+                $observations=$this->payments->readObservationsForRoots($pdo,$headers);
+                $summaries=$this->refundSummaries($connection,$pdo,$prefix,$headers,$observations);$list=[];
+                foreach($headers as $header){
+                    $id=self::number($header['id'],1);$list[]=FinanceTransactionProjection::row($header,$observations[$id],$draft,$summaries[$id]);
+                }
                 $data=['schema'=>1,'scope'=>'testing_persisted_payment_v1','real_funds_enabled'=>false,
                     'available_revisions'=>$available,'selected_revision'=>$revision,'rule'=>$draft===null?null:FinanceTransactionProjection::rule($draft),
                     'list'=>$list,'next_before_id'=>$hasMore?$list[count($list)-1]['root_order_id']:null,
@@ -71,6 +80,55 @@ final class FinanceTransactionsServices
             $this->connection($connection,$pdo,$prefix,false);return $data;
         }catch(AuthException|HttpException $error){throw $error;}
         catch(Throwable $error){throw new AuthUnavailableException();}
+    }
+
+    /** Existing same-PDO facts only. Unapplied payment roots never enter the aftersale reader. */
+    private function refundSummaries(Mysql $connection,PDO $pdo,string $prefix,array $headers,array $observations): array
+    {
+        $out=[];$roots=[];$allIds=[];
+        foreach($headers as $root){
+            $id=self::number($root['id'],1);
+            if(array_key_exists($id,$out)||!isset($observations[$id])||!is_array($observations[$id]))throw new AuthUnavailableException();
+            $out[$id]=null;$allIds[]=$id;
+            if(FinanceTransactionProjection::hasAppliedPayment($observations[$id]))$roots[]=$root;
+        }
+        if(array_keys($observations)!==$allIds)throw new AuthUnavailableException();
+        if($roots===[])return $out;
+        $this->connection($connection,$pdo,$prefix,true);
+        $ready=$this->families->readAftersaleStructureReadiness($connection,$pdo);
+        if($ready!==['schema'=>2,'state'=>'READY'])throw new AuthUnavailableException();
+        $this->connection($connection,$pdo,$prefix,true);
+        $facts8=$this->orders->readPaymentApplicationCaptureFactsBatch($connection,$pdo,$roots);
+        $this->connection($connection,$pdo,$prefix,true);
+        $families=$this->families->readFulfillmentFamiliesForRoots($connection,$pdo,$roots);
+        $this->connection($connection,$pdo,$prefix,true);
+        $refunds=$this->refunds->readRefundsForRoots($connection,$pdo,$roots);
+        $this->connection($connection,$pdo,$prefix,true);
+        $actions=$this->refunds->readActionsForRoots($connection,$pdo,$roots);
+        $this->connection($connection,$pdo,$prefix,true);
+        $logs=$this->refunds->readStatusLogsForRoots($connection,$pdo,$roots);
+        $this->connection($connection,$pdo,$prefix,true);
+        $ids=array_map(static fn(array $root):int=>self::number($root['id'],1),$roots);
+        foreach([$facts8,$families,$refunds,$actions,$logs] as $map)
+            if(array_keys($map)!==$ids)throw new AuthUnavailableException();
+        foreach($roots as $root){
+            $id=self::number($root['id'],1);$observation=$observations[$id];
+            $capture=$this->orders->capturePaymentApplicationFactsFromFacts(self::number($root['uid'],1),$id,$facts8[$id]);
+            if($capture['root']!==$root)throw new AuthUnavailableException();
+            $raw=$families[$id];MarketplaceOrderFulfillmentDao::keys($raw,['children','child_items','operations','ranges']);
+            $family=['children'=>$raw['children'],'items'=>$raw['child_items'],'ranges'=>$raw['ranges'],'refunds'=>$refunds[$id]];
+            $cut=$actions[$id]===[]?null:MarketplaceOrderFulfillmentDao::u64($actions[$id][count($actions[$id])-1]['id']);
+            $context=['schema'=>2,'cut_id'=>$cut,'actions'=>$actions[$id],'refunds'=>$refunds[$id],
+                'operations'=>$raw['operations'],'ranges'=>$raw['ranges'],'logs'=>$logs[$id]];
+            $inspection=MarketplaceOrderRefundFacts::inspectForAftersale($capture,$context,$observation['locked']);
+            $this->fulfillment->validateAftersaleFamilyFromFacts($root,$capture,$family,$inspection);
+            $capacity=MarketplaceOrderRefundFacts::quoteSelectionFromInspection($inspection)['capacity'];
+            if($capacity['currency']!=='CNY'||$capacity['paid']!==$root['pay_price'])throw new AuthUnavailableException();
+            // Capacity already uses each refund's final saved state; never sum cumulative observations or applications here.
+            $out[$id]=['confirmed_amount'=>$capacity['confirmed'],'held_amount'=>$capacity['held']];
+        }
+        if($this->families->readAftersaleStructureReadiness($connection,$pdo)!==$ready)throw new AuthUnavailableException();
+        $this->connection($connection,$pdo,$prefix,true);return $out;
     }
 
     private function authorize(PlatformScope $scope): void
