@@ -164,6 +164,8 @@ python -I -B help/audit-regressions/orchestration/verify_sources.py
 
 新退款 Readiness 要求实际读取连接使用原生预处理。QA 仅在传给 Readiness/Gate 的局部 PDO 上关闭 `PDO::ATTR_EMULATE_PREPARES`，随后保留原检查；独立的维护连接设置不会传播到新建的 `audit_db()` 连接。normal 的新退款来源分支和 shared 顾客退款/结构回执读取均按原来源选择处理；history 的两个连接接缝仅随现有 `legacy_refund_anchors=true` 的新五锚来源分支启用，旧11及旧13默认整件输出保持。退款菜单完整观察器还仅在自己的专用连接上设置 `SESSION information_schema_stats_expiry=0`，与原 early/finance 观察器一致，以读取实际原生计数；其他分支不新增此设置，MySQL 全局不变。全局 guard、产品 Readiness、账号权限、SQL 模式、原断言和已冻结 Run 均不因此改变；源码与语法检查不代替新正式完整运行。
 
+normal 新退款 Gate 的 `m4i_refund_bootstrap` 在首次完整观察前，使用已有 `audit_app` 连接按 `SHOW CREATE TABLE`、`SELECT *` 顺序打开刚创建的同一退款空表，严格核 DDL 形状及真实空行；随后保留原 observer 和 receipt 的完整元数据比较。同 MySQL 8.0.45 原生空表组件已观察到首次打开前后 `AUTO_INCREMENT` 从 NULL 变为 1，先打开后连续捕获全字段一致；源码不转换该值、不省略字段、不重试或增加权限。旧 Gate 输出及原业务后缀保持；此组件不是原 A3 丢失叶值的重构，也不代替后继完整正常运行。
+
 共享历史响应头模型还按冻结旧App启用的LoadLangPack与SessionInit精确接受各一条原生cb_lang=zh-cn和32hex PHPSESSID Cookie，两条均仅path=/。原完整字节/CRLF、单响应块、无截断、Cookie属性与Session未复用校验保留，未知或重复Cookie仍拒绝；不关闭语言Cookie、不改旧App配置。此共同修复作用于后继producer来源；原R19失败原始头未保存，正常原生Cookie组件不代表该旧响应已重放或37业务通过。新工具来源、语法/纯组件和真实历史新Run资格分别保留，停止样本仍不执行。
 
 失败历史 producer 的普通退役使用 `python -I -B -X utf8 help/audit-regressions/orchestration/retire_failed_history.py --help` 所列单角色入口。执行时必须显式给定并固定 SHA256 的 `--host`（仅支持已审201800字节历史Host）、`--context`、`--source-authority`、`--preview-baseline`，以及原 `--freeze-sha256`、`--review-sha256` 和全新外部 `--output`。它只处理尚无成功seal或后继角色的原producer退出1、两base、六卷与一网；沿原Host普通stop `--timeout=-1`及非force删除，不调用成功历史关闭。所有权始终使用原context，仅原native记录落点重定向外部OUT；原Run应零追加。预览只在RAM比较8个容器全部27字段、Cmd及完整Mounts多重集，公开仅保留摘要。

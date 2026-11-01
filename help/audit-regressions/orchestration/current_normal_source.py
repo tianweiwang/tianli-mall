@@ -650,7 +650,15 @@ function m4i_refund_bootstrap(array $binding,array $history): array
     m2f_assert(is_int($parent)&&MarketplaceMs5RefundMigration::newTables()===\crmeb\services\marketplace\RefundSchemaReadiness::newTables()
         &&MarketplaceMs5RefundMenus::menuRows($parent)===\crmeb\services\marketplace\RefundSchemaReadiness::menuRows($parent),
         'REFUND_ORIGINAL_MIGRATION_AND_SHARED_READINESS_CONTRACTS_EQUAL');
-    m4c_entry_refund_results($structure,$menuResults,$id,$parent,$sources);$native=m4c_entry_refund_observe($history,$id);
+    m4c_entry_refund_results($structure,$menuResults,$id,$parent,$sources);
+    $openedRefundDdl=$db->query('SHOW CREATE TABLE eb_marketplace_refund_attempt')->fetch(PDO::FETCH_NUM);
+    m2f_assert(is_array($openedRefundDdl)&&array_keys($openedRefundDdl)===[0,1]
+        &&$openedRefundDdl[0]==='eb_marketplace_refund_attempt'&&is_string($openedRefundDdl[1])
+        &&str_starts_with($openedRefundDdl[1],'CREATE TABLE `eb_marketplace_refund_attempt` ('),
+        'REFUND_NATIVE_EMPTY_TABLE_OPEN_DDL');
+    m2f_assert(m4cb_rows($db,'SELECT * FROM eb_marketplace_refund_attempt')===[],
+        'REFUND_NATIVE_EMPTY_TABLE_OPEN_ROWS');
+    $native=m4c_entry_refund_observe($history,$id);
     $grants['application_after']=hash('sha256',json_encode($db->query('SHOW GRANTS')->fetchAll(PDO::FETCH_COLUMN),JSON_THROW_ON_ERROR));
     $grants['maintenance_after']=hash('sha256',json_encode($maintenance->query('SHOW GRANTS')->fetchAll(PDO::FETCH_COLUMN),JSON_THROW_ON_ERROR));
     m2f_assert($modes===m2f_modes($maintenance)&&$auto===m4cb_rows($maintenance,'SELECT @@SESSION.auto_increment_increment AS step,@@SESSION.auto_increment_offset AS first')
