@@ -44,6 +44,8 @@ B 对该 helper 使用同一独审前后值，并逐项连接 B 当前表单向�
 
 每次 `source_tree_manifest` 对父目录按原首次出现顺序去重，逐项执行原目录/非链接/真实路径校核；全部文件仍逐字节读取并计算摘要，随后在最终 Git clean 检查前再完整校核一次相同父目录集合。没有跨 scan 的缓存，两次独立完整 scan 均保留。2026-11-02 在原冻结树的单次正常组件中，15976文件/413136077字节的完整manifest逐字段相同；父目录校核从99345次降到实际7816次（两遍3908个目录），两次耗时观察分别为9.334秒和1.634秒。该单对计时存在缓存和主机活动差异，只证明本接缝的实际结果及调用数，不代表44分钟准备总耗时已解决或Worker已经通过；完整原件位于仓库外 `finance-refund-facts-20261102-r1/worker-prep-perf-r1`。
 
+当前自然到期目标的源码优化先在临时 guard 副本中将唯一精确新 Worker tuple 逆为原启动目标，再核原完整函数摘要；实际输出和逆回仍保留新 tuple，不接受其它函数变化。作者维护工具版本与冻结的 App 来源分列记录，不回写冻结树。
+
 当前 `WORKER_STARTUP_READINESS` 和 `WORKER_NATURAL_PREPARATION` 的 Core9 initializer 只在 `register-worker-normal`、`authorize-worker-cleanup` 两个 proof 内复用同一次 gate 已核实的源码。先完整执行原 `m4i_worker_sources`：两个 namespace 分别遍历四根、核五组完整闭集及相同 descriptor、31个 extras、固定 donor 和全部文件字节，通过后才返回该次局部映射。原 gate 后续命中 `/workspace` 或 `/source` 中同 path 时仍严格核完整 descriptor 相等；未命中、准备引用和 `/run/ms4-prep` artifacts 继续原物理读取。原 `m4i_sourceFile`、其它调用点与非 Worker proof 的物理检查保持，无 static、跨 gate 或跨 phase 缓存。两目标函数及整 initializer 逐字逆回、其余函数保全和完整 Core9 正逆派生须通过；B/history 不接此变换。PHP语法、正常源码块组件和完整真实 gate/Worker 运行分别记证据。
 
 2026-11-02 的实际正常源码块组件使用相同原冻结树双只读挂载、固定公开 binding、PHP 8.2及512M内存限制；原版539.180秒/87663次物理文件校核，候选130.848秒/21933次物理校核，并增加65730次同 gate 完整 descriptor 相等校核。除随重复读取减少的物理文件/路径检查计数外，其余原闭集、双 namespace、目录及 donor 校核计数全部相同；两进程均自然退出0、stderr空，两个临时 helper 均已正常移除。新 initializer 与该组件的 PHP 8.2语法、完整 Core9 派生和正逆回放也已通过。结果见同外置目录 `gate-comparison.json`；这是单对正常源码块测量，不执行完整 gate 的身份/环境前置，不连接App/DB/Redis，不代签Worker、完整A或44分钟全准备流程，也未重放旧失败。

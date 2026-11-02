@@ -1378,7 +1378,16 @@ def normal_worker_source_profile_changes(initializer: bytes) -> tuple[bytes, dic
     require(pin(original_gate) == {"bytes": 13577,
             "sha256": "981ab6002eda8f7d8a51903f3a7eea38e5f5599a0fc62f93bf585aed09b220db"},
             "EXACT_ORIGINAL_NORMAL_WORKER_GATE")
-    require(pin(original_worker) == {"bytes": 4792,
+    # Qualify only the named successor descriptor against the original full body.
+    # The real source/output and inverse proofs retain the successor tuple.
+    worker_guard = original_worker
+    natural_tuple = ("[" + str(WORKER_NATURAL_PREPARATION["bytes"]) + ", '"
+                     + WORKER_NATURAL_PREPARATION["sha256"] + "']").encode("utf-8")
+    startup_tuple = ("[" + str(WORKER_STARTUP_READINESS["bytes"]) + ", '"
+                     + WORKER_STARTUP_READINESS["sha256"] + "']").encode("utf-8")
+    if natural_tuple in worker_guard:
+        worker_guard = once(worker_guard, natural_tuple, startup_tuple)
+    require(pin(worker_guard) == {"bytes": 4792,
             "sha256": "c777c08e2f27002706b4ea91d03ee0f5a0e936897fdbf24c5515daf289182382"},
             "EXACT_ORIGINAL_NORMAL_WORKER_SOURCE_VERIFIER")
     previous_call = b"m4i_sourceFile("
