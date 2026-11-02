@@ -179,11 +179,12 @@ export default {
           this.$store.commit('userInfo/userInfo', data.user_info);
           this.$store.commit('menus/setopenMenus', []);
           this.$store.commit('menus/getmenusNav', data.menus);
-          this.$store.dispatch('routesList/setRoutesList', data.menus);
+          await this.$store.dispatch('routesList/setRoutesList', data.menus);
+          const menus = this.$store.state.routesList.routesList;
           const arr = formatFlatteningRoutes(this.$router.options.routes);
           this.formatTwoStageRoutes(arr);
           this.$store.commit('menus/setOneLvMenus', arr);
-          const routes = formatFlatteningRoutes(data.menus);
+          const routes = menus.length ? formatFlatteningRoutes(menus) : [];
           this.$store.commit('menus/setOneLvRoute', routes);
           this.$store.commit('userInfo/name', data.user_info.account);
           this.$store.commit('userInfo/avatar', data.user_info.head_pic);
@@ -216,9 +217,14 @@ export default {
             }
             this.checkSocket();
           } catch (e) {}
+          const firstMenu = findFirstNonNullChildren(menus);
+          if (!firstMenu || !firstMenu.path) {
+            this.$message.error('当前账号没有可用菜单，请联系管理员');
+            return;
+          }
           PrevLoading.start();
           this.$router.push({
-            path: data.menus.length ? findFirstNonNullChildren(data.menus).path : this.$routeProStr + '/',
+            path: firstMenu.path,
           });
         })
         .catch((res) => {
