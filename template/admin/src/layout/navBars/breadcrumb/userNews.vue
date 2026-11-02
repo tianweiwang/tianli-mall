@@ -4,6 +4,14 @@
       <div class="head-box-title">系统通知</div>
       <!-- <div class="head-box-btn" v-if="newsList.length > 0" v-db-click @click="onAllReadClick">全部已读</div> -->
     </div>
+    <el-alert
+      v-if="notificationUnavailable"
+      title="实时通知暂不可用"
+      description="已保存通知仍可查看，可刷新页面重试。"
+      type="info"
+      :closable="false"
+      show-icon
+    />
     <div class="content-box">
       <template v-if="newsList.length > 0">
         <div class="content-box-item" v-for="(v, k) in newsList" :key="k" v-db-click @click="jumpUrl(v.url)">
@@ -41,22 +49,36 @@ export default {
       newsList: [],
       newOrderAudioLink: null,
       messageList: [],
+      notificationUnavailable: false,
     };
+  },
+  created() {
+    this._notificationDisposed = false;
+    this._notificationSocket = null;
+    this._notificationHandlers = [];
   },
   mounted() {
     this.getNotict();
     this.newOrderAudioLink = newOrderAudioLink;
-    getAdminSocket().then((ws) => {
-      ws.send({
+    const credential = getCookies('token');
+    if (!credential) return;
+    return getAdminSocket().then(async (ws) => {
+      if (this._notificationDisposed || getCookies('token') !== credential) return;
+      await ws.whenOpen();
+      if (this._notificationDisposed || getCookies('token') !== credential) return;
+      await ws.send({
         type: 'login',
-        data: getCookies('token'),
+        data: credential,
       });
+      if (this._notificationDisposed || getCookies('token') !== credential) return;
+      this._notificationSocket = ws;
+      this.notificationUnavailable = false;
       let that = this;
-      ws.$on('ADMIN_NEW_PUSH', function (data) {
+      this.listenNotification(ws, 'ADMIN_NEW_PUSH', function (data) {
         that.getNotict();
       });
 
-      ws.$on('NEW_ORDER', function (data) {
+      this.listenNotification(ws, 'NEW_ORDER', function (data) {
         that.$notify.info({
           title: '新订单',
           message: '您有一个新的订单,ID为(' + data.order_id + '),请注意查看',
@@ -70,7 +92,7 @@ export default {
           read: 0,
         });
       });
-      ws.$on('NEW_REFUND_ORDER', function (data) {
+      this.listenNotification(ws, 'NEW_REFUND_ORDER', function (data) {
         that.$notify.info({
           title: '退款订单提醒',
           message: '您有一个订单申请退款,ID为(' + data.order_id + '),请注意查看',
@@ -84,7 +106,7 @@ export default {
           read: 0,
         });
       });
-      ws.$on('WITHDRAW', function (data) {
+      this.listenNotification(ws, 'WITHDRAW', function (data) {
         // that.$Notice.warning({
         //   title: '提现提醒',
         //   duration: 8,
@@ -102,7 +124,7 @@ export default {
           read: 0,
         });
       });
-      ws.$on('STORE_STOCK', function (data) {
+      this.listenNotification(ws, 'STORE_STOCK', function (data) {
         that.$notify.info({
           title: '库存预警',
           message: '商品ID为(' + data.id + ')的库存不足啦,请注意查看~',
@@ -115,7 +137,7 @@ export default {
           read: 0,
         });
       });
-      ws.$on('PAY_SMS_SUCCESS', function (data) {
+      this.listenNotification(ws, 'PAY_SMS_SUCCESS', function (data) {
         that.$notify.info({
           title: '短信充值成功',
           message: '恭喜您充值' + data.price + '元，获得' + data.number + '条短信',
@@ -128,7 +150,22 @@ export default {
           read: 0,
         });
       });
+      this.listenNotification(ws, 'close', (event) => {
+        if (event && event.key === 1) this.notificationUnavailable = true;
+      });
+    }).catch((error) => {
+      if (this._notificationDisposed || getCookies('token') !== credential) return;
+      this.notificationUnavailable = true;
+      if (!['聊天室连接未完成', '聊天室连接已关闭', '聊天室消息尚未发送'].includes(error && error.message)) throw error;
     });
+  },
+  beforeDestroy() {
+    this._notificationDisposed = true;
+    if (this._notificationSocket) {
+      this._notificationHandlers.forEach(({ event, handler }) => this._notificationSocket.$off(event, handler));
+    }
+    this._notificationHandlers = [];
+    this._notificationSocket = null;
   },
   filters: {
     // 1 待发货 2 库存报警  3评论回复  4提现申请
@@ -154,6 +191,14 @@ export default {
     },
   },
   methods: {
+    listenNotification(ws, event, callback) {
+      const credential = getCookies('token');
+      const handler = (data) => {
+        if (!this._notificationDisposed && getCookies('token') === credential) callback(data);
+      };
+      ws.$on(event, handler);
+      this._notificationHandlers.push({ event, handler });
+    },
     // 全部已读点击
     onAllReadClick() {
       this.newsList = [];
@@ -164,6 +209,7 @@ export default {
     getNotict() {
       jnoticeRequest()
         .then((res) => {
+          if (this._notificationDisposed) return;
           this.newsList = res.data || [];
           this.$emit('haveNews', !!this.newsList.length);
         })

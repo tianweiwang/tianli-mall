@@ -190,7 +190,14 @@ function createSocket(key) {
 
 let adminSocket;
 export function getAdminSocket() {
-  if (!adminSocket) adminSocket = createSocket(1);
+  if (!adminSocket) {
+    const connection = createSocket(1);
+    adminSocket = connection;
+    // Keep the returned rejection visible to its caller; only evict the failed cache.
+    connection.catch(() => {
+      if (adminSocket === connection) adminSocket = undefined;
+    });
+  }
   return adminSocket;
 }
 export const Socket = createSocket(2);

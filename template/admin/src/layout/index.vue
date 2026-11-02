@@ -74,7 +74,7 @@ export default {
       }
     },
   },
-  distroyed() {
+  beforeDestroy() {
     window.removeEventListener('resize', this.onLayoutResize);
   },
 };

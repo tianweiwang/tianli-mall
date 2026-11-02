@@ -95,27 +95,27 @@ export default {
   },
   created() {
     // 监听非本页面调用 0 刷新当前，1 关闭当前，2 关闭其它，3 关闭全部
-    this.bus.$on('onCurrentContextmenuClick', (data) => {
-      this.onCurrentContextmenuClick(data);
-    });
+    this.bus.$on('onCurrentContextmenuClick', this.onCurrentContextmenuClick);
   },
   mounted() {
     if (!this.$store.state.app.tagNavList.length) {
       this.getTagsViewRoutes();
     }
-    if (this.$refs.tagsViews?.offsetWidth < this.$refs.scrollbarRef.$refs.wrap.scrollWidth) {
-      this.scrollTagIcon = true;
-    }
-    window.addEventListener('resize', () => {
-      if (this.$refs.tagsViews?.offsetWidth < this.$refs.scrollbarRef.$refs.wrap.scrollWidth) {
-        this.scrollTagIcon = true;
-      } else {
-        this.scrollTagIcon = false;
-      }
-    });
+    this.updateScrollTagIcon();
+    window.addEventListener('resize', this.updateScrollTagIcon);
   },
   methods: {
     ...mapMutations(['setBreadCrumb', 'setTagNavList', 'addTag', 'setLocal', 'setHomeRoute', 'closeTag']),
+    getScrollWrap() {
+      if (this._isBeingDestroyed || this._isDestroyed) return null;
+      return this.$refs.scrollbarRef?.$refs?.wrap;
+    },
+    updateScrollTagIcon() {
+      if (this._isBeingDestroyed || this._isDestroyed) return;
+      const tags = this.$refs.tagsViews;
+      const wrap = this.getScrollWrap();
+      this.scrollTagIcon = Boolean(tags && wrap && tags.offsetWidth < wrap.scrollWidth);
+    },
     clickDropdown(e) {
       let data = { id: e, path: this.$route.path };
       this.onCurrentContextmenuClick(data);
@@ -138,25 +138,31 @@ export default {
     },
     // 鼠标滚轮滚动
     onHandleScroll(e) {
-      this.$refs.scrollbarRef.$refs.wrap.scrollLeft += e.wheelDelta / 4;
+      const wrap = this.getScrollWrap();
+      if (wrap) wrap.scrollLeft += e.wheelDelta / 4;
     },
     scrollTag(production) {
-      let scrollRefs = this.$refs.scrollbarRef.$refs.wrap.scrollWidth;
-      let scrollLeft = this.$refs.scrollbarRef.$refs.wrap.scrollLeft;
+      const wrap = this.getScrollWrap();
+      if (!wrap) return;
+      let scrollRefs = wrap.scrollWidth;
+      let scrollLeft = wrap.scrollLeft;
       if (production === 'left') {
-        this.$refs.scrollbarRef.$refs.wrap.scrollLeft = scrollLeft - 300 <= 0 ? 0 : scrollLeft - 300;
+        wrap.scrollLeft = scrollLeft - 300 <= 0 ? 0 : scrollLeft - 300;
       } else {
-        this.$refs.scrollbarRef.$refs.wrap.scrollLeft = scrollLeft + 300 >= scrollRefs ? scrollRefs : scrollLeft + 300;
+        wrap.scrollLeft = scrollLeft + 300 >= scrollRefs ? scrollRefs : scrollLeft + 300;
       }
     },
     // tagsView 横向滚动
     tagsViewmoveToCurrentTag() {
       this.$nextTick(() => {
+        const wrap = this.getScrollWrap();
+        if (!wrap) return;
         const tagsRefs = this.$refs.tagsRefs;
         if (!tagsRefs) return;
         if (tagsRefs.length <= 0) return false;
         // 当前 li 元素
         let liDom = tagsRefs[this.tagsRefsIndex];
+        if (!liDom) return;
         // 当前 li 元素下标
         let liIndex = this.tagsRefsIndex;
         // 当前 ul 下 li 元素总长度
@@ -166,7 +172,7 @@ export default {
         // 最后 li
         let liLast = tagsRefs[tagsRefs.length - 1];
         // 当前滚动条的值
-        let scrollRefs = this.$refs.scrollbarRef.$refs.wrap;
+        let scrollRefs = wrap;
         // 当前滚动条滚动宽度
         let scrollS = scrollRefs.scrollWidth;
         // 当前滚动条偏移宽度
@@ -294,13 +300,7 @@ export default {
       }
     },
     refreshIcon() {
-      this.$nextTick((e) => {
-        if (this.$refs.tagsViews?.offsetWidth < this.$refs.scrollbarRef.$refs.wrap.scrollWidth) {
-          this.scrollTagIcon = true;
-        } else {
-          this.scrollTagIcon = false;
-        }
-      });
+      this.$nextTick(this.updateScrollTagIcon);
     },
     // 1、刷新当前 tagsView：
     refreshCurrentTagsView(path) {
@@ -364,9 +364,10 @@ export default {
       deep: true,
     },
   },
-  destroyed() {
+  beforeDestroy() {
+    window.removeEventListener('resize', this.updateScrollTagIcon);
     // 取消非本页面调用监听（fun/tagsView）
-    this.bus.$off('onCurrentContextmenuClick');
+    this.bus.$off('onCurrentContextmenuClick', this.onCurrentContextmenuClick);
   },
 };
 </script>
