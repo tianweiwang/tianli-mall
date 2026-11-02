@@ -589,8 +589,9 @@ function m4w_prepare_launch(PDO $db,array $arFinal):array
  }
  $same($arFinal,$current['snapshot']);$same($initial['snapshot'],$current['snapshot']);$clock();
  $window=m4w_preflight($db,$current['snapshot'],$current['cache']);$finished=$clock();
- // Private witness only; the Host retains its original descriptor-only contract.
- $preparation=['scope'=>'READ_ONLY_ORIGINAL_FINITE_NATURAL_EXPIRY_BEFORE_LIFECYCLE','initial'=>$initial,
+ // Retain every initial native value with the existing strict reversible archive.
+ // Avoid expanding this extra witness again inside the unchanged BEFORE seal.
+ $preparation=['scope'=>'READ_ONLY_ORIGINAL_FINITE_NATURAL_EXPIRY_BEFORE_LIFECYCLE','initial'=>m4w_fixtures_archive($initial),
   'initial_finite'=>$finite,'rounds'=>$rounds,'final_observation'=>$current['observation'],
   'started_ns'=>$started,'finished_ns'=>$finished,'bounds'=>['maximum_rounds'=>$count,'maximum_observations'=>$count+1,
    'wait_limit_ns'=>181000000000,'observation_limit_ns'=>180000000000,'processing_allowance_ns'=>5000000000,'total_limit_ns'=>$totalLimit]];

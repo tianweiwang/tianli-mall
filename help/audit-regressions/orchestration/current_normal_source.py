@@ -52,6 +52,8 @@ WORKER_STARTUP_READINESS = {"path": WORKER_PATH, "bytes": 133975,
                             "sha256": "1cfa53cb481805dbaa0a8b50fa88fd169b9b9d48a847158877202cf73a0331f6"}
 WORKER_NATURAL_PREPARATION = {"path": WORKER_PATH, "bytes": 142574,
                               "sha256": "e9e2335fb6ee58bc08ccfe6867f6fd606e3846dab4548dc0990562ce9f2daad7"}
+WORKER_PREPARATION_ARCHIVE = {"path": WORKER_PATH, "bytes": 142676,
+                              "sha256": "76551d5f9e12fd7fb4018eef6b1d45c23ce8d2f4b3dc978c2380276cda7f715e"}
 CUSTOMER_PATH = "help/audit-regressions/isolated/ms4-customer-http-normal.php"
 CUSTOMER_BEFORE = {"path": CUSTOMER_PATH, "bytes": 121457,
                    "sha256": "1fae540f4f145ace9ed94d17648d785f1663c4e8d6dbd0b2de54b75ffcbdea75"}
@@ -1378,15 +1380,15 @@ def normal_worker_source_profile_changes(initializer: bytes) -> tuple[bytes, dic
     require(pin(original_gate) == {"bytes": 13577,
             "sha256": "981ab6002eda8f7d8a51903f3a7eea38e5f5599a0fc62f93bf585aed09b220db"},
             "EXACT_ORIGINAL_NORMAL_WORKER_GATE")
-    # Qualify only the named successor descriptor against the original full body.
-    # The real source/output and inverse proofs retain the successor tuple.
+    # Qualify only the named successor descriptors against the original full body.
+    # The real source/output and inverse proofs retain the selected successor tuple.
     worker_guard = original_worker
-    natural_tuple = ("[" + str(WORKER_NATURAL_PREPARATION["bytes"]) + ", '"
-                     + WORKER_NATURAL_PREPARATION["sha256"] + "']").encode("utf-8")
     startup_tuple = ("[" + str(WORKER_STARTUP_READINESS["bytes"]) + ", '"
                      + WORKER_STARTUP_READINESS["sha256"] + "']").encode("utf-8")
-    if natural_tuple in worker_guard:
-        worker_guard = once(worker_guard, natural_tuple, startup_tuple)
+    for successor in (WORKER_NATURAL_PREPARATION, WORKER_PREPARATION_ARCHIVE):
+        successor_tuple = ("[" + str(successor["bytes"]) + ", '" + successor["sha256"] + "']").encode("utf-8")
+        if successor_tuple in worker_guard:
+            worker_guard = once(worker_guard, successor_tuple, startup_tuple)
     require(pin(worker_guard) == {"bytes": 4792,
             "sha256": "c777c08e2f27002706b4ea91d03ee0f5a0e936897fdbf24c5515daf289182382"},
             "EXACT_ORIGINAL_NORMAL_WORKER_SOURCE_VERIFIER")
@@ -1519,7 +1521,7 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
     worker_update = None
     worker_current = inventory[WORKER_PATH]
     if worker_current != WORKER_BEFORE:
-        require(worker_current in (WORKER_CURRENT, WORKER_FATAL_DIAGNOSTIC, WORKER_MEMORY_LIFETIME, WORKER_STARTUP_READINESS, WORKER_NATURAL_PREPARATION), "EXACT_CURRENT_WORKER_ARCHIVE_SOURCE")
+        require(worker_current in (WORKER_CURRENT, WORKER_FATAL_DIAGNOSTIC, WORKER_MEMORY_LIFETIME, WORKER_STARTUP_READINESS, WORKER_NATURAL_PREPARATION, WORKER_PREPARATION_ARCHIVE), "EXACT_CURRENT_WORKER_ARCHIVE_SOURCE")
         worker_review = source_review.get("worker_fixtures_archive_update")
         require(type(worker_review) is dict and worker_review.get("before") == WORKER_BEFORE
                 and worker_review.get("after") == worker_current,
@@ -1726,7 +1728,7 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
                         for name in ("ms4-host.py", "verify-zero-ms4-fulfillment.py")),
                 "INITIALIZER_HOST_ZERO_INTERFACE_SAME_SEVEN_FORM_SOURCES")
     worker_source_proof = None
-    if worker_current in (WORKER_STARTUP_READINESS, WORKER_NATURAL_PREPARATION):
+    if worker_current in (WORKER_STARTUP_READINESS, WORKER_NATURAL_PREPARATION, WORKER_PREPARATION_ARCHIVE):
         after["ms4-initialize.php"], worker_source_proof = normal_worker_source_profile_changes(
             after["ms4-initialize.php"])
     after["ms4-host.py"], source_read_before, source_read_after, source_read_proof = normal_source_read_profile_changes(
@@ -2912,7 +2914,7 @@ def derive_b_profile(authority_pointer: dict[str, Any],
             return wanted
         if row["path"] == WORKER_PATH and wanted != row:
             worker_review = source_review.get("worker_fixtures_archive_update")
-            require(row == WORKER_BEFORE and wanted in (WORKER_CURRENT, WORKER_FATAL_DIAGNOSTIC, WORKER_MEMORY_LIFETIME, WORKER_STARTUP_READINESS, WORKER_NATURAL_PREPARATION)
+            require(row == WORKER_BEFORE and wanted in (WORKER_CURRENT, WORKER_FATAL_DIAGNOSTIC, WORKER_MEMORY_LIFETIME, WORKER_STARTUP_READINESS, WORKER_NATURAL_PREPARATION, WORKER_PREPARATION_ARCHIVE)
                     and type(worker_review) is dict and worker_review.get("before") == WORKER_BEFORE
                     and worker_review.get("after") == wanted,
                     "B_EXACT_REVIEWED_WORKER_FIXTURE_ARCHIVE_UPDATE")
