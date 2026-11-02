@@ -1737,6 +1737,13 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
         after["ms4-host.py"])
     after["ms4-host.py"], review_image_before, review_image_after, review_image_proof = aftersale_review_image_profile_changes(
         after["ms4-host.py"])
+    after["verify-zero-ms4-fulfillment.py"], zero_review_image_before, zero_review_image_after, zero_review_image_proof = aftersale_review_image_profile_changes(
+        after["verify-zero-ms4-fulfillment.py"])
+    zero_review_image_proof["whole_zero_inverse_exact"] = zero_review_image_proof.pop("whole_host_inverse_exact")
+    review_image_proof = {**review_image_proof, "targets": {
+        "ms4-host.py": review_image_proof,
+        "verify-zero-ms4-fulfillment.py": zero_review_image_proof,
+    }}
     for name, symbol, target in (
         ("ms4-host.py", "INTERFACE_SHA256", "interface-v1.json"),
         ("normal-close-ms4-fulfillment.py", "HOST_SHA256", "ms4-host.py"),
@@ -1764,7 +1771,8 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
         "paid_current_successor_entry_pair_changed": True,
         "all_original_python_function_bodies_exact": False,
         "python_function_changes": {"ms4-host.py": ["verify_files_bootstrap", "verify_schema_bootstrap", "verify_finance_bootstrap",
-            "prerequisite_result", "verify_merchant_exit_bootstrap", "verify_order_menu_bootstrap", "verify_freeze", "source_tree_manifest", "verify_aftersale_review_business"]},
+            "prerequisite_result", "verify_merchant_exit_bootstrap", "verify_order_menu_bootstrap", "verify_freeze", "source_tree_manifest", "verify_aftersale_review_business"],
+            "verify-zero-ms4-fulfillment.py": ["verify_aftersale_review_business"]},
         "normal_source_read_reuse": source_read_proof,
         "normal_source_parent_reuse": source_parent_proof,
         "aftersale_review_image_consumer": review_image_proof,
@@ -1833,6 +1841,9 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
             observed["source_tree_manifest"] = once(observed["source_tree_manifest"], source_parent_after, source_parent_before)
             observed["verify_aftersale_review_business"] = once(
                 observed["verify_aftersale_review_business"], review_image_after, review_image_before)
+        elif name == "verify-zero-ms4-fulfillment.py":
+            observed["verify_aftersale_review_business"] = once(
+                observed["verify_aftersale_review_business"], zero_review_image_after, zero_review_image_before)
         require(functions(before[name]) == observed, "ALL_OTHER_ORIGINAL_PYTHON_FUNCTION_BODIES_EXACT")
         compile(after[name], str(out / name), "exec")
         counts[name] = len(functions(after[name]))
@@ -1849,7 +1860,8 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
         "changed": [name for name in NAMES if before[name] != after[name]],
         "all_original_python_function_bodies_exact": False, "python_named_function_counts": counts,
         "python_function_changes": {"ms4-host.py": ["verify_files_bootstrap", "verify_schema_bootstrap", "verify_finance_bootstrap",
-            "prerequisite_result", "verify_merchant_exit_bootstrap", "verify_order_menu_bootstrap", "verify_freeze", "source_tree_manifest", "verify_aftersale_review_business"]},
+            "prerequisite_result", "verify_merchant_exit_bootstrap", "verify_order_menu_bootstrap", "verify_freeze", "source_tree_manifest", "verify_aftersale_review_business"],
+            "verify-zero-ms4-fulfillment.py": ["verify_aftersale_review_business"]},
         "normal_source_read_reuse": source_read_proof,
         "normal_source_parent_reuse": source_parent_proof,
         "aftersale_review_image_consumer": review_image_proof,
@@ -2977,6 +2989,13 @@ def derive_b_profile(authority_pointer: dict[str, Any],
     initializer, host, order_rows, order_mode = order_menu_profile_changes(
         initializer, host, inventory, Path(authority["validation_root"]), with_read_leaves=False)
     host, review_image_before, review_image_after, review_image_proof = aftersale_review_image_profile_changes(host)
+    after["candidate/verify-zero-ms4-fulfillment.py"], zero_review_image_before, zero_review_image_after, zero_review_image_proof = aftersale_review_image_profile_changes(
+        after["candidate/verify-zero-ms4-fulfillment.py"])
+    zero_review_image_proof["whole_zero_inverse_exact"] = zero_review_image_proof.pop("whole_host_inverse_exact")
+    review_image_proof = {**review_image_proof, "targets": {
+        "candidate/ms4-host.py": review_image_proof,
+        "candidate/verify-zero-ms4-fulfillment.py": zero_review_image_proof,
+    }}
     after["candidate/ms4-initialize.php"] = initializer
     after["candidate/ms4-host.py"] = host
     # The public installer remains in both complete source reads. Only deployment
@@ -3066,6 +3085,9 @@ def derive_b_profile(authority_pointer: dict[str, Any],
                 added = added | {"verify_refund_bootstrap"}
             current_functions["verify_aftersale_review_business"] = once(
                 current_functions["verify_aftersale_review_business"], review_image_after, review_image_before)
+        elif name == "verify-zero-ms4-fulfillment.py":
+            current_functions["verify_aftersale_review_business"] = once(
+                current_functions["verify_aftersale_review_business"], zero_review_image_after, zero_review_image_before)
         if network_subnets is not None:
             changed |= ({"ui_web_connect", "ui_web_networks"} if name == "ms4-host.py"
                         else {"ui_zero_network_identity", "ui_zero_resource_networks"} if name == "verify-zero-ms4-fulfillment.py" else set())
@@ -4017,7 +4039,7 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
         "network_subnets":selected_subnets,
         "network_availability":"NOT_PROVED_BY_AUTHOR_ROOT_FRESH_RECHECK_REQUIRED_BEFORE_START_ISOLATION_REUSE_ONLY_AFTER_ACTUAL_A_CLOSE_AND_ZERO",
         "changed_python_bodies":{"ms4-host.py":["verify_files_bootstrap","ui_copy_freeze_values","ui_web_connect","ui_web_networks","prerequisite_result","verify_aftersale_review_business"],
-            "verify-zero-ms4-fulfillment.py":["ui_copy_freeze_values","ui_zero_network_identity","ui_zero_resource_networks"],
+            "verify-zero-ms4-fulfillment.py":["ui_copy_freeze_values","ui_zero_network_identity","ui_zero_resource_networks","verify_aftersale_review_business"],
             "normal-close-ms4-fulfillment.py":[],
             "root-ui-materialize-freeze.py":["main","current_known_normal_root","current_consume_materialization","current_verify_sources","frozen_materials","frozen_resources"],
             "root-ui-start-to-ready.py":["main","current_core_aux_authority"]},
