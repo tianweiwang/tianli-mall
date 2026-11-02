@@ -8,6 +8,10 @@
 // | Author: CRMEB Team <admin@crmeb.com>
 // +----------------------------------------------------------------------
 
+import { loginInfoApi } from '@/api/account';
+
+let brandingRequest = null;
+
 export default {
   namespaced: true,
   state: {
@@ -88,6 +92,26 @@ export default {
     },
   },
   actions: {
+    loadBranding({ commit }) {
+      if (!brandingRequest) {
+        brandingRequest = loginInfoApi()
+          .then((res) => {
+            const data = res.data || {};
+            const branding = {
+              logo: data.logo_rectangle || '',
+              logoSmall: data.logo_square || '',
+              copyright: data.copyright || '',
+            };
+            commit('logo', branding.logo);
+            commit('logoSmall', branding.logoSmall);
+            return branding;
+          })
+          .finally(() => {
+            brandingRequest = null;
+          });
+      }
+      return brandingRequest;
+    },
     getMenusNavList({ commit }) {
       return new Promise((resolve, reject) => {
         menusApi()

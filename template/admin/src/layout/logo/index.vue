@@ -13,8 +13,6 @@
 </template>
 
 <script>
-import { getLogo } from '@/api/common';
-
 export default {
   name: 'layoutLogo',
   data() {
@@ -35,7 +33,7 @@ export default {
     },
   },
   mounted() {
-    this.getLogo();
+    return this.getLogo();
   },
   methods: {
     // logo 点击实现菜单展开/收起
@@ -54,9 +52,10 @@ export default {
       this.$store.state.themeConfig.themeConfig.isCollapse = !this.$store.state.themeConfig.themeConfig.isCollapse;
     },
     getLogo() {
-      getLogo().then((res) => {
-        this.minLogo = res.data.logo_square;
-        this.maxLogo = res.data.logo;
+      return this.$store.dispatch('userInfo/loadBranding').then((branding) => {
+        this.minLogo = branding.logoSmall;
+        this.maxLogo = branding.logo;
+        return branding;
       });
     },
   },

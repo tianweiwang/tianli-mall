@@ -4,7 +4,6 @@
   </div>
 </template>
 <script>
-import { getCrmebCopyRight } from '@/api/system';
 import { Session } from '@/utils/storage.js';
 
 export default {
@@ -16,14 +15,15 @@ export default {
     };
   },
   created() {
-    this.getVersion();
+    return this.getVersion();
   },
   methods: {
     getVersion() {
-      getCrmebCopyRight().then((res) => {
-        this.copyright = res.data.copyrightContext;
-        Session.set('copyright', res.data.copyrightContext);
+      return this.$store.dispatch('userInfo/loadBranding').then((branding) => {
+        this.copyright = branding.copyright;
+        Session.set('copyright', branding.copyright);
         this.isShow = true;
+        return branding;
       });
     },
   },
