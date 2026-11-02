@@ -478,6 +478,126 @@ function m4w_cache_preflight(array $capture):void
    &&(($v['due_at']===0)===($v['ship_id']==='0')),'M4W_VALID_ORIGINAL_CURSOR');}
  m4w_expect(in_array($capture['rows'][M4W_CACHE_KEYS[2]]['type'],['none','set'],true),'M4W_NATIVE_TAG_ABSENT_OR_SET');
 }
+/** Only original finite descriptors that cannot cover the unchanged natural window. */
+function m4w_preparation_imminent(array $snapshot,array $cache):array
+{
+ m4w_expect(M4W_WINDOW_SECONDS===180&&isset($snapshot['redis'])
+  &&m5pcp_redis_deadline_compatible($snapshot['redis'],$snapshot['redis']),'M4W_PREPARATION_COMPLETE_CANONICAL_REDIS');
+ m4w_expect(is_string($cache['time_ms']??null)&&bccomp($cache['time_ms'],$snapshot['redis']['time_ms'],0)>=0,
+  'M4W_PREPARATION_CACHE_TIME_AFTER_COMPLETE_SNAPSHOT');
+ $now=m5pcp_int($cache['time_ms'],0,PHP_INT_MAX-M4W_WINDOW_SECONDS*1000);$out=[];
+ foreach($snapshot['redis']['keys']as$key=>$row)if($row['expires']>0&&$row['expires']<=$now+M4W_WINDOW_SECONDS*1000)$out[$key]=$row;
+ return $out;
+}
+
+/** Passive preparation only; no Worker exists and no Redis write is issued. */
+function m4w_wait_natural_expiry(array $cache,int $deadline):array
+{
+ $before=m5pcp_int($cache['time_ms']??null,0,PHP_INT_MAX-M4W_WINDOW_SECONDS*1000);
+ m4w_expect(M4W_WINDOW_SECONDS===180&&$deadline>0&&$deadline<=$before+M4W_WINDOW_SECONDS*1000,
+  'M4W_PREPARATION_ONLY_IMMINENT_ORIGINAL_DEADLINE');
+ $started=hrtime(true);$last=$started;$limit=181000000000;
+ m4w_expect(is_int($started)&&$started>0,'M4W_PREPARATION_REAL_MONOTONIC_START');
+ $clock=static function()use($started,$limit,&$last):int{
+  $now=hrtime(true);m4w_expect(is_int($now)&&$now>=$last&&$now-$started<=$limit,'M4W_PREPARATION_WAIT_MONOTONIC_BOUND');
+  $last=$now;return $now;
+ };
+ // TIME is observed at the two cache endpoints, not continuously during sleep.
+ // Strictly pass the original expiry millisecond; sleep in at most 250 ms slices.
+ $micro=max(0,$deadline-$before+1)*1000;$target=$started+$micro*1000;
+ $maximum=intdiv($micro+249999,250000)+1;$sleeps=0;
+ while(($now=$clock())<$target){
+  m4w_expect($sleeps<$maximum,'M4W_PREPARATION_FINITE_SLEEP_SLICES');
+  usleep(min(250000,max(1,intdiv($target-$now+999,1000))));++$sleeps;$clock();
+ }
+ $clock();$after=m4w_cache_native();$clock();
+ m4w_expect(bccomp($after['time_ms'],$cache['time_ms'],0)>=0&&bccomp($after['time_ms'],(string)$deadline,0)>0,
+  'M4W_PREPARATION_REAL_REDIS_TIME_PASSED_ORIGINAL_EXPIRY');
+ $finished=$clock();
+ return ['cache'=>$after,'witness'=>['deadline_ms'=>$deadline,'redis_before_ms'=>$cache['time_ms'],'redis_after_ms'=>$after['time_ms'],
+  'started_ns'=>$started,'finished_ns'=>$finished,'sleep_calls'=>$sleeps,'limit_ns'=>$limit]];
+}
+
+/** Retain the original preparation anchor; only natural expiry may precede launch. */
+function m4w_prepare_launch(PDO $db,array $arFinal):array
+{
+ $started=hrtime(true);$last=$started;
+ m4w_expect(is_int($started)&&$started>0&&($GLOBALS['m4w_process_state']??null)===null,'M4W_PREPARATION_BEFORE_ANY_LIFECYCLE');
+ $capture=static function(string $notBefore)use($db,&$last):array{
+  $begin=hrtime(true);m4w_expect(is_int($begin)&&$begin>=$last,'M4W_PREPARATION_OBSERVATION_MONOTONIC_START');
+  $snapshot=m4ar_snapshot($db);
+  m4w_expect(m4w_files_capture(M4AR_PRIVATE)['file_map']===$snapshot['private'],'M4W_COMPLETE_READONLY_OLD_PRIVATE_FILES');
+  m4w_expect(m4cf_native_files()===$snapshot['customer_form_private'],'M4W_CUSTOMER_FORM_BEFORE_ORIGINALS');
+  $cacheStart=hrtime(true);m4w_expect(is_int($cacheStart)&&$cacheStart>=$begin&&$cacheStart-$begin<=180000000000,
+   'M4W_PREPARATION_CACHE_READ_MONOTONIC_START');
+  $cache=m4w_cache_native();$end=hrtime(true);
+  m4w_expect(is_int($end)&&$end>=$cacheStart&&$end-$begin<=180000000000,'M4W_PREPARATION_COMPLETE_OBSERVATION_BOUND');$last=$end;
+  m4w_expect(bccomp($snapshot['redis']['time_ms'],$notBefore,0)>=0&&bccomp($cache['time_ms'],$snapshot['redis']['time_ms'],0)>=0,
+   'M4W_PREPARATION_FULL_SNAPSHOT_AND_CACHE_TIME_CHAIN');
+  // Only this matching copy may omit a fixed cache already naturally absent
+  // at the later TIME. Keep the complete snapshot for the next strict round.
+  $matching=$snapshot['redis'];
+  foreach(M4W_CACHE_KEYS as$key){$hash=hash('sha256',$key);
+   if($cache['rows'][$key]['type']==='none'&&isset($matching['keys'][$hash])
+    &&$matching['keys'][$hash]['expires']>0&&bccomp((string)$matching['keys'][$hash]['expires'],$cache['time_ms'],0)<0)
+    unset($matching['keys'][$hash]);
+  }
+  m4w_cache_snapshot_match($matching,$cache);unset($matching);m4w_cache_preflight($cache);
+  return ['snapshot'=>$snapshot,'cache'=>$cache,'observation'=>['started_ns'=>$begin,'finished_ns'=>$end,
+   'redis_time_ms'=>$snapshot['redis']['time_ms'],'cache_time_ms'=>$cache['time_ms']]];
+ };
+ $same=static function(array $before,array $after):void{
+  m4ar_zero($before,$after);
+  // Do not inherit the language-cache rebuild exception from m4ar_zero.
+  m4w_expect(m5pcp_redis_deadline_compatible($before['redis'],$after['redis']),'M4W_PREPARATION_STRICT_ONLY_ORIGINAL_NATURAL_EXPIRY');
+ };
+ $initial=$capture($arFinal['redis']['time_ms']);$same($arFinal,$initial['snapshot']);
+ $imminent=m4w_preparation_imminent($initial['snapshot'],$initial['cache']);
+ $finite=array_filter($initial['snapshot']['redis']['keys'],static fn(array $row):bool=>$row['expires']>0);$count=count($finite);
+ // N finite IDs allow at most N waits and N+1 complete observations. The
+ // global limit includes all array checks/proof preparation and a fixed 5 s
+ // allowance; local wait/observation budgets can never reset this total.
+ m4w_expect($count<=intdiv(PHP_INT_MAX-185000000000,361000000000),'M4W_PREPARATION_FINITE_TOTAL_TIME_ARITHMETIC');
+ $totalLimit=$count*181000000000+($count+1)*180000000000+5000000000;
+ $clock=static function()use($started,$totalLimit,&$last):int{
+  $now=hrtime(true);m4w_expect(is_int($now)&&$now>=$last&&$now-$started<=$totalLimit,'M4W_PREPARATION_GLOBAL_MONOTONIC_BOUND');
+  $last=$now;return $now;
+ };
+ $clock();$current=$initial;$rounds=[];$remaining=$finite;
+ while($imminent!==[]){
+  $clock();m4w_expect(count($rounds)<$count,'M4W_PREPARATION_AT_MOST_ORIGINAL_FINITE_ROUNDS');
+  foreach($imminent as$key=>$row)m4w_expect(isset($remaining[$key])&&$remaining[$key]===$row&&$finite[$key]===$row,
+   'M4W_PREPARATION_IMMINENT_IS_ORIGINAL_FINITE_DESCRIPTOR');
+  $deadline=min(array_column($imminent,'expires'));$wait=m4w_wait_natural_expiry($current['cache'],$deadline);
+  m4w_expect($wait['witness']['started_ns']>=$last&&$wait['witness']['finished_ns']>=$wait['witness']['started_ns'],
+   'M4W_PREPARATION_WAIT_MONOTONIC_CHAIN');$last=$wait['witness']['finished_ns'];$clock();
+  $fresh=$capture($wait['cache']['time_ms']);$clock();
+  $same($arFinal,$fresh['snapshot']);$same($initial['snapshot'],$fresh['snapshot']);$same($current['snapshot'],$fresh['snapshot']);$clock();
+  $removed=array_diff_key($current['snapshot']['redis']['keys'],$fresh['snapshot']['redis']['keys']);
+  m4w_expect(count(array_intersect_key($removed,$imminent))>=1,'M4W_PREPARATION_AT_LEAST_ONE_IMMINENT_NATURALLY_GONE');
+  foreach($removed as$key=>$row)m4w_expect(isset($imminent[$key],$remaining[$key])&&$imminent[$key]===$row
+   &&$finite[$key]===$row&&$remaining[$key]===$row
+   &&$row['expires']>0&&bccomp((string)$row['expires'],$fresh['snapshot']['redis']['time_ms'],0)<0,
+   'M4W_PREPARATION_ONLY_ORIGINAL_EXPIRED_DESCRIPTOR_REMOVED');
+  $next=array_filter($fresh['snapshot']['redis']['keys'],static fn(array $row):bool=>$row['expires']>0);
+  m4w_expect(count($next)<count($remaining)&&array_diff_key($next,$remaining)===[], 'M4W_PREPARATION_ORIGINAL_FINITE_IDS_STRICTLY_DECREASE');
+  foreach($next as$key=>$row)m4w_expect($finite[$key]===$row,'M4W_PREPARATION_RETAINED_FINITE_DESCRIPTOR_UNCHANGED');
+  $rounds[]=['imminent'=>$imminent,'removed'=>$removed,'wait'=>$wait['witness'],'observation'=>$fresh['observation'],
+   'remaining_finite_count'=>count($next)];
+  $remaining=$next;$current=$fresh;unset($fresh,$wait);$clock();
+  $imminent=m4w_preparation_imminent($current['snapshot'],$current['cache']);$clock();
+ }
+ $same($arFinal,$current['snapshot']);$same($initial['snapshot'],$current['snapshot']);$clock();
+ $window=m4w_preflight($db,$current['snapshot'],$current['cache']);$finished=$clock();
+ // Private witness only; the Host retains its original descriptor-only contract.
+ $preparation=['scope'=>'READ_ONLY_ORIGINAL_FINITE_NATURAL_EXPIRY_BEFORE_LIFECYCLE','initial'=>$initial,
+  'initial_finite'=>$finite,'rounds'=>$rounds,'final_observation'=>$current['observation'],
+  'started_ns'=>$started,'finished_ns'=>$finished,'bounds'=>['maximum_rounds'=>$count,'maximum_observations'=>$count+1,
+   'wait_limit_ns'=>181000000000,'observation_limit_ns'=>180000000000,'processing_allowance_ns'=>5000000000,'total_limit_ns'=>$totalLimit]];
+ $preparation['finished_ns']=$clock();
+ return ['before'=>$current['snapshot'],'cache'=>$current['cache'],'window'=>$window,'preparation'=>$preparation];
+}
+
 function m4w_preflight(PDO $db,array $snapshot,array $cache):array
 {
  $tasks=$db->query('SELECT * FROM eb_system_timer ORDER BY id')->fetchAll(PDO::FETCH_ASSOC);
@@ -1727,15 +1847,13 @@ function m4w_run():int
  $db=audit_db();$GLOBALS['m4w_db']=$db;m4w_expect(!$db->inTransaction(),'M4W_REAL_OBSERVER_OUTSIDE_TRANSACTION');
  $GLOBALS['m4w_observer']=m5pc_observer_configure($db);m4w_phase('restore_public');
  $restored=m4w_public_restore($source,$inputs);unset($restored['keep']);
- $before=m4ar_snapshot($db);$GLOBALS['m4w_before_snapshot']=$before;
- m4ar_zero($restored['final']['native'],$before);
- m4w_expect(m4w_files_capture(M4AR_PRIVATE)['file_map']===$before['private'],'M4W_COMPLETE_READONLY_OLD_PRIVATE_FILES');
- m4w_expect(m4cf_native_files()===$before['customer_form_private'],'M4W_CUSTOMER_FORM_BEFORE_ORIGINALS');
- $cache=m4w_cache_native();$GLOBALS['m4w_before_cache']=$cache;$window=m4w_preflight($db,$before,$cache);$GLOBALS['m4w_preflight']=$window;
+  m4w_phase('natural_expiry_preparation');$prepared=m4w_prepare_launch($db,$restored['final']['native']);
+  $before=$prepared['before'];$cache=$prepared['cache'];$window=$prepared['window'];$preparation=$prepared['preparation'];unset($prepared);
+  $GLOBALS['m4w_before_snapshot']=$before;$GLOBALS['m4w_before_cache']=$cache;$GLOBALS['m4w_preflight']=$window;
  $beforePayload=['snapshot'=>$before,'cache'=>$cache,'preflight'=>$window,'predecessor_hashes'=>$GLOBALS['m4w_predecessor_hashes'],
   'original_inputs'=>m4w_input_public($inputs),'fixtures'=>m4w_fixtures_archive($fixtures),'config'=>['path_basename'=>basename($config['path']),
    'bytes'=>strlen($config['raw']),'sha256'=>$config['sha256'],'stat'=>$config['stat']],
-  'normal_final'=>$restored['final'],'normal_keep_descriptor'=>$restored['descriptor']];
+   'normal_final'=>$restored['final'],'normal_keep_descriptor'=>$restored['descriptor'],'preparation'=>$preparation];unset($preparation);
  $beforeSeal=m4ar_private_seal(M4W_BEFORE,'MS4_WORKER_NORMAL_BEFORE_NATIVE_FACTS',$source,$beforePayload);$GLOBALS['m4w_before_seal']=$beforeSeal;
  $read=m4w_archive_load(M4W_BEFORE,'MS4_WORKER_NORMAL_BEFORE_NATIVE_FACTS',$source,$beforeSeal);
  foreach($beforePayload as$k=>$v)m4w_expect(array_key_exists($k,$read)&&$read[$k]===$v,'M4W_COMPLETE_BEFORE_NATIVE_READBACK');

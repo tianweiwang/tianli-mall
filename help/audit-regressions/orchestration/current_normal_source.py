@@ -50,6 +50,8 @@ WORKER_MEMORY_LIFETIME = {"path": WORKER_PATH, "bytes": 132395,
                            "sha256": "0d0d0571087d375c2bdff63e7458c7155482451f08d1b9134f99de4e255931a0"}
 WORKER_STARTUP_READINESS = {"path": WORKER_PATH, "bytes": 133975,
                             "sha256": "1cfa53cb481805dbaa0a8b50fa88fd169b9b9d48a847158877202cf73a0331f6"}
+WORKER_NATURAL_PREPARATION = {"path": WORKER_PATH, "bytes": 142574,
+                              "sha256": "e9e2335fb6ee58bc08ccfe6867f6fd606e3846dab4548dc0990562ce9f2daad7"}
 CUSTOMER_PATH = "help/audit-regressions/isolated/ms4-customer-http-normal.php"
 CUSTOMER_BEFORE = {"path": CUSTOMER_PATH, "bytes": 121457,
                    "sha256": "1fae540f4f145ace9ed94d17648d785f1663c4e8d6dbd0b2de54b75ffcbdea75"}
@@ -1508,7 +1510,7 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
     worker_update = None
     worker_current = inventory[WORKER_PATH]
     if worker_current != WORKER_BEFORE:
-        require(worker_current in (WORKER_CURRENT, WORKER_FATAL_DIAGNOSTIC, WORKER_MEMORY_LIFETIME, WORKER_STARTUP_READINESS), "EXACT_CURRENT_WORKER_ARCHIVE_SOURCE")
+        require(worker_current in (WORKER_CURRENT, WORKER_FATAL_DIAGNOSTIC, WORKER_MEMORY_LIFETIME, WORKER_STARTUP_READINESS, WORKER_NATURAL_PREPARATION), "EXACT_CURRENT_WORKER_ARCHIVE_SOURCE")
         worker_review = source_review.get("worker_fixtures_archive_update")
         require(type(worker_review) is dict and worker_review.get("before") == WORKER_BEFORE
                 and worker_review.get("after") == worker_current,
@@ -1715,7 +1717,7 @@ def build_profile(output: str | Path, authority_pointer: dict[str, Any],
                         for name in ("ms4-host.py", "verify-zero-ms4-fulfillment.py")),
                 "INITIALIZER_HOST_ZERO_INTERFACE_SAME_SEVEN_FORM_SOURCES")
     worker_source_proof = None
-    if worker_current == WORKER_STARTUP_READINESS:
+    if worker_current in (WORKER_STARTUP_READINESS, WORKER_NATURAL_PREPARATION):
         after["ms4-initialize.php"], worker_source_proof = normal_worker_source_profile_changes(
             after["ms4-initialize.php"])
     after["ms4-host.py"], source_read_before, source_read_after, source_read_proof = normal_source_read_profile_changes(
@@ -2901,7 +2903,7 @@ def derive_b_profile(authority_pointer: dict[str, Any],
             return wanted
         if row["path"] == WORKER_PATH and wanted != row:
             worker_review = source_review.get("worker_fixtures_archive_update")
-            require(row == WORKER_BEFORE and wanted in (WORKER_CURRENT, WORKER_FATAL_DIAGNOSTIC, WORKER_MEMORY_LIFETIME, WORKER_STARTUP_READINESS)
+            require(row == WORKER_BEFORE and wanted in (WORKER_CURRENT, WORKER_FATAL_DIAGNOSTIC, WORKER_MEMORY_LIFETIME, WORKER_STARTUP_READINESS, WORKER_NATURAL_PREPARATION)
                     and type(worker_review) is dict and worker_review.get("before") == WORKER_BEFORE
                     and worker_review.get("after") == wanted,
                     "B_EXACT_REVIEWED_WORKER_FIXTURE_ARCHIVE_UPDATE")
