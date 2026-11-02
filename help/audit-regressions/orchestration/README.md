@@ -108,7 +108,11 @@ H5 仅接收已独审的四个固定 LX 别名属性后继算法；原 r5 只作
 
 部署 public 只排除根部 `install/`，同名嵌套目录仍包含；安装器另以原 reader 完整读取并随原 finish 复核，included/excluded 两套完整目录、文件哈希及摘要均绑定同一 capture，写入现有 `producer-result.json.public_source_scope`。原逐文件 input-inventory、五材料、10键 profile 和 `NO_PUBLIC_ENV_FILE` 保持。后续 B 的 `ms4-ui-public-copy.php` 在 `m4uic_copy` 的完整 public 比较及末尾全树复读（原276–278、351行）须同步为完整来源保全与根 install 排除投影，既有 `install/.env` 固定模板读取/复制特例（原18–28、77–78、167–170行）也须一并明确调整；本作者不改 B，不以允许部署 `.env` 绕过检查。
 
-作者使用 `--output`、`--authority-file`、`--authority-sha256`，仅创建新的源码候选及其正逆变更。producer 的 paths 文件仍为 `{schema:1, paths:{...}}`，路径键精确为 `metadata/source/public/h5_build/merchant_build/admin_build`。current-build-proofs 文件精确包含 `schema:1`、`scope:CURRENT_THREE_FRONTEND_BUILD_PROOFS`、`source_sha` 和 `builds`；builds 下三端各自包含 `packet`、`pins`、`run`、`outer`，pins 是对应包 `PINS.json` 的绝对路径、字节数和SHA-256，outer 是该 Run 的原 `-launch` 目录。旧 metadata 不能替代这份当前三端证明。
+作者使用 `--output`、`--authority-file`、`--authority-sha256`，仅创建新的源码候选及其正逆变更。producer 的 paths 文件仍为 `{schema:1, paths:{...}}`，路径键精确为 `metadata/source/public/h5_build/merchant_build/admin_build`。current-build-proofs 文件精确包含 `schema:1`、`scope:CURRENT_THREE_FRONTEND_BUILD_PROOFS`、`source_sha` 和 `builds`；普通构建的每端记录包含 `packet`、`pins`、`run`、`outer`，pins 是对应包 `PINS.json` 的绝对路径、字节数和SHA-256，outer 是该 Run 的原 `-launch` 目录。旧 metadata 不能替代这份当前三端证明。
+
+Admin 另接收固定的 `PREVIEW_NODE22_ADMIN_BUILD_JSON_V1`：记录精确为 `protocol/run/input/root_build/build/outer`，后三份 JSON 与 outer 的 created、terminal、stdout、stderr 均使用完整固定描述符。它只复用现有 b1c58 构建，不运行原 builder；原构建身份与当前应用身份分列。固定原工具的11个纯定义保留，`context_read` 仅桥接原 reader；含多行配置字符串的 `parallelism_addition` 顶层原文保持。当前完整 capture、1099件原编译输入及 helper、原 work 的唯一配置变换、原命令和完整输出流、dist 和三次输入复核均须通过。原普通四键路径保持。
+
+该 Admin 协议的 `current_frontend_bytes_match_original_builds` 表示当前编译输入与原输入逐件相等；dist 哈希范围明确为 `PACKAGING_TIME_OBSERVATION_NOT_ORIGINAL_BUILD_HASH`，包锁证据不替代原始完整依赖树回执。`_b_materials` 按同一协议关联固定原记录、当前 capture、五材料和实际 dist，并核此范围标记；不补造普通构建的 `BUILD-REPORT`、`ADMISSION` 或历史依赖保全文件。针对性读取通过不代表完整材料、B、UI或发布通过。
 
 `Inputs.finish` 仅从本次既有 tree snapshot 的精确文件 key 跳过首循环重复读；standalone 顺序、各树最后完整字节/FD/目录复读与三阶段 finish/alias 调用保持，不使用 mtime 或跨调用缓存，冻结来源不改签，提速须以后继正常运行实测。
 

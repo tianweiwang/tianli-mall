@@ -16,6 +16,8 @@ FRONTEND_AUTHOR_PIN = {"path": Path(__file__).with_name("current_frontend_build_
                        "bytes": 21883, "sha256": "4b186bc90efc16b96f68731af1f05b7a90ef37c1e20e4d2e3a3942ed49c23710"}
 H5_LX_SOURCE = {"path": "H:/天俪商城/artifacts/multi-merchant-current-normal-source-20261028-r61/frontend-source-ms6-b-copy4-lx/h5_build.py",
                 "bytes": 19341, "sha256": "ab6dafd5f1beccc70a512887a9a3449a250008be0045aac84b4476460e210350"}
+PREVIEW_ADMIN_TOOL_PIN = {"path": "H:/天俪商城/worktrees/mall-history-reader-count/help/preview/build-frontends.py",
+                          "bytes": 42880, "sha256": "8ef3218359e57d995f933ebd1c81daf34e22e290bfcb0499ea291dd065e1071b"}
 
 
 def helpers():
@@ -108,6 +110,11 @@ def current_proofs(reader, path, sha, paths, output):
     need(len(rows) == len(captured) == capture['tracked_file_count'], 'COMPLETE_CURRENT_CAPTURED_GIT_ROWS')
     directories = {parent.as_posix() for name in rows for parent in PurePosixPath(name).parents if parent.as_posix() != '.'}
     for frontend, row in value['builds'].items():
+        if frontend == 'admin' and type(row) is dict and row.get('protocol') == 'PREVIEW_NODE22_ADMIN_BUILD_JSON_V1':
+            current_preview_admin_records(reader,row,paths)
+            for p in [Path(row['run']),Path(row['input']['path']).parent]:
+                need(not output.is_relative_to(p) and not p.is_relative_to(output), 'PREVIEW_ADMIN_OUTPUT_INPUT_DISJOINT')
+            continue
         need(type(row) is dict and set(row) == {'packet','pins','run','outer'}, 'CURRENT_PER_FRONTEND_SOURCE_AND_RUN')
         for key in ['packet','run','outer']:
             p = Path(row[key]); ordinary(p,'dir')
@@ -275,6 +282,8 @@ def current_windows(reader, packet, q, run, report, preservation, operations):
 
 
 def current_build(reader, paths, frontend):
+    if frontend == 'admin' and paths['_current_build_proofs']['builds'][frontend].get('protocol') == 'PREVIEW_NODE22_ADMIN_BUILD_JSON_V1':
+        return current_preview_admin_build(reader,paths)
     spec = paths['_current_build_proofs']['builds'][frontend]; run = Path(spec['run']); outer_root = Path(spec['outer'])
     packet,q,rows,directories = current_packet(reader,spec,paths); report = reader.json(run/'BUILD-REPORT.json')
     projection = current_input_projection(rows,directories,frontend)
@@ -352,6 +361,165 @@ def current_build(reader, paths, frontend):
     return tree, {'original_build_revision':report['source_head'],'build_report':reader.file(run/'BUILD-REPORT.json'),
         'current_source_revision':CURRENT_SOURCE_SHA,'reuse_basis':'COMPLETE_BUILD_INPUT_EQUIVALENCE_ORIGINAL_HEAD_RETAINED',
         'builder_pins':spec['pins'],'run_id':report['run_id'],'outer_result':reader.file(outer_root/'RESULT.json'),'dist_root':dist_root.as_posix()}
+'''
+
+
+PREVIEW_ADMIN_RUNTIME = r'''
+__PREVIEW_ADMIN_PARALLELISM_FUNCTION__
+
+
+def current_preview_admin_raw(reader, descriptor, expected_path):
+    need(type(descriptor) is dict and set(descriptor) == {'path','bytes','sha256'}
+        and type(descriptor['path']) is str and type(descriptor['bytes']) is int and descriptor['bytes'] >= 0
+        and type(descriptor['sha256']) is str and re.fullmatch('[a-f0-9]{64}',descriptor['sha256']), 'PREVIEW_ADMIN_EXACT_DESCRIPTOR')
+    path = Path(descriptor['path'])
+    need(path.is_absolute() and path == expected_path and path.resolve(strict=True) == path, 'PREVIEW_ADMIN_FIXED_CANONICAL_PATH')
+    actual,raw = reader.file(path,True)
+    need(actual == {key:descriptor[key] for key in ['bytes','sha256']}, 'PREVIEW_ADMIN_COMPLETE_FIXED_BYTES')
+    return raw
+
+
+def current_preview_admin_records(reader, spec, paths):
+    import datetime as dt
+    root = Path('H:/天俪商城/artifacts/finance-refund-facts-20261102-r1')
+    run = root/'admin-build-r1'; source = Path('H:/天俪商城/worktrees/mall-history-reader-count')
+    cache = Path('H:/天俪商城/artifacts/ms0b-task8/frontend/admin')
+    node = Path('H:/天俪商城/artifacts/ms3-build-tools/source477732-node22/node-v22.23.3-win-x64/node.exe')
+    revision = 'b1c58ce8a40553e56ea365ee576a5c3e41823ff4'
+    scope = 'UNCHANGED_EXISTING_LOCK_MATCHED_NODE22_ADMIN_BUILD_ONLY_NEW_OUTPUT_ROOT'
+    driver = {'path':str(root/'admin-build-driver.py'),'bytes':933,
+        'sha256':'26041dadabc9144dcf4791003385f183e8f8513867747288656fa9e0fcff410e'}
+    need(os.name == 'nt' and type(spec) is dict and set(spec) == {'protocol','run','input','root_build','build','outer'}
+        and spec['protocol'] == 'PREVIEW_NODE22_ADMIN_BUILD_JSON_V1' and type(spec['run']) is str
+        and Path(spec['run']) == run == paths['admin_build'] and run.resolve(strict=True) == run,
+        'ONLY_FIXED_PREVIEW_ADMIN_PROTOCOL_AND_RUN')
+    ordinary(root,'dir'); ordinary(run,'dir')
+    bound = loads(current_preview_admin_raw(reader,spec['input'],root/'ADMIN-BUILD-INPUT.json'))
+    wanted_tool = {**CURRENT_PREVIEW_ADMIN_TOOL,'path':str(Path(CURRENT_PREVIEW_ADMIN_TOOL['path']))}
+    need(bound == {'scope':scope,'source_commit':revision,'tool':wanted_tool,'driver':driver,
+        'sole_runtime_configuration_delta':'OUTPUT redirects to new empty external admin-build-r1; SOURCE remains original module worktree; original main frontend/admin memory2048 workers2',
+        'new_output':str(run),'node':{'path':str(node),'version':'v22.23.3'},'approved_cache':str(cache),
+        'source_and_cache_exact_packages':{
+            'package.json':{'bytes':4101,'sha256':'034d720946ae491bb4debdd7b2f12002c99178275f0b794807b6ac49be5cb1a3'},
+            'package-lock.json':{'bytes':1198971,'sha256':'5aada3f4b41b397d0b5cd44e2e8a4fd239a24e02e240dfbea6f6ac9d5acc23aa'}},
+        'Docker_install_shared_dependency_edits':'NOT RUN','old_default_output_changed':False,'UI_HTTP_acceptance':'NOT RUN'}
+        and bound['old_default_output_changed'] is False, 'ORIGINAL_PREVIEW_ADMIN_INPUT_CLOSED_CONTRACT')
+    current_preview_admin_raw(reader,bound['tool'],source/'help/preview/build-frontends.py')
+    current_preview_admin_raw(reader,bound['driver'],root/'admin-build-driver.py')
+    summary = loads(current_preview_admin_raw(reader,spec['root_build'],run/'BUILD.json'))
+    record = loads(current_preview_admin_raw(reader,spec['build'],run/'admin/BUILD.json'))
+    need(type(summary) is dict and set(summary) == {'frontends','browser_and_business_acceptance'}
+        and summary['frontends'] == {'admin':record} and summary['browser_and_business_acceptance'] == 'PENDING',
+        'ORIGINAL_PREVIEW_ADMIN_ROOT_AND_INNER_JOIN')
+    need(type(record) is dict and set(record) == {'frontend','status','started','commands','source_directory','dist',
+        'preview_only_config','not_verified','source_inputs','dependencies','finished','dist_files','dist_bytes'}
+        and record['frontend'] == 'admin' and record['status'] == 'BUILT' and record['source_directory'] == str(source)
+        and record['dist'] == str(run/'admin/dist') and record['preview_only_config'] == {'loader_parallel':False,'minifier_workers':2}
+        and record['preview_only_config']['loader_parallel'] is False
+        and type(record['preview_only_config']['minifier_workers']) is int
+        and record['not_verified'] == ['browser','API/business flow','real payment','device','formal acceptance','release']
+        and all(type(record[key]) is int and record[key] > 0 for key in ['dist_files','dist_bytes']),
+        'ORIGINAL_PREVIEW_ADMIN_INNER_BUILD_PROTOCOL')
+    inputs = record['source_inputs']; dependencies = record['dependencies']
+    need(type(inputs) is dict and set(inputs) == {'directory','file_count','bytes','copied_input_sha256'}
+        and inputs['directory'] == str(source/'template/admin') and type(inputs['file_count']) is int and inputs['file_count'] == 1099
+        and type(inputs['bytes']) is int and inputs['bytes'] > 0 and type(inputs['copied_input_sha256']) is str
+        and re.fullmatch('[a-f0-9]{64}',inputs['copied_input_sha256']), 'ORIGINAL_PREVIEW_ADMIN_SOURCE_INPUT_RECORD')
+    need(type(dependencies) is dict and set(dependencies) == {'directory','new_package_junctions','generated_cache','installation'}
+        and dependencies['directory'] == str(cache/'node_modules') and type(dependencies['new_package_junctions']) is int
+        and dependencies['new_package_junctions'] == 1549 and dependencies['generated_cache'] == str(run/'work/template/admin/node_modules/.cache')
+        and dependencies['installation'] is False, 'ORIGINAL_DECLARED_ADMIN_DEPENDENCIES_NOT_A_MODULE_TREE_RECEIPT')
+    commands = record['commands']
+    need(type(commands) is list and len(commands) == 2 and [item['label'] for item in commands] == ['prebuild','build'],
+        'ORIGINAL_ADMIN_TWO_COMMAND_SEQUENCE')
+    for item in commands:
+        need(type(item) is dict and set(item) == {'label','argv','cwd','started','stdout','stderr','exit','pid','finished'}
+            and type(item['pid']) is int and item['pid'] > 0 and type(item['exit']) is int and item['exit'] == 0
+            and type(item['argv']) is list and all(type(value) is str for value in item['argv'])
+            and all(type(item[key]) is str for key in ['cwd','started','stdout','stderr','finished']),
+            'ORIGINAL_ADMIN_COMMAND_FIELDS_NOT_FABRICATED_NATIVE_FOUR')
+        need(dt.datetime.fromisoformat(record['started']) <= dt.datetime.fromisoformat(item['started'])
+            <= dt.datetime.fromisoformat(item['finished']) <= dt.datetime.fromisoformat(record['finished']), 'ORIGINAL_ADMIN_RECORDED_COMMAND_LIFETIME')
+    need(dt.datetime.fromisoformat(commands[0]['finished']) <= dt.datetime.fromisoformat(commands[1]['started']), 'ORIGINAL_ADMIN_COMMANDS_SEQUENTIAL')
+    need(type(spec['outer']) is dict and set(spec['outer']) == {'created','terminal','stdout','stderr'}, 'ORIGINAL_ADMIN_OUTER_FOUR_POINTERS')
+    outer = {key:current_preview_admin_raw(reader,pointer,root/('admin-build-actual.'+{'created':'created.json','terminal':'terminal.json','stdout':'stdout','stderr':'stderr'}[key]))
+        for key,pointer in spec['outer'].items()}
+    created = loads(outer['created']); terminal = loads(outer['terminal'])
+    fields = {'argv','cwd','pid','started_ns','source_commit','scope'}
+    need(type(created) is dict and set(created) == fields and type(terminal) is dict
+        and set(terminal) == fields | {'native_exit','wait_returncode','finished_ns','stdout','stderr'}
+        and all(terminal[key] == value for key,value in created.items())
+        and created['argv'] == [str(Path('C:/Users/Vwang/AppData/Local/Programs/Python/Python314/python.exe')),'-I','-B','-X','utf8',driver['path']]
+        and created['cwd'] == str(root) and created['source_commit'] == revision and created['scope'] == scope
+        and type(created['pid']) is int and created['pid'] > 0 and type(created['started_ns']) is int and created['started_ns'] > 0
+        and type(terminal['finished_ns']) is int and terminal['finished_ns'] >= created['started_ns']
+        and all(type(terminal[key]) is int and terminal[key] == 0 for key in ['native_exit','wait_returncode']),
+        'ORIGINAL_ADMIN_OUTER_SIX_ELEVEN_FIELD_NATIVE_WAIT_ZERO')
+    for channel in ['stdout','stderr']:
+        need(type(terminal[channel]) is dict and set(terminal[channel]) == {'bytes','sha256'}
+            and type(terminal[channel]['bytes']) is int and type(terminal[channel]['sha256']) is str
+            and terminal[channel] == fp(outer[channel]), 'ORIGINAL_ADMIN_OUTER_STREAM_HAS_NO_PATH_FIELD')
+    need(outer['stderr'] == b'' and [loads(line) for line in outer['stdout'].splitlines()] == [
+        {'frontend':'admin','command':'prebuild','pid':commands[0]['pid']},
+        {'frontend':'admin','command':'build','pid':commands[1]['pid']},
+        {'frontend':'admin','status':'BUILT','dist':record['dist']}], 'ORIGINAL_ADMIN_OUTER_THREE_COMPLETE_STDOUT_LINES')
+    reader._current_build_roots = getattr(reader,'_current_build_roots',[]) + [root,run,source,cache,node.parent]
+    return bound,record
+
+
+def current_preview_admin_build(reader, paths):
+    import datetime as dt
+    import json
+    spec = paths['_current_build_proofs']['builds']['admin']; run = Path(spec['run'])
+    bound,record = current_preview_admin_records(reader,spec,paths)
+    SOURCE = paths['source']; NODE = Path(bound['node']['path']); CACHES = {'admin':Path(bound['approved_cache'])}
+
+__PREVIEW_ADMIN_READONLY_FUNCTIONS__
+
+    projection = paths['_current_build_proofs']['_current_inputs']['admin']; prefix = 'template/admin/'
+    source = SOURCE/'template/admin'; work = run/'work/template/admin'; dist = run/'admin/dist'
+    captured = {row['path']:row for row in projection['files']}
+    need(len(captured) == len(projection['files']) == 1102, 'COMPLETE_CAPTURED_ADMIN_SOURCE_AND_HELPER')
+    expected = {name[len(prefix):]:{key:row[key] for key in ['bytes','sha256']} for name,row in captured.items() if name.startswith(prefix)}
+    expected_directories = [name[len(prefix):] for name in projection['directories'] if name.startswith(prefix)]
+    full_source = reader.tree(source)
+    need(files(full_source) == expected and full_source['directories'] == expected_directories, 'CURRENT_COMPLETE_ADMIN_SOURCE_NAMESPACE_AND_CAPTURE_BYTES')
+    helper_name = 'help/audit-regressions/frontend-source-check.cjs'; helper = captured[helper_name]
+    check_pin(reader,SOURCE/helper_name,helper)
+    for name,row in captured.items():
+        need(row['git_mode'] in ['100644','100755'] and reader.files[str(SOURCE/name)]['git_blob'] == row['git_blob1'], 'CURRENT_COMPLETE_ADMIN_CAPTURED_GIT_BLOBS')
+    selected = []; selected_directories = []
+    for relative,directory,leaves in input_entries(source):
+        if relative != Path('.'):
+            selected_directories.append(relative.as_posix())
+        selected.extend((relative/leaf).as_posix() for leaf in leaves)
+    need(len(selected) == len(set(selected)) == 1099 and set(selected) <= set(expected)
+        and sorted(set(expected)-set(selected),key=order) == ['.env','.env.dev']
+        and sorted(selected_directories,key=order) == expected_directories,
+        'ORIGINAL_EXPLICIT_1099_ADMIN_INPUT_PROJECTION_NO_UNCAPTURED_MEMBERS')
+    copied = reader.tree(work,('node_modules',),True)
+    need(set(files(copied)) == set(selected) and copied['directories'] == sorted(selected_directories,key=order),
+        'ORIGINAL_ADMIN_WORK_COMPLETE_NAMESPACE_ONLY_ROOT_NODE_MODULES_EXCLUDED')
+    check_pin(reader,run/'work'/helper_name,helper)
+    for leaf,wanted in bound['source_and_cache_exact_packages'].items():
+        for parent in [source,work,CACHES['admin']]:
+            check_pin(reader,parent/leaf,wanted)
+    observed = {}; built = context_builds(run,observed,('admin',))['admin']
+    need(all(str(path) in reader.files for path in observed), 'EVERY_PREVIEW_ADMIN_OBSERVED_FILE_REGISTERED_IN_ORIGINAL_READER')
+    tree = reader.tree(dist,public=True)
+    need(built['tree'] == {'files':files(tree),'directories':tree['directories']}
+        and built['source_inputs'] == {key:record['source_inputs'][key] for key in ['file_count','bytes','copied_input_sha256']}
+        and built['output_hash_scope'] == 'PACKAGING_TIME_OBSERVATION_NOT_ORIGINAL_BUILD_HASH',
+        'CURRENT_ADMIN_COMPLETE_DIST_OBSERVATION_NOT_ORIGINAL_BUILD_HASH')
+    source_binding = paths['_current_build_proofs']['_current_public_source_binding']
+    return tree, {'protocol':spec['protocol'],'run':spec['run'],'input':spec['input'],'root_build':spec['root_build'],
+        'build':spec['build'],'outer':spec['outer'],'original_build_revision':bound['source_commit'],
+        'current_source_revision':CURRENT_SOURCE_SHA,'reuse_basis':'COMPLETE_BUILD_INPUT_EQUIVALENCE_ORIGINAL_HEAD_RETAINED',
+        'source_equivalence':{'capture':source_binding['capture'],'source_inventory':source_binding['source_inventory'],
+            'captured_projection':projection,'compiler_inputs':built['source_inputs'],'excluded_from_compiler':['.env','.env.dev'],
+            'helper':helper,'work_vue_config_transform':'EXACT_ORIGINAL_PARALLELISM_ADDITION_2',
+            'dependency_evidence_scope':'ORIGINAL_PACKAGE_LOCK_BINDINGS_ONLY_NO_HISTORICAL_MODULE_TREE_RECEIPT'},
+        'dist_root':dist.as_posix(),'output_hash_scope':built['output_hash_scope']}
 '''
 
 
@@ -550,6 +718,38 @@ def current_alias_finish(reader):
 '''
 
 
+def preview_admin_readonly_source(h):
+    """Copy only fixed read-only definitions; never import the preview builder."""
+    original = h.read_pointer(PREVIEW_ADMIN_TOOL_PIN)
+    definitions = h.functions(original)
+    names = ('input_entries','parallelism_addition','context_require','context_relative','context_regular',
+             'context_pin','context_read','context_namespace','context_tree','ContextResources','context_builds')
+    before = definitions['context_read']
+    old_read = b'    raw = path.read_bytes()\n'
+    new_read = b'    raw = reader.file(path, True)[1]\n'
+    after = h.once(before,old_read,new_read)
+    h.require(h.once(after,new_read,old_read) == before, 'PREVIEW_ADMIN_CONTEXT_READ_WHOLE_FUNCTION_INVERSE')
+    transformed = h.once(original,before,after)
+    h.require(h.once(transformed,after,before) == original
+              and {name for name,value in definitions.items() if h.functions(transformed)[name] != value} == {'context_read'},
+              'PREVIEW_ADMIN_WHOLE_TOOL_INVERSE_ONLY_ONE_READER_BRIDGE')
+    copied = {name:(after if name == 'context_read' else definitions[name]) for name in names}
+    nested = '\n\n'.join(b'\n'.join(b'    '+line if line else b'' for line in copied[name].split(b'\n')).decode('utf-8')
+                           for name in names if name != 'parallelism_addition')
+    runtime = PREVIEW_ADMIN_RUNTIME.replace('__PREVIEW_ADMIN_READONLY_FUNCTIONS__',nested).replace(
+        '__PREVIEW_ADMIN_PARALLELISM_FUNCTION__',definitions['parallelism_addition'].decode('utf-8'))
+    h.require(h.functions(runtime.encode('utf-8'))['parallelism_addition'] == definitions['parallelism_addition'],
+              'PREVIEW_ADMIN_PARALLELISM_TOP_LEVEL_DEFINITION_EXACT')
+    proof = {'original_tool':PREVIEW_ADMIN_TOOL_PIN,'copied_readonly_definitions':{name:h.pin(definitions[name]) for name in names},
+             'top_level_preserved_definitions':{'parallelism_addition':h.pin(definitions['parallelism_addition'])},
+             'parallelism_addition_top_level_body_exact':True,
+             'context_read_before':h.pin(before),'context_read_after':h.pin(after),
+             'whole_function_inverse_exact':True,'whole_tool_inverse_exact':True,
+             'sole_change':'context_read path.read_bytes becomes original Inputs.reader.file; original observed and stat checks retained',
+             'module_import_builder_main_or_subprocess':'NOT_EXECUTED'}
+    return runtime,proof
+
+
 def derive_source(output: str | Path, authority_pointer: dict):
     """Derive bytes and their inverse only; never call the produced materializer."""
     h = helpers()
@@ -575,8 +775,10 @@ def derive_source(output: str | Path, authority_pointer: dict):
             raw = h.once(raw, b"    from build_common import native9, regular, relative, put\n", b'')
         reused.append(b'\n'.join(b'    '+line if line else b'' for line in raw.split(b'\n')).decode('utf-8'))
     h5_runtime = H5_RUNTIME.replace('__H5_READONLY_FUNCTIONS__', '\n\n'.join(reused)).encode('utf-8')
+    preview_admin_runtime,preview_admin_derivation = preview_admin_readonly_source(h)
     runtime = ('\nCURRENT_SOURCE_SHA = '+repr(source_sha)+'\nCURRENT_SOURCE_AUTHORITY = '+repr(authority_pointer)
-               +'\nCURRENT_H5_SOURCE = '+repr(h5_pin)+'\n\n'+RUNTIME+'\n'+h5_runtime.decode('utf-8')+'\n').encode('utf-8')
+               +'\nCURRENT_H5_SOURCE = '+repr(h5_pin)+'\nCURRENT_PREVIEW_ADMIN_TOOL = '+repr(PREVIEW_ADMIN_TOOL_PIN)
+               +'\n\n'+RUNTIME+'\n'+preview_admin_runtime+'\n'+h5_runtime.decode('utf-8')+'\n').encode('utf-8')
     contexts = []
     after = before
     def replace(label, original, replacement):
@@ -683,13 +885,17 @@ def derive_source(output: str | Path, authority_pointer: dict):
                 'historical_h5_alias_receipts':'Both actual before/after receipts are read only; exact native9/birth/tag/query bind the preserved snapshot and original native streams. Present raw values never replace historical observations.',
                 'h5_alias_raw_attributes':[1056,263200], 'h5_alias_stable_snapshot_attributes':1056,
                 'reused_h5_readonly_functions':['stylus_tree','dependency_window','adapter_receipt'],
+                 'preview_admin_readonly_derivation':preview_admin_derivation,
+                 'preview_admin_protocol':'Only explicit Admin six-key PREVIEW_NODE22_ADMIN_BUILD_JSON_V1; original input/root/inner BUILD and outer native four retained. All ordinary four-key build contracts remain unchanged.',
+                 'preview_admin_output_hash_scope':'PACKAGING_TIME_OBSERVATION_NOT_ORIGINAL_BUILD_HASH',
+                 'preview_admin_dependency_scope':'Original package/lock bindings only; no historical full module tree or native-preservation receipt is created.',
                 'changed_original_functions':sorted(changed), 'whole_file_inverse_exact':True,
                 'changed_original_methods':{'Inputs':['file: two bridge call arguments only', 'finish: omit precise tree-covered keys from the duplicate file pass; final full tree rereads unchanged']},
                 'native_identity_scope':'Only regular Windows exe/bat/cmd/com comparison FD mode OR0111; all other mode bits/common fields/birth and both raw nine-field observations retained',
                 'original_preserved_bodies':['ordinary','native_observation','png','collision_check','write_new','metadata','resources'],
                 'all_undeclared_original_function_bodies_exact':True, 'producer_build_Docker_Node_materials_UI':'NOT RUN',
-                'required_current_build_proofs':'Explicit file plus fixed SHA; all three actual outer/Run/source packets required before output',
-                'build_reuse':'Each original build head/authority remains real; complete frontend_source files/directories/Git mode/blob/bytes/SHA must equal this independently reviewed generation. Public is checked against the current capture separately.',
+                 'required_current_build_proofs':'Explicit file plus fixed SHA; all three real completed builds required. Ordinary four-key packets remain exact; the sole Admin six-key preview protocol retains its fixed original BUILD/native evidence.',
+                 'build_reuse':'Each original build revision and evidence remain real. Ordinary complete frontend_source projections remain exact. Preview Admin verifies the complete current capture and explicit original compiler projection, copied bodies and declared config transform. Public is checked against the current capture separately.',
                  'public_source_scope':'Only the root install directory is excluded from deployable public. Both complete included and excluded namespaces and bytes are independently checked against the same current capture and rechecked by the original Inputs.finish; nested install directories are included.',
                 'contexts':contexts}
     files = {'before/ms4-ui-materials.py':before, 'candidate/ms4-ui-materials.py':after,

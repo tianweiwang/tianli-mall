@@ -3287,9 +3287,83 @@ def _b_materials(materials: dict[str, Any], authority_pointer: dict[str, Any],
                 and build["reuse_basis"] == "COMPLETE_BUILD_INPUT_EQUIVALENCE_ORIGINAL_HEAD_RETAINED",
                 "B_BUILD_ORIGINAL_PROVENANCE_RETAINED")
         row = proofs["builds"][name]
-        require(type(row) is dict and set(row) == {"packet", "pins", "run", "outer"}, "B_BUILD_EXACT_SOURCE_RUN_POINTERS")
-        read_pointer({"path": (Path(row["packet"]) / "PINS.json").as_posix(), **row["pins"]})
         tree = decode(emitted["manifests/ui-" + name + "-dist.json"])
+        if name == "admin" and type(row) is dict and set(row) == {"protocol", "run", "input", "root_build", "build", "outer"}:
+            require(row["protocol"] == "PREVIEW_NODE22_ADMIN_BUILD_JSON_V1"
+                    and build["output_hash_scope"] == "PACKAGING_TIME_OBSERVATION_NOT_ORIGINAL_BUILD_HASH"
+                    and all(build[key] == value for key, value in row.items()), "B_ADMIN_ORIGINAL_PROTOCOL_POINTERS_RETAINED")
+            run = Path(row["run"])
+            dist = run / "admin/dist"
+            require(Path(row["input"]["path"]) == run.parent / "ADMIN-BUILD-INPUT.json"
+                    and Path(row["root_build"]["path"]) == run / "BUILD.json"
+                    and Path(row["build"]["path"]) == run / "admin/BUILD.json"
+                    and Path(build["dist_root"]) == dist, "B_ADMIN_ORIGINAL_BUILD_AND_DIST_LAYOUT")
+            inputs = decode(read_pointer(row["input"]))
+            root_build = decode(read_pointer(row["root_build"]))
+            original = decode(read_pointer(row["build"]))
+            require(root_build["frontends"] == {"admin": original} and original["frontend"] == "admin"
+                    and original["status"] == "BUILT" and Path(original["dist"]) == dist
+                    and Path(inputs["new_output"]) == run
+                    and original["dist_files"] == len(tree["files"])
+                    and original["dist_bytes"] == sum(item["bytes"] for item in tree["files"]),
+                    "B_ADMIN_REAL_BUILD_RECORD_AND_COMPLETE_MATERIAL_DIST_JOIN")
+            equivalence = build["source_equivalence"]
+            capture = decode(read_pointer(authority["capture"]))
+            helper = "help/audit-regressions/frontend-source-check.cjs"
+            projected = equivalence["captured_projection"]["files"]
+            expected_inputs = {path: item for path, item in inventory.items() if path.startswith("template/admin/") or path == helper}
+            require(set(equivalence) == {"capture", "source_inventory", "captured_projection", "compiler_inputs",
+                                       "excluded_from_compiler", "helper", "work_vue_config_transform", "dependency_evidence_scope"}
+                    and equivalence["capture"] == authority["capture"]
+                    and equivalence["source_inventory"] == capture["files"]["SOURCE-INVENTORY.jsonl"]
+                    and len(projected) == len(expected_inputs)
+                    and {item["path"]: {key: item[key] for key in ("path", "bytes", "sha256")} for item in projected} == expected_inputs
+                    and [item for item in projected if item["path"] == helper] == [equivalence["helper"]]
+                    and equivalence["compiler_inputs"] == {key: original["source_inputs"][key]
+                        for key in ("file_count", "bytes", "copied_input_sha256")}
+                    and equivalence["excluded_from_compiler"] == [".env", ".env.dev"]
+                    and equivalence["work_vue_config_transform"] == "EXACT_ORIGINAL_PARALLELISM_ADDITION_2"
+                    and equivalence["dependency_evidence_scope"] == "ORIGINAL_PACKAGE_LOCK_BINDINGS_ONLY_NO_HISTORICAL_MODULE_TREE_RECEIPT",
+                    "B_ADMIN_CURRENT_CAPTURE_COMPLETE_INPUT_AND_ORIGINAL_COMPILER_SUMMARY_JOIN")
+            outer = row["outer"]
+            require(type(outer) is dict and set(outer) == {"created", "terminal", "stdout", "stderr"},
+                    "B_ADMIN_REAL_OUTER_FOUR_POINTERS")
+            streams = {}
+            for key, suffix in (("created", "created.json"), ("terminal", "terminal.json"), ("stdout", "stdout"), ("stderr", "stderr")):
+                require(Path(outer[key]["path"]) == run.parent / ("admin-build-actual." + suffix),
+                        "B_ADMIN_FIXED_ORIGINAL_OUTER_LOCATION")
+                streams[key] = read_pointer(outer[key])
+            created, terminal = decode(streams["created"]), decode(streams["terminal"])
+            fields = {"argv", "cwd", "pid", "started_ns", "source_commit", "scope"}
+            require(set(created) == fields and set(terminal) == fields | {"native_exit", "wait_returncode", "finished_ns", "stdout", "stderr"}
+                    and all(terminal[key] == created[key] for key in fields)
+                    and inputs["source_commit"] == created["source_commit"] == build["original_build_revision"]
+                    == "b1c58ce8a40553e56ea365ee576a5c3e41823ff4"
+                    and created["scope"] == inputs["scope"]
+                    == "UNCHANGED_EXISTING_LOCK_MATCHED_NODE22_ADMIN_BUILD_ONLY_NEW_OUTPUT_ROOT"
+                    and Path(created["cwd"]) == run.parent
+                    and type(created["argv"]) is list and len(created["argv"]) == 6
+                    and Path(created["argv"][0]) == Path("C:/Users/Vwang/AppData/Local/Programs/Python/Python314/python.exe")
+                    and created["argv"][1:5] == ["-I", "-B", "-X", "utf8"]
+                    and Path(created["argv"][5]) == Path(inputs["driver"]["path"]) == run.parent / "admin-build-driver.py"
+                    and type(created["pid"]) is int and created["pid"] > 0
+                    and type(created["started_ns"]) is int and type(terminal["finished_ns"]) is int
+                    and terminal["finished_ns"] > created["started_ns"]
+                    and type(terminal["native_exit"]) is int and type(terminal["wait_returncode"]) is int
+                    and terminal["native_exit"] == terminal["wait_returncode"] == 0,
+                    "B_ADMIN_ORIGINAL_SOURCE_SAME_PROCESS_AND_NATURAL_ZERO")
+            for key in ("stdout", "stderr"):
+                require(terminal[key] == {field: outer[key][field] for field in ("bytes", "sha256")}
+                        and pin(streams[key]) == terminal[key], "B_ADMIN_COMPLETE_ORIGINAL_OUTER_STREAM")
+            require(streams["stderr"] == b''
+                    and [command["label"] for command in original["commands"]] == ["prebuild", "build"]
+                    and [decode(line) for line in streams["stdout"].splitlines()] == [
+                        {"frontend": "admin", "command": command["label"], "pid": command["pid"]}
+                        for command in original["commands"]] + [{"frontend": "admin", "status": "BUILT", "dist": original["dist"]}],
+                    "B_ADMIN_ORIGINAL_OUTER_STREAM_INNER_COMMANDS_AND_DIST_JOIN")
+        else:
+            require(type(row) is dict and set(row) == {"packet", "pins", "run", "outer"}, "B_BUILD_EXACT_SOURCE_RUN_POINTERS")
+            read_pointer({"path": (Path(row["packet"]) / "PINS.json").as_posix(), **row["pins"]})
         require(profile[name + "_dist_files"] == tree["files"]
                 and profile[name + "_dist_directories"] == tree["directories"], "B_REAL_THREE_DIST_MANIFEST_JOIN")
     return emitted, result
