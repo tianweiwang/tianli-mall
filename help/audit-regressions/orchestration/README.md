@@ -76,7 +76,9 @@ B 对该 helper 使用同一独审前后值，并逐项连接 B 当前表单向�
 
 历史文件准备 CLI 会解码完整双源清单并整读源码；实际 R8 在 PHP 128M 上限退出255。其固定字节变换只在原入口检查后、首次完整资格读取前，核原128M并将本进程预算设为512M、核返回值与回读；共享 Compose、挂载、命令及业务 HTTP 默认预算不变。该 CLI 同进程的旧 App 初始化也使用此预算，所有原数据与文件检查保持；新完整运行仍须实证，原失败不重启或改签。
 
-历史 producer 的固定直接入口采用同文件已有的 `nhep_normal_history_main()`；其固定原件摘要、末尾唯一接缝和整件逆变换均须核同。主函数在原 `audit_db()` 创建 observer 后显式设置 `PDO::ATTR_EMULATE_PREPARES=false`，严格核 setter 返回 `true` 和属性回读为整数 `0`，再接原 Redis 与 pre37。原 DML 账户和身份断言保持；同文件 startup、原 37 步 HTTP、正常 seal/close/publish 及其余来源和业务断言逐字节保留，正常 CLI 参数及共享角色配置保持。新包仍为十四件，八件变换、六件整件保持；采用须另行独审、生成新 freeze 和新 Run，旧 R9/R17/R18 失败不重启或改签。同原镜像、私有配置及公共 factory 的新鲜连接已实测原属性为整数 `1`，显式设置后返回 `true` 与整数 `0`；完整新历史链仍须实际验证。
+历史 producer 的固定直接入口采用同文件已有的 `nhep_normal_history_main()`；其固定原件摘要、末尾唯一接缝和整件逆变换均须核同。主函数在原 `audit_db()` 创建 observer 后显式设置 `PDO::ATTR_EMULATE_PREPARES=false`，严格核 setter 返回 `true` 和属性回读为整数 `0`，再接原 Redis 与 pre37。原 DML 账户和身份断言保持；同文件 startup、原 37 步 HTTP、正常 seal/close 及其余来源和业务断言保持，正常 CLI 参数及共享角色配置保持；最终公件的本机文件系统接缝见下段。新包仍为十四件，八件变换、六件整件保持；采用须另行独审、生成新 freeze 和新 Run，旧 R9/R17/R18 失败不重启或改签。同原镜像、私有配置及公共 factory 的新鲜连接已实测原属性为整数 `1`，显式设置后返回 `true` 与整数 `0`；完整新历史链仍须实际验证。
+
+历史 producer 的最终安全公件先在既有 `/legacy-runtime` Linux tmpfs执行原严格0700目录、0600文件、create-only、同句柄/stat9及完整读回，再将同一RAM安全字节导出到固定宿主路径 `/run/audit/evidence/legacy-history-producer-result.json`。Windows宿主绑定目录实际为0777，不能冒称Linux私有目录；公共出口核真实owner、类型、单链接、设备、canonical、handle/path身份和完整写读，并核父目录身份保持。原qualified/exact13/schema/status/source/run/freeze门保持，无任意路径或通用writer参数。已在同固定PHP8.2镜像上通过真实语法和单次正常合成组件：私有0700/0600、宿主目录0777、公件0600、完整字节相同，两个helper均自然0并普通移除。组件明确不是历史完成seal；旧失败Run不续签，新完整历史运行仍待。
 
 HTTP 包装层仅在原失败 catch 内格式化一条不超过2048字节（含换行）的 CLI STDERR 安全诊断：固定 scope/status、受限异常类名和 NHE/NHEH 常量 code、固定来源标签/正整数行号及前16帧中的首个已知 callsite，以及 `step_entries_count`、`last_entry_sequence`。这两个数字只反映原 `nheh_step` 已追加条目的序号，0条时后一项为 null，不表示尝试次数或完整业务验收。原包装 code 过滤、throw、外层 cleanup/exit、成功37步和13字段 seal 保持；无原始 message/path/trace/args、请求/响应、配置或凭据输出，诊断错误不替换原失败。原 R18 具体失败原因仍未知。
 

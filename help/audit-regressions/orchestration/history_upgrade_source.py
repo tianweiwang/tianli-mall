@@ -1191,6 +1191,90 @@ def _producer_cookie_seams():
     )
 
 
+def _producer_publication_seams():
+    """Keep private native publication, then export only its fixed public bytes.
+
+    The host evidence bind may expose Windows permission bits. It is a public
+    output, not a substitute for the existing Linux 0700/0600 private boundary.
+    The fixed helper has no caller-selected paths or business qualification.
+    """
+    previous_root = b"    $root = '/run/audit/evidence'; $path = $root . '/legacy-history-producer-result.json';\r\n"
+    current_root = br'''    return nhep_normal_history_publish_safe_bytes(nhe_json($seal));
+}
+
+/** Fixed publication I/O only; the caller retains all original qualified seal gates. */
+function nhep_normal_history_publish_safe_bytes(string $raw): array
+{
+    $root = '/legacy-runtime'; $path = $root . '/legacy-history-producer-result.json';
+'''.replace(b"\n", b"\r\n")
+    previous_tail = br'''    nhep_expect(nhe_file($path, $pin) === $raw, 'NHE_NORMAL_PUBLISH_COMPLETE_CLOSED_NAMED_RESULT_READBACK');
+    return $pin;
+}
+'''.replace(b"\n", b"\r\n")
+    current_tail = br'''    nhep_expect(nhe_file($path, $pin) === $raw, 'NHE_NORMAL_PUBLISH_COMPLETE_CLOSED_NAMED_RESULT_READBACK');
+    // Only the already serialized safe public view crosses the host bind. The
+    // Linux stage above retains every original private 0700/0600 assertion.
+    $publicRoot = '/run/audit/evidence';
+    $publicPath = $publicRoot . '/legacy-history-producer-result.json';
+    clearstatcache(true, $publicRoot); $publicDirectory = lstat($publicRoot);
+    nhep_expect(is_array($publicDirectory) && is_dir($publicRoot) && !is_link($publicRoot)
+        && realpath($publicRoot) === $publicRoot && ($publicDirectory['mode'] & 0170000) === 0040000
+        && ($publicDirectory['mode'] & 06000) === 0 && $publicDirectory['uid'] === posix_geteuid()
+        && !file_exists($publicPath) && !is_link($publicPath), 'NHE_NORMAL_PUBLIC_EXPORT_FIXED_OWN_CREATE_ONLY_DIRECTORY');
+    $mask = umask(0077);
+    try { $publicStream = fopen($publicPath, 'x+b'); } finally { umask($mask); }
+    nhep_expect(is_resource($publicStream), 'NHE_NORMAL_PUBLIC_EXPORT_ACTUAL_CREATE_ONLY_HANDLE');
+    $failure = null;
+    try {
+        $opened = fstat($publicStream); clearstatcache(true, $publicPath); $named = lstat($publicPath);
+        nhep_expect(is_array($opened) && is_array($named) && !is_link($publicPath)
+            && realpath($publicPath) === $publicPath && ($opened['mode'] & 0170000) === 0100000
+            && ($opened['mode'] & 06000) === 0 && $opened['uid'] === posix_geteuid()
+            && $opened['nlink'] === 1 && $opened['size'] === 0 && $opened['dev'] === $publicDirectory['dev'],
+            'NHE_NORMAL_PUBLIC_EXPORT_OWN_REGULAR_SINGLE_LINK_EMPTY_RESULT');
+        foreach (['dev', 'ino', 'mode', 'nlink', 'uid', 'gid', 'size', 'mtime', 'ctime'] as $key)
+            nhep_expect($opened[$key] === $named[$key], 'NHE_NORMAL_PUBLIC_EXPORT_SAME_NAMED_OPENED_STAT9');
+        $offset = 0;
+        while ($offset < strlen($raw)) {
+            $written = fwrite($publicStream, substr($raw, $offset));
+            nhep_expect(is_int($written) && $written > 0, 'NHE_NORMAL_PUBLIC_EXPORT_FULL_SAFE_BYTES_WRITE');
+            $offset += $written;
+        }
+        nhep_expect(fflush($publicStream) && fseek($publicStream, 0) === 0,
+            'NHE_NORMAL_PUBLIC_EXPORT_FLUSH_AND_SAME_HANDLE_REWIND');
+        $readback = stream_get_contents($publicStream);
+        nhep_expect(is_string($readback) && $readback === $raw && feof($publicStream),
+            'NHE_NORMAL_PUBLIC_EXPORT_COMPLETE_SAME_HANDLE_READBACK_EOF');
+        $sealed = fstat($publicStream); clearstatcache(true, $publicPath); $after = lstat($publicPath);
+        nhep_expect(is_array($sealed) && is_array($after) && $sealed['size'] === strlen($raw)
+            && !is_link($publicPath) && realpath($publicPath) === $publicPath,
+            'NHE_NORMAL_PUBLIC_EXPORT_COMPLETE_NATIVE_RESULT_SIZE');
+        foreach (['dev', 'ino', 'mode', 'nlink', 'uid', 'gid'] as $key)
+            nhep_expect($sealed[$key] === $opened[$key], 'NHE_NORMAL_PUBLIC_EXPORT_ORIGINAL_HANDLE_IDENTITY');
+        foreach (['dev', 'ino', 'mode', 'nlink', 'uid', 'gid', 'size', 'mtime', 'ctime'] as $key)
+            nhep_expect($sealed[$key] === $after[$key], 'NHE_NORMAL_PUBLIC_EXPORT_FINAL_PATH_HANDLE_STAT9');
+    } catch (Throwable $error) { $failure = $error; throw $error;
+    } finally {
+        try { nhep_expect(fclose($publicStream), 'NHE_NORMAL_PUBLIC_EXPORT_REAL_ORIGINAL_HANDLE_CLOSED');
+        } catch (Throwable $closeError) { if ($failure === null) throw $closeError; }
+    }
+    $publicPin = ['path' => $publicPath, 'bytes' => strlen($raw), 'sha256' => hash('sha256', $raw)];
+    nhep_expect(nhe_file($publicPath, $publicPin) === $raw, 'NHE_NORMAL_PUBLIC_EXPORT_CLOSED_COMPLETE_NAMED_READBACK');
+    clearstatcache(true, $publicRoot); $publicDirectoryAfter = lstat($publicRoot);
+    nhep_expect(is_array($publicDirectoryAfter) && is_dir($publicRoot) && !is_link($publicRoot)
+        && realpath($publicRoot) === $publicRoot, 'NHE_NORMAL_PUBLIC_EXPORT_ORIGINAL_DIRECTORY_STILL_CANONICAL');
+    foreach (['dev', 'ino', 'mode', 'nlink', 'uid', 'gid'] as $key)
+        nhep_expect($publicDirectoryAfter[$key] === $publicDirectory[$key],
+            'NHE_NORMAL_PUBLIC_EXPORT_ORIGINAL_DIRECTORY_NATIVE_IDENTITY');
+    return $publicPin;
+}
+'''.replace(b"\n", b"\r\n")
+    return ((previous_root, current_root),
+            (b"    $raw = nhe_json($seal); $mask = umask(0077);\r\n    try { $stream = fopen($path, 'x+b'); }",
+             b"    $mask = umask(0077);\r\n    try { $stream = fopen($path, 'x+b'); }"),
+            (previous_tail, current_tail))
+
+
 def transform_producer_entry(raw: bytes, *, legacy_refund_anchors=False) -> bytes:
     if type(legacy_refund_anchors) is not bool:
         raise ValueError("EXACT_HISTORY_LEGACY_ANCHOR_VARIANT_REQUIRED")
@@ -1217,6 +1301,8 @@ def transform_producer_entry(raw: bytes, *, legacy_refund_anchors=False) -> byte
     if legacy_refund_anchors:
         for previous, current in _legacy_anchor_producer_seams():
             candidate = _refund_once(candidate, previous, current)
+    for previous, current in _producer_publication_seams():
+        candidate = _refund_once(candidate, previous, current)
     if reverse_producer_entry(candidate, legacy_refund_anchors=legacy_refund_anchors) != raw:
         raise ValueError("HISTORY_PRODUCER_COMPLETE_ENTRY_REVERSE_REQUIRED")
     return candidate
@@ -1225,6 +1311,8 @@ def transform_producer_entry(raw: bytes, *, legacy_refund_anchors=False) -> byte
 def reverse_producer_entry(candidate: bytes, *, legacy_refund_anchors=False) -> bytes:
     if type(legacy_refund_anchors) is not bool:
         raise ValueError("EXACT_HISTORY_LEGACY_ANCHOR_VARIANT_REQUIRED")
+    for previous, current in reversed(_producer_publication_seams()):
+        candidate = _refund_once(candidate, current, previous)
     if legacy_refund_anchors:
         for previous, current in reversed(_legacy_anchor_producer_seams()):
             candidate = _refund_once(candidate, current, previous)
