@@ -1008,12 +1008,16 @@ _DRIVER_PRESTART_INITIALIZER = rb'''function m4i_driverPrestartRedis(array &$evi
     m2f_assert(getenv('MS4_PROOF_NAME') === 'register-driver', 'DRIVER_CLOCK_ONLY_ORIGINAL_REGISTER_HELPER');
     $context = m4i_read('/run/audit/actual-run-context.json');
     $driver = m4i_read('/run/audit/evidence/driver-created.json');
+    $helper = m4i_read('/run/audit/evidence/register-driver-created.json');
     $manifest = audit_manifest();
     m2f_assert(($manifest['guard_mode'] ?? null) === 'read-only'
         && $manifest['run_id'] === $context['run_id'] && $manifest['commit_sha'] === $context['source_sha']
         && $manifest['project'] === $context['project']
         && $manifest['services']['audit-ms4-migration']['id'] === $driver['id']
-        && $manifest['services']['audit-bootstrap']['id'] === $evidence['binding']['container_id']
+        && $helper['id'] === $evidence['binding']['container_id']
+        && $helper['run_id'] === $context['run_id'] && $helper['source_sha'] === $context['source_sha']
+        && $helper['proof_name'] === 'register-driver'
+        && hash_file('sha256', '/run/audit/evidence/register-driver-created.json') === $evidence['binding']['created_sha256']
         && $manifest['services']['audit-redis']['id'] === $context['initial_service_ids']['audit-redis']
         && $manifest['services']['audit-mysql']['id'] === $context['initial_service_ids']['audit-mysql']
         && $driver['run_id'] === $context['run_id'] && $driver['source_sha'] === $context['source_sha']
