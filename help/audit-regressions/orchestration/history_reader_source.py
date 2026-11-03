@@ -194,6 +194,8 @@ def transform_reader(raw: bytes, *, refund_readiness: bool = False, legacy_refun
         candidate = _refund_reader_apply(candidate)
     if legacy_refund_anchors:
         candidate = _legacy_anchor_reader_apply(candidate)
+    for name, old, new in _driver_gap_reader_seams():
+        candidate = _replace_once(candidate, old, new, name)
     if candidate.count(_ADOPTED_QUALIFY) != 1 or _FIRST_UNBOUND in candidate or reverse_reader(candidate, refund_readiness=refund_readiness, legacy_refund_anchors=legacy_refund_anchors) != raw:
         raise ValueError("HISTORY_READER_SOURCE_ADOPTION_AND_WHOLE_REVERSE")
     return candidate
@@ -204,12 +206,146 @@ def reverse_reader(candidate: bytes, *, refund_readiness: bool = False, legacy_r
     if type(candidate) is not bytes or candidate.count(_ADOPTED_QUALIFY) != 1 or _FIRST_UNBOUND in candidate:
         raise ValueError("HISTORY_READER_CANDIDATE_BYTES_AND_SOURCE_ADOPTION")
     _legacy_anchor_reader_mode(refund_readiness, legacy_refund_anchors)
-    original = _legacy_anchor_reader_apply(candidate, reverse=True) if legacy_refund_anchors else candidate
+    original = candidate
+    for name, old, new in reversed(_driver_gap_reader_seams()):
+        original = _replace_once(original, new, old, name)
+    original = _legacy_anchor_reader_apply(original, reverse=True) if legacy_refund_anchors else original
     original = _refund_reader_apply(original, reverse=True) if refund_readiness else original
     for name, old, new in reversed(READER_SEAMS):
         original = _replace_once(original, new, old, name)
     _original_reader(original)
     return original
+
+
+# These public registration controls already exist. A new exact2 clock object
+# qualifies only the sealed-to-driver gap; it never replaces an observed value.
+_DRIVER_GAP_READER = rb'''function nhecr_driver_prestart_clock(array $context, array $publicRaw, array $driver): ?int
+{
+    if (!array_key_exists('driver_registration_result', $publicRaw)) return null;
+    $result = json_decode($publicRaw['driver_registration_result'], true, 256, JSON_THROW_ON_ERROR);
+    if (!array_key_exists('driver_prestart_redis', $result)) return null;
+    $made = json_decode($publicRaw['driver_registration_created'], true, 256, JSON_THROW_ON_ERROR);
+    $terminal = json_decode($publicRaw['driver_registration_terminal'], true, 256, JSON_THROW_ON_ERROR);
+    foreach ([[$driver, 'driver', 'audit-ms4-migration'], [$made, 'register-driver', 'audit-bootstrap']] as [$facts, $proof, $role]) {
+        nhecr_expect(is_string($facts['id']) && preg_match('/\A[a-f0-9]{64}\z/D', $facts['id']) === 1
+            && $facts['run_id'] === $context['run_id'] && $facts['source_sha'] === $context['source_sha']
+            && $facts['proof_name'] === $proof && $facts['status'] === 'created' && $facts['pid'] === 0
+            && $facts['restart_count'] === 0 && $facts['image'] === M4M_IMAGE
+            && $facts['hostname'] === substr($facts['id'], 0, 12)
+            && $facts['read_only'] === true && $facts['privileged'] === false && $facts['cap_drop'] === ['ALL']
+            && in_array($facts['security_options'], [['no-new-privileges'], ['no-new-privileges:true']], true)
+            && $facts['entrypoint'] === ['php'] && $facts['workdir'] === '/workspace'
+            && $facts['network_mode'] === $context['project'] . '_isolation'
+            && array_keys($facts['networks']) === [$context['project'] . '_isolation']
+            && in_array($facts['port_bindings'], [null, []], true)
+            && $facts['labels']['tianli.audit'] === '1' && $facts['labels']['tianli.audit.run'] === $context['run_id']
+            && $facts['labels']['com.docker.compose.project'] === $context['project']
+            && $facts['labels']['com.docker.compose.service'] === $role,
+            'NHECR_DRIVER_CLOCK_ORIGINAL_TWO_CREATED_CIDS_AND_BOUNDARIES');
+        foreach ($facts['ports'] ?? [] as $port) nhecr_expect($port === null, 'NHECR_DRIVER_CLOCK_NO_PUBLISHED_PORTS');
+    }
+    foreach (['id', 'image', 'hostname', 'labels', 'tmpfs', 'read_only', 'privileged', 'network_mode', 'command',
+        'entrypoint', 'workdir', 'port_bindings', 'cap_drop', 'security_options', 'created_at'] as $key)
+        nhecr_expect($made[$key] === $terminal[$key], 'NHECR_DRIVER_CLOCK_SAME_COMPLETE_HELPER_IMMUTABLES');
+    $nativeMounts = static function (array $rows): array {
+        $out = []; foreach ($rows as $row) { ksort($row, SORT_STRING); $out[] = json_encode($row, JSON_THROW_ON_ERROR); }
+        sort($out, SORT_STRING); return $out;
+    };
+    nhecr_expect($nativeMounts($made['mounts']) === $nativeMounts($terminal['mounts'])
+        && array_keys($made['networks']) === array_keys($terminal['networks'])
+        && $terminal['status'] === 'exited' && $terminal['pid'] === 0 && $terminal['exit_code'] === 0
+        && $terminal['restart_count'] === 0 && $made['id'] !== $driver['id']
+        && $made['command'] === ['/run/ms4-prep/ms4-initialize.php', 'register']
+        && $driver['command'] === ['help/audit-regressions/isolated/ms4-migration.php'],
+        'NHECR_DRIVER_CLOCK_ACTUAL_ORIGINAL_REGISTER_HELPER_ZERO');
+    nhecr_keys($made['tmpfs'], ['/tmp']);
+    $mounts = nhe_mount_rows(array_values(array_filter($made['mounts'], static fn(array $row): bool => $row['Type'] !== 'tmpfs')));
+    $wanted = [];
+    foreach (['/workspace' => $context['repo_dir'], '/source' => $context['repo_dir'],
+        '/run/ms4-prep' => $context['prep_dir'], '/run/audit' => $context['run_dir']] as $destination => $source)
+        $wanted[] = ['Type' => 'bind', 'Source' => $source, 'Destination' => $destination, 'RW' => $destination === '/run/audit', 'Name' => ''];
+    foreach (['/run/audit-bootstrap' => 'bootstrap-secrets', '/run/audit-redis' => 'redis-secrets',
+        '/run/audit-app' => 'app-secrets', '/run/audit-fixtures' => 'fixture-secrets'] as $destination => $leaf) {
+        $rows = array_values(array_filter($mounts, static fn(array $row): bool => $row['Destination'] === $destination));
+        nhecr_expect(count($rows) === 1 && $rows[0]['Type'] === 'volume' && $rows[0]['RW'] === false
+            && $rows[0]['Name'] === $context['project'] . '_' . $leaf
+            && is_string($rows[0]['Source']) && $rows[0]['Source'] !== '', 'NHECR_DRIVER_CLOCK_FOUR_OWN_PRIVATE_RO_VOLUMES');
+        $wanted[] = $rows[0];
+    }
+    nhecr_expect($mounts === nhe_mount_rows($wanted), 'NHECR_DRIVER_CLOCK_COMPLETE_ORIGINAL_EIGHT_HELPER_MOUNTS');
+    $binding = $result['binding']; $clock = $result['driver_prestart_redis'];
+    nhecr_keys($binding, ['container_id', 'entry_namespace_pid', 'source_sha', 'created_sha256', 'freeze_sha256']);
+    nhecr_keys($clock, ['container_id', 'redis_ms']);
+    nhecr_expect($result['schema'] === 1 && $result['scope'] === 'MS4_PREREQUISITES_ONLY'
+        && $result['status'] === 'REGISTERED_NATIVE_RESOURCES_ONLY' && $result['native_exit'] === 0
+        && $result['run_id'] === $context['run_id'] && $result['source_sha'] === $context['source_sha']
+        && $binding['container_id'] === $made['id'] && $binding['source_sha'] === $context['source_sha']
+        && $binding['freeze_sha256'] === $context['freeze_sha256']
+        && $binding['created_sha256'] === hash('sha256', $publicRaw['driver_registration_created'])
+        && is_int($binding['entry_namespace_pid']) && $binding['entry_namespace_pid'] > 0
+        && $clock['container_id'] === $driver['id'] && is_int($clock['redis_ms']) && $clock['redis_ms'] > 0,
+        'NHECR_DRIVER_CLOCK_COMPLETE_NATIVE_ZERO_RUN_SOURCE_FREEZE_CREATED_JOIN');
+    return $clock['redis_ms'];
+}
+
+function nhecr_driver_gap_baseline(array $expected, array $actual, ?int $redisMs, array $sealTime): array
+{
+    // PHP arrays use copy-on-write: no actual descriptor is ever copied into expected.
+    if ($redisMs === null) return $expected;
+    nhecr_expect($redisMs > 0 && array_is_list($sealTime) && count($sealTime) === 2
+        && is_string($sealTime[0]) && ctype_digit($sealTime[0])
+        && is_string($sealTime[1]) && ctype_digit($sealTime[1]) && bccomp($sealTime[1], '1000000', 0) < 0
+        && bccomp((string)$redisMs, bcadd(bcmul($sealTime[0], '1000', 0), bcdiv($sealTime[1], '1000', 0), 0), 0) >= 0,
+        'NHECR_DRIVER_REAL_PRESTART_REDIS_TIME_NOT_BEFORE_SEAL');
+    nhecr_keys($expected, ['names', 'tables', 'redis', 'modes']); nhecr_keys($actual, ['names', 'tables', 'redis', 'modes']);
+    nhecr_expect(is_array($expected['redis']) && is_array($actual['redis']), 'NHECR_DRIVER_COMPLETE_INDEPENDENT_BASELINE_MAPS');
+    foreach ($expected['redis'] as $key => $row) {
+        nhecr_keys($row, ['sha256', 'expires']);
+        nhecr_expect(is_string($key) && preg_match('/\A[a-f0-9]{64}\z/D', $key) === 1
+            && is_string($row['sha256']) && preg_match('/\A[a-f0-9]{64}\z/D', $row['sha256']) === 1
+            && is_int($row['expires']) && ($row['expires'] === -1 || $row['expires'] > 0),
+            'NHECR_DRIVER_ORIGINAL_EXACT_REDIS_HASH_AND_ABSOLUTE_EXPIRY');
+        if ($row['expires'] > 0 && $row['expires'] < $redisMs && !array_key_exists($key, $actual['redis'])) unset($expected['redis'][$key]);
+    }
+    return $expected;
+}
+
+'''
+
+
+def _driver_gap_reader_seams():
+    keys = (b"    nhecr_keys($publicRaw, ['freeze', 'producer_created', 'producer_original_created', 'producer_terminal', 'producer_binding',\n"
+            b"        'producer_result', 'driver_created', 'driver_original_created', 'driver_terminal', 'driver_binding', 'driver_result']);\n")
+    return (
+        ('driver_gap_pure_helpers', b'function nhecr_history_handoff(array $context, array $publicRaw): array\n',
+         _DRIVER_GAP_READER + b'function nhecr_history_handoff(array $context, array $publicRaw): array\n'),
+        ('driver_gap_public_exact_keys', keys,
+         b"    if (array_key_exists('driver_registration_result', $publicRaw))\n"
+         b"        nhecr_keys($publicRaw, ['freeze', 'producer_created', 'producer_original_created', 'producer_terminal', 'producer_binding',\n"
+         b"            'producer_result', 'driver_created', 'driver_original_created', 'driver_terminal', 'driver_binding', 'driver_result',\n"
+         b"            'driver_registration_created', 'driver_registration_terminal', 'driver_registration_result']);\n"
+         b'    else\n' + keys),
+        ('driver_gap_qualified_input_to_unchanged_four_cli',
+         b"    $migration = nhecr_four_cli_join($seal['expected_m4m'], $context, $publicRaw['freeze'], $publicRaw['driver_original_created'],\n",
+         b"    $independent = nhecr_driver_gap_baseline($seal['expected_m4m'], $objects['driver_result']['snapshots']['before'],\n"
+         b"        nhecr_driver_prestart_clock($context, $publicRaw, $objects['driver_original_created']), $seal['seal_redis_time']);\n"
+         b"    $migration = nhecr_four_cli_join($independent, $context, $publicRaw['freeze'], $publicRaw['driver_original_created'],\n"),
+        ('driver_gap_existing_public_controls',
+         b"        'driver_result' => '/run/audit/evidence/ms4-migration-normal.json'];\n",
+         b"        'driver_result' => '/run/audit/evidence/ms4-migration-normal.json',\n"
+         b"        'driver_registration_created' => '/run/audit/evidence/register-driver-created.json',\n"
+         b"        'driver_registration_terminal' => '/run/audit/evidence/register-driver-terminal.json',\n"
+         b"        'driver_registration_result' => '/run/audit/evidence/register-driver-result.json'];\n"),
+        ('driver_gap_repeated_baseline_join',
+         b"    nhecr_expect($seal === $handoff['seal'] && $driver['snapshots']['before'] === $seal['expected_m4m']\n",
+         b"    $clockRaw = [];\n"
+         b"    foreach (['created', 'terminal', 'result'] as $part)\n"
+         b"        $clockRaw['driver_registration_' . $part] = $state['public_inputs']['/run/audit/evidence/register-driver-' . $part . '.json']['raw'];\n"
+         b"    $originalDriver = json_decode($state['public_inputs']['/run/audit/evidence/ms4-migration-container-created.json']['raw'], true, 256, JSON_THROW_ON_ERROR);\n"
+         b"    $independent = nhecr_driver_gap_baseline($seal['expected_m4m'], $driver['snapshots']['before'],\n"
+         b"        nhecr_driver_prestart_clock($state['context'], $clockRaw, $originalDriver), $seal['seal_redis_time']);\n"
+         b"    nhecr_expect($seal === $handoff['seal'] && $driver['snapshots']['before'] === $independent\n"),
+    )
 
 
 # Pure contract declarations adapted from the independently reviewed upgrade

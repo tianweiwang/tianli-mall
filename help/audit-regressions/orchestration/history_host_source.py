@@ -1365,7 +1365,8 @@ def fixed_seams(*, refund_readiness: bool = False, legacy_refund_anchors: bool =
     adoption = tuple((before.encode('utf-8'), after.encode('utf-8')) for before, after in _ADOPTION_SEAMS)
     seams = projection_seams() + extra + ((b'def prepare(binding_file, run_root):',
         insertion + b'def prepare(binding_file, run_root):'),) + adoption
-    return seams + (_refund_host_seams() if refund_readiness else ()) + (_legacy_anchor_host_seams() if legacy_refund_anchors else ())
+    return (seams + (_refund_host_seams() if refund_readiness else ())
+            + (_legacy_anchor_host_seams() if legacy_refund_anchors else ()) + _driver_gap_host_seams())
 
 
 def transform_compose(raw: bytes) -> bytes:
@@ -1406,10 +1407,11 @@ def transform_host(raw: bytes, *, refund_readiness: bool = False, legacy_refund_
         _require(candidate.count(before) == 1, "HISTORY_HOST_UNIQUE_LITERAL_SEAM")
         candidate = candidate.replace(before, after, 1)
     original = _definitions(raw); updated = _definitions(candidate)
-    changed = {"freeze", "verify_freeze", "legacy_handoff_source", "main", "native", "compose", "owned", "global_consumers", "proof_expected", "stage", "prepare", "current"}
+    changed = {"freeze", "verify_freeze", "legacy_handoff_source", "legacy_four_cli_handoff", "main", "native", "compose", "owned", "global_consumers", "proof_expected", "stage", "prepare", "current"}
     additions = {"history_source_bytes", "history_source_json", "history_source_pointer",
                  "history_source_equal", "history_source_projection", "history_source_review", "current_reader_authority"}
     additions |= set(_definitions((_HISTORY_RUNTIME + "\n\n" + _READER_RUNTIME).encode()))
+    additions |= set(_definitions(_DRIVER_GAP_HOST.encode()))
     _require(b"NONEMPTY_HISTORY_RUNTIME_NOT_IMPLEMENTED" not in candidate,
              "HISTORY_FINAL_ADMISSION_USES_REAL_REVIEW_AND_SOURCE_ALIASES")
     if legacy_refund_anchors:
@@ -1431,6 +1433,119 @@ def reverse_host(candidate: bytes, *, refund_readiness: bool = False, legacy_ref
     _require(len(original) == BASE_BYTES and hashlib.sha256(original).hexdigest() == BASE_SHA256,
              "HISTORY_HOST_REVERSE_COMPLETE_ORIGINAL_SHA256")
     return original
+
+
+_DRIVER_GAP_HOST = r'''def history_driver_gap_baseline(expected, actual, redis_ms, seal_time):
+    """Only absent, already-expired sealed rows may cross the prestart gap."""
+    import copy
+    projected = copy.deepcopy(expected)
+    if redis_ms is None:
+        return projected
+    expect(type(redis_ms) is int and 0 < redis_ms <= 9223372036854775807
+           and type(seal_time) is list and len(seal_time) == 2
+           and all(type(value) is str and re.fullmatch('[0-9]+', value) for value in seal_time)
+           and 0 <= int(seal_time[1]) < 1000000
+           and redis_ms >= int(seal_time[0]) * 1000 + int(seal_time[1]) // 1000,
+           'HISTORY_DRIVER_REAL_PRESTART_REDIS_TIME_NOT_BEFORE_SEAL')
+    expect(type(expected) is dict and type(actual) is dict
+           and set(expected) == set(actual) == {'names', 'tables', 'redis', 'modes'}
+           and type(expected['redis']) is dict and type(actual['redis']) is dict,
+           'HISTORY_DRIVER_COMPLETE_INDEPENDENT_BASELINE_MAPS')
+    for key, row in expected['redis'].items():
+        expect(type(key) is str and re.fullmatch('[a-f0-9]{64}', key)
+               and type(row) is dict and set(row) == {'sha256', 'expires'}
+               and type(row['sha256']) is str and re.fullmatch('[a-f0-9]{64}', row['sha256'])
+               and type(row['expires']) is int and (row['expires'] == -1 or row['expires'] > 0),
+               'HISTORY_DRIVER_ORIGINAL_EXACT_REDIS_HASH_AND_ABSOLUTE_EXPIRY')
+        if 0 < row['expires'] < redis_ms and key not in actual['redis']:
+            del projected['redis'][key]
+    return projected
+
+
+def history_driver_prestart_clock(context, driver, created_raw, terminal_raw, result_raw):
+    result = json.loads(result_raw)
+    if 'driver_prestart_redis' not in result:
+        return None  # Older source has no causal clock proof: retain original strict equality.
+    made = json.loads(created_raw); terminal = json.loads(terminal_raw)
+    for facts, proof, role in [(driver, 'driver', 'audit-ms4-migration'),
+                                (made, 'register-driver', 'audit-bootstrap')]:
+        owned(context, facts, role)
+        expect(facts['run_id'] == context['run_id'] and facts['source_sha'] == context['source_sha']
+               and facts['proof_name'] == proof and re.fullmatch('[a-f0-9]{64}', facts['id'])
+               and facts['hostname'] == facts['id'][:12]
+               and facts['status'] == 'created' and facts['pid'] == 0 and facts['restart_count'] == 0,
+               'HISTORY_DRIVER_CLOCK_ORIGINAL_TWO_CREATED_CIDS')
+    owned(context, terminal, 'audit-bootstrap'); same_created(made, terminal)
+    expect(terminal['status'] == 'exited' and terminal['pid'] == terminal['exit_code'] == 0
+           and made['id'] != driver['id']
+           and made['command'] == ['/run/ms4-prep/ms4-initialize.php', 'register']
+           and driver['command'] == ['help/audit-regressions/isolated/ms4-migration.php']
+           and set(made['tmpfs']) == {'/tmp'}, 'HISTORY_DRIVER_CLOCK_ACTUAL_ORIGINAL_REGISTER_HELPER_ZERO')
+    wanted = [{'Type': 'bind', 'Source': host, 'Destination': destination, 'RW': destination == '/run/audit', 'Name': ''}
+              for destination, host in {'/workspace': context['repo_dir'], '/source': context['repo_dir'],
+                  '/run/ms4-prep': context['prep_dir'], '/run/audit': context['run_dir']}.items()]
+    for leaf, destination in [('bootstrap-secrets', '/run/audit-bootstrap'), ('redis-secrets', '/run/audit-redis'),
+                              ('app-secrets', '/run/audit-app'), ('fixture-secrets', '/run/audit-fixtures')]:
+        rows = [row for row in made['mounts'] if row['Destination'] == destination]
+        expect(len(rows) == 1 and rows[0]['Type'] == 'volume'
+               and rows[0]['Name'] == context['project'] + '_' + leaf and rows[0]['RW'] is False
+               and type(rows[0]['Source']) is str and rows[0]['Source'], 'HISTORY_DRIVER_CLOCK_FOUR_OWN_PRIVATE_RO_VOLUMES')
+        wanted.append(rows[0])
+    expect(history_mount_rows([row for row in made['mounts'] if row['Type'] != 'tmpfs']) == history_mount_rows(wanted),
+           'HISTORY_DRIVER_CLOCK_COMPLETE_ORIGINAL_EIGHT_HELPER_MOUNTS')
+    binding = result['binding']; clock = result['driver_prestart_redis']
+    expect(type(result['schema']) is int and result['schema'] == 1
+           and result['scope'] == 'MS4_PREREQUISITES_ONLY' and result['status'] == 'REGISTERED_NATIVE_RESOURCES_ONLY'
+           and type(result['native_exit']) is int and result['native_exit'] == 0
+           and result['run_id'] == context['run_id'] and result['source_sha'] == context['source_sha']
+           and set(binding) == {'container_id', 'entry_namespace_pid', 'source_sha', 'created_sha256', 'freeze_sha256'}
+           and binding['container_id'] == made['id'] and binding['source_sha'] == context['source_sha']
+           and binding['freeze_sha256'] == context['freeze_sha256'] and binding['created_sha256'] == digest(created_raw)
+           and type(binding['entry_namespace_pid']) is int and binding['entry_namespace_pid'] > 0
+           and type(clock) is dict and set(clock) == {'container_id', 'redis_ms'}
+           and clock['container_id'] == driver['id'] and type(clock['redis_ms']) is int
+           and 0 < clock['redis_ms'] <= 9223372036854775807,
+           'HISTORY_DRIVER_CLOCK_COMPLETE_NATIVE_ZERO_RUN_SOURCE_FREEZE_CREATED_JOIN')
+    return clock['redis_ms']
+
+
+def history_driver_prestart(context, driver):
+    evidence = Path(context['run_dir']) / 'evidence'
+    result_raw, result_pin = history_source_bytes(evidence / 'register-driver-result.json')
+    if 'driver_prestart_redis' not in json.loads(result_raw):
+        return None
+    created_raw, created_pin = history_source_bytes(evidence / 'register-driver-created.json')
+    terminal_raw, terminal_pin = history_source_bytes(evidence / 'register-driver-terminal.json')
+    clock = history_driver_prestart_clock(context, driver, created_raw, terminal_raw, result_raw)
+    for leaf, raw, pin in [('register-driver-created.json', created_raw, created_pin),
+                           ('register-driver-terminal.json', terminal_raw, terminal_pin),
+                           ('register-driver-result.json', result_raw, result_pin)]:
+        expect(history_source_bytes(evidence / leaf) == (raw, pin), 'HISTORY_DRIVER_CLOCK_ORIGINAL_PUBLIC_BYTES_HELD')
+    return clock
+
+
+'''
+
+
+def _driver_gap_host_seams():
+    anchor = b'def legacy_four_cli_handoff(context, result):\n'
+    return (
+        (anchor, _DRIVER_GAP_HOST.encode() + anchor),
+        (b"    expect(type(result['original_table_count']) is int and result['original_table_count'] == 164\n",
+         b"    independent = history_driver_gap_baseline(seal['expected_m4m'], result['snapshots']['before'],\n"
+         b"        history_driver_prestart(context, driver), seal['seal_redis_time'])\n"
+         b"    expect(type(result['original_table_count']) is int and result['original_table_count'] == 164\n"),
+        (b"legacy_seal_equal(result['snapshots']['before'], seal['expected_m4m'])",
+         b"legacy_seal_equal(result['snapshots']['before'], independent)"),
+        (b"        expect(facts['status'] == 'created', 'SAME_UNSTARTED_DRIVER_ONLY')\n",
+         b"        same_created(bound_created(context, 'driver', 'audit-ms4-migration'), facts)\n"
+         b"        expect(facts['status'] == 'created' and facts['pid'] == 0 and facts['restart_count'] == 0, 'SAME_UNSTARTED_DRIVER_ONLY')\n"
+         b"        history_driver_prestart(context, bound_created(context, 'driver', 'audit-ms4-migration'))\n"),
+        (b"        expect(facts['status'] == 'created' and facts['restart_count'] == 0, 'ONLY_UNSTARTED_SAME_DRIVER')\n",
+         b"        same_created(bound_created(context, 'driver', 'audit-ms4-migration'), facts)\n"
+         b"        expect(facts['status'] == 'created' and facts['pid'] == 0 and facts['restart_count'] == 0, 'ONLY_UNSTARTED_SAME_DRIVER')\n"
+         b"        history_driver_prestart(context, bound_created(context, 'driver', 'audit-ms4-migration'))\n"),
+    )
 
 
 # Only the explicitly selected f4ca/6d1e/24b1 source combination emits this path.

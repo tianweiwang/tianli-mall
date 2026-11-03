@@ -970,6 +970,8 @@ def transform_initializer(raw: bytes, *, refund_readiness=False, legacy_refund_a
     if legacy_refund_anchors:
         for previous, current in _legacy_anchor_initializer_seams():
             candidate = _refund_once(candidate, previous, current)
+    for previous, current in _driver_prestart_initializer_seams():
+        candidate = _refund_once(candidate, previous, current)
     if reverse_initializer(candidate, refund_readiness=refund_readiness, legacy_refund_anchors=legacy_refund_anchors) != raw:
         raise ValueError("INITIALIZER_COMPLETE_REVERSE_REQUIRED")
     return candidate
@@ -982,6 +984,8 @@ def reverse_initializer(candidate: bytes, *, refund_readiness=False, legacy_refu
     if not isinstance(candidate, bytes):
         raise ValueError("INITIALIZER_CANDIDATE_BYTES_REQUIRED")
     raw = candidate
+    for previous, current in reversed(_driver_prestart_initializer_seams()):
+        raw = _refund_once(raw, current, previous)
     if legacy_refund_anchors:
         for previous, current in reversed(_legacy_anchor_initializer_seams()):
             raw = _refund_once(raw, current, previous)
@@ -994,6 +998,51 @@ def reverse_initializer(candidate: bytes, *, refund_readiness=False, legacy_refu
         raw = raw.replace(after, before, 1)
     _source(raw)
     return raw
+
+
+# A future Run may qualify only passive expiry across the producer/driver gap.
+# This existing helper samples the Run's Redis before the driver is started;
+# the original migration's before/after/repeat equality is unchanged.
+_DRIVER_PRESTART_INITIALIZER = rb'''function m4i_driverPrestartRedis(array &$evidence): void
+{
+    m2f_assert(getenv('MS4_PROOF_NAME') === 'register-driver', 'DRIVER_CLOCK_ONLY_ORIGINAL_REGISTER_HELPER');
+    $context = m4i_read('/run/audit/actual-run-context.json');
+    $driver = m4i_read('/run/audit/evidence/driver-created.json');
+    $manifest = audit_manifest();
+    m2f_assert(($manifest['guard_mode'] ?? null) === 'read-only'
+        && $manifest['run_id'] === $context['run_id'] && $manifest['commit_sha'] === $context['source_sha']
+        && $manifest['project'] === $context['project']
+        && $manifest['services']['audit-ms4-migration']['id'] === $driver['id']
+        && $manifest['services']['audit-bootstrap']['id'] === $evidence['binding']['container_id']
+        && $manifest['services']['audit-redis']['id'] === $context['initial_service_ids']['audit-redis']
+        && $manifest['services']['audit-mysql']['id'] === $context['initial_service_ids']['audit-mysql']
+        && $driver['run_id'] === $context['run_id'] && $driver['source_sha'] === $context['source_sha']
+        && $driver['proof_name'] === 'driver' && $driver['status'] === 'created'
+        && $driver['pid'] === 0 && $driver['restart_count'] === 0
+        && is_string($driver['id']) && preg_match('/\A[a-f0-9]{64}\z/D', $driver['id']) === 1
+        && $driver['id'] !== $evidence['binding']['container_id']
+        && $evidence['binding']['source_sha'] === $context['source_sha']
+        && $evidence['binding']['freeze_sha256'] === $context['freeze_sha256'],
+        'DRIVER_CLOCK_SAME_ORIGINAL_CREATED_DRIVER_RUN_SOURCE_FREEZE_AND_BASE_RESOURCES');
+    // In this explicitly read-only guard mode this checks DNS, config, both
+    // sentinels and the exact existing DML grants without a DDL denial probe.
+    audit_guard_assert();
+    $redisMs = m4iu_redisTime();
+    m2f_assert($redisMs > 0, 'DRIVER_CLOCK_REAL_REDIS_POSITIVE_INTEGER_MILLISECONDS');
+    $evidence['driver_prestart_redis'] = ['container_id' => $driver['id'], 'redis_ms' => $redisMs];
+}
+
+'''
+
+
+def _driver_prestart_initializer_seams():
+    anchor = b'function m4i_main(): int\n'
+    registration = b"                audit_register_resources();\n"
+    return (
+        (anchor, _DRIVER_PRESTART_INITIALIZER + anchor),
+        (registration, registration
+         + b"                if (getenv('MS4_PROOF_NAME') === 'register-driver') m4i_driverPrestartRedis($evidence);\n"),
+    )
 
 
 FILES_BOOTSTRAP_SOURCE_PIN = (14449, "dbe38371567d495d5567189599a025903b91a22ffa6c8b001aab2509baf1375b")
