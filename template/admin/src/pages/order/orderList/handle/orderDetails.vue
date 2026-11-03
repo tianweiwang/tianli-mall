@@ -828,4 +828,28 @@ export default {
     }
   }
 }
+@media screen and (max-width: 800px) {
+  .section {
+    .item {
+      flex: 0 0 100%;
+      min-width: 0;
+    }
+
+    .item:nth-child(3n + 1),
+    .item:nth-child(3n + 2),
+    .item:nth-child(3n + 3) {
+      padding-left: 0;
+      padding-right: 0;
+    }
+
+    .item > div:first-child:not(:last-child) {
+      flex: 0 0 7em;
+    }
+
+    .item > .value {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+  }
+}
 </style>
