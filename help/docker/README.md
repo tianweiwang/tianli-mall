@@ -151,7 +151,9 @@ r44已用既有已审不可变双镜像和检查器，在新18196默认配置、
 
 原普通Queue封装保留两次入队尝试，记录 `queue.submit_returned` 或固定失败事件；正常返回不提升为严格持久化确认。由HTTP调用时使用当前请求编号，CLI来源明确记录为console。AuditLogJob在其原生RPUSH正确认后，以 `queue.submitted` 桥接已认证MerchantContext编号、独立任务编号及job ID；原六键签名载荷不增加字段，数据库提交与严格删除确认完成后才写 `queue.audit_completed`。当前业务Controller没有自动调用此审计任务，登录或读取本人资料不等于自动投递。
 
-通用BaseJobs异常、Queue最终入队失败和全局CLI report改用有限字段。console的异常渲染、框架状态输出、其他业务任务自有日志及失败任务表的原载荷/异常存储仍有各自范围；失败任务数据保留原重试用途。这里不宣称全部Worker输出或完整R04已经通过，停止的故障、重试故障、并发及恢复样本不因此恢复执行。
+2026-10-27交付时，通用BaseJobs异常、Queue最终入队失败和全局CLI report已改用有限字段，console异常渲染当时仍在后续范围。框架状态输出、其他业务任务自有日志及失败任务表的原载荷/异常存储仍有各自范围；失败任务数据保留原重试用途。这里不宣称全部Worker输出或完整R04已经通过，停止的故障、重试故障、并发及恢复样本不因此恢复执行。
+
+2026-11-03应用层`ExceptionHandle::renderForConsole`普通异常路径的显示源码收口：该路径不再把原Throwable交给终端渲染，而由原Console/Buffer/Nothing驱动处理固定`CONSOLE_EXCEPTION`替代异常。沿父类原app.debug规则升级输出级别后，渲染期间仅把高于normal的级别暂降为normal，并在finally恢复，避免输出替代异常的trace；只在该方法内未被原app.debug升级的quiet保持静默，两无输出驱动保持原行为。框架Error.php另行新建默认Output，不继承命令的`-q`；vendor Console.php的直接catch路径仍把原Throwable交给Output并绕过该方法，属于未覆盖的后续范围，不能宣称全部CLI异常或全CLI的`-q`行为已收口。原Schema分支、report/ignore规则、HTTP渲染及调用方控制保持；既有console.exception日志仍使用独立diagnostic_id，不宣称与终端输出共用编号。本片仅做源码静态核对与逆变换保全，PHP8.2实际候选纯语法检查通过；未执行实际异常、故障、负向或恢复样本，未部署运行，不签完整R04/MS6。
 
 正常验证（2026-10-27）：新专用18190实例沿原发布流程实际apply，复用既有正常Worker验证的身份、审计和业务投影断言。合法服务认证后经原AuditLogJob投递一项，由常驻消费者产生唯一成功审计；source context编号、独立任务编号及原生job ID贯通五条有限日志。再经原Queue封装投递原CheckQueueJob，由普通消费者写入本次合成检查标记，对应四条有限日志。两类任务均为首次正常处理，两队列的pending/reserved/delayed全零，商品/SKU/订单/用户余额投影不变，五个Supervisor程序状态及PID保持。未用HTTP登录代替任务投递，也未手动调用fire。
 

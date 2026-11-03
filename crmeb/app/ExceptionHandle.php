@@ -90,6 +90,17 @@ class ExceptionHandle extends Handle
             fwrite(STDERR, $e->getMessage() . PHP_EOL);
             exit(2);
         }
-        parent::renderForConsole($output, $e);
+        if ($this->app->isDebug()) {
+            $output->setVerbosity(\think\console\Output::VERBOSITY_DEBUG);
+        }
+        $verbosity = $output->getVerbosity();
+        try {
+            if ($verbosity > \think\console\Output::VERBOSITY_NORMAL) {
+                $output->setVerbosity(\think\console\Output::VERBOSITY_NORMAL);
+            }
+            $output->renderException(new \RuntimeException('CONSOLE_EXCEPTION'));
+        } finally {
+            $output->setVerbosity($verbosity);
+        }
     }
 }
