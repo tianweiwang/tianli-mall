@@ -141,7 +141,7 @@
         <template slot-scope="scope">
           <div v-if="isSavedMarketplaceV1(scope.row)" class="saved-list-actions">
             <span class="saved-list-note" v-if="scope.row.fulfillment_summary">已发 {{ scope.row.fulfillment_summary.shipped }} / 已收 {{ scope.row.fulfillment_summary.received }} 件 · {{ scope.row.fulfillment_summary.child_count }} 个包裹</span>
-            <span class="saved-list-note" v-else>履约资料暂不可用</span>
+            <span class="saved-list-note" v-else>{{ normalUnpaidText(scope.row) || '履约资料暂不可用' }}</span>
             <span class="saved-list-note" v-if="scope.row.schema === 2">未发取消 {{ scope.row.fulfillment_summary.cancelled_unshipped }} 件 · 已退件 {{ scope.row.fulfillment_summary.returned_accepted }} 件 · 暂停发货 {{ scope.row.aftersale.pending_cancel_quantity }} 件 · 待处理退件 {{ scope.row.aftersale.pending_return_quantity }} 件</span>
             <el-button type="text" @click="changeMenu(scope.row, '2')">详情</el-button>
           </div>
@@ -377,7 +377,7 @@ import {
 import { mapState, mapMutations } from 'vuex';
 import editFrom from '../../../../components/from/from';
 import detailsFrom from '../handle/orderDetails';
-import { readPlatformFulfillment, rootOrderStatusText } from './fulfillmentPackages.vue';
+import { readPlatformFulfillment, rootOrderStatusText, normalUnpaidFulfillmentText } from './fulfillmentPackages.vue';
 import orderRemark from '../handle/orderRemark';
 import orderSend from '../handle/orderSend';
 import orderRefund from '../handle/orderRefund';
@@ -503,6 +503,7 @@ export default {
   },
   methods: {
     savedFulfillmentState(item) { return rootOrderStatusText(item); },
+    normalUnpaidText: normalUnpaidFulfillmentText,
     isSavedMarketplaceV1(row) {
       return !!row && (row.marketplace_trade_version === 1 || row.marketplace_trade_version === '1');
     },

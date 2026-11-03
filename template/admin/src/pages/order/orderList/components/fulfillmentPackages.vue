@@ -3,11 +3,11 @@
     <p v-if="loading" role="status">正在读取包裹资料…</p>
     <div v-if="error" class="read-error" role="alert"><p>{{ error }}</p><el-button class="fulfillment-control" :disabled="loading" @click="$emit('retry')">重新加载</el-button></div>
     <template v-if="view && view.kind === 'root'">
-      <h3>履约情况</h3><p role="status">{{ rootText(view.summary, view.aftersale) }}</p>
+      <h3>履约情况</h3><p role="status">{{ normalUnpaidText || rootText(view.summary, view.aftersale) }}</p>
       <p v-if="view.summary">共 {{ view.summary.original }} 件 · 已发 {{ view.summary.shipped }} 件 · 已收 {{ view.summary.received }} 件 · {{ view.summary.child_count }} 个包裹</p>
       <p v-if="view.aftersale">未发取消 {{ view.summary.cancelled_unshipped }} 件 · 已验收退件 {{ view.summary.returned_accepted }} 件 · 暂停发货 {{ view.aftersale.pending_cancel_quantity }} 件 · 待处理退件 {{ view.aftersale.pending_return_quantity }} 件</p>
       <p v-if="view.aftersale">履约结束时间（含取消、退件）：{{ time(view.aftersale.fulfillment_completed_at) }}</p>
-      <template v-if="view.children !== undefined">
+      <template v-if="view.children !== undefined && !normalUnpaidText">
         <p v-if="view.children === null">包裹资料暂不可用</p>
         <template v-else>
           <h3>履约包裹</h3><p v-if="view.children.count === 0">暂无履约包裹</p><p v-else-if="!view.children.list.length">本页暂无包裹</p>
@@ -170,6 +170,12 @@ export function readPlatformFulfillment(order, detail = false) {
   }
   return { kind: 'root', order, summary, aftersale: s2 ? { ...order.aftersale } : undefined, children };
 }
+export function normalUnpaidFulfillmentText(order) {
+  if (!order || typeof order !== 'object' || Array.isArray(order) || ![1, '1'].includes(order.marketplace_trade_version)
+    || ![0, '0'].includes(order.pid) || ![0, '0'].includes(order.paid) || order.fulfillment_summary !== null) return '';
+  if (order.is_cancel === 0 || order.is_cancel === '0') return '订单待付款，暂无履约包裹';
+  return order.is_cancel === 1 || order.is_cancel === '1' ? '订单已取消，暂无履约包裹' : '';
+}
 export function rootFulfillmentText(summary, aftersale) { const state = aftersaleState(summary, aftersale); if (state) return state; return summary === null ? '履约资料暂不可用' : summary.shipping_state === 'unshipped' ? '待发货' : summary.shipping_state === 'partial' ? '部分发货' : summary.receipt_state === 'received' ? '已收货' : summary.receipt_state === 'partial' ? '部分收货' : '待收货'; }
 export function rootOrderStatusText(order) {
   object(order); const paid = order.paid, cancelled = order.is_cancel;
@@ -180,7 +186,7 @@ export function rootOrderStatusText(order) {
 }
 function childText(child) { const state = child.schema === 2 ? aftersaleState(child, child.aftersale) : ''; if (state) return state; return child.receipt_state === 'received' ? '已收货' : child.receipt_state === 'partial' ? '部分收货' : '待收货'; }
 function displayTime(value) { if (value === null || value === 0) return '—'; timeValue(value); const date = new Date(value * 1000); const pad = number => String(number).padStart(2, '0'); return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate()) + ' ' + pad(date.getHours()) + ':' + pad(date.getMinutes()) + ':' + pad(date.getSeconds()); }
-export default { name: 'FulfillmentPackages', props: { view: { type: Object, default: null }, loading: { type: Boolean, default: false }, error: { type: String, default: '' }, formImages: { type: Array, default: () => [] } }, methods: { formImagesFor(group, field) { return imageRowsFor(this.formImages, group, field); }, rootText: rootFulfillmentText, childText, time: displayTime } };
+export default { name: 'FulfillmentPackages', props: { view: { type: Object, default: null }, loading: { type: Boolean, default: false }, error: { type: String, default: '' }, formImages: { type: Array, default: () => [] } }, computed: { normalUnpaidText() { return this.view && this.view.kind === 'root' ? normalUnpaidFulfillmentText(this.view.order) : ''; } }, methods: { formImagesFor(group, field) { return imageRowsFor(this.formImages, group, field); }, rootText: rootFulfillmentText, childText, time: displayTime } };
 </script>
 
 <style scoped>
