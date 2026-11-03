@@ -2685,6 +2685,22 @@ def _b_constant(raw: bytes, name: str, value: Any) -> bytes:
     return updated
 
 
+def _b_detached_main_state(original: bytes) -> tuple[bytes, dict[str, Any]]:
+    """Change only the archived main branch expectation; hold its whole gate."""
+    require(type(original) is bytes and functions(original) == {"main_state": original},
+            "B_COMPLETE_ORIGINAL_MAIN_STATE_FUNCTION")
+    before = (b"    assert native(prefix + '-branch', [*git, 'branch', '--show-current']).decode().strip()"
+              b" == 'feature/ms4-single-store'\n")
+    after = (b"    assert native(prefix + '-branch', [*git, 'branch', '--show-current']).decode().strip()"
+             b" == ''\n")
+    expected = once(original, before, after)
+    require(functions(expected) == {"main_state": expected}
+            and once(expected, after, before) == original, "B_MAIN_STATE_ONE_LITERAL_WHOLE_FUNCTION_INVERSE")
+    return expected, {"before": pin(original), "after": pin(expected),
+        "branch_expectation": "DETACHED_EMPTY_CURRENT_BRANCH", "unique_literal_change": True,
+        "complete_function_reverse_exact": True, "HEAD_index_owned_dirty_and_file_pins_unchanged": True}
+
+
 def _b_baseline() -> dict[str, bytes]:
     pins = decode(read_pointer(_archived_public_pointer(BASELINE_PINS)))["members"]
     prefix = "b/"
@@ -3891,6 +3907,8 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
                materials: dict[str, bytes], material_result: dict[str, Any]) -> dict[str, Any]:
     before, after = derived["before"], dict(derived["after"])
     authority, inventory = derived["authority"], derived["inventory"]
+    main_state_before = functions(before["root-source/root-ui-materialize-freeze.py"])["main_state"]
+    main_state_detached, main_state_contract = _b_detached_main_state(main_state_before)
     head = authority["source_sha"]; normal_root = Path(fixed["normal"]["root"])
     binding = decode(read_pointer(_pointer(normal_root / "qualification/CURRENT-BINDING.json")))
     data = decode(read_pointer(binding["source_data"]))
@@ -4041,7 +4059,7 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
         "changed_python_bodies":{"ms4-host.py":["verify_files_bootstrap","ui_copy_freeze_values","ui_web_connect","ui_web_networks","prerequisite_result","verify_aftersale_review_business"],
             "verify-zero-ms4-fulfillment.py":["ui_copy_freeze_values","ui_zero_network_identity","ui_zero_resource_networks","verify_aftersale_review_business"],
             "normal-close-ms4-fulfillment.py":[],
-            "root-ui-materialize-freeze.py":["main","current_known_normal_root","current_consume_materialization","current_verify_sources","frozen_materials","frozen_resources"],
+            "root-ui-materialize-freeze.py":["main","main_state","current_known_normal_root","current_consume_materialization","current_verify_sources","frozen_materials","frozen_resources"],
             "root-ui-start-to-ready.py":["main","current_core_aux_authority"]},
         "added_schema_consumer":"ms4-host.py:verify_schema_bootstrap",
         "added_finance_consumer":"ms4-host.py:verify_finance_bootstrap",
@@ -4049,6 +4067,7 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
         "added_order_menu_consumer":"ms4-host.py:verify_order_menu_bootstrap",
         "aftersale_review_image_consumer":derived["aftersale_review_image_consumer"],
         "browser_compatibility":derived["browser_compatibility"],
+        "materializer_detached_main_state":main_state_contract,
         "runtime":"NOT RUN","approval":"NOT_GRANTED_REQUIRES_INDEPENDENT_SOURCE_REVIEW"}
     after["SOURCE-CHECKS.json"] = encode(checks)
     inputs = decode(before["root-source/INPUTS.json"])
@@ -4081,6 +4100,7 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
             "latest_commit_paths":sorted(row["path"] for row in latest),"source_requirements":data["requirements"]}}
     root_m = after["root-source/root-ui-materialize-freeze.py"]
     for name,value in constants.items():root_m = _b_constant(root_m,name,value)
+    root_m = once(root_m, main_state_before, main_state_detached)
     # PREPARED now names the new B package; the original proof receipt remains
     # at the exact independently pinned path already used by both Hosts.
     proof_reference = constant(after["candidate/ms4-host.py"], "PROOF_INI_REFERENCE")
@@ -4141,14 +4161,17 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
             anchor = b"    current_b_source_review(args.source_review_file,args.source_review_sha256)\n"
             raw = once(raw,anchor,anchor+b"    current_b_normal_materialization()\n")
         extra = shared_constants + "CURRENT_B_M_OUTER = "+repr(fixed["normal"]["outer"])+"\n"+shared+review_runtime
-        # Insert before the original main dispatch, leaving all original helpers
-        # and business-stage bodies intact.
+        # Insert before the original main dispatch. The single detached branch
+        # expectation above is checked separately; other helpers stay intact.
         marker = b"if __name__ == '__main__':\n"
         after["root-source/"+name] = once(raw,marker,extra.encode()+"\n".encode()+marker)
     for name, changed in (("root-ui-materialize-freeze.py", {"main", "current_known_normal_root",
-            "current_consume_materialization", "current_verify_sources", "frozen_materials", "frozen_resources"}),
+            "main_state", "current_consume_materialization", "current_verify_sources", "frozen_materials", "frozen_resources"}),
             ("root-ui-start-to-ready.py", {"main", "current_core_aux_authority"})):
         original = functions(before["root-source/" + name]); candidate = functions(after["root-source/" + name])
+        if name == "root-ui-materialize-freeze.py":
+            require(original["main_state"] == main_state_before and candidate["main_state"] == main_state_detached,
+                    "B_ACTUAL_MAIN_STATE_EQUALS_ONLY_THE_WHOLE_FUNCTION_LITERAL_PROJECTION")
         require(all(symbol in candidate and candidate[symbol] == raw
                     for symbol, raw in original.items() if symbol not in changed),
                 "B_ALL_ORIGINAL_NON_TARGET_ROOT_AND_BUSINESS_FUNCTIONS_RAW_EXACT")
