@@ -1,0 +1,295 @@
+{
+  "schema": 1,
+  "scope": "AUTHOR_SOURCE_ONLY_READ_FUNCTION_FINITE_INVERSE_NO_SELF_SOURCE0",
+  "Root_v2_adoption": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/integrated-continuation-20261026-r1/BUILD-WINDOWS-READER-V2-ADOPTION.json",
+    "bytes": 3191,
+    "sha256": "cb9d9d4284bb79d76eb3aa41b6eac978792aa0e07e5c408aee8c143280054501"
+  },
+  "old_whole_common": {
+    "bytes": 14412,
+    "sha256": "538273c0e8d849a05855afd2dd60402d86badd21afda695a08dd39740dbd1292"
+  },
+  "new_whole_common": {
+    "bytes": 15306,
+    "sha256": "997c04f1b344841cd14e5e21f3dd4de807cd5972323b42e74e944595122bd07f"
+  },
+  "read_before": {
+    "bytes": 871,
+    "sha256": "0129657ab1ed482f21f7114096d1ec551c9847d5dc7129e434153a02f7bf9a5a"
+  },
+  "read_after": {
+    "bytes": 1765,
+    "sha256": "1b87f46707769f5645b06acb5bf8bf86b068ccd0988b9743acda10f5315c038d"
+  },
+  "read_only_whole_function_inverse_equal": true,
+  "entire_outside_read_raw": true,
+  "named_functions_same_order": [
+    "require",
+    "pin",
+    "native9",
+    "regular",
+    "read",
+    "descriptor",
+    "relative",
+    "fixed",
+    "create",
+    "put",
+    "tree",
+    "identities",
+    "native",
+    "git",
+    "qualification",
+    "repo_snapshot",
+    "frontend_source",
+    "preserved",
+    "dist_tree"
+  ],
+  "named_function_count": 19,
+  "only_changed_named_function": "read",
+  "native9_full_source": {
+    "bytes": 204,
+    "sha256": "3209384c3110a3dd421928a40a1c5fa0b5e2e9635c5b724c2da24362aad94e8c"
+  },
+  "native9_original_schema_and_raw_body_unchanged": true,
+  "every_other_function_and_callsite_raw": true,
+  "four_other_drivers_and_qualification_raw": true,
+  "fifteen_H5_leaves_raw": true,
+  "all26_r1_originals": [
+    {
+      "path": "build_common.py",
+      "r1": {
+        "bytes": 14412,
+        "sha256": "538273c0e8d849a05855afd2dd60402d86badd21afda695a08dd39740dbd1292"
+      },
+      "r2_raw_equal": false
+    },
+    {
+      "path": "DESIGN.md",
+      "r1": {
+        "bytes": 6469,
+        "sha256": "b14167c26a070ee6872b2db40414a0bc150d14bd91a10ead08d34888f332ab74"
+      },
+      "r2_raw_equal": true
+    },
+    {
+      "path": "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/index.js",
+      "r1": {
+        "bytes": 3141,
+        "sha256": "2ab66760753222a99102ed3e4b1172f50fd5d048ba5f62e0181a9da39d00b14e"
+      },
+      "r2_raw_equal": true
+    },
+    {
+      "path": "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/LICENSE",
+      "r1": {
+        "bytes": 11357,
+        "sha256": "58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd"
+      },
+      "r2_raw_equal": true
+    },
+    {
+      "path": "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/logo.png",
+      "r1": {
+        "bytes": 4023,
+        "sha256": "46719607502ebe256abff3ee000121c761708258187fb2bd6dac8443845ef32e"
+      },
+      "r2_raw_equal": true
+    },
+    {
+      "path": "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/package.json",
+      "r1": {
+        "bytes": 522,
+        "sha256": "8c92f14563f96945ba48ae076548153bf727444854f865b001adecfb67b8f0fc"
+      },
+      "r2_raw_equal": true
+    },
+    {
+      "path": "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/packages/babel-plugin-uni-api/index.js",
+      "r1": {
+        "bytes": 457,
+        "sha256": "ef9ff386de03428469dfe98e88f8e4b8cf8b9eb9a9e7b8ea75ccca0456c712af"
+      },
+      "r2_raw_equal": true
+    },
+    {
+      "path": "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/packages/webpack-optimize-plugin/api.js",
+      "r1": {
+        "bytes": 7144,
+        "sha256": "ea692c2eafea2c268e6fc2d07861a12d4e9ba551cac0a27b4b753d89e264084e"
+      },
+      "r2_raw_equal": true
+    },
+    {
+      "path": "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/packages/webpack-optimize-plugin/component.js",
+      "r1": {
+        "bytes": 1897,
+        "sha256": "a081107af8b43cc7cb04d5c1f0772a3dcaf0afe515e766979a8ca84c257f9863"
+      },
+      "r2_raw_equal": true
+    },
+    {
+      "path": "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/packages/webpack-optimize-plugin/index.js",
+      "r1": {
+        "bytes": 1208,
+        "sha256": "f8fedd62267eb0f33819ac96ea0bda4dcfe33c66e0220720e2b7b0462f42a5b4"
+      },
+      "r2_raw_equal": true
+    },
+    {
+      "path": "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/packages/webpack-optimize-plugin/util.js",
+      "r1": {
+        "bytes": 478,
+        "sha256": "aae615b10529785ef0b2aa90d8b1edd97ec53a7723880e83542b361c529e8b51"
+      },
+      "r2_raw_equal": true
+    },
+    {
+      "path": "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/packages/webpack-style-loader/index.js",
+      "r1": {
+        "bytes": 439,
+        "sha256": "69f80ff4391cf7fc2e8c3c5612b18c957d2d4d147f7bc32d3181fc2d5ac7df5a"
+      },
+      "r2_raw_equal": true
+    },
+    {
+      "path": "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/README.md",
+      "r1": {
+        "bytes": 64,
+        "sha256": "5321080250bf750ffbbe46c1047184c5bd42bd9a3cf166cdb2cd6fd9b4274484"
+      },
+      "r2_raw_equal": true
+    },
+    {
+      "path": "h5-tools/compiler-source-guards.json",
+      "r1": {
+        "bytes": 1241,
+        "sha256": "dc98c9880114884e2b166e1547fd34b75d88c2fc1d78cbee2b9b89a730cf15f1"
+      },
+      "r2_raw_equal": true
+    },
+    {
+      "path": "h5-tools/explicit-pass-preload.cjs",
+      "r1": {
+        "bytes": 12166,
+        "sha256": "a4692cdee10951f07f567170908b444ccace6ac74254bcf0a1aaf52aa1d51e44"
+      },
+      "r2_raw_equal": true
+    },
+    {
+      "path": "h5-tools/optimize-overlay-manifest.json",
+      "r1": {
+        "bytes": 2632,
+        "sha256": "25419be4b7106b148c6744798942be56faba17ea97286c76dc55855da85c4ec5"
+      },
+      "r2_raw_equal": true
+    },
+    {
+      "path": "h5-tools/stylus-inputs.json",
+      "r1": {
+        "bytes": 6986,
+        "sha256": "c8c6303316ef15daa79c31a5f80feb76177a4b1d032dc506e775e33a3405d499"
+      },
+      "r2_raw_equal": true
+    },
+    {
+      "path": "h5_build.py",
+      "r1": {
+        "bytes": 12319,
+        "sha256": "ecc9358ebf4d171b054a33e5b1c7855caa5803d863b01469b3d9d0731c46d18b"
+      },
+      "r2_raw_equal": true
+    },
+    {
+      "path": "launch.py",
+      "r1": {
+        "bytes": 2554,
+        "sha256": "370c3565af6c7de13a40a9a0998f28577b13b79f7661d2f6b327137fda0cf660"
+      },
+      "r2_raw_equal": true
+    },
+    {
+      "path": "PINS.json",
+      "r1": {
+        "bytes": 4822,
+        "sha256": "889a3dd469baafd97cf373ea33494f3fd653f8a34482ff33b90339ec31abb56d"
+      },
+      "r2_raw_equal": false
+    },
+    {
+      "path": "PROVENANCE.json",
+      "r1": {
+        "bytes": 23134,
+        "sha256": "e1899345d9e12635d7ee285f34e82ecb6c3faef1598403dba824e3525d8b64e0"
+      },
+      "r2_raw_equal": true
+    },
+    {
+      "path": "QUALIFICATION.json",
+      "r1": {
+        "bytes": 378,
+        "sha256": "459933c3a83ebd431d0b769fd5f2db0e186585af52960a8945ad96a5ec68213b"
+      },
+      "r2_raw_equal": true
+    },
+    {
+      "path": "README.md",
+      "r1": {
+        "bytes": 2927,
+        "sha256": "0a90290fc82152263e40736f34c8e2a14fa6c4bdab4122ef0f8187d37e218ea4"
+      },
+      "r2_raw_equal": true
+    },
+    {
+      "path": "root-build.py",
+      "r1": {
+        "bytes": 4006,
+        "sha256": "71b8ba80deceb1ab1d14d8dc91c86a07c3336a1e6360f7baded2da88be3333c4"
+      },
+      "r2_raw_equal": true
+    },
+    {
+      "path": "SOURCE-REPORT.json",
+      "r1": {
+        "bytes": 5712,
+        "sha256": "c8644f733530f0cc711b17023d3336744975c1644d344bfa8b59d3f8fb907283"
+      },
+      "r2_raw_equal": false
+    },
+    {
+      "path": "windows_build.py",
+      "r1": {
+        "bytes": 10945,
+        "sha256": "26539f48a225625030f53df8fda204773213c35ca30e0da98467d0443f3453c5"
+      },
+      "r2_raw_equal": true
+    }
+  ],
+  "all26_immutable_r1_files_read_back_exact": true,
+  "complete_modified_original_preimages": [
+    "build_common.py.r1",
+    "R1-PINS.json",
+    "R1-SOURCE-REPORT.json"
+  ],
+  "new_reader_semantics_source_only": {
+    "each_path_full9_including_mode_ctime_before_after": true,
+    "each_FD_full9_including_mode_ctime_open_after": true,
+    "cross_API_shared": [
+      "st_dev",
+      "st_ino",
+      "st_nlink",
+      "st_uid",
+      "st_gid",
+      "st_size",
+      "st_mtime_ns"
+    ],
+    "explicit_birth_each_and_cross_same": true,
+    "both_S_IFMT_regular": true,
+    "complete_EOF_length_and_original_hash_consumers": true,
+    "regular_no_link_reparse_before_and_after": true,
+    "fallback_or_ctime_conversion": false
+  },
+  "actual_candidate_parse_compile_import_execution": "NOT_PERFORMED",
+  "Node_npm_HBuilderX_Docker_build_or_targets": "NOT_RUN",
+  "future_final_HEAD_Val_M_build_Run": "UNBOUND"
+}

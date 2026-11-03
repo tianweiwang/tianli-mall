@@ -30,7 +30,61 @@ def load_json(raw):
     return json.loads(raw.decode('utf-8'), object_pairs_hook=unique_object)
 
 
-def verify_public_donors(root, manifest):
+def verify_frontend_public_inputs(root, manifest):
+    """Fixed source/metadata closure; never inspect Node or dependency contents."""
+    origin = 'H:/天俪商城/artifacts/project-organization-20261023'
+    package = 'integrated-three-frontend-build-source-r5'
+    baseline_name = 'sources/' + package + '/PINS.json'
+    baseline_raw = (root / baseline_name).read_bytes()
+    require((len(baseline_raw), hashlib.sha256(baseline_raw).hexdigest()) ==
+            (9207, 'c2add24a609ff5185a9f4f971d0455a5a783cf9b55b4eedb16e599a6efec462d'),
+            'Exact original frontend source PINS')
+    baseline = load_json(baseline_raw)
+    require(baseline['schema'] == 1 and baseline['scope'] == 'SOURCE_ONLY_NOT_BUILD_OR_RUNTIME_SEAL'
+            and len(baseline['files']) == 53 and len(baseline['directories']) == 11,
+            'Complete original frontend source packet')
+    authority_prefix = 'sources/integrated-continuation-20261026-r1/'
+    authorities = {
+        'admin': {'path': authority_prefix + 'dependency-preflight-r2/admin.json', 'bytes': 11566525,
+                  'sha256': '7535000a19b35dc4683a3ec5c6da40ccf857c89198d3b0e074d0ab727145eb7d'},
+        'merchant': {'path': authority_prefix + 'dependency-preflight-r2/merchant.json', 'bytes': 4271550,
+                     'sha256': 'faea7f5e40b5c0f4e172419675b35b7d85f5779a57cc86ab4c414940f946889b'},
+        'h5': {'path': authority_prefix + 'CURRENT-H5-DEPENDENCY-AUTHORITY.json', 'bytes': 5704609,
+               'sha256': 'dacec90c49dadcdd760e0f81facc1cf1e5668595219e33b7af1592d750de140c'},
+        'npm': {'path': authority_prefix + 'dependency-preflight-r2/npm.json', 'bytes': 337444,
+                'sha256': '559ee2b39970215ac32b56550b4f96b080d6e714e64b0f745652f021f2b9d675'},
+    }
+    baseline_pin = {'path': baseline_name, 'bytes': len(baseline_raw), 'sha256': hashlib.sha256(baseline_raw).hexdigest()}
+    wanted = {baseline_name: baseline_pin}
+    for name, row in baseline['files'].items():
+        pure = PurePosixPath(name)
+        require(not pure.is_absolute() and '..' not in pure.parts and str(pure) == name and '\\' not in name,
+                'Closed original frontend source path')
+        wanted['sources/' + package + '/' + name] = row
+    wanted.update({row['path']: row for row in authorities.values()})
+    empty = 'h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/.tmp'
+    parents = {str(parent) for name in baseline['files'] for parent in PurePosixPath(name).parents if str(parent) != '.'}
+    require(set(baseline['directories']) - parents == {empty}, 'Only declared empty frontend source directory')
+    packet_root = root / 'sources' / package
+    actual_directories = {path.relative_to(packet_root).as_posix() for path in packet_root.rglob('*') if path.is_dir()}
+    require(actual_directories == parents, 'Exact archived frontend directory set without empty tmp')
+    expected = {'schema': 1, 'scope': 'FIXED_THREE_FRONTEND_PUBLIC_SOURCE_INPUTS', 'origin_root': origin,
+                'baseline_pin': baseline_pin, 'authority_inputs': authorities,
+                'required': list(wanted), 'declared_empty_directories': [empty]}
+    require(len(wanted) == 58 and manifest.get('frontend_build_public_inputs') == expected,
+            'Exact frontend public fifty-eight allowlist')
+    indexed = {row['path']: row for row in manifest['files']}
+    for name, pin in wanted.items():
+        row = indexed[name]
+        require(row['origin_root'] == origin and row['origin_relative_path'] == name[len('sources/'):]
+                and row['package'] == PurePosixPath(name).parts[1]
+                and {key: row[key] for key in ['bytes', 'sha256']} == {key: pin[key] for key in ['bytes', 'sha256']},
+                'Frontend original logical origin and complete bytes')
+    require(sum(indexed[name]['bytes'] for name in wanted) == 27094591, 'Fixed frontend public total bytes')
+    return set(wanted)
+
+
+def verify_public_donors(root, manifest, frontend_public):
     """Check only the fixed public author inputs; historical Run evidence is absent."""
     core_package = 'integrated-normal-and-b-source-tree-source-r3'
     normal_package = 'currentb54-next-normal-preparation-r3'
@@ -67,7 +121,7 @@ def verify_public_donors(root, manifest):
     require(len(expected) == 60, 'Fixed public donor sixty files')
     indexed = {row['path']: row for row in manifest['files']}
     actual = {row['path'] for row in manifest['files'] if 'origin_root' in row}
-    require(actual == expected, 'Public donor origin fields only on fixed sources')
+    require(actual == expected | frontend_public, 'Public origin fields only on fixed sixty plus frontend fifty-eight')
     for name in expected:
         row = indexed[name]
         require(row['origin_root'] == origin
@@ -150,7 +204,8 @@ def main():
         require('sources/' + rel not in expected, 'Draft status must be updated before adding: ' + rel)
     for rel in manifest['required_design_clarifications']:
         require('sources/' + rel in expected, 'Design clarification missing: ' + rel)
-    public_donors = verify_public_donors(root, manifest)
+    frontend_public = verify_frontend_public_inputs(root, manifest)
+    public_donors = verify_public_donors(root, manifest, frontend_public)
     dependencies = load_json((root / 'runtime-dependencies.json').read_bytes())
     require(dependencies['runtime_ready'] is False, 'Runtime readiness cannot be inferred from source verification')
     print(json.dumps({
@@ -161,6 +216,7 @@ def main():
         'python_ast_parsed': python_count,
         'json_parsed': json_count,
         'public_donors_verified': public_donors,
+        'frontend_public_inputs_verified': len(frontend_public),
         'archived_programs_executed': False,
         'runtime_ready': False,
         'runtime_dependencies': 'runtime-dependencies.json',

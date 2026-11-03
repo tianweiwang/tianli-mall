@@ -1,0 +1,62 @@
+{
+  "scope": "SOURCE_ONLY_NO_CANDIDATE_EXECUTION",
+  "edits": [
+    {
+      "name": "dedicated_helper_insert",
+      "stage_offset": 761,
+      "before": "def dependency_window(authority):\n",
+      "after": "def stylus_tree(context, phase, authority):\n    \"\"\"Only the four Root-proven internal LX npm CLI aliases, never follow links.\"\"\"\n    import os\n    import stat\n    from build_common import native9, regular, relative\n\n    require(phase in ('before', 'after'), 'FIXED_STYLUS_OBSERVATION_PHASE')\n    require(set(authority) == {'root', 'files', 'directories', 'links'}\n            and authority['root'] == STYLUS.as_posix(), 'FIXED_STYLUS_FOUR_FIELD_AUTHORITY')\n    expected_links = {\n        'node_modules/.bin/atob': {'target': '../atob/bin/atob.js', 'resolved_relative': 'node_modules/atob/bin/atob.js',\n            'reparse_query': {'bytes': 256, 'sha256': '86ae39fbac50827824de5a9f5b8a0ce09c0cd056d41db329f5e3206fbe4a4ad5'}},\n        'node_modules/.bin/mkdirp': {'target': '../mkdirp/bin/cmd.js', 'resolved_relative': 'node_modules/mkdirp/bin/cmd.js',\n            'reparse_query': {'bytes': 257, 'sha256': 'c300741ddd380322ba0a19c991b225f7362fb54802e0529561936422a40eeb43'}},\n        'node_modules/.bin/semver': {'target': '../semver/bin/semver.js', 'resolved_relative': 'node_modules/semver/bin/semver.js',\n            'reparse_query': {'bytes': 260, 'sha256': 'd8fb0493d05cee7e1eec24334796132e19f8b06f2844449f5a9a97cd3a631508'}},\n        'node_modules/.bin/stylus': {'target': '../stylus/bin/stylus', 'resolved_relative': 'node_modules/stylus/bin/stylus',\n            'reparse_query': {'bytes': 257, 'sha256': '8e36385f941ef4d04dbf6a4fc8f949599222254a729018b42d8ea1daec62e11f'}},\n    }\n    expected_bins = {'atob': {'atob': 'bin/atob.js'}, 'mkdirp': 'bin/cmd.js',\n                     'semver': {'semver': './bin/semver.js'}, 'stylus': {'stylus': './bin/stylus'}}\n    require(authority['links'] == expected_links and type(authority['files']) is dict\n            and type(authority['directories']) is list and len(authority['files']) == 338\n            and len(authority['directories']) == 57, 'EXACT_STYLUS338_DIRECTORIES57_ALIASES4')\n    regular(STYLUS, True)\n    require(STYLUS.resolve(strict=True) == STYLUS, 'ORDINARY_FIXED_STYLUS_ROOT')\n    files, directories, links, alias_states, directory_states = {}, [], {}, {}, {}\n    fields = ('st_dev', 'st_ino', 'st_mode', 'st_nlink', 'st_uid', 'st_gid', 'st_size', 'st_mtime_ns', 'st_ctime_ns')\n    def walk_error(error):\n        raise error\n    for current, children, leaves in os.walk(STYLUS, topdown=True, followlinks=False, onerror=walk_error):\n        base = Path(current)\n        regular(base, True)\n        directory_states[base.relative_to(STYLUS).as_posix()] = native9(base)\n        children.sort()\n        for name in children:\n            path = base / name\n            regular(path, True)\n            directories.append(relative(path.relative_to(STYLUS).as_posix()))\n        for name in sorted(leaves):\n            path = base / name\n            name = relative(path.relative_to(STYLUS).as_posix())\n            facts = path.lstat()\n            if name not in expected_links:\n                regular(path)\n                files[name] = pin(read(path))\n                continue\n            before = native9(path)\n            birth = getattr(facts, 'st_birthtime_ns', None)\n            require([getattr(facts, key) for key in fields] == before\n                    and getattr(facts, 'st_file_attributes', 0) & 1024\n                    and getattr(facts, 'st_reparse_tag', None) == 0xA000001D\n                    and not stat.S_ISDIR(facts.st_mode) and type(birth) is int,\n                    'EXACT_LX_STYLUS_ALIAS_IDENTITY')\n            query, terminal = native(context, 'h5-stylus-' + phase + '-alias-' + path.name,\n                ['C:/Windows/System32/fsutil.exe', 'reparsepoint', 'query', str(path)])\n            require(terminal['native_exit'] == terminal['wait_returncode'] == 0\n                    and terminal['stderr']['bytes'] == 0\n                    and pin(query) == expected_links[name]['reparse_query'], 'EXACT_FULL_NATIVE_STYLUS_REPARSE_QUERY')\n            after = path.lstat()\n            require(native9(path) == before and [getattr(after, key) for key in fields] == before\n                    and getattr(after, 'st_birthtime_ns', None) == birth\n                    and getattr(after, 'st_reparse_tag', None) == 0xA000001D\n                    and getattr(after, 'st_file_attributes', None) == getattr(facts, 'st_file_attributes', None),\n                    'STYLUS_ALIAS_UNCHANGED_AFTER_NATIVE_QUERY')\n            links[name] = expected_links[name]\n            alias_states[name] = {'native9': before, 'birthtime_ns': birth,\n                'reparse_tag': facts.st_reparse_tag, 'file_attributes': facts.st_file_attributes,\n                'reparse_query': pin(query)}\n    value = {'files': dict(sorted(files.items())), 'directories': sorted(directories), 'links': dict(sorted(links.items()))}\n    require(value == {key: authority[key] for key in ('files', 'directories', 'links')}\n            and len(files) == 338 and len(directories) == 57 and len(links) == 4\n            and sum(row['bytes'] for row in files.values()) == 1965844,\n            'COMPLETE_STYLUS_REGULAR_BYTES_DIRECTORIES_AND_ONLY_FOUR_ALIASES')\n    names = [*files, *directories, *links]\n    require(len({name.casefold() for name in names}) == len(names), 'NO_STYLUS_CASE_OR_KIND_COLLISION')\n    for name, row in expected_links.items():\n        target = STYLUS / row['resolved_relative']\n        require(row['resolved_relative'] in files and target.resolve(strict=True) == target,\n                'STYLUS_ALIAS_TARGET_IS_QUALIFIED_INTERNAL_REGULAR_FILE')\n        regular(target)\n        require(pin(read(target)) == files[row['resolved_relative']], 'STYLUS_ALIAS_REAL_TARGET_FULL_BYTES')\n        package = json.loads(read(STYLUS / 'node_modules' / Path(name).name / 'package.json'))\n        require(package['name'] == Path(name).name and package['bin'] == expected_bins[Path(name).name],\n                'STYLUS_ALIAS_EXACT_REAL_DECLARED_NPM_PACKAGE_BIN')\n    for name, state in directory_states.items():\n        path = STYLUS if name == '.' else STYLUS / name\n        regular(path, True)\n        require(native9(path) == state, 'STYLUS_DIRECTORY_IDENTITIES_PRESERVED_DURING_FULL_READ')\n    return {'tree': value, 'native9': identities(STYLUS, value['files']),\n            'directory_native9': directory_states, 'alias_identities': alias_states}\n\n\ndef dependency_window(context, phase, authority):\n",
+      "stage_before": {
+        "bytes": 12319,
+        "sha256": "ecc9358ebf4d171b054a33e5b1c7855caa5803d863b01469b3d9d0731c46d18b"
+      },
+      "stage_after": {
+        "bytes": 18630,
+        "sha256": "29a8d96831d00b530ba8340b83a34c7fccf60306b3dd8b6045639635c5d254d2"
+      }
+    },
+    {
+      "name": "only_stylus_dispatch",
+      "stage_offset": 7291,
+      "before": "        require(set(row) == {'root', 'files', 'directories'} and Path(row['root']).resolve() == root.resolve(), 'FIXED_H5_DEPENDENCY_ROOT')\n        value = tree(root, True)\n        require(value == {key: row[key] for key in ['files', 'directories']}, 'COMPLETE_FIXED_COMPILER_OR_STYLUS_TREE')\n        snapshots[name] = {'tree': value, 'native9': identities(root, value['files'])}\n",
+      "after": "        if name == 'compile-stylus':\n            snapshots[name] = stylus_tree(context, phase, row)\n        else:\n            require(set(row) == {'root', 'files', 'directories'} and Path(row['root']).resolve() == root.resolve(), 'FIXED_H5_DEPENDENCY_ROOT')\n            value = tree(root, True)\n            require(value == {key: row[key] for key in ['files', 'directories']}, 'COMPLETE_FIXED_COMPILER_OR_STYLUS_TREE')\n            snapshots[name] = {'tree': value, 'native9': identities(root, value['files'])}\n",
+      "stage_before": {
+        "bytes": 18630,
+        "sha256": "29a8d96831d00b530ba8340b83a34c7fccf60306b3dd8b6045639635c5d254d2"
+      },
+      "stage_after": {
+        "bytes": 18760,
+        "sha256": "4a3c20e91804a52cd5500101a7b04eb0b909d7d2a83cc20529794b90f35748d0"
+      }
+    },
+    {
+      "name": "actual_before_caller",
+      "stage_offset": 11714,
+      "before": "dependencies_before = dependency_window(authority)",
+      "after": "dependencies_before = dependency_window(context, 'before', authority)",
+      "stage_before": {
+        "bytes": 18760,
+        "sha256": "4a3c20e91804a52cd5500101a7b04eb0b909d7d2a83cc20529794b90f35748d0"
+      },
+      "stage_after": {
+        "bytes": 18779,
+        "sha256": "d8c114a05d22e404abf08dfd59c015eb26e35c5dbe397b0caf7556d449a39a52"
+      }
+    },
+    {
+      "name": "actual_after_caller",
+      "stage_offset": 17639,
+      "before": "require(dependency_window(authority) == dependencies_before",
+      "after": "require(dependency_window(context, 'after', authority) == dependencies_before",
+      "stage_before": {
+        "bytes": 18779,
+        "sha256": "d8c114a05d22e404abf08dfd59c015eb26e35c5dbe397b0caf7556d449a39a52"
+      },
+      "stage_after": {
+        "bytes": 18797,
+        "sha256": "e093b2248d9a4eb6b181775653dce1ed4b2476261dcfc27850918ec6818b515f"
+      }
+    }
+  ],
+  "whole_inverse_equal": true
+}

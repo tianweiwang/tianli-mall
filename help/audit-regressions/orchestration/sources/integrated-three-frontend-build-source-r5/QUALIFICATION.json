@@ -1,0 +1,42 @@
+{
+  "schema": 1,
+  "scope": "ROOT_SAME_CLEAN_HEAD_THREE_BUILD_QUALIFICATION",
+  "sealed": true,
+  "head": "923723639489e388e2142f81450a084715baf1cb",
+  "parent": "40f6f9694c65f078ea785f0e3bcd8827089c7cc3",
+  "source_repo": "H:/天俪商城/worktrees/multi-merchant-integrated",
+  "validation_repo": "H:/天俪商城/worktrees/ms4-chat-integrated-normal-check-r1",
+  "full_tree": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/integrated-three-frontend-build-source-r5/FULL-TREE.json",
+    "bytes": 4820809,
+    "sha256": "8c205b64636659c412a8926757bd789c23406d7a065b449b81b6e9820916b2d9"
+  },
+  "source_authority": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/integrated-chat-source-tree-qualification-r1/RESULT.json",
+    "bytes": 1130,
+    "sha256": "833cd2bba966fc5c72e3ea05ffb9bb4394708d3aa0a34399988a85c7f6a80ee1"
+  },
+  "dependency_authority": {
+    "admin": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/integrated-continuation-20261026-r1/dependency-preflight-r2/admin.json",
+      "bytes": 11566525,
+      "sha256": "7535000a19b35dc4683a3ec5c6da40ccf857c89198d3b0e074d0ab727145eb7d"
+    },
+    "merchant": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/integrated-continuation-20261026-r1/dependency-preflight-r2/merchant.json",
+      "bytes": 4271550,
+      "sha256": "faea7f5e40b5c0f4e172419675b35b7d85f5779a57cc86ab4c414940f946889b"
+    },
+    "h5": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/integrated-continuation-20261026-r1/CURRENT-H5-DEPENDENCY-AUTHORITY.json",
+      "bytes": 5704609,
+      "sha256": "dacec90c49dadcdd760e0f81facc1cf1e5668595219e33b7af1592d750de140c"
+    }
+  },
+  "npm_runtime_authority": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/integrated-continuation-20261026-r1/dependency-preflight-r2/npm.json",
+    "bytes": 337444,
+    "sha256": "559ee2b39970215ac32b56550b4f96b080d6e714e64b0f745652f021f2b9d675"
+  },
+  "output_parent": "H:/天俪商城/artifacts/project-organization-20261023/build-runs"
+}

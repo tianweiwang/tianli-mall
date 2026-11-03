@@ -1,0 +1,17 @@
+def read(path):
+    path = Path(path)
+    regular(path)
+    before = native9(path)
+    with path.open('rb') as handle:
+        opened = os.fstat(handle.fileno())
+        require([opened.st_dev, opened.st_ino, opened.st_mode, opened.st_nlink,
+                 opened.st_uid, opened.st_gid, opened.st_size, opened.st_mtime_ns,
+                 opened.st_ctime_ns] == before, 'SAME_NAMED_OPEN_FILE')
+        raw = handle.read()
+        require(handle.read(1) == b'' and len(raw) == opened.st_size, 'COMPLETE_EOF_READ')
+        final = os.fstat(handle.fileno())
+        require([final.st_dev, final.st_ino, final.st_mode, final.st_nlink,
+                 final.st_uid, final.st_gid, final.st_size, final.st_mtime_ns,
+                 final.st_ctime_ns] == before, 'SAME_OPEN_FILE_AFTER_READ')
+    require(native9(path) == before, 'SAME_NAMED_FILE_AFTER_READ')
+    return raw

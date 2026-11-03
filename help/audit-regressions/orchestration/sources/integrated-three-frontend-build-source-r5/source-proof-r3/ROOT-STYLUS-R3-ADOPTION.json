@@ -1,0 +1,67 @@
+{
+  "date": "2026-10-26",
+  "status": "ROOT_ACTUAL_FOUR_INTERNAL_DECLARED_LX_NPM_CLI_ALIAS_FINITE_H5_ONLY_SOURCE_R3_ADAPTER_ADOPTED",
+  "actual_readback": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/integrated-continuation-20261026-r1/stylus-link-preflight-r3/RESULT.json",
+    "bytes": 4828,
+    "sha256": "392c53a654986e6c09dcacc058222f609848b1e9287d0be13c668d5d0fda30fa"
+  },
+  "actual_Stylus_authority": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/integrated-continuation-20261026-r1/stylus-link-preflight-r3/STYLUS-AUTHORITY.json",
+    "bytes": 56867,
+    "sha256": "24535d0fc3449ab2553008ac18a6eb73c01dbf695f619b8c2b2661192a4bdbc3"
+  },
+  "actual_aliases": {
+    "node_modules/.bin/atob": {
+      "target": "../atob/bin/atob.js",
+      "resolved_relative": "node_modules/atob/bin/atob.js",
+      "reparse_query": {
+        "bytes": 256,
+        "sha256": "86ae39fbac50827824de5a9f5b8a0ce09c0cd056d41db329f5e3206fbe4a4ad5"
+      }
+    },
+    "node_modules/.bin/mkdirp": {
+      "target": "../mkdirp/bin/cmd.js",
+      "resolved_relative": "node_modules/mkdirp/bin/cmd.js",
+      "reparse_query": {
+        "bytes": 257,
+        "sha256": "c300741ddd380322ba0a19c991b225f7362fb54802e0529561936422a40eeb43"
+      }
+    },
+    "node_modules/.bin/semver": {
+      "target": "../semver/bin/semver.js",
+      "resolved_relative": "node_modules/semver/bin/semver.js",
+      "reparse_query": {
+        "bytes": 260,
+        "sha256": "d8fb0493d05cee7e1eec24334796132e19f8b06f2844449f5a9a97cd3a631508"
+      }
+    },
+    "node_modules/.bin/stylus": {
+      "target": "../stylus/bin/stylus",
+      "resolved_relative": "node_modules/stylus/bin/stylus",
+      "reparse_query": {
+        "bytes": 257,
+        "sha256": "8e36385f941ef4d04dbf6a4fc8f949599222254a729018b42d8ea1daec62e11f"
+      }
+    }
+  },
+  "actual_4_native_8_full_raw_bytes": 1030,
+  "adopted_source_scope": "New immutable integrated-three-frontend-build-source-r3 from full unchanged r2; only h5_build.py dedicated Stylus tree reader, dependency_window signature and exactly two before/after callsites plus necessary design/provenance/seals",
+  "adopted_design": [
+    "Keep build_common.py and its generic tree/regular/read and all Windows/admin/merchant/npm/Git source/output no-link rules byte-exact r2",
+    "Keep original Stylus cache and original four aliases unchanged; no flattening, deletion, relocation, symlink following or blanket reparse allowance",
+    "Dedicated H5 compile-stylus namespace includes all338 regular files/all57 directories plus exact four named node_modules/.bin aliases; every other reparse or directory link rejects",
+    "Each alias must have actual Windows LX tag0xA000001D and unchanged native9/birth identity; target/resolved_relative exactly the adopted rooted npm-package bin map and corresponding real regular target file",
+    "Read each alias with fixed C:/Windows/System32/fsutil.exe reparsepoint query through existing full-native recorder; compare exact complete raw stdout against genuine Root authority reparse_query and require empty stderr/natural0, without localized-header parsing",
+    "Other four H5 roots retain exact original3-field authority and strict regular trees; only Stylus authority uses root/files/directories/links",
+    "Verify all338 regular bytes/identities and all alias native/metadata before and after real build, using unique before/after native labels; preserve original30 Stylus leaves/28 package versions, 8guards/11overlays/2passes/dist joins and ordinary helper cleanup"
+  ],
+  "runtime_authority": "ALL_NONE; actual dependencies proven only, finalHEAD/M/Val/A/build/Run not sealed",
+  "prior_readonly_failures_preserved": [
+    "Original full dependency session29533 actual exit1 at first reparse after7 completed roots",
+    "Root metadata reader ASCII assumption post-native0 exit1",
+    "Root metadata reader wrong assumed semver target post-three-native0 exit1; actual target ends semver.js"
+  ],
+  "implementation": "NOT_YET_APPLIED",
+  "candidate_import_execution_build_or_target": "NOT_RUN"
+}

@@ -1,0 +1,231 @@
+{
+  "schema": 1,
+  "scope": "SOURCE_ONLY_NOT_BUILD_OR_RUNTIME_SEAL",
+  "files": {
+    "DESIGN.md": {
+      "bytes": 6469,
+      "sha256": "b14167c26a070ee6872b2db40414a0bc150d14bd91a10ead08d34888f332ab74"
+    },
+    "FULL-TREE.json": {
+      "bytes": 4820809,
+      "sha256": "8c205b64636659c412a8926757bd789c23406d7a065b449b81b6e9820916b2d9"
+    },
+    "PROVENANCE.json": {
+      "bytes": 23134,
+      "sha256": "e1899345d9e12635d7ee285f34e82ecb6c3faef1598403dba824e3525d8b64e0"
+    },
+    "QUALIFICATION.json": {
+      "bytes": 2097,
+      "sha256": "2ce29d5cfea33478df20cc8960a0851ae6211ee580c688121b1ac5f907e022d2"
+    },
+    "R5-SOURCE-DERIVATION.json": {
+      "bytes": 5262,
+      "sha256": "95ba05452dec06036762d31c65f43556878595fec7f27fe9d7c24f0da42c71e0"
+    },
+    "READER-FIX-DESIGN.md": {
+      "bytes": 3622,
+      "sha256": "2fad384d6aad2a061311af202eef49c81a54d60887e91be87b98a430fa9a1af1"
+    },
+    "README.md": {
+      "bytes": 3921,
+      "sha256": "f20ebd0983b28b0e2fbfb50c8eed5a75230e1f6ad939df32852b8049f280c0a3"
+    },
+    "SOURCE-REPORT.json": {
+      "bytes": 15853,
+      "sha256": "13f5568ca2998735308264a5fb34bce261afaf5b59a17e7a7be8f03f4d378e28"
+    },
+    "STYLUS-ALIASES-DESIGN.md": {
+      "bytes": 4055,
+      "sha256": "4e0d8795ac760d31283df6e061d09837d8c65c954498fe2f60d748b1ae123fe6"
+    },
+    "build_common.py": {
+      "bytes": 15497,
+      "sha256": "83fd9cce742a4d0c75d417c77a5e0d76887f9665e8f98697723e2b462c383548"
+    },
+    "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/LICENSE": {
+      "bytes": 11357,
+      "sha256": "58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd"
+    },
+    "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/README.md": {
+      "bytes": 64,
+      "sha256": "5321080250bf750ffbbe46c1047184c5bd42bd9a3cf166cdb2cd6fd9b4274484"
+    },
+    "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/index.js": {
+      "bytes": 3141,
+      "sha256": "2ab66760753222a99102ed3e4b1172f50fd5d048ba5f62e0181a9da39d00b14e"
+    },
+    "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/logo.png": {
+      "bytes": 4023,
+      "sha256": "46719607502ebe256abff3ee000121c761708258187fb2bd6dac8443845ef32e"
+    },
+    "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/package.json": {
+      "bytes": 522,
+      "sha256": "8c92f14563f96945ba48ae076548153bf727444854f865b001adecfb67b8f0fc"
+    },
+    "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/packages/babel-plugin-uni-api/index.js": {
+      "bytes": 457,
+      "sha256": "ef9ff386de03428469dfe98e88f8e4b8cf8b9eb9a9e7b8ea75ccca0456c712af"
+    },
+    "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/packages/webpack-optimize-plugin/api.js": {
+      "bytes": 7144,
+      "sha256": "ea692c2eafea2c268e6fc2d07861a12d4e9ba551cac0a27b4b753d89e264084e"
+    },
+    "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/packages/webpack-optimize-plugin/component.js": {
+      "bytes": 1897,
+      "sha256": "a081107af8b43cc7cb04d5c1f0772a3dcaf0afe515e766979a8ca84c257f9863"
+    },
+    "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/packages/webpack-optimize-plugin/index.js": {
+      "bytes": 1208,
+      "sha256": "f8fedd62267eb0f33819ac96ea0bda4dcfe33c66e0220720e2b7b0462f42a5b4"
+    },
+    "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/packages/webpack-optimize-plugin/util.js": {
+      "bytes": 478,
+      "sha256": "aae615b10529785ef0b2aa90d8b1edd97ec53a7723880e83542b361c529e8b51"
+    },
+    "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/packages/webpack-style-loader/index.js": {
+      "bytes": 439,
+      "sha256": "69f80ff4391cf7fc2e8c3c5612b18c957d2d4d147f7bc32d3181fc2d5ac7df5a"
+    },
+    "h5-tools/compiler-source-guards.json": {
+      "bytes": 1241,
+      "sha256": "dc98c9880114884e2b166e1547fd34b75d88c2fc1d78cbee2b9b89a730cf15f1"
+    },
+    "h5-tools/explicit-pass-preload.cjs": {
+      "bytes": 12166,
+      "sha256": "a4692cdee10951f07f567170908b444ccace6ac74254bcf0a1aaf52aa1d51e44"
+    },
+    "h5-tools/optimize-overlay-manifest.json": {
+      "bytes": 2632,
+      "sha256": "25419be4b7106b148c6744798942be56faba17ea97286c76dc55855da85c4ec5"
+    },
+    "h5-tools/stylus-inputs.json": {
+      "bytes": 6986,
+      "sha256": "c8c6303316ef15daa79c31a5f80feb76177a4b1d032dc506e775e33a3405d499"
+    },
+    "h5_build.py": {
+      "bytes": 18797,
+      "sha256": "e093b2248d9a4eb6b181775653dce1ed4b2476261dcfc27850918ec6818b515f"
+    },
+    "launch.py": {
+      "bytes": 2554,
+      "sha256": "370c3565af6c7de13a40a9a0998f28577b13b79f7661d2f6b327137fda0cf660"
+    },
+    "root-build.py": {
+      "bytes": 4006,
+      "sha256": "71b8ba80deceb1ab1d14d8dc91c86a07c3336a1e6360f7baded2da88be3333c4"
+    },
+    "source-proof-r2/R1-BASELINE.json": {
+      "bytes": 5277,
+      "sha256": "f3ebb33067450d0502be0e3eadd81f582151dcf42bbf1dc6eb45e558056d7775"
+    },
+    "source-proof-r2/R1-PINS.json": {
+      "bytes": 4822,
+      "sha256": "889a3dd469baafd97cf373ea33494f3fd653f8a34482ff33b90339ec31abb56d"
+    },
+    "source-proof-r2/R1-SOURCE-REPORT.json": {
+      "bytes": 5712,
+      "sha256": "c8644f733530f0cc711b17023d3336744975c1644d344bfa8b59d3f8fb907283"
+    },
+    "source-proof-r2/ROOT-READER-V2-ADOPTION.json": {
+      "bytes": 3191,
+      "sha256": "cb9d9d4284bb79d76eb3aa41b6eac978792aa0e07e5c408aee8c143280054501"
+    },
+    "source-proof-r2/SOURCE-PRESERVATION.json": {
+      "bytes": 8712,
+      "sha256": "e64e22257e129ace848d2625b77d676a2c6af8577c04245d171bf3712841fff7"
+    },
+    "source-proof-r2/build_common.py.diff": {
+      "bytes": 2472,
+      "sha256": "dfb8f94d2dbde980dc037af860de1a24bf9e88637bec03e1569ec31c59b821e9"
+    },
+    "source-proof-r2/build_common.py.r1": {
+      "bytes": 14412,
+      "sha256": "538273c0e8d849a05855afd2dd60402d86badd21afda695a08dd39740dbd1292"
+    },
+    "source-proof-r2/read.after.source": {
+      "bytes": 1765,
+      "sha256": "1b87f46707769f5645b06acb5bf8bf86b068ccd0988b9743acda10f5315c038d"
+    },
+    "source-proof-r2/read.before.source": {
+      "bytes": 871,
+      "sha256": "0129657ab1ed482f21f7114096d1ec551c9847d5dc7129e434153a02f7bf9a5a"
+    },
+    "source-proof-r3/FINITE-EDITS.json": {
+      "bytes": 9339,
+      "sha256": "e0e9d6ffb7361fddb34b1aa7d0b3fafdd843a25114f10f731072d18abfa06bd4"
+    },
+    "source-proof-r3/R2-BASELINE.json": {
+      "bytes": 6631,
+      "sha256": "6dccc36913366952eefd7967684ce5936df4b6dea1f59fd40849a790998ec9ea"
+    },
+    "source-proof-r3/R2-PINS.json": {
+      "bytes": 6394,
+      "sha256": "9ded7bcbc7f3726ac31ee3a23baeb193bbbccfb66a28d57422d4a87a4515cd0b"
+    },
+    "source-proof-r3/R2-SOURCE-REPORT.json": {
+      "bytes": 12014,
+      "sha256": "4fc7008195429b95faf163c933cba3a1bac528b250635a9c7e2c22c92d59ef2c"
+    },
+    "source-proof-r3/ROOT-STYLUS-AUTHORITY.json": {
+      "bytes": 56867,
+      "sha256": "24535d0fc3449ab2553008ac18a6eb73c01dbf695f619b8c2b2661192a4bdbc3"
+    },
+    "source-proof-r3/ROOT-STYLUS-R3-ADOPTION.json": {
+      "bytes": 4094,
+      "sha256": "f9d8520533ba2d0e8ec3c5377661644b58dd4fd224ac8f8c09caf09d7cc22bc5"
+    },
+    "source-proof-r3/ROOT-STYLUS-RESULT.json": {
+      "bytes": 4828,
+      "sha256": "392c53a654986e6c09dcacc058222f609848b1e9287d0be13c668d5d0fda30fa"
+    },
+    "source-proof-r3/SOURCE-PRESERVATION.json": {
+      "bytes": 12353,
+      "sha256": "47d3d9d8bb5a555ff34588e731f7bf2c89e179df20df928c2cdaf27a47e3503b"
+    },
+    "source-proof-r3/h5_build.py.diff": {
+      "bytes": 9213,
+      "sha256": "42a98081b6d15b960dbf2ab9422444004422900e41aa37e63dc07623703c0e02"
+    },
+    "source-proof-r3/h5_build.py.r2": {
+      "bytes": 12319,
+      "sha256": "ecc9358ebf4d171b054a33e5b1c7855caa5803d863b01469b3d9d0731c46d18b"
+    },
+    "source-proof-r3/stylus_tree.source": {
+      "bytes": 6295,
+      "sha256": "1e013971f3f8406896bd4ae81d7b87b2cc1c1a8d75a644f5c83331f616d21877"
+    },
+    "source-proof-r5/r3-PINS.json": {
+      "bytes": 8288,
+      "sha256": "c2444cfb0093b8063e04b0f607a08ee2485fb2f888d56823a0dd76532da7c0ca"
+    },
+    "source-proof-r5/r3-QUALIFICATION.json": {
+      "bytes": 378,
+      "sha256": "459933c3a83ebd431d0b769fd5f2db0e186585af52960a8945ad96a5ec68213b"
+    },
+    "source-proof-r5/r3-README.md": {
+      "bytes": 2927,
+      "sha256": "0a90290fc82152263e40736f34c8e2a14fa6c4bdab4122ef0f8187d37e218ea4"
+    },
+    "source-proof-r5/r3-build_common.py": {
+      "bytes": 15306,
+      "sha256": "997c04f1b344841cd14e5e21f3dd4de807cd5972323b42e74e944595122bd07f"
+    },
+    "windows_build.py": {
+      "bytes": 10945,
+      "sha256": "26539f48a225625030f53df8fda204773213c35ca30e0da98467d0443f3453c5"
+    }
+  },
+  "directories": [
+    "h5-tools",
+    "h5-tools/compiler-overlays",
+    "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize",
+    "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/.tmp",
+    "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/packages",
+    "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/packages/babel-plugin-uni-api",
+    "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/packages/webpack-optimize-plugin",
+    "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/packages/webpack-style-loader",
+    "source-proof-r2",
+    "source-proof-r3",
+    "source-proof-r5"
+  ]
+}

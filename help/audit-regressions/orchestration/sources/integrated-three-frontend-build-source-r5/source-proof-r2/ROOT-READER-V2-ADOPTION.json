@@ -1,0 +1,79 @@
+{
+  "date": "2026-10-26",
+  "status": "ROOT_ACTUAL_WINDOWS314_PATH_FD_MODE_AND_CTIME_SEMANTICS_FINITE_READER_FIX_V2_ADOPTED",
+  "supersedes_only_cross_API_field_design": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/integrated-continuation-20261026-r1/BUILD-WINDOWS-READER-ADOPTION.json",
+    "bytes": 3011,
+    "sha256": "03f2061936f465532ed4658fde96637516deaad7c2eb3edae1385c8ce3043044"
+  },
+  "actual_read_only_example": {
+    "path": "H:/天俪商城/artifacts/ms0b-task8/frontend/admin/node_modules/.bin/_mocha.cmd",
+    "bytes": 321,
+    "sha256": "8c228a577f805d08ff8eb5002d9492412c11f16c6eaf3d7bb7e6645460115d09",
+    "stats": {
+      "path_before": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474984316794,
+        "st_mode": 33279,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 321,
+        "st_mtime_ns": 1785433445623817800,
+        "st_ctime_ns": 1785433445574716500,
+        "st_birthtime_ns": 1785433445574716500
+      },
+      "FD_open": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474984316794,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 321,
+        "st_mtime_ns": 1785433445623817800,
+        "st_ctime_ns": 1785433445623817800,
+        "st_birthtime_ns": 1785433445574716500
+      },
+      "FD_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474984316794,
+        "st_mode": 33206,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 321,
+        "st_mtime_ns": 1785433445623817800,
+        "st_ctime_ns": 1785433445623817800,
+        "st_birthtime_ns": 1785433445574716500
+      },
+      "path_after": {
+        "st_dev": 1618373208947831848,
+        "st_ino": 281474984316794,
+        "st_mode": 33279,
+        "st_nlink": 1,
+        "st_uid": 0,
+        "st_gid": 0,
+        "st_size": 321,
+        "st_mtime_ns": 1785433445623817800,
+        "st_ctime_ns": 1785433445574716500,
+        "st_birthtime_ns": 1785433445574716500
+      }
+    }
+  },
+  "defect": "The same stable legal .cmd file exposes different full st_mode values as well as ctime through lstat and fstat on the actual Windows Python3.14 runtime",
+  "adopted_reader_v2": [
+    "native9(path) schema and all dependency/output consumers remain original",
+    "Path before/after retain full mode, ctime and birth stability; FD open/after retain full mode, ctime and birth stability independently",
+    "Cross API compare dev/ino/nlink/uid/gid/size/mtime and explicit birthtime; require both stat.S_IFMT(mode) equal regular-file kind, without equating API-specific full permission bits",
+    "Keep complete EOF/hash and no-link/reparse/full namespace and all None qualification guards"
+  ],
+  "Root_own_dependency_preflight_first_attempt": {
+    "exit": 1,
+    "point": "stable_hash cross API COMMON including mode on admin .bin/_mocha.cmd",
+    "candidate_build_import_target": "NOT_RUN",
+    "original_script_and_PLAN": "PRESERVED"
+  },
+  "successor": "Immutable build Source r2; no other algorithm changes without another actual source defect",
+  "implementation": "NOT_YET_APPLIED"
+}

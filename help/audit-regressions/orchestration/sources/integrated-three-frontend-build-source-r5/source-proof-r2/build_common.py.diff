@@ -1,0 +1,50 @@
+--- immutable-r1/build_common.py
+
++++ new-r2/build_common.py
+
+@@ -46,20 +46,35 @@
+
+ 
+ def read(path):
+     path = Path(path)
+-    regular(path)
+-    before = native9(path)
++    fields = ('st_dev', 'st_ino', 'st_mode', 'st_nlink', 'st_uid',
++              'st_gid', 'st_size', 'st_mtime_ns', 'st_ctime_ns')
++    shared = ('st_dev', 'st_ino', 'st_nlink', 'st_uid', 'st_gid',
++              'st_size', 'st_mtime_ns')
++    before_info = regular(path)
++    before = [getattr(before_info, key) for key in fields]
++    before_birth = getattr(before_info, 'st_birthtime_ns', None)
++    require(type(before_birth) is int, 'EXPLICIT_NAMED_FILE_BIRTHTIME')
+     with path.open('rb') as handle:
+         opened = os.fstat(handle.fileno())
+-        require([opened.st_dev, opened.st_ino, opened.st_mode, opened.st_nlink,
+-                 opened.st_uid, opened.st_gid, opened.st_size, opened.st_mtime_ns,
+-                 opened.st_ctime_ns] == before, 'SAME_NAMED_OPEN_FILE')
++        opened_native = [getattr(opened, key) for key in fields]
++        opened_birth = getattr(opened, 'st_birthtime_ns', None)
++        require([getattr(opened, key) for key in shared]
++                == [getattr(before_info, key) for key in shared]
++                and type(opened_birth) is int and opened_birth == before_birth
++                and stat.S_IFMT(opened.st_mode) == stat.S_IFMT(before_info.st_mode) == stat.S_IFREG,
++                'SAME_NAMED_OPEN_FILE')
+         raw = handle.read()
+         require(handle.read(1) == b'' and len(raw) == opened.st_size, 'COMPLETE_EOF_READ')
+         final = os.fstat(handle.fileno())
+-        require([final.st_dev, final.st_ino, final.st_mode, final.st_nlink,
+-                 final.st_uid, final.st_gid, final.st_size, final.st_mtime_ns,
+-                 final.st_ctime_ns] == before, 'SAME_OPEN_FILE_AFTER_READ')
+-    require(native9(path) == before, 'SAME_NAMED_FILE_AFTER_READ')
++        final_birth = getattr(final, 'st_birthtime_ns', None)
++        require([getattr(final, key) for key in fields] == opened_native
++                and type(final_birth) is int and final_birth == opened_birth,
++                'SAME_OPEN_FILE_AFTER_READ')
++    after_info = regular(path)
++    after_birth = getattr(after_info, 'st_birthtime_ns', None)
++    require([getattr(after_info, key) for key in fields] == before
++            and type(after_birth) is int and after_birth == before_birth,
++            'SAME_NAMED_FILE_AFTER_READ')
+     return raw
+ 
+ 

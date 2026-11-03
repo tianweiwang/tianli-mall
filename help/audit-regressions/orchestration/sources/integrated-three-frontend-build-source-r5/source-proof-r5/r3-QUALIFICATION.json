@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "scope": "ROOT_SAME_CLEAN_HEAD_THREE_BUILD_QUALIFICATION",
+  "sealed": false,
+  "head": null,
+  "parent": null,
+  "source_repo": null,
+  "validation_repo": null,
+  "full_tree": null,
+  "source_authority": null,
+  "dependency_authority": {
+    "admin": null,
+    "merchant": null,
+    "h5": null
+  },
+  "output_parent": null,
+  "npm_runtime_authority": null
+}

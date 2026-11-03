@@ -1,0 +1,144 @@
+{
+  "status": "AUTHOR_FINITE_ROOT_SOURCE_PREPARED_REVIEW_PENDING_NOT_EXECUTABLE",
+  "scope": "THREE_FIXED_FRONTENDS_SOURCE_ONLY",
+  "source_observation_only": "7a17c6bee8f5656235b7a68a5b2c1df21b11fa5c",
+  "files": {
+    "build_common.py": {
+      "bytes": 14412,
+      "sha256": "538273c0e8d849a05855afd2dd60402d86badd21afda695a08dd39740dbd1292"
+    },
+    "windows_build.py": {
+      "bytes": 10945,
+      "sha256": "26539f48a225625030f53df8fda204773213c35ca30e0da98467d0443f3453c5"
+    },
+    "h5_build.py": {
+      "bytes": 12319,
+      "sha256": "ecc9358ebf4d171b054a33e5b1c7855caa5803d863b01469b3d9d0731c46d18b"
+    },
+    "root-build.py": {
+      "bytes": 4006,
+      "sha256": "71b8ba80deceb1ab1d14d8dc91c86a07c3336a1e6360f7baded2da88be3333c4"
+    },
+    "launch.py": {
+      "bytes": 2554,
+      "sha256": "370c3565af6c7de13a40a9a0998f28577b13b79f7661d2f6b327137fda0cf660"
+    },
+    "DESIGN.md": {
+      "bytes": 6469,
+      "sha256": "b14167c26a070ee6872b2db40414a0bc150d14bd91a10ead08d34888f332ab74"
+    },
+    "README.md": {
+      "bytes": 2927,
+      "sha256": "0a90290fc82152263e40736f34c8e2a14fa6c4bdab4122ef0f8187d37e218ea4"
+    },
+    "QUALIFICATION.json": {
+      "bytes": 378,
+      "sha256": "459933c3a83ebd431d0b769fd5f2db0e186585af52960a8945ad96a5ec68213b"
+    },
+    "PROVENANCE.json": {
+      "bytes": 23134,
+      "sha256": "e1899345d9e12635d7ee285f34e82ecb6c3faef1598403dba824e3525d8b64e0"
+    }
+  },
+  "raw_mature_H5_leaf_copies": [
+    {
+      "path": "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/index.js",
+      "bytes": 3141,
+      "sha256": "2ab66760753222a99102ed3e4b1172f50fd5d048ba5f62e0181a9da39d00b14e"
+    },
+    {
+      "path": "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/LICENSE",
+      "bytes": 11357,
+      "sha256": "58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd"
+    },
+    {
+      "path": "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/logo.png",
+      "bytes": 4023,
+      "sha256": "46719607502ebe256abff3ee000121c761708258187fb2bd6dac8443845ef32e"
+    },
+    {
+      "path": "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/package.json",
+      "bytes": 522,
+      "sha256": "8c92f14563f96945ba48ae076548153bf727444854f865b001adecfb67b8f0fc"
+    },
+    {
+      "path": "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/packages/babel-plugin-uni-api/index.js",
+      "bytes": 457,
+      "sha256": "ef9ff386de03428469dfe98e88f8e4b8cf8b9eb9a9e7b8ea75ccca0456c712af"
+    },
+    {
+      "path": "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/packages/webpack-optimize-plugin/api.js",
+      "bytes": 7144,
+      "sha256": "ea692c2eafea2c268e6fc2d07861a12d4e9ba551cac0a27b4b753d89e264084e"
+    },
+    {
+      "path": "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/packages/webpack-optimize-plugin/component.js",
+      "bytes": 1897,
+      "sha256": "a081107af8b43cc7cb04d5c1f0772a3dcaf0afe515e766979a8ca84c257f9863"
+    },
+    {
+      "path": "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/packages/webpack-optimize-plugin/index.js",
+      "bytes": 1208,
+      "sha256": "f8fedd62267eb0f33819ac96ea0bda4dcfe33c66e0220720e2b7b0462f42a5b4"
+    },
+    {
+      "path": "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/packages/webpack-optimize-plugin/util.js",
+      "bytes": 478,
+      "sha256": "aae615b10529785ef0b2aa90d8b1edd97ec53a7723880e83542b361c529e8b51"
+    },
+    {
+      "path": "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/packages/webpack-style-loader/index.js",
+      "bytes": 439,
+      "sha256": "69f80ff4391cf7fc2e8c3c5612b18c957d2d4d147f7bc32d3181fc2d5ac7df5a"
+    },
+    {
+      "path": "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/README.md",
+      "bytes": 64,
+      "sha256": "5321080250bf750ffbbe46c1047184c5bd42bd9a3cf166cdb2cd6fd9b4274484"
+    },
+    {
+      "path": "h5-tools/compiler-source-guards.json",
+      "bytes": 1241,
+      "sha256": "dc98c9880114884e2b166e1547fd34b75d88c2fc1d78cbee2b9b89a730cf15f1"
+    },
+    {
+      "path": "h5-tools/explicit-pass-preload.cjs",
+      "bytes": 12166,
+      "sha256": "a4692cdee10951f07f567170908b444ccace6ac74254bcf0a1aaf52aa1d51e44"
+    },
+    {
+      "path": "h5-tools/optimize-overlay-manifest.json",
+      "bytes": 2632,
+      "sha256": "25419be4b7106b148c6744798942be56faba17ea97286c76dc55855da85c4ec5"
+    },
+    {
+      "path": "h5-tools/stylus-inputs.json",
+      "bytes": 6986,
+      "sha256": "c8c6303316ef15daa79c31a5f80feb76177a4b1d032dc506e775e33a3405d499"
+    }
+  ],
+  "qualification": {
+    "module_constant": null,
+    "sealed": false,
+    "final_HEAD_Source_Val_fulltracked_dependencies": "UNBOUND",
+    "real_build_DIST_current17_publiccopy": "UNBOUND",
+    "four_missing_manifests_created": false
+  },
+  "checks_actually_done": [
+    "actual mature controller/source read",
+    "fixed current Git/old overlays/package-lock byte comparison",
+    "fifteen protected H5 source leaves raw equal",
+    "main qualification guard text precedes output mkdir in both entries",
+    "exact Source member byte inventory and no candidate cache",
+    "no AST/compile/import/candidate or tool runtime"
+  ],
+  "not_done": [
+    "Root/non-author Source review",
+    "Python/Node/PowerShell/PHP parse or lint of this packet",
+    "final clean HEAD/Val/fulltracked and every dependency/runtime authority",
+    "Node/npm/HBuilderX/Docker execution",
+    "three builds and output manifests",
+    "HTTP/WS/SQL/browser/device/financial/deploy acceptance"
+  ],
+  "derivation_statement": "Finite new orchestration reuses proven ordinary native/copy/preservation/adapter contracts. Only 15 H5 support leaves claimed raw equal; no false whole-driver inverse or unchanged-callable claim."
+}

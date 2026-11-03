@@ -46,7 +46,7 @@
     },
     {
       "kind": "authoring inputs",
-      "detail": "The current maintenance author selects the fixed public baseline PINS/Core9/B31 and historical-normal PINS/18 source donors from the tracked archive, retaining logical origins separately from actual file pointers. Historical archived assemble/refresh programs still retain predecessor paths and may need additional authoring inputs; complete historical authoring replay is not claimed. Independent authority, actual syntax/build/readback results and historical retirement evidence remain external runtime prerequisites."
+      "detail": "The current maintenance author selects the fixed public baseline PINS/Core9/B31 and historical-normal PINS/18 source donors from the tracked archive, retaining logical origins separately from actual file pointers. The three-frontend author also selects the complete fixed r5 source packet and four public dependency/npm metadata authorities from its separate 58-file archive allowlist; generated qualification records the four exact metadata pointer mappings and inverse while preserving full bytes/SHA. Actual Node, dependency directories, tools and output environment remain external prerequisites. Historical archived assemble/refresh programs still retain predecessor paths and may need additional authoring inputs; complete historical authoring replay is not claimed. Independent authority, actual syntax/build/readback results and historical retirement evidence remain external runtime prerequisites."
     },
     {
       "kind": "fresh execution environment",

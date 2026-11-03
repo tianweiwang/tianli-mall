@@ -14,6 +14,20 @@ from typing import Any
 BASELINE = Path("H:/天俪商城/artifacts/project-organization-20261023/integrated-three-frontend-build-source-r5")
 BASELINE_PINS = {"path": (BASELINE / "PINS.json").as_posix(), "bytes": 9207,
                  "sha256": "c2add24a609ff5185a9f4f971d0455a5a783cf9b55b4eedb16e599a6efec462d"}
+PUBLIC_ORIGIN = BASELINE.parent.as_posix()
+PUBLIC_AUTHORITIES = {
+    "admin": {"path": PUBLIC_ORIGIN + "/integrated-continuation-20261026-r1/dependency-preflight-r2/admin.json",
+              "bytes": 11566525, "sha256": "7535000a19b35dc4683a3ec5c6da40ccf857c89198d3b0e074d0ab727145eb7d"},
+    "merchant": {"path": PUBLIC_ORIGIN + "/integrated-continuation-20261026-r1/dependency-preflight-r2/merchant.json",
+                 "bytes": 4271550, "sha256": "faea7f5e40b5c0f4e172419675b35b7d85f5779a57cc86ab4c414940f946889b"},
+    "h5": {"path": PUBLIC_ORIGIN + "/integrated-continuation-20261026-r1/CURRENT-H5-DEPENDENCY-AUTHORITY.json",
+           "bytes": 5704609, "sha256": "dacec90c49dadcdd760e0f81facc1cf1e5668595219e33b7af1592d750de140c"},
+    "npm": {"path": PUBLIC_ORIGIN + "/integrated-continuation-20261026-r1/dependency-preflight-r2/npm.json",
+            "bytes": 337444, "sha256": "559ee2b39970215ac32b56550b4f96b080d6e714e64b0f745652f021f2b9d675"},
+}
+EMPTY_BASELINE_DIRECTORY = "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/.tmp"
+
+
 def helpers():
     path = Path(__file__).resolve().with_name("current_normal_source.py")
     spec = importlib.util.spec_from_file_location("current_frontend_source_helpers", path)
@@ -29,6 +43,59 @@ def safe_relative(name: str, require) -> None:
             and not name.startswith("/") and PurePosixPath(name).as_posix() == name
             and all(part not in ("", ".", "..", ".git") for part in name.split("/")),
             "CLOSED_FRONTEND_SOURCE_RELATIVE_PATH")
+
+
+def public_build_sources(h):
+    """Resolve only the fixed 54 source leaves and four public metadata inputs."""
+    tool_root = Path(__file__).resolve().parent
+    manifest = h.decode(h.stable_read(tool_root / "source-manifest.json"))
+    h.require(manifest["schema"] == 2 and manifest["status"] == "SOURCE_ARCHIVE_RUNTIME_NOT_READY"
+              and manifest["file_count"] == len(manifest["files"]), "FRONTEND_PUBLIC_ARCHIVE_INDEX")
+    indexed = {row["path"]: row for row in manifest["files"]}
+    h.require(len(indexed) == len(manifest["files"]), "FRONTEND_PUBLIC_UNIQUE_ARCHIVE_PATHS")
+
+    def archived(origin):
+        h.require(type(origin) is dict and set(origin) == {"path", "bytes", "sha256"},
+                  "FRONTEND_FIXED_PUBLIC_DESCRIPTOR")
+        logical = Path(origin["path"])
+        h.require(logical.is_absolute() and logical.as_posix() == origin["path"]
+                  and logical.is_relative_to(Path(PUBLIC_ORIGIN)), "FRONTEND_FIXED_PUBLIC_ORIGIN")
+        relative = logical.relative_to(Path(PUBLIC_ORIGIN)).as_posix()
+        safe_relative(relative, h.require)
+        name = "sources/" + relative
+        row = indexed[name]
+        h.require(row["origin_root"] == PUBLIC_ORIGIN and row["origin_relative_path"] == relative
+                  and row["package"] == PurePosixPath(relative).parts[0]
+                  and {key: row[key] for key in ("bytes", "sha256")}
+                  == {key: origin[key] for key in ("bytes", "sha256")},
+                  "FRONTEND_PUBLIC_ORIGINAL_AND_ARCHIVED_PIN_JOIN")
+        actual = tool_root / name
+        h.ordinary(actual)
+        h.require(actual.resolve(strict=True).is_relative_to(tool_root / "sources"),
+                  "FRONTEND_PUBLIC_INSIDE_ARCHIVE")
+        return {"path": actual.as_posix(), **{key: origin[key] for key in ("bytes", "sha256")}}
+
+    baseline_pointer = archived(BASELINE_PINS)
+    baseline = h.decode(h.read_pointer(baseline_pointer))
+    h.require(baseline["schema"] == 1 and baseline["scope"] == "SOURCE_ONLY_NOT_BUILD_OR_RUNTIME_SEAL"
+              and len(baseline["files"]) == 53 and len(baseline["directories"]) == 11,
+              "FIXED_COMPLETE_R5_SOURCE_PACKET")
+    required = ["sources/" + BASELINE.name + "/PINS.json"]
+    for name, wanted in baseline["files"].items():
+        safe_relative(name, h.require)
+        archived({"path": (BASELINE / name).as_posix(), **wanted})
+        required.append("sources/" + BASELINE.name + "/" + name)
+    authority_pointers = {name: archived(origin) for name, origin in PUBLIC_AUTHORITIES.items()}
+    authority_rows = {name: {**row, "path": "sources/" + Path(row["path"]).relative_to(Path(PUBLIC_ORIGIN)).as_posix()}
+                      for name, row in PUBLIC_AUTHORITIES.items()}
+    required += [row["path"] for row in authority_rows.values()]
+    expected = {"schema": 1, "scope": "FIXED_THREE_FRONTEND_PUBLIC_SOURCE_INPUTS", "origin_root": PUBLIC_ORIGIN,
+                "baseline_pin": {**BASELINE_PINS, "path": required[0]}, "authority_inputs": authority_rows,
+                "required": required, "declared_empty_directories": [EMPTY_BASELINE_DIRECTORY]}
+    h.require(len(required) == len(set(required)) == 58
+              and manifest.get("frontend_build_public_inputs") == expected,
+              "EXACT_FRONTEND_PUBLIC_FIFTY_EIGHT_ALLOWLIST")
+    return Path(baseline_pointer["path"]).parent, baseline, baseline_pointer, authority_pointers
 
 
 def windows_copy_four(raw: bytes, h) -> bytes:
@@ -119,25 +186,25 @@ def derive_source(output: str | Path, authority_pointer: dict[str, Any], windows
                       Path(authority["candidate_root"]), Path(authority["validation_root"])):
         h.require(not out.is_relative_to(protected), "FRONTEND_SOURCE_OUTPUT_OUTSIDE_PROTECTED_TREES")
     h.require(not out.exists() and not out.is_symlink(), "ONE_NEW_FRONTEND_SOURCE_PACKET_ONLY")
-    baseline = h.decode(h.read_pointer(BASELINE_PINS))
-    h.require(baseline["schema"] == 1 and baseline["scope"] == "SOURCE_ONLY_NOT_BUILD_OR_RUNTIME_SEAL"
-              and len(baseline["files"]) == 53 and len(baseline["directories"]) == 11,
-              "FIXED_COMPLETE_R5_SOURCE_PACKET")
+    baseline_root, baseline, baseline_pointer, authority_pointers = public_build_sources(h)
     actual_files, actual_directories = set(), set()
-    for path in BASELINE.rglob("*"):
+    for path in baseline_root.rglob("*"):
         h.ordinary(path)
-        relative = path.relative_to(BASELINE).as_posix()
+        relative = path.relative_to(baseline_root).as_posix()
         if path.is_dir():
             actual_directories.add(relative)
         else:
             h.require(path.is_file(), "ORDINARY_BASELINE_SOURCE_MEMBER")
             actual_files.add(relative)
-    h.require(actual_files == set(baseline["files"]) | {"PINS.json"}
-              and actual_directories == set(baseline["directories"]), "EXACT_PHYSICAL_R5_PACKET_NAMESPACE")
+    file_parents = {parent.as_posix() for name in baseline["files"] for parent in PurePosixPath(name).parents
+                    if parent.as_posix() != "."}
+    h.require(set(baseline["directories"]) - file_parents == {EMPTY_BASELINE_DIRECTORY}
+              and actual_files == set(baseline["files"]) | {"PINS.json"}
+              and actual_directories == file_parents, "EXACT_ARCHIVED_R5_FILES_AND_DECLARED_EMPTY_DIRECTORY")
     before = {}
     for name, wanted in baseline["files"].items():
         safe_relative(name, h.require)
-        before[name] = h.read_pointer({"path": (BASELINE / name).as_posix(), **wanted})
+        before[name] = h.read_pointer({"path": (baseline_root / name).as_posix(), **wanted})
     qualification = h.decode(before["QUALIFICATION.json"])
     original_qualification = copy.deepcopy(qualification)
     h.require(set(qualification) == {"schema", "scope", "sealed", "head", "parent", "source_repo", "validation_repo",
@@ -147,7 +214,10 @@ def derive_source(output: str | Path, authority_pointer: dict[str, Any], windows
               and qualification["sealed"] is True, "ORIGINAL_BUILDER_INPUT_QUALIFICATION_CONTRACT")
     # Preserve the fixed authorities. Actual builds retain the existing complete
     # dependency-body/namespace checks; this Source author does not run them.
-    for pointer in [*qualification["dependency_authority"].values(), qualification["npm_runtime_authority"]]:
+    h.require(qualification["dependency_authority"] == {name: PUBLIC_AUTHORITIES[name] for name in ("admin", "merchant", "h5")}
+              and qualification["npm_runtime_authority"] == PUBLIC_AUTHORITIES["npm"],
+              "EXACT_ORIGINAL_FOUR_PUBLIC_METADATA_AUTHORITIES")
+    for pointer in authority_pointers.values():
         h.read_pointer(pointer)
     captured_rows = [h.decode(line) for line in h.read_pointer(capture["files"]["SOURCE-INVENTORY.jsonl"]).splitlines()]
     h.require(len(captured_rows) == capture["tracked_file_count"] == len(compact)
@@ -177,9 +247,19 @@ def derive_source(output: str | Path, authority_pointer: dict[str, Any], windows
                          source_repo=authority["candidate_root"], validation_repo=authority["validation_root"],
                          full_tree={"path": (out / "FULL-TREE.json").as_posix(), **h.pin(after["FULL-TREE.json"])},
                          source_authority=authority_pointer)
+    before_pointer_mapping = copy.deepcopy(qualification)
+    qualification["dependency_authority"] = {name: authority_pointers[name] for name in ("admin", "merchant", "h5")}
+    qualification["npm_runtime_authority"] = authority_pointers["npm"]
+    inverse_pointer_mapping = copy.deepcopy(qualification)
+    inverse_pointer_mapping["dependency_authority"] = original_qualification["dependency_authority"]
+    inverse_pointer_mapping["npm_runtime_authority"] = original_qualification["npm_runtime_authority"]
+    h.require(inverse_pointer_mapping == before_pointer_mapping
+              and all({key: PUBLIC_AUTHORITIES[name][key] for key in ("bytes", "sha256")}
+                      == {key: authority_pointers[name][key] for key in ("bytes", "sha256")}
+                      and PUBLIC_AUTHORITIES[name]["path"] != authority_pointers[name]["path"]
+                      for name in PUBLIC_AUTHORITIES), "ONLY_FOUR_PUBLIC_METADATA_PATHS_REBOUND_WITH_COMPLETE_INVERSE")
     h.require(all(qualification[key] == original_qualification[key] for key in
-                  ("schema", "scope", "sealed", "dependency_authority", "npm_runtime_authority", "output_parent")),
-              "ORIGINAL_DEPENDENCY_AND_OUTPUT_CONTRACTS_RETAINED")
+                  ("schema", "scope", "sealed", "output_parent")), "ORIGINAL_QUALIFICATION_AND_OUTPUT_CONTRACTS_RETAINED")
     after["QUALIFICATION.json"] = h.encode(qualification)
     qualification_pointer = {"path": (out / "QUALIFICATION.json").as_posix(), **h.pin(after["QUALIFICATION.json"])}
     after["build_common.py"] = h.replace_constant(before["build_common.py"], "QUALIFIED_INPUTS_PIN", qualification_pointer)
@@ -210,7 +290,7 @@ def derive_source(output: str | Path, authority_pointer: dict[str, Any], windows
         f"本代仅将原 r5 完整构建器绑定到独立核过的 `{qualification['head']}`，"
         f"父提交 `{qualification['parent']}`；完整 Git 来源为 {len(files)} 文件、{len(directories)} 目录。"
         "资格、双树与每文件 Git blob 均来自固定 R61 技术依据及其完整捕获；捕获本身不授予批准。\n\n"
-        "原离线依赖依据、工具、构建命令、输出父守卫和所有校验函数保留。新包仍须独立 Source 复核，"
+        "原离线依赖依据字节、工具、构建命令、输出父守卫和所有校验函数保留；四份公开清单指针仅重绑定归档位置。新包仍须独立 Source 复核，"
         "随后由 Root 按各端实际运行；作者没有执行构建、Docker 或应用。三端构建、dist、四份最终 manifest、"
         "完整 A/post-A、B/UI、设备及发布均未由此取得成功证据。\n\n"
         "当前绑定见 QUALIFICATION.json 与 R61-SOURCE-DERIVATION.json；以下 r5 及更早文字完整保留为历史。\n\n---\n\n"
@@ -244,6 +324,7 @@ def derive_source(output: str | Path, authority_pointer: dict[str, Any], windows
         "schema": 1, "scope": "R61_CURRENT_THREE_FRONTEND_BUILD_SOURCE_ONLY",
         "status": "SOURCE_CANDIDATE_PENDING_INDEPENDENT_PACKET_REVIEW",
         "baseline_packet": BASELINE_PINS, "technical_authority": authority_pointer,
+        "baseline_packet_source": baseline_pointer,
         "independent_source_review": authority["independent_review"], "capture": authority["capture"],
         "actual_git_inventory": capture["files"]["SOURCE-INVENTORY.jsonl"],
         "source_sha": qualification["head"], "parent": qualification["parent"],
@@ -253,8 +334,15 @@ def derive_source(output: str | Path, authority_pointer: dict[str, Any], windows
         "preserved_existing_members": [name for name in before if name not in changed],
         "common_pointer_whole_file_inverse_exact": True,
         "all_original_python_function_bodies_exact": windows_copy_workers == 1 and not windows_lx_alias_attributes_enabled,
+        # Existing copy consumers join these fields to the actual qualification.
+        # Preserved means authority bytes/SHA and logical origin, not path identity.
         "dependency_authority_preserved": qualification["dependency_authority"],
         "npm_runtime_authority_preserved": qualification["npm_runtime_authority"],
+        "public_input_pointer_rebinding": {"schema": 1, "scope": "FOUR_FIXED_PUBLIC_METADATA_PATHS_ONLY",
+            "original_logical_inputs": copy.deepcopy(PUBLIC_AUTHORITIES), "actual_archive_inputs": authority_pointers,
+            "paths_changed": True, "authority_bytes_sha256_preserved": True,
+            "qualification_four_path_inverse_equal": True,
+            "legacy_preserved_fields_mean": "actual qualification pointers; original authority bytes/SHA and logical origins preserved, paths explicitly rebound"},
         "output_parent_preserved": qualification["output_parent"],
         "build_Node_npm_Docker_App": "NOT RUN", "A_B_UI_release_acceptance": "NOT_GRANTED",
     }

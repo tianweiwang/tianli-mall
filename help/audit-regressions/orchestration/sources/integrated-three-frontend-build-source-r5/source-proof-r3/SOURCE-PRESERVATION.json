@@ -1,0 +1,378 @@
+{
+  "schema": 1,
+  "scope": "AUTHOR_FINITE_STYLUS_ONLY_SOURCE_PRESERVATION_NOT_SELF_SOURCE0",
+  "design_saved_before_code": "STYLUS-ALIASES-DESIGN.md",
+  "Root_adoption": {
+    "original_path": "H:/天俪商城/artifacts/project-organization-20261023/integrated-continuation-20261026-r1/BUILD-H5-EXACT-STYLUS-ALIASES-R3-ADOPTION.json",
+    "bytes": 4094,
+    "sha256": "f9d8520533ba2d0e8ec3c5377661644b58dd4fd224ac8f8c09caf09d7cc22bc5"
+  },
+  "Root_actual_Stylus_authority": {
+    "original_path": "H:/天俪商城/artifacts/project-organization-20261023/integrated-continuation-20261026-r1/stylus-link-preflight-r3/STYLUS-AUTHORITY.json",
+    "bytes": 56867,
+    "sha256": "24535d0fc3449ab2553008ac18a6eb73c01dbf695f619b8c2b2661192a4bdbc3"
+  },
+  "r2_h5": {
+    "bytes": 12319,
+    "sha256": "ecc9358ebf4d171b054a33e5b1c7855caa5803d863b01469b3d9d0731c46d18b"
+  },
+  "r3_h5": {
+    "bytes": 18797,
+    "sha256": "e093b2248d9a4eb6b181775653dce1ed4b2476261dcfc27850918ec6818b515f"
+  },
+  "finite_4_edits_complete_inverse_to_r2": true,
+  "only_old_code_seams": [
+    "dependency_window signature",
+    "dedicated compile-stylus branch only; other4 strict3 fields original",
+    "exactly before and after dependency_window callsites in run"
+  ],
+  "new_top_level_helper": "stylus_tree",
+  "common_reader_native9_Windows_npm_Source_dist_raw": true,
+  "all36_immutable_r2_originals": [
+    {
+      "path": "build_common.py",
+      "r2": {
+        "bytes": 15306,
+        "sha256": "997c04f1b344841cd14e5e21f3dd4de807cd5972323b42e74e944595122bd07f"
+      },
+      "current_r3_raw_equal": true
+    },
+    {
+      "path": "DESIGN.md",
+      "r2": {
+        "bytes": 6469,
+        "sha256": "b14167c26a070ee6872b2db40414a0bc150d14bd91a10ead08d34888f332ab74"
+      },
+      "current_r3_raw_equal": true
+    },
+    {
+      "path": "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/index.js",
+      "r2": {
+        "bytes": 3141,
+        "sha256": "2ab66760753222a99102ed3e4b1172f50fd5d048ba5f62e0181a9da39d00b14e"
+      },
+      "current_r3_raw_equal": true
+    },
+    {
+      "path": "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/LICENSE",
+      "r2": {
+        "bytes": 11357,
+        "sha256": "58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd"
+      },
+      "current_r3_raw_equal": true
+    },
+    {
+      "path": "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/logo.png",
+      "r2": {
+        "bytes": 4023,
+        "sha256": "46719607502ebe256abff3ee000121c761708258187fb2bd6dac8443845ef32e"
+      },
+      "current_r3_raw_equal": true
+    },
+    {
+      "path": "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/package.json",
+      "r2": {
+        "bytes": 522,
+        "sha256": "8c92f14563f96945ba48ae076548153bf727444854f865b001adecfb67b8f0fc"
+      },
+      "current_r3_raw_equal": true
+    },
+    {
+      "path": "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/packages/babel-plugin-uni-api/index.js",
+      "r2": {
+        "bytes": 457,
+        "sha256": "ef9ff386de03428469dfe98e88f8e4b8cf8b9eb9a9e7b8ea75ccca0456c712af"
+      },
+      "current_r3_raw_equal": true
+    },
+    {
+      "path": "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/packages/webpack-optimize-plugin/api.js",
+      "r2": {
+        "bytes": 7144,
+        "sha256": "ea692c2eafea2c268e6fc2d07861a12d4e9ba551cac0a27b4b753d89e264084e"
+      },
+      "current_r3_raw_equal": true
+    },
+    {
+      "path": "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/packages/webpack-optimize-plugin/component.js",
+      "r2": {
+        "bytes": 1897,
+        "sha256": "a081107af8b43cc7cb04d5c1f0772a3dcaf0afe515e766979a8ca84c257f9863"
+      },
+      "current_r3_raw_equal": true
+    },
+    {
+      "path": "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/packages/webpack-optimize-plugin/index.js",
+      "r2": {
+        "bytes": 1208,
+        "sha256": "f8fedd62267eb0f33819ac96ea0bda4dcfe33c66e0220720e2b7b0462f42a5b4"
+      },
+      "current_r3_raw_equal": true
+    },
+    {
+      "path": "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/packages/webpack-optimize-plugin/util.js",
+      "r2": {
+        "bytes": 478,
+        "sha256": "aae615b10529785ef0b2aa90d8b1edd97ec53a7723880e83542b361c529e8b51"
+      },
+      "current_r3_raw_equal": true
+    },
+    {
+      "path": "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/packages/webpack-style-loader/index.js",
+      "r2": {
+        "bytes": 439,
+        "sha256": "69f80ff4391cf7fc2e8c3c5612b18c957d2d4d147f7bc32d3181fc2d5ac7df5a"
+      },
+      "current_r3_raw_equal": true
+    },
+    {
+      "path": "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/README.md",
+      "r2": {
+        "bytes": 64,
+        "sha256": "5321080250bf750ffbbe46c1047184c5bd42bd9a3cf166cdb2cd6fd9b4274484"
+      },
+      "current_r3_raw_equal": true
+    },
+    {
+      "path": "h5-tools/compiler-source-guards.json",
+      "r2": {
+        "bytes": 1241,
+        "sha256": "dc98c9880114884e2b166e1547fd34b75d88c2fc1d78cbee2b9b89a730cf15f1"
+      },
+      "current_r3_raw_equal": true
+    },
+    {
+      "path": "h5-tools/explicit-pass-preload.cjs",
+      "r2": {
+        "bytes": 12166,
+        "sha256": "a4692cdee10951f07f567170908b444ccace6ac74254bcf0a1aaf52aa1d51e44"
+      },
+      "current_r3_raw_equal": true
+    },
+    {
+      "path": "h5-tools/optimize-overlay-manifest.json",
+      "r2": {
+        "bytes": 2632,
+        "sha256": "25419be4b7106b148c6744798942be56faba17ea97286c76dc55855da85c4ec5"
+      },
+      "current_r3_raw_equal": true
+    },
+    {
+      "path": "h5-tools/stylus-inputs.json",
+      "r2": {
+        "bytes": 6986,
+        "sha256": "c8c6303316ef15daa79c31a5f80feb76177a4b1d032dc506e775e33a3405d499"
+      },
+      "current_r3_raw_equal": true
+    },
+    {
+      "path": "h5_build.py",
+      "r2": {
+        "bytes": 12319,
+        "sha256": "ecc9358ebf4d171b054a33e5b1c7855caa5803d863b01469b3d9d0731c46d18b"
+      },
+      "current_r3_raw_equal": false
+    },
+    {
+      "path": "launch.py",
+      "r2": {
+        "bytes": 2554,
+        "sha256": "370c3565af6c7de13a40a9a0998f28577b13b79f7661d2f6b327137fda0cf660"
+      },
+      "current_r3_raw_equal": true
+    },
+    {
+      "path": "PINS.json",
+      "r2": {
+        "bytes": 6394,
+        "sha256": "9ded7bcbc7f3726ac31ee3a23baeb193bbbccfb66a28d57422d4a87a4515cd0b"
+      },
+      "current_r3_raw_equal": false
+    },
+    {
+      "path": "PROVENANCE.json",
+      "r2": {
+        "bytes": 23134,
+        "sha256": "e1899345d9e12635d7ee285f34e82ecb6c3faef1598403dba824e3525d8b64e0"
+      },
+      "current_r3_raw_equal": true
+    },
+    {
+      "path": "QUALIFICATION.json",
+      "r2": {
+        "bytes": 378,
+        "sha256": "459933c3a83ebd431d0b769fd5f2db0e186585af52960a8945ad96a5ec68213b"
+      },
+      "current_r3_raw_equal": true
+    },
+    {
+      "path": "READER-FIX-DESIGN.md",
+      "r2": {
+        "bytes": 3622,
+        "sha256": "2fad384d6aad2a061311af202eef49c81a54d60887e91be87b98a430fa9a1af1"
+      },
+      "current_r3_raw_equal": true
+    },
+    {
+      "path": "README.md",
+      "r2": {
+        "bytes": 2927,
+        "sha256": "0a90290fc82152263e40736f34c8e2a14fa6c4bdab4122ef0f8187d37e218ea4"
+      },
+      "current_r3_raw_equal": true
+    },
+    {
+      "path": "root-build.py",
+      "r2": {
+        "bytes": 4006,
+        "sha256": "71b8ba80deceb1ab1d14d8dc91c86a07c3336a1e6360f7baded2da88be3333c4"
+      },
+      "current_r3_raw_equal": true
+    },
+    {
+      "path": "source-proof-r2/build_common.py.diff",
+      "r2": {
+        "bytes": 2472,
+        "sha256": "dfb8f94d2dbde980dc037af860de1a24bf9e88637bec03e1569ec31c59b821e9"
+      },
+      "current_r3_raw_equal": true
+    },
+    {
+      "path": "source-proof-r2/build_common.py.r1",
+      "r2": {
+        "bytes": 14412,
+        "sha256": "538273c0e8d849a05855afd2dd60402d86badd21afda695a08dd39740dbd1292"
+      },
+      "current_r3_raw_equal": true
+    },
+    {
+      "path": "source-proof-r2/R1-BASELINE.json",
+      "r2": {
+        "bytes": 5277,
+        "sha256": "f3ebb33067450d0502be0e3eadd81f582151dcf42bbf1dc6eb45e558056d7775"
+      },
+      "current_r3_raw_equal": true
+    },
+    {
+      "path": "source-proof-r2/R1-PINS.json",
+      "r2": {
+        "bytes": 4822,
+        "sha256": "889a3dd469baafd97cf373ea33494f3fd653f8a34482ff33b90339ec31abb56d"
+      },
+      "current_r3_raw_equal": true
+    },
+    {
+      "path": "source-proof-r2/R1-SOURCE-REPORT.json",
+      "r2": {
+        "bytes": 5712,
+        "sha256": "c8644f733530f0cc711b17023d3336744975c1644d344bfa8b59d3f8fb907283"
+      },
+      "current_r3_raw_equal": true
+    },
+    {
+      "path": "source-proof-r2/read.after.source",
+      "r2": {
+        "bytes": 1765,
+        "sha256": "1b87f46707769f5645b06acb5bf8bf86b068ccd0988b9743acda10f5315c038d"
+      },
+      "current_r3_raw_equal": true
+    },
+    {
+      "path": "source-proof-r2/read.before.source",
+      "r2": {
+        "bytes": 871,
+        "sha256": "0129657ab1ed482f21f7114096d1ec551c9847d5dc7129e434153a02f7bf9a5a"
+      },
+      "current_r3_raw_equal": true
+    },
+    {
+      "path": "source-proof-r2/ROOT-READER-V2-ADOPTION.json",
+      "r2": {
+        "bytes": 3191,
+        "sha256": "cb9d9d4284bb79d76eb3aa41b6eac978792aa0e07e5c408aee8c143280054501"
+      },
+      "current_r3_raw_equal": true
+    },
+    {
+      "path": "source-proof-r2/SOURCE-PRESERVATION.json",
+      "r2": {
+        "bytes": 8712,
+        "sha256": "e64e22257e129ace848d2625b77d676a2c6af8577c04245d171bf3712841fff7"
+      },
+      "current_r3_raw_equal": true
+    },
+    {
+      "path": "SOURCE-REPORT.json",
+      "r2": {
+        "bytes": 12014,
+        "sha256": "4fc7008195429b95faf163c933cba3a1bac528b250635a9c7e2c22c92d59ef2c"
+      },
+      "current_r3_raw_equal": false
+    },
+    {
+      "path": "windows_build.py",
+      "r2": {
+        "bytes": 10945,
+        "sha256": "26539f48a225625030f53df8fda204773213c35ca30e0da98467d0443f3453c5"
+      },
+      "current_r3_raw_equal": true
+    }
+  ],
+  "all36_immutable_r2_readback_exact": true,
+  "remaining33_original_paths_raw": true,
+  "all15_H5_mature_leaves_and_existing_r2_evidence_raw": true,
+  "protected_30leaves_28versions_8guards_11overlays_2pass_dist_lifecycle_code_raw": true,
+  "alias_contract": {
+    "fixed_links": {
+      "node_modules/.bin/atob": {
+        "target": "../atob/bin/atob.js",
+        "resolved_relative": "node_modules/atob/bin/atob.js",
+        "reparse_query": {
+          "bytes": 256,
+          "sha256": "86ae39fbac50827824de5a9f5b8a0ce09c0cd056d41db329f5e3206fbe4a4ad5"
+        }
+      },
+      "node_modules/.bin/mkdirp": {
+        "target": "../mkdirp/bin/cmd.js",
+        "resolved_relative": "node_modules/mkdirp/bin/cmd.js",
+        "reparse_query": {
+          "bytes": 257,
+          "sha256": "c300741ddd380322ba0a19c991b225f7362fb54802e0529561936422a40eeb43"
+        }
+      },
+      "node_modules/.bin/semver": {
+        "target": "../semver/bin/semver.js",
+        "resolved_relative": "node_modules/semver/bin/semver.js",
+        "reparse_query": {
+          "bytes": 260,
+          "sha256": "d8fb0493d05cee7e1eec24334796132e19f8b06f2844449f5a9a97cd3a631508"
+        }
+      },
+      "node_modules/.bin/stylus": {
+        "target": "../stylus/bin/stylus",
+        "resolved_relative": "node_modules/stylus/bin/stylus",
+        "reparse_query": {
+          "bytes": 257,
+          "sha256": "8e36385f941ef4d04dbf6a4fc8f949599222254a729018b42d8ea1daec62e11f"
+        }
+      }
+    },
+    "namespace_regular_files": 338,
+    "regular_bytes": 1965844,
+    "ordinary_directories": 57,
+    "only_aliases": 4,
+    "same_LX_tag": "0xA000001D",
+    "native9_and_explicit_birth_before_after": true,
+    "existing_native_recorder": true,
+    "fixed_fsutil_absolute_argv": true,
+    "locale_decode_or_parsing": false,
+    "full_raw_stdout_pin_and_empty_stderr_natural0": true,
+    "unique_before_after_labels": true,
+    "actual_target_and_exact_package_bin": true,
+    "no_link_follow_cache_write_flatten_delete_or_general_allowance": true
+  },
+  "all_future_qualifications": "ORIGINAL_NONE_UNBOUND",
+  "actual_candidate_parse_compile_import_execution": "NOT_PERFORMED",
+  "actual_fsutil_Docker_Node_build_target": "NOT_RUN",
+  "authority_note": "Copied Root actual dependency qualification is historical read-only input evidence, not new build/Run/final-HEAD qualification."
+}

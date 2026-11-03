@@ -1,0 +1,34 @@
+[
+  {
+    "path": "node_modules/webpack/lib/webpack.js",
+    "sha256": "28e13ed959fdaa32f90b2bbc9ce5da674dd6921dd09306636627a08eddaebb1f"
+  },
+  {
+    "path": "node_modules/webpack/lib/Watching.js",
+    "sha256": "bd75d383e25a0fb7265c2d9b111140b91d799f5811ec1ae8201d10a1336634c9"
+  },
+  {
+    "path": "node_modules/webpack/lib/MultiWatching.js",
+    "sha256": "b4be56d942027521b155827de5fa60597c88ec1b92ebef55ddabfa82a842b79e"
+  },
+  {
+    "path": "node_modules/@dcloudio/vue-cli-plugin-uni-optimize/packages/webpack-optimize-plugin/index.js",
+    "sha256": "f8fedd62267eb0f33819ac96ea0bda4dcfe33c66e0220720e2b7b0462f42a5b4"
+  },
+  {
+    "path": "node_modules/webpack/lib/Compiler.js",
+    "sha256": "06acae4203d59213995d9eba33b859a857adfdf002db7ded51565a384d7b72e9"
+  },
+  {
+    "path": "node_modules/webpack/lib/MultiCompiler.js",
+    "sha256": "51a1d0f8fb2b1f1ddda9bf37f00eafa6d670b0bd93ee6f7820405bb09ae1e7f6"
+  },
+  {
+    "path": "node_modules/@dcloudio/vue-cli-plugin-uni/commands/build.js",
+    "sha256": "cfd78f2b0f9618795501f820ab5026a61f7d9c2f93f60e56af518777d709853c"
+  },
+  {
+    "path": "bin/uniapp-cli.js",
+    "sha256": "0c71853cb91effbeab019c4bb05660fd171764e84c42ee7046ee28bab0e4320c"
+  }
+]

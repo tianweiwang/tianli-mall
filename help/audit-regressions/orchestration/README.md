@@ -8,7 +8,11 @@
 
 现用作者另需的两组固定公共 donor 也保存在同一索引：原 `project-organization-20261023` 下的 baseline PINS/Core9/B31 与 historical-normal PINS/18件，新增60件、66,018,409字节。新增行单列真实 `origin_root`，原242行及其归档字节保持；只选源码、来源索引和合成棋盘图，不递归收入原目录中的其它文件或运行资料。
 
-这是**源码归档和恢复资料**。包含旧完整编排、后续失败版本和修正后的完整编排源码。本目录不宣称可直接跨机器运行或业务验证通过。当前交付分支为 `feature/multi-merchant-release-config-20261027`；初次源码交接保留在 `feature/ms4-asset-consumers`；最早的 `codex/audit-base` 链接不包含本次交接。
+正式三端构建的固定公开输入现另归档58件、27,094,591字节：原 `integrated-three-frontend-build-source-r5` 的53个源成员与原PINS，加四份依赖/Node-npm清单。总索引为360件、131,641,209字节；原302件及60个normal/B公共donor保持。新集合由独立的 `frontend_build_public_inputs` 精确允许清单核对，不递归引入依赖缓存、Node二进制、运行收据或私有材料。原声明的唯一空 `.tmp` 目录不在Git归档中创建，只在新派生包内按原11目录恢复。
+
+`current_frontend_build_source.py` 从此归档读取原r5与四份公开authority；生成的QUALIFICATION仍保持原12键，仅将四份metadata指针映射为归档实际路径。R61派生记录中的 `public_input_pointer_rebinding` 明列原逻辑指针、实际指针、完整bytes/SHA保全和四路径逆回；为兼容现复制消费者保留的 `dependency_authority_preserved` / `npm_runtime_authority_preserved` 仅表示authority原字节资格保持，不表示绝对路径未变。实际Node、依赖目录、工具版本、输出位置及其所有构建检查仍是环境前提；源码派生不代表已构建或发布。
+
+这是**源码归档和恢复资料**。包含旧完整编排、后续失败版本和修正后的完整编排源码。本目录不宣称可直接跨机器运行或业务验证通过。当前维护分支为 `feature/finance-refund-facts-20261102`；此前交付保留在 `feature/multi-merchant-release-config-20261027`；初次源码交接保留在 `feature/ms4-asset-consumers`；最早的 `codex/audit-base` 链接不包含本次交接。
 
 ## 当前候选的正常回归接入
 

@@ -1,0 +1,76 @@
+{
+  "schema": 1,
+  "status": "PREPARED_NOT_RUN",
+  "package": "@dcloudio/vue-cli-plugin-uni-optimize",
+  "version": "2.0.2-alpha-5010220260604002",
+  "source_package": "E:/HBuilderX/plugins/uniapp-cli/node_modules/@dcloudio/vue-cli-plugin-uni-optimize",
+  "overlay_package": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-mobile-h5-build-source-r1/compiler-overlays/vue-cli-plugin-uni-optimize",
+  "container_package": "/hbx/plugins/uniapp-cli/node_modules/@dcloudio/vue-cli-plugin-uni-optimize",
+  "source_tmp_exists": false,
+  "overlay_tmp_empty": true,
+  "copied_file_count": 11,
+  "excluded_directories": [
+    ".tmp",
+    ".cache",
+    "node_modules"
+  ],
+  "cache_container_path": "/hbx/plugins/uniapp-cli/node_modules/@dcloudio/vue-cli-plugin-uni-optimize/.tmp",
+  "cache_mount": "tmpfs rw,nosuid,nodev,size=16777216",
+  "entries": [
+    {
+      "path": "index.js",
+      "bytes": 3141,
+      "sha256": "2ab66760753222a99102ed3e4b1172f50fd5d048ba5f62e0181a9da39d00b14e"
+    },
+    {
+      "path": "LICENSE",
+      "bytes": 11357,
+      "sha256": "58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd"
+    },
+    {
+      "path": "logo.png",
+      "bytes": 4023,
+      "sha256": "46719607502ebe256abff3ee000121c761708258187fb2bd6dac8443845ef32e"
+    },
+    {
+      "path": "package.json",
+      "bytes": 522,
+      "sha256": "8c92f14563f96945ba48ae076548153bf727444854f865b001adecfb67b8f0fc"
+    },
+    {
+      "path": "packages/babel-plugin-uni-api/index.js",
+      "bytes": 457,
+      "sha256": "ef9ff386de03428469dfe98e88f8e4b8cf8b9eb9a9e7b8ea75ccca0456c712af"
+    },
+    {
+      "path": "packages/webpack-optimize-plugin/api.js",
+      "bytes": 7144,
+      "sha256": "ea692c2eafea2c268e6fc2d07861a12d4e9ba551cac0a27b4b753d89e264084e"
+    },
+    {
+      "path": "packages/webpack-optimize-plugin/component.js",
+      "bytes": 1897,
+      "sha256": "a081107af8b43cc7cb04d5c1f0772a3dcaf0afe515e766979a8ca84c257f9863"
+    },
+    {
+      "path": "packages/webpack-optimize-plugin/index.js",
+      "bytes": 1208,
+      "sha256": "f8fedd62267eb0f33819ac96ea0bda4dcfe33c66e0220720e2b7b0462f42a5b4"
+    },
+    {
+      "path": "packages/webpack-optimize-plugin/util.js",
+      "bytes": 478,
+      "sha256": "aae615b10529785ef0b2aa90d8b1edd97ec53a7723880e83542b361c529e8b51"
+    },
+    {
+      "path": "packages/webpack-style-loader/index.js",
+      "bytes": 439,
+      "sha256": "69f80ff4391cf7fc2e8c3c5612b18c957d2d4d147f7bc32d3181fc2d5ac7df5a"
+    },
+    {
+      "path": "README.md",
+      "bytes": 64,
+      "sha256": "5321080250bf750ffbbe46c1047184c5bd42bd9a3cf166cdb2cd6fd9b4274484"
+    }
+  ]
+}

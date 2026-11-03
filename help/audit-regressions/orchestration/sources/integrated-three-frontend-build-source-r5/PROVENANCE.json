@@ -1,0 +1,484 @@
+{
+  "scope": "LOCAL_SOURCE_DISCOVERY_AND_STATIC_COMPARISON_NOT_BUILD",
+  "observed_head_not_final_qualification": "7a17c6bee8f5656235b7a68a5b2c1df21b11fa5c",
+  "controllers_full_read": [
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-platform-site-image-admin-build-actual-r1/root-driver.py",
+      "bytes": 20905,
+      "sha256": "5f9396a251c36e11cbda059a6025beea1b0a090fcbe83b0791e4e213695adf3b"
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-merchant-video-audio-ui-build-source-r2/root-driver.py",
+      "bytes": 17874,
+      "sha256": "01ebcba8aa5a56deeb647697a05b789cde4a5af48410898a18cadc24cb7a6258"
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/current41c0-normal-root-admission-r1/run-r92-merchant-ui-build-r2.py",
+      "bytes": 2028,
+      "sha256": "5f17a22fff357e2d9d105a08cee00e60e3a57e9cb5fbad7c8d30e6ed10d9c597"
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/current41c0-normal-root-admission-r1/read-r99-platform-admin-build.py",
+      "bytes": 5987,
+      "sha256": "20ee064ebb8b9dfaa84e307b6ecab4840ec3df230abe32c3dc7e82de025fc87a"
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/current41c0-normal-root-admission-r1/read-r97-mobile-h5-actual.py",
+      "bytes": 6427,
+      "sha256": "66ad849fc0fee316e228c494f9adc8de859d64ee5c3635fcf932fd128dd16297"
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-mobile-h5-build-source-r1/launch.py",
+      "bytes": 3346,
+      "sha256": "698dc8f19c221533beb4379344d21319d1603f5223384990c0dc15090b50bd25"
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-mobile-h5-build-source-r1/build-linux.ps1",
+      "bytes": 16084,
+      "sha256": "09fd61adcb680eee89c3455a83d27cc97089e7bcda8d45943b1a8e2fe15c1f52"
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-mobile-h5-build-source-r1/build-common.ps1",
+      "bytes": 6615,
+      "sha256": "d8875beda725969ca0c7f492a55e0e43f8d66723ae059f510a902fd7b13ab6d4"
+    },
+    {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-mobile-h5-build-source-r1/native.py",
+      "bytes": 1867,
+      "sha256": "f272cde2d2cfb7704e70c59cc959a93caed626b17ff9a62651b4993c2bf204c8"
+    }
+  ],
+  "Root_runtime_preflight": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/integrated-build-runtime-preflight-r1/RESULT.json",
+    "bytes": 914,
+    "sha256": "7369477877e96ddf20fc3debbba80cda996578d1a483dacfa0c649ed5a3d6833"
+  },
+  "raw_H5_leaves": [
+    {
+      "source": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-mobile-h5-build-source-r1/explicit-pass-preload.cjs",
+        "bytes": 12166,
+        "sha256": "a4692cdee10951f07f567170908b444ccace6ac74254bcf0a1aaf52aa1d51e44"
+      },
+      "copy": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/integrated-three-frontend-build-source-r1/h5-tools/explicit-pass-preload.cjs",
+        "bytes": 12166,
+        "sha256": "a4692cdee10951f07f567170908b444ccace6ac74254bcf0a1aaf52aa1d51e44"
+      },
+      "raw_equal": true
+    },
+    {
+      "source": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-mobile-h5-build-source-r1/compiler-source-guards.json",
+        "bytes": 1241,
+        "sha256": "dc98c9880114884e2b166e1547fd34b75d88c2fc1d78cbee2b9b89a730cf15f1"
+      },
+      "copy": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/integrated-three-frontend-build-source-r1/h5-tools/compiler-source-guards.json",
+        "bytes": 1241,
+        "sha256": "dc98c9880114884e2b166e1547fd34b75d88c2fc1d78cbee2b9b89a730cf15f1"
+      },
+      "raw_equal": true
+    },
+    {
+      "source": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-mobile-h5-build-source-r1/optimize-overlay-manifest.json",
+        "bytes": 2632,
+        "sha256": "25419be4b7106b148c6744798942be56faba17ea97286c76dc55855da85c4ec5"
+      },
+      "copy": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/integrated-three-frontend-build-source-r1/h5-tools/optimize-overlay-manifest.json",
+        "bytes": 2632,
+        "sha256": "25419be4b7106b148c6744798942be56faba17ea97286c76dc55855da85c4ec5"
+      },
+      "raw_equal": true
+    },
+    {
+      "source": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-mobile-h5-build-source-r1/stylus-inputs.json",
+        "bytes": 6986,
+        "sha256": "c8c6303316ef15daa79c31a5f80feb76177a4b1d032dc506e775e33a3405d499"
+      },
+      "copy": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/integrated-three-frontend-build-source-r1/h5-tools/stylus-inputs.json",
+        "bytes": 6986,
+        "sha256": "c8c6303316ef15daa79c31a5f80feb76177a4b1d032dc506e775e33a3405d499"
+      },
+      "raw_equal": true
+    },
+    {
+      "source": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-mobile-h5-build-source-r1/compiler-overlays/vue-cli-plugin-uni-optimize/index.js",
+        "bytes": 3141,
+        "sha256": "2ab66760753222a99102ed3e4b1172f50fd5d048ba5f62e0181a9da39d00b14e"
+      },
+      "copy": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/integrated-three-frontend-build-source-r1/h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/index.js",
+        "bytes": 3141,
+        "sha256": "2ab66760753222a99102ed3e4b1172f50fd5d048ba5f62e0181a9da39d00b14e"
+      },
+      "raw_equal": true
+    },
+    {
+      "source": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-mobile-h5-build-source-r1/compiler-overlays/vue-cli-plugin-uni-optimize/LICENSE",
+        "bytes": 11357,
+        "sha256": "58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd"
+      },
+      "copy": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/integrated-three-frontend-build-source-r1/h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/LICENSE",
+        "bytes": 11357,
+        "sha256": "58d1e17ffe5109a7ae296caafcadfdbe6a7d176f0bc4ab01e12a689b0499d8bd"
+      },
+      "raw_equal": true
+    },
+    {
+      "source": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-mobile-h5-build-source-r1/compiler-overlays/vue-cli-plugin-uni-optimize/logo.png",
+        "bytes": 4023,
+        "sha256": "46719607502ebe256abff3ee000121c761708258187fb2bd6dac8443845ef32e"
+      },
+      "copy": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/integrated-three-frontend-build-source-r1/h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/logo.png",
+        "bytes": 4023,
+        "sha256": "46719607502ebe256abff3ee000121c761708258187fb2bd6dac8443845ef32e"
+      },
+      "raw_equal": true
+    },
+    {
+      "source": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-mobile-h5-build-source-r1/compiler-overlays/vue-cli-plugin-uni-optimize/package.json",
+        "bytes": 522,
+        "sha256": "8c92f14563f96945ba48ae076548153bf727444854f865b001adecfb67b8f0fc"
+      },
+      "copy": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/integrated-three-frontend-build-source-r1/h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/package.json",
+        "bytes": 522,
+        "sha256": "8c92f14563f96945ba48ae076548153bf727444854f865b001adecfb67b8f0fc"
+      },
+      "raw_equal": true
+    },
+    {
+      "source": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-mobile-h5-build-source-r1/compiler-overlays/vue-cli-plugin-uni-optimize/packages/babel-plugin-uni-api/index.js",
+        "bytes": 457,
+        "sha256": "ef9ff386de03428469dfe98e88f8e4b8cf8b9eb9a9e7b8ea75ccca0456c712af"
+      },
+      "copy": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/integrated-three-frontend-build-source-r1/h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/packages/babel-plugin-uni-api/index.js",
+        "bytes": 457,
+        "sha256": "ef9ff386de03428469dfe98e88f8e4b8cf8b9eb9a9e7b8ea75ccca0456c712af"
+      },
+      "raw_equal": true
+    },
+    {
+      "source": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-mobile-h5-build-source-r1/compiler-overlays/vue-cli-plugin-uni-optimize/packages/webpack-optimize-plugin/api.js",
+        "bytes": 7144,
+        "sha256": "ea692c2eafea2c268e6fc2d07861a12d4e9ba551cac0a27b4b753d89e264084e"
+      },
+      "copy": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/integrated-three-frontend-build-source-r1/h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/packages/webpack-optimize-plugin/api.js",
+        "bytes": 7144,
+        "sha256": "ea692c2eafea2c268e6fc2d07861a12d4e9ba551cac0a27b4b753d89e264084e"
+      },
+      "raw_equal": true
+    },
+    {
+      "source": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-mobile-h5-build-source-r1/compiler-overlays/vue-cli-plugin-uni-optimize/packages/webpack-optimize-plugin/component.js",
+        "bytes": 1897,
+        "sha256": "a081107af8b43cc7cb04d5c1f0772a3dcaf0afe515e766979a8ca84c257f9863"
+      },
+      "copy": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/integrated-three-frontend-build-source-r1/h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/packages/webpack-optimize-plugin/component.js",
+        "bytes": 1897,
+        "sha256": "a081107af8b43cc7cb04d5c1f0772a3dcaf0afe515e766979a8ca84c257f9863"
+      },
+      "raw_equal": true
+    },
+    {
+      "source": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-mobile-h5-build-source-r1/compiler-overlays/vue-cli-plugin-uni-optimize/packages/webpack-optimize-plugin/index.js",
+        "bytes": 1208,
+        "sha256": "f8fedd62267eb0f33819ac96ea0bda4dcfe33c66e0220720e2b7b0462f42a5b4"
+      },
+      "copy": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/integrated-three-frontend-build-source-r1/h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/packages/webpack-optimize-plugin/index.js",
+        "bytes": 1208,
+        "sha256": "f8fedd62267eb0f33819ac96ea0bda4dcfe33c66e0220720e2b7b0462f42a5b4"
+      },
+      "raw_equal": true
+    },
+    {
+      "source": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-mobile-h5-build-source-r1/compiler-overlays/vue-cli-plugin-uni-optimize/packages/webpack-optimize-plugin/util.js",
+        "bytes": 478,
+        "sha256": "aae615b10529785ef0b2aa90d8b1edd97ec53a7723880e83542b361c529e8b51"
+      },
+      "copy": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/integrated-three-frontend-build-source-r1/h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/packages/webpack-optimize-plugin/util.js",
+        "bytes": 478,
+        "sha256": "aae615b10529785ef0b2aa90d8b1edd97ec53a7723880e83542b361c529e8b51"
+      },
+      "raw_equal": true
+    },
+    {
+      "source": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-mobile-h5-build-source-r1/compiler-overlays/vue-cli-plugin-uni-optimize/packages/webpack-style-loader/index.js",
+        "bytes": 439,
+        "sha256": "69f80ff4391cf7fc2e8c3c5612b18c957d2d4d147f7bc32d3181fc2d5ac7df5a"
+      },
+      "copy": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/integrated-three-frontend-build-source-r1/h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/packages/webpack-style-loader/index.js",
+        "bytes": 439,
+        "sha256": "69f80ff4391cf7fc2e8c3c5612b18c957d2d4d147f7bc32d3181fc2d5ac7df5a"
+      },
+      "raw_equal": true
+    },
+    {
+      "source": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-mobile-h5-build-source-r1/compiler-overlays/vue-cli-plugin-uni-optimize/README.md",
+        "bytes": 64,
+        "sha256": "5321080250bf750ffbbe46c1047184c5bd42bd9a3cf166cdb2cd6fd9b4274484"
+      },
+      "copy": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/integrated-three-frontend-build-source-r1/h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/README.md",
+        "bytes": 64,
+        "sha256": "5321080250bf750ffbbe46c1047184c5bd42bd9a3cf166cdb2cd6fd9b4274484"
+      },
+      "raw_equal": true
+    }
+  ],
+  "old_overlay_vs_observed_Git": [
+    {
+      "old_group": "merchant5",
+      "path": "template/merchant/src/api/index.js",
+      "old_candidate": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-merchant-video-audio-ui-source-r1/candidate/template/merchant/src/api/index.js",
+        "bytes": 8118,
+        "sha256": "db0fd5d352456a5d7297a0cffe054becfa482117595e136e86e0a90b7734b13c"
+      },
+      "observed_Git": {
+        "bytes": 16498,
+        "sha256": "b93602be099d670063686c98b1d21202e266215a85b23d00fcdbde67b4a81c66"
+      },
+      "raw_equal": false,
+      "new_build_action": "USE_FINAL_QUALIFIED_GIT_ONLY_NEVER_APPLY_OLD_OVERLAY"
+    },
+    {
+      "old_group": "merchant5",
+      "path": "template/merchant/src/components/AttachmentLibrary.vue",
+      "old_candidate": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-merchant-video-audio-ui-source-r1/candidate/template/merchant/src/components/AttachmentLibrary.vue",
+        "bytes": 17017,
+        "sha256": "f7f0c0ef59469a738fa5fefa774db6985cf609d059abf47f01511050bb05c09a"
+      },
+      "observed_Git": {
+        "bytes": 18177,
+        "sha256": "82652ef60c8c11fcaa5c5c2df1f23a06882fdaee3b3a88a231e3425596ee7b2e"
+      },
+      "raw_equal": false,
+      "new_build_action": "USE_FINAL_QUALIFIED_GIT_ONLY_NEVER_APPLY_OLD_OVERLAY"
+    },
+    {
+      "old_group": "merchant5",
+      "path": "template/merchant/src/components/AttachmentPicker.vue",
+      "old_candidate": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-merchant-video-audio-ui-source-r1/candidate/template/merchant/src/components/AttachmentPicker.vue",
+        "bytes": 1055,
+        "sha256": "120fb7dc677ca0c13784ca0c6aef8e6eccbb0803023d89af479752a65f3069a9"
+      },
+      "observed_Git": {
+        "bytes": 1055,
+        "sha256": "120fb7dc677ca0c13784ca0c6aef8e6eccbb0803023d89af479752a65f3069a9"
+      },
+      "raw_equal": true,
+      "new_build_action": "USE_FINAL_QUALIFIED_GIT_ONLY_NEVER_APPLY_OLD_OVERLAY"
+    },
+    {
+      "old_group": "merchant5",
+      "path": "template/merchant/src/pages/product/edit.vue",
+      "old_candidate": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-merchant-video-audio-ui-source-r1/candidate/template/merchant/src/pages/product/edit.vue",
+        "bytes": 20546,
+        "sha256": "421a23a909f460faee8ea0de96d54a399beb3271ccbb39765a0d1a8773e37448"
+      },
+      "observed_Git": {
+        "bytes": 20546,
+        "sha256": "421a23a909f460faee8ea0de96d54a399beb3271ccbb39765a0d1a8773e37448"
+      },
+      "raw_equal": true,
+      "new_build_action": "USE_FINAL_QUALIFIED_GIT_ONLY_NEVER_APPLY_OLD_OVERLAY"
+    },
+    {
+      "old_group": "merchant5",
+      "path": "template/merchant/src/styles.css",
+      "old_candidate": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-merchant-video-audio-ui-source-r1/candidate/template/merchant/src/styles.css",
+        "bytes": 6511,
+        "sha256": "81d4ac812325ccff6960943a373baec5fef79bc912693ed31389a7d0142a6549"
+      },
+      "observed_Git": {
+        "bytes": 6511,
+        "sha256": "81d4ac812325ccff6960943a373baec5fef79bc912693ed31389a7d0142a6549"
+      },
+      "raw_equal": true,
+      "new_build_action": "USE_FINAL_QUALIFIED_GIT_ONLY_NEVER_APPLY_OLD_OVERLAY"
+    },
+    {
+      "old_group": "admin8",
+      "path": "template/admin/src/api/product-media.js",
+      "old_candidate": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-owned-video-ui-source-r2/candidate/template/admin/src/api/product-media.js",
+        "bytes": 15539,
+        "sha256": "35c08999b07b3949fdc92642ce94ac51978681e41189c5ad59f6887d504accb9"
+      },
+      "observed_Git": {
+        "bytes": 26453,
+        "sha256": "161cf53754d6f2f12aedbf07212c4c6657716ed7f2f1fba9303be34aded669ff"
+      },
+      "raw_equal": false,
+      "new_build_action": "USE_FINAL_QUALIFIED_GIT_ONLY_NEVER_APPLY_OLD_OVERLAY"
+    },
+    {
+      "old_group": "admin8",
+      "path": "template/admin/src/components/uploadVideo2/index.vue",
+      "old_candidate": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-owned-video-ui-source-r2/candidate/template/admin/src/components/uploadVideo2/index.vue",
+        "bytes": 51538,
+        "sha256": "8fabaff83b922819903e1f1fb96896da2c5ff9eafed9cde751d51e966fb81d83"
+      },
+      "observed_Git": {
+        "bytes": 53417,
+        "sha256": "f59e88096662834630225c48bd818a696be8ffdca3c218fca64f3d5a78520391"
+      },
+      "raw_equal": false,
+      "new_build_action": "USE_FINAL_QUALIFIED_GIT_ONLY_NEVER_APPLY_OLD_OVERLAY"
+    },
+    {
+      "old_group": "admin8",
+      "path": "template/admin/src/components/uploadVideo2/model.js",
+      "old_candidate": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-owned-video-ui-source-r2/candidate/template/admin/src/components/uploadVideo2/model.js",
+        "bytes": 1032,
+        "sha256": "bf4cb3eab09cffd78a4e4fee78c8720a0ddda931b61fe0c130e88c73c1f7b395"
+      },
+      "observed_Git": {
+        "bytes": 1032,
+        "sha256": "bf4cb3eab09cffd78a4e4fee78c8720a0ddda931b61fe0c130e88c73c1f7b395"
+      },
+      "raw_equal": true,
+      "new_build_action": "USE_FINAL_QUALIFIED_GIT_ONLY_NEVER_APPLY_OLD_OVERLAY"
+    },
+    {
+      "old_group": "admin8",
+      "path": "template/admin/src/components/uploadVideo2/videoModal.vue",
+      "old_candidate": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-owned-video-ui-source-r2/candidate/template/admin/src/components/uploadVideo2/videoModal.vue",
+        "bytes": 1514,
+        "sha256": "1944164110e85e6f7b11fc69fea0d714fb28b30d5c62752a186d2cb9cee0456a"
+      },
+      "observed_Git": {
+        "bytes": 1514,
+        "sha256": "1944164110e85e6f7b11fc69fea0d714fb28b30d5c62752a186d2cb9cee0456a"
+      },
+      "raw_equal": true,
+      "new_build_action": "USE_FINAL_QUALIFIED_GIT_ONLY_NEVER_APPLY_OLD_OVERLAY"
+    },
+    {
+      "old_group": "admin8",
+      "path": "template/admin/src/components/wangEditor/editor.js",
+      "old_candidate": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-owned-video-ui-source-r2/candidate/template/admin/src/components/wangEditor/editor.js",
+        "bytes": 810,
+        "sha256": "5e98389b141225d33acbcdbf2eff3546cf4fd441bbd9dc0ada6ca07088008c11"
+      },
+      "observed_Git": {
+        "bytes": 810,
+        "sha256": "5e98389b141225d33acbcdbf2eff3546cf4fd441bbd9dc0ada6ca07088008c11"
+      },
+      "raw_equal": true,
+      "new_build_action": "USE_FINAL_QUALIFIED_GIT_ONLY_NEVER_APPLY_OLD_OVERLAY"
+    },
+    {
+      "old_group": "admin8",
+      "path": "template/admin/src/components/wangEditor/html.js",
+      "old_candidate": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-owned-video-ui-source-r2/candidate/template/admin/src/components/wangEditor/html.js",
+        "bytes": 780,
+        "sha256": "0ba0974fadac4a395647571ea51a89e4bb47f0eb8a1610972862e992b7091838"
+      },
+      "observed_Git": {
+        "bytes": 780,
+        "sha256": "0ba0974fadac4a395647571ea51a89e4bb47f0eb8a1610972862e992b7091838"
+      },
+      "raw_equal": true,
+      "new_build_action": "USE_FINAL_QUALIFIED_GIT_ONLY_NEVER_APPLY_OLD_OVERLAY"
+    },
+    {
+      "old_group": "admin8",
+      "path": "template/admin/src/components/wangEditor/index.vue",
+      "old_candidate": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-owned-video-ui-source-r2/candidate/template/admin/src/components/wangEditor/index.vue",
+        "bytes": 12423,
+        "sha256": "acf473d8c405add13fdd8192f3458588cd746273bddd280099745c1530d78a8c"
+      },
+      "observed_Git": {
+        "bytes": 12423,
+        "sha256": "acf473d8c405add13fdd8192f3458588cd746273bddd280099745c1530d78a8c"
+      },
+      "raw_equal": true,
+      "new_build_action": "USE_FINAL_QUALIFIED_GIT_ONLY_NEVER_APPLY_OLD_OVERLAY"
+    },
+    {
+      "old_group": "admin8",
+      "path": "template/admin/src/pages/product/productAdd/index.vue",
+      "old_candidate": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-owned-video-ui-source-r2/candidate/template/admin/src/pages/product/productAdd/index.vue",
+        "bytes": 68653,
+        "sha256": "677e632505e5425ca1b82f76eda312d5b2ad39b296d2d1dffb714bde39f652ad"
+      },
+      "observed_Git": {
+        "bytes": 68653,
+        "sha256": "677e632505e5425ca1b82f76eda312d5b2ad39b296d2d1dffb714bde39f652ad"
+      },
+      "raw_equal": true,
+      "new_build_action": "USE_FINAL_QUALIFIED_GIT_ONLY_NEVER_APPLY_OLD_OVERLAY"
+    },
+    {
+      "old_group": "admin2",
+      "path": "template/admin/src/api/product-media.js",
+      "old_candidate": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-platform-site-image-admin-build-source-r1/ui-source/candidate/template/admin/src/api/product-media.js",
+        "bytes": 18399,
+        "sha256": "4e86ab8ba5c7f65f69570bb6968a370b09a8c3e2cf5b10332c310c4b10151b5a"
+      },
+      "observed_Git": {
+        "bytes": 26453,
+        "sha256": "161cf53754d6f2f12aedbf07212c4c6657716ed7f2f1fba9303be34aded669ff"
+      },
+      "raw_equal": false,
+      "new_build_action": "USE_FINAL_QUALIFIED_GIT_ONLY_NEVER_APPLY_OLD_OVERLAY"
+    },
+    {
+      "old_group": "admin2",
+      "path": "template/admin/src/components/uploadPictures/index.vue",
+      "old_candidate": {
+        "path": "H:/天俪商城/artifacts/project-organization-20261023/currentbfe-platform-site-image-admin-build-source-r1/ui-source/candidate/template/admin/src/components/uploadPictures/index.vue",
+        "bytes": 57175,
+        "sha256": "5f524012bcba75ed38673a1316e72658fc8de0641d6288ac5177071cae50dbb1"
+      },
+      "observed_Git": {
+        "bytes": 57175,
+        "sha256": "5f524012bcba75ed38673a1316e72658fc8de0641d6288ac5177071cae50dbb1"
+      },
+      "raw_equal": true,
+      "new_build_action": "USE_FINAL_QUALIFIED_GIT_ONLY_NEVER_APPLY_OLD_OVERLAY"
+    }
+  ],
+  "actual_current_builds": "NOT_RUN",
+  "final_qualified_HEAD_Source_Val_fulltree_dependencies": "UNBOUND",
+  "dist_and_public_copy_four_manifests": "NOT_CREATED",
+  "author_checks": "Source reads/Git blob byte comparison only; no AST/compile/import/candidate/Node/npm/HBuilderX/Docker/targets/network"
+}

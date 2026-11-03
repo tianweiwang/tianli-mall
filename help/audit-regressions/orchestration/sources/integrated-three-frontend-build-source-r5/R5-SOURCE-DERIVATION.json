@@ -1,0 +1,113 @@
+{
+  "date": "2026-10-26",
+  "status": "ROOT_DERIVED_REAL_CURRENT_SOURCE_AND_OFFLINE_INPUT_BOUND_BUILD_SOURCE_R5_PENDING_NONAUTHOR_FINAL_REVIEW",
+  "original_r3": {
+    "root": "H:/天俪商城/artifacts/project-organization-20261023/integrated-three-frontend-build-source-r3",
+    "whole48": 48,
+    "complete_bytes": 357670,
+    "PINS": {
+      "bytes": 8288,
+      "sha256": "c2444cfb0093b8063e04b0f607a08ee2485fb2f888d56823a0dd76532da7c0ca"
+    }
+  },
+  "exact_common_edits": [
+    {
+      "before_utf8": "RUN_PARENT = ORG / 'integrated-three-frontend-build-runs'",
+      "after_utf8": "RUN_PARENT = ORG / 'build-runs'"
+    },
+    {
+      "before_utf8": "QUALIFIED_INPUTS_PIN = None",
+      "after_utf8": "QUALIFIED_INPUTS_PIN = {'path': 'H:/天俪商城/artifacts/project-organization-20261023/integrated-three-frontend-build-source-r5/QUALIFICATION.json', 'bytes': 2097, 'sha256': '2ce29d5cfea33478df20cc8960a0851ae6211ee580c688121b1ac5f907e022d2'}"
+    }
+  ],
+  "whole_common_inverse_to_r3": true,
+  "other_original_raw_unchanged": [
+    "DESIGN.md",
+    "h5_build.py",
+    "launch.py",
+    "PROVENANCE.json",
+    "READER-FIX-DESIGN.md",
+    "root-build.py",
+    "SOURCE-REPORT.json",
+    "STYLUS-ALIASES-DESIGN.md",
+    "windows_build.py",
+    "h5-tools/compiler-source-guards.json",
+    "h5-tools/explicit-pass-preload.cjs",
+    "h5-tools/optimize-overlay-manifest.json",
+    "h5-tools/stylus-inputs.json",
+    "source-proof-r2/build_common.py.diff",
+    "source-proof-r2/build_common.py.r1",
+    "source-proof-r2/R1-BASELINE.json",
+    "source-proof-r2/R1-PINS.json",
+    "source-proof-r2/R1-SOURCE-REPORT.json",
+    "source-proof-r2/read.after.source",
+    "source-proof-r2/read.before.source",
+    "source-proof-r2/ROOT-READER-V2-ADOPTION.json",
+    "source-proof-r2/SOURCE-PRESERVATION.json",
+    "source-proof-r3/FINITE-EDITS.json",
+    "source-proof-r3/h5_build.py.diff",
+    "source-proof-r3/h5_build.py.r2",
+    "source-proof-r3/R2-BASELINE.json",
+    "source-proof-r3/R2-PINS.json",
+    "source-proof-r3/R2-SOURCE-REPORT.json",
+    "source-proof-r3/ROOT-STYLUS-AUTHORITY.json",
+    "source-proof-r3/ROOT-STYLUS-R3-ADOPTION.json",
+    "source-proof-r3/ROOT-STYLUS-RESULT.json",
+    "source-proof-r3/SOURCE-PRESERVATION.json",
+    "source-proof-r3/stylus_tree.source",
+    "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/index.js",
+    "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/LICENSE",
+    "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/logo.png",
+    "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/package.json",
+    "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/README.md",
+    "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/packages/babel-plugin-uni-api/index.js",
+    "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/packages/webpack-optimize-plugin/api.js",
+    "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/packages/webpack-optimize-plugin/component.js",
+    "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/packages/webpack-optimize-plugin/index.js",
+    "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/packages/webpack-optimize-plugin/util.js",
+    "h5-tools/compiler-overlays/vue-cli-plugin-uni-optimize/packages/webpack-style-loader/index.js"
+  ],
+  "qualification": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/integrated-three-frontend-build-source-r5/QUALIFICATION.json",
+    "bytes": 2097,
+    "sha256": "2ce29d5cfea33478df20cc8960a0851ae6211ee580c688121b1ac5f907e022d2"
+  },
+  "Source_Val_actual_authority": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/integrated-chat-source-tree-qualification-r1/RESULT.json",
+    "bytes": 1130,
+    "sha256": "833cd2bba966fc5c72e3ea05ffb9bb4394708d3aa0a34399988a85c7f6a80ee1"
+  },
+  "fulltree_lossless_field_projection": true,
+  "dependency_authority": {
+    "admin": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/integrated-continuation-20261026-r1/dependency-preflight-r2/admin.json",
+      "bytes": 11566525,
+      "sha256": "7535000a19b35dc4683a3ec5c6da40ccf857c89198d3b0e074d0ab727145eb7d"
+    },
+    "merchant": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/integrated-continuation-20261026-r1/dependency-preflight-r2/merchant.json",
+      "bytes": 4271550,
+      "sha256": "faea7f5e40b5c0f4e172419675b35b7d85f5779a57cc86ab4c414940f946889b"
+    },
+    "h5": {
+      "path": "H:/天俪商城/artifacts/project-organization-20261023/integrated-continuation-20261026-r1/CURRENT-H5-DEPENDENCY-AUTHORITY.json",
+      "bytes": 5704609,
+      "sha256": "dacec90c49dadcdd760e0f81facc1cf1e5668595219e33b7af1592d750de140c"
+    }
+  },
+  "npm_runtime_authority": {
+    "path": "H:/天俪商城/artifacts/project-organization-20261023/integrated-continuation-20261026-r1/dependency-preflight-r2/npm.json",
+    "bytes": 337444,
+    "sha256": "559ee2b39970215ac32b56550b4f96b080d6e714e64b0f745652f021f2b9d675"
+  },
+  "actual_pure_python_AST_compile_only": [
+    "build_common.py",
+    "windows_build.py",
+    "h5_build.py",
+    "root-build.py",
+    "launch.py"
+  ],
+  "candidate_module_or_build_execution": false,
+  "Run_A_postA_build_B_browser_deploy": "NOT_RUN",
+  "final_non_author_review": "PENDING"
+}
