@@ -1,4 +1,4 @@
-"""Fixed initializer, file-observer and producer-entry seams; no I/O or CLI.
+"""Fixed initializer, file-read, file-observer and producer-entry seams; no I/O or CLI.
 
 The emitted source candidate requires a real external source review, the original
 producer seal/four CLI and both real normal retirements before registration.
@@ -1029,6 +1029,59 @@ def reverse_files_bootstrap(candidate: bytes) -> bytes:
         raise ValueError("FILES_BOOTSTRAP_UNIQUE_REVERSE_SEAM_REQUIRED")
     raw = candidate.replace(_FILES_BOOTSTRAP_AFTER, _FILES_BOOTSTRAP_BEFORE, 1)
     _files_bootstrap_source(raw)
+    return raw
+
+
+LEGACY_APP_SOURCE_PIN = (52325, "36ee80b6e425aa5623f814bfb9efd8b8d0b2aede94a2762c03d4d696aab734c5")
+_LEGACY_APP_READ_BEFORE = b"""    nhe_expect(is_array($before) && is_file($path) && !is_link($path)
+        && ($before['mode'] & 0170000) === 0100000, 'NHE_REGULAR_SOURCE_FILE');
+    $raw = file_get_contents($path);
+"""
+_LEGACY_APP_READ_AFTER = br"""    nhe_expect(is_array($before) && is_file($path) && !is_link($path)
+        && ($before['mode'] & 0170000) === 0100000, 'NHE_REGULAR_SOURCE_FILE');
+    // App initialization installs its own handler; this read must retain a safe first failure.
+    set_error_handler(static function (int $severity, #[SensitiveParameter] string $message): never {
+        if ($severity !== E_WARNING) throw new \RuntimeException('NHE_FILE_READ_OTHER_PHP_DIAGNOSTIC');
+        $reason = 'OTHER';
+        foreach (['No such file or directory' => 'NOT_FOUND', 'Permission denied' => 'PERMISSION',
+            'Too many open files' => 'OPEN_FILE_LIMIT', 'Cannot allocate memory' => 'ALLOCATION',
+            'Input/output error' => 'IO'] as $suffix => $code) {
+            if (strlen($message) <= 8192 && preg_match('~\Afile_get_contents\(.*\): '
+                . '(?:Failed to open stream: |Read of [0-9]+ bytes failed with errno=[0-9]+ )'
+                . preg_quote($suffix, '~') . '\z~Ds', $message) === 1) {
+                $reason = $code; break;
+            }
+        }
+        throw new \RuntimeException('NHE_FILE_READ_WARNING_' . $reason);
+    });
+    try {
+        $raw = file_get_contents($path);
+    } finally {
+        restore_error_handler();
+    }
+"""
+
+
+def _legacy_app_source(raw):
+    if not isinstance(raw, bytes) or (len(raw), hashlib.sha256(raw).hexdigest()) != LEGACY_APP_SOURCE_PIN:
+        raise ValueError("LEGACY_APP_EXACT_ARCHIVED_SOURCE_REQUIRED")
+
+
+def transform_legacy_app(raw: bytes) -> bytes:
+    _legacy_app_source(raw)
+    if raw.count(_LEGACY_APP_READ_BEFORE) != 1 or _LEGACY_APP_READ_AFTER in raw:
+        raise ValueError("LEGACY_APP_UNIQUE_READ_FORWARD_SEAM_REQUIRED")
+    candidate = raw.replace(_LEGACY_APP_READ_BEFORE, _LEGACY_APP_READ_AFTER, 1)
+    if reverse_legacy_app(candidate) != raw:
+        raise ValueError("LEGACY_APP_COMPLETE_READ_REVERSE_REQUIRED")
+    return candidate
+
+
+def reverse_legacy_app(candidate: bytes) -> bytes:
+    if not isinstance(candidate, bytes) or candidate.count(_LEGACY_APP_READ_AFTER) != 1:
+        raise ValueError("LEGACY_APP_UNIQUE_READ_REVERSE_SEAM_REQUIRED")
+    raw = candidate.replace(_LEGACY_APP_READ_AFTER, _LEGACY_APP_READ_BEFORE, 1)
+    _legacy_app_source(raw)
     return raw
 
 

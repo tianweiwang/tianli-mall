@@ -4281,7 +4281,7 @@ def build_history_source(output: str | Path, authority_pointer: dict[str, Any],
     upgrade_application_sources = []
     upgrade_registration_donor = None
     changed_names = ("compose.yml", "ms4-host.py", "ms4-initialize.php", "seed-source-inverse.json",
-                     "legacy-current-reader.php", "legacy-files-bootstrap.php", "legacy-history-producer.php",
+                     "legacy-current-reader.php", "legacy-app.php", "legacy-files-bootstrap.php", "legacy-history-producer.php",
                      "legacy-history-http.php")
     for kind, function, name in (("host", "host", "ms4-host.py"),
                                  ("reader", "reader", "legacy-current-reader.php"),
@@ -4315,6 +4315,10 @@ def build_history_source(output: str | Path, authority_pointer: dict[str, Any],
                 require(once(after["compose.yml"], selected_network, original_network) == composed,
                         "HISTORY_ONLY_EXPLICIT_ISOLATION_IPAM_BLOCK_CHANGED")
         if kind == "upgrade":
+            after["legacy-app.php"] = namespace["transform_legacy_app"](before["legacy-app.php"])
+            require(type(after["legacy-app.php"]) is bytes
+                    and namespace["reverse_legacy_app"](after["legacy-app.php"]) == before["legacy-app.php"],
+                    "HISTORY_COMPLETE_LEGACY_APP_READ_BOUNDARY_INVERSE")
             after["legacy-files-bootstrap.php"] = namespace["transform_files_bootstrap"](before["legacy-files-bootstrap.php"])
             require(type(after["legacy-files-bootstrap.php"]) is bytes
                     and namespace["reverse_files_bootstrap"](after["legacy-files-bootstrap.php"]) == before["legacy-files-bootstrap.php"],
@@ -4426,9 +4430,9 @@ def build_history_source(output: str | Path, authority_pointer: dict[str, Any],
         "after_function_sha256": seed_record["after_function_sha256"],
         "source_call_sites": 5, "whole_original_functions_unchanged": True}
     require(set(after) == set(before) and all(after[name] == before[name] for name in HISTORY_NAMES
-            if name not in changed_names), "HISTORY_OTHER_SIX_COMPLETE_FILES_UNCHANGED")
-    require(len(changed_names) == 8 and {name for name in HISTORY_NAMES if before[name] != after[name]} == set(changed_names),
-            "HISTORY_EXACT_EIGHT_CHANGED_MEMBERS")
+            if name not in changed_names), "HISTORY_OTHER_FIVE_COMPLETE_FILES_UNCHANGED")
+    require(len(changed_names) == 9 and {name for name in HISTORY_NAMES if before[name] != after[name]} == set(changed_names),
+            "HISTORY_EXACT_NINE_CHANGED_MEMBERS")
     require(constant(after["ms4-host.py"], "ARTIFACTS") == list(HISTORY_NAMES), "HISTORY_FINAL_FOURTEEN_ARTIFACTS")
     require(b"raise RuntimeError('NONEMPTY_HISTORY_RUNTIME_NOT_IMPLEMENTED')" not in after["ms4-host.py"]
             and b"nhecr_expect(false, 'NHECR_EXACT13_READER_FINAL_SOURCE_UNBOUND');" not in after["legacy-current-reader.php"]
@@ -4449,7 +4453,7 @@ def build_history_source(output: str | Path, authority_pointer: dict[str, Any],
     checks = {"schema": 1, "status": "CURRENT_HISTORY_SOURCE_REQUIRES_INDEPENDENT_ADOPTION",
               "source_sha": authority["source_sha"], "legacy_source_sha": constant(before["ms4-host.py"], "LEGACY_SOURCE"),
               "changed_members": [name for name in HISTORY_NAMES if before[name] != after[name]],
-               "original_other_members_unchanged": True, "unchanged_whole_members": 6,
+               "original_other_members_unchanged": True, "unchanged_whole_members": 5,
               "complete_forward_and_reverse": True,
               "python_syntax": "PASS", "modified_php_syntax": "NOT RUN",
               "independent_review": "PENDING", "runtime": "NOT RUN", "source_review_written": False,
