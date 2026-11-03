@@ -13,7 +13,7 @@ BUILD_BASE = Path("H:/天俪商城/artifacts/project-organization-20261023/integ
 BUILD_PINS = {"path": (BUILD_BASE / "PINS.json").as_posix(), "bytes": 9207,
               "sha256": "c2add24a609ff5185a9f4f971d0455a5a783cf9b55b4eedb16e599a6efec462d"}
 FRONTEND_AUTHOR_PIN = {"path": Path(__file__).with_name("current_frontend_build_source.py").as_posix(),
-                       "bytes": 21883, "sha256": "4b186bc90efc16b96f68731af1f05b7a90ef37c1e20e4d2e3a3942ed49c23710"}
+                       "bytes": 28347, "sha256": "b691f155d568512c9a4d2df7c6bd654174fefbeebcdcc2f7650b3739538151a4"}
 H5_LX_SOURCE = {"path": "H:/天俪商城/artifacts/multi-merchant-current-normal-source-20261028-r61/frontend-source-ms6-b-copy4-lx/h5_build.py",
                 "bytes": 19341, "sha256": "ab6dafd5f1beccc70a512887a9a3449a250008be0045aac84b4476460e210350"}
 PREVIEW_ADMIN_TOOL_PIN = {"path": "H:/天俪商城/worktrees/mall-history-reader-count/help/preview/build-frontends.py",
