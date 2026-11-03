@@ -38,11 +38,13 @@
     <div class="layout-navbars-breadcrumb-user-icon mr10" v-db-click @click="openMobelPage">
       <i title="商城页面" class="el-icon-mobile-phone"></i>
     </div>
-    <el-dropdown :show-timeout="70" @command="onDropdownCommand">
+    <el-dropdown class="layout-navbars-breadcrumb-user-dropdown" :show-timeout="70" @command="onDropdownCommand">
       <span class="layout-navbars-breadcrumb-user-link">
         <img :src="avatarSrc" class="layout-navbars-breadcrumb-user-link-photo mr5" alt="" @error="onAvatarError" />
-        {{ getUserInfos.account === '' ? 'test' : getUserInfos.account }}
-        <i class="el-icon-arrow-down el-icon--right"></i>
+        <span class="layout-navbars-breadcrumb-user-link-name" :title="getUserInfos.account === '' ? 'test' : getUserInfos.account">
+          {{ getUserInfos.account === '' ? 'test' : getUserInfos.account }}
+        </span>
+        <i class="el-icon-arrow-down el-icon--right layout-navbars-breadcrumb-user-link-arrow"></i>
       </span>
       <el-dropdown-menu slot="dropdown">
         <el-dropdown-item command="user">{{ $t('message.user.dropdown6') }}</el-dropdown-item>
@@ -272,30 +274,54 @@ export default {
 <style scoped lang="scss">
 .layout-navbars-breadcrumb-user {
   display: flex;
+  min-width: 0;
+  height: 50px;
+  max-height: 100%;
   align-items: center;
   justify-content: flex-end;
+  > * {
+    flex-shrink: 0;
+    height: 100%;
+  }
+  > .layout-navbars-breadcrumb-user-dropdown {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
   .el-icon-bell {
     color: var(--prev-bg-topBarColor);
   }
   &-link {
+    width: 100%;
+    min-width: 0;
     height: 100%;
     display: flex;
     align-items: center;
     white-space: nowrap;
     &-photo {
+      flex-shrink: 0;
       width: 30px;
       height: 30px;
       border-radius: 100%;
+    }
+    &-name {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    &-arrow {
+      flex-shrink: 0;
     }
   }
   &-icon {
     padding: 0 10px;
     cursor: pointer;
     color: var(--prev-bg-topBarColor);
-    height: 50px;
-    line-height: 50px;
+    height: 100%;
+    line-height: 1;
     display: flex;
     align-items: center;
+    justify-content: center;
     font-size: 15px;
     &:hover {
       background: var(--prev-color-hover);
