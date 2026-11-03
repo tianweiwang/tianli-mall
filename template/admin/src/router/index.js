@@ -170,8 +170,11 @@ async function refreshPlatformSession(session) {
       store.commit('menus/getmenusNav', data.menus);
       await store.dispatch('routesList/setRoutesList', data.menus);
       requirePlatformSession(session);
-      store.commit('menus/setOneLvMenus', formatFlatteningRoutes(router.options.routes));
+      const staticRoutes = formatFlatteningRoutes(router.options.routes);
+      store.commit('menus/setOneLvMenus', staticRoutes);
       store.commit('menus/setOneLvRoute', formatFlatteningRoutes(data.menus));
+      const cacheList = staticRoutes.filter((route) => route && route.meta && route.meta.keepAlive).map((route) => route.name);
+      await store.dispatch('keepAliveNames/setCacheKeepAlive', cacheList);
       requirePlatformSession(session);
       platformSessionReady = session;
     })();
