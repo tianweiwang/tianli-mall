@@ -4383,6 +4383,12 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
         for name in ("root-source/DESIGN-TASKS.md", "candidate/DESIGN.md"):
             require(after[name].endswith(b"\n"), "B_INTERRUPTION_DOCUMENTED_EXISTING_SOURCE_RECORD")
             after[name] += note
+    label_note = ("\n\n## 本派生来源的逐件 Git 回执标签\n\n"
+        "未来 materializer 的 committed-source 标签使用完整仓库相对路径 UTF-8 字节的 SHA256，避免同名文件碰撞。"
+        "SOURCE_ROWS 集合、遍历顺序、git show 参数及逐件长度/SHA 断言保持；只改 native 标签表达式，并核完整 main 单接缝逆回。"
+        "输出仍独占 xb 创建，不覆盖、跳过或复用旧回执；历史失败保持，新的真实运行仍待执行。\n").encode()
+    require(after["root-source/DESIGN-TASKS.md"].endswith(b"\n"), "B_MATERIALIZER_LABEL_CHANGE_DOCUMENTED_EXISTING_RECORD")
+    after["root-source/DESIGN-TASKS.md"] += label_note
     selected_subnets = derived["network_subnets"]
     require(("        - subnet: " + selected_subnets["isolation"] + "\n").encode()
             in stable_read(normal_root / "validation/actual-profile/compose.yml"),
@@ -4414,6 +4420,8 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
     for row in core["core_sources"]:
         require(row["path"] not in rows or rows[row["path"]] == row, "B_CONSISTENT_CORE_AND_NORMAL_SOURCE_OVERLAP")
         rows[row["path"]] = row
+    committed_source_labels = ["committed-source-" + hashlib.sha256(path.encode("utf-8")).hexdigest() for path in rows]
+    require(len(committed_source_labels) == len(set(committed_source_labels)), "B_COMPLETE_SOURCE_ROWS_FULL_PATH_NATIVE_LABELS_UNIQUE")
     latest = [inventory[row["path"]] for row in data["commit_chain"][-1]["files"]]
     require(latest and data["commit_chain"][-1]["source_sha"] == head, "B_ACTUAL_LAST_PARENT_COMMIT_FILES")
     members = {"files": list(inventory.values())}
@@ -4551,6 +4559,9 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
         "added_order_menu_consumer":"ms4-host.py:verify_order_menu_bootstrap",
         "aftersale_review_image_consumer":derived["aftersale_review_image_consumer"],
         "browser_compatibility":derived["browser_compatibility"],
+        "materializer_committed_source_labels":{"source_rows":len(rows),"unique_labels":len(set(committed_source_labels)),
+            "suffix":"SHA256_UTF8_FULL_REPOSITORY_RELATIVE_PATH","only_added_main_change":"NATIVE_LABEL_EXPRESSION",
+            "git_show_argv_order_and_file_assertions":"UNCHANGED","whole_main_single_seam_inverse":True},
         "materializer_detached_main_state":main_state_contract,
         "runtime":"NOT RUN","approval":"NOT_GRANTED_REQUIRES_INDEPENDENT_SOURCE_REVIEW"}
     if interrupted:
@@ -4590,6 +4601,15 @@ def _b_publish(out: Path, fixed_pointer: dict[str, Any], fixed: dict[str, Any], 
     root_m = after["root-source/root-ui-materialize-freeze.py"]
     for name,value in constants.items():root_m = _b_constant(root_m,name,value)
     root_m = once(root_m, main_state_before, main_state_detached)
+    main_before_labels = functions(root_m)["main"]
+    old_label = b"native('committed-source-' + Path(path).name,[*git,'show',HEAD + ':' + path])"
+    new_label = b"native('committed-source-' + sha(path.encode('utf-8')),[*git,'show',HEAD + ':' + path])"
+    main_with_labels = once(main_before_labels, old_label, new_label)
+    require(once(main_with_labels, new_label, old_label) == main_before_labels, "B_MATERIALIZER_WHOLE_MAIN_ONLY_NATIVE_LABEL_INVERSE")
+    root_before_labels = root_m
+    root_m = once(root_m, old_label, new_label)
+    require(once(root_m, new_label, old_label) == root_before_labels, "B_MATERIALIZER_COMPLETE_SOURCE_ONLY_NATIVE_LABEL_INVERSE")
+    require(functions(root_m)["main"] == main_with_labels, "B_MATERIALIZER_WHOLE_MAIN_EXACT_LABEL_PROJECTION")
     # PREPARED now names the new B package; the original proof receipt remains
     # at the exact independently pinned path already used by both Hosts.
     proof_reference = constant(after["candidate/ms4-host.py"], "PROOF_INI_REFERENCE")
